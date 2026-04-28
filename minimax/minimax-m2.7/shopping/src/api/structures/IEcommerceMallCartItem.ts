@@ -15,8 +15,9 @@ export type IEcommerceMallCartItem = {
    *
    * System-generated UUID that uniquely identifies this line item within the customer's shopping cart.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_cart_items.id. UUID primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from ecommerce_mall_cart_items.id.
+     *   UUID primary key.
    */
   id: string & tags.Format<"uuid">;
 
@@ -25,8 +26,9 @@ export type IEcommerceMallCartItem = {
    *
    * Positive integer representing how many units the customer has added. Valid range: 1 to 99 items per line item.
    *
-   * @x-autobe-database-schema-property quantity
-   * @x-autobe-specification Direct mapping from ecommerce_mall_cart_items.quantity. Integer representing units.
+     * @x-autobe-database-schema-property quantity
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_cart_items.quantity. Integer representing units.
    */
   quantity: number & tags.Type<"int32"> & tags.Minimum<1>;
 
@@ -35,7 +37,10 @@ export type IEcommerceMallCartItem = {
    *
    * Calculated as the quantity multiplied by the unit price of the product variant. This value is computed at read time and reflects the current variant pricing, not a stored value.
    *
-   * @x-autobe-specification Computed field: subtotal = quantity * variant.price. Uses variant price (which may be null, then falls back to product.base_price). Calculated at read time from cart_items.quantity and variant pricing.
+     * @x-autobe-specification Computed field: subtotal = quantity *
+     *   variant.price. Uses variant price (which may be null, then falls back
+     *   to product.base_price). Calculated at read time from
+     *   cart_items.quantity and variant pricing.
    */
   subtotal: number;
 
@@ -44,8 +49,10 @@ export type IEcommerceMallCartItem = {
    *
    * Contains SKU code, pricing information, stock availability, and option values for this specific variant. The variant may be null if it has been deleted by the seller.
    *
-   * @x-autobe-database-schema-property productVariant
-   * @x-autobe-specification Belongs-to relation: ecommerce_mall_product_variant_id maps to productVariant relation. Exposed as IEcommerceMallProductVariant.ISummary object via $ref.
+     * @x-autobe-database-schema-property productVariant
+     * @x-autobe-specification Belongs-to relation:
+     *   ecommerce_mall_product_variant_id maps to productVariant relation.
+     *   Exposed as IEcommerceMallProductVariant.ISummary object via $ref.
    */
   variant: IEcommerceMallProductVariant.ISummary;
 
@@ -54,7 +61,10 @@ export type IEcommerceMallCartItem = {
    *
    * Contains essential product information including name, base price, category, and stock availability. Included for quick product identification without additional API calls.
    *
-   * @x-autobe-specification Obtained via JOIN through productVariant to ecommerce_mall_products. Exposed as IEcommerceMallProduct.ISummary object via $ref. Product name, base price, and category are derived from this join.
+     * @x-autobe-specification Obtained via JOIN through productVariant to
+     *   ecommerce_mall_products. Exposed as IEcommerceMallProduct.ISummary
+     *   object via $ref. Product name, base price, and category are derived
+     *   from this join.
    */
   product: IEcommerceMallProduct.ISummary;
 
@@ -63,8 +73,9 @@ export type IEcommerceMallCartItem = {
    *
    * Records when the customer first added this specific variant to their cart. Used for cart ordering and analytics.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_cart_items.created_at. DateTime timestamp.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_cart_items.created_at. DateTime timestamp.
    */
   createdAt: string & tags.Format<"date-time">;
 
@@ -73,8 +84,9 @@ export type IEcommerceMallCartItem = {
    *
    * Updated whenever the customer changes the quantity of this cart item. Helps track recent cart activity and manage cart expiration.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_cart_items.updated_at. DateTime timestamp.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_cart_items.updated_at. DateTime timestamp.
    */
   updatedAt: string & tags.Format<"date-time">;
 };
@@ -96,8 +108,10 @@ export namespace IEcommerceMallCartItem {
      *
      * **Constraints**: Minimum value of 1.
      *
-     * @x-autobe-database-schema-property quantity
-     * @x-autobe-specification Direct mapping from ecommerce_mall_cart_items.quantity column. Integer representing the number of units of this variant to add to cart.
+         * @x-autobe-database-schema-property quantity
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_cart_items.quantity column. Integer representing the
+         *   number of units of this variant to add to cart.
      */
     quantity: number & tags.Type<"int32"> & tags.Minimum<1>;
 
@@ -110,8 +124,11 @@ export namespace IEcommerceMallCartItem {
      *
      * **Validation**: The variant must exist and not be soft-deleted.
      *
-     * @x-autobe-database-schema-property ecommerce_mall_product_variant_id
-     * @x-autobe-specification Direct mapping to ecommerce_mall_cart_items.ecommerce_mall_product_variant_id FK column. References the specific product variant (SKU) to add to cart. The variant must exist and not be soft-deleted.
+         * @x-autobe-database-schema-property ecommerce_mall_product_variant_id
+         * @x-autobe-specification Direct mapping to
+         *   ecommerce_mall_cart_items.ecommerce_mall_product_variant_id FK
+         *   column. References the specific product variant (SKU) to add to
+         *   cart. The variant must exist and not be soft-deleted.
      */
     productVariantId: string & tags.Format<"uuid">;
   };
@@ -138,8 +155,10 @@ export namespace IEcommerceMallCartItem {
      * - Maximum: 99
      * - Same variant cannot appear twice in a cart - this field updates existing line item quantity
      *
-     * @x-autobe-database-schema-property quantity
-     * @x-autobe-specification Direct mapping from ecommerce_mall_cart_items.quantity column. Integer value representing the number of units of this variant in the cart.
+         * @x-autobe-database-schema-property quantity
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_cart_items.quantity column. Integer value
+         *   representing the number of units of this variant in the cart.
      */
     quantity?:
       | (number & tags.Type<"int32"> & tags.Minimum<0> & tags.Maximum<99>)

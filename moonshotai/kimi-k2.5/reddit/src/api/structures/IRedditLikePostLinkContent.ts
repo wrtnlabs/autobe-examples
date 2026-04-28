@@ -8,48 +8,59 @@ export type IRedditLikePostLinkContent = {
   /**
    * Unique identifier for this link content record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Primary key UUID from reddit_like_post_link_contents.id.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Primary key UUID from
+     *   reddit_like_post_link_contents.id.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * The external URL that this link post points to. Must be a valid URI.
    *
-   * @x-autobe-database-schema-property url
-   * @x-autobe-specification Direct mapping from reddit_like_post_link_contents.url. Maximum 80000 characters to support long URLs.
+     * @x-autobe-database-schema-property url
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_post_link_contents.url. Maximum 80000 characters to support
+     *   long URLs.
    */
   url: string;
 
   /**
    * Extracted domain from the URL for display and filtering purposes (e.g., 'example.com').
    *
-   * @x-autobe-database-schema-property domain
-   * @x-autobe-specification Direct mapping from reddit_like_post_link_contents.domain. Extracted from URL for display and filtering purposes.
+     * @x-autobe-database-schema-property domain
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_post_link_contents.domain. Extracted from URL for display
+     *   and filtering purposes.
    */
   domain: string;
 
   /**
    * Optional preview title fetched from the linked page's OpenGraph or meta tags.
    *
-   * @x-autobe-specification Direct mapping from reddit_like_post_link_contents.preview_title. Nullable. Fetched via OpenGraph or similar protocols.
-   * @x-autobe-database-schema-property preview_title
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_post_link_contents.preview_title. Nullable. Fetched via
+     *   OpenGraph or similar protocols.
+     * @x-autobe-database-schema-property preview_title
    */
   previewTitle: string | null;
 
   /**
    * Optional preview description fetched from the linked page's OpenGraph or meta tags.
    *
-   * @x-autobe-specification Direct mapping from reddit_like_post_link_contents.preview_description. Nullable. Fetched via OpenGraph or similar protocols.
-   * @x-autobe-database-schema-property preview_description
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_post_link_contents.preview_description. Nullable. Fetched
+     *   via OpenGraph or similar protocols.
+     * @x-autobe-database-schema-property preview_description
    */
   previewDescription: string | null;
 
   /**
    * Optional preview image URL fetched from the linked page's OpenGraph or meta tags.
    *
-   * @x-autobe-database-schema-property preview_image_url
-   * @x-autobe-specification Direct mapping from reddit_like_post_link_contents.preview_image_url. Nullable. Fetched via OpenGraph or similar protocols.
+     * @x-autobe-database-schema-property preview_image_url
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_post_link_contents.preview_image_url. Nullable. Fetched via
+     *   OpenGraph or similar protocols.
    */
   previewImageUrl: string | null;
 };

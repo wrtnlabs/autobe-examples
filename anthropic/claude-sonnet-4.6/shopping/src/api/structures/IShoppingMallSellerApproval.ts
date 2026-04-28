@@ -15,63 +15,108 @@ export type IShoppingMallSellerApproval = {
   /**
    * The unique UUID identifier of this seller approval record. Use this value as the `approvalId` path parameter when accessing or updating this specific approval.
    *
-   * @x-autobe-specification Maps to the primary key column (UUID) of the dedicated seller approval tracking table. Used to uniquely identify a specific SellerApproval record. Pass this value as the `approvalId` path parameter when retrieving or updating a specific approval record via GET or PUT endpoints.
+     * @x-autobe-specification Maps to the primary key column (UUID) of the
+     *   dedicated seller approval tracking table. Used to uniquely identify a
+     *   specific SellerApproval record. Pass this value as the `approvalId`
+     *   path parameter when retrieving or updating a specific approval record
+     *   via GET or PUT endpoints.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * A summary of the seller account that submitted this approval request. Includes the seller's unique identifier, email address, shop name, and account status flags.
    *
-   * @x-autobe-specification Computed by joining the approval tracking table's seller_id foreign key column to the shopping_mall_sellers table. Returns an IShoppingMallSeller.ISummary object with the seller's id, email, shop_name, isBanned, isSuspended, createdAt, and updatedAt. This relation is always non-null — every approval record belongs to exactly one seller.
+     * @x-autobe-specification Computed by joining the approval tracking table's
+     *   seller_id foreign key column to the shopping_mall_sellers table.
+     *   Returns an IShoppingMallSeller.ISummary object with the seller's id,
+     *   email, shop_name, isBanned, isSuspended, createdAt, and updatedAt. This
+     *   relation is always non-null — every approval record belongs to exactly
+     *   one seller.
    */
   seller: IShoppingMallSeller.ISummary;
 
   /**
    * The current administrative decision status of this approval record. One of: `pending` (awaiting review), `approved` (seller granted platform access), or `rejected` (seller denied registration).
    *
-   * @x-autobe-specification Maps to the status column of the dedicated seller approval tracking table. Allowed values: 'pending' (awaiting administrator review), 'approved' (seller is authorized to operate on the platform), 'rejected' (seller's registration was denied). Status transitions: only 'pending' → 'approved' or 'pending' → 'rejected' are valid. A rejected seller may resubmit, creating a new approval record with 'pending' status.
+     * @x-autobe-specification Maps to the status column of the dedicated seller
+     *   approval tracking table. Allowed values: 'pending' (awaiting
+     *   administrator review), 'approved' (seller is authorized to operate on
+     *   the platform), 'rejected' (seller's registration was denied). Status
+     *   transitions: only 'pending' → 'approved' or 'pending' → 'rejected' are
+     *   valid. A rejected seller may resubmit, creating a new approval record
+     *   with 'pending' status.
    */
   status: "pending" | "approved" | "rejected";
 
   /**
    * The UTC timestamp recording when the seller submitted this approval request. Establishes the chronological order of registration attempts in the audit trail.
    *
-   * @x-autobe-specification Maps to the submitted_at column (timestamptz) of the dedicated seller approval tracking table. Set to the current server timestamp at the moment the seller submits their approval request via POST /shoppingMall/seller/approvals. This field is immutable after creation and provides the chronological audit trail for each registration attempt.
+     * @x-autobe-specification Maps to the submitted_at column (timestamptz) of
+     *   the dedicated seller approval tracking table. Set to the current server
+     *   timestamp at the moment the seller submits their approval request via
+     *   POST /shoppingMall/seller/approvals. This field is immutable after
+     *   creation and provides the chronological audit trail for each
+     *   registration attempt.
    */
   submitted_at: string & tags.Format<"date-time">;
 
   /**
    * The UTC timestamp recording when an administrator made their review decision on this approval request. Null if the approval is still awaiting review (`pending` status).
    *
-   * @x-autobe-specification Maps to the reviewed_at column (timestamptz, nullable) of the dedicated seller approval tracking table. Set to the current server timestamp when an administrator records their decision via PUT /sellerApprovals/{approvalId}. Remains null while the record has status='pending'. Once set, this field is immutable.
+     * @x-autobe-specification Maps to the reviewed_at column (timestamptz,
+     *   nullable) of the dedicated seller approval tracking table. Set to the
+     *   current server timestamp when an administrator records their decision
+     *   via PUT /sellerApprovals/{approvalId}. Remains null while the record
+     *   has status='pending'. Once set, this field is immutable.
    */
   reviewed_at: (string & tags.Format<"date-time">) | null;
 
   /**
    * The administrator's written explanation for why this seller registration was denied. Non-null only when status is `rejected`. Null for `pending` and `approved` records. Sellers can use this explanation to understand the basis for denial and address issues before resubmitting.
    *
-   * @x-autobe-specification Maps to the rejection_reason column (text, nullable) of the dedicated seller approval tracking table. Contains a non-empty string when status='rejected', explaining the administrator's reason for denying the registration. Always null when status='pending' or status='approved'. The administrator is required to provide this reason at review time if rejecting; the system enforces a non-empty value (minLength: 1).
+     * @x-autobe-specification Maps to the rejection_reason column (text,
+     *   nullable) of the dedicated seller approval tracking table. Contains a
+     *   non-empty string when status='rejected', explaining the administrator's
+     *   reason for denying the registration. Always null when status='pending'
+     *   or status='approved'. The administrator is required to provide this
+     *   reason at review time if rejecting; the system enforces a non-empty
+     *   value (minLength: 1).
    */
   rejection_reason: string | null;
 
   /**
    * A summary of the administrator who reviewed and decided on this approval request. Null when the approval is still in `pending` status and no decision has been made yet.
    *
-   * @x-autobe-specification Computed by LEFT JOIN of the approval tracking table's reviewed_by_admin_id foreign key column to the shopping_mall_admins table. Returns an IShoppingMallAdmin.ISummary object (id, email, actor_type, grade, created_at, updated_at, deleted_at) when a decision has been made. Returns null when status='pending' because no administrator has acted yet.
+     * @x-autobe-specification Computed by LEFT JOIN of the approval tracking
+     *   table's reviewed_by_admin_id foreign key column to the
+     *   shopping_mall_admins table. Returns an IShoppingMallAdmin.ISummary
+     *   object (id, email, actor_type, grade, created_at, updated_at,
+     *   deleted_at) when a decision has been made. Returns null when
+     *   status='pending' because no administrator has acted yet.
    */
   reviewed_by: IShoppingMallAdmin.ISummary | null;
 
   /**
    * The UTC timestamp recording when this approval record was created in the system. Typically corresponds to the seller's registration or resubmission time.
    *
-   * @x-autobe-specification Maps to the created_at column (timestamptz) of the dedicated seller approval tracking table. Set to the current server timestamp when the approval record row is first inserted into the database. Typically equal to submitted_at for seller-initiated submissions, or set by the system when auto-creating the first approval record upon seller registration.
+     * @x-autobe-specification Maps to the created_at column (timestamptz) of
+     *   the dedicated seller approval tracking table. Set to the current server
+     *   timestamp when the approval record row is first inserted into the
+     *   database. Typically equal to submitted_at for seller-initiated
+     *   submissions, or set by the system when auto-creating the first approval
+     *   record upon seller registration.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * The UTC timestamp recording when this approval record was last modified. Updated when an administrator approves or rejects the request.
    *
-   * @x-autobe-specification Maps to the updated_at column (timestamptz) of the dedicated seller approval tracking table. Updated automatically whenever the approval record is modified — primarily when an administrator records their decision (status, reviewed_at, rejection_reason, reviewed_by_admin_id columns are written). Useful for detecting changes in the record's lifecycle.
+     * @x-autobe-specification Maps to the updated_at column (timestamptz) of
+     *   the dedicated seller approval tracking table. Updated automatically
+     *   whenever the approval record is modified — primarily when an
+     *   administrator records their decision (status, reviewed_at,
+     *   rejection_reason, reviewed_by_admin_id columns are written). Useful for
+     *   detecting changes in the record's lifecycle.
    */
   updated_at: string & tags.Format<"date-time">;
 };
@@ -89,7 +134,11 @@ export namespace IShoppingMallSellerApproval {
     /**
      * Optional filter for the approval status of seller registration records. Accepted values are `pending` (awaiting administrator review), `approved` (seller has been granted platform access), and `rejected` (registration was denied). When omitted, records of all statuses are included in the results.
      *
-     * @x-autobe-specification Optional filter on the approval status. Applies a WHERE condition: shopping_mall_seller_approvals.status = :status. Accepted values: 'pending', 'approved', 'rejected'. If null or omitted, no status filter is applied and all statuses are returned.
+         * @x-autobe-specification Optional filter on the approval status.
+         *   Applies a WHERE condition: shopping_mall_seller_approvals.status =
+         *   :status. Accepted values: 'pending', 'approved', 'rejected'. If
+         *   null or omitted, no status filter is applied and all statuses are
+         *   returned.
      */
     status?:
       | (string & tags.Pattern<"^(pending|approved|rejected)$">)
@@ -99,70 +148,118 @@ export namespace IShoppingMallSellerApproval {
     /**
      * Optional case-insensitive partial text search filter on the seller's email address. Use this to find approval records associated with a specific seller email or email domain.
      *
-     * @x-autobe-specification Optional filter for partial text search on the seller's email address. Applies ILIKE match against shopping_mall_sellers.email (case-insensitive partial match). SQL: WHERE shopping_mall_sellers.email ILIKE '%' || :sellerEmail || '%'. If null or omitted, no email filter is applied.
+         * @x-autobe-specification Optional filter for partial text search on
+         *   the seller's email address. Applies ILIKE match against
+         *   shopping_mall_sellers.email (case-insensitive partial match). SQL:
+         *   WHERE shopping_mall_sellers.email ILIKE '%' || :sellerEmail || '%'.
+         *   If null or omitted, no email filter is applied.
      */
     sellerEmail?: string | null | undefined;
 
     /**
      * Optional case-insensitive partial text search filter on the seller's shop name. Use this to find approval records for sellers operating a shop with a matching name.
      *
-     * @x-autobe-specification Optional filter for partial text search on the seller's shop name. Applies ILIKE match against shopping_mall_sellers.shop_name (case-insensitive partial match). SQL: WHERE shopping_mall_sellers.shop_name ILIKE '%' || :shopName || '%'. If null or omitted, no shop name filter is applied.
+         * @x-autobe-specification Optional filter for partial text search on
+         *   the seller's shop name. Applies ILIKE match against
+         *   shopping_mall_sellers.shop_name (case-insensitive partial match).
+         *   SQL: WHERE shopping_mall_sellers.shop_name ILIKE '%' || :shopName
+         *   || '%'. If null or omitted, no shop name filter is applied.
      */
     shopName?: string | null | undefined;
 
     /**
      * Optional case-insensitive keyword search that simultaneously matches against the seller's email address and shop name. Useful for quickly locating a seller's approval record when you know part of their identity but not whether the match is in the email or shop name field.
      *
-     * @x-autobe-specification Optional combined keyword filter that searches across both the seller's email and shop name. Applies ILIKE match with OR condition: WHERE (shopping_mall_sellers.email ILIKE '%' || :sellerKeyword || '%' OR shopping_mall_sellers.shop_name ILIKE '%' || :sellerKeyword || '%'). If both sellerKeyword and individual sellerEmail/shopName filters are provided, they are AND-combined. If null or omitted, no keyword filter is applied.
+         * @x-autobe-specification Optional combined keyword filter that
+         *   searches across both the seller's email and shop name. Applies
+         *   ILIKE match with OR condition: WHERE (shopping_mall_sellers.email
+         *   ILIKE '%' || :sellerKeyword || '%' OR
+         *   shopping_mall_sellers.shop_name ILIKE '%' || :sellerKeyword ||
+         *   '%'). If both sellerKeyword and individual sellerEmail/shopName
+         *   filters are provided, they are AND-combined. If null or omitted, no
+         *   keyword filter is applied.
      */
     sellerKeyword?: string | null | undefined;
 
     /**
      * Optional start of the submission date range filter (inclusive). When provided, only approval records submitted on or after this timestamp are returned. Use in combination with `submittedAtTo` to define a precise date range.
      *
-     * @x-autobe-specification Optional inclusive lower-bound filter on the submission timestamp. Maps to WHERE shopping_mall_seller_approvals.created_at >= :submittedAtFrom. Value must be a valid ISO 8601 date-time string. If null or omitted, no lower-bound date filter is applied.
+         * @x-autobe-specification Optional inclusive lower-bound filter on the
+         *   submission timestamp. Maps to WHERE
+         *   shopping_mall_seller_approvals.created_at >= :submittedAtFrom.
+         *   Value must be a valid ISO 8601 date-time string. If null or
+         *   omitted, no lower-bound date filter is applied.
      */
     submittedAtFrom?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * Optional end of the submission date range filter (inclusive). When provided, only approval records submitted on or before this timestamp are returned. Use in combination with `submittedAtFrom` to define a precise date range.
      *
-     * @x-autobe-specification Optional inclusive upper-bound filter on the submission timestamp. Maps to WHERE shopping_mall_seller_approvals.created_at <= :submittedAtTo. Value must be a valid ISO 8601 date-time string. If null or omitted, no upper-bound date filter is applied.
+         * @x-autobe-specification Optional inclusive upper-bound filter on the
+         *   submission timestamp. Maps to WHERE
+         *   shopping_mall_seller_approvals.created_at <= :submittedAtTo. Value
+         *   must be a valid ISO 8601 date-time string. If null or omitted, no
+         *   upper-bound date filter is applied.
      */
     submittedAtTo?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * Optional start of the review date range filter (inclusive). When provided, only approval records that were reviewed by an administrator on or after this timestamp are returned. Records that are still pending (not yet reviewed) are excluded when this filter is active.
      *
-     * @x-autobe-specification Optional inclusive lower-bound filter on the review decision timestamp. Maps to WHERE shopping_mall_seller_approvals.reviewed_at >= :reviewedAtFrom. Only records that have been reviewed (reviewed_at IS NOT NULL) and fall within the range are returned. Value must be a valid ISO 8601 date-time string. If null or omitted, no lower-bound review date filter is applied.
+         * @x-autobe-specification Optional inclusive lower-bound filter on the
+         *   review decision timestamp. Maps to WHERE
+         *   shopping_mall_seller_approvals.reviewed_at >= :reviewedAtFrom. Only
+         *   records that have been reviewed (reviewed_at IS NOT NULL) and fall
+         *   within the range are returned. Value must be a valid ISO 8601
+         *   date-time string. If null or omitted, no lower-bound review date
+         *   filter is applied.
      */
     reviewedAtFrom?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * Optional end of the review date range filter (inclusive). When provided, only approval records that were reviewed by an administrator on or before this timestamp are returned. Use in combination with `reviewedAtFrom` to define a precise administrative decision date range.
      *
-     * @x-autobe-specification Optional inclusive upper-bound filter on the review decision timestamp. Maps to WHERE shopping_mall_seller_approvals.reviewed_at <= :reviewedAtTo. Only records that have been reviewed (reviewed_at IS NOT NULL) and fall within the range are returned. Value must be a valid ISO 8601 date-time string. If null or omitted, no upper-bound review date filter is applied.
+         * @x-autobe-specification Optional inclusive upper-bound filter on the
+         *   review decision timestamp. Maps to WHERE
+         *   shopping_mall_seller_approvals.reviewed_at <= :reviewedAtTo. Only
+         *   records that have been reviewed (reviewed_at IS NOT NULL) and fall
+         *   within the range are returned. Value must be a valid ISO 8601
+         *   date-time string. If null or omitted, no upper-bound review date
+         *   filter is applied.
      */
     reviewedAtTo?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * Optional sort expression to control the ordering of results. Accepted format is `field:direction` — for example, `submittedAt:desc` (most recent submissions first), `reviewedAt:asc` (oldest reviews first), or `status:asc` (alphabetical by status). When omitted, results are sorted by submission date descending (most recent first).
      *
-     * @x-autobe-specification Optional sort expression controlling the ORDER BY clause applied to the result set. Accepted format: '<field>:<direction>' where field is one of 'submittedAt' (maps to shopping_mall_seller_approvals.created_at), 'reviewedAt' (maps to shopping_mall_seller_approvals.reviewed_at), or 'status' (maps to shopping_mall_seller_approvals.status); direction is 'asc' or 'desc'. Examples: 'submittedAt:desc', 'reviewedAt:asc', 'status:asc'. Default when null or omitted: shopping_mall_seller_approvals.created_at DESC.
+         * @x-autobe-specification Optional sort expression controlling the
+         *   ORDER BY clause applied to the result set. Accepted format:
+         *   '<field>:<direction>' where field is one of 'submittedAt' (maps to
+         *   shopping_mall_seller_approvals.created_at), 'reviewedAt' (maps to
+         *   shopping_mall_seller_approvals.reviewed_at), or 'status' (maps to
+         *   shopping_mall_seller_approvals.status); direction is 'asc' or
+         *   'desc'. Examples: 'submittedAt:desc', 'reviewedAt:asc',
+         *   'status:asc'. Default when null or omitted:
+         *   shopping_mall_seller_approvals.created_at DESC.
      */
     sort?: string | null | undefined;
 
     /**
      * The page number to retrieve (1-indexed). Defaults to page 1 when omitted. Use in combination with `limit` to navigate through large result sets.
      *
-     * @x-autobe-specification 1-indexed page number for pagination. Maps to SQL OFFSET = (page - 1) * limit. Minimum value is 1. Default value when omitted is 1 (first page). Must be a positive integer.
+         * @x-autobe-specification 1-indexed page number for pagination. Maps to
+         *   SQL OFFSET = (page - 1) * limit. Minimum value is 1. Default value
+         *   when omitted is 1 (first page). Must be a positive integer.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * The maximum number of seller approval records to return per page. Minimum is 1, maximum is 100. Defaults to 20 when omitted. Use in combination with `page` to paginate through large result sets.
      *
-     * @x-autobe-specification Maximum number of records to return per page. Maps to SQL LIMIT. Minimum value is 1, maximum value is 100. Default value when omitted is 20. Values exceeding 100 should be clamped to 100.
+         * @x-autobe-specification Maximum number of records to return per page.
+         *   Maps to SQL LIMIT. Minimum value is 1, maximum value is 100.
+         *   Default value when omitted is 20. Values exceeding 100 should be
+         *   clamped to 100.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -180,14 +277,28 @@ export namespace IShoppingMallSellerApproval {
     /**
      * The administrator's review decision for the seller registration request. Must be either 'approved' to grant the seller full platform access, or 'rejected' to deny the application. When 'rejected', a non-empty `rejection_reason` must also be provided.
      *
-     * @x-autobe-specification Maps to the `status` column of the seller approval tracking entity. Allowed input values are 'approved' and 'rejected' only (not 'pending' — this operation exclusively transitions a pending approval to a decided state). Controls platform access: 'approved' permits the seller to create products and conduct sales; 'rejected' denies platform access and records the rejection reason.
+         * @x-autobe-specification Maps to the `status` column of the seller
+         *   approval tracking entity. Allowed input values are 'approved' and
+         *   'rejected' only (not 'pending' — this operation exclusively
+         *   transitions a pending approval to a decided state). Controls
+         *   platform access: 'approved' permits the seller to create products
+         *   and conduct sales; 'rejected' denies platform access and records
+         *   the rejection reason.
      */
     status: "approved" | "rejected";
 
     /**
      * The reason for rejecting the seller's registration application. Required as a non-empty string when `status` is 'rejected', so the seller understands the grounds for denial and can correct their submission before reapplying. Must be `null` when `status` is 'approved'.
      *
-     * @x-autobe-specification Maps to the `rejection_reason` column of the seller approval tracking entity. Business rules: (1) When status='rejected', this field must be a non-empty string (minLength: 1 enforced); providing null or an empty string results in a 422 validation error. (2) When status='approved', this field must be null; passing a non-null value when approving is a validation error. The stored rejection reason is visible to the rejected seller so they understand the grounds for denial and can correct their submission before reapplying.
+         * @x-autobe-specification Maps to the `rejection_reason` column of the
+         *   seller approval tracking entity. Business rules: (1) When
+         *   status='rejected', this field must be a non-empty string
+         *   (minLength: 1 enforced); providing null or an empty string results
+         *   in a 422 validation error. (2) When status='approved', this field
+         *   must be null; passing a non-null value when approving is a
+         *   validation error. The stored rejection reason is visible to the
+         *   rejected seller so they understand the grounds for denial and can
+         *   correct their submission before reapplying.
      */
     rejection_reason: (string & tags.MinLength<1>) | null;
   };
@@ -208,42 +319,66 @@ export namespace IShoppingMallSellerApproval {
     /**
      * The unique identifier of this seller approval record.
      *
-     * @x-autobe-specification Mapped from shopping_mall_seller_approvals.id (UUID primary key). This is the unique identifier of the seller approval record itself. Used as the record identifier in list and detail API responses.
+         * @x-autobe-specification Mapped from shopping_mall_seller_approvals.id
+         *   (UUID primary key). This is the unique identifier of the seller
+         *   approval record itself. Used as the record identifier in list and
+         *   detail API responses.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * The current review status of this seller approval request. 'pending' means awaiting administrator review, 'approved' means the seller has been granted platform access, and 'rejected' means the registration was denied.
      *
-     * @x-autobe-specification Mapped from shopping_mall_seller_approvals.status (enum: 'pending' | 'approved' | 'rejected'). Reflects the administrator's current decision on this approval request. Newly created records start as 'pending'. An administrator transitions the status to 'approved' or 'rejected' when reviewing the request.
+         * @x-autobe-specification Mapped from
+         *   shopping_mall_seller_approvals.status (enum: 'pending' | 'approved'
+         *   | 'rejected'). Reflects the administrator's current decision on
+         *   this approval request. Newly created records start as 'pending'. An
+         *   administrator transitions the status to 'approved' or 'rejected'
+         *   when reviewing the request.
      */
     status: "pending" | "approved" | "rejected";
 
     /**
      * A summary of the seller account associated with this approval request, including their identifier, email address, shop name, and account status flags.
      *
-     * @x-autobe-specification Computed by JOINing shopping_mall_seller_approvals.shopping_mall_seller_id to shopping_mall_sellers.id and mapping the result to IShoppingMallSeller.ISummary. Includes: id, email, shop_name (as shopName), is_banned (as isBanned), is_suspended (as isSuspended), created_at (as createdAt), updated_at (as updatedAt).
+         * @x-autobe-specification Computed by JOINing
+         *   shopping_mall_seller_approvals.shopping_mall_seller_id to
+         *   shopping_mall_sellers.id and mapping the result to
+         *   IShoppingMallSeller.ISummary. Includes: id, email, shop_name (as
+         *   shopName), is_banned (as isBanned), is_suspended (as isSuspended),
+         *   created_at (as createdAt), updated_at (as updatedAt).
      */
     seller: IShoppingMallSeller.ISummary;
 
     /**
      * The date and time when this seller approval request was submitted.
      *
-     * @x-autobe-specification Mapped from shopping_mall_seller_approvals.created_at (Timestamptz). Represents the moment the seller submitted this approval request. Exposed as submittedAt for semantic clarity in the API response.
+         * @x-autobe-specification Mapped from
+         *   shopping_mall_seller_approvals.created_at (Timestamptz). Represents
+         *   the moment the seller submitted this approval request. Exposed as
+         *   submittedAt for semantic clarity in the API response.
      */
     submittedAt: string & tags.Format<"date-time">;
 
     /**
      * The date and time when an administrator reviewed this approval request, or null if it has not yet been reviewed.
      *
-     * @x-autobe-specification Mapped from shopping_mall_seller_approvals.reviewed_at (nullable Timestamptz). Null when the request has not yet been reviewed by an administrator. Set to the current timestamp when the admin approves or rejects the request.
+         * @x-autobe-specification Mapped from
+         *   shopping_mall_seller_approvals.reviewed_at (nullable Timestamptz).
+         *   Null when the request has not yet been reviewed by an
+         *   administrator. Set to the current timestamp when the admin approves
+         *   or rejects the request.
      */
     reviewedAt: (string & tags.Format<"date-time">) | null;
 
     /**
      * The reason provided by the administrator for rejecting this seller approval request, or null if the request was not rejected.
      *
-     * @x-autobe-specification Mapped from shopping_mall_seller_approvals.rejection_reason (nullable String). Null unless status is 'rejected'. When an administrator rejects the request, they provide a textual explanation that is stored in this column and returned here.
+         * @x-autobe-specification Mapped from
+         *   shopping_mall_seller_approvals.rejection_reason (nullable String).
+         *   Null unless status is 'rejected'. When an administrator rejects the
+         *   request, they provide a textual explanation that is stored in this
+         *   column and returned here.
      */
     rejectionReason: string | null;
   };

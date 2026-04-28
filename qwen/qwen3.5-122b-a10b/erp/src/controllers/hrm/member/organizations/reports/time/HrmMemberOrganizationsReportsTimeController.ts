@@ -29,9 +29,12 @@ export class HrmMemberOrganizationsReportsTimeController {
    * @param connection
    * @param organizationId Organization identifier for multi-tenancy scoping (global scope)
    * @param body Report filtering criteria including date range (start and end dates), billable status filter, optional employee/project/task IDs for narrowing scope, and grouping dimension preferences.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query hrm_timelogs table with date range filtering on the date column. Apply billable flag filter if specified. Join with hrm_employees for employee details, hrm_projects for project information, and hrm_tasks for task details.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query hrm_timelogs table with date range
+     *   filtering on the date column. Apply billable flag filter if specified.
+     *   Join with hrm_employees for employee details, hrm_projects for project
+     *   information, and hrm_tasks for task details.
    *
    * Apply organization scoping through employee.organization_id matching the organizationId path parameter to ensure multi-tenancy isolation. Filter out soft-deleted timelogs (deleted_at IS NULL).
    *

@@ -26,7 +26,10 @@ import { IPageIHrmTimeTrackingOrganizationWeeklySummary } from "../../../structu
  * @param props.body Weekly summary filters and pagination criteria
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Accept a JSON request body of type IOrganizationWeeklySummary.IRequest containing at minimum pagination and optional analytical filters such as reporting date range, optional project identifier, and sort criteria.
+ * @x-autobe-specification Accept a JSON request body of type
+ *   IOrganizationWeeklySummary.IRequest containing at minimum pagination and
+ *   optional analytical filters such as reporting date range, optional project
+ *   identifier, and sort criteria.
  *
  * Resolve the caller's currently selected organization context before any data access. Evaluate whether the caller has report viewing permission in that organization. Reject the request when the permission is absent, even if the same caller has report visibility in another organization.
  *
@@ -133,7 +136,10 @@ export namespace index {
  * @param props.organizationWeeklySummaryId Target organization weekly summary record identifier
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Implement a read-only service method that loads one record from `hrm_time_tracking_organization_weekly_summaries` by its primary identifier and validates organization-scoped access before returning it.
+ * @x-autobe-specification Implement a read-only service method that loads one
+ *   record from `hrm_time_tracking_organization_weekly_summaries` by its
+ *   primary identifier and validates organization-scoped access before
+ *   returning it.
  *
  * Resolve the caller's current organization context from authentication/session state, then verify that the caller is allowed to view reporting data in that organization. Enforce the organization-scoped permission model described in the requirements: permissions must be evaluated only in the current organization, and permissions from another organization must not authorize access. If the caller lacks reporting access, reject the request.
  *

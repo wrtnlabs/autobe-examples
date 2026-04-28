@@ -24,9 +24,10 @@ export class ShoppingmallSeller_profilesController {
    *
    * @param connection
    * @param body Seller profile search, filter, sort, and pagination criteria
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Implement a seller-profile search service over the current seller profile table only.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Implement a seller-profile search service over
+     *   the current seller profile table only.
    *
    * Accept an IShoppingMallSellerProfile.IRequest body containing pagination, filter, and sort criteria. Validate page size, page cursor or page number strategy defined by the shared paging convention, and reject unsupported filter or sort fields. Treat the operation as read-only and do not mutate seller profile state under any circumstance.
    *
@@ -69,9 +70,11 @@ export class ShoppingmallSeller_profilesController {
    *
    * @param connection
    * @param sellerProfileId Target seller profile ID
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Load a single record from shopping_mall_seller_profiles by its primary key id using sellerProfileId.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Load a single record from
+     *   shopping_mall_seller_profiles by its primary key id using
+     *   sellerProfileId.
    *
    * Filter the query to match the requested id and exclude records whose deleted_at is not null, because this endpoint is for the current active public seller profile only. If no matching active record exists, return a not-found error.
    *

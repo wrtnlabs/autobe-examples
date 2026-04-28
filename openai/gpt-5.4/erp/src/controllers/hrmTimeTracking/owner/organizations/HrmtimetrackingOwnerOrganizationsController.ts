@@ -27,9 +27,12 @@ export class HrmtimetrackingOwnerOrganizationsController {
    *
    * @param connection
    * @param body Organization identity and operational settings for creation
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor owner
-   * @x-autobe-specification Validate the request body against the Organization creation DTO and persist a new record in the organization table using only fields that exist in the schema for organization identity and operational preferences.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor owner
+     * @x-autobe-specification Validate the request body against the
+     *   Organization creation DTO and persist a new record in the organization
+     *   table using only fields that exist in the schema for organization
+     *   identity and operational preferences.
    *
    * Within a single transaction, create the organization, create or assign the creator's ownership relationship required by the business model, and register the new organization as available in the creator's organization associations. If the platform maintains an active organization context pointer for the authenticated account, update that pointer so the created organization becomes the initial or newly selected workspace immediately after success.
    *
@@ -69,9 +72,15 @@ export class HrmtimetrackingOwnerOrganizationsController {
    *
    * @param connection
    * @param body Organization search, filter, sort, and pagination criteria
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor owner
-   * @x-autobe-specification Implement this operation as a collection search over hrm_time_tracking_organizations joined with the caller's membership relationship so that only organizations accessible to the authenticated user are returned. The service layer should resolve the authenticated principal, determine the user's linked organization memberships across owner, manager, or employee roles as applicable, and build a query constrained to those organization IDs only.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor owner
+     * @x-autobe-specification Implement this operation as a collection search
+     *   over hrm_time_tracking_organizations joined with the caller's
+     *   membership relationship so that only organizations accessible to the
+     *   authenticated user are returned. The service layer should resolve the
+     *   authenticated principal, determine the user's linked organization
+     *   memberships across owner, manager, or employee roles as applicable, and
+     *   build a query constrained to those organization IDs only.
    *
    * Accept an IHrmTimeTrackingOrganization.IRequest request body containing pagination, search text, optional filtering, and sort options. Support partial text search primarily against the organization name and optionally the description if the request schema includes that capability. Apply deterministic sorting using supported fields such as name, createdAt, or updatedAt, with a stable secondary sort by id when necessary. Exclude logically inactive records by enforcing deleted_at IS NULL.
    *
@@ -111,9 +120,11 @@ export class HrmtimetrackingOwnerOrganizationsController {
    *
    * @param connection
    * @param organizationId Target organization's unique identifier
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor owner
-   * @x-autobe-specification Load the organization from hrm_time_tracking_organizations by primary key id using the organizationId path parameter.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor owner
+     * @x-autobe-specification Load the organization from
+     *   hrm_time_tracking_organizations by primary key id using the
+     *   organizationId path parameter.
    *
    * Before returning data, verify that the authenticated user has membership or equivalent authorized access to the target organization in the current organization context. Apply organization-scoped access evaluation only within the selected organization, and reject the request when the target organization is outside that scope or when the caller lacks permission to view organization information in that organization.
    *
@@ -156,9 +167,10 @@ export class HrmtimetrackingOwnerOrganizationsController {
    * @param connection
    * @param organizationId Target organization's ID
    * @param body Updated organization identity and operational settings
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor owner
-   * @x-autobe-specification Implement this operation as a transactional update of one row in `hrm_time_tracking_organizations`.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor owner
+     * @x-autobe-specification Implement this operation as a transactional
+     *   update of one row in `hrm_time_tracking_organizations`.
    *
    * 1. Resolve the authenticated user and current organization context.
    * 2. Verify that the current organization context matches the `organizationId` path parameter. Reject the request if the caller attempts to update a different organization than the one currently selected.
@@ -221,9 +233,10 @@ export class HrmtimetrackingOwnerOrganizationsController {
    *
    * @param connection
    * @param organizationId Unique identifier of the organization to permanently remove.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor owner
-   * @x-autobe-specification Implement this operation as an owner-only organization-scoped destructive workflow.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor owner
+     * @x-autobe-specification Implement this operation as an owner-only
+     *   organization-scoped destructive workflow.
    *
    * 1. Authenticate the caller and resolve the active organization context.
    * 2. Validate that an organization context is selected and that it matches the organizationId path parameter. Reject when the caller is attempting to delete an organization outside the current context or one they do not belong to.

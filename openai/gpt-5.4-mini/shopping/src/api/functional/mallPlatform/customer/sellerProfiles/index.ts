@@ -19,7 +19,9 @@ import { IMallPlatformSellerProfile } from "../../../../structures/IMallPlatform
  * @param props.sellerProfileId The seller profile identifier (UUID).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Load the seller profile by its primary identifier and return the current profile row only. Validate that the record exists; otherwise return 404.
+ * @x-autobe-specification Load the seller profile by its primary identifier and
+ *   return the current profile row only. Validate that the record exists;
+ *   otherwise return 404.
  *
  * Use the seller profile table as the source of truth for current storefront identity fields. Do not join or modify snapshot tables in this operation. The endpoint must remain read-only and must not trigger snapshot creation.
  *

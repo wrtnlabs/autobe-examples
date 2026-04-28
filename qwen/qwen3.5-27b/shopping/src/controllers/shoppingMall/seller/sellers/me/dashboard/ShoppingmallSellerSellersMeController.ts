@@ -26,9 +26,10 @@ export class ShoppingmallSellerSellersMeController {
    * Only authenticated sellers can access their own dashboard. Each seller sees only their own shop data, not other sellers' information.
    *
    * @param connection
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Query the following aggregates for the authenticated seller:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Query the following aggregates for the
+     *   authenticated seller:
    *
    * 1. **Total Products**: COUNT(*) from shopping_mall_products WHERE shopping_mall_seller_id = current_seller_id
    *

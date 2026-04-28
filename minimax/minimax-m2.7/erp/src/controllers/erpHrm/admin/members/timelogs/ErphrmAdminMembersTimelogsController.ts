@@ -25,9 +25,10 @@ export class ErphrmAdminMembersTimelogsController {
    * @param connection
    * @param memberId Unique identifier of the member whose timelogs to retrieve (global scope)
    * @param body Search criteria and pagination parameters for filtering timelogs
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query timelogs for a specific member through their employee associations.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Query timelogs for a specific member through
+     *   their employee associations.
    *
    * 1. Validate that the memberId exists in erp_hrm_members table (not soft-deleted).
    * 2. Look up all employee records in erp_hrm_employees where erp_hrm_member_id matches the memberId.
@@ -80,9 +81,10 @@ export class ErphrmAdminMembersTimelogsController {
    * @param connection
    * @param memberId Unique identifier of the member (employee) who owns the timelog
    * @param timelogId Unique identifier of the timelog to retrieve
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query erp_hrm_timelogs table by timelogId. Verify the timelog exists and belongs to the specified memberId.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Query erp_hrm_timelogs table by timelogId. Verify
+     *   the timelog exists and belongs to the specified memberId.
    *
    * Authorization check: If the authenticated user is the owner of the timelog, allow access. Otherwise, verify the user has time:view_all permission within the organization context. Return 403 Forbidden if authorization fails.
    *
@@ -125,9 +127,10 @@ export class ErphrmAdminMembersTimelogsController {
    * @param memberId Unique identifier of the member/employee who owns the timelog (global scope)
    * @param timelogId Unique identifier of the timelog to update (global scope)
    * @param body Partial update payload containing fields to modify: date, duration_minutes, erp_hrm_project_id, erp_hrm_task_id, description, billable. All fields are optional.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Validate that the timelog exists and retrieve its current state including associated timesheet status.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Validate that the timelog exists and retrieve its
+     *   current state including associated timesheet status.
    *
    * Verify the requesting user has authorization: either owns the timelog (employee record matches) or has time:manage permission.
    *
@@ -188,9 +191,9 @@ export class ErphrmAdminMembersTimelogsController {
    * @param connection
    * @param memberId UUID of the employee (member) who owns the timelog
    * @param timelogId UUID of the timelog to be deleted
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification DELETE operation to remove a timelog permanently.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification DELETE operation to remove a timelog permanently.
    *
    * 1. Authorization Check:
    *    - Extract the authenticated user's session and organization context

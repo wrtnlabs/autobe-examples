@@ -21,11 +21,12 @@ export class RedditcommunityMemberFeedsHomeController {
    *
    * @param connection
    * @param body Search criteria for home feed including sort method, time period filter, and pagination parameters. Sort options: hot (default), top, new, controversial. When sorting by top, specify time_period: today, this_week, this_month, this_year, or all_time.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query reddit_community_posts table joining with reddit_community_subscriptions to filter posts only from communities where:
-   * - User's subscription status is 'active'
-   * - User is not banned from the community (check reddit_community_ban_records)
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query reddit_community_posts table joining with
+     *   reddit_community_subscriptions to filter posts only from communities
+     *   where: - User's subscription status is 'active' - User is not banned
+     *   from the community (check reddit_community_ban_records)
    *
    * Apply sorting:
    * - hot: weighted algorithm combining vote score, comment activity, and recency

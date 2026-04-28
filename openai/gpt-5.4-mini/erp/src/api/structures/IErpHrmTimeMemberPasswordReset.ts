@@ -10,64 +10,77 @@ export type IErpHrmTimeMemberPasswordReset = {
   /**
    * Unique identifier of the password reset record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from erp_hrm_time_member_password_resets.id.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_member_password_resets.id.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Member account associated with this password reset request.
    *
-   * @x-autobe-database-schema-property member
-   * @x-autobe-specification Join through erp_hrm_time_member_password_resets.member and project the related erp_hrm_time_members record as a summary object.
+     * @x-autobe-database-schema-property member
+     * @x-autobe-specification Join through
+     *   erp_hrm_time_member_password_resets.member and project the related
+     *   erp_hrm_time_members record as a summary object.
    */
   member: IErpHrmTimeMember.ISummary;
 
   /**
    * Password reset token.
    *
-   * @x-autobe-database-schema-property token
-   * @x-autobe-specification Direct mapping from erp_hrm_time_member_password_resets.token. This is the stored reset token value used to validate the reset request.
+     * @x-autobe-database-schema-property token
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_member_password_resets.token. This is the stored reset
+     *   token value used to validate the reset request.
    */
   token: string;
 
   /**
    * Time when the reset token expires and becomes invalid.
    *
-   * @x-autobe-database-schema-property expires_at
-   * @x-autobe-specification Direct mapping from erp_hrm_time_member_password_resets.expires_at.
+     * @x-autobe-database-schema-property expires_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_member_password_resets.expires_at.
    */
   expiresAt: string & tags.Format<"date-time">;
 
   /**
    * Time when the reset token was used, or null if it has not been consumed.
    *
-   * @x-autobe-database-schema-property used_at
-   * @x-autobe-specification Direct mapping from erp_hrm_time_member_password_resets.used_at. This field is nullable and remains null until the token is consumed.
+     * @x-autobe-database-schema-property used_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_member_password_resets.used_at. This field is nullable and
+     *   remains null until the token is consumed.
    */
   usedAt: (string & tags.Format<"date-time">) | null;
 
   /**
    * Time when the password reset request was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from erp_hrm_time_member_password_resets.created_at.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_member_password_resets.created_at.
    */
   createdAt: string & tags.Format<"date-time">;
 
   /**
    * Time when the password reset request was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from erp_hrm_time_member_password_resets.updated_at.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_member_password_resets.updated_at.
    */
   updatedAt: string & tags.Format<"date-time">;
 
   /**
    * Time when the password reset request was soft deleted, or null if it is active.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from erp_hrm_time_member_password_resets.deleted_at. This field is nullable and is present only when the reset request has been soft deleted or revoked.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_member_password_resets.deleted_at. This field is nullable
+     *   and is present only when the reset request has been soft deleted or
+     *   revoked.
    */
   deletedAt: (string & tags.Format<"date-time">) | null;
 };
@@ -79,56 +92,68 @@ export namespace IErpHrmTimeMemberPasswordReset {
     /**
      * Unique identifier of this password reset request.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from erp_hrm_time_member_password_resets.id.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_member_password_resets.id.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Member account associated with this password reset request.
      *
-     * @x-autobe-database-schema-property member
-     * @x-autobe-specification Resolve the belongs-to relation from erp_hrm_time_member_password_resets.member via erp_hrm_time_member_id and expose it as a member summary object. Do not include any password-related fields from the related member record.
+         * @x-autobe-database-schema-property member
+         * @x-autobe-specification Resolve the belongs-to relation from
+         *   erp_hrm_time_member_password_resets.member via
+         *   erp_hrm_time_member_id and expose it as a member summary object. Do
+         *   not include any password-related fields from the related member
+         *   record.
      */
     member: IErpHrmTimeMember.ISummary;
 
     /**
      * Time when the reset token expires and can no longer be used.
      *
-     * @x-autobe-database-schema-property expires_at
-     * @x-autobe-specification Direct mapping from erp_hrm_time_member_password_resets.expires_at.
+         * @x-autobe-database-schema-property expires_at
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_member_password_resets.expires_at.
      */
     expiresAt: string & tags.Format<"date-time">;
 
     /**
      * Time when the reset token was consumed, or null if it has not been used.
      *
-     * @x-autobe-database-schema-property used_at
-     * @x-autobe-specification Direct mapping from erp_hrm_time_member_password_resets.used_at. Preserve null when the token has not been consumed yet.
+         * @x-autobe-database-schema-property used_at
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_member_password_resets.used_at. Preserve null when the
+         *   token has not been consumed yet.
      */
     usedAt: (string & tags.Format<"date-time">) | null;
 
     /**
      * Time when this password reset request was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from erp_hrm_time_member_password_resets.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_member_password_resets.created_at.
      */
     createdAt: string & tags.Format<"date-time">;
 
     /**
      * Time when this password reset request was last updated.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from erp_hrm_time_member_password_resets.updated_at.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_member_password_resets.updated_at.
      */
     updatedAt: string & tags.Format<"date-time">;
 
     /**
      * Time when this password reset request was soft deleted, or null if it is active.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from erp_hrm_time_member_password_resets.deleted_at. Preserve null when the request is active.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_member_password_resets.deleted_at. Preserve null when
+         *   the request is active.
      */
     deletedAt: (string & tags.Format<"date-time">) | null;
   };
@@ -140,30 +165,39 @@ export namespace IErpHrmTimeMemberPasswordReset {
     /**
      * Member account ID used to filter password reset records.
      *
-     * @x-autobe-database-schema-property erp_hrm_time_member_id
-     * @x-autobe-specification Direct equality filter on erp_hrm_time_member_password_resets.erp_hrm_time_member_id.
+         * @x-autobe-database-schema-property erp_hrm_time_member_id
+         * @x-autobe-specification Direct equality filter on
+         *   erp_hrm_time_member_password_resets.erp_hrm_time_member_id.
      */
     erpHrmTimeMemberId?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Reset token used to filter password reset records.
      *
-     * @x-autobe-database-schema-property token
-     * @x-autobe-specification Direct token lookup on erp_hrm_time_member_password_resets.token.
+         * @x-autobe-database-schema-property token
+         * @x-autobe-specification Direct token lookup on
+         *   erp_hrm_time_member_password_resets.token.
      */
     token?: string | undefined;
 
     /**
      * Filter by whether the reset token is unused, used, or expired.
      *
-     * @x-autobe-specification Derived classification using erp_hrm_time_member_password_resets.used_at and erp_hrm_time_member_password_resets.expires_at. 'unused' means used_at is null and expires_at is in the future; 'used' means used_at is not null; 'expired' means used_at is null and expires_at is at or before the current time.
+         * @x-autobe-specification Derived classification using
+         *   erp_hrm_time_member_password_resets.used_at and
+         *   erp_hrm_time_member_password_resets.expires_at. 'unused' means
+         *   used_at is null and expires_at is in the future; 'used' means
+         *   used_at is not null; 'expired' means used_at is null and expires_at
+         *   is at or before the current time.
      */
     status?: "unused" | "used" | "expired" | undefined;
 
     /**
      * Created-at date range filter.
      *
-     * @x-autobe-specification Range filter applied to erp_hrm_time_member_password_resets.created_at using inclusive from/to bounds. A null bound means open-ended.
+         * @x-autobe-specification Range filter applied to
+         *   erp_hrm_time_member_password_resets.created_at using inclusive
+         *   from/to bounds. A null bound means open-ended.
      */
     createdAt?:
       | {
@@ -175,7 +209,9 @@ export namespace IErpHrmTimeMemberPasswordReset {
     /**
      * Expiration date range filter.
      *
-     * @x-autobe-specification Range filter applied to erp_hrm_time_member_password_resets.expires_at using inclusive from/to bounds. A null bound means open-ended.
+         * @x-autobe-specification Range filter applied to
+         *   erp_hrm_time_member_password_resets.expires_at using inclusive
+         *   from/to bounds. A null bound means open-ended.
      */
     expiresAt?:
       | {
@@ -187,14 +223,16 @@ export namespace IErpHrmTimeMemberPasswordReset {
     /**
      * Page number to retrieve.
      *
-     * @x-autobe-specification 1-based pagination page number for the list query.
+         * @x-autobe-specification 1-based pagination page number for the list
+         *   query.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of records per page.
      *
-     * @x-autobe-specification Maximum number of rows to return per page, constrained by the endpoint's allowed range.
+         * @x-autobe-specification Maximum number of rows to return per page,
+         *   constrained by the endpoint's allowed range.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -203,7 +241,9 @@ export namespace IErpHrmTimeMemberPasswordReset {
     /**
      * Sort order for the search results.
      *
-     * @x-autobe-specification Supported sort values are createdAtAsc, createdAtDesc, expiresAtAsc, and expiresAtDesc. Default ordering is created_at descending when omitted.
+         * @x-autobe-specification Supported sort values are createdAtAsc,
+         *   createdAtDesc, expiresAtAsc, and expiresAtDesc. Default ordering is
+         *   created_at descending when omitted.
      */
     sort?:
       | "createdAtAsc"

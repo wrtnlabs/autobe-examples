@@ -24,9 +24,10 @@ export class EcommercemallSellerSellersMeOrdersItemsController {
    * **Access Control**: Only returns order items belonging to products owned by the authenticated seller.
    *
    * @param connection
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Query ecommerce_mall_order_items table with pagination.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Query ecommerce_mall_order_items table with
+     *   pagination.
    *
    * **Authorization**: Extract seller ID from authenticated session. Only return order items where the associated product (via ecommerce_mall_product_id) belongs to this seller.
    *
@@ -87,9 +88,10 @@ export class EcommercemallSellerSellersMeOrdersItemsController {
    *
    * @param connection
    * @param body Search criteria including optional status filter and pagination parameters. Status filter allows sellers to narrow results to items in specific states such as paid (awaiting shipment), shipped, delivered, cancelled, or refunded.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Query order_items table with JOIN on products to filter by authenticated seller's product IDs.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Query order_items table with JOIN on products to
+     *   filter by authenticated seller's product IDs.
    *
    * 1. Extract authenticated seller ID from request context (JWT token)
    * 2. Query products table to get all product IDs owned by this seller
@@ -133,9 +135,10 @@ export class EcommercemallSellerSellersMeOrdersItemsController {
    *
    * @param connection
    * @param itemId Unique identifier of the order item to retrieve.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Query the ecommerce_mall_order_items table for the specified itemId.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Query the ecommerce_mall_order_items table for
+     *   the specified itemId.
    *
    * Verify ownership: Join with ecommerce_mall_products via ecommerce_mall_product_id, then verify the product's ecommerce_mall_seller_id matches the authenticated seller's ID. Return 404 if the order item does not belong to the seller's products.
    *

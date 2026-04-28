@@ -24,9 +24,9 @@ export class PrivatetodoappAuthMemberController {
    *
    * @param connection
    * @param body Member registration credentials including email and password
-   * @x-autobe-authorization-type join
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation details for member registration:
+     * @x-autobe-authorization-type join
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation details for member registration:
    *
    * 1. Validate email format and check uniqueness against private_todo_app_members.email unique constraint
    * 2. Hash the provided password using secure one-way hashing algorithm (bcrypt/argon2)
@@ -85,9 +85,9 @@ export class PrivatetodoappAuthMemberController {
    *
    * @param connection
    * @param body Member login credentials with email and password
-   * @x-autobe-authorization-type login
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation details for member login:
+     * @x-autobe-authorization-type login
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation details for member login:
    *
    * 1. Validate request body contains email and password
    * 2. Query private_todo_app_members by email (unique index lookup)
@@ -144,9 +144,9 @@ export class PrivatetodoappAuthMemberController {
    *
    * @param connection
    * @param body Refresh token for obtaining new access tokens
-   * @x-autobe-authorization-type refresh
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation details for token refresh:
+     * @x-autobe-authorization-type refresh
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation details for token refresh:
    *
    * 1. Extract refresh token from request body
    * 2. Validate refresh token signature and format

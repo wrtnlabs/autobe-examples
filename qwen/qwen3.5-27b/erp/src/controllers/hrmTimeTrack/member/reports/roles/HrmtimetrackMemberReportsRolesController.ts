@@ -17,9 +17,11 @@ export class HrmtimetrackMemberReportsRolesController {
    * Role reports help administrators understand their permission structure, identify potential role consolidation opportunities, and audit access control configurations. The data is scoped to the currently selected organization and reflects active roles only (excluding soft-deleted roles).
    *
    * @param connection
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query hrm_time_track_roles table filtered by the current organization's ID and excluding soft-deleted roles (deleted_at IS NULL).
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query hrm_time_track_roles table filtered by the
+     *   current organization's ID and excluding soft-deleted roles (deleted_at
+     *   IS NULL).
    *
    * For each active role, compute:
    * 1. Role count: total number of active roles in the organization

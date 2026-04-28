@@ -24,9 +24,11 @@ export class ShoppingmallMemberProductsReviewsController {
    *
    * @param connection
    * @param productId Target product identifier whose product-detail reviews are displayed.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Select shopping_mall_reviews rows for the given product scope where shopping_mall_reviews.shopping_mall_product_id = productId.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Select shopping_mall_reviews rows for the given
+     *   product scope where shopping_mall_reviews.shopping_mall_product_id =
+     *   productId.
    *
    * Filter/visibility handling for storefront display:
    * - Prefer the is_public flag to decide whether a review is eligible for display.

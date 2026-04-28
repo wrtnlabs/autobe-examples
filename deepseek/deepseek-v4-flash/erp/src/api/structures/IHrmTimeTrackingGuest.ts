@@ -13,24 +13,24 @@ import { IHrmTimeTrackingGuestSession } from "./IHrmTimeTrackingGuestSession";
  */
 export type IHrmTimeTrackingGuest = {
   /**
-   * @x-autobe-database-schema-property id
+     * @x-autobe-database-schema-property id
    */
   id: string & tags.Format<"uuid">;
   /**
-   * @x-autobe-database-schema-property device_fingerprint
+     * @x-autobe-database-schema-property device_fingerprint
    */
   device_fingerprint: string;
   sessions: IHrmTimeTrackingGuestSession[];
   /**
-   * @x-autobe-database-schema-property created_at
+     * @x-autobe-database-schema-property created_at
    */
   created_at: string & tags.Format<"date-time">;
   /**
-   * @x-autobe-database-schema-property updated_at
+     * @x-autobe-database-schema-property updated_at
    */
   updated_at: string & tags.Format<"date-time">;
   /**
-   * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-database-schema-property deleted_at
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -50,7 +50,15 @@ export namespace IHrmTimeTrackingGuest {
      *
      * Security: The refresh token should be stored securely by the client (e.g., in an HTTP-only cookie or secure storage) and transmitted only to this token refresh endpoint. The token's cryptographic signature prevents forgery, and the server independently enforces session expiry via the `expired_at` column for defense-in-depth. This token must never be exposed in URLs or logs.
      *
-     * @x-autobe-specification The `refresh_token` is a JWT previously issued to the client during the join or a prior refresh operation. The backend extracts this string, verifies its JWT signature using the server's secret key decodes the `session_id` claim from the JWT payload, and looks up the corresponding session record in `hrm_time_tracking_member_sessions` to validate session freshness and member account activity. If the token is malformed, the server returns 400. If the session is expired or not found, the server returns 401.
+         * @x-autobe-specification The `refresh_token` is a JWT previously
+         *   issued to the client during the join or a prior refresh operation.
+         *   The backend extracts this string, verifies its JWT signature using
+         *   the server's secret key decodes the `session_id` claim from the JWT
+         *   payload, and looks up the corresponding session record in
+         *   `hrm_time_tracking_member_sessions` to validate session freshness
+         *   and member account activity. If the token is malformed, the server
+         *   returns 400. If the session is expired or not found, the server
+         *   returns 401.
      */
     refresh_token: string;
   };
@@ -70,7 +78,11 @@ export namespace IHrmTimeTrackingGuest {
      *
      * This UUID corresponds to the primary key of the member record in hrm_time_tracking_members. During the join flow, this ID is generated upon successful registration. During the refresh flow, it identifies the existing member associated with the provided refresh token.
      *
-     * @x-autobe-specification Direct column mapping from hrm_time_tracking_members.id. During the join flow, this is the UUID generated for the newly created member record. During the refresh flow, it identifies the existing member associated with the provided refresh token.
+         * @x-autobe-specification Direct column mapping from
+         *   hrm_time_tracking_members.id. During the join flow, this is the
+         *   UUID generated for the newly created member record. During the
+         *   refresh flow, it identifies the existing member associated with the
+         *   provided refresh token.
      */
     id: string & tags.Format<"uuid">;
 
@@ -79,7 +91,12 @@ export namespace IHrmTimeTrackingGuest {
      *
      * This value was originally captured when the guest first accessed the system via client-side device fingerprinting. It is returned in the authentication response to enable the client to correlate the anonymous guest identity with the newly created member account, facilitating a seamless guest-to-member transition.
      *
-     * @x-autobe-specification Direct column mapping from hrm_time_tracking_guests.device_fingerprint. The anonymous guest record was created prior to registration via client-side device fingerprinting; the fingerprint is preserved in the response to enable client-side session correlation across the guest-to-member transition.
+         * @x-autobe-specification Direct column mapping from
+         *   hrm_time_tracking_guests.device_fingerprint. The anonymous guest
+         *   record was created prior to registration via client-side device
+         *   fingerprinting; the fingerprint is preserved in the response to
+         *   enable client-side session correlation across the guest-to-member
+         *   transition.
      */
     device_fingerprint: string;
 
@@ -88,7 +105,12 @@ export namespace IHrmTimeTrackingGuest {
      *
      * Each session entry captures the HTTP context at session creation time — the client IP address, the current page URL (href), and the HTTP referrer — enabling audit and security analysis of the authentication flow. The list includes sessions created before the guest transitioned to a member.
      *
-     * @x-autobe-specification Maps to the hrm_time_tracking_guests.sessions relation, which links to hrm_time_tracking_guest_sessions records via foreign key (hrm_time_tracking_guest_id). Returns the guest's session history including the pre-registration anonymous sessions. Each session captures IP, href, referrer, created_at, and expired_at.
+         * @x-autobe-specification Maps to the hrm_time_tracking_guests.sessions
+         *   relation, which links to hrm_time_tracking_guest_sessions records
+         *   via foreign key (hrm_time_tracking_guest_id). Returns the guest's
+         *   session history including the pre-registration anonymous sessions.
+         *   Each session captures IP, href, referrer, created_at, and
+         *   expired_at.
      */
     sessions: IHrmTimeTrackingGuestSession[];
 
@@ -97,7 +119,10 @@ export namespace IHrmTimeTrackingGuest {
      *
      * This value is set once at account creation and never modified. It represents the moment the user transitioned from anonymous guest to registered member.
      *
-     * @x-autobe-specification Direct column mapping from hrm_time_tracking_members.created_at. Timestamp set when the member record was created during join. For refresh flows, this remains unchanged from the original creation time.
+         * @x-autobe-specification Direct column mapping from
+         *   hrm_time_tracking_members.created_at. Timestamp set when the member
+         *   record was created during join. For refresh flows, this remains
+         *   unchanged from the original creation time.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -106,7 +131,10 @@ export namespace IHrmTimeTrackingGuest {
      *
      * Initially equal to the creation timestamp upon registration. Updated whenever the member's profile fields are modified, such as after display name or avatar changes.
      *
-     * @x-autobe-specification Direct column mapping from hrm_time_tracking_members.updated_at. Initially set to created_at during join; updated on subsequent profile changes (e.g., display name update via member profile update endpoint).
+         * @x-autobe-specification Direct column mapping from
+         *   hrm_time_tracking_members.updated_at. Initially set to created_at
+         *   during join; updated on subsequent profile changes (e.g., display
+         *   name update via member profile update endpoint).
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -115,14 +143,19 @@ export namespace IHrmTimeTrackingGuest {
      *
      * A null value means the account is active and in good standing. If the account has been deleted, this field contains the deletion timestamp and the token refresh endpoint will reject requests for this account.
      *
-     * @x-autobe-specification Direct column mapping from hrm_time_tracking_members.deleted_at. Null indicates an active account. A non-null value indicates the account has been soft-deleted and the refresh flow would reject further token issuance.
+         * @x-autobe-specification Direct column mapping from
+         *   hrm_time_tracking_members.deleted_at. Null indicates an active
+         *   account. A non-null value indicates the account has been
+         *   soft-deleted and the refresh flow would reject further token
+         *   issuance.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
 
     /**
      * Authorization token.
      *
-     * @x-autobe-specification Authorization token comes from the session table.
+         * @x-autobe-specification Authorization token comes from the session
+         *   table.
      */
     token: IAuthorizationToken;
   };
@@ -138,8 +171,9 @@ export namespace IHrmTimeTrackingGuest {
      *
      * Assigned by the system upon creation. Used as the primary key for referencing this guest across the platform.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_guests.id. Primary key, UUID format.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_guests.id. Primary key, UUID format.
      */
     id: string & tags.Format<"uuid">;
 
@@ -148,8 +182,10 @@ export namespace IHrmTimeTrackingGuest {
      *
      * This field uniquely identifies a guest's device across browsing sessions, allowing the system to recognize returning anonymous users before they sign up or log in. The fingerprint is generated client-side from browser and device characteristics.
      *
-     * @x-autobe-database-schema-property device_fingerprint
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_guests.device_fingerprint. Unique constraint on this column enables anonymous recognition across sessions.
+         * @x-autobe-database-schema-property device_fingerprint
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_guests.device_fingerprint. Unique constraint on
+         *   this column enables anonymous recognition across sessions.
      */
     device_fingerprint: string;
 
@@ -158,8 +194,9 @@ export namespace IHrmTimeTrackingGuest {
      *
      * Set automatically upon the initial anonymous visit.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_guests.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_guests.created_at.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -168,8 +205,9 @@ export namespace IHrmTimeTrackingGuest {
      *
      * Updated automatically whenever the record is modified.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_guests.updated_at.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_guests.updated_at.
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -178,7 +216,9 @@ export namespace IHrmTimeTrackingGuest {
      *
      * This is a computed count of related session records, not a stored database field. Included in the response only when explicitly requested via the sessionsCount load option.
      *
-     * @x-autobe-specification Computed: COUNT of related hrm_time_tracking_guest_sessions records. Included only when load.sessionsCount query parameter is true.
+         * @x-autobe-specification Computed: COUNT of related
+         *   hrm_time_tracking_guest_sessions records. Included only when
+         *   load.sessionsCount query parameter is true.
      */
     sessions_count: number & tags.Type<"int32">;
   };
@@ -200,7 +240,9 @@ export namespace IHrmTimeTrackingGuest {
      *
      * When provided, filters the guest list to only include records whose device fingerprint contains the search text (case-insensitive). Omit to return all guests matching other filter criteria.
      *
-     * @x-autobe-specification Case-insensitive partial match (ILIKE/LIKE) against hrm_time_tracking_guests.device_fingerprint. Optional; when omitted, no text filter is applied.
+         * @x-autobe-specification Case-insensitive partial match (ILIKE/LIKE)
+         *   against hrm_time_tracking_guests.device_fingerprint. Optional; when
+         *   omitted, no text filter is applied.
      */
     search?: string | undefined;
 
@@ -209,7 +251,9 @@ export namespace IHrmTimeTrackingGuest {
      *
      * Filters guest records created at or after this timestamp. Must be used together with `created_at_to` to define the full date range. Omit both or provide both to avoid inconsistent filtering.
      *
-     * @x-autobe-specification Filters hrm_time_tracking_guests.created_at >= this value (inclusive). Used together with created_at_to to define a range. Both or neither should be specified.
+         * @x-autobe-specification Filters hrm_time_tracking_guests.created_at
+         *   >= this value (inclusive). Used together with created_at_to to
+         *   define a range. Both or neither should be specified.
      */
     created_at_from?: (string & tags.Format<"date-time">) | undefined;
 
@@ -218,7 +262,9 @@ export namespace IHrmTimeTrackingGuest {
      *
      * Filters guest records created at or before this timestamp. Must be used together with `created_at_from` to define the full date range. Omit both or provide both to avoid inconsistent filtering.
      *
-     * @x-autobe-specification Filters hrm_time_tracking_guests.created_at <= this value (inclusive). Used together with created_at_from to define a range. Both or neither should be specified.
+         * @x-autobe-specification Filters hrm_time_tracking_guests.created_at
+         *   <= this value (inclusive). Used together with created_at_from to
+         *   define a range. Both or neither should be specified.
      */
     created_at_to?: (string & tags.Format<"date-time">) | undefined;
 
@@ -227,7 +273,10 @@ export namespace IHrmTimeTrackingGuest {
      *
      * By default, soft-deleted records are excluded. Set this flag to true for administrative review scenarios where deleted guest records need to be visible.
      *
-     * @x-autobe-specification When true, removes the default WHERE deleted_at IS NULL filter from the query, returning all records including soft-deleted ones. When false or unset, only non-deleted records are returned.
+         * @x-autobe-specification When true, removes the default WHERE
+         *   deleted_at IS NULL filter from the query, returning all records
+         *   including soft-deleted ones. When false or unset, only non-deleted
+         *   records are returned.
      */
     includeSoftDeleted?: boolean | undefined;
 
@@ -236,7 +285,9 @@ export namespace IHrmTimeTrackingGuest {
      *
      * Indicates which page of results to retrieve. Page numbering starts from 1. Combine with `limit` to control result subset size.
      *
-     * @x-autobe-specification 1-indexed page number for pagination. Used with the limit parameter for OFFSET calculation: OFFSET = (page - 1) * limit. Defaults to 1 when omitted.
+         * @x-autobe-specification 1-indexed page number for pagination. Used
+         *   with the limit parameter for OFFSET calculation: OFFSET = (page -
+         *   1) * limit. Defaults to 1 when omitted.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -245,7 +296,9 @@ export namespace IHrmTimeTrackingGuest {
      *
      * Controls how many guest records are returned in a single page. The actual count may be lower on the final page or when fewer records match the query.
      *
-     * @x-autobe-specification Maximum number of records to return per page. Used in LIMIT clause. Capped at 100. Defaults to a system-configured value (typically 20) when omitted.
+         * @x-autobe-specification Maximum number of records to return per page.
+         *   Used in LIMIT clause. Capped at 100. Defaults to a
+         *   system-configured value (typically 20) when omitted.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -256,7 +309,10 @@ export namespace IHrmTimeTrackingGuest {
      *
      * Specifies which column to use for sorting results. The value must correspond to a valid database column name.
      *
-     * @x-autobe-specification Field name for ORDER BY clause, corresponding to a database column name (e.g., 'created_at', 'device_fingerprint'). Defaults to 'created_at' when omitted. Must be a valid sortable column.
+         * @x-autobe-specification Field name for ORDER BY clause, corresponding
+         *   to a database column name (e.g., 'created_at',
+         *   'device_fingerprint'). Defaults to 'created_at' when omitted. Must
+         *   be a valid sortable column.
      */
     sort?: string | undefined;
 
@@ -265,7 +321,8 @@ export namespace IHrmTimeTrackingGuest {
      *
      * Controls whether results are sorted in ascending or descending order relative to the specified `sort` field.
      *
-     * @x-autobe-specification Sort direction for ORDER BY clause: 'asc' for ascending, 'desc' for descending. Defaults to 'desc' when omitted.
+         * @x-autobe-specification Sort direction for ORDER BY clause: 'asc' for
+         *   ascending, 'desc' for descending. Defaults to 'desc' when omitted.
      */
     direction?: "asc" | "desc" | undefined;
 
@@ -274,7 +331,10 @@ export namespace IHrmTimeTrackingGuest {
      *
      * Use `load.sessionsCount: true` to include the count of guest sessions for each guest record in the response. All flags are optional and default to false when omitted.
      *
-     * @x-autobe-specification Object containing boolean flags for eager-loading related data. Currently supports sessionsCount (triggers COUNT subquery on hrm_time_tracking_guest_sessions). All flags are optional.
+         * @x-autobe-specification Object containing boolean flags for
+         *   eager-loading related data. Currently supports sessionsCount
+         *   (triggers COUNT subquery on hrm_time_tracking_guest_sessions). All
+         *   flags are optional.
      */
     load?:
       | {
@@ -299,8 +359,11 @@ export namespace IHrmTimeTrackingGuest {
      *
      * Used for authentication (login) and communication purposes. No two accounts can share the same email address. The email must contain an '@' symbol and be in a recognized email format. The value is trimmed and lowercased before storage for consistent matching.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_members.email. Validated for format (must contain '@') and uniqueness (unique constraint across platform). Trimmed and lowercased before storage.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_members.email. Validated for format (must contain
+         *   '@') and uniqueness (unique constraint across platform). Trimmed
+         *   and lowercased before storage.
      */
     email: string & tags.Format<"email">;
 
@@ -309,8 +372,11 @@ export namespace IHrmTimeTrackingGuest {
      *
      * The backend securely hashes this password using a one-way hashing algorithm (bcrypt, cost factor 10+) before storing it in the database. The original plaintext password is never stored or logged. Minimum length and non-empty requirements are enforced during validation.
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification Transform mapping: user-provided plaintext password → hrm_time_tracking_members.password_hash. Backend hashes using bcrypt (cost factor 10+) before storage. Never stored in plaintext. Empty string rejected by validation.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification Transform mapping: user-provided plaintext
+         *   password → hrm_time_tracking_members.password_hash. Backend hashes
+         *   using bcrypt (cost factor 10+) before storage. Never stored in
+         *   plaintext. Empty string rejected by validation.
      */
     password: string;
 
@@ -319,7 +385,9 @@ export namespace IHrmTimeTrackingGuest {
      *
      * Used for security auditing when establishing the member session. This field helps track the page from which the user initiated registration for analytics and security monitoring purposes.
      *
-     * @x-autobe-specification Captured from the HTTP request's current page URL context. Stored in hrm_time_tracking_member_sessions.href at session creation during the join process. Required field.
+         * @x-autobe-specification Captured from the HTTP request's current page
+         *   URL context. Stored in hrm_time_tracking_member_sessions.href at
+         *   session creation during the join process. Required field.
      */
     href: string & tags.Format<"uri">;
 
@@ -328,7 +396,10 @@ export namespace IHrmTimeTrackingGuest {
      *
      * Used for security auditing when establishing the member session. If no referrer header is present in the HTTP request, this field stores an empty string to indicate the referrer was not available.
      *
-     * @x-autobe-specification Captured from the HTTP Referer header. Stored in hrm_time_tracking_member_sessions.referrer at session creation. May be empty string if the HTTP Referer header is absent in the request.
+         * @x-autobe-specification Captured from the HTTP Referer header. Stored
+         *   in hrm_time_tracking_member_sessions.referrer at session creation.
+         *   May be empty string if the HTTP Referer header is absent in the
+         *   request.
      */
     referrer: string & tags.Format<"uri">;
 
@@ -337,7 +408,11 @@ export namespace IHrmTimeTrackingGuest {
      *
      * This field is optional because in server-side rendered (SSR) environments, the client may not be able to determine its own public IP address. When omitted, the server falls back to the IP address from which the HTTP request originated, ensuring the session audit trail always contains an IP address.
      *
-     * @x-autobe-specification Captured from the client IP address (request source). Stored in hrm_time_tracking_member_sessions.ip at session creation. Optional in request body for SSR environments where the client cannot determine its own IP; server falls back to request.connection.remoteAddress or equivalent when omitted.
+         * @x-autobe-specification Captured from the client IP address (request
+         *   source). Stored in hrm_time_tracking_member_sessions.ip at session
+         *   creation. Optional in request body for SSR environments where the
+         *   client cannot determine its own IP; server falls back to
+         *   request.connection.remoteAddress or equivalent when omitted.
      */
     ip?: (string & tags.Format<"ipv4">) | undefined;
   };

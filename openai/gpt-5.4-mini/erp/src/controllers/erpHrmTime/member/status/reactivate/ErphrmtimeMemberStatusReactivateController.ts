@@ -19,9 +19,12 @@ export class ErphrmtimeMemberStatusReactivateController {
    * After a successful reactivation, the service should update the employee status, persist the change in the employee table, and create the corresponding activity log entry that records the action timestamp, acting user, affected employee, and action details.
    *
    * @param connection
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Resolve the target employee from the current organization context and validate that the requester has permission to manage employees. Load the employee record and confirm its status is deactivated before applying the transition.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Resolve the target employee from the current
+     *   organization context and validate that the requester has permission to
+     *   manage employees. Load the employee record and confirm its status is
+     *   deactivated before applying the transition.
    *
    * Update the employee status to active in a transaction. Preserve all historical data; do not alter timelogs, timesheets, or contracts. After the status update succeeds, insert an activity log entry describing the reactivation event, including the acting member and affected employee.
    *

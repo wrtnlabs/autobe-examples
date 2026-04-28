@@ -20,7 +20,9 @@ import { IRedditClonePostVote } from "../../../../structures/IRedditClonePostVot
  * @param props.body Vote action to perform. Include vote_type to cast or change a vote (upvote/downvote), or omit/set to null to remove the vote.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query reddit_clone_posts table to verify the post exists by postId and is not soft-deleted (deleted_at IS NULL). If post is deleted, return 404 error.
+ * @x-autobe-specification Query reddit_clone_posts table to verify the post
+ *   exists by postId and is not soft-deleted (deleted_at IS NULL). If post is
+ *   deleted, return 404 error.
  *
  * Get the authenticated member's ID from the session/context.
  *
@@ -142,7 +144,8 @@ export namespace vote {
  * @param props.voteId The UUID of the vote record to retrieve (global scope).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query the reddit_clone_post_votes table to retrieve a single vote record by voteId.
+ * @x-autobe-specification Query the reddit_clone_post_votes table to retrieve a
+ *   single vote record by voteId.
  *
  * 1. Validate that the postId parameter matches the reddit_clone_post_id in the vote record to ensure the vote belongs to the specified post.
  * 2. Validate that the voteId parameter matches the id field in the vote record.

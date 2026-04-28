@@ -37,20 +37,22 @@ export class EcommerceCustomerOrdersItemsConfirm_deliveryController {
    * @param connection
    * @param orderId UUID of the parent order containing the item (global scope)
    * @param itemId UUID of the order item to confirm delivery for (scoped to order)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification 1. Validate path parameters: orderId (UUID), itemId (UUID)
-   * 2. Verify order item exists and belongs to the specified order (order_item.ecommerce_order_id = orderId)
-   * 3. Verify the authenticated customer owns the order (order.ecommerce_customer_id = current_customer_id)
-   * 4. Verify order item status is "shipped" (not already "delivered", "cancelled", or "refunded")
-   * 5. Find the shipment containing this order item via ecommerce_shipment_items junction table
-   * 6. If item belongs to a shipment:
-   *    - Update all order items in the same shipment: set status = "delivered"
-   *    - Update shipment: set delivered_at = current_timestamp, status = "delivered"
-   * 7. If item does not belong to any shipment (edge case):
-   *    - Update only this order item: set status = "delivered"
-   * 8. Recalculate parent order status based on all order items' statuses
-   * 9. Return the updated order item object with status "delivered"
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification 1. Validate path parameters: orderId (UUID),
+     *   itemId (UUID) 2. Verify order item exists and belongs to the specified
+     *   order (order_item.ecommerce_order_id = orderId) 3. Verify the
+     *   authenticated customer owns the order (order.ecommerce_customer_id =
+     *   current_customer_id) 4. Verify order item status is "shipped" (not
+     *   already "delivered", "cancelled", or "refunded") 5. Find the shipment
+     *   containing this order item via ecommerce_shipment_items junction table
+     *   6. If item belongs to a shipment: - Update all order items in the same
+     *   shipment: set status = "delivered" - Update shipment: set delivered_at
+     *   = current_timestamp, status = "delivered" 7. If item does not belong to
+     *   any shipment (edge case): - Update only this order item: set status =
+     *   "delivered" 8. Recalculate parent order status based on all order
+     *   items' statuses 9. Return the updated order item object with status
+     *   "delivered"
    *
    * **Error Cases**:
    * - 404: Order item not found or does not belong to order

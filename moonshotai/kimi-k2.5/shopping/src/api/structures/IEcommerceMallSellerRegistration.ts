@@ -11,64 +11,89 @@ export type IEcommerceMallSellerRegistration = {
   /**
    * Unique identifier for this seller registration application.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_seller_registrations.id. UUID primary key auto-generated on record creation.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_seller_registrations.id. UUID primary key auto-generated
+     *   on record creation.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Current approval status of the registration application.
    *
-   * @x-autobe-specification Direct mapping from ecommerce_mall_seller_registrations.status. String column storing enum values: 'pending' (awaiting administrator review), 'approved' (seller can list products), 'rejected' (administrator denied application).
-   * @x-autobe-database-schema-property status
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_seller_registrations.status. String column storing enum
+     *   values: 'pending' (awaiting administrator review), 'approved' (seller
+     *   can list products), 'rejected' (administrator denied application).
+     * @x-autobe-database-schema-property status
    */
   status: string;
 
   /**
    * Reason provided by the administrator when rejecting the application. Null if not rejected.
    *
-   * @x-autobe-specification Direct mapping from ecommerce_mall_seller_registrations.rejection_reason. Nullable string. Populated only when status is 'rejected', providing the explanation for denial. Null when status is 'pending' or 'approved'.
-   * @x-autobe-database-schema-property rejection_reason
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_seller_registrations.rejection_reason. Nullable string.
+     *   Populated only when status is 'rejected', providing the explanation for
+     *   denial. Null when status is 'pending' or 'approved'.
+     * @x-autobe-database-schema-property rejection_reason
    */
   rejectionReason: string | null;
 
   /**
    * The seller who submitted this registration application.
    *
-   * @x-autobe-database-schema-property seller
-   * @x-autobe-specification Join via ecommerce_mall_seller_registrations.seller_id → ecommerce_mall_sellers.id. Returns IEcommerceMallSeller.ISummary containing the applicant seller's id, email, approvalStatus, and timestamps.
+     * @x-autobe-database-schema-property seller
+     * @x-autobe-specification Join via
+     *   ecommerce_mall_seller_registrations.seller_id →
+     *   ecommerce_mall_sellers.id. Returns IEcommerceMallSeller.ISummary
+     *   containing the applicant seller's id, email, approvalStatus, and
+     *   timestamps.
    */
   seller: IEcommerceMallSeller.ISummary;
 
   /**
    * The administrator who reviewed this application. Null if the registration is still pending review.
    *
-   * @x-autobe-database-schema-property reviewer
-   * @x-autobe-specification Join via ecommerce_mall_seller_registrations.reviewer_id → ecommerce_mall_admins.id. Returns IEcommerceMallAdmin.ISummary containing the reviewing administrator's details. Nullable when reviewer_id is null (registration not yet reviewed).
+     * @x-autobe-database-schema-property reviewer
+     * @x-autobe-specification Join via
+     *   ecommerce_mall_seller_registrations.reviewer_id →
+     *   ecommerce_mall_admins.id. Returns IEcommerceMallAdmin.ISummary
+     *   containing the reviewing administrator's details. Nullable when
+     *   reviewer_id is null (registration not yet reviewed).
    */
   reviewer: IEcommerceMallAdmin.ISummary | null;
 
   /**
    * Timestamp when the seller submitted the registration application.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_seller_registrations.created_at. Set automatically when the record is created representing when the seller submitted their registration application.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_seller_registrations.created_at. Set automatically when
+     *   the record is created representing when the seller submitted their
+     *   registration application.
    */
   createdAt: string & tags.Format<"date-time">;
 
   /**
    * Timestamp of the most recent update to this registration record.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_seller_registrations.updated_at. Automatically updated to current timestamp on every modification to the record.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_seller_registrations.updated_at. Automatically updated
+     *   to current timestamp on every modification to the record.
    */
   updatedAt: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when an administrator reviewed this application. Null if still pending review.
    *
-   * @x-autobe-database-schema-property reviewed_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_seller_registrations.reviewed_at. Set when an administrator reviews and processes the application (status changes from pending to approved or rejected). Null while status is still pending.
+     * @x-autobe-database-schema-property reviewed_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_seller_registrations.reviewed_at. Set when an
+     *   administrator reviews and processes the application (status changes
+     *   from pending to approved or rejected). Null while status is still
+     *   pending.
    */
   reviewedAt: (string & tags.Format<"date-time">) | null;
 };
@@ -88,56 +113,68 @@ export namespace IEcommerceMallSellerRegistration {
     /**
      * Unique identifier for the seller registration application.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_mall_seller_registrations.id. Primary key UUID.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_seller_registrations.id. Primary key UUID.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Current approval status of the seller registration application.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from ecommerce_mall_seller_registrations.status. Values: 'pending', 'approved', 'rejected'.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_seller_registrations.status. Values: 'pending',
+         *   'approved', 'rejected'.
      */
     status: string;
 
     /**
      * Reason provided by the administrator when rejecting the registration application. Null if not rejected.
      *
-     * @x-autobe-database-schema-property rejection_reason
-     * @x-autobe-specification Direct mapping from ecommerce_mall_seller_registrations.rejection_reason. Nullable. Populated only when status is 'rejected'.
+         * @x-autobe-database-schema-property rejection_reason
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_seller_registrations.rejection_reason. Nullable.
+         *   Populated only when status is 'rejected'.
      */
     rejectionReason: string | null;
 
     /**
      * Timestamp when the seller submitted the registration application.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_seller_registrations.created_at. Timestamp when the registration was submitted.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_seller_registrations.created_at. Timestamp when the
+         *   registration was submitted.
      */
     createdAt: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when an administrator reviewed the registration application. Null if pending review.
      *
-     * @x-autobe-database-schema-property reviewed_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_seller_registrations.reviewed_at. Nullable. Set when an administrator reviews the application.
+         * @x-autobe-database-schema-property reviewed_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_seller_registrations.reviewed_at. Nullable. Set when
+         *   an administrator reviews the application.
      */
     reviewedAt: (string & tags.Format<"date-time">) | null;
 
     /**
      * The seller account that submitted this registration application.
      *
-     * @x-autobe-database-schema-property seller
-     * @x-autobe-specification JOIN via seller_id to ecommerce_mall_sellers. Returns IEcommerceMallSeller.ISummary with seller account details.
+         * @x-autobe-database-schema-property seller
+         * @x-autobe-specification JOIN via seller_id to ecommerce_mall_sellers.
+         *   Returns IEcommerceMallSeller.ISummary with seller account details.
      */
     seller: IEcommerceMallSeller.ISummary;
 
     /**
      * The administrator who reviewed this registration application. Null if pending review.
      *
-     * @x-autobe-database-schema-property reviewer
-     * @x-autobe-specification LEFT JOIN via reviewer_id to ecommerce_mall_admins. Returns IEcommerceMallAdmin.ISummary or null if not yet reviewed.
+         * @x-autobe-database-schema-property reviewer
+         * @x-autobe-specification LEFT JOIN via reviewer_id to
+         *   ecommerce_mall_admins. Returns IEcommerceMallAdmin.ISummary or null
+         *   if not yet reviewed.
      */
     reviewer: IEcommerceMallAdmin.ISummary | null;
   };
@@ -167,21 +204,21 @@ export namespace IEcommerceMallSellerRegistration {
     /**
      * Filter by registration status. Values: 'pending', 'approved', 'rejected'.
      *
-     * @x-autobe-database-schema-property status
+         * @x-autobe-database-schema-property status
      */
     status?: string | undefined;
 
     /**
      * Filter by seller account ID (UUID format).
      *
-     * @x-autobe-database-schema-property seller_id
+         * @x-autobe-database-schema-property seller_id
      */
     sellerId?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Filter by reviewer administrator ID (UUID format).
      *
-     * @x-autobe-database-schema-property reviewer_id
+         * @x-autobe-database-schema-property reviewer_id
      */
     reviewerId?: (string & tags.Format<"uuid">) | null | undefined;
 

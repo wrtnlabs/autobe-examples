@@ -16,16 +16,21 @@ export type IEcommerceMallProductVariantSnapshot = {
    *
    * A UUID that uniquely identifies this immutable historical record of a variant's state at a specific point in time.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_product_variant_snapshots.id. UUID primary key identifying this specific snapshot record.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_product_variant_snapshots.id. UUID primary key
+     *   identifying this specific snapshot record.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Original product variant that was modified. Provides the current variant reference for tracing back to the present state while maintaining historical snapshot integrity.
    *
-   * @x-autobe-specification Join from product_variant_id to ecommerce_mall_product_variants.id. Returns IEcommerceMallProductVariant.ISummary with id, sku_code, option_values, price, stock_quantity at snapshot time.
-   * @x-autobe-database-schema-property productVariant
+     * @x-autobe-specification Join from product_variant_id to
+     *   ecommerce_mall_product_variants.id. Returns
+     *   IEcommerceMallProductVariant.ISummary with id, sku_code, option_values,
+     *   price, stock_quantity at snapshot time.
+     * @x-autobe-database-schema-property productVariant
    */
   productVariant: IEcommerceMallProductVariant.ISummary;
 
@@ -34,8 +39,11 @@ export type IEcommerceMallProductVariantSnapshot = {
    *
    * Denormalized product reference for independent analysis without requiring joins to the variants table. Ensures snapshots remain valid even if the variant reference is removed. Enables historical product-level analysis across all variant snapshots.
    *
-   * @x-autobe-database-schema-property product_id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_product_variant_snapshots.product_id. Denormalized product reference for independent historical analysis without requiring joins to parent tables.
+     * @x-autobe-database-schema-property product_id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_product_variant_snapshots.product_id. Denormalized
+     *   product reference for independent historical analysis without requiring
+     *   joins to parent tables.
    */
   product_id: string & tags.Format<"uuid">;
 
@@ -44,8 +52,10 @@ export type IEcommerceMallProductVariantSnapshot = {
    *
    * Denormalized seller reference for historical seller attribution. Preserves the seller identity even if the variant is reassigned to a different seller. Enables seller-specific variant change tracking and attribution.
    *
-   * @x-autobe-database-schema-property seller_id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_product_variant_snapshots.seller_id. Denormalized seller reference for historical seller attribution.
+     * @x-autobe-database-schema-property seller_id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_product_variant_snapshots.seller_id. Denormalized seller
+     *   reference for historical seller attribution.
    */
   seller_id: string & tags.Format<"uuid">;
 
@@ -54,8 +64,10 @@ export type IEcommerceMallProductVariantSnapshot = {
    *
    * The stock keeping unit identifier that was active for this variant. Used to track SKU changes and ensure unique product identification across the snapshot history. Enables historical inventory tracking and order fulfillment verification.
    *
-   * @x-autobe-database-schema-property sku_code
-   * @x-autobe-specification Direct mapping from ecommerce_mall_product_variant_snapshots.sku_code. The stock keeping unit identifier that was active for this variant at snapshot time.
+     * @x-autobe-database-schema-property sku_code
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_product_variant_snapshots.sku_code. The stock keeping
+     *   unit identifier that was active for this variant at snapshot time.
    */
   sku_code: string;
 
@@ -64,8 +76,10 @@ export type IEcommerceMallProductVariantSnapshot = {
    *
    * Stores the specific option combination that defines this variant (such as color, size, material, etc.) as a JSON string. Captures the exact variant configuration that was active when the snapshot was created, enabling reconstruction of product appearance and specifications at that point in time.
    *
-   * @x-autobe-specification Direct mapping from ecommerce_mall_product_variant_snapshots.option_values. JSON string of variant option values (e.g., {"color": "red", "size": "L"}).
-   * @x-autobe-database-schema-property option_values
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_product_variant_snapshots.option_values. JSON string of
+     *   variant option values (e.g., {"color": "red", "size": "L"}).
+     * @x-autobe-database-schema-property option_values
    */
   option_values: string;
 
@@ -74,8 +88,11 @@ export type IEcommerceMallProductVariantSnapshot = {
    *
    * The variant-specific price that overrides the base product price, or null if the variant was using the base product price at that time. Enables tracking of variant pricing changes over time and supports historical order price verification. Prices are stored as decimal values representing currency amounts.
    *
-   * @x-autobe-database-schema-property price
-   * @x-autobe-specification Direct mapping from ecommerce_mall_product_variant_snapshots.price. Optional variant-specific price override at snapshot time. Nullable Float stored as DoublePrecision in database.
+     * @x-autobe-database-schema-property price
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_product_variant_snapshots.price. Optional
+     *   variant-specific price override at snapshot time. Nullable Float stored
+     *   as DoublePrecision in database.
    */
   price: number | null;
 
@@ -84,8 +101,10 @@ export type IEcommerceMallProductVariantSnapshot = {
    *
    * The inventory level of this variant when the snapshot was created. Enables historical analysis of stock levels and inventory fluctuations across the variant lifecycle. Supports order fulfillment verification and inventory trend analysis.
    *
-   * @x-autobe-database-schema-property stock_quantity
-   * @x-autobe-specification Direct mapping from ecommerce_mall_product_variant_snapshots.stock_quantity. Integer inventory level at snapshot time.
+     * @x-autobe-database-schema-property stock_quantity
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_product_variant_snapshots.stock_quantity. Integer
+     *   inventory level at snapshot time.
    */
   stock_quantity: number & tags.Type<"int32">;
 
@@ -94,8 +113,11 @@ export type IEcommerceMallProductVariantSnapshot = {
    *
    * The point in time when this variant state was captured. All snapshots are append-only and cannot be modified, preserving the immutable audit trail. Used for chronological ordering of variant history and determining snapshot relevance.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_product_variant_snapshots.created_at. DateTime timestamp when this snapshot was created. Immutable point-in-time record for audit trail.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_product_variant_snapshots.created_at. DateTime timestamp
+     *   when this snapshot was created. Immutable point-in-time record for
+     *   audit trail.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -104,8 +126,11 @@ export type IEcommerceMallProductVariantSnapshot = {
    *
    * Identical to created_at since snapshots are immutable records. This field exists to maintain consistency with the platform's standard entity pattern. All snapshots are created with the same timestamp for both fields, ensuring the record is truly append-only and cannot be retroactively modified.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_product_variant_snapshots.updated_at. Identical to created_at since snapshots are immutable. Required field for all business entities to track record creation time.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_product_variant_snapshots.updated_at. Identical to
+     *   created_at since snapshots are immutable. Required field for all
+     *   business entities to track record creation time.
    */
   updated_at: string & tags.Format<"date-time">;
 };
@@ -123,8 +148,9 @@ export namespace IEcommerceMallProductVariantSnapshot {
      *
      * Uniquely identifies the snapshot record in the audit trail. Used to reference this specific historical state of the variant.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_mall_product_variant_snapshots.id. UUID format.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_product_variant_snapshots.id. UUID format.
      */
     id: string & tags.Format<"uuid">;
 
@@ -133,8 +159,9 @@ export namespace IEcommerceMallProductVariantSnapshot {
      *
      * The stock keeping unit identifier that was active for this variant when the snapshot was created. Used to track SKU changes and ensure unique product identification across the snapshot history.
      *
-     * @x-autobe-database-schema-property sku_code
-     * @x-autobe-specification Direct mapping from ecommerce_mall_product_variant_snapshots.sku_code. String field.
+         * @x-autobe-database-schema-property sku_code
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_product_variant_snapshots.sku_code. String field.
      */
     sku_code: string;
 
@@ -143,8 +170,10 @@ export namespace IEcommerceMallProductVariantSnapshot {
      *
      * Stores the variant configuration options as a JSON object. Captures the specific combination of attributes (such as color='red', size='L') that define this variant when the snapshot was created.
      *
-     * @x-autobe-database-schema-property option_values
-     * @x-autobe-specification Direct mapping from ecommerce_mall_product_variant_snapshots.option_values. JSON string field.
+         * @x-autobe-database-schema-property option_values
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_product_variant_snapshots.option_values. JSON string
+         *   field.
      */
     option_values: string;
 
@@ -153,8 +182,10 @@ export namespace IEcommerceMallProductVariantSnapshot {
      *
      * The variant-specific price that overrides the base product price at the time of snapshot. Null when the variant uses the base product price. Enables tracking of variant pricing changes over time.
      *
-     * @x-autobe-database-schema-property price
-     * @x-autobe-specification Direct mapping from ecommerce_mall_product_variant_snapshots.price. Nullable Float type, null if using base product price.
+         * @x-autobe-database-schema-property price
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_product_variant_snapshots.price. Nullable Float
+         *   type, null if using base product price.
      */
     price: number | null;
 
@@ -163,8 +194,10 @@ export namespace IEcommerceMallProductVariantSnapshot {
      *
      * The inventory level of this variant when the snapshot was created. Enables historical analysis of stock levels and inventory fluctuations across the variant lifecycle.
      *
-     * @x-autobe-database-schema-property stock_quantity
-     * @x-autobe-specification Direct mapping from ecommerce_mall_product_variant_snapshots.stock_quantity. Integer field.
+         * @x-autobe-database-schema-property stock_quantity
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_product_variant_snapshots.stock_quantity. Integer
+         *   field.
      */
     stock_quantity: number & tags.Type<"int32">;
 
@@ -173,8 +206,10 @@ export namespace IEcommerceMallProductVariantSnapshot {
      *
      * Establishes the relationship to the parent variant being audited. Allows tracing back to the current variant state while maintaining historical snapshot integrity.
      *
-     * @x-autobe-database-schema-property product_variant_id
-     * @x-autobe-specification Direct mapping from ecommerce_mall_product_variant_snapshots.product_variant_id. UUID FK referencing the original variant being audited.
+         * @x-autobe-database-schema-property product_variant_id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_product_variant_snapshots.product_variant_id. UUID
+         *   FK referencing the original variant being audited.
      */
     product_variant_id: string & tags.Format<"uuid">;
 
@@ -183,8 +218,10 @@ export namespace IEcommerceMallProductVariantSnapshot {
      *
      * Denormalized product reference for independent analysis without requiring joins to the variants table. Ensures snapshots remain valid even if the variant reference is removed.
      *
-     * @x-autobe-database-schema-property product_id
-     * @x-autobe-specification Direct mapping from ecommerce_mall_product_variant_snapshots.product_id. Denormalized product reference for independent analysis.
+         * @x-autobe-database-schema-property product_id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_product_variant_snapshots.product_id. Denormalized
+         *   product reference for independent analysis.
      */
     product_id: string & tags.Format<"uuid">;
 
@@ -193,8 +230,10 @@ export namespace IEcommerceMallProductVariantSnapshot {
      *
      * Denormalized seller reference for historical seller attribution. Preserves the seller identity even if the variant is reassigned to a different seller.
      *
-     * @x-autobe-database-schema-property seller_id
-     * @x-autobe-specification Direct mapping from ecommerce_mall_product_variant_snapshots.seller_id. Denormalized seller reference for historical seller attribution.
+         * @x-autobe-database-schema-property seller_id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_product_variant_snapshots.seller_id. Denormalized
+         *   seller reference for historical seller attribution.
      */
     seller_id: string & tags.Format<"uuid">;
 
@@ -203,8 +242,10 @@ export namespace IEcommerceMallProductVariantSnapshot {
      *
      * The point in time when this variant state was captured. All snapshots are append-only and cannot be modified, preserving the immutable audit trail.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_product_variant_snapshots.created_at. ISO 8601 date-time format.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_product_variant_snapshots.created_at. ISO 8601
+         *   date-time format.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -213,8 +254,11 @@ export namespace IEcommerceMallProductVariantSnapshot {
      *
      * Identical to created_at since snapshots are immutable. Required field for all business entities to track record creation time.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_product_variant_snapshots.updated_at. ISO 8601 date-time format, identical to created_at since snapshots are immutable.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_product_variant_snapshots.updated_at. ISO 8601
+         *   date-time format, identical to created_at since snapshots are
+         *   immutable.
      */
     updated_at: string & tags.Format<"date-time">;
   };
@@ -235,14 +279,16 @@ export namespace IEcommerceMallProductVariantSnapshot {
     /**
      * Page number for pagination (1-indexed).
      *
-     * @x-autobe-specification Page number for cursor-based pagination. Must be >= 1. Default value is 1.
+         * @x-autobe-specification Page number for cursor-based pagination. Must
+         *   be >= 1. Default value is 1.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Number of items per page. Defaults to 20. Maximum 100.
      *
-     * @x-autobe-specification Number of items to return per page. Must be between 1 and 100. Default value is 20.
+         * @x-autobe-specification Number of items to return per page. Must be
+         *   between 1 and 100. Default value is 20.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -251,28 +297,35 @@ export namespace IEcommerceMallProductVariantSnapshot {
     /**
      * Sort order for snapshots. Supports 'created_at_asc' or 'created_at_desc'.
      *
-     * @x-autobe-specification Sort order for the snapshot results. Valid values: 'created_at_asc' (oldest first) or 'created_at_desc' (newest first). Default is 'created_at_desc'.
+         * @x-autobe-specification Sort order for the snapshot results. Valid
+         *   values: 'created_at_asc' (oldest first) or 'created_at_desc'
+         *   (newest first). Default is 'created_at_desc'.
      */
     sort?: "created_at_asc" | "created_at_desc" | undefined;
 
     /**
      * Filter snapshots created after this date-time (ISO 8601 format).
      *
-     * @x-autobe-specification ISO 8601 date-time string. Filters snapshots created after or on this date. Used together with createdAtTo for date range filtering.
+         * @x-autobe-specification ISO 8601 date-time string. Filters snapshots
+         *   created after or on this date. Used together with createdAtTo for
+         *   date range filtering.
      */
     createdAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Filter snapshots created before this date-time (ISO 8601 format).
      *
-     * @x-autobe-specification ISO 8601 date-time string. Filters snapshots created before or on this date. Used together with createdAtFrom for date range filtering.
+         * @x-autobe-specification ISO 8601 date-time string. Filters snapshots
+         *   created before or on this date. Used together with createdAtFrom
+         *   for date range filtering.
      */
     createdAtTo?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Partial match search term for SKU code (1-100 characters).
      *
-     * @x-autobe-specification Partial match search term for SKU code. Must be 1-100 characters. Performs LIKE search on sku_code field.
+         * @x-autobe-specification Partial match search term for SKU code. Must
+         *   be 1-100 characters. Performs LIKE search on sku_code field.
      */
     skuSearch?: (string & tags.MinLength<1> & tags.MaxLength<100>) | undefined;
 
@@ -281,7 +334,10 @@ export namespace IEcommerceMallProductVariantSnapshot {
      *
      * Object with optional `min` and `max` properties (both >= 0) to filter snapshots by price. Prices are inclusive on both ends.
      *
-     * @x-autobe-specification Object with optional min (number >= 0) and max (number >= 0) properties. Filters snapshots where price falls within the specified range (inclusive). Both properties are optional.
+         * @x-autobe-specification Object with optional min (number >= 0) and
+         *   max (number >= 0) properties. Filters snapshots where price falls
+         *   within the specified range (inclusive). Both properties are
+         *   optional.
      */
     priceRange?:
       | {

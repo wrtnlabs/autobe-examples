@@ -28,8 +28,12 @@ export namespace IShoppingMallRefundRequest {
     /**
      * The customer's written explanation for why a refund is being requested. This text is preserved exactly as submitted and is visible to the seller and administrators during the refund review workflow. A clear, detailed reason improves the likelihood of a favorable outcome.
      *
-     * @x-autobe-database-schema-property reason
-     * @x-autobe-specification Direct mapping to `shopping_mall_refund_requests.reason`. The value provided by the customer is stored verbatim with no transformation. Must be a non-empty string. Used by the seller and administrators when evaluating and responding to the refund request.
+         * @x-autobe-database-schema-property reason
+         * @x-autobe-specification Direct mapping to
+         *   `shopping_mall_refund_requests.reason`. The value provided by the
+         *   customer is stored verbatim with no transformation. Must be a
+         *   non-empty string. Used by the seller and administrators when
+         *   evaluating and responding to the refund request.
      */
     reason: string;
   };
@@ -41,15 +45,29 @@ export namespace IShoppingMallRefundRequest {
     /**
      * The seller's or administrator's resolution decision for the pending refund request. Must be either 'approved' (to process the refund and restore inventory) or 'rejected' (to decline the refund while leaving the order item in 'delivered' status). Only 'pending' refund requests can be updated; this field cannot be changed once a decision has been recorded.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping to shopping_mall_refund_requests.status. The value must be one of the two allowed constants: 'approved' or 'rejected'. The service layer validates that the current record status is 'pending' before accepting the update. On commit: (a) 'approved' — sets order item status to 'refunded', restores inventory, recalculates order status; (b) 'rejected' — no further changes beyond updating the refund request record and appending the snapshot.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping to
+         *   shopping_mall_refund_requests.status. The value must be one of the
+         *   two allowed constants: 'approved' or 'rejected'. The service layer
+         *   validates that the current record status is 'pending' before
+         *   accepting the update. On commit: (a) 'approved' — sets order item
+         *   status to 'refunded', restores inventory, recalculates order
+         *   status; (b) 'rejected' — no further changes beyond updating the
+         *   refund request record and appending the snapshot.
      */
     status: "approved" | "rejected";
 
     /**
      * An optional explanatory note from the seller or administrator accompanying the refund decision. This note is preserved in the immutable audit trail snapshot created at the time of the response. It may be used to communicate the rationale for an approval or rejection to the customer. Providing a note is not required but is recommended for transparency and dispute resolution purposes.
      *
-     * @x-autobe-specification This field has no direct column mapping in shopping_mall_refund_requests. When provided, the note value should be associated with the newly created shopping_mall_refund_request_snapshots record — for example, stored as an additional annotation or embedded in the snapshot creation logic for audit trail purposes. When null or omitted, no note is recorded. This field is entirely optional and its absence does not affect the resolution workflow.
+         * @x-autobe-specification This field has no direct column mapping in
+         *   shopping_mall_refund_requests. When provided, the note value should
+         *   be associated with the newly created
+         *   shopping_mall_refund_request_snapshots record — for example, stored
+         *   as an additional annotation or embedded in the snapshot creation
+         *   logic for audit trail purposes. When null or omitted, no note is
+         *   recorded. This field is entirely optional and its absence does not
+         *   affect the resolution workflow.
      */
     note?: string | null | undefined;
   };
@@ -61,42 +79,72 @@ export namespace IShoppingMallRefundRequest {
     /**
      * Optional filter to restrict results to refund requests in a specific resolution state. 'pending' returns requests awaiting seller response, 'approved' returns requests where the refund was granted, and 'rejected' returns requests where the refund was denied. When omitted or null, all statuses are included.
      *
-     * @x-autobe-specification Optional equality filter against shopping_mall_refund_requests.status column. When provided (non-null), applies WHERE shopping_mall_refund_requests.status = :status to the query. Valid values: 'pending' (awaiting seller response), 'approved' (refund granted by seller), 'rejected' (refund denied by seller). When null or omitted, no status filter is applied and results include refund requests of all statuses.
+         * @x-autobe-specification Optional equality filter against
+         *   shopping_mall_refund_requests.status column. When provided
+         *   (non-null), applies WHERE shopping_mall_refund_requests.status =
+         *   :status to the query. Valid values: 'pending' (awaiting seller
+         *   response), 'approved' (refund granted by seller), 'rejected'
+         *   (refund denied by seller). When null or omitted, no status filter
+         *   is applied and results include refund requests of all statuses.
      */
     status?: "pending" | "approved" | "rejected" | null | undefined;
 
     /**
      * Optional inclusive start timestamp for filtering refund requests by their submission date. When provided, only refund requests submitted on or after this date-time are included. Use together with `createdAtTo` to define a date range window.
      *
-     * @x-autobe-specification Optional lower-bound date range filter against shopping_mall_refund_requests.created_at. When provided (non-null), applies WHERE shopping_mall_refund_requests.created_at >= :createdAtFrom. Must be a valid ISO 8601 date-time string. Typically paired with createdAtTo for a complete range window. When null or omitted, no lower-bound date filter is applied.
+         * @x-autobe-specification Optional lower-bound date range filter
+         *   against shopping_mall_refund_requests.created_at. When provided
+         *   (non-null), applies WHERE shopping_mall_refund_requests.created_at
+         *   >= :createdAtFrom. Must be a valid ISO 8601 date-time string.
+         *   Typically paired with createdAtTo for a complete range window. When
+         *   null or omitted, no lower-bound date filter is applied.
      */
     createdAtFrom?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * Optional inclusive end timestamp for filtering refund requests by their submission date. When provided, only refund requests submitted on or before this date-time are included. Use together with `createdAtFrom` to define a date range window.
      *
-     * @x-autobe-specification Optional upper-bound date range filter against shopping_mall_refund_requests.created_at. When provided (non-null), applies WHERE shopping_mall_refund_requests.created_at <= :createdAtTo. Must be a valid ISO 8601 date-time string. Typically paired with createdAtFrom for a complete range window. When null or omitted, no upper-bound date filter is applied.
+         * @x-autobe-specification Optional upper-bound date range filter
+         *   against shopping_mall_refund_requests.created_at. When provided
+         *   (non-null), applies WHERE shopping_mall_refund_requests.created_at
+         *   <= :createdAtTo. Must be a valid ISO 8601 date-time string.
+         *   Typically paired with createdAtFrom for a complete range window.
+         *   When null or omitted, no upper-bound date filter is applied.
      */
     createdAtTo?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * Optional keyword to search within the customer's written refund reason text. When provided, only refund requests whose reason contains this keyword (case-insensitive) are returned. Useful for finding requests related to specific dispute topics.
      *
-     * @x-autobe-specification Optional full-text search filter. When provided (non-null), applies WHERE shopping_mall_refund_requests.reason ILIKE '%:keyword%' using the GIN trigram index (gin_trgm_ops) on the reason column for efficient partial-match searching. Case-insensitive. When null or omitted, no keyword filter is applied. The search targets the customer's written refund reason text.
+         * @x-autobe-specification Optional full-text search filter. When
+         *   provided (non-null), applies WHERE
+         *   shopping_mall_refund_requests.reason ILIKE '%:keyword%' using the
+         *   GIN trigram index (gin_trgm_ops) on the reason column for efficient
+         *   partial-match searching. Case-insensitive. When null or omitted, no
+         *   keyword filter is applied. The search targets the customer's
+         *   written refund reason text.
      */
     keyword?: string | null | undefined;
 
     /**
      * The page number to retrieve, starting from 1. Controls which segment of the paginated results is returned. Defaults to 1 when omitted.
      *
-     * @x-autobe-specification Pagination parameter. 1-based page number indicating which page of results to return. Minimum value is 1. When omitted, defaults to 1. Used to compute OFFSET = (page - 1) * limit in the database query. Reflected in the IPage.IPagination.current field of the response.
+         * @x-autobe-specification Pagination parameter. 1-based page number
+         *   indicating which page of results to return. Minimum value is 1.
+         *   When omitted, defaults to 1. Used to compute OFFSET = (page - 1) *
+         *   limit in the database query. Reflected in the
+         *   IPage.IPagination.current field of the response.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * The maximum number of refund requests to return per page. Must be between 1 and 100 inclusive. Controls the page size of the paginated response.
      *
-     * @x-autobe-specification Pagination parameter. Number of records to return per page. Minimum value is 1, maximum value is 100. When omitted, a server-defined default applies (typically 20). Used to compute the LIMIT clause in the database query. Reflected in the IPage.IPagination.limit field of the response.
+         * @x-autobe-specification Pagination parameter. Number of records to
+         *   return per page. Minimum value is 1, maximum value is 100. When
+         *   omitted, a server-defined default applies (typically 20). Used to
+         *   compute the LIMIT clause in the database query. Reflected in the
+         *   IPage.IPagination.limit field of the response.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -110,48 +158,69 @@ export namespace IShoppingMallRefundRequest {
     /**
      * The unique identifier of this refund request.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_refund_requests.id. UUID primary key, auto-generated at record creation.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_refund_requests.id. UUID primary key, auto-generated
+         *   at record creation.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * The unique identifier of the order item for which this refund was requested. Each order item may have at most one refund request.
      *
-     * @x-autobe-database-schema-property order_item_id
-     * @x-autobe-specification Direct mapping from shopping_mall_refund_requests.order_item_id. References the delivered shopping_mall_order_items record that this refund request pertains to. Unique constraint ensures at most one refund request per order item.
+         * @x-autobe-database-schema-property order_item_id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_refund_requests.order_item_id. References the
+         *   delivered shopping_mall_order_items record that this refund request
+         *   pertains to. Unique constraint ensures at most one refund request
+         *   per order item.
      */
     orderItemId: string & tags.Format<"uuid">;
 
     /**
      * The current resolution status of this refund request. One of: 'pending' (awaiting seller response), 'approved' (refund granted), or 'rejected' (refund denied).
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from shopping_mall_refund_requests.status. One of: 'pending' (awaiting seller or administrator response), 'approved' (seller agreed to refund; the associated order item transitions to refunded), 'rejected' (seller denied the refund; the order item remains delivered).
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_refund_requests.status. One of: 'pending' (awaiting
+         *   seller or administrator response), 'approved' (seller agreed to
+         *   refund; the associated order item transitions to refunded),
+         *   'rejected' (seller denied the refund; the order item remains
+         *   delivered).
      */
     status: string;
 
     /**
      * The customer's written explanation for why the refund is being requested. May be truncated in list views; see the detail endpoint for the full text.
      *
-     * @x-autobe-database-schema-property reason
-     * @x-autobe-specification Direct mapping from shopping_mall_refund_requests.reason. The customer's written explanation for why the refund is being requested, preserved verbatim. In list views, this value may be truncated for display purposes.
+         * @x-autobe-database-schema-property reason
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_refund_requests.reason. The customer's written
+         *   explanation for why the refund is being requested, preserved
+         *   verbatim. In list views, this value may be truncated for display
+         *   purposes.
      */
     reason: string;
 
     /**
      * The timestamp at which the customer submitted this refund request. The 7-day eligibility window for refund requests is calculated from this time.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_refund_requests.created_at (Timestamptz). The timestamp at which the customer submitted the refund request. Used as the reference point for the 7-day eligibility window.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_refund_requests.created_at (Timestamptz). The
+         *   timestamp at which the customer submitted the refund request. Used
+         *   as the reference point for the 7-day eligibility window.
      */
     createdAt: string & tags.Format<"date-time">;
 
     /**
      * The timestamp of the most recent update to this refund request, typically reflecting a status change after seller or administrator review.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from shopping_mall_refund_requests.updated_at (Timestamptz). Reflects the most recent update to the record, typically when the seller or administrator changed the status (approved or rejected).
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_refund_requests.updated_at (Timestamptz). Reflects
+         *   the most recent update to the record, typically when the seller or
+         *   administrator changed the status (approved or rejected).
      */
     updatedAt: string & tags.Format<"date-time">;
   };

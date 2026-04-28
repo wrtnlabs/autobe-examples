@@ -8,56 +8,70 @@ export type IRedditLikeGuestSession = {
   /**
    * Unique identifier of the guest session.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from reddit_like_guest_sessions.id. UUID primary key identifying the unique guest session.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_guest_sessions.id. UUID primary key identifying the unique
+     *   guest session.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Identifier of the guest actor associated with this session.
    *
-   * @x-autobe-database-schema-property reddit_like_guest_id
-   * @x-autobe-specification Direct mapping from reddit_like_guest_sessions.reddit_like_guest_id. References the associated guest actor record.
+     * @x-autobe-database-schema-property reddit_like_guest_id
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_guest_sessions.reddit_like_guest_id. References the
+     *   associated guest actor record.
    */
   redditLikeGuestId: string & tags.Format<"uuid">;
 
   /**
    * Client IP address where the guest session was established.
    *
-   * @x-autobe-database-schema-property ip
-   * @x-autobe-specification Direct mapping from reddit_like_guest_sessions.ip. Captures client IP address at session creation for security and analytics.
+     * @x-autobe-database-schema-property ip
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_guest_sessions.ip. Captures client IP address at session
+     *   creation for security and analytics.
    */
   ip: string;
 
   /**
    * Initial page URL where the guest session was established.
    *
-   * @x-autobe-database-schema-property href
-   * @x-autobe-specification Direct mapping from reddit_like_guest_sessions.href. Stores the initial page URL where the guest session was created.
+     * @x-autobe-database-schema-property href
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_guest_sessions.href. Stores the initial page URL where the
+     *   guest session was created.
    */
   href: string;
 
   /**
    * HTTP referrer header from the initial request.
    *
-   * @x-autobe-database-schema-property referrer
-   * @x-autobe-specification Direct mapping from reddit_like_guest_sessions.referrer. Captures HTTP referrer header from the initial request for traffic source analysis.
+     * @x-autobe-database-schema-property referrer
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_guest_sessions.referrer. Captures HTTP referrer header from
+     *   the initial request for traffic source analysis.
    */
   referrer: string;
 
   /**
    * Timestamp when the guest session was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from reddit_like_guest_sessions.created_at. Timestamp when the session was created, converted to ISO 8601 format.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_guest_sessions.created_at. Timestamp when the session was
+     *   created, converted to ISO 8601 format.
    */
   createdAt: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the guest session expires.
    *
-   * @x-autobe-database-schema-property expired_at
-   * @x-autobe-specification Direct mapping from reddit_like_guest_sessions.expired_at. Timestamp when the session expires and becomes invalid, converted to ISO 8601 format.
+     * @x-autobe-database-schema-property expired_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_guest_sessions.expired_at. Timestamp when the session
+     *   expires and becomes invalid, converted to ISO 8601 format.
    */
   expiredAt: string & tags.Format<"date-time">;
 };

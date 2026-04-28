@@ -25,9 +25,9 @@ export class ErphrmtimetrackingMemberActivitylogsnapshotsController {
    *
    * @param connection
    * @param body Search criteria, pagination, and sorting options for activity log entry snapshots.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation steps:
    *
    * 1) Authorization and organization scoping
    * - Resolve the currently selected organization context from the authenticated request/session.

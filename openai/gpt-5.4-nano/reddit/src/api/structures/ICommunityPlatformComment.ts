@@ -8,88 +8,110 @@ export type ICommunityPlatformComment = {
   /**
    * Unique identifier of the comment.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Return the comment primary key from `community_platform_comments.id` for the resolved commentId.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Return the comment primary key from
+     *   `community_platform_comments.id` for the resolved commentId.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Identifier of the post this comment belongs to.
    *
-   * @x-autobe-database-schema-property community_platform_post_id
-   * @x-autobe-specification Return `community_platform_comments.community_platform_post_id` as the parent post ID. The caller must verify the comment belongs to the requested postId before returning this DTO.
+     * @x-autobe-database-schema-property community_platform_post_id
+     * @x-autobe-specification Return
+     *   `community_platform_comments.community_platform_post_id` as the parent
+     *   post ID. The caller must verify the comment belongs to the requested
+     *   postId before returning this DTO.
    */
   community_platform_post_id: string & tags.Format<"uuid">;
 
   /**
    * Optional parent comment identifier for nested reply threads.
    *
-   * @x-autobe-database-schema-property parent_comment_id
-   * @x-autobe-specification Return `community_platform_comments.parent_comment_id` as a UUID string when not null; return null when the comment is not a reply (DB parent_comment_id is null).
+     * @x-autobe-database-schema-property parent_comment_id
+     * @x-autobe-specification Return
+     *   `community_platform_comments.parent_comment_id` as a UUID string when
+     *   not null; return null when the comment is not a reply (DB
+     *   parent_comment_id is null).
    */
   parent_comment_id: (string & tags.Format<"uuid">) | null;
 
   /**
    * Identifier of the member who authored the comment.
    *
-   * @x-autobe-database-schema-property author_id
-   * @x-autobe-specification Return `community_platform_comments.author_id` identifying the member who authored the comment.
+     * @x-autobe-database-schema-property author_id
+     * @x-autobe-specification Return `community_platform_comments.author_id`
+     *   identifying the member who authored the comment.
    */
   author_id: string & tags.Format<"uuid">;
 
   /**
    * Identifier of the member who last edited the comment, if applicable.
    *
-   * @x-autobe-database-schema-property edited_by_id
-   * @x-autobe-specification Return `community_platform_comments.edited_by_id` as a UUID string when not null; return null when the comment has never been edited or edit attribution is not recorded (DB edited_by_id is null).
+     * @x-autobe-database-schema-property edited_by_id
+     * @x-autobe-specification Return `community_platform_comments.edited_by_id`
+     *   as a UUID string when not null; return null when the comment has never
+     *   been edited or edit attribution is not recorded (DB edited_by_id is
+     *   null).
    */
   edited_by_id: (string & tags.Format<"uuid">) | null;
 
   /**
    * Identifier of the member who soft-deleted the comment, if applicable.
    *
-   * @x-autobe-database-schema-property deleted_by_id
-   * @x-autobe-specification Return `community_platform_comments.deleted_by_id` as a UUID string when not null; return null when deletion attribution is not recorded (DB deleted_by_id is null). If `deleted_at` is not null but `deleted_by_id` is null in the DB, return null as stored.
+     * @x-autobe-database-schema-property deleted_by_id
+     * @x-autobe-specification Return
+     *   `community_platform_comments.deleted_by_id` as a UUID string when not
+     *   null; return null when deletion attribution is not recorded (DB
+     *   deleted_by_id is null). If `deleted_at` is not null but `deleted_by_id`
+     *   is null in the DB, return null as stored.
    */
   deleted_by_id: (string & tags.Format<"uuid">) | null;
 
   /**
    * Timestamp when the comment was originally posted.
    *
-   * @x-autobe-database-schema-property posted_at
-   * @x-autobe-specification Return `community_platform_comments.posted_at` formatted as an RFC3339 date-time string.
+     * @x-autobe-database-schema-property posted_at
+     * @x-autobe-specification Return `community_platform_comments.posted_at`
+     *   formatted as an RFC3339 date-time string.
    */
   posted_at: string & tags.Format<"date-time">;
 
   /**
    * The comment content text.
    *
-   * @x-autobe-database-schema-property body_text
-   * @x-autobe-specification Return `community_platform_comments.body_text` as the current comment text.
+     * @x-autobe-database-schema-property body_text
+     * @x-autobe-specification Return `community_platform_comments.body_text` as
+     *   the current comment text.
    */
   body_text: string;
 
   /**
    * When the comment record was created in the system.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Return `community_platform_comments.created_at` formatted as an RFC3339 date-time string.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Return `community_platform_comments.created_at`
+     *   formatted as an RFC3339 date-time string.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * When the comment record was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Return `community_platform_comments.updated_at` formatted as an RFC3339 date-time string; this value changes when the comment content is edited.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Return `community_platform_comments.updated_at`
+     *   formatted as an RFC3339 date-time string; this value changes when the
+     *   comment content is edited.
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * Soft-deletion timestamp; null when the comment is active.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Return `community_platform_comments.deleted_at` as an RFC3339 date-time string when not null; return null when the comment is active (not deleted).
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Return `community_platform_comments.deleted_at`
+     *   as an RFC3339 date-time string when not null; return null when the
+     *   comment is active (not deleted).
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -101,8 +123,17 @@ export namespace ICommunityPlatformComment {
     /**
      * The updated comment text. The server trims whitespace and rejects empty content.
      *
-     * @x-autobe-database-schema-property body_text
-     * @x-autobe-specification Map request `bodyText` -> `community_platform_comments.body_text`. Before persisting, trim leading/trailing whitespace and ensure the trimmed value is non-empty (minLength>=1). Reject the request if missing or becomes empty after trimming. In the PUT handler, after a successful update the service must set `community_platform_comments.updated_at` to now() and set `community_platform_comments.edited_by_id` from the authenticated member; do not accept client control over `edited_by_id`. Do not modify `community_platform_post_id` or `parent_comment_id` (thread placement).
+         * @x-autobe-database-schema-property body_text
+         * @x-autobe-specification Map request `bodyText` ->
+         *   `community_platform_comments.body_text`. Before persisting, trim
+         *   leading/trailing whitespace and ensure the trimmed value is
+         *   non-empty (minLength>=1). Reject the request if missing or becomes
+         *   empty after trimming. In the PUT handler, after a successful update
+         *   the service must set `community_platform_comments.updated_at` to
+         *   now() and set `community_platform_comments.edited_by_id` from the
+         *   authenticated member; do not accept client control over
+         *   `edited_by_id`. Do not modify `community_platform_post_id` or
+         *   `parent_comment_id` (thread placement).
      */
     bodyText: string & tags.MinLength<1>;
   };

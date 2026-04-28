@@ -33,9 +33,9 @@ export class ShoppingmallSellerSellerProductsVariantsController {
    * @param productId The unique identifier of the product that owns this variant
    * @param variantId The unique identifier of the variant to update
    * @param body Variant update data including SKU code, option values, and optional price override
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Implementation steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Implementation steps:
    *
    * 1. **Authorization Check**: Verify the authenticated seller owns the product (shopping_mall_products.shopping_mall_seller_id matches seller ID)
    *

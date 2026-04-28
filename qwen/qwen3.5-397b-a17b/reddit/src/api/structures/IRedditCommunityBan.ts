@@ -17,8 +17,9 @@ export type IRedditCommunityBan = {
    *
    * This is the primary key of the ban record, generated as a UUID when the ban is created. Used to reference the ban in update and delete operations.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from reddit_community_bans.id. Auto-generated UUID on insert.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from reddit_community_bans.id.
+     *   Auto-generated UUID on insert.
    */
   id: string & tags.Format<"uuid">;
 
@@ -27,8 +28,9 @@ export type IRedditCommunityBan = {
    *
    * Provides context for the moderation action, helping other moderators understand the enforcement history. The reason is visible to moderators in the banned users list for oversight and reference purposes.
    *
-   * @x-autobe-database-schema-property reason
-   * @x-autobe-specification Direct mapping from reddit_community_bans.reason. Required field storing the moderator's explanation for the ban.
+     * @x-autobe-database-schema-property reason
+     * @x-autobe-specification Direct mapping from reddit_community_bans.reason.
+     *   Required field storing the moderator's explanation for the ban.
    */
   reason: string;
 
@@ -37,8 +39,10 @@ export type IRedditCommunityBan = {
    *
    * When 'active', the member cannot create posts or comments in the community but can view all content. When 'removed', the member regains full posting privileges. Status transitions from inactive to active when a moderator bans a user, and from active to inactive when unbanned.
    *
-   * @x-autobe-database-schema-property status
-   * @x-autobe-specification Direct mapping from reddit_community_bans.status. Values: 'active' (restrictions enforced) or 'removed' (privileges restored).
+     * @x-autobe-database-schema-property status
+     * @x-autobe-specification Direct mapping from reddit_community_bans.status.
+     *   Values: 'active' (restrictions enforced) or 'removed' (privileges
+     *   restored).
    */
   status: string;
 
@@ -47,8 +51,11 @@ export type IRedditCommunityBan = {
    *
    * This is the community in which the member's posting privileges are restricted. The ban only affects this specific community - the member can still participate in other communities where they are not banned. Returns community summary information including name, description, and icon.
    *
-   * @x-autobe-database-schema-property community
-   * @x-autobe-specification JOIN from reddit_community_bans.reddit_community_community_id to reddit_community_communities.id. Returns IRedditCommunityCommunity.ISummary.
+     * @x-autobe-database-schema-property community
+     * @x-autobe-specification JOIN from
+     *   reddit_community_bans.reddit_community_community_id to
+     *   reddit_community_communities.id. Returns
+     *   IRedditCommunityCommunity.ISummary.
    */
   community: IRedditCommunityCommunity.ISummary;
 
@@ -57,8 +64,10 @@ export type IRedditCommunityBan = {
    *
    * This is the user who has restricted posting privileges in the community. When the ban status is active, this member cannot create posts or comments in the associated community. The member retains viewing access to all community content. Returns member summary information including username, display name, and karma.
    *
-   * @x-autobe-database-schema-property member
-   * @x-autobe-specification JOIN from reddit_community_bans.reddit_community_member_id to reddit_community_members.id. Returns IRedditCommunityMember.ISummary.
+     * @x-autobe-database-schema-property member
+     * @x-autobe-specification JOIN from
+     *   reddit_community_bans.reddit_community_member_id to
+     *   reddit_community_members.id. Returns IRedditCommunityMember.ISummary.
    */
   member: IRedditCommunityMember.ISummary;
 
@@ -67,8 +76,10 @@ export type IRedditCommunityBan = {
    *
    * Tracks which moderator or community owner enacted the ban for accountability and audit purposes. This allows communities to maintain records of enforcement actions and enables oversight of moderation decisions. Returns member summary information including username and display name.
    *
-   * @x-autobe-database-schema-property issuer
-   * @x-autobe-specification JOIN from reddit_community_bans.issuer_member_id to reddit_community_members.id. Returns IRedditCommunityMember.ISummary.
+     * @x-autobe-database-schema-property issuer
+     * @x-autobe-specification JOIN from reddit_community_bans.issuer_member_id
+     *   to reddit_community_members.id. Returns
+     *   IRedditCommunityMember.ISummary.
    */
   issuer: IRedditCommunityMember.ISummary;
 
@@ -77,8 +88,10 @@ export type IRedditCommunityBan = {
    *
    * Records when the ban was initially issued by the moderator. This timestamp is automatically set by the database when the ban record is inserted and cannot be modified.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from reddit_community_bans.created_at. Auto-set to current timestamp on insert.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_bans.created_at. Auto-set to current timestamp on
+     *   insert.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -87,8 +100,10 @@ export type IRedditCommunityBan = {
    *
    * Records when the ban was last modified, such as when the status was changed from active to removed or when the reason was updated. This timestamp is automatically updated by the database on any modification to the ban record.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from reddit_community_bans.updated_at. Auto-updated to current timestamp on any update.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_bans.updated_at. Auto-updated to current timestamp on
+     *   any update.
    */
   updated_at: string & tags.Format<"date-time">;
 };
@@ -106,8 +121,11 @@ export namespace IRedditCommunityBan {
      *
      * This UUID must reference an existing registered member account. The ban will restrict this member's ability to create posts and comments in the specified community while maintaining their viewing access. Validate that the member exists before creating the ban record.
      *
-     * @x-autobe-database-schema-property reddit_community_member_id
-     * @x-autobe-specification Direct mapping from reddit_community_bans.reddit_community_member_id. Must be a valid UUID referencing an existing member. Validate that the member exists before creating the ban.
+         * @x-autobe-database-schema-property reddit_community_member_id
+         * @x-autobe-specification Direct mapping from
+         *   reddit_community_bans.reddit_community_member_id. Must be a valid
+         *   UUID referencing an existing member. Validate that the member
+         *   exists before creating the ban.
      */
     reddit_community_member_id: string & tags.Format<"uuid">;
 
@@ -116,8 +134,11 @@ export namespace IRedditCommunityBan {
      *
      * This field provides context for the moderation action, helping other moderators understand the enforcement history. The reason is visible to all moderators in the banned users list for oversight, reference, and audit purposes. Should be clear and specific about the rule violation or behavior that led to the ban.
      *
-     * @x-autobe-database-schema-property reason
-     * @x-autobe-specification Direct mapping from reddit_community_bans.reason. Store the moderator-provided explanation for the ban. This text is visible to other moderators for oversight and audit purposes.
+         * @x-autobe-database-schema-property reason
+         * @x-autobe-specification Direct mapping from
+         *   reddit_community_bans.reason. Store the moderator-provided
+         *   explanation for the ban. This text is visible to other moderators
+         *   for oversight and audit purposes.
      */
     reason: string;
 
@@ -126,8 +147,12 @@ export namespace IRedditCommunityBan {
      *
      * Use 'active' to immediately restrict the member's ability to create posts and comments in the community. The member retains viewing access to all community content. Use 'removed' to create a ban record without active restrictions, which can be useful for documenting past enforcement actions. When active, the status can be changed to removed by a moderator to unban the user.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from reddit_community_bans.status. Accepts 'active' or 'removed'. When 'active', the member cannot create posts or comments. When 'removed', the member regains full posting privileges. Default should be 'active' for new bans.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   reddit_community_bans.status. Accepts 'active' or 'removed'. When
+         *   'active', the member cannot create posts or comments. When
+         *   'removed', the member regains full posting privileges. Default
+         *   should be 'active' for new bans.
      */
     status: string;
   };
@@ -147,8 +172,10 @@ export namespace IRedditCommunityBan {
      *
      * This field is optional in update requests - omit it to keep the existing reason unchanged.
      *
-     * @x-autobe-database-schema-property reason
-     * @x-autobe-specification Direct mapping from reddit_community_bans.reason. Optional field for partial update support.
+         * @x-autobe-database-schema-property reason
+         * @x-autobe-specification Direct mapping from
+         *   reddit_community_bans.reason. Optional field for partial update
+         *   support.
      */
     reason?: string | undefined;
 
@@ -159,8 +186,11 @@ export namespace IRedditCommunityBan {
      *
      * This field is optional in update requests - omit it to keep the existing status unchanged. Use 'active' to enforce or re-enforce posting restrictions, or 'removed' to lift them.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from reddit_community_bans.status. Optional field for partial update support. Valid values: 'active' (enforce restrictions) or 'removed' (lift restrictions).
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   reddit_community_bans.status. Optional field for partial update
+         *   support. Valid values: 'active' (enforce restrictions) or 'removed'
+         *   (lift restrictions).
      */
     status?: string | undefined;
   };
@@ -178,8 +208,9 @@ export namespace IRedditCommunityBan {
      *
      * This is the primary key of the ban entity, generated as a UUID when the ban is created. Used to reference this specific ban record in update or delete operations.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from reddit_community_bans.id. UUID format.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from reddit_community_bans.id.
+         *   UUID format.
      */
     id: string & tags.Format<"uuid">;
 
@@ -188,8 +219,10 @@ export namespace IRedditCommunityBan {
      *
      * This object contains the banned user's summary profile information including their username, display name, and karma score. The member relation is resolved through the reddit_community_member_id foreign key.
      *
-     * @x-autobe-database-schema-property member
-     * @x-autobe-specification Relation mapping via reddit_community_member_id FK to reddit_community_members.id. Returns ISummary with username, display_name, karma.
+         * @x-autobe-database-schema-property member
+         * @x-autobe-specification Relation mapping via
+         *   reddit_community_member_id FK to reddit_community_members.id.
+         *   Returns ISummary with username, display_name, karma.
      */
     member: IRedditCommunityMember.ISummary;
 
@@ -198,8 +231,10 @@ export namespace IRedditCommunityBan {
      *
      * This object contains the issuing moderator's summary profile information. The issuer relation is resolved through the issuer_member_id foreign key, providing accountability for the moderation action.
      *
-     * @x-autobe-database-schema-property issuer
-     * @x-autobe-specification Relation mapping via issuer_member_id FK to reddit_community_members.id. Returns ISummary with username, display_name, karma.
+         * @x-autobe-database-schema-property issuer
+         * @x-autobe-specification Relation mapping via issuer_member_id FK to
+         *   reddit_community_members.id. Returns ISummary with username,
+         *   display_name, karma.
      */
     issuer: IRedditCommunityMember.ISummary;
 
@@ -208,8 +243,9 @@ export namespace IRedditCommunityBan {
      *
      * This field contains the reason provided by the moderator when issuing the ban. It helps other moderators understand the enforcement history and provides context for future moderation decisions. The reason is visible to moderators in the banned users list.
      *
-     * @x-autobe-database-schema-property reason
-     * @x-autobe-specification Direct mapping from reddit_community_bans.reason. Plain text string.
+         * @x-autobe-database-schema-property reason
+         * @x-autobe-specification Direct mapping from
+         *   reddit_community_bans.reason. Plain text string.
      */
     reason: string;
 
@@ -218,8 +254,9 @@ export namespace IRedditCommunityBan {
      *
      * When 'active', the member cannot create posts or comments in the community but can view all content. When 'removed', the member regains full posting privileges. Status transitions from inactive to active when a moderator bans a user, and from active to inactive when unbanned.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from reddit_community_bans.status. Enum values: 'active' or 'removed'.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   reddit_community_bans.status. Enum values: 'active' or 'removed'.
      */
     status: string;
 
@@ -228,8 +265,9 @@ export namespace IRedditCommunityBan {
      *
      * This field records when the ban was initially issued by the moderator. Used for audit purposes and to display the ban's age in moderator interfaces. The timestamp is in ISO 8601 format with timezone information.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from reddit_community_bans.created_at. ISO 8601 date-time format.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_community_bans.created_at. ISO 8601 date-time format.
      */
     created_at: string & tags.Format<"date-time">;
   };
@@ -247,7 +285,11 @@ export namespace IRedditCommunityBan {
      *
      * When provided, the endpoint performs a case-insensitive partial match against both the username and display_name fields of the banned member. The search is implemented through a JOIN with the reddit_community_members table. Leave this field empty or omit it to retrieve all bans without member filtering.
      *
-     * @x-autobe-specification Filters ban results by matching the banned member's username or display_name. Implemented via JOIN with reddit_community_members table using LIKE comparison. Case-insensitive partial match. Optional - omit for no member filter.
+         * @x-autobe-specification Filters ban results by matching the banned
+         *   member's username or display_name. Implemented via JOIN with
+         *   reddit_community_members table using LIKE comparison.
+         *   Case-insensitive partial match. Optional - omit for no member
+         *   filter.
      */
     search?: string | undefined;
 
@@ -256,7 +298,10 @@ export namespace IRedditCommunityBan {
      *
      * Accepts either 'active' to show only currently enforced bans or 'removed' to show only historical bans that have been lifted. When this field is omitted, the response includes bans of both statuses. This filter helps moderators focus on active restrictions or review historical enforcement actions.
      *
-     * @x-autobe-specification Filters ban results by status enum value (active or removed). Maps to reddit_community_bans.status column. When omitted, returns both active and removed bans. Used in WHERE clause for filtering.
+         * @x-autobe-specification Filters ban results by status enum value
+         *   (active or removed). Maps to reddit_community_bans.status column.
+         *   When omitted, returns both active and removed bans. Used in WHERE
+         *   clause for filtering.
      */
     status?: "active" | "removed" | undefined;
 
@@ -265,7 +310,9 @@ export namespace IRedditCommunityBan {
      *
      * Specifies which page of results to retrieve, with page numbering starting from 1 (not 0). The first page is page 1. This value works together with the limit parameter to determine which subset of records to return. If not provided, defaults to page 1. Must be at least 1.
      *
-     * @x-autobe-specification 1-indexed page number for pagination. Used with limit to calculate OFFSET: OFFSET = (page - 1) * limit. Defaults to 1 if not provided. Minimum value is 1.
+         * @x-autobe-specification 1-indexed page number for pagination. Used
+         *   with limit to calculate OFFSET: OFFSET = (page - 1) * limit.
+         *   Defaults to 1 if not provided. Minimum value is 1.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -274,7 +321,9 @@ export namespace IRedditCommunityBan {
      *
      * Controls the page size for paginated results. The actual number of records returned may be less than this value on the final page or when the total matching records are fewer than the limit. Must be between 1 and 100 inclusive. If not provided, the endpoint uses its default page size.
      *
-     * @x-autobe-specification Maximum number of records per page. Used with page to calculate OFFSET. Defaults to endpoint default if not provided. Minimum 1, maximum 100. Enforced by validation.
+         * @x-autobe-specification Maximum number of records per page. Used with
+         *   page to calculate OFFSET. Defaults to endpoint default if not
+         *   provided. Minimum 1, maximum 100. Enforced by validation.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)

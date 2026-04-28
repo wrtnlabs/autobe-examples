@@ -23,9 +23,10 @@ export class ShoppingmallAdminMembersController {
    *
    * @param connection
    * @param body Search criteria including account status filter, email search term, registration date range, and pagination parameters.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query shopping_mall_members table with pagination and filtering support.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Query shopping_mall_members table with pagination
+     *   and filtering support.
    *
    * Apply search filters:
    * - status: Filter by account status (active, banned, deleted)
@@ -75,9 +76,10 @@ export class ShoppingmallAdminMembersController {
    *
    * @param connection
    * @param memberId Unique identifier of the member account to retrieve (UUID format).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query the shopping_mall_members table by the provided memberId UUID.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Query the shopping_mall_members table by the
+     *   provided memberId UUID.
    *
    * Retrieve all fields: id, email, status, created_at, updated_at, deleted_at.
    *
@@ -118,9 +120,10 @@ export class ShoppingmallAdminMembersController {
    * @param connection
    * @param memberId The unique identifier of the member account to update (UUID format).
    * @param body Update payload containing account status and mutable properties. Status controls account access: active for normal operation, banned to prevent login, deleted for soft-delete.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Update the shopping_mall_members record by memberId UUID.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Update the shopping_mall_members record by
+     *   memberId UUID.
    *
    * Validate that memberId exists in shopping_mall_members table.
    * Validate requester has administrator privileges.

@@ -27,9 +27,11 @@ export class ShoppingmallCustomerRefund_requestsSnapshotsController {
    * @param connection
    * @param refundRequestId Target refund request ID
    * @param body History browsing criteria and pagination options
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Validate the `refundRequestId` path parameter as a UUID and load the parent record from `shopping_mall_refund_requests` by `id`.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Validate the `refundRequestId` path parameter as
+     *   a UUID and load the parent record from `shopping_mall_refund_requests`
+     *   by `id`.
    *
    * Authorize access before returning history. Allow the request when the caller is the customer identified by `shopping_mall_customer_id` on the parent refund request, the seller responsible for the related order item obtained through `shopping_mall_order_items.shopping_mall_seller_id`, or an administrator actor with platform oversight. Reject access when the caller is unrelated to the refund case.
    *
@@ -79,9 +81,16 @@ export class ShoppingmallCustomerRefund_requestsSnapshotsController {
    * @param connection
    * @param refundRequestId Target refund request ID that owns this snapshot
    * @param snapshotId Target refund request snapshot ID within the specified refund request
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Load the parent record from shopping_mall_refund_requests by id = refundRequestId first, and enforce authorization based on the caller's role and ownership of the underlying refund request and order-item context. Customers may read only their own refund-request history. Sellers may read snapshot history only when they are operationally responsible for the associated order item through the surrounding order and fulfillment relationships. Administrators may read for oversight purposes.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Load the parent record from
+     *   shopping_mall_refund_requests by id = refundRequestId first, and
+     *   enforce authorization based on the caller's role and ownership of the
+     *   underlying refund request and order-item context. Customers may read
+     *   only their own refund-request history. Sellers may read snapshot
+     *   history only when they are operationally responsible for the associated
+     *   order item through the surrounding order and fulfillment relationships.
+     *   Administrators may read for oversight purposes.
    *
    * After parent authorization succeeds, load the child snapshot from shopping_mall_refund_request_snapshots where id = snapshotId and shopping_mall_refund_request_id = refundRequestId. Never resolve the snapshot by snapshotId alone for the final result, because the nested route requires containment validation. If no matching parent-child pair exists, return a not-found error.
    *

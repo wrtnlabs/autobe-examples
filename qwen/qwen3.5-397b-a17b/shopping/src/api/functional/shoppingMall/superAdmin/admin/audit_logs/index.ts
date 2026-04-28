@@ -22,7 +22,8 @@ import { IShoppingMallAdminAuditLog } from "../../../../../structures/IShoppingM
  * @param props.body Search criteria for filtering audit logs including action type, target entity type, administrator ID, date ranges, text search, and pagination parameters.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor superAdmin
- * @x-autobe-specification Query shopping_mall_admin_audit_logs table with pagination and filtering.
+ * @x-autobe-specification Query shopping_mall_admin_audit_logs table with
+ *   pagination and filtering.
  *
  * Apply filters from request body:
  * - action_type: filter by specific action types (create, update, delete, approve, reject, suspend, unsuspend, ban, unban, promote, demote, force_cancel, force_refund)
@@ -126,7 +127,8 @@ export namespace index {
  * @param props.auditLogId Unique identifier of the audit log entry to retrieve (UUID format).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor superAdmin
- * @x-autobe-specification Query the shopping_mall_admin_audit_logs table by primary key id.
+ * @x-autobe-specification Query the shopping_mall_admin_audit_logs table by
+ *   primary key id.
  *
  * Retrieve the single audit log record matching the provided auditLogId UUID.
  * Return the complete entity including: id, shopping_mall_admin_id, action_type, target_entity_type, target_entity_id, action_details, ip_address, user_agent, and created_at.

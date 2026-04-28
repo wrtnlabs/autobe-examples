@@ -30,7 +30,8 @@ import { IRedditLikeVote } from "../../../../structures/IRedditLikeVote";
  * @param props.body Search criteria for filtering and paginating the user's voting history, including vote type, content type, date ranges, and pagination parameters.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query reddit_like_votes table for the authenticated user's votes with pagination and filtering.
+ * @x-autobe-specification Query reddit_like_votes table for the authenticated
+ *   user's votes with pagination and filtering.
  *
  * **Implementation Steps**
  *

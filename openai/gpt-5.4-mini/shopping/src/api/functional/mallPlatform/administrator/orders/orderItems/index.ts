@@ -25,7 +25,10 @@ export * as snapshots from "./snapshots/index";
  * @param props.body Search, pagination, and sorting criteria for the order's item list. The order is fixed by the path parameter and must not be repeated here.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor administrator
- * @x-autobe-specification Load the target order by id and verify access before querying its order items. Customers may only access their own order items; sellers may access items for their own products; administrators may access any order.
+ * @x-autobe-specification Load the target order by id and verify access before
+ *   querying its order items. Customers may only access their own order items;
+ *   sellers may access items for their own products; administrators may access
+ *   any order.
  *
  * Query mall_platform_order_items by mall_platform_order_id and join the related productVariant and seller records as needed to populate the summary view. Preserve ordering suitable for order detail display, typically by creation time or item id in a stable direction. Include current item status, quantity, and the contextual product/variant identifiers needed for the summary response.
  *
@@ -128,7 +131,12 @@ export namespace index {
  * @param props.orderItemId The order item identifier in UUID format, scoped to the specified order.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor administrator
- * @x-autobe-specification Load the order by orderId first, then fetch the order item by orderItemId constrained to that order. Verify the order item belongs to the order before returning it; if not, return not found rather than leaking cross-order existence. Enforce authorization so customers can only read their own orders, sellers can only read order items belonging to their products, and administrators can read any order item.
+ * @x-autobe-specification Load the order by orderId first, then fetch the order
+ *   item by orderItemId constrained to that order. Verify the order item
+ *   belongs to the order before returning it; if not, return not found rather
+ *   than leaking cross-order existence. Enforce authorization so customers can
+ *   only read their own orders, sellers can only read order items belonging to
+ *   their products, and administrators can read any order item.
  *
  * Return the live order item entity from mall_platform_order_items. Do not attempt to reconstruct historical product or seller data from snapshots in this endpoint; the snapshot tables are for dispute/history use cases and should be accessed separately. Include the foreign-key identifiers and current status from the live record. If the order or order item has been deleted or is inaccessible under current permissions, respond with not found. No request body is needed.
  * @path /mallPlatform/administrator/orders/:orderId/orderItems/:orderItemId

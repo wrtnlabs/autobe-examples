@@ -108,38 +108,38 @@ export namespace IEcommerceMallShipment {
    */
   export type IRequest = {
     /**
-     * @x-autobe-database-schema-property order_id
+         * @x-autobe-database-schema-property order_id
      */
     order_id?: (string & tags.Format<"uuid">) | undefined;
     /**
-     * @x-autobe-database-schema-property status
+         * @x-autobe-database-schema-property status
      */
     status?: "shipped" | "delivered" | undefined;
     /**
-     * @x-autobe-database-schema-property shipped_at
+         * @x-autobe-database-schema-property shipped_at
      */
     shipped_at_after?: (string & tags.Format<"date-time">) | null | undefined;
     /**
-     * @x-autobe-database-schema-property shipped_at
+         * @x-autobe-database-schema-property shipped_at
      */
     shipped_at_before?: (string & tags.Format<"date-time">) | null | undefined;
     /**
-     * @x-autobe-database-schema-property delivered_at
+         * @x-autobe-database-schema-property delivered_at
      */
     delivered_at_after?: (string & tags.Format<"date-time">) | null | undefined;
     /**
-     * @x-autobe-database-schema-property delivered_at
+         * @x-autobe-database-schema-property delivered_at
      */
     delivered_at_before?:
       | (string & tags.Format<"date-time">)
       | null
       | undefined;
     /**
-     * @x-autobe-database-schema-property created_at
+         * @x-autobe-database-schema-property created_at
      */
     created_at_after?: (string & tags.Format<"date-time">) | undefined;
     /**
-     * @x-autobe-database-schema-property created_at
+         * @x-autobe-database-schema-property created_at
      */
     created_at_before?: (string & tags.Format<"date-time">) | undefined;
     sort_field?:
@@ -162,7 +162,8 @@ export namespace IEcommerceMallShipment {
      * Requesting a page beyond the available range returns an empty data array
      * with valid pagination metadata reflecting the actual totals.
      *
-     * @x-autobe-specification 1-indexed page number. Defaults to 1 if not provided.
+         * @x-autobe-specification 1-indexed page number. Defaults to 1 if not
+         *   provided.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };

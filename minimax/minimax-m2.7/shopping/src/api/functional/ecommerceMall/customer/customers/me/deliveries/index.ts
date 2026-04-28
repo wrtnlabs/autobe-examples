@@ -20,7 +20,9 @@ import { IPageIEcommerceMallShipment } from "../../../../../../structures/IPageI
  * @param props.connection
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Query all shipments for the authenticated customer where the shipment's order items have status 'shipped' (not yet delivered or confirmed).
+ * @x-autobe-specification Query all shipments for the authenticated customer
+ *   where the shipment's order items have status 'shipped' (not yet delivered
+ *   or confirmed).
  *
  * Implementation steps:
  * 1. Extract authenticated customer ID from session/token

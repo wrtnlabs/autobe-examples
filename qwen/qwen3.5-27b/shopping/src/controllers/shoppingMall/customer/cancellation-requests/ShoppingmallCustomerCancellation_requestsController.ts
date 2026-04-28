@@ -23,9 +23,10 @@ export class ShoppingmallCustomerCancellation_requestsController {
    *
    * @param connection
    * @param body Cancellation request details including the order item to cancel and the customer's reason for requesting cancellation.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Implementation steps for creating a cancellation request:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Implementation steps for creating a cancellation
+     *   request:
    *
    * 1. **Authentication & Authorization**: Verify the request is from an authenticated customer. Extract customer ID from the session.
    *
@@ -95,9 +96,10 @@ export class ShoppingmallCustomerCancellation_requestsController {
    *
    * @param connection
    * @param body Search criteria including status filter, date range, pagination parameters, and sorting options for cancellation requests.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Query shopping_mall_cancellation_requests table with pagination and filtering support.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Query shopping_mall_cancellation_requests table
+     *   with pagination and filtering support.
    *
    * Apply filters based on request body:
    * - status: Filter by cancellation status (pending, approved, rejected)
@@ -145,9 +147,10 @@ export class ShoppingmallCustomerCancellation_requestsController {
    *
    * @param connection
    * @param cancellationRequestId Unique identifier of the cancellation request to retrieve (global scope).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Query the shopping_mall_cancellation_requests table for the record matching the provided cancellationRequestId.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Query the shopping_mall_cancellation_requests
+     *   table for the record matching the provided cancellationRequestId.
    *
    * Join with shopping_mall_customers to include customer details (email, display name, account status).
    *

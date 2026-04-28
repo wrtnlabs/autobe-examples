@@ -36,9 +36,9 @@ export class ShoppingmallSellerDashboardController {
    * **Related Operations**: Sellers can drill down into specific metrics using GET /seller/products, GET /seller/orders, GET /seller/cancellation-requests, and GET /seller/refund-requests endpoints.
    *
    * @param connection
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Implementation steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Implementation steps:
    *
    * 1. **Authentication Check**: Extract seller ID from JWT token in Authorization header. Validate session is active.
    *

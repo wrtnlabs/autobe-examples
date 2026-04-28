@@ -31,8 +31,9 @@ export namespace IHrmTaskHistory {
      *
      * This is the primary key of the audit record, generated automatically when the status change occurs. Format is UUID v4.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from hrm_task_histories.id. UUID format.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from hrm_task_histories.id.
+         *   UUID format.
      */
     id: string & tags.Format<"uuid">;
 
@@ -41,8 +42,9 @@ export namespace IHrmTaskHistory {
      *
      * This field captures the precise moment of the status transition in UTC timezone (ISO 8601 format with timezone). Used for chronological ordering of history events.
      *
-     * @x-autobe-database-schema-property timestamp
-     * @x-autobe-specification Direct mapping from hrm_task_histories.timestamp. timestamptz format.
+         * @x-autobe-database-schema-property timestamp
+         * @x-autobe-specification Direct mapping from
+         *   hrm_task_histories.timestamp. timestamptz format.
      */
     timestamp: string & tags.Format<"date-time">;
 
@@ -51,8 +53,9 @@ export namespace IHrmTaskHistory {
      *
      * Possible values: 'open', 'in-progress', 'completed', 'closed'. This represents the workflow state immediately before the transition recorded in this history entry.
      *
-     * @x-autobe-database-schema-property old_status
-     * @x-autobe-specification Direct mapping from hrm_task_histories.old_status. String enum.
+         * @x-autobe-database-schema-property old_status
+         * @x-autobe-specification Direct mapping from
+         *   hrm_task_histories.old_status. String enum.
      */
     old_status: string;
 
@@ -61,8 +64,9 @@ export namespace IHrmTaskHistory {
      *
      * Possible values: 'open', 'in-progress', 'completed', 'closed'. This represents the workflow state immediately after the transition recorded in this history entry.
      *
-     * @x-autobe-database-schema-property new_status
-     * @x-autobe-specification Direct mapping from hrm_task_histories.new_status. String enum.
+         * @x-autobe-database-schema-property new_status
+         * @x-autobe-specification Direct mapping from
+         *   hrm_task_histories.new_status. String enum.
      */
     new_status: string;
 
@@ -71,8 +75,9 @@ export namespace IHrmTaskHistory {
      *
      * This relation identifies which authenticated user performed the status transition. Includes basic member information (id, email) for accountability and audit purposes.
      *
-     * @x-autobe-database-schema-property member
-     * @x-autobe-specification Join from hrm_task_histories.hrm_member_id to hrm_members.id. Returns IHrmMember.ISummary.
+         * @x-autobe-database-schema-property member
+         * @x-autobe-specification Join from hrm_task_histories.hrm_member_id to
+         *   hrm_members.id. Returns IHrmMember.ISummary.
      */
     member: IHrmMember.ISummary;
 
@@ -81,8 +86,9 @@ export namespace IHrmTaskHistory {
      *
      * Set automatically by the system when the status change occurs. Typically identical to the timestamp field, but may differ in edge cases involving system delays or batch processing.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from hrm_task_histories.created_at. timestamptz format.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_task_histories.created_at. timestamptz format.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -91,8 +97,9 @@ export namespace IHrmTaskHistory {
      *
      * For audit records, this field typically remains unchanged after initial creation, as history entries are immutable. May be updated only for system maintenance purposes.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from hrm_task_histories.updated_at. timestamptz format.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_task_histories.updated_at. timestamptz format.
      */
     updated_at: string & tags.Format<"date-time">;
   };

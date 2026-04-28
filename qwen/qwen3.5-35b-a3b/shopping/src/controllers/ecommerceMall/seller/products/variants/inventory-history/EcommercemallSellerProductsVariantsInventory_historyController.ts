@@ -31,9 +31,10 @@ export class EcommercemallSellerProductsVariantsInventory_historyController {
    * @param productId UUID of the product that owns this variant (for path validation and access control).
    * @param variantId UUID of the variant whose inventory history is being queried.
    * @param body Search criteria for inventory history records including operation type filters, date range, quantity range, and pagination parameters.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Query ecommerce_mall_inventory_records table filtered by product_variant_id = {variantId}.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Query ecommerce_mall_inventory_records table
+     *   filtered by product_variant_id = {variantId}.
    *
    * ### Filtering
    * - operation_type: filter by exact match (RESTOCK, ADJUSTMENT, LOSS, ORDER_DEDUCTION, REFUND_RETURN, CANCELLATION_RETURN)

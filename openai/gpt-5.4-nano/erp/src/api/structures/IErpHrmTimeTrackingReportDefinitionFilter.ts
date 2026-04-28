@@ -8,88 +8,117 @@ export type IErpHrmTimeTrackingReportDefinitionFilter = {
   /**
    * Unique identifier of this report definition filter rule.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Map erp_hrm_time_tracking_report_definition_filters.id -> DTO.id. Treat as immutable identifier; never change on PUT.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Map
+     *   erp_hrm_time_tracking_report_definition_filters.id -> DTO.id. Treat as
+     *   immutable identifier; never change on PUT.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Identifier of the report definition that owns this filter rule.
    *
-   * @x-autobe-database-schema-property erp_hrm_time_tracking_report_definition_id
-   * @x-autobe-specification Map erp_hrm_time_tracking_report_definition_filters.erp_hrm_time_tracking_report_definition_id -> DTO.reportDefinitionId. The service must ensure tenant scope consistency with the reportDefinitionId path parameter.
+     * @x-autobe-database-schema-property erp_hrm_time_tracking_report_definition_id
+     * @x-autobe-specification Map
+     *   erp_hrm_time_tracking_report_definition_filters.erp_hrm_time_tracking_report_definition_id
+     *   -> DTO.reportDefinitionId. The service must ensure tenant scope
+     *   consistency with the reportDefinitionId path parameter.
    */
   reportDefinitionId: string & tags.Format<"uuid">;
 
   /**
    * Logical key of the report field/attribute targeted by this filter rule.
    *
-   * @x-autobe-database-schema-property field_key
-   * @x-autobe-specification Map erp_hrm_time_tracking_report_definition_filters.field_key -> DTO.fieldKey. Indicates which report attribute this filter applies to.
+     * @x-autobe-database-schema-property field_key
+     * @x-autobe-specification Map
+     *   erp_hrm_time_tracking_report_definition_filters.field_key ->
+     *   DTO.fieldKey. Indicates which report attribute this filter applies to.
    */
   fieldKey: string;
 
   /**
    * Filter comparison operator used when applying the rule to report data.
    *
-   * @x-autobe-database-schema-property operator
-   * @x-autobe-specification Map erp_hrm_time_tracking_report_definition_filters.operator -> DTO.operator. Controls how valueText/valueText2 are interpreted during evaluation.
+     * @x-autobe-database-schema-property operator
+     * @x-autobe-specification Map
+     *   erp_hrm_time_tracking_report_definition_filters.operator ->
+     *   DTO.operator. Controls how valueText/valueText2 are interpreted during
+     *   evaluation.
    */
   operator: string;
 
   /**
    * Primary configured value for this filter rule, stored as text (semantics depend on fieldKey/operator).
    *
-   * @x-autobe-database-schema-property value_text
-   * @x-autobe-specification Map erp_hrm_time_tracking_report_definition_filters.value_text -> DTO.valueText. Stores the operator’s primary configured value in text form.
+     * @x-autobe-database-schema-property value_text
+     * @x-autobe-specification Map
+     *   erp_hrm_time_tracking_report_definition_filters.value_text ->
+     *   DTO.valueText. Stores the operator’s primary configured value in text
+     *   form.
    */
   valueText: string;
 
   /**
    * Optional secondary configured value for this filter rule. Null when not used by the operator.
    *
-   * @x-autobe-database-schema-property value_text_2
-   * @x-autobe-specification Map erp_hrm_time_tracking_report_definition_filters.value_text_2 -> DTO.valueText2. May be null; used as a secondary configured value for range-style operators when applicable.
+     * @x-autobe-database-schema-property value_text_2
+     * @x-autobe-specification Map
+     *   erp_hrm_time_tracking_report_definition_filters.value_text_2 ->
+     *   DTO.valueText2. May be null; used as a secondary configured value for
+     *   range-style operators when applicable.
    */
   valueText2: string | null;
 
   /**
    * Whether this filter rule is enabled for future report generations.
    *
-   * @x-autobe-database-schema-property is_enabled
-   * @x-autobe-specification Map erp_hrm_time_tracking_report_definition_filters.is_enabled -> DTO.isEnabled. If false, the rule remains stored but is ignored during report generation.
+     * @x-autobe-database-schema-property is_enabled
+     * @x-autobe-specification Map
+     *   erp_hrm_time_tracking_report_definition_filters.is_enabled ->
+     *   DTO.isEnabled. If false, the rule remains stored but is ignored during
+     *   report generation.
    */
   isEnabled: boolean;
 
   /**
    * Ordering hint for deterministic presentation of filters within the same report definition.
    *
-   * @x-autobe-database-schema-property display_order
-   * @x-autobe-specification Map erp_hrm_time_tracking_report_definition_filters.display_order -> DTO.displayOrder. Used for deterministic ordering when presenting multiple filters.
+     * @x-autobe-database-schema-property display_order
+     * @x-autobe-specification Map
+     *   erp_hrm_time_tracking_report_definition_filters.display_order ->
+     *   DTO.displayOrder. Used for deterministic ordering when presenting
+     *   multiple filters.
    */
   displayOrder: number & tags.Type<"int32">;
 
   /**
    * Creation timestamp of this filter rule.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Map erp_hrm_time_tracking_report_definition_filters.created_at -> DTO.createdAt as an ISO-8601 date-time string.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Map
+     *   erp_hrm_time_tracking_report_definition_filters.created_at ->
+     *   DTO.createdAt as an ISO-8601 date-time string.
    */
   createdAt: string & tags.Format<"date-time">;
 
   /**
    * Last update timestamp of this filter rule.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Map erp_hrm_time_tracking_report_definition_filters.updated_at -> DTO.updatedAt as an ISO-8601 date-time string. Updated after successful PUT mutations.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Map
+     *   erp_hrm_time_tracking_report_definition_filters.updated_at ->
+     *   DTO.updatedAt as an ISO-8601 date-time string. Updated after successful
+     *   PUT mutations.
    */
   updatedAt: string & tags.Format<"date-time">;
 
   /**
    * Soft-delete timestamp for this filter rule. Null when the rule is not deleted.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Map erp_hrm_time_tracking_report_definition_filters.deleted_at -> DTO.deletedAt. Null indicates not soft-deleted.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Map
+     *   erp_hrm_time_tracking_report_definition_filters.deleted_at ->
+     *   DTO.deletedAt. Null indicates not soft-deleted.
    */
   deletedAt: (string & tags.Format<"date-time">) | null;
 };
@@ -101,88 +130,108 @@ export namespace IErpHrmTimeTrackingReportDefinitionFilter {
     /**
      * Unique identifier of this filter rule.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_report_definition_filters.id (UUID string).
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_tracking_report_definition_filters.id (UUID string).
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Identifier of the report definition that owns this filter rule.
      *
-     * @x-autobe-database-schema-property erp_hrm_time_tracking_report_definition_id
-     * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_report_definition_filters.erp_hrm_time_tracking_report_definition_id (UUID string) to DTO reportDefinitionId.
+         * @x-autobe-database-schema-property erp_hrm_time_tracking_report_definition_id
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_tracking_report_definition_filters.erp_hrm_time_tracking_report_definition_id
+         *   (UUID string) to DTO reportDefinitionId.
      */
     reportDefinitionId: string & tags.Format<"uuid">;
 
     /**
      * Logical key of the report attribute this filter targets.
      *
-     * @x-autobe-database-schema-property field_key
-     * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_report_definition_filters.field_key. Represents which logical report attribute this filter applies to.
+         * @x-autobe-database-schema-property field_key
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_tracking_report_definition_filters.field_key.
+         *   Represents which logical report attribute this filter applies to.
      */
     fieldKey: string;
 
     /**
      * Comparison operator used to evaluate the filter condition.
      *
-     * @x-autobe-database-schema-property operator
-     * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_report_definition_filters.operator. Used together with fieldKey and value(s) to evaluate the condition.
+         * @x-autobe-database-schema-property operator
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_tracking_report_definition_filters.operator. Used
+         *   together with fieldKey and value(s) to evaluate the condition.
      */
     operator: string;
 
     /**
      * Primary stored value for this filter rule, serialized as text.
      *
-     * @x-autobe-database-schema-property value_text
-     * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_report_definition_filters.value_text. Stored as text; interpretation depends on fieldKey and operator.
+         * @x-autobe-database-schema-property value_text
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_tracking_report_definition_filters.value_text. Stored
+         *   as text; interpretation depends on fieldKey and operator.
      */
     valueText: string;
 
     /**
      * Optional secondary stored value for range/dual-value operators; null when not applicable.
      *
-     * @x-autobe-database-schema-property value_text_2
-     * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_report_definition_filters.value_text_2 (nullable). Return null when the DB column is null.
+         * @x-autobe-database-schema-property value_text_2
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_tracking_report_definition_filters.value_text_2
+         *   (nullable). Return null when the DB column is null.
      */
     valueText2: string | null;
 
     /**
      * Whether this filter rule is enabled and should participate in later report generation filtering.
      *
-     * @x-autobe-database-schema-property is_enabled
-     * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_report_definition_filters.is_enabled.
+         * @x-autobe-database-schema-property is_enabled
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_tracking_report_definition_filters.is_enabled.
      */
     isEnabled: boolean;
 
     /**
      * Deterministic order index for sorting filters in the UI and/or during evaluation.
      *
-     * @x-autobe-database-schema-property display_order
-     * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_report_definition_filters.display_order (integer). Used for stable presentation ordering.
+         * @x-autobe-database-schema-property display_order
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_tracking_report_definition_filters.display_order
+         *   (integer). Used for stable presentation ordering.
      */
     displayOrder: number & tags.Type<"int32">;
 
     /**
      * Timestamp when this filter rule was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_report_definition_filters.created_at (date-time).
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_tracking_report_definition_filters.created_at
+         *   (date-time).
      */
     createdAt: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when this filter rule was last updated.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_report_definition_filters.updated_at (date-time).
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_tracking_report_definition_filters.updated_at
+         *   (date-time).
      */
     updatedAt: string & tags.Format<"date-time">;
 
     /**
      * Soft-deletion timestamp. Null means the filter rule is active.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_report_definition_filters.deleted_at (nullable date-time). Null means the row is active/not deleted.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_tracking_report_definition_filters.deleted_at
+         *   (nullable date-time). Null means the row is active/not deleted.
      */
     deletedAt: (string & tags.Format<"date-time">) | null;
   };
@@ -194,48 +243,68 @@ export namespace IErpHrmTimeTrackingReportDefinitionFilter {
     /**
      * Machine-readable key of the report attribute this filter applies to (e.g., employee, project, or date-range-related attribute).
      *
-     * @x-autobe-database-schema-property field_key
-     * @x-autobe-specification Directly persist into erp_hrm_time_tracking_report_definition_filters.field_key. Must be validated against allowed filter keys for the chosen report definition (service-side validation).
+         * @x-autobe-database-schema-property field_key
+         * @x-autobe-specification Directly persist into
+         *   erp_hrm_time_tracking_report_definition_filters.field_key. Must be
+         *   validated against allowed filter keys for the chosen report
+         *   definition (service-side validation).
      */
     field_key: string;
 
     /**
      * Comparison operator used to evaluate the filter (exact supported values depend on report definition configuration).
      *
-     * @x-autobe-database-schema-property operator
-     * @x-autobe-specification Directly persist into erp_hrm_time_tracking_report_definition_filters.operator. Must be validated as a supported operator for the selected field_key by the report generation/configuration engine.
+         * @x-autobe-database-schema-property operator
+         * @x-autobe-specification Directly persist into
+         *   erp_hrm_time_tracking_report_definition_filters.operator. Must be
+         *   validated as a supported operator for the selected field_key by the
+         *   report generation/configuration engine.
      */
     operator: string;
 
     /**
      * Primary filter value serialized as text. The meaning depends on field_key and operator.
      *
-     * @x-autobe-database-schema-property value_text
-     * @x-autobe-specification Directly persist into erp_hrm_time_tracking_report_definition_filters.value_text. Interpretation depends on field_key and operator; must be validated for meaningfulness by the service.
+         * @x-autobe-database-schema-property value_text
+         * @x-autobe-specification Directly persist into
+         *   erp_hrm_time_tracking_report_definition_filters.value_text.
+         *   Interpretation depends on field_key and operator; must be validated
+         *   for meaningfulness by the service.
      */
     value_text: string;
 
     /**
      * Optional secondary filter value serialized as text (used by range-style operators). Provide null when not applicable.
      *
-     * @x-autobe-database-schema-property value_text_2
-     * @x-autobe-specification Persist into erp_hrm_time_tracking_report_definition_filters.value_text_2. Store null when the client provides null. Required only for operator types that require a second value (service-side validation).
+         * @x-autobe-database-schema-property value_text_2
+         * @x-autobe-specification Persist into
+         *   erp_hrm_time_tracking_report_definition_filters.value_text_2. Store
+         *   null when the client provides null. Required only for operator
+         *   types that require a second value (service-side validation).
      */
     value_text_2: string | null;
 
     /**
      * Whether this filter rule is currently enabled and should be applied during report generation.
      *
-     * @x-autobe-database-schema-property is_enabled
-     * @x-autobe-specification Directly persist into erp_hrm_time_tracking_report_definition_filters.is_enabled to control whether this filter rule is active for report generations.
+         * @x-autobe-database-schema-property is_enabled
+         * @x-autobe-specification Directly persist into
+         *   erp_hrm_time_tracking_report_definition_filters.is_enabled to
+         *   control whether this filter rule is active for report generations.
      */
     is_enabled: boolean;
 
     /**
      * Ordering index for this filter rule among other configured filters of the same report definition (lower values appear/evaluate earlier).
      *
-     * @x-autobe-database-schema-property display_order
-     * @x-autobe-specification Persist into erp_hrm_time_tracking_report_definition_filters.display_order. If the client provides a value, validate it for consistency with existing filter ordering for the same report definition. If the API implementation supports auto-assignment when missing, it will set it to the next available integer greater than current max for that report definition.
+         * @x-autobe-database-schema-property display_order
+         * @x-autobe-specification Persist into
+         *   erp_hrm_time_tracking_report_definition_filters.display_order. If
+         *   the client provides a value, validate it for consistency with
+         *   existing filter ordering for the same report definition. If the API
+         *   implementation supports auto-assignment when missing, it will set
+         *   it to the next available integer greater than current max for that
+         *   report definition.
      */
     display_order: number & tags.Type<"int32">;
   };
@@ -247,40 +316,63 @@ export namespace IErpHrmTimeTrackingReportDefinitionFilter {
     /**
      * Logical key of the report attribute that this filter applies to (e.g., employee, project, task, or date-range attribute).
      *
-     * @x-autobe-database-schema-property field_key
-     * @x-autobe-specification Direct mapping to erp_hrm_time_tracking_report_definition_filters.field_key. When omitted, keep the existing stored field_key. Validate that the field_key is supported/meaningful for the parent report definition’s report_type and its configured filter dimensions.
+         * @x-autobe-database-schema-property field_key
+         * @x-autobe-specification Direct mapping to
+         *   erp_hrm_time_tracking_report_definition_filters.field_key. When
+         *   omitted, keep the existing stored field_key. Validate that the
+         *   field_key is supported/meaningful for the parent report
+         *   definition’s report_type and its configured filter dimensions.
      */
     field_key?: string | undefined;
 
     /**
      * Comparison operator that defines how value_text (and optionally value_text_2) is evaluated for this filter.
      *
-     * @x-autobe-database-schema-property operator
-     * @x-autobe-specification Direct mapping to erp_hrm_time_tracking_report_definition_filters.operator. When omitted, keep existing operator. Validate operator compatibility with the selected field_key and the report definition type/dimensions; also validate the required value shape (including whether value_text_2 is needed).
+         * @x-autobe-database-schema-property operator
+         * @x-autobe-specification Direct mapping to
+         *   erp_hrm_time_tracking_report_definition_filters.operator. When
+         *   omitted, keep existing operator. Validate operator compatibility
+         *   with the selected field_key and the report definition
+         *   type/dimensions; also validate the required value shape (including
+         *   whether value_text_2 is needed).
      */
     operator?: string | undefined;
 
     /**
      * Primary comparison value for the filter, stored as text. Interpretation depends on field_key and operator.
      *
-     * @x-autobe-database-schema-property value_text
-     * @x-autobe-specification Direct mapping to erp_hrm_time_tracking_report_definition_filters.value_text. When omitted, keep existing value_text. Validate that value_text is meaningful for the selected (field_key, operator) combination per the shared validation logic used by report generation.
+         * @x-autobe-database-schema-property value_text
+         * @x-autobe-specification Direct mapping to
+         *   erp_hrm_time_tracking_report_definition_filters.value_text. When
+         *   omitted, keep existing value_text. Validate that value_text is
+         *   meaningful for the selected (field_key, operator) combination per
+         *   the shared validation logic used by report generation.
      */
     value_text?: string | undefined;
 
     /**
      * Optional secondary value for range-style operators. Send null to clear the secondary value; omit to keep unchanged.
      *
-     * @x-autobe-database-schema-property value_text_2
-     * @x-autobe-specification Direct mapping to erp_hrm_time_tracking_report_definition_filters.value_text_2. Accepts null to clear the secondary value. When omitted, keep existing value_text_2. Validate that value_text_2 is present (non-null) when the selected operator requires a secondary value (e.g., between/range), and that it is consistent with operator semantics when provided.
+         * @x-autobe-database-schema-property value_text_2
+         * @x-autobe-specification Direct mapping to
+         *   erp_hrm_time_tracking_report_definition_filters.value_text_2.
+         *   Accepts null to clear the secondary value. When omitted, keep
+         *   existing value_text_2. Validate that value_text_2 is present
+         *   (non-null) when the selected operator requires a secondary value
+         *   (e.g., between/range), and that it is consistent with operator
+         *   semantics when provided.
      */
     value_text_2?: string | null | undefined;
 
     /**
      * Whether this filter rule is enabled and should be applied during future report generation.
      *
-     * @x-autobe-database-schema-property is_enabled
-     * @x-autobe-specification Direct mapping to erp_hrm_time_tracking_report_definition_filters.is_enabled. When omitted, keep existing is_enabled. Persist the provided boolean. If set to false, the filter should remain stored but be treated as ignored by future report generation runs.
+         * @x-autobe-database-schema-property is_enabled
+         * @x-autobe-specification Direct mapping to
+         *   erp_hrm_time_tracking_report_definition_filters.is_enabled. When
+         *   omitted, keep existing is_enabled. Persist the provided boolean. If
+         *   set to false, the filter should remain stored but be treated as
+         *   ignored by future report generation runs.
      */
     is_enabled?: boolean | undefined;
   };
@@ -292,21 +384,30 @@ export namespace IErpHrmTimeTrackingReportDefinitionFilter {
     /**
      * Ordered list of filter rule items that define how the report will filter time-tracking data.
      *
-     * @x-autobe-specification filters is the authoritative desired ordered set of filter rule items to persist for the target report definition. Each item carries field_key/operator/value_text/value_text_2/is_enabled and determines display_order via incoming order and/or explicit displayOrder semantics defined by the item DTO.
+         * @x-autobe-specification filters is the authoritative desired ordered
+         *   set of filter rule items to persist for the target report
+         *   definition. Each item carries
+         *   field_key/operator/value_text/value_text_2/is_enabled and
+         *   determines display_order via incoming order and/or explicit
+         *   displayOrder semantics defined by the item DTO.
      */
     filters: IErpHrmTimeTrackingReportDefinitionFilter.IRequestFilterItem[];
 
     /**
      * Optional page number for any list-style representation; not used for filter configuration persistence.
      *
-     * @x-autobe-specification Optional request pagination metadata for shared DTO compatibility. Server must ignore it for filter-row persistence.
+         * @x-autobe-specification Optional request pagination metadata for
+         *   shared DTO compatibility. Server must ignore it for filter-row
+         *   persistence.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
 
     /**
      * Optional page size for any list-style representation; not used for filter configuration persistence.
      *
-     * @x-autobe-specification Optional request pagination metadata for shared DTO compatibility. Server must ignore it for filter-row persistence.
+         * @x-autobe-specification Optional request pagination metadata for
+         *   shared DTO compatibility. Server must ignore it for filter-row
+         *   persistence.
      */
     limit?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };
@@ -318,40 +419,52 @@ export namespace IErpHrmTimeTrackingReportDefinitionFilter {
     /**
      * Logical key of the report attribute/field this filter applies to (the report engine’s field_key).
      *
-     * @x-autobe-specification Direct mapping from the client-provided fieldKey to erp_hrm_time_tracking_report_definition_filters.field_key. Treat as the logical attribute key understood by the report engine (e.g., employee, project, task, date range, etc.).
-     * @x-autobe-database-schema-property field_key
+         * @x-autobe-specification Direct mapping from the client-provided
+         *   fieldKey to
+         *   erp_hrm_time_tracking_report_definition_filters.field_key. Treat as
+         *   the logical attribute key understood by the report engine (e.g.,
+         *   employee, project, task, date range, etc.).
+         * @x-autobe-database-schema-property field_key
      */
     fieldKey: null;
 
     /**
      * Comparison operator to apply for this filter rule (e.g., equals, not_equals, in_list, contains, between).
      *
-     * @x-autobe-specification Direct mapping from DTO operator to erp_hrm_time_tracking_report_definition_filters.operator. Business logic interprets allowed operator values and their semantics.
-     * @x-autobe-database-schema-property operator
+         * @x-autobe-specification Direct mapping from DTO operator to
+         *   erp_hrm_time_tracking_report_definition_filters.operator. Business
+         *   logic interprets allowed operator values and their semantics.
+         * @x-autobe-database-schema-property operator
      */
     operator: null;
 
     /**
      * Primary filter value (serialized as text) used by this operator.
      *
-     * @x-autobe-specification Direct mapping from DTO valueText to erp_hrm_time_tracking_report_definition_filters.value_text as the primary value serialized to text.
-     * @x-autobe-database-schema-property value_text
+         * @x-autobe-specification Direct mapping from DTO valueText to
+         *   erp_hrm_time_tracking_report_definition_filters.value_text as the
+         *   primary value serialized to text.
+         * @x-autobe-database-schema-property value_text
      */
     valueText: null;
 
     /**
      * Optional secondary filter value for dual/range operators. Use null when not applicable.
      *
-     * @x-autobe-specification Nullable secondary filter value mapped to value_text_2; set to null when not applicable for the chosen operator.
-     * @x-autobe-database-schema-property value_text_2
+         * @x-autobe-specification Nullable secondary filter value mapped to
+         *   value_text_2; set to null when not applicable for the chosen
+         *   operator.
+         * @x-autobe-database-schema-property value_text_2
      */
     valueText2: null;
 
     /**
      * Whether this filter rule is enabled and should be considered during report generation.
      *
-     * @x-autobe-specification Direct mapping from DTO isEnabled to erp_hrm_time_tracking_report_definition_filters.is_enabled. When false, the rule is preserved but not applied by the report engine.
-     * @x-autobe-database-schema-property is_enabled
+         * @x-autobe-specification Direct mapping from DTO isEnabled to
+         *   erp_hrm_time_tracking_report_definition_filters.is_enabled. When
+         *   false, the rule is preserved but not applied by the report engine.
+         * @x-autobe-database-schema-property is_enabled
      */
     isEnabled: null;
   };

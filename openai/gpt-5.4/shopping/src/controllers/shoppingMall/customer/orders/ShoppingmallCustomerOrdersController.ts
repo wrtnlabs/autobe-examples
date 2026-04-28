@@ -26,9 +26,10 @@ export class ShoppingmallCustomerOrdersController {
    *
    * @param connection
    * @param body Order search criteria and pagination options
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Implement a paginated order-history query over shopping_mall_orders.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Implement a paginated order-history query over
+     *   shopping_mall_orders.
    *
    * Authenticate the caller and determine the visibility scope before querying. For a customer caller, constrain the base query to shopping_mall_orders.shopping_mall_customer_id equal to the authenticated customer's id and exclude records whose deleted_at is not null unless the platform's shared read policy explicitly requires otherwise. For an administrator caller, the same query structure may be executed without the customer ownership restriction to support platform-wide oversight. Do not allow an ordinary customer to broaden scope beyond their own orders.
    *
@@ -72,9 +73,11 @@ export class ShoppingmallCustomerOrdersController {
    *
    * @param connection
    * @param orderId Target order's unique identifier
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Implement a read-only service that loads a single row from `shopping_mall_orders` by its primary identifier and returns a fully assembled order detail DTO.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Implement a read-only service that loads a single
+     *   row from `shopping_mall_orders` by its primary identifier and returns a
+     *   fully assembled order detail DTO.
    *
    * Authorize the caller before returning data. If the authenticated actor is a customer, constrain the lookup so the order must belong to that customer account. If the authenticated actor is an administrator or super administrator, allow unrestricted lookup for oversight. Do not allow unrelated customers. Do not expose this endpoint as a general seller detail endpoint because seller visibility is item- and shipment-scoped and should be handled by separate seller-facing operations.
    *

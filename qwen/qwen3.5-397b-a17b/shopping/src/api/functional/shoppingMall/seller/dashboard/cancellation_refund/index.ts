@@ -15,7 +15,9 @@ import { IShoppingMallDashboard } from "../../../../../structures/IShoppingMallD
  * @param props.connection
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Query shopping_mall_cancellation_requests table filtering by seller's order items and status = 'pending'. Count the total number of pending cancellation requests.
+ * @x-autobe-specification Query shopping_mall_cancellation_requests table
+ *   filtering by seller's order items and status = 'pending'. Count the total
+ *   number of pending cancellation requests.
  *
  * Query shopping_mall_refund_requests table filtering by seller's order items and status = 'pending'. Count the total number of pending refund requests.
  *

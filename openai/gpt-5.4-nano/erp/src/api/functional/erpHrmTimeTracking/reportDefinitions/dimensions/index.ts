@@ -37,7 +37,9 @@ import { IErpHrmTimeTrackingReportDefinitionDimension } from "../../../../struct
  * @param props.body Dimension configuration values to add under the specified report definition. The parent reportDefinitionId is provided by the path.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Implement POST /reportDefinitions/{reportDefinitionId}/dimensions as creation of one erp_hrm_time_tracking_report_definition_dimensions record.
+ * @x-autobe-specification Implement POST
+ *   /reportDefinitions/{reportDefinitionId}/dimensions as creation of one
+ *   erp_hrm_time_tracking_report_definition_dimensions record.
  *
  * 1) Parse path parameter reportDefinitionId.
  * 2) Resolve current organization context from the authenticated member/session. Block if no organization context exists (per report error scenario requirement).
@@ -173,22 +175,29 @@ export namespace createReportDefinitionDimension {
  * @param props.body Set of dimension configurations to apply to the report definition. The system will upsert provided dimensions and remove dimensions not included by marking them as removed via deleted_at.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Implementation steps:
- * 1) Parse `{reportDefinitionId}` from path as UUID.
- * 2) Load `erp_hrm_time_tracking_report_definitions` by id and join/check that it belongs to the caller’s active organization context.
- *    - If organization context is missing, block with a business validation error.
- *    - If the caller lacks permission, block with authorization error.
- * 3) Validate request payload:
- *    - Ensure request dimension changes contain no duplicate `dimension_key` within the same request batch.
- * 4) Perform database transaction:
- *    - Fetch existing `erp_hrm_time_tracking_report_definition_dimensions` for the report definition where `deleted_at` is null.
- *    - For each requested dimension:
- *      a) If it matches an existing active row by `dimension_key`, update `dimension_label` and `sort_order`.
- *      b) If it does not exist, create a new row with `dimension_key`, `dimension_label`, and `sort_order`.
- *    - For any existing active row whose `dimension_key` is not present in the request, mark it as removed by setting `deleted_at` to current timestamp.
- *    - For soft-deleted rows (deleted_at not null), do not resurrect unless the request includes that `dimension_key`; if included, treat as upsert by creating a new active row or clearing deleted_at per implementation preference—prefer updating by reusing the existing row when possible.
- *    - Enforce/let DB enforce uniqueness of `(report_definition_id, dimension_key)`; if the DB rejects due to duplicates, convert to a business validation error.
- * 5) After commit, query the active dimensions (`deleted_at is null`) ordered by `sort_order` and return them as summaries.
+ * @x-autobe-specification Implementation steps: 1) Parse `{reportDefinitionId}`
+ *   from path as UUID. 2) Load `erp_hrm_time_tracking_report_definitions` by id
+ *   and join/check that it belongs to the caller’s active organization context.
+ *   - If organization context is missing, block with a business validation
+ *   error. - If the caller lacks permission, block with authorization error. 3)
+ *   Validate request payload: - Ensure request dimension changes contain no
+ *   duplicate `dimension_key` within the same request batch. 4) Perform
+ *   database transaction: - Fetch existing
+ *   `erp_hrm_time_tracking_report_definition_dimensions` for the report
+ *   definition where `deleted_at` is null. - For each requested dimension: a)
+ *   If it matches an existing active row by `dimension_key`, update
+ *   `dimension_label` and `sort_order`. b) If it does not exist, create a new
+ *   row with `dimension_key`, `dimension_label`, and `sort_order`. - For any
+ *   existing active row whose `dimension_key` is not present in the request,
+ *   mark it as removed by setting `deleted_at` to current timestamp. - For
+ *   soft-deleted rows (deleted_at not null), do not resurrect unless the
+ *   request includes that `dimension_key`; if included, treat as upsert by
+ *   creating a new active row or clearing deleted_at per implementation
+ *   preference—prefer updating by reusing the existing row when possible. -
+ *   Enforce/let DB enforce uniqueness of `(report_definition_id,
+ *   dimension_key)`; if the DB rejects due to duplicates, convert to a business
+ *   validation error. 5) After commit, query the active dimensions (`deleted_at
+ *   is null`) ordered by `sort_order` and return them as summaries.
  *
  * Edge cases:
  * - Empty request should remove all existing active dimensions for the report definition (set deleted_at for each existing row).
@@ -442,7 +451,8 @@ export namespace at {
  * @param props.body Updated configuration values for the report definition grouping dimension.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Implement PUT update for a single `erp_hrm_time_tracking_report_definition_dimensions` row.
+ * @x-autobe-specification Implement PUT update for a single
+ *   `erp_hrm_time_tracking_report_definition_dimensions` row.
  *
  * 1) Authentication/authorization and organization context
  * - Resolve the current organization context from the authenticated member session.
@@ -578,15 +588,21 @@ export namespace updateReportDefinitionDimension {
  * @param props.dimensionId Target report definition dimension identifier to remove. Must belong to the given report definition.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Realize Agent implementation steps:
- * 1) Parse `reportDefinitionId` and `dimensionId` from path.
- * 2) Resolve the calling member’s selected organization context.
- * 3) Load `erp_hrm_time_tracking_report_definitions` by `id = reportDefinitionId` AND `erp_hrm_time_tracking_organization_id = currentOrgId` AND ensure it is not deleted if the service treats `deleted_at` as removal.
- * 4) Load `erp_hrm_time_tracking_report_definition_dimensions` by `id = dimensionId` AND `erp_hrm_time_tracking_report_definition_id = reportDefinition.id`.
- *    - If not found, throw NotFound/BadRequest consistent with the platform error model.
- * 5) Authorization check: verify the caller has permission to manage report definitions/dimensions within the selected organization (per domain permission matrix). Deny with Forbidden when lacking capability.
- * 6) Remove the dimension by setting `deleted_at = now()` (timezone-aware) rather than removing the row, matching the presence of `deleted_at` in schema.
- * 7) Return 200/204 with no response body (operation responseBody is null).
+ * @x-autobe-specification Realize Agent implementation steps: 1) Parse
+ *   `reportDefinitionId` and `dimensionId` from path. 2) Resolve the calling
+ *   member’s selected organization context. 3) Load
+ *   `erp_hrm_time_tracking_report_definitions` by `id = reportDefinitionId` AND
+ *   `erp_hrm_time_tracking_organization_id = currentOrgId` AND ensure it is not
+ *   deleted if the service treats `deleted_at` as removal. 4) Load
+ *   `erp_hrm_time_tracking_report_definition_dimensions` by `id = dimensionId`
+ *   AND `erp_hrm_time_tracking_report_definition_id = reportDefinition.id`. -
+ *   If not found, throw NotFound/BadRequest consistent with the platform error
+ *   model. 5) Authorization check: verify the caller has permission to manage
+ *   report definitions/dimensions within the selected organization (per domain
+ *   permission matrix). Deny with Forbidden when lacking capability. 6) Remove
+ *   the dimension by setting `deleted_at = now()` (timezone-aware) rather than
+ *   removing the row, matching the presence of `deleted_at` in schema. 7)
+ *   Return 200/204 with no response body (operation responseBody is null).
  *
  * Edge cases:
  * - If the dimension is already marked deleted (`deleted_at` not null), treat the operation as idempotent: either no-op or return a validation error; prefer idempotent no-op to simplify client behavior.

@@ -31,8 +31,10 @@ export type IEcommerceSellerSnapshot = {
    *
    * This field serves as the primary key for the snapshot, uniquely identifying each historical record of a seller's profile state.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_seller_snapshots.id. Unique identifier for each snapshot record.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_seller_snapshots.id. Unique identifier for each snapshot
+     *   record.
    */
   id: string & tags.Format<"uuid">;
 
@@ -41,8 +43,10 @@ export type IEcommerceSellerSnapshot = {
    *
    * This field captures the exact shop name value from the seller profile when the snapshot was taken. It is denormalized to ensure the snapshot remains valid even if the original seller record is later modified or deleted.
    *
-   * @x-autobe-database-schema-property shop_name
-   * @x-autobe-specification Direct mapping from ecommerce_seller_snapshots.shop_name. Denormalized from seller profile at snapshot time.
+     * @x-autobe-database-schema-property shop_name
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_seller_snapshots.shop_name. Denormalized from seller profile
+     *   at snapshot time.
    */
   shop_name: string;
 
@@ -51,8 +55,10 @@ export type IEcommerceSellerSnapshot = {
    *
    * This field captures the exact shop description value from the seller profile when the snapshot was taken. It is denormalized to ensure the snapshot remains valid even if the original seller record is later modified or deleted. This field may be null if the seller did not provide a description at the time of the snapshot.
    *
-   * @x-autobe-database-schema-property shop_description
-   * @x-autobe-specification Direct mapping from ecommerce_seller_snapshots.shop_description. Nullable denormalized field from seller profile at snapshot time.
+     * @x-autobe-database-schema-property shop_description
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_seller_snapshots.shop_description. Nullable denormalized
+     *   field from seller profile at snapshot time.
    */
   shop_description: string | null;
 
@@ -61,8 +67,10 @@ export type IEcommerceSellerSnapshot = {
    *
    * This field captures the exact logo URL from the seller profile when the snapshot was taken. It is denormalized to ensure the snapshot remains valid even if the original seller record is later modified or deleted. This field may be null if the seller did not provide a logo at the time of the snapshot.
    *
-   * @x-autobe-specification Direct mapping from ecommerce_seller_snapshots.logo_url. Nullable denormalized field from seller profile at snapshot time.
-   * @x-autobe-database-schema-property logo_url
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_seller_snapshots.logo_url. Nullable denormalized field from
+     *   seller profile at snapshot time.
+     * @x-autobe-database-schema-property logo_url
    */
   logo_url: (string & tags.Format<"uri">) | null;
 
@@ -71,8 +79,10 @@ export type IEcommerceSellerSnapshot = {
    *
    * This relation provides access to the seller's summary information, including their identity, account status, and current shop profile. The relation is established through the ecommerce_seller_id foreign key. Note that the snapshot contains denormalized shop data (shop_name, shop_description, logo_url) that reflects the state at the time of the snapshot, not the current state of the seller's profile.
    *
-   * @x-autobe-database-schema-property seller
-   * @x-autobe-specification Join via ecommerce_seller_id to ecommerce_sellers.id. Returns IEcommerceSeller.ISummary with shop profile data inlined.
+     * @x-autobe-database-schema-property seller
+     * @x-autobe-specification Join via ecommerce_seller_id to
+     *   ecommerce_sellers.id. Returns IEcommerceSeller.ISummary with shop
+     *   profile data inlined.
    */
   seller: IEcommerceSeller.ISummary;
 
@@ -81,8 +91,10 @@ export type IEcommerceSellerSnapshot = {
    *
    * This field marks the exact moment the seller profile was modified and this snapshot was generated. It is used to order snapshots chronologically for audit trail reconstruction and to determine the point-in-time state captured by this snapshot.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_seller_snapshots.created_at. Timestamp when snapshot was generated.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_seller_snapshots.created_at. Timestamp when snapshot was
+     *   generated.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -91,8 +103,10 @@ export type IEcommerceSellerSnapshot = {
    *
    * For snapshot tables, this field is typically the same as created_at since snapshots are immutable and cannot be modified after creation. This field exists for consistency with other entity tables in the system.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from ecommerce_seller_snapshots.updated_at. For snapshots, typically equals created_at.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_seller_snapshots.updated_at. For snapshots, typically equals
+     *   created_at.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -101,8 +115,10 @@ export type IEcommerceSellerSnapshot = {
    *
    * For snapshot tables, this field is always null as snapshots are immutable and cannot be deleted. Snapshots are preserved indefinitely for audit and dispute resolution purposes. The presence of this field is for schema consistency with other entity tables in the system.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from ecommerce_seller_snapshots.deleted_at. Always null for snapshots as they are immutable.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_seller_snapshots.deleted_at. Always null for snapshots as
+     *   they are immutable.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -148,7 +164,14 @@ export namespace IEcommerceSellerSnapshot {
      *
      * When specified, only snapshots of the selected type are returned. When omitted, snapshots from all types are included in the result set.
      *
-     * @x-autobe-specification Enum filter determining target snapshot table. Values: 'product' → ecommerce_product_snapshots, 'orderItem' → ecommerce_order_item_snapshots, 'review' → ecommerce_review_snapshots, 'cancellationRequest' → ecommerce_cancellation_request_snapshots, 'refundRequest' → ecommerce_refund_request_snapshots, 'seller' → ecommerce_seller_snapshots. Optional - if not specified, queries all snapshot types.
+         * @x-autobe-specification Enum filter determining target snapshot
+         *   table. Values: 'product' → ecommerce_product_snapshots, 'orderItem'
+         *   → ecommerce_order_item_snapshots, 'review' →
+         *   ecommerce_review_snapshots, 'cancellationRequest' →
+         *   ecommerce_cancellation_request_snapshots, 'refundRequest' →
+         *   ecommerce_refund_request_snapshots, 'seller' →
+         *   ecommerce_seller_snapshots. Optional - if not specified, queries
+         *   all snapshot types.
      */
     snapshotType?:
       | "product"
@@ -172,7 +195,9 @@ export namespace IEcommerceSellerSnapshot {
      *
      * Combined with `toDate`, defines a time range for snapshot filtering. If only `fromDate` is specified, returns all snapshots from that point forward. If neither `fromDate` nor `toDate` is specified, no date filtering is applied.
      *
-     * @x-autobe-specification ISO 8601 date-time string. Filters snapshots where created_at >= fromDate. Used for temporal range queries on snapshot creation timestamps.
+         * @x-autobe-specification ISO 8601 date-time string. Filters snapshots
+         *   where created_at >= fromDate. Used for temporal range queries on
+         *   snapshot creation timestamps.
      */
     fromDate?: (string & tags.Format<"date-time">) | undefined;
 
@@ -189,7 +214,9 @@ export namespace IEcommerceSellerSnapshot {
      *
      * Combined with `fromDate`, defines a time range for snapshot filtering. If only `toDate` is specified, returns all snapshots up to that point. If neither `fromDate` nor `toDate` is specified, no date filtering is applied.
      *
-     * @x-autobe-specification ISO 8601 date-time string. Filters snapshots where created_at <= toDate. Used for temporal range queries on snapshot creation timestamps.
+         * @x-autobe-specification ISO 8601 date-time string. Filters snapshots
+         *   where created_at <= toDate. Used for temporal range queries on
+         *   snapshot creation timestamps.
      */
     toDate?: (string & tags.Format<"date-time">) | undefined;
 
@@ -206,7 +233,9 @@ export namespace IEcommerceSellerSnapshot {
      *
      * Only applicable when `snapshotType` is `product`. If `snapshotType` is unspecified or set to a different type, this parameter is ignored.
      *
-     * @x-autobe-specification UUID string. When snapshotType is 'product', filters ecommerce_product_snapshots where the related product matches this ID. Optional entity reference filter.
+         * @x-autobe-specification UUID string. When snapshotType is 'product',
+         *   filters ecommerce_product_snapshots where the related product
+         *   matches this ID. Optional entity reference filter.
      */
     productId?: (string & tags.Format<"uuid">) | undefined;
 
@@ -223,7 +252,10 @@ export namespace IEcommerceSellerSnapshot {
      *
      * Only applicable when `snapshotType` is `orderItem`. If `snapshotType` is unspecified or set to a different type, this parameter is ignored.
      *
-     * @x-autobe-specification UUID string. When snapshotType is 'orderItem', filters ecommerce_order_item_snapshots where the related order item matches this ID. Optional entity reference filter.
+         * @x-autobe-specification UUID string. When snapshotType is
+         *   'orderItem', filters ecommerce_order_item_snapshots where the
+         *   related order item matches this ID. Optional entity reference
+         *   filter.
      */
     orderItemId?: (string & tags.Format<"uuid">) | undefined;
 
@@ -240,7 +272,9 @@ export namespace IEcommerceSellerSnapshot {
      *
      * Only applicable when `snapshotType` is `review`. If `snapshotType` is unspecified or set to a different type, this parameter is ignored.
      *
-     * @x-autobe-specification UUID string. When snapshotType is 'review', filters ecommerce_review_snapshots where the related review matches this ID. Optional entity reference filter.
+         * @x-autobe-specification UUID string. When snapshotType is 'review',
+         *   filters ecommerce_review_snapshots where the related review matches
+         *   this ID. Optional entity reference filter.
      */
     reviewId?: (string & tags.Format<"uuid">) | undefined;
 
@@ -257,7 +291,11 @@ export namespace IEcommerceSellerSnapshot {
      *
      * Only applicable when `snapshotType` is `cancellationRequest`. If `snapshotType` is unspecified or set to a different type, this parameter is ignored.
      *
-     * @x-autobe-specification UUID string. When snapshotType is 'cancellationRequest', filters ecommerce_cancellation_request_snapshots where the related cancellation request matches this ID. Optional entity reference filter.
+         * @x-autobe-specification UUID string. When snapshotType is
+         *   'cancellationRequest', filters
+         *   ecommerce_cancellation_request_snapshots where the related
+         *   cancellation request matches this ID. Optional entity reference
+         *   filter.
      */
     cancellationRequestId?: (string & tags.Format<"uuid">) | undefined;
 
@@ -274,7 +312,10 @@ export namespace IEcommerceSellerSnapshot {
      *
      * Only applicable when `snapshotType` is `refundRequest`. If `snapshotType` is unspecified or set to a different type, this parameter is ignored.
      *
-     * @x-autobe-specification UUID string. When snapshotType is 'refundRequest', filters ecommerce_refund_request_snapshots where the related refund request matches this ID. Optional entity reference filter.
+         * @x-autobe-specification UUID string. When snapshotType is
+         *   'refundRequest', filters ecommerce_refund_request_snapshots where
+         *   the related refund request matches this ID. Optional entity
+         *   reference filter.
      */
     refundRequestId?: (string & tags.Format<"uuid">) | undefined;
 
@@ -291,7 +332,9 @@ export namespace IEcommerceSellerSnapshot {
      *
      * Only applicable when `snapshotType` is `seller`. If `snapshotType` is unspecified or set to a different type, this parameter is ignored.
      *
-     * @x-autobe-specification UUID string. When snapshotType is 'seller', filters ecommerce_seller_snapshots where the related seller matches this ID. Optional entity reference filter.
+         * @x-autobe-specification UUID string. When snapshotType is 'seller',
+         *   filters ecommerce_seller_snapshots where the related seller matches
+         *   this ID. Optional entity reference filter.
      */
     sellerId?: (string & tags.Format<"uuid">) | undefined;
 
@@ -308,7 +351,10 @@ export namespace IEcommerceSellerSnapshot {
      *
      * Only applicable when `snapshotType` is `cancellationRequest` or `refundRequest`. For other snapshot types, this parameter is ignored.
      *
-     * @x-autobe-specification String value representing status before transition. When snapshotType is 'cancellationRequest' or 'refundRequest', filters snapshots where status_before matches this value. Used for tracking status change history.
+         * @x-autobe-specification String value representing status before
+         *   transition. When snapshotType is 'cancellationRequest' or
+         *   'refundRequest', filters snapshots where status_before matches this
+         *   value. Used for tracking status change history.
      */
     statusBefore?: string | undefined;
 
@@ -325,7 +371,10 @@ export namespace IEcommerceSellerSnapshot {
      *
      * Only applicable when `snapshotType` is `cancellationRequest` or `refundRequest`. For other snapshot types, this parameter is ignored.
      *
-     * @x-autobe-specification String value representing status after transition. When snapshotType is 'cancellationRequest' or 'refundRequest', filters snapshots where status_after matches this value. Used for tracking status change history.
+         * @x-autobe-specification String value representing status after
+         *   transition. When snapshotType is 'cancellationRequest' or
+         *   'refundRequest', filters snapshots where status_after matches this
+         *   value. Used for tracking status change history.
      */
     statusAfter?: string | undefined;
 
@@ -342,7 +391,9 @@ export namespace IEcommerceSellerSnapshot {
      *
      * Combined with `limit`, determines the offset for result retrieval. If not specified, defaults to page 1.
      *
-     * @x-autobe-specification Integer >= 1. Controls which page of results to return. Used with limit for cursor-based pagination. Defaults to 1 if not specified.
+         * @x-autobe-specification Integer >= 1. Controls which page of results
+         *   to return. Used with limit for cursor-based pagination. Defaults to
+         *   1 if not specified.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -359,7 +410,9 @@ export namespace IEcommerceSellerSnapshot {
      *
      * Combined with `page`, determines result pagination. The actual number of records returned may be less than this value on the final page or when fewer total records exist. If not specified, defaults to a server-defined reasonable value.
      *
-     * @x-autobe-specification Integer 1-100. Controls maximum number of records returned per page. Used with page for cursor-based pagination. Defaults to a reasonable value if not specified.
+         * @x-autobe-specification Integer 1-100. Controls maximum number of
+         *   records returned per page. Used with page for cursor-based
+         *   pagination. Defaults to a reasonable value if not specified.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)

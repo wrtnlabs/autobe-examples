@@ -10,80 +10,104 @@ export type ICommunityPlatformMemberEmailVerification = {
   /**
    * Unique identifier of this email verification record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from `community_platform_member_email_verifications.id`. Return the verification record UUID primary key as stored.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   `community_platform_member_email_verifications.id`. Return the
+     *   verification record UUID primary key as stored.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Member account that owns this email verification record.
    *
-   * @x-autobe-database-schema-property member
-   * @x-autobe-specification Map from the `member` belongs-to relation on `community_platform_member_email_verifications`. Resolve it by joining `community_platform_members` on `community_platform_member_id` and serialize the related row as `ICommunityPlatformMember.ISummary`.
+     * @x-autobe-database-schema-property member
+     * @x-autobe-specification Map from the `member` belongs-to relation on
+     *   `community_platform_member_email_verifications`. Resolve it by joining
+     *   `community_platform_members` on `community_platform_member_id` and
+     *   serialize the related row as `ICommunityPlatformMember.ISummary`.
    */
   member: ICommunityPlatformMember.ISummary;
 
   /**
    * Verification token issued for confirming the member's email address.
    *
-   * @x-autobe-database-schema-property token
-   * @x-autobe-specification Direct mapping from `community_platform_member_email_verifications.token`. Return the issued verification token string exactly as persisted for this record.
+     * @x-autobe-database-schema-property token
+     * @x-autobe-specification Direct mapping from
+     *   `community_platform_member_email_verifications.token`. Return the
+     *   issued verification token string exactly as persisted for this record.
    */
   token: string;
 
   /**
    * Current lifecycle status of the email verification record.
    *
-   * @x-autobe-database-schema-property status
-   * @x-autobe-specification Direct mapping from `community_platform_member_email_verifications.status`. Return the persisted lifecycle status value without deriving alternative labels.
+     * @x-autobe-database-schema-property status
+     * @x-autobe-specification Direct mapping from
+     *   `community_platform_member_email_verifications.status`. Return the
+     *   persisted lifecycle status value without deriving alternative labels.
    */
   status: string;
 
   /**
    * Timestamp when the email verification was successfully completed, or null if it has not been completed.
    *
-   * @x-autobe-database-schema-property verified_at
-   * @x-autobe-specification Direct mapping from `community_platform_member_email_verifications.verified_at`. Return the timestamp when verification was completed, or `null` when the email has not been successfully verified by this record.
+     * @x-autobe-database-schema-property verified_at
+     * @x-autobe-specification Direct mapping from
+     *   `community_platform_member_email_verifications.verified_at`. Return the
+     *   timestamp when verification was completed, or `null` when the email has
+     *   not been successfully verified by this record.
    */
   verified_at: (string & tags.Format<"date-time">) | null;
 
   /**
    * Timestamp when this verification token expires.
    *
-   * @x-autobe-database-schema-property expired_at
-   * @x-autobe-specification Direct mapping from `community_platform_member_email_verifications.expired_at`. Return the timestamp after which this verification token is no longer valid.
+     * @x-autobe-database-schema-property expired_at
+     * @x-autobe-specification Direct mapping from
+     *   `community_platform_member_email_verifications.expired_at`. Return the
+     *   timestamp after which this verification token is no longer valid.
    */
   expired_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when this verification record was invalidated, or null if it remains valid.
    *
-   * @x-autobe-database-schema-property invalidated_at
-   * @x-autobe-specification Direct mapping from `community_platform_member_email_verifications.invalidated_at`. Return the timestamp when the verification was invalidated before use, or `null` if it has not been invalidated.
+     * @x-autobe-database-schema-property invalidated_at
+     * @x-autobe-specification Direct mapping from
+     *   `community_platform_member_email_verifications.invalidated_at`. Return
+     *   the timestamp when the verification was invalidated before use, or
+     *   `null` if it has not been invalidated.
    */
   invalidated_at: (string & tags.Format<"date-time">) | null;
 
   /**
    * Timestamp when this email verification record was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from `community_platform_member_email_verifications.created_at`. Return the issuance timestamp for when this verification record was created.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   `community_platform_member_email_verifications.created_at`. Return the
+     *   issuance timestamp for when this verification record was created.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when this email verification record was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from `community_platform_member_email_verifications.updated_at`. Return the most recent timestamp when this verification record was updated.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   `community_platform_member_email_verifications.updated_at`. Return the
+     *   most recent timestamp when this verification record was updated.
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when this verification record was soft-deleted, or null if it is still active.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from `community_platform_member_email_verifications.deleted_at`. Return the soft-deletion timestamp when the record has been removed from active visibility, or `null` when it remains active.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   `community_platform_member_email_verifications.deleted_at`. Return the
+     *   soft-deletion timestamp when the record has been removed from active
+     *   visibility, or `null` when it remains active.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -95,21 +119,40 @@ export namespace ICommunityPlatformMemberEmailVerification {
     /**
      * Email address for the new member account.
      *
-     * @x-autobe-specification Use the client-supplied email as the registration login identifier and contact address during the atomic sign-up transaction. Validate required presence and uniqueness against community_platform_members.email before creating the new member record, then persist the accepted value into that member row.
+         * @x-autobe-specification Use the client-supplied email as the
+         *   registration login identifier and contact address during the atomic
+         *   sign-up transaction. Validate required presence and uniqueness
+         *   against community_platform_members.email before creating the new
+         *   member record, then persist the accepted value into that member
+         *   row.
      */
     email: string & tags.Format<"email">;
 
     /**
      * Plain-text password for the new member account.
      *
-     * @x-autobe-specification Accept the client's plain-text password for member registration, validate required presence according to registration rules, hash it server-side, and use the resulting hash when creating the member credential record during the atomic registration transaction. Never persist, log, or return the raw password.
+         * @x-autobe-specification Accept the client's plain-text password for
+         *   member registration, validate required presence according to
+         *   registration rules, hash it server-side, and use the resulting hash
+         *   when creating the member credential record during the atomic
+         *   registration transaction. Never persist, log, or return the raw
+         *   password.
      */
     password: string & tags.Format<"password">;
 
     /**
      * Requested username for the new account, used during sign-up validation and downstream identity setup.
      *
-     * @x-autobe-specification Use this value as a registration-time username input for uniqueness validation against the platform identity source required by the sign-up flow. The loaded community_platform_members and community_platform_profiles schemas do not contain a username column, so this property must not be mapped directly to either loaded table. If the implementation includes another identity store or downstream profile or account creation step that persists username, that logic must consume this field there; otherwise it remains a validated command input used to enforce registration rules before account creation.
+         * @x-autobe-specification Use this value as a registration-time
+         *   username input for uniqueness validation against the platform
+         *   identity source required by the sign-up flow. The loaded
+         *   community_platform_members and community_platform_profiles schemas
+         *   do not contain a username column, so this property must not be
+         *   mapped directly to either loaded table. If the implementation
+         *   includes another identity store or downstream profile or account
+         *   creation step that persists username, that logic must consume this
+         *   field there; otherwise it remains a validated command input used to
+         *   enforce registration rules before account creation.
      */
     username: string;
   };
@@ -123,29 +166,35 @@ export namespace ICommunityPlatformMemberEmailVerification {
    */
   export type IUpdate = {
     /**
-     * @x-autobe-database-schema-property status
+         * @x-autobe-database-schema-property status
      */
     status?: string | undefined;
 
     /**
      * Timestamp when the email verification was successfully completed, or null when the verification is not completed.
      *
-     * @x-autobe-database-schema-property verified_at
+         * @x-autobe-database-schema-property verified_at
      */
     verified_at?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * Expiration timestamp for the verification record when the lifecycle update workflow allows revising token validity.
      *
-     * @x-autobe-database-schema-property expired_at
-     * @x-autobe-specification Controlled update mapping to community_platform_member_email_verifications.expired_at. This optional field may be supplied only when the service permits revising the verification lifecycle expiration during a legal state transition. Persistence logic must validate the resulting state coherently with status, verified_at, invalidated_at, and current time.
+         * @x-autobe-database-schema-property expired_at
+         * @x-autobe-specification Controlled update mapping to
+         *   community_platform_member_email_verifications.expired_at. This
+         *   optional field may be supplied only when the service permits
+         *   revising the verification lifecycle expiration during a legal state
+         *   transition. Persistence logic must validate the resulting state
+         *   coherently with status, verified_at, invalidated_at, and current
+         *   time.
      */
     expired_at?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Timestamp when this verification record was invalidated, or null when it remains not invalidated.
      *
-     * @x-autobe-database-schema-property invalidated_at
+         * @x-autobe-database-schema-property invalidated_at
      */
     invalidated_at?: (string & tags.Format<"date-time">) | null | undefined;
   };
@@ -157,48 +206,60 @@ export namespace ICommunityPlatformMemberEmailVerification {
     /**
      * Unique identifier of this email verification record.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from community_platform_member_email_verifications.id.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_member_email_verifications.id.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Current lifecycle status of this email verification attempt.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from community_platform_member_email_verifications.status. Represents the current lifecycle state of the verification attempt, such as pending, verified, expired, or invalidated.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_member_email_verifications.status. Represents
+         *   the current lifecycle state of the verification attempt, such as
+         *   pending, verified, expired, or invalidated.
      */
     status: string;
 
     /**
      * Timestamp when the email address was successfully verified, or null if verification has not been completed.
      *
-     * @x-autobe-database-schema-property verified_at
-     * @x-autobe-specification Direct mapping from community_platform_member_email_verifications.verified_at. Return the stored timestamp when verification was successfully completed, or null when the attempt has not been completed successfully.
+         * @x-autobe-database-schema-property verified_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_member_email_verifications.verified_at. Return
+         *   the stored timestamp when verification was successfully completed,
+         *   or null when the attempt has not been completed successfully.
      */
     verified_at: (string & tags.Format<"date-time">) | null;
 
     /**
      * Timestamp after which this verification attempt is no longer valid.
      *
-     * @x-autobe-database-schema-property expired_at
-     * @x-autobe-specification Direct mapping from community_platform_member_email_verifications.expired_at.
+         * @x-autobe-database-schema-property expired_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_member_email_verifications.expired_at.
      */
     expired_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when this verification attempt was invalidated, or null if it has not been invalidated.
      *
-     * @x-autobe-database-schema-property invalidated_at
-     * @x-autobe-specification Direct mapping from community_platform_member_email_verifications.invalidated_at. Return the stored timestamp when the verification attempt was invalidated before use, or null when it has not been invalidated.
+         * @x-autobe-database-schema-property invalidated_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_member_email_verifications.invalidated_at.
+         *   Return the stored timestamp when the verification attempt was
+         *   invalidated before use, or null when it has not been invalidated.
      */
     invalidated_at: (string & tags.Format<"date-time">) | null;
 
     /**
      * Timestamp when this email verification record was issued.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from community_platform_member_email_verifications.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_member_email_verifications.created_at.
      */
     created_at: string & tags.Format<"date-time">;
   };
@@ -210,84 +271,137 @@ export namespace ICommunityPlatformMemberEmailVerification {
     /**
      * Filter results by verification lifecycle status.
      *
-     * @x-autobe-specification Optional request filter that narrows the authenticated-member-scoped query to email verification records whose underlying status column matches the supplied lifecycle status value.
+         * @x-autobe-specification Optional request filter that narrows the
+         *   authenticated-member-scoped query to email verification records
+         *   whose underlying status column matches the supplied lifecycle
+         *   status value.
      */
     status?: string | undefined;
 
     /**
      * Include only records created on or after this timestamp.
      *
-     * @x-autobe-specification Optional request filter that sets the inclusive lower timestamp boundary for record creation time in the member-scoped email verification query. The service should apply this value as a greater-than-or-equal constraint on each record's creation timestamp.
+         * @x-autobe-specification Optional request filter that sets the
+         *   inclusive lower timestamp boundary for record creation time in the
+         *   member-scoped email verification query. The service should apply
+         *   this value as a greater-than-or-equal constraint on each record's
+         *   creation timestamp.
      */
     createdAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Include only records created on or before this timestamp.
      *
-     * @x-autobe-specification Optional request filter that sets the inclusive upper timestamp boundary for record creation time in the member-scoped email verification query. The service should apply this value as a less-than-or-equal constraint on each record's creation timestamp.
+         * @x-autobe-specification Optional request filter that sets the
+         *   inclusive upper timestamp boundary for record creation time in the
+         *   member-scoped email verification query. The service should apply
+         *   this value as a less-than-or-equal constraint on each record's
+         *   creation timestamp.
      */
     createdAtTo?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Include only records whose expiration time is on or after this timestamp.
      *
-     * @x-autobe-specification Optional request filter that sets the inclusive lower timestamp boundary for expiration time in the member-scoped email verification query. The service should apply this value as a greater-than-or-equal constraint on each record's expiration timestamp.
+         * @x-autobe-specification Optional request filter that sets the
+         *   inclusive lower timestamp boundary for expiration time in the
+         *   member-scoped email verification query. The service should apply
+         *   this value as a greater-than-or-equal constraint on each record's
+         *   expiration timestamp.
      */
     expiredAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Include only records whose expiration time is on or before this timestamp.
      *
-     * @x-autobe-specification Optional request filter that sets the inclusive upper timestamp boundary for expiration time in the member-scoped email verification query. The service should apply this value as a less-than-or-equal constraint on each record's expiration timestamp.
+         * @x-autobe-specification Optional request filter that sets the
+         *   inclusive upper timestamp boundary for expiration time in the
+         *   member-scoped email verification query. The service should apply
+         *   this value as a less-than-or-equal constraint on each record's
+         *   expiration timestamp.
      */
     expiredAtTo?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Include only records verified on or after this timestamp.
      *
-     * @x-autobe-specification Optional request filter that sets the inclusive lower timestamp boundary for verification completion time in the member-scoped email verification query. The service should apply this value as a greater-than-or-equal constraint on records that have a verification timestamp, while records without a verification timestamp do not satisfy the bound.
+         * @x-autobe-specification Optional request filter that sets the
+         *   inclusive lower timestamp boundary for verification completion time
+         *   in the member-scoped email verification query. The service should
+         *   apply this value as a greater-than-or-equal constraint on records
+         *   that have a verification timestamp, while records without a
+         *   verification timestamp do not satisfy the bound.
      */
     verifiedAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Include only records verified on or before this timestamp.
      *
-     * @x-autobe-specification Optional request filter that sets the inclusive upper timestamp boundary for verification completion time in the member-scoped email verification query. The service should apply this value as a less-than-or-equal constraint on records that have a verification timestamp, while records without a verification timestamp do not satisfy the bound.
+         * @x-autobe-specification Optional request filter that sets the
+         *   inclusive upper timestamp boundary for verification completion time
+         *   in the member-scoped email verification query. The service should
+         *   apply this value as a less-than-or-equal constraint on records that
+         *   have a verification timestamp, while records without a verification
+         *   timestamp do not satisfy the bound.
      */
     verifiedAtTo?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Include only records invalidated on or after this timestamp.
      *
-     * @x-autobe-specification Optional request filter that sets the inclusive lower timestamp boundary for invalidation time in the member-scoped email verification query. The service should apply this value as a greater-than-or-equal constraint on records that have an invalidation timestamp, while records without such a timestamp do not satisfy the bound unless separately targeted by invalidatedAtIsNull.
+         * @x-autobe-specification Optional request filter that sets the
+         *   inclusive lower timestamp boundary for invalidation time in the
+         *   member-scoped email verification query. The service should apply
+         *   this value as a greater-than-or-equal constraint on records that
+         *   have an invalidation timestamp, while records without such a
+         *   timestamp do not satisfy the bound unless separately targeted by
+         *   invalidatedAtIsNull.
      */
     invalidatedAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Include only records invalidated on or before this timestamp.
      *
-     * @x-autobe-specification Optional request filter that sets the inclusive upper timestamp boundary for invalidation time in the member-scoped email verification query. The service should apply this value as a less-than-or-equal constraint on records that have an invalidation timestamp, while records without such a timestamp do not satisfy the bound unless separately targeted by invalidatedAtIsNull.
+         * @x-autobe-specification Optional request filter that sets the
+         *   inclusive upper timestamp boundary for invalidation time in the
+         *   member-scoped email verification query. The service should apply
+         *   this value as a less-than-or-equal constraint on records that have
+         *   an invalidation timestamp, while records without such a timestamp
+         *   do not satisfy the bound unless separately targeted by
+         *   invalidatedAtIsNull.
      */
     invalidatedAtTo?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Filter results by whether the invalidation timestamp is absent or present.
      *
-     * @x-autobe-specification Optional boolean query control that filters records by the presence or absence of an invalidation timestamp. When true, the service should return only records whose invalidation timestamp is absent. When false, the service should return only records whose invalidation timestamp is present. This field defines null-check behavior rather than representing a stored value itself.
+         * @x-autobe-specification Optional boolean query control that filters
+         *   records by the presence or absence of an invalidation timestamp.
+         *   When true, the service should return only records whose
+         *   invalidation timestamp is absent. When false, the service should
+         *   return only records whose invalidation timestamp is present. This
+         *   field defines null-check behavior rather than representing a stored
+         *   value itself.
      */
     invalidatedAtIsNull?: boolean | undefined;
 
     /**
      * Page number of the filtered result set to return.
      *
-     * @x-autobe-specification Optional pagination control that selects which 1-indexed result page to return after all member-scoped filters are applied. The service should use this field to calculate the query offset together with limit.
+         * @x-autobe-specification Optional pagination control that selects
+         *   which 1-indexed result page to return after all member-scoped
+         *   filters are applied. The service should use this field to calculate
+         *   the query offset together with limit.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of records to return per page.
      *
-     * @x-autobe-specification Optional pagination control that sets the maximum number of records returned in a single filtered page. The service should apply this field as the page size limit after ownership scoping and filtering are resolved.
+         * @x-autobe-specification Optional pagination control that sets the
+         *   maximum number of records returned in a single filtered page. The
+         *   service should apply this field as the page size limit after
+         *   ownership scoping and filtering are resolved.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -296,7 +410,11 @@ export namespace ICommunityPlatformMemberEmailVerification {
     /**
      * Sort rule for ordering the filtered results.
      *
-     * @x-autobe-specification Optional service-defined sort token that determines the stable ordering of filtered results, such as ascending or descending creation time. The service should translate this token into the appropriate ORDER BY behavior and should default to newest created records first when the token is omitted.
+         * @x-autobe-specification Optional service-defined sort token that
+         *   determines the stable ordering of filtered results, such as
+         *   ascending or descending creation time. The service should translate
+         *   this token into the appropriate ORDER BY behavior and should
+         *   default to newest created records first when the token is omitted.
      */
     sort?: string | undefined;
   };

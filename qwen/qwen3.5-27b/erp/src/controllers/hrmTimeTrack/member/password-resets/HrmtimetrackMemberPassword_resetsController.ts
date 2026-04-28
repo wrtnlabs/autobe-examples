@@ -22,9 +22,10 @@ export class HrmtimetrackMemberPassword_resetsController {
    *
    * @param connection
    * @param body Search criteria for password reset tokens including member email filter, status filter (unused/used/expired), date range filters for created and expired timestamps, token pattern search, and pagination parameters.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query hrm_time_track_member_password_resets table with pagination and filtering support.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query hrm_time_track_member_password_resets table
+     *   with pagination and filtering support.
    *
    * Filtering criteria:
    * - Filter by member email (join with hrm_time_track_members on hrm_time_track_member_id)
@@ -77,9 +78,10 @@ export class HrmtimetrackMemberPassword_resetsController {
    *
    * @param connection
    * @param resetId Unique identifier of the password reset token record (global scope)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query the hrm_time_track_member_password_resets table for a record matching the provided resetId.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query the hrm_time_track_member_password_resets
+     *   table for a record matching the provided resetId.
    *
    * Implementation steps:
    * 1. Validate that resetId is a valid UUID format

@@ -33,9 +33,10 @@ export class EcommerceAdminOrdersItemsForce_cancelController {
    * @param orderId UUID of the parent order containing the order item (global scope)
    * @param itemId UUID of the order item to force-cancel (scoped to parent order)
    * @param body Optional reason for the force-cancellation action, recorded for audit trail purposes.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Implement as admin-only POST endpoint with UUID path parameters for orderId and itemId.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Implement as admin-only POST endpoint with UUID
+     *   path parameters for orderId and itemId.
    *
    * **Implementation Steps**
    * 1. Authenticate request as administrator with force-cancel privileges

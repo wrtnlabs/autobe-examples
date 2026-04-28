@@ -24,9 +24,11 @@ export class CommunityplatformGuestPostsController {
    *
    * @param connection
    * @param body Feed scope, search, pagination, and sorting criteria for browsing posts.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor guest
-   * @x-autobe-specification Implement a feed/list query over community_platform_posts with joins to author, community, and exactly one subtype table per post variant.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor guest
+     * @x-autobe-specification Implement a feed/list query over
+     *   community_platform_posts with joins to author, community, and exactly
+     *   one subtype table per post variant.
    *
    * Accept a request body containing feed scope, optional community identifier or community name filter, keyword search, pagination, sort mode, and top-sort time window. Resolve the caller's identity from the authentication context, then apply access rules: guest callers may only request public or community-scoped browsing, while members may request home-feed browsing limited to communities with an active subscription record in community_platform_community_subscriptions.
    *
@@ -68,10 +70,17 @@ export class CommunityplatformGuestPostsController {
    *
    * @param connection
    * @param postId The target post identifier.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor guest
-   * @x-autobe-specification Load one row from community_platform_posts by postId and verify it exists and is viewable.
-   * Resolve the post’s concrete subtype data from the appropriate companion table based on the post’s content kind: community_platform_post_texts for text posts, community_platform_post_links for link posts, and community_platform_post_images for image posts. Include the public post metadata needed by the detail page: title, author identity, community identity, creation time, and any vote/comment aggregates required by the response schema.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor guest
+     * @x-autobe-specification Load one row from community_platform_posts by
+     *   postId and verify it exists and is viewable. Resolve the post’s
+     *   concrete subtype data from the appropriate companion table based on the
+     *   post’s content kind: community_platform_post_texts for text posts,
+     *   community_platform_post_links for link posts, and
+     *   community_platform_post_images for image posts. Include the public post
+     *   metadata needed by the detail page: title, author identity, community
+     *   identity, creation time, and any vote/comment aggregates required by
+     *   the response schema.
    *
    * The service should validate that the post belongs to a reachable community context and that the post is not in a state that makes it unavailable for normal viewing. If the post is missing or not accessible, return a not-found style response rather than exposing internal moderation details. Do not compute feed sorting here; this is a direct entity lookup.
    *

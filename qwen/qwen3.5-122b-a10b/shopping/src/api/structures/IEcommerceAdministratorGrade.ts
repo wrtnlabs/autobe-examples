@@ -28,8 +28,10 @@ export type IEcommerceAdministratorGrade = {
    *
    * This UUID serves as the primary key for the ecommerce_administrator_grades table, uniquely identifying each administrator grade assignment.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_administrator_grades.id. UUID primary key for the grade assignment record.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_administrator_grades.id. UUID primary key for the grade
+     *   assignment record.
    */
   id: string & tags.Format<"uuid">;
 
@@ -44,8 +46,11 @@ export type IEcommerceAdministratorGrade = {
    * - Returns summary-level data suitable for display contexts
    * - Includes audit timestamps (created_at, updated_at, deleted_at)
    *
-   * @x-autobe-database-schema-property ecommerceAdmin
-   * @x-autobe-specification Belongs-to relation via JOIN from ecommerce_administrator_grades.ecommerce_admin_id to ecommerce_admins.id. Returns IEcommerceAdmin.ISummary with id, email, grade, and timestamps.
+     * @x-autobe-database-schema-property ecommerceAdmin
+     * @x-autobe-specification Belongs-to relation via JOIN from
+     *   ecommerce_administrator_grades.ecommerce_admin_id to
+     *   ecommerce_admins.id. Returns IEcommerceAdmin.ISummary with id, email,
+     *   grade, and timestamps.
    */
   ecommerceAdmin: IEcommerceAdmin.ISummary;
 
@@ -61,8 +66,10 @@ export type IEcommerceAdministratorGrade = {
    *
    * Grade values are validated at the application layer to ensure only allowed values are stored. Changes to grade level are recorded in the grade transition audit trail.
    *
-   * @x-autobe-specification Direct mapping from ecommerce_administrator_grades.grade. String field with allowed values 'regular' or 'super'. Validated at application layer.
-   * @x-autobe-database-schema-property grade
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_administrator_grades.grade. String field with allowed values
+     *   'regular' or 'super'. Validated at application layer.
+     * @x-autobe-database-schema-property grade
    */
   grade: string;
 
@@ -71,8 +78,10 @@ export type IEcommerceAdministratorGrade = {
    *
    * This timestamp is automatically set by the database when the grade assignment record is first created, typically when an administrator account is approved or when a grade is initially assigned. The value cannot be modified after creation.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_administrator_grades.created_at. System-managed timestamp set upon record creation.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_administrator_grades.created_at. System-managed timestamp set
+     *   upon record creation.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -81,8 +90,10 @@ export type IEcommerceAdministratorGrade = {
    *
    * This timestamp is automatically updated whenever any field in the grade assignment record is modified, such as during a grade promotion or demotion. It provides an audit trail for tracking when changes occurred.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from ecommerce_administrator_grades.updated_at. System-managed timestamp updated on any field modification.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_administrator_grades.updated_at. System-managed timestamp
+     *   updated on any field modification.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -97,8 +108,10 @@ export type IEcommerceAdministratorGrade = {
    * - Deleted assignments: deleted_at contains the deletion timestamp
    * - Soft-deleted records are excluded from active queries but retained for audit trails
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from ecommerce_administrator_grades.deleted_at. Nullable timestamp set when record is soft-deleted. Null for active records.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_administrator_grades.deleted_at. Nullable timestamp set when
+     *   record is soft-deleted. Null for active records.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -150,8 +163,9 @@ export namespace IEcommerceAdministratorGrade {
      *
      * This is the primary key of the grade assignment record in the database, stored as a UUID.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_administrator_grades.id. Primary key, UUID format.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_administrator_grades.id. Primary key, UUID format.
      */
     id: string & tags.Format<"uuid">;
 
@@ -164,8 +178,10 @@ export namespace IEcommerceAdministratorGrade {
      *
      * This field is validated at the application layer to ensure only allowed values are stored.
      *
-     * @x-autobe-database-schema-property grade
-     * @x-autobe-specification Direct mapping from ecommerce_administrator_grades.grade. String field with allowed values: 'regular' or 'super'. Validated at application layer.
+         * @x-autobe-database-schema-property grade
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_administrator_grades.grade. String field with allowed
+         *   values: 'regular' or 'super'. Validated at application layer.
      */
     grade: string;
 
@@ -174,8 +190,11 @@ export namespace IEcommerceAdministratorGrade {
      *
      * This is a belongs-to relation that provides access to the administrator's basic information. The relation is established through the ecommerce_admin_id foreign key.
      *
-     * @x-autobe-database-schema-property ecommerceAdmin
-     * @x-autobe-specification Relation join from ecommerce_administrator_grades.ecommerce_admin_id to ecommerce_admins.id. Returns IEcommerceAdmin.ISummary via JOIN operation.
+         * @x-autobe-database-schema-property ecommerceAdmin
+         * @x-autobe-specification Relation join from
+         *   ecommerce_administrator_grades.ecommerce_admin_id to
+         *   ecommerce_admins.id. Returns IEcommerceAdmin.ISummary via JOIN
+         *   operation.
      */
     admin: IEcommerceAdmin.ISummary;
 
@@ -184,8 +203,10 @@ export namespace IEcommerceAdministratorGrade {
      *
      * Automatically set when the administrator account is approved and the initial grade assignment is created. Typically corresponds to the administrator approval date.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from ecommerce_administrator_grades.created_at. Timestamp with timezone (timestamptz).
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_administrator_grades.created_at. Timestamp with timezone
+         *   (timestamptz).
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -194,8 +215,10 @@ export namespace IEcommerceAdministratorGrade {
      *
      * Automatically updated whenever the grade level changes, such as during a promotion or demotion operation. Each grade transition is also recorded in the grade transitions audit table.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from ecommerce_administrator_grades.updated_at. Timestamp with timezone (timestamptz).
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_administrator_grades.updated_at. Timestamp with timezone
+         *   (timestamptz).
      */
     updated_at: string & tags.Format<"date-time">;
   };
@@ -249,8 +272,10 @@ export namespace IEcommerceAdministratorGrade {
      *
      * When omitted, returns assignments for all grade levels.
      *
-     * @x-autobe-database-schema-property grade
-     * @x-autobe-specification Direct mapping from ecommerce_administrator_grades.grade. Filter by grade level: 'regular' or 'super'. Validated at application layer.
+         * @x-autobe-database-schema-property grade
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_administrator_grades.grade. Filter by grade level:
+         *   'regular' or 'super'. Validated at application layer.
      */
     grade?: string | undefined;
 
@@ -265,8 +290,12 @@ export namespace IEcommerceAdministratorGrade {
      *
      * When omitted, no email filtering is applied and all assignments matching other criteria are returned.
      *
-     * @x-autobe-database-schema-property ecommerceAdmin
-     * @x-autobe-specification Join from ecommerce_administrator_grades.ecommerce_admin_id to ecommerce_admins.id. Filter by partial match on ecommerce_admins.email field. Enables searching grade assignments by administrator email address.
+         * @x-autobe-database-schema-property ecommerceAdmin
+         * @x-autobe-specification Join from
+         *   ecommerce_administrator_grades.ecommerce_admin_id to
+         *   ecommerce_admins.id. Filter by partial match on
+         *   ecommerce_admins.email field. Enables searching grade assignments
+         *   by administrator email address.
      */
     adminEmail?: string | undefined;
 
@@ -283,8 +312,10 @@ export namespace IEcommerceAdministratorGrade {
      *
      * ISO 8601 datetime: YYYY-MM-DDTHH:mm:ssZ or with timezone offset.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from ecommerce_administrator_grades.created_at. ISO 8601 datetime format. Filters records where created_at >= this value.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_administrator_grades.created_at. ISO 8601 datetime
+         *   format. Filters records where created_at >= this value.
      */
     createdAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
@@ -301,8 +332,10 @@ export namespace IEcommerceAdministratorGrade {
      *
      * ISO 8601 datetime: YYYY-MM-DDTHH:mm:ssZ or with timezone offset.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from ecommerce_administrator_grades.created_at. ISO 8601 datetime format. Filters records where created_at <= this value.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_administrator_grades.created_at. ISO 8601 datetime
+         *   format. Filters records where created_at <= this value.
      */
     createdAtTo?: (string & tags.Format<"date-time">) | undefined;
 
@@ -319,8 +352,10 @@ export namespace IEcommerceAdministratorGrade {
      *
      * ISO 8601 datetime: YYYY-MM-DDTHH:mm:ssZ or with timezone offset.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from ecommerce_administrator_grades.updated_at. ISO 8601 datetime format. Filters records where updated_at >= this value.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_administrator_grades.updated_at. ISO 8601 datetime
+         *   format. Filters records where updated_at >= this value.
      */
     updatedAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
@@ -337,8 +372,10 @@ export namespace IEcommerceAdministratorGrade {
      *
      * ISO 8601 datetime: YYYY-MM-DDTHH:mm:ssZ or with timezone offset.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from ecommerce_administrator_grades.updated_at. ISO 8601 datetime format. Filters records where updated_at <= this value.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_administrator_grades.updated_at. ISO 8601 datetime
+         *   format. Filters records where updated_at <= this value.
      */
     updatedAtTo?: (string & tags.Format<"date-time">) | undefined;
 
@@ -360,7 +397,10 @@ export namespace IEcommerceAdministratorGrade {
      *
      * Combined with {@link limit} to control result set size. For example, page=2 with limit=10 returns records 11-20.
      *
-     * @x-autobe-specification Computed pagination parameter. 1-indexed page number for result set navigation. Defaults to 1 when not specified. Validated to be minimum 1. Used with limit parameter to calculate offset for database query.
+         * @x-autobe-specification Computed pagination parameter. 1-indexed page
+         *   number for result set navigation. Defaults to 1 when not specified.
+         *   Validated to be minimum 1. Used with limit parameter to calculate
+         *   offset for database query.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -382,7 +422,10 @@ export namespace IEcommerceAdministratorGrade {
      *
      * Combined with {@link page} to navigate through results. Higher limits return more data per request but increase response size. Recommended to use values between 10-50 for optimal performance.
      *
-     * @x-autobe-specification Computed pagination parameter. Maximum number of records per page. Defaults to 10 when not specified. Validated to be between 1 and 100 inclusive. Used with page parameter to calculate offset for database query.
+         * @x-autobe-specification Computed pagination parameter. Maximum number
+         *   of records per page. Defaults to 10 when not specified. Validated
+         *   to be between 1 and 100 inclusive. Used with page parameter to
+         *   calculate offset for database query.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)

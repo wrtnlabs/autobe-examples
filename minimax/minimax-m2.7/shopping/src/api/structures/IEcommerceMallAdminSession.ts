@@ -22,8 +22,9 @@ export type IEcommerceMallAdminSession = {
    *
    * This field represents the primary key of the session record, assigned as a UUID at session creation time. Used to reference and retrieve specific session records.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_admin_sessions.id (UUID primary key).
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_admin_sessions.id (UUID primary key).
    */
   id: string & tags.Format<"uuid">;
 
@@ -32,8 +33,9 @@ export type IEcommerceMallAdminSession = {
    *
    * Captures the client's IP address at session creation for security auditing and access tracking purposes.
    *
-   * @x-autobe-database-schema-property ip
-   * @x-autobe-specification Direct mapping from ecommerce_mall_admin_sessions.ip.
+     * @x-autobe-database-schema-property ip
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_admin_sessions.ip.
    */
   ip: string;
 
@@ -42,8 +44,9 @@ export type IEcommerceMallAdminSession = {
    *
    * Stores the URL path from which the session was initiated or last accessed, used for audit trail analysis.
    *
-   * @x-autobe-database-schema-property href
-   * @x-autobe-specification Direct mapping from ecommerce_mall_admin_sessions.href.
+     * @x-autobe-database-schema-property href
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_admin_sessions.href.
    */
   href: string;
 
@@ -52,8 +55,9 @@ export type IEcommerceMallAdminSession = {
    *
    * Records the HTTP referrer value capturing the previous page the administrator visited before accessing the session, useful for tracking navigation patterns.
    *
-   * @x-autobe-database-schema-property referrer
-   * @x-autobe-specification Direct mapping from ecommerce_mall_admin_sessions.referrer.
+     * @x-autobe-database-schema-property referrer
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_admin_sessions.referrer.
    */
   referrer: string;
 
@@ -62,8 +66,9 @@ export type IEcommerceMallAdminSession = {
    *
    * Records the exact date and time when the administrator session was established, used for session lifecycle tracking and audit logging.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_admin_sessions.created_at.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_admin_sessions.created_at.
    */
   createdAt: string & tags.Format<"date-time">;
 
@@ -72,8 +77,9 @@ export type IEcommerceMallAdminSession = {
    *
    * Defines the expiration boundary of the session. When current time exceeds this value, the session is considered expired and cannot be used for authenticated requests.
    *
-   * @x-autobe-database-schema-property expired_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_admin_sessions.expired_at.
+     * @x-autobe-database-schema-property expired_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_admin_sessions.expired_at.
    */
   expiredAt: string & tags.Format<"date-time">;
 
@@ -82,8 +88,11 @@ export type IEcommerceMallAdminSession = {
    *
    * Returns a summary view of the administrator including id, email, name, and creation timestamp. This relation links the session to its owning administrator account.
    *
-   * @x-autobe-database-schema-property admin
-   * @x-autobe-specification Belongs-to relation 'admin' via ecommerce_mall_admin_id FK. JOIN to ecommerce_mall_admins table. Exposed as IEcommerceMallAdmin.ISummary for embedded display (excludes password_hash, updated_at).
+     * @x-autobe-database-schema-property admin
+     * @x-autobe-specification Belongs-to relation 'admin' via
+     *   ecommerce_mall_admin_id FK. JOIN to ecommerce_mall_admins table.
+     *   Exposed as IEcommerceMallAdmin.ISummary for embedded display (excludes
+     *   password_hash, updated_at).
    */
   admin: IEcommerceMallAdmin.ISummary;
 };
@@ -99,8 +108,9 @@ export namespace IEcommerceMallAdminSession {
      *
      * Primary key UUID assigned at session creation. Used for session management and lookup operations.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_mall_admin_sessions.id. Primary key UUID.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_admin_sessions.id. Primary key UUID.
      */
     id: string & tags.Format<"uuid">;
 
@@ -109,8 +119,10 @@ export namespace IEcommerceMallAdminSession {
      *
      * Reference to the administrator account that created this session. Contains summary information (id, name, email) for display in audit lists.
      *
-     * @x-autobe-database-schema-property admin
-     * @x-autobe-specification Belongs-to relation: ecommerce_mall_admin_id FK JOIN to ecommerce_mall_admins.id. Returns IEcommerceMallAdmin.ISummary.
+         * @x-autobe-database-schema-property admin
+         * @x-autobe-specification Belongs-to relation: ecommerce_mall_admin_id
+         *   FK JOIN to ecommerce_mall_admins.id. Returns
+         *   IEcommerceMallAdmin.ISummary.
      */
     admin: IEcommerceMallAdmin.ISummary;
 
@@ -119,8 +131,9 @@ export namespace IEcommerceMallAdminSession {
      *
      * Records when the administrator authenticated and the session was established. Used for session age calculation and audit trail purposes.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_admin_sessions.created_at. Timestamptz.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_admin_sessions.created_at. Timestamptz.
      */
     createdAt: string & tags.Format<"date-time">;
 
@@ -129,8 +142,9 @@ export namespace IEcommerceMallAdminSession {
      *
      * After this timestamp, the JWT token is no longer valid and the administrator must re-authenticate. Typically set to a configurable duration after created_at (e.g., 24 hours).
      *
-     * @x-autobe-database-schema-property expired_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_admin_sessions.expired_at. Timestamptz.
+         * @x-autobe-database-schema-property expired_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_admin_sessions.expired_at. Timestamptz.
      */
     expiredAt: string & tags.Format<"date-time">;
 
@@ -139,8 +153,9 @@ export namespace IEcommerceMallAdminSession {
      *
      * Records the page path the administrator was on when the session was created. Useful for security auditing to understand session context.
      *
-     * @x-autobe-database-schema-property href
-     * @x-autobe-specification Direct mapping from ecommerce_mall_admin_sessions.href. Current URL path.
+         * @x-autobe-database-schema-property href
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_admin_sessions.href. Current URL path.
      */
     href: string;
 
@@ -149,8 +164,9 @@ export namespace IEcommerceMallAdminSession {
      *
      * Records the client IP address at session creation for security auditing. May be IPv4 or IPv6 format.
      *
-     * @x-autobe-database-schema-property ip
-     * @x-autobe-specification Direct mapping from ecommerce_mall_admin_sessions.ip. Client IP address.
+         * @x-autobe-database-schema-property ip
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_admin_sessions.ip. Client IP address.
      */
     ip: string;
 
@@ -159,7 +175,9 @@ export namespace IEcommerceMallAdminSession {
      *
      * Boolean flag indicating if the session can still be used for authentication. Computed by comparing the expired_at timestamp against the current time. Active sessions allow API access; expired sessions require re-authentication.
      *
-     * @x-autobe-specification Computed: expired_at > NOW(). Compares session expired_at timestamp against current server time. Returns true if session has not yet expired.
+         * @x-autobe-specification Computed: expired_at > NOW(). Compares
+         *   session expired_at timestamp against current server time. Returns
+         *   true if session has not yet expired.
      */
     isActive: boolean;
 
@@ -168,8 +186,9 @@ export namespace IEcommerceMallAdminSession {
      *
      * Records the HTTP Referer header value at session creation. Indicates where the administrator came from before authenticating. Useful for security analysis.
      *
-     * @x-autobe-database-schema-property referrer
-     * @x-autobe-specification Direct mapping from ecommerce_mall_admin_sessions.referrer. HTTP referrer header.
+         * @x-autobe-database-schema-property referrer
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_admin_sessions.referrer. HTTP referrer header.
      */
     referrer: string;
   };
@@ -194,7 +213,9 @@ export namespace IEcommerceMallAdminSession {
      *
      * Filters the session list to show only sessions belonging to the specified administrator account. Use this to audit sessions for a specific administrator.
      *
-     * @x-autobe-specification Filter by administrator UUID. Exact match on the admin identifier to view all sessions belonging to a specific administrator.
+         * @x-autobe-specification Filter by administrator UUID. Exact match on
+         *   the admin identifier to view all sessions belonging to a specific
+         *   administrator.
      */
     adminId?: (string & tags.Format<"uuid">) | undefined;
 
@@ -203,7 +224,8 @@ export namespace IEcommerceMallAdminSession {
      *
      * Filters sessions based on the client IP address recorded at session creation. Supports exact match or prefix matching for subnet-based filtering.
      *
-     * @x-autobe-specification Filter by client IP address. Supports exact match or prefix matching for subnet-based filtering.
+         * @x-autobe-specification Filter by client IP address. Supports exact
+         *   match or prefix matching for subnet-based filtering.
      */
     ip?: string | undefined;
 
@@ -212,7 +234,8 @@ export namespace IEcommerceMallAdminSession {
      *
      * Filters sessions to include only those created at or after the specified timestamp. Use with createdTo to define a date range for time-period auditing.
      *
-     * @x-autobe-specification Date range filter start: sessions created at or after this timestamp (>= comparison). ISO 8601 datetime format.
+         * @x-autobe-specification Date range filter start: sessions created at
+         *   or after this timestamp (>= comparison). ISO 8601 datetime format.
      */
     createdFrom?: (string & tags.Format<"date-time">) | undefined;
 
@@ -221,7 +244,8 @@ export namespace IEcommerceMallAdminSession {
      *
      * Filters sessions to include only those created at or before the specified timestamp. Use with createdFrom to define a date range for time-period auditing.
      *
-     * @x-autobe-specification Date range filter end: sessions created at or before this timestamp (<= comparison). ISO 8601 datetime format.
+         * @x-autobe-specification Date range filter end: sessions created at or
+         *   before this timestamp (<= comparison). ISO 8601 datetime format.
      */
     createdTo?: (string & tags.Format<"date-time">) | undefined;
 
@@ -230,7 +254,9 @@ export namespace IEcommerceMallAdminSession {
      *
      * Filters sessions based on expiration status. 'active' shows sessions that have not yet expired. 'expired' shows sessions that have passed their expiration time.
      *
-     * @x-autobe-specification Computed filter based on session expiration. 'active' = session has not expired. 'expired' = session has passed expiration time.
+         * @x-autobe-specification Computed filter based on session expiration.
+         *   'active' = session has not expired. 'expired' = session has passed
+         *   expiration time.
      */
     status?: "active" | "expired" | undefined;
 
@@ -239,7 +265,8 @@ export namespace IEcommerceMallAdminSession {
      *
      * Specifies which page of results to retrieve. Page numbering is 1-indexed (first page is 1, not 0).
      *
-     * @x-autobe-specification Pagination query parameter (not a database column). 1-indexed page number. Default: 1.
+         * @x-autobe-specification Pagination query parameter (not a database
+         *   column). 1-indexed page number. Default: 1.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -248,7 +275,8 @@ export namespace IEcommerceMallAdminSession {
      *
      * Controls how many session records are returned per page. Must be between 1 and 100. Use with page to navigate through paginated results.
      *
-     * @x-autobe-specification Pagination query parameter (not a database column). Maximum records per page. Default: 20. Max: 100.
+         * @x-autobe-specification Pagination query parameter (not a database
+         *   column). Maximum records per page. Default: 20. Max: 100.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)

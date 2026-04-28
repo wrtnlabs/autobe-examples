@@ -16,8 +16,9 @@ export type IMallPlatformSellerProfile = {
    *
    * This is the UUID primary key of the live seller profile record and uniquely identifies the storefront profile returned by the API.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from mall_platform_seller_profiles.id.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_seller_profiles.id.
    */
   id: string & tags.Format<"uuid">;
 
@@ -26,8 +27,12 @@ export type IMallPlatformSellerProfile = {
    *
    * This is a summary view of the linked seller account used to identify the profile owner and surface the account's moderation state alongside the storefront identity.
    *
-   * @x-autobe-database-schema-property sellerAccount
-   * @x-autobe-specification Join mall_platform_seller_profiles.seller_account_id to mall_platform_seller_accounts.id and serialize the related account as IMallPlatformSellerAccount.ISummary. Do not expose seller_account_id in this DTO.
+     * @x-autobe-database-schema-property sellerAccount
+     * @x-autobe-specification Join
+     *   mall_platform_seller_profiles.seller_account_id to
+     *   mall_platform_seller_accounts.id and serialize the related account as
+     *   IMallPlatformSellerAccount.ISummary. Do not expose seller_account_id in
+     *   this DTO.
    */
   sellerAccount: IMallPlatformSellerAccount.ISummary;
 
@@ -36,8 +41,9 @@ export type IMallPlatformSellerProfile = {
    *
    * This is the customer-facing name displayed on product listings, seller profile pages, and order-history references.
    *
-   * @x-autobe-database-schema-property shop_name
-   * @x-autobe-specification Direct mapping from mall_platform_seller_profiles.shop_name.
+     * @x-autobe-database-schema-property shop_name
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_seller_profiles.shop_name.
    */
   shopName: string;
 
@@ -46,8 +52,9 @@ export type IMallPlatformSellerProfile = {
    *
    * This text describes the shop on the seller profile page and may be shown in storefront contexts where additional seller information is displayed.
    *
-   * @x-autobe-database-schema-property shop_description
-   * @x-autobe-specification Direct mapping from mall_platform_seller_profiles.shop_description.
+     * @x-autobe-database-schema-property shop_description
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_seller_profiles.shop_description.
    */
   shopDescription: string;
 
@@ -56,8 +63,10 @@ export type IMallPlatformSellerProfile = {
    *
    * This optional URI points to the current public shop logo shown to customers. It may be null when the seller has not configured a logo image.
    *
-   * @x-autobe-database-schema-property logo_image_uri
-   * @x-autobe-specification Direct mapping from mall_platform_seller_profiles.logo_image_uri. Preserve null when no logo image has been set.
+     * @x-autobe-database-schema-property logo_image_uri
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_seller_profiles.logo_image_uri. Preserve null when no
+     *   logo image has been set.
    */
   logoImageUri: (string & tags.Format<"uri">) | null;
 
@@ -66,8 +75,9 @@ export type IMallPlatformSellerProfile = {
    *
    * This value records when the current live profile row was first persisted.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from mall_platform_seller_profiles.created_at.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_seller_profiles.created_at.
    */
   createdAt: string & tags.Format<"date-time">;
 
@@ -76,8 +86,9 @@ export type IMallPlatformSellerProfile = {
    *
    * This value reflects the most recent modification to the live profile row.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from mall_platform_seller_profiles.updated_at.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_seller_profiles.updated_at.
    */
   updatedAt: string & tags.Format<"date-time">;
 
@@ -86,8 +97,10 @@ export type IMallPlatformSellerProfile = {
    *
    * This value is null for active profiles and populated only when the live profile row has been soft deleted.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from mall_platform_seller_profiles.deleted_at. Preserve null when the profile has not been soft deleted.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_seller_profiles.deleted_at. Preserve null when the
+     *   profile has not been soft deleted.
    */
   deletedAt: (string & tags.Format<"date-time">) | null;
 };

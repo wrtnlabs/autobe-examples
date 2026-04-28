@@ -30,9 +30,11 @@ export class CommunityplatformMemberPostsCommentsSnapshotsController {
    * @param connection
    * @param postId Target post's ID
    * @param commentId Target comment's ID
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement this operation as an append-only creation of a community_platform_comment_snapshots row for an existing community_platform_comments record.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implement this operation as an append-only
+     *   creation of a community_platform_comment_snapshots row for an existing
+     *   community_platform_comments record.
    *
    * 1. Authorize the caller as an authenticated internal or member-originated workflow permitted to preserve comment history. Reject guest access. If this operation is exposed through application services for member comment editing, additionally ensure the caller is allowed to perform the upstream comment modification that triggered snapshot creation.
    *
@@ -91,9 +93,10 @@ export class CommunityplatformMemberPostsCommentsSnapshotsController {
    * @param postId Target post's ID that contains the comment discussion entry
    * @param commentId Target comment's ID within the specified post discussion
    * @param body Pagination and sorting criteria for comment snapshot history
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement a scoped snapshot-history listing for one comment under one post.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implement a scoped snapshot-history listing for
+     *   one comment under one post.
    *
    * 1. Resolve the parent post by `postId` from `community_platform_posts`. If no record exists or the post is not viewable under current lifecycle rules, reject the request.
    * 2. Resolve the parent comment by `commentId` from `community_platform_comments` and verify that `community_platform_comments.community_platform_post_id` exactly matches the resolved post `id`. If the comment does not exist, is not viewable, or belongs to a different post, reject the request.
@@ -147,9 +150,11 @@ export class CommunityplatformMemberPostsCommentsSnapshotsController {
    * @param postId Target post's ID
    * @param commentId Target comment's ID within the specified post
    * @param snapshotId Target historical snapshot's ID for the specified comment
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement a read-only service that resolves a single historical comment snapshot within the scope of a post discussion.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implement a read-only service that resolves a
+     *   single historical comment snapshot within the scope of a post
+     *   discussion.
    *
    * 1. Validate the path parameters as UUIDs.
    * 2. Query `community_platform_posts` by `id = postId` and confirm the post is addressable for the current actor according to discussion visibility rules.

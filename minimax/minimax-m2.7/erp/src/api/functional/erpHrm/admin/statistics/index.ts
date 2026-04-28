@@ -13,7 +13,9 @@ import { IErpHrmStatistic } from "../../../../structures/IErpHrmStatistic";
  * @param props.connection
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Query the current organization context from the session. Verify the requesting user has report:view permission in their role.
+ * @x-autobe-specification Query the current organization context from the
+ *   session. Verify the requesting user has report:view permission in their
+ *   role.
  *
  * Calculate active employee count from erp_hrm_employees where organization_id matches and status equals active.
  *

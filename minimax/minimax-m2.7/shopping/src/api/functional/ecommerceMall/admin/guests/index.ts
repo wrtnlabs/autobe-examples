@@ -139,7 +139,8 @@ export namespace upsert {
  * @param props.guestId Unique identifier of the guest account (UUID format).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Query the ecommerce_mall_guests table using the provided guestId as the primary key lookup.
+ * @x-autobe-specification Query the ecommerce_mall_guests table using the
+ *   provided guestId as the primary key lookup.
  *
  * 1. Validate the guestId format - must be a valid UUID
  * 2. Query database: SELECT * FROM ecommerce_mall_guests WHERE id = :guestId AND deleted_at IS NULL

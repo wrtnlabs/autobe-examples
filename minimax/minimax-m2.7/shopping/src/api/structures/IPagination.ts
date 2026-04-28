@@ -16,7 +16,10 @@ export type IPagination = {
    *
    * True when the current page number is less than the total number of pages. Use this flag to determine whether to show a 'next' button or load more option in the UI.
    *
-   * @x-autobe-specification Computed boolean: true if current page < totalPages, false otherwise. Logic: hasNext = page < totalPages. Indicates whether the client should show a 'next' button or allow infinite scroll to load additional pages.
+     * @x-autobe-specification Computed boolean: true if current page <
+     *   totalPages, false otherwise. Logic: hasNext = page < totalPages.
+     *   Indicates whether the client should show a 'next' button or allow
+     *   infinite scroll to load additional pages.
    */
   hasNext: boolean;
 
@@ -25,7 +28,9 @@ export type IPagination = {
    *
    * True when the current page number is greater than 1. Use this flag to determine whether to show a 'previous' button in the UI. Always false on page 1.
    *
-   * @x-autobe-specification Computed boolean: true if current page > 1, false otherwise. Logic: hasPrev = page > 1. Indicates whether the client should show a 'previous' button. Always false when on page 1.
+     * @x-autobe-specification Computed boolean: true if current page > 1, false
+     *   otherwise. Logic: hasPrev = page > 1. Indicates whether the client
+     *   should show a 'previous' button. Always false when on page 1.
    */
   hasPrev: boolean;
 
@@ -34,7 +39,9 @@ export type IPagination = {
    *
    * The page size requested or the default if not specified. Determines how many items are included in the current response page.
    *
-   * @x-autobe-specification Propagated from request query parameter 'limit'. Default typically 20 if not specified. Represents the number of items per page as requested by the client.
+     * @x-autobe-specification Propagated from request query parameter 'limit'.
+     *   Default typically 20 if not specified. Represents the number of items
+     *   per page as requested by the client.
    */
   limit: number & tags.Type<"int32"> & tags.Minimum<1>;
 
@@ -43,7 +50,10 @@ export type IPagination = {
    *
    * Uses 1-based indexing where the first page is page 1. For example, page 3 with limit 20 returns items 41-60 of the total dataset.
    *
-   * @x-autobe-specification Propagated from request query parameter 'page'. Uses 1-based indexing where the first page is page 1. The server does not auto-correct invalid page numbers - it returns empty data if page exceeds totalPages.
+     * @x-autobe-specification Propagated from request query parameter 'page'.
+     *   Uses 1-based indexing where the first page is page 1. The server does
+     *   not auto-correct invalid page numbers - it returns empty data if page
+     *   exceeds totalPages.
    */
   page: number & tags.Type<"int32"> & tags.Minimum<1>;
 
@@ -52,7 +62,10 @@ export type IPagination = {
    *
    * The complete number of items that match the filter/search criteria before pagination. Use this to calculate total pages or display 'showing X of Y items' information.
    *
-   * @x-autobe-specification Computed integer from COUNT(*) or COUNT(DISTINCT id) on the base query before pagination. Represents total matching records regardless of page boundaries. Used to calculate totalPages and inform UI about full dataset size.
+     * @x-autobe-specification Computed integer from COUNT(*) or COUNT(DISTINCT
+     *   id) on the base query before pagination. Represents total matching
+     *   records regardless of page boundaries. Used to calculate totalPages and
+     *   inform UI about full dataset size.
    */
   total: number & tags.Type<"int32"> & tags.Minimum<0>;
 
@@ -61,7 +74,10 @@ export type IPagination = {
    *
    * Calculated as the ceiling of total divided by limit. For example, 100 total items with limit 20 results in 5 total pages.
    *
-   * @x-autobe-specification Computed integer using ceiling division: totalPages = Math.ceil(total / limit). Minimum value is 1 when total > 0, or 0 when total is 0. Example: 101 items with limit 20 = 6 totalPages (ceiling of 5.05).
+     * @x-autobe-specification Computed integer using ceiling division:
+     *   totalPages = Math.ceil(total / limit). Minimum value is 1 when total >
+     *   0, or 0 when total is 0. Example: 101 items with limit 20 = 6
+     *   totalPages (ceiling of 5.05).
    */
   totalPages: number & tags.Type<"int32"> & tags.Minimum<0>;
 };

@@ -29,18 +29,33 @@ export class CommunityplatformAdminCommunitiesModerationactionsPostsController {
    * @param connection
    * @param communityId Target community's ID
    * @param moderationActionId Target moderation action's ID within the community
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification 1. Authenticate the caller and require a member identity.
-   * 2. Resolve the caller's community-local authority for the target community. Permit access only when the caller holds the owner or moderator role for the specified community. Do not grant access based on platform-wide admin status because current requirements do not define such authority.
-   * 3. Load the community_platform_communities row by communityId and reject when it does not exist.
-   * 4. Load the community_platform_moderation_actions row by moderationActionId and reject when it does not exist.
-   * 5. Verify that community_platform_moderation_actions.community_platform_community_id exactly matches communityId. Reject on mismatch to preserve community isolation.
-   * 6. Load the one-to-one community_platform_moderation_action_posts row by community_platform_moderation_action_id = moderationActionId. Reject when no post-target subtype exists for the moderation action.
-   * 7. Load the target community_platform_posts row by the subtype's community_platform_post_id.
-   * 8. Verify that community_platform_posts.community_platform_community_id exactly matches communityId. Reject on mismatch because moderation targets must remain associated with the community to which they belong.
-   * 9. Return the detailed post DTO mapped from the post row. Include post identity, author linkage, community linkage, title, post_type, status, created_at, updated_at, and deletion-state representation according to the project DTO conventions.
-   * 10. Perform no mutation. This is a read-only audit retrieval operation.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification 1. Authenticate the caller and require a member
+     *   identity. 2. Resolve the caller's community-local authority for the
+     *   target community. Permit access only when the caller holds the owner or
+     *   moderator role for the specified community. Do not grant access based
+     *   on platform-wide admin status because current requirements do not
+     *   define such authority. 3. Load the community_platform_communities row
+     *   by communityId and reject when it does not exist. 4. Load the
+     *   community_platform_moderation_actions row by moderationActionId and
+     *   reject when it does not exist. 5. Verify that
+     *   community_platform_moderation_actions.community_platform_community_id
+     *   exactly matches communityId. Reject on mismatch to preserve community
+     *   isolation. 6. Load the one-to-one
+     *   community_platform_moderation_action_posts row by
+     *   community_platform_moderation_action_id = moderationActionId. Reject
+     *   when no post-target subtype exists for the moderation action. 7. Load
+     *   the target community_platform_posts row by the subtype's
+     *   community_platform_post_id. 8. Verify that
+     *   community_platform_posts.community_platform_community_id exactly
+     *   matches communityId. Reject on mismatch because moderation targets must
+     *   remain associated with the community to which they belong. 9. Return
+     *   the detailed post DTO mapped from the post row. Include post identity,
+     *   author linkage, community linkage, title, post_type, status,
+     *   created_at, updated_at, and deletion-state representation according to
+     *   the project DTO conventions. 10. Perform no mutation. This is a
+     *   read-only audit retrieval operation.
    *
    * Implementation notes:
    * - Use a consistent not-found response strategy so callers cannot infer cross-community moderation data.
@@ -89,9 +104,16 @@ export class CommunityplatformAdminCommunitiesModerationactionsPostsController {
    * @param communityId Target community's ID
    * @param moderationActionId Target moderation action's ID within the community
    * @param moderationActionPostId Target moderation action post record's ID
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Load the caller's member identity and verify that the caller holds community-local elevated authority for the specified community. Authorization must succeed only when the caller is either the owner of the target community or has an active community_platform_community_moderators assignment for the same community with a status representing active standing. Do not authorize guests, ordinary members without local moderation authority, or platform admins acting outside a community-local role.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Load the caller's member identity and verify that
+     *   the caller holds community-local elevated authority for the specified
+     *   community. Authorization must succeed only when the caller is either
+     *   the owner of the target community or has an active
+     *   community_platform_community_moderators assignment for the same
+     *   community with a status representing active standing. Do not authorize
+     *   guests, ordinary members without local moderation authority, or
+     *   platform admins acting outside a community-local role.
    *
    * Query community_platform_moderation_action_posts by id = moderationActionPostId, joining its parent community_platform_moderation_actions and referenced community_platform_posts rows. Enforce all nested invariants in the same retrieval flow: the parent moderation action id must equal moderationActionId, the parent moderation action's community_platform_community_id must equal communityId, and the target post's community_platform_community_id must also equal communityId. If any invariant fails, return a not-found style error so cross-community or broken-parent information is not disclosed.
    *

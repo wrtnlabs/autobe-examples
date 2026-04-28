@@ -16,8 +16,9 @@ export type IEcommerceMallShippingAddress = {
    *
    * UUID format for global uniqueness across the platform.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_shipping_addresses.id (UUID primary key).
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_shipping_addresses.id (UUID primary key).
    */
   id: string & tags.Format<"uuid">;
 
@@ -26,8 +27,9 @@ export type IEcommerceMallShippingAddress = {
    *
    * Used by shipping carriers for package delivery coordination. Required for all shipments.
    *
-   * @x-autobe-database-schema-property recipient_name
-   * @x-autobe-specification Direct mapping from ecommerce_mall_shipping_addresses.recipient_name.
+     * @x-autobe-database-schema-property recipient_name
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_shipping_addresses.recipient_name.
    */
   recipientName: string;
 
@@ -36,8 +38,9 @@ export type IEcommerceMallShippingAddress = {
    *
    * Used by shipping carriers to contact recipients during delivery. Format varies by country.
    *
-   * @x-autobe-database-schema-property phone
-   * @x-autobe-specification Direct mapping from ecommerce_mall_shipping_addresses.phone.
+     * @x-autobe-database-schema-property phone
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_shipping_addresses.phone.
    */
   phone: string;
 
@@ -46,8 +49,9 @@ export type IEcommerceMallShippingAddress = {
    *
    * Contains the complete street-level address for physical delivery routing.
    *
-   * @x-autobe-database-schema-property street_address
-   * @x-autobe-specification Direct mapping from ecommerce_mall_shipping_addresses.street_address.
+     * @x-autobe-database-schema-property street_address
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_shipping_addresses.street_address.
    */
   streetAddress: string;
 
@@ -56,8 +60,9 @@ export type IEcommerceMallShippingAddress = {
    *
    * Used for regional shipping routing and carrier delivery zone identification.
    *
-   * @x-autobe-database-schema-property city
-   * @x-autobe-specification Direct mapping from ecommerce_mall_shipping_addresses.city.
+     * @x-autobe-database-schema-property city
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_shipping_addresses.city.
    */
   city: string;
 
@@ -66,8 +71,9 @@ export type IEcommerceMallShippingAddress = {
    *
    * Required for regional shipping routing, especially in countries with states or provinces.
    *
-   * @x-autobe-database-schema-property state
-   * @x-autobe-specification Direct mapping from ecommerce_mall_shipping_addresses.state.
+     * @x-autobe-database-schema-property state
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_shipping_addresses.state.
    */
   state: string;
 
@@ -76,8 +82,9 @@ export type IEcommerceMallShippingAddress = {
    *
    * Used by shipping carriers for accurate package routing and zone determination.
    *
-   * @x-autobe-database-schema-property postal_code
-   * @x-autobe-specification Direct mapping from ecommerce_mall_shipping_addresses.postal_code.
+     * @x-autobe-database-schema-property postal_code
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_shipping_addresses.postal_code.
    */
   postalCode: string;
 
@@ -86,8 +93,9 @@ export type IEcommerceMallShippingAddress = {
    *
    * Required for international shipping and customs processing. Used for cross-border delivery determination.
    *
-   * @x-autobe-database-schema-property country
-   * @x-autobe-specification Direct mapping from ecommerce_mall_shipping_addresses.country.
+     * @x-autobe-database-schema-property country
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_shipping_addresses.country.
    */
   country: string;
 
@@ -96,8 +104,9 @@ export type IEcommerceMallShippingAddress = {
    *
    * When true, this address is pre-selected during checkout for faster order processing. Only one address per customer can be default at a time.
    *
-   * @x-autobe-database-schema-property is_default
-   * @x-autobe-specification Direct mapping from ecommerce_mall_shipping_addresses.is_default. Boolean flag.
+     * @x-autobe-database-schema-property is_default
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_shipping_addresses.is_default. Boolean flag.
    */
   isDefault: boolean;
 
@@ -106,8 +115,10 @@ export type IEcommerceMallShippingAddress = {
    *
    * Records the exact date and time when this address was added to the customer's account.
    *
-   * @x-autobe-specification Direct mapping from ecommerce_mall_shipping_addresses.created_at. Timestamp when address was first created.
-   * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_shipping_addresses.created_at. Timestamp when address
+     *   was first created.
+     * @x-autobe-database-schema-property created_at
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -116,8 +127,10 @@ export type IEcommerceMallShippingAddress = {
    *
    * Records the last time any field of this address was updated.
    *
-   * @x-autobe-specification Direct mapping from ecommerce_mall_shipping_addresses.updated_at. Timestamp of last modification.
-   * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_shipping_addresses.updated_at. Timestamp of last
+     *   modification.
+     * @x-autobe-database-schema-property updated_at
    */
   updated_at: string & tags.Format<"date-time">;
 };
@@ -148,7 +161,10 @@ export namespace IEcommerceMallShippingAddress {
      *
      * Partial match with case-insensitive comparison allows searching for addresses where the recipient name contains the provided text. For example, "John" matches "John Doe" and "john smith". Empty or null value returns all addresses regardless of recipient name.
      *
-     * @x-autobe-specification Filter parameter mapping to DB column ecommerce_mall_shipping_addresses.recipient_name. Apply ILIKE partial match for flexible search (case-insensitive). Omit from WHERE clause if value is null/undefined.
+         * @x-autobe-specification Filter parameter mapping to DB column
+         *   ecommerce_mall_shipping_addresses.recipient_name. Apply ILIKE
+         *   partial match for flexible search (case-insensitive). Omit from
+         *   WHERE clause if value is null/undefined.
      */
     recipient_name?: string | undefined;
 
@@ -157,7 +173,9 @@ export namespace IEcommerceMallShippingAddress {
      *
      * Exact match required to find addresses with a specific phone number. Useful when the caller knows the exact contact number. Empty or null value returns all addresses regardless of phone number.
      *
-     * @x-autobe-specification Filter parameter mapping to DB column ecommerce_mall_shipping_addresses.phone. Apply exact match comparison. Omit from WHERE clause if value is null/undefined.
+         * @x-autobe-specification Filter parameter mapping to DB column
+         *   ecommerce_mall_shipping_addresses.phone. Apply exact match
+         *   comparison. Omit from WHERE clause if value is null/undefined.
      */
     phone?: string | undefined;
 
@@ -166,7 +184,10 @@ export namespace IEcommerceMallShippingAddress {
      *
      * Partial match with case-insensitive comparison allows searching for addresses in a specific city or region. For example, "New" matches "New York", "Newark", and "New Orleans". Empty or null value returns all addresses regardless of city.
      *
-     * @x-autobe-specification Filter parameter mapping to DB column ecommerce_mall_shipping_addresses.city. Apply ILIKE partial match for flexible city search (case-insensitive). Omit from WHERE clause if value is null/undefined.
+         * @x-autobe-specification Filter parameter mapping to DB column
+         *   ecommerce_mall_shipping_addresses.city. Apply ILIKE partial match
+         *   for flexible city search (case-insensitive). Omit from WHERE clause
+         *   if value is null/undefined.
      */
     city?: string | undefined;
 
@@ -175,7 +196,9 @@ export namespace IEcommerceMallShippingAddress {
      *
      * Exact match required to filter addresses in a specific state or province. The state value must match exactly. Empty or null value returns all addresses regardless of state.
      *
-     * @x-autobe-specification Filter parameter mapping to DB column ecommerce_mall_shipping_addresses.state. Apply exact match comparison. Omit from WHERE clause if value is null/undefined.
+         * @x-autobe-specification Filter parameter mapping to DB column
+         *   ecommerce_mall_shipping_addresses.state. Apply exact match
+         *   comparison. Omit from WHERE clause if value is null/undefined.
      */
     state?: string | undefined;
 
@@ -184,7 +207,9 @@ export namespace IEcommerceMallShippingAddress {
      *
      * Exact match required for postal code filtering. Used by carriers for accurate package routing. Empty or null value returns all addresses regardless of postal code.
      *
-     * @x-autobe-specification Filter parameter mapping to DB column ecommerce_mall_shipping_addresses.postal_code. Apply exact match comparison. Omit from WHERE clause if value is null/undefined.
+         * @x-autobe-specification Filter parameter mapping to DB column
+         *   ecommerce_mall_shipping_addresses.postal_code. Apply exact match
+         *   comparison. Omit from WHERE clause if value is null/undefined.
      */
     postal_code?: string | undefined;
 
@@ -193,7 +218,9 @@ export namespace IEcommerceMallShippingAddress {
      *
      * Exact match required for country filtering. Supports cross-border delivery filtering. Empty or null value returns all addresses regardless of country.
      *
-     * @x-autobe-specification Filter parameter mapping to DB column ecommerce_mall_shipping_addresses.country. Apply exact match comparison. Omit from WHERE clause if value is null/undefined.
+         * @x-autobe-specification Filter parameter mapping to DB column
+         *   ecommerce_mall_shipping_addresses.country. Apply exact match
+         *   comparison. Omit from WHERE clause if value is null/undefined.
      */
     country?: string | undefined;
 
@@ -202,7 +229,11 @@ export namespace IEcommerceMallShippingAddress {
      *
      * Boolean flag to return only addresses that are designated as the customer's default shipping address. When true, returns only default addresses. When false, returns only non-default addresses. When omitted or null, returns all addresses regardless of default status.
      *
-     * @x-autobe-specification Filter parameter mapping to DB column ecommerce_mall_shipping_addresses.is_default. Boolean filter: when true returns only default addresses, when false returns only non-default addresses. Omit from WHERE clause if value is null/undefined.
+         * @x-autobe-specification Filter parameter mapping to DB column
+         *   ecommerce_mall_shipping_addresses.is_default. Boolean filter: when
+         *   true returns only default addresses, when false returns only
+         *   non-default addresses. Omit from WHERE clause if value is
+         *   null/undefined.
      */
     is_default?: boolean | undefined;
 
@@ -211,7 +242,10 @@ export namespace IEcommerceMallShippingAddress {
      *
      * Specifies which page of results to retrieve. Page numbering starts at 1 (not 0). The server uses this value along with limit to calculate the offset for database queries. Default value is 1 when not specified or invalid.
      *
-     * @x-autobe-specification Pagination control parameter. Page number to retrieve (1-indexed). Defaults to 1 if not provided or less than 1. Used to calculate offset: offset = (page - 1) * limit. Not a DB column - computed query parameter for pagination metadata.
+         * @x-autobe-specification Pagination control parameter. Page number to
+         *   retrieve (1-indexed). Defaults to 1 if not provided or less than 1.
+         *   Used to calculate offset: offset = (page - 1) * limit. Not a DB
+         *   column - computed query parameter for pagination metadata.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -220,7 +254,11 @@ export namespace IEcommerceMallShippingAddress {
      *
      * Controls the maximum number of shipping addresses returned in a single page. Must be between 1 and 100 inclusive. Default is 20 results per page. The actual number of results may be less than this value on the final page.
      *
-     * @x-autobe-specification Pagination control parameter. Maximum number of records to return per page. Constrained between 1 and 100 inclusive. Defaults to 20 if not provided, less than 1, or greater than 100. Used to calculate offset: offset = (page - 1) * limit. Not a DB column - computed query parameter.
+         * @x-autobe-specification Pagination control parameter. Maximum number
+         *   of records to return per page. Constrained between 1 and 100
+         *   inclusive. Defaults to 20 if not provided, less than 1, or greater
+         *   than 100. Used to calculate offset: offset = (page - 1) * limit.
+         *   Not a DB column - computed query parameter.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -238,8 +276,10 @@ export namespace IEcommerceMallShippingAddress {
      *
      * The name of the person who will receive the package at this shipping address. Required for shipping purposes.
      *
-     * @x-autobe-database-schema-property recipient_name
-     * @x-autobe-specification Direct mapping to ecommerce_mall_shipping_addresses.recipient_name. Required string for delivery recipient identification.
+         * @x-autobe-database-schema-property recipient_name
+         * @x-autobe-specification Direct mapping to
+         *   ecommerce_mall_shipping_addresses.recipient_name. Required string
+         *   for delivery recipient identification.
      */
     recipient_name?: string | undefined;
 
@@ -248,8 +288,10 @@ export namespace IEcommerceMallShippingAddress {
      *
      * Contact phone number used by delivery carriers to coordinate package delivery. Required for shipping purposes.
      *
-     * @x-autobe-database-schema-property phone
-     * @x-autobe-specification Direct mapping to ecommerce_mall_shipping_addresses.phone. Required string for delivery contact.
+         * @x-autobe-database-schema-property phone
+         * @x-autobe-specification Direct mapping to
+         *   ecommerce_mall_shipping_addresses.phone. Required string for
+         *   delivery contact.
      */
     phone?: string | undefined;
 
@@ -258,8 +300,10 @@ export namespace IEcommerceMallShippingAddress {
      *
      * The detailed street address where packages will be delivered, including house number, street name, apartment/unit numbers if applicable. Required for physical delivery routing.
      *
-     * @x-autobe-database-schema-property street_address
-     * @x-autobe-specification Direct mapping to ecommerce_mall_shipping_addresses.street_address. Required string for physical delivery location.
+         * @x-autobe-database-schema-property street_address
+         * @x-autobe-specification Direct mapping to
+         *   ecommerce_mall_shipping_addresses.street_address. Required string
+         *   for physical delivery location.
      */
     street_address?: string | undefined;
 
@@ -268,8 +312,10 @@ export namespace IEcommerceMallShippingAddress {
      *
      * The city where this shipping address is located. Used by carriers for accurate package routing within the region.
      *
-     * @x-autobe-database-schema-property city
-     * @x-autobe-specification Direct mapping to ecommerce_mall_shipping_addresses.city. Required string for city-level shipping routing.
+         * @x-autobe-database-schema-property city
+         * @x-autobe-specification Direct mapping to
+         *   ecommerce_mall_shipping_addresses.city. Required string for
+         *   city-level shipping routing.
      */
     city?: string | undefined;
 
@@ -278,8 +324,10 @@ export namespace IEcommerceMallShippingAddress {
      *
      * The state or province where this shipping address is located. Used for regional shipping routing and tax calculation purposes.
      *
-     * @x-autobe-database-schema-property state
-     * @x-autobe-specification Direct mapping to ecommerce_mall_shipping_addresses.state. Required string for regional shipping routing.
+         * @x-autobe-database-schema-property state
+         * @x-autobe-specification Direct mapping to
+         *   ecommerce_mall_shipping_addresses.state. Required string for
+         *   regional shipping routing.
      */
     state?: string | undefined;
 
@@ -288,8 +336,10 @@ export namespace IEcommerceMallShippingAddress {
      *
      * The postal code or ZIP code that identifies the specific delivery area. Used by carriers for accurate package routing to the correct local distribution center.
      *
-     * @x-autobe-database-schema-property postal_code
-     * @x-autobe-specification Direct mapping to ecommerce_mall_shipping_addresses.postal_code. Required string for postal code routing.
+         * @x-autobe-database-schema-property postal_code
+         * @x-autobe-specification Direct mapping to
+         *   ecommerce_mall_shipping_addresses.postal_code. Required string for
+         *   postal code routing.
      */
     postal_code?: string | undefined;
 
@@ -298,8 +348,10 @@ export namespace IEcommerceMallShippingAddress {
      *
      * The country where this shipping address is located. Required for cross-border delivery processing and customs documentation.
      *
-     * @x-autobe-database-schema-property country
-     * @x-autobe-specification Direct mapping to ecommerce_mall_shipping_addresses.country. Required string for international shipping processing.
+         * @x-autobe-database-schema-property country
+         * @x-autobe-specification Direct mapping to
+         *   ecommerce_mall_shipping_addresses.country. Required string for
+         *   international shipping processing.
      */
     country?: string | undefined;
 
@@ -308,8 +360,11 @@ export namespace IEcommerceMallShippingAddress {
      *
      * When set to true, this address will be pre-selected during checkout. The backend automatically clears the default flag on any previously default address. Only one address per customer can be the default at a time.
      *
-     * @x-autobe-database-schema-property is_default
-     * @x-autobe-specification Direct mapping to ecommerce_mall_shipping_addresses.is_default. Boolean flag indicating if this is the customer's default shipping address. When true, backend clears the default flag on other addresses.
+         * @x-autobe-database-schema-property is_default
+         * @x-autobe-specification Direct mapping to
+         *   ecommerce_mall_shipping_addresses.is_default. Boolean flag
+         *   indicating if this is the customer's default shipping address. When
+         *   true, backend clears the default flag on other addresses.
      */
     is_default?: boolean | undefined;
   };
@@ -327,8 +382,9 @@ export namespace IEcommerceMallShippingAddress {
      *
      * This is the name that shipping carriers will use on the delivery label and when contacting the recipient. The recipient should be the person who will be available to receive the package at the specified address.
      *
-     * @x-autobe-database-schema-property recipient_name
-     * @x-autobe-specification Direct mapping from ecommerce_mall_shipping_addresses.recipient_name.
+         * @x-autobe-database-schema-property recipient_name
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_shipping_addresses.recipient_name.
      */
     recipient_name: string;
 
@@ -337,8 +393,9 @@ export namespace IEcommerceMallShippingAddress {
      *
      * Shipping carriers use this number to contact the recipient about delivery scheduling, failed delivery attempts, or other delivery-related issues. Include country code for international shipping.
      *
-     * @x-autobe-database-schema-property phone
-     * @x-autobe-specification Direct mapping from ecommerce_mall_shipping_addresses.phone.
+         * @x-autobe-database-schema-property phone
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_shipping_addresses.phone.
      */
     phone: string;
 
@@ -347,8 +404,9 @@ export namespace IEcommerceMallShippingAddress {
      *
      * Include all address components such as apartment numbers, suite numbers, floor information, or building names in this field. This must be detailed enough for shipping carriers to locate the delivery destination.
      *
-     * @x-autobe-database-schema-property street_address
-     * @x-autobe-specification Direct mapping from ecommerce_mall_shipping_addresses.street_address.
+         * @x-autobe-database-schema-property street_address
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_shipping_addresses.street_address.
      */
     street_address: string;
 
@@ -357,8 +415,9 @@ export namespace IEcommerceMallShippingAddress {
      *
      * Use the official city name as recognized by postal services. For large metropolitan areas, ensure the correct district or borough is specified if applicable.
      *
-     * @x-autobe-database-schema-property city
-     * @x-autobe-specification Direct mapping from ecommerce_mall_shipping_addresses.city.
+         * @x-autobe-database-schema-property city
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_shipping_addresses.city.
      */
     city: string;
 
@@ -367,8 +426,9 @@ export namespace IEcommerceMallShippingAddress {
      *
      * Required for regional routing by shipping carriers. Use the official administrative division name recognized in the destination country.
      *
-     * @x-autobe-database-schema-property state
-     * @x-autobe-specification Direct mapping from ecommerce_mall_shipping_addresses.state.
+         * @x-autobe-database-schema-property state
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_shipping_addresses.state.
      */
     state: string;
 
@@ -377,8 +437,9 @@ export namespace IEcommerceMallShippingAddress {
      *
      * Used by shipping carriers to determine accurate routing and delivery pathways. Ensure the correct format for the destination country is provided.
      *
-     * @x-autobe-database-schema-property postal_code
-     * @x-autobe-specification Direct mapping from ecommerce_mall_shipping_addresses.postal_code.
+         * @x-autobe-database-schema-property postal_code
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_shipping_addresses.postal_code.
      */
     postal_code: string;
 
@@ -387,8 +448,9 @@ export namespace IEcommerceMallShippingAddress {
      *
      * Specifies the destination country for cross-border delivery processing. Shipping carriers require this for customs documentation and international shipping compliance.
      *
-     * @x-autobe-database-schema-property country
-     * @x-autobe-specification Direct mapping from ecommerce_mall_shipping_addresses.country.
+         * @x-autobe-database-schema-property country
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_shipping_addresses.country.
      */
     country: string;
 
@@ -397,8 +459,10 @@ export namespace IEcommerceMallShippingAddress {
      *
      * Only one address can be designated as default per customer. When true, this address is pre-selected during checkout for convenience. If another address was previously default, it will be automatically unmarked.
      *
-     * @x-autobe-database-schema-property is_default
-     * @x-autobe-specification Direct mapping from ecommerce_mall_shipping_addresses.is_default. Defaults to false if not provided.
+         * @x-autobe-database-schema-property is_default
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_shipping_addresses.is_default. Defaults to false if
+         *   not provided.
      */
     is_default?: boolean | undefined;
   };
@@ -420,8 +484,9 @@ export namespace IEcommerceMallShippingAddress {
      *
      * The city component of the shipping address used for regional routing by carriers. Displayed in address lists for location context.
      *
-     * @x-autobe-database-schema-property city
-     * @x-autobe-specification Direct mapping from ecommerce_mall_shipping_addresses.city.
+         * @x-autobe-database-schema-property city
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_shipping_addresses.city.
      */
     city: string;
 
@@ -430,8 +495,9 @@ export namespace IEcommerceMallShippingAddress {
      *
      * The country component required for international shipping processing and cross-border delivery coordination.
      *
-     * @x-autobe-database-schema-property country
-     * @x-autobe-specification Direct mapping from ecommerce_mall_shipping_addresses.country.
+         * @x-autobe-database-schema-property country
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_shipping_addresses.country.
      */
     country: string;
 
@@ -440,8 +506,9 @@ export namespace IEcommerceMallShippingAddress {
      *
      * UUID assigned at address creation time. Used for address selection, update, and deletion operations.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_mall_shipping_addresses.id (UUID primary key).
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_shipping_addresses.id (UUID primary key).
      */
     id: string & tags.Format<"uuid">;
 
@@ -450,8 +517,10 @@ export namespace IEcommerceMallShippingAddress {
      *
      * When true, this address is pre-selected during checkout for user convenience. Only one address per customer can be the default at any time.
      *
-     * @x-autobe-database-schema-property is_default
-     * @x-autobe-specification Direct mapping from ecommerce_mall_shipping_addresses.is_default. Boolean flag indicating if this is the customer's primary shipping address.
+         * @x-autobe-database-schema-property is_default
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_shipping_addresses.is_default. Boolean flag
+         *   indicating if this is the customer's primary shipping address.
      */
     is_default: boolean;
 
@@ -460,8 +529,9 @@ export namespace IEcommerceMallShippingAddress {
      *
      * The person designated to receive the package at this address. Required field for shipping carrier label generation.
      *
-     * @x-autobe-database-schema-property recipient_name
-     * @x-autobe-specification Direct mapping from ecommerce_mall_shipping_addresses.recipient_name.
+         * @x-autobe-database-schema-property recipient_name
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_shipping_addresses.recipient_name.
      */
     recipient_name: string;
 
@@ -470,8 +540,9 @@ export namespace IEcommerceMallShippingAddress {
      *
      * The regional administrative division used for shipping routing within the country. Required for accurate regional delivery processing.
      *
-     * @x-autobe-database-schema-property state
-     * @x-autobe-specification Direct mapping from ecommerce_mall_shipping_addresses.state.
+         * @x-autobe-database-schema-property state
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_shipping_addresses.state.
      */
     state: string;
   };

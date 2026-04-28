@@ -24,9 +24,16 @@ export class HrmtimetrackingAuthEmployeeController {
    *
    * @param connection
    * @param body Employee registration payload with credential fields required to create an employee account.
-   * @x-autobe-authorization-type join
-   * @x-autobe-authorization-actor employee
-   * @x-autobe-specification Implement employee account registration by validating the incoming join payload, normalizing the email value, and checking hrm_time_tracking_employees for an existing non-deleted account with the same unique email. If a conflicting active account exists, reject the request with a validation error. If the business policy allows re-registration of a previously deleted account, that policy must be explicitly defined elsewhere; otherwise reject when any matching unique email exists because the table enforces uniqueness.
+     * @x-autobe-authorization-type join
+     * @x-autobe-authorization-actor employee
+     * @x-autobe-specification Implement employee account registration by
+     *   validating the incoming join payload, normalizing the email value, and
+     *   checking hrm_time_tracking_employees for an existing non-deleted
+     *   account with the same unique email. If a conflicting active account
+     *   exists, reject the request with a validation error. If the business
+     *   policy allows re-registration of a previously deleted account, that
+     *   policy must be explicitly defined elsewhere; otherwise reject when any
+     *   matching unique email exists because the table enforces uniqueness.
    *
    * Hash the provided password before persistence and create a new hrm_time_tracking_employees row with a generated UUID, email, password_hash, null email_verified_at unless verification is completed during registration, null last_logged_in_at, current created_at, current updated_at, and null deleted_at. After creating the employee identity, create an authenticated session record in hrm_time_tracking_employee_sessions if the authorization architecture issues tokens immediately after join. Populate the session with the employee id, optional selected organization context if supplied by the join flow, request metadata such as ip, href, and referrer, null logged_out_at, current created_at, and an appropriate expired_at timestamp.
    *
@@ -66,9 +73,18 @@ export class HrmtimetrackingAuthEmployeeController {
    *
    * @param connection
    * @param body Employee login payload containing the credentials required to authenticate an employee account.
-   * @x-autobe-authorization-type login
-   * @x-autobe-authorization-actor employee
-   * @x-autobe-specification Implement employee login by locating the employee identity in hrm_time_tracking_employees using the unique email field and rejecting the request if no active matching account exists or if deleted_at indicates the account is deleted. Verify the provided password against password_hash using the platform password hashing strategy. On successful authentication, update last_logged_in_at to the current timestamp and create a new hrm_time_tracking_employee_sessions row capturing the employee id, optional selected organization workspace, request ip, href, referrer, null logged_out_at, current created_at, and a computed expired_at.
+     * @x-autobe-authorization-type login
+     * @x-autobe-authorization-actor employee
+     * @x-autobe-specification Implement employee login by locating the employee
+     *   identity in hrm_time_tracking_employees using the unique email field
+     *   and rejecting the request if no active matching account exists or if
+     *   deleted_at indicates the account is deleted. Verify the provided
+     *   password against password_hash using the platform password hashing
+     *   strategy. On successful authentication, update last_logged_in_at to the
+     *   current timestamp and create a new hrm_time_tracking_employee_sessions
+     *   row capturing the employee id, optional selected organization
+     *   workspace, request ip, href, referrer, null logged_out_at, current
+     *   created_at, and a computed expired_at.
    *
    * Issue authorization tokens represented by IHrmTimeTrackingEmployee.IAuthorized. The tokens should be bound to the created session so refresh validation can later confirm session expiry and logout state. If the schema-supported workflow requires email verification before full access, the implementation may validate email_verified_at and either reject login or limit downstream access according to system policy, but it must only rely on this confirmed field rather than inventing other verification markers.
    *
@@ -108,9 +124,18 @@ export class HrmtimetrackingAuthEmployeeController {
    *
    * @param connection
    * @param body Employee refresh payload containing the token material required to renew authorization.
-   * @x-autobe-authorization-type refresh
-   * @x-autobe-authorization-actor employee
-   * @x-autobe-specification Implement token refresh by validating the incoming refresh payload against the platform's refresh-token strategy and resolving the associated persistent employee session. Confirm that the related hrm_time_tracking_employee_sessions row exists, has not reached expired_at, and has not been explicitly terminated through logged_out_at. Also confirm that the referenced hrm_time_tracking_employees account still exists and is not deleted according to deleted_at. When refresh is accepted, issue a new IHrmTimeTrackingEmployee.IAuthorized token payload and update session state as needed by the token rotation policy.
+     * @x-autobe-authorization-type refresh
+     * @x-autobe-authorization-actor employee
+     * @x-autobe-specification Implement token refresh by validating the
+     *   incoming refresh payload against the platform's refresh-token strategy
+     *   and resolving the associated persistent employee session. Confirm that
+     *   the related hrm_time_tracking_employee_sessions row exists, has not
+     *   reached expired_at, and has not been explicitly terminated through
+     *   logged_out_at. Also confirm that the referenced
+     *   hrm_time_tracking_employees account still exists and is not deleted
+     *   according to deleted_at. When refresh is accepted, issue a new
+     *   IHrmTimeTrackingEmployee.IAuthorized token payload and update session
+     *   state as needed by the token rotation policy.
    *
    * If refresh token rotation is used, revoke or replace the prior refresh credential in the server-side token store or token versioning layer while preserving the same underlying session row when appropriate. If the architecture instead mints a replacement session during refresh, create the new session atomically and invalidate the previous one. In either approach, preserve auditability and do not authorize refresh for logged-out or expired sessions.
    *

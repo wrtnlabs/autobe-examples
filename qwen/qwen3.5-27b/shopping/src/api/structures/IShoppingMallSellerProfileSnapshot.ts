@@ -14,8 +14,10 @@ export type IShoppingMallSellerProfileSnapshot = {
    *
    * This UUID serves as the primary key for the snapshot table, allowing precise identification and retrieval of individual snapshot records for audit and dispute resolution purposes.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_seller_profile_snapshots.id. Primary key uniquely identifying each snapshot record.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_seller_profile_snapshots.id. Primary key uniquely
+     *   identifying each snapshot record.
    */
   id: string & tags.Format<"uuid">;
 
@@ -24,8 +26,10 @@ export type IShoppingMallSellerProfileSnapshot = {
    *
    * This foreign key links the snapshot to the specific seller profile whose state was captured, enabling retrieval of all modification history for a given profile.
    *
-   * @x-autobe-database-schema-property shopping_mall_seller_profile_id
-   * @x-autobe-specification Direct mapping from shopping_mall_seller_profile_snapshots.shopping_mall_seller_profile_id. Foreign key reference to the seller profile that was modified.
+     * @x-autobe-database-schema-property shopping_mall_seller_profile_id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_seller_profile_snapshots.shopping_mall_seller_profile_id.
+     *   Foreign key reference to the seller profile that was modified.
    */
   shopping_mall_seller_profile_id: string & tags.Format<"uuid">;
 
@@ -34,8 +38,11 @@ export type IShoppingMallSellerProfileSnapshot = {
    *
    * Contains the previous shop name that was changed during this modification event. This field is null if the shop name was not modified in this particular change event.
    *
-   * @x-autobe-database-schema-property shop_name_before
-   * @x-autobe-specification Direct mapping from shopping_mall_seller_profile_snapshots.shop_name_before. Nullable - contains the previous shop name value only if shop_name was modified in this change event.
+     * @x-autobe-database-schema-property shop_name_before
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_seller_profile_snapshots.shop_name_before. Nullable -
+     *   contains the previous shop name value only if shop_name was modified in
+     *   this change event.
    */
   shop_name_before?: string | null | undefined;
 
@@ -44,8 +51,11 @@ export type IShoppingMallSellerProfileSnapshot = {
    *
    * Contains the new shop name that was set during this modification event. This field is null if the shop name was not modified in this particular change event.
    *
-   * @x-autobe-database-schema-property shop_name_after
-   * @x-autobe-specification Direct mapping from shopping_mall_seller_profile_snapshots.shop_name_after. Nullable - contains the new shop name value only if shop_name was modified in this change event.
+     * @x-autobe-database-schema-property shop_name_after
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_seller_profile_snapshots.shop_name_after. Nullable -
+     *   contains the new shop name value only if shop_name was modified in this
+     *   change event.
    */
   shop_name_after?: string | null | undefined;
 
@@ -54,8 +64,11 @@ export type IShoppingMallSellerProfileSnapshot = {
    *
    * Contains the previous shop description that was changed during this modification event. This field is null if the shop description was not modified in this particular change event.
    *
-   * @x-autobe-database-schema-property shop_description_before
-   * @x-autobe-specification Direct mapping from shopping_mall_seller_profile_snapshots.shop_description_before. Nullable - contains the previous shop description value only if shop_description was modified in this change event.
+     * @x-autobe-database-schema-property shop_description_before
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_seller_profile_snapshots.shop_description_before.
+     *   Nullable - contains the previous shop description value only if
+     *   shop_description was modified in this change event.
    */
   shop_description_before?: string | null | undefined;
 
@@ -64,8 +77,11 @@ export type IShoppingMallSellerProfileSnapshot = {
    *
    * Contains the new shop description that was set during this modification event. This field is null if the shop description was not modified in this particular change event.
    *
-   * @x-autobe-database-schema-property shop_description_after
-   * @x-autobe-specification Direct mapping from shopping_mall_seller_profile_snapshots.shop_description_after. Nullable - contains the new shop description value only if shop_description was modified in this change event.
+     * @x-autobe-database-schema-property shop_description_after
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_seller_profile_snapshots.shop_description_after. Nullable
+     *   - contains the new shop description value only if shop_description was
+     *   modified in this change event.
    */
   shop_description_after?: string | null | undefined;
 
@@ -74,8 +90,11 @@ export type IShoppingMallSellerProfileSnapshot = {
    *
    * Contains the previous logo image URL that was changed during this modification event. This field is null if the logo image was not modified in this particular change event.
    *
-   * @x-autobe-specification Direct mapping from shopping_mall_seller_profile_snapshots.logo_image_before. Nullable - contains the previous logo image URI only if logo_uri was modified in this change event.
-   * @x-autobe-database-schema-property logo_image_before
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_seller_profile_snapshots.logo_image_before. Nullable -
+     *   contains the previous logo image URI only if logo_uri was modified in
+     *   this change event.
+     * @x-autobe-database-schema-property logo_image_before
    */
   logo_image_before?: (string & tags.Format<"uri">) | null | undefined;
 
@@ -84,8 +103,11 @@ export type IShoppingMallSellerProfileSnapshot = {
    *
    * Contains the new logo image URL that was set during this modification event. This field is null if the logo image was not modified in this particular change event.
    *
-   * @x-autobe-specification Direct mapping from shopping_mall_seller_profile_snapshots.logo_image_after. Nullable - contains the new logo image URI only if logo_uri was modified in this change event.
-   * @x-autobe-database-schema-property logo_image_after
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_seller_profile_snapshots.logo_image_after. Nullable -
+     *   contains the new logo image URI only if logo_uri was modified in this
+     *   change event.
+     * @x-autobe-database-schema-property logo_image_after
    */
   logo_image_after?: (string & tags.Format<"uri">) | null | undefined;
 
@@ -94,8 +116,11 @@ export type IShoppingMallSellerProfileSnapshot = {
    *
    * Records the exact time when the seller profile modification occurred and this snapshot was generated. This timestamp is essential for chronological ordering of modification history.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from shopping_mall_seller_profile_snapshots.created_at. Timestamp when the snapshot was created, indicating when the profile modification occurred.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_seller_profile_snapshots.created_at. Timestamp when the
+     *   snapshot was created, indicating when the profile modification
+     *   occurred.
    */
   created_at: string & tags.Format<"date-time">;
 };
@@ -113,8 +138,10 @@ export namespace IShoppingMallSellerProfileSnapshot {
      *
      * This UUID identifies a specific modification event in the seller profile audit trail. Each time a seller changes their profile (shop name, description, or logo), a new snapshot is created with a unique ID.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_seller_profile_snapshots.id. Primary key, UUID format, auto-generated by database.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_seller_profile_snapshots.id. Primary key, UUID
+         *   format, auto-generated by database.
      */
     id: string & tags.Format<"uuid">;
 
@@ -123,8 +150,11 @@ export namespace IShoppingMallSellerProfileSnapshot {
      *
      * This field contains the previous shop name that was changed during this profile update. If the shop name was not modified in this particular change event, this field will be null.
      *
-     * @x-autobe-database-schema-property shop_name_before
-     * @x-autobe-specification Direct mapping from shopping_mall_seller_profile_snapshots.shop_name_before. Nullable String. Contains the previous shop name value before the modification, or null if shop name was not changed in this event.
+         * @x-autobe-database-schema-property shop_name_before
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_seller_profile_snapshots.shop_name_before. Nullable
+         *   String. Contains the previous shop name value before the
+         *   modification, or null if shop name was not changed in this event.
      */
     shop_name_before: string | null;
 
@@ -133,8 +163,11 @@ export namespace IShoppingMallSellerProfileSnapshot {
      *
      * This field contains the new shop name that was set during this profile update. If the shop name was not modified in this particular change event, this field will be null.
      *
-     * @x-autobe-database-schema-property shop_name_after
-     * @x-autobe-specification Direct mapping from shopping_mall_seller_profile_snapshots.shop_name_after. Nullable String. Contains the new shop name value after the modification, or null if shop name was not changed in this event.
+         * @x-autobe-database-schema-property shop_name_after
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_seller_profile_snapshots.shop_name_after. Nullable
+         *   String. Contains the new shop name value after the modification, or
+         *   null if shop name was not changed in this event.
      */
     shop_name_after: string | null;
 
@@ -143,8 +176,12 @@ export namespace IShoppingMallSellerProfileSnapshot {
      *
      * This field contains the previous shop description that was changed during this profile update. If the shop description was not modified in this particular change event, this field will be null.
      *
-     * @x-autobe-database-schema-property shop_description_before
-     * @x-autobe-specification Direct mapping from shopping_mall_seller_profile_snapshots.shop_description_before. Nullable String. Contains the previous shop description value before the modification, or null if shop description was not changed in this event.
+         * @x-autobe-database-schema-property shop_description_before
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_seller_profile_snapshots.shop_description_before.
+         *   Nullable String. Contains the previous shop description value
+         *   before the modification, or null if shop description was not
+         *   changed in this event.
      */
     shop_description_before: string | null;
 
@@ -153,8 +190,12 @@ export namespace IShoppingMallSellerProfileSnapshot {
      *
      * This field contains the new shop description that was set during this profile update. If the shop description was not modified in this particular change event, this field will be null.
      *
-     * @x-autobe-database-schema-property shop_description_after
-     * @x-autobe-specification Direct mapping from shopping_mall_seller_profile_snapshots.shop_description_after. Nullable String. Contains the new shop description value after the modification, or null if shop description was not changed in this event.
+         * @x-autobe-database-schema-property shop_description_after
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_seller_profile_snapshots.shop_description_after.
+         *   Nullable String. Contains the new shop description value after the
+         *   modification, or null if shop description was not changed in this
+         *   event.
      */
     shop_description_after: string | null;
 
@@ -163,8 +204,11 @@ export namespace IShoppingMallSellerProfileSnapshot {
      *
      * This field contains the previous logo image URL that was changed during this profile update. If the logo image was not modified in this particular change event, this field will be null.
      *
-     * @x-autobe-database-schema-property logo_image_before
-     * @x-autobe-specification Direct mapping from shopping_mall_seller_profile_snapshots.logo_image_before. Nullable String with URI format. Contains the previous logo image URL before the modification, or null if logo was not changed in this event.
+         * @x-autobe-database-schema-property logo_image_before
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_seller_profile_snapshots.logo_image_before. Nullable
+         *   String with URI format. Contains the previous logo image URL before
+         *   the modification, or null if logo was not changed in this event.
      */
     logo_image_before: (string & tags.Format<"uri">) | null;
 
@@ -173,8 +217,11 @@ export namespace IShoppingMallSellerProfileSnapshot {
      *
      * This field contains the new logo image URL that was set during this profile update. If the logo image was not modified in this particular change event, this field will be null.
      *
-     * @x-autobe-database-schema-property logo_image_after
-     * @x-autobe-specification Direct mapping from shopping_mall_seller_profile_snapshots.logo_image_after. Nullable String with URI format. Contains the new logo image URL after the modification, or null if logo was not changed in this event.
+         * @x-autobe-database-schema-property logo_image_after
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_seller_profile_snapshots.logo_image_after. Nullable
+         *   String with URI format. Contains the new logo image URL after the
+         *   modification, or null if logo was not changed in this event.
      */
     logo_image_after: (string & tags.Format<"uri">) | null;
 
@@ -183,8 +230,13 @@ export namespace IShoppingMallSellerProfileSnapshot {
      *
      * This relation provides context about which seller's profile was changed. It includes the seller's current profile information such as shop name, description, logo, approval status, and account state.
      *
-     * @x-autobe-database-schema-property sellerProfile
-     * @x-autobe-specification Relation mapping from shopping_mall_seller_profile_snapshots.sellerProfile. JOIN on shopping_mall_seller_profile_id foreign key to shopping_mall_seller_profiles.id. Returns IShoppingMallSellerProfile.ISummary object with seller profile details.
+         * @x-autobe-database-schema-property sellerProfile
+         * @x-autobe-specification Relation mapping from
+         *   shopping_mall_seller_profile_snapshots.sellerProfile. JOIN on
+         *   shopping_mall_seller_profile_id foreign key to
+         *   shopping_mall_seller_profiles.id. Returns
+         *   IShoppingMallSellerProfile.ISummary object with seller profile
+         *   details.
      */
     sellerProfile: IShoppingMallSellerProfile.ISummary;
 
@@ -193,8 +245,11 @@ export namespace IShoppingMallSellerProfileSnapshot {
      *
      * This DateTime field records the exact time when the seller profile was modified and this snapshot was generated. Used to order snapshots chronologically, with most recent changes appearing first.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_seller_profile_snapshots.created_at. DateTime with timezone. Records the exact timestamp when this snapshot was created during the profile modification event.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_seller_profile_snapshots.created_at. DateTime with
+         *   timezone. Records the exact timestamp when this snapshot was
+         *   created during the profile modification event.
      */
     created_at: string & tags.Format<"date-time">;
   };
@@ -210,7 +265,12 @@ export namespace IShoppingMallSellerProfileSnapshot {
      *
      * Only snapshots created on or after this date-time will be included in the results. Use this parameter to retrieve snapshots from a specific time period. The value must be in ISO 8601 date-time format (e.g., 2024-01-15T10:30:00Z). This parameter is optional - if omitted, no lower bound filter is applied and snapshots from any date will be returned.
      *
-     * @x-autobe-specification Query parameter for filtering snapshots by creation date lower bound. Applied as WHERE created_at >= created_at_from on shopping_mall_seller_profile_snapshots.created_at column. ISO 8601 date-time format. Optional - if not provided, no lower bound filter is applied.
+         * @x-autobe-specification Query parameter for filtering snapshots by
+         *   creation date lower bound. Applied as WHERE created_at >=
+         *   created_at_from on
+         *   shopping_mall_seller_profile_snapshots.created_at column. ISO 8601
+         *   date-time format. Optional - if not provided, no lower bound filter
+         *   is applied.
      */
     created_at_from?: (string & tags.Format<"date-time">) | undefined;
 
@@ -219,7 +279,11 @@ export namespace IShoppingMallSellerProfileSnapshot {
      *
      * Only snapshots created on or before this date-time will be included in the results. Use this parameter together with created_at_from to retrieve snapshots within a specific time range. The value must be in ISO 8601 date-time format (e.g., 2024-01-20T23:59:59Z). This parameter is optional - if omitted, no upper bound filter is applied and snapshots from any date will be returned.
      *
-     * @x-autobe-specification Query parameter for filtering snapshots by creation date upper bound. Applied as WHERE created_at <= created_at_to on shopping_mall_seller_profile_snapshots.created_at column. ISO 8601 date-time format. Optional - if not provided, no upper bound filter is applied.
+         * @x-autobe-specification Query parameter for filtering snapshots by
+         *   creation date upper bound. Applied as WHERE created_at <=
+         *   created_at_to on shopping_mall_seller_profile_snapshots.created_at
+         *   column. ISO 8601 date-time format. Optional - if not provided, no
+         *   upper bound filter is applied.
      */
     created_at_to?: (string & tags.Format<"date-time">) | undefined;
 
@@ -228,7 +292,14 @@ export namespace IShoppingMallSellerProfileSnapshot {
      *
      * Specify an array of field names to retrieve only snapshots where those specific fields were changed. Valid values are: shop_name (shop name changes), shop_description (shop description changes), or logo_image (logo image changes). For example, ["shop_name"] returns only snapshots where the shop name was modified. This parameter is optional - if omitted, all snapshots are returned regardless of which fields were changed. The array must contain unique values.
      *
-     * @x-autobe-specification Query parameter for filtering snapshots by which profile fields were modified. Accepts an array of field names: shop_name, shop_description, or logo_image. Applied as OR conditions checking if corresponding _before and _after columns are non-null. For example, shop_name filters snapshots where shop_name_before OR shop_name_after is not null. Optional - if not provided, all snapshots are returned regardless of which fields changed.
+         * @x-autobe-specification Query parameter for filtering snapshots by
+         *   which profile fields were modified. Accepts an array of field
+         *   names: shop_name, shop_description, or logo_image. Applied as OR
+         *   conditions checking if corresponding _before and _after columns are
+         *   non-null. For example, shop_name filters snapshots where
+         *   shop_name_before OR shop_name_after is not null. Optional - if not
+         *   provided, all snapshots are returned regardless of which fields
+         *   changed.
      */
     changed_fields?:
       | (("shop_name" | "shop_description" | "logo_image")[] & tags.UniqueItems)
@@ -239,7 +310,10 @@ export namespace IShoppingMallSellerProfileSnapshot {
      *
      * Specifies which page of results to retrieve. Page numbering starts at 1 (the first page). For example, page 1 returns the first set of results, page 2 returns the second set, and so on. The number of items per page is controlled by the limit parameter. This parameter is optional - if omitted, defaults to page 1 (the first page of results).
      *
-     * @x-autobe-specification Query parameter for pagination page number. 1-indexed (page 1 is the first page). Used to calculate offset for LIMIT/OFFSET pagination: OFFSET = (page - 1) * limit. Default value is 1 if not provided. Minimum value is 1.
+         * @x-autobe-specification Query parameter for pagination page number.
+         *   1-indexed (page 1 is the first page). Used to calculate offset for
+         *   LIMIT/OFFSET pagination: OFFSET = (page - 1) * limit. Default value
+         *   is 1 if not provided. Minimum value is 1.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -248,7 +322,11 @@ export namespace IShoppingMallSellerProfileSnapshot {
      *
      * Controls how many snapshot records are included in each page of results. The value must be between 1 and 100 (inclusive). For example, a limit of 20 returns up to 20 snapshots per page. This parameter is optional - if omitted, a default limit (typically 20) is applied. Use a higher limit to retrieve more snapshots per request, or a lower limit for smaller, more manageable result sets.
      *
-     * @x-autobe-specification Query parameter for maximum number of snapshots per page. Used as LIMIT clause in SQL query. Minimum value is 1, maximum value is 100. Default value is typically 20 or similar if not provided. Controls how many snapshot records are returned in each page of results.
+         * @x-autobe-specification Query parameter for maximum number of
+         *   snapshots per page. Used as LIMIT clause in SQL query. Minimum
+         *   value is 1, maximum value is 100. Default value is typically 20 or
+         *   similar if not provided. Controls how many snapshot records are
+         *   returned in each page of results.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)

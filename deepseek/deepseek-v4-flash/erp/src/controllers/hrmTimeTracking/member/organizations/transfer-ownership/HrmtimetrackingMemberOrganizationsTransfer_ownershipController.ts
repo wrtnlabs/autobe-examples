@@ -23,9 +23,12 @@ export class HrmtimetrackingMemberOrganizationsTransfer_ownershipController {
    * @param connection
    * @param organizationId The unique identifier (UUID) of the organization whose ownership will be transferred.
    * @param body Specifies the target employee who will receive ownership of the organization. The employee must have an active record within the same organization.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Verify the requesting user is the current organization owner (checked via hrm_time_tracking_organizations.hrm_time_tracking_member_id matching the authenticated member).
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Verify the requesting user is the current
+     *   organization owner (checked via
+     *   hrm_time_tracking_organizations.hrm_time_tracking_member_id matching
+     *   the authenticated member).
    *
    * Look up the target employee by their UUID (hrm_time_tracking_employees.id). Verify the target employee belongs to the same organization (hrm_time_tracking_employees.hrm_time_tracking_organization_id matches the path parameter). Verify the target employee has status='active' and deleted_at IS NULL.
    *

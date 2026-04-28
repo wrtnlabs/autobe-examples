@@ -18,7 +18,11 @@ export namespace IHrmPlatformGuest {
      *
      * The token must be a valid JWT string. If the token is invalid, malformed, expired, or the associated guest account has been deleted, the refresh operation will fail with a 401 Unauthorized error and the client must create a new guest session via the join endpoint.
      *
-     * @x-autobe-specification JWT refresh token string provided by client. Validated against hrm_platform_guest_sessions table: verify token signature, check expired_at > current time, confirm referenced guest account exists and is not soft-deleted. Server-side computation generates new token pair upon successful validation.
+         * @x-autobe-specification JWT refresh token string provided by client.
+         *   Validated against hrm_platform_guest_sessions table: verify token
+         *   signature, check expired_at > current time, confirm referenced
+         *   guest account exists and is not soft-deleted. Server-side
+         *   computation generates new token pair upon successful validation.
      */
     refresh_token: string;
   };
@@ -36,15 +40,17 @@ export namespace IHrmPlatformGuest {
      *
      * This UUID is automatically generated when the guest account is created. It identifies the guest throughout their session and is used to track their activity on the platform.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from hrm_platform_guests.id. UUID format.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from hrm_platform_guests.id.
+         *   UUID format.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Authorization token.
      *
-     * @x-autobe-specification Authorization token comes from the session table.
+         * @x-autobe-specification Authorization token comes from the session
+         *   table.
      */
     token: IAuthorizationToken;
   };
@@ -64,8 +70,11 @@ export namespace IHrmPlatformGuest {
      *
      * This enables the platform to maintain guest state across page loads and browser sessions without requiring authentication, and supports features like preserving registration form state across page reloads.
      *
-     * @x-autobe-database-schema-property device_fingerprint
-     * @x-autobe-specification Direct mapping to hrm_platform_guests.device_fingerprint. Optional field - if not provided in request, server generates unique fingerprint from request characteristics. Must be unique across all guest records.
+         * @x-autobe-database-schema-property device_fingerprint
+         * @x-autobe-specification Direct mapping to
+         *   hrm_platform_guests.device_fingerprint. Optional field - if not
+         *   provided in request, server generates unique fingerprint from
+         *   request characteristics. Must be unique across all guest records.
      */
     device_fingerprint?: string | undefined;
 
@@ -76,7 +85,10 @@ export namespace IHrmPlatformGuest {
      *
      * Required for all guest registration requests to enable proper session tracking and analytics.
      *
-     * @x-autobe-specification Session context field - NOT stored in hrm_platform_guests. Used to create hrm_platform_guest_sessions record with the URL the guest was accessing. Required field for session tracking.
+         * @x-autobe-specification Session context field - NOT stored in
+         *   hrm_platform_guests. Used to create hrm_platform_guest_sessions
+         *   record with the URL the guest was accessing. Required field for
+         *   session tracking.
      */
     href: string & tags.Format<"uri">;
 
@@ -87,7 +99,9 @@ export namespace IHrmPlatformGuest {
      *
      * Required for all guest registration requests to enable proper session tracking and analytics.
      *
-     * @x-autobe-specification Session context field - NOT stored in hrm_platform_guests. Used to create hrm_platform_guest_sessions record with the referring URL. Required field for session tracking.
+         * @x-autobe-specification Session context field - NOT stored in
+         *   hrm_platform_guests. Used to create hrm_platform_guest_sessions
+         *   record with the referring URL. Required field for session tracking.
      */
     referrer: string & tags.Format<"uri">;
 
@@ -98,7 +112,11 @@ export namespace IHrmPlatformGuest {
      *
      * Optional to support server-side rendering (SSR) scenarios where the client cannot directly know its own IP address. When omitted, the server automatically captures the IP from the request context as a fallback.
      *
-     * @x-autobe-specification Session context field - NOT stored in hrm_platform_guests. Used to create hrm_platform_guest_sessions record with client IP address. Optional field to support SSR scenarios where client cannot know its own IP (server captures as fallback: body.ip ?? serverIp).
+         * @x-autobe-specification Session context field - NOT stored in
+         *   hrm_platform_guests. Used to create hrm_platform_guest_sessions
+         *   record with client IP address. Optional field to support SSR
+         *   scenarios where client cannot know its own IP (server captures as
+         *   fallback: body.ip ?? serverIp).
      */
     ip?: (string & tags.Format<"ipv4">) | undefined;
   };

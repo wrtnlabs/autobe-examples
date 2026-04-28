@@ -21,7 +21,9 @@ import { IRedditLikeCommunitySubscription } from "../../../../../structures/IRed
  * @param props.communityId Target community's ID (UUID)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query the reddit_like_community_subscriptions table to find the active subscription record for the authenticated member and the specified community.
+ * @x-autobe-specification Query the reddit_like_community_subscriptions table
+ *   to find the active subscription record for the authenticated member and the
+ *   specified community.
  *
  * 1. Extract communityId from path parameter
  * 2. Get authenticated member ID from session/context

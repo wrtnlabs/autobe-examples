@@ -11,51 +11,52 @@ import { IRedditCloneMember } from "./IRedditCloneMember";
  */
 export type IRedditCloneFile = {
   /**
-   * @x-autobe-database-schema-property id
+     * @x-autobe-database-schema-property id
    */
   id: string & tags.Format<"uuid">;
   /**
-   * @x-autobe-database-schema-property original_filename
+     * @x-autobe-database-schema-property original_filename
    */
   originalFilename: string;
   /**
-   * @x-autobe-database-schema-property stored_filename
+     * @x-autobe-database-schema-property stored_filename
    */
   storedFilename: string;
   /**
-   * @x-autobe-database-schema-property mime_type
+     * @x-autobe-database-schema-property mime_type
    */
   mimeType: string;
   /**
-   * @x-autobe-database-schema-property file_size
+     * @x-autobe-database-schema-property file_size
    */
   fileSize: number & tags.Type<"int32">;
   /**
-   * @x-autobe-database-schema-property storage_path
+     * @x-autobe-database-schema-property storage_path
    */
   storagePath: string;
 
   /**
    * Processing status of the uploaded file: pending (awaiting virus scan), processed (safe), or failed (scan error).
    *
-   * @x-autobe-specification Direct mapping from reddit_clone_files.status column. String type matching DB column.
-   * @x-autobe-database-schema-property status
+     * @x-autobe-specification Direct mapping from reddit_clone_files.status
+     *   column. String type matching DB column.
+     * @x-autobe-database-schema-property status
    */
   status: string;
   /**
-   * @x-autobe-database-schema-property created_at
+     * @x-autobe-database-schema-property created_at
    */
   createdAt: string & tags.Format<"date-time">;
   /**
-   * @x-autobe-database-schema-property updated_at
+     * @x-autobe-database-schema-property updated_at
    */
   updatedAt: string & tags.Format<"date-time">;
   /**
-   * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-database-schema-property deleted_at
    */
   deletedAt: (string & tags.Format<"date-time">) | null;
   /**
-   * @x-autobe-database-schema-property uploader
+     * @x-autobe-database-schema-property uploader
    */
   uploader: IRedditCloneMember.ISummary;
   thumbnails: IRedditCloneFileThumbnail[];
@@ -70,14 +71,18 @@ export namespace IRedditCloneFile {
     /**
      * Page number to retrieve for pagination. Defaults to 1.
      *
-     * @x-autobe-specification Pagination query parameter specifying which page number to retrieve. Applied as offset calculation: (page - 1) * limit. Defaults to 1 if not provided.
+         * @x-autobe-specification Pagination query parameter specifying which
+         *   page number to retrieve. Applied as offset calculation: (page - 1)
+         *   * limit. Defaults to 1 if not provided.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of records per page (1-100).
      *
-     * @x-autobe-specification Pagination query parameter specifying maximum number of records per page. Applied as LIMIT clause. Must be between 1 and 100.
+         * @x-autobe-specification Pagination query parameter specifying maximum
+         *   number of records per page. Applied as LIMIT clause. Must be
+         *   between 1 and 100.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -86,42 +91,52 @@ export namespace IRedditCloneFile {
     /**
      * Filter files by processing status: pending, processed, or failed.
      *
-     * @x-autobe-specification Filter by file processing status column: 'pending' (awaiting virus scan), 'processed' (scanned and safe), 'failed' (scan failed).
+         * @x-autobe-specification Filter by file processing status column:
+         *   'pending' (awaiting virus scan), 'processed' (scanned and safe),
+         *   'failed' (scan failed).
      */
     status?: "pending" | "processed" | "failed" | undefined;
 
     /**
      * Filter files by uploader's member ID (UUID).
      *
-     * @x-autobe-specification Filter by exact match on uploader_id column. UUID format required. References reddit_clone_members.id.
+         * @x-autobe-specification Filter by exact match on uploader_id column.
+         *   UUID format required. References reddit_clone_members.id.
      */
     uploaderId?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Search by original filename using partial matching (case-insensitive).
      *
-     * @x-autobe-specification Partial matching search on original_filename column. Case-insensitive with wildcards.
+         * @x-autobe-specification Partial matching search on original_filename
+         *   column. Case-insensitive with wildcards.
      */
     search?: string | undefined;
 
     /**
      * Filter files by exact MIME type matching.
      *
-     * @x-autobe-specification Filter by exact match on mime_type column. Common values: 'image/jpeg', 'image/png', 'image/gif', 'image/webp'.
+         * @x-autobe-specification Filter by exact match on mime_type column.
+         *   Common values: 'image/jpeg', 'image/png', 'image/gif',
+         *   'image/webp'.
      */
     mimeType?: string | undefined;
 
     /**
      * Filter files created on or after this datetime (ISO 8601 format).
      *
-     * @x-autobe-specification Filter records created on or after this datetime. ISO 8601 datetime format (e.g., '2024-01-01T00:00:00Z'). Inclusive comparison.
+         * @x-autobe-specification Filter records created on or after this
+         *   datetime. ISO 8601 datetime format (e.g., '2024-01-01T00:00:00Z').
+         *   Inclusive comparison.
      */
     createdAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Filter files created on or before this datetime (ISO 8601 format).
      *
-     * @x-autobe-specification Filter records created on or before this datetime. ISO 8601 datetime format (e.g., '2024-12-31T23:59:59Z'). Inclusive comparison.
+         * @x-autobe-specification Filter records created on or before this
+         *   datetime. ISO 8601 datetime format (e.g., '2024-12-31T23:59:59Z').
+         *   Inclusive comparison.
      */
     createdAtTo?: (string & tags.Format<"date-time">) | undefined;
   };
@@ -133,15 +148,21 @@ export namespace IRedditCloneFile {
     /**
      * Binary file content to upload as multipart form-data.
      *
-     * @x-autobe-specification Binary file content from multipart form-data under field name 'file'. Server reads content to validate MIME type, compute file_size, and verify dimensions for images. Validated formats: image/jpeg, image/png, image/gif, image/webp. Size constraints: 1KB-5MB. Dimension constraints: 50-8000px.
+         * @x-autobe-specification Binary file content from multipart form-data
+         *   under field name 'file'. Server reads content to validate MIME
+         *   type, compute file_size, and verify dimensions for images.
+         *   Validated formats: image/jpeg, image/png, image/gif, image/webp.
+         *   Size constraints: 1KB-5MB. Dimension constraints: 50-8000px.
      */
     file: string & tags.ContentMediaType<"application/octet-stream">;
 
     /**
      * Original filename of the uploaded file as provided by the user.
      *
-     * @x-autobe-database-schema-property original_filename
-     * @x-autobe-specification Direct mapping to reddit_clone_files.original_filename column. Validated: alphanumeric, hyphens, underscores only; max 255 characters.
+         * @x-autobe-database-schema-property original_filename
+         * @x-autobe-specification Direct mapping to
+         *   reddit_clone_files.original_filename column. Validated:
+         *   alphanumeric, hyphens, underscores only; max 255 characters.
      */
     originalFilename: string & tags.MaxLength<255> & tags.Format<"regex">;
   };
@@ -176,109 +197,130 @@ export namespace IRedditCloneFile {
     /**
      * Unique identifier of the uploaded file.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from reddit_clone_files.id. UUID primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from reddit_clone_files.id.
+         *   UUID primary key.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Original filename as uploaded by the user before storage transformation.
      *
-     * @x-autobe-database-schema-property original_filename
-     * @x-autobe-specification Direct mapping from reddit_clone_files.original_filename.
+         * @x-autobe-database-schema-property original_filename
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_files.original_filename.
      */
     originalFilename: string;
 
     /**
      * Generated unique filename used for storage, ensuring no collisions.
      *
-     * @x-autobe-database-schema-property stored_filename
-     * @x-autobe-specification Direct mapping from reddit_clone_files.stored_filename. Unique constraint enforced.
+         * @x-autobe-database-schema-property stored_filename
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_files.stored_filename. Unique constraint enforced.
      */
     storedFilename: string;
 
     /**
      * MIME type of the file (e.g., image/jpeg, image/png).
      *
-     * @x-autobe-database-schema-property mime_type
-     * @x-autobe-specification Direct mapping from reddit_clone_files.mime_type.
+         * @x-autobe-database-schema-property mime_type
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_files.mime_type.
      */
     mimeType: string;
 
     /**
      * File size in bytes.
      *
-     * @x-autobe-database-schema-property file_size
-     * @x-autobe-specification Direct mapping from reddit_clone_files.file_size. Integer in bytes.
+         * @x-autobe-database-schema-property file_size
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_files.file_size. Integer in bytes.
      */
     fileSize: number & tags.Type<"int32">;
 
     /**
      * Path in the storage system where the file is located.
      *
-     * @x-autobe-database-schema-property storage_path
-     * @x-autobe-specification Direct mapping from reddit_clone_files.storage_path. Path in storage system.
+         * @x-autobe-database-schema-property storage_path
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_files.storage_path. Path in storage system.
      */
     storagePath: string;
 
     /**
      * Processing status indicating virus scan completion state.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from reddit_clone_files.status. Values: 'pending' (awaiting virus scan), 'processed' (safe), 'failed' (scan error).
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_files.status. Values: 'pending' (awaiting virus scan),
+         *   'processed' (safe), 'failed' (scan error).
      */
     status: string;
 
     /**
      * Member who uploaded the file, shown as summary with identifier.
      *
-     * @x-autobe-database-schema-property uploader
-     * @x-autobe-specification Belongs-to relation: JOIN reddit_clone_members ON files.uploader_id = members.id. Returns IRedditCloneMember.ISummary with id and username for audit trail.
+         * @x-autobe-database-schema-property uploader
+         * @x-autobe-specification Belongs-to relation: JOIN
+         *   reddit_clone_members ON files.uploader_id = members.id. Returns
+         *   IRedditCloneMember.ISummary with id and username for audit trail.
      */
     uploader: IRedditCloneMember.ISummary;
 
     /**
      * Polymorphic file associations linking this file to owning entities (user avatars, community icons, post images).
      *
-     * @x-autobe-specification Cross-table HAS relation: SELECT * FROM reddit_clone_file_associations WHERE reddit_clone_file_id = files.id AND target_type = 'user'|'community'|'post'. Returns polymorphic associations with target_type and target_id.
+         * @x-autobe-specification Cross-table HAS relation: SELECT * FROM
+         *   reddit_clone_file_associations WHERE reddit_clone_file_id =
+         *   files.id AND target_type = 'user'|'community'|'post'. Returns
+         *   polymorphic associations with target_type and target_id.
      */
     associations: IRedditCloneFileAssociation.ISummary[];
 
     /**
      * Virus scan history records ordered by most recent scan timestamp.
      *
-     * @x-autobe-specification Cross-table HAS relation: SELECT * FROM reddit_clone_file_scans WHERE reddit_clone_file_id = files.id ORDER BY scanned_at DESC. Contains scanner, status, threat_name, details.
+         * @x-autobe-specification Cross-table HAS relation: SELECT * FROM
+         *   reddit_clone_file_scans WHERE reddit_clone_file_id = files.id ORDER
+         *   BY scanned_at DESC. Contains scanner, status, threat_name, details.
      */
     scans: IRedditCloneFileScan[];
 
     /**
      * Available thumbnail variants for image files with dimensions and paths.
      *
-     * @x-autobe-specification Cross-table HAS relation: SELECT * FROM reddit_clone_file_thumbnails WHERE reddit_clone_file_id = files.id. Contains width, height, variant, thumbnail_path.
+         * @x-autobe-specification Cross-table HAS relation: SELECT * FROM
+         *   reddit_clone_file_thumbnails WHERE reddit_clone_file_id = files.id.
+         *   Contains width, height, variant, thumbnail_path.
      */
     thumbnails: IRedditCloneFileThumbnail[];
 
     /**
      * Timestamp when the file was uploaded.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from reddit_clone_files.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_files.created_at.
      */
     createdAt: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when the file metadata was last modified.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from reddit_clone_files.updated_at.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_files.updated_at.
      */
     updatedAt: string & tags.Format<"date-time">;
 
     /**
      * Soft-deletion timestamp; null if file is active, timestamp if deleted.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from reddit_clone_files.deleted_at. Nullable - null if file is active, set if soft-deleted.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_files.deleted_at. Nullable - null if file is active,
+         *   set if soft-deleted.
      */
     deletedAt: (string & tags.Format<"date-time">) | null;
   };

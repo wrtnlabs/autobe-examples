@@ -22,7 +22,8 @@ import { IPageIHrmTimeTrackEmployeeSnapshot } from "../../../../structures/IPage
  * @param props.body Search criteria for employee snapshots including filters for employee ID, organization, status, employment type, date ranges, and pagination parameters.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query hrm_time_track_employee_snapshots table with pagination and filtering capabilities.
+ * @x-autobe-specification Query hrm_time_track_employee_snapshots table with
+ *   pagination and filtering capabilities.
  *
  * Filtering:
  * - Filter by employee ID (hrm_time_track_employee_id) to view all snapshots for a specific employee
@@ -137,7 +138,8 @@ export namespace index {
  * @param props.snapshotId Unique identifier of the employee snapshot to retrieve (global scope).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query hrm_time_track_employee_snapshots table by primary key id.
+ * @x-autobe-specification Query hrm_time_track_employee_snapshots table by
+ *   primary key id.
  *
  * 1. Validate snapshotId is a valid UUID format.
  * 2. Execute SELECT query on hrm_time_track_employee_snapshots WHERE id = snapshotId.

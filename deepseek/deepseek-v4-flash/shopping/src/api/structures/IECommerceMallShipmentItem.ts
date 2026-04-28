@@ -19,8 +19,9 @@ export type IECommerceMallShipmentItem = {
    *
    * The primary key of the junction table linking an order item to its parent shipment. This ID is used as the unique reference for this association within the system.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from e_commerce_mall_shipment_items.id. UUID primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_shipment_items.id. UUID primary key.
    */
   id: string & tags.Format<"uuid">;
 
@@ -29,8 +30,12 @@ export type IECommerceMallShipmentItem = {
    *
    * Represents the physical package dispatched by the seller that includes this item. Provides tracking information including the carrier company name, tracking number for package monitoring, timestamps for when the package was shipped and delivered, the seller's shop identity, and the count of order items bundled in this package.
    *
-   * @x-autobe-database-schema-property shipment
-   * @x-autobe-specification BELONGS-TO relation: JOIN e_commerce_mall_shipments via shipment_id FK. Maps to IECommerceMallShipment.ISummary providing id, carrier_name, tracking_number, shipped_at, delivered_at, order_items_count, and seller (IECommerceMallSeller.ISummary).
+     * @x-autobe-database-schema-property shipment
+     * @x-autobe-specification BELONGS-TO relation: JOIN
+     *   e_commerce_mall_shipments via shipment_id FK. Maps to
+     *   IECommerceMallShipment.ISummary providing id, carrier_name,
+     *   tracking_number, shipped_at, delivered_at, order_items_count, and
+     *   seller (IECommerceMallSeller.ISummary).
    */
   shipment: IECommerceMallShipment.ISummary;
 
@@ -39,8 +44,15 @@ export type IECommerceMallShipmentItem = {
    *
    * Contains purchase details including the product name and variant options as they existed at the time of purchase (from preserved snapshots), the seller's shop name at the time of the transaction, quantity purchased, unit price, calculated subtotal, current fulfillment status (paid, shipped, delivered, cancelled, refunded), and references to the parent order and product variant.
    *
-   * @x-autobe-database-schema-property orderItem
-   * @x-autobe-specification BELONGS-TO relation: JOIN e_commerce_mall_order_items via order_item_id FK. Maps to IECommerceMallOrderItem.ISummary providing id, product_name (flattened from snapshot), variant_sku (flattened from snapshot), variant_options (flattened from snapshot), shop_name (flattened from seller snapshot), quantity, unit_price, subtotal (computed), status, order (IECommerceMallOrder.ISummary), productVariant (IECommerceMallProductVariant.ISummary), and created_at.
+     * @x-autobe-database-schema-property orderItem
+     * @x-autobe-specification BELONGS-TO relation: JOIN
+     *   e_commerce_mall_order_items via order_item_id FK. Maps to
+     *   IECommerceMallOrderItem.ISummary providing id, product_name (flattened
+     *   from snapshot), variant_sku (flattened from snapshot), variant_options
+     *   (flattened from snapshot), shop_name (flattened from seller snapshot),
+     *   quantity, unit_price, subtotal (computed), status, order
+     *   (IECommerceMallOrder.ISummary), productVariant
+     *   (IECommerceMallProductVariant.ISummary), and created_at.
    */
   orderItem: IECommerceMallOrderItem.ISummary;
 
@@ -49,7 +61,18 @@ export type IECommerceMallShipmentItem = {
    *
    * Captures the exact product name, description, base price, variant SKU, formatted option values (e.g., 'Color: Red, Size: Large'), and optional variant-specific price override as they existed when the customer placed the order. This snapshot persists even if the seller later edits or deletes the original product or variant, ensuring a permanent audit trail for order histories, financial record-keeping, and dispute resolution.
    *
-   * @x-autobe-specification Traverse the orderItem BELONGS-TO relation (e_commerce_mall_shipment_items → e_commerce_mall_order_items via order_item_id FK), then access the 1:1 HAS-ONE relation `productVariantSnapshot` on e_commerce_mall_order_items to reach e_commerce_mall_order_item_snapshots. Maps to IECommerceMallOrderItemSnapshot with fields: id, productName (from product_name), productDescription (from product_description), productBasePrice (from product_base_price), variantSku (from variant_sku), variantOptions (from variant_options), variantPrice (from variant_price), createdAt (from created_at). This preserves the exact product and variant state at the moment of purchase — not a live fetch from the current product/variant tables.
+     * @x-autobe-specification Traverse the orderItem BELONGS-TO relation
+     *   (e_commerce_mall_shipment_items → e_commerce_mall_order_items via
+     *   order_item_id FK), then access the 1:1 HAS-ONE relation
+     *   `productVariantSnapshot` on e_commerce_mall_order_items to reach
+     *   e_commerce_mall_order_item_snapshots. Maps to
+     *   IECommerceMallOrderItemSnapshot with fields: id, productName (from
+     *   product_name), productDescription (from product_description),
+     *   productBasePrice (from product_base_price), variantSku (from
+     *   variant_sku), variantOptions (from variant_options), variantPrice (from
+     *   variant_price), createdAt (from created_at). This preserves the exact
+     *   product and variant state at the moment of purchase — not a live fetch
+     *   from the current product/variant tables.
    */
   snapshot: IECommerceMallOrderItemSnapshot;
 
@@ -58,7 +81,15 @@ export type IECommerceMallShipmentItem = {
    *
    * Records the seller's shop name and optional logo URL as they appeared when the order was placed. Ensures that historical order records accurately reflect the seller's identity at the time of the transaction, even if the seller later changes their shop name or logo. Created automatically at order placement and permanently associated with the order item.
    *
-   * @x-autobe-specification Traverse the orderItem BELONGS-TO relation (e_commerce_mall_shipment_items → e_commerce_mall_order_items via order_item_id FK), then access the 1:1 HAS-ONE relation `sellerSnapshot` on e_commerce_mall_order_items to reach e_commerce_mall_order_item_seller_snapshots. Maps to IECommerceMallOrderItemSellerSnapshot with fields: id, shop_name, shop_logo (nullable via oneOf), created_at. This preserves the seller's shop identity at the time of the transaction — not a live fetch from the current seller profile.
+     * @x-autobe-specification Traverse the orderItem BELONGS-TO relation
+     *   (e_commerce_mall_shipment_items → e_commerce_mall_order_items via
+     *   order_item_id FK), then access the 1:1 HAS-ONE relation
+     *   `sellerSnapshot` on e_commerce_mall_order_items to reach
+     *   e_commerce_mall_order_item_seller_snapshots. Maps to
+     *   IECommerceMallOrderItemSellerSnapshot with fields: id, shop_name,
+     *   shop_logo (nullable via oneOf), created_at. This preserves the seller's
+     *   shop identity at the time of the transaction — not a live fetch from
+     *   the current seller profile.
    */
   sellerSnapshot: IECommerceMallOrderItemSellerSnapshot;
 
@@ -67,8 +98,11 @@ export type IECommerceMallShipmentItem = {
    *
    * Indicates when the seller packed this item into the shipment package and the tracking information was recorded. All items in a shipment transition to a shipped status at this time.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from e_commerce_mall_shipment_items.created_at. Timestamp when the junction record associating this order item with the shipment was created (i.e., when the seller assigned the item to the shipment).
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_shipment_items.created_at. Timestamp when the junction
+     *   record associating this order item with the shipment was created (i.e.,
+     *   when the seller assigned the item to the shipment).
    */
   created_at: string & tags.Format<"date-time">;
 };
@@ -82,42 +116,59 @@ export namespace IECommerceMallShipmentItem {
     /**
      * Text search query to filter shipment items by product name or variant details preserved in the order item snapshot at the time of purchase.
      *
-     * @x-autobe-specification LIKE/ILIKE query on product_name from the joined e_commerce_mall_order_item_snapshots table. Performs a case-insensitive partial match to find order items whose product name contains the search string.
+         * @x-autobe-specification LIKE/ILIKE query on product_name from the
+         *   joined e_commerce_mall_order_item_snapshots table. Performs a
+         *   case-insensitive partial match to find order items whose product
+         *   name contains the search string.
      */
     search?: string | undefined;
 
     /**
      * Filter shipment items by the current fulfillment status of the associated order item. Allowed values: "paid", "shipped", "delivered", "cancelled", "refunded". When omitted, items in all statuses are returned.
      *
-     * @x-autobe-specification Exact match filter on e_commerce_mall_order_items.status column. Allowed values: "paid", "shipped", "delivered", "cancelled", "refunded". When omitted, items in all statuses are returned.
+         * @x-autobe-specification Exact match filter on
+         *   e_commerce_mall_order_items.status column. Allowed values: "paid",
+         *   "shipped", "delivered", "cancelled", "refunded". When omitted,
+         *   items in all statuses are returned.
      */
     status?: string | undefined;
 
     /**
      * Lower bound (inclusive) for filtering by the shipment item's creation timestamp. Shipment items created at or after this timestamp are included in the results.
      *
-     * @x-autobe-specification Date range lower bound (inclusive) filter on e_commerce_mall_shipment_items.created_at. Shipment items created at or after this timestamp are included. Used with endCreatedAt to define a filter window.
+         * @x-autobe-specification Date range lower bound (inclusive) filter on
+         *   e_commerce_mall_shipment_items.created_at. Shipment items created
+         *   at or after this timestamp are included. Used with endCreatedAt to
+         *   define a filter window.
      */
     startCreatedAt?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Upper bound (exclusive) for filtering by the shipment item's creation timestamp. Shipment items created before this timestamp are included in the results.
      *
-     * @x-autobe-specification Date range upper bound (exclusive) filter on e_commerce_mall_shipment_items.created_at. Shipment items created before this timestamp are included. Used with startCreatedAt to define a filter window.
+         * @x-autobe-specification Date range upper bound (exclusive) filter on
+         *   e_commerce_mall_shipment_items.created_at. Shipment items created
+         *   before this timestamp are included. Used with startCreatedAt to
+         *   define a filter window.
      */
     endCreatedAt?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Page number for cursor-based pagination. Starts at 1. When omitted, the first page is returned.
      *
-     * @x-autobe-specification Cursor-based pagination page number (1-indexed). Defaults to 1 when omitted. Used with limit to paginate through results. Corresponds to the OFFSET calculation: (page - 1) * limit.
+         * @x-autobe-specification Cursor-based pagination page number
+         *   (1-indexed). Defaults to 1 when omitted. Used with limit to
+         *   paginate through results. Corresponds to the OFFSET calculation:
+         *   (page - 1) * limit.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of shipment items to return per page. Default is 20. Maximum is 100.
      *
-     * @x-autobe-specification Maximum number of shipment items to return per page. Default is 20. Maximum is 100. Corresponds to the LIMIT clause in the SQL query.
+         * @x-autobe-specification Maximum number of shipment items to return
+         *   per page. Default is 20. Maximum is 100. Corresponds to the LIMIT
+         *   clause in the SQL query.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -135,8 +186,9 @@ export namespace IECommerceMallShipmentItem {
      *
      * The primary key of the shipment-item junction table, representing the unique link between a shipment and the order item packed within it. This identifier is used for referencing the association in subsequent operations.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from e_commerce_mall_shipment_items.id. UUID primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_shipment_items.id. UUID primary key.
      */
     id: string & tags.Format<"uuid">;
 
@@ -145,8 +197,13 @@ export namespace IECommerceMallShipmentItem {
      *
      * Includes the purchased product name, variant SKU and options, seller's shop name, quantity, unit price (captured at purchase time), calculated subtotal (quantity × unit_price), and the current fulfillment status (paid, shipped, delivered, cancelled, or refunded). All product and seller details are sourced from immutable order-time snapshots, ensuring historical accuracy even if the product or seller profile is later modified.
      *
-     * @x-autobe-database-schema-property orderItem
-     * @x-autobe-specification BELONGS-TO relation: join e_commerce_mall_shipment_items.order_item_id to e_commerce_mall_order_items.id. Returns IECommerceMallOrderItem.ISummary with flattened snapshot data (product_name, variant_sku, variant_options, shop_name, quantity, unit_price, subtotal, status).
+         * @x-autobe-database-schema-property orderItem
+         * @x-autobe-specification BELONGS-TO relation: join
+         *   e_commerce_mall_shipment_items.order_item_id to
+         *   e_commerce_mall_order_items.id. Returns
+         *   IECommerceMallOrderItem.ISummary with flattened snapshot data
+         *   (product_name, variant_sku, variant_options, shop_name, quantity,
+         *   unit_price, subtotal, status).
      */
     orderItem: IECommerceMallOrderItem.ISummary;
 
@@ -155,8 +212,10 @@ export namespace IECommerceMallShipmentItem {
      *
      * Indicates when the seller assigned this order item to the shipment package. For list views, items are typically sorted by this timestamp in descending order (newest first).
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from e_commerce_mall_shipment_items.created_at, mapped to camelCase createdAt.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_shipment_items.created_at, mapped to camelCase
+         *   createdAt.
      */
     createdAt: string & tags.Format<"date-time">;
   };

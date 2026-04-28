@@ -10,15 +10,18 @@ export namespace ICommunityPlatformGuest {
     /**
      * Unique identifier of the current guest principal.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from community_platform_guests.id. This is the anonymous guest identity identifier returned alongside the issued token payload.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_guests.id. This is the anonymous guest identity
+         *   identifier returned alongside the issued token payload.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Authorization token.
      *
-     * @x-autobe-specification Authorization token comes from the session table.
+         * @x-autobe-specification Authorization token comes from the session
+         *   table.
      */
     token: IAuthorizationToken;
   };

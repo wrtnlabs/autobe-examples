@@ -34,7 +34,8 @@ import { IPageIHrmMemberEmailVerification } from "../../../../../structures/IPag
  * @param props.body Request body containing the member identifier for which to create an email verification token.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implement email verification token creation with the following logic:
+ * @x-autobe-specification Implement email verification token creation with the
+ *   following logic:
  *
  * 1. **Authentication & Authorization**: Require authenticated member context. Verify the requesting member matches the target member_id in the request body.
  *
@@ -177,7 +178,8 @@ export namespace create {
  * @param props.body Search criteria for filtering email verification records including member ID, email pattern, status filters, date ranges, and pagination parameters.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query hrm_member_email_verifications table with pagination and filtering.
+ * @x-autobe-specification Query hrm_member_email_verifications table with
+ *   pagination and filtering.
  *
  * **Implementation Steps**
  * 1. Validate authentication and admin authorization
@@ -296,7 +298,8 @@ export namespace index {
  * @param props.verificationId Unique identifier of the email verification record (UUID format).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query the hrm_member_email_verifications table by id (UUID primary key).
+ * @x-autobe-specification Query the hrm_member_email_verifications table by id
+ *   (UUID primary key).
  *
  * Implementation steps:
  * 1. Validate verificationId is a valid UUID format

@@ -24,9 +24,11 @@ export class EcommercemallCustomerCustomersMeDeliveriesController {
    * Each pending delivery belongs to a specific order. Customers can view which order each delivery is from and access detailed order information through the provided references.
    *
    * @param connection
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Query all shipments for the authenticated customer where the shipment's order items have status 'shipped' (not yet delivered or confirmed).
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Query all shipments for the authenticated
+     *   customer where the shipment's order items have status 'shipped' (not
+     *   yet delivered or confirmed).
    *
    * Implementation steps:
    * 1. Extract authenticated customer ID from session/token

@@ -16,8 +16,9 @@ export type IHrmPlatformProject = {
    *
    * Auto-generated UUID assigned when the project is created. Used as the primary key for all project operations and as the path parameter in project-specific endpoints.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from hrm_platform_projects.id. UUID format generated on creation.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from hrm_platform_projects.id.
+     *   UUID format generated on creation.
    */
   id: string & tags.Format<"uuid">;
 
@@ -26,8 +27,10 @@ export type IHrmPlatformProject = {
    *
    * All projects belong to exactly one organization for multi-tenancy isolation. This nested object provides organization context including name, currency, and timezone. The organization cannot be changed after project creation.
    *
-   * @x-autobe-database-schema-property organization
-   * @x-autobe-specification Join from hrm_platform_projects.organization_id to hrm_platform_organizations.id. Returns IHrmPlatformOrganization.ISummary with essential organization fields.
+     * @x-autobe-database-schema-property organization
+     * @x-autobe-specification Join from hrm_platform_projects.organization_id
+     *   to hrm_platform_organizations.id. Returns
+     *   IHrmPlatformOrganization.ISummary with essential organization fields.
    */
   organization: IHrmPlatformOrganization.ISummary;
 
@@ -36,8 +39,9 @@ export type IHrmPlatformProject = {
    *
    * Required field that uniquely identifies the project. Used in UI displays, reports, and when assigning timelogs to projects. Must be non-empty and should be descriptive of the project's purpose.
    *
-   * @x-autobe-database-schema-property name
-   * @x-autobe-specification Direct mapping from hrm_platform_projects.name. Required non-empty string for project identification.
+     * @x-autobe-database-schema-property name
+     * @x-autobe-specification Direct mapping from hrm_platform_projects.name.
+     *   Required non-empty string for project identification.
    */
   name: string;
 
@@ -46,8 +50,9 @@ export type IHrmPlatformProject = {
    *
    * Provides context about what the project aims to accomplish. Can contain markdown or plain text. Null when no description has been provided. Displayed in project detail views.
    *
-   * @x-autobe-database-schema-property description
-   * @x-autobe-specification Direct mapping from hrm_platform_projects.description. Nullable string for project context.
+     * @x-autobe-database-schema-property description
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_projects.description. Nullable string for project context.
    */
   description?: string | null | undefined;
 
@@ -56,8 +61,9 @@ export type IHrmPlatformProject = {
    *
    * Required field used to visually distinguish projects in calendars, task boards, and reports. Format should be valid hex color (e.g., '#FF5733' or 'FF5733'). Helps users quickly identify projects across the interface.
    *
-   * @x-autobe-database-schema-property color
-   * @x-autobe-specification Direct mapping from hrm_platform_projects.color. Required hex color code for UI visual distinction.
+     * @x-autobe-database-schema-property color
+     * @x-autobe-specification Direct mapping from hrm_platform_projects.color.
+     *   Required hex color code for UI visual distinction.
    */
   color: string;
 
@@ -66,8 +72,10 @@ export type IHrmPlatformProject = {
    *
    * Three states: 'active' for ongoing projects accepting new timelogs, 'archived' for preserved reference projects that cannot receive new work, and 'completed' for finished initiatives. Status changes are logged in activity logs. Transitioning to archived or completed prevents new timelogs from being recorded.
    *
-   * @x-autobe-specification Direct mapping from hrm_platform_projects.status. String column with values 'active', 'archived', 'completed'. Controls timelog availability.
-   * @x-autobe-database-schema-property status
+     * @x-autobe-specification Direct mapping from hrm_platform_projects.status.
+     *   String column with values 'active', 'archived', 'completed'. Controls
+     *   timelog availability.
+     * @x-autobe-database-schema-property status
    */
   status: string;
 
@@ -76,8 +84,10 @@ export type IHrmPlatformProject = {
    *
    * Represents the planned effort for the project. Used for tracking progress against estimates and generating budget utilization reports. Null when no budget has been defined. Displayed in project budget reports showing percentage consumed.
    *
-   * @x-autobe-database-schema-property budget_hours
-   * @x-autobe-specification Direct mapping from hrm_platform_projects.budget_hours. Nullable number for capacity planning.
+     * @x-autobe-database-schema-property budget_hours
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_projects.budget_hours. Nullable number for capacity
+     *   planning.
    */
   budget_hours?: number | null | undefined;
 
@@ -86,8 +96,10 @@ export type IHrmPlatformProject = {
    *
    * Indicates when project work began or is scheduled to begin. Used for Gantt charts, timeline views, and duration calculations. Null for projects without defined start dates. ISO 8601 format with timezone.
    *
-   * @x-autobe-database-schema-property start_date
-   * @x-autobe-specification Direct mapping from hrm_platform_projects.start_date. Nullable ISO date-time for timeline tracking.
+     * @x-autobe-database-schema-property start_date
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_projects.start_date. Nullable ISO date-time for timeline
+     *   tracking.
    */
   start_date?: (string & tags.Format<"date-time">) | null | undefined;
 
@@ -96,8 +108,10 @@ export type IHrmPlatformProject = {
    *
    * Indicates when project work is expected to be completed. Used for deadline tracking, overdue alerts, and timeline visualization. Null for ongoing projects without fixed end dates. ISO 8601 format with timezone.
    *
-   * @x-autobe-database-schema-property end_date
-   * @x-autobe-specification Direct mapping from hrm_platform_projects.end_date. Nullable ISO date-time for deadline tracking.
+     * @x-autobe-database-schema-property end_date
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_projects.end_date. Nullable ISO date-time for deadline
+     *   tracking.
    */
   end_date?: (string & tags.Format<"date-time">) | null | undefined;
 
@@ -106,8 +120,10 @@ export type IHrmPlatformProject = {
    *
    * Automatically set when the project is first created. Used for audit trails, sorting projects by age, and determining project creation order. Immutable after creation. ISO 8601 format with timezone.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from hrm_platform_projects.created_at. Auto-set timestamp on project creation.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_projects.created_at. Auto-set timestamp on project
+     *   creation.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -116,8 +132,10 @@ export type IHrmPlatformProject = {
    *
    * Automatically updated whenever any project field is modified. Used for change tracking, cache invalidation, and identifying recently modified projects. ISO 8601 format with timezone.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from hrm_platform_projects.updated_at. Auto-updated timestamp on any project modification.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_projects.updated_at. Auto-updated timestamp on any project
+     *   modification.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -126,8 +144,10 @@ export type IHrmPlatformProject = {
    *
    * Null for active projects. When set, marks the project as deleted while preserving the record for audit and reference purposes. Deleted projects are excluded from normal queries and cannot receive new timelogs. ISO 8601 format with timezone.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from hrm_platform_projects.deleted_at. Nullable timestamp indicating soft deletion. Null means active project.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_projects.deleted_at. Nullable timestamp indicating soft
+     *   deletion. Null means active project.
    */
   deleted_at?: (string & tags.Format<"date-time">) | null | undefined;
 };
@@ -178,46 +198,54 @@ export namespace IHrmPlatformProject {
     /**
      * Project name for identification within the organization.
      *
-     * @x-autobe-database-schema-property name
+         * @x-autobe-database-schema-property name
      */
     name: string;
 
     /**
      * Optional detailed description of project scope and objectives.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from hrm_platform_projects.description. Nullable string for project context.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_projects.description. Nullable string for project
+         *   context.
      */
     description?: string | null | undefined;
 
     /**
      * Hex color code for UI visual distinction (e.g., '#FF5733' or 'FF5733').
      *
-     * @x-autobe-database-schema-property color
+         * @x-autobe-database-schema-property color
      */
     color: string;
 
     /**
      * Optional total estimated hours for project capacity planning.
      *
-     * @x-autobe-database-schema-property budget_hours
-     * @x-autobe-specification Direct mapping from hrm_platform_projects.budget_hours. Nullable number for capacity planning.
+         * @x-autobe-database-schema-property budget_hours
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_projects.budget_hours. Nullable number for capacity
+         *   planning.
      */
     budgetHours?: number | null | undefined;
 
     /**
      * Optional project start date for timeline tracking.
      *
-     * @x-autobe-database-schema-property start_date
-     * @x-autobe-specification Direct mapping from hrm_platform_projects.start_date. Nullable ISO date-time for timeline tracking.
+         * @x-autobe-database-schema-property start_date
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_projects.start_date. Nullable ISO date-time for
+         *   timeline tracking.
      */
     startDate?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * Optional project end date or deadline.
      *
-     * @x-autobe-database-schema-property end_date
-     * @x-autobe-specification Direct mapping from hrm_platform_projects.end_date. Nullable ISO date-time for deadline tracking.
+         * @x-autobe-database-schema-property end_date
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_projects.end_date. Nullable ISO date-time for deadline
+         *   tracking.
      */
     endDate?: (string & tags.Format<"date-time">) | null | undefined;
   };

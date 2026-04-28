@@ -8,48 +8,79 @@ export type IShoppingMallInventoryRecord = {
   /**
    * The unique identifier of this inventory record. A UUID that permanently identifies this stock movement event in the ledger.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_inventory_records.id. UUID primary key, auto-generated at record creation time. Never changes after creation.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_inventory_records.id. UUID primary key, auto-generated at
+     *   record creation time. Never changes after creation.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * The unique identifier of the product variant to which this inventory record belongs. All inventory records for a given variant collectively form its complete stock movement history, and their quantities summed together yield the variant's current derived stock level.
    *
-   * @x-autobe-database-schema-property shopping_mall_product_variant_id
-   * @x-autobe-specification Direct mapping from shopping_mall_inventory_records.shopping_mall_product_variant_id. UUID foreign key referencing shopping_mall_product_variants.id. Identifies the product variant whose stock level this record adjusts. Exposed as variantId (camelCase) in the DTO.
+     * @x-autobe-database-schema-property shopping_mall_product_variant_id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_inventory_records.shopping_mall_product_variant_id. UUID
+     *   foreign key referencing shopping_mall_product_variants.id. Identifies
+     *   the product variant whose stock level this record adjusts. Exposed as
+     *   variantId (camelCase) in the DTO.
    */
   variantId: string & tags.Format<"uuid">;
 
   /**
    * The signed quantity change this record represents. A positive value indicates a stock increase (e.g., a manual restock or restoration from an approved cancellation or refund). A negative value indicates a stock decrease (e.g., a deduction from an order placement or a manual loss adjustment). Zero is not a valid value. Summing this field across all records for a variant yields the variant's current stock level.
    *
-   * @x-autobe-database-schema-property quantity
-   * @x-autobe-specification Direct mapping from shopping_mall_inventory_records.quantity (INTEGER). Positive values represent stock increases (restocks, cancellation or refund restorations). Negative values represent stock decreases (order placements, manual loss adjustments). Zero is never stored. The sum of all quantity values for a variant equals its current derived stock level.
+     * @x-autobe-database-schema-property quantity
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_inventory_records.quantity (INTEGER). Positive values
+     *   represent stock increases (restocks, cancellation or refund
+     *   restorations). Negative values represent stock decreases (order
+     *   placements, manual loss adjustments). Zero is never stored. The sum of
+     *   all quantity values for a variant equals its current derived stock
+     *   level.
    */
   quantity: number & tags.Type<"int32">;
 
   /**
    * The categorized classification of why this stock change occurred. One of: 'manual_restock' (seller manually added inventory), 'manual_adjustment' (seller corrected for loss, damage, or other operational reason), 'order_placement' (automatic deduction when an order was placed), 'order_cancellation' (automatic restoration when a cancellation request was approved), or 'order_refund' (automatic restoration when a refund request was approved).
    *
-   * @x-autobe-database-schema-property reason_type
-   * @x-autobe-specification Direct mapping from shopping_mall_inventory_records.reason_type (STRING). One of five enumerated values: 'manual_restock' (seller manually adds stock), 'manual_adjustment' (seller corrects for damage, loss, or operational reason), 'order_placement' (automatic deduction when an order is placed), 'order_cancellation' (automatic restoration when a cancellation request is approved), 'order_refund' (automatic restoration when a refund request is approved). Manual types are created by seller API calls; automatic types are created by the system in response to order lifecycle events.
+     * @x-autobe-database-schema-property reason_type
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_inventory_records.reason_type (STRING). One of five
+     *   enumerated values: 'manual_restock' (seller manually adds stock),
+     *   'manual_adjustment' (seller corrects for damage, loss, or operational
+     *   reason), 'order_placement' (automatic deduction when an order is
+     *   placed), 'order_cancellation' (automatic restoration when a
+     *   cancellation request is approved), 'order_refund' (automatic
+     *   restoration when a refund request is approved). Manual types are
+     *   created by seller API calls; automatic types are created by the system
+     *   in response to order lifecycle events.
    */
   reasonType: string;
 
   /**
    * The human-readable explanation provided by the seller for manual stock adjustments. Present when the reason type is 'manual_restock' or 'manual_adjustment' (e.g., 'Received new shipment from supplier' or 'Damaged goods removed from warehouse'). Null for system-generated records where the reason is fully described by the reason type field alone.
    *
-   * @x-autobe-database-schema-property note
-   * @x-autobe-specification Direct mapping from shopping_mall_inventory_records.note (nullable STRING). Non-null and contains the seller's human-readable explanation when reasonType is 'manual_restock' or 'manual_adjustment'. Always null for system-generated records where reasonType is 'order_placement', 'order_cancellation', or 'order_refund', because the reason is fully captured by the reasonType field itself.
+     * @x-autobe-database-schema-property note
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_inventory_records.note (nullable STRING). Non-null and
+     *   contains the seller's human-readable explanation when reasonType is
+     *   'manual_restock' or 'manual_adjustment'. Always null for
+     *   system-generated records where reasonType is 'order_placement',
+     *   'order_cancellation', or 'order_refund', because the reason is fully
+     *   captured by the reasonType field itself.
    */
   note: string | null;
 
   /**
    * The UTC timestamp recording when this inventory record was created. Since inventory records are immutable and append-only, this timestamp also represents the exact moment the corresponding stock movement event occurred.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from shopping_mall_inventory_records.created_at (TIMESTAMPTZ). Set to the UTC timestamp at the moment the record was inserted. Never changes (append-only table, no updates). Used to present the inventory history in chronological order.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_inventory_records.created_at (TIMESTAMPTZ). Set to the
+     *   UTC timestamp at the moment the record was inserted. Never changes
+     *   (append-only table, no updates). Used to present the inventory history
+     *   in chronological order.
    */
   createdAt: string & tags.Format<"date-time">;
 };
@@ -65,42 +96,68 @@ export namespace IShoppingMallInventoryRecord {
     /**
      * Optional list of reason type values to filter inventory records by. When provided, only records whose reason type matches one of the specified values are returned. Valid values are: `manual_restock`, `manual_adjustment`, `order_placement`, `order_cancellation`, and `order_refund`. If omitted, records of all reason types are included.
      *
-     * @x-autobe-specification Optional array of reason type strings to filter inventory records. If present and non-empty, adds WHERE reason_type IN (reasonTypes) to the query against shopping_mall_inventory_records. Valid values: 'manual_restock', 'manual_adjustment', 'order_placement', 'order_cancellation', 'order_refund'. If absent or empty, no reason_type filter is applied and all types are returned.
+         * @x-autobe-specification Optional array of reason type strings to
+         *   filter inventory records. If present and non-empty, adds WHERE
+         *   reason_type IN (reasonTypes) to the query against
+         *   shopping_mall_inventory_records. Valid values: 'manual_restock',
+         *   'manual_adjustment', 'order_placement', 'order_cancellation',
+         *   'order_refund'. If absent or empty, no reason_type filter is
+         *   applied and all types are returned.
      */
     reasonTypes?: string[] | undefined;
 
     /**
      * Optional start of the date range filter for inventory records. When specified, only records created at or after this timestamp are returned. Must be an ISO 8601 datetime string (e.g., `2024-01-01T00:00:00Z`). If omitted, no lower date boundary is applied.
      *
-     * @x-autobe-specification Optional ISO 8601 datetime lower bound filter. If present, adds WHERE created_at >= dateFrom to the query. Applied to the created_at column (Timestamptz) of shopping_mall_inventory_records. Must be a valid date-time string. If absent, no lower bound is applied.
+         * @x-autobe-specification Optional ISO 8601 datetime lower bound
+         *   filter. If present, adds WHERE created_at >= dateFrom to the query.
+         *   Applied to the created_at column (Timestamptz) of
+         *   shopping_mall_inventory_records. Must be a valid date-time string.
+         *   If absent, no lower bound is applied.
      */
     dateFrom?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Optional end of the date range filter for inventory records. When specified, only records created at or before this timestamp are returned. Must be an ISO 8601 datetime string (e.g., `2024-12-31T23:59:59Z`). If omitted, no upper date boundary is applied.
      *
-     * @x-autobe-specification Optional ISO 8601 datetime upper bound filter. If present, adds WHERE created_at <= dateTo to the query. Applied to the created_at column (Timestamptz) of shopping_mall_inventory_records. Must be a valid date-time string. If absent, no upper bound is applied.
+         * @x-autobe-specification Optional ISO 8601 datetime upper bound
+         *   filter. If present, adds WHERE created_at <= dateTo to the query.
+         *   Applied to the created_at column (Timestamptz) of
+         *   shopping_mall_inventory_records. Must be a valid date-time string.
+         *   If absent, no upper bound is applied.
      */
     dateTo?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Optional sort direction for the inventory record list. Accepted values are `asc` (ascending, oldest records first — the default) and `desc` (descending, newest records first). If omitted, results default to ascending chronological order.
      *
-     * @x-autobe-specification Optional sort direction for results. Controls the ORDER BY direction on the created_at column of shopping_mall_inventory_records. Accepted values: 'asc' (ascending, oldest first — default when omitted) or 'desc' (descending, newest first). Any other value should default to 'asc'.
+         * @x-autobe-specification Optional sort direction for results. Controls
+         *   the ORDER BY direction on the created_at column of
+         *   shopping_mall_inventory_records. Accepted values: 'asc' (ascending,
+         *   oldest first — default when omitted) or 'desc' (descending, newest
+         *   first). Any other value should default to 'asc'.
      */
     sort?: string | undefined;
 
     /**
      * The 1-indexed page number to retrieve. Defaults to 1 (the first page) when not specified. Use in combination with `limit` to paginate through the full list of inventory records.
      *
-     * @x-autobe-specification 1-indexed page number for pagination. Default value is 1 when omitted. Used to compute OFFSET = (page - 1) * limit in the SQL query. Minimum value is 1 (enforced by schema constraint). Must be combined with limit to determine the result window.
+         * @x-autobe-specification 1-indexed page number for pagination. Default
+         *   value is 1 when omitted. Used to compute OFFSET = (page - 1) *
+         *   limit in the SQL query. Minimum value is 1 (enforced by schema
+         *   constraint). Must be combined with limit to determine the result
+         *   window.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * The maximum number of inventory records to return per page. Must be between 1 and 100. Defaults to 20 when not specified. The actual number of returned records may be less than this value on the last page or when fewer total records exist.
      *
-     * @x-autobe-specification Maximum number of inventory records to return per page. Default value is 20 when omitted. Minimum is 1, maximum is 100 (enforced by schema constraints). Applied as LIMIT in the SQL query. Actual returned count may be less than limit on the final page.
+         * @x-autobe-specification Maximum number of inventory records to return
+         *   per page. Default value is 20 when omitted. Minimum is 1, maximum
+         *   is 100 (enforced by schema constraints). Applied as LIMIT in the
+         *   SQL query. Actual returned count may be less than limit on the
+         *   final page.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -118,40 +175,65 @@ export namespace IShoppingMallInventoryRecord {
     /**
      * Unique identifier of this inventory record event. A UUID assigned automatically when the record is created.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_inventory_records.id. UUID primary key generated by the system at record creation. Immutable once set.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_inventory_records.id. UUID primary key generated by
+         *   the system at record creation. Immutable once set.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * The signed integer stock change represented by this record. Positive values indicate a stock increase (e.g., restocking or refund restoration); negative values indicate a stock decrease (e.g., order placement or manual loss correction).
      *
-     * @x-autobe-database-schema-property quantity
-     * @x-autobe-specification Direct mapping from shopping_mall_inventory_records.quantity (Int). Positive values indicate stock increases (manual_restock, order_cancellation, order_refund). Negative values indicate stock decreases (order_placement, manual_adjustment for loss). The sum of all quantity values across all records for a variant equals its current stock level.
+         * @x-autobe-database-schema-property quantity
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_inventory_records.quantity (Int). Positive values
+         *   indicate stock increases (manual_restock, order_cancellation,
+         *   order_refund). Negative values indicate stock decreases
+         *   (order_placement, manual_adjustment for loss). The sum of all
+         *   quantity values across all records for a variant equals its current
+         *   stock level.
      */
     quantity: number & tags.Type<"int32">;
 
     /**
      * The categorized reason why this stock change occurred. One of: `manual_restock`, `manual_adjustment`, `order_placement`, `order_cancellation`, or `order_refund`.
      *
-     * @x-autobe-database-schema-property reason_type
-     * @x-autobe-specification Direct mapping from shopping_mall_inventory_records.reason_type (String). One of five values: 'manual_restock' (seller manually adds inventory), 'manual_adjustment' (seller corrects for damage or loss), 'order_placement' (automatic deduction when an order is placed), 'order_cancellation' (automatic restoration when a cancellation request is approved), 'order_refund' (automatic restoration when a refund request is approved).
+         * @x-autobe-database-schema-property reason_type
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_inventory_records.reason_type (String). One of five
+         *   values: 'manual_restock' (seller manually adds inventory),
+         *   'manual_adjustment' (seller corrects for damage or loss),
+         *   'order_placement' (automatic deduction when an order is placed),
+         *   'order_cancellation' (automatic restoration when a cancellation
+         *   request is approved), 'order_refund' (automatic restoration when a
+         *   refund request is approved).
      */
     reasonType: string;
 
     /**
      * A human-readable explanation provided by the seller for manual stock adjustments. `null` for automatically generated records such as order placements, cancellations, or refunds.
      *
-     * @x-autobe-database-schema-property note
-     * @x-autobe-specification Direct mapping from shopping_mall_inventory_records.note (String?, nullable). Contains the human-readable explanation provided by the seller for manual stock adjustments (required for manual_restock and manual_adjustment reason types). Is null for automatically generated records (order_placement, order_cancellation, order_refund).
+         * @x-autobe-database-schema-property note
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_inventory_records.note (String?, nullable). Contains
+         *   the human-readable explanation provided by the seller for manual
+         *   stock adjustments (required for manual_restock and
+         *   manual_adjustment reason types). Is null for automatically
+         *   generated records (order_placement, order_cancellation,
+         *   order_refund).
      */
     note: string | null;
 
     /**
      * The timestamp when this inventory record was created. Records are immutable and append-only, so this is the only time field present.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_inventory_records.created_at (Timestamptz). Records when this inventory event was persisted. Used to present the inventory history in chronological order. No updated_at or deleted_at exist because records are immutable and append-only.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_inventory_records.created_at (Timestamptz). Records
+         *   when this inventory event was persisted. Used to present the
+         *   inventory history in chronological order. No updated_at or
+         *   deleted_at exist because records are immutable and append-only.
      */
     createdAt: string & tags.Format<"date-time">;
   };
@@ -167,11 +249,11 @@ export namespace IShoppingMallInventoryRecord {
    */
   export type ICreate = {
     /**
-     * @x-autobe-database-schema-property quantity
+         * @x-autobe-database-schema-property quantity
      */
     quantity: number & tags.Type<"int32">;
     /**
-     * @x-autobe-database-schema-property note
+         * @x-autobe-database-schema-property note
      */
     note?: (string & tags.MinLength<1>) | null | undefined;
   };

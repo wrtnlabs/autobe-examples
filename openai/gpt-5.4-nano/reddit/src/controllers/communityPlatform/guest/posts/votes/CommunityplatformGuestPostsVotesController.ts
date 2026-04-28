@@ -30,9 +30,9 @@ export class CommunityplatformGuestPostsVotesController {
    * @param connection
    * @param postId Target post identifier that scopes the vote retrieval.
    * @param voteId Vote record identifier for the post vote to retrieve.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor guest
-   * @x-autobe-specification Implementation steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor guest
+     * @x-autobe-specification Implementation steps:
    *
    * 1) Parse path parameters:
    * - postId (UUID)
@@ -96,9 +96,10 @@ export class CommunityplatformGuestPostsVotesController {
    * @param connection
    * @param postId Target post identifier whose vote the authenticated member wants to update.
    * @param body Requested vote direction for the target post for the authenticated member.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor guest
-   * @x-autobe-specification 1. Authenticate the caller as a member; if unauthenticated, reject.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor guest
+     * @x-autobe-specification 1. Authenticate the caller as a member; if
+     *   unauthenticated, reject.
    *
    * 2. Validate target post existence for normal viewing contexts using `community_platform_posts.id`.
    *    - Query `community_platform_posts` by `id = :postId`.

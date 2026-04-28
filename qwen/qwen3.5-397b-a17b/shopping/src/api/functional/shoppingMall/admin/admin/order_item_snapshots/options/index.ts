@@ -21,7 +21,8 @@ import { IShoppingMallOrderItemSnapshotOption } from "../../../../../../structur
  * @param props.snapshotId UUID of the order item snapshot to retrieve options for (scoped to administrator oversight).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Query shopping_mall_order_item_snapshot_options table filtering by shopping_mall_order_item_snapshot_id parameter.
+ * @x-autobe-specification Query shopping_mall_order_item_snapshot_options table
+ *   filtering by shopping_mall_order_item_snapshot_id parameter.
  *
  * 1. Validate snapshotId exists in shopping_mall_order_item_snapshots table
  * 2. Verify requesting user has administrator privileges

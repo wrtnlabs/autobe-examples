@@ -31,8 +31,9 @@ export type IEcommerceProductVariant = {
    *
    * **Format**: UUID string (e.g., "550e8400-e29b-41d4-a716-446655440000")
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_product_variants.id. Primary key UUID.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_product_variants.id. Primary key UUID.
    */
   id: string & tags.Format<"uuid">;
 
@@ -45,8 +46,10 @@ export type IEcommerceProductVariant = {
    *
    * **Access**: Available in all variant responses (Read, Create response, Update response)
    *
-   * @x-autobe-database-schema-property product
-   * @x-autobe-specification Belongs-to relation from ecommerce_product_variants.product_id to ecommerce_products.id. Returns IEcommerceProduct.ISummary via JOIN.
+     * @x-autobe-database-schema-property product
+     * @x-autobe-specification Belongs-to relation from
+     *   ecommerce_product_variants.product_id to ecommerce_products.id. Returns
+     *   IEcommerceProduct.ISummary via JOIN.
    */
   product: IEcommerceProduct.ISummary;
 
@@ -61,8 +64,10 @@ export type IEcommerceProductVariant = {
    *
    * **Examples**: "RED-LARGE", "BLUE-SMALL", "COTTON-MEDIUM"
    *
-   * @x-autobe-database-schema-property sku_code
-   * @x-autobe-specification Direct mapping from ecommerce_product_variants.sku_code. Must be unique within the parent product (composite unique constraint on product_id + sku_code).
+     * @x-autobe-database-schema-property sku_code
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_product_variants.sku_code. Must be unique within the parent
+     *   product (composite unique constraint on product_id + sku_code).
    */
   sku_code: string;
 
@@ -79,8 +84,10 @@ export type IEcommerceProductVariant = {
    *
    * **Business Context**: These options define the specific variant characteristics (e.g., color, size, material, style) that distinguish it from other variants of the same product.
    *
-   * @x-autobe-database-schema-property option_values
-   * @x-autobe-specification Direct mapping from ecommerce_product_variants.option_values. Structured string in key=value format separated by semicolons.
+     * @x-autobe-database-schema-property option_values
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_product_variants.option_values. Structured string in
+     *   key=value format separated by semicolons.
    */
   option_values: string;
 
@@ -100,8 +107,10 @@ export type IEcommerceProductVariant = {
    *
    * **Example**: 29.99, 49.99, null
    *
-   * @x-autobe-database-schema-property price
-   * @x-autobe-specification Direct mapping from ecommerce_product_variants.price. Nullable decimal (DoublePrecision). If null, the product's base_price is used.
+     * @x-autobe-database-schema-property price
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_product_variants.price. Nullable decimal (DoublePrecision).
+     *   If null, the product's base_price is used.
    */
   price?: number | null | undefined;
 
@@ -124,7 +133,10 @@ export type IEcommerceProductVariant = {
    *
    * **Real-time**: Calculated on-the-fly from inventory history, not stored as a cached value
    *
-   * @x-autobe-specification Computed property: SUM of all ecommerce_inventory_records.quantity_change where variant_id matches. Positive values represent stock additions (restocks), negative values represent stock deductions (sales, adjustments, losses).
+     * @x-autobe-specification Computed property: SUM of all
+     *   ecommerce_inventory_records.quantity_change where variant_id matches.
+     *   Positive values represent stock additions (restocks), negative values
+     *   represent stock deductions (sales, adjustments, losses).
    */
   stock_quantity: number & tags.Type<"int32">;
 
@@ -140,8 +152,10 @@ export type IEcommerceProductVariant = {
    * - Auditing when variants were added to a product
    * - Reporting on variant creation trends
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_product_variants.created_at. Timestamp with timezone (timestamptz). Auto-set on variant creation.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_product_variants.created_at. Timestamp with timezone
+     *   (timestamptz). Auto-set on variant creation.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -159,8 +173,10 @@ export type IEcommerceProductVariant = {
    * - Syncing variant data across systems
    * - Auditing variant change history
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from ecommerce_product_variants.updated_at. Timestamp with timezone (timestamptz). Auto-updated on any variant modification.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_product_variants.updated_at. Timestamp with timezone
+     *   (timestamptz). Auto-updated on any variant modification.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -183,8 +199,10 @@ export type IEcommerceProductVariant = {
    *
    * **Example**: "2024-02-01T09:00:00.000Z" (deleted), null (active)
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from ecommerce_product_variants.deleted_at. Nullable timestamp with timezone (timestamptz). Null means the variant is active. Set on soft-delete.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_product_variants.deleted_at. Nullable timestamp with timezone
+     *   (timestamptz). Null means the variant is active. Set on soft-delete.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -216,8 +234,9 @@ export namespace IEcommerceProductVariant {
      *
      * **Usage**: Referenced in cart items, order items, inventory records, and API endpoints for variant-specific operations.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_product_variants.id. UUID primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_product_variants.id. UUID primary key.
      */
     id: string & tags.Format<"uuid">;
 
@@ -233,8 +252,9 @@ export namespace IEcommerceProductVariant {
      * - Used for inventory management and stock tracking
      * - Referenced in cart and order items for variant identification
      *
-     * @x-autobe-database-schema-property sku_code
-     * @x-autobe-specification Direct mapping from ecommerce_product_variants.sku_code. Unique within parent product.
+         * @x-autobe-database-schema-property sku_code
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_product_variants.sku_code. Unique within parent product.
      */
     sku_code: string;
 
@@ -249,8 +269,10 @@ export namespace IEcommerceProductVariant {
      *
      * **Usage**: Displayed to customers to show the specific variant characteristics. Used by the system to match cart and order items to the correct variant.
      *
-     * @x-autobe-database-schema-property option_values
-     * @x-autobe-specification Direct mapping from ecommerce_product_variants.option_values. Structured string in key=value format separated by semicolons.
+         * @x-autobe-database-schema-property option_values
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_product_variants.option_values. Structured string in
+         *   key=value format separated by semicolons.
      */
     option_values: string;
 
@@ -265,8 +287,10 @@ export namespace IEcommerceProductVariant {
      *
      * **Usage**: Useful for variants with different pricing tiers (e.g., premium colors, larger sizes). Enables flexible pricing strategies without modifying the parent product's base price.
      *
-     * @x-autobe-database-schema-property price
-     * @x-autobe-specification Direct mapping from ecommerce_product_variants.price. Nullable decimal. When null, parent product's base_price is used.
+         * @x-autobe-database-schema-property price
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_product_variants.price. Nullable decimal. When null,
+         *   parent product's base_price is used.
      */
     price?: number | null | undefined;
 
@@ -288,7 +312,10 @@ export namespace IEcommerceProductVariant {
      *
      * **Usage**: Displayed to customers to show availability. Prevents overselling by validating against this count during order placement.
      *
-     * @x-autobe-specification Computed aggregation: SUM(inventory_records.quantity) WHERE inventory_records.variant_id = this variant's id. Real-time calculation from inventory change history.
+         * @x-autobe-specification Computed aggregation:
+         *   SUM(inventory_records.quantity) WHERE inventory_records.variant_id
+         *   = this variant's id. Real-time calculation from inventory change
+         *   history.
      */
     stock_count: number & tags.Type<"int32">;
 
@@ -303,8 +330,10 @@ export namespace IEcommerceProductVariant {
      *
      * **Usage**: Enables navigation from variant to product detail pages. Provides product context (name, seller, category) without requiring separate API calls.
      *
-     * @x-autobe-database-schema-property product
-     * @x-autobe-specification JOIN from ecommerce_product_variants.product_id to ecommerce_products.id. Returns IEcommerceProduct.ISummary via association relation.
+         * @x-autobe-database-schema-property product
+         * @x-autobe-specification JOIN from
+         *   ecommerce_product_variants.product_id to ecommerce_products.id.
+         *   Returns IEcommerceProduct.ISummary via association relation.
      */
     product: IEcommerceProduct.ISummary;
 
@@ -317,8 +346,9 @@ export namespace IEcommerceProductVariant {
      *
      * **Usage**: Sorting variants by creation date, filtering variants within date ranges, audit and reporting purposes.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from ecommerce_product_variants.created_at. DateTime with timezone.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_product_variants.created_at. DateTime with timezone.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -335,8 +365,10 @@ export namespace IEcommerceProductVariant {
      *
      * **Usage**: Detecting recently modified variants, caching invalidation, sync operations.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from ecommerce_product_variants.updated_at. DateTime with timezone. Updated on any field change.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_product_variants.updated_at. DateTime with timezone.
+         *   Updated on any field change.
      */
     updated_at: string & tags.Format<"date-time">;
   };
@@ -369,7 +401,10 @@ export namespace IEcommerceProductVariant {
      * - "-XL" matches variants with SKU codes ending in "-XL"
      * - Empty string returns all variants
      *
-     * @x-autobe-specification Direct LIKE filter on ecommerce_product_variants.sku_code column. Performs case-insensitive partial text matching. Maps to the sku_code column in the database.
+         * @x-autobe-specification Direct LIKE filter on
+         *   ecommerce_product_variants.sku_code column. Performs
+         *   case-insensitive partial text matching. Maps to the sku_code column
+         *   in the database.
      */
     sku_code?: string | undefined;
 
@@ -383,7 +418,11 @@ export namespace IEcommerceProductVariant {
      * - Variants with no inventory records are treated as out of stock
      * - Real-time calculation ensures accurate availability status
      *
-     * @x-autobe-specification Computed aggregation field. Filters variants where SUM(inventory_records.quantity) > 0. Joins ecommerce_product_variants with ecommerce_inventory_records and calculates total stock per variant. Maps to no single column - derived from inventory aggregation.
+         * @x-autobe-specification Computed aggregation field. Filters variants
+         *   where SUM(inventory_records.quantity) > 0. Joins
+         *   ecommerce_product_variants with ecommerce_inventory_records and
+         *   calculates total stock per variant. Maps to no single column -
+         *   derived from inventory aggregation.
      */
     in_stock?: boolean | undefined;
 
@@ -400,7 +439,11 @@ export namespace IEcommerceProductVariant {
      * **Example**:
      * - {"color": "Red", "size": "Large"} matches variants with exactly those option values (may have additional options)
      *
-     * @x-autobe-specification JSON filter on ecommerce_product_variants.option_values column. The column stores structured string in key=value;key=value format (e.g., "color=Red;size=Large"). Filter matches variants containing all specified key-value pairs. Maps to the option_values column.
+         * @x-autobe-specification JSON filter on
+         *   ecommerce_product_variants.option_values column. The column stores
+         *   structured string in key=value;key=value format (e.g.,
+         *   "color=Red;size=Large"). Filter matches variants containing all
+         *   specified key-value pairs. Maps to the option_values column.
      */
     option_values?:
       | {
@@ -422,7 +465,10 @@ export namespace IEcommerceProductVariant {
      * - offset = (page - 1) × limit
      * - Example: page=3, limit=20 → offset=40 (skips first 40 records)
      *
-     * @x-autobe-specification Pagination offset parameter. Calculated as offset = (page - 1) * limit. Must be minimum 1. Used for offset-based pagination in variant list queries. Computed parameter, no database mapping.
+         * @x-autobe-specification Pagination offset parameter. Calculated as
+         *   offset = (page - 1) * limit. Must be minimum 1. Used for
+         *   offset-based pagination in variant list queries. Computed
+         *   parameter, no database mapping.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -441,7 +487,10 @@ export namespace IEcommerceProductVariant {
      * - Values above 100 are automatically clamped to 100
      * - Values below 1 are automatically clamped to 1
      *
-     * @x-autobe-specification Pagination limit parameter. Controls maximum rows returned per page. Clamped to range [1, 100]. Used with page field for offset-based pagination. Computed parameter, no database mapping.
+         * @x-autobe-specification Pagination limit parameter. Controls maximum
+         *   rows returned per page. Clamped to range [1, 100]. Used with page
+         *   field for offset-based pagination. Computed parameter, no database
+         *   mapping.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -462,7 +511,10 @@ export namespace IEcommerceProductVariant {
      * - Invalid field names are rejected with 400 Bad Request
      * - Defaults to created_at if not specified
      *
-     * @x-autobe-specification ORDER BY field name parameter. Valid values: sku_code, price, created_at. Used to construct SQL ORDER BY clause for variant list queries. Defaults to created_at if not specified. Computed parameter, no database mapping.
+         * @x-autobe-specification ORDER BY field name parameter. Valid values:
+         *   sku_code, price, created_at. Used to construct SQL ORDER BY clause
+         *   for variant list queries. Defaults to created_at if not specified.
+         *   Computed parameter, no database mapping.
      */
     sort?: string | undefined;
 
@@ -480,7 +532,10 @@ export namespace IEcommerceProductVariant {
      * - When sort=sku_code or sort=price, defaults to asc
      * - Invalid values are rejected with 400 Bad Request
      *
-     * @x-autobe-specification Sort direction parameter. Valid values: "asc" (ascending) or "desc" (descending). Used to construct SQL ORDER BY clause direction. Defaults to "desc" for created_at sorting. Computed parameter, no database mapping.
+         * @x-autobe-specification Sort direction parameter. Valid values: "asc"
+         *   (ascending) or "desc" (descending). Used to construct SQL ORDER BY
+         *   clause direction. Defaults to "desc" for created_at sorting.
+         *   Computed parameter, no database mapping.
      */
     order?: "asc" | "desc" | undefined;
   };
@@ -516,8 +571,10 @@ export namespace IEcommerceProductVariant {
      *
      * **Uniqueness**: Must be unique within the parent product scope (product_id + sku_code forms a unique constraint)
      *
-     * @x-autobe-database-schema-property sku_code
-     * @x-autobe-specification Direct mapping from ecommerce_product_variants.sku_code. Must be unique within the parent product. Used for inventory tracking and order fulfillment.
+         * @x-autobe-database-schema-property sku_code
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_product_variants.sku_code. Must be unique within the
+         *   parent product. Used for inventory tracking and order fulfillment.
      */
     sku_code?: string | undefined;
 
@@ -530,8 +587,11 @@ export namespace IEcommerceProductVariant {
      *
      * **Usage**: Customers select these option values when adding the variant to their cart. The options are displayed on product detail pages to help customers identify the specific variant they want to purchase.
      *
-     * @x-autobe-database-schema-property option_values
-     * @x-autobe-specification Direct mapping from ecommerce_product_variants.option_values. Structured string in key=value format separated by semicolons (e.g., 'color=Red;size=Large').
+         * @x-autobe-database-schema-property option_values
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_product_variants.option_values. Structured string in
+         *   key=value format separated by semicolons (e.g.,
+         *   'color=Red;size=Large').
      */
     option_values?: string | undefined;
 
@@ -548,8 +608,11 @@ export namespace IEcommerceProductVariant {
      *
      * **Usage**: Allows sellers to price specific variants differently from the base product price, such as premium sizes or special color combinations.
      *
-     * @x-autobe-database-schema-property price
-     * @x-autobe-specification Direct mapping from ecommerce_product_variants.price. Nullable decimal field. If null, the product's base_price is used for cart calculations and order totals.
+         * @x-autobe-database-schema-property price
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_product_variants.price. Nullable decimal field. If null,
+         *   the product's base_price is used for cart calculations and order
+         *   totals.
      */
     price?: number | null | undefined;
   };
@@ -593,8 +656,12 @@ export namespace IEcommerceProductVariant {
      * - Used for inventory management and stock tracking
      * - Referenced in order items for purchase history
      *
-     * @x-autobe-database-schema-property sku_code
-     * @x-autobe-specification Direct mapping from ecommerce_product_variants.sku_code. Must be unique within the product (composite unique constraint @@unique([product_id, sku_code])). Backend validates uniqueness against existing non-deleted variants.
+         * @x-autobe-database-schema-property sku_code
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_product_variants.sku_code. Must be unique within the
+         *   product (composite unique constraint @@unique([product_id,
+         *   sku_code])). Backend validates uniqueness against existing
+         *   non-deleted variants.
      */
     sku_code: string;
 
@@ -617,8 +684,12 @@ export namespace IEcommerceProductVariant {
      * - Displayed to customers during variant selection
      * - Used in order snapshots for purchase history
      *
-     * @x-autobe-database-schema-property option_values
-     * @x-autobe-specification Direct mapping from ecommerce_product_variants.option_values. Structured string in key=value format separated by semicolons (e.g., 'color=Red;size=Large;material=Cotton'). Backend validates format correctness.
+         * @x-autobe-database-schema-property option_values
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_product_variants.option_values. Structured string in
+         *   key=value format separated by semicolons (e.g.,
+         *   'color=Red;size=Large;material=Cotton'). Backend validates format
+         *   correctness.
      */
     option_values: string;
 
@@ -642,8 +713,11 @@ export namespace IEcommerceProductVariant {
      *
      * Variants without a price override inherit the product's base price, ensuring consistent pricing when all variants share the same cost.
      *
-     * @x-autobe-database-schema-property price
-     * @x-autobe-specification Direct mapping from ecommerce_product_variants.price. Nullable decimal value. If null, the product's base_price from ecommerce_products is used for cart calculations and order totals.
+         * @x-autobe-database-schema-property price
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_product_variants.price. Nullable decimal value. If null,
+         *   the product's base_price from ecommerce_products is used for cart
+         *   calculations and order totals.
      */
     price?: number | null | undefined;
   };

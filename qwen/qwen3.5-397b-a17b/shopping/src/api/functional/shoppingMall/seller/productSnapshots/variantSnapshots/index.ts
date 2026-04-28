@@ -26,7 +26,8 @@ import { IShoppingMallProductVariantSnapshot } from "../../../../../structures/I
  * @param props.body Search criteria including SKU code filter, price range, stock quantity range, and pagination parameters for browsing variant snapshots.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Query shopping_mall_product_variant_snapshots table filtered by shopping_mall_product_snapshot_id parameter.
+ * @x-autobe-specification Query shopping_mall_product_variant_snapshots table
+ *   filtered by shopping_mall_product_snapshot_id parameter.
  *
  * Implementation steps:
  * 1. Validate productSnapshotId exists in shopping_mall_product_snapshots table

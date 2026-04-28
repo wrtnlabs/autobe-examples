@@ -25,7 +25,8 @@ import { IPageIErpHrmContract } from "../../../../../structures/IPageIErpHrmCont
  * @param props.body Contract creation data including start date, compensation details, and working hours.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Create a new employment contract for the specified employee.
+ * @x-autobe-specification Create a new employment contract for the specified
+ *   employee.
  *
  * 1. Validate the requesting user has employee:manage permission in the current organization context.
  * 2. Validate the employeeId exists and belongs to the current organization.
@@ -156,7 +157,8 @@ export namespace create {
  * @param props.body Search criteria and pagination parameters for filtering contracts
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query erp_hrm_contracts table filtered by erp_hrm_employee_id matching the path parameter.
+ * @x-autobe-specification Query erp_hrm_contracts table filtered by
+ *   erp_hrm_employee_id matching the path parameter.
  *
  * Authorization checks:
  * 1. Verify the requesting member has an active employee record in the same organization
@@ -404,7 +406,8 @@ export namespace at {
  * @param props.body Contract update details. Only active contracts can be modified. The start_date field is immutable and cannot be changed.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Update an existing employment contract for an employee.
+ * @x-autobe-specification Update an existing employment contract for an
+ *   employee.
  *
  * ## Validation Steps
  * 1. Verify user has employee:manage permission in the organization

@@ -22,8 +22,9 @@ export type IEcommerceMallGuestSession = {
    *
    * Primary key UUID assigned at session creation. Used to retrieve and validate session state for unauthenticated guest visitors.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_guest_sessions.id. UUID primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_guest_sessions.id. UUID primary key.
    */
   id: string & tags.Format<"uuid">;
 
@@ -32,8 +33,9 @@ export type IEcommerceMallGuestSession = {
    *
    * Records the IP address when the session was created. Used for security auditing and fraud detection purposes.
    *
-   * @x-autobe-database-schema-property ip
-   * @x-autobe-specification Direct mapping from ecommerce_mall_guest_sessions.ip. String.
+     * @x-autobe-database-schema-property ip
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_guest_sessions.ip. String.
    */
   ip: string;
 
@@ -42,8 +44,9 @@ export type IEcommerceMallGuestSession = {
    *
    * Tracks the current page URL within the platform. Used for session state continuity and navigation analytics.
    *
-   * @x-autobe-database-schema-property href
-   * @x-autobe-specification Direct mapping from ecommerce_mall_guest_sessions.href. String.
+     * @x-autobe-database-schema-property href
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_guest_sessions.href. String.
    */
   href: string;
 
@@ -52,8 +55,9 @@ export type IEcommerceMallGuestSession = {
    *
    * Records the HTTP referrer header value. Used for traffic source analytics and user journey tracking.
    *
-   * @x-autobe-database-schema-property referrer
-   * @x-autobe-specification Direct mapping from ecommerce_mall_guest_sessions.referrer. String.
+     * @x-autobe-database-schema-property referrer
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_guest_sessions.referrer. String.
    */
   referrer: string;
 
@@ -62,8 +66,10 @@ export type IEcommerceMallGuestSession = {
    *
    * Records the exact moment the guest session was established. Used for session age calculation and audit logging.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_guest_sessions.created_at. ISO 8601 timestamp with timezone.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_guest_sessions.created_at. ISO 8601 timestamp with
+     *   timezone.
    */
   createdAt: string & tags.Format<"date-time">;
 
@@ -72,8 +78,10 @@ export type IEcommerceMallGuestSession = {
    *
    * Session validity deadline. Expired sessions return 404 on retrieval. Clients should refresh tokens before expiration.
    *
-   * @x-autobe-database-schema-property expired_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_guest_sessions.expired_at. ISO 8601 timestamp with timezone.
+     * @x-autobe-database-schema-property expired_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_guest_sessions.expired_at. ISO 8601 timestamp with
+     *   timezone.
    */
   expiredAt: string & tags.Format<"date-time">;
 
@@ -82,8 +90,10 @@ export type IEcommerceMallGuestSession = {
    *
    * Contains device fingerprint and user agent information for identifying the anonymous visitor across sessions.
    *
-   * @x-autobe-database-schema-property guest
-   * @x-autobe-specification JOIN via ecommerce_mall_guest_id FK to ecommerce_mall_guests.id. Returns IEcommerceMallGuest.ISummary containing fingerprint, user_agent, and last_active_at.
+     * @x-autobe-database-schema-property guest
+     * @x-autobe-specification JOIN via ecommerce_mall_guest_id FK to
+     *   ecommerce_mall_guests.id. Returns IEcommerceMallGuest.ISummary
+     *   containing fingerprint, user_agent, and last_active_at.
    */
   guest: IEcommerceMallGuest.ISummary;
 };
@@ -120,7 +130,10 @@ export namespace IEcommerceMallGuestSession {
      * - Filter sessions for a specific guest: guestId="550e8400-e29b-41d4-a716-446655440000"
      * - Include all guests: omit this parameter
      *
-     * @x-autobe-specification Query parameter for filtering by guest. Maps to ecommerce_mall_guest_sessions.ecommerce_mall_guest_id column via exact match. When provided, returns only sessions belonging to that specific guest account.
+         * @x-autobe-specification Query parameter for filtering by guest. Maps
+         *   to ecommerce_mall_guest_sessions.ecommerce_mall_guest_id column via
+         *   exact match. When provided, returns only sessions belonging to that
+         *   specific guest account.
      */
     guestId?: (string & tags.Format<"uuid">) | undefined;
 
@@ -136,7 +149,10 @@ export namespace IEcommerceMallGuestSession {
      * - Exact match: ip="192.168.1.100"
      * - Range search: ip="192.168." (all IPs starting with 192.168.)
      *
-     * @x-autobe-specification Query parameter for filtering by IP address. Maps to ecommerce_mall_guest_sessions.ip column. Uses LIKE pattern matching for partial matches to support IP range searches and subnet filtering.
+         * @x-autobe-specification Query parameter for filtering by IP address.
+         *   Maps to ecommerce_mall_guest_sessions.ip column. Uses LIKE pattern
+         *   matching for partial matches to support IP range searches and
+         *   subnet filtering.
      */
     ip?: string | undefined;
 
@@ -152,7 +168,10 @@ export namespace IEcommerceMallGuestSession {
      * - Exact URL: href="https://example.com/products/123"
      * - Page pattern: href="/products/" (all product pages)
      *
-     * @x-autobe-specification Query parameter for filtering by current page URL. Maps to ecommerce_mall_guest_sessions.href column. Uses LIKE pattern matching for partial matches to support URL pattern searches.
+         * @x-autobe-specification Query parameter for filtering by current page
+         *   URL. Maps to ecommerce_mall_guest_sessions.href column. Uses LIKE
+         *   pattern matching for partial matches to support URL pattern
+         *   searches.
      */
     href?: string | undefined;
 
@@ -168,7 +187,10 @@ export namespace IEcommerceMallGuestSession {
      * - Exact referrer: referrer="https://google.com/search?q=shoes"
      * - Domain pattern: referrer="https://google.com" (all Google traffic)
      *
-     * @x-autobe-specification Query parameter for filtering by HTTP referrer. Maps to ecommerce_mall_guest_sessions.referrer column. Uses LIKE pattern matching for partial matches to support referrer pattern searches.
+         * @x-autobe-specification Query parameter for filtering by HTTP
+         *   referrer. Maps to ecommerce_mall_guest_sessions.referrer column.
+         *   Uses LIKE pattern matching for partial matches to support referrer
+         *   pattern searches.
      */
     referrer?: string | undefined;
 
@@ -184,7 +206,10 @@ export namespace IEcommerceMallGuestSession {
      * - dateFrom="2024-01-01T00:00:00Z" (all sessions from January 1st onward)
      * - dateFrom="2024-01-15T00:00:00Z" and dateTo="2024-01-31T23:59:59Z" (January only)
      *
-     * @x-autobe-specification Query parameter for lower boundary of creation date range. Maps to ecommerce_mall_guest_sessions.created_at column. Filters sessions where created_at >= dateFrom (inclusive lower boundary).
+         * @x-autobe-specification Query parameter for lower boundary of
+         *   creation date range. Maps to
+         *   ecommerce_mall_guest_sessions.created_at column. Filters sessions
+         *   where created_at >= dateFrom (inclusive lower boundary).
      */
     dateFrom?: (string & tags.Format<"date-time">) | undefined;
 
@@ -200,7 +225,10 @@ export namespace IEcommerceMallGuestSession {
      * - dateTo="2024-12-31T23:59:59Z" (all sessions until end of year)
      * - dateFrom="2024-01-01T00:00:00Z" and dateTo="2024-06-30T23:59:59Z" (first half of 2024)
      *
-     * @x-autobe-specification Query parameter for upper boundary of creation date range. Maps to ecommerce_mall_guest_sessions.created_at column. Filters sessions where created_at <= dateTo (inclusive upper boundary).
+         * @x-autobe-specification Query parameter for upper boundary of
+         *   creation date range. Maps to
+         *   ecommerce_mall_guest_sessions.created_at column. Filters sessions
+         *   where created_at <= dateTo (inclusive upper boundary).
      */
     dateTo?: (string & tags.Format<"date-time">) | undefined;
 
@@ -216,7 +244,10 @@ export namespace IEcommerceMallGuestSession {
      * - expiredFrom="2024-06-01T00:00:00Z" (sessions expiring from June onward)
      * - expiredTo="2024-12-31T23:59:59Z" (sessions expiring by end of year)
      *
-     * @x-autobe-specification Query parameter for lower boundary of expiration date range. Maps to ecommerce_mall_guest_sessions.expired_at column. Filters sessions where expired_at >= expiredFrom (inclusive lower boundary).
+         * @x-autobe-specification Query parameter for lower boundary of
+         *   expiration date range. Maps to
+         *   ecommerce_mall_guest_sessions.expired_at column. Filters sessions
+         *   where expired_at >= expiredFrom (inclusive lower boundary).
      */
     expiredFrom?: (string & tags.Format<"date-time">) | undefined;
 
@@ -232,7 +263,10 @@ export namespace IEcommerceMallGuestSession {
      * - expiredTo="2024-06-30T23:59:59Z" (sessions expiring by June 30th)
      * - expiredFrom="2024-01-01T00:00:00Z" and expiredTo="2024-06-30T23:59:59Z" (first half expiration window)
      *
-     * @x-autobe-specification Query parameter for upper boundary of expiration date range. Maps to ecommerce_mall_guest_sessions.expired_at column. Filters sessions where expired_at <= expiredTo (inclusive upper boundary).
+         * @x-autobe-specification Query parameter for upper boundary of
+         *   expiration date range. Maps to
+         *   ecommerce_mall_guest_sessions.expired_at column. Filters sessions
+         *   where expired_at <= expiredTo (inclusive upper boundary).
      */
     expiredTo?: (string & tags.Format<"date-time">) | undefined;
 
@@ -249,7 +283,11 @@ export namespace IEcommerceMallGuestSession {
      * - Active monitoring: expired=false to see current guest activity
      * - Full audit: omit to see complete session history
      *
-     * @x-autobe-specification Query parameter for filtering by expiration status. Computed boolean filter using ecommerce_mall_guest_sessions.expired_at column. When true: expired_at < NOW(). When false: expired_at >= NOW(). Omits both conditions when null.
+         * @x-autobe-specification Query parameter for filtering by expiration
+         *   status. Computed boolean filter using
+         *   ecommerce_mall_guest_sessions.expired_at column. When true:
+         *   expired_at < NOW(). When false: expired_at >= NOW(). Omits both
+         *   conditions when null.
      */
     expired?: boolean | undefined;
 
@@ -269,7 +307,12 @@ export namespace IEcommerceMallGuestSession {
      * - sortBy="created_at" (newest first)
      * - sortBy="expired_at" (soonest expiring first)
      *
-     * @x-autobe-specification Query parameter for controlling sort order. Supported fields: created_at (maps to ecommerce_mall_guest_sessions.created_at), ip (maps to ecommerce_mall_guest_sessions.ip), expired_at (maps to ecommerce_mall_guest_sessions.expired_at). Default sort: created_at DESC (newest first).
+         * @x-autobe-specification Query parameter for controlling sort order.
+         *   Supported fields: created_at (maps to
+         *   ecommerce_mall_guest_sessions.created_at), ip (maps to
+         *   ecommerce_mall_guest_sessions.ip), expired_at (maps to
+         *   ecommerce_mall_guest_sessions.expired_at). Default sort: created_at
+         *   DESC (newest first).
      */
     sortBy?: "created_at" | "ip" | "expired_at" | undefined;
 
@@ -286,7 +329,10 @@ export namespace IEcommerceMallGuestSession {
      * - page=2 (second page of results)
      * - page=10 (tenth page)
      *
-     * @x-autobe-specification Pagination query parameter. 1-indexed page number for offset-based pagination. Default value is 1. Used in conjunction with limit to calculate offset: offset = (page - 1) * limit.
+         * @x-autobe-specification Pagination query parameter. 1-indexed page
+         *   number for offset-based pagination. Default value is 1. Used in
+         *   conjunction with limit to calculate offset: offset = (page - 1) *
+         *   limit.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -303,7 +349,9 @@ export namespace IEcommerceMallGuestSession {
      * - limit=50 (50 items per page)
      * - limit=100 (maximum, 100 items per page)
      *
-     * @x-autobe-specification Pagination query parameter controlling items per page. Default is 20, maximum is 100. Used with page to calculate offset and limit results.
+         * @x-autobe-specification Pagination query parameter controlling items
+         *   per page. Default is 20, maximum is 100. Used with page to
+         *   calculate offset and limit results.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -327,8 +375,9 @@ export namespace IEcommerceMallGuestSession {
      *
      * Uniqueness: Each session has a globally unique identifier.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_mall_guest_sessions.id. UUID primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_guest_sessions.id. UUID primary key.
      */
     id: string & tags.Format<"uuid">;
 
@@ -339,8 +388,9 @@ export namespace IEcommerceMallGuestSession {
      *
      * Usage: Used for session ordering and retention policies.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_guest_sessions.created_at. DateTime stored in UTC.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_guest_sessions.created_at. DateTime stored in UTC.
      */
     createdAt: string & tags.Format<"date-time">;
 
@@ -351,8 +401,9 @@ export namespace IEcommerceMallGuestSession {
      *
      * Usage: Sessions are considered expired when current time exceeds this value. Expired sessions cannot be used for authentication.
      *
-     * @x-autobe-database-schema-property expired_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_guest_sessions.expired_at. DateTime stored in UTC.
+         * @x-autobe-database-schema-property expired_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_guest_sessions.expired_at. DateTime stored in UTC.
      */
     expiredAt: string & tags.Format<"date-time">;
 
@@ -363,8 +414,9 @@ export namespace IEcommerceMallGuestSession {
      *
      * Usage: Used for security auditing and geographic tracking of anonymous visitors.
      *
-     * @x-autobe-database-schema-property ip
-     * @x-autobe-specification Direct mapping from ecommerce_mall_guest_sessions.ip. String IP address (IPv4 or IPv6).
+         * @x-autobe-database-schema-property ip
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_guest_sessions.ip. String IP address (IPv4 or IPv6).
      */
     ip: string;
 
@@ -375,8 +427,9 @@ export namespace IEcommerceMallGuestSession {
      *
      * Usage: Tracks the visitor's current navigation location for browsing pattern analysis.
      *
-     * @x-autobe-database-schema-property href
-     * @x-autobe-specification Direct mapping from ecommerce_mall_guest_sessions.href. Current page URL.
+         * @x-autobe-database-schema-property href
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_guest_sessions.href. Current page URL.
      */
     href: string;
 
@@ -387,8 +440,9 @@ export namespace IEcommerceMallGuestSession {
      *
      * Usage: Tracks how the visitor arrived at the current page for traffic attribution and analytics.
      *
-     * @x-autobe-database-schema-property referrer
-     * @x-autobe-specification Direct mapping from ecommerce_mall_guest_sessions.referrer. HTTP Referer header value.
+         * @x-autobe-database-schema-property referrer
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_guest_sessions.referrer. HTTP Referer header value.
      */
     referrer: string;
 
@@ -399,8 +453,12 @@ export namespace IEcommerceMallGuestSession {
      *
      * Included Data: Guest summary includes fingerprint for device identification.
      *
-     * @x-autobe-database-schema-property guest
-     * @x-autobe-specification Belongs-to relation via LEFT JOIN with ecommerce_mall_guests on ecommerce_mall_guest_sessions.ecommerce_mall_guest_id = ecommerce_mall_guests.id. Returns IEcommerceMallGuest.ISummary object.
+         * @x-autobe-database-schema-property guest
+         * @x-autobe-specification Belongs-to relation via LEFT JOIN with
+         *   ecommerce_mall_guests on
+         *   ecommerce_mall_guest_sessions.ecommerce_mall_guest_id =
+         *   ecommerce_mall_guests.id. Returns IEcommerceMallGuest.ISummary
+         *   object.
      */
     guest: IEcommerceMallGuest.ISummary;
 
@@ -411,7 +469,9 @@ export namespace IEcommerceMallGuestSession {
      *
      * Usage: Convenience field for quickly determining session validity without manual date comparison.
      *
-     * @x-autobe-specification Computed boolean: expired_at < NOW(). Evaluates whether the session's expiration timestamp has passed. No direct database column.
+         * @x-autobe-specification Computed boolean: expired_at < NOW().
+         *   Evaluates whether the session's expiration timestamp has passed. No
+         *   direct database column.
      */
     isExpired: boolean;
   };

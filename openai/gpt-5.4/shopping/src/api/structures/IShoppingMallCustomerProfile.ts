@@ -10,56 +10,67 @@ export type IShoppingMallCustomerProfile = {
   /**
    * Unique identifier of this customer profile record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_customer_profiles.id.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_customer_profiles.id.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Customer-facing display name shown in the profile.
    *
-   * @x-autobe-database-schema-property display_name
-   * @x-autobe-specification Direct mapping from shopping_mall_customer_profiles.display_name.
+     * @x-autobe-database-schema-property display_name
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_customer_profiles.display_name.
    */
   displayName: string;
 
   /**
    * Customer contact phone number stored in the profile.
    *
-   * @x-autobe-database-schema-property phone_number
-   * @x-autobe-specification Direct mapping from shopping_mall_customer_profiles.phone_number.
+     * @x-autobe-database-schema-property phone_number
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_customer_profiles.phone_number.
    */
   phoneNumber: string;
 
   /**
    * Owning customer account summary for this profile.
    *
-   * @x-autobe-database-schema-property customer
-   * @x-autobe-specification Join from shopping_mall_customer_profiles.shopping_mall_customer_id to shopping_mall_customers.id and map the belongs-to relation shopping_mall_customer_profiles.customer as IShoppingMallCustomer.ISummary.
+     * @x-autobe-database-schema-property customer
+     * @x-autobe-specification Join from
+     *   shopping_mall_customer_profiles.shopping_mall_customer_id to
+     *   shopping_mall_customers.id and map the belongs-to relation
+     *   shopping_mall_customer_profiles.customer as
+     *   IShoppingMallCustomer.ISummary.
    */
   customer: IShoppingMallCustomer.ISummary;
 
   /**
    * Timestamp when this profile record was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from shopping_mall_customer_profiles.created_at.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_customer_profiles.created_at.
    */
   createdAt: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when this profile record was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from shopping_mall_customer_profiles.updated_at.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_customer_profiles.updated_at.
    */
   updatedAt: string & tags.Format<"date-time">;
 
   /**
    * Soft-deletion timestamp for this profile, or null when the profile is still active.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from shopping_mall_customer_profiles.deleted_at. Return null when the profile has not been soft-deleted.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_customer_profiles.deleted_at. Return null when the
+     *   profile has not been soft-deleted.
    */
   deletedAt: (string & tags.Format<"date-time">) | null;
 };
@@ -71,16 +82,24 @@ export namespace IShoppingMallCustomerProfile {
     /**
      * Customer-facing display name to set on the current profile.
      *
-     * @x-autobe-database-schema-property display_name
-     * @x-autobe-specification Map this field to shopping_mall_customer_profiles.display_name for the active profile row resolved from the authenticated customer context. Apply it only when provided in the request body as part of a partial profile update.
+         * @x-autobe-database-schema-property display_name
+         * @x-autobe-specification Map this field to
+         *   shopping_mall_customer_profiles.display_name for the active profile
+         *   row resolved from the authenticated customer context. Apply it only
+         *   when provided in the request body as part of a partial profile
+         *   update.
      */
     displayName?: string | undefined;
 
     /**
      * Customer contact phone number to set on the current profile.
      *
-     * @x-autobe-database-schema-property phone_number
-     * @x-autobe-specification Map this field to shopping_mall_customer_profiles.phone_number for the active profile row resolved from the authenticated customer context. Apply it only when provided in the request body as part of a partial profile update.
+         * @x-autobe-database-schema-property phone_number
+         * @x-autobe-specification Map this field to
+         *   shopping_mall_customer_profiles.phone_number for the active profile
+         *   row resolved from the authenticated customer context. Apply it only
+         *   when provided in the request body as part of a partial profile
+         *   update.
      */
     phoneNumber?: string | undefined;
   };

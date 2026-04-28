@@ -27,18 +27,25 @@ export class ShoppingmallMemberAddressesController {
    *
    * @param connection
    * @param body Create input for a customer shipping address. The system requires all core recipient and destination fields, and stores them into shopping_mall_addresses.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation steps:
-   * 1) Authenticate request as member/customer and obtain member id.
-   * 2) Validate required input fields: recipient_name, phone_number, postal_code, country, city, street_line1; street_line2 is optional.
-   * 3) Create a new shopping_mall_addresses row with shopping_mall_customer_id set to the authenticated member id, and set is_default according to request rules.
-   * 4) If the new record is marked as default (is_default=true), ensure any existing active addresses for the same shopping_mall_customer_id have is_default=false within a transaction. If the system uses deleted_at for inactive entries, exclude records where deleted_at is not null from the default-unsetting logic.
-   * 5) Persist timestamps created_at/updated_at automatically (or set in application layer depending on implementation).
-   * 6) Return the created address using the response schema matching IShoppingMallAddresses.
-   * 7) Error handling:
-   *    - On validation failures (missing required fields), do not write any records.
-   *    - On ownership/authorization failures, reject with an authorization error.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation steps: 1) Authenticate request as
+     *   member/customer and obtain member id. 2) Validate required input
+     *   fields: recipient_name, phone_number, postal_code, country, city,
+     *   street_line1; street_line2 is optional. 3) Create a new
+     *   shopping_mall_addresses row with shopping_mall_customer_id set to the
+     *   authenticated member id, and set is_default according to request rules.
+     *   4) If the new record is marked as default (is_default=true), ensure any
+     *   existing active addresses for the same shopping_mall_customer_id have
+     *   is_default=false within a transaction. If the system uses deleted_at
+     *   for inactive entries, exclude records where deleted_at is not null from
+     *   the default-unsetting logic. 5) Persist timestamps
+     *   created_at/updated_at automatically (or set in application layer
+     *   depending on implementation). 6) Return the created address using the
+     *   response schema matching IShoppingMallAddresses. 7) Error handling: -
+     *   On validation failures (missing required fields), do not write any
+     *   records. - On ownership/authorization failures, reject with an
+     *   authorization error.
    *
    * Database access:
    * - Insert into shopping_mall_addresses.
@@ -81,9 +88,11 @@ export class ShoppingmallMemberAddressesController {
    *
    * @param connection
    * @param body The address update payload, including the target address identifier owned by the authenticated customer and the updated shipping destination fields (and optional default selection intent).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Authenticate the caller as a member/customer and load the target `shopping_mall_addresses` row by the address identifier provided in the request body.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Authenticate the caller as a member/customer and
+     *   load the target `shopping_mall_addresses` row by the address identifier
+     *   provided in the request body.
    *
    * 1) Ownership check
    * - Query `shopping_mall_addresses` by id AND shopping_mall_customer_id == authenticated customer id.
@@ -146,30 +155,26 @@ export class ShoppingmallMemberAddressesController {
    *
    * @param connection
    * @param addressId Target address identifier within the authenticated customer address book (UUID).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1) Input: accept `addressId` (UUID) from path.
-   * 2) Authorization: identify the authenticated customer/member and treat it as the owner scope for addresses.
-   * 3) Query: perform a single-row lookup in `shopping_mall_addresses` where `id = addressId`.
-   * 4) Ownership filter: ensure `shopping_mall_customer_id = authenticatedCustomerId`.
-   * 5) If no matching row is found, raise an error equivalent to not found or forbidden (implementation may unify responses to avoid leaking existence).
-   * 6) Map the selected row fields to `IShoppingMallAddress` DTO:
-   *    - id
-   *    - recipientName (from recipient_name)
-   *    - phoneNumber (from phone_number)
-   *    - streetLine1 (from street_line1)
-   *    - streetLine2 (from street_line2, nullable)
-   *    - city
-   *    - postalCode (from postal_code)
-   *    - country
-   *    - isDefault (from is_default)
-   *    - createdAt (from created_at)
-   *    - updatedAt (from updated_at)
-   *    - (Do not expose `deleted_at` directly unless the DTO schema includes it; follow DTO definitions.)
-   * 7) Transactions: read-only operation; no transaction needed beyond the ORM/SQL read.
-   * 8) Error handling:
-   *    - Invalid UUID path parameter: return 400.
-   *    - Unauthorized/ownership mismatch or missing record: return an error (implementation-specific status mapping).
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification 1) Input: accept `addressId` (UUID) from path. 2)
+     *   Authorization: identify the authenticated customer/member and treat it
+     *   as the owner scope for addresses. 3) Query: perform a single-row lookup
+     *   in `shopping_mall_addresses` where `id = addressId`. 4) Ownership
+     *   filter: ensure `shopping_mall_customer_id = authenticatedCustomerId`.
+     *   5) If no matching row is found, raise an error equivalent to not found
+     *   or forbidden (implementation may unify responses to avoid leaking
+     *   existence). 6) Map the selected row fields to `IShoppingMallAddress`
+     *   DTO: - id - recipientName (from recipient_name) - phoneNumber (from
+     *   phone_number) - streetLine1 (from street_line1) - streetLine2 (from
+     *   street_line2, nullable) - city - postalCode (from postal_code) -
+     *   country - isDefault (from is_default) - createdAt (from created_at) -
+     *   updatedAt (from updated_at) - (Do not expose `deleted_at` directly
+     *   unless the DTO schema includes it; follow DTO definitions.) 7)
+     *   Transactions: read-only operation; no transaction needed beyond the
+     *   ORM/SQL read. 8) Error handling: - Invalid UUID path parameter: return
+     *   400. - Unauthorized/ownership mismatch or missing record: return an
+     *   error (implementation-specific status mapping).
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Get(":addressId")
@@ -207,9 +212,9 @@ export class ShoppingmallMemberAddressesController {
    * @param connection
    * @param addressId Target address record ID to update in the customer’s address book.
    * @param body Complete replacement payload for the address fields to keep the shipping address book entry valid and selectable for future checkouts.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement PUT update on shopping_mall_addresses.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implement PUT update on shopping_mall_addresses.
    *
    * 1) Authorization & ownership
    * - Authenticate caller as a logged-in customer/member.
@@ -293,9 +298,10 @@ export class ShoppingmallMemberAddressesController {
    *
    * @param connection
    * @param addressId Identifier of the shipping address to remove from the customer’s address book.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement `erase` as an authenticated customer-only delete.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implement `erase` as an authenticated
+     *   customer-only delete.
    *
    * 1) Authentication/actor check
    * - Require the request to be authenticated as a customer/member (not guest).

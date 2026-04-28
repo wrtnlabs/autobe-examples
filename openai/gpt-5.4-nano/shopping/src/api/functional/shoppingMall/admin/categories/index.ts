@@ -164,7 +164,8 @@ export namespace create {
  * @param props.body Search and pagination criteria for categories listing.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Query shopping_mall_categories and return a paginated list of category summaries.
+ * @x-autobe-specification Query shopping_mall_categories and return a paginated
+ *   list of category summaries.
  *
  * 1) Parse requestBody criteria for pagination (page size, cursor/offset if supported by IShoppingMallCategory.IRequest) and optional filters (e.g., visibility, parent/slug/name search) as defined by the request DTO.
  * 2) Apply filtering to shopping_mall_categories:
@@ -277,13 +278,14 @@ export namespace index {
  * @param props.categoryId Target category identifier (UUID) to fetch a single category record.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification 1) Validate `categoryId` is a valid UUID.
- * 2) Query `shopping_mall_categories` by `id = categoryId`.
- * 3) Enforce browseability:
- *    - If `deleted_at` is not null, treat as not found (return 404).
- *    - Apply customer visibility rules based on `visibility` (only return if the stored visibility indicates it is browseable).
- * 4) Return a single DTO mapped from the category row (id, name, description, slug, visibility, display_order, created_at, updated_at).
- * 5) If the category does not exist or is not browseable, return an error response indicating it cannot be found.
+ * @x-autobe-specification 1) Validate `categoryId` is a valid UUID. 2) Query
+ *   `shopping_mall_categories` by `id = categoryId`. 3) Enforce browseability:
+ *   - If `deleted_at` is not null, treat as not found (return 404). - Apply
+ *   customer visibility rules based on `visibility` (only return if the stored
+ *   visibility indicates it is browseable). 4) Return a single DTO mapped from
+ *   the category row (id, name, description, slug, visibility, display_order,
+ *   created_at, updated_at). 5) If the category does not exist or is not
+ *   browseable, return an error response indicating it cannot be found.
  *
  * No transaction is required for a pure read operation. Do not join products by default to keep this operation fast and to avoid leaking products that may be subject to separate visibility rules.
  * @path /shoppingMall/admin/categories/:categoryId
@@ -384,21 +386,24 @@ export namespace at {
  * @param props.body Updated category data. Only administrator-editable fields (e.g., name and description) are accepted; parent placement and other identifiers remain unchanged.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Implementation steps:
- * 1) Authorize caller as administrator (admin or super-admin grade per actor rules). Reject otherwise.
- * 2) Validate path parameter categoryId is a UUID.
- * 3) Load shopping_mall_categories by id = categoryId, ensuring the record exists.
- * 4) If not found, return a not-found style domain error without applying changes.
- * 5) Validate request payload fields intended for editing (e.g., name and description) according to category editing rules.
- *    - Apply only customer-facing fields; do not alter parent_category_id.
- *    - Preserve one-level nesting: do not change parent relationship during this operation.
- *    - slug uniqueness is not changed here; if the update DTO includes slug (it should not), ignore/reject.
- * 6) Run update in a transaction:
- *    - UPDATE shopping_mall_categories SET name = ?, description = ?, updated_at = NOW() WHERE id = ?;
- * 7) Return the updated category entity mapped to IShoppingMallCategory.
- * 8) Edge cases:
- *    - If the payload is identical to current values, still treat as success and return the current record.
- *    - If the category is hidden/controlled by visibility or deleted_at, still update the stored fields as an administrative edit (do not implement deletion here).
+ * @x-autobe-specification Implementation steps: 1) Authorize caller as
+ *   administrator (admin or super-admin grade per actor rules). Reject
+ *   otherwise. 2) Validate path parameter categoryId is a UUID. 3) Load
+ *   shopping_mall_categories by id = categoryId, ensuring the record exists. 4)
+ *   If not found, return a not-found style domain error without applying
+ *   changes. 5) Validate request payload fields intended for editing (e.g.,
+ *   name and description) according to category editing rules. - Apply only
+ *   customer-facing fields; do not alter parent_category_id. - Preserve
+ *   one-level nesting: do not change parent relationship during this operation.
+ *   - slug uniqueness is not changed here; if the update DTO includes slug (it
+ *   should not), ignore/reject. 6) Run update in a transaction: - UPDATE
+ *   shopping_mall_categories SET name = ?, description = ?, updated_at = NOW()
+ *   WHERE id = ?; 7) Return the updated category entity mapped to
+ *   IShoppingMallCategory. 8) Edge cases: - If the payload is identical to
+ *   current values, still treat as success and return the current record. - If
+ *   the category is hidden/controlled by visibility or deleted_at, still update
+ *   the stored fields as an administrative edit (do not implement deletion
+ *   here).
  * @path /shoppingMall/admin/categories/:categoryId
  * @accessor api.functional.shoppingMall.admin.categories.update
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe

@@ -132,7 +132,8 @@ export namespace create {
  * @param props.body Updated community attributes: name (must be unique across all communities), description text, and optionally the new icon image details.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Validate that the authenticated member is the owner of the community (owner_id matches the member's id).
+ * @x-autobe-specification Validate that the authenticated member is the owner
+ *   of the community (owner_id matches the member's id).
  *
  * Query the community_platform_communities table by communityId (id). If not found or deleted_at is not null, return 404 Not Found.
  *
@@ -240,7 +241,11 @@ export namespace update {
  * @param props.communityId Unique identifier (UUID) of the community to delete.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query the community_platform_communities table by id matching {communityId}. Verify the community exists and is not already soft-deleted (deleted_at IS NULL). Authenticate the requesting user via session JWT and verify user.id matches community.owner_id — reject with 403 Forbidden if not the owner.
+ * @x-autobe-specification Query the community_platform_communities table by id
+ *   matching {communityId}. Verify the community exists and is not already
+ *   soft-deleted (deleted_at IS NULL). Authenticate the requesting user via
+ *   session JWT and verify user.id matches community.owner_id — reject with 403
+ *   Forbidden if not the owner.
  *
  * Perform soft delete by setting deleted_at = now(). Do NOT hard-delete the row. The retention period policy is defined externally; the service merely sets the timestamp.
  *

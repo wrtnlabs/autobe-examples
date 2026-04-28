@@ -25,9 +25,9 @@ export class ShoppingmallCustomerWishlistsController {
    *
    * @param connection
    * @param body Pagination and sorting parameters for wishlist items
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Implementation steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Implementation steps:
    *
    * 1. **Authentication Context**: Extract authenticated customer ID from JWT token. Verify customer is not banned.
    *

@@ -20,9 +20,10 @@ export class RedditcloneProfilesController {
    *
    * @param connection
    * @param body Search criteria for filtering user profiles including display name search, karma range filters, sorting options, and pagination parameters.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query reddit_clone_user_profiles table with pagination and filtering.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query reddit_clone_user_profiles table with
+     *   pagination and filtering.
    *
    * Apply search filters:
    * - Filter by display_name (partial match, case-insensitive)
@@ -71,9 +72,12 @@ export class RedditcloneProfilesController {
    *
    * @param connection
    * @param profileId Unique identifier of the user profile to retrieve (global scope)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query reddit_clone_user_profiles table by id (profileId parameter). Verify the profile exists and is not soft-deleted (deleted_at is null). If profile is deleted or not found, return 404 error.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query reddit_clone_user_profiles table by id
+     *   (profileId parameter). Verify the profile exists and is not
+     *   soft-deleted (deleted_at is null). If profile is deleted or not found,
+     *   return 404 error.
    *
    * Join with reddit_clone_members to verify the member account is not deleted. If member is deleted, return 404 error.
    *

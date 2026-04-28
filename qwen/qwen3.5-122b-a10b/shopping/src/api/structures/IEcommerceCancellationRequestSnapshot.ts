@@ -14,8 +14,10 @@ export type IEcommerceCancellationRequestSnapshot = {
    *
    * This UUID serves as the primary key for the snapshot record, uniquely identifying each status transition entry in the audit trail.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_cancellation_request_snapshots.id. UUID primary key for the snapshot record.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_cancellation_request_snapshots.id. UUID primary key for the
+     *   snapshot record.
    */
   id: string & tags.Format<"uuid">;
 
@@ -24,8 +26,10 @@ export type IEcommerceCancellationRequestSnapshot = {
    *
    * This UUID links the snapshot to its parent cancellation request entity. Multiple snapshots can reference the same cancellation request as it progresses through the approval/rejection workflow.
    *
-   * @x-autobe-database-schema-property ecommerce_cancellation_request_id
-   * @x-autobe-specification Direct mapping from ecommerce_cancellation_request_snapshots.ecommerce_cancellation_request_id. UUID foreign key referencing the parent cancellation request.
+     * @x-autobe-database-schema-property ecommerce_cancellation_request_id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_cancellation_request_snapshots.ecommerce_cancellation_request_id.
+     *   UUID foreign key referencing the parent cancellation request.
    */
   ecommerceCancellationRequestId: string & tags.Format<"uuid">;
 
@@ -34,8 +38,10 @@ export type IEcommerceCancellationRequestSnapshot = {
    *
    * Records the exact moment when the cancellation request state changed, such as when a seller approved or rejected the request. This timestamp is critical for audit trail reconstruction and dispute resolution.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_cancellation_request_snapshots.created_at. Timestamp when the snapshot was created, recorded as date-time format.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_cancellation_request_snapshots.created_at. Timestamp when the
+     *   snapshot was created, recorded as date-time format.
    */
   createdAt: string & tags.Format<"date-time">;
 
@@ -44,8 +50,11 @@ export type IEcommerceCancellationRequestSnapshot = {
    *
    * Captures the previous state of the cancellation request for audit trail purposes. Common values include 'pending' when the request was awaiting response.
    *
-   * @x-autobe-database-schema-property status_before
-   * @x-autobe-specification Direct mapping from ecommerce_cancellation_request_snapshots.status_before. String value representing the cancellation request status before the change occurred.
+     * @x-autobe-database-schema-property status_before
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_cancellation_request_snapshots.status_before. String value
+     *   representing the cancellation request status before the change
+     *   occurred.
    */
   statusBefore: string;
 
@@ -54,8 +63,10 @@ export type IEcommerceCancellationRequestSnapshot = {
    *
    * Captures the new state after the update, such as transitioning from 'pending' to 'approved' or 'rejected'. Combined with statusBefore, this enables complete reconstruction of the request's lifecycle.
    *
-   * @x-autobe-database-schema-property status_after
-   * @x-autobe-specification Direct mapping from ecommerce_cancellation_request_snapshots.status_after. String value representing the cancellation request status after the change occurred.
+     * @x-autobe-database-schema-property status_after
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_cancellation_request_snapshots.status_after. String value
+     *   representing the cancellation request status after the change occurred.
    */
   statusAfter: string;
 
@@ -64,8 +75,10 @@ export type IEcommerceCancellationRequestSnapshot = {
    *
    * References either a seller or admin who approved or rejected the cancellation request. The corresponding actor type is stored in changedByActorType field.
    *
-   * @x-autobe-database-schema-property changed_by_actor_id
-   * @x-autobe-specification Direct mapping from ecommerce_cancellation_request_snapshots.changed_by_actor_id. String ID of the actor (seller or admin) who made the status change.
+     * @x-autobe-database-schema-property changed_by_actor_id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_cancellation_request_snapshots.changed_by_actor_id. String ID
+     *   of the actor (seller or admin) who made the status change.
    */
   changedByActorId: string;
 
@@ -74,8 +87,11 @@ export type IEcommerceCancellationRequestSnapshot = {
    *
    * Values: 'seller' when a seller responds to the request, or 'admin' when an administrator forces cancellation. This field works together with changedByActorId to identify the complete actor identity.
    *
-   * @x-autobe-database-schema-property changed_by_actor_type
-   * @x-autobe-specification Direct mapping from ecommerce_cancellation_request_snapshots.changed_by_actor_type. String value indicating actor type: 'seller' when a seller responds, or 'admin' when an administrator forces cancellation.
+     * @x-autobe-database-schema-property changed_by_actor_type
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_cancellation_request_snapshots.changed_by_actor_type. String
+     *   value indicating actor type: 'seller' when a seller responds, or
+     *   'admin' when an administrator forces cancellation.
    */
   changedByActorType: string;
 
@@ -84,8 +100,11 @@ export type IEcommerceCancellationRequestSnapshot = {
    *
    * Optional text explaining why the cancellation was approved or rejected. Required when rejecting a request to provide transparency to the customer and enable dispute resolution.
    *
-   * @x-autobe-database-schema-property change_reason
-   * @x-autobe-specification Direct mapping from ecommerce_cancellation_request_snapshots.change_reason. Nullable string explaining why the cancellation was approved or rejected. Required when rejecting a request to provide transparency to the customer.
+     * @x-autobe-database-schema-property change_reason
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_cancellation_request_snapshots.change_reason. Nullable string
+     *   explaining why the cancellation was approved or rejected. Required when
+     *   rejecting a request to provide transparency to the customer.
    */
   changeReason: string | null;
 };
@@ -118,7 +137,10 @@ export namespace IEcommerceCancellationRequestSnapshot {
      *
      * Used in combination with the `limit` parameter to calculate the offset for database queries. For example, with page=2 and limit=10, the query would skip the first 10 records and return records 11-20.
      *
-     * @x-autobe-specification Pagination parameter: 1-indexed page number. Defaults to 1 if not provided. Used with limit to calculate offset for database query. Maps to query logic for ecommerce_cancellation_request_snapshots table.
+         * @x-autobe-specification Pagination parameter: 1-indexed page number.
+         *   Defaults to 1 if not provided. Used with limit to calculate offset
+         *   for database query. Maps to query logic for
+         *   ecommerce_cancellation_request_snapshots table.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -129,7 +151,10 @@ export namespace IEcommerceCancellationRequestSnapshot {
      *
      * The actual number of records returned may be less than this value on the final page or when the total number of matching records is fewer than the limit.
      *
-     * @x-autobe-specification Pagination parameter: maximum items per page. Valid range 1-100. Defaults to 10 if not provided. Used with page to calculate offset. Maps to query logic for ecommerce_cancellation_request_snapshots table.
+         * @x-autobe-specification Pagination parameter: maximum items per page.
+         *   Valid range 1-100. Defaults to 10 if not provided. Used with page
+         *   to calculate offset. Maps to query logic for
+         *   ecommerce_cancellation_request_snapshots table.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -142,7 +167,10 @@ export namespace IEcommerceCancellationRequestSnapshot {
      *
      * For example, setting this to "pending" would return all snapshots where the cancellation request was in "pending" status before the change.
      *
-     * @x-autobe-specification Filter parameter for ecommerce_cancellation_request_snapshots.status_before column. Filters snapshots by their previous status value before the change occurred.
+         * @x-autobe-specification Filter parameter for
+         *   ecommerce_cancellation_request_snapshots.status_before column.
+         *   Filters snapshots by their previous status value before the change
+         *   occurred.
      */
     status_before?: string | undefined;
 
@@ -153,7 +181,10 @@ export namespace IEcommerceCancellationRequestSnapshot {
      *
      * For example, setting this to "approved" would return all snapshots where the cancellation request transitioned to "approved" status.
      *
-     * @x-autobe-specification Filter parameter for ecommerce_cancellation_request_snapshots.status_after column. Filters snapshots by their new status value after the change occurred.
+         * @x-autobe-specification Filter parameter for
+         *   ecommerce_cancellation_request_snapshots.status_after column.
+         *   Filters snapshots by their new status value after the change
+         *   occurred.
      */
     status_after?: string | undefined;
 
@@ -167,7 +198,10 @@ export namespace IEcommerceCancellationRequestSnapshot {
      *
      * This is useful for auditing purposes to distinguish between seller-initiated and admin-initiated changes.
      *
-     * @x-autobe-specification Filter parameter for ecommerce_cancellation_request_snapshots.changed_by_actor_type column. Filters snapshots by the type of actor who made the change: 'seller' or 'admin'.
+         * @x-autobe-specification Filter parameter for
+         *   ecommerce_cancellation_request_snapshots.changed_by_actor_type
+         *   column. Filters snapshots by the type of actor who made the change:
+         *   'seller' or 'admin'.
      */
     changed_by_actor_type?: string | undefined;
 
@@ -178,7 +212,10 @@ export namespace IEcommerceCancellationRequestSnapshot {
      *
      * The timestamp must be in ISO 8601 date-time format (e.g., "2024-01-15T10:30:00Z"). When combined with `created_at_to`, this defines an inclusive date range for filtering.
      *
-     * @x-autobe-specification Filter parameter for ecommerce_cancellation_request_snapshots.created_at column. Includes snapshots where created_at >= this timestamp. ISO 8601 date-time format required.
+         * @x-autobe-specification Filter parameter for
+         *   ecommerce_cancellation_request_snapshots.created_at column.
+         *   Includes snapshots where created_at >= this timestamp. ISO 8601
+         *   date-time format required.
      */
     created_at_from?: (string & tags.Format<"date-time">) | undefined;
 
@@ -189,7 +226,10 @@ export namespace IEcommerceCancellationRequestSnapshot {
      *
      * The timestamp must be in ISO 8601 date-time format (e.g., "2024-01-20T15:45:00Z"). When combined with `created_at_from`, this defines an inclusive date range for filtering.
      *
-     * @x-autobe-specification Filter parameter for ecommerce_cancellation_request_snapshots.created_at column. Includes snapshots where created_at <= this timestamp. ISO 8601 date-time format required.
+         * @x-autobe-specification Filter parameter for
+         *   ecommerce_cancellation_request_snapshots.created_at column.
+         *   Includes snapshots where created_at <= this timestamp. ISO 8601
+         *   date-time format required.
      */
     created_at_to?: (string & tags.Format<"date-time">) | undefined;
   };
@@ -211,8 +251,10 @@ export namespace IEcommerceCancellationRequestSnapshot {
      *
      * This UUID uniquely identifies a single status transition record within the cancellation request audit trail. Each snapshot represents one moment when the cancellation request status changed.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_cancellation_request_snapshots.id. UUID primary key for the snapshot record.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_cancellation_request_snapshots.id. UUID primary key for
+         *   the snapshot record.
      */
     id: string & tags.Format<"uuid">;
 
@@ -221,8 +263,10 @@ export namespace IEcommerceCancellationRequestSnapshot {
      *
      * Records the exact moment when the cancellation request status changed, such as when a seller approved or rejected the request. Uses ISO 8601 format with timezone information.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from ecommerce_cancellation_request_snapshots.created_at. Timestamp with timezone (timestamptz).
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_cancellation_request_snapshots.created_at. Timestamp with
+         *   timezone (timestamptz).
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -231,8 +275,10 @@ export namespace IEcommerceCancellationRequestSnapshot {
      *
      * Captures the previous state of the cancellation request for audit trail purposes. Common values include 'pending' when the snapshot records the first status change from the initial pending state.
      *
-     * @x-autobe-database-schema-property status_before
-     * @x-autobe-specification Direct mapping from ecommerce_cancellation_request_snapshots.status_before. String value representing previous status.
+         * @x-autobe-database-schema-property status_before
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_cancellation_request_snapshots.status_before. String
+         *   value representing previous status.
      */
     status_before: string;
 
@@ -241,8 +287,10 @@ export namespace IEcommerceCancellationRequestSnapshot {
      *
      * Captures the new state after the update, such as transitioning from 'pending' to 'approved' or 'rejected'. This field shows the result of the actor's decision on the cancellation request.
      *
-     * @x-autobe-database-schema-property status_after
-     * @x-autobe-specification Direct mapping from ecommerce_cancellation_request_snapshots.status_after. String value representing new status.
+         * @x-autobe-database-schema-property status_after
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_cancellation_request_snapshots.status_after. String value
+         *   representing new status.
      */
     status_after: string;
 
@@ -251,8 +299,10 @@ export namespace IEcommerceCancellationRequestSnapshot {
      *
      * References either a seller (when responding to customer cancellation request) or administrator (when force-cancelling). The corresponding actor type is specified in changed_by_actor_type.
      *
-     * @x-autobe-database-schema-property changed_by_actor_id
-     * @x-autobe-specification Direct mapping from ecommerce_cancellation_request_snapshots.changed_by_actor_id. UUID referencing seller or admin actor.
+         * @x-autobe-database-schema-property changed_by_actor_id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_cancellation_request_snapshots.changed_by_actor_id. UUID
+         *   referencing seller or admin actor.
      */
     changed_by_actor_id: string & tags.Format<"uuid">;
 
@@ -261,8 +311,10 @@ export namespace IEcommerceCancellationRequestSnapshot {
      *
      * Values are 'seller' when a seller responds to the cancellation request, or 'admin' when an administrator forces cancellation. Combined with changed_by_actor_id, this identifies the specific actor responsible for the change.
      *
-     * @x-autobe-database-schema-property changed_by_actor_type
-     * @x-autobe-specification Direct mapping from ecommerce_cancellation_request_snapshots.changed_by_actor_type. String enum: 'seller' or 'admin'.
+         * @x-autobe-database-schema-property changed_by_actor_type
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_cancellation_request_snapshots.changed_by_actor_type.
+         *   String enum: 'seller' or 'admin'.
      */
     changed_by_actor_type: string;
 
@@ -271,8 +323,10 @@ export namespace IEcommerceCancellationRequestSnapshot {
      *
      * Contains text explaining why the cancellation was approved or rejected. Required when rejecting a request to provide transparency to the customer about the decision rationale. May be null for approvals where no explanation is necessary.
      *
-     * @x-autobe-database-schema-property change_reason
-     * @x-autobe-specification Direct mapping from ecommerce_cancellation_request_snapshots.change_reason. Nullable string field.
+         * @x-autobe-database-schema-property change_reason
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_cancellation_request_snapshots.change_reason. Nullable
+         *   string field.
      */
     change_reason?: string | null | undefined;
   };

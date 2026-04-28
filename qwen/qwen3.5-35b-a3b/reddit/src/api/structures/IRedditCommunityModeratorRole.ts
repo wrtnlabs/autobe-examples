@@ -21,8 +21,9 @@ export type IRedditCommunityModeratorRole = {
    *
    * This is a UUID generated when the role assignment record is created. It serves as the primary key and is used to reference this specific role assignment in API operations and database queries.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from reddit_community_moderator_roles.id. UUID primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_moderator_roles.id. UUID primary key.
    */
   id: string & tags.Format<"uuid">;
 
@@ -31,8 +32,10 @@ export type IRedditCommunityModeratorRole = {
    *
    * This field indicates the level of authority: "owner" for community creators with full administrative permissions, or "moderator" for users granted elevated permissions by the owner. The owner role is automatically assigned at community creation and cannot be transferred to another user.
    *
-   * @x-autobe-database-schema-property role
-   * @x-autobe-specification Direct mapping from reddit_community_moderator_roles.role. Must be either "owner" or "moderator".
+     * @x-autobe-database-schema-property role
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_moderator_roles.role. Must be either "owner" or
+     *   "moderator".
    */
   role: string;
 
@@ -41,8 +44,10 @@ export type IRedditCommunityModeratorRole = {
    *
    * This UTC timestamp marks when the role was first assigned, whether as an owner role at community creation or as a moderator role assigned later by the owner. The value is immutable once set.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from reddit_community_moderator_roles.created_at. UTC timestamp in ISO 8601 format.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_moderator_roles.created_at. UTC timestamp in ISO 8601
+     *   format.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -51,8 +56,10 @@ export type IRedditCommunityModeratorRole = {
    *
    * This UTC timestamp is updated whenever the role assignment record is modified, such as when metadata is changed. For role assignments, this typically remains unchanged unless the record itself is modified.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from reddit_community_moderator_roles.updated_at. UTC timestamp in ISO 8601 format.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_moderator_roles.updated_at. UTC timestamp in ISO 8601
+     *   format.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -61,8 +68,10 @@ export type IRedditCommunityModeratorRole = {
    *
    * When null, the role assignment is active and visible. When set to a UTC timestamp, the record is marked as deleted but remains in the database for referential integrity. Only active records (deleted_at is null) are returned in API responses.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from reddit_community_moderator_roles.deleted_at. Nullable UTC timestamp in ISO 8601 format.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_moderator_roles.deleted_at. Nullable UTC timestamp in
+     *   ISO 8601 format.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 
@@ -71,8 +80,11 @@ export type IRedditCommunityModeratorRole = {
    *
    * This relation links the role assignment to its parent community entity. The returned object contains the community's essential information including identifier, name, description, subscriber count, and creation timestamp. This is a belongs-to association.
    *
-   * @x-autobe-database-schema-property community
-   * @x-autobe-specification Join from reddit_community_moderator_roles.reddit_community_community_id to reddit_community_communities.id. Returns IRedditCommunityCommunity.ISummary object.
+     * @x-autobe-database-schema-property community
+     * @x-autobe-specification Join from
+     *   reddit_community_moderator_roles.reddit_community_community_id to
+     *   reddit_community_communities.id. Returns
+     *   IRedditCommunityCommunity.ISummary object.
    */
   community: IRedditCommunityCommunity.ISummary;
 
@@ -81,8 +93,11 @@ export type IRedditCommunityModeratorRole = {
    *
    * This relation links the role assignment to the member entity that possesses the elevated permissions. The returned object contains the member's identifier, username, and account timestamps. This is a belongs-to association.
    *
-   * @x-autobe-database-schema-property member
-   * @x-autobe-specification Join from reddit_community_moderator_roles.reddit_community_member_id to reddit_community_members.id. Returns IRedditCommunityMember.ISummary object.
+     * @x-autobe-database-schema-property member
+     * @x-autobe-specification Join from
+     *   reddit_community_moderator_roles.reddit_community_member_id to
+     *   reddit_community_members.id. Returns IRedditCommunityMember.ISummary
+     *   object.
    */
   member: IRedditCommunityMember.ISummary;
 };

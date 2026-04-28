@@ -31,32 +31,31 @@ export class EcommercemallSellerSellerCancel_requestsController {
    * @param connection
    * @param requestId UUID of the cancellation request to update.
    * @param body Update payload for cancellation request status and optional rejection reason.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification 1. Verify seller authentication and authorization - seller must own the order item associated with this cancellation request.
-   * 2. Load the cancellation request by requestId and verify it exists and is not soft-deleted.
-   * 3. Validate that the request status is 'pending' - cannot modify approved or rejected requests.
-   * 4. Validate that the request applies to an order item owned by the authenticated seller.
-   * 5. Validate the update payload:
-   *    - status must be either 'approved' or 'rejected'
-   *    - If status is 'rejected', seller_rejection_reason is optional but recommended
-   * 6. If status is 'approved':
-   *    - Update cancellation request status to 'approved'
-   *    - Update order item status to 'cancelled'
-   *    - Update order status based on aggregated item statuses
-   *    - Restore stock quantities in inventory_records for the product variant
-   *    - Process refund for the cancelled item amount
-   *    - Set approved_at timestamp
-   * 7. If status is 'rejected':
-   *    - Update cancellation request status to 'rejected'
-   *    - Update seller_rejection_reason if provided
-   *    - Set rejected_at timestamp
-   * 8. Create a snapshot of the cancellation request state using ecommerce_mall_cancellation_request_snapshots table, capturing:
-   *    - Request title, body, reason, status
-   *    - approved_at or rejected_at timestamp
-   *    - seller_rejection_reason if provided
-   * 9. Update the updated_at timestamp on the cancellation request.
-   * 10. Return the updated cancellation request with all details including the order item information.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification 1. Verify seller authentication and authorization
+     *   - seller must own the order item associated with this cancellation
+     *   request. 2. Load the cancellation request by requestId and verify it
+     *   exists and is not soft-deleted. 3. Validate that the request status is
+     *   'pending' - cannot modify approved or rejected requests. 4. Validate
+     *   that the request applies to an order item owned by the authenticated
+     *   seller. 5. Validate the update payload: - status must be either
+     *   'approved' or 'rejected' - If status is 'rejected',
+     *   seller_rejection_reason is optional but recommended 6. If status is
+     *   'approved': - Update cancellation request status to 'approved' - Update
+     *   order item status to 'cancelled' - Update order status based on
+     *   aggregated item statuses - Restore stock quantities in
+     *   inventory_records for the product variant - Process refund for the
+     *   cancelled item amount - Set approved_at timestamp 7. If status is
+     *   'rejected': - Update cancellation request status to 'rejected' - Update
+     *   seller_rejection_reason if provided - Set rejected_at timestamp 8.
+     *   Create a snapshot of the cancellation request state using
+     *   ecommerce_mall_cancellation_request_snapshots table, capturing: -
+     *   Request title, body, reason, status - approved_at or rejected_at
+     *   timestamp - seller_rejection_reason if provided 9. Update the
+     *   updated_at timestamp on the cancellation request. 10. Return the
+     *   updated cancellation request with all details including the order item
+     *   information.
    *
    * Error cases:
    * - 404: Cancellation request not found or soft-deleted

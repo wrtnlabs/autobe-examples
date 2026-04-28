@@ -16,8 +16,9 @@ export type ITodoAppMemberPasswordReset = {
    *
    * This UUID serves as the primary key and is used in API endpoints to reference a specific password reset request (e.g., via the {resetId} path parameter).
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from todo_app_member_password_resets.id. Primary key (UUID).
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   todo_app_member_password_resets.id. Primary key (UUID).
    */
   id: string & tags.Format<"uuid">;
 
@@ -26,8 +27,11 @@ export type ITodoAppMemberPasswordReset = {
    *
    * This relationship identifies the account that initiated the password reset request. The member's summary includes their display name from their associated profile.
    *
-   * @x-autobe-database-schema-property member
-   * @x-autobe-specification JOIN from todo_app_member_password_resets.todo_app_member_id to todo_app_members.id, including profile data via todo_app_profiles. Returns ITodoAppMember.ISummary.
+     * @x-autobe-database-schema-property member
+     * @x-autobe-specification JOIN from
+     *   todo_app_member_password_resets.todo_app_member_id to
+     *   todo_app_members.id, including profile data via todo_app_profiles.
+     *   Returns ITodoAppMember.ISummary.
    */
   member: ITodoAppMember.ISummary;
 
@@ -36,8 +40,9 @@ export type ITodoAppMemberPasswordReset = {
    *
    * After this time, the reset token is no longer valid and cannot be used to change the member's password. Compare against the current time to determine whether the reset request is still actionable.
    *
-   * @x-autobe-database-schema-property expired_at
-   * @x-autobe-specification Direct mapping from todo_app_member_password_resets.expired_at. DateTime in UTC.
+     * @x-autobe-database-schema-property expired_at
+     * @x-autobe-specification Direct mapping from
+     *   todo_app_member_password_resets.expired_at. DateTime in UTC.
    */
   expired_at: string & tags.Format<"date-time">;
 
@@ -46,8 +51,9 @@ export type ITodoAppMemberPasswordReset = {
    *
    * Indicates when the password reset request was originally made.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from todo_app_member_password_resets.created_at. DateTime in UTC.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   todo_app_member_password_resets.created_at. DateTime in UTC.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -56,8 +62,9 @@ export type ITodoAppMemberPasswordReset = {
    *
    * Updated automatically when any field on the record changes.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from todo_app_member_password_resets.updated_at. DateTime in UTC.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   todo_app_member_password_resets.updated_at. DateTime in UTC.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -66,8 +73,11 @@ export type ITodoAppMemberPasswordReset = {
    *
    * A null value indicates the reset token is still pending and potentially usable (provided it has not expired). A non-null timestamp indicates the reset has been used to change the member's password or has been intentionally invalidated. This serves as a soft-delete marker for consumption tracking.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from todo_app_member_password_resets.deleted_at. Nullable DateTime. A non-null value indicates the reset token has been consumed (used to reset password) or otherwise invalidated.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   todo_app_member_password_resets.deleted_at. Nullable DateTime. A
+     *   non-null value indicates the reset token has been consumed (used to
+     *   reset password) or otherwise invalidated.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -83,7 +93,10 @@ export namespace ITodoAppMemberPasswordReset {
      *
      * Specifies which page of results to retrieve. Page numbering starts from 1, so the first page is page 1. Omit this parameter to receive the first page. If the requested page exceeds the total number of available pages, the last page is returned automatically.
      *
-     * @x-autobe-specification Pagination page number (1-indexed). Defaults to 1 when omitted. Validated against total available pages — if page exceeds total pages, the last available page is returned (bounded). Used to compute SQL OFFSET: (page - 1) * limit.
+         * @x-autobe-specification Pagination page number (1-indexed). Defaults
+         *   to 1 when omitted. Validated against total available pages — if
+         *   page exceeds total pages, the last available page is returned
+         *   (bounded). Used to compute SQL OFFSET: (page - 1) * limit.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -92,7 +105,9 @@ export namespace ITodoAppMemberPasswordReset {
      *
      * Controls the page size for paginated results. Valid values range from 1 to 100. Smaller values improve response time for large datasets. Omit this parameter to use the default page size.
      *
-     * @x-autobe-specification Maximum number of records per page. Must be between 1 and 100 inclusive. Default value (e.g., 20) applied when omitted. Used as the SQL LIMIT clause in queries.
+         * @x-autobe-specification Maximum number of records per page. Must be
+         *   between 1 and 100 inclusive. Default value (e.g., 20) applied when
+         *   omitted. Used as the SQL LIMIT clause in queries.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -103,7 +118,11 @@ export namespace ITodoAppMemberPasswordReset {
      *
      * Only password reset records created at or after this timestamp are returned. Specify in ISO 8601 format (e.g., 2024-01-01T00:00:00Z). Combine with created_at_to to define a specific date range.
      *
-     * @x-autobe-specification ISO 8601 datetime string (UTC). Filters to include only records where the created_at column is >= this value (inclusive lower bound). Applied as a WHERE clause condition on the created_at column. Use in combination with created_at_to to define a specific date range window.
+         * @x-autobe-specification ISO 8601 datetime string (UTC). Filters to
+         *   include only records where the created_at column is >= this value
+         *   (inclusive lower bound). Applied as a WHERE clause condition on the
+         *   created_at column. Use in combination with created_at_to to define
+         *   a specific date range window.
      */
     created_at_from?: (string & tags.Format<"date-time">) | undefined;
 
@@ -112,7 +131,11 @@ export namespace ITodoAppMemberPasswordReset {
      *
      * Only password reset records created at or before this timestamp are returned. Specify in ISO 8601 format (e.g., 2024-12-31T23:59:59Z). Combine with created_at_from to define a specific date range.
      *
-     * @x-autobe-specification ISO 8601 datetime string (UTC). Filters to include only records where the created_at column is <= this value (inclusive upper bound). Applied as a WHERE clause condition on the created_at column. Use in combination with created_at_from to define a specific date range window.
+         * @x-autobe-specification ISO 8601 datetime string (UTC). Filters to
+         *   include only records where the created_at column is <= this value
+         *   (inclusive upper bound). Applied as a WHERE clause condition on the
+         *   created_at column. Use in combination with created_at_from to
+         *   define a specific date range window.
      */
     created_at_to?: (string & tags.Format<"date-time">) | undefined;
 
@@ -121,7 +144,12 @@ export namespace ITodoAppMemberPasswordReset {
      *
      * When set to true, only consumed or expired tokens are returned. When set to false, only active (unused and unexpired) tokens are returned. When omitted, all tokens are returned regardless of consumption status.
      *
-     * @x-autobe-specification Boolean filter for consumption status. When true, returns only consumed or expired tokens where deleted_at IS NOT NULL. When false, returns only active/usable tokens where deleted_at IS NULL. When omitted, returns all records regardless of consumption status. Applied as a WHERE clause condition on the deleted_at column.
+         * @x-autobe-specification Boolean filter for consumption status. When
+         *   true, returns only consumed or expired tokens where deleted_at IS
+         *   NOT NULL. When false, returns only active/usable tokens where
+         *   deleted_at IS NULL. When omitted, returns all records regardless of
+         *   consumption status. Applied as a WHERE clause condition on the
+         *   deleted_at column.
      */
     consumed?: boolean | undefined;
   };
@@ -139,8 +167,9 @@ export namespace ITodoAppMemberPasswordReset {
      *
      * This UUID serves as the primary key and is generated automatically when the password reset request is created.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from todo_app_member_password_resets.id. UUID primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_member_password_resets.id. UUID primary key.
      */
     id: string & tags.Format<"uuid">;
 
@@ -149,8 +178,11 @@ export namespace ITodoAppMemberPasswordReset {
      *
      * For security purposes, only the last 4 characters of the token are exposed in the response. The full token is used during the actual password reset flow to verify the member's identity.
      *
-     * @x-autobe-database-schema-property code
-     * @x-autobe-specification Direct mapping from todo_app_member_password_resets.code. Unique reset token. Service layer should partially mask the code for security - show only the last 4 characters in the response.
+         * @x-autobe-database-schema-property code
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_member_password_resets.code. Unique reset token. Service
+         *   layer should partially mask the code for security - show only the
+         *   last 4 characters in the response.
      */
     code: string;
 
@@ -159,8 +191,9 @@ export namespace ITodoAppMemberPasswordReset {
      *
      * After this time, the token can no longer be used to reset the password. The member must request a new password reset if the token has expired.
      *
-     * @x-autobe-database-schema-property expired_at
-     * @x-autobe-specification Direct mapping from todo_app_member_password_resets.expired_at. Expiration timestamp.
+         * @x-autobe-database-schema-property expired_at
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_member_password_resets.expired_at. Expiration timestamp.
      */
     expired_at: string & tags.Format<"date-time">;
 
@@ -169,8 +202,9 @@ export namespace ITodoAppMemberPasswordReset {
      *
      * Indicates when the member initiated the password reset process.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from todo_app_member_password_resets.created_at. Creation timestamp.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_member_password_resets.created_at. Creation timestamp.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -179,8 +213,11 @@ export namespace ITodoAppMemberPasswordReset {
      *
      * When null, the token is still active and can be used to reset the password. When set to a timestamp, the token has been consumed (used to complete a password reset) or has been invalidated.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from todo_app_member_password_resets.deleted_at. Nullable. null = active/usable token, non-null = token has been consumed (used to reset password) or expired.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_member_password_resets.deleted_at. Nullable. null =
+         *   active/usable token, non-null = token has been consumed (used to
+         *   reset password) or expired.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
 
@@ -189,8 +226,10 @@ export namespace ITodoAppMemberPasswordReset {
      *
      * References the owning member who initiated the password reset process. Only the requesting member can see their own password reset records.
      *
-     * @x-autobe-database-schema-property member
-     * @x-autobe-specification Join from todo_app_member_password_resets.todo_app_member_id to todo_app_members.id. Returns ITodoAppMember.ISummary.
+         * @x-autobe-database-schema-property member
+         * @x-autobe-specification Join from
+         *   todo_app_member_password_resets.todo_app_member_id to
+         *   todo_app_members.id. Returns ITodoAppMember.ISummary.
      */
     member: ITodoAppMember.ISummary;
   };

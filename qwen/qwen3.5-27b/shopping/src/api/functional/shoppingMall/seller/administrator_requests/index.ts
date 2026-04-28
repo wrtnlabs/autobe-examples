@@ -20,7 +20,8 @@ import { IShoppingMallAdministratorRequest } from "../../../../structures/IShopp
  * @param props.body Administrator promotion request with justification reason.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Create administrator promotion request for authenticated user.
+ * @x-autobe-specification Create administrator promotion request for
+ *   authenticated user.
  *
  * 1. Validate user is authenticated as customer or seller (not administrator or guest).
  * 2. Validate reason text is provided and not empty.
@@ -126,7 +127,8 @@ export namespace create {
  * @param props.body Search criteria for administrator requests including status filter, actor type filter, and pagination parameters.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Query shopping_mall_administrator_requests table with filtering and pagination.
+ * @x-autobe-specification Query shopping_mall_administrator_requests table with
+ *   filtering and pagination.
  *
  * Filtering:
  * - status: Filter by 'pending', 'approved', or 'rejected' (optional)
@@ -240,7 +242,8 @@ export namespace index {
  * @param props.administratorRequestId Unique identifier of the administrator promotion request to retrieve.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Query the shopping_mall_administrator_requests table by id (UUID).
+ * @x-autobe-specification Query the shopping_mall_administrator_requests table
+ *   by id (UUID).
  *
  * Authorization checks:
  * - Super administrators: Allow access to any request

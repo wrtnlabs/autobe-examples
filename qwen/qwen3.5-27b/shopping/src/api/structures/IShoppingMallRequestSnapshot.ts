@@ -18,8 +18,10 @@ export type IShoppingMallRequestSnapshot = {
    *
    * This UUID identifies a specific snapshot capturing a single status transition event for either a cancellation or refund request. Each snapshot is immutable and serves as a permanent audit record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_request_snapshots.id. Primary key uniquely identifying each request snapshot record.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_request_snapshots.id. Primary key uniquely identifying
+     *   each request snapshot record.
    */
   id: string & tags.Format<"uuid">;
 
@@ -28,8 +30,10 @@ export type IShoppingMallRequestSnapshot = {
    *
    * Allowed values are 'cancellation' for order item cancellation requests or 'refund' for order item refund requests. This field determines which request reference field (cancellationRequestId or refundRequestId) is populated.
    *
-   * @x-autobe-database-schema-property request_type
-   * @x-autobe-specification Direct mapping from shopping_mall_request_snapshots.request_type. Discriminator field with allowed values: 'cancellation' or 'refund'.
+     * @x-autobe-database-schema-property request_type
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_request_snapshots.request_type. Discriminator field with
+     *   allowed values: 'cancellation' or 'refund'.
    */
   requestType: string;
 
@@ -38,8 +42,10 @@ export type IShoppingMallRequestSnapshot = {
    *
    * This field captures the previous status value (typically 'pending') before the seller's approval or rejection changed it to 'approved' or 'rejected'. Used to document the complete state transition.
    *
-   * @x-autobe-database-schema-property status_before
-   * @x-autobe-specification Direct mapping from shopping_mall_request_snapshots.status_before. Captures the request status before the seller's response, typically 'pending'.
+     * @x-autobe-database-schema-property status_before
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_request_snapshots.status_before. Captures the request
+     *   status before the seller's response, typically 'pending'.
    */
   statusBefore: string;
 
@@ -48,8 +54,10 @@ export type IShoppingMallRequestSnapshot = {
    *
    * This field captures the new status value ('approved' or 'rejected') after the seller responded to the request. Combined with status_before, it documents the complete state transition.
    *
-   * @x-autobe-database-schema-property status_after
-   * @x-autobe-specification Direct mapping from shopping_mall_request_snapshots.status_after. Captures the new status after seller response: 'approved' or 'rejected'.
+     * @x-autobe-database-schema-property status_after
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_request_snapshots.status_after. Captures the new status
+     *   after seller response: 'approved' or 'rejected'.
    */
   statusAfter: string;
 
@@ -58,8 +66,10 @@ export type IShoppingMallRequestSnapshot = {
    *
    * This field captures the seller's explanation for their decision, which is essential for dispute resolution and customer communication. May be null if the seller did not provide a reason.
    *
-   * @x-autobe-database-schema-property seller_reason
-   * @x-autobe-specification Direct mapping from shopping_mall_request_snapshots.seller_reason. Nullable field containing seller's explanation for their decision.
+     * @x-autobe-database-schema-property seller_reason
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_request_snapshots.seller_reason. Nullable field
+     *   containing seller's explanation for their decision.
    */
   sellerReason: string | null;
 
@@ -68,8 +78,10 @@ export type IShoppingMallRequestSnapshot = {
    *
    * Records the exact moment when the request state change occurred and was captured in this immutable snapshot. Used for audit trail and chronological ordering of snapshots.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from shopping_mall_request_snapshots.created_at. Timestamp when the snapshot was created, immutable after creation.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_request_snapshots.created_at. Timestamp when the snapshot
+     *   was created, immutable after creation.
    */
   createdAt: string & tags.Format<"date-time">;
 
@@ -78,8 +90,10 @@ export type IShoppingMallRequestSnapshot = {
    *
    * This field is populated when requestType is 'cancellation' and null when requestType is 'refund'. It links the snapshot to the specific cancellation request whose state is being recorded.
    *
-   * @x-autobe-database-schema-property shopping_mall_cancellation_request_id
-   * @x-autobe-specification Direct mapping from shopping_mall_request_snapshots.shopping_mall_cancellation_request_id. Populated only when requestType is 'cancellation', null otherwise.
+     * @x-autobe-database-schema-property shopping_mall_cancellation_request_id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_request_snapshots.shopping_mall_cancellation_request_id.
+     *   Populated only when requestType is 'cancellation', null otherwise.
    */
   cancellationRequestId: (string & tags.Format<"uuid">) | null;
 
@@ -88,8 +102,10 @@ export type IShoppingMallRequestSnapshot = {
    *
    * This field is populated when requestType is 'refund' and null when requestType is 'cancellation'. It links the snapshot to the specific refund request whose state is being recorded.
    *
-   * @x-autobe-database-schema-property shopping_mall_refund_request_id
-   * @x-autobe-specification Direct mapping from shopping_mall_request_snapshots.shopping_mall_refund_request_id. Populated only when requestType is 'refund', null otherwise.
+     * @x-autobe-database-schema-property shopping_mall_refund_request_id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_request_snapshots.shopping_mall_refund_request_id.
+     *   Populated only when requestType is 'refund', null otherwise.
    */
   refundRequestId: (string & tags.Format<"uuid">) | null;
 
@@ -98,8 +114,11 @@ export type IShoppingMallRequestSnapshot = {
    *
    * This provides direct access to the order item context without needing to traverse through the request table. The order item contains product, variant, and seller information at the time of purchase.
    *
-   * @x-autobe-database-schema-property shopping_mall_order_item_id
-   * @x-autobe-specification Direct mapping from shopping_mall_request_snapshots.shopping_mall_order_item_id. Denormalized FK to order item for efficient querying without traversing through request table.
+     * @x-autobe-database-schema-property shopping_mall_order_item_id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_request_snapshots.shopping_mall_order_item_id.
+     *   Denormalized FK to order item for efficient querying without traversing
+     *   through request table.
    */
   orderItemId: string & tags.Format<"uuid">;
 
@@ -108,8 +127,11 @@ export type IShoppingMallRequestSnapshot = {
    *
    * This is the customer account that created the original request. The customer reference is denormalized from the request table for efficient querying and audit trail completeness.
    *
-   * @x-autobe-database-schema-property customer
-   * @x-autobe-specification Relation via JOIN from shopping_mall_request_snapshots.shopping_mall_customer_id to shopping_mall_customers. Returns IShoppingMallCustomer.ISummary. Denormalized FK for efficient querying.
+     * @x-autobe-database-schema-property customer
+     * @x-autobe-specification Relation via JOIN from
+     *   shopping_mall_request_snapshots.shopping_mall_customer_id to
+     *   shopping_mall_customers. Returns IShoppingMallCustomer.ISummary.
+     *   Denormalized FK for efficient querying.
    */
   customer: IShoppingMallCustomer.ISummary;
 
@@ -118,8 +140,11 @@ export type IShoppingMallRequestSnapshot = {
    *
    * This captures which seller handled the approval or rejection decision, enabling accountability tracking. The seller is determined by the order item's product ownership.
    *
-   * @x-autobe-database-schema-property seller
-   * @x-autobe-specification Relation via JOIN from shopping_mall_request_snapshots.shopping_mall_seller_id to shopping_mall_sellers. Returns IShoppingMallSeller.ISummary. Captures which seller handled the approval or rejection decision.
+     * @x-autobe-database-schema-property seller
+     * @x-autobe-specification Relation via JOIN from
+     *   shopping_mall_request_snapshots.shopping_mall_seller_id to
+     *   shopping_mall_sellers. Returns IShoppingMallSeller.ISummary. Captures
+     *   which seller handled the approval or rejection decision.
    */
   seller: IShoppingMallSeller.ISummary;
 
@@ -128,8 +153,12 @@ export type IShoppingMallRequestSnapshot = {
    *
    * This provides complete order item context including the product variant, quantity, price, and current status. The order item snapshot preserves the state at time of purchase.
    *
-   * @x-autobe-database-schema-property orderItem
-   * @x-autobe-specification Relation via JOIN from shopping_mall_request_snapshots.shopping_mall_order_item_id to shopping_mall_order_items. Returns IShoppingMallOrderItem.ISummary. Provides order item details including product, variant, and pricing information.
+     * @x-autobe-database-schema-property orderItem
+     * @x-autobe-specification Relation via JOIN from
+     *   shopping_mall_request_snapshots.shopping_mall_order_item_id to
+     *   shopping_mall_order_items. Returns IShoppingMallOrderItem.ISummary.
+     *   Provides order item details including product, variant, and pricing
+     *   information.
    */
   orderItem: IShoppingMallOrderItem.ISummary;
 };
@@ -147,8 +176,10 @@ export namespace IShoppingMallRequestSnapshot {
      *
      * This UUID identifies a specific immutable snapshot capturing a state change in a cancellation or refund request when a seller responds.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_request_snapshots.id. Primary key uniquely identifying each request snapshot record.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_request_snapshots.id. Primary key uniquely
+         *   identifying each request snapshot record.
      */
     id: string & tags.Format<"uuid">;
 
@@ -157,8 +188,10 @@ export namespace IShoppingMallRequestSnapshot {
      *
      * This discriminator field indicates whether the snapshot captures a cancellation request or refund request state change. It determines which polymorphic foreign key (shopping_mall_cancellation_request_id or shopping_mall_refund_request_id) is populated in the database.
      *
-     * @x-autobe-database-schema-property request_type
-     * @x-autobe-specification Direct mapping from shopping_mall_request_snapshots.request_type. Discriminator field indicating the type of request being snapshot.
+         * @x-autobe-database-schema-property request_type
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_request_snapshots.request_type. Discriminator field
+         *   indicating the type of request being snapshot.
      */
     request_type: string;
 
@@ -167,8 +200,10 @@ export namespace IShoppingMallRequestSnapshot {
      *
      * This field typically contains 'pending' as the previous status, representing the state before the seller approved or rejected the cancellation or refund request.
      *
-     * @x-autobe-database-schema-property status_before
-     * @x-autobe-specification Direct mapping from shopping_mall_request_snapshots.status_before. Captures the request status before the seller's response.
+         * @x-autobe-database-schema-property status_before
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_request_snapshots.status_before. Captures the request
+         *   status before the seller's response.
      */
     status_before: string;
 
@@ -177,8 +212,10 @@ export namespace IShoppingMallRequestSnapshot {
      *
      * This field contains either 'approved' or 'rejected', representing the seller's decision on the cancellation or refund request. This status change triggers the snapshot creation.
      *
-     * @x-autobe-database-schema-property status_after
-     * @x-autobe-specification Direct mapping from shopping_mall_request_snapshots.status_after. Captures the new request status after the seller's response.
+         * @x-autobe-database-schema-property status_after
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_request_snapshots.status_after. Captures the new
+         *   request status after the seller's response.
      */
     status_after: string;
 
@@ -187,8 +224,10 @@ export namespace IShoppingMallRequestSnapshot {
      *
      * This optional text field captures the seller's justification for their decision, which is essential for customer communication and dispute resolution. It may be null if the seller did not provide a reason.
      *
-     * @x-autobe-database-schema-property seller_reason
-     * @x-autobe-specification Direct mapping from shopping_mall_request_snapshots.seller_reason. Nullable field containing the seller's explanation for their decision.
+         * @x-autobe-database-schema-property seller_reason
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_request_snapshots.seller_reason. Nullable field
+         *   containing the seller's explanation for their decision.
      */
     seller_reason: string | null;
 
@@ -197,8 +236,10 @@ export namespace IShoppingMallRequestSnapshot {
      *
      * This field records the exact moment when the request state change occurred and was captured in this immutable snapshot. Used for audit trail and chronological ordering of snapshots.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_request_snapshots.created_at. Timestamp when the snapshot was created.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_request_snapshots.created_at. Timestamp when the
+         *   snapshot was created.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -207,8 +248,12 @@ export namespace IShoppingMallRequestSnapshot {
      *
      * This reference provides information about the customer account that submitted the original request. It includes the customer's identity and profile details as a summary object.
      *
-     * @x-autobe-database-schema-property customer
-     * @x-autobe-specification Relation mapping from shopping_mall_request_snapshots.customer via shopping_mall_customer_id FK. Returns IShoppingMallCustomer.ISummary via JOIN to shopping_mall_customers table.
+         * @x-autobe-database-schema-property customer
+         * @x-autobe-specification Relation mapping from
+         *   shopping_mall_request_snapshots.customer via
+         *   shopping_mall_customer_id FK. Returns
+         *   IShoppingMallCustomer.ISummary via JOIN to shopping_mall_customers
+         *   table.
      */
     customer: IShoppingMallCustomer.ISummary;
 
@@ -217,8 +262,11 @@ export namespace IShoppingMallRequestSnapshot {
      *
      * This reference provides information about the seller account that approved or rejected the request. It includes the seller's identity, approval status, and shop profile details as a summary object.
      *
-     * @x-autobe-database-schema-property seller
-     * @x-autobe-specification Relation mapping from shopping_mall_request_snapshots.seller via shopping_mall_seller_id FK. Returns IShoppingMallSeller.ISummary via JOIN to shopping_mall_sellers table.
+         * @x-autobe-database-schema-property seller
+         * @x-autobe-specification Relation mapping from
+         *   shopping_mall_request_snapshots.seller via shopping_mall_seller_id
+         *   FK. Returns IShoppingMallSeller.ISummary via JOIN to
+         *   shopping_mall_sellers table.
      */
     seller: IShoppingMallSeller.ISummary;
 
@@ -227,8 +275,12 @@ export namespace IShoppingMallRequestSnapshot {
      *
      * This reference provides context about which specific product variant was affected by the request. It includes the order item's quantity, price, status, and references to the parent order, product variant, and selling seller.
      *
-     * @x-autobe-database-schema-property orderItem
-     * @x-autobe-specification Relation mapping from shopping_mall_request_snapshots.orderItem via shopping_mall_order_item_id FK. Returns IShoppingMallOrderItem.ISummary via JOIN to shopping_mall_order_items table.
+         * @x-autobe-database-schema-property orderItem
+         * @x-autobe-specification Relation mapping from
+         *   shopping_mall_request_snapshots.orderItem via
+         *   shopping_mall_order_item_id FK. Returns
+         *   IShoppingMallOrderItem.ISummary via JOIN to
+         *   shopping_mall_order_items table.
      */
     orderItem: IShoppingMallOrderItem.ISummary;
   };
@@ -246,7 +298,11 @@ export namespace IShoppingMallRequestSnapshot {
      *
      * This filter narrows results to either cancellation request snapshots or refund request snapshots. The request_type field serves as a discriminator that determines which polymorphic foreign key is populated in the database (shopping_mall_cancellation_request_id for 'cancellation' or shopping_mall_refund_request_id for 'refund').
      *
-     * @x-autobe-specification Query filter for shopping_mall_request_snapshots.request_type column. Filters snapshots by request type discriminator. Only accepts 'cancellation' or 'refund' values. Used in WHERE clause: request_type = :request_type.
+         * @x-autobe-specification Query filter for
+         *   shopping_mall_request_snapshots.request_type column. Filters
+         *   snapshots by request type discriminator. Only accepts
+         *   'cancellation' or 'refund' values. Used in WHERE clause:
+         *   request_type = :request_type.
      */
     request_type?: "cancellation" | "refund" | undefined;
 
@@ -255,7 +311,11 @@ export namespace IShoppingMallRequestSnapshot {
      *
      * When provided, returns only snapshots related to the specified order item. This is useful for viewing the complete audit trail of all cancellation and refund requests for a particular purchased product variant.
      *
-     * @x-autobe-specification Query filter for shopping_mall_request_snapshots.shopping_mall_order_item_id column. Filters snapshots for a specific order item. UUID format required. Used in WHERE clause: shopping_mall_order_item_id = :shopping_mall_order_item_id.
+         * @x-autobe-specification Query filter for
+         *   shopping_mall_request_snapshots.shopping_mall_order_item_id column.
+         *   Filters snapshots for a specific order item. UUID format required.
+         *   Used in WHERE clause: shopping_mall_order_item_id =
+         *   :shopping_mall_order_item_id.
      */
     shopping_mall_order_item_id?: (string & tags.Format<"uuid">) | undefined;
 
@@ -264,7 +324,12 @@ export namespace IShoppingMallRequestSnapshot {
      *
      * When provided, returns only snapshots for requests submitted by the specified customer. Customer actors can only view their own snapshots (automatically filtered by authentication). Administrators can view snapshots for any customer.
      *
-     * @x-autobe-specification Query filter for shopping_mall_request_snapshots.shopping_mall_customer_id column. Filters snapshots for a specific customer. UUID format required. For customer actors, this is automatically set to authenticated user ID by the authorization layer. Used in WHERE clause: shopping_mall_customer_id = :shopping_mall_customer_id.
+         * @x-autobe-specification Query filter for
+         *   shopping_mall_request_snapshots.shopping_mall_customer_id column.
+         *   Filters snapshots for a specific customer. UUID format required.
+         *   For customer actors, this is automatically set to authenticated
+         *   user ID by the authorization layer. Used in WHERE clause:
+         *   shopping_mall_customer_id = :shopping_mall_customer_id.
      */
     shopping_mall_customer_id?: (string & tags.Format<"uuid">) | undefined;
 
@@ -273,7 +338,12 @@ export namespace IShoppingMallRequestSnapshot {
      *
      * When provided, returns only snapshots where the specified seller responded to requests. Seller actors can only view snapshots for their own responses (automatically filtered by authentication). Administrators can view snapshots for any seller's responses.
      *
-     * @x-autobe-specification Query filter for shopping_mall_request_snapshots.shopping_mall_seller_id column. Filters snapshots for responses by a specific seller. UUID format required. For seller actors, this is automatically set to authenticated user ID by the authorization layer. Used in WHERE clause: shopping_mall_seller_id = :shopping_mall_seller_id.
+         * @x-autobe-specification Query filter for
+         *   shopping_mall_request_snapshots.shopping_mall_seller_id column.
+         *   Filters snapshots for responses by a specific seller. UUID format
+         *   required. For seller actors, this is automatically set to
+         *   authenticated user ID by the authorization layer. Used in WHERE
+         *   clause: shopping_mall_seller_id = :shopping_mall_seller_id.
      */
     shopping_mall_seller_id?: (string & tags.Format<"uuid">) | undefined;
 
@@ -282,7 +352,11 @@ export namespace IShoppingMallRequestSnapshot {
      *
      * This filter allows querying snapshots based on the original status before a seller responded. For most snapshots, this will be 'pending' as requests start in pending status before seller approval or rejection.
      *
-     * @x-autobe-specification Query filter for shopping_mall_request_snapshots.status_before column. Filters snapshots by the status value before the state transition. Typically 'pending' for all snapshots. Used in WHERE clause: status_before = :status_before.
+         * @x-autobe-specification Query filter for
+         *   shopping_mall_request_snapshots.status_before column. Filters
+         *   snapshots by the status value before the state transition.
+         *   Typically 'pending' for all snapshots. Used in WHERE clause:
+         *   status_before = :status_before.
      */
     status_before?: string | undefined;
 
@@ -291,7 +365,11 @@ export namespace IShoppingMallRequestSnapshot {
      *
      * This filter allows querying snapshots based on the outcome of the seller's response. Use 'approved' to find approved requests or 'rejected' to find rejected requests. This is useful for analyzing seller response patterns or dispute resolution statistics.
      *
-     * @x-autobe-specification Query filter for shopping_mall_request_snapshots.status_after column. Filters snapshots by the status value after the state transition. Accepts 'approved' or 'rejected' values. Used in WHERE clause: status_after = :status_after.
+         * @x-autobe-specification Query filter for
+         *   shopping_mall_request_snapshots.status_after column. Filters
+         *   snapshots by the status value after the state transition. Accepts
+         *   'approved' or 'rejected' values. Used in WHERE clause: status_after
+         *   = :status_after.
      */
     status_after?: string | undefined;
 
@@ -300,7 +378,11 @@ export namespace IShoppingMallRequestSnapshot {
      *
      * When provided, returns only snapshots created on or after this timestamp. Useful for viewing recent activity or analyzing requests within a specific time period. Must be provided in ISO 8601 date-time format (e.g., '2024-01-15T00:00:00Z').
      *
-     * @x-autobe-specification Date range filter start on shopping_mall_request_snapshots.created_at column. Filters snapshots created on or after this timestamp. ISO 8601 date-time format required. Used in WHERE clause: created_at >= :created_at_from.
+         * @x-autobe-specification Date range filter start on
+         *   shopping_mall_request_snapshots.created_at column. Filters
+         *   snapshots created on or after this timestamp. ISO 8601 date-time
+         *   format required. Used in WHERE clause: created_at >=
+         *   :created_at_from.
      */
     created_at_from?: (string & tags.Format<"date-time">) | undefined;
 
@@ -309,7 +391,11 @@ export namespace IShoppingMallRequestSnapshot {
      *
      * When provided, returns only snapshots created on or before this timestamp. Typically used together with created_at_from to define a time window. Must be provided in ISO 8601 date-time format (e.g., '2024-01-15T23:59:59Z').
      *
-     * @x-autobe-specification Date range filter end on shopping_mall_request_snapshots.created_at column. Filters snapshots created on or before this timestamp. ISO 8601 date-time format required. Used in WHERE clause: created_at <= :created_at_to.
+         * @x-autobe-specification Date range filter end on
+         *   shopping_mall_request_snapshots.created_at column. Filters
+         *   snapshots created on or before this timestamp. ISO 8601 date-time
+         *   format required. Used in WHERE clause: created_at <=
+         *   :created_at_to.
      */
     created_at_to?: (string & tags.Format<"date-time">) | undefined;
 
@@ -318,7 +404,9 @@ export namespace IShoppingMallRequestSnapshot {
      *
      * Specifies which page of results to retrieve. Page numbering starts from 1 (not 0). When combined with the limit parameter, this enables browsing through large result sets in manageable chunks. Default is page 1 if not specified.
      *
-     * @x-autobe-specification Pagination page number. 1-indexed integer. Used for OFFSET calculation: OFFSET = (page - 1) * limit. Minimum value is 1. Default is 1 when not provided.
+         * @x-autobe-specification Pagination page number. 1-indexed integer.
+         *   Used for OFFSET calculation: OFFSET = (page - 1) * limit. Minimum
+         *   value is 1. Default is 1 when not provided.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -327,7 +415,10 @@ export namespace IShoppingMallRequestSnapshot {
      *
      * Controls how many snapshot records are included in each page of results. Accepts values from 1 to 100. Larger values reduce the number of API calls needed but increase response size. Default is applied when not specified.
      *
-     * @x-autobe-specification Pagination limit (records per page). Integer between 1 and 100. Used in LIMIT clause of SQL query. Default is typically 20 or similar when not provided. Maximum enforced at 100 to prevent excessive data transfer.
+         * @x-autobe-specification Pagination limit (records per page). Integer
+         *   between 1 and 100. Used in LIMIT clause of SQL query. Default is
+         *   typically 20 or similar when not provided. Maximum enforced at 100
+         *   to prevent excessive data transfer.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)

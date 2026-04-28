@@ -20,9 +20,10 @@ export class ShoppingmallReviewsController {
    *
    * @param connection
    * @param body Search criteria including product ID filter, member ID filter, rating range, date range, and pagination parameters for browsing reviews.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query shopping_mall_reviews table with pagination and filtering.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query shopping_mall_reviews table with pagination
+     *   and filtering.
    *
    * Apply filters:
    * - shopping_mall_product_id: filter by specific product (for product detail pages)
@@ -64,9 +65,10 @@ export class ShoppingmallReviewsController {
    *
    * @param connection
    * @param reviewId UUID identifier of the review to retrieve.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query the shopping_mall_reviews table by the provided reviewId UUID parameter.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query the shopping_mall_reviews table by the
+     *   provided reviewId UUID parameter.
    *
    * Retrieve the full review record including all fields: id, shopping_mall_member_id, shopping_mall_product_id, shopping_mall_order_id, shopping_mall_order_item_id, rating, content, created_at, updated_at.
    *

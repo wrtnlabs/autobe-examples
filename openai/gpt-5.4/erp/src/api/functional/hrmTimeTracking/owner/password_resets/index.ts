@@ -25,7 +25,9 @@ import { IHrmTimeTrackingOwnerPasswordReset } from "../../../../structures/IHrmT
  * @param props.body Password reset request target information
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor owner
- * @x-autobe-specification Validate the JSON request body against IHrmTimeTrackingPasswordReset.ICreate. Require the caller to provide the actor kind and account email used for password recovery.
+ * @x-autobe-specification Validate the JSON request body against
+ *   IHrmTimeTrackingPasswordReset.ICreate. Require the caller to provide the
+ *   actor kind and account email used for password recovery.
  *
  * Normalize the email address according to the service's authentication policy before lookup. Branch by actor kind:
  * - owner -> query hrm_time_tracking_owners by unique email and ignore rows that are no longer valid for authentication according to service rules.
@@ -138,7 +140,9 @@ export namespace create {
  * @param props.body Password reset token and new password input
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor owner
- * @x-autobe-specification Implement a password reset completion workflow that accepts a JSON body containing the actor type, reset token, and new password payload.
+ * @x-autobe-specification Implement a password reset completion workflow that
+ *   accepts a JSON body containing the actor type, reset token, and new
+ *   password payload.
  *
  * 1. Validate the request body shape and password policy before any database mutation.
  * 2. Resolve the actor-specific reset source by the declared actor type:
@@ -259,7 +263,8 @@ export namespace resetPassword {
  * @param props.passwordResetId Unique identifier of the password reset record
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor owner
- * @x-autobe-specification Implement a read-only service that accepts passwordResetId as the primary key of a password reset record.
+ * @x-autobe-specification Implement a read-only service that accepts
+ *   passwordResetId as the primary key of a password reset record.
  *
  * Search the password reset record across the three concrete tables: hrm_time_tracking_owner_password_resets, hrm_time_tracking_manager_password_resets, and hrm_time_tracking_employee_password_resets. Because the route is generic, the service should attempt lookup by id in each table and normalize the first matching result into a unified domain object for IHrmTimeTrackingPasswordReset. The normalized response should include the record id, actor category derived from the source table, source account id, token value if the security policy allows returning it; otherwise the implementation may mask or omit the raw token in the DTO design stage if the shared schema already reflects masking. Also map expiration timestamp, creation timestamp, update timestamp when present, consumption-or-usage timestamp, and deleted timestamp when present in owner and manager reset tables.
  *
@@ -359,7 +364,8 @@ export namespace at {
  * @param props.body Password reset completion data including reset token and replacement password
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor owner
- * @x-autobe-specification Implement this operation as a transactional password reset completion workflow.
+ * @x-autobe-specification Implement this operation as a transactional password
+ *   reset completion workflow.
  *
  * 1. Resolve the target reset request by `passwordResetId` across the three concrete reset tables: `hrm_time_tracking_owner_password_resets`, `hrm_time_tracking_manager_password_resets`, and `hrm_time_tracking_employee_password_resets`. Exactly one matching record is expected. If none exists, return a not-found error.
  * 2. Validate the request body. Require the supplied reset token and replacement password fields defined in `IHrmTimeTrackingPasswordReset.IUpdate`. Reject when the replacement password is missing, empty, or fails any password policy enforced by the service layer.
@@ -480,7 +486,8 @@ export namespace update {
  * @param props.passwordResetId Unique identifier of the password reset request to remove.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor owner
- * @x-autobe-specification Implement this operation as a security-sensitive single-record deletion for password reset artifacts.
+ * @x-autobe-specification Implement this operation as a security-sensitive
+ *   single-record deletion for password reset artifacts.
  *
  * 1. Authenticate the caller and determine the actor category from the authenticated session context: owner, manager, or employee.
  * 2. Resolve the backing table exclusively from that actor category:

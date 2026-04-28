@@ -163,11 +163,12 @@ export namespace createWishlistItem {
  * @param props.body Instruction payload describing which product(s) should be added/removed (or otherwise modified) within the specified wishlist. The implementation must be idempotent with respect to the (wishlist, product) uniqueness constraint and must respect deleted_at visibility rules.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification 1) Authorization and ownership
- * - Authenticate caller as a member/customer.
- * - Load shopping_mall_wishlists by id = wishlistId.
- * - Verify the authenticated member id matches shopping_mall_wishlists.shopping_mall_member_id. If not, return authorization/ownership error.
- * - If shopping_mall_wishlists.deleted_at is not null, treat wishlist as hidden/unavailable and reject.
+ * @x-autobe-specification 1) Authorization and ownership - Authenticate caller
+ *   as a member/customer. - Load shopping_mall_wishlists by id = wishlistId. -
+ *   Verify the authenticated member id matches
+ *   shopping_mall_wishlists.shopping_mall_member_id. If not, return
+ *   authorization/ownership error. - If shopping_mall_wishlists.deleted_at is
+ *   not null, treat wishlist as hidden/unavailable and reject.
  *
  * 2) Input interpretation
  * - Parse the request body into an operation instruction for wishlist items under this wishlistId (as defined by IShoppingMallWishlistItem.IRequest).
@@ -438,7 +439,8 @@ export namespace at {
  * @param props.body Update payload for the specified wishlist item. Use it to change the product association or the item visibility state represented by `deleted_at` (or related fields exposed in the DTO).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification 1) Authenticate the caller as a member; deny if not authenticated.
+ * @x-autobe-specification 1) Authenticate the caller as a member; deny if not
+ *   authenticated.
  *
  * 2) Load the wishlist by `shopping_mall_wishlists.id = wishlistId`.
  *    - Verify that `shopping_mall_wishlists.shopping_mall_member_id` matches the current authenticated member.
@@ -575,7 +577,10 @@ export namespace updateWishlistItem {
  * @param props.wishlistItemId Target wishlist item id to remove from the wishlist.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification 1) Authorization: Resolve the authenticated member identity and load `shopping_mall_wishlists` by `id = wishlistId`. Verify `shopping_mall_member_id` matches the caller. If not, reject with forbidden/not-found per error policy.
+ * @x-autobe-specification 1) Authorization: Resolve the authenticated member
+ *   identity and load `shopping_mall_wishlists` by `id = wishlistId`. Verify
+ *   `shopping_mall_member_id` matches the caller. If not, reject with
+ *   forbidden/not-found per error policy.
  *
  * 2) Target lookup (scoped): In a single transaction, query `shopping_mall_wishlist_items` with:
  *    - `id = wishlistItemId`

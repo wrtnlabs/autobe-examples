@@ -21,9 +21,10 @@ export class RedditcloneAuthGuestController {
    *
    * @param connection
    * @param body Guest registration request containing device identification information.
-   * @x-autobe-authorization-type join
-   * @x-autobe-authorization-actor guest
-   * @x-autobe-specification Create a new guest account identified by device fingerprint and generate initial session tokens.
+     * @x-autobe-authorization-type join
+     * @x-autobe-authorization-actor guest
+     * @x-autobe-specification Create a new guest account identified by device
+     *   fingerprint and generate initial session tokens.
    *
    * 1. Extract device fingerprint from request headers or body
    * 2. Check if guest with this fingerprint already exists in reddit_clone_guests
@@ -70,9 +71,10 @@ export class RedditcloneAuthGuestController {
    *
    * @param connection
    * @param body Token refresh request containing the refresh token.
-   * @x-autobe-authorization-type refresh
-   * @x-autobe-authorization-actor guest
-   * @x-autobe-specification Refresh guest session tokens using a valid refresh token.
+     * @x-autobe-authorization-type refresh
+     * @x-autobe-authorization-actor guest
+     * @x-autobe-specification Refresh guest session tokens using a valid
+     *   refresh token.
    *
    * 1. Validate the refresh token from the request body
    * 2. Look up the corresponding session in reddit_clone_guest_sessions

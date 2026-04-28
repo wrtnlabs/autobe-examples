@@ -19,9 +19,10 @@ export class RedditcloneProfilesPostsController {
    * @param connection
    * @param profileId UUID of the user profile whose posts to retrieve (global scope).
    * @param body Search criteria including post type filter, title search, date range filters, sort options, and pagination parameters.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query the reddit_clone_posts table filtering by reddit_clone_user_profile_id matching the profileId path parameter.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query the reddit_clone_posts table filtering by
+     *   reddit_clone_user_profile_id matching the profileId path parameter.
    *
    * Apply search filters from the request body:
    * - Filter by post_type if specified (text, link, or image)
@@ -77,9 +78,13 @@ export class RedditcloneProfilesPostsController {
    * @param connection
    * @param profileId UUID of the user profile that owns this post (global scope)
    * @param postId UUID of the post to retrieve (global scope)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query the reddit_clone_posts table for the post matching the postId parameter. Verify that the post's reddit_clone_user_profile_id matches the profileId parameter - return 404 if mismatch. Check that deleted_at is null - return 404 if post is soft-deleted.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query the reddit_clone_posts table for the post
+     *   matching the postId parameter. Verify that the post's
+     *   reddit_clone_user_profile_id matches the profileId parameter - return
+     *   404 if mismatch. Check that deleted_at is null - return 404 if post is
+     *   soft-deleted.
    *
    * Join with reddit_clone_user_profiles to retrieve author information (display_name, bio, avatar, karma). Join with reddit_clone_communities to retrieve community information (name, description, icon).
    *

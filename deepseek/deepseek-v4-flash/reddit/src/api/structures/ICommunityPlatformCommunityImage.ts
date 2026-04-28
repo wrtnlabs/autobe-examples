@@ -16,8 +16,9 @@ export type ICommunityPlatformCommunityImage = {
    *
    * Auto-generated upon creation. Used as the primary key for referencing individual image records.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from community_platform_community_images.id. UUID format.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_community_images.id. UUID format.
    */
   id: string & tags.Format<"uuid">;
 
@@ -26,8 +27,10 @@ export type ICommunityPlatformCommunityImage = {
    *
    * Used for display and identification purposes in administrative interfaces and listing views.
    *
-   * @x-autobe-database-schema-property name
-   * @x-autobe-specification Direct mapping from community_platform_community_images.name. The original filename as provided by the uploader.
+     * @x-autobe-database-schema-property name
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_community_images.name. The original filename as
+     *   provided by the uploader.
    */
   name: string;
 
@@ -36,8 +39,10 @@ export type ICommunityPlatformCommunityImage = {
    *
    * Determines how the file should be served and processed by the storage layer and content delivery system.
    *
-   * @x-autobe-database-schema-property mime_type
-   * @x-autobe-specification Direct mapping from community_platform_community_images.mime_type. String value (e.g., 'image/png', 'image/jpeg', 'image/webp').
+     * @x-autobe-database-schema-property mime_type
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_community_images.mime_type. String value (e.g.,
+     *   'image/png', 'image/jpeg', 'image/webp').
    */
   mime_type: string;
 
@@ -46,8 +51,10 @@ export type ICommunityPlatformCommunityImage = {
    *
    * Used for storage capacity tracking, bandwidth estimation, and upload validation.
    *
-   * @x-autobe-database-schema-property size
-   * @x-autobe-specification Direct mapping from community_platform_community_images.size. Integer representing file size in bytes.
+     * @x-autobe-database-schema-property size
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_community_images.size. Integer representing file
+     *   size in bytes.
    */
   size: number & tags.Type<"int32">;
 
@@ -56,8 +63,10 @@ export type ICommunityPlatformCommunityImage = {
    *
    * This URL is used to retrieve and serve the image to clients. The actual file is stored in an external file storage system, not within the database itself.
    *
-   * @x-autobe-database-schema-property url
-   * @x-autobe-specification Direct mapping from community_platform_community_images.url. URI string pointing to the physical image file in external storage (e.g., S3, local filesystem).
+     * @x-autobe-database-schema-property url
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_community_images.url. URI string pointing to the
+     *   physical image file in external storage (e.g., S3, local filesystem).
    */
   url: string & tags.Format<"uri">;
 
@@ -66,8 +75,13 @@ export type ICommunityPlatformCommunityImage = {
    *
    * Each icon image is associated with exactly one community. A community may have multiple icon records over time as icons are updated. This provides the full summary of the parent community including its name, description, subscriber count, and owner information.
    *
-   * @x-autobe-database-schema-property community
-   * @x-autobe-specification JOIN via community_platform_community_images.community_platform_community_id to community_platform_communities.id. Returns ICommunityPlatformCommunity.ISummary (id, name, description, icon_uri, subscriber_count, owner, created_at). Filter: community.deleted_at IS NULL.
+     * @x-autobe-database-schema-property community
+     * @x-autobe-specification JOIN via
+     *   community_platform_community_images.community_platform_community_id to
+     *   community_platform_communities.id. Returns
+     *   ICommunityPlatformCommunity.ISummary (id, name, description, icon_uri,
+     *   subscriber_count, owner, created_at). Filter: community.deleted_at IS
+     *   NULL.
    */
   community: ICommunityPlatformCommunity.ISummary;
 
@@ -76,8 +90,9 @@ export type ICommunityPlatformCommunityImage = {
    *
    * Used to determine the current active icon: the most recent created_at for a given community represents the current icon. Also used for chronological sorting in listing views.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from community_platform_community_images.created_at. DateTime with timezone.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_community_images.created_at. DateTime with timezone.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -86,8 +101,9 @@ export type ICommunityPlatformCommunityImage = {
    *
    * Tracks modifications to file metadata or storage location for audit purposes. Updated whenever name, mime_type, size, or url are changed.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from community_platform_community_images.updated_at. DateTime with timezone.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_community_images.updated_at. DateTime with timezone.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -96,8 +112,10 @@ export type ICommunityPlatformCommunityImage = {
    *
    * Null indicates the record is active. When set, the record is considered soft-deleted — the icon is no longer the active community icon but remains in the database for potential recovery within the configured retention period.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from community_platform_community_images.deleted_at. Nullable DateTime with timezone. Null indicates the record is active (current icon).
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_community_images.deleted_at. Nullable DateTime with
+     *   timezone. Null indicates the record is active (current icon).
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -127,8 +145,10 @@ export namespace ICommunityPlatformCommunityImage {
      *
      * This filename is used for display and identification purposes in administrative interfaces. It is stored as-is from the client and does not affect how the file is stored on the server.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from community_platform_community_images.name. The original filename as provided by the uploader.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_community_images.name. The original filename as
+         *   provided by the uploader.
      */
     name: string;
 
@@ -137,8 +157,10 @@ export namespace ICommunityPlatformCommunityImage {
      *
      * This MIME type determines how the file should be served and processed by the storage layer and content delivery system. The platform validates that the MIME type is one of the supported image formats.
      *
-     * @x-autobe-database-schema-property mime_type
-     * @x-autobe-specification Direct mapping from community_platform_community_images.mime_type. Determines how the file is served and processed by the storage layer.
+         * @x-autobe-database-schema-property mime_type
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_community_images.mime_type. Determines how the
+         *   file is served and processed by the storage layer.
      */
     mime_type: string;
 
@@ -147,8 +169,10 @@ export namespace ICommunityPlatformCommunityImage {
      *
      * Used for storage capacity tracking, bandwidth estimation, and upload validation. The server validates that the file size does not exceed the platform's maximum upload limit.
      *
-     * @x-autobe-database-schema-property size
-     * @x-autobe-specification Direct mapping from community_platform_community_images.size. File size in bytes, validated server-side against platform limits.
+         * @x-autobe-database-schema-property size
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_community_images.size. File size in bytes,
+         *   validated server-side against platform limits.
      */
     size: number & tags.Type<"int32"> & tags.Minimum<1>;
 
@@ -157,8 +181,13 @@ export namespace ICommunityPlatformCommunityImage {
      *
      * The backend reads the actual file content from this URI, uploads it to external storage (e.g., S3, local filesystem), and stores the resulting permanent storage URL in the database record. This field does not represent the final CDN serving URL — that URL is returned in the API response after the upload is processed.
      *
-     * @x-autobe-database-schema-property url
-     * @x-autobe-specification Maps to community_platform_community_images.url after server-side processing. The url field in this request holds a client-side file content URI string. The backend reads the file content from this URI, uploads it to external storage, obtains the permanent storage URL, and stores that URL in the database url column.
+         * @x-autobe-database-schema-property url
+         * @x-autobe-specification Maps to
+         *   community_platform_community_images.url after server-side
+         *   processing. The url field in this request holds a client-side file
+         *   content URI string. The backend reads the file content from this
+         *   URI, uploads it to external storage, obtains the permanent storage
+         *   URL, and stores that URL in the database url column.
      */
     url: string & tags.Format<"uri">;
   };
@@ -176,7 +205,9 @@ export namespace ICommunityPlatformCommunityImage {
      *
      * Performs a case-insensitive substring match against the image filename. Only image records whose filename contains the search term will be included in the results.
      *
-     * @x-autobe-specification LIKE search against community_platform_community_images.name column. Performs case-insensitive substring matching on the image filename.
+         * @x-autobe-specification LIKE search against
+         *   community_platform_community_images.name column. Performs
+         *   case-insensitive substring matching on the image filename.
      */
     search?: string | undefined;
 
@@ -185,7 +216,8 @@ export namespace ICommunityPlatformCommunityImage {
      *
      * Accepts values such as image/png, image/jpeg, or image/webp. Only images matching the specified MIME type will be included in the results.
      *
-     * @x-autobe-specification Exact match filter applied as WHERE mime_type = :value on community_platform_community_images.mime_type column.
+         * @x-autobe-specification Exact match filter applied as WHERE mime_type
+         *   = :value on community_platform_community_images.mime_type column.
      */
     mime_type?: string | undefined;
 
@@ -194,7 +226,9 @@ export namespace ICommunityPlatformCommunityImage {
      *
      * Filters the result set to include only icon images with a file size greater than or equal to this value. Combine with size_to to define a size range.
      *
-     * @x-autobe-specification Minimum file size boundary for range filtering on community_platform_community_images.size column. Applied as WHERE size >= size_from.
+         * @x-autobe-specification Minimum file size boundary for range
+         *   filtering on community_platform_community_images.size column.
+         *   Applied as WHERE size >= size_from.
      */
     size_from?: (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
 
@@ -203,7 +237,9 @@ export namespace ICommunityPlatformCommunityImage {
      *
      * Filters the result set to include only icon images with a file size less than or equal to this value. Combine with size_from to define a size range.
      *
-     * @x-autobe-specification Maximum file size boundary for range filtering on community_platform_community_images.size column. Applied as WHERE size <= size_to.
+         * @x-autobe-specification Maximum file size boundary for range
+         *   filtering on community_platform_community_images.size column.
+         *   Applied as WHERE size <= size_to.
      */
     size_to?: (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
 
@@ -212,7 +248,9 @@ export namespace ICommunityPlatformCommunityImage {
      *
      * Filters icon images to include only those created at or after this timestamp. Combine with created_at_to to define a date range.
      *
-     * @x-autobe-specification Start boundary for date range filtering on community_platform_community_images.created_at column. Applied as WHERE created_at >= created_at_from.
+         * @x-autobe-specification Start boundary for date range filtering on
+         *   community_platform_community_images.created_at column. Applied as
+         *   WHERE created_at >= created_at_from.
      */
     created_at_from?: (string & tags.Format<"date-time">) | undefined;
 
@@ -221,7 +259,9 @@ export namespace ICommunityPlatformCommunityImage {
      *
      * Filters icon images to include only those created at or before this timestamp. Combine with created_at_from to define a date range.
      *
-     * @x-autobe-specification End boundary for date range filtering on community_platform_community_images.created_at column. Applied as WHERE created_at <= created_at_to.
+         * @x-autobe-specification End boundary for date range filtering on
+         *   community_platform_community_images.created_at column. Applied as
+         *   WHERE created_at <= created_at_to.
      */
     created_at_to?: (string & tags.Format<"date-time">) | undefined;
 
@@ -230,7 +270,10 @@ export namespace ICommunityPlatformCommunityImage {
      *
      * An opaque token representing the position from which to continue reading results. When provided, the endpoint returns records occurring after the identified position. Omit this field to retrieve the first page.
      *
-     * @x-autobe-specification Opaque pagination cursor token for cursor-based navigation. Encodes the scroll position based on the last record of the previous page (created_at DESC order). When provided, returns results starting after that position.
+         * @x-autobe-specification Opaque pagination cursor token for
+         *   cursor-based navigation. Encodes the scroll position based on the
+         *   last record of the previous page (created_at DESC order). When
+         *   provided, returns results starting after that position.
      */
     cursor?: string | undefined;
 
@@ -239,7 +282,9 @@ export namespace ICommunityPlatformCommunityImage {
      *
      * Controls the page size for paginated results. The value is capped at 100 to prevent excessively large payloads.
      *
-     * @x-autobe-specification Maximum number of records per page for pagination. Capped at 100 server-side. Controls the page size for paginated responses.
+         * @x-autobe-specification Maximum number of records per page for
+         *   pagination. Capped at 100 server-side. Controls the page size for
+         *   paginated responses.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -250,7 +295,10 @@ export namespace ICommunityPlatformCommunityImage {
      *
      * Specifies which page of results to retrieve, with page numbering starting from 1. If omitted, defaults to the first page. When a cursor token is provided alongside this field, cursor-based navigation takes precedence.
      *
-     * @x-autobe-specification 1-indexed page number for page-based pagination fallback. Defaults to 1 if not provided. When a cursor token is provided, page-based pagination may be overridden in favor of cursor-based navigation.
+         * @x-autobe-specification 1-indexed page number for page-based
+         *   pagination fallback. Defaults to 1 if not provided. When a cursor
+         *   token is provided, page-based pagination may be overridden in favor
+         *   of cursor-based navigation.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };
@@ -266,8 +314,10 @@ export namespace ICommunityPlatformCommunityImage {
      *
      * Used for display and identification purposes in administrative interfaces. This value replaces the previous filename in the database record.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from community_platform_community_images.name. Replaces the existing filename with the new upload's original filename.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_community_images.name. Replaces the existing
+         *   filename with the new upload's original filename.
      */
     name?: string | undefined;
 
@@ -276,8 +326,10 @@ export namespace ICommunityPlatformCommunityImage {
      *
      * Determines how the file should be served and processed by the storage layer and content delivery system. Only image MIME types are accepted.
      *
-     * @x-autobe-database-schema-property mime_type
-     * @x-autobe-specification Direct mapping from community_platform_community_images.mime_type. Must be a supported image MIME type (e.g., image/png, image/jpeg, image/webp).
+         * @x-autobe-database-schema-property mime_type
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_community_images.mime_type. Must be a supported
+         *   image MIME type (e.g., image/png, image/jpeg, image/webp).
      */
     mime_type?: string | undefined;
 
@@ -286,8 +338,10 @@ export namespace ICommunityPlatformCommunityImage {
      *
      * Used for storage capacity tracking, bandwidth estimation, and upload validation.
      *
-     * @x-autobe-database-schema-property size
-     * @x-autobe-specification Direct mapping from community_platform_community_images.size. Stored as integer representing bytes.
+         * @x-autobe-database-schema-property size
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_community_images.size. Stored as integer
+         *   representing bytes.
      */
     size?: (number & tags.Type<"int32">) | undefined;
 
@@ -296,8 +350,11 @@ export namespace ICommunityPlatformCommunityImage {
      *
      * This URL is used to retrieve and serve the image to clients. The actual file is stored in an external file storage system (e.g., S3, local filesystem), not within the database itself. When updating, the CDN cache for the previous icon URL is invalidated to ensure the new image is served immediately.
      *
-     * @x-autobe-database-schema-property url
-     * @x-autobe-specification Direct mapping from community_platform_community_images.url. Points to the newly uploaded file in external storage. The previous file at the old URL should be disassociated.
+         * @x-autobe-database-schema-property url
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_community_images.url. Points to the newly
+         *   uploaded file in external storage. The previous file at the old URL
+         *   should be disassociated.
      */
     url?: (string & tags.Format<"uri">) | undefined;
   };

@@ -1,0 +1,153 @@
+/// Organization-scoped authorization template defining permission sets that
+/// control what actions members can perform within that organization.
+/// Built-in roles (Owner, Manager, Employee) are immutable platform defaults
+/// with predefined permission catalogs that cannot be deleted or modified.
+/// Custom roles are created and managed by organization owners, allowing
+/// tailored permission configurations for specific organizational needs.
+///
+/// Each role is scoped to exactly one {@link hrm_platform_organizations} and
+/// referenced by {@link hrm_platform_employees} through a foreign key for
+/// role assignment. Permission mappings are maintained in the companion
+/// {@link hrm_platform_role_permissions} junction table.
+///
+/// Built-in roles are automatically provisioned during organization
+/// creation. Custom roles can be created, edited, and deleted by
+/// organization owners, provided no employees are currently assigned to
+/// them.
+///
+/// @namespace hrm_platform.role
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_platform_roles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the role record.
+  id String @id
+  
+  /// References the organization to which this role belongs. Roles are
+  /// strictly scoped to a single organization — permissions granted by a role
+  /// only apply within that organization's data boundaries.
+  ///
+  /// This foreign key enforces multi-tenancy isolation by ensuring roles
+  /// cannot cross organizational contexts and permissions do not leak between
+  /// employers.
+  hrm_platform_organization_id String
+  
+  /// Human-readable name of the role. Built-in roles use fixed names: 'Owner',
+  /// 'Manager', 'Employee'. Custom roles can use any unique name within the
+  /// organization.
+  ///
+  /// Role names are displayed in the user interface when assigning roles to
+  /// employees or managing roles in the administration panel.
+  name String
+  
+  /// Indicates whether this role is a built-in platform default. Built-in
+  /// roles (Owner, Manager, Employee) have this field set to true and cannot
+  /// be deleted or have their permission sets modified by organization owners.
+  ///
+  /// Custom roles created by organization owners have this field set to false
+  /// and can be fully managed including permission edits and deletion when
+  /// unassigned.
+  built_in Boolean
+  
+  /// Optional description explaining the purpose and scope of this role. Used
+  /// for documentation and display in role management interfaces.
+  ///
+  /// Helps organization owners understand the intended use of custom roles and
+  /// provides context when selecting roles for employee assignment.
+  description String?
+  
+  /// Timestamp when this role was created. Built-in roles are created during
+  /// organization setup. Custom roles are created when an organization owner
+  /// defines a new role.
+  created_at DateTime
+  
+  /// Timestamp when this role was last updated. For built-in roles, this
+  /// remains unchanged. For custom roles, this is updated when the role name,
+  /// description, or permission set is modified.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for custom roles. When set to a non-null value, the
+  /// role is marked as deleted and can no longer be assigned to employees.
+  ///
+  /// Built-in roles cannot be deleted, so this field remains null for them.
+  /// Custom roles can only be deleted if no employees are currently assigned
+  /// to them.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  organization hrm_platform_organizations @relation(fields: [hrm_platform_organization_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  employees hrm_platform_employees[]
+  rolePermissions hrm_platform_role_permissions[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([hrm_platform_organization_id, name])
+}
+
+/// Junction table mapping organization roles to their granted permission keys.
+///
+/// Each entry associates an {@link hrm_platform_roles} instance with a
+/// specific permission key, enabling granular access control within an
+/// organization. Built-in roles (Owner, Manager, Employee) have predefined
+/// permission sets, while custom roles reference permission keys selected
+/// during role creation.
+///
+/// Permission keys represent discrete platform capabilities such as
+/// org:manage, employee:manage, project:view, time:approve, and report:view.
+/// Each permission key can appear multiple times across different roles
+/// within or across organizations, but cannot be duplicated within the same
+/// role.
+///
+/// @namespace hrm_platform.role
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_platform_role_permissions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the role-permission mapping record.
+  id String @id
+  
+  /// Foreign key reference to the role that grants this permission.
+  ///
+  /// Links to {@link hrm_platform_roles} to establish which organization role
+  /// this permission belongs to. Each role can have multiple entries for
+  /// different permissions.
+  hrm_platform_role_id String
+  
+  /// The permission key string identifying a specific platform capability.
+  ///
+  /// Allowed values include org:manage, employee:manage, employee:view,
+  /// project:manage, project:view, time:manage, time:approve, time:view_all,
+  /// and report:view. Each key represents a distinct access control attribute
+  /// granted to the associated role.
+  permission_key String
+  
+  /// Timestamp when this role-permission mapping was created.
+  created_at DateTime
+  
+  /// Timestamp when this role-permission mapping was last updated.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  role hrm_platform_roles @relation(fields: [hrm_platform_role_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([hrm_platform_role_id, permission_key], map: "hrm_platform_role_permissions_hrm_platform_role_id_per_1a82c5b6")
+  @@index([permission_key])
+}

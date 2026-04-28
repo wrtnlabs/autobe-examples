@@ -14,7 +14,11 @@ export type IECommerceMallSession = {
    *
    * Acts as the primary key across all session tables (administrator, customer, seller, and guest sessions). This identifier is used to look up session details via the API.
    *
-   * @x-autobe-specification Maps to the id column of whichever session table matched the query: e_commerce_mall_administrator_sessions.id, e_commerce_mall_customer_sessions.id, e_commerce_mall_seller_sessions.id, or e_commerce_mall_guest_sessions.id. UUID format.
+     * @x-autobe-specification Maps to the id column of whichever session table
+     *   matched the query: e_commerce_mall_administrator_sessions.id,
+     *   e_commerce_mall_customer_sessions.id,
+     *   e_commerce_mall_seller_sessions.id, or
+     *   e_commerce_mall_guest_sessions.id. UUID format.
    */
   id: string & tags.Format<"uuid">;
 
@@ -23,7 +27,12 @@ export type IECommerceMallSession = {
    *
    * One of: 'administrator', 'customer', 'seller', or 'guest'. Combined with actorId to uniquely identify the owning actor.
    *
-   * @x-autobe-specification Computed discriminator. Query across all four session tables by sessionId. The table that contains a matching record determines the actorType: e_commerce_mall_administrator_sessions → 'administrator', e_commerce_mall_customer_sessions → 'customer', e_commerce_mall_seller_sessions → 'seller', e_commerce_mall_guest_sessions → 'guest'.
+     * @x-autobe-specification Computed discriminator. Query across all four
+     *   session tables by sessionId. The table that contains a matching record
+     *   determines the actorType: e_commerce_mall_administrator_sessions →
+     *   'administrator', e_commerce_mall_customer_sessions → 'customer',
+     *   e_commerce_mall_seller_sessions → 'seller',
+     *   e_commerce_mall_guest_sessions → 'guest'.
    */
   actorType: "administrator" | "customer" | "seller" | "guest";
 
@@ -32,7 +41,15 @@ export type IECommerceMallSession = {
    *
    * Combined with actorType to establish the owning entity. For administrators, this is the administrator's ID; for customers, the customer's ID; and so on.
    *
-   * @x-autobe-specification Computed value. Maps to the foreign key column of the matched session table: when actorType='administrator' → e_commerce_mall_administrator_sessions.e_commerce_mall_administrator_id, when actorType='customer' → e_commerce_mall_customer_sessions.e_commerce_mall_customer_id, when actorType='seller' → e_commerce_mall_seller_sessions.e_commerce_mall_seller_id, when actorType='guest' → e_commerce_mall_guest_sessions.e_commerce_mall_guest_id.
+     * @x-autobe-specification Computed value. Maps to the foreign key column of
+     *   the matched session table: when actorType='administrator' →
+     *   e_commerce_mall_administrator_sessions.e_commerce_mall_administrator_id,
+     *   when actorType='customer' →
+     *   e_commerce_mall_customer_sessions.e_commerce_mall_customer_id, when
+     *   actorType='seller' →
+     *   e_commerce_mall_seller_sessions.e_commerce_mall_seller_id, when
+     *   actorType='guest' →
+     *   e_commerce_mall_guest_sessions.e_commerce_mall_guest_id.
    */
   actorId: string & tags.Format<"uuid">;
 
@@ -41,7 +58,11 @@ export type IECommerceMallSession = {
    *
    * Captured for security auditing, anomaly detection, and geographic analysis of login origins. Supports both IPv4 and IPv6 address formats.
    *
-   * @x-autobe-specification Maps to the ip column of whichever session table matched the query: e_commerce_mall_administrator_sessions.ip, e_commerce_mall_customer_sessions.ip, e_commerce_mall_seller_sessions.ip, or e_commerce_mall_guest_sessions.ip.
+     * @x-autobe-specification Maps to the ip column of whichever session table
+     *   matched the query: e_commerce_mall_administrator_sessions.ip,
+     *   e_commerce_mall_customer_sessions.ip,
+     *   e_commerce_mall_seller_sessions.ip, or
+     *   e_commerce_mall_guest_sessions.ip.
    */
   ip: string;
 
@@ -50,7 +71,11 @@ export type IECommerceMallSession = {
    *
    * Captures the entry point for the session, useful for understanding navigation patterns and troubleshooting authentication issues.
    *
-   * @x-autobe-specification Maps to the href column of whichever session table matched the query: e_commerce_mall_administrator_sessions.href, e_commerce_mall_customer_sessions.href, e_commerce_mall_seller_sessions.href, or e_commerce_mall_guest_sessions.href.
+     * @x-autobe-specification Maps to the href column of whichever session
+     *   table matched the query: e_commerce_mall_administrator_sessions.href,
+     *   e_commerce_mall_customer_sessions.href,
+     *   e_commerce_mall_seller_sessions.href, or
+     *   e_commerce_mall_guest_sessions.href.
    */
   href: string;
 
@@ -59,7 +84,12 @@ export type IECommerceMallSession = {
    *
    * Indicates the previous page the actor visited before the authentication page, useful for traffic source analysis and security auditing.
    *
-   * @x-autobe-specification Maps to the referrer column of whichever session table matched the query: e_commerce_mall_administrator_sessions.referrer, e_commerce_mall_customer_sessions.referrer, e_commerce_mall_seller_sessions.referrer, or e_commerce_mall_guest_sessions.referrer.
+     * @x-autobe-specification Maps to the referrer column of whichever session
+     *   table matched the query:
+     *   e_commerce_mall_administrator_sessions.referrer,
+     *   e_commerce_mall_customer_sessions.referrer,
+     *   e_commerce_mall_seller_sessions.referrer, or
+     *   e_commerce_mall_guest_sessions.referrer.
    */
   referrer: string;
 
@@ -68,7 +98,12 @@ export type IECommerceMallSession = {
    *
    * Used for session lifecycle management, duration calculations, and audit trail purposes.
    *
-   * @x-autobe-specification Maps to the created_at column of whichever session table matched the query: e_commerce_mall_administrator_sessions.created_at, e_commerce_mall_customer_sessions.created_at, e_commerce_mall_seller_sessions.created_at, or e_commerce_mall_guest_sessions.created_at.
+     * @x-autobe-specification Maps to the created_at column of whichever
+     *   session table matched the query:
+     *   e_commerce_mall_administrator_sessions.created_at,
+     *   e_commerce_mall_customer_sessions.created_at,
+     *   e_commerce_mall_seller_sessions.created_at, or
+     *   e_commerce_mall_guest_sessions.created_at.
    */
   createdAt: string & tags.Format<"date-time">;
 
@@ -77,7 +112,12 @@ export type IECommerceMallSession = {
    *
    * Once expired, the session cannot be used for authenticated access and the actor must re-authenticate. Expired sessions are still returned by the API — this field indicates whether the session is still valid.
    *
-   * @x-autobe-specification Maps to the expired_at column of whichever session table matched the query: e_commerce_mall_administrator_sessions.expired_at, e_commerce_mall_customer_sessions.expired_at, e_commerce_mall_seller_sessions.expired_at, or e_commerce_mall_guest_sessions.expired_at.
+     * @x-autobe-specification Maps to the expired_at column of whichever
+     *   session table matched the query:
+     *   e_commerce_mall_administrator_sessions.expired_at,
+     *   e_commerce_mall_customer_sessions.expired_at,
+     *   e_commerce_mall_seller_sessions.expired_at, or
+     *   e_commerce_mall_guest_sessions.expired_at.
    */
   expiredAt: string & tags.Format<"date-time">;
 };
@@ -95,7 +135,8 @@ export namespace IECommerceMallSession {
      *
      * Performs a partial match against the session's IP address. For example, searching for "192.168" will match all sessions with IP addresses containing that subnet prefix.
      *
-     * @x-autobe-specification Partial match filter on session.ip. Applied as a LIKE or ILIKE query on the ip column of the session table.
+         * @x-autobe-specification Partial match filter on session.ip. Applied
+         *   as a LIKE or ILIKE query on the ip column of the session table.
      */
     search?: string | undefined;
 
@@ -104,7 +145,10 @@ export namespace IECommerceMallSession {
      *
      * Sessions created at or after this timestamp are included in the results. Combine with `created_at_to` to define a specific time window.
      *
-     * @x-autobe-specification Lower bound filter on session.created_at. Combined with created_at_to to form a range query (created_at >= created_at_from AND created_at <= created_at_to). Applied only when provided.
+         * @x-autobe-specification Lower bound filter on session.created_at.
+         *   Combined with created_at_to to form a range query (created_at >=
+         *   created_at_from AND created_at <= created_at_to). Applied only when
+         *   provided.
      */
     created_at_from?: (string & tags.Format<"date-time">) | undefined;
 
@@ -113,7 +157,10 @@ export namespace IECommerceMallSession {
      *
      * Sessions created at or before this timestamp are included in the results. Combine with `created_at_from` to define a specific time window.
      *
-     * @x-autobe-specification Upper bound filter on session.created_at. Combined with created_at_from to form a range query (created_at >= created_at_from AND created_at <= created_at_to). Applied only when provided.
+         * @x-autobe-specification Upper bound filter on session.created_at.
+         *   Combined with created_at_from to form a range query (created_at >=
+         *   created_at_from AND created_at <= created_at_to). Applied only when
+         *   provided.
      */
     created_at_to?: (string & tags.Format<"date-time">) | undefined;
 
@@ -122,7 +169,10 @@ export namespace IECommerceMallSession {
      *
      * Sessions expiring at or after this timestamp are included. Combine with `expired_at_to` to define a specific time window.
      *
-     * @x-autobe-specification Lower bound filter on session.expired_at. Combined with expired_at_to to form a range query (expired_at >= expired_at_from AND expired_at <= expired_at_to). Applied only when provided.
+         * @x-autobe-specification Lower bound filter on session.expired_at.
+         *   Combined with expired_at_to to form a range query (expired_at >=
+         *   expired_at_from AND expired_at <= expired_at_to). Applied only when
+         *   provided.
      */
     expired_at_from?: (string & tags.Format<"date-time">) | undefined;
 
@@ -131,7 +181,10 @@ export namespace IECommerceMallSession {
      *
      * Sessions expiring at or before this timestamp are included. Combine with `expired_at_from` to define a specific time window.
      *
-     * @x-autobe-specification Upper bound filter on session.expired_at. Combined with expired_at_from to form a range query (expired_at >= expired_at_from AND expired_at <= expired_at_to). Applied only when provided.
+         * @x-autobe-specification Upper bound filter on session.expired_at.
+         *   Combined with expired_at_from to form a range query (expired_at >=
+         *   expired_at_from AND expired_at <= expired_at_to). Applied only when
+         *   provided.
      */
     expired_at_to?: (string & tags.Format<"date-time">) | undefined;
 
@@ -140,7 +193,10 @@ export namespace IECommerceMallSession {
      *
      * By default, only active (non-expired) sessions are returned. Set this to `true` to also include sessions that have passed their expiration timestamp.
      *
-     * @x-autobe-specification Boolean flag controlling expired session inclusion. When true, the default filter (expired_at > now) is removed, returning all sessions including expired ones. Defaults to false when absent.
+         * @x-autobe-specification Boolean flag controlling expired session
+         *   inclusion. When true, the default filter (expired_at > now) is
+         *   removed, returning all sessions including expired ones. Defaults to
+         *   false when absent.
      */
     include_expired?: boolean | undefined;
 
@@ -149,7 +205,9 @@ export namespace IECommerceMallSession {
      *
      * 1-indexed page number indicating which page of results to retrieve. Page 1 returns the first set of results. Defaults to 1 when not specified.
      *
-     * @x-autobe-specification 1-indexed page number for offset-based pagination. Defaults to 1. Combined with limit to compute OFFSET: (page - 1) * limit.
+         * @x-autobe-specification 1-indexed page number for offset-based
+         *   pagination. Defaults to 1. Combined with limit to compute OFFSET:
+         *   (page - 1) * limit.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -158,7 +216,9 @@ export namespace IECommerceMallSession {
      *
      * Controls how many session records are returned in a single page. The value must be between 1 and 100. Defaults to an implementation-defined value when not specified.
      *
-     * @x-autobe-specification Maximum number of records per page. Defaults to an implementation-defined value. Minimum 1, Maximum 100. Combined with page to compute OFFSET: (page - 1) * limit.
+         * @x-autobe-specification Maximum number of records per page. Defaults
+         *   to an implementation-defined value. Minimum 1, Maximum 100.
+         *   Combined with page to compute OFFSET: (page - 1) * limit.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -176,7 +236,11 @@ export namespace IECommerceMallSession {
      *
      * This UUID serves as the primary key across all session types (customer, seller, administrator, and super administrator). Used to distinguish individual login sessions and for the `isCurrent` comparison against the JWT session token.
      *
-     * @x-autobe-specification Direct mapping from id column, common across all 4 session tables (e_commerce_mall_customer_sessions.id, e_commerce_mall_seller_sessions.id, e_commerce_mall_administrator_sessions.id, e_commerce_mall_super_administrator_sessions.id). UUID primary key.
+         * @x-autobe-specification Direct mapping from id column, common across
+         *   all 4 session tables (e_commerce_mall_customer_sessions.id,
+         *   e_commerce_mall_seller_sessions.id,
+         *   e_commerce_mall_administrator_sessions.id,
+         *   e_commerce_mall_super_administrator_sessions.id). UUID primary key.
      */
     id: string & tags.Format<"uuid">;
 
@@ -185,7 +249,12 @@ export namespace IECommerceMallSession {
      *
      * Captured during authentication for security auditing, anomaly detection, and geographic analysis of login origins. Supports both IPv4 and IPv6 address formats.
      *
-     * @x-autobe-specification Direct mapping from ip column, common across all 4 session tables (e_commerce_mall_customer_sessions.ip, e_commerce_mall_seller_sessions.ip, e_commerce_mall_administrator_sessions.ip, e_commerce_mall_super_administrator_sessions.ip). Captured from HTTP request source IP at login time for security auditing.
+         * @x-autobe-specification Direct mapping from ip column, common across
+         *   all 4 session tables (e_commerce_mall_customer_sessions.ip,
+         *   e_commerce_mall_seller_sessions.ip,
+         *   e_commerce_mall_administrator_sessions.ip,
+         *   e_commerce_mall_super_administrator_sessions.ip). Captured from
+         *   HTTP request source IP at login time for security auditing.
      */
     ip: string;
 
@@ -194,7 +263,13 @@ export namespace IECommerceMallSession {
      *
      * Records the entry point for the session, useful for understanding navigation patterns and troubleshooting authentication issues.
      *
-     * @x-autobe-specification Direct mapping from href column, common across all 4 session tables (e_commerce_mall_customer_sessions.href, e_commerce_mall_seller_sessions.href, e_commerce_mall_administrator_sessions.href, e_commerce_mall_super_administrator_sessions.href). Captures the full request URL at session creation for audit trail purposes.
+         * @x-autobe-specification Direct mapping from href column, common
+         *   across all 4 session tables
+         *   (e_commerce_mall_customer_sessions.href,
+         *   e_commerce_mall_seller_sessions.href,
+         *   e_commerce_mall_administrator_sessions.href,
+         *   e_commerce_mall_super_administrator_sessions.href). Captures the
+         *   full request URL at session creation for audit trail purposes.
      */
     href: string & tags.Format<"uri">;
 
@@ -203,7 +278,14 @@ export namespace IECommerceMallSession {
      *
      * Indicates the previous page before authentication, used for traffic source analysis, marketing attribution, and security monitoring.
      *
-     * @x-autobe-specification Direct mapping from referrer column, common across all 4 session tables (e_commerce_mall_customer_sessions.referrer, e_commerce_mall_seller_sessions.referrer, e_commerce_mall_administrator_sessions.referrer, e_commerce_mall_super_administrator_sessions.referrer). Captures the HTTP Referer header value at session creation for audit and analytics.
+         * @x-autobe-specification Direct mapping from referrer column, common
+         *   across all 4 session tables
+         *   (e_commerce_mall_customer_sessions.referrer,
+         *   e_commerce_mall_seller_sessions.referrer,
+         *   e_commerce_mall_administrator_sessions.referrer,
+         *   e_commerce_mall_super_administrator_sessions.referrer). Captures
+         *   the HTTP Referer header value at session creation for audit and
+         *   analytics.
      */
     referrer: string & tags.Format<"uri">;
 
@@ -212,7 +294,13 @@ export namespace IECommerceMallSession {
      *
      * Set at the moment of successful authentication. Used as the session start time for duration calculations and session listing sorted by newest first.
      *
-     * @x-autobe-specification Direct mapping from created_at column, common across all 4 session tables (e_commerce_mall_customer_sessions.created_at, e_commerce_mall_seller_sessions.created_at, e_commerce_mall_administrator_sessions.created_at, e_commerce_mall_super_administrator_sessions.created_at). Set automatically at session creation time (login).
+         * @x-autobe-specification Direct mapping from created_at column, common
+         *   across all 4 session tables
+         *   (e_commerce_mall_customer_sessions.created_at,
+         *   e_commerce_mall_seller_sessions.created_at,
+         *   e_commerce_mall_administrator_sessions.created_at,
+         *   e_commerce_mall_super_administrator_sessions.created_at). Set
+         *   automatically at session creation time (login).
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -221,7 +309,14 @@ export namespace IECommerceMallSession {
      *
      * Sessions have a mandatory expiration time for security. After this timestamp, the session is no longer accepted for authentication. Expired sessions are preserved in the database for audit trail completeness but excluded from authentication checks.
      *
-     * @x-autobe-specification Direct mapping from expired_at column, common across all 4 session tables (e_commerce_mall_customer_sessions.expired_at, e_commerce_mall_seller_sessions.expired_at, e_commerce_mall_administrator_sessions.expired_at, e_commerce_mall_super_administrator_sessions.expired_at). Non-nullable by default for security — mandatory session expiration enforced.
+         * @x-autobe-specification Direct mapping from expired_at column, common
+         *   across all 4 session tables
+         *   (e_commerce_mall_customer_sessions.expired_at,
+         *   e_commerce_mall_seller_sessions.expired_at,
+         *   e_commerce_mall_administrator_sessions.expired_at,
+         *   e_commerce_mall_super_administrator_sessions.expired_at).
+         *   Non-nullable by default for security — mandatory session expiration
+         *   enforced.
      */
     expired_at: string & tags.Format<"date-time">;
 
@@ -230,7 +325,11 @@ export namespace IECommerceMallSession {
      *
      * Compares the session identifier against the session token in the current JWT access token. Returns `true` when this is the session used for the current API request, allowing users to identify which session is currently active among multiple concurrent sessions.
      *
-     * @x-autobe-specification Computed property. Compares the session's id field against the session id stored in the current JWT access token. Returns true when the session id matches the current JWT session token's id, indicating this is the session used for the current API request.
+         * @x-autobe-specification Computed property. Compares the session's id
+         *   field against the session id stored in the current JWT access
+         *   token. Returns true when the session id matches the current JWT
+         *   session token's id, indicating this is the session used for the
+         *   current API request.
      */
     isCurrent: boolean;
   };

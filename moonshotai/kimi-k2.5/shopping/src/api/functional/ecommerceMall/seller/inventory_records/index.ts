@@ -22,7 +22,9 @@ import { IPageIEcommerceMallInventoryRecord } from "../../../../structures/IPage
  * @param props.inventoryRecordId Unique identifier of the inventory record (UUID format)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Fetch the inventory record from the ecommerce_mall_inventory_records table by the provided inventoryRecordId parameter.
+ * @x-autobe-specification Fetch the inventory record from the
+ *   ecommerce_mall_inventory_records table by the provided inventoryRecordId
+ *   parameter.
  *
  * The query should join with the ecommerce_mall_product_variants table to include basic variant information (SKU code, product association).
  *
@@ -124,7 +126,8 @@ export namespace at {
  * @param props.body Search criteria and pagination parameters for filtering inventory records
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Query ecommerce_mall_inventory_records table joined with ecommerce_mall_product_variants and ecommerce_mall_products.
+ * @x-autobe-specification Query ecommerce_mall_inventory_records table joined
+ *   with ecommerce_mall_product_variants and ecommerce_mall_products.
  *
  * Apply filters from request body:
  * - productId: Filter by specific product

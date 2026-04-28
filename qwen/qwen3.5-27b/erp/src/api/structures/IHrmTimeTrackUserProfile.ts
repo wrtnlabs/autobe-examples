@@ -12,7 +12,12 @@ export type IHrmTimeTrackUserProfile = {
    *
    * This field allows users to set a friendly name that is displayed throughout the platform instead of their email address. The display name is shared across all organizations the user belongs to and serves as the primary identity representation in user interfaces. Updates to this field are immediately reflected in all organization contexts.
    *
-   * @x-autobe-specification Computed from UserProfile.display_name field. The UserProfile entity is linked to hrm_time_track_members via member_id. This field stores the human-readable name shown throughout the platform instead of the email address. Updates to this field are immediately reflected across all organization contexts. Backend retrieves this by joining UserProfile on member_id.
+     * @x-autobe-specification Computed from UserProfile.display_name field. The
+     *   UserProfile entity is linked to hrm_time_track_members via member_id.
+     *   This field stores the human-readable name shown throughout the platform
+     *   instead of the email address. Updates to this field are immediately
+     *   reflected across all organization contexts. Backend retrieves this by
+     *   joining UserProfile on member_id.
    */
   display_name?: string | undefined;
 
@@ -21,7 +26,14 @@ export type IHrmTimeTrackUserProfile = {
    *
    * This field stores the URL of an image that represents the user visually across the platform. The avatar is displayed in user interfaces alongside the display name for easy visual identification. The URL must be valid and accessible. The avatar is shared across all organizations the user belongs to and updates are immediately reflected in all contexts.
    *
-   * @x-autobe-specification Computed from UserProfile.avatar field. The UserProfile entity is linked to hrm_time_track_members via member_id. This field stores the URL of an image that represents the user visually. The avatar is displayed in user interfaces alongside the display name for easy visual identification. The URL must be valid and accessible. The avatar is shared across all organizations the user belongs to and updates are immediately reflected in all contexts. Backend retrieves this by joining UserProfile on member_id.
+     * @x-autobe-specification Computed from UserProfile.avatar field. The
+     *   UserProfile entity is linked to hrm_time_track_members via member_id.
+     *   This field stores the URL of an image that represents the user
+     *   visually. The avatar is displayed in user interfaces alongside the
+     *   display name for easy visual identification. The URL must be valid and
+     *   accessible. The avatar is shared across all organizations the user
+     *   belongs to and updates are immediately reflected in all contexts.
+     *   Backend retrieves this by joining UserProfile on member_id.
    */
   avatar: (string & tags.Format<"url">) | null;
 
@@ -30,7 +42,14 @@ export type IHrmTimeTrackUserProfile = {
    *
    * This field stores the user's phone number for contact purposes. The phone number is shared across all organizations the user belongs to and can be used for notifications, two-factor authentication, or other communication needs. The format is validated by the backend to ensure it follows acceptable phone number patterns.
    *
-   * @x-autobe-specification Computed from UserProfile.phone_number field. The UserProfile entity is linked to hrm_time_track_members via member_id. This field stores the user's phone number for contact purposes. The phone number is shared across all organizations the user belongs to and can be used for notifications, two-factor authentication, or other communication needs. The format is validated by the backend to ensure it follows acceptable phone number patterns. Backend retrieves this by joining UserProfile on member_id.
+     * @x-autobe-specification Computed from UserProfile.phone_number field. The
+     *   UserProfile entity is linked to hrm_time_track_members via member_id.
+     *   This field stores the user's phone number for contact purposes. The
+     *   phone number is shared across all organizations the user belongs to and
+     *   can be used for notifications, two-factor authentication, or other
+     *   communication needs. The format is validated by the backend to ensure
+     *   it follows acceptable phone number patterns. Backend retrieves this by
+     *   joining UserProfile on member_id.
    */
   phone_number?: string | null | undefined;
 };
@@ -51,7 +70,13 @@ export namespace IHrmTimeTrackUserProfile {
      *
      * This field allows users to set a friendly name that is displayed throughout the platform instead of their email address. The display name is shared across all organizations the user belongs to and serves as the primary identity representation in user interfaces. Updates to this field are immediately reflected in all organization contexts.
      *
-     * @x-autobe-specification Maps to UserProfile.display_name field. This is a computed/conceptual property stored in the UserProfile entity (separate from hrm_time_track_members table). When updated, the backend finds the UserProfile record associated with the authenticated member_id and updates the display_name field. The display_name is used throughout the platform as the human-readable identifier instead of showing the email address.
+         * @x-autobe-specification Maps to UserProfile.display_name field. This
+         *   is a computed/conceptual property stored in the UserProfile entity
+         *   (separate from hrm_time_track_members table). When updated, the
+         *   backend finds the UserProfile record associated with the
+         *   authenticated member_id and updates the display_name field. The
+         *   display_name is used throughout the platform as the human-readable
+         *   identifier instead of showing the email address.
      */
     display_name?: string | undefined;
 
@@ -60,7 +85,14 @@ export namespace IHrmTimeTrackUserProfile {
      *
      * This field stores the URL of an image that represents the user visually across the platform. The avatar is displayed in user interfaces alongside the display name for easy visual identification. The URL must be valid and accessible. The avatar is shared across all organizations the user belongs to and updates are immediately reflected in all contexts.
      *
-     * @x-autobe-specification Maps to UserProfile.avatar field. This is a computed/conceptual property stored in the UserProfile entity (separate from hrm_time_track_members table). When updated, the backend finds the UserProfile record associated with the authenticated member_id and updates the avatar field. The avatar must be a valid URL format (validated by OpenAPI schema with format: 'url'). The backend may perform additional validation to ensure the URL is accessible and points to an image file.
+         * @x-autobe-specification Maps to UserProfile.avatar field. This is a
+         *   computed/conceptual property stored in the UserProfile entity
+         *   (separate from hrm_time_track_members table). When updated, the
+         *   backend finds the UserProfile record associated with the
+         *   authenticated member_id and updates the avatar field. The avatar
+         *   must be a valid URL format (validated by OpenAPI schema with
+         *   format: 'url'). The backend may perform additional validation to
+         *   ensure the URL is accessible and points to an image file.
      */
     avatar?: (string & tags.Format<"url">) | undefined;
 
@@ -69,7 +101,14 @@ export namespace IHrmTimeTrackUserProfile {
      *
      * This field stores the user's phone number for contact purposes. The phone number is shared across all organizations the user belongs to and can be used for notifications, two-factor authentication, or other communication needs. The format is validated by the backend to ensure it follows acceptable phone number patterns.
      *
-     * @x-autobe-specification Maps to UserProfile.phone_number field. This is a computed/conceptual property stored in the UserProfile entity (separate from hrm_time_track_members table). When updated, the backend finds the UserProfile record associated with the authenticated member_id and updates the phone_number field. The phone number format is validated by the backend to ensure it follows acceptable phone number patterns. The specific validation rules may vary based on regional requirements.
+         * @x-autobe-specification Maps to UserProfile.phone_number field. This
+         *   is a computed/conceptual property stored in the UserProfile entity
+         *   (separate from hrm_time_track_members table). When updated, the
+         *   backend finds the UserProfile record associated with the
+         *   authenticated member_id and updates the phone_number field. The
+         *   phone number format is validated by the backend to ensure it
+         *   follows acceptable phone number patterns. The specific validation
+         *   rules may vary based on regional requirements.
      */
     phone_number?: string | undefined;
   };

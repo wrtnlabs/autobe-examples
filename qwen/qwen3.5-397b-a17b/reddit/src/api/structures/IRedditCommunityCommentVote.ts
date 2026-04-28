@@ -18,8 +18,11 @@ export type IRedditCommunityCommentVote = {
    *
    * When a member changes their vote, this value is updated. When a member removes their vote, the vote record is soft-deleted rather than changing this value.
    *
-   * @x-autobe-specification Direct mapping from reddit_community_comment_votes.value. Integer column with business constraint: +1 for upvote, -1 for downvote. Application-layer validation enforces allowed values.
-   * @x-autobe-database-schema-property value
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_comment_votes.value. Integer column with business
+     *   constraint: +1 for upvote, -1 for downvote. Application-layer
+     *   validation enforces allowed values.
+     * @x-autobe-database-schema-property value
    */
   value: number & tags.Type<"int32">;
 
@@ -30,8 +33,10 @@ export type IRedditCommunityCommentVote = {
    *
    * Remains constant throughout the vote's lifecycle, even when the vote value changes or the vote is soft-deleted.
    *
-   * @x-autobe-specification Direct mapping from reddit_community_comment_votes.id. UUID format primary key. Auto-generated on vote creation.
-   * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_comment_votes.id. UUID format primary key.
+     *   Auto-generated on vote creation.
+     * @x-autobe-database-schema-property id
    */
   id: string & tags.Format<"uuid">;
 
@@ -42,8 +47,10 @@ export type IRedditCommunityCommentVote = {
    *
    * Used for audit trails and determining vote age.
    *
-   * @x-autobe-specification Direct mapping from reddit_community_comment_votes.created_at. DateTime with date-time format. Auto-set to current timestamp on vote creation.
-   * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_comment_votes.created_at. DateTime with date-time
+     *   format. Auto-set to current timestamp on vote creation.
+     * @x-autobe-database-schema-property created_at
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -54,8 +61,11 @@ export type IRedditCommunityCommentVote = {
    *
    * Used for optimistic locking to handle concurrent vote modifications.
    *
-   * @x-autobe-specification Direct mapping from reddit_community_comment_votes.updated_at. DateTime with date-time format. Auto-updated on any vote modification including value changes and soft-delete.
-   * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_comment_votes.updated_at. DateTime with date-time
+     *   format. Auto-updated on any vote modification including value changes
+     *   and soft-delete.
+     * @x-autobe-database-schema-property updated_at
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -66,8 +76,11 @@ export type IRedditCommunityCommentVote = {
    *
    * Soft-delete preserves the vote record for audit purposes and allows potential recovery, rather than permanently deleting the record.
    *
-   * @x-autobe-specification Direct mapping from reddit_community_comment_votes.deleted_at. DateTime with date-time format, nullable. Null when vote is active, set to current timestamp when vote is removed.
-   * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_comment_votes.deleted_at. DateTime with date-time
+     *   format, nullable. Null when vote is active, set to current timestamp
+     *   when vote is removed.
+     * @x-autobe-database-schema-property deleted_at
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 
@@ -78,8 +91,10 @@ export type IRedditCommunityCommentVote = {
    *
    * Provides context about who voted, enabling users to see voting patterns and member engagement.
    *
-   * @x-autobe-specification Relation mapping via member_id FK to reddit_community_members. Returns IRedditCommunityMember.ISummary with voter profile information. Joined on read operations.
-   * @x-autobe-database-schema-property member
+     * @x-autobe-specification Relation mapping via member_id FK to
+     *   reddit_community_members. Returns IRedditCommunityMember.ISummary with
+     *   voter profile information. Joined on read operations.
+     * @x-autobe-database-schema-property member
    */
   member: IRedditCommunityMember.ISummary;
 };

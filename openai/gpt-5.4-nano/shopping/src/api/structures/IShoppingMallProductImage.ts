@@ -8,64 +8,82 @@ export type IShoppingMallProductImage = {
   /**
    * Unique identifier of the product image asset.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_product_images.id. Treat as immutable identifier for the image asset; used for lookups by id in detail endpoints.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_product_images.id. Treat as immutable identifier for the
+     *   image asset; used for lookups by id in detail endpoints.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Identifier of the product that owns this image.
    *
-   * @x-autobe-database-schema-property shopping_mall_product_id
-   * @x-autobe-specification Direct mapping from shopping_mall_product_images.shopping_mall_product_id. Identifies the parent product this image belongs to.
+     * @x-autobe-database-schema-property shopping_mall_product_id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_product_images.shopping_mall_product_id. Identifies the
+     *   parent product this image belongs to.
    */
   shopping_mall_product_id: string & tags.Format<"uuid">;
 
   /**
    * Public URL/URI of the product image.
    *
-   * @x-autobe-database-schema-property href
-   * @x-autobe-specification Direct mapping from shopping_mall_product_images.href. Store and return the public URI/URL string for rendering the image.
+     * @x-autobe-database-schema-property href
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_product_images.href. Store and return the public URI/URL
+     *   string for rendering the image.
    */
   href: string & tags.MinLength<1> & tags.Format<"url">;
 
   /**
    * Alternative text for the image (accessibility).
    *
-   * @x-autobe-database-schema-property alt_text
-   * @x-autobe-specification Direct mapping from shopping_mall_product_images.alt_text. Used as accessibility/SEO alternative text for the image.
+     * @x-autobe-database-schema-property alt_text
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_product_images.alt_text. Used as accessibility/SEO
+     *   alternative text for the image.
    */
   alt_text: string & tags.MinLength<1>;
 
   /**
    * Ordering position of this image within the product’s image gallery.
    *
-   * @x-autobe-database-schema-property display_order
-   * @x-autobe-specification Direct mapping from shopping_mall_product_images.display_order. Lower values are displayed earlier in the product’s image gallery order.
+     * @x-autobe-database-schema-property display_order
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_product_images.display_order. Lower values are displayed
+     *   earlier in the product’s image gallery order.
    */
   display_order: number & tags.Type<"int32">;
 
   /**
    * Timestamp when this image record was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from shopping_mall_product_images.created_at. Serialized as ISO-8601 date-time string.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_product_images.created_at. Serialized as ISO-8601
+     *   date-time string.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when this image record was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from shopping_mall_product_images.updated_at. Serialized as ISO-8601 date-time string.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_product_images.updated_at. Serialized as ISO-8601
+     *   date-time string.
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * Soft-deletion timestamp. Null means the image is active; non-null means the image is hidden.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from shopping_mall_product_images.deleted_at. If null, the image is active; if non-null, the image is soft-deleted and hidden from active storefront listings by higher-level visibility rules. Serialize as ISO-8601 date-time string when non-null.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_product_images.deleted_at. If null, the image is active;
+     *   if non-null, the image is soft-deleted and hidden from active
+     *   storefront listings by higher-level visibility rules. Serialize as
+     *   ISO-8601 date-time string when non-null.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -77,64 +95,80 @@ export namespace IShoppingMallProductImage {
     /**
      * Unique identifier of the product image asset.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_product_images.id to this.id. Return as a string UUID.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_images.id to this.id. Return as a string
+         *   UUID.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Public URI/URL where the image can be fetched for storefront rendering.
      *
-     * @x-autobe-database-schema-property href
-     * @x-autobe-specification Direct mapping from shopping_mall_product_images.href to this.href. Return the stored public URI/string.
+         * @x-autobe-database-schema-property href
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_images.href to this.href. Return the stored
+         *   public URI/string.
      */
     href: string & tags.Format<"uri">;
 
     /**
      * Alternative text for accessibility and improved rendering.
      *
-     * @x-autobe-database-schema-property alt_text
-     * @x-autobe-specification Direct mapping from shopping_mall_product_images.alt_text to this.alt_text.
+         * @x-autobe-database-schema-property alt_text
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_images.alt_text to this.alt_text.
      */
     alt_text: string;
 
     /**
      * Sort order of this image among the images of the same product.
      *
-     * @x-autobe-database-schema-property display_order
-     * @x-autobe-specification Direct mapping from shopping_mall_product_images.display_order to this.display_order. Lower numbers are displayed earlier.
+         * @x-autobe-database-schema-property display_order
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_images.display_order to this.display_order.
+         *   Lower numbers are displayed earlier.
      */
     display_order: number & tags.Type<"int32">;
 
     /**
      * Identifier of the product that owns this image.
      *
-     * @x-autobe-database-schema-property shopping_mall_product_id
-     * @x-autobe-specification Direct mapping from shopping_mall_product_images.shopping_mall_product_id to this.shopping_mall_product_id.
+         * @x-autobe-database-schema-property shopping_mall_product_id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_images.shopping_mall_product_id to
+         *   this.shopping_mall_product_id.
      */
     shopping_mall_product_id: string & tags.Format<"uuid">;
 
     /**
      * Timestamp when the image record was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_product_images.created_at to this.created_at. Serialize as ISO-8601 date-time string.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_images.created_at to this.created_at.
+         *   Serialize as ISO-8601 date-time string.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when the image record was last updated.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from shopping_mall_product_images.updated_at to this.updated_at. Serialize as ISO-8601 date-time string.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_images.updated_at to this.updated_at.
+         *   Serialize as ISO-8601 date-time string.
      */
     updated_at: string & tags.Format<"date-time">;
 
     /**
      * Soft-deletion timestamp for the image. Null means the image is currently active/visible.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from shopping_mall_product_images.deleted_at to this.deleted_at. If the DB value is null, return null; otherwise serialize as ISO-8601 date-time string.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_images.deleted_at to this.deleted_at. If the
+         *   DB value is null, return null; otherwise serialize as ISO-8601
+         *   date-time string.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };
@@ -146,24 +180,38 @@ export namespace IShoppingMallProductImage {
     /**
      * Public URL/URI of the product image asset to be rendered on the storefront.
      *
-     * @x-autobe-database-schema-property href
-     * @x-autobe-specification Direct mapping from shopping_mall_product_images.href. Treat as a partial field: update only when the client provides href. Validate that it is a non-empty URL/URI-compatible string (format url) before persisting.
+         * @x-autobe-database-schema-property href
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_images.href. Treat as a partial field: update
+         *   only when the client provides href. Validate that it is a non-empty
+         *   URL/URI-compatible string (format url) before persisting.
      */
     href?: (string & tags.Format<"url">) | undefined;
 
     /**
      * Alternative text for the image (accessibility and improved storefront rendering).
      *
-     * @x-autobe-database-schema-property alt_text
-     * @x-autobe-specification Direct mapping from shopping_mall_product_images.alt_text. Treat as a partial field: update only when provided. Validate it according to business rules for alt text (non-empty text in practice, with DTO constraints applied).
+         * @x-autobe-database-schema-property alt_text
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_images.alt_text. Treat as a partial field:
+         *   update only when provided. Validate it according to business rules
+         *   for alt text (non-empty text in practice, with DTO constraints
+         *   applied).
      */
     alt_text?: string | undefined;
 
     /**
      * Sort order of this image within the owning product’s image set; lower values are displayed earlier.
      *
-     * @x-autobe-database-schema-property display_order
-     * @x-autobe-specification Direct mapping from shopping_mall_product_images.display_order. Treat as a partial field: update only when provided. Validate display_order as an integer >= 0. If this value changes, ensure storefront ordering coherence for all images under the same shopping_mall_product_id according to application rules (e.g., the first-by-order image is treated as the main/thumbnail). Apply concurrency-safe ordering update within a transaction.
+         * @x-autobe-database-schema-property display_order
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_images.display_order. Treat as a partial
+         *   field: update only when provided. Validate display_order as an
+         *   integer >= 0. If this value changes, ensure storefront ordering
+         *   coherence for all images under the same shopping_mall_product_id
+         *   according to application rules (e.g., the first-by-order image is
+         *   treated as the main/thumbnail). Apply concurrency-safe ordering
+         *   update within a transaction.
      */
     display_order?: (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };
@@ -175,32 +223,44 @@ export namespace IShoppingMallProductImage {
     /**
      * Identifier of the product that this new image belongs to.
      *
-     * @x-autobe-database-schema-property shopping_mall_product_id
-     * @x-autobe-specification Direct mapping to shopping_mall_product_images.shopping_mall_product_id (UUID). Used to locate shopping_mall_products for seller ownership authorization before insert.
+         * @x-autobe-database-schema-property shopping_mall_product_id
+         * @x-autobe-specification Direct mapping to
+         *   shopping_mall_product_images.shopping_mall_product_id (UUID). Used
+         *   to locate shopping_mall_products for seller ownership authorization
+         *   before insert.
      */
     shopping_mall_product_id: string & tags.Format<"uuid">;
 
     /**
      * Public URL/URI of the product image to render on the storefront.
      *
-     * @x-autobe-database-schema-property href
-     * @x-autobe-specification Direct mapping to shopping_mall_product_images.href. Validate that the provided URI/URL string length fits the database limit (VarChar(80000)) and serialize it as stored.
+         * @x-autobe-database-schema-property href
+         * @x-autobe-specification Direct mapping to
+         *   shopping_mall_product_images.href. Validate that the provided
+         *   URI/URL string length fits the database limit (VarChar(80000)) and
+         *   serialize it as stored.
      */
     href: string & tags.MaxLength<80000> & tags.Format<"uri">;
 
     /**
      * Alternative text for the image (accessibility description).
      *
-     * @x-autobe-database-schema-property alt_text
-     * @x-autobe-specification Direct mapping to shopping_mall_product_images.alt_text. Must be a non-null string as required by the DB schema and used for accessibility.
+         * @x-autobe-database-schema-property alt_text
+         * @x-autobe-specification Direct mapping to
+         *   shopping_mall_product_images.alt_text. Must be a non-null string as
+         *   required by the DB schema and used for accessibility.
      */
     alt_text: string;
 
     /**
      * Gallery ordering value for this image within the product’s image set (lower values appear earlier).
      *
-     * @x-autobe-database-schema-property display_order
-     * @x-autobe-specification If the client provides display_order, persist it as an integer into shopping_mall_product_images.display_order. If display_order is omitted, compute next order as max(display_order)+1 among active images (deleted_at IS NULL) for the same shopping_mall_product_id, then persist the computed value.
+         * @x-autobe-database-schema-property display_order
+         * @x-autobe-specification If the client provides display_order, persist
+         *   it as an integer into shopping_mall_product_images.display_order.
+         *   If display_order is omitted, compute next order as
+         *   max(display_order)+1 among active images (deleted_at IS NULL) for
+         *   the same shopping_mall_product_id, then persist the computed value.
      */
     display_order?: (number & tags.Type<"int32">) | undefined;
   };
@@ -212,54 +272,68 @@ export namespace IShoppingMallProductImage {
     /**
      * Optional product UUID to scope the image search to a specific seller product.
      *
-     * @x-autobe-database-schema-property shopping_mall_product_id
-     * @x-autobe-specification If provided, filter shopping_mall_product_images.shopping_mall_product_id = shoppingMallProductId (after verifying seller ownership via join).
+         * @x-autobe-database-schema-property shopping_mall_product_id
+         * @x-autobe-specification If provided, filter
+         *   shopping_mall_product_images.shopping_mall_product_id =
+         *   shoppingMallProductId (after verifying seller ownership via join).
      */
     shoppingMallProductId?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Optional keyword to search within the image href (URL/URI).
      *
-     * @x-autobe-database-schema-property href
-     * @x-autobe-specification If provided and non-empty, apply a substring/ILIKE keyword match against shopping_mall_product_images.href.
+         * @x-autobe-database-schema-property href
+         * @x-autobe-specification If provided and non-empty, apply a
+         *   substring/ILIKE keyword match against
+         *   shopping_mall_product_images.href.
      */
     hrefKeyword?: string | undefined;
 
     /**
      * Optional keyword to search within the image alt text for accessibility.
      *
-     * @x-autobe-database-schema-property alt_text
-     * @x-autobe-specification If provided and non-empty, apply a substring/ILIKE keyword match against shopping_mall_product_images.alt_text.
+         * @x-autobe-database-schema-property alt_text
+         * @x-autobe-specification If provided and non-empty, apply a
+         *   substring/ILIKE keyword match against
+         *   shopping_mall_product_images.alt_text.
      */
     altTextKeyword?: string | undefined;
 
     /**
      * Optional soft-deletion state filter: null returns active images; a timestamp returns images deleted at that exact time.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification If deletedAt is null, filter shopping_mall_product_images.deleted_at IS NULL. If deletedAt is a date-time string, filter shopping_mall_product_images.deleted_at = deletedAt.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification If deletedAt is null, filter
+         *   shopping_mall_product_images.deleted_at IS NULL. If deletedAt is a
+         *   date-time string, filter shopping_mall_product_images.deleted_at =
+         *   deletedAt.
      */
     deletedAt?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * 1-indexed page number for the result set (must be >= 1).
      *
-     * @x-autobe-specification 1-indexed page number. Compute OFFSET = (page - 1) * limit.
+         * @x-autobe-specification 1-indexed page number. Compute OFFSET = (page
+         *   - 1) * limit.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of image records to return per page (must be >= 1).
      *
-     * @x-autobe-specification Page size (must be >= 1). Use as LIMIT in pagination.
+         * @x-autobe-specification Page size (must be >= 1). Use as LIMIT in
+         *   pagination.
      */
     limit?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Sort selector. Currently supports ordering by product image display order ascending.
      *
-     * @x-autobe-database-schema-property display_order
-     * @x-autobe-specification Only supported constant: sort='displayOrderAsc'. When used, order by shopping_mall_product_images.display_order ASC, then by shopping_mall_product_images.created_at DESC as a tie-breaker.
+         * @x-autobe-database-schema-property display_order
+         * @x-autobe-specification Only supported constant:
+         *   sort='displayOrderAsc'. When used, order by
+         *   shopping_mall_product_images.display_order ASC, then by
+         *   shopping_mall_product_images.created_at DESC as a tie-breaker.
      */
     sort?: "displayOrderAsc" | undefined;
   };

@@ -23,8 +23,8 @@ import { IMultiUserTodoTodo } from "../../../../../structures/IMultiUserTodoTodo
  * @param props.body Bulk request containing the todo ids to move from the authenticated member's normal list into trash.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Authorization/actor gating:
- * - Allow only authenticated member access. Deny guest.
+ * @x-autobe-specification Authorization/actor gating: - Allow only
+ *   authenticated member access. Deny guest.
  *
  * Request validation:
  * - Validate that the request body contains an array of todo ids.

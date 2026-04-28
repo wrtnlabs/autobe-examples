@@ -24,9 +24,10 @@ export class RedditcloneCommunitiesFeedsController {
    * @param connection
    * @param communityId The unique identifier of the community whose feed is being requested (global scope).
    * @param body Filter, sort, and pagination parameters for the community feed. Includes sort_type (hot/new/top/controversial), time_filter for 'top' sorting, after_cursor for pagination, and first_page_size for page size.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query the reddit_clone_posts table for posts belonging to the specified community ID.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query the reddit_clone_posts table for posts
+     *   belonging to the specified community ID.
    *
    * **Query Logic**:
    * 1. Filter posts by community_id = {communityId}

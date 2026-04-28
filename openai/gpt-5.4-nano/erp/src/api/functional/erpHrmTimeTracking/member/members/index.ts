@@ -28,7 +28,8 @@ import { IPageIErpHrmTimeTrackingMember } from "../../../../structures/IPageIErp
  * @param props.body Search and pagination criteria for member directory browsing within the selected organization.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implement as a paginated search/list operation for members.
+ * @x-autobe-specification Implement as a paginated search/list operation for
+ *   members.
  *
  * - Validate authorization: require that the caller has employee view access in the currently selected organization context. Deny without returning any data if access is missing.
  * - Resolve organization scope: the caller’s selected organization determines which member records are visible.

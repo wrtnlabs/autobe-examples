@@ -22,7 +22,9 @@ import { IECommerceMallOrder } from "../../../../../structures/IECommerceMallOrd
  * @param props.body Optional specification of which order items to force refund. If `orderItemIds` is omitted or empty, all eligible items in the order are force refunded. If specific item IDs are provided, only those items are force refunded.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor superAdministrator
- * @x-autobe-specification Validate that the order exists by querying `e_commerce_mall_orders` with the provided `orderCode`. If no order found, reject with a not-found error.
+ * @x-autobe-specification Validate that the order exists by querying
+ *   `e_commerce_mall_orders` with the provided `orderCode`. If no order found,
+ *   reject with a not-found error.
  *
  * If the request body includes an `orderItemIds` array, load only those specific `e_commerce_mall_order_items` that belong to this order. If no `orderItemIds` is provided, load all order items belonging to this order.
  *

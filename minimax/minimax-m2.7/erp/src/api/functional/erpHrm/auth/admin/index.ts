@@ -17,14 +17,14 @@ import { IErpHrmAdmin } from "../../../../structures/IErpHrmAdmin";
  * @param props.body Registration data for new admin account including email, password, and display name
  * @x-autobe-authorization-type join
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification 1. Receive IErpHrmAdmin.IJoin request body with email, password, displayName, phone (optional), avatarUri (optional)
- * 2. Validate email format and uniqueness in erp_hrm_admins table
- * 3. Validate password strength (min 8 chars, complexity requirements)
- * 4. Hash password using bcrypt
- * 5. Create new erp_hrm_admins record with provided data
- * 6. Generate JWT access and refresh tokens with admin ID in payload
- * 7. Create erp_hrm_admin_sessions record with IP, user agent, expiration (24 hours for access token)
- * 8. Return IErpHrmAdmin.IAuthorized with tokens, admin details
+ * @x-autobe-specification 1. Receive IErpHrmAdmin.IJoin request body with
+ *   email, password, displayName, phone (optional), avatarUri (optional) 2.
+ *   Validate email format and uniqueness in erp_hrm_admins table 3. Validate
+ *   password strength (min 8 chars, complexity requirements) 4. Hash password
+ *   using bcrypt 5. Create new erp_hrm_admins record with provided data 6.
+ *   Generate JWT access and refresh tokens with admin ID in payload 7. Create
+ *   erp_hrm_admin_sessions record with IP, user agent, expiration (24 hours for
+ *   access token) 8. Return IErpHrmAdmin.IAuthorized with tokens, admin details
  *
  * Edge cases:
  * - Duplicate email: return 409 Conflict
@@ -120,12 +120,13 @@ export namespace join {
  * @param props.body Login credentials containing email and password for admin authentication
  * @x-autobe-authorization-type login
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification 1. Receive IErpHrmAdmin.ILogin request body with email and password
- * 2. Query erp_hrm_admins table by email
- * 3. Verify password against stored password_hash using bcrypt
- * 4. If valid, generate JWT access token (1 hour expiry) and refresh token (7 days expiry)
- * 5. Create erp_hrm_admin_sessions record with client IP, current URL, referrer, and expiration
- * 6. Return IErpHrmAdmin.IAuthorized with tokens and admin profile
+ * @x-autobe-specification 1. Receive IErpHrmAdmin.ILogin request body with
+ *   email and password 2. Query erp_hrm_admins table by email 3. Verify
+ *   password against stored password_hash using bcrypt 4. If valid, generate
+ *   JWT access token (1 hour expiry) and refresh token (7 days expiry) 5.
+ *   Create erp_hrm_admin_sessions record with client IP, current URL, referrer,
+ *   and expiration 6. Return IErpHrmAdmin.IAuthorized with tokens and admin
+ *   profile
  *
  * Edge cases:
  * - Admin not found: return 401 Unauthorized with generic message
@@ -221,13 +222,12 @@ export namespace login {
  * @param props.body Refresh token for obtaining new access token without re-authentication
  * @x-autobe-authorization-type refresh
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification 1. Receive IErpHrmAdmin.IRefresh request body with refreshToken
- * 2. Validate refresh token signature and expiration
- * 3. Extract admin ID from token payload
- * 4. Query erp_hrm_admin_sessions to verify session exists and not expired
- * 5. Generate new access token and optionally new refresh token (token rotation)
- * 6. Update session record with new expiration
- * 7. Return IErpHrmAdmin.IAuthorized with new tokens
+ * @x-autobe-specification 1. Receive IErpHrmAdmin.IRefresh request body with
+ *   refreshToken 2. Validate refresh token signature and expiration 3. Extract
+ *   admin ID from token payload 4. Query erp_hrm_admin_sessions to verify
+ *   session exists and not expired 5. Generate new access token and optionally
+ *   new refresh token (token rotation) 6. Update session record with new
+ *   expiration 7. Return IErpHrmAdmin.IAuthorized with new tokens
  *
  * Edge cases:
  * - Expired refresh token: return 401 Unauthorized

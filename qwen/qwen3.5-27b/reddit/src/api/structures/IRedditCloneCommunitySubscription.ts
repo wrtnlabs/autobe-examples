@@ -15,8 +15,10 @@ export type IRedditCloneCommunitySubscription = {
    *
    * This UUID serves as the primary key for the subscription entity and is used to reference the subscription in API operations and database queries.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from reddit_clone_community_subscriptions.id column. This is the primary key UUID that uniquely identifies each subscription record.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_community_subscriptions.id column. This is the primary key
+     *   UUID that uniquely identifies each subscription record.
    */
   id: string & tags.Format<"uuid">;
 
@@ -25,8 +27,12 @@ export type IRedditCloneCommunitySubscription = {
    *
    * This object contains the member's summary information including their email, username, and account creation timestamp. It represents the authenticated user who established this subscription.
    *
-   * @x-autobe-database-schema-property member
-   * @x-autobe-specification Relation object created by JOIN on reddit_clone_member_id to reddit_clone_members table. Returns IRedditCloneMember.ISummary with member's email, username, and creation timestamp. The FK column reddit_clone_member_id is excluded from the DTO in favor of this object representation.
+     * @x-autobe-database-schema-property member
+     * @x-autobe-specification Relation object created by JOIN on
+     *   reddit_clone_member_id to reddit_clone_members table. Returns
+     *   IRedditCloneMember.ISummary with member's email, username, and creation
+     *   timestamp. The FK column reddit_clone_member_id is excluded from the
+     *   DTO in favor of this object representation.
    */
   member: IRedditCloneMember.ISummary;
 
@@ -35,8 +41,13 @@ export type IRedditCloneCommunitySubscription = {
    *
    * This object contains the community's summary information including its unique name, description, icon image, owner profile, subscriber count, and creation timestamp. It represents the target community of this subscription.
    *
-   * @x-autobe-database-schema-property community
-   * @x-autobe-specification Relation object created by JOIN on reddit_clone_community_id to reddit_clone_communities table. Returns IRedditCloneCommunity.ISummary with community's id, name, description, icon, owner, subscriber_count, and created_at. The FK column reddit_clone_community_id is excluded from the DTO in favor of this object representation.
+     * @x-autobe-database-schema-property community
+     * @x-autobe-specification Relation object created by JOIN on
+     *   reddit_clone_community_id to reddit_clone_communities table. Returns
+     *   IRedditCloneCommunity.ISummary with community's id, name, description,
+     *   icon, owner, subscriber_count, and created_at. The FK column
+     *   reddit_clone_community_id is excluded from the DTO in favor of this
+     *   object representation.
    */
   community: IRedditCloneCommunity.ISummary;
 
@@ -45,8 +56,12 @@ export type IRedditCloneCommunitySubscription = {
    *
    * This field records when the user first subscribed to the community. It is used for sorting subscriptions by join date and tracking community growth over time. The timestamp is in ISO 8601 format with timezone information.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from reddit_clone_community_subscriptions.created_at column. Records the exact date and time when the subscription was first created. This timestamp is set automatically by the database on INSERT and cannot be modified by clients.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_community_subscriptions.created_at column. Records the
+     *   exact date and time when the subscription was first created. This
+     *   timestamp is set automatically by the database on INSERT and cannot be
+     *   modified by clients.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -55,8 +70,11 @@ export type IRedditCloneCommunitySubscription = {
    *
    * This field tracks the most recent modification to the subscription record. It is automatically updated by the database whenever any field in the subscription is modified, providing an audit trail of changes.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from reddit_clone_community_subscriptions.updated_at column. Tracks the most recent modification to the subscription record. Updated automatically by the database on any UPDATE operation to maintain audit trail.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_community_subscriptions.updated_at column. Tracks the most
+     *   recent modification to the subscription record. Updated automatically
+     *   by the database on any UPDATE operation to maintain audit trail.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -65,8 +83,12 @@ export type IRedditCloneCommunitySubscription = {
    *
    * This nullable field supports soft-delete functionality. When null, the subscription is active and the member can create posts in the community. When set to a timestamp, it indicates the user has unsubscribed while preserving the record for audit and historical purposes.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from reddit_clone_community_subscriptions.deleted_at column. Nullable DateTime field for soft-delete functionality. When null, the subscription is active. When set, indicates the user has unsubscribed from the community while preserving the record for audit purposes.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_community_subscriptions.deleted_at column. Nullable
+     *   DateTime field for soft-delete functionality. When null, the
+     *   subscription is active. When set, indicates the user has unsubscribed
+     *   from the community while preserving the record for audit purposes.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -84,8 +106,10 @@ export namespace IRedditCloneCommunitySubscription {
      *
      * This UUID serves as the primary key for the subscription entity, allowing precise identification and referencing of individual subscription records across the system.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from reddit_clone_community_subscriptions.id. Primary key UUID identifying the subscription record.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_community_subscriptions.id. Primary key UUID
+         *   identifying the subscription record.
      */
     id: string & tags.Format<"uuid">;
 
@@ -94,8 +118,10 @@ export namespace IRedditCloneCommunitySubscription {
      *
      * Records the exact date and time when the user first subscribed to the community. Used for sorting subscriptions by join date and tracking community growth over time.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from reddit_clone_community_subscriptions.created_at. Records when the member first subscribed to the community.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_community_subscriptions.created_at. Records when the
+         *   member first subscribed to the community.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -104,8 +130,10 @@ export namespace IRedditCloneCommunitySubscription {
      *
      * Tracks modifications to the subscription record. Updated on any changes to maintain audit trail of subscription modifications.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from reddit_clone_community_subscriptions.updated_at. Tracks the most recent modification to the subscription record.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_community_subscriptions.updated_at. Tracks the most
+         *   recent modification to the subscription record.
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -114,8 +142,11 @@ export namespace IRedditCloneCommunitySubscription {
      *
      * Contains the member's identification information including their public profile details. This reference allows viewing who has subscribed to the community without exposing internal foreign key values.
      *
-     * @x-autobe-database-schema-property member
-     * @x-autobe-specification Join from reddit_clone_community_subscriptions.reddit_clone_member_id to reddit_clone_members.id. Returns IRedditCloneMember.ISummary containing member identification details.
+         * @x-autobe-database-schema-property member
+         * @x-autobe-specification Join from
+         *   reddit_clone_community_subscriptions.reddit_clone_member_id to
+         *   reddit_clone_members.id. Returns IRedditCloneMember.ISummary
+         *   containing member identification details.
      */
     member: IRedditCloneMember.ISummary;
 
@@ -124,8 +155,11 @@ export namespace IRedditCloneCommunitySubscription {
      *
      * Contains essential community information including name, description, icon image, owner profile, and subscriber count. This reference provides context about which community the subscription belongs to.
      *
-     * @x-autobe-database-schema-property community
-     * @x-autobe-specification Join from reddit_clone_community_subscriptions.reddit_clone_community_id to reddit_clone_communities.id. Returns IRedditCloneCommunity.ISummary containing community name, description, icon, and subscriber count.
+         * @x-autobe-database-schema-property community
+         * @x-autobe-specification Join from
+         *   reddit_clone_community_subscriptions.reddit_clone_community_id to
+         *   reddit_clone_communities.id. Returns IRedditCloneCommunity.ISummary
+         *   containing community name, description, icon, and subscriber count.
      */
     community: IRedditCloneCommunity.ISummary;
   };
@@ -143,7 +177,11 @@ export namespace IRedditCloneCommunitySubscription {
      *
      * Performs a partial, case-insensitive text search on community names. Enter any substring to find matching communities in the subscription list. For example, 'tech' will match communities named 'Technology Hub', 'Tech Talk', or 'Advanced Tech'. This filter is applied via JOIN with the communities table.
      *
-     * @x-autobe-specification Computed filter parameter for partial string matching on community name. Performs LIKE query on reddit_clone_communities.name via JOIN with reddit_clone_community_subscriptions.reddit_clone_community_id. Case-insensitive partial match enabled for flexible search.
+         * @x-autobe-specification Computed filter parameter for partial string
+         *   matching on community name. Performs LIKE query on
+         *   reddit_clone_communities.name via JOIN with
+         *   reddit_clone_community_subscriptions.reddit_clone_community_id.
+         *   Case-insensitive partial match enabled for flexible search.
      */
     communityName?: string | undefined;
 
@@ -152,7 +190,11 @@ export namespace IRedditCloneCommunitySubscription {
      *
      * Specify an ISO 8601 datetime string to include only subscriptions created at or after this timestamp. Useful for finding recent subscriptions or filtering by a specific time period. Example format: '2024-01-15T10:30:00Z'. Combines with subscribedBefore for date range queries.
      *
-     * @x-autobe-specification Computed filter parameter for date range filtering on subscription creation timestamp. Filters reddit_clone_community_subscriptions.created_at >= provided ISO 8601 datetime value. Only includes subscriptions created on or after the specified date and time.
+         * @x-autobe-specification Computed filter parameter for date range
+         *   filtering on subscription creation timestamp. Filters
+         *   reddit_clone_community_subscriptions.created_at >= provided ISO
+         *   8601 datetime value. Only includes subscriptions created on or
+         *   after the specified date and time.
      */
     subscribedAfter?: (string & tags.Format<"date-time">) | undefined;
 
@@ -161,7 +203,11 @@ export namespace IRedditCloneCommunitySubscription {
      *
      * Specify an ISO 8601 datetime string to include only subscriptions created before this timestamp. Useful for historical analysis or filtering out recent subscriptions. Example format: '2024-06-01T00:00:00Z'. Combines with subscribedAfter for date range queries.
      *
-     * @x-autobe-specification Computed filter parameter for date range filtering on subscription creation timestamp. Filters reddit_clone_community_subscriptions.created_at <= provided ISO 8601 datetime value. Only includes subscriptions created before the specified date and time.
+         * @x-autobe-specification Computed filter parameter for date range
+         *   filtering on subscription creation timestamp. Filters
+         *   reddit_clone_community_subscriptions.created_at <= provided ISO
+         *   8601 datetime value. Only includes subscriptions created before the
+         *   specified date and time.
      */
     subscribedBefore?: (string & tags.Format<"date-time">) | undefined;
 
@@ -170,7 +216,11 @@ export namespace IRedditCloneCommunitySubscription {
      *
      * Specifies which page of results to return when paginating through subscription lists. Page numbering starts at 1 (not 0). Each page contains up to 'limit' number of records. Use this parameter along with 'limit' to navigate through large result sets. Default is page 1 if not specified.
      *
-     * @x-autobe-specification Pagination page number parameter. 1-indexed integer indicating which page of results to retrieve. Server validates minimum value of 1. Used to calculate offset for LIMIT/OFFSET pagination query. Default value is 1 when not provided.
+         * @x-autobe-specification Pagination page number parameter. 1-indexed
+         *   integer indicating which page of results to retrieve. Server
+         *   validates minimum value of 1. Used to calculate offset for
+         *   LIMIT/OFFSET pagination query. Default value is 1 when not
+         *   provided.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -179,7 +229,11 @@ export namespace IRedditCloneCommunitySubscription {
      *
      * Controls how many subscription records are returned in each page. Minimum value is 1, maximum is 100. Larger values reduce the number of API calls needed but increase response size. Smaller values enable finer-grained pagination. Default is 20 records per page if not specified.
      *
-     * @x-autobe-specification Pagination page size parameter. Integer specifying maximum number of records per page. Server validates range 1-100. Used as LIMIT clause in SQL query. Default value is 20 when not provided. Maximum enforced at 100 to prevent excessive resource usage.
+         * @x-autobe-specification Pagination page size parameter. Integer
+         *   specifying maximum number of records per page. Server validates
+         *   range 1-100. Used as LIMIT clause in SQL query. Default value is 20
+         *   when not provided. Maximum enforced at 100 to prevent excessive
+         *   resource usage.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -190,7 +244,11 @@ export namespace IRedditCloneCommunitySubscription {
      *
      * Specifies which field to use for ordering the subscription list. Available options include 'created_at' (subscription creation date), 'updated_at' (last update date), 'community_name' (alphabetical by community), or 'member_username' (alphabetical by member). Default sort field is 'created_at' if not specified.
      *
-     * @x-autobe-specification Sort field parameter for ORDER BY clause. Accepts field names: 'created_at', 'updated_at', 'community_name', 'member_username'. Server validates against allowed fields. Default is 'created_at' when not provided. Determines which column is used for result ordering.
+         * @x-autobe-specification Sort field parameter for ORDER BY clause.
+         *   Accepts field names: 'created_at', 'updated_at', 'community_name',
+         *   'member_username'. Server validates against allowed fields. Default
+         *   is 'created_at' when not provided. Determines which column is used
+         *   for result ordering.
      */
     sort?: string | undefined;
 
@@ -199,7 +257,11 @@ export namespace IRedditCloneCommunitySubscription {
      *
      * Determines whether results are ordered from lowest to highest ('asc') or highest to lowest ('desc'). For date fields, 'desc' shows newest first, 'asc' shows oldest first. For text fields, 'asc' is A-Z, 'desc' is Z-A. Default is 'desc' (descending) if not specified.
      *
-     * @x-autobe-specification Sort direction parameter for ORDER BY clause. Accepts 'asc' for ascending order or 'desc' for descending order. Server validates against enum values ['asc', 'desc']. Default is 'desc' (descending) when not provided. Combined with 'sort' field to determine complete ordering.
+         * @x-autobe-specification Sort direction parameter for ORDER BY clause.
+         *   Accepts 'asc' for ascending order or 'desc' for descending order.
+         *   Server validates against enum values ['asc', 'desc']. Default is
+         *   'desc' (descending) when not provided. Combined with 'sort' field
+         *   to determine complete ordering.
      */
     order?: "asc" | "desc" | undefined;
   };
@@ -219,8 +281,11 @@ export namespace IRedditCloneCommunitySubscription {
      *
      * Subscription to a community is a prerequisite for creating posts within that community. Duplicate subscriptions are prevented by a unique constraint on the member-community pair.
      *
-     * @x-autobe-database-schema-property reddit_clone_community_id
-     * @x-autobe-specification Direct mapping from reddit_clone_community_id column. This is the community the authenticated member wants to subscribe to. Validated against reddit_clone_communities table to ensure community exists and is not deleted.
+         * @x-autobe-database-schema-property reddit_clone_community_id
+         * @x-autobe-specification Direct mapping from reddit_clone_community_id
+         *   column. This is the community the authenticated member wants to
+         *   subscribe to. Validated against reddit_clone_communities table to
+         *   ensure community exists and is not deleted.
      */
     community_id: string & tags.Format<"uuid">;
   };

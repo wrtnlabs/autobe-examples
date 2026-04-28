@@ -19,7 +19,8 @@ import { IEcommerceMallCategory } from "../../../../structures/IEcommerceMallCat
  * @param props.connection
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor guest
- * @x-autobe-specification Query the ecommerce_mall_categories table to retrieve all categories.
+ * @x-autobe-specification Query the ecommerce_mall_categories table to retrieve
+ *   all categories.
  *
  * Group categories by their parent_id field. Categories with NULL parent_id are root/parent categories.
  *

@@ -44,8 +44,14 @@ export namespace IShoppingMallPostPurchaseCancellationRequest {
      *
      * Only one cancellation request can exist per order item due to database unique constraint. Attempting to create a second cancellation request for the same order item will result in a conflict error.
      *
-     * @x-autobe-database-schema-property shopping_mall_order_item_id
-     * @x-autobe-specification Direct mapping from shopping_mall_post_purchase_cancellation_requests.shopping_mall_order_item_id. Must be valid UUID referencing an existing order item with status='paid' (not shipped, delivered, cancelled, or refunded). System validates order item belongs to authenticated customer and no existing cancellation request exists for this item (unique constraint).
+         * @x-autobe-database-schema-property shopping_mall_order_item_id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_post_purchase_cancellation_requests.shopping_mall_order_item_id.
+         *   Must be valid UUID referencing an existing order item with
+         *   status='paid' (not shipped, delivered, cancelled, or refunded).
+         *   System validates order item belongs to authenticated customer and
+         *   no existing cancellation request exists for this item (unique
+         *   constraint).
      */
     shopping_mall_order_item_id: string & tags.Format<"uuid">;
 
@@ -56,8 +62,13 @@ export namespace IShoppingMallPostPurchaseCancellationRequest {
      *
      * The reason must be a non-empty string. System validation ensures the reason is provided and contains meaningful content. This text is preserved in the cancellation request record and visible to the seller during the review process, as well as in the audit trail snapshots.
      *
-     * @x-autobe-database-schema-property reason
-     * @x-autobe-specification Direct mapping from shopping_mall_post_purchase_cancellation_requests.reason. Required non-empty string providing customer's explanation for cancellation. System validates reason is provided and not empty (minimum length check). This text is stored as-is and visible to the seller during review.
+         * @x-autobe-database-schema-property reason
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_post_purchase_cancellation_requests.reason. Required
+         *   non-empty string providing customer's explanation for cancellation.
+         *   System validates reason is provided and not empty (minimum length
+         *   check). This text is stored as-is and visible to the seller during
+         *   review.
      */
     reason: string;
   };
@@ -75,8 +86,9 @@ export namespace IShoppingMallPostPurchaseCancellationRequest {
      *
      * Primary key of the cancellation request record. Used to reference this specific request in API operations and URLs.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_post_purchase_cancellation_requests.id. UUID format.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_post_purchase_cancellation_requests.id. UUID format.
      */
     id: string & tags.Format<"uuid">;
 
@@ -85,8 +97,10 @@ export namespace IShoppingMallPostPurchaseCancellationRequest {
      *
      * Free text explanation provided by the customer when submitting the cancellation request. This helps the seller make an informed decision on whether to approve or reject the request.
      *
-     * @x-autobe-database-schema-property reason
-     * @x-autobe-specification Direct mapping from shopping_mall_post_purchase_cancellation_requests.reason. Free text provided by customer.
+         * @x-autobe-database-schema-property reason
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_post_purchase_cancellation_requests.reason. Free text
+         *   provided by customer.
      */
     reason: string;
 
@@ -99,8 +113,10 @@ export namespace IShoppingMallPostPurchaseCancellationRequest {
      * - 'approved': Seller approved, refund processing
      * - 'rejected': Seller rejected with reason provided in seller_response_reason
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from shopping_mall_post_purchase_cancellation_requests.status. Values: 'pending', 'approved', 'rejected'.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_post_purchase_cancellation_requests.status. Values:
+         *   'pending', 'approved', 'rejected'.
      */
     status: string;
 
@@ -109,8 +125,10 @@ export namespace IShoppingMallPostPurchaseCancellationRequest {
      *
      * Optional text provided by the seller when rejecting a cancellation request, explaining the rejection decision. This field is null for pending or approved requests, and only contains a value when the seller has rejected the request.
      *
-     * @x-autobe-database-schema-property seller_response_reason
-     * @x-autobe-specification Direct mapping from shopping_mall_post_purchase_cancellation_requests.seller_response_reason. Nullable - only populated when status is 'rejected'.
+         * @x-autobe-database-schema-property seller_response_reason
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_post_purchase_cancellation_requests.seller_response_reason.
+         *   Nullable - only populated when status is 'rejected'.
      */
     seller_response_reason?: string | null | undefined;
 
@@ -119,8 +137,10 @@ export namespace IShoppingMallPostPurchaseCancellationRequest {
      *
      * Records the exact date and time when the customer submitted this cancellation request. Used for sorting, filtering, and tracking request age.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_post_purchase_cancellation_requests.created_at. ISO 8601 date-time format.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_post_purchase_cancellation_requests.created_at. ISO
+         *   8601 date-time format.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -129,8 +149,10 @@ export namespace IShoppingMallPostPurchaseCancellationRequest {
      *
      * Reference to the member account that initiated this cancellation request. Contains summary information about the customer for display purposes in administrative views.
      *
-     * @x-autobe-database-schema-property member
-     * @x-autobe-specification Relation mapping via JOIN on shopping_mall_member_id to shopping_mall_members table. Returns IShoppingMallMember.ISummary with customer account information.
+         * @x-autobe-database-schema-property member
+         * @x-autobe-specification Relation mapping via JOIN on
+         *   shopping_mall_member_id to shopping_mall_members table. Returns
+         *   IShoppingMallMember.ISummary with customer account information.
      */
     member: IShoppingMallMember.ISummary;
 
@@ -139,8 +161,11 @@ export namespace IShoppingMallPostPurchaseCancellationRequest {
      *
      * Reference to the specific purchased item this cancellation request targets. Contains summary information about the order item including product, variant, quantity, and price details.
      *
-     * @x-autobe-database-schema-property orderItem
-     * @x-autobe-specification Relation mapping via JOIN on shopping_mall_order_item_id to shopping_mall_order_items table. Returns IShoppingMallOrderItem.ISummary with purchased item details.
+         * @x-autobe-database-schema-property orderItem
+         * @x-autobe-specification Relation mapping via JOIN on
+         *   shopping_mall_order_item_id to shopping_mall_order_items table.
+         *   Returns IShoppingMallOrderItem.ISummary with purchased item
+         *   details.
      */
     orderItem: IShoppingMallOrderItem.ISummary;
 
@@ -149,8 +174,10 @@ export namespace IShoppingMallPostPurchaseCancellationRequest {
      *
      * Reference to the seller account that owns the order item and must approve or reject this cancellation request. Contains summary information about the seller for display purposes.
      *
-     * @x-autobe-database-schema-property seller
-     * @x-autobe-specification Relation mapping via JOIN on shopping_mall_seller_id to shopping_mall_sellers table. Returns IShoppingMallSeller.ISummary with seller account information.
+         * @x-autobe-database-schema-property seller
+         * @x-autobe-specification Relation mapping via JOIN on
+         *   shopping_mall_seller_id to shopping_mall_sellers table. Returns
+         *   IShoppingMallSeller.ISummary with seller account information.
      */
     seller: IShoppingMallSeller.ISummary;
   };

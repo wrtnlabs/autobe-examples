@@ -36,9 +36,9 @@ export class ShoppingmallCustomerReviewsController {
    *
    * @param connection
    * @param body Review creation data including order item reference, rating, and optional text content
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Implementation steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Implementation steps:
    *
    * 1. Authenticate customer from JWT token
    * 2. Validate request body:
@@ -127,9 +127,10 @@ export class ShoppingmallCustomerReviewsController {
    * @param connection
    * @param reviewId Unique identifier of the review to update (UUID format)
    * @param body Updated review data including rating and optional content
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Update a customer's review with the following steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Update a customer's review with the following
+     *   steps:
    *
    * 1. **Authentication**: Verify the customer is authenticated via JWT session token
    * 2. **Authorization**: Query shopping_mall_reviews by id where shopping_mall_customer_id matches the authenticated customer's id and deleted_at is null
@@ -186,9 +187,9 @@ export class ShoppingmallCustomerReviewsController {
    *
    * @param connection
    * @param reviewId Unique identifier of the review to delete. The customer must be the original author of this review.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Implementation Steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Implementation Steps:
    *
    * 1. **Authentication Verification**: Extract customer ID from JWT session token. Return 401 Unauthorized if not authenticated.
    *

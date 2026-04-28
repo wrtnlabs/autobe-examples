@@ -24,9 +24,10 @@ export class RedditcommunityAdminReportsController {
    *
    * @param connection
    * @param body Search criteria for filtering reports including status, content type, date range filters, and pagination parameters.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query reddit_community_reports table with the following logic:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Query reddit_community_reports table with the
+     *   following logic:
    *
    * 1. Authorization: Verify the requesting moderator has moderator role in the target community
    * 2. Filtering:
@@ -74,9 +75,10 @@ export class RedditcommunityAdminReportsController {
    *
    * @param connection
    * @param reportId UUID identifier of the report to retrieve
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query reddit_community_reports table for the report with matching id.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Query reddit_community_reports table for the
+     *   report with matching id.
    *
    * 1. Validate reportId is a valid UUID format
    * 2. Fetch report record with fields: id, reporter_id, community_id, target_post_id, target_comment_id, reason, status_id, created_at, updated_at
@@ -115,9 +117,9 @@ export class RedditcommunityAdminReportsController {
    *
    * @param connection
    * @param reportId The UUID of the report to approve.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Approve a report for content moderation.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Approve a report for content moderation.
    *
    * 1. Validate that the report exists and has not been soft-deleted.
    * 2. Verify the report status is pending (status_id = 0).
@@ -183,23 +185,21 @@ export class RedditcommunityAdminReportsController {
    * @param connection
    * @param reportId UUID of the report to dismiss (global scope)
    * @param body Optional moderation notes explaining the dismissal decision.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification 1. Verify the current user is authenticated and has moderator role for a community
-   * 2. Fetch the report by {reportId} with soft delete filter (deleted_at IS NULL)
-   * 3. Validate report exists and belongs to a community the user moderates
-   * 4. Verify report status_id equals 0 (pending) - reject if already approved(1) or dismissed(2)
-   * 5. Verify the report's community_id matches the user's moderator community
-   * 6. Create reddit_community_report_resolutions record:
-   *    - reddit_community_report_id: report.id
-   *    - reddit_community_admin_id: current user's admin id
-   *    - resolution_type: 'dismissed'
-   *    - status: 'dismissed'
-   *    - resolved_at: current timestamp
-   *    - resolution_notes: from request body if provided
-   * 7. Update report status_id to 2 (dismissed)
-   * 8. Update updated_at timestamp
-   * 9. Return the updated report object
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification 1. Verify the current user is authenticated and
+     *   has moderator role for a community 2. Fetch the report by {reportId}
+     *   with soft delete filter (deleted_at IS NULL) 3. Validate report exists
+     *   and belongs to a community the user moderates 4. Verify report
+     *   status_id equals 0 (pending) - reject if already approved(1) or
+     *   dismissed(2) 5. Verify the report's community_id matches the user's
+     *   moderator community 6. Create reddit_community_report_resolutions
+     *   record: - reddit_community_report_id: report.id -
+     *   reddit_community_admin_id: current user's admin id - resolution_type:
+     *   'dismissed' - status: 'dismissed' - resolved_at: current timestamp -
+     *   resolution_notes: from request body if provided 7. Update report
+     *   status_id to 2 (dismissed) 8. Update updated_at timestamp 9. Return the
+     *   updated report object
    *
    * ### Edge Cases
    * - Concurrent dismissal: Use row-level locking on the report row

@@ -20,9 +20,10 @@ export class HrmtimetrackMemberSessionsController {
    *
    * @param connection
    * @param body Search criteria for member sessions including filters for member, organization, date ranges, expiration status, and pagination parameters.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query hrm_time_track_member_sessions table with pagination and filtering support.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query hrm_time_track_member_sessions table with
+     *   pagination and filtering support.
    *
    * Filtering:
    * - Apply member_id filter if provided in request body
@@ -79,9 +80,10 @@ export class HrmtimetrackMemberSessionsController {
    *
    * @param connection
    * @param sessionId Unique identifier of the session record to retrieve (UUID format, global scope).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query the hrm_time_track_member_sessions table for a session record matching the provided sessionId UUID.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query the hrm_time_track_member_sessions table
+     *   for a session record matching the provided sessionId UUID.
    *
    * Implementation steps:
    * 1. Validate the sessionId parameter is a valid UUID format

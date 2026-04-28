@@ -18,9 +18,10 @@ export class TodoappMemberProfileController {
    * The profile contains the member's display name which identifies them within the application interface. All profile data is private and isolated per user.
    *
    * @param connection
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query the todo_app_members table for the authenticated member's record using session context.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query the todo_app_members table for the
+     *   authenticated member's record using session context.
    *
    * Retrieve display_name, created_at, and updated_at fields. Exclude password_hash and email from response for security.
    *
@@ -53,9 +54,10 @@ export class TodoappMemberProfileController {
    *
    * @param connection
    * @param body Profile update data containing the new display name value.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Update the display_name field for the authenticated user in todo_app_members table.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Update the display_name field for the
+     *   authenticated user in todo_app_members table.
    *
    * 1. Extract authenticated user ID from session context
    * 2. Validate display_name if provided (check length constraints per business rules)

@@ -12,7 +12,11 @@ export type IEcommerceMallShipmentDeliveryStatus = {
    *
    * Determined by checking delivery confirmation and 14-day auto-delivery rule: 'delivered' when customer confirms OR 14 days pass since shipping, 'shipped' when tracking is provided but not yet delivered.
    *
-   * @x-autobe-specification Calculate status based on: (1) if delivered_at IS NOT NULL, status = 'delivered'; (2) else if CURRENT_TIMESTAMP - shipped_at >= INTERVAL '14 days', status = 'delivered'; (3) else status = 'shipped'. This ensures shipments without explicit delivery confirmation are automatically marked delivered after 14 days.
+     * @x-autobe-specification Calculate status based on: (1) if delivered_at IS
+     *   NOT NULL, status = 'delivered'; (2) else if CURRENT_TIMESTAMP -
+     *   shipped_at >= INTERVAL '14 days', status = 'delivered'; (3) else status
+     *   = 'shipped'. This ensures shipments without explicit delivery
+     *   confirmation are automatically marked delivered after 14 days.
    */
   status: "pending" | "shipped" | "delivered";
 
@@ -21,8 +25,10 @@ export type IEcommerceMallShipmentDeliveryStatus = {
    *
    * Examples include FedEx, DHL, USPS, or other logistics providers. May be null if the seller has not yet provided carrier information.
    *
-   * @x-autobe-specification Direct mapping from ecommerce_mall_shipments.carrier. May be null if carrier not yet provided by seller.
-   * @x-autobe-database-schema-property carrier
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_shipments.carrier. May be null if carrier not yet
+     *   provided by seller.
+     * @x-autobe-database-schema-property carrier
    */
   carrierName?: string | null | undefined;
 
@@ -31,8 +37,10 @@ export type IEcommerceMallShipmentDeliveryStatus = {
    *
    * Allows customers to track package location online via the carrier's website. May be null if the seller has not yet provided tracking information.
    *
-   * @x-autobe-specification Direct mapping from ecommerce_mall_shipments.tracking_number. May be null if tracking number not yet provided by seller.
-   * @x-autobe-database-schema-property tracking_number
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_shipments.tracking_number. May be null if tracking
+     *   number not yet provided by seller.
+     * @x-autobe-database-schema-property tracking_number
    */
   trackingNumber?: string | null | undefined;
 
@@ -41,8 +49,10 @@ export type IEcommerceMallShipmentDeliveryStatus = {
    *
    * This timestamp indicates when the seller provided tracking information and initiated the shipping process. Used as the baseline for the 14-day auto-delivery calculation. May be null if the shipment has not yet been marked as shipped.
    *
-   * @x-autobe-specification Direct mapping from ecommerce_mall_shipments.shipped_at. May be null if shipment has not been marked as shipped yet.
-   * @x-autobe-database-schema-property shipped_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_shipments.shipped_at. May be null if shipment has not
+     *   been marked as shipped yet.
+     * @x-autobe-database-schema-property shipped_at
    */
   shippingDate?: (string & tags.Format<"date-time">) | null | undefined;
 
@@ -51,8 +61,11 @@ export type IEcommerceMallShipmentDeliveryStatus = {
    *
    * May be null if the customer has not manually confirmed delivery. In such cases, the system may auto-confirm delivery after 14 days based on the shipping date.
    *
-   * @x-autobe-database-schema-property delivered_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_shipments.delivered_at. May be null if customer has not explicitly confirmed delivery. When null, auto-delivery rule (14 days after shipping) may apply.
+     * @x-autobe-database-schema-property delivered_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_shipments.delivered_at. May be null if customer has not
+     *   explicitly confirmed delivery. When null, auto-delivery rule (14 days
+     *   after shipping) may apply.
    */
   deliveryConfirmedAt: (string & tags.Format<"date-time">) | null;
 
@@ -61,7 +74,11 @@ export type IEcommerceMallShipmentDeliveryStatus = {
    *
    * May be null if customer confirmed delivery manually, or if the 14-day auto-delivery timeout has not yet passed. Used to track the point when delivery was auto-confirmed by the system.
    *
-   * @x-autobe-specification Calculate auto-delivery timestamp: if delivered_at IS NULL AND (CURRENT_TIMESTAMP - shipped_at) >= INTERVAL '14 days', autoDeliveredAt = shipped_at + 14 days. Otherwise null. This represents when the shipment would be automatically marked as delivered if customer does not confirm.
+     * @x-autobe-specification Calculate auto-delivery timestamp: if
+     *   delivered_at IS NULL AND (CURRENT_TIMESTAMP - shipped_at) >= INTERVAL
+     *   '14 days', autoDeliveredAt = shipped_at + 14 days. Otherwise null. This
+     *   represents when the shipment would be automatically marked as delivered
+     *   if customer does not confirm.
    */
   autoDeliveredAt: (string & tags.Format<"date-time">) | null;
 
@@ -70,7 +87,10 @@ export type IEcommerceMallShipmentDeliveryStatus = {
    *
    * Each item represents an order line item that was packaged and shipped together. Useful for tracking which specific products are included in this delivery.
    *
-   * @x-autobe-specification JOIN from ecommerce_mall_shipment_items WHERE shipment_id = {shipmentId}, collect array of item_id UUID values. Returns all order item UUIDs that are part of this physical shipment. This is a computed aggregation, not a direct database property.
+     * @x-autobe-specification JOIN from ecommerce_mall_shipment_items WHERE
+     *   shipment_id = {shipmentId}, collect array of item_id UUID values.
+     *   Returns all order item UUIDs that are part of this physical shipment.
+     *   This is a computed aggregation, not a direct database property.
    */
   itemIds: (string & tags.Format<"uuid">)[];
 };

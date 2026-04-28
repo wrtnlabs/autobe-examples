@@ -81,7 +81,8 @@ export namespace IHrmPlatformProject {
      * Requesting a page beyond the available range returns an empty data array
      * with valid pagination metadata reflecting the actual totals.
      *
-     * @x-autobe-specification 1-indexed page number. Defaults to 1 if not provided.
+         * @x-autobe-specification 1-indexed page number. Defaults to 1 if not
+         *   provided.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };
@@ -97,8 +98,11 @@ export namespace IHrmPlatformProject {
      *
      * A unique identifier within the organization that distinguishes this project from others. The name is human-readable and appears in project lists, dashboards, and navigation components.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from hrm_platform_projects.name. Required, non-empty string. Unique within organization (enforced by @@unique([organization_id, name]) constraint).
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_projects.name. Required, non-empty string. Unique
+         *   within organization (enforced by @@unique([organization_id, name])
+         *   constraint).
      */
     name: string;
 
@@ -107,8 +111,10 @@ export namespace IHrmPlatformProject {
      *
      * Helps users quickly distinguish projects in lists and dashboards through colored badges, icons, and visual markers. Follows standard hex format (#RRGGBB).
      *
-     * @x-autobe-database-schema-property color_code
-     * @x-autobe-specification Direct mapping from hrm_platform_projects.color_code. Required, valid hex color format (e.g., #FF5733). Used for visual identification in UI components.
+         * @x-autobe-database-schema-property color_code
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_projects.color_code. Required, valid hex color format
+         *   (e.g., #FF5733). Used for visual identification in UI components.
      */
     color_code: string;
 
@@ -117,8 +123,10 @@ export namespace IHrmPlatformProject {
      *
      * Supports rich project documentation and can contain longer-form text describing the project purpose, deliverables, or important notes. Maximum 1000 characters.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from hrm_platform_projects.description. Optional text field with maximum 1000 characters. Used for project context and documentation.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_projects.description. Optional text field with maximum
+         *   1000 characters. Used for project context and documentation.
      */
     description?: string | null | undefined;
 
@@ -127,8 +135,12 @@ export namespace IHrmPlatformProject {
      *
      * When set, the system tracks actual hours logged against the project and enables budget utilization reporting. Projects without budget hours are excluded from budget-focused reports.
      *
-     * @x-autobe-database-schema-property budget_hours
-     * @x-autobe-specification Direct mapping from hrm_platform_projects.budget_hours. Optional floating-point number representing total estimated hours for resource planning. Minimum value is 0. If not set, the project is excluded from budget-focused reports.
+         * @x-autobe-database-schema-property budget_hours
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_projects.budget_hours. Optional floating-point number
+         *   representing total estimated hours for resource planning. Minimum
+         *   value is 0. If not set, the project is excluded from budget-focused
+         *   reports.
      */
     budget_hours?: number | null | undefined;
 
@@ -137,8 +149,12 @@ export namespace IHrmPlatformProject {
      *
      * Used for timeline tracking and project duration calculations. The start date is independent of project status and can be set or updated during project editing. If unset, the project has no scheduled start date.
      *
-     * @x-autobe-database-schema-property start_date
-     * @x-autobe-specification Direct mapping from hrm_platform_projects.start_date. Optional ISO 8601 date-time format. Independent of project status, can be set or updated during project editing. Used for timeline tracking and project duration calculations.
+         * @x-autobe-database-schema-property start_date
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_projects.start_date. Optional ISO 8601 date-time
+         *   format. Independent of project status, can be set or updated during
+         *   project editing. Used for timeline tracking and project duration
+         *   calculations.
      */
     start_date?: (string & tags.Format<"date-time">) | null | undefined;
 
@@ -147,8 +163,11 @@ export namespace IHrmPlatformProject {
      *
      * Used for timeline tracking and deadline management. The end date is independent of project status and can be set or updated during project editing. If unset, the project has no scheduled end date.
      *
-     * @x-autobe-database-schema-property end_date
-     * @x-autobe-specification Direct mapping from hrm_platform_projects.end_date. Optional ISO 8601 date-time format. Independent of project status, can be set or updated during project editing. Used for deadline management and timeline tracking.
+         * @x-autobe-database-schema-property end_date
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_projects.end_date. Optional ISO 8601 date-time format.
+         *   Independent of project status, can be set or updated during project
+         *   editing. Used for deadline management and timeline tracking.
      */
     end_date?: (string & tags.Format<"date-time">) | null | undefined;
   };
@@ -175,43 +194,51 @@ export namespace IHrmPlatformProject {
    */
   export type IUpdate = {
     /**
-     * @x-autobe-database-schema-property name
+         * @x-autobe-database-schema-property name
      */
     name?: string | undefined;
 
     /**
      * Optional project description text. When updating, can be set to null to clear the description.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from hrm_platform_projects.description (nullable text). Optional updateable field.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_projects.description (nullable text). Optional
+         *   updateable field.
      */
     description?: string | null | undefined;
     /**
-     * @x-autobe-database-schema-property color_code
+         * @x-autobe-database-schema-property color_code
      */
     color_code?: string | undefined;
 
     /**
      * Optional budget hours for project planning. Can be set to null to clear budget tracking.
      *
-     * @x-autobe-database-schema-property budget_hours
-     * @x-autobe-specification Direct mapping from hrm_platform_projects.budget_hours (nullable double). Optional budget tracking value.
+         * @x-autobe-database-schema-property budget_hours
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_projects.budget_hours (nullable double). Optional
+         *   budget tracking value.
      */
     budget_hours?: number | null | undefined;
 
     /**
      * Optional project start date. Can be set to null to remove the scheduled start date.
      *
-     * @x-autobe-database-schema-property start_date
-     * @x-autobe-specification Direct mapping from hrm_platform_projects.start_date (nullable timestamptz). Optional project timeline marker.
+         * @x-autobe-database-schema-property start_date
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_projects.start_date (nullable timestamptz). Optional
+         *   project timeline marker.
      */
     start_date?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * Optional project end date/deadline. Can be set to null to remove the scheduled end date.
      *
-     * @x-autobe-database-schema-property end_date
-     * @x-autobe-specification Direct mapping from hrm_platform_projects.end_date (nullable timestamptz). Optional project deadline marker.
+         * @x-autobe-database-schema-property end_date
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_projects.end_date (nullable timestamptz). Optional
+         *   project deadline marker.
      */
     end_date?: (string & tags.Format<"date-time">) | null | undefined;
   };
@@ -233,35 +260,35 @@ export namespace IHrmPlatformProject {
    */
   export type ISummary = {
     /**
-     * @x-autobe-database-schema-property id
+         * @x-autobe-database-schema-property id
      */
     id: string & tags.Format<"uuid">;
     /**
-     * @x-autobe-database-schema-property name
+         * @x-autobe-database-schema-property name
      */
     name: string;
     /**
-     * @x-autobe-database-schema-property status
+         * @x-autobe-database-schema-property status
      */
     status: string;
     /**
-     * @x-autobe-database-schema-property color_code
+         * @x-autobe-database-schema-property color_code
      */
     color_code: string;
     /**
-     * @x-autobe-database-schema-property budget_hours
+         * @x-autobe-database-schema-property budget_hours
      */
     budget_hours?: number | null | undefined;
     /**
-     * @x-autobe-database-schema-property start_date
+         * @x-autobe-database-schema-property start_date
      */
     start_date?: (string & tags.Format<"date-time">) | null | undefined;
     /**
-     * @x-autobe-database-schema-property end_date
+         * @x-autobe-database-schema-property end_date
      */
     end_date?: (string & tags.Format<"date-time">) | null | undefined;
     /**
-     * @x-autobe-database-schema-property description
+         * @x-autobe-database-schema-property description
      */
     description?: string | null | undefined;
     total_hours: number;
@@ -271,11 +298,11 @@ export namespace IHrmPlatformProject {
     employee_count: number & tags.Type<"int32">;
     budget_utilization?: number | null | undefined;
     /**
-     * @x-autobe-database-schema-property created_at
+         * @x-autobe-database-schema-property created_at
      */
     created_at: string & tags.Format<"date-time">;
     /**
-     * @x-autobe-database-schema-property updated_at
+         * @x-autobe-database-schema-property updated_at
      */
     updated_at: string & tags.Format<"date-time">;
   };

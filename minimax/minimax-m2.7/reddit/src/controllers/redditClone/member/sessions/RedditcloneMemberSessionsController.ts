@@ -22,9 +22,10 @@ export class RedditcloneMemberSessionsController {
    *
    * @param connection
    * @param body Search criteria and pagination parameters for filtering sessions
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query reddit_clone_member_sessions table filtering by the authenticated member's ID (from session context).
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query reddit_clone_member_sessions table
+     *   filtering by the authenticated member's ID (from session context).
    *
    * Apply filters based on request body:
    * - Filter by IP address pattern (partial match) if provided
@@ -71,9 +72,10 @@ export class RedditcloneMemberSessionsController {
    *
    * @param connection
    * @param sessionId The unique identifier of the session to retrieve (UUID format).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query reddit_clone_member_sessions table using the provided sessionId UUID.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query reddit_clone_member_sessions table using
+     *   the provided sessionId UUID.
    *
    * 1. Verify sessionId is a valid UUID format.
    * 2. Query the session record by id.

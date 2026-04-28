@@ -28,9 +28,11 @@ export class ShoppingmallAdministratorProductsVariantsSnapshotsController {
    * @param productId Target product's ID
    * @param variantId Target variant's ID
    * @param body Paging, sorting, and filtering options for variant snapshot history
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Implement this operation as a paginated history query over the product variant snapshot records scoped by a specific product and variant.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor administrator
+     * @x-autobe-specification Implement this operation as a paginated history
+     *   query over the product variant snapshot records scoped by a specific
+     *   product and variant.
    *
    * 1. Authenticate the caller and require either seller or administrator authority.
    * 2. Resolve the product by productId from the current product domain and fail if it does not exist.
@@ -89,9 +91,11 @@ export class ShoppingmallAdministratorProductsVariantsSnapshotsController {
    * @param productId Target product's ID that scopes the live variant and ownership check
    * @param variantId Target live product variant's ID under the specified product
    * @param productVariantSnapshotId Target historical product variant snapshot's ID under the specified variant
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Implement a read-only service that retrieves exactly one historical variant snapshot under a verified product-variant hierarchy.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor administrator
+     * @x-autobe-specification Implement a read-only service that retrieves
+     *   exactly one historical variant snapshot under a verified
+     *   product-variant hierarchy.
    *
    * 1. Load the target `shopping_mall_product_variants` row by `variantId` and confirm its `shopping_mall_product_id` equals `productId`. If no such row exists, or if the variant belongs to a different product, reject the request as not found.
    * 2. Load the target `shopping_mall_product_variant_snapshots` row by `productVariantSnapshotId` and confirm its `shopping_mall_product_variant_id` equals `variantId`. If not, reject as not found.

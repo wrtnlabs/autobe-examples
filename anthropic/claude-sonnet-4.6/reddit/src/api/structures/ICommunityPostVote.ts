@@ -11,48 +11,72 @@ export type ICommunityPostVote = {
   /**
    * Unique identifier for this vote record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from community_post_votes.id. UUID primary key, always present and non-null.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from community_post_votes.id. UUID
+     *   primary key, always present and non-null.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * The authenticated member who cast this vote, represented as a lightweight summary including their username, avatar, and karma score.
    *
-   * @x-autobe-database-schema-property member
-   * @x-autobe-specification Resolved via JOIN: community_post_votes.community_member_id → community_members.id, then JOIN community_user_profiles on community_user_profiles.community_member_id = community_members.id. Returns ICommunityMember.ISummary with fields: id, username, display_name (nullable), avatar_url (nullable), karma_score, created_at.
+     * @x-autobe-database-schema-property member
+     * @x-autobe-specification Resolved via JOIN:
+     *   community_post_votes.community_member_id → community_members.id, then
+     *   JOIN community_user_profiles on
+     *   community_user_profiles.community_member_id = community_members.id.
+     *   Returns ICommunityMember.ISummary with fields: id, username,
+     *   display_name (nullable), avatar_url (nullable), karma_score,
+     *   created_at.
    */
   member: ICommunityMember.ISummary;
 
   /**
    * The post on which this vote was cast, represented as a lightweight summary including its title, type, author, community, vote score, comment count, and content preview.
    *
-   * @x-autobe-database-schema-property post
-   * @x-autobe-specification Resolved via JOIN: community_post_votes.community_post_id → community_posts.id. Returns ICommunityPost.ISummary with computed fields: vote_score (SUM of votes), comment_count (COUNT of non-deleted comments), author (ICommunityMember.ISummary), community (ICommunityCommunity.ISummary), and a type-specific preview. Only active posts (deleted_at IS NULL) are expected; however, the FK join must be performed unconditionally since the vote record exists independently.
+     * @x-autobe-database-schema-property post
+     * @x-autobe-specification Resolved via JOIN:
+     *   community_post_votes.community_post_id → community_posts.id. Returns
+     *   ICommunityPost.ISummary with computed fields: vote_score (SUM of
+     *   votes), comment_count (COUNT of non-deleted comments), author
+     *   (ICommunityMember.ISummary), community (ICommunityCommunity.ISummary),
+     *   and a type-specific preview. Only active posts (deleted_at IS NULL) are
+     *   expected; however, the FK join must be performed unconditionally since
+     *   the vote record exists independently.
    */
   post: ICommunityPost.ISummary;
 
   /**
    * The direction of this vote — either 'upvote' or 'downvote'. An upvote increases the post's net score and positively contributes to the post author's karma; a downvote decreases the net score and negatively impacts karma.
    *
-   * @x-autobe-database-schema-property vote_type
-   * @x-autobe-specification Direct mapping from community_post_votes.vote_type. Allowed string values are exactly 'upvote' or 'downvote'. An upvote increases the post's net score by +1 and contributes positively to the author's karma; a downvote decreases the net score by -1 and negatively impacts karma.
+     * @x-autobe-database-schema-property vote_type
+     * @x-autobe-specification Direct mapping from
+     *   community_post_votes.vote_type. Allowed string values are exactly
+     *   'upvote' or 'downvote'. An upvote increases the post's net score by +1
+     *   and contributes positively to the author's karma; a downvote decreases
+     *   the net score by -1 and negatively impacts karma.
    */
   voteType: string;
 
   /**
    * The timestamp when this vote was originally cast.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from community_post_votes.created_at. ISO 8601 date-time string in UTC. Set once at INSERT time and never modified thereafter.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   community_post_votes.created_at. ISO 8601 date-time string in UTC. Set
+     *   once at INSERT time and never modified thereafter.
    */
   createdAt: string & tags.Format<"date-time">;
 
   /**
    * The timestamp when this vote record was last modified, reflecting the most recent change of vote direction. Equal to createdAt if the vote direction has never been changed.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from community_post_votes.updated_at. ISO 8601 date-time string in UTC. Updated to the current time whenever the vote direction is changed (e.g., from upvote to downvote). Equals createdAt when the vote has never been changed.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   community_post_votes.updated_at. ISO 8601 date-time string in UTC.
+     *   Updated to the current time whenever the vote direction is changed
+     *   (e.g., from upvote to downvote). Equals createdAt when the vote has
+     *   never been changed.
    */
   updatedAt: string & tags.Format<"date-time">;
 };
@@ -68,7 +92,11 @@ export namespace ICommunityPostVote {
     /**
      * Optional filter to narrow results by vote direction. Accepts 'upvote' to list only upvotes, 'downvote' to list only downvotes, or null/omitted to return all votes regardless of direction.
      *
-     * @x-autobe-specification Optional filter applied to community_post_votes.vote_type. If provided, must match one of the allowed values: 'upvote' or 'downvote'. Adds WHERE vote_type = :voteType to the query. If null or omitted, no filter is applied and both vote directions are returned.
+         * @x-autobe-specification Optional filter applied to
+         *   community_post_votes.vote_type. If provided, must match one of the
+         *   allowed values: 'upvote' or 'downvote'. Adds WHERE vote_type =
+         *   :voteType to the query. If null or omitted, no filter is applied
+         *   and both vote directions are returned.
      */
     voteType?:
       | (string & tags.Pattern<"^(upvote|downvote)$">)
@@ -78,14 +106,18 @@ export namespace ICommunityPostVote {
     /**
      * Page number for pagination (1-indexed). Determines which page of vote records to return. Defaults to 1 when not specified.
      *
-     * @x-autobe-specification 1-indexed page number for offset-based pagination. Applied as OFFSET = (page - 1) * limit in the query. Minimum value is 1. Defaults to 1 when omitted.
+         * @x-autobe-specification 1-indexed page number for offset-based
+         *   pagination. Applied as OFFSET = (page - 1) * limit in the query.
+         *   Minimum value is 1. Defaults to 1 when omitted.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of vote records to return per page. Must be between 1 and 100 inclusive. Defaults to 20 when not specified.
      *
-     * @x-autobe-specification Maximum number of community_post_votes records to return per page. Applied as LIMIT :limit in the SQL query. Minimum is 1, maximum is 100. Defaults to 20 when omitted.
+         * @x-autobe-specification Maximum number of community_post_votes
+         *   records to return per page. Applied as LIMIT :limit in the SQL
+         *   query. Minimum is 1, maximum is 100. Defaults to 20 when omitted.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -94,7 +126,10 @@ export namespace ICommunityPostVote {
     /**
      * Sort order for the vote list by creation time. Use 'asc' for oldest-first ordering or 'desc' for newest-first ordering. Defaults to 'desc' (newest first) when not specified.
      *
-     * @x-autobe-specification Controls the ORDER BY direction applied to community_post_votes.created_at. 'asc' returns oldest votes first, 'desc' returns newest votes first. Defaults to 'desc' when null or omitted.
+         * @x-autobe-specification Controls the ORDER BY direction applied to
+         *   community_post_votes.created_at. 'asc' returns oldest votes first,
+         *   'desc' returns newest votes first. Defaults to 'desc' when null or
+         *   omitted.
      */
     sort?: (string & tags.Pattern<"^(asc|desc)$">) | null | undefined;
   };
@@ -106,40 +141,53 @@ export namespace ICommunityPostVote {
     /**
      * The unique identifier of this post vote record.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from community_post_votes.id. UUID primary key uniquely identifying this vote record.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from community_post_votes.id.
+         *   UUID primary key uniquely identifying this vote record.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * The direction of the vote cast by the member. Either 'upvote' or 'downvote'.
      *
-     * @x-autobe-database-schema-property vote_type
-     * @x-autobe-specification Direct mapping from community_post_votes.vote_type. Allowed values are 'upvote' or 'downvote'. An upvote increases the post's net score and contributes positively to the author's karma; a downvote decreases the net score and impacts karma negatively.
+         * @x-autobe-database-schema-property vote_type
+         * @x-autobe-specification Direct mapping from
+         *   community_post_votes.vote_type. Allowed values are 'upvote' or
+         *   'downvote'. An upvote increases the post's net score and
+         *   contributes positively to the author's karma; a downvote decreases
+         *   the net score and impacts karma negatively.
      */
     vote_type: string;
 
     /**
      * The public profile summary of the member who cast this vote. Includes the voter's username, display name, avatar, and karma score.
      *
-     * @x-autobe-database-schema-property member
-     * @x-autobe-specification Populated by joining community_members and community_user_profiles on community_post_votes.community_member_id = community_members.id. Returns an ICommunityMember.ISummary object with the voter's public identity information.
+         * @x-autobe-database-schema-property member
+         * @x-autobe-specification Populated by joining community_members and
+         *   community_user_profiles on community_post_votes.community_member_id
+         *   = community_members.id. Returns an ICommunityMember.ISummary object
+         *   with the voter's public identity information.
      */
     voter: ICommunityMember.ISummary;
 
     /**
      * The timestamp when this vote was originally cast.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from community_post_votes.created_at. ISO 8601 timestamp (with timezone) recording when the vote was originally cast.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   community_post_votes.created_at. ISO 8601 timestamp (with timezone)
+         *   recording when the vote was originally cast.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * The timestamp when this vote was last updated, such as when the member changed the vote direction.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from community_post_votes.updated_at. ISO 8601 timestamp (with timezone) recording when the vote was last modified, e.g., when the member changed direction from upvote to downvote or vice versa.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   community_post_votes.updated_at. ISO 8601 timestamp (with timezone)
+         *   recording when the vote was last modified, e.g., when the member
+         *   changed direction from upvote to downvote or vice versa.
      */
     updated_at: string & tags.Format<"date-time">;
   };
@@ -151,8 +199,13 @@ export namespace ICommunityPostVote {
     /**
      * The desired vote direction to cast or update on the target post. Must be either 'upvote' or 'downvote'. Submitting the same direction as the currently active vote is not a valid state transition and will be rejected.
      *
-     * @x-autobe-database-schema-property vote_type
-     * @x-autobe-specification Direct mapping to community_post_votes.vote_type. Must be exactly 'upvote' or 'downvote'. Validate that the submitted value differs from the member's current active vote on this post; if the same value is submitted, reject with 422. Used to determine karma delta: +1/-1 for new votes, +2/-2 for direction changes.
+         * @x-autobe-database-schema-property vote_type
+         * @x-autobe-specification Direct mapping to
+         *   community_post_votes.vote_type. Must be exactly 'upvote' or
+         *   'downvote'. Validate that the submitted value differs from the
+         *   member's current active vote on this post; if the same value is
+         *   submitted, reject with 422. Used to determine karma delta: +1/-1
+         *   for new votes, +2/-2 for direction changes.
      */
     vote_type: "upvote" | "downvote";
   };

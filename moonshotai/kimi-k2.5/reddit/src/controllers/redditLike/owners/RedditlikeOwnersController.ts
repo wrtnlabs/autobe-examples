@@ -20,9 +20,10 @@ export class RedditlikeOwnersController {
    *
    * @param connection
    * @param body Search criteria and pagination parameters for filtering owner accounts
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query reddit_like_owners table with pagination and filtering capabilities.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query reddit_like_owners table with pagination
+     *   and filtering capabilities.
    *
    * Apply search filters on:
    * - username: partial match search (case-insensitive)
@@ -68,9 +69,10 @@ export class RedditlikeOwnersController {
    *
    * @param connection
    * @param ownerId Target owner's unique identifier (UUID)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query the reddit_like_owners table by primary key id matching the ownerId path parameter.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query the reddit_like_owners table by primary key
+     *   id matching the ownerId path parameter.
    *
    * Select all columns except password_hash for security:
    * - id: Owner's UUID identifier

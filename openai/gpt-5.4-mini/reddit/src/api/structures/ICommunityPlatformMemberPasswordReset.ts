@@ -10,56 +10,74 @@ export type ICommunityPlatformMemberPasswordReset = {
   /**
    * Unique identifier of the password reset record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from community_platform_member_password_resets.id. This is the reset record primary key and is returned as-is.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_member_password_resets.id. This is the reset record
+     *   primary key and is returned as-is.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Identifier of the member account associated with this password reset record.
    *
-   * @x-autobe-database-schema-property community_platform_member_id
-   * @x-autobe-specification Direct mapping from community_platform_member_password_resets.community_platform_member_id. Return the member foreign key as stored so downstream logic can associate the reset token with its member account.
+     * @x-autobe-database-schema-property community_platform_member_id
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_member_password_resets.community_platform_member_id.
+     *   Return the member foreign key as stored so downstream logic can
+     *   associate the reset token with its member account.
    */
   community_platform_member_id: string & tags.Format<"uuid">;
 
   /**
    * Password reset token used to validate the recovery request.
    *
-   * @x-autobe-database-schema-property token
-   * @x-autobe-specification Direct mapping from community_platform_member_password_resets.token. This unique token is the lookup key used by the reset endpoint and must be preserved exactly.
+     * @x-autobe-database-schema-property token
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_member_password_resets.token. This unique token is
+     *   the lookup key used by the reset endpoint and must be preserved
+     *   exactly.
    */
   token: string;
 
   /**
    * Timestamp when the password reset record was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from community_platform_member_password_resets.created_at. Use the stored timestamptz value without transformation.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_member_password_resets.created_at. Use the stored
+     *   timestamptz value without transformation.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the password reset token expires.
    *
-   * @x-autobe-database-schema-property expired_at
-   * @x-autobe-specification Direct mapping from community_platform_member_password_resets.expired_at. Use the stored expiration timestamp to evaluate token validity.
+     * @x-autobe-database-schema-property expired_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_member_password_resets.expired_at. Use the stored
+     *   expiration timestamp to evaluate token validity.
    */
   expired_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the password reset token was consumed, or null if it has not been used.
    *
-   * @x-autobe-database-schema-property used_at
-   * @x-autobe-specification Direct mapping from community_platform_member_password_resets.used_at. Preserve null when the token has not been used; otherwise expose the stored consumption timestamp unchanged.
+     * @x-autobe-database-schema-property used_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_member_password_resets.used_at. Preserve null when
+     *   the token has not been used; otherwise expose the stored consumption
+     *   timestamp unchanged.
    */
   used_at: (string & tags.Format<"date-time">) | null;
 
   /**
    * Timestamp when the password reset token was revoked, or null if it is still active.
    *
-   * @x-autobe-database-schema-property revoked_at
-   * @x-autobe-specification Direct mapping from community_platform_member_password_resets.revoked_at. Preserve null when the token has not been revoked; otherwise expose the stored revocation timestamp unchanged.
+     * @x-autobe-database-schema-property revoked_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_member_password_resets.revoked_at. Preserve null
+     *   when the token has not been revoked; otherwise expose the stored
+     *   revocation timestamp unchanged.
    */
   revoked_at: (string & tags.Format<"date-time">) | null;
 };
@@ -73,48 +91,58 @@ export namespace ICommunityPlatformMemberPasswordReset {
     /**
      * Unique identifier for this password reset record.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from community_platform_member_password_resets.id.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_member_password_resets.id.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Member account associated with this password reset record.
      *
-     * @x-autobe-database-schema-property member
-     * @x-autobe-specification Join community_platform_member_password_resets.community_platform_member_id to community_platform_members.id and expose the related member as ICommunityPlatformMember.ISummary.
+         * @x-autobe-database-schema-property member
+         * @x-autobe-specification Join
+         *   community_platform_member_password_resets.community_platform_member_id
+         *   to community_platform_members.id and expose the related member as
+         *   ICommunityPlatformMember.ISummary.
      */
     member: ICommunityPlatformMember.ISummary;
 
     /**
      * Timestamp when this password reset record was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from community_platform_member_password_resets.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_member_password_resets.created_at.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when this password reset token expires and becomes invalid.
      *
-     * @x-autobe-database-schema-property expired_at
-     * @x-autobe-specification Direct mapping from community_platform_member_password_resets.expired_at.
+         * @x-autobe-database-schema-property expired_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_member_password_resets.expired_at.
      */
     expired_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when this password reset token was used, or null if it has not been consumed.
      *
-     * @x-autobe-database-schema-property used_at
-     * @x-autobe-specification Direct mapping from community_platform_member_password_resets.used_at. Preserve null when the token has not been consumed.
+         * @x-autobe-database-schema-property used_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_member_password_resets.used_at. Preserve null
+         *   when the token has not been consumed.
      */
     used_at: (string & tags.Format<"date-time">) | null;
 
     /**
      * Timestamp when this password reset token was revoked, or null if it remains active.
      *
-     * @x-autobe-database-schema-property revoked_at
-     * @x-autobe-specification Direct mapping from community_platform_member_password_resets.revoked_at. Preserve null when the token has not been revoked.
+         * @x-autobe-database-schema-property revoked_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_member_password_resets.revoked_at. Preserve null
+         *   when the token has not been revoked.
      */
     revoked_at: (string & tags.Format<"date-time">) | null;
   };
@@ -126,86 +154,115 @@ export namespace ICommunityPlatformMemberPasswordReset {
     /**
      * Member account identifier used to filter password reset records.
      *
-     * @x-autobe-database-schema-property community_platform_member_id
-     * @x-autobe-specification Filter records by community_platform_member_password_resets.community_platform_member_id so callers can scope results to a specific member account when allowed by authorization.
+         * @x-autobe-database-schema-property community_platform_member_id
+         * @x-autobe-specification Filter records by
+         *   community_platform_member_password_resets.community_platform_member_id
+         *   so callers can scope results to a specific member account when
+         *   allowed by authorization.
      */
     communityPlatformMemberId?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Start of the password reset creation-time range.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Apply as a greater-than-or-equal lower bound on community_platform_member_password_resets.created_at when provided.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Apply as a greater-than-or-equal lower bound
+         *   on community_platform_member_password_resets.created_at when
+         *   provided.
      */
     createdAtFrom?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * End of the password reset creation-time range.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Apply as an less-than-or-equal upper bound on community_platform_member_password_resets.created_at when provided.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Apply as an less-than-or-equal upper bound on
+         *   community_platform_member_password_resets.created_at when provided.
      */
     createdAtTo?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * Start of the password reset expiration-time range.
      *
-     * @x-autobe-database-schema-property expired_at
-     * @x-autobe-specification Apply as a greater-than-or-equal lower bound on community_platform_member_password_resets.expired_at when provided.
+         * @x-autobe-database-schema-property expired_at
+         * @x-autobe-specification Apply as a greater-than-or-equal lower bound
+         *   on community_platform_member_password_resets.expired_at when
+         *   provided.
      */
     expiredAtFrom?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * End of the password reset expiration-time range.
      *
-     * @x-autobe-database-schema-property expired_at
-     * @x-autobe-specification Apply as an less-than-or-equal upper bound on community_platform_member_password_resets.expired_at when provided.
+         * @x-autobe-database-schema-property expired_at
+         * @x-autobe-specification Apply as an less-than-or-equal upper bound on
+         *   community_platform_member_password_resets.expired_at when provided.
      */
     expiredAtTo?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * Start of the password reset usage-time range.
      *
-     * @x-autobe-database-schema-property used_at
-     * @x-autobe-specification Apply as a greater-than-or-equal lower bound on community_platform_member_password_resets.used_at when provided. Because the column is nullable, queries should ignore rows with null used_at unless the caller's filter logic explicitly handles null-state separately.
+         * @x-autobe-database-schema-property used_at
+         * @x-autobe-specification Apply as a greater-than-or-equal lower bound
+         *   on community_platform_member_password_resets.used_at when provided.
+         *   Because the column is nullable, queries should ignore rows with
+         *   null used_at unless the caller's filter logic explicitly handles
+         *   null-state separately.
      */
     usedAtFrom?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * End of the password reset usage-time range.
      *
-     * @x-autobe-database-schema-property used_at
-     * @x-autobe-specification Apply as an less-than-or-equal upper bound on community_platform_member_password_resets.used_at when provided. Because the column is nullable, queries should ignore rows with null used_at unless the caller's filter logic explicitly handles null-state separately.
+         * @x-autobe-database-schema-property used_at
+         * @x-autobe-specification Apply as an less-than-or-equal upper bound on
+         *   community_platform_member_password_resets.used_at when provided.
+         *   Because the column is nullable, queries should ignore rows with
+         *   null used_at unless the caller's filter logic explicitly handles
+         *   null-state separately.
      */
     usedAtTo?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * Start of the password reset revocation-time range.
      *
-     * @x-autobe-database-schema-property revoked_at
-     * @x-autobe-specification Apply as a greater-than-or-equal lower bound on community_platform_member_password_resets.revoked_at when provided. Because the column is nullable, queries should ignore rows with null revoked_at unless the caller's filter logic explicitly handles null-state separately.
+         * @x-autobe-database-schema-property revoked_at
+         * @x-autobe-specification Apply as a greater-than-or-equal lower bound
+         *   on community_platform_member_password_resets.revoked_at when
+         *   provided. Because the column is nullable, queries should ignore
+         *   rows with null revoked_at unless the caller's filter logic
+         *   explicitly handles null-state separately.
      */
     revokedAtFrom?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * End of the password reset revocation-time range.
      *
-     * @x-autobe-database-schema-property revoked_at
-     * @x-autobe-specification Apply as an less-than-or-equal upper bound on community_platform_member_password_resets.revoked_at when provided. Because the column is nullable, queries should ignore rows with null revoked_at unless the caller's filter logic explicitly handles null-state separately.
+         * @x-autobe-database-schema-property revoked_at
+         * @x-autobe-specification Apply as an less-than-or-equal upper bound on
+         *   community_platform_member_password_resets.revoked_at when provided.
+         *   Because the column is nullable, queries should ignore rows with
+         *   null revoked_at unless the caller's filter logic explicitly handles
+         *   null-state separately.
      */
     revokedAtTo?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * Page number to retrieve.
      *
-     * @x-autobe-specification Interpret as the 1-indexed page number for paginated list retrieval. Use it to calculate OFFSET/LIMIT against the password reset query result set.
+         * @x-autobe-specification Interpret as the 1-indexed page number for
+         *   paginated list retrieval. Use it to calculate OFFSET/LIMIT against
+         *   the password reset query result set.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of records to return per page.
      *
-     * @x-autobe-specification Interpret as the maximum number of rows returned per page. Use it as the LIMIT for the paginated password reset query, respecting the schema's bounds.
+         * @x-autobe-specification Interpret as the maximum number of rows
+         *   returned per page. Use it as the LIMIT for the paginated password
+         *   reset query, respecting the schema's bounds.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -214,14 +271,20 @@ export namespace ICommunityPlatformMemberPasswordReset {
     /**
      * Sort order for the result list.
      *
-     * @x-autobe-specification Interpret as a sort selector for the password reset list query. Use it to determine the ORDER BY clause for safe browsing, with the implementation choosing a stable default when no explicit sort is supplied.
+         * @x-autobe-specification Interpret as a sort selector for the password
+         *   reset list query. Use it to determine the ORDER BY clause for safe
+         *   browsing, with the implementation choosing a stable default when no
+         *   explicit sort is supplied.
      */
     sort?: string | undefined;
 
     /**
      * Free-text search term for narrowing the password reset list.
      *
-     * @x-autobe-specification Apply as a text search predicate over the searchable password reset list fields allowed by the endpoint contract. Do not map it to the token value; token material remains secret and excluded.
+         * @x-autobe-specification Apply as a text search predicate over the
+         *   searchable password reset list fields allowed by the endpoint
+         *   contract. Do not map it to the token value; token material remains
+         *   secret and excluded.
      */
     search?: string | undefined;
   };

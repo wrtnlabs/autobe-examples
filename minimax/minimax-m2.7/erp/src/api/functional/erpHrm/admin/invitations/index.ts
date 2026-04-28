@@ -23,7 +23,8 @@ export * as bulk from "./bulk/index";
  * @param props.invitationId Unique identifier of the invitation to resend (UUID)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Resend a pending invitation by regenerating its token and updating the timestamp.
+ * @x-autobe-specification Resend a pending invitation by regenerating its token
+ *   and updating the timestamp.
  *
  * 1. Validate invitationId exists and is a valid UUID
  * 2. Query erp_hrm_invitations table by id

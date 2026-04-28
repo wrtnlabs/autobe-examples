@@ -22,9 +22,10 @@ export class CommunityplatformMemberVote_summariesController {
    *
    * @param connection
    * @param body Search criteria for filtering vote summary records. Supports optional filtering by target type (post or comment), net score range, upvote count range, downvote count range, creation date range, and last-updated date range. Includes sort preference and cursor-based pagination parameters.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query community_platform_vote_summaries table with dynamic filtering and pagination.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query community_platform_vote_summaries table
+     *   with dynamic filtering and pagination.
    *
    * Filters to support in ICommunityPlatformVoteSummary.IRequest:
    * - target_type: optional filter by 'post' or 'comment' (null/omitted returns both types)
@@ -78,9 +79,11 @@ export class CommunityplatformMemberVote_summariesController {
    *
    * @param connection
    * @param summaryId The unique identifier (UUID) of the target vote summary record to retrieve.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query community_platform_vote_summaries table by primary key (id) where id equals the provided {summaryId} UUID parameter.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query community_platform_vote_summaries table by
+     *   primary key (id) where id equals the provided {summaryId} UUID
+     *   parameter.
    *
    * Return the complete vote summary record including: id, target_type, target_id, upvote_count, downvote_count, net_score, created_at, updated_at.
    *

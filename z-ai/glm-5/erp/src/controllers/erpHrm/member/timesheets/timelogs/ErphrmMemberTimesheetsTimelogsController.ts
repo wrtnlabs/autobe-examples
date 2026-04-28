@@ -25,9 +25,9 @@ export class ErphrmMemberTimesheetsTimelogsController {
    * @param connection
    * @param timesheetId UUID of the draft timesheet to add timelogs to
    * @param body Array of timelog IDs to add to the draft timesheet
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Add existing timelogs to a draft timesheet.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Add existing timelogs to a draft timesheet.
    *
    * Implementation steps:
    * 1. Fetch the timesheet by timesheetId from erp_hrm_timesheets table
@@ -105,9 +105,9 @@ export class ErphrmMemberTimesheetsTimelogsController {
    * @param connection
    * @param timesheetId Unique identifier of the timesheet whose timelog associations are being modified
    * @param body Arrays of timelog IDs to add to and remove from the timesheet
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation steps:
    *
    * 1. **Authentication & Authorization Check**
    *    - Verify the authenticated user is a member with an active employee record in the organization
@@ -201,9 +201,11 @@ export class ErphrmMemberTimesheetsTimelogsController {
    * @param connection
    * @param timesheetId Unique identifier of the timesheet from which to remove the timelog. The timesheet must exist and belong to the current organization.
    * @param timelogId Unique identifier of the timelog to remove from the timesheet. Must be currently associated with the specified timesheet.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Delete the junction record from erp_hrm_timesheet_timelogs table where timesheet_id matches the path parameter and timelog_id matches the path parameter. Before deletion:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Delete the junction record from
+     *   erp_hrm_timesheet_timelogs table where timesheet_id matches the path
+     *   parameter and timelog_id matches the path parameter. Before deletion:
    *
    * 1. Validate the timesheet exists and belongs to the current organization context
    * 2. Validate the timelog exists and belongs to the same employee as the timesheet

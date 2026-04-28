@@ -1,0 +1,135 @@
+/// Records a single vote cast by a member on a post, enforcing the
+/// one-vote-per-user-per-post constraint.
+///
+///
+///
+/// Each vote captures the voter (member), the target post, and the vote
+/// direction. A user may cast only one vote on any given post — this is
+/// enforced via a unique index on (member_id, post_id). Vote direction
+/// changes replace the existing record's direction value rather than
+/// creating a duplicate.
+///
+/// Vote removal is handled by deleting the record entirely. Vote score
+/// (upvotes minus downvotes) is computed by aggregating records per post.
+/// Author karma is a derived value computed from votes across both posts and
+/// comments.
+///
+/// @namespace vote
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_community_post_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key of the vote record.
+  id String @id
+  
+  /// References the authenticated member who cast this vote.
+  ///
+  ///
+  ///
+  /// The member is the voter. Each vote is always associated with exactly one
+  /// member account.
+  ///
+  /// Cross-reference: {@link reddit_like_community_members}.
+  reddit_like_community_member_id String
+  
+  /// References the post that received this vote.
+  ///
+  ///
+  ///
+  /// Each vote targets exactly one post. Posts belong to communities and have
+  /// authors.
+  ///
+  /// Cross-reference: {@link reddit_like_community_posts}.
+  reddit_like_community_post_id String
+  
+  /// The direction of the vote: "up" for an upvote or "down" for a downvote.
+  ///
+  ///
+  ///
+  /// An upvote increases the post's vote score by +1 and the author's karma by
+  /// +1. A downvote decreases both by 1. Changing direction from up to down
+  /// shifts the post score by -2 and karma by -2 (and vice versa for down to
+  /// up).
+  direction String
+  
+  /// Timestamp when this vote was first cast.
+  created_at DateTime
+  
+  /// Timestamp of the last modification to this vote record, updated when the
+  /// vote direction changes.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member reddit_like_community_members @relation(fields: [reddit_like_community_member_id], references: [id], onDelete: Cascade)
+  post reddit_like_community_posts @relation(fields: [reddit_like_community_post_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([reddit_like_community_member_id, reddit_like_community_post_id], map: "reddit_like_community_post_votes_reddit_like_community_28db4b92")
+  // spellchecker: ignore-next-line
+  @@index([reddit_like_community_post_id, created_at], map: "reddit_like_community_post_votes_reddit_like_community_fe2bf5cb")
+}
+
+/// Records user votes on comments, enforcing one vote per user per comment.
+///
+/// Users can upvote or downvote comments. The direction is stored as a
+/// string. Scores are derived from counting upvotes and downvotes per
+/// comment.
+///
+/// @namespace vote
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_community_comment_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the comment vote record.
+  id String @id
+  
+  /// Reference to the member who cast the vote.
+  ///
+  /// Links to the authenticated user who voted on this comment.
+  reddit_like_community_member_id String
+  
+  /// Reference to the comment that received the vote.
+  ///
+  /// Links to the comment that was voted on.
+  reddit_like_community_comment_id String
+  
+  /// The direction of the vote: 'upvote' or 'downvote'.
+  ///
+  /// Represents whether the user voted positively (upvote) or negatively
+  /// (downvote) on the comment.
+  direction String
+  
+  /// Timestamp when the vote was created.
+  ///
+  /// Tracks when the user first cast their vote on this comment.
+  created_at DateTime
+  
+  /// Timestamp when the vote was last updated.
+  ///
+  /// Tracks when the vote was modified, for example, when a user changes their
+  /// vote direction.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member reddit_like_community_members @relation(fields: [reddit_like_community_member_id], references: [id], onDelete: Cascade)
+  comment reddit_like_community_comments @relation(fields: [reddit_like_community_comment_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([reddit_like_community_comment_id], map: "reddit_like_community_comment_votes_reddit_like_commun_8f74631e")
+  // spellchecker: ignore-next-line
+  @@unique([reddit_like_community_member_id, reddit_like_community_comment_id], map: "reddit_like_community_comment_votes_reddit_like_commun_acc92944")
+}

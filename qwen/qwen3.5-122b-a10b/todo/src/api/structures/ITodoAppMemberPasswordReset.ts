@@ -22,8 +22,10 @@ export type ITodoAppMemberPasswordReset = {
    *
    * UUID primary key that uniquely identifies the password reset token in the system. Generated when the token is created and never changes.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from todo_app_member_password_resets.id. UUID primary key uniquely identifying this password reset token record.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   todo_app_member_password_resets.id. UUID primary key uniquely
+     *   identifying this password reset token record.
    */
   id: string & tags.Format<"uuid">;
 
@@ -38,8 +40,10 @@ export type ITodoAppMemberPasswordReset = {
    * - Never logged or stored in plaintext in application logs
    * - Validated for existence, expiration, and usage status before use
    *
-   * @x-autobe-database-schema-property token
-   * @x-autobe-specification Direct mapping from todo_app_member_password_resets.token. Cryptographically random string, unique across all reset tokens.
+     * @x-autobe-database-schema-property token
+     * @x-autobe-specification Direct mapping from
+     *   todo_app_member_password_resets.token. Cryptographically random string,
+     *   unique across all reset tokens.
    */
   token: string;
 
@@ -53,8 +57,10 @@ export type ITodoAppMemberPasswordReset = {
    * - Password reset requests check: current_time < expires_at
    * - This field is NOT NULL to ensure all tokens have a defined expiration
    *
-   * @x-autobe-database-schema-property expires_at
-   * @x-autobe-specification Direct mapping from todo_app_member_password_resets.expires_at. DateTime when token becomes invalid. NOT NULL constraint.
+     * @x-autobe-database-schema-property expires_at
+     * @x-autobe-specification Direct mapping from
+     *   todo_app_member_password_resets.expires_at. DateTime when token becomes
+     *   invalid. NOT NULL constraint.
    */
   expires_at: string & tags.Format<"date-time">;
 
@@ -70,8 +76,10 @@ export type ITodoAppMemberPasswordReset = {
    * - Used tokens are logically removed from active rotation
    * - Nullable to support both unused (NULL) and used (timestamp) states
    *
-   * @x-autobe-database-schema-property used_at
-   * @x-autobe-specification Direct mapping from todo_app_member_password_resets.used_at. Nullable DateTime. NULL when token is unused, populated with timestamp when token is consumed.
+     * @x-autobe-database-schema-property used_at
+     * @x-autobe-specification Direct mapping from
+     *   todo_app_member_password_resets.used_at. Nullable DateTime. NULL when
+     *   token is unused, populated with timestamp when token is consumed.
    */
   used_at: (string & tags.Format<"date-time">) | null;
 
@@ -86,8 +94,10 @@ export type ITodoAppMemberPasswordReset = {
    * - Never updated after creation
    * - Required for all records
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from todo_app_member_password_resets.created_at. DateTime when token was created. NOT NULL constraint.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   todo_app_member_password_resets.created_at. DateTime when token was
+     *   created. NOT NULL constraint.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -102,8 +112,10 @@ export type ITodoAppMemberPasswordReset = {
    * - Updated when token is consumed (used_at is populated)
    * - Never updated for other modifications
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from todo_app_member_password_resets.updated_at. DateTime when record was last modified. Updated when token is consumed.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   todo_app_member_password_resets.updated_at. DateTime when record was
+     *   last modified. Updated when token is consumed.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -118,8 +130,10 @@ export type ITodoAppMemberPasswordReset = {
    * - Set to current timestamp when record is soft deleted
    * - Queries should filter out records where deleted_at IS NOT NULL
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from todo_app_member_password_resets.deleted_at. Nullable DateTime. NULL for active records, populated when soft deleted.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   todo_app_member_password_resets.deleted_at. Nullable DateTime. NULL for
+     *   active records, populated when soft deleted.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 
@@ -134,8 +148,11 @@ export type ITodoAppMemberPasswordReset = {
    * - When a member is deleted, their reset tokens are cascade deleted
    * - This is a many-to-one relationship: many tokens can reference one member
    *
-   * @x-autobe-database-schema-property todoAppMember
-   * @x-autobe-specification Join from todo_app_member_password_resets.todo_app_member_id to todo_app_members.id. Returns ITodoAppMember.ISummary via LEFT JOIN. Foreign key column todo_app_member_id excluded from DTO.
+     * @x-autobe-database-schema-property todoAppMember
+     * @x-autobe-specification Join from
+     *   todo_app_member_password_resets.todo_app_member_id to
+     *   todo_app_members.id. Returns ITodoAppMember.ISummary via LEFT JOIN.
+     *   Foreign key column todo_app_member_id excluded from DTO.
    */
   todoAppMember: ITodoAppMember.ISummary;
 };
@@ -169,8 +186,11 @@ export namespace ITodoAppMemberPasswordReset {
      *
      * Once validated and used, the token is marked as consumed and cannot be reused for additional password resets.
      *
-     * @x-autobe-database-schema-property token
-     * @x-autobe-specification Direct mapping from todo_app_member_password_resets.token. Cryptographically random one-time reset token string. Must exist in database, not expired, and not previously used.
+         * @x-autobe-database-schema-property token
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_member_password_resets.token. Cryptographically random
+         *   one-time reset token string. Must exist in database, not expired,
+         *   and not previously used.
      */
     token: string;
 
@@ -185,7 +205,10 @@ export namespace ITodoAppMemberPasswordReset {
      * - Will be hashed using bcrypt or Argon2 before storage
      * - Never stored or logged in plain text
      *
-     * @x-autobe-specification Business field for new password. Backend validates password policy requirements (minimum length, complexity), then hashes using bcrypt or Argon2 before storing in todo_app_members.password_hash.
+         * @x-autobe-specification Business field for new password. Backend
+         *   validates password policy requirements (minimum length,
+         *   complexity), then hashes using bcrypt or Argon2 before storing in
+         *   todo_app_members.password_hash.
      */
     newPassword: string;
 
@@ -199,7 +222,9 @@ export namespace ITodoAppMemberPasswordReset {
      * - Must be identical to the newPassword field
      * - Used to prevent accidental password entry errors
      *
-     * @x-autobe-specification Business field for password confirmation. Backend validates newPassword and newPasswordConfirm match exactly before proceeding with password update.
+         * @x-autobe-specification Business field for password confirmation.
+         *   Backend validates newPassword and newPasswordConfirm match exactly
+         *   before proceeding with password update.
      */
     newPasswordConfirm: string;
 
@@ -211,7 +236,8 @@ export namespace ITodoAppMemberPasswordReset {
      * Requesting a page beyond the available range returns an empty data array
      * with valid pagination metadata reflecting the actual totals.
      *
-     * @x-autobe-specification 1-indexed page number. Defaults to 1 if not provided.
+         * @x-autobe-specification 1-indexed page number. Defaults to 1 if not
+         *   provided.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
 
@@ -223,7 +249,8 @@ export namespace ITodoAppMemberPasswordReset {
      * enforce upper bounds to prevent excessive resource consumption on large
      * requests.
      *
-     * @x-autobe-specification Maximum records per page. Defaults to 100 if not provided.
+         * @x-autobe-specification Maximum records per page. Defaults to 100 if
+         *   not provided.
      */
     limit?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };
@@ -252,8 +279,10 @@ export namespace ITodoAppMemberPasswordReset {
      * - Current time must be before expires_at for token to be valid
      * - Format: ISO 8601 date-time string
      *
-     * @x-autobe-database-schema-property expires_at
-     * @x-autobe-specification Direct mapping from todo_app_member_password_resets.expires_at. Timestamp when the token becomes invalid.
+         * @x-autobe-database-schema-property expires_at
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_member_password_resets.expires_at. Timestamp when the
+         *   token becomes invalid.
      */
     expires_at: string & tags.Format<"date-time">;
 
@@ -267,8 +296,10 @@ export namespace ITodoAppMemberPasswordReset {
      * - NULL: Token has not been used (valid for password reset)
      * - Timestamp: Token has been consumed (invalid for reuse)
      *
-     * @x-autobe-database-schema-property used_at
-     * @x-autobe-specification Direct mapping from todo_app_member_password_resets.used_at. NULL for unused tokens, timestamp when token was consumed.
+         * @x-autobe-database-schema-property used_at
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_member_password_resets.used_at. NULL for unused tokens,
+         *   timestamp when token was consumed.
      */
     used_at: (string & tags.Format<"date-time">) | null;
 
@@ -281,8 +312,10 @@ export namespace ITodoAppMemberPasswordReset {
      *
      * - ISO 8601 date-time string
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from todo_app_member_password_resets.created_at. Timestamp when token was originally generated.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_member_password_resets.created_at. Timestamp when token
+         *   was originally generated.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -297,7 +330,11 @@ export namespace ITodoAppMemberPasswordReset {
      * - Token is not expired: current_time < expires_at
      * - Token is not used: used_at IS NULL
      *
-     * @x-autobe-specification Computed property: always true in successful response. The endpoint only returns this response after validating that the token exists, is not expired (now() < expires_at), and is not used (used_at IS NULL). If any validation fails, a 404 or 410 error is returned instead.
+         * @x-autobe-specification Computed property: always true in successful
+         *   response. The endpoint only returns this response after validating
+         *   that the token exists, is not expired (now() < expires_at), and is
+         *   not used (used_at IS NULL). If any validation fails, a 404 or 410
+         *   error is returned instead.
      */
     valid: boolean;
   };

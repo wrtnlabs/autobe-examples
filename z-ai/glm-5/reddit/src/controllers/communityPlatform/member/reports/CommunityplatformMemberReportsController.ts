@@ -25,9 +25,10 @@ export class CommunityplatformMemberReportsController {
    *
    * @param connection
    * @param body Report creation data including target content and reason
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Create a new report record in community_platform_reports table with status 'pending'.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Create a new report record in
+     *   community_platform_reports table with status 'pending'.
    *
    * 1. Validate the authenticated member is not banned from the target community.
    * 2. Validate target_type is either 'post' or 'comment'.
@@ -68,9 +69,10 @@ export class CommunityplatformMemberReportsController {
    *
    * @param connection
    * @param body Search criteria and pagination parameters for report listing
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query community_platform_reports table with pagination and filtering for moderator review.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query community_platform_reports table with
+     *   pagination and filtering for moderator review.
    *
    * Implementation steps:
    * 1. Authenticate member and verify moderator privileges for the requested community
@@ -122,9 +124,10 @@ export class CommunityplatformMemberReportsController {
    *
    * @param connection
    * @param reportId Unique identifier of the report to retrieve (UUID format)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Retrieve a single report by ID for moderator review.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Retrieve a single report by ID for moderator
+     *   review.
    *
    * 1. Authorization check:
    *    - Verify the authenticated member is a moderator of the report's community

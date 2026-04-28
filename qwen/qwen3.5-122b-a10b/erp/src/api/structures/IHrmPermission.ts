@@ -20,8 +20,9 @@ export type IHrmPermission = {
    *
    * Generated as a UUID when the permission record is created. This value is immutable and serves as the primary key for all permission-related operations.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from hrm_permissions.id. UUID format, primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from hrm_permissions.id. UUID
+     *   format, primary key.
    */
   id: string & tags.Format<"uuid">;
 
@@ -32,8 +33,10 @@ export type IHrmPermission = {
    *
    * The naming convention uses a domain prefix (org, employee, project, time, report) followed by an action suffix (manage, view, approve, view_all) to clearly indicate the permission's scope and purpose.
    *
-   * @x-autobe-database-schema-property permission_name
-   * @x-autobe-specification Direct mapping from hrm_permissions.permission_name. Unique constraint enforced at database level.
+     * @x-autobe-database-schema-property permission_name
+     * @x-autobe-specification Direct mapping from
+     *   hrm_permissions.permission_name. Unique constraint enforced at database
+     *   level.
    */
   permission_name: string;
 
@@ -42,8 +45,8 @@ export type IHrmPermission = {
    *
    * Provides context for administrators when assigning permissions to roles. The description explains the specific capabilities and access granted by this permission in natural language.
    *
-   * @x-autobe-database-schema-property description
-   * @x-autobe-specification Direct mapping from hrm_permissions.description.
+     * @x-autobe-database-schema-property description
+     * @x-autobe-specification Direct mapping from hrm_permissions.description.
    */
   description: string;
 
@@ -52,8 +55,9 @@ export type IHrmPermission = {
    *
    * Recorded in UTC timezone using ISO 8601 format (e.g., 2024-01-15T10:30:00.000Z). Permission definitions are system-initialized and this timestamp reflects when the permission was added to the system.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from hrm_permissions.created_at. UTC timezone, ISO 8601 format.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from hrm_permissions.created_at.
+     *   UTC timezone, ISO 8601 format.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -62,8 +66,9 @@ export type IHrmPermission = {
    *
    * Recorded in UTC timezone using ISO 8601 format (e.g., 2024-01-15T10:30:00.000Z). For system-defined permissions, this typically matches created_at since permission definitions are immutable.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from hrm_permissions.updated_at. UTC timezone, ISO 8601 format.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from hrm_permissions.updated_at.
+     *   UTC timezone, ISO 8601 format.
    */
   updated_at: string & tags.Format<"date-time">;
 };
@@ -87,8 +92,9 @@ export namespace IHrmPermission {
      *
      * This UUID serves as the primary key for the permission record and is used when referencing the permission in role assignments, API operations, and database queries. The identifier is system-generated and immutable once created.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from hrm_permissions.id. UUID primary key uniquely identifying each permission definition.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from hrm_permissions.id. UUID
+         *   primary key uniquely identifying each permission definition.
      */
     id: string & tags.Format<"uuid">;
 
@@ -109,8 +115,10 @@ export namespace IHrmPermission {
      * - time:view_all - View all timelogs across the organization
      * - report:view - Access organization-wide reports and analytics
      *
-     * @x-autobe-database-schema-property permission_name
-     * @x-autobe-specification Direct mapping from hrm_permissions.permission_name. Unique constraint enforced at database level.
+         * @x-autobe-database-schema-property permission_name
+         * @x-autobe-specification Direct mapping from
+         *   hrm_permissions.permission_name. Unique constraint enforced at
+         *   database level.
      */
     permission_name: string;
 
@@ -119,8 +127,10 @@ export namespace IHrmPermission {
      *
      * This field provides a clear, natural language explanation of the permission's purpose and scope. It is displayed in role management interfaces to help administrators understand the implications of granting this permission to a role. The description complements the technical permission_name by providing business context.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from hrm_permissions.description. Human-readable text explaining permission purpose.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   hrm_permissions.description. Human-readable text explaining
+         *   permission purpose.
      */
     description: string;
 
@@ -129,8 +139,9 @@ export namespace IHrmPermission {
      *
      * This ISO 8601 formatted datetime records when the permission entry was initially added to the permissions table. Permission definitions are system-managed and typically created during application initialization or migration, so this timestamp reflects when the permission became available in the system.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from hrm_permissions.created_at. PostgreSQL timestamptz type.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_permissions.created_at. PostgreSQL timestamptz type.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -139,8 +150,9 @@ export namespace IHrmPermission {
      *
      * This ISO 8601 formatted datetime tracks the most recent update to the permission record. For system-defined permissions, this typically only changes if the description or metadata is updated during system migrations or configuration changes.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from hrm_permissions.updated_at. PostgreSQL timestamptz type.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_permissions.updated_at. PostgreSQL timestamptz type.
      */
     updated_at: string & tags.Format<"date-time">;
   };
@@ -177,7 +189,10 @@ export namespace IHrmPermission {
      * - Single word: Matches any permission containing that word
      * - Multiple words: All words must appear in the same permission (AND logic)
      *
-     * @x-autobe-specification Query parameter for case-insensitive partial matching. Applied as LIKE '%term%' on both permission_name and description columns in hrm_permissions table. Returns permissions where either field contains the search term.
+         * @x-autobe-specification Query parameter for case-insensitive partial
+         *   matching. Applied as LIKE '%term%' on both permission_name and
+         *   description columns in hrm_permissions table. Returns permissions
+         *   where either field contains the search term.
      */
     search?: string | undefined;
 
@@ -199,7 +214,10 @@ export namespace IHrmPermission {
      * - Omitted: Returns permissions from all categories
      * - Specified: Returns only permissions matching the given category prefix
      *
-     * @x-autobe-specification Query parameter for filtering by permission domain prefix. Extracts the prefix before the colon in permission_name (org, employee, project, time, report) and matches permissions starting with '{category}:'.
+         * @x-autobe-specification Query parameter for filtering by permission
+         *   domain prefix. Extracts the prefix before the colon in
+         *   permission_name (org, employee, project, time, report) and matches
+         *   permissions starting with '{category}:'.
      */
     category?: string | undefined;
 
@@ -219,7 +237,9 @@ export namespace IHrmPermission {
      * - Default value: 1 (if omitted)
      * - Maximum value: Determined by total record count and pageSize
      *
-     * @x-autobe-specification Query parameter for offset-based pagination. Calculates OFFSET as (page - 1) * pageSize. Must be >= 1. Defaults to 1 if omitted.
+         * @x-autobe-specification Query parameter for offset-based pagination.
+         *   Calculates OFFSET as (page - 1) * pageSize. Must be >= 1. Defaults
+         *   to 1 if omitted.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -240,7 +260,9 @@ export namespace IHrmPermission {
      * - Server may enforce upper bounds to prevent excessive resource consumption
      * - Recommended range: 10-50 for typical UI pagination
      *
-     * @x-autobe-specification Query parameter for controlling result set size per page. Maps to LIMIT clause in SQL query. Must be between 1 and 100. Defaults to 20 if omitted.
+         * @x-autobe-specification Query parameter for controlling result set
+         *   size per page. Maps to LIMIT clause in SQL query. Must be between 1
+         *   and 100. Defaults to 20 if omitted.
      */
     pageSize?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -262,7 +284,10 @@ export namespace IHrmPermission {
      * - Omitted: Defaults to sorting by permission_name in ascending order
      * - Invalid value: Server may reject request or fall back to default
      *
-     * @x-autobe-specification Query parameter for specifying the sort field. Maps to ORDER BY clause in SQL query. Valid values: permission_name, created_at, updated_at. Defaults to permission_name if omitted.
+         * @x-autobe-specification Query parameter for specifying the sort
+         *   field. Maps to ORDER BY clause in SQL query. Valid values:
+         *   permission_name, created_at, updated_at. Defaults to
+         *   permission_name if omitted.
      */
     sort?: string | undefined;
 
@@ -285,7 +310,9 @@ export namespace IHrmPermission {
      * - `sort=permission_name&order=asc`: org:manage, employee:view, project:manage
      * - `sort=created_at&order=desc`: Newest permissions first
      *
-     * @x-autobe-specification Query parameter for specifying sort direction. Maps to ASC/DESC in ORDER BY clause. Valid values: 'asc' (ascending), 'desc' (descending). Defaults to 'asc' if omitted.
+         * @x-autobe-specification Query parameter for specifying sort
+         *   direction. Maps to ASC/DESC in ORDER BY clause. Valid values: 'asc'
+         *   (ascending), 'desc' (descending). Defaults to 'asc' if omitted.
      */
     order?: "asc" | "desc" | undefined;
 
@@ -305,7 +332,10 @@ export namespace IHrmPermission {
      * - If both `limit` and `pageSize` are provided, `limit` takes precedence
      * - The actual number of records returned may be less than this value on the final page or when total records are fewer than the limit
      *
-     * @x-autobe-specification Query parameter for maximum record count per page. Alias for pageSize with different naming convention. If provided, overrides pageSize. Must be >= 0. Defaults to 100 if omitted or null.
+         * @x-autobe-specification Query parameter for maximum record count per
+         *   page. Alias for pageSize with different naming convention. If
+         *   provided, overrides pageSize. Must be >= 0. Defaults to 100 if
+         *   omitted or null.
      */
     limit?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };

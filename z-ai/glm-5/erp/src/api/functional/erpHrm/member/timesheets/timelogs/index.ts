@@ -322,7 +322,9 @@ export namespace updateTimelogs {
  * @param props.timelogId Unique identifier of the timelog to remove from the timesheet. Must be currently associated with the specified timesheet.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Delete the junction record from erp_hrm_timesheet_timelogs table where timesheet_id matches the path parameter and timelog_id matches the path parameter. Before deletion:
+ * @x-autobe-specification Delete the junction record from
+ *   erp_hrm_timesheet_timelogs table where timesheet_id matches the path
+ *   parameter and timelog_id matches the path parameter. Before deletion:
  *
  * 1. Validate the timesheet exists and belongs to the current organization context
  * 2. Validate the timelog exists and belongs to the same employee as the timesheet

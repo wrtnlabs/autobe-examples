@@ -26,9 +26,10 @@ export class EcommercemallCustomerProductsEnrichedController {
    *
    * @param connection
    * @param productId Unique identifier of the product to retrieve.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Query ecommerce_mall_products table filtering by id = {productId} AND deleted_at IS NULL. If not found, return 404.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Query ecommerce_mall_products table filtering by
+     *   id = {productId} AND deleted_at IS NULL. If not found, return 404.
    *
    * Join and include related data:
    * 1. ecommerce_mall_product_images: Get all images for the product ordered by display_order ASC

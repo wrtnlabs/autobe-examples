@@ -19,7 +19,8 @@ import { IRedditCommunityCommunity } from "../../../../../structures/IRedditComm
  * @param props.communityId Unique identifier of the community to be deleted.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query reddit_community_communities table to find community by ID.
+ * @x-autobe-specification Query reddit_community_communities table to find
+ *   community by ID.
  *
  * 1. Validate community exists and is not deleted (deleted_at is NULL)
  * 2. Verify requesting user is the community owner (owner_id matches)

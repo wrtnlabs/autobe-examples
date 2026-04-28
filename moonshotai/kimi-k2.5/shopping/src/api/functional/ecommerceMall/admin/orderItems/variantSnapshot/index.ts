@@ -21,7 +21,8 @@ import { IEcommerceMallProductVariantSnapshot } from "../../../../../structures/
  * @param props.orderItemId Unique identifier of the order item whose variant snapshot is being retrieved
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Query the ecommerce_mall_order_items table to find the variant snapshot associated with the provided orderItemId.
+ * @x-autobe-specification Query the ecommerce_mall_order_items table to find
+ *   the variant snapshot associated with the provided orderItemId.
  *
  * Join with ecommerce_mall_product_variant_snapshots to retrieve the full snapshot data. The snapshot contains: SKU code, option values (color, size, etc.), and the variant-specific price at purchase time.
  *

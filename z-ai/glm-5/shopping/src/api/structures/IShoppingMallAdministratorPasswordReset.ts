@@ -12,35 +12,45 @@ export type IShoppingMallAdministratorPasswordReset = {
   /**
    * Unique identifier for this administrator request.
    *
-   * @x-autobe-specification UUID primary key from administrator_requests table. Unique identifier for the administrator role request record.
+     * @x-autobe-specification UUID primary key from administrator_requests
+     *   table. Unique identifier for the administrator role request record.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Reason provided by the requester for seeking administrator access.
    *
-   * @x-autobe-specification Text field from administrator_requests.reason column. Contains the justification provided by the requester for seeking administrative privileges.
+     * @x-autobe-specification Text field from administrator_requests.reason
+     *   column. Contains the justification provided by the requester for
+     *   seeking administrative privileges.
    */
   reason: string;
 
   /**
    * Current status of the administrator request.
    *
-   * @x-autobe-specification Enum field from administrator_requests.status column. Values: 'pending' (awaiting review), 'approved' (granted admin role), 'rejected' (denied, can reapply). Terminal states are approved/rejected.
+     * @x-autobe-specification Enum field from administrator_requests.status
+     *   column. Values: 'pending' (awaiting review), 'approved' (granted admin
+     *   role), 'rejected' (denied, can reapply). Terminal states are
+     *   approved/rejected.
    */
   status: "pending" | "approved" | "rejected";
 
   /**
    * Timestamp when the request was submitted.
    *
-   * @x-autobe-specification Timestamp from administrator_requests.created_at column. Records when the request was submitted by the user.
+     * @x-autobe-specification Timestamp from administrator_requests.created_at
+     *   column. Records when the request was submitted by the user.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the request was reviewed, if processed.
    *
-   * @x-autobe-specification Nullable timestamp from administrator_requests.reviewed_at column. Populated when a super administrator approves or rejects the request. Null while status is 'pending'.
+     * @x-autobe-specification Nullable timestamp from
+     *   administrator_requests.reviewed_at column. Populated when a super
+     *   administrator approves or rejects the request. Null while status is
+     *   'pending'.
    */
   reviewed_at: (string & tags.Format<"date-time">) | null;
   reviewer: IShoppingMallAdministrator.ISummary | null;
@@ -50,7 +60,9 @@ export type IShoppingMallAdministratorPasswordReset = {
   /**
    * Current role of the requester (customer or seller).
    *
-   * @x-autobe-specification Enum from administrator_requests.requester_type column indicating the requester's current role. Values: 'customer' or 'seller'. Determines which table to JOIN for requester details.
+     * @x-autobe-specification Enum from administrator_requests.requester_type
+     *   column indicating the requester's current role. Values: 'customer' or
+     *   'seller'. Determines which table to JOIN for requester details.
    */
   requester_role: "customer" | "seller";
 };
@@ -62,21 +74,30 @@ export namespace IShoppingMallAdministratorPasswordReset {
     /**
      * Filter administrator requests by processing status. Use 'pending' for requests awaiting review, 'approved' for granted requests, or 'rejected' for denied requests.
      *
-     * @x-autobe-specification Filter parameter applied via WHERE clause on administrator_requests.status column. Valid values: 'pending' (awaiting review), 'approved' (granted admin privileges), 'rejected' (denied request). When null or omitted, returns all requests regardless of status.
+         * @x-autobe-specification Filter parameter applied via WHERE clause on
+         *   administrator_requests.status column. Valid values: 'pending'
+         *   (awaiting review), 'approved' (granted admin privileges),
+         *   'rejected' (denied request). When null or omitted, returns all
+         *   requests regardless of status.
      */
     status?: "pending" | "approved" | "rejected" | null | undefined;
 
     /**
      * Page number for paginated results. Starts at 1 for the first page of results.
      *
-     * @x-autobe-specification Pagination offset parameter. Defaults to 1 (first page). Used to calculate OFFSET = (page - 1) * limit. Minimum value: 1. Combined with limit to implement result pagination.
+         * @x-autobe-specification Pagination offset parameter. Defaults to 1
+         *   (first page). Used to calculate OFFSET = (page - 1) * limit.
+         *   Minimum value: 1. Combined with limit to implement result
+         *   pagination.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of administrator requests to return per page. Defaults to 10, maximum 100.
      *
-     * @x-autobe-specification Maximum number of records returned per page. Defaults to 10, maximum allowed is 100. Used in LIMIT clause. Actual returned count may be less on the final page.
+         * @x-autobe-specification Maximum number of records returned per page.
+         *   Defaults to 10, maximum allowed is 100. Used in LIMIT clause.
+         *   Actual returned count may be less on the final page.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -90,42 +111,64 @@ export namespace IShoppingMallAdministratorPasswordReset {
     /**
      * Unique identifier for this administrator role request.
      *
-     * @x-autobe-specification Unique identifier for the administrator request. Generated upon request submission. Used as primary key for request lookup and reference. May be stored in shopping_mall_administrator_requests.id or equivalent request storage mechanism.
+         * @x-autobe-specification Unique identifier for the administrator
+         *   request. Generated upon request submission. Used as primary key for
+         *   request lookup and reference. May be stored in
+         *   shopping_mall_administrator_requests.id or equivalent request
+         *   storage mechanism.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * The applicant's justification for seeking administrator privileges.
      *
-     * @x-autobe-specification Text field containing the applicant's justification for why they should be granted administrator privileges. Required at submission time. Stored in request storage (e.g., shopping_mall_administrator_requests.reason). Maximum length enforced by validation rules.
+         * @x-autobe-specification Text field containing the applicant's
+         *   justification for why they should be granted administrator
+         *   privileges. Required at submission time. Stored in request storage
+         *   (e.g., shopping_mall_administrator_requests.reason). Maximum length
+         *   enforced by validation rules.
      */
     reason: string;
 
     /**
      * Current status of the administrator request: pending, approved, or rejected.
      *
-     * @x-autobe-specification Current processing status of the request. Valid values: 'pending' (awaiting review), 'approved' (user granted admin role), 'rejected' (request denied). Stored in request storage. Only super administrators can transition status from pending to approved/rejected.
+         * @x-autobe-specification Current processing status of the request.
+         *   Valid values: 'pending' (awaiting review), 'approved' (user granted
+         *   admin role), 'rejected' (request denied). Stored in request
+         *   storage. Only super administrators can transition status from
+         *   pending to approved/rejected.
      */
     status: "pending" | "approved" | "rejected";
 
     /**
      * Timestamp when the administrator request was submitted.
      *
-     * @x-autobe-specification Timestamp when the administrator request was submitted. Set automatically upon creation. Used for chronological sorting (newest first in dashboard). Stored in request storage with timestamp type.
+         * @x-autobe-specification Timestamp when the administrator request was
+         *   submitted. Set automatically upon creation. Used for chronological
+         *   sorting (newest first in dashboard). Stored in request storage with
+         *   timestamp type.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when the request was reviewed, null if still pending.
      *
-     * @x-autobe-specification Timestamp when a super administrator made a decision on this request. Null for pending requests. Set when status transitions to approved or rejected. Stored in request storage with nullable timestamp type.
+         * @x-autobe-specification Timestamp when a super administrator made a
+         *   decision on this request. Null for pending requests. Set when
+         *   status transitions to approved or rejected. Stored in request
+         *   storage with nullable timestamp type.
      */
     reviewed_at: (string & tags.Format<"date-time">) | null;
 
     /**
      * The super administrator who reviewed this request, null if not yet reviewed.
      *
-     * @x-autobe-specification Reference to the super administrator who reviewed this request. Null for pending requests. JOIN with shopping_mall_administrators table on reviewedBy foreign key to fetch IShoppingMallAdministrator.ISummary data. Only populated after review decision is made.
+         * @x-autobe-specification Reference to the super administrator who
+         *   reviewed this request. Null for pending requests. JOIN with
+         *   shopping_mall_administrators table on reviewedBy foreign key to
+         *   fetch IShoppingMallAdministrator.ISummary data. Only populated
+         *   after review decision is made.
      */
     reviewer: IShoppingMallAdministrator.ISummary | null;
   };

@@ -18,8 +18,9 @@ export type IHrmTimeTrackProject = {
    *
    * This identifier is used to reference the project across all API operations and serves as the primary key in the database. It is generated automatically when the project is created and cannot be modified.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from hrm_time_track_projects.id. Primary key UUID generated on project creation.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from hrm_time_track_projects.id.
+     *   Primary key UUID generated on project creation.
    */
   id: string & tags.Format<"uuid">;
 
@@ -28,8 +29,9 @@ export type IHrmTimeTrackProject = {
    *
    * The name uniquely identifies the project within the organization context and is used in user interfaces, reports, and communications. This field is required when creating a project and must be a non-empty string.
    *
-   * @x-autobe-database-schema-property name
-   * @x-autobe-specification Direct mapping from hrm_time_track_projects.name. Required non-empty string field.
+     * @x-autobe-database-schema-property name
+     * @x-autobe-specification Direct mapping from hrm_time_track_projects.name.
+     *   Required non-empty string field.
    */
   name: string;
 
@@ -38,8 +40,10 @@ export type IHrmTimeTrackProject = {
    *
    * Provides additional context about the project's purpose, deliverables, and requirements. This field is optional and can be null for projects that only require a name for identification.
    *
-   * @x-autobe-database-schema-property description
-   * @x-autobe-specification Direct mapping from hrm_time_track_projects.description. Nullable string field for optional detailed description.
+     * @x-autobe-database-schema-property description
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_projects.description. Nullable string field for optional
+     *   detailed description.
    */
   description: string | null;
 
@@ -48,8 +52,9 @@ export type IHrmTimeTrackProject = {
    *
    * Used to visually distinguish projects in dashboards, lists, and reports. The value must be a valid hex color format (e.g., #FF5733). This field is required when creating a project.
    *
-   * @x-autobe-database-schema-property color_code
-   * @x-autobe-specification Direct mapping from hrm_time_track_projects.color_code. Required hex color format string.
+     * @x-autobe-database-schema-property color_code
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_projects.color_code. Required hex color format string.
    */
   color_code: string;
 
@@ -58,8 +63,10 @@ export type IHrmTimeTrackProject = {
    *
    * Allowed values are: 'active' (ongoing, can receive new timelogs and tasks), 'archived' (preserved for reference, no new timelogs), 'completed' (finished, no new timelogs). Status controls whether new work can be added to the project. Projects can be reactivated by changing status back to 'active'.
    *
-   * @x-autobe-database-schema-property status
-   * @x-autobe-specification Direct mapping from hrm_time_track_projects.status. Enum field with values: 'active', 'archived', 'completed'. Controls whether new work can be added.
+     * @x-autobe-database-schema-property status
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_projects.status. Enum field with values: 'active',
+     *   'archived', 'completed'. Controls whether new work can be added.
    */
   status: string;
 
@@ -68,8 +75,10 @@ export type IHrmTimeTrackProject = {
    *
    * Used for tracking and reporting against planned vs actual time investment. This field is optional and can be null for projects without a defined hour budget. When provided, enables budget tracking and variance analysis.
    *
-   * @x-autobe-database-schema-property budget_hours
-   * @x-autobe-specification Direct mapping from hrm_time_track_projects.budget_hours. Nullable Float (DoublePrecision) for optional total estimated hours budget.
+     * @x-autobe-database-schema-property budget_hours
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_projects.budget_hours. Nullable Float (DoublePrecision)
+     *   for optional total estimated hours budget.
    */
   budget_hours: number | null;
 
@@ -78,8 +87,10 @@ export type IHrmTimeTrackProject = {
    *
    * Indicates when the project work began or is scheduled to begin. This field is optional and can be null for projects without a defined start date. Used for timeline tracking and project planning.
    *
-   * @x-autobe-database-schema-property start_date
-   * @x-autobe-specification Direct mapping from hrm_time_track_projects.start_date. Nullable DateTime (Timestamptz) for optional project start date.
+     * @x-autobe-database-schema-property start_date
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_projects.start_date. Nullable DateTime (Timestamptz) for
+     *   optional project start date.
    */
   start_date: (string & tags.Format<"date-time">) | null;
 
@@ -88,8 +99,10 @@ export type IHrmTimeTrackProject = {
    *
    * Indicates when the project work is scheduled to complete. This field is optional and can be null for projects without a defined end date. When both start_date and end_date are provided, end_date must be after start_date.
    *
-   * @x-autobe-database-schema-property end_date
-   * @x-autobe-specification Direct mapping from hrm_time_track_projects.end_date. Nullable DateTime (Timestamptz) for optional project end date. Must be after start_date if both provided.
+     * @x-autobe-database-schema-property end_date
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_projects.end_date. Nullable DateTime (Timestamptz) for
+     *   optional project end date. Must be after start_date if both provided.
    */
   end_date: (string & tags.Format<"date-time">) | null;
 
@@ -98,8 +111,10 @@ export type IHrmTimeTrackProject = {
    *
    * This timestamp is automatically set when the project is created and cannot be modified. It provides an audit trail for project creation and is used for sorting and filtering projects by creation date.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from hrm_time_track_projects.created_at. DateTime (Timestamptz) set automatically on project creation. Immutable.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_projects.created_at. DateTime (Timestamptz) set
+     *   automatically on project creation. Immutable.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -108,8 +123,10 @@ export type IHrmTimeTrackProject = {
    *
    * This timestamp is automatically updated whenever the project is modified. It helps track when the most recent changes were made and is used for change detection and audit purposes.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from hrm_time_track_projects.updated_at. DateTime (Timestamptz) updated automatically on each modification.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_projects.updated_at. DateTime (Timestamptz) updated
+     *   automatically on each modification.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -118,8 +135,10 @@ export type IHrmTimeTrackProject = {
    *
    * Null indicates the project is active. When set, the project is marked as deleted but preserved for audit purposes. Projects can only be deleted if they have no associated timelogs. Soft delete preserves data integrity while removing the project from active operations.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from hrm_time_track_projects.deleted_at. Nullable DateTime (Timestamptz). Null indicates active project. Set when project is soft deleted.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_projects.deleted_at. Nullable DateTime (Timestamptz).
+     *   Null indicates active project. Set when project is soft deleted.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 
@@ -128,8 +147,12 @@ export type IHrmTimeTrackProject = {
    *
    * Each project belongs to exactly one organization, which provides the multi-tenancy boundary and permission context for project access. The organization field includes essential organization information such as name, currency, and timezone settings.
    *
-   * @x-autobe-database-schema-property organization
-   * @x-autobe-specification JOIN from hrm_time_track_projects.hrm_time_track_organization_id to hrm_time_track_organizations.id. Returns IHrmTimeTrackOrganization.ISummary. FK transformed to object for Read DTO.
+     * @x-autobe-database-schema-property organization
+     * @x-autobe-specification JOIN from
+     *   hrm_time_track_projects.hrm_time_track_organization_id to
+     *   hrm_time_track_organizations.id. Returns
+     *   IHrmTimeTrackOrganization.ISummary. FK transformed to object for Read
+     *   DTO.
    */
   organization: IHrmTimeTrackOrganization.ISummary;
 
@@ -138,7 +161,12 @@ export type IHrmTimeTrackProject = {
    *
    * This array includes all project members who have been assigned to work on this project. Each member entry includes the employee information and their role (member or project-lead) which determines their authority level within the project context.
    *
-   * @x-autobe-specification Computed array via JOIN from hrm_time_track_projects.id to hrm_time_track_project_members.hrm_time_track_project_id. Returns array of IHrmTimeTrackProjectMember.ISummary. Filter: exclude soft-deleted project members (deleted_at IS NULL). Composition relation - employees assigned to this project with their roles.
+     * @x-autobe-specification Computed array via JOIN from
+     *   hrm_time_track_projects.id to
+     *   hrm_time_track_project_members.hrm_time_track_project_id. Returns array
+     *   of IHrmTimeTrackProjectMember.ISummary. Filter: exclude soft-deleted
+     *   project members (deleted_at IS NULL). Composition relation - employees
+     *   assigned to this project with their roles.
    */
   projectMembers: IHrmTimeTrackProjectMember.ISummary[];
 
@@ -147,7 +175,12 @@ export type IHrmTimeTrackProject = {
    *
    * This array includes all tasks that belong to this project, excluding soft-deleted tasks. Each task entry includes essential task information such as title, priority, status, and assigned employee. Tasks can be organized in a parent-child hierarchy for work breakdown structures.
    *
-   * @x-autobe-specification Computed array via JOIN from hrm_time_track_projects.id to hrm_time_track_tasks.hrm_time_track_project_id. Returns array of IHrmTimeTrackTask.ISummary. Filter: exclude soft-deleted tasks (deleted_at IS NULL). Composition relation - all tasks belonging to this project.
+     * @x-autobe-specification Computed array via JOIN from
+     *   hrm_time_track_projects.id to
+     *   hrm_time_track_tasks.hrm_time_track_project_id. Returns array of
+     *   IHrmTimeTrackTask.ISummary. Filter: exclude soft-deleted tasks
+     *   (deleted_at IS NULL). Composition relation - all tasks belonging to
+     *   this project.
    */
   tasks: IHrmTimeTrackTask.ISummary[];
 };
@@ -161,31 +194,31 @@ export namespace IHrmTimeTrackProject {
    */
   export type ICreate = {
     /**
-     * @x-autobe-database-schema-property name
+         * @x-autobe-database-schema-property name
      */
     name: string;
     /**
-     * @x-autobe-database-schema-property color_code
+         * @x-autobe-database-schema-property color_code
      */
     color_code: string;
     /**
-     * @x-autobe-database-schema-property description
+         * @x-autobe-database-schema-property description
      */
     description?: string | null | undefined;
     /**
-     * @x-autobe-database-schema-property status
+         * @x-autobe-database-schema-property status
      */
     status?: string | undefined;
     /**
-     * @x-autobe-database-schema-property budget_hours
+         * @x-autobe-database-schema-property budget_hours
      */
     budget_hours?: number | null | undefined;
     /**
-     * @x-autobe-database-schema-property start_date
+         * @x-autobe-database-schema-property start_date
      */
     start_date?: (string & tags.Format<"date-time">) | null | undefined;
     /**
-     * @x-autobe-database-schema-property end_date
+         * @x-autobe-database-schema-property end_date
      */
     end_date?: (string & tags.Format<"date-time">) | null | undefined;
   };
@@ -201,7 +234,9 @@ export namespace IHrmTimeTrackProject {
      *
      * When provided, performs trigram similarity search on the project name field to find projects with names similar to the search term. This enables flexible name-based filtering that tolerates minor spelling variations. Leave empty or omit to retrieve all projects without name filtering.
      *
-     * @x-autobe-specification Trigram similarity search on name column using gin_trgm_ops index. Optional parameter for fuzzy name matching. Empty or null means no search filter applied.
+         * @x-autobe-specification Trigram similarity search on name column
+         *   using gin_trgm_ops index. Optional parameter for fuzzy name
+         *   matching. Empty or null means no search filter applied.
      */
     search?: string | undefined;
 
@@ -210,7 +245,10 @@ export namespace IHrmTimeTrackProject {
      *
      * Accepts three values: 'active' for ongoing projects that can receive new time entries, 'archived' for preserved projects kept for reference, or 'completed' for finished projects. When omitted, the response includes projects with all status values.
      *
-     * @x-autobe-specification Filter projects by lifecycle status. Accepts 'active', 'archived', or 'completed'. Optional parameter - when omitted, returns projects with any status. Maps to status column filter in database query.
+         * @x-autobe-specification Filter projects by lifecycle status. Accepts
+         *   'active', 'archived', or 'completed'. Optional parameter - when
+         *   omitted, returns projects with any status. Maps to status column
+         *   filter in database query.
      */
     status?: "active" | "archived" | "completed" | undefined;
 
@@ -219,7 +257,9 @@ export namespace IHrmTimeTrackProject {
      *
      * Indicates which page of results to retrieve. Page numbering is 1-indexed (first page is 1, not 0). When omitted, the system defaults to returning the first page of results.
      *
-     * @x-autobe-specification 1-indexed page number for cursor-based pagination. Minimum value is 1. When omitted, defaults to page 1. Used to navigate through paginated result sets.
+         * @x-autobe-specification 1-indexed page number for cursor-based
+         *   pagination. Minimum value is 1. When omitted, defaults to page 1.
+         *   Used to navigate through paginated result sets.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -228,7 +268,9 @@ export namespace IHrmTimeTrackProject {
      *
      * Accepts values from 1 to 100. Controls how many project records are included in each paginated response. When omitted, the system uses a server-defined default limit. Larger values reduce the number of requests needed but increase response size.
      *
-     * @x-autobe-specification Number of records per page. Range: 1 to 100. When omitted, uses server default. Controls the maximum number of project summaries returned in a single response.
+         * @x-autobe-specification Number of records per page. Range: 1 to 100.
+         *   When omitted, uses server default. Controls the maximum number of
+         *   project summaries returned in a single response.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -248,8 +290,10 @@ export namespace IHrmTimeTrackProject {
      *
      * This UUID serves as the primary key for the project entity and is used to reference the project in API operations, relationships, and audit logs.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from hrm_time_track_projects.id. Primary key UUID identifying the project uniquely within the system.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_projects.id. Primary key UUID identifying the
+         *   project uniquely within the system.
      */
     id: string & tags.Format<"uuid">;
 
@@ -258,8 +302,10 @@ export namespace IHrmTimeTrackProject {
      *
      * The name uniquely identifies the project within the organization and appears in user interfaces, reports, and communications. Must be unique across all projects in the same organization.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from hrm_time_track_projects.name. Required field with unique constraint within organization context.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_projects.name. Required field with unique constraint
+         *   within organization context.
      */
     name: string;
 
@@ -268,8 +314,10 @@ export namespace IHrmTimeTrackProject {
      *
      * Provides additional context about the project's purpose, deliverables, and goals. This field is optional and may be null if no description has been provided.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from hrm_time_track_projects.description. Optional text field providing project context. Nullable in database.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_projects.description. Optional text field providing
+         *   project context. Nullable in database.
      */
     description: string | null;
 
@@ -278,8 +326,10 @@ export namespace IHrmTimeTrackProject {
      *
      * Used to visually distinguish projects in dashboards, lists, and reports. Typically a hex color code or color name that provides quick visual identification of the project.
      *
-     * @x-autobe-database-schema-property color_code
-     * @x-autobe-specification Direct mapping from hrm_time_track_projects.color_code. Required string field for visual identification in UI.
+         * @x-autobe-database-schema-property color_code
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_projects.color_code. Required string field for
+         *   visual identification in UI.
      */
     color_code: string;
 
@@ -288,8 +338,11 @@ export namespace IHrmTimeTrackProject {
      *
      * Allowed values are 'active' (ongoing, can receive new timelogs), 'archived' (preserved for reference, no new timelogs), or 'completed' (finished, no new timelogs). The status controls whether new work can be added to the project and affects visibility in active project lists.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from hrm_time_track_projects.status. Required field with allowed values: 'active', 'archived', 'completed'. Controls whether new work can be added.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_projects.status. Required field with allowed values:
+         *   'active', 'archived', 'completed'. Controls whether new work can be
+         *   added.
      */
     status: string;
 
@@ -298,8 +351,10 @@ export namespace IHrmTimeTrackProject {
      *
      * Used for tracking and reporting against planned versus actual time investment. This field is optional and may be null if no budget has been set for the project.
      *
-     * @x-autobe-database-schema-property budget_hours
-     * @x-autobe-specification Direct mapping from hrm_time_track_projects.budget_hours. Optional decimal field for total estimated hours. Nullable in database.
+         * @x-autobe-database-schema-property budget_hours
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_projects.budget_hours. Optional decimal field for
+         *   total estimated hours. Nullable in database.
      */
     budget_hours: number | null;
 
@@ -308,8 +363,10 @@ export namespace IHrmTimeTrackProject {
      *
      * Indicates when the project work began or is scheduled to begin. This field is optional and may be null if no start date has been specified for the project.
      *
-     * @x-autobe-database-schema-property start_date
-     * @x-autobe-specification Direct mapping from hrm_time_track_projects.start_date. Optional DateTime field indicating project start. Nullable in database. Format: date-time.
+         * @x-autobe-database-schema-property start_date
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_projects.start_date. Optional DateTime field
+         *   indicating project start. Nullable in database. Format: date-time.
      */
     start_date: (string & tags.Format<"date-time">) | null;
 
@@ -318,8 +375,10 @@ export namespace IHrmTimeTrackProject {
      *
      * Indicates when the project work is scheduled to complete. This field is optional and may be null if no end date has been specified for the project.
      *
-     * @x-autobe-database-schema-property end_date
-     * @x-autobe-specification Direct mapping from hrm_time_track_projects.end_date. Optional DateTime field indicating project end. Nullable in database. Format: date-time.
+         * @x-autobe-database-schema-property end_date
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_projects.end_date. Optional DateTime field
+         *   indicating project end. Nullable in database. Format: date-time.
      */
     end_date: (string & tags.Format<"date-time">) | null;
 
@@ -328,8 +387,12 @@ export namespace IHrmTimeTrackProject {
      *
      * Every project belongs to exactly one organization, which provides the multi-tenancy boundary and permission context for project access. The organization field includes essential organization information for display purposes.
      *
-     * @x-autobe-database-schema-property organization
-     * @x-autobe-specification Join from hrm_time_track_projects.hrm_time_track_organization_id to hrm_time_track_organizations.id. Returns IHrmTimeTrackOrganization.ISummary. Required relation - every project belongs to exactly one organization.
+         * @x-autobe-database-schema-property organization
+         * @x-autobe-specification Join from
+         *   hrm_time_track_projects.hrm_time_track_organization_id to
+         *   hrm_time_track_organizations.id. Returns
+         *   IHrmTimeTrackOrganization.ISummary. Required relation - every
+         *   project belongs to exactly one organization.
      */
     organization: IHrmTimeTrackOrganization.ISummary;
 
@@ -338,8 +401,10 @@ export namespace IHrmTimeTrackProject {
      *
      * This immutable timestamp records when the project was first created in the system. Used for audit purposes and sorting projects by creation date.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from hrm_time_track_projects.created_at. Immutable DateTime timestamp set on project creation. Format: date-time.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_projects.created_at. Immutable DateTime timestamp
+         *   set on project creation. Format: date-time.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -348,8 +413,10 @@ export namespace IHrmTimeTrackProject {
      *
      * This timestamp is automatically updated whenever any project attribute is changed. Used to track the most recent modification and detect stale data.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from hrm_time_track_projects.updated_at. DateTime timestamp updated on every project modification. Format: date-time.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_projects.updated_at. DateTime timestamp updated on
+         *   every project modification. Format: date-time.
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -358,8 +425,10 @@ export namespace IHrmTimeTrackProject {
      *
      * When null, the project is active and accessible. When set, the project has been soft-deleted and is excluded from active queries. Soft deletion preserves data for audit purposes while removing the project from active operations.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from hrm_time_track_projects.deleted_at. Nullable DateTime indicating soft-delete status. Null means active project. Format: date-time.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_projects.deleted_at. Nullable DateTime indicating
+         *   soft-delete status. Null means active project. Format: date-time.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };
@@ -371,31 +440,31 @@ export namespace IHrmTimeTrackProject {
    */
   export type IUpdate = {
     /**
-     * @x-autobe-database-schema-property budget_hours
+         * @x-autobe-database-schema-property budget_hours
      */
     budget_hours?: number | null | undefined;
     /**
-     * @x-autobe-database-schema-property color_code
+         * @x-autobe-database-schema-property color_code
      */
     color_code?: string | undefined;
     /**
-     * @x-autobe-database-schema-property description
+         * @x-autobe-database-schema-property description
      */
     description?: string | null | undefined;
     /**
-     * @x-autobe-database-schema-property end_date
+         * @x-autobe-database-schema-property end_date
      */
     end_date?: (string & tags.Format<"date-time">) | null | undefined;
     /**
-     * @x-autobe-database-schema-property name
+         * @x-autobe-database-schema-property name
      */
     name?: string | undefined;
     /**
-     * @x-autobe-database-schema-property start_date
+         * @x-autobe-database-schema-property start_date
      */
     start_date?: (string & tags.Format<"date-time">) | null | undefined;
     /**
-     * @x-autobe-database-schema-property status
+         * @x-autobe-database-schema-property status
      */
     status?: string | undefined;
   };

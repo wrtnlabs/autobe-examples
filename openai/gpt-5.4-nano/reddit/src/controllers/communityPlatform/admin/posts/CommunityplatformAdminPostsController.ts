@@ -37,10 +37,10 @@ export class CommunityplatformAdminPostsController {
    *
    * @param connection
    * @param postId Target post ID to retrieve details for.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification 1) Validate inputs
-   * - Parse postId from path as UUID (use repository/service layer UUID parsing).
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification 1) Validate inputs - Parse postId from path as
+     *   UUID (use repository/service layer UUID parsing).
    *
    * 2) Load post core row
    * - Query community_platform_posts by id = postId.
@@ -109,22 +109,27 @@ export class CommunityplatformAdminPostsController {
    * @param connection
    * @param postId Target post ID to update.
    * @param body Update payload for the post’s core content. The payload must satisfy the system’s post type-to-content pairing rules (text vs link vs image) and include a non-empty title.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification 1) Authenticate caller as member.
-   * 2) Load `community_platform_posts` by id = postId, ensuring the row is accessible for updates (exclude hard non-existence).
-   * 3) Authorization: verify `community_platform_posts.author_id` matches the authenticated member’s id; if not, reject.
-   * 4) Validate request payload:
-   *    - title must be non-empty.
-   *    - post_type must be one of the supported classification values used by the system (text/link/image) and the provided content fields must match the chosen post_type.
-   *    - For link-type: require/validate `link_url` is provided and acceptable; refresh the link metadata scalar fields kept on the post row.
-   *    - For image-type: require/validate `image_cover_url` (and alt text if provided) so the post can render an image preview.
-   *    - For text-type: ensure body text is provided as the main content representation.
-   * 5) Apply update in a transaction:
-   *    - Update `title`, `body`, `post_type`, and the relevant type-specific scalar fields (`link_url`, `image_cover_url`, `image_alt_text`) on `community_platform_posts`.
-   *    - Set `edited_by_id` to the authenticated member id.
-   *    - Set `edited_at` to current timestamp.
-   * 6) Return the updated post DTO representing how a single post is displayed (type-specific content fields).
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification 1) Authenticate caller as member. 2) Load
+     *   `community_platform_posts` by id = postId, ensuring the row is
+     *   accessible for updates (exclude hard non-existence). 3) Authorization:
+     *   verify `community_platform_posts.author_id` matches the authenticated
+     *   member’s id; if not, reject. 4) Validate request payload: - title must
+     *   be non-empty. - post_type must be one of the supported classification
+     *   values used by the system (text/link/image) and the provided content
+     *   fields must match the chosen post_type. - For link-type:
+     *   require/validate `link_url` is provided and acceptable; refresh the
+     *   link metadata scalar fields kept on the post row. - For image-type:
+     *   require/validate `image_cover_url` (and alt text if provided) so the
+     *   post can render an image preview. - For text-type: ensure body text is
+     *   provided as the main content representation. 5) Apply update in a
+     *   transaction: - Update `title`, `body`, `post_type`, and the relevant
+     *   type-specific scalar fields (`link_url`, `image_cover_url`,
+     *   `image_alt_text`) on `community_platform_posts`. - Set `edited_by_id`
+     *   to the authenticated member id. - Set `edited_at` to current timestamp.
+     *   6) Return the updated post DTO representing how a single post is
+     *   displayed (type-specific content fields).
    *
    * Edge cases:
    * - If validation fails, do not write any changes.
@@ -165,9 +170,10 @@ export class CommunityplatformAdminPostsController {
    *
    * @param connection
    * @param postId Target post identifier to erase.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Authorize the caller, then delete the target post and invalidate any derived browsing contexts.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Authorize the caller, then delete the target post
+     *   and invalidate any derived browsing contexts.
    *
    * 1) Parse `postId` from the path.
    * 2) Load the target post record by `postId`.
@@ -222,9 +228,10 @@ export class CommunityplatformAdminPostsController {
    *
    * @param connection
    * @param body Creation payload for a new post. Includes the target community, post_type, title, and the post-type-specific content required to populate community_platform_posts and its dependent link/image tables.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Implement POST /posts as an atomic creation workflow.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Implement POST /posts as an atomic creation
+     *   workflow.
    *
    * 1) Authentication/actor resolution
    * - Require authenticated member actor.
@@ -304,9 +311,10 @@ export class CommunityplatformAdminPostsController {
    *
    * @param connection
    * @param body Search criteria and pagination parameters for locating posts in the feed/list view.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Implement a paginated post search over `community_platform_posts`.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Implement a paginated post search over
+     *   `community_platform_posts`.
    *
    * Algorithm:
    * 1. Validate the request body: pagination limits, sorting options, and any optional filters.

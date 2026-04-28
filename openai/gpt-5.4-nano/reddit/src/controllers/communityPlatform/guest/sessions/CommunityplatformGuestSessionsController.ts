@@ -25,19 +25,24 @@ export class CommunityplatformGuestSessionsController {
    *
    * @param connection
    * @param body Session patch request specifying the target session and the new validity/revocation metadata to apply.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor guest
-   * @x-autobe-specification 1) Identify caller actor type (guest vs member vs admin) from the request context.
-   * 2) Resolve the target session row that belongs to the caller using the session identifier provided in the request body payload (do not allow cross-actor access).
-   * 3) Validate session state transition rules:
-   *    - If the request attempts to update a session that is already revoked (deleted_at is set) or already expired (expired_at is in the past), return an authorization/validation failure (no state change).
-   *    - If token-rotation semantics are requested, update only the allowed timestamp/context columns (updated_at and any request-driven validity timestamps).
-   * 4) Apply updates in a transaction:
-   *    - Set expired_at if the caller is rotating/renewing session validity.
-   *    - Set deleted_at if the caller is revoking the session.
-   *    - Always refresh updated_at when any change is applied.
-   * 5) Ensure immediate effect for subsequent requests by relying on the persisted deleted_at/expired_at checks in authentication middleware.
-   * 6) Return the updated session representation.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor guest
+     * @x-autobe-specification 1) Identify caller actor type (guest vs member vs
+     *   admin) from the request context. 2) Resolve the target session row that
+     *   belongs to the caller using the session identifier provided in the
+     *   request body payload (do not allow cross-actor access). 3) Validate
+     *   session state transition rules: - If the request attempts to update a
+     *   session that is already revoked (deleted_at is set) or already expired
+     *   (expired_at is in the past), return an authorization/validation failure
+     *   (no state change). - If token-rotation semantics are requested, update
+     *   only the allowed timestamp/context columns (updated_at and any
+     *   request-driven validity timestamps). 4) Apply updates in a transaction:
+     *   - Set expired_at if the caller is rotating/renewing session validity. -
+     *   Set deleted_at if the caller is revoking the session. - Always refresh
+     *   updated_at when any change is applied. 5) Ensure immediate effect for
+     *   subsequent requests by relying on the persisted deleted_at/expired_at
+     *   checks in authentication middleware. 6) Return the updated session
+     *   representation.
    *
    * Edge cases:
    * - Missing/invalid session identifier in request body -> validation error.
@@ -76,19 +81,18 @@ export class CommunityplatformGuestSessionsController {
    *
    * @param connection
    * @param sessionId UUID of the session record to retrieve.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor guest
-   * @x-autobe-specification Implementation steps:
-   * 1) Authenticate the caller and enforce authorization boundaries for elevated access to session records (admin-only).
-   * 2) Parse `sessionId` as UUID.
-   * 3) Query in order (or via union) for a record with `id = sessionId` in:
-   *    - community_platform_guest_sessions
-   *    - community_platform_member_sessions
-   *    - community_platform_admin_sessions
-   * 4) If no record exists, return a not-found failure outcome.
-   * 5) If a record exists, map DB fields to the response DTO, including:
-   *    - id, related actor id (guest/member/admin id), ip, href, referrer, created_at, updated_at, expired_at, and deleted_at (if present).
-   * 6) Do not modify any data.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor guest
+     * @x-autobe-specification Implementation steps: 1) Authenticate the caller
+     *   and enforce authorization boundaries for elevated access to session
+     *   records (admin-only). 2) Parse `sessionId` as UUID. 3) Query in order
+     *   (or via union) for a record with `id = sessionId` in: -
+     *   community_platform_guest_sessions - community_platform_member_sessions
+     *   - community_platform_admin_sessions 4) If no record exists, return a
+     *   not-found failure outcome. 5) If a record exists, map DB fields to the
+     *   response DTO, including: - id, related actor id (guest/member/admin
+     *   id), ip, href, referrer, created_at, updated_at, expired_at, and
+     *   deleted_at (if present). 6) Do not modify any data.
    *
    * Error handling:
    * - Invalid UUID in `sessionId` -> validation failure.

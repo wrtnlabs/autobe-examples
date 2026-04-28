@@ -45,7 +45,18 @@ export namespace IHrmTimeTrackRole {
      *
      * This array must contain at least one valid permission value. Upon successful update, all current permissions for the role are removed and replaced with this set. Valid permission values include: organization_management (manage organization settings), employee_management (manage employees), employee_viewing (view employees), project_management (manage projects), project_viewing (view projects), time_management (manage time tracking), timesheet_approval (approve timesheets), time_viewing_all (view all time logs), and report_viewing (access reports).
      *
-     * @x-autobe-specification Computed request payload for permission update operation. Each permission string in the array corresponds to a permission_code that will be inserted into hrm_time_track_role_permissions junction table with the role's id as hrm_time_track_role_id. The backend performs an atomic replace operation: first deletes all existing hrm_time_track_role_permissions records for this role, then inserts new records for each permission value in the array. Validation ensures minItems: 1 (at least one permission required per business rule) and each value matches the allowed permission list. This is not a direct database field but a request parameter that drives database mutations.
+         * @x-autobe-specification Computed request payload for permission
+         *   update operation. Each permission string in the array corresponds
+         *   to a permission_code that will be inserted into
+         *   hrm_time_track_role_permissions junction table with the role's id
+         *   as hrm_time_track_role_id. The backend performs an atomic replace
+         *   operation: first deletes all existing
+         *   hrm_time_track_role_permissions records for this role, then inserts
+         *   new records for each permission value in the array. Validation
+         *   ensures minItems: 1 (at least one permission required per business
+         *   rule) and each value matches the allowed permission list. This is
+         *   not a direct database field but a request parameter that drives
+         *   database mutations.
      */
     permissions: (
       | "organization_management"
@@ -74,8 +85,13 @@ export namespace IHrmTimeTrackRole {
      *
      * For custom roles, this field can be updated to a new name. The new name must be unique within the organization - attempting to use a name that already exists will result in a conflict error. For built-in roles (system-defined roles like Owner, Manager, Employee), this field cannot be modified to preserve system integrity.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from hrm_time_track_roles.name column. Optional field for partial updates. For custom roles (is_builtin=false), this field can be updated to a new unique name. For built-in roles (is_builtin=true), updating this field is rejected by backend validation. Name uniqueness is enforced at database level within the organization scope.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from hrm_time_track_roles.name
+         *   column. Optional field for partial updates. For custom roles
+         *   (is_builtin=false), this field can be updated to a new unique name.
+         *   For built-in roles (is_builtin=true), updating this field is
+         *   rejected by backend validation. Name uniqueness is enforced at
+         *   database level within the organization scope.
      */
     name?: string | undefined;
 
@@ -84,8 +100,12 @@ export namespace IHrmTimeTrackRole {
      *
      * This field provides context about what the role is for and what permissions it typically grants. It helps administrators understand when to assign this role to employees. The description can be updated for both custom and built-in roles, or set to null to remove it.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from hrm_time_track_roles.description column. Optional nullable field for partial updates. Can be updated for both custom and built-in roles. Setting to null removes the description. Backend stores the value as-is without transformation.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_roles.description column. Optional nullable field
+         *   for partial updates. Can be updated for both custom and built-in
+         *   roles. Setting to null removes the description. Backend stores the
+         *   value as-is without transformation.
      */
     description?: string | null | undefined;
   };
@@ -101,7 +121,18 @@ export namespace IHrmTimeTrackRole {
      *
      * Each permission code represents a specific capability within the organization. Valid permission codes are: organization_management (full organization control), employee_management (manage employee records), employee_viewing (view employee information), project_management (create and manage projects), project_viewing (view project details), time_management (manage time tracking), timesheet_approval (approve employee timesheets), time_viewing_all (view all employees' time logs), and report_viewing (access organizational reports). Duplicate codes in the array or codes already assigned to the role are handled gracefully without error.
      *
-     * @x-autobe-specification Array of permission code strings to add to the role. Each item must be one of the valid permission codes: organization_management, employee_management, employee_viewing, project_management, project_viewing, time_management, timesheet_approval, time_viewing_all, report_viewing. Backend validates each code against this allowed list. For each valid code, a new record is inserted into hrm_time_track_role_permissions table with the role id, permission code, and current timestamp. Duplicate codes in the array or codes already assigned to the role are ignored without error due to unique constraint on (hrm_time_track_role_id, permission_code) in hrm_time_track_role_permissions table.
+         * @x-autobe-specification Array of permission code strings to add to
+         *   the role. Each item must be one of the valid permission codes:
+         *   organization_management, employee_management, employee_viewing,
+         *   project_management, project_viewing, time_management,
+         *   timesheet_approval, time_viewing_all, report_viewing. Backend
+         *   validates each code against this allowed list. For each valid code,
+         *   a new record is inserted into hrm_time_track_role_permissions table
+         *   with the role id, permission code, and current timestamp. Duplicate
+         *   codes in the array or codes already assigned to the role are
+         *   ignored without error due to unique constraint on
+         *   (hrm_time_track_role_id, permission_code) in
+         *   hrm_time_track_role_permissions table.
      */
     permissions: (
       | "organization_management"
@@ -127,8 +158,10 @@ export namespace IHrmTimeTrackRole {
      *
      * Partial text matching is supported using ILIKE or trigram similarity. Leave empty or omit to retrieve all roles without name filtering.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping to hrm_time_track_roles.name column. Used for partial text matching via ILIKE or trigram similarity search. Empty or undefined means no name filter applied.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping to hrm_time_track_roles.name
+         *   column. Used for partial text matching via ILIKE or trigram
+         *   similarity search. Empty or undefined means no name filter applied.
      */
     name?: string | undefined;
 
@@ -137,8 +170,11 @@ export namespace IHrmTimeTrackRole {
      *
      * Set to true to retrieve only built-in system roles, false for custom user-created roles only. Omit this parameter to include both built-in and custom roles in results.
      *
-     * @x-autobe-database-schema-property is_builtin
-     * @x-autobe-specification Direct mapping to hrm_time_track_roles.is_builtin column. Boolean exact match filter. true returns only built-in system roles, false returns only custom user-created roles. Undefined means no filter applied.
+         * @x-autobe-database-schema-property is_builtin
+         * @x-autobe-specification Direct mapping to
+         *   hrm_time_track_roles.is_builtin column. Boolean exact match filter.
+         *   true returns only built-in system roles, false returns only custom
+         *   user-created roles. Undefined means no filter applied.
      */
     is_builtin?: boolean | undefined;
 
@@ -147,7 +183,11 @@ export namespace IHrmTimeTrackRole {
      *
      * Set to true to retrieve only roles that have a description, false for roles without descriptions. Omit to include roles regardless of description presence.
      *
-     * @x-autobe-specification Computed filter based on hrm_time_track_roles.description column. true filters for description IS NOT NULL, false filters for description IS NULL. Undefined means no filter applied. This is a derived boolean property, not a direct column mapping.
+         * @x-autobe-specification Computed filter based on
+         *   hrm_time_track_roles.description column. true filters for
+         *   description IS NOT NULL, false filters for description IS NULL.
+         *   Undefined means no filter applied. This is a derived boolean
+         *   property, not a direct column mapping.
      */
     has_description?: boolean | undefined;
 
@@ -156,7 +196,9 @@ export namespace IHrmTimeTrackRole {
      *
      * Specifies which page of results to retrieve. Page numbering starts from 1. Combined with limit parameter to control result set size.
      *
-     * @x-autobe-specification Pagination page number (1-indexed). Not mapped to any database column. Used to calculate OFFSET in SQL query: OFFSET = (page - 1) * limit. Minimum value is 1.
+         * @x-autobe-specification Pagination page number (1-indexed). Not
+         *   mapped to any database column. Used to calculate OFFSET in SQL
+         *   query: OFFSET = (page - 1) * limit. Minimum value is 1.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -165,7 +207,9 @@ export namespace IHrmTimeTrackRole {
      *
      * Controls how many role records are returned in each page. Must be between 1 and 100. Combined with page parameter for pagination.
      *
-     * @x-autobe-specification Maximum number of records per page. Not mapped to any database column. Used as LIMIT in SQL query. Range: 1-100. Default typically 20 or similar.
+         * @x-autobe-specification Maximum number of records per page. Not
+         *   mapped to any database column. Used as LIMIT in SQL query. Range:
+         *   1-100. Default typically 20 or similar.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -176,7 +220,10 @@ export namespace IHrmTimeTrackRole {
      *
      * Specifies which field to use for ordering the role list. Common options include created_at, name, or updated_at. Backend validates against allowed sort fields.
      *
-     * @x-autobe-specification Field name for sorting results. Not mapped to any database column directly. Maps to ORDER BY clause column name. Common values: created_at, name, updated_at. Backend validates against allowed columns.
+         * @x-autobe-specification Field name for sorting results. Not mapped to
+         *   any database column directly. Maps to ORDER BY clause column name.
+         *   Common values: created_at, name, updated_at. Backend validates
+         *   against allowed columns.
      */
     sort?: string | undefined;
 
@@ -185,7 +232,10 @@ export namespace IHrmTimeTrackRole {
      *
      * Set to 'asc' for ascending order or 'desc' for descending order. Applied to the field specified in the sort parameter.
      *
-     * @x-autobe-specification Sort direction for results. Not mapped to any database column. Maps to ASC or DESC in ORDER BY clause. Enum values: 'asc' for ascending, 'desc' for descending. Default typically 'desc' for created_at sorting.
+         * @x-autobe-specification Sort direction for results. Not mapped to any
+         *   database column. Maps to ASC or DESC in ORDER BY clause. Enum
+         *   values: 'asc' for ascending, 'desc' for descending. Default
+         *   typically 'desc' for created_at sorting.
      */
     order?: "asc" | "desc" | undefined;
   };
@@ -203,8 +253,9 @@ export namespace IHrmTimeTrackRole {
      *
      * This UUID serves as the primary key for role records and is used to reference the role in API operations, employee assignments, and audit logs.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from hrm_time_track_roles.id. Primary key UUID identifying the role within the organization.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from hrm_time_track_roles.id.
+         *   Primary key UUID identifying the role within the organization.
      */
     id: string & tags.Format<"uuid">;
 
@@ -213,8 +264,10 @@ export namespace IHrmTimeTrackRole {
      *
      * Role names are unique within an organization and are used to identify and display roles in the user interface. Examples include 'Administrator', 'Manager', 'Employee', 'Time Keeper'.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from hrm_time_track_roles.name. Unique within organization due to @@unique constraint on (hrm_time_track_organization_id, name).
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_roles.name. Unique within organization due to
+         *   @@unique constraint on (hrm_time_track_organization_id, name).
      */
     name: string;
 
@@ -223,8 +276,10 @@ export namespace IHrmTimeTrackRole {
      *
      * The description provides context about what the role is for and what permissions it typically grants. This helps administrators understand when to assign this role to employees. Descriptions can be null if no description is provided.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from hrm_time_track_roles.description. Nullable field - can be null if no description is provided.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_roles.description. Nullable field - can be null if
+         *   no description is provided.
      */
     description: string | null;
 
@@ -233,8 +288,10 @@ export namespace IHrmTimeTrackRole {
      *
      * Built-in roles are predefined by the system with standard permission sets and cannot be deleted (only soft-deleted). Custom roles are created by organization administrators and can be fully managed including deletion.
      *
-     * @x-autobe-database-schema-property is_builtin
-     * @x-autobe-specification Direct mapping from hrm_time_track_roles.is_builtin. Boolean flag distinguishing system-defined roles from custom user-created roles.
+         * @x-autobe-database-schema-property is_builtin
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_roles.is_builtin. Boolean flag distinguishing
+         *   system-defined roles from custom user-created roles.
      */
     is_builtin: boolean;
 
@@ -243,8 +300,10 @@ export namespace IHrmTimeTrackRole {
      *
      * Recorded automatically when the role is first created. Used for audit trail, sorting roles by creation date, and tracking when roles were added to the organization.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from hrm_time_track_roles.created_at. ISO 8601 datetime format with timezone. Immutable after role creation.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_roles.created_at. ISO 8601 datetime format with
+         *   timezone. Immutable after role creation.
      */
     created_at: string & tags.Format<"date-time">;
   };

@@ -23,9 +23,10 @@ export class ShoppingmallSellerRefund_requestsController {
    *
    * @param connection
    * @param refundRequestId UUID of the refund request to approve. Must correspond to a pending refund request for an order item sold by the authenticated seller.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Implementation flow for approving a refund request:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Implementation flow for approving a refund
+     *   request:
    *
    * 1. **Authentication & Authorization**: Verify seller authentication token. Extract seller ID from JWT claims.
    *
@@ -96,9 +97,10 @@ export class ShoppingmallSellerRefund_requestsController {
    *
    * @param connection
    * @param refundRequestId Unique identifier of the refund request to reject. Must be a valid UUID referencing an existing refund request in 'pending' status.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Implementation steps for rejecting a refund request:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Implementation steps for rejecting a refund
+     *   request:
    *
    * 1. Authentication: Extract seller identity from JWT token in Authorization header.
    *

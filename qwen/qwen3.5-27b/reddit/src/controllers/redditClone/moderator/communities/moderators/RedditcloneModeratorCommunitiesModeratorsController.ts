@@ -23,9 +23,10 @@ export class RedditcloneModeratorCommunitiesModeratorsController {
    * @param connection
    * @param communityId Unique identifier of the community to add the moderator to (global scope)
    * @param body Moderator assignment details including the user profile to assign and the role type (owner or moderator).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor moderator
-   * @x-autobe-specification Insert a new record into reddit_clone_community_moderators table with the following logic:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor moderator
+     * @x-autobe-specification Insert a new record into
+     *   reddit_clone_community_moderators table with the following logic:
    *
    * 1. Validate that the requesting user has permission to add moderators (must be owner or existing moderator of the community)
    * 2. Verify the community exists and is not deleted
@@ -77,9 +78,11 @@ export class RedditcloneModeratorCommunitiesModeratorsController {
    * @param connection
    * @param communityId Unique identifier of the community to list moderators for (global scope).
    * @param body Search criteria including role filter, sorting preferences, and pagination parameters for moderator list retrieval.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor moderator
-   * @x-autobe-specification Query reddit_clone_community_moderators table filtered by reddit_clone_community_id matching the path parameter communityId.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor moderator
+     * @x-autobe-specification Query reddit_clone_community_moderators table
+     *   filtered by reddit_clone_community_id matching the path parameter
+     *   communityId.
    *
    * Apply search filters from request body:
    * - role: filter by 'owner' or 'moderator'
@@ -132,9 +135,11 @@ export class RedditcloneModeratorCommunitiesModeratorsController {
    * @param connection
    * @param communityId UUID of the community containing this moderator assignment (scoped to community)
    * @param moderatorId UUID of the moderator assignment record (global scope)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor moderator
-   * @x-autobe-specification Query the reddit_clone_community_moderators table for a single record matching the moderatorId parameter within the specified communityId.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor moderator
+     * @x-autobe-specification Query the reddit_clone_community_moderators table
+     *   for a single record matching the moderatorId parameter within the
+     *   specified communityId.
    *
    * Implementation steps:
    * 1. Validate that both communityId and moderatorId are valid UUIDs
@@ -186,9 +191,10 @@ export class RedditcloneModeratorCommunitiesModeratorsController {
    * @param connection
    * @param communityId UUID of the community from which to remove the moderator.
    * @param moderatorId UUID of the moderator assignment record to remove.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor moderator
-   * @x-autobe-specification Query reddit_clone_community_moderators table to find the moderator assignment record by id (moderatorId).
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor moderator
+     * @x-autobe-specification Query reddit_clone_community_moderators table to
+     *   find the moderator assignment record by id (moderatorId).
    *
    * Verify the moderator assignment belongs to the specified community (reddit_clone_community_id = communityId).
    *

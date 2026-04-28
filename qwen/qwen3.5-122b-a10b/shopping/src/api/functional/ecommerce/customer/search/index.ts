@@ -36,7 +36,8 @@ import { IPageIEcommerceProduct } from "../../../../structures/IPageIEcommercePr
  * @param props.body Search criteria including name keyword, category filters, price range, stock availability filter, sorting preference, and pagination parameters.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Query ecommerce_products table with complex filtering and pagination.
+ * @x-autobe-specification Query ecommerce_products table with complex filtering
+ *   and pagination.
  *
  * **Implementation Steps**
  *

@@ -21,9 +21,10 @@ export class RedditcloneMemberPostsImageController {
    * @param connection
    * @param postId Unique identifier of the post (global scope)
    * @param body New image file to associate with the post
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Update the image file association for an image post.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Update the image file association for an image
+     *   post.
    *
    * Implementation steps:
    * 1. Extract postId from path parameter

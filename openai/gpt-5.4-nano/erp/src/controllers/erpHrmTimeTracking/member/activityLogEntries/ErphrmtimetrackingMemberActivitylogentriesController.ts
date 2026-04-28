@@ -29,17 +29,27 @@ export class ErphrmtimetrackingMemberActivitylogentriesController {
    *
    * @param connection
    * @param body Creation payload for an organization-scoped audit activity log entry, including action taxonomy and typed target reference.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation steps:
-   * 1) Authenticate the caller as a member actor.
-   * 2) Validate organization scope: resolve the selected organization context for the caller and verify the request `organizationId` matches that context (or enforce server-side override to the selected organization).
-   * 3) Resolve performer identity: set/validate `performedByMemberId` to the authenticated member’s ID; do not allow arbitrary override.
-   * 4) Validate polymorphic target: ensure `targetEntityType` is a supported business entity type string and that `targetEntityId` is a UUID value. (Do not attempt to fully materialize the target entity here; store reference only.)
-   * 5) Validate required fields: `actionType`, `summary`, `occurredAt` must be present; `details` can be null.
-   * 6) Insert into `erp_hrm_time_tracking_activity_log_entries` within a single transaction.
-   * 7) If the caller indicates an action outcome that is not completed (implementation must be driven by server-side workflow outcome), reject creation to avoid misleading audit entries; align with the error-handling requirement that rejected attempts must not be logged as successful.
-   * 8) Return the created record DTO mapped from the inserted row.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation steps: 1) Authenticate the caller
+     *   as a member actor. 2) Validate organization scope: resolve the selected
+     *   organization context for the caller and verify the request
+     *   `organizationId` matches that context (or enforce server-side override
+     *   to the selected organization). 3) Resolve performer identity:
+     *   set/validate `performedByMemberId` to the authenticated member’s ID; do
+     *   not allow arbitrary override. 4) Validate polymorphic target: ensure
+     *   `targetEntityType` is a supported business entity type string and that
+     *   `targetEntityId` is a UUID value. (Do not attempt to fully materialize
+     *   the target entity here; store reference only.) 5) Validate required
+     *   fields: `actionType`, `summary`, `occurredAt` must be present;
+     *   `details` can be null. 6) Insert into
+     *   `erp_hrm_time_tracking_activity_log_entries` within a single
+     *   transaction. 7) If the caller indicates an action outcome that is not
+     *   completed (implementation must be driven by server-side workflow
+     *   outcome), reject creation to avoid misleading audit entries; align with
+     *   the error-handling requirement that rejected attempts must not be
+     *   logged as successful. 8) Return the created record DTO mapped from the
+     *   inserted row.
    *
    * Database interaction:
    * - INSERT into `erp_hrm_time_tracking_activity_log_entries` with organization_id, performed_by_member_id, action_type, target_entity_type, target_entity_id, summary, details, occurred_at.
@@ -84,9 +94,10 @@ export class ErphrmtimetrackingMemberActivitylogentriesController {
    *
    * @param connection
    * @param body Search criteria for activity log entries, including organization-scoped filters, occurred time range, action/target/performed-by filters, text search, and pagination/sorting controls.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement as an organization-scoped audit-log search.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implement as an organization-scoped audit-log
+     *   search.
    *
    * 1) Input validation
    * - Parse `IErpHrmTimeTrackingActivityLogEntry.IRequest` fields (pagination, sort, and filters).
@@ -159,30 +170,23 @@ export class ErphrmtimetrackingMemberActivitylogentriesController {
    *
    * @param connection
    * @param activityLogEntryId Identifier of the target activity log entry to retrieve (UUID).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation steps:
-   * 1. Extract path parameter activityLogEntryId.
-   * 2. Resolve the caller’s selected organization context.
-   * 3. Perform an authorization/ownership check by selecting from erp_hrm_time_tracking_activity_log_entries with conditions:
-   *    - id = activityLogEntryId
-   *    - organization_id = selectedOrganizationId
-   * 4. If no row matches, return a rejection/error consistent with not-found-without-leaking semantics.
-   * 5. If response DTO requires actor information, either map performed_by_member_id directly (if the DTO includes ids) or join erp_hrm_time_tracking_members accordingly; do not expose other-organization data.
-   * 6. Map database columns to the response DTO fields:
-   *    - id
-   *    - organization_id (only if included by DTO contract; otherwise omit from DTO mapping)
-   *    - performed_by_member_id
-   *    - action_type
-   *    - target_entity_type
-   *    - target_entity_id
-   *    - summary
-   *    - details (nullable)
-   *    - occurred_at
-   *    - created_at
-   *    - updated_at
-   *    - deleted_at (nullable) only if included in DTO contract.
-   * 7. Return the mapped activity log entry.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation steps: 1. Extract path parameter
+     *   activityLogEntryId. 2. Resolve the caller’s selected organization
+     *   context. 3. Perform an authorization/ownership check by selecting from
+     *   erp_hrm_time_tracking_activity_log_entries with conditions: - id =
+     *   activityLogEntryId - organization_id = selectedOrganizationId 4. If no
+     *   row matches, return a rejection/error consistent with
+     *   not-found-without-leaking semantics. 5. If response DTO requires actor
+     *   information, either map performed_by_member_id directly (if the DTO
+     *   includes ids) or join erp_hrm_time_tracking_members accordingly; do not
+     *   expose other-organization data. 6. Map database columns to the response
+     *   DTO fields: - id - organization_id (only if included by DTO contract;
+     *   otherwise omit from DTO mapping) - performed_by_member_id - action_type
+     *   - target_entity_type - target_entity_id - summary - details (nullable)
+     *   - occurred_at - created_at - updated_at - deleted_at (nullable) only if
+     *   included in DTO contract. 7. Return the mapped activity log entry.
    *
    * Database considerations:
    * - Use the indexed column erp_hrm_time_tracking_activity_log_entries.organization_id together with id to keep the query efficient.
@@ -234,12 +238,13 @@ export class ErphrmtimetrackingMemberActivitylogentriesController {
    * @param connection
    * @param activityLogEntryId Target activity log entry identifier to update (UUID), scoped to the currently selected organization.
    * @param body Update payload for the activity log entry fields. The update applies to the existing entry identified by `{activityLogEntryId}` within the selected organization.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1) Authorization & tenant scoping
-   * - Resolve caller member identity from the session.
-   * - Determine selected organization context from the request/session (per organization-scoped access rules).
-   * - Verify caller has permission to update activity log entries in that selected organization (deny if lacking).
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification 1) Authorization & tenant scoping - Resolve
+     *   caller member identity from the session. - Determine selected
+     *   organization context from the request/session (per organization-scoped
+     *   access rules). - Verify caller has permission to update activity log
+     *   entries in that selected organization (deny if lacking).
    *
    * 2) Load and validate target row
    * - Parse `activityLogEntryId` as UUID.
@@ -312,9 +317,9 @@ export class ErphrmtimetrackingMemberActivitylogentriesController {
    *
    * @param connection
    * @param activityLogEntryId Target activity log entry ID to remove.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation steps for Realize Agent:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation steps for Realize Agent:
    *
    * 1. Parse `activityLogEntryId` from path and resolve it to `erp_hrm_time_tracking_activity_log_entries.id`.
    * 2. Resolve caller’s selected organization context (tenant) and enforce tenant isolation by checking `erp_hrm_time_tracking_activity_log_entries.organization_id` equals the selected organization id.

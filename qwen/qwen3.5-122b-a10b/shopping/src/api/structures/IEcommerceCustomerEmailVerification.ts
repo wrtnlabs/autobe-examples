@@ -24,8 +24,9 @@ export type IEcommerceCustomerEmailVerification = {
    *
    * This is the primary key of the verification record, stored as a UUID. It is used to reference this specific verification token in API requests, such as when retrieving verification details or when the customer submits the verification code.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_customer_email_verifications.id. Primary key, UUID format.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_customer_email_verifications.id. Primary key, UUID format.
    */
   id: string & tags.Format<"uuid">;
 
@@ -34,8 +35,10 @@ export type IEcommerceCustomerEmailVerification = {
    *
    * This foreign key links the verification token to the customer's account in the ecommerce_customers table. It identifies which customer owns this verification record and is used to validate ownership during API access control.
    *
-   * @x-autobe-database-schema-property ecommerce_customer_id
-   * @x-autobe-specification Direct mapping from ecommerce_customer_email_verifications.ecommerce_customer_id. Foreign key to ecommerce_customers table, UUID format.
+     * @x-autobe-database-schema-property ecommerce_customer_id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_customer_email_verifications.ecommerce_customer_id. Foreign
+     *   key to ecommerce_customers table, UUID format.
    */
   ecommerce_customer_id: string & tags.Format<"uuid">;
 
@@ -46,8 +49,10 @@ export type IEcommerceCustomerEmailVerification = {
    *
    * The timestamp is stored in UTC and returned in ISO 8601 format with timezone information.
    *
-   * @x-autobe-database-schema-property expires_at
-   * @x-autobe-specification Direct mapping from ecommerce_customer_email_verifications.expires_at. DateTime with date-time format.
+     * @x-autobe-database-schema-property expires_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_customer_email_verifications.expires_at. DateTime with
+     *   date-time format.
    */
   expires_at: string & tags.Format<"date-time">;
 
@@ -58,8 +63,11 @@ export type IEcommerceCustomerEmailVerification = {
    *
    * When this field has a value, the verification process is complete and the token is no longer valid for future use.
    *
-   * @x-autobe-database-schema-property verified_at
-   * @x-autobe-specification Direct mapping from ecommerce_customer_email_verifications.verified_at. Nullable DateTime with date-time format. Null means pending verification, set value means verified.
+     * @x-autobe-database-schema-property verified_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_customer_email_verifications.verified_at. Nullable DateTime
+     *   with date-time format. Null means pending verification, set value means
+     *   verified.
    */
   verified_at?: (string & tags.Format<"date-time">) | null | undefined;
 
@@ -68,8 +76,10 @@ export type IEcommerceCustomerEmailVerification = {
    *
    * This field is automatically set when the email verification record is created, typically when the customer registers or requests a new verification email. It cannot be modified after creation and is used for auditing purposes.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_customer_email_verifications.created_at. DateTime with date-time format. Auto-set on record creation.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_customer_email_verifications.created_at. DateTime with
+     *   date-time format. Auto-set on record creation.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -78,8 +88,10 @@ export type IEcommerceCustomerEmailVerification = {
    *
    * This field is automatically updated whenever any field in the verification record is modified, such as when verified_at is set during successful verification. It is used for auditing and conflict detection.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from ecommerce_customer_email_verifications.updated_at. DateTime with date-time format. Auto-updated on record modification.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_customer_email_verifications.updated_at. DateTime with
+     *   date-time format. Auto-updated on record modification.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -88,8 +100,11 @@ export type IEcommerceCustomerEmailVerification = {
    *
    * This field is null for active verification records. When set, it indicates the record has been soft-deleted and should be treated as archived. Soft-deleted records are typically excluded from API responses unless explicitly requested by administrators.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from ecommerce_customer_email_verifications.deleted_at. Nullable DateTime with date-time format. Null means active record, set value means soft-deleted.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_customer_email_verifications.deleted_at. Nullable DateTime
+     *   with date-time format. Null means active record, set value means
+     *   soft-deleted.
    */
   deleted_at?: (string & tags.Format<"date-time">) | null | undefined;
 };
@@ -119,7 +134,9 @@ export namespace IEcommerceCustomerEmailVerification {
      *
      * Specifies which page of results to retrieve. Page numbering starts from 1, so the first page is page 1. This is an alternative to using the cursor parameter for pagination. When both page and cursor are provided, cursor takes precedence.
      *
-     * @x-autobe-specification 1-indexed page number for cursor-based pagination. Defaults to 1 when not specified. Used as alternative to cursor token for page navigation.
+         * @x-autobe-specification 1-indexed page number for cursor-based
+         *   pagination. Defaults to 1 when not specified. Used as alternative
+         *   to cursor token for page navigation.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -128,7 +145,10 @@ export namespace IEcommerceCustomerEmailVerification {
      *
      * Defines the upper bound on how many records can be returned in a single page response. This controls the result set size for efficient pagination and network transfer. The actual number of records returned may be less than this value on the final page or when fewer records match the query criteria.
      *
-     * @x-autobe-specification Maximum number of records per page. Valid range: 1-100. Defaults to a system-configured value when not specified. Used to control result set size for efficient pagination.
+         * @x-autobe-specification Maximum number of records per page. Valid
+         *   range: 1-100. Defaults to a system-configured value when not
+         *   specified. Used to control result set size for efficient
+         *   pagination.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -139,7 +159,11 @@ export namespace IEcommerceCustomerEmailVerification {
      *
      * Opaque token that encodes the position in the result set for efficient cursor-based pagination. Include this value from a previous page's response to retrieve the next page of results. When both cursor and page are provided, cursor takes precedence for pagination.
      *
-     * @x-autobe-specification Cursor token for offset-free pagination. Encodes the position in the result set for efficient next-page retrieval. Use the cursor value from the previous page response to fetch the next page. When provided, takes precedence over page parameter.
+         * @x-autobe-specification Cursor token for offset-free pagination.
+         *   Encodes the position in the result set for efficient next-page
+         *   retrieval. Use the cursor value from the previous page response to
+         *   fetch the next page. When provided, takes precedence over page
+         *   parameter.
      */
     cursor?: string | undefined;
 
@@ -148,7 +172,10 @@ export namespace IEcommerceCustomerEmailVerification {
      *
      * Filters email verification records by the associated user's email address. Supports partial matching using SQL LIKE pattern matching, allowing searches for email domains or partial addresses. The filter is applied via JOIN to the customer or seller email columns depending on the user_type filter. Case-insensitive search.
      *
-     * @x-autobe-specification Email filter applied via JOIN to ecommerce_customers.email or ecommerce_sellers.email columns. Uses SQL LIKE operator for partial matching. Case-insensitive search across both customer and seller account tables.
+         * @x-autobe-specification Email filter applied via JOIN to
+         *   ecommerce_customers.email or ecommerce_sellers.email columns. Uses
+         *   SQL LIKE operator for partial matching. Case-insensitive search
+         *   across both customer and seller account tables.
      */
     email?: string | undefined;
 
@@ -163,7 +190,11 @@ export namespace IEcommerceCustomerEmailVerification {
      *
      * Multiple status values can be specified to filter for multiple statuses simultaneously.
      *
-     * @x-autobe-specification Verification status computed from verified_at and expires_at columns. 'verified' = verified_at is not null, 'pending' = verified_at is null AND expires_at is in future, 'expired' = expires_at is in past (before current timestamp). Implemented via CASE expression in SQL query.
+         * @x-autobe-specification Verification status computed from verified_at
+         *   and expires_at columns. 'verified' = verified_at is not null,
+         *   'pending' = verified_at is null AND expires_at is in future,
+         *   'expired' = expires_at is in past (before current timestamp).
+         *   Implemented via CASE expression in SQL query.
      */
     status?: "verified" | "pending" | "expired" | undefined;
 
@@ -177,7 +208,12 @@ export namespace IEcommerceCustomerEmailVerification {
      *
      * When not specified, the query returns verification records for both account types.
      *
-     * @x-autobe-specification Account type discriminator that determines which table to query. 'customer' queries ecommerce_customer_email_verifications joined with ecommerce_customers. 'seller' queries ecommerce_seller_email_verifications joined with ecommerce_sellers. Used to union results from both actor types.
+         * @x-autobe-specification Account type discriminator that determines
+         *   which table to query. 'customer' queries
+         *   ecommerce_customer_email_verifications joined with
+         *   ecommerce_customers. 'seller' queries
+         *   ecommerce_seller_email_verifications joined with ecommerce_sellers.
+         *   Used to union results from both actor types.
      */
     user_type?: "customer" | "seller" | undefined;
 
@@ -186,7 +222,11 @@ export namespace IEcommerceCustomerEmailVerification {
      *
      * Filters email verification records by their creation date range. Only records with a created_at timestamp greater than or equal to this value will be included in the results. Use in combination with created_at_to to specify a date range. Timestamps must be in ISO 8601 format (e.g., '2024-01-15T10:30:00Z').
      *
-     * @x-autobe-specification Filters records where created_at >= provided timestamp. Maps to the created_at column in both ecommerce_customer_email_verifications and ecommerce_seller_email_verifications tables. Uses SQL >= comparison operator. Timestamps should be in ISO 8601 format (date-time).
+         * @x-autobe-specification Filters records where created_at >= provided
+         *   timestamp. Maps to the created_at column in both
+         *   ecommerce_customer_email_verifications and
+         *   ecommerce_seller_email_verifications tables. Uses SQL >= comparison
+         *   operator. Timestamps should be in ISO 8601 format (date-time).
      */
     created_at_from?: (string & tags.Format<"date-time">) | undefined;
 
@@ -195,7 +235,11 @@ export namespace IEcommerceCustomerEmailVerification {
      *
      * Filters email verification records by their creation date range. Only records with a created_at timestamp less than or equal to this value will be included in the results. Use in combination with created_at_from to specify a date range. Timestamps must be in ISO 8601 format (e.g., '2024-01-20T15:45:00Z').
      *
-     * @x-autobe-specification Filters records where created_at <= provided timestamp. Maps to the created_at column in both ecommerce_customer_email_verifications and ecommerce_seller_email_verifications tables. Uses SQL <= comparison operator. Timestamps should be in ISO 8601 format (date-time).
+         * @x-autobe-specification Filters records where created_at <= provided
+         *   timestamp. Maps to the created_at column in both
+         *   ecommerce_customer_email_verifications and
+         *   ecommerce_seller_email_verifications tables. Uses SQL <= comparison
+         *   operator. Timestamps should be in ISO 8601 format (date-time).
      */
     created_at_to?: (string & tags.Format<"date-time">) | undefined;
 
@@ -204,7 +248,11 @@ export namespace IEcommerceCustomerEmailVerification {
      *
      * Filters email verification records by their token expiration date range. Only records with an expires_at timestamp greater than or equal to this value will be included in the results. Use in combination with expires_at_to to specify an expiration date range. Timestamps must be in ISO 8601 format (e.g., '2024-01-16T10:30:00Z').
      *
-     * @x-autobe-specification Filters records where expires_at >= provided timestamp. Maps to the expires_at column in both ecommerce_customer_email_verifications and ecommerce_seller_email_verifications tables. Uses SQL >= comparison operator. Timestamps should be in ISO 8601 format (date-time).
+         * @x-autobe-specification Filters records where expires_at >= provided
+         *   timestamp. Maps to the expires_at column in both
+         *   ecommerce_customer_email_verifications and
+         *   ecommerce_seller_email_verifications tables. Uses SQL >= comparison
+         *   operator. Timestamps should be in ISO 8601 format (date-time).
      */
     expires_at_from?: (string & tags.Format<"date-time">) | undefined;
 
@@ -213,7 +261,11 @@ export namespace IEcommerceCustomerEmailVerification {
      *
      * Filters email verification records by their token expiration date range. Only records with an expires_at timestamp less than or equal to this value will be included in the results. Use in combination with expires_at_from to specify an expiration date range. Timestamps must be in ISO 8601 format (e.g., '2024-01-20T15:45:00Z').
      *
-     * @x-autobe-specification Filters records where expires_at <= provided timestamp. Maps to the expires_at column in both ecommerce_customer_email_verifications and ecommerce_seller_email_verifications tables. Uses SQL <= comparison operator. Timestamps should be in ISO 8601 format (date-time).
+         * @x-autobe-specification Filters records where expires_at <= provided
+         *   timestamp. Maps to the expires_at column in both
+         *   ecommerce_customer_email_verifications and
+         *   ecommerce_seller_email_verifications tables. Uses SQL <= comparison
+         *   operator. Timestamps should be in ISO 8601 format (date-time).
      */
     expires_at_to?: (string & tags.Format<"date-time">) | undefined;
   };
@@ -237,8 +289,10 @@ export namespace IEcommerceCustomerEmailVerification {
      *
      * This UUID serves as the primary key for the verification record, allowing administrators to reference specific verification attempts in audit logs and support communications.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_customer_email_verifications.id. UUID primary key uniquely identifying the verification record.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_customer_email_verifications.id. UUID primary key
+         *   uniquely identifying the verification record.
      */
     id: string & tags.Format<"uuid">;
 
@@ -249,7 +303,9 @@ export namespace IEcommerceCustomerEmailVerification {
      *
      * **Format**: Standard email address format (e.g., user@example.com)
      *
-     * @x-autobe-specification Computed from JOIN with ecommerce_customers table on ecommerce_customer_id. Extracts the email field from the related customer record. Format: email address string.
+         * @x-autobe-specification Computed from JOIN with ecommerce_customers
+         *   table on ecommerce_customer_id. Extracts the email field from the
+         *   related customer record. Format: email address string.
      */
     email: string & tags.Format<"email">;
 
@@ -260,8 +316,11 @@ export namespace IEcommerceCustomerEmailVerification {
      *
      * **Format**: ISO 8601 date-time with timezone (e.g., 2026-04-06T15:25:27.839Z)
      *
-     * @x-autobe-database-schema-property expires_at
-     * @x-autobe-specification Direct mapping from ecommerce_customer_email_verifications.expires_at. DateTime with timezone (timestamptz). Token expiration threshold for validity checks.
+         * @x-autobe-database-schema-property expires_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_customer_email_verifications.expires_at. DateTime with
+         *   timezone (timestamptz). Token expiration threshold for validity
+         *   checks.
      */
     expires_at: string & tags.Format<"date-time">;
 
@@ -276,7 +335,10 @@ export namespace IEcommerceCustomerEmailVerification {
      *
      * Administrators use this field to filter and monitor verification workflows, identifying records requiring manual intervention.
      *
-     * @x-autobe-specification Computed field with three possible values: 'verified' if verified_at is not null, 'expired' if expires_at < current timestamp and verified_at is null, 'pending' otherwise. Business logic: checks verification completion and token validity.
+         * @x-autobe-specification Computed field with three possible values:
+         *   'verified' if verified_at is not null, 'expired' if expires_at <
+         *   current timestamp and verified_at is null, 'pending' otherwise.
+         *   Business logic: checks verification completion and token validity.
      */
     status: string;
 
@@ -287,7 +349,10 @@ export namespace IEcommerceCustomerEmailVerification {
      *
      * **Allowed values**: 'customer' (for this schema)
      *
-     * @x-autobe-specification Computed discriminator field. Value is always 'customer' for this table (ecommerce_customer_email_verifications). Distinguishes between customer and seller verification records in unified administrative views.
+         * @x-autobe-specification Computed discriminator field. Value is always
+         *   'customer' for this table (ecommerce_customer_email_verifications).
+         *   Distinguishes between customer and seller verification records in
+         *   unified administrative views.
      */
     user_type: string;
 
@@ -298,8 +363,11 @@ export namespace IEcommerceCustomerEmailVerification {
      *
      * **Format**: ISO 8601 date-time with timezone (e.g., 2026-04-05T15:25:27.839Z)
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from ecommerce_customer_email_verifications.created_at. DateTime with timezone (timestamptz). Automatically set when verification record is created.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_customer_email_verifications.created_at. DateTime with
+         *   timezone (timestamptz). Automatically set when verification record
+         *   is created.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -310,8 +378,11 @@ export namespace IEcommerceCustomerEmailVerification {
      *
      * **Format**: ISO 8601 date-time with timezone (e.g., 2026-04-05T16:30:45.123Z) or null if not yet verified
      *
-     * @x-autobe-database-schema-property verified_at
-     * @x-autobe-specification Direct mapping from ecommerce_customer_email_verifications.verified_at. Nullable DateTime with timezone (timestamptz). Set when customer completes email verification, null if not yet verified.
+         * @x-autobe-database-schema-property verified_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_customer_email_verifications.verified_at. Nullable
+         *   DateTime with timezone (timestamptz). Set when customer completes
+         *   email verification, null if not yet verified.
      */
     verified_at: (string & tags.Format<"date-time">) | null;
   };

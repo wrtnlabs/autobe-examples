@@ -123,7 +123,8 @@ export namespace create {
  * @param props.body Search criteria including completion status filter, sort field, sort direction, and pagination parameters.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query the todo_app_todos table for todos owned by the authenticated member.
+ * @x-autobe-specification Query the todo_app_todos table for todos owned by the
+ *   authenticated member.
  *
  * Apply completion status filter if provided:
  * - 'all' or undefined: return all todos (both complete and incomplete)
@@ -322,7 +323,8 @@ export namespace at {
  * @param props.body The fields to update on the todo. Only provided fields will be modified - omit fields to preserve their current values. Title is required if provided and must be non-empty. Description, start date, and due date are optional.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Update the todo identified by todoId with the provided fields.
+ * @x-autobe-specification Update the todo identified by todoId with the
+ *   provided fields.
  *
  * 1. Verify authentication: ensure the request is from an authenticated member
  * 2. Find the todo by todoId and verify ownership (todo_app_member_id matches authenticated user)
@@ -435,7 +437,8 @@ export namespace update {
  * @param props.todoId Unique identifier of the todo to delete (UUID format).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Soft-delete a todo by updating is_deleted to true and setting deleted_at to current timestamp.
+ * @x-autobe-specification Soft-delete a todo by updating is_deleted to true and
+ *   setting deleted_at to current timestamp.
  *
  * 1. Verify the todo exists and belongs to the authenticated member (privacy isolation)
  * 2. Verify the todo is not already deleted (is_deleted = false)

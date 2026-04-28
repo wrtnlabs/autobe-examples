@@ -39,7 +39,10 @@ export namespace IShoppingMallOrder {
      *
      * The search term is matched anywhere in the code string. For example, searching '2024' would match orders with codes like 'ORD-2024-001' or '20240101-ABC'.
      *
-     * @x-autobe-specification Query parameter for partial match search on shopping_mall_orders.code column. Implemented as SQL LIKE '%search%' or equivalent. Case-insensitive search recommended. Empty or omitted search returns all orders.
+         * @x-autobe-specification Query parameter for partial match search on
+         *   shopping_mall_orders.code column. Implemented as SQL LIKE
+         *   '%search%' or equivalent. Case-insensitive search recommended.
+         *   Empty or omitted search returns all orders.
      */
     search?: string | undefined;
 
@@ -50,7 +53,12 @@ export namespace IShoppingMallOrder {
      *
      * Order status is computed from constituent order item statuses: 'cancelled' if any item is cancelled, 'refunded' if any item is refunded, 'delivered' if all items are delivered, 'shipped' if any item is shipped, otherwise 'paid'. This computed status determines which orders match the filter.
      *
-     * @x-autobe-specification Query parameter for filtering orders by status. Accepts single status string or array of status values. Status is computed from child order_items: if any cancelled → 'cancelled', any refunded → 'refunded', all delivered → 'delivered', any shipped → 'shipped', else 'paid'. Filter applied after status computation.
+         * @x-autobe-specification Query parameter for filtering orders by
+         *   status. Accepts single status string or array of status values.
+         *   Status is computed from child order_items: if any cancelled →
+         *   'cancelled', any refunded → 'refunded', all delivered →
+         *   'delivered', any shipped → 'shipped', else 'paid'. Filter applied
+         *   after status computation.
      */
     status?: string | string[] | undefined;
 
@@ -61,8 +69,13 @@ export namespace IShoppingMallOrder {
      *
      * For the customer-facing endpoint (/member/orders), this filter is automatically applied based on the authenticated user's identity and should not be provided in the request body.
      *
-     * @x-autobe-database-schema-property member_id
-     * @x-autobe-specification Query parameter for filtering orders by customer member ID. Direct mapping to shopping_mall_orders.member_id column. Primarily used in admin endpoint to view orders for a specific customer. Member endpoint auto-filters by authenticated user's member_id (not exposed in request body).
+         * @x-autobe-database-schema-property member_id
+         * @x-autobe-specification Query parameter for filtering orders by
+         *   customer member ID. Direct mapping to
+         *   shopping_mall_orders.member_id column. Primarily used in admin
+         *   endpoint to view orders for a specific customer. Member endpoint
+         *   auto-filters by authenticated user's member_id (not exposed in
+         *   request body).
      */
     member_id?: (string & tags.Format<"uuid">) | undefined;
 
@@ -73,7 +86,11 @@ export namespace IShoppingMallOrder {
      *
      * The filter requires joining with the order_items table to identify orders that include products from the specified seller. An order may contain items from multiple sellers, so this filter returns orders where at least one item belongs to the specified seller.
      *
-     * @x-autobe-specification Query parameter for filtering orders by seller ID. Requires JOIN to shopping_mall_order_items to filter orders containing items from a specific seller. Used in admin and seller endpoints. Implemented as EXISTS subquery or JOIN with DISTINCT on order id.
+         * @x-autobe-specification Query parameter for filtering orders by
+         *   seller ID. Requires JOIN to shopping_mall_order_items to filter
+         *   orders containing items from a specific seller. Used in admin and
+         *   seller endpoints. Implemented as EXISTS subquery or JOIN with
+         *   DISTINCT on order id.
      */
     seller_id?: (string & tags.Format<"uuid">) | undefined;
 
@@ -84,8 +101,12 @@ export namespace IShoppingMallOrder {
      *
      * Use this parameter to find orders within a specific time period. Combine with created_at_lte to define a complete date range. The timestamp should be provided in ISO 8601 format (e.g., '2024-01-01T00:00:00Z').
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Query parameter for filtering orders created on or after a specific timestamp. Maps to shopping_mall_orders.created_at column with >= comparison. ISO 8601 date-time format required. Used for date range filtering when combined with created_at_lte.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Query parameter for filtering orders created
+         *   on or after a specific timestamp. Maps to
+         *   shopping_mall_orders.created_at column with >= comparison. ISO 8601
+         *   date-time format required. Used for date range filtering when
+         *   combined with created_at_lte.
      */
     created_at_gte?: (string & tags.Format<"date-time">) | undefined;
 
@@ -96,8 +117,12 @@ export namespace IShoppingMallOrder {
      *
      * Use this parameter to find orders within a specific time period. Combine with created_at_gte to define a complete date range. The timestamp should be provided in ISO 8601 format (e.g., '2024-12-31T23:59:59Z').
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Query parameter for filtering orders created on or before a specific timestamp. Maps to shopping_mall_orders.created_at column with <= comparison. ISO 8601 date-time format required. Used for date range filtering when combined with created_at_gte.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Query parameter for filtering orders created
+         *   on or before a specific timestamp. Maps to
+         *   shopping_mall_orders.created_at column with <= comparison. ISO 8601
+         *   date-time format required. Used for date range filtering when
+         *   combined with created_at_gte.
      */
     created_at_lte?: (string & tags.Format<"date-time">) | undefined;
 
@@ -108,7 +133,10 @@ export namespace IShoppingMallOrder {
      *
      * This parameter works together with limit to control pagination. For example, page=1 with limit=20 returns the first 20 orders, while page=2 with limit=20 returns the next 20 orders. If omitted, defaults to page 1.
      *
-     * @x-autobe-specification Query parameter for pagination page number. 1-indexed (first page is 1). Defaults to 1 if omitted. Used with limit to implement offset-based pagination. Offset calculated as (page - 1) * limit.
+         * @x-autobe-specification Query parameter for pagination page number.
+         *   1-indexed (first page is 1). Defaults to 1 if omitted. Used with
+         *   limit to implement offset-based pagination. Offset calculated as
+         *   (page - 1) * limit.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -119,7 +147,10 @@ export namespace IShoppingMallOrder {
      *
      * The value must be between 1 and 100 inclusive. If omitted, defaults to 20 items per page. Note that the actual number of records returned may be less than this limit on the final page of results or when the total matching records are fewer than the limit.
      *
-     * @x-autobe-specification Query parameter for maximum number of records per page. Minimum 1, maximum 100. Defaults to 20 if omitted. Used with page to implement offset-based pagination. Actual returned count may be less on the final page.
+         * @x-autobe-specification Query parameter for maximum number of records
+         *   per page. Minimum 1, maximum 100. Defaults to 20 if omitted. Used
+         *   with page to implement offset-based pagination. Actual returned
+         *   count may be less on the final page.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -136,7 +167,11 @@ export namespace IShoppingMallOrder {
      *
      * Combine with the direction parameter to control ascending or descending order.
      *
-     * @x-autobe-specification Query parameter specifying the field to sort results by. Allowed values: 'created_at' (order creation timestamp), 'code' (order code string), 'total_price' (order total amount). Defaults to 'created_at' if omitted. Used with direction parameter.
+         * @x-autobe-specification Query parameter specifying the field to sort
+         *   results by. Allowed values: 'created_at' (order creation
+         *   timestamp), 'code' (order code string), 'total_price' (order total
+         *   amount). Defaults to 'created_at' if omitted. Used with direction
+         *   parameter.
      */
     sort?: "created_at" | "code" | "total_price" | undefined;
 
@@ -150,7 +185,10 @@ export namespace IShoppingMallOrder {
      *
      * The default direction is 'desc', which means orders are sorted with the most recently created orders appearing first. This is typically the most useful default for order history views.
      *
-     * @x-autobe-specification Query parameter specifying sort direction. Allowed values: 'asc' (ascending), 'desc' (descending). Defaults to 'desc' if omitted. Used with sort parameter. Default sort is created_at DESC (newest orders first).
+         * @x-autobe-specification Query parameter specifying sort direction.
+         *   Allowed values: 'asc' (ascending), 'desc' (descending). Defaults to
+         *   'desc' if omitted. Used with sort parameter. Default sort is
+         *   created_at DESC (newest orders first).
      */
     direction?: "asc" | "desc" | undefined;
   };
@@ -168,8 +206,9 @@ export namespace IShoppingMallOrder {
      *
      * This is the primary key of the order record, generated as a UUID v4 upon order creation. Used for order lookup, API operations, and internal referencing.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_orders.id. UUID format generated by database.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from shopping_mall_orders.id.
+         *   UUID format generated by database.
      */
     id: string & tags.Format<"uuid">;
 
@@ -178,8 +217,9 @@ export namespace IShoppingMallOrder {
      *
      * A unique order number used for customer-facing communications, receipts, and support inquiries. Format typically includes date and sequence number (e.g., ORD-2024-001234). Customers reference this code when contacting support about their order.
      *
-     * @x-autobe-database-schema-property code
-     * @x-autobe-specification Direct mapping from shopping_mall_orders.code. Human-readable unique order number.
+         * @x-autobe-database-schema-property code
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_orders.code. Human-readable unique order number.
      */
     code: string;
 
@@ -188,8 +228,10 @@ export namespace IShoppingMallOrder {
      *
      * This represents the complete amount paid for the order, including all items and applicable taxes or fees. The value is captured at checkout and remains immutable after order creation, even if individual item prices change later.
      *
-     * @x-autobe-database-schema-property total_price
-     * @x-autobe-specification Direct mapping from shopping_mall_orders.total_price. Snapshot of total amount at purchase time, does not change after order creation.
+         * @x-autobe-database-schema-property total_price
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_orders.total_price. Snapshot of total amount at
+         *   purchase time, does not change after order creation.
      */
     total_price: number;
 
@@ -198,8 +240,10 @@ export namespace IShoppingMallOrder {
      *
      * Records the exact date and time when the customer completed checkout and the order was created. Used for order history sorting, delivery estimates, and customer support reference. Format is ISO 8601 with timezone (e.g., 2024-01-15T10:30:00Z).
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_orders.created_at. ISO 8601 date-time format with timezone.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_orders.created_at. ISO 8601 date-time format with
+         *   timezone.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -208,8 +252,10 @@ export namespace IShoppingMallOrder {
      *
      * Contains summary information about the member account that made the purchase. Includes customer identification and basic profile data. This relation is resolved via foreign key join to the members table.
      *
-     * @x-autobe-database-schema-property member
-     * @x-autobe-specification JOIN from shopping_mall_orders.member_id to shopping_mall_members.id. Returns IShoppingMallMember.ISummary with customer information.
+         * @x-autobe-database-schema-property member
+         * @x-autobe-specification JOIN from shopping_mall_orders.member_id to
+         *   shopping_mall_members.id. Returns IShoppingMallMember.ISummary with
+         *   customer information.
      */
     member: IShoppingMallMember.ISummary;
 
@@ -218,7 +264,11 @@ export namespace IShoppingMallOrder {
      *
      * Derived from the statuses of all order items within this order. The status reflects the most advanced state among all items: cancelled if any item was cancelled, refunded if any item was refunded, delivered if all items are delivered, shipped if any item has shipped, or paid if all items are awaiting fulfillment. This computed field provides a quick overview of order progress.
      *
-     * @x-autobe-specification Computed from child shopping_mall_order_items.status values. Aggregation logic: if any item cancelled → 'cancelled', any refunded → 'refunded', all delivered → 'delivered', any shipped → 'shipped', else 'paid'. Not stored in database.
+         * @x-autobe-specification Computed from child
+         *   shopping_mall_order_items.status values. Aggregation logic: if any
+         *   item cancelled → 'cancelled', any refunded → 'refunded', all
+         *   delivered → 'delivered', any shipped → 'shipped', else 'paid'. Not
+         *   stored in database.
      */
     status: string;
 
@@ -227,7 +277,9 @@ export namespace IShoppingMallOrder {
      *
      * Indicates how many different products or variants were purchased in this order. This count represents the number of order item records, not the total quantity of products. For example, an order with 3 units of product A and 2 units of product B would have an items_count of 2.
      *
-     * @x-autobe-specification Computed from COUNT(shopping_mall_order_items) where order_id matches. Returns integer representing number of distinct line items in the order.
+         * @x-autobe-specification Computed from
+         *   COUNT(shopping_mall_order_items) where order_id matches. Returns
+         *   integer representing number of distinct line items in the order.
      */
     items_count: number & tags.Type<"int32">;
   };
@@ -247,7 +299,14 @@ export namespace IShoppingMallOrder {
      *
      * The address must belong to the authenticated customer - addresses from other users are rejected. During checkout, the full address details (recipient name, phone number, street address, etc.) are retrieved and associated with the order.
      *
-     * @x-autobe-specification References shopping_mall_customer_addresses.id. Used during order creation to determine shipping destination. The address details (recipient name, phone, full address) are retrieved from customer_addresses table and may be denormalized into order/shipment records. Validation: address must belong to the authenticated member (JWT subject). Not stored as FK in orders table - used for checkout processing only.
+         * @x-autobe-specification References
+         *   shopping_mall_customer_addresses.id. Used during order creation to
+         *   determine shipping destination. The address details (recipient
+         *   name, phone, full address) are retrieved from customer_addresses
+         *   table and may be denormalized into order/shipment records.
+         *   Validation: address must belong to the authenticated member (JWT
+         *   subject). Not stored as FK in orders table - used for checkout
+         *   processing only.
      */
     shopping_mall_customer_address_id: string & tags.Format<"uuid">;
   };

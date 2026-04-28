@@ -21,7 +21,8 @@ import { IRedditCommunityMember } from "../../../../../structures/IRedditCommuni
  * @param props.memberId The unique identifier of the member whose portfolio is being retrieved.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor guest
- * @x-autobe-specification Query the reddit_community_members table to retrieve member profile information by memberId.
+ * @x-autobe-specification Query the reddit_community_members table to retrieve
+ *   member profile information by memberId.
  *
  * Load the member's post history by querying reddit_community_posts where reddit_community_member_id matches, filtering out soft-deleted posts (deleted_at IS NULL).
  *

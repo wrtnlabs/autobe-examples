@@ -26,7 +26,8 @@ export * as targetEntities from "./targetEntities/index";
  * @param props.body Search criteria for the organization-scoped activity log, including action type, performer/user identifier, occurred-at date range, and pagination/sorting settings.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implement PATCH /activityLogs/search as an organization-scoped filtered list query.
+ * @x-autobe-specification Implement PATCH /activityLogs/search as an
+ *   organization-scoped filtered list query.
  *
  * 1) Authorization
  * - Require the caller to have org:manage permission before executing any query.

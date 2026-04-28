@@ -23,9 +23,10 @@ export class HrmtimetrackAuthGuestController {
    *
    * @param connection
    * @param body Guest invitation acceptance request containing email address and invitation token.
-   * @x-autobe-authorization-type join
-   * @x-autobe-authorization-actor guest
-   * @x-autobe-specification Implement guest invitation acceptance and account creation flow.
+     * @x-autobe-authorization-type join
+     * @x-autobe-authorization-actor guest
+     * @x-autobe-specification Implement guest invitation acceptance and account
+     *   creation flow.
    *
    * 1. Validate the invitation token from the request body
    * 2. Query hrm_time_track_guests table to find the invitation by email and token
@@ -79,9 +80,9 @@ export class HrmtimetrackAuthGuestController {
    *
    * @param connection
    * @param body Guest token refresh request containing the current refresh token.
-   * @x-autobe-authorization-type refresh
-   * @x-autobe-authorization-actor guest
-   * @x-autobe-specification Implement guest session token refresh flow.
+     * @x-autobe-authorization-type refresh
+     * @x-autobe-authorization-actor guest
+     * @x-autobe-specification Implement guest session token refresh flow.
    *
    * 1. Validate the refresh token from the request body
    * 2. Decode the refresh token to extract guest session ID and email

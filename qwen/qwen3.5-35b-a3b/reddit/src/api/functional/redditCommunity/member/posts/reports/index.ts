@@ -26,17 +26,14 @@ import { IRedditCommunityReport } from "../../../../../structures/IRedditCommuni
  * @param props.body Report submission details including the reason for reporting the post. The reporter (submitting user) and community (post's community) are automatically determined from authentication and the post record.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification 1. Validate that the post exists and is not soft-deleted
- * 2. Check that the authenticated user has not already reported this post (unique constraint on [reporter_id, target_post_id])
- * 3. Extract community_id from the post record
- * 4. Create the report record with:
- *    - reporter_id from authenticated user
- *    - community_id from post's community
- *    - target_post_id from path parameter
- *    - reason from request body (validate 500 char max)
- *    - status_id = 0 (pending)
- *    - created_at, updated_at = current timestamp
- * 5. Return the created report with all fields
+ * @x-autobe-specification 1. Validate that the post exists and is not
+ *   soft-deleted 2. Check that the authenticated user has not already reported
+ *   this post (unique constraint on [reporter_id, target_post_id]) 3. Extract
+ *   community_id from the post record 4. Create the report record with: -
+ *   reporter_id from authenticated user - community_id from post's community -
+ *   target_post_id from path parameter - reason from request body (validate 500
+ *   char max) - status_id = 0 (pending) - created_at, updated_at = current
+ *   timestamp 5. Return the created report with all fields
  *
  * Error handling:
  * - 404 if post not found or soft-deleted
@@ -139,7 +136,8 @@ export namespace create {
  * @param props.body Search criteria including optional status filter, date range filters, reporter filter, and pagination parameters.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query reddit_community_reports table for reports targeting the specified postId.
+ * @x-autobe-specification Query reddit_community_reports table for reports
+ *   targeting the specified postId.
  *
  * 1. Verify the user has moderator privileges for the community containing this post
  * 2. Filter reports where target_post_id matches the path parameter
@@ -247,7 +245,9 @@ export namespace index {
  * @param props.reportId UUID of the specific report record to retrieve.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Retrieve a single report record from reddit_community_reports table where target_post_id matches the postId parameter.
+ * @x-autobe-specification Retrieve a single report record from
+ *   reddit_community_reports table where target_post_id matches the postId
+ *   parameter.
  *
  * Implementation steps:
  * 1. Validate that postId and reportId are valid UUIDs

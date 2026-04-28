@@ -14,8 +14,9 @@ export type IShoppingMallGuest = {
    *
    * This UUID serves as the primary key for guest account records in the database. It is used to reference the guest account in API operations and database queries.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_guests.id. UUID primary key uniquely identifying the guest account record.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from shopping_mall_guests.id. UUID
+     *   primary key uniquely identifying the guest account record.
    */
   id: string & tags.Format<"uuid">;
 
@@ -24,8 +25,10 @@ export type IShoppingMallGuest = {
    *
    * This fingerprint is generated from browser and device characteristics and remains consistent for the same device. It serves as the primary identifier for guest users who do not have email or password credentials. The device fingerprint enables the platform to maintain guest session state and preferences across page reloads and browser restarts.
    *
-   * @x-autobe-database-schema-property device_fingerprint
-   * @x-autobe-specification Direct mapping from shopping_mall_guests.device_fingerprint. Unique constraint ensures each device fingerprint maps to exactly one guest account.
+     * @x-autobe-database-schema-property device_fingerprint
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_guests.device_fingerprint. Unique constraint ensures each
+     *   device fingerprint maps to exactly one guest account.
    */
   device_fingerprint: string;
 
@@ -34,8 +37,10 @@ export type IShoppingMallGuest = {
    *
    * This timestamp is recorded when the guest first accesses the platform and a device fingerprint is generated. It provides audit trail information for when the guest account was established.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from shopping_mall_guests.created_at. DateTime field with timestamptz database type, recorded when the guest account is first created.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_guests.created_at. DateTime field with timestamptz
+     *   database type, recorded when the guest account is first created.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -44,8 +49,10 @@ export type IShoppingMallGuest = {
    *
    * This timestamp is automatically updated whenever guest activity occurs or the device fingerprint is refreshed. It provides visibility into the last modification time of the guest account record.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from shopping_mall_guests.updated_at. DateTime field with timestamptz database type, automatically updated on any guest account modification.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_guests.updated_at. DateTime field with timestamptz
+     *   database type, automatically updated on any guest account modification.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -54,8 +61,12 @@ export type IShoppingMallGuest = {
    *
    * This nullable field supports soft delete functionality. When null, the guest account is active. When set to a timestamp, the guest account has been soft-deleted (e.g., when the guest registers as an authenticated user or after extended inactivity). Soft-deleted guests are excluded from active guest queries.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from shopping_mall_guests.deleted_at. Nullable DateTime field with timestamptz database type for soft delete support. Null means the guest account is active; non-null indicates the account has been soft-deleted.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_guests.deleted_at. Nullable DateTime field with
+     *   timestamptz database type for soft delete support. Null means the guest
+     *   account is active; non-null indicates the account has been
+     *   soft-deleted.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -75,7 +86,13 @@ export namespace IShoppingMallGuest {
      *
      * The token is validated server-side against the shopping_mall_guest_sessions table. If valid and not expired, new access and refresh tokens are issued. If invalid or expired, the guest must call the join endpoint to create a new session.
      *
-     * @x-autobe-specification Refresh token provided by the client from a previous IShoppingMallGuest.IAuthorized response. This token is validated against the shopping_mall_guest_sessions table where it was stored during initial guest join or previous refresh. The backend verifies the token is not expired, not revoked, and associated with an active (non-deleted) guest record in shopping_mall_guests before issuing new tokens.
+         * @x-autobe-specification Refresh token provided by the client from a
+         *   previous IShoppingMallGuest.IAuthorized response. This token is
+         *   validated against the shopping_mall_guest_sessions table where it
+         *   was stored during initial guest join or previous refresh. The
+         *   backend verifies the token is not expired, not revoked, and
+         *   associated with an active (non-deleted) guest record in
+         *   shopping_mall_guests before issuing new tokens.
      */
     refresh_token: string;
   };
@@ -93,7 +110,9 @@ export namespace IShoppingMallGuest {
      *
      * This field is captured from the HTTP request to track the entry point for the guest session. It is used for security monitoring and session management purposes. The href is stored in the session table and helps identify the context of the guest's platform access.
      *
-     * @x-autobe-specification Captured from HTTP request (current page URL). Stored in shopping_mall_guest_sessions.href for session tracking and security monitoring. Required field.
+         * @x-autobe-specification Captured from HTTP request (current page
+         *   URL). Stored in shopping_mall_guest_sessions.href for session
+         *   tracking and security monitoring. Required field.
      */
     href: string & tags.Format<"uri">;
 
@@ -102,7 +121,9 @@ export namespace IShoppingMallGuest {
      *
      * This field is captured from the HTTP Referrer header to track how guests discovered the platform. It is used for analytics, security monitoring, and understanding user acquisition channels. The referrer is stored in the session table.
      *
-     * @x-autobe-specification Captured from HTTP request (Referrer header or source page). Stored in shopping_mall_guest_sessions.referrer for session tracking and security monitoring. Required field.
+         * @x-autobe-specification Captured from HTTP request (Referrer header
+         *   or source page). Stored in shopping_mall_guest_sessions.referrer
+         *   for session tracking and security monitoring. Required field.
      */
     referrer: string & tags.Format<"uri">;
 
@@ -111,7 +132,11 @@ export namespace IShoppingMallGuest {
      *
      * This field is optional because in Server Side Rendering (SSR) scenarios, the client cannot know its own IP address - the server captures it as a fallback. The IP is stored in the session table and used for security monitoring, rate limiting, and fraud detection. Format is IPv4 address string.
      *
-     * @x-autobe-specification Captured from HTTP request (client IP address). Optional field because in SSR (Server Side Rendering) the client cannot know its own IP - server captures it as fallback. Stored in shopping_mall_guest_sessions.ip for session tracking and security monitoring. Format: IPv4 address.
+         * @x-autobe-specification Captured from HTTP request (client IP
+         *   address). Optional field because in SSR (Server Side Rendering) the
+         *   client cannot know its own IP - server captures it as fallback.
+         *   Stored in shopping_mall_guest_sessions.ip for session tracking and
+         *   security monitoring. Format: IPv4 address.
      */
     ip?: (string & tags.Format<"ipv4">) | undefined;
   };
@@ -129,8 +154,9 @@ export namespace IShoppingMallGuest {
      *
      * This UUID serves as the primary key for the guest record and is used to reference the guest in related tables such as guest_sessions.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_guests.id. Primary key, UUID format, NOT NULL.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from shopping_mall_guests.id.
+         *   Primary key, UUID format, NOT NULL.
      */
     id: string & tags.Format<"uuid">;
 
@@ -139,8 +165,10 @@ export namespace IShoppingMallGuest {
      *
      * This fingerprint is generated from browser and device characteristics and remains consistent for the same device. It serves as the primary identifier for guest users who do not have email or password credentials. The fingerprint is unique across all guest accounts.
      *
-     * @x-autobe-database-schema-property device_fingerprint
-     * @x-autobe-specification Direct mapping from shopping_mall_guests.device_fingerprint. Unique constraint, NOT NULL.
+         * @x-autobe-database-schema-property device_fingerprint
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_guests.device_fingerprint. Unique constraint, NOT
+         *   NULL.
      */
     device_fingerprint: string;
 
@@ -149,8 +177,9 @@ export namespace IShoppingMallGuest {
      *
      * Recorded when the guest first accesses the platform and a device fingerprint is generated. This field is never null and represents the initial registration time of the guest.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_guests.created_at. DateTime with timezone, NOT NULL.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_guests.created_at. DateTime with timezone, NOT NULL.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -159,8 +188,9 @@ export namespace IShoppingMallGuest {
      *
      * Updated whenever guest activity occurs or the device fingerprint is refreshed. This field is never null and tracks the most recent modification to the guest record.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from shopping_mall_guests.updated_at. DateTime with timezone, NOT NULL.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_guests.updated_at. DateTime with timezone, NOT NULL.
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -169,8 +199,10 @@ export namespace IShoppingMallGuest {
      *
      * Nullable field for soft delete support. Guest accounts may be deleted when they register as authenticated users (customer, seller, or administrator) or after extended inactivity. When null, the guest account is active. When set, the account is marked as deleted but retained in the database.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from shopping_mall_guests.deleted_at. DateTime with timezone, nullable for soft delete support.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_guests.deleted_at. DateTime with timezone, nullable
+         *   for soft delete support.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };
@@ -186,42 +218,54 @@ export namespace IShoppingMallGuest {
     /**
      * Filter guests by device fingerprint. Supports exact match or partial match search.
      *
-     * @x-autobe-specification Filter parameter for device_fingerprint column in shopping_mall_guests table. Supports exact match or partial match (LIKE query) to find guests by device fingerprint.
+         * @x-autobe-specification Filter parameter for device_fingerprint
+         *   column in shopping_mall_guests table. Supports exact match or
+         *   partial match (LIKE query) to find guests by device fingerprint.
      */
     device_fingerprint?: string | undefined;
 
     /**
      * Filter guests created on or after this timestamp.
      *
-     * @x-autobe-specification Filter parameter for created_at column in shopping_mall_guests table. Filters guests created on or after this timestamp using >= comparison.
+         * @x-autobe-specification Filter parameter for created_at column in
+         *   shopping_mall_guests table. Filters guests created on or after this
+         *   timestamp using >= comparison.
      */
     created_at_gte?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Filter guests created on or before this timestamp.
      *
-     * @x-autobe-specification Filter parameter for created_at column in shopping_mall_guests table. Filters guests created on or before this timestamp using <= comparison.
+         * @x-autobe-specification Filter parameter for created_at column in
+         *   shopping_mall_guests table. Filters guests created on or before
+         *   this timestamp using <= comparison.
      */
     created_at_lte?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Filter by deletion status. Use true for deleted guests, false for active guests.
      *
-     * @x-autobe-specification Filter parameter for deleted_at column in shopping_mall_guests table. Boolean value: true filters for deleted guests (deleted_at IS NOT NULL), false filters for active guests (deleted_at IS NULL).
+         * @x-autobe-specification Filter parameter for deleted_at column in
+         *   shopping_mall_guests table. Boolean value: true filters for deleted
+         *   guests (deleted_at IS NOT NULL), false filters for active guests
+         *   (deleted_at IS NULL).
      */
     deleted_at?: boolean | undefined;
 
     /**
      * Page number for pagination (1-indexed).
      *
-     * @x-autobe-specification Pagination parameter for page number (1-indexed). Used to calculate OFFSET in SQL query: (page - 1) * limit.
+         * @x-autobe-specification Pagination parameter for page number
+         *   (1-indexed). Used to calculate OFFSET in SQL query: (page - 1) *
+         *   limit.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Number of results per page (1-100).
      *
-     * @x-autobe-specification Pagination parameter for number of results per page. Used as LIMIT in SQL query. Valid range: 1-100.
+         * @x-autobe-specification Pagination parameter for number of results
+         *   per page. Used as LIMIT in SQL query. Valid range: 1-100.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -230,7 +274,9 @@ export namespace IShoppingMallGuest {
     /**
      * Field to sort by.
      *
-     * @x-autobe-specification Sorting parameter specifying which field to sort by. Enum values: id, device_fingerprint, created_at, updated_at, deleted_at. Maps to ORDER BY clause in SQL query.
+         * @x-autobe-specification Sorting parameter specifying which field to
+         *   sort by. Enum values: id, device_fingerprint, created_at,
+         *   updated_at, deleted_at. Maps to ORDER BY clause in SQL query.
      */
     sort?:
       | "id"
@@ -243,7 +289,9 @@ export namespace IShoppingMallGuest {
     /**
      * Sort order (ascending or descending).
      *
-     * @x-autobe-specification Sorting parameter specifying sort direction. Enum values: asc (ascending), desc (descending). Maps to ASC/DESC in ORDER BY clause. Default: desc.
+         * @x-autobe-specification Sorting parameter specifying sort direction.
+         *   Enum values: asc (ascending), desc (descending). Maps to ASC/DESC
+         *   in ORDER BY clause. Default: desc.
      */
     order?: "asc" | "desc" | undefined;
   };
@@ -261,7 +309,9 @@ export namespace IShoppingMallGuest {
      *
      * This UUID serves as the primary key for the guest record in the shopping_mall_guests table. It is auto-generated when a guest account is created and remains constant throughout the guest's session lifecycle.
      *
-     * @x-autobe-specification Mapped from shopping_mall_guests.id. Primary key UUID identifying the guest account record. Auto-generated when guest account is created.
+         * @x-autobe-specification Mapped from shopping_mall_guests.id. Primary
+         *   key UUID identifying the guest account record. Auto-generated when
+         *   guest account is created.
      */
     id: string & tags.Format<"uuid">;
 
@@ -270,7 +320,10 @@ export namespace IShoppingMallGuest {
      *
      * This fingerprint is generated from browser and device characteristics and remains consistent for the same device. It serves as the primary identifier for guest users who do not have email or password credentials. The fingerprint is unique across all guest accounts.
      *
-     * @x-autobe-specification Mapped from shopping_mall_guests.device_fingerprint. Unique identifier generated from browser/device characteristics (User-Agent, IP address, or client-provided fingerprint).
+         * @x-autobe-specification Mapped from
+         *   shopping_mall_guests.device_fingerprint. Unique identifier
+         *   generated from browser/device characteristics (User-Agent, IP
+         *   address, or client-provided fingerprint).
      */
     device_fingerprint: string;
 
@@ -279,7 +332,9 @@ export namespace IShoppingMallGuest {
      *
      * This ISO 8601 datetime is recorded when the guest first accesses the platform and a device fingerprint is generated. It represents the initial registration time of the guest session and is immutable.
      *
-     * @x-autobe-specification Mapped from shopping_mall_guests.created_at. Timestamp when the guest account was first created. Recorded when guest first accesses the platform.
+         * @x-autobe-specification Mapped from shopping_mall_guests.created_at.
+         *   Timestamp when the guest account was first created. Recorded when
+         *   guest first accesses the platform.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -288,7 +343,9 @@ export namespace IShoppingMallGuest {
      *
      * This ISO 8601 datetime is updated whenever guest activity occurs or the device fingerprint is refreshed. It tracks the most recent modification to the guest record.
      *
-     * @x-autobe-specification Mapped from shopping_mall_guests.updated_at. Timestamp when the guest account was last updated. Updated on guest activity or fingerprint refresh.
+         * @x-autobe-specification Mapped from shopping_mall_guests.updated_at.
+         *   Timestamp when the guest account was last updated. Updated on guest
+         *   activity or fingerprint refresh.
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -297,14 +354,17 @@ export namespace IShoppingMallGuest {
      *
      * This nullable ISO 8601 datetime indicates when the guest account was deleted. Guest accounts may be deleted when they register as authenticated users (customer, seller, or administrator) or after extended inactivity. When null, the guest account is active.
      *
-     * @x-autobe-specification Mapped from shopping_mall_guests.deleted_at. Nullable timestamp for soft delete support. Set when guest registers as authenticated user or after inactivity.
+         * @x-autobe-specification Mapped from shopping_mall_guests.deleted_at.
+         *   Nullable timestamp for soft delete support. Set when guest
+         *   registers as authenticated user or after inactivity.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
 
     /**
      * Authorization token.
      *
-     * @x-autobe-specification Authorization token comes from the session table.
+         * @x-autobe-specification Authorization token comes from the session
+         *   table.
      */
     token: IAuthorizationToken;
   };

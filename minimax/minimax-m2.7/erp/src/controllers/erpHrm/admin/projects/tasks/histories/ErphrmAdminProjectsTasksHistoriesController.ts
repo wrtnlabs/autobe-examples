@@ -24,9 +24,10 @@ export class ErphrmAdminProjectsTasksHistoriesController {
    * @param projectId Unique identifier of the project containing the task (global scope)
    * @param taskId Unique identifier of the task to retrieve history for (scoped to project)
    * @param body Search criteria and pagination parameters for filtering task histories
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query erp_hrm_task_histories table filtered by the specified task ID from path parameter.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Query erp_hrm_task_histories table filtered by
+     *   the specified task ID from path parameter.
    *
    * Join with erp_hrm_members table to retrieve member identity information (display name, avatar) for the member who made each status change. Join with erp_hrm_tasks to verify the task exists and belongs to the specified project.
    *
@@ -78,9 +79,10 @@ export class ErphrmAdminProjectsTasksHistoriesController {
    * @param projectId Unique identifier of the project containing the task (global scope)
    * @param taskId Unique identifier of the task whose history entry is being retrieved (scoped to project)
    * @param historyId Unique identifier of the specific task history entry to retrieve
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Retrieve the task history entry from erp_hrm_task_histories table using the provided historyId.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Retrieve the task history entry from
+     *   erp_hrm_task_histories table using the provided historyId.
    *
    * Verify the history entry belongs to the specified taskId by checking erp_hrm_task_id foreign key relationship.
    *

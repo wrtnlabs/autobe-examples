@@ -17,8 +17,9 @@ export type IMallPlatformShipmentItem = {
    *
    * This value identifies one junction row linking a shipment to a purchased order item. It is stable for the lifetime of the record and can be used to reference the association in follow-up shipment or order-detail operations.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from mall_platform_shipment_items.id.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_shipment_items.id.
    */
   id: string & tags.Format<"uuid">;
 
@@ -27,8 +28,11 @@ export type IMallPlatformShipmentItem = {
    *
    * This object shows which delivery package contains the purchased order item. It is returned as a shipment summary so clients can render shipment context without handling the foreign-key scalar directly.
    *
-   * @x-autobe-database-schema-property shipment
-   * @x-autobe-specification Load the related shipment through mall_platform_shipment_items.shipment and expose it as an IMallPlatformShipment.ISummary object. Do not expose the raw mall_platform_shipment_id column in this property.
+     * @x-autobe-database-schema-property shipment
+     * @x-autobe-specification Load the related shipment through
+     *   mall_platform_shipment_items.shipment and expose it as an
+     *   IMallPlatformShipment.ISummary object. Do not expose the raw
+     *   mall_platform_shipment_id column in this property.
    */
   shipment: IMallPlatformShipment.ISummary;
 
@@ -37,8 +41,11 @@ export type IMallPlatformShipmentItem = {
    *
    * This object identifies the order line that belongs to the shipment. It is returned as an order-item summary so clients can show the purchased product context, quantity, and item status alongside the shipment membership.
    *
-   * @x-autobe-database-schema-property orderItem
-   * @x-autobe-specification Load the related order item through mall_platform_shipment_items.orderItem and expose it as an IMallPlatformOrderItem.ISummary object. Do not expose the raw mall_platform_order_item_id column in this property.
+     * @x-autobe-database-schema-property orderItem
+     * @x-autobe-specification Load the related order item through
+     *   mall_platform_shipment_items.orderItem and expose it as an
+     *   IMallPlatformOrderItem.ISummary object. Do not expose the raw
+     *   mall_platform_order_item_id column in this property.
    */
   orderItem: IMallPlatformOrderItem.ISummary;
 
@@ -47,8 +54,9 @@ export type IMallPlatformShipmentItem = {
    *
    * This timestamp marks when the order item was linked to the shipment and is useful for audit trails and dispute review.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from mall_platform_shipment_items.created_at.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_shipment_items.created_at.
    */
   createdAt: string & tags.Format<"date-time">;
 
@@ -57,8 +65,9 @@ export type IMallPlatformShipmentItem = {
    *
    * This timestamp changes whenever the shipment membership row is modified and helps clients and operators track the latest state of the assignment.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from mall_platform_shipment_items.updated_at.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_shipment_items.updated_at.
    */
   updatedAt: string & tags.Format<"date-time">;
 
@@ -67,8 +76,11 @@ export type IMallPlatformShipmentItem = {
    *
    * A null value means the association is still active. A timestamp means the record was logically deleted and retained for historical or audit purposes.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from mall_platform_shipment_items.deleted_at. Preserve the nullable lifecycle state so soft-deleted shipment-item rows can be distinguished from active rows.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_shipment_items.deleted_at. Preserve the nullable
+     *   lifecycle state so soft-deleted shipment-item rows can be distinguished
+     *   from active rows.
    */
   deletedAt: (string & tags.Format<"date-time">) | null;
 };
@@ -97,8 +109,13 @@ export namespace IMallPlatformShipmentItem {
      *
      * Provide the UUID of the shipment that should own this order-item link. The server checks that the reassignment is allowed before saving the change.
      *
-     * @x-autobe-database-schema-property mall_platform_shipment_id
-     * @x-autobe-specification Direct mapping to mall_platform_shipment_items.mall_platform_shipment_id. The service may use this UUID to move the current shipment-item assignment to another shipment only if the target shipment remains valid for the same seller context and the unique assignment constraint for the order item is preserved.
+         * @x-autobe-database-schema-property mall_platform_shipment_id
+         * @x-autobe-specification Direct mapping to
+         *   mall_platform_shipment_items.mall_platform_shipment_id. The service
+         *   may use this UUID to move the current shipment-item assignment to
+         *   another shipment only if the target shipment remains valid for the
+         *   same seller context and the unique assignment constraint for the
+         *   order item is preserved.
      */
     shipmentId?: (string & tags.Format<"uuid">) | undefined;
   };
@@ -116,8 +133,9 @@ export namespace IMallPlatformShipmentItem {
      *
      * This is the unique UUID for the junction row that connects one shipment to one order item.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from mall_platform_shipment_items.id.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_shipment_items.id.
      */
     id: string & tags.Format<"uuid">;
 
@@ -126,8 +144,10 @@ export namespace IMallPlatformShipmentItem {
      *
      * This is exposed as a shipment summary object so clients can inspect the shared package and tracking context.
      *
-     * @x-autobe-database-schema-property shipment
-     * @x-autobe-specification Join mall_platform_shipment_items.shipment to mall_platform_shipments and expose the related shipment as IMallPlatformShipment.ISummary.
+         * @x-autobe-database-schema-property shipment
+         * @x-autobe-specification Join mall_platform_shipment_items.shipment to
+         *   mall_platform_shipments and expose the related shipment as
+         *   IMallPlatformShipment.ISummary.
      */
     shipment: IMallPlatformShipment.ISummary;
 
@@ -136,8 +156,10 @@ export namespace IMallPlatformShipmentItem {
      *
      * This is exposed as an order-item summary object so clients can see the purchased line that belongs to the shipment.
      *
-     * @x-autobe-database-schema-property orderItem
-     * @x-autobe-specification Join mall_platform_shipment_items.orderItem to mall_platform_order_items and expose the related order item as IMallPlatformOrderItem.ISummary.
+         * @x-autobe-database-schema-property orderItem
+         * @x-autobe-specification Join mall_platform_shipment_items.orderItem
+         *   to mall_platform_order_items and expose the related order item as
+         *   IMallPlatformOrderItem.ISummary.
      */
     orderItem: IMallPlatformOrderItem.ISummary;
 
@@ -146,8 +168,9 @@ export namespace IMallPlatformShipmentItem {
      *
      * This timestamp supports audit trails and historical reconstruction of shipment membership.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from mall_platform_shipment_items.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_shipment_items.created_at.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -156,8 +179,9 @@ export namespace IMallPlatformShipmentItem {
      *
      * This timestamp is used for audit and synchronization purposes when the membership record changes.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from mall_platform_shipment_items.updated_at.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_shipment_items.updated_at.
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -166,8 +190,11 @@ export namespace IMallPlatformShipmentItem {
      *
      * A null value means the link is still active. A timestamp indicates the membership was logically removed while preserving history.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from mall_platform_shipment_items.deleted_at. Preserve null when the link is active and expose the stored deletion timestamp when soft-deleted.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_shipment_items.deleted_at. Preserve null when the
+         *   link is active and expose the stored deletion timestamp when
+         *   soft-deleted.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };

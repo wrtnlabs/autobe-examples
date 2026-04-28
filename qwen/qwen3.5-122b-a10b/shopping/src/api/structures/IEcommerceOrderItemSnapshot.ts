@@ -22,8 +22,10 @@ export type IEcommerceOrderItemSnapshot = {
    *
    * This is the primary key of the snapshot entity, generated as a UUID when the snapshot is created at order placement time.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_order_item_snapshots.id. Primary key for the snapshot record. UUID format.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_order_item_snapshots.id. Primary key for the snapshot record.
+     *   UUID format.
    */
   id: string & tags.Format<"uuid">;
 
@@ -32,8 +34,11 @@ export type IEcommerceOrderItemSnapshot = {
    *
    * Each order item has exactly one snapshot created at purchase time, establishing a one-to-one relationship. This foreign key links the snapshot back to its source order item for authorization and validation purposes.
    *
-   * @x-autobe-database-schema-property ecommerce_order_item_id
-   * @x-autobe-specification Direct mapping from ecommerce_order_item_snapshots.ecommerce_order_item_id. Foreign key establishing 1:1 relationship with ecommerce_order_items table. UUID format.
+     * @x-autobe-database-schema-property ecommerce_order_item_id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_order_item_snapshots.ecommerce_order_item_id. Foreign key
+     *   establishing 1:1 relationship with ecommerce_order_items table. UUID
+     *   format.
    */
   ecommerce_order_item_id: string & tags.Format<"uuid">;
 
@@ -42,8 +47,11 @@ export type IEcommerceOrderItemSnapshot = {
    *
    * This is a denormalized copy of the product name captured when the customer placed the order. It remains unchanged even if the product's name is modified or deleted after the purchase, ensuring historical accuracy for purchase records and dispute resolution.
    *
-   * @x-autobe-database-schema-property product_name
-   * @x-autobe-specification Direct mapping from ecommerce_order_item_snapshots.product_name. Denormalized product name captured at order placement time. Never changes after snapshot creation.
+     * @x-autobe-database-schema-property product_name
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_order_item_snapshots.product_name. Denormalized product name
+     *   captured at order placement time. Never changes after snapshot
+     *   creation.
    */
   product_name: string;
 
@@ -52,8 +60,11 @@ export type IEcommerceOrderItemSnapshot = {
    *
    * This is a denormalized copy of the product description captured when the customer placed the order. It may be null if the product had no description at purchase time. Like product_name, this remains unchanged even if the product description is modified after the purchase.
    *
-   * @x-autobe-database-schema-property product_description
-   * @x-autobe-specification Direct mapping from ecommerce_order_item_snapshots.product_description. Nullable denormalized product description captured at order placement time. May be null if product had no description.
+     * @x-autobe-database-schema-property product_description
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_order_item_snapshots.product_description. Nullable
+     *   denormalized product description captured at order placement time. May
+     *   be null if product had no description.
    */
   product_description?: string | null | undefined;
 
@@ -62,8 +73,11 @@ export type IEcommerceOrderItemSnapshot = {
    *
    * This is a denormalized copy of the seller's shop name captured when the customer placed the order. It remains unchanged even if the seller updates their shop name or profile after the purchase, ensuring accurate historical records of who sold the product.
    *
-   * @x-autobe-database-schema-property seller_shop_name
-   * @x-autobe-specification Direct mapping from ecommerce_order_item_snapshots.seller_shop_name. Denormalized seller shop name captured at order placement time. Never changes after snapshot creation.
+     * @x-autobe-database-schema-property seller_shop_name
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_order_item_snapshots.seller_shop_name. Denormalized seller
+     *   shop name captured at order placement time. Never changes after
+     *   snapshot creation.
    */
   seller_shop_name: string;
 
@@ -72,8 +86,11 @@ export type IEcommerceOrderItemSnapshot = {
    *
    * This is a denormalized copy of the seller's logo URL captured when the customer placed the order. It may be null if the seller had not uploaded a logo at purchase time. The URL remains unchanged even if the seller updates their logo after the purchase.
    *
-   * @x-autobe-specification Direct mapping from ecommerce_order_item_snapshots.seller_logo_url. Nullable denormalized seller logo URL captured at order placement time. May be null if seller had no logo. Format: uri.
-   * @x-autobe-database-schema-property seller_logo_url
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_order_item_snapshots.seller_logo_url. Nullable denormalized
+     *   seller logo URL captured at order placement time. May be null if seller
+     *   had no logo. Format: uri.
+     * @x-autobe-database-schema-property seller_logo_url
    */
   seller_logo_url?: (string & tags.Format<"uri">) | null | undefined;
 
@@ -82,8 +99,11 @@ export type IEcommerceOrderItemSnapshot = {
    *
    * This is a denormalized copy of the product's base price captured when the customer placed the order. It is stored as a double-precision number for accurate currency calculations. This price remains unchanged even if the product's price is modified after the purchase, ensuring accurate historical pricing records for refunds and dispute resolution.
    *
-   * @x-autobe-database-schema-property base_price
-   * @x-autobe-specification Direct mapping from ecommerce_order_item_snapshots.base_price. Denormalized product base price captured at order placement time. Stored as double precision for currency calculations. Never changes after snapshot creation.
+     * @x-autobe-database-schema-property base_price
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_order_item_snapshots.base_price. Denormalized product base
+     *   price captured at order placement time. Stored as double precision for
+     *   currency calculations. Never changes after snapshot creation.
    */
   base_price: number;
 
@@ -92,8 +112,11 @@ export type IEcommerceOrderItemSnapshot = {
    *
    * This represents the exact moment when the order was placed and the snapshot was generated. It serves as the purchase timestamp for the order item and is used for audit trail purposes, order history sorting, and compliance verification.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_order_item_snapshots.created_at. Timestamp when this snapshot was created, which corresponds to the order placement time. Date-time format (timestamptz).
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_order_item_snapshots.created_at. Timestamp when this snapshot
+     *   was created, which corresponds to the order placement time. Date-time
+     *   format (timestamptz).
    */
   created_at: string & tags.Format<"date-time">;
 };

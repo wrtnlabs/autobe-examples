@@ -20,9 +20,10 @@ export class EcommercemallCustomerProductsDetailController {
    *
    * @param connection
    * @param productId Product unique identifier (global scope)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Query the ecommerce_mall_products table by id where deleted_at is null.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Query the ecommerce_mall_products table by id
+     *   where deleted_at is null.
    *
    * Fetch the following related data:
    * 1. Product images from ecommerce_mall_product_images ordered by display_order ascending

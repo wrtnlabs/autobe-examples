@@ -24,9 +24,9 @@ export class EcommercemallCustomerAdmin_promotion_requestsController {
    *
    * @param connection
    * @param body Promotion request creation data including the reason for seeking administrator privileges
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Implementation requirements:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Implementation requirements:
    *
    * 1. **Authentication**: Verify the user is authenticated as either a customer or seller.
    *
@@ -98,9 +98,10 @@ export class EcommercemallCustomerAdmin_promotion_requestsController {
    *
    * @param connection
    * @param body Search criteria and pagination parameters for filtering promotion requests by status, requester type, and review state
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Query ecommerce_mall_admin_promotion_requests table with pagination and filtering.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Query ecommerce_mall_admin_promotion_requests
+     *   table with pagination and filtering.
    *
    * Apply search filters on:
    * - Status: pending, approved, or rejected
@@ -148,9 +149,11 @@ export class EcommercemallCustomerAdmin_promotion_requestsController {
    *
    * @param connection
    * @param requestId Unique identifier (UUID) of the administrator promotion request to retrieve
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Retrieve the admin promotion request from ecommerce_mall_admin_promotion_requests table using the provided UUID requestId.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Retrieve the admin promotion request from
+     *   ecommerce_mall_admin_promotion_requests table using the provided UUID
+     *   requestId.
    *
    * Query must include:
    * 1. Fetch the main request record by primary key
@@ -199,9 +202,11 @@ export class EcommercemallCustomerAdmin_promotion_requestsController {
    *
    * @param connection
    * @param requestId UUID identifier of the admin promotion request to delete
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Validate the request exists and is in 'pending' status. Reject with appropriate error if the request is already approved or rejected.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Validate the request exists and is in 'pending'
+     *   status. Reject with appropriate error if the request is already
+     *   approved or rejected.
    *
    * Perform soft delete by setting deleted_at to current timestamp. Do not hard delete the record to preserve data integrity and allow potential audit queries.
    *

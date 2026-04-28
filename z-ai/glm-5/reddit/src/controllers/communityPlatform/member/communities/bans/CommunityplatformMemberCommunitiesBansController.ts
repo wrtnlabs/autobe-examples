@@ -27,9 +27,9 @@ export class CommunityplatformMemberCommunitiesBansController {
    * @param connection
    * @param communityId The unique identifier of the community where the ban will be applied
    * @param body Ban creation details including the member to ban and the reason
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation steps:
    *
    * 1. Authenticate the requesting user and verify they have moderator privileges (owner or moderator role) in the community via community_platform_moderators table with deleted_at IS NULL.
    *
@@ -87,9 +87,10 @@ export class CommunityplatformMemberCommunitiesBansController {
    * @param connection
    * @param communityId Unique identifier of the community to retrieve bans for. The authenticated user must be a moderator of this community to access the ban list.
    * @param body Search criteria and pagination parameters for filtering ban records
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query community_platform_bans table for active bans (deleted_at IS NULL) within the specified community.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query community_platform_bans table for active
+     *   bans (deleted_at IS NULL) within the specified community.
    *
    * 1. Validate that the authenticated user is a moderator of the community by checking community_platform_moderators table
    * 2. Join with community_platform_members to get banned user details (username, display_name)
@@ -145,9 +146,10 @@ export class CommunityplatformMemberCommunitiesBansController {
    * @param connection
    * @param communityId The unique identifier of the community where the ban exists. The requester must be a moderator of this community to access ban information.
    * @param banId The unique identifier of the ban record to retrieve. This ban must belong to the specified community.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Retrieve a single ban record by ID within a specific community context.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Retrieve a single ban record by ID within a
+     *   specific community context.
    *
    * Implementation steps:
    * 1. Authenticate the requesting member via session token
@@ -199,9 +201,10 @@ export class CommunityplatformMemberCommunitiesBansController {
    * @param connection
    * @param communityId The unique identifier of the community from which the ban will be removed.
    * @param banId The unique identifier of the ban record to be removed. Must be an active ban (not previously unbanned) within the specified community.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Soft-delete the ban record by setting deleted_at to current timestamp.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Soft-delete the ban record by setting deleted_at
+     *   to current timestamp.
    *
    * Implementation steps:
    * 1. Authenticate the requesting moderator via session token

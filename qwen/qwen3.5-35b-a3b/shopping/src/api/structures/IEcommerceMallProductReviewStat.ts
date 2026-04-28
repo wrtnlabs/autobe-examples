@@ -21,8 +21,9 @@ export type IEcommerceMallProductReviewStat = {
    *
    * UUID identifier generated when the stats record is created (first time a review is added for this product).
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_product_review_stats.id. UUID format.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_product_review_stats.id. UUID format.
    */
   id: string & tags.Format<"uuid">;
 
@@ -31,8 +32,10 @@ export type IEcommerceMallProductReviewStat = {
    *
    * UUID identifier linking this stats record to its parent product. This FK enables querying stats by product and establishing the 1:1 relationship between products and their review statistics.
    *
-   * @x-autobe-database-schema-property ecommerce_mall_product_id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_product_review_stats.ecommerce_mall_product_id. UUID format. Required FK to ecommerce_mall_products.id.
+     * @x-autobe-database-schema-property ecommerce_mall_product_id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_product_review_stats.ecommerce_mall_product_id. UUID
+     *   format. Required FK to ecommerce_mall_products.id.
    */
   ecommerce_mall_product_id: string & tags.Format<"uuid">;
 
@@ -41,8 +44,11 @@ export type IEcommerceMallProductReviewStat = {
    *
    * Range: 0.0 to 5.0. Calculated as sum(rating) / count(rating) for all reviews where deleted_at is NULL. If no reviews exist, this field is null.
    *
-   * @x-autobe-database-schema-property average_rating
-   * @x-autobe-specification Direct mapping from ecommerce_mall_product_review_stats.average_rating. Nullable float (double precision). Represents arithmetic mean of review ratings, rounded to 2 decimal places.
+     * @x-autobe-database-schema-property average_rating
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_product_review_stats.average_rating. Nullable float
+     *   (double precision). Represents arithmetic mean of review ratings,
+     *   rounded to 2 decimal places.
    */
   average_rating: number | null;
 
@@ -51,8 +57,10 @@ export type IEcommerceMallProductReviewStat = {
    *
    * Only counts reviews where deleted_at is NULL. If no reviews exist, this value is 0.
    *
-   * @x-autobe-database-schema-property review_count
-   * @x-autobe-specification Direct mapping from ecommerce_mall_product_review_stats.review_count. Non-negative integer representing the total number of non-deleted reviews for this product.
+     * @x-autobe-database-schema-property review_count
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_product_review_stats.review_count. Non-negative integer
+     *   representing the total number of non-deleted reviews for this product.
    */
   review_count: number & tags.Type<"int32"> & tags.Minimum<0>;
 
@@ -61,8 +69,10 @@ export type IEcommerceMallProductReviewStat = {
    *
    * Used for rating distribution display and analysis. Only counts reviews where deleted_at is NULL.
    *
-   * @x-autobe-database-schema-property rating_1_count
-   * @x-autobe-specification Direct mapping from ecommerce_mall_product_review_stats.rating_1_count. Non-negative integer representing the count of 1-star reviews.
+     * @x-autobe-database-schema-property rating_1_count
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_product_review_stats.rating_1_count. Non-negative
+     *   integer representing the count of 1-star reviews.
    */
   rating_1_count: number & tags.Type<"int32"> & tags.Minimum<0>;
 
@@ -71,8 +81,10 @@ export type IEcommerceMallProductReviewStat = {
    *
    * Used for rating distribution display and analysis. Only counts reviews where deleted_at is NULL.
    *
-   * @x-autobe-database-schema-property rating_2_count
-   * @x-autobe-specification Direct mapping from ecommerce_mall_product_review_stats.rating_2_count. Non-negative integer representing the count of 2-star reviews.
+     * @x-autobe-database-schema-property rating_2_count
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_product_review_stats.rating_2_count. Non-negative
+     *   integer representing the count of 2-star reviews.
    */
   rating_2_count: number & tags.Type<"int32"> & tags.Minimum<0>;
 
@@ -81,8 +93,10 @@ export type IEcommerceMallProductReviewStat = {
    *
    * Used for rating distribution display and analysis. Only counts reviews where deleted_at is NULL.
    *
-   * @x-autobe-database-schema-property rating_3_count
-   * @x-autobe-specification Direct mapping from ecommerce_mall_product_review_stats.rating_3_count. Non-negative integer representing the count of 3-star reviews.
+     * @x-autobe-database-schema-property rating_3_count
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_product_review_stats.rating_3_count. Non-negative
+     *   integer representing the count of 3-star reviews.
    */
   rating_3_count: number & tags.Type<"int32"> & tags.Minimum<0>;
 
@@ -91,8 +105,10 @@ export type IEcommerceMallProductReviewStat = {
    *
    * Used for rating distribution display and analysis. Only counts reviews where deleted_at is NULL.
    *
-   * @x-autobe-database-schema-property rating_4_count
-   * @x-autobe-specification Direct mapping from ecommerce_mall_product_review_stats.rating_4_count. Non-negative integer representing the count of 4-star reviews.
+     * @x-autobe-database-schema-property rating_4_count
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_product_review_stats.rating_4_count. Non-negative
+     *   integer representing the count of 4-star reviews.
    */
   rating_4_count: number & tags.Type<"int32"> & tags.Minimum<0>;
 
@@ -101,8 +117,10 @@ export type IEcommerceMallProductReviewStat = {
    *
    * Used for rating distribution display and analysis. Only counts reviews where deleted_at is NULL.
    *
-   * @x-autobe-database-schema-property rating_5_count
-   * @x-autobe-specification Direct mapping from ecommerce_mall_product_review_stats.rating_5_count. Non-negative integer representing the count of 5-star reviews.
+     * @x-autobe-database-schema-property rating_5_count
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_product_review_stats.rating_5_count. Non-negative
+     *   integer representing the count of 5-star reviews.
    */
   rating_5_count: number & tags.Type<"int32"> & tags.Minimum<0>;
 
@@ -111,8 +129,10 @@ export type IEcommerceMallProductReviewStat = {
    *
    * Used for tracking when review statistics were first generated and for audit purposes.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_product_review_stats.created_at. ISO 8601 timestamp format with timezone.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_product_review_stats.created_at. ISO 8601 timestamp
+     *   format with timezone.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -121,8 +141,10 @@ export type IEcommerceMallProductReviewStat = {
    *
    * Used for tracking the most recent activity on review statistics and for caching invalidation.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_product_review_stats.updated_at. ISO 8601 timestamp format with timezone.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_product_review_stats.updated_at. ISO 8601 timestamp
+     *   format with timezone.
    */
   updated_at: string & tags.Format<"date-time">;
 };

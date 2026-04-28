@@ -145,7 +145,8 @@ export namespace createAddressSnapshot {
  * @param props.body Search criteria for listing snapshot records (pagination, sorting, and any optional filters supported by the request DTO).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification 1. Input: path `addressId` (UUID) and request body search criteria.
+ * @x-autobe-specification 1. Input: path `addressId` (UUID) and request body
+ *   search criteria.
  *
  * 2. Authorization / visibility enforcement:
  * - Determine the requesting party identity (member/admin/other as applicable in the service layer).
@@ -274,16 +275,18 @@ export namespace index {
  * @param props.snapshotId Target snapshot record ID to retrieve.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implementation steps:
- * 1) Authenticate the caller as a customer (registered member) using the existing auth middleware.
- * 2) Parse path parameters addressId and snapshotId (both are UUID strings).
- * 3) Query shopping_mall_address_snapshots by id = snapshotId and shopping_mall_address_id = addressId.
- *    - If no row matches, behave as an unsuccessful request without leaking existence details.
- * 4) Enforce snapshot visibility:
- *    - Determine whether the caller is the owning customer of the parent address record.
- *    - Load shopping_mall_addresses for shopping_mall_address_id (or join it in the same query) to verify shopping_mall_customer_id matches the caller's member identity.
- *    - If visibility is not granted, reject the request.
- * 5) Return the snapshot record mapped to IShoppingMallAddressSnapshot DTO.
+ * @x-autobe-specification Implementation steps: 1) Authenticate the caller as a
+ *   customer (registered member) using the existing auth middleware. 2) Parse
+ *   path parameters addressId and snapshotId (both are UUID strings). 3) Query
+ *   shopping_mall_address_snapshots by id = snapshotId and
+ *   shopping_mall_address_id = addressId. - If no row matches, behave as an
+ *   unsuccessful request without leaking existence details. 4) Enforce snapshot
+ *   visibility: - Determine whether the caller is the owning customer of the
+ *   parent address record. - Load shopping_mall_addresses for
+ *   shopping_mall_address_id (or join it in the same query) to verify
+ *   shopping_mall_customer_id matches the caller's member identity. - If
+ *   visibility is not granted, reject the request. 5) Return the snapshot
+ *   record mapped to IShoppingMallAddressSnapshot DTO.
  *
  * Data handling rules:
  * - Do not apply any updates, deletes, or transformations that would modify snapshot semantics.

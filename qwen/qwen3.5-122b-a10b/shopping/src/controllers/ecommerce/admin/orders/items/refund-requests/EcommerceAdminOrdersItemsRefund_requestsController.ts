@@ -32,9 +32,10 @@ export class EcommerceAdminOrdersItemsRefund_requestsController {
    * @param orderId Unique identifier of the parent order (UUID format).
    * @param itemId Unique identifier of the order item within the order (UUID format).
    * @param body Search criteria for filtering refund requests including status, date ranges, and pagination parameters.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query ecommerce_refund_requests table filtered by ecommerce_order_item_id.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Query ecommerce_refund_requests table filtered by
+     *   ecommerce_order_item_id.
    *
    * **Implementation Steps**
    *
@@ -103,9 +104,10 @@ export class EcommerceAdminOrdersItemsRefund_requestsController {
    * @param orderId Unique identifier of the parent order (UUID format).
    * @param itemId Unique identifier of the order item within the order (UUID format).
    * @param requestId Unique identifier of the refund request (UUID format).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query the ecommerce_refund_requests table by primary key (id) with foreign key validation.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Query the ecommerce_refund_requests table by
+     *   primary key (id) with foreign key validation.
    *
    * **Implementation Steps**
    * 1. Validate the order exists and belongs to the authenticated customer (or is accessible by seller/admin)

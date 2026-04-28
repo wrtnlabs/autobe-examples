@@ -22,7 +22,8 @@ import { IShoppingMallRefundRequestSnapshot } from "../../../../../structures/IS
  * @param props.body Search criteria for refund request snapshots including filters for refund request ID, seller ID, status transitions, date ranges, and pagination parameters.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor administrator
- * @x-autobe-specification Query shopping_mall_refund_request_snapshots table with pagination and filtering support.
+ * @x-autobe-specification Query shopping_mall_refund_request_snapshots table
+ *   with pagination and filtering support.
  *
  * Filtering:
  * - Filter by refund_request_id to get all snapshots for a specific refund request
@@ -144,7 +145,8 @@ export namespace index {
  * @param props.snapshotId Unique identifier of the refund request snapshot to retrieve (global scope)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor administrator
- * @x-autobe-specification Query shopping_mall_refund_request_snapshots table by primary key (id).
+ * @x-autobe-specification Query shopping_mall_refund_request_snapshots table by
+ *   primary key (id).
  *
  * 1. Validate snapshotId is a valid UUID format
  * 2. Look up the snapshot record by id

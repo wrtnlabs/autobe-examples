@@ -16,8 +16,10 @@ export type IShoppingMallSuperAdmin = {
    *
    * This UUID serves as the primary key for the super administrator account. It is used in API path parameters for retrieving and updating super administrator profiles, and for referencing the account in audit logs and administrative actions.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_super_admins.id. UUID format. Primary key used for all super administrator lookups and updates.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_super_admins.id. UUID format. Primary key used for all
+     *   super administrator lookups and updates.
    */
   id: string & tags.Format<"uuid">;
 
@@ -28,8 +30,10 @@ export type IShoppingMallSuperAdmin = {
    *
    * Format: Valid email address (RFC 5322 compliant).
    *
-   * @x-autobe-database-schema-property email
-   * @x-autobe-specification Direct mapping from shopping_mall_super_admins.email. Unique constraint enforced at database level. Used for authentication and account identification.
+     * @x-autobe-database-schema-property email
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_super_admins.email. Unique constraint enforced at
+     *   database level. Used for authentication and account identification.
    */
   email: string & tags.Format<"email">;
 
@@ -40,8 +44,10 @@ export type IShoppingMallSuperAdmin = {
    *
    * Format: ISO 8601 datetime with timezone (e.g., 2024-01-15T10:30:00Z).
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from shopping_mall_super_admins.created_at. Automatically set on account creation. Read-only, never updated after initial creation.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_super_admins.created_at. Automatically set on account
+     *   creation. Read-only, never updated after initial creation.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -52,8 +58,10 @@ export type IShoppingMallSuperAdmin = {
    *
    * Format: ISO 8601 datetime with timezone (e.g., 2024-01-15T10:30:00Z).
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from shopping_mall_super_admins.updated_at. Automatically updated on every profile modification including email changes and password updates.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_super_admins.updated_at. Automatically updated on every
+     *   profile modification including email changes and password updates.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -66,8 +74,11 @@ export type IShoppingMallSuperAdmin = {
    *
    * Format: ISO 8601 datetime with timezone, or null if account is active.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from shopping_mall_super_admins.deleted_at. Nullable. NULL indicates active account. Non-NULL indicates soft-deleted account. Super administrator accounts are rarely deleted due to their critical role.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_super_admins.deleted_at. Nullable. NULL indicates active
+     *   account. Non-NULL indicates soft-deleted account. Super administrator
+     *   accounts are rarely deleted due to their critical role.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -87,7 +98,12 @@ export namespace IShoppingMallSuperAdmin {
      *
      * The refresh token should be stored securely by the client and transmitted only to the token refresh endpoint. It has a longer lifetime than the access token, typically 7-30 days depending on security configuration.
      *
-     * @x-autobe-specification JWT refresh token string validated against shopping_mall_super_admin_sessions. Server extracts session ID from token payload, queries sessions table to verify expired_at is in future and associated super_admin_id exists in shopping_mall_super_admins with deleted_at null. Token format is opaque to client.
+         * @x-autobe-specification JWT refresh token string validated against
+         *   shopping_mall_super_admin_sessions. Server extracts session ID from
+         *   token payload, queries sessions table to verify expired_at is in
+         *   future and associated super_admin_id exists in
+         *   shopping_mall_super_admins with deleted_at null. Token format is
+         *   opaque to client.
      */
     refreshToken: string;
   };
@@ -107,8 +123,10 @@ export namespace IShoppingMallSuperAdmin {
      *
      * Must be a valid email format and is case-sensitive for matching purposes.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from shopping_mall_super_admins.email. Used to query the super administrator account. Must be unique and valid email format.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_super_admins.email. Used to query the super
+         *   administrator account. Must be unique and valid email format.
      */
     email: string & tags.Format<"email">;
 
@@ -119,8 +137,11 @@ export namespace IShoppingMallSuperAdmin {
      *
      * Must match the password set during account creation or last password change.
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification Plain text password input from user. Backend compares against shopping_mall_super_admins.password_hash using bcrypt verification. Never stored; only used for authentication comparison.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification Plain text password input from user. Backend
+         *   compares against shopping_mall_super_admins.password_hash using
+         *   bcrypt verification. Never stored; only used for authentication
+         *   comparison.
      */
     password: string & tags.Format<"password">;
 
@@ -131,7 +152,10 @@ export namespace IShoppingMallSuperAdmin {
      *
      * Used for security monitoring and detecting suspicious login patterns.
      *
-     * @x-autobe-specification Session context field captured for shopping_mall_super_admin_sessions record. Represents the current page URL where login was initiated. Not stored in shopping_mall_super_admins table.
+         * @x-autobe-specification Session context field captured for
+         *   shopping_mall_super_admin_sessions record. Represents the current
+         *   page URL where login was initiated. Not stored in
+         *   shopping_mall_super_admins table.
      */
     href: string & tags.Format<"uri">;
 
@@ -142,7 +166,10 @@ export namespace IShoppingMallSuperAdmin {
      *
      * Helps identify the traffic source and detect potential security threats.
      *
-     * @x-autobe-specification Session context field captured for shopping_mall_super_admin_sessions record. Represents the HTTP referrer header indicating the previous page. Not stored in shopping_mall_super_admins table.
+         * @x-autobe-specification Session context field captured for
+         *   shopping_mall_super_admin_sessions record. Represents the HTTP
+         *   referrer header indicating the previous page. Not stored in
+         *   shopping_mall_super_admins table.
      */
     referrer: string & tags.Format<"uri">;
 
@@ -153,7 +180,11 @@ export namespace IShoppingMallSuperAdmin {
      *
      * Stored in shopping_mall_super_admin_sessions for security auditing and detecting unauthorized access attempts.
      *
-     * @x-autobe-specification Optional session context field captured for shopping_mall_super_admin_sessions record. Represents the client's IP address. In SSR contexts, server captures this as fallback (body.ip ?? serverIp). Not stored in shopping_mall_super_admins table.
+         * @x-autobe-specification Optional session context field captured for
+         *   shopping_mall_super_admin_sessions record. Represents the client's
+         *   IP address. In SSR contexts, server captures this as fallback
+         *   (body.ip ?? serverIp). Not stored in shopping_mall_super_admins
+         *   table.
      */
     ip?: (string & tags.Format<"ipv4">) | undefined;
   };
@@ -173,8 +204,10 @@ export namespace IShoppingMallSuperAdmin {
      *
      * Validation includes email format verification and uniqueness check against existing super administrator accounts.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from shopping_mall_super_admins.email. Must be unique across all super administrator accounts. Validated for email format before storage.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_super_admins.email. Must be unique across all super
+         *   administrator accounts. Validated for email format before storage.
      */
     email: string & tags.Format<"email">;
 
@@ -185,8 +218,11 @@ export namespace IShoppingMallSuperAdmin {
      *
      * Used for authentication during login to generate JWT session tokens.
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification User-provided password is bcrypt-hashed before storing as password_hash in shopping_mall_super_admins.password_hash. Minimum 8 characters required. Never stored or returned in plain text.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification User-provided password is bcrypt-hashed
+         *   before storing as password_hash in
+         *   shopping_mall_super_admins.password_hash. Minimum 8 characters
+         *   required. Never stored or returned in plain text.
      */
     password: string & tags.MinLength<8> & tags.Format<"password">;
 
@@ -197,7 +233,10 @@ export namespace IShoppingMallSuperAdmin {
      *
      * This field is stored in the session table (shopping_mall_super_admin_sessions) rather than the super administrator account table.
      *
-     * @x-autobe-specification Session context field captured during registration. Stored in shopping_mall_super_admin_sessions table, not in shopping_mall_super_admins. Represents the URL where the user initiated the join action.
+         * @x-autobe-specification Session context field captured during
+         *   registration. Stored in shopping_mall_super_admin_sessions table,
+         *   not in shopping_mall_super_admins. Represents the URL where the
+         *   user initiated the join action.
      */
     href: string & tags.Format<"uri">;
 
@@ -208,7 +247,10 @@ export namespace IShoppingMallSuperAdmin {
      *
      * This field is stored in the session table (shopping_mall_super_admin_sessions) rather than the super administrator account table.
      *
-     * @x-autobe-specification Session context field captured during registration. Stored in shopping_mall_super_admin_sessions table, not in shopping_mall_super_admins. Represents the HTTP referrer header indicating the previous page.
+         * @x-autobe-specification Session context field captured during
+         *   registration. Stored in shopping_mall_super_admin_sessions table,
+         *   not in shopping_mall_super_admins. Represents the HTTP referrer
+         *   header indicating the previous page.
      */
     referrer: string & tags.Format<"uri">;
 
@@ -221,7 +263,11 @@ export namespace IShoppingMallSuperAdmin {
      *
      * Format: IPv4 address (e.g., 192.168.1.1).
      *
-     * @x-autobe-specification Session context field captured during registration. Stored in shopping_mall_super_admin_sessions table, not in shopping_mall_super_admins. Optional to support SSR scenarios where server captures IP as fallback. Format: IPv4 address.
+         * @x-autobe-specification Session context field captured during
+         *   registration. Stored in shopping_mall_super_admin_sessions table,
+         *   not in shopping_mall_super_admins. Optional to support SSR
+         *   scenarios where server captures IP as fallback. Format: IPv4
+         *   address.
      */
     ip?: (string & tags.Format<"ipv4">) | undefined;
   };
@@ -239,8 +285,10 @@ export namespace IShoppingMallSuperAdmin {
      *
      * This UUID is automatically generated when the account is created and serves as the primary key for all super administrator-related operations. It is used to reference the account in audit logs, session records, and administrative operations.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_super_admins.id. UUID v4 format generated on account creation.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_super_admins.id. UUID v4 format generated on account
+         *   creation.
      */
     id: string & tags.Format<"uuid">;
 
@@ -249,8 +297,10 @@ export namespace IShoppingMallSuperAdmin {
      *
      * This email serves as the primary login credential and must be unique across all super administrator accounts. It is used for authentication, password reset communications, and account notifications. The email format is validated according to RFC 5322 standards.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from shopping_mall_super_admins.email. Must be unique across all super administrator accounts. Validated for email format.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_super_admins.email. Must be unique across all super
+         *   administrator accounts. Validated for email format.
      */
     email: string & tags.Format<"email">;
 
@@ -259,8 +309,10 @@ export namespace IShoppingMallSuperAdmin {
      *
      * This timestamp is automatically set when the account is first created and never modified. It is used for audit trails, account age verification, and security monitoring. The value is in ISO 8601 format with timezone information (UTC).
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_super_admins.created_at. Automatically set to current timestamp on account creation. ISO 8601 format with timezone.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_super_admins.created_at. Automatically set to current
+         *   timestamp on account creation. ISO 8601 format with timezone.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -269,8 +321,11 @@ export namespace IShoppingMallSuperAdmin {
      *
      * This timestamp is automatically updated whenever the account profile is modified, including email changes, password updates, or other administrative actions. It is used for security monitoring and detecting unauthorized access patterns. The value is in ISO 8601 format with timezone information (UTC).
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from shopping_mall_super_admins.updated_at. Automatically updated on every profile modification including email changes and password updates. ISO 8601 format with timezone.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_super_admins.updated_at. Automatically updated on
+         *   every profile modification including email changes and password
+         *   updates. ISO 8601 format with timezone.
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -279,15 +334,19 @@ export namespace IShoppingMallSuperAdmin {
      *
      * This field implements soft deletion to maintain referential integrity with audit logs and other related records. When null, the account is active. When set to a timestamp, the account is considered deleted but the record is retained for audit purposes. Super administrator accounts are rarely deleted due to their critical role in platform governance. The value is in ISO 8601 format with timezone information (UTC).
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from shopping_mall_super_admins.deleted_at. Nullable: null means account is active, timestamp means soft-deleted. ISO 8601 format with timezone.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_super_admins.deleted_at. Nullable: null means account
+         *   is active, timestamp means soft-deleted. ISO 8601 format with
+         *   timezone.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
 
     /**
      * Authorization token.
      *
-     * @x-autobe-specification Authorization token comes from the session table.
+         * @x-autobe-specification Authorization token comes from the session
+         *   table.
      */
     token: IAuthorizationToken;
   };
@@ -307,7 +366,10 @@ export namespace IShoppingMallSuperAdmin {
      *
      * Optional parameter - if omitted, no email filtering is applied and all accounts matching other criteria are returned.
      *
-     * @x-autobe-specification Query parameter for partial matching on shopping_mall_super_admins.email field. Implements LIKE '%search%' pattern matching. Optional - if omitted, no email filtering applied.
+         * @x-autobe-specification Query parameter for partial matching on
+         *   shopping_mall_super_admins.email field. Implements LIKE '%search%'
+         *   pattern matching. Optional - if omitted, no email filtering
+         *   applied.
      */
     search?: string | undefined;
 
@@ -318,7 +380,10 @@ export namespace IShoppingMallSuperAdmin {
      *
      * Uses ISO 8601 date-time format (e.g., 2024-01-01T00:00:00Z). Optional parameter - if omitted, no lower bound is applied to the creation date filter.
      *
-     * @x-autobe-specification Query parameter filtering shopping_mall_super_admins.created_at >= provided timestamp. ISO 8601 date-time format. Optional - if omitted, no lower bound on creation date.
+         * @x-autobe-specification Query parameter filtering
+         *   shopping_mall_super_admins.created_at >= provided timestamp. ISO
+         *   8601 date-time format. Optional - if omitted, no lower bound on
+         *   creation date.
      */
     created_at_from?: (string & tags.Format<"date-time">) | undefined;
 
@@ -329,7 +394,10 @@ export namespace IShoppingMallSuperAdmin {
      *
      * Uses ISO 8601 date-time format (e.g., 2024-12-31T23:59:59Z). Optional parameter - if omitted, no upper bound is applied to the creation date filter.
      *
-     * @x-autobe-specification Query parameter filtering shopping_mall_super_admins.created_at <= provided timestamp. ISO 8601 date-time format. Optional - if omitted, no upper bound on creation date.
+         * @x-autobe-specification Query parameter filtering
+         *   shopping_mall_super_admins.created_at <= provided timestamp. ISO
+         *   8601 date-time format. Optional - if omitted, no upper bound on
+         *   creation date.
      */
     created_at_to?: (string & tags.Format<"date-time">) | undefined;
 
@@ -340,7 +408,9 @@ export namespace IShoppingMallSuperAdmin {
      *
      * Defaults to 1 if omitted. Used in conjunction with limit to implement cursor-based pagination. The backend calculates the SQL OFFSET as (page - 1) * limit to retrieve the correct page of results.
      *
-     * @x-autobe-specification Pagination parameter for 1-indexed page number. Defaults to 1 if omitted. Used with limit to calculate OFFSET in SQL query: OFFSET (page - 1) * limit.
+         * @x-autobe-specification Pagination parameter for 1-indexed page
+         *   number. Defaults to 1 if omitted. Used with limit to calculate
+         *   OFFSET in SQL query: OFFSET (page - 1) * limit.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -351,7 +421,9 @@ export namespace IShoppingMallSuperAdmin {
      *
      * Must be between 1 and 100 (inclusive). Defaults to 20 if omitted. This value is used as the LIMIT clause in the database query. The actual number of records returned may be less than the limit on the final page or when total records are fewer than the limit.
      *
-     * @x-autobe-specification Pagination parameter for maximum items per page. Minimum 1, maximum 100. Defaults to 20 if omitted. Used as LIMIT clause in SQL query.
+         * @x-autobe-specification Pagination parameter for maximum items per
+         *   page. Minimum 1, maximum 100. Defaults to 20 if omitted. Used as
+         *   LIMIT clause in SQL query.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -369,7 +441,9 @@ export namespace IShoppingMallSuperAdmin {
      *
      * Defaults to created_at if omitted. Combined with direction parameter to determine sort order.
      *
-     * @x-autobe-specification Sort field parameter. Valid values: created_at, email, updated_at. Maps to ORDER BY clause in SQL query. Defaults to created_at if omitted.
+         * @x-autobe-specification Sort field parameter. Valid values:
+         *   created_at, email, updated_at. Maps to ORDER BY clause in SQL
+         *   query. Defaults to created_at if omitted.
      */
     sort?: "created_at" | "email" | "updated_at" | undefined;
 
@@ -384,7 +458,9 @@ export namespace IShoppingMallSuperAdmin {
      *
      * Defaults to desc (descending) if omitted, showing the most recently created accounts first.
      *
-     * @x-autobe-specification Sort direction parameter. Valid values: asc (ascending), desc (descending). Maps to ASC/DESC in SQL ORDER BY clause. Defaults to desc if omitted.
+         * @x-autobe-specification Sort direction parameter. Valid values: asc
+         *   (ascending), desc (descending). Maps to ASC/DESC in SQL ORDER BY
+         *   clause. Defaults to desc if omitted.
      */
     direction?: "asc" | "desc" | undefined;
   };
@@ -402,8 +478,11 @@ export namespace IShoppingMallSuperAdmin {
      *
      * This email serves as the primary login credential for the super administrator account. When updating, the new email must not conflict with any existing super administrator accounts. The backend validates this uniqueness constraint before persisting the change.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping to shopping_mall_super_admins.email column. Must be unique across all super administrator accounts. Backend validates uniqueness constraint before update.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping to
+         *   shopping_mall_super_admins.email column. Must be unique across all
+         *   super administrator accounts. Backend validates uniqueness
+         *   constraint before update.
      */
     email?: (string & tags.Format<"email">) | undefined;
 
@@ -412,8 +491,12 @@ export namespace IShoppingMallSuperAdmin {
      *
      * The password is provided in plain text in the request body and will be hashed using bcrypt by the backend before being stored in the database. Password must meet security requirements including minimum length and complexity standards. The hashed password is never returned in any API response.
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification Maps to shopping_mall_super_admins.password_hash column. Plain text password provided in request is bcrypt hashed by backend before storage. Subject to password security requirements (minimum length, complexity).
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification Maps to
+         *   shopping_mall_super_admins.password_hash column. Plain text
+         *   password provided in request is bcrypt hashed by backend before
+         *   storage. Subject to password security requirements (minimum length,
+         *   complexity).
      */
     password?: (string & tags.Format<"password">) | undefined;
   };
@@ -431,8 +514,9 @@ export namespace IShoppingMallSuperAdmin {
      *
      * This UUID uniquely identifies the super administrator across the platform. Generated automatically upon account creation and immutable throughout the account lifecycle.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_super_admins.id. UUID format generated by database.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_super_admins.id. UUID format generated by database.
      */
     id: string & tags.Format<"uuid">;
 
@@ -443,8 +527,10 @@ export namespace IShoppingMallSuperAdmin {
      *
      * Format: Valid email address following RFC 5322 standards.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from shopping_mall_super_admins.email. Unique constraint enforced at database level.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_super_admins.email. Unique constraint enforced at
+         *   database level.
      */
     email: string & tags.Format<"email">;
 
@@ -455,8 +541,10 @@ export namespace IShoppingMallSuperAdmin {
      *
      * Format: ISO 8601 date-time with timezone (e.g., 2024-01-15T10:30:00Z).
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_super_admins.created_at. Automatically set by database on INSERT.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_super_admins.created_at. Automatically set by
+         *   database on INSERT.
      */
     createdAt: string & tags.Format<"date-time">;
 
@@ -467,8 +555,10 @@ export namespace IShoppingMallSuperAdmin {
      *
      * Format: ISO 8601 date-time with timezone (e.g., 2024-01-15T10:30:00Z).
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from shopping_mall_super_admins.updated_at. Automatically updated by database on every UPDATE operation.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_super_admins.updated_at. Automatically updated by
+         *   database on every UPDATE operation.
      */
     updatedAt: string & tags.Format<"date-time">;
 
@@ -479,8 +569,10 @@ export namespace IShoppingMallSuperAdmin {
      *
      * Format: ISO 8601 date-time with timezone when set, null when account is active.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from shopping_mall_super_admins.deleted_at. Nullable - null indicates active account, non-null indicates deactivated account.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_super_admins.deleted_at. Nullable - null indicates
+         *   active account, non-null indicates deactivated account.
      */
     deletedAt: (string & tags.Format<"date-time">) | null;
   };

@@ -21,9 +21,11 @@ export class MallplatformSellerOrderitemsForce_cancelController {
    * @param connection
    * @param orderItemId The identifier of the order item to force-cancel (global UUID).
    * @param body Administrator force-cancellation request payload used for audit context and dispute handling.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Authenticate the caller as an administrator and verify order intervention permission before processing the request. Load the target order item by orderItemId and confirm it exists.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Authenticate the caller as an administrator and
+     *   verify order intervention permission before processing the request.
+     *   Load the target order item by orderItemId and confirm it exists.
    *
    * Validate that the item can be force-cancelled under the current business rules. Reject requests for items that are already cancelled, refunded, or otherwise ineligible, and do not modify any related data on failure.
    *

@@ -26,9 +26,10 @@ export class ShoppingmallSellerProductsVariantsSnapshotsController {
    * @param productId UUID of the product containing the variant (global scope)
    * @param variantId UUID of the product variant whose snapshots to retrieve (global scope)
    * @param body Search criteria including date range filters, price range filters, SKU code search, and pagination parameters (offset, limit, sortBy, sortOrder).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Query shopping_mall_variant_snapshots table with filtering and pagination.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Query shopping_mall_variant_snapshots table with
+     *   filtering and pagination.
    *
    * Path parameters:
    * - productId: Used to identify the product context (for authorization and path structure)
@@ -90,9 +91,10 @@ export class ShoppingmallSellerProductsVariantsSnapshotsController {
    * @param productId Unique identifier of the product that owns the variant containing this snapshot.
    * @param variantId Unique identifier of the product variant for which this snapshot was created.
    * @param snapshotId Unique identifier of the variant snapshot to retrieve.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Query shopping_mall_variant_snapshots table by snapshotId (primary key).
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Query shopping_mall_variant_snapshots table by
+     *   snapshotId (primary key).
    *
    * Validate that the snapshot belongs to the specified variantId (shopping_mall_product_variant_id matches variantId).
    *

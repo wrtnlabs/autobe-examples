@@ -33,20 +33,38 @@ export * as items from "./items/index";
  * @param props.body Shipment creation payload containing logistics details (carrier name and tracking number, both required) and the list of order item IDs to include in this shipment.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification 1. Authenticate the request as a seller actor. Extract the authenticated seller's ID from the session.
- * 2. Validate that the order identified by `orderId` exists in the `shopping_mall_orders` table. If not found, return 404.
- * 3. Parse the request body to extract: carrier name, optional tracking_number, list of order item IDs to include, optional shipped_at timestamp, optional estimated_delivery_at timestamp.
- * 4. Validate that at least one order item ID is provided. If the list is empty, return 400 (at least one item required).
- * 5. Query `shopping_mall_order_items` for each provided order item ID, filtering by `shopping_mall_order_id = orderId`. Verify all items exist and belong to the specified order.
- * 6. For each order item, join with `shopping_mall_product_variants` → `shopping_mall_products` to confirm the owning seller ID matches the authenticated seller's ID. If any item belongs to a different seller, reject the entire request with 403.
- * 7. Verify that all selected order items have `status = 'paid'`. If any item has a different status, return 422 with details.
- * 8. Check that none of the selected order items already have an entry in `shopping_mall_shipment_items` (each order item can belong to at most one shipment, enforced by the unique constraint on `shopping_mall_order_item_id`). If any item is already assigned to a shipment, return 409.
- * 9. Within a database transaction:
- *    a. Insert a new record into `shopping_mall_shipments` with: `shopping_mall_order_id = orderId`, `shopping_mall_seller_id = authenticatedSellerId`, `carrier`, `tracking_number`, `shipped_at`, `estimated_delivery_at`, `created_at = now()`, `updated_at = now()`, `deleted_at = null`.
- *    b. Insert records into `shopping_mall_shipment_items` for each selected order item, linking each `shopping_mall_order_item_id` to the newly created shipment ID.
- *    c. Update each selected `shopping_mall_order_items` record: set `status = 'shipped'`, `updated_at = now()`.
- *    d. Recalculate and update the parent `shopping_mall_orders.status` based on the aggregate status of all order items.
- * 10. Return the created shipment entity including its ID, carrier, tracking_number, timestamps, and the list of associated shipment items.
+ * @x-autobe-specification 1. Authenticate the request as a seller actor.
+ *   Extract the authenticated seller's ID from the session. 2. Validate that
+ *   the order identified by `orderId` exists in the `shopping_mall_orders`
+ *   table. If not found, return 404. 3. Parse the request body to extract:
+ *   carrier name, optional tracking_number, list of order item IDs to include,
+ *   optional shipped_at timestamp, optional estimated_delivery_at timestamp. 4.
+ *   Validate that at least one order item ID is provided. If the list is empty,
+ *   return 400 (at least one item required). 5. Query
+ *   `shopping_mall_order_items` for each provided order item ID, filtering by
+ *   `shopping_mall_order_id = orderId`. Verify all items exist and belong to
+ *   the specified order. 6. For each order item, join with
+ *   `shopping_mall_product_variants` → `shopping_mall_products` to confirm the
+ *   owning seller ID matches the authenticated seller's ID. If any item belongs
+ *   to a different seller, reject the entire request with 403. 7. Verify that
+ *   all selected order items have `status = 'paid'`. If any item has a
+ *   different status, return 422 with details. 8. Check that none of the
+ *   selected order items already have an entry in
+ *   `shopping_mall_shipment_items` (each order item can belong to at most one
+ *   shipment, enforced by the unique constraint on
+ *   `shopping_mall_order_item_id`). If any item is already assigned to a
+ *   shipment, return 409. 9. Within a database transaction: a. Insert a new
+ *   record into `shopping_mall_shipments` with: `shopping_mall_order_id =
+ *   orderId`, `shopping_mall_seller_id = authenticatedSellerId`, `carrier`,
+ *   `tracking_number`, `shipped_at`, `estimated_delivery_at`, `created_at =
+ *   now()`, `updated_at = now()`, `deleted_at = null`. b. Insert records into
+ *   `shopping_mall_shipment_items` for each selected order item, linking each
+ *   `shopping_mall_order_item_id` to the newly created shipment ID. c. Update
+ *   each selected `shopping_mall_order_items` record: set `status = 'shipped'`,
+ *   `updated_at = now()`. d. Recalculate and update the parent
+ *   `shopping_mall_orders.status` based on the aggregate status of all order
+ *   items. 10. Return the created shipment entity including its ID, carrier,
+ *   tracking_number, timestamps, and the list of associated shipment items.
  * @path /shoppingMall/seller/orders/:orderId/shipments
  * @accessor api.functional.shoppingMall.seller.orders.shipments.create
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -154,24 +172,31 @@ export namespace create {
  * @param props.body Pagination and optional filtering criteria for the shipment list.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification 1. Extract the authenticated actor's identity (customer or seller) from the JWT session.
- * 2. Look up the order by orderId in shopping_mall_orders. If not found, return 404.
- * 3. Authorization check:
- *    - If actor is a customer: verify shopping_mall_orders.shopping_mall_customer_id matches the authenticated customer's ID. If not, return 403.
- *    - If actor is a seller: verify that at least one shipment in the order belongs to this seller (shopping_mall_shipments.shopping_mall_seller_id). If no association, return 403.
- * 4. Query shopping_mall_shipments WHERE shopping_mall_order_id = orderId AND deleted_at IS NULL.
- *    - Apply pagination from the request body (page/limit).
- *    - Apply optional filters from request body: status filter (by checking delivered_at/shipped_at nullability), carrier filter, etc.
- *    - Order by created_at DESC by default.
- * 5. For each shipment, join shopping_mall_shipment_items and their associated shopping_mall_order_items to produce the list of bundled order items.
- * 6. Return paginated results with IPageIShoppingMallShipment.ISummary structure, including:
- *    - id, carrier, tracking_number, shipped_at, estimated_delivery_at, delivered_at, created_at, updated_at
- *    - seller summary (seller id)
- *    - list of order item summaries within the shipment
- * 7. Edge cases:
- *    - Order with no shipments yet → return empty paginated result (not 404).
- *    - Deleted shipments (deleted_at IS NOT NULL) must be excluded.
- *    - Seller actor: return all shipments in the order (not just their own) if the requirement is customer-centric, or restrict to their own shipments if seller-centric. Since path is /orders/{orderId}/shipments without seller scoping, return all shipments for the order to any authorized actor.
+ * @x-autobe-specification 1. Extract the authenticated actor's identity
+ *   (customer or seller) from the JWT session. 2. Look up the order by orderId
+ *   in shopping_mall_orders. If not found, return 404. 3. Authorization check:
+ *   - If actor is a customer: verify
+ *   shopping_mall_orders.shopping_mall_customer_id matches the authenticated
+ *   customer's ID. If not, return 403. - If actor is a seller: verify that at
+ *   least one shipment in the order belongs to this seller
+ *   (shopping_mall_shipments.shopping_mall_seller_id). If no association,
+ *   return 403. 4. Query shopping_mall_shipments WHERE shopping_mall_order_id =
+ *   orderId AND deleted_at IS NULL. - Apply pagination from the request body
+ *   (page/limit). - Apply optional filters from request body: status filter (by
+ *   checking delivered_at/shipped_at nullability), carrier filter, etc. - Order
+ *   by created_at DESC by default. 5. For each shipment, join
+ *   shopping_mall_shipment_items and their associated shopping_mall_order_items
+ *   to produce the list of bundled order items. 6. Return paginated results
+ *   with IPageIShoppingMallShipment.ISummary structure, including: - id,
+ *   carrier, tracking_number, shipped_at, estimated_delivery_at, delivered_at,
+ *   created_at, updated_at - seller summary (seller id) - list of order item
+ *   summaries within the shipment 7. Edge cases: - Order with no shipments yet
+ *   → return empty paginated result (not 404). - Deleted shipments (deleted_at
+ *   IS NOT NULL) must be excluded. - Seller actor: return all shipments in the
+ *   order (not just their own) if the requirement is customer-centric, or
+ *   restrict to their own shipments if seller-centric. Since path is
+ *   /orders/{orderId}/shipments without seller scoping, return all shipments
+ *   for the order to any authorized actor.
  * @path /shoppingMall/seller/orders/:orderId/shipments
  * @accessor api.functional.shoppingMall.seller.orders.shipments.index
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -277,17 +302,29 @@ export namespace index {
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
  * @x-autobe-specification 1. Authenticate the calling user as a customer actor.
- * 2. Lookup the order by `orderId` in `shopping_mall_orders`. Verify that `shopping_mall_orders.shopping_mall_customer_id` matches the authenticated customer's ID. If not found or does not belong to the customer, return 403/404.
- * 3. Lookup the shipment by `shipmentId` in `shopping_mall_shipments`. Verify that `shopping_mall_shipments.shopping_mall_order_id` matches the `orderId` path parameter. If not found or mismatched, return 404.
- * 4. Exclude records where `shopping_mall_shipments.deleted_at IS NOT NULL`.
- * 5. Join `shopping_mall_shipment_items` on `shopping_mall_shipment_id = shipmentId` to get all shipment items.
- * 6. For each shipment item, join `shopping_mall_order_items` on `shopping_mall_order_item_id` to retrieve item details (quantity, unit_price, status).
- * 7. For each order item, join `shopping_mall_order_item_snapshots` to retrieve the product snapshot (`product_snapshot_id`), variant SKU snapshot (`product_snapshot_skus_id`), and seller profile snapshot (`seller_profile_snapshot_id`).
- * 8. Optionally join `shopping_mall_product_snapshots` and `shopping_mall_product_snapshot_skuses` for product name and variant options.
- * 9. Assemble and return a `IShoppingMallShipment` response object containing:
- *    - shipment id, carrier, tracking_number, shipped_at, estimated_delivery_at, delivered_at, created_at, updated_at
- *    - nested list of shipment items with order item details and snapshot information.
- * 10. Handle edge cases: order not found, shipment not found, order not belonging to the customer, shipment not belonging to the order.
+ *   2. Lookup the order by `orderId` in `shopping_mall_orders`. Verify that
+ *   `shopping_mall_orders.shopping_mall_customer_id` matches the authenticated
+ *   customer's ID. If not found or does not belong to the customer, return
+ *   403/404. 3. Lookup the shipment by `shipmentId` in
+ *   `shopping_mall_shipments`. Verify that
+ *   `shopping_mall_shipments.shopping_mall_order_id` matches the `orderId` path
+ *   parameter. If not found or mismatched, return 404. 4. Exclude records where
+ *   `shopping_mall_shipments.deleted_at IS NOT NULL`. 5. Join
+ *   `shopping_mall_shipment_items` on `shopping_mall_shipment_id = shipmentId`
+ *   to get all shipment items. 6. For each shipment item, join
+ *   `shopping_mall_order_items` on `shopping_mall_order_item_id` to retrieve
+ *   item details (quantity, unit_price, status). 7. For each order item, join
+ *   `shopping_mall_order_item_snapshots` to retrieve the product snapshot
+ *   (`product_snapshot_id`), variant SKU snapshot (`product_snapshot_skus_id`),
+ *   and seller profile snapshot (`seller_profile_snapshot_id`). 8. Optionally
+ *   join `shopping_mall_product_snapshots` and
+ *   `shopping_mall_product_snapshot_skuses` for product name and variant
+ *   options. 9. Assemble and return a `IShoppingMallShipment` response object
+ *   containing: - shipment id, carrier, tracking_number, shipped_at,
+ *   estimated_delivery_at, delivered_at, created_at, updated_at - nested list
+ *   of shipment items with order item details and snapshot information. 10.
+ *   Handle edge cases: order not found, shipment not found, order not belonging
+ *   to the customer, shipment not belonging to the order.
  * @path /shoppingMall/seller/orders/:orderId/shipments/:shipmentId
  * @accessor api.functional.shoppingMall.seller.orders.shipments.at
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -386,20 +423,26 @@ export namespace at {
  * @param props.body Updated logistics details for the shipment, including carrier name, tracking number, dispatch timestamp, and estimated delivery date.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification 1. Authenticate the requesting seller and extract their seller ID from the session.
- * 2. Look up the order (shopping_mall_orders) by `orderId` path parameter. Return 404 if not found.
- * 3. Look up the shipment (shopping_mall_shipments) by `shipmentId` path parameter. Return 404 if not found.
- * 4. Verify that the shipment's `shopping_mall_order_id` matches the provided `orderId`. Return 404 if they do not match.
- * 5. Verify that the shipment's `shopping_mall_seller_id` matches the authenticated seller's ID. Return 403 if the seller does not own this shipment.
- * 6. Validate the request body fields:
- *    - `carrier`: Required non-empty string.
- *    - `tracking_number`: Optional string, may be null.
- *    - `shipped_at`: Optional ISO 8601 datetime string representing the actual dispatch time.
- *    - `estimated_delivery_at`: Optional ISO 8601 datetime string for the projected delivery date.
- * 7. Update the shopping_mall_shipments record with the provided field values and set `updated_at` to the current timestamp.
- * 8. Do NOT update `delivered_at` through this endpoint — that field is managed by the customer delivery confirmation flow.
- * 9. Fetch the updated shipment record, including its associated shipment items (shopping_mall_shipment_items joined with shopping_mall_order_items).
- * 10. Return the full updated IShoppingMallShipment entity as the response.
+ * @x-autobe-specification 1. Authenticate the requesting seller and extract
+ *   their seller ID from the session. 2. Look up the order
+ *   (shopping_mall_orders) by `orderId` path parameter. Return 404 if not
+ *   found. 3. Look up the shipment (shopping_mall_shipments) by `shipmentId`
+ *   path parameter. Return 404 if not found. 4. Verify that the shipment's
+ *   `shopping_mall_order_id` matches the provided `orderId`. Return 404 if they
+ *   do not match. 5. Verify that the shipment's `shopping_mall_seller_id`
+ *   matches the authenticated seller's ID. Return 403 if the seller does not
+ *   own this shipment. 6. Validate the request body fields: - `carrier`:
+ *   Required non-empty string. - `tracking_number`: Optional string, may be
+ *   null. - `shipped_at`: Optional ISO 8601 datetime string representing the
+ *   actual dispatch time. - `estimated_delivery_at`: Optional ISO 8601 datetime
+ *   string for the projected delivery date. 7. Update the
+ *   shopping_mall_shipments record with the provided field values and set
+ *   `updated_at` to the current timestamp. 8. Do NOT update `delivered_at`
+ *   through this endpoint — that field is managed by the customer delivery
+ *   confirmation flow. 9. Fetch the updated shipment record, including its
+ *   associated shipment items (shopping_mall_shipment_items joined with
+ *   shopping_mall_order_items). 10. Return the full updated
+ *   IShoppingMallShipment entity as the response.
  * @path /shoppingMall/seller/orders/:orderId/shipments/:shipmentId
  * @accessor api.functional.shoppingMall.seller.orders.shipments.update
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -508,14 +551,22 @@ export namespace update {
  * @param props.shipmentId The UUID of the shipment to be deleted.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification 1. Authenticate the requesting actor (seller or admin). Extract their identity from the JWT session.
- * 2. Look up the shipment by shipmentId in shopping_mall_shipments. Verify that shopping_mall_order_id matches the provided orderId — if not, return 404.
- * 3. If the actor is a seller, verify that shopping_mall_seller_id on the shipment matches the authenticated seller's ID. If not, return 403 Forbidden.
- * 4. Check that deleted_at is currently null. If it is already set, the shipment is already deleted — return 404 or 409 as appropriate.
- * 5. Set deleted_at = current timestamp (NOW()) and update updated_at on the shipment record using a single UPDATE query.
- * 6. Return the updated shipment record with deleted_at populated to confirm the operation.
- * 7. Edge case: if the shipment has delivered_at set (delivery was already confirmed), consider whether the platform policy allows deletion. If it does not, return 422 Unprocessable Entity with an appropriate message.
- * 8. No cascading hard-delete on shopping_mall_shipment_items is performed — those records remain, but the shipment is logically removed from active views.
+ * @x-autobe-specification 1. Authenticate the requesting actor (seller or
+ *   admin). Extract their identity from the JWT session. 2. Look up the
+ *   shipment by shipmentId in shopping_mall_shipments. Verify that
+ *   shopping_mall_order_id matches the provided orderId — if not, return 404.
+ *   3. If the actor is a seller, verify that shopping_mall_seller_id on the
+ *   shipment matches the authenticated seller's ID. If not, return 403
+ *   Forbidden. 4. Check that deleted_at is currently null. If it is already
+ *   set, the shipment is already deleted — return 404 or 409 as appropriate. 5.
+ *   Set deleted_at = current timestamp (NOW()) and update updated_at on the
+ *   shipment record using a single UPDATE query. 6. Return the updated shipment
+ *   record with deleted_at populated to confirm the operation. 7. Edge case: if
+ *   the shipment has delivered_at set (delivery was already confirmed),
+ *   consider whether the platform policy allows deletion. If it does not,
+ *   return 422 Unprocessable Entity with an appropriate message. 8. No
+ *   cascading hard-delete on shopping_mall_shipment_items is performed — those
+ *   records remain, but the shipment is logically removed from active views.
  * @path /shoppingMall/seller/orders/:orderId/shipments/:shipmentId
  * @accessor api.functional.shoppingMall.seller.orders.shipments.erase
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe

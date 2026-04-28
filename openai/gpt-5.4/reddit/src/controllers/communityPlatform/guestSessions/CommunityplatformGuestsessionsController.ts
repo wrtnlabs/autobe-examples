@@ -24,9 +24,10 @@ export class CommunityplatformGuestsessionsController {
    *
    * @param connection
    * @param body Search criteria, pagination, and sorting options for guest sessions
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Implement this operation as a paginated search over the community_platform_guest_sessions table.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Implement this operation as a paginated search
+     *   over the community_platform_guest_sessions table.
    *
    * Accept an ICommunityPlatformGuestSession.IRequest body containing pagination inputs, sorting options, and optional filters. Supported filters should be based strictly on known schema fields: id, community_platform_guest_id, ip, href, referrer, created_at, and expired_at. The service may also support joined filtering by the related community_platform_guests.guest_key because each session belongs to a guest identity through community_platform_guest_id. Do not infer or filter on fields that are not defined in the loaded schemas.
    *
@@ -69,9 +70,11 @@ export class CommunityplatformGuestsessionsController {
    *
    * @param connection
    * @param guestSessionId Unique identifier of the guest session record
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Locate the target record in `community_platform_guest_sessions` by primary key `id` using the `guestSessionId` path parameter.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Locate the target record in
+     *   `community_platform_guest_sessions` by primary key `id` using the
+     *   `guestSessionId` path parameter.
    *
    * Return a single `ICommunityPlatformGuestSession` object populated from the persisted columns of the session record. The implementation should at minimum map `id`, the foreign key to the belonged guest identity, connection context fields such as `ip`, `href`, and `referrer`, and lifecycle timestamps including `created_at` and `expired_at`. Include the belonged guest relationship only if the referenced DTO structure for `ICommunityPlatformGuestSession` requires it; otherwise avoid unnecessary joins and return the session-focused shape.
    *

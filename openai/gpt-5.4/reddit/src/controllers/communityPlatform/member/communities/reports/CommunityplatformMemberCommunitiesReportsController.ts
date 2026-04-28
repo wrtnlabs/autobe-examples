@@ -27,9 +27,11 @@ export class CommunityplatformMemberCommunitiesReportsController {
    * @param connection
    * @param communityId Target community ID for the moderation report review list
    * @param body Filtering, sorting, and pagination criteria for the community report review list
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Validate that the caller is an authenticated member and resolve the requested `communityId` against `community_platform_communities.id`.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Validate that the caller is an authenticated
+     *   member and resolve the requested `communityId` against
+     *   `community_platform_communities.id`.
    *
    * Authorize by querying `community_platform_community_moderators` for a row matching the requested community and the caller's member identity, and require an active moderation assignment that has not been revoked or deleted. If no qualifying assignment exists, reject the request as forbidden.
    *
@@ -81,9 +83,10 @@ export class CommunityplatformMemberCommunitiesReportsController {
    * @param connection
    * @param communityId Target community ID for the moderation scope
    * @param reportId Target report ID within the specified community
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement a read-only service that loads a single community-scoped report for moderator review.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implement a read-only service that loads a single
+     *   community-scoped report for moderator review.
    *
    * 1. Authorize the caller as an authenticated member. Resolve the caller's member identity, then query community_platform_community_moderators for an active, non-deleted assignment matching the caller and the path communityId. If no active assignment exists for the requested community, reject with a permission error. Do not authorize based solely on global membership or moderation rights in another community.
    *

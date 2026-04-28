@@ -177,7 +177,8 @@ export namespace create {
  * @param props.body Search criteria and pagination options for product images, optionally scoped to a specific product for seller image management flows (including reorder context).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implement a PATCH-based list/search for ProductImage with optional seller-scoped filtering.
+ * @x-autobe-specification Implement a PATCH-based list/search for ProductImage
+ *   with optional seller-scoped filtering.
  *
  * Algorithm:
  * 1. Parse the request body as ShoppingMallProductImage.IRequest.
@@ -423,27 +424,35 @@ export namespace at {
  * @param props.body Updated product image data.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implementation steps:
- * 1) Parse `productImageId` from path.
- * 2) Load `shopping_mall_product_images` by `id = productImageId`.
- * 3) Join/load the owning product from `shopping_mall_products` using `shopping_mall_product_id`.
- * 4) Authorization: verify the authenticated seller (member with seller role) matches `shopping_mall_products.shopping_mall_seller_id`. If not, reject with an authorization/ownership error.
- * 5) Validate request payload fields:
- *    - Ensure `href` (if provided) is a valid, non-empty URL/URI string per DTO constraints.
- *    - Ensure `alt_text` (if provided) meets DTO constraints.
- *    - Ensure `display_order` (if provided) is an integer within allowed DTO range.
- * 6) Apply update to `shopping_mall_product_images` fields (id remains unchanged; `shopping_mall_product_id` must not be changed by client input).
- * 7) Ordering consistency:
- *    - If `display_order` is updated, ensure it does not violate any business rule about image ordering for the product. If business rules require unique ordering positions, enforce it by shifting/renumbering within the same `shopping_mall_product_id`; otherwise persist as-is but verify that storefront display will correctly treat the minimum `display_order` as main thumbnail.
- * 8) Concurrency handling:
- *    - Use an optimistic concurrency strategy if the underlying DTO supports it (e.g., updated_at/version) or enforce ordering update within a transaction using appropriate row locking for the same `shopping_mall_product_id` to prevent ambiguous outcomes.
- * 9) Transaction: perform the update in a database transaction; only after successful validation and write, return the updated row.
- * 10) Snapshot/audit integrity:
- *    - If the system maintains product snapshot history for product image edits, create/update snapshot entries only after the write succeeds. Never create snapshot history if authorization/validation fails.
- * Edge cases:
- * - Image id does not exist → return not-found.
- * - Seller suspended/banned → reject per actor rules.
- * - Update attempts to change product association → reject.
+ * @x-autobe-specification Implementation steps: 1) Parse `productImageId` from
+ *   path. 2) Load `shopping_mall_product_images` by `id = productImageId`. 3)
+ *   Join/load the owning product from `shopping_mall_products` using
+ *   `shopping_mall_product_id`. 4) Authorization: verify the authenticated
+ *   seller (member with seller role) matches
+ *   `shopping_mall_products.shopping_mall_seller_id`. If not, reject with an
+ *   authorization/ownership error. 5) Validate request payload fields: - Ensure
+ *   `href` (if provided) is a valid, non-empty URL/URI string per DTO
+ *   constraints. - Ensure `alt_text` (if provided) meets DTO constraints. -
+ *   Ensure `display_order` (if provided) is an integer within allowed DTO
+ *   range. 6) Apply update to `shopping_mall_product_images` fields (id remains
+ *   unchanged; `shopping_mall_product_id` must not be changed by client input).
+ *   7) Ordering consistency: - If `display_order` is updated, ensure it does
+ *   not violate any business rule about image ordering for the product. If
+ *   business rules require unique ordering positions, enforce it by
+ *   shifting/renumbering within the same `shopping_mall_product_id`; otherwise
+ *   persist as-is but verify that storefront display will correctly treat the
+ *   minimum `display_order` as main thumbnail. 8) Concurrency handling: - Use
+ *   an optimistic concurrency strategy if the underlying DTO supports it (e.g.,
+ *   updated_at/version) or enforce ordering update within a transaction using
+ *   appropriate row locking for the same `shopping_mall_product_id` to prevent
+ *   ambiguous outcomes. 9) Transaction: perform the update in a database
+ *   transaction; only after successful validation and write, return the updated
+ *   row. 10) Snapshot/audit integrity: - If the system maintains product
+ *   snapshot history for product image edits, create/update snapshot entries
+ *   only after the write succeeds. Never create snapshot history if
+ *   authorization/validation fails. Edge cases: - Image id does not exist →
+ *   return not-found. - Seller suspended/banned → reject per actor rules. -
+ *   Update attempts to change product association → reject.
  *
  * @path /shoppingMall/member/productImages/:productImageId
  * @accessor api.functional.shoppingMall.member.productImages.updateProductImage

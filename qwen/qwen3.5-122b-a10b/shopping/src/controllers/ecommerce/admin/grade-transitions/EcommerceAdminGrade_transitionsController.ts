@@ -34,9 +34,10 @@ export class EcommerceAdminGrade_transitionsController {
    *
    * @param connection
    * @param body Search criteria for filtering administrator grade transition records including target administrator, performing administrator, grade values, date ranges, and pagination parameters.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query the ecommerce_admin_grade_transitions table with the following implementation requirements:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Query the ecommerce_admin_grade_transitions table
+     *   with the following implementation requirements:
    *
    * **Authentication & Authorization**
    * - Require valid administrator authentication (admin or super admin grade)
@@ -102,9 +103,10 @@ export class EcommerceAdminGrade_transitionsController {
    *
    * @param connection
    * @param transitionId Unique identifier of the grade transition audit record (UUID format).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query the ecommerce_admin_grade_transitions table by id (UUID).
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Query the ecommerce_admin_grade_transitions table
+     *   by id (UUID).
    *
    * Implement access control to verify the requesting user is an authenticated administrator or super administrator. Return 403 Forbidden if unauthorized.
    *

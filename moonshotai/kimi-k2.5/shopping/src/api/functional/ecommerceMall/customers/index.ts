@@ -20,7 +20,8 @@ import { IPageIEcommerceMallCustomer } from "../../../structures/IPageIEcommerce
  * @param props.body Search criteria and pagination parameters for filtering customer accounts
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query the ecommerce_mall_customers table with pagination and filtering support.
+ * @x-autobe-specification Query the ecommerce_mall_customers table with
+ *   pagination and filtering support.
  *
  * Apply search filters:
  * - email: Partial string match (LIKE query with wildcards)
@@ -131,7 +132,8 @@ export namespace index {
  * @param props.customerId Unique identifier of the customer account (global scope)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query the ecommerce_mall_customers table by primary key id matching the customerId path parameter.
+ * @x-autobe-specification Query the ecommerce_mall_customers table by primary
+ *   key id matching the customerId path parameter.
  *
  * Return fields: id, email, created_at, updated_at, deleted_at.
  *

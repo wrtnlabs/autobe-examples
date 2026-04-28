@@ -30,9 +30,10 @@ export class EcommerceSellerAnalyticsController {
    * This endpoint requires administrator authentication. Regular customers and sellers cannot access platform-wide analytics as this data may contain sensitive business information.
    *
    * @param connection
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Implement GET /analytics as a read-only statistics endpoint.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Implement GET /analytics as a read-only
+     *   statistics endpoint.
    *
    * **Service Logic**
    *

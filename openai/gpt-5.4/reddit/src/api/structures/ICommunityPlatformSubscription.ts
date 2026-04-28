@@ -11,56 +11,72 @@ export type ICommunityPlatformSubscription = {
   /**
    * Unique identifier of this subscription record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from community_platform_subscriptions.id.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_subscriptions.id.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Member account that owns this subscription.
    *
-   * @x-autobe-database-schema-property member
-   * @x-autobe-specification Resolve the belongs-to relation from community_platform_subscriptions.community_platform_member_id to community_platform_members.id and materialize the related row as ICommunityPlatformMember.ISummary.
+     * @x-autobe-database-schema-property member
+     * @x-autobe-specification Resolve the belongs-to relation from
+     *   community_platform_subscriptions.community_platform_member_id to
+     *   community_platform_members.id and materialize the related row as
+     *   ICommunityPlatformMember.ISummary.
    */
   member: ICommunityPlatformMember.ISummary;
 
   /**
    * Community that this subscription links the member to.
    *
-   * @x-autobe-database-schema-property community
-   * @x-autobe-specification Resolve the belongs-to relation from community_platform_subscriptions.community_platform_community_id to community_platform_communities.id and materialize the related row as ICommunityPlatformCommunity.ISummary.
+     * @x-autobe-database-schema-property community
+     * @x-autobe-specification Resolve the belongs-to relation from
+     *   community_platform_subscriptions.community_platform_community_id to
+     *   community_platform_communities.id and materialize the related row as
+     *   ICommunityPlatformCommunity.ISummary.
    */
   community: ICommunityPlatformCommunity.ISummary;
 
   /**
    * Whether this subscription is currently active.
    *
-   * @x-autobe-database-schema-property active
-   * @x-autobe-specification Direct mapping from community_platform_subscriptions.active. True means the subscription currently counts as an effective membership link.
+     * @x-autobe-database-schema-property active
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_subscriptions.active. True means the subscription
+     *   currently counts as an effective membership link.
    */
   active: boolean;
 
   /**
    * Timestamp when this subscription was first created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from community_platform_subscriptions.created_at as an RFC 3339 date-time string.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_subscriptions.created_at as an RFC 3339 date-time
+     *   string.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when this subscription record was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from community_platform_subscriptions.updated_at as an RFC 3339 date-time string.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_subscriptions.updated_at as an RFC 3339 date-time
+     *   string.
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * Soft-deletion timestamp for this subscription, or null when the record is not deleted.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from community_platform_subscriptions.deleted_at. Represent nullable state as oneOf[string date-time, null]. Null means the subscription has not been soft-deleted.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_subscriptions.deleted_at. Represent nullable state
+     *   as oneOf[string date-time, null]. Null means the subscription has not
+     *   been soft-deleted.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -72,7 +88,12 @@ export namespace ICommunityPlatformSubscription {
     /**
      * Unique slug of the community that the authenticated member wants to subscribe to.
      *
-     * @x-autobe-specification Client supplies the unique community slug. Resolve community_platform_communities.slug = community_slug to load the target community, then use its id as community_platform_community_id when inserting or reactivating the community_platform_subscriptions row for the authenticated member. Reject the request if no eligible community matches the slug.
+         * @x-autobe-specification Client supplies the unique community slug.
+         *   Resolve community_platform_communities.slug = community_slug to
+         *   load the target community, then use its id as
+         *   community_platform_community_id when inserting or reactivating the
+         *   community_platform_subscriptions row for the authenticated member.
+         *   Reject the request if no eligible community matches the slug.
      */
     community_slug: string;
   };

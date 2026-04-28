@@ -26,7 +26,8 @@ import { IPageICommunityPlatformPostVote } from "../../../../structures/IPageICo
  * @param props.body Search filters, pagination, and sorting for post votes
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implement a paginated search over community_platform_post_votes as the primary table.
+ * @x-autobe-specification Implement a paginated search over
+ *   community_platform_post_votes as the primary table.
  *
  * Authenticate the caller as a member before executing the query. By default, constrain the search to rows whose community_platform_member_id equals the authenticated member's id. Do not expose unrestricted cross-member vote browsing through this operation unless a separate privileged policy is explicitly introduced.
  *

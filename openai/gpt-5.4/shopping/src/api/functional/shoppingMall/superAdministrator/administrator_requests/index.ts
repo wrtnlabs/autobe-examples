@@ -24,7 +24,11 @@ import { IShoppingMallAdministratorRequest } from "../../../../structures/IShopp
  * @param props.body Administrator request review update data
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor superAdministrator
- * @x-autobe-specification Load the shopping_mall_administrator_requests row by id using administratorRequestId and ensure deleted_at is null unless the platform explicitly supports reviewing logically deleted requests, which is not indicated by the current requirements. If no matching row exists, raise a not-found error.
+ * @x-autobe-specification Load the shopping_mall_administrator_requests row by
+ *   id using administratorRequestId and ensure deleted_at is null unless the
+ *   platform explicitly supports reviewing logically deleted requests, which is
+ *   not indicated by the current requirements. If no matching row exists, raise
+ *   a not-found error.
  *
  * Authorize only the superAdministrator actor. Reject requests from customers, sellers, regular administrators, guests, banned governance accounts, or otherwise unauthorized sessions.
  *

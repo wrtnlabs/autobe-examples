@@ -16,8 +16,9 @@ export type ITodoAppTodo = {
    *
    * This UUID is generated automatically upon creation and serves as the primary key for all todo operations.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from todo_app_todos.id. Primary key, UUID format.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from todo_app_todos.id. Primary
+     *   key, UUID format.
    */
   id: string & tags.Format<"uuid">;
 
@@ -26,8 +27,9 @@ export type ITodoAppTodo = {
    *
    * This is the primary visible label of the todo and is required at creation time. Must be a non-empty, non-whitespace string.
    *
-   * @x-autobe-database-schema-property title
-   * @x-autobe-specification Direct mapping from todo_app_todos.title. Required, non-empty string.
+     * @x-autobe-database-schema-property title
+     * @x-autobe-specification Direct mapping from todo_app_todos.title.
+     *   Required, non-empty string.
    */
   title: string;
 
@@ -36,8 +38,9 @@ export type ITodoAppTodo = {
    *
    * Provides additional context beyond the title. Can be null or omitted when not needed.
    *
-   * @x-autobe-database-schema-property description
-   * @x-autobe-specification Direct mapping from todo_app_todos.description. Nullable string.
+     * @x-autobe-database-schema-property description
+     * @x-autobe-specification Direct mapping from todo_app_todos.description.
+     *   Nullable string.
    */
   description: string | null;
 
@@ -46,8 +49,10 @@ export type ITodoAppTodo = {
    *
    * This is a date-only value — the time component is semantically ignored. When sorting by start date ascending, todos with a null start_date appear after all todos that have a start_date set.
    *
-   * @x-autobe-database-schema-property start_date
-   * @x-autobe-specification Direct mapping from todo_app_todos.start_date. Date-only value (time component semantically ignored). Nullable DateTime.
+     * @x-autobe-database-schema-property start_date
+     * @x-autobe-specification Direct mapping from todo_app_todos.start_date.
+     *   Date-only value (time component semantically ignored). Nullable
+     *   DateTime.
    */
   start_date: (string & tags.Format<"date-time">) | null;
 
@@ -56,8 +61,10 @@ export type ITodoAppTodo = {
    *
    * This is a date-only value — the time component is semantically ignored. When sorting by due date ascending, todos with a null due_date appear after all todos that have a due_date set.
    *
-   * @x-autobe-database-schema-property due_date
-   * @x-autobe-specification Direct mapping from todo_app_todos.due_date. Date-only value (time component semantically ignored). Nullable DateTime.
+     * @x-autobe-database-schema-property due_date
+     * @x-autobe-specification Direct mapping from todo_app_todos.due_date.
+     *   Date-only value (time component semantically ignored). Nullable
+     *   DateTime.
    */
   due_date: (string & tags.Format<"date-time">) | null;
 
@@ -66,8 +73,9 @@ export type ITodoAppTodo = {
    *
    * A null value means the todo is incomplete. A non-null value means the todo is complete, with the timestamp recording when the completion toggle occurred.
    *
-   * @x-autobe-database-schema-property completed_at
-   * @x-autobe-specification Direct mapping from todo_app_todos.completed_at. Nullable DateTime. Null means incomplete, non-null means complete.
+     * @x-autobe-database-schema-property completed_at
+     * @x-autobe-specification Direct mapping from todo_app_todos.completed_at.
+     *   Nullable DateTime. Null means incomplete, non-null means complete.
    */
   completed_at: (string & tags.Format<"date-time">) | null;
 
@@ -76,8 +84,9 @@ export type ITodoAppTodo = {
    *
    * A null value means the todo is active and visible in the normal todo list. A non-null value means the todo is in the trash. Restoring the todo clears this field.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from todo_app_todos.deleted_at. Nullable DateTime. Null means active, non-null means in trash.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from todo_app_todos.deleted_at.
+     *   Nullable DateTime. Null means active, non-null means in trash.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 
@@ -86,8 +95,9 @@ export type ITodoAppTodo = {
    *
    * Set automatically upon successful creation and cannot be modified.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from todo_app_todos.created_at. DateTime, set automatically on creation.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from todo_app_todos.created_at.
+     *   DateTime, set automatically on creation.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -96,8 +106,9 @@ export type ITodoAppTodo = {
    *
    * Updated automatically whenever the todo or any of its editable fields are modified.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from todo_app_todos.updated_at. DateTime, updated automatically on modification.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from todo_app_todos.updated_at.
+     *   DateTime, updated automatically on modification.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -106,8 +117,9 @@ export type ITodoAppTodo = {
    *
    * This is a belongs-to relationship resolved by joining todo_app_todos.todo_app_member_id with todo_app_members.id. Returns the summary representation of the owning member.
    *
-   * @x-autobe-database-schema-property member
-   * @x-autobe-specification Belongs-to relation: todo_app_member_id → join with todo_app_members.id to produce ITodoAppMember.ISummary.
+     * @x-autobe-database-schema-property member
+     * @x-autobe-specification Belongs-to relation: todo_app_member_id → join
+     *   with todo_app_members.id to produce ITodoAppMember.ISummary.
    */
   member: ITodoAppMember.ISummary;
 };
@@ -123,7 +135,9 @@ export namespace ITodoAppTodo {
      *
      * Specifies which page of results to retrieve. The first page is page 1. Combined with limit to compute the OFFSET for database queries.
      *
-     * @x-autobe-specification Offset-based pagination parameter. 1-indexed page number. Defaults to 1. Maps to SQL OFFSET = (page - 1) * limit.
+         * @x-autobe-specification Offset-based pagination parameter. 1-indexed
+         *   page number. Defaults to 1. Maps to SQL OFFSET = (page - 1) *
+         *   limit.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -132,7 +146,9 @@ export namespace ITodoAppTodo {
      *
      * Controls how many todo items appear in a single page of results. Values are capped at 100 to prevent excessive data transfer.
      *
-     * @x-autobe-specification Maximum number of records per page. Capped at 100. Maps to SQL LIMIT. Default behavior: implement with a sensible default (e.g., 20) when not provided.
+         * @x-autobe-specification Maximum number of records per page. Capped at
+         *   100. Maps to SQL LIMIT. Default behavior: implement with a sensible
+         *   default (e.g., 20) when not provided.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -143,7 +159,10 @@ export namespace ITodoAppTodo {
      *
      * Supported sort fields: createdAt (creation date), startDate (start date), dueDate (due date). When sorting by startDate or dueDate in ascending order, todos without a value appear at the end of the results.
      *
-     * @x-autobe-specification Sort field selection. Maps to SQL ORDER BY on created_at, start_date, or due_date columns (snake_case conversion from camelCase). For nullable columns (start_date, due_date), use NULLS LAST ordering when ascending.
+         * @x-autobe-specification Sort field selection. Maps to SQL ORDER BY on
+         *   created_at, start_date, or due_date columns (snake_case conversion
+         *   from camelCase). For nullable columns (start_date, due_date), use
+         *   NULLS LAST ordering when ascending.
      */
     sortBy?: "createdAt" | "startDate" | "dueDate" | undefined;
 
@@ -152,7 +171,9 @@ export namespace ITodoAppTodo {
      *
      * asc for ascending order (oldest/earliest first), desc for descending order (newest/latest first). The default sort direction is descending when sorting by creation date.
      *
-     * @x-autobe-specification Sort direction. Maps to SQL ORDER BY direction: asc or desc. Default: desc (newest first) when sortBy defaults to createdAt.
+         * @x-autobe-specification Sort direction. Maps to SQL ORDER BY
+         *   direction: asc or desc. Default: desc (newest first) when sortBy
+         *   defaults to createdAt.
      */
     sortOrder?: "asc" | "desc" | undefined;
 
@@ -161,7 +182,9 @@ export namespace ITodoAppTodo {
      *
      * all shows every todo regardless of completion state. complete shows only completed todos (those with a non-null completion timestamp). incomplete shows only incomplete todos (those with a null completion timestamp).
      *
-     * @x-autobe-specification Completion status filter. Maps to WHERE clause on completed_at: all = no filter, complete = completed_at IS NOT NULL, incomplete = completed_at IS NULL.
+         * @x-autobe-specification Completion status filter. Maps to WHERE
+         *   clause on completed_at: all = no filter, complete = completed_at IS
+         *   NOT NULL, incomplete = completed_at IS NULL.
      */
     status?: "all" | "complete" | "incomplete" | undefined;
   };
@@ -175,28 +198,28 @@ export namespace ITodoAppTodo {
     /**
      * The title of the todo. Must be a non-empty, non-whitespace string.
      *
-     * @x-autobe-database-schema-property title
+         * @x-autobe-database-schema-property title
      */
     title: string;
 
     /**
      * Optional detailed description of the todo.
      *
-     * @x-autobe-database-schema-property description
+         * @x-autobe-database-schema-property description
      */
     description?: string | null | undefined;
 
     /**
      * Optional start date for the todo (date-only value; time component is semantically ignored).
      *
-     * @x-autobe-database-schema-property start_date
+         * @x-autobe-database-schema-property start_date
      */
     start_date?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * Optional due date for the todo (date-only value; time component is semantically ignored).
      *
-     * @x-autobe-database-schema-property due_date
+         * @x-autobe-database-schema-property due_date
      */
     due_date?: (string & tags.Format<"date-time">) | null | undefined;
   };
@@ -214,8 +237,9 @@ export namespace ITodoAppTodo {
      *
      * Assigned automatically upon creation. Used as a reference in API operations such as view, edit, complete, delete, and restore.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from todo_app_todos.id. UUID primary key, auto-generated on creation.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from todo_app_todos.id. UUID
+         *   primary key, auto-generated on creation.
      */
     id: string & tags.Format<"uuid">;
 
@@ -224,8 +248,9 @@ export namespace ITodoAppTodo {
      *
      * This is the primary visible label displayed in the todo list. Must be a non-empty string and is required at creation time.
      *
-     * @x-autobe-database-schema-property title
-     * @x-autobe-specification Direct mapping from todo_app_todos.title. String NOT NULL. Must be non-empty.
+         * @x-autobe-database-schema-property title
+         * @x-autobe-specification Direct mapping from todo_app_todos.title.
+         *   String NOT NULL. Must be non-empty.
      */
     title: string;
 
@@ -234,8 +259,10 @@ export namespace ITodoAppTodo {
      *
      * A non-null value means the todo is complete, with the timestamp recording when the completion toggle occurred. A null value means the todo is still incomplete.
      *
-     * @x-autobe-database-schema-property completed_at
-     * @x-autobe-specification Direct mapping from todo_app_todos.completed_at. DateTime? — a non-null value means the todo is complete; null means incomplete.
+         * @x-autobe-database-schema-property completed_at
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_todos.completed_at. DateTime? — a non-null value means the
+         *   todo is complete; null means incomplete.
      */
     completedAt: (string & tags.Format<"date-time">) | null;
 
@@ -244,8 +271,11 @@ export namespace ITodoAppTodo {
      *
      * Date-only value (the time component is semantically ignored). When sorting by start date ascending, todos without a start date appear after all todos that have one set.
      *
-     * @x-autobe-database-schema-property start_date
-     * @x-autobe-specification Direct mapping from todo_app_todos.start_date. DateTime? — date-only value, time component semantically ignored. Null values sort last when sorting ascending.
+         * @x-autobe-database-schema-property start_date
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_todos.start_date. DateTime? — date-only value, time
+         *   component semantically ignored. Null values sort last when sorting
+         *   ascending.
      */
     startDate: (string & tags.Format<"date-time">) | null;
 
@@ -254,8 +284,10 @@ export namespace ITodoAppTodo {
      *
      * Date-only value (the time component is semantically ignored). When sorting by due date ascending, todos without a due date appear after all todos that have one set.
      *
-     * @x-autobe-database-schema-property due_date
-     * @x-autobe-specification Direct mapping from todo_app_todos.due_date. DateTime? — date-only value, time component semantically ignored. Null values sort last when sorting ascending.
+         * @x-autobe-database-schema-property due_date
+         * @x-autobe-specification Direct mapping from todo_app_todos.due_date.
+         *   DateTime? — date-only value, time component semantically ignored.
+         *   Null values sort last when sorting ascending.
      */
     dueDate: (string & tags.Format<"date-time">) | null;
 
@@ -264,8 +296,10 @@ export namespace ITodoAppTodo {
      *
      * Set automatically upon creation. Used as the default sort field in the todo list (newest first).
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from todo_app_todos.created_at. DateTime NOT NULL, set automatically on creation.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_todos.created_at. DateTime NOT NULL, set automatically on
+         *   creation.
      */
     createdAt: string & tags.Format<"date-time">;
 
@@ -274,8 +308,10 @@ export namespace ITodoAppTodo {
      *
      * A non-null value means the todo is in the trash and will not appear in the normal todo list. A null value means the todo is active. Restoring the todo clears this field.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from todo_app_todos.deleted_at. DateTime? — a non-null value means the todo is in trash; null means active.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_todos.deleted_at. DateTime? — a non-null value means the
+         *   todo is in trash; null means active.
      */
     deletedAt: (string & tags.Format<"date-time">) | null;
 
@@ -284,8 +320,10 @@ export namespace ITodoAppTodo {
      *
      * Resolved via a JOIN on the foreign key. Each todo is owned by exactly one member, and this relationship enforces strict data isolation — a member can only access their own todos.
      *
-     * @x-autobe-database-schema-property member
-     * @x-autobe-specification Relation join from todo_app_todos.todo_app_member_id to todo_app_members.id. Returns ITodoAppMember.ISummary.
+         * @x-autobe-database-schema-property member
+         * @x-autobe-specification Relation join from
+         *   todo_app_todos.todo_app_member_id to todo_app_members.id. Returns
+         *   ITodoAppMember.ISummary.
      */
     member: ITodoAppMember.ISummary;
   };
@@ -303,8 +341,9 @@ export namespace ITodoAppTodo {
      *
      * Provides the primary visible label for the todo. Must be a non-empty string when provided. Only provided fields are updated; omitted fields retain their current values.
      *
-     * @x-autobe-database-schema-property title
-     * @x-autobe-specification Direct mapping from todo_app_todos.title. Updated only if provided in request body (patch semantics).
+         * @x-autobe-database-schema-property title
+         * @x-autobe-specification Direct mapping from todo_app_todos.title.
+         *   Updated only if provided in request body (patch semantics).
      */
     title?: string | undefined;
 
@@ -313,8 +352,10 @@ export namespace ITodoAppTodo {
      *
      * Provides additional context beyond the title. Set to null to clear the current description. Only provided fields are updated; omitted fields retain their current values.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from todo_app_todos.description. Set to null to clear the current value. Updated only if provided in request body (patch semantics).
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_todos.description. Set to null to clear the current value.
+         *   Updated only if provided in request body (patch semantics).
      */
     description?: string | null | undefined;
 
@@ -323,8 +364,11 @@ export namespace ITodoAppTodo {
      *
      * Date-only value; the time component is semantically ignored. When sorting by start date ascending, todos with a null start_date appear after all todos that have a start_date set. Set to null to clear the current start date. Only provided fields are updated; omitted fields retain their current values.
      *
-     * @x-autobe-database-schema-property start_date
-     * @x-autobe-specification Direct mapping from todo_app_todos.start_date. Date-only value — time component is semantically ignored. Set to null to clear the current value. Updated only if provided in request body (patch semantics).
+         * @x-autobe-database-schema-property start_date
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_todos.start_date. Date-only value — time component is
+         *   semantically ignored. Set to null to clear the current value.
+         *   Updated only if provided in request body (patch semantics).
      */
     start_date?: (string & tags.Format<"date-time">) | null | undefined;
 
@@ -333,8 +377,11 @@ export namespace ITodoAppTodo {
      *
      * Date-only value; the time component is semantically ignored. When sorting by due date ascending, todos with a null due_date appear after all todos that have a due_date set. Set to null to clear the current due date. Only provided fields are updated; omitted fields retain their current values.
      *
-     * @x-autobe-database-schema-property due_date
-     * @x-autobe-specification Direct mapping from todo_app_todos.due_date. Date-only value — time component is semantically ignored. Set to null to clear the current value. Updated only if provided in request body (patch semantics).
+         * @x-autobe-database-schema-property due_date
+         * @x-autobe-specification Direct mapping from todo_app_todos.due_date.
+         *   Date-only value — time component is semantically ignored. Set to
+         *   null to clear the current value. Updated only if provided in
+         *   request body (patch semantics).
      */
     due_date?: (string & tags.Format<"date-time">) | null | undefined;
   };

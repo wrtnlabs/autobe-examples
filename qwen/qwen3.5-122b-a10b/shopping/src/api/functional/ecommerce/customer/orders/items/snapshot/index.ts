@@ -32,7 +32,8 @@ export * as variant from "./variant/index";
  * @param props.itemId UUID of the order item whose snapshot to retrieve (global scope)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Query the ecommerce_order_item_snapshots table by joining with ecommerce_order_items to validate ownership and authorization.
+ * @x-autobe-specification Query the ecommerce_order_item_snapshots table by
+ *   joining with ecommerce_order_items to validate ownership and authorization.
  *
  * **Implementation Steps**
  *

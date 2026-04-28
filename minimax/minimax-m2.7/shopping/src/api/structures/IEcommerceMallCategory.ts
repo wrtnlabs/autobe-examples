@@ -12,8 +12,9 @@ export type IEcommerceMallCategory = {
    *
    * This is the system-generated UUID primary key assigned at category creation. It is used to reference the category in other API endpoints and database relations.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_categories.id. UUID primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from ecommerce_mall_categories.id.
+     *   UUID primary key.
    */
   id: string & tags.Format<"uuid">;
 
@@ -22,8 +23,10 @@ export type IEcommerceMallCategory = {
    *
    * The name must be unique among categories sharing the same parent. For top-level categories, uniqueness is global. For subcategories, uniqueness is scoped to their parent category.
    *
-   * @x-autobe-database-schema-property name
-   * @x-autobe-specification Direct mapping from ecommerce_mall_categories.name. Must be unique within same parent scope.
+     * @x-autobe-database-schema-property name
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_categories.name. Must be unique within same parent
+     *   scope.
    */
   name: string;
 
@@ -32,8 +35,9 @@ export type IEcommerceMallCategory = {
    *
    * This field provides supplementary information about the category's purpose or contents. It is nullable since not all categories require a description.
    *
-   * @x-autobe-database-schema-property description
-   * @x-autobe-specification Direct mapping from ecommerce_mall_categories.description. Nullable field.
+     * @x-autobe-database-schema-property description
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_categories.description. Nullable field.
    */
   description?: string | null | undefined;
 
@@ -42,8 +46,10 @@ export type IEcommerceMallCategory = {
    *
    * For subcategories, this references the parent category. For top-level categories, this is null. The parent object includes only id and name for summary view.
    *
-   * @x-autobe-specification Join from ecommerce_mall_categories.parent_id to ecommerce_mall_categories.id. Returns ISummary with id and name. Nullable - null for top-level categories.
-   * @x-autobe-database-schema-property parent
+     * @x-autobe-specification Join from ecommerce_mall_categories.parent_id to
+     *   ecommerce_mall_categories.id. Returns ISummary with id and name.
+     *   Nullable - null for top-level categories.
+     * @x-autobe-database-schema-property parent
    */
   parent: IEcommerceMallCategory.ISummary | null;
 
@@ -52,8 +58,9 @@ export type IEcommerceMallCategory = {
    *
    * This is automatically set when the category is first created and cannot be modified afterwards.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_categories.created_at. System-managed timestamp.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_categories.created_at. System-managed timestamp.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -62,8 +69,10 @@ export type IEcommerceMallCategory = {
    *
    * This field updates automatically whenever any category attribute (name, description, or parent) is changed.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_categories.updated_at. Updated on any field modification.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_categories.updated_at. Updated on any field
+     *   modification.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -72,8 +81,9 @@ export type IEcommerceMallCategory = {
    *
    * When null, the category is active and visible. When set, the category has been deleted but data is preserved. Deleted categories return 404 on direct retrieval but may be referenced in historical data.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_categories.deleted_at. Nullable soft delete timestamp.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_categories.deleted_at. Nullable soft delete timestamp.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 
@@ -82,7 +92,9 @@ export type IEcommerceMallCategory = {
    *
    * This computed value indicates how many direct child categories exist. Only active (non-deleted) subcategories are counted.
    *
-   * @x-autobe-specification COUNT of ecommerce_mall_categories where parent_id equals this category's id AND deleted_at IS NULL. Aggregated count of immediate child subcategories.
+     * @x-autobe-specification COUNT of ecommerce_mall_categories where
+     *   parent_id equals this category's id AND deleted_at IS NULL. Aggregated
+     *   count of immediate child subcategories.
    */
   subcategories_count: number & tags.Type<"int32">;
 
@@ -91,8 +103,10 @@ export type IEcommerceMallCategory = {
    *
    * Each child includes its id, name, description, and further nested children. Subcategories are only included if they are not soft-deleted. The array is sorted alphabetically by name.
    *
-   * @x-autobe-database-schema-property subcategories
-   * @x-autobe-specification HAS-MANY relation: ecommerce_mall_categories where parent_id equals this category's id AND deleted_at IS NULL. Returns full ITree objects with children nested.
+     * @x-autobe-database-schema-property subcategories
+     * @x-autobe-specification HAS-MANY relation: ecommerce_mall_categories
+     *   where parent_id equals this category's id AND deleted_at IS NULL.
+     *   Returns full ITree objects with children nested.
    */
   subcategories: IEcommerceMallCategory.ITree[];
 };
@@ -108,7 +122,10 @@ export namespace IEcommerceMallCategory {
      *
      * Defines the upper bound on how many records can be returned in a single page response. The actual number of records returned may be less than this value on the final page or when total matching records are fewer than the limit.
      *
-     * @x-autobe-specification Maximum number of records per page. Valid range: minimum 1, maximum 100. Maps directly to LIMIT clause in SQL query against ecommerce_mall_categories. When omitted, default limit should be applied by the query layer.
+         * @x-autobe-specification Maximum number of records per page. Valid
+         *   range: minimum 1, maximum 100. Maps directly to LIMIT clause in SQL
+         *   query against ecommerce_mall_categories. When omitted, default
+         *   limit should be applied by the query layer.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -119,7 +136,10 @@ export namespace IEcommerceMallCategory {
      *
      * When provided, returns only categories whose name contains the specified text. Search is case-insensitive for better user experience.
      *
-     * @x-autobe-specification Filter by category name. Applies case-insensitive partial match (ILIKE pattern with %wildcards%) against ecommerce_mall_categories.name column. When provided, adds WHERE clause: name ILIKE '%' || name || '%'.
+         * @x-autobe-specification Filter by category name. Applies
+         *   case-insensitive partial match (ILIKE pattern with %wildcards%)
+         *   against ecommerce_mall_categories.name column. When provided, adds
+         *   WHERE clause: name ILIKE '%' || name || '%'.
      */
     name?: string | undefined;
 
@@ -128,7 +148,10 @@ export namespace IEcommerceMallCategory {
      *
      * Used in combination with limit to navigate through large result sets. The offset specifies how many records to skip from the beginning of the matching results.
      *
-     * @x-autobe-specification Number of records to skip for cursor-based pagination. Maps directly to OFFSET clause in SQL query against ecommerce_mall_categories. Typically used with page to calculate offset: offset = (page - 1) * limit.
+         * @x-autobe-specification Number of records to skip for cursor-based
+         *   pagination. Maps directly to OFFSET clause in SQL query against
+         *   ecommerce_mall_categories. Typically used with page to calculate
+         *   offset: offset = (page - 1) * limit.
      */
     offset?: (number & tags.Type<"int32">) | undefined;
 
@@ -137,7 +160,10 @@ export namespace IEcommerceMallCategory {
      *
      * When set to true, returns only categories where parent_id is null (root categories). When false or omitted, returns all categories matching other filter criteria.
      *
-     * @x-autobe-specification Filter flag that when true, adds condition parent_id IS NULL on ecommerce_mall_categories, returning only top-level categories (root categories without a parent). When false or omitted, this filter is not applied.
+         * @x-autobe-specification Filter flag that when true, adds condition
+         *   parent_id IS NULL on ecommerce_mall_categories, returning only
+         *   top-level categories (root categories without a parent). When false
+         *   or omitted, this filter is not applied.
      */
     onlyParents?: boolean | undefined;
 
@@ -146,7 +172,10 @@ export namespace IEcommerceMallCategory {
      *
      * Specifies which page of results to return. Page numbering starts at 1. Combined with limit to determine which records to return: records are skipped based on (page - 1) * limit.
      *
-     * @x-autobe-specification Page number for offset-based pagination. Minimum value is 1 (1-indexed). Used with limit to calculate offset: offset = (page - 1) * limit. When omitted, defaults to page 1.
+         * @x-autobe-specification Page number for offset-based pagination.
+         *   Minimum value is 1 (1-indexed). Used with limit to calculate
+         *   offset: offset = (page - 1) * limit. When omitted, defaults to page
+         *   1.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -155,7 +184,10 @@ export namespace IEcommerceMallCategory {
      *
      * When provided with a valid category UUID, returns only categories whose parent_id matches the specified value. Use this to retrieve all direct children of a particular parent category.
      *
-     * @x-autobe-specification Filter by parent category UUID. Applies exact match against ecommerce_mall_categories.parent_id column. When provided, returns only subcategories belonging to this specific parent category. Adds WHERE clause: parent_id = parentId.
+         * @x-autobe-specification Filter by parent category UUID. Applies exact
+         *   match against ecommerce_mall_categories.parent_id column. When
+         *   provided, returns only subcategories belonging to this specific
+         *   parent category. Adds WHERE clause: parent_id = parentId.
      */
     parentId?: (string & tags.Format<"uuid">) | undefined;
   };
@@ -167,15 +199,15 @@ export namespace IEcommerceMallCategory {
    */
   export type ICreate = {
     /**
-     * @x-autobe-database-schema-property description
+         * @x-autobe-database-schema-property description
      */
     description?: string | null | undefined;
     /**
-     * @x-autobe-database-schema-property name
+         * @x-autobe-database-schema-property name
      */
     name: string;
     /**
-     * @x-autobe-database-schema-property parent_id
+         * @x-autobe-database-schema-property parent_id
      */
     parent_id?: (string & tags.Format<"uuid">) | null | undefined;
   };
@@ -193,21 +225,21 @@ export namespace IEcommerceMallCategory {
     /**
      * Category name displayed to users. Must be unique within the same parent scope.
      *
-     * @x-autobe-database-schema-property name
+         * @x-autobe-database-schema-property name
      */
     name?: (string & tags.MaxLength<255>) | undefined;
 
     /**
      * Optional category description providing additional context about the category.
      *
-     * @x-autobe-database-schema-property description
+         * @x-autobe-database-schema-property description
      */
     description?: (string & tags.MaxLength<1000>) | null | undefined;
 
     /**
      * Reference to parent category. Set to null to make this a top-level category. Cannot reference a subcategory (enforces max one-level nesting).
      *
-     * @x-autobe-database-schema-property parent_id
+         * @x-autobe-database-schema-property parent_id
      */
     parentId?: (string & tags.Format<"uuid">) | null | undefined;
   };
@@ -225,8 +257,9 @@ export namespace IEcommerceMallCategory {
      *
      * This UUID serves as the primary key for the category and is used to reference categories in other operations such as product filtering and category detail retrieval.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_mall_categories.id (UUID primary key).
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_categories.id (UUID primary key).
      */
     id: string & tags.Format<"uuid">;
 
@@ -235,8 +268,10 @@ export namespace IEcommerceMallCategory {
      *
      * Must be unique within the same parent scope. For example, two different parent categories can each have a subcategory named 'Electronics', but a single parent cannot have two subcategories both named 'Electronics'.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from ecommerce_mall_categories.name. Unique constraint within same parent scope.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_categories.name. Unique constraint within same
+         *   parent scope.
      */
     name: string;
 
@@ -245,8 +280,9 @@ export namespace IEcommerceMallCategory {
      *
      * When present, this field contains a human-readable description of what products or subcategories fall under this category. May be null for categories without extended descriptions.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from ecommerce_mall_categories.description. Nullable field.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_categories.description. Nullable field.
      */
     description?: null | string | undefined;
 
@@ -255,8 +291,13 @@ export namespace IEcommerceMallCategory {
      *
      * Contains all direct subcategories under this parent. Each subcategory is represented as an IEcommerceMallCategory.ITree node with its own nested children. Terminal nodes (subcategories without further children) have an empty children array.
      *
-     * @x-autobe-database-schema-property subcategories
-     * @x-autobe-specification Maps to ecommerce_mall_categories.subcategories relation. Recursive array of IEcommerceMallCategory.ITree nodes representing immediate child subcategories. Each subcategory node contains its own id, name, description, and recursively nested children array (empty for terminal nodes). Sorted alphabetically by name.
+         * @x-autobe-database-schema-property subcategories
+         * @x-autobe-specification Maps to
+         *   ecommerce_mall_categories.subcategories relation. Recursive array
+         *   of IEcommerceMallCategory.ITree nodes representing immediate child
+         *   subcategories. Each subcategory node contains its own id, name,
+         *   description, and recursively nested children array (empty for
+         *   terminal nodes). Sorted alphabetically by name.
      */
     children: IEcommerceMallCategory.ITree[];
   };
@@ -278,8 +319,10 @@ export namespace IEcommerceMallCategory {
      *
      * This UUID serves as the primary key for the category and is used to reference categories in other operations such as product filtering and category detail retrieval.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_mall_categories.id. UUID primary key with database unique constraint.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_categories.id. UUID primary key with database unique
+         *   constraint.
      */
     id: string & tags.Format<"uuid">;
 
@@ -288,8 +331,10 @@ export namespace IEcommerceMallCategory {
      *
      * Must be unique within the same parent scope. For example, two different parent categories can each have a subcategory named 'Electronics', but a single parent cannot have two subcategories both named 'Electronics'.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from ecommerce_mall_categories.name. Unique constraint enforced within parent scope via database @@unique([parent_id, name]).
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_categories.name. Unique constraint enforced within
+         *   parent scope via database @@unique([parent_id, name]).
      */
     name: string;
 
@@ -298,8 +343,9 @@ export namespace IEcommerceMallCategory {
      *
      * When present, this field contains a human-readable description of what products or subcategories fall under this category. May be null for categories without extended descriptions.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from ecommerce_mall_categories.description. Nullable String column.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_categories.description. Nullable String column.
      */
     description?: null | string | undefined;
   };

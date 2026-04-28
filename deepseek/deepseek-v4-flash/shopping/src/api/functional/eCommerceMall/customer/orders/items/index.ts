@@ -23,7 +23,8 @@ import { IPageIECommerceMallOrderItem } from "../../../../../structures/IPageIEC
  * @param props.body Search criteria for filtering order items within the specified order. Supports filtering by item status (paid, shipped, delivered, cancelled, refunded) and standard pagination parameters (page, limit).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Resolve the order by its unique `code` field. If no order with the given code exists, return 404 Not Found.
+ * @x-autobe-specification Resolve the order by its unique `code` field. If no
+ *   order with the given code exists, return 404 Not Found.
  *
  * Apply actor-based data filtering automatically:
  * - Customer: join with e_commerce_mall_orders and filter by e_commerce_mall_customer_id matching the authenticated customer
@@ -136,7 +137,9 @@ export namespace index {
  * @param props.itemId The unique identifier (UUID) of the order item to retrieve.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Query e_commerce_mall_order_items by UUID (itemId) after verifying the item belongs to the order identified by orderCode (join through e_commerce_mall_orders using the unique code constraint).
+ * @x-autobe-specification Query e_commerce_mall_order_items by UUID (itemId)
+ *   after verifying the item belongs to the order identified by orderCode (join
+ *   through e_commerce_mall_orders using the unique code constraint).
  *
  * Join the following related data:
  * - e_commerce_mall_order_item_snapshots (product-variant snapshot): product_name, product_description, product_base_price, variant_sku, variant_options, variant_price

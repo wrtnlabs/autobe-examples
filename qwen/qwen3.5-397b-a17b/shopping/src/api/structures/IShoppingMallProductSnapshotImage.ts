@@ -16,8 +16,9 @@ export type IShoppingMallProductSnapshotImage = {
    *
    * Uniquely identifies this image within the product snapshot images table. Generated as a UUID when the snapshot is created. Used to retrieve specific image records via API endpoints.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_product_snapshot_images.id. UUID format.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_product_snapshot_images.id. UUID format.
    */
   id: string & tags.Format<"uuid">;
 
@@ -26,8 +27,10 @@ export type IShoppingMallProductSnapshotImage = {
    *
    * This field stores the location of the image file captured when the product snapshot was created. The URL is preserved immutably to maintain accurate historical representation, even if the original image is later modified or deleted.
    *
-   * @x-autobe-specification Direct mapping from shopping_mall_product_snapshot_images.image_url. Stores the image URL as it existed at snapshot creation time. Must be valid URI format.
-   * @x-autobe-database-schema-property image_url
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_product_snapshot_images.image_url. Stores the image URL
+     *   as it existed at snapshot creation time. Must be valid URI format.
+     * @x-autobe-database-schema-property image_url
    */
   imageUrl: string & tags.Format<"uri">;
 
@@ -36,8 +39,10 @@ export type IShoppingMallProductSnapshotImage = {
    *
    * Images are sorted by this field in ascending order. The image with the lowest displayOrder value appears first and serves as the main/thumbnail image. Subsequent images follow in order. This ordering is preserved in the snapshot to maintain accurate historical representation.
    *
-   * @x-autobe-database-schema-property display_order
-   * @x-autobe-specification Direct mapping from shopping_mall_product_snapshot_images.display_order. Integer value for sorting images in ascending order.
+     * @x-autobe-database-schema-property display_order
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_product_snapshot_images.display_order. Integer value for
+     *   sorting images in ascending order.
    */
   displayOrder: number & tags.Type<"int32">;
 
@@ -46,8 +51,10 @@ export type IShoppingMallProductSnapshotImage = {
    *
    * Records the exact time when the product snapshot was created, preserving when this image configuration existed. This field is immutable and cannot be modified after creation. Used for chronological ordering of product history.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from shopping_mall_product_snapshot_images.created_at. DateTime in ISO 8601 format with timezone.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_product_snapshot_images.created_at. DateTime in ISO 8601
+     *   format with timezone.
    */
   createdAt: string & tags.Format<"date-time">;
 
@@ -56,8 +63,11 @@ export type IShoppingMallProductSnapshotImage = {
    *
    * This relation provides context about the product snapshot containing this image. Returns a summary representation including the product name, base price, category, and creation timestamp. Enables navigation from an image to its parent snapshot for historical product state verification.
    *
-   * @x-autobe-database-schema-property productSnapshot
-   * @x-autobe-specification Relation mapping via JOIN to shopping_mall_product_snapshots on shopping_mall_product_snapshot_id field. Returns IShoppingMallProductSnapshot.ISummary with product context.
+     * @x-autobe-database-schema-property productSnapshot
+     * @x-autobe-specification Relation mapping via JOIN to
+     *   shopping_mall_product_snapshots on shopping_mall_product_snapshot_id
+     *   field. Returns IShoppingMallProductSnapshot.ISummary with product
+     *   context.
    */
   productSnapshot: IShoppingMallProductSnapshot.ISummary;
 };

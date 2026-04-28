@@ -32,7 +32,8 @@ export * as snapshots from "./snapshots/index";
  * @param props.body Search criteria for filtering reviews including product, customer, rating range, date range, and pagination parameters.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Query ecommerce_reviews table with the following implementation details:
+ * @x-autobe-specification Query ecommerce_reviews table with the following
+ *   implementation details:
  *
  * **Query Logic**
  * - Base query: SELECT from ecommerce_reviews with LEFT JOIN to ecommerce_customers and ecommerce_products for display fields
@@ -162,7 +163,8 @@ export namespace index {
  * @param props.reviewId Unique identifier of the review to retrieve (UUID format).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Query the ecommerce_reviews table by primary key (id) for the given reviewId parameter.
+ * @x-autobe-specification Query the ecommerce_reviews table by primary key (id)
+ *   for the given reviewId parameter.
  *
  * **Implementation Steps**
  *

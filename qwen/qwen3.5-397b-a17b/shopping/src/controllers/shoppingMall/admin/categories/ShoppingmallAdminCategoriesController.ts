@@ -22,9 +22,10 @@ export class ShoppingmallAdminCategoriesController {
    *
    * @param connection
    * @param body Category creation data including name (required), optional description, and optional parentId for subcategories.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Create a new shopping_mall_categories record with the provided name, description, and optional parent_id.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Create a new shopping_mall_categories record with
+     *   the provided name, description, and optional parent_id.
    *
    * 1. Verify the authenticated user has administrator role authorization.
    * 2. Validate that the category name is unique by checking against existing categories (including soft-deleted ones if applicable).
@@ -71,9 +72,10 @@ export class ShoppingmallAdminCategoriesController {
    * @param connection
    * @param categoryId Category identifier (UUID format).
    * @param body Category update data including name and optional description.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Update shopping_mall_categories record by categoryId UUID.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Update shopping_mall_categories record by
+     *   categoryId UUID.
    *
    * Validate requester has administrator role - reject non-admin users.
    * Verify category exists and is not soft deleted.
@@ -118,9 +120,10 @@ export class ShoppingmallAdminCategoriesController {
    *
    * @param connection
    * @param categoryId UUID of the category to delete (administrator access required).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Delete the category with the given categoryId by setting its deleted_at timestamp to the current time.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Delete the category with the given categoryId by
+     *   setting its deleted_at timestamp to the current time.
    *
    * Implementation steps:
    * 1. Verify the requesting user has administrator role (admin or superAdmin)

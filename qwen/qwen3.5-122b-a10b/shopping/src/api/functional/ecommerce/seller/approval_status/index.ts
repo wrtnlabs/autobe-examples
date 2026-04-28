@@ -25,7 +25,8 @@ import { IEcommerceSellerApproval } from "../../../../structures/IEcommerceSelle
  * @param props.connection
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Query the ecommerce_seller_approvals table to retrieve the current seller's approval status.
+ * @x-autobe-specification Query the ecommerce_seller_approvals table to
+ *   retrieve the current seller's approval status.
  *
  * Implementation steps:
  * 1. Extract seller identity from authentication token/session

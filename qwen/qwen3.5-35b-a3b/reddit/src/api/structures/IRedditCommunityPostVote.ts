@@ -13,27 +13,28 @@ import { IRedditCommunityPost } from "./IRedditCommunityPost";
  */
 export type IRedditCommunityPostVote = {
   /**
-   * @x-autobe-database-schema-property id
+     * @x-autobe-database-schema-property id
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * The direction of the vote: upvote or downvote.
    *
-   * @x-autobe-specification Direct mapping from reddit_community_post_votes.vote_type column.
-   * @x-autobe-database-schema-property vote_type
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_post_votes.vote_type column.
+     * @x-autobe-database-schema-property vote_type
    */
   vote_type: string;
   /**
-   * @x-autobe-database-schema-property created_at
+     * @x-autobe-database-schema-property created_at
    */
   created_at: string & tags.Format<"date-time">;
   /**
-   * @x-autobe-database-schema-property updated_at
+     * @x-autobe-database-schema-property updated_at
    */
   updated_at: string & tags.Format<"date-time">;
   /**
-   * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-database-schema-property deleted_at
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 
@@ -42,8 +43,10 @@ export type IRedditCommunityPostVote = {
    *
    * Full member summary including identifier, username, and account timestamps. This object reference prevents circular back-references when accessing votes within member context.
    *
-   * @x-autobe-specification Join from member_id to reddit_community_members.id. Returns ISummary with id, username, and timestamps.
-   * @x-autobe-database-schema-property member
+     * @x-autobe-specification Join from member_id to
+     *   reddit_community_members.id. Returns ISummary with id, username, and
+     *   timestamps.
+     * @x-autobe-database-schema-property member
    */
   author: IRedditCommunityMember.ISummary;
 
@@ -52,8 +55,10 @@ export type IRedditCommunityPostVote = {
    *
    * Full post summary including identifier, title, type, and engagement metrics. This object reference prevents circular back-references when accessing votes within post context.
    *
-   * @x-autobe-specification Join from post_id to reddit_community_posts.id. Returns ISummary with id, title, post_type, vote_score, comment_count, and timestamps.
-   * @x-autobe-database-schema-property post
+     * @x-autobe-specification Join from post_id to reddit_community_posts.id.
+     *   Returns ISummary with id, title, post_type, vote_score, comment_count,
+     *   and timestamps.
+     * @x-autobe-database-schema-property post
    */
   post: IRedditCommunityPost.ISummary;
 };
@@ -83,7 +88,8 @@ export namespace IRedditCommunityPostVote {
      * Requesting a page beyond the available range returns an empty data array
      * with valid pagination metadata reflecting the actual totals.
      *
-     * @x-autobe-specification 1-indexed page number. Defaults to 1 if not provided.
+         * @x-autobe-specification 1-indexed page number. Defaults to 1 if not
+         *   provided.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
 
@@ -95,7 +101,8 @@ export namespace IRedditCommunityPostVote {
      * enforce upper bounds to prevent excessive resource consumption on large
      * requests.
      *
-     * @x-autobe-specification Maximum records per page. Defaults to 100 if not provided.
+         * @x-autobe-specification Maximum records per page. Defaults to 100 if
+         *   not provided.
      */
     limit?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };

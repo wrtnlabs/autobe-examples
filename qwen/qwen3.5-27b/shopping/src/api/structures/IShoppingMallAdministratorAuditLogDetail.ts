@@ -14,8 +14,10 @@ export type IShoppingMallAdministratorAuditLogDetail = {
    *
    * This UUID uniquely identifies a single field-level change within an administrator audit log. Each detail record represents one field modification, and multiple details can exist for a single audit log when multiple fields are changed simultaneously.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_administrator_audit_log_details.id. Primary key UUID identifying this audit log detail record.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_administrator_audit_log_details.id. Primary key UUID
+     *   identifying this audit log detail record.
    */
   id: string & tags.Format<"uuid">;
 
@@ -24,8 +26,10 @@ export type IShoppingMallAdministratorAuditLogDetail = {
    *
    * This field identifies which specific attribute was changed in the target entity. Examples include 'shop_name', 'status', 'grade', 'description', etc. The field name is stored as a string to maintain flexibility across different entity types and their various attributes.
    *
-   * @x-autobe-database-schema-property field_name
-   * @x-autobe-specification Direct mapping from shopping_mall_administrator_audit_log_details.field_name. String identifying which field was modified in the target entity.
+     * @x-autobe-database-schema-property field_name
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_administrator_audit_log_details.field_name. String
+     *   identifying which field was modified in the target entity.
    */
   field_name: string;
 
@@ -34,8 +38,11 @@ export type IShoppingMallAdministratorAuditLogDetail = {
    *
    * This field captures the previous state of the modified attribute for audit trail purposes. The value is stored as a string regardless of the original data type (boolean, number, datetime, etc.). For null values in the database, the string 'null' is stored. When a new field is added (no previous value exists), this field is null.
    *
-   * @x-autobe-database-schema-property old_value
-   * @x-autobe-specification Direct mapping from shopping_mall_administrator_audit_log_details.old_value. Nullable string storing the previous value as string representation. Null when a new field is added.
+     * @x-autobe-database-schema-property old_value
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_administrator_audit_log_details.old_value. Nullable
+     *   string storing the previous value as string representation. Null when a
+     *   new field is added.
    */
   old_value: string | null;
 
@@ -44,8 +51,11 @@ export type IShoppingMallAdministratorAuditLogDetail = {
    *
    * This field captures the new state of the modified attribute for audit trail purposes. The value is stored as a string regardless of the original data type (boolean, number, datetime, etc.). For null values in the database, the string 'null' is stored. When a field is removed or cleared (set to null), this field is null.
    *
-   * @x-autobe-database-schema-property new_value
-   * @x-autobe-specification Direct mapping from shopping_mall_administrator_audit_log_details.new_value. Nullable string storing the new value as string representation. Null when a field is removed or cleared.
+     * @x-autobe-database-schema-property new_value
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_administrator_audit_log_details.new_value. Nullable
+     *   string storing the new value as string representation. Null when a
+     *   field is removed or cleared.
    */
   new_value: string | null;
 
@@ -54,8 +64,11 @@ export type IShoppingMallAdministratorAuditLogDetail = {
    *
    * This DateTime indicates when the field modification was recorded as part of an administrative action. The timestamp provides temporal context for audit trail analysis and helps reconstruct the sequence of changes when multiple fields are modified in a single action.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from shopping_mall_administrator_audit_log_details.created_at. DateTime timestamp when this field change detail was created as part of an administrator action.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_administrator_audit_log_details.created_at. DateTime
+     *   timestamp when this field change detail was created as part of an
+     *   administrator action.
    */
   created_at: string & tags.Format<"date-time">;
 };

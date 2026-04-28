@@ -16,8 +16,9 @@ export type IHrmTimeTrackingGuestSession = {
    *
    * This UUID is assigned by the system upon session creation and serves as the canonical identifier for referencing this session across the platform.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_guest_sessions.id. Primary key, UUID format.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_guest_sessions.id. Primary key, UUID format.
    */
   id: string & tags.Format<"uuid">;
 
@@ -26,8 +27,9 @@ export type IHrmTimeTrackingGuestSession = {
    *
    * Used for basic security auditing and geographic analysis of access patterns. This value is captured once at session creation and never updated.
    *
-   * @x-autobe-database-schema-property ip
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_guest_sessions.ip.
+     * @x-autobe-database-schema-property ip
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_guest_sessions.ip.
    */
   ip: string;
 
@@ -36,8 +38,9 @@ export type IHrmTimeTrackingGuestSession = {
    *
    * Captures the entry point or landing page where the guest session was initiated, useful for traffic source analysis and navigation path auditing.
    *
-   * @x-autobe-database-schema-property href
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_guest_sessions.href.
+     * @x-autobe-database-schema-property href
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_guest_sessions.href.
    */
   href: string & tags.Format<"uri">;
 
@@ -46,8 +49,9 @@ export type IHrmTimeTrackingGuestSession = {
    *
    * Indicates the previous page from which the guest arrived, enabling analysis of navigation paths, marketing attribution, and external traffic sources.
    *
-   * @x-autobe-database-schema-property referrer
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_guest_sessions.referrer.
+     * @x-autobe-database-schema-property referrer
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_guest_sessions.referrer.
    */
   referrer: string & tags.Format<"uri">;
 
@@ -56,8 +60,10 @@ export type IHrmTimeTrackingGuestSession = {
    *
    * Each session belongs to a single guest record identified by device fingerprint. The guest summary provides essential identifying information about the anonymous visitor who initiated the session.
    *
-   * @x-autobe-database-schema-property guest
-   * @x-autobe-specification Join via hrm_time_tracking_guest_id → hrm_time_tracking_guests.id. Rendered as IHrmTimeTrackingGuest.ISummary.
+     * @x-autobe-database-schema-property guest
+     * @x-autobe-specification Join via hrm_time_tracking_guest_id →
+     *   hrm_time_tracking_guests.id. Rendered as
+     *   IHrmTimeTrackingGuest.ISummary.
    */
   guest: IHrmTimeTrackingGuest.ISummary;
 
@@ -66,8 +72,9 @@ export type IHrmTimeTrackingGuestSession = {
    *
    * This field is never updated — sessions are append-only records. Used for session age calculation and audit purposes.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_guest_sessions.created_at.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_guest_sessions.created_at.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -76,8 +83,9 @@ export type IHrmTimeTrackingGuestSession = {
    *
    * Non-nullable by default for security — every session must have a defined expiration. Clients should check this field to determine if re-authentication is required.
    *
-   * @x-autobe-database-schema-property expired_at
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_guest_sessions.expired_at.
+     * @x-autobe-database-schema-property expired_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_guest_sessions.expired_at.
    */
   expired_at: string & tags.Format<"date-time">;
 };

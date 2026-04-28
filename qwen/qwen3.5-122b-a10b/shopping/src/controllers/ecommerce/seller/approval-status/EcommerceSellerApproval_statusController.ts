@@ -29,9 +29,10 @@ export class EcommerceSellerApproval_statusController {
    * New sellers start with pending approval status. Administrators review and approve or reject registrations. Rejected sellers can view the rejection reason and submit new registration requests after addressing the issues.
    *
    * @param connection
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Query the ecommerce_seller_approvals table to retrieve the current seller's approval status.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Query the ecommerce_seller_approvals table to
+     *   retrieve the current seller's approval status.
    *
    * Implementation steps:
    * 1. Extract seller identity from authentication token/session

@@ -33,20 +33,27 @@ export * as reviews from "./reviews/index";
  * @param props.body Payload for creating a seller-owned product, including product-level attributes required to create shopping_mall_products and any optional dependent creation details supported by IShoppingMallProduct.ICreate.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implementation steps:
- * 1) Parse body as IShoppingMallProduct.ICreate.
- * 2) Resolve seller identity from auth context; set shopping_mall_seller_id to the authenticated seller member id (do not accept/override by client).
- * 3) Validate category selection against shopping_mall_categories hierarchy rules (including optional one-level parent constraint). Reject if invalid pairing; do not write any rows.
- * 4) Validate product code uniqueness within the seller: enforce @@unique([shopping_mall_seller_id, code]). If already exists, reject.
- * 5) Insert into shopping_mall_products with provided name/description/is_featured, and set deleted_at to null.
- * 6) If the request includes images, insert shopping_mall_product_images rows tied to the created product id, validating seller ownership and ensuring image ordering via display_order. On any validation/authorization failure during image handling, roll back the transaction so no product rows or image rows are left in an inconsistent state, and do not create product snapshots.
- * 7) Return the created product by selecting the row and mapping it to IShoppingMallProduct response DTO.
- * Transactionality:
- * - Use a single database transaction for product creation plus any dependent image inserts. Roll back on any error.
- * Edge cases:
- * - Seller suspension: reject early before inserting.
- * - Invalid category nesting: reject before inserting.
- * - Duplicate seller-scoped code: reject with conflict.
+ * @x-autobe-specification Implementation steps: 1) Parse body as
+ *   IShoppingMallProduct.ICreate. 2) Resolve seller identity from auth context;
+ *   set shopping_mall_seller_id to the authenticated seller member id (do not
+ *   accept/override by client). 3) Validate category selection against
+ *   shopping_mall_categories hierarchy rules (including optional one-level
+ *   parent constraint). Reject if invalid pairing; do not write any rows. 4)
+ *   Validate product code uniqueness within the seller: enforce
+ *   @@unique([shopping_mall_seller_id, code]). If already exists, reject. 5)
+ *   Insert into shopping_mall_products with provided
+ *   name/description/is_featured, and set deleted_at to null. 6) If the request
+ *   includes images, insert shopping_mall_product_images rows tied to the
+ *   created product id, validating seller ownership and ensuring image ordering
+ *   via display_order. On any validation/authorization failure during image
+ *   handling, roll back the transaction so no product rows or image rows are
+ *   left in an inconsistent state, and do not create product snapshots. 7)
+ *   Return the created product by selecting the row and mapping it to
+ *   IShoppingMallProduct response DTO. Transactionality: - Use a single
+ *   database transaction for product creation plus any dependent image inserts.
+ *   Roll back on any error. Edge cases: - Seller suspension: reject early
+ *   before inserting. - Invalid category nesting: reject before inserting. -
+ *   Duplicate seller-scoped code: reject with conflict.
  *
  * @path /shoppingMall/member/products
  * @accessor api.functional.shoppingMall.member.products.createProduct
@@ -144,7 +151,8 @@ export namespace createProduct {
  * @param props.body Search criteria, pagination, and sorting options for filtering products.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query `shopping_mall_products` with pagination and filtering derived from `IShoppingMallProduct.IRequest`.
+ * @x-autobe-specification Query `shopping_mall_products` with pagination and
+ *   filtering derived from `IShoppingMallProduct.IRequest`.
  *
  * Implementation steps:
  * 1) Authorization scope
@@ -380,29 +388,31 @@ export namespace at {
  * @param props.body Product update payload containing seller-owned product-level fields to modify.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implementation steps:
- * 1) Parse `productId` from path and validate it is a UUID.
- * 2) Authenticate the caller as a member with seller capabilities (enforce member/seller auth middleware as provided by the system).
- * 3) Load the target row from `shopping_mall_products` by `id`.
- *    - If not found, return 404.
- * 4) Authorization checks:
- *    - Ensure the authenticated seller’s member id matches `shopping_mall_products.shopping_mall_seller_id`.
- *    - If mismatch, reject with authorization/ownership error.
- *    - Ensure the seller is not suspended per administrative status.
- *      If suspended, reject with the seller-suspended edit error.
- * 5) Apply update validation for product-level fields from `IShoppingMallProduct.IUpdate`.
- *    - Validate the referenced category id exists in `shopping_mall_categories`.
- *    - Validate any seller-scoped code constraints if the update allows `code` changes (must remain unique within the same seller: `@@unique([shopping_mall_seller_id, code])`).
- *    - Validate business rules for name/description and featured flag.
- * 6) Transactional write:
- *    - Begin transaction.
- *    - Update `shopping_mall_products` row fields.
- *    - Create an immutable product snapshot row in `shopping_mall_product_snapshots` capturing point-in-time product attributes after applying the update. Ensure snapshot denormalized fields match the product state used for dispute resolution.
- *    - Commit transaction.
- * 7) Return the updated product record as `IShoppingMallProduct`.
- * 8) Error handling:
- *    - Any validation/authorization failure must not update the product row and must not create incorrect snapshots.
- *    - Database constraint violations (e.g., duplicate seller-scoped code) should be mapped to a client-friendly validation error.
+ * @x-autobe-specification Implementation steps: 1) Parse `productId` from path
+ *   and validate it is a UUID. 2) Authenticate the caller as a member with
+ *   seller capabilities (enforce member/seller auth middleware as provided by
+ *   the system). 3) Load the target row from `shopping_mall_products` by `id`.
+ *   - If not found, return 404. 4) Authorization checks: - Ensure the
+ *   authenticated seller’s member id matches
+ *   `shopping_mall_products.shopping_mall_seller_id`. - If mismatch, reject
+ *   with authorization/ownership error. - Ensure the seller is not suspended
+ *   per administrative status. If suspended, reject with the seller-suspended
+ *   edit error. 5) Apply update validation for product-level fields from
+ *   `IShoppingMallProduct.IUpdate`. - Validate the referenced category id
+ *   exists in `shopping_mall_categories`. - Validate any seller-scoped code
+ *   constraints if the update allows `code` changes (must remain unique within
+ *   the same seller: `@@unique([shopping_mall_seller_id, code])`). - Validate
+ *   business rules for name/description and featured flag. 6) Transactional
+ *   write: - Begin transaction. - Update `shopping_mall_products` row fields. -
+ *   Create an immutable product snapshot row in
+ *   `shopping_mall_product_snapshots` capturing point-in-time product
+ *   attributes after applying the update. Ensure snapshot denormalized fields
+ *   match the product state used for dispute resolution. - Commit transaction.
+ *   7) Return the updated product record as `IShoppingMallProduct`. 8) Error
+ *   handling: - Any validation/authorization failure must not update the
+ *   product row and must not create incorrect snapshots. - Database constraint
+ *   violations (e.g., duplicate seller-scoped code) should be mapped to a
+ *   client-friendly validation error.
  *
  * Notes:
  * - This operation must not directly modify variant rows (`shopping_mall_product_variants`) or image rows (`shopping_mall_product_images`). Those concerns are handled by their own flows with their own snapshot-integrity rules.

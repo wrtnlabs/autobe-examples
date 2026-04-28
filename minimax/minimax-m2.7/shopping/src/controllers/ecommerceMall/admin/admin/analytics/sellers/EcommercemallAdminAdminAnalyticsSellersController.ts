@@ -26,9 +26,11 @@ export class EcommercemallAdminAdminAnalyticsSellersController {
    *
    * @param connection
    * @param body Search and filter criteria for seller analytics including approval status, suspension state, date ranges, text search, pagination controls, and sorting preferences.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query ecommerce_mall_sellers table with applied filters for approval_status, suspension status (derived from seller_suspensions table), and date ranges on created_at.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Query ecommerce_mall_sellers table with applied
+     *   filters for approval_status, suspension status (derived from
+     *   seller_suspensions table), and date ranges on created_at.
    *
    * Join with ecommerce_mall_products to calculate product_count per seller (excluding soft-deleted products where deleted_at IS NOT NULL).
    *

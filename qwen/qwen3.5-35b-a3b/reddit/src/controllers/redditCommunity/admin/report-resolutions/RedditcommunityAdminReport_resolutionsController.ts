@@ -20,9 +20,10 @@ export class RedditcommunityAdminReport_resolutionsController {
    *
    * @param connection
    * @param body Search criteria for filtering report resolutions. Supports filtering by resolution status (open, resolved, dismissed, escalated, transferred), resolution type (resolved, dismissed, escalated, transferred), moderator admin ID, community ID, and date range (created_at or resolved_at). Includes pagination parameters for cursor-based or offset-based pagination with configurable page size.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Implement paginated query against reddit_community_report_resolutions table with optional filtering.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Implement paginated query against
+     *   reddit_community_report_resolutions table with optional filtering.
    *
    * Filtering Logic:
    * - status: Filter by resolution status (open, resolved, dismissed, escalated, transferred) - enum validation
@@ -104,9 +105,10 @@ export class RedditcommunityAdminReport_resolutionsController {
    *
    * @param connection
    * @param resolutionId Unique identifier of the report resolution to retrieve.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Implement the following logic to retrieve a report resolution:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Implement the following logic to retrieve a
+     *   report resolution:
    *
    * ### Pre-conditions
    * - User must be authenticated as a moderator (admin account with is_active = true)

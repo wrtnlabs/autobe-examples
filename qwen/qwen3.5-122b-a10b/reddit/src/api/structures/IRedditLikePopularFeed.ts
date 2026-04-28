@@ -34,7 +34,9 @@ export namespace IRedditLikePopularFeed {
      *
      * Omit this parameter when requesting the first page, or provide the cursor value from the previous response's pagination metadata to retrieve the next page.
      *
-     * @x-autobe-specification Cursor token for pagination, decoded to (created_at, id) composite key for deterministic ordering across pages
+         * @x-autobe-specification Cursor token for pagination, decoded to
+         *   (created_at, id) composite key for deterministic ordering across
+         *   pages
      */
     cursor?: string | undefined;
 
@@ -45,7 +47,8 @@ export namespace IRedditLikePopularFeed {
      *
      * This parameter directly maps to the SQL LIMIT clause and affects query performance. Larger values return more data per request but increase response size.
      *
-     * @x-autobe-specification Maximum records per page, validated to range 1-100. Used in SQL LIMIT clause.
+         * @x-autobe-specification Maximum records per page, validated to range
+         *   1-100. Used in SQL LIMIT clause.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -63,7 +66,10 @@ export namespace IRedditLikePopularFeed {
      *
      * Defaults to 'hot' if not specified.
      *
-     * @x-autobe-specification Sorting algorithm: hot (vote_score * recency_factor DESC), new (created_at DESC), top (vote_score DESC with time_filter), or controversial (ABS(vote_score) / total_votes DESC)
+         * @x-autobe-specification Sorting algorithm: hot (vote_score *
+         *   recency_factor DESC), new (created_at DESC), top (vote_score DESC
+         *   with time_filter), or controversial (ABS(vote_score) / total_votes
+         *   DESC)
      */
     sort?: "hot" | "new" | "top" | "controversial" | undefined;
 
@@ -81,7 +87,9 @@ export namespace IRedditLikePopularFeed {
      *
      * If sort=top is used without time_filter, defaults to 'all_time'.
      *
-     * @x-autobe-specification Time boundary for top sorting: today, week, month, year, or all_time. Applied as created_at >= timeBoundary filter when sort=top.
+         * @x-autobe-specification Time boundary for top sorting: today, week,
+         *   month, year, or all_time. Applied as created_at >= timeBoundary
+         *   filter when sort=top.
      */
     time_filter?: "today" | "week" | "month" | "year" | "all_time" | undefined;
 
@@ -92,7 +100,9 @@ export namespace IRedditLikePopularFeed {
      *
      * When provided, only posts whose titles contain the search term (or are similar according to trigram matching) are included in the results. This parameter works in combination with other filters like sort, time_filter, and community_id.
      *
-     * @x-autobe-specification Full-text search query on post titles using GIN trigram index. Implemented as title ILIKE %search% or GIN trigram similarity match.
+         * @x-autobe-specification Full-text search query on post titles using
+         *   GIN trigram index. Implemented as title ILIKE %search% or GIN
+         *   trigram similarity match.
      */
     search?: string | undefined;
 
@@ -103,7 +113,9 @@ export namespace IRedditLikePopularFeed {
      *
      * If omitted or null, posts from all communities are included in the popular feed. This is useful for viewing a specific community's content through the same endpoint used for the global popular feed.
      *
-     * @x-autobe-specification Filter posts by community ID (UUID format). Applied as WHERE reddit_like_community_id = community_id in SQL query.
+         * @x-autobe-specification Filter posts by community ID (UUID format).
+         *   Applied as WHERE reddit_like_community_id = community_id in SQL
+         *   query.
      */
     community_id?: (string & tags.Format<"uuid">) | undefined;
 
@@ -116,7 +128,8 @@ export namespace IRedditLikePopularFeed {
      *
      * Requesting a page number beyond the available range returns an empty data array with valid pagination metadata reflecting the actual total pages.
      *
-     * @x-autobe-specification 1-indexed page number, defaults to 1 if not provided. Alternative to cursor-based pagination.
+         * @x-autobe-specification 1-indexed page number, defaults to 1 if not
+         *   provided. Alternative to cursor-based pagination.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };

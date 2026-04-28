@@ -20,8 +20,9 @@ export type IEcommerceMallReview = {
    *
    * The review identifier is used to reference a specific review in API operations such as editing or retrieving review details. Each review has a globally unique identifier generated at creation time.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_reviews.id. UUID primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from ecommerce_mall_reviews.id.
+     *   UUID primary key.
    */
   id: string & tags.Format<"uuid">;
 
@@ -30,8 +31,9 @@ export type IEcommerceMallReview = {
    *
    * Higher values indicate greater satisfaction. A rating of 5 represents excellent, 1 represents very poor. The rating is required when creating or updating a review.
    *
-   * @x-autobe-database-schema-property rating
-   * @x-autobe-specification Direct mapping from ecommerce_mall_reviews.rating. Integer 1-5.
+     * @x-autobe-database-schema-property rating
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_reviews.rating. Integer 1-5.
    */
   rating: number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<5>;
 
@@ -40,8 +42,9 @@ export type IEcommerceMallReview = {
    *
    * Customers can write descriptive reviews explaining their experience with the product quality, usability, and value. The content is optional—some customers choose to leave only a star rating without text feedback.
    *
-   * @x-autobe-specification Direct mapping from ecommerce_mall_reviews.content. Nullable string, max 5000 characters.
-   * @x-autobe-database-schema-property content
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_reviews.content. Nullable string, max 5000 characters.
+     * @x-autobe-database-schema-property content
    */
   content?: (string & tags.MaxLength<5000>) | null | undefined;
 
@@ -50,8 +53,9 @@ export type IEcommerceMallReview = {
    *
    * Indicates when the customer submitted the review for the product. This timestamp is set at creation time and never changes, even after edits.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_reviews.created_at. ISO 8601 timestamp.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_reviews.created_at. ISO 8601 timestamp.
    */
   createdAt: string & tags.Format<"date-time">;
 
@@ -60,8 +64,9 @@ export type IEcommerceMallReview = {
    *
    * This timestamp changes whenever the customer edits the review content or rating. When a review is first created, updatedAt equals createdAt.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_reviews.updated_at. ISO 8601 timestamp.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_reviews.updated_at. ISO 8601 timestamp.
    */
   updatedAt: string & tags.Format<"date-time">;
 
@@ -70,8 +75,10 @@ export type IEcommerceMallReview = {
    *
    * Returns a summary of the customer including their display name and profile information. When a customer deletes their account, reviews are retained but the customer reference may be anonymized.
    *
-   * @x-autobe-database-schema-property customer
-   * @x-autobe-specification BELONGS-TO relation via ecommerce_mall_customer_id FK. Returns IEcommerceMallCustomer.ISummary. Direct mapping to customer relation.
+     * @x-autobe-database-schema-property customer
+     * @x-autobe-specification BELONGS-TO relation via
+     *   ecommerce_mall_customer_id FK. Returns IEcommerceMallCustomer.ISummary.
+     *   Direct mapping to customer relation.
    */
   customer: IEcommerceMallCustomer.ISummary;
 
@@ -80,8 +87,10 @@ export type IEcommerceMallReview = {
    *
    * Returns a summary of the product including its name, base price, category, and stock availability. The product reference remains valid even if the product is later deleted.
    *
-   * @x-autobe-database-schema-property product
-   * @x-autobe-specification BELONGS-TO relation via ecommerce_mall_product_id FK. Returns IEcommerceMallProduct.ISummary. Direct mapping to product relation.
+     * @x-autobe-database-schema-property product
+     * @x-autobe-specification BELONGS-TO relation via ecommerce_mall_product_id
+     *   FK. Returns IEcommerceMallProduct.ISummary. Direct mapping to product
+     *   relation.
    */
   product: IEcommerceMallProduct.ISummary;
 
@@ -90,8 +99,10 @@ export type IEcommerceMallReview = {
    *
    * Links the review to the specific order item that represents the customer's purchase of this product. This verifies that the reviewer actually purchased and received the product.
    *
-   * @x-autobe-database-schema-property orderItem
-   * @x-autobe-specification BELONGS-TO relation via ecommerce_mall_order_item_id FK. Returns IEcommerceMallOrderItem.ISummary. Direct mapping to orderItem relation.
+     * @x-autobe-database-schema-property orderItem
+     * @x-autobe-specification BELONGS-TO relation via
+     *   ecommerce_mall_order_item_id FK. Returns
+     *   IEcommerceMallOrderItem.ISummary. Direct mapping to orderItem relation.
    */
   orderItem: IEcommerceMallOrderItem.ISummary;
 };
@@ -109,8 +120,10 @@ export namespace IEcommerceMallReview {
      *
      * When present, this field contains the customer's written review describing their experience with the product. Reviews can be ratings-only (content = null) or include detailed feedback (content = string). Text content is limited by database constraints but not enforced by the API layer.
      *
-     * @x-autobe-database-schema-property content
-     * @x-autobe-specification Direct mapping from ecommerce_mall_reviews.content. Nullable - reviews can be ratings-only without text.
+         * @x-autobe-database-schema-property content
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_reviews.content. Nullable - reviews can be
+         *   ratings-only without text.
      */
     content?: string | null | undefined;
 
@@ -119,8 +132,9 @@ export namespace IEcommerceMallReview {
      *
      * This timestamp is immutable once set and reflects the server time when the customer submitted the review. List endpoints sort by this field descending to show most recent reviews first.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_reviews.created_at with camelCase naming convention.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_reviews.created_at with camelCase naming convention.
      */
     createdAt: string & tags.Format<"date-time">;
 
@@ -129,8 +143,12 @@ export namespace IEcommerceMallReview {
      *
      * Contains the reviewer's summary information including their display name (from customer profile). Used to show who wrote each review in list views. The customer relation is denormalized as an object for convenient access in frontend components.
      *
-     * @x-autobe-database-schema-property customer
-     * @x-autobe-specification BELONGS-TO relation: Join ecommerce_mall_reviews.ecommerce_mall_customer_id to ecommerce_mall_customers.id. Returns IEcommerceMallCustomer.ISummary with display name from customer profile.
+         * @x-autobe-database-schema-property customer
+         * @x-autobe-specification BELONGS-TO relation: Join
+         *   ecommerce_mall_reviews.ecommerce_mall_customer_id to
+         *   ecommerce_mall_customers.id. Returns
+         *   IEcommerceMallCustomer.ISummary with display name from customer
+         *   profile.
      */
     customer: IEcommerceMallCustomer.ISummary;
 
@@ -139,8 +157,9 @@ export namespace IEcommerceMallReview {
      *
      * System-generated UUID that uniquely identifies this review across the platform. Use this identifier when editing, deleting, or referencing a specific review. The ID is immutable and cannot be changed after creation.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_mall_reviews.id. UUID primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_reviews.id. UUID primary key.
      */
     id: string & tags.Format<"uuid">;
 
@@ -149,8 +168,11 @@ export namespace IEcommerceMallReview {
      *
      * Contains the product's summary information including its name. Used to display which product the review belongs to in list views. The product relation is denormalized as an object for convenient access in frontend components.
      *
-     * @x-autobe-database-schema-property product
-     * @x-autobe-specification BELONGS-TO relation: Join ecommerce_mall_reviews.ecommerce_mall_product_id to ecommerce_mall_products.id. Returns IEcommerceMallProduct.ISummary with product name and basic info.
+         * @x-autobe-database-schema-property product
+         * @x-autobe-specification BELONGS-TO relation: Join
+         *   ecommerce_mall_reviews.ecommerce_mall_product_id to
+         *   ecommerce_mall_products.id. Returns IEcommerceMallProduct.ISummary
+         *   with product name and basic info.
      */
     product: IEcommerceMallProduct.ISummary;
 
@@ -159,8 +181,10 @@ export namespace IEcommerceMallReview {
      *
      * Integer value where 1 represents the lowest satisfaction (poor) and 5 represents the highest satisfaction (excellent). This field is required for all reviews and is used to calculate average ratings displayed on product pages. Validation ensures the value is between 1 and 5 inclusive.
      *
-     * @x-autobe-database-schema-property rating
-     * @x-autobe-specification Direct mapping from ecommerce_mall_reviews.rating. Integer 1-5 with database constraint.
+         * @x-autobe-database-schema-property rating
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_reviews.rating. Integer 1-5 with database
+         *   constraint.
      */
     rating: number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<5>;
   };
@@ -178,12 +202,14 @@ export namespace IEcommerceMallReview {
      *
      * Customers can write descriptive reviews explaining their experience with the product quality, usability, and value. The content is optional—some customers choose to leave only a star rating without text feedback.
      *
-     * @x-autobe-database-schema-property content
-     * @x-autobe-specification Direct mapping from ecommerce_mall_reviews.content. Nullable string, max 5000 characters. Optional in update since clearing content is valid.
+         * @x-autobe-database-schema-property content
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_reviews.content. Nullable string, max 5000
+         *   characters. Optional in update since clearing content is valid.
      */
     content?: (string & tags.MaxLength<5000>) | null | undefined;
     /**
-     * @x-autobe-database-schema-property rating
+         * @x-autobe-database-schema-property rating
      */
     rating: number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<5>;
   };
@@ -199,7 +225,10 @@ export namespace IEcommerceMallReview {
      *
      * When provided, only reviews for this product are returned. Used primarily by the customer review history endpoint to filter reviews by a particular product.
      *
-     * @x-autobe-specification Filter by product. Maps to ecommerce_mall_reviews.ecommerce_mall_product_id column for exact match filtering. Used primarily in customer review history to filter by specific product.
+         * @x-autobe-specification Filter by product. Maps to
+         *   ecommerce_mall_reviews.ecommerce_mall_product_id column for exact
+         *   match filtering. Used primarily in customer review history to
+         *   filter by specific product.
      */
     productId?: (string & tags.Format<"uuid">) | undefined;
 
@@ -208,7 +237,9 @@ export namespace IEcommerceMallReview {
      *
      * Use with maxRating for range filtering to find reviews within a specific star rating band (e.g., 3-5 stars).
      *
-     * @x-autobe-specification Filter by minimum rating. Maps to ecommerce_mall_reviews.rating column with >= comparison operator. Use with maxRating for range filtering.
+         * @x-autobe-specification Filter by minimum rating. Maps to
+         *   ecommerce_mall_reviews.rating column with >= comparison operator.
+         *   Use with maxRating for range filtering.
      */
     minRating?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<5>)
@@ -219,7 +250,9 @@ export namespace IEcommerceMallReview {
      *
      * Use with minRating for range filtering to find reviews within a specific star rating band (e.g., 1-3 stars).
      *
-     * @x-autobe-specification Filter by maximum rating. Maps to ecommerce_mall_reviews.rating column with <= comparison operator. Use with minRating for range filtering.
+         * @x-autobe-specification Filter by maximum rating. Maps to
+         *   ecommerce_mall_reviews.rating column with <= comparison operator.
+         *   Use with minRating for range filtering.
      */
     maxRating?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<5>)
@@ -230,7 +263,10 @@ export namespace IEcommerceMallReview {
      *
      * Used primarily by product review listings to show only reviews with a specific star rating.
      *
-     * @x-autobe-specification Filter by exact rating. Maps to ecommerce_mall_reviews.rating column with = comparison operator. Used primarily by product review listings for exact match filtering.
+         * @x-autobe-specification Filter by exact rating. Maps to
+         *   ecommerce_mall_reviews.rating column with = comparison operator.
+         *   Used primarily by product review listings for exact match
+         *   filtering.
      */
     rating?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<5>)
@@ -241,7 +277,9 @@ export namespace IEcommerceMallReview {
      *
      * Inclusive lower bound for the creation date range filter. ISO 8601 format required (e.g., 2024-01-01T00:00:00Z).
      *
-     * @x-autobe-specification Filter by minimum creation date. Maps to ecommerce_mall_reviews.created_at column with >= comparison operator. ISO 8601 date-time format required.
+         * @x-autobe-specification Filter by minimum creation date. Maps to
+         *   ecommerce_mall_reviews.created_at column with >= comparison
+         *   operator. ISO 8601 date-time format required.
      */
     createdAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
@@ -250,7 +288,9 @@ export namespace IEcommerceMallReview {
      *
      * Inclusive upper bound for the creation date range filter. ISO 8601 format required (e.g., 2024-12-31T23:59:59Z).
      *
-     * @x-autobe-specification Filter by maximum creation date. Maps to ecommerce_mall_reviews.created_at column with <= comparison operator. ISO 8601 date-time format required.
+         * @x-autobe-specification Filter by maximum creation date. Maps to
+         *   ecommerce_mall_reviews.created_at column with <= comparison
+         *   operator. ISO 8601 date-time format required.
      */
     createdAtTo?: (string & tags.Format<"date-time">) | undefined;
 
@@ -259,7 +299,10 @@ export namespace IEcommerceMallReview {
      *
      * When true, all reviews including deleted ones are returned. When false or omitted, only active (non-deleted) reviews are included in results.
      *
-     * @x-autobe-specification Include deleted records filter. Maps to ecommerce_mall_reviews.deleted_at column. When false/null: apply WHERE deleted_at IS NULL. When true: include all records regardless of deleted status.
+         * @x-autobe-specification Include deleted records filter. Maps to
+         *   ecommerce_mall_reviews.deleted_at column. When false/null: apply
+         *   WHERE deleted_at IS NULL. When true: include all records regardless
+         *   of deleted status.
      */
     deleted?: boolean | undefined;
 
@@ -268,7 +311,10 @@ export namespace IEcommerceMallReview {
      *
      * Opaque string value from previous response's nextCursor field. When provided, returns reviews created before this cursor for stable pagination ordering.
      *
-     * @x-autobe-specification Cursor-based pagination parameter. Encodes created_at + id for stable pagination ordering. Opaque string from previous response's nextCursor field. When provided, returns records created before this cursor.
+         * @x-autobe-specification Cursor-based pagination parameter. Encodes
+         *   created_at + id for stable pagination ordering. Opaque string from
+         *   previous response's nextCursor field. When provided, returns
+         *   records created before this cursor.
      */
     cursor?: string | undefined;
 
@@ -277,7 +323,9 @@ export namespace IEcommerceMallReview {
      *
      * Controls the page size for paginated results. Must be between 1 and 100 items per page.
      *
-     * @x-autobe-specification Page size limit for pagination. Controls maximum number of reviews to return per page. Must be between 1 and 100.
+         * @x-autobe-specification Page size limit for pagination. Controls
+         *   maximum number of reviews to return per page. Must be between 1 and
+         *   100.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -288,7 +336,9 @@ export namespace IEcommerceMallReview {
      *
      * Specifies which page of results to return. Page numbering starts from 1 (not 0). Defaults to page 1 if not provided.
      *
-     * @x-autobe-specification 1-indexed page number for offset-based pagination. Defaults to 1 if not provided. Used by customer review history endpoint for page navigation.
+         * @x-autobe-specification 1-indexed page number for offset-based
+         *   pagination. Defaults to 1 if not provided. Used by customer review
+         *   history endpoint for page navigation.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };
@@ -306,14 +356,14 @@ export namespace IEcommerceMallReview {
     /**
      * Optional text content of the review. Customers can write detailed feedback about the product.
      *
-     * @x-autobe-database-schema-property content
+         * @x-autobe-database-schema-property content
      */
     content?: string | null | undefined;
 
     /**
      * Star rating from 1 to 5. Required field for all reviews.
      *
-     * @x-autobe-database-schema-property rating
+         * @x-autobe-database-schema-property rating
      */
     rating: number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<5>;
   };
@@ -331,7 +381,9 @@ export namespace IEcommerceMallReview {
      *
      * This is the primary key of the order item record, used to identify which specific order item the customer wants to review when submitting a review via POST /customers/me/orders/items/{itemId}/review.
      *
-     * @x-autobe-specification Direct mapping from ecommerce_mall_order_items.id. UUID primary key uniquely identifying this order item eligible for review.
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_order_items.id. UUID primary key uniquely
+         *   identifying this order item eligible for review.
      */
     orderItemId: string & tags.Format<"uuid">;
 
@@ -340,7 +392,10 @@ export namespace IEcommerceMallReview {
      *
      * The human-readable order number that customers use to identify their orders. Helps customers match eligible items to their original purchases.
      *
-     * @x-autobe-specification Direct mapping from ecommerce_mall_orders.order_number. Unique human-readable order reference string assigned at order creation for customer identification.
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_orders.order_number. Unique human-readable order
+         *   reference string assigned at order creation for customer
+         *   identification.
      */
     orderNumber: string;
 
@@ -349,7 +404,9 @@ export namespace IEcommerceMallReview {
      *
      * The product that was purchased in this order item. Used to identify which product the customer is reviewing.
      *
-     * @x-autobe-specification Direct mapping from ecommerce_mall_order_items.ecommerce_mall_product_id. Foreign key to ecommerce_mall_products.id.
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_order_items.ecommerce_mall_product_id. Foreign key
+         *   to ecommerce_mall_products.id.
      */
     productId: string & tags.Format<"uuid">;
 
@@ -358,7 +415,11 @@ export namespace IEcommerceMallReview {
      *
      * This may differ from the current product name if the seller has edited the product after the order was placed. The frozen name from the product snapshot ensures accurate historical reference.
      *
-     * @x-autobe-specification Fallback mapping: ecommerce_mall_product_snapshots.name (from order_items.ecommerce_mall_product_snapshot_id) if product is soft-deleted, else ecommerce_mall_products.name. Preserves product name at time of purchase for dispute resolution.
+         * @x-autobe-specification Fallback mapping:
+         *   ecommerce_mall_product_snapshots.name (from
+         *   order_items.ecommerce_mall_product_snapshot_id) if product is
+         *   soft-deleted, else ecommerce_mall_products.name. Preserves product
+         *   name at time of purchase for dispute resolution.
      */
     productName: string;
 
@@ -367,7 +428,10 @@ export namespace IEcommerceMallReview {
      *
      * Displays the primary product image to help customers visually identify which product they want to review. Uses the first image by display order.
      *
-     * @x-autobe-specification JOIN from ecommerce_mall_products to ecommerce_mall_product_images WHERE display_order=1 (first image). Fallback to snapshot image if product is soft-deleted. Returns product image URL for visual identification.
+         * @x-autobe-specification JOIN from ecommerce_mall_products to
+         *   ecommerce_mall_product_images WHERE display_order=1 (first image).
+         *   Fallback to snapshot image if product is soft-deleted. Returns
+         *   product image URL for visual identification.
      */
     productImageUrl: string & tags.Format<"uri">;
 
@@ -376,7 +440,9 @@ export namespace IEcommerceMallReview {
      *
      * Identifies the exact product variant (size, color, etc.) that was purchased in this order item.
      *
-     * @x-autobe-specification Direct mapping from ecommerce_mall_order_items.ecommerce_mall_product_variant_id. Foreign key to ecommerce_mall_product_variants.id.
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_order_items.ecommerce_mall_product_variant_id.
+         *   Foreign key to ecommerce_mall_product_variants.id.
      */
     variantId: string & tags.Format<"uuid">;
 
@@ -385,7 +451,9 @@ export namespace IEcommerceMallReview {
      *
      * Shows how many units of this product variant were ordered. Note that regardless of quantity, only one review can be submitted per product per order.
      *
-     * @x-autobe-specification Direct mapping from ecommerce_mall_order_items.quantity. Integer representing number of units purchased.
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_order_items.quantity. Integer representing number of
+         *   units purchased.
      */
     quantity: number & tags.Type<"int32">;
 
@@ -394,7 +462,9 @@ export namespace IEcommerceMallReview {
      *
      * This price is frozen at the time of purchase and may differ from the current product price if the seller has updated pricing. Used for reference in dispute resolution.
      *
-     * @x-autobe-specification Direct mapping from ecommerce_mall_order_items.unit_price. Frozen at purchase time, stored as Double precision floating point.
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_order_items.unit_price. Frozen at purchase time,
+         *   stored as Double precision floating point.
      */
     unitPrice: number;
 
@@ -403,7 +473,12 @@ export namespace IEcommerceMallReview {
      *
      * This may differ from the current shop name if the seller has updated their profile after the order. The frozen name from the seller profile snapshot ensures accurate historical reference.
      *
-     * @x-autobe-specification Fallback mapping: ecommerce_mall_seller_profile_snapshots.shop_name (from order_items.ecommerce_mall_seller_profile_snapshot_id) if seller is suspended, else ecommerce_mall_sellers.shop_name (via products.seller relation). Preserves seller name at time of purchase.
+         * @x-autobe-specification Fallback mapping:
+         *   ecommerce_mall_seller_profile_snapshots.shop_name (from
+         *   order_items.ecommerce_mall_seller_profile_snapshot_id) if seller is
+         *   suspended, else ecommerce_mall_sellers.shop_name (via
+         *   products.seller relation). Preserves seller name at time of
+         *   purchase.
      */
     sellerName: string;
 
@@ -412,7 +487,10 @@ export namespace IEcommerceMallReview {
      *
      * The date and time when the customer confirmed or the system marked the item as delivered. Results are sorted by this field in descending order (most recent first), helping customers recall their recent purchases for review.
      *
-     * @x-autobe-specification Direct mapping from ecommerce_mall_order_items.updated_at. Represents the timestamp when order item status changed to 'delivered'. Used as delivery confirmation timestamp. Results sorted by this field DESC.
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_order_items.updated_at. Represents the timestamp
+         *   when order item status changed to 'delivered'. Used as delivery
+         *   confirmation timestamp. Results sorted by this field DESC.
      */
     deliveredAt: string & tags.Format<"date-time">;
   };

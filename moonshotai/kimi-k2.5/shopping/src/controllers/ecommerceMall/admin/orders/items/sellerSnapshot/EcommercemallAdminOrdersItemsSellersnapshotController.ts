@@ -21,9 +21,10 @@ export class EcommercemallAdminOrdersItemsSellersnapshotController {
    * @param connection
    * @param orderId Unique identifier of the order containing the order item (global scope)
    * @param orderItemId Unique identifier of the order item whose seller snapshot to retrieve (scoped to order)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Retrieve the seller profile snapshot from ecommerce_mall_order_item_seller_snapshots table.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Retrieve the seller profile snapshot from
+     *   ecommerce_mall_order_item_seller_snapshots table.
    *
    * Query by orderItemId to find the associated seller snapshot record.
    * Validate that the requesting user has permission to view this order item:

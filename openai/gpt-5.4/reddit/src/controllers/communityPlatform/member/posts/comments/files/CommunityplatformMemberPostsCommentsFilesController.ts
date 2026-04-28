@@ -29,9 +29,11 @@ export class CommunityplatformMemberPostsCommentsFilesController {
    * @param postId Target post's ID that contains the comment discussion
    * @param commentId Target comment's ID within the specified post
    * @param body Metadata for the file to attach to the target comment
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement a service-layer create workflow for `community_platform_comment_files` under the scoped parent route `/posts/{postId}/comments/{commentId}/files`.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implement a service-layer create workflow for
+     *   `community_platform_comment_files` under the scoped parent route
+     *   `/posts/{postId}/comments/{commentId}/files`.
    *
    * 1. Authenticate the caller as a member-scoped actor and reject unauthenticated guest requests.
    * 2. Load the target post from `community_platform_posts` by `id = postId`. If not found, return a not-found error.
@@ -88,9 +90,10 @@ export class CommunityplatformMemberPostsCommentsFilesController {
    * @param postId Target post ID that owns the discussion thread containing the comment
    * @param commentId Target comment ID within the specified post whose attached files are being listed
    * @param body Pagination, filtering, and sorting criteria for comment file attachments
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement this operation as a comment-scoped attachment listing query.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implement this operation as a comment-scoped
+     *   attachment listing query.
    *
    * 1. Validate that a post exists for postId and is viewable in the current context.
    * 2. Validate that a comment exists for commentId, that its community_platform_post_id matches postId, and that the comment is available for viewing under normal discussion rules.
@@ -146,9 +149,11 @@ export class CommunityplatformMemberPostsCommentsFilesController {
    * @param postId Target post identifier that scopes the comment discussion
    * @param commentId Target comment identifier within the specified post
    * @param fileId Target file attachment identifier within the specified comment
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement a read-only service method that fetches one comment attachment by the nested identifiers `postId`, `commentId`, and `fileId`.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implement a read-only service method that fetches
+     *   one comment attachment by the nested identifiers `postId`, `commentId`,
+     *   and `fileId`.
    *
    * First, validate the path parameter formats as UUID values. Query `community_platform_posts` by `id = postId` and confirm the post is viewable according to business visibility rules. Then query `community_platform_comments` by `id = commentId` and `community_platform_post_id = postId` so the comment is guaranteed to belong to the specified post. Exclude comments that are not available for normal viewing, including rows whose lifecycle state indicates removal or moderation-based hiding, and rows whose `deleted_at` is not null, unless broader internal visibility rules explicitly permit administrators to inspect them.
    *
@@ -203,9 +208,10 @@ export class CommunityplatformMemberPostsCommentsFilesController {
    * @param commentId Target comment's ID within the post
    * @param fileId Target attached file's ID within the comment
    * @param body Updated metadata for the comment attachment
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement this operation as a hierarchical update on community_platform_comment_files.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implement this operation as a hierarchical update
+     *   on community_platform_comment_files.
    *
    * 1. Authenticate the caller as a member or an authorized moderator/owner acting within the related community.
    * 2. Load the target comment file by fileId and join its parent community_platform_comments row and parent community_platform_posts row.
@@ -267,9 +273,11 @@ export class CommunityplatformMemberPostsCommentsFilesController {
    * @param postId Target post's ID that scopes the parent discussion context.
    * @param commentId Target comment's ID within the specified post.
    * @param fileId Target attached file's ID within the specified comment.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement this operation as a single-resource deletion for community_platform_comment_files with strict parent-chain validation.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implement this operation as a single-resource
+     *   deletion for community_platform_comment_files with strict parent-chain
+     *   validation.
    *
    * 1. Authenticate the caller and resolve whether the caller is an owning member of the parent comment or a moderator/owner with authority in the community that contains the parent post.
    * 2. Load the target file from community_platform_comment_files by id = fileId and join or separately load its parent comment from community_platform_comments using community_platform_comment_id.

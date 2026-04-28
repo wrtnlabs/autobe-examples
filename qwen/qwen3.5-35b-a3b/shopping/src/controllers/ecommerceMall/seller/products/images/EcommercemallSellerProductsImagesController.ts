@@ -22,9 +22,10 @@ export class EcommercemallSellerProductsImagesController {
    * @param connection
    * @param productId The unique identifier of the product to add the image to.
    * @param body Image upload data including the image URL and display order position. The image_url must be a valid storage location (local or external) where the image file has been uploaded. display_order determines the sequence of images, with lower values appearing first.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Create a new product image record in ecommerce_mall_product_images table.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Create a new product image record in
+     *   ecommerce_mall_product_images table.
    *
    * 1. Validate that the product exists and is not soft-deleted.
    * 2. Verify the authenticated user is the seller who owns the product.
@@ -87,18 +88,18 @@ export class EcommercemallSellerProductsImagesController {
    * @param connection
    * @param productId The UUID of the product whose images are being reordered.
    * @param body Array of image IDs with their new display order values. All IDs must belong to the specified product, and display orders must be sequential integers starting from 1.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification 1. Verify seller authentication token
-   * 2. Load product record and verify seller owns the product
-   * 3. Load all product images from database
-   * 4. Validate all image IDs in request body belong to the specified product
-   * 5. Validate all image IDs exist in the database
-   * 6. Validate display_order values are unique sequential integers starting from 1
-   * 7. Update display_order for each image in a transaction
-   * 8. Update updated_at timestamp on each modified image
-   * 9. Create a product snapshot capturing the new image order (per business rules)
-   * 10. Return the complete updated list of images sorted by display_order ascending
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification 1. Verify seller authentication token 2. Load
+     *   product record and verify seller owns the product 3. Load all product
+     *   images from database 4. Validate all image IDs in request body belong
+     *   to the specified product 5. Validate all image IDs exist in the
+     *   database 6. Validate display_order values are unique sequential
+     *   integers starting from 1 7. Update display_order for each image in a
+     *   transaction 8. Update updated_at timestamp on each modified image 9.
+     *   Create a product snapshot capturing the new image order (per business
+     *   rules) 10. Return the complete updated list of images sorted by
+     *   display_order ascending
    *
    * Edge cases:
    * - Reject if request would result in zero images (at least one must remain)
@@ -147,21 +148,19 @@ export class EcommercemallSellerProductsImagesController {
    * @param connection
    * @param productId The unique identifier of the product this image belongs to.
    * @param imageId The unique identifier of the product image to retrieve.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification 1. Verify the product exists and is accessible by the requesting seller (product owner)
-   * 2. Verify the image_id belongs to the specified product_id
-   * 3. Check that image is not soft deleted (deleted_at is NULL)
-   * 4. Return the full image record with all fields:
-   *    - id: image UUID
-   *    - product_id: parent product UUID
-   *    - image_url: storage URL
-   *    - display_order: integer position
-   *    - created_at: creation timestamp
-   *    - updated_at: last update timestamp
-   * 5. Return 404 if product not found, image not found, or image belongs to different product
-   * 6. Return 403 if requesting seller is not the product owner
-   * 7. Query: SELECT * FROM ecommerce_mall_product_images WHERE id = :imageId AND product_id = :productId AND deleted_at IS NULL
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification 1. Verify the product exists and is accessible by
+     *   the requesting seller (product owner) 2. Verify the image_id belongs to
+     *   the specified product_id 3. Check that image is not soft deleted
+     *   (deleted_at is NULL) 4. Return the full image record with all fields: -
+     *   id: image UUID - product_id: parent product UUID - image_url: storage
+     *   URL - display_order: integer position - created_at: creation timestamp
+     *   - updated_at: last update timestamp 5. Return 404 if product not found,
+     *   image not found, or image belongs to different product 6. Return 403 if
+     *   requesting seller is not the product owner 7. Query: SELECT * FROM
+     *   ecommerce_mall_product_images WHERE id = :imageId AND product_id =
+     *   :productId AND deleted_at IS NULL
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Get(":imageId")
@@ -197,9 +196,11 @@ export class EcommercemallSellerProductsImagesController {
    * @param connection
    * @param productId Unique identifier of the product (UUID format).
    * @param imageId Unique identifier of the product image to delete (UUID format).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Delete operation for ecommerce_mall_product_images table with the following implementation steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Delete operation for
+     *   ecommerce_mall_product_images table with the following implementation
+     *   steps:
    *
    * 1. Authentication & Authorization:
    *    - Verify user is authenticated (logged-in seller)

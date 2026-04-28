@@ -21,10 +21,9 @@ import { IPageICommunityPlatformCommunityBan } from "../../../../../structures/I
  * @param props.communityId Target community identifier whose moderation bans should be listed.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implementation steps:
- * 1) Authorization
- * - Confirm the caller is a moderation-capable actor for `communityId` (community owner or assigned moderator), or a platform admin.
- * - Reject unauthorized actors.
+ * @x-autobe-specification Implementation steps: 1) Authorization - Confirm the
+ *   caller is a moderation-capable actor for `communityId` (community owner or
+ *   assigned moderator), or a platform admin. - Reject unauthorized actors.
  *
  * 2) Base query
  * - Query `community_platform_community_bans` with filter `community_id = :communityId`.

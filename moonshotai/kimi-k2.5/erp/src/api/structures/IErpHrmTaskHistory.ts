@@ -11,56 +11,69 @@ export type IErpHrmTaskHistory = {
   /**
    * Unique identifier for the task history entry.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from erp_hrm_task_histories.id primary key. UUID format.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from erp_hrm_task_histories.id
+     *   primary key. UUID format.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * The task status before this change was applied.
    *
-   * @x-autobe-database-schema-property previous_status
-   * @x-autobe-specification Direct mapping from erp_hrm_task_histories.previous_status. Captures the task status before the change occurred.
+     * @x-autobe-database-schema-property previous_status
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_task_histories.previous_status. Captures the task status before
+     *   the change occurred.
    */
   previousStatus: string;
 
   /**
    * The task status after this change was applied.
    *
-   * @x-autobe-database-schema-property new_status
-   * @x-autobe-specification Direct mapping from erp_hrm_task_histories.new_status. Captures the task status after the change occurred.
+     * @x-autobe-database-schema-property new_status
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_task_histories.new_status. Captures the task status after the
+     *   change occurred.
    */
   newStatus: string;
 
   /**
    * Optional explanation or reason for the status change.
    *
-   * @x-autobe-database-schema-property change_reason
-   * @x-autobe-specification Direct mapping from erp_hrm_task_histories.change_reason. Nullable field allowing optional explanation for the status change.
+     * @x-autobe-database-schema-property change_reason
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_task_histories.change_reason. Nullable field allowing optional
+     *   explanation for the status change.
    */
   changeReason: string | null;
 
   /**
    * Timestamp when this status change was recorded.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from erp_hrm_task_histories.created_at. Timestamp when this history record was created, marking when the status change occurred.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_task_histories.created_at. Timestamp when this history record
+     *   was created, marking when the status change occurred.
    */
   createdAt: string & tags.Format<"date-time">;
 
   /**
    * Summary information about the task whose status was changed.
    *
-   * @x-autobe-database-schema-property task
-   * @x-autobe-specification Join via erp_hrm_task_histories.erp_hrm_task_id foreign key to erp_hrm_tasks table. Returns IErpHrmTask.ISummary with task identification and status information.
+     * @x-autobe-database-schema-property task
+     * @x-autobe-specification Join via erp_hrm_task_histories.erp_hrm_task_id
+     *   foreign key to erp_hrm_tasks table. Returns IErpHrmTask.ISummary with
+     *   task identification and status information.
    */
   task: IErpHrmTask.ISummary;
 
   /**
    * Summary information about the member who performed this status change.
    *
-   * @x-autobe-database-schema-property changedByMember
-   * @x-autobe-specification Join via erp_hrm_task_histories.erp_hrm_member_id foreign key to erp_hrm_members table. Returns IErpHrmMember.ISummary with member profile information who performed the change.
+     * @x-autobe-database-schema-property changedByMember
+     * @x-autobe-specification Join via erp_hrm_task_histories.erp_hrm_member_id
+     *   foreign key to erp_hrm_members table. Returns IErpHrmMember.ISummary
+     *   with member profile information who performed the change.
    */
   changedByMember: IErpHrmMember.ISummary;
 };
@@ -72,49 +85,64 @@ export namespace IErpHrmTaskHistory {
     /**
      * Free-text search string to filter task histories by change reason content.
      *
-     * @x-autobe-specification Computed LIKE query on change_reason column. Concatenate with % wildcards for partial matching across task history reason text.
+         * @x-autobe-specification Computed LIKE query on change_reason column.
+         *   Concatenate with % wildcards for partial matching across task
+         *   history reason text.
      */
     search?: string | null | undefined;
 
     /**
      * Task status filter to find histories involving specific status values.
      *
-     * @x-autobe-specification Computed filter checking against previous_status OR new_status columns in erp_hrm_task_histories. Accepts status values to find histories where status transitioned to/from the specified value.
+         * @x-autobe-specification Computed filter checking against
+         *   previous_status OR new_status columns in erp_hrm_task_histories.
+         *   Accepts status values to find histories where status transitioned
+         *   to/from the specified value.
      */
     status?: string | null | undefined;
 
     /**
      * Start of date range filter for task history creation timestamp (inclusive).
      *
-     * @x-autobe-specification Computed filter mapping to created_at >= startDate. Combined with endDate for range queries on task history timestamp. ISO 8601 date-time format.
+         * @x-autobe-specification Computed filter mapping to created_at >=
+         *   startDate. Combined with endDate for range queries on task history
+         *   timestamp. ISO 8601 date-time format.
      */
     startDate?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * End of date range filter for task history creation timestamp (inclusive).
      *
-     * @x-autobe-specification Computed filter mapping to created_at <= endDate. Combined with startDate for range queries on task history timestamp. ISO 8601 date-time format.
+         * @x-autobe-specification Computed filter mapping to created_at <=
+         *   endDate. Combined with startDate for range queries on task history
+         *   timestamp. ISO 8601 date-time format.
      */
     endDate?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * Filter by the member who performed the status change.
      *
-     * @x-autobe-specification Computed filter mapping to erp_hrm_member_id column. UUID of the member who made the status change, linking to erp_hrm_members table via changedByMember relation.
+         * @x-autobe-specification Computed filter mapping to erp_hrm_member_id
+         *   column. UUID of the member who made the status change, linking to
+         *   erp_hrm_members table via changedByMember relation.
      */
     changedByMemberId?: (string & tags.Format<"uuid">) | null | undefined;
 
     /**
      * Page number for paginated results (1-based).
      *
-     * @x-autobe-specification Computed pagination parameter. 1-based page number for result set pagination. Used with limit to calculate database OFFSET.
+         * @x-autobe-specification Computed pagination parameter. 1-based page
+         *   number for result set pagination. Used with limit to calculate
+         *   database OFFSET.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | null | undefined;
 
     /**
      * Number of results per page.
      *
-     * @x-autobe-specification Computed pagination parameter. Number of records per page. Used with page to calculate database LIMIT and OFFSET.
+         * @x-autobe-specification Computed pagination parameter. Number of
+         *   records per page. Used with page to calculate database LIMIT and
+         *   OFFSET.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -124,7 +152,9 @@ export namespace IErpHrmTaskHistory {
     /**
      * Sort criteria for ordering results (field:direction format).
      *
-     * @x-autobe-specification Computed sorting parameter. Format: 'field:direction' (e.g., 'created_at:desc', 'new_status:asc'). Maps to database ORDER BY clause.
+         * @x-autobe-specification Computed sorting parameter. Format:
+         *   'field:direction' (e.g., 'created_at:desc', 'new_status:asc'). Maps
+         *   to database ORDER BY clause.
      */
     sort?: string | null | undefined;
   };
@@ -136,48 +166,54 @@ export namespace IErpHrmTaskHistory {
     /**
      * Unique identifier for this task history record.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from erp_hrm_task_histories.id.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_task_histories.id.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * The task status before the change occurred.
      *
-     * @x-autobe-database-schema-property previous_status
-     * @x-autobe-specification Direct mapping from erp_hrm_task_histories.previous_status.
+         * @x-autobe-database-schema-property previous_status
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_task_histories.previous_status.
      */
     previous_status: string;
 
     /**
      * The task status after the change occurred.
      *
-     * @x-autobe-database-schema-property new_status
-     * @x-autobe-specification Direct mapping from erp_hrm_task_histories.new_status.
+         * @x-autobe-database-schema-property new_status
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_task_histories.new_status.
      */
     new_status: string;
 
     /**
      * Optional explanation or reason for the status change.
      *
-     * @x-autobe-database-schema-property change_reason
-     * @x-autobe-specification Direct mapping from erp_hrm_task_histories.change_reason. Nullable field.
+         * @x-autobe-database-schema-property change_reason
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_task_histories.change_reason. Nullable field.
      */
     change_reason: string | null;
 
     /**
      * The user (member) who performed the status change.
      *
-     * @x-autobe-database-schema-property changedByMember
-     * @x-autobe-specification Join via erp_hrm_member_id to erp_hrm_members. Returns IErpHrmMember.ISummary.
+         * @x-autobe-database-schema-property changedByMember
+         * @x-autobe-specification Join via erp_hrm_member_id to
+         *   erp_hrm_members. Returns IErpHrmMember.ISummary.
      */
     changed_by: IErpHrmMember.ISummary;
 
     /**
      * Timestamp when the status change was recorded.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from erp_hrm_task_histories.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_task_histories.created_at.
      */
     created_at: string & tags.Format<"date-time">;
   };

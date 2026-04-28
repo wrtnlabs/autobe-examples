@@ -22,13 +22,15 @@ export class EcommercemallAdminAdminAdminsController {
    *
    * @param connection
    * @param body Search criteria including email filter, name filter, date range filters, status filter, and pagination parameters.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query ecommerce_mall_admins table with the following search criteria:
-   * - Filter by email: partial match (LIKE %email%) if email filter provided
-   * - Filter by name: partial match (LIKE %name%) if name filter provided
-   * - Filter by createdAt range: created_after and created_before datetime filters
-   * - Filter by status: 'active' returns only where deleted_at IS NULL, 'deleted' returns only where deleted_at IS NOT NULL, null/omitted returns all
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Query ecommerce_mall_admins table with the
+     *   following search criteria: - Filter by email: partial match (LIKE
+     *   %email%) if email filter provided - Filter by name: partial match (LIKE
+     *   %name%) if name filter provided - Filter by createdAt range:
+     *   created_after and created_before datetime filters - Filter by status:
+     *   'active' returns only where deleted_at IS NULL, 'deleted' returns only
+     *   where deleted_at IS NOT NULL, null/omitted returns all
    *
    * Apply pagination with page number and limit (default 20, max 100).
    * Sort by created_at descending (newest first) by default.
@@ -69,9 +71,10 @@ export class EcommercemallAdminAdminAdminsController {
    *
    * @param connection
    * @param adminId Unique identifier of the administrator account to retrieve (UUID format).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query the ecommerce_mall_admins table using the provided adminId parameter.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Query the ecommerce_mall_admins table using the
+     *   provided adminId parameter.
    *
    * Validate that the requesting user is a super administrator. If not, return 403 Forbidden.
    *

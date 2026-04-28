@@ -24,7 +24,8 @@ import { IShoppingMallVariantSnapshot } from "../../../../../../structures/IShop
  * @param props.body Search criteria including date range filters, price range filters, SKU code search, and pagination parameters (offset, limit, sortBy, sortOrder).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Query shopping_mall_variant_snapshots table with filtering and pagination.
+ * @x-autobe-specification Query shopping_mall_variant_snapshots table with
+ *   filtering and pagination.
  *
  * Path parameters:
  * - productId: Used to identify the product context (for authorization and path structure)
@@ -150,7 +151,8 @@ export namespace index {
  * @param props.snapshotId Unique identifier of the variant snapshot to retrieve.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Query shopping_mall_variant_snapshots table by snapshotId (primary key).
+ * @x-autobe-specification Query shopping_mall_variant_snapshots table by
+ *   snapshotId (primary key).
  *
  * Validate that the snapshot belongs to the specified variantId (shopping_mall_product_variant_id matches variantId).
  *

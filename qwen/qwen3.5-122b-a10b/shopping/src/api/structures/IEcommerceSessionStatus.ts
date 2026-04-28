@@ -32,7 +32,10 @@ export type IEcommerceSessionStatus = {
    * - `seller` — Merchant account with product and inventory management capabilities
    * - `administrator` — Platform administrator with oversight and management capabilities
    *
-   * @x-autobe-specification Discriminator value extracted from JWT token claims. Determined by which user ID field is present in the token: customer_id → 'customer', seller_id → 'seller', admin_id → 'administrator'.
+     * @x-autobe-specification Discriminator value extracted from JWT token
+     *   claims. Determined by which user ID field is present in the token:
+     *   customer_id → 'customer', seller_id → 'seller', admin_id →
+     *   'administrator'.
    */
   type: "customer" | "seller" | "administrator";
 
@@ -45,7 +48,10 @@ export type IEcommerceSessionStatus = {
    *
    * UUID (Universally Unique Identifier) in string format.
    *
-   * @x-autobe-specification Session primary key from the source session table. For customer sessions: ecommerce_customer_sessions.id. For seller sessions: ecommerce_seller_sessions.id. For administrator sessions: ecommerce_admin_sessions.id. UUID format.
+     * @x-autobe-specification Session primary key from the source session
+     *   table. For customer sessions: ecommerce_customer_sessions.id. For
+     *   seller sessions: ecommerce_seller_sessions.id. For administrator
+     *   sessions: ecommerce_admin_sessions.id. UUID format.
    */
   id: string & tags.Format<"uuid">;
 
@@ -64,7 +70,11 @@ export type IEcommerceSessionStatus = {
    * - `seller` type → ecommerce_sellers.id
    * - `administrator` type → ecommerce_admins.id
    *
-   * @x-autobe-specification Computed from JWT token claims. Extracted from customer_id, seller_id, or admin_id claim depending on the user type. Represents the authenticated user's primary key in their respective actor table (ecommerce_customers.id, ecommerce_sellers.id, or ecommerce_admins.id).
+     * @x-autobe-specification Computed from JWT token claims. Extracted from
+     *   customer_id, seller_id, or admin_id claim depending on the user type.
+     *   Represents the authenticated user's primary key in their respective
+     *   actor table (ecommerce_customers.id, ecommerce_sellers.id, or
+     *   ecommerce_admins.id).
    */
   user_id: string & tags.Format<"uuid">;
 
@@ -77,7 +87,11 @@ export type IEcommerceSessionStatus = {
    *
    * ISO 8601 datetime string (e.g., "2024-01-15T10:30:00Z").
    *
-   * @x-autobe-specification Session creation timestamp from the source session table. For customer sessions: ecommerce_customer_sessions.created_at. For seller sessions: ecommerce_seller_sessions.created_at. For administrator sessions: ecommerce_admin_sessions.created_at. ISO 8601 datetime format.
+     * @x-autobe-specification Session creation timestamp from the source
+     *   session table. For customer sessions:
+     *   ecommerce_customer_sessions.created_at. For seller sessions:
+     *   ecommerce_seller_sessions.created_at. For administrator sessions:
+     *   ecommerce_admin_sessions.created_at. ISO 8601 datetime format.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -94,7 +108,11 @@ export type IEcommerceSessionStatus = {
    *
    * Clients should monitor this value and request a token refresh before expiration to maintain continuous authentication.
    *
-   * @x-autobe-specification Session expiration timestamp from the source session table. For customer sessions: ecommerce_customer_sessions.expired_at. For seller sessions: ecommerce_seller_sessions.expired_at. For administrator sessions: ecommerce_admin_sessions.expired_at. ISO 8601 datetime format.
+     * @x-autobe-specification Session expiration timestamp from the source
+     *   session table. For customer sessions:
+     *   ecommerce_customer_sessions.expired_at. For seller sessions:
+     *   ecommerce_seller_sessions.expired_at. For administrator sessions:
+     *   ecommerce_admin_sessions.expired_at. ISO 8601 datetime format.
    */
   expired_at: string & tags.Format<"date-time">;
 
@@ -114,7 +132,10 @@ export type IEcommerceSessionStatus = {
    * - **Regular Administrator**: Can manage categories, oversee products/orders, and manage user accounts
    * - **Super Administrator**: All regular permissions plus ability to approve/reject administrator requests and manage administrator grades
    *
-   * @x-autobe-specification Computed field. For `administrator` type: queries ecommerce_administrator_grades table to retrieve the administrator's current grade (regular or super). For `customer` and `seller` types: always null. Grade information is only relevant for administrators.
+     * @x-autobe-specification Computed field. For `administrator` type: queries
+     *   ecommerce_administrator_grades table to retrieve the administrator's
+     *   current grade (regular or super). For `customer` and `seller` types:
+     *   always null. Grade information is only relevant for administrators.
    */
   grade?: "regular" | "super" | null | undefined;
 };

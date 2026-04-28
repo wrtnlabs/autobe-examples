@@ -25,17 +25,24 @@ import { IErpHrmTimeTrackingOrganization } from "../../../../../../structures/IE
  * @param props.body Request payload identifying which organization’s timezone interpretation should be rebuilt across derived time views.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification 1) Parse request to get target organizationId.
- * 2) Authorization: verify authenticated member belongs to the organization context and has owner authority consistent with the organization settings edit rules.
- * 3) Load erp_hrm_time_tracking_organizations by id; if not found -> 404/NotFound.
- * 4) Validate organization.timezone is non-empty and conforms to timezone interpretation rules; if invalid -> 400/BadRequest.
- * 5) Execute rebuild workflow:
- *    - Recompute any derived organization-scoped time summaries that depend on timezone boundaries.
- *    - Specifically ensure that weekly timesheet period boundaries used for interpretation are based on the updated organization timezone, while preserving historical timelog work_date/start_time/end_time values as recorded.
- *    - If report generations/outputs depend on timezone interpretation, re-run affected computations by creating new report generation runs/outputs rather than mutating timelog atomic data.
- * 6) Update derived state atomically per unit of work; avoid partial updates.
- * 7) Record results to provide observability (if an existing table for rebuild runs exists; otherwise rely on standard activity logging).
- * 8) Return 200/OK with no body (responseBody null) or a minimal success indicator if the implementation layer supports it.
+ * @x-autobe-specification 1) Parse request to get target organizationId. 2)
+ *   Authorization: verify authenticated member belongs to the organization
+ *   context and has owner authority consistent with the organization settings
+ *   edit rules. 3) Load erp_hrm_time_tracking_organizations by id; if not found
+ *   -> 404/NotFound. 4) Validate organization.timezone is non-empty and
+ *   conforms to timezone interpretation rules; if invalid -> 400/BadRequest. 5)
+ *   Execute rebuild workflow: - Recompute any derived organization-scoped time
+ *   summaries that depend on timezone boundaries. - Specifically ensure that
+ *   weekly timesheet period boundaries used for interpretation are based on the
+ *   updated organization timezone, while preserving historical timelog
+ *   work_date/start_time/end_time values as recorded. - If report
+ *   generations/outputs depend on timezone interpretation, re-run affected
+ *   computations by creating new report generation runs/outputs rather than
+ *   mutating timelog atomic data. 6) Update derived state atomically per unit
+ *   of work; avoid partial updates. 7) Record results to provide observability
+ *   (if an existing table for rebuild runs exists; otherwise rely on standard
+ *   activity logging). 8) Return 200/OK with no body (responseBody null) or a
+ *   minimal success indicator if the implementation layer supports it.
  *
  * Edge cases:
  * - If organization deletion is in progress (if applicable), reject to avoid inconsistent tenant state.

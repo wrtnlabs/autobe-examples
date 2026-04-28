@@ -27,9 +27,10 @@ export class EcommercemallAdminSellersController {
    *
    * @param connection
    * @param body Search criteria, filters, and pagination parameters for querying seller accounts
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query the ecommerce_mall_sellers table with filtering and pagination.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Query the ecommerce_mall_sellers table with
+     *   filtering and pagination.
    *
    * Filter capabilities:
    * - approval_status: Filter by 'pending', 'approved', 'rejected', or 'suspended'
@@ -88,9 +89,10 @@ export class EcommercemallAdminSellersController {
    *
    * @param connection
    * @param sellerId Unique identifier of the seller (UUID)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query the ecommerce_mall_sellers table by id matching the sellerId path parameter.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Query the ecommerce_mall_sellers table by id
+     *   matching the sellerId path parameter.
    *
    * Include the following in the response:
    * - id: The seller's unique identifier

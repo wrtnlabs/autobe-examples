@@ -20,15 +20,15 @@ import { IShoppingMallShipment } from "./IShoppingMallShipment";
  */
 export type IShoppingMallOrderItem = {
   /**
-   * @x-autobe-database-schema-property id
+     * @x-autobe-database-schema-property id
    */
   id: string & tags.Format<"uuid">;
   /**
-   * @x-autobe-database-schema-property quantity
+     * @x-autobe-database-schema-property quantity
    */
   quantity: number & tags.Type<"int32"> & tags.Minimum<1>;
   /**
-   * @x-autobe-database-schema-property price
+     * @x-autobe-database-schema-property price
    */
   price: number;
 
@@ -37,28 +37,30 @@ export type IShoppingMallOrderItem = {
    *
    * Tracks the item's progression through the fulfillment workflow. Valid values are: paid (awaiting shipment), shipped (in transit), delivered (confirmed or auto-delivered after 14 days), cancelled (pre-shipment cancellation approved), or refunded (post-delivery return approved).
    *
-   * @x-autobe-specification Direct mapping from shopping_mall_order_items.status column. String with allowed values: paid, shipped, delivered, cancelled, refunded.
-   * @x-autobe-database-schema-property status
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_order_items.status column. String with allowed values:
+     *   paid, shipped, delivered, cancelled, refunded.
+     * @x-autobe-database-schema-property status
    */
   status: string;
   /**
-   * @x-autobe-database-schema-property order
+     * @x-autobe-database-schema-property order
    */
   order: IShoppingMallOrder.ISummary;
   /**
-   * @x-autobe-database-schema-property product
+     * @x-autobe-database-schema-property product
    */
   product: IShoppingMallProduct.ISummary;
   /**
-   * @x-autobe-database-schema-property productVariant
+     * @x-autobe-database-schema-property productVariant
    */
   productVariant: IShoppingMallProductVariant.ISummary;
   /**
-   * @x-autobe-database-schema-property seller
+     * @x-autobe-database-schema-property seller
    */
   seller: IShoppingMallSeller.ISummary;
   /**
-   * @x-autobe-database-schema-property shipment
+     * @x-autobe-database-schema-property shipment
    */
   shipment: IShoppingMallShipment.ISummary | null;
   snapshot: IShoppingMallOrderItemSnapshot;
@@ -66,11 +68,11 @@ export type IShoppingMallOrderItem = {
   refundRequest: IShoppingMallRefundRequest.ISummary | null;
   review: IShoppingMallReview.ISummary | null;
   /**
-   * @x-autobe-database-schema-property created_at
+     * @x-autobe-database-schema-property created_at
    */
   createdAt: string & tags.Format<"date-time">;
   /**
-   * @x-autobe-database-schema-property updated_at
+     * @x-autobe-database-schema-property updated_at
    */
   updatedAt: string & tags.Format<"date-time">;
 };
@@ -92,7 +94,10 @@ export namespace IShoppingMallOrderItem {
      *
      * Optional field — omit for unfiltered results.
      *
-     * @x-autobe-specification Text search filter applied as LIKE match on product name from joined shopping_mall_products table. Implementation: WHERE products.name ILIKE '%search%'. Optional — if omitted, no text filtering applied.
+         * @x-autobe-specification Text search filter applied as LIKE match on
+         *   product name from joined shopping_mall_products table.
+         *   Implementation: WHERE products.name ILIKE '%search%'. Optional — if
+         *   omitted, no text filtering applied.
      */
     search?: string | undefined;
 
@@ -109,7 +114,11 @@ export namespace IShoppingMallOrderItem {
      *
      * Optional field — omit to retrieve items regardless of status.
      *
-     * @x-autobe-specification Status filter applied as exact match on shopping_mall_order_items.status column. Allowed values: paid, shipped, delivered, cancelled, refunded. Implementation: WHERE status = 'value'. Optional — if omitted, no status filtering applied.
+         * @x-autobe-specification Status filter applied as exact match on
+         *   shopping_mall_order_items.status column. Allowed values: paid,
+         *   shipped, delivered, cancelled, refunded. Implementation: WHERE
+         *   status = 'value'. Optional — if omitted, no status filtering
+         *   applied.
      */
     status?:
       | "paid"
@@ -128,7 +137,10 @@ export namespace IShoppingMallOrderItem {
      *
      * Minimum value is 1. Must be a positive integer.
      *
-     * @x-autobe-specification Page number for offset-based pagination. 1-indexed (first page is 1). Implementation: OFFSET = (page - 1) * limit. Default: 1. Minimum: 1. Used with limit to control result set size.
+         * @x-autobe-specification Page number for offset-based pagination.
+         *   1-indexed (first page is 1). Implementation: OFFSET = (page - 1) *
+         *   limit. Default: 1. Minimum: 1. Used with limit to control result
+         *   set size.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -141,7 +153,10 @@ export namespace IShoppingMallOrderItem {
      *
      * Constrained to a minimum of 1 and a maximum of 100 items per page to balance usability with performance.
      *
-     * @x-autobe-specification Maximum number of items per page. Implementation: LIMIT clause in SQL query. Default: 20. Minimum: 1. Maximum: 100 (enforced by validation). Controls response payload size.
+         * @x-autobe-specification Maximum number of items per page.
+         *   Implementation: LIMIT clause in SQL query. Default: 20. Minimum: 1.
+         *   Maximum: 100 (enforced by validation). Controls response payload
+         *   size.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -156,7 +171,11 @@ export namespace IShoppingMallOrderItem {
      *
      * Optional field — omit for unfiltered date range. Commonly used by sellers to query order history for specific time periods.
      *
-     * @x-autobe-specification Date range filter start boundary. Applied as WHERE created_at >= createdAtFrom on shopping_mall_order_items.created_at. Format: ISO 8601 date-time (YYYY-MM-DDTHH:mm:ss.sssZ). Optional — if omitted, no lower bound on creation date.
+         * @x-autobe-specification Date range filter start boundary. Applied as
+         *   WHERE created_at >= createdAtFrom on
+         *   shopping_mall_order_items.created_at. Format: ISO 8601 date-time
+         *   (YYYY-MM-DDTHH:mm:ss.sssZ). Optional — if omitted, no lower bound
+         *   on creation date.
      */
     createdAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
@@ -169,7 +188,11 @@ export namespace IShoppingMallOrderItem {
      *
      * Optional field — omit for unfiltered date range. Typically used together with createdAtFrom to define a specific date range for order history analysis.
      *
-     * @x-autobe-specification Date range filter end boundary. Applied as WHERE created_at <= createdAtTo on shopping_mall_order_items.created_at. Format: ISO 8601 date-time (YYYY-MM-DDTHH:mm:ss.sssZ). Optional — if omitted, no upper bound on creation date.
+         * @x-autobe-specification Date range filter end boundary. Applied as
+         *   WHERE created_at <= createdAtTo on
+         *   shopping_mall_order_items.created_at. Format: ISO 8601 date-time
+         *   (YYYY-MM-DDTHH:mm:ss.sssZ). Optional — if omitted, no upper bound
+         *   on creation date.
      */
     createdAtTo?: (string & tags.Format<"date-time">) | undefined;
   };
@@ -187,8 +210,9 @@ export namespace IShoppingMallOrderItem {
      *
      * This is the primary key of the order item record, generated as a UUID v4. Used to uniquely identify this specific line item within the order system.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_order_items.id. UUID format.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_order_items.id. UUID format.
      */
     id: string & tags.Format<"uuid">;
 
@@ -197,8 +221,9 @@ export namespace IShoppingMallOrderItem {
      *
      * This represents the quantity ordered by the customer for this specific variant. Combined with the unit price, it determines the line item total. Must be a positive integer.
      *
-     * @x-autobe-database-schema-property quantity
-     * @x-autobe-specification Direct mapping from shopping_mall_order_items.quantity. Integer type, must be positive.
+         * @x-autobe-database-schema-property quantity
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_order_items.quantity. Integer type, must be positive.
      */
     quantity: number & tags.Type<"int32">;
 
@@ -207,8 +232,10 @@ export namespace IShoppingMallOrderItem {
      *
      * This price is captured at checkout and preserved for historical accuracy, even if the product's price changes later. Multiplied by quantity to calculate the line item total. Stored as a number for decimal precision.
      *
-     * @x-autobe-database-schema-property price
-     * @x-autobe-specification Direct mapping from shopping_mall_order_items.price. Captured at checkout time as snapshot.
+         * @x-autobe-database-schema-property price
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_order_items.price. Captured at checkout time as
+         *   snapshot.
      */
     price: number;
 
@@ -217,8 +244,10 @@ export namespace IShoppingMallOrderItem {
      *
      * Tracks the item's progression through the fulfillment workflow. Valid values are: paid (awaiting shipment), shipped (in transit), delivered (confirmed or auto-delivered after 14 days), cancelled (pre-shipment cancellation approved), or refunded (post-delivery return approved). This status drives order-level status aggregation and seller workflow queues.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from shopping_mall_order_items.status. Allowed values: paid, shipped, delivered, cancelled, refunded.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_order_items.status. Allowed values: paid, shipped,
+         *   delivered, cancelled, refunded.
      */
     status: string;
 
@@ -227,8 +256,9 @@ export namespace IShoppingMallOrderItem {
      *
      * Records the exact time when the order was placed and this item was added. This timestamp is set once at checkout and never modified. Used for order history sorting and fulfillment timeline tracking.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_order_items.created_at. Set at checkout time.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_order_items.created_at. Set at checkout time.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -237,8 +267,10 @@ export namespace IShoppingMallOrderItem {
      *
      * Updated whenever the order item's status changes (e.g., paid → shipped → delivered) or when a shipment is assigned. Used for tracking fulfillment progress and identifying recently modified items.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from shopping_mall_order_items.updated_at. Updated on status changes and shipment assignment.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_order_items.updated_at. Updated on status changes and
+         *   shipment assignment.
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -247,7 +279,10 @@ export namespace IShoppingMallOrderItem {
      *
      * This code is derived from the parent order's code field and provides a customer-friendly identifier for the order containing this item. Used in customer communications, receipts, and support inquiries. Format typically includes date and sequence number (e.g., ORD-2024-001234).
      *
-     * @x-autobe-specification Computed from JOIN with shopping_mall_orders.code. Query: SELECT orders.code FROM shopping_mall_order_items JOIN shopping_mall_orders ON order_items.shopping_mall_order_id = orders.id.
+         * @x-autobe-specification Computed from JOIN with
+         *   shopping_mall_orders.code. Query: SELECT orders.code FROM
+         *   shopping_mall_order_items JOIN shopping_mall_orders ON
+         *   order_items.shopping_mall_order_id = orders.id.
      */
     orderCode: string;
 
@@ -256,8 +291,10 @@ export namespace IShoppingMallOrderItem {
      *
      * Contains essential product details including name, base price, category, and seller information. This is a nested summary object that provides context about what was purchased without requiring a separate API call.
      *
-     * @x-autobe-database-schema-property product
-     * @x-autobe-specification Relation mapping via JOIN from shopping_mall_order_items.shopping_mall_product_id to shopping_mall_products.id. Returns IShoppingMallProduct.ISummary.
+         * @x-autobe-database-schema-property product
+         * @x-autobe-specification Relation mapping via JOIN from
+         *   shopping_mall_order_items.shopping_mall_product_id to
+         *   shopping_mall_products.id. Returns IShoppingMallProduct.ISummary.
      */
     product: IShoppingMallProduct.ISummary;
 
@@ -266,8 +303,11 @@ export namespace IShoppingMallOrderItem {
      *
      * Contains variant-specific details including SKU code, option values (e.g., color, size), and optional price override. This identifies the exact configuration of the product that was ordered.
      *
-     * @x-autobe-database-schema-property productVariant
-     * @x-autobe-specification Relation mapping via JOIN from shopping_mall_order_items.shopping_mall_product_variant_id to shopping_mall_product_variants.id. Returns IShoppingMallProductVariant.ISummary.
+         * @x-autobe-database-schema-property productVariant
+         * @x-autobe-specification Relation mapping via JOIN from
+         *   shopping_mall_order_items.shopping_mall_product_variant_id to
+         *   shopping_mall_product_variants.id. Returns
+         *   IShoppingMallProductVariant.ISummary.
      */
     productVariant: IShoppingMallProductVariant.ISummary;
 
@@ -276,8 +316,10 @@ export namespace IShoppingMallOrderItem {
      *
      * Contains the seller's identification and contact information. This determines which seller is responsible for shipping and customer service for this item. Used for seller-specific order management and dashboard views.
      *
-     * @x-autobe-database-schema-property seller
-     * @x-autobe-specification Relation mapping via JOIN from shopping_mall_order_items.shopping_mall_seller_id to shopping_mall_sellers.id. Returns IShoppingMallSeller.ISummary.
+         * @x-autobe-database-schema-property seller
+         * @x-autobe-specification Relation mapping via JOIN from
+         *   shopping_mall_order_items.shopping_mall_seller_id to
+         *   shopping_mall_sellers.id. Returns IShoppingMallSeller.ISummary.
      */
     seller: IShoppingMallSeller.ISummary;
 
@@ -286,8 +328,11 @@ export namespace IShoppingMallOrderItem {
      *
      * Contains carrier name, tracking number, and shipping/delivery timestamps when the item has been shipped. Null if the item has not yet been shipped (status is 'paid'). Once a shipment is created by the seller, this field contains the tracking details needed for delivery monitoring.
      *
-     * @x-autobe-database-schema-property shipment
-     * @x-autobe-specification Relation mapping via LEFT JOIN from shopping_mall_order_items.shopping_mall_shipment_id to shopping_mall_shipments.id. Returns IShoppingMallShipment.ISummary or null if not yet shipped.
+         * @x-autobe-database-schema-property shipment
+         * @x-autobe-specification Relation mapping via LEFT JOIN from
+         *   shopping_mall_order_items.shopping_mall_shipment_id to
+         *   shopping_mall_shipments.id. Returns IShoppingMallShipment.ISummary
+         *   or null if not yet shipped.
      */
     shipment: IShoppingMallShipment.ISummary | null;
   };

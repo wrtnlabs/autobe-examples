@@ -59,56 +59,93 @@ export namespace IErpHrmTimeReport {
     /**
      * The grouping dimension used for this report entry. Determines whether the aggregation shows data per employee, per project, or per task.
      *
-     * @x-autobe-specification Value derived from the request parameter 'groupBy'. Determines which dimension to aggregate by: 'employee' groups by employee_id from erp_hrm_timelogs, 'project' groups by project_id, 'task' groups by task_id. This value dictates which of the three entity properties (employee, project, task) will be populated with actual data; the other two remain null.
+         * @x-autobe-specification Value derived from the request parameter
+         *   'groupBy'. Determines which dimension to aggregate by: 'employee'
+         *   groups by employee_id from erp_hrm_timelogs, 'project' groups by
+         *   project_id, 'task' groups by task_id. This value dictates which of
+         *   the three entity properties (employee, project, task) will be
+         *   populated with actual data; the other two remain null.
      */
     groupBy: "employee" | "project" | "task";
 
     /**
      * Employee details when the report is grouped by employee. Contains employee summary with member profile, role, and department. Null when grouping by project or task.
      *
-     * @x-autobe-specification Conditionally populated based on groupBy value. When groupBy='employee': LEFT JOIN erp_hrm_timelogs.employee_id to erp_hrm_employees.id, then JOIN to erp_hrm_members, erp_hrm_roles, and erp_hrm_departments to construct IErpHrmEmployee.ISummary. When groupBy is 'project' or 'task', this property is null. The employee summary includes member profile (display name, avatar), role, and department affiliation.
+         * @x-autobe-specification Conditionally populated based on groupBy
+         *   value. When groupBy='employee': LEFT JOIN
+         *   erp_hrm_timelogs.employee_id to erp_hrm_employees.id, then JOIN to
+         *   erp_hrm_members, erp_hrm_roles, and erp_hrm_departments to
+         *   construct IErpHrmEmployee.ISummary. When groupBy is 'project' or
+         *   'task', this property is null. The employee summary includes member
+         *   profile (display name, avatar), role, and department affiliation.
      */
     employee: IErpHrmEmployee.ISummary | null;
 
     /**
      * Project details when the report is grouped by project. Contains project summary with identification, status, and metadata. Null when grouping by employee or task.
      *
-     * @x-autobe-specification Conditionally populated based on groupBy value. When groupBy='project': LEFT JOIN erp_hrm_timelogs.project_id to erp_hrm_projects.id to construct IErpHrmProject.ISummary containing id, name, description, colorCode, status, budgetHours, startDate, endDate, createdAt. When groupBy is 'employee' or 'task', this property is null.
+         * @x-autobe-specification Conditionally populated based on groupBy
+         *   value. When groupBy='project': LEFT JOIN
+         *   erp_hrm_timelogs.project_id to erp_hrm_projects.id to construct
+         *   IErpHrmProject.ISummary containing id, name, description,
+         *   colorCode, status, budgetHours, startDate, endDate, createdAt. When
+         *   groupBy is 'employee' or 'task', this property is null.
      */
     project: IErpHrmProject.ISummary | null;
 
     /**
      * Task details when the report is grouped by task. Contains task summary with title, status, priority, and assignment information. Null when grouping by employee or project.
      *
-     * @x-autobe-specification Conditionally populated based on groupBy value. When groupBy='task': LEFT JOIN erp_hrm_timelogs.task_id to erp_hrm_tasks.id, then JOIN to erp_hrm_employees if task is assigned, to construct IErpHrmTask.ISummary. When groupBy is 'employee' or 'project', this property is null. Includes task title, status, priority, assigned employee, and subtask indicator.
+         * @x-autobe-specification Conditionally populated based on groupBy
+         *   value. When groupBy='task': LEFT JOIN erp_hrm_timelogs.task_id to
+         *   erp_hrm_tasks.id, then JOIN to erp_hrm_employees if task is
+         *   assigned, to construct IErpHrmTask.ISummary. When groupBy is
+         *   'employee' or 'project', this property is null. Includes task
+         *   title, status, priority, assigned employee, and subtask indicator.
      */
     task: IErpHrmTask.ISummary | null;
 
     /**
      * Total hours logged for this group, including both billable and non-billable time. Represents the complete time investment for the grouped entity.
      *
-     * @x-autobe-specification Computed as SUM(erp_hrm_timelogs.duration) / 60.0 for all timelogs in the group. Duration is stored in minutes in the database, so division by 60 converts to hours. Includes both billable and non-billable time. Uses double precision for fractional hours. Minimum value constraint: 0.
+         * @x-autobe-specification Computed as SUM(erp_hrm_timelogs.duration) /
+         *   60.0 for all timelogs in the group. Duration is stored in minutes
+         *   in the database, so division by 60 converts to hours. Includes both
+         *   billable and non-billable time. Uses double precision for
+         *   fractional hours. Minimum value constraint: 0.
      */
     totalHours: number & tags.Minimum<0>;
 
     /**
      * Total billable hours logged for this group. Only includes time entries marked as billable, representing revenue-generating work.
      *
-     * @x-autobe-specification Computed as SUM(erp_hrm_timelogs.duration WHERE billable = true) / 60.0. Only includes timelog entries where the billable flag is true. Duration is stored in minutes, converted to hours. Uses double precision for fractional hours. Minimum value constraint: 0.
+         * @x-autobe-specification Computed as SUM(erp_hrm_timelogs.duration
+         *   WHERE billable = true) / 60.0. Only includes timelog entries where
+         *   the billable flag is true. Duration is stored in minutes, converted
+         *   to hours. Uses double precision for fractional hours. Minimum value
+         *   constraint: 0.
      */
     billableHours: number & tags.Minimum<0>;
 
     /**
      * Total non-billable hours logged for this group. Includes time entries not marked as billable, representing internal or overhead work.
      *
-     * @x-autobe-specification Computed as SUM(erp_hrm_timelogs.duration WHERE billable = false) / 60.0. Only includes timelog entries where the billable flag is false. Alternatively calculated as totalHours - billableHours. Duration is stored in minutes, converted to hours. Uses double precision for fractional hours. Minimum value constraint: 0.
+         * @x-autobe-specification Computed as SUM(erp_hrm_timelogs.duration
+         *   WHERE billable = false) / 60.0. Only includes timelog entries where
+         *   the billable flag is false. Alternatively calculated as totalHours
+         *   - billableHours. Duration is stored in minutes, converted to hours.
+         *   Uses double precision for fractional hours. Minimum value
+         *   constraint: 0.
      */
     nonBillableHours: number & tags.Minimum<0>;
 
     /**
      * Number of individual timelog entries included in this group's aggregation. Provides context for the sample size underlying the hour totals.
      *
-     * @x-autobe-specification Computed as COUNT(*) of erp_hrm_timelogs records matching the group criteria. Counts all timelog entries that contribute to this group's aggregated hours, regardless of billable status. Integer type with minimum value constraint: 0.
+         * @x-autobe-specification Computed as COUNT(*) of erp_hrm_timelogs
+         *   records matching the group criteria. Counts all timelog entries
+         *   that contribute to this group's aggregated hours, regardless of
+         *   billable status. Integer type with minimum value constraint: 0.
      */
     timelogCount: number & tags.Type<"int32"> & tags.Minimum<0>;
   };

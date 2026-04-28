@@ -23,7 +23,8 @@ import { IPageIEcommerceMallShipment } from "../../../../../../structures/IPageI
  * @param props.connection
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Query ecommerce_mall_shipments table filtering by the authenticated seller's ID from the session token.
+ * @x-autobe-specification Query ecommerce_mall_shipments table filtering by the
+ *   authenticated seller's ID from the session token.
  *
  * Join with ecommerce_mall_orders to include order_number for context.
  *
@@ -96,7 +97,8 @@ export namespace list {
  * @param props.shipmentId Unique identifier of the shipment to retrieve. Must be a valid UUID belonging to the authenticated seller.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Query ecommerce_mall_shipments table filtering by id = {shipmentId} and ecommerce_mall_seller_id = authenticated seller ID.
+ * @x-autobe-specification Query ecommerce_mall_shipments table filtering by id
+ *   = {shipmentId} and ecommerce_mall_seller_id = authenticated seller ID.
  *
  * Validate that the shipment exists and belongs to the authenticated seller.
  * Check that deleted_at is null (not soft deleted).
@@ -203,7 +205,8 @@ export namespace at {
  * @param props.body Tracking information update payload containing carrier name and tracking number.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Query ecommerce_mall_shipments by shipmentId ensuring ecommerce_mall_seller_id matches the authenticated seller.
+ * @x-autobe-specification Query ecommerce_mall_shipments by shipmentId ensuring
+ *   ecommerce_mall_seller_id matches the authenticated seller.
  *
  * Validate that shipment exists and belongs to the seller. Return 404 if shipment not found, 403 if shipment belongs to another seller.
  *

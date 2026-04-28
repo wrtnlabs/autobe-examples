@@ -23,8 +23,9 @@ export namespace IEcommerceMallSellerSnapshot {
      *
      * Uniquely identifies the audit trail snapshot within the platform's compliance records. Used to reference this specific historical state of the shop profile for retrieval, auditing, and dispute resolution purposes.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_mall_seller_snapshots.id. UUID primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_seller_snapshots.id. UUID primary key.
      */
     id: string & tags.Format<"uuid">;
 
@@ -33,8 +34,9 @@ export namespace IEcommerceMallSellerSnapshot {
      *
      * This field preserves the exact shop name shown to customers in product listings, order confirmations, and customer-facing pages at the time of the modification. It remains constant even if the seller later updates their shop name, enabling accurate historical attribution of products and transactions.
      *
-     * @x-autobe-database-schema-property shop_name
-     * @x-autobe-specification Direct mapping from ecommerce_mall_seller_snapshots.shop_name. Required string field.
+         * @x-autobe-database-schema-property shop_name
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_seller_snapshots.shop_name. Required string field.
      */
     shop_name: string;
 
@@ -43,8 +45,10 @@ export namespace IEcommerceMallSellerSnapshot {
      *
      * This preserved description includes background information about the seller's business, product offerings, policies, and other details displayed to customers. The text enables historical understanding of the seller's positioning and value proposition at the snapshot point in time.
      *
-     * @x-autobe-database-schema-property shop_description
-     * @x-autobe-specification Direct mapping from ecommerce_mall_seller_snapshots.shop_description. Required string field.
+         * @x-autobe-database-schema-property shop_description
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_seller_snapshots.shop_description. Required string
+         *   field.
      */
     shop_description: string;
 
@@ -53,8 +57,10 @@ export namespace IEcommerceMallSellerSnapshot {
      *
      * This field preserves the visual brand identity that appeared in product listings, seller profiles, and order-related communications when the snapshot was captured. When null, the shop profile had no logo at that point in time.
      *
-     * @x-autobe-database-schema-property shop_logo
-     * @x-autobe-specification Direct mapping from ecommerce_mall_seller_snapshots.shop_logo. Nullable string field with max 80000 character length.
+         * @x-autobe-database-schema-property shop_logo
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_seller_snapshots.shop_logo. Nullable string field
+         *   with max 80000 character length.
      */
     shop_logo: string | null;
 
@@ -63,8 +69,10 @@ export namespace IEcommerceMallSellerSnapshot {
      *
      * This immutable timestamp represents when the snapshot was captured and preserved. It is used for chronological tracking of profile changes, audit trail reconstruction, and determining the temporal context of historical data.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_seller_snapshots.created_at. ISO 8601 date-time format.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_seller_snapshots.created_at. ISO 8601 date-time
+         *   format.
      */
     created_at: string & tags.Format<"date-time">;
   };

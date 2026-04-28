@@ -21,7 +21,8 @@ export * as options from "./options/index";
  * @param props.orderItemId Order item identifier (UUID format) to retrieve the snapshot for.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Query shopping_mall_order_item_snapshots table by orderItemId parameter.
+ * @x-autobe-specification Query shopping_mall_order_item_snapshots table by
+ *   orderItemId parameter.
  *
  * Join with shopping_mall_order_item_snapshot_options to include all variant option key-value pairs.
  *

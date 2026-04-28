@@ -45,7 +45,10 @@ export namespace IHrmGuest {
      *
      * Include this token in the request body when the access token expires. The token should be received from a previous join or refresh operation and stored securely by the client.
      *
-     * @x-autobe-specification JWT refresh token validated against hrm_guest_sessions table. Service checks token existence, expiration status, and single-use constraint before issuing new tokens.
+         * @x-autobe-specification JWT refresh token validated against
+         *   hrm_guest_sessions table. Service checks token existence,
+         *   expiration status, and single-use constraint before issuing new
+         *   tokens.
      */
     refreshToken: string;
   };
@@ -69,8 +72,9 @@ export namespace IHrmGuest {
      *
      * Performs case-insensitive pattern matching on the device_fingerprint column. Use % wildcards for partial matching. Maximum length is 255 characters.
      *
-     * @x-autobe-database-schema-property device_fingerprint
-     * @x-autobe-specification Maps to device_fingerprint column for ILIKE pattern matching. Maximum 255 characters.
+         * @x-autobe-database-schema-property device_fingerprint
+         * @x-autobe-specification Maps to device_fingerprint column for ILIKE
+         *   pattern matching. Maximum 255 characters.
      */
     search?: (string & tags.MaxLength<255>) | undefined;
 
@@ -79,7 +83,10 @@ export namespace IHrmGuest {
      *
      * When true, returns only deleted guests (deleted_at IS NOT NULL). When false, returns only active guests (deleted_at IS NULL). When omitted, includes both active and deleted guests. This is a query parameter, not a direct column mapping.
      *
-     * @x-autobe-specification Computed query parameter. Translates to: true -> deleted_at IS NOT NULL, false -> deleted_at IS NULL, omitted -> no filter on deleted_at. Input is boolean, DB column is nullable datetime.
+         * @x-autobe-specification Computed query parameter. Translates to: true
+         *   -> deleted_at IS NOT NULL, false -> deleted_at IS NULL, omitted ->
+         *   no filter on deleted_at. Input is boolean, DB column is nullable
+         *   datetime.
      */
     deleted?: boolean | undefined;
 
@@ -88,8 +95,10 @@ export namespace IHrmGuest {
      *
      * Returns guests whose created_at value is greater than or equal to this timestamp. Use ISO 8601 format (e.g., 2024-01-01T00:00:00Z).
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Maps to created_at column for filtering guests created after this timestamp (inclusive). Format: ISO 8601 date-time.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Maps to created_at column for filtering
+         *   guests created after this timestamp (inclusive). Format: ISO 8601
+         *   date-time.
      */
     createdAfter?: (string & tags.Format<"date-time">) | undefined;
 
@@ -98,8 +107,10 @@ export namespace IHrmGuest {
      *
      * Returns guests whose created_at value is less than or equal to this timestamp. Use ISO 8601 format (e.g., 2024-12-31T23:59:59Z).
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Maps to created_at column for filtering guests created before this timestamp (inclusive). Format: ISO 8601 date-time.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Maps to created_at column for filtering
+         *   guests created before this timestamp (inclusive). Format: ISO 8601
+         *   date-time.
      */
     createdBefore?: (string & tags.Format<"date-time">) | undefined;
 
@@ -108,7 +119,9 @@ export namespace IHrmGuest {
      *
      * Controls which page of results to retrieve. Page numbering is 1-indexed (first page is 1). Combined with limit to calculate the offset for database queries.
      *
-     * @x-autobe-specification Pagination page number, 1-indexed. Used for offset calculation: (page - 1) * limit. Defaults to 1 if not provided.
+         * @x-autobe-specification Pagination page number, 1-indexed. Used for
+         *   offset calculation: (page - 1) * limit. Defaults to 1 if not
+         *   provided.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -117,7 +130,9 @@ export namespace IHrmGuest {
      *
      * Controls the maximum number of records returned per page. Values outside the 1-100 range will be clamped to the valid bounds. Combined with page to calculate the offset for database queries.
      *
-     * @x-autobe-specification Pagination page size limit. Must be between 1 and 100. Used for offset calculation: (page - 1) * limit. Defaults to 10 if not provided.
+         * @x-autobe-specification Pagination page size limit. Must be between 1
+         *   and 100. Used for offset calculation: (page - 1) * limit. Defaults
+         *   to 10 if not provided.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -149,8 +164,12 @@ export namespace IHrmGuest {
      *
      * The fingerprint is a string value generated client-side. The server validates that the fingerprint is non-empty but does not verify its authenticity - this is a temporary access mechanism for unauthenticated users.
      *
-     * @x-autobe-database-schema-property device_fingerprint
-     * @x-autobe-specification Direct mapping from hrm_guests.device_fingerprint. Unique constraint enforced at database level. Generated client-side from browser/device characteristics including user agent, screen resolution, installed fonts, and other browser APIs.
+         * @x-autobe-database-schema-property device_fingerprint
+         * @x-autobe-specification Direct mapping from
+         *   hrm_guests.device_fingerprint. Unique constraint enforced at
+         *   database level. Generated client-side from browser/device
+         *   characteristics including user agent, screen resolution, installed
+         *   fonts, and other browser APIs.
      */
     device_fingerprint: string;
 
@@ -163,7 +182,10 @@ export namespace IHrmGuest {
      *
      * Must be a valid URI string. Used alongside referrer to understand user navigation patterns and detect suspicious access patterns.
      *
-     * @x-autobe-specification Session context field captured from request and stored in hrm_guest_sessions.href when the session record is created. Represents the entry point URL where the guest session was initiated for analytics and security auditing purposes.
+         * @x-autobe-specification Session context field captured from request
+         *   and stored in hrm_guest_sessions.href when the session record is
+         *   created. Represents the entry point URL where the guest session was
+         *   initiated for analytics and security auditing purposes.
      */
     href: string & tags.Format<"uri">;
 
@@ -176,7 +198,10 @@ export namespace IHrmGuest {
      *
      * Must be a valid URI string. Combined with href, enables understanding of user acquisition channels and navigation flows.
      *
-     * @x-autobe-specification Session context field captured from request and stored in hrm_guest_sessions.referrer when the session record is created. Captures the source page or external link that directed the guest to the system for analytics and security auditing.
+         * @x-autobe-specification Session context field captured from request
+         *   and stored in hrm_guest_sessions.referrer when the session record
+         *   is created. Captures the source page or external link that directed
+         *   the guest to the system for analytics and security auditing.
      */
     referrer: string & tags.Format<"uri">;
 
@@ -189,7 +214,12 @@ export namespace IHrmGuest {
      *
      * Must be a valid IPv4 address string when provided. If omitted, the server may capture the IP from the request headers.
      *
-     * @x-autobe-specification Session context field captured from request and stored in hrm_guest_sessions.ip when the session record is created. Captures the client IP address for security auditing and detecting suspicious access patterns from different locations. Optional for SSR scenarios where client cannot determine its own IP.
+         * @x-autobe-specification Session context field captured from request
+         *   and stored in hrm_guest_sessions.ip when the session record is
+         *   created. Captures the client IP address for security auditing and
+         *   detecting suspicious access patterns from different locations.
+         *   Optional for SSR scenarios where client cannot determine its own
+         *   IP.
      */
     ip?: (string & tags.Format<"ipv4">) | undefined;
   };
@@ -211,8 +241,9 @@ export namespace IHrmGuest {
      *
      * This UUID serves as the primary key for the guest record, enabling precise identification and reference across API operations.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from hrm_guests.id. UUID primary key for unique guest identification.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from hrm_guests.id. UUID
+         *   primary key for unique guest identification.
      */
     id: string & tags.Format<"uuid">;
 
@@ -225,8 +256,10 @@ export namespace IHrmGuest {
      *
      * Each device fingerprint is unique across the system, enforced by a database unique constraint.
      *
-     * @x-autobe-database-schema-property device_fingerprint
-     * @x-autobe-specification Direct mapping from hrm_guests.device_fingerprint. Unique constraint enforced at database level.
+         * @x-autobe-database-schema-property device_fingerprint
+         * @x-autobe-specification Direct mapping from
+         *   hrm_guests.device_fingerprint. Unique constraint enforced at
+         *   database level.
      */
     device_fingerprint: string;
 
@@ -235,8 +268,9 @@ export namespace IHrmGuest {
      *
      * Records the initial creation time of the guest account in ISO 8601 format with timezone information (timestamptz).
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from hrm_guests.created_at. ISO 8601 timestamp with timezone.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from hrm_guests.created_at.
+         *   ISO 8601 timestamp with timezone.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -245,7 +279,10 @@ export namespace IHrmGuest {
      *
      * Computed via aggregation of the hrm_guest_sessions table, counting all active (non-expired) session records associated with this guest account. Provides a quick overview of concurrent or recent session activity for the device.
      *
-     * @x-autobe-specification Aggregation: COUNT(hrm_guest_sessions) JOIN on guest_id. Computes the number of active guest sessions for this device by counting all active (non-expired) session records associated with this guest account.
+         * @x-autobe-specification Aggregation: COUNT(hrm_guest_sessions) JOIN
+         *   on guest_id. Computes the number of active guest sessions for this
+         *   device by counting all active (non-expired) session records
+         *   associated with this guest account.
      */
     sessions_count: number & tags.Type<"int32">;
   };
@@ -265,15 +302,15 @@ export namespace IHrmGuest {
    */
   export type IAuthorized = {
     /**
-     * @x-autobe-database-schema-property id
+         * @x-autobe-database-schema-property id
      */
     id: string & tags.Format<"uuid">;
     /**
-     * @x-autobe-database-schema-property device_fingerprint
+         * @x-autobe-database-schema-property device_fingerprint
      */
     device_fingerprint: string;
     /**
-     * @x-autobe-database-schema-property created_at
+         * @x-autobe-database-schema-property created_at
      */
     created_at: string & tags.Format<"date-time">;
     updated_at: string & tags.Format<"date-time">;
@@ -283,7 +320,8 @@ export namespace IHrmGuest {
     /**
      * Authorization token.
      *
-     * @x-autobe-specification Authorization token comes from the session table.
+         * @x-autobe-specification Authorization token comes from the session
+         *   table.
      */
     token: IAuthorizationToken;
   };

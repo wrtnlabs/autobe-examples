@@ -22,7 +22,9 @@ import { ITodoAppProfile } from "../../../../structures/ITodoAppProfile";
  * @param props.connection
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Resolve the authenticated member from the request's authorization/session context. Do not accept or derive any alternate target member identifier from client input.
+ * @x-autobe-specification Resolve the authenticated member from the request's
+ *   authorization/session context. Do not accept or derive any alternate target
+ *   member identifier from client input.
  *
  * Query `todo_app_profiles` for the single row whose `todo_app_member_id` matches the authenticated member's `id`. Because the schema defines `@@unique([todo_app_member_id])`, expect at most one active profile row for a member. Return the profile as `ITodoAppProfile`.
  *
@@ -88,7 +90,8 @@ export namespace at {
  * @param props.body New private profile values for the signed-in member
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implement a service method that updates the current member's profile inside a single transaction scope.
+ * @x-autobe-specification Implement a service method that updates the current
+ *   member's profile inside a single transaction scope.
  *
  * 1. Authenticate the caller as a `member` using the existing session/auth context. If authentication is missing or invalid, reject the request as unavailable to signed-out users.
  * 2. Resolve the current member identifier from the authentication context.

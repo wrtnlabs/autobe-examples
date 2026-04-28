@@ -27,8 +27,9 @@ export type IShoppingMallOrderItem = {
    *
    * This UUID identifies a specific product variant purchase within an order. Used to reference the order item in cancellation requests, refund requests, and shipment operations.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_order_items.id. Primary key uniquely identifying each order item.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from shopping_mall_order_items.id.
+     *   Primary key uniquely identifying each order item.
    */
   id: string & tags.Format<"uuid">;
 
@@ -37,8 +38,10 @@ export type IShoppingMallOrderItem = {
    *
    * This quantity is used for inventory deduction at order placement and determines the total price (quantity × price per unit). Cannot be modified after order is placed.
    *
-   * @x-autobe-database-schema-property quantity
-   * @x-autobe-specification Direct mapping from shopping_mall_order_items.quantity. Integer representing number of units purchased.
+     * @x-autobe-database-schema-property quantity
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_order_items.quantity. Integer representing number of
+     *   units purchased.
    */
   quantity: number & tags.Type<"int32">;
 
@@ -47,8 +50,10 @@ export type IShoppingMallOrderItem = {
    *
    * This captures the exact price paid by the customer, which may differ from the current variant price if the product was discounted or the price was changed after purchase. Used for calculating order totals and refunds.
    *
-   * @x-autobe-database-schema-property price
-   * @x-autobe-specification Direct mapping from shopping_mall_order_items.price. Decimal representing price per unit at time of purchase.
+     * @x-autobe-database-schema-property price
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_order_items.price. Decimal representing price per unit at
+     *   time of purchase.
    */
   price: number;
 
@@ -64,8 +69,10 @@ export type IShoppingMallOrderItem = {
    * - `cancelled`: Item was cancelled before shipment
    * - `refunded`: Item was refunded after delivery
    *
-   * @x-autobe-specification Direct mapping from shopping_mall_order_items.status. String column with constrained values: paid, shipped, delivered, cancelled, refunded.
-   * @x-autobe-database-schema-property status
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_order_items.status. String column with constrained
+     *   values: paid, shipped, delivered, cancelled, refunded.
+     * @x-autobe-database-schema-property status
    */
   status: string;
 
@@ -74,8 +81,10 @@ export type IShoppingMallOrderItem = {
    *
    * Set automatically when the order is placed and payment is successfully processed. Used for order history sorting and audit trails.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from shopping_mall_order_items.created_at. Timestamp when order item was created.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_order_items.created_at. Timestamp when order item was
+     *   created.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -84,8 +93,10 @@ export type IShoppingMallOrderItem = {
    *
    * Updated automatically on status changes and other modifications. Used for tracking item lifecycle and determining the most recent state.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from shopping_mall_order_items.updated_at. Timestamp when order item was last modified.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_order_items.updated_at. Timestamp when order item was
+     *   last modified.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -94,8 +105,10 @@ export type IShoppingMallOrderItem = {
    *
    * When null, the order item is active. When set, the item is marked as deleted but preserved in the database for order history and audit purposes. Soft-deleted items are excluded from active queries.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from shopping_mall_order_items.deleted_at. Nullable timestamp for soft delete.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_order_items.deleted_at. Nullable timestamp for soft
+     *   delete.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 
@@ -104,8 +117,11 @@ export type IShoppingMallOrderItem = {
    *
    * This relation provides access to order-level information including order number, customer details, shipping address, and overall order status. The order context is essential for understanding the purchase transaction.
    *
-   * @x-autobe-database-schema-property order
-   * @x-autobe-specification Relation from shopping_mall_order_items.shopping_mall_order_id FK to shopping_mall_orders. Returns IShoppingMallOrder.ISummary with order details.
+     * @x-autobe-database-schema-property order
+     * @x-autobe-specification Relation from
+     *   shopping_mall_order_items.shopping_mall_order_id FK to
+     *   shopping_mall_orders. Returns IShoppingMallOrder.ISummary with order
+     *   details.
    */
   order: IShoppingMallOrder.ISummary;
 
@@ -114,8 +130,11 @@ export type IShoppingMallOrderItem = {
    *
    * This relation provides access to the current variant information including SKU code, price, and option values. Note that the actual product state at purchase time is preserved in the snapshot fields below.
    *
-   * @x-autobe-database-schema-property productVariant
-   * @x-autobe-specification Relation from shopping_mall_order_items.shopping_mall_product_variant_id FK to shopping_mall_product_variants. Returns IShoppingMallProductVariant.ISummary with variant details.
+     * @x-autobe-database-schema-property productVariant
+     * @x-autobe-specification Relation from
+     *   shopping_mall_order_items.shopping_mall_product_variant_id FK to
+     *   shopping_mall_product_variants. Returns
+     *   IShoppingMallProductVariant.ISummary with variant details.
    */
   productVariant: IShoppingMallProductVariant.ISummary;
 
@@ -124,8 +143,11 @@ export type IShoppingMallOrderItem = {
    *
    * This relation provides access to seller account information and their shop profile. The seller is responsible for order fulfillment, shipping, and responding to cancellation or refund requests.
    *
-   * @x-autobe-database-schema-property seller
-   * @x-autobe-specification Relation from shopping_mall_order_items.shopping_mall_seller_id FK to shopping_mall_sellers. Returns IShoppingMallSeller.ISummary with seller details.
+     * @x-autobe-database-schema-property seller
+     * @x-autobe-specification Relation from
+     *   shopping_mall_order_items.shopping_mall_seller_id FK to
+     *   shopping_mall_sellers. Returns IShoppingMallSeller.ISummary with seller
+     *   details.
    */
   seller: IShoppingMallSeller.ISummary;
 
@@ -134,7 +156,10 @@ export type IShoppingMallOrderItem = {
    *
    * This is the exact product name as it appeared when the order was placed, preserved in an immutable snapshot. This ensures the product name remains visible even if the seller later modifies or deletes the product.
    *
-   * @x-autobe-specification Computed from shopping_mall_order_item_snapshots.product_name. Captures the product name exactly as it existed at time of purchase. Immutable snapshot data.
+     * @x-autobe-specification Computed from
+     *   shopping_mall_order_item_snapshots.product_name. Captures the product
+     *   name exactly as it existed at time of purchase. Immutable snapshot
+     *   data.
    */
   product_name: string;
 
@@ -143,7 +168,10 @@ export type IShoppingMallOrderItem = {
    *
    * This is the exact product description as it appeared when the order was placed, preserved in an immutable snapshot. This ensures product details remain visible for order history and dispute resolution even if the seller later modifies the product.
    *
-   * @x-autobe-specification Computed from shopping_mall_order_item_snapshots.product_description. Captures the product description exactly as it existed at time of purchase. Immutable snapshot data.
+     * @x-autobe-specification Computed from
+     *   shopping_mall_order_item_snapshots.product_description. Captures the
+     *   product description exactly as it existed at time of purchase.
+     *   Immutable snapshot data.
    */
   product_description: string;
 
@@ -152,7 +180,10 @@ export type IShoppingMallOrderItem = {
    *
    * This is the exact Stock Keeping Unit code as it appeared when the order was placed, preserved in an immutable snapshot. Used for inventory tracking and order fulfillment reference.
    *
-   * @x-autobe-specification Computed from shopping_mall_order_item_snapshots.variant_sku_code. Captures the variant SKU code exactly as it existed at time of purchase. Immutable snapshot data.
+     * @x-autobe-specification Computed from
+     *   shopping_mall_order_item_snapshots.variant_sku_code. Captures the
+     *   variant SKU code exactly as it existed at time of purchase. Immutable
+     *   snapshot data.
    */
   variant_sku_code: string;
 
@@ -161,7 +192,10 @@ export type IShoppingMallOrderItem = {
    *
    * This is the exact variant-specific price as it appeared when the order was placed, preserved in an immutable snapshot. This may differ from the current variant price if the seller later changed pricing.
    *
-   * @x-autobe-specification Computed from shopping_mall_order_item_snapshots.variant_price. Captures the variant price exactly as it existed at time of purchase. Immutable snapshot data.
+     * @x-autobe-specification Computed from
+     *   shopping_mall_order_item_snapshots.variant_price. Captures the variant
+     *   price exactly as it existed at time of purchase. Immutable snapshot
+     *   data.
    */
   variant_price: number;
 
@@ -170,7 +204,10 @@ export type IShoppingMallOrderItem = {
    *
    * This is the exact shop name as it appeared when the order was placed, preserved in an immutable snapshot. This ensures the seller's identity remains visible even if they later change their shop name or delete their account.
    *
-   * @x-autobe-specification Computed from shopping_mall_order_item_snapshots.seller_shop_name. Captures the seller's shop name exactly as it existed at time of purchase. Immutable snapshot data.
+     * @x-autobe-specification Computed from
+     *   shopping_mall_order_item_snapshots.seller_shop_name. Captures the
+     *   seller's shop name exactly as it existed at time of purchase. Immutable
+     *   snapshot data.
    */
   seller_shop_name: string;
 
@@ -179,7 +216,10 @@ export type IShoppingMallOrderItem = {
    *
    * This is the exact shop description as it appeared when the order was placed, preserved in an immutable snapshot. May be null if the seller did not provide a shop description. This ensures seller information remains visible for order history.
    *
-   * @x-autobe-specification Computed from shopping_mall_order_item_snapshots.seller_shop_description. Captures the seller's shop description exactly as it existed at time of purchase. Nullable field. Immutable snapshot data.
+     * @x-autobe-specification Computed from
+     *   shopping_mall_order_item_snapshots.seller_shop_description. Captures
+     *   the seller's shop description exactly as it existed at time of
+     *   purchase. Nullable field. Immutable snapshot data.
    */
   seller_shop_description: string | null;
 
@@ -188,7 +228,10 @@ export type IShoppingMallOrderItem = {
    *
    * This array contains all product images as they existed when the order was placed, preserved in immutable snapshots. Images are ordered by display_order. This ensures product visuals remain visible even if the seller later modifies or deletes product images.
    *
-   * @x-autobe-specification Computed from shopping_mall_order_item_snapshot_product_images table. Array of product images with display_order, captured at time of purchase. Each image contains uri and display_order fields. Immutable snapshot data.
+     * @x-autobe-specification Computed from
+     *   shopping_mall_order_item_snapshot_product_images table. Array of
+     *   product images with display_order, captured at time of purchase. Each
+     *   image contains uri and display_order fields. Immutable snapshot data.
    */
   images: IShoppingMallOrderItemSnapshotProductImage[];
 
@@ -197,7 +240,11 @@ export type IShoppingMallOrderItem = {
    *
    * This array contains the variant's option key-value pairs as they existed when the order was placed, preserved in immutable snapshots. Examples include color, size, material, or other product attributes. This ensures variant specifications remain visible for order history and fulfillment.
    *
-   * @x-autobe-specification Computed from shopping_mall_order_item_snapshot_variant_options table. Array of key-value pairs representing variant option values (e.g., {key: 'color', value: 'Red'}, {key: 'size', value: 'Large'}), captured at time of purchase. Immutable snapshot data.
+     * @x-autobe-specification Computed from
+     *   shopping_mall_order_item_snapshot_variant_options table. Array of
+     *   key-value pairs representing variant option values (e.g., {key:
+     *   'color', value: 'Red'}, {key: 'size', value: 'Large'}), captured at
+     *   time of purchase. Immutable snapshot data.
    */
   variantOptions: IShoppingMallOrderItemSnapshotVariantOption[];
 };
@@ -256,8 +303,10 @@ export namespace IShoppingMallOrderItem {
      *
      * This UUID identifies a specific line item within an order. Each order item represents a purchased product variant with its own quantity, price, and fulfillment status. The ID is used to reference this item in cancellation requests, refund requests, and order management operations.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_order_items.id. Primary key UUID identifying the order item.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_order_items.id. Primary key UUID identifying the
+         *   order item.
      */
     id: string & tags.Format<"uuid">;
 
@@ -266,8 +315,10 @@ export namespace IShoppingMallOrderItem {
      *
      * This field indicates how many items of the specific product variant the customer ordered. It is used for inventory deduction, order fulfillment, and calculating the total price (quantity × price per unit). The quantity is fixed at order placement and cannot be modified afterward.
      *
-     * @x-autobe-database-schema-property quantity
-     * @x-autobe-specification Direct mapping from shopping_mall_order_items.quantity. Integer representing the number of units purchased.
+         * @x-autobe-database-schema-property quantity
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_order_items.quantity. Integer representing the number
+         *   of units purchased.
      */
     quantity: number & tags.Type<"int32">;
 
@@ -276,8 +327,10 @@ export namespace IShoppingMallOrderItem {
      *
      * This captures the exact price the customer paid for each unit of the product variant. The price is recorded at order placement and preserved even if the product variant's current price changes. This ensures accurate order history, refund calculations, and dispute resolution. The total item cost is calculated as quantity × price.
      *
-     * @x-autobe-database-schema-property price
-     * @x-autobe-specification Direct mapping from shopping_mall_order_items.price. Float representing the price per unit at time of purchase.
+         * @x-autobe-database-schema-property price
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_order_items.price. Float representing the price per
+         *   unit at time of purchase.
      */
     price: number;
 
@@ -286,8 +339,10 @@ export namespace IShoppingMallOrderItem {
      *
      * The status indicates where this item is in the order fulfillment workflow. Allowed values are: 'paid' (payment completed, awaiting shipment), 'shipped' (seller has shipped the item with tracking), 'delivered' (customer has received and confirmed delivery), 'cancelled' (item was cancelled before shipment), or 'refunded' (item was refunded after delivery). Each order item has its own independent status, allowing partial order processing where different items can be at different stages.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from shopping_mall_order_items.status. String enum with values: 'paid', 'shipped', 'delivered', 'cancelled', 'refunded'.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_order_items.status. String enum with values: 'paid',
+         *   'shipped', 'delivered', 'cancelled', 'refunded'.
      */
     status: string;
 
@@ -296,8 +351,10 @@ export namespace IShoppingMallOrderItem {
      *
      * This records the exact date and time when the order item was created during checkout. The timestamp is set automatically when the customer's order is placed and payment is successfully processed. It is used for order history sorting, audit trails, and time-based analytics.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_order_items.created_at. ISO 8601 datetime when the order item was created.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_order_items.created_at. ISO 8601 datetime when the
+         *   order item was created.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -306,8 +363,11 @@ export namespace IShoppingMallOrderItem {
      *
      * This relation provides context about the order this item belongs to, including the order number for customer-facing identification, the customer who placed the order, the shipping address used, and order-level timestamps. The order summary is included to provide complete context without requiring additional API calls.
      *
-     * @x-autobe-database-schema-property order
-     * @x-autobe-specification Relation to shopping_mall_orders via JOIN on shopping_mall_order_id. Returns IShoppingMallOrder.ISummary containing order number, customer reference, shipping address, and order-level metadata.
+         * @x-autobe-database-schema-property order
+         * @x-autobe-specification Relation to shopping_mall_orders via JOIN on
+         *   shopping_mall_order_id. Returns IShoppingMallOrder.ISummary
+         *   containing order number, customer reference, shipping address, and
+         *   order-level metadata.
      */
     order: IShoppingMallOrder.ISummary;
 
@@ -316,8 +376,11 @@ export namespace IShoppingMallOrderItem {
      *
      * This relation provides details about the specific product variant (SKU) that the customer ordered, including the SKU code, variant-specific price (or null if using product base price), option values (e.g., color, size), and current stock status. The variant information is preserved even if the product is later modified or deleted by the seller.
      *
-     * @x-autobe-database-schema-property productVariant
-     * @x-autobe-specification Relation to shopping_mall_product_variants via JOIN on shopping_mall_product_variant_id. Returns IShoppingMallProductVariant.ISummary containing SKU code, price, option values, and stock information.
+         * @x-autobe-database-schema-property productVariant
+         * @x-autobe-specification Relation to shopping_mall_product_variants
+         *   via JOIN on shopping_mall_product_variant_id. Returns
+         *   IShoppingMallProductVariant.ISummary containing SKU code, price,
+         *   option values, and stock information.
      */
     productVariant: IShoppingMallProductVariant.ISummary;
 
@@ -326,8 +389,11 @@ export namespace IShoppingMallOrderItem {
      *
      * This relation identifies the seller responsible for fulfilling this order item. It includes the seller's account information and shop profile (shop name, description, logo) for customer reference. The seller information is captured at order placement and preserved for order history, even if the seller's account status changes.
      *
-     * @x-autobe-database-schema-property seller
-     * @x-autobe-specification Relation to shopping_mall_sellers via JOIN on shopping_mall_seller_id. Returns IShoppingMallSeller.ISummary containing seller email, approval status, and seller profile with shop name and description.
+         * @x-autobe-database-schema-property seller
+         * @x-autobe-specification Relation to shopping_mall_sellers via JOIN on
+         *   shopping_mall_seller_id. Returns IShoppingMallSeller.ISummary
+         *   containing seller email, approval status, and seller profile with
+         *   shop name and description.
      */
     seller: IShoppingMallSeller.ISummary;
   };
@@ -343,7 +409,12 @@ export namespace IShoppingMallOrderItem {
      *
      * This text is recorded in the audit trail for accountability and dispute resolution purposes. Recommended to provide a clear reason for administrative actions, such as policy violations, customer disputes, or exceptional circumstances requiring immediate intervention.
      *
-     * @x-autobe-specification User-provided reason text for the force-cancel action. This value is stored in the administrator audit log entry along with administrator ID, order ID, item ID, and timestamp. Not stored in shopping_mall_order_items table directly. The reason is optional but recommended for accountability and dispute resolution.
+         * @x-autobe-specification User-provided reason text for the
+         *   force-cancel action. This value is stored in the administrator
+         *   audit log entry along with administrator ID, order ID, item ID, and
+         *   timestamp. Not stored in shopping_mall_order_items table directly.
+         *   The reason is optional but recommended for accountability and
+         *   dispute resolution.
      */
     reason?: (string & tags.MinLength<1> & tags.MaxLength<1000>) | undefined;
   };

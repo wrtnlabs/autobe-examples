@@ -27,8 +27,9 @@ export type IHrmPlatformTimesheetAction = {
    *
    * UUID-formatted primary key generated at record creation. Immutable after creation, used for identifying and referencing specific actions in the audit trail.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from hrm_platform_timesheet_actions.id (UUID primary key).
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_timesheet_actions.id (UUID primary key).
    */
   id: string & tags.Format<"uuid">;
 
@@ -37,8 +38,9 @@ export type IHrmPlatformTimesheetAction = {
    *
    * Provides full attribution for audit trail purposes. Includes member identification details such as email and display name. Enables accountability tracking for all workflow transitions.
    *
-   * @x-autobe-database-schema-property actor
-   * @x-autobe-specification JOIN from hrm_platform_timesheet_actions.actor_id to hrm_platform_members.id. Returns IHrmPlatformMember.ISummary.
+     * @x-autobe-database-schema-property actor
+     * @x-autobe-specification JOIN from hrm_platform_timesheet_actions.actor_id
+     *   to hrm_platform_members.id. Returns IHrmPlatformMember.ISummary.
    */
   actor: IHrmPlatformMember.ISummary;
 
@@ -47,8 +49,10 @@ export type IHrmPlatformTimesheetAction = {
    *
    * References the parent timesheet record containing the action in the approval workflow lifecycle. Provides context for which timesheet the action affected.
    *
-   * @x-autobe-database-schema-property timesheet
-   * @x-autobe-specification JOIN from hrm_platform_timesheet_actions.hrm_platform_timesheet_id to hrm_platform_timesheets.id. Returns IHrmPlatformTimesheet.ISummary.
+     * @x-autobe-database-schema-property timesheet
+     * @x-autobe-specification JOIN from
+     *   hrm_platform_timesheet_actions.hrm_platform_timesheet_id to
+     *   hrm_platform_timesheets.id. Returns IHrmPlatformTimesheet.ISummary.
    */
   timesheet: IHrmPlatformTimesheet.ISummary;
 
@@ -62,8 +66,10 @@ export type IHrmPlatformTimesheetAction = {
    *
    * Indicates the workflow state transition that occurred.
    *
-   * @x-autobe-database-schema-property action
-   * @x-autobe-specification Direct mapping from hrm_platform_timesheet_actions.action. Enum values: submit, approve, reject.
+     * @x-autobe-database-schema-property action
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_timesheet_actions.action. Enum values: submit, approve,
+     *   reject.
    */
   action: string;
 
@@ -72,8 +78,9 @@ export type IHrmPlatformTimesheetAction = {
    *
    * Used for rejection reasons, approval comments, or additional context. Managers may provide detailed feedback when rejecting a timesheet, explaining what needs revision. Null when no notes were provided.
    *
-   * @x-autobe-database-schema-property notes
-   * @x-autobe-specification Direct mapping from hrm_platform_timesheet_actions.notes. Nullable field.
+     * @x-autobe-database-schema-property notes
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_timesheet_actions.notes. Nullable field.
    */
   notes: string | null;
 
@@ -82,8 +89,9 @@ export type IHrmPlatformTimesheetAction = {
    *
    * ISO 8601 datetime with timezone. Records when the action event occurred, enabling chronological ordering of the audit trail and workflow analysis.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from hrm_platform_timesheet_actions.created_at (timestamptz).
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_timesheet_actions.created_at (timestamptz).
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -92,8 +100,9 @@ export type IHrmPlatformTimesheetAction = {
    *
    * ISO 8601 datetime with timezone. For append-only audit logs, this typically equals created_at. May differ if records are corrected or modified for compliance purposes.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from hrm_platform_timesheet_actions.updated_at (timestamptz).
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_timesheet_actions.updated_at (timestamptz).
    */
   updated_at: string & tags.Format<"date-time">;
 };
@@ -145,56 +154,71 @@ export namespace IHrmPlatformTimesheetAction {
     /**
      * Unique identifier for this timesheet action record, used as the primary key for audit trail tracking and referencing.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from hrm_platform_timesheet_actions.id (UUID).
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_timesheet_actions.id (UUID).
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * The type of action performed on the timesheet, indicating the lifecycle event (submit, approve, or reject) and enabling status transition tracking.
      *
-     * @x-autobe-database-schema-property action
-     * @x-autobe-specification Direct mapping from hrm_platform_timesheet_actions.action. Enum: submit, approve, reject.
+         * @x-autobe-database-schema-property action
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_timesheet_actions.action. Enum: submit, approve,
+         *   reject.
      */
     action: string;
 
     /**
      * The member who performed this action, enabling audit trail attribution. Links to the actor's summary record for display in activity logs.
      *
-     * @x-autobe-database-schema-property actor
-     * @x-autobe-specification JOIN from hrm_platform_timesheet_actions.actor_id to hrm_platform_members.id. Returns IHrmPlatformMember.ISummary with member display info and credentials excluded.
+         * @x-autobe-database-schema-property actor
+         * @x-autobe-specification JOIN from
+         *   hrm_platform_timesheet_actions.actor_id to hrm_platform_members.id.
+         *   Returns IHrmPlatformMember.ISummary with member display info and
+         *   credentials excluded.
      */
     actor: IHrmPlatformMember.ISummary;
 
     /**
      * The timesheet this action belongs to, providing context for the workflow event. Links to the timesheet summary for display in action lists.
      *
-     * @x-autobe-database-schema-property timesheet
-     * @x-autobe-specification JOIN from hrm_platform_timesheet_actions.hrm_platform_timesheet_id to hrm_platform_timesheets.id. Returns IHrmPlatformTimesheet.ISummary for list views.
+         * @x-autobe-database-schema-property timesheet
+         * @x-autobe-specification JOIN from
+         *   hrm_platform_timesheet_actions.hrm_platform_timesheet_id to
+         *   hrm_platform_timesheets.id. Returns IHrmPlatformTimesheet.ISummary
+         *   for list views.
      */
     timesheet: IHrmPlatformTimesheet.ISummary;
 
     /**
      * Optional notes or feedback accompanying the action. Used for rejection reasons, approval comments, or additional context about the timesheet event.
      *
-     * @x-autobe-database-schema-property notes
-     * @x-autobe-specification Direct mapping from hrm_platform_timesheet_actions.notes. Nullable string for optional feedback or rejection reasons.
+         * @x-autobe-database-schema-property notes
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_timesheet_actions.notes. Nullable string for optional
+         *   feedback or rejection reasons.
      */
     notes: string | null;
 
     /**
      * Timestamp when this action was recorded in the audit trail, used for chronological ordering and reporting.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from hrm_platform_timesheet_actions.created_at (TIMESTAMPTZ). Timestamp of when the action was recorded.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_timesheet_actions.created_at (TIMESTAMPTZ). Timestamp
+         *   of when the action was recorded.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when this record was last updated, maintained for audit trail tracking and modification monitoring.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from hrm_platform_timesheet_actions.updated_at (TIMESTAMPTZ). Timestamp of the last record modification.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_timesheet_actions.updated_at (TIMESTAMPTZ). Timestamp
+         *   of the last record modification.
      */
     updated_at: string & tags.Format<"date-time">;
   };

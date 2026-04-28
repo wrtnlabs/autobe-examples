@@ -10,88 +10,111 @@ export type IShoppingMallPaymentAttempt = {
   /**
    * Unique identifier of this payment attempt.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_payment_attempts.id.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_payment_attempts.id.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Customer account that initiated this payment attempt.
    *
-   * @x-autobe-database-schema-property customer
-   * @x-autobe-specification Join shopping_mall_payment_attempts.shopping_mall_customer_id to shopping_mall_customers.id and expose the related actor as IShoppingMallCustomer.ISummary.
+     * @x-autobe-database-schema-property customer
+     * @x-autobe-specification Join
+     *   shopping_mall_payment_attempts.shopping_mall_customer_id to
+     *   shopping_mall_customers.id and expose the related actor as
+     *   IShoppingMallCustomer.ISummary.
    */
   customer: IShoppingMallCustomer.ISummary;
 
   /**
    * Current processing result of the payment attempt.
    *
-   * @x-autobe-database-schema-property status
-   * @x-autobe-specification Direct mapping from shopping_mall_payment_attempts.status. Stores the current processing outcome such as pending, succeeded, or failed according to service-level payment lifecycle rules.
+     * @x-autobe-database-schema-property status
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_payment_attempts.status. Stores the current processing
+     *   outcome such as pending, succeeded, or failed according to
+     *   service-level payment lifecycle rules.
    */
   status: string;
 
   /**
    * Total payment amount submitted for this attempt.
    *
-   * @x-autobe-database-schema-property amount
-   * @x-autobe-specification Direct mapping from shopping_mall_payment_attempts.amount. Represents the authoritative total amount submitted to the payment gateway for this checkout attempt.
+     * @x-autobe-database-schema-property amount
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_payment_attempts.amount. Represents the authoritative
+     *   total amount submitted to the payment gateway for this checkout
+     *   attempt.
    */
   amount: number;
 
   /**
    * Name of the payment gateway provider used to process the attempt.
    *
-   * @x-autobe-database-schema-property gateway_provider
-   * @x-autobe-specification Direct mapping from shopping_mall_payment_attempts.gateway_provider.
+     * @x-autobe-database-schema-property gateway_provider
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_payment_attempts.gateway_provider.
    */
   gateway_provider: string;
 
   /**
    * Gateway-issued reference used to reconcile this attempt with the external payment provider.
    *
-   * @x-autobe-database-schema-property gateway_reference
-   * @x-autobe-specification Direct mapping from shopping_mall_payment_attempts.gateway_reference. This value is the provider-issued reconciliation identifier recorded for gateway tracing and deduplication.
+     * @x-autobe-database-schema-property gateway_reference
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_payment_attempts.gateway_reference. This value is the
+     *   provider-issued reconciliation identifier recorded for gateway tracing
+     *   and deduplication.
    */
   gateway_reference: string;
 
   /**
    * Failure message or rejection reason returned when the payment attempt does not succeed.
    *
-   * @x-autobe-database-schema-property failure_reason
-   * @x-autobe-specification Direct mapping from shopping_mall_payment_attempts.failure_reason. Preserve null when the gateway has not reported a failure or when the payment completed successfully.
+     * @x-autobe-database-schema-property failure_reason
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_payment_attempts.failure_reason. Preserve null when the
+     *   gateway has not reported a failure or when the payment completed
+     *   successfully.
    */
   failure_reason: string | null;
 
   /**
    * Timestamp when the payment gateway finished processing this attempt and returned its final outcome.
    *
-   * @x-autobe-database-schema-property processed_at
-   * @x-autobe-specification Direct mapping from shopping_mall_payment_attempts.processed_at. Preserve null when the gateway has not yet produced a terminal outcome for the attempt.
+     * @x-autobe-database-schema-property processed_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_payment_attempts.processed_at. Preserve null when the
+     *   gateway has not yet produced a terminal outcome for the attempt.
    */
   processed_at: (string & tags.Format<"date-time">) | null;
 
   /**
    * Timestamp when this payment-attempt record was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from shopping_mall_payment_attempts.created_at.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_payment_attempts.created_at.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when this payment-attempt record was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from shopping_mall_payment_attempts.updated_at.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_payment_attempts.updated_at.
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * Soft-deletion timestamp, or null when this payment-attempt record remains active.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from shopping_mall_payment_attempts.deleted_at. Preserve null when the payment-attempt record is still active.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_payment_attempts.deleted_at. Preserve null when the
+     *   payment-attempt record is still active.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -103,16 +126,24 @@ export namespace IShoppingMallPaymentAttempt {
     /**
      * Total payment amount to submit for this checkout payment attempt.
      *
-     * @x-autobe-database-schema-property amount
-     * @x-autobe-specification Direct mapping from shopping_mall_payment_attempts.amount. Accept the payment amount submitted for the reviewed checkout and validate that the server-side authoritative payable total is positive and matches or overrides the client-submitted amount before persistence.
+         * @x-autobe-database-schema-property amount
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_payment_attempts.amount. Accept the payment amount
+         *   submitted for the reviewed checkout and validate that the
+         *   server-side authoritative payable total is positive and matches or
+         *   overrides the client-submitted amount before persistence.
      */
     amount: number;
 
     /**
      * Payment gateway provider selected to process this checkout payment attempt.
      *
-     * @x-autobe-database-schema-property gateway_provider
-     * @x-autobe-specification Direct mapping from shopping_mall_payment_attempts.gateway_provider. Accept the client-selected external payment gateway provider and validate that it is one of the providers supported by the service before creating the payment-attempt record.
+         * @x-autobe-database-schema-property gateway_provider
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_payment_attempts.gateway_provider. Accept the
+         *   client-selected external payment gateway provider and validate that
+         *   it is one of the providers supported by the service before creating
+         *   the payment-attempt record.
      */
     gateway_provider: string;
   };
@@ -124,31 +155,40 @@ export namespace IShoppingMallPaymentAttempt {
    */
   export type IUpdate = {
     /**
-     * @x-autobe-database-schema-property status
+         * @x-autobe-database-schema-property status
      */
     status?: string | undefined;
     /**
-     * @x-autobe-database-schema-property gateway_provider
+         * @x-autobe-database-schema-property gateway_provider
      */
     gateway_provider?: string | undefined;
     /**
-     * @x-autobe-database-schema-property gateway_reference
+         * @x-autobe-database-schema-property gateway_reference
      */
     gateway_reference?: string | undefined;
 
     /**
      * Failure message or rejection reason returned when the payment attempt does not succeed. Provide null to clear it when appropriate.
      *
-     * @x-autobe-database-schema-property failure_reason
-     * @x-autobe-specification Maps to shopping_mall_payment_attempts.failure_reason. In this update DTO the field is optional, and when provided it may be a string or null so the caller can set or clear the stored gateway failure detail subject to payment-state validation.
+         * @x-autobe-database-schema-property failure_reason
+         * @x-autobe-specification Maps to
+         *   shopping_mall_payment_attempts.failure_reason. In this update DTO
+         *   the field is optional, and when provided it may be a string or null
+         *   so the caller can set or clear the stored gateway failure detail
+         *   subject to payment-state validation.
      */
     failure_reason?: string | null | undefined;
 
     /**
      * Timestamp when the payment gateway finished processing this attempt and returned its final outcome. Provide null to clear it when appropriate.
      *
-     * @x-autobe-database-schema-property processed_at
-     * @x-autobe-specification Maps to shopping_mall_payment_attempts.processed_at. In this update DTO the field is optional, and when provided it may be an RFC 3339 date-time string or null so the caller can set or clear the recorded gateway completion time subject to payment-state validation.
+         * @x-autobe-database-schema-property processed_at
+         * @x-autobe-specification Maps to
+         *   shopping_mall_payment_attempts.processed_at. In this update DTO the
+         *   field is optional, and when provided it may be an RFC 3339
+         *   date-time string or null so the caller can set or clear the
+         *   recorded gateway completion time subject to payment-state
+         *   validation.
      */
     processed_at?: (string & tags.Format<"date-time">) | null | undefined;
   };
@@ -160,77 +200,112 @@ export namespace IShoppingMallPaymentAttempt {
     /**
      * Filter results by the payment attempt's current processing status, such as pending, succeeded, or failed.
      *
-     * @x-autobe-specification Optional query filter for payment-attempt status. Apply this value as an equality condition on shopping_mall_payment_attempts.status after scoping the search to the authenticated customer's records. When omitted, do not filter by status.
+         * @x-autobe-specification Optional query filter for payment-attempt
+         *   status. Apply this value as an equality condition on
+         *   shopping_mall_payment_attempts.status after scoping the search to
+         *   the authenticated customer's records. When omitted, do not filter
+         *   by status.
      */
     status?: string | undefined;
 
     /**
      * Filter results by the payment gateway provider used for the payment attempt.
      *
-     * @x-autobe-specification Optional query filter for gateway provider. Interpret this camelCase request field as a filter over shopping_mall_payment_attempts.gateway_provider when constructing the customer-scoped search query.
+         * @x-autobe-specification Optional query filter for gateway provider.
+         *   Interpret this camelCase request field as a filter over
+         *   shopping_mall_payment_attempts.gateway_provider when constructing
+         *   the customer-scoped search query.
      */
     gatewayProvider?: string | undefined;
 
     /**
      * Minimum payment amount to include in the results.
      *
-     * @x-autobe-specification Optional lower-bound amount filter. When provided, apply it as a greater-than-or-equal condition on shopping_mall_payment_attempts.amount within the authenticated customer's scoped query.
+         * @x-autobe-specification Optional lower-bound amount filter. When
+         *   provided, apply it as a greater-than-or-equal condition on
+         *   shopping_mall_payment_attempts.amount within the authenticated
+         *   customer's scoped query.
      */
     minimumAmount?: number | undefined;
 
     /**
      * Maximum payment amount to include in the results.
      *
-     * @x-autobe-specification Optional upper-bound amount filter. When provided, apply it as a less-than-or-equal condition on shopping_mall_payment_attempts.amount within the authenticated customer's scoped query.
+         * @x-autobe-specification Optional upper-bound amount filter. When
+         *   provided, apply it as a less-than-or-equal condition on
+         *   shopping_mall_payment_attempts.amount within the authenticated
+         *   customer's scoped query.
      */
     maximumAmount?: number | undefined;
 
     /**
      * Include only payment attempts created at or after this timestamp.
      *
-     * @x-autobe-specification Optional inclusive lower-bound creation timestamp filter. When provided, apply it as a created_at >= value condition on shopping_mall_payment_attempts in the authenticated customer's query.
+         * @x-autobe-specification Optional inclusive lower-bound creation
+         *   timestamp filter. When provided, apply it as a created_at >= value
+         *   condition on shopping_mall_payment_attempts in the authenticated
+         *   customer's query.
      */
     createdAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Include only payment attempts created at or before this timestamp.
      *
-     * @x-autobe-specification Optional inclusive upper-bound creation timestamp filter. When provided, apply it as a created_at <= value condition on shopping_mall_payment_attempts in the authenticated customer's query.
+         * @x-autobe-specification Optional inclusive upper-bound creation
+         *   timestamp filter. When provided, apply it as a created_at <= value
+         *   condition on shopping_mall_payment_attempts in the authenticated
+         *   customer's query.
      */
     createdAtTo?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Include only payment attempts processed at or after this timestamp.
      *
-     * @x-autobe-specification Optional inclusive lower-bound processing timestamp filter. When provided, apply it as a processed_at >= value condition and naturally exclude rows whose processed_at is null.
+         * @x-autobe-specification Optional inclusive lower-bound processing
+         *   timestamp filter. When provided, apply it as a processed_at >=
+         *   value condition and naturally exclude rows whose processed_at is
+         *   null.
      */
     processedAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Include only payment attempts processed at or before this timestamp.
      *
-     * @x-autobe-specification Optional inclusive upper-bound processing timestamp filter. When provided, apply it as a processed_at <= value condition and naturally exclude rows whose processed_at is null.
+         * @x-autobe-specification Optional inclusive upper-bound processing
+         *   timestamp filter. When provided, apply it as a processed_at <=
+         *   value condition and naturally exclude rows whose processed_at is
+         *   null.
      */
     processedAtTo?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Sort order to apply to the payment-attempt history results.
      *
-     * @x-autobe-specification Optional sort directive for ordering the customer payment-attempt history list. Interpret this value only against the endpoint's supported sort options, such as created_at descending by default and other approved sortable fields when explicitly requested. Reject unsupported sort directives instead of guessing.
+         * @x-autobe-specification Optional sort directive for ordering the
+         *   customer payment-attempt history list. Interpret this value only
+         *   against the endpoint's supported sort options, such as created_at
+         *   descending by default and other approved sortable fields when
+         *   explicitly requested. Reject unsupported sort directives instead of
+         *   guessing.
      */
     sort?: string | undefined;
 
     /**
      * Page number of the paginated result set to retrieve.
      *
-     * @x-autobe-specification 1-based page number used to paginate the filtered and sorted result set. Use this value together with limit to compute offset after applying customer scoping and all filters.
+         * @x-autobe-specification 1-based page number used to paginate the
+         *   filtered and sorted result set. Use this value together with limit
+         *   to compute offset after applying customer scoping and all filters.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of payment attempts to return in one page.
      *
-     * @x-autobe-specification Maximum number of records to return per page. Enforce the declared schema bounds, then use this value with page to calculate the query limit and offset for the customer-scoped search.
+         * @x-autobe-specification Maximum number of records to return per page.
+         *   Enforce the declared schema bounds, then use this value with page
+         *   to calculate the query limit and offset for the customer-scoped
+         *   search.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -244,80 +319,97 @@ export namespace IShoppingMallPaymentAttempt {
     /**
      * Unique identifier of the payment attempt record.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_payment_attempts.id.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_payment_attempts.id.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Current processing result of the payment attempt.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from shopping_mall_payment_attempts.status. Preserve the stored payment-attempt result value such as pending, succeeded, or failed.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_payment_attempts.status. Preserve the stored
+         *   payment-attempt result value such as pending, succeeded, or failed.
      */
     status: string;
 
     /**
      * Total payment amount requested for this checkout attempt.
      *
-     * @x-autobe-database-schema-property amount
-     * @x-autobe-specification Direct mapping from shopping_mall_payment_attempts.amount. Expose the numeric amount submitted to the payment gateway for this attempt.
+         * @x-autobe-database-schema-property amount
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_payment_attempts.amount. Expose the numeric amount
+         *   submitted to the payment gateway for this attempt.
      */
     amount: number;
 
     /**
      * Name of the payment gateway provider that processed the attempt.
      *
-     * @x-autobe-database-schema-property gateway_provider
-     * @x-autobe-specification Direct mapping from shopping_mall_payment_attempts.gateway_provider.
+         * @x-autobe-database-schema-property gateway_provider
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_payment_attempts.gateway_provider.
      */
     gateway_provider: string;
 
     /**
      * Gateway-issued reference identifier for this payment attempt.
      *
-     * @x-autobe-database-schema-property gateway_reference
-     * @x-autobe-specification Direct mapping from shopping_mall_payment_attempts.gateway_reference. Return the provider-issued reference stored for reconciliation.
+         * @x-autobe-database-schema-property gateway_reference
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_payment_attempts.gateway_reference. Return the
+         *   provider-issued reference stored for reconciliation.
      */
     gateway_reference: string;
 
     /**
      * Failure or rejection reason returned for an unsuccessful payment attempt, or null when unavailable.
      *
-     * @x-autobe-database-schema-property failure_reason
-     * @x-autobe-specification Direct mapping from shopping_mall_payment_attempts.failure_reason. Return the stored failure or rejection message when present; otherwise return null.
+         * @x-autobe-database-schema-property failure_reason
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_payment_attempts.failure_reason. Return the stored
+         *   failure or rejection message when present; otherwise return null.
      */
     failure_reason: string | null;
 
     /**
      * Timestamp when the payment gateway finished processing the attempt, or null if not yet finalized.
      *
-     * @x-autobe-database-schema-property processed_at
-     * @x-autobe-specification Direct mapping from shopping_mall_payment_attempts.processed_at. Return the timestamp when the gateway completed processing and produced a final outcome, or null if processing has not finished.
+         * @x-autobe-database-schema-property processed_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_payment_attempts.processed_at. Return the timestamp
+         *   when the gateway completed processing and produced a final outcome,
+         *   or null if processing has not finished.
      */
     processed_at: (string & tags.Format<"date-time">) | null;
 
     /**
      * Timestamp when the payment attempt record was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_payment_attempts.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_payment_attempts.created_at.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when the payment attempt record was last updated.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from shopping_mall_payment_attempts.updated_at.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_payment_attempts.updated_at.
      */
     updated_at: string & tags.Format<"date-time">;
 
     /**
      * Soft-deletion timestamp for the payment attempt record, or null when the record remains active.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from shopping_mall_payment_attempts.deleted_at. Return the soft-deletion timestamp when the record has been deleted, otherwise return null.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_payment_attempts.deleted_at. Return the soft-deletion
+         *   timestamp when the record has been deleted, otherwise return null.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };

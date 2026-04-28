@@ -31,7 +31,8 @@ import { IEcommerceMallOrder } from "../../../../../../../structures/IEcommerceM
  * @param props.connection
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification 1. Retrieve the authenticated customer from the session token.
+ * @x-autobe-specification 1. Retrieve the authenticated customer from the
+ *   session token.
  *
  * 2. Load the customer's cart with all cart items using the customer ID from session.
  *

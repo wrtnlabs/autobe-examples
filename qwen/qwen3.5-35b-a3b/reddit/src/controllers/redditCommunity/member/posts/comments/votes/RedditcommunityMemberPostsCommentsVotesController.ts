@@ -30,9 +30,10 @@ export class RedditcommunityMemberPostsCommentsVotesController {
    * @param postId The unique identifier of the post containing the comment. Used to verify the comment belongs to this post.
    * @param commentId The unique identifier of the comment being voted on.
    * @param body The vote type to cast. Must be either "upvote" or "downvote".
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Create or update a vote record in reddit_community_comment_votes table.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Create or update a vote record in
+     *   reddit_community_comment_votes table.
    *
    * 1. Validate postId and commentId path parameters exist and are valid UUIDs
    * 2. Query reddit_community_comments to verify:
@@ -107,26 +108,25 @@ export class RedditcommunityMemberPostsCommentsVotesController {
    * @param postId The UUID of the post that the comment belongs to.
    * @param commentId The UUID of the comment to update the vote on.
    * @param body The vote type to cast on the comment. Use 'upvote' for positive feedback, 'downvote' for negative feedback, or null to remove an existing vote.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1. Extract path parameters: postId, commentId
-   * 2. Retrieve the comment from reddit_community_comments by commentId
-   * 3. Verify the comment belongs to the post specified by postId (join check)
-   * 4. Verify comment exists and deleted_at is NULL
-   * 5. Verify the comment's author is not the authenticated member (prevents self-voting)
-   * 6. Retrieve authenticated member_id from session/token
-   * 7. Check if a vote record exists for this member_id and comment_id in reddit_community_comment_votes
-   * 8. If vote exists:
-   *    a. If vote_type == new vote_type (same), return existing vote unchanged
-   *    b. Update the vote record with new vote_type, set updated_at
-   *    c. If vote_type is NULL (remove), soft-delete the vote record (set deleted_at)
-   * 9. If vote does not exist:
-   *    a. Create new vote record with member_id, comment_id, vote_type
-   *    b. Set created_at = current_timestamp, updated_at = current_timestamp
-   * 10. Recalculate comment vote_score:
-   *     a. Sum all active (deleted_at is NULL) votes: upvote=+1, downvote=-1
-   *     b. Update comment.vote_score = calculated score
-   * 11. Return updated comment with new vote_score
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification 1. Extract path parameters: postId, commentId 2.
+     *   Retrieve the comment from reddit_community_comments by commentId 3.
+     *   Verify the comment belongs to the post specified by postId (join check)
+     *   4. Verify comment exists and deleted_at is NULL 5. Verify the comment's
+     *   author is not the authenticated member (prevents self-voting) 6.
+     *   Retrieve authenticated member_id from session/token 7. Check if a vote
+     *   record exists for this member_id and comment_id in
+     *   reddit_community_comment_votes 8. If vote exists: a. If vote_type ==
+     *   new vote_type (same), return existing vote unchanged b. Update the vote
+     *   record with new vote_type, set updated_at c. If vote_type is NULL
+     *   (remove), soft-delete the vote record (set deleted_at) 9. If vote does
+     *   not exist: a. Create new vote record with member_id, comment_id,
+     *   vote_type b. Set created_at = current_timestamp, updated_at =
+     *   current_timestamp 10. Recalculate comment vote_score: a. Sum all active
+     *   (deleted_at is NULL) votes: upvote=+1, downvote=-1 b. Update
+     *   comment.vote_score = calculated score 11. Return updated comment with
+     *   new vote_score
    *
    * ### Edge Cases
    *
@@ -170,9 +170,11 @@ export class RedditcommunityMemberPostsCommentsVotesController {
    * @param postId UUID of the post that this vote is associated with.
    * @param commentId UUID of the comment that this vote is associated with (if commenting on a post comment).
    * @param voteId UUID of the vote record to retrieve.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query the reddit_community_post_votes or reddit_community_comment_votes table to retrieve the vote record matching the voteId parameter.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query the reddit_community_post_votes or
+     *   reddit_community_comment_votes table to retrieve the vote record
+     *   matching the voteId parameter.
    *
    * Validate that the vote exists and has not been soft-deleted (deleted_at is NULL).
    *

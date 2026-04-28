@@ -20,9 +20,11 @@ export class EcommercemallAdministratorOrdersForce_cancelController {
    *
    * @param connection
    * @param orderCode The unique order code (human-readable identifier) of the order to force-cancel. This is a globally unique string assigned at order creation.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification 1. Lookup the order by e_commerce_mall_orders.code (unique string, not UUID). Return 404 if not found.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor administrator
+     * @x-autobe-specification 1. Lookup the order by
+     *   e_commerce_mall_orders.code (unique string, not UUID). Return 404 if
+     *   not found.
    *
    * 2. Fetch all order items (e_commerce_mall_order_items) belonging to this order via e_commerce_mall_order_id.
    *

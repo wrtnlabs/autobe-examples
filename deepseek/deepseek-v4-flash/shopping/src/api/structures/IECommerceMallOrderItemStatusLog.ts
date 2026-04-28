@@ -18,8 +18,9 @@ export type IECommerceMallOrderItemStatusLog = {
    *
    * Used as the primary key to reference a specific status change record in URL paths and composite lookup keys when retrieving individual log entries.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from e_commerce_mall_order_item_status_logs.id. Primary key, UUID format.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_order_item_status_logs.id. Primary key, UUID format.
    */
   id: string & tags.Format<"uuid">;
 
@@ -28,8 +29,12 @@ export type IECommerceMallOrderItemStatusLog = {
    *
    * Each status log records a transition in a specific order item's lifecycle. The order item is returned as a summary reference, providing context about the purchased product name, variant SKU, seller shop name, quantity, unit price, subtotal, and current fulfillment status.
    *
-   * @x-autobe-database-schema-property orderItem
-   * @x-autobe-specification BELONGS-TO relation: JOIN on e_commerce_mall_order_item_id to e_commerce_mall_order_items.id. Returns IECommerceMallOrderItem.ISummary. The itemId path parameter in API endpoints ensures data isolation — the log must belong to the specified order item.
+     * @x-autobe-database-schema-property orderItem
+     * @x-autobe-specification BELONGS-TO relation: JOIN on
+     *   e_commerce_mall_order_item_id to e_commerce_mall_order_items.id.
+     *   Returns IECommerceMallOrderItem.ISummary. The itemId path parameter in
+     *   API endpoints ensures data isolation — the log must belong to the
+     *   specified order item.
    */
   orderItem: IECommerceMallOrderItem.ISummary;
 
@@ -38,8 +43,11 @@ export type IECommerceMallOrderItemStatusLog = {
    *
    * Null represents the initial state when the order item was first created with status "paid" — there was no prior status to transition from. This field is used together with `to_status` to reconstruct the complete state history of an order item over time.
    *
-   * @x-autobe-database-schema-property from_status
-   * @x-autobe-specification Direct mapping from e_commerce_mall_order_item_status_logs.from_status. Nullable string — null for the initial 'paid' status entry representing that there was no prior state.
+     * @x-autobe-database-schema-property from_status
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_order_item_status_logs.from_status. Nullable string —
+     *   null for the initial 'paid' status entry representing that there was no
+     *   prior state.
    */
   from_status: string | null;
 
@@ -48,8 +56,11 @@ export type IECommerceMallOrderItemStatusLog = {
    *
    * Valid values include: "paid" (payment completed, awaiting seller to ship), "shipped" (seller has dispatched the item via a carrier), "delivered" (customer confirmed delivery or 14-day auto-delivery timeout elapsed), "cancelled" (item cancelled before shipping via cancellation request approval or administrator force-cancel), "refunded" (item refunded after delivery via refund request approval or administrator force-refund). This field is always populated.
    *
-   * @x-autobe-database-schema-property to_status
-   * @x-autobe-specification Direct mapping from e_commerce_mall_order_item_status_logs.to_status. Always non-null — represents the new state after transition. Valid values: paid, shipped, delivered, cancelled, refunded.
+     * @x-autobe-database-schema-property to_status
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_order_item_status_logs.to_status. Always non-null —
+     *   represents the new state after transition. Valid values: paid, shipped,
+     *   delivered, cancelled, refunded.
    */
   to_status: string;
 
@@ -58,8 +69,13 @@ export type IECommerceMallOrderItemStatusLog = {
    *
    * Provides audit context for each transition. Common reasons include: "shipment_created" (when shipped via a seller shipment), "customer_delivery_confirmation" (customer confirmed delivery), "auto_delivery_timeout" (14-day auto-delivery period expired), "cancellation_approved" (seller approved a cancellation request), "refund_approved" (seller approved a refund request), "administrator_force_cancel" (administrator force-cancelled the item), and "administrator_force_refund" (administrator force-refunded the item). May be null for transitions without a specific recorded cause.
    *
-   * @x-autobe-database-schema-property reason
-   * @x-autobe-specification Direct mapping from e_commerce_mall_order_item_status_logs.reason. Nullable string — may be null for transitions without a specific recorded cause. Common values: shipment_created, customer_delivery_confirmation, auto_delivery_timeout, cancellation_approved, refund_approved, administrator_force_cancel, administrator_force_refund.
+     * @x-autobe-database-schema-property reason
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_order_item_status_logs.reason. Nullable string — may be
+     *   null for transitions without a specific recorded cause. Common values:
+     *   shipment_created, customer_delivery_confirmation,
+     *   auto_delivery_timeout, cancellation_approved, refund_approved,
+     *   administrator_force_cancel, administrator_force_refund.
    */
   reason: string | null;
 
@@ -68,8 +84,12 @@ export type IECommerceMallOrderItemStatusLog = {
    *
    * For "shipped" status entries, this timestamp serves as the reference point for calculating the 14-day auto-delivery timeout — if no delivery confirmation is received within 14 days of this timestamp, the order item is automatically transitioned to "delivered". Status log entries are immutable once created, so this timestamp accurately reflects when the transition occurred.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from e_commerce_mall_order_item_status_logs.created_at. For 'shipped' status entries, this timestamp is the reference point for calculating the 14-day auto-delivery timeout window. Status logs are immutable once created — this value never changes.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_order_item_status_logs.created_at. For 'shipped' status
+     *   entries, this timestamp is the reference point for calculating the
+     *   14-day auto-delivery timeout window. Status logs are immutable once
+     *   created — this value never changes.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -78,8 +98,12 @@ export type IECommerceMallOrderItemStatusLog = {
    *
    * Included for consistency with the standard temporal field pattern. Status log entries are immutable once created, so this value will always equal the created_at timestamp.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from e_commerce_mall_order_item_status_logs.updated_at. Included for consistency with the standard temporal field pattern. In practice, status logs are immutable once created — this value will equal created_at.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_order_item_status_logs.updated_at. Included for
+     *   consistency with the standard temporal field pattern. In practice,
+     *   status logs are immutable once created — this value will equal
+     *   created_at.
    */
   updated_at: string & tags.Format<"date-time">;
 };
@@ -99,7 +123,8 @@ export namespace IECommerceMallOrderItemStatusLog {
      *
      * Page numbering starts from 1 (the first page). When not specified, defaults to 1. This parameter controls which slice of the ordered result set is returned, enabling clients to navigate through large collections of status log entries efficiently.
      *
-     * @x-autobe-specification Pagination: current page number (1-indexed). skip = (page - 1) * limit. Defaults to 1 when not provided.
+         * @x-autobe-specification Pagination: current page number (1-indexed).
+         *   skip = (page - 1) * limit. Defaults to 1 when not provided.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -108,7 +133,9 @@ export namespace IECommerceMallOrderItemStatusLog {
      *
      * Defines the page size constraint for paginated responses. The actual number of entries in the response may be lower on the final page or when total records are fewer than the limit. The maximum allowed value is 100, preventing excessively large page sizes.
      *
-     * @x-autobe-specification Pagination: maximum number of entries per page. take = limit. Maximum allowed value is 100. Defaults to a system-configured value (e.g., 20) when not provided.
+         * @x-autobe-specification Pagination: maximum number of entries per
+         *   page. take = limit. Maximum allowed value is 100. Defaults to a
+         *   system-configured value (e.g., 20) when not provided.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -119,8 +146,10 @@ export namespace IECommerceMallOrderItemStatusLog {
      *
      * Returns only log entries where the to_status matches the specified value. Valid status values include: paid, shipped, delivered, cancelled, refunded. This filter enables users to quickly find all entries where an order item entered a particular state in its lifecycle.
      *
-     * @x-autobe-database-schema-property to_status
-     * @x-autobe-specification Filter using exact match on e_commerce_mall_order_item_status_logs.to_status. Valid enum values: paid, shipped, delivered, cancelled, refunded.
+         * @x-autobe-database-schema-property to_status
+         * @x-autobe-specification Filter using exact match on
+         *   e_commerce_mall_order_item_status_logs.to_status. Valid enum
+         *   values: paid, shipped, delivered, cancelled, refunded.
      */
     to_status?: string | undefined;
 
@@ -129,8 +158,11 @@ export namespace IECommerceMallOrderItemStatusLog {
      *
      * Returns only log entries where the from_status matches the specified value. When filtering by null, returns entries where from_status is null — representing the initial 'paid' status entry that has no prior state. This filter allows tracing the origins of specific status transitions.
      *
-     * @x-autobe-database-schema-property from_status
-     * @x-autobe-specification Filter using exact match on e_commerce_mall_order_item_status_logs.from_status. Handles null semantics correctly — null from_status represents the initial 'paid' status entry with no prior state.
+         * @x-autobe-database-schema-property from_status
+         * @x-autobe-specification Filter using exact match on
+         *   e_commerce_mall_order_item_status_logs.from_status. Handles null
+         *   semantics correctly — null from_status represents the initial
+         *   'paid' status entry with no prior state.
      */
     from_status?: string | null | undefined;
 
@@ -139,8 +171,13 @@ export namespace IECommerceMallOrderItemStatusLog {
      *
      * Returns only log entries whose reason field contains the specified text (partial match). Common reason values include: shipment_created (item shipped), customer_delivery_confirmation (manual delivery confirmation), auto_delivery_timeout (14-day auto-delivery), cancellation_approved (seller approved cancellation), refund_approved (seller approved refund), administrator_force_cancel, and administrator_force_refund.
      *
-     * @x-autobe-database-schema-property reason
-     * @x-autobe-specification Filter using LIKE/substring match on e_commerce_mall_order_item_status_logs.reason. Partial match against the reason text. Common values: shipment_created, customer_delivery_confirmation, auto_delivery_timeout, cancellation_approved, refund_approved, administrator_force_cancel, administrator_force_refund.
+         * @x-autobe-database-schema-property reason
+         * @x-autobe-specification Filter using LIKE/substring match on
+         *   e_commerce_mall_order_item_status_logs.reason. Partial match
+         *   against the reason text. Common values: shipment_created,
+         *   customer_delivery_confirmation, auto_delivery_timeout,
+         *   cancellation_approved, refund_approved, administrator_force_cancel,
+         *   administrator_force_refund.
      */
     reason?: string | null | undefined;
 
@@ -149,7 +186,10 @@ export namespace IECommerceMallOrderItemStatusLog {
      *
      * Returns only log entries created at or after this timestamp. When paired with created_at_to, defines a time window for retrieving status changes that occurred within a specific period. The 'shipped' status entry's created_at is the reference point for calculating the 14-day auto-delivery window.
      *
-     * @x-autobe-specification Filter: e_commerce_mall_order_item_status_logs.created_at >= created_at_from. Date range lower bound — defines the start of the time window for filtering status changes.
+         * @x-autobe-specification Filter:
+         *   e_commerce_mall_order_item_status_logs.created_at >=
+         *   created_at_from. Date range lower bound — defines the start of the
+         *   time window for filtering status changes.
      */
     created_at_from?: (string & tags.Format<"date-time">) | undefined;
 
@@ -158,7 +198,10 @@ export namespace IECommerceMallOrderItemStatusLog {
      *
      * Returns only log entries created at or before this timestamp. When paired with created_at_from, defines a time window for retrieving status changes that occurred within a specific period.
      *
-     * @x-autobe-specification Filter: e_commerce_mall_order_item_status_logs.created_at <= created_at_to. Date range upper bound — defines the end of the time window for filtering status changes.
+         * @x-autobe-specification Filter:
+         *   e_commerce_mall_order_item_status_logs.created_at <= created_at_to.
+         *   Date range upper bound — defines the end of the time window for
+         *   filtering status changes.
      */
     created_at_to?: (string & tags.Format<"date-time">) | undefined;
   };
@@ -176,8 +219,9 @@ export namespace IECommerceMallOrderItemStatusLog {
      *
      * Auto-generated UUID primary key assigned at creation. Used as a stable reference for retrieving individual log entries.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from e_commerce_mall_order_item_status_logs.id. UUID primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_order_item_status_logs.id. UUID primary key.
      */
     id: string & tags.Format<"uuid">;
 
@@ -186,8 +230,10 @@ export namespace IECommerceMallOrderItemStatusLog {
      *
      * Provides context for the status transition by exposing the associated order item's summary information, including product name, variant details, quantity, unit price, and current fulfillment status.
      *
-     * @x-autobe-database-schema-property orderItem
-     * @x-autobe-specification BELONGS-TO relation via JOIN on e_commerce_mall_order_item_id FK to e_commerce_mall_order_items.id. Returns IECommerceMallOrderItem.ISummary.
+         * @x-autobe-database-schema-property orderItem
+         * @x-autobe-specification BELONGS-TO relation via JOIN on
+         *   e_commerce_mall_order_item_id FK to e_commerce_mall_order_items.id.
+         *   Returns IECommerceMallOrderItem.ISummary.
      */
     orderItem: IECommerceMallOrderItem.ISummary;
 
@@ -196,8 +242,10 @@ export namespace IECommerceMallOrderItemStatusLog {
      *
      * Null for the very first log entry (when the order item is created with status 'paid'), indicating there was no prior state. For subsequent transitions, this field captures the status that existed before the change.
      *
-     * @x-autobe-database-schema-property from_status
-     * @x-autobe-specification Direct mapping from e_commerce_mall_order_item_status_logs.from_status. Null for the initial 'paid' status entry.
+         * @x-autobe-database-schema-property from_status
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_order_item_status_logs.from_status. Null for the
+         *   initial 'paid' status entry.
      */
     from_status: string | null;
 
@@ -206,8 +254,10 @@ export namespace IECommerceMallOrderItemStatusLog {
      *
      * Represents the next state in the order item's lifecycle. Valid values include: `paid` (initial state after order placement), `shipped` (seller dispatched the item), `delivered` (customer confirmed delivery or auto-delivery timeout), `cancelled` (item cancelled before shipping), and `refunded` (item refunded after delivery).
      *
-     * @x-autobe-database-schema-property to_status
-     * @x-autobe-specification Direct mapping from e_commerce_mall_order_item_status_logs.to_status. Valid values: paid, shipped, delivered, cancelled, refunded.
+         * @x-autobe-database-schema-property to_status
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_order_item_status_logs.to_status. Valid values:
+         *   paid, shipped, delivered, cancelled, refunded.
      */
     to_status: string;
 
@@ -216,8 +266,13 @@ export namespace IECommerceMallOrderItemStatusLog {
      *
      * Provides audit context explaining why the transition occurred. Examples include: `shipment_created` (item shipped via a shipment), `customer_delivery_confirmation` (customer confirmed delivery), `auto_delivery_timeout` (14-day auto-delivery triggered), `cancellation_approved` (seller approved cancellation request), `refund_approved` (seller approved refund request), `administrator_force_cancel` (admin force-cancelled the item), or `administrator_force_refund` (admin force-refunded the item).
      *
-     * @x-autobe-database-schema-property reason
-     * @x-autobe-specification Direct mapping from e_commerce_mall_order_item_status_logs.reason. Nullable. Values include: 'shipment_created', 'customer_delivery_confirmation', 'auto_delivery_timeout', 'cancellation_approved', 'refund_approved', 'administrator_force_cancel', 'administrator_force_refund'.
+         * @x-autobe-database-schema-property reason
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_order_item_status_logs.reason. Nullable. Values
+         *   include: 'shipment_created', 'customer_delivery_confirmation',
+         *   'auto_delivery_timeout', 'cancellation_approved',
+         *   'refund_approved', 'administrator_force_cancel',
+         *   'administrator_force_refund'.
      */
     reason: string | null;
 
@@ -226,8 +281,9 @@ export namespace IECommerceMallOrderItemStatusLog {
      *
      * For entries with `to_status` of `shipped`, this timestamp serves as the reference point for the 14-day auto-delivery window — if the customer does not manually confirm delivery within 14 days of this timestamp, the order item is automatically transitioned to `delivered`.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from e_commerce_mall_order_item_status_logs.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_order_item_status_logs.created_at.
      */
     created_at: string & tags.Format<"date-time">;
   };

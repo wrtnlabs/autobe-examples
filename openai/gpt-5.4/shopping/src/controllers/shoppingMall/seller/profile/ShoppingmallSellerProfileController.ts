@@ -24,9 +24,12 @@ export class ShoppingmallSellerProfileController {
    *
    * @param connection
    * @param body Updated customer-owned profile fields
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Resolve the authenticated customer from the active customer session context and load the corresponding `shopping_mall_customers` record together with its one-to-one `shopping_mall_customer_profiles` relation.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Resolve the authenticated customer from the
+     *   active customer session context and load the corresponding
+     *   `shopping_mall_customers` record together with its one-to-one
+     *   `shopping_mall_customer_profiles` relation.
    *
    * Before performing any write, verify that an authenticated customer context exists. If not, reject the request as unauthorized. Then verify that the customer account is still active by checking that `shopping_mall_customers.deleted_at` is null. If the customer account is deleted, reject the request and do not recreate profile data. If needed by service policy, also deny access when the authenticated customer is banned from active use.
    *

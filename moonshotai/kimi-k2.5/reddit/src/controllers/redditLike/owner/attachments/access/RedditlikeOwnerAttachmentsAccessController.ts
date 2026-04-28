@@ -21,9 +21,11 @@ export class RedditlikeOwnerAttachmentsAccessController {
    * @param connection
    * @param attachmentId Target attachment's ID to log access for
    * @param body Access event details including type and optional context
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor owner
-   * @x-autobe-specification Create a new access log entry in reddit_like_attachment_access_logs table recording an access event to the specified attachment.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor owner
+     * @x-autobe-specification Create a new access log entry in
+     *   reddit_like_attachment_access_logs table recording an access event to
+     *   the specified attachment.
    *
    * Validate the attachment exists in reddit_like_attachments table. Extract actor information from the current authenticated session (actor_id and actor_type from JWT claims - guest, member, moderator, or owner). If unauthenticated, set actor_id to null and actor_type to null.
    *

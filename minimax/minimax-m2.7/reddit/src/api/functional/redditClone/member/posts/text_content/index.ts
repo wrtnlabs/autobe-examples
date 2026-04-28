@@ -24,13 +24,13 @@ import { IRedditClonePostTextContent } from "../../../../../structures/IRedditCl
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
  * @x-autobe-specification 1. Extract postId from path parameter (UUID format)
- * 2. Validate the authenticated user is the author of the post (reddit_clone_member_id matches session)
- * 3. Verify post exists in reddit_clone_posts table
- * 4. Verify post type is 'text'
- * 5. Retrieve associated reddit_clone_post_text_contents record via reddit_clone_post_id
- * 6. Update the body field with the provided value
- * 7. Update updated_at timestamp on the parent post
- * 8. Return the complete post with text content relationship populated
+ *   2. Validate the authenticated user is the author of the post
+ *   (reddit_clone_member_id matches session) 3. Verify post exists in
+ *   reddit_clone_posts table 4. Verify post type is 'text' 5. Retrieve
+ *   associated reddit_clone_post_text_contents record via reddit_clone_post_id
+ *   6. Update the body field with the provided value 7. Update updated_at
+ *   timestamp on the parent post 8. Return the complete post with text content
+ *   relationship populated
  *
  * Error handling:
  * - 404 Not Found if post does not exist or is deleted

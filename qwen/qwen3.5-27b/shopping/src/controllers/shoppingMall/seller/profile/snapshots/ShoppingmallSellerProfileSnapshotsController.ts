@@ -22,9 +22,10 @@ export class ShoppingmallSellerProfileSnapshotsController {
    *
    * @param connection
    * @param body Search criteria including date range filters, field change filters, and pagination parameters for retrieving seller profile snapshots.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Query shopping_mall_seller_profile_snapshots table filtered by the authenticated seller's profile ID.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Query shopping_mall_seller_profile_snapshots
+     *   table filtered by the authenticated seller's profile ID.
    *
    * Apply search filters from request body:
    * - Date range filtering on created_at
@@ -69,9 +70,10 @@ export class ShoppingmallSellerProfileSnapshotsController {
    *
    * @param connection
    * @param snapshotId Unique identifier of the seller profile snapshot to retrieve (global scope).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Query shopping_mall_seller_profile_snapshots table by primary key id.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Query shopping_mall_seller_profile_snapshots
+     *   table by primary key id.
    *
    * 1. Validate the snapshotId is a valid UUID
    * 2. Fetch the snapshot record from shopping_mall_seller_profile_snapshots

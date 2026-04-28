@@ -22,7 +22,8 @@ import { IShoppingMallSuperAdmin } from "../../../../structures/IShoppingMallSup
  * @param props.body Search criteria for filtering super administrator accounts including email pattern matching, date range filters for account creation, pagination parameters, and sorting options.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor superAdmin
- * @x-autobe-specification Query shopping_mall_super_admins table with pagination and filtering.
+ * @x-autobe-specification Query shopping_mall_super_admins table with
+ *   pagination and filtering.
  *
  * Apply search filters on email (partial match), created_at date range, and account status (active/deleted).
  * Exclude soft-deleted records by default unless explicitly requested.
@@ -118,7 +119,8 @@ export namespace index {
  * @param props.superAdminId Unique identifier of the super administrator account (UUID format).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor superAdmin
- * @x-autobe-specification Query the shopping_mall_super_admins table by the provided superAdminId UUID parameter.
+ * @x-autobe-specification Query the shopping_mall_super_admins table by the
+ *   provided superAdminId UUID parameter.
  *
  * Return the super administrator record with id, email, created_at, and updated_at fields.
  * Exclude password_hash from the response for security.
@@ -212,7 +214,8 @@ export namespace at {
  * @param props.body Update request containing modifiable super administrator profile fields. Email must be unique. Password will be hashed before storage.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor superAdmin
- * @x-autobe-specification Update the shopping_mall_super_admins record identified by superAdminId.
+ * @x-autobe-specification Update the shopping_mall_super_admins record
+ *   identified by superAdminId.
  *
  * 1. Validate the superAdminId exists and the record is not soft deleted
  * 2. Validate email uniqueness if email is being changed (check against other super admins)

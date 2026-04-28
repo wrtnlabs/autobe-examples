@@ -11,35 +11,52 @@ export type IErpHrmOrganizationDashboard = {
   /**
    * Total number of active employees in the organization.
    *
-   * @x-autobe-specification COUNT aggregation from erp_hrm_employees WHERE erp_hrm_organization_id = :orgId AND status = 'active'. Returns total number of active employees in the organization.
+     * @x-autobe-specification COUNT aggregation from erp_hrm_employees WHERE
+     *   erp_hrm_organization_id = :orgId AND status = 'active'. Returns total
+     *   number of active employees in the organization.
    */
   employeeCount: number & tags.Type<"int32">;
 
   /**
    * Total hours logged across all employees for the current week.
    *
-   * @x-autobe-specification SUM(duration_minutes)/60 from erp_hrm_timelogs JOIN erp_hrm_employees WHERE erp_hrm_employees.erp_hrm_organization_id = :orgId AND timelog date falls within current week (Monday to Sunday based on organization timezone). Returns total hours as decimal number.
+     * @x-autobe-specification SUM(duration_minutes)/60 from erp_hrm_timelogs
+     *   JOIN erp_hrm_employees WHERE erp_hrm_employees.erp_hrm_organization_id
+     *   = :orgId AND timelog date falls within current week (Monday to Sunday
+     *   based on organization timezone). Returns total hours as decimal number.
    */
   totalHoursThisWeek: number;
 
   /**
    * Number of timesheets awaiting approval.
    *
-   * @x-autobe-specification COUNT from erp_hrm_timesheets WHERE erp_hrm_employee_id IN (employee IDs for current organization) AND status = 'submitted'. Returns count of timesheets awaiting manager approval.
+     * @x-autobe-specification COUNT from erp_hrm_timesheets WHERE
+     *   erp_hrm_employee_id IN (employee IDs for current organization) AND
+     *   status = 'submitted'. Returns count of timesheets awaiting manager
+     *   approval.
    */
   pendingTimesheetsCount: number & tags.Type<"int32">;
 
   /**
    * Projects where budget utilization exceeds 80 percent.
    *
-   * @x-autobe-specification Join erp_hrm_projects with timelog aggregates. Calculate actual_hours = SUM(duration_minutes)/60 per project. Calculate budget_utilization_percentage = (actual_hours / budget_hours) * 100. Filter: budget_hours IS NOT NULL AND status = 'active' AND percentage > 80. Returns array of IErpHrmProject.ISummary with budget alerts.
+     * @x-autobe-specification Join erp_hrm_projects with timelog aggregates.
+     *   Calculate actual_hours = SUM(duration_minutes)/60 per project.
+     *   Calculate budget_utilization_percentage = (actual_hours / budget_hours)
+     *   * 100. Filter: budget_hours IS NOT NULL AND status = 'active' AND
+     *   percentage > 80. Returns array of IErpHrmProject.ISummary with budget
+     *   alerts.
    */
   budgetAlertProjects: IErpHrmProject.ISummary[];
 
   /**
    * Top 5 employees by hours logged this week.
    *
-   * @x-autobe-specification Aggregate timelogs per employee for current week: SUM(duration_minutes)/60 as total_hours. Filter by organization context. Order by total_hours DESC. Limit 5. Include employee name and total hours. Returns array of anonymous object { employee_id, employee_name, total_hours }.
+     * @x-autobe-specification Aggregate timelogs per employee for current week:
+     *   SUM(duration_minutes)/60 as total_hours. Filter by organization
+     *   context. Order by total_hours DESC. Limit 5. Include employee name and
+     *   total hours. Returns array of anonymous object { employee_id,
+     *   employee_name, total_hours }.
    */
   topPerformers: IErpHrmEmployee.ISummary[];
 };

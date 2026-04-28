@@ -14,8 +14,9 @@ export type IShoppingMallAdministrator = {
    *
    * This UUID serves as the primary key for identifying administrator accounts across the platform. It is used in API path parameters and as a reference in related entities.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_administrators.id. Primary key UUID.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_administrators.id. Primary key UUID.
    */
   id: string & tags.Format<"uuid">;
 
@@ -24,8 +25,10 @@ export type IShoppingMallAdministrator = {
    *
    * This email serves as the login credential and must be unique across all administrators. It is used for password reset flows and account notifications.
    *
-   * @x-autobe-database-schema-property email
-   * @x-autobe-specification Direct mapping from shopping_mall_administrators.email. Unique constraint enforced at database level.
+     * @x-autobe-database-schema-property email
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_administrators.email. Unique constraint enforced at
+     *   database level.
    */
   email: string & tags.Format<"email">;
 
@@ -34,8 +37,10 @@ export type IShoppingMallAdministrator = {
    *
    * Regular administrators can manage sellers, categories, products, orders, and users. Super administrators have all regular admin capabilities plus the ability to promote/demote other administrators and cannot be demoted by themselves.
    *
-   * @x-autobe-database-schema-property grade
-   * @x-autobe-specification Direct mapping from shopping_mall_administrators.grade. Contains 'regular' or 'super' values.
+     * @x-autobe-database-schema-property grade
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_administrators.grade. Contains 'regular' or 'super'
+     *   values.
    */
   grade: string;
 
@@ -44,8 +49,9 @@ export type IShoppingMallAdministrator = {
    *
    * When true, the administrator cannot authenticate or access the system. Banned administrators retain their account data for audit and accountability purposes. Only super administrators can ban other administrators.
    *
-   * @x-autobe-database-schema-property banned
-   * @x-autobe-specification Direct mapping from shopping_mall_administrators.banned. Boolean flag.
+     * @x-autobe-database-schema-property banned
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_administrators.banned. Boolean flag.
    */
   banned: boolean;
 
@@ -54,8 +60,9 @@ export type IShoppingMallAdministrator = {
    *
    * Records the initial account creation time for audit and compliance purposes. Stored in UTC with timezone information.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from shopping_mall_administrators.created_at. DateTime with timezone.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_administrators.created_at. DateTime with timezone.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -64,8 +71,9 @@ export type IShoppingMallAdministrator = {
    *
    * Tracks the most recent update to any administrator account field for audit trail. Updated automatically on any modification to the record.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from shopping_mall_administrators.updated_at. DateTime with timezone.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_administrators.updated_at. DateTime with timezone.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -74,8 +82,10 @@ export type IShoppingMallAdministrator = {
    *
    * When null, the account is active. When set, the account is marked as deleted but preserved for audit purposes. Soft deletion allows for potential restoration while maintaining data integrity.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from shopping_mall_administrators.deleted_at. Nullable DateTime with timezone. Use oneOf for nullable type.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_administrators.deleted_at. Nullable DateTime with
+     *   timezone. Use oneOf for nullable type.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -93,8 +103,10 @@ export namespace IShoppingMallAdministrator {
      *
      * This email must not already exist in the system (unique constraint). It serves as the primary identifier for authentication and is used for password reset flows and account notifications.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping to shopping_mall_administrators.email column. Unique constraint enforced at database level. Validated as RFC 5322 email format.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping to
+         *   shopping_mall_administrators.email column. Unique constraint
+         *   enforced at database level. Validated as RFC 5322 email format.
      */
     email: string & tags.Format<"email">;
 
@@ -103,8 +115,11 @@ export namespace IShoppingMallAdministrator {
      *
      * This password is securely hashed using bcrypt before storage and is never stored in plain text. Must meet complexity requirements: minimum 8 characters, at least one uppercase letter, one lowercase letter, and one number.
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification Maps to shopping_mall_administrators.password_hash column. Password is hashed using bcrypt with salt rounds >= 10 before storage. Plain text password provided by client, never stored.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification Maps to
+         *   shopping_mall_administrators.password_hash column. Password is
+         *   hashed using bcrypt with salt rounds >= 10 before storage. Plain
+         *   text password provided by client, never stored.
      */
     password: string & tags.Format<"password">;
 
@@ -113,7 +128,10 @@ export namespace IShoppingMallAdministrator {
      *
      * This field is captured for security auditing and session tracking purposes. It represents the href of the page where the user initiated the registration process.
      *
-     * @x-autobe-specification Session context field stored in shopping_mall_administrator_sessions.href column, not in shopping_mall_administrators. Captures the current page URL where registration occurred for security auditing.
+         * @x-autobe-specification Session context field stored in
+         *   shopping_mall_administrator_sessions.href column, not in
+         *   shopping_mall_administrators. Captures the current page URL where
+         *   registration occurred for security auditing.
      */
     href: string & tags.Format<"uri">;
 
@@ -122,7 +140,10 @@ export namespace IShoppingMallAdministrator {
      *
      * This field is captured for security auditing and session tracking purposes. It indicates the source page from which the user navigated to the registration form.
      *
-     * @x-autobe-specification Session context field stored in shopping_mall_administrator_sessions.referrer column, not in shopping_mall_administrators. Captures the previous page URL that led to the registration page.
+         * @x-autobe-specification Session context field stored in
+         *   shopping_mall_administrator_sessions.referrer column, not in
+         *   shopping_mall_administrators. Captures the previous page URL that
+         *   led to the registration page.
      */
     referrer: string & tags.Format<"uri">;
 
@@ -131,7 +152,11 @@ export namespace IShoppingMallAdministrator {
      *
      * This field is optional in the registration request because in Server Side Rendering (SSR) scenarios, the client cannot know its own IP address. If not provided by the client, the server will capture it automatically. Used for session tracking and security monitoring.
      *
-     * @x-autobe-specification Session context field stored in shopping_mall_administrator_sessions.ip column, not in shopping_mall_administrators. Optional in IJoin because in SSR (Server Side Rendering) the client cannot know its own IP - server captures it as fallback. Format: IPv4 address.
+         * @x-autobe-specification Session context field stored in
+         *   shopping_mall_administrator_sessions.ip column, not in
+         *   shopping_mall_administrators. Optional in IJoin because in SSR
+         *   (Server Side Rendering) the client cannot know its own IP - server
+         *   captures it as fallback. Format: IPv4 address.
      */
     ip?: (string & tags.Format<"ipv4">) | undefined;
   };
@@ -149,8 +174,10 @@ export namespace IShoppingMallAdministrator {
      *
      * This UUID serves as the primary key and is used to reference the administrator in all related operations, including session management, audit logging, and grade changes.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_administrators.id. Primary key UUID that uniquely identifies each administrator account.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_administrators.id. Primary key UUID that uniquely
+         *   identifies each administrator account.
      */
     id: string & tags.Format<"uuid">;
 
@@ -159,8 +186,10 @@ export namespace IShoppingMallAdministrator {
      *
      * This email serves as the login credential and must be unique across all administrators. It is used for password reset flows and account notifications.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from shopping_mall_administrators.email. Unique email address used for authentication and identification.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_administrators.email. Unique email address used for
+         *   authentication and identification.
      */
     email: string & tags.Format<"email">;
 
@@ -169,8 +198,10 @@ export namespace IShoppingMallAdministrator {
      *
      * Regular administrators can manage sellers, categories, products, orders, and users. Super administrators have all regular admin capabilities plus the ability to promote/demote other administrators and cannot be demoted by themselves.
      *
-     * @x-autobe-database-schema-property grade
-     * @x-autobe-specification Direct mapping from shopping_mall_administrators.grade. String value indicating privilege level: 'regular' or 'super'.
+         * @x-autobe-database-schema-property grade
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_administrators.grade. String value indicating
+         *   privilege level: 'regular' or 'super'.
      */
     grade: string;
 
@@ -179,8 +210,10 @@ export namespace IShoppingMallAdministrator {
      *
      * When true, the administrator cannot authenticate or access the system. Banned administrators retain their account data for audit and accountability purposes. Only super administrators can ban other administrators.
      *
-     * @x-autobe-database-schema-property banned
-     * @x-autobe-specification Direct mapping from shopping_mall_administrators.banned. Boolean flag indicating whether the administrator account is banned from logging in.
+         * @x-autobe-database-schema-property banned
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_administrators.banned. Boolean flag indicating
+         *   whether the administrator account is banned from logging in.
      */
     banned: boolean;
 
@@ -189,8 +222,10 @@ export namespace IShoppingMallAdministrator {
      *
      * Records the initial account creation time for audit and compliance purposes. This field is immutable and provides the baseline for account lifecycle tracking.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_administrators.created_at. DateTime timestamp when the administrator account was created.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_administrators.created_at. DateTime timestamp when
+         *   the administrator account was created.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -199,8 +234,12 @@ export namespace IShoppingMallAdministrator {
      *
      * When null, the account is active. When set to a timestamp, the account is marked as deleted but preserved for audit and accountability purposes. Soft-deleted administrators cannot authenticate or access the system.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from shopping_mall_administrators.deleted_at. Nullable DateTime timestamp indicating soft-delete status. When null, the account is active. When set, the account is marked as deleted but preserved for audit purposes.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_administrators.deleted_at. Nullable DateTime
+         *   timestamp indicating soft-delete status. When null, the account is
+         *   active. When set, the account is marked as deleted but preserved
+         *   for audit purposes.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };
@@ -218,7 +257,11 @@ export namespace IShoppingMallAdministrator {
      *
      * Performs a partial match search on administrator email addresses. Enter any portion of an email address to find matching administrators. The search is case-insensitive and matches any occurrence of the search term within email addresses.
      *
-     * @x-autobe-specification Computed parameter for email search. Performs partial match on shopping_mall_administrators.email column using SQL LIKE operator with wildcards (e.g., '%searchterm%'). Case-insensitive search for finding administrators by email address.
+         * @x-autobe-specification Computed parameter for email search. Performs
+         *   partial match on shopping_mall_administrators.email column using
+         *   SQL LIKE operator with wildcards (e.g., '%searchterm%').
+         *   Case-insensitive search for finding administrators by email
+         *   address.
      */
     search?: string | undefined;
 
@@ -227,8 +270,12 @@ export namespace IShoppingMallAdministrator {
      *
      * Specify 'regular' to filter for regular administrators only, or 'super' to filter for super administrators only. Leave empty or omit this parameter to include administrators of all privilege levels in the results.
      *
-     * @x-autobe-database-schema-property grade
-     * @x-autobe-specification Direct mapping to shopping_mall_administrators.grade column. Filter by exact match on grade values: 'regular' for regular administrators or 'super' for super administrators. NULL or omitted means no grade filtering applied.
+         * @x-autobe-database-schema-property grade
+         * @x-autobe-specification Direct mapping to
+         *   shopping_mall_administrators.grade column. Filter by exact match on
+         *   grade values: 'regular' for regular administrators or 'super' for
+         *   super administrators. NULL or omitted means no grade filtering
+         *   applied.
      */
     grade?: string | undefined;
 
@@ -237,7 +284,11 @@ export namespace IShoppingMallAdministrator {
      *
      * Specify 'active' to show only administrators who can access the system, or 'banned' to show only administrators who have been prohibited from accessing the system. Leave empty or omit this parameter to include administrators of all status types in the results.
      *
-     * @x-autobe-specification Computed parameter mapping to shopping_mall_administrators.banned column. 'active' maps to banned=false, 'banned' maps to banned=true. NULL or omitted means no status filtering applied. This provides user-friendly status values instead of raw boolean.
+         * @x-autobe-specification Computed parameter mapping to
+         *   shopping_mall_administrators.banned column. 'active' maps to
+         *   banned=false, 'banned' maps to banned=true. NULL or omitted means
+         *   no status filtering applied. This provides user-friendly status
+         *   values instead of raw boolean.
      */
     status?: string | undefined;
 
@@ -246,7 +297,10 @@ export namespace IShoppingMallAdministrator {
      *
      * Use the cursor value returned in the previous page's response metadata to continue browsing from where you left off. This enables efficient cursor-based pagination for large datasets. Omit this parameter or set to null to start from the first page.
      *
-     * @x-autobe-specification Cursor-based pagination token from previous response. Use the cursor value returned in the pagination metadata of the previous page response to retrieve the next page. NULL or omitted means start from the beginning of the result set.
+         * @x-autobe-specification Cursor-based pagination token from previous
+         *   response. Use the cursor value returned in the pagination metadata
+         *   of the previous page response to retrieve the next page. NULL or
+         *   omitted means start from the beginning of the result set.
      */
     cursor?: string | undefined;
 
@@ -255,7 +309,10 @@ export namespace IShoppingMallAdministrator {
      *
      * Specify how many administrator accounts should be included in each page of results. Accepts values from 1 to 100. If omitted, defaults to 20 records per page. Use a higher limit for fewer page navigations, or a lower limit for more granular browsing.
      *
-     * @x-autobe-specification Number of records to return per page. Minimum 1, maximum 100. Default is 20 if not specified. This controls the page size for pagination. Must be a positive integer within the allowed range.
+         * @x-autobe-specification Number of records to return per page. Minimum
+         *   1, maximum 100. Default is 20 if not specified. This controls the
+         *   page size for pagination. Must be a positive integer within the
+         *   allowed range.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -268,7 +325,11 @@ export namespace IShoppingMallAdministrator {
      *
      * This parameter provides traditional page-based pagination as an alternative to cursor-based navigation. Use either cursor or page for pagination, but not both simultaneously.
      *
-     * @x-autobe-specification 1-indexed page number for traditional pagination. Defaults to 1 if not provided or null. Alternative to cursor-based pagination. When used with limit, calculates offset as (page - 1) * limit. Requesting a page beyond available results returns empty data array.
+         * @x-autobe-specification 1-indexed page number for traditional
+         *   pagination. Defaults to 1 if not provided or null. Alternative to
+         *   cursor-based pagination. When used with limit, calculates offset as
+         *   (page - 1) * limit. Requesting a page beyond available results
+         *   returns empty data array.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };
@@ -286,7 +347,12 @@ export namespace IShoppingMallAdministrator {
      *
      * This UUID serves as the primary key in the shopping_mall_administrators table and uniquely identifies the administrator across all system operations. It is used for audit logging, session management, and as a reference in related entities.
      *
-     * @x-autobe-specification Direct mapping from shopping_mall_administrators.id column. Primary key UUID identifying the authenticated administrator account. This is the unique identifier used across all system operations for audit logging, session management, and as a reference in related entities.
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_administrators.id column. Primary key UUID
+         *   identifying the authenticated administrator account. This is the
+         *   unique identifier used across all system operations for audit
+         *   logging, session management, and as a reference in related
+         *   entities.
      */
     id: string & tags.Format<"uuid">;
 
@@ -295,7 +361,11 @@ export namespace IShoppingMallAdministrator {
      *
      * This email serves as the login credential and must be unique across all administrators. It is used for password reset flows, account notifications, and as a human-readable identifier for the administrator account.
      *
-     * @x-autobe-specification Direct mapping from shopping_mall_administrators.email column. Unique email address used for administrator authentication and identification. This email serves as the login credential and must be unique across all administrators.
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_administrators.email column. Unique email address
+         *   used for administrator authentication and identification. This
+         *   email serves as the login credential and must be unique across all
+         *   administrators.
      */
     email: string & tags.Format<"email">;
 
@@ -304,7 +374,12 @@ export namespace IShoppingMallAdministrator {
      *
      * Administrators have two grade levels: 'regular' or 'super'. Regular administrators can manage sellers, categories, products, orders, and user accounts. Super administrators have all regular admin capabilities plus the ability to promote or demote other administrators and cannot be demoted by themselves.
      *
-     * @x-autobe-specification Direct mapping from shopping_mall_administrators.grade column. Privilege level: 'regular' or 'super'. Regular administrators can manage sellers, categories, products, orders, and users. Super administrators have all regular admin capabilities plus the ability to promote/demote other administrators.
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_administrators.grade column. Privilege level:
+         *   'regular' or 'super'. Regular administrators can manage sellers,
+         *   categories, products, orders, and users. Super administrators have
+         *   all regular admin capabilities plus the ability to promote/demote
+         *   other administrators.
      */
     grade: string;
 
@@ -313,7 +388,11 @@ export namespace IShoppingMallAdministrator {
      *
      * When true, the administrator cannot authenticate or access the system. Banned administrators retain their account data for audit and accountability purposes. Only super administrators can ban other administrators. This field is included in the auth response so clients can detect ban status even after successful token validation.
      *
-     * @x-autobe-specification Direct mapping from shopping_mall_administrators.banned column. Boolean flag indicating whether the administrator account is banned from logging in. When true, the administrator cannot authenticate or access the system. Only super administrators can ban other administrators.
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_administrators.banned column. Boolean flag indicating
+         *   whether the administrator account is banned from logging in. When
+         *   true, the administrator cannot authenticate or access the system.
+         *   Only super administrators can ban other administrators.
      */
     banned: boolean;
 
@@ -322,7 +401,11 @@ export namespace IShoppingMallAdministrator {
      *
      * Records the initial account creation time in ISO 8601 format for audit and compliance purposes. This timestamp is set when the administrator registers and is never modified.
      *
-     * @x-autobe-specification Direct mapping from shopping_mall_administrators.created_at column. Timestamp when this administrator account was created. Records the initial account creation time for audit and compliance purposes. This timestamp is set when the administrator registers and is never modified.
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_administrators.created_at column. Timestamp when this
+         *   administrator account was created. Records the initial account
+         *   creation time for audit and compliance purposes. This timestamp is
+         *   set when the administrator registers and is never modified.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -331,7 +414,12 @@ export namespace IShoppingMallAdministrator {
      *
      * Tracks the most recent update to any administrator account field in ISO 8601 format for audit trail purposes. This timestamp is updated whenever the administrator's email, grade, or ban status changes.
      *
-     * @x-autobe-specification Direct mapping from shopping_mall_administrators.updated_at column. Timestamp when this administrator account was last modified. Tracks the most recent update to any administrator account field for audit trail. This timestamp is updated whenever the administrator's email, grade, or ban status changes.
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_administrators.updated_at column. Timestamp when this
+         *   administrator account was last modified. Tracks the most recent
+         *   update to any administrator account field for audit trail. This
+         *   timestamp is updated whenever the administrator's email, grade, or
+         *   ban status changes.
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -340,14 +428,20 @@ export namespace IShoppingMallAdministrator {
      *
      * When null, the account is active and can authenticate. When set to an ISO 8601 timestamp, the account is marked as deleted but preserved for audit purposes. Soft-deleted administrators cannot authenticate or access the system.
      *
-     * @x-autobe-specification Direct mapping from shopping_mall_administrators.deleted_at column. Timestamp when this administrator account was soft-deleted. When null, the account is active. When set, the account is marked as deleted but preserved for audit purposes. Soft-deleted administrators cannot authenticate or access the system.
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_administrators.deleted_at column. Timestamp when this
+         *   administrator account was soft-deleted. When null, the account is
+         *   active. When set, the account is marked as deleted but preserved
+         *   for audit purposes. Soft-deleted administrators cannot authenticate
+         *   or access the system.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
 
     /**
      * Authorization token.
      *
-     * @x-autobe-specification Authorization token comes from the session table.
+         * @x-autobe-specification Authorization token comes from the session
+         *   table.
      */
     token: IAuthorizationToken;
   };
@@ -365,8 +459,11 @@ export namespace IShoppingMallAdministrator {
      *
      * This email must match an existing administrator account in the system. The email is used as the primary identifier to locate the administrator record during login. Only non-deleted accounts (deleted_at=null) can authenticate successfully.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from shopping_mall_administrators.email. Used to lookup the administrator account. Backend validates that email matches an existing record with deleted_at=null.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_administrators.email. Used to lookup the
+         *   administrator account. Backend validates that email matches an
+         *   existing record with deleted_at=null.
      */
     email: string & tags.Format<"email">;
 
@@ -375,8 +472,11 @@ export namespace IShoppingMallAdministrator {
      *
      * The password is provided in plain text and will be securely hashed by the backend for verification. The backend compares the bcrypt hash of this input against the stored password_hash field. Never transmit this password over unencrypted connections.
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification Plain text password provided by user. Backend hashes this input using bcrypt and compares against stored password_hash in shopping_mall_administrators. Never stores plain text password.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification Plain text password provided by user. Backend
+         *   hashes this input using bcrypt and compares against stored
+         *   password_hash in shopping_mall_administrators. Never stores plain
+         *   text password.
      */
     password: string & tags.Format<"password">;
 
@@ -385,7 +485,10 @@ export namespace IShoppingMallAdministrator {
      *
      * This field tracks the client's current location in the application at the time of login. It is stored in the session record for security monitoring and audit purposes. Required field to enable session tracking and potential redirect-after-login functionality.
      *
-     * @x-autobe-specification Session context field captured from client request. Stored in shopping_mall_administrator_sessions.href upon successful authentication. Represents the current page URL where the login occurred.
+         * @x-autobe-specification Session context field captured from client
+         *   request. Stored in shopping_mall_administrator_sessions.href upon
+         *   successful authentication. Represents the current page URL where
+         *   the login occurred.
      */
     href: string & tags.Format<"uri">;
 
@@ -394,7 +497,10 @@ export namespace IShoppingMallAdministrator {
      *
      * This field captures the URL of the page that redirected the user to the login page. It is stored in the session record for security monitoring and audit trail purposes. Required field to enable complete session context tracking.
      *
-     * @x-autobe-specification Session context field captured from client request. Stored in shopping_mall_administrator_sessions.referrer upon successful authentication. Represents the referring page URL that led to the login page.
+         * @x-autobe-specification Session context field captured from client
+         *   request. Stored in shopping_mall_administrator_sessions.referrer
+         *   upon successful authentication. Represents the referring page URL
+         *   that led to the login page.
      */
     referrer: string & tags.Format<"uri">;
 
@@ -403,7 +509,11 @@ export namespace IShoppingMallAdministrator {
      *
      * This field records the IP address from which the login request originated. It is stored in the session record for security monitoring and audit purposes. This field is optional because in server-side rendering (SSR) scenarios, the client cannot determine its own IP address - the server will capture and populate this value as a fallback.
      *
-     * @x-autobe-specification Session context field captured from client request. Stored in shopping_mall_administrator_sessions.ip upon successful authentication. Optional because in SSR scenarios, the client cannot know its own IP - server captures it as fallback (body.ip ?? serverIp).
+         * @x-autobe-specification Session context field captured from client
+         *   request. Stored in shopping_mall_administrator_sessions.ip upon
+         *   successful authentication. Optional because in SSR scenarios, the
+         *   client cannot know its own IP - server captures it as fallback
+         *   (body.ip ?? serverIp).
      */
     ip?: (string & tags.Format<"ipv4">) | undefined;
   };
@@ -423,7 +533,13 @@ export namespace IShoppingMallAdministrator {
      *
      * Upon successful validation, new tokens are issued and the session expiration is extended.
      *
-     * @x-autobe-specification JWT refresh token provided by client for session renewal. Validated against shopping_mall_administrator_sessions table: token must exist, not be expired (expired_at > now), and associated administrator must be active (deleted_at=null) and not banned (banned=false). Token is generated during login or previous refresh operation with 7-day expiration.
+         * @x-autobe-specification JWT refresh token provided by client for
+         *   session renewal. Validated against
+         *   shopping_mall_administrator_sessions table: token must exist, not
+         *   be expired (expired_at > now), and associated administrator must be
+         *   active (deleted_at=null) and not banned (banned=false). Token is
+         *   generated during login or previous refresh operation with 7-day
+         *   expiration.
      */
     refresh_token: string;
   };
@@ -452,7 +568,13 @@ export namespace IShoppingMallAdministrator {
      * - Unbanned (false): Administrator can log in and exercise their privileges based on their grade
      * - Account data and audit logs are preserved in both states
      *
-     * @x-autobe-specification Boolean field that maps to the 'banned' column in shopping_mall_administrators table. When this request is processed, the backend updates the 'banned' field in the database with this value. True means ban the administrator (prevent login and system access). False means unban the administrator (restore login and system access). The target administrator is identified by the path parameter, not included in this request body.
+         * @x-autobe-specification Boolean field that maps to the 'banned'
+         *   column in shopping_mall_administrators table. When this request is
+         *   processed, the backend updates the 'banned' field in the database
+         *   with this value. True means ban the administrator (prevent login
+         *   and system access). False means unban the administrator (restore
+         *   login and system access). The target administrator is identified by
+         *   the path parameter, not included in this request body.
      */
     ban: boolean;
   };

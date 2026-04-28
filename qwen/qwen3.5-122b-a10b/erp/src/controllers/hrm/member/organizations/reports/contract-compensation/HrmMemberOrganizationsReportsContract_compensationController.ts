@@ -33,9 +33,10 @@ export class HrmMemberOrganizationsReportsContract_compensationController {
    *
    * @param connection
    * @param organizationId Unique identifier of the organization for which to retrieve the contract compensation report (global scope).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query hrm_contracts joined with hrm_employees and hrm_departments tables within the specified organization context.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query hrm_contracts joined with hrm_employees and
+     *   hrm_departments tables within the specified organization context.
    *
    * **Implementation Steps**
    *

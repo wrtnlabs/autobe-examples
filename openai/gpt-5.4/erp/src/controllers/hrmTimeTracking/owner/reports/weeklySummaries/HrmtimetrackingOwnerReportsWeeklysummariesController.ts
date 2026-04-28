@@ -25,9 +25,13 @@ export class HrmtimetrackingOwnerReportsWeeklysummariesController {
    *
    * @param connection
    * @param body Weekly summary report filter and pagination criteria
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor owner
-   * @x-autobe-specification Authorize the caller as an owner, manager, or employee within the currently selected organization context, then enforce report-viewing permission before processing any filter or query logic. Reject the request if the caller lacks permission to view reports for the organization.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor owner
+     * @x-autobe-specification Authorize the caller as an owner, manager, or
+     *   employee within the currently selected organization context, then
+     *   enforce report-viewing permission before processing any filter or query
+     *   logic. Reject the request if the caller lacks permission to view
+     *   reports for the organization.
    *
    * Validate the request body as weekly summary search criteria. Require a date range suitable for Weekly Summary Report calculation and normalize it into inclusive week boundaries used by the service layer. Accept an optional project identifier filter and verify that the referenced project belongs to the same current organization before applying it. Apply pagination and deterministic sorting over week buckets.
    *

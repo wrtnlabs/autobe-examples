@@ -27,7 +27,9 @@ import { IShoppingMallSellerProfileSnapshot } from "../../../../../structures/IS
  * @param props.body Historical seller profile snapshot creation data
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor administrator
- * @x-autobe-specification Implement this operation as creation of a new row in shopping_mall_seller_profile_snapshots for the parent shopping_mall_seller_profiles record identified by sellerProfileId.
+ * @x-autobe-specification Implement this operation as creation of a new row in
+ *   shopping_mall_seller_profile_snapshots for the parent
+ *   shopping_mall_seller_profiles record identified by sellerProfileId.
  *
  * 1. Authorize the caller. If the actor is a seller, load the parent seller profile joined to shopping_mall_sellers and verify the seller owns the profile through shopping_mall_seller_profiles.shopping_mall_seller_id. Also verify the seller is currently allowed to perform seller-profile editing in the surrounding business flow. If the actor is an administrator, allow creation only for legitimate oversight or administrative correction workflows. Reject all other actors.
  *
@@ -146,7 +148,8 @@ export namespace create {
  * @param props.body Filtering, pagination, and sorting options for seller profile snapshot history
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor administrator
- * @x-autobe-specification Validate that sellerProfileId identifies an existing shopping_mall_seller_profiles row.
+ * @x-autobe-specification Validate that sellerProfileId identifies an existing
+ *   shopping_mall_seller_profiles row.
  *
  * Authorize access before querying snapshot history. If the caller is a seller, ensure the requested shopping_mall_seller_profiles row belongs to the authenticated seller account through shopping_mall_seller_id. If the caller is an administrator or superAdministrator, permit oversight access. Reject unauthenticated requests and any authenticated actor that is neither the owning seller nor an administrator-level actor.
  *
@@ -259,7 +262,9 @@ export namespace index {
  * @param props.snapshotId Target seller profile snapshot identifier
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor administrator
- * @x-autobe-specification Implement a read-only detail query for one row in `shopping_mall_seller_profile_snapshots` joined logically to its parent `shopping_mall_seller_profiles`.
+ * @x-autobe-specification Implement a read-only detail query for one row in
+ *   `shopping_mall_seller_profile_snapshots` joined logically to its parent
+ *   `shopping_mall_seller_profiles`.
  *
  * 1. Authenticate the caller and identify actor type.
  * 2. Load the parent seller profile by `shopping_mall_seller_profiles.id = sellerProfileId`. If not found, return a not-found error.

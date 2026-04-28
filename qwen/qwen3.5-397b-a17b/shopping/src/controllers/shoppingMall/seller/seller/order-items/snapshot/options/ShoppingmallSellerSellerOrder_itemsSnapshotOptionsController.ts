@@ -22,9 +22,10 @@ export class ShoppingmallSellerSellerOrder_itemsSnapshotOptionsController {
    *
    * @param connection
    * @param orderItemId UUID of the order item to retrieve snapshot options for (scoped to seller's products).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Query shopping_mall_order_item_snapshot_options table by joining through shopping_mall_order_item_snapshots.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Query shopping_mall_order_item_snapshot_options
+     *   table by joining through shopping_mall_order_item_snapshots.
    *
    * 1. Validate orderItemId exists and belongs to a product sold by the authenticated seller
    * 2. Find the snapshot record via shopping_mall_order_item_snapshots where shopping_mall_order_item_id = orderItemId

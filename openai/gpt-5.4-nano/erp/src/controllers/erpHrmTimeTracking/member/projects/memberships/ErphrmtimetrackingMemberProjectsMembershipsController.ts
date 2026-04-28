@@ -38,9 +38,9 @@ export class ErphrmtimetrackingMemberProjectsMembershipsController {
    * @param connection
    * @param projectId Target project identifier to which the employee will be assigned.
    * @param body Creation payload for assigning an employee to a project, including the employee identifier and the membership role used to drive project-scoped responsibility.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation steps:
    *
    * 1) Extract `projectId` from path and load `erp_hrm_time_tracking_projects` by `id`.
    *    - If the project does not exist, throw not-found.
@@ -132,9 +132,10 @@ export class ErphrmtimetrackingMemberProjectsMembershipsController {
    * @param connection
    * @param projectId Target project ID for which the membership assignments will be managed.
    * @param body Membership mutation request for a single project. Describes which employees to add/reactivate with which `membership_role`, and which employees to remove from this project. Removals must only apply to existing active memberships.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement PATCH /projects/{projectId}/memberships as an atomic membership mutation workflow.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implement PATCH /projects/{projectId}/memberships
+     *   as an atomic membership mutation workflow.
    *
    * 1) Resolve and authorize target project
    * - Query `erp_hrm_time_tracking_projects` by `id = projectId` and verify it belongs to the selected organization (`erp_hrm_time_tracking_organization_id`).
@@ -211,26 +212,32 @@ export class ErphrmtimetrackingMemberProjectsMembershipsController {
    * @param connection
    * @param projectId Target project ID whose organization scope is used to enforce tenant isolation.
    * @param membershipId Target membership ID of the employee-to-project assignment.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Service-layer implementation steps:
-   * 1) Parse path parameters: projectId (UUID) and membershipId (UUID).
-   * 2) Enforce organization scoping:
-   *    - Load the project by projectId and verify it belongs to the currently selected organization (erp_hrm_time_tracking_projects.erp_hrm_time_tracking_organization_id).
-   *    - If not found or not in scope, deny.
-   * 3) Load membership:
-   *    - Query erp_hrm_time_tracking_project_memberships by id=membershipId.
-   *    - Verify membership.project_id equals the given projectId (prevent cross-project access).
-   *    - Apply active-state handling: if deleted_at is not null, treat as unavailable for normal viewing (deny or not found per error policy).
-   * 4) Authorization based on caller:
-   *    - Determine caller’s employee representation within this organization.
-   *    - For employees, allow viewing only memberships tied to projects the employee is assigned to (conceptual rule: employees can view assigned projects only for their own memberships). Enforce that membership.employee_id matches caller’s employee id.
-   *    - For higher-privileged actors (e.g., managers/owners) apply their role-permission capabilities to decide whether membership detail viewing is allowed; do not expand beyond authorization policy.
-   * 5) Return response DTO mapped from membership entity fields:
-   *    - Include membership_role and linked identifiers as defined by IErpHrmTimeTrackingProjectMembership.
-   * 6) Error handling:
-   *    - If project is out of scope: authorization error.
-   *    - If membership.project_id mismatches or membership not accessible: not found / authorization error per global policy.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Service-layer implementation steps: 1) Parse path
+     *   parameters: projectId (UUID) and membershipId (UUID). 2) Enforce
+     *   organization scoping: - Load the project by projectId and verify it
+     *   belongs to the currently selected organization
+     *   (erp_hrm_time_tracking_projects.erp_hrm_time_tracking_organization_id).
+     *   - If not found or not in scope, deny. 3) Load membership: - Query
+     *   erp_hrm_time_tracking_project_memberships by id=membershipId. - Verify
+     *   membership.project_id equals the given projectId (prevent cross-project
+     *   access). - Apply active-state handling: if deleted_at is not null,
+     *   treat as unavailable for normal viewing (deny or not found per error
+     *   policy). 4) Authorization based on caller: - Determine caller’s
+     *   employee representation within this organization. - For employees,
+     *   allow viewing only memberships tied to projects the employee is
+     *   assigned to (conceptual rule: employees can view assigned projects only
+     *   for their own memberships). Enforce that membership.employee_id matches
+     *   caller’s employee id. - For higher-privileged actors (e.g.,
+     *   managers/owners) apply their role-permission capabilities to decide
+     *   whether membership detail viewing is allowed; do not expand beyond
+     *   authorization policy. 5) Return response DTO mapped from membership
+     *   entity fields: - Include membership_role and linked identifiers as
+     *   defined by IErpHrmTimeTrackingProjectMembership. 6) Error handling: -
+     *   If project is out of scope: authorization error. - If
+     *   membership.project_id mismatches or membership not accessible: not
+     *   found / authorization error per global policy.
    *
    * Database query plan (typical):
    * - SELECT projects by id and organization id.
@@ -303,9 +310,9 @@ export class ErphrmtimetrackingMemberProjectsMembershipsController {
    * @param projectId Target project ID that scopes the membership update.
    * @param membershipId Target membership record ID to update within the specified project.
    * @param body Update payload for an existing project membership, primarily used to change the membership role (e.g., member vs project-lead) inside the target project.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Service layer steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Service layer steps:
    *
    * 1. Parse `projectId` and `membershipId` from path.
    * 2. Start a DB transaction.
@@ -374,29 +381,33 @@ export class ErphrmtimetrackingMemberProjectsMembershipsController {
    * @param connection
    * @param projectId Target project identifier to which the membership must belong.
    * @param membershipId Identifier of the specific project membership record to remove.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation steps:
-   * 1) Parse `projectId` (UUID) and `membershipId` (UUID) from path.
-   * 2) Load the target membership row from `erp_hrm_time_tracking_project_memberships` by `id = membershipId`.
-   *    - Ensure it is active: `deleted_at IS NULL`.
-   *    - Validate `membership.project_id == projectId`; if not, reject.
-   * 3) Load the target project from `erp_hrm_time_tracking_projects` by `id = projectId`.
-   *    - Ensure the project is active: `deleted_at IS NULL`.
-   * 4) Authorization:
-   *    - Confirm the caller has project management capability for the project’s organization using `erp_hrm_time_tracking_projects.erp_hrm_time_tracking_organization_id` and the currently selected organization context.
-   *    - Deny if the caller is not authorized or the organization context does not match.
-   * 5) Removal:
-   *    - Update the membership row to mark it removed by setting `deleted_at = now()` and updating `updated_at` accordingly.
-   *    - Do this in a transaction to ensure membership and project existence checks are consistent.
-   * 6) Activity logging:
-   *    - Insert an `erp_hrm_time_tracking_activity_log_entries` record capturing the membership removal action, including performedBy user and target identifiers, as required by the domain’s activity log behavior.
-   * 7) Return:
-   *    - For success, return HTTP 200/204 with no response body (responseBody is null).
-   * Edge cases:
-   * - If membership does not exist or is already removed: reject with an error indicating the membership is not currently active.
-   * - If project is deleted (`deleted_at` not null): reject.
-   * - If membership belongs to a different project than `{projectId}`: reject.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation steps: 1) Parse `projectId` (UUID)
+     *   and `membershipId` (UUID) from path. 2) Load the target membership row
+     *   from `erp_hrm_time_tracking_project_memberships` by `id =
+     *   membershipId`. - Ensure it is active: `deleted_at IS NULL`. - Validate
+     *   `membership.project_id == projectId`; if not, reject. 3) Load the
+     *   target project from `erp_hrm_time_tracking_projects` by `id =
+     *   projectId`. - Ensure the project is active: `deleted_at IS NULL`. 4)
+     *   Authorization: - Confirm the caller has project management capability
+     *   for the project’s organization using
+     *   `erp_hrm_time_tracking_projects.erp_hrm_time_tracking_organization_id`
+     *   and the currently selected organization context. - Deny if the caller
+     *   is not authorized or the organization context does not match. 5)
+     *   Removal: - Update the membership row to mark it removed by setting
+     *   `deleted_at = now()` and updating `updated_at` accordingly. - Do this
+     *   in a transaction to ensure membership and project existence checks are
+     *   consistent. 6) Activity logging: - Insert an
+     *   `erp_hrm_time_tracking_activity_log_entries` record capturing the
+     *   membership removal action, including performedBy user and target
+     *   identifiers, as required by the domain’s activity log behavior. 7)
+     *   Return: - For success, return HTTP 200/204 with no response body
+     *   (responseBody is null). Edge cases: - If membership does not exist or
+     *   is already removed: reject with an error indicating the membership is
+     *   not currently active. - If project is deleted (`deleted_at` not null):
+     *   reject. - If membership belongs to a different project than
+     *   `{projectId}`: reject.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Delete(":membershipId")

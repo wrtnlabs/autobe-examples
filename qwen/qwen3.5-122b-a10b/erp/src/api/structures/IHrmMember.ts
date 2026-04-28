@@ -27,8 +27,9 @@ export type IHrmMember = {
    * **Format**: UUID v4 (version 4 random UUID)
    * **Immutability**: This value never changes after account creation
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from hrm_members.id. UUID format primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from hrm_members.id. UUID format
+     *   primary key.
    */
   id: string & tags.Format<"uuid">;
 
@@ -41,8 +42,9 @@ export type IHrmMember = {
    * **Uniqueness**: Global unique constraint across all member accounts
    * **Usage**: Login credential, password reset, email verification, notifications
    *
-   * @x-autobe-database-schema-property email
-   * @x-autobe-specification Direct mapping from hrm_members.email. Unique constraint enforced at database level.
+     * @x-autobe-database-schema-property email
+     * @x-autobe-specification Direct mapping from hrm_members.email. Unique
+     *   constraint enforced at database level.
    */
   email: string & tags.Format<"email">;
 
@@ -55,8 +57,9 @@ export type IHrmMember = {
    * **Auto-generated**: Set automatically during account registration
    * **Immutability**: This value never changes after account creation
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from hrm_members.created_at. Set automatically on account creation.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from hrm_members.created_at. Set
+     *   automatically on account creation.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -69,8 +72,9 @@ export type IHrmMember = {
    * **Auto-updated**: Modified automatically on any account change
    * **Usage**: Client synchronization, change tracking, audit compliance
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from hrm_members.updated_at. Automatically updated on any account modification.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from hrm_members.updated_at.
+     *   Automatically updated on any account modification.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -84,8 +88,9 @@ export type IHrmMember = {
    * **Non-null value**: Account is soft-deleted (deactivated)
    * **Recovery**: Soft-deleted accounts can potentially be restored depending on retention policies
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from hrm_members.deleted_at. Nullable DateTime - null means active, non-null means deleted.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from hrm_members.deleted_at.
+     *   Nullable DateTime - null means active, non-null means deleted.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -133,7 +138,11 @@ export namespace IHrmMember {
      *
      * Upon successful refresh, this token is invalidated as part of the rotation mechanism. A new refresh token is returned in the response and should replace the old one in client storage. This limits the damage if a token is compromised, as the old token becomes unusable after refresh.
      *
-     * @x-autobe-specification JWT refresh token from previous authentication response (join/login/refresh). Validated against hrm_member_sessions table by hash lookup. Must be valid, unexpired, and associated with an active session. Token rotation occurs on successful refresh: old token invalidated, new pair generated.
+         * @x-autobe-specification JWT refresh token from previous
+         *   authentication response (join/login/refresh). Validated against
+         *   hrm_member_sessions table by hash lookup. Must be valid, unexpired,
+         *   and associated with an active session. Token rotation occurs on
+         *   successful refresh: old token invalidated, new pair generated.
      */
     refresh_token: string;
   };
@@ -161,8 +170,10 @@ export namespace IHrmMember {
      *
      * Email format is validated against RFC 5322 standards. The email must be unique across all member accounts in the system.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from hrm_members.email. Used as unique identifier for member lookup during authentication. Email format validated.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from hrm_members.email. Used
+         *   as unique identifier for member lookup during authentication. Email
+         *   format validated.
      */
     email: string & tags.Format<"email">;
 
@@ -175,8 +186,11 @@ export namespace IHrmMember {
      *
      * The password is transmitted over HTTPS only and is never stored or logged in plain text. The bcrypt hash stored in the database is never exposed in any API response.
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification Plain text password for bcrypt verification against hrm_members.password_hash. Password is hashed server-side and never stored or transmitted in plain text after initial submission.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification Plain text password for bcrypt verification
+         *   against hrm_members.password_hash. Password is hashed server-side
+         *   and never stored or transmitted in plain text after initial
+         *   submission.
      */
     password: string;
   };
@@ -212,8 +226,10 @@ export namespace IHrmMember {
      * - Must be unique across all hrm_members records
      * - Case-insensitive comparison for uniqueness checks
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from hrm_members.email. Unique constraint enforced at database level. Used for authentication and email verification flows.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from hrm_members.email. Unique
+         *   constraint enforced at database level. Used for authentication and
+         *   email verification flows.
      */
     email: string & tags.Format<"email">;
 
@@ -232,8 +248,11 @@ export namespace IHrmMember {
      * **Password Policy**:
      * Users should choose strong passwords combining uppercase, lowercase, numbers, and special characters for enhanced security.
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification Plain text password input that backend transforms to bcrypt hash before storing in hrm_members.password_hash. Never stored or transmitted in plain text after initial registration.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification Plain text password input that backend
+         *   transforms to bcrypt hash before storing in
+         *   hrm_members.password_hash. Never stored or transmitted in plain
+         *   text after initial registration.
      */
     password: string;
 
@@ -252,7 +271,9 @@ export namespace IHrmMember {
      * - Stored with session for the duration of the session
      * - Used for security monitoring and fraud detection
      *
-     * @x-autobe-specification Session context field stored in hrm_member_sessions.href, not hrm_members. Captures the current page URI at registration time for audit trail and session tracking.
+         * @x-autobe-specification Session context field stored in
+         *   hrm_member_sessions.href, not hrm_members. Captures the current
+         *   page URI at registration time for audit trail and session tracking.
      */
     href: string & tags.Format<"uri">;
 
@@ -272,7 +293,10 @@ export namespace IHrmMember {
      * - Stored with session for the duration of the session
      * - May be null or empty if no referrer was present
      *
-     * @x-autobe-specification Session context field stored in hrm_member_sessions.referrer, not hrm_members. Captures the referrer page URI at registration time for audit trail and session tracking.
+         * @x-autobe-specification Session context field stored in
+         *   hrm_member_sessions.referrer, not hrm_members. Captures the
+         *   referrer page URI at registration time for audit trail and session
+         *   tracking.
      */
     referrer: string & tags.Format<"uri">;
 
@@ -295,7 +319,10 @@ export namespace IHrmMember {
      * - Validated against IPv4 regex pattern
      * - Stored with session for the duration of the session
      *
-     * @x-autobe-specification Session context field stored in hrm_member_sessions.ip, not hrm_members. Captures client IP address at registration time for audit trail and session tracking. Optional for SSR cases where client cannot determine own IP.
+         * @x-autobe-specification Session context field stored in
+         *   hrm_member_sessions.ip, not hrm_members. Captures client IP address
+         *   at registration time for audit trail and session tracking. Optional
+         *   for SSR cases where client cannot determine own IP.
      */
     ip?: (string & tags.Format<"ipv4">) | undefined;
   };
@@ -319,8 +346,10 @@ export namespace IHrmMember {
      *
      * **Behavior**: Optional. If omitted, no email filtering applied.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from hrm_members.email. Used for ILIKE partial match search (email LIKE '%{value}%'). Optional parameter.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from hrm_members.email. Used
+         *   for ILIKE partial match search (email LIKE '%{value}%'). Optional
+         *   parameter.
      */
     email?: string | undefined;
 
@@ -333,8 +362,10 @@ export namespace IHrmMember {
      *
      * **Behavior**: Optional. If omitted, no lower bound applied.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Maps to hrm_members.created_at for lower bound filtering. SQL: created_at >= {value}. ISO 8601 date-time format required.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Maps to hrm_members.created_at for lower
+         *   bound filtering. SQL: created_at >= {value}. ISO 8601 date-time
+         *   format required.
      */
     created_at_from?: (string & tags.Format<"date-time">) | undefined;
 
@@ -347,8 +378,10 @@ export namespace IHrmMember {
      *
      * **Behavior**: Optional. If omitted, no upper bound applied.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Maps to hrm_members.created_at for upper bound filtering. SQL: created_at <= {value}. ISO 8601 date-time format required.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Maps to hrm_members.created_at for upper
+         *   bound filtering. SQL: created_at <= {value}. ISO 8601 date-time
+         *   format required.
      */
     created_at_to?: (string & tags.Format<"date-time">) | undefined;
 
@@ -361,7 +394,11 @@ export namespace IHrmMember {
      *
      * **Behavior**: Optional. Defaults to false (excludes deleted accounts).
      *
-     * @x-autobe-specification Computed filter parameter. When true, includes records where deleted_at IS NOT NULL. When false or omitted, includes only records where deleted_at IS NULL. Maps to hrm_members.deleted_at for query logic but is not a direct column mapping.
+         * @x-autobe-specification Computed filter parameter. When true,
+         *   includes records where deleted_at IS NOT NULL. When false or
+         *   omitted, includes only records where deleted_at IS NULL. Maps to
+         *   hrm_members.deleted_at for query logic but is not a direct column
+         *   mapping.
      */
     include_deleted?: boolean | undefined;
 
@@ -374,7 +411,9 @@ export namespace IHrmMember {
      *
      * **Behavior**: Optional. Defaults to 1 if not specified.
      *
-     * @x-autobe-specification Pagination parameter for cursor-based navigation. 1-indexed page number. Used with limit to calculate offset for query. Minimum value: 1.
+         * @x-autobe-specification Pagination parameter for cursor-based
+         *   navigation. 1-indexed page number. Used with limit to calculate
+         *   offset for query. Minimum value: 1.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -387,7 +426,9 @@ export namespace IHrmMember {
      *
      * **Behavior**: Optional. Defaults to a system-defined value if not specified.
      *
-     * @x-autobe-specification Pagination parameter for maximum records per page. Controls query result size. Minimum: 1, Maximum: 100. Used with page for cursor-based pagination.
+         * @x-autobe-specification Pagination parameter for maximum records per
+         *   page. Controls query result size. Minimum: 1, Maximum: 100. Used
+         *   with page for cursor-based pagination.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -418,8 +459,9 @@ export namespace IHrmMember {
      * **Generated**: Automatically on account creation
      * **Mutable**: No
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from hrm_members.id. Primary key UUID identifier for the member account.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from hrm_members.id. Primary
+         *   key UUID identifier for the member account.
      */
     id: string & tags.Format<"uuid">;
 
@@ -432,8 +474,9 @@ export namespace IHrmMember {
      * **Unique**: Yes, enforced at database level
      * **Mutable**: No (requires account change process)
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from hrm_members.email. Unique constraint enforced at database level.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from hrm_members.email. Unique
+         *   constraint enforced at database level.
      */
     email: string & tags.Format<"email">;
 
@@ -446,8 +489,9 @@ export namespace IHrmMember {
      * **Generated**: Automatically on account creation
      * **Mutable**: No
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from hrm_members.created_at. Set automatically on account creation using timestamptz.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from hrm_members.created_at.
+         *   Set automatically on account creation using timestamptz.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -460,8 +504,10 @@ export namespace IHrmMember {
      * **Generated**: Automatically on creation and each update
      * **Mutable**: No (auto-updated by system)
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from hrm_members.updated_at. Automatically updated on any account modification using timestamptz.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from hrm_members.updated_at.
+         *   Automatically updated on any account modification using
+         *   timestamptz.
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -475,8 +521,10 @@ export namespace IHrmMember {
      * **Non-null**: Deleted account
      * **Mutable**: No (set once on deletion)
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from hrm_members.deleted_at. Nullable timestamptz - null means active account, non-null means soft-deleted.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from hrm_members.deleted_at.
+         *   Nullable timestamptz - null means active account, non-null means
+         *   soft-deleted.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };
@@ -504,7 +552,8 @@ export namespace IHrmMember {
      *
      * This UUID serves as the primary key for the member record in the hrm_members table. It is auto-generated upon account creation and remains immutable throughout the account's lifecycle.
      *
-     * @x-autobe-specification Direct mapping from hrm_members.id. UUID primary key, auto-generated on account creation.
+         * @x-autobe-specification Direct mapping from hrm_members.id. UUID
+         *   primary key, auto-generated on account creation.
      */
     id: string & tags.Format<"uuid">;
 
@@ -517,7 +566,8 @@ export namespace IHrmMember {
      * - Must be a valid email format
      * - Must be unique across all member accounts
      *
-     * @x-autobe-specification Direct mapping from hrm_members.email. Unique constraint enforced at database level.
+         * @x-autobe-specification Direct mapping from hrm_members.email. Unique
+         *   constraint enforced at database level.
      */
     email: string & tags.Format<"email">;
 
@@ -526,7 +576,8 @@ export namespace IHrmMember {
      *
      * This timestamp is automatically set by the database when the member record is first created. It is used for audit trails and account age calculations.
      *
-     * @x-autobe-specification Direct mapping from hrm_members.created_at. Set automatically on account creation.
+         * @x-autobe-specification Direct mapping from hrm_members.created_at.
+         *   Set automatically on account creation.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -535,7 +586,8 @@ export namespace IHrmMember {
      *
      * This timestamp is automatically updated by the database whenever any field in the member record is modified. It is used for tracking account changes and synchronization purposes.
      *
-     * @x-autobe-specification Direct mapping from hrm_members.updated_at. Automatically updated on any account modification.
+         * @x-autobe-specification Direct mapping from hrm_members.updated_at.
+         *   Automatically updated on any account modification.
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -548,14 +600,16 @@ export namespace IHrmMember {
      * - `null`: Account is active
      * - **Set**: Account is soft-deleted (retained but deactivated)
      *
-     * @x-autobe-specification Direct mapping from hrm_members.deleted_at. Nullable - null means active account, set means soft-deleted.
+         * @x-autobe-specification Direct mapping from hrm_members.deleted_at.
+         *   Nullable - null means active account, set means soft-deleted.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
 
     /**
      * Authorization token.
      *
-     * @x-autobe-specification Authorization token comes from the session table.
+         * @x-autobe-specification Authorization token comes from the session
+         *   table.
      */
     token: IAuthorizationToken;
 
@@ -575,7 +629,11 @@ export namespace IHrmMember {
      * - Login response: True or false depending on verification status
      * - Organization access: Requires email_verified to be true
      *
-     * @x-autobe-specification Computed boolean indicating whether the member's email has been verified. True if a valid (non-expired, unused) verification token exists in hrm_member_email_verifications table for this member. False otherwise. Verification token expires after 24 hours and supports single-use validation.
+         * @x-autobe-specification Computed boolean indicating whether the
+         *   member's email has been verified. True if a valid (non-expired,
+         *   unused) verification token exists in hrm_member_email_verifications
+         *   table for this member. False otherwise. Verification token expires
+         *   after 24 hours and supports single-use validation.
      */
     email_verified?: boolean | undefined;
 
@@ -592,7 +650,13 @@ export namespace IHrmMember {
      * **Organization Context**
      * After login, the member must select an organization from this list. The selected organization context is provided via request header in subsequent API calls to access organization-scoped endpoints.
      *
-     * @x-autobe-specification Computed array of organizations the member belongs to. Joined via hrm_employees relation: hrm_members.id → hrm_employees.member_id → hrm_employees.organization_id → hrm_organizations. Returns IHrmOrganization.ISummary for each organization. Empty array for join operation (no organizations yet). Populated for login operation (member's organizations). Omitted for refresh operation.
+         * @x-autobe-specification Computed array of organizations the member
+         *   belongs to. Joined via hrm_employees relation: hrm_members.id →
+         *   hrm_employees.member_id → hrm_employees.organization_id →
+         *   hrm_organizations. Returns IHrmOrganization.ISummary for each
+         *   organization. Empty array for join operation (no organizations
+         *   yet). Populated for login operation (member's organizations).
+         *   Omitted for refresh operation.
      */
     organizations?: IHrmOrganization.ISummary[] | undefined;
   };
@@ -619,8 +683,11 @@ export namespace IHrmMember {
      * - Password is validated server-side before accepting new password
      * - Incorrect current password returns 401 Unauthorized
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification Current password provided by user for verification. Validated against stored password_hash using bcrypt.compare(). Must match the stored hash for authentication to succeed.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification Current password provided by user for
+         *   verification. Validated against stored password_hash using
+         *   bcrypt.compare(). Must match the stored hash for authentication to
+         *   succeed.
      */
     current_password: string & tags.Format<"password">;
 
@@ -642,8 +709,12 @@ export namespace IHrmMember {
      * - Original password is never stored in plain text
      * - All existing sessions are invalidated after successful change
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification New password provided by user. Validated against security requirements (min 8 chars, uppercase, lowercase, number, special character) and must differ from current password. After validation, hashed using bcrypt and stored in password_hash column.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification New password provided by user. Validated
+         *   against security requirements (min 8 chars, uppercase, lowercase,
+         *   number, special character) and must differ from current password.
+         *   After validation, hashed using bcrypt and stored in password_hash
+         *   column.
      */
     new_password: string & tags.Format<"password">;
   };

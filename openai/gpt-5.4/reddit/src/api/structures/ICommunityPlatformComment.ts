@@ -17,16 +17,26 @@ export namespace ICommunityPlatformComment {
     /**
      * The updated textual content of the comment.
      *
-     * @x-autobe-database-schema-property body
-     * @x-autobe-specification Direct mapping from community_platform_comments.body. Accept the replacement comment text to store on the existing target comment record identified by the route. This is the standard user-editable field in normal comment editing flows and should be validated by comment content rules before persistence.
+         * @x-autobe-database-schema-property body
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_comments.body. Accept the replacement comment
+         *   text to store on the existing target comment record identified by
+         *   the route. This is the standard user-editable field in normal
+         *   comment editing flows and should be validated by comment content
+         *   rules before persistence.
      */
     body?: string | undefined;
 
     /**
      * The lifecycle status to apply to the comment when an authorized moderation update changes its visibility or state.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from community_platform_comments.status. Use this field only when the caller is authorized to perform moderation-capable lifecycle changes on the target comment. Service logic must enforce allowed status transitions and reject unauthorized attempts to modify the comment state.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_comments.status. Use this field only when the
+         *   caller is authorized to perform moderation-capable lifecycle
+         *   changes on the target comment. Service logic must enforce allowed
+         *   status transitions and reject unauthorized attempts to modify the
+         *   comment state.
      */
     status?: string | undefined;
   };
@@ -38,11 +48,11 @@ export namespace ICommunityPlatformComment {
    */
   export type ICreate = {
     /**
-     * @x-autobe-database-schema-property body
+         * @x-autobe-database-schema-property body
      */
     body: string;
     /**
-     * @x-autobe-database-schema-property parent_id
+         * @x-autobe-database-schema-property parent_id
      */
     parentId?: (string & tags.Format<"uuid">) | null | undefined;
   };
@@ -54,21 +64,42 @@ export namespace ICommunityPlatformComment {
     /**
      * Sorting mode for the post's comment discussion.
      *
-     * @x-autobe-specification Request-control field for PATCH /communityPlatform/posts/{postId}/comments. Accept one of best, new, or controversial. Apply it after filtering comments by the target post from the path parameter. best uses aggregate vote score derived from community_platform_comment_votes for comments in the post discussion, new orders by community_platform_comments.created_at descending, and controversial prioritizes comments with high vote activity and a score near zero. Preserve parent-child relationships while applying the selected ordering.
+         * @x-autobe-specification Request-control field for PATCH
+         *   /communityPlatform/posts/{postId}/comments. Accept one of best,
+         *   new, or controversial. Apply it after filtering comments by the
+         *   target post from the path parameter. best uses aggregate vote score
+         *   derived from community_platform_comment_votes for comments in the
+         *   post discussion, new orders by
+         *   community_platform_comments.created_at descending, and
+         *   controversial prioritizes comments with high vote activity and a
+         *   score near zero. Preserve parent-child relationships while applying
+         *   the selected ordering.
      */
     sort?: "best" | "new" | "controversial" | undefined;
 
     /**
      * Page number of comment results to retrieve.
      *
-     * @x-autobe-specification Pagination control for PATCH /communityPlatform/posts/{postId}/comments. Use this integer as the 1-indexed page number for the discussion retrieval boundary defined by the endpoint. Apply it to the selected comment browse scope after filtering by postId and ordering by the requested sort mode. This value does not map to any column in community_platform_comments.
+         * @x-autobe-specification Pagination control for PATCH
+         *   /communityPlatform/posts/{postId}/comments. Use this integer as the
+         *   1-indexed page number for the discussion retrieval boundary defined
+         *   by the endpoint. Apply it to the selected comment browse scope
+         *   after filtering by postId and ordering by the requested sort mode.
+         *   This value does not map to any column in
+         *   community_platform_comments.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of comment results to include in one page.
      *
-     * @x-autobe-specification Pagination control for PATCH /communityPlatform/posts/{postId}/comments. Use this integer as the maximum number of comment results returned for the requested page, subject to the schema maximum of 100. Apply it to the discussion retrieval scope for the target post while keeping thread integrity consistent with the endpoint contract. This value does not map to any column in community_platform_comments.
+         * @x-autobe-specification Pagination control for PATCH
+         *   /communityPlatform/posts/{postId}/comments. Use this integer as the
+         *   maximum number of comment results returned for the requested page,
+         *   subject to the schema maximum of 100. Apply it to the discussion
+         *   retrieval scope for the target post while keeping thread integrity
+         *   consistent with the endpoint contract. This value does not map to
+         *   any column in community_platform_comments.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)

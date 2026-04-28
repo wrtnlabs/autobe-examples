@@ -18,7 +18,8 @@ import { IEcommerceMallCustomerAddress } from "../../../../../structures/IEcomme
  * @param props.addressId The unique identifier of the address to retrieve.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query ecommerce_mall_customer_addresses table for a single record matching the provided addressId and customerId.
+ * @x-autobe-specification Query ecommerce_mall_customer_addresses table for a
+ *   single record matching the provided addressId and customerId.
  *
  * 1. Validate that customerId and addressId are valid UUIDs
  * 2. Verify the address exists and is not soft-deleted (deleted_at IS NULL)

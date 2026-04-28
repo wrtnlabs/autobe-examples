@@ -19,8 +19,10 @@ export type IMallPlatformRefundRequest = {
    *
    * This value identifies one live refund request record and is used for retrieval and updates within the scope of its parent order item.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from mall_platform_refund_requests.id. This is the immutable UUID identifier of the refund request record.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_refund_requests.id. This is the immutable UUID identifier
+     *   of the refund request record.
    */
   id: string & tags.Format<"uuid">;
 
@@ -29,8 +31,11 @@ export type IMallPlatformRefundRequest = {
    *
    * This relationship identifies the purchased item being refunded and is returned as a nested order-item summary for display and scope verification.
    *
-   * @x-autobe-database-schema-property orderItem
-   * @x-autobe-specification Join mall_platform_refund_requests.mall_platform_order_item_id to mall_platform_order_items.id and expose the related order item as IMallPlatformOrderItem.ISummary.
+     * @x-autobe-database-schema-property orderItem
+     * @x-autobe-specification Join
+     *   mall_platform_refund_requests.mall_platform_order_item_id to
+     *   mall_platform_order_items.id and expose the related order item as
+     *   IMallPlatformOrderItem.ISummary.
    */
   orderItem: IMallPlatformOrderItem.ISummary;
 
@@ -39,8 +44,11 @@ export type IMallPlatformRefundRequest = {
    *
    * This relationship identifies the account that requested the refund and is returned as a nested customer summary for auditing and display.
    *
-   * @x-autobe-database-schema-property customer
-   * @x-autobe-specification Join mall_platform_refund_requests.mall_platform_customer_id to mall_platform_customers.id and expose the requesting customer as IMallPlatformCustomer.ISummary.
+     * @x-autobe-database-schema-property customer
+     * @x-autobe-specification Join
+     *   mall_platform_refund_requests.mall_platform_customer_id to
+     *   mall_platform_customers.id and expose the requesting customer as
+     *   IMallPlatformCustomer.ISummary.
    */
   customer: IMallPlatformCustomer.ISummary;
 
@@ -49,8 +57,11 @@ export type IMallPlatformRefundRequest = {
    *
    * This relationship identifies the merchant account that handles the item-level refund workflow and is returned as a nested seller summary.
    *
-   * @x-autobe-database-schema-property seller
-   * @x-autobe-specification Join mall_platform_refund_requests.mall_platform_seller_id to mall_platform_sellers.id and expose the responsible seller as IMallPlatformSeller.ISummary.
+     * @x-autobe-database-schema-property seller
+     * @x-autobe-specification Join
+     *   mall_platform_refund_requests.mall_platform_seller_id to
+     *   mall_platform_sellers.id and expose the responsible seller as
+     *   IMallPlatformSeller.ISummary.
    */
   seller: IMallPlatformSeller.ISummary;
 
@@ -59,8 +70,11 @@ export type IMallPlatformRefundRequest = {
    *
    * This relation remains null until an administrator handles or overrides the request, after which it is exposed as a nested administrator summary.
    *
-   * @x-autobe-database-schema-property administrator
-   * @x-autobe-specification Join mall_platform_refund_requests.mall_platform_administrator_id to mall_platform_administrators.id. Expose the reviewer as IMallPlatformAdministrator.ISummary when present, otherwise null.
+     * @x-autobe-database-schema-property administrator
+     * @x-autobe-specification Join
+     *   mall_platform_refund_requests.mall_platform_administrator_id to
+     *   mall_platform_administrators.id. Expose the reviewer as
+     *   IMallPlatformAdministrator.ISummary when present, otherwise null.
    */
   administrator: IMallPlatformAdministrator.ISummary | null;
 
@@ -69,8 +83,11 @@ export type IMallPlatformRefundRequest = {
    *
    * This text records why the purchased order item should be refunded and is preserved as part of the live request history.
    *
-   * @x-autobe-database-schema-property reason
-   * @x-autobe-specification Direct mapping from mall_platform_refund_requests.reason. For the create payload, this is the only customer-provided field accepted; for the live entity, it is the stored request explanation text.
+     * @x-autobe-database-schema-property reason
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_refund_requests.reason. For the create payload, this is
+     *   the only customer-provided field accepted; for the live entity, it is
+     *   the stored request explanation text.
    */
   reason: string;
 
@@ -79,8 +96,11 @@ export type IMallPlatformRefundRequest = {
    *
    * This value reflects where the refund workflow currently stands, such as pending, approved, rejected, or cancelled.
    *
-   * @x-autobe-database-schema-property status
-   * @x-autobe-specification Direct mapping from mall_platform_refund_requests.status. This field stores the current refund-request workflow state and is mutable through review actions only.
+     * @x-autobe-database-schema-property status
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_refund_requests.status. This field stores the current
+     *   refund-request workflow state and is mutable through review actions
+     *   only.
    */
   status: string;
 
@@ -89,8 +109,10 @@ export type IMallPlatformRefundRequest = {
    *
    * This value remains null until a seller or administrator records a decision on the request.
    *
-   * @x-autobe-database-schema-property reviewed_at
-   * @x-autobe-specification Direct mapping from mall_platform_refund_requests.reviewed_at. Preserve null when the request has not yet been reviewed.
+     * @x-autobe-database-schema-property reviewed_at
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_refund_requests.reviewed_at. Preserve null when the
+     *   request has not yet been reviewed.
    */
   reviewedAt: (string & tags.Format<"date-time">) | null;
 
@@ -99,8 +121,10 @@ export type IMallPlatformRefundRequest = {
    *
    * This text is shown to explain the review outcome and remains null until a reviewer provides a note.
    *
-   * @x-autobe-database-schema-property review_note
-   * @x-autobe-specification Direct mapping from mall_platform_refund_requests.review_note. Preserve null when no reviewer note has been written.
+     * @x-autobe-database-schema-property review_note
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_refund_requests.review_note. Preserve null when no
+     *   reviewer note has been written.
    */
   reviewNote: string | null;
 
@@ -109,8 +133,10 @@ export type IMallPlatformRefundRequest = {
    *
    * This timestamp marks when the customer first submitted the request.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from mall_platform_refund_requests.created_at. This timestamp is assigned when the refund request is created and never changes afterward.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_refund_requests.created_at. This timestamp is assigned
+     *   when the refund request is created and never changes afterward.
    */
   createdAt: string & tags.Format<"date-time">;
 
@@ -119,8 +145,10 @@ export type IMallPlatformRefundRequest = {
    *
    * This timestamp reflects the most recent change to the live request record, including review actions and other mutable-field updates.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from mall_platform_refund_requests.updated_at. This timestamp changes whenever the live refund request is updated, including review changes.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_refund_requests.updated_at. This timestamp changes
+     *   whenever the live refund request is updated, including review changes.
    */
   updatedAt: string & tags.Format<"date-time">;
 
@@ -129,8 +157,10 @@ export type IMallPlatformRefundRequest = {
    *
    * This value is null while the request is active and is populated only for retained historical cleanup.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from mall_platform_refund_requests.deleted_at. Preserve null when the request is active; set a timestamp only if the record is soft-deleted.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_refund_requests.deleted_at. Preserve null when the
+     *   request is active; set a timestamp only if the record is soft-deleted.
    */
   deletedAt: (string & tags.Format<"date-time">) | null;
 
@@ -139,7 +169,11 @@ export type IMallPlatformRefundRequest = {
    *
    * This nested object is used with the refund-request creation endpoint and only contains the reason text for the refund claim.
    *
-   * @x-autobe-specification Computed customer create payload for refund requests. The endpoint path supplies the order item scope, and the request body only carries the refund reason. The backend validates eligibility, assigns ownership, initializes status fields, and records timestamps.
+     * @x-autobe-specification Computed customer create payload for refund
+     *   requests. The endpoint path supplies the order item scope, and the
+     *   request body only carries the refund reason. The backend validates
+     *   eligibility, assigns ownership, initializes status fields, and records
+     *   timestamps.
    */
   create?:
     | {
@@ -154,7 +188,12 @@ export type IMallPlatformRefundRequest = {
    *
    * The refund request identity, ownership references, system-managed timestamps, soft-delete marker, and snapshot history are not included because the request is already scoped by the route and handled by the server.
    *
-   * @x-autobe-specification Computed mutable review payload for refund requests. It exposes only the editable live-request fields used by seller and administrator review flows: status, reviewedAt, and reviewNote. The route and authenticated actor supply ownership and scope, and the server persists the prior state as a snapshot when a workflow transition occurs.
+     * @x-autobe-specification Computed mutable review payload for refund
+     *   requests. It exposes only the editable live-request fields used by
+     *   seller and administrator review flows: status, reviewedAt, and
+     *   reviewNote. The route and authenticated actor supply ownership and
+     *   scope, and the server persists the prior state as a snapshot when a
+     *   workflow transition occurs.
    */
   update?: boolean | undefined;
 };
@@ -170,8 +209,11 @@ export namespace IMallPlatformRefundRequest {
      *
      * Provide a clear text reason describing the refund request for the item targeted by the endpoint path. The platform stores this text as the refund-request reason and uses it during review.
      *
-     * @x-autobe-database-schema-property reason
-     * @x-autobe-specification Direct mapping to mall_platform_refund_requests.reason. This is the sole request-body field for refund creation and stores the customer's explanation for requesting a refund on the specified order item.
+         * @x-autobe-database-schema-property reason
+         * @x-autobe-specification Direct mapping to
+         *   mall_platform_refund_requests.reason. This is the sole request-body
+         *   field for refund creation and stores the customer's explanation for
+         *   requesting a refund on the specified order item.
      */
     reason: string;
   };
@@ -189,8 +231,11 @@ export namespace IMallPlatformRefundRequest {
      *
      * This text explains why the refund is being requested and is visible to the people reviewing the request. It can be updated when the request is edited.
      *
-     * @x-autobe-database-schema-property reason
-     * @x-autobe-specification Direct mapping to mall_platform_refund_requests.reason. This stores the current explanation for why the refund was requested and may be adjusted when the refund workflow allows reason edits.
+         * @x-autobe-database-schema-property reason
+         * @x-autobe-specification Direct mapping to
+         *   mall_platform_refund_requests.reason. This stores the current
+         *   explanation for why the refund was requested and may be adjusted
+         *   when the refund workflow allows reason edits.
      */
     reason?: string | undefined;
 
@@ -199,8 +244,12 @@ export namespace IMallPlatformRefundRequest {
      *
      * This value shows where the request is in its review lifecycle, such as pending, approved, or rejected. It is used to drive the next allowed action and display the current decision state.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping to mall_platform_refund_requests.status. This stores the current refund-request workflow state and is updated by seller or administrator review actions according to the allowed state machine.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping to
+         *   mall_platform_refund_requests.status. This stores the current
+         *   refund-request workflow state and is updated by seller or
+         *   administrator review actions according to the allowed state
+         *   machine.
      */
     status?: string | undefined;
 
@@ -209,8 +258,11 @@ export namespace IMallPlatformRefundRequest {
      *
      * This value is set when a reviewer records a decision. If the request has not been reviewed yet, the value is null.
      *
-     * @x-autobe-database-schema-property reviewed_at
-     * @x-autobe-specification Direct mapping to mall_platform_refund_requests.reviewed_at. This nullable timestamp records when the current review decision or state transition was made.
+         * @x-autobe-database-schema-property reviewed_at
+         * @x-autobe-specification Direct mapping to
+         *   mall_platform_refund_requests.reviewed_at. This nullable timestamp
+         *   records when the current review decision or state transition was
+         *   made.
      */
     reviewed_at?: (string & tags.Format<"date-time">) | null | undefined;
 
@@ -219,8 +271,11 @@ export namespace IMallPlatformRefundRequest {
      *
      * This text explains the decision or outcome of the review when provided. If no reviewer note exists, the value is null.
      *
-     * @x-autobe-database-schema-property review_note
-     * @x-autobe-specification Direct mapping to mall_platform_refund_requests.review_note. This nullable text field stores the reviewer’s explanation or decision note for the current refund request state.
+         * @x-autobe-database-schema-property review_note
+         * @x-autobe-specification Direct mapping to
+         *   mall_platform_refund_requests.review_note. This nullable text field
+         *   stores the reviewer’s explanation or decision note for the current
+         *   refund request state.
      */
     review_note?: string | null | undefined;
   };
@@ -238,8 +293,9 @@ export namespace IMallPlatformRefundRequest {
      *
      * This value uniquely identifies one live refund request record and is used for lookup, linking, and snapshot navigation.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from mall_platform_refund_requests.id.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_refund_requests.id.
      */
     id: string & tags.Format<"uuid">;
 
@@ -248,8 +304,11 @@ export namespace IMallPlatformRefundRequest {
      *
      * This is the purchased item the refund request applies to, exposed as a summary object for browsing and dispute review.
      *
-     * @x-autobe-database-schema-property orderItem
-     * @x-autobe-specification Join from mall_platform_refund_requests.mall_platform_order_item_id to mall_platform_order_items.id and expose the related order item as IMallPlatformOrderItem.ISummary.
+         * @x-autobe-database-schema-property orderItem
+         * @x-autobe-specification Join from
+         *   mall_platform_refund_requests.mall_platform_order_item_id to
+         *   mall_platform_order_items.id and expose the related order item as
+         *   IMallPlatformOrderItem.ISummary.
      */
     orderItem: IMallPlatformOrderItem.ISummary;
 
@@ -258,8 +317,11 @@ export namespace IMallPlatformRefundRequest {
      *
      * This is the shopper account that opened the refund workflow, shown as a summary object for review and history screens.
      *
-     * @x-autobe-database-schema-property customer
-     * @x-autobe-specification Join from mall_platform_refund_requests.mall_platform_customer_id to mall_platform_customers.id and expose the requester as IMallPlatformCustomer.ISummary.
+         * @x-autobe-database-schema-property customer
+         * @x-autobe-specification Join from
+         *   mall_platform_refund_requests.mall_platform_customer_id to
+         *   mall_platform_customers.id and expose the requester as
+         *   IMallPlatformCustomer.ISummary.
      */
     customer: IMallPlatformCustomer.ISummary;
 
@@ -268,8 +330,11 @@ export namespace IMallPlatformRefundRequest {
      *
      * This is the merchant account that owns the purchased item and is expected to respond to the refund workflow.
      *
-     * @x-autobe-database-schema-property seller
-     * @x-autobe-specification Join from mall_platform_refund_requests.mall_platform_seller_id to mall_platform_sellers.id and expose the responsible seller as IMallPlatformSeller.ISummary.
+         * @x-autobe-database-schema-property seller
+         * @x-autobe-specification Join from
+         *   mall_platform_refund_requests.mall_platform_seller_id to
+         *   mall_platform_sellers.id and expose the responsible seller as
+         *   IMallPlatformSeller.ISummary.
      */
     seller: IMallPlatformSeller.ISummary;
 
@@ -278,8 +343,13 @@ export namespace IMallPlatformRefundRequest {
      *
      * This field is null until an administrator participates in the workflow, after which it identifies the reviewing administrator as a summary object.
      *
-     * @x-autobe-database-schema-property administrator
-     * @x-autobe-specification Join from mall_platform_refund_requests.mall_platform_administrator_id to mall_platform_administrators.id when the field is not null, and expose the reviewing administrator as IMallPlatformAdministrator.ISummary. Preserve null when no administrator has handled the request.
+         * @x-autobe-database-schema-property administrator
+         * @x-autobe-specification Join from
+         *   mall_platform_refund_requests.mall_platform_administrator_id to
+         *   mall_platform_administrators.id when the field is not null, and
+         *   expose the reviewing administrator as
+         *   IMallPlatformAdministrator.ISummary. Preserve null when no
+         *   administrator has handled the request.
      */
     administrator: IMallPlatformAdministrator.ISummary | null;
 
@@ -288,8 +358,9 @@ export namespace IMallPlatformRefundRequest {
      *
      * This text captures why the item is being returned for review and is shown in request detail and dispute screens.
      *
-     * @x-autobe-database-schema-property reason
-     * @x-autobe-specification Direct mapping from mall_platform_refund_requests.reason.
+         * @x-autobe-database-schema-property reason
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_refund_requests.reason.
      */
     reason: string;
 
@@ -298,8 +369,9 @@ export namespace IMallPlatformRefundRequest {
      *
      * This value reflects the live review status of the refund workflow, such as pending, approved, rejected, or cancelled.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from mall_platform_refund_requests.status.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_refund_requests.status.
      */
     status: string;
 
@@ -308,8 +380,10 @@ export namespace IMallPlatformRefundRequest {
      *
      * This field is null until a seller or administrator has recorded a decision, and then it shows the review timestamp.
      *
-     * @x-autobe-database-schema-property reviewed_at
-     * @x-autobe-specification Direct mapping from mall_platform_refund_requests.reviewed_at. Preserve null until a reviewer decision has been recorded.
+         * @x-autobe-database-schema-property reviewed_at
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_refund_requests.reviewed_at. Preserve null until a
+         *   reviewer decision has been recorded.
      */
     reviewedAt: (string & tags.Format<"date-time">) | null;
 
@@ -318,8 +392,10 @@ export namespace IMallPlatformRefundRequest {
      *
      * This text explains the approval or rejection outcome and remains null until a reviewer adds an explanation.
      *
-     * @x-autobe-database-schema-property review_note
-     * @x-autobe-specification Direct mapping from mall_platform_refund_requests.review_note. Preserve null when no reviewer note exists.
+         * @x-autobe-database-schema-property review_note
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_refund_requests.review_note. Preserve null when no
+         *   reviewer note exists.
      */
     reviewNote: string | null;
 
@@ -328,8 +404,9 @@ export namespace IMallPlatformRefundRequest {
      *
      * This timestamp marks when the workflow was opened and is used for ordering and audit display.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from mall_platform_refund_requests.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_refund_requests.created_at.
      */
     createdAt: string & tags.Format<"date-time">;
 
@@ -338,8 +415,9 @@ export namespace IMallPlatformRefundRequest {
      *
      * This timestamp changes whenever the live request row is modified and is used for freshness and audit display.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from mall_platform_refund_requests.updated_at.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_refund_requests.updated_at.
      */
     updatedAt: string & tags.Format<"date-time">;
 
@@ -348,8 +426,11 @@ export namespace IMallPlatformRefundRequest {
      *
      * This field remains null for active requests and records when the live request was archived while preserving history.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from mall_platform_refund_requests.deleted_at. Preserve null for active requests and expose the soft-delete timestamp when the record has been retired.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_refund_requests.deleted_at. Preserve null for active
+         *   requests and expose the soft-delete timestamp when the record has
+         *   been retired.
      */
     deletedAt: (string & tags.Format<"date-time">) | null;
   };

@@ -17,15 +17,15 @@ import { IEcommerceMallSeller } from "./IEcommerceMallSeller";
  */
 export type IEcommerceMallRefundRequestSnapshot = {
   /**
-   * @x-autobe-database-schema-property id
+     * @x-autobe-database-schema-property id
    */
   id: string & tags.Format<"uuid">;
   /**
-   * @x-autobe-database-schema-property refund_request_id
+     * @x-autobe-database-schema-property refund_request_id
    */
   refund_request_id?: (string & tags.Format<"uuid">) | null | undefined;
   /**
-   * @x-autobe-database-schema-property order_item_id
+     * @x-autobe-database-schema-property order_item_id
    */
   order_item_id: string & tags.Format<"uuid">;
 
@@ -34,57 +34,67 @@ export type IEcommerceMallRefundRequestSnapshot = {
    *
    * Allowed values: 'pending', 'approved', 'rejected'. Initial status is 'pending' when created. Transitions to 'approved' or 'rejected' when seller takes action.
    *
-   * @x-autobe-specification Direct mapping from ecommerce_mall_refund_request_snapshots.status. Values: pending, approved, rejected.
-   * @x-autobe-database-schema-property status
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_refund_request_snapshots.status. Values: pending,
+     *   approved, rejected.
+     * @x-autobe-database-schema-property status
    */
   status: string;
   /**
-   * @x-autobe-database-schema-property reason
+     * @x-autobe-database-schema-property reason
    */
   reason: string;
   /**
-   * @x-autobe-database-schema-property created_at
+     * @x-autobe-database-schema-property created_at
    */
   created_at: string & tags.Format<"date-time">;
   /**
-   * @x-autobe-database-schema-property responded_at
+     * @x-autobe-database-schema-property responded_at
    */
   responded_at?: (string & tags.Format<"date-time">) | null | undefined;
   /**
-   * @x-autobe-database-schema-property approved_by_seller_id
+     * @x-autobe-database-schema-property approved_by_seller_id
    */
   approved_by_seller_id?: (string & tags.Format<"uuid">) | null | undefined;
   /**
-   * @x-autobe-database-schema-property rejection_reason
+     * @x-autobe-database-schema-property rejection_reason
    */
   rejection_reason?: string | null | undefined;
   /**
-   * @x-autobe-database-schema-property snapshot_at
+     * @x-autobe-database-schema-property snapshot_at
    */
   snapshot_at: string & tags.Format<"date-time">;
   /**
-   * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-database-schema-property deleted_at
    */
   deleted_at?: (string & tags.Format<"date-time">) | null | undefined;
 
   /**
    * Associated order item with the refund request. Includes denormalized product and seller information for customer-facing views.
    *
-   * @x-autobe-specification JOIN to ecommerce_mall_order_items on order_item_id. Returns IEcommerceMallOrderItem.ISummary with denormalized fields: order_number, seller_display_name, product_variant_name, product_variant_sku_code, product_variant_price, quantity, unit_price, subtotal, status.
+     * @x-autobe-specification JOIN to ecommerce_mall_order_items on
+     *   order_item_id. Returns IEcommerceMallOrderItem.ISummary with
+     *   denormalized fields: order_number, seller_display_name,
+     *   product_variant_name, product_variant_sku_code, product_variant_price,
+     *   quantity, unit_price, subtotal, status.
    */
   order_item?: IEcommerceMallOrderItem.ISummary | null | undefined;
 
   /**
    * The seller who approved the refund request. Only populated when the refund request status is 'approved'.
    *
-   * @x-autobe-specification LEFT JOIN to ecommerce_mall_sellers on approved_by_seller_id. Returns IEcommerceMallSeller.ISummary when status is 'approved'. Null when status is 'pending' or 'rejected'.
+     * @x-autobe-specification LEFT JOIN to ecommerce_mall_sellers on
+     *   approved_by_seller_id. Returns IEcommerceMallSeller.ISummary when
+     *   status is 'approved'. Null when status is 'pending' or 'rejected'.
    */
   approved_by_seller?: IEcommerceMallSeller.ISummary | null | undefined;
 
   /**
    * The seller who rejected the refund request. Only populated when the refund request status is 'rejected'.
    *
-   * @x-autobe-specification LEFT JOIN to ecommerce_mall_sellers on rejected_by_seller_id. Returns IEcommerceMallSeller.ISummary when status is 'rejected'. Null when status is 'pending' or 'approved'.
+     * @x-autobe-specification LEFT JOIN to ecommerce_mall_sellers on
+     *   rejected_by_seller_id. Returns IEcommerceMallSeller.ISummary when
+     *   status is 'rejected'. Null when status is 'pending' or 'approved'.
    */
   rejected_by_seller?: IEcommerceMallSeller.ISummary | null | undefined;
 };

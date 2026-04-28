@@ -20,9 +20,10 @@ export class EcommercemallSellerSeller_approvalsController {
    *
    * @param connection
    * @param body Search criteria including status filter, date ranges, pagination parameters, and optional seller email search.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Query ecommerce_mall_seller_approval_requests table with pagination and filtering.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Query ecommerce_mall_seller_approval_requests
+     *   table with pagination and filtering.
    *
    * Apply search filters on:
    * - status: filter by pending, approved, or rejected (default shows all)
@@ -65,9 +66,10 @@ export class EcommercemallSellerSeller_approvalsController {
    *
    * @param connection
    * @param requestId UUID of the seller approval request to retrieve
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Query the ecommerce_mall_seller_approval_requests table by UUID id.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Query the ecommerce_mall_seller_approval_requests
+     *   table by UUID id.
    *
    * Apply soft-delete filtering: exclude records where deleted_at is not null.
    *

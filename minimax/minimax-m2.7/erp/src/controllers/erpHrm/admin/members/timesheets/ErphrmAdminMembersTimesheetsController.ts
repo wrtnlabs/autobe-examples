@@ -28,9 +28,10 @@ export class ErphrmAdminMembersTimesheetsController {
    * @param connection
    * @param memberId The unique identifier of the member (user) who owns the timesheet
    * @param timesheetId The unique identifier of the timesheet to retrieve
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query erp_hrm_timesheets table by id, joining with erp_hrm_employees to verify erp_hrm_user_id matches memberId.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Query erp_hrm_timesheets table by id, joining
+     *   with erp_hrm_employees to verify erp_hrm_user_id matches memberId.
    *
    * Authorization rules:
    * 1. If requesting user is the owner of the timesheet (their user record matches the employee.user), allow access.

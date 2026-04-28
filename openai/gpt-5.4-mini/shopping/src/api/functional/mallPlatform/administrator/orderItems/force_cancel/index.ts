@@ -22,7 +22,9 @@ import { IMallPlatformOrderItem } from "../../../../../structures/IMallPlatformO
  * @param props.body Administrator force-cancellation request payload used for audit context and dispute handling.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor administrator
- * @x-autobe-specification Authenticate the caller as an administrator and verify order intervention permission before processing the request. Load the target order item by orderItemId and confirm it exists.
+ * @x-autobe-specification Authenticate the caller as an administrator and
+ *   verify order intervention permission before processing the request. Load
+ *   the target order item by orderItemId and confirm it exists.
  *
  * Validate that the item can be force-cancelled under the current business rules. Reject requests for items that are already cancelled, refunded, or otherwise ineligible, and do not modify any related data on failure.
  *

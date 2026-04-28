@@ -17,7 +17,8 @@ import typia, { tags } from "typia";
  * @param props.categoryId UUID of the category to delete. This uniquely identifies the category within the shopping mall platform.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor administrator
- * @x-autobe-specification Validate that the requesting user has administrator role and sufficient permissions to delete categories.
+ * @x-autobe-specification Validate that the requesting user has administrator
+ *   role and sufficient permissions to delete categories.
  *
  * Find the category by categoryId from shopping_mall_categories table. If not found, return 404 Not Found.
  *

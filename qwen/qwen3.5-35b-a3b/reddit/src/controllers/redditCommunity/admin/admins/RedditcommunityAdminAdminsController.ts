@@ -18,9 +18,10 @@ export class RedditcommunityAdminAdminsController {
    *
    * @param connection
    * @param body Search and pagination criteria for filtering and ordering administrator accounts.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query the reddit_community_admins table with the following rules:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Query the reddit_community_admins table with the
+     *   following rules:
    *
    * 1. Filtering:
    *    - Filter out soft-deleted records (deleted_at IS NULL) by default
@@ -77,9 +78,10 @@ export class RedditcommunityAdminAdminsController {
    *
    * @param connection
    * @param adminId The unique identifier of the administrator to retrieve
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query the reddit_community_admins table by admin_id primary key.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Query the reddit_community_admins table by
+     *   admin_id primary key.
    *
    * Return the complete administrator record including email, created_at, and updated_at fields.
    *

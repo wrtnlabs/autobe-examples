@@ -20,8 +20,10 @@ export type IEcommerceMallSellerApproval = {
    *
    * Indicates whether the seller registration is pending administrator review, approved for selling, or rejected. Sellers can list products and process orders only when status is 'approved'.
    *
-   * @x-autobe-database-schema-property approval_status
-   * @x-autobe-specification Direct mapping from ecommerce_mall_sellers.approval_status column. Returns string value: 'pending', 'approved', or 'rejected'.
+     * @x-autobe-database-schema-property approval_status
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_sellers.approval_status column. Returns string value:
+     *   'pending', 'approved', or 'rejected'.
    */
   approvalStatus: string;
 
@@ -30,8 +32,10 @@ export type IEcommerceMallSellerApproval = {
    *
    * Only populated when approvalStatus is 'rejected'. Contains the administrator's explanation for denying the seller registration application.
    *
-   * @x-autobe-database-schema-property rejection_reason
-   * @x-autobe-specification Direct mapping from ecommerce_mall_sellers.rejection_reason column. Nullable - only populated when approvalStatus is 'rejected'.
+     * @x-autobe-database-schema-property rejection_reason
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_sellers.rejection_reason column. Nullable - only
+     *   populated when approvalStatus is 'rejected'.
    */
   rejectionReason?: string | null | undefined;
 
@@ -40,8 +44,10 @@ export type IEcommerceMallSellerApproval = {
    *
    * ISO 8601 formatted datetime indicating when the administrator rejected the seller registration. Only present when approvalStatus is 'rejected'.
    *
-   * @x-autobe-database-schema-property rejected_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_sellers.rejected_at column. Nullable - only populated when approvalStatus is 'rejected'. ISO 8601 timestamp with timezone.
+     * @x-autobe-database-schema-property rejected_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_sellers.rejected_at column. Nullable - only populated
+     *   when approvalStatus is 'rejected'. ISO 8601 timestamp with timezone.
    */
   rejectedAt?: (string & tags.Format<"date-time">) | null | undefined;
 
@@ -50,7 +56,11 @@ export type IEcommerceMallSellerApproval = {
    *
    * Contains summary records of all approval requests in chronological order (newest first). Each record shows the status at that time and the reviewing administrator if the request was processed.
    *
-   * @x-autobe-specification JOIN ecommerce_mall_seller_approvals via ecommerce_mall_seller_id FK. ORDER BY created_at DESC. Returns array of IEcommerceMallSellerApproval.ISummary objects showing all previous approval attempts. This is a computed field derived from the reverse relation.
+     * @x-autobe-specification JOIN ecommerce_mall_seller_approvals via
+     *   ecommerce_mall_seller_id FK. ORDER BY created_at DESC. Returns array of
+     *   IEcommerceMallSellerApproval.ISummary objects showing all previous
+     *   approval attempts. This is a computed field derived from the reverse
+     *   relation.
    */
   approvalHistory: IEcommerceMallSellerApproval.ISummary[];
 };
@@ -72,7 +82,11 @@ export namespace IEcommerceMallSellerApproval {
      *
      * When specified, only approval records submitted on or after this date are included in results. Use ISO 8601 date-time format (e.g., '2024-01-01T00:00:00Z'). Omit to include all records from the beginning of history.
      *
-     * @x-autobe-specification Lower boundary for created_at date range filter. When provided, query returns only records where created_at >= created_at_from. Use ISO 8601 date-time format (e.g., '2024-01-01T00:00:00Z'). Optional - when omitted, no lower bound is applied.
+         * @x-autobe-specification Lower boundary for created_at date range
+         *   filter. When provided, query returns only records where created_at
+         *   >= created_at_from. Use ISO 8601 date-time format (e.g.,
+         *   '2024-01-01T00:00:00Z'). Optional - when omitted, no lower bound is
+         *   applied.
      */
     created_at_from?: (string & tags.Format<"date-time">) | undefined;
 
@@ -81,7 +95,11 @@ export namespace IEcommerceMallSellerApproval {
      *
      * When specified, only approval records submitted on or before this date are included in results. Use ISO 8601 date-time format (e.g., '2024-12-31T23:59:59Z'). Omit to include all records up to the present.
      *
-     * @x-autobe-specification Upper boundary for created_at date range filter. When provided, query returns only records where created_at <= created_at_to. Use ISO 8601 date-time format (e.g., '2024-12-31T23:59:59Z'). Optional - when omitted, no upper bound is applied.
+         * @x-autobe-specification Upper boundary for created_at date range
+         *   filter. When provided, query returns only records where created_at
+         *   <= created_at_to. Use ISO 8601 date-time format (e.g.,
+         *   '2024-12-31T23:59:59Z'). Optional - when omitted, no upper bound is
+         *   applied.
      */
     created_at_to?: (string & tags.Format<"date-time">) | undefined;
 
@@ -90,7 +108,10 @@ export namespace IEcommerceMallSellerApproval {
      *
      * Controls the page size for paginated results. Default value is 20 items per page. Maximum allowed value is 100 items per page. When the requested limit exceeds the maximum, the query is capped at 100.
      *
-     * @x-autobe-specification Maximum number of records to return per page. Applied as LIMIT clause in SQL query. Default value is 20 when not provided. Maximum allowed value is 100 to prevent excessive data retrieval. Must be positive integer.
+         * @x-autobe-specification Maximum number of records to return per page.
+         *   Applied as LIMIT clause in SQL query. Default value is 20 when not
+         *   provided. Maximum allowed value is 100 to prevent excessive data
+         *   retrieval. Must be positive integer.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -101,7 +122,11 @@ export namespace IEcommerceMallSellerApproval {
      *
      * Specifies which page of results to return. Page numbering starts at 1 (first page). The page number determines the offset for fetching records: offset = (page - 1) * limit. Default value is 1.
      *
-     * @x-autobe-specification Page number to retrieve (1-indexed). Used to calculate offset: OFFSET (page - 1) * limit. Default value is 1 (first page). Must be positive integer. When page exceeds available pages, an empty result set is returned with pagination metadata showing total records.
+         * @x-autobe-specification Page number to retrieve (1-indexed). Used to
+         *   calculate offset: OFFSET (page - 1) * limit. Default value is 1
+         *   (first page). Must be positive integer. When page exceeds available
+         *   pages, an empty result set is returned with pagination metadata
+         *   showing total records.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -110,7 +135,12 @@ export namespace IEcommerceMallSellerApproval {
      *
      * Allows filtering to view only records with a specific approval status. Valid values: 'pending' (awaiting administrator review), 'approved' (seller registration accepted), 'rejected' (seller registration denied). Omit to include all statuses.
      *
-     * @x-autobe-specification Filter by approval status value stored in ecommerce_mall_seller_approvals.status column. WHERE clause applies this filter when provided. Allowed values: 'pending' (awaiting review), 'approved' (registration accepted), 'rejected' (registration denied). Optional - when omitted, all statuses are included in results.
+         * @x-autobe-specification Filter by approval status value stored in
+         *   ecommerce_mall_seller_approvals.status column. WHERE clause applies
+         *   this filter when provided. Allowed values: 'pending' (awaiting
+         *   review), 'approved' (registration accepted), 'rejected'
+         *   (registration denied). Optional - when omitted, all statuses are
+         *   included in results.
      */
     status?: "approved" | "pending" | "rejected" | undefined;
   };
@@ -130,8 +160,9 @@ export namespace IEcommerceMallSellerApproval {
      *
      * Set automatically when the seller submits their registration. Used for ordering and chronological tracking of approval requests.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_seller_approvals.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_seller_approvals.created_at.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -140,8 +171,9 @@ export namespace IEcommerceMallSellerApproval {
      *
      * UUID primary key assigned at creation. Used for referencing specific approval records in approval/rejection operations.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_mall_seller_approvals.id (UUID primary key).
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_seller_approvals.id (UUID primary key).
      */
     id: string & tags.Format<"uuid">;
 
@@ -150,8 +182,10 @@ export namespace IEcommerceMallSellerApproval {
      *
      * Only populated when the approval status is 'rejected'. Contains the administrator's explanation for why the seller registration was denied. Null when pending or approved.
      *
-     * @x-autobe-database-schema-property rejection_reason
-     * @x-autobe-specification Direct mapping from ecommerce_mall_seller_approvals.rejection_reason. Nullable - only populated when status is 'rejected'.
+         * @x-autobe-database-schema-property rejection_reason
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_seller_approvals.rejection_reason. Nullable - only
+         *   populated when status is 'rejected'.
      */
     rejection_reason?: string | null | undefined;
 
@@ -160,8 +194,11 @@ export namespace IEcommerceMallSellerApproval {
      *
      * Populated after an administrator approves or rejects the request. Null when the request is still pending review.
      *
-     * @x-autobe-database-schema-property reviewedByAdmin
-     * @x-autobe-specification Join via ecommerce_mall_seller_approvals.reviewed_by_admin_id FK to ecommerce_mall_admins.id. Returns IEcommerceMallAdmin.ISummary or null.
+         * @x-autobe-database-schema-property reviewedByAdmin
+         * @x-autobe-specification Join via
+         *   ecommerce_mall_seller_approvals.reviewed_by_admin_id FK to
+         *   ecommerce_mall_admins.id. Returns IEcommerceMallAdmin.ISummary or
+         *   null.
      */
     reviewedByAdmin?: IEcommerceMallAdmin.ISummary | null | undefined;
 
@@ -170,8 +207,10 @@ export namespace IEcommerceMallSellerApproval {
      *
      * Contains the seller summary including email for administrators to identify the seller requesting approval.
      *
-     * @x-autobe-database-schema-property seller
-     * @x-autobe-specification Join via ecommerce_mall_seller_approvals.ecommerce_mall_seller_id FK to ecommerce_mall_sellers.id. Returns IEcommerceMallSeller.ISummary.
+         * @x-autobe-database-schema-property seller
+         * @x-autobe-specification Join via
+         *   ecommerce_mall_seller_approvals.ecommerce_mall_seller_id FK to
+         *   ecommerce_mall_sellers.id. Returns IEcommerceMallSeller.ISummary.
      */
     seller: IEcommerceMallSeller.ISummary;
 
@@ -180,8 +219,10 @@ export namespace IEcommerceMallSellerApproval {
      *
      * Values: 'pending' (awaiting administrator review), 'approved' (seller can list products), 'rejected' (registration denied). Determines what actions are available to administrators.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from ecommerce_mall_seller_approvals.status. Enum values: 'pending', 'approved', 'rejected'.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_seller_approvals.status. Enum values: 'pending',
+         *   'approved', 'rejected'.
      */
     status: string;
 
@@ -190,8 +231,9 @@ export namespace IEcommerceMallSellerApproval {
      *
      * Updated when the status changes from pending to approved or rejected. Also updated when an administrator updates review metadata.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_seller_approvals.updated_at.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_seller_approvals.updated_at.
      */
     updated_at: string & tags.Format<"date-time">;
   };

@@ -22,7 +22,10 @@ export namespace IPlatformTimeTrackingDailyHour {
      *
      * This value is typically displayed on the personal dashboard as a numeric value (e.g., "8.5 hours") to show employees how much time they've logged for the current day.
      *
-     * @x-autobe-specification Aggregation of duration_minutes from hrm_platform_timelogs for the current day in organization timezone. Formula: SUM(CAST(duration_minutes AS FLOAT)) / 60. Returns 0.00 if no timelogs exist for today.
+         * @x-autobe-specification Aggregation of duration_minutes from
+         *   hrm_platform_timelogs for the current day in organization timezone.
+         *   Formula: SUM(CAST(duration_minutes AS FLOAT)) / 60. Returns 0.00 if
+         *   no timelogs exist for today.
      *
      * Calculation Steps:
      * 1. Extract employee_id from authentication context (session token)
@@ -44,7 +47,10 @@ export namespace IPlatformTimeTrackingDailyHour {
      *
      * This field provides clarity for users viewing data from different timezones, ensuring they know exactly which day the hours were calculated for.
      *
-     * @x-autobe-specification Date context in organization timezone (YYYY-MM-DD format), derived from the organization's timezone configuration in hrm_platform_time_tracking_timezones and the current server date in that timezone.
+         * @x-autobe-specification Date context in organization timezone
+         *   (YYYY-MM-DD format), derived from the organization's timezone
+         *   configuration in hrm_platform_time_tracking_timezones and the
+         *   current server date in that timezone.
      *
      * Calculation Steps:
      * 1. Query hrm_platform_time_tracking_timezones to get organization timezone

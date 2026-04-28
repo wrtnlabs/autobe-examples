@@ -21,7 +21,9 @@ import { IPageIECommerceMallSellerSuspensionLog } from "../../../../../structure
  * @param props.body Search and filter criteria for listing seller suspension logs. Supports filtering by action type (suspend/unsuspend), actor type (administrator/super_administrator), date range on creation timestamp, and pagination parameters.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor superAdministrator
- * @x-autobe-specification Query e_commerce_mall_seller_suspension_logs table filtered by e_commerce_mall_seller_id matching the {sellerId} path parameter.
+ * @x-autobe-specification Query e_commerce_mall_seller_suspension_logs table
+ *   filtered by e_commerce_mall_seller_id matching the {sellerId} path
+ *   parameter.
  *
  * Implement pagination using cursor-based or offset pagination as defined by the request body's pagination parameters.
  *
@@ -133,7 +135,9 @@ export namespace index {
  * @param props.logId The unique identifier of the suspension log entry to retrieve.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor superAdministrator
- * @x-autobe-specification Query the e_commerce_mall_seller_suspension_logs table by primary key (logId) filtered by e_commerce_mall_seller_id matching the sellerId path parameter.
+ * @x-autobe-specification Query the e_commerce_mall_seller_suspension_logs
+ *   table by primary key (logId) filtered by e_commerce_mall_seller_id matching
+ *   the sellerId path parameter.
  *
  * Perform the following steps:
  * 1. Validate that the sellerId references an existing seller in e_commerce_mall_sellers (return 404 if not found).

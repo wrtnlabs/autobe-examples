@@ -16,8 +16,9 @@ export type IRedditCloneModeratorPasswordReset = {
    *
    * This UUID uniquely identifies each password reset request and serves as the primary key in the database. It is used in API paths to retrieve specific password reset records for audit purposes.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from reddit_clone_moderator_password_resets.id. Primary key UUID.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_moderator_password_resets.id. Primary key UUID.
    */
   id: string & tags.Format<"uuid">;
 
@@ -26,8 +27,10 @@ export type IRedditCloneModeratorPasswordReset = {
    *
    * This field references the moderator account that requested the password reset. The summary view displays essential moderator information (display name, email, profile) for audit and administrative purposes.
    *
-   * @x-autobe-database-schema-property moderator
-   * @x-autobe-specification Relation via reddit_clone_moderator_id FK to reddit_clone_moderators.id. Returns IRedditCloneModerator.ISummary with essential moderator information for audit trail.
+     * @x-autobe-database-schema-property moderator
+     * @x-autobe-specification Relation via reddit_clone_moderator_id FK to
+     *   reddit_clone_moderators.id. Returns IRedditCloneModerator.ISummary with
+     *   essential moderator information for audit trail.
    */
   moderator: IRedditCloneModerator.ISummary;
 
@@ -36,7 +39,9 @@ export type IRedditCloneModeratorPasswordReset = {
    *
    * This computed field shows whether the token can still be used for password reset. 'active' means the token is valid and not yet expired. 'expired' means the token has passed its expiration time and cannot be used. A new password reset request must be made if the token is expired.
    *
-   * @x-autobe-specification Computed field derived by comparing expires_at with current timestamp. Returns 'active' if expires_at >= current time, 'expired' otherwise. No database column - calculated at query time.
+     * @x-autobe-specification Computed field derived by comparing expires_at
+     *   with current timestamp. Returns 'active' if expires_at >= current time,
+     *   'expired' otherwise. No database column - calculated at query time.
    */
   status: "active" | "expired";
 
@@ -45,8 +50,10 @@ export type IRedditCloneModeratorPasswordReset = {
    *
    * This field records when the moderator requested a password reset. Used for audit trail tracking, calculating token age, and monitoring password reset activity patterns.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from reddit_clone_moderator_password_resets.created_at. Timestamp when the password reset token was generated.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_moderator_password_resets.created_at. Timestamp when the
+     *   password reset token was generated.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -55,8 +62,10 @@ export type IRedditCloneModeratorPasswordReset = {
    *
    * Tokens expire after a specified duration (typically 1 hour) for security. Once this timestamp is reached, the token becomes invalid and cannot be used for password reset. The moderator must request a new password reset token if the current one has expired.
    *
-   * @x-autobe-database-schema-property expires_at
-   * @x-autobe-specification Direct mapping from reddit_clone_moderator_password_resets.expires_at. Timestamp when the token expires (typically 1 hour after creation).
+     * @x-autobe-database-schema-property expires_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_moderator_password_resets.expires_at. Timestamp when the
+     *   token expires (typically 1 hour after creation).
    */
   expires_at: string & tags.Format<"date-time">;
 };
@@ -74,8 +83,9 @@ export namespace IRedditCloneModeratorPasswordReset {
      *
      * This UUID identifies each password reset token in the system. Used as the primary key for database operations and API references.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from reddit_clone_moderator_password_resets.id. Primary key UUID.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_moderator_password_resets.id. Primary key UUID.
      */
     id: string & tags.Format<"uuid">;
 
@@ -84,8 +94,10 @@ export namespace IRedditCloneModeratorPasswordReset {
      *
      * This token is sent to the moderator via email and must be provided to complete the password reset process. The token is unique and designed to be unpredictable and non-reusable. Once used or expired, the token cannot be reused.
      *
-     * @x-autobe-database-schema-property token
-     * @x-autobe-specification Direct mapping from reddit_clone_moderator_password_resets.token. Cryptographically secure unique token.
+         * @x-autobe-database-schema-property token
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_moderator_password_resets.token. Cryptographically
+         *   secure unique token.
      */
     token: string;
 
@@ -94,8 +106,9 @@ export namespace IRedditCloneModeratorPasswordReset {
      *
      * Tokens expire after a specified duration (typically 1 hour) for security. Once expired, the token cannot be used and a new reset request must be made. Timestamp is in ISO 8601 format with UTC timezone.
      *
-     * @x-autobe-database-schema-property expires_at
-     * @x-autobe-specification Direct mapping from reddit_clone_moderator_password_resets.expires_at. DateTime in UTC.
+         * @x-autobe-database-schema-property expires_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_moderator_password_resets.expires_at. DateTime in UTC.
      */
     expires_at: string & tags.Format<"date-time">;
 
@@ -104,8 +117,9 @@ export namespace IRedditCloneModeratorPasswordReset {
      *
      * Records when the moderator requested a password reset. Used for audit trail and to calculate token age. Timestamp is in ISO 8601 format with UTC timezone.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from reddit_clone_moderator_password_resets.created_at. DateTime in UTC.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_moderator_password_resets.created_at. DateTime in UTC.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -114,8 +128,9 @@ export namespace IRedditCloneModeratorPasswordReset {
      *
      * Contains the moderator's public profile information and account details. This establishes the relationship between the password reset token and the specific moderator requesting the reset.
      *
-     * @x-autobe-database-schema-property moderator
-     * @x-autobe-specification Join via reddit_clone_moderator_id to reddit_clone_moderators.id. Returns IRedditCloneModerator.ISummary.
+         * @x-autobe-database-schema-property moderator
+         * @x-autobe-specification Join via reddit_clone_moderator_id to
+         *   reddit_clone_moderators.id. Returns IRedditCloneModerator.ISummary.
      */
     moderator: IRedditCloneModerator.ISummary;
   };
@@ -133,7 +148,11 @@ export namespace IRedditCloneModeratorPasswordReset {
      *
      * Specifies the unique identifier of the moderator whose password reset tokens should be retrieved. When provided, only tokens associated with this specific moderator account will be returned.
      *
-     * @x-autobe-specification Filter by moderator ID. Exact match on reddit_clone_moderator_id column in reddit_clone_moderator_password_resets table. UUID format. This parameter maps to the FK column that links password reset tokens to moderator accounts.
+         * @x-autobe-specification Filter by moderator ID. Exact match on
+         *   reddit_clone_moderator_id column in
+         *   reddit_clone_moderator_password_resets table. UUID format. This
+         *   parameter maps to the FK column that links password reset tokens to
+         *   moderator accounts.
      */
     moderator_id?: (string & tags.Format<"uuid">) | undefined;
 
@@ -142,7 +161,11 @@ export namespace IRedditCloneModeratorPasswordReset {
      *
      * Searches for tokens containing the specified string value. Useful for audit trail purposes when searching for specific token values. Supports partial matching.
      *
-     * @x-autobe-specification Filter by token value. LIKE partial match on token column in reddit_clone_moderator_password_resets table. Supports substring search for audit purposes. This parameter maps to the unique token column storing cryptographically secure reset credentials.
+         * @x-autobe-specification Filter by token value. LIKE partial match on
+         *   token column in reddit_clone_moderator_password_resets table.
+         *   Supports substring search for audit purposes. This parameter maps
+         *   to the unique token column storing cryptographically secure reset
+         *   credentials.
      */
     token?: string | undefined;
 
@@ -151,7 +174,10 @@ export namespace IRedditCloneModeratorPasswordReset {
      *
      * Accepts values 'active' or 'expired'. Active tokens have not yet passed their expiration time (expires_at > now). Expired tokens have passed their expiration time and can no longer be used for password reset.
      *
-     * @x-autobe-specification Filter by token expiration status. Computed field: 'active' if expires_at > current timestamp, 'expired' if expires_at <= current timestamp. Not a direct DB column, derived from comparing expires_at column with current time.
+         * @x-autobe-specification Filter by token expiration status. Computed
+         *   field: 'active' if expires_at > current timestamp, 'expired' if
+         *   expires_at <= current timestamp. Not a direct DB column, derived
+         *   from comparing expires_at column with current time.
      */
     status?: string | undefined;
 
@@ -160,7 +186,10 @@ export namespace IRedditCloneModeratorPasswordReset {
      *
      * Specifies the start of the date range for token creation time. Only tokens created at or after this timestamp will be included in the results. Use with created_at_to for range filtering.
      *
-     * @x-autobe-specification Filter tokens created on or after this timestamp. Applied as created_at >= created_at_from in SQL query. ISO 8601 date-time format. This parameter maps to the created_at column for range filtering.
+         * @x-autobe-specification Filter tokens created on or after this
+         *   timestamp. Applied as created_at >= created_at_from in SQL query.
+         *   ISO 8601 date-time format. This parameter maps to the created_at
+         *   column for range filtering.
      */
     created_at_from?: (string & tags.Format<"date-time">) | undefined;
 
@@ -169,7 +198,10 @@ export namespace IRedditCloneModeratorPasswordReset {
      *
      * Specifies the end of the date range for token creation time. Only tokens created at or before this timestamp will be included in the results. Use with created_at_from for range filtering.
      *
-     * @x-autobe-specification Filter tokens created on or before this timestamp. Applied as created_at <= created_at_to in SQL query. ISO 8601 date-time format. This parameter maps to the created_at column for range filtering.
+         * @x-autobe-specification Filter tokens created on or before this
+         *   timestamp. Applied as created_at <= created_at_to in SQL query. ISO
+         *   8601 date-time format. This parameter maps to the created_at column
+         *   for range filtering.
      */
     created_at_to?: (string & tags.Format<"date-time">) | undefined;
 
@@ -178,7 +210,10 @@ export namespace IRedditCloneModeratorPasswordReset {
      *
      * Use the cursor value from the previous page's response to retrieve the next page of results. This enables efficient server-side pagination without offset-based queries.
      *
-     * @x-autobe-specification Cursor-based pagination token. Used to retrieve the next page of results. Value is typically an encoded representation of the last item's ID or timestamp from the previous page. Computed pagination parameter, not a DB column.
+         * @x-autobe-specification Cursor-based pagination token. Used to
+         *   retrieve the next page of results. Value is typically an encoded
+         *   representation of the last item's ID or timestamp from the previous
+         *   page. Computed pagination parameter, not a DB column.
      */
     cursor?: string | undefined;
 
@@ -187,7 +222,9 @@ export namespace IRedditCloneModeratorPasswordReset {
      *
      * Defaults to 20 records per page. Maximum allowed value is 100. Smaller values may be used for faster initial loads or mobile interfaces.
      *
-     * @x-autobe-specification Maximum number of records to return per page. Default is 20, maximum allowed is 100. Applied as LIMIT clause in SQL query. Computed pagination parameter, not a DB column.
+         * @x-autobe-specification Maximum number of records to return per page.
+         *   Default is 20, maximum allowed is 100. Applied as LIMIT clause in
+         *   SQL query. Computed pagination parameter, not a DB column.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -198,7 +235,10 @@ export namespace IRedditCloneModeratorPasswordReset {
      *
      * Determines how results are ordered. Default is most recently created tokens first. Can sort by creation time or expiration time in ascending or descending order.
      *
-     * @x-autobe-specification Sort field and direction for results. Default is 'created_at desc' (most recent first). Supported values: 'created_at asc', 'created_at desc', 'expires_at asc', 'expires_at desc'. Computed pagination parameter, not a DB column.
+         * @x-autobe-specification Sort field and direction for results. Default
+         *   is 'created_at desc' (most recent first). Supported values:
+         *   'created_at asc', 'created_at desc', 'expires_at asc', 'expires_at
+         *   desc'. Computed pagination parameter, not a DB column.
      */
     sort?: string | undefined;
 
@@ -207,7 +247,10 @@ export namespace IRedditCloneModeratorPasswordReset {
      *
      * Specifies which page of results to return. Page numbering starts from 1. If omitted, null, or undefined, defaults to page 1 (first page). Requesting a page beyond the available range returns an empty data array with valid pagination metadata reflecting the actual totals.
      *
-     * @x-autobe-specification 1-indexed page number for page-based pagination. Defaults to 1 if not provided. Alternative to cursor-based pagination. Cannot be used together with cursor parameter. Computed pagination parameter, not a DB column.
+         * @x-autobe-specification 1-indexed page number for page-based
+         *   pagination. Defaults to 1 if not provided. Alternative to
+         *   cursor-based pagination. Cannot be used together with cursor
+         *   parameter. Computed pagination parameter, not a DB column.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };

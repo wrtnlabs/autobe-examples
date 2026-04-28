@@ -25,7 +25,8 @@ import { IShoppingMallGuest } from "../../../../structures/IShoppingMallGuest";
  * @param props.body Guest join payload used to create (or locate) a guest identity and bootstrap a guest session.
  * @x-autobe-authorization-type join
  * @x-autobe-authorization-actor guest
- * @x-autobe-specification Implement POST /auth/guest/join as a guest account creation/auth bootstrap endpoint.
+ * @x-autobe-specification Implement POST /auth/guest/join as a guest account
+ *   creation/auth bootstrap endpoint.
  *
  * Algorithm:
  * 1) Validate request DTO IShoppingMallGuest.IJoin fields (e.g., device fingerprint / guest identity inputs defined by schema).
@@ -147,7 +148,8 @@ export namespace join {
  * @param props.body Guest token refresh payload containing the credential(s) required to renew the guest session tokens.
  * @x-autobe-authorization-type refresh
  * @x-autobe-authorization-actor guest
- * @x-autobe-specification Implement POST /auth/guest/refresh as a token renewal endpoint for existing guest sessions.
+ * @x-autobe-specification Implement POST /auth/guest/refresh as a token renewal
+ *   endpoint for existing guest sessions.
  *
  * Algorithm:
  * 1) Validate request DTO IShoppingMallGuest.IRefresh fields (typically includes refresh token or session identifier).

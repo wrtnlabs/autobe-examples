@@ -28,14 +28,14 @@ export * as snapshot_indices from "./snapshot_indices/index";
  * @param props.reviewId Target review identifier to retrieve (primary key of `shopping_mall_reviews`).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Service layer implementation (read-only):
- * 1) Parse `reviewId` from path.
- * 2) Query `shopping_mall_reviews` by `id` (primary key).
- * 3) Join minimal related data only if required by the response DTO (e.g., to compute author-deleted display flags). Do not perform writes.
- * 4) Apply authorization checks:
- *    - Member/admin visibility rules must be enforced before returning any review fields.
- *    - If the record has `deleted_at` set, keep the review content available for display as “deleted user” per requirements.
- * 5) Return the review DTO.
+ * @x-autobe-specification Service layer implementation (read-only): 1) Parse
+ *   `reviewId` from path. 2) Query `shopping_mall_reviews` by `id` (primary
+ *   key). 3) Join minimal related data only if required by the response DTO
+ *   (e.g., to compute author-deleted display flags). Do not perform writes. 4)
+ *   Apply authorization checks: - Member/admin visibility rules must be
+ *   enforced before returning any review fields. - If the record has
+ *   `deleted_at` set, keep the review content available for display as “deleted
+ *   user” per requirements. 5) Return the review DTO.
  *
  * Database query notes:
  * - Primary lookup should use `shopping_mall_reviews` on `id`.
@@ -135,7 +135,8 @@ export namespace at {
  * @param props.body Search filters and pagination controls for retrieving review summaries.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Implement PATCH /reviews as a list/search handler over `shopping_mall_reviews`.
+ * @x-autobe-specification Implement PATCH /reviews as a list/search handler
+ *   over `shopping_mall_reviews`.
  *
  * 1) Parse request body `IShoppingMallReview.IRequest` to obtain:
  * - pagination parameters (page size / cursor)

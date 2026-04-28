@@ -42,8 +42,9 @@ export namespace IHrmTimeTrackingTimesheet {
      *
      * Each timesheet is assigned a system-generated UUID upon creation. This identifier is used for referencing the timesheet in API operations.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_timesheets.id. UUID primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_timesheets.id. UUID primary key.
      */
     id: string & tags.Format<"uuid">;
 
@@ -52,8 +53,9 @@ export namespace IHrmTimeTrackingTimesheet {
      *
      * Together with the employee identifier, this field forms a unique constraint ensuring at most one timesheet per employee per work week. The work week runs Monday through Sunday.
      *
-     * @x-autobe-database-schema-property week_start_date
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_timesheets.week_start_date. Always a Monday.
+         * @x-autobe-database-schema-property week_start_date
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_timesheets.week_start_date. Always a Monday.
      */
     week_start_date: string & tags.Format<"date-time">;
 
@@ -62,8 +64,10 @@ export namespace IHrmTimeTrackingTimesheet {
      *
      * Always six days after the week start date. Used for display and query filtering purposes.
      *
-     * @x-autobe-database-schema-property week_end_date
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_timesheets.week_end_date. Always a Sunday, six days after week_start_date.
+         * @x-autobe-database-schema-property week_end_date
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_timesheets.week_end_date. Always a Sunday, six
+         *   days after week_start_date.
      */
     week_end_date: string & tags.Format<"date-time">;
 
@@ -72,8 +76,10 @@ export namespace IHrmTimeTrackingTimesheet {
      *
      * The status tracks the timesheet lifecycle through four states: draft (being composed), submitted (awaiting review), approved (locked permanently), or rejected (returned to draft for modifications). Valid transitions are draft to submitted, submitted to approved, and submitted to rejected back to draft.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_timesheets.status. One of: draft, submitted, approved, rejected.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_timesheets.status. One of: draft, submitted,
+         *   approved, rejected.
      */
     status: string;
 
@@ -82,8 +88,10 @@ export namespace IHrmTimeTrackingTimesheet {
      *
      * Automatically recomputed when timelogs are added to or removed from the timesheet. Stored as a denormalized value for query performance.
      *
-     * @x-autobe-database-schema-property total_hours
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_timesheets.total_hours. Denormalized aggregate computed from summing duration of all included timelogs.
+         * @x-autobe-database-schema-property total_hours
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_timesheets.total_hours. Denormalized aggregate
+         *   computed from summing duration of all included timelogs.
      */
     total_hours: number;
 
@@ -92,8 +100,10 @@ export namespace IHrmTimeTrackingTimesheet {
      *
      * Set when the employee changes the status from draft to submitted. Remains null until the first submission.
      *
-     * @x-autobe-database-schema-property submitted_at
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_timesheets.submitted_at. Nullable—set when the timesheet status changes to submitted.
+         * @x-autobe-database-schema-property submitted_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_timesheets.submitted_at. Nullable—set when the
+         *   timesheet status changes to submitted.
      */
     submitted_at: (string & tags.Format<"date-time">) | null;
 
@@ -102,8 +112,10 @@ export namespace IHrmTimeTrackingTimesheet {
      *
      * Set by the system when an authorized reviewer performs an approval or rejection action. Null until the timesheet is reviewed.
      *
-     * @x-autobe-database-schema-property reviewed_at
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_timesheets.reviewed_at. Nullable—set when a reviewer approves or rejects the timesheet.
+         * @x-autobe-database-schema-property reviewed_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_timesheets.reviewed_at. Nullable—set when a
+         *   reviewer approves or rejects the timesheet.
      */
     reviewed_at: (string & tags.Format<"date-time">) | null;
 
@@ -112,8 +124,10 @@ export namespace IHrmTimeTrackingTimesheet {
      *
      * This field is populated when a submitted timesheet is rejected. It is null if the timesheet has not been rejected or is still in draft, submitted, or approved state.
      *
-     * @x-autobe-database-schema-property rejection_reason
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_timesheets.rejection_reason. Required when rejecting, null otherwise.
+         * @x-autobe-database-schema-property rejection_reason
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_timesheets.rejection_reason. Required when
+         *   rejecting, null otherwise.
      */
     rejection_reason: string | null;
 
@@ -122,8 +136,9 @@ export namespace IHrmTimeTrackingTimesheet {
      *
      * Set automatically by the system at creation time and never modified after.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_timesheets.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_timesheets.created_at.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -132,8 +147,11 @@ export namespace IHrmTimeTrackingTimesheet {
      *
      * Each timesheet belongs to exactly one employee who creates, owns, and submits it for approval. The employee summary provides their display name, role, department, and current status.
      *
-     * @x-autobe-database-schema-property employee
-     * @x-autobe-specification Join from hrm_time_tracking_timesheets.hrm_time_tracking_employee_id to hrm_time_tracking_employees.id. Returns IHrmTimeTrackingEmployee.ISummary.
+         * @x-autobe-database-schema-property employee
+         * @x-autobe-specification Join from
+         *   hrm_time_tracking_timesheets.hrm_time_tracking_employee_id to
+         *   hrm_time_tracking_employees.id. Returns
+         *   IHrmTimeTrackingEmployee.ISummary.
      */
     employee: IHrmTimeTrackingEmployee.ISummary;
 
@@ -142,8 +160,11 @@ export namespace IHrmTimeTrackingTimesheet {
      *
      * Set when an authorized member with time:approve permission performs an approval or rejection action. Null until the timesheet is reviewed.
      *
-     * @x-autobe-database-schema-property reviewer
-     * @x-autobe-specification Left join from hrm_time_tracking_timesheets.hrm_time_tracking_reviewer_id to hrm_time_tracking_members.id. Returns IHrmTimeTrackingMember.ISummary (nullable).
+         * @x-autobe-database-schema-property reviewer
+         * @x-autobe-specification Left join from
+         *   hrm_time_tracking_timesheets.hrm_time_tracking_reviewer_id to
+         *   hrm_time_tracking_members.id. Returns
+         *   IHrmTimeTrackingMember.ISummary (nullable).
      */
     reviewer: IHrmTimeTrackingMember.ISummary | null;
   };
@@ -159,7 +180,10 @@ export namespace IHrmTimeTrackingTimesheet {
      *
      * Returns only timesheets whose current workflow status matches the specified value. Valid status values follow the timesheet lifecycle: draft (being composed), submitted (awaiting review), approved (reviewed and accepted), or rejected (returned for revision).
      *
-     * @x-autobe-specification Exact match equality filter on hrm_time_tracking_timesheets.status. Valid values: draft, submitted, approved, rejected. No transformation needed — query applies WHERE status = :value.
+         * @x-autobe-specification Exact match equality filter on
+         *   hrm_time_tracking_timesheets.status. Valid values: draft,
+         *   submitted, approved, rejected. No transformation needed — query
+         *   applies WHERE status = :value.
      */
     status?: string | undefined;
 
@@ -168,7 +192,10 @@ export namespace IHrmTimeTrackingTimesheet {
      *
      * Filters timesheets whose week start date (Monday) is on or after this date. Combine with endDate to define a date range window. Only timesheets with week_start_date greater than or equal to this value are included.
      *
-     * @x-autobe-specification Range start filter on hrm_time_tracking_timesheets.week_start_date column. Applies WHERE week_start_date >= :startDate. Used together with endDate to define a week coverage window.
+         * @x-autobe-specification Range start filter on
+         *   hrm_time_tracking_timesheets.week_start_date column. Applies WHERE
+         *   week_start_date >= :startDate. Used together with endDate to define
+         *   a week coverage window.
      */
     startDate?: (string & tags.Format<"date-time">) | undefined;
 
@@ -177,7 +204,10 @@ export namespace IHrmTimeTrackingTimesheet {
      *
      * Filters timesheets whose week start date (Monday) is on or before this date. Combine with startDate to define a date range window. Only timesheets with week_start_date less than or equal to this value are included.
      *
-     * @x-autobe-specification Range end filter on hrm_time_tracking_timesheets.week_start_date column. Applies WHERE week_start_date <= :endDate. Used together with startDate to define a week coverage window with both inclusive boundaries.
+         * @x-autobe-specification Range end filter on
+         *   hrm_time_tracking_timesheets.week_start_date column. Applies WHERE
+         *   week_start_date <= :endDate. Used together with startDate to define
+         *   a week coverage window with both inclusive boundaries.
      */
     endDate?: (string & tags.Format<"date-time">) | undefined;
 
@@ -186,7 +216,11 @@ export namespace IHrmTimeTrackingTimesheet {
      *
      * When provided, only timesheets belonging to the specified employee are returned. This filter is only available to members with time:approve permission (Manager, Owner, or custom roles with the permission). Employees without this permission automatically see only their own timesheets.
      *
-     * @x-autobe-specification Exact match filter on hrm_time_tracking_timesheets.hrm_time_tracking_employee_id column. Restricted to members with time:approve permission — regular employees cannot use this filter and automatically see only their own timesheets.
+         * @x-autobe-specification Exact match filter on
+         *   hrm_time_tracking_timesheets.hrm_time_tracking_employee_id column.
+         *   Restricted to members with time:approve permission — regular
+         *   employees cannot use this filter and automatically see only their
+         *   own timesheets.
      */
     employeeId?: (string & tags.Format<"uuid">) | undefined;
 
@@ -195,7 +229,9 @@ export namespace IHrmTimeTrackingTimesheet {
      *
      * Specifies which page of timesheet results to retrieve. Page numbering starts from 1. Use together with limit to control pagination. When omitted, the first page is returned.
      *
-     * @x-autobe-specification 1-indexed page number for cursor-based pagination. Results sorted by week_start_date descending. Defaults to 1 when not provided. Minimum value is 1.
+         * @x-autobe-specification 1-indexed page number for cursor-based
+         *   pagination. Results sorted by week_start_date descending. Defaults
+         *   to 1 when not provided. Minimum value is 1.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -204,7 +240,10 @@ export namespace IHrmTimeTrackingTimesheet {
      *
      * Controls how many timesheet records are returned in a single page. The maximum allowed value is 100. When omitted, a system-default page size is used.
      *
-     * @x-autobe-specification Maximum number of records per page. Defaults to system-configured value when not provided. Enforces maximum of 100 records per page — values exceeding 100 are capped to 100. Minimum value is 1.
+         * @x-autobe-specification Maximum number of records per page. Defaults
+         *   to system-configured value when not provided. Enforces maximum of
+         *   100 records per page — values exceeding 100 are capped to 100.
+         *   Minimum value is 1.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -245,8 +284,13 @@ export namespace IHrmTimeTrackingTimesheet {
      *
      * Must be a non-empty string providing actionable feedback to the employee about what needs to be corrected before resubmission. The rejection reason is stored on the timesheet record and is visible to both the employee and reviewer in the timesheet history.
      *
-     * @x-autobe-specification Direct mapping from the DB column hrm_time_tracking_timesheets.rejection_reason (nullable String). Controller-level validation enforces non-empty string for the reject action per Section 530 business rules — not enforced at the JSON Schema level to avoid validation loopholes with oneOf/null branching.
-     * @x-autobe-database-schema-property rejection_reason
+         * @x-autobe-specification Direct mapping from the DB column
+         *   hrm_time_tracking_timesheets.rejection_reason (nullable String).
+         *   Controller-level validation enforces non-empty string for the
+         *   reject action per Section 530 business rules — not enforced at the
+         *   JSON Schema level to avoid validation loopholes with oneOf/null
+         *   branching.
+         * @x-autobe-database-schema-property rejection_reason
      */
     rejection_reason?: string | null | undefined;
   };

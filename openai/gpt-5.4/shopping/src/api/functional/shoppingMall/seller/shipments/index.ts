@@ -28,7 +28,8 @@ export * as trackingInfos from "./trackingInfos/index";
  * @param props.body Shipment creation data including selected order items and tracking information
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Implement this operation as a single database transaction.
+ * @x-autobe-specification Implement this operation as a single database
+ *   transaction.
  *
  * 1. Authenticate the caller and resolve the acting seller context unless the caller is an authorized administrator performing oversight. For seller callers, require that every selected order item belongs to that seller by matching `shopping_mall_order_items.shopping_mall_seller_id` to the authenticated seller's `shopping_mall_sellers.id`.
  * 2. Validate the request body contains at least one order item identifier and shipment-level tracking data. Load all referenced `shopping_mall_order_items` rows together with their parent `shopping_mall_orders` and existing `shopping_mall_shipments` assignment state.
@@ -135,7 +136,9 @@ export namespace create {
  * @param props.body Shipment search criteria and pagination options
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Implement a paginated shipment search over shopping_mall_shipments with structured filters provided by IShoppingMallShipment.IRequest.
+ * @x-autobe-specification Implement a paginated shipment search over
+ *   shopping_mall_shipments with structured filters provided by
+ *   IShoppingMallShipment.IRequest.
  *
  * Build the base query from shopping_mall_shipments and support filtering at minimum by order identity, shipment identity, seller identity for authorized oversight views, delivery state inferred from delivered_at, and shipping timeline fields such as shipped_at date range when such fields exist in the request DTO. Join shopping_mall_orders to validate customer ownership and to allow filtering by order code when requested. Join shopping_mall_tracking_infos as an optional one-to-one relation so shipment summaries can include carrier_name, tracking_number, and tracking_url context when the DTO requires it. Join shopping_mall_order_items to compute or load included item summaries or item counts for presentation, but avoid duplicating shipment rows by using aggregation or nested mapping after the shipment page is selected.
  *
@@ -240,7 +243,8 @@ export namespace index {
  * @param props.shipmentId Target shipment's ID
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Implement a read-only shipment detail lookup service for `shopping_mall_shipments`.
+ * @x-autobe-specification Implement a read-only shipment detail lookup service
+ *   for `shopping_mall_shipments`.
  *
  * 1. Accept `shipmentId` as a UUID path parameter and load the shipment by `shopping_mall_shipments.id`. Exclude records that should not be exposed to the current caller, including cases where the shipment cannot be found or is not accessible under authorization rules.
  * 2. Join or separately load the parent `shopping_mall_orders` record using `shopping_mall_order_id` so the service can verify ownership and provide parent-order context if the DTO requires it.
@@ -349,7 +353,9 @@ export namespace at {
  * @param props.body Shipment update information
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Load the target `shopping_mall_shipments` record by `id = shipmentId` together with its `order`, `seller`, `trackingInfo`, and grouped `orderItems`.
+ * @x-autobe-specification Load the target `shopping_mall_shipments` record by
+ *   `id = shipmentId` together with its `order`, `seller`, `trackingInfo`, and
+ *   grouped `orderItems`.
  *
  * Authorize access before mutation. For customer execution, join through `shopping_mall_orders` and verify the shipment's `shopping_mall_order_id` belongs to the authenticated customer. For administrator execution, allow oversight access according to administrative permissions. Reject access when the shipment does not exist or is outside the caller's ownership boundary.
  *
@@ -461,15 +467,37 @@ export namespace update {
  * @param props.shipmentId Target shipment's ID.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification 1. Authorize the caller as either an administrator or the seller who owns the shipment. For seller access, load the target shopping_mall_shipments row and verify shopping_mall_seller_id matches the authenticated seller account.
- * 2. Load the shipment by id from shopping_mall_shipments, including its related order items from shopping_mall_order_items and optional trackingInfo from shopping_mall_tracking_infos. If not found, return a not-found error.
- * 3. Validate that the shipment is eligible for deletion. Reject the request if the shipment has already reached a preserved downstream state that should remain in customer order history, such as a completed delivered flow, or if business policy forbids removing a shipment that is still required for active tracking, dispute resolution, or historical integrity.
- * 4. Within a transaction, clear the shipment association from all linked shopping_mall_order_items by setting shopping_mall_shipment_id to null for rows referencing this shipment. Recalculate or normalize per-item status only if the fulfillment model requires reversing an invalid shipped association; do not invent status values not supported by the service's existing order-item state machine.
- * 5. Delete the dependent shopping_mall_tracking_infos row if present. Because the Prisma relation is cascading from shipment to tracking info, direct deletion of the shipment may already remove it, but the implementation should preserve transactional clarity.
- * 6. Delete the shopping_mall_shipments row.
- * 7. After deletion, ensure any order-detail query path no longer returns the removed shipment for the related shopping_mall_orders record. If aggregate order status depends on shipment existence, trigger the existing order-status reconciliation routine.
- * 8. Return success with no response body.
- * 9. Error handling: return not found when shipmentId does not exist; return forbidden when a seller attempts to remove another seller's shipment; return conflict when the shipment cannot be removed because it is already required for preserved fulfillment or historical order visibility; return validation error for malformed UUID input.
+ * @x-autobe-specification 1. Authorize the caller as either an administrator or
+ *   the seller who owns the shipment. For seller access, load the target
+ *   shopping_mall_shipments row and verify shopping_mall_seller_id matches the
+ *   authenticated seller account. 2. Load the shipment by id from
+ *   shopping_mall_shipments, including its related order items from
+ *   shopping_mall_order_items and optional trackingInfo from
+ *   shopping_mall_tracking_infos. If not found, return a not-found error. 3.
+ *   Validate that the shipment is eligible for deletion. Reject the request if
+ *   the shipment has already reached a preserved downstream state that should
+ *   remain in customer order history, such as a completed delivered flow, or if
+ *   business policy forbids removing a shipment that is still required for
+ *   active tracking, dispute resolution, or historical integrity. 4. Within a
+ *   transaction, clear the shipment association from all linked
+ *   shopping_mall_order_items by setting shopping_mall_shipment_id to null for
+ *   rows referencing this shipment. Recalculate or normalize per-item status
+ *   only if the fulfillment model requires reversing an invalid shipped
+ *   association; do not invent status values not supported by the service's
+ *   existing order-item state machine. 5. Delete the dependent
+ *   shopping_mall_tracking_infos row if present. Because the Prisma relation is
+ *   cascading from shipment to tracking info, direct deletion of the shipment
+ *   may already remove it, but the implementation should preserve transactional
+ *   clarity. 6. Delete the shopping_mall_shipments row. 7. After deletion,
+ *   ensure any order-detail query path no longer returns the removed shipment
+ *   for the related shopping_mall_orders record. If aggregate order status
+ *   depends on shipment existence, trigger the existing order-status
+ *   reconciliation routine. 8. Return success with no response body. 9. Error
+ *   handling: return not found when shipmentId does not exist; return forbidden
+ *   when a seller attempts to remove another seller's shipment; return conflict
+ *   when the shipment cannot be removed because it is already required for
+ *   preserved fulfillment or historical order visibility; return validation
+ *   error for malformed UUID input.
  * @path /shoppingMall/seller/shipments/:shipmentId
  * @accessor api.functional.shoppingMall.seller.shipments.erase
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe

@@ -197,7 +197,8 @@ export namespace create {
  * @param props.body Search criteria and pagination parameters for filtering organization members
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query erp_hrm_organization_members table with organization scoping from session context.
+ * @x-autobe-specification Query erp_hrm_organization_members table with
+ *   organization scoping from session context.
  *
  * Join with erp_hrm_members for user profile data (first_name, last_name, email, avatar_url).
  * Join with erp_hrm_roles for role name and description.
@@ -591,7 +592,8 @@ export namespace update {
  * @param props.organizationMemberId Unique identifier of the organization member (employee) to remove (UUID format)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implement DELETE operation for OrganizationMember removal.
+ * @x-autobe-specification Implement DELETE operation for OrganizationMember
+ *   removal.
  *
  * 1. Validate the requesting user has org:manage permission for the organization.
  *

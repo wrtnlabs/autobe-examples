@@ -26,9 +26,10 @@ export class EcommerceSellerDashboardController {
    * - Pending refund requests: Refund requests with status 'pending' for the seller's order items
    *
    * @param connection
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Implement seller shop dashboard retrieval with the following logic:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Implement seller shop dashboard retrieval with
+     *   the following logic:
    *
    * 1. **Authentication**: Validate seller authentication via session token. Extract seller_id from authenticated session.
    *

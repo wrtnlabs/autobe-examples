@@ -27,7 +27,8 @@ export * as vote from "./vote/index";
  * @param props.body Updated post data including title and type-specific content
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Update an existing post owned by the authenticated member.
+ * @x-autobe-specification Update an existing post owned by the authenticated
+ *   member.
  *
  * 1. Authenticate the requesting member from session
  * 2. Fetch the post by postId from community_platform_posts
@@ -155,7 +156,11 @@ export namespace update {
  * @param props.postId Unique identifier of the post to delete
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Verify the authenticated member's authorization before deletion: check if the member is the author of the post (author_id matches), OR if the member is a moderator of the post's community (query community_platform_moderators table with member_id and community_id). If neither condition is met, return 403 Forbidden error.
+ * @x-autobe-specification Verify the authenticated member's authorization
+ *   before deletion: check if the member is the author of the post (author_id
+ *   matches), OR if the member is a moderator of the post's community (query
+ *   community_platform_moderators table with member_id and community_id). If
+ *   neither condition is met, return 403 Forbidden error.
  *
  * If authorized, perform soft deletion by setting deleted_at to current timestamp on the community_platform_posts record. The database cascade configuration (onDelete: Cascade on comments relation) will automatically handle related comments - however, since this is a soft delete on the post, related comments should also be soft-deleted to maintain data integrity (set deleted_at on all community_platform_comments where community_platform_post_id matches).
  *

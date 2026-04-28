@@ -12,8 +12,8 @@ export type IMallPlatformCategory = {
    *
    * This value is used to identify the category across browsing and administration workflows.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from mall_platform_categories.id.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from mall_platform_categories.id.
    */
   id: string & tags.Format<"uuid">;
 
@@ -22,8 +22,11 @@ export type IMallPlatformCategory = {
    *
    * Top-level categories have no parent. Subcategories use this value to point to their immediate parent in the one-level hierarchy.
    *
-   * @x-autobe-database-schema-property parent_category_id
-   * @x-autobe-specification Direct mapping from mall_platform_categories.parent_category_id. A null value means the category is top-level; a non-null value references the immediate parent category.
+     * @x-autobe-database-schema-property parent_category_id
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_categories.parent_category_id. A null value means the
+     *   category is top-level; a non-null value references the immediate parent
+     *   category.
    */
   parentCategoryId: (string & tags.Format<"uuid">) | null;
 
@@ -32,8 +35,9 @@ export type IMallPlatformCategory = {
    *
    * This label appears in catalog navigation, browse views, and administrative category management screens.
    *
-   * @x-autobe-database-schema-property name
-   * @x-autobe-specification Direct mapping from mall_platform_categories.name.
+     * @x-autobe-database-schema-property name
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_categories.name.
    */
   name: string;
 
@@ -42,8 +46,9 @@ export type IMallPlatformCategory = {
    *
    * This text helps users understand what kinds of products belong in the category.
    *
-   * @x-autobe-database-schema-property description
-   * @x-autobe-specification Direct mapping from mall_platform_categories.description.
+     * @x-autobe-database-schema-property description
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_categories.description.
    */
   description: string;
 
@@ -52,8 +57,11 @@ export type IMallPlatformCategory = {
    *
    * This is returned as a summary reference so clients can navigate upward without loading the full parent entity.
    *
-   * @x-autobe-database-schema-property parentCategory
-   * @x-autobe-specification Join from mall_platform_categories.parent_category_id to the parent category row. Expose the immediate parent as a nullable IMallPlatformCategory.ISummary reference for navigation.
+     * @x-autobe-database-schema-property parentCategory
+     * @x-autobe-specification Join from
+     *   mall_platform_categories.parent_category_id to the parent category row.
+     *   Expose the immediate parent as a nullable
+     *   IMallPlatformCategory.ISummary reference for navigation.
    */
   parentCategory: IMallPlatformCategory.ISummary | null;
 
@@ -62,8 +70,11 @@ export type IMallPlatformCategory = {
    *
    * These nested category records let clients render the immediate child level of the marketplace taxonomy.
    *
-   * @x-autobe-database-schema-property subcategories
-   * @x-autobe-specification Recursive relation from mall_platform_categories.subcategories to the direct child category rows. Expose immediate children as nested IMallPlatformCategory entities to support one-level category browsing.
+     * @x-autobe-database-schema-property subcategories
+     * @x-autobe-specification Recursive relation from
+     *   mall_platform_categories.subcategories to the direct child category
+     *   rows. Expose immediate children as nested IMallPlatformCategory
+     *   entities to support one-level category browsing.
    */
   subcategories: IMallPlatformCategory[];
 
@@ -72,8 +83,9 @@ export type IMallPlatformCategory = {
    *
    * This timestamp is preserved for lifecycle tracking and administrative review.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from mall_platform_categories.created_at.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_categories.created_at.
    */
   createdAt: string & tags.Format<"date-time">;
 
@@ -82,8 +94,9 @@ export type IMallPlatformCategory = {
    *
    * This reflects the most recent persisted change to the category record.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from mall_platform_categories.updated_at.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_categories.updated_at.
    */
   updatedAt: string & tags.Format<"date-time">;
 
@@ -92,8 +105,10 @@ export type IMallPlatformCategory = {
    *
    * A null value means the category is active and available for browsing.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from mall_platform_categories.deleted_at. Null means the category is active; a non-null timestamp means it has been soft-deleted.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_categories.deleted_at. Null means the category is active;
+     *   a non-null timestamp means it has been soft-deleted.
    */
   deletedAt: (string & tags.Format<"date-time">) | null;
 };
@@ -111,8 +126,10 @@ export namespace IMallPlatformCategory {
      *
      * Administrators use this field to rename the category shown in browsing and management interfaces. The value must remain unique among sibling categories under the same parent.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from mall_platform_categories.name. Update the category's display name while preserving sibling uniqueness under the same parent category.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_categories.name. Update the category's display name
+         *   while preserving sibling uniqueness under the same parent category.
      */
     name?: string | undefined;
 
@@ -121,8 +138,10 @@ export namespace IMallPlatformCategory {
      *
      * Administrators use this field to revise the explanatory text associated with the category. It should clearly communicate the category’s purpose to customers and administrators.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from mall_platform_categories.description. Update the human-readable description shown in catalog browsing and administration views.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_categories.description. Update the human-readable
+         *   description shown in catalog browsing and administration views.
      */
     description?: string | undefined;
 
@@ -131,8 +150,13 @@ export namespace IMallPlatformCategory {
      *
      * Administrators use this field to move the category under another root category or clear its parent to keep it at the top level. The platform validates the resulting hierarchy before saving.
      *
-     * @x-autobe-database-schema-property parent_category_id
-     * @x-autobe-specification Direct mapping from mall_platform_categories.parent_category_id. Accept a UUID to assign a parent category, or null to make the category a root category. The service layer must ensure the resulting hierarchy still respects the one-level nesting rule and sibling uniqueness constraint.
+         * @x-autobe-database-schema-property parent_category_id
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_categories.parent_category_id. Accept a UUID to
+         *   assign a parent category, or null to make the category a root
+         *   category. The service layer must ensure the resulting hierarchy
+         *   still respects the one-level nesting rule and sibling uniqueness
+         *   constraint.
      */
     parentCategoryId?: (string & tags.Format<"uuid">) | null | undefined;
   };
@@ -148,7 +172,10 @@ export namespace IMallPlatformCategory {
      *
      * Use this optional value to narrow the returned direct subcategories by matching category text such as the name or description. It affects the browse query only.
      *
-     * @x-autobe-specification Apply this text input as a filter in the direct-subcategory browse query, typically against category name and description. It is not persisted and does not map to any database column or relation.
+         * @x-autobe-specification Apply this text input as a filter in the
+         *   direct-subcategory browse query, typically against category name
+         *   and description. It is not persisted and does not map to any
+         *   database column or relation.
      */
     search?: string | undefined;
 
@@ -157,7 +184,9 @@ export namespace IMallPlatformCategory {
      *
      * Use this optional value to select which page of results to return. Page numbering starts at 1.
      *
-     * @x-autobe-specification Use this 1-indexed value as the current page number in the direct-subcategory browse query. It is a request-only pagination control and does not map to a stored database attribute.
+         * @x-autobe-specification Use this 1-indexed value as the current page
+         *   number in the direct-subcategory browse query. It is a request-only
+         *   pagination control and does not map to a stored database attribute.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -166,7 +195,9 @@ export namespace IMallPlatformCategory {
      *
      * Use this optional value to control the page size for the browse response. The actual number returned may be smaller on the final page or when fewer matches exist.
      *
-     * @x-autobe-specification Use this value as the maximum number of direct subcategory rows returned per page. It is a request-only page-size control and does not map to a stored database attribute.
+         * @x-autobe-specification Use this value as the maximum number of
+         *   direct subcategory rows returned per page. It is a request-only
+         *   page-size control and does not map to a stored database attribute.
      */
     limit?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -175,7 +206,9 @@ export namespace IMallPlatformCategory {
      *
      * Use this optional value to control how direct subcategories are ordered in the browse response so pagination remains stable and predictable.
      *
-     * @x-autobe-specification Use this enum to determine stable ordering for direct subcategory browse results. It is a request-only sorting control and does not map to a stored database attribute.
+         * @x-autobe-specification Use this enum to determine stable ordering
+         *   for direct subcategory browse results. It is a request-only sorting
+         *   control and does not map to a stored database attribute.
      */
     sort?: "newest" | "oldest" | "name_asc" | "name_desc" | undefined;
   };
@@ -193,8 +226,9 @@ export namespace IMallPlatformCategory {
      *
      * This value identifies the category record in API responses and can be used to reference the category in nested displays and detail views.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from mall_platform_categories.id.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_categories.id.
      */
     id: string & tags.Format<"uuid">;
 
@@ -203,8 +237,9 @@ export namespace IMallPlatformCategory {
      *
      * This is the human-readable label shown in navigation, listings, and category detail contexts.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from mall_platform_categories.name.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_categories.name.
      */
     name: string;
 
@@ -213,8 +248,9 @@ export namespace IMallPlatformCategory {
      *
      * This text helps customers and administrators understand what the category covers when browsing the catalog.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from mall_platform_categories.description.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_categories.description.
      */
     description: string;
 
@@ -223,8 +259,12 @@ export namespace IMallPlatformCategory {
      *
      * Root categories return null. Subcategories return the immediate parent category as a nested summary object so client code can render one-level taxonomy navigation without loading the full hierarchy.
      *
-     * @x-autobe-database-schema-property parentCategory
-     * @x-autobe-specification Join from mall_platform_categories.parent_category_id to mall_platform_categories.id and return the parent category as an IMallPlatformCategory.ISummary reference, or null when the category is a root category.
+         * @x-autobe-database-schema-property parentCategory
+         * @x-autobe-specification Join from
+         *   mall_platform_categories.parent_category_id to
+         *   mall_platform_categories.id and return the parent category as an
+         *   IMallPlatformCategory.ISummary reference, or null when the category
+         *   is a root category.
      */
     parentCategory: IMallPlatformCategory.ISummary | null;
 
@@ -233,8 +273,9 @@ export namespace IMallPlatformCategory {
      *
      * This value is preserved for audit and browsing purposes and reflects the original creation time in the database.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from mall_platform_categories.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_categories.created_at.
      */
     createdAt: string & tags.Format<"date-time">;
 
@@ -243,8 +284,9 @@ export namespace IMallPlatformCategory {
      *
      * This value lets clients detect the most recent modification time for the category record.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from mall_platform_categories.updated_at.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_categories.updated_at.
      */
     updatedAt: string & tags.Format<"date-time">;
 
@@ -253,8 +295,10 @@ export namespace IMallPlatformCategory {
      *
      * A null value means the category is currently active. When present, it indicates the record was soft-deleted and should be treated as inactive in browsing flows.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from mall_platform_categories.deleted_at. The value is nullable when the category has not been soft-deleted.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_categories.deleted_at. The value is nullable when the
+         *   category has not been soft-deleted.
      */
     deletedAt: (string & tags.Format<"date-time">) | null;
   };
@@ -270,8 +314,10 @@ export namespace IMallPlatformCategory {
      *
      * Use this as the human-readable label shown in category browsing, navigation, and product classification.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from mall_platform_categories.name. Persist the submitted value as the category name.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_categories.name. Persist the submitted value as the
+         *   category name.
      */
     name: string;
 
@@ -280,8 +326,10 @@ export namespace IMallPlatformCategory {
      *
      * Use this to explain what belongs in the category and to help customers and administrators understand the taxonomy.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from mall_platform_categories.description. Persist the submitted value as the category description.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_categories.description. Persist the submitted value
+         *   as the category description.
      */
     description: string;
 
@@ -290,8 +338,12 @@ export namespace IMallPlatformCategory {
      *
      * Supply this only when creating a direct subcategory. Leave it null or omit it to create a top-level category with no parent.
      *
-     * @x-autobe-database-schema-property parent_category_id
-     * @x-autobe-specification Direct mapping from mall_platform_categories.parent_category_id. Provide this value only when creating a direct subcategory; when null or omitted, the category is top-level. The service layer must validate that the parent exists and that the hierarchy stays one level deep.
+         * @x-autobe-database-schema-property parent_category_id
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_categories.parent_category_id. Provide this value
+         *   only when creating a direct subcategory; when null or omitted, the
+         *   category is top-level. The service layer must validate that the
+         *   parent exists and that the hierarchy stays one level deep.
      */
     parentCategoryId?: (string & tags.Format<"uuid">) | null | undefined;
   };

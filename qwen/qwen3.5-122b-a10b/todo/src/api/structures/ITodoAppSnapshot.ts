@@ -24,16 +24,18 @@ export type ITodoAppSnapshot = {
    *
    * Generated automatically when the snapshot is created. This ID is globally unique and can be used to reference this specific snapshot state.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from todo_app_snapshots.id. UUID primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from todo_app_snapshots.id. UUID
+     *   primary key.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Parent todo that this snapshot belongs to.
    *
-   * @x-autobe-specification Join from todo_app_snapshots.todo_app_todos_id to todo_app_todos.id. Returns ITodoAppTodo.ISummary.
-   * @x-autobe-database-schema-property todo
+     * @x-autobe-specification Join from todo_app_snapshots.todo_app_todos_id to
+     *   todo_app_todos.id. Returns ITodoAppTodo.ISummary.
+     * @x-autobe-database-schema-property todo
    */
   todo: ITodoAppTodo.ISummary;
 
@@ -42,8 +44,9 @@ export type ITodoAppSnapshot = {
    *
    * This preserves the exact title text as it existed when the todo was edited, enabling historical comparison of title changes.
    *
-   * @x-autobe-database-schema-property title
-   * @x-autobe-specification Direct mapping from todo_app_snapshots.title. Non-nullable string.
+     * @x-autobe-database-schema-property title
+     * @x-autobe-specification Direct mapping from todo_app_snapshots.title.
+     *   Non-nullable string.
    */
   title: string;
 
@@ -52,8 +55,10 @@ export type ITodoAppSnapshot = {
    *
    * May be null if the todo had no description when this snapshot was taken, or an empty string if a blank description was explicitly set. This preserves the exact description state for historical review.
    *
-   * @x-autobe-database-schema-property description
-   * @x-autobe-specification Direct mapping from todo_app_snapshots.description. Nullable string - null if no description was set at snapshot time.
+     * @x-autobe-database-schema-property description
+     * @x-autobe-specification Direct mapping from
+     *   todo_app_snapshots.description. Nullable string - null if no
+     *   description was set at snapshot time.
    */
   description?: string | null | undefined;
 
@@ -62,8 +67,10 @@ export type ITodoAppSnapshot = {
    *
    * May be null if the todo had no start date when this snapshot was taken. This preserves scheduling information for historical tracking of when the user planned to begin work on the task.
    *
-   * @x-autobe-database-schema-property start_date
-   * @x-autobe-specification Direct mapping from todo_app_snapshots.start_date. Nullable date-time - null if no start date was set at snapshot time.
+     * @x-autobe-database-schema-property start_date
+     * @x-autobe-specification Direct mapping from
+     *   todo_app_snapshots.start_date. Nullable date-time - null if no start
+     *   date was set at snapshot time.
    */
   start_date?: (string & tags.Format<"date-time">) | null | undefined;
 
@@ -72,8 +79,9 @@ export type ITodoAppSnapshot = {
    *
    * May be null if the todo had no due date when this snapshot was taken. This preserves deadline information for historical tracking of scheduling changes and deadline adjustments.
    *
-   * @x-autobe-database-schema-property due_date
-   * @x-autobe-specification Direct mapping from todo_app_snapshots.due_date. Nullable date-time - null if no due date was set at snapshot time.
+     * @x-autobe-database-schema-property due_date
+     * @x-autobe-specification Direct mapping from todo_app_snapshots.due_date.
+     *   Nullable date-time - null if no due date was set at snapshot time.
    */
   due_date?: (string & tags.Format<"date-time">) | null | undefined;
 
@@ -82,8 +90,9 @@ export type ITodoAppSnapshot = {
    *
    * True if the todo was marked complete when this snapshot was taken, false otherwise. This enables tracking of when a todo was completed or reopened.
    *
-   * @x-autobe-database-schema-property is_completed
-   * @x-autobe-specification Direct mapping from todo_app_snapshots.is_completed. Non-nullable boolean.
+     * @x-autobe-database-schema-property is_completed
+     * @x-autobe-specification Direct mapping from
+     *   todo_app_snapshots.is_completed. Non-nullable boolean.
    */
   is_completed: boolean;
 
@@ -92,8 +101,10 @@ export type ITodoAppSnapshot = {
    *
    * This is the authoritative time when the todo was modified and this snapshot was captured. Snapshots are sorted by this field to display edit history in chronological order.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from todo_app_snapshots.created_at. Non-nullable date-time with timestamptz format.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   todo_app_snapshots.created_at. Non-nullable date-time with timestamptz
+     *   format.
    */
   created_at: string & tags.Format<"date-time">;
 };
@@ -117,8 +128,9 @@ export namespace ITodoAppSnapshot {
      *
      * This UUID uniquely identifies the snapshot within the system. It is auto-generated when the snapshot is created and cannot be modified.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from todo_app_snapshots.id. UUID primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from todo_app_snapshots.id.
+         *   UUID primary key.
      */
     id: string & tags.Format<"uuid">;
 
@@ -127,8 +139,8 @@ export namespace ITodoAppSnapshot {
      *
      * This captures the todo's title exactly as it existed when the edit occurred. The title is required and cannot be empty.
      *
-     * @x-autobe-database-schema-property title
-     * @x-autobe-specification Direct mapping from todo_app_snapshots.title.
+         * @x-autobe-database-schema-property title
+         * @x-autobe-specification Direct mapping from todo_app_snapshots.title.
      */
     title: string;
 
@@ -137,8 +149,9 @@ export namespace ITodoAppSnapshot {
      *
      * This optional field contains the todo's description or notes as they existed at edit time. May be null if no description was set when the snapshot was created.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from todo_app_snapshots.description. Nullable field.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_snapshots.description. Nullable field.
      */
     description?: string | null | undefined;
 
@@ -147,8 +160,9 @@ export namespace ITodoAppSnapshot {
      *
      * This optional field records when the user planned to begin working on the todo. May be null if no start date was set when the snapshot was created. Stored in UTC timezone.
      *
-     * @x-autobe-database-schema-property start_date
-     * @x-autobe-specification Direct mapping from todo_app_snapshots.start_date. Nullable datetime.
+         * @x-autobe-database-schema-property start_date
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_snapshots.start_date. Nullable datetime.
      */
     start_date?: (string & tags.Format<"date-time">) | null | undefined;
 
@@ -157,8 +171,9 @@ export namespace ITodoAppSnapshot {
      *
      * This optional field records the deadline for completing the todo. May be null if no due date was set when the snapshot was created. Stored in UTC timezone.
      *
-     * @x-autobe-database-schema-property due_date
-     * @x-autobe-specification Direct mapping from todo_app_snapshots.due_date. Nullable datetime.
+         * @x-autobe-database-schema-property due_date
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_snapshots.due_date. Nullable datetime.
      */
     due_date?: (string & tags.Format<"date-time">) | null | undefined;
 
@@ -167,8 +182,9 @@ export namespace ITodoAppSnapshot {
      *
      * This boolean indicates whether the todo was marked as complete (true) or incomplete (false) at the moment the snapshot was taken. Used to track completion state changes over time.
      *
-     * @x-autobe-database-schema-property is_completed
-     * @x-autobe-specification Direct mapping from todo_app_snapshots.is_completed.
+         * @x-autobe-database-schema-property is_completed
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_snapshots.is_completed.
      */
     is_completed: boolean;
 
@@ -177,8 +193,10 @@ export namespace ITodoAppSnapshot {
      *
      * This reference provides context about which todo task this snapshot records. The todo is returned as a summary object containing essential identifying information. Users can verify they are viewing the correct edit history through this reference.
      *
-     * @x-autobe-database-schema-property todo
-     * @x-autobe-specification Relation join from todo_app_snapshots.todo_app_todos_id to todo_app_todos.id. Returns ITodoAppTodo.ISummary via belongs-to relationship.
+         * @x-autobe-database-schema-property todo
+         * @x-autobe-specification Relation join from
+         *   todo_app_snapshots.todo_app_todos_id to todo_app_todos.id. Returns
+         *   ITodoAppTodo.ISummary via belongs-to relationship.
      */
     todo: ITodoAppTodo.ISummary;
 
@@ -187,8 +205,9 @@ export namespace ITodoAppSnapshot {
      *
      * This datetime indicates the exact moment the todo was edited and this snapshot was captured. Used for sorting snapshots in chronological order and understanding the edit history timeline. Stored in UTC timezone.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from todo_app_snapshots.created_at. Auto-set on snapshot creation.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_snapshots.created_at. Auto-set on snapshot creation.
      */
     created_at: string & tags.Format<"date-time">;
   };
@@ -212,7 +231,10 @@ export namespace ITodoAppSnapshot {
      *
      * This cursor is generated by the backend based on the last snapshot's created_at timestamp. Clients should use the cursor value from the pagination metadata in the previous response to fetch the next page. When no cursor is provided, the first page is returned.
      *
-     * @x-autobe-specification Opaque cursor token for cursor-based pagination. Generated by backend from the last snapshot's created_at value. Client should pass the cursor from the previous response's pagination metadata to retrieve the next page.
+         * @x-autobe-specification Opaque cursor token for cursor-based
+         *   pagination. Generated by backend from the last snapshot's
+         *   created_at value. Client should pass the cursor from the previous
+         *   response's pagination metadata to retrieve the next page.
      */
     cursor?: string | undefined;
 
@@ -221,7 +243,9 @@ export namespace ITodoAppSnapshot {
      *
      * Controls the upper bound of records returned in a single page. Valid values range from 1 to 100. The actual number of records may be less than this value on the final page or when fewer snapshots exist than the limit.
      *
-     * @x-autobe-specification Maximum number of snapshots to return per page. Must be between 1 and 100. Defaults to 20 if not specified. Backend applies this as the upper bound for the result set size.
+         * @x-autobe-specification Maximum number of snapshots to return per
+         *   page. Must be between 1 and 100. Defaults to 20 if not specified.
+         *   Backend applies this as the upper bound for the result set size.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -232,7 +256,10 @@ export namespace ITodoAppSnapshot {
      *
      * When provided, only snapshots with a created_at value greater than or equal to this timestamp will be included in the results. Use in combination with created_at_to to specify a date range. Timestamps should be in ISO 8601 format with timezone information.
      *
-     * @x-autobe-specification Filter snapshots created on or after this timestamp (inclusive). Maps to the created_at column in todo_app_snapshots table. Used with created_at_to to define a date range filter.
+         * @x-autobe-specification Filter snapshots created on or after this
+         *   timestamp (inclusive). Maps to the created_at column in
+         *   todo_app_snapshots table. Used with created_at_to to define a date
+         *   range filter.
      */
     created_at_from?: (string & tags.Format<"date-time">) | undefined;
 
@@ -241,7 +268,10 @@ export namespace ITodoAppSnapshot {
      *
      * When provided, only snapshots with a created_at value less than or equal to this timestamp will be included in the results. Use in combination with created_at_from to specify a date range. Timestamps should be in ISO 8601 format with timezone information.
      *
-     * @x-autobe-specification Filter snapshots created on or before this timestamp (inclusive). Maps to the created_at column in todo_app_snapshots table. Used with created_at_from to define a date range filter.
+         * @x-autobe-specification Filter snapshots created on or before this
+         *   timestamp (inclusive). Maps to the created_at column in
+         *   todo_app_snapshots table. Used with created_at_from to define a
+         *   date range filter.
      */
     created_at_to?: (string & tags.Format<"date-time">) | undefined;
 
@@ -250,7 +280,11 @@ export namespace ITodoAppSnapshot {
      *
      * Specifies which page of results to return. Page numbering starts from 1. If omitted, null, or undefined, defaults to page 1 (first page). Requesting a page beyond the available range returns an empty data array with valid pagination metadata reflecting the actual totals.
      *
-     * @x-autobe-specification 1-indexed page number for traditional pagination fallback. Defaults to 1 if not provided or null. Used when cursor-based pagination is not preferred. Backend validates page number bounds and returns empty data array for out-of-range pages.
+         * @x-autobe-specification 1-indexed page number for traditional
+         *   pagination fallback. Defaults to 1 if not provided or null. Used
+         *   when cursor-based pagination is not preferred. Backend validates
+         *   page number bounds and returns empty data array for out-of-range
+         *   pages.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };

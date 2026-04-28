@@ -23,7 +23,8 @@ import { ICommunityPlatformUserProfile } from "../../../../structures/ICommunity
  * @param props.body Profile fields to update for the currently logged-in member.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor guest
- * @x-autobe-specification Authenticate request and resolve the current member id from session middleware.
+ * @x-autobe-specification Authenticate request and resolve the current member
+ *   id from session middleware.
  *
  * 1) Authorization & ownership scope
  * - Require member authentication.

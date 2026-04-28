@@ -28,9 +28,10 @@ export class ShoppingmallAdministratorReviewsSnapshotsController {
    * @param connection
    * @param reviewId UUID of the review whose snapshots are being retrieved (global scope)
    * @param body Search criteria for filtering review snapshots, including rating changes, text content modifications, deletion status, date ranges, and pagination parameters.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Query shopping_mall_review_snapshots table where shopping_mall_review_id matches the reviewId path parameter.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor administrator
+     * @x-autobe-specification Query shopping_mall_review_snapshots table where
+     *   shopping_mall_review_id matches the reviewId path parameter.
    *
    * Authorization:
    * - For customer actors: Verify that the review's shopping_mall_customer_id matches the authenticated customer's ID
@@ -91,9 +92,10 @@ export class ShoppingmallAdministratorReviewsSnapshotsController {
    * @param connection
    * @param reviewId The unique identifier of the review that was modified
    * @param snapshotId The unique identifier of the snapshot to retrieve
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Query the shopping_mall_review_snapshots table by joining on review_id and filtering by the specific snapshot ID.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor administrator
+     * @x-autobe-specification Query the shopping_mall_review_snapshots table by
+     *   joining on review_id and filtering by the specific snapshot ID.
    *
    * Return the complete snapshot record including:
    * - id: The snapshot's unique identifier (UUID)

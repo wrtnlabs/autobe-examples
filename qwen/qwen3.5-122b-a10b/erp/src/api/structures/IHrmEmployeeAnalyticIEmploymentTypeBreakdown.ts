@@ -30,7 +30,10 @@ export type IHrmEmployeeAnalyticIEmploymentTypeBreakdown = {
    * - `contractor`: Contract-based employment
    * - `intern`: Internship position
    *
-   * @x-autobe-specification Derived from hrm_employees.employment_type column. Returns one of: 'full-time', 'part-time', 'contractor', 'intern'. Categories with zero employees are omitted from the result array.
+     * @x-autobe-specification Derived from hrm_employees.employment_type
+     *   column. Returns one of: 'full-time', 'part-time', 'contractor',
+     *   'intern'. Categories with zero employees are omitted from the result
+     *   array.
    */
   employment_type: "full-time" | "part-time" | "contractor" | "intern";
 
@@ -43,7 +46,10 @@ export type IHrmEmployeeAnalyticIEmploymentTypeBreakdown = {
    *
    * This value is computed by counting employees in the hrm_employees table where the employment_type matches this entry's employment_type value, filtered by any organization, department, or status criteria specified in the parent analytics request.
    *
-   * @x-autobe-specification Aggregation count from hrm_employees table. COUNT(*) of employees matching the employment_type filter and any organization/department/status filters applied to the parent analytics request.
+     * @x-autobe-specification Aggregation count from hrm_employees table.
+     *   COUNT(*) of employees matching the employment_type filter and any
+     *   organization/department/status filters applied to the parent analytics
+     *   request.
    */
   count: number & tags.Type<"int32">;
 };

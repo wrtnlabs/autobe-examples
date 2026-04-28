@@ -14,7 +14,10 @@ export type IDateRange = {
    *
    * When omitted, no minimum boundary is applied, allowing records from any earlier time to be included.
    *
-   * @x-autobe-specification Start of the date range (inclusive). Maps to query parameter min timestamp for filtering (e.g., created_at >= :gte). Optional - if omitted, no minimum boundary is applied. Implementation uses SQL WHERE clause: WHERE created_at >= :gte
+     * @x-autobe-specification Start of the date range (inclusive). Maps to
+     *   query parameter min timestamp for filtering (e.g., created_at >= :gte).
+     *   Optional - if omitted, no minimum boundary is applied. Implementation
+     *   uses SQL WHERE clause: WHERE created_at >= :gte
    */
   gte?: (string & tags.Format<"date-time">) | undefined;
 
@@ -25,7 +28,10 @@ export type IDateRange = {
    *
    * When omitted, no maximum boundary is applied, allowing records from any later time to be included.
    *
-   * @x-autobe-specification End of the date range (inclusive). Maps to query parameter max timestamp for filtering (e.g., created_at <= :lte). Optional - if omitted, no maximum boundary is applied. Implementation uses SQL WHERE clause: WHERE created_at <= :lte
+     * @x-autobe-specification End of the date range (inclusive). Maps to query
+     *   parameter max timestamp for filtering (e.g., created_at <= :lte).
+     *   Optional - if omitted, no maximum boundary is applied. Implementation
+     *   uses SQL WHERE clause: WHERE created_at <= :lte
    */
   lte?: (string & tags.Format<"date-time">) | undefined;
 };

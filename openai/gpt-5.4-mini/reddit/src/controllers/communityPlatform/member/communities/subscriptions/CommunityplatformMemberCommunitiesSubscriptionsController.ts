@@ -23,9 +23,12 @@ export class CommunityplatformMemberCommunitiesSubscriptionsController {
    *
    * @param connection
    * @param communityId Target community identifier.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Resolve the community by communityId, then query the subscription table for the authenticated member's membership link to that community. Use the current member identity from the security context; do not take member identity from the request body or path.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Resolve the community by communityId, then query
+     *   the subscription table for the authenticated member's membership link
+     *   to that community. Use the current member identity from the security
+     *   context; do not take member identity from the request body or path.
    *
    * Apply an exact lookup on community_platform_member_id and community_platform_community_id, and filter to the active subscription status defined by the domain rules. Exclude deleted records. If the community does not exist, return a not-found response. If no active subscription exists for the current member, return an empty or null-equivalent result according to the platform's standard single-resource read behavior.
    *
@@ -66,9 +69,10 @@ export class CommunityplatformMemberCommunitiesSubscriptionsController {
    * @param connection
    * @param communityId Target community ID.
    * @param body Subscription creation details for the current member.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement as a member-only create operation scoped to one community.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implement as a member-only create operation
+     *   scoped to one community.
    *
    * 1. Resolve the authenticated member from the request context and load the target community by communityId.
    * 2. Verify the community exists and is eligible for subscription based on its current status.
@@ -126,11 +130,13 @@ export class CommunityplatformMemberCommunitiesSubscriptionsController {
    *
    * @param connection
    * @param communityId Target community identifier.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Resolve the authenticated member from the request security context.
-   * Load the target community by communityId and confirm it exists; if not, return a not-found error.
-   * Check the community lifecycle state if the application policy requires active communities only for subscription.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Resolve the authenticated member from the request
+     *   security context. Load the target community by communityId and confirm
+     *   it exists; if not, return a not-found error. Check the community
+     *   lifecycle state if the application policy requires active communities
+     *   only for subscription.
    *
    * Query community_platform_community_subscriptions by (community_platform_member_id, community_platform_community_id).
    * If no record exists, insert a new subscription row with subscription_status set to active and timestamps populated by the persistence layer.
@@ -176,9 +182,10 @@ export class CommunityplatformMemberCommunitiesSubscriptionsController {
    *
    * @param connection
    * @param communityId Target community identifier.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement as a member-scoped subscription removal operation.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implement as a member-scoped subscription removal
+     *   operation.
    *
    * 1. Resolve the authenticated member from the current security context. Do not accept a member identifier from the client.
    * 2. Load the target community by communityId and verify it exists and is in a state that can be addressed by membership operations.

@@ -18,9 +18,12 @@ export class EcommercemallMemberProfileController {
    *
    * @param connection
    * @param body Profile update data containing optional display_name and phone_number fields. Only provide fields that need to be updated.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Retrieve the authenticated customer's account from ecommerce_mall_members using the session token. Update the display_name and/or phone_number fields based on the request body. Run validation rules:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Retrieve the authenticated customer's account
+     *   from ecommerce_mall_members using the session token. Update the
+     *   display_name and/or phone_number fields based on the request body. Run
+     *   validation rules:
    *
    * 1. If display_name is provided:
    *    - Ensure it is not empty (reject with 400 if empty)

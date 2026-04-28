@@ -19,9 +19,11 @@ export class ShoppingmallCustomerCustomersMeAddressesController {
    * @param connection
    * @param addressId Unique identifier of the shipping address to update (global scope)
    * @param body Updated address fields including recipient name, phone number, street address, city, state or province, postal code, and country.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Query shopping_mall_customer_addresses table for the address matching the given addressId and belonging to the authenticated customer (shopping_mall_customer_id).
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Query shopping_mall_customer_addresses table for
+     *   the address matching the given addressId and belonging to the
+     *   authenticated customer (shopping_mall_customer_id).
    *
    * Validate that the address exists and is not soft deleted (deleted_at IS NULL).
    *

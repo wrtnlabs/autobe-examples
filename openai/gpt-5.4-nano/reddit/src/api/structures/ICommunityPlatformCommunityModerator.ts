@@ -11,48 +11,61 @@ export type ICommunityPlatformCommunityModerator = {
   /**
    * Unique identifier of the community-moderator assignment record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Map directly from community_platform_community_moderators.id (UUID). Use as the primary identifier of the moderator assignment record.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Map directly from
+     *   community_platform_community_moderators.id (UUID). Use as the primary
+     *   identifier of the moderator assignment record.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Identifier of the community for which this user is assigned as a moderator.
    *
-   * @x-autobe-database-schema-property community_id
-   * @x-autobe-specification Map directly from community_platform_community_moderators.community_id (UUID). This identifies the community that the moderation authority applies to.
+     * @x-autobe-database-schema-property community_id
+     * @x-autobe-specification Map directly from
+     *   community_platform_community_moderators.community_id (UUID). This
+     *   identifies the community that the moderation authority applies to.
    */
   community_id: string & tags.Format<"uuid">;
 
   /**
    * Identifier of the member account assigned as a moderator.
    *
-   * @x-autobe-database-schema-property moderator_user_id
-   * @x-autobe-specification Map directly from community_platform_community_moderators.moderator_user_id (UUID). This identifies the member account granted moderator authority.
+     * @x-autobe-database-schema-property moderator_user_id
+     * @x-autobe-specification Map directly from
+     *   community_platform_community_moderators.moderator_user_id (UUID). This
+     *   identifies the member account granted moderator authority.
    */
   moderator_user_id: string & tags.Format<"uuid">;
 
   /**
    * Timestamp when the moderator assignment record was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Map directly from community_platform_community_moderators.created_at (timestamp). Represents when this moderator assignment record was created.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Map directly from
+     *   community_platform_community_moderators.created_at (timestamp).
+     *   Represents when this moderator assignment record was created.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the moderator assignment record was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Map directly from community_platform_community_moderators.updated_at (timestamp). Represents when this moderator assignment record was last updated.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Map directly from
+     *   community_platform_community_moderators.updated_at (timestamp).
+     *   Represents when this moderator assignment record was last updated.
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * Soft-deletion timestamp for the moderator assignment; null means the assignment is currently active.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Map directly from community_platform_community_moderators.deleted_at. Return null when the assignment is active; return the timestamp when the assignment is soft-deleted/inactive.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Map directly from
+     *   community_platform_community_moderators.deleted_at. Return null when
+     *   the assignment is active; return the timestamp when the assignment is
+     *   soft-deleted/inactive.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -64,16 +77,22 @@ export namespace ICommunityPlatformCommunityModerator {
     /**
      * The identifier of the community that will receive the moderator role.
      *
-     * @x-autobe-database-schema-property community_id
-     * @x-autobe-specification Direct mapping from request.communityId to community_platform_community_moderators.community_id. Server validates the community exists and is eligible for moderator assignment (e.g., not deleted) before insert.
+         * @x-autobe-database-schema-property community_id
+         * @x-autobe-specification Direct mapping from request.communityId to
+         *   community_platform_community_moderators.community_id. Server
+         *   validates the community exists and is eligible for moderator
+         *   assignment (e.g., not deleted) before insert.
      */
     communityId: string & tags.Format<"uuid">;
 
     /**
      * The identifier of the member user who will be granted moderator authority for the specified community.
      *
-     * @x-autobe-database-schema-property moderator_user_id
-     * @x-autobe-specification Direct mapping from request.moderatorUserId to community_platform_community_moderators.moderator_user_id. Server validates the member account exists and is eligible to be assigned as a moderator before insert.
+         * @x-autobe-database-schema-property moderator_user_id
+         * @x-autobe-specification Direct mapping from request.moderatorUserId
+         *   to community_platform_community_moderators.moderator_user_id.
+         *   Server validates the member account exists and is eligible to be
+         *   assigned as a moderator before insert.
      */
     moderatorUserId: string & tags.Format<"uuid">;
   };
@@ -85,24 +104,37 @@ export namespace ICommunityPlatformCommunityModerator {
     /**
      * The community identifier this moderator assignment will belong to (destination community).
      *
-     * @x-autobe-database-schema-property community_id
-     * @x-autobe-specification Direct mapping from community_platform_community_moderators.community_id. If provided, server must load the target assignment, then re-check the acting actor’s moderation authority for the destination community before applying the change.
+         * @x-autobe-database-schema-property community_id
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_community_moderators.community_id. If provided,
+         *   server must load the target assignment, then re-check the acting
+         *   actor’s moderation authority for the destination community before
+         *   applying the change.
      */
     community_id?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * The member identifier to assign as moderator for the community.
      *
-     * @x-autobe-database-schema-property moderator_user_id
-     * @x-autobe-specification Direct mapping from community_platform_community_moderators.moderator_user_id. If provided, server must ensure the referenced member exists and that the (community_id, moderator_user_id) pair is eligible and does not violate the unique constraint.
+         * @x-autobe-database-schema-property moderator_user_id
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_community_moderators.moderator_user_id. If
+         *   provided, server must ensure the referenced member exists and that
+         *   the (community_id, moderator_user_id) pair is eligible and does not
+         *   violate the unique constraint.
      */
     moderator_user_id?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Soft-deletion timestamp for disabling the moderator assignment; provide null to re-enable an existing (previously disabled) assignment.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping to community_platform_community_moderators.deleted_at with soft-delete semantics: non-null value disables the assignment (sets deleted_at); null value re-enables the assignment (clears deleted_at). When present, it must be applied as part of the transactional update together with authorization re-check.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping to
+         *   community_platform_community_moderators.deleted_at with soft-delete
+         *   semantics: non-null value disables the assignment (sets
+         *   deleted_at); null value re-enables the assignment (clears
+         *   deleted_at). When present, it must be applied as part of the
+         *   transactional update together with authorization re-check.
      */
     deleted_at?: (string & tags.Format<"date-time">) | null | undefined;
   };
@@ -114,48 +146,63 @@ export namespace ICommunityPlatformCommunityModerator {
     /**
      * Unique identifier of the moderator assignment record.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Map community_platform_community_moderators.id (UUID) directly to DTO.id as a uuid string.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Map
+         *   community_platform_community_moderators.id (UUID) directly to
+         *   DTO.id as a uuid string.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * The community for which this member is assigned as a moderator.
      *
-     * @x-autobe-database-schema-property community
-     * @x-autobe-specification Resolve DTO.community by joining community_platform_community_moderators.community_id -> community_platform_communities.id and projecting the matched community row into ICommunityPlatformCommunity.ISummary.
+         * @x-autobe-database-schema-property community
+         * @x-autobe-specification Resolve DTO.community by joining
+         *   community_platform_community_moderators.community_id ->
+         *   community_platform_communities.id and projecting the matched
+         *   community row into ICommunityPlatformCommunity.ISummary.
      */
     community: ICommunityPlatformCommunity.ISummary;
 
     /**
      * The member account that has been assigned as a moderator for the community.
      *
-     * @x-autobe-database-schema-property moderator
-     * @x-autobe-specification Resolve DTO.moderator by joining community_platform_community_moderators.moderator_user_id -> community_platform_members.id and projecting the matched member row into ICommunityPlatformMember.ISummary.
+         * @x-autobe-database-schema-property moderator
+         * @x-autobe-specification Resolve DTO.moderator by joining
+         *   community_platform_community_moderators.moderator_user_id ->
+         *   community_platform_members.id and projecting the matched member row
+         *   into ICommunityPlatformMember.ISummary.
      */
     moderator: ICommunityPlatformMember.ISummary;
 
     /**
      * Timestamp when this moderator assignment record was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Map community_platform_community_moderators.created_at (timestamptz) directly to DTO.created_at as an ISO 8601 date-time string.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Map
+         *   community_platform_community_moderators.created_at (timestamptz)
+         *   directly to DTO.created_at as an ISO 8601 date-time string.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when this moderator assignment record was last updated.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Map community_platform_community_moderators.updated_at (timestamptz) directly to DTO.updated_at as an ISO 8601 date-time string.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Map
+         *   community_platform_community_moderators.updated_at (timestamptz)
+         *   directly to DTO.updated_at as an ISO 8601 date-time string.
      */
     updated_at: string & tags.Format<"date-time">;
 
     /**
      * Soft-deletion timestamp for the moderator assignment. Null means the assignment is currently active.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Map community_platform_community_moderators.deleted_at (nullable timestamptz) to DTO.deleted_at: return the date-time when non-null, otherwise return null (active assignment).
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Map
+         *   community_platform_community_moderators.deleted_at (nullable
+         *   timestamptz) to DTO.deleted_at: return the date-time when non-null,
+         *   otherwise return null (active assignment).
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };
@@ -167,40 +214,55 @@ export namespace ICommunityPlatformCommunityModerator {
     /**
      * Identifier of the community whose moderator list will be modified.
      *
-     * @x-autobe-database-schema-property community_id
-     * @x-autobe-specification Direct mapping from request.communityId to community_platform_community_moderators.community_id. Validate that the target community exists and apply authorization before performing writes.
+         * @x-autobe-database-schema-property community_id
+         * @x-autobe-specification Direct mapping from request.communityId to
+         *   community_platform_community_moderators.community_id. Validate that
+         *   the target community exists and apply authorization before
+         *   performing writes.
      */
     communityId: string & tags.Format<"uuid">;
 
     /**
      * Moderator membership operation to apply for each target member id: either add them as moderators or remove them.
      *
-     * @x-autobe-specification Server-side instruction controlling the write behavior for each target member:
-     * - "add": upsert/reactivate moderator assignment rows (deleted_at cleared).
-     * - "remove": deactivate/delete active moderator assignment rows.
-     * This value does not persist to community_platform_community_moderators directly.
+         * @x-autobe-specification Server-side instruction controlling the write
+         *   behavior for each target member: - "add": upsert/reactivate
+         *   moderator assignment rows (deleted_at cleared). - "remove":
+         *   deactivate/delete active moderator assignment rows. This value does
+         *   not persist to community_platform_community_moderators directly.
      */
     operation: "add" | "remove";
 
     /**
      * List of member account ids to add to or remove from the community’s moderator set.
      *
-     * @x-autobe-database-schema-property moderator_user_id
-     * @x-autobe-specification Direct mapping from request.targetMemberIds[] to community_platform_community_moderators.moderator_user_id for each assignment to add/remove. Treat duplicates idempotently. Validate each target member exists before applying changes (or apply server-defined validation rules for non-existent members).
+         * @x-autobe-database-schema-property moderator_user_id
+         * @x-autobe-specification Direct mapping from request.targetMemberIds[]
+         *   to community_platform_community_moderators.moderator_user_id for
+         *   each assignment to add/remove. Treat duplicates idempotently.
+         *   Validate each target member exists before applying changes (or
+         *   apply server-defined validation rules for non-existent members).
      */
     targetMemberIds: (string & tags.Format<"uuid">)[] & tags.MinItems<1>;
 
     /**
      * Page number (1-indexed) for the returned moderator list.
      *
-     * @x-autobe-specification Pagination parameter used only for how the endpoint returns the updated moderator list summary. When omitted/undefined or explicitly null, default to page 1. Page is 1-indexed; out-of-range results return an empty list with correct pagination metadata.
+         * @x-autobe-specification Pagination parameter used only for how the
+         *   endpoint returns the updated moderator list summary. When
+         *   omitted/undefined or explicitly null, default to page 1. Page is
+         *   1-indexed; out-of-range results return an empty list with correct
+         *   pagination metadata.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
 
     /**
      * Maximum number of moderator records to return per page.
      *
-     * @x-autobe-specification Pagination parameter used only for how the endpoint returns the updated moderator list summary. When omitted/undefined or explicitly null, default to 100. Applies an upper bound per server rules if configured.
+         * @x-autobe-specification Pagination parameter used only for how the
+         *   endpoint returns the updated moderator list summary. When
+         *   omitted/undefined or explicitly null, default to 100. Applies an
+         *   upper bound per server rules if configured.
      */
     limit?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };

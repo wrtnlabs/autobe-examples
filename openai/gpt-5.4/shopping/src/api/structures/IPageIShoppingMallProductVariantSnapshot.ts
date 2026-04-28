@@ -11,14 +11,15 @@ export type IPageIShoppingMallProductVariantSnapshot = {
   /**
    * Page information.
    *
-   * @x-autobe-specification Pagination information for the page.
+     * @x-autobe-specification Pagination information for the page.
    */
   pagination: IPage.IPagination;
 
   /**
    * List of records.
    *
-   * @x-autobe-specification List of records of type IShoppingMallProductVariantSnapshot.
+     * @x-autobe-specification List of records of type
+     *   IShoppingMallProductVariantSnapshot.
    */
   data: IShoppingMallProductVariantSnapshot[];
 };
@@ -32,14 +33,15 @@ export namespace IPageIShoppingMallProductVariantSnapshot {
     /**
      * Page information.
      *
-     * @x-autobe-specification Pagination information for the page.
+         * @x-autobe-specification Pagination information for the page.
      */
     pagination: IPage.IPagination;
 
     /**
      * List of records.
      *
-     * @x-autobe-specification List of records of type IShoppingMallProductVariantSnapshot.ISummary.
+         * @x-autobe-specification List of records of type
+         *   IShoppingMallProductVariantSnapshot.ISummary.
      */
     data: IShoppingMallProductVariantSnapshot.ISummary[];
   };

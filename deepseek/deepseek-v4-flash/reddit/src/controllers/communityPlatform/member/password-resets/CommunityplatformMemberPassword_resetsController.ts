@@ -20,9 +20,10 @@ export class CommunityplatformMemberPassword_resetsController {
    *
    * @param connection
    * @param body Search criteria for filtering password reset records, including optional member ID filter, usage status filter, date range on creation time, and pagination parameters.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query community_platform_member_password_resets table with pagination support.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query community_platform_member_password_resets
+     *   table with pagination support.
    *
    * Implement search/filter criteria:
    * - memberId: Filter by community_platform_member_id (UUID exact match)
@@ -66,9 +67,10 @@ export class CommunityplatformMemberPassword_resetsController {
    *
    * @param connection
    * @param resetId Unique identifier (UUID) of the password reset record to retrieve (global scope).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query community_platform_member_password_resets table by id (UUID primary key).
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query community_platform_member_password_resets
+     *   table by id (UUID primary key).
    *
    * Return the full record if found. Return 404 if no record matches the given resetId.
    *

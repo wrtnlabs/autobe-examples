@@ -23,7 +23,9 @@ import { IPageICommunityPlatformReport } from "../../../../../structures/IPageIC
  * @param props.communityId Target community identifier.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Load the community by id, verify the caller has moderator authority for that community, then query community_platform_reports filtered by community_id = :communityId.
+ * @x-autobe-specification Load the community by id, verify the caller has
+ *   moderator authority for that community, then query
+ *   community_platform_reports filtered by community_id = :communityId.
  *
  * Return only reports that belong to the requested community. Apply default pagination and sorting suitable for moderation review, typically newest first by created_at descending, while preserving stable ordering for records with the same timestamp.
  *

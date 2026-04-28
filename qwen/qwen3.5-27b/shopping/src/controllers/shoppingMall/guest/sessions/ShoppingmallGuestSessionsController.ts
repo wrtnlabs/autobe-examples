@@ -22,9 +22,12 @@ export class ShoppingmallGuestSessionsController {
    *
    * @param connection
    * @param body Search criteria for filtering sessions including actor type, status, IP address, date ranges, and pagination parameters.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor guest
-   * @x-autobe-specification Query all session tables (shopping_mall_customer_sessions, shopping_mall_seller_sessions, shopping_mall_administrator_sessions, shopping_mall_guest_sessions) based on search criteria.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor guest
+     * @x-autobe-specification Query all session tables
+     *   (shopping_mall_customer_sessions, shopping_mall_seller_sessions,
+     *   shopping_mall_administrator_sessions, shopping_mall_guest_sessions)
+     *   based on search criteria.
    *
    * Apply filters from request body:
    * - actorType: filter by 'customer', 'seller', 'administrator', or 'guest'
@@ -73,9 +76,13 @@ export class ShoppingmallGuestSessionsController {
    *
    * @param connection
    * @param sessionId Unique identifier of the session to retrieve. Must be a valid UUID format.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor guest
-   * @x-autobe-specification Query the appropriate session table based on the session record's user type. The session ID is a UUID that uniquely identifies a session across all session tables (shopping_mall_customer_sessions, shopping_mall_seller_sessions, shopping_mall_administrator_sessions, shopping_mall_guest_sessions).
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor guest
+     * @x-autobe-specification Query the appropriate session table based on the
+     *   session record's user type. The session ID is a UUID that uniquely
+     *   identifies a session across all session tables
+     *   (shopping_mall_customer_sessions, shopping_mall_seller_sessions,
+     *   shopping_mall_administrator_sessions, shopping_mall_guest_sessions).
    *
    * Implementation steps:
    * 1. Validate the sessionId parameter is a valid UUID format

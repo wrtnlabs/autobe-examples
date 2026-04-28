@@ -11,48 +11,59 @@ export type IRedditClonePostVote = {
   /**
    * Unique identifier for the vote record.
    *
-   * @x-autobe-specification Direct mapping from reddit_clone_post_votes.id. UUID primary key.
-   * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from reddit_clone_post_votes.id.
+     *   UUID primary key.
+     * @x-autobe-database-schema-property id
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Vote direction indicating approval or disapproval.
    *
-   * @x-autobe-specification Direct mapping from reddit_clone_post_votes.direction. Enum: 'upvote' (+1) or 'downvote' (-1).
-   * @x-autobe-database-schema-property direction
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_post_votes.direction. Enum: 'upvote' (+1) or 'downvote'
+     *   (-1).
+     * @x-autobe-database-schema-property direction
    */
   direction: string;
 
   /**
    * Timestamp when the vote was cast.
    *
-   * @x-autobe-specification Direct mapping from reddit_clone_post_votes.created_at. Timestamp when vote was originally cast.
-   * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_post_votes.created_at. Timestamp when vote was originally
+     *   cast.
+     * @x-autobe-database-schema-property created_at
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the vote was last modified.
    *
-   * @x-autobe-specification Direct mapping from reddit_clone_post_votes.updated_at. Timestamp when vote direction was last changed.
-   * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_post_votes.updated_at. Timestamp when vote direction was
+     *   last changed.
+     * @x-autobe-database-schema-property updated_at
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * The member who cast this vote.
    *
-   * @x-autobe-specification Join from reddit_clone_post_votes.reddit_clone_member_id to reddit_clone_members.id. Returns ISummary with voter id and username.
-   * @x-autobe-database-schema-property member
+     * @x-autobe-specification Join from
+     *   reddit_clone_post_votes.reddit_clone_member_id to
+     *   reddit_clone_members.id. Returns ISummary with voter id and username.
+     * @x-autobe-database-schema-property member
    */
   member: IRedditCloneMember.ISummary;
 
   /**
    * The post being voted on.
    *
-   * @x-autobe-specification Join from reddit_clone_post_votes.reddit_clone_post_id to reddit_clone_posts.id. Returns ISummary with post id and title.
-   * @x-autobe-database-schema-property post
+     * @x-autobe-specification Join from
+     *   reddit_clone_post_votes.reddit_clone_post_id to reddit_clone_posts.id.
+     *   Returns ISummary with post id and title.
+     * @x-autobe-database-schema-property post
    */
   post: IRedditClonePost.ISummary;
 };
@@ -84,40 +95,47 @@ export namespace IRedditClonePostVote {
     /**
      * Unique vote identifier.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from reddit_clone_post_votes.id. UUID primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_post_votes.id. UUID primary key.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Vote direction indicating whether this is an upvote or downvote.
      *
-     * @x-autobe-database-schema-property direction
-     * @x-autobe-specification Direct mapping from reddit_clone_post_votes.direction. Value: 'upvote' or 'downvote'.
+         * @x-autobe-database-schema-property direction
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_post_votes.direction. Value: 'upvote' or 'downvote'.
      */
     direction: string;
 
     /**
      * Timestamp when the vote was originally cast.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from reddit_clone_post_votes.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_post_votes.created_at.
      */
     createdAt: string & tags.Format<"date-time">;
 
     /**
      * The member who cast this vote.
      *
-     * @x-autobe-database-schema-property member
-     * @x-autobe-specification Join from reddit_clone_post_votes.reddit_clone_member_id to reddit_clone_members.id. Returns IRedditCloneMember.ISummary.
+         * @x-autobe-database-schema-property member
+         * @x-autobe-specification Join from
+         *   reddit_clone_post_votes.reddit_clone_member_id to
+         *   reddit_clone_members.id. Returns IRedditCloneMember.ISummary.
      */
     member: IRedditCloneMember.ISummary;
 
     /**
      * Timestamp when the vote direction was last changed, null if never modified.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from reddit_clone_post_votes.updated_at. Nullable - null when vote has never been changed.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_post_votes.updated_at. Nullable - null when vote has
+         *   never been changed.
      */
     updatedAt?: null | (string & tags.Format<"date-time">) | undefined;
   };
@@ -129,47 +147,55 @@ export namespace IRedditClonePostVote {
     /**
      * Unique identifier of the vote record.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from reddit_clone_post_votes.id. UUID primary key of the vote record.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_post_votes.id. UUID primary key of the vote record.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Vote direction indicating whether this is an upvote or downvote.
      *
-     * @x-autobe-database-schema-property direction
-     * @x-autobe-specification Direct mapping from reddit_clone_post_votes.direction. Value is 'upvote' or 'downvote'.
+         * @x-autobe-database-schema-property direction
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_post_votes.direction. Value is 'upvote' or 'downvote'.
      */
     direction: string;
 
     /**
      * Timestamp when the vote was created or first cast.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from reddit_clone_post_votes.created_at. ISO 8601 timestamp.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_post_votes.created_at. ISO 8601 timestamp.
      */
     createdAt: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when the vote was last updated (direction change).
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from reddit_clone_post_votes.updated_at. ISO 8601 timestamp.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_post_votes.updated_at. ISO 8601 timestamp.
      */
     updatedAt: string & tags.Format<"date-time">;
 
     /**
      * The member who cast this vote.
      *
-     * @x-autobe-database-schema-property member
-     * @x-autobe-specification JOIN from reddit_clone_post_votes.reddit_clone_member_id to reddit_clone_members.id. Returns ISummary with id and username.
+         * @x-autobe-database-schema-property member
+         * @x-autobe-specification JOIN from
+         *   reddit_clone_post_votes.reddit_clone_member_id to
+         *   reddit_clone_members.id. Returns ISummary with id and username.
      */
     member: IRedditCloneMember.ISummary;
 
     /**
      * The comment's current total vote score after this vote operation (upvotes minus downvotes).
      *
-     * @x-autobe-specification Aggregated vote_score from reddit_clone_comments table via the comment being voted on. Calculated as sum of upvotes minus downvotes on the comment.
+         * @x-autobe-specification Aggregated vote_score from
+         *   reddit_clone_comments table via the comment being voted on.
+         *   Calculated as sum of upvotes minus downvotes on the comment.
      */
     commentVoteScore: number & tags.Type<"int32">;
   };

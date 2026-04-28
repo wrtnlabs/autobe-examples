@@ -10,80 +10,92 @@ export type IErpHrmContract = {
   /**
    * Unique identifier of the employment contract.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from erp_hrm_contracts.id. UUID primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from erp_hrm_contracts.id. UUID
+     *   primary key.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Date and time when the contract becomes effective.
    *
-   * @x-autobe-database-schema-property start_date
-   * @x-autobe-specification Direct mapping from erp_hrm_contracts.start_date. DateTime representing when the contract term begins.
+     * @x-autobe-database-schema-property start_date
+     * @x-autobe-specification Direct mapping from erp_hrm_contracts.start_date.
+     *   DateTime representing when the contract term begins.
    */
   startDate: string & tags.Format<"date-time">;
 
   /**
    * Date and time when the contract ends. Null means the contract is ongoing.
    *
-   * @x-autobe-database-schema-property end_date
-   * @x-autobe-specification Direct mapping from erp_hrm_contracts.end_date. Nullable - null indicates ongoing contract with no end date.
+     * @x-autobe-database-schema-property end_date
+     * @x-autobe-specification Direct mapping from erp_hrm_contracts.end_date.
+     *   Nullable - null indicates ongoing contract with no end date.
    */
   endDate?: (string & tags.Format<"date-time">) | null | undefined;
 
   /**
    * Pay rate amount for this contract.
    *
-   * @x-autobe-database-schema-property pay_rate
-   * @x-autobe-specification Direct mapping from erp_hrm_contracts.pay_rate. Float value representing compensation amount.
+     * @x-autobe-database-schema-property pay_rate
+     * @x-autobe-specification Direct mapping from erp_hrm_contracts.pay_rate.
+     *   Float value representing compensation amount.
    */
   payRate: number;
 
   /**
    * Pay period type determining how the pay rate is applied.
    *
-   * @x-autobe-database-schema-property pay_period
-   * @x-autobe-specification Direct mapping from erp_hrm_contracts.pay_period. Enum values: hourly, daily, weekly, monthly.
+     * @x-autobe-database-schema-property pay_period
+     * @x-autobe-specification Direct mapping from erp_hrm_contracts.pay_period.
+     *   Enum values: hourly, daily, weekly, monthly.
    */
   payPeriod: string;
 
   /**
    * Contracted working hours per week.
    *
-   * @x-autobe-database-schema-property working_hours_per_week
-   * @x-autobe-specification Direct mapping from erp_hrm_contracts.working_hours_per_week. Float value for weekly working hours commitment.
+     * @x-autobe-database-schema-property working_hours_per_week
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_contracts.working_hours_per_week. Float value for weekly
+     *   working hours commitment.
    */
   workingHoursPerWeek: number;
 
   /**
    * Optional notes or comments about the contract.
    *
-   * @x-autobe-database-schema-property notes
-   * @x-autobe-specification Direct mapping from erp_hrm_contracts.notes. Nullable string for optional comments.
+     * @x-autobe-database-schema-property notes
+     * @x-autobe-specification Direct mapping from erp_hrm_contracts.notes.
+     *   Nullable string for optional comments.
    */
   notes?: string | null | undefined;
 
   /**
    * The employee this contract belongs to.
    *
-   * @x-autobe-database-schema-property employee
-   * @x-autobe-specification Join via erp_hrm_employee_id FK to erp_hrm_employees table. Returns IErpHrmEmployee.ISummary object containing employee identity and role info.
+     * @x-autobe-database-schema-property employee
+     * @x-autobe-specification Join via erp_hrm_employee_id FK to
+     *   erp_hrm_employees table. Returns IErpHrmEmployee.ISummary object
+     *   containing employee identity and role info.
    */
   employee: IErpHrmEmployee.ISummary;
 
   /**
    * Timestamp when the contract was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from erp_hrm_contracts.created_at. Timestamp when contract was created.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from erp_hrm_contracts.created_at.
+     *   Timestamp when contract was created.
    */
   createdAt: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the contract was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from erp_hrm_contracts.updated_at. Timestamp when contract was last modified.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from erp_hrm_contracts.updated_at.
+     *   Timestamp when contract was last modified.
    */
   updatedAt: string & tags.Format<"date-time">;
 };
@@ -95,56 +107,69 @@ export namespace IErpHrmContract {
     /**
      * Filter contracts starting on or after this date.
      *
-     * @x-autobe-specification Maps to erp_hrm_contracts.start_date >= value. ISO 8601 datetime format. Optional filter for date range on contract start.
+         * @x-autobe-specification Maps to erp_hrm_contracts.start_date >=
+         *   value. ISO 8601 datetime format. Optional filter for date range on
+         *   contract start.
      */
     startDateFrom?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Filter contracts starting on or before this date.
      *
-     * @x-autobe-specification Maps to erp_hrm_contracts.start_date <= value. ISO 8601 datetime format. Optional filter for date range on contract start.
+         * @x-autobe-specification Maps to erp_hrm_contracts.start_date <=
+         *   value. ISO 8601 datetime format. Optional filter for date range on
+         *   contract start.
      */
     startDateTo?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Filter contracts ending on or after this date.
      *
-     * @x-autobe-specification Maps to erp_hrm_contracts.end_date >= value. ISO 8601 datetime format. Optional filter for date range on contract end.
+         * @x-autobe-specification Maps to erp_hrm_contracts.end_date >= value.
+         *   ISO 8601 datetime format. Optional filter for date range on
+         *   contract end.
      */
     endDateFrom?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Filter contracts ending on or before this date.
      *
-     * @x-autobe-specification Maps to erp_hrm_contracts.end_date <= value. ISO 8601 datetime format. Optional filter for date range on contract end.
+         * @x-autobe-specification Maps to erp_hrm_contracts.end_date <= value.
+         *   ISO 8601 datetime format. Optional filter for date range on
+         *   contract end.
      */
     endDateTo?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Filter by contract status: active (no end_date), ended (past end_date), ongoing (future end_date).
      *
-     * @x-autobe-specification Computed filter: active (end_date IS NULL), ended (end_date < NOW()), ongoing (end_date > NOW()). Does not directly map to a column.
+         * @x-autobe-specification Computed filter: active (end_date IS NULL),
+         *   ended (end_date < NOW()), ongoing (end_date > NOW()). Does not
+         *   directly map to a column.
      */
     status?: string | undefined;
 
     /**
      * Filter by pay period type.
      *
-     * @x-autobe-specification Maps to erp_hrm_contracts.pay_period exact match. Enum: hourly, daily, weekly, monthly.
+         * @x-autobe-specification Maps to erp_hrm_contracts.pay_period exact
+         *   match. Enum: hourly, daily, weekly, monthly.
      */
     payPeriod?: "hourly" | "daily" | "weekly" | "monthly" | undefined;
 
     /**
      * Page number for pagination.
      *
-     * @x-autobe-specification Page number for pagination offset calculation. Default 1. Used with limit to compute OFFSET.
+         * @x-autobe-specification Page number for pagination offset
+         *   calculation. Default 1. Used with limit to compute OFFSET.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Number of items per page (max 100).
      *
-     * @x-autobe-specification Records per page for pagination LIMIT. Default 20, max 100. Controls page size.
+         * @x-autobe-specification Records per page for pagination LIMIT.
+         *   Default 20, max 100. Controls page size.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -186,80 +211,92 @@ export namespace IErpHrmContract {
     /**
      * Unique contract identifier.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from erp_hrm_contracts.id. UUID primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from erp_hrm_contracts.id.
+         *   UUID primary key.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Contract start date marking when this contract term begins.
      *
-     * @x-autobe-database-schema-property start_date
-     * @x-autobe-specification Direct mapping from erp_hrm_contracts.start_date. DateTime.
+         * @x-autobe-database-schema-property start_date
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_contracts.start_date. DateTime.
      */
     start_date: string & tags.Format<"date-time">;
 
     /**
      * Contract end date. Null if the contract is ongoing.
      *
-     * @x-autobe-database-schema-property end_date
-     * @x-autobe-specification Direct mapping from erp_hrm_contracts.end_date. Nullable - null indicates an ongoing contract with no end date.
+         * @x-autobe-database-schema-property end_date
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_contracts.end_date. Nullable - null indicates an ongoing
+         *   contract with no end date.
      */
     end_date: (string & tags.Format<"date-time">) | null;
 
     /**
      * Numeric pay rate amount for this contract.
      *
-     * @x-autobe-database-schema-property pay_rate
-     * @x-autobe-specification Direct mapping from erp_hrm_contracts.pay_rate. Float/DoublePrecision.
+         * @x-autobe-database-schema-property pay_rate
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_contracts.pay_rate. Float/DoublePrecision.
      */
     pay_rate: number;
 
     /**
      * Pay period type determining how the pay rate is applied.
      *
-     * @x-autobe-database-schema-property pay_period
-     * @x-autobe-specification Direct mapping from erp_hrm_contracts.pay_period. String enum: hourly|daily|weekly|monthly.
+         * @x-autobe-database-schema-property pay_period
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_contracts.pay_period. String enum:
+         *   hourly|daily|weekly|monthly.
      */
     pay_period: string;
 
     /**
      * Contracted working hours per week.
      *
-     * @x-autobe-database-schema-property working_hours_per_week
-     * @x-autobe-specification Direct mapping from erp_hrm_contracts.working_hours_per_week. Float/DoublePrecision.
+         * @x-autobe-database-schema-property working_hours_per_week
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_contracts.working_hours_per_week. Float/DoublePrecision.
      */
     working_hours_per_week: number;
 
     /**
      * Optional notes or comments about this contract.
      *
-     * @x-autobe-specification Direct mapping from erp_hrm_contracts.notes. Nullable string.
-     * @x-autobe-database-schema-property notes
+         * @x-autobe-specification Direct mapping from erp_hrm_contracts.notes.
+         *   Nullable string.
+         * @x-autobe-database-schema-property notes
      */
     notes?: string | null | undefined;
 
     /**
      * Timestamp when this contract was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from erp_hrm_contracts.created_at. DateTime timestamp.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_contracts.created_at. DateTime timestamp.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when this contract was last updated.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from erp_hrm_contracts.updated_at. DateTime timestamp.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_contracts.updated_at. DateTime timestamp.
      */
     updated_at: string & tags.Format<"date-time">;
 
     /**
      * The employee this contract belongs to.
      *
-     * @x-autobe-database-schema-property employee
-     * @x-autobe-specification BELONGS-TO relation to erp_hrm_employees via erp_hrm_employee_id. JOIN returns IErpHrmEmployee.ISummary.
+         * @x-autobe-database-schema-property employee
+         * @x-autobe-specification BELONGS-TO relation to erp_hrm_employees via
+         *   erp_hrm_employee_id. JOIN returns IErpHrmEmployee.ISummary.
      */
     employee: IErpHrmEmployee.ISummary;
   };
@@ -271,35 +308,35 @@ export namespace IErpHrmContract {
     /**
      * Contract end date. Set a date to terminate the contract, or null to indicate ongoing employment.
      *
-     * @x-autobe-database-schema-property end_date
+         * @x-autobe-database-schema-property end_date
      */
     endDate?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * Optional notes or comments about the contract.
      *
-     * @x-autobe-database-schema-property notes
+         * @x-autobe-database-schema-property notes
      */
     notes?: string | null | undefined;
 
     /**
      * Pay period type. One of: hourly, daily, weekly, monthly.
      *
-     * @x-autobe-database-schema-property pay_period
+         * @x-autobe-database-schema-property pay_period
      */
     payPeriod?: string | undefined;
 
     /**
      * Pay rate amount (positive number).
      *
-     * @x-autobe-database-schema-property pay_rate
+         * @x-autobe-database-schema-property pay_rate
      */
     payRate?: number | undefined;
 
     /**
      * Contracted working hours per week (positive number).
      *
-     * @x-autobe-database-schema-property working_hours_per_week
+         * @x-autobe-database-schema-property working_hours_per_week
      */
     workingHoursPerWeek?: number | undefined;
   };

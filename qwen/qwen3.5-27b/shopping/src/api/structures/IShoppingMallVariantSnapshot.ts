@@ -43,7 +43,11 @@ export namespace IShoppingMallVariantSnapshot {
      *
      * The search is applied using SQL LIKE with wildcards, enabling flexible pattern matching without requiring exact SKU code knowledge.
      *
-     * @x-autobe-specification Query parameter for filtering variant snapshots by SKU code. Applied as SQL LIKE query on shopping_mall_variant_snapshots.sku_code column. Supports partial matching with case-insensitive comparison. Example: 'ABC123' matches 'ABC123', 'abc123xyz', etc.
+         * @x-autobe-specification Query parameter for filtering variant
+         *   snapshots by SKU code. Applied as SQL LIKE query on
+         *   shopping_mall_variant_snapshots.sku_code column. Supports partial
+         *   matching with case-insensitive comparison. Example: 'ABC123'
+         *   matches 'ABC123', 'abc123xyz', etc.
      */
     search?: string | undefined;
 
@@ -54,7 +58,11 @@ export namespace IShoppingMallVariantSnapshot {
      *
      * Price is stored as double precision in the database. Combine with price_max to define a price range for more specific filtering.
      *
-     * @x-autobe-specification Query parameter for filtering variant snapshots by minimum price. Applied as SQL WHERE price >= price_min on shopping_mall_variant_snapshots.price column. Type is number (double precision). Inclusive comparison - snapshots with price exactly equal to price_min are included.
+         * @x-autobe-specification Query parameter for filtering variant
+         *   snapshots by minimum price. Applied as SQL WHERE price >= price_min
+         *   on shopping_mall_variant_snapshots.price column. Type is number
+         *   (double precision). Inclusive comparison - snapshots with price
+         *   exactly equal to price_min are included.
      */
     price_min?: number | undefined;
 
@@ -65,7 +73,11 @@ export namespace IShoppingMallVariantSnapshot {
      *
      * Price is stored as double precision in the database. Combine with price_min to define a price range for more specific filtering.
      *
-     * @x-autobe-specification Query parameter for filtering variant snapshots by maximum price. Applied as SQL WHERE price <= price_max on shopping_mall_variant_snapshots.price column. Type is number (double precision). Inclusive comparison - snapshots with price exactly equal to price_max are included.
+         * @x-autobe-specification Query parameter for filtering variant
+         *   snapshots by maximum price. Applied as SQL WHERE price <= price_max
+         *   on shopping_mall_variant_snapshots.price column. Type is number
+         *   (double precision). Inclusive comparison - snapshots with price
+         *   exactly equal to price_max are included.
      */
     price_max?: number | undefined;
 
@@ -76,7 +88,11 @@ export namespace IShoppingMallVariantSnapshot {
      *
      * The comparison is inclusive, so snapshots created exactly at the specified time will be included. Combine with created_at_to to define a date range.
      *
-     * @x-autobe-specification Query parameter for filtering variant snapshots by creation date start. Applied as SQL WHERE created_at >= created_at_from on shopping_mall_variant_snapshots.created_at column. Format is ISO 8601 date-time string with timezone. Inclusive comparison.
+         * @x-autobe-specification Query parameter for filtering variant
+         *   snapshots by creation date start. Applied as SQL WHERE created_at
+         *   >= created_at_from on shopping_mall_variant_snapshots.created_at
+         *   column. Format is ISO 8601 date-time string with timezone.
+         *   Inclusive comparison.
      */
     created_at_from?: (string & tags.Format<"date-time">) | undefined;
 
@@ -87,7 +103,11 @@ export namespace IShoppingMallVariantSnapshot {
      *
      * The comparison is inclusive, so snapshots created exactly at the specified time will be included. Combine with created_at_from to define a date range.
      *
-     * @x-autobe-specification Query parameter for filtering variant snapshots by creation date end. Applied as SQL WHERE created_at <= created_at_to on shopping_mall_variant_snapshots.created_at column. Format is ISO 8601 date-time string with timezone. Inclusive comparison.
+         * @x-autobe-specification Query parameter for filtering variant
+         *   snapshots by creation date end. Applied as SQL WHERE created_at <=
+         *   created_at_to on shopping_mall_variant_snapshots.created_at column.
+         *   Format is ISO 8601 date-time string with timezone. Inclusive
+         *   comparison.
      */
     created_at_to?: (string & tags.Format<"date-time">) | undefined;
 
@@ -98,7 +118,10 @@ export namespace IShoppingMallVariantSnapshot {
      *
      * For example, with limit=20, page=1 returns records 1-20, page=2 returns records 21-40, and so on. The response includes pagination metadata showing total pages available.
      *
-     * @x-autobe-specification Query parameter for pagination page number. 1-indexed integer. Applied to calculate SQL OFFSET as (page - 1) * limit. Default value is 1 if not provided. Minimum value is 1. Used with LIMIT clause for pagination.
+         * @x-autobe-specification Query parameter for pagination page number.
+         *   1-indexed integer. Applied to calculate SQL OFFSET as (page - 1) *
+         *   limit. Default value is 1 if not provided. Minimum value is 1. Used
+         *   with LIMIT clause for pagination.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -109,7 +132,10 @@ export namespace IShoppingMallVariantSnapshot {
      *
      * For example, limit=20 returns up to 20 snapshots per page. The actual number may be less on the final page if total records don't divide evenly. The response includes pagination metadata showing total record count.
      *
-     * @x-autobe-specification Query parameter for number of records per page. Integer between 1 and 100. Applied to SQL LIMIT clause. Default value is 20 if not provided. Maximum value is 100 to prevent excessive data retrieval.
+         * @x-autobe-specification Query parameter for number of records per
+         *   page. Integer between 1 and 100. Applied to SQL LIMIT clause.
+         *   Default value is 20 if not provided. Maximum value is 100 to
+         *   prevent excessive data retrieval.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -122,7 +148,11 @@ export namespace IShoppingMallVariantSnapshot {
      *
      * Combine with sortOrder to control ascending or descending order. For example, sortBy='price' with sortOrder='desc' returns snapshots from highest to lowest price.
      *
-     * @x-autobe-specification Query parameter for specifying which field to sort by. String value must be one of: 'id', 'sku_code', 'price', 'created_at'. Applied to SQL ORDER BY clause. Default is 'created_at' if not provided. Validates against allowed field list to prevent SQL injection.
+         * @x-autobe-specification Query parameter for specifying which field to
+         *   sort by. String value must be one of: 'id', 'sku_code', 'price',
+         *   'created_at'. Applied to SQL ORDER BY clause. Default is
+         *   'created_at' if not provided. Validates against allowed field list
+         *   to prevent SQL injection.
      */
     sortBy?: string | undefined;
 
@@ -133,7 +163,10 @@ export namespace IShoppingMallVariantSnapshot {
      *
      * For example, with sortBy='created_at' and sortOrder='desc', the newest snapshots appear first. With sortOrder='asc', the oldest snapshots appear first.
      *
-     * @x-autobe-specification Query parameter for sort direction. Must be either 'asc' (ascending) or 'desc' (descending). Applied to SQL ORDER BY clause. Default is 'desc' if not provided. Validates against allowed values to prevent SQL injection.
+         * @x-autobe-specification Query parameter for sort direction. Must be
+         *   either 'asc' (ascending) or 'desc' (descending). Applied to SQL
+         *   ORDER BY clause. Default is 'desc' if not provided. Validates
+         *   against allowed values to prevent SQL injection.
      */
     sortOrder?: "asc" | "desc" | undefined;
   };
@@ -151,8 +184,10 @@ export namespace IShoppingMallVariantSnapshot {
      *
      * This UUID identifies a specific snapshot record capturing the state of a product variant at a particular point in time. Each snapshot is immutable and serves as an audit trail entry.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_variant_snapshots.id. Primary key uniquely identifying each variant snapshot record.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_variant_snapshots.id. Primary key uniquely
+         *   identifying each variant snapshot record.
      */
     id: string & tags.Format<"uuid">;
 
@@ -161,8 +196,10 @@ export namespace IShoppingMallVariantSnapshot {
      *
      * This field preserves the SKU code as it existed when the snapshot was created, allowing tracking of SKU code changes over the variant's lifecycle.
      *
-     * @x-autobe-database-schema-property sku_code
-     * @x-autobe-specification Direct mapping from shopping_mall_variant_snapshots.sku_code. Captures the SKU code value at the time the snapshot was created.
+         * @x-autobe-database-schema-property sku_code
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_variant_snapshots.sku_code. Captures the SKU code
+         *   value at the time the snapshot was created.
      */
     sku_code: string;
 
@@ -171,8 +208,10 @@ export namespace IShoppingMallVariantSnapshot {
      *
      * This field preserves the variant's price as it existed when the snapshot was created. Variants can have prices that override the base product price, and this captures the exact price at modification time.
      *
-     * @x-autobe-database-schema-property price
-     * @x-autobe-specification Direct mapping from shopping_mall_variant_snapshots.price. Captures the variant-specific price value at the time the snapshot was created.
+         * @x-autobe-database-schema-property price
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_variant_snapshots.price. Captures the
+         *   variant-specific price value at the time the snapshot was created.
      */
     price: number;
 
@@ -181,8 +220,11 @@ export namespace IShoppingMallVariantSnapshot {
      *
      * Records the exact point in time when the variant state was captured. Used to establish chronological order of variant modifications and to identify when specific changes occurred.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_variant_snapshots.created_at. Timestamp when the snapshot was created, marking the point in time when the variant state was captured.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_variant_snapshots.created_at. Timestamp when the
+         *   snapshot was created, marking the point in time when the variant
+         *   state was captured.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -191,8 +233,12 @@ export namespace IShoppingMallVariantSnapshot {
      *
      * This relation provides context about which specific variant this snapshot represents. It links back to the current variant record, allowing users to understand which variant's historical state is being displayed.
      *
-     * @x-autobe-database-schema-property productVariant
-     * @x-autobe-specification Relation via JOIN from shopping_mall_variant_snapshots.shopping_mall_product_variant_id FK to shopping_mall_product_variants.id. Returns IShoppingMallProductVariant.ISummary providing context about which variant this snapshot represents.
+         * @x-autobe-database-schema-property productVariant
+         * @x-autobe-specification Relation via JOIN from
+         *   shopping_mall_variant_snapshots.shopping_mall_product_variant_id FK
+         *   to shopping_mall_product_variants.id. Returns
+         *   IShoppingMallProductVariant.ISummary providing context about which
+         *   variant this snapshot represents.
      */
     productVariant: IShoppingMallProductVariant.ISummary;
   };

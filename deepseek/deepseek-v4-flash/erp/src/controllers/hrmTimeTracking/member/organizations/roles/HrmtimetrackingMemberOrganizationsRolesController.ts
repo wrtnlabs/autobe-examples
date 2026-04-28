@@ -28,13 +28,13 @@ export class HrmtimetrackingMemberOrganizationsRolesController {
    * @param connection
    * @param organizationId UUID of the organization where the custom role will be created. The organization must be active.
    * @param body Required role name and set of permissions to assign to the new custom role. The name must be unique within the organization and not conflict with built-in role names. Permissions must be a non-empty array of valid system permission codes.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Insert a record into hrm_time_tracking_roles with:
-   * - hrm_time_tracking_organization_id: from path parameter organizationId
-   * - name: from request body (validate uniqueness within organization before insert)
-   * - type: set to 'custom'
-   * - created_at, updated_at: current timestamp
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Insert a record into hrm_time_tracking_roles
+     *   with: - hrm_time_tracking_organization_id: from path parameter
+     *   organizationId - name: from request body (validate uniqueness within
+     *   organization before insert) - type: set to 'custom' - created_at,
+     *   updated_at: current timestamp
    *
    * Validate that the organization exists and is active. Validate that no role with the same name already exists within this organization (composite unique constraint on [organization_id, name]). Validate that name is not one of the reserved built-in role names ('Owner', 'Manager', 'Employee').
    *
@@ -77,9 +77,12 @@ export class HrmtimetrackingMemberOrganizationsRolesController {
    * @param connection
    * @param organizationId Target organization's unique identifier (UUID). All returned roles belong exclusively to this organization, enforcing multi-tenant data isolation.
    * @param body Search criteria for filtering and paginating roles within the organization. Supports optional name partial match filter, optional type filter (built_in or custom), and standard pagination parameters (page, limit) with sorting options.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query hrm_time_tracking_roles table filtered by hrm_time_tracking_organization_id matching the organizationId path parameter. Apply multi-tenant isolation — never return roles from other organizations.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query hrm_time_tracking_roles table filtered by
+     *   hrm_time_tracking_organization_id matching the organizationId path
+     *   parameter. Apply multi-tenant isolation — never return roles from other
+     *   organizations.
    *
    * Apply optional search filters from request body:
    * - name: partial/fuzzy match against the role name column
@@ -124,9 +127,10 @@ export class HrmtimetrackingMemberOrganizationsRolesController {
    * @param connection
    * @param organizationId Target organization UUID. Enforces multi-tenant data isolation — only roles belonging to this organization are accessible.
    * @param roleId Target role UUID. Combined with organizationId to uniquely identify the role within the organization.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query hrm_time_tracking_roles table filtering by id (roleId) AND hrm_time_tracking_organization_id (organizationId).
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query hrm_time_tracking_roles table filtering by
+     *   id (roleId) AND hrm_time_tracking_organization_id (organizationId).
    *
    * - Exclude soft-deleted records: WHERE deleted_at IS NULL
    * - Include associated permissions via LEFT JOIN on hrm_time_tracking_role_permissions (filter out soft-deleted permission records where deleted_at IS NULL)
@@ -172,9 +176,13 @@ export class HrmtimetrackingMemberOrganizationsRolesController {
    * @param organizationId UUID of the organization that owns the role. Used to scope the operation within a specific tenant for multi-tenant data isolation.
    * @param roleId UUID of the role to update. The role must belong to the organization specified by organizationId.
    * @param body Updated role data including an optional new name (for custom roles only) and the complete list of permission codes to assign to the role. The permissionCodes array replaces the existing permission set entirely.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Validate that the role exists and is not soft-deleted (deleted_at is null) within the specified organization. Verify that the organizationId in the path matches the role's hrm_time_tracking_organization_id — return a 404 Not Found if the role doesn't belong to the organization.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Validate that the role exists and is not
+     *   soft-deleted (deleted_at is null) within the specified organization.
+     *   Verify that the organizationId in the path matches the role's
+     *   hrm_time_tracking_organization_id — return a 404 Not Found if the role
+     *   doesn't belong to the organization.
    *
    * Check the caller's permissions — only users with org:manage permission (Owner role) can update roles.
    *
@@ -233,15 +241,21 @@ export class HrmtimetrackingMemberOrganizationsRolesController {
    * @param connection
    * @param organizationId The UUID of the organization that owns the role (scoped within multi-tenant boundary).
    * @param roleId The UUID of the role to soft-delete (scoped to the specified organization).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1. Look up the role by roleId. Verify it exists and that hrm_time_tracking_organization_id matches organizationId. Return 404 if not found.
-   * 2. Check the role's `type` field.
-   *    - If `built_in`: reject with 403 Forbidden — built-in roles (Owner, Manager, Employee) are system-protected and cannot be deleted.
-   * 3. For custom roles: query hrm_time_tracking_employees to check if any active employees (deleted_at IS NULL) have hrm_time_tracking_role_id = this roleId. If ≥1 active employee exists, reject with 409 Conflict.
-   * 4. Perform soft-delete: SET deleted_at = NOW() on the role record.
-   * 5. Cascade deletion of associated hrm_time_tracking_role_permissions entries is automatic via FK constraint (onDelete: Cascade) — no manual cleanup needed.
-   * 6. Return the updated IHrmTimeTrackingRole entity with deleted_at now populated.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification 1. Look up the role by roleId. Verify it exists
+     *   and that hrm_time_tracking_organization_id matches organizationId.
+     *   Return 404 if not found. 2. Check the role's `type` field. - If
+     *   `built_in`: reject with 403 Forbidden — built-in roles (Owner, Manager,
+     *   Employee) are system-protected and cannot be deleted. 3. For custom
+     *   roles: query hrm_time_tracking_employees to check if any active
+     *   employees (deleted_at IS NULL) have hrm_time_tracking_role_id = this
+     *   roleId. If ≥1 active employee exists, reject with 409 Conflict. 4.
+     *   Perform soft-delete: SET deleted_at = NOW() on the role record. 5.
+     *   Cascade deletion of associated hrm_time_tracking_role_permissions
+     *   entries is automatic via FK constraint (onDelete: Cascade) — no manual
+     *   cleanup needed. 6. Return the updated IHrmTimeTrackingRole entity with
+     *   deleted_at now populated.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Delete(":roleId")

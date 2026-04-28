@@ -19,8 +19,10 @@ export type IShoppingMallPostPurchaseCancellationRequestSnapshot = {
    *
    * This is the primary key of the snapshot record, generated as a UUID v4 when the snapshot is created. Used to uniquely identify this specific state capture in the audit trail.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_post_purchase_cancellation_request_snapshots.id. UUID v4 format generated when snapshot is created.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_post_purchase_cancellation_request_snapshots.id. UUID v4
+     *   format generated when snapshot is created.
    */
   id: string & tags.Format<"uuid">;
 
@@ -29,8 +31,10 @@ export type IShoppingMallPostPurchaseCancellationRequestSnapshot = {
    *
    * Valid values include: 'pending' (awaiting seller response), 'approved' (seller approved the cancellation), 'rejected' (seller rejected the cancellation). This field captures the exact status at the snapshot moment, enabling historical tracking of status transitions even if the current request status changes.
    *
-   * @x-autobe-database-schema-property status
-   * @x-autobe-specification Direct mapping from shopping_mall_post_purchase_cancellation_request_snapshots.status. Values: 'pending', 'approved', 'rejected'.
+     * @x-autobe-database-schema-property status
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_post_purchase_cancellation_request_snapshots.status.
+     *   Values: 'pending', 'approved', 'rejected'.
    */
   status: string;
 
@@ -39,8 +43,10 @@ export type IShoppingMallPostPurchaseCancellationRequestSnapshot = {
    *
    * This text field preserves the exact reason provided by the customer when they submitted the cancellation request. The reason is captured once during initial request creation and remains unchanged in all subsequent snapshots, providing context for dispute resolution.
    *
-   * @x-autobe-database-schema-property reason
-   * @x-autobe-specification Direct mapping from shopping_mall_post_purchase_cancellation_request_snapshots.reason. Free text provided by customer.
+     * @x-autobe-database-schema-property reason
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_post_purchase_cancellation_request_snapshots.reason. Free
+     *   text provided by customer.
    */
   reason: string;
 
@@ -49,8 +55,10 @@ export type IShoppingMallPostPurchaseCancellationRequestSnapshot = {
    *
    * This field is populated only when the seller takes action on the request. It may contain approval confirmation, rejection explanation, or additional notes from the seller. Null for the initial snapshot created when the customer first submits the request before any seller response.
    *
-   * @x-autobe-database-schema-property seller_response
-   * @x-autobe-specification Direct mapping from shopping_mall_post_purchase_cancellation_request_snapshots.seller_response. Nullable - null for initial snapshot, string when seller responds.
+     * @x-autobe-database-schema-property seller_response
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_post_purchase_cancellation_request_snapshots.seller_response.
+     *   Nullable - null for initial snapshot, string when seller responds.
    */
   seller_response: string | null;
 
@@ -59,8 +67,10 @@ export type IShoppingMallPostPurchaseCancellationRequestSnapshot = {
    *
    * Records the exact moment when the state change occurred and this snapshot was captured. Enables chronological ordering of snapshots to reconstruct the complete history of the cancellation request. Used for audit trail verification and dispute resolution timelines.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from shopping_mall_post_purchase_cancellation_request_snapshots.created_at. ISO 8601 date-time format with timezone.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_post_purchase_cancellation_request_snapshots.created_at.
+     *   ISO 8601 date-time format with timezone.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -69,8 +79,11 @@ export type IShoppingMallPostPurchaseCancellationRequestSnapshot = {
    *
    * References the cancellation request that this snapshot captures the state of. Each cancellation request can have multiple snapshots representing its state at different points in time. This relation enables navigation from a snapshot back to the current request state.
    *
-   * @x-autobe-database-schema-property cancellationRequest
-   * @x-autobe-specification Relation mapping via JOIN on shopping_mall_post_purchase_cancellation_request_id to shopping_mall_post_purchase_cancellation_requests. Returns IShoppingMallPostPurchaseCancellationRequest.ISummary.
+     * @x-autobe-database-schema-property cancellationRequest
+     * @x-autobe-specification Relation mapping via JOIN on
+     *   shopping_mall_post_purchase_cancellation_request_id to
+     *   shopping_mall_post_purchase_cancellation_requests. Returns
+     *   IShoppingMallPostPurchaseCancellationRequest.ISummary.
    */
   cancellationRequest: IShoppingMallPostPurchaseCancellationRequest.ISummary;
 
@@ -79,8 +92,11 @@ export type IShoppingMallPostPurchaseCancellationRequestSnapshot = {
    *
    * This field is populated when the seller takes action on the cancellation request (approve or reject). For the initial snapshot created when the customer submits the request, this field is null as no seller response exists yet. Links to the seller account for identity verification and accountability.
    *
-   * @x-autobe-database-schema-property seller
-   * @x-autobe-specification Relation mapping via LEFT JOIN on shopping_mall_seller_id to shopping_mall_sellers. Returns IShoppingMallSeller.ISummary or null for initial snapshot before seller response.
+     * @x-autobe-database-schema-property seller
+     * @x-autobe-specification Relation mapping via LEFT JOIN on
+     *   shopping_mall_seller_id to shopping_mall_sellers. Returns
+     *   IShoppingMallSeller.ISummary or null for initial snapshot before seller
+     *   response.
    */
   seller: IShoppingMallSeller.ISummary | null;
 };
@@ -98,8 +114,10 @@ export namespace IShoppingMallPostPurchaseCancellationRequestSnapshot {
      *
      * This UUID serves as the primary key for the snapshot entry in the audit trail. Each snapshot receives a unique identifier upon creation, enabling precise reference to specific state changes in the cancellation request lifecycle.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_post_purchase_cancellation_request_snapshots.id. UUID format.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_post_purchase_cancellation_request_snapshots.id. UUID
+         *   format.
      */
     id: string & tags.Format<"uuid">;
 
@@ -108,8 +126,11 @@ export namespace IShoppingMallPostPurchaseCancellationRequestSnapshot {
      *
      * Valid values are: pending (awaiting seller response), approved (seller approved the cancellation), or rejected (seller rejected the cancellation). This field preserves the exact status at the snapshot moment, enabling historical tracking of status transitions even if the current request status changes.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from shopping_mall_post_purchase_cancellation_request_snapshots.status. Captures exact status at snapshot moment: pending, approved, or rejected.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_post_purchase_cancellation_request_snapshots.status.
+         *   Captures exact status at snapshot moment: pending, approved, or
+         *   rejected.
      */
     status: string;
 
@@ -118,8 +139,11 @@ export namespace IShoppingMallPostPurchaseCancellationRequestSnapshot {
      *
      * This text field preserves the exact reason provided by the customer when they submitted the cancellation request. The reason is captured once during initial request creation and remains unchanged in all subsequent snapshots, providing context for dispute resolution and seller decision-making.
      *
-     * @x-autobe-database-schema-property reason
-     * @x-autobe-specification Direct mapping from shopping_mall_post_purchase_cancellation_request_snapshots.reason. Customer's cancellation reason captured once during initial request creation.
+         * @x-autobe-database-schema-property reason
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_post_purchase_cancellation_request_snapshots.reason.
+         *   Customer's cancellation reason captured once during initial request
+         *   creation.
      */
     reason: string;
 
@@ -128,8 +152,11 @@ export namespace IShoppingMallPostPurchaseCancellationRequestSnapshot {
      *
      * This field is populated only when the seller takes action on the request (approve or reject). It may contain approval confirmation, rejection explanation, or additional notes from the seller. Null for the initial snapshot created when the customer first submits the request, as no seller response exists yet.
      *
-     * @x-autobe-database-schema-property seller_response
-     * @x-autobe-specification Direct mapping from shopping_mall_post_purchase_cancellation_request_snapshots.seller_response. Nullable string - null for initial snapshot, populated when seller takes action.
+         * @x-autobe-database-schema-property seller_response
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_post_purchase_cancellation_request_snapshots.seller_response.
+         *   Nullable string - null for initial snapshot, populated when seller
+         *   takes action.
      */
     seller_response: string | null;
 
@@ -138,8 +165,10 @@ export namespace IShoppingMallPostPurchaseCancellationRequestSnapshot {
      *
      * Records the exact moment when the state change occurred and this snapshot was captured. Enables chronological ordering of snapshots to reconstruct the complete history of the cancellation request. Used for audit trail verification and dispute resolution timelines.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_post_purchase_cancellation_request_snapshots.created_at. DateTime with timestamptz format.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_post_purchase_cancellation_request_snapshots.created_at.
+         *   DateTime with timestamptz format.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -148,8 +177,12 @@ export namespace IShoppingMallPostPurchaseCancellationRequestSnapshot {
      *
      * This field references the seller account that took action on the cancellation request (approve or reject). Populated only when the seller has responded - null for the initial snapshot created when the customer submits the request, as no seller response exists at that point. Returns seller summary information including email and approval status.
      *
-     * @x-autobe-database-schema-property seller
-     * @x-autobe-specification Relation mapping via LEFT JOIN from shopping_mall_post_purchase_cancellation_request_snapshots.shopping_mall_seller_id to shopping_mall_sellers.id. Returns IShoppingMallSeller.ISummary. Nullable - null for initial snapshot when no seller has responded yet.
+         * @x-autobe-database-schema-property seller
+         * @x-autobe-specification Relation mapping via LEFT JOIN from
+         *   shopping_mall_post_purchase_cancellation_request_snapshots.shopping_mall_seller_id
+         *   to shopping_mall_sellers.id. Returns IShoppingMallSeller.ISummary.
+         *   Nullable - null for initial snapshot when no seller has responded
+         *   yet.
      */
     seller: IShoppingMallSeller.ISummary | null;
   };
@@ -169,8 +202,11 @@ export namespace IShoppingMallPostPurchaseCancellationRequestSnapshot {
      *
      * This filter is optional. When omitted, snapshots of all statuses are included in the results.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct filter on shopping_mall_post_purchase_cancellation_request_snapshots.status column. Exact match filter for status values: pending, approved, rejected. Optional - if not provided, no status filtering applied.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct filter on
+         *   shopping_mall_post_purchase_cancellation_request_snapshots.status
+         *   column. Exact match filter for status values: pending, approved,
+         *   rejected. Optional - if not provided, no status filtering applied.
      */
     status?: string | undefined;
 
@@ -181,8 +217,11 @@ export namespace IShoppingMallPostPurchaseCancellationRequestSnapshot {
      *
      * Format must be ISO 8601 date-time (e.g., 2024-01-15T10:30:00Z). This filter is optional - when omitted, no lower bound is applied to the date range.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Filter on shopping_mall_post_purchase_cancellation_request_snapshots.created_at column. Applies >= comparison (inclusive). ISO 8601 date-time format. Optional - if not provided, no lower bound on date range.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Filter on
+         *   shopping_mall_post_purchase_cancellation_request_snapshots.created_at
+         *   column. Applies >= comparison (inclusive). ISO 8601 date-time
+         *   format. Optional - if not provided, no lower bound on date range.
      */
     from?: (string & tags.Format<"date-time">) | undefined;
 
@@ -193,8 +232,11 @@ export namespace IShoppingMallPostPurchaseCancellationRequestSnapshot {
      *
      * Format must be ISO 8601 date-time (e.g., 2024-01-15T10:30:00Z). This filter is optional - when omitted, no upper bound is applied to the date range.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Filter on shopping_mall_post_purchase_cancellation_request_snapshots.created_at column. Applies <= comparison (inclusive). ISO 8601 date-time format. Optional - if not provided, no upper bound on date range.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Filter on
+         *   shopping_mall_post_purchase_cancellation_request_snapshots.created_at
+         *   column. Applies <= comparison (inclusive). ISO 8601 date-time
+         *   format. Optional - if not provided, no upper bound on date range.
      */
     to?: (string & tags.Format<"date-time">) | undefined;
 
@@ -205,7 +247,12 @@ export namespace IShoppingMallPostPurchaseCancellationRequestSnapshot {
      *
      * Set to true to retrieve only snapshots where the seller has responded (seller_response is not null). Set to false to retrieve only initial snapshots without seller response. This filter is optional - when omitted, snapshots with and without seller responses are both included.
      *
-     * @x-autobe-specification Computed filter parameter with no direct DB column. Filters shopping_mall_post_purchase_cancellation_request_snapshots based on seller_response nullability: true applies WHERE seller_response IS NOT NULL, false applies WHERE seller_response IS NULL. Optional - if not provided, no filtering by seller response presence.
+         * @x-autobe-specification Computed filter parameter with no direct DB
+         *   column. Filters
+         *   shopping_mall_post_purchase_cancellation_request_snapshots based on
+         *   seller_response nullability: true applies WHERE seller_response IS
+         *   NOT NULL, false applies WHERE seller_response IS NULL. Optional -
+         *   if not provided, no filtering by seller response presence.
      */
     hasSellerResponse?: boolean | undefined;
 
@@ -216,7 +263,11 @@ export namespace IShoppingMallPostPurchaseCancellationRequestSnapshot {
      *
      * This parameter works together with the limit parameter to control result set size. The actual offset is calculated as (page - 1) * limit. Minimum value is 1. This parameter is optional - defaults to 1 if not provided.
      *
-     * @x-autobe-specification Pagination parameter for cursor-based pagination. No direct DB mapping - controls OFFSET/LIMIT query clauses. Page number starts at 1 (first page). Combined with limit to calculate offset: offset = (page - 1) * limit. Default is 1 if not provided.
+         * @x-autobe-specification Pagination parameter for cursor-based
+         *   pagination. No direct DB mapping - controls OFFSET/LIMIT query
+         *   clauses. Page number starts at 1 (first page). Combined with limit
+         *   to calculate offset: offset = (page - 1) * limit. Default is 1 if
+         *   not provided.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -227,7 +278,11 @@ export namespace IShoppingMallPostPurchaseCancellationRequestSnapshot {
      *
      * The value must be between 1 and 100 inclusive. The maximum of 100 is enforced by business rules to protect system performance. This parameter is optional - a default value is applied by the service layer if not provided.
      *
-     * @x-autobe-specification Pagination parameter for cursor-based pagination. No direct DB mapping - controls LIMIT query clause. Maximum value is 100 per business rules. Combined with page to calculate offset. Default is applied by service layer if not provided.
+         * @x-autobe-specification Pagination parameter for cursor-based
+         *   pagination. No direct DB mapping - controls LIMIT query clause.
+         *   Maximum value is 100 per business rules. Combined with page to
+         *   calculate offset. Default is applied by service layer if not
+         *   provided.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)

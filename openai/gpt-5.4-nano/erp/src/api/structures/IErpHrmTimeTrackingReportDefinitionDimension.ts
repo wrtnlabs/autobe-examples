@@ -8,64 +8,83 @@ export type IErpHrmTimeTrackingReportDefinitionDimension = {
   /**
    * Unique identifier of this report definition dimension configuration.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_report_definition_dimensions.id to DTO.id. UUID string format.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_tracking_report_definition_dimensions.id to DTO.id. UUID
+     *   string format.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Identifier of the report definition that owns this grouping dimension.
    *
-   * @x-autobe-database-schema-property erp_hrm_time_tracking_report_definition_id
-   * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_report_definition_dimensions.erp_hrm_time_tracking_report_definition_id to DTO.reportDefinitionId. Service layer must ensure the row belongs to the requested reportDefinitionId and active organization context.
+     * @x-autobe-database-schema-property erp_hrm_time_tracking_report_definition_id
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_tracking_report_definition_dimensions.erp_hrm_time_tracking_report_definition_id
+     *   to DTO.reportDefinitionId. Service layer must ensure the row belongs to
+     *   the requested reportDefinitionId and active organization context.
    */
   reportDefinitionId: string & tags.Format<"uuid">;
 
   /**
    * Machine-readable key identifying what dimension this grouping represents (e.g., employee, project, task, week).
    *
-   * @x-autobe-database-schema-property dimension_key
-   * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_report_definition_dimensions.dimension_key to DTO.dimensionKey. Stored as a stable string used by reporting logic.
+     * @x-autobe-database-schema-property dimension_key
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_tracking_report_definition_dimensions.dimension_key to
+     *   DTO.dimensionKey. Stored as a stable string used by reporting logic.
    */
   dimensionKey: string;
 
   /**
    * Human-friendly label displayed for this grouping dimension in report output and UI.
    *
-   * @x-autobe-database-schema-property dimension_label
-   * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_report_definition_dimensions.dimension_label to DTO.dimensionLabel. Used for UI headers/labels in report views.
+     * @x-autobe-database-schema-property dimension_label
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_tracking_report_definition_dimensions.dimension_label to
+     *   DTO.dimensionLabel. Used for UI headers/labels in report views.
    */
   dimensionLabel: string;
 
   /**
    * 1-based ordering position of this dimension when rendering report grouping headers/columns.
    *
-   * @x-autobe-database-schema-property sort_order
-   * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_report_definition_dimensions.sort_order to DTO.sortOrder. Business expectation is 1-based ordering; DB ordering integers determine deterministic presentation.
+     * @x-autobe-database-schema-property sort_order
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_tracking_report_definition_dimensions.sort_order to
+     *   DTO.sortOrder. Business expectation is 1-based ordering; DB ordering
+     *   integers determine deterministic presentation.
    */
   sortOrder: number & tags.Type<"int32"> & tags.Minimum<1>;
 
   /**
    * Timestamp when this report definition dimension configuration was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_report_definition_dimensions.created_at to DTO.createdAt (date-time string).
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_tracking_report_definition_dimensions.created_at to
+     *   DTO.createdAt (date-time string).
    */
   createdAt: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when this report definition dimension configuration was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_report_definition_dimensions.updated_at to DTO.updatedAt (date-time string).
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_tracking_report_definition_dimensions.updated_at to
+     *   DTO.updatedAt (date-time string).
    */
   updatedAt: string & tags.Format<"date-time">;
 
   /**
    * Soft-deletion timestamp. Null means the dimension is active; a non-null value means the dimension has been deactivated/removed from configuration.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_report_definition_dimensions.deleted_at to DTO.deletedAt. deletedAt is null when active; when non-null, the dimension is considered soft-deleted/inactive.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_tracking_report_definition_dimensions.deleted_at to
+     *   DTO.deletedAt. deletedAt is null when active; when non-null, the
+     *   dimension is considered soft-deleted/inactive.
    */
   deletedAt: (string & tags.Format<"date-time">) | null;
 };
@@ -77,22 +96,36 @@ export namespace IErpHrmTimeTrackingReportDefinitionDimension {
     /**
      * Array of dimension configurations to apply to the report definition. Each item identifies a dimension by its dimension_key and includes its label and ordering.
      *
-     * @x-autobe-database-schema-property dimension_key
-     * @x-autobe-specification Treat each element of `dimensions` as one dimension configuration row for erp_hrm_time_tracking_report_definition_dimensions. Use dimension_key to upsert an active row and to determine which existing active rows should remain; reject duplicate dimension_key values within the batch; soft-remove any active rows not present in the incoming batch by setting deleted_at.
+         * @x-autobe-database-schema-property dimension_key
+         * @x-autobe-specification Treat each element of `dimensions` as one
+         *   dimension configuration row for
+         *   erp_hrm_time_tracking_report_definition_dimensions. Use
+         *   dimension_key to upsert an active row and to determine which
+         *   existing active rows should remain; reject duplicate dimension_key
+         *   values within the batch; soft-remove any active rows not present in
+         *   the incoming batch by setting deleted_at.
      */
     dimensions: IErpHrmTimeTrackingReportDefinitionDimension.IRequestDimension[];
 
     /**
      * Target page number (1-indexed) when pagination is applicable; does not affect which dimensions are mutated.
      *
-     * @x-autobe-specification Request-only pagination parameter (1-indexed). For this dimensions update endpoint, mutation semantics do not depend on pagination; if used by a shared client payload shape, default/ignore behavior should apply (typically defaults to 1).
+         * @x-autobe-specification Request-only pagination parameter
+         *   (1-indexed). For this dimensions update endpoint, mutation
+         *   semantics do not depend on pagination; if used by a shared client
+         *   payload shape, default/ignore behavior should apply (typically
+         *   defaults to 1).
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
 
     /**
      * Maximum number of records per page when pagination is applicable; does not affect which dimensions are mutated.
      *
-     * @x-autobe-specification Request-only pagination parameter controlling max records per page when pagination is applicable. For this dimensions update endpoint, mutation semantics do not depend on pagination; if provided by shared client payload shape, it may be ignored (typically defaults to 100).
+         * @x-autobe-specification Request-only pagination parameter controlling
+         *   max records per page when pagination is applicable. For this
+         *   dimensions update endpoint, mutation semantics do not depend on
+         *   pagination; if provided by shared client payload shape, it may be
+         *   ignored (typically defaults to 100).
      */
     limit?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };
@@ -104,56 +137,71 @@ export namespace IErpHrmTimeTrackingReportDefinitionDimension {
     /**
      * Unique identifier of the configured report dimension.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_report_definition_dimensions.id (UUID).
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_tracking_report_definition_dimensions.id (UUID).
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Machine-readable key that identifies the grouping dimension (e.g., employee, project, task, week).
      *
-     * @x-autobe-database-schema-property dimension_key
-     * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_report_definition_dimensions.dimension_key. Treated as the stable unique key within a report definition.
+         * @x-autobe-database-schema-property dimension_key
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_tracking_report_definition_dimensions.dimension_key.
+         *   Treated as the stable unique key within a report definition.
      */
     dimension_key: string;
 
     /**
      * Human-friendly label for the grouping dimension used in UI/output headers.
      *
-     * @x-autobe-database-schema-property dimension_label
-     * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_report_definition_dimensions.dimension_label.
+         * @x-autobe-database-schema-property dimension_label
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_tracking_report_definition_dimensions.dimension_label.
      */
     dimension_label: string;
 
     /**
      * 1-based ordering index used to deterministically order the dimensions.
      *
-     * @x-autobe-database-schema-property sort_order
-     * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_report_definition_dimensions.sort_order (stored as integer). Used to sort dimensions deterministically in responses.
+         * @x-autobe-database-schema-property sort_order
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_tracking_report_definition_dimensions.sort_order
+         *   (stored as integer). Used to sort dimensions deterministically in
+         *   responses.
      */
     sort_order: number & tags.Type<"int32">;
 
     /**
      * Timestamp when this dimension configuration row was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_report_definition_dimensions.created_at. Format as ISO-8601 string.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_tracking_report_definition_dimensions.created_at.
+         *   Format as ISO-8601 string.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when this dimension configuration row was last updated.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_report_definition_dimensions.updated_at. Format as ISO-8601 string.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_tracking_report_definition_dimensions.updated_at.
+         *   Format as ISO-8601 string.
      */
     updated_at: string & tags.Format<"date-time">;
 
     /**
      * Soft-delete timestamp. Null means the dimension is currently active; non-null means it has been removed from the configuration.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_report_definition_dimensions.deleted_at. Return null for active dimensions; return the stored timestamp for soft-deleted/removal markers. Format non-null value as ISO-8601 string.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_tracking_report_definition_dimensions.deleted_at.
+         *   Return null for active dimensions; return the stored timestamp for
+         *   soft-deleted/removal markers. Format non-null value as ISO-8601
+         *   string.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };
@@ -165,24 +213,35 @@ export namespace IErpHrmTimeTrackingReportDefinitionDimension {
     /**
      * Machine-readable key that identifies the grouping dimension (e.g., employee, project, task, week).
      *
-     * @x-autobe-database-schema-property dimension_key
-     * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_report_definition_dimensions.dimension_key. Validate as non-empty string (minLength=1). Enforce uniqueness scoped to erp_hrm_time_tracking_report_definition_id via DB constraint.
+         * @x-autobe-database-schema-property dimension_key
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_tracking_report_definition_dimensions.dimension_key.
+         *   Validate as non-empty string (minLength=1). Enforce uniqueness
+         *   scoped to erp_hrm_time_tracking_report_definition_id via DB
+         *   constraint.
      */
     dimension_key: string & tags.MinLength<1>;
 
     /**
      * Human-friendly label for the grouping dimension, shown in report output headers/UI.
      *
-     * @x-autobe-database-schema-property dimension_label
-     * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_report_definition_dimensions.dimension_label. Validate as non-empty string (minLength=1). Used for display headers/labels in report outputs.
+         * @x-autobe-database-schema-property dimension_label
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_tracking_report_definition_dimensions.dimension_label.
+         *   Validate as non-empty string (minLength=1). Used for display
+         *   headers/labels in report outputs.
      */
     dimension_label: string & tags.MinLength<1>;
 
     /**
      * 1-based ordering position of this dimension among all dimensions of the same report definition.
      *
-     * @x-autobe-database-schema-property sort_order
-     * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_report_definition_dimensions.sort_order. Validate as integer with minimum 1 to guarantee 1-based ordering. Enforce uniqueness scoped to erp_hrm_time_tracking_report_definition_id via DB constraint.
+         * @x-autobe-database-schema-property sort_order
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_tracking_report_definition_dimensions.sort_order.
+         *   Validate as integer with minimum 1 to guarantee 1-based ordering.
+         *   Enforce uniqueness scoped to
+         *   erp_hrm_time_tracking_report_definition_id via DB constraint.
      */
     sort_order: number & tags.Type<"int32"> & tags.Minimum<1>;
   };
@@ -194,32 +253,50 @@ export namespace IErpHrmTimeTrackingReportDefinitionDimension {
     /**
      * Machine-readable grouping key used by the report output generation to identify what this dimension groups by.
      *
-     * @x-autobe-database-schema-property dimension_key
-     * @x-autobe-specification Direct mapping to erp_hrm_time_tracking_report_definition_dimensions.dimension_key. Stored as-is. When changing the value, the service layer must enforce the uniqueness constraint within the report definition scope using (erp_hrm_time_tracking_report_definition_id, dimension_key).
+         * @x-autobe-database-schema-property dimension_key
+         * @x-autobe-specification Direct mapping to
+         *   erp_hrm_time_tracking_report_definition_dimensions.dimension_key.
+         *   Stored as-is. When changing the value, the service layer must
+         *   enforce the uniqueness constraint within the report definition
+         *   scope using (erp_hrm_time_tracking_report_definition_id,
+         *   dimension_key).
      */
     dimension_key?: string | undefined;
 
     /**
      * Human-friendly label shown in reporting UI for this grouping dimension.
      *
-     * @x-autobe-database-schema-property dimension_label
-     * @x-autobe-specification Direct mapping to erp_hrm_time_tracking_report_definition_dimensions.dimension_label. Stored as-is for UI/header rendering. No additional joins are required for persistence.
+         * @x-autobe-database-schema-property dimension_label
+         * @x-autobe-specification Direct mapping to
+         *   erp_hrm_time_tracking_report_definition_dimensions.dimension_label.
+         *   Stored as-is for UI/header rendering. No additional joins are
+         *   required for persistence.
      */
     dimension_label?: string | undefined;
 
     /**
      * 1-based (or otherwise UI-defined) ordering position for how this dimension appears relative to other configured dimensions.
      *
-     * @x-autobe-database-schema-property sort_order
-     * @x-autobe-specification Direct mapping to erp_hrm_time_tracking_report_definition_dimensions.sort_order. Stored as an integer and used to deterministically order dimensions in generated outputs. Validate business expectations (e.g., positive/1-based) in the service layer if required.
+         * @x-autobe-database-schema-property sort_order
+         * @x-autobe-specification Direct mapping to
+         *   erp_hrm_time_tracking_report_definition_dimensions.sort_order.
+         *   Stored as an integer and used to deterministically order dimensions
+         *   in generated outputs. Validate business expectations (e.g.,
+         *   positive/1-based) in the service layer if required.
      */
     sort_order?: (number & tags.Type<"int32">) | undefined;
 
     /**
      * Soft-delete marker. When set to a datetime, the dimension is considered deactivated/removed from active report configuration; when null, it is active.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping to erp_hrm_time_tracking_report_definition_dimensions.deleted_at with soft-delete semantics: provide a datetime to deactivate (persist that timestamp); provide null to reactivate (persist null). If omitted, do not modify the existing deleted_at value. The service layer should treat non-null deleted_at as disabled for future generations.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping to
+         *   erp_hrm_time_tracking_report_definition_dimensions.deleted_at with
+         *   soft-delete semantics: provide a datetime to deactivate (persist
+         *   that timestamp); provide null to reactivate (persist null). If
+         *   omitted, do not modify the existing deleted_at value. The service
+         *   layer should treat non-null deleted_at as disabled for future
+         *   generations.
      */
     deleted_at?: (string & tags.Format<"date-time">) | null | undefined;
   };
@@ -231,24 +308,30 @@ export namespace IErpHrmTimeTrackingReportDefinitionDimension {
     /**
      * Machine-readable key that identifies the grouping dimension configuration within a report definition.
      *
-     * @x-autobe-specification Use JSON Schema string for erp_hrm_time_tracking_report_definition_dimensions.dimension_key; stable dimension identifier supplied by client.
-     * @x-autobe-database-schema-property dimension_key
+         * @x-autobe-specification Use JSON Schema string for
+         *   erp_hrm_time_tracking_report_definition_dimensions.dimension_key;
+         *   stable dimension identifier supplied by client.
+         * @x-autobe-database-schema-property dimension_key
      */
     dimension_key: boolean;
 
     /**
      * Human-friendly label for this grouping dimension used in report headers/UI.
      *
-     * @x-autobe-specification Use JSON Schema string for erp_hrm_time_tracking_report_definition_dimensions.dimension_label; display label supplied by client.
-     * @x-autobe-database-schema-property dimension_label
+         * @x-autobe-specification Use JSON Schema string for
+         *   erp_hrm_time_tracking_report_definition_dimensions.dimension_label;
+         *   display label supplied by client.
+         * @x-autobe-database-schema-property dimension_label
      */
     dimension_label: boolean;
 
     /**
      * 1-based integer sort order for how this dimension is ordered relative to other dimensions in the report definition.
      *
-     * @x-autobe-specification Use JSON Schema integer for erp_hrm_time_tracking_report_definition_dimensions.sort_order; persisted 1-based ordering.
-     * @x-autobe-database-schema-property sort_order
+         * @x-autobe-specification Use JSON Schema integer for
+         *   erp_hrm_time_tracking_report_definition_dimensions.sort_order;
+         *   persisted 1-based ordering.
+         * @x-autobe-database-schema-property sort_order
      */
     sort_order: boolean;
   };

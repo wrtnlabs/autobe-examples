@@ -26,9 +26,13 @@ export class HrmMemberOrganizationsActivity_logsController {
    * @param connection
    * @param organizationCode Organization code (global scope) identifying the organization whose activity logs to retrieve.
    * @param body Search criteria including action type filter, performer user ID, timestamp range, and pagination parameters (page, pageSize, sortBy, sortOrder).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query hrm_activity_logs table with organization-scoped filtering. Join with hrm_members to fetch performer details (display_name, email). Apply search filters from request body: action_type (exact match), performer_id (UUID), timestamp range (gte/lte). Order by timestamp DESC.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query hrm_activity_logs table with
+     *   organization-scoped filtering. Join with hrm_members to fetch performer
+     *   details (display_name, email). Apply search filters from request body:
+     *   action_type (exact match), performer_id (UUID), timestamp range
+     *   (gte/lte). Order by timestamp DESC.
    *
    * Implement cursor-based or offset pagination. For offset pagination, use LIMIT/OFFSET with page and pageSize parameters. For cursor pagination, use timestamp-based cursors for better performance on large datasets.
    *
@@ -70,9 +74,10 @@ export class HrmMemberOrganizationsActivity_logsController {
    * @param connection
    * @param organizationCode Organization code identifying the organization context (global scope)
    * @param activityLogId Activity log entry UUID identifier
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query hrm_activity_logs table by organization context and activity log ID.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query hrm_activity_logs table by organization
+     *   context and activity log ID.
    *
    * 1. Validate organization context from request header or session
    * 2. Verify user has org:manage permission for the organization
@@ -131,9 +136,10 @@ export class HrmMemberOrganizationsActivity_logsController {
    * @param connection
    * @param organizationId Unique identifier of the organization whose activity logs to retrieve (global scope).
    * @param body Search criteria including action type filters, performer user ID, timestamp date range, and pagination parameters.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query hrm_activity_logs table with organization-scoped filtering.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query hrm_activity_logs table with
+     *   organization-scoped filtering.
    *
    * 1. Validate user has org:manage permission for the target organization
    * 2. Join with hrm_members table to fetch performer user details
@@ -184,9 +190,11 @@ export class HrmMemberOrganizationsActivity_logsController {
    *
    * @param connection
    * @param organizationId The organization's unique identifier in UUID format.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query hrm_activity_logs table filtered by organization context. The organization scope is enforced through the organization context in the request.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query hrm_activity_logs table filtered by
+     *   organization context. The organization scope is enforced through the
+     *   organization context in the request.
    *
    * Aggregate activity counts by action_type field, grouping to produce distribution statistics. Calculate temporal trends by grouping activities into time buckets (daily/weekly/monthly based on timestamp field).
    *

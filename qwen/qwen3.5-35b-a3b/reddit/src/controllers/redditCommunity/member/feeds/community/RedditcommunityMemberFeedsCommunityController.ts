@@ -31,9 +31,10 @@ export class RedditcommunityMemberFeedsCommunityController {
    * @param body Search criteria and pagination options for fetching community posts.
    *
    *             The request body specifies sorting preferences, pagination parameters, and optional time period filtering for "top" sort. Sorting must be one of: "hot", "new", or "top". For "top" sort, a time_period can be specified as one of: "today", "this_week", "this_month", "this_year", or "all_time".
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement by querying the reddit_community_posts table with the following logic:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implement by querying the reddit_community_posts
+     *   table with the following logic:
    *
    * 1. **Filter by community_id**: Match posts where reddit_community_community_id equals the {communityId} path parameter. Filter out soft-deleted posts where deleted_at is not null.
    *

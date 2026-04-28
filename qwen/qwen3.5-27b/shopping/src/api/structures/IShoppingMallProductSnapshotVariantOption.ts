@@ -14,8 +14,11 @@ export type IShoppingMallProductSnapshotVariantOption = {
    *
    * This UUID serves as the primary key for the option record, allowing precise identification and reference to individual option key-value pairs within product variant snapshots.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_product_snapshot_variant_options.id. UUID primary key uniquely identifying this option entry within the product snapshot variant.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_product_snapshot_variant_options.id. UUID primary key
+     *   uniquely identifying this option entry within the product snapshot
+     *   variant.
    */
   id: string & tags.Format<"uuid">;
 
@@ -24,8 +27,11 @@ export type IShoppingMallProductSnapshotVariantOption = {
    *
    * This field contains standardized identifiers that categorize variant options. Common examples include 'Color', 'Size', 'Material', 'Pattern', and other product-specific attributes that distinguish variants within the same product.
    *
-   * @x-autobe-database-schema-property key
-   * @x-autobe-specification Direct mapping from shopping_mall_product_snapshot_variant_options.key. String field containing the option attribute name such as 'Color', 'Size', or 'Material'.
+     * @x-autobe-database-schema-property key
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_product_snapshot_variant_options.key. String field
+     *   containing the option attribute name such as 'Color', 'Size', or
+     *   'Material'.
    */
   key: string;
 
@@ -34,8 +40,11 @@ export type IShoppingMallProductSnapshotVariantOption = {
    *
    * This field contains the actual option selections that distinguish variants from each other within the same product. For example, if the key is 'Color', the value might be 'Red', 'Blue', or 'Black'.
    *
-   * @x-autobe-database-schema-property value
-   * @x-autobe-specification Direct mapping from shopping_mall_product_snapshot_variant_options.value. String field containing the specific option selection such as 'Red', 'Large', or 'Cotton'.
+     * @x-autobe-database-schema-property value
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_product_snapshot_variant_options.value. String field
+     *   containing the specific option selection such as 'Red', 'Large', or
+     *   'Cotton'.
    */
   value: string;
 
@@ -44,8 +53,11 @@ export type IShoppingMallProductSnapshotVariantOption = {
    *
    * This field records the exact moment when the product modification occurred and the snapshot was generated, capturing the precise time of the variant option state for audit trail purposes.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from shopping_mall_product_snapshot_variant_options.created_at. DateTime field with timezone indicating when this option entry was created as part of the product snapshot.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_product_snapshot_variant_options.created_at. DateTime
+     *   field with timezone indicating when this option entry was created as
+     *   part of the product snapshot.
    */
   created_at: string & tags.Format<"date-time">;
 };

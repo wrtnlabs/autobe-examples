@@ -18,9 +18,11 @@ export class ShoppingmallSellerSellersController {
    *
    * @param connection
    * @param sellerId Unique identifier of the seller account submitting the reapplication (global scope)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Verify the seller exists and the authenticated user is the seller themselves (or an administrator acting on their behalf).
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Verify the seller exists and the authenticated
+     *   user is the seller themselves (or an administrator acting on their
+     *   behalf).
    *
    * Check that the seller's current approval_status is 'rejected'. If status is 'pending' or 'approved', return a 400 Bad Request error.
    *

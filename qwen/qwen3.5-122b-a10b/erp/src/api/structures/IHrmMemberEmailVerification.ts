@@ -39,8 +39,10 @@ export type IHrmMemberEmailVerification = {
    * **Generation**: Auto-generated on record creation
    * **Usage**: Referenced in verification endpoint paths and verification link URLs
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from hrm_member_email_verifications.id. UUID format primary key, auto-generated on record creation.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   hrm_member_email_verifications.id. UUID format primary key,
+     *   auto-generated on record creation.
    */
   id: string & tags.Format<"uuid">;
 
@@ -54,8 +56,11 @@ export type IHrmMemberEmailVerification = {
    * **Lifecycle**: Valid until used_at is set or expires_at is reached
    * **Format**: Alphanumeric string (minimum 32 characters)
    *
-   * @x-autobe-database-schema-property token
-   * @x-autobe-specification Direct mapping from hrm_member_email_verifications.token. Cryptographically secure random string, minimum 32 characters, unique constraint enforced at database level.
+     * @x-autobe-database-schema-property token
+     * @x-autobe-specification Direct mapping from
+     *   hrm_member_email_verifications.token. Cryptographically secure random
+     *   string, minimum 32 characters, unique constraint enforced at database
+     *   level.
    */
   token: string;
 
@@ -68,8 +73,11 @@ export type IHrmMemberEmailVerification = {
    * **Source**: Retrieved from hrm_members.email during token creation
    * **Purpose**: Reference for email dispatch and verification confirmation
    *
-   * @x-autobe-database-schema-property email
-   * @x-autobe-specification Direct mapping from hrm_member_email_verifications.email. Email format validated on creation, matches the member's registered email address from hrm_members table.
+     * @x-autobe-database-schema-property email
+     * @x-autobe-specification Direct mapping from
+     *   hrm_member_email_verifications.email. Email format validated on
+     *   creation, matches the member's registered email address from
+     *   hrm_members table.
    */
   email: string;
 
@@ -82,8 +90,11 @@ export type IHrmMemberEmailVerification = {
    * **Default**: Current time + 24 hours at token creation
    * **Behavior**: Token is invalid if current time >= expires_at and used_at is null
    *
-   * @x-autobe-database-schema-property expires_at
-   * @x-autobe-specification Direct mapping from hrm_member_email_verifications.expires_at. DateTime in timestamptz format, set to current time plus configured expiration duration (typically 24 hours) at token creation.
+     * @x-autobe-database-schema-property expires_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_member_email_verifications.expires_at. DateTime in timestamptz
+     *   format, set to current time plus configured expiration duration
+     *   (typically 24 hours) at token creation.
    */
   expires_at: string & tags.Format<"date-time">;
 
@@ -97,8 +108,12 @@ export type IHrmMemberEmailVerification = {
    * **Behavior**: Once populated, token cannot be used again even if expires_at is in the future
    * **Verification Check**: Token is valid only if used_at is null AND expires_at > current time
    *
-   * @x-autobe-database-schema-property used_at
-   * @x-autobe-specification Direct mapping from hrm_member_email_verifications.used_at. Nullable DateTime in timestamptz format. Set to current time when token is successfully used for verification. Once set, token cannot be used again (single-use constraint).
+     * @x-autobe-database-schema-property used_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_member_email_verifications.used_at. Nullable DateTime in
+     *   timestamptz format. Set to current time when token is successfully used
+     *   for verification. Once set, token cannot be used again (single-use
+     *   constraint).
    */
   used_at: (string & tags.Format<"date-time">) | null;
 
@@ -112,8 +127,12 @@ export type IHrmMemberEmailVerification = {
    * **Returned Schema**: IHrmMember.ISummary
    * **Purpose**: Provides context about which member account this verification belongs to
    *
-   * @x-autobe-database-schema-property member
-   * @x-autobe-specification Join from hrm_member_email_verifications.hrm_member_id to hrm_members.id. Returns IHrmMember.ISummary containing member identification and email information. FK column hrm_member_id is excluded from DTO, exposed as member relation object instead.
+     * @x-autobe-database-schema-property member
+     * @x-autobe-specification Join from
+     *   hrm_member_email_verifications.hrm_member_id to hrm_members.id. Returns
+     *   IHrmMember.ISummary containing member identification and email
+     *   information. FK column hrm_member_id is excluded from DTO, exposed as
+     *   member relation object instead.
    */
   member: IHrmMember.ISummary;
 
@@ -126,8 +145,10 @@ export type IHrmMemberEmailVerification = {
    * **Generation**: Auto-generated on record creation
    * **Purpose**: Audit trail, token age calculation, expiration verification
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from hrm_member_email_verifications.created_at. DateTime in timestamptz format, automatically set to current time on record creation.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_member_email_verifications.created_at. DateTime in timestamptz
+     *   format, automatically set to current time on record creation.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -140,8 +161,11 @@ export type IHrmMemberEmailVerification = {
    * **Generation**: Auto-updated on any record modification
    * **Purpose**: Audit trail, synchronization, change tracking
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from hrm_member_email_verifications.updated_at. DateTime in timestamptz format, automatically updated on any record modification (e.g., when used_at is set).
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_member_email_verifications.updated_at. DateTime in timestamptz
+     *   format, automatically updated on any record modification (e.g., when
+     *   used_at is set).
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -155,8 +179,12 @@ export type IHrmMemberEmailVerification = {
    * **Behavior**: Records with deleted_at IS NOT NULL are excluded from queries (deleted_at IS NULL filter applied)
    * **Purpose**: Audit compliance, data retention, potential recovery
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from hrm_member_email_verifications.deleted_at. Nullable DateTime in timestamptz format. Null for active records, set to current time when soft-deleted. Soft-deleted records are excluded from queries (deleted_at IS NULL).
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_member_email_verifications.deleted_at. Nullable DateTime in
+     *   timestamptz format. Null for active records, set to current time when
+     *   soft-deleted. Soft-deleted records are excluded from queries
+     *   (deleted_at IS NULL).
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -203,8 +231,9 @@ export namespace IHrmMemberEmailVerification {
      *
      * This is the primary key for the email verification record, generated as a UUID when the verification token is created. It is used to reference the specific verification attempt in API requests and responses.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from hrm_member_email_verifications.id. UUID format primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   hrm_member_email_verifications.id. UUID format primary key.
      */
     id: string & tags.Format<"uuid">;
 
@@ -215,8 +244,9 @@ export namespace IHrmMemberEmailVerification {
      *
      * The email is stored for reference and allows re-sending verification emails if needed.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from hrm_member_email_verifications.email. Email format validation.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   hrm_member_email_verifications.email. Email format validation.
      */
     email: string & tags.Format<"email">;
 
@@ -227,8 +257,10 @@ export namespace IHrmMemberEmailVerification {
      *
      * Compare this value with the current time to determine if the token has expired.
      *
-     * @x-autobe-database-schema-property expires_at
-     * @x-autobe-specification Direct mapping from hrm_member_email_verifications.expires_at. DateTime with timestamptz format.
+         * @x-autobe-database-schema-property expires_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_member_email_verifications.expires_at. DateTime with
+         *   timestamptz format.
      */
     expires_at: string & tags.Format<"date-time">;
 
@@ -239,8 +271,10 @@ export namespace IHrmMemberEmailVerification {
      *
      * A non-null value indicates the email has been successfully verified and the token cannot be reused (single-use constraint).
      *
-     * @x-autobe-database-schema-property used_at
-     * @x-autobe-specification Direct mapping from hrm_member_email_verifications.used_at. Nullable DateTime - null if pending, set if verified.
+         * @x-autobe-database-schema-property used_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_member_email_verifications.used_at. Nullable DateTime - null if
+         *   pending, set if verified.
      */
     used_at: (string & tags.Format<"date-time">) | null;
 
@@ -249,8 +283,10 @@ export namespace IHrmMemberEmailVerification {
      *
      * This is the date and time when the email verification record was created, which corresponds to when the verification token was generated and sent to the member. It is automatically set by the database on record insertion.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from hrm_member_email_verifications.created_at. DateTime with timestamptz format.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_member_email_verifications.created_at. DateTime with
+         *   timestamptz format.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -259,8 +295,10 @@ export namespace IHrmMemberEmailVerification {
      *
      * This is the date and time when the email verification record was last updated. It is automatically updated by the database on any modification to the record, such as when used_at is set during verification.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from hrm_member_email_verifications.updated_at. DateTime with timestamptz format.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_member_email_verifications.updated_at. DateTime with
+         *   timestamptz format.
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -271,8 +309,10 @@ export namespace IHrmMemberEmailVerification {
      *
      * A non-null value indicates the record is no longer active in the system.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from hrm_member_email_verifications.deleted_at. Nullable DateTime - null if active, set if soft-deleted.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_member_email_verifications.deleted_at. Nullable DateTime - null
+         *   if active, set if soft-deleted.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
 
@@ -283,8 +323,10 @@ export namespace IHrmMemberEmailVerification {
      *
      * The member summary includes essential identification information (id, email, timestamps) without sensitive credentials like password hashes. This allows API consumers to identify the user associated with the verification record.
      *
-     * @x-autobe-database-schema-property member
-     * @x-autobe-specification Join from hrm_member_email_verifications.hrm_member_id to hrm_members.id. Returns IHrmMember.ISummary via relation.
+         * @x-autobe-database-schema-property member
+         * @x-autobe-specification Join from
+         *   hrm_member_email_verifications.hrm_member_id to hrm_members.id.
+         *   Returns IHrmMember.ISummary via relation.
      */
     member: IHrmMember.ISummary;
   };
@@ -310,8 +352,10 @@ export namespace IHrmMemberEmailVerification {
      *
      * Returns only email verification records for the specified member. Uses exact UUID matching on the hrm_member_id foreign key column.
      *
-     * @x-autobe-database-schema-property hrm_member_id
-     * @x-autobe-specification Direct mapping from hrm_member_email_verifications.hrm_member_id. Exact UUID match filter.
+         * @x-autobe-database-schema-property hrm_member_id
+         * @x-autobe-specification Direct mapping from
+         *   hrm_member_email_verifications.hrm_member_id. Exact UUID match
+         *   filter.
      */
     member_id?: (string & tags.Format<"uuid">) | undefined;
 
@@ -320,8 +364,10 @@ export namespace IHrmMemberEmailVerification {
      *
      * Performs partial matching on the email field using case-insensitive pattern matching (ILIKE). Useful for finding verifications by email domain or partial address.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from hrm_member_email_verifications.email. ILIKE pattern matching for partial email search.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   hrm_member_email_verifications.email. ILIKE pattern matching for
+         *   partial email search.
      */
     email?: string | undefined;
 
@@ -333,7 +379,10 @@ export namespace IHrmMemberEmailVerification {
      * - **used**: Token has been successfully used for verification (used_at IS NOT NULL)
      * - **expired**: Token has passed expiration without being used (expires_at <= NOW AND used_at IS NULL)
      *
-     * @x-autobe-specification Computed filter based on used_at and expires_at columns. pending = used_at IS NULL AND expires_at > NOW, used = used_at IS NOT NULL, expired = expires_at <= NOW AND used_at IS NULL.
+         * @x-autobe-specification Computed filter based on used_at and
+         *   expires_at columns. pending = used_at IS NULL AND expires_at > NOW,
+         *   used = used_at IS NOT NULL, expired = expires_at <= NOW AND used_at
+         *   IS NULL.
      */
     status?: "pending" | "used" | "expired" | undefined;
 
@@ -342,8 +391,10 @@ export namespace IHrmMemberEmailVerification {
      *
      * Defines the start of the creation date range for filtering. Records with created_at equal to or later than this value are included. Use ISO 8601 format (e.g., 2024-01-01T00:00:00Z).
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Maps to hrm_member_email_verifications.created_at. Filter verifications created on or after this timestamp (inclusive).
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Maps to
+         *   hrm_member_email_verifications.created_at. Filter verifications
+         *   created on or after this timestamp (inclusive).
      */
     created_at_from?: (string & tags.Format<"date-time">) | undefined;
 
@@ -352,8 +403,10 @@ export namespace IHrmMemberEmailVerification {
      *
      * Defines the end of the creation date range for filtering. Records with created_at equal to or earlier than this value are included. Use ISO 8601 format (e.g., 2024-12-31T23:59:59Z).
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Maps to hrm_member_email_verifications.created_at. Filter verifications created on or before this timestamp (inclusive).
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Maps to
+         *   hrm_member_email_verifications.created_at. Filter verifications
+         *   created on or before this timestamp (inclusive).
      */
     created_at_to?: (string & tags.Format<"date-time">) | undefined;
 
@@ -362,8 +415,10 @@ export namespace IHrmMemberEmailVerification {
      *
      * Defines the start of the expiration date range for filtering. Records with expires_at equal to or later than this value are included. Useful for finding tokens still valid beyond a certain date.
      *
-     * @x-autobe-database-schema-property expires_at
-     * @x-autobe-specification Maps to hrm_member_email_verifications.expires_at. Filter verifications that expire on or after this timestamp (inclusive).
+         * @x-autobe-database-schema-property expires_at
+         * @x-autobe-specification Maps to
+         *   hrm_member_email_verifications.expires_at. Filter verifications
+         *   that expire on or after this timestamp (inclusive).
      */
     expires_at_from?: (string & tags.Format<"date-time">) | undefined;
 
@@ -372,8 +427,10 @@ export namespace IHrmMemberEmailVerification {
      *
      * Defines the end of the expiration date range for filtering. Records with expires_at equal to or earlier than this value are included. Useful for finding tokens expiring within a specific timeframe.
      *
-     * @x-autobe-database-schema-property expires_at
-     * @x-autobe-specification Maps to hrm_member_email_verifications.expires_at. Filter verifications that expire on or before this timestamp (inclusive).
+         * @x-autobe-database-schema-property expires_at
+         * @x-autobe-specification Maps to
+         *   hrm_member_email_verifications.expires_at. Filter verifications
+         *   that expire on or before this timestamp (inclusive).
      */
     expires_at_to?: (string & tags.Format<"date-time">) | undefined;
 
@@ -382,7 +439,9 @@ export namespace IHrmMemberEmailVerification {
      *
      * Specifies which page of results to retrieve. Page numbering starts from 1 (not 0). When combined with limit, determines the offset for cursor-based pagination. Default value is 1 if not specified.
      *
-     * @x-autobe-specification Query-level pagination parameter. 1-indexed page number. Defaults to 1 if not provided. Used with limit for cursor-based pagination using (created_at, id) composite cursor.
+         * @x-autobe-specification Query-level pagination parameter. 1-indexed
+         *   page number. Defaults to 1 if not provided. Used with limit for
+         *   cursor-based pagination using (created_at, id) composite cursor.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -391,7 +450,10 @@ export namespace IHrmMemberEmailVerification {
      *
      * Specifies the maximum number of verification records to return in a single page. Valid range is 1 to 100. Requests exceeding 100 are automatically capped to 100. Combined with page parameter for pagination.
      *
-     * @x-autobe-specification Query-level pagination parameter. Maximum records per page. Range: 1-100. Enforced server-side with maximum cap of 100. Used with page for cursor-based pagination using (created_at, id) composite cursor.
+         * @x-autobe-specification Query-level pagination parameter. Maximum
+         *   records per page. Range: 1-100. Enforced server-side with maximum
+         *   cap of 100. Used with page for cursor-based pagination using
+         *   (created_at, id) composite cursor.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)

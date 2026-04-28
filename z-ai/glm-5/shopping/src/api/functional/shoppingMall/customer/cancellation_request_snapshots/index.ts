@@ -24,7 +24,8 @@ import { IShoppingMallCancellationRequestSnapshot } from "../../../../structures
  * @param props.body Search criteria and pagination parameters for filtering cancellation request snapshots
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Query shopping_mall_cancellation_request_snapshots table with pagination and filtering.
+ * @x-autobe-specification Query shopping_mall_cancellation_request_snapshots
+ *   table with pagination and filtering.
  *
  * Apply search filters:
  * - Filter by shopping_mall_cancellation_request_id (UUID) to see all snapshots for a specific cancellation request

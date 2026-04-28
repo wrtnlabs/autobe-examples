@@ -31,9 +31,9 @@ export class ShoppingmallSellerSellerShipmentsController {
    *
    * @param connection
    * @param body Shipment creation data including carrier info and order items to ship
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Implementation steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Implementation steps:
    *
    * 1. Authenticate seller from session token
    * 2. Validate request body:

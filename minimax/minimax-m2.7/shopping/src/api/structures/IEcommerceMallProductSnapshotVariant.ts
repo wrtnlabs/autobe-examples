@@ -14,8 +14,10 @@ export type IEcommerceMallProductSnapshotVariant = {
    *
    * Auto-generated UUID primary key that uniquely identifies this option value within the variant snapshot.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_product_snapshot_variant_option_values.id. UUID primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_product_snapshot_variant_option_values.id. UUID primary
+     *   key.
    */
   id: string & tags.Format<"uuid">;
 
@@ -24,8 +26,10 @@ export type IEcommerceMallProductSnapshotVariant = {
    *
    * Examples: color, size, style, material. The key must be unique per variant snapshot (enforced by unique constraint).
    *
-   * @x-autobe-database-schema-property key
-   * @x-autobe-specification Direct mapping from ecommerce_mall_product_snapshot_variant_option_values.key. Stores the option attribute name such as color, size, or style.
+     * @x-autobe-database-schema-property key
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_product_snapshot_variant_option_values.key. Stores the
+     *   option attribute name such as color, size, or style.
    */
   key: string;
 
@@ -34,8 +38,10 @@ export type IEcommerceMallProductSnapshotVariant = {
    *
    * Examples: Red, Large, Cotton. The actual value corresponding to the option key.
    *
-   * @x-autobe-database-schema-property value
-   * @x-autobe-specification Direct mapping from ecommerce_mall_product_snapshot_variant_option_values.value. Stores the option value for the specified attribute.
+     * @x-autobe-database-schema-property value
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_product_snapshot_variant_option_values.value. Stores the
+     *   option value for the specified attribute.
    */
   value: string;
 
@@ -44,8 +50,10 @@ export type IEcommerceMallProductSnapshotVariant = {
    *
    * ISO 8601 formatted datetime indicating when this specific option value state was recorded.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_product_snapshot_variant_option_values.created_at. Timestamptz timezone-aware timestamp.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_product_snapshot_variant_option_values.created_at.
+     *   Timestamptz timezone-aware timestamp.
    */
   created_at: string & tags.Format<"date-time">;
 };

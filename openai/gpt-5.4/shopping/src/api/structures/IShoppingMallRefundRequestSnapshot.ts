@@ -10,80 +10,116 @@ export type IShoppingMallRefundRequestSnapshot = {
   /**
    * Unique identifier of this preserved refund-request snapshot record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_refund_request_snapshots.id.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_refund_request_snapshots.id.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * The refund request that owns this historical snapshot entry.
    *
-   * @x-autobe-database-schema-property refundRequest
-   * @x-autobe-specification Resolve the belongs-to relation from shopping_mall_refund_request_snapshots.shopping_mall_refund_request_id to shopping_mall_refund_requests.id and project it as IShoppingMallRefundRequest.ISummary.
+     * @x-autobe-database-schema-property refundRequest
+     * @x-autobe-specification Resolve the belongs-to relation from
+     *   shopping_mall_refund_request_snapshots.shopping_mall_refund_request_id
+     *   to shopping_mall_refund_requests.id and project it as
+     *   IShoppingMallRefundRequest.ISummary.
    */
   refundRequest: IShoppingMallRefundRequest.ISummary;
 
   /**
    * Customer-provided reason associated with the refund request state shown by this snapshot view.
    *
-   * @x-autobe-database-schema-property refundRequest
-   * @x-autobe-specification Project the historical refund reason from the joined parent refund request resolved through shopping_mall_refund_request_snapshots.refundRequest. Read shopping_mall_refund_requests.reason from that parent relation after containment-validated snapshot lookup.
+     * @x-autobe-database-schema-property refundRequest
+     * @x-autobe-specification Project the historical refund reason from the
+     *   joined parent refund request resolved through
+     *   shopping_mall_refund_request_snapshots.refundRequest. Read
+     *   shopping_mall_refund_requests.reason from that parent relation after
+     *   containment-validated snapshot lookup.
    */
   reason: string;
 
   /**
    * Refund workflow status represented by this historical snapshot view.
    *
-   * @x-autobe-database-schema-property refundRequest
-   * @x-autobe-specification Project the refund workflow status from the joined parent refund request resolved through shopping_mall_refund_request_snapshots.refundRequest. Read shopping_mall_refund_requests.status from that parent relation for the historical snapshot inspection view.
+     * @x-autobe-database-schema-property refundRequest
+     * @x-autobe-specification Project the refund workflow status from the
+     *   joined parent refund request resolved through
+     *   shopping_mall_refund_request_snapshots.refundRequest. Read
+     *   shopping_mall_refund_requests.status from that parent relation for the
+     *   historical snapshot inspection view.
    */
   status: string;
 
   /**
    * Role of the reviewer associated with the refund-request state in this snapshot, such as seller or administrator.
    *
-   * @x-autobe-database-schema-property refundRequest
-   * @x-autobe-specification Project the reviewer role from the joined parent refund request resolved through shopping_mall_refund_request_snapshots.refundRequest. Read shopping_mall_refund_requests.reviewer_role from that parent relation and return string or null exactly as stored.
+     * @x-autobe-database-schema-property refundRequest
+     * @x-autobe-specification Project the reviewer role from the joined parent
+     *   refund request resolved through
+     *   shopping_mall_refund_request_snapshots.refundRequest. Read
+     *   shopping_mall_refund_requests.reviewer_role from that parent relation
+     *   and return string or null exactly as stored.
    */
   reviewerRole: string | null;
 
   /**
    * Reviewer note or decision explanation associated with the refund-request state shown by this snapshot.
    *
-   * @x-autobe-database-schema-property refundRequest
-   * @x-autobe-specification Project the reviewer note from the joined parent refund request resolved through shopping_mall_refund_request_snapshots.refundRequest. Read shopping_mall_refund_requests.review_note from that parent relation and preserve null when no review note exists.
+     * @x-autobe-database-schema-property refundRequest
+     * @x-autobe-specification Project the reviewer note from the joined parent
+     *   refund request resolved through
+     *   shopping_mall_refund_request_snapshots.refundRequest. Read
+     *   shopping_mall_refund_requests.review_note from that parent relation and
+     *   preserve null when no review note exists.
    */
   reviewNote: string | null;
 
   /**
    * Timestamp when the represented refund-request review decision was recorded, or null if not yet reviewed.
    *
-   * @x-autobe-database-schema-property refundRequest
-   * @x-autobe-specification Project the review timestamp from the joined parent refund request resolved through shopping_mall_refund_request_snapshots.refundRequest. Read shopping_mall_refund_requests.reviewed_at from that parent relation and serialize as date-time or null.
+     * @x-autobe-database-schema-property refundRequest
+     * @x-autobe-specification Project the review timestamp from the joined
+     *   parent refund request resolved through
+     *   shopping_mall_refund_request_snapshots.refundRequest. Read
+     *   shopping_mall_refund_requests.reviewed_at from that parent relation and
+     *   serialize as date-time or null.
    */
   reviewedAt: (string & tags.Format<"date-time">) | null;
 
   /**
    * Timestamp when the refund request represented in this snapshot was originally submitted.
    *
-   * @x-autobe-database-schema-property refundRequest
-   * @x-autobe-specification Project the original refund-request submission time from the joined parent refund request resolved through shopping_mall_refund_request_snapshots.refundRequest. Read shopping_mall_refund_requests.created_at from that parent relation for the snapshot inspection view.
+     * @x-autobe-database-schema-property refundRequest
+     * @x-autobe-specification Project the original refund-request submission
+     *   time from the joined parent refund request resolved through
+     *   shopping_mall_refund_request_snapshots.refundRequest. Read
+     *   shopping_mall_refund_requests.created_at from that parent relation for
+     *   the snapshot inspection view.
    */
   createdAt: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the represented refund request was last updated.
    *
-   * @x-autobe-database-schema-property refundRequest
-   * @x-autobe-specification Project the last update timestamp from the joined parent refund request resolved through shopping_mall_refund_request_snapshots.refundRequest. Read shopping_mall_refund_requests.updated_at from that parent relation for the snapshot inspection view.
+     * @x-autobe-database-schema-property refundRequest
+     * @x-autobe-specification Project the last update timestamp from the joined
+     *   parent refund request resolved through
+     *   shopping_mall_refund_request_snapshots.refundRequest. Read
+     *   shopping_mall_refund_requests.updated_at from that parent relation for
+     *   the snapshot inspection view.
    */
   updatedAt: string & tags.Format<"date-time">;
 
   /**
    * Soft-deletion timestamp of the represented refund request, or null when it remains active.
    *
-   * @x-autobe-database-schema-property refundRequest
-   * @x-autobe-specification Project the soft-deletion timestamp from the joined parent refund request resolved through shopping_mall_refund_request_snapshots.refundRequest. Read shopping_mall_refund_requests.deleted_at from that parent relation and return null when the parent refund request has not been soft-deleted.
+     * @x-autobe-database-schema-property refundRequest
+     * @x-autobe-specification Project the soft-deletion timestamp from the
+     *   joined parent refund request resolved through
+     *   shopping_mall_refund_request_snapshots.refundRequest. Read
+     *   shopping_mall_refund_requests.deleted_at from that parent relation and
+     *   return null when the parent refund request has not been soft-deleted.
    */
   deletedAt: (string & tags.Format<"date-time">) | null;
 };
@@ -95,24 +131,31 @@ export namespace IShoppingMallRefundRequestSnapshot {
     /**
      * Unique identifier of this preserved refund-request snapshot record.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_refund_request_snapshots.id.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_refund_request_snapshots.id.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * The refund request whose historical snapshot entry this record represents.
      *
-     * @x-autobe-database-schema-property refundRequest
-     * @x-autobe-specification Resolve the belongs-to relation from shopping_mall_refund_request_snapshots.shopping_mall_refund_request_id to shopping_mall_refund_requests.id and serialize the related record as IShoppingMallRefundRequest.ISummary.
+         * @x-autobe-database-schema-property refundRequest
+         * @x-autobe-specification Resolve the belongs-to relation from
+         *   shopping_mall_refund_request_snapshots.shopping_mall_refund_request_id
+         *   to shopping_mall_refund_requests.id and serialize the related
+         *   record as IShoppingMallRefundRequest.ISummary.
      */
     refundRequest: IShoppingMallRefundRequest.ISummary;
 
     /**
      * Identifier of the actor who reviewed this refund-request state, or null when no reviewer was recorded for the snapshot.
      *
-     * @x-autobe-database-schema-property reviewer_actor_id
-     * @x-autobe-specification Direct mapping from shopping_mall_refund_request_snapshots.reviewer_actor_id. Keep null when the snapshot was recorded without a reviewing actor identifier.
+         * @x-autobe-database-schema-property reviewer_actor_id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_refund_request_snapshots.reviewer_actor_id. Keep null
+         *   when the snapshot was recorded without a reviewing actor
+         *   identifier.
      */
     reviewer_actor_id: (string & tags.Format<"uuid">) | null;
   };
@@ -124,14 +167,24 @@ export namespace IShoppingMallRefundRequestSnapshot {
     /**
      * Page number of the refund-request snapshot history to retrieve.
      *
-     * @x-autobe-specification Computed request parameter, not a database column. Use this value as the 1-indexed page number when paginating rows selected from shopping_mall_refund_request_snapshots where shopping_mall_refund_request_id matches the refundRequestId path parameter. When omitted, the server may apply its default first-page behavior.
+         * @x-autobe-specification Computed request parameter, not a database
+         *   column. Use this value as the 1-indexed page number when paginating
+         *   rows selected from shopping_mall_refund_request_snapshots where
+         *   shopping_mall_refund_request_id matches the refundRequestId path
+         *   parameter. When omitted, the server may apply its default
+         *   first-page behavior.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of refund-request snapshot records to include in one response page.
      *
-     * @x-autobe-specification Computed request parameter, not a database column. Use this value as the maximum number of snapshot-history rows to return from the filtered shopping_mall_refund_request_snapshots result set. Enforce the schema bounds of minimum 1 and maximum 100 before executing the query.
+         * @x-autobe-specification Computed request parameter, not a database
+         *   column. Use this value as the maximum number of snapshot-history
+         *   rows to return from the filtered
+         *   shopping_mall_refund_request_snapshots result set. Enforce the
+         *   schema bounds of minimum 1 and maximum 100 before executing the
+         *   query.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -140,7 +193,13 @@ export namespace IShoppingMallRefundRequestSnapshot {
     /**
      * Sort option controlling the order in which refund-request snapshot history records are returned.
      *
-     * @x-autobe-specification Computed request parameter, not a database column. Interpret this string as the client's requested ordering for the filtered shopping_mall_refund_request_snapshots history result. If the value is absent, sort by a deterministic chronological progression appropriate for immutable audit-trail review so consumers can follow the refund case evolution consistently.
+         * @x-autobe-specification Computed request parameter, not a database
+         *   column. Interpret this string as the client's requested ordering
+         *   for the filtered shopping_mall_refund_request_snapshots history
+         *   result. If the value is absent, sort by a deterministic
+         *   chronological progression appropriate for immutable audit-trail
+         *   review so consumers can follow the refund case evolution
+         *   consistently.
      */
     sort?: string | undefined;
   };
@@ -152,14 +211,29 @@ export namespace IShoppingMallRefundRequestSnapshot {
     /**
      * The new workflow status to apply to the refund request, such as approving or rejecting the customer's refund case.
      *
-     * @x-autobe-specification Read the value from the request body and apply it to shopping_mall_refund_requests.status for the live refund request identified by path parameter refundRequestId within the same transaction that inserts a shopping_mall_refund_request_snapshots row. This field is not stored on shopping_mall_refund_request_snapshots itself; it is the requested decision status captured by the response workflow and reflected in the updated live refund request.
+         * @x-autobe-specification Read the value from the request body and
+         *   apply it to shopping_mall_refund_requests.status for the live
+         *   refund request identified by path parameter refundRequestId within
+         *   the same transaction that inserts a
+         *   shopping_mall_refund_request_snapshots row. This field is not
+         *   stored on shopping_mall_refund_request_snapshots itself; it is the
+         *   requested decision status captured by the response workflow and
+         *   reflected in the updated live refund request.
      */
     status: string;
 
     /**
      * Optional explanation or decision note from the seller or administrator about the refund response.
      *
-     * @x-autobe-specification Read the optional value from the request body and apply it to shopping_mall_refund_requests.review_note for the live refund request identified by refundRequestId while creating the related shopping_mall_refund_request_snapshots row in the same transaction. If omitted, downstream service logic may persist null or keep its standard optional-field handling. This field is not a column on shopping_mall_refund_request_snapshots; it is client input for the live refund decision note recorded as part of the response event.
+         * @x-autobe-specification Read the optional value from the request body
+         *   and apply it to shopping_mall_refund_requests.review_note for the
+         *   live refund request identified by refundRequestId while creating
+         *   the related shopping_mall_refund_request_snapshots row in the same
+         *   transaction. If omitted, downstream service logic may persist null
+         *   or keep its standard optional-field handling. This field is not a
+         *   column on shopping_mall_refund_request_snapshots; it is client
+         *   input for the live refund decision note recorded as part of the
+         *   response event.
      */
     review_note?: string | undefined;
   };

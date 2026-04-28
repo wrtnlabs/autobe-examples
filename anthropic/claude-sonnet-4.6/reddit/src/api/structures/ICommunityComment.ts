@@ -17,63 +17,90 @@ export type ICommunityComment = {
   /**
    * The unique identifier of this comment. A UUID assigned at creation that permanently identifies the comment record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from community_comments.id. UUID primary key, auto-generated at insert time. Used to uniquely identify this comment in all operations.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from community_comments.id. UUID
+     *   primary key, auto-generated at insert time. Used to uniquely identify
+     *   this comment in all operations.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * The unique identifier of the post this comment belongs to. All comments in a thread — regardless of nesting depth — reference the same post via this field.
    *
-   * @x-autobe-database-schema-property post_id
-   * @x-autobe-specification Direct mapping from community_comments.post_id. References community_posts.id. All comments at any nesting depth within a thread share the same post_id, enabling efficient lookup of all comments for a given post.
+     * @x-autobe-database-schema-property post_id
+     * @x-autobe-specification Direct mapping from community_comments.post_id.
+     *   References community_posts.id. All comments at any nesting depth within
+     *   a thread share the same post_id, enabling efficient lookup of all
+     *   comments for a given post.
    */
   post_id: string & tags.Format<"uuid">;
 
   /**
    * The unique identifier of the parent comment when this comment is a reply, or `null` if this is a top-level response directly to the post. Use this field to determine the comment's nesting position in the thread.
    *
-   * @x-autobe-database-schema-property parent_id
-   * @x-autobe-specification Direct mapping from community_comments.parent_id (nullable UUID). Null indicates a top-level comment directly on the post. A non-null UUID identifies the immediate parent comment in the thread, enabling unlimited nesting depth via a self-referencing structure.
+     * @x-autobe-database-schema-property parent_id
+     * @x-autobe-specification Direct mapping from community_comments.parent_id
+     *   (nullable UUID). Null indicates a top-level comment directly on the
+     *   post. A non-null UUID identifies the immediate parent comment in the
+     *   thread, enabling unlimited nesting depth via a self-referencing
+     *   structure.
    */
   parent_id: (string & tags.Format<"uuid">) | null;
 
   /**
    * The public identity of the member who authored this comment, including their username, optional display name, avatar, karma score, and registration date. Derived from the linked member account and profile records.
    *
-   * @x-autobe-database-schema-property member
-   * @x-autobe-specification Join community_members via the 'member' relation (community_comments.member_id = community_members.id), then join community_user_profiles on community_user_profiles.community_member_id = community_members.id. Project as ICommunityMember.ISummary: id, username, display_name (nullable), avatar_url (nullable), karma_score, created_at. Only include active member records (community_members.deleted_at IS NULL).
+     * @x-autobe-database-schema-property member
+     * @x-autobe-specification Join community_members via the 'member' relation
+     *   (community_comments.member_id = community_members.id), then join
+     *   community_user_profiles on community_user_profiles.community_member_id
+     *   = community_members.id. Project as ICommunityMember.ISummary: id,
+     *   username, display_name (nullable), avatar_url (nullable), karma_score,
+     *   created_at. Only include active member records
+     *   (community_members.deleted_at IS NULL).
    */
   author: ICommunityMember.ISummary;
 
   /**
    * The text body of the comment. This is the primary content authored by the member, and may be updated by the original author after posting. Always non-empty.
    *
-   * @x-autobe-database-schema-property content
-   * @x-autobe-specification Direct mapping from community_comments.content. Non-empty string. The mutable text body of the comment, reflecting the most recently edited version. Never blank.
+     * @x-autobe-database-schema-property content
+     * @x-autobe-specification Direct mapping from community_comments.content.
+     *   Non-empty string. The mutable text body of the comment, reflecting the
+     *   most recently edited version. Never blank.
    */
   content: string;
 
   /**
    * The net community vote score for this comment, calculated as total upvotes minus total downvotes. A positive value indicates community approval; a negative value indicates disapproval. Newly created comments start at zero.
    *
-   * @x-autobe-specification Computed aggregation from community_comment_votes. Query: SELECT COUNT(CASE WHEN vote_type = 'up' THEN 1 END) - COUNT(CASE WHEN vote_type = 'down' THEN 1 END) FROM community_comment_votes WHERE comment_id = community_comments.id AND deleted_at IS NULL. Returns an integer; zero for a new comment with no votes. Can be negative if downvotes exceed upvotes.
+     * @x-autobe-specification Computed aggregation from
+     *   community_comment_votes. Query: SELECT COUNT(CASE WHEN vote_type = 'up'
+     *   THEN 1 END) - COUNT(CASE WHEN vote_type = 'down' THEN 1 END) FROM
+     *   community_comment_votes WHERE comment_id = community_comments.id AND
+     *   deleted_at IS NULL. Returns an integer; zero for a new comment with no
+     *   votes. Can be negative if downvotes exceed upvotes.
    */
   vote_score: number & tags.Type<"int32">;
 
   /**
    * The date and time when this comment was originally submitted. Immutable after creation and used for chronological display and sorting.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from community_comments.created_at. Timestamptz, set at insert time and never modified thereafter. Used for chronological ordering of comments.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   community_comments.created_at. Timestamptz, set at insert time and
+     *   never modified thereafter. Used for chronological ordering of comments.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * The date and time when this comment was last modified. Updated whenever the comment's content is edited by the author. Equals the creation timestamp for comments that have never been edited.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from community_comments.updated_at. Timestamptz, set to the current server time whenever the comment record is modified (e.g., content edited). Equal to created_at for comments that have never been edited.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   community_comments.updated_at. Timestamptz, set to the current server
+     *   time whenever the comment record is modified (e.g., content edited).
+     *   Equal to created_at for comments that have never been edited.
    */
   updated_at: string & tags.Format<"date-time">;
 };
@@ -85,8 +112,12 @@ export namespace ICommunityComment {
     /**
      * The new text body for the comment. Must be a non-empty string. This is the only field that can be changed after a comment is created; all other comment attributes are immutable.
      *
-     * @x-autobe-database-schema-property content
-     * @x-autobe-specification Direct mapping to community_comments.content. The service executes: UPDATE community_comments SET content = request.content, updated_at = now() WHERE id = commentId AND deleted_at IS NULL. Validation: content must be a non-empty string (minLength: 1); return 400 if blank or missing.
+         * @x-autobe-database-schema-property content
+         * @x-autobe-specification Direct mapping to community_comments.content.
+         *   The service executes: UPDATE community_comments SET content =
+         *   request.content, updated_at = now() WHERE id = commentId AND
+         *   deleted_at IS NULL. Validation: content must be a non-empty string
+         *   (minLength: 1); return 400 if blank or missing.
      */
     content: string & tags.MinLength<1>;
   };
@@ -98,16 +129,25 @@ export namespace ICommunityComment {
     /**
      * The text body of the comment. Must be non-empty; blank or whitespace-only submissions are rejected. This field is required.
      *
-     * @x-autobe-database-schema-property content
-     * @x-autobe-specification Direct mapping from community_comments.content. The value must be a non-empty string (minLength: 1). Backend must additionally reject blank or whitespace-only strings. Store the trimmed value in the column.
+         * @x-autobe-database-schema-property content
+         * @x-autobe-specification Direct mapping from
+         *   community_comments.content. The value must be a non-empty string
+         *   (minLength: 1). Backend must additionally reject blank or
+         *   whitespace-only strings. Store the trimmed value in the column.
      */
     content: string & tags.MinLength<1>;
 
     /**
      * Optional UUID of the parent comment to reply to. Omit this field (or pass null) to create a top-level comment directly on the post. Provide the UUID of an existing, non-deleted comment on the same post to create a nested reply. There is no limit on nesting depth.
      *
-     * @x-autobe-database-schema-property parent_id
-     * @x-autobe-specification Direct mapping to community_comments.parent_id. When null or omitted, the comment is a top-level response to the post. When a UUID is provided, the backend must verify that a comment with that id exists in community_comments WHERE post_id = postId AND deleted_at IS NULL; reject with 422 if not found. The column is nullable and this field is optional in the request body.
+         * @x-autobe-database-schema-property parent_id
+         * @x-autobe-specification Direct mapping to
+         *   community_comments.parent_id. When null or omitted, the comment is
+         *   a top-level response to the post. When a UUID is provided, the
+         *   backend must verify that a comment with that id exists in
+         *   community_comments WHERE post_id = postId AND deleted_at IS NULL;
+         *   reject with 422 if not found. The column is nullable and this field
+         *   is optional in the request body.
      */
     parent_id?: (string & tags.Format<"uuid">) | null | undefined;
   };
@@ -123,7 +163,16 @@ export namespace ICommunityComment {
     /**
      * Sorting mode for the comment list. Accepted values are `'best'` (highest net vote score first), `'new'` (most recently created first), `'controversial'` (most-voted but divisive comments first), `'created_at_asc'` (oldest first), and `'created_at_desc'` (newest first). Defaults to `'best'` when listing post comments, and `'new'` when listing replies. Omit or pass `null` to use the endpoint's default sort order.
      *
-     * @x-autobe-specification Maps to ORDER BY logic applied to the community_comments query result. Accepted values: 'best' (ORDER BY net_vote_score DESC, where net_vote_score is computed from community_comment_votes); 'new' (ORDER BY created_at DESC); 'controversial' (ORDER BY total_votes DESC, ABS(net_vote_score) ASC, for comments with many votes but near-zero net score); 'created_at_asc' (ORDER BY created_at ASC); 'created_at_desc' (ORDER BY created_at DESC). Default: 'best' for post comment listing; 'new' for reply listing. Null means use the default for the endpoint.
+         * @x-autobe-specification Maps to ORDER BY logic applied to the
+         *   community_comments query result. Accepted values: 'best' (ORDER BY
+         *   net_vote_score DESC, where net_vote_score is computed from
+         *   community_comment_votes); 'new' (ORDER BY created_at DESC);
+         *   'controversial' (ORDER BY total_votes DESC, ABS(net_vote_score)
+         *   ASC, for comments with many votes but near-zero net score);
+         *   'created_at_asc' (ORDER BY created_at ASC); 'created_at_desc'
+         *   (ORDER BY created_at DESC). Default: 'best' for post comment
+         *   listing; 'new' for reply listing. Null means use the default for
+         *   the endpoint.
      */
     sort?:
       | (string &
@@ -134,49 +183,76 @@ export namespace ICommunityComment {
     /**
      * Optional keyword to search within comment content. When provided, only comments whose text content contains the keyword (case-insensitive) are returned. Leverages a trigram index for efficient partial-match search. Must be at least 1 character if specified.
      *
-     * @x-autobe-specification When provided, applies a full-text search filter on the community_comments.content column using the GIN trigram index (ILIKE '%keyword%' or pg_trgm similarity search). Minimum length is 1 character. When null or omitted, no keyword filter is applied.
+         * @x-autobe-specification When provided, applies a full-text search
+         *   filter on the community_comments.content column using the GIN
+         *   trigram index (ILIKE '%keyword%' or pg_trgm similarity search).
+         *   Minimum length is 1 character. When null or omitted, no keyword
+         *   filter is applied.
      */
     keyword?: (string & tags.MinLength<1>) | null | undefined;
 
     /**
      * Optional filter on comment nesting. When set to `null`, only top-level comments (direct responses to the post) are returned. When set to a UUID, only direct replies to that specific comment are returned. When omitted entirely, both top-level comments and replies are included without restriction.
      *
-     * @x-autobe-specification Controls filtering by community_comments.parent_id: if property is omitted from the request body, no parent_id filter is applied (both top-level and replies are included); if explicitly set to null, filter WHERE parent_id IS NULL (top-level comments only); if set to a UUID string, filter WHERE parent_id = that UUID (direct replies to that specific comment only).
+         * @x-autobe-specification Controls filtering by
+         *   community_comments.parent_id: if property is omitted from the
+         *   request body, no parent_id filter is applied (both top-level and
+         *   replies are included); if explicitly set to null, filter WHERE
+         *   parent_id IS NULL (top-level comments only); if set to a UUID
+         *   string, filter WHERE parent_id = that UUID (direct replies to that
+         *   specific comment only).
      */
     parentId?: (string & tags.Format<"uuid">) | null | undefined;
 
     /**
      * Optional filter to restrict comments to those belonging to a specific post. When provided, only comments on the specified post are returned. Primarily used when viewing a user's comment history to narrow results to a single post.
      *
-     * @x-autobe-specification When provided, applies WHERE community_comments.post_id = postId to the query. This narrows comment results to those belonging to the specified post. Particularly relevant when listing a user profile's comment history across multiple posts. When null or omitted, no post filter is applied.
+         * @x-autobe-specification When provided, applies WHERE
+         *   community_comments.post_id = postId to the query. This narrows
+         *   comment results to those belonging to the specified post.
+         *   Particularly relevant when listing a user profile's comment history
+         *   across multiple posts. When null or omitted, no post filter is
+         *   applied.
      */
     postId?: (string & tags.Format<"uuid">) | null | undefined;
 
     /**
      * Optional inclusive lower bound for the comment creation timestamp. When provided, only comments created at or after this date-time are returned. Use together with `createdAtTo` to define a time window.
      *
-     * @x-autobe-specification When provided, applies WHERE community_comments.created_at >= createdAtFrom (inclusive lower bound) to the query. The value must be an ISO 8601 date-time string. When null or omitted, no lower bound on created_at is applied.
+         * @x-autobe-specification When provided, applies WHERE
+         *   community_comments.created_at >= createdAtFrom (inclusive lower
+         *   bound) to the query. The value must be an ISO 8601 date-time
+         *   string. When null or omitted, no lower bound on created_at is
+         *   applied.
      */
     createdAtFrom?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * Optional inclusive upper bound for the comment creation timestamp. When provided, only comments created at or before this date-time are returned. Use together with `createdAtFrom` to define a time window.
      *
-     * @x-autobe-specification When provided, applies WHERE community_comments.created_at <= createdAtTo (inclusive upper bound) to the query. The value must be an ISO 8601 date-time string. When null or omitted, no upper bound on created_at is applied.
+         * @x-autobe-specification When provided, applies WHERE
+         *   community_comments.created_at <= createdAtTo (inclusive upper
+         *   bound) to the query. The value must be an ISO 8601 date-time
+         *   string. When null or omitted, no upper bound on created_at is
+         *   applied.
      */
     createdAtTo?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * 1-based page number for paginating through the comment list. Page 1 returns the first set of results. Defaults to `1` when not specified.
      *
-     * @x-autobe-specification 1-based page number for offset pagination. Translates to SQL OFFSET = (page - 1) * limit. Minimum value is 1. Default is 1 when null or omitted.
+         * @x-autobe-specification 1-based page number for offset pagination.
+         *   Translates to SQL OFFSET = (page - 1) * limit. Minimum value is 1.
+         *   Default is 1 when null or omitted.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | null | undefined;
 
     /**
      * Maximum number of comments to return per page. Must be between 1 and 100 inclusive. Defaults to `20` when not specified.
      *
-     * @x-autobe-specification Number of comment records to return per page. Translates to SQL LIMIT. Minimum value is 1, maximum is 100. Default is 20 when null or omitted.
+         * @x-autobe-specification Number of comment records to return per page.
+         *   Translates to SQL LIMIT. Minimum value is 1, maximum is 100.
+         *   Default is 20 when null or omitted.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -195,70 +271,97 @@ export namespace ICommunityComment {
     /**
      * The unique identifier of this comment, as a UUID.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from community_comments.id (UUID primary key).
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from community_comments.id
+         *   (UUID primary key).
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * The community member who authored this comment, including their username, display name, avatar, and karma score.
      *
-     * @x-autobe-database-schema-property member
-     * @x-autobe-specification Computed by joining community_members ON community_comments.member_id = community_members.id, then further joining community_user_profiles to obtain display_name, avatar_url, and karma_score. Maps to the 'member' belongs-to relation in community_comments. Returns ICommunityMember.ISummary.
+         * @x-autobe-database-schema-property member
+         * @x-autobe-specification Computed by joining community_members ON
+         *   community_comments.member_id = community_members.id, then further
+         *   joining community_user_profiles to obtain display_name, avatar_url,
+         *   and karma_score. Maps to the 'member' belongs-to relation in
+         *   community_comments. Returns ICommunityMember.ISummary.
      */
     author: ICommunityMember.ISummary;
 
     /**
      * The post that this comment belongs to. Provides context about which community and post the comment was made on, which is especially useful when displaying a user's comment history spanning multiple communities.
      *
-     * @x-autobe-database-schema-property post
-     * @x-autobe-specification Computed by joining community_posts ON community_comments.post_id = community_posts.id. Maps to the 'post' belongs-to relation in community_comments. Returns ICommunityPost.ISummary. This provides the full post context (community, title, type, vote score, etc.) for the comment.
+         * @x-autobe-database-schema-property post
+         * @x-autobe-specification Computed by joining community_posts ON
+         *   community_comments.post_id = community_posts.id. Maps to the 'post'
+         *   belongs-to relation in community_comments. Returns
+         *   ICommunityPost.ISummary. This provides the full post context
+         *   (community, title, type, vote score, etc.) for the comment.
      */
     post: ICommunityPost.ISummary;
 
     /**
      * The UUID of the parent comment when this is a nested reply, or null if this comment is a top-level response directly on the post.
      *
-     * @x-autobe-database-schema-property parent_id
-     * @x-autobe-specification Direct mapping from community_comments.parent_id (nullable UUID). Null indicates a top-level comment posted directly on the post. A non-null value is the UUID of the immediate parent comment in the reply chain.
+         * @x-autobe-database-schema-property parent_id
+         * @x-autobe-specification Direct mapping from
+         *   community_comments.parent_id (nullable UUID). Null indicates a
+         *   top-level comment posted directly on the post. A non-null value is
+         *   the UUID of the immediate parent comment in the reply chain.
      */
     parent_id: (string & tags.Format<"uuid">) | null;
 
     /**
      * The full text content of the comment.
      *
-     * @x-autobe-database-schema-property content
-     * @x-autobe-specification Direct mapping from community_comments.content. Always non-empty; empty comments are not permitted by the platform.
+         * @x-autobe-database-schema-property content
+         * @x-autobe-specification Direct mapping from
+         *   community_comments.content. Always non-empty; empty comments are
+         *   not permitted by the platform.
      */
     content: string;
 
     /**
      * The net vote score of the comment, calculated as total upvotes minus total downvotes. May be zero or negative.
      *
-     * @x-autobe-specification Computed aggregation: SUM(CASE WHEN direction='up' THEN 1 WHEN direction='down' THEN -1 ELSE 0 END) FROM community_comment_votes WHERE comment_id = community_comments.id AND deleted_at IS NULL. Defaults to 0 when no votes exist. This is a net vote score (upvotes minus downvotes) and may be negative.
+         * @x-autobe-specification Computed aggregation: SUM(CASE WHEN
+         *   direction='up' THEN 1 WHEN direction='down' THEN -1 ELSE 0 END)
+         *   FROM community_comment_votes WHERE comment_id =
+         *   community_comments.id AND deleted_at IS NULL. Defaults to 0 when no
+         *   votes exist. This is a net vote score (upvotes minus downvotes) and
+         *   may be negative.
      */
     vote_score: number & tags.Type<"int32">;
 
     /**
      * The number of direct replies nested under this comment. Only counts immediate child comments, not deeper nested replies.
      *
-     * @x-autobe-specification Computed aggregation: COUNT(*) FROM community_comments WHERE parent_id = community_comments.id AND deleted_at IS NULL. Counts only direct child replies (one level deep), not recursively nested replies. Defaults to 0 when no replies exist.
+         * @x-autobe-specification Computed aggregation: COUNT(*) FROM
+         *   community_comments WHERE parent_id = community_comments.id AND
+         *   deleted_at IS NULL. Counts only direct child replies (one level
+         *   deep), not recursively nested replies. Defaults to 0 when no
+         *   replies exist.
      */
     reply_count: number & tags.Type<"int32"> & tags.Minimum<0>;
 
     /**
      * The timestamp when this comment was originally posted.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from community_comments.created_at (timestamptz). Represents when the comment was originally submitted.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   community_comments.created_at (timestamptz). Represents when the
+         *   comment was originally submitted.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * The timestamp when this comment was last edited. If never edited, this equals created_at.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from community_comments.updated_at (timestamptz). Updated whenever the comment content is edited.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   community_comments.updated_at (timestamptz). Updated whenever the
+         *   comment content is edited.
      */
     updated_at: string & tags.Format<"date-time">;
   };

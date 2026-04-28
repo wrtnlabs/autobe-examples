@@ -59,7 +59,14 @@ export namespace IHrmRolePermission {
      * }
      * ```
      *
-     * @x-autobe-specification Array of permission UUIDs to assign to the role. Each permission_id is validated against hrm_permissions table for existence before insertion. The backend creates one hrm_role_permissions record per permission_id, using the hrm_role_id from the path parameter {roleId}. Duplicate permission IDs are handled by the unique constraint on (hrm_role_id, hrm_permission_id). The roleId itself is NOT included in this request body - it comes from the URL path.
+         * @x-autobe-specification Array of permission UUIDs to assign to the
+         *   role. Each permission_id is validated against hrm_permissions table
+         *   for existence before insertion. The backend creates one
+         *   hrm_role_permissions record per permission_id, using the
+         *   hrm_role_id from the path parameter {roleId}. Duplicate permission
+         *   IDs are handled by the unique constraint on (hrm_role_id,
+         *   hrm_permission_id). The roleId itself is NOT included in this
+         *   request body - it comes from the URL path.
      */
     permission_ids: (string & tags.Format<"uuid">)[] & tags.MinItems<1>;
   };

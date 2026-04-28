@@ -10,40 +10,47 @@ export type IShoppingMallAdmin = {
   /**
    * Unique identifier of the administrator account.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_admins.id. UUID stored in the database is returned as a string in UUID format.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from shopping_mall_admins.id. UUID
+     *   stored in the database is returned as a string in UUID format.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Administrator login email address.
    *
-   * @x-autobe-database-schema-property email
-   * @x-autobe-specification Direct mapping from shopping_mall_admins.email. Stored email is returned as a validated email string.
+     * @x-autobe-database-schema-property email
+     * @x-autobe-specification Direct mapping from shopping_mall_admins.email.
+     *   Stored email is returned as a validated email string.
    */
   email: string & tags.Format<"email">;
 
   /**
    * Timestamp when the administrator account was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from shopping_mall_admins.created_at. Return as ISO-8601 date-time string.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_admins.created_at. Return as ISO-8601 date-time string.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the administrator account was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from shopping_mall_admins.updated_at. Return as ISO-8601 date-time string.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_admins.updated_at. Return as ISO-8601 date-time string.
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * Soft-deletion timestamp. Null when the administrator account is active; otherwise the ISO-8601 timestamp when it was disabled.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from shopping_mall_admins.deleted_at. If the column is NULL, return null; otherwise return the timestamp as an ISO-8601 date-time string to indicate soft deletion.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_admins.deleted_at. If the column is NULL, return null;
+     *   otherwise return the timestamp as an ISO-8601 date-time string to
+     *   indicate soft deletion.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -55,47 +62,55 @@ export namespace IShoppingMallAdmin {
     /**
      * Unique administrator identifier (UUID).
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Read shopping_mall_admins.id as the administrator’s stable primary identifier for this authorization response.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Read shopping_mall_admins.id as the
+         *   administrator’s stable primary identifier for this authorization
+         *   response.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Administrator login email address.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Read shopping_mall_admins.email as the administrator’s login email address shown to authorized clients.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Read shopping_mall_admins.email as the
+         *   administrator’s login email address shown to authorized clients.
      */
     email: string & tags.Format<"email">;
 
     /**
      * Admin account creation timestamp.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Read shopping_mall_admins.created_at as the timestamp when the admin account was created.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Read shopping_mall_admins.created_at as the
+         *   timestamp when the admin account was created.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * Admin account last-updated timestamp.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Read shopping_mall_admins.updated_at as the timestamp when the admin account was last updated.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Read shopping_mall_admins.updated_at as the
+         *   timestamp when the admin account was last updated.
      */
     updated_at: string & tags.Format<"date-time">;
 
     /**
      * Soft-deletion timestamp for the administrator account, or null if the account is active.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Read shopping_mall_admins.deleted_at. Return null when the admin is active; otherwise return the ISO timestamp when the account was soft-deleted/disabled.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Read shopping_mall_admins.deleted_at. Return
+         *   null when the admin is active; otherwise return the ISO timestamp
+         *   when the account was soft-deleted/disabled.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
 
     /**
      * Authorization token.
      *
-     * @x-autobe-specification Authorization token comes from the session table.
+         * @x-autobe-specification Authorization token comes from the session
+         *   table.
      */
     token: IAuthorizationToken;
   };
@@ -107,14 +122,21 @@ export namespace IShoppingMallAdmin {
     /**
      * Administrator account email used for login.
      *
-     * @x-autobe-specification Use the provided email to look up the administrator account server-side (by matching it to the administrator login email stored in the admin account table with a unique constraint).
+         * @x-autobe-specification Use the provided email to look up the
+         *   administrator account server-side (by matching it to the
+         *   administrator login email stored in the admin account table with a
+         *   unique constraint).
      */
     email: string & tags.Format<"email">;
 
     /**
      * Administrator password in plain text for authentication (the server verifies it against the stored password hash).
      *
-     * @x-autobe-specification Treat this as plain-text password provided by the client. After locating the administrator record by email, verify this plain-text password against the stored password hash using constant-time safe password hashing verification provided by the configured hashing library.
+         * @x-autobe-specification Treat this as plain-text password provided by
+         *   the client. After locating the administrator record by email,
+         *   verify this plain-text password against the stored password hash
+         *   using constant-time safe password hashing verification provided by
+         *   the configured hashing library.
      */
     password: string & tags.Format<"password">;
   };
@@ -126,7 +148,14 @@ export namespace IShoppingMallAdmin {
     /**
      * Refresh token credential provided by the administrator to request renewed access/refresh tokens.
      *
-     * @x-autobe-specification Validate refreshToken: (1) check integrity and expiration of the refresh token, (2) if refresh tokens are stored server-side, verify the refreshToken exists, belongs to an active admin session/account, and has not been revoked, (3) if rotation is enabled, revoke/invalidate the presented refresh token and persist the newly generated refresh token/session linkage, (4) on success, derive the admin identity for token issuance; on failure, reject without returning tokens.
+         * @x-autobe-specification Validate refreshToken: (1) check integrity
+         *   and expiration of the refresh token, (2) if refresh tokens are
+         *   stored server-side, verify the refreshToken exists, belongs to an
+         *   active admin session/account, and has not been revoked, (3) if
+         *   rotation is enabled, revoke/invalidate the presented refresh token
+         *   and persist the newly generated refresh token/session linkage, (4)
+         *   on success, derive the admin identity for token issuance; on
+         *   failure, reject without returning tokens.
      */
     refreshToken: string;
   };
@@ -138,16 +167,21 @@ export namespace IShoppingMallAdmin {
     /**
      * Administrator login email address used to uniquely identify the admin account.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Map request.email to shopping_mall_admins.email. Enforce unique constraint at persistence layer and validate email format server-side.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Map request.email to
+         *   shopping_mall_admins.email. Enforce unique constraint at
+         *   persistence layer and validate email format server-side.
      */
     email: string & tags.Format<"email">;
 
     /**
      * Plain-text password provided by the client; the server hashes and stores it as the administrator password hash.
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification Accept request.password as plain text only for hashing; store into shopping_mall_admins.password_hash after applying the platform password hashing algorithm. Do not persist or echo the plain password.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification Accept request.password as plain text only
+         *   for hashing; store into shopping_mall_admins.password_hash after
+         *   applying the platform password hashing algorithm. Do not persist or
+         *   echo the plain password.
      */
     password: string & tags.Format<"password">;
   };

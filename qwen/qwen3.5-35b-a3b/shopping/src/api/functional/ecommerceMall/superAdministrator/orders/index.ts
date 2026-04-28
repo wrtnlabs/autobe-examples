@@ -27,7 +27,8 @@ import { IEcommerceMallOrder } from "../../../../structures/IEcommerceMallOrder"
  * @param props.id Unique identifier of the order to retrieve.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor superAdministrator
- * @x-autobe-specification Retrieve order by UUID and return full details with all related data.
+ * @x-autobe-specification Retrieve order by UUID and return full details with
+ *   all related data.
  *
  * 1. Query ecommerce_mall_orders by id
  * 2. Join with ecommerce_mall_members to get customer information

@@ -28,7 +28,12 @@ import { IPageIHrmTimeTrackingDepartment } from "../../../../structures/IPageIHr
  * @param props.body Department creation information
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor manager
- * @x-autobe-specification Authenticate the caller and resolve the currently selected organization context from the session or workspace selection state. Authorize the operation only when the caller has organization management permission in that current organization. Reject the request if the current organization context is missing or if the caller lacks the required permission.
+ * @x-autobe-specification Authenticate the caller and resolve the currently
+ *   selected organization context from the session or workspace selection
+ *   state. Authorize the operation only when the caller has organization
+ *   management permission in that current organization. Reject the request if
+ *   the current organization context is missing or if the caller lacks the
+ *   required permission.
  *
  * Validate the request body against IHrmTimeTrackingDepartment.ICreate. Require a department name and accept an optional description and optional parent department reference. Normalize and trim user-supplied text as appropriate for the service conventions before persistence.
  *
@@ -135,7 +140,11 @@ export namespace create {
  * @param props.body Department search filters and pagination options
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor manager
- * @x-autobe-specification Implement a department list query over hrm_time_tracking_departments restricted to the authenticated user's currently selected organization context. Resolve the active organization from authentication/session context, not from client-supplied path input. Reject the request if no valid organization context is selected.
+ * @x-autobe-specification Implement a department list query over
+ *   hrm_time_tracking_departments restricted to the authenticated user's
+ *   currently selected organization context. Resolve the active organization
+ *   from authentication/session context, not from client-supplied path input.
+ *   Reject the request if no valid organization context is selected.
  *
  * Build the query from hrm_time_tracking_departments using hrm_time_tracking_organization_id = currentOrganizationId and deleted_at IS NULL as mandatory predicates. Support request-body driven pagination, free-text search, filtering, and sorting through IHrmTimeTrackingDepartment.IRequest. At minimum, allow search and filter behavior on department name, optional description presence or value, and parent/top-level status as long as every condition maps to actual schema fields. Use the table's name trigram index for efficient partial-name search where applicable.
  *
@@ -238,7 +247,9 @@ export namespace index {
  * @param props.departmentId Target department's unique identifier within the current organization
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor manager
- * @x-autobe-specification Implement a read-only service method that loads one hrm_time_tracking_departments row by id and returns it only when it belongs to the authenticated user's currently selected organization context.
+ * @x-autobe-specification Implement a read-only service method that loads one
+ *   hrm_time_tracking_departments row by id and returns it only when it belongs
+ *   to the authenticated user's currently selected organization context.
  *
  * Resolve the caller's active organization from the authentication/session context before querying. Execute a single-record lookup filtered by both hrm_time_tracking_departments.id = :departmentId and hrm_time_tracking_departments.hrm_time_tracking_organization_id = :currentOrganizationId. Exclude rows whose deleted_at is not null so that removed departments are not returned from normal detail views.
  *
@@ -338,7 +349,9 @@ export namespace at {
  * @param props.body Department update information
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor manager
- * @x-autobe-specification Implement a service method that updates one active hrm_time_tracking_departments record by its id within the caller's currently selected organization context.
+ * @x-autobe-specification Implement a service method that updates one active
+ *   hrm_time_tracking_departments record by its id within the caller's
+ *   currently selected organization context.
  *
  * 1. Authorize the caller before any mutation. Allow only users who have organization management permission in the current organization context. If the caller lacks that permission, reject the request.
  *
@@ -456,7 +469,8 @@ export namespace update {
  * @param props.departmentId Unique identifier of the department to remove from the current organization.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor manager
- * @x-autobe-specification Implement a service-layer delete flow for a single department in the current organization context.
+ * @x-autobe-specification Implement a service-layer delete flow for a single
+ *   department in the current organization context.
  *
  * 1. Resolve the authenticated actor and current organization context from session state. Authorize only organization owners or managers who possess organization management permission for the selected organization. Deny the request if the actor lacks permission.
  *

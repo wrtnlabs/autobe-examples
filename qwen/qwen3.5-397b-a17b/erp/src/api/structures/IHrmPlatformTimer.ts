@@ -18,8 +18,9 @@ export type IHrmPlatformTimer = {
    *
    * Automatically generated UUID assigned when the timer is created. Used to reference the timer for update, stop, or discard operations.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from hrm_platform_timers.id. UUID format generated on timer creation.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from hrm_platform_timers.id. UUID
+     *   format generated on timer creation.
    */
   id: string & tags.Format<"uuid">;
 
@@ -28,8 +29,11 @@ export type IHrmPlatformTimer = {
    *
    * References the employee record of the authenticated user who started the timer. Includes employee ID, position, employment type, status, and associated member, role, and department information.
    *
-   * @x-autobe-database-schema-property employee
-   * @x-autobe-specification JOIN from hrm_platform_timers.hrm_platform_employee_id to hrm_platform_employees.id. Returns IHrmPlatformEmployee.ISummary with employee identification and role information.
+     * @x-autobe-database-schema-property employee
+     * @x-autobe-specification JOIN from
+     *   hrm_platform_timers.hrm_platform_employee_id to
+     *   hrm_platform_employees.id. Returns IHrmPlatformEmployee.ISummary with
+     *   employee identification and role information.
    */
   employee: IHrmPlatformEmployee.ISummary;
 
@@ -38,8 +42,11 @@ export type IHrmPlatformTimer = {
    *
    * Every timer must be associated with a project to categorize the work being tracked. The project must be one that the employee is assigned to as a project member. Includes project ID, name, color, and status.
    *
-   * @x-autobe-database-schema-property project
-   * @x-autobe-specification JOIN from hrm_platform_timers.hrm_platform_project_id to hrm_platform_projects.id. Returns IHrmPlatformProject.ISummary with project identification and status.
+     * @x-autobe-database-schema-property project
+     * @x-autobe-specification JOIN from
+     *   hrm_platform_timers.hrm_platform_project_id to
+     *   hrm_platform_projects.id. Returns IHrmPlatformProject.ISummary with
+     *   project identification and status.
    */
   project: IHrmPlatformProject.ISummary;
 
@@ -48,8 +55,11 @@ export type IHrmPlatformTimer = {
    *
    * Provides granular tracking within a project. Null value indicates the timer is tracking time at the project level without a specific task assignment. When provided, includes task ID, title, status, and priority.
    *
-   * @x-autobe-database-schema-property task
-   * @x-autobe-specification LEFT JOIN from hrm_platform_timers.hrm_platform_task_id to hrm_platform_tasks.id. Returns IHrmPlatformTask.ISummary or null. Task is optional - employees may track time at project level without specifying a task.
+     * @x-autobe-database-schema-property task
+     * @x-autobe-specification LEFT JOIN from
+     *   hrm_platform_timers.hrm_platform_task_id to hrm_platform_tasks.id.
+     *   Returns IHrmPlatformTask.ISummary or null. Task is optional - employees
+     *   may track time at project level without specifying a task.
    */
   task: IHrmPlatformTask.ISummary | null;
 
@@ -58,8 +68,10 @@ export type IHrmPlatformTimer = {
    *
    * Records the exact moment the employee initiated time tracking. This value is immutable and is used to calculate the duration when the timer is stopped.
    *
-   * @x-autobe-database-schema-property started_at
-   * @x-autobe-specification Direct mapping from hrm_platform_timers.started_at. Set to current timestamp when timer is created. Immutable after creation.
+     * @x-autobe-database-schema-property started_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_timers.started_at. Set to current timestamp when timer is
+     *   created. Immutable after creation.
    */
   started_at: string & tags.Format<"date-time">;
 
@@ -68,8 +80,11 @@ export type IHrmPlatformTimer = {
    *
    * Null value indicates the timer is currently running (active). When set, the timer is considered complete and will create a timelog entry with duration calculated as stopped_at minus started_at. An employee can have at most one timer where this field is null.
    *
-   * @x-autobe-database-schema-property stopped_at
-   * @x-autobe-specification Direct mapping from hrm_platform_timers.stopped_at. Null indicates active running timer. Set to current timestamp when timer is stopped. Used to calculate duration (stopped_at - started_at).
+     * @x-autobe-database-schema-property stopped_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_timers.stopped_at. Null indicates active running timer.
+     *   Set to current timestamp when timer is stopped. Used to calculate
+     *   duration (stopped_at - started_at).
    */
   stopped_at: (string & tags.Format<"date-time">) | null;
 
@@ -78,8 +93,10 @@ export type IHrmPlatformTimer = {
    *
    * Employees can add notes about what specific work they are doing during this timer session. This field is editable while the timer is running to allow updates as work context changes.
    *
-   * @x-autobe-database-schema-property description
-   * @x-autobe-specification Direct mapping from hrm_platform_timers.description. Nullable string. Editable while timer is running to allow updates as work context changes.
+     * @x-autobe-database-schema-property description
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_timers.description. Nullable string. Editable while timer
+     *   is running to allow updates as work context changes.
    */
   description: string | null;
 
@@ -88,8 +105,10 @@ export type IHrmPlatformTimer = {
    *
    * Automatically set when the timer is first created. Used for audit trails and sorting.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from hrm_platform_timers.created_at. Auto-set to current timestamp on record creation. Immutable.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_timers.created_at. Auto-set to current timestamp on record
+     *   creation. Immutable.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -98,8 +117,10 @@ export type IHrmPlatformTimer = {
    *
    * Automatically updated when the timer is stopped or when the employee edits the description, project, or task of a running timer.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from hrm_platform_timers.updated_at. Auto-updated on any timer modification (stop, edit description/project/task).
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_timers.updated_at. Auto-updated on any timer modification
+     *   (stop, edit description/project/task).
    */
   updated_at: string & tags.Format<"date-time">;
 };
@@ -134,8 +155,11 @@ export namespace IHrmPlatformTimer {
      *
      * Required field that categorizes the work being tracked. The project must exist within the organization and the authenticated employee must be assigned to it as a project member. This ensures employees can only track time against projects they have access to.
      *
-     * @x-autobe-database-schema-property hrm_platform_project_id
-     * @x-autobe-specification Direct mapping from hrm_platform_timers.hrm_platform_project_id. Required FK to hrm_platform_projects. Validation: project must exist and authenticated employee must be assigned as project member.
+         * @x-autobe-database-schema-property hrm_platform_project_id
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_timers.hrm_platform_project_id. Required FK to
+         *   hrm_platform_projects. Validation: project must exist and
+         *   authenticated employee must be assigned as project member.
      */
     hrm_platform_project_id: string & tags.Format<"uuid">;
 
@@ -144,8 +168,12 @@ export namespace IHrmPlatformTimer {
      *
      * Provides granular tracking within a project. When specified, the task must belong to the selected project. Null value indicates the employee is tracking time at the project level without associating it to a specific task. Useful for general project work or administrative tasks.
      *
-     * @x-autobe-database-schema-property hrm_platform_task_id
-     * @x-autobe-specification Direct mapping from hrm_platform_timers.hrm_platform_task_id. Optional FK to hrm_platform_tasks. Validation: if provided, task must belong to the specified project. Null value indicates time tracked at project level only.
+         * @x-autobe-database-schema-property hrm_platform_task_id
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_timers.hrm_platform_task_id. Optional FK to
+         *   hrm_platform_tasks. Validation: if provided, task must belong to
+         *   the specified project. Null value indicates time tracked at project
+         *   level only.
      */
     hrm_platform_task_id?: (string & tags.Format<"uuid">) | null | undefined;
 
@@ -154,8 +182,11 @@ export namespace IHrmPlatformTimer {
      *
      * Allows employees to add notes about what specific work they are performing during this timer session. This field is editable while the timer is running to allow updates as work context changes. Helps provide context for time entries when reviewing timelogs and timesheets.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from hrm_platform_timers.description. Optional text field for work notes. Nullable - employees can add notes about what specific work they are doing during this timer session.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_timers.description. Optional text field for work
+         *   notes. Nullable - employees can add notes about what specific work
+         *   they are doing during this timer session.
      */
     description?: string | null | undefined;
   };
@@ -173,22 +204,24 @@ export namespace IHrmPlatformTimer {
      *
      * Employees can add notes about what specific work they are doing during this timer session. This field is editable while the timer is running to allow updates as work context changes. Null value indicates no description provided.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from hrm_platform_timers.description. Nullable string for work notes. Editable while timer is running.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_timers.description. Nullable string for work notes.
+         *   Editable while timer is running.
      */
     description?: string | null | undefined;
 
     /**
      * Reference to the project being tracked by this timer.
      *
-     * @x-autobe-database-schema-property hrm_platform_project_id
+         * @x-autobe-database-schema-property hrm_platform_project_id
      */
     hrm_platform_project_id?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Reference to the optional task being tracked by this timer.
      *
-     * @x-autobe-database-schema-property hrm_platform_task_id
+         * @x-autobe-database-schema-property hrm_platform_task_id
      */
     hrm_platform_task_id?: (string & tags.Format<"uuid">) | null | undefined;
   };
@@ -206,8 +239,9 @@ export namespace IHrmPlatformTimer {
      *
      * This is the primary key that uniquely identifies each timer record in the system. Used for timer management operations such as editing, stopping, or discarding a running timer.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from hrm_platform_timers.id. UUID format.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from hrm_platform_timers.id.
+         *   UUID format.
      */
     id: string & tags.Format<"uuid">;
 
@@ -216,8 +250,10 @@ export namespace IHrmPlatformTimer {
      *
      * Records the exact moment the employee initiated time tracking. This value is immutable and used to calculate the duration when the timer is stopped. For active timers, this is also used to compute the elapsed time displayed in real-time.
      *
-     * @x-autobe-database-schema-property started_at
-     * @x-autobe-specification Direct mapping from hrm_platform_timers.started_at. ISO 8601 date-time format. Immutable after timer creation.
+         * @x-autobe-database-schema-property started_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_timers.started_at. ISO 8601 date-time format.
+         *   Immutable after timer creation.
      */
     started_at: string & tags.Format<"date-time">;
 
@@ -226,8 +262,10 @@ export namespace IHrmPlatformTimer {
      *
      * Null value indicates the timer is currently running (active). When set, the timer is considered complete and the duration is calculated as stopped_at minus started_at. Only one timer per employee can have stopped_at as null at any time.
      *
-     * @x-autobe-database-schema-property stopped_at
-     * @x-autobe-specification Direct mapping from hrm_platform_timers.stopped_at. ISO 8601 date-time format. Null indicates the timer is currently running (active).
+         * @x-autobe-database-schema-property stopped_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_timers.stopped_at. ISO 8601 date-time format. Null
+         *   indicates the timer is currently running (active).
      */
     stopped_at: (string & tags.Format<"date-time">) | null;
 
@@ -236,8 +274,10 @@ export namespace IHrmPlatformTimer {
      *
      * Employees can add notes about what specific work they are doing during this timer session. This field is editable while the timer is running to allow updates as work context changes. Null value indicates no description was provided.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from hrm_platform_timers.description. Nullable string. Editable while timer is running.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_timers.description. Nullable string. Editable while
+         *   timer is running.
      */
     description: string | null;
 
@@ -246,8 +286,10 @@ export namespace IHrmPlatformTimer {
      *
      * Every timer must be associated with a project to categorize the work being tracked. The project must be one that the employee is assigned to as a project member. This reference provides project context including name and color for UI display.
      *
-     * @x-autobe-database-schema-property project
-     * @x-autobe-specification Relation mapping via JOIN from hrm_platform_timers.hrm_platform_project_id to hrm_platform_projects.id. Returns IHrmPlatformProject.ISummary.
+         * @x-autobe-database-schema-property project
+         * @x-autobe-specification Relation mapping via JOIN from
+         *   hrm_platform_timers.hrm_platform_project_id to
+         *   hrm_platform_projects.id. Returns IHrmPlatformProject.ISummary.
      */
     project: IHrmPlatformProject.ISummary;
 
@@ -256,8 +298,11 @@ export namespace IHrmPlatformTimer {
      *
      * Tasks provide granular tracking within a project. This field is nullable because employees may track time at the project level without specifying a particular task. When provided, the task must belong to the associated project.
      *
-     * @x-autobe-database-schema-property task
-     * @x-autobe-specification Relation mapping via LEFT JOIN from hrm_platform_timers.hrm_platform_task_id to hrm_platform_tasks.id. Returns IHrmPlatformTask.ISummary or null. Task must belong to the associated project.
+         * @x-autobe-database-schema-property task
+         * @x-autobe-specification Relation mapping via LEFT JOIN from
+         *   hrm_platform_timers.hrm_platform_task_id to hrm_platform_tasks.id.
+         *   Returns IHrmPlatformTask.ISummary or null. Task must belong to the
+         *   associated project.
      */
     task: IHrmPlatformTask.ISummary | null;
 
@@ -266,7 +311,9 @@ export namespace IHrmPlatformTimer {
      *
      * Indicates whether the timer is currently running or has been completed. Value is 'active' when stopped_at is null (timer is running), and 'completed' when stopped_at has a value (timer has been stopped). This computed field provides a convenient status indicator for UI display.
      *
-     * @x-autobe-specification Computed property: 'active' if stopped_at is null, 'completed' if stopped_at is not null. Not stored in database - derived from stopped_at field at query time.
+         * @x-autobe-specification Computed property: 'active' if stopped_at is
+         *   null, 'completed' if stopped_at is not null. Not stored in database
+         *   - derived from stopped_at field at query time.
      */
     status: string;
 
@@ -275,7 +322,10 @@ export namespace IHrmPlatformTimer {
      *
      * Represents the total tracked time for completed timers. Calculated as the difference between stopped_at and started_at, converted to minutes and rounded to the nearest integer. Null for active timers that have not been stopped yet.
      *
-     * @x-autobe-specification Computed property: duration in minutes as integer, calculated as (stopped_at - started_at) / 60000, rounded to nearest minute. Null if timer is active (stopped_at is null). Not stored in database.
+         * @x-autobe-specification Computed property: duration in minutes as
+         *   integer, calculated as (stopped_at - started_at) / 60000, rounded
+         *   to nearest minute. Null if timer is active (stopped_at is null).
+         *   Not stored in database.
      */
     duration: (number & tags.Type<"int32">) | null;
 
@@ -284,7 +334,10 @@ export namespace IHrmPlatformTimer {
      *
      * Shows the running duration for active timers, enabling real-time UI updates. Calculated as the difference between the current server time and started_at, in seconds. Null for completed timers where the final duration is available instead.
      *
-     * @x-autobe-specification Computed property: elapsed time in seconds as integer, calculated as (now() - started_at) / 1000. Null if timer is completed (stopped_at is not null). Not stored in database - computed at query time using current server timestamp.
+         * @x-autobe-specification Computed property: elapsed time in seconds as
+         *   integer, calculated as (now() - started_at) / 1000. Null if timer
+         *   is completed (stopped_at is not null). Not stored in database -
+         *   computed at query time using current server timestamp.
      */
     elapsedTime: (number & tags.Type<"int32">) | null;
   };

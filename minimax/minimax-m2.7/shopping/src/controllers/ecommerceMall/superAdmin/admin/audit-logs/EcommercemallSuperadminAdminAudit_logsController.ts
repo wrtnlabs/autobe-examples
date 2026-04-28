@@ -30,9 +30,10 @@ export class EcommercemallSuperadminAdminAudit_logsController {
    *
    * @param connection
    * @param body Search criteria including administrator ID, action type, resource type, resource ID, date range filters, and pagination parameters.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor superAdmin
-   * @x-autobe-specification Query ecommerce_mall_admin_audit_logs table with pagination and optional filtering.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor superAdmin
+     * @x-autobe-specification Query ecommerce_mall_admin_audit_logs table with
+     *   pagination and optional filtering.
    *
    * 1. Apply search filters if provided:
    *    - ecommerceMallAdminId: Filter by specific administrator
@@ -84,9 +85,10 @@ export class EcommercemallSuperadminAdminAudit_logsController {
    *
    * @param connection
    * @param logId Unique identifier of the audit log entry to retrieve.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor superAdmin
-   * @x-autobe-specification Query the ecommerce_mall_admin_audit_logs table using the provided logId parameter as the primary key.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor superAdmin
+     * @x-autobe-specification Query the ecommerce_mall_admin_audit_logs table
+     *   using the provided logId parameter as the primary key.
    *
    * Join with ecommerce_mall_admins table to retrieve administrator details (email, name) for the admin who performed the action.
    *

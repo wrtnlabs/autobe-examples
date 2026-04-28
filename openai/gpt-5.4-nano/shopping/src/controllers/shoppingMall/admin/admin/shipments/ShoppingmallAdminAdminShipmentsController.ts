@@ -28,9 +28,9 @@ export class ShoppingmallAdminAdminShipmentsController {
    *
    * @param connection
    * @param body Administrative shipment search criteria (filters, pagination, and sorting).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Implement an admin shipment search.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Implement an admin shipment search.
    *
    * 1) Authorization gate
    * - Require admin privileges.
@@ -98,15 +98,23 @@ export class ShoppingmallAdminAdminShipmentsController {
    *
    * @param connection
    * @param shipmentId Target shipment identifier to retrieve administrative shipment details.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Implementation steps:
-   * 1) Accept `shipmentId` (UUID) from path.
-   * 2) Authorize requester as admin.
-   * 3) Query `shopping_mall_shipments` by `id = shipmentId` and ensure it is visible (filter out rows where `deleted_at` is set if the service treats deleted records as not visible).
-   * 4) Load associated shipment confirmation: query `shopping_mall_shipment_confirmations` by `shopping_mall_shipment_id = shipmentId`, again filtering out rows where `deleted_at` is set. If multiple confirmations can exist, select the most relevant one for current status (typically the latest by `confirmed_at`).
-   * 5) Load included order items: query `shopping_mall_order_items` where `shopping_mall_shipment_id = shipmentId`, filtering out where `deleted_at` is set if applicable. Return the list of items included in this shipment, including item status (`line_item_status`) and purchase context fields as defined by the DTO.
-   * 6) Assemble `IShoppingMallShipment` response object.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Implementation steps: 1) Accept `shipmentId`
+     *   (UUID) from path. 2) Authorize requester as admin. 3) Query
+     *   `shopping_mall_shipments` by `id = shipmentId` and ensure it is visible
+     *   (filter out rows where `deleted_at` is set if the service treats
+     *   deleted records as not visible). 4) Load associated shipment
+     *   confirmation: query `shopping_mall_shipment_confirmations` by
+     *   `shopping_mall_shipment_id = shipmentId`, again filtering out rows
+     *   where `deleted_at` is set. If multiple confirmations can exist, select
+     *   the most relevant one for current status (typically the latest by
+     *   `confirmed_at`). 5) Load included order items: query
+     *   `shopping_mall_order_items` where `shopping_mall_shipment_id =
+     *   shipmentId`, filtering out where `deleted_at` is set if applicable.
+     *   Return the list of items included in this shipment, including item
+     *   status (`line_item_status`) and purchase context fields as defined by
+     *   the DTO. 6) Assemble `IShoppingMallShipment` response object.
    *
    * Edge cases:
    * - Shipment exists but shipment confirmation does not: return shipment data with tracking fields as null/empty per DTO.
@@ -149,9 +157,10 @@ export class ShoppingmallAdminAdminShipmentsController {
    * @param connection
    * @param shipmentId Target shipment identifier to update.
    * @param body Administrator update payload for the specified shipment. Use this body to request changes to shipment status and, when supported, shipment confirmation/tracking fields used for fulfillment tracking visibility.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Implement admin shipment update as an atomic transaction.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Implement admin shipment update as an atomic
+     *   transaction.
    *
    * 1) Input validation
    * - Validate shipmentId is a UUID and request body fields conform to IShoppingMallShipment.IUpdate.
@@ -225,9 +234,9 @@ export class ShoppingmallAdminAdminShipmentsController {
    *
    * @param connection
    * @param shipmentId Target shipment identifier to permanently remove.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Implementation steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Implementation steps:
    *
    * 1) Authorization check: verify the caller is an authenticated admin actor authorized to perform shipment maintenance.
    *

@@ -27,9 +27,11 @@ export class ErphrmtimeMemberRolesController {
    *
    * @param connection
    * @param body Role creation payload for the active organization. Includes the role name, optional description, and the approved permissions that compose the role.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Validate that the caller has organization-level role management access in the currently selected organization. Resolve the active organization context before any write.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Validate that the caller has organization-level
+     *   role management access in the currently selected organization. Resolve
+     *   the active organization context before any write.
    *
    * Check that the request body contains a role name and only approved permissions. Enforce uniqueness of role name within the organization using the existing `(organization_id, name)` constraint. Reject attempts to create built-in roles through this endpoint; built-in roles are system-defined records that already exist for each organization.
    *
@@ -65,10 +67,12 @@ export class ErphrmtimeMemberRolesController {
    *
    * @param connection
    * @param body Search, filter, sort, and pagination criteria for browsing roles in the selected organization.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query erp_hrm_time_roles within the selected organization context only.
-   * Apply organization scoping from the authenticated member’s active organization selection before any search/filter logic.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query erp_hrm_time_roles within the selected
+     *   organization context only. Apply organization scoping from the
+     *   authenticated member’s active organization selection before any
+     *   search/filter logic.
    *
    * Support request-body search criteria for pagination, free-text search by role name, sorting, and any additional filters supported by the role request DTO. The query should return built-in roles and custom roles that belong to the same organization. Built-in roles are permanent and must always remain visible in the organization scope.
    *
@@ -104,9 +108,12 @@ export class ErphrmtimeMemberRolesController {
    *
    * @param connection
    * @param roleId Role identifier in UUID format.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Load the role by primary key and verify it belongs to the currently selected organization context before returning it. Use the authenticated member's organization scope to prevent cross-tenant access.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Load the role by primary key and verify it
+     *   belongs to the currently selected organization context before returning
+     *   it. Use the authenticated member's organization scope to prevent
+     *   cross-tenant access.
    *
    * Query the `erp_hrm_time_roles` table by `id`, and ensure the matched row's `erp_hrm_time_organization_id` equals the active organization. Exclude deleted rows if the application treats `deleted_at` as unavailable data for consumers.
    *
@@ -141,9 +148,13 @@ export class ErphrmtimeMemberRolesController {
    * @param connection
    * @param roleId The unique identifier of the role to update within the current organization context.
    * @param body Role update data containing the new role name and permission set.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Load the target role by roleId within the active organization context. Verify that the role belongs to the organization associated with the request and that the caller has the required authorization, typically owner-managed role administration or equivalent permissions.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Load the target role by roleId within the active
+     *   organization context. Verify that the role belongs to the organization
+     *   associated with the request and that the caller has the required
+     *   authorization, typically owner-managed role administration or
+     *   equivalent permissions.
    *
    * Disallow updates to built-in roles (Owner, Manager, Employee). If the role is built-in, return a domain validation error. For custom roles, apply the incoming name and permission changes in a single transaction. Validate the submitted permission list against the approved permission catalog and reject unknown or disallowed permissions.
    *
@@ -182,9 +193,21 @@ export class ErphrmtimeMemberRolesController {
    *
    * @param connection
    * @param roleId Role identifier within the organization (global UUID primary key).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Load the role by id within the authenticated member's selected organization context. Verify the role belongs to that organization before any destructive action. Reject the request if the role is marked as built-in, because built-in roles are permanently protected. Reject the request if any employee references the role, since each employee must retain exactly one role. If validation passes, delete the role record inside a transaction and rely on database cascade behavior only for dependent role-permission rows if the schema supports it; do not delete or modify employees. Return a not-found error when the id does not resolve within the organization context. Return a conflict or validation error when the role is in use or protected. Record any required activity audit entry if the service layer uses organization activity tracking for role changes.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Load the role by id within the authenticated
+     *   member's selected organization context. Verify the role belongs to that
+     *   organization before any destructive action. Reject the request if the
+     *   role is marked as built-in, because built-in roles are permanently
+     *   protected. Reject the request if any employee references the role,
+     *   since each employee must retain exactly one role. If validation passes,
+     *   delete the role record inside a transaction and rely on database
+     *   cascade behavior only for dependent role-permission rows if the schema
+     *   supports it; do not delete or modify employees. Return a not-found
+     *   error when the id does not resolve within the organization context.
+     *   Return a conflict or validation error when the role is in use or
+     *   protected. Record any required activity audit entry if the service
+     *   layer uses organization activity tracking for role changes.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Delete(":roleId")
@@ -214,9 +237,10 @@ export class ErphrmtimeMemberRolesController {
    *
    * @param connection
    * @param roleId Role identifier within the current organization (UUID).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Load the role by id within the current organization context, then verify delete eligibility.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Load the role by id within the current
+     *   organization context, then verify delete eligibility.
    *
    * Implementation rules:
    * - Confirm the role belongs to the selected organization; reject cross-organization access.
@@ -255,9 +279,14 @@ export class ErphrmtimeMemberRolesController {
    *
    * @param connection
    * @param roleId Role identifier within the selected organization.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Load the role by id together with its organization scope and is_builtin flag. Verify the authenticated member is operating within the selected organization context and has permission to manage employee role assignment in that organization. Return a boolean capability result indicating whether this role may be assigned to employees.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Load the role by id together with its
+     *   organization scope and is_builtin flag. Verify the authenticated member
+     *   is operating within the selected organization context and has
+     *   permission to manage employee role assignment in that organization.
+     *   Return a boolean capability result indicating whether this role may be
+     *   assigned to employees.
    *
    * The check should fail closed: if the role cannot be resolved in the active organization, or if the caller does not have the required access, deny the operation. Built-in roles remain assignable according to organization rules, but the service must still respect any business rule that limits assignment changes to users with employee management authority. Do not expose unrelated role data in the response. Use a single existence lookup by id and organization scope to avoid cross-tenant leakage.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
@@ -291,13 +320,21 @@ export class ErphrmtimeMemberRolesController {
    *
    * @param connection
    * @param roleId Role identifier within the current organization scope.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Load one role by primary key within the active organization context and verify that its organization matches the caller's selected organization.
-   * Join `erp_hrm_time_role_permissions` to `erp_hrm_time_permissions` to assemble the effective permission list in stable order. Exclude rows marked deleted if the application uses deletion filtering consistently for read operations.
-   * Return the resolved permission catalog for the role, including each permission key and description. Do not expose unrelated role metadata in this endpoint beyond what the response type requires.
-   * Treat built-in and custom roles identically for resolution; built-in status only affects manage/delete operations, not this read path.
-   * If the role is missing or outside scope, return a 404. If the user cannot view roles in the current organization, let the auth guard block the call.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Load one role by primary key within the active
+     *   organization context and verify that its organization matches the
+     *   caller's selected organization. Join `erp_hrm_time_role_permissions` to
+     *   `erp_hrm_time_permissions` to assemble the effective permission list in
+     *   stable order. Exclude rows marked deleted if the application uses
+     *   deletion filtering consistently for read operations. Return the
+     *   resolved permission catalog for the role, including each permission key
+     *   and description. Do not expose unrelated role metadata in this endpoint
+     *   beyond what the response type requires. Treat built-in and custom roles
+     *   identically for resolution; built-in status only affects manage/delete
+     *   operations, not this read path. If the role is missing or outside
+     *   scope, return a 404. If the user cannot view roles in the current
+     *   organization, let the auth guard block the call.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Get(":roleId/effectivePermissions")

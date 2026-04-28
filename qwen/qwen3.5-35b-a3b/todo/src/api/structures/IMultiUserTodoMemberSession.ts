@@ -14,8 +14,10 @@ export type IMultiUserTodoMemberSession = {
    *
    * UUID-formatted primary key that uniquely identifies this specific session within the system. Used as the path parameter in session management endpoints.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from multi_user_todo_member_sessions.id. UUID primary key uniquely identifying the session.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   multi_user_todo_member_sessions.id. UUID primary key uniquely
+     *   identifying the session.
    */
   id: string & tags.Format<"uuid">;
 
@@ -24,8 +26,12 @@ export type IMultiUserTodoMemberSession = {
    *
    * Reference to the authenticated member account associated with this session. Contains the member's identifying information including their UUID, email address, and account status.
    *
-   * @x-autobe-database-schema-property member
-   * @x-autobe-specification Join from multi_user_todo_member_sessions.multi_user_todo_member_id to multi_user_todo_members.id. Returns IMultiUserTodoMember.ISummary containing essential member profile fields. FK column excluded from response in favor of object reference.
+     * @x-autobe-database-schema-property member
+     * @x-autobe-specification Join from
+     *   multi_user_todo_member_sessions.multi_user_todo_member_id to
+     *   multi_user_todo_members.id. Returns IMultiUserTodoMember.ISummary
+     *   containing essential member profile fields. FK column excluded from
+     *   response in favor of object reference.
    */
   member: IMultiUserTodoMember.ISummary;
 
@@ -34,8 +40,10 @@ export type IMultiUserTodoMemberSession = {
    *
    * IPv4-formatted IP address of the client device at the time of session creation. Used for security auditing and detecting suspicious login activity from different locations.
    *
-   * @x-autobe-database-schema-property ip
-   * @x-autobe-specification Direct mapping from multi_user_todo_member_sessions.ip. Captured at session creation time. IPv4 address format.
+     * @x-autobe-database-schema-property ip
+     * @x-autobe-specification Direct mapping from
+     *   multi_user_todo_member_sessions.ip. Captured at session creation time.
+     *   IPv4 address format.
    */
   ip: string;
 
@@ -44,8 +52,10 @@ export type IMultiUserTodoMemberSession = {
    *
    * The HTTP path of the page the member was viewing when the session token was generated or last used. Provides context about user navigation at the time of session activity.
    *
-   * @x-autobe-database-schema-property href
-   * @x-autobe-specification Direct mapping from multi_user_todo_member_sessions.href. Captured at session creation time. Contains the last visited URL path string.
+     * @x-autobe-database-schema-property href
+     * @x-autobe-specification Direct mapping from
+     *   multi_user_todo_member_sessions.href. Captured at session creation
+     *   time. Contains the last visited URL path string.
    */
   href: string;
 
@@ -54,8 +64,11 @@ export type IMultiUserTodoMemberSession = {
    *
    * The referrer URL indicating which page or external site the member came from when logging in or creating the session. Useful for understanding user entry points and session origin.
    *
-   * @x-autobe-database-schema-property referrer
-   * @x-autobe-specification Direct mapping from multi_user_todo_member_sessions.referrer. Captured at session creation time. Contains the HTTP Referrer header value indicating the source page.
+     * @x-autobe-database-schema-property referrer
+     * @x-autobe-specification Direct mapping from
+     *   multi_user_todo_member_sessions.referrer. Captured at session creation
+     *   time. Contains the HTTP Referrer header value indicating the source
+     *   page.
    */
   referrer: string;
 
@@ -64,8 +77,11 @@ export type IMultiUserTodoMemberSession = {
    *
    * ISO 8601 formatted date-time marking the exact moment the member logged in and the session token was issued. Used for session age calculation and audit trails.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from multi_user_todo_member_sessions.created_at. ISO 8601 formatted date-time timestamp when the session was first created (member logged in).
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   multi_user_todo_member_sessions.created_at. ISO 8601 formatted
+     *   date-time timestamp when the session was first created (member logged
+     *   in).
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -74,8 +90,11 @@ export type IMultiUserTodoMemberSession = {
    *
    * ISO 8601 formatted date-time marking when this session will expire and the tokens will no longer be valid. Sessions must be refreshed or re-authenticated before this time. Used for automatic session cleanup and security enforcement.
    *
-   * @x-autobe-database-schema-property expired_at
-   * @x-autobe-specification Direct mapping from multi_user_todo_member_sessions.expired_at. ISO 8601 formatted date-time timestamp when the session expires and becomes invalid. Used for automatic session cleanup and security.
+     * @x-autobe-database-schema-property expired_at
+     * @x-autobe-specification Direct mapping from
+     *   multi_user_todo_member_sessions.expired_at. ISO 8601 formatted
+     *   date-time timestamp when the session expires and becomes invalid. Used
+     *   for automatic session cleanup and security.
    */
   expired_at: string & tags.Format<"date-time">;
 };
@@ -89,8 +108,9 @@ export namespace IMultiUserTodoMemberSession {
     /**
      * Unique identifier for the authentication session.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from multi_user_todo_member_sessions.id (UUID primary key).
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   multi_user_todo_member_sessions.id (UUID primary key).
      */
     id: string & tags.Format<"uuid">;
 
@@ -99,8 +119,11 @@ export namespace IMultiUserTodoMemberSession {
      *
      * This relation provides access to the authenticated user's information including their email address and account timestamps. Used to identify who the session belongs to in administrative views.
      *
-     * @x-autobe-database-schema-property member
-     * @x-autobe-specification Join from multi_user_todo_member_sessions.member to multi_user_todo_members.id. Returns IMultiUserTodoMember.ISummary to identify the session owner.
+         * @x-autobe-database-schema-property member
+         * @x-autobe-specification Join from
+         *   multi_user_todo_member_sessions.member to
+         *   multi_user_todo_members.id. Returns IMultiUserTodoMember.ISummary
+         *   to identify the session owner.
      */
     member: IMultiUserTodoMember.ISummary;
 
@@ -109,8 +132,9 @@ export namespace IMultiUserTodoMemberSession {
      *
      * Used for security auditing and detecting suspicious login activity from different locations. Stored as an IPv4 or IPv6 address string.
      *
-     * @x-autobe-database-schema-property ip
-     * @x-autobe-specification Direct mapping from multi_user_todo_member_sessions.ip (string).
+         * @x-autobe-database-schema-property ip
+         * @x-autobe-specification Direct mapping from
+         *   multi_user_todo_member_sessions.ip (string).
      */
     ip: string;
 
@@ -119,8 +143,9 @@ export namespace IMultiUserTodoMemberSession {
      *
      * Provides context about which page the member was viewing when the session token was generated or last used. Stored as a string path.
      *
-     * @x-autobe-database-schema-property href
-     * @x-autobe-specification Direct mapping from multi_user_todo_member_sessions.href (string).
+         * @x-autobe-database-schema-property href
+         * @x-autobe-specification Direct mapping from
+         *   multi_user_todo_member_sessions.href (string).
      */
     href: string;
 
@@ -129,8 +154,9 @@ export namespace IMultiUserTodoMemberSession {
      *
      * Indicates which page or external site the member came from when logging in or creating the session. Helps trace user journey and login sources.
      *
-     * @x-autobe-database-schema-property referrer
-     * @x-autobe-specification Direct mapping from multi_user_todo_member_sessions.referrer (string).
+         * @x-autobe-database-schema-property referrer
+         * @x-autobe-specification Direct mapping from
+         *   multi_user_todo_member_sessions.referrer (string).
      */
     referrer: string;
 
@@ -139,8 +165,9 @@ export namespace IMultiUserTodoMemberSession {
      *
      * Records the exact moment the member logged in and the session token was issued. Used for session age calculations and activity auditing.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from multi_user_todo_member_sessions.created_at (timestamptz).
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   multi_user_todo_member_sessions.created_at (timestamptz).
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -149,8 +176,9 @@ export namespace IMultiUserTodoMemberSession {
      *
      * Used for automatic session cleanup and security. Sessions must be refreshed or re-authenticated before this time. After expiration, the session token is no longer valid.
      *
-     * @x-autobe-database-schema-property expired_at
-     * @x-autobe-specification Direct mapping from multi_user_todo_member_sessions.expired_at (timestamptz).
+         * @x-autobe-database-schema-property expired_at
+         * @x-autobe-specification Direct mapping from
+         *   multi_user_todo_member_sessions.expired_at (timestamptz).
      */
     expired_at: string & tags.Format<"date-time">;
   };
@@ -168,7 +196,8 @@ export namespace IMultiUserTodoMemberSession {
      *
      * Indicates which page of results to return. Page numbering starts from 1 (not 0). Used with limit parameter to control result set pagination.
      *
-     * @x-autobe-specification 1-indexed page number for pagination. Minimum 1. Default: 1.
+         * @x-autobe-specification 1-indexed page number for pagination. Minimum
+         *   1. Default: 1.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -177,7 +206,8 @@ export namespace IMultiUserTodoMemberSession {
      *
      * Controls the size of each page in paginated results. Must be between 1 and 100. Default is 20 items per page.
      *
-     * @x-autobe-specification Number of items per page. Range: 1-100. Default: 20.
+         * @x-autobe-specification Number of items per page. Range: 1-100.
+         *   Default: 20.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -188,7 +218,9 @@ export namespace IMultiUserTodoMemberSession {
      *
      * Includes only sessions created on or after this timestamp. Use with created_at_lte to define a date range. ISO 8601 date-time format required.
      *
-     * @x-autobe-specification Filter sessions created on or after this ISO 8601 date-time. Optional. Combined with created_at_lte to define date range.
+         * @x-autobe-specification Filter sessions created on or after this ISO
+         *   8601 date-time. Optional. Combined with created_at_lte to define
+         *   date range.
      */
     created_at_gte?: (string & tags.Format<"date-time">) | undefined;
 
@@ -197,7 +229,9 @@ export namespace IMultiUserTodoMemberSession {
      *
      * Includes only sessions created on or before this timestamp. Use with created_at_gte to define a date range. ISO 8601 date-time format required.
      *
-     * @x-autobe-specification Filter sessions created on or before this ISO 8601 date-time. Optional. Combined with created_at_gte to define date range.
+         * @x-autobe-specification Filter sessions created on or before this ISO
+         *   8601 date-time. Optional. Combined with created_at_gte to define
+         *   date range.
      */
     created_at_lte?: (string & tags.Format<"date-time">) | undefined;
 
@@ -206,7 +240,8 @@ export namespace IMultiUserTodoMemberSession {
      *
      * Includes only sessions expiring on or after this timestamp. Useful for finding sessions with future expiration dates. ISO 8601 date-time format required.
      *
-     * @x-autobe-specification Filter sessions with expiration on or after this ISO 8601 date-time. Optional.
+         * @x-autobe-specification Filter sessions with expiration on or after
+         *   this ISO 8601 date-time. Optional.
      */
     expired_at_gte?: (string & tags.Format<"date-time">) | undefined;
 
@@ -215,7 +250,8 @@ export namespace IMultiUserTodoMemberSession {
      *
      * Includes only sessions expiring on or before this timestamp. Useful for finding expired or expiring sessions. ISO 8601 date-time format required.
      *
-     * @x-autobe-specification Filter sessions with expiration on or before this ISO 8601 date-time. Optional.
+         * @x-autobe-specification Filter sessions with expiration on or before
+         *   this ISO 8601 date-time. Optional.
      */
     expired_at_lte?: (string & tags.Format<"date-time">) | undefined;
 
@@ -228,7 +264,9 @@ export namespace IMultiUserTodoMemberSession {
      *
      * Defaults to 'all' when not specified.
      *
-     * @x-autobe-specification Session expiration status filter. Values: 'active' (expired_at > now), 'expired' (expired_at <= now), 'all' (no filter).
+         * @x-autobe-specification Session expiration status filter. Values:
+         *   'active' (expired_at > now), 'expired' (expired_at <= now), 'all'
+         *   (no filter).
      */
     status?: "active" | "expired" | "all" | undefined;
 
@@ -237,7 +275,9 @@ export namespace IMultiUserTodoMemberSession {
      *
      * Restricts results to sessions belonging to a specific member. Uses the UUID format (36 characters with hyphens). Useful for auditing a particular user's sessions.
      *
-     * @x-autobe-specification Filter sessions by member UUID. Optional. Used to find sessions for a specific member account. UUID format required.
+         * @x-autobe-specification Filter sessions by member UUID. Optional.
+         *   Used to find sessions for a specific member account. UUID format
+         *   required.
      */
     member_id?: (string & tags.Format<"uuid">) | undefined;
 
@@ -246,7 +286,8 @@ export namespace IMultiUserTodoMemberSession {
      *
      * Uses SQL LIKE matching to find sessions matching the IP pattern. Useful for identifying sessions from specific IP ranges or patterns. No special format required.
      *
-     * @x-autobe-specification IP address pattern for SQL LIKE matching. Optional. Allows partial matching of client IP addresses.
+         * @x-autobe-specification IP address pattern for SQL LIKE matching.
+         *   Optional. Allows partial matching of client IP addresses.
      */
     ip?: string | undefined;
 
@@ -255,7 +296,8 @@ export namespace IMultiUserTodoMemberSession {
      *
      * Determines the column used for ordering session results. Options: created_at (most recent first), expired_at, or ip address.
      *
-     * @x-autobe-specification Sort field for results. Values: 'created_at' (default), 'expired_at', 'ip'.
+         * @x-autobe-specification Sort field for results. Values: 'created_at'
+         *   (default), 'expired_at', 'ip'.
      */
     sort_by?: "created_at" | "expired_at" | "ip" | undefined;
 
@@ -264,7 +306,8 @@ export namespace IMultiUserTodoMemberSession {
      *
      * Controls whether results are sorted in ascending or descending order. 'asc' sorts from smallest to largest (oldest to newest for dates). 'desc' sorts from largest to smallest (newest to oldest for dates). Default is descending.
      *
-     * @x-autobe-specification Sort direction. Values: 'asc' (ascending) or 'desc' (descending). Default: desc.
+         * @x-autobe-specification Sort direction. Values: 'asc' (ascending) or
+         *   'desc' (descending). Default: desc.
      */
     sort_order?: "asc" | "desc" | undefined;
   };

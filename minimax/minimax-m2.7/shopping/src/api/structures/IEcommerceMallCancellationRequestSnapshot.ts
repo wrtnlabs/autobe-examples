@@ -16,8 +16,9 @@ export type IEcommerceMallCancellationRequestSnapshot = {
    *
    * System-generated unique identifier for the cancellation request snapshot record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_cancellation_request_snapshots.id. UUID primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_cancellation_request_snapshots.id. UUID primary key.
    */
   id: string & tags.Format<"uuid">;
 
@@ -26,8 +27,10 @@ export type IEcommerceMallCancellationRequestSnapshot = {
    *
    * References the original cancellation request that was approved or rejected by the seller.
    *
-   * @x-autobe-database-schema-property ecommerce_mall_cancellation_request_id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_cancellation_request_snapshots.ecommerce_mall_cancellation_request_id. Foreign key to ecommerce_mall_cancellation_requests.id.
+     * @x-autobe-database-schema-property ecommerce_mall_cancellation_request_id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_cancellation_request_snapshots.ecommerce_mall_cancellation_request_id.
+     *   Foreign key to ecommerce_mall_cancellation_requests.id.
    */
   cancellationRequestId: string & tags.Format<"uuid">;
 
@@ -36,8 +39,10 @@ export type IEcommerceMallCancellationRequestSnapshot = {
    *
    * Preserves the customer's cancellation reason for audit purposes.
    *
-   * @x-autobe-database-schema-property reason
-   * @x-autobe-specification Direct mapping from ecommerce_mall_cancellation_request_snapshots.reason. Captured from original cancellation request at snapshot time.
+     * @x-autobe-database-schema-property reason
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_cancellation_request_snapshots.reason. Captured from
+     *   original cancellation request at snapshot time.
    */
   reason: string;
 
@@ -46,8 +51,10 @@ export type IEcommerceMallCancellationRequestSnapshot = {
    *
    * **Values**: 'approved' - cancellation accepted and refund will be processed. 'rejected' - seller declined the cancellation request.
    *
-   * @x-autobe-specification Direct mapping from ecommerce_mall_cancellation_request_snapshots.status. Enum values: 'approved', 'rejected'.
-   * @x-autobe-database-schema-property status
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_cancellation_request_snapshots.status. Enum values:
+     *   'approved', 'rejected'.
+     * @x-autobe-database-schema-property status
    */
   status: string;
 
@@ -56,8 +63,10 @@ export type IEcommerceMallCancellationRequestSnapshot = {
    *
    * Records the exact moment the seller approved or rejected the cancellation request.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_cancellation_request_snapshots.created_at. DateTime representing when seller responded.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_cancellation_request_snapshots.created_at. DateTime
+     *   representing when seller responded.
    */
   createdAt: string & tags.Format<"date-time">;
 };
@@ -81,7 +90,10 @@ export namespace IEcommerceMallCancellationRequestSnapshot {
      *
      * **Usage**: Use this to navigate through paginated results. The server returns up to `limit` items per page.
      *
-     * @x-autobe-specification Page number for pagination. Computed as: OFFSET = (page - 1) * limit. Applies to ecommerce_mall_cancellation_request_snapshots query via Prisma skip(). Defaults to 1 if not provided.
+         * @x-autobe-specification Page number for pagination. Computed as:
+         *   OFFSET = (page - 1) * limit. Applies to
+         *   ecommerce_mall_cancellation_request_snapshots query via Prisma
+         *   skip(). Defaults to 1 if not provided.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -94,7 +106,9 @@ export namespace IEcommerceMallCancellationRequestSnapshot {
      *
      * **Constraint**: Values exceeding 100 are rejected to prevent excessive server load.
      *
-     * @x-autobe-specification Number of items per page for pagination. Computed as LIMIT clause in SQL query via Prisma take(). Must be between 1 and 100. Defaults to 20 if not provided.
+         * @x-autobe-specification Number of items per page for pagination.
+         *   Computed as LIMIT clause in SQL query via Prisma take(). Must be
+         *   between 1 and 100. Defaults to 20 if not provided.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -109,7 +123,11 @@ export namespace IEcommerceMallCancellationRequestSnapshot {
      *
      * **Direction**: Prefix field name with '-' for descending order, omit prefix for ascending order.
      *
-     * @x-autobe-specification Sorting criteria for result ordering. Computed as ORDER BY clause in SQL query via Prisma orderBy(). Format: field name with optional minus prefix for descending (e.g., 'created_at' for ASC, '-created_at' for DESC). Defaults to created_at descending if not provided.
+         * @x-autobe-specification Sorting criteria for result ordering.
+         *   Computed as ORDER BY clause in SQL query via Prisma orderBy().
+         *   Format: field name with optional minus prefix for descending (e.g.,
+         *   'created_at' for ASC, '-created_at' for DESC). Defaults to
+         *   created_at descending if not provided.
      */
     sort?: string | undefined;
   };
@@ -127,8 +145,11 @@ export namespace IEcommerceMallCancellationRequestSnapshot {
      *
      * Links to the original cancellation request that triggered this snapshot when the seller responded.
      *
-     * @x-autobe-database-schema-property cancellationRequest
-     * @x-autobe-specification BELONGS-TO relation from ecommerce_mall_cancellation_request_snaphots.ecommerce_mall_cancellation_request_id to ecommerce_mall_cancellation_requests.id. Returns IEcommerceMallCancellationRequest.ISummary.
+         * @x-autobe-database-schema-property cancellationRequest
+         * @x-autobe-specification BELONGS-TO relation from
+         *   ecommerce_mall_cancellation_request_snaphots.ecommerce_mall_cancellation_request_id
+         *   to ecommerce_mall_cancellation_requests.id. Returns
+         *   IEcommerceMallCancellationRequest.ISummary.
      */
     cancellationRequest: IEcommerceMallCancellationRequest.ISummary;
 
@@ -137,8 +158,10 @@ export namespace IEcommerceMallCancellationRequestSnapshot {
      *
      * Represents the moment when the seller approved or rejected the cancellation request, capturing the state at that time.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_cancellation_request_snapshots.created_at. DateTime stored in UTC.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_cancellation_request_snapshots.created_at. DateTime
+         *   stored in UTC.
      */
     createdAt: string & tags.Format<"date-time">;
 
@@ -147,8 +170,9 @@ export namespace IEcommerceMallCancellationRequestSnapshot {
      *
      * Auto-generated UUID used to reference this specific snapshot record.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_mall_cancellation_request_snapshots.id. UUID primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_cancellation_request_snapshots.id. UUID primary key.
      */
     id: string & tags.Format<"uuid">;
 
@@ -157,8 +181,10 @@ export namespace IEcommerceMallCancellationRequestSnapshot {
      *
      * Preserves the customer's cancellation reason for audit purposes, immutable once snapshot is created.
      *
-     * @x-autobe-database-schema-property reason
-     * @x-autobe-specification Direct mapping from ecommerce_mall_cancellation_request_snapshots.reason. Reason text captured from original cancellation request.
+         * @x-autobe-database-schema-property reason
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_cancellation_request_snapshots.reason. Reason text
+         *   captured from original cancellation request.
      */
     reason: string;
 
@@ -167,8 +193,10 @@ export namespace IEcommerceMallCancellationRequestSnapshot {
      *
      * Indicates the seller's response: 'approved' means the cancellation was accepted, 'rejected' means the request was denied. This status is frozen at snapshot creation and cannot be changed.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from ecommerce_mall_cancellation_request_snapshots.status. Enum values: 'approved', 'rejected'.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_cancellation_request_snapshots.status. Enum values:
+         *   'approved', 'rejected'.
      */
     status: string;
   };

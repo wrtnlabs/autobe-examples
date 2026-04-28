@@ -18,9 +18,10 @@ export class ShoppingmallMemberProfileController {
    * The customer profile is created automatically upon member registration and maintains a one-to-one relationship with the member account. Profile data is editable by the customer through the update profile endpoint.
    *
    * @param connection
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query shopping_mall_customer_profiles table filtering by the authenticated member's ID from session token.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query shopping_mall_customer_profiles table
+     *   filtering by the authenticated member's ID from session token.
    *
    * Join with shopping_mall_members to verify the member account exists and is active.
    *
@@ -57,9 +58,10 @@ export class ShoppingmallMemberProfileController {
    *
    * @param connection
    * @param body Profile update data containing optional display name and phone number fields. At least one field should be provided.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Update the shopping_mall_customer_profiles record for the authenticated member.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Update the shopping_mall_customer_profiles record
+     *   for the authenticated member.
    *
    * 1. Extract member ID from authentication session context
    * 2. Query shopping_mall_customer_profiles where shopping_mall_member_id equals the authenticated member's ID

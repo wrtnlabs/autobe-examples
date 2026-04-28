@@ -30,7 +30,8 @@ import { IPageIEcommerceSeller } from "../../../structures/IPageIEcommerceSeller
  * @param props.body Search criteria for filtering seller accounts including approval status, suspension status, ban status, date ranges, and pagination parameters.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query ecommerce_sellers table with optional joins to ecommerce_seller_profiles for shop information.
+ * @x-autobe-specification Query ecommerce_sellers table with optional joins to
+ *   ecommerce_seller_profiles for shop information.
  *
  * Apply search filters from request body:
  * - approval_status: filter by 'pending', 'approved', or 'rejected'
@@ -153,7 +154,9 @@ export namespace index {
  * @param props.sellerId Unique identifier of the seller account (UUID format).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query the ecommerce_sellers table by UUID primary key (id). Join with ecommerce_seller_profiles table to retrieve shop profile information (shop_name, shop_description, logo_image_url).
+ * @x-autobe-specification Query the ecommerce_sellers table by UUID primary key
+ *   (id). Join with ecommerce_seller_profiles table to retrieve shop profile
+ *   information (shop_name, shop_description, logo_image_url).
  *
  * **Implementation Steps**
  *

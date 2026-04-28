@@ -23,9 +23,10 @@ export class EcommercemallSellerProductsnapshotsImagesController {
    * @param connection
    * @param snapshotId The unique identifier of the product snapshot whose images are being listed (UUID format)
    * @param body Search criteria and pagination parameters for filtering snapshot images by display order or position
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Query ecommerce_mall_product_snapshot_images filtering by the provided snapshotId from path parameter.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Query ecommerce_mall_product_snapshot_images
+     *   filtering by the provided snapshotId from path parameter.
    *
    * Apply optional search filters from request body on display_order range (min/max) or specific display positions.
    * Support pagination with cursor or offset-based strategies as configured.
@@ -68,9 +69,10 @@ export class EcommercemallSellerProductsnapshotsImagesController {
    * @param connection
    * @param snapshotId Unique identifier (UUID) of the product snapshot containing the image
    * @param imageId Unique identifier (UUID) of the specific snapshot image to retrieve
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Query the ecommerce_mall_product_snapshot_images table using the composite key (ecommerce_mall_product_snapshot_id, id).
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Query the ecommerce_mall_product_snapshot_images
+     *   table using the composite key (ecommerce_mall_product_snapshot_id, id).
    *
    * 1. Validate that the snapshot exists in ecommerce_mall_product_snapshots table
    * 2. Verify caller authorization: caller must be either:

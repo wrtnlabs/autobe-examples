@@ -20,11 +20,12 @@ import { IPageIECommerceMallSession } from "../../../../structures/IPageIECommer
  * @param props.body Search criteria for filtering active sessions, including IP address matching, creation date range filtering, and standard pagination parameters.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Query the appropriate session table based on the authenticated user's actor type:
- * - Customer → e_commerce_mall_customer_sessions
- * - Seller → e_commerce_mall_seller_sessions
- * - Administrator → e_commerce_mall_administrator_sessions
- * - Super Administrator → e_commerce_mall_super_administrator_sessions
+ * @x-autobe-specification Query the appropriate session table based on the
+ *   authenticated user's actor type: - Customer →
+ *   e_commerce_mall_customer_sessions - Seller →
+ *   e_commerce_mall_seller_sessions - Administrator →
+ *   e_commerce_mall_administrator_sessions - Super Administrator →
+ *   e_commerce_mall_super_administrator_sessions
  *
  * Filter sessions by the authenticated actor's ID (not a parameter — derived from auth context). Apply search filters on ip (partial match), created_at range (from/to), and expired_at range. Support pagination with page and limit parameters. Sort by created_at descending (newest first). Mark the current session (matching the session token's ID) with a flag in the response. Exclude expired sessions from results (expired_at < now) unless explicitly requested via a filter parameter. Return cursor-based or offset-based pagination.
  * @path /eCommerceMall/customer/sessions
@@ -115,7 +116,12 @@ export namespace index {
  * @param props.sessionId The unique identifier (UUID) of the session to retrieve. Sessions are checked across administrator, customer, seller, and guest session tables.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Query across all four session tables (e_commerce_mall_administrator_sessions, e_commerce_mall_customer_sessions, e_commerce_mall_seller_sessions, e_commerce_mall_guest_sessions) by the provided sessionId UUID. Return the matching session along with the actor type discriminator and the actor's ID. If no match is found in any table, return 404 Not Found.
+ * @x-autobe-specification Query across all four session tables
+ *   (e_commerce_mall_administrator_sessions, e_commerce_mall_customer_sessions,
+ *   e_commerce_mall_seller_sessions, e_commerce_mall_guest_sessions) by the
+ *   provided sessionId UUID. Return the matching session along with the actor
+ *   type discriminator and the actor's ID. If no match is found in any table,
+ *   return 404 Not Found.
  *
  * Response includes: id, actorType (string enum: 'administrator'|'customer'|'seller'|'guest'), actorId (UUID of the owning actor), ip, href, referrer, createdAt, expiredAt. Do not expose the session token itself.
  * @path /eCommerceMall/customer/sessions/:sessionId

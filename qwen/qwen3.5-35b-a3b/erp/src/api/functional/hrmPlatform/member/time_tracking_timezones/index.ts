@@ -22,18 +22,16 @@ import { IPageIHrmPlatformTimeTrackingTimezone } from "../../../../structures/IP
  * @param props.body Timezone configuration data including the organization identifier and IANA timezone string. The organization must not already have a timezone configuration.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification 1. Validate that the provided timezone identifier is a valid IANA timezone name.
- * 2. Check if a timezone configuration already exists for the given organization_id. If found, return unique constraint violation error.
- * 3. Verify the organization exists in hrm_platform_organizations table.
- * 4. Create new timezone configuration record with:
- *    - Generate UUID for id
- *    - Set organization_id from request
- *    - Set timezone from request (validated)
- *    - Set created_at to current UTC timestamp
- *    - Set updated_at to current UTC timestamp
- *    - Set deleted_at to NULL
- * 5. Insert record into hrm_platform_time_tracking_timezones table.
- * 6. Return the created record with all fields.
+ * @x-autobe-specification 1. Validate that the provided timezone identifier is
+ *   a valid IANA timezone name. 2. Check if a timezone configuration already
+ *   exists for the given organization_id. If found, return unique constraint
+ *   violation error. 3. Verify the organization exists in
+ *   hrm_platform_organizations table. 4. Create new timezone configuration
+ *   record with: - Generate UUID for id - Set organization_id from request -
+ *   Set timezone from request (validated) - Set created_at to current UTC
+ *   timestamp - Set updated_at to current UTC timestamp - Set deleted_at to
+ *   NULL 5. Insert record into hrm_platform_time_tracking_timezones table. 6.
+ *   Return the created record with all fields.
  *
  * Error handling:
  * - UNIQUE constraint violation if organization already has timezone config: 409 Conflict
@@ -128,7 +126,8 @@ export namespace create {
  * @param props.body Search criteria including organization filter, timezone filter, pagination parameters (page, pageSize), and sorting options (sortBy, sortOrder).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query hrm_platform_time_tracking_timezones table with pagination and filtering.
+ * @x-autobe-specification Query hrm_platform_time_tracking_timezones table with
+ *   pagination and filtering.
  *
  * Apply search filters on:
  * - organization_id: filter by specific organization (UUID format)
@@ -240,12 +239,14 @@ export namespace index {
  * @param props.timezoneId The UUID of the timezone configuration to retrieve
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification 1. Query hrm_platform_time_tracking_timezones table WHERE id = {timezoneId}
- * 2. Validate the requested timezone belongs to the user's currently selected organization (enforce data isolation per organization context from authentication middleware)
- * 3. Check that deleted_at IS NULL (soft delete validation)
- * 4. Return the full timezone configuration record
- * 5. Return 404 Not Found if the timezone configuration does not exist or does not belong to the user's organization
- * 6. Return 404 if the record is soft-deleted (deleted_at IS NOT NULL)
+ * @x-autobe-specification 1. Query hrm_platform_time_tracking_timezones table
+ *   WHERE id = {timezoneId} 2. Validate the requested timezone belongs to the
+ *   user's currently selected organization (enforce data isolation per
+ *   organization context from authentication middleware) 3. Check that
+ *   deleted_at IS NULL (soft delete validation) 4. Return the full timezone
+ *   configuration record 5. Return 404 Not Found if the timezone configuration
+ *   does not exist or does not belong to the user's organization 6. Return 404
+ *   if the record is soft-deleted (deleted_at IS NOT NULL)
  *
  * Implementation notes:
  * - timezone field must be a valid IANA timezone string (e.g., 'Asia/Seoul', 'America/New_York')
@@ -341,18 +342,17 @@ export namespace at {
  * @param props.body Timezone configuration update data containing the new IANA timezone identifier.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification 1. Validate that the user has organization management permissions (org:manage)
- * 2. Extract organization context from the user's current organization selection
- * 3. Find the timezone configuration record by timezoneId
- * 4. Verify the record exists and deleted_at is NULL (not soft-deleted)
- * 5. Verify the record belongs to the user's organization (organization_id match)
- * 6. Validate the provided timezone format: must be valid IANA timezone identifier
- *    - Use IANA Time Zone Database validation
- *    - Reject invalid or custom timezone names
- *    - Accept formats like 'Area/Location' (e.g., 'Asia/Seoul', 'America/New_York')
- * 7. Update the timezone field with the provided value
- * 8. Set updated_at to the current timestamp
- * 9. Return the updated timezone configuration record
+ * @x-autobe-specification 1. Validate that the user has organization management
+ *   permissions (org:manage) 2. Extract organization context from the user's
+ *   current organization selection 3. Find the timezone configuration record by
+ *   timezoneId 4. Verify the record exists and deleted_at is NULL (not
+ *   soft-deleted) 5. Verify the record belongs to the user's organization
+ *   (organization_id match) 6. Validate the provided timezone format: must be
+ *   valid IANA timezone identifier - Use IANA Time Zone Database validation -
+ *   Reject invalid or custom timezone names - Accept formats like
+ *   'Area/Location' (e.g., 'Asia/Seoul', 'America/New_York') 7. Update the
+ *   timezone field with the provided value 8. Set updated_at to the current
+ *   timestamp 9. Return the updated timezone configuration record
  *
  * Edge cases:
  * - If timezoneId not found: return 404 Not Found
@@ -457,11 +457,12 @@ export namespace update {
  * @param props.timezoneId Unique identifier of the timezone configuration to delete.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification 1. Fetch the timezone configuration by timezoneId from hrm_platform_time_tracking_timezones table
- * 2. Verify the timezone exists and is not already soft-deleted (deleted_at is NULL)
- * 3. Verify the user has organization owner role for the organization associated with this timezone
- * 4. Set deleted_at to current timestamp (soft delete)
- * 5. Return the deleted timezone record in the response
+ * @x-autobe-specification 1. Fetch the timezone configuration by timezoneId
+ *   from hrm_platform_time_tracking_timezones table 2. Verify the timezone
+ *   exists and is not already soft-deleted (deleted_at is NULL) 3. Verify the
+ *   user has organization owner role for the organization associated with this
+ *   timezone 4. Set deleted_at to current timestamp (soft delete) 5. Return the
+ *   deleted timezone record in the response
  *
  * Error handling:
  * - Return 404 if timezone does not exist or is already deleted

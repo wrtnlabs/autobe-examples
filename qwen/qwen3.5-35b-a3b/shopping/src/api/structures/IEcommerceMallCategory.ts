@@ -34,8 +34,9 @@ export type IEcommerceMallCategory = {
    * - Primary key for all category references
    * - Used in API paths: /categories/{id}
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_categories.id. UUID format. Auto-generated on category creation.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from ecommerce_mall_categories.id.
+     *   UUID format. Auto-generated on category creation.
    */
   id: string & tags.Format<"uuid">;
 
@@ -51,8 +52,10 @@ export type IEcommerceMallCategory = {
    * - Required when creating a category
    * - Maximum 100 characters
    *
-   * @x-autobe-database-schema-property name
-   * @x-autobe-specification Direct mapping from ecommerce_mall_categories.name. Required field. Unique combined with parent_id. Maximum 100 characters.
+     * @x-autobe-database-schema-property name
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_categories.name. Required field. Unique combined with
+     *   parent_id. Maximum 100 characters.
    */
   name: string;
 
@@ -68,8 +71,10 @@ export type IEcommerceMallCategory = {
    * - Maximum 500 characters
    * - Nullable for optional descriptions
    *
-   * @x-autobe-database-schema-property description
-   * @x-autobe-specification Direct mapping from ecommerce_mall_categories.description. Nullable field. Maximum 500 characters. Used for SEO and user guidance.
+     * @x-autobe-database-schema-property description
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_categories.description. Nullable field. Maximum 500
+     *   characters. Used for SEO and user guidance.
    */
   description?: string | null | undefined;
 
@@ -85,8 +90,10 @@ export type IEcommerceMallCategory = {
    * - Nullable: auto-ordered if not specified
    * - Integer values only
    *
-   * @x-autobe-database-schema-property sort_order
-   * @x-autobe-specification Direct mapping from ecommerce_mall_categories.sort_order. Nullable field. Lower values appear first in catalog displays. Defaults to 0 if not specified.
+     * @x-autobe-database-schema-property sort_order
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_categories.sort_order. Nullable field. Lower values
+     *   appear first in catalog displays. Defaults to 0 if not specified.
    */
   sort_order?: (number & tags.Type<"int32">) | null | undefined;
 
@@ -101,8 +108,11 @@ export type IEcommerceMallCategory = {
    * **Format**:
    * - ISO 8601 date-time format with timezone
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_categories.created_at. Timestamp set on category creation. Always present (NOT NULL). Used for audit trail and chronological browsing.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_categories.created_at. Timestamp set on category
+     *   creation. Always present (NOT NULL). Used for audit trail and
+     *   chronological browsing.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -117,8 +127,11 @@ export type IEcommerceMallCategory = {
    * **Format**:
    * - ISO 8601 date-time format with timezone
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_categories.updated_at. Timestamp updated on every category modification. Always present (NOT NULL). Tracks when the category was last changed.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_categories.updated_at. Timestamp updated on every
+     *   category modification. Always present (NOT NULL). Tracks when the
+     *   category was last changed.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -134,8 +147,11 @@ export type IEcommerceMallCategory = {
    * - Categories with products should use soft delete
    * - Soft deletion maintains referential integrity with products
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_categories.deleted_at. NULL when category is active. Set when category is soft-deleted. Soft delete preserves product relationships for audit trail.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_categories.deleted_at. NULL when category is active. Set
+     *   when category is soft-deleted. Soft delete preserves product
+     *   relationships for audit trail.
    */
   deleted_at?: (string & tags.Format<"date-time">) | null | undefined;
 
@@ -152,8 +168,11 @@ export type IEcommerceMallCategory = {
    * - Parent category must be a top-level category (parent.parent_id must be NULL)
    * - Cannot create cycles or self-references
    *
-   * @x-autobe-database-schema-property parent_id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_categories.parent_id. FK to self-referencing ecommerce_mall_categories table. NULL for top-level categories. Must reference existing category.
+     * @x-autobe-database-schema-property parent_id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_categories.parent_id. FK to self-referencing
+     *   ecommerce_mall_categories table. NULL for top-level categories. Must
+     *   reference existing category.
    */
   parent_id?: (string & tags.Format<"uuid">) | null | undefined;
 
@@ -169,8 +188,11 @@ export type IEcommerceMallCategory = {
    * - Set automatically on category creation from JWT authentication
    * - Remains immutable after creation
    *
-   * @x-autobe-database-schema-property creator_id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_categories.creator_id. FK to ecommerce_mall_administrators table. NULL if creator deleted. Tracks which administrator created the category.
+     * @x-autobe-database-schema-property creator_id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_categories.creator_id. FK to
+     *   ecommerce_mall_administrators table. NULL if creator deleted. Tracks
+     *   which administrator created the category.
    */
   creator_id?: (string & tags.Format<"uuid">) | null | undefined;
 
@@ -186,8 +208,11 @@ export type IEcommerceMallCategory = {
    * - One-level nesting enforced by database constraints
    * - Parent summary includes only essential fields (id, name, created_at, updated_at)
    *
-   * @x-autobe-specification Join from ecommerce_mall_categories.parent_id to self. Returns IEcommerceMallCategory.ISummary for hierarchical navigation. NULL for top-level categories or if parent was soft-deleted.
-   * @x-autobe-database-schema-property parent
+     * @x-autobe-specification Join from ecommerce_mall_categories.parent_id to
+     *   self. Returns IEcommerceMallCategory.ISummary for hierarchical
+     *   navigation. NULL for top-level categories or if parent was
+     *   soft-deleted.
+     * @x-autobe-database-schema-property parent
    */
   parent?: IEcommerceMallCategory.ISummary | null | undefined;
 
@@ -203,8 +228,11 @@ export type IEcommerceMallCategory = {
    * - May be NULL if original creator account was soft-deleted
    * - Provides accountability for category management actions
    *
-   * @x-autobe-specification Join from ecommerce_mall_categories.creator_id to ecommerce_mall_administrators. Returns IEcommerceMallAdministrator.ISummary showing which administrator created this category. NULL if creator was soft-deleted.
-   * @x-autobe-database-schema-property creator
+     * @x-autobe-specification Join from ecommerce_mall_categories.creator_id to
+     *   ecommerce_mall_administrators. Returns
+     *   IEcommerceMallAdministrator.ISummary showing which administrator
+     *   created this category. NULL if creator was soft-deleted.
+     * @x-autobe-database-schema-property creator
    */
   creator?: IEcommerceMallAdministrator.ISummary | null | undefined;
 
@@ -221,8 +249,11 @@ export type IEcommerceMallCategory = {
    * - Empty array for leaf categories
    * - Summary objects include id, name, created_at, updated_at for each child
    *
-   * @x-autobe-database-schema-property children
-   * @x-autobe-specification Recursive JOIN from ecommerce_mall_categories.parent_id = current.id. Returns array of IEcommerceMallCategory.ISummary for child categories. One-level nesting only.
+     * @x-autobe-database-schema-property children
+     * @x-autobe-specification Recursive JOIN from
+     *   ecommerce_mall_categories.parent_id = current.id. Returns array of
+     *   IEcommerceMallCategory.ISummary for child categories. One-level nesting
+     *   only.
    */
   children?: IEcommerceMallCategory.ISummary[] | undefined;
 };
@@ -251,7 +282,7 @@ export namespace IEcommerceMallCategory {
    */
   export type ICreate = {
     /**
-     * @x-autobe-database-schema-property name
+         * @x-autobe-database-schema-property name
      */
     name: string & tags.MinLength<1> & tags.MaxLength<100>;
 
@@ -264,8 +295,10 @@ export namespace IEcommerceMallCategory {
      * - Maximum 500 characters
      * - Optional in Create DTO (nullable in DB)
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from ecommerce_mall_categories.description. Nullable field in DB, so optional in Create DTO. Max 500 characters.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_categories.description. Nullable field in DB, so
+         *   optional in Create DTO. Max 500 characters.
      */
     description?:
       | (string & tags.MinLength<1> & tags.MaxLength<500>)
@@ -283,8 +316,10 @@ export namespace IEcommerceMallCategory {
      * - Must reference existing category if provided
      * - Parent category must be a top-level category (parent.parent_id must be NULL)
      *
-     * @x-autobe-database-schema-property parent_id
-     * @x-autobe-specification FK to self-referencing ecommerce_mall_categories table. Nullable in DB, so optional in Create DTO. Must reference existing top-level category if provided.
+         * @x-autobe-database-schema-property parent_id
+         * @x-autobe-specification FK to self-referencing
+         *   ecommerce_mall_categories table. Nullable in DB, so optional in
+         *   Create DTO. Must reference existing top-level category if provided.
      */
     parent_id?: (string & tags.Format<"uuid">) | null | undefined;
 
@@ -299,8 +334,11 @@ export namespace IEcommerceMallCategory {
      * - Nullable: auto-ordered if not specified
      * - Integer values only
      *
-     * @x-autobe-database-schema-property sort_order
-     * @x-autobe-specification Direct mapping from ecommerce_mall_categories.sort_order. Nullable field in DB, so optional in Create DTO. Integer values for display order, defaults to 0 if not specified.
+         * @x-autobe-database-schema-property sort_order
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_categories.sort_order. Nullable field in DB, so
+         *   optional in Create DTO. Integer values for display order, defaults
+         *   to 0 if not specified.
      */
     sort_order?: (number & tags.Type<"int32">) | null | undefined;
   };
@@ -322,11 +360,11 @@ export namespace IEcommerceMallCategory {
    */
   export type ISummary = {
     /**
-     * @x-autobe-database-schema-property id
+         * @x-autobe-database-schema-property id
      */
     id: string & tags.Format<"uuid">;
     /**
-     * @x-autobe-database-schema-property name
+         * @x-autobe-database-schema-property name
      */
     name: string & tags.MinLength<1> & tags.MaxLength<100>;
 
@@ -340,8 +378,10 @@ export namespace IEcommerceMallCategory {
      * - Searchable via GIN index
      * - Used for SEO and user guidance
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from ecommerce_mall_categories.description column. String field that is nullable in database.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_categories.description column. String field that is
+         *   nullable in database.
      */
     description: (string & tags.MaxLength<500>) | null;
 
@@ -355,22 +395,24 @@ export namespace IEcommerceMallCategory {
      * - Nullable: Yes
      * - Used for manual category ordering
      *
-     * @x-autobe-database-schema-property sort_order
-     * @x-autobe-specification Direct mapping from ecommerce_mall_categories.sort_order column. Integer field that is nullable in database with default auto-ordering.
+         * @x-autobe-database-schema-property sort_order
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_categories.sort_order column. Integer field that is
+         *   nullable in database with default auto-ordering.
      */
     sort_order:
       | (number & tags.Type<"int32"> & tags.Minimum<-999> & tags.Maximum<999>)
       | null;
     /**
-     * @x-autobe-database-schema-property parent
+         * @x-autobe-database-schema-property parent
      */
     parent: null | IEcommerceMallCategory.ISummary;
     /**
-     * @x-autobe-database-schema-property created_at
+         * @x-autobe-database-schema-property created_at
      */
     created_at: string & tags.Format<"date-time">;
     /**
-     * @x-autobe-database-schema-property updated_at
+         * @x-autobe-database-schema-property updated_at
      */
     updated_at: string & tags.Format<"date-time">;
   };
@@ -398,21 +440,21 @@ export namespace IEcommerceMallCategory {
     /**
      * Optional partial match filter for category name (case-insensitive, uses LIKE with wildcards)
      *
-     * @x-autobe-database-schema-property name
+         * @x-autobe-database-schema-property name
      */
     name?: string | undefined;
 
     /**
      * Optional exact match filter for subcategories of specific parent. NULL for top-level categories
      *
-     * @x-autobe-database-schema-property parent_id
+         * @x-autobe-database-schema-property parent_id
      */
     parent_id?: (string & tags.Format<"uuid">) | null | undefined;
 
     /**
      * Optional equality filter to find categories with specific sort priority
      *
-     * @x-autobe-database-schema-property sort_order
+         * @x-autobe-database-schema-property sort_order
      */
     sort_order?: (number & tags.Type<"int32">) | null | undefined;
 
@@ -461,19 +503,19 @@ export namespace IEcommerceMallCategory {
    */
   export type IUpdate = {
     /**
-     * @x-autobe-database-schema-property name
+         * @x-autobe-database-schema-property name
      */
     name?: (string & tags.MinLength<1> & tags.MaxLength<100>) | undefined;
     /**
-     * @x-autobe-database-schema-property description
+         * @x-autobe-database-schema-property description
      */
     description?: (string & tags.MaxLength<500>) | null | undefined;
     /**
-     * @x-autobe-database-schema-property sort_order
+         * @x-autobe-database-schema-property sort_order
      */
     sort_order?: (number & tags.Type<"int32">) | null | undefined;
     /**
-     * @x-autobe-database-schema-property parent_id
+         * @x-autobe-database-schema-property parent_id
      */
     parent_id?: (string & tags.Format<"uuid">) | null | undefined;
   };
@@ -487,55 +529,62 @@ export namespace IEcommerceMallCategory {
    */
   export type IHierarchy = {
     /**
-     * @x-autobe-database-schema-property id
+         * @x-autobe-database-schema-property id
      */
     id: string & tags.Format<"uuid">;
     /**
-     * @x-autobe-database-schema-property name
+         * @x-autobe-database-schema-property name
      */
     name: string;
 
     /**
      * Optional detailed description of the category, providing SEO and user guidance. Max length 500 characters. Nullable for categories that don't have descriptions.
      *
-     * @x-autobe-specification Direct mapping from ecommerce_mall_categories.description column. Nullable field that can be omitted for top-level categories.
-     * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_categories.description column. Nullable field that
+         *   can be omitted for top-level categories.
+         * @x-autobe-database-schema-property description
      */
     description: (string & tags.MaxLength<500>) | null;
 
     /**
      * Display order priority within parent category. Lower values appear first. Nullable when auto-ordered.
      *
-     * @x-autobe-specification Direct mapping from ecommerce_mall_categories.sort_order column. Nullable integer for display ordering within parent category, NULL treated as 0.
-     * @x-autobe-database-schema-property sort_order
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_categories.sort_order column. Nullable integer for
+         *   display ordering within parent category, NULL treated as 0.
+         * @x-autobe-database-schema-property sort_order
      */
     sort_order: (number & tags.Type<"int32">) | null;
     /**
-     * @x-autobe-database-schema-property created_at
+         * @x-autobe-database-schema-property created_at
      */
     created_at: string & tags.Format<"date-time">;
     /**
-     * @x-autobe-database-schema-property updated_at
+         * @x-autobe-database-schema-property updated_at
      */
     updated_at: string & tags.Format<"date-time">;
     /**
-     * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-database-schema-property deleted_at
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
 
     /**
      * Reference to the administrator who created this category. Nullable for historical records.
      *
-     * @x-autobe-specification Direct mapping from ecommerce_mall_categories.creator_id column. Nullable FK that can be null for historical categories before creator tracking was implemented.
-     * @x-autobe-database-schema-property creator_id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_categories.creator_id column. Nullable FK that can
+         *   be null for historical categories before creator tracking was
+         *   implemented.
+         * @x-autobe-database-schema-property creator_id
      */
     creator_id: (string & tags.Format<"uuid">) | null;
     /**
-     * @x-autobe-database-schema-property creator
+         * @x-autobe-database-schema-property creator
      */
     creator: IEcommerceMallAdministrator.ISummary | null;
     /**
-     * @x-autobe-database-schema-property children
+         * @x-autobe-database-schema-property children
      */
     children: IEcommerceMallCategory.ISummary[];
     product_count: (number & tags.Type<"int32">) | null;

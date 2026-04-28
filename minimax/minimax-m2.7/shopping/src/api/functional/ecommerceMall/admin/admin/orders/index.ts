@@ -108,7 +108,9 @@ export namespace list {
  * @param props.body Search criteria including order status filter, customer ID filter, date range filters (createdAtFrom, createdAtTo), amount range filters (minTotal, maxTotal), and pagination parameters (page, limit).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Query ecommerce_mall_orders table with JOIN on ecommerce_mall_customers for customer email display when customer filter is applied.
+ * @x-autobe-specification Query ecommerce_mall_orders table with JOIN on
+ *   ecommerce_mall_customers for customer email display when customer filter is
+ *   applied.
  *
  * Apply search filters:
  * - Filter by order status (exact match on status field)
@@ -221,7 +223,8 @@ export namespace index {
  * @param props.orderId Unique identifier of the order to retrieve.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Query ecommerce_mall_orders table using the provided orderId.
+ * @x-autobe-specification Query ecommerce_mall_orders table using the provided
+ *   orderId.
  *
  * Validate that the order exists; return 404 if not found.
  *

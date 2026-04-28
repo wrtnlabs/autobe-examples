@@ -11,64 +11,85 @@ export type ICommunityPlatformCommunitySubscription = {
   /**
    * Unique identifier of the community subscription relationship.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from community_platform_community_subscriptions.id to DTO.id (serialized as UUID string). Used as communitySubscriptionId in the corresponding endpoint path/body semantics.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_community_subscriptions.id to DTO.id (serialized as
+     *   UUID string). Used as communitySubscriptionId in the corresponding
+     *   endpoint path/body semantics.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Identifier of the community that the member is subscribed to.
    *
-   * @x-autobe-database-schema-property community_id
-   * @x-autobe-specification Direct mapping from community_platform_community_subscriptions.community_id to DTO.community_id (UUID string).
+     * @x-autobe-database-schema-property community_id
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_community_subscriptions.community_id to
+     *   DTO.community_id (UUID string).
    */
   community_id: string & tags.Format<"uuid">;
 
   /**
    * Identifier of the member (user) who owns this subscription record.
    *
-   * @x-autobe-database-schema-property member_id
-   * @x-autobe-specification Direct mapping from community_platform_community_subscriptions.member_id to DTO.member_id (UUID string). Used by service-layer authorization to verify ownership for member-scoped access.
+     * @x-autobe-database-schema-property member_id
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_community_subscriptions.member_id to DTO.member_id
+     *   (UUID string). Used by service-layer authorization to verify ownership
+     *   for member-scoped access.
    */
   member_id: string & tags.Format<"uuid">;
 
   /**
    * Timestamp indicating when the member subscribed to the community.
    *
-   * @x-autobe-database-schema-property subscribed_at
-   * @x-autobe-specification Direct mapping from community_platform_community_subscriptions.subscribed_at to DTO.subscribed_at (ISO 8601 date-time string). On creation this timestamp represents when the subscription was established.
+     * @x-autobe-database-schema-property subscribed_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_community_subscriptions.subscribed_at to
+     *   DTO.subscribed_at (ISO 8601 date-time string). On creation this
+     *   timestamp represents when the subscription was established.
    */
   subscribed_at: string & tags.Format<"date-time">;
 
   /**
    * Whether this subscription is currently active for participation in the community.
    *
-   * @x-autobe-database-schema-property is_active
-   * @x-autobe-specification Direct mapping from community_platform_community_subscriptions.is_active to DTO.is_active (boolean). Service layer uses this to determine whether the subscription counts for active participation/listing eligibility.
+     * @x-autobe-database-schema-property is_active
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_community_subscriptions.is_active to DTO.is_active
+     *   (boolean). Service layer uses this to determine whether the
+     *   subscription counts for active participation/listing eligibility.
    */
   is_active: boolean;
 
   /**
    * Timestamp when this subscription record was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from community_platform_community_subscriptions.created_at to DTO.created_at (ISO 8601 date-time string).
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_community_subscriptions.created_at to DTO.created_at
+     *   (ISO 8601 date-time string).
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when this subscription record was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from community_platform_community_subscriptions.updated_at to DTO.updated_at (ISO 8601 date-time string).
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_community_subscriptions.updated_at to DTO.updated_at
+     *   (ISO 8601 date-time string).
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * Soft-deletion timestamp for the subscription record; null means the subscription has not been removed.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from community_platform_community_subscriptions.deleted_at to DTO.deleted_at. If the database value is NULL, DTO.deleted_at must be null; otherwise serialize as ISO 8601 date-time string.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_community_subscriptions.deleted_at to
+     *   DTO.deleted_at. If the database value is NULL, DTO.deleted_at must be
+     *   null; otherwise serialize as ISO 8601 date-time string.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -80,8 +101,13 @@ export namespace ICommunityPlatformCommunitySubscription {
     /**
      * UUID of the community the authenticated member wants to subscribe to.
      *
-     * @x-autobe-database-schema-property community_id
-     * @x-autobe-specification Direct mapping from request body community_id to community_platform_community_subscriptions.community_id. Validate that the community_id exists in community_platform_communities.id before inserting the subscription row. Use session-derived member_id for the subscriber identity; do not accept or infer member_id from any client payload field.
+         * @x-autobe-database-schema-property community_id
+         * @x-autobe-specification Direct mapping from request body community_id
+         *   to community_platform_community_subscriptions.community_id.
+         *   Validate that the community_id exists in
+         *   community_platform_communities.id before inserting the subscription
+         *   row. Use session-derived member_id for the subscriber identity; do
+         *   not accept or infer member_id from any client payload field.
      */
     community_id: string & tags.Format<"uuid">;
   };
@@ -93,8 +119,13 @@ export namespace ICommunityPlatformCommunitySubscription {
     /**
      * Whether this community subscription is currently active for participation in the community.
      *
-     * @x-autobe-database-schema-property is_active
-     * @x-autobe-specification Direct mapping from community_platform_community_subscriptions.is_active. Server must treat it as the effective participation status: when toggled, apply subscriber-count consistency for the related community using the same false->true/true->false transition rules. Clients cannot change any other fields through this DTO.
+         * @x-autobe-database-schema-property is_active
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_community_subscriptions.is_active. Server must
+         *   treat it as the effective participation status: when toggled, apply
+         *   subscriber-count consistency for the related community using the
+         *   same false->true/true->false transition rules. Clients cannot
+         *   change any other fields through this DTO.
      */
     is_active?: boolean | undefined;
   };
@@ -106,80 +137,101 @@ export namespace ICommunityPlatformCommunitySubscription {
     /**
      * Unique identifier of the community subscription record.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from community_platform_community_subscriptions.id (UUID).
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_community_subscriptions.id (UUID).
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Timestamp indicating when the member subscribed to the community.
      *
-     * @x-autobe-database-schema-property subscribed_at
-     * @x-autobe-specification Direct mapping from community_platform_community_subscriptions.subscribed_at. Use RFC3339/ISO-8601 string format for date-time.
+         * @x-autobe-database-schema-property subscribed_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_community_subscriptions.subscribed_at. Use
+         *   RFC3339/ISO-8601 string format for date-time.
      */
     subscribedAt: string & tags.Format<"date-time">;
 
     /**
      * Whether the subscription is currently active for participation in the community.
      *
-     * @x-autobe-database-schema-property is_active
-     * @x-autobe-specification Direct mapping from community_platform_community_subscriptions.is_active (boolean).
+         * @x-autobe-database-schema-property is_active
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_community_subscriptions.is_active (boolean).
      */
     isActive: boolean;
 
     /**
      * Timestamp when the subscription record was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from community_platform_community_subscriptions.created_at. Use RFC3339/ISO-8601 string format for date-time.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_community_subscriptions.created_at. Use
+         *   RFC3339/ISO-8601 string format for date-time.
      */
     createdAt: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when the subscription record was last updated.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from community_platform_community_subscriptions.updated_at. Use RFC3339/ISO-8601 string format for date-time.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_community_subscriptions.updated_at. Use
+         *   RFC3339/ISO-8601 string format for date-time.
      */
     updatedAt: string & tags.Format<"date-time">;
 
     /**
      * Soft-deletion timestamp for the subscription record. Null means the subscription is not deleted.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from community_platform_community_subscriptions.deleted_at. If the row is not soft-deleted, return null; otherwise return the stored date-time string.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_community_subscriptions.deleted_at. If the row
+         *   is not soft-deleted, return null; otherwise return the stored
+         *   date-time string.
      */
     deletedAt: (string & tags.Format<"date-time">) | null;
 
     /**
      * Identifier of the community that the member is subscribed to.
      *
-     * @x-autobe-database-schema-property community_id
-     * @x-autobe-specification Direct mapping from community_platform_community_subscriptions.community_id (UUID). This is the ID used to join to the related community.
+         * @x-autobe-database-schema-property community_id
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_community_subscriptions.community_id (UUID).
+         *   This is the ID used to join to the related community.
      */
     communityId: string & tags.Format<"uuid">;
 
     /**
      * Identifier of the member who holds the subscription.
      *
-     * @x-autobe-database-schema-property member_id
-     * @x-autobe-specification Direct mapping from community_platform_community_subscriptions.member_id (UUID). This is the ID used to join to the related member.
+         * @x-autobe-database-schema-property member_id
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_community_subscriptions.member_id (UUID). This
+         *   is the ID used to join to the related member.
      */
     memberId: string & tags.Format<"uuid">;
 
     /**
      * Summary identity of the related community for display in subscription list UIs.
      *
-     * @x-autobe-database-schema-property community
-     * @x-autobe-specification Resolve via JOIN: community_platform_community_subscriptions.community_id = community_platform_communities.id, then project the joined community row as ICommunityPlatformCommunity.ISummary.
+         * @x-autobe-database-schema-property community
+         * @x-autobe-specification Resolve via JOIN:
+         *   community_platform_community_subscriptions.community_id =
+         *   community_platform_communities.id, then project the joined
+         *   community row as ICommunityPlatformCommunity.ISummary.
      */
     community: ICommunityPlatformCommunity.ISummary;
 
     /**
      * Summary identity of the related member (account persona) for display in subscription list UIs.
      *
-     * @x-autobe-database-schema-property member
-     * @x-autobe-specification Resolve via JOIN: community_platform_community_subscriptions.member_id = community_platform_members.id, then project the joined member row as ICommunityPlatformMember.ISummary.
+         * @x-autobe-database-schema-property member
+         * @x-autobe-specification Resolve via JOIN:
+         *   community_platform_community_subscriptions.member_id =
+         *   community_platform_members.id, then project the joined member row
+         *   as ICommunityPlatformMember.ISummary.
      */
     member: ICommunityPlatformMember.ISummary;
   };
@@ -191,71 +243,90 @@ export namespace ICommunityPlatformCommunitySubscription {
     /**
      * Optional filter to restrict results to subscriptions belonging to a specific member (UUID). For member actors, the server enforces acting-member scope.
      *
-     * @x-autobe-database-schema-property member_id
-     * @x-autobe-specification If provided, validate UUID format and apply equality on `community_platform_community_subscriptions.member_id`. For member actor, override/ignore any non-matching provided value to the acting member id.
+         * @x-autobe-database-schema-property member_id
+         * @x-autobe-specification If provided, validate UUID format and apply
+         *   equality on `community_platform_community_subscriptions.member_id`.
+         *   For member actor, override/ignore any non-matching provided value
+         *   to the acting member id.
      */
     member_id?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Optional filter to restrict results to subscriptions belonging to a specific community (UUID).
      *
-     * @x-autobe-database-schema-property community_id
-     * @x-autobe-specification If provided, validate UUID format and apply equality on `community_platform_community_subscriptions.community_id`.
+         * @x-autobe-database-schema-property community_id
+         * @x-autobe-specification If provided, validate UUID format and apply
+         *   equality on
+         *   `community_platform_community_subscriptions.community_id`.
      */
     community_id?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Optional filter indicating whether the subscription is currently active for participation.
      *
-     * @x-autobe-database-schema-property is_active
-     * @x-autobe-specification If provided, apply equality filter on `community_platform_community_subscriptions.is_active`.
+         * @x-autobe-database-schema-property is_active
+         * @x-autobe-specification If provided, apply equality filter on
+         *   `community_platform_community_subscriptions.is_active`.
      */
     is_active?: boolean | undefined;
 
     /**
      * Optional filter for the subscription start timestamp lower bound (inclusive).
      *
-     * @x-autobe-database-schema-property subscribed_at
-     * @x-autobe-specification If provided, apply range filter `community_platform_community_subscriptions.subscribed_at >= subscribed_at_from` (inclusive). Validate date-time format.
+         * @x-autobe-database-schema-property subscribed_at
+         * @x-autobe-specification If provided, apply range filter
+         *   `community_platform_community_subscriptions.subscribed_at >=
+         *   subscribed_at_from` (inclusive). Validate date-time format.
      */
     subscribed_at_from?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Optional filter for the subscription start timestamp upper bound (inclusive).
      *
-     * @x-autobe-database-schema-property subscribed_at
-     * @x-autobe-specification If provided, apply range filter `community_platform_community_subscriptions.subscribed_at <= subscribed_at_to` (inclusive). Validate date-time format.
+         * @x-autobe-database-schema-property subscribed_at
+         * @x-autobe-specification If provided, apply range filter
+         *   `community_platform_community_subscriptions.subscribed_at <=
+         *   subscribed_at_to` (inclusive). Validate date-time format.
      */
     subscribed_at_to?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Optional sort field selector (commonly created_at or subscribed_at).
      *
-     * @x-autobe-specification Interpret `sort` as the logical sort field selector. Implementation must support:
-     * - 'created_at' => order by `community_platform_community_subscriptions.created_at`
-     * - 'subscribed_at' => order by `community_platform_community_subscriptions.subscribed_at`
-     * If omitted, default to `community_platform_community_subscriptions.created_at`. Reject/validate unsupported values per service rules.
+         * @x-autobe-specification Interpret `sort` as the logical sort field
+         *   selector. Implementation must support: - 'created_at' => order by
+         *   `community_platform_community_subscriptions.created_at` -
+         *   'subscribed_at' => order by
+         *   `community_platform_community_subscriptions.subscribed_at` If
+         *   omitted, default to
+         *   `community_platform_community_subscriptions.created_at`.
+         *   Reject/validate unsupported values per service rules.
      */
     sort?: string | undefined;
 
     /**
      * Optional sort direction: 'asc' or 'desc'.
      *
-     * @x-autobe-specification If provided, must be 'asc' or 'desc' and should be applied as the direction for the selected sort column. If omitted, default to ascending.
+         * @x-autobe-specification If provided, must be 'asc' or 'desc' and
+         *   should be applied as the direction for the selected sort column. If
+         *   omitted, default to ascending.
      */
     order?: "asc" | "desc" | undefined;
 
     /**
      * Optional 1-based page number for pagination.
      *
-     * @x-autobe-specification 1-based page index used to compute pagination offset/limit. Validate minimum value >= 1. If omitted, use the platform default page.
+         * @x-autobe-specification 1-based page index used to compute pagination
+         *   offset/limit. Validate minimum value >= 1. If omitted, use the
+         *   platform default page.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Optional page size limit (records per page).
      *
-     * @x-autobe-specification Maximum number of records per page. Validate 1..100 (per schema). Used to compute pagination limits.
+         * @x-autobe-specification Maximum number of records per page. Validate
+         *   1..100 (per schema). Used to compute pagination limits.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)

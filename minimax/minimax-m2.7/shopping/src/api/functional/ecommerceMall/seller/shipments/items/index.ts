@@ -31,7 +31,8 @@ import { IEcommerceMallShipmentItem } from "../../../../../structures/IEcommerce
  * @param props.shipmentId Unique identifier of the shipment whose items to retrieve.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Query the ecommerce_mall_shipment_items table filtering by ecommerce_mall_shipment_id matching the path parameter.
+ * @x-autobe-specification Query the ecommerce_mall_shipment_items table
+ *   filtering by ecommerce_mall_shipment_id matching the path parameter.
  *
  * Join ecommerce_mall_shipment_items with ecommerce_mall_order_items to retrieve order item details.
  * Further join with:
@@ -129,7 +130,8 @@ export namespace getByShipmentid {
  * @param props.itemId Unique identifier of the shipment item (UUID format)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Retrieve a single shipment item by its ID within a specific shipment.
+ * @x-autobe-specification Retrieve a single shipment item by its ID within a
+ *   specific shipment.
  *
  * 1. Validate the shipmentId and itemId are valid UUIDs
  * 2. Query ecommerce_mall_shipment_items table filtering by id = itemId AND ecommerce_mall_shipment_id = shipmentId

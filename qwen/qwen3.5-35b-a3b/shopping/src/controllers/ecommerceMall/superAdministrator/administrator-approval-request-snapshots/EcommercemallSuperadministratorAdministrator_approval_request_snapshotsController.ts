@@ -22,9 +22,11 @@ export class EcommercemallSuperadministratorAdministrator_approval_request_snaps
    *
    * @param connection
    * @param body Search criteria including requester type, approval status, date range filters, reviewer ID, pagination parameters, and sorting options.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor superAdministrator
-   * @x-autobe-specification Query ecommerce_mall_administrator_approval_requests_snapshots table with pagination and filtering.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor superAdministrator
+     * @x-autobe-specification Query
+     *   ecommerce_mall_administrator_approval_requests_snapshots table with
+     *   pagination and filtering.
    *
    * Apply search filters on:
    * - requester_type: filter by member or seller
@@ -68,9 +70,11 @@ export class EcommercemallSuperadministratorAdministrator_approval_request_snaps
    *
    * @param connection
    * @param snapshotId UUID identifier of the snapshot record to retrieve.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor superAdministrator
-   * @x-autobe-specification Query ecommerce_mall_administrator_approval_requests_snapshots table by id (UUID).
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor superAdministrator
+     * @x-autobe-specification Query
+     *   ecommerce_mall_administrator_approval_requests_snapshots table by id
+     *   (UUID).
    *
    * 1. Find snapshot record with the given snapshotId
    * 2. If not found, return 404 Not Found

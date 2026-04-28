@@ -27,9 +27,10 @@ export class ShoppingmallMemberSnapshotsController {
    *
    * @param connection
    * @param body Snapshot browsing criteria including pagination/sorting and optional filters for snapshot source/linkage fields.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement snapshot browsing as a collection-level query over `shopping_mall_snapshots`.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implement snapshot browsing as a collection-level
+     *   query over `shopping_mall_snapshots`.
    *
    * 1) Parse request body criteria (filtering, search keywords, date range, and optional linkage filters such as `source_type`, `source_entity_id`, `source_order_id`, `source_order_item_id`, `source_review_id`).
    * 2) Build a base query selecting snapshot metadata fields needed by `IShoppingMallSnapshot.ISummary`.
@@ -77,18 +78,26 @@ export class ShoppingmallMemberSnapshotsController {
    *
    * @param connection
    * @param snapshotId Target snapshot identifier (UUID) for the immutable snapshot record to view.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation steps:
-   * 1) Authenticate the caller and resolve their party identity used for `shopping_mall_snapshot_parties.party_type` and `party_id`.
-   * 2) Fetch the snapshot metadata from `shopping_mall_snapshots` by `id = snapshotId`.
-   * 3) Enforce viewability:
-   *    - Determine whether a matching row exists in `shopping_mall_snapshot_parties` for the same `shopping_mall_snapshot_id` and caller identity where `can_view = true` and `deleted_at` is null.
-   *    - Treat absence of a viewable party relationship as access denied.
-   *    - Additionally, ensure administrator visibility rules are applied consistently with how admin parties are represented in `shopping_mall_snapshot_parties`.
-   * 4) If the snapshot is not found OR access is not viewable, return an unsuccessful result in a way that does not leak existence details (e.g., a generic forbidden/not-found-equivalent error).
-   * 5) If viewable, load the optional `shopping_mall_snapshot_payloads` record via the 1:1 relation `shopping_mall_snapshots.payload`.
-   * 6) Construct the response DTO `IShoppingMallSnapshot` from snapshot metadata and (when present) payload content.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation steps: 1) Authenticate the caller
+     *   and resolve their party identity used for
+     *   `shopping_mall_snapshot_parties.party_type` and `party_id`. 2) Fetch
+     *   the snapshot metadata from `shopping_mall_snapshots` by `id =
+     *   snapshotId`. 3) Enforce viewability: - Determine whether a matching row
+     *   exists in `shopping_mall_snapshot_parties` for the same
+     *   `shopping_mall_snapshot_id` and caller identity where `can_view = true`
+     *   and `deleted_at` is null. - Treat absence of a viewable party
+     *   relationship as access denied. - Additionally, ensure administrator
+     *   visibility rules are applied consistently with how admin parties are
+     *   represented in `shopping_mall_snapshot_parties`. 4) If the snapshot is
+     *   not found OR access is not viewable, return an unsuccessful result in a
+     *   way that does not leak existence details (e.g., a generic
+     *   forbidden/not-found-equivalent error). 5) If viewable, load the
+     *   optional `shopping_mall_snapshot_payloads` record via the 1:1 relation
+     *   `shopping_mall_snapshots.payload`. 6) Construct the response DTO
+     *   `IShoppingMallSnapshot` from snapshot metadata and (when present)
+     *   payload content.
    *
    * Database access considerations:
    * - Use a single transaction-free read (no write).
@@ -144,9 +153,10 @@ export class ShoppingmallMemberSnapshotsController {
    *
    * @param connection
    * @param body History query criteria for filtering snapshot records by source type and linkage identifiers, with pagination and sorting.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query `shopping_mall_snapshots` as the main history table.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query `shopping_mall_snapshots` as the main
+     *   history table.
    *
    * Implementation steps:
    * 1) Parse requestBody filters (sourceType, optional sourceEntityId, optional linkage ids: sourceSellerId/sourceOrderId/sourceOrderItemId/sourceReviewId/sourceCancellationRequestId/sourceRefundRequestId) and pagination/sorting options.

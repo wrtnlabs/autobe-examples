@@ -8,7 +8,10 @@ export type IEcommerceMallPendingRequestsCount = {
   /**
    * Number of pending administrator promotion requests awaiting review.
    *
-   * @x-autobe-specification Computed via COUNT(*) query on ecommerce_mall_admin_promotion_requests table with WHERE status = 'pending' clause. Non-negative integer starting from 0. No database column mapping - this is an aggregated result computed at query time.
+     * @x-autobe-specification Computed via COUNT(*) query on
+     *   ecommerce_mall_admin_promotion_requests table with WHERE status =
+     *   'pending' clause. Non-negative integer starting from 0. No database
+     *   column mapping - this is an aggregated result computed at query time.
    */
   count: number & tags.Type<"int32"> & tags.Minimum<0>;
 };

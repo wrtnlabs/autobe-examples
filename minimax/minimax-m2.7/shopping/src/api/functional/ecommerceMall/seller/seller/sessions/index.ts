@@ -41,7 +41,8 @@ import { IPageIEcommerceMallSellerSession } from "../../../../../structures/IPag
  * @param props.body Search criteria for filtering seller sessions including optional filters for IP address, session status, creation date range, and pagination parameters.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Query ecommerce_mall_seller_sessions table filtering by the authenticated seller's ID (from session context).
+ * @x-autobe-specification Query ecommerce_mall_seller_sessions table filtering
+ *   by the authenticated seller's ID (from session context).
  *
  * 1. Extract seller ID from the authenticated session JWT token.
  * 2. Query seller_sessions table with seller_id as primary filter.
@@ -143,7 +144,8 @@ export namespace index {
  * @param props.sessionId Unique identifier of the seller session to retrieve.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Query the ecommerce_mall_seller_sessions table using the provided sessionId as the primary key.
+ * @x-autobe-specification Query the ecommerce_mall_seller_sessions table using
+ *   the provided sessionId as the primary key.
  *
  * Validate that the session exists and retrieve all associated fields: id, ecommerce_mall_seller_id, ip, href, referrer, access_token, refresh_token, created_at, expired_at.
  *

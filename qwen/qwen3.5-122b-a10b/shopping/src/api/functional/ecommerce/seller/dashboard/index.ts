@@ -22,7 +22,8 @@ import { IEcommerceShopDashboard } from "../../../../structures/IEcommerceShopDa
  * @param props.connection
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Implement seller shop dashboard retrieval with the following logic:
+ * @x-autobe-specification Implement seller shop dashboard retrieval with the
+ *   following logic:
  *
  * 1. **Authentication**: Validate seller authentication via session token. Extract seller_id from authenticated session.
  *

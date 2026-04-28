@@ -22,9 +22,10 @@ export class ShoppingmallAdministratorGrade_changesController {
    *
    * @param connection
    * @param body Search criteria for filtering grade change audit records, including administrator ID, performer ID, grade filters, change type, date range, and pagination parameters.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Query shopping_mall_administrator_grade_changes table with pagination and filtering.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor administrator
+     * @x-autobe-specification Query shopping_mall_administrator_grade_changes
+     *   table with pagination and filtering.
    *
    * **Search Filters**:
    * - administratorId: Filter by the administrator whose grade was changed
@@ -82,9 +83,10 @@ export class ShoppingmallAdministratorGrade_changesController {
    *
    * @param connection
    * @param changeId Unique identifier of the grade change audit record to retrieve (global scope).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Query shopping_mall_administrator_grade_changes table by primary key id.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor administrator
+     * @x-autobe-specification Query shopping_mall_administrator_grade_changes
+     *   table by primary key id.
    *
    * 1. Validate changeId parameter is a valid UUID format.
    * 2. Perform SELECT query on shopping_mall_administrator_grade_changes WHERE id = changeId.

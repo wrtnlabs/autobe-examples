@@ -22,7 +22,10 @@ import { IPageIMallPlatformSellerAccount } from "../../../../structures/IPageIMa
  * @param props.body Search criteria for filtering, sorting, and paginating seller account records.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor administrator
- * @x-autobe-specification Query the mall_platform_sellers and mall_platform_seller_accounts data needed to build a searchable seller account list. Apply pagination, keyword search, approval-status filtering, and sorting in the service layer before returning results.
+ * @x-autobe-specification Query the mall_platform_sellers and
+ *   mall_platform_seller_accounts data needed to build a searchable seller
+ *   account list. Apply pagination, keyword search, approval-status filtering,
+ *   and sorting in the service layer before returning results.
  *
  * Use seller account and approval-related fields that are actually available in the schema. Do not invent status columns or lifecycle timestamps. If the request includes a search keyword, match against seller identity fields and any public account identifiers supported by the schema. If the request includes approval state criteria, filter by the seller approval relationship rather than assuming a denormalized field exists on the seller table.
  *
@@ -117,7 +120,13 @@ export namespace index {
  * @param props.sellerAccountId The seller account UUID to retrieve (global scope).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor administrator
- * @x-autobe-specification Load one mall_platform_seller_accounts record by primary key and join the one-to-one mall_platform_seller_profiles relation through seller_account_id. Return the seller account fields id, email, approval_status, rejection_reason, suspended_at, deleted_at, created_at, and updated_at, plus the linked seller profile fields id, seller_account_id, shop_name, shop_description, logo_image_uri, created_at, updated_at, and deleted_at.
+ * @x-autobe-specification Load one mall_platform_seller_accounts record by
+ *   primary key and join the one-to-one mall_platform_seller_profiles relation
+ *   through seller_account_id. Return the seller account fields id, email,
+ *   approval_status, rejection_reason, suspended_at, deleted_at, created_at,
+ *   and updated_at, plus the linked seller profile fields id,
+ *   seller_account_id, shop_name, shop_description, logo_image_uri, created_at,
+ *   updated_at, and deleted_at.
  *
  * Validate sellerAccountId as a UUID before querying. If the seller account is missing, return a 404-style error. Do not expose password_hash in any response mapping. Do not infer approval or suspension from the profile table; the seller account table is authoritative for account state. Keep nullable columns nullable in the response and preserve exact stored values.
  * @path /mallPlatform/administrator/sellerAccounts/:sellerAccountId

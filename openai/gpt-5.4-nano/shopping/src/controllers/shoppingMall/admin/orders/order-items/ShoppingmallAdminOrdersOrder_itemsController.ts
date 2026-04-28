@@ -24,9 +24,9 @@ export class ShoppingmallAdminOrdersOrder_itemsController {
    * @param connection
    * @param orderId Target order identifier whose purchased line items are being listed.
    * @param body Pagination and optional ordering/filtering parameters for listing order items within the specified order.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Realize Agent implementation steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Realize Agent implementation steps:
    *
    * 1) Validate `orderId` is a UUID.
    * 2) Load `shopping_mall_orders` by `id = orderId`. If not found, return not-found.

@@ -10,56 +10,74 @@ export type IShoppingMallSellerProfilePurchaseSnapshot = {
   /**
    * Unique identifier of this preserved seller profile purchase snapshot.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_seller_profile_purchase_snapshots.id.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_seller_profile_purchase_snapshots.id.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Seller shop name preserved from the time the order item was purchased.
    *
-   * @x-autobe-database-schema-property shop_name
-   * @x-autobe-specification Direct mapping from shopping_mall_seller_profile_purchase_snapshots.shop_name. Store and return the seller-facing shop name exactly as captured at snapshot creation time.
+     * @x-autobe-database-schema-property shop_name
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_seller_profile_purchase_snapshots.shop_name. Store and
+     *   return the seller-facing shop name exactly as captured at snapshot
+     *   creation time.
    */
   shop_name: string;
 
   /**
    * Seller shop logo URI preserved from the time of purchase, or null when no logo was captured.
    *
-   * @x-autobe-database-schema-property logo_uri
-   * @x-autobe-specification Direct mapping from shopping_mall_seller_profile_purchase_snapshots.logo_uri. Return the stored logo URI when one was captured at purchase time; otherwise return null.
+     * @x-autobe-database-schema-property logo_uri
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_seller_profile_purchase_snapshots.logo_uri. Return the
+     *   stored logo URI when one was captured at purchase time; otherwise
+     *   return null.
    */
   logo_uri: (string & tags.Format<"uri">) | null;
 
   /**
    * Order item whose purchase-time seller identity is preserved by this snapshot.
    *
-   * @x-autobe-database-schema-property orderItem
-   * @x-autobe-specification Join shopping_mall_order_items on shopping_mall_seller_profile_purchase_snapshots.shopping_mall_order_item_id = shopping_mall_order_items.id and project the related row as IShoppingMallOrderItem.ISummary.
+     * @x-autobe-database-schema-property orderItem
+     * @x-autobe-specification Join shopping_mall_order_items on
+     *   shopping_mall_seller_profile_purchase_snapshots.shopping_mall_order_item_id
+     *   = shopping_mall_order_items.id and project the related row as
+     *   IShoppingMallOrderItem.ISummary.
    */
   orderItem: IShoppingMallOrderItem.ISummary;
 
   /**
    * Timestamp when this purchase-time seller profile snapshot was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from shopping_mall_seller_profile_purchase_snapshots.created_at.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_seller_profile_purchase_snapshots.created_at.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when this snapshot record was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from shopping_mall_seller_profile_purchase_snapshots.updated_at. For this immutable record, this is typically equal to creation time unless exceptional administrative lifecycle handling updates the row metadata.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_seller_profile_purchase_snapshots.updated_at. For this
+     *   immutable record, this is typically equal to creation time unless
+     *   exceptional administrative lifecycle handling updates the row metadata.
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * Soft-deletion timestamp for exceptional administrative removal handling, or null when the historical snapshot remains active.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from shopping_mall_seller_profile_purchase_snapshots.deleted_at. Return null for normally retained historical records; otherwise return the soft-delete timestamp when exceptional administrative lifecycle handling has marked the snapshot as deleted.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_seller_profile_purchase_snapshots.deleted_at. Return null
+     *   for normally retained historical records; otherwise return the
+     *   soft-delete timestamp when exceptional administrative lifecycle
+     *   handling has marked the snapshot as deleted.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -71,15 +89,19 @@ export namespace IShoppingMallSellerProfilePurchaseSnapshot {
    */
   export type ICreate = {
     /**
-     * @x-autobe-database-schema-property shop_name
+         * @x-autobe-database-schema-property shop_name
      */
     shop_name: string;
 
     /**
      * Seller shop logo URI preserved at purchase time, or null when no logo is captured.
      *
-     * @x-autobe-database-schema-property logo_uri
-     * @x-autobe-specification Direct mapping from shopping_mall_seller_profile_purchase_snapshots.logo_uri. Accept the preserved seller shop logo URI when provided, or null because the source database column is nullable. In this create DTO, the property remains optional because clients may omit it entirely.
+         * @x-autobe-database-schema-property logo_uri
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_seller_profile_purchase_snapshots.logo_uri. Accept
+         *   the preserved seller shop logo URI when provided, or null because
+         *   the source database column is nullable. In this create DTO, the
+         *   property remains optional because clients may omit it entirely.
      */
     logo_uri?: (string & tags.Format<"uri">) | null | undefined;
   };
@@ -91,14 +113,24 @@ export namespace IShoppingMallSellerProfilePurchaseSnapshot {
     /**
      * Page number of the historical seller profile purchase snapshot results to return.
      *
-     * @x-autobe-specification Query control, not a database column. Interpret as the 1-indexed page number applied after filtering shopping_mall_seller_profile_purchase_snapshots by the resolved shopping_mall_order_item_id from the path-scoped order item. When omitted, downstream pagination behavior should fall back to the platform default page, typically 1.
+         * @x-autobe-specification Query control, not a database column.
+         *   Interpret as the 1-indexed page number applied after filtering
+         *   shopping_mall_seller_profile_purchase_snapshots by the resolved
+         *   shopping_mall_order_item_id from the path-scoped order item. When
+         *   omitted, downstream pagination behavior should fall back to the
+         *   platform default page, typically 1.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of historical seller profile purchase snapshot records to include in one response page.
      *
-     * @x-autobe-specification Query control, not a database column. Interpret as the maximum number of filtered shopping_mall_seller_profile_purchase_snapshots rows to return in one page after applying the resolved order-item scope. Enforce the schema bounds of minimum 1 and maximum 100, and when omitted use the platform default page size.
+         * @x-autobe-specification Query control, not a database column.
+         *   Interpret as the maximum number of filtered
+         *   shopping_mall_seller_profile_purchase_snapshots rows to return in
+         *   one page after applying the resolved order-item scope. Enforce the
+         *   schema bounds of minimum 1 and maximum 100, and when omitted use
+         *   the platform default page size.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -107,7 +139,12 @@ export namespace IShoppingMallSellerProfilePurchaseSnapshot {
     /**
      * Sorting rule applied to the historical seller profile purchase snapshot results.
      *
-     * @x-autobe-specification Query control, not a database column. Interpret as the client-requested sort expression for the list of shopping_mall_seller_profile_purchase_snapshots already filtered to the resolved order item. Support deterministic ordering compatible with this collection endpoint; when omitted, default to created_at descending and id ascending for stable paging.
+         * @x-autobe-specification Query control, not a database column.
+         *   Interpret as the client-requested sort expression for the list of
+         *   shopping_mall_seller_profile_purchase_snapshots already filtered to
+         *   the resolved order item. Support deterministic ordering compatible
+         *   with this collection endpoint; when omitted, default to created_at
+         *   descending and id ascending for stable paging.
      */
     sort?: string | undefined;
   };

@@ -27,7 +27,8 @@ import { IPageIEcommerceMallSellerAdminRequest } from "../../../../../../structu
  * @param props.body Contains the reason text explaining why the seller is requesting administrative privileges.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Create a new admin request for the authenticated seller.
+ * @x-autobe-specification Create a new admin request for the authenticated
+ *   seller.
  *
  * 1. Extract authenticated seller from request context (seller session/token)
  * 2. Validate seller account exists and is active (not suspended/banned)
@@ -143,7 +144,8 @@ export namespace create {
  * @param props.body Search criteria including optional status filter, date range filters, and pagination parameters for listing the seller's admin requests.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Query ecommerce_mall_seller_admin_requests table filtering by the authenticated seller's ID.
+ * @x-autobe-specification Query ecommerce_mall_seller_admin_requests table
+ *   filtering by the authenticated seller's ID.
  *
  * Implementation steps:
  * 1. Extract seller ID from authenticated session (JWT token)
@@ -249,7 +251,8 @@ export namespace index {
  * @param props.requestId Unique identifier (UUID) of the admin request to retrieve. Must belong to the authenticated seller.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Query the ecommerce_mall_seller_admin_requests table to retrieve the specific admin request by its UUID identifier.
+ * @x-autobe-specification Query the ecommerce_mall_seller_admin_requests table
+ *   to retrieve the specific admin request by its UUID identifier.
  *
  * 1. Extract seller ID from authenticated seller session (JWT token).
  * 2. Query database: SELECT * FROM ecommerce_mall_seller_admin_requests WHERE id = requestId AND ecommerce_mall_seller_id = authenticatedSellerId AND deleted_at IS NULL.

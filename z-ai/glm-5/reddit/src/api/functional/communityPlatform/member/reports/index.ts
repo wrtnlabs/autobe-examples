@@ -24,7 +24,8 @@ import { IPageICommunityPlatformReport } from "../../../../structures/IPageIComm
  * @param props.body Report creation data including target content and reason
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Create a new report record in community_platform_reports table with status 'pending'.
+ * @x-autobe-specification Create a new report record in
+ *   community_platform_reports table with status 'pending'.
  *
  * 1. Validate the authenticated member is not banned from the target community.
  * 2. Validate target_type is either 'post' or 'comment'.
@@ -124,7 +125,8 @@ export namespace create {
  * @param props.body Search criteria and pagination parameters for report listing
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query community_platform_reports table with pagination and filtering for moderator review.
+ * @x-autobe-specification Query community_platform_reports table with
+ *   pagination and filtering for moderator review.
  *
  * Implementation steps:
  * 1. Authenticate member and verify moderator privileges for the requested community

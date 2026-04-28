@@ -65,7 +65,15 @@ export namespace IHrmPlatformDashboard {
      * - **personal**: Calculates individual employee metrics from timelogs, timers, timesheets, and tasks for the authenticated user.
      * - **organization**: Calculates organization-wide aggregated metrics (active employee count, pending timesheets) requiring `report_view` permission.
      *
-     * @x-autobe-specification Required enum parameter. 'personal' triggers calculation of employee-specific metrics (hours_logged_today from hrm_platform_timelogs, active_timer from hrm_platform_timers, recent_timelogs, pending_timesheet_status from hrm_platform_timesheets, assigned_tasks from hrm_platform_tasks). 'organization' triggers organization-wide metrics (total_active_employees from hrm_platform_employees, pending_timesheets_count from hrm_platform_timesheets) and requires 'report_view' permission check in hrm_platform_permissions.
+         * @x-autobe-specification Required enum parameter. 'personal' triggers
+         *   calculation of employee-specific metrics (hours_logged_today from
+         *   hrm_platform_timelogs, active_timer from hrm_platform_timers,
+         *   recent_timelogs, pending_timesheet_status from
+         *   hrm_platform_timesheets, assigned_tasks from hrm_platform_tasks).
+         *   'organization' triggers organization-wide metrics
+         *   (total_active_employees from hrm_platform_employees,
+         *   pending_timesheets_count from hrm_platform_timesheets) and requires
+         *   'report_view' permission check in hrm_platform_permissions.
      */
     dashboard_type: "personal" | "organization";
 
@@ -74,7 +82,11 @@ export namespace IHrmPlatformDashboard {
      *
      * When provided, timelog aggregations (hours logged today, recent timelogs) will be calculated only for records where start_datetime falls within the specified date range. Used primarily for historical analysis and reporting.
      *
-     * @x-autobe-specification Optional ISO 8601 date string (YYYY-MM-DD). Filters timelog data by start_datetime >= start_date. When not provided, default range is used (today's date for personal dashboard). Used in WHERE clause when aggregating timelogs for hours_logged_today and recent_timelogs metrics.
+         * @x-autobe-specification Optional ISO 8601 date string (YYYY-MM-DD).
+         *   Filters timelog data by start_datetime >= start_date. When not
+         *   provided, default range is used (today's date for personal
+         *   dashboard). Used in WHERE clause when aggregating timelogs for
+         *   hours_logged_today and recent_timelogs metrics.
      */
     start_date?: (string & tags.Format<"date">) | undefined;
 
@@ -83,7 +95,11 @@ export namespace IHrmPlatformDashboard {
      *
      * When provided with start_date, creates a date range filter for timelog aggregations. Timelogs are included only if start_datetime falls within [start_date, end_date] range. Useful for analyzing specific time periods rather than current metrics.
      *
-     * @x-autobe-specification Optional ISO 8601 date string (YYYY-MM-DD). Filters timelog data by start_datetime <= end_date. Used together with start_date to create a date range. When not provided, uses default range (all time for organization dashboard). Applied in WHERE clause for timelog aggregation queries.
+         * @x-autobe-specification Optional ISO 8601 date string (YYYY-MM-DD).
+         *   Filters timelog data by start_datetime <= end_date. Used together
+         *   with start_date to create a date range. When not provided, uses
+         *   default range (all time for organization dashboard). Applied in
+         *   WHERE clause for timelog aggregation queries.
      */
     end_date?: (string & tags.Format<"date">) | undefined;
 
@@ -92,7 +108,12 @@ export namespace IHrmPlatformDashboard {
      *
      * Allows retrieving only tasks matching a specific status. Common values: 'TODO', 'IN_PROGRESS', 'IN_REVIEW', 'DONE'. When not provided, returns all assigned tasks regardless of status.
      *
-     * @x-autobe-specification Optional string parameter filtering tasks by status. Valid values: 'TODO', 'IN_PROGRESS', 'IN_REVIEW', 'DONE'. Passed as WHERE clause condition: assigned_tasks WHERE status = task_status_filter. Only applicable when dashboard_type is 'personal'. Used to limit the assigned_tasks list in personal_metrics response.
+         * @x-autobe-specification Optional string parameter filtering tasks by
+         *   status. Valid values: 'TODO', 'IN_PROGRESS', 'IN_REVIEW', 'DONE'.
+         *   Passed as WHERE clause condition: assigned_tasks WHERE status =
+         *   task_status_filter. Only applicable when dashboard_type is
+         *   'personal'. Used to limit the assigned_tasks list in
+         *   personal_metrics response.
      */
     task_status_filter?: string | undefined;
 
@@ -101,7 +122,11 @@ export namespace IHrmPlatformDashboard {
      *
      * Controls which page of results to return when listing assigned tasks. Page numbers are 1-indexed. Used together with limit to paginate large task lists in personal dashboard response.
      *
-     * @x-autobe-specification Optional integer, minimum value 1. Defaults to 1 when not provided. Used in OFFSET calculation: (page - 1) * limit. Applied in ORDER BY created_at DESC with LIMIT/OFFSET for assigned_tasks query. Must be at least 1 (zero or negative values rejected with 400 error).
+         * @x-autobe-specification Optional integer, minimum value 1. Defaults
+         *   to 1 when not provided. Used in OFFSET calculation: (page - 1) *
+         *   limit. Applied in ORDER BY created_at DESC with LIMIT/OFFSET for
+         *   assigned_tasks query. Must be at least 1 (zero or negative values
+         *   rejected with 400 error).
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -110,7 +135,11 @@ export namespace IHrmPlatformDashboard {
      *
      * Controls the size of each page in paginated task list. Must be between 1 and 100. Defaults to 10 if not provided. Used together with page parameter to limit the number of assigned_tasks in the response.
      *
-     * @x-autobe-specification Optional integer, must be between 1 and 100 inclusive. Defaults to 10 when not provided. Used as LIMIT clause in assigned_tasks query. Values exceeding 100 are rejected with 400 error. Values below 1 are rejected with 400 error. Together with page, enables pagination for large task lists.
+         * @x-autobe-specification Optional integer, must be between 1 and 100
+         *   inclusive. Defaults to 10 when not provided. Used as LIMIT clause
+         *   in assigned_tasks query. Values exceeding 100 are rejected with 400
+         *   error. Values below 1 are rejected with 400 error. Together with
+         *   page, enables pagination for large task lists.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -128,7 +157,10 @@ export namespace IHrmPlatformDashboard {
      *
      * This enum determines which metrics object in the response will contain data. The 'personal' type returns individual employee metrics, while 'organization' returns organization-wide aggregated metrics.
      *
-     * @x-autobe-specification Enum discriminator: 'personal' returns individual employee metrics; 'organization' returns aggregated organization metrics. Required field that determines which metrics object is populated.
+         * @x-autobe-specification Enum discriminator: 'personal' returns
+         *   individual employee metrics; 'organization' returns aggregated
+         *   organization metrics. Required field that determines which metrics
+         *   object is populated.
      */
     dashboard_type: string;
 
@@ -137,7 +169,14 @@ export namespace IHrmPlatformDashboard {
      *
      * This object contains individual employee time tracking metrics including hours worked today, active timer status with elapsed time, recent work entries, pending timesheet information, and assigned tasks. Populated when dashboard_type is 'personal'.
      *
-     * @x-autobe-specification Computed aggregation: hours_logged_today (SUM timelogs today in user timezone), active_timer (latest timer with elapsed time), recent_timelogs (last 5 timelogs), pending_timesheet_status (current week timesheet status), assigned_tasks (tasks with IN_PROGRESS/TODO status). All data sourced from hrm_platform_timelogs, hrm_platform_timers, hrm_platform_timesheets, hrm_platform_tasks, hrm_platform_employees tables.
+         * @x-autobe-specification Computed aggregation: hours_logged_today (SUM
+         *   timelogs today in user timezone), active_timer (latest timer with
+         *   elapsed time), recent_timelogs (last 5 timelogs),
+         *   pending_timesheet_status (current week timesheet status),
+         *   assigned_tasks (tasks with IN_PROGRESS/TODO status). All data
+         *   sourced from hrm_platform_timelogs, hrm_platform_timers,
+         *   hrm_platform_timesheets, hrm_platform_tasks, hrm_platform_employees
+         *   tables.
      */
     personal_metrics: IHrmPlatformDashboardIPersonalMetric | null;
 
@@ -146,7 +185,12 @@ export namespace IHrmPlatformDashboard {
      *
      * This object contains organization-level statistics including total active employee count and number of pending timesheets awaiting approval. Requires 'report_view' permission to access. Populated only when dashboard_type is 'organization'.
      *
-     * @x-autobe-specification Computed aggregation: total_active_employees (COUNT employees with status='active' in organization), pending_timesheets_count (COUNT timesheets with status='submitted' in organization). Requires 'report_view' permission check against hrm_platform_permissions before returning data. Populated only when dashboard_type is 'organization'.
+         * @x-autobe-specification Computed aggregation: total_active_employees
+         *   (COUNT employees with status='active' in organization),
+         *   pending_timesheets_count (COUNT timesheets with status='submitted'
+         *   in organization). Requires 'report_view' permission check against
+         *   hrm_platform_permissions before returning data. Populated only when
+         *   dashboard_type is 'organization'.
      */
     org_metrics: IHrmPlatformDashboardIOrgMetric | null;
   };

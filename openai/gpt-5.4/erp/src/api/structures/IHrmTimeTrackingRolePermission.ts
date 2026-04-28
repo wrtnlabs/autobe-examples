@@ -10,48 +10,64 @@ export type IHrmTimeTrackingRolePermission = {
   /**
    * Unique identifier of this role permission assignment.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_role_permissions.id. Return the UUID primary key of the persisted permission-assignment row.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_role_permissions.id. Return the UUID primary key of
+     *   the persisted permission-assignment row.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Granted permission code assigned to the role.
    *
-   * @x-autobe-database-schema-property permission
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_role_permissions.permission. Return the granted permission code exactly as stored for the related role, subject to business validation elsewhere.
+     * @x-autobe-database-schema-property permission
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_role_permissions.permission. Return the granted
+     *   permission code exactly as stored for the related role, subject to
+     *   business validation elsewhere.
    */
   permission: string;
 
   /**
    * Role that owns this permission assignment.
    *
-   * @x-autobe-database-schema-property role
-   * @x-autobe-specification Join hrm_time_tracking_roles on hrm_time_tracking_role_permissions.hrm_time_tracking_role_id = hrm_time_tracking_roles.id and materialize the related role as IHrmTimeTrackingRole.ISummary. The joined role must belong to the organization context used by the nested route.
+     * @x-autobe-database-schema-property role
+     * @x-autobe-specification Join hrm_time_tracking_roles on
+     *   hrm_time_tracking_role_permissions.hrm_time_tracking_role_id =
+     *   hrm_time_tracking_roles.id and materialize the related role as
+     *   IHrmTimeTrackingRole.ISummary. The joined role must belong to the
+     *   organization context used by the nested route.
    */
   role: IHrmTimeTrackingRole.ISummary;
 
   /**
    * Timestamp when this permission assignment was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_role_permissions.created_at as an ISO 8601 date-time string.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_role_permissions.created_at as an ISO 8601 date-time
+     *   string.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when this permission assignment was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_role_permissions.updated_at as an ISO 8601 date-time string.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_role_permissions.updated_at as an ISO 8601 date-time
+     *   string.
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * Soft-deletion timestamp for this permission assignment, or null when the assignment is active.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_role_permissions.deleted_at. Return an ISO 8601 date-time string when the assignment has been soft deleted, otherwise return null.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_role_permissions.deleted_at. Return an ISO 8601
+     *   date-time string when the assignment has been soft deleted, otherwise
+     *   return null.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -63,8 +79,14 @@ export namespace IHrmTimeTrackingRolePermission {
     /**
      * New permission code that should replace the current granted permission on the selected role permission assignment.
      *
-     * @x-autobe-database-schema-property permission
-     * @x-autobe-specification Direct mapping to hrm_time_tracking_role_permissions.permission for the existing row identified by permissionId in the path. Replace the current granted permission code with this submitted value after validating that it is a supported platform permission code and that no other active hrm_time_tracking_role_permissions row for the same hrm_time_tracking_role_id already uses the same permission.
+         * @x-autobe-database-schema-property permission
+         * @x-autobe-specification Direct mapping to
+         *   hrm_time_tracking_role_permissions.permission for the existing row
+         *   identified by permissionId in the path. Replace the current granted
+         *   permission code with this submitted value after validating that it
+         *   is a supported platform permission code and that no other active
+         *   hrm_time_tracking_role_permissions row for the same
+         *   hrm_time_tracking_role_id already uses the same permission.
      */
     permission: string;
   };
@@ -76,8 +98,18 @@ export namespace IHrmTimeTrackingRolePermission {
     /**
      * Permission codes to grant to the target custom role. Each value represents one permission assignment that the server will add for the role identified by the request path.
      *
-     * @x-autobe-database-schema-property permission
-     * @x-autobe-specification Each array item maps to the `permission` column of one new `hrm_time_tracking_role_permissions` row. Validate every item against the allowed permission catalog (`org:manage`, `employee:manage`, `employee:view`, `project:manage`, `project:view`, `time:manage`, `time:approve`, `time:view_all`, `report:view`). The array must contain at least one item. During processing, use the `roleId` path parameter as `hrm_time_tracking_role_id`, normalize or reject duplicate codes according to service policy, skip no-op duplicates already assigned to the role by raising a validation/conflict error, and insert one row per accepted permission code.
+         * @x-autobe-database-schema-property permission
+         * @x-autobe-specification Each array item maps to the `permission`
+         *   column of one new `hrm_time_tracking_role_permissions` row.
+         *   Validate every item against the allowed permission catalog
+         *   (`org:manage`, `employee:manage`, `employee:view`,
+         *   `project:manage`, `project:view`, `time:manage`, `time:approve`,
+         *   `time:view_all`, `report:view`). The array must contain at least
+         *   one item. During processing, use the `roleId` path parameter as
+         *   `hrm_time_tracking_role_id`, normalize or reject duplicate codes
+         *   according to service policy, skip no-op duplicates already assigned
+         *   to the role by raising a validation/conflict error, and insert one
+         *   row per accepted permission code.
      */
     permissions: (
       | "org:manage"

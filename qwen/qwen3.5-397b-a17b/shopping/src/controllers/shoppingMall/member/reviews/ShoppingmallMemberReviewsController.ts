@@ -22,9 +22,10 @@ export class ShoppingmallMemberReviewsController {
    *
    * @param connection
    * @param body Review creation data including the product, order, order item references, mandatory star rating, and optional text content.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Create a new review record in shopping_mall_reviews table.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Create a new review record in
+     *   shopping_mall_reviews table.
    *
    * 1. Validate request body: rating must be integer 1-5, content is optional string
    * 2. Verify the authenticated customer owns the order_item by joining order_items -> orders -> member_id
@@ -68,9 +69,10 @@ export class ShoppingmallMemberReviewsController {
    * @param connection
    * @param reviewId The unique identifier of the review to update (UUID format).
    * @param body Update payload containing the new rating and/or text content for the review.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Update the review identified by reviewId with the provided rating and/or content.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Update the review identified by reviewId with the
+     *   provided rating and/or content.
    *
    * 1. Validate reviewId format (UUID)
    * 2. Query shopping_mall_reviews table for the review with matching id
@@ -124,9 +126,10 @@ export class ShoppingmallMemberReviewsController {
    *
    * @param connection
    * @param reviewId Unique identifier of the review to delete (UUID format).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1. Authenticate the requesting customer and extract their member ID from the session.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification 1. Authenticate the requesting customer and
+     *   extract their member ID from the session.
    *
    * 2. Query the shopping_mall_reviews table to find the review by the provided reviewId.
    *

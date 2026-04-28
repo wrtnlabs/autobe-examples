@@ -11,72 +11,92 @@ export type ICommunityPlatformBan = {
   /**
    * Unique identifier of the community ban record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from community_platform_bans.id. This is the ban record identifier returned to moderation clients.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from community_platform_bans.id.
+     *   This is the ban record identifier returned to moderation clients.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * The member who is restricted by this ban.
    *
-   * @x-autobe-database-schema-property member
-   * @x-autobe-specification Join community_platform_bans.community_platform_member_id to community_platform_members.id and expose the related member as ICommunityPlatformMember.ISummary.
+     * @x-autobe-database-schema-property member
+     * @x-autobe-specification Join
+     *   community_platform_bans.community_platform_member_id to
+     *   community_platform_members.id and expose the related member as
+     *   ICommunityPlatformMember.ISummary.
    */
   member: ICommunityPlatformMember.ISummary;
 
   /**
    * The community where this ban is enforced.
    *
-   * @x-autobe-database-schema-property community
-   * @x-autobe-specification Join community_platform_bans.community_platform_community_id to community_platform_communities.id and expose the related community as ICommunityPlatformCommunity.ISummary.
+     * @x-autobe-database-schema-property community
+     * @x-autobe-specification Join
+     *   community_platform_bans.community_platform_community_id to
+     *   community_platform_communities.id and expose the related community as
+     *   ICommunityPlatformCommunity.ISummary.
    */
   community: ICommunityPlatformCommunity.ISummary;
 
   /**
    * Moderation reason explaining why the member was banned.
    *
-   * @x-autobe-database-schema-property reason
-   * @x-autobe-specification Direct mapping from community_platform_bans.reason. Store the moderator-provided explanation for why the ban was issued.
+     * @x-autobe-database-schema-property reason
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_bans.reason. Store the moderator-provided
+     *   explanation for why the ban was issued.
    */
   reason: string;
 
   /**
    * When the ban started.
    *
-   * @x-autobe-database-schema-property started_at
-   * @x-autobe-specification Direct mapping from community_platform_bans.started_at. This marks when the ban became effective.
+     * @x-autobe-database-schema-property started_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_bans.started_at. This marks when the ban became
+     *   effective.
    */
   startedAt: string & tags.Format<"date-time">;
 
   /**
    * When the ban ends, or null if it is still active.
    *
-   * @x-autobe-database-schema-property ended_at
-   * @x-autobe-specification Direct mapping from community_platform_bans.ended_at. Null means the ban is still active and has no scheduled end time.
+     * @x-autobe-database-schema-property ended_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_bans.ended_at. Null means the ban is still active
+     *   and has no scheduled end time.
    */
   endedAt: (string & tags.Format<"date-time">) | null;
 
   /**
    * When the ban record was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from community_platform_bans.created_at. This is set by the server when the ban record is created.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_bans.created_at. This is set by the server when the
+     *   ban record is created.
    */
   createdAt: string & tags.Format<"date-time">;
 
   /**
    * When the ban record was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from community_platform_bans.updated_at. This is updated by the server whenever the ban record changes.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_bans.updated_at. This is updated by the server
+     *   whenever the ban record changes.
    */
   updatedAt: string & tags.Format<"date-time">;
 
   /**
    * When the ban was soft deleted, or null if it is still present.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from community_platform_bans.deleted_at. Null means the ban is currently active in storage; a timestamp indicates it was soft deleted or revoked.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_bans.deleted_at. Null means the ban is currently
+     *   active in storage; a timestamp indicates it was soft deleted or
+     *   revoked.
    */
   deletedAt: (string & tags.Format<"date-time">) | null;
 };
@@ -88,32 +108,46 @@ export namespace ICommunityPlatformBan {
     /**
      * UUID of the member who is being banned from the community.
      *
-     * @x-autobe-database-schema-property community_platform_member_id
-     * @x-autobe-specification Direct mapping to community_platform_bans.community_platform_member_id. The client supplies the UUID of the affected member; the service validates that the member exists and can be banned in the path-resolved community.
+         * @x-autobe-database-schema-property community_platform_member_id
+         * @x-autobe-specification Direct mapping to
+         *   community_platform_bans.community_platform_member_id. The client
+         *   supplies the UUID of the affected member; the service validates
+         *   that the member exists and can be banned in the path-resolved
+         *   community.
      */
     communityPlatformMemberId: string & tags.Format<"uuid">;
 
     /**
      * Moderation reason explaining why the member is being banned.
      *
-     * @x-autobe-database-schema-property reason
-     * @x-autobe-specification Direct mapping to community_platform_bans.reason. Store the moderation explanation as provided after validating that it is non-empty and appropriate for the ban record.
+         * @x-autobe-database-schema-property reason
+         * @x-autobe-specification Direct mapping to
+         *   community_platform_bans.reason. Store the moderation explanation as
+         *   provided after validating that it is non-empty and appropriate for
+         *   the ban record.
      */
     reason: string;
 
     /**
      * Timestamp when the ban becomes effective.
      *
-     * @x-autobe-database-schema-property started_at
-     * @x-autobe-specification Direct mapping to community_platform_bans.started_at. Use the supplied timestamp as the ban's effective start time after validation; the service may also normalize timing rules to ensure the record starts at a valid effective moment.
+         * @x-autobe-database-schema-property started_at
+         * @x-autobe-specification Direct mapping to
+         *   community_platform_bans.started_at. Use the supplied timestamp as
+         *   the ban's effective start time after validation; the service may
+         *   also normalize timing rules to ensure the record starts at a valid
+         *   effective moment.
      */
     startedAt: string & tags.Format<"date-time">;
 
     /**
      * Optional timestamp when the ban ends. Use null for an indefinite ban.
      *
-     * @x-autobe-database-schema-property ended_at
-     * @x-autobe-specification Direct mapping to community_platform_bans.ended_at. When provided, store the ban's scheduled end time; when null or omitted, the ban remains open-ended until moderation explicitly lifts or replaces it.
+         * @x-autobe-database-schema-property ended_at
+         * @x-autobe-specification Direct mapping to
+         *   community_platform_bans.ended_at. When provided, store the ban's
+         *   scheduled end time; when null or omitted, the ban remains
+         *   open-ended until moderation explicitly lifts or replaces it.
      */
     endedAt?: (string & tags.Format<"date-time">) | null | undefined;
   };
@@ -125,24 +159,34 @@ export namespace ICommunityPlatformBan {
     /**
      * Reason for the ban or updated moderation note explaining why the member is restricted.
      *
-     * @x-autobe-database-schema-property reason
-     * @x-autobe-specification Direct mapping from community_platform_bans.reason. Update only the moderation explanation text for the targeted ban; keep the member and community scope unchanged.
+         * @x-autobe-database-schema-property reason
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_bans.reason. Update only the moderation
+         *   explanation text for the targeted ban; keep the member and
+         *   community scope unchanged.
      */
     reason?: string | undefined;
 
     /**
      * Timestamp when the ban starts or becomes effective.
      *
-     * @x-autobe-database-schema-property started_at
-     * @x-autobe-specification Direct mapping from community_platform_bans.started_at. Use this value to adjust when the ban becomes effective. When ended_at is also provided, validate that the interval is coherent and that the end does not precede the start.
+         * @x-autobe-database-schema-property started_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_bans.started_at. Use this value to adjust when
+         *   the ban becomes effective. When ended_at is also provided, validate
+         *   that the interval is coherent and that the end does not precede the
+         *   start.
      */
     started_at?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Timestamp when the ban ends, or null if the ban is ongoing.
      *
-     * @x-autobe-database-schema-property ended_at
-     * @x-autobe-specification Direct mapping from community_platform_bans.ended_at. This field may be null for an ongoing ban. When present, it defines when the temporary ban ends and must not be earlier than started_at.
+         * @x-autobe-database-schema-property ended_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_bans.ended_at. This field may be null for an
+         *   ongoing ban. When present, it defines when the temporary ban ends
+         *   and must not be earlier than started_at.
      */
     ended_at?: (string & tags.Format<"date-time">) | null | undefined;
   };
@@ -154,72 +198,91 @@ export namespace ICommunityPlatformBan {
     /**
      * Unique identifier for this ban record.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from community_platform_bans.id. Stable UUID identifier for the ban record.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_bans.id. Stable UUID identifier for the ban
+         *   record.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * The member who is banned in this community.
      *
-     * @x-autobe-database-schema-property member
-     * @x-autobe-specification Join community_platform_bans.community_platform_member_id to community_platform_members.id and expose the related member as ICommunityPlatformMember.ISummary.
+         * @x-autobe-database-schema-property member
+         * @x-autobe-specification Join
+         *   community_platform_bans.community_platform_member_id to
+         *   community_platform_members.id and expose the related member as
+         *   ICommunityPlatformMember.ISummary.
      */
     member: ICommunityPlatformMember.ISummary;
 
     /**
      * The community where this ban is enforced.
      *
-     * @x-autobe-database-schema-property community
-     * @x-autobe-specification Join community_platform_bans.community_platform_community_id to community_platform_communities.id and expose the related community as ICommunityPlatformCommunity.ISummary.
+         * @x-autobe-database-schema-property community
+         * @x-autobe-specification Join
+         *   community_platform_bans.community_platform_community_id to
+         *   community_platform_communities.id and expose the related community
+         *   as ICommunityPlatformCommunity.ISummary.
      */
     community: ICommunityPlatformCommunity.ISummary;
 
     /**
      * Reason the member was banned.
      *
-     * @x-autobe-database-schema-property reason
-     * @x-autobe-specification Direct mapping from community_platform_bans.reason. Stored moderation explanation shown to consumers.
+         * @x-autobe-database-schema-property reason
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_bans.reason. Stored moderation explanation shown
+         *   to consumers.
      */
     reason: string;
 
     /**
      * When the ban became effective.
      *
-     * @x-autobe-database-schema-property started_at
-     * @x-autobe-specification Direct mapping from community_platform_bans.started_at. Indicates when enforcement began.
+         * @x-autobe-database-schema-property started_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_bans.started_at. Indicates when enforcement
+         *   began.
      */
     started_at: string & tags.Format<"date-time">;
 
     /**
      * When the ban ends, if it is temporary.
      *
-     * @x-autobe-database-schema-property ended_at
-     * @x-autobe-specification Direct mapping from community_platform_bans.ended_at. Null when the ban is indefinite or still active; otherwise the scheduled expiry time.
+         * @x-autobe-database-schema-property ended_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_bans.ended_at. Null when the ban is indefinite
+         *   or still active; otherwise the scheduled expiry time.
      */
     ended_at: (string & tags.Format<"date-time">) | null;
 
     /**
      * When the ban record was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from community_platform_bans.created_at. Immutable record creation time.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_bans.created_at. Immutable record creation time.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * When the ban record was last updated.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from community_platform_bans.updated_at. Updated whenever the ban record changes.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_bans.updated_at. Updated whenever the ban record
+         *   changes.
      */
     updated_at: string & tags.Format<"date-time">;
 
     /**
      * When the ban record was soft deleted, if applicable.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from community_platform_bans.deleted_at. Null while the ban remains active; populated when the record is soft deleted or revoked.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_bans.deleted_at. Null while the ban remains
+         *   active; populated when the record is soft deleted or revoked.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };
@@ -231,35 +294,54 @@ export namespace ICommunityPlatformBan {
     /**
      * Free-text search term for matching ban reasons or member identity in the community ban list.
      *
-     * @x-autobe-specification Use as a free-text filter against community_platform_bans list retrieval. Apply parameterized matching over ban reason text and member identity fields via joins to community_platform_members. Do not persist this value; it only affects the query.
+         * @x-autobe-specification Use as a free-text filter against
+         *   community_platform_bans list retrieval. Apply parameterized
+         *   matching over ban reason text and member identity fields via joins
+         *   to community_platform_members. Do not persist this value; it only
+         *   affects the query.
      */
     search?: string | undefined;
 
     /**
      * Whether to show only active bans or only inactive/ended bans in the community ban list.
      *
-     * @x-autobe-specification Treat true as a filter for currently active ban records and false as a filter for inactive/ended or deleted ban records. Implement the state check using community_platform_bans.ended_at and community_platform_bans.deleted_at. Do not store this field; derive it entirely at query time.
+         * @x-autobe-specification Treat true as a filter for currently active
+         *   ban records and false as a filter for inactive/ended or deleted ban
+         *   records. Implement the state check using
+         *   community_platform_bans.ended_at and
+         *   community_platform_bans.deleted_at. Do not store this field; derive
+         *   it entirely at query time.
      */
     isActive?: boolean | undefined;
 
     /**
      * Sort direction for the community ban list.
      *
-     * @x-autobe-specification Apply the requested list ordering to ban records. The supported values are the ban-list directions defined by the schema, with new ordering meaning newest first and old ordering meaning oldest first. Translate the selected value into a safe ORDER BY clause over the ban list query; do not persist it.
+         * @x-autobe-specification Apply the requested list ordering to ban
+         *   records. The supported values are the ban-list directions defined
+         *   by the schema, with new ordering meaning newest first and old
+         *   ordering meaning oldest first. Translate the selected value into a
+         *   safe ORDER BY clause over the ban list query; do not persist it.
      */
     sort?: "new" | "old" | undefined;
 
     /**
      * Page number to retrieve from the paginated ban list.
      *
-     * @x-autobe-specification Use as the 1-indexed page number for paginated community ban retrieval. Combine with limit to compute offset/skip for the query. Validate that the value is within supported bounds before applying it.
+         * @x-autobe-specification Use as the 1-indexed page number for
+         *   paginated community ban retrieval. Combine with limit to compute
+         *   offset/skip for the query. Validate that the value is within
+         *   supported bounds before applying it.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of ban records to return per page.
      *
-     * @x-autobe-specification Use as the maximum number of ban records returned per page. Enforce the configured upper bound before querying and use it with page to compute paging offsets. Do not persist this value.
+         * @x-autobe-specification Use as the maximum number of ban records
+         *   returned per page. Enforce the configured upper bound before
+         *   querying and use it with page to compute paging offsets. Do not
+         *   persist this value.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)

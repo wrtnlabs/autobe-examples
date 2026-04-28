@@ -24,9 +24,10 @@ export class EcommercemallProductsController {
    *
    * @param connection
    * @param body Search criteria including optional filters for name query, category, price range, stock availability, sorting order, and pagination parameters.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query the ecommerce_mall_products table applying the following filters:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query the ecommerce_mall_products table applying
+     *   the following filters:
    *
    * 1. **Name Search**: If 'query' is provided, perform case-insensitive partial match on name field using ILIKE pattern '%query%'.
    *
@@ -73,9 +74,9 @@ export class EcommercemallProductsController {
    *
    * @param connection
    * @param productId Unique identifier of the product in UUID format.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query the ecommerce_mall_products table by id.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query the ecommerce_mall_products table by id.
    *
    * Return 404 Not Found if product does not exist or has been deleted (deleted_at is not null).
    *

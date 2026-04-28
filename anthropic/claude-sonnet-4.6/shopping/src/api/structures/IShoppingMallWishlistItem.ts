@@ -14,24 +14,35 @@ export type IShoppingMallWishlistItem = {
   /**
    * Unique identifier for this wishlist item record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_wishlist_items.id. UUID primary key generated at insert time.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_wishlist_items.id. UUID primary key generated at insert
+     *   time.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Summary information of the product saved to this wishlist entry. Includes the product name, primary image URL, base price, assigned category, owning seller, and timestamps.
    *
-   * @x-autobe-database-schema-property product
-   * @x-autobe-specification Resolved via JOIN on shopping_mall_wishlist_items.shopping_mall_product_id → shopping_mall_products.id. Returned as IShoppingMallProduct.ISummary, which includes: id, name, base_price, primaryImageUrl (first image by sequence from shopping_mall_product_images), category (nullable ISummary from shopping_mall_categories), seller (ISummary from shopping_mall_sellers), created_at, and deleted_at.
+     * @x-autobe-database-schema-property product
+     * @x-autobe-specification Resolved via JOIN on
+     *   shopping_mall_wishlist_items.shopping_mall_product_id →
+     *   shopping_mall_products.id. Returned as IShoppingMallProduct.ISummary,
+     *   which includes: id, name, base_price, primaryImageUrl (first image by
+     *   sequence from shopping_mall_product_images), category (nullable
+     *   ISummary from shopping_mall_categories), seller (ISummary from
+     *   shopping_mall_sellers), created_at, and deleted_at.
    */
   product: IShoppingMallProduct.ISummary;
 
   /**
    * The date and time when the customer added this product to their wishlist.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from shopping_mall_wishlist_items.created_at. Set to the current server timestamp when the wishlist item row is inserted. Never updated after creation.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_wishlist_items.created_at. Set to the current server
+     *   timestamp when the wishlist item row is inserted. Never updated after
+     *   creation.
    */
   created_at: string & tags.Format<"date-time">;
 };
@@ -43,8 +54,16 @@ export namespace IShoppingMallWishlistItem {
     /**
      * The unique identifier of the product to add to the wishlist. Must reference an existing, active product in the catalog. The customer may not add the same product more than once; if it is already in their wishlist, the existing wishlist item is returned.
      *
-     * @x-autobe-database-schema-property shopping_mall_product_id
-     * @x-autobe-specification Direct mapping to shopping_mall_wishlist_items.shopping_mall_product_id (FK referencing shopping_mall_products.id). Must be a valid UUID of an existing, non-deleted product (deleted_at IS NULL). If the referenced product does not exist or is soft-deleted, return 404. Used together with the session-resolved shopping_mall_customer_id to perform an upsert-style operation respecting the composite unique constraint @@unique([shopping_mall_customer_id, shopping_mall_product_id]).
+         * @x-autobe-database-schema-property shopping_mall_product_id
+         * @x-autobe-specification Direct mapping to
+         *   shopping_mall_wishlist_items.shopping_mall_product_id (FK
+         *   referencing shopping_mall_products.id). Must be a valid UUID of an
+         *   existing, non-deleted product (deleted_at IS NULL). If the
+         *   referenced product does not exist or is soft-deleted, return 404.
+         *   Used together with the session-resolved shopping_mall_customer_id
+         *   to perform an upsert-style operation respecting the composite
+         *   unique constraint @@unique([shopping_mall_customer_id,
+         *   shopping_mall_product_id]).
      */
     shopping_mall_product_id: string & tags.Format<"uuid">;
   };
@@ -56,24 +75,36 @@ export namespace IShoppingMallWishlistItem {
     /**
      * The unique identifier of this wishlist item record.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_wishlist_items.id. UUID primary key uniquely identifying this wishlist entry.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_wishlist_items.id. UUID primary key uniquely
+         *   identifying this wishlist entry.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * A summary of the product the customer has saved to their wishlist, including its name, base price, category, seller, and primary image. Only active (non-deleted) products are included.
      *
-     * @x-autobe-database-schema-property product
-     * @x-autobe-specification Resolved via the product belongs-to relation: JOIN shopping_mall_products ON shopping_mall_wishlist_items.shopping_mall_product_id = shopping_mall_products.id, then mapped to IShoppingMallProduct.ISummary (id, name, base_price, category, seller, primaryImageUrl, created_at, deleted_at). Items where shopping_mall_products.deleted_at IS NOT NULL must be excluded from wishlist results.
+         * @x-autobe-database-schema-property product
+         * @x-autobe-specification Resolved via the product belongs-to relation:
+         *   JOIN shopping_mall_products ON
+         *   shopping_mall_wishlist_items.shopping_mall_product_id =
+         *   shopping_mall_products.id, then mapped to
+         *   IShoppingMallProduct.ISummary (id, name, base_price, category,
+         *   seller, primaryImageUrl, created_at, deleted_at). Items where
+         *   shopping_mall_products.deleted_at IS NOT NULL must be excluded from
+         *   wishlist results.
      */
     product: IShoppingMallProduct.ISummary;
 
     /**
      * The timestamp at which the customer added this product to their wishlist.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_wishlist_items.created_at. ISO 8601 datetime (with timezone) recording when the customer added this product to their wishlist.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_wishlist_items.created_at. ISO 8601 datetime (with
+         *   timezone) recording when the customer added this product to their
+         *   wishlist.
      */
     created_at: string & tags.Format<"date-time">;
   };
@@ -91,28 +122,49 @@ export namespace IShoppingMallWishlistItem {
     /**
      * Optional keyword filter applied to product names in the wishlist. When provided, only wishlist items whose product name contains the specified keyword are returned. Case-insensitive partial matching is supported. When omitted, no keyword filtering is applied.
      *
-     * @x-autobe-specification Optional keyword search filter. When provided (non-null), apply a case-insensitive trigram GIN index match (ILIKE or pg_trgm) against shopping_mall_products.name. When null or omitted, no text filtering is applied and all non-deleted wishlist items for the authenticated customer are included. Corresponds to the GIN index on shopping_mall_products.name defined as @@index([name(ops: raw('gin_trgm_ops'))], type: Gin).
+         * @x-autobe-specification Optional keyword search filter. When provided
+         *   (non-null), apply a case-insensitive trigram GIN index match (ILIKE
+         *   or pg_trgm) against shopping_mall_products.name. When null or
+         *   omitted, no text filtering is applied and all non-deleted wishlist
+         *   items for the authenticated customer are included. Corresponds to
+         *   the GIN index on shopping_mall_products.name defined as
+         *   @@index([name(ops: raw('gin_trgm_ops'))], type: Gin).
      */
     search?: string | null | undefined;
 
     /**
      * Controls the ordering of the returned wishlist items. Use `created_at` to sort by the date each product was added to the wishlist (most recent first, default). Use `name` to sort alphabetically by product name. When omitted, defaults to most recently added first.
      *
-     * @x-autobe-specification Optional sort order for the result set. Allowed values: 'created_at' → ORDER BY shopping_mall_wishlist_items.created_at DESC (shows most recently wishlisted items first); 'name' → ORDER BY shopping_mall_products.name ASC (alphabetical by product name). When null or omitted, default sort is 'created_at' DESC. Passed directly to the SQL ORDER BY clause after validation.
+         * @x-autobe-specification Optional sort order for the result set.
+         *   Allowed values: 'created_at' → ORDER BY
+         *   shopping_mall_wishlist_items.created_at DESC (shows most recently
+         *   wishlisted items first); 'name' → ORDER BY
+         *   shopping_mall_products.name ASC (alphabetical by product name).
+         *   When null or omitted, default sort is 'created_at' DESC. Passed
+         *   directly to the SQL ORDER BY clause after validation.
      */
     sort?: "created_at" | "name" | null | undefined;
 
     /**
      * The page number to retrieve (1-based). Page 1 returns the first set of results. When omitted, defaults to page 1. Use together with `limit` to navigate through the full wishlist.
      *
-     * @x-autobe-specification 1-based page number for pagination. When provided, use as the OFFSET multiplier: OFFSET = (page - 1) * limit. When null or omitted, defaults to page 1 (no offset). Must be a positive integer ≥ 1. Used together with `limit` to construct the LIMIT/OFFSET clause in the SQL query.
+         * @x-autobe-specification 1-based page number for pagination. When
+         *   provided, use as the OFFSET multiplier: OFFSET = (page - 1) *
+         *   limit. When null or omitted, defaults to page 1 (no offset). Must
+         *   be a positive integer ≥ 1. Used together with `limit` to construct
+         *   the LIMIT/OFFSET clause in the SQL query.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | null | undefined;
 
     /**
      * The maximum number of wishlist items to return per page. Accepts values between 1 and 100 inclusive. When omitted, defaults to 20 items per page. Use together with `page` to paginate through the customer's full wishlist.
      *
-     * @x-autobe-specification Number of items to return per page (LIMIT clause). Must be a positive integer between 1 and 100 inclusive. When null or omitted, defaults to 20. Used together with `page` to construct the LIMIT/OFFSET clause: LIMIT = limit, OFFSET = (page - 1) * limit. The maximum allowed value is 100 to prevent excessively large queries.
+         * @x-autobe-specification Number of items to return per page (LIMIT
+         *   clause). Must be a positive integer between 1 and 100 inclusive.
+         *   When null or omitted, defaults to 20. Used together with `page` to
+         *   construct the LIMIT/OFFSET clause: LIMIT = limit, OFFSET = (page -
+         *   1) * limit. The maximum allowed value is 100 to prevent excessively
+         *   large queries.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)

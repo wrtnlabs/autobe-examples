@@ -22,9 +22,10 @@ export class ShoppingmallCustomerWishlistsController {
    *
    * @param connection
    * @param body Product identifier to add to the wishlist. The productId must reference an existing, non-deleted product.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Create a new wishlist entry linking the authenticated customer to a product.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Create a new wishlist entry linking the
+     *   authenticated customer to a product.
    *
    * 1. Extract customer ID from the authenticated session/token.
    * 2. Validate that the productId in the request body exists and references a valid, non-deleted product.
@@ -71,9 +72,10 @@ export class ShoppingmallCustomerWishlistsController {
    *
    * @param connection
    * @param body Search and pagination parameters for filtering wishlist products. Supports filtering by product name, category, price range, and cursor-based pagination.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Query shopping_mall_customer_wishlists table joined with shopping_mall_products for the authenticated customer.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Query shopping_mall_customer_wishlists table
+     *   joined with shopping_mall_products for the authenticated customer.
    *
    * 1. Authenticate the customer from the request context
    * 2. Apply search filters from request body:
@@ -122,9 +124,10 @@ export class ShoppingmallCustomerWishlistsController {
    *
    * @param connection
    * @param wishlistId Unique identifier of the wishlist entry to retrieve (UUID format).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Query the shopping_mall_customer_wishlists table by the wishlist ID (id column).
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Query the shopping_mall_customer_wishlists table
+     *   by the wishlist ID (id column).
    *
    * Join with shopping_mall_products to retrieve product details (name, description, base_price, images, variants).
    *
@@ -168,9 +171,10 @@ export class ShoppingmallCustomerWishlistsController {
    *
    * @param connection
    * @param wishlistId Unique identifier of the wishlist entry to remove (global scope)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Soft delete the wishlist entry by setting deleted_at to current timestamp.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Soft delete the wishlist entry by setting
+     *   deleted_at to current timestamp.
    *
    * 1. Verify the wishlistId exists in shopping_mall_customer_wishlists table
    * 2. Verify the current customer owns this wishlist entry (shopping_mall_customer_id matches authenticated customer)

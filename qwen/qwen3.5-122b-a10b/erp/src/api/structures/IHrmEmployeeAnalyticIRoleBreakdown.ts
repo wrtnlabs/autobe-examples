@@ -20,7 +20,9 @@ export type IHrmEmployeeAnalyticIRoleBreakdown = {
    *
    * Contains the UUID of the role assigned to employees. For employees without a role assignment, this field is null and the role_name is 'Unassigned'. The null role_id values are grouped together as the 'unassigned' category in the analytics aggregation.
    *
-   * @x-autobe-specification Derived from hrm_employees.role_id column. Nullable UUID. Null values grouped as 'unassigned' category in aggregation. Computed via GROUP BY role_id.
+     * @x-autobe-specification Derived from hrm_employees.role_id column.
+     *   Nullable UUID. Null values grouped as 'unassigned' category in
+     *   aggregation. Computed via GROUP BY role_id.
    */
   role_id: (string & tags.Format<"uuid">) | null;
 
@@ -29,7 +31,9 @@ export type IHrmEmployeeAnalyticIRoleBreakdown = {
    *
    * The human-readable name of the role from hrm_roles.name column. For unassigned employees (null role_id), this is the literal string 'Unassigned'. This field provides a user-friendly label for the role category in analytics displays.
    *
-   * @x-autobe-specification Derived from hrm_roles.name column via LEFT JOIN on hrm_employees.role_id = hrm_roles.id. Returns 'Unassigned' for null role_id. Computed via aggregation join.
+     * @x-autobe-specification Derived from hrm_roles.name column via LEFT JOIN
+     *   on hrm_employees.role_id = hrm_roles.id. Returns 'Unassigned' for null
+     *   role_id. Computed via aggregation join.
    */
   role_name: string;
 
@@ -38,7 +42,9 @@ export type IHrmEmployeeAnalyticIRoleBreakdown = {
    *
    * Computed via COUNT(*) aggregation for employees grouped by role_id. Always at least 1 since empty categories are omitted from the array. This count represents the total number of employees currently assigned to this specific role within the organization.
    *
-   * @x-autobe-specification COUNT(*) aggregation per role_id group. Minimum 1 since empty categories omitted. Computed via GROUP BY role_id with COUNT aggregation.
+     * @x-autobe-specification COUNT(*) aggregation per role_id group. Minimum 1
+     *   since empty categories omitted. Computed via GROUP BY role_id with
+     *   COUNT aggregation.
    */
   count: number & tags.Type<"int32"> & tags.Minimum<1>;
 };

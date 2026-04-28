@@ -25,11 +25,11 @@ import { IErpHrmProjectMember } from "../../../../../../structures/IErpHrmProjec
  * @param props.projectId Unique identifier of the project to retrieve member analytics for
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Query erp_hrm_projects table to validate projectId exists and belongs to the user's organization.
- * Join erp_hrm_project_members with erp_hrm_employees to get member details.
- * Aggregate member count by assigned_role (member, project_lead).
- * Calculate total member count.
- * Return summary statistics and member details ordered by created_at.
+ * @x-autobe-specification Query erp_hrm_projects table to validate projectId
+ *   exists and belongs to the user's organization. Join erp_hrm_project_members
+ *   with erp_hrm_employees to get member details. Aggregate member count by
+ *   assigned_role (member, project_lead). Calculate total member count. Return
+ *   summary statistics and member details ordered by created_at.
  *
  * Validate that the project belongs to the user's current organization context.
  * Return empty analytics (not error) if project has no members.

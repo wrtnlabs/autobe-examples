@@ -23,9 +23,10 @@ export class TodoappMemberTodosController {
    *
    * @param connection
    * @param body Todo creation data with required title and optional description, start date, and due date. The member ID is obtained from authentication context.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Create a new todo entity in the todo_app_todos table.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Create a new todo entity in the todo_app_todos
+     *   table.
    *
    * 1. Extract authenticated member ID from session context (not from request body)
    * 2. Validate title is provided and not empty
@@ -68,9 +69,10 @@ export class TodoappMemberTodosController {
    *
    * @param connection
    * @param body Search criteria including completion status filter, sort field, sort direction, and pagination parameters.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query the todo_app_todos table for todos owned by the authenticated member.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query the todo_app_todos table for todos owned by
+     *   the authenticated member.
    *
    * Apply completion status filter if provided:
    * - 'all' or undefined: return all todos (both complete and incomplete)
@@ -115,9 +117,9 @@ export class TodoappMemberTodosController {
    *
    * @param connection
    * @param todoId Unique identifier of the todo (UUID format).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query todo_app_todos table by id parameter.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query todo_app_todos table by id parameter.
    *
    * Validate that the todo exists and belongs to the authenticated member (todo_app_member_id matches session user).
    *
@@ -158,9 +160,10 @@ export class TodoappMemberTodosController {
    * @param connection
    * @param todoId The UUID identifier of the todo to update. Must be a valid todo owned by the authenticated user.
    * @param body The fields to update on the todo. Only provided fields will be modified - omit fields to preserve their current values. Title is required if provided and must be non-empty. Description, start date, and due date are optional.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Update the todo identified by todoId with the provided fields.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Update the todo identified by todoId with the
+     *   provided fields.
    *
    * 1. Verify authentication: ensure the request is from an authenticated member
    * 2. Find the todo by todoId and verify ownership (todo_app_member_id matches authenticated user)
@@ -211,9 +214,10 @@ export class TodoappMemberTodosController {
    *
    * @param connection
    * @param todoId Unique identifier of the todo to delete (UUID format).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Soft-delete a todo by updating is_deleted to true and setting deleted_at to current timestamp.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Soft-delete a todo by updating is_deleted to true
+     *   and setting deleted_at to current timestamp.
    *
    * 1. Verify the todo exists and belongs to the authenticated member (privacy isolation)
    * 2. Verify the todo is not already deleted (is_deleted = false)

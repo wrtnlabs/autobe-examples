@@ -8,88 +8,112 @@ export type IShoppingMallShippingAddress = {
   /**
    * Unique identifier of the saved shipping address.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_shipping_addresses.id. Return the persisted UUID that uniquely identifies this saved shipping address record within the customer's address book.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_shipping_addresses.id. Return the persisted UUID that
+     *   uniquely identifies this saved shipping address record within the
+     *   customer's address book.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Name of the person who will receive deliveries at this address.
    *
-   * @x-autobe-database-schema-property recipient_name
-   * @x-autobe-specification Direct mapping from shopping_mall_shipping_addresses.recipient_name. Return the stored delivery recipient name exactly as persisted for this address entry.
+     * @x-autobe-database-schema-property recipient_name
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_shipping_addresses.recipient_name. Return the stored
+     *   delivery recipient name exactly as persisted for this address entry.
    */
   recipient_name: string;
 
   /**
    * Delivery contact phone number for this address.
    *
-   * @x-autobe-database-schema-property phone_number
-   * @x-autobe-specification Direct mapping from shopping_mall_shipping_addresses.phone_number. Return the saved contact phone number used for delivery coordination for this address.
+     * @x-autobe-database-schema-property phone_number
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_shipping_addresses.phone_number. Return the saved contact
+     *   phone number used for delivery coordination for this address.
    */
   phone_number: string;
 
   /**
    * Primary street address line of the delivery destination.
    *
-   * @x-autobe-database-schema-property street_address
-   * @x-autobe-specification Direct mapping from shopping_mall_shipping_addresses.street_address. Return the primary street address line of the saved delivery destination.
+     * @x-autobe-database-schema-property street_address
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_shipping_addresses.street_address. Return the primary
+     *   street address line of the saved delivery destination.
    */
   street_address: string;
 
   /**
    * City or locality of the delivery destination.
    *
-   * @x-autobe-database-schema-property city
-   * @x-autobe-specification Direct mapping from shopping_mall_shipping_addresses.city. Return the stored city or locality value for the address.
+     * @x-autobe-database-schema-property city
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_shipping_addresses.city. Return the stored city or
+     *   locality value for the address.
    */
   city: string;
 
   /**
    * State, province, or equivalent regional subdivision of the delivery destination.
    *
-   * @x-autobe-database-schema-property state_province
-   * @x-autobe-specification Direct mapping from shopping_mall_shipping_addresses.state_province. Return the saved state, province, or equivalent regional subdivision for the address.
+     * @x-autobe-database-schema-property state_province
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_shipping_addresses.state_province. Return the saved
+     *   state, province, or equivalent regional subdivision for the address.
    */
   state_province: string;
 
   /**
    * Postal or ZIP code of the delivery destination.
    *
-   * @x-autobe-database-schema-property postal_code
-   * @x-autobe-specification Direct mapping from shopping_mall_shipping_addresses.postal_code. Return the stored postal or ZIP code for the delivery destination.
+     * @x-autobe-database-schema-property postal_code
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_shipping_addresses.postal_code. Return the stored postal
+     *   or ZIP code for the delivery destination.
    */
   postal_code: string;
 
   /**
    * Country of the delivery destination.
    *
-   * @x-autobe-database-schema-property country
-   * @x-autobe-specification Direct mapping from shopping_mall_shipping_addresses.country. Return the saved country name for the delivery destination.
+     * @x-autobe-database-schema-property country
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_shipping_addresses.country. Return the saved country name
+     *   for the delivery destination.
    */
   country: string;
 
   /**
    * Whether this is the customer's currently designated default shipping address.
    *
-   * @x-autobe-database-schema-property is_default
-   * @x-autobe-specification Direct mapping from shopping_mall_shipping_addresses.is_default. Return whether this saved address is currently designated as the customer's default shipping address for preselection in future checkout flows.
+     * @x-autobe-database-schema-property is_default
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_shipping_addresses.is_default. Return whether this saved
+     *   address is currently designated as the customer's default shipping
+     *   address for preselection in future checkout flows.
    */
   is_default: boolean;
 
   /**
    * Timestamp when this saved shipping address was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from shopping_mall_shipping_addresses.created_at. Return the timestamp when this saved shipping address record was first created.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_shipping_addresses.created_at. Return the timestamp when
+     *   this saved shipping address record was first created.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when this saved shipping address was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from shopping_mall_shipping_addresses.updated_at. Return the timestamp when this saved shipping address record was last updated.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_shipping_addresses.updated_at. Return the timestamp when
+     *   this saved shipping address record was last updated.
    */
   updated_at: string & tags.Format<"date-time">;
 };
@@ -101,84 +125,123 @@ export namespace IShoppingMallShippingAddress {
     /**
      * Keyword used to search across the customer's saved shipping addresses.
      *
-     * @x-autobe-specification Optional free-text search term used by the list operation to match the authenticated customer's saved addresses across supported text fields, including recipient name, phone number, street address, city, state or province, postal code, and country. Ignore when omitted.
+         * @x-autobe-specification Optional free-text search term used by the
+         *   list operation to match the authenticated customer's saved
+         *   addresses across supported text fields, including recipient name,
+         *   phone number, street address, city, state or province, postal code,
+         *   and country. Ignore when omitted.
      */
     search?: string | undefined;
 
     /**
      * Filter addresses by recipient name.
      *
-     * @x-autobe-specification Optional filter input used by the list operation to restrict results by recipient name within the authenticated customer's saved addresses. Apply as a supported name-based filter only after mandatory ownership scoping.
+         * @x-autobe-specification Optional filter input used by the list
+         *   operation to restrict results by recipient name within the
+         *   authenticated customer's saved addresses. Apply as a supported
+         *   name-based filter only after mandatory ownership scoping.
      */
     recipient_name?: string | undefined;
 
     /**
      * Filter addresses by delivery contact phone number.
      *
-     * @x-autobe-specification Optional filter input used by the list operation to restrict results by delivery phone number within the authenticated customer's saved addresses. Apply only after mandatory ownership scoping.
+         * @x-autobe-specification Optional filter input used by the list
+         *   operation to restrict results by delivery phone number within the
+         *   authenticated customer's saved addresses. Apply only after
+         *   mandatory ownership scoping.
      */
     phone_number?: string | undefined;
 
     /**
      * Filter addresses by street address.
      *
-     * @x-autobe-specification Optional filter input used by the list operation to restrict results by street address within the authenticated customer's saved addresses. Apply only after mandatory ownership scoping.
+         * @x-autobe-specification Optional filter input used by the list
+         *   operation to restrict results by street address within the
+         *   authenticated customer's saved addresses. Apply only after
+         *   mandatory ownership scoping.
      */
     street_address?: string | undefined;
 
     /**
      * Filter addresses by city or locality.
      *
-     * @x-autobe-specification Optional filter input used by the list operation to restrict results by city or locality within the authenticated customer's saved addresses. Apply only after mandatory ownership scoping.
+         * @x-autobe-specification Optional filter input used by the list
+         *   operation to restrict results by city or locality within the
+         *   authenticated customer's saved addresses. Apply only after
+         *   mandatory ownership scoping.
      */
     city?: string | undefined;
 
     /**
      * Filter addresses by state, province, or regional subdivision.
      *
-     * @x-autobe-specification Optional filter input used by the list operation to restrict results by state, province, or regional subdivision within the authenticated customer's saved addresses. Apply only after mandatory ownership scoping.
+         * @x-autobe-specification Optional filter input used by the list
+         *   operation to restrict results by state, province, or regional
+         *   subdivision within the authenticated customer's saved addresses.
+         *   Apply only after mandatory ownership scoping.
      */
     state_province?: string | undefined;
 
     /**
      * Filter addresses by postal or ZIP code.
      *
-     * @x-autobe-specification Optional filter input used by the list operation to restrict results by postal or ZIP code within the authenticated customer's saved addresses. Apply only after mandatory ownership scoping.
+         * @x-autobe-specification Optional filter input used by the list
+         *   operation to restrict results by postal or ZIP code within the
+         *   authenticated customer's saved addresses. Apply only after
+         *   mandatory ownership scoping.
      */
     postal_code?: string | undefined;
 
     /**
      * Filter addresses by country.
      *
-     * @x-autobe-specification Optional filter input used by the list operation to restrict results by country within the authenticated customer's saved addresses. Apply only after mandatory ownership scoping.
+         * @x-autobe-specification Optional filter input used by the list
+         *   operation to restrict results by country within the authenticated
+         *   customer's saved addresses. Apply only after mandatory ownership
+         *   scoping.
      */
     country?: string | undefined;
 
     /**
      * Filter addresses by whether they are marked as the default shipping address.
      *
-     * @x-autobe-specification Optional boolean filter input used by the list operation to restrict results to default or non-default saved addresses within the authenticated customer's scoped address book. Apply only after mandatory ownership scoping.
+         * @x-autobe-specification Optional boolean filter input used by the
+         *   list operation to restrict results to default or non-default saved
+         *   addresses within the authenticated customer's scoped address book.
+         *   Apply only after mandatory ownership scoping.
      */
     is_default?: boolean | undefined;
 
     /**
      * Sorting instruction for ordering the returned saved addresses.
      *
-     * @x-autobe-specification Optional sort instruction for ordering the authenticated customer's saved shipping addresses. Validate requested sort fields against the operation's supported sortable fields, translate them into deterministic ordering rules, and reject unsupported sort expressions.
+         * @x-autobe-specification Optional sort instruction for ordering the
+         *   authenticated customer's saved shipping addresses. Validate
+         *   requested sort fields against the operation's supported sortable
+         *   fields, translate them into deterministic ordering rules, and
+         *   reject unsupported sort expressions.
      */
     sort?: string | undefined;
 
     /**
      * Page number of results to return.
      *
-     * @x-autobe-specification Optional 1-indexed page number used by the list operation to choose which slice of the filtered and sorted result set to return. Apply after ownership scoping, filtering, and sorting. Default according to the platform pagination convention when omitted.
+         * @x-autobe-specification Optional 1-indexed page number used by the
+         *   list operation to choose which slice of the filtered and sorted
+         *   result set to return. Apply after ownership scoping, filtering, and
+         *   sorting. Default according to the platform pagination convention
+         *   when omitted.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of results to include in a single page.
      *
-     * @x-autobe-specification Optional maximum number of saved-address records to return in one page. Enforce schema bounds, then apply after ownership scoping, filtering, and sorting. Default according to the platform pagination convention when omitted.
+         * @x-autobe-specification Optional maximum number of saved-address
+         *   records to return in one page. Enforce schema bounds, then apply
+         *   after ownership scoping, filtering, and sorting. Default according
+         *   to the platform pagination convention when omitted.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -192,64 +255,90 @@ export namespace IShoppingMallShippingAddress {
     /**
      * Name of the person who will receive deliveries at this saved address.
      *
-     * @x-autobe-database-schema-property recipient_name
-     * @x-autobe-specification Direct mapping from the request body to shopping_mall_shipping_addresses.recipient_name when creating the saved address. This value is required and should contain the name of the person who will receive deliveries at this destination.
+         * @x-autobe-database-schema-property recipient_name
+         * @x-autobe-specification Direct mapping from the request body to
+         *   shopping_mall_shipping_addresses.recipient_name when creating the
+         *   saved address. This value is required and should contain the name
+         *   of the person who will receive deliveries at this destination.
      */
     recipient_name: string;
 
     /**
      * Phone number used for delivery contact at this saved address.
      *
-     * @x-autobe-database-schema-property phone_number
-     * @x-autobe-specification Direct mapping from the request body to shopping_mall_shipping_addresses.phone_number when creating the saved address. This value is required and stores the delivery contact phone number for coordination.
+         * @x-autobe-database-schema-property phone_number
+         * @x-autobe-specification Direct mapping from the request body to
+         *   shopping_mall_shipping_addresses.phone_number when creating the
+         *   saved address. This value is required and stores the delivery
+         *   contact phone number for coordination.
      */
     phone_number: string;
 
     /**
      * Primary street address line for the delivery destination.
      *
-     * @x-autobe-database-schema-property street_address
-     * @x-autobe-specification Direct mapping from the request body to shopping_mall_shipping_addresses.street_address when creating the saved address. This value is required and stores the primary street address line for the delivery destination.
+         * @x-autobe-database-schema-property street_address
+         * @x-autobe-specification Direct mapping from the request body to
+         *   shopping_mall_shipping_addresses.street_address when creating the
+         *   saved address. This value is required and stores the primary street
+         *   address line for the delivery destination.
      */
     street_address: string;
 
     /**
      * City or locality of the delivery destination.
      *
-     * @x-autobe-database-schema-property city
-     * @x-autobe-specification Direct mapping from the request body to shopping_mall_shipping_addresses.city when creating the saved address. This value is required and stores the city or locality of the delivery destination.
+         * @x-autobe-database-schema-property city
+         * @x-autobe-specification Direct mapping from the request body to
+         *   shopping_mall_shipping_addresses.city when creating the saved
+         *   address. This value is required and stores the city or locality of
+         *   the delivery destination.
      */
     city: string;
 
     /**
      * State, province, or equivalent regional subdivision of the delivery destination.
      *
-     * @x-autobe-database-schema-property state_province
-     * @x-autobe-specification Direct mapping from the request body to shopping_mall_shipping_addresses.state_province when creating the saved address. This value is required and stores the state, province, or equivalent regional subdivision for the destination.
+         * @x-autobe-database-schema-property state_province
+         * @x-autobe-specification Direct mapping from the request body to
+         *   shopping_mall_shipping_addresses.state_province when creating the
+         *   saved address. This value is required and stores the state,
+         *   province, or equivalent regional subdivision for the destination.
      */
     state_province: string;
 
     /**
      * Postal or ZIP code for the delivery destination.
      *
-     * @x-autobe-database-schema-property postal_code
-     * @x-autobe-specification Direct mapping from the request body to shopping_mall_shipping_addresses.postal_code when creating the saved address. This value is required and stores the postal or ZIP code for the destination.
+         * @x-autobe-database-schema-property postal_code
+         * @x-autobe-specification Direct mapping from the request body to
+         *   shopping_mall_shipping_addresses.postal_code when creating the
+         *   saved address. This value is required and stores the postal or ZIP
+         *   code for the destination.
      */
     postal_code: string;
 
     /**
      * Country of the delivery destination.
      *
-     * @x-autobe-database-schema-property country
-     * @x-autobe-specification Direct mapping from the request body to shopping_mall_shipping_addresses.country when creating the saved address. This value is required and stores the country name for the delivery destination.
+         * @x-autobe-database-schema-property country
+         * @x-autobe-specification Direct mapping from the request body to
+         *   shopping_mall_shipping_addresses.country when creating the saved
+         *   address. This value is required and stores the country name for the
+         *   delivery destination.
      */
     country: string;
 
     /**
      * Whether this saved address should be designated as the customer's default shipping address.
      *
-     * @x-autobe-database-schema-property is_default
-     * @x-autobe-specification Direct mapping from the request body to shopping_mall_shipping_addresses.is_default when creating the saved address. This optional flag indicates whether the new saved address should become the customer's designated default shipping address; if omitted, downstream service logic may apply its standard default-handling behavior.
+         * @x-autobe-database-schema-property is_default
+         * @x-autobe-specification Direct mapping from the request body to
+         *   shopping_mall_shipping_addresses.is_default when creating the saved
+         *   address. This optional flag indicates whether the new saved address
+         *   should become the customer's designated default shipping address;
+         *   if omitted, downstream service logic may apply its standard
+         *   default-handling behavior.
      */
     is_default?: boolean | undefined;
   };
@@ -261,96 +350,110 @@ export namespace IShoppingMallShippingAddress {
     /**
      * Unique identifier of the saved shipping address entry.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_shipping_addresses.id.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_shipping_addresses.id.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Name of the person who will receive deliveries at this address.
      *
-     * @x-autobe-database-schema-property recipient_name
-     * @x-autobe-specification Direct mapping from shopping_mall_shipping_addresses.recipient_name.
+         * @x-autobe-database-schema-property recipient_name
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_shipping_addresses.recipient_name.
      */
     recipient_name: string;
 
     /**
      * Contact phone number for delivery coordination for this address.
      *
-     * @x-autobe-database-schema-property phone_number
-     * @x-autobe-specification Direct mapping from shopping_mall_shipping_addresses.phone_number.
+         * @x-autobe-database-schema-property phone_number
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_shipping_addresses.phone_number.
      */
     phone_number: string;
 
     /**
      * Primary street address line of the delivery destination.
      *
-     * @x-autobe-database-schema-property street_address
-     * @x-autobe-specification Direct mapping from shopping_mall_shipping_addresses.street_address.
+         * @x-autobe-database-schema-property street_address
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_shipping_addresses.street_address.
      */
     street_address: string;
 
     /**
      * City or locality of the delivery destination.
      *
-     * @x-autobe-database-schema-property city
-     * @x-autobe-specification Direct mapping from shopping_mall_shipping_addresses.city.
+         * @x-autobe-database-schema-property city
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_shipping_addresses.city.
      */
     city: string;
 
     /**
      * State, province, or equivalent regional subdivision of the delivery destination.
      *
-     * @x-autobe-database-schema-property state_province
-     * @x-autobe-specification Direct mapping from shopping_mall_shipping_addresses.state_province.
+         * @x-autobe-database-schema-property state_province
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_shipping_addresses.state_province.
      */
     state_province: string;
 
     /**
      * Postal or ZIP code of the delivery destination.
      *
-     * @x-autobe-database-schema-property postal_code
-     * @x-autobe-specification Direct mapping from shopping_mall_shipping_addresses.postal_code.
+         * @x-autobe-database-schema-property postal_code
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_shipping_addresses.postal_code.
      */
     postal_code: string;
 
     /**
      * Country name of the delivery destination.
      *
-     * @x-autobe-database-schema-property country
-     * @x-autobe-specification Direct mapping from shopping_mall_shipping_addresses.country.
+         * @x-autobe-database-schema-property country
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_shipping_addresses.country.
      */
     country: string;
 
     /**
      * Whether this saved address is currently designated as the customer's default shipping address.
      *
-     * @x-autobe-database-schema-property is_default
-     * @x-autobe-specification Direct mapping from shopping_mall_shipping_addresses.is_default.
+         * @x-autobe-database-schema-property is_default
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_shipping_addresses.is_default.
      */
     is_default: boolean;
 
     /**
      * Timestamp when this saved shipping address entry was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_shipping_addresses.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_shipping_addresses.created_at.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when this saved shipping address entry was last updated.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from shopping_mall_shipping_addresses.updated_at.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_shipping_addresses.updated_at.
      */
     updated_at: string & tags.Format<"date-time">;
 
     /**
      * Soft-deletion timestamp of the saved shipping address entry, or null when the address is still active.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from shopping_mall_shipping_addresses.deleted_at. Return the timestamp when the address entry was soft-deleted, or null when the address is active.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_shipping_addresses.deleted_at. Return the timestamp
+         *   when the address entry was soft-deleted, or null when the address
+         *   is active.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };
@@ -362,64 +465,83 @@ export namespace IShoppingMallShippingAddress {
     /**
      * Name of the person who will receive deliveries at this saved address.
      *
-     * @x-autobe-database-schema-property recipient_name
-     * @x-autobe-specification Direct mapping from request body to shopping_mall_shipping_addresses.recipient_name. Require a non-empty recipient name when updating the saved shipping address.
+         * @x-autobe-database-schema-property recipient_name
+         * @x-autobe-specification Direct mapping from request body to
+         *   shopping_mall_shipping_addresses.recipient_name. Require a
+         *   non-empty recipient name when updating the saved shipping address.
      */
     recipient_name: string;
 
     /**
      * Contact phone number for delivery coordination for this saved address.
      *
-     * @x-autobe-database-schema-property phone_number
-     * @x-autobe-specification Direct mapping from request body to shopping_mall_shipping_addresses.phone_number. Require a usable delivery contact phone number for the updated address record.
+         * @x-autobe-database-schema-property phone_number
+         * @x-autobe-specification Direct mapping from request body to
+         *   shopping_mall_shipping_addresses.phone_number. Require a usable
+         *   delivery contact phone number for the updated address record.
      */
     phone_number: string;
 
     /**
      * Primary street address line of the delivery destination.
      *
-     * @x-autobe-database-schema-property street_address
-     * @x-autobe-specification Direct mapping from request body to shopping_mall_shipping_addresses.street_address. Persist the primary street-address line for the customer's saved delivery destination.
+         * @x-autobe-database-schema-property street_address
+         * @x-autobe-specification Direct mapping from request body to
+         *   shopping_mall_shipping_addresses.street_address. Persist the
+         *   primary street-address line for the customer's saved delivery
+         *   destination.
      */
     street_address: string;
 
     /**
      * City or locality of the delivery destination.
      *
-     * @x-autobe-database-schema-property city
-     * @x-autobe-specification Direct mapping from request body to shopping_mall_shipping_addresses.city. Require the city or locality component as part of the complete delivery address.
+         * @x-autobe-database-schema-property city
+         * @x-autobe-specification Direct mapping from request body to
+         *   shopping_mall_shipping_addresses.city. Require the city or locality
+         *   component as part of the complete delivery address.
      */
     city: string;
 
     /**
      * State, province, or equivalent regional subdivision of the delivery destination.
      *
-     * @x-autobe-database-schema-property state_province
-     * @x-autobe-specification Direct mapping from request body to shopping_mall_shipping_addresses.state_province. Persist the regional subdivision value for the saved delivery destination.
+         * @x-autobe-database-schema-property state_province
+         * @x-autobe-specification Direct mapping from request body to
+         *   shopping_mall_shipping_addresses.state_province. Persist the
+         *   regional subdivision value for the saved delivery destination.
      */
     state_province: string;
 
     /**
      * Postal or ZIP code of the delivery destination.
      *
-     * @x-autobe-database-schema-property postal_code
-     * @x-autobe-specification Direct mapping from request body to shopping_mall_shipping_addresses.postal_code. Require the postal or ZIP code needed for delivery routing.
+         * @x-autobe-database-schema-property postal_code
+         * @x-autobe-specification Direct mapping from request body to
+         *   shopping_mall_shipping_addresses.postal_code. Require the postal or
+         *   ZIP code needed for delivery routing.
      */
     postal_code: string;
 
     /**
      * Country of the delivery destination.
      *
-     * @x-autobe-database-schema-property country
-     * @x-autobe-specification Direct mapping from request body to shopping_mall_shipping_addresses.country. Persist the country name for the saved delivery destination.
+         * @x-autobe-database-schema-property country
+         * @x-autobe-specification Direct mapping from request body to
+         *   shopping_mall_shipping_addresses.country. Persist the country name
+         *   for the saved delivery destination.
      */
     country: string;
 
     /**
      * Whether this saved address should be the customer's default shipping address for future checkout selection.
      *
-     * @x-autobe-database-schema-property is_default
-     * @x-autobe-specification Direct mapping from request body to shopping_mall_shipping_addresses.is_default. When true, the service may clear is_default on the same customer's other non-deleted shipping addresses in the same transaction so this address becomes the active default.
+         * @x-autobe-database-schema-property is_default
+         * @x-autobe-specification Direct mapping from request body to
+         *   shopping_mall_shipping_addresses.is_default. When true, the service
+         *   may clear is_default on the same customer's other non-deleted
+         *   shipping addresses in the same transaction so this address becomes
+         *   the active default.
      */
     is_default: boolean;
   };

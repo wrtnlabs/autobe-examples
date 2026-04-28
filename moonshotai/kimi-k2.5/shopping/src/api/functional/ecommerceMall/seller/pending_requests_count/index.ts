@@ -13,7 +13,8 @@ import { IEcommerceMallPendingRequestsCount } from "../../../../structures/IEcom
  * @param props.connection
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Query the ecommerce_mall_admin_promotion_requests table and count records where status equals 'pending'.
+ * @x-autobe-specification Query the ecommerce_mall_admin_promotion_requests
+ *   table and count records where status equals 'pending'.
  *
  * This is a read-only aggregation operation that performs a simple COUNT query with a WHERE clause filtering for pending status. The operation should be extremely lightweight, executing a single database aggregate query.
  *

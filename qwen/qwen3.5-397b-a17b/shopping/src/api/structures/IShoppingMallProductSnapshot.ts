@@ -15,31 +15,31 @@ import { IShoppingMallProductVariantSnapshot } from "./IShoppingMallProductVaria
  */
 export type IShoppingMallProductSnapshot = {
   /**
-   * @x-autobe-database-schema-property id
+     * @x-autobe-database-schema-property id
    */
   id: string & tags.Format<"uuid">;
   /**
-   * @x-autobe-database-schema-property product
+     * @x-autobe-database-schema-property product
    */
   product: IShoppingMallProduct.ISummary;
   /**
-   * @x-autobe-database-schema-property category
+     * @x-autobe-database-schema-property category
    */
   category: IShoppingMallCategory.ISummary;
   /**
-   * @x-autobe-database-schema-property name
+     * @x-autobe-database-schema-property name
    */
   name: string;
   /**
-   * @x-autobe-database-schema-property description
+     * @x-autobe-database-schema-property description
    */
   description: string;
   /**
-   * @x-autobe-database-schema-property base_price
+     * @x-autobe-database-schema-property base_price
    */
   base_price: number;
   /**
-   * @x-autobe-database-schema-property created_at
+     * @x-autobe-database-schema-property created_at
    */
   created_at: string & tags.Format<"date-time">;
   productVariantSnapshots: IShoppingMallProductVariantSnapshot.ISummary[];
@@ -61,7 +61,11 @@ export namespace IShoppingMallProductSnapshot {
      *
      * Optional parameter - omitting this field returns all snapshots without text filtering.
      *
-     * @x-autobe-specification Full-text search query parameter. Applied as LIKE operator on shopping_mall_product_snapshots.name and shopping_mall_product_snapshots.description columns. Case-insensitive partial match. Optional - if omitted, no text search filter is applied.
+         * @x-autobe-specification Full-text search query parameter. Applied as
+         *   LIKE operator on shopping_mall_product_snapshots.name and
+         *   shopping_mall_product_snapshots.description columns.
+         *   Case-insensitive partial match. Optional - if omitted, no text
+         *   search filter is applied.
      */
     search?: string | undefined;
 
@@ -72,7 +76,10 @@ export namespace IShoppingMallProductSnapshot {
      *
      * Optional parameter - defaults to 1 if omitted. Must be at least 1.
      *
-     * @x-autobe-specification Page number for offset-based pagination. 1-indexed (first page is 1). Used to calculate offset: offset = (page - 1) * limit. Defaults to 1 if not provided. Minimum value is 1.
+         * @x-autobe-specification Page number for offset-based pagination.
+         *   1-indexed (first page is 1). Used to calculate offset: offset =
+         *   (page - 1) * limit. Defaults to 1 if not provided. Minimum value is
+         *   1.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -83,7 +90,10 @@ export namespace IShoppingMallProductSnapshot {
      *
      * Optional parameter - uses a system default if omitted. Must be between 1 and 100 inclusive.
      *
-     * @x-autobe-specification Maximum number of records per page. Used with page to implement offset-based pagination. Defaults to a system default (typically 20-50) if not provided. Range: 1 to 100. Prevents excessive data transfer in a single request.
+         * @x-autobe-specification Maximum number of records per page. Used with
+         *   page to implement offset-based pagination. Defaults to a system
+         *   default (typically 20-50) if not provided. Range: 1 to 100.
+         *   Prevents excessive data transfer in a single request.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -96,7 +106,10 @@ export namespace IShoppingMallProductSnapshot {
      *
      * Optional parameter - omitting this field includes snapshots from any date (no lower bound).
      *
-     * @x-autobe-specification Start of date range filter for created_at column. Applied as created_at >= created_at_from. ISO 8601 date-time format (e.g., 2024-01-01T00:00:00Z). Optional - if omitted, no lower bound on creation date.
+         * @x-autobe-specification Start of date range filter for created_at
+         *   column. Applied as created_at >= created_at_from. ISO 8601
+         *   date-time format (e.g., 2024-01-01T00:00:00Z). Optional - if
+         *   omitted, no lower bound on creation date.
      */
     created_at_from?: (string & tags.Format<"date-time">) | undefined;
 
@@ -107,7 +120,10 @@ export namespace IShoppingMallProductSnapshot {
      *
      * Optional parameter - omitting this field includes snapshots up to the current time (no upper bound).
      *
-     * @x-autobe-specification End of date range filter for created_at column. Applied as created_at <= created_at_to. ISO 8601 date-time format (e.g., 2024-12-31T23:59:59Z). Optional - if omitted, no upper bound on creation date.
+         * @x-autobe-specification End of date range filter for created_at
+         *   column. Applied as created_at <= created_at_to. ISO 8601 date-time
+         *   format (e.g., 2024-12-31T23:59:59Z). Optional - if omitted, no
+         *   upper bound on creation date.
      */
     created_at_to?: (string & tags.Format<"date-time">) | undefined;
   };
@@ -138,8 +154,10 @@ export namespace IShoppingMallProductSnapshot {
      *
      * This UUID identifies a specific snapshot in the audit trail. Each product edit generates a new snapshot with a distinct ID. Use this ID to retrieve detailed snapshot information or variant snapshots via dedicated endpoints.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_product_snapshots.id. UUID format generated by database.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_snapshots.id. UUID format generated by
+         *   database.
      */
     id: string & tags.Format<"uuid">;
 
@@ -148,8 +166,10 @@ export namespace IShoppingMallProductSnapshot {
      *
      * This is the denormalized product name preserved in the snapshot for historical accuracy. Unlike the live product name, this value never changes after snapshot creation, ensuring order items and audit trails reference the exact name customers saw when purchasing.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from shopping_mall_product_snapshots.name. Captured at snapshot creation time, immutable thereafter.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_snapshots.name. Captured at snapshot creation
+         *   time, immutable thereafter.
      */
     name: string;
 
@@ -158,8 +178,10 @@ export namespace IShoppingMallProductSnapshot {
      *
      * This is the denormalized base price preserved in the snapshot for historical accuracy. Unlike the live product price, this value never changes after snapshot creation, ensuring order items and audit trails reference the exact price customers paid. Individual variants may have different prices via variant_price overrides.
      *
-     * @x-autobe-database-schema-property base_price
-     * @x-autobe-specification Direct mapping from shopping_mall_product_snapshots.base_price. Float/Double precision capturing price at snapshot time, immutable.
+         * @x-autobe-database-schema-property base_price
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_snapshots.base_price. Float/Double precision
+         *   capturing price at snapshot time, immutable.
      */
     base_price: number;
 
@@ -168,8 +190,11 @@ export namespace IShoppingMallProductSnapshot {
      *
      * This object represents the category the product belonged to when this snapshot was created. The category is denormalized via JOIN to preserve historical context even if the product's category changes later or the category is deleted. Includes category id, name, optional description, parent reference, and creation timestamp.
      *
-     * @x-autobe-database-schema-property category
-     * @x-autobe-specification JOIN from shopping_mall_product_snapshots.shopping_mall_category_id to shopping_mall_categories.id. Returns IShoppingMallCategory.ISummary with id, name, description, parent, created_at.
+         * @x-autobe-database-schema-property category
+         * @x-autobe-specification JOIN from
+         *   shopping_mall_product_snapshots.shopping_mall_category_id to
+         *   shopping_mall_categories.id. Returns IShoppingMallCategory.ISummary
+         *   with id, name, description, parent, created_at.
      */
     category: IShoppingMallCategory.ISummary;
 
@@ -178,8 +203,10 @@ export namespace IShoppingMallProductSnapshot {
      *
      * This marks the exact moment the product edit occurred and this snapshot was generated. Snapshots are ordered chronologically with newest first for browsing history. This timestamp is immutable and serves as the authoritative record of when the product state was captured.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_product_snapshots.created_at. DateTime with timezone, immutable after snapshot creation.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_snapshots.created_at. DateTime with timezone,
+         *   immutable after snapshot creation.
      */
     created_at: string & tags.Format<"date-time">;
   };

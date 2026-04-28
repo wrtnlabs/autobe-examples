@@ -25,9 +25,11 @@ export class EcommercemallCustomerCustomersMeCancellation_requestsController {
    * **Related Resources**: Each cancellation request links to the associated order item, allowing customers to see which product variant was requested for cancellation and the current order item status.
    *
    * @param connection
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Query the ecommerce_mall_cancellation_requests table filtering by ecommerce_mall_customer_id matching the authenticated customer from the JWT token.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Query the ecommerce_mall_cancellation_requests
+     *   table filtering by ecommerce_mall_customer_id matching the
+     *   authenticated customer from the JWT token.
    *
    * Implement pagination with query parameters:
    * - page: page number (default: 1)
@@ -73,9 +75,11 @@ export class EcommercemallCustomerCustomersMeCancellation_requestsController {
    *
    * @param connection
    * @param requestId Unique identifier of the cancellation request to retrieve (global scope).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Query ecommerce_mall_cancellation_requests table filtering by id = {requestId} AND ecommerce_mall_customer_id = authenticated customer ID.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Query ecommerce_mall_cancellation_requests table
+     *   filtering by id = {requestId} AND ecommerce_mall_customer_id =
+     *   authenticated customer ID.
    *
    * Verify the cancellation request exists and belongs to the requesting customer. If not found or unauthorized, return appropriate error response.
    *

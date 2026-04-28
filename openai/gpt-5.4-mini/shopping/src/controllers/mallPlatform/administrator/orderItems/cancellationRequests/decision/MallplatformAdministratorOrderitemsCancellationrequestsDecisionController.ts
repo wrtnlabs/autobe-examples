@@ -24,9 +24,12 @@ export class MallplatformAdministratorOrderitemsCancellationrequestsDecisionCont
    * @param orderItemId The identifier of the order item that owns the cancellation request.
    * @param cancellationRequestId The identifier of the cancellation request being decided for the specified order item.
    * @param body The seller’s decision payload for the cancellation request, including the final outcome and any reviewer note required by the workflow.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Load the cancellation request by cancellationRequestId and verify that it belongs to the orderItemId provided in the route. If the request is missing or the association does not match, return not found.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor administrator
+     * @x-autobe-specification Load the cancellation request by
+     *   cancellationRequestId and verify that it belongs to the orderItemId
+     *   provided in the route. If the request is missing or the association
+     *   does not match, return not found.
    *
    * Authorize the caller as the seller of the order item, or as an administrator only if the authorization layer explicitly permits administrative oversight on cancellation decisions. The request must still be pending or otherwise reviewable; if it is already decided, return conflict.
    *

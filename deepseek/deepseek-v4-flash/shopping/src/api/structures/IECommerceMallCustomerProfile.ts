@@ -14,8 +14,9 @@ export type IECommerceMallCustomerProfile = {
    *
    * This UUID serves as the primary key for the profile entry in the database.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from e_commerce_mall_customer_profiles.id. Primary key UUID.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_customer_profiles.id. Primary key UUID.
    */
   id: string & tags.Format<"uuid">;
 
@@ -24,8 +25,9 @@ export type IECommerceMallCustomerProfile = {
    *
    * This name allows customers to be recognized by other users without revealing their email address. It appears on all reviews written by this customer.
    *
-   * @x-autobe-database-schema-property display_name
-   * @x-autobe-specification Direct mapping from e_commerce_mall_customer_profiles.display_name.
+     * @x-autobe-database-schema-property display_name
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_customer_profiles.display_name.
    */
   display_name: string;
 
@@ -34,8 +36,10 @@ export type IECommerceMallCustomerProfile = {
    *
    * Stored for purposes such as delivery coordination by shipping carriers. This field is optional and may be null if the customer has not provided a phone number.
    *
-   * @x-autobe-database-schema-property phone_number
-   * @x-autobe-specification Direct mapping from e_commerce_mall_customer_profiles.phone_number. Nullable — may be null or a string.
+     * @x-autobe-database-schema-property phone_number
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_customer_profiles.phone_number. Nullable — may be null
+     *   or a string.
    */
   phone_number: string | null;
 
@@ -44,8 +48,10 @@ export type IECommerceMallCustomerProfile = {
    *
    * Set at the time of customer registration and remains unchanged thereafter.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from e_commerce_mall_customer_profiles.created_at. Set automatically on profile creation during customer registration.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_customer_profiles.created_at. Set automatically on
+     *   profile creation during customer registration.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -54,8 +60,10 @@ export type IECommerceMallCustomerProfile = {
    *
    * Updated automatically whenever the display name or phone number is modified.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from e_commerce_mall_customer_profiles.updated_at. Updated automatically on each profile modification.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_customer_profiles.updated_at. Updated automatically on
+     *   each profile modification.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -64,8 +72,10 @@ export type IECommerceMallCustomerProfile = {
    *
    * When a customer deletes their account, the profile is soft-deleted rather than hard-deleted to preserve referential integrity with historical records. This field is null when the profile is active.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from e_commerce_mall_customer_profiles.deleted_at. Nullable — null when profile is active, set when customer deletes account.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_customer_profiles.deleted_at. Nullable — null when
+     *   profile is active, set when customer deletes account.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -81,8 +91,10 @@ export namespace IECommerceMallCustomerProfile {
      *
      * This name allows customers to be recognized by other users without revealing their email address. When provided in an update request, the display name is updated to the new value. When omitted, the existing display name is retained.
      *
-     * @x-autobe-database-schema-property display_name
-     * @x-autobe-specification Direct mapping from e_commerce_mall_customer_profiles.display_name. Optional — only included in UPDATE query when present in request body.
+         * @x-autobe-database-schema-property display_name
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_customer_profiles.display_name. Optional — only
+         *   included in UPDATE query when present in request body.
      */
     displayName?: string | undefined;
 
@@ -91,8 +103,11 @@ export namespace IECommerceMallCustomerProfile {
      *
      * Set to a string value to update or set the phone number. Set to `null` to explicitly clear the existing phone number. When omitted from the request, the existing phone number is retained unchanged.
      *
-     * @x-autobe-database-schema-property phone_number
-     * @x-autobe-specification Direct mapping from e_commerce_mall_customer_profiles.phone_number. Accepts string or null — null clears the field. Optional — only included in UPDATE query when present in request body.
+         * @x-autobe-database-schema-property phone_number
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_customer_profiles.phone_number. Accepts string or
+         *   null — null clears the field. Optional — only included in UPDATE
+         *   query when present in request body.
      */
     phoneNumber?: string | null | undefined;
   };

@@ -21,7 +21,11 @@ import { IMallPlatformShipment } from "../../../../../structures/IMallPlatformSh
  * @param props.body Shipment creation data including the selected order item identifiers and the shared carrier and tracking information.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Validate that the authenticated seller owns every requested order item and that every item is eligible for shipping. Enforce that all selected items belong to one seller only and reject any request that mixes sellers or references items that are already shipped, delivered, cancelled, refunded, or otherwise unavailable.
+ * @x-autobe-specification Validate that the authenticated seller owns every
+ *   requested order item and that every item is eligible for shipping. Enforce
+ *   that all selected items belong to one seller only and reject any request
+ *   that mixes sellers or references items that are already shipped, delivered,
+ *   cancelled, refunded, or otherwise unavailable.
  *
  * Create the shipment and its shipment-item links in a single transaction. Persist the carrier name and tracking number on the shipment record, then insert one shipment-item association for each included order item. Update each included order item to shipped in the same transaction so the shipment and order-item states cannot diverge.
  *

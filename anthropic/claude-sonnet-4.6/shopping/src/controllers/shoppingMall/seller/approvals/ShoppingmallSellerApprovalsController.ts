@@ -34,22 +34,24 @@ export class ShoppingmallSellerApprovalsController {
    *
    * @param connection
    * @param body Seller approval request submission data, including any supporting profile information for the administrator's review.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification 1. Authenticate the requesting actor as a seller using the session token.
-   * 2. Query the shopping_mall_sellers table to verify the seller exists and is not banned (is_banned = false).
-   * 3. Find the most recent SellerApproval record associated with this seller.
-   * 4. Validate resubmission eligibility:
-   *    - If the most recent approval record has status 'pending', return HTTP 422 with a message indicating the seller must wait for a decision.
-   *    - If the most recent approval record has status 'approved', return HTTP 422 with a message indicating the seller is already approved.
-   *    - Only proceed if the most recent approval status is 'rejected' (or no prior approval exists for resubmission path).
-   * 5. Create a new SellerApproval record:
-   *    - Set status = 'pending'
-   *    - Set seller reference to the authenticated seller's ID
-   *    - Set submitted_at = current timestamp
-   *    - Clear/null any rejection reason and reviewed_at from the new record
-   * 6. Persist the new SellerApproval record to the database.
-   * 7. Return the newly created SellerApproval record as IShoppingMallSellerApproval in the response body.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification 1. Authenticate the requesting actor as a seller
+     *   using the session token. 2. Query the shopping_mall_sellers table to
+     *   verify the seller exists and is not banned (is_banned = false). 3. Find
+     *   the most recent SellerApproval record associated with this seller. 4.
+     *   Validate resubmission eligibility: - If the most recent approval record
+     *   has status 'pending', return HTTP 422 with a message indicating the
+     *   seller must wait for a decision. - If the most recent approval record
+     *   has status 'approved', return HTTP 422 with a message indicating the
+     *   seller is already approved. - Only proceed if the most recent approval
+     *   status is 'rejected' (or no prior approval exists for resubmission
+     *   path). 5. Create a new SellerApproval record: - Set status = 'pending'
+     *   - Set seller reference to the authenticated seller's ID - Set
+     *   submitted_at = current timestamp - Clear/null any rejection reason and
+     *   reviewed_at from the new record 6. Persist the new SellerApproval
+     *   record to the database. 7. Return the newly created SellerApproval
+     *   record as IShoppingMallSellerApproval in the response body.
    *
    * Edge cases:
    * - If the seller account is suspended (is_suspended = true), the resubmission may still be allowed as suspension does not bar approval resubmission — only rejected status matters.
@@ -95,9 +97,11 @@ export class ShoppingmallSellerApprovalsController {
    *
    * @param connection
    * @param body Search criteria and pagination options for filtering seller approval records.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification 1. Authentication: Verify the requester holds an active admin or super admin session. Reject with 401 if unauthenticated, 403 if the actor is not an admin.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification 1. Authentication: Verify the requester holds an
+     *   active admin or super admin session. Reject with 401 if
+     *   unauthenticated, 403 if the actor is not an admin.
    *
    * 2. Query the `shopping_mall_seller_approvals` table (joined with `shopping_mall_sellers` for shop_name and email) with the following filters from the request body:
    *    - `status` (optional): Filter by approval status ('pending', 'approved', 'rejected'). If omitted, return all statuses.
@@ -159,9 +163,10 @@ export class ShoppingmallSellerApprovalsController {
    *
    * @param connection
    * @param approvalId The unique UUID identifier of the seller approval record to retrieve.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Retrieve a single SellerApproval record by its primary key UUID (`approvalId`).
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Retrieve a single SellerApproval record by its
+     *   primary key UUID (`approvalId`).
    *
    * Implementation steps:
    * 1. Extract `approvalId` from the path parameter and validate it as a valid UUID format.

@@ -20,9 +20,10 @@ export class MultiusertodoMemberProfileController {
    *
    * @param connection
    * @param body Profile update data containing the new display name.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Authenticate the user via access_token in the Authorization header (format: Bearer <token>).
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Authenticate the user via access_token in the
+     *   Authorization header (format: Bearer <token>).
    *
    * Extract user_id from the validated token and identify the corresponding member record in multi_user_todo_members table.
    *

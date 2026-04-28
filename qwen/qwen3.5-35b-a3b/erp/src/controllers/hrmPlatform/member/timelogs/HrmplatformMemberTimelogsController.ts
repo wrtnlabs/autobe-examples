@@ -47,16 +47,17 @@ export class HrmplatformMemberTimelogsController {
    *
    * @param connection
    * @param body Timelog creation data including employee assignment, project and task context, work session times, duration, description, and billable flag.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1. Validate request body fields:
-   *    - Ensure employee_id exists and belongs to the user's organization (or user has time:manage permission)
-   *    - Verify project_id exists and belongs to the same organization as the employee
-   *    - If task_id is provided, verify it belongs to the same project
-   *    - Validate start_datetime is in the past (no future timelogs)
-   *    - Validate end_datetime is after start_datetime and in the past
-   *    - Calculate duration_minutes = (end_datetime - start_datetime) in minutes; must be > 0
-   *    - Validate billable is a boolean
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification 1. Validate request body fields: - Ensure
+     *   employee_id exists and belongs to the user's organization (or user has
+     *   time:manage permission) - Verify project_id exists and belongs to the
+     *   same organization as the employee - If task_id is provided, verify it
+     *   belongs to the same project - Validate start_datetime is in the past
+     *   (no future timelogs) - Validate end_datetime is after start_datetime
+     *   and in the past - Calculate duration_minutes = (end_datetime -
+     *   start_datetime) in minutes; must be > 0 - Validate billable is a
+     *   boolean
    *
    * 2. Check timesheet status for the week period (start_datetime to end_datetime):
    *    - Find the employee's timesheet that contains the week period
@@ -110,9 +111,10 @@ export class HrmplatformMemberTimelogsController {
    *
    * @param connection
    * @param body Search criteria including employee filter, project filter, date range filters, billable status, pagination parameters, and sorting options.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query hrm_platform_timelogs table with the following implementation steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query hrm_platform_timelogs table with the
+     *   following implementation steps:
    *
    * 1. Authentication: Verify user is authenticated and has appropriate organization context.
    *
@@ -184,9 +186,10 @@ export class HrmplatformMemberTimelogsController {
    *
    * @param connection
    * @param timelogId Unique identifier of the timelog to retrieve
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Retrieve a single timelog by UUID from hrm_platform_timelogs table.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Retrieve a single timelog by UUID from
+     *   hrm_platform_timelogs table.
    *
    * 1. Validate timelogId is a valid UUID format
    * 2. Query hrm_platform_timelogs where id = timelogId AND deleted_at IS NULL
@@ -227,23 +230,32 @@ export class HrmplatformMemberTimelogsController {
    * @param connection
    * @param timelogId The UUID identifier of the timelog to update.
    * @param body Timelog fields to update. At least one field must be provided. Fields excluded from update: id, employee_id, created_at, updated_at, deleted_at.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1. Validate timelogId is a valid UUID format.
-   * 2. Retrieve timelog from hrm_platform_timelogs where id = timelogId.
-   * 3. If not found, return 404 Not Found.
-   * 4. Validate authenticated member's employee record: query hrm_platform_employees where user_id = authenticated_member.user_id AND organization_id = current_org_context.
-   * 5. Verify employee_id of timelog matches authenticated employee.id. If mismatch, return 403 Forbidden (per business rule #444).
-   * 6. Check if timelog.deleted_at is not null. If soft-deleted, return 400 Bad Request.
-   * 7. Verify project status: join with hrm_platform_projects on project_id. If project.status = 'completed', return 409 Conflict (per business rule #604).
-   * 8. Check timesheet immutability: query hrm_platform_timesheet_timelogs for any association with this timelog. Join with hrm_platform_timesheets on timesheet_id. If any associated timesheet has status != 'draft' (i.e., 'submitted', 'approved'), return 409 Conflict (per business rule #139 and #99).
-   * 9. If request contains project_id, verify project belongs to same organization as employee.
-   * 10. If request contains task_id, verify task belongs to the specified project.
-   * 11. Calculate duration_minutes from provided start_datetime and end_datetime: (end_datetime - start_datetime) in minutes. Validate end_datetime >= start_datetime.
-   * 12. Apply updates to timelog: set fields from IHrmPlatformTimelog.IUpdate, set updated_at = now().
-   * 13. Save timelog to database.
-   * 14. Query updated timelog with employee, project, and task relationships.
-   * 15. Return 200 OK with full timelog object.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification 1. Validate timelogId is a valid UUID format. 2.
+     *   Retrieve timelog from hrm_platform_timelogs where id = timelogId. 3. If
+     *   not found, return 404 Not Found. 4. Validate authenticated member's
+     *   employee record: query hrm_platform_employees where user_id =
+     *   authenticated_member.user_id AND organization_id = current_org_context.
+     *   5. Verify employee_id of timelog matches authenticated employee.id. If
+     *   mismatch, return 403 Forbidden (per business rule #444). 6. Check if
+     *   timelog.deleted_at is not null. If soft-deleted, return 400 Bad
+     *   Request. 7. Verify project status: join with hrm_platform_projects on
+     *   project_id. If project.status = 'completed', return 409 Conflict (per
+     *   business rule #604). 8. Check timesheet immutability: query
+     *   hrm_platform_timesheet_timelogs for any association with this timelog.
+     *   Join with hrm_platform_timesheets on timesheet_id. If any associated
+     *   timesheet has status != 'draft' (i.e., 'submitted', 'approved'), return
+     *   409 Conflict (per business rule #139 and #99). 9. If request contains
+     *   project_id, verify project belongs to same organization as employee.
+     *   10. If request contains task_id, verify task belongs to the specified
+     *   project. 11. Calculate duration_minutes from provided start_datetime
+     *   and end_datetime: (end_datetime - start_datetime) in minutes. Validate
+     *   end_datetime >= start_datetime. 12. Apply updates to timelog: set
+     *   fields from IHrmPlatformTimelog.IUpdate, set updated_at = now(). 13.
+     *   Save timelog to database. 14. Query updated timelog with employee,
+     *   project, and task relationships. 15. Return 200 OK with full timelog
+     *   object.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Put(":timelogId")
@@ -285,9 +297,10 @@ export class HrmplatformMemberTimelogsController {
    *
    * @param connection
    * @param timelogId UUID identifier of the timelog to delete
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement soft-delete by setting deleted_at timestamp to current time.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implement soft-delete by setting deleted_at
+     *   timestamp to current time.
    *
    * **Authorization**:
    * 1. Verify user is authenticated

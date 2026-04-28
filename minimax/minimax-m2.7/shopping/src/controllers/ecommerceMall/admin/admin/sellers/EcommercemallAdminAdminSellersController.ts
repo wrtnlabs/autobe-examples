@@ -40,9 +40,13 @@ export class EcommercemallAdminAdminSellersController {
    * **Response**: Paginated list containing seller summary records with ID, email, shop name, approval status, suspension status, and creation timestamp.
    *
    * @param connection
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query the ecommerce_mall_sellers table with LEFT JOIN to ecommerce_mall_seller_profiles for shop names. Apply pagination using offset pagination with page and limit query parameters. Join with ecommerce_mall_seller_suspensions table to determine current suspension status of each seller.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Query the ecommerce_mall_sellers table with LEFT
+     *   JOIN to ecommerce_mall_seller_profiles for shop names. Apply pagination
+     *   using offset pagination with page and limit query parameters. Join with
+     *   ecommerce_mall_seller_suspensions table to determine current suspension
+     *   status of each seller.
    *
    * Filter logic:
    * - approvalStatus: Filter sellers by their current approval_status field (pending, approved, rejected)
@@ -96,9 +100,10 @@ export class EcommercemallAdminAdminSellersController {
    *
    * @param connection
    * @param body Search criteria including email filter, approval status filter, suspension status filter, date range filters, and pagination parameters for listing sellers.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query ecommerce_mall_sellers table with LEFT JOIN to ecommerce_mall_seller_profiles for shop information.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Query ecommerce_mall_sellers table with LEFT JOIN
+     *   to ecommerce_mall_seller_profiles for shop information.
    *
    * Apply search filters:
    * - Filter by email contains (case-insensitive partial match)
@@ -158,9 +163,10 @@ export class EcommercemallAdminAdminSellersController {
    * Returns 401 Unauthorized if the requesting user is not an authenticated administrator. Returns 403 Forbidden if the user lacks administrative privileges.
    *
    * @param connection
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query the ecommerce_mall_sellers table filtering by approval_status = 'pending'.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Query the ecommerce_mall_sellers table filtering
+     *   by approval_status = 'pending'.
    *
    * Accept pagination via query parameters: page (default: 1) and limit (default: 20).
    *
@@ -199,9 +205,10 @@ export class EcommercemallAdminAdminSellersController {
    *
    * @param connection
    * @param sellerId Unique identifier of the seller account (UUID format)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query the ecommerce_mall_sellers table using the provided sellerId (UUID) as the primary key.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Query the ecommerce_mall_sellers table using the
+     *   provided sellerId (UUID) as the primary key.
    *
    * Include the following related data in the response:
    * 1. Seller profile (ecommerce_mall_seller_profiles) - one-to-one relationship with shop name, description, and logo_uri
@@ -244,9 +251,9 @@ export class EcommercemallAdminAdminSellersController {
    *
    * @param connection
    * @param sellerId Unique identifier of the seller to approve.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Approve a pending seller registration request.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Approve a pending seller registration request.
    *
    * 1. Extract sellerId from path parameter (UUID format).
    * 2. Validate the authenticated user has ADMIN or SUPER_ADMIN role.
@@ -290,9 +297,10 @@ export class EcommercemallAdminAdminSellersController {
    * @param connection
    * @param sellerId Unique identifier of the seller to reject (UUID format).
    * @param body Rejection details containing the mandatory reason for rejecting the seller registration application.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Reject a seller registration application by updating the seller record.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Reject a seller registration application by
+     *   updating the seller record.
    *
    * 1. Validate the sellerId parameter is a valid UUID format.
    *
@@ -355,23 +363,22 @@ export class EcommercemallAdminAdminSellersController {
    * @param connection
    * @param sellerId Unique identifier of the seller account to suspend (global scope)
    * @param body The suspension reason provided by the administrator explaining why the seller account is being suspended.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification 1. Retrieve the seller from ecommerce_mall_sellers by sellerId
-   * 2. Validate seller exists and is not already suspended (check for active suspension record with restored_at = NULL)
-   * 3. Retrieve the authenticated admin ID from the session token
-   * 4. Validate the admin is not suspending their own seller account (if admin has a seller account)
-   * 5. Create a new record in ecommerce_mall_seller_suspensions:
-   *    - id: generate UUID
-   *    - ecommerce_mall_seller_id: sellerId
-   *    - suspended_by_id: authenticated admin ID
-   *    - reason: from request body
-   *    - suspended_at: current timestamp
-   *    - restored_at: null
-   *    - created_at: current timestamp
-   *    - updated_at: current timestamp
-   * 6. Update all active products by the seller to set visibility flags (soft_delete or hidden field) to prevent display in search and category listings
-   * 7. Return the created suspension record with seller details
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification 1. Retrieve the seller from
+     *   ecommerce_mall_sellers by sellerId 2. Validate seller exists and is not
+     *   already suspended (check for active suspension record with restored_at
+     *   = NULL) 3. Retrieve the authenticated admin ID from the session token
+     *   4. Validate the admin is not suspending their own seller account (if
+     *   admin has a seller account) 5. Create a new record in
+     *   ecommerce_mall_seller_suspensions: - id: generate UUID -
+     *   ecommerce_mall_seller_id: sellerId - suspended_by_id: authenticated
+     *   admin ID - reason: from request body - suspended_at: current timestamp
+     *   - restored_at: null - created_at: current timestamp - updated_at:
+     *   current timestamp 6. Update all active products by the seller to set
+     *   visibility flags (soft_delete or hidden field) to prevent display in
+     *   search and category listings 7. Return the created suspension record
+     *   with seller details
    *
    * **Error Cases**:
    * - Seller not found: Return 404
@@ -415,9 +422,11 @@ export class EcommercemallAdminAdminSellersController {
    * @param connection
    * @param sellerId Unique identifier of the seller account to unsuspend (UUID format, global scope).
    * @param body Optional restoration details including the reason for unsuspending the seller account.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Retrieve the seller by sellerId and verify they currently have an active suspension (latest ecommerce_mall_seller_suspensions record with null restored_at).
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Retrieve the seller by sellerId and verify they
+     *   currently have an active suspension (latest
+     *   ecommerce_mall_seller_suspensions record with null restored_at).
    *
    * If the seller is not suspended, return error 400 with message indicating the seller is not currently suspended.
    *

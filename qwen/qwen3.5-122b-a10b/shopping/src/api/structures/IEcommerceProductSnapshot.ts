@@ -23,8 +23,9 @@ export type IEcommerceProductSnapshot = {
    *
    * Generated as a UUID at snapshot creation time. Serves as the primary key for the snapshot table and is used to retrieve specific historical product states.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_product_snapshots.id. UUID primary key, NOT NULL.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_product_snapshots.id. UUID primary key, NOT NULL.
    */
   id: string & tags.Format<"uuid">;
 
@@ -33,8 +34,10 @@ export type IEcommerceProductSnapshot = {
    *
    * Links to the parent product record in the ecommerce_products table. Multiple snapshots can exist for the same product to track its modification history over time.
    *
-   * @x-autobe-database-schema-property ecommerce_product_id
-   * @x-autobe-specification Direct mapping from ecommerce_product_snapshots.ecommerce_product_id. UUID foreign key to ecommerce_products table, NOT NULL.
+     * @x-autobe-database-schema-property ecommerce_product_id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_product_snapshots.ecommerce_product_id. UUID foreign key to
+     *   ecommerce_products table, NOT NULL.
    */
   ecommerce_product_id: string & tags.Format<"uuid">;
 
@@ -43,8 +46,10 @@ export type IEcommerceProductSnapshot = {
    *
    * Denormalized from the product table to preserve historical state even if the product name is later changed. This ensures the snapshot accurately reflects what customers saw at the time of purchase or review.
    *
-   * @x-autobe-database-schema-property name
-   * @x-autobe-specification Direct mapping from ecommerce_product_snapshots.name. String, NOT NULL. Denormalized from products table.
+     * @x-autobe-database-schema-property name
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_product_snapshots.name. String, NOT NULL. Denormalized from
+     *   products table.
    */
   name: string;
 
@@ -53,8 +58,10 @@ export type IEcommerceProductSnapshot = {
    *
    * Denormalized from the product table to preserve historical state even if the product description is later changed. Contains the full product specifications, features, and usage information as it existed when the snapshot was created.
    *
-   * @x-autobe-database-schema-property description
-   * @x-autobe-specification Direct mapping from ecommerce_product_snapshots.description. String, NOT NULL. Denormalized from products table.
+     * @x-autobe-database-schema-property description
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_product_snapshots.description. String, NOT NULL. Denormalized
+     *   from products table.
    */
   description: string;
 
@@ -63,8 +70,10 @@ export type IEcommerceProductSnapshot = {
    *
    * Denormalized from the product table to preserve historical categorization even if the product is moved to a different category later. Links to the category that was assigned to the product when this snapshot was created.
    *
-   * @x-autobe-database-schema-property category_id
-   * @x-autobe-specification Direct mapping from ecommerce_product_snapshots.category_id. UUID foreign key to ecommerce_categories table, NOT NULL. Denormalized from products table.
+     * @x-autobe-database-schema-property category_id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_product_snapshots.category_id. UUID foreign key to
+     *   ecommerce_categories table, NOT NULL. Denormalized from products table.
    */
   category_id: string & tags.Format<"uuid">;
 
@@ -73,8 +82,10 @@ export type IEcommerceProductSnapshot = {
    *
    * Denormalized from the product table to preserve historical pricing even if the product price is later changed. This is the default price shown when variants don't override it. Stored as double precision to handle decimal currency values accurately.
    *
-   * @x-autobe-database-schema-property base_price
-   * @x-autobe-specification Direct mapping from ecommerce_product_snapshots.base_price. Double precision number, NOT NULL. Denormalized from products table.
+     * @x-autobe-database-schema-property base_price
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_product_snapshots.base_price. Double precision number, NOT
+     *   NULL. Denormalized from products table.
    */
   base_price: number;
 
@@ -83,8 +94,10 @@ export type IEcommerceProductSnapshot = {
    *
    * Marks the point-in-time when the product state was captured. Snapshots are immutable and cannot be modified after creation. This timestamp is used to order snapshots chronologically and determine the sequence of product modifications.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_product_snapshots.created_at. Timestamp with timezone, NOT NULL.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_product_snapshots.created_at. Timestamp with timezone, NOT
+     *   NULL.
    */
   created_at: string & tags.Format<"date-time">;
 };
@@ -112,7 +125,9 @@ export namespace IEcommerceProductSnapshot {
      *
      * When specified, only product snapshots created at or after this datetime will be included in the results. Uses ISO 8601 date-time format (e.g., "2024-01-15T10:30:00Z"). Omit to retrieve snapshots from the beginning of time.
      *
-     * @x-autobe-specification Query parameter for filtering snapshots by creation date. When provided, only snapshots with created_at >= this value are returned. Format: ISO 8601 date-time string.
+         * @x-autobe-specification Query parameter for filtering snapshots by
+         *   creation date. When provided, only snapshots with created_at >=
+         *   this value are returned. Format: ISO 8601 date-time string.
      */
     from?: (string & tags.Format<"date-time">) | undefined;
 
@@ -121,7 +136,9 @@ export namespace IEcommerceProductSnapshot {
      *
      * When specified, only product snapshots created at or before this datetime will be included in the results. Uses ISO 8601 date-time format (e.g., "2024-01-20T15:45:00Z"). Omit to retrieve snapshots up to the present.
      *
-     * @x-autobe-specification Query parameter for filtering snapshots by creation date. When provided, only snapshots with created_at <= this value are returned. Format: ISO 8601 date-time string.
+         * @x-autobe-specification Query parameter for filtering snapshots by
+         *   creation date. When provided, only snapshots with created_at <=
+         *   this value are returned. Format: ISO 8601 date-time string.
      */
     to?: (string & tags.Format<"date-time">) | undefined;
 
@@ -130,7 +147,9 @@ export namespace IEcommerceProductSnapshot {
      *
      * 1-indexed page number indicating which chunk of results to retrieve. Must be used together with the `limit` parameter. Minimum value is 1. When using cursor-based pagination instead, omit this field.
      *
-     * @x-autobe-specification Offset-based pagination page number (1-indexed). Minimum value: 1. Use with `limit` for offset-based pagination. Do not use with `cursor`.
+         * @x-autobe-specification Offset-based pagination page number
+         *   (1-indexed). Minimum value: 1. Use with `limit` for offset-based
+         *   pagination. Do not use with `cursor`.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -139,7 +158,9 @@ export namespace IEcommerceProductSnapshot {
      *
      * Defines the upper bound for result set size in offset-based pagination. Valid range is 1 to 100 records. Must be used together with the `page` parameter. When using cursor-based pagination instead, omit this field.
      *
-     * @x-autobe-specification Maximum number of records per page for offset-based pagination. Range: 1-100. Use with `page` for offset-based pagination. Do not use with `cursor`.
+         * @x-autobe-specification Maximum number of records per page for
+         *   offset-based pagination. Range: 1-100. Use with `page` for
+         *   offset-based pagination. Do not use with `cursor`.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -150,7 +171,10 @@ export namespace IEcommerceProductSnapshot {
      *
      * Opaque token returned in the pagination metadata of a previous response, used to fetch the next page of results. More efficient than offset-based pagination for large datasets. When using cursor-based pagination, omit the `page` and `limit` parameters.
      *
-     * @x-autobe-specification Cursor token for cursor-based pagination. Returned in pagination metadata from previous request. Use instead of `page`/`limit` for efficient pagination through large result sets.
+         * @x-autobe-specification Cursor token for cursor-based pagination.
+         *   Returned in pagination metadata from previous request. Use instead
+         *   of `page`/`limit` for efficient pagination through large result
+         *   sets.
      */
     cursor?: string | undefined;
   };
@@ -170,8 +194,10 @@ export namespace IEcommerceProductSnapshot {
      *
      * This UUID serves as the primary key for the snapshot, allowing precise retrieval of historical product state.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_product_snapshots.id. UUID primary key uniquely identifying this snapshot record.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_product_snapshots.id. UUID primary key uniquely
+         *   identifying this snapshot record.
      */
     id: string & tags.Format<"uuid">;
 
@@ -180,8 +206,10 @@ export namespace IEcommerceProductSnapshot {
      *
      * This field preserves the historical product name even if the current product name has been changed. The name is denormalized from the product table to ensure audit trail integrity.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from ecommerce_product_snapshots.name. Denormalized product name at snapshot time.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_product_snapshots.name. Denormalized product name at
+         *   snapshot time.
      */
     name: string;
 
@@ -190,8 +218,10 @@ export namespace IEcommerceProductSnapshot {
      *
      * This UUID references the category the product belonged to when the snapshot was created. The category reference is preserved even if the product is later moved to a different category.
      *
-     * @x-autobe-database-schema-property category_id
-     * @x-autobe-specification Direct mapping from ecommerce_product_snapshots.category_id. UUID foreign key to category table.
+         * @x-autobe-database-schema-property category_id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_product_snapshots.category_id. UUID foreign key to
+         *   category table.
      */
     category_id: string & tags.Format<"uuid">;
 
@@ -200,8 +230,10 @@ export namespace IEcommerceProductSnapshot {
      *
      * This price is denormalized from the product table to preserve historical pricing information. Individual product variants may have their own prices that override this base price.
      *
-     * @x-autobe-database-schema-property base_price
-     * @x-autobe-specification Direct mapping from ecommerce_product_snapshots.base_price. Double precision floating point number representing price in platform currency.
+         * @x-autobe-database-schema-property base_price
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_product_snapshots.base_price. Double precision floating
+         *   point number representing price in platform currency.
      */
     base_price: number;
 
@@ -210,8 +242,10 @@ export namespace IEcommerceProductSnapshot {
      *
      * This marks the exact point in time when the product state was captured. Snapshots are immutable and cannot be modified after creation.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from ecommerce_product_snapshots.created_at. Timestamp with timezone in PostgreSQL timestamptz format.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_product_snapshots.created_at. Timestamp with timezone in
+         *   PostgreSQL timestamptz format.
      */
     created_at: string & tags.Format<"date-time">;
   };

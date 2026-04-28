@@ -20,8 +20,10 @@ export type IHrmTimeTrackEmployeeSnapshot = {
    *
    * This UUID serves as the primary key for the snapshot and is used to reference this specific point-in-time record in audit trails, compliance reports, and historical analysis. Each snapshot receives a unique identifier upon creation that remains constant throughout its lifecycle.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from hrm_time_track_employee_snapshots.id. Primary key UUID uniquely identifying the employee snapshot record.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_employee_snapshots.id. Primary key UUID uniquely
+     *   identifying the employee snapshot record.
    */
   id: string & tags.Format<"uuid">;
 
@@ -30,8 +32,12 @@ export type IHrmTimeTrackEmployeeSnapshot = {
    *
    * This field provides a reference to the source employee record, enabling navigation to the current employee state and related employment data. The snapshot preserves the employee's state at the moment of capture, independent of any subsequent modifications to the employee record.
    *
-   * @x-autobe-database-schema-property employee
-   * @x-autobe-specification Relation mapping from hrm_time_track_employee_snapshots.employee via FK hrm_time_track_employee_id to hrm_time_track_employees.id. Returns IHrmTimeTrackEmployee.ISummary with employee identification information.
+     * @x-autobe-database-schema-property employee
+     * @x-autobe-specification Relation mapping from
+     *   hrm_time_track_employee_snapshots.employee via FK
+     *   hrm_time_track_employee_id to hrm_time_track_employees.id. Returns
+     *   IHrmTimeTrackEmployee.ISummary with employee identification
+     *   information.
    */
   employee: IHrmTimeTrackEmployee.ISummary;
 
@@ -40,8 +46,12 @@ export type IHrmTimeTrackEmployeeSnapshot = {
    *
    * This field preserves the member identity (email, account creation timestamp) at the moment the snapshot was created. The denormalized member reference ensures historical accuracy even if the member account is later modified or the employee relationship changes.
    *
-   * @x-autobe-database-schema-property member
-   * @x-autobe-specification Relation mapping from hrm_time_track_employee_snapshots.member via FK hrm_time_track_member_id to hrm_time_track_members.id. Returns IHrmTimeTrackMember.ISummary with member identity information including email and account timestamps.
+     * @x-autobe-database-schema-property member
+     * @x-autobe-specification Relation mapping from
+     *   hrm_time_track_employee_snapshots.member via FK
+     *   hrm_time_track_member_id to hrm_time_track_members.id. Returns
+     *   IHrmTimeTrackMember.ISummary with member identity information including
+     *   email and account timestamps.
    */
   member: IHrmTimeTrackMember.ISummary;
 
@@ -50,8 +60,12 @@ export type IHrmTimeTrackEmployeeSnapshot = {
    *
    * This field is nullable as employees may not have a department assignment. The snapshot preserves the department context (name, description, parent department) at the moment of capture, even if the employee is later reassigned or the department is deleted.
    *
-   * @x-autobe-database-schema-property department
-   * @x-autobe-specification Relation mapping from hrm_time_track_employee_snapshots.department via FK hrm_time_track_department_id to hrm_time_track_departments.id (LEFT JOIN for nullable). Returns IHrmTimeTrackDepartment.ISummary or null if employee had no department assignment at snapshot time.
+     * @x-autobe-database-schema-property department
+     * @x-autobe-specification Relation mapping from
+     *   hrm_time_track_employee_snapshots.department via FK
+     *   hrm_time_track_department_id to hrm_time_track_departments.id (LEFT
+     *   JOIN for nullable). Returns IHrmTimeTrackDepartment.ISummary or null if
+     *   employee had no department assignment at snapshot time.
    */
   department: IHrmTimeTrackDepartment.ISummary | null;
 
@@ -60,8 +74,12 @@ export type IHrmTimeTrackEmployeeSnapshot = {
    *
    * This field preserves the role context (name, description, built-in status) at the moment of capture. The snapshot ensures historical accuracy of the employee's permissions and access level, even if the role is later changed or deleted.
    *
-   * @x-autobe-database-schema-property role
-   * @x-autobe-specification Relation mapping from hrm_time_track_employee_snapshots.role via FK hrm_time_track_role_id to hrm_time_track_roles.id. Returns IHrmTimeTrackRole.ISummary with role identification information including name, description, and built-in status.
+     * @x-autobe-database-schema-property role
+     * @x-autobe-specification Relation mapping from
+     *   hrm_time_track_employee_snapshots.role via FK hrm_time_track_role_id to
+     *   hrm_time_track_roles.id. Returns IHrmTimeTrackRole.ISummary with role
+     *   identification information including name, description, and built-in
+     *   status.
    */
   role: IHrmTimeTrackRole.ISummary;
 
@@ -70,8 +88,11 @@ export type IHrmTimeTrackEmployeeSnapshot = {
    *
    * This optional field stores the employee's official job title or position name as it existed when the snapshot was created. It is used for historical reporting and audit purposes, preserving the position information even if the employee's title is later changed. Null when no position title was assigned.
    *
-   * @x-autobe-specification Direct mapping from hrm_time_track_employee_snapshots.position_title. Nullable field storing the employee's job title or position name (e.g., 'Senior Developer', 'Marketing Manager') at snapshot time.
-   * @x-autobe-database-schema-property position_title
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_employee_snapshots.position_title. Nullable field
+     *   storing the employee's job title or position name (e.g., 'Senior
+     *   Developer', 'Marketing Manager') at snapshot time.
+     * @x-autobe-database-schema-property position_title
    */
   position_title?: string | null | undefined;
 
@@ -80,8 +101,11 @@ export type IHrmTimeTrackEmployeeSnapshot = {
    *
    * This field categorizes the employment type such as full-time, part-time, contract, or internship as it existed when the snapshot was created. The value conforms to the Employee Employment Type Classification business category and is used for historical reporting and compliance purposes.
    *
-   * @x-autobe-database-schema-property employment_type
-   * @x-autobe-specification Direct mapping from hrm_time_track_employee_snapshots.employment_type. Value must conform to Employee Employment Type Classification business category (full-time, part-time, contractor, intern).
+     * @x-autobe-database-schema-property employment_type
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_employee_snapshots.employment_type. Value must conform
+     *   to Employee Employment Type Classification business category
+     *   (full-time, part-time, contractor, intern).
    */
   employment_type: string;
 
@@ -90,8 +114,10 @@ export type IHrmTimeTrackEmployeeSnapshot = {
    *
    * This field tracks the employee's active status (active or deactivated) as it existed when the snapshot was created. The value conforms to the Employee Status Classification business category and affects historical access and permission analysis.
    *
-   * @x-autobe-database-schema-property status
-   * @x-autobe-specification Direct mapping from hrm_time_track_employee_snapshots.status. Value must conform to Employee Status Classification business category (active, deactivated).
+     * @x-autobe-database-schema-property status
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_employee_snapshots.status. Value must conform to
+     *   Employee Status Classification business category (active, deactivated).
    */
   status: string;
 
@@ -100,8 +126,11 @@ export type IHrmTimeTrackEmployeeSnapshot = {
    *
    * This immutable timestamp records the exact point in time when the employee state was captured. Used for chronological ordering of snapshots and for querying employee state at specific historical moments. Format follows ISO 8601 date-time standard with timezone information.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from hrm_time_track_employee_snapshots.created_at. Timestamp when the snapshot was created, immutable after creation. Format: ISO 8601 date-time with timezone.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_employee_snapshots.created_at. Timestamp when the
+     *   snapshot was created, immutable after creation. Format: ISO 8601
+     *   date-time with timezone.
    */
   created_at: string & tags.Format<"date-time">;
 };
@@ -117,7 +146,10 @@ export namespace IHrmTimeTrackEmployeeSnapshot {
      *
      * When provided, returns only snapshots associated with the specified employee record. This is useful for viewing the complete history of a single employee's state changes over time.
      *
-     * @x-autobe-specification Filter parameter mapping to hrm_time_track_employee_id column in hrm_time_track_employee_snapshots table. Filters snapshots for a specific employee record. UUID format.
+         * @x-autobe-specification Filter parameter mapping to
+         *   hrm_time_track_employee_id column in
+         *   hrm_time_track_employee_snapshots table. Filters snapshots for a
+         *   specific employee record. UUID format.
      */
     employee_id?: (string & tags.Format<"uuid">) | undefined;
 
@@ -126,7 +158,10 @@ export namespace IHrmTimeTrackEmployeeSnapshot {
      *
      * Restricts results to employee snapshots belonging to the specified organization. This ensures data isolation and organization-scoped queries.
      *
-     * @x-autobe-specification Filter parameter mapping to hrm_time_track_organization_id column in hrm_time_track_employee_snapshots table. Filters snapshots within a specific organization scope. UUID format.
+         * @x-autobe-specification Filter parameter mapping to
+         *   hrm_time_track_organization_id column in
+         *   hrm_time_track_employee_snapshots table. Filters snapshots within a
+         *   specific organization scope. UUID format.
      */
     organization_id?: (string & tags.Format<"uuid">) | undefined;
 
@@ -135,7 +170,10 @@ export namespace IHrmTimeTrackEmployeeSnapshot {
      *
      * Returns all employee snapshots associated with the specified member (user) account, useful for tracking a user's employment history across multiple organizations.
      *
-     * @x-autobe-specification Filter parameter mapping to hrm_time_track_member_id column in hrm_time_track_employee_snapshots table. Filters snapshots for a specific user account across all organizations. UUID format.
+         * @x-autobe-specification Filter parameter mapping to
+         *   hrm_time_track_member_id column in
+         *   hrm_time_track_employee_snapshots table. Filters snapshots for a
+         *   specific user account across all organizations. UUID format.
      */
     member_id?: (string & tags.Format<"uuid">) | undefined;
 
@@ -144,7 +182,10 @@ export namespace IHrmTimeTrackEmployeeSnapshot {
      *
      * Filter by 'active' to find snapshots where the employee was active, or 'deactivated' to find snapshots where the employee was deactivated. This reflects the employee's status at the time the snapshot was created.
      *
-     * @x-autobe-specification Filter parameter mapping to status column in hrm_time_track_employee_snapshots table. Accepts values: 'active' or 'deactivated'. Filters snapshots by employee status at snapshot time.
+         * @x-autobe-specification Filter parameter mapping to status column in
+         *   hrm_time_track_employee_snapshots table. Accepts values: 'active'
+         *   or 'deactivated'. Filters snapshots by employee status at snapshot
+         *   time.
      */
     status?: string | undefined;
 
@@ -153,7 +194,10 @@ export namespace IHrmTimeTrackEmployeeSnapshot {
      *
      * Filter by employment type such as 'full-time', 'part-time', 'contractor', or 'intern'. This reflects the employee's employment classification at the time the snapshot was created.
      *
-     * @x-autobe-specification Filter parameter mapping to employment_type column in hrm_time_track_employee_snapshots table. Accepts values: 'full-time', 'part-time', 'contractor', or 'intern'. Filters snapshots by employment classification at snapshot time.
+         * @x-autobe-specification Filter parameter mapping to employment_type
+         *   column in hrm_time_track_employee_snapshots table. Accepts values:
+         *   'full-time', 'part-time', 'contractor', or 'intern'. Filters
+         *   snapshots by employment classification at snapshot time.
      */
     employment_type?: string | undefined;
 
@@ -162,7 +206,11 @@ export namespace IHrmTimeTrackEmployeeSnapshot {
      *
      * Returns snapshots where the employee was assigned to the specified department at snapshot time. Note that department assignment is optional for employees, so this filter only matches snapshots with a department assignment.
      *
-     * @x-autobe-specification Filter parameter mapping to hrm_time_track_department_id column in hrm_time_track_employee_snapshots table. Filters snapshots by department assignment at snapshot time. UUID format. Nullable in database, filter only matches non-null values.
+         * @x-autobe-specification Filter parameter mapping to
+         *   hrm_time_track_department_id column in
+         *   hrm_time_track_employee_snapshots table. Filters snapshots by
+         *   department assignment at snapshot time. UUID format. Nullable in
+         *   database, filter only matches non-null values.
      */
     department_id?: (string & tags.Format<"uuid">) | undefined;
 
@@ -171,7 +219,10 @@ export namespace IHrmTimeTrackEmployeeSnapshot {
      *
      * Returns snapshots where the employee was assigned to the specified role at snapshot time. This is useful for tracking role changes and permission history for employees.
      *
-     * @x-autobe-specification Filter parameter mapping to hrm_time_track_role_id column in hrm_time_track_employee_snapshots table. Filters snapshots by role assignment at snapshot time. UUID format.
+         * @x-autobe-specification Filter parameter mapping to
+         *   hrm_time_track_role_id column in hrm_time_track_employee_snapshots
+         *   table. Filters snapshots by role assignment at snapshot time. UUID
+         *   format.
      */
     role_id?: (string & tags.Format<"uuid">) | undefined;
 
@@ -180,7 +231,9 @@ export namespace IHrmTimeTrackEmployeeSnapshot {
      *
      * Filters to include only snapshots created at or after this timestamp. Use with created_at_end to define a time window. ISO 8601 date-time format (e.g., '2024-01-01T00:00:00Z').
      *
-     * @x-autobe-specification Date range filter start boundary. Maps to created_at column with >= comparison. ISO 8601 date-time format. Filters snapshots created at or after this timestamp.
+         * @x-autobe-specification Date range filter start boundary. Maps to
+         *   created_at column with >= comparison. ISO 8601 date-time format.
+         *   Filters snapshots created at or after this timestamp.
      */
     created_at_start?: (string & tags.Format<"date-time">) | undefined;
 
@@ -189,7 +242,9 @@ export namespace IHrmTimeTrackEmployeeSnapshot {
      *
      * Filters to include only snapshots created at or before this timestamp. Use with created_at_start to define a time window. ISO 8601 date-time format (e.g., '2024-12-31T23:59:59Z').
      *
-     * @x-autobe-specification Date range filter end boundary. Maps to created_at column with <= comparison. ISO 8601 date-time format. Filters snapshots created at or before this timestamp.
+         * @x-autobe-specification Date range filter end boundary. Maps to
+         *   created_at column with <= comparison. ISO 8601 date-time format.
+         *   Filters snapshots created at or before this timestamp.
      */
     created_at_end?: (string & tags.Format<"date-time">) | undefined;
 
@@ -198,7 +253,9 @@ export namespace IHrmTimeTrackEmployeeSnapshot {
      *
      * Accepts 'created_at' (snapshot creation time), 'status' (employee status), 'employment_type' (employment classification), or 'position_title' (job title). Default is 'created_at'.
      *
-     * @x-autobe-specification Sorting field parameter. Accepts values: 'created_at', 'status', 'employment_type', 'position_title'. Default is 'created_at'. Determines which field to sort results by.
+         * @x-autobe-specification Sorting field parameter. Accepts values:
+         *   'created_at', 'status', 'employment_type', 'position_title'.
+         *   Default is 'created_at'. Determines which field to sort results by.
      */
     sort_field?: string | undefined;
 
@@ -207,7 +264,9 @@ export namespace IHrmTimeTrackEmployeeSnapshot {
      *
      * Accepts 'asc' for ascending order or 'desc' for descending order. Default is 'desc' to show the most recent snapshots first.
      *
-     * @x-autobe-specification Sorting direction parameter. Accepts values: 'asc' (ascending) or 'desc' (descending). Default is 'desc' (most recent snapshots first).
+         * @x-autobe-specification Sorting direction parameter. Accepts values:
+         *   'asc' (ascending) or 'desc' (descending). Default is 'desc' (most
+         *   recent snapshots first).
      */
     sort_direction?: string | undefined;
 
@@ -216,7 +275,8 @@ export namespace IHrmTimeTrackEmployeeSnapshot {
      *
      * 1-indexed page number, minimum value is 1. Use this along with 'limit' to navigate through paginated results. Default is page 1.
      *
-     * @x-autobe-specification Page number for pagination. 1-indexed, minimum value is 1. Used for offset-based pagination. Default is 1.
+         * @x-autobe-specification Page number for pagination. 1-indexed,
+         *   minimum value is 1. Used for offset-based pagination. Default is 1.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -225,7 +285,9 @@ export namespace IHrmTimeTrackEmployeeSnapshot {
      *
      * Minimum value is 1, maximum is 100. Controls how many snapshots are returned in each page of results. Default is 20 records per page.
      *
-     * @x-autobe-specification Maximum number of records per page. Minimum 1, maximum 100. Controls the page size for pagination. Default is 20.
+         * @x-autobe-specification Maximum number of records per page. Minimum
+         *   1, maximum 100. Controls the page size for pagination. Default is
+         *   20.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -236,7 +298,10 @@ export namespace IHrmTimeTrackEmployeeSnapshot {
      *
      * An opaque string representing a position in the result set. Use cursor-based pagination for efficient navigation through large datasets, avoiding performance issues with offset-based pagination.
      *
-     * @x-autobe-specification Cursor for cursor-based pagination. Opaque string token representing a position in the result set. Use for efficient pagination through large datasets without offset limitations.
+         * @x-autobe-specification Cursor for cursor-based pagination. Opaque
+         *   string token representing a position in the result set. Use for
+         *   efficient pagination through large datasets without offset
+         *   limitations.
      */
     cursor?: string | undefined;
   };
@@ -254,8 +319,10 @@ export namespace IHrmTimeTrackEmployeeSnapshot {
      *
      * This UUID serves as the primary key for identifying and referencing individual employee snapshots in the system. Each snapshot receives a unique identifier upon creation, enabling precise tracking and retrieval of historical employee state records.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from hrm_time_track_employee_snapshots.id. Primary key UUID identifying the snapshot record.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_employee_snapshots.id. Primary key UUID identifying
+         *   the snapshot record.
      */
     id: string & tags.Format<"uuid">;
 
@@ -264,8 +331,10 @@ export namespace IHrmTimeTrackEmployeeSnapshot {
      *
      * This field captures the employee's specific job role description (e.g., 'Software Engineer', 'Marketing Manager', 'Team Lead'). It is denormalized from the employee record to preserve the position information even if the employee's title changes later. This field may be null if no position title was assigned to the employee at snapshot time.
      *
-     * @x-autobe-database-schema-property position_title
-     * @x-autobe-specification Direct mapping from hrm_time_track_employee_snapshots.position_title. Nullable string field capturing the employee's job title at snapshot time.
+         * @x-autobe-database-schema-property position_title
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_employee_snapshots.position_title. Nullable string
+         *   field capturing the employee's job title at snapshot time.
      */
     position_title: string | null;
 
@@ -274,8 +343,11 @@ export namespace IHrmTimeTrackEmployeeSnapshot {
      *
      * This field categorizes the employment arrangement as one of four types: 'full-time', 'part-time', 'contractor', or 'intern'. It is denormalized from the employee record to preserve the employment type even if it changes later. This information is used for reporting, compliance, and workforce analytics purposes.
      *
-     * @x-autobe-database-schema-property employment_type
-     * @x-autobe-specification Direct mapping from hrm_time_track_employee_snapshots.employment_type. Non-nullable string field with values: 'full-time', 'part-time', 'contractor', or 'intern'.
+         * @x-autobe-database-schema-property employment_type
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_employee_snapshots.employment_type. Non-nullable
+         *   string field with values: 'full-time', 'part-time', 'contractor',
+         *   or 'intern'.
      */
     employment_type: string;
 
@@ -284,8 +356,10 @@ export namespace IHrmTimeTrackEmployeeSnapshot {
      *
      * This field indicates whether the employee was 'active' or 'deactivated' at the moment of snapshot. Active employees can log time and submit timesheets, while deactivated employees cannot. The status is denormalized to preserve the employment state even if the employee's status changes later.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from hrm_time_track_employee_snapshots.status. Non-nullable string field with values: 'active' or 'deactivated'.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_employee_snapshots.status. Non-nullable string field
+         *   with values: 'active' or 'deactivated'.
      */
     status: string;
 
@@ -294,8 +368,10 @@ export namespace IHrmTimeTrackEmployeeSnapshot {
      *
      * This field records the exact point in time when the employee state was captured. It is used for chronological ordering of snapshots and for querying employee state at specific historical moments. The timestamp includes timezone information for accurate time-based queries and reporting.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from hrm_time_track_employee_snapshots.created_at. DateTime field with timezone indicating when the snapshot was created.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_employee_snapshots.created_at. DateTime field with
+         *   timezone indicating when the snapshot was created.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -304,8 +380,11 @@ export namespace IHrmTimeTrackEmployeeSnapshot {
      *
      * This field provides the organizational context for the employee snapshot, showing which organization the employee was a member of when the snapshot was created. It includes essential organization information (name, description, currency, timezone) denormalized for display purposes. The organization reference is preserved even if the organization settings change later.
      *
-     * @x-autobe-database-schema-property organization
-     * @x-autobe-specification Relation via JOIN from hrm_time_track_employee_snapshots.hrm_time_track_organization_id to hrm_time_track_organizations.id. Returns IHrmTimeTrackOrganization.ISummary object.
+         * @x-autobe-database-schema-property organization
+         * @x-autobe-specification Relation via JOIN from
+         *   hrm_time_track_employee_snapshots.hrm_time_track_organization_id to
+         *   hrm_time_track_organizations.id. Returns
+         *   IHrmTimeTrackOrganization.ISummary object.
      */
     organization: IHrmTimeTrackOrganization.ISummary;
 
@@ -314,8 +393,11 @@ export namespace IHrmTimeTrackEmployeeSnapshot {
      *
      * This field links the employee snapshot to the authenticated user account (member), preserving the user-employee relationship at the moment of snapshot. It includes the member's email and account creation timestamp for identification and audit purposes. The member reference is preserved even if the user account is later modified or deleted.
      *
-     * @x-autobe-database-schema-property member
-     * @x-autobe-specification Relation via JOIN from hrm_time_track_employee_snapshots.hrm_time_track_member_id to hrm_time_track_members.id. Returns IHrmTimeTrackMember.ISummary object.
+         * @x-autobe-database-schema-property member
+         * @x-autobe-specification Relation via JOIN from
+         *   hrm_time_track_employee_snapshots.hrm_time_track_member_id to
+         *   hrm_time_track_members.id. Returns IHrmTimeTrackMember.ISummary
+         *   object.
      */
     member: IHrmTimeTrackMember.ISummary;
 
@@ -324,8 +406,12 @@ export namespace IHrmTimeTrackEmployeeSnapshot {
      *
      * This field shows the employee's departmental assignment when the snapshot was created. Department assignment is optional, so this field may be null if the employee was not assigned to any department. The department information (name, description, hierarchical parent) is denormalized for display purposes and preserved even if the employee is later reassigned or the department is deleted.
      *
-     * @x-autobe-database-schema-property department
-     * @x-autobe-specification Relation via JOIN from hrm_time_track_employee_snapshots.hrm_time_track_department_id to hrm_time_track_departments.id. Returns IHrmTimeTrackDepartment.ISummary object or null. Nullable as department assignment is optional for employees.
+         * @x-autobe-database-schema-property department
+         * @x-autobe-specification Relation via JOIN from
+         *   hrm_time_track_employee_snapshots.hrm_time_track_department_id to
+         *   hrm_time_track_departments.id. Returns
+         *   IHrmTimeTrackDepartment.ISummary object or null. Nullable as
+         *   department assignment is optional for employees.
      */
     department: IHrmTimeTrackDepartment.ISummary | null;
 
@@ -334,8 +420,11 @@ export namespace IHrmTimeTrackEmployeeSnapshot {
      *
      * This field captures the employee's role and permission context when the snapshot was created. Every active employee must have a role assigned, so this field is not nullable. The role information (name, description, built-in status) is denormalized for display purposes and preserved even if the role is later changed or deleted.
      *
-     * @x-autobe-database-schema-property role
-     * @x-autobe-specification Relation via JOIN from hrm_time_track_employee_snapshots.hrm_time_track_role_id to hrm_time_track_roles.id. Returns IHrmTimeTrackRole.ISummary object. Non-nullable as every active employee must have a role assigned.
+         * @x-autobe-database-schema-property role
+         * @x-autobe-specification Relation via JOIN from
+         *   hrm_time_track_employee_snapshots.hrm_time_track_role_id to
+         *   hrm_time_track_roles.id. Returns IHrmTimeTrackRole.ISummary object.
+         *   Non-nullable as every active employee must have a role assigned.
      */
     role: IHrmTimeTrackRole.ISummary;
   };

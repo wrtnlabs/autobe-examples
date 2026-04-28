@@ -22,7 +22,9 @@ import { IPageIMallPlatformOrderItemSnapshotVariantOption } from "../../../../..
  * @param props.snapshotId The snapshot identifier for the preserved order item state.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Query mall_platform_order_item_snapshot_variant_options for the specified order, order item, and snapshot context.
+ * @x-autobe-specification Query
+ *   mall_platform_order_item_snapshot_variant_options for the specified order,
+ *   order item, and snapshot context.
  *
  * First validate that the order exists, then confirm the order item belongs to that order, and finally confirm the snapshot belongs to that order item. After the parent chain is validated, load the option rows associated with the snapshot and return them in a stable order suitable for display and comparison.
  *
@@ -126,7 +128,13 @@ export namespace index {
  * @param props.variantOptionId The variant option identifier within the specified order item snapshot.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Load the requested mall_platform_order_item_snapshot_variant_options record by variantOptionId and validate it belongs to the specified snapshot, order item, and order. Verify the parent chain using joins or sequential existence checks across mall_platform_orders, mall_platform_order_items, mall_platform_order_item_snapshots, and mall_platform_order_item_snapshot_variant_options.
+ * @x-autobe-specification Load the requested
+ *   mall_platform_order_item_snapshot_variant_options record by variantOptionId
+ *   and validate it belongs to the specified snapshot, order item, and order.
+ *   Verify the parent chain using joins or sequential existence checks across
+ *   mall_platform_orders, mall_platform_order_items,
+ *   mall_platform_order_item_snapshots, and
+ *   mall_platform_order_item_snapshot_variant_options.
  *
  * Because this data is immutable historical snapshot content, do not perform any writes, do not regenerate snapshots, and do not modify related tables. Return 404 when any identifier is missing, mismatched, or inaccessible. Apply authorization checks based on the order-history and snapshot-viewing rules for the platform. Return the full entity using the canonical single-resource response component.
  * @path /mallPlatform/seller/orders/:orderId/orderItems/:orderItemId/snapshots/:snapshotId/variantOptions/:variantOptionId

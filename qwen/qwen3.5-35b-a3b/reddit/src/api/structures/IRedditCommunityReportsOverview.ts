@@ -14,7 +14,11 @@ export type IRedditCommunityReportsOverview = {
    *
    * Contains summary counts of all pending reports awaiting moderator review, including total pending count and temporal information about the report queue. Helps moderators assess workload and prioritize review based on report age and volume.
    *
-   * @x-autobe-specification Computed aggregation from filtered reports (status_id=0, deleted_at=NULL). Aggregate counts: totalPendingCount = COUNT(*) where status_id=0 and deleted_at=NULL. oldestReportDate = MIN(created_at) where status_id=0 and deleted_at=NULL. newestReportDate = MAX(created_at) where status_id=0 and deleted_at=NULL.
+     * @x-autobe-specification Computed aggregation from filtered reports
+     *   (status_id=0, deleted_at=NULL). Aggregate counts: totalPendingCount =
+     *   COUNT(*) where status_id=0 and deleted_at=NULL. oldestReportDate =
+     *   MIN(created_at) where status_id=0 and deleted_at=NULL. newestReportDate
+     *   = MAX(created_at) where status_id=0 and deleted_at=NULL.
    */
   statistics: IRedditCommunityReportsOverviewStatistic;
 
@@ -23,7 +27,14 @@ export type IRedditCommunityReportsOverview = {
    *
    * Each report item includes the reported content details (post title or comment text), reporter username, submission reason, and submission timestamp. Moderators use this list to review content and decide whether to approve or dismiss each report.
    *
-   * @x-autobe-specification Paginated array of report overview items. Each item joined with: reddit_community_members(reporter_id) → reporter.username. reddit_community_posts(target_post_id) → targetContent.title (nullable, for post reports). reddit_community_comments(target_comment_id) → targetContent.text (nullable, for comment reports). Fields per item: id, reason, status_id, created_at, reporter.username, targetContent (object with title OR text depending on target type).
+     * @x-autobe-specification Paginated array of report overview items. Each
+     *   item joined with: reddit_community_members(reporter_id) →
+     *   reporter.username. reddit_community_posts(target_post_id) →
+     *   targetContent.title (nullable, for post reports).
+     *   reddit_community_comments(target_comment_id) → targetContent.text
+     *   (nullable, for comment reports). Fields per item: id, reason,
+     *   status_id, created_at, reporter.username, targetContent (object with
+     *   title OR text depending on target type).
    */
   reports: IRedditCommunityReportOverviewItem[];
 
@@ -32,7 +43,10 @@ export type IRedditCommunityReportsOverview = {
    *
    * Contains information about the current page position, total number of items, and navigation controls for browsing through paginated report results.
    *
-   * @x-autobe-specification Standard IPage.IPagination metadata computed by the pagination system. Contains currentPage, pageSize, totalItems, totalPages, hasPreviousPage, hasNextPage for navigating the paginated report list.
+     * @x-autobe-specification Standard IPage.IPagination metadata computed by
+     *   the pagination system. Contains currentPage, pageSize, totalItems,
+     *   totalPages, hasPreviousPage, hasNextPage for navigating the paginated
+     *   report list.
    */
   pagination: IPaginationMetadatum;
 };

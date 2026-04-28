@@ -18,8 +18,9 @@ export type IRedditCommunityPost = {
    *
    * This primary key is generated when the post is created and remains unchanged throughout the post's lifetime. Use this identifier to retrieve, update, or delete the post.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from reddit_community_posts.id. UUID format. Primary key identifying the post uniquely.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from reddit_community_posts.id.
+     *   UUID format. Primary key identifying the post uniquely.
    */
   id: string & tags.Format<"uuid">;
 
@@ -28,8 +29,10 @@ export type IRedditCommunityPost = {
    *
    * This required field appears in all post listings and displays. It cannot be empty when creating a post and is displayed prominently when viewing the full post content.
    *
-   * @x-autobe-database-schema-property title
-   * @x-autobe-specification Direct mapping from reddit_community_posts.title. Required field that serves as the primary identifier for the post. Cannot be empty.
+     * @x-autobe-database-schema-property title
+     * @x-autobe-specification Direct mapping from reddit_community_posts.title.
+     *   Required field that serves as the primary identifier for the post.
+     *   Cannot be empty.
    */
   title: string;
 
@@ -38,8 +41,10 @@ export type IRedditCommunityPost = {
    *
    * Fixed at creation time and remains unchanged for the post's lifetime. Three types are supported: 'text' for written content posts, 'link' for external URLs, and 'image' for uploaded images. The type determines the visual presentation and available content fields.
    *
-   * @x-autobe-database-schema-property post_type
-   * @x-autobe-specification Direct mapping from reddit_community_posts.post_type. Fixed at creation time with values: text, link, or image. Determines which content fields are present.
+     * @x-autobe-database-schema-property post_type
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_posts.post_type. Fixed at creation time with values:
+     *   text, link, or image. Determines which content fields are present.
    */
   post_type: string;
 
@@ -48,8 +53,11 @@ export type IRedditCommunityPost = {
    *
    * This field contains the full text entered by the author for text posts. It is null for link posts and image posts. In post listings, a preview of the first 200 characters is shown. The complete content is displayed when viewing the full post details.
    *
-   * @x-autobe-database-schema-property text_content
-   * @x-autobe-specification Direct mapping from reddit_community_posts.text_content. Contains the full text entered by the author for text posts. Null for link posts and image posts. Shows a preview of the first 200 characters in post listings.
+     * @x-autobe-database-schema-property text_content
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_posts.text_content. Contains the full text entered by
+     *   the author for text posts. Null for link posts and image posts. Shows a
+     *   preview of the first 200 characters in post listings.
    */
   text_content: string | null;
 
@@ -58,8 +66,11 @@ export type IRedditCommunityPost = {
    *
    * This field stores the destination URL for link posts. It is null for text posts and image posts. In post listings, the domain name is displayed, and users click to navigate to the external content when viewing the full post.
    *
-   * @x-autobe-specification Direct mapping from reddit_community_posts.link_url. Stores the destination URL for link posts. Null for text posts and image posts. The domain name is displayed in post listings.
-   * @x-autobe-database-schema-property link_url
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_posts.link_url. Stores the destination URL for link
+     *   posts. Null for text posts and image posts. The domain name is
+     *   displayed in post listings.
+     * @x-autobe-database-schema-property link_url
    */
   link_url?: (string & tags.Format<"uri">) | null | undefined;
 
@@ -68,8 +79,10 @@ export type IRedditCommunityPost = {
    *
    * This ISO 8601 formatted timestamp is displayed as relative time (e.g., '3 hours ago', '2 days ago') in post listings. It provides temporal context for the content and establishes the chronological order of posts within a community.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from reddit_community_posts.created_at. Timestamp in UTC. Displays as relative time (e.g., '3 hours ago') in listings.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_posts.created_at. Timestamp in UTC. Displays as
+     *   relative time (e.g., '3 hours ago') in listings.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -78,8 +91,10 @@ export type IRedditCommunityPost = {
    *
    * This ISO 8601 formatted timestamp is automatically modified when the post is edited by its author. It indicates when the most recent modification occurred to the post content or metadata.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from reddit_community_posts.updated_at. Automatically set to current timestamp when post is edited by its author.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_posts.updated_at. Automatically set to current
+     *   timestamp when post is edited by its author.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -88,8 +103,11 @@ export type IRedditCommunityPost = {
    *
    * This field is null when the post is active and visible. It is set to the deletion timestamp when the author or a moderator deletes the post. Soft-deleted posts are filtered out from normal queries to maintain clean data presentation.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from reddit_community_posts.deleted_at. Null when the post is active. Set when the author or moderator deletes the post. Posts with deleted_at set are filtered out from queries.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_posts.deleted_at. Null when the post is active. Set
+     *   when the author or moderator deletes the post. Posts with deleted_at
+     *   set are filtered out from queries.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 
@@ -98,8 +116,11 @@ export type IRedditCommunityPost = {
    *
    * This score represents the community judgment of the post based on all expressed opinions. It is computed by adding all upvotes and subtracting all downvotes cast by users. The score is updated incrementally as votes are added, changed, or removed. Posts with zero votes are still visible to users with access to the community.
    *
-   * @x-autobe-database-schema-property vote_score
-   * @x-autobe-specification Direct mapping from reddit_community_posts.vote_score. Net vote score calculated from all user votes on this post. Represents the net community judgment. Updated incrementally as votes are added or changed.
+     * @x-autobe-database-schema-property vote_score
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_posts.vote_score. Net vote score calculated from all
+     *   user votes on this post. Represents the net community judgment. Updated
+     *   incrementally as votes are added or changed.
    */
   vote_score: number & tags.Type<"int32">;
 
@@ -108,8 +129,10 @@ export type IRedditCommunityPost = {
    *
    * This count includes all top-level comments and nested replies associated with the post. It is updated incrementally as comments are added or removed, providing quick visibility of the engagement level without requiring a separate query to the comments table.
    *
-   * @x-autobe-database-schema-property comment_count
-   * @x-autobe-specification Direct mapping from reddit_community_posts.comment_count. Total number of comments on this post. Updated incrementally as comments are added or removed.
+     * @x-autobe-database-schema-property comment_count
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_posts.comment_count. Total number of comments on this
+     *   post. Updated incrementally as comments are added or removed.
    */
   comment_count: number & tags.Type<"int32">;
 
@@ -118,8 +141,13 @@ export type IRedditCommunityPost = {
    *
    * This object reference provides access to the post author's basic profile information including their unique identifier and username. The author is established at post creation time and cannot be changed. Only the author (owner) can edit or delete their own posts.
    *
-   * @x-autobe-database-schema-property author
-   * @x-autobe-specification Relation mapping via JOIN: JOIN reddit_community_members on reddit_community_posts.reddit_community_member_id = reddit_community_members.id. Returns ISummary with id, username, created_at, updated_at. This is the belongs-to relation that exposes the author_id FK as an object reference.
+     * @x-autobe-database-schema-property author
+     * @x-autobe-specification Relation mapping via JOIN: JOIN
+     *   reddit_community_members on
+     *   reddit_community_posts.reddit_community_member_id =
+     *   reddit_community_members.id. Returns ISummary with id, username,
+     *   created_at, updated_at. This is the belongs-to relation that exposes
+     *   the author_id FK as an object reference.
    */
   author: IRedditCommunityMember.ISummary;
 
@@ -128,8 +156,13 @@ export type IRedditCommunityPost = {
    *
    * This object reference provides access to the community's basic information including its name and description. The post is permanently associated with its community and cannot be moved to a different community after creation. The community determines which subscribers see the post.
    *
-   * @x-autobe-database-schema-property community
-   * @x-autobe-specification Relation mapping via JOIN: JOIN reddit_community_communities on reddit_community_posts.reddit_community_community_id = reddit_community_communities.id. Returns ISummary with id, name, description, created_at, deleted_at. This is the belongs-to relation that exposes the community_id FK as an object reference.
+     * @x-autobe-database-schema-property community
+     * @x-autobe-specification Relation mapping via JOIN: JOIN
+     *   reddit_community_communities on
+     *   reddit_community_posts.reddit_community_community_id =
+     *   reddit_community_communities.id. Returns ISummary with id, name,
+     *   description, created_at, deleted_at. This is the belongs-to relation
+     *   that exposes the community_id FK as an object reference.
    */
   community: IRedditCommunityCommunity.ISummary;
 };
@@ -202,8 +235,12 @@ export namespace IRedditCommunityPost {
      *
      * - **controversial**: Ranking by absolute vote score, highlighting posts with significant upvotes and downvotes.
      *
-     * @x-internal Determines ranking algorithm
-     * @x-autobe-specification Sort method for ranking results. Valid values: 'hot' (engagement-based with recency factor, default), 'new' (chronological by created_at DESC), 'top' (by vote_score DESC, optional time_period filter), 'controversial' (by absolute vote score DESC). Requires time_period filter when sort='top'.
+         * @x-internal Determines ranking algorithm
+         * @x-autobe-specification Sort method for ranking results. Valid
+         *   values: 'hot' (engagement-based with recency factor, default),
+         *   'new' (chronological by created_at DESC), 'top' (by vote_score
+         *   DESC, optional time_period filter), 'controversial' (by absolute
+         *   vote score DESC). Requires time_period filter when sort='top'.
      */
     sort?: "hot" | "new" | "top" | "controversial" | undefined;
 
@@ -220,8 +257,12 @@ export namespace IRedditCommunityPost {
      *
      * Only applicable when sort is set to 'top'.
      *
-     * @x-internal Only applicable when sort='top'
-     * @x-autobe-specification Time period filter for 'top' sort. Valid values: 'today' (created_at >= NOW() - 1 day), 'this_week' (created_at >= NOW() - 7 days), 'this_month' (created_at >= NOW() - 30 days), 'this_year' (created_at >= NOW() - 365 days), 'all_time' (no time filter). Only applicable when sort='top'.
+         * @x-internal Only applicable when sort='top'
+         * @x-autobe-specification Time period filter for 'top' sort. Valid
+         *   values: 'today' (created_at >= NOW() - 1 day), 'this_week'
+         *   (created_at >= NOW() - 7 days), 'this_month' (created_at >= NOW() -
+         *   30 days), 'this_year' (created_at >= NOW() - 365 days), 'all_time'
+         *   (no time filter). Only applicable when sort='top'.
      */
     timePeriod?:
       | "today"
@@ -238,7 +279,9 @@ export namespace IRedditCommunityPost {
      *
      * Smaller page sizes reduce bandwidth usage and improve response time for browsing. Larger page sizes are useful for bulk data processing or when displaying complete result sets.
      *
-     * @x-autobe-specification Number of results per page. Integer between 1 and 100. Default value: 20. Controls the maximum number of records returned in each page response.
+         * @x-autobe-specification Number of results per page. Integer between 1
+         *   and 100. Default value: 20. Controls the maximum number of records
+         *   returned in each page response.
      */
     pageSize?:
       | (number &
@@ -259,7 +302,9 @@ export namespace IRedditCommunityPost {
      *
      * Use this filter to browse posts of a specific format or to narrow search results when only certain content types are relevant.
      *
-     * @x-autobe-specification Filter by post type. Valid values: 'text' (written content posts), 'link' (external URL posts), 'image' (uploaded image posts). Exact match filtering on post_type column.
+         * @x-autobe-specification Filter by post type. Valid values: 'text'
+         *   (written content posts), 'link' (external URL posts), 'image'
+         *   (uploaded image posts). Exact match filtering on post_type column.
      */
     postType?: "text" | "link" | "image" | undefined;
 
@@ -274,7 +319,10 @@ export namespace IRedditCommunityPost {
      *
      * Combine with voteScoreMax to create a vote score range filter.
      *
-     * @x-autobe-specification Minimum vote score filter. Integer value. Filters posts where vote_score >= this value. Can be negative to include downvoted posts, or omitted to include all posts regardless of score.
+         * @x-autobe-specification Minimum vote score filter. Integer value.
+         *   Filters posts where vote_score >= this value. Can be negative to
+         *   include downvoted posts, or omitted to include all posts regardless
+         *   of score.
      */
     voteScoreMin?: (number & tags.Type<"int32">) | undefined;
 
@@ -287,7 +335,10 @@ export namespace IRedditCommunityPost {
      * - Combine with voteScoreMin to create a vote score range
      * - Set low values to find controversial or low-engagement posts
      *
-     * @x-autobe-specification Maximum vote score filter. Integer value. Filters posts where vote_score <= this value. Useful for excluding highly upvoted content or finding controversial posts with low net scores.
+         * @x-autobe-specification Maximum vote score filter. Integer value.
+         *   Filters posts where vote_score <= this value. Useful for excluding
+         *   highly upvoted content or finding controversial posts with low net
+         *   scores.
      */
     voteScoreMax?: (number & tags.Type<"int32">) | undefined;
 
@@ -300,7 +351,9 @@ export namespace IRedditCommunityPost {
      * - Combine with dateTo to create a date range filter
      * - Useful for finding content posted within a specific period
      *
-     * @x-autobe-specification Filter posts created on or after this date-time. ISO 8601 formatted date-time string. Filters posts where created_at >= this value. Works with ISO 8601 datetime format.
+         * @x-autobe-specification Filter posts created on or after this
+         *   date-time. ISO 8601 formatted date-time string. Filters posts where
+         *   created_at >= this value. Works with ISO 8601 datetime format.
      */
     dateFrom?: (string & tags.Format<"date-time">) | undefined;
 
@@ -313,7 +366,10 @@ export namespace IRedditCommunityPost {
      * - Combine with dateFrom to create a date range filter
      * - Useful for finding older content or historical posts
      *
-     * @x-autobe-specification Filter posts created on or before this date-time. ISO 8601 formatted date-time string. Filters posts where created_at <= this value. Use with dateFrom to narrow results to a specific time window.
+         * @x-autobe-specification Filter posts created on or before this
+         *   date-time. ISO 8601 formatted date-time string. Filters posts where
+         *   created_at <= this value. Use with dateFrom to narrow results to a
+         *   specific time window.
      */
     dateTo?: (string & tags.Format<"date-time">) | undefined;
 
@@ -326,7 +382,9 @@ export namespace IRedditCommunityPost {
      * - Accepts valid UUID format
      * - Useful for discovering content from communities of interest
      *
-     * @x-autobe-specification Filter by community ID. UUID format. Filters posts where reddit_community_community_id equals this UUID. Limits results to posts from a specific community.
+         * @x-autobe-specification Filter by community ID. UUID format. Filters
+         *   posts where reddit_community_community_id equals this UUID. Limits
+         *   results to posts from a specific community.
      */
     communityId?: (string & tags.Format<"uuid">) | undefined;
 
@@ -339,7 +397,9 @@ export namespace IRedditCommunityPost {
      * - Accepts valid UUID format
      * - Useful for viewing another member's post history
      *
-     * @x-autobe-specification Filter by author member ID. UUID format. Filters posts where reddit_community_member_id equals this UUID. Limits results to posts created by a specific member.
+         * @x-autobe-specification Filter by author member ID. UUID format.
+         *   Filters posts where reddit_community_member_id equals this UUID.
+         *   Limits results to posts created by a specific member.
      */
     authorId?: (string & tags.Format<"uuid">) | undefined;
 
@@ -352,7 +412,10 @@ export namespace IRedditCommunityPost {
      * - Requesting a page beyond available range returns an empty data array
      * - Use with limit to control how many records appear per page
      *
-     * @x-autobe-specification Target page number to retrieve (1-indexed). Integer >= 0. Defaults to 1 if not provided. Requesting a page beyond available range returns empty data array with valid pagination metadata.
+         * @x-autobe-specification Target page number to retrieve (1-indexed).
+         *   Integer >= 0. Defaults to 1 if not provided. Requesting a page
+         *   beyond available range returns empty data array with valid
+         *   pagination metadata.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
 
@@ -365,7 +428,9 @@ export namespace IRedditCommunityPost {
      * - Server may enforce upper bounds for large requests
      * - Use smaller values for faster page loading, larger values for fewer API calls
      *
-     * @x-autobe-specification Maximum number of records to return per page. Integer >= 0. Defaults to 100 if not provided. Server may enforce upper bounds to prevent excessive resource consumption.
+         * @x-autobe-specification Maximum number of records to return per page.
+         *   Integer >= 0. Defaults to 100 if not provided. Server may enforce
+         *   upper bounds to prevent excessive resource consumption.
      */
     limit?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };

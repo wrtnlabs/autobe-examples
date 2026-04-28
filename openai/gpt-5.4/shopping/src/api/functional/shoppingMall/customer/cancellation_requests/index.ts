@@ -28,7 +28,8 @@ export * as snapshots from "./snapshots/index";
  * @param props.body Information required to submit a cancellation request for one order item
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Implement a customer-authenticated creation flow for `shopping_mall_cancellation_requests`.
+ * @x-autobe-specification Implement a customer-authenticated creation flow for
+ *   `shopping_mall_cancellation_requests`.
  *
  * 1. Resolve the authenticated customer identity from the request context. Reject when there is no active customer session.
  * 2. Validate the request body against `IShoppingMallCancellationRequest.ICreate`. Require a target order-item identifier and a non-empty reason string. Trim surrounding whitespace from the reason before persistence and reject when the effective reason is empty.
@@ -145,7 +146,9 @@ export namespace create {
  * @param props.body Search criteria, pagination, and sorting options for cancellation requests
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Implement this operation as a paginated search over shopping_mall_cancellation_requests with joins or follow-up fetches as needed for ownership enforcement and summary enrichment.
+ * @x-autobe-specification Implement this operation as a paginated search over
+ *   shopping_mall_cancellation_requests with joins or follow-up fetches as
+ *   needed for ownership enforcement and summary enrichment.
  *
  * 1. Authenticate the caller and resolve the actor type. Reject unauthenticated access unless a broader platform policy explicitly allows none, which is not supported by the loaded requirements.
  * 2. Build a base query from shopping_mall_cancellation_requests excluding logically removed records when the service-layer policy treats deleted_at as hidden from normal browsing. Do not query the snapshot table for this endpoint because the endpoint represents live cancellation requests only.
@@ -254,7 +257,12 @@ export namespace index {
  * @param props.cancellationRequestId Target cancellation request ID
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Load one active cancellation request from shopping_mall_cancellation_requests by id where id equals the cancellationRequestId path parameter and deleted_at is null. Join or subsequently load the related shopping_mall_order_items row through shopping_mall_order_item_id so the service can enforce visibility and ownership checks based on the linked commercial context.
+ * @x-autobe-specification Load one active cancellation request from
+ *   shopping_mall_cancellation_requests by id where id equals the
+ *   cancellationRequestId path parameter and deleted_at is null. Join or
+ *   subsequently load the related shopping_mall_order_items row through
+ *   shopping_mall_order_item_id so the service can enforce visibility and
+ *   ownership checks based on the linked commercial context.
  *
  * Authorize the caller before returning the resource. For customer callers, require that shopping_mall_customer_id matches the authenticated customer account. For administrator callers, allow access according to administrator privileges. If seller access is supported in the service layer, verify through the related shopping_mall_order_items.shopping_mall_seller_id that the authenticated seller is the responsible seller for the linked order item before returning data. Deny access when the caller is unauthenticated or outside the ownership boundary.
  *

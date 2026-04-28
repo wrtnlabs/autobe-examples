@@ -18,9 +18,10 @@ export class HrmtimetrackGuestsController {
    *
    * @param connection
    * @param body Search criteria including email, status, organization filters, date ranges, and pagination parameters.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query hrm_time_track_guests table with pagination and filtering support.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query hrm_time_track_guests table with pagination
+     *   and filtering support.
    *
    * Apply search filters from request body:
    * - email: exact or partial match on email field
@@ -63,9 +64,10 @@ export class HrmtimetrackGuestsController {
    *
    * @param connection
    * @param guestId Unique identifier of the guest invitation record (global scope)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query the hrm_time_track_guests table for a record matching the provided guestId UUID.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query the hrm_time_track_guests table for a
+     *   record matching the provided guestId UUID.
    *
    * 1. Validate that guestId is a valid UUID format
    * 2. Perform a SELECT query on hrm_time_track_guests WHERE id = guestId AND deleted_at IS NULL

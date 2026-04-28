@@ -20,9 +20,10 @@ export class ShoppingmallAdminAdminShipmentsController {
    *
    * @param connection
    * @param body Search criteria including seller ID, order ID, carrier name, tracking number, shipped/delivered date ranges, delivery status filter, pagination, and sorting options.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query shopping_mall_shipments table with pagination and filtering support.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Query shopping_mall_shipments table with
+     *   pagination and filtering support.
    *
    * Apply search filters on: shopping_mall_seller_id, shopping_mall_order_id, carrier_name, tracking_number (partial match), shipped_at range, delivered_at range, and delivery status (shipped vs delivered based on delivered_at null check).
    *
@@ -64,9 +65,10 @@ export class ShoppingmallAdminAdminShipmentsController {
    *
    * @param connection
    * @param shipmentId Unique identifier of the shipment to retrieve (UUID format).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query shopping_mall_shipments table by primary key ID.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Query shopping_mall_shipments table by primary
+     *   key ID.
    *
    * Retrieve the shipment record including: id, shopping_mall_order_id, shopping_mall_seller_id, carrier_name, tracking_number, shipped_at, delivered_at, created_at, updated_at.
    *

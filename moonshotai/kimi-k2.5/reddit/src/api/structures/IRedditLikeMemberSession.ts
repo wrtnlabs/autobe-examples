@@ -13,21 +13,37 @@ export type IRedditLikeMemberSession = {
   /**
    * Unique session identifier (UUID).
    *
-   * @x-autobe-specification Direct column mapping from session table. For guest: reddit_like_guest_sessions.id. For member: reddit_like_member_sessions.id. For moderator: reddit_like_moderator_sessions.id. For owner: reddit_like_owner_sessions.id.
+     * @x-autobe-specification Direct column mapping from session table. For
+     *   guest: reddit_like_guest_sessions.id. For member:
+     *   reddit_like_member_sessions.id. For moderator:
+     *   reddit_like_moderator_sessions.id. For owner:
+     *   reddit_like_owner_sessions.id.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Actor type discriminator indicating the session owner's role (guest, member, moderator, owner).
    *
-   * @x-autobe-specification Computed constant value set based on session table source: "guest" when querying guest_sessions, "member" for member_sessions, "moderator" for moderator_sessions, "owner" for owner_sessions. Used by oneOf discriminator to determine which actor schema reference is populated.
+     * @x-autobe-specification Computed constant value set based on session
+     *   table source: "guest" when querying guest_sessions, "member" for
+     *   member_sessions, "moderator" for moderator_sessions, "owner" for
+     *   owner_sessions. Used by oneOf discriminator to determine which actor
+     *   schema reference is populated.
    */
   actorType: "guest" | "member" | "moderator" | "owner";
 
   /**
    * Polymorphic reference to the session owner. Contains guest, member, moderator, or owner summary based on actorType.
    *
-   * @x-autobe-specification Computed via JOIN query. For guest sessions: JOIN reddit_like_guests ON guest_sessions.reddit_like_guest_id = guests.id. For member sessions: JOIN reddit_like_members ON member_sessions.reddit_like_member_id = members.id. For moderator sessions: JOIN reddit_like_moderators ON moderator_sessions.moderator_id = moderators.id (which includes member sub-fetch). For owner sessions: JOIN reddit_like_owners ON owner_sessions.reddit_like_owner_id = owners.id. Returns corresponding ISummary type.
+     * @x-autobe-specification Computed via JOIN query. For guest sessions: JOIN
+     *   reddit_like_guests ON guest_sessions.reddit_like_guest_id = guests.id.
+     *   For member sessions: JOIN reddit_like_members ON
+     *   member_sessions.reddit_like_member_id = members.id. For moderator
+     *   sessions: JOIN reddit_like_moderators ON
+     *   moderator_sessions.moderator_id = moderators.id (which includes member
+     *   sub-fetch). For owner sessions: JOIN reddit_like_owners ON
+     *   owner_sessions.reddit_like_owner_id = owners.id. Returns corresponding
+     *   ISummary type.
    */
   actor:
     | IRedditLikeGuest.ISummary
@@ -38,49 +54,81 @@ export type IRedditLikeMemberSession = {
   /**
    * Client IP address captured when the session was established.
    *
-   * @x-autobe-specification Direct column mapping from session table. For guest: reddit_like_guest_sessions.ip. For member: reddit_like_member_sessions.ip. For moderator: reddit_like_moderator_sessions.ip. For owner: reddit_like_owner_sessions.ip. Captured at session creation from request.
+     * @x-autobe-specification Direct column mapping from session table. For
+     *   guest: reddit_like_guest_sessions.ip. For member:
+     *   reddit_like_member_sessions.ip. For moderator:
+     *   reddit_like_moderator_sessions.ip. For owner:
+     *   reddit_like_owner_sessions.ip. Captured at session creation from
+     *   request.
    */
   ip: string;
 
   /**
    * URL path where the session was initiated.
    *
-   * @x-autobe-specification Direct column mapping from session table. For guest: reddit_like_guest_sessions.href. For member: reddit_like_member_sessions.href. For moderator: reddit_like_moderator_sessions.href. For owner: reddit_like_owner_sessions.href. Stores the URL path where session was created.
+     * @x-autobe-specification Direct column mapping from session table. For
+     *   guest: reddit_like_guest_sessions.href. For member:
+     *   reddit_like_member_sessions.href. For moderator:
+     *   reddit_like_moderator_sessions.href. For owner:
+     *   reddit_like_owner_sessions.href. Stores the URL path where session was
+     *   created.
    */
   href: string;
 
   /**
    * HTTP Referer header from the session creation request.
    *
-   * @x-autobe-specification Direct column mapping from session table. For guest: reddit_like_guest_sessions.referrer. For member: reddit_like_member_sessions.referrer. For moderator: reddit_like_moderator_sessions.referrer. For owner: reddit_like_owner_sessions.referrer. Stores HTTP Referer header value at session creation.
+     * @x-autobe-specification Direct column mapping from session table. For
+     *   guest: reddit_like_guest_sessions.referrer. For member:
+     *   reddit_like_member_sessions.referrer. For moderator:
+     *   reddit_like_moderator_sessions.referrer. For owner:
+     *   reddit_like_owner_sessions.referrer. Stores HTTP Referer header value
+     *   at session creation.
    */
   referrer: string;
 
   /**
    * User agent string of the client browser or application. Only populated for member sessions.
    *
-   * @x-autobe-specification Direct from reddit_like_member_sessions.user_agent. For guest, moderator, and owner sessions this field is not present in their respective tables, so value is null. Captures browser/app user agent string for audit trail.
+     * @x-autobe-specification Direct from
+     *   reddit_like_member_sessions.user_agent. For guest, moderator, and owner
+     *   sessions this field is not present in their respective tables, so value
+     *   is null. Captures browser/app user agent string for audit trail.
    */
   userAgent: string | null;
 
   /**
    * Timestamp when the session was created.
    *
-   * @x-autobe-specification Direct column mapping from session table. For guest: reddit_like_guest_sessions.created_at. For member: reddit_like_member_sessions.created_at. For moderator: reddit_like_moderator_sessions.created_at. For owner: reddit_like_owner_sessions.created_at. Timestamp when session record was created.
+     * @x-autobe-specification Direct column mapping from session table. For
+     *   guest: reddit_like_guest_sessions.created_at. For member:
+     *   reddit_like_member_sessions.created_at. For moderator:
+     *   reddit_like_moderator_sessions.created_at. For owner:
+     *   reddit_like_owner_sessions.created_at. Timestamp when session record
+     *   was created.
    */
   createdAt: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the session expires or became invalid. Null if session is still active. For member sessions, this is the access token expiration time.
    *
-   * @x-autobe-specification Direct column mapping from session table for guest/moderator/owner: reddit_like_guest_sessions.expired_at, reddit_like_moderator_sessions.expired_at, reddit_like_owner_sessions.expired_at. Nullable - null means session is still active. For member sessions, this maps to expires_at column instead (access token expiration).
+     * @x-autobe-specification Direct column mapping from session table for
+     *   guest/moderator/owner: reddit_like_guest_sessions.expired_at,
+     *   reddit_like_moderator_sessions.expired_at,
+     *   reddit_like_owner_sessions.expired_at. Nullable - null means session is
+     *   still active. For member sessions, this maps to expires_at column
+     *   instead (access token expiration).
    */
   expiredAt: (string & tags.Format<"date-time">) | null;
 
   /**
    * Access token expiration timestamp. For member sessions with JWT tokens, this is when the access token expires.
    *
-   * @x-autobe-specification Direct from reddit_like_member_sessions.expires_at. Represents access token expiration timestamp. For guest/moderator/owner sessions, this matches expired_at value. Present for API compatibility with member sessions which have separate access token and refresh token expirations.
+     * @x-autobe-specification Direct from
+     *   reddit_like_member_sessions.expires_at. Represents access token
+     *   expiration timestamp. For guest/moderator/owner sessions, this matches
+     *   expired_at value. Present for API compatibility with member sessions
+     *   which have separate access token and refresh token expirations.
    */
   expiresAt: (string & tags.Format<"date-time">) | null;
 };
@@ -92,56 +140,78 @@ export namespace IRedditLikeMemberSession {
     /**
      * Filter sessions by actor type. Null queries all types, otherwise limits to specific actor session type.
      *
-     * @x-autobe-specification Query parameter determining which actor session tables to query. Used by backend to filter which session records to include in UNION query across guest_sessions, member_sessions, moderator_sessions, and owner_sessions tables. When null, queries all session types.
+         * @x-autobe-specification Query parameter determining which actor
+         *   session tables to query. Used by backend to filter which session
+         *   records to include in UNION query across guest_sessions,
+         *   member_sessions, moderator_sessions, and owner_sessions tables.
+         *   When null, queries all session types.
      */
     actorType?: "guest" | "member" | "moderator" | "owner" | null | undefined;
 
     /**
      * Filter sessions for a specific user across all actor types. Matches UUID in respective actor tables.
      *
-     * @x-autobe-specification UUID filter matching the user identifier in the respective actor tables. Cross-table filter since different session tables have different FK column names (guest_id in guest_sessions, member_id in member_sessions, etc.). Applied via JOIN with actor tables.
+         * @x-autobe-specification UUID filter matching the user identifier in
+         *   the respective actor tables. Cross-table filter since different
+         *   session tables have different FK column names (guest_id in
+         *   guest_sessions, member_id in member_sessions, etc.). Applied via
+         *   JOIN with actor tables.
      */
     userId?: (string & tags.Format<"uuid">) | null | undefined;
 
     /**
      * Filter to show only active (non-expired) sessions. When true, filters sessions where current time is before expiration.
      *
-     * @x-autobe-specification Computed boolean filter. When true, applies WHERE expired_at > NOW() filter to return only non-expired sessions. When false or null, returns all sessions regardless of expiration status.
+         * @x-autobe-specification Computed boolean filter. When true, applies
+         *   WHERE expired_at > NOW() filter to return only non-expired
+         *   sessions. When false or null, returns all sessions regardless of
+         *   expiration status.
      */
     activeOnly?: boolean | null | undefined;
 
     /**
      * Filter sessions by originating IP address. Performs partial match against stored IP addresses.
      *
-     * @x-autobe-specification String filter applied via LIKE pattern match on ip column across reddit_like_guest_sessions, reddit_like_member_sessions, reddit_like_moderator_sessions, and reddit_like_owner_sessions tables.
+         * @x-autobe-specification String filter applied via LIKE pattern match
+         *   on ip column across reddit_like_guest_sessions,
+         *   reddit_like_member_sessions, reddit_like_moderator_sessions, and
+         *   reddit_like_owner_sessions tables.
      */
     ipAddress?: (string & tags.Format<"ipv4">) | null | undefined;
 
     /**
      * Start of created_at date range filter. Sessions created at or after this timestamp are included.
      *
-     * @x-autobe-specification DateTime filter applied to created_at column as lower bound (inclusive) across all session tables. Combined with dateRangeEnd to create BETWEEN range filter.
+         * @x-autobe-specification DateTime filter applied to created_at column
+         *   as lower bound (inclusive) across all session tables. Combined with
+         *   dateRangeEnd to create BETWEEN range filter.
      */
     dateRangeStart?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * End of created_at date range filter. Sessions created at or before this timestamp are included.
      *
-     * @x-autobe-specification DateTime filter applied to created_at column as upper bound (inclusive) across all session tables. Combined with dateRangeStart to create BETWEEN range filter.
+         * @x-autobe-specification DateTime filter applied to created_at column
+         *   as upper bound (inclusive) across all session tables. Combined with
+         *   dateRangeStart to create BETWEEN range filter.
      */
     dateRangeEnd?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * Page number for pagination (1-indexed). Used with limit to paginate large result sets.
      *
-     * @x-autobe-specification Computed pagination parameter. 1-based page number used with limit to calculate OFFSET for database query. Formula: OFFSET = (page - 1) * limit. Default value is 1.
+         * @x-autobe-specification Computed pagination parameter. 1-based page
+         *   number used with limit to calculate OFFSET for database query.
+         *   Formula: OFFSET = (page - 1) * limit. Default value is 1.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum sessions per page. Upper bound of 100 records, defaults to 20 if not specified.
      *
-     * @x-autobe-specification Computed pagination parameter. Maximum number of records per page. Used with page to calculate OFFSET and LIMIT for database query. Maximum allowed is 100, default is 20.
+         * @x-autobe-specification Computed pagination parameter. Maximum number
+         *   of records per page. Used with page to calculate OFFSET and LIMIT
+         *   for database query. Maximum allowed is 100, default is 20.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -155,21 +225,36 @@ export namespace IRedditLikeMemberSession {
     /**
      * Unique identifier for the session record.
      *
-     * @x-autobe-specification Maps to id column in reddit_like_guest_sessions, reddit_like_member_sessions, reddit_like_moderator_sessions, and reddit_like_owner_sessions. Primary key UUID identifying the session.
+         * @x-autobe-specification Maps to id column in
+         *   reddit_like_guest_sessions, reddit_like_member_sessions,
+         *   reddit_like_moderator_sessions, and reddit_like_owner_sessions.
+         *   Primary key UUID identifying the session.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Type of authenticated actor associated with this session: guest for temporary visitors, member for registered users, moderator for community moderators, or owner for community creators.
      *
-     * @x-autobe-specification Computed discriminator based on originating table: 'guest' for reddit_like_guest_sessions, 'member' for reddit_like_member_sessions, 'moderator' for reddit_like_moderator_sessions, 'owner' for reddit_like_owner_sessions. Constant string values defined in oneOf.
+         * @x-autobe-specification Computed discriminator based on originating
+         *   table: 'guest' for reddit_like_guest_sessions, 'member' for
+         *   reddit_like_member_sessions, 'moderator' for
+         *   reddit_like_moderator_sessions, 'owner' for
+         *   reddit_like_owner_sessions. Constant string values defined in
+         *   oneOf.
      */
     actorType: "guest" | "member" | "moderator" | "owner";
 
     /**
      * Polymorphic user identity associated with this session. Returns the appropriate actor summary based on actorType.
      *
-     * @x-autobe-specification Resolve via JOIN based on actorType: for guest sessions join reddit_like_guests to get IRedditLikeGuest.ISummary, for member sessions join reddit_like_members via member_id to get IRedditLikeMember.ISummary, for moderator sessions join reddit_like_moderators -> members to get IRedditLikeModerator.ISummary, for owner sessions join reddit_like_owners to get IRedditLikeOwner.ISummary.
+         * @x-autobe-specification Resolve via JOIN based on actorType: for
+         *   guest sessions join reddit_like_guests to get
+         *   IRedditLikeGuest.ISummary, for member sessions join
+         *   reddit_like_members via member_id to get
+         *   IRedditLikeMember.ISummary, for moderator sessions join
+         *   reddit_like_moderators -> members to get
+         *   IRedditLikeModerator.ISummary, for owner sessions join
+         *   reddit_like_owners to get IRedditLikeOwner.ISummary.
      */
     user:
       | IRedditLikeGuest.ISummary
@@ -180,49 +265,70 @@ export namespace IRedditLikeMemberSession {
     /**
      * Client IP address from which the session was established, captured at login or session creation.
      *
-     * @x-autobe-specification Maps to ip column in reddit_like_guest_sessions, reddit_like_member_sessions, reddit_like_moderator_sessions, and reddit_like_owner_sessions. Stores client IP address at session creation.
+         * @x-autobe-specification Maps to ip column in
+         *   reddit_like_guest_sessions, reddit_like_member_sessions,
+         *   reddit_like_moderator_sessions, and reddit_like_owner_sessions.
+         *   Stores client IP address at session creation.
      */
     ip: string;
 
     /**
      * URL path where the session was initiated, captured at session creation for audit and analytics.
      *
-     * @x-autobe-specification Maps to href column in reddit_like_guest_sessions, reddit_like_member_sessions, reddit_like_moderator_sessions, and reddit_like_owner_sessions. Captured from initial page URL at session establishment.
+         * @x-autobe-specification Maps to href column in
+         *   reddit_like_guest_sessions, reddit_like_member_sessions,
+         *   reddit_like_moderator_sessions, and reddit_like_owner_sessions.
+         *   Captured from initial page URL at session establishment.
      */
     href: string;
 
     /**
      * HTTP referrer header captured when the session was established, tracking the source of the session.
      *
-     * @x-autobe-specification Maps to referrer column in reddit_like_guest_sessions, reddit_like_member_sessions, reddit_like_moderator_sessions, and reddit_like_owner_sessions. Captured from HTTP referer header at session creation.
+         * @x-autobe-specification Maps to referrer column in
+         *   reddit_like_guest_sessions, reddit_like_member_sessions,
+         *   reddit_like_moderator_sessions, and reddit_like_owner_sessions.
+         *   Captured from HTTP referer header at session creation.
      */
     referrer: string;
 
     /**
      * User agent string from the client browser or application. Only available for member sessions; null for other actor types.
      *
-     * @x-autobe-specification Maps to user_agent column in reddit_like_member_sessions. NULL for guest, moderator, and owner sessions as those tables do not have this column.
+         * @x-autobe-specification Maps to user_agent column in
+         *   reddit_like_member_sessions. NULL for guest, moderator, and owner
+         *   sessions as those tables do not have this column.
      */
     userAgent: string | null;
 
     /**
      * Timestamp when the session was created.
      *
-     * @x-autobe-specification Maps to created_at column in reddit_like_guest_sessions, reddit_like_member_sessions, reddit_like_moderator_sessions, and reddit_like_owner_sessions. UTC timestamp when session was created.
+         * @x-autobe-specification Maps to created_at column in
+         *   reddit_like_guest_sessions, reddit_like_member_sessions,
+         *   reddit_like_moderator_sessions, and reddit_like_owner_sessions. UTC
+         *   timestamp when session was created.
      */
     createdAt: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when the session expires and becomes invalid. Null if session has no fixed expiration.
      *
-     * @x-autobe-specification Maps to expired_at column in reddit_like_guest_sessions, reddit_like_moderator_sessions, reddit_like_owner_sessions, and expires_at column in reddit_like_member_sessions. Nullable when session is still active without explicit expiration.
+         * @x-autobe-specification Maps to expired_at column in
+         *   reddit_like_guest_sessions, reddit_like_moderator_sessions,
+         *   reddit_like_owner_sessions, and expires_at column in
+         *   reddit_like_member_sessions. Nullable when session is still active
+         *   without explicit expiration.
      */
     expiredAt: (string & tags.Format<"date-time">) | null;
 
     /**
      * Computed field indicating whether the session is currently active based on expiration timestamp.
      *
-     * @x-autobe-specification Computed calculation: CASE WHEN expired_at IS NULL THEN true WHEN NOW() < expired_at THEN true ELSE false END. Returns true if session has not yet expired or has no expiration date, false otherwise.
+         * @x-autobe-specification Computed calculation: CASE WHEN expired_at IS
+         *   NULL THEN true WHEN NOW() < expired_at THEN true ELSE false END.
+         *   Returns true if session has not yet expired or has no expiration
+         *   date, false otherwise.
      */
     isActive: boolean;
   };

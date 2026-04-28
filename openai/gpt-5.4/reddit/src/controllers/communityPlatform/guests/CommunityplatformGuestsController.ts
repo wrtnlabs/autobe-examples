@@ -24,9 +24,10 @@ export class CommunityplatformGuestsController {
    *
    * @param connection
    * @param body Search criteria, pagination, and sorting options for guest identities
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Implement this operation as a paginated search over the community_platform_guests table.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Implement this operation as a paginated search
+     *   over the community_platform_guests table.
    *
    * Accept an ICommunityPlatformGuest.IRequest body containing list retrieval controls such as pagination, sorting, and optional filters. The implementation should support exact or partial matching on guest_key where the DTO defines it, optional filtering by lifecycle timestamps using created_at and updated_at, and filtering by active-versus-retired status using whether deleted_at is null. Only fields that actually exist on community_platform_guests may be queried directly.
    *
@@ -67,9 +68,13 @@ export class CommunityplatformGuestsController {
    *
    * @param connection
    * @param guestId Unique identifier of the target guest record
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Implement this operation as a single-record lookup against the community_platform_guests table using the provided guestId as the primary identifier. Validate that guestId is a well-formed UUID before querying. Fetch exactly one guest actor record and map it to the ICommunityPlatformGuest response DTO.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Implement this operation as a single-record
+     *   lookup against the community_platform_guests table using the provided
+     *   guestId as the primary identifier. Validate that guestId is a
+     *   well-formed UUID before querying. Fetch exactly one guest actor record
+     *   and map it to the ICommunityPlatformGuest response DTO.
    *
    * Enforce privileged authorization before database access. Guests and members should not be permitted to retrieve arbitrary guest identity records. If the caller lacks administrative or equivalent internal authority, reject the request with a forbidden result. This authorization rule is derived from the requirements stating that guests are unauthenticated public visitors and members do not have platform-wide authority.
    *

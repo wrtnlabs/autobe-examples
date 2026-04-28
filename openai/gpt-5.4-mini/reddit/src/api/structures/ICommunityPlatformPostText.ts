@@ -6,8 +6,11 @@ export type ICommunityPlatformPostText = {
   /**
    * Full text content for the post's text subtype.
    *
-   * @x-autobe-specification Direct mapping to community_platform_post_texts.body. Accept the text body for the post subtype row and persist it in the same transaction as the parent post creation. Validate as a non-empty string before insert.
-   * @x-autobe-database-schema-property body
+     * @x-autobe-specification Direct mapping to
+     *   community_platform_post_texts.body. Accept the text body for the post
+     *   subtype row and persist it in the same transaction as the parent post
+     *   creation. Validate as a non-empty string before insert.
+     * @x-autobe-database-schema-property body
    */
   body: boolean;
 };

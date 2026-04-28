@@ -1,0 +1,245 @@
+/// Guest profiles representing anonymous platform visitors identified by
+/// device fingerprint before account creation.
+///
+/// Guests exist in an unauthenticated state with zero permissions and no
+/// organizational context. They can only access public entry points such as
+/// sign-up and login pages. The device fingerprint tracks user identity
+/// across public pages to provide continuity. Once a guest registers, they
+/// transition to a member account.
+///
+/// @namespace hrm_platform.authorization
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_platform_guests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique device fingerprint identifying the anonymous visitor's browser and
+  /// device characteristics. Used to correlate public entry point visits.
+  device_fingerprint String
+  
+  /// Timestamp when the guest profile was initially recorded.
+  created_at DateTime
+  
+  /// Timestamp when the guest profile was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the guest profile was soft deleted. Retained for audit and
+  /// cleanup scheduling.
+  deleted_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  sessions hrm_platform_guest_sessions[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([device_fingerprint])
+  @@index([deleted_at])
+}
+
+/// Session token tracking for ephemeral unauthenticated guest browsing of
+/// public entry points.
+///
+/// Each guest session captures anonymous browsing context during sign-up and
+/// login page interactions, including client IP address, current page URL,
+/// referring source URL, mandatory security expiration timestamp for session
+/// invalidation, and temporal audit records for security compliance.
+///
+/// Cross-references: {@link hrm_platform_guests}
+///
+/// @namespace hrm_platform.authorization
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_platform_guest_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key unique identifier for each guest session.
+  id String @id
+  
+  /// Links this ephemeral session to the guest actor profile.
+  ///
+  /// This foreign key establishes the 1:N relationship where {@link
+  /// hrm_platform_guests} entity owns many guest sessions, but each session
+  /// belongs to exactly one {@link hrm_platform_guests} actor entity.
+  ///
+  /// Enforces multi-tenant organization data isolation by preventing
+  /// cross-organization session token leakage.
+  hrm_platform_guest_id String
+  
+  /// Client IP address where the guest session was initiated.
+  ip String
+  
+  /// Current page URL the guest is browsing when the session is active.
+  href String
+  
+  /// Source URL from which the guest navigated to the current page.
+  referrer String?
+  
+  /// Timestamp when the guest session token was created.
+  created_at DateTime
+  
+  /// Security expiration timestamp for the session token.
+  ///
+  /// Mandatory field to enforce session invalidation before account creation.
+  expired_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  guest hrm_platform_guests @relation(fields: [hrm_platform_guest_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([hrm_platform_guest_id, created_at], map: "hrm_platform_guest_sessions_hrm_platform_guest_id_crea_1cdac0df")
+}
+
+/// Registered member accounts with email/password authentication credentials
+/// and a global profile shared across all organizational contexts.
+///
+/// Members authenticate using email and password. Profile data (display
+/// name, avatar image, phone number) is consistent regardless of active
+/// organizational scope. Members can belong to multiple organizations via
+/// employee records (handled by the employee component). Account deletion
+/// applies soft-delete to preserve historical timelogs and timesheets across
+/// organizations.
+///
+/// Actors who successfully authenticate transition from guest status to
+/// member status and select an organization context to operate within.
+///
+/// @namespace hrm_platform.authorization
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_platform_members {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key for member accounts.
+  id String @id
+  
+  /// Email address used for authentication.
+  ///
+  /// Used to uniquely identify the account during login and to link with
+  /// organization employee records. This field must be globally unique across
+  /// the entire platform.
+  email String
+  
+  /// Securely hashed password for authentication.
+  ///
+  /// The hash is stored instead of plaintext for secure credential
+  /// verification during login. Changes to this password affect authentication
+  /// for all organization contexts globally.
+  password_hash String
+  
+  /// Display name shown in the user interface.
+  ///
+  /// Profile field shared globally across all organizations the member belongs
+  /// to. Used in employee lists, timesheet headers, and activity logs.
+  display_name String
+  
+  /// Avatar image URI for member profile.
+  ///
+  /// Profile shared across all organizational contexts. Null value means no
+  /// custom avatar image has been provided.
+  avatar_image String?
+  
+  /// Phone number for the member profile.
+  ///
+  /// Profile shared across all organizational contexts. Used for contact
+  /// information in employee records and invitations.
+  phone_number String?
+  
+  /// Timestamp when the member account was created.
+  created_at DateTime
+  
+  /// Timestamp when the member account was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the member account was deleted.
+  ///
+  /// When a user deletes their account, this field is set rather than
+  /// permanently removing the row. Employee records in other organizations
+  /// remain as historical references but are marked as deactivated. This
+  /// preserves timelog and timesheet history.
+  deleted_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  memberSessions hrm_platform_member_sessions[]
+  organizationConfigurationSnapshots hrm_platform_organization_snapshots[]
+  employees hrm_platform_employees[]
+  reviewedTimesheets hrm_platform_timesheets[]
+  hrmPlatformTimers hrm_platform_timers[]
+  activityLogs hrm_platform_activity_logs[]
+  taskHistories hrm_platform_task_histories[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([email])
+}
+
+/// JWT session tokens maintaining authentication state and active
+/// organization context for authenticated members operating within selected
+/// organizational scopes.
+///
+/// Each record represents an active or expired member session containing the
+/// HTTP context from the login event. Sessions remain active until the user
+/// explicitly logs out; they do not auto-expire. The system enforces
+/// organization-level data isolation by restricting all session-bound
+/// operations to the currently selected organization.
+///
+/// @namespace hrm_platform.authorization
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_platform_member_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the member account whose session this record represents.
+  ///
+  /// Sessions are scoped exclusively to the owning member and never permit
+  /// cross-user data access. When a member logs in from multiple devices or
+  /// browsers, separate session records are created.
+  hrm_platform_member_id String
+  
+  /// IP address from which the session was created during login.
+  ip String
+  
+  /// URL that the session was created from (href).
+  href String
+  
+  /// Referrer URL leading to the login page when the session was created.
+  referrer String
+  
+  /// Timestamp when the session was created.
+  created_at DateTime
+  
+  /// Timestamp after which this session token is considered invalid.
+  ///
+  /// NOT NULL by default for security purposes.
+  expired_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member hrm_platform_members @relation(fields: [hrm_platform_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([hrm_platform_member_id, created_at], map: "hrm_platform_member_sessions_hrm_platform_member_id_cr_884a512e")
+}

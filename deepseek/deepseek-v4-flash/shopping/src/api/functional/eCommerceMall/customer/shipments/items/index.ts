@@ -23,7 +23,8 @@ import { IPageIECommerceMallShipmentItem } from "../../../../../structures/IPage
  * @param props.body Search and filter criteria for listing shipment items. Supports filtering by order item status and pagination parameters.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Query e_commerce_mall_shipment_items table filtered by shipment_id = {shipmentId}.
+ * @x-autobe-specification Query e_commerce_mall_shipment_items table filtered
+ *   by shipment_id = {shipmentId}.
  *
  * Join with:
  *   - e_commerce_mall_order_items (for quantity, unit_price, status, created_at)
@@ -145,7 +146,9 @@ export namespace index {
  * @param props.itemId UUID of the order item within the shipment. This corresponds to the order_item_id in the shipment_items junction table. Each order item can be assigned to at most one shipment at a time, enforced by a unique constraint.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Query the e_commerce_mall_shipment_items junction table to find the record where shipment_id = shipmentId AND order_item_id = itemId. If not found, return 404 NotFound.
+ * @x-autobe-specification Query the e_commerce_mall_shipment_items junction
+ *   table to find the record where shipment_id = shipmentId AND order_item_id =
+ *   itemId. If not found, return 404 NotFound.
  *
  * Join with e_commerce_mall_shipments to get carrier_name, tracking_number, shipped_at, delivered_at, and seller_id.
  * Join with e_commerce_mall_order_items to get quantity, unit_price, status, e_commerce_mall_product_variant_id, and e_commerce_mall_order_id.

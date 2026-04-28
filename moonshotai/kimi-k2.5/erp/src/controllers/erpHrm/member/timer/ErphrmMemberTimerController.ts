@@ -27,9 +27,11 @@ export class ErphrmMemberTimerController {
    * - PATCH /timers for listing historical timer entries
    *
    * @param connection
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query the erp_hrm_timers table for a record where organization_member_id matches the current authenticated employee's membership ID.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query the erp_hrm_timers table for a record where
+     *   organization_member_id matches the current authenticated employee's
+     *   membership ID.
    *
    * Implementation steps:
    * 1. Identify the current authenticated member's organization context from the session

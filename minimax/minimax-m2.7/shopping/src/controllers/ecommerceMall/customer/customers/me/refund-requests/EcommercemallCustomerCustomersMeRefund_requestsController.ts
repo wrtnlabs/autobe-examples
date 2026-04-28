@@ -23,9 +23,10 @@ export class EcommercemallCustomerCustomersMeRefund_requestsController {
    * **Response Details**: Each item in the list includes the refund request ID, order item reference with product information, current status, reason text, and relevant timestamps.
    *
    * @param connection
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Query ecommerce_mall_refund_requests table filtered by the authenticated customer's ID from the session token.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Query ecommerce_mall_refund_requests table
+     *   filtered by the authenticated customer's ID from the session token.
    *
    * Join with ecommerce_mall_order_items to get order item details (product name, variant info, unit price, quantity).
    *

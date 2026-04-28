@@ -23,9 +23,15 @@ export class ShoppingmallCustomerOrdersAddresssnapshotsController {
    *
    * @param connection
    * @param orderCode Unique business code of the target order (global scope)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Resolve the target order from shopping_mall_orders using the unique code column, not the internal UUID. Enforce authorization so that only the owning customer of shopping_mall_orders.shopping_mall_customer_id or an administrator with order-oversight authority can read the record. After the order is authorized, load the related shopping_mall_order_address_snapshots row by shopping_mall_order_id using the table's unique constraint.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Resolve the target order from
+     *   shopping_mall_orders using the unique code column, not the internal
+     *   UUID. Enforce authorization so that only the owning customer of
+     *   shopping_mall_orders.shopping_mall_customer_id or an administrator with
+     *   order-oversight authority can read the record. After the order is
+     *   authorized, load the related shopping_mall_order_address_snapshots row
+     *   by shopping_mall_order_id using the table's unique constraint.
    *
    * Return the full snapshot DTO from the persisted columns in shopping_mall_order_address_snapshots, including recipient_name, phone_number, street_address, city, state_province, postal_code, country, created_at, and updated_at as defined by the schema contract for IShoppingMallOrderAddressSnapshot. Do not source any of these values from the customer's current saved shipping addresses, customer profile, or other mutable records.
    *
@@ -68,9 +74,11 @@ export class ShoppingmallCustomerOrdersAddresssnapshotsController {
    * @param connection
    * @param orderId Target order's ID
    * @param addressSnapshotId Target order address snapshot's ID
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Implement a read-only service method that resolves a single order address snapshot by both the parent order identifier and the child snapshot identifier.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Implement a read-only service method that
+     *   resolves a single order address snapshot by both the parent order
+     *   identifier and the child snapshot identifier.
    *
    * First, authenticate the caller and determine whether the actor is a customer or administrator. If the actor is a customer, load the target order in a way that verifies the order belongs to the authenticated customer before attempting to expose any address snapshot data. If the actor is an administrator, allow lookup for platform oversight without customer ownership restriction. Reject all other actors.
    *

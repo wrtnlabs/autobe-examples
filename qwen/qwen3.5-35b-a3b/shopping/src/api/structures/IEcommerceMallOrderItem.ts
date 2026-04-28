@@ -154,8 +154,10 @@ export namespace IEcommerceMallOrderItem {
      *
      * This is a foreign key reference to the product_variant table. The variant must exist, belong to an active product, and have sufficient stock_quantity to fulfill the requested quantity. The system resolves the seller_id from this variant's product for order item association.
      *
-     * @x-autobe-database-schema-property ecommerce_mall_product_variant_id
-     * @x-autobe-specification Direct mapping from ecommerce_mall_product_variants.id. The backend resolves seller_id from the variant's product.relation.
+         * @x-autobe-database-schema-property ecommerce_mall_product_variant_id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_product_variants.id. The backend resolves seller_id
+         *   from the variant's product.relation.
      */
     product_variant_id: string & tags.Format<"uuid">;
 
@@ -164,8 +166,9 @@ export namespace IEcommerceMallOrderItem {
      *
      * Must be at least 1 and cannot exceed the available stock_quantity for this variant. The system validates inventory availability before order creation.
      *
-     * @x-autobe-database-schema-property quantity
-     * @x-autobe-specification Direct mapping from quantity field. Backend validates: quantity ≥ 1 and variant.stock_quantity ≥ quantity.
+         * @x-autobe-database-schema-property quantity
+         * @x-autobe-specification Direct mapping from quantity field. Backend
+         *   validates: quantity ≥ 1 and variant.stock_quantity ≥ quantity.
      */
     quantity: number & tags.Type<"int32"> & tags.Minimum<1>;
   };

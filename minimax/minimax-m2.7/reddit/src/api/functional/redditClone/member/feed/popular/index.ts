@@ -30,7 +30,8 @@ import { IRedditClonePost } from "../../../../../structures/IRedditClonePost";
  * @param props.body Pagination parameters, sorting criteria, and optional time filter for top/controversial sorting
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query reddit_clone_posts table with the following implementation:
+ * @x-autobe-specification Query reddit_clone_posts table with the following
+ *   implementation:
  *
  * 1. FILTERING: Exclude soft-deleted posts (deleted_at IS NULL)
  * 2. SORTING LOGIC:

@@ -10,32 +10,39 @@ export type IEcommerceMallGuest = {
   /**
    * Unique identifier of the guest account.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_guests.id. Primary key as UUID.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from ecommerce_mall_guests.id.
+     *   Primary key as UUID.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Timestamp when the guest account was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_guests.created_at. Timestamptz converted to ISO 8601 datetime string.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_guests.created_at. Timestamptz converted to ISO 8601
+     *   datetime string.
    */
   createdAt: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the guest account was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_guests.updated_at. Timestamptz converted to ISO 8601 datetime string.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_guests.updated_at. Timestamptz converted to ISO 8601
+     *   datetime string.
    */
   updatedAt: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the guest account was soft-deleted, or null if active.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_guests.deleted_at. Nullable timestamptz converted to ISO 8601 datetime string or null if not soft-deleted.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_guests.deleted_at. Nullable timestamptz converted to ISO
+     *   8601 datetime string or null if not soft-deleted.
    */
   deletedAt: (string & tags.Format<"date-time">) | null;
 };
@@ -47,39 +54,47 @@ export namespace IEcommerceMallGuest {
     /**
      * Unique identifier of the guest account.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_mall_guests.id (UUID primary key).
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from ecommerce_mall_guests.id
+         *   (UUID primary key).
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Timestamp when the guest account was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_guests.created_at (timestamptz). Auto-set on record creation.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_guests.created_at (timestamptz). Auto-set on record
+         *   creation.
      */
     createdAt: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when the guest account was last updated.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_guests.updated_at (timestamptz). Auto-updated on record modification.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_guests.updated_at (timestamptz). Auto-updated on
+         *   record modification.
      */
     updatedAt: string & tags.Format<"date-time">;
 
     /**
      * Soft deletion timestamp. Null if the guest account is active; set when soft-deleted.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_guests.deleted_at (timestamptz, nullable). Null indicates active record; non-null indicates soft-deleted.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_guests.deleted_at (timestamptz, nullable). Null
+         *   indicates active record; non-null indicates soft-deleted.
      */
     deletedAt: (string & tags.Format<"date-time">) | null;
 
     /**
      * Authorization token.
      *
-     * @x-autobe-specification Authorization token comes from the session table.
+         * @x-autobe-specification Authorization token comes from the session
+         *   table.
      */
     token: IAuthorizationToken;
   };
@@ -91,30 +106,37 @@ export namespace IEcommerceMallGuest {
     /**
      * Unique identifier for the guest account.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_mall_guests.id UUID primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from ecommerce_mall_guests.id
+         *   UUID primary key.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Timestamp when the guest account was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_guests.created_at timestamp. ISO 8601 format.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_guests.created_at timestamp. ISO 8601 format.
      */
     createdAt: string & tags.Format<"date-time">;
 
     /**
      * Expiration timestamp of the guest's most recent session token.
      *
-     * @x-autobe-specification Computed by querying ecommerce_mall_guest_sessions for the most recent session belonging to this guest and extracting the access_token_expires_at value. ISO 8601 format.
+         * @x-autobe-specification Computed by querying
+         *   ecommerce_mall_guest_sessions for the most recent session belonging
+         *   to this guest and extracting the access_token_expires_at value. ISO
+         *   8601 format.
      */
     expiresAt: string & tags.Format<"date-time">;
 
     /**
      * Current status of the guest session indicating whether it is active or expired.
      *
-     * @x-autobe-specification Computed by comparing current UTC timestamp to expiresAt value. Returns 'active' if expiresAt is in the future, 'expired' if expiresAt is in the past or equal to current time.
+         * @x-autobe-specification Computed by comparing current UTC timestamp
+         *   to expiresAt value. Returns 'active' if expiresAt is in the future,
+         *   'expired' if expiresAt is in the past or equal to current time.
      */
     status: "active" | "expired";
   };
@@ -126,21 +148,30 @@ export namespace IEcommerceMallGuest {
     /**
      * Start of guest creation date range filter. Filters guests created at or after this timestamp.
      *
-     * @x-autobe-specification Filter parameter for created_at column in ecommerce_mall_guests table. Used as lower bound in date range query (created_at >= createdAtStart). Maps to guests.created_at with GTE comparison.
+         * @x-autobe-specification Filter parameter for created_at column in
+         *   ecommerce_mall_guests table. Used as lower bound in date range
+         *   query (created_at >= createdAtStart). Maps to guests.created_at
+         *   with GTE comparison.
      */
     createdAtStart?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * End of guest creation date range filter. Filters guests created at or before this timestamp.
      *
-     * @x-autobe-specification Filter parameter for created_at column in ecommerce_mall_guests table. Used as upper bound in date range query (created_at <= createdAtEnd). Maps to guests.created_at with LTE comparison.
+         * @x-autobe-specification Filter parameter for created_at column in
+         *   ecommerce_mall_guests table. Used as upper bound in date range
+         *   query (created_at <= createdAtEnd). Maps to guests.created_at with
+         *   LTE comparison.
      */
     createdAtEnd?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * Start of last activity date range filter. Filters guest sessions with last activity at or after this timestamp.
      *
-     * @x-autobe-specification Filter parameter for last_activity_at column in ecommerce_mall_guest_sessions table. Joins guest_sessions via guest relationship. Used as lower bound in date range query (last_activity_at >= lastActivityAtStart).
+         * @x-autobe-specification Filter parameter for last_activity_at column
+         *   in ecommerce_mall_guest_sessions table. Joins guest_sessions via
+         *   guest relationship. Used as lower bound in date range query
+         *   (last_activity_at >= lastActivityAtStart).
      */
     lastActivityAtStart?:
       | (string & tags.Format<"date-time">)
@@ -150,35 +181,49 @@ export namespace IEcommerceMallGuest {
     /**
      * End of last activity date range filter. Filters guest sessions with last activity at or before this timestamp.
      *
-     * @x-autobe-specification Filter parameter for last_activity_at column in ecommerce_mall_guest_sessions table. Joins guest_sessions via guest relationship. Used as upper bound in date range query (last_activity_at <= lastActivityAtEnd).
+         * @x-autobe-specification Filter parameter for last_activity_at column
+         *   in ecommerce_mall_guest_sessions table. Joins guest_sessions via
+         *   guest relationship. Used as upper bound in date range query
+         *   (last_activity_at <= lastActivityAtEnd).
      */
     lastActivityAtEnd?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * IP address pattern filter using SQL LIKE syntax. Filters guest sessions by partial or full IP address match.
      *
-     * @x-autobe-specification Filter parameter for ip column in ecommerce_mall_guest_sessions table. Uses SQL LIKE pattern matching for partial IP address searches. Joins guest_sessions via guest relationship. Supports wildcards (e.g., '192.168.%').
+         * @x-autobe-specification Filter parameter for ip column in
+         *   ecommerce_mall_guest_sessions table. Uses SQL LIKE pattern matching
+         *   for partial IP address searches. Joins guest_sessions via guest
+         *   relationship. Supports wildcards (e.g., '192.168.%').
      */
     ipPattern?: string | null | undefined;
 
     /**
      * User agent pattern filter using SQL LIKE syntax. Filters guest sessions by browser or device user agent string patterns.
      *
-     * @x-autobe-specification Filter parameter for user_agent column in ecommerce_mall_guest_sessions table. Uses SQL LIKE pattern matching for partial user agent string searches. Joins guest_sessions via guest relationship. Supports wildcards.
+         * @x-autobe-specification Filter parameter for user_agent column in
+         *   ecommerce_mall_guest_sessions table. Uses SQL LIKE pattern matching
+         *   for partial user agent string searches. Joins guest_sessions via
+         *   guest relationship. Supports wildcards.
      */
     userAgentPattern?: string | null | undefined;
 
     /**
      * Page number for pagination (1-indexed). Specifies which page of results to return.
      *
-     * @x-autobe-specification Pagination parameter for cursor-based pagination. Computed value specifying which page of results to return. Minimum value 1. Used with limit to calculate OFFSET in SQL query: OFFSET = (page - 1) * limit.
+         * @x-autobe-specification Pagination parameter for cursor-based
+         *   pagination. Computed value specifying which page of results to
+         *   return. Minimum value 1. Used with limit to calculate OFFSET in SQL
+         *   query: OFFSET = (page - 1) * limit.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | null | undefined;
 
     /**
      * Maximum number of records per page. Controls the size of each page in paginated results. Maximum 100.
      *
-     * @x-autobe-specification Pagination parameter limiting the number of records per page. Computed value with minimum 1 and maximum 100. Used in SQL LIMIT clause to control result set size.
+         * @x-autobe-specification Pagination parameter limiting the number of
+         *   records per page. Computed value with minimum 1 and maximum 100.
+         *   Used in SQL LIMIT clause to control result set size.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -193,21 +238,30 @@ export namespace IEcommerceMallGuest {
     /**
      * The current page URL where the session was initiated. Used for analytics and debugging purposes.
      *
-     * @x-autobe-specification Session context captured from client's document.location.href and stored in ecommerce_mall_guest_sessions.href column for analytics tracking and session origin identification.
+         * @x-autobe-specification Session context captured from client's
+         *   document.location.href and stored in
+         *   ecommerce_mall_guest_sessions.href column for analytics tracking
+         *   and session origin identification.
      */
     href: string & tags.Format<"uri">;
 
     /**
      * The referring URL that led to this session creation. Used for tracking traffic sources and user journey analysis.
      *
-     * @x-autobe-specification Session context captured from client's document.referrer and stored in ecommerce_mall_guest_sessions.referrer column for traffic source analytics.
+         * @x-autobe-specification Session context captured from client's
+         *   document.referrer and stored in
+         *   ecommerce_mall_guest_sessions.referrer column for traffic source
+         *   analytics.
      */
     referrer: string & tags.Format<"uri">;
 
     /**
      * Client IPv4 address for security tracking and abuse prevention. May be null in server-side rendered contexts where the client cannot determine its own IP.
      *
-     * @x-autobe-specification Client IPv4 address captured for security auditing and abuse prevention. Stored in ecommerce_mall_guest_sessions.ip. Optional in SSR contexts where the server provides fallback detection (body.ip ?? serverIp).
+         * @x-autobe-specification Client IPv4 address captured for security
+         *   auditing and abuse prevention. Stored in
+         *   ecommerce_mall_guest_sessions.ip. Optional in SSR contexts where
+         *   the server provides fallback detection (body.ip ?? serverIp).
      */
     ip?: (string & tags.Format<"ipv4">) | null | undefined;
   };
@@ -219,28 +273,43 @@ export namespace IEcommerceMallGuest {
     /**
      * The refresh token from the existing guest session to exchange for new tokens.
      *
-     * @x-autobe-specification JWT refresh token obtained from the previous IEcommerceMallGuest.IAuthorized response. Must be provided as-is (base64url encoded JWT). Server validates by hashing and comparing against guest_sessions.refresh_token_hashed. If valid and not expired, new tokens are issued.
+         * @x-autobe-specification JWT refresh token obtained from the previous
+         *   IEcommerceMallGuest.IAuthorized response. Must be provided as-is
+         *   (base64url encoded JWT). Server validates by hashing and comparing
+         *   against guest_sessions.refresh_token_hashed. If valid and not
+         *   expired, new tokens are issued.
      */
     refreshToken: string;
 
     /**
      * The current page URL for session context tracking.
      *
-     * @x-autobe-specification The current page URL provided by the client-side application. Captured during token refresh to maintain accurate session context for security auditing. Stored in guest_sessions.href when session is refreshed.
+         * @x-autobe-specification The current page URL provided by the
+         *   client-side application. Captured during token refresh to maintain
+         *   accurate session context for security auditing. Stored in
+         *   guest_sessions.href when session is refreshed.
      */
     href: string & tags.Format<"uri">;
 
     /**
      * The referring page URL for session context tracking.
      *
-     * @x-autobe-specification The referring page URL (previous page) provided by the client-side application. Captured during token refresh to track navigation flow for security monitoring. Stored in guest_sessions.referrer when session is refreshed.
+         * @x-autobe-specification The referring page URL (previous page)
+         *   provided by the client-side application. Captured during token
+         *   refresh to track navigation flow for security monitoring. Stored in
+         *   guest_sessions.referrer when session is refreshed.
      */
     referrer: string & tags.Format<"uri">;
 
     /**
      * The client IPv4 address, optional for SSR compatibility.
      *
-     * @x-autobe-specification The client IP address in IPv4 format. Optional (nullable) to support Server-Side Rendering (SSR) where the client cannot determine its own IP address. If null is provided, the server captures the IP from the incoming HTTP connection. Stored in guest_sessions.ip for security audit trail. Format validation: IPv4 dotted-decimal notation.
+         * @x-autobe-specification The client IP address in IPv4 format.
+         *   Optional (nullable) to support Server-Side Rendering (SSR) where
+         *   the client cannot determine its own IP address. If null is
+         *   provided, the server captures the IP from the incoming HTTP
+         *   connection. Stored in guest_sessions.ip for security audit trail.
+         *   Format validation: IPv4 dotted-decimal notation.
      */
     ip: (string & tags.Format<"ipv4">) | null;
   };

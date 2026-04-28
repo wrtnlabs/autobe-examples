@@ -25,9 +25,9 @@ export class ShoppingmallAdministratorAdminCategoriesController {
    * @param connection
    * @param categoryId Unique identifier of the category to update (UUID format)
    * @param body Category update data containing name and optional description
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Implementation steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor administrator
+     * @x-autobe-specification Implementation steps:
    *
    * 1. Authenticate administrator from JWT token
    * 2. Validate categoryId as UUID format

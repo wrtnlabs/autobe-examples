@@ -31,9 +31,11 @@ export class EcommerceAdminStatisticsController {
    * The response contains aggregated counts optimized for dashboard display without requiring the client to perform calculations.
    *
    * @param connection
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query aggregated statistics from ecommerce_orders, ecommerce_products, ecommerce_cancellation_requests, and ecommerce_refund_requests tables.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Query aggregated statistics from
+     *   ecommerce_orders, ecommerce_products, ecommerce_cancellation_requests,
+     *   and ecommerce_refund_requests tables.
    *
    * **Implementation Steps**
    *

@@ -18,85 +18,85 @@ import { tags } from "typia";
  */
 export type IHrmPlatformContractsSnapshot = {
   /**
-   * @x-autobe-database-schema-property id
+     * @x-autobe-database-schema-property id
    */
   id: string & tags.Format<"uuid">;
   /**
-   * @x-autobe-database-schema-property hrm_platform_contract_id
+     * @x-autobe-database-schema-property hrm_platform_contract_id
    */
   hrm_platform_contract_id: string & tags.Format<"uuid">;
   /**
-   * @x-autobe-database-schema-property contract_number
+     * @x-autobe-database-schema-property contract_number
    */
   contract_number: string;
   /**
-   * @x-autobe-database-schema-property start_date
+     * @x-autobe-database-schema-property start_date
    */
   start_date: string & tags.Format<"date-time">;
   /**
-   * @x-autobe-database-schema-property end_date
+     * @x-autobe-database-schema-property end_date
    */
   end_date?: (string & tags.Format<"date-time">) | null | undefined;
   /**
-   * @x-autobe-database-schema-property job_title
+     * @x-autobe-database-schema-property job_title
    */
   job_title: string;
   /**
-   * @x-autobe-database-schema-property department_id
+     * @x-autobe-database-schema-property department_id
    */
   department_id?: (string & tags.Format<"uuid">) | null | undefined;
   /**
-   * @x-autobe-database-schema-property compensation_amount
+     * @x-autobe-database-schema-property compensation_amount
    */
   compensation_amount: number & tags.Minimum<0>;
   /**
-   * @x-autobe-database-schema-property compensation_currency
+     * @x-autobe-database-schema-property compensation_currency
    */
   compensation_currency: string;
   /**
-   * @x-autobe-database-schema-property compensation_frequency
+     * @x-autobe-database-schema-property compensation_frequency
    */
   compensation_frequency: string;
   /**
-   * @x-autobe-database-schema-property benefits_description
+     * @x-autobe-database-schema-property benefits_description
    */
   benefits_description?: string | null | undefined;
   /**
-   * @x-autobe-database-schema-property probation_period_days
+     * @x-autobe-database-schema-property probation_period_days
    */
   probation_period_days?:
     | (number & tags.Type<"int32"> & tags.Minimum<0>)
     | null
     | undefined;
   /**
-   * @x-autobe-database-schema-property notice_period_days
+     * @x-autobe-database-schema-property notice_period_days
    */
   notice_period_days?:
     | (number & tags.Type<"int32"> & tags.Minimum<0>)
     | null
     | undefined;
   /**
-   * @x-autobe-database-schema-property work_location
+     * @x-autobe-database-schema-property work_location
    */
   work_location?: string | null | undefined;
   /**
-   * @x-autobe-database-schema-property work_type
+     * @x-autobe-database-schema-property work_type
    */
   work_type: string;
   /**
-   * @x-autobe-database-schema-property notes
+     * @x-autobe-database-schema-property notes
    */
   notes?: string | null | undefined;
   /**
-   * @x-autobe-database-schema-property created_at
+     * @x-autobe-database-schema-property created_at
    */
   created_at: string & tags.Format<"date-time">;
   /**
-   * @x-autobe-database-schema-property updated_at
+     * @x-autobe-database-schema-property updated_at
    */
   updated_at: string & tags.Format<"date-time">;
   /**
-   * @x-autobe-database-schema-property snapshotted_at
+     * @x-autobe-database-schema-property snapshotted_at
    */
   snapshotted_at: string & tags.Format<"date-time">;
 };
@@ -155,21 +155,21 @@ export namespace IHrmPlatformContractsSnapshot {
     /**
      * Search contract number (partial match)
      *
-     * @x-autobe-database-schema-property contract_number
+         * @x-autobe-database-schema-property contract_number
      */
     contract_number?: string | undefined;
 
     /**
      * Filter contracts with start_date >= this value
      *
-     * @x-autobe-database-schema-property start_date
+         * @x-autobe-database-schema-property start_date
      */
     start_date_from?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Filter contracts with start_date <= this value
      *
-     * @x-autobe-database-schema-property start_date
+         * @x-autobe-database-schema-property start_date
      */
     start_date_to?: (string & tags.Format<"date-time">) | undefined;
 
@@ -178,8 +178,10 @@ export namespace IHrmPlatformContractsSnapshot {
      *
      * Only returns contracts where end_date is not null and end_date >= this timestamp. This filter excludes records with null end_date (ongoing contracts).
      *
-     * @x-autobe-database-schema-property end_date
-     * @x-autobe-specification Filter parameter for end_date. Since end_date is nullable in DB, this filter accepts null values and excludes null end_date records from results.
+         * @x-autobe-database-schema-property end_date
+         * @x-autobe-specification Filter parameter for end_date. Since end_date
+         *   is nullable in DB, this filter accepts null values and excludes
+         *   null end_date records from results.
      */
     end_date_from?: (string & tags.Format<"date-time">) | null | undefined;
 
@@ -188,22 +190,24 @@ export namespace IHrmPlatformContractsSnapshot {
      *
      * Only returns contracts where end_date is not null and end_date <= this timestamp. This filter excludes records with null end_date (ongoing contracts).
      *
-     * @x-autobe-database-schema-property end_date
-     * @x-autobe-specification Filter parameter for end_date. Since end_date is nullable in DB, this filter accepts null values and excludes null end_date records from results.
+         * @x-autobe-database-schema-property end_date
+         * @x-autobe-specification Filter parameter for end_date. Since end_date
+         *   is nullable in DB, this filter accepts null values and excludes
+         *   null end_date records from results.
      */
     end_date_to?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * Filter snapshots created on or after this timestamp
      *
-     * @x-autobe-database-schema-property snapshotted_at
+         * @x-autobe-database-schema-property snapshotted_at
      */
     snapshotted_at_from?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Filter snapshots created on or before this timestamp
      *
-     * @x-autobe-database-schema-property snapshotted_at
+         * @x-autobe-database-schema-property snapshotted_at
      */
     snapshotted_at_to?: (string & tags.Format<"date-time">) | undefined;
   };
@@ -227,67 +231,67 @@ export namespace IHrmPlatformContractsSnapshot {
    */
   export type ISummary = {
     /**
-     * @x-autobe-database-schema-property id
+         * @x-autobe-database-schema-property id
      */
     id: string & tags.Format<"uuid">;
     /**
-     * @x-autobe-database-schema-property contract_number
+         * @x-autobe-database-schema-property contract_number
      */
     contract_number: string;
     /**
-     * @x-autobe-database-schema-property start_date
+         * @x-autobe-database-schema-property start_date
      */
     start_date: string & tags.Format<"date-time">;
     /**
-     * @x-autobe-database-schema-property end_date
+         * @x-autobe-database-schema-property end_date
      */
     end_date: (string & tags.Format<"date-time">) | null;
     /**
-     * @x-autobe-database-schema-property job_title
+         * @x-autobe-database-schema-property job_title
      */
     job_title: string;
     /**
-     * @x-autobe-database-schema-property department_id
+         * @x-autobe-database-schema-property department_id
      */
     department_id: (string & tags.Format<"uuid">) | null;
     /**
-     * @x-autobe-database-schema-property compensation_amount
+         * @x-autobe-database-schema-property compensation_amount
      */
     compensation_amount: number;
     /**
-     * @x-autobe-database-schema-property compensation_currency
+         * @x-autobe-database-schema-property compensation_currency
      */
     compensation_currency: string;
     /**
-     * @x-autobe-database-schema-property compensation_frequency
+         * @x-autobe-database-schema-property compensation_frequency
      */
     compensation_frequency: string;
     /**
-     * @x-autobe-database-schema-property benefits_description
+         * @x-autobe-database-schema-property benefits_description
      */
     benefits_description: string | null;
     /**
-     * @x-autobe-database-schema-property probation_period_days
+         * @x-autobe-database-schema-property probation_period_days
      */
     probation_period_days: (number & tags.Type<"int32">) | null;
     /**
-     * @x-autobe-database-schema-property notice_period_days
+         * @x-autobe-database-schema-property notice_period_days
      */
     notice_period_days: (number & tags.Type<"int32">) | null;
     /**
-     * @x-autobe-database-schema-property work_location
+         * @x-autobe-database-schema-property work_location
      */
     work_location: string | null;
     /**
-     * @x-autobe-database-schema-property work_type
+         * @x-autobe-database-schema-property work_type
      */
     work_type: string;
     /**
-     * @x-autobe-database-schema-property notes
+         * @x-autobe-database-schema-property notes
      */
     notes: string | null;
     /**
-     * @x-autobe-database-schema-property snapshotted_at
+         * @x-autobe-database-schema-property snapshotted_at
      */
     snapshotted_at: string & tags.Format<"date-time">;
   };

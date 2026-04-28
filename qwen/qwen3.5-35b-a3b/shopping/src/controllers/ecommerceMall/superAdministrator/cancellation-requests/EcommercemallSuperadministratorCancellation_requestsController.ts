@@ -18,9 +18,10 @@ export class EcommercemallSuperadministratorCancellation_requestsController {
    *
    * @param connection
    * @param id Unique identifier of the cancellation request
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor superAdministrator
-   * @x-autobe-specification Retrieve a single cancellation request from ecommerce_mall_cancellation_requests table by UUID.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor superAdministrator
+     * @x-autobe-specification Retrieve a single cancellation request from
+     *   ecommerce_mall_cancellation_requests table by UUID.
    *
    * 1. Query the cancellation request by id parameter
    * 2. Validate the record exists and is not soft-deleted (deleted_at IS NULL)

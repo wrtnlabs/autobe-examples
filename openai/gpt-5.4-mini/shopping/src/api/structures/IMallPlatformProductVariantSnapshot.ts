@@ -17,8 +17,9 @@ export type IMallPlatformProductVariantSnapshot = {
    *
    * This value uniquely identifies one preserved product variant snapshot record and is used for read-only lookup and historical reference.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from mall_platform_product_variant_snapshots.id.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_product_variant_snapshots.id.
    */
   id: string & tags.Format<"uuid">;
 
@@ -27,8 +28,11 @@ export type IMallPlatformProductVariantSnapshot = {
    *
    * This is shown as a summary reference to the related variant so consumers can identify which live variant the preserved state belongs to without loading mutable variant details here.
    *
-   * @x-autobe-database-schema-property productVariant
-   * @x-autobe-specification Resolve from mall_platform_product_variant_snapshots.mall_platform_product_variant_id and expose as IMallPlatformProductVariant.ISummary. This is a read-only relation reference to the parent variant.
+     * @x-autobe-database-schema-property productVariant
+     * @x-autobe-specification Resolve from
+     *   mall_platform_product_variant_snapshots.mall_platform_product_variant_id
+     *   and expose as IMallPlatformProductVariant.ISummary. This is a read-only
+     *   relation reference to the parent variant.
    */
   productVariant: IMallPlatformProductVariant.ISummary;
 
@@ -37,8 +41,11 @@ export type IMallPlatformProductVariantSnapshot = {
    *
    * This is shown as a summary reference to the related product so consumers can inspect the parent catalog item associated with the preserved variant state.
    *
-   * @x-autobe-database-schema-property product
-   * @x-autobe-specification Resolve from mall_platform_product_variant_snapshots.mall_platform_product_id and expose as IMallPlatformProduct.ISummary. This links the preserved snapshot back to its parent product.
+     * @x-autobe-database-schema-property product
+     * @x-autobe-specification Resolve from
+     *   mall_platform_product_variant_snapshots.mall_platform_product_id and
+     *   expose as IMallPlatformProduct.ISummary. This links the preserved
+     *   snapshot back to its parent product.
    */
   product: IMallPlatformProduct.ISummary;
 
@@ -47,8 +54,9 @@ export type IMallPlatformProductVariantSnapshot = {
    *
    * This value reflects the variant's seller-defined identifier at the moment the snapshot was created and is preserved for audit and historical reconstruction.
    *
-   * @x-autobe-database-schema-property sku_code
-   * @x-autobe-specification Direct mapping from mall_platform_product_variant_snapshots.sku_code.
+     * @x-autobe-database-schema-property sku_code
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_product_variant_snapshots.sku_code.
    */
   skuCode: string;
 
@@ -57,8 +65,9 @@ export type IMallPlatformProductVariantSnapshot = {
    *
    * This is the human-readable summary of the variant options as they were recorded when the snapshot was created.
    *
-   * @x-autobe-database-schema-property option_summary
-   * @x-autobe-specification Direct mapping from mall_platform_product_variant_snapshots.option_summary.
+     * @x-autobe-database-schema-property option_summary
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_product_variant_snapshots.option_summary.
    */
   optionSummary: string;
 
@@ -67,8 +76,10 @@ export type IMallPlatformProductVariantSnapshot = {
    *
    * When present, this is the price override that applied to the variant at snapshot time. When absent, the snapshot records that no override was set.
    *
-   * @x-autobe-database-schema-property price_override
-   * @x-autobe-specification Direct mapping from mall_platform_product_variant_snapshots.price_override. Preserve null when no override existed at the time the snapshot was created.
+     * @x-autobe-database-schema-property price_override
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_product_variant_snapshots.price_override. Preserve null
+     *   when no override existed at the time the snapshot was created.
    */
   priceOverride: number | null;
 
@@ -77,8 +88,10 @@ export type IMallPlatformProductVariantSnapshot = {
    *
    * This field carries the context or explanation associated with the variant change that triggered the snapshot. It may be empty when no reason was provided.
    *
-   * @x-autobe-database-schema-property snapshot_reason
-   * @x-autobe-specification Direct mapping from mall_platform_product_variant_snapshots.snapshot_reason. Preserve null when no reason was recorded.
+     * @x-autobe-database-schema-property snapshot_reason
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_product_variant_snapshots.snapshot_reason. Preserve null
+     *   when no reason was recorded.
    */
   snapshotReason: string | null;
 
@@ -87,8 +100,9 @@ export type IMallPlatformProductVariantSnapshot = {
    *
    * This timestamp marks when the preserved product variant state was recorded and is used to reconstruct the historical timeline of changes.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from mall_platform_product_variant_snapshots.created_at.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_product_variant_snapshots.created_at.
    */
   createdAt: string & tags.Format<"date-time">;
 };
@@ -106,7 +120,10 @@ export namespace IMallPlatformProductVariantSnapshot {
      *
      * This value selects which page of results to return when browsing the immutable history for a product's variants. It is a browsing control rather than stored data.
      *
-     * @x-autobe-specification Use this value as the 1-indexed page number when paginating immutable variant snapshot results. It is not mapped to a database field and should be applied by the query layer only.
+         * @x-autobe-specification Use this value as the 1-indexed page number
+         *   when paginating immutable variant snapshot results. It is not
+         *   mapped to a database field and should be applied by the query layer
+         *   only.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -115,7 +132,9 @@ export namespace IMallPlatformProductVariantSnapshot {
      *
      * This value controls how many variant snapshot rows are returned in a single response. It is a browsing limit rather than stored data.
      *
-     * @x-autobe-specification Use this value as the maximum number of snapshot rows returned per page. It is not mapped to a database field and should be applied by the query layer only.
+         * @x-autobe-specification Use this value as the maximum number of
+         *   snapshot rows returned per page. It is not mapped to a database
+         *   field and should be applied by the query layer only.
      */
     limit?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -124,7 +143,9 @@ export namespace IMallPlatformProductVariantSnapshot {
      *
      * This value controls the order in which preserved variant snapshots are returned, such as newest first or other supported ordering modes.
      *
-     * @x-autobe-specification Use this value as the sort expression for immutable snapshot browsing. It is not mapped to a database field and should be interpreted by the query layer when ordering results.
+         * @x-autobe-specification Use this value as the sort expression for
+         *   immutable snapshot browsing. It is not mapped to a database field
+         *   and should be interpreted by the query layer when ordering results.
      */
     sort?: string | undefined;
 
@@ -133,7 +154,10 @@ export namespace IMallPlatformProductVariantSnapshot {
      *
      * This value narrows the list by matching against searchable snapshot content, such as preserved variant identifiers or change notes.
      *
-     * @x-autobe-specification Use this value as a broad text search term over searchable snapshot content. It is not mapped to a database field; the query layer should match it against preserved snapshot attributes such as SKU code, option summary, and snapshot reason.
+         * @x-autobe-specification Use this value as a broad text search term
+         *   over searchable snapshot content. It is not mapped to a database
+         *   field; the query layer should match it against preserved snapshot
+         *   attributes such as SKU code, option summary, and snapshot reason.
      */
     search?: string | undefined;
 
@@ -142,7 +166,10 @@ export namespace IMallPlatformProductVariantSnapshot {
      *
      * This value filters the list to snapshots recorded for one specific variant within the requested product scope.
      *
-     * @x-autobe-specification Use this value to filter variant snapshot history to a specific live product variant. It is not mapped to a database field in this request DTO and should be applied by the query layer against the snapshot history source.
+         * @x-autobe-specification Use this value to filter variant snapshot
+         *   history to a specific live product variant. It is not mapped to a
+         *   database field in this request DTO and should be applied by the
+         *   query layer against the snapshot history source.
      */
     mallPlatformProductVariantId?: (string & tags.Format<"uuid">) | undefined;
 
@@ -151,7 +178,10 @@ export namespace IMallPlatformProductVariantSnapshot {
      *
      * This value matches the variant SKU stored in the historical snapshot record, allowing clients to find history entries for a known code.
      *
-     * @x-autobe-specification Use this value to filter snapshots by preserved SKU code. It is not mapped to a database field in this request DTO and should be applied by the query layer against the historical snapshot data source.
+         * @x-autobe-specification Use this value to filter snapshots by
+         *   preserved SKU code. It is not mapped to a database field in this
+         *   request DTO and should be applied by the query layer against the
+         *   historical snapshot data source.
      */
     skuCode?: string | undefined;
 
@@ -160,7 +190,10 @@ export namespace IMallPlatformProductVariantSnapshot {
      *
      * This value matches the historical option combination string recorded in the snapshot, such as a color and size description.
      *
-     * @x-autobe-specification Use this value to filter snapshots by preserved option summary. It is not mapped to a database field in this request DTO and should be applied by the query layer against the historical snapshot data source.
+         * @x-autobe-specification Use this value to filter snapshots by
+         *   preserved option summary. It is not mapped to a database field in
+         *   this request DTO and should be applied by the query layer against
+         *   the historical snapshot data source.
      */
     optionSummary?: string | undefined;
 
@@ -169,7 +202,10 @@ export namespace IMallPlatformProductVariantSnapshot {
      *
      * This value narrows results to snapshot records whose historical variant price override is at or above the specified amount.
      *
-     * @x-autobe-specification Use this value as the inclusive lower bound for the preserved price override when filtering snapshot history. It is not mapped to a database field in this request DTO and should be applied by the query layer only.
+         * @x-autobe-specification Use this value as the inclusive lower bound
+         *   for the preserved price override when filtering snapshot history.
+         *   It is not mapped to a database field in this request DTO and should
+         *   be applied by the query layer only.
      */
     priceOverrideMin?: number | undefined;
 
@@ -178,7 +214,10 @@ export namespace IMallPlatformProductVariantSnapshot {
      *
      * This value narrows results to snapshot records whose historical variant price override is at or below the specified amount.
      *
-     * @x-autobe-specification Use this value as the inclusive upper bound for the preserved price override when filtering snapshot history. It is not mapped to a database field in this request DTO and should be applied by the query layer only.
+         * @x-autobe-specification Use this value as the inclusive upper bound
+         *   for the preserved price override when filtering snapshot history.
+         *   It is not mapped to a database field in this request DTO and should
+         *   be applied by the query layer only.
      */
     priceOverrideMax?: number | undefined;
 
@@ -187,7 +226,10 @@ export namespace IMallPlatformProductVariantSnapshot {
      *
      * This value matches the stored change note or explanation captured with the historical record.
      *
-     * @x-autobe-specification Use this value to filter snapshots by the stored reason or change note. It is not mapped to a database field in this request DTO and should be applied by the query layer against the historical snapshot source.
+         * @x-autobe-specification Use this value to filter snapshots by the
+         *   stored reason or change note. It is not mapped to a database field
+         *   in this request DTO and should be applied by the query layer
+         *   against the historical snapshot source.
      */
     snapshotReason?: string | undefined;
 
@@ -196,7 +238,10 @@ export namespace IMallPlatformProductVariantSnapshot {
      *
      * This value filters results to snapshots created on or after the specified timestamp.
      *
-     * @x-autobe-specification Use this value as the inclusive lower bound for snapshot creation time when filtering variant snapshot history. It is not mapped to a database field in this request DTO and should be applied by the query layer only.
+         * @x-autobe-specification Use this value as the inclusive lower bound
+         *   for snapshot creation time when filtering variant snapshot history.
+         *   It is not mapped to a database field in this request DTO and should
+         *   be applied by the query layer only.
      */
     createdAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
@@ -205,7 +250,10 @@ export namespace IMallPlatformProductVariantSnapshot {
      *
      * This value filters results to snapshots created on or before the specified timestamp.
      *
-     * @x-autobe-specification Use this value as the inclusive upper bound for snapshot creation time when filtering variant snapshot history. It is not mapped to a database field in this request DTO and should be applied by the query layer only.
+         * @x-autobe-specification Use this value as the inclusive upper bound
+         *   for snapshot creation time when filtering variant snapshot history.
+         *   It is not mapped to a database field in this request DTO and should
+         *   be applied by the query layer only.
      */
     createdAtTo?: (string & tags.Format<"date-time">) | undefined;
   };
@@ -223,8 +271,9 @@ export namespace IMallPlatformProductVariantSnapshot {
      *
      * This value identifies one immutable historical snapshot row and is used to reference the record in browsing and audit flows.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from mall_platform_product_variant_snapshots.id.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_product_variant_snapshots.id.
      */
     id: string & tags.Format<"uuid">;
 
@@ -233,8 +282,11 @@ export namespace IMallPlatformProductVariantSnapshot {
      *
      * This summary reference identifies which live variant's state was preserved without exposing the raw foreign-key value.
      *
-     * @x-autobe-database-schema-property productVariant
-     * @x-autobe-specification Join mall_platform_product_variant_snapshots.mall_platform_product_variant_id to mall_platform_product_variants.id and expose the related variant as IMallPlatformProductVariant.ISummary.
+         * @x-autobe-database-schema-property productVariant
+         * @x-autobe-specification Join
+         *   mall_platform_product_variant_snapshots.mall_platform_product_variant_id
+         *   to mall_platform_product_variants.id and expose the related variant
+         *   as IMallPlatformProductVariant.ISummary.
      */
     productVariant: IMallPlatformProductVariant.ISummary;
 
@@ -243,8 +295,11 @@ export namespace IMallPlatformProductVariantSnapshot {
      *
      * This summary reference provides the product context for the preserved variant history without exposing the raw foreign-key value.
      *
-     * @x-autobe-database-schema-property product
-     * @x-autobe-specification Join mall_platform_product_variant_snapshots.mall_platform_product_id to mall_platform_products.id and expose the related product as IMallPlatformProduct.ISummary.
+         * @x-autobe-database-schema-property product
+         * @x-autobe-specification Join
+         *   mall_platform_product_variant_snapshots.mall_platform_product_id to
+         *   mall_platform_products.id and expose the related product as
+         *   IMallPlatformProduct.ISummary.
      */
     product: IMallPlatformProduct.ISummary;
 
@@ -253,8 +308,9 @@ export namespace IMallPlatformProductVariantSnapshot {
      *
      * This value reflects the variant's historical stock keeping unit exactly as stored when the snapshot was created.
      *
-     * @x-autobe-database-schema-property sku_code
-     * @x-autobe-specification Direct mapping from mall_platform_product_variant_snapshots.sku_code.
+         * @x-autobe-database-schema-property sku_code
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_product_variant_snapshots.sku_code.
      */
     sku_code: string;
 
@@ -263,8 +319,9 @@ export namespace IMallPlatformProductVariantSnapshot {
      *
      * This field captures the variant's option combination as it existed when the snapshot was recorded.
      *
-     * @x-autobe-database-schema-property option_summary
-     * @x-autobe-specification Direct mapping from mall_platform_product_variant_snapshots.option_summary.
+         * @x-autobe-database-schema-property option_summary
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_product_variant_snapshots.option_summary.
      */
     option_summary: string;
 
@@ -273,8 +330,10 @@ export namespace IMallPlatformProductVariantSnapshot {
      *
      * A null value means the variant had no override price at the time this snapshot was created.
      *
-     * @x-autobe-database-schema-property price_override
-     * @x-autobe-specification Direct mapping from mall_platform_product_variant_snapshots.price_override. Keep nullable because the source column is nullable.
+         * @x-autobe-database-schema-property price_override
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_product_variant_snapshots.price_override. Keep
+         *   nullable because the source column is nullable.
      */
     price_override: number | null;
 
@@ -283,8 +342,10 @@ export namespace IMallPlatformProductVariantSnapshot {
      *
      * A null value means no explicit reason was provided for the historical change.
      *
-     * @x-autobe-database-schema-property snapshot_reason
-     * @x-autobe-specification Direct mapping from mall_platform_product_variant_snapshots.snapshot_reason. Keep nullable because the source column is nullable.
+         * @x-autobe-database-schema-property snapshot_reason
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_product_variant_snapshots.snapshot_reason. Keep
+         *   nullable because the source column is nullable.
      */
     snapshot_reason: string | null;
 
@@ -293,8 +354,9 @@ export namespace IMallPlatformProductVariantSnapshot {
      *
      * This value marks when the historical variant state was preserved and is used to order snapshot history.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from mall_platform_product_variant_snapshots.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_product_variant_snapshots.created_at.
      */
     created_at: string & tags.Format<"date-time">;
   };

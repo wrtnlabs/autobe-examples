@@ -34,10 +34,10 @@ export class CommunityplatformGuestPostsController {
    *
    * @param connection
    * @param postId Target post ID to retrieve details for.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor guest
-   * @x-autobe-specification 1) Validate inputs
-   * - Parse postId from path as UUID (use repository/service layer UUID parsing).
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor guest
+     * @x-autobe-specification 1) Validate inputs - Parse postId from path as
+     *   UUID (use repository/service layer UUID parsing).
    *
    * 2) Load post core row
    * - Query community_platform_posts by id = postId.
@@ -103,9 +103,10 @@ export class CommunityplatformGuestPostsController {
    *
    * @param connection
    * @param body Search criteria and pagination parameters for locating posts in the feed/list view.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor guest
-   * @x-autobe-specification Implement a paginated post search over `community_platform_posts`.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor guest
+     * @x-autobe-specification Implement a paginated post search over
+     *   `community_platform_posts`.
    *
    * Algorithm:
    * 1. Validate the request body: pagination limits, sorting options, and any optional filters.

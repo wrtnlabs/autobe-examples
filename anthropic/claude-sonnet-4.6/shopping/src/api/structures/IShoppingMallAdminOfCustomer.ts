@@ -10,40 +10,56 @@ export type IShoppingMallAdminOfCustomer = {
   /**
    * The unique identifier of this customer-origin linkage record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_admin_of_customers.id. UUID primary key of this linkage record.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_admin_of_customers.id. UUID primary key of this linkage
+     *   record.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * The unique identifier of the regular administrator account that was promoted from a customer account.
    *
-   * @x-autobe-database-schema-property admin_id
-   * @x-autobe-specification Direct mapping from shopping_mall_admin_of_customers.admin_id. UUID foreign key referencing shopping_mall_admins.id. Unique — each admin can have at most one customer-origin linkage.
+     * @x-autobe-database-schema-property admin_id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_admin_of_customers.admin_id. UUID foreign key referencing
+     *   shopping_mall_admins.id. Unique — each admin can have at most one
+     *   customer-origin linkage.
    */
   admin_id: string & tags.Format<"uuid">;
 
   /**
    * The unique identifier of the originating customer account from which the administrator was promoted.
    *
-   * @x-autobe-database-schema-property customer_id
-   * @x-autobe-specification Direct mapping from shopping_mall_admin_of_customers.customer_id. UUID foreign key referencing shopping_mall_customers.id. Unique — a single customer account cannot be promoted to admin more than once through the customer pathway.
+     * @x-autobe-database-schema-property customer_id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_admin_of_customers.customer_id. UUID foreign key
+     *   referencing shopping_mall_customers.id. Unique — a single customer
+     *   account cannot be promoted to admin more than once through the customer
+     *   pathway.
    */
   customer_id: string & tags.Format<"uuid">;
 
   /**
    * A summary of the originating customer account from which this administrator was promoted. Provides essential identity and status fields for the source customer.
    *
-   * @x-autobe-database-schema-property customer
-   * @x-autobe-specification Join from shopping_mall_admin_of_customers.customer_id to shopping_mall_customers.id. Returns IShoppingMallCustomer.ISummary containing id, email, nickname, phone, is_banned, created_at, updated_at. Populated via the customer belongs-to relation.
+     * @x-autobe-database-schema-property customer
+     * @x-autobe-specification Join from
+     *   shopping_mall_admin_of_customers.customer_id to
+     *   shopping_mall_customers.id. Returns IShoppingMallCustomer.ISummary
+     *   containing id, email, nickname, phone, is_banned, created_at,
+     *   updated_at. Populated via the customer belongs-to relation.
    */
   customer: IShoppingMallCustomer.ISummary;
 
   /**
    * The timestamp indicating when the administrator promotion from the customer account was recorded and this linkage was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from shopping_mall_admin_of_customers.created_at. ISO 8601 date-time string (timestamptz). Indicates when the admin promotion from customer was recorded.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_admin_of_customers.created_at. ISO 8601 date-time string
+     *   (timestamptz). Indicates when the admin promotion from customer was
+     *   recorded.
    */
   created_at: string & tags.Format<"date-time">;
 };

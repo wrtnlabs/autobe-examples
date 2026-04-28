@@ -28,7 +28,8 @@ import { IShoppingMallWishlistEntry } from "../../../../structures/IShoppingMall
  * @param props.body Product information to save in the authenticated customer's wishlist
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Implement a create-wishlist-entry service for authenticated customers.
+ * @x-autobe-specification Implement a create-wishlist-entry service for
+ *   authenticated customers.
  *
  * 1. Resolve the authenticated actor and require that the actor is a customer. Reject unauthenticated requests and any non-customer actor before performing database work.
  * 2. Parse the request body as `IShoppingMallWishlistEntry.ICreate`. The DTO should provide the target product identifier only; do not accept customer ownership from the client, and do not interpret any variant-level identifier as a valid wishlist target.
@@ -148,7 +149,8 @@ export namespace create {
  * @param props.body Wishlist search, pagination, and sorting criteria
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Implement a customer-scoped wishlist search over shopping_mall_wishlist_entries.
+ * @x-autobe-specification Implement a customer-scoped wishlist search over
+ *   shopping_mall_wishlist_entries.
  *
  * 1. Authenticate the caller as a customer. Reject requests from unauthenticated callers or non-customer actors before any database access intended for wishlist retrieval.
  * 2. Build the query from shopping_mall_wishlist_entries as the base table. Apply a mandatory ownership predicate using the authenticated customer's ID against shopping_mall_customer_id.
@@ -260,7 +262,8 @@ export namespace index {
  * @param props.wishlistEntryId Target wishlist entry ID owned by the signed-in customer
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Authenticate the caller as a customer and obtain the authenticated customer account identifier.
+ * @x-autobe-specification Authenticate the caller as a customer and obtain the
+ *   authenticated customer account identifier.
  *
  * Query shopping_mall_wishlist_entries by id with a predicate that also matches shopping_mall_customer_id to the authenticated customer and filters for deleted_at IS NULL. Join or subsequently load the related shopping_mall_products record referenced by shopping_mall_product_id so the response DTO can be materialized with current product information resolved from the catalog side.
  *
@@ -361,7 +364,9 @@ export namespace at {
  * @param props.wishlistEntryId Target wishlist entry ID.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Resolve the authenticated customer from the session context and reject the request when no signed-in customer identity is present.
+ * @x-autobe-specification Resolve the authenticated customer from the session
+ *   context and reject the request when no signed-in customer identity is
+ *   present.
  *
  * Load the target record from shopping_mall_wishlist_entries by id = {wishlistEntryId}. The lookup must confirm that deleted_at is null so only active wishlist entries are eligible for removal. If no active record exists for the provided id, return a not-found style error.
  *

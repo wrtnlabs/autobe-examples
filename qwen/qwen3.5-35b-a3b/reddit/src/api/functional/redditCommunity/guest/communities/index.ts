@@ -22,7 +22,8 @@ export * as stats from "./stats/index";
  * @param props.body Search and filter criteria for community listing including name query, sort field, pagination parameters, and subscriber count minimum threshold.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor guest
- * @x-autobe-specification Query reddit_community_communities table with WHERE deleted_at IS NULL to exclude soft-deleted communities.
+ * @x-autobe-specification Query reddit_community_communities table with WHERE
+ *   deleted_at IS NULL to exclude soft-deleted communities.
  *
  * Apply filters from request body:
  * - name: partial match (LIKE %query%) case-insensitive search
@@ -118,7 +119,8 @@ export namespace index {
  * @param props.communityId Unique identifier of the community to retrieve
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor guest
- * @x-autobe-specification Query the reddit_community_communities table by id (UUID).
+ * @x-autobe-specification Query the reddit_community_communities table by id
+ *   (UUID).
  *
  * 1. Look up community by id parameter
  * 2. Verify deleted_at is NULL (soft delete check)

@@ -25,7 +25,8 @@ export * as scans from "./scans/index";
  * @param props.body Search criteria including pagination parameters, filters by status, uploader, filename, MIME type, and date range
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query reddit_clone_files table with pagination and filtering.
+ * @x-autobe-specification Query reddit_clone_files table with pagination and
+ *   filtering.
  *
  * Apply search filters:
  * - Filter by processing status: 'pending', 'processed', 'failed'
@@ -131,7 +132,8 @@ export namespace index {
  * @param props.fileId Unique identifier of the file to retrieve (global scope)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query reddit_clone_files table using the provided fileId as the primary key.
+ * @x-autobe-specification Query reddit_clone_files table using the provided
+ *   fileId as the primary key.
  *
  * Validate that the file exists and deleted_at is null (file has not been soft-deleted).
  *

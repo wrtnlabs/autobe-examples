@@ -28,9 +28,10 @@ export class MultiusertodoMemberTodosController {
    *
    * @param connection
    * @param body Todo creation data. Title is required and must be between 1 and 255 characters. Description is optional and can be up to 10,000 characters. Start date and due date are optional date-time values. If not provided, the todo will be marked as incomplete by default.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Create a new todo record in the multi_user_todo_todos table.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Create a new todo record in the
+     *   multi_user_todo_todos table.
    *
    * 1. Validate authentication - ensure the request contains a valid access_token belonging to a member user.
    * 2. Parse the request body and validate:
@@ -77,9 +78,10 @@ export class MultiusertodoMemberTodosController {
    *
    * @param connection
    * @param body Search criteria including completion status filter, sorting options, and pagination parameters.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query multi_user_todo_todos table with the following logic:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query multi_user_todo_todos table with the
+     *   following logic:
    *
    * 1. Authentication: Extract user_id from JWT access_token and filter todos where multi_user_todo_member_id = user_id
    *
@@ -133,9 +135,9 @@ export class MultiusertodoMemberTodosController {
    *
    * @param connection
    * @param todoId Unique identifier of the todo to retrieve.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query multi_user_todo_todos table by id (UUID).
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query multi_user_todo_todos table by id (UUID).
    *
    * Prerequisites:
    * 1. Extract user_id from JWT access_token in Authorization header
@@ -182,23 +184,25 @@ export class MultiusertodoMemberTodosController {
    * @param connection
    * @param todoId UUID identifier of the todo to update. Must belong to the authenticated user.
    * @param body Partial update object containing any combination of fields to modify. At least one field must be specified.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1. Validate authentication - extract user_id from access_token in Authorization header
-   * 2. Query multi_user_todo_todos by todo_id and verify multi_user_todo_member_id matches authenticated user_id
-   * 3. Validate that request body contains at least one field to update (title, description, start_date, or due_date)
-   * 4. Validate field constraints:
-   *    - title: max 255 characters if provided
-   *    - description: max 10000 characters if provided
-   *    - start_date: valid ISO 8601 datetime if provided
-   *    - due_date: valid ISO 8601 datetime if provided
-   * 5. Build UPDATE statement with only the provided fields
-   * 6. After successful update, query the old todo values from a previous edit record (most recent edited_at) to create history entry
-   * 7. Insert record into multi_user_todo_todos_edits with old values (from previous edit or current state before update) and new values (from request)
-   * 8. Query the updated todo with all fields
-   * 9. Return 200 OK with complete todo object
-   * 10. Return 404 Not Found if todo doesn't exist or doesn't belong to user
-   * 11. Return 400 Bad Request if no fields provided or validation fails
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification 1. Validate authentication - extract user_id from
+     *   access_token in Authorization header 2. Query multi_user_todo_todos by
+     *   todo_id and verify multi_user_todo_member_id matches authenticated
+     *   user_id 3. Validate that request body contains at least one field to
+     *   update (title, description, start_date, or due_date) 4. Validate field
+     *   constraints: - title: max 255 characters if provided - description: max
+     *   10000 characters if provided - start_date: valid ISO 8601 datetime if
+     *   provided - due_date: valid ISO 8601 datetime if provided 5. Build
+     *   UPDATE statement with only the provided fields 6. After successful
+     *   update, query the old todo values from a previous edit record (most
+     *   recent edited_at) to create history entry 7. Insert record into
+     *   multi_user_todo_todos_edits with old values (from previous edit or
+     *   current state before update) and new values (from request) 8. Query the
+     *   updated todo with all fields 9. Return 200 OK with complete todo object
+     *   10. Return 404 Not Found if todo doesn't exist or doesn't belong to
+     *   user 11. Return 400 Bad Request if no fields provided or validation
+     *   fails
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Put(":todoId")
@@ -231,13 +235,15 @@ export class MultiusertodoMemberTodosController {
    *
    * @param connection
    * @param todoId UUID identifier of the todo to delete
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1. Authenticate the request and extract user_id from JWT token in Authorization header
-   * 2. Query multi_user_todo_todos WHERE id = {todoId} AND multi_user_todo_member_id = {user_id} AND is_deleted = false
-   * 3. If no todo found, return 404 Not Found
-   * 4. Update the todo: set is_deleted = true, deleted_at = current_timestamp
-   * 5. Return the updated todo with is_deleted=true and deleted_at set in response body
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification 1. Authenticate the request and extract user_id
+     *   from JWT token in Authorization header 2. Query multi_user_todo_todos
+     *   WHERE id = {todoId} AND multi_user_todo_member_id = {user_id} AND
+     *   is_deleted = false 3. If no todo found, return 404 Not Found 4. Update
+     *   the todo: set is_deleted = true, deleted_at = current_timestamp 5.
+     *   Return the updated todo with is_deleted=true and deleted_at set in
+     *   response body
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Delete(":todoId")
@@ -269,9 +275,11 @@ export class MultiusertodoMemberTodosController {
    *
    * @param connection
    * @param todoId The unique identifier of the todo to retrieve edit history for.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Retrieve edit history entries from multi_user_todo_todos_edits table where todo_id matches the path parameter.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Retrieve edit history entries from
+     *   multi_user_todo_todos_edits table where todo_id matches the path
+     *   parameter.
    *
    * 1. Validate todo_id is a valid UUID format
    * 2. Verify the todo exists and belongs to the authenticated user

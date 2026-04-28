@@ -12,96 +12,126 @@ export type ICommunityPlatformCommunityBanSnapshot = {
   /**
    * Unique identifier of this community ban snapshot.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from community_platform_community_ban_snapshots.id. Treat as an immutable identifier for the snapshot record.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_community_ban_snapshots.id. Treat as an immutable
+     *   identifier for the snapshot record.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Identifier of the community ban record this snapshot belongs to.
    *
-   * @x-autobe-database-schema-property community_ban_id
-   * @x-autobe-specification Direct mapping from community_platform_community_ban_snapshots.community_ban_id. In GET /.../{banId}/snapshots/{snapshotId}, enforce that the returned row has community_ban_id == {banId}.
+     * @x-autobe-database-schema-property community_ban_id
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_community_ban_snapshots.community_ban_id. In GET
+     *   /.../{banId}/snapshots/{snapshotId}, enforce that the returned row has
+     *   community_ban_id == {banId}.
    */
   community_ban_id: string & tags.Format<"uuid">;
 
   /**
    * Identifier of the community where the ban applies.
    *
-   * @x-autobe-database-schema-property community_id
-   * @x-autobe-specification Direct mapping from community_platform_community_ban_snapshots.community_id. In responses, use this value to perform community-scoped authorization checks for moderation/audit access.
+     * @x-autobe-database-schema-property community_id
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_community_ban_snapshots.community_id. In responses,
+     *   use this value to perform community-scoped authorization checks for
+     *   moderation/audit access.
    */
   community_id: string & tags.Format<"uuid">;
 
   /**
    * Identifier of the member who is banned in the snapshot.
    *
-   * @x-autobe-database-schema-property banned_user_id
-   * @x-autobe-specification Direct mapping from community_platform_community_ban_snapshots.banned_user_id. In create flows, derive this from the resolved community ban row (by community_ban_id).
+     * @x-autobe-database-schema-property banned_user_id
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_community_ban_snapshots.banned_user_id. In create
+     *   flows, derive this from the resolved community ban row (by
+     *   community_ban_id).
    */
   banned_user_id: string & tags.Format<"uuid">;
 
   /**
    * Identifier of the moderator member who applied the ban in the snapshot.
    *
-   * @x-autobe-database-schema-property applied_by_moderator_id
-   * @x-autobe-specification Direct mapping from community_platform_community_ban_snapshots.applied_by_moderator_id. In create flows, derive this from the resolved community ban row (and/or authenticated moderator identity, consistent with service logic).
+     * @x-autobe-database-schema-property applied_by_moderator_id
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_community_ban_snapshots.applied_by_moderator_id. In
+     *   create flows, derive this from the resolved community ban row (and/or
+     *   authenticated moderator identity, consistent with service logic).
    */
   applied_by_moderator_id: string & tags.Format<"uuid">;
 
   /**
    * Ban state captured at the snapshot moment (e.g., active/lifted depending on moderation workflow).
    *
-   * @x-autobe-database-schema-property ban_status
-   * @x-autobe-specification Direct mapping from community_platform_community_ban_snapshots.ban_status. Persist the provided value when creating a snapshot; return exactly what was stored.
+     * @x-autobe-database-schema-property ban_status
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_community_ban_snapshots.ban_status. Persist the
+     *   provided value when creating a snapshot; return exactly what was
+     *   stored.
    */
   ban_status: string;
 
   /**
    * Moderator-provided reason for the ban at the snapshot moment.
    *
-   * @x-autobe-database-schema-property reason
-   * @x-autobe-specification Direct mapping from community_platform_community_ban_snapshots.reason. Persist and return the moderator’s reason string as stored.
+     * @x-autobe-database-schema-property reason
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_community_ban_snapshots.reason. Persist and return
+     *   the moderator’s reason string as stored.
    */
   reason: string;
 
   /**
    * Timestamp indicating when this ban status becomes effective.
    *
-   * @x-autobe-database-schema-property effective_from
-   * @x-autobe-specification Direct mapping from community_platform_community_ban_snapshots.effective_from. This defines when the snapshot becomes effective in the moderation timeline.
+     * @x-autobe-database-schema-property effective_from
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_community_ban_snapshots.effective_from. This defines
+     *   when the snapshot becomes effective in the moderation timeline.
    */
   effective_from: string & tags.Format<"date-time">;
 
   /**
    * Timestamp indicating when this ban status stops being effective, or null if it has no scheduled end.
    *
-   * @x-autobe-database-schema-property effective_until
-   * @x-autobe-specification Direct mapping from community_platform_community_ban_snapshots.effective_until. Nullable: null means the snapshot represents an open-ended effective period.
+     * @x-autobe-database-schema-property effective_until
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_community_ban_snapshots.effective_until. Nullable:
+     *   null means the snapshot represents an open-ended effective period.
    */
   effective_until: (string & tags.Format<"date-time">) | null;
 
   /**
    * When this snapshot record was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from community_platform_community_ban_snapshots.created_at. Server/database-managed; treat as immutable in API semantics.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_community_ban_snapshots.created_at.
+     *   Server/database-managed; treat as immutable in API semantics.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * When this snapshot record was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from community_platform_community_ban_snapshots.updated_at. Server/database-managed; may change if the record is updated by the system.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_community_ban_snapshots.updated_at.
+     *   Server/database-managed; may change if the record is updated by the
+     *   system.
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * When this snapshot record was soft-deleted, or null if it is not deleted.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from community_platform_community_ban_snapshots.deleted_at. Nullable: null means the snapshot has not been soft-deleted.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_community_ban_snapshots.deleted_at. Nullable: null
+     *   means the snapshot has not been soft-deleted.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -113,32 +143,44 @@ export namespace ICommunityPlatformCommunityBanSnapshot {
     /**
      * The moderation status captured by this snapshot (the ban state as of effective_from).
      *
-     * @x-autobe-database-schema-property ban_status
-     * @x-autobe-specification Direct mapping from community_platform_community_ban_snapshots.ban_status. Persist the provided non-empty status string as-is for the snapshot record.
+         * @x-autobe-database-schema-property ban_status
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_community_ban_snapshots.ban_status. Persist the
+         *   provided non-empty status string as-is for the snapshot record.
      */
     ban_status: string;
 
     /**
      * Moderator-provided reason associated with the ban at the snapshot moment.
      *
-     * @x-autobe-database-schema-property reason
-     * @x-autobe-specification Direct mapping from community_platform_community_ban_snapshots.reason. Persist the provided non-empty reason string for the snapshot record.
+         * @x-autobe-database-schema-property reason
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_community_ban_snapshots.reason. Persist the
+         *   provided non-empty reason string for the snapshot record.
      */
     reason: string;
 
     /**
      * The timestamp from which this snapshot’s ban state becomes effective.
      *
-     * @x-autobe-database-schema-property effective_from
-     * @x-autobe-specification Direct mapping from community_platform_community_ban_snapshots.effective_from. Persist the provided timestamp. It defines the start of this snapshot’s effective time window.
+         * @x-autobe-database-schema-property effective_from
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_community_ban_snapshots.effective_from. Persist
+         *   the provided timestamp. It defines the start of this snapshot’s
+         *   effective time window.
      */
     effective_from: string & tags.Format<"date-time">;
 
     /**
      * The timestamp when the snapshot’s ban state is scheduled to end, or null if there is no scheduled end.
      *
-     * @x-autobe-database-schema-property effective_until
-     * @x-autobe-specification Direct mapping from community_platform_community_ban_snapshots.effective_until. Accept null for no scheduled end; otherwise persist the provided timestamp. Validate: if effective_until is not null, it must be >= effective_from (or at least not earlier) to keep a valid time window.
+         * @x-autobe-database-schema-property effective_until
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_community_ban_snapshots.effective_until. Accept
+         *   null for no scheduled end; otherwise persist the provided
+         *   timestamp. Validate: if effective_until is not null, it must be >=
+         *   effective_from (or at least not earlier) to keep a valid time
+         *   window.
      */
     effective_until?: (string & tags.Format<"date-time">) | null | undefined;
   };
@@ -150,96 +192,124 @@ export namespace ICommunityPlatformCommunityBanSnapshot {
     /**
      * Snapshot record identifier.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from community_platform_community_ban_snapshots.id. Return as UUID string.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_community_ban_snapshots.id. Return as UUID
+         *   string.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * The underlying community ban record represented at the time of this snapshot.
      *
-     * @x-autobe-database-schema-property communityBan
-     * @x-autobe-specification Resolve belongs-to join: community_platform_community_ban_snapshots.community_ban_id -> community_platform_community_bans.id, and return ICommunityPlatformCommunityBan.ISummary.
+         * @x-autobe-database-schema-property communityBan
+         * @x-autobe-specification Resolve belongs-to join:
+         *   community_platform_community_ban_snapshots.community_ban_id ->
+         *   community_platform_community_bans.id, and return
+         *   ICommunityPlatformCommunityBan.ISummary.
      */
     communityBan: ICommunityPlatformCommunityBan.ISummary;
 
     /**
      * The community where the ban applies.
      *
-     * @x-autobe-database-schema-property community
-     * @x-autobe-specification Resolve belongs-to join: community_platform_community_ban_snapshots.community_id -> community_platform_communities.id, and return ICommunityPlatformCommunity.ISummary.
+         * @x-autobe-database-schema-property community
+         * @x-autobe-specification Resolve belongs-to join:
+         *   community_platform_community_ban_snapshots.community_id ->
+         *   community_platform_communities.id, and return
+         *   ICommunityPlatformCommunity.ISummary.
      */
     community: ICommunityPlatformCommunity.ISummary;
 
     /**
      * The member who was banned in the community.
      *
-     * @x-autobe-database-schema-property bannedUser
-     * @x-autobe-specification Resolve belongs-to join: community_platform_community_ban_snapshots.banned_user_id -> community_platform_members.id, and return ICommunityPlatformMember.ISummary.
+         * @x-autobe-database-schema-property bannedUser
+         * @x-autobe-specification Resolve belongs-to join:
+         *   community_platform_community_ban_snapshots.banned_user_id ->
+         *   community_platform_members.id, and return
+         *   ICommunityPlatformMember.ISummary.
      */
     bannedUser: ICommunityPlatformMember.ISummary;
 
     /**
      * The moderator who applied the ban (at snapshot time).
      *
-     * @x-autobe-database-schema-property appliedByModerator
-     * @x-autobe-specification Resolve belongs-to join: community_platform_community_ban_snapshots.applied_by_moderator_id -> community_platform_members.id, and return ICommunityPlatformMember.ISummary.
+         * @x-autobe-database-schema-property appliedByModerator
+         * @x-autobe-specification Resolve belongs-to join:
+         *   community_platform_community_ban_snapshots.applied_by_moderator_id
+         *   -> community_platform_members.id, and return
+         *   ICommunityPlatformMember.ISummary.
      */
     appliedByModerator: ICommunityPlatformMember.ISummary;
 
     /**
      * Ban status value as recorded at the snapshot moment.
      *
-     * @x-autobe-database-schema-property ban_status
-     * @x-autobe-specification Direct mapping from community_platform_community_ban_snapshots.ban_status.
+         * @x-autobe-database-schema-property ban_status
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_community_ban_snapshots.ban_status.
      */
     banStatus: string;
 
     /**
      * Moderator-provided reason for the ban as recorded at the snapshot moment.
      *
-     * @x-autobe-database-schema-property reason
-     * @x-autobe-specification Direct mapping from community_platform_community_ban_snapshots.reason.
+         * @x-autobe-database-schema-property reason
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_community_ban_snapshots.reason.
      */
     reason: string;
 
     /**
      * When the ban became effective (according to this snapshot).
      *
-     * @x-autobe-database-schema-property effective_from
-     * @x-autobe-specification Direct mapping from community_platform_community_ban_snapshots.effective_from. Return as ISO 8601 date-time string.
+         * @x-autobe-database-schema-property effective_from
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_community_ban_snapshots.effective_from. Return
+         *   as ISO 8601 date-time string.
      */
     effectiveFrom: string & tags.Format<"date-time">;
 
     /**
      * When the ban is scheduled to end, or null if there is no scheduled end (according to this snapshot).
      *
-     * @x-autobe-database-schema-property effective_until
-     * @x-autobe-specification Direct mapping from community_platform_community_ban_snapshots.effective_until. If the DB value is null, return null; otherwise return ISO 8601 date-time string.
+         * @x-autobe-database-schema-property effective_until
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_community_ban_snapshots.effective_until. If the
+         *   DB value is null, return null; otherwise return ISO 8601 date-time
+         *   string.
      */
     effectiveUntil: (string & tags.Format<"date-time">) | null;
 
     /**
      * When the snapshot record was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from community_platform_community_ban_snapshots.created_at. Return as ISO 8601 date-time string.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_community_ban_snapshots.created_at. Return as
+         *   ISO 8601 date-time string.
      */
     createdAt: string & tags.Format<"date-time">;
 
     /**
      * When the snapshot record was last updated.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from community_platform_community_ban_snapshots.updated_at. Return as ISO 8601 date-time string.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_community_ban_snapshots.updated_at. Return as
+         *   ISO 8601 date-time string.
      */
     updatedAt: string & tags.Format<"date-time">;
 
     /**
      * Soft-deletion timestamp for the snapshot record, or null if not deleted.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from community_platform_community_ban_snapshots.deleted_at. If the DB value is null, return null; otherwise return ISO 8601 date-time string.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_community_ban_snapshots.deleted_at. If the DB
+         *   value is null, return null; otherwise return ISO 8601 date-time
+         *   string.
      */
     deletedAt: (string & tags.Format<"date-time">) | null;
   };
@@ -251,28 +321,41 @@ export namespace ICommunityPlatformCommunityBanSnapshot {
     /**
      * Optional lower bound for the snapshot effective start time. When set, only snapshots whose effective_from is on/after this timestamp are returned.
      *
-     * @x-autobe-specification If provided, treat effectiveFrom as a lower bound for the snapshot’s effective start time. Filter rows where community_platform_community_ban_snapshots.effective_from >= effectiveFrom.
+         * @x-autobe-specification If provided, treat effectiveFrom as a lower
+         *   bound for the snapshot’s effective start time. Filter rows where
+         *   community_platform_community_ban_snapshots.effective_from >=
+         *   effectiveFrom.
      */
     effectiveFrom?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Optional upper bound for the snapshot effective end time. When set, only snapshots whose effective_until is on/before this timestamp are returned; ongoing snapshots with effective_until = null do not match.
      *
-     * @x-autobe-specification If provided, treat effectiveUntil as an upper bound for the snapshot’s effective end time. Filter rows where community_platform_community_ban_snapshots.effective_until <= effectiveUntil. If community_platform_community_ban_snapshots.effective_until is NULL (unbounded/ongoing), it does NOT match when effectiveUntil is provided.
+         * @x-autobe-specification If provided, treat effectiveUntil as an upper
+         *   bound for the snapshot’s effective end time. Filter rows where
+         *   community_platform_community_ban_snapshots.effective_until <=
+         *   effectiveUntil. If
+         *   community_platform_community_ban_snapshots.effective_until is NULL
+         *   (unbounded/ongoing), it does NOT match when effectiveUntil is
+         *   provided.
      */
     effectiveUntil?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * 1-based page number to retrieve from the paginated snapshot timeline.
      *
-     * @x-autobe-specification Use page as the 1-based page number for the paginated snapshot timeline. The server applies offset = (page - 1) * limit when fetching results.
+         * @x-autobe-specification Use page as the 1-based page number for the
+         *   paginated snapshot timeline. The server applies offset = (page - 1)
+         *   * limit when fetching results.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of snapshot records to return per page.
      *
-     * @x-autobe-specification Use limit as the maximum number of snapshot records returned per page. Enforce the DTO bounds (minimum 1, maximum 100) and apply it as the query page size.
+         * @x-autobe-specification Use limit as the maximum number of snapshot
+         *   records returned per page. Enforce the DTO bounds (minimum 1,
+         *   maximum 100) and apply it as the query page size.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)

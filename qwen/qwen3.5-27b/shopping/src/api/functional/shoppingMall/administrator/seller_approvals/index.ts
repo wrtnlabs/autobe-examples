@@ -20,7 +20,8 @@ import { IShoppingMallSeller } from "../../../../structures/IShoppingMallSeller"
  * @param props.body Search criteria for filtering seller approval requests, including approval status filter, email and shop name search terms, sorting preferences, and pagination parameters.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor administrator
- * @x-autobe-specification Query shopping_mall_sellers table joined with shopping_mall_seller_profiles for shop information.
+ * @x-autobe-specification Query shopping_mall_sellers table joined with
+ *   shopping_mall_seller_profiles for shop information.
  *
  * Apply filtering based on request body:
  * - approval_status filter: pending, approved, or rejected

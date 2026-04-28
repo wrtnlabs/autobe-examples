@@ -24,25 +24,22 @@ export * as items from "./items/index";
  * @param props.body Cancellation request data containing the reason for cancellation and optional list of specific item IDs to cancel. If itemIds is not provided, all items in the order will be cancelled.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification 1. Validate customer authentication (member actor)
- * 2. Fetch order by orderId, verify customer is the order owner
- * 3. Fetch all order items belonging to this order
- * 4. Validate reason text is provided and non-empty
- * 5. Determine items to cancel:
- *    - If itemIds provided in requestBody, use those
- *    - Otherwise, use all items in the order
- * 6. For each item to cancel:
- *    a. Verify item status is 'paid'
- *    b. Check no existing cancellation request with status 'pending' exists for this item (enforced by @@unique([ecommerce_mall_order_item_id, status]))
- *    c. Verify item hasn't been soft-deleted (deleted_at is null)
- * 7. Create cancellation requests for valid items:
- *    - Set status = 'pending'
- *    - Set reason from request body
- *    - Set ecommerce_mall_order_item_id, ecommerce_mall_order_id, ecommerce_mall_seller_id
- *    - Create snapshot record (ecommerce_mall_cancellation_request_snapshots) on creation
- * 8. Return 201 Created with list of created cancellation requests
- * 9. Return 400 Bad Request with details of which items couldn't be cancelled and why
- * 10. Return 404 Not Found if order doesn't exist or customer doesn't own it
+ * @x-autobe-specification 1. Validate customer authentication (member actor) 2.
+ *   Fetch order by orderId, verify customer is the order owner 3. Fetch all
+ *   order items belonging to this order 4. Validate reason text is provided and
+ *   non-empty 5. Determine items to cancel: - If itemIds provided in
+ *   requestBody, use those - Otherwise, use all items in the order 6. For each
+ *   item to cancel: a. Verify item status is 'paid' b. Check no existing
+ *   cancellation request with status 'pending' exists for this item (enforced
+ *   by @@unique([ecommerce_mall_order_item_id, status])) c. Verify item hasn't
+ *   been soft-deleted (deleted_at is null) 7. Create cancellation requests for
+ *   valid items: - Set status = 'pending' - Set reason from request body - Set
+ *   ecommerce_mall_order_item_id, ecommerce_mall_order_id,
+ *   ecommerce_mall_seller_id - Create snapshot record
+ *   (ecommerce_mall_cancellation_request_snapshots) on creation 8. Return 201
+ *   Created with list of created cancellation requests 9. Return 400 Bad
+ *   Request with details of which items couldn't be cancelled and why 10.
+ *   Return 404 Not Found if order doesn't exist or customer doesn't own it
  *
  * Business Rules:
  * - Only items with status 'paid' can be cancelled (Section 612)

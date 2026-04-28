@@ -23,9 +23,12 @@ export class ErphrmMemberReportsProjectsBudgetController {
    *
    * @param connection
    * @param body Filter criteria and pagination parameters for project budget report
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query erp_hrm_projects table to find all projects within the organization that have budget_hours defined (not null). Filter by status if provided in request body (active, archived, completed).
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query erp_hrm_projects table to find all projects
+     *   within the organization that have budget_hours defined (not null).
+     *   Filter by status if provided in request body (active, archived,
+     *   completed).
    *
    * For each matching project, aggregate total hours from erp_hrm_timelogs where project_id matches and deleted_at is null. Calculate budget utilization percentage as (actual_hours / budget_hours) * 100.
    *

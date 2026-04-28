@@ -21,9 +21,10 @@ export class RedditcommunityAdminCommunitiesController {
    *
    * @param connection
    * @param body Search and filter criteria for community listing including name query, sort field, pagination parameters, and subscriber count minimum threshold.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query reddit_community_communities table with WHERE deleted_at IS NULL to exclude soft-deleted communities.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Query reddit_community_communities table with
+     *   WHERE deleted_at IS NULL to exclude soft-deleted communities.
    *
    * Apply filters from request body:
    * - name: partial match (LIKE %query%) case-insensitive search
@@ -60,9 +61,10 @@ export class RedditcommunityAdminCommunitiesController {
    *
    * @param connection
    * @param communityId Unique identifier of the community to retrieve
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query the reddit_community_communities table by id (UUID).
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Query the reddit_community_communities table by
+     *   id (UUID).
    *
    * 1. Look up community by id parameter
    * 2. Verify deleted_at is NULL (soft delete check)
@@ -104,9 +106,10 @@ export class RedditcommunityAdminCommunitiesController {
    * @param connection
    * @param communityId Unique identifier of the community to update.
    * @param body Update fields for the community. Omitted fields will not be changed. Only the community owner or moderators can update this resource.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Locate the community record by communityId (UUID) from reddit_community_communities table.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Locate the community record by communityId (UUID)
+     *   from reddit_community_communities table.
    *
    * 1. Authorization validation:
    *    - Verify the requesting member has owner or moderator role in this community

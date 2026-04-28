@@ -39,7 +39,8 @@ import { IShoppingMallOrder } from "../../../../../structures/IShoppingMallOrder
  * @param props.body Search criteria including status filters, date ranges, price ranges, customer filter, and order number search
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Implement as a paginated search query on shopping_mall_orders table with the following logic:
+ * @x-autobe-specification Implement as a paginated search query on
+ *   shopping_mall_orders table with the following logic:
  *
  * 1. **Authentication & Authorization:**
  *    - Require administrator authentication

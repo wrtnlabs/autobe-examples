@@ -14,8 +14,10 @@ export type IShoppingMallCustomerWishlist = {
    *
    * This UUID uniquely identifies the wishlist entry in the database and is used to reference the entry in API operations such as retrieval and deletion.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_customer_wishlists.id. Primary key UUID generated on wishlist entry creation.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_customer_wishlists.id. Primary key UUID generated on
+     *   wishlist entry creation.
    */
   id: string & tags.Format<"uuid">;
 
@@ -24,8 +26,12 @@ export type IShoppingMallCustomerWishlist = {
    *
    * This object contains complete product information including name, description, base price, all product images, all variants with their options and inventory status, seller shop profile, category assignment, and review statistics. Products are stored at the product level (not variant level) to allow customers flexibility when choosing variants during purchase.
    *
-   * @x-autobe-database-schema-property product
-   * @x-autobe-specification JOIN via shopping_mall_product_id FK to shopping_mall_products. Returns full IShoppingMallProduct object with all details including name, description, base_price, images, variants, seller, category, and reviews_count. Filter: product.deleted_at IS NULL.
+     * @x-autobe-database-schema-property product
+     * @x-autobe-specification JOIN via shopping_mall_product_id FK to
+     *   shopping_mall_products. Returns full IShoppingMallProduct object with
+     *   all details including name, description, base_price, images, variants,
+     *   seller, category, and reviews_count. Filter: product.deleted_at IS
+     *   NULL.
    */
   product: IShoppingMallProduct;
 
@@ -34,8 +40,10 @@ export type IShoppingMallCustomerWishlist = {
    *
    * This field is set automatically when the wishlist entry is created and is used for sorting and pagination of wishlist items. The timestamp is in ISO 8601 format with timezone information.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from shopping_mall_customer_wishlists.created_at. Timestamp in ISO 8601 format with timezone (DateTime with Timestamptz storage).
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_customer_wishlists.created_at. Timestamp in ISO 8601
+     *   format with timezone (DateTime with Timestamptz storage).
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -44,8 +52,10 @@ export type IShoppingMallCustomerWishlist = {
    *
    * This field is updated whenever the entry is modified. Wishlist entries typically have minimal updates beyond creation and soft deletion. The timestamp is in ISO 8601 format with timezone information.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from shopping_mall_customer_wishlists.updated_at. Timestamp in ISO 8601 format with timezone (DateTime with Timestamptz storage).
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_customer_wishlists.updated_at. Timestamp in ISO 8601
+     *   format with timezone (DateTime with Timestamptz storage).
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -54,8 +64,11 @@ export type IShoppingMallCustomerWishlist = {
    *
    * When a customer removes a product from their wishlist, this field is set instead of physically deleting the record. A null value indicates the wishlist entry is active. A non-null value indicates the entry has been deleted. Deleted entries are filtered out from API responses.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from shopping_mall_customer_wishlists.deleted_at. Nullable timestamp in ISO 8601 format with timezone (DateTime? with Timestamptz storage). Null means active entry, non-null means soft-deleted.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_customer_wishlists.deleted_at. Nullable timestamp in ISO
+     *   8601 format with timezone (DateTime? with Timestamptz storage). Null
+     *   means active entry, non-null means soft-deleted.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -73,7 +86,11 @@ export namespace IShoppingMallCustomerWishlist {
      *
      * Performs a case-insensitive partial text match against product names. Enter any portion of a product name to find matching items in your wishlist. The search uses substring matching, so entering "phone" will match products like "Smartphone Case" or "Phone Charger".
      *
-     * @x-autobe-specification Query parameter for case-insensitive partial text search on product.name. Applied using SQL LIKE operator with %wildcards% on both sides. Filters products in the wishlist by matching the search term against the product name field. Does not match against product description or other fields.
+         * @x-autobe-specification Query parameter for case-insensitive partial
+         *   text search on product.name. Applied using SQL LIKE operator with
+         *   %wildcards% on both sides. Filters products in the wishlist by
+         *   matching the search term against the product name field. Does not
+         *   match against product description or other fields.
      */
     search?: string | undefined;
 
@@ -82,7 +99,12 @@ export namespace IShoppingMallCustomerWishlist {
      *
      * Filters the wishlist to show only products that belong to the specified category. Enter the UUID of a category to see only products in that category. Products without a category assignment will not appear in filtered results.
      *
-     * @x-autobe-specification Query parameter for filtering wishlist products by category. Applied as exact match filter on products.shopping_mall_category_id. Only products assigned to the specified category (or its subcategories if hierarchical filtering is implemented) will be included in results. Products without a category assignment are excluded when this filter is provided.
+         * @x-autobe-specification Query parameter for filtering wishlist
+         *   products by category. Applied as exact match filter on
+         *   products.shopping_mall_category_id. Only products assigned to the
+         *   specified category (or its subcategories if hierarchical filtering
+         *   is implemented) will be included in results. Products without a
+         *   category assignment are excluded when this filter is provided.
      */
     category_id?: (string & tags.Format<"uuid">) | undefined;
 
@@ -91,7 +113,11 @@ export namespace IShoppingMallCustomerWishlist {
      *
      * Only products with a base price greater than or equal to this value will be included in results. Use this to filter out lower-priced items from your wishlist view. Can be combined with max_price to define a price range.
      *
-     * @x-autobe-specification Query parameter for filtering wishlist products by minimum base_price. Applied as >= comparison on products.base_price field. Products with base_price less than this value are excluded from results. Can be combined with max_price for range filtering.
+         * @x-autobe-specification Query parameter for filtering wishlist
+         *   products by minimum base_price. Applied as >= comparison on
+         *   products.base_price field. Products with base_price less than this
+         *   value are excluded from results. Can be combined with max_price for
+         *   range filtering.
      */
     min_price?: number | undefined;
 
@@ -100,7 +126,11 @@ export namespace IShoppingMallCustomerWishlist {
      *
      * Only products with a base price less than or equal to this value will be included in results. Use this to filter out higher-priced items from your wishlist view. Can be combined with min_price to define a price range.
      *
-     * @x-autobe-specification Query parameter for filtering wishlist products by maximum base_price. Applied as <= comparison on products.base_price field. Products with base_price greater than this value are excluded from results. Can be combined with min_price for range filtering.
+         * @x-autobe-specification Query parameter for filtering wishlist
+         *   products by maximum base_price. Applied as <= comparison on
+         *   products.base_price field. Products with base_price greater than
+         *   this value are excluded from results. Can be combined with
+         *   min_price for range filtering.
      */
     max_price?: number | undefined;
 
@@ -109,7 +139,11 @@ export namespace IShoppingMallCustomerWishlist {
      *
      * Specifies which page of results to retrieve when using offset-based pagination. Page 1 is the first page. This parameter works together with limit to determine which subset of wishlist items to return. Alternative to cursor-based pagination using nextCursor/previousCursor.
      *
-     * @x-autobe-specification Query parameter for offset-based pagination. 1-indexed page number. Used with limit parameter to calculate offset as (page - 1) * limit. Alternative to cursor-based pagination. When both page and cursor parameters are provided, cursor-based pagination takes precedence.
+         * @x-autobe-specification Query parameter for offset-based pagination.
+         *   1-indexed page number. Used with limit parameter to calculate
+         *   offset as (page - 1) * limit. Alternative to cursor-based
+         *   pagination. When both page and cursor parameters are provided,
+         *   cursor-based pagination takes precedence.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -118,7 +152,11 @@ export namespace IShoppingMallCustomerWishlist {
      *
      * Controls how many products are returned in each page of results. Valid values are between 1 and 100. Use a smaller limit for faster loading or a larger limit to see more items at once. Works with page parameter for offset-based pagination.
      *
-     * @x-autobe-specification Query parameter for controlling number of records per page. Valid range: 1-100. Default is typically 20 if not specified. Used with page parameter for offset-based pagination, or to control cursor-based page size. Maximum enforced at 100 to prevent excessive data transfer.
+         * @x-autobe-specification Query parameter for controlling number of
+         *   records per page. Valid range: 1-100. Default is typically 20 if
+         *   not specified. Used with page parameter for offset-based
+         *   pagination, or to control cursor-based page size. Maximum enforced
+         *   at 100 to prevent excessive data transfer.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -129,7 +167,12 @@ export namespace IShoppingMallCustomerWishlist {
      *
      * Use this cursor to navigate forward through your wishlist. The cursor is obtained from the nextCursor field in the previous page's response. This enables efficient pagination for large wishlists without offset performance issues. Cannot be used together with previousCursor.
      *
-     * @x-autobe-specification Query parameter for cursor-based forward pagination. Cursor is encoded string containing created_at and id from the last item of previous page. Applied as WHERE clause: (created_at, id) < (cursor_created_at, cursor_id) for DESC ordering. Returns items after the cursor position. Mutually exclusive with previousCursor.
+         * @x-autobe-specification Query parameter for cursor-based forward
+         *   pagination. Cursor is encoded string containing created_at and id
+         *   from the last item of previous page. Applied as WHERE clause:
+         *   (created_at, id) < (cursor_created_at, cursor_id) for DESC
+         *   ordering. Returns items after the cursor position. Mutually
+         *   exclusive with previousCursor.
      */
     nextCursor?: string | undefined;
 
@@ -138,7 +181,12 @@ export namespace IShoppingMallCustomerWishlist {
      *
      * Use this cursor to navigate backward through your wishlist. The cursor is obtained from the previousCursor field in the next page's response. This enables efficient bidirectional pagination for large wishlists. Cannot be used together with nextCursor.
      *
-     * @x-autobe-specification Query parameter for cursor-based backward pagination. Cursor is encoded string containing created_at and id from the first item of next page. Applied as WHERE clause: (created_at, id) > (cursor_created_at, cursor_id) for DESC ordering, with results reversed. Returns items before the cursor position. Mutually exclusive with nextCursor.
+         * @x-autobe-specification Query parameter for cursor-based backward
+         *   pagination. Cursor is encoded string containing created_at and id
+         *   from the first item of next page. Applied as WHERE clause:
+         *   (created_at, id) > (cursor_created_at, cursor_id) for DESC
+         *   ordering, with results reversed. Returns items before the cursor
+         *   position. Mutually exclusive with nextCursor.
      */
     previousCursor?: string | undefined;
   };
@@ -156,8 +204,10 @@ export namespace IShoppingMallCustomerWishlist {
      *
      * This UUID identifies a specific product saved to the customer's wishlist. It is used to reference this entry in update and delete operations.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_customer_wishlists.id. Primary key identifying the wishlist entry.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_customer_wishlists.id. Primary key identifying the
+         *   wishlist entry.
      */
     id: string & tags.Format<"uuid">;
 
@@ -166,8 +216,11 @@ export namespace IShoppingMallCustomerWishlist {
      *
      * This field contains the product's summary information including name, base price, main image, seller shop details, category assignment, and stock availability. Products are referenced by ID in the database but exposed as full objects in the API response for better usability.
      *
-     * @x-autobe-database-schema-property product
-     * @x-autobe-specification JOIN from shopping_mall_customer_wishlists.shopping_mall_product_id to shopping_mall_products.id. Returns IShoppingMallProduct.ISummary with product details, seller info, and availability status.
+         * @x-autobe-database-schema-property product
+         * @x-autobe-specification JOIN from
+         *   shopping_mall_customer_wishlists.shopping_mall_product_id to
+         *   shopping_mall_products.id. Returns IShoppingMallProduct.ISummary
+         *   with product details, seller info, and availability status.
      */
     product: IShoppingMallProduct.ISummary;
 
@@ -176,8 +229,10 @@ export namespace IShoppingMallCustomerWishlist {
      *
      * This field indicates when the customer saved this product to their wishlist. It is used for sorting wishlist entries in reverse chronological order (newest first) and for pagination.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_customer_wishlists.created_at. Timestamp when the product was added to the wishlist.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_customer_wishlists.created_at. Timestamp when the
+         *   product was added to the wishlist.
      */
     created_at: string & tags.Format<"date-time">;
   };
@@ -193,8 +248,12 @@ export namespace IShoppingMallCustomerWishlist {
      *
      * This UUID must reference an existing, non-deleted product in the shopping mall platform. Products are added to wishlists at the product level (not variant level), meaning customers can later choose any available variant when purchasing. The same product cannot be added multiple times to a single customer's wishlist - attempting to do so returns a conflict error. When a seller deletes a product, it is automatically removed from all customer wishlists.
      *
-     * @x-autobe-database-schema-property shopping_mall_product_id
-     * @x-autobe-specification Direct mapping from shopping_mall_product_id column. UUID format required. Server validates that referenced product exists and is not deleted (deleted_at IS NULL). Server also checks for duplicate wishlist entries (same customer-product pair) and returns 409 Conflict if exists.
+         * @x-autobe-database-schema-property shopping_mall_product_id
+         * @x-autobe-specification Direct mapping from shopping_mall_product_id
+         *   column. UUID format required. Server validates that referenced
+         *   product exists and is not deleted (deleted_at IS NULL). Server also
+         *   checks for duplicate wishlist entries (same customer-product pair)
+         *   and returns 409 Conflict if exists.
      */
     productId: string & tags.Format<"uuid">;
   };

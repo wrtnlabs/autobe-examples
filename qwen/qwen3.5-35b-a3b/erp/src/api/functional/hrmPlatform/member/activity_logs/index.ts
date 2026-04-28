@@ -27,7 +27,8 @@ import { IPageIHrmPlatformActivityLog } from "../../../../structures/IPageIHrmPl
  * @param props.body Search criteria for activity logs including entity filters, time ranges, pagination, and sorting options.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Execute a paginated search query on hrm_platform_activity_logs table.
+ * @x-autobe-specification Execute a paginated search query on
+ *   hrm_platform_activity_logs table.
  *
  * 1. Permission Check:
  *    - Validate user has 'org:manage' permission before executing query

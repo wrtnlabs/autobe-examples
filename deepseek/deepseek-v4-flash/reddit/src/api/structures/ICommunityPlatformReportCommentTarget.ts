@@ -17,8 +17,9 @@ export type ICommunityPlatformReportCommentTarget = {
    *
    * This primary key uniquely identifies each report-to-comment association record within the system. It is used to reference specific target records in API operations and internal queries.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from community_platform_report_comment_targets.id. Primary key, UUID format.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_report_comment_targets.id. Primary key, UUID format.
    */
   id: string & tags.Format<"uuid">;
 
@@ -27,8 +28,14 @@ export type ICommunityPlatformReportCommentTarget = {
    *
    * This property provides a summary reference to the parent report, including the reason for reporting, the type of content being reported (post or comment), the current resolution status (pending, approved, or dismissed), the identity of the reporter, and the scoping community. The 1:1 relationship enforced by the unique foreign key constraint ensures each comment target belongs to exactly one report.
    *
-   * @x-autobe-specification INNER JOIN from community_platform_report_comment_targets.community_platform_report_id to community_platform_reports.id. Returns ICommunityPlatformReport.ISummary (id, reason, target_type, status, reporter, community, created_at, updated_at, deleted_at). The unique constraint on community_platform_report_id guarantees 1:1 relationship — each comment target belongs to exactly one report.
-   * @x-autobe-database-schema-property report
+     * @x-autobe-specification INNER JOIN from
+     *   community_platform_report_comment_targets.community_platform_report_id
+     *   to community_platform_reports.id. Returns
+     *   ICommunityPlatformReport.ISummary (id, reason, target_type, status,
+     *   reporter, community, created_at, updated_at, deleted_at). The unique
+     *   constraint on community_platform_report_id guarantees 1:1 relationship
+     *   — each comment target belongs to exactly one report.
+     * @x-autobe-database-schema-property report
    */
   report: ICommunityPlatformReport.ISummary;
 
@@ -37,8 +44,12 @@ export type ICommunityPlatformReportCommentTarget = {
    *
    * This property provides access to the complete comment details including the content body, author information, denormalized vote score, nested threaded replies, and timestamps. Soft-deleted comments are still included in the response to allow moderators to review reported content even after its deletion.
    *
-   * @x-autobe-database-schema-property comment
-   * @x-autobe-specification JOIN from community_platform_report_comment_targets.community_platform_comment_id to community_platform_comments.id. Returns full ICommunityPlatformComment entity with nested replies. Includes soft-deleted comments (deleted_at IS NOT NULL) for moderator review.
+     * @x-autobe-database-schema-property comment
+     * @x-autobe-specification JOIN from
+     *   community_platform_report_comment_targets.community_platform_comment_id
+     *   to community_platform_comments.id. Returns full
+     *   ICommunityPlatformComment entity with nested replies. Includes
+     *   soft-deleted comments (deleted_at IS NOT NULL) for moderator review.
    */
   comment: ICommunityPlatformComment;
 
@@ -47,8 +58,10 @@ export type ICommunityPlatformReportCommentTarget = {
    *
    * Set automatically when the report is submitted against a comment. This value is immutable after creation and corresponds to the moment the report was filed against the comment.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from community_platform_report_comment_targets.created_at. Immutable timestamp set on creation.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_report_comment_targets.created_at. Immutable
+     *   timestamp set on creation.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -57,8 +70,10 @@ export type ICommunityPlatformReportCommentTarget = {
    *
    * Updated whenever the record is modified. For most cases, this value matches the `created_at` timestamp since the target link record is typically set once at creation time and rarely modified afterward.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from community_platform_report_comment_targets.updated_at. Updated on any record modification.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_report_comment_targets.updated_at. Updated on any
+     *   record modification.
    */
   updated_at: string & tags.Format<"date-time">;
 };

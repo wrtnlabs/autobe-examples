@@ -22,7 +22,8 @@ import { IPageIErpHrmActivityLog } from "../../../../structures/IPageIErpHrmActi
  * @param props.body Search criteria, filters, and pagination parameters
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Query erp_hrm_activity_logs table filtered by the current organization context.
+ * @x-autobe-specification Query erp_hrm_activity_logs table filtered by the
+ *   current organization context.
  *
  * Apply the following filters from the request body:
  * - Filter by action_type for specific action categories
@@ -128,7 +129,8 @@ export namespace index {
  * @param props.activityLogId Unique identifier of the activity log entry (UUID format)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Query erp_hrm_activity_logs table by the provided activityLogId UUID.
+ * @x-autobe-specification Query erp_hrm_activity_logs table by the provided
+ *   activityLogId UUID.
  *
  * Verify the authenticated member has org:manage permission in the current organization context.
  *

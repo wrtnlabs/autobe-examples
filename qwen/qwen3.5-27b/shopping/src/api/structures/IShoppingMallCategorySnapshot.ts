@@ -12,8 +12,10 @@ export type IShoppingMallCategorySnapshot = {
    *
    * This UUID identifies a specific audit snapshot created when a category was modified. Each snapshot is immutable and represents a single point in time in the category's modification history.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_category_snapshots.id. Primary key uniquely identifying this snapshot record.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_category_snapshots.id. Primary key uniquely identifying
+     *   this snapshot record.
    */
   id: string & tags.Format<"uuid">;
 
@@ -22,8 +24,10 @@ export type IShoppingMallCategorySnapshot = {
    *
    * This field preserves the previous value of the category name, allowing administrators to see what the name was changed from. Essential for audit trail and understanding the scope of changes.
    *
-   * @x-autobe-database-schema-property name_before
-   * @x-autobe-specification Direct mapping from shopping_mall_category_snapshots.name_before. Stores the category name value before the modification was applied.
+     * @x-autobe-database-schema-property name_before
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_category_snapshots.name_before. Stores the category name
+     *   value before the modification was applied.
    */
   name_before: string;
 
@@ -32,8 +36,10 @@ export type IShoppingMallCategorySnapshot = {
    *
    * This field captures the new value of the category name after the change was applied. Combined with name_before, it provides complete visibility into name changes.
    *
-   * @x-autobe-database-schema-property name_after
-   * @x-autobe-specification Direct mapping from shopping_mall_category_snapshots.name_after. Stores the category name value after the modification was applied.
+     * @x-autobe-database-schema-property name_after
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_category_snapshots.name_after. Stores the category name
+     *   value after the modification was applied.
    */
   name_after: string;
 
@@ -42,8 +48,10 @@ export type IShoppingMallCategorySnapshot = {
    *
    * This field preserves the previous value of the category description, allowing administrators to see what the description was changed from. Essential for audit trail and understanding the scope of changes.
    *
-   * @x-autobe-database-schema-property description_before
-   * @x-autobe-specification Direct mapping from shopping_mall_category_snapshots.description_before. Stores the category description value before the modification was applied.
+     * @x-autobe-database-schema-property description_before
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_category_snapshots.description_before. Stores the
+     *   category description value before the modification was applied.
    */
   description_before: string;
 
@@ -52,8 +60,10 @@ export type IShoppingMallCategorySnapshot = {
    *
    * This field captures the new value of the category description after the change was applied. Combined with description_before, it provides complete visibility into description changes.
    *
-   * @x-autobe-database-schema-property description_after
-   * @x-autobe-specification Direct mapping from shopping_mall_category_snapshots.description_after. Stores the category description value after the modification was applied.
+     * @x-autobe-database-schema-property description_after
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_category_snapshots.description_after. Stores the category
+     *   description value after the modification was applied.
    */
   description_after: string;
 
@@ -62,8 +72,11 @@ export type IShoppingMallCategorySnapshot = {
    *
    * This field preserves the previous parent category relationship for subcategories. A null value indicates the category was a top-level category (not a subcategory) before the change. This allows tracking of hierarchy changes when categories are moved between parent categories.
    *
-   * @x-autobe-database-schema-property parent_category_id_before
-   * @x-autobe-specification Direct mapping from shopping_mall_category_snapshots.parent_category_id_before. Stores the previous parent category relationship. Nullable - null means the category was not a subcategory before the change.
+     * @x-autobe-database-schema-property parent_category_id_before
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_category_snapshots.parent_category_id_before. Stores the
+     *   previous parent category relationship. Nullable - null means the
+     *   category was not a subcategory before the change.
    */
   parent_category_id_before: (string & tags.Format<"uuid">) | null;
 
@@ -72,8 +85,11 @@ export type IShoppingMallCategorySnapshot = {
    *
    * This field captures the new parent category relationship for subcategories. A null value indicates the category is now a top-level category (not a subcategory). Combined with parent_category_id_before, it provides complete visibility into hierarchy changes.
    *
-   * @x-autobe-database-schema-property parent_category_id_after
-   * @x-autobe-specification Direct mapping from shopping_mall_category_snapshots.parent_category_id_after. Stores the new parent category relationship. Nullable - null means the category is not a subcategory after the change.
+     * @x-autobe-database-schema-property parent_category_id_after
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_category_snapshots.parent_category_id_after. Stores the
+     *   new parent category relationship. Nullable - null means the category is
+     *   not a subcategory after the change.
    */
   parent_category_id_after: (string & tags.Format<"uuid">) | null;
 
@@ -82,8 +98,11 @@ export type IShoppingMallCategorySnapshot = {
    *
    * Records the exact moment the category modification occurred, providing temporal context for the audit trail. This timestamp helps administrators understand when changes were made and in what sequence.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from shopping_mall_category_snapshots.created_at. Records the exact timestamp when this snapshot was created (when the category modification occurred).
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_category_snapshots.created_at. Records the exact
+     *   timestamp when this snapshot was created (when the category
+     *   modification occurred).
    */
   created_at: string & tags.Format<"date-time">;
 };
@@ -99,8 +118,10 @@ export namespace IShoppingMallCategorySnapshot {
      *
      * This UUID identifies a specific point-in-time capture of category modifications, enabling precise reference to individual audit entries.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_category_snapshots.id. Primary key UUID for each snapshot record.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_category_snapshots.id. Primary key UUID for each
+         *   snapshot record.
      */
     id: string & tags.Format<"uuid">;
 
@@ -109,8 +130,10 @@ export namespace IShoppingMallCategorySnapshot {
      *
      * This foreign key links the snapshot to the specific category whose state was captured, allowing retrieval of all modification history for any given category.
      *
-     * @x-autobe-database-schema-property shopping_mall_category_id
-     * @x-autobe-specification Direct mapping from shopping_mall_category_snapshots.shopping_mall_category_id. Foreign key reference to shopping_mall_categories.id.
+         * @x-autobe-database-schema-property shopping_mall_category_id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_category_snapshots.shopping_mall_category_id. Foreign
+         *   key reference to shopping_mall_categories.id.
      */
     shopping_mall_category_id: string & tags.Format<"uuid">;
 
@@ -119,8 +142,10 @@ export namespace IShoppingMallCategorySnapshot {
      *
      * This field preserves the previous category name value, enabling comparison with the new value to understand what changed during the modification.
      *
-     * @x-autobe-database-schema-property name_before
-     * @x-autobe-specification Direct mapping from shopping_mall_category_snapshots.name_before. Stores the previous value of the category name field.
+         * @x-autobe-database-schema-property name_before
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_category_snapshots.name_before. Stores the previous
+         *   value of the category name field.
      */
     name_before: string;
 
@@ -129,8 +154,10 @@ export namespace IShoppingMallCategorySnapshot {
      *
      * This field captures the new category name value after the change was applied by the administrator.
      *
-     * @x-autobe-database-schema-property name_after
-     * @x-autobe-specification Direct mapping from shopping_mall_category_snapshots.name_after. Stores the new value of the category name field.
+         * @x-autobe-database-schema-property name_after
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_category_snapshots.name_after. Stores the new value
+         *   of the category name field.
      */
     name_after: string;
 
@@ -139,8 +166,10 @@ export namespace IShoppingMallCategorySnapshot {
      *
      * This field preserves the previous category description value, enabling comparison with the new value to understand what changed during the modification.
      *
-     * @x-autobe-database-schema-property description_before
-     * @x-autobe-specification Direct mapping from shopping_mall_category_snapshots.description_before. Stores the previous value of the category description field.
+         * @x-autobe-database-schema-property description_before
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_category_snapshots.description_before. Stores the
+         *   previous value of the category description field.
      */
     description_before: string;
 
@@ -149,8 +178,10 @@ export namespace IShoppingMallCategorySnapshot {
      *
      * This field captures the new category description value after the change was applied by the administrator.
      *
-     * @x-autobe-database-schema-property description_after
-     * @x-autobe-specification Direct mapping from shopping_mall_category_snapshots.description_after. Stores the new value of the category description field.
+         * @x-autobe-database-schema-property description_after
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_category_snapshots.description_after. Stores the new
+         *   value of the category description field.
      */
     description_after: string;
 
@@ -159,8 +190,11 @@ export namespace IShoppingMallCategorySnapshot {
      *
      * This field captures the previous parent category relationship for subcategories. Null if the category was not a subcategory before the change, or was a top-level category.
      *
-     * @x-autobe-database-schema-property parent_category_id_before
-     * @x-autobe-specification Direct mapping from shopping_mall_category_snapshots.parent_category_id_before. Nullable foreign key storing the previous parent category relationship.
+         * @x-autobe-database-schema-property parent_category_id_before
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_category_snapshots.parent_category_id_before.
+         *   Nullable foreign key storing the previous parent category
+         *   relationship.
      */
     parent_category_id_before: (string & tags.Format<"uuid">) | null;
 
@@ -169,8 +203,10 @@ export namespace IShoppingMallCategorySnapshot {
      *
      * This field captures the new parent category relationship for subcategories. Null if the category is not a subcategory after the change, or is a top-level category.
      *
-     * @x-autobe-database-schema-property parent_category_id_after
-     * @x-autobe-specification Direct mapping from shopping_mall_category_snapshots.parent_category_id_after. Nullable foreign key storing the new parent category relationship.
+         * @x-autobe-database-schema-property parent_category_id_after
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_category_snapshots.parent_category_id_after. Nullable
+         *   foreign key storing the new parent category relationship.
      */
     parent_category_id_after: (string & tags.Format<"uuid">) | null;
 
@@ -179,8 +215,10 @@ export namespace IShoppingMallCategorySnapshot {
      *
      * Records the exact moment the category modification occurred, providing temporal context for the audit trail and enabling chronological ordering of snapshots.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_category_snapshots.created_at. Timestamp when the snapshot was created automatically during category modification.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_category_snapshots.created_at. Timestamp when the
+         *   snapshot was created automatically during category modification.
      */
     created_at: string & tags.Format<"date-time">;
   };
@@ -198,7 +236,10 @@ export namespace IShoppingMallCategorySnapshot {
      *
      * This parameter enables filtering category modification snapshots to a specific time period. When combined with created_at_to, it creates a bounded date range for audit trail investigation.
      *
-     * @x-autobe-specification Filter parameter for shopping_mall_category_snapshots.created_at >= value. Applied as WHERE clause lower bound for date range filtering. Accepts ISO 8601 date-time string.
+         * @x-autobe-specification Filter parameter for
+         *   shopping_mall_category_snapshots.created_at >= value. Applied as
+         *   WHERE clause lower bound for date range filtering. Accepts ISO 8601
+         *   date-time string.
      */
     created_at_from?: (string & tags.Format<"date-time">) | undefined;
 
@@ -207,7 +248,10 @@ export namespace IShoppingMallCategorySnapshot {
      *
      * This parameter enables filtering category modification snapshots to a specific time period. When combined with created_at_from, it creates a bounded date range for audit trail investigation.
      *
-     * @x-autobe-specification Filter parameter for shopping_mall_category_snapshots.created_at <= value. Applied as WHERE clause upper bound for date range filtering. Accepts ISO 8601 date-time string.
+         * @x-autobe-specification Filter parameter for
+         *   shopping_mall_category_snapshots.created_at <= value. Applied as
+         *   WHERE clause upper bound for date range filtering. Accepts ISO 8601
+         *   date-time string.
      */
     created_at_to?: (string & tags.Format<"date-time">) | undefined;
 
@@ -216,7 +260,12 @@ export namespace IShoppingMallCategorySnapshot {
      *
      * This parameter allows administrators to focus on specific types of category modifications when reviewing audit trails. For example, filtering by 'parent_category' shows all subcategory reorganization events.
      *
-     * @x-autobe-specification Filter parameter that checks which fields changed in the snapshot. name: filters where name_before != name_after. description: filters where description_before != description_after. parent_category: filters where parent_category_id_before != parent_category_id_after. Applied as WHERE clause with CASE logic.
+         * @x-autobe-specification Filter parameter that checks which fields
+         *   changed in the snapshot. name: filters where name_before !=
+         *   name_after. description: filters where description_before !=
+         *   description_after. parent_category: filters where
+         *   parent_category_id_before != parent_category_id_after. Applied as
+         *   WHERE clause with CASE logic.
      */
     change_type?: "name" | "description" | "parent_category" | undefined;
 
@@ -225,7 +274,10 @@ export namespace IShoppingMallCategorySnapshot {
      *
      * This parameter enables efficient browsing through large audit histories without relying on page numbers. Cursor-based pagination is more stable when data is being modified concurrently.
      *
-     * @x-autobe-specification Cursor-based pagination parameter. Used to retrieve subsequent pages of results. The cursor value is obtained from the next_cursor field in the previous response's pagination object. Applied as OFFSET calculation in query.
+         * @x-autobe-specification Cursor-based pagination parameter. Used to
+         *   retrieve subsequent pages of results. The cursor value is obtained
+         *   from the next_cursor field in the previous response's pagination
+         *   object. Applied as OFFSET calculation in query.
      */
     cursor?: string | undefined;
 
@@ -234,7 +286,9 @@ export namespace IShoppingMallCategorySnapshot {
      *
      * This parameter controls the page size for paginated results. Larger limits reduce the number of API calls needed but increase response size. The maximum limit of 100 prevents excessive data transfer.
      *
-     * @x-autobe-specification Pagination limit parameter. Restricts the number of snapshot records returned per page. Default is 20, minimum is 1, maximum is 100. Applied as LIMIT clause in SQL query.
+         * @x-autobe-specification Pagination limit parameter. Restricts the
+         *   number of snapshot records returned per page. Default is 20,
+         *   minimum is 1, maximum is 100. Applied as LIMIT clause in SQL query.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -245,7 +299,10 @@ export namespace IShoppingMallCategorySnapshot {
      *
      * Specifies which page of results to return. Page numbering starts from 1. If omitted, null, or undefined, defaults to page 1 (first page). Requesting a page beyond the available range returns an empty data array with valid pagination metadata reflecting the actual totals.
      *
-     * @x-autobe-specification 1-indexed page number parameter. Defaults to 1 if not provided, null, or undefined. Used for page-based pagination as an alternative to cursor-based pagination. Applied as OFFSET = (page - 1) * limit in SQL query.
+         * @x-autobe-specification 1-indexed page number parameter. Defaults to
+         *   1 if not provided, null, or undefined. Used for page-based
+         *   pagination as an alternative to cursor-based pagination. Applied as
+         *   OFFSET = (page - 1) * limit in SQL query.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };

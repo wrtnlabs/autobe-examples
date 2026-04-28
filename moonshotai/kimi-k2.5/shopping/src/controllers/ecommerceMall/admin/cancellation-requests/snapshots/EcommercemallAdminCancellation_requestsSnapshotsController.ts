@@ -25,9 +25,11 @@ export class EcommercemallAdminCancellation_requestsSnapshotsController {
    * @param connection
    * @param cancellationRequestId The unique identifier of the cancellation request (UUID format). Used to scope the snapshot list to a specific cancellation request.
    * @param body Search criteria, filters, and pagination parameters for listing cancellation request snapshots
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query the ecommerce_mall_cancellation_request_snapshots table filtered by the provided cancellationRequestId path parameter.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Query the
+     *   ecommerce_mall_cancellation_request_snapshots table filtered by the
+     *   provided cancellationRequestId path parameter.
    *
    * Apply filters from request body:
    * - Filter by created_at date range (from/to timestamps)
@@ -91,9 +93,11 @@ export class EcommercemallAdminCancellation_requestsSnapshotsController {
    * @param connection
    * @param cancellationRequestId UUID of the cancellation request that owns this snapshot (scoped access)
    * @param snapshotId UUID of the snapshot to retrieve (global unique identifier)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query the ecommerce_mall_cancellation_request_snapshots table for the record matching the provided snapshotId and cancellationRequestId.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Query the
+     *   ecommerce_mall_cancellation_request_snapshots table for the record
+     *   matching the provided snapshotId and cancellationRequestId.
    *
    * Validation rules:
    * 1. Verify the snapshot exists with the given ID

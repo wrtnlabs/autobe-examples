@@ -19,8 +19,10 @@ export type IEcommerceMallSellerApprovalRequestSnapshot = {
    *
    * UUID format primary key that uniquely identifies this immutable audit record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_seller_approval_request_snapshots.id. UUID primary key identifying the snapshot record.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_seller_approval_request_snapshots.id. UUID primary key
+     *   identifying the snapshot record.
    */
   id: string & tags.Format<"uuid">;
 
@@ -29,8 +31,12 @@ export type IEcommerceMallSellerApprovalRequestSnapshot = {
    *
    * Establishes a many-to-one relationship from snapshot back to the source approval request. Each snapshot corresponds to one approval request's state at a specific point in time.
    *
-   * @x-autobe-database-schema-property approvalRequest
-   * @x-autobe-specification JOIN from ecommerce_mall_seller_approval_request_snapshots.approvalRequest_id to ecommerce_mall_seller_approval_requests.id. Returns IEcommerceMallSellerApprovalRequest.ISummary for the parent approval request.
+     * @x-autobe-database-schema-property approvalRequest
+     * @x-autobe-specification JOIN from
+     *   ecommerce_mall_seller_approval_request_snapshots.approvalRequest_id to
+     *   ecommerce_mall_seller_approval_requests.id. Returns
+     *   IEcommerceMallSellerApprovalRequest.ISummary for the parent approval
+     *   request.
    */
   approvalRequest: IEcommerceMallSellerApprovalRequest.ISummary;
 
@@ -39,8 +45,12 @@ export type IEcommerceMallSellerApprovalRequestSnapshot = {
    *
    * Populated only when approval status is approved. Links the snapshot to the administrator entity that made the approval decision. May be null during pending or rejected states.
    *
-   * @x-autobe-database-schema-property approverAdministrator
-   * @x-autobe-specification JOIN from ecommerce_mall_seller_approval_request_snapshots.approved_by_administrator_id to ecommerce_mall_administrators.id. Returns IEcommerceMallAdministrator.ISummary when available. Nullable when snapshot was created before approval decision or during pending state.
+     * @x-autobe-database-schema-property approverAdministrator
+     * @x-autobe-specification JOIN from
+     *   ecommerce_mall_seller_approval_request_snapshots.approved_by_administrator_id
+     *   to ecommerce_mall_administrators.id. Returns
+     *   IEcommerceMallAdministrator.ISummary when available. Nullable when
+     *   snapshot was created before approval decision or during pending state.
    */
   approverAdministrator?:
     | IEcommerceMallAdministrator.ISummary
@@ -52,8 +62,10 @@ export type IEcommerceMallSellerApprovalRequestSnapshot = {
    *
    * Allowed values: pending (awaiting administrator review), approved (seller is approved and can start selling), rejected (application denied, seller must reapply).
    *
-   * @x-autobe-database-schema-property status
-   * @x-autobe-specification Direct mapping from ecommerce_mall_seller_approval_request_snapshots.status. Captures the status at snapshot time.
+     * @x-autobe-database-schema-property status
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_seller_approval_request_snapshots.status. Captures the
+     *   status at snapshot time.
    */
   status: string;
 
@@ -62,8 +74,10 @@ export type IEcommerceMallSellerApprovalRequestSnapshot = {
    *
    * Only populated when status equals 'rejected'. Provides the seller with specific feedback about what needs improvement before resubmitting their application.
    *
-   * @x-autobe-database-schema-property rejection_reason
-   * @x-autobe-specification Direct mapping from ecommerce_mall_seller_approval_request_snapshots.rejection_reason with camelCase transformation. Only populated when status is rejected.
+     * @x-autobe-database-schema-property rejection_reason
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_seller_approval_request_snapshots.rejection_reason with
+     *   camelCase transformation. Only populated when status is rejected.
    */
   rejectionReason?: string | null | undefined;
 
@@ -72,8 +86,10 @@ export type IEcommerceMallSellerApprovalRequestSnapshot = {
    *
    * Populated only when status is 'approved'. Null otherwise. Format: RFC 3339 date-time string (ISO 8601).
    *
-   * @x-autobe-database-schema-property approved_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_seller_approval_request_snapshots.approved_at with camelCase transformation. Populated only when status is approved.
+     * @x-autobe-database-schema-property approved_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_seller_approval_request_snapshots.approved_at with
+     *   camelCase transformation. Populated only when status is approved.
    */
   approvedAt?: (string & tags.Format<"date-time">) | null | undefined;
 
@@ -82,8 +98,10 @@ export type IEcommerceMallSellerApprovalRequestSnapshot = {
    *
    * Populated only when status is 'rejected'. Null otherwise. Format: RFC 3339 date-time string (ISO 8601).
    *
-   * @x-autobe-database-schema-property rejected_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_seller_approval_request_snapshots.rejected_at with camelCase transformation. Populated only when status is rejected.
+     * @x-autobe-database-schema-property rejected_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_seller_approval_request_snapshots.rejected_at with
+     *   camelCase transformation. Populated only when status is rejected.
    */
   rejectedAt?: (string & tags.Format<"date-time">) | null | undefined;
 
@@ -92,8 +110,11 @@ export type IEcommerceMallSellerApprovalRequestSnapshot = {
    *
    * Timestamp representing the exact point in time when this audit record was created. Typically identical to the updated_at of the source approval request at the moment of snapshot generation. Format: RFC 3339 date-time string (ISO 8601).
    *
-   * @x-autobe-database-schema-property snapshot_time
-   * @x-autobe-specification Direct mapping from ecommerce_mall_seller_approval_request_snapshots.snapshot_time with camelCase transformation. Typically identical to the updated_at of the source approval request at time of snapshot creation.
+     * @x-autobe-database-schema-property snapshot_time
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_seller_approval_request_snapshots.snapshot_time with
+     *   camelCase transformation. Typically identical to the updated_at of the
+     *   source approval request at time of snapshot creation.
    */
   snapshotTime: string & tags.Format<"date-time">;
 
@@ -102,8 +123,11 @@ export type IEcommerceMallSellerApprovalRequestSnapshot = {
    *
    * Automatically set when this snapshot record is inserted. Never modified after creation. Format: RFC 3339 date-time string (ISO 8601).
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_seller_approval_request_snapshots.created_at with camelCase transformation. Automatically set when this snapshot record is inserted.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_seller_approval_request_snapshots.created_at with
+     *   camelCase transformation. Automatically set when this snapshot record
+     *   is inserted.
    */
   createdAt: string & tags.Format<"date-time">;
 
@@ -112,8 +136,11 @@ export type IEcommerceMallSellerApprovalRequestSnapshot = {
    *
    * Automatically updated on every modification to this snapshot record. Enables tracking of when snapshot data was last changed. Format: RFC 3339 date-time string (ISO 8601).
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_seller_approval_request_snapshots.updated_at with camelCase transformation. Automatically updated on every modification to this record.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_seller_approval_request_snapshots.updated_at with
+     *   camelCase transformation. Automatically updated on every modification
+     *   to this record.
    */
   updatedAt: string & tags.Format<"date-time">;
 };
@@ -131,19 +158,19 @@ export namespace IEcommerceMallSellerApprovalRequestSnapshot {
    */
   export type ISummary = {
     /**
-     * @x-autobe-database-schema-property id
+         * @x-autobe-database-schema-property id
      */
     id: string & tags.Format<"uuid">;
     /**
-     * @x-autobe-database-schema-property status
+         * @x-autobe-database-schema-property status
      */
     status: string;
     /**
-     * @x-autobe-database-schema-property snapshot_time
+         * @x-autobe-database-schema-property snapshot_time
      */
     snapshotTime: string & tags.Format<"date-time">;
     /**
-     * @x-autobe-database-schema-property approvalRequest
+         * @x-autobe-database-schema-property approvalRequest
      */
     approvalRequest: IEcommerceMallSellerApprovalRequest.ISummary;
 
@@ -158,8 +185,11 @@ export namespace IEcommerceMallSellerApprovalRequestSnapshot {
      *
      * {@link display_name} — Administrator's public-facing name
      *
-     * @x-autobe-database-schema-property approverAdministrator
-     * @x-autobe-specification Join from ecommerce_mall_seller_approval_request_snapshots.approved_by_administrator_id to ecommerce_mall_administrators.id. Returns ISummary. Nullable when snapshot represents pending status.
+         * @x-autobe-database-schema-property approverAdministrator
+         * @x-autobe-specification Join from
+         *   ecommerce_mall_seller_approval_request_snapshots.approved_by_administrator_id
+         *   to ecommerce_mall_administrators.id. Returns ISummary. Nullable
+         *   when snapshot represents pending status.
      */
     approvedByAdministrator: IEcommerceMallAdministrator.ISummary | null;
   };

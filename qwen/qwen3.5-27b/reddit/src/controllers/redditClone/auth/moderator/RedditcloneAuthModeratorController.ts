@@ -22,9 +22,12 @@ export class RedditcloneAuthModeratorController {
    *
    * @param connection
    * @param body Registration request for a new moderator account including email, password, and user profile information.
-   * @x-autobe-authorization-type join
-   * @x-autobe-authorization-actor moderator
-   * @x-autobe-specification 1. Validate the request body: email must be valid format and unique, password must meet complexity requirements (minimum 8 characters, at least one uppercase, one lowercase, one number), user profile data must be provided.
+     * @x-autobe-authorization-type join
+     * @x-autobe-authorization-actor moderator
+     * @x-autobe-specification 1. Validate the request body: email must be valid
+     *   format and unique, password must meet complexity requirements (minimum
+     *   8 characters, at least one uppercase, one lowercase, one number), user
+     *   profile data must be provided.
    *
    * 2. Create a new user profile record in reddit_clone_user_profiles with display name, bio, and avatar information from the request.
    *
@@ -94,9 +97,10 @@ export class RedditcloneAuthModeratorController {
    *
    * @param connection
    * @param body Login credentials for an existing moderator account including email and password.
-   * @x-autobe-authorization-type login
-   * @x-autobe-authorization-actor moderator
-   * @x-autobe-specification 1. Validate the request body: email must be provided and valid format, password must be provided.
+     * @x-autobe-authorization-type login
+     * @x-autobe-authorization-actor moderator
+     * @x-autobe-specification 1. Validate the request body: email must be
+     *   provided and valid format, password must be provided.
    *
    * 2. Query reddit_clone_moderators table for a moderator record with:
    *    - email: matching the provided email
@@ -164,9 +168,10 @@ export class RedditcloneAuthModeratorController {
    *
    * @param connection
    * @param body Refresh token for obtaining new access and refresh tokens without re-authentication.
-   * @x-autobe-authorization-type refresh
-   * @x-autobe-authorization-actor moderator
-   * @x-autobe-specification 1. Validate the request body: refresh token must be provided.
+     * @x-autobe-authorization-type refresh
+     * @x-autobe-authorization-actor moderator
+     * @x-autobe-specification 1. Validate the request body: refresh token must
+     *   be provided.
    *
    * 2. Decode and validate the refresh token:
    *    - Verify JWT signature

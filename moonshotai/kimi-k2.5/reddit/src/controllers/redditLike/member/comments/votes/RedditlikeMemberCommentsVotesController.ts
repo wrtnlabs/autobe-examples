@@ -33,9 +33,10 @@ export class RedditlikeMemberCommentsVotesController {
    * @param connection
    * @param commentId Target comment's ID (UUID) to vote on
    * @param body Vote creation details including the vote type (upvote or downvote)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Create a new vote on a comment through the polymorphic voting system.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Create a new vote on a comment through the
+     *   polymorphic voting system.
    *
    * Implementation steps:
    * 1. Validate the comment exists and is_deleted=false (reject if deleted per section 179)

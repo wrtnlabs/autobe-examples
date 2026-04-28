@@ -17,9 +17,10 @@ export class ShoppingmallMemberDashboardController {
    * The dashboard data is scoped to the authenticated seller's account only. Sellers can view these statistics to monitor their business activity and pending customer requests requiring attention.
    *
    * @param connection
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query the authenticated seller's dashboard statistics:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query the authenticated seller's dashboard
+     *   statistics:
    *
    * 1. Count products from shopping_mall_products table where seller_id matches authenticated seller
    * 2. Count order items from shopping_mall_order_items table where seller_id matches authenticated seller

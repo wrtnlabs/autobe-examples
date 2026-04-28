@@ -19,7 +19,8 @@ import { IECommerceMallProduct } from "../../../../../structures/IECommerceMallP
  * @param props.productId The unique identifier of the product to retrieve ratings for.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Query the e_commerce_mall_reviews table filtered by product_id and where deleted_at IS NULL.
+ * @x-autobe-specification Query the e_commerce_mall_reviews table filtered by
+ *   product_id and where deleted_at IS NULL.
  *
  * Calculate average rating: SELECT AVG(rating) FROM e_commerce_mall_reviews WHERE e_commerce_mall_product_id = {productId} AND deleted_at IS NULL.
  *

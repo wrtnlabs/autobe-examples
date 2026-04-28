@@ -11,112 +11,142 @@ export type IHrmTimeTrackingOrganizationInvitation = {
   /**
    * Unique identifier of this organization invitation record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_organization_invitations.id.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_organization_invitations.id.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Organization that issued this invitation.
    *
-   * @x-autobe-database-schema-property organization
-   * @x-autobe-specification Join hrm_time_tracking_organization_invitations.hrm_time_tracking_organization_id to hrm_time_tracking_organizations.id and project the related row as IHrmTimeTrackingOrganization.ISummary.
+     * @x-autobe-database-schema-property organization
+     * @x-autobe-specification Join
+     *   hrm_time_tracking_organization_invitations.hrm_time_tracking_organization_id
+     *   to hrm_time_tracking_organizations.id and project the related row as
+     *   IHrmTimeTrackingOrganization.ISummary.
    */
   organization: IHrmTimeTrackingOrganization.ISummary;
 
   /**
    * Role intended to be assigned when the invitation is accepted, or null when no role was preselected.
    *
-   * @x-autobe-database-schema-property role
-   * @x-autobe-specification Left join hrm_time_tracking_organization_invitations.hrm_time_tracking_role_id to hrm_time_tracking_roles.id and project the related row as IHrmTimeTrackingRole.ISummary. Return null when no intended role is assigned to the invitation.
+     * @x-autobe-database-schema-property role
+     * @x-autobe-specification Left join
+     *   hrm_time_tracking_organization_invitations.hrm_time_tracking_role_id to
+     *   hrm_time_tracking_roles.id and project the related row as
+     *   IHrmTimeTrackingRole.ISummary. Return null when no intended role is
+     *   assigned to the invitation.
    */
   role: IHrmTimeTrackingRole.ISummary | null;
 
   /**
    * Email address of the person being invited to the organization.
    *
-   * @x-autobe-database-schema-property email
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_organization_invitations.email. This value is the invitee email used for organization-specific invitation matching and uniqueness within the organization.
+     * @x-autobe-database-schema-property email
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_organization_invitations.email. This value is the
+     *   invitee email used for organization-specific invitation matching and
+     *   uniqueness within the organization.
    */
   email: string & tags.Format<"email">;
 
   /**
    * Current lifecycle status of the invitation.
    *
-   * @x-autobe-database-schema-property status
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_organization_invitations.status. Return the persisted lifecycle state string such as pending, accepted, expired, or cancelled without deriving a replacement field.
+     * @x-autobe-database-schema-property status
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_organization_invitations.status. Return the persisted
+     *   lifecycle state string such as pending, accepted, expired, or cancelled
+     *   without deriving a replacement field.
    */
   status: string;
 
   /**
    * Optional message or note included with the invitation.
    *
-   * @x-autobe-database-schema-property message
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_organization_invitations.message. Return null when no invitation message or note was stored.
+     * @x-autobe-database-schema-property message
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_organization_invitations.message. Return null when no
+     *   invitation message or note was stored.
    */
   message: string | null;
 
   /**
    * Timestamp when the invitation was issued.
    *
-   * @x-autobe-database-schema-property invited_at
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_organization_invitations.invited_at.
+     * @x-autobe-database-schema-property invited_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_organization_invitations.invited_at.
    */
   invited_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the invited person accepted the invitation, or null if it has not been accepted.
    *
-   * @x-autobe-database-schema-property accepted_at
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_organization_invitations.accepted_at. Return null when the invitation has not been accepted.
+     * @x-autobe-database-schema-property accepted_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_organization_invitations.accepted_at. Return null
+     *   when the invitation has not been accepted.
    */
   accepted_at: (string & tags.Format<"date-time">) | null;
 
   /**
    * Timestamp when the invitation was resolved into its final onboarding outcome, or null if it is still unresolved.
    *
-   * @x-autobe-database-schema-property resolved_at
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_organization_invitations.resolved_at. Return null when the invitation has not yet been resolved into a final onboarding outcome.
+     * @x-autobe-database-schema-property resolved_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_organization_invitations.resolved_at. Return null
+     *   when the invitation has not yet been resolved into a final onboarding
+     *   outcome.
    */
   resolved_at: (string & tags.Format<"date-time">) | null;
 
   /**
    * Timestamp when the invitation expired, or null if it has not expired.
    *
-   * @x-autobe-database-schema-property expired_at
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_organization_invitations.expired_at. Return null when the invitation has not expired.
+     * @x-autobe-database-schema-property expired_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_organization_invitations.expired_at. Return null when
+     *   the invitation has not expired.
    */
   expired_at: (string & tags.Format<"date-time">) | null;
 
   /**
    * Timestamp when the invitation was cancelled by an administrator, or null if it has not been cancelled.
    *
-   * @x-autobe-database-schema-property cancelled_at
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_organization_invitations.cancelled_at. Return null when the invitation has not been cancelled.
+     * @x-autobe-database-schema-property cancelled_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_organization_invitations.cancelled_at. Return null
+     *   when the invitation has not been cancelled.
    */
   cancelled_at: (string & tags.Format<"date-time">) | null;
 
   /**
    * Timestamp when this invitation record was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_organization_invitations.created_at.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_organization_invitations.created_at.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when this invitation record was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_organization_invitations.updated_at.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_organization_invitations.updated_at.
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when this invitation record was soft deleted, or null when it remains active.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_organization_invitations.deleted_at. Return null when the invitation record is active and not soft deleted.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_organization_invitations.deleted_at. Return null when
+     *   the invitation record is active and not soft deleted.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -128,18 +158,18 @@ export namespace IHrmTimeTrackingOrganizationInvitation {
    */
   export type ICreate = {
     /**
-     * @x-autobe-database-schema-property email
+         * @x-autobe-database-schema-property email
      */
     email: string & tags.Format<"email">;
     /**
-     * @x-autobe-database-schema-property hrm_time_tracking_role_id
+         * @x-autobe-database-schema-property hrm_time_tracking_role_id
      */
     hrm_time_tracking_role_id?:
       | (string & tags.Format<"uuid">)
       | null
       | undefined;
     /**
-     * @x-autobe-database-schema-property message
+         * @x-autobe-database-schema-property message
      */
     message?: string | null | undefined;
   };
@@ -151,8 +181,15 @@ export namespace IHrmTimeTrackingOrganizationInvitation {
     /**
      * Optional identifier of the organization role that should be assigned when the invitation is accepted. Set null to remove any preselected role.
      *
-     * @x-autobe-database-schema-property hrm_time_tracking_role_id
-     * @x-autobe-specification Optional direct mapping to hrm_time_tracking_organization_invitations.hrm_time_tracking_role_id. Accept a role UUID to assign or replace the invitation's intended role, or null to clear the role selection. When provided with a non-null value, validate that the referenced hrm_time_tracking_roles.id exists and belongs to the same hrm_time_tracking_organization_id as the path-scoped invitation before persisting.
+         * @x-autobe-database-schema-property hrm_time_tracking_role_id
+         * @x-autobe-specification Optional direct mapping to
+         *   hrm_time_tracking_organization_invitations.hrm_time_tracking_role_id.
+         *   Accept a role UUID to assign or replace the invitation's intended
+         *   role, or null to clear the role selection. When provided with a
+         *   non-null value, validate that the referenced
+         *   hrm_time_tracking_roles.id exists and belongs to the same
+         *   hrm_time_tracking_organization_id as the path-scoped invitation
+         *   before persisting.
      */
     hrm_time_tracking_role_id?:
       | (string & tags.Format<"uuid">)
@@ -162,48 +199,82 @@ export namespace IHrmTimeTrackingOrganizationInvitation {
     /**
      * Invitation lifecycle status to apply to the record, such as pending, accepted, expired, or cancelled.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping to hrm_time_tracking_organization_invitations.status. Use this field to request an administrative lifecycle transition such as keeping the invitation pending or marking it cancelled or expired. The service must validate that the requested status is compatible with the invitation's current state and with any supplied accepted_at, resolved_at, expired_at, and cancelled_at values.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping to
+         *   hrm_time_tracking_organization_invitations.status. Use this field
+         *   to request an administrative lifecycle transition such as keeping
+         *   the invitation pending or marking it cancelled or expired. The
+         *   service must validate that the requested status is compatible with
+         *   the invitation's current state and with any supplied accepted_at,
+         *   resolved_at, expired_at, and cancelled_at values.
      */
     status?: string | undefined;
 
     /**
      * Optional message or note associated with the invitation. Set null to remove the current message.
      *
-     * @x-autobe-database-schema-property message
-     * @x-autobe-specification Optional direct mapping to hrm_time_tracking_organization_invitations.message. Accept a string to store or replace the invitation note, or null to clear the existing message. This field changes only the administrator-provided message content and does not affect organization scope or invitation matching behavior by itself.
+         * @x-autobe-database-schema-property message
+         * @x-autobe-specification Optional direct mapping to
+         *   hrm_time_tracking_organization_invitations.message. Accept a string
+         *   to store or replace the invitation note, or null to clear the
+         *   existing message. This field changes only the
+         *   administrator-provided message content and does not affect
+         *   organization scope or invitation matching behavior by itself.
      */
     message?: string | null | undefined;
 
     /**
      * Timestamp indicating when the invitation was accepted, if that lifecycle state is being represented.
      *
-     * @x-autobe-database-schema-property accepted_at
-     * @x-autobe-specification Optional direct mapping to hrm_time_tracking_organization_invitations.accepted_at. Accept an ISO 8601 date-time value to record when the invitation was accepted, or null to clear it only if the business transition is valid. The service must enforce consistency between this timestamp and status so that accepted_at is present only for states that permit administrative acceptance metadata.
+         * @x-autobe-database-schema-property accepted_at
+         * @x-autobe-specification Optional direct mapping to
+         *   hrm_time_tracking_organization_invitations.accepted_at. Accept an
+         *   ISO 8601 date-time value to record when the invitation was
+         *   accepted, or null to clear it only if the business transition is
+         *   valid. The service must enforce consistency between this timestamp
+         *   and status so that accepted_at is present only for states that
+         *   permit administrative acceptance metadata.
      */
     accepted_at?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * Timestamp indicating when the invitation was resolved into a completed onboarding outcome.
      *
-     * @x-autobe-database-schema-property resolved_at
-     * @x-autobe-specification Optional direct mapping to hrm_time_tracking_organization_invitations.resolved_at. Accept an ISO 8601 date-time value when the invitation is being marked as resolved, or null when no resolution timestamp should be stored. The service must ensure this value is only persisted for lifecycle states that represent a completed invitation outcome.
+         * @x-autobe-database-schema-property resolved_at
+         * @x-autobe-specification Optional direct mapping to
+         *   hrm_time_tracking_organization_invitations.resolved_at. Accept an
+         *   ISO 8601 date-time value when the invitation is being marked as
+         *   resolved, or null when no resolution timestamp should be stored.
+         *   The service must ensure this value is only persisted for lifecycle
+         *   states that represent a completed invitation outcome.
      */
     resolved_at?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * Timestamp indicating when the invitation expired.
      *
-     * @x-autobe-database-schema-property expired_at
-     * @x-autobe-specification Optional direct mapping to hrm_time_tracking_organization_invitations.expired_at. Accept an ISO 8601 date-time value to mark when the invitation expired, or null when no expiration timestamp should be stored. If status is changed to an expired state, the service must keep expired_at consistent with that transition and ensure the invitation no longer participates in pending email-based matching.
+         * @x-autobe-database-schema-property expired_at
+         * @x-autobe-specification Optional direct mapping to
+         *   hrm_time_tracking_organization_invitations.expired_at. Accept an
+         *   ISO 8601 date-time value to mark when the invitation expired, or
+         *   null when no expiration timestamp should be stored. If status is
+         *   changed to an expired state, the service must keep expired_at
+         *   consistent with that transition and ensure the invitation no longer
+         *   participates in pending email-based matching.
      */
     expired_at?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * Timestamp indicating when the invitation was cancelled by an administrator.
      *
-     * @x-autobe-database-schema-property cancelled_at
-     * @x-autobe-specification Optional direct mapping to hrm_time_tracking_organization_invitations.cancelled_at. Accept an ISO 8601 date-time value to record administrative cancellation, or null when no cancellation timestamp should be stored. If status is changed to a cancelled state, the service must keep cancelled_at consistent with that transition and prevent the invitation from remaining eligible for pending sign-up matching.
+         * @x-autobe-database-schema-property cancelled_at
+         * @x-autobe-specification Optional direct mapping to
+         *   hrm_time_tracking_organization_invitations.cancelled_at. Accept an
+         *   ISO 8601 date-time value to record administrative cancellation, or
+         *   null when no cancellation timestamp should be stored. If status is
+         *   changed to a cancelled state, the service must keep cancelled_at
+         *   consistent with that transition and prevent the invitation from
+         *   remaining eligible for pending sign-up matching.
      */
     cancelled_at?: (string & tags.Format<"date-time">) | null | undefined;
   };
@@ -215,104 +286,130 @@ export namespace IHrmTimeTrackingOrganizationInvitation {
     /**
      * Unique identifier of the organization invitation.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_organization_invitations.id.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_organization_invitations.id.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Email address that received the organization invitation.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_organization_invitations.email. Return the invited email address exactly as stored for matching and review workflows.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_organization_invitations.email. Return the
+         *   invited email address exactly as stored for matching and review
+         *   workflows.
      */
     email: string;
 
     /**
      * Current lifecycle status of the invitation.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_organization_invitations.status. This value represents the persisted invitation lifecycle state such as pending, accepted, expired, or cancelled.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_organization_invitations.status. This value
+         *   represents the persisted invitation lifecycle state such as
+         *   pending, accepted, expired, or cancelled.
      */
     status: string;
 
     /**
      * Optional note or message included with the invitation.
      *
-     * @x-autobe-database-schema-property message
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_organization_invitations.message. Return null when no invitation note was provided.
+         * @x-autobe-database-schema-property message
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_organization_invitations.message. Return null
+         *   when no invitation note was provided.
      */
     message: string | null;
 
     /**
      * Role intended to be assigned when the invitation is accepted, or null if no role was preselected.
      *
-     * @x-autobe-database-schema-property role
-     * @x-autobe-specification Left join hrm_time_tracking_roles using hrm_time_tracking_organization_invitations.hrm_time_tracking_role_id = hrm_time_tracking_roles.id and map the joined row to IHrmTimeTrackingRole.ISummary. Return null when hrm_time_tracking_role_id is null.
+         * @x-autobe-database-schema-property role
+         * @x-autobe-specification Left join hrm_time_tracking_roles using
+         *   hrm_time_tracking_organization_invitations.hrm_time_tracking_role_id
+         *   = hrm_time_tracking_roles.id and map the joined row to
+         *   IHrmTimeTrackingRole.ISummary. Return null when
+         *   hrm_time_tracking_role_id is null.
      */
     role: IHrmTimeTrackingRole.ISummary | null;
 
     /**
      * Timestamp when the invitation was issued.
      *
-     * @x-autobe-database-schema-property invited_at
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_organization_invitations.invited_at.
+         * @x-autobe-database-schema-property invited_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_organization_invitations.invited_at.
      */
     invited_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when the invited user accepted the invitation, or null if it has not been accepted.
      *
-     * @x-autobe-database-schema-property accepted_at
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_organization_invitations.accepted_at. Return null when the invitation has not been accepted.
+         * @x-autobe-database-schema-property accepted_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_organization_invitations.accepted_at. Return null
+         *   when the invitation has not been accepted.
      */
     accepted_at: (string & tags.Format<"date-time">) | null;
 
     /**
      * Timestamp when the invitation was resolved into its final membership outcome, or null if still unresolved.
      *
-     * @x-autobe-database-schema-property resolved_at
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_organization_invitations.resolved_at. Return null when the invitation has not yet been resolved into a final outcome.
+         * @x-autobe-database-schema-property resolved_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_organization_invitations.resolved_at. Return null
+         *   when the invitation has not yet been resolved into a final outcome.
      */
     resolved_at: (string & tags.Format<"date-time">) | null;
 
     /**
      * Timestamp when the invitation expired, or null if it has not expired.
      *
-     * @x-autobe-database-schema-property expired_at
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_organization_invitations.expired_at. Return null when the invitation has not expired.
+         * @x-autobe-database-schema-property expired_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_organization_invitations.expired_at. Return null
+         *   when the invitation has not expired.
      */
     expired_at: (string & tags.Format<"date-time">) | null;
 
     /**
      * Timestamp when the invitation was cancelled, or null if it has not been cancelled.
      *
-     * @x-autobe-database-schema-property cancelled_at
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_organization_invitations.cancelled_at. Return null when the invitation has not been cancelled.
+         * @x-autobe-database-schema-property cancelled_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_organization_invitations.cancelled_at. Return
+         *   null when the invitation has not been cancelled.
      */
     cancelled_at: (string & tags.Format<"date-time">) | null;
 
     /**
      * Timestamp when this invitation record was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_organization_invitations.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_organization_invitations.created_at.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when this invitation record was last updated.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_organization_invitations.updated_at.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_organization_invitations.updated_at.
      */
     updated_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when this invitation record was soft deleted, or null if it is still active.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_organization_invitations.deleted_at. Return null when the invitation record is active and has not been soft deleted.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_organization_invitations.deleted_at. Return null
+         *   when the invitation record is active and has not been soft deleted.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };
@@ -324,112 +421,178 @@ export namespace IHrmTimeTrackingOrganizationInvitation {
     /**
      * General text search term for narrowing invitation results within the selected organization.
      *
-     * @x-autobe-specification Use this as a general text-search term for invitation browsing within the already path-scoped organization. Apply it to searchable invitation text fields supported by the implementation, typically email and optionally message, using partial-match semantics such as ILIKE or trigram-assisted search. Combine with other filters using AND semantics.
+         * @x-autobe-specification Use this as a general text-search term for
+         *   invitation browsing within the already path-scoped organization.
+         *   Apply it to searchable invitation text fields supported by the
+         *   implementation, typically email and optionally message, using
+         *   partial-match semantics such as ILIKE or trigram-assisted search.
+         *   Combine with other filters using AND semantics.
      */
     search?: string | undefined;
 
     /**
      * Email address filter for invited people.
      *
-     * @x-autobe-specification Use this as an email-specific filter within the organization-scoped invitation query. Compare against the invitation email field stored in hrm_time_tracking_organization_invitations.email using exact match or case-insensitive partial matching according to endpoint implementation, while still keeping results limited to the path-selected organization.
+         * @x-autobe-specification Use this as an email-specific filter within
+         *   the organization-scoped invitation query. Compare against the
+         *   invitation email field stored in
+         *   hrm_time_tracking_organization_invitations.email using exact match
+         *   or case-insensitive partial matching according to endpoint
+         *   implementation, while still keeping results limited to the
+         *   path-selected organization.
      */
     email?: (string & tags.Format<"email">) | undefined;
 
     /**
      * Invitation lifecycle status to filter by.
      *
-     * @x-autobe-specification Use this as a lifecycle-status filter for organization invitations. Apply equality matching against the stored invitation status value in hrm_time_tracking_organization_invitations.status for statuses supported by the service, such as pending, accepted, expired, or cancelled.
+         * @x-autobe-specification Use this as a lifecycle-status filter for
+         *   organization invitations. Apply equality matching against the
+         *   stored invitation status value in
+         *   hrm_time_tracking_organization_invitations.status for statuses
+         *   supported by the service, such as pending, accepted, expired, or
+         *   cancelled.
      */
     status?: string | undefined;
 
     /**
      * Inclusive start of the invitation-issued time range.
      *
-     * @x-autobe-specification Use this as the inclusive lower bound for the invitation-issued timestamp range. Apply it to the stored invited_at value in hrm_time_tracking_organization_invitations, such as invited_at >= invitedFrom, after parsing the input as an ISO 8601 date-time.
+         * @x-autobe-specification Use this as the inclusive lower bound for the
+         *   invitation-issued timestamp range. Apply it to the stored
+         *   invited_at value in hrm_time_tracking_organization_invitations,
+         *   such as invited_at >= invitedFrom, after parsing the input as an
+         *   ISO 8601 date-time.
      */
     invitedFrom?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Inclusive end of the invitation-issued time range.
      *
-     * @x-autobe-specification Use this as the inclusive upper bound for the invitation-issued timestamp range. Apply it to the stored invited_at value in hrm_time_tracking_organization_invitations, such as invited_at <= invitedTo, after parsing the input as an ISO 8601 date-time.
+         * @x-autobe-specification Use this as the inclusive upper bound for the
+         *   invitation-issued timestamp range. Apply it to the stored
+         *   invited_at value in hrm_time_tracking_organization_invitations,
+         *   such as invited_at <= invitedTo, after parsing the input as an ISO
+         *   8601 date-time.
      */
     invitedTo?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Inclusive start of the invitation-accepted time range.
      *
-     * @x-autobe-specification Use this as the inclusive lower bound for the invitation-accepted timestamp range. Apply it to the stored accepted_at value in hrm_time_tracking_organization_invitations, such as accepted_at >= acceptedFrom. Rows with null accepted_at naturally do not satisfy the comparison.
+         * @x-autobe-specification Use this as the inclusive lower bound for the
+         *   invitation-accepted timestamp range. Apply it to the stored
+         *   accepted_at value in hrm_time_tracking_organization_invitations,
+         *   such as accepted_at >= acceptedFrom. Rows with null accepted_at
+         *   naturally do not satisfy the comparison.
      */
     acceptedFrom?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Inclusive end of the invitation-accepted time range.
      *
-     * @x-autobe-specification Use this as the inclusive upper bound for the invitation-accepted timestamp range. Apply it to the stored accepted_at value in hrm_time_tracking_organization_invitations, such as accepted_at <= acceptedTo. Rows with null accepted_at naturally do not satisfy the comparison.
+         * @x-autobe-specification Use this as the inclusive upper bound for the
+         *   invitation-accepted timestamp range. Apply it to the stored
+         *   accepted_at value in hrm_time_tracking_organization_invitations,
+         *   such as accepted_at <= acceptedTo. Rows with null accepted_at
+         *   naturally do not satisfy the comparison.
      */
     acceptedTo?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Inclusive start of the invitation-resolution time range.
      *
-     * @x-autobe-specification Use this as the inclusive lower bound for the invitation-resolution timestamp range. Apply it to the stored resolved_at value in hrm_time_tracking_organization_invitations, such as resolved_at >= resolvedFrom, to find invitations resolved during or after the specified time.
+         * @x-autobe-specification Use this as the inclusive lower bound for the
+         *   invitation-resolution timestamp range. Apply it to the stored
+         *   resolved_at value in hrm_time_tracking_organization_invitations,
+         *   such as resolved_at >= resolvedFrom, to find invitations resolved
+         *   during or after the specified time.
      */
     resolvedFrom?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Inclusive end of the invitation-resolution time range.
      *
-     * @x-autobe-specification Use this as the inclusive upper bound for the invitation-resolution timestamp range. Apply it to the stored resolved_at value in hrm_time_tracking_organization_invitations, such as resolved_at <= resolvedTo, to find invitations resolved on or before the specified time.
+         * @x-autobe-specification Use this as the inclusive upper bound for the
+         *   invitation-resolution timestamp range. Apply it to the stored
+         *   resolved_at value in hrm_time_tracking_organization_invitations,
+         *   such as resolved_at <= resolvedTo, to find invitations resolved on
+         *   or before the specified time.
      */
     resolvedTo?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Inclusive start of the invitation-expiration time range.
      *
-     * @x-autobe-specification Use this as the inclusive lower bound for the invitation-expiration timestamp range. Apply it to the stored expired_at value in hrm_time_tracking_organization_invitations, such as expired_at >= expiredFrom, to find invitations that expired during or after the specified time.
+         * @x-autobe-specification Use this as the inclusive lower bound for the
+         *   invitation-expiration timestamp range. Apply it to the stored
+         *   expired_at value in hrm_time_tracking_organization_invitations,
+         *   such as expired_at >= expiredFrom, to find invitations that expired
+         *   during or after the specified time.
      */
     expiredFrom?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Inclusive end of the invitation-expiration time range.
      *
-     * @x-autobe-specification Use this as the inclusive upper bound for the invitation-expiration timestamp range. Apply it to the stored expired_at value in hrm_time_tracking_organization_invitations, such as expired_at <= expiredTo, to find invitations that expired on or before the specified time.
+         * @x-autobe-specification Use this as the inclusive upper bound for the
+         *   invitation-expiration timestamp range. Apply it to the stored
+         *   expired_at value in hrm_time_tracking_organization_invitations,
+         *   such as expired_at <= expiredTo, to find invitations that expired
+         *   on or before the specified time.
      */
     expiredTo?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Inclusive start of the invitation-cancellation time range.
      *
-     * @x-autobe-specification Use this as the inclusive lower bound for the invitation-cancellation timestamp range. Apply it to the stored cancelled_at value in hrm_time_tracking_organization_invitations, such as cancelled_at >= cancelledFrom, to find invitations cancelled during or after the specified time.
+         * @x-autobe-specification Use this as the inclusive lower bound for the
+         *   invitation-cancellation timestamp range. Apply it to the stored
+         *   cancelled_at value in hrm_time_tracking_organization_invitations,
+         *   such as cancelled_at >= cancelledFrom, to find invitations
+         *   cancelled during or after the specified time.
      */
     cancelledFrom?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Inclusive end of the invitation-cancellation time range.
      *
-     * @x-autobe-specification Use this as the inclusive upper bound for the invitation-cancellation timestamp range. Apply it to the stored cancelled_at value in hrm_time_tracking_organization_invitations, such as cancelled_at <= cancelledTo, to find invitations cancelled on or before the specified time.
+         * @x-autobe-specification Use this as the inclusive upper bound for the
+         *   invitation-cancellation timestamp range. Apply it to the stored
+         *   cancelled_at value in hrm_time_tracking_organization_invitations,
+         *   such as cancelled_at <= cancelledTo, to find invitations cancelled
+         *   on or before the specified time.
      */
     cancelledTo?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Sort option controlling the order of invitation results.
      *
-     * @x-autobe-specification Interpret this as the requested primary sort expression for invitation list results within the already filtered query. Support sortable fields derived from stored invitation values, such as invited_at, email, or status, and always append a stable secondary ordering like created_at DESC then id DESC when necessary to prevent nondeterministic pagination.
+         * @x-autobe-specification Interpret this as the requested primary sort
+         *   expression for invitation list results within the already filtered
+         *   query. Support sortable fields derived from stored invitation
+         *   values, such as invited_at, email, or status, and always append a
+         *   stable secondary ordering like created_at DESC then id DESC when
+         *   necessary to prevent nondeterministic pagination.
      */
     sort?: string | undefined;
 
     /**
      * Page number of the results to return.
      *
-     * @x-autobe-specification Use this as the 1-indexed page number for page-based pagination over the filtered invitation result set. When omitted, default according to the service pagination convention, typically page 1.
+         * @x-autobe-specification Use this as the 1-indexed page number for
+         *   page-based pagination over the filtered invitation result set. When
+         *   omitted, default according to the service pagination convention,
+         *   typically page 1.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of invitation records to include in one page.
      *
-     * @x-autobe-specification Use this as the maximum number of invitation records to return per page. Enforce the schema bounds already defined on the property and apply the service default when omitted.
+         * @x-autobe-specification Use this as the maximum number of invitation
+         *   records to return per page. Enforce the schema bounds already
+         *   defined on the property and apply the service default when omitted.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)

@@ -32,9 +32,9 @@ export class ShoppingmallAdministratorCategoriesController {
    *
    * @param connection
    * @param body Category creation data including name, optional description, and optional parent category reference for subcategories.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Implementation steps for category creation:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor administrator
+     * @x-autobe-specification Implementation steps for category creation:
    *
    * 1. **Authorization Check**: Verify the authenticated user is an administrator. Return 403 Forbidden if not.
    *
@@ -95,9 +95,9 @@ export class ShoppingmallAdministratorCategoriesController {
    *
    * @param connection
    * @param categoryId Unique identifier of the category to be deleted (UUID format, global scope)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Implementation steps for category deletion:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor administrator
+     * @x-autobe-specification Implementation steps for category deletion:
    *
    * 1. Authentication & Authorization Check:
    *    - Verify administrator session is active

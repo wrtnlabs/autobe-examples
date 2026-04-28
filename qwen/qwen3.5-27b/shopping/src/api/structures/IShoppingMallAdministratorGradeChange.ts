@@ -14,8 +14,10 @@ export type IShoppingMallAdministratorGradeChange = {
    *
    * This UUID serves as the primary key for identifying and retrieving specific grade change events from the audit trail.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_administrator_grade_changes.id. Primary key of the grade change audit record.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_administrator_grade_changes.id. Primary key of the grade
+     *   change audit record.
    */
   id: string & tags.Format<"uuid">;
 
@@ -24,8 +26,12 @@ export type IShoppingMallAdministratorGradeChange = {
    *
    * This represents the target administrator account that received the promotion or demotion action.
    *
-   * @x-autobe-database-schema-property administrator
-   * @x-autobe-specification JOIN from shopping_mall_administrator_grade_changes.administrator_id to shopping_mall_administrators.id. Returns IShoppingMallAdministrator.ISummary representing the administrator whose grade was changed.
+     * @x-autobe-database-schema-property administrator
+     * @x-autobe-specification JOIN from
+     *   shopping_mall_administrator_grade_changes.administrator_id to
+     *   shopping_mall_administrators.id. Returns
+     *   IShoppingMallAdministrator.ISummary representing the administrator
+     *   whose grade was changed.
    */
   administrator: IShoppingMallAdministrator.ISummary;
 
@@ -34,8 +40,12 @@ export type IShoppingMallAdministratorGradeChange = {
    *
    * Only super administrators have the authority to promote or demote other administrators. This field provides accountability for privilege modifications.
    *
-   * @x-autobe-database-schema-property performedBy
-   * @x-autobe-specification JOIN from shopping_mall_administrator_grade_changes.performed_by_id to shopping_mall_administrators.id. Returns IShoppingMallAdministrator.ISummary representing the super administrator who performed the grade change action.
+     * @x-autobe-database-schema-property performedBy
+     * @x-autobe-specification JOIN from
+     *   shopping_mall_administrator_grade_changes.performed_by_id to
+     *   shopping_mall_administrators.id. Returns
+     *   IShoppingMallAdministrator.ISummary representing the super
+     *   administrator who performed the grade change action.
    */
   performedBy: IShoppingMallAdministrator.ISummary;
 
@@ -44,8 +54,10 @@ export type IShoppingMallAdministratorGradeChange = {
    *
    * Allowed values are 'regular' or 'super'. This field captures the state before the modification for audit trail purposes.
    *
-   * @x-autobe-database-schema-property previous_grade
-   * @x-autobe-specification Direct mapping from shopping_mall_administrator_grade_changes.previous_grade. Stores the grade level before the change was applied.
+     * @x-autobe-database-schema-property previous_grade
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_administrator_grade_changes.previous_grade. Stores the
+     *   grade level before the change was applied.
    */
   previousGrade: string;
 
@@ -54,8 +66,10 @@ export type IShoppingMallAdministratorGradeChange = {
    *
    * Allowed values are 'regular' or 'super'. This field captures the new state after the modification was successfully applied.
    *
-   * @x-autobe-database-schema-property new_grade
-   * @x-autobe-specification Direct mapping from shopping_mall_administrator_grade_changes.new_grade. Stores the grade level after the change was applied.
+     * @x-autobe-database-schema-property new_grade
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_administrator_grade_changes.new_grade. Stores the grade
+     *   level after the change was applied.
    */
   newGrade: string;
 
@@ -64,8 +78,10 @@ export type IShoppingMallAdministratorGradeChange = {
    *
    * Allowed values are 'promotion' (regular to super) or 'demotion' (super to regular). This field categorizes the nature of the privilege change.
    *
-   * @x-autobe-database-schema-property change_type
-   * @x-autobe-specification Direct mapping from shopping_mall_administrator_grade_changes.change_type. Stores the type of grade modification performed.
+     * @x-autobe-database-schema-property change_type
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_administrator_grade_changes.change_type. Stores the type
+     *   of grade modification performed.
    */
   changeType: string;
 
@@ -74,8 +90,10 @@ export type IShoppingMallAdministratorGradeChange = {
    *
    * This immutable timestamp provides the exact moment when the privilege modification occurred, essential for audit trail chronology.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from shopping_mall_administrator_grade_changes.created_at. Timestamp when the grade change was executed and recorded.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_administrator_grade_changes.created_at. Timestamp when
+     *   the grade change was executed and recorded.
    */
   createdAt: string & tags.Format<"date-time">;
 };
@@ -106,7 +124,10 @@ export namespace IShoppingMallAdministratorGradeChange {
      *
      * Use this filter to retrieve all grade changes for a specific administrator account. This helps track the privilege history of individual administrators for audit and compliance purposes.
      *
-     * @x-autobe-specification UUID filter parameter for shopping_mall_administrator_grade_changes.administrator_id column. Filters grade change records by the administrator whose grade was modified. Implementation: WHERE administrator_id = :administratorId
+         * @x-autobe-specification UUID filter parameter for
+         *   shopping_mall_administrator_grade_changes.administrator_id column.
+         *   Filters grade change records by the administrator whose grade was
+         *   modified. Implementation: WHERE administrator_id = :administratorId
      */
     administratorId?: (string & tags.Format<"uuid">) | undefined;
 
@@ -115,7 +136,11 @@ export namespace IShoppingMallAdministratorGradeChange {
      *
      * Use this filter to retrieve all grade changes performed by a specific super administrator. This helps track the administrative actions taken by individual super administrators for accountability purposes.
      *
-     * @x-autobe-specification UUID filter parameter for shopping_mall_administrator_grade_changes.performed_by_id column. Filters grade change records by the super administrator who performed the action. Implementation: WHERE performed_by_id = :performedById
+         * @x-autobe-specification UUID filter parameter for
+         *   shopping_mall_administrator_grade_changes.performed_by_id column.
+         *   Filters grade change records by the super administrator who
+         *   performed the action. Implementation: WHERE performed_by_id =
+         *   :performedById
      */
     performedById?: (string & tags.Format<"uuid">) | undefined;
 
@@ -124,7 +149,10 @@ export namespace IShoppingMallAdministratorGradeChange {
      *
      * Allowed values: 'regular' or 'super'. Use this filter to find all promotions (previousGrade: 'regular') or all demotions (previousGrade: 'super').
      *
-     * @x-autobe-specification String filter parameter for shopping_mall_administrator_grade_changes.previous_grade column. Filters by the grade value before the change ('regular' or 'super'). Implementation: WHERE previous_grade = :previousGrade
+         * @x-autobe-specification String filter parameter for
+         *   shopping_mall_administrator_grade_changes.previous_grade column.
+         *   Filters by the grade value before the change ('regular' or
+         *   'super'). Implementation: WHERE previous_grade = :previousGrade
      */
     previousGrade?: string | undefined;
 
@@ -133,7 +161,10 @@ export namespace IShoppingMallAdministratorGradeChange {
      *
      * Allowed values: 'regular' or 'super'. Use this filter to find all administrators who received a specific grade level.
      *
-     * @x-autobe-specification String filter parameter for shopping_mall_administrator_grade_changes.new_grade column. Filters by the grade value after the change ('regular' or 'super'). Implementation: WHERE new_grade = :newGrade
+         * @x-autobe-specification String filter parameter for
+         *   shopping_mall_administrator_grade_changes.new_grade column. Filters
+         *   by the grade value after the change ('regular' or 'super').
+         *   Implementation: WHERE new_grade = :newGrade
      */
     newGrade?: string | undefined;
 
@@ -142,7 +173,10 @@ export namespace IShoppingMallAdministratorGradeChange {
      *
      * Allowed values: 'promotion' (regular to super) or 'demotion' (super to regular). Use this filter to retrieve only promotions or only demotions.
      *
-     * @x-autobe-specification String filter parameter for shopping_mall_administrator_grade_changes.change_type column. Filters by the type of grade modification ('promotion' or 'demotion'). Implementation: WHERE change_type = :changeType
+         * @x-autobe-specification String filter parameter for
+         *   shopping_mall_administrator_grade_changes.change_type column.
+         *   Filters by the type of grade modification ('promotion' or
+         *   'demotion'). Implementation: WHERE change_type = :changeType
      */
     changeType?: string | undefined;
 
@@ -151,7 +185,11 @@ export namespace IShoppingMallAdministratorGradeChange {
      *
      * Object with optional from and to fields (ISO 8601 datetime format). Use this to retrieve grade changes within a specific time period for audit reporting and compliance purposes.
      *
-     * @x-autobe-specification Object filter parameter for shopping_mall_administrator_grade_changes.created_at column. Contains optional from/to DateTime fields for filtering grade changes within a date range. Implementation: WHERE created_at >= :from AND created_at <= :to
+         * @x-autobe-specification Object filter parameter for
+         *   shopping_mall_administrator_grade_changes.created_at column.
+         *   Contains optional from/to DateTime fields for filtering grade
+         *   changes within a date range. Implementation: WHERE created_at >=
+         *   :from AND created_at <= :to
      */
     dateRange?:
       | {
@@ -165,7 +203,10 @@ export namespace IShoppingMallAdministratorGradeChange {
      *
      * 1-indexed page number. Default is 1. Use this parameter along with limit to navigate through paginated results. Each page contains up to 'limit' number of grade change records.
      *
-     * @x-autobe-specification Computed pagination parameter. Not mapped to any database column. Used to specify which page of results to retrieve. Default: 1, Minimum: 1. Implementation: OFFSET = (page - 1) * limit.
+         * @x-autobe-specification Computed pagination parameter. Not mapped to
+         *   any database column. Used to specify which page of results to
+         *   retrieve. Default: 1, Minimum: 1. Implementation: OFFSET = (page -
+         *   1) * limit.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -174,7 +215,10 @@ export namespace IShoppingMallAdministratorGradeChange {
      *
      * Default is 20, minimum is 1, maximum is 100. Use this to control how many grade change records are returned in each page. Larger limits reduce the number of API calls needed but increase response size.
      *
-     * @x-autobe-specification Computed pagination parameter. Not mapped to any database column. Specifies maximum number of records per page. Default: 20, Minimum: 1, Maximum: 100. Implementation: LIMIT clause in SQL query.
+         * @x-autobe-specification Computed pagination parameter. Not mapped to
+         *   any database column. Specifies maximum number of records per page.
+         *   Default: 20, Minimum: 1, Maximum: 100. Implementation: LIMIT clause
+         *   in SQL query.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -185,7 +229,11 @@ export namespace IShoppingMallAdministratorGradeChange {
      *
      * String format: 'fieldName:direction' where direction is 'asc' (ascending) or 'desc' (descending). Default is 'created_at:desc' (newest first). Valid fields include created_at, change_type, previous_grade, and new_grade.
      *
-     * @x-autobe-specification Computed sort parameter. Not mapped to any database column. String format: 'field:direction' where direction is 'asc' or 'desc'. Default: 'created_at:desc'. Valid fields: created_at, change_type, previous_grade, new_grade. Implementation: ORDER BY clause in SQL query.
+         * @x-autobe-specification Computed sort parameter. Not mapped to any
+         *   database column. String format: 'field:direction' where direction
+         *   is 'asc' or 'desc'. Default: 'created_at:desc'. Valid fields:
+         *   created_at, change_type, previous_grade, new_grade. Implementation:
+         *   ORDER BY clause in SQL query.
      */
     sort?: string | undefined;
   };
@@ -205,8 +253,10 @@ export namespace IShoppingMallAdministratorGradeChange {
      *
      * This UUID serves as the primary key for identifying and referencing specific grade modification events in audit trails and administrative reports.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_administrator_grade_changes.id. Primary key for the grade change audit record.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_administrator_grade_changes.id. Primary key for the
+         *   grade change audit record.
      */
     id: string & tags.Format<"uuid">;
 
@@ -215,8 +265,10 @@ export namespace IShoppingMallAdministratorGradeChange {
      *
      * Allowed values: 'regular' or 'super'. This field captures the privilege state prior to the modification for audit trail completeness.
      *
-     * @x-autobe-database-schema-property previous_grade
-     * @x-autobe-specification Direct mapping from shopping_mall_administrator_grade_changes.previous_grade. Stores the grade level before the change occurred.
+         * @x-autobe-database-schema-property previous_grade
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_administrator_grade_changes.previous_grade. Stores
+         *   the grade level before the change occurred.
      */
     previous_grade: string;
 
@@ -225,8 +277,10 @@ export namespace IShoppingMallAdministratorGradeChange {
      *
      * Allowed values: 'regular' or 'super'. This field captures the resulting privilege state after the modification for audit trail completeness.
      *
-     * @x-autobe-database-schema-property new_grade
-     * @x-autobe-specification Direct mapping from shopping_mall_administrator_grade_changes.new_grade. Stores the grade level after the change was applied.
+         * @x-autobe-database-schema-property new_grade
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_administrator_grade_changes.new_grade. Stores the
+         *   grade level after the change was applied.
      */
     new_grade: string;
 
@@ -235,8 +289,10 @@ export namespace IShoppingMallAdministratorGradeChange {
      *
      * Allowed values: 'promotion' (regular to super) or 'demotion' (super to regular). This field categorizes the nature of the privilege change for audit reporting and filtering.
      *
-     * @x-autobe-database-schema-property change_type
-     * @x-autobe-specification Direct mapping from shopping_mall_administrator_grade_changes.change_type. Stores the type of grade modification performed.
+         * @x-autobe-database-schema-property change_type
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_administrator_grade_changes.change_type. Stores the
+         *   type of grade modification performed.
      */
     change_type: string;
 
@@ -245,8 +301,10 @@ export namespace IShoppingMallAdministratorGradeChange {
      *
      * This datetime field provides the exact moment of the privilege modification for chronological ordering, filtering, and compliance reporting purposes.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_administrator_grade_changes.created_at. Timestamp when the grade change was executed and recorded.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_administrator_grade_changes.created_at. Timestamp
+         *   when the grade change was executed and recorded.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -255,8 +313,10 @@ export namespace IShoppingMallAdministratorGradeChange {
      *
      * This relation provides summary information about the target administrator account that received the promotion or demotion, including their email, current grade, and ban status.
      *
-     * @x-autobe-database-schema-property administrator
-     * @x-autobe-specification JOIN shopping_mall_administrators on administrator_id. Returns IShoppingMallAdministrator.ISummary for the administrator whose grade was changed.
+         * @x-autobe-database-schema-property administrator
+         * @x-autobe-specification JOIN shopping_mall_administrators on
+         *   administrator_id. Returns IShoppingMallAdministrator.ISummary for
+         *   the administrator whose grade was changed.
      */
     administrator: IShoppingMallAdministrator.ISummary;
 
@@ -265,8 +325,10 @@ export namespace IShoppingMallAdministratorGradeChange {
      *
      * This relation provides summary information about the super administrator account that executed the promotion or demotion, establishing accountability for the privilege modification.
      *
-     * @x-autobe-database-schema-property performedBy
-     * @x-autobe-specification JOIN shopping_mall_administrators on performed_by_id. Returns IShoppingMallAdministrator.ISummary for the super administrator who performed the grade change action.
+         * @x-autobe-database-schema-property performedBy
+         * @x-autobe-specification JOIN shopping_mall_administrators on
+         *   performed_by_id. Returns IShoppingMallAdministrator.ISummary for
+         *   the super administrator who performed the grade change action.
      */
     performedBy: IShoppingMallAdministrator.ISummary;
   };

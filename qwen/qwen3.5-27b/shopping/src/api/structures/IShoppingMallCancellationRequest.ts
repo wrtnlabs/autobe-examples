@@ -50,7 +50,13 @@ export namespace IShoppingMallCancellationRequest {
      *
      * When this parameter is not provided, cancellation requests with all statuses are returned in the result set.
      *
-     * @x-autobe-specification Filter parameter for cancellation request status. Applied as WHERE clause filter on shopping_mall_cancellation_requests.status column. Allowed values: 'pending' (awaiting seller response), 'approved' (seller approved, item will be cancelled), 'rejected' (seller rejected the request). Optional filter - when not provided, all statuses are returned in the result set.
+         * @x-autobe-specification Filter parameter for cancellation request
+         *   status. Applied as WHERE clause filter on
+         *   shopping_mall_cancellation_requests.status column. Allowed values:
+         *   'pending' (awaiting seller response), 'approved' (seller approved,
+         *   item will be cancelled), 'rejected' (seller rejected the request).
+         *   Optional filter - when not provided, all statuses are returned in
+         *   the result set.
      */
     status?: "pending" | "approved" | "rejected" | undefined;
 
@@ -63,7 +69,13 @@ export namespace IShoppingMallCancellationRequest {
      *
      * When this parameter is not provided, all accessible cancellation requests are returned based on the authenticated actor's permissions.
      *
-     * @x-autobe-specification Filter parameter for customer ID. Applied as WHERE clause filter on shopping_mall_cancellation_requests.shopping_mall_customer_id column. UUID format. Optional filter - when not provided, requests from all customers are returned (subject to authorization). For customer actors, this is automatically filtered to the authenticated customer's ID on the server side.
+         * @x-autobe-specification Filter parameter for customer ID. Applied as
+         *   WHERE clause filter on
+         *   shopping_mall_cancellation_requests.shopping_mall_customer_id
+         *   column. UUID format. Optional filter - when not provided, requests
+         *   from all customers are returned (subject to authorization). For
+         *   customer actors, this is automatically filtered to the
+         *   authenticated customer's ID on the server side.
      */
     customerId?: (string & tags.Format<"uuid">) | undefined;
 
@@ -76,7 +88,15 @@ export namespace IShoppingMallCancellationRequest {
      *
      * When this parameter is not provided, all accessible cancellation requests are returned based on the authenticated actor's permissions.
      *
-     * @x-autobe-specification Filter parameter for seller ID. Does not directly map to a column in shopping_mall_cancellation_requests. Implementation performs JOIN with shopping_mall_order_items on order_item_id, then filters on shopping_mall_order_items.shopping_mall_seller_id column. UUID format. Optional filter - when not provided, requests for all sellers are returned (subject to authorization). For seller actors, this is automatically filtered to the authenticated seller's ID on the server side.
+         * @x-autobe-specification Filter parameter for seller ID. Does not
+         *   directly map to a column in shopping_mall_cancellation_requests.
+         *   Implementation performs JOIN with shopping_mall_order_items on
+         *   order_item_id, then filters on
+         *   shopping_mall_order_items.shopping_mall_seller_id column. UUID
+         *   format. Optional filter - when not provided, requests for all
+         *   sellers are returned (subject to authorization). For seller actors,
+         *   this is automatically filtered to the authenticated seller's ID on
+         *   the server side.
      */
     sellerId?: (string & tags.Format<"uuid">) | undefined;
 
@@ -89,7 +109,13 @@ export namespace IShoppingMallCancellationRequest {
      *
      * When this parameter is not provided, cancellation requests from all orders are returned in the result set.
      *
-     * @x-autobe-specification Filter parameter for order ID. Does not directly map to a column in shopping_mall_cancellation_requests. Implementation performs JOIN with shopping_mall_order_items on order_item_id, then filters on shopping_mall_order_items.shopping_mall_order_id column. UUID format. Optional filter - when not provided, requests from all orders are returned in the result set.
+         * @x-autobe-specification Filter parameter for order ID. Does not
+         *   directly map to a column in shopping_mall_cancellation_requests.
+         *   Implementation performs JOIN with shopping_mall_order_items on
+         *   order_item_id, then filters on
+         *   shopping_mall_order_items.shopping_mall_order_id column. UUID
+         *   format. Optional filter - when not provided, requests from all
+         *   orders are returned in the result set.
      */
     orderId?: (string & tags.Format<"uuid">) | undefined;
 
@@ -105,7 +131,16 @@ export namespace IShoppingMallCancellationRequest {
      *
      * When this parameter is not provided, or when both 'from' and 'to' are omitted, no date filtering is applied and all cancellation requests are returned (subject to other filters).
      *
-     * @x-autobe-specification Filter parameter for creation date range. Applied as WHERE clause range filter on shopping_mall_cancellation_requests.created_at column with condition: created_at >= from AND created_at <= to. Object type with optional 'from' and 'to' properties, both in ISO 8601 date-time format. When 'from' is provided, only requests created on or after that timestamp are returned. When 'to' is provided, only requests created on or before that timestamp are returned. When both are provided, requests within the range are returned. When neither is provided, no date filtering is applied.
+         * @x-autobe-specification Filter parameter for creation date range.
+         *   Applied as WHERE clause range filter on
+         *   shopping_mall_cancellation_requests.created_at column with
+         *   condition: created_at >= from AND created_at <= to. Object type
+         *   with optional 'from' and 'to' properties, both in ISO 8601
+         *   date-time format. When 'from' is provided, only requests created on
+         *   or after that timestamp are returned. When 'to' is provided, only
+         *   requests created on or before that timestamp are returned. When
+         *   both are provided, requests within the range are returned. When
+         *   neither is provided, no date filtering is applied.
      */
     createdAt?:
       | {
@@ -123,7 +158,12 @@ export namespace IShoppingMallCancellationRequest {
      *
      * Combined with the 'limit' parameter, this determines which subset of the total results is returned in the response. The response includes pagination metadata showing the current page, total pages, and total record count.
      *
-     * @x-autobe-specification Pagination parameter for page number. Does not map to any database column. Used for cursor-based pagination implementation. Integer type with minimum value of 1. Default value is 1 when not provided. Controls which page of results to return. Combined with 'limit' parameter to determine the offset for database query.
+         * @x-autobe-specification Pagination parameter for page number. Does
+         *   not map to any database column. Used for cursor-based pagination
+         *   implementation. Integer type with minimum value of 1. Default value
+         *   is 1 when not provided. Controls which page of results to return.
+         *   Combined with 'limit' parameter to determine the offset for
+         *   database query.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -138,7 +178,12 @@ export namespace IShoppingMallCancellationRequest {
      *
      * Setting a higher limit reduces the number of requests needed to retrieve all results but increases the response size. Setting a lower limit provides smaller, more manageable responses but requires more requests to retrieve all results.
      *
-     * @x-autobe-specification Pagination parameter for items per page. Does not map to any database column. Used for cursor-based pagination implementation. Integer type with minimum value of 1 and maximum value of 100. Default value is 20 when not provided. Controls the maximum number of records returned per page. Used in LIMIT clause of database query.
+         * @x-autobe-specification Pagination parameter for items per page. Does
+         *   not map to any database column. Used for cursor-based pagination
+         *   implementation. Integer type with minimum value of 1 and maximum
+         *   value of 100. Default value is 20 when not provided. Controls the
+         *   maximum number of records returned per page. Used in LIMIT clause
+         *   of database query.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -156,7 +201,12 @@ export namespace IShoppingMallCancellationRequest {
      *
      * This sorting option is particularly useful when reviewing recent cancellation activity or when auditing historical cancellation requests in chronological order.
      *
-     * @x-autobe-specification Sort order parameter for result ordering. Does not map to any database column. Used in ORDER BY clause of database query. Allowed values: 'createdAt' for ascending order (oldest first), '-createdAt' for descending order (newest first). Default value is '-createdAt' when not provided, meaning results are sorted by creation date with newest requests first.
+         * @x-autobe-specification Sort order parameter for result ordering.
+         *   Does not map to any database column. Used in ORDER BY clause of
+         *   database query. Allowed values: 'createdAt' for ascending order
+         *   (oldest first), '-createdAt' for descending order (newest first).
+         *   Default value is '-createdAt' when not provided, meaning results
+         *   are sorted by creation date with newest requests first.
      */
     sort?: "createdAt" | "-createdAt" | undefined;
   };
@@ -184,8 +234,13 @@ export namespace IShoppingMallCancellationRequest {
      *
      * This field specifies which order item the customer wants to cancel. The order item must be in 'paid' status (not yet shipped) and must belong to an order owned by the authenticated customer. This field is optional because some endpoints provide the order item ID via URL path parameters instead of the request body.
      *
-     * @x-autobe-database-schema-property shopping_mall_order_item_id
-     * @x-autobe-specification Maps to shopping_mall_order_item_id foreign key column. This field is optional because the order item ID may be provided via URL path parameter (itemId) in some endpoints. When provided in request body, it must be a valid UUID referencing an existing order item in 'paid' status that belongs to the authenticated customer.
+         * @x-autobe-database-schema-property shopping_mall_order_item_id
+         * @x-autobe-specification Maps to shopping_mall_order_item_id foreign
+         *   key column. This field is optional because the order item ID may be
+         *   provided via URL path parameter (itemId) in some endpoints. When
+         *   provided in request body, it must be a valid UUID referencing an
+         *   existing order item in 'paid' status that belongs to the
+         *   authenticated customer.
      */
     orderItemId?: (string & tags.Format<"uuid">) | undefined;
 
@@ -194,8 +249,12 @@ export namespace IShoppingMallCancellationRequest {
      *
      * This field captures why the customer wants to cancel the specific order item. The reason is stored and visible to the seller when they review the cancellation request. A minimum of 10 characters is required to ensure the reason provides meaningful context for the seller's decision-making process.
      *
-     * @x-autobe-database-schema-property reason
-     * @x-autobe-specification Direct mapping to reason column in shopping_mall_cancellation_requests table. The reason text is trimmed of leading/trailing whitespace before storage. Minimum length of 10 characters enforced to ensure meaningful cancellation reasons. This field is required for all cancellation requests.
+         * @x-autobe-database-schema-property reason
+         * @x-autobe-specification Direct mapping to reason column in
+         *   shopping_mall_cancellation_requests table. The reason text is
+         *   trimmed of leading/trailing whitespace before storage. Minimum
+         *   length of 10 characters enforced to ensure meaningful cancellation
+         *   reasons. This field is required for all cancellation requests.
      */
     reason: string & tags.MinLength<10>;
   };
@@ -213,8 +272,10 @@ export namespace IShoppingMallCancellationRequest {
      *
      * This UUID identifies the cancellation request across the platform and is used to reference the request in API operations, seller responses, and audit trails.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_cancellation_requests.id. Primary key uniquely identifying each cancellation request.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_cancellation_requests.id. Primary key uniquely
+         *   identifying each cancellation request.
      */
     id: string & tags.Format<"uuid">;
 
@@ -226,8 +287,10 @@ export namespace IShoppingMallCancellationRequest {
      * - 'approved': Seller has approved the request, the order item will be cancelled and refunded
      * - 'rejected': Seller has rejected the request, the order item will continue processing
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from shopping_mall_cancellation_requests.status. Allowed values: 'pending', 'approved', 'rejected'.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_cancellation_requests.status. Allowed values:
+         *   'pending', 'approved', 'rejected'.
      */
     status: string;
 
@@ -236,8 +299,10 @@ export namespace IShoppingMallCancellationRequest {
      *
      * This text field captures the customer's explanation for why they want to cancel this specific order item. The reason is visible to the seller when reviewing the cancellation request and helps the seller make an informed decision.
      *
-     * @x-autobe-database-schema-property reason
-     * @x-autobe-specification Direct mapping from shopping_mall_cancellation_requests.reason. Text field containing customer's explanation for requesting cancellation.
+         * @x-autobe-database-schema-property reason
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_cancellation_requests.reason. Text field containing
+         *   customer's explanation for requesting cancellation.
      */
     reason: string;
 
@@ -246,8 +311,11 @@ export namespace IShoppingMallCancellationRequest {
      *
      * This field is null when the request is in 'pending' status. Once the seller responds (approves or rejects), this field contains their explanation for the decision. The reason helps the customer understand why their request was approved or rejected.
      *
-     * @x-autobe-database-schema-property response_reason
-     * @x-autobe-specification Direct mapping from shopping_mall_cancellation_requests.response_reason. Nullable field populated when seller responds to the request with approval or rejection explanation.
+         * @x-autobe-database-schema-property response_reason
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_cancellation_requests.response_reason. Nullable field
+         *   populated when seller responds to the request with approval or
+         *   rejection explanation.
      */
     response_reason: string | null;
 
@@ -256,8 +324,10 @@ export namespace IShoppingMallCancellationRequest {
      *
      * This timestamp records when the customer submitted the cancellation request. It is used for sorting cancellation requests chronologically and for tracking response time metrics.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_cancellation_requests.created_at. Timestamp in ISO 8601 format with timezone.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_cancellation_requests.created_at. Timestamp in ISO
+         *   8601 format with timezone.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -266,8 +336,11 @@ export namespace IShoppingMallCancellationRequest {
      *
      * This object contains summary information about the customer who requested the cancellation, including their account ID and email address. For customers viewing their own requests, this shows their own profile. For sellers and administrators, this identifies which customer made the request.
      *
-     * @x-autobe-database-schema-property customer
-     * @x-autobe-specification Relation mapping via JOIN from shopping_mall_cancellation_requests.shopping_mall_customer_id to shopping_mall_customers.id. Returns IShoppingMallCustomer.ISummary with customer identity information.
+         * @x-autobe-database-schema-property customer
+         * @x-autobe-specification Relation mapping via JOIN from
+         *   shopping_mall_cancellation_requests.shopping_mall_customer_id to
+         *   shopping_mall_customers.id. Returns IShoppingMallCustomer.ISummary
+         *   with customer identity information.
      */
     customer: IShoppingMallCustomer.ISummary;
 
@@ -276,8 +349,12 @@ export namespace IShoppingMallCancellationRequest {
      *
      * This object contains summary information about the specific order item the customer wants to cancel, including the product variant details, quantity ordered, price paid, and current fulfillment status. The order item must be in 'paid' status (not yet shipped) for cancellation to be allowed.
      *
-     * @x-autobe-database-schema-property orderItem
-     * @x-autobe-specification Relation mapping via JOIN from shopping_mall_cancellation_requests.shopping_mall_order_item_id to shopping_mall_order_items.id. Returns IShoppingMallOrderItem.ISummary with order item details including product variant, quantity, price, and status.
+         * @x-autobe-database-schema-property orderItem
+         * @x-autobe-specification Relation mapping via JOIN from
+         *   shopping_mall_cancellation_requests.shopping_mall_order_item_id to
+         *   shopping_mall_order_items.id. Returns
+         *   IShoppingMallOrderItem.ISummary with order item details including
+         *   product variant, quantity, price, and status.
      */
     orderItem: IShoppingMallOrderItem.ISummary;
   };
@@ -297,8 +374,16 @@ export namespace IShoppingMallCancellationRequest {
      *
      * This field is required when rejecting a cancellation request. The text is also preserved in the cancellation request snapshot created at the time of rejection for audit and dispute resolution purposes.
      *
-     * @x-autobe-specification Direct mapping to shopping_mall_cancellation_requests.response_reason column. This field stores the seller's explanation for rejecting the cancellation request. The text is required in the request body and must be provided by the seller. Upon successful rejection, this field is populated with the provided reason and the cancellation request status is set to 'rejected'. The database column is nullable to accommodate records created before rejection, but the request DTO requires this field.
-     * @x-autobe-database-schema-property response_reason
+         * @x-autobe-specification Direct mapping to
+         *   shopping_mall_cancellation_requests.response_reason column. This
+         *   field stores the seller's explanation for rejecting the
+         *   cancellation request. The text is required in the request body and
+         *   must be provided by the seller. Upon successful rejection, this
+         *   field is populated with the provided reason and the cancellation
+         *   request status is set to 'rejected'. The database column is
+         *   nullable to accommodate records created before rejection, but the
+         *   request DTO requires this field.
+         * @x-autobe-database-schema-property response_reason
      */
     response_reason: string | null;
   };
@@ -314,8 +399,12 @@ export namespace IShoppingMallCancellationRequest {
      *
      * This text field contains the seller's explanation for approving the customer's cancellation request. The reason is stored permanently in the cancellation request record and is visible to the customer as part of the cancellation approval notification. This field serves as documentation for dispute resolution and provides transparency in the cancellation process.
      *
-     * @x-autobe-specification Direct mapping from shopping_mall_cancellation_requests.response_reason column. This field is nullable in the database. Populated by the seller when approving a cancellation request. The value is stored as-is and displayed to the customer as the seller's response.
-     * @x-autobe-database-schema-property response_reason
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_cancellation_requests.response_reason column. This
+         *   field is nullable in the database. Populated by the seller when
+         *   approving a cancellation request. The value is stored as-is and
+         *   displayed to the customer as the seller's response.
+         * @x-autobe-database-schema-property response_reason
      */
     response_reason?: string | null | undefined;
   };

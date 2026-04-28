@@ -26,7 +26,10 @@ import { IShoppingMallCartItem } from "../../../../structures/IShoppingMallCartI
  * @param props.body Variant selection and quantity to add to the cart
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Authenticate the caller as a customer and resolve the caller's shopping_mall_customers.id as the cart owner. Accept a request body of type IShoppingMallCartItem.ICreate containing the target product identifier, target product variant identifier, and requested quantity.
+ * @x-autobe-specification Authenticate the caller as a customer and resolve the
+ *   caller's shopping_mall_customers.id as the cart owner. Accept a request
+ *   body of type IShoppingMallCartItem.ICreate containing the target product
+ *   identifier, target product variant identifier, and requested quantity.
  *
  * Validate the request in this order:
  * 1. Ensure quantity is a positive integer greater than zero.
@@ -144,7 +147,8 @@ export namespace create {
  * @param props.body Cart item list query criteria, pagination, and sorting options
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Implement this operation as a customer-scoped cart-item list query.
+ * @x-autobe-specification Implement this operation as a customer-scoped
+ *   cart-item list query.
  *
  * 1. Authenticate the caller and require the `customer` actor. Resolve the customer account identifier from the authenticated session context rather than from request parameters.
  * 2. Parse `IShoppingMallCartItem.IRequest` for pagination, sorting, and any allowed search filters. Ignore or reject any criterion that attempts to override customer ownership scope.
@@ -249,7 +253,8 @@ export namespace index {
  * @param props.cartItemId Target cart item's UUID owned by the authenticated customer
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Implement a read-only service method that retrieves one active cart item for the authenticated customer.
+ * @x-autobe-specification Implement a read-only service method that retrieves
+ *   one active cart item for the authenticated customer.
  *
  * 1. Authenticate the caller as a customer and obtain the current customer account ID. Reject requests that do not have an active customer authentication context.
  * 2. Query shopping_mall_cart_items by id = :cartItemId, shopping_mall_customer_id = :currentCustomerId, and deleted_at IS NULL. This ownership-scoped lookup is mandatory so the API never exposes another customer's basket line.
@@ -351,7 +356,8 @@ export namespace at {
  * @param props.body Updated quantity and mutable cart line information
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Load the target shopping_mall_cart_items row by id = {cartItemId} and deleted_at IS NULL.
+ * @x-autobe-specification Load the target shopping_mall_cart_items row by id =
+ *   {cartItemId} and deleted_at IS NULL.
  *
  * Authorize by authenticated customer context. Verify the loaded cart item's shopping_mall_customer_id matches the authenticated customer's account id. If the cart item is missing, return a not-found error. If the cart item belongs to a different customer, return a forbidden error.
  *
@@ -465,7 +471,8 @@ export namespace update {
  * @param props.cartItemId Identifier of the cart item to remove from the signed-in customer's cart
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Authenticate the caller as a customer session before executing the operation.
+ * @x-autobe-specification Authenticate the caller as a customer session before
+ *   executing the operation.
  *
  * Load the target record from the cart item persistence model by cartItemId. Verify that the record exists and that its owning customer account matches the authenticated customer. If no record is found, return a not-found error. If the record exists but belongs to a different customer, return a forbidden error or an equivalent ownership violation response according to platform conventions.
  *

@@ -21,9 +21,12 @@ export class MallplatformAdministratorApprovalrequestsDecisionsController {
    * @param connection
    * @param approvalRequestId The administrator approval request identifier (UUID) used to select the request being decided.
    * @param body The decision payload that instructs the platform to approve or reject the targeted administrator approval request.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Look up the administrator approval request by approvalRequestId and verify it exists. Enforce super-administrator authorization before allowing the decision flow. Reject any request that is not still pending to prevent duplicate finalization.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor administrator
+     * @x-autobe-specification Look up the administrator approval request by
+     *   approvalRequestId and verify it exists. Enforce super-administrator
+     *   authorization before allowing the decision flow. Reject any request
+     *   that is not still pending to prevent duplicate finalization.
    *
    * Apply the decision in a single transaction. Persist the reviewer outcome, update the request status to approved or rejected, and preserve the applicant reason and decision details as governance history. If the request is approved, promote the requesting account to a regular administrator according to the platform rules. If the request is rejected, keep the applicant account unchanged and store the rejection outcome for later review.
    *

@@ -10,72 +10,86 @@ export type IErpHrmMemberSession = {
   /**
    * Unique identifier for the member session.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from erp_hrm_member_sessions.id. Primary key UUID.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from erp_hrm_member_sessions.id.
+     *   Primary key UUID.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * JWT access token used for authenticating API requests during the session.
    *
-   * @x-autobe-database-schema-property access_token
-   * @x-autobe-specification Direct mapping from erp_hrm_member_sessions.access_token. JWT access token for API authentication.
+     * @x-autobe-database-schema-property access_token
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_member_sessions.access_token. JWT access token for API
+     *   authentication.
    */
   accessToken: string;
 
   /**
    * JWT refresh token used to obtain a new access token pair when the current access token expires.
    *
-   * @x-autobe-database-schema-property refresh_token
-   * @x-autobe-specification Direct mapping from erp_hrm_member_sessions.refresh_token. JWT refresh token for obtaining new access tokens.
+     * @x-autobe-database-schema-property refresh_token
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_member_sessions.refresh_token. JWT refresh token for obtaining
+     *   new access tokens.
    */
   refreshToken: string;
 
   /**
    * IP address from which the session was initiated, captured for audit and security purposes.
    *
-   * @x-autobe-database-schema-property ip
-   * @x-autobe-specification Direct mapping from erp_hrm_member_sessions.ip. IPv4 address captured at session creation.
+     * @x-autobe-database-schema-property ip
+     * @x-autobe-specification Direct mapping from erp_hrm_member_sessions.ip.
+     *   IPv4 address captured at session creation.
    */
   ip: string;
 
   /**
    * URL endpoint where the authentication request originated.
    *
-   * @x-autobe-database-schema-property href
-   * @x-autobe-specification Direct mapping from erp_hrm_member_sessions.href. The URL endpoint where the session was created.
+     * @x-autobe-database-schema-property href
+     * @x-autobe-specification Direct mapping from erp_hrm_member_sessions.href.
+     *   The URL endpoint where the session was created.
    */
   href: string;
 
   /**
    * Referrer URL that led to the authentication request, captured for analytics and fraud detection.
    *
-   * @x-autobe-database-schema-property referrer
-   * @x-autobe-specification Direct mapping from erp_hrm_member_sessions.referrer. The referring URL that initiated the authentication request.
+     * @x-autobe-database-schema-property referrer
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_member_sessions.referrer. The referring URL that initiated the
+     *   authentication request.
    */
   referrer: string;
 
   /**
    * The authenticated member who owns this session.
    *
-   * @x-autobe-database-schema-property member
-   * @x-autobe-specification Join via erp_hrm_member_id FK. Returns member summary with basic profile information.
+     * @x-autobe-database-schema-property member
+     * @x-autobe-specification Join via erp_hrm_member_id FK. Returns member
+     *   summary with basic profile information.
    */
   member: IErpHrmMember.ISummary;
 
   /**
    * Timestamp when the session was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from erp_hrm_member_sessions.created_at. ISO 8601 timestamp when session was created.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_member_sessions.created_at. ISO 8601 timestamp when session was
+     *   created.
    */
   createdAt: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the session will expire or became invalid.
    *
-   * @x-autobe-database-schema-property expired_at
-   * @x-autobe-specification Direct mapping from erp_hrm_member_sessions.expired_at. ISO 8601 timestamp when session expires.
+     * @x-autobe-database-schema-property expired_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_member_sessions.expired_at. ISO 8601 timestamp when session
+     *   expires.
    */
   expiredAt: string & tags.Format<"date-time">;
 };
@@ -87,55 +101,68 @@ export namespace IErpHrmMemberSession {
     /**
      * Unique identifier for the authentication session.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from erp_hrm_member_sessions.id (UUID primary key).
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_member_sessions.id (UUID primary key).
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Client IP address from which the session was initiated.
      *
-     * @x-autobe-database-schema-property ip
-     * @x-autobe-specification Direct mapping from erp_hrm_member_sessions.ip. Captured from client connection at session creation.
+         * @x-autobe-database-schema-property ip
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_member_sessions.ip. Captured from client connection at
+         *   session creation.
      */
     ip: string;
 
     /**
      * URL or endpoint where the authentication request originated.
      *
-     * @x-autobe-database-schema-property href
-     * @x-autobe-specification Direct mapping from erp_hrm_member_sessions.href. Original request URL for authentication.
+         * @x-autobe-database-schema-property href
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_member_sessions.href. Original request URL for
+         *   authentication.
      */
     href: string;
 
     /**
      * HTTP referrer header indicating the source of the authentication request.
      *
-     * @x-autobe-database-schema-property referrer
-     * @x-autobe-specification Direct mapping from erp_hrm_member_sessions.referrer. HTTP referrer header captured at session creation.
+         * @x-autobe-database-schema-property referrer
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_member_sessions.referrer. HTTP referrer header captured at
+         *   session creation.
      */
     referrer: string;
 
     /**
      * Timestamp when the session was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from erp_hrm_member_sessions.created_at (Timestamptz). Set at record creation.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_member_sessions.created_at (Timestamptz). Set at record
+         *   creation.
      */
     createdAt: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when the session expires. Used for security to limit session lifetime.
      *
-     * @x-autobe-database-schema-property expired_at
-     * @x-autobe-specification Direct mapping from erp_hrm_member_sessions.expired_at (Timestamptz). Used for session security and automatic expiration.
+         * @x-autobe-database-schema-property expired_at
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_member_sessions.expired_at (Timestamptz). Used for session
+         *   security and automatic expiration.
      */
     expiredAt: string & tags.Format<"date-time">;
 
     /**
      * Indicates whether the session is currently active based on expiration timestamp.
      *
-     * @x-autobe-specification Computed field: isActive = expired_at > current_timestamp(). Determined at query time based on current time relative to expired_at.
+         * @x-autobe-specification Computed field: isActive = expired_at >
+         *   current_timestamp(). Determined at query time based on current time
+         *   relative to expired_at.
      */
     isActive: boolean;
   };
@@ -147,49 +174,59 @@ export namespace IErpHrmMemberSession {
     /**
      * Filter sessions created after this timestamp (inclusive). Null means no lower bound.
      *
-     * @x-autobe-specification Filter: WHERE created_at >= createdAfter. When null, no lower bound filter applied.
+         * @x-autobe-specification Filter: WHERE created_at >= createdAfter.
+         *   When null, no lower bound filter applied.
      */
     createdAfter: (string & tags.Format<"date-time">) | null;
 
     /**
      * Filter sessions created before this timestamp (inclusive). Null means no upper bound.
      *
-     * @x-autobe-specification Filter: WHERE created_at <= createdBefore. When null, no upper bound filter applied.
+         * @x-autobe-specification Filter: WHERE created_at <= createdBefore.
+         *   When null, no upper bound filter applied.
      */
     createdBefore: (string & tags.Format<"date-time">) | null;
 
     /**
      * Filter sessions by status: 'active' (not yet expired), 'expired' (already expired), 'all' (both). Null means return all sessions.
      *
-     * @x-autobe-specification Filter: 'active' = expired_at > now(), 'expired' = expired_at <= now(), 'all' = no filter. Null defaults to 'all'.
+         * @x-autobe-specification Filter: 'active' = expired_at > now(),
+         *   'expired' = expired_at <= now(), 'all' = no filter. Null defaults
+         *   to 'all'.
      */
     status: "active" | "expired" | "all" | null;
 
     /**
      * Filter sessions by IP address using case-insensitive partial pattern matching. Null means no IP filter.
      *
-     * @x-autobe-specification Filter: WHERE ip ILIKE '%' || ipPattern || '%'. Partial match supported. Null means no IP filter.
+         * @x-autobe-specification Filter: WHERE ip ILIKE '%' || ipPattern ||
+         *   '%'. Partial match supported. Null means no IP filter.
      */
     ipPattern: string | null;
 
     /**
      * Filter sessions by referrer URL using case-insensitive partial pattern matching. Null means no referrer filter.
      *
-     * @x-autobe-specification Filter: WHERE referrer ILIKE '%' || referrerPattern || '%'. Partial match supported. Null means no referrer filter.
+         * @x-autobe-specification Filter: WHERE referrer ILIKE '%' ||
+         *   referrerPattern || '%'. Partial match supported. Null means no
+         *   referrer filter.
      */
     referrerPattern: string | null;
 
     /**
      * Opaque pagination cursor for navigating large result sets efficiently. Null retrieves first page.
      *
-     * @x-autobe-specification Cursor-based pagination token. Encoded tuple of (created_at, id) for consistent pagination. Null means first page.
+         * @x-autobe-specification Cursor-based pagination token. Encoded tuple
+         *   of (created_at, id) for consistent pagination. Null means first
+         *   page.
      */
     cursor: string | null;
 
     /**
      * Maximum number of sessions to return per page. Range 1-100. Default should be applied server-side if null.
      *
-     * @x-autobe-specification Pagination limit: LIMIT limit. Range: 1-100. Recommended: 20. Higher values increase response size.
+         * @x-autobe-specification Pagination limit: LIMIT limit. Range: 1-100.
+         *   Recommended: 20. Higher values increase response size.
      */
     limit:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -198,7 +235,9 @@ export namespace IErpHrmMemberSession {
     /**
      * Target page number (1-indexed). Page 1 is the first page. Null defaults to page 1.
      *
-     * @x-autobe-specification 1-indexed page number for offset calculation: OFFSET (page - 1) * limit. Minimum value is 1. Null defaults to first page.
+         * @x-autobe-specification 1-indexed page number for offset calculation:
+         *   OFFSET (page - 1) * limit. Minimum value is 1. Null defaults to
+         *   first page.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };

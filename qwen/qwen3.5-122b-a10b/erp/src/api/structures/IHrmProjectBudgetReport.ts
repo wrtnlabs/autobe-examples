@@ -27,8 +27,9 @@ export type IHrmProjectBudgetReport = {
    *
    * This is the primary key of the project record in the hrm_projects table, formatted as a UUID.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from hrm_projects.id. UUID format. Primary key of the project record.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from hrm_projects.id. UUID format.
+     *   Primary key of the project record.
    */
   project_id: string & tags.Format<"uuid">;
 
@@ -37,8 +38,9 @@ export type IHrmProjectBudgetReport = {
    *
    * The project name used throughout the UI for project references and navigation.
    *
-   * @x-autobe-database-schema-property name
-   * @x-autobe-specification Direct mapping from hrm_projects.name. Display name of the project.
+     * @x-autobe-database-schema-property name
+     * @x-autobe-specification Direct mapping from hrm_projects.name. Display
+     *   name of the project.
    */
   project_name: string;
 
@@ -47,8 +49,9 @@ export type IHrmProjectBudgetReport = {
    *
    * This optional planning field tracks the allocated time resources for capacity planning and progress tracking against estimates.
    *
-   * @x-autobe-specification Direct mapping from hrm_projects.budget_hours. Decimal precision. Allocated budget hours for the project.
-   * @x-autobe-database-schema-property budget_hours
+     * @x-autobe-specification Direct mapping from hrm_projects.budget_hours.
+     *   Decimal precision. Allocated budget hours for the project.
+     * @x-autobe-database-schema-property budget_hours
    */
   budget_hours?: number | null | undefined;
 
@@ -57,7 +60,9 @@ export type IHrmProjectBudgetReport = {
    *
    * Calculated by summing all timelog duration_minutes values for the project and converting to hours. Only includes timelogs where deleted_at IS NULL.
    *
-   * @x-autobe-specification Computed from hrm_timelogs: SUM(duration_minutes) / 60 for all timelogs belonging to this project where deleted_at IS NULL.
+     * @x-autobe-specification Computed from hrm_timelogs: SUM(duration_minutes)
+     *   / 60 for all timelogs belonging to this project where deleted_at IS
+     *   NULL.
    */
   actual_hours: number;
 
@@ -66,7 +71,8 @@ export type IHrmProjectBudgetReport = {
    *
    * Calculated as (actual_hours / budget_hours) * 100. Indicates budget utilization progress. Returns 0 when budget_hours is zero to handle division by zero.
    *
-   * @x-autobe-specification Computed formula: (actual_hours / budget_hours) * 100. Returns 0 when budget_hours is 0 to avoid division by zero.
+     * @x-autobe-specification Computed formula: (actual_hours / budget_hours) *
+     *   100. Returns 0 when budget_hours is 0 to avoid division by zero.
    */
   percentage_consumed: number;
 
@@ -75,8 +81,9 @@ export type IHrmProjectBudgetReport = {
    *
    * Used for project badges, timeline indicators, and dashboard visualizations. Format: #RRGGBB or #RRGGBBAA.
    *
-   * @x-autobe-database-schema-property color_code
-   * @x-autobe-specification Direct mapping from hrm_projects.color_code. Hex format (#RRGGBB or #RRGGBBAA).
+     * @x-autobe-database-schema-property color_code
+     * @x-autobe-specification Direct mapping from hrm_projects.color_code. Hex
+     *   format (#RRGGBB or #RRGGBBAA).
    */
   project_color_code?: string | undefined;
 
@@ -85,8 +92,9 @@ export type IHrmProjectBudgetReport = {
    *
    * One of: active (current work), archived (inactive but preserved), or completed (finished work). Active projects accept new timelogs and task assignments.
    *
-   * @x-autobe-database-schema-property status
-   * @x-autobe-specification Direct mapping from hrm_projects.status. One of: active, archived, completed.
+     * @x-autobe-database-schema-property status
+     * @x-autobe-specification Direct mapping from hrm_projects.status. One of:
+     *   active, archived, completed.
    */
   project_status?: string | undefined;
 };
@@ -112,7 +120,9 @@ export namespace IHrmProjectBudgetReport {
      *
      * This is the primary key from the hrm_projects table, used to reference the project in all API operations and relationships.
      *
-     * @x-autobe-specification Data source: hrm_projects.id. Primary key identifier for the project from the hrm_projects table, included in this computed report via LEFT JOIN.
+         * @x-autobe-specification Data source: hrm_projects.id. Primary key
+         *   identifier for the project from the hrm_projects table, included in
+         *   this computed report via LEFT JOIN.
      */
     id: string & tags.Format<"uuid">;
 
@@ -121,7 +131,9 @@ export namespace IHrmProjectBudgetReport {
      *
      * Required field used throughout the UI for project references and navigation. This is the human-readable name assigned when the project was created.
      *
-     * @x-autobe-specification Data source: hrm_projects.name. Required field for project display, included in this computed report via LEFT JOIN.
+         * @x-autobe-specification Data source: hrm_projects.name. Required
+         *   field for project display, included in this computed report via
+         *   LEFT JOIN.
      */
     name: string;
 
@@ -130,7 +142,9 @@ export namespace IHrmProjectBudgetReport {
      *
      * Optional planning field tracking allocated time resources. Used for capacity planning and progress tracking against estimates. Projects without a budget_hours value are excluded from this report.
      *
-     * @x-autobe-specification Data source: hrm_projects.budget_hours. Optional planning field tracking allocated time resources. Projects without budget_hours are excluded from results via WHERE clause.
+         * @x-autobe-specification Data source: hrm_projects.budget_hours.
+         *   Optional planning field tracking allocated time resources. Projects
+         *   without budget_hours are excluded from results via WHERE clause.
      */
     budget_hours: number;
 
@@ -139,7 +153,10 @@ export namespace IHrmProjectBudgetReport {
      *
      * Calculated by summing all timelog duration_minutes values (converted to hours) for the project within the specified date range. Projects with no timelogs will show 0 hours.
      *
-     * @x-autobe-specification Data source: SUM(hrm_timelogs.duration_minutes / 60) grouped by project_id within the report's date_range filter. Projects with zero timelogs show 0.
+         * @x-autobe-specification Data source:
+         *   SUM(hrm_timelogs.duration_minutes / 60) grouped by project_id
+         *   within the report's date_range filter. Projects with zero timelogs
+         *   show 0.
      */
     actual_hours: number;
 
@@ -148,7 +165,10 @@ export namespace IHrmProjectBudgetReport {
      *
      * Calculated as (actual_hours / budget_hours) × 100. This metric helps identify projects approaching or exceeding their budget limits. Typically, utilization above 80% is flagged as a warning threshold for project managers.
      *
-     * @x-autobe-specification Data source: (actual_hours / budget_hours) * 100. actual_hours from SUM(hrm_timelogs.duration_minutes/60), budget_hours from hrm_projects.budget_hours. Only projects with budget_hours > 0 are included.
+         * @x-autobe-specification Data source: (actual_hours / budget_hours) *
+         *   100. actual_hours from SUM(hrm_timelogs.duration_minutes/60),
+         *   budget_hours from hrm_projects.budget_hours. Only projects with
+         *   budget_hours > 0 are included.
      */
     utilization_percentage: number;
 
@@ -157,7 +177,9 @@ export namespace IHrmProjectBudgetReport {
      *
      * Project status indicates whether the project is active (current work), archived (inactive but preserved), or completed (finished work). Active projects accept new timelogs and task assignments, while archived and completed projects preserve historical records but do not accept new time entries.
      *
-     * @x-autobe-specification Data source: hrm_projects.status. Values: active, archived, or completed. Included in this computed report via LEFT JOIN.
+         * @x-autobe-specification Data source: hrm_projects.status. Values:
+         *   active, archived, or completed. Included in this computed report
+         *   via LEFT JOIN.
      */
     status: string;
   };
@@ -191,7 +213,9 @@ export namespace IHrmProjectBudgetReport {
      *
      * If not provided, all timelogs are included regardless of date.
      *
-     * @x-autobe-specification Query filter for date range. Filters hrm_timelogs.date column where date >= start AND date <= end. Used to limit report to specific time period.
+         * @x-autobe-specification Query filter for date range. Filters
+         *   hrm_timelogs.date column where date >= start AND date <= end. Used
+         *   to limit report to specific time period.
      */
     date_range?:
       | {
@@ -213,7 +237,9 @@ export namespace IHrmProjectBudgetReport {
      *
      * If not provided, projects of all statuses are included.
      *
-     * @x-autobe-specification Query filter for project status. Filters hrm_projects.status column where status equals the provided value. Valid values: active, archived, completed.
+         * @x-autobe-specification Query filter for project status. Filters
+         *   hrm_projects.status column where status equals the provided value.
+         *   Valid values: active, archived, completed.
      */
     status?: string | undefined;
 
@@ -229,7 +255,9 @@ export namespace IHrmProjectBudgetReport {
      *
      * If not provided, both billable and non-billable timelogs are included.
      *
-     * @x-autobe-specification Query filter for billable time. Filters hrm_timelogs.billable column where billable equals the provided boolean value. When true, only billable timelogs are included.
+         * @x-autobe-specification Query filter for billable time. Filters
+         *   hrm_timelogs.billable column where billable equals the provided
+         *   boolean value. When true, only billable timelogs are included.
      */
     billable?: boolean | undefined;
 
@@ -245,7 +273,9 @@ export namespace IHrmProjectBudgetReport {
      *
      * Used together with `limit` to control the number of results returned per request.
      *
-     * @x-autobe-specification Pagination control for result set. Specifies which page of results to return. Minimum value is 1. Used with limit parameter to paginate aggregated report results.
+         * @x-autobe-specification Pagination control for result set. Specifies
+         *   which page of results to return. Minimum value is 1. Used with
+         *   limit parameter to paginate aggregated report results.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -262,7 +292,10 @@ export namespace IHrmProjectBudgetReport {
      *
      * The actual number of records returned may be less than this value on the final page or when fewer records match the filter criteria.
      *
-     * @x-autobe-specification Pagination control for result set size. Specifies maximum number of records per page. Minimum value is 1, maximum value is 100. Used with page parameter to paginate aggregated report results.
+         * @x-autobe-specification Pagination control for result set size.
+         *   Specifies maximum number of records per page. Minimum value is 1,
+         *   maximum value is 100. Used with page parameter to paginate
+         *   aggregated report results.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)

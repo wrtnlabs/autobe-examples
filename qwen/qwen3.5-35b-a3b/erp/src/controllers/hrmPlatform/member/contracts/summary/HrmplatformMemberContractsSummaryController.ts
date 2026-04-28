@@ -19,9 +19,10 @@ export class HrmplatformMemberContractsSummaryController {
    *
    * @param connection
    * @param body Search criteria and pagination parameters for contract summary retrieval. Includes filter options for contract status, date ranges (start_date, end_date, created_at), employee reference, compensation ranges, and sorting preferences.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query hrm_platform_contracts table with pagination, filtering, and sorting.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query hrm_platform_contracts table with
+     *   pagination, filtering, and sorting.
    *
    * Apply filters from request body:
    * - date_range: filter contracts by start_date, end_date, or created_at ranges

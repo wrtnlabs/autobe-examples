@@ -22,9 +22,10 @@ export class CommunityplatformMemberVotesController {
    *
    * @param connection
    * @param postVoteId Unique identifier of the target post vote record
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement a read-only service method that loads a single row from community_platform_post_votes by its primary key id.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implement a read-only service method that loads a
+     *   single row from community_platform_post_votes by its primary key id.
    *
    * Validate that postVoteId is a UUID-formatted identifier before querying. Query the vote row by id and join the related community_platform_members record through community_platform_member_id and the related community_platform_posts record through community_platform_post_id when authorization, ownership checks, or response composition requires those relations. If no row exists for the supplied id, return a not-found error.
    *

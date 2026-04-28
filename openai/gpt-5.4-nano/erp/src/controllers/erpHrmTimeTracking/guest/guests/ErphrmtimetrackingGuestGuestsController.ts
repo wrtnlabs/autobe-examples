@@ -26,9 +26,9 @@ export class ErphrmtimetrackingGuestGuestsController {
    * - Guest-auth entry behaviors (sign up / sign in) are handled by the authentication flow and must establish an authenticated session before any organization-scoped endpoints can be called.
    *
    * @param connection
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor guest
-   * @x-autobe-specification Implement guest identity listing.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor guest
+     * @x-autobe-specification Implement guest identity listing.
    *
    * 1) Authorization: allow access only for the guest actor context defined in requirements; still enforce any general authorization gates for guest browsing.
    * 2) Query: SELECT from `erp_hrm_time_tracking_guests`.
@@ -83,21 +83,25 @@ export class ErphrmtimetrackingGuestGuestsController {
    *
    * @param connection
    * @param body Guest session upsert payload containing guest identity correlation and connection context metadata to issue a guest session with an expiration timestamp.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor guest
-   * @x-autobe-specification Implementation steps:
-   * 1) Parse request body containing guest identity correlation inputs (e.g., guestEmail) and connection metadata (ip/href/referrer).
-   * 2) Look up erp_hrm_time_tracking_guests by unique email.
-   *    - If a record exists and deleted_at is null, treat it as active.
-   *    - If it exists but deleted_at is non-null, reject (do not issue sessions for deleted identities).
-   *    - If no record exists, create a new erp_hrm_time_tracking_guests row.
-   *      - For creation, set email and password_hash from the request or generate/derive a compliant password hash according to the system’s guest authentication policy.
-   * 3) Create a new erp_hrm_time_tracking_guest_sessions row:
-   *    - Set erp_hrm_time_tracking_guest_id from the active guest identity.
-   *    - Persist ip, href, referrer.
-   *    - Set created_at to current server timestamp.
-   *    - Set expired_at to created_at + configured guest session TTL.
-   * 4) Return a response DTO containing the guest identity id and the issued guest session id along with relevant timestamps for client-side gating.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor guest
+     * @x-autobe-specification Implementation steps: 1) Parse request body
+     *   containing guest identity correlation inputs (e.g., guestEmail) and
+     *   connection metadata (ip/href/referrer). 2) Look up
+     *   erp_hrm_time_tracking_guests by unique email. - If a record exists and
+     *   deleted_at is null, treat it as active. - If it exists but deleted_at
+     *   is non-null, reject (do not issue sessions for deleted identities). -
+     *   If no record exists, create a new erp_hrm_time_tracking_guests row. -
+     *   For creation, set email and password_hash from the request or
+     *   generate/derive a compliant password hash according to the system’s
+     *   guest authentication policy. 3) Create a new
+     *   erp_hrm_time_tracking_guest_sessions row: - Set
+     *   erp_hrm_time_tracking_guest_id from the active guest identity. -
+     *   Persist ip, href, referrer. - Set created_at to current server
+     *   timestamp. - Set expired_at to created_at + configured guest session
+     *   TTL. 4) Return a response DTO containing the guest identity id and the
+     *   issued guest session id along with relevant timestamps for client-side
+     *   gating.
    *
    * Transactions and consistency:
    * - Use a single database transaction covering guest identity lookup/creation (if needed) and session insert.

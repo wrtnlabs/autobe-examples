@@ -25,21 +25,28 @@ import { IShoppingMallInventoryRecord } from "../../../../structures/IShoppingMa
  * @param props.body Inventory movement input for creating a single immutable InventoryRecord entry, including the required quantity and the reason that explains why the inventory changed.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implementation steps:
- * 1) Authenticate actor and authorize: allow seller to create inventory records only for variants they own; allow admin if the platform permissions include admin inventory oversight.
- * 2) Validate request payload:
- *    - Ensure the referenced `shopping_mall_product_variants.id` exists and is not soft-deleted (`shopping_mall_product_variants.deleted_at` is null) and is active (`is_active=true`).
- *    - Validate quantity invariants for inventory consistency:
- *      - stock_quantity, reserved_quantity, available_quantity must be non-negative integers.
- *      - available_quantity must be derived/coherent with stock_quantity and reserved_quantity according to the service’s inventory model rules (Realize Agent should apply the exact invariant checks used elsewhere in the platform).
- * 3) Validate business reason requirement (inventory history explainability): if the request does not provide a reason, reject.
- * 4) Persist a new `shopping_mall_inventory_records` row with:
- *    - shopping_mall_product_variant_id
- *    - stock_quantity, reserved_quantity, available_quantity
- *    - created_at/updated_at set to current time in DB if not provided by DTO mapping.
- * 5) Do NOT update existing inventory history rows; only append.
- * 6) After insert, the system derives current stock by summing inventory history entries for the variant; if the insertion introduces inconsistency detectable by the consistency checker, roll back and return an error.
- * 7) Return the created record DTO.
+ * @x-autobe-specification Implementation steps: 1) Authenticate actor and
+ *   authorize: allow seller to create inventory records only for variants they
+ *   own; allow admin if the platform permissions include admin inventory
+ *   oversight. 2) Validate request payload: - Ensure the referenced
+ *   `shopping_mall_product_variants.id` exists and is not soft-deleted
+ *   (`shopping_mall_product_variants.deleted_at` is null) and is active
+ *   (`is_active=true`). - Validate quantity invariants for inventory
+ *   consistency: - stock_quantity, reserved_quantity, available_quantity must
+ *   be non-negative integers. - available_quantity must be derived/coherent
+ *   with stock_quantity and reserved_quantity according to the service’s
+ *   inventory model rules (Realize Agent should apply the exact invariant
+ *   checks used elsewhere in the platform). 3) Validate business reason
+ *   requirement (inventory history explainability): if the request does not
+ *   provide a reason, reject. 4) Persist a new
+ *   `shopping_mall_inventory_records` row with: -
+ *   shopping_mall_product_variant_id - stock_quantity, reserved_quantity,
+ *   available_quantity - created_at/updated_at set to current time in DB if not
+ *   provided by DTO mapping. 5) Do NOT update existing inventory history rows;
+ *   only append. 6) After insert, the system derives current stock by summing
+ *   inventory history entries for the variant; if the insertion introduces
+ *   inconsistency detectable by the consistency checker, roll back and return
+ *   an error. 7) Return the created record DTO.
  *
  * Error handling:
  * - 400/422 for validation failures (missing/invalid quantities, missing reason, inconsistent inventory results).
@@ -146,7 +153,8 @@ export namespace create {
  * @param props.body Search criteria and pagination controls for browsing inventory history records.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implement a search/list endpoint over shopping_mall_inventory_records.
+ * @x-autobe-specification Implement a search/list endpoint over
+ *   shopping_mall_inventory_records.
  *
  * 1) Parse request body (IShoppingMallInventoryRecord.IRequest or equivalent):
  *    - productVariantId (optional filter mapped to shopping_mall_product_variant_id)
@@ -385,7 +393,8 @@ export namespace at {
  * @param props.body Updated values for the inventory history entry. The service must validate that the inventory remains internally consistent when current stock is derived from inventory history.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implementation guidance for PUT /inventoryRecords/{inventoryRecordId}.
+ * @x-autobe-specification Implementation guidance for PUT
+ *   /inventoryRecords/{inventoryRecordId}.
  *
  * 1) Input handling
  * - Read inventoryRecordId from path parameter.
@@ -527,14 +536,16 @@ export namespace update {
  * @param props.inventoryRecordId Target inventory history entry ID to erase. This references shopping_mall_inventory_records.id.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification 1) Parse path parameter inventoryRecordId as UUID.
- * 2) Authorization: ensure the caller is allowed to access inventory history records in the first place (at minimum, the caller must be authenticated as an admin or seller depending on how inventory history is scoped in the service). Regardless of actor, enforce immutability.
- * 3) Fetch shopping_mall_inventory_records by id.
- *    - If not found: return 404 (not found).
- * 4) If found: reject deletion.
- *    - Do not perform any DELETE/soft-delete update on shopping_mall_inventory_records.
- *    - Return a business/domain error such as "inventory history is immutable".
- * 5) Ensure the response does not modify any other rows.
+ * @x-autobe-specification 1) Parse path parameter inventoryRecordId as UUID. 2)
+ *   Authorization: ensure the caller is allowed to access inventory history
+ *   records in the first place (at minimum, the caller must be authenticated as
+ *   an admin or seller depending on how inventory history is scoped in the
+ *   service). Regardless of actor, enforce immutability. 3) Fetch
+ *   shopping_mall_inventory_records by id. - If not found: return 404 (not
+ *   found). 4) If found: reject deletion. - Do not perform any
+ *   DELETE/soft-delete update on shopping_mall_inventory_records. - Return a
+ *   business/domain error such as "inventory history is immutable". 5) Ensure
+ *   the response does not modify any other rows.
  *
  * Edge cases:
  * - If the database row exists but is marked deleted_at (if applicable), still reject deletion/erasure and do not hard-delete.

@@ -11,14 +11,15 @@ export namespace IPageIEcommerceMallReview {
     /**
      * Page information.
      *
-     * @x-autobe-specification Pagination information for the page.
+         * @x-autobe-specification Pagination information for the page.
      */
     pagination: IPage.IPagination;
 
     /**
      * List of records.
      *
-     * @x-autobe-specification List of records of type IEcommerceMallReview.ISummary.
+         * @x-autobe-specification List of records of type
+         *   IEcommerceMallReview.ISummary.
      */
     data: IEcommerceMallReview.ISummary[];
   };
@@ -32,14 +33,15 @@ export namespace IPageIEcommerceMallReview {
     /**
      * Page information.
      *
-     * @x-autobe-specification Pagination information for the page.
+         * @x-autobe-specification Pagination information for the page.
      */
     pagination: IPage.IPagination;
 
     /**
      * List of records.
      *
-     * @x-autobe-specification List of records of type IEcommerceMallReview.ISnapshot.
+         * @x-autobe-specification List of records of type
+         *   IEcommerceMallReview.ISnapshot.
      */
     data: IEcommerceMallReview.ISnapshot[];
   };

@@ -17,8 +17,9 @@ export type IECommerceMallSuperAdministrator = {
    *
    * This UUID is the primary key of the super administrator record and is used as a reference in API path parameters, audit logs, and grade change records.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from e_commerce_mall_super_administrators.id. Primary key, UUID format.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_super_administrators.id. Primary key, UUID format.
    */
   id: string & tags.Format<"uuid">;
 
@@ -27,8 +28,11 @@ export type IECommerceMallSuperAdministrator = {
    *
    * Each super administrator is promoted from an existing regular administrator account. This one-to-one relationship maintains the governance chain where super administrators retain an associated regular administrator identity. The summary includes the administrator's ID, email, grade, and creation timestamp.
    *
-   * @x-autobe-database-schema-property administrator
-   * @x-autobe-specification Join via e_commerce_mall_administrator_id FK to e_commerce_mall_administrators table (id). Returns IECommerceMallAdministrator.ISummary. Filters out soft-deleted administrators (deleted_at IS NULL).
+     * @x-autobe-database-schema-property administrator
+     * @x-autobe-specification Join via e_commerce_mall_administrator_id FK to
+     *   e_commerce_mall_administrators table (id). Returns
+     *   IECommerceMallAdministrator.ISummary. Filters out soft-deleted
+     *   administrators (deleted_at IS NULL).
    */
   administrator: IECommerceMallAdministrator.ISummary;
 
@@ -37,8 +41,10 @@ export type IECommerceMallSuperAdministrator = {
    *
    * This email is distinct from the underlying administrator's email and serves as the login identifier for credential-based authentication. Must be a valid email format and is unique across all super administrator accounts.
    *
-   * @x-autobe-database-schema-property email
-   * @x-autobe-specification Direct mapping from e_commerce_mall_super_administrators.email. Unique constraint enforced at database level.
+     * @x-autobe-database-schema-property email
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_super_administrators.email. Unique constraint enforced
+     *   at database level.
    */
   email: string & tags.Format<"email">;
 
@@ -47,8 +53,9 @@ export type IECommerceMallSuperAdministrator = {
    *
    * This corresponds to the moment when the administrator was promoted to super administrator status by an existing super administrator. Recorded in ISO 8601 format with timezone information.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from e_commerce_mall_super_administrators.created_at. Timestamptz format.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_super_administrators.created_at. Timestamptz format.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -57,8 +64,9 @@ export type IECommerceMallSuperAdministrator = {
    *
    * Tracks updates such as password changes or profile modifications. Recorded in ISO 8601 format with timezone information.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from e_commerce_mall_super_administrators.updated_at. Timestamptz format.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_super_administrators.updated_at. Timestamptz format.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -67,8 +75,10 @@ export type IECommerceMallSuperAdministrator = {
    *
    * Soft deletion preserves audit trail integrity for historical governance records such as past promotions, demotions, and administrator requests. A null value indicates the account is currently active. Recorded in ISO 8601 format with timezone information.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from e_commerce_mall_super_administrators.deleted_at. Nullable timestamptz. Null indicates an active, non-deleted account.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_super_administrators.deleted_at. Nullable timestamptz.
+     *   Null indicates an active, non-deleted account.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -86,8 +96,12 @@ export namespace IECommerceMallSuperAdministrator {
      *
      * This foreign key establishes the 1:1 relationship between the new super administrator record and the existing regular administrator record being elevated. The referenced administrator must exist in the system and must not already have a corresponding super administrator record.
      *
-     * @x-autobe-database-schema-property e_commerce_mall_administrator_id
-     * @x-autobe-specification Direct mapping from e_commerce_mall_super_administrators.e_commerce_mall_administrator_id. Foreign key referencing the regular administrator account being promoted. Must reference an existing administrator who is not already a super administrator.
+         * @x-autobe-database-schema-property e_commerce_mall_administrator_id
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_super_administrators.e_commerce_mall_administrator_id.
+         *   Foreign key referencing the regular administrator account being
+         *   promoted. Must reference an existing administrator who is not
+         *   already a super administrator.
      */
     administrator_id: string & tags.Format<"uuid">;
 
@@ -96,8 +110,11 @@ export namespace IECommerceMallSuperAdministrator {
      *
      * This email is separate from the regular administrator's existing email, allowing distinct credentials at the super administrator level. Must be a valid email format and unique across all super administrator accounts on the platform.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from e_commerce_mall_super_administrators.email. Must be a valid email format and unique across all super administrator accounts. This email is distinct from the underlying administrator's email.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_super_administrators.email. Must be a valid email
+         *   format and unique across all super administrator accounts. This
+         *   email is distinct from the underlying administrator's email.
      */
     email: string & tags.Format<"email">;
 
@@ -106,8 +123,11 @@ export namespace IECommerceMallSuperAdministrator {
      *
      * This password is used for authentication alongside the email address. It is stored securely using a strong hashing algorithm (bcrypt) and is never exposed in API responses or logs.
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification Maps to e_commerce_mall_super_administrators.password_hash via bcrypt hashing. The plain-text password is hashed before storage and never stored in raw form.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification Maps to
+         *   e_commerce_mall_super_administrators.password_hash via bcrypt
+         *   hashing. The plain-text password is hashed before storage and never
+         *   stored in raw form.
      */
     password: string & tags.Format<"password">;
 
@@ -116,7 +136,10 @@ export namespace IECommerceMallSuperAdministrator {
      *
      * Captured from the HTTP request context at session creation time for security audit trail purposes. Records which platform page the promoting super administrator was on when performing the promotion.
      *
-     * @x-autobe-specification Session context field captured from the HTTP request URL at the time of promotion. Stored in e_commerce_mall_super_administrator_sessions for audit trail purposes.
+         * @x-autobe-specification Session context field captured from the HTTP
+         *   request URL at the time of promotion. Stored in
+         *   e_commerce_mall_super_administrator_sessions for audit trail
+         *   purposes.
      */
     href: string & tags.Format<"uri">;
 
@@ -125,7 +148,10 @@ export namespace IECommerceMallSuperAdministrator {
      *
      * Captured from the HTTP Referer header at session creation time for security audit trail purposes. Provides context about the navigation path that led to the promotion action.
      *
-     * @x-autobe-specification Session context field captured from the HTTP Referer header at the time of promotion. Stored in e_commerce_mall_super_administrator_sessions for audit trail purposes.
+         * @x-autobe-specification Session context field captured from the HTTP
+         *   Referer header at the time of promotion. Stored in
+         *   e_commerce_mall_super_administrator_sessions for audit trail
+         *   purposes.
      */
     referrer: string & tags.Format<"uri">;
 
@@ -134,7 +160,11 @@ export namespace IECommerceMallSuperAdministrator {
      *
      * Captured for security audit trail purposes and stored as part of the session record. This field is optional as it may be detected server-side in SSR environments when the client cannot self-report its IP address.
      *
-     * @x-autobe-specification Session context field captured from the client IP address at the time of promotion. Stored in e_commerce_mall_super_administrator_sessions for audit trail purposes. Optional because in SSR scenarios the server may detect the IP as fallback.
+         * @x-autobe-specification Session context field captured from the
+         *   client IP address at the time of promotion. Stored in
+         *   e_commerce_mall_super_administrator_sessions for audit trail
+         *   purposes. Optional because in SSR scenarios the server may detect
+         *   the IP as fallback.
      */
     ip?: (string & tags.Format<"ipv4">) | null | undefined;
   };
@@ -152,7 +182,10 @@ export namespace IECommerceMallSuperAdministrator {
      *
      * Must be a valid email format and correspond to an active (non-deleted) super administrator account in the system. This email is verified against the stored credential in the `e_commerce_mall_super_administrators` table during authentication.
      *
-     * @x-autobe-specification Maps to e_commerce_mall_super_administrators.email column. Used to look up the super administrator account during authentication. Unique constraint enforced at database level.
+         * @x-autobe-specification Maps to
+         *   e_commerce_mall_super_administrators.email column. Used to look up
+         *   the super administrator account during authentication. Unique
+         *   constraint enforced at database level.
      */
     email: string & tags.Format<"email">;
 
@@ -161,7 +194,10 @@ export namespace IECommerceMallSuperAdministrator {
      *
      * The system verifies this password against the securely stored password hash in the `e_commerce_mall_super_administrators` table using bcrypt comparison. The plain-text password is never stored or logged and is only used transiently for authentication verification.
      *
-     * @x-autobe-specification User-provided plain-text password. Compared against e_commerce_mall_super_administrators.password_hash using bcrypt.compare for secure password verification. Never stored or logged in plain text — only used transiently during authentication.
+         * @x-autobe-specification User-provided plain-text password. Compared
+         *   against e_commerce_mall_super_administrators.password_hash using
+         *   bcrypt.compare for secure password verification. Never stored or
+         *   logged in plain text — only used transiently during authentication.
      */
     password: string;
 
@@ -170,7 +206,10 @@ export namespace IECommerceMallSuperAdministrator {
      *
      * Captured for security auditing purposes to track the origin of login requests. This URL is stored in the session record created upon successful authentication in the `e_commerce_mall_super_administrator_sessions` table.
      *
-     * @x-autobe-specification Full request URL from which the login was initiated. Captured from the request body and stored in e_commerce_mall_super_administrator_sessions.href for audit trail purposes at session creation time.
+         * @x-autobe-specification Full request URL from which the login was
+         *   initiated. Captured from the request body and stored in
+         *   e_commerce_mall_super_administrator_sessions.href for audit trail
+         *   purposes at session creation time.
      */
     href: string & tags.Format<"uri">;
 
@@ -179,7 +218,10 @@ export namespace IECommerceMallSuperAdministrator {
      *
      * Captured for security auditing and analytics purposes to track how users navigated to the login page. Stored in the session record upon successful authentication in the `e_commerce_mall_super_administrator_sessions` table.
      *
-     * @x-autobe-specification HTTP Referer header value at the time of login. Captured from the request body and stored in e_commerce_mall_super_administrator_sessions.referrer for audit trail and analytics purposes.
+         * @x-autobe-specification HTTP Referer header value at the time of
+         *   login. Captured from the request body and stored in
+         *   e_commerce_mall_super_administrator_sessions.referrer for audit
+         *   trail and analytics purposes.
      */
     referrer: string & tags.Format<"uri">;
 
@@ -188,7 +230,11 @@ export namespace IECommerceMallSuperAdministrator {
      *
      * This field is optional. In server-side rendering scenarios where the client cannot determine its own IP address, the server captures the client IP as a fallback (`body.ip ?? serverIp`). Used for security auditing and stored in the session record upon successful authentication in the `e_commerce_mall_super_administrator_sessions` table.
      *
-     * @x-autobe-specification Client IPv4 address at the time of login. Optional field — in server-side rendering scenarios where the client cannot determine its own IP, the server captures the client IP as a fallback using body.ip ?? serverIp logic. Stored in e_commerce_mall_super_administrator_sessions.ip.
+         * @x-autobe-specification Client IPv4 address at the time of login.
+         *   Optional field — in server-side rendering scenarios where the
+         *   client cannot determine its own IP, the server captures the client
+         *   IP as a fallback using body.ip ?? serverIp logic. Stored in
+         *   e_commerce_mall_super_administrator_sessions.ip.
      */
     ip?: (string & tags.Format<"ipv4">) | undefined;
   };
@@ -208,7 +254,10 @@ export namespace IECommerceMallSuperAdministrator {
      *
      * This identifier corresponds to the primary key of the super administrator record in the database. It uniquely identifies the super administrator across all system operations and is used as the subject claim in JWT tokens for authentication.
      *
-     * @x-autobe-specification Direct mapping from e_commerce_mall_super_administrators.id. UUID primary key of the super administrator record. Retrieved at session creation time during join, login, or refresh operations.
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_super_administrators.id. UUID primary key of the
+         *   super administrator record. Retrieved at session creation time
+         *   during join, login, or refresh operations.
      */
     id: string & tags.Format<"uuid">;
 
@@ -217,7 +266,13 @@ export namespace IECommerceMallSuperAdministrator {
      *
      * Provides a summary view of the underlying administrator identity, including the administrator's unique identifier, email address, grade level (regular or super), and account creation timestamp. Every super administrator has a 1:1 relationship with a regular administrator record, maintaining the platform's governance chain.
      *
-     * @x-autobe-specification Derived from 1:1 LEFT JOIN between e_commerce_mall_super_administrators and e_commerce_mall_administrators via the e_commerce_mall_administrator_id FK. Returns IECommerceMallAdministrator.ISummary. Every super administrator has exactly one corresponding administrator record due to the @relation constraint.
+         * @x-autobe-specification Derived from 1:1 LEFT JOIN between
+         *   e_commerce_mall_super_administrators and
+         *   e_commerce_mall_administrators via the
+         *   e_commerce_mall_administrator_id FK. Returns
+         *   IECommerceMallAdministrator.ISummary. Every super administrator has
+         *   exactly one corresponding administrator record due to the @relation
+         *   constraint.
      */
     administrator: IECommerceMallAdministrator.ISummary;
 
@@ -226,7 +281,11 @@ export namespace IECommerceMallSuperAdministrator {
      *
      * This email serves as the login identifier along with the password for credential-based authentication. It is distinct from the underlying regular administrator's email address, allowing separate credentials at the super administrator level.
      *
-     * @x-autobe-specification Direct mapping from e_commerce_mall_super_administrators.email. Has a @@unique constraint ensuring no duplicate super administrator email addresses. Retrieved from the super administrator record at session creation time.
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_super_administrators.email. Has a @@unique
+         *   constraint ensuring no duplicate super administrator email
+         *   addresses. Retrieved from the super administrator record at session
+         *   creation time.
      */
     email: string & tags.Format<"email">;
 
@@ -235,7 +294,11 @@ export namespace IECommerceMallSuperAdministrator {
      *
      * This corresponds to the moment when the regular administrator was promoted to super administrator status by an existing super administrator. The timestamp is in ISO 8601 date-time format.
      *
-     * @x-autobe-specification Direct mapping from e_commerce_mall_super_administrators.created_at. Set at promotion time when the administrator was elevated to super administrator status by an existing super administrator. Retrieved from the super administrator record at session creation.
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_super_administrators.created_at. Set at promotion
+         *   time when the administrator was elevated to super administrator
+         *   status by an existing super administrator. Retrieved from the super
+         *   administrator record at session creation.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -244,7 +307,10 @@ export namespace IECommerceMallSuperAdministrator {
      *
      * Tracks the most recent modification to any account field, such as password changes or profile updates. The timestamp is in ISO 8601 date-time format.
      *
-     * @x-autobe-specification Direct mapping from e_commerce_mall_super_administrators.updated_at. Updated on any record modification such as password changes. Retrieved from the super administrator record at session creation time.
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_super_administrators.updated_at. Updated on any
+         *   record modification such as password changes. Retrieved from the
+         *   super administrator record at session creation time.
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -253,14 +319,19 @@ export namespace IECommerceMallSuperAdministrator {
      *
      * Soft deletion preserves audit trail integrity for historical governance records. A soft-deleted account is denied authentication and cannot perform any platform operations.
      *
-     * @x-autobe-specification Direct mapping from e_commerce_mall_super_administrators.deleted_at. Nullable — null value indicates the account is active and not soft-deleted. A soft-deleted super administrator is denied authentication regardless of credential validity.
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_super_administrators.deleted_at. Nullable — null
+         *   value indicates the account is active and not soft-deleted. A
+         *   soft-deleted super administrator is denied authentication
+         *   regardless of credential validity.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
 
     /**
      * Authorization token.
      *
-     * @x-autobe-specification Authorization token comes from the session table.
+         * @x-autobe-specification Authorization token comes from the session
+         *   table.
      */
     token: IAuthorizationToken;
   };
@@ -282,7 +353,20 @@ export namespace IECommerceMallSuperAdministrator {
      *
      * Invalid, expired, or revoked refresh tokens result in a 401 authentication failure response, requiring the super administrator to log in again.
      *
-     * @x-autobe-specification The refresh token is a JWT string obtained from a previous successful authentication response (join/promotion, login, or prior token refresh). It identifies the existing super administrator session record in e_commerce_mall_super_administrator_sessions. The server-side validation flow: (1) decode the JWT to extract the session identifier, (2) look up the matching session record in e_commerce_mall_super_administrator_sessions, (3) verify the session has not expired (expired_at > current timestamp), and (4) verify the session has not been revoked (e.g., by logout). On success, new JWT access and refresh tokens are issued and the session expiration is extended. On any validation failure, return 401 Unauthorized. This token is NOT stored as a database column — it is a runtime credential passed in the request body.
+         * @x-autobe-specification The refresh token is a JWT string obtained
+         *   from a previous successful authentication response (join/promotion,
+         *   login, or prior token refresh). It identifies the existing super
+         *   administrator session record in
+         *   e_commerce_mall_super_administrator_sessions. The server-side
+         *   validation flow: (1) decode the JWT to extract the session
+         *   identifier, (2) look up the matching session record in
+         *   e_commerce_mall_super_administrator_sessions, (3) verify the
+         *   session has not expired (expired_at > current timestamp), and (4)
+         *   verify the session has not been revoked (e.g., by logout). On
+         *   success, new JWT access and refresh tokens are issued and the
+         *   session expiration is extended. On any validation failure, return
+         *   401 Unauthorized. This token is NOT stored as a database column —
+         *   it is a runtime credential passed in the request body.
      */
     refreshToken: string;
   };
@@ -300,7 +384,11 @@ export namespace IECommerceMallSuperAdministrator {
      *
      * Performs a partial (LIKE) match against the super administrator's email field. The search is case-insensitive and matches any substring within the email address. When omitted or empty, no email-based filtering is applied.
      *
-     * @x-autobe-specification LIKE (partial) match on the e_commerce_mall_super_administrators.email column. Case-insensitive. Transformed by the backend into a WHERE email LIKE '%keyword%' clause. When empty or omitted, no email filter is applied.
+         * @x-autobe-specification LIKE (partial) match on the
+         *   e_commerce_mall_super_administrators.email column.
+         *   Case-insensitive. Transformed by the backend into a WHERE email
+         *   LIKE '%keyword%' clause. When empty or omitted, no email filter is
+         *   applied.
      */
     search?: string | undefined;
 
@@ -309,7 +397,9 @@ export namespace IECommerceMallSuperAdministrator {
      *
      * Indicates which page of results to retrieve. Page numbering starts from 1, so the first page is page 1. This parameter is used together with `limit` to control result set slicing. Defaults to 1 when omitted.
      *
-     * @x-autobe-specification Offset-based pagination page number. Page 1 is the first page. Computed as SQL OFFSET = (page - 1) * limit. Default to 1 if omitted.
+         * @x-autobe-specification Offset-based pagination page number. Page 1
+         *   is the first page. Computed as SQL OFFSET = (page - 1) * limit.
+         *   Default to 1 if omitted.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -318,7 +408,9 @@ export namespace IECommerceMallSuperAdministrator {
      *
      * Defines the upper bound on how many records can be returned in a single response. The actual number of records in the response may be less when the remaining records are fewer than this value. Capped at 100 to prevent excessive data loads.
      *
-     * @x-autobe-specification Maximum records per page. Applied as SQL LIMIT. Capped at 100 server-side. Default to application-configured page size (e.g., 20) if omitted.
+         * @x-autobe-specification Maximum records per page. Applied as SQL
+         *   LIMIT. Capped at 100 server-side. Default to application-configured
+         *   page size (e.g., 20) if omitted.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -329,7 +421,10 @@ export namespace IECommerceMallSuperAdministrator {
      *
      * Filters super administrators created at or after this timestamp. Used together with `to_created_at` to define a bounded date range. When only `from_created_at` is provided, results include all records created from the specified point in time onward, with no upper bound.
      *
-     * @x-autobe-specification Inclusive lower bound filter on the e_commerce_mall_super_administrators.created_at column. Transformed to WHERE created_at >= :from_created_at. When omitted, no lower bound is applied.
+         * @x-autobe-specification Inclusive lower bound filter on the
+         *   e_commerce_mall_super_administrators.created_at column. Transformed
+         *   to WHERE created_at >= :from_created_at. When omitted, no lower
+         *   bound is applied.
      */
     from_created_at?: (string & tags.Format<"date-time">) | undefined;
 
@@ -338,7 +433,10 @@ export namespace IECommerceMallSuperAdministrator {
      *
      * Filters super administrators created at or before this timestamp. Used together with `from_created_at` to define a bounded date range. When only `to_created_at` is provided, results include all records created up to the specified point in time.
      *
-     * @x-autobe-specification Inclusive upper bound filter on the e_commerce_mall_super_administrators.created_at column. Transformed to WHERE created_at <= :to_created_at. When omitted, no upper bound is applied.
+         * @x-autobe-specification Inclusive upper bound filter on the
+         *   e_commerce_mall_super_administrators.created_at column. Transformed
+         *   to WHERE created_at <= :to_created_at. When omitted, no upper bound
+         *   is applied.
      */
     to_created_at?: (string & tags.Format<"date-time">) | undefined;
 
@@ -347,7 +445,10 @@ export namespace IECommerceMallSuperAdministrator {
      *
      * Defaults to false when omitted, meaning soft-deleted accounts are excluded by default. Set to true to include accounts that have been soft-deleted in the result set.
      *
-     * @x-autobe-specification Controls soft-deletion filtering. When true, omit the WHERE deleted_at IS NULL clause to include soft-deleted records. When false or absent, apply WHERE deleted_at IS NULL to exclude soft-deleted records.
+         * @x-autobe-specification Controls soft-deletion filtering. When true,
+         *   omit the WHERE deleted_at IS NULL clause to include soft-deleted
+         *   records. When false or absent, apply WHERE deleted_at IS NULL to
+         *   exclude soft-deleted records.
      */
     include_deleted?: boolean | undefined;
   };
@@ -363,8 +464,9 @@ export namespace IECommerceMallSuperAdministrator {
      *
      * This UUID serves as the primary key for the super administrator record and is used for API operations that target a specific super administrator.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from e_commerce_mall_super_administrators.id. UUID format.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_super_administrators.id. UUID format.
      */
     id: string & tags.Format<"uuid">;
 
@@ -373,8 +475,11 @@ export namespace IECommerceMallSuperAdministrator {
      *
      * This email is distinct from the linked regular administrator's email and serves as the login identifier for the super administrator account.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from e_commerce_mall_super_administrators.email. Unique constraint enforced at the database level. This email is distinct from the linked regular administrator's email.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_super_administrators.email. Unique constraint
+         *   enforced at the database level. This email is distinct from the
+         *   linked regular administrator's email.
      */
     email: string;
 
@@ -383,8 +488,13 @@ export namespace IECommerceMallSuperAdministrator {
      *
      * Each super administrator has a one-to-one relationship with a regular administrator account, maintaining the governance chain where super administrators originate from existing regular administrators and retain their underlying administrator identity.
      *
-     * @x-autobe-database-schema-property administrator
-     * @x-autobe-specification Join from e_commerce_mall_super_administrators.e_commerce_mall_administrator_id to e_commerce_mall_administrators.id. Returns IECommerceMallAdministrator.ISummary containing id, email, grade (computed: 'super' if super_administrators record exists, else 'regular'), and created_at.
+         * @x-autobe-database-schema-property administrator
+         * @x-autobe-specification Join from
+         *   e_commerce_mall_super_administrators.e_commerce_mall_administrator_id
+         *   to e_commerce_mall_administrators.id. Returns
+         *   IECommerceMallAdministrator.ISummary containing id, email, grade
+         *   (computed: 'super' if super_administrators record exists, else
+         *   'regular'), and created_at.
      */
     administrator: IECommerceMallAdministrator.ISummary;
 
@@ -393,8 +503,11 @@ export namespace IECommerceMallSuperAdministrator {
      *
      * This corresponds to the moment the administrator was promoted to super administrator status by an existing super administrator.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from e_commerce_mall_super_administrators.created_at. This timestamp corresponds to when the administrator was promoted to super administrator status.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_super_administrators.created_at. This timestamp
+         *   corresponds to when the administrator was promoted to super
+         *   administrator status.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -403,8 +516,10 @@ export namespace IECommerceMallSuperAdministrator {
      *
      * Tracks modifications such as password changes or other account updates to the super administrator record.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from e_commerce_mall_super_administrators.updated_at. Updated on any account modification such as password changes.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_super_administrators.updated_at. Updated on any
+         *   account modification such as password changes.
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -413,8 +528,11 @@ export namespace IECommerceMallSuperAdministrator {
      *
      * Soft deletion preserves audit trail integrity for historical governance records such as past promotions, demotions, and administrator requests that involved this super administrator.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from e_commerce_mall_super_administrators.deleted_at. Null when the account is active. Soft-deleted records are excluded by default unless explicitly requested via IRequest parameters.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_super_administrators.deleted_at. Null when the
+         *   account is active. Soft-deleted records are excluded by default
+         *   unless explicitly requested via IRequest parameters.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };

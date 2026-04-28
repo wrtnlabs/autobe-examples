@@ -8,15 +8,21 @@ export type IShoppingMallMemberPasswordReset = {
   /**
    * Opaque reset token issued to the member; it identifies the reset record the server will validate and consume.
    *
-   * @x-autobe-database-schema-property token
-   * @x-autobe-specification Use request.token to locate a shopping_mall_member_password_resets row by token. During redemption, enforce eligibility both before and inside the transaction: deleted_at IS NULL, used_at IS NULL, expires_at > now().
+     * @x-autobe-database-schema-property token
+     * @x-autobe-specification Use request.token to locate a
+     *   shopping_mall_member_password_resets row by token. During redemption,
+     *   enforce eligibility both before and inside the transaction: deleted_at
+     *   IS NULL, used_at IS NULL, expires_at > now().
    */
   token: string;
 
   /**
    * New password in plain text for the member account. The server hashes and stores it securely.
    *
-   * @x-autobe-specification Treat request.password as plaintext. Hash it in the redemption transaction and update shopping_mall_members.password_hash for the member referenced by the matched eligible shopping_mall_member_password_resets row.
+     * @x-autobe-specification Treat request.password as plaintext. Hash it in
+     *   the redemption transaction and update
+     *   shopping_mall_members.password_hash for the member referenced by the
+     *   matched eligible shopping_mall_member_password_resets row.
    */
   password: boolean;
 };
@@ -28,15 +34,27 @@ export namespace IShoppingMallMemberPasswordReset {
     /**
      * Opaque password-reset token that must match an existing, non-expired, unused, non-deleted reset record.
      *
-     * @x-autobe-database-schema-property token
-     * @x-autobe-specification Direct mapping from request.token to shopping_mall_member_password_resets.token. Use it to locate the reset row, then perform eligibility checks (deleted_at IS NULL, used_at IS NULL, expires_at > now()) and re-check eligibility inside the redemption transaction.
+         * @x-autobe-database-schema-property token
+         * @x-autobe-specification Direct mapping from request.token to
+         *   shopping_mall_member_password_resets.token. Use it to locate the
+         *   reset row, then perform eligibility checks (deleted_at IS NULL,
+         *   used_at IS NULL, expires_at > now()) and re-check eligibility
+         *   inside the redemption transaction.
      */
     token: string;
 
     /**
      * New password in plain text to replace the member’s existing password. The server hashes and stores it securely.
      *
-     * @x-autobe-specification Treat request.password as plaintext. In the redemption transaction, hash the plaintext password using the system’s password-hashing strategy and persist the result into shopping_mall_members.password_hash for the member referenced by the matched shopping_mall_member_password_resets.shopping_mall_member_id. Do not store the plaintext password anywhere in the database. After successfully updating the member password hash, mark shopping_mall_member_password_resets.used_at = now().
+         * @x-autobe-specification Treat request.password as plaintext. In the
+         *   redemption transaction, hash the plaintext password using the
+         *   system’s password-hashing strategy and persist the result into
+         *   shopping_mall_members.password_hash for the member referenced by
+         *   the matched
+         *   shopping_mall_member_password_resets.shopping_mall_member_id. Do
+         *   not store the plaintext password anywhere in the database. After
+         *   successfully updating the member password hash, mark
+         *   shopping_mall_member_password_resets.used_at = now().
      */
     password: string & tags.Format<"password">;
   };

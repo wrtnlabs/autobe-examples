@@ -27,7 +27,8 @@ import { IPageIHrmTimeTrackingEmployeeContract } from "../../../../../structures
  * @param props.body Employment terms to create for the employee
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor owner
- * @x-autobe-specification Implement this operation as an organization-scoped employee contract creation workflow.
+ * @x-autobe-specification Implement this operation as an organization-scoped
+ *   employee contract creation workflow.
  *
  * 1. Authenticate the caller and resolve the currently selected organization context from the session or request context.
  * 2. Authorize only actors with employee management capability in that organization, typically owner or a manager with the relevant permission. Reject employee self-service use of this endpoint.
@@ -145,7 +146,10 @@ export namespace create {
  * @param props.body Contract list filters, pagination, and sorting options
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor owner
- * @x-autobe-specification Implement this operation as a scoped contract-history query over `hrm_time_tracking_employee_contracts` joined to `hrm_time_tracking_employees` only as needed to validate access and employee existence.
+ * @x-autobe-specification Implement this operation as a scoped contract-history
+ *   query over `hrm_time_tracking_employee_contracts` joined to
+ *   `hrm_time_tracking_employees` only as needed to validate access and
+ *   employee existence.
  *
  * First, resolve the caller's authenticated actor and current organization context. Verify that the target `employeeId` is accessible in that organization context. For an employee actor, allow the request only when the target employee identity corresponds to the authenticated employee's own workforce record in the selected organization. For owner and manager actors, require employee view permission within the current organization. If the employee does not belong to the current organization or is otherwise outside scope, reject the request.
  *
@@ -254,7 +258,8 @@ export namespace index {
  * @param props.contractId Target contract's unique ID belonging to the specified employee
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor owner
- * @x-autobe-specification Resolve the current authenticated actor and selected organization context first.
+ * @x-autobe-specification Resolve the current authenticated actor and selected
+ *   organization context first.
  *
  * Load the employee record identified by `employeeId` and confirm that it is visible within the current organization context according to workforce access rules. Then load the contract record from `hrm_time_tracking_employee_contracts` by `contractId` and verify that its `hrm_time_tracking_employee_id` matches the requested `employeeId`. Reject the request if the employee does not exist, the contract does not exist, the contract is not owned by the specified employee, or the employee/contract falls outside the current organization scope.
  *
@@ -359,7 +364,10 @@ export namespace at {
  * @param props.body Updated employment terms for the target contract
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor owner
- * @x-autobe-specification Load the target contract from hrm_time_tracking_employee_contracts by id = contractId, hrm_time_tracking_employee_id = employeeId, and deleted_at IS NULL. Reject the request if no matching contract exists.
+ * @x-autobe-specification Load the target contract from
+ *   hrm_time_tracking_employee_contracts by id = contractId,
+ *   hrm_time_tracking_employee_id = employeeId, and deleted_at IS NULL. Reject
+ *   the request if no matching contract exists.
  *
  * Verify that the target contract is accessible within the currently selected organization context. Use organization-scoped authorization rules so that only a caller with employee management permission in the current organization may proceed. Reject cross-organization access attempts even if the caller belongs to another organization.
  *
@@ -478,7 +486,8 @@ export namespace update {
  * @param props.contractId Target employee contract identifier belonging to the specified employee.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor owner
- * @x-autobe-specification Implement a service-layer delete operation for a nested employee contract resource.
+ * @x-autobe-specification Implement a service-layer delete operation for a
+ *   nested employee contract resource.
  *
  * 1. Resolve the authenticated actor and selected organization context from the request session. Reject the request when no organization context is selected, when the actor does not belong to that organization, or when the actor has lost association with that organization.
  * 2. Authorize the actor. Allow organization owners. Allow managers only when their organization-scoped permission set includes employee-management capability. Reject employees and any actor outside the selected organization.

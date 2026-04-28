@@ -12,8 +12,10 @@ export type IShoppingMallProductImage = {
    *
    * This UUID identifies the specific image record in the shopping mall platform. It is used in API paths to reference individual images for operations like reordering, updating display order, or deletion.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_product_images.id. Primary key uniquely identifying each product image record.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_product_images.id. Primary key uniquely identifying each
+     *   product image record.
    */
   id: string & tags.Format<"uuid">;
 
@@ -22,8 +24,12 @@ export type IShoppingMallProductImage = {
    *
    * Lower values appear first. The image with the lowest display_order serves as the main thumbnail shown in product listings and search results. Sellers can reorder images to change their display sequence, with the first image becoming the primary product image visible to customers browsing the platform.
    *
-   * @x-autobe-database-schema-property display_order
-   * @x-autobe-specification Direct mapping from shopping_mall_product_images.display_order. Integer value determining image position in product gallery. Must be >= 1. Unique per product (enforced by database unique constraint on shopping_mall_product_id and display_order).
+     * @x-autobe-database-schema-property display_order
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_product_images.display_order. Integer value determining
+     *   image position in product gallery. Must be >= 1. Unique per product
+     *   (enforced by database unique constraint on shopping_mall_product_id and
+     *   display_order).
    */
   display_order: number & tags.Type<"int32"> & tags.Minimum<1>;
 
@@ -32,8 +38,10 @@ export type IShoppingMallProductImage = {
    *
    * This field contains the complete URL where the image is stored in the platform's file storage system. The URI is used by the frontend to display the image in product galleries, detail pages, and search results. Sellers upload images and the system stores the URI for retrieval.
    *
-   * @x-autobe-database-schema-property image_uri
-   * @x-autobe-specification Direct mapping from shopping_mall_product_images.image_uri. Stores the full URL where the image file is hosted in the file storage system. Format: URI.
+     * @x-autobe-database-schema-property image_uri
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_product_images.image_uri. Stores the full URL where the
+     *   image file is hosted in the file storage system. Format: URI.
    */
   image_uri: string & tags.Format<"uri">;
 
@@ -42,8 +50,11 @@ export type IShoppingMallProductImage = {
    *
    * This field records the exact date and time when the seller uploaded the image to the product. It is automatically set by the system upon image creation and never modified. This timestamp is useful for tracking when images were added and for sorting images by upload date if needed.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from shopping_mall_product_images.created_at. Timestamp when the image was uploaded and created. Format: date-time. Auto-set on insert, never modified.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_product_images.created_at. Timestamp when the image was
+     *   uploaded and created. Format: date-time. Auto-set on insert, never
+     *   modified.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -52,8 +63,11 @@ export type IShoppingMallProductImage = {
    *
    * This field is automatically updated whenever any aspect of the image record changes, such as display order reordering. It provides an audit trail for tracking when images were modified and helps sellers understand the modification history of their product images.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from shopping_mall_product_images.updated_at. Timestamp when the image record was last modified (display order changes, etc.). Format: date-time. Auto-updated on any modification.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_product_images.updated_at. Timestamp when the image
+     *   record was last modified (display order changes, etc.). Format:
+     *   date-time. Auto-updated on any modification.
    */
   updated_at: string & tags.Format<"date-time">;
 };
@@ -73,8 +87,15 @@ export namespace IShoppingMallProductImage {
      *
      * When this value is updated, a product snapshot is automatically created to preserve the previous display order for audit and dispute resolution purposes.
      *
-     * @x-autobe-database-schema-property display_order
-     * @x-autobe-specification Direct mapping from shopping_mall_product_images.display_order column. This integer determines the image's position in the product gallery. Lower values appear first. The image with the lowest display_order becomes the main thumbnail shown in product listings and search results. When updated, triggers product snapshot creation for audit trail. Must be >= 0 and unique per product (uniqueness enforced by database constraint).
+         * @x-autobe-database-schema-property display_order
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_images.display_order column. This integer
+         *   determines the image's position in the product gallery. Lower
+         *   values appear first. The image with the lowest display_order
+         *   becomes the main thumbnail shown in product listings and search
+         *   results. When updated, triggers product snapshot creation for audit
+         *   trail. Must be >= 0 and unique per product (uniqueness enforced by
+         *   database constraint).
      */
     display_order?: (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };
@@ -90,7 +111,15 @@ export namespace IShoppingMallProductImage {
      *
      * The images array specifies the new sequence for product images in the gallery. The first image in the array becomes the main thumbnail (display_order 1) shown in product listings and search results. Subsequent images follow in the specified order. All image IDs must belong to the specified product and be valid UUIDs.
      *
-     * @x-autobe-specification Array of image UUIDs in the desired display order. Each UUID references the id field in shopping_mall_product_images table. Backend validation: all image IDs must belong to the specified product (shopping_mall_product_id matches productId path parameter), product must not be deleted, seller must own the product. Backend processing: update display_order for each image sequentially starting from 1 based on array position. The first image in the array gets display_order 1 and becomes the main thumbnail.
+         * @x-autobe-specification Array of image UUIDs in the desired display
+         *   order. Each UUID references the id field in
+         *   shopping_mall_product_images table. Backend validation: all image
+         *   IDs must belong to the specified product (shopping_mall_product_id
+         *   matches productId path parameter), product must not be deleted,
+         *   seller must own the product. Backend processing: update
+         *   display_order for each image sequentially starting from 1 based on
+         *   array position. The first image in the array gets display_order 1
+         *   and becomes the main thumbnail.
      */
     images: (string & tags.Format<"uuid">)[] &
       tags.MinItems<1> &
@@ -108,8 +137,11 @@ export namespace IShoppingMallProductImage {
      *
      * This must be a valid URL pointing to the image file stored in the file storage system. The image will be added to the product's gallery with the next available display order position. The first image (lowest display_order) serves as the main thumbnail shown in product listings.
      *
-     * @x-autobe-database-schema-property image_uri
-     * @x-autobe-specification Direct mapping to shopping_mall_product_images.image_uri column. The URI is provided by the seller after uploading the image file to the storage system. This must be a valid URL format.
+         * @x-autobe-database-schema-property image_uri
+         * @x-autobe-specification Direct mapping to
+         *   shopping_mall_product_images.image_uri column. The URI is provided
+         *   by the seller after uploading the image file to the storage system.
+         *   This must be a valid URL format.
      */
     image_uri: string & tags.Format<"url">;
   };

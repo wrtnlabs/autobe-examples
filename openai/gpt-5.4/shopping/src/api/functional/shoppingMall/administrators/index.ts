@@ -26,7 +26,8 @@ import { IShoppingMallAdministrator } from "../../../structures/IShoppingMallAdm
  * @param props.body Administrator roster search and pagination criteria
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Implement this operation as a paginated search over the shopping_mall_administrators table.
+ * @x-autobe-specification Implement this operation as a paginated search over
+ *   the shopping_mall_administrators table.
  *
  * Accept a JSON request body of type IShoppingMallAdministrator.IRequest containing pagination, filtering, and sorting fields appropriate for administrative roster browsing. Support filters that are grounded in the business requirement for governance visibility, especially current administrator grade and general keyword search over non-secret identifying fields. Do not require path parameters. Because this is an internal roster endpoint, never expose password hashes, reset tokens, or session information in the response.
  *
@@ -131,7 +132,8 @@ export namespace index {
  * @param props.administratorId Target administrator account ID
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Implement a read-only detail retrieval for one administrator account from `shopping_mall_administrators`.
+ * @x-autobe-specification Implement a read-only detail retrieval for one
+ *   administrator account from `shopping_mall_administrators`.
  *
  * 1. Authorize the caller as an `administrator` or `superAdministrator`. Reject customer and seller actors. Reject unauthenticated requests.
  * 2. Parse `administratorId` as a UUID and query `shopping_mall_administrators` by primary key.

@@ -16,8 +16,9 @@ export type IEcommerceMallCustomerProfile = {
    *
    * A UUID primary key that uniquely identifies this profile record in the database.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_customer_profiles.id. UUID primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_customer_profiles.id. UUID primary key.
    */
   id: string & tags.Format<"uuid">;
 
@@ -26,8 +27,9 @@ export type IEcommerceMallCustomerProfile = {
    *
    * The display name is shown publicly on the platform for identification purposes. It must be a non-empty string not exceeding 100 characters.
    *
-   * @x-autobe-database-schema-property display_name
-   * @x-autobe-specification Direct mapping from ecommerce_mall_customer_profiles.display_name.
+     * @x-autobe-database-schema-property display_name
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_customer_profiles.display_name.
    */
   display_name: string;
 
@@ -36,8 +38,9 @@ export type IEcommerceMallCustomerProfile = {
    *
    * The phone number is used for order notifications and delivery coordination. Must be between 10 and 20 characters in length.
    *
-   * @x-autobe-database-schema-property phone
-   * @x-autobe-specification Direct mapping from ecommerce_mall_customer_profiles.phone.
+     * @x-autobe-database-schema-property phone
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_customer_profiles.phone.
    */
   phone: string;
 
@@ -46,8 +49,10 @@ export type IEcommerceMallCustomerProfile = {
    *
    * The UTC timestamp indicating when this customer profile was initially created in the system.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_customer_profiles.created_at. DateTime to ISO 8601 date-time string.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_customer_profiles.created_at. DateTime to ISO 8601
+     *   date-time string.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -56,8 +61,10 @@ export type IEcommerceMallCustomerProfile = {
    *
    * The UTC timestamp indicating the most recent modification to this customer profile.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_customer_profiles.updated_at. DateTime to ISO 8601 date-time string.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_customer_profiles.updated_at. DateTime to ISO 8601
+     *   date-time string.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -66,8 +73,12 @@ export type IEcommerceMallCustomerProfile = {
    *
    * A nested object containing the customer's account information, specifically the email address used for authentication. Password and other security-related fields are excluded for security reasons.
    *
-   * @x-autobe-database-schema-property customer
-   * @x-autobe-specification BELONGS-TO relation: JOIN ecommerce_mall_customers ON ecommerce_mall_customer_profiles.ecommerce_mall_customer_id = ecommerce_mall_customers.id. Returns ISummary with email only, excluding password_hash.
+     * @x-autobe-database-schema-property customer
+     * @x-autobe-specification BELONGS-TO relation: JOIN
+     *   ecommerce_mall_customers ON
+     *   ecommerce_mall_customer_profiles.ecommerce_mall_customer_id =
+     *   ecommerce_mall_customers.id. Returns ISummary with email only,
+     *   excluding password_hash.
    */
   customer: IEcommerceMallCustomer.ISummary;
 };
@@ -87,8 +98,10 @@ export namespace IEcommerceMallCustomerProfile {
      *
      * **Constraints**: Required. Maximum 100 characters. Cannot be blank or null.
      *
-     * @x-autobe-database-schema-property display_name
-     * @x-autobe-specification Direct mapping to ecommerce_mall_customer_profiles.display_name column. Required string, max length 100 characters.
+         * @x-autobe-database-schema-property display_name
+         * @x-autobe-specification Direct mapping to
+         *   ecommerce_mall_customer_profiles.display_name column. Required
+         *   string, max length 100 characters.
      */
     display_name: string & tags.MaxLength<100>;
 
@@ -99,8 +112,10 @@ export namespace IEcommerceMallCustomerProfile {
      *
      * **Constraints**: Required. Length between 10 and 20 characters. Cannot be blank or null.
      *
-     * @x-autobe-database-schema-property phone
-     * @x-autobe-specification Direct mapping to ecommerce_mall_customer_profiles.phone column. Required string, length between 10 and 20 characters.
+         * @x-autobe-database-schema-property phone
+         * @x-autobe-specification Direct mapping to
+         *   ecommerce_mall_customer_profiles.phone column. Required string,
+         *   length between 10 and 20 characters.
      */
     phone: string & tags.MinLength<10> & tags.MaxLength<20>;
   };
@@ -116,8 +131,9 @@ export namespace IEcommerceMallCustomerProfile {
      *
      * A UUID string that uniquely identifies this profile record in the system. Used for referencing and database relationships.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_mall_customer_profiles.id. UUID primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_customer_profiles.id. UUID primary key.
      */
     id: string & tags.Format<"uuid">;
 
@@ -126,8 +142,9 @@ export namespace IEcommerceMallCustomerProfile {
      *
      * Used for public-facing identification when the customer writes reviews, communicates with sellers, or is displayed in order contexts.
      *
-     * @x-autobe-database-schema-property display_name
-     * @x-autobe-specification Direct mapping from ecommerce_mall_customer_profiles.display_name.
+         * @x-autobe-database-schema-property display_name
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_customer_profiles.display_name.
      */
     display_name: string;
 
@@ -136,8 +153,9 @@ export namespace IEcommerceMallCustomerProfile {
      *
      * Used for order notifications and delivery coordination. Displayed to sellers for shipping purposes.
      *
-     * @x-autobe-database-schema-property phone
-     * @x-autobe-specification Direct mapping from ecommerce_mall_customer_profiles.phone.
+         * @x-autobe-database-schema-property phone
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_customer_profiles.phone.
      */
     phone: string;
 
@@ -146,8 +164,9 @@ export namespace IEcommerceMallCustomerProfile {
      *
      * Records when the profile was first created, typically during customer registration. Displayed in ISO 8601 format with timezone information.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_customer_profiles.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_customer_profiles.created_at.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -156,8 +175,9 @@ export namespace IEcommerceMallCustomerProfile {
      *
      * Tracks profile modifications including display name and phone changes. Displayed in ISO 8601 format with timezone information.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_customer_profiles.updated_at.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_customer_profiles.updated_at.
      */
     updated_at: string & tags.Format<"date-time">;
   };

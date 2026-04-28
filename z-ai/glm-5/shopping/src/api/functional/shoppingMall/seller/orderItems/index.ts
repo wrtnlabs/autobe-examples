@@ -30,7 +30,8 @@ import { IShoppingMallOrderItem } from "../../../../structures/IShoppingMallOrde
  * @param props.itemId Unique identifier of the order item to retrieve
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Query the shopping_mall_order_items table by primary key ID to retrieve the order item record.
+ * @x-autobe-specification Query the shopping_mall_order_items table by primary
+ *   key ID to retrieve the order item record.
  *
  * **Authorization Enforcement:**
  * 1. Retrieve the order item by ID

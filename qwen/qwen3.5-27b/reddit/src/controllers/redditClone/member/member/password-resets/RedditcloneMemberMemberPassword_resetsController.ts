@@ -24,9 +24,10 @@ export class RedditcloneMemberMemberPassword_resetsController {
    *
    * @param connection
    * @param body Search criteria for password reset records including member ID filter, token status (used/unused), date range filters, sorting preferences, and pagination parameters.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query reddit_clone_member_password_resets table with pagination and filtering support.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query reddit_clone_member_password_resets table
+     *   with pagination and filtering support.
    *
    * Filtering:
    * - Filter by reddit_clone_member_id to find resets for specific member
@@ -86,9 +87,10 @@ export class RedditcloneMemberMemberPassword_resetsController {
    *
    * @param connection
    * @param resetId Unique identifier of the password reset record to retrieve (global scope).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query reddit_clone_member_password_resets table by primary key (id) matching the resetId parameter.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query reddit_clone_member_password_resets table
+     *   by primary key (id) matching the resetId parameter.
    *
    * Verify that the requesting authenticated member's ID matches the reddit_clone_member_id foreign key in the password reset record. Reject with 403 Forbidden if the member does not own this password reset record.
    *

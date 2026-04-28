@@ -25,20 +25,19 @@ import { IPageIEcommerceMallInventoryRecord } from "../../../../../../../../stru
  * @param props.body Search criteria for filtering inventory history including date range filters, reason filter, and pagination parameters.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification 1. Extract variantId from path parameters and seller ID from authenticated session.
- * 2. Verify the variant exists and belongs to a product owned by the authenticated seller.
- *    - Query ecommerce_mall_product_variants table
- *    - Join with ecommerce_mall_products to verify seller ownership
- *    - Return 404 if variant not found or not owned by seller
- * 3. Build search criteria from request body:
- *    - Filter by ecommerce_mall_product_variant_id = variantId
- *    - Apply date range filter on created_at if startDate/endDate provided
- *    - Apply reason filter if reason provided
- * 4. Query ecommerce_mall_inventory_records with pagination:
- *    - Sort by created_at DESC (most recent first)
- *    - Apply pagination (page, limit)
- * 5. Calculate current stock quantity by summing all inventory records for the variant.
- * 6. Return paginated list of inventory records with total count and stock summary.
+ * @x-autobe-specification 1. Extract variantId from path parameters and seller
+ *   ID from authenticated session. 2. Verify the variant exists and belongs to
+ *   a product owned by the authenticated seller. - Query
+ *   ecommerce_mall_product_variants table - Join with ecommerce_mall_products
+ *   to verify seller ownership - Return 404 if variant not found or not owned
+ *   by seller 3. Build search criteria from request body: - Filter by
+ *   ecommerce_mall_product_variant_id = variantId - Apply date range filter on
+ *   created_at if startDate/endDate provided - Apply reason filter if reason
+ *   provided 4. Query ecommerce_mall_inventory_records with pagination: - Sort
+ *   by created_at DESC (most recent first) - Apply pagination (page, limit) 5.
+ *   Calculate current stock quantity by summing all inventory records for the
+ *   variant. 6. Return paginated list of inventory records with total count and
+ *   stock summary.
  *
  * Edge cases:
  * - Variant not found: Return 404

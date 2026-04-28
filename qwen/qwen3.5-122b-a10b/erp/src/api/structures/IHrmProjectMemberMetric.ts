@@ -26,7 +26,9 @@ export type IHrmProjectMemberMetric = {
    *
    * **Data Source**: hrm_project_members table filtered by project_id where deleted_at IS NULL.
    *
-   * @x-autobe-specification COUNT(hrm_project_members) WHERE project_id = {projectId} AND deleted_at IS NULL. Excludes soft-deleted member assignments.
+     * @x-autobe-specification COUNT(hrm_project_members) WHERE project_id =
+     *   {projectId} AND deleted_at IS NULL. Excludes soft-deleted member
+     *   assignments.
    */
   total_members: number & tags.Type<"int32"> & tags.Minimum<0>;
 
@@ -39,7 +41,9 @@ export type IHrmProjectMemberMetric = {
    *
    * **Data Source**: hrm_project_members table grouped by role field where deleted_at IS NULL.
    *
-   * @x-autobe-specification GROUP BY hrm_project_members.role field with counts for 'member' and 'project-lead' values. Excludes soft-deleted assignments.
+     * @x-autobe-specification GROUP BY hrm_project_members.role field with
+     *   counts for 'member' and 'project-lead' values. Excludes soft-deleted
+     *   assignments.
    */
   members_by_role: {
     member: number & tags.Type<"int32"> & tags.Minimum<0>;
@@ -53,7 +57,9 @@ export type IHrmProjectMemberMetric = {
    *
    * **Data Source**: hrm_timelogs table joined with hrm_project_members to filter by project members. Only includes timelogs from active (non-deleted) member assignments.
    *
-   * @x-autobe-specification SUM(hrm_timelogs.duration_minutes) / 60 for all timelogs belonging to active project members. Duration converted from minutes to hours.
+     * @x-autobe-specification SUM(hrm_timelogs.duration_minutes) / 60 for all
+     *   timelogs belonging to active project members. Duration converted from
+     *   minutes to hours.
    */
   total_hours: number & tags.Minimum<0>;
 
@@ -66,7 +72,8 @@ export type IHrmProjectMemberMetric = {
    *
    * **Edge Cases**: Returns null when total_members equals 0.
    *
-   * @x-autobe-specification total_hours / total_members. Returns null when total_members is 0 to avoid division by zero.
+     * @x-autobe-specification total_hours / total_members. Returns null when
+     *   total_members is 0 to avoid division by zero.
    */
   average_hours_per_member: (number & tags.Minimum<0>) | null;
 
@@ -77,7 +84,9 @@ export type IHrmProjectMemberMetric = {
    *
    * **Data Source**: hrm_active_timers table joined with hrm_project_members to filter by project members.
    *
-   * @x-autobe-specification COUNT(hrm_active_timers) where employee_id belongs to project members and timer is currently running (not stopped).
+     * @x-autobe-specification COUNT(hrm_active_timers) where employee_id
+     *   belongs to project members and timer is currently running (not
+     *   stopped).
    */
   active_timers_count: number & tags.Type<"int32"> & tags.Minimum<0>;
 };

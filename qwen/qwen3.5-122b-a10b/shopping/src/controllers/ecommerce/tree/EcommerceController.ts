@@ -25,9 +25,12 @@ export class EcommerceController {
    * Returns 404 if no categories exist in the system. Returns 500 for database query failures.
    *
    * @param connection
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query ecommerce_categories table for all active (deleted_at IS NULL) categories. Fetch root categories (parent_id IS NULL) with their subcategories using a single query with LEFT JOIN or two separate queries optimized for the two-level hierarchy.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query ecommerce_categories table for all active
+     *   (deleted_at IS NULL) categories. Fetch root categories (parent_id IS
+     *   NULL) with their subcategories using a single query with LEFT JOIN or
+     *   two separate queries optimized for the two-level hierarchy.
    *
    * **Implementation Steps**
    *

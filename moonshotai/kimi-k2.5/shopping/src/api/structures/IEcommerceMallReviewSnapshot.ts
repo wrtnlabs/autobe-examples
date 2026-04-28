@@ -8,40 +8,49 @@ export type IEcommerceMallReviewSnapshot = {
   /**
    * Unique identifier for the review snapshot.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_review_snapshots.id UUID primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_review_snapshots.id UUID primary key.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * UUID of the parent review this snapshot captures.
    *
-   * @x-autobe-database-schema-property ecommerce_mall_review_id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_review_snapshots.ecommerce_mall_review_id. References the parent review this snapshot belongs to.
+     * @x-autobe-database-schema-property ecommerce_mall_review_id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_review_snapshots.ecommerce_mall_review_id. References
+     *   the parent review this snapshot belongs to.
    */
   reviewId: string & tags.Format<"uuid">;
 
   /**
    * Star rating value (1-5) of the review at the time this snapshot was created.
    *
-   * @x-autobe-database-schema-property rating
-   * @x-autobe-specification Direct mapping from ecommerce_mall_review_snapshots.rating. Integer value between 1-5 representing star rating at the time of the snapshot.
+     * @x-autobe-database-schema-property rating
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_review_snapshots.rating. Integer value between 1-5
+     *   representing star rating at the time of the snapshot.
    */
   rating: number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<5>;
 
   /**
    * Text content of the review at the time this snapshot was created. May be null if the review had no text content.
    *
-   * @x-autobe-database-schema-property content
-   * @x-autobe-specification Direct mapping from ecommerce_mall_review_snapshots.content. Nullable text field containing the review text content at the time of the snapshot.
+     * @x-autobe-database-schema-property content
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_review_snapshots.content. Nullable text field containing
+     *   the review text content at the time of the snapshot.
    */
   content: string | null;
 
   /**
    * Timestamp when this snapshot was created, indicating when the review edit occurred.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_review_snapshots.created_at. Timestamp when the snapshot was created (when the review was edited).
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_review_snapshots.created_at. Timestamp when the snapshot
+     *   was created (when the review was edited).
    */
   createdAt: string & tags.Format<"date-time">;
 };
@@ -53,14 +62,17 @@ export namespace IEcommerceMallReviewSnapshot {
     /**
      * Page number for pagination control (1-based indexing). Determines which page of results to return.
      *
-     * @x-autobe-specification Page number for cursor-based pagination (1-based). Used to calculate OFFSET for database query: OFFSET = (page - 1) * limit.
+         * @x-autobe-specification Page number for cursor-based pagination
+         *   (1-based). Used to calculate OFFSET for database query: OFFSET =
+         *   (page - 1) * limit.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Number of items to return per page. Maximum allowed is 100 items.
      *
-     * @x-autobe-specification Maximum number of records per page. Used for LIMIT clause in database query. Valid range: 1-100.
+         * @x-autobe-specification Maximum number of records per page. Used for
+         *   LIMIT clause in database query. Valid range: 1-100.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -69,14 +81,18 @@ export namespace IEcommerceMallReviewSnapshot {
     /**
      * Start of date range filter. Only include snapshots created at or after this timestamp. Omit or set null to include all older snapshots.
      *
-     * @x-autobe-specification Optional filter for snapshots created on or after this timestamp. Maps to SQL WHERE created_at >= createdAtFrom. Null means no lower bound.
+         * @x-autobe-specification Optional filter for snapshots created on or
+         *   after this timestamp. Maps to SQL WHERE created_at >=
+         *   createdAtFrom. Null means no lower bound.
      */
     createdAtFrom?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * End of date range filter. Only include snapshots created at or before this timestamp. Omit or set null to include all newer snapshots.
      *
-     * @x-autobe-specification Optional filter for snapshots created on or before this timestamp. Maps to SQL WHERE created_at <= createdAtTo. Null means no upper bound.
+         * @x-autobe-specification Optional filter for snapshots created on or
+         *   before this timestamp. Maps to SQL WHERE created_at <= createdAtTo.
+         *   Null means no upper bound.
      */
     createdAtTo?: (string & tags.Format<"date-time">) | null | undefined;
   };

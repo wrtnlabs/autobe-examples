@@ -42,39 +42,39 @@ export namespace IHrmPlatformTimer {
    */
   export type ISummary = {
     /**
-     * @x-autobe-database-schema-property id
+         * @x-autobe-database-schema-property id
      */
     id: string & tags.Format<"uuid">;
     /**
-     * @x-autobe-database-schema-property status
+         * @x-autobe-database-schema-property status
      */
     status: string;
     /**
-     * @x-autobe-database-schema-property last_tick_at
+         * @x-autobe-database-schema-property last_tick_at
      */
     lastTickAt: string & tags.Format<"date-time">;
     /**
-     * @x-autobe-database-schema-property duration_seconds
+         * @x-autobe-database-schema-property duration_seconds
      */
     durationSeconds: number & tags.Type<"int32">;
     /**
-     * @x-autobe-database-schema-property created_at
+         * @x-autobe-database-schema-property created_at
      */
     createdAt: string & tags.Format<"date-time">;
     /**
-     * @x-autobe-database-schema-property updated_at
+         * @x-autobe-database-schema-property updated_at
      */
     updatedAt: string & tags.Format<"date-time">;
     /**
-     * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-database-schema-property deleted_at
      */
     deletedAt: (string & tags.Format<"date-time">) | null;
     /**
-     * @x-autobe-database-schema-property project
+         * @x-autobe-database-schema-property project
      */
     project: IHrmPlatformProject.ISummary | null;
     /**
-     * @x-autobe-database-schema-property task
+         * @x-autobe-database-schema-property task
      */
     task: IHrmPlatformTask.ISummary | null;
   };
@@ -92,11 +92,11 @@ export namespace IHrmPlatformTimer {
    */
   export type ICreate = {
     /**
-     * @x-autobe-database-schema-property hrm_platform_project_id
+         * @x-autobe-database-schema-property hrm_platform_project_id
      */
     hrm_platform_project_id?: (string & tags.Format<"uuid">) | null | undefined;
     /**
-     * @x-autobe-database-schema-property hrm_platform_task_id
+         * @x-autobe-database-schema-property hrm_platform_task_id
      */
     hrm_platform_task_id?: (string & tags.Format<"uuid">) | null | undefined;
   };
@@ -110,11 +110,11 @@ export namespace IHrmPlatformTimer {
    */
   export type IUpdate = {
     /**
-     * @x-autobe-database-schema-property hrm_platform_project_id
+         * @x-autobe-database-schema-property hrm_platform_project_id
      */
     hrm_platform_project_id?: (string & tags.Format<"uuid">) | null | undefined;
     /**
-     * @x-autobe-database-schema-property hrm_platform_task_id
+         * @x-autobe-database-schema-property hrm_platform_task_id
      */
     hrm_platform_task_id?: (string & tags.Format<"uuid">) | null | undefined;
   };
@@ -169,7 +169,8 @@ export namespace IHrmPlatformTimer {
      * Requesting a page beyond the available range returns an empty data array
      * with valid pagination metadata reflecting the actual totals.
      *
-     * @x-autobe-specification 1-indexed page number. Defaults to 1 if not provided.
+         * @x-autobe-specification 1-indexed page number. Defaults to 1 if not
+         *   provided.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
 
@@ -181,7 +182,8 @@ export namespace IHrmPlatformTimer {
      * enforce upper bounds to prevent excessive resource consumption on large
      * requests.
      *
-     * @x-autobe-specification Maximum records per page. Defaults to 100 if not provided.
+         * @x-autobe-specification Maximum records per page. Defaults to 100 if
+         *   not provided.
      */
     limit?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };

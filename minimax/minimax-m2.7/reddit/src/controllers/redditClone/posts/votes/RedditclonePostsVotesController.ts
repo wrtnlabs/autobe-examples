@@ -19,9 +19,9 @@ export class RedditclonePostsVotesController {
    * @param connection
    * @param postId Unique identifier of the post being voted on (UUID format)
    * @param body Vote direction: 'upvote' to cast or change to upvote, 'downvote' to cast or change to downvote. Submitting the same direction as existing vote removes the vote.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Handle post voting with the following logic:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Handle post voting with the following logic:
    *
    * 1. Authentication: Verify the request includes valid member session token. Extract member ID from session.
    *

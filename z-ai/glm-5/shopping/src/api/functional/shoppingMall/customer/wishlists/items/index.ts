@@ -34,7 +34,8 @@ import { IShoppingMallWishlistItem } from "../../../../../structures/IShoppingMa
  * @param props.body Product to add to wishlist
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Implementation steps for adding a product to the customer's wishlist:
+ * @x-autobe-specification Implementation steps for adding a product to the
+ *   customer's wishlist:
  *
  * 1. **Authentication & Authorization:**
  *    - Extract customer ID from JWT token in Authorization header

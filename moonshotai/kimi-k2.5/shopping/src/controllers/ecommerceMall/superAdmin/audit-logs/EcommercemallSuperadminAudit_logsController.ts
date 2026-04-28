@@ -26,9 +26,11 @@ export class EcommercemallSuperadminAudit_logsController {
    *
    * @param connection
    * @param body Search criteria and pagination parameters for filtering audit logs
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor superAdmin
-   * @x-autobe-specification Query both ecommerce_mall_admin_audit_logs and ecommerce_mall_super_admin_audit_logs tables based on the requester's privilege level.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor superAdmin
+     * @x-autobe-specification Query both ecommerce_mall_admin_audit_logs and
+     *   ecommerce_mall_super_admin_audit_logs tables based on the requester's
+     *   privilege level.
    *
    * For superAdmin requesters:
    * - Query both tables and aggregate results
@@ -94,9 +96,10 @@ export class EcommercemallSuperadminAudit_logsController {
    *
    * @param connection
    * @param logId Unique identifier of the audit log entry (global scope)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor superAdmin
-   * @x-autobe-specification Query the ecommerce_mall_admin_audit_logs table by the provided logId parameter.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor superAdmin
+     * @x-autobe-specification Query the ecommerce_mall_admin_audit_logs table
+     *   by the provided logId parameter.
    *
    * Validate that the requesting user has permission to view audit logs (administrator or super administrator role required).
    *

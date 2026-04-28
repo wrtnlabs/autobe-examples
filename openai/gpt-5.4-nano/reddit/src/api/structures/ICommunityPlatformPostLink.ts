@@ -8,56 +8,66 @@ export type ICommunityPlatformPostLink = {
   /**
    * Unique identifier of the link-metadata record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Return community_platform_post_links.id for the loaded link-metadata record.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Return community_platform_post_links.id for the
+     *   loaded link-metadata record.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Canonical external URL for the link post.
    *
-   * @x-autobe-database-schema-property href
-   * @x-autobe-specification Return community_platform_post_links.href as the canonical external URL for the link post.
+     * @x-autobe-database-schema-property href
+     * @x-autobe-specification Return community_platform_post_links.href as the
+     *   canonical external URL for the link post.
    */
   href: string & tags.Format<"uri">;
 
   /**
    * Display title extracted/assigned for the link preview.
    *
-   * @x-autobe-database-schema-property display_title
-   * @x-autobe-specification Return community_platform_post_links.display_title used by clients for link preview rendering.
+     * @x-autobe-database-schema-property display_title
+     * @x-autobe-specification Return
+     *   community_platform_post_links.display_title used by clients for link
+     *   preview rendering.
    */
   display_title: string;
 
   /**
    * Short display description extracted/assigned for the link preview.
    *
-   * @x-autobe-database-schema-property display_description
-   * @x-autobe-specification Return community_platform_post_links.display_description used by clients for link preview rendering.
+     * @x-autobe-database-schema-property display_description
+     * @x-autobe-specification Return
+     *   community_platform_post_links.display_description used by clients for
+     *   link preview rendering.
    */
   display_description: string;
 
   /**
    * Timestamp when this link-metadata record was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Return community_platform_post_links.created_at (creation timestamp of the link-metadata record).
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Return community_platform_post_links.created_at
+     *   (creation timestamp of the link-metadata record).
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when this link-metadata record was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Return community_platform_post_links.updated_at (last update timestamp of the link-metadata record).
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Return community_platform_post_links.updated_at
+     *   (last update timestamp of the link-metadata record).
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * Soft-deletion timestamp for the link-metadata record; null when active.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Return community_platform_post_links.deleted_at. If null, the record is active; if a timestamp, the record has been soft-deleted.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Return community_platform_post_links.deleted_at.
+     *   If null, the record is active; if a timestamp, the record has been
+     *   soft-deleted.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -69,24 +79,36 @@ export namespace ICommunityPlatformPostLink {
     /**
      * Canonical external URL for the link post. Used as the definitive target for link previews and link rendering.
      *
-     * @x-autobe-database-schema-property href
-     * @x-autobe-specification Direct mapping from community_platform_post_links.href. Validate href is non-empty and a valid canonical URL string (per request schema format uri). Persist exactly as provided.
+         * @x-autobe-database-schema-property href
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_post_links.href. Validate href is non-empty and
+         *   a valid canonical URL string (per request schema format uri).
+         *   Persist exactly as provided.
      */
     href: string & tags.Format<"uri">;
 
     /**
      * Optional preview title extracted or assigned for list/feed display.
      *
-     * @x-autobe-database-schema-property display_title
-     * @x-autobe-specification If provided, persist directly to community_platform_post_links.display_title. If omitted by the client, implementation should derive/refresh a preview title from href using the platform’s link-preview/domain extraction rules, ensuring the stored value stays consistent with href.
+         * @x-autobe-database-schema-property display_title
+         * @x-autobe-specification If provided, persist directly to
+         *   community_platform_post_links.display_title. If omitted by the
+         *   client, implementation should derive/refresh a preview title from
+         *   href using the platform’s link-preview/domain extraction rules,
+         *   ensuring the stored value stays consistent with href.
      */
     displayTitle?: string | undefined;
 
     /**
      * Optional preview description extracted or assigned for list/feed display.
      *
-     * @x-autobe-database-schema-property display_description
-     * @x-autobe-specification If provided, persist directly to community_platform_post_links.display_description. If omitted by the client, implementation should derive/refresh a preview description from href using the platform’s link-preview/domain extraction rules, ensuring the stored value stays consistent with href.
+         * @x-autobe-database-schema-property display_description
+         * @x-autobe-specification If provided, persist directly to
+         *   community_platform_post_links.display_description. If omitted by
+         *   the client, implementation should derive/refresh a preview
+         *   description from href using the platform’s link-preview/domain
+         *   extraction rules, ensuring the stored value stays consistent with
+         *   href.
      */
     displayDescription?: string | undefined;
   };

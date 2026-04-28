@@ -14,8 +14,11 @@ export type IRedditCommunityPostTextContent = {
    *
    * The content is stored in the reddit_community_post_texts table and is retrieved via JOIN when the post_type is 'text'. This field is required for all text posts and represents the primary content that distinguishes text posts from link or image posts.
    *
-   * @x-autobe-database-schema-property body
-   * @x-autobe-specification Direct mapping from reddit_community_post_texts.body. Contains the full markdown-formatted text content of the post. No transformation required. This field is required for all text-type posts.
+     * @x-autobe-database-schema-property body
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_post_texts.body. Contains the full markdown-formatted
+     *   text content of the post. No transformation required. This field is
+     *   required for all text-type posts.
    */
   body: string;
 };

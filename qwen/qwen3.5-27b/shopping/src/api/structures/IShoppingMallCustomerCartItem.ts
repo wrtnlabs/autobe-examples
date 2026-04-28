@@ -18,8 +18,10 @@ export type IShoppingMallCustomerCartItem = {
    *
    * This UUID identifies a specific cart item within the shopping mall platform. It is used to reference the cart item in API operations such as updating quantity or removing the item from the cart.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_customer_cart_items.id. Primary key uniquely identifying each cart item record.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_customer_cart_items.id. Primary key uniquely identifying
+     *   each cart item record.
    */
   id: string & tags.Format<"uuid">;
 
@@ -28,8 +30,11 @@ export type IShoppingMallCustomerCartItem = {
    *
    * This quantity represents how many items of this specific variant are in the customer's cart. When the same variant is added to the cart multiple times, quantities are combined into a single cart item. The quantity can be updated by the customer before checkout.
    *
-   * @x-autobe-database-schema-property quantity
-   * @x-autobe-specification Direct mapping from shopping_mall_customer_cart_items.quantity. Integer field representing the number of units of the product variant the customer wants to purchase. Minimum value is 1.
+     * @x-autobe-database-schema-property quantity
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_customer_cart_items.quantity. Integer field representing
+     *   the number of units of the product variant the customer wants to
+     *   purchase. Minimum value is 1.
    */
   quantity: number & tags.Type<"int32"> & tags.Minimum<1>;
 
@@ -38,8 +43,12 @@ export type IShoppingMallCustomerCartItem = {
    *
    * This relation provides information about the parent shopping cart, including the customer who owns it and the cart's timestamps. Each cart item belongs to exactly one customer's shopping cart.
    *
-   * @x-autobe-database-schema-property cart
-   * @x-autobe-specification Relation mapping from shopping_mall_customer_cart_items.cart relation. JOIN to shopping_mall_customer_carts table via shopping_mall_customer_cart_id FK. Returns IShoppingMallCustomerCart.ISummary. This establishes the parent cart that owns this cart item.
+     * @x-autobe-database-schema-property cart
+     * @x-autobe-specification Relation mapping from
+     *   shopping_mall_customer_cart_items.cart relation. JOIN to
+     *   shopping_mall_customer_carts table via shopping_mall_customer_cart_id
+     *   FK. Returns IShoppingMallCustomerCart.ISummary. This establishes the
+     *   parent cart that owns this cart item.
    */
   cart: IShoppingMallCustomerCart.ISummary;
 
@@ -48,8 +57,13 @@ export type IShoppingMallCustomerCartItem = {
    *
    * This relation provides complete information about the product variant being purchased, including the SKU code, variant-specific price (or product base price), option values (e.g., color, size), current stock quantity, and the parent product details.
    *
-   * @x-autobe-database-schema-property productVariant
-   * @x-autobe-specification Relation mapping from shopping_mall_customer_cart_items.productVariant relation. JOIN to shopping_mall_product_variants table via shopping_mall_product_variant_id FK. Returns IShoppingMallProductVariant.ISummary. This provides the product variant details including SKU code, price, options, and stock quantity.
+     * @x-autobe-database-schema-property productVariant
+     * @x-autobe-specification Relation mapping from
+     *   shopping_mall_customer_cart_items.productVariant relation. JOIN to
+     *   shopping_mall_product_variants table via
+     *   shopping_mall_product_variant_id FK. Returns
+     *   IShoppingMallProductVariant.ISummary. This provides the product variant
+     *   details including SKU code, price, options, and stock quantity.
    */
   productVariant: IShoppingMallProductVariant.ISummary;
 
@@ -58,7 +72,10 @@ export type IShoppingMallCustomerCartItem = {
    *
    * This value is calculated by multiplying the product variant's price (or the product's base price if the variant has no specific price) by the quantity. It represents the total cost for all units of this variant in the cart item.
    *
-   * @x-autobe-specification Computed property. Calculated as productVariant.price * quantity. If productVariant.price is null, use product.base_price from the parent product. This computation happens at query time and is not stored in the database.
+     * @x-autobe-specification Computed property. Calculated as
+     *   productVariant.price * quantity. If productVariant.price is null, use
+     *   product.base_price from the parent product. This computation happens at
+     *   query time and is not stored in the database.
    */
   subtotal: number;
 
@@ -67,8 +84,11 @@ export type IShoppingMallCustomerCartItem = {
    *
    * This field records the exact time when the customer added this product variant to their cart. It is used for sorting cart items by addition order and for audit trail purposes.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from shopping_mall_customer_cart_items.created_at. DateTime field with Timestamptz database type. Set automatically when the cart item is first added to the shopping cart. Never modified after creation.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_customer_cart_items.created_at. DateTime field with
+     *   Timestamptz database type. Set automatically when the cart item is
+     *   first added to the shopping cart. Never modified after creation.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -77,8 +97,11 @@ export type IShoppingMallCustomerCartItem = {
    *
    * This field is updated whenever the cart item's quantity is changed or any other modification is made to the item. It tracks the last activity on this cart item.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from shopping_mall_customer_cart_items.updated_at. DateTime field with Timestamptz database type. Updated automatically whenever the cart item's quantity is modified or the item is otherwise changed.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_customer_cart_items.updated_at. DateTime field with
+     *   Timestamptz database type. Updated automatically whenever the cart
+     *   item's quantity is modified or the item is otherwise changed.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -87,8 +110,12 @@ export type IShoppingMallCustomerCartItem = {
    *
    * When this field is null, the cart item is active in the customer's cart. When set to a timestamp, the cart item has been removed (soft-deleted) but the record is preserved for audit purposes. Deleted cart items are excluded from cart total calculations and checkout operations.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from shopping_mall_customer_cart_items.deleted_at. Nullable DateTime field with Timestamptz database type. When null, the cart item is active. When set, the cart item has been soft-deleted and should be excluded from active cart queries.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_customer_cart_items.deleted_at. Nullable DateTime field
+     *   with Timestamptz database type. When null, the cart item is active.
+     *   When set, the cart item has been soft-deleted and should be excluded
+     *   from active cart queries.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -104,8 +131,12 @@ export namespace IShoppingMallCustomerCartItem {
      *
      * This field represents the quantity the customer wants to purchase. The quantity must be a positive integer (minimum 1). To remove an item from the cart entirely, use the delete operation instead of setting quantity to zero. When updated, the cart total is automatically recalculated based on the new quantity multiplied by the unit price.
      *
-     * @x-autobe-database-schema-property quantity
-     * @x-autobe-specification Direct mapping from shopping_mall_customer_cart_items.quantity column. User-provided field for update operation. Must be a positive integer greater than zero. The system validates this constraint before updating the database record.
+         * @x-autobe-database-schema-property quantity
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_customer_cart_items.quantity column. User-provided
+         *   field for update operation. Must be a positive integer greater than
+         *   zero. The system validates this constraint before updating the
+         *   database record.
      */
     quantity?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
   };
@@ -125,8 +156,14 @@ export namespace IShoppingMallCustomerCartItem {
      *
      * If the same variant is already in the cart, the quantities will be combined into a single cart item rather than creating duplicates.
      *
-     * @x-autobe-database-schema-property shopping_mall_product_variant_id
-     * @x-autobe-specification Direct mapping to shopping_mall_product_variant_id foreign key column. This UUID references the specific product variant (SKU) that the customer wants to add to their cart. The variant must exist in shopping_mall_product_variants table and must not be soft-deleted (deleted_at is null). System validates variant existence and availability before creating cart item.
+         * @x-autobe-database-schema-property shopping_mall_product_variant_id
+         * @x-autobe-specification Direct mapping to
+         *   shopping_mall_product_variant_id foreign key column. This UUID
+         *   references the specific product variant (SKU) that the customer
+         *   wants to add to their cart. The variant must exist in
+         *   shopping_mall_product_variants table and must not be soft-deleted
+         *   (deleted_at is null). System validates variant existence and
+         *   availability before creating cart item.
      */
     productVariantId: string & tags.Format<"uuid">;
 
@@ -137,8 +174,14 @@ export namespace IShoppingMallCustomerCartItem {
      *
      * The total cost for this cart item is calculated as: variant price × quantity. This subtotal is included in the overall cart total when the customer proceeds to checkout.
      *
-     * @x-autobe-database-schema-property quantity
-     * @x-autobe-specification Direct mapping to quantity column in shopping_mall_customer_cart_items. This integer represents the number of units of the product variant the customer wants to purchase. Minimum value is 1. When the same variant is added multiple times, quantities are combined by adding to existing cart item's quantity. System validates that quantity is a positive integer.
+         * @x-autobe-database-schema-property quantity
+         * @x-autobe-specification Direct mapping to quantity column in
+         *   shopping_mall_customer_cart_items. This integer represents the
+         *   number of units of the product variant the customer wants to
+         *   purchase. Minimum value is 1. When the same variant is added
+         *   multiple times, quantities are combined by adding to existing cart
+         *   item's quantity. System validates that quantity is a positive
+         *   integer.
      */
     quantity: number & tags.Type<"int32"> & tags.Minimum<1>;
   };
@@ -156,8 +199,10 @@ export namespace IShoppingMallCustomerCartItem {
      *
      * This UUID uniquely identifies each cart item within the shopping cart system. It is used to reference specific items when updating quantities or removing items from the cart.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_customer_cart_items.id. Primary key UUID identifying the cart item.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_customer_cart_items.id. Primary key UUID identifying
+         *   the cart item.
      */
     id: string & tags.Format<"uuid">;
 
@@ -166,8 +211,10 @@ export namespace IShoppingMallCustomerCartItem {
      *
      * This field represents how many units of the product variant the customer wants to purchase. When the same variant is added multiple times, quantities are combined into a single cart item.
      *
-     * @x-autobe-database-schema-property quantity
-     * @x-autobe-specification Direct mapping from shopping_mall_customer_cart_items.quantity. Integer value representing the number of units requested.
+         * @x-autobe-database-schema-property quantity
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_customer_cart_items.quantity. Integer value
+         *   representing the number of units requested.
      */
     quantity: number & tags.Type<"int32"> & tags.Minimum<1>;
 
@@ -176,8 +223,11 @@ export namespace IShoppingMallCustomerCartItem {
      *
      * This object contains complete information about the specific variant (e.g., Red/Large size) including its unique SKU identifier, variant-specific price (or null if using product base price), option key-value pairs, and current stock quantity.
      *
-     * @x-autobe-database-schema-property productVariant
-     * @x-autobe-specification Relation via JOIN on shopping_mall_product_variant_id to shopping_mall_product_variants. Returns IShoppingMallProductVariant.ISummary with variant details including SKU, price, options, and stock.
+         * @x-autobe-database-schema-property productVariant
+         * @x-autobe-specification Relation via JOIN on
+         *   shopping_mall_product_variant_id to shopping_mall_product_variants.
+         *   Returns IShoppingMallProductVariant.ISummary with variant details
+         *   including SKU, price, options, and stock.
      */
     productVariant: IShoppingMallProductVariant.ISummary;
 
@@ -186,7 +236,10 @@ export namespace IShoppingMallCustomerCartItem {
      *
      * This object provides context about the product this variant belongs to, including the product name, base price, seller shop information, category classification, and main product image. Helpful for display purposes when browsing cart items.
      *
-     * @x-autobe-specification Computed via JOIN through productVariant to shopping_mall_products. Returns IShoppingMallProduct.ISummary with product name, base price, seller, category, and main image. Join path: cart_item → productVariant → product.
+         * @x-autobe-specification Computed via JOIN through productVariant to
+         *   shopping_mall_products. Returns IShoppingMallProduct.ISummary with
+         *   product name, base price, seller, category, and main image. Join
+         *   path: cart_item → productVariant → product.
      */
     product: IShoppingMallProduct.ISummary;
 
@@ -195,7 +248,10 @@ export namespace IShoppingMallCustomerCartItem {
      *
      * This computed field represents the subtotal cost for this specific cart line item, calculated by multiplying the quantity by the unit price. The unit price is the variant-specific price if available, otherwise the product's base price.
      *
-     * @x-autobe-specification Computed as quantity × (productVariant.price OR product.base_price). If variant has its own price, use that; otherwise use product base price. Result is a non-negative number representing the total cost for this cart line item.
+         * @x-autobe-specification Computed as quantity × (productVariant.price
+         *   OR product.base_price). If variant has its own price, use that;
+         *   otherwise use product base price. Result is a non-negative number
+         *   representing the total cost for this cart line item.
      */
     subtotal: number & tags.Minimum<0>;
 
@@ -204,7 +260,10 @@ export namespace IShoppingMallCustomerCartItem {
      *
      * This boolean indicates if the product variant is still active (not deleted) and has sufficient stock available. If false, the item cannot be purchased and should be removed from the cart before checkout.
      *
-     * @x-autobe-specification Computed as (productVariant.deleted_at IS NULL AND stock_quantity > 0). Stock quantity derived from shopping_mall_inventory_records SUM. Returns true if the variant is active and has available inventory, false otherwise.
+         * @x-autobe-specification Computed as (productVariant.deleted_at IS
+         *   NULL AND stock_quantity > 0). Stock quantity derived from
+         *   shopping_mall_inventory_records SUM. Returns true if the variant is
+         *   active and has available inventory, false otherwise.
      */
     available: boolean;
 
@@ -213,8 +272,10 @@ export namespace IShoppingMallCustomerCartItem {
      *
      * This field records when the cart item was first created, helping customers understand the age of items in their cart. Used for sorting and audit purposes.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_customer_cart_items.created_at. ISO 8601 datetime string in UTC timezone.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_customer_cart_items.created_at. ISO 8601 datetime
+         *   string in UTC timezone.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -223,8 +284,11 @@ export namespace IShoppingMallCustomerCartItem {
      *
      * This field is updated whenever the cart item is changed, such as when the quantity is updated. It helps track the most recent modification activity on the item.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from shopping_mall_customer_cart_items.updated_at. ISO 8601 datetime string in UTC timezone. Updated on any quantity change or modification.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_customer_cart_items.updated_at. ISO 8601 datetime
+         *   string in UTC timezone. Updated on any quantity change or
+         *   modification.
      */
     updated_at: string & tags.Format<"date-time">;
   };
@@ -242,7 +306,12 @@ export namespace IShoppingMallCustomerCartItem {
      *
      * When set to true, this filter excludes cart items where the referenced product variant is deleted or out of stock. This helps customers identify which items in their cart can actually be purchased. Items marked as unavailable may need to be removed or replaced before checkout.
      *
-     * @x-autobe-specification Computed filter that joins shopping_mall_customer_cart_items with shopping_mall_product_variants and shopping_mall_inventory_records. When true, only returns cart items where: (1) product variant deleted_at IS NULL, AND (2) current stock quantity > 0. This ensures customers only see purchasable items in their cart.
+         * @x-autobe-specification Computed filter that joins
+         *   shopping_mall_customer_cart_items with
+         *   shopping_mall_product_variants and shopping_mall_inventory_records.
+         *   When true, only returns cart items where: (1) product variant
+         *   deleted_at IS NULL, AND (2) current stock quantity > 0. This
+         *   ensures customers only see purchasable items in their cart.
      */
     availableOnly?: boolean | undefined;
 
@@ -251,7 +320,10 @@ export namespace IShoppingMallCustomerCartItem {
      *
      * Only returns cart items where the selected quantity is greater than or equal to this value. Useful for finding cart items with larger quantities, such as bulk purchases or items the customer wants more of.
      *
-     * @x-autobe-specification Filter parameter that applies >= comparison on shopping_mall_customer_cart_items.quantity column. Returns cart items where quantity >= minQuantity value. Used to find cart items with at least a minimum quantity threshold.
+         * @x-autobe-specification Filter parameter that applies >= comparison
+         *   on shopping_mall_customer_cart_items.quantity column. Returns cart
+         *   items where quantity >= minQuantity value. Used to find cart items
+         *   with at least a minimum quantity threshold.
      */
     minQuantity?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -260,7 +332,10 @@ export namespace IShoppingMallCustomerCartItem {
      *
      * Only returns cart items where the selected quantity is less than or equal to this value. Useful for finding cart items with smaller quantities or limiting results to single-unit purchases.
      *
-     * @x-autobe-specification Filter parameter that applies <= comparison on shopping_mall_customer_cart_items.quantity column. Returns cart items where quantity <= maxQuantity value. Used to find cart items with at most a maximum quantity threshold.
+         * @x-autobe-specification Filter parameter that applies <= comparison
+         *   on shopping_mall_customer_cart_items.quantity column. Returns cart
+         *   items where quantity <= maxQuantity value. Used to find cart items
+         *   with at most a maximum quantity threshold.
      */
     maxQuantity?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -269,7 +344,11 @@ export namespace IShoppingMallCustomerCartItem {
      *
      * Only returns cart items that were added to the cart at or after the specified timestamp. This helps customers find recently added items or items added within a specific time range. Format: ISO 8601 datetime (e.g., 2024-01-15T10:30:00Z).
      *
-     * @x-autobe-specification Filter parameter that applies >= comparison on shopping_mall_customer_cart_items.created_at column. Returns cart items where created_at >= createdAtFrom value (ISO 8601 datetime). Used to find cart items added after a specific date/time.
+         * @x-autobe-specification Filter parameter that applies >= comparison
+         *   on shopping_mall_customer_cart_items.created_at column. Returns
+         *   cart items where created_at >= createdAtFrom value (ISO 8601
+         *   datetime). Used to find cart items added after a specific
+         *   date/time.
      */
     createdAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
@@ -278,7 +357,11 @@ export namespace IShoppingMallCustomerCartItem {
      *
      * Only returns cart items that were added to the cart at or before the specified timestamp. Combined with createdAtFrom, this creates a date range filter for cart item creation times. Format: ISO 8601 datetime (e.g., 2024-01-20T23:59:59Z).
      *
-     * @x-autobe-specification Filter parameter that applies <= comparison on shopping_mall_customer_cart_items.created_at column. Returns cart items where created_at <= createdAtTo value (ISO 8601 datetime). Used to find cart items added before a specific date/time.
+         * @x-autobe-specification Filter parameter that applies <= comparison
+         *   on shopping_mall_customer_cart_items.created_at column. Returns
+         *   cart items where created_at <= createdAtTo value (ISO 8601
+         *   datetime). Used to find cart items added before a specific
+         *   date/time.
      */
     createdAtTo?: (string & tags.Format<"date-time">) | undefined;
 
@@ -287,7 +370,11 @@ export namespace IShoppingMallCustomerCartItem {
      *
      * Only returns cart items that were last modified at or after the specified timestamp. This helps identify recently changed cart items, such as items with updated quantities. Format: ISO 8601 datetime (e.g., 2024-01-15T10:30:00Z).
      *
-     * @x-autobe-specification Filter parameter that applies >= comparison on shopping_mall_customer_cart_items.updated_at column. Returns cart items where updated_at >= updatedAtFrom value (ISO 8601 datetime). Used to find cart items modified after a specific date/time.
+         * @x-autobe-specification Filter parameter that applies >= comparison
+         *   on shopping_mall_customer_cart_items.updated_at column. Returns
+         *   cart items where updated_at >= updatedAtFrom value (ISO 8601
+         *   datetime). Used to find cart items modified after a specific
+         *   date/time.
      */
     updatedAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
@@ -296,7 +383,11 @@ export namespace IShoppingMallCustomerCartItem {
      *
      * Only returns cart items that were last modified at or before the specified timestamp. Combined with updatedAtFrom, this creates a date range filter for cart item modification times. Format: ISO 8601 datetime (e.g., 2024-01-20T23:59:59Z).
      *
-     * @x-autobe-specification Filter parameter that applies <= comparison on shopping_mall_customer_cart_items.updated_at column. Returns cart items where updated_at <= updatedAtTo value (ISO 8601 datetime). Used to find cart items modified before a specific date/time.
+         * @x-autobe-specification Filter parameter that applies <= comparison
+         *   on shopping_mall_customer_cart_items.updated_at column. Returns
+         *   cart items where updated_at <= updatedAtTo value (ISO 8601
+         *   datetime). Used to find cart items modified before a specific
+         *   date/time.
      */
     updatedAtTo?: (string & tags.Format<"date-time">) | undefined;
 
@@ -305,7 +396,14 @@ export namespace IShoppingMallCustomerCartItem {
      *
      * Determines which field is used for ordering the cart items list. Options include: createdAt (when item was added), updatedAt (when item was last modified), quantity (selected quantity), subtotal (calculated price), productName (product name alphabetically), or skuCode (variant SKU code). Default is createdAt.
      *
-     * @x-autobe-specification Computed sort field mapping. Maps to: createdAt -> shopping_mall_customer_cart_items.created_at, updatedAt -> shopping_mall_customer_cart_items.updated_at, quantity -> shopping_mall_customer_cart_items.quantity, subtotal -> computed (quantity * variant.price OR product.base_price), productName -> shopping_mall_products.name (via JOIN), skuCode -> shopping_mall_product_variants.sku_code (via JOIN). Default: createdAt.
+         * @x-autobe-specification Computed sort field mapping. Maps to:
+         *   createdAt -> shopping_mall_customer_cart_items.created_at,
+         *   updatedAt -> shopping_mall_customer_cart_items.updated_at, quantity
+         *   -> shopping_mall_customer_cart_items.quantity, subtotal -> computed
+         *   (quantity * variant.price OR product.base_price), productName ->
+         *   shopping_mall_products.name (via JOIN), skuCode ->
+         *   shopping_mall_product_variants.sku_code (via JOIN). Default:
+         *   createdAt.
      */
     sortBy?:
       | "createdAt"
@@ -321,7 +419,10 @@ export namespace IShoppingMallCustomerCartItem {
      *
      * Determines whether items are sorted in ascending (ASC) or descending (DESC) order based on the sortBy field. For example, with sortBy=createdAt and sortOrder=DESC, the most recently added cart items appear first. Default is DESC.
      *
-     * @x-autobe-specification Sort direction for the sortBy field. ASC = ascending order (oldest first, A-Z, lowest to highest), DESC = descending order (newest first, Z-A, highest to lowest). Default: DESC (newest items first).
+         * @x-autobe-specification Sort direction for the sortBy field. ASC =
+         *   ascending order (oldest first, A-Z, lowest to highest), DESC =
+         *   descending order (newest first, Z-A, highest to lowest). Default:
+         *   DESC (newest items first).
      */
     sortOrder?: "ASC" | "DESC" | undefined;
 
@@ -330,7 +431,10 @@ export namespace IShoppingMallCustomerCartItem {
      *
      * Specifies which page of cart items to retrieve. Page numbering starts at 1. Combined with the limit parameter, this enables browsing through large cart item lists in manageable chunks. Default is page 1.
      *
-     * @x-autobe-specification Pagination page number (1-indexed). Used with limit to implement offset-based pagination. Page 1 returns records 1 to limit, page 2 returns records limit+1 to 2*limit, etc. Default: 1. Minimum: 1.
+         * @x-autobe-specification Pagination page number (1-indexed). Used with
+         *   limit to implement offset-based pagination. Page 1 returns records
+         *   1 to limit, page 2 returns records limit+1 to 2*limit, etc.
+         *   Default: 1. Minimum: 1.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -339,7 +443,10 @@ export namespace IShoppingMallCustomerCartItem {
      *
      * Controls how many cart items are returned in each page of results. Range is 1 to 100 items per page. Default is 20 items. Larger limits reduce the number of pages but increase response size. Maximum is capped at 100 for performance.
      *
-     * @x-autobe-specification Maximum number of cart items to return per page. Range: 1-100. Default: 20. Used with page parameter for offset-based pagination. Server enforces maximum of 100 to prevent excessive data transfer.
+         * @x-autobe-specification Maximum number of cart items to return per
+         *   page. Range: 1-100. Default: 20. Used with page parameter for
+         *   offset-based pagination. Server enforces maximum of 100 to prevent
+         *   excessive data transfer.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)

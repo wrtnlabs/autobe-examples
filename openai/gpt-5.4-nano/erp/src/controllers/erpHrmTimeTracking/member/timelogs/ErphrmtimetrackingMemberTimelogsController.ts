@@ -42,12 +42,15 @@ export class ErphrmtimetrackingMemberTimelogsController {
    *
    * @param connection
    * @param body Creation payload for a new timelog entry, including work date, duration in minutes, target project, and optional task/note/timesheet linkage.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1) Authorization & context
-   * - Resolve the actor’s currently selected organization context.
-   * - Determine the target employee/member id from the actor identity within that organization context.
-   * - Enforce that the operation can only create timelog rows for the selected organization (set erp_hrm_time_tracking_organization_id from context; never accept an arbitrary organization id from the client).
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification 1) Authorization & context - Resolve the actor’s
+     *   currently selected organization context. - Determine the target
+     *   employee/member id from the actor identity within that organization
+     *   context. - Enforce that the operation can only create timelog rows for
+     *   the selected organization (set erp_hrm_time_tracking_organization_id
+     *   from context; never accept an arbitrary organization id from the
+     *   client).
    *
    * 2) Validate request payload against timelog invariants from the schema/comments and the loaded requirements:
    * - work_date must be provided (timelog requires a date for timesheet grouping).
@@ -130,9 +133,9 @@ export class ErphrmtimetrackingMemberTimelogsController {
    *
    * @param connection
    * @param body Timelog browsing criteria including pagination, sorting, and optional filters such as employee, project, task, timesheet container, and work date range.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation steps:
    *
    * 1) Read requestBody (IErpHrmTimeTrackingTimelog.IRequest) for pagination/sorting and filters.
    * 2) Start a query on erp_hrm_time_tracking_timelogs.
@@ -186,9 +189,9 @@ export class ErphrmtimetrackingMemberTimelogsController {
    *
    * @param connection
    * @param timelogId Identifier of the timelog record to retrieve.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation steps:
    *
    * 1. Resolve authorization context:
    *    - Determine the selected organization (tenant) from the session/context.
@@ -257,9 +260,9 @@ export class ErphrmtimetrackingMemberTimelogsController {
    * @param connection
    * @param timelogId Identifier of the timelog to update within the currently selected organization context.
    * @param body Updated values for the timelog record. The service must validate that the timelog remains editable under the timesheet workflow rules and that the update does not violate organization scoping and ownership constraints.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement PUT timelog update as follows.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implement PUT timelog update as follows.
    *
    * 1) Parse path parameter `timelogId` (UUID) and load the target `erp_hrm_time_tracking_timelogs` row by `id` while also filtering by `erp_hrm_time_tracking_organization_id = selectedOrganizationId`.
    *    - If no row matches, return a domain error indicating the timelog cannot be accessed in the current organization.
@@ -332,9 +335,9 @@ export class ErphrmtimetrackingMemberTimelogsController {
    *
    * @param connection
    * @param timelogId Target timelog ID to permanently remove. This must be a UUID matching `erp_hrm_time_tracking_timelogs.id`.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1) Parse `timelogId` from path.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification 1) Parse `timelogId` from path.
    *
    * 2) Load the timelog row from `erp_hrm_time_tracking_timelogs` by `id = timelogId`.
    *    - If not found, immediately reject (timelog not available in selected organization context).

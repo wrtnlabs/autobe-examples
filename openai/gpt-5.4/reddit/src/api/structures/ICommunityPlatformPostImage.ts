@@ -10,88 +10,108 @@ export type ICommunityPlatformPostImage = {
   /**
    * Unique identifier of this post image attachment record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from community_platform_post_images.id.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_post_images.id.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Summary of the post that owns this image attachment.
    *
-   * @x-autobe-database-schema-property post
-   * @x-autobe-specification Join community_platform_post_images.community_platform_post_id to community_platform_posts.id and map the parent post as ICommunityPlatformPost.ISummary. The nested endpoint must also verify this relation matches the supplied postId path parameter before returning the DTO.
+     * @x-autobe-database-schema-property post
+     * @x-autobe-specification Join
+     *   community_platform_post_images.community_platform_post_id to
+     *   community_platform_posts.id and map the parent post as
+     *   ICommunityPlatformPost.ISummary. The nested endpoint must also verify
+     *   this relation matches the supplied postId path parameter before
+     *   returning the DTO.
    */
   post: ICommunityPlatformPost.ISummary;
 
   /**
    * Permanent storage location of the uploaded image file.
    *
-   * @x-autobe-database-schema-property storage_uri
-   * @x-autobe-specification Direct mapping from community_platform_post_images.storage_uri. Return the persisted storage location exactly as stored without fabricating CDN-specific derivative URLs.
+     * @x-autobe-database-schema-property storage_uri
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_post_images.storage_uri. Return the persisted
+     *   storage location exactly as stored without fabricating CDN-specific
+     *   derivative URLs.
    */
   storage_uri: string;
 
   /**
    * Original filename provided for the uploaded image.
    *
-   * @x-autobe-database-schema-property original_name
-   * @x-autobe-specification Direct mapping from community_platform_post_images.original_name.
+     * @x-autobe-database-schema-property original_name
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_post_images.original_name.
    */
   original_name: string;
 
   /**
    * Detected MIME type of the stored image file.
    *
-   * @x-autobe-database-schema-property mime_type
-   * @x-autobe-specification Direct mapping from community_platform_post_images.mime_type.
+     * @x-autobe-database-schema-property mime_type
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_post_images.mime_type.
    */
   mime_type: string;
 
   /**
    * Stored file size of the image in bytes.
    *
-   * @x-autobe-database-schema-property byte_size
-   * @x-autobe-specification Direct mapping from community_platform_post_images.byte_size.
+     * @x-autobe-database-schema-property byte_size
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_post_images.byte_size.
    */
   byte_size: number & tags.Type<"int32">;
 
   /**
    * Pixel width of the stored image, or null when unavailable.
    *
-   * @x-autobe-database-schema-property width
-   * @x-autobe-specification Direct mapping from community_platform_post_images.width. Return the stored pixel width when media processing determined it; otherwise return null.
+     * @x-autobe-database-schema-property width
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_post_images.width. Return the stored pixel width
+     *   when media processing determined it; otherwise return null.
    */
   width: (number & tags.Type<"int32">) | null;
 
   /**
    * Pixel height of the stored image, or null when unavailable.
    *
-   * @x-autobe-database-schema-property height
-   * @x-autobe-specification Direct mapping from community_platform_post_images.height. Return the stored pixel height when media processing determined it; otherwise return null.
+     * @x-autobe-database-schema-property height
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_post_images.height. Return the stored pixel height
+     *   when media processing determined it; otherwise return null.
    */
   height: (number & tags.Type<"int32">) | null;
 
   /**
    * Timestamp when this image attachment record was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from community_platform_post_images.created_at.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_post_images.created_at.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when this image attachment record was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from community_platform_post_images.updated_at.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_post_images.updated_at.
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * Soft-deletion timestamp of this image attachment, or null when it is still active.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from community_platform_post_images.deleted_at. Return null when the image attachment has not been soft-deleted.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_post_images.deleted_at. Return null when the image
+     *   attachment has not been soft-deleted.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -103,35 +123,43 @@ export namespace ICommunityPlatformPostImage {
    */
   export type IUpdate = {
     /**
-     * @x-autobe-database-schema-property storage_uri
+         * @x-autobe-database-schema-property storage_uri
      */
     storage_uri?: string | undefined;
     /**
-     * @x-autobe-database-schema-property original_name
+         * @x-autobe-database-schema-property original_name
      */
     original_name?: string | undefined;
     /**
-     * @x-autobe-database-schema-property mime_type
+         * @x-autobe-database-schema-property mime_type
      */
     mime_type?: string | undefined;
     /**
-     * @x-autobe-database-schema-property byte_size
+         * @x-autobe-database-schema-property byte_size
      */
     byte_size?: (number & tags.Type<"int32">) | undefined;
 
     /**
      * Pixel width of the replacement image, or null when unavailable.
      *
-     * @x-autobe-database-schema-property width
-     * @x-autobe-specification Maps to mutable column community_platform_post_images.width. Accept an integer pixel width when available from replacement image processing, or null when the dimension is unavailable or being cleared during the update operation.
+         * @x-autobe-database-schema-property width
+         * @x-autobe-specification Maps to mutable column
+         *   community_platform_post_images.width. Accept an integer pixel width
+         *   when available from replacement image processing, or null when the
+         *   dimension is unavailable or being cleared during the update
+         *   operation.
      */
     width?: (number & tags.Type<"int32">) | null | undefined;
 
     /**
      * Pixel height of the replacement image, or null when unavailable.
      *
-     * @x-autobe-database-schema-property height
-     * @x-autobe-specification Maps to mutable column community_platform_post_images.height. Accept an integer pixel height when available from replacement image processing, or null when the dimension is unavailable or being cleared during the update operation.
+         * @x-autobe-database-schema-property height
+         * @x-autobe-specification Maps to mutable column
+         *   community_platform_post_images.height. Accept an integer pixel
+         *   height when available from replacement image processing, or null
+         *   when the dimension is unavailable or being cleared during the
+         *   update operation.
      */
     height?: (number & tags.Type<"int32">) | null | undefined;
   };
@@ -145,33 +173,33 @@ export namespace ICommunityPlatformPostImage {
    */
   export type ICreate = {
     /**
-     * @x-autobe-database-schema-property storage_uri
+         * @x-autobe-database-schema-property storage_uri
      */
     storage_uri: string & tags.Format<"uri">;
     /**
-     * @x-autobe-database-schema-property original_name
+         * @x-autobe-database-schema-property original_name
      */
     original_name: string;
     /**
-     * @x-autobe-database-schema-property mime_type
+         * @x-autobe-database-schema-property mime_type
      */
     mime_type: string;
     /**
-     * @x-autobe-database-schema-property byte_size
+         * @x-autobe-database-schema-property byte_size
      */
     byte_size: number & tags.Type<"int32"> & tags.Minimum<0>;
 
     /**
      * Pixel width of the stored image, or null when unavailable.
      *
-     * @x-autobe-database-schema-property width
+         * @x-autobe-database-schema-property width
      */
     width?: (number & tags.Type<"int32">) | null | undefined;
 
     /**
      * Pixel height of the stored image, or null when unavailable.
      *
-     * @x-autobe-database-schema-property height
+         * @x-autobe-database-schema-property height
      */
     height?: (number & tags.Type<"int32">) | null | undefined;
   };

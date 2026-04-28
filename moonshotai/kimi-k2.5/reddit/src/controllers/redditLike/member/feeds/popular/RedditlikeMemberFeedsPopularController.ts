@@ -27,9 +27,10 @@ export class RedditlikeMemberFeedsPopularController {
    *
    * @param connection
    * @param body Search criteria including sort method, optional time filter for Top sorting, and pagination parameters
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query posts from reddit_like_posts table with is_deleted=false to get active posts from all communities.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query posts from reddit_like_posts table with
+     *   is_deleted=false to get active posts from all communities.
    *
    * Apply sorting based on request criteria:
    * - 'hot': Order by weighted combination of vote_score and recency (recent posts with high engagement first)

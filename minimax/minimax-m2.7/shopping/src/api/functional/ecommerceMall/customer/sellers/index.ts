@@ -23,7 +23,8 @@ import { IEcommerceMallSeller } from "../../../../structures/IEcommerceMallSelle
  * @param props.sellerId Unique identifier of the seller (UUID format)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Retrieve seller by sellerId from ecommerce_mall_sellers table using UUID primary key.
+ * @x-autobe-specification Retrieve seller by sellerId from
+ *   ecommerce_mall_sellers table using UUID primary key.
  *
  * Join with ecommerce_mall_seller_profiles to fetch shop profile data (name, description, logo_uri).
  *

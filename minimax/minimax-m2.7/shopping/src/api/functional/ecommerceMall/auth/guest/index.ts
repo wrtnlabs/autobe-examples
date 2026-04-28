@@ -23,13 +23,17 @@ import { IEcommerceMallGuest } from "../../../../structures/IEcommerceMallGuest"
  * @param props.body Request body containing device fingerprint for guest identification. The fingerprint is typically generated client-side using browser characteristics and used to recognize returning guests across sessions.
  * @x-autobe-authorization-type join
  * @x-autobe-authorization-actor guest
- * @x-autobe-specification 1. Validate fingerprint from request body exists and is non-empty.
- * 2. Extract IP address from request headers (x-forwarded-for or remote address) and user agent from headers.
- * 3. Create new guest record in ecommerce_mall_guests table with fingerprint, ip_address, user_agent, created_at, updated_at.
- * 4. Create new session in ecommerce_mall_guest_sessions table with generated UUID, guest_id reference, IP, href, referrer, current timestamp for created_at, and expiration timestamp (configurable, e.g., 24 hours).
- * 5. Generate JWT access token containing guest_id, session_id, exp claim.
- * 6. Generate refresh token with longer expiration (e.g., 7 days).
- * 7. Return access token and refresh token in IEcommerceMallGuest.IAuthorized response.
+ * @x-autobe-specification 1. Validate fingerprint from request body exists and
+ *   is non-empty. 2. Extract IP address from request headers (x-forwarded-for
+ *   or remote address) and user agent from headers. 3. Create new guest record
+ *   in ecommerce_mall_guests table with fingerprint, ip_address, user_agent,
+ *   created_at, updated_at. 4. Create new session in
+ *   ecommerce_mall_guest_sessions table with generated UUID, guest_id
+ *   reference, IP, href, referrer, current timestamp for created_at, and
+ *   expiration timestamp (configurable, e.g., 24 hours). 5. Generate JWT access
+ *   token containing guest_id, session_id, exp claim. 6. Generate refresh token
+ *   with longer expiration (e.g., 7 days). 7. Return access token and refresh
+ *   token in IEcommerceMallGuest.IAuthorized response.
  *
  * Error handling:
  * - 400 if fingerprint is missing or empty
@@ -132,15 +136,14 @@ export namespace join {
  * @param props.body Request body containing the refresh token issued during guest join. The refresh token is used to obtain a new access token without re-authentication.
  * @x-autobe-authorization-type refresh
  * @x-autobe-authorization-actor guest
- * @x-autobe-specification 1. Extract refresh token from request body.
- * 2. Validate refresh token signature and expiration.
- * 3. Look up session by session_id from token claims.
- * 4. Verify session hasn't been invalidated (check expiry, deleted status).
- * 5. Update last_active_at on the guest record.
- * 6. Optionally update session href/referrer if provided.
- * 7. Generate new access token with updated expiration.
- * 8. Optionally rotate refresh token (invalidate old, issue new) for security.
- * 9. Return new access token and optionally new refresh token.
+ * @x-autobe-specification 1. Extract refresh token from request body. 2.
+ *   Validate refresh token signature and expiration. 3. Look up session by
+ *   session_id from token claims. 4. Verify session hasn't been invalidated
+ *   (check expiry, deleted status). 5. Update last_active_at on the guest
+ *   record. 6. Optionally update session href/referrer if provided. 7. Generate
+ *   new access token with updated expiration. 8. Optionally rotate refresh
+ *   token (invalidate old, issue new) for security. 9. Return new access token
+ *   and optionally new refresh token.
  *
  * Error handling:
  * - 401 if refresh token is invalid, expired, or revoked

@@ -26,7 +26,8 @@ import { ITodoAppMemberSession } from "../../../../structures/ITodoAppMemberSess
  * @param props.body Session search filters, pagination, and sorting options
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implement a read-only session listing query over `todo_app_member_sessions` scoped to the authenticated member.
+ * @x-autobe-specification Implement a read-only session listing query over
+ *   `todo_app_member_sessions` scoped to the authenticated member.
  *
  * Resolve the authenticated member from the active session context and never accept ownership scope from client-provided identifiers. Build the query with a mandatory predicate `todo_app_member_id = <authenticated member id>`. Do not expose or honor any request field that attempts to target another member account.
  *
@@ -129,7 +130,10 @@ export namespace index {
  * @param props.sessionId Target session record identifier owned by the signed-in member
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implement a read-only service method that resolves the authenticated member from the current authorization context, then queries `todo_app_member_sessions` for a single row whose `id` matches the path parameter.
+ * @x-autobe-specification Implement a read-only service method that resolves
+ *   the authenticated member from the current authorization context, then
+ *   queries `todo_app_member_sessions` for a single row whose `id` matches the
+ *   path parameter.
  *
  * After loading the row, enforce ownership by verifying that `todo_app_member_sessions.todo_app_member_id` is equal to the authenticated member's `id`. If no authenticated member exists, fail with an authorization error. If the session row does not exist, return a not-found error. If the row exists but is owned by a different member, return a forbidden or not-found style access denial according to the service's security convention, without disclosing another member's existence.
  *

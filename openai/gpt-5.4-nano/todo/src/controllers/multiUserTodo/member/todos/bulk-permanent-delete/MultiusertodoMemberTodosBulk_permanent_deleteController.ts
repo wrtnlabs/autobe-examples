@@ -22,9 +22,9 @@ export class MultiusertodoMemberTodosBulk_permanent_deleteController {
    *
    * @param connection
    * @param body Bulk permanent deletion request containing the todo IDs to remove permanently for the authenticated member.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation steps:
    *
    * 1) Authenticate the request to get the authenticated member owner identity (ownerId).
    *

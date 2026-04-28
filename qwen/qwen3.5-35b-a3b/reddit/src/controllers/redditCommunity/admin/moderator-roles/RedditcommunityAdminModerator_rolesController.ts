@@ -18,9 +18,10 @@ export class RedditcommunityAdminModerator_rolesController {
    *
    * @param connection
    * @param body Search criteria for moderator role assignments including community, member, role type, date range filters, and pagination parameters.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query reddit_community_moderator_roles table with pagination and filtering.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Query reddit_community_moderator_roles table with
+     *   pagination and filtering.
    *
    * Apply search filters:
    * - reddit_community_community_id: exact match filter
@@ -74,9 +75,10 @@ export class RedditcommunityAdminModerator_rolesController {
    *
    * @param connection
    * @param roleId The unique identifier of the moderator role assignment to retrieve.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query the reddit_community_moderator_roles table for a record matching the given roleId UUID.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Query the reddit_community_moderator_roles table
+     *   for a record matching the given roleId UUID.
    *
    * 1. Validate that roleId is a valid UUID format
    * 2. Execute SELECT query with WHERE clause: id = roleId

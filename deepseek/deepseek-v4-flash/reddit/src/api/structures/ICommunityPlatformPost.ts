@@ -13,7 +13,7 @@ import { ICommunityPlatformMember } from "./ICommunityPlatformMember";
  */
 export type ICommunityPlatformPost = {
   /**
-   * @x-autobe-database-schema-property id
+     * @x-autobe-database-schema-property id
    */
   id: string & tags.Format<"uuid">;
 
@@ -22,40 +22,42 @@ export type ICommunityPlatformPost = {
    *
    * Valid values are `text`, `link`, and `image`. This field determines which type-specific 1:1 child record contains the content (text body, link URL with domain, or image reference).
    *
-   * @x-autobe-specification Direct mapping from community_platform_posts.type. Valid values are 'text', 'link', 'image' — enforced at application layer.
-   * @x-autobe-database-schema-property type
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_posts.type. Valid values are 'text', 'link', 'image'
+     *   — enforced at application layer.
+     * @x-autobe-database-schema-property type
    */
   type: string;
   /**
-   * @x-autobe-database-schema-property title
+     * @x-autobe-database-schema-property title
    */
   title: string;
   /**
-   * @x-autobe-database-schema-property vote_score
+     * @x-autobe-database-schema-property vote_score
    */
   vote_score: number & tags.Type<"int32">;
   /**
-   * @x-autobe-database-schema-property comment_count
+     * @x-autobe-database-schema-property comment_count
    */
   comment_count: number & tags.Type<"int32">;
   /**
-   * @x-autobe-database-schema-property created_at
+     * @x-autobe-database-schema-property created_at
    */
   created_at: string & tags.Format<"date-time">;
   /**
-   * @x-autobe-database-schema-property updated_at
+     * @x-autobe-database-schema-property updated_at
    */
   updated_at: (string & tags.Format<"date-time">) | null;
   /**
-   * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-database-schema-property deleted_at
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
   /**
-   * @x-autobe-database-schema-property author
+     * @x-autobe-database-schema-property author
    */
   author: ICommunityPlatformMember.ISummary;
   /**
-   * @x-autobe-database-schema-property community
+     * @x-autobe-database-schema-property community
    */
   community: ICommunityPlatformCommunity.ISummary;
 
@@ -64,7 +66,11 @@ export type ICommunityPlatformPost = {
    *
    * Includes the full text content and timestamps. Only present when the post's type is `text`. Contains the body text, creation timestamp, and last edit timestamp from the associated text content record.
    *
-   * @x-autobe-specification Type-discriminated composition via JOIN community_platform_post_texts where community_platform_post_texts.community_platform_post_id = community_platform_posts.id. Only populated when type='text'. Returns body, created_at, updated_at from the child table.
+     * @x-autobe-specification Type-discriminated composition via JOIN
+     *   community_platform_post_texts where
+     *   community_platform_post_texts.community_platform_post_id =
+     *   community_platform_posts.id. Only populated when type='text'. Returns
+     *   body, created_at, updated_at from the child table.
    */
   text?:
     | {
@@ -79,7 +85,11 @@ export type ICommunityPlatformPost = {
    *
    * Includes the target URL, extracted domain name, and timestamps. Only present when the post's type is `link`. The domain name is extracted automatically from the URL for feed display (e.g., 'youtube.com').
    *
-   * @x-autobe-specification Type-discriminated composition via JOIN community_platform_post_links where community_platform_post_links.community_platform_post_id = community_platform_posts.id. Only populated when type='link'. Returns url, domain_name, created_at, updated_at from the child table.
+     * @x-autobe-specification Type-discriminated composition via JOIN
+     *   community_platform_post_links where
+     *   community_platform_post_links.community_platform_post_id =
+     *   community_platform_posts.id. Only populated when type='link'. Returns
+     *   url, domain_name, created_at, updated_at from the child table.
    */
   link?:
     | {
@@ -95,7 +105,11 @@ export type ICommunityPlatformPost = {
    *
    * Includes the external storage URI and timestamps. Only present when the post's type is `image`. The URI references the uploaded image file in external storage.
    *
-   * @x-autobe-specification Type-discriminated composition via JOIN community_platform_post_images where community_platform_post_images.community_platform_post_id = community_platform_posts.id. Only populated when type='image'. Returns url, created_at, updated_at from the child table.
+     * @x-autobe-specification Type-discriminated composition via JOIN
+     *   community_platform_post_images where
+     *   community_platform_post_images.community_platform_post_id =
+     *   community_platform_posts.id. Only populated when type='image'. Returns
+     *   url, created_at, updated_at from the child table.
    */
   image?:
     | {
@@ -129,7 +143,12 @@ export namespace ICommunityPlatformPost {
      *
      * Determines the ordering of posts in the result set. **Hot** balances recency and upvote velocity — recent posts with rapid upvote activity rank highest. **New** displays the most recently created posts first (chronological descending). **Top** orders by highest net vote score, optionally limited to a time window via the `timeframe` parameter. **Controversial** surfaces posts with high voting activity but a net score near zero, indicating divisive content. Defaults to `hot` if not specified.
      *
-     * @x-autobe-specification Enum parameter for feed sort mode. Maps to ORDER BY clause: 'hot' uses (vote_score / POW(EXTRACT(EPOCH FROM (NOW() - created_at)) / 3600 + 2, 1.5)) DESC, 'new' uses created_at DESC, 'top' uses vote_score DESC (optionally filtered by timeframe), 'controversial' uses controversy score computed from vote_summaries join. Default: 'hot' if not provided.
+         * @x-autobe-specification Enum parameter for feed sort mode. Maps to
+         *   ORDER BY clause: 'hot' uses (vote_score / POW(EXTRACT(EPOCH FROM
+         *   (NOW() - created_at)) / 3600 + 2, 1.5)) DESC, 'new' uses created_at
+         *   DESC, 'top' uses vote_score DESC (optionally filtered by
+         *   timeframe), 'controversial' uses controversy score computed from
+         *   vote_summaries join. Default: 'hot' if not provided.
      */
     sort?: "hot" | "new" | "top" | "controversial" | undefined;
 
@@ -138,7 +157,12 @@ export namespace ICommunityPlatformPost {
      *
      * Restricts the result set to posts created within a specific time range when sorting by **Top**. Options include the past hour (`hour`), today (`today`), this week (`week`), this month (`month`), this year (`year`), or all time (`all`). This parameter is ignored when the sort mode is not `top`.
      *
-     * @x-autobe-specification Optional time filter for 'top' sort mode. Maps to a WHERE created_at >= interval_start clause. Intervals: 'hour' = 1 hour ago, 'today' = start of current day, 'week' = 7 days ago, 'month' = 30 days ago, 'year' = 365 days ago, 'all' = no time filter. Only effective when sort is 'top'; ignored for other sort modes.
+         * @x-autobe-specification Optional time filter for 'top' sort mode.
+         *   Maps to a WHERE created_at >= interval_start clause. Intervals:
+         *   'hour' = 1 hour ago, 'today' = start of current day, 'week' = 7
+         *   days ago, 'month' = 30 days ago, 'year' = 365 days ago, 'all' = no
+         *   time filter. Only effective when sort is 'top'; ignored for other
+         *   sort modes.
      */
     timeframe?:
       | "hour"
@@ -154,7 +178,13 @@ export namespace ICommunityPlatformPost {
      *
      * Selects the feed scope: **popular** returns posts from all communities across the platform (default, accessible without authentication), while **home** returns posts exclusively from communities the requesting member is subscribed to. The home feed requires member authentication — unauthenticated requests receive a 401 Unauthorized error. When `communityId` is also provided, the community filter takes precedence over this parameter.
      *
-     * @x-autobe-specification Feed type selector. 'home' filters posts to communities where the authenticated member has a subscription in community_platform_subscriptions (requires member auth; guest receives 401). 'popular' shows all non-deleted posts across all communities. When communityId is also provided, the communityId filter takes precedence over feed. Default: 'popular' if not provided.
+         * @x-autobe-specification Feed type selector. 'home' filters posts to
+         *   communities where the authenticated member has a subscription in
+         *   community_platform_subscriptions (requires member auth; guest
+         *   receives 401). 'popular' shows all non-deleted posts across all
+         *   communities. When communityId is also provided, the communityId
+         *   filter takes precedence over feed. Default: 'popular' if not
+         *   provided.
      */
     feed?: "home" | "popular" | undefined;
 
@@ -163,8 +193,13 @@ export namespace ICommunityPlatformPost {
      *
      * When provided, only posts belonging to the community identified by this UUID are returned. This parameter overrides the `feed` scope parameter — regardless of whether `feed` is set to `home` or `popular`, the result is scoped to this single community. Returns a 404 error if the specified community does not exist or has been deleted.
      *
-     * @x-autobe-database-schema-property community_id
-     * @x-autobe-specification Filters posts to those belonging to the specified community. Maps to WHERE community_id = {communityId} in the query. The community must exist and not be soft-deleted (deleted_at IS NULL on communities table); returns 404 if not found. When provided, overrides the `feed` parameter for scope determination.
+         * @x-autobe-database-schema-property community_id
+         * @x-autobe-specification Filters posts to those belonging to the
+         *   specified community. Maps to WHERE community_id = {communityId} in
+         *   the query. The community must exist and not be soft-deleted
+         *   (deleted_at IS NULL on communities table); returns 404 if not
+         *   found. When provided, overrides the `feed` parameter for scope
+         *   determination.
      */
     communityId?: (string & tags.Format<"uuid">) | undefined;
 
@@ -173,7 +208,10 @@ export namespace ICommunityPlatformPost {
      *
      * Performs a case-insensitive search against post titles. Only posts whose titles contain the provided text (as a substring) are returned. This filter combines with other active filters such as community scope, author filter, and sort mode.
      *
-     * @x-autobe-specification Case-insensitive text search on post title. Maps to WHERE title ILIKE '%search%' (PostgreSQL). Applied in addition to other filters (communityId, authorId, feed scope). Empty string or whitespace-only values are treated as no filter.
+         * @x-autobe-specification Case-insensitive text search on post title.
+         *   Maps to WHERE title ILIKE '%search%' (PostgreSQL). Applied in
+         *   addition to other filters (communityId, authorId, feed scope).
+         *   Empty string or whitespace-only values are treated as no filter.
      */
     search?: string | undefined;
 
@@ -182,8 +220,12 @@ export namespace ICommunityPlatformPost {
      *
      * When provided, only posts created by the member identified by this UUID are returned. This filter can be combined with community scoping, text search, and sort parameters. Returns an empty result set if the specified author has no posts, rather than an error.
      *
-     * @x-autobe-database-schema-property member_id
-     * @x-autobe-specification Filters posts to those authored by the specified member. Maps to WHERE member_id = {authorId} in the query. Combined with other active filters (communityId, search, feed scope). The member must exist; returns empty results (not an error) if the member has no posts or is deleted.
+         * @x-autobe-database-schema-property member_id
+         * @x-autobe-specification Filters posts to those authored by the
+         *   specified member. Maps to WHERE member_id = {authorId} in the
+         *   query. Combined with other active filters (communityId, search,
+         *   feed scope). The member must exist; returns empty results (not an
+         *   error) if the member has no posts or is deleted.
      */
     authorId?: (string & tags.Format<"uuid">) | undefined;
 
@@ -192,7 +234,14 @@ export namespace ICommunityPlatformPost {
      *
      * Provides consistent pagination across pages by encoding the position of the last item from the previous page. When provided, results start from after this cursor position. The cursor format depends on the active sort mode — it encodes the fields that determine sort ordering. This parameter is mutually exclusive with the `page` parameter; when both are present, the cursor takes precedence. Use the response metadata to obtain the next cursor value.
      *
-     * @x-autobe-specification Opaque cursor string for cursor-based pagination. The cursor encodes the sort position of the last item on the previous page. For 'new' sort, cursor encodes created_at timestamp. For 'top' sort, cursor encodes (vote_score, created_at) pair. For 'hot'/'controversial', cursor is an opaque token. When cursor is provided, results start after the cursor position. Mutually exclusive with `page` — if both are provided, cursor takes precedence.
+         * @x-autobe-specification Opaque cursor string for cursor-based
+         *   pagination. The cursor encodes the sort position of the last item
+         *   on the previous page. For 'new' sort, cursor encodes created_at
+         *   timestamp. For 'top' sort, cursor encodes (vote_score, created_at)
+         *   pair. For 'hot'/'controversial', cursor is an opaque token. When
+         *   cursor is provided, results start after the cursor position.
+         *   Mutually exclusive with `page` — if both are provided, cursor takes
+         *   precedence.
      */
     cursor?: string | undefined;
 
@@ -201,7 +250,10 @@ export namespace ICommunityPlatformPost {
      *
      * Specifies how many post records to return in a single response. The actual number may be less than this value on the last page or when fewer records match the query criteria. Defaults to 20 if not provided. Maximum allowed value is 50.
      *
-     * @x-autobe-specification Maximum number of records to return per page. Applied to both cursor-based and offset-based pagination. Default: 20. Maximum: 50. The actual number of returned records may be less on the final page or when fewer records match the query.
+         * @x-autobe-specification Maximum number of records to return per page.
+         *   Applied to both cursor-based and offset-based pagination. Default:
+         *   20. Maximum: 50. The actual number of returned records may be less
+         *   on the final page or when fewer records match the query.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<50>)
@@ -212,7 +264,12 @@ export namespace ICommunityPlatformPost {
      *
      * Specifies which page of results to retrieve, with page numbering starting from 1. Used together with the `limit` parameter for traditional page navigation. This parameter is mutually exclusive with the `cursor` parameter; when both are present, `cursor` takes precedence. Defaults to page 1. Requesting a page beyond the available range returns an empty results array with accurate pagination metadata reflecting the actual total.
      *
-     * @x-autobe-specification 1-indexed page number for offset-based pagination. Maps to OFFSET (page - 1) * limit. Mutually exclusive with `cursor` — if both are provided, cursor takes precedence. Defaults to 1 (first page) if not provided or null. Requesting a page beyond available results returns an empty data array with valid pagination metadata.
+         * @x-autobe-specification 1-indexed page number for offset-based
+         *   pagination. Maps to OFFSET (page - 1) * limit. Mutually exclusive
+         *   with `cursor` — if both are provided, cursor takes precedence.
+         *   Defaults to 1 (first page) if not provided or null. Requesting a
+         *   page beyond available results returns an empty data array with
+         *   valid pagination metadata.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };
@@ -232,8 +289,10 @@ export namespace ICommunityPlatformPost {
      *
      * If provided, the title must be non-empty. The title is displayed prominently in feed previews and the full post view, serving as the primary identifier for the content.
      *
-     * @x-autobe-database-schema-property title
-     * @x-autobe-specification Direct mapping from community_platform_posts.title. If provided, must be non-empty. This is the only direct DB column field mapped in the Update DTO.
+         * @x-autobe-database-schema-property title
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_posts.title. If provided, must be non-empty.
+         *   This is the only direct DB column field mapped in the Update DTO.
      */
     title?: string | undefined;
 
@@ -242,7 +301,12 @@ export namespace ICommunityPlatformPost {
      *
      * Only valid when the post's type is 'text'. This field is ignored for link-type and image-type posts. The body contains the full text content of the post.
      *
-     * @x-autobe-specification Computed via type-discriminated composition: maps to community_platform_post_texts.body through the 'text' 1:1 child relation. Only valid when the post's type is 'text'. Upserts the child record: creates community_platform_post_texts row if not exists, updates existing body if already present. Ignored for link-type and image-type posts.
+         * @x-autobe-specification Computed via type-discriminated composition:
+         *   maps to community_platform_post_texts.body through the 'text' 1:1
+         *   child relation. Only valid when the post's type is 'text'. Upserts
+         *   the child record: creates community_platform_post_texts row if not
+         *   exists, updates existing body if already present. Ignored for
+         *   link-type and image-type posts.
      */
     body?: string | undefined;
 
@@ -251,7 +315,11 @@ export namespace ICommunityPlatformPost {
      *
      * Only valid when the post's type is 'link'. The domain name is extracted automatically from the URL for feed display (e.g., 'youtube.com'). This field is ignored for text-type and image-type posts.
      *
-     * @x-autobe-specification Computed via type-discriminated composition: maps to community_platform_post_links.url through the 'link' 1:1 child relation. The domain_name is extracted automatically when the URL is updated. Only valid when the post's type is 'link'. Upserts the child record. Ignored for text-type and image-type posts.
+         * @x-autobe-specification Computed via type-discriminated composition:
+         *   maps to community_platform_post_links.url through the 'link' 1:1
+         *   child relation. The domain_name is extracted automatically when the
+         *   URL is updated. Only valid when the post's type is 'link'. Upserts
+         *   the child record. Ignored for text-type and image-type posts.
      */
     url?: (string & tags.Format<"url">) | undefined;
 
@@ -260,7 +328,11 @@ export namespace ICommunityPlatformPost {
      *
      * Only valid when the post's type is 'image'. This field references an uploaded image in external storage for thumbnail display in feeds. Ignored for text-type and link-type posts.
      *
-     * @x-autobe-specification Computed via type-discriminated composition: maps to community_platform_post_images.url through the 'image' 1:1 child relation. References an uploaded image in external storage. Only valid when the post's type is 'image'. Upserts the child record. Ignored for text-type and link-type posts.
+         * @x-autobe-specification Computed via type-discriminated composition:
+         *   maps to community_platform_post_images.url through the 'image' 1:1
+         *   child relation. References an uploaded image in external storage.
+         *   Only valid when the post's type is 'image'. Upserts the child
+         *   record. Ignored for text-type and link-type posts.
      */
     imageUrl?: (string & tags.Format<"url">) | undefined;
   };
@@ -278,8 +350,9 @@ export namespace ICommunityPlatformPost {
      *
      * This UUID serves as the primary key for the post record and is used for routing to the full post detail endpoint.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from community_platform_posts.id. UUID primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_posts.id. UUID primary key.
      */
     id: string & tags.Format<"uuid">;
 
@@ -288,8 +361,11 @@ export namespace ICommunityPlatformPost {
      *
      * Valid values are `text`, `link`, and `image`. This field determines which preview field is populated: text posts include `text_preview`, image posts include `image_url`, and link posts include `domain_name`.
      *
-     * @x-autobe-database-schema-property type
-     * @x-autobe-specification Direct mapping from community_platform_posts.type. Discriminator values: 'text', 'link', 'image'. Determines which child table to LEFT JOIN for preview computation.
+         * @x-autobe-database-schema-property type
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_posts.type. Discriminator values: 'text',
+         *   'link', 'image'. Determines which child table to LEFT JOIN for
+         *   preview computation.
      */
     type: string;
 
@@ -298,8 +374,9 @@ export namespace ICommunityPlatformPost {
      *
      * Displayed prominently in feed previews and serves as the primary identifier for the content. Every post must have a title regardless of its type.
      *
-     * @x-autobe-database-schema-property title
-     * @x-autobe-specification Direct mapping from community_platform_posts.title.
+         * @x-autobe-database-schema-property title
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_posts.title.
      */
     title: string;
 
@@ -308,8 +385,10 @@ export namespace ICommunityPlatformPost {
      *
      * Calculated as total upvotes minus total downvotes. Used for Hot, Top, and Controversial feed sorting. Can be positive, zero, or negative.
      *
-     * @x-autobe-database-schema-property vote_score
-     * @x-autobe-specification Direct mapping from community_platform_posts.vote_score. Denormalized net score (total upvotes minus total downvotes). Can be positive, zero, or negative.
+         * @x-autobe-database-schema-property vote_score
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_posts.vote_score. Denormalized net score (total
+         *   upvotes minus total downvotes). Can be positive, zero, or negative.
      */
     vote_score: number & tags.Type<"int32">;
 
@@ -318,8 +397,10 @@ export namespace ICommunityPlatformPost {
      *
      * Includes nested replies at all depths. Displayed in feed previews to indicate discussion activity.
      *
-     * @x-autobe-database-schema-property comment_count
-     * @x-autobe-specification Direct mapping from community_platform_posts.comment_count. Denormalized total comment count including nested replies at all depths.
+         * @x-autobe-database-schema-property comment_count
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_posts.comment_count. Denormalized total comment
+         *   count including nested replies at all depths.
      */
     comment_count: number & tags.Type<"int32">;
 
@@ -328,8 +409,11 @@ export namespace ICommunityPlatformPost {
      *
      * Displayed as relative time in feeds and used for chronological sorting.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from community_platform_posts.created_at. Used for chronological feed sorting (New sort option). Displayed as relative time (e.g., '3 hours ago') in feeds.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_posts.created_at. Used for chronological feed
+         *   sorting (New sort option). Displayed as relative time (e.g., '3
+         *   hours ago') in feeds.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -338,8 +422,10 @@ export namespace ICommunityPlatformPost {
      *
      * Contains the member's summary information including their unique identifier, username, and registration timestamp.
      *
-     * @x-autobe-database-schema-property author
-     * @x-autobe-specification INNER JOIN community_platform_members ON posts.member_id = members.id. Returned as ICommunityPlatformMember.ISummary.
+         * @x-autobe-database-schema-property author
+         * @x-autobe-specification INNER JOIN community_platform_members ON
+         *   posts.member_id = members.id. Returned as
+         *   ICommunityPlatformMember.ISummary.
      */
     author: ICommunityPlatformMember.ISummary;
 
@@ -348,8 +434,10 @@ export namespace ICommunityPlatformPost {
      *
      * Contains the community's summary information including its name, description, and subscriber count.
      *
-     * @x-autobe-database-schema-property community
-     * @x-autobe-specification INNER JOIN community_platform_communities ON posts.community_id = communities.id. Returned as ICommunityPlatformCommunity.ISummary.
+         * @x-autobe-database-schema-property community
+         * @x-autobe-specification INNER JOIN community_platform_communities ON
+         *   posts.community_id = communities.id. Returned as
+         *   ICommunityPlatformCommunity.ISummary.
      */
     community: ICommunityPlatformCommunity.ISummary;
 
@@ -358,7 +446,11 @@ export namespace ICommunityPlatformPost {
      *
      * Only populated when the post type is `text`. Contains the first 200 characters of the body content for display in feed previews.
      *
-     * @x-autobe-specification When type='text': LEFT JOIN community_platform_post_texts ON posts.id = texts.community_platform_post_id. Extract first 200 characters of texts.body as text_preview. For non-text posts, this field is absent (not in required array).
+         * @x-autobe-specification When type='text': LEFT JOIN
+         *   community_platform_post_texts ON posts.id =
+         *   texts.community_platform_post_id. Extract first 200 characters of
+         *   texts.body as text_preview. For non-text posts, this field is
+         *   absent (not in required array).
      */
     text_preview?: string | undefined;
 
@@ -367,7 +459,10 @@ export namespace ICommunityPlatformPost {
      *
      * Only populated when the post type is `image`. References the image stored in the external file storage system for thumbnail display in feed previews.
      *
-     * @x-autobe-specification When type='image': LEFT JOIN community_platform_post_images ON posts.id = images.community_platform_post_id. Return images.url as image_url. For non-image posts, this field is absent (not in required array).
+         * @x-autobe-specification When type='image': LEFT JOIN
+         *   community_platform_post_images ON posts.id =
+         *   images.community_platform_post_id. Return images.url as image_url.
+         *   For non-image posts, this field is absent (not in required array).
      */
     image_url?: (string & tags.Format<"uri">) | undefined;
 
@@ -376,7 +471,11 @@ export namespace ICommunityPlatformPost {
      *
      * Only populated when the post type is `link`. Displays the domain (e.g., 'youtube.com', 'github.com') alongside link posts in feed previews.
      *
-     * @x-autobe-specification When type='link': LEFT JOIN community_platform_post_links ON posts.id = links.community_platform_post_id. Return links.domain_name (extracted domain from the URL, e.g., 'youtube.com'). For non-link posts, this field is absent (not in required array).
+         * @x-autobe-specification When type='link': LEFT JOIN
+         *   community_platform_post_links ON posts.id =
+         *   links.community_platform_post_id. Return links.domain_name
+         *   (extracted domain from the URL, e.g., 'youtube.com'). For non-link
+         *   posts, this field is absent (not in required array).
      */
     domain_name?: string | undefined;
   };

@@ -20,7 +20,8 @@ import { IRedditCommunityMember } from "../../../structures/IRedditCommunityMemb
  * @param props.body Search criteria for member accounts including optional filters and pagination parameters.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query the reddit_community_members table with pagination and optional filtering.
+ * @x-autobe-specification Query the reddit_community_members table with
+ *   pagination and optional filtering.
  *
  * Search Criteria:
  * - username: Optional exact or partial match on username field (case-insensitive)

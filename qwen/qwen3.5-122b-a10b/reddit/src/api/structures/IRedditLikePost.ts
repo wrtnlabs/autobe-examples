@@ -32,8 +32,9 @@ export type IRedditLikePost = {
    *
    * Generated as a UUID when the post is created. Serves as the primary key for all post-related operations including updates, deletions, and lookups.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from reddit_like_posts.id. UUID primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from reddit_like_posts.id. UUID
+     *   primary key.
    */
   id: string & tags.Format<"uuid">;
 
@@ -42,8 +43,9 @@ export type IRedditLikePost = {
    *
    * Required for all posts. Used for full-text search and displayed prominently in community feeds and post listing pages.
    *
-   * @x-autobe-database-schema-property title
-   * @x-autobe-specification Direct mapping from reddit_like_posts.title. Required field, max 500 characters.
+     * @x-autobe-database-schema-property title
+     * @x-autobe-specification Direct mapping from reddit_like_posts.title.
+     *   Required field, max 500 characters.
    */
   title: string;
 
@@ -52,8 +54,9 @@ export type IRedditLikePost = {
    *
    * Determines which content field is populated: text posts use content_text, link posts use content_url, and image posts use post_files. Valid values are 'text', 'link', or 'image'.
    *
-   * @x-autobe-specification Direct mapping from reddit_like_posts.content_type. Enum: 'text', 'link', 'image'.
-   * @x-autobe-database-schema-property content_type
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_posts.content_type. Enum: 'text', 'link', 'image'.
+     * @x-autobe-database-schema-property content_type
    */
   content_type: string;
 
@@ -62,8 +65,10 @@ export type IRedditLikePost = {
    *
    * Populated only when content_type is 'text'. Null for link and image posts. Supports markdown formatting for rich text display.
    *
-   * @x-autobe-database-schema-property content_text
-   * @x-autobe-specification Direct mapping from reddit_like_posts.content_text. Nullable, required only when content_type is 'text'.
+     * @x-autobe-database-schema-property content_text
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_posts.content_text. Nullable, required only when
+     *   content_type is 'text'.
    */
   content_text?: string | null | undefined;
 
@@ -72,8 +77,10 @@ export type IRedditLikePost = {
    *
    * Populated only when content_type is 'link'. Null for text and image posts. Must be a valid URI with protocol prefix (e.g., https://).
    *
-   * @x-autobe-database-schema-property content_url
-   * @x-autobe-specification Direct mapping from reddit_like_posts.content_url. Nullable, required only when content_type is 'link'. Valid URI format.
+     * @x-autobe-database-schema-property content_url
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_posts.content_url. Nullable, required only when
+     *   content_type is 'link'. Valid URI format.
    */
   content_url?: (string & tags.Format<"uri">) | null | undefined;
 
@@ -82,8 +89,9 @@ export type IRedditLikePost = {
    *
    * Contains summary information about the post author including username, display name, and karma score. Used to attribute content and link to the author's profile page.
    *
-   * @x-autobe-database-schema-property member
-   * @x-autobe-specification Join from reddit_like_posts.reddti_like_member_id to reddit_like_members.id. Returns IRedditLikeMember.ISummary.
+     * @x-autobe-database-schema-property member
+     * @x-autobe-specification Join from reddit_like_posts.reddti_like_member_id
+     *   to reddit_like_members.id. Returns IRedditLikeMember.ISummary.
    */
   author: IRedditLikeMember.ISummary;
 
@@ -92,8 +100,10 @@ export type IRedditLikePost = {
    *
    * Contains summary information about the parent community including name, description, and owner. Used to display community context and link to community pages.
    *
-   * @x-autobe-database-schema-property community
-   * @x-autobe-specification Join from reddit_like_posts.reddti_like_community_id to reddit_like_communities.id. Returns IRedditLikeCommunity.ISummary.
+     * @x-autobe-database-schema-property community
+     * @x-autobe-specification Join from
+     *   reddit_like_posts.reddti_like_community_id to
+     *   reddit_like_communities.id. Returns IRedditLikeCommunity.ISummary.
    */
   community: IRedditLikeCommunity.ISummary;
 
@@ -102,7 +112,9 @@ export type IRedditLikePost = {
    *
    * Populated only when content_type is 'image'. Contains an array of uploaded image file metadata including URLs and dimensions. Empty array for text and link posts.
    *
-   * @x-autobe-specification Composition relation from reddit_like_posts.id to reddit_like_post_files.reddti_like_post_id. Returns array of IRedditLikePostFile. Not a direct column in reddit_like_posts table.
+     * @x-autobe-specification Composition relation from reddit_like_posts.id to
+     *   reddit_like_post_files.reddti_like_post_id. Returns array of
+     *   IRedditLikePostFile. Not a direct column in reddit_like_posts table.
    */
   post_files: IRedditLikePostFile[];
 
@@ -111,7 +123,9 @@ export type IRedditLikePost = {
    *
    * Computed from the reddit_like_comments table by counting all comments associated with this post that are not soft-deleted. Updated in real-time as comments are created or deleted.
    *
-   * @x-autobe-specification Computed as COUNT(*) from reddit_like_comments WHERE reddit_like_post_id = post.id AND deleted_at IS NULL. Non-negative integer.
+     * @x-autobe-specification Computed as COUNT(*) from reddit_like_comments
+     *   WHERE reddit_like_post_id = post.id AND deleted_at IS NULL.
+     *   Non-negative integer.
    */
   comments_count: number & tags.Type<"int32"> & tags.Minimum<0>;
 
@@ -120,7 +134,9 @@ export type IRedditLikePost = {
    *
    * Calculated from the reddit_like_votes table as the sum of upvotes minus downvotes. Represents the community's overall sentiment toward the post. Can be negative if downvotes exceed upvotes.
    *
-   * @x-autobe-specification Computed as SUM(CASE WHEN vote_type = 'upvote' THEN 1 ELSE -1 END) from reddit_like_votes WHERE reddit_like_post_id = post.id. Integer, can be negative.
+     * @x-autobe-specification Computed as SUM(CASE WHEN vote_type = 'upvote'
+     *   THEN 1 ELSE -1 END) from reddit_like_votes WHERE reddit_like_post_id =
+     *   post.id. Integer, can be negative.
    */
   vote_score: number & tags.Type<"int32">;
 
@@ -129,8 +145,9 @@ export type IRedditLikePost = {
    *
    * Records the exact moment when the post was initially published. Used for sorting posts by recency and displaying time elapsed since creation.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from reddit_like_posts.created_at. DateTime with timezone (timestamptz).
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from reddit_like_posts.created_at.
+     *   DateTime with timezone (timestamptz).
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -139,8 +156,9 @@ export type IRedditLikePost = {
    *
    * Updated whenever the post title or content is modified. Used to track content changes and display "edited" indicators to users.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from reddit_like_posts.updated_at. DateTime with timezone (timestamptz).
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from reddit_like_posts.updated_at.
+     *   DateTime with timezone (timestamptz).
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -149,8 +167,10 @@ export type IRedditLikePost = {
    *
    * When null, the post is active and visible in feeds. When set, the post is hidden from feeds but retained for audit purposes. The post author or community moderators can delete posts.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from reddit_like_posts.deleted_at. Nullable DateTime with timezone. NULL for active posts, non-null for deleted posts.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from reddit_like_posts.deleted_at.
+     *   Nullable DateTime with timezone. NULL for active posts, non-null for
+     *   deleted posts.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -191,7 +211,11 @@ export namespace IRedditLikePost {
      * - **popular**: All posts across the platform regardless of community (public access)
      * - **community**: Posts from a specific community (requires community_id parameter)
      *
-     * @x-autobe-specification Determines which feed source to query. home: JOIN with reddit_like_community_subscriptions and filter by current member_id. popular: Query all reddit_like_posts without filtering. community: Filter reddit_like_posts by reddit_like_community_id. Valid values: home, popular, community.
+         * @x-autobe-specification Determines which feed source to query. home:
+         *   JOIN with reddit_like_community_subscriptions and filter by current
+         *   member_id. popular: Query all reddit_like_posts without filtering.
+         *   community: Filter reddit_like_posts by reddit_like_community_id.
+         *   Valid values: home, popular, community.
      */
     feed_type?: "home" | "popular" | "community" | undefined;
 
@@ -205,7 +229,11 @@ export namespace IRedditLikePost {
      * - **top**: Highest vote score within the specified time_filter period
      * - **controversial**: Posts with high vote variance (many upvotes and downvotes)
      *
-     * @x-autobe-specification Determines the sorting algorithm for ordering results. hot: ORDER BY (vote_score * recency_factor) DESC. new: ORDER BY created_at DESC. top: ORDER BY vote_score DESC (with time_filter applied). controversial: ORDER BY vote variance DESC. Valid values: hot, new, top, controversial.
+         * @x-autobe-specification Determines the sorting algorithm for ordering
+         *   results. hot: ORDER BY (vote_score * recency_factor) DESC. new:
+         *   ORDER BY created_at DESC. top: ORDER BY vote_score DESC (with
+         *   time_filter applied). controversial: ORDER BY vote variance DESC.
+         *   Valid values: hot, new, top, controversial.
      */
     sort?: "hot" | "new" | "top" | "controversial" | undefined;
 
@@ -220,7 +248,11 @@ export namespace IRedditLikePost {
      * - **year**: Posts from the last 365 days
      * - **all_time**: No time restriction (all posts)
      *
-     * @x-autobe-specification Time range filter for 'top' sorting. Filters posts where created_at falls within the specified period. today: current day, week: last 7 days, month: last 30 days, year: last 365 days, all_time: no time restriction. Only applies when sort=top. Valid values: today, week, month, year, all_time.
+         * @x-autobe-specification Time range filter for 'top' sorting. Filters
+         *   posts where created_at falls within the specified period. today:
+         *   current day, week: last 7 days, month: last 30 days, year: last 365
+         *   days, all_time: no time restriction. Only applies when sort=top.
+         *   Valid values: today, week, month, year, all_time.
      */
     time_filter?: "today" | "week" | "month" | "year" | "all_time" | undefined;
 
@@ -231,7 +263,10 @@ export namespace IRedditLikePost {
      *
      * Omit this parameter when requesting the first page. Include the cursor value from the previous response's pagination metadata to fetch the next page.
      *
-     * @x-autobe-specification Base64-encoded pagination cursor containing created_at and id as composite cursor for consistent ordering. Format: base64(JSON.stringify({created_at: DateTime, id: UUID})). Used to fetch the next page of results. Omit for first page.
+         * @x-autobe-specification Base64-encoded pagination cursor containing
+         *   created_at and id as composite cursor for consistent ordering.
+         *   Format: base64(JSON.stringify({created_at: DateTime, id: UUID})).
+         *   Used to fetch the next page of results. Omit for first page.
      */
     cursor?: string | undefined;
 
@@ -246,7 +281,9 @@ export namespace IRedditLikePost {
      * - Maximum: 100
      * - Default: 25
      *
-     * @x-autobe-specification Maximum number of posts to return per page. Controls page size for pagination. Range: 1-100. Default: 25. Applied as LIMIT clause in SQL query.
+         * @x-autobe-specification Maximum number of posts to return per page.
+         *   Controls page size for pagination. Range: 1-100. Default: 25.
+         *   Applied as LIMIT clause in SQL query.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -261,7 +298,9 @@ export namespace IRedditLikePost {
      *
      * **Required when**: feed_type = "community"
      *
-     * @x-autobe-specification Community UUID filter for community feed. Required when feed_type=community. Filters reddit_like_posts WHERE reddit_like_community_id = community_id. Format: UUID string.
+         * @x-autobe-specification Community UUID filter for community feed.
+         *   Required when feed_type=community. Filters reddit_like_posts WHERE
+         *   reddit_like_community_id = community_id. Format: UUID string.
      */
     community_id?: (string & tags.Format<"uuid">) | undefined;
 
@@ -274,7 +313,10 @@ export namespace IRedditLikePost {
      *
      * Requesting a page beyond the available range returns an empty data array with valid pagination metadata reflecting the actual totals.
      *
-     * @x-autobe-specification 1-indexed page number for pagination. Defaults to 1 if not provided, null, or undefined. Requesting a page beyond available range returns empty data array with valid pagination metadata. Applied after cursor-based pagination logic.
+         * @x-autobe-specification 1-indexed page number for pagination.
+         *   Defaults to 1 if not provided, null, or undefined. Requesting a
+         *   page beyond available range returns empty data array with valid
+         *   pagination metadata. Applied after cursor-based pagination logic.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };
@@ -320,7 +362,7 @@ export namespace IRedditLikePost {
    */
   export type IUpdate = {
     /**
-     * @x-autobe-database-schema-property title
+         * @x-autobe-database-schema-property title
      */
     title?: (string & tags.MinLength<1> & tags.MaxLength<500>) | undefined;
 
@@ -329,8 +371,10 @@ export namespace IRedditLikePost {
      *
      * Populated only when content_type is 'text'. Null for link and image posts. Supports markdown formatting for rich text display.
      *
-     * @x-autobe-database-schema-property content_text
-     * @x-autobe-specification Direct mapping from reddit_like_posts.content_text. Nullable String, optional in Update DTO.
+         * @x-autobe-database-schema-property content_text
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_posts.content_text. Nullable String, optional in Update
+         *   DTO.
      */
     content_text?:
       | (string & tags.MinLength<1> & tags.MaxLength<10000>)
@@ -342,8 +386,10 @@ export namespace IRedditLikePost {
      *
      * Populated only when content_type is 'link'. Null for text and image posts. Must be a valid URI with protocol prefix (e.g., https://).
      *
-     * @x-autobe-database-schema-property content_url
-     * @x-autobe-specification Direct mapping from reddit_like_posts.content_url. Nullable String with URI format, optional in Update DTO.
+         * @x-autobe-database-schema-property content_url
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_posts.content_url. Nullable String with URI format,
+         *   optional in Update DTO.
      */
     content_url?:
       | (string & tags.MaxLength<80000> & tags.Format<"uri">)
@@ -370,7 +416,9 @@ export namespace IRedditLikePost {
      *
      * This is the UUID that uniquely identifies the post in the system. It is used to correlate the vote summary with the specific post and can be used to fetch the full post details via the post retrieval endpoints.
      *
-     * @x-autobe-specification Post identifier from reddit_like_posts.id. This is the UUID of the post whose vote summary is being returned. Used to correlate the vote summary with the specific post.
+         * @x-autobe-specification Post identifier from reddit_like_posts.id.
+         *   This is the UUID of the post whose vote summary is being returned.
+         *   Used to correlate the vote summary with the specific post.
      */
     id: string & tags.Format<"uuid">;
 
@@ -385,7 +433,11 @@ export namespace IRedditLikePost {
      *
      * This real-time computation ensures accurate, up-to-date scoring without denormalized storage in the posts table.
      *
-     * @x-autobe-specification Computed as COUNT(votes where vote_type='upvote') - COUNT(votes where vote_type='downvote') from reddit_like_votes table. Aggregated by reddit_like_post_id. Filters out soft-deleted votes (deleted_at IS NULL). Returns 0 when no votes exist.
+         * @x-autobe-specification Computed as COUNT(votes where
+         *   vote_type='upvote') - COUNT(votes where vote_type='downvote') from
+         *   reddit_like_votes table. Aggregated by reddit_like_post_id. Filters
+         *   out soft-deleted votes (deleted_at IS NULL). Returns 0 when no
+         *   votes exist.
      */
     vote_score: number & tags.Type<"int32">;
 
@@ -398,7 +450,10 @@ export namespace IRedditLikePost {
      *
      * Used to display the upvote tally on post lists and detail views. Combined with downvote_count to calculate the net vote_score.
      *
-     * @x-autobe-specification COUNT(*) from reddit_like_votes WHERE reddit_like_post_id = {postId} AND vote_type = 'upvote' AND deleted_at IS NULL. Aggregated by post. Returns 0 when no upvotes exist.
+         * @x-autobe-specification COUNT(*) from reddit_like_votes WHERE
+         *   reddit_like_post_id = {postId} AND vote_type = 'upvote' AND
+         *   deleted_at IS NULL. Aggregated by post. Returns 0 when no upvotes
+         *   exist.
      */
     upvote_count: number & tags.Type<"int32">;
 
@@ -411,7 +466,10 @@ export namespace IRedditLikePost {
      *
      * Used to display the downvote tally on post lists and detail views. Combined with upvote_count to calculate the net vote_score.
      *
-     * @x-autobe-specification COUNT(*) from reddit_like_votes WHERE reddit_like_post_id = {postId} AND vote_type = 'downvote' AND deleted_at IS NULL. Aggregated by post. Returns 0 when no downvotes exist.
+         * @x-autobe-specification COUNT(*) from reddit_like_votes WHERE
+         *   reddit_like_post_id = {postId} AND vote_type = 'downvote' AND
+         *   deleted_at IS NULL. Aggregated by post. Returns 0 when no downvotes
+         *   exist.
      */
     downvote_count: number & tags.Type<"int32">;
   };
@@ -447,8 +505,9 @@ export namespace IRedditLikePost {
      *
      * This is the primary key of the post record, stored as a UUID. It uniquely identifies the post across the entire platform and is used in API endpoints for post-specific operations.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from reddit_like_posts.id. Primary key, UUID format.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from reddit_like_posts.id.
+         *   Primary key, UUID format.
      */
     id: string & tags.Format<"uuid">;
 
@@ -457,8 +516,9 @@ export namespace IRedditLikePost {
      *
      * This is the main headline of the post, required for all posts. It is used for full-text search and is prominently displayed in all list views and the post detail page.
      *
-     * @x-autobe-database-schema-property title
-     * @x-autobe-specification Direct mapping from reddit_like_posts.title. Required field, full-text searchable.
+         * @x-autobe-database-schema-property title
+         * @x-autobe-specification Direct mapping from reddit_like_posts.title.
+         *   Required field, full-text searchable.
      */
     title: string;
 
@@ -470,8 +530,10 @@ export namespace IRedditLikePost {
      * - link: Uses content_url field for external links
      * - image: References attached files from reddit_like_post_files table
      *
-     * @x-autobe-database-schema-property content_type
-     * @x-autobe-specification Direct mapping from reddit_like_posts.content_type. Valid values: 'text', 'link', 'image'.
+         * @x-autobe-database-schema-property content_type
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_posts.content_type. Valid values: 'text', 'link',
+         *   'image'.
      */
     content_type: string;
 
@@ -480,8 +542,10 @@ export namespace IRedditLikePost {
      *
      * This is a reference to the author's member account, returned as a summary object containing the author's public profile information including username, display name, and karma score. The author can edit and delete their own posts.
      *
-     * @x-autobe-database-schema-property member
-     * @x-autobe-specification Join from reddit_like_posts.reddit_like_member_id to reddit_like_members.id. Returns IRedditLikeMember.ISummary via BELONGS-TO relation.
+         * @x-autobe-database-schema-property member
+         * @x-autobe-specification Join from
+         *   reddit_like_posts.reddit_like_member_id to reddit_like_members.id.
+         *   Returns IRedditLikeMember.ISummary via BELONGS-TO relation.
      */
     author: IRedditLikeMember.ISummary;
 
@@ -490,8 +554,11 @@ export namespace IRedditLikePost {
      *
      * This is a reference to the community that contains this post, returned as a summary object. Users must be subscribed to the community to create posts there, and community owners and moderators can delete posts in their community.
      *
-     * @x-autobe-database-schema-property community
-     * @x-autobe-specification Join from reddit_like_posts.reddit_like_community_id to reddit_like_communities.id. Returns IRedditLikeCommunity.ISummary via BELONGS-TO relation.
+         * @x-autobe-database-schema-property community
+         * @x-autobe-specification Join from
+         *   reddit_like_posts.reddit_like_community_id to
+         *   reddit_like_communities.id. Returns IRedditLikeCommunity.ISummary
+         *   via BELONGS-TO relation.
      */
     community: IRedditLikeCommunity.ISummary;
 
@@ -500,7 +567,9 @@ export namespace IRedditLikePost {
      *
      * Calculated as the sum of all upvotes minus all downvotes from the reddit_like_votes table, excluding soft-deleted votes. This score is used to rank posts in feeds and display post popularity.
      *
-     * @x-autobe-specification Computed from reddit_like_votes: SUM of upvotes minus downvotes where deleted_at IS NULL. Aggregation over HAS-MANY relation.
+         * @x-autobe-specification Computed from reddit_like_votes: SUM of
+         *   upvotes minus downvotes where deleted_at IS NULL. Aggregation over
+         *   HAS-MANY relation.
      */
     vote_score: number & tags.Type<"int32">;
 
@@ -509,7 +578,9 @@ export namespace IRedditLikePost {
      *
      * Count of all comments from the reddit_like_comments table, excluding soft-deleted comments. This count is displayed in feed views to show post engagement levels.
      *
-     * @x-autobe-specification Computed from reddit_like_comments: COUNT of comments where deleted_at IS NULL. Aggregation over HAS-MANY relation.
+         * @x-autobe-specification Computed from reddit_like_comments: COUNT of
+         *   comments where deleted_at IS NULL. Aggregation over HAS-MANY
+         *   relation.
      */
     comment_count: number & tags.Type<"int32">;
 
@@ -523,7 +594,10 @@ export namespace IRedditLikePost {
      *
      * This field is optimized for list views where full content would be too large.
      *
-     * @x-autobe-specification Computed based on content_type: text posts use SUBSTRING(content_text, 1, 200), link posts extract domain from content_url, image posts use thumbnail URL from reddit_like_post_files first file.
+         * @x-autobe-specification Computed based on content_type: text posts
+         *   use SUBSTRING(content_text, 1, 200), link posts extract domain from
+         *   content_url, image posts use thumbnail URL from
+         *   reddit_like_post_files first file.
      */
     content_preview: string;
 
@@ -532,8 +606,9 @@ export namespace IRedditLikePost {
      *
      * Records the exact moment when the post was initially published. This timestamp is used for sorting posts in feeds (new, hot, top by time period) and displaying post age to users.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from reddit_like_posts.created_at. Timestamp with timezone, UTC.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_posts.created_at. Timestamp with timezone, UTC.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -542,8 +617,10 @@ export namespace IRedditLikePost {
      *
      * When present, indicates the post has been deleted but retained for audit purposes. Active queries should filter out posts with non-null deleted_at values. Soft-deleted posts can be recovered within retention policies.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from reddit_like_posts.deleted_at. Nullable timestamp, soft-deletion marker.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_posts.deleted_at. Nullable timestamp, soft-deletion
+         *   marker.
      */
     deleted_at?: (string & tags.Format<"date-time">) | null | undefined;
   };

@@ -17,63 +17,63 @@ export type IEcommerceMallCategoriesSnapshot = {
   /**
    * Primary key identifier for the category snapshot record.
    *
-   * @x-autobe-database-schema-property id
+     * @x-autobe-database-schema-property id
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Type identifier for the snapshot target entity. Always set to 'category' to distinguish snapshot type.
    *
-   * @x-autobe-database-schema-property entity_type
+     * @x-autobe-database-schema-property entity_type
    */
   entity_type: "category";
 
   /**
    * The ID of the category at the time of snapshot creation.
    *
-   * @x-autobe-database-schema-property entity_id
+     * @x-autobe-database-schema-property entity_id
    */
   entity_id: string & tags.Format<"uuid">;
 
   /**
    * Category name as it existed at the time of modification.
    *
-   * @x-autobe-database-schema-property name
+     * @x-autobe-database-schema-property name
    */
   name: string;
 
   /**
    * Category description as it existed at the time of modification.
    *
-   * @x-autobe-database-schema-property description
+     * @x-autobe-database-schema-property description
    */
   description: string;
 
   /**
    * Timestamp when the snapshot was created, representing the exact point in time for this immutable record.
    *
-   * @x-autobe-database-schema-property created_at
+     * @x-autobe-database-schema-property created_at
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * The category that was modified.
    *
-   * @x-autobe-database-schema-property category
+     * @x-autobe-database-schema-property category
    */
   category: IEcommerceMallCategory.ISummary;
 
   /**
    * The administrator who made the modification.
    *
-   * @x-autobe-database-schema-property modifiedBy
+     * @x-autobe-database-schema-property modifiedBy
    */
   modifiedBy: IEcommerceMallAdministrator.ISummary;
 
   /**
    * The parent category in the snapshot state, if one existed at modification time.
    *
-   * @x-autobe-database-schema-property parentCategory
+     * @x-autobe-database-schema-property parentCategory
    */
   parentCategory?: IEcommerceMallCategory.ISummary | null | undefined;
 };
@@ -150,8 +150,10 @@ export namespace IEcommerceMallCategoriesSnapshot {
      *
      * This UUID serves as the primary key for identifying a specific audit snapshot in the category modification history.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_mall_categories_snapshots.id. UUID primary key for the snapshot record.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_categories_snapshots.id. UUID primary key for the
+         *   snapshot record.
      */
     id: string & tags.Format<"uuid">;
 
@@ -160,8 +162,10 @@ export namespace IEcommerceMallCategoriesSnapshot {
      *
      * Always set to 'category' to distinguish snapshot type and enable polymorphic querying across different entity snapshot types in the audit trail system.
      *
-     * @x-autobe-database-schema-property entity_type
-     * @x-autobe-specification Direct mapping from ecommerce_mall_categories_snapshots.entity_type. Always set to 'category' to identify the snapshot target entity type.
+         * @x-autobe-database-schema-property entity_type
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_categories_snapshots.entity_type. Always set to
+         *   'category' to identify the snapshot target entity type.
      */
     entity_type: string;
 
@@ -170,8 +174,10 @@ export namespace IEcommerceMallCategoriesSnapshot {
      *
      * Matches the category_id field and identifies which specific category instance this snapshot represents for audit purposes.
      *
-     * @x-autobe-database-schema-property entity_id
-     * @x-autobe-specification Direct mapping from ecommerce_mall_categories_snapshots.entity_id. The ID of the category at the time of snapshot creation.
+         * @x-autobe-database-schema-property entity_id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_categories_snapshots.entity_id. The ID of the
+         *   category at the time of snapshot creation.
      */
     entity_id: string & tags.Format<"uuid">;
 
@@ -180,8 +186,10 @@ export namespace IEcommerceMallCategoriesSnapshot {
      *
      * Preserved value when the snapshot was created, enabling comparison of category naming changes over time in the audit trail.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from ecommerce_mall_categories_snapshots.name. Preserved value when the snapshot was created.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_categories_snapshots.name. Preserved value when the
+         *   snapshot was created.
      */
     name: string;
 
@@ -190,8 +198,10 @@ export namespace IEcommerceMallCategoriesSnapshot {
      *
      * Preserved value when the snapshot was created, capturing the complete category state including optional description text for historical review.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from ecommerce_mall_categories_snapshots.description. Preserved value when the snapshot was created.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_categories_snapshots.description. Preserved value
+         *   when the snapshot was created.
      */
     description: string;
 
@@ -200,8 +210,10 @@ export namespace IEcommerceMallCategoriesSnapshot {
      *
      * Represents the exact point in time for this immutable audit record, enabling chronological browsing of category modification history.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_categories_snapshots.created_at. Represents the exact point in time for this immutable record.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_categories_snapshots.created_at. Represents the
+         *   exact point in time for this immutable record.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -210,8 +222,11 @@ export namespace IEcommerceMallCategoriesSnapshot {
      *
      * Provides a direct reference to the current category entity for display and navigation purposes, separate from the historical snapshot values.
      *
-     * @x-autobe-database-schema-property category
-     * @x-autobe-specification Join from ecommerce_mall_categories_snapshots.category_id to ecommerce_mall_categories.id. Returns the current IEcommerceMallCategory.ISummary for the referenced category.
+         * @x-autobe-database-schema-property category
+         * @x-autobe-specification Join from
+         *   ecommerce_mall_categories_snapshots.category_id to
+         *   ecommerce_mall_categories.id. Returns the current
+         *   IEcommerceMallCategory.ISummary for the referenced category.
      */
     category: IEcommerceMallCategory.ISummary;
 
@@ -220,8 +235,11 @@ export namespace IEcommerceMallCategoriesSnapshot {
      *
      * May be null if the category had no parent at the time of this snapshot. Preserves the parent-child relationship state for historical accuracy in the audit trail.
      *
-     * @x-autobe-database-schema-property parentCategory
-     * @x-autobe-specification Join from ecommerce_mall_categories_snapshots.parent_category_id to ecommerce_mall_categories.id. Returns the parent category as it existed at snapshot time, or null if no parent.
+         * @x-autobe-database-schema-property parentCategory
+         * @x-autobe-specification Join from
+         *   ecommerce_mall_categories_snapshots.parent_category_id to
+         *   ecommerce_mall_categories.id. Returns the parent category as it
+         *   existed at snapshot time, or null if no parent.
      */
     parentCategory: IEcommerceMallCategory.ISummary | null;
 
@@ -230,8 +248,12 @@ export namespace IEcommerceMallCategoriesSnapshot {
      *
      * Identifies which admin user triggered this snapshot for accountability and audit purposes, linking to their current profile information.
      *
-     * @x-autobe-database-schema-property modifiedBy
-     * @x-autobe-specification Join from ecommerce_mall_categories_snapshots.modified_by_id to ecommerce_mall_administrators.id. Returns the IEcommerceMallAdministrator.ISummary of the admin who triggered this snapshot.
+         * @x-autobe-database-schema-property modifiedBy
+         * @x-autobe-specification Join from
+         *   ecommerce_mall_categories_snapshots.modified_by_id to
+         *   ecommerce_mall_administrators.id. Returns the
+         *   IEcommerceMallAdministrator.ISummary of the admin who triggered
+         *   this snapshot.
      */
     modifiedBy: IEcommerceMallAdministrator.ISummary;
   };

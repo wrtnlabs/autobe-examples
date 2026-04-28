@@ -19,7 +19,8 @@ import { IPageIEcommerceMallShipmentItem } from "../../../../../structures/IPage
  * @param props.body Search and filter criteria for listing shipment items, including status filters, quantity ranges, date ranges, pagination, and sorting options.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor administrator
- * @x-autobe-specification Query ecommerce_mall_shipment_items table filtered by shipment_id = {shipmentId}.
+ * @x-autobe-specification Query ecommerce_mall_shipment_items table filtered by
+ *   shipment_id = {shipmentId}.
  *
  * Apply filters from request body:
  * - status: filter by shipment item status (pending, shipped, delivered, cancelled)

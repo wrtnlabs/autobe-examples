@@ -26,9 +26,10 @@ export class TodoappMemberEmailverificationsController {
    *
    * @param connection
    * @param body Filtering, sorting, and pagination criteria for member email verification records
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement this operation as a member-scoped search over the todo_app_member_email_verifications table.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implement this operation as a member-scoped
+     *   search over the todo_app_member_email_verifications table.
    *
    * Authenticate the caller as a member and resolve the signed-in member's primary identifier from the active session context. Build the query so that todo_app_member_id is always constrained to the authenticated member id. Do not accept or infer any alternate account scope from the request body, and do not expose records for any other member under any condition.
    *
@@ -70,9 +71,10 @@ export class TodoappMemberEmailverificationsController {
    *
    * @param connection
    * @param emailVerificationId Target email verification record ID
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Authenticate the requester as a member before any data access.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Authenticate the requester as a member before any
+     *   data access.
    *
    * Load one row from todo_app_member_email_verifications by id = :emailVerificationId and deleted_at IS NULL. Join or separately validate against todo_app_members through todo_app_member_id to ensure the record belongs to the currently authenticated member account. The authenticated member context must be derived from the session or access context rather than from request input.
    *

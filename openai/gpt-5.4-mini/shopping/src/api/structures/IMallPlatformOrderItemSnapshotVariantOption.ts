@@ -14,8 +14,9 @@ export type IMallPlatformOrderItemSnapshotVariantOption = {
    *
    * This value identifies one normalized option-value pair captured inside an order item snapshot and remains stable for the lifetime of the record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from mall_platform_order_item_snapshot_variant_options.id.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_order_item_snapshot_variant_options.id.
    */
   id: string & tags.Format<"uuid">;
 
@@ -24,8 +25,9 @@ export type IMallPlatformOrderItemSnapshotVariantOption = {
    *
    * Examples include attributes such as color or size. The value is stored exactly as captured in the historical order-item snapshot.
    *
-   * @x-autobe-database-schema-property option_name
-   * @x-autobe-specification Direct mapping from mall_platform_order_item_snapshot_variant_options.option_name.
+     * @x-autobe-database-schema-property option_name
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_order_item_snapshot_variant_options.option_name.
    */
   optionName: string;
 
@@ -34,8 +36,9 @@ export type IMallPlatformOrderItemSnapshotVariantOption = {
    *
    * Examples include values such as red or large. The value is stored exactly as captured in the historical order-item snapshot.
    *
-   * @x-autobe-database-schema-property option_value
-   * @x-autobe-specification Direct mapping from mall_platform_order_item_snapshot_variant_options.option_value.
+     * @x-autobe-database-schema-property option_value
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_order_item_snapshot_variant_options.option_value.
    */
   optionValue: string;
 
@@ -44,8 +47,11 @@ export type IMallPlatformOrderItemSnapshotVariantOption = {
    *
    * This relation points to the historical snapshot record that captured the purchased item state, allowing clients to reconstruct the full preserved variant configuration.
    *
-   * @x-autobe-database-schema-property orderItemSnapshot
-   * @x-autobe-specification Join from mall_platform_order_item_snapshot_variant_options.mall_platform_order_item_snapshot_id to mall_platform_order_item_snapshots.id and expose the related record as IMallPlatformOrderItemSnapshot.ISummary.
+     * @x-autobe-database-schema-property orderItemSnapshot
+     * @x-autobe-specification Join from
+     *   mall_platform_order_item_snapshot_variant_options.mall_platform_order_item_snapshot_id
+     *   to mall_platform_order_item_snapshots.id and expose the related record
+     *   as IMallPlatformOrderItemSnapshot.ISummary.
    */
   orderItemSnapshot: IMallPlatformOrderItemSnapshot.ISummary;
 
@@ -54,8 +60,9 @@ export type IMallPlatformOrderItemSnapshotVariantOption = {
    *
    * This timestamp is used for audit and retention workflows and reflects the database creation time of the historical snapshot row.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from mall_platform_order_item_snapshot_variant_options.created_at.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_order_item_snapshot_variant_options.created_at.
    */
   createdAt: string & tags.Format<"date-time">;
 
@@ -64,8 +71,9 @@ export type IMallPlatformOrderItemSnapshotVariantOption = {
    *
    * This timestamp reflects the last database update applied to the historical row's metadata.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from mall_platform_order_item_snapshot_variant_options.updated_at.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_order_item_snapshot_variant_options.updated_at.
    */
   updatedAt: string & tags.Format<"date-time">;
 
@@ -74,8 +82,11 @@ export type IMallPlatformOrderItemSnapshotVariantOption = {
    *
    * A null value means the row is still active, while a populated timestamp marks retention or cleanup handling.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from mall_platform_order_item_snapshot_variant_options.deleted_at. Preserve null when active and the timestamp when soft-deleted for retention handling.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_order_item_snapshot_variant_options.deleted_at. Preserve
+     *   null when active and the timestamp when soft-deleted for retention
+     *   handling.
    */
   deletedAt: (string & tags.Format<"date-time">) | null;
 };

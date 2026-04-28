@@ -31,8 +31,9 @@ export type IHrmTimesheetTimelog = {
    *
    * Auto-generated UUID assigned when the timesheet is created. Serves as the primary key for all timesheet operations including retrieval, updates, and workflow transitions.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from hrm_timesheets.id. UUID primary key, auto-generated on creation.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from hrm_timesheets.id. UUID
+     *   primary key, auto-generated on creation.
    */
   id: string & tags.Format<"uuid">;
 
@@ -41,8 +42,10 @@ export type IHrmTimesheetTimelog = {
    *
    * Defines the beginning of the week for time entry aggregation. Must be a Monday date. The week_end_date is calculated as week_start_date + 6 days to form a complete Monday-to-Sunday period.
    *
-   * @x-autobe-database-schema-property week_start_date
-   * @x-autobe-specification Direct mapping from hrm_timesheets.week_start_date. DateTime storing Monday of the week in ISO 8601 format.
+     * @x-autobe-database-schema-property week_start_date
+     * @x-autobe-specification Direct mapping from
+     *   hrm_timesheets.week_start_date. DateTime storing Monday of the week in
+     *   ISO 8601 format.
    */
   week_start_date: string & tags.Format<"date-time">;
 
@@ -51,8 +54,10 @@ export type IHrmTimesheetTimelog = {
    *
    * Calculated automatically as week_start_date + 6 days. Defines the complete week period (Monday to Sunday) for which time entries are aggregated in this timesheet.
    *
-   * @x-autobe-database-schema-property week_end_date
-   * @x-autobe-specification Direct mapping from hrm_timesheets.week_end_date. DateTime storing Sunday of the week, calculated as week_start_date + 6 days.
+     * @x-autobe-database-schema-property week_end_date
+     * @x-autobe-specification Direct mapping from hrm_timesheets.week_end_date.
+     *   DateTime storing Sunday of the week, calculated as week_start_date + 6
+     *   days.
    */
   week_end_date: string & tags.Format<"date-time">;
 
@@ -68,8 +73,10 @@ export type IHrmTimesheetTimelog = {
    *
    * Status transitions follow strict rules: draft→submitted, draft→rejected, submitted→approved, submitted→rejected. Approved timesheets cannot be reverted.
    *
-   * @x-autobe-database-schema-property status
-   * @x-autobe-specification Direct mapping from hrm_timesheets.status. String enum: draft, submitted, approved, rejected. Controls workflow state and timelog lock status.
+     * @x-autobe-database-schema-property status
+     * @x-autobe-specification Direct mapping from hrm_timesheets.status. String
+     *   enum: draft, submitted, approved, rejected. Controls workflow state and
+     *   timelog lock status.
    */
   status: string;
 
@@ -78,8 +85,10 @@ export type IHrmTimesheetTimelog = {
    *
    * Automatically calculated from the hrm_timesheet_timelogs junction table by summing the duration_minutes of all associated timelogs and dividing by 60. Updated whenever timelogs are added or removed from the timesheet, or when the week period changes.
    *
-   * @x-autobe-database-schema-property total_hours
-   * @x-autobe-specification Direct mapping from hrm_timesheets.total_hours. Float (double precision) storing sum of all timelog durations divided by 60 (minutes to hours conversion).
+     * @x-autobe-database-schema-property total_hours
+     * @x-autobe-specification Direct mapping from hrm_timesheets.total_hours.
+     *   Float (double precision) storing sum of all timelog durations divided
+     *   by 60 (minutes to hours conversion).
    */
   total_hours: number;
 
@@ -88,8 +97,9 @@ export type IHrmTimesheetTimelog = {
    *
    * Populated automatically when the timesheet status transitions from draft to submitted. Null while the timesheet is in draft status. Used for audit trail and to track submission timing.
    *
-   * @x-autobe-database-schema-property submitted_at
-   * @x-autobe-specification Direct mapping from hrm_timesheets.submitted_at. DateTime nullable, set when status transitions from draft to submitted.
+     * @x-autobe-database-schema-property submitted_at
+     * @x-autobe-specification Direct mapping from hrm_timesheets.submitted_at.
+     *   DateTime nullable, set when status transitions from draft to submitted.
    */
   submitted_at?: (string & tags.Format<"date-time">) | null | undefined;
 
@@ -98,8 +108,9 @@ export type IHrmTimesheetTimelog = {
    *
    * Populated automatically when the timesheet status transitions to approved or rejected. Null for draft and submitted statuses. Used for audit trail and to track when review occurred.
    *
-   * @x-autobe-database-schema-property reviewed_at
-   * @x-autobe-specification Direct mapping from hrm_timesheets.reviewed_at. DateTime nullable, set when status transitions to approved or rejected.
+     * @x-autobe-database-schema-property reviewed_at
+     * @x-autobe-specification Direct mapping from hrm_timesheets.reviewed_at.
+     *   DateTime nullable, set when status transitions to approved or rejected.
    */
   reviewed_at?: (string & tags.Format<"date-time">) | null | undefined;
 
@@ -108,8 +119,10 @@ export type IHrmTimesheetTimelog = {
    *
    * Required field when status is rejected. Explains to the employee what corrections are needed before resubmission. Null for non-rejected statuses. Business rule: timesheets cannot be rejected without providing a reason.
    *
-   * @x-autobe-database-schema-property rejection_reason
-   * @x-autobe-specification Direct mapping from hrm_timesheets.rejection_reason. String nullable, required when status is rejected. Explains why timesheet was returned to employee.
+     * @x-autobe-database-schema-property rejection_reason
+     * @x-autobe-specification Direct mapping from
+     *   hrm_timesheets.rejection_reason. String nullable, required when status
+     *   is rejected. Explains why timesheet was returned to employee.
    */
   rejection_reason?: string | null | undefined;
 
@@ -118,8 +131,9 @@ export type IHrmTimesheetTimelog = {
    *
    * Automatically set by the system when the timesheet is first created. Used for audit trail and chronological sorting of timesheets.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from hrm_timesheets.created_at. DateTime storing record creation time in ISO 8601 format with timezone.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from hrm_timesheets.created_at.
+     *   DateTime storing record creation time in ISO 8601 format with timezone.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -128,8 +142,10 @@ export type IHrmTimesheetTimelog = {
    *
    * Automatically updated by the system whenever any field of the timesheet is modified. Used for tracking changes and conflict detection in concurrent updates.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from hrm_timesheets.updated_at. DateTime storing last modification time, automatically updated on any field change.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from hrm_timesheets.updated_at.
+     *   DateTime storing last modification time, automatically updated on any
+     *   field change.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -138,8 +154,10 @@ export type IHrmTimesheetTimelog = {
    *
    * Null while the timesheet is active. Set to the current timestamp when the timesheet is deleted, enabling soft delete functionality for record preservation and potential recovery. Soft-deleted timesheets are excluded from queries by default.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from hrm_timesheets.deleted_at. DateTime nullable, set when timesheet is soft-deleted. Null for active records.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from hrm_timesheets.deleted_at.
+     *   DateTime nullable, set when timesheet is soft-deleted. Null for active
+     *   records.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 
@@ -148,8 +166,10 @@ export type IHrmTimesheetTimelog = {
    *
    * Required relation linking the timesheet to the employee record. The employee is the owner of the timesheet and is responsible for submitting it for review. This relation is populated via JOIN on the hrm_employee_id foreign key.
    *
-   * @x-autobe-database-schema-property employee
-   * @x-autobe-specification JOIN from hrm_timesheets.hrm_employee_id to hrm_employees.id. Returns IHrmEmployee.ISummary. Required relation - every timesheet belongs to exactly one employee.
+     * @x-autobe-database-schema-property employee
+     * @x-autobe-specification JOIN from hrm_timesheets.hrm_employee_id to
+     *   hrm_employees.id. Returns IHrmEmployee.ISummary. Required relation -
+     *   every timesheet belongs to exactly one employee.
    */
   employee: IHrmEmployee.ISummary;
 
@@ -158,8 +178,10 @@ export type IHrmTimesheetTimelog = {
    *
    * Nullable relation that is populated when the timesheet transitions to approved or rejected status. Contains the reviewer's member information including name and contact details. Null for draft and submitted statuses where review has not yet occurred.
    *
-   * @x-autobe-database-schema-property reviewer
-   * @x-autobe-specification LEFT JOIN from hrm_timesheets.reviewed_by to hrm_members.id. Returns IHrmMember.ISummary nullable. Populated when timesheet is approved or rejected.
+     * @x-autobe-database-schema-property reviewer
+     * @x-autobe-specification LEFT JOIN from hrm_timesheets.reviewed_by to
+     *   hrm_members.id. Returns IHrmMember.ISummary nullable. Populated when
+     *   timesheet is approved or rejected.
    */
   reviewed_by?: IHrmMember.ISummary | null | undefined;
 
@@ -168,7 +190,13 @@ export type IHrmTimesheetTimelog = {
    *
    * Array of timelog summaries representing all work entries aggregated in this timesheet. Timelogs are automatically included based on the employee and week period (week_start_date to week_end_date). When the timesheet is submitted or approved, these timelogs become locked and cannot be modified. Each timelog includes project, task, duration, and billable status information.
    *
-   * @x-autobe-specification Computed via hrm_timesheet_timelogs junction table: JOIN hrm_timesheets to hrm_timesheet_timelogs on timesheet_id, then JOIN hrm_timelogs on timelog_id. Filters: timelogs must belong to the same employee (hrm_employee_id) and fall within the week period (week_start_date to week_end_date). Returns array of IHrmTimelog.ISummary. This is an aggregation/composition relation, not a direct DB property.
+     * @x-autobe-specification Computed via hrm_timesheet_timelogs junction
+     *   table: JOIN hrm_timesheets to hrm_timesheet_timelogs on timesheet_id,
+     *   then JOIN hrm_timelogs on timelog_id. Filters: timelogs must belong to
+     *   the same employee (hrm_employee_id) and fall within the week period
+     *   (week_start_date to week_end_date). Returns array of
+     *   IHrmTimelog.ISummary. This is an aggregation/composition relation, not
+     *   a direct DB property.
    */
   timelogs: IHrmTimelog.ISummary[];
 };
@@ -211,7 +239,13 @@ export namespace IHrmTimesheetTimelog {
      *
      * Duplicates are silently skipped. The operation inserts new rows into the hrm_timesheet_timelogs junction table for each valid timelog ID that is not already associated.
      *
-     * @x-autobe-specification Array of timelog UUIDs to add to the draft timesheet. Backend validates each timelog exists, belongs to the authenticated employee, and falls within the timesheet week period (week_start_date to week_end_date). Duplicates are silently skipped - no error if timelog already associated. On success, inserts new rows into hrm_timesheet_timelogs junction table for each valid timelog ID not already associated.
+         * @x-autobe-specification Array of timelog UUIDs to add to the draft
+         *   timesheet. Backend validates each timelog exists, belongs to the
+         *   authenticated employee, and falls within the timesheet week period
+         *   (week_start_date to week_end_date). Duplicates are silently skipped
+         *   - no error if timelog already associated. On success, inserts new
+         *   rows into hrm_timesheet_timelogs junction table for each valid
+         *   timelog ID not already associated.
      */
     add_timelog_ids: (string & tags.Format<"uuid">)[];
 
@@ -231,7 +265,14 @@ export namespace IHrmTimesheetTimelog {
      *
      * On success, soft-deletes rows from the hrm_timesheet_timelogs junction table where deleted_at is null. The timesheet's total_hours is recalculated after removal.
      *
-     * @x-autobe-specification Array of timelog UUIDs to remove from the draft timesheet. Backend validates each timelog exists, belongs to the authenticated employee, and is not locked by a submitted or approved timesheet. If any timelog is locked, the entire request fails with validation error. On success, soft-deletes rows from hrm_timesheet_timelogs junction table (sets deleted_at = now) where deleted_at is null. The timesheet's total_hours is recalculated after removal.
+         * @x-autobe-specification Array of timelog UUIDs to remove from the
+         *   draft timesheet. Backend validates each timelog exists, belongs to
+         *   the authenticated employee, and is not locked by a submitted or
+         *   approved timesheet. If any timelog is locked, the entire request
+         *   fails with validation error. On success, soft-deletes rows from
+         *   hrm_timesheet_timelogs junction table (sets deleted_at = now) where
+         *   deleted_at is null. The timesheet's total_hours is recalculated
+         *   after removal.
      */
     remove_timelog_ids: (string & tags.Format<"uuid">)[];
   };
@@ -265,8 +306,9 @@ export namespace IHrmTimesheetTimelog {
      *
      * Generated as a UUID when the timesheet is created. Serves as the primary key for all timesheet operations including retrieval, update, and workflow transitions.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from hrm_timesheets.id. UUID format, primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from hrm_timesheets.id. UUID
+         *   format, primary key.
      */
     id: string & tags.Format<"uuid">;
 
@@ -275,8 +317,10 @@ export namespace IHrmTimesheetTimelog {
      *
      * Contains summary information about the employee including their position, employment type, and status. This relation is required and always present for valid timesheet records.
      *
-     * @x-autobe-database-schema-property employee
-     * @x-autobe-specification Join from hrm_timesheets.hrm_employee_id to hrm_employees.id. Returns IHrmEmployee.ISummary via BELONGS-TO relation.
+         * @x-autobe-database-schema-property employee
+         * @x-autobe-specification Join from hrm_timesheets.hrm_employee_id to
+         *   hrm_employees.id. Returns IHrmEmployee.ISummary via BELONGS-TO
+         *   relation.
      */
     employee: IHrmEmployee.ISummary;
 
@@ -285,8 +329,10 @@ export namespace IHrmTimesheetTimelog {
      *
      * Populated only when the timesheet transitions to approved or rejected status. Null for draft and submitted states. Contains the reviewer's member summary information.
      *
-     * @x-autobe-database-schema-property reviewer
-     * @x-autobe-specification Join from hrm_timesheets.reviewed_by to hrm_members.id. Returns IHrmMember.ISummary or null via BELONGS-TO relation. Null when timesheet is in draft or submitted state.
+         * @x-autobe-database-schema-property reviewer
+         * @x-autobe-specification Join from hrm_timesheets.reviewed_by to
+         *   hrm_members.id. Returns IHrmMember.ISummary or null via BELONGS-TO
+         *   relation. Null when timesheet is in draft or submitted state.
      */
     reviewer?: IHrmMember.ISummary | null | undefined;
 
@@ -295,8 +341,10 @@ export namespace IHrmTimesheetTimelog {
      *
      * Used for grouping timelogs and preventing duplicate submissions for the same week. The weekly period runs from Monday (week_start_date) to Sunday (week_end_date).
      *
-     * @x-autobe-database-schema-property week_start_date
-     * @x-autobe-specification Direct mapping from hrm_timesheets.week_start_date. DateTime format (timestamptz). Represents the Monday of the weekly period.
+         * @x-autobe-database-schema-property week_start_date
+         * @x-autobe-specification Direct mapping from
+         *   hrm_timesheets.week_start_date. DateTime format (timestamptz).
+         *   Represents the Monday of the weekly period.
      */
     week_start_date: string & tags.Format<"date-time">;
 
@@ -305,8 +353,10 @@ export namespace IHrmTimesheetTimelog {
      *
      * Defines the end boundary of the weekly timesheet period. Always 6 days after week_start_date, representing the complete Monday-to-Sunday week.
      *
-     * @x-autobe-database-schema-property week_end_date
-     * @x-autobe-specification Direct mapping from hrm_timesheets.week_end_date. DateTime format (timestamptz). Calculated as week_start_date + 6 days (Sunday).
+         * @x-autobe-database-schema-property week_end_date
+         * @x-autobe-specification Direct mapping from
+         *   hrm_timesheets.week_end_date. DateTime format (timestamptz).
+         *   Calculated as week_start_date + 6 days (Sunday).
      */
     week_end_date: string & tags.Format<"date-time">;
 
@@ -321,8 +371,9 @@ export namespace IHrmTimesheetTimelog {
      *
      * Status determines which operations are permitted on the timesheet.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from hrm_timesheets.status. String enum: draft, submitted, approved, rejected.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from hrm_timesheets.status.
+         *   String enum: draft, submitted, approved, rejected.
      */
     status: string;
 
@@ -331,8 +382,10 @@ export namespace IHrmTimesheetTimelog {
      *
      * Calculated from the timesheet_timelogs junction table by summing the duration of all included timelogs. Provides a quick overview of total time logged for the week without fetching individual timelog records.
      *
-     * @x-autobe-database-schema-property total_hours
-     * @x-autobe-specification Direct mapping from hrm_timesheets.total_hours. Float/Double precision. Sum of all timelog durations included in this timesheet, expressed in hours.
+         * @x-autobe-database-schema-property total_hours
+         * @x-autobe-specification Direct mapping from
+         *   hrm_timesheets.total_hours. Float/Double precision. Sum of all
+         *   timelog durations included in this timesheet, expressed in hours.
      */
     total_hours: number;
 
@@ -341,8 +394,11 @@ export namespace IHrmTimesheetTimelog {
      *
      * Nullable for draft status. Automatically populated when the timesheet transitions from draft to submitted status. Records the exact moment the employee submitted the timesheet for manager approval.
      *
-     * @x-autobe-database-schema-property submitted_at
-     * @x-autobe-specification Direct mapping from hrm_timesheets.submitted_at. DateTime format (timestamptz). Nullable - null for draft status, populated when status transitions to submitted.
+         * @x-autobe-database-schema-property submitted_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_timesheets.submitted_at. DateTime format (timestamptz).
+         *   Nullable - null for draft status, populated when status transitions
+         *   to submitted.
      */
     submitted_at?: (string & tags.Format<"date-time">) | null | undefined;
 
@@ -351,8 +407,11 @@ export namespace IHrmTimesheetTimelog {
      *
      * Nullable until review occurs. Automatically populated when the timesheet transitions to approved or rejected status. Records the exact moment a manager completed the review.
      *
-     * @x-autobe-database-schema-property reviewed_at
-     * @x-autobe-specification Direct mapping from hrm_timesheets.reviewed_at. DateTime format (timestamptz). Nullable - null until review occurs, populated when status transitions to approved or rejected.
+         * @x-autobe-database-schema-property reviewed_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_timesheets.reviewed_at. DateTime format (timestamptz). Nullable
+         *   - null until review occurs, populated when status transitions to
+         *   approved or rejected.
      */
     reviewed_at?: (string & tags.Format<"date-time">) | null | undefined;
 
@@ -361,8 +420,10 @@ export namespace IHrmTimesheetTimelog {
      *
      * Nullable for draft, submitted, and approved statuses. Required and populated when status is rejected. Contains the manager's explanation for why the timesheet was returned to the employee for correction.
      *
-     * @x-autobe-database-schema-property rejection_reason
-     * @x-autobe-specification Direct mapping from hrm_timesheets.rejection_reason. String. Nullable - null for non-rejected statuses. Required when status is rejected.
+         * @x-autobe-database-schema-property rejection_reason
+         * @x-autobe-specification Direct mapping from
+         *   hrm_timesheets.rejection_reason. String. Nullable - null for
+         *   non-rejected statuses. Required when status is rejected.
      */
     rejection_reason?: string | null | undefined;
 
@@ -371,8 +432,10 @@ export namespace IHrmTimesheetTimelog {
      *
      * Automatically set by the system when the timesheet is first created. Used for audit trails and sorting timesheets chronologically.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from hrm_timesheets.created_at. DateTime format (timestamptz). Automatically set when timesheet record is created.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_timesheets.created_at. DateTime format (timestamptz).
+         *   Automatically set when timesheet record is created.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -381,8 +444,10 @@ export namespace IHrmTimesheetTimelog {
      *
      * Automatically updated by the system whenever any field of the timesheet is modified. Used for tracking changes and synchronization purposes.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from hrm_timesheets.updated_at. DateTime format (timestamptz). Automatically updated on any modification to the timesheet record.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_timesheets.updated_at. DateTime format (timestamptz).
+         *   Automatically updated on any modification to the timesheet record.
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -391,8 +456,11 @@ export namespace IHrmTimesheetTimelog {
      *
      * Nullable for active records. Set to the current timestamp when the timesheet is deleted, enabling soft delete functionality for record preservation and audit compliance. Null value indicates the timesheet is active.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from hrm_timesheets.deleted_at. DateTime format (timestamptz). Nullable - null for active records, populated when timesheet is soft-deleted.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_timesheets.deleted_at. DateTime format (timestamptz). Nullable
+         *   - null for active records, populated when timesheet is
+         *   soft-deleted.
      */
     deleted_at?: (string & tags.Format<"date-time">) | null | undefined;
   };
@@ -421,8 +489,11 @@ export namespace IHrmTimesheetTimelog {
      *
      * **Validation**: Must reference an existing employee record that belongs to the specified organization.
      *
-     * @x-autobe-database-schema-property hrm_employee_id
-     * @x-autobe-specification Direct mapping from hrm_timesheets.hrm_employee_id. Foreign key to hrm_employees table. Backend validates employee belongs to organization from path parameter.
+         * @x-autobe-database-schema-property hrm_employee_id
+         * @x-autobe-specification Direct mapping from
+         *   hrm_timesheets.hrm_employee_id. Foreign key to hrm_employees table.
+         *   Backend validates employee belongs to organization from path
+         *   parameter.
      */
     hrm_employee_id: string & tags.Format<"uuid">;
 
@@ -437,8 +508,11 @@ export namespace IHrmTimesheetTimelog {
      *
      * **Business Rule**: Only one timesheet per employee per week is allowed in submitted or approved status.
      *
-     * @x-autobe-database-schema-property week_start_date
-     * @x-autobe-specification Direct mapping from hrm_timesheets.week_start_date. DateTime with timestamptz format. Backend calculates week_end_date as week_start_date + 6 days (Sunday).
+         * @x-autobe-database-schema-property week_start_date
+         * @x-autobe-specification Direct mapping from
+         *   hrm_timesheets.week_start_date. DateTime with timestamptz format.
+         *   Backend calculates week_end_date as week_start_date + 6 days
+         *   (Sunday).
      */
     week_start_date: string & tags.Format<"date-time">;
   };
@@ -471,7 +545,10 @@ export namespace IHrmTimesheetTimelog {
      *
      * When provided, only timesheets matching this status will be returned.
      *
-     * @x-autobe-specification Query filter parameter. Maps to hrm_timesheets.status column with exact match comparison. Allowed values: draft, submitted, approved, rejected. Used to filter timesheets by workflow state.
+         * @x-autobe-specification Query filter parameter. Maps to
+         *   hrm_timesheets.status column with exact match comparison. Allowed
+         *   values: draft, submitted, approved, rejected. Used to filter
+         *   timesheets by workflow state.
      */
     status?: string | undefined;
 
@@ -480,7 +557,10 @@ export namespace IHrmTimesheetTimelog {
      *
      * Uses ISO 8601 date-time format (e.g., "2024-01-15T00:00:00Z"). Returns timesheets whose weekly period starts on or after the specified date. Combined with week_start_date_lte for date range filtering.
      *
-     * @x-autobe-specification Query filter parameter. Maps to hrm_timesheets.week_start_date column with greater-than-or-equal comparison. Filters timesheets where week_start_date >= value. ISO 8601 date-time format required.
+         * @x-autobe-specification Query filter parameter. Maps to
+         *   hrm_timesheets.week_start_date column with greater-than-or-equal
+         *   comparison. Filters timesheets where week_start_date >= value. ISO
+         *   8601 date-time format required.
      */
     week_start_date_gte?: (string & tags.Format<"date-time">) | undefined;
 
@@ -489,7 +569,10 @@ export namespace IHrmTimesheetTimelog {
      *
      * Uses ISO 8601 date-time format (e.g., "2024-01-21T23:59:59Z"). Returns timesheets whose weekly period starts on or before the specified date. Combined with week_start_date_gte for date range filtering.
      *
-     * @x-autobe-specification Query filter parameter. Maps to hrm_timesheets.week_start_date column with less-than-or-equal comparison. Filters timesheets where week_start_date <= value. ISO 8601 date-time format required.
+         * @x-autobe-specification Query filter parameter. Maps to
+         *   hrm_timesheets.week_start_date column with less-than-or-equal
+         *   comparison. Filters timesheets where week_start_date <= value. ISO
+         *   8601 date-time format required.
      */
     week_start_date_lte?: (string & tags.Format<"date-time">) | undefined;
 
@@ -498,7 +581,10 @@ export namespace IHrmTimesheetTimelog {
      *
      * UUID format identifying the employee whose timesheets should be retrieved. When provided, only timesheets owned by this employee will be returned. Useful for viewing a specific employee's timesheet history.
      *
-     * @x-autobe-specification Query filter parameter. Maps to hrm_timesheets.hrm_employee_id column with exact match comparison. Filters timesheets belonging to specific employee. UUID format required.
+         * @x-autobe-specification Query filter parameter. Maps to
+         *   hrm_timesheets.hrm_employee_id column with exact match comparison.
+         *   Filters timesheets belonging to specific employee. UUID format
+         *   required.
      */
     employee_id?: (string & tags.Format<"uuid">) | undefined;
 
@@ -507,7 +593,10 @@ export namespace IHrmTimesheetTimelog {
      *
      * Determines which page of results to retrieve. Page numbering starts from 1, so the first page is page 1. Combined with limit to calculate the offset for database queries. Default: 1 if not specified.
      *
-     * @x-autobe-specification Pagination parameter. Calculates offset as (page - 1) * limit for offset-based pagination. Minimum value: 1 (1-indexed). Used with limit to determine which subset of results to return.
+         * @x-autobe-specification Pagination parameter. Calculates offset as
+         *   (page - 1) * limit for offset-based pagination. Minimum value: 1
+         *   (1-indexed). Used with limit to determine which subset of results
+         *   to return.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -516,7 +605,10 @@ export namespace IHrmTimesheetTimelog {
      *
      * Defines how many timesheet records to return in a single response. Valid range: 1-100. Values exceeding 100 are capped at 100. Combined with page to calculate offset for database queries. Default: 10 if not specified.
      *
-     * @x-autobe-specification Pagination parameter. Sets maximum number of records per page. Minimum: 1, Maximum: 100. Used with page to determine offset and result set size. Enforced server-side to prevent excessive data retrieval.
+         * @x-autobe-specification Pagination parameter. Sets maximum number of
+         *   records per page. Minimum: 1, Maximum: 100. Used with page to
+         *   determine offset and result set size. Enforced server-side to
+         *   prevent excessive data retrieval.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -556,8 +648,12 @@ export namespace IHrmTimesheetTimelog {
      * - Cannot conflict with existing submitted or approved timesheets for the same employee
      * - Format: ISO 8601 datetime with timezone
      *
-     * @x-autobe-database-schema-property week_start_date
-     * @x-autobe-specification Direct mapping from hrm_timesheets.week_start_date. DateTime field storing the Monday of the week in ISO 8601 format with timezone. Must be a Monday date. Business rule: week_start_date must be validated as Monday before update.
+         * @x-autobe-database-schema-property week_start_date
+         * @x-autobe-specification Direct mapping from
+         *   hrm_timesheets.week_start_date. DateTime field storing the Monday
+         *   of the week in ISO 8601 format with timezone. Must be a Monday
+         *   date. Business rule: week_start_date must be validated as Monday
+         *   before update.
      */
     week_start_date?: (string & tags.Format<"date-time">) | undefined;
 
@@ -572,8 +668,12 @@ export namespace IHrmTimesheetTimelog {
      * - Must be a Sunday (day of week = 7)
      * - Format: ISO 8601 datetime with timezone
      *
-     * @x-autobe-database-schema-property week_end_date
-     * @x-autobe-specification Direct mapping from hrm_timesheets.week_end_date. DateTime field storing the Sunday of the week in ISO 8601 format with timezone. Calculated as week_start_date + 6 days. Business rule: week_end_date must be validated as week_start_date + 6 days (Sunday).
+         * @x-autobe-database-schema-property week_end_date
+         * @x-autobe-specification Direct mapping from
+         *   hrm_timesheets.week_end_date. DateTime field storing the Sunday of
+         *   the week in ISO 8601 format with timezone. Calculated as
+         *   week_start_date + 6 days. Business rule: week_end_date must be
+         *   validated as week_start_date + 6 days (Sunday).
      */
     week_end_date?: (string & tags.Format<"date-time">) | undefined;
 
@@ -599,8 +699,12 @@ export namespace IHrmTimesheetTimelog {
      * - Setting status to rejected requires providing a rejection_reason
      * - Setting status to submitted sets submitted_at timestamp automatically
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from hrm_timesheets.status. String enum field with allowed values: draft, submitted, approved, rejected. Controls workflow state and timelog lock status. Business rule: only draft timesheets can be updated. Valid transitions: draft→submitted, draft→rejected.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from hrm_timesheets.status.
+         *   String enum field with allowed values: draft, submitted, approved,
+         *   rejected. Controls workflow state and timelog lock status. Business
+         *   rule: only draft timesheets can be updated. Valid transitions:
+         *   draft→submitted, draft→rejected.
      */
     status?: string | undefined;
 
@@ -619,8 +723,12 @@ export namespace IHrmTimesheetTimelog {
      *
      * When a manager rejects a timesheet, they must provide a clear explanation of what needs to be corrected. This reason is visible to the employee when the timesheet returns to draft status, guiding them on how to fix the issues before resubmitting.
      *
-     * @x-autobe-database-schema-property rejection_reason
-     * @x-autobe-specification Direct mapping from hrm_timesheets.rejection_reason. Nullable string field, required when status is set to 'rejected'. Business rule: timesheets cannot be rejected without providing a reason. All Update DTO fields optional for partial updates.
+         * @x-autobe-database-schema-property rejection_reason
+         * @x-autobe-specification Direct mapping from
+         *   hrm_timesheets.rejection_reason. Nullable string field, required
+         *   when status is set to 'rejected'. Business rule: timesheets cannot
+         *   be rejected without providing a reason. All Update DTO fields
+         *   optional for partial updates.
      */
     rejection_reason?: string | null | undefined;
   };
@@ -651,8 +759,11 @@ export namespace IHrmTimesheetTimelog {
      * - Must be a non-empty string
      * - Minimum length: 1 character
      *
-     * @x-autobe-specification Direct mapping from hrm_timesheets.rejection_reason column. Required field with non-empty string validation, but schema allows null to match DB nullable column.
-     * @x-autobe-database-schema-property rejection_reason
+         * @x-autobe-specification Direct mapping from
+         *   hrm_timesheets.rejection_reason column. Required field with
+         *   non-empty string validation, but schema allows null to match DB
+         *   nullable column.
+         * @x-autobe-database-schema-property rejection_reason
      */
     rejection_reason: (string & tags.MinLength<1>) | null;
   };

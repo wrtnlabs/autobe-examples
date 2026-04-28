@@ -23,7 +23,8 @@ import { IRedditCommunityPost } from "../../../../structures/IRedditCommunityPos
  * @param props.body Search criteria including sorting option, time range filter for top posts, and pagination parameters.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query reddit_community_posts table filtered by reddit_community_community_id matching the provided communityId parameter.
+ * @x-autobe-specification Query reddit_community_posts table filtered by
+ *   reddit_community_community_id matching the provided communityId parameter.
  *
  * Exclude posts where deleted_at is not NULL.
  *

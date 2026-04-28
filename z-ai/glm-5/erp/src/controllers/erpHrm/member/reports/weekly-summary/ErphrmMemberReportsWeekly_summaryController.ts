@@ -29,9 +29,9 @@ export class ErphrmMemberReportsWeekly_summaryController {
    *
    * @param connection
    * @param body Filter criteria and pagination parameters for the weekly summary report
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation steps:
    *
    * 1. **Authorization Check**: Verify the authenticated member has report:view permission within the current organization context.
    *

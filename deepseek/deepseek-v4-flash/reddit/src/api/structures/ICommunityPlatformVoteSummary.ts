@@ -14,8 +14,9 @@ export type ICommunityPlatformVoteSummary = {
    *
    * Serves as the primary key for the vote summary, used in path parameters to retrieve a specific vote summary via the `{summaryId}` route parameter.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from community_platform_vote_summaries.id. Primary key, UUID format.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_vote_summaries.id. Primary key, UUID format.
    */
   id: string & tags.Format<"uuid">;
 
@@ -24,8 +25,10 @@ export type ICommunityPlatformVoteSummary = {
    *
    * Discriminates between posts ('post') and comments ('comment'). Used together with `target_id` to uniquely identify the target entity. Combined with `target_type`, `target_id` forms a unique constraint guaranteeing exactly one summary per target.
    *
-   * @x-autobe-database-schema-property target_type
-   * @x-autobe-specification Direct mapping from community_platform_vote_summaries.target_type. Discriminator: 'post' for post summaries, 'comment' for comment summaries.
+     * @x-autobe-database-schema-property target_type
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_vote_summaries.target_type. Discriminator: 'post'
+     *   for post summaries, 'comment' for comment summaries.
    */
   target_type: string;
 
@@ -34,8 +37,11 @@ export type ICommunityPlatformVoteSummary = {
    *
    * Combined with `target_type` to uniquely identify the target entity. When `target_type` is 'post', this references `community_platform_posts.id`. When `target_type` is 'comment', this references `community_platform_comments.id`.
    *
-   * @x-autobe-database-schema-property target_id
-   * @x-autobe-specification Direct mapping from community_platform_vote_summaries.target_id. UUID referencing community_platform_posts.id (when target_type='post') or community_platform_comments.id (when target_type='comment').
+     * @x-autobe-database-schema-property target_id
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_vote_summaries.target_id. UUID referencing
+     *   community_platform_posts.id (when target_type='post') or
+     *   community_platform_comments.id (when target_type='comment').
    */
   target_id: string & tags.Format<"uuid">;
 
@@ -44,8 +50,11 @@ export type ICommunityPlatformVoteSummary = {
    *
    * Incremented when a user casts an upvote, decremented when an upvote is removed or changed to a downvote. This count reflects the current state and is updated reactively by application logic.
    *
-   * @x-autobe-database-schema-property upvote_count
-   * @x-autobe-specification Direct mapping from community_platform_vote_summaries.upvote_count. Integer, updated reactively by application logic whenever a vote is cast, changed, or removed on the target.
+     * @x-autobe-database-schema-property upvote_count
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_vote_summaries.upvote_count. Integer, updated
+     *   reactively by application logic whenever a vote is cast, changed, or
+     *   removed on the target.
    */
   upvote_count: number & tags.Type<"int32">;
 
@@ -54,8 +63,11 @@ export type ICommunityPlatformVoteSummary = {
    *
    * Incremented when a user casts a downvote, decremented when a downvote is removed or changed to an upvote. This count reflects the current state and is updated reactively by application logic.
    *
-   * @x-autobe-database-schema-property downvote_count
-   * @x-autobe-specification Direct mapping from community_platform_vote_summaries.downvote_count. Integer, updated reactively by application logic whenever a vote is cast, changed, or removed on the target.
+     * @x-autobe-database-schema-property downvote_count
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_vote_summaries.downvote_count. Integer, updated
+     *   reactively by application logic whenever a vote is cast, changed, or
+     *   removed on the target.
    */
   downvote_count: number & tags.Type<"int32">;
 
@@ -64,8 +76,10 @@ export type ICommunityPlatformVoteSummary = {
    *
    * Positive values indicate more approvals than disapprovals, zero indicates a tie or no votes, negative values indicate more disapprovals than approvals. Used for feed sorting (Top, Best) and content ranking algorithms.
    *
-   * @x-autobe-database-schema-property net_score
-   * @x-autobe-specification Direct mapping from community_platform_vote_summaries.net_score. Integer, calculated as upvote_count - downvote_count. Updated reactively by application logic.
+     * @x-autobe-database-schema-property net_score
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_vote_summaries.net_score. Integer, calculated as
+     *   upvote_count - downvote_count. Updated reactively by application logic.
    */
   net_score: number & tags.Type<"int32">;
 
@@ -74,8 +88,10 @@ export type ICommunityPlatformVoteSummary = {
    *
    * Typically set when the first vote is cast on the target post or comment. This timestamp is not updated on subsequent votes.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from community_platform_vote_summaries.created_at. Timestamptz. Set when the first vote is cast on the target entity.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_vote_summaries.created_at. Timestamptz. Set when the
+     *   first vote is cast on the target entity.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -84,8 +100,10 @@ export type ICommunityPlatformVoteSummary = {
    *
    * Updated on every vote event (cast, change, or removal) on the target post or comment. Used to detect recent vote activity.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from community_platform_vote_summaries.updated_at. Timestamptz. Updated each time a vote is cast, changed, or removed on the target.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_vote_summaries.updated_at. Timestamptz. Updated each
+     *   time a vote is cast, changed, or removed on the target.
    */
   updated_at: string & tags.Format<"date-time">;
 };
@@ -103,8 +121,10 @@ export namespace ICommunityPlatformVoteSummary {
      *
      * This is a system-generated UUID that uniquely identifies the vote summary row in the database.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from community_platform_vote_summaries.id. UUID primary key, auto-generated.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_vote_summaries.id. UUID primary key,
+         *   auto-generated.
      */
     id: string & tags.Format<"uuid">;
 
@@ -113,8 +133,11 @@ export namespace ICommunityPlatformVoteSummary {
      *
      * Must be either `"post"` for a post or `"comment"` for a comment. This field acts as a discriminator that, together with `target_id`, identifies which entity the vote statistics belong to.
      *
-     * @x-autobe-database-schema-property target_type
-     * @x-autobe-specification Direct mapping from community_platform_vote_summaries.target_type. Discriminator value must be 'post' or 'comment'. Combined with target_id for polymorphic reference.
+         * @x-autobe-database-schema-property target_type
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_vote_summaries.target_type. Discriminator value
+         *   must be 'post' or 'comment'. Combined with target_id for
+         *   polymorphic reference.
      */
     target_type: string & tags.Pattern<"^(post|comment)$">;
 
@@ -123,8 +146,11 @@ export namespace ICommunityPlatformVoteSummary {
      *
      * Used together with `target_type` to uniquely identify which entity this vote summary belongs to. References either a post or comment record depending on the discriminator value.
      *
-     * @x-autobe-database-schema-property target_id
-     * @x-autobe-specification Direct mapping from community_platform_vote_summaries.target_id. UUID referencing the target post or comment. Combined with target_type for polymorphic lookup.
+         * @x-autobe-database-schema-property target_id
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_vote_summaries.target_id. UUID referencing the
+         *   target post or comment. Combined with target_type for polymorphic
+         *   lookup.
      */
     target_id: string & tags.Format<"uuid">;
 
@@ -133,8 +159,10 @@ export namespace ICommunityPlatformVoteSummary {
      *
      * Updated automatically whenever a vote is added, changed, or removed. Represents only positive votes (+1 value).
      *
-     * @x-autobe-database-schema-property upvote_count
-     * @x-autobe-specification Direct mapping from community_platform_vote_summaries.upvote_count. Integer, updated by application logic on vote create/change/remove.
+         * @x-autobe-database-schema-property upvote_count
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_vote_summaries.upvote_count. Integer, updated by
+         *   application logic on vote create/change/remove.
      */
     upvote_count: number & tags.Type<"int32">;
 
@@ -143,8 +171,10 @@ export namespace ICommunityPlatformVoteSummary {
      *
      * Updated automatically whenever a vote is added, changed, or removed. Represents only negative votes (-1 value).
      *
-     * @x-autobe-database-schema-property downvote_count
-     * @x-autobe-specification Direct mapping from community_platform_vote_summaries.downvote_count. Integer, updated by application logic on vote create/change/remove.
+         * @x-autobe-database-schema-property downvote_count
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_vote_summaries.downvote_count. Integer, updated
+         *   by application logic on vote create/change/remove.
      */
     downvote_count: number & tags.Type<"int32">;
 
@@ -153,8 +183,10 @@ export namespace ICommunityPlatformVoteSummary {
      *
      * A positive score indicates more upvotes than downvotes. A zero score indicates a tie or no votes. A negative score indicates more downvotes than upvotes.
      *
-     * @x-autobe-database-schema-property net_score
-     * @x-autobe-specification Direct mapping from community_platform_vote_summaries.net_score. Calculated as upvote_count - downvote_count. Can be negative.
+         * @x-autobe-database-schema-property net_score
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_vote_summaries.net_score. Calculated as
+         *   upvote_count - downvote_count. Can be negative.
      */
     net_score: number & tags.Type<"int32">;
 
@@ -163,8 +195,10 @@ export namespace ICommunityPlatformVoteSummary {
      *
      * Typically corresponds to when the first vote was cast on the target entity. If equal to `updated_at`, it means only a single vote has been cast or the vote state has not changed since creation.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from community_platform_vote_summaries.created_at. Timestamptz, set when the first vote is cast on the target.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_vote_summaries.created_at. Timestamptz, set when
+         *   the first vote is cast on the target.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -173,8 +207,10 @@ export namespace ICommunityPlatformVoteSummary {
      *
      * Reflects the most recent vote activity (cast, changed, or removed) on the target entity. Can equal `created_at` if no changes have occurred since the initial vote.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from community_platform_vote_summaries.updated_at. Timestamptz, updated whenever a vote is cast, changed, or removed on the target.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_vote_summaries.updated_at. Timestamptz, updated
+         *   whenever a vote is cast, changed, or removed on the target.
      */
     updated_at: string & tags.Format<"date-time">;
   };
@@ -194,7 +230,11 @@ export namespace ICommunityPlatformVoteSummary {
      *
      * Restricts results to vote summaries belonging to either posts or comments. When omitted, summaries for both target types are returned. Must be either `"post"` or `"comment"`.
      *
-     * @x-autobe-specification Exact-match filter on community_platform_vote_summaries.target_type column. Applied as WHERE target_type = :target_type. Must validate value is 'post' or 'comment'. When null/omitted, no target_type filter is applied — both types returned.
+         * @x-autobe-specification Exact-match filter on
+         *   community_platform_vote_summaries.target_type column. Applied as
+         *   WHERE target_type = :target_type. Must validate value is 'post' or
+         *   'comment'. When null/omitted, no target_type filter is applied —
+         *   both types returned.
      */
     target_type?: "post" | "comment" | undefined;
 
@@ -203,7 +243,10 @@ export namespace ICommunityPlatformVoteSummary {
      *
      * Filters vote summaries whose net score (upvotes minus downvotes) is at least this value. Accepts negative values as net scores can be negative.
      *
-     * @x-autobe-specification Lower bound filter on community_platform_vote_summaries.net_score column. Applied as WHERE net_score >= :min_net_score. Supports negative values — net_score can be negative.
+         * @x-autobe-specification Lower bound filter on
+         *   community_platform_vote_summaries.net_score column. Applied as
+         *   WHERE net_score >= :min_net_score. Supports negative values —
+         *   net_score can be negative.
      */
     min_net_score?: (number & tags.Type<"int32">) | undefined;
 
@@ -212,7 +255,9 @@ export namespace ICommunityPlatformVoteSummary {
      *
      * Filters vote summaries whose net score (upvotes minus downvotes) is at most this value. Accepts negative values as net scores can be negative.
      *
-     * @x-autobe-specification Upper bound filter on community_platform_vote_summaries.net_score column. Applied as WHERE net_score <= :max_net_score. Supports negative values.
+         * @x-autobe-specification Upper bound filter on
+         *   community_platform_vote_summaries.net_score column. Applied as
+         *   WHERE net_score <= :max_net_score. Supports negative values.
      */
     max_net_score?: (number & tags.Type<"int32">) | undefined;
 
@@ -221,7 +266,10 @@ export namespace ICommunityPlatformVoteSummary {
      *
      * Filters vote summaries where the total number of upvotes is at least this value. Must be a non-negative integer.
      *
-     * @x-autobe-specification Lower bound filter on community_platform_vote_summaries.upvote_count column. Applied as WHERE upvote_count >= :min_upvote_count. Minimum value is 0 (upvote count is non-negative).
+         * @x-autobe-specification Lower bound filter on
+         *   community_platform_vote_summaries.upvote_count column. Applied as
+         *   WHERE upvote_count >= :min_upvote_count. Minimum value is 0 (upvote
+         *   count is non-negative).
      */
     min_upvote_count?:
       | (number & tags.Type<"int32"> & tags.Minimum<0>)
@@ -232,7 +280,9 @@ export namespace ICommunityPlatformVoteSummary {
      *
      * Filters vote summaries where the total number of upvotes is at most this value. Must be a non-negative integer.
      *
-     * @x-autobe-specification Upper bound filter on community_platform_vote_summaries.upvote_count column. Applied as WHERE upvote_count <= :max_upvote_count. Minimum value is 0.
+         * @x-autobe-specification Upper bound filter on
+         *   community_platform_vote_summaries.upvote_count column. Applied as
+         *   WHERE upvote_count <= :max_upvote_count. Minimum value is 0.
      */
     max_upvote_count?:
       | (number & tags.Type<"int32"> & tags.Minimum<0>)
@@ -243,7 +293,9 @@ export namespace ICommunityPlatformVoteSummary {
      *
      * Filters vote summaries where the total number of downvotes is at least this value. Must be a non-negative integer.
      *
-     * @x-autobe-specification Lower bound filter on community_platform_vote_summaries.downvote_count column. Applied as WHERE downvote_count >= :min_downvote_count. Minimum value is 0.
+         * @x-autobe-specification Lower bound filter on
+         *   community_platform_vote_summaries.downvote_count column. Applied as
+         *   WHERE downvote_count >= :min_downvote_count. Minimum value is 0.
      */
     min_downvote_count?:
       | (number & tags.Type<"int32"> & tags.Minimum<0>)
@@ -254,7 +306,9 @@ export namespace ICommunityPlatformVoteSummary {
      *
      * Filters vote summaries where the total number of downvotes is at most this value. Must be a non-negative integer.
      *
-     * @x-autobe-specification Upper bound filter on community_platform_vote_summaries.downvote_count column. Applied as WHERE downvote_count <= :max_downvote_count. Minimum value is 0.
+         * @x-autobe-specification Upper bound filter on
+         *   community_platform_vote_summaries.downvote_count column. Applied as
+         *   WHERE downvote_count <= :max_downvote_count. Minimum value is 0.
      */
     max_downvote_count?:
       | (number & tags.Type<"int32"> & tags.Minimum<0>)
@@ -265,7 +319,10 @@ export namespace ICommunityPlatformVoteSummary {
      *
      * Filters vote summaries that were created at or after this date and time. Use ISO 8601 format (e.g., `2024-01-01T00:00:00Z`). Combine with `created_at_until` to define a time window.
      *
-     * @x-autobe-specification Lower bound filter on community_platform_vote_summaries.created_at column. Applied as WHERE created_at >= :created_at_since. ISO 8601 date-time format. Combine with created_at_until for time window.
+         * @x-autobe-specification Lower bound filter on
+         *   community_platform_vote_summaries.created_at column. Applied as
+         *   WHERE created_at >= :created_at_since. ISO 8601 date-time format.
+         *   Combine with created_at_until for time window.
      */
     created_at_since?: (string & tags.Format<"date-time">) | undefined;
 
@@ -274,7 +331,9 @@ export namespace ICommunityPlatformVoteSummary {
      *
      * Filters vote summaries that were created at or before this date and time. Use ISO 8601 format (e.g., `2024-12-31T23:59:59Z`). Combine with `created_at_since` to define a time window.
      *
-     * @x-autobe-specification Upper bound filter on community_platform_vote_summaries.created_at column. Applied as WHERE created_at <= :created_at_until. ISO 8601 date-time format.
+         * @x-autobe-specification Upper bound filter on
+         *   community_platform_vote_summaries.created_at column. Applied as
+         *   WHERE created_at <= :created_at_until. ISO 8601 date-time format.
      */
     created_at_until?: (string & tags.Format<"date-time">) | undefined;
 
@@ -283,7 +342,10 @@ export namespace ICommunityPlatformVoteSummary {
      *
      * Filters vote summaries that were last updated at or after this date and time. Use ISO 8601 format (e.g., `2024-01-01T00:00:00Z`). Combine with `updated_at_until` to define a time window.
      *
-     * @x-autobe-specification Lower bound filter on community_platform_vote_summaries.updated_at column. Applied as WHERE updated_at >= :updated_at_since. ISO 8601 date-time format. Combine with updated_at_until for time window.
+         * @x-autobe-specification Lower bound filter on
+         *   community_platform_vote_summaries.updated_at column. Applied as
+         *   WHERE updated_at >= :updated_at_since. ISO 8601 date-time format.
+         *   Combine with updated_at_until for time window.
      */
     updated_at_since?: (string & tags.Format<"date-time">) | undefined;
 
@@ -292,7 +354,9 @@ export namespace ICommunityPlatformVoteSummary {
      *
      * Filters vote summaries that were last updated at or before this date and time. Use ISO 8601 format (e.g., `2024-12-31T23:59:59Z`). Combine with `updated_at_since` to define a time window.
      *
-     * @x-autobe-specification Upper bound filter on community_platform_vote_summaries.updated_at column. Applied as WHERE updated_at <= :updated_at_until. ISO 8601 date-time format.
+         * @x-autobe-specification Upper bound filter on
+         *   community_platform_vote_summaries.updated_at column. Applied as
+         *   WHERE updated_at <= :updated_at_until. ISO 8601 date-time format.
      */
     updated_at_until?: (string & tags.Format<"date-time">) | undefined;
 
@@ -308,7 +372,11 @@ export namespace ICommunityPlatformVoteSummary {
      *
      * All sort options default to descending order.
      *
-     * @x-autobe-specification Computed query parameter. Maps to SQL ORDER BY expression using the enum value as the sort field. Default direction is descending for all fields: ORDER BY {field} DESC. Enum values: net_score, upvote_count, downvote_count, created_at, updated_at. No direct DB column — this is a query instruction.
+         * @x-autobe-specification Computed query parameter. Maps to SQL ORDER
+         *   BY expression using the enum value as the sort field. Default
+         *   direction is descending for all fields: ORDER BY {field} DESC. Enum
+         *   values: net_score, upvote_count, downvote_count, created_at,
+         *   updated_at. No direct DB column — this is a query instruction.
      */
     sort?:
       | "net_score"
@@ -323,7 +391,10 @@ export namespace ICommunityPlatformVoteSummary {
      *
      * Specifies which page of results to return. Page numbering is 1-indexed, so page 1 returns the first set of results. Use with `limit` to navigate through results.
      *
-     * @x-autobe-specification Computed pagination parameter. Page is 1-indexed. Combined with limit to calculate SQL OFFSET: OFFSET = (page - 1) * limit. Defaults to 1 when omitted. Minimum value is 1. No direct DB column.
+         * @x-autobe-specification Computed pagination parameter. Page is
+         *   1-indexed. Combined with limit to calculate SQL OFFSET: OFFSET =
+         *   (page - 1) * limit. Defaults to 1 when omitted. Minimum value is 1.
+         *   No direct DB column.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -332,7 +403,10 @@ export namespace ICommunityPlatformVoteSummary {
      *
      * Defines the upper bound on how many vote summary records are returned in a single page. Must be between 1 and 100. Use with `page` to control result navigation.
      *
-     * @x-autobe-specification Computed pagination parameter. Defines maximum records per page. Applied as SQL LIMIT. Minimum is 1, maximum is 100. When omitted, a default page size is used. No direct DB column.
+         * @x-autobe-specification Computed pagination parameter. Defines
+         *   maximum records per page. Applied as SQL LIMIT. Minimum is 1,
+         *   maximum is 100. When omitted, a default page size is used. No
+         *   direct DB column.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)

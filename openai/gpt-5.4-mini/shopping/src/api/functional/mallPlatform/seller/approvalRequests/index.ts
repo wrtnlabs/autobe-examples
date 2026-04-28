@@ -22,8 +22,16 @@ export * as resubmissions from "./resubmissions/index";
  * @param props.body The information required to submit an administrator approval request, including the applicant's reason for seeking administrator access.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Create a new mall_platform_administrator_approval_requests row for the currently authenticated account.
- * Validate that the caller is a logged-in customer or seller and reject unauthenticated access. Populate the applicant reference from the session context rather than from the request body. Persist the submitted reason and initialize the review status as pending. If business rules prohibit multiple active requests from the same account, check for an existing pending request and return a validation error when one already exists. Return the created request entity after persistence so the client can display its current status.
+ * @x-autobe-specification Create a new
+ *   mall_platform_administrator_approval_requests row for the currently
+ *   authenticated account. Validate that the caller is a logged-in customer or
+ *   seller and reject unauthenticated access. Populate the applicant reference
+ *   from the session context rather than from the request body. Persist the
+ *   submitted reason and initialize the review status as pending. If business
+ *   rules prohibit multiple active requests from the same account, check for an
+ *   existing pending request and return a validation error when one already
+ *   exists. Return the created request entity after persistence so the client
+ *   can display its current status.
  *
  * This operation only submits the request. Review decisions, approval, and rejection history are handled by separate governance operations.
  * @path /mallPlatform/seller/approvalRequests
@@ -114,7 +122,12 @@ export namespace create {
  * @param props.body Search criteria for browsing administrator approval requests, including pagination, sorting, and status filters.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Query mall_platform_administrator_approval_requests with pagination, sorting, and filter criteria from the request body. Support status filtering for pending, approved, and rejected requests, with default sorting that prioritizes newest or pending-first review queues according to the implemented business rules. Return only summary fields needed for list review, not the full approval request graph.
+ * @x-autobe-specification Query mall_platform_administrator_approval_requests
+ *   with pagination, sorting, and filter criteria from the request body.
+ *   Support status filtering for pending, approved, and rejected requests, with
+ *   default sorting that prioritizes newest or pending-first review queues
+ *   according to the implemented business rules. Return only summary fields
+ *   needed for list review, not the full approval request graph.
  *
  * Do not perform any update in this operation. If the requested filters produce no matches, return an empty page rather than an error. Validate page size, page number, and filter enum values before querying. If a request references a missing or invalid state, reject the request with a validation error. Preserve the current record state exactly as stored; this endpoint is strictly read-only.
  * @path /mallPlatform/seller/approvalRequests
@@ -207,10 +220,15 @@ export namespace index {
  * @param props.approvalRequestId The administrator approval request UUID in global scope.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Fetch one row from mall_platform_administrator_approval_requests by id using the approvalRequestId UUID path parameter.
- * Return the request's current fields: id, administrator_id, reviewer_administrator_id, reason, status, rejection_reason, reviewed_at, created_at, updated_at, and deleted_at.
- * Do not include snapshot rows in the response; snapshots belong to a separate historical operation.
- * If the record is missing, return not found. If retrieval policy treats deleted rows as inaccessible, honor that policy instead of exposing deleted data.
+ * @x-autobe-specification Fetch one row from
+ *   mall_platform_administrator_approval_requests by id using the
+ *   approvalRequestId UUID path parameter. Return the request's current fields:
+ *   id, administrator_id, reviewer_administrator_id, reason, status,
+ *   rejection_reason, reviewed_at, created_at, updated_at, and deleted_at. Do
+ *   not include snapshot rows in the response; snapshots belong to a separate
+ *   historical operation. If the record is missing, return not found. If
+ *   retrieval policy treats deleted rows as inaccessible, honor that policy
+ *   instead of exposing deleted data.
  * @path /mallPlatform/seller/approvalRequests/:approvalRequestId
  * @accessor api.functional.mallPlatform.seller.approvalRequests.at
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe

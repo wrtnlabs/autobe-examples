@@ -18,8 +18,9 @@ export type IEcommerceMallSeller = {
    *
    * This UUID uniquely identifies a seller account in the e-commerce platform. Used as the primary key for all seller-related operations and API references.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_sellers.id. UUID primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from ecommerce_mall_sellers.id.
+     *   UUID primary key.
    */
   id: string & tags.Format<"uuid">;
 
@@ -28,8 +29,9 @@ export type IEcommerceMallSeller = {
    *
    * Must be unique across all seller accounts. Used as the primary identifier for login and password recovery workflows. Displayed to administrators for platform oversight purposes.
    *
-   * @x-autobe-database-schema-property email
-   * @x-autobe-specification Direct mapping from ecommerce_mall_sellers.email. Unique constraint.
+     * @x-autobe-database-schema-property email
+     * @x-autobe-specification Direct mapping from ecommerce_mall_sellers.email.
+     *   Unique constraint.
    */
   email: string;
 
@@ -38,8 +40,9 @@ export type IEcommerceMallSeller = {
    *
    * Different from shop name. Used in order confirmations, reviews, and product listings to identify the seller. This is the name that customers see when interacting with the seller's products.
    *
-   * @x-autobe-database-schema-property display_name
-   * @x-autobe-specification Direct mapping from ecommerce_mall_sellers.display_name.
+     * @x-autobe-database-schema-property display_name
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_sellers.display_name.
    */
   display_name: string;
 
@@ -54,8 +57,11 @@ export type IEcommerceMallSeller = {
    *
    * This status determines whether the seller can access platform features. Only approved sellers can list products and fulfill orders.
    *
-   * @x-autobe-specification Direct mapping from ecommerce_mall_sellers.approval_status. Enum values: pending|approved|rejected. Schema updated from oneOf to string type to match database column.
-   * @x-autobe-database-schema-property approval_status
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_sellers.approval_status. Enum values:
+     *   pending|approved|rejected. Schema updated from oneOf to string type to
+     *   match database column.
+     * @x-autobe-database-schema-property approval_status
    */
   approval_status: string;
 
@@ -64,8 +70,10 @@ export type IEcommerceMallSeller = {
    *
    * Explains why the seller application was denied. Only populated when approval_status equals 'rejected'. Can be edited by administrators to provide updated feedback to the seller.
    *
-   * @x-autobe-database-schema-property rejection_reason
-   * @x-autobe-specification Direct mapping from ecommerce_mall_sellers.rejection_reason. Nullable string populated only when approval_status='rejected'.
+     * @x-autobe-database-schema-property rejection_reason
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_sellers.rejection_reason. Nullable string populated only
+     *   when approval_status='rejected'.
    */
   rejection_reason: string | null;
 
@@ -74,8 +82,10 @@ export type IEcommerceMallSeller = {
    *
    * True when seller is banned from selling. Suspension is tracked separately with timestamps and reasons in seller_suspensions table for audit purposes. This is a soft restriction that can be lifted without deleting the account.
    *
-   * @x-autobe-database-schema-property is_suspended
-   * @x-autobe-specification Direct mapping from ecommerce_mall_sellers.is_suspended. Boolean flag for suspension status.
+     * @x-autobe-database-schema-property is_suspended
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_sellers.is_suspended. Boolean flag for suspension
+     *   status.
    */
   is_suspended: boolean;
 
@@ -84,8 +94,9 @@ export type IEcommerceMallSeller = {
    *
    * Records the date and time when the seller completed registration and created their account. Used for account lifecycle tracking and administrative oversight.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_sellers.created_at. Timestamp with timezone.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_sellers.created_at. Timestamp with timezone.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -94,8 +105,10 @@ export type IEcommerceMallSeller = {
    *
    * Automatically updated whenever the seller record is modified. Used to track the most recent activity on the account and for audit purposes.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_sellers.updated_at. Timestamp with timezone, auto-updated on modification.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_sellers.updated_at. Timestamp with timezone,
+     *   auto-updated on modification.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -104,8 +117,11 @@ export type IEcommerceMallSeller = {
    *
    * When deleted_at is null, seller is active. When populated with a timestamp, seller is soft-deleted and cannot authenticate. Soft-delete preserves account history for audit and recovery purposes without permanent data loss.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_sellers.deleted_at. Nullable timestamp for soft-delete tracking. When null, seller is active. When populated, seller is soft-deleted.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_sellers.deleted_at. Nullable timestamp for soft-delete
+     *   tracking. When null, seller is active. When populated, seller is
+     *   soft-deleted.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -131,8 +147,10 @@ export namespace IEcommerceMallSeller {
      *
      * This is the seller's account email that was registered during account creation. It serves as the primary identifier for finding the seller record in the database during login. The email must match an existing, active (not deleted) seller account.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from ecommerce_mall_sellers.email. Used to find the seller account by unique email address for authentication.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_sellers.email. Used to find the seller account by
+         *   unique email address for authentication.
      */
     email: string & tags.Format<"email">;
 
@@ -141,8 +159,11 @@ export namespace IEcommerceMallSeller {
      *
      * Provided as plain text by the client and never stored in plaintext in the database. The backend will hash this password using BCrypt and compare it against the stored password_hash during authentication. This field is sensitive and should only be transmitted over HTTPS.
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification Plain text password provided by client for BCrypt verification. The system compares this against the stored password_hash in ecommerce_mall_sellers.password_hash using BCrypt verification. Never store or log the plain text password.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification Plain text password provided by client for
+         *   BCrypt verification. The system compares this against the stored
+         *   password_hash in ecommerce_mall_sellers.password_hash using BCrypt
+         *   verification. Never store or log the plain text password.
      */
     password: string & tags.Format<"password">;
 
@@ -151,7 +172,11 @@ export namespace IEcommerceMallSeller {
      *
      * Captures the URL where the seller initiated the login action. This helps with security auditing by tracking the origin of authentication attempts and detecting suspicious activity from unexpected sources.
      *
-     * @x-autobe-specification Client-provided original URL where the login request originated. This is captured from the client application and stored with the session record for security auditing and session tracking. Used to detect suspicious login activity from unexpected sources.
+         * @x-autobe-specification Client-provided original URL where the login
+         *   request originated. This is captured from the client application
+         *   and stored with the session record for security auditing and
+         *   session tracking. Used to detect suspicious login activity from
+         *   unexpected sources.
      */
     href: string & tags.Format<"uri">;
 
@@ -160,7 +185,10 @@ export namespace IEcommerceMallSeller {
      *
      * Captures the URL of the page that directed the seller to the login page. This information is stored with the session record for security auditing and helps track user navigation patterns during the authentication flow.
      *
-     * @x-autobe-specification Client-provided referrer URL (the page that linked to the login page). Captured from the client application for security auditing and user experience analysis. Used to understand how sellers navigate to the authentication system.
+         * @x-autobe-specification Client-provided referrer URL (the page that
+         *   linked to the login page). Captured from the client application for
+         *   security auditing and user experience analysis. Used to understand
+         *   how sellers navigate to the authentication system.
      */
     referrer: string & tags.Format<"uri">;
 
@@ -169,7 +197,11 @@ export namespace IEcommerceMallSeller {
      *
      * Captures the IP address from which the login request originated. Used for security auditing, fraud detection, and geolocation analysis. Helps detect suspicious login activity from unexpected locations or multiple concurrent logins.
      *
-     * @x-autobe-specification Client-provided or server-captured IP address. The seller may provide this, but typically the server captures it from the network connection. Stored with the session record for security auditing, fraud detection, and geolocation analysis of login attempts.
+         * @x-autobe-specification Client-provided or server-captured IP
+         *   address. The seller may provide this, but typically the server
+         *   captures it from the network connection. Stored with the session
+         *   record for security auditing, fraud detection, and geolocation
+         *   analysis of login attempts.
      */
     ip: string & tags.Format<"ipv4">;
   };
@@ -213,7 +245,16 @@ export namespace IEcommerceMallSeller {
      *
      * Refresh tokens are short-lived and single-use to prevent token theft. After successful refresh, the old session is invalidated to prevent replay attacks.
      *
-     * @x-autobe-specification Refresh token (JWT string) from previous authentication response. The backend validates this by: (1) decoding JWT to verify format and signature, (2) looking up token in ecommerce_mall_seller_sessions table, (3) checking expired_at > current_time, (4) verifying the seller account exists with deleted_at IS NULL, is_suspended=false, approval_status='approved', (5) generating new access_token and refresh_token JWTs, (6) creating new session record, (7) marking old session as deleted. Returns 401 for expired/invalid token, 403 for suspended/deleted/rejected account, 404 if session not found.
+         * @x-autobe-specification Refresh token (JWT string) from previous
+         *   authentication response. The backend validates this by: (1)
+         *   decoding JWT to verify format and signature, (2) looking up token
+         *   in ecommerce_mall_seller_sessions table, (3) checking expired_at >
+         *   current_time, (4) verifying the seller account exists with
+         *   deleted_at IS NULL, is_suspended=false, approval_status='approved',
+         *   (5) generating new access_token and refresh_token JWTs, (6)
+         *   creating new session record, (7) marking old session as deleted.
+         *   Returns 401 for expired/invalid token, 403 for
+         *   suspended/deleted/rejected account, 404 if session not found.
      */
     refresh_token: string;
   };
@@ -239,8 +280,11 @@ export namespace IEcommerceMallSeller {
      *
      * Must be a valid email format and unique across all seller accounts. This email serves as the primary identifier for login and password recovery workflows. Upon successful registration, an email verification token is sent to this address to confirm ownership.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from ecommerce_mall_sellers.email. Unique constraint enforced during registration. Used for login authentication and communication. Email verification token is sent after successful registration.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_sellers.email. Unique constraint enforced during
+         *   registration. Used for login authentication and communication.
+         *   Email verification token is sent after successful registration.
      */
     email: string & tags.Format<"email">;
 
@@ -249,8 +293,11 @@ export namespace IEcommerceMallSeller {
      *
      * Sent in plaintext and immediately hashed with BCrypt algorithm (minimum cost factor 12) before storage. Use a secure password policy: minimum 8 characters, including uppercase, lowercase, numbers, and special characters. Password is never stored or transmitted in plaintext.
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification Plain text password from user, transformed to BCrypt hash (cost factor >= 12) before storing in ecommerce_mall_sellers.password_hash. Never store plaintext passwords.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification Plain text password from user, transformed to
+         *   BCrypt hash (cost factor >= 12) before storing in
+         *   ecommerce_mall_sellers.password_hash. Never store plaintext
+         *   passwords.
      */
     password: string & tags.Format<"password">;
 
@@ -259,8 +306,10 @@ export namespace IEcommerceMallSeller {
      *
      * This display name appears in order confirmations, product listings, and reviews to identify the seller. It is different from the shop name (which is part of the seller's shop profile). Must be a valid identifier with no profanity or misleading content.
      *
-     * @x-autobe-database-schema-property display_name
-     * @x-autobe-specification Direct mapping from ecommerce_mall_sellers.display_name. Public-facing identity shown to customers browsing products, different from shop name.
+         * @x-autobe-database-schema-property display_name
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_sellers.display_name. Public-facing identity shown
+         *   to customers browsing products, different from shop name.
      */
     display_name: string;
 
@@ -269,7 +318,10 @@ export namespace IEcommerceMallSeller {
      *
      * Indicates the source domain or application that initiated the registration request. Logged with the generated JWT session tokens for security monitoring and detecting suspicious access patterns. Used in combination with IP address to identify unauthorized access.
      *
-     * @x-autobe-specification Session context field: request origin URL (URI). Logged with JWT session tokens in ecommerce_mall_seller_sessions table. Used for security auditing and detecting suspicious login patterns.
+         * @x-autobe-specification Session context field: request origin URL
+         *   (URI). Logged with JWT session tokens in
+         *   ecommerce_mall_seller_sessions table. Used for security auditing
+         *   and detecting suspicious login patterns.
      */
     href: string & tags.Format<"uri">;
 
@@ -278,7 +330,10 @@ export namespace IEcommerceMallSeller {
      *
      * Captures the URL of the page that linked to the registration form. This information is logged with JWT session tokens for analytics (understanding user acquisition sources) and security auditing (detecting suspicious referral patterns).
      *
-     * @x-autobe-specification Session context field: referrer URL (URI) from HTTP Referer header. Logged with JWT session tokens in ecommerce_mall_seller_sessions table. Used for analytics and security auditing.
+         * @x-autobe-specification Session context field: referrer URL (URI)
+         *   from HTTP Referer header. Logged with JWT session tokens in
+         *   ecommerce_mall_seller_sessions table. Used for analytics and
+         *   security auditing.
      */
     referrer: string & tags.Format<"uri">;
 
@@ -287,7 +342,11 @@ export namespace IEcommerceMallSeller {
      *
      * Captures the IP address of the device making the registration request. Logged with JWT session tokens for security monitoring, fraud detection, and abuse prevention. In Server Side Rendering (SSR) scenarios, this field is optional as the server may capture the IP directly from the request.
      *
-     * @x-autobe-specification Session context field: client IP address (optional, format: ipv4). Logged with JWT session tokens in ecommerce_mall_seller_sessions table. In SSR (Server Side Rendering) scenarios, the client may not know its own IP, so server captures it as fallback (body.ip ?? serverIp).
+         * @x-autobe-specification Session context field: client IP address
+         *   (optional, format: ipv4). Logged with JWT session tokens in
+         *   ecommerce_mall_seller_sessions table. In SSR (Server Side
+         *   Rendering) scenarios, the client may not know its own IP, so server
+         *   captures it as fallback (body.ip ?? serverIp).
      */
     ip?: (string & tags.Format<"ipv4">) | undefined;
   };
@@ -335,7 +394,9 @@ export namespace IEcommerceMallSeller {
      *
      * UUID-formatted primary key that uniquely identifies this seller in the system. Used for API references, relationship tracking, and database joins.
      *
-     * @x-autobe-specification Direct mapping from ecommerce_mall_sellers.id. Extracted from JWT subject claim after authentication.
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_sellers.id. Extracted from JWT subject claim after
+         *   authentication.
      */
     id: string & tags.Format<"uuid">;
 
@@ -344,7 +405,9 @@ export namespace IEcommerceMallSeller {
      *
      * Must be unique across all seller accounts. Used as the primary identifier for login, password recovery, and order communications.
      *
-     * @x-autobe-specification Direct mapping from ecommerce_mall_sellers.email. Unique constraint enforced in database.
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_sellers.email. Unique constraint enforced in
+         *   database.
      */
     email: string;
 
@@ -353,7 +416,9 @@ export namespace IEcommerceMallSeller {
      *
      * Different from shop name. Used in order confirmations, reviews, and product listings to identify the seller. Appears on product detail pages and in customer-facing communications.
      *
-     * @x-autobe-specification Direct mapping from ecommerce_mall_sellers.display_name. Can be updated by seller via shop profile endpoint.
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_sellers.display_name. Can be updated by seller via
+         *   shop profile endpoint.
      */
     display_name: string;
 
@@ -365,7 +430,10 @@ export namespace IEcommerceMallSeller {
      * - approved: Approved to sell products and fulfill orders
      * - rejected: Application denied, can reapply after addressing issues
      *
-     * @x-autobe-specification Direct mapping from ecommerce_mall_sellers.approval_status. Enum field with values: pending, approved, rejected. Default: pending. Used in approval status filtering and validation.
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_sellers.approval_status. Enum field with values:
+         *   pending, approved, rejected. Default: pending. Used in approval
+         *   status filtering and validation.
      */
     approval_status: "pending" | "approved" | "rejected";
 
@@ -374,7 +442,10 @@ export namespace IEcommerceMallSeller {
      *
      * Explains why the seller application was denied. Only populated when approval_status is 'rejected'. Can be edited by administrators. Helps sellers understand what improvements are needed for reapplication.
      *
-     * @x-autobe-specification Direct mapping from ecommerce_mall_sellers.rejection_reason. Nullable string. Only populated when approval_status equals 'rejected'. Provides feedback to seller for reapplication.
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_sellers.rejection_reason. Nullable string. Only
+         *   populated when approval_status equals 'rejected'. Provides feedback
+         *   to seller for reapplication.
      */
     rejection_reason: string | null;
 
@@ -383,7 +454,10 @@ export namespace IEcommerceMallSeller {
      *
      * True when seller is banned from selling. Suspension is tracked separately with timestamps and reasons in seller_suspensions table for audit purposes. Suspended sellers cannot authenticate or sell products.
      *
-     * @x-autobe-specification Direct mapping from ecommerce_mall_sellers.is_suspended. Boolean field. True when seller has active suspension record. Checked before authentication to prevent suspended sellers from accessing API.
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_sellers.is_suspended. Boolean field. True when
+         *   seller has active suspension record. Checked before authentication
+         *   to prevent suspended sellers from accessing API.
      */
     is_suspended: boolean;
 
@@ -392,7 +466,9 @@ export namespace IEcommerceMallSeller {
      *
      * ISO 8601 formatted datetime indicating when the seller registration was submitted and the account was first created in the system. Used for audit trails, account age calculations, and administrative oversight.
      *
-     * @x-autobe-specification Direct mapping from ecommerce_mall_sellers.created_at. Datetime with timezone. Set when seller record is first inserted. Immutable after creation.
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_sellers.created_at. Datetime with timezone. Set when
+         *   seller record is first inserted. Immutable after creation.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -401,7 +477,10 @@ export namespace IEcommerceMallSeller {
      *
      * ISO 8601 formatted datetime indicating the most recent modification to the seller record. Includes any changes to profile information, approval status, suspension state, or other account attributes. Used for tracking account activity.
      *
-     * @x-autobe-specification Direct mapping from ecommerce_mall_sellers.updated_at. Datetime with timezone. Automatically updated on every write operation to the seller record. Set by database trigger or ORM layer.
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_sellers.updated_at. Datetime with timezone.
+         *   Automatically updated on every write operation to the seller
+         *   record. Set by database trigger or ORM layer.
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -410,14 +489,18 @@ export namespace IEcommerceMallSeller {
      *
      * When null, seller is active. When populated, seller is soft-deleted and cannot authenticate. Soft deletion preserves data for audit purposes while preventing account access. Can be reviewed by administrators.
      *
-     * @x-autobe-specification Direct mapping from ecommerce_mall_sellers.deleted_at. Nullable datetime. Null when seller is active. Populated when soft-delete is called. Queries filter by deleted_at IS NULL to find active sellers.
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_sellers.deleted_at. Nullable datetime. Null when
+         *   seller is active. Populated when soft-delete is called. Queries
+         *   filter by deleted_at IS NULL to find active sellers.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
 
     /**
      * Authorization token.
      *
-     * @x-autobe-specification Authorization token comes from the session table.
+         * @x-autobe-specification Authorization token comes from the session
+         *   table.
      */
     token: IAuthorizationToken;
   };
@@ -446,8 +529,10 @@ export namespace IEcommerceMallSeller {
      *
      * UUID-format primary key used to uniquely identify seller accounts across the platform. This identifier is referenced in all seller-related operations and relationships.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_mall_sellers.id. UUID format. Primary key for seller account identification.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_sellers.id. UUID format. Primary key for seller
+         *   account identification.
      */
     id: string & tags.Format<"uuid">;
 
@@ -456,8 +541,10 @@ export namespace IEcommerceMallSeller {
      *
      * Different from shop name. Used in order confirmations, product listings, and reviews to identify the seller to customers.
      *
-     * @x-autobe-database-schema-property display_name
-     * @x-autobe-specification Direct mapping from ecommerce_mall_sellers.display_name. Public-facing seller name shown to customers in product listings and order confirmations.
+         * @x-autobe-database-schema-property display_name
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_sellers.display_name. Public-facing seller name
+         *   shown to customers in product listings and order confirmations.
      */
     display_name: string;
 
@@ -469,8 +556,10 @@ export namespace IEcommerceMallSeller {
      * - `approved`: Approved to sell products and fulfill orders
      * - `rejected`: Application denied, can reapply after addressing issues
      *
-     * @x-autobe-database-schema-property approval_status
-     * @x-autobe-specification Direct mapping from ecommerce_mall_sellers.approval_status. Values: pending, approved, rejected. Default: pending.
+         * @x-autobe-database-schema-property approval_status
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_sellers.approval_status. Values: pending, approved,
+         *   rejected. Default: pending.
      */
     approval_status: string;
 
@@ -479,8 +568,11 @@ export namespace IEcommerceMallSeller {
      *
      * True when seller is banned from selling. Suspension is tracked separately with timestamps and reasons in the seller_suspensions table for audit purposes.
      *
-     * @x-autobe-database-schema-property is_suspended
-     * @x-autobe-specification Direct mapping from ecommerce_mall_sellers.is_suspended. Boolean flag indicating whether the seller is currently banned from selling. Suspension history tracked separately in seller_suspensions table.
+         * @x-autobe-database-schema-property is_suspended
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_sellers.is_suspended. Boolean flag indicating
+         *   whether the seller is currently banned from selling. Suspension
+         *   history tracked separately in seller_suspensions table.
      */
     is_suspended: boolean;
 
@@ -489,8 +581,10 @@ export namespace IEcommerceMallSeller {
      *
      * ISO 8601 formatted datetime with timezone, indicating the exact moment the seller account was created in the system.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_sellers.created_at. ISO 8601 timestamp with timezone (timestamptz). Indicates when seller account was created.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_sellers.created_at. ISO 8601 timestamp with timezone
+         *   (timestamptz). Indicates when seller account was created.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -499,8 +593,11 @@ export namespace IEcommerceMallSeller {
      *
      * Must be unique across all seller accounts. Used as the primary identifier for login and password recovery workflows. May be omitted from list views for privacy reasons.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from ecommerce_mall_sellers.email. Unique email address used for authentication and communication. Can be omitted from list views for privacy.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_sellers.email. Unique email address used for
+         *   authentication and communication. Can be omitted from list views
+         *   for privacy.
      */
     email?: (string & tags.Format<"email">) | undefined;
 
@@ -509,8 +606,11 @@ export namespace IEcommerceMallSeller {
      *
      * Only populated when approval_status equals 'rejected'. Explains why the seller application was denied. Can be edited by administrators.
      *
-     * @x-autobe-database-schema-property rejection_reason
-     * @x-autobe-specification Direct mapping from ecommerce_mall_sellers.rejection_reason. Administrator-provided reason when approval_status is 'rejected'. Nullable when not rejected.
+         * @x-autobe-database-schema-property rejection_reason
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_sellers.rejection_reason. Administrator-provided
+         *   reason when approval_status is 'rejected'. Nullable when not
+         *   rejected.
      */
     rejection_reason?: string | null | undefined;
 
@@ -519,8 +619,11 @@ export namespace IEcommerceMallSeller {
      *
      * When null, the seller is active. When populated, the seller is soft-deleted and cannot authenticate. Provides audit trail for deleted accounts without permanent data loss.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_sellers.deleted_at. Soft delete timestamp. When null, seller is active. When populated, seller is soft-deleted and cannot authenticate.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_sellers.deleted_at. Soft delete timestamp. When
+         *   null, seller is active. When populated, seller is soft-deleted and
+         *   cannot authenticate.
      */
     deleted_at?: (string & tags.Format<"date-time">) | null | undefined;
 
@@ -529,8 +632,10 @@ export namespace IEcommerceMallSeller {
      *
      * ISO 8601 formatted datetime with timezone, indicating when the seller account was last modified. Used for change tracking and audit purposes.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_sellers.updated_at. ISO 8601 timestamp with timezone (timestamptz). Indicates last seller account modification.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_sellers.updated_at. ISO 8601 timestamp with timezone
+         *   (timestamptz). Indicates last seller account modification.
      */
     updated_at?: (string & tags.Format<"date-time">) | undefined;
   };
@@ -575,7 +680,11 @@ export namespace IEcommerceMallSeller {
      *
      * Provides granular control for targeting individual sessions by their unique identifiers. Accepts one or more session UUIDs from the ecommerce_mall_seller_sessions table. Only sessions that are currently active (deleted_at IS NULL) for the specified seller will be revoked.
      *
-     * @x-autobe-specification Array of session UUIDs to target for revocation. Accepts one or more UUID strings from ecommerce_mall_seller_sessions table where deleted_at IS NULL. When populated, revocation targets only the specified session IDs. Used for granular session management.
+         * @x-autobe-specification Array of session UUIDs to target for
+         *   revocation. Accepts one or more UUID strings from
+         *   ecommerce_mall_seller_sessions table where deleted_at IS NULL. When
+         *   populated, revocation targets only the specified session IDs. Used
+         *   for granular session management.
      */
     session_ids?: (string & tags.Format<"uuid">)[] | undefined;
 
@@ -584,7 +693,11 @@ export namespace IEcommerceMallSeller {
      *
      * When set to true, terminates every active session for the specified seller regardless of individual session IDs. This forces the seller to re-authenticate across all devices. Used for complete account security intervention such as password changes or account compromise scenarios.
      *
-     * @x-autobe-specification Boolean flag to revoke all active sessions for the seller. When set to true, revokes every session in ecommerce_mall_seller_sessions for the target seller where deleted_at IS NULL. Used for complete account logout and security intervention.
+         * @x-autobe-specification Boolean flag to revoke all active sessions
+         *   for the seller. When set to true, revokes every session in
+         *   ecommerce_mall_seller_sessions for the target seller where
+         *   deleted_at IS NULL. Used for complete account logout and security
+         *   intervention.
      */
     all?: boolean | undefined;
   };
@@ -600,8 +713,10 @@ export namespace IEcommerceMallSeller {
      *
      * Identifies the target seller account in the revocation operation. Mapped from the path parameter in the API endpoint `/ecommerceMall/administrator/sellers/{sellerId}/sessions`.
      *
-     * @x-autobe-database-schema-property ecommerce_mall_seller_id
-     * @x-autobe-specification UUID from path parameter, maps to ecommerce_mall_seller_id column in ecommerce_mall_seller_sessions table.
+         * @x-autobe-database-schema-property ecommerce_mall_seller_id
+         * @x-autobe-specification UUID from path parameter, maps to
+         *   ecommerce_mall_seller_id column in ecommerce_mall_seller_sessions
+         *   table.
      */
     seller_id: string & tags.Format<"uuid">;
 
@@ -610,7 +725,10 @@ export namespace IEcommerceMallSeller {
      *
      * List of session identifiers where the revocation operation set the deleted_at timestamp. Each UUID corresponds to an ecommerce_mall_seller_sessions record that was marked for revocation. Empty array if no sessions matched the revocation criteria.
      *
-     * @x-autobe-specification Computed array: selects id from ecommerce_mall_seller_sessions where ecommerce_mall_seller_id = sellerId AND deleted_at was set during revocation operation. This is a computed response value, not a direct table column.
+         * @x-autobe-specification Computed array: selects id from
+         *   ecommerce_mall_seller_sessions where ecommerce_mall_seller_id =
+         *   sellerId AND deleted_at was set during revocation operation. This
+         *   is a computed response value, not a direct table column.
      */
     revoked_session_ids: (string & tags.Format<"uuid">)[];
 
@@ -619,7 +737,10 @@ export namespace IEcommerceMallSeller {
      *
      * Integer representing the number of session records that were successfully marked for revocation. Matches the length of the revoked_session_ids array. Useful for verifying the revocation scope matched the request intent.
      *
-     * @x-autobe-specification Computed: COUNT of sessions where deleted_at was set during the revocation operation. Equals revoked_session_ids.length. This is a computed response value, not a direct table column.
+         * @x-autobe-specification Computed: COUNT of sessions where deleted_at
+         *   was set during the revocation operation. Equals
+         *   revoked_session_ids.length. This is a computed response value, not
+         *   a direct table column.
      */
     count: number & tags.Type<"int32"> & tags.Minimum<0>;
 
@@ -628,7 +749,9 @@ export namespace IEcommerceMallSeller {
      *
      * Timestamp indicating when the server processed the revocation request and set the deleted_at field on the targeted sessions. Used for audit trail and to confirm the timing of session termination.
      *
-     * @x-autobe-specification Computed: current UTC timestamp at the time the revocation operation completes. This is a computed response value, not a direct table column.
+         * @x-autobe-specification Computed: current UTC timestamp at the time
+         *   the revocation operation completes. This is a computed response
+         *   value, not a direct table column.
      */
     revoked_at: string & tags.Format<"date-time">;
   };

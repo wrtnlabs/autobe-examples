@@ -24,7 +24,8 @@ import { IShoppingMallAdministratorPasswordReset } from "../../../../structures/
  * @param props.body Search criteria and pagination parameters for administrator requests
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor administrator
- * @x-autobe-specification Query administrator requests with pagination and optional filtering.
+ * @x-autobe-specification Query administrator requests with pagination and
+ *   optional filtering.
  *
  * Implementation steps:
  * 1. Verify the authenticated user is a super administrator by checking shopping_mall_administrators.grade = 'super'. Return 403 Forbidden if not.

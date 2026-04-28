@@ -27,9 +27,10 @@ export class CommunityplatformMemberCommunitiesModeratorsController {
    * @param connection
    * @param communityId Target community's unique identifier where the moderator will be added
    * @param body Member to be added as a moderator to the community
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Add a moderator to a community by creating a record in community_platform_moderators table.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Add a moderator to a community by creating a
+     *   record in community_platform_moderators table.
    *
    * Authorization checks:
    * 1. Verify the requester is authenticated as a member
@@ -83,9 +84,11 @@ export class CommunityplatformMemberCommunitiesModeratorsController {
    * @param connection
    * @param communityId Unique identifier of the community whose moderators are being listed
    * @param body Search criteria including role filter and pagination parameters
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query community_platform_moderators table filtered by community_id to retrieve all active (deleted_at IS NULL) moderator assignments for the specified community.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query community_platform_moderators table
+     *   filtered by community_id to retrieve all active (deleted_at IS NULL)
+     *   moderator assignments for the specified community.
    *
    * JOIN with community_platform_members to include moderator details (username, display_name, bio, karma, avatar).
    *
@@ -137,9 +140,9 @@ export class CommunityplatformMemberCommunitiesModeratorsController {
    * @param connection
    * @param communityId UUID of the community to which the moderator belongs
    * @param moderatorId UUID of the moderator role assignment record to retrieve
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation steps:
    *
    * 1. Validate that the authenticated user has moderator access to the specified community (query community_platform_moderators table to check if user is a moderator or owner of the community)
    * 2. Query community_platform_moderators table by id = moderatorId with community_platform_community_id = communityId filter
@@ -199,9 +202,10 @@ export class CommunityplatformMemberCommunitiesModeratorsController {
    * @param connection
    * @param communityId The unique identifier of the community from which the moderator is being removed.
    * @param moderatorId The unique identifier of the moderator record to remove (community_platform_moderators.id, not the member's id).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Remove a moderator from a community by soft-deleting the moderator record.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Remove a moderator from a community by
+     *   soft-deleting the moderator record.
    *
    * Authorization checks (in order):
    * 1. Verify the requester is authenticated and has an active moderator role in the community

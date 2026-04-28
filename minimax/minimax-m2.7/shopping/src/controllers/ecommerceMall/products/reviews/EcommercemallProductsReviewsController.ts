@@ -28,9 +28,10 @@ export class EcommercemallProductsReviewsController {
    *
    * @param connection
    * @param productId Unique identifier of the product (UUID format).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query ecommerce_mall_reviews table filtered by product ID and null deleted_at (active reviews only).
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query ecommerce_mall_reviews table filtered by
+     *   product ID and null deleted_at (active reviews only).
    *
    * Join with ecommerce_mall_customers to get customer id, then left join with ecommerce_mall_customer_profiles to retrieve display_name for reviewer attribution.
    *
@@ -72,9 +73,10 @@ export class EcommercemallProductsReviewsController {
    * @param connection
    * @param productId Unique identifier of the product to retrieve reviews for.
    * @param body Search criteria including pagination parameters (cursor, limit) and optional rating filter.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query the ecommerce_mall_reviews table filtering by ecommerce_mall_product_id matching the path parameter.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query the ecommerce_mall_reviews table filtering
+     *   by ecommerce_mall_product_id matching the path parameter.
    *
    * Apply WHERE deleted_at IS NULL to exclude soft-deleted reviews.
    *
@@ -123,9 +125,11 @@ export class EcommercemallProductsReviewsController {
    * @param connection
    * @param productId Unique identifier of the product this review belongs to.
    * @param reviewId Unique identifier of the review to retrieve.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query the ecommerce_mall_reviews table filtering by id = :reviewId AND ecommerce_mall_product_id = :productId AND deleted_at IS NULL.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query the ecommerce_mall_reviews table filtering
+     *   by id = :reviewId AND ecommerce_mall_product_id = :productId AND
+     *   deleted_at IS NULL.
    *
    * If no matching active review exists, return HTTP 404 with error message "Review not found".
    *

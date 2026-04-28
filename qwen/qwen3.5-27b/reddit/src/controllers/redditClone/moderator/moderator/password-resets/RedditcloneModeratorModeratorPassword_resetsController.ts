@@ -22,9 +22,10 @@ export class RedditcloneModeratorModeratorPassword_resetsController {
    *
    * @param connection
    * @param body Search criteria for filtering password reset tokens including moderator ID, token status, date ranges, and pagination parameters.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor moderator
-   * @x-autobe-specification Query the reddit_clone_moderator_password_resets table with pagination and filtering support.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor moderator
+     * @x-autobe-specification Query the reddit_clone_moderator_password_resets
+     *   table with pagination and filtering support.
    *
    * Apply search filters from the request body:
    * - Filter by moderator_id to find tokens for a specific moderator
@@ -76,9 +77,10 @@ export class RedditcloneModeratorModeratorPassword_resetsController {
    *
    * @param connection
    * @param resetId Unique identifier of the password reset token record (global scope)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor moderator
-   * @x-autobe-specification Query the reddit_clone_moderator_password_resets table by primary key id.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor moderator
+     * @x-autobe-specification Query the reddit_clone_moderator_password_resets
+     *   table by primary key id.
    *
    * Security considerations:
    * - DO NOT return the actual token field in the response (security risk)

@@ -268,14 +268,14 @@ export namespace index {
  * @param props.productVariantId Target product variant's UUID.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification 1) Validate `productVariantId` is a UUID.
- * 2) Query `shopping_mall_product_variants` where `id = productVariantId`.
- * 3) If not found: return not found.
- * 4) Apply visibility rules consistent with storefront browsing:
- *    - Ensure the variant is considered viewable for the caller.
- *    - If caller is not allowed to see inactive/hidden variants (based on `is_active` and `deleted_at`), return an authorization/availability error.
- * 5) Map the DB row to response DTO `IShoppingMallProductVariant`.
- * 6) Return 200 with the mapped object.
+ * @x-autobe-specification 1) Validate `productVariantId` is a UUID. 2) Query
+ *   `shopping_mall_product_variants` where `id = productVariantId`. 3) If not
+ *   found: return not found. 4) Apply visibility rules consistent with
+ *   storefront browsing: - Ensure the variant is considered viewable for the
+ *   caller. - If caller is not allowed to see inactive/hidden variants (based
+ *   on `is_active` and `deleted_at`), return an authorization/availability
+ *   error. 5) Map the DB row to response DTO `IShoppingMallProductVariant`. 6)
+ *   Return 200 with the mapped object.
  *
  * No transaction is required since this is a pure read.
  * @path /shoppingMall/member/productVariants/:productVariantId
@@ -508,7 +508,8 @@ export namespace update {
  * @param props.productVariantId Target product variant ID to remove (UUID).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Perform deletion of a product variant with seller ownership validation and workflow eligibility checks.
+ * @x-autobe-specification Perform deletion of a product variant with seller
+ *   ownership validation and workflow eligibility checks.
  *
  * 1) Authenticate and authorize
  * - Require an authenticated seller actor.

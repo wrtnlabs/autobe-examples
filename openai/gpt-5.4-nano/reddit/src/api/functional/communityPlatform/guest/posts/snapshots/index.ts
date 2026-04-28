@@ -26,7 +26,8 @@ import { ICommunityPlatformPostSnapshot } from "../../../../../structures/ICommu
  * @param props.snapshotId Target snapshot identifier to retrieve the exact point-in-time snapshot.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor guest
- * @x-autobe-specification 1) Parse `postId` and `snapshotId` as UUIDs from path parameters.
+ * @x-autobe-specification 1) Parse `postId` and `snapshotId` as UUIDs from path
+ *   parameters.
  *
  * 2) Query `community_platform_post_snapshots`:
  * - Filter by `id = snapshotId`.

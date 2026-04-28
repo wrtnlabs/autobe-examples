@@ -21,9 +21,10 @@ export class EcommercemallAdministratorOrdersSnapshotsController {
    * @param connection
    * @param orderId Unique identifier of the order. The snapshots returned are all snapshots associated with this order.
    * @param body Pagination and optional date range filters for order snapshot search.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Query ecommerce_mall_order_snapshots table filtered by ecommerce_mall_order_id.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor administrator
+     * @x-autobe-specification Query ecommerce_mall_order_snapshots table
+     *   filtered by ecommerce_mall_order_id.
    *
    * Apply cursor-based pagination for efficient large result set handling.
    *
@@ -85,20 +86,21 @@ export class EcommercemallAdministratorOrdersSnapshotsController {
    * @param connection
    * @param orderId The unique identifier of the order containing this snapshot.
    * @param snapshotId The unique identifier of the snapshot to retrieve.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification 1. Validate that orderId and snapshotId are valid UUIDs
-   * 2. Query ecommerce_mall_order_snapshots table for the record matching both orderId and snapshotId
-   * 3. Verify the requested snapshot belongs to the specified order (enforce referential integrity)
-   * 4. Check authorization:
-   *    - If requester is the order owner (member_id matches): allow access
-   *    - If requester is an administrator: allow access to any order snapshot
-   *    - Otherwise: return 403 Forbidden
-   * 5. Join with related entities if needed:
-   *    - Fetch customer details from ecommerce_mall_members (customer_name, customer_phone from snapshot table already denormalized)
-   *    - No additional joins required as snapshot contains denormalized data
-   * 6. Return the snapshot record with all fields
-   * 7. Handle not found: return 404 if snapshot does not exist or does not belong to the order
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor administrator
+     * @x-autobe-specification 1. Validate that orderId and snapshotId are valid
+     *   UUIDs 2. Query ecommerce_mall_order_snapshots table for the record
+     *   matching both orderId and snapshotId 3. Verify the requested snapshot
+     *   belongs to the specified order (enforce referential integrity) 4. Check
+     *   authorization: - If requester is the order owner (member_id matches):
+     *   allow access - If requester is an administrator: allow access to any
+     *   order snapshot - Otherwise: return 403 Forbidden 5. Join with related
+     *   entities if needed: - Fetch customer details from
+     *   ecommerce_mall_members (customer_name, customer_phone from snapshot
+     *   table already denormalized) - No additional joins required as snapshot
+     *   contains denormalized data 6. Return the snapshot record with all
+     *   fields 7. Handle not found: return 404 if snapshot does not exist or
+     *   does not belong to the order
    *
    * Edge cases:
    * - Snapshot may be from a deleted order: still viewable if snapshot exists

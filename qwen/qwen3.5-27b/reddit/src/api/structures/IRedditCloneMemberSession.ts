@@ -16,8 +16,10 @@ export type IRedditCloneMemberSession = {
    *
    * This UUID identifies the specific authentication session and is used to retrieve, update, or delete session records. Each session has a globally unique identifier that distinguishes it from all other sessions across the platform.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from reddit_clone_member_sessions.id. Primary key of the session table, unique identifier for each member session.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_member_sessions.id. Primary key of the session table,
+     *   unique identifier for each member session.
    */
   id: string & tags.Format<"uuid">;
 
@@ -26,8 +28,10 @@ export type IRedditCloneMemberSession = {
    *
    * This token is used for short-term authentication of API requests. It contains user claims and expires after a short duration (typically 15 minutes). The token must be included in the Authorization header of subsequent API requests to verify the user's authenticated state.
    *
-   * @x-autobe-database-schema-property access_token
-   * @x-autobe-specification Direct mapping from reddit_clone_member_sessions.access_token. JWT access token for short-term API authentication, typically valid for 15 minutes.
+     * @x-autobe-database-schema-property access_token
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_member_sessions.access_token. JWT access token for
+     *   short-term API authentication, typically valid for 15 minutes.
    */
   access_token: string;
 
@@ -36,8 +40,10 @@ export type IRedditCloneMemberSession = {
    *
    * This field captures the client's IP address at login time for security auditing and session anomaly detection. It can be used to identify suspicious login patterns, unauthorized access attempts, or to track session origin for debugging purposes.
    *
-   * @x-autobe-database-schema-property ip
-   * @x-autobe-specification Direct mapping from reddit_clone_member_sessions.ip. Client IP address captured at login time for security auditing.
+     * @x-autobe-database-schema-property ip
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_member_sessions.ip. Client IP address captured at login
+     *   time for security auditing.
    */
   ip: string;
 
@@ -46,8 +52,10 @@ export type IRedditCloneMemberSession = {
    *
    * This field tracks the entry point URL where the user initiated the login process. It provides context for the session origin and can be used for analytics, security monitoring, or understanding user navigation patterns before authentication.
    *
-   * @x-autobe-database-schema-property href
-   * @x-autobe-specification Direct mapping from reddit_clone_member_sessions.href. Page URL where the login occurred, tracking the entry point.
+     * @x-autobe-database-schema-property href
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_member_sessions.href. Page URL where the login occurred,
+     *   tracking the entry point.
    */
   href: string;
 
@@ -56,8 +64,10 @@ export type IRedditCloneMemberSession = {
    *
    * This field captures the referring page URL that directed the user to the login page. It provides additional context about the user's navigation path before authentication. This field may be null if the user directly navigated to the login page or if the referrer information was not available.
    *
-   * @x-autobe-database-schema-property referrer
-   * @x-autobe-specification Direct mapping from reddit_clone_member_sessions.referrer. Referrer URL that led to the login page. Nullable field as referrer may not always be available.
+     * @x-autobe-database-schema-property referrer
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_member_sessions.referrer. Referrer URL that led to the
+     *   login page. Nullable field as referrer may not always be available.
    */
   referrer: string | null;
 
@@ -66,8 +76,10 @@ export type IRedditCloneMemberSession = {
    *
    * This field records the exact time when the user logged in and the session was established. It is used for session age calculations, expiration checks, audit logging, and determining how long the user has been authenticated.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from reddit_clone_member_sessions.created_at. Timestamp when the session was created (user logged in).
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_member_sessions.created_at. Timestamp when the session was
+     *   created (user logged in).
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -76,8 +88,10 @@ export type IRedditCloneMemberSession = {
    *
    * This field indicates when the refresh token will expire and the session will become invalid. After this time, the user must re-authenticate with credentials to obtain a new session. Clients should check this timestamp to determine if token refresh or re-login is needed.
    *
-   * @x-autobe-database-schema-property expired_at
-   * @x-autobe-specification Direct mapping from reddit_clone_member_sessions.expired_at. Timestamp when the session expires and refresh token becomes invalid.
+     * @x-autobe-database-schema-property expired_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_member_sessions.expired_at. Timestamp when the session
+     *   expires and refresh token becomes invalid.
    */
   expired_at: string & tags.Format<"date-time">;
 
@@ -86,8 +100,10 @@ export type IRedditCloneMemberSession = {
    *
    * This field tracks when the session was terminated through logout or revocation. Soft deletion maintains the session record for audit purposes while marking it as inactive. This field is null for active sessions and contains a timestamp for terminated sessions.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from reddit_clone_member_sessions.deleted_at. Timestamp when the session was soft-deleted (logout or revocation). Nullable field.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_member_sessions.deleted_at. Timestamp when the session was
+     *   soft-deleted (logout or revocation). Nullable field.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 
@@ -96,8 +112,11 @@ export type IRedditCloneMemberSession = {
    *
    * This nested object contains the authenticated member's summary information including their unique identifier, email, username, and public profile details. It provides context about which user account is associated with this authentication session.
    *
-   * @x-autobe-database-schema-property member
-   * @x-autobe-specification Relation mapping via JOIN from reddit_clone_member_sessions.reddit_clone_member_id to reddit_clone_members.id. Returns IRedditCloneMember.ISummary object with member details.
+     * @x-autobe-database-schema-property member
+     * @x-autobe-specification Relation mapping via JOIN from
+     *   reddit_clone_member_sessions.reddit_clone_member_id to
+     *   reddit_clone_members.id. Returns IRedditCloneMember.ISummary object
+     *   with member details.
    */
   member: IRedditCloneMember.ISummary;
 };
@@ -113,8 +132,11 @@ export namespace IRedditCloneMemberSession {
      *
      * When provided, this parameter restricts the session list to only include authentication sessions belonging to the specified member account. This is useful for users viewing their own active sessions or administrators auditing a specific member's authentication activity.
      *
-     * @x-autobe-database-schema-property reddit_clone_member_id
-     * @x-autobe-specification Filter sessions by member ID. Maps to reddit_clone_member_id foreign key column in reddit_clone_member_sessions table. When provided, only sessions belonging to the specified member are returned.
+         * @x-autobe-database-schema-property reddit_clone_member_id
+         * @x-autobe-specification Filter sessions by member ID. Maps to
+         *   reddit_clone_member_id foreign key column in
+         *   reddit_clone_member_sessions table. When provided, only sessions
+         *   belonging to the specified member are returned.
      */
     member_id?: (string & tags.Format<"uuid">) | undefined;
 
@@ -127,7 +149,11 @@ export namespace IRedditCloneMemberSession {
      *
      * **terminated**: Sessions that have been explicitly ended by user logout or administrative revocation.
      *
-     * @x-autobe-specification Filter sessions by computed status. Status is derived from deleted_at and expired_at columns: active (deleted_at IS NULL AND expired_at > NOW), expired (deleted_at IS NULL AND expired_at <= NOW), terminated (deleted_at IS NOT NULL). This is a computed field, not a direct column mapping.
+         * @x-autobe-specification Filter sessions by computed status. Status is
+         *   derived from deleted_at and expired_at columns: active (deleted_at
+         *   IS NULL AND expired_at > NOW), expired (deleted_at IS NULL AND
+         *   expired_at <= NOW), terminated (deleted_at IS NOT NULL). This is a
+         *   computed field, not a direct column mapping.
      */
     status?: "active" | "expired" | "terminated" | undefined;
 
@@ -136,8 +162,11 @@ export namespace IRedditCloneMemberSession {
      *
      * When provided, only sessions created on or after this timestamp are included in the results. Use this parameter to find sessions within a specific time period. Format: ISO 8601 date-time (e.g., 2024-01-15T10:30:00Z).
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Filter sessions created on or after this timestamp. Maps to created_at column in reddit_clone_member_sessions table. Used in WHERE clause: created_at >= created_at_from. ISO 8601 date-time format.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Filter sessions created on or after this
+         *   timestamp. Maps to created_at column in
+         *   reddit_clone_member_sessions table. Used in WHERE clause:
+         *   created_at >= created_at_from. ISO 8601 date-time format.
      */
     created_at_from?: (string & tags.Format<"date-time">) | undefined;
 
@@ -146,8 +175,11 @@ export namespace IRedditCloneMemberSession {
      *
      * When provided, only sessions created on or before this timestamp are included in the results. Use this parameter together with created_at_from to define a time window. Format: ISO 8601 date-time (e.g., 2024-01-20T15:45:00Z).
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Filter sessions created on or before this timestamp. Maps to created_at column in reddit_clone_member_sessions table. Used in WHERE clause: created_at <= created_at_to. ISO 8601 date-time format.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Filter sessions created on or before this
+         *   timestamp. Maps to created_at column in
+         *   reddit_clone_member_sessions table. Used in WHERE clause:
+         *   created_at <= created_at_to. ISO 8601 date-time format.
      */
     created_at_to?: (string & tags.Format<"date-time">) | undefined;
 
@@ -156,8 +188,11 @@ export namespace IRedditCloneMemberSession {
      *
      * When provided, only sessions that expire on or after this timestamp are included in the results. Useful for finding sessions with expiration dates within a specific range. Format: ISO 8601 date-time (e.g., 2024-02-01T00:00:00Z).
      *
-     * @x-autobe-database-schema-property expired_at
-     * @x-autobe-specification Filter sessions with expiration time on or after this timestamp. Maps to expired_at column in reddit_clone_member_sessions table. Used in WHERE clause: expired_at >= expired_at_from. ISO 8601 date-time format.
+         * @x-autobe-database-schema-property expired_at
+         * @x-autobe-specification Filter sessions with expiration time on or
+         *   after this timestamp. Maps to expired_at column in
+         *   reddit_clone_member_sessions table. Used in WHERE clause:
+         *   expired_at >= expired_at_from. ISO 8601 date-time format.
      */
     expired_at_from?: (string & tags.Format<"date-time">) | undefined;
 
@@ -166,8 +201,11 @@ export namespace IRedditCloneMemberSession {
      *
      * When provided, only sessions that expire on or before this timestamp are included in the results. Use this parameter together with expired_at_from to define an expiration time window. Format: ISO 8601 date-time (e.g., 2024-02-28T23:59:59Z).
      *
-     * @x-autobe-database-schema-property expired_at
-     * @x-autobe-specification Filter sessions with expiration time on or before this timestamp. Maps to expired_at column in reddit_clone_member_sessions table. Used in WHERE clause: expired_at <= expired_at_to. ISO 8601 date-time format.
+         * @x-autobe-database-schema-property expired_at
+         * @x-autobe-specification Filter sessions with expiration time on or
+         *   before this timestamp. Maps to expired_at column in
+         *   reddit_clone_member_sessions table. Used in WHERE clause:
+         *   expired_at <= expired_at_to. ISO 8601 date-time format.
      */
     expired_at_to?: (string & tags.Format<"date-time">) | undefined;
 
@@ -176,7 +214,10 @@ export namespace IRedditCloneMemberSession {
      *
      * Specifies which column to order the results by. Common options include created_at (session creation time), expired_at (session expiration time), or deleted_at (logout time). If not provided, results are sorted by created_at in descending order (newest first).
      *
-     * @x-autobe-specification Field name to sort results by. Computed pagination parameter, not a database column. Valid values include: created_at, expired_at, deleted_at. Default is created_at if not specified.
+         * @x-autobe-specification Field name to sort results by. Computed
+         *   pagination parameter, not a database column. Valid values include:
+         *   created_at, expired_at, deleted_at. Default is created_at if not
+         *   specified.
      */
     sort?: string | undefined;
 
@@ -187,7 +228,10 @@ export namespace IRedditCloneMemberSession {
      *
      * **desc**: Results are ordered from newest to oldest (or Z to A for text fields). This is the default direction.
      *
-     * @x-autobe-specification Sort direction for the results. Computed pagination parameter, not a database column. Valid values: asc (ascending, oldest first) or desc (descending, newest first). Default is desc if not specified.
+         * @x-autobe-specification Sort direction for the results. Computed
+         *   pagination parameter, not a database column. Valid values: asc
+         *   (ascending, oldest first) or desc (descending, newest first).
+         *   Default is desc if not specified.
      */
     order?: "asc" | "desc" | undefined;
 
@@ -196,7 +240,10 @@ export namespace IRedditCloneMemberSession {
      *
      * Specifies which page of results to return when the total number of sessions exceeds the limit. Page numbering starts from 1 (not 0). For example, page=1 returns the first set of results, page=2 returns the second set, and so on.
      *
-     * @x-autobe-specification Page number for pagination (1-indexed). Computed pagination parameter, not a database column. Minimum value is 1. Used to calculate offset for LIMIT/OFFSET query: OFFSET = (page - 1) * limit.
+         * @x-autobe-specification Page number for pagination (1-indexed).
+         *   Computed pagination parameter, not a database column. Minimum value
+         *   is 1. Used to calculate offset for LIMIT/OFFSET query: OFFSET =
+         *   (page - 1) * limit.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -205,7 +252,10 @@ export namespace IRedditCloneMemberSession {
      *
      * Controls how many sessions are included in each page of results. Valid range is 1 to 100 records. Use a smaller limit for faster responses or a larger limit to reduce the number of pages. Default is typically 20 records per page.
      *
-     * @x-autobe-specification Maximum number of records per page. Computed pagination parameter, not a database column. Range: 1 to 100. Used in SQL LIMIT clause to control result set size. Default is typically 20 if not specified.
+         * @x-autobe-specification Maximum number of records per page. Computed
+         *   pagination parameter, not a database column. Range: 1 to 100. Used
+         *   in SQL LIMIT clause to control result set size. Default is
+         *   typically 20 if not specified.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -230,8 +280,10 @@ export namespace IRedditCloneMemberSession {
      *
      * This UUID identifies a specific authentication session and can be used to reference this session in API operations such as session retrieval or termination.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from reddit_clone_member_sessions.id column. Primary key of the session record.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_member_sessions.id column. Primary key of the session
+         *   record.
      */
     id: string & tags.Format<"uuid">;
 
@@ -240,8 +292,11 @@ export namespace IRedditCloneMemberSession {
      *
      * This nested object provides the authenticated member's identification information including their email, username, account creation timestamp, and public profile details (display name, bio, avatar, karma).
      *
-     * @x-autobe-database-schema-property member
-     * @x-autobe-specification Relation via JOIN with reddit_clone_members table on reddit_clone_member_id FK. Returns IRedditCloneMember.ISummary with member account details including id, email, username, created_at, and profile.
+         * @x-autobe-database-schema-property member
+         * @x-autobe-specification Relation via JOIN with reddit_clone_members
+         *   table on reddit_clone_member_id FK. Returns
+         *   IRedditCloneMember.ISummary with member account details including
+         *   id, email, username, created_at, and profile.
      */
     member: IRedditCloneMember.ISummary;
 
@@ -250,8 +305,10 @@ export namespace IRedditCloneMemberSession {
      *
      * This field captures the client's IP address at login time for security auditing and session anomaly detection. It can be used to identify suspicious login patterns or unauthorized access attempts.
      *
-     * @x-autobe-database-schema-property ip
-     * @x-autobe-specification Direct mapping from reddit_clone_member_sessions.ip column. Stores the client IP address at login time.
+         * @x-autobe-database-schema-property ip
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_member_sessions.ip column. Stores the client IP
+         *   address at login time.
      */
     ip: string & tags.Format<"ipv4">;
 
@@ -260,8 +317,10 @@ export namespace IRedditCloneMemberSession {
      *
      * This field tracks the entry point URL where the user initiated the login process. It provides context for the session origin and can be used for analytics or security monitoring.
      *
-     * @x-autobe-database-schema-property href
-     * @x-autobe-specification Direct mapping from reddit_clone_member_sessions.href column. Stores the page URL where login occurred.
+         * @x-autobe-database-schema-property href
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_member_sessions.href column. Stores the page URL where
+         *   login occurred.
      */
     href: string & tags.Format<"uri">;
 
@@ -270,8 +329,10 @@ export namespace IRedditCloneMemberSession {
      *
      * This field captures the referring page URL that directed the user to the login page. It provides additional context about the user's navigation path before authentication. May be null if the user navigated directly to the login page.
      *
-     * @x-autobe-database-schema-property referrer
-     * @x-autobe-specification Direct mapping from reddit_clone_member_sessions.referrer column. Nullable field storing the referring page URL.
+         * @x-autobe-database-schema-property referrer
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_member_sessions.referrer column. Nullable field
+         *   storing the referring page URL.
      */
     referrer: (string & tags.Format<"uri">) | null;
 
@@ -280,8 +341,10 @@ export namespace IRedditCloneMemberSession {
      *
      * This field records the exact time when the user logged in and the session was established. It is used for session age calculations, expiration checks, and audit logging.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from reddit_clone_member_sessions.created_at column. Records the exact time when the user logged in and the session was established.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_member_sessions.created_at column. Records the exact
+         *   time when the user logged in and the session was established.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -290,8 +353,10 @@ export namespace IRedditCloneMemberSession {
      *
      * This field indicates when the refresh token will expire and the session will become invalid. After this time, the user must re-authenticate with credentials to obtain a new session.
      *
-     * @x-autobe-database-schema-property expired_at
-     * @x-autobe-specification Direct mapping from reddit_clone_member_sessions.expired_at column. Indicates when the refresh token will expire and the session will become invalid.
+         * @x-autobe-database-schema-property expired_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_member_sessions.expired_at column. Indicates when the
+         *   refresh token will expire and the session will become invalid.
      */
     expired_at: string & tags.Format<"date-time">;
 
@@ -300,8 +365,10 @@ export namespace IRedditCloneMemberSession {
      *
      * This field tracks when the session was terminated through logout or revocation. Soft deletion maintains the session record for audit purposes while marking it as inactive. Null indicates the session is currently active.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from reddit_clone_member_sessions.deleted_at column. Nullable field tracking when the session was terminated (logout or revocation).
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_member_sessions.deleted_at column. Nullable field
+         *   tracking when the session was terminated (logout or revocation).
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };

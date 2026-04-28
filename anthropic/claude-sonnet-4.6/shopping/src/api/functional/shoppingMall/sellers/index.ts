@@ -29,11 +29,12 @@ import { IShoppingMallSeller } from "../../../structures/IShoppingMallSeller";
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
  * @x-autobe-specification 1. Extract the sellerId UUID from the path parameter.
- * 2. Query the `shopping_mall_sellers` table for a record where `id = sellerId` AND `deleted_at IS NULL`.
- * 3. If no matching record is found, return a 404 Not Found error.
- * 4. Map the database record to the `IShoppingMallSeller` DTO, including: id, email, shop_name, is_banned, is_suspended, created_at, updated_at.
- * 5. Never expose password_hash in the response.
- * 6. Return the mapped DTO with HTTP 200.
+ *   2. Query the `shopping_mall_sellers` table for a record where `id =
+ *   sellerId` AND `deleted_at IS NULL`. 3. If no matching record is found,
+ *   return a 404 Not Found error. 4. Map the database record to the
+ *   `IShoppingMallSeller` DTO, including: id, email, shop_name, is_banned,
+ *   is_suspended, created_at, updated_at. 5. Never expose password_hash in the
+ *   response. 6. Return the mapped DTO with HTTP 200.
  *
  * Authorization:
  * - admin and superAdmin actors may retrieve any seller's information.

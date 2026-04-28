@@ -23,7 +23,8 @@ import { IEcommerceMallAdmin } from "../../../../../structures/IEcommerceMallAdm
  * @param props.connection
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor superAdmin
- * @x-autobe-specification Query the database to aggregate platform statistics for the admin dashboard.
+ * @x-autobe-specification Query the database to aggregate platform statistics
+ *   for the admin dashboard.
  *
  * Execute the following counts:
  * 1. Count all customers from ecommerce_mall_customers where deleted_at is null

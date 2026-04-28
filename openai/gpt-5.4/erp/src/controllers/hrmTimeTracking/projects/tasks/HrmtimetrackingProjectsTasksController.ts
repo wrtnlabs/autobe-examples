@@ -26,9 +26,11 @@ export class HrmtimetrackingProjectsTasksController {
    * @param connection
    * @param projectId Target project's unique identifier
    * @param body Information required to create a task in the project
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Implement project-scoped task creation against hrm_time_tracking_tasks inside the caller's current organization context.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Implement project-scoped task creation against
+     *   hrm_time_tracking_tasks inside the caller's current organization
+     *   context.
    *
    * 1. Resolve the authenticated actor and current organization context.
    * 2. Load hrm_time_tracking_projects by id = projectId, deleted_at IS NULL, and hrm_time_tracking_organization_id matching the current organization. If no matching project exists, reject the request.
@@ -94,9 +96,11 @@ export class HrmtimetrackingProjectsTasksController {
    * @param connection
    * @param projectId Target project's ID
    * @param body Task filters, sorting options, and pagination input for project-scoped browsing
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Validate the authenticated session and resolve the caller's currently selected organization context before any data access.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Validate the authenticated session and resolve
+     *   the caller's currently selected organization context before any data
+     *   access.
    *
    * Load the target project from hrm_time_tracking_projects by id = {projectId}, deleted_at IS NULL, and hrm_time_tracking_organization_id equal to the active organization. If no such project exists in the active organization, reject the request as not found within the current workspace scope.
    *
@@ -145,9 +149,12 @@ export class HrmtimetrackingProjectsTasksController {
    * @param connection
    * @param projectId Target project's ID
    * @param taskId Target task's ID
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Implement a read-only service method that retrieves one task from `hrm_time_tracking_tasks` by `id = taskId` and `hrm_time_tracking_project_id = projectId`, while enforcing organization and membership visibility constraints.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Implement a read-only service method that
+     *   retrieves one task from `hrm_time_tracking_tasks` by `id = taskId` and
+     *   `hrm_time_tracking_project_id = projectId`, while enforcing
+     *   organization and membership visibility constraints.
    *
    * First, resolve the caller's current organization context from authentication/session middleware. Load the referenced project from `hrm_time_tracking_projects` using `projectId`, ensuring the project belongs to the caller's current organization and is not logically removed for normal business retrieval. If no such project exists, reject the request as not found or out of scope.
    *
@@ -195,9 +202,17 @@ export class HrmtimetrackingProjectsTasksController {
    * @param projectId Target project's ID
    * @param taskId Target task's ID
    * @param body Task update data
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Load the target project from `hrm_time_tracking_projects` by `projectId` and ensure it exists within the caller's current organization context and is not logically removed for active use. Load the target task from `hrm_time_tracking_tasks` by `taskId` and verify that `hrm_time_tracking_tasks.hrm_time_tracking_project_id` matches the supplied `projectId`. Reject the request when the project or task does not exist, when the task does not belong to the project, or when the record is not available for update.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Load the target project from
+     *   `hrm_time_tracking_projects` by `projectId` and ensure it exists within
+     *   the caller's current organization context and is not logically removed
+     *   for active use. Load the target task from `hrm_time_tracking_tasks` by
+     *   `taskId` and verify that
+     *   `hrm_time_tracking_tasks.hrm_time_tracking_project_id` matches the
+     *   supplied `projectId`. Reject the request when the project or task does
+     *   not exist, when the task does not belong to the project, or when the
+     *   record is not available for update.
    *
    * Resolve the caller's actor type and organization-scoped authority. Allow the operation when the caller has broader project-management authority for the current organization, or when the caller is an employee who is a project lead for the same project. To verify project-lead authority for an employee caller, query `hrm_time_tracking_project_memberships` for a non-deleted membership row matching the caller's employee identity and the target `hrm_time_tracking_project_id`, and require `membership_role` to indicate project-lead responsibility according to the service's business-role mapping. Reject all other callers.
    *
@@ -245,9 +260,10 @@ export class HrmtimetrackingProjectsTasksController {
    * @param connection
    * @param projectId Target project's UUID in the current organization scope.
    * @param taskId Target task's UUID within the specified project.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Implement a project-scoped task deletion service for the `hrm_time_tracking_tasks` table.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Implement a project-scoped task deletion service
+     *   for the `hrm_time_tracking_tasks` table.
    *
    * 1. Authenticate the caller and resolve the current organization context from the active session.
    * 2. Authorize the caller:

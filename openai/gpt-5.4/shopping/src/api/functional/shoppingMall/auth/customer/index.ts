@@ -25,7 +25,13 @@ import { IShoppingMallCustomer } from "../../../../structures/IShoppingMallCusto
  * @param props.body Customer registration payload containing the email and password required to create a customer account.
  * @x-autobe-authorization-type join
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Implement customer registration by validating the incoming join payload, normalizing the email address to a canonical form, and verifying that no active or deleted customer record already occupies the unique email constraint in shopping_mall_customers. Hash the provided password before persistence. Create a new shopping_mall_customers row with a generated UUID, email, password_hash, created_at, and updated_at, leaving banned_at and deleted_at as null.
+ * @x-autobe-specification Implement customer registration by validating the
+ *   incoming join payload, normalizing the email address to a canonical form,
+ *   and verifying that no active or deleted customer record already occupies
+ *   the unique email constraint in shopping_mall_customers. Hash the provided
+ *   password before persistence. Create a new shopping_mall_customers row with
+ *   a generated UUID, email, password_hash, created_at, and updated_at, leaving
+ *   banned_at and deleted_at as null.
  *
  * After successful account creation, create an authenticated session context consistent with the dedicated actor-session pattern represented by shopping_mall_customer_sessions. Persist a new session row containing the new customer ID, the observed client ip, href, referrer, created_at, and expired_at derived from the JWT/session policy. Return IShoppingMallCustomer.IAuthorized containing the access token, refresh token, and authorized customer/session information expected by the shared authorization DTO contract.
  *
@@ -128,7 +134,11 @@ export namespace join {
  * @param props.body Customer login payload containing the email and password used to authenticate an existing customer account.
  * @x-autobe-authorization-type login
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Implement customer login by locating the customer record in shopping_mall_customers using the submitted email, verifying the supplied password against password_hash, and rejecting authentication when the account does not exist, the password is invalid, the account is banned, or the account has been deleted from active use.
+ * @x-autobe-specification Implement customer login by locating the customer
+ *   record in shopping_mall_customers using the submitted email, verifying the
+ *   supplied password against password_hash, and rejecting authentication when
+ *   the account does not exist, the password is invalid, the account is banned,
+ *   or the account has been deleted from active use.
  *
  * Specifically enforce the loaded business requirement that a banned customer cannot log in through normal sign-in by checking banned_at before issuing tokens. Also reject accounts with deleted_at set because the requirements say the customer identity and profile are removed from active use after account deletion even though historical references are preserved. On successful credential validation, create a new shopping_mall_customer_sessions row containing shopping_mall_customer_id, ip, href, referrer, created_at, and expired_at.
  *
@@ -231,7 +241,12 @@ export namespace login {
  * @param props.body Customer refresh payload used to renew authorization from an existing valid customer session.
  * @x-autobe-authorization-type refresh
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Implement token refresh by validating the submitted refresh credential from IShoppingMallCustomer.IRefresh, resolving the linked customer session, and confirming that the corresponding shopping_mall_customer_sessions record is still valid. The implementation must verify the session exists, has not passed expired_at, and belongs to a customer account that remains eligible for authentication.
+ * @x-autobe-specification Implement token refresh by validating the submitted
+ *   refresh credential from IShoppingMallCustomer.IRefresh, resolving the
+ *   linked customer session, and confirming that the corresponding
+ *   shopping_mall_customer_sessions record is still valid. The implementation
+ *   must verify the session exists, has not passed expired_at, and belongs to a
+ *   customer account that remains eligible for authentication.
  *
  * Load the associated shopping_mall_customers row through shopping_mall_customer_id and re-check account state before issuing new tokens. Deny refresh when banned_at is set or deleted_at is set, because the actor must not regain access through refresh when normal authentication is no longer allowed. If the refresh contract rotates session identifiers or refresh tokens, update the session record or replacement record consistently with the platform token strategy while preserving auditability.
  *

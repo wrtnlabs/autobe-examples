@@ -26,9 +26,9 @@ export class ErphrmAdminEmployeesContractsController {
    * @param connection
    * @param employeeId Unique identifier of the employee for whom the contract is being created. The employee must exist and belong to the current organization context.
    * @param body Contract creation payload containing employment terms including start date, compensation details, and working hours. All required fields must be provided; optional fields may be omitted.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Create a new contract for the specified employee.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Create a new contract for the specified employee.
    *
    * 1. Validate the authenticated user has employee:manage permission in the current organization context.
    * 2. Verify the employeeId exists and belongs to the current organization.
@@ -83,9 +83,10 @@ export class ErphrmAdminEmployeesContractsController {
    * @param connection
    * @param employeeId Unique identifier of the employee whose contracts to retrieve (UUID format)
    * @param body Search criteria and pagination parameters for filtering employee contracts
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query erp_hrm_contracts table filtered by erp_hrm_employee_id matching the path parameter.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Query erp_hrm_contracts table filtered by
+     *   erp_hrm_employee_id matching the path parameter.
    *
    * Apply search filters from request body:
    * - Filter by date range (start_date_from, start_date_to, end_date_from, end_date_to)
@@ -134,9 +135,11 @@ export class ErphrmAdminEmployeesContractsController {
    * @param connection
    * @param employeeId Unique identifier of the employee who owns the contract (global scope)
    * @param contractId Unique identifier of the contract to retrieve (scoped to employee)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Retrieve a single contract from the erp_hrm_contracts table using the composite key of employee_id and contract_id.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Retrieve a single contract from the
+     *   erp_hrm_contracts table using the composite key of employee_id and
+     *   contract_id.
    *
    * 1. Verify the requesting user has permission to view contracts:
    *    - Allow if the requesting user's employee ID matches the employeeId path parameter
@@ -189,17 +192,21 @@ export class ErphrmAdminEmployeesContractsController {
    * @param employeeId Unique identifier of the employee who owns this contract (UUID format).
    * @param contractId Unique identifier of the contract to update (UUID format).
    * @param body Fields to update on the active contract. Only provided fields are modified; omitted fields retain their current values.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification 1. Validate the authenticated user has employee:manage permission in the organization context.
-   * 2. Verify the employeeId exists and belongs to the current organization.
-   * 3. Retrieve the contract by contractId and verify it belongs to the specified employee.
-   * 4. Validate the contract is still active (end_date is null OR end_date is in the future).
-   * 5. Reject update if contract has an end_date in the past (historical/ended contracts are immutable).
-   * 6. Validate provided fields: pay_rate (positive number), pay_period (one of: hourly, daily, weekly, monthly), working_hours_per_week (positive number), end_date (must be after or equal to start_date).
-   * 7. Update only the provided fields; omit fields are left unchanged.
-   * 8. Set updated_at to current timestamp.
-   * 9. Return the fully updated contract entity.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification 1. Validate the authenticated user has
+     *   employee:manage permission in the organization context. 2. Verify the
+     *   employeeId exists and belongs to the current organization. 3. Retrieve
+     *   the contract by contractId and verify it belongs to the specified
+     *   employee. 4. Validate the contract is still active (end_date is null OR
+     *   end_date is in the future). 5. Reject update if contract has an
+     *   end_date in the past (historical/ended contracts are immutable). 6.
+     *   Validate provided fields: pay_rate (positive number), pay_period (one
+     *   of: hourly, daily, weekly, monthly), working_hours_per_week (positive
+     *   number), end_date (must be after or equal to start_date). 7. Update
+     *   only the provided fields; omit fields are left unchanged. 8. Set
+     *   updated_at to current timestamp. 9. Return the fully updated contract
+     *   entity.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Put(":contractId")
@@ -238,9 +245,15 @@ export class ErphrmAdminEmployeesContractsController {
    * @param connection
    * @param employeeId Unique identifier of the employee who owns the contract (global scope)
    * @param contractId Unique identifier of the contract to delete (scoped to employee)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Validate the employee exists within the current organization context. Verify the contract exists and belongs to the specified employee. Ensure the contract is the current active contract (end_date is null or end_date is after current date). Reject deletion if the contract has an end_date in the past (immutable historical record). Perform cascade delete of the contract record from erp_hrm_contracts table. Return null on successful deletion.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Validate the employee exists within the current
+     *   organization context. Verify the contract exists and belongs to the
+     *   specified employee. Ensure the contract is the current active contract
+     *   (end_date is null or end_date is after current date). Reject deletion
+     *   if the contract has an end_date in the past (immutable historical
+     *   record). Perform cascade delete of the contract record from
+     *   erp_hrm_contracts table. Return null on successful deletion.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Delete(":contractId")

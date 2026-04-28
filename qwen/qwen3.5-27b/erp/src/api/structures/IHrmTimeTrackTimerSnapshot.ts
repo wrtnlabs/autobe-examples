@@ -20,8 +20,10 @@ export type IHrmTimeTrackTimerSnapshot = {
    *
    * This UUID serves as the primary key for the snapshot, allowing precise identification and retrieval of individual audit trail entries. Each timer lifecycle event (start, stop, discard, edit) generates a unique snapshot with its own identifier.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from hrm_time_track_timer_snapshots.id. Primary key uniquely identifying each timer snapshot record.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_timer_snapshots.id. Primary key uniquely identifying
+     *   each timer snapshot record.
    */
   id: string & tags.Format<"uuid">;
 
@@ -30,8 +32,11 @@ export type IHrmTimeTrackTimerSnapshot = {
    *
    * This field categorizes the snapshot by the event that created it: 'start' when a timer begins tracking time, 'stop' when a timer completes and records duration, 'discard' when a timer is cancelled without recording time, or 'edit' when timer attributes are modified after creation.
    *
-   * @x-autobe-database-schema-property event_type
-   * @x-autobe-specification Direct mapping from hrm_time_track_timer_snapshots.event_type. Allowed values: 'start', 'stop', 'discard', 'edit'. Indicates which timer lifecycle event triggered this snapshot.
+     * @x-autobe-database-schema-property event_type
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_timer_snapshots.event_type. Allowed values: 'start',
+     *   'stop', 'discard', 'edit'. Indicates which timer lifecycle event
+     *   triggered this snapshot.
    */
   event_type: string;
 
@@ -40,8 +45,11 @@ export type IHrmTimeTrackTimerSnapshot = {
    *
    * For 'start' events, this value is 0. For 'stop' events, this contains the total tracked duration. For 'discard' events, this may contain partial duration or 0. For 'edit' events, this reflects the modified duration. Stored as an integer for precise time tracking.
    *
-   * @x-autobe-database-schema-property duration_seconds
-   * @x-autobe-specification Direct mapping from hrm_time_track_timer_snapshots.duration_seconds. Integer value representing the timer duration in seconds at the time of the snapshot event.
+     * @x-autobe-database-schema-property duration_seconds
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_timer_snapshots.duration_seconds. Integer value
+     *   representing the timer duration in seconds at the time of the snapshot
+     *   event.
    */
   duration_seconds: number & tags.Type<"int32">;
 
@@ -50,8 +58,10 @@ export type IHrmTimeTrackTimerSnapshot = {
    *
    * This field captures the start time of the timer session and remains constant across all snapshots for the same timer, even if the timer is edited. Used to calculate elapsed time and provide audit trail of when work began.
    *
-   * @x-autobe-database-schema-property started_at
-   * @x-autobe-specification Direct mapping from hrm_time_track_timer_snapshots.started_at. DateTime in ISO 8601 format indicating when the timer session originally began.
+     * @x-autobe-database-schema-property started_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_timer_snapshots.started_at. DateTime in ISO 8601 format
+     *   indicating when the timer session originally began.
    */
   started_at: string & tags.Format<"date-time">;
 
@@ -60,8 +70,11 @@ export type IHrmTimeTrackTimerSnapshot = {
    *
    * This field is populated for 'stop' and 'edit' events when the timer has been completed. For 'start' events and active timers, this field is null. Used to calculate total duration and provide audit trail of when work ended.
    *
-   * @x-autobe-database-schema-property stopped_at
-   * @x-autobe-specification Direct mapping from hrm_time_track_timer_snapshots.stopped_at. Nullable DateTime in ISO 8601 format. Populated for 'stop' and 'edit' events when timer has been completed. Null for 'start' events and active timers.
+     * @x-autobe-database-schema-property stopped_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_timer_snapshots.stopped_at. Nullable DateTime in ISO
+     *   8601 format. Populated for 'stop' and 'edit' events when timer has been
+     *   completed. Null for 'start' events and active timers.
    */
   stopped_at: (string & tags.Format<"date-time">) | null;
 
@@ -70,8 +83,10 @@ export type IHrmTimeTrackTimerSnapshot = {
    *
    * This field captures any additional context or comments provided by the employee about the work being tracked. The note is denormalized from the parent timer to preserve the exact text at the time of the snapshot, ensuring audit trail accuracy.
    *
-   * @x-autobe-database-schema-property note
-   * @x-autobe-specification Direct mapping from hrm_time_track_timer_snapshots.note. Nullable string field capturing optional work description or context provided by the employee.
+     * @x-autobe-database-schema-property note
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_timer_snapshots.note. Nullable string field capturing
+     *   optional work description or context provided by the employee.
    */
   note: string | null;
 
@@ -80,8 +95,10 @@ export type IHrmTimeTrackTimerSnapshot = {
    *
    * This field indicates when the timer event occurred and the snapshot was recorded. It serves as the chronological marker for the audit trail, allowing reconstruction of the complete timer lifecycle sequence.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from hrm_time_track_timer_snapshots.created_at. DateTime in ISO 8601 format indicating when the timer event occurred and the snapshot was recorded.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_timer_snapshots.created_at. DateTime in ISO 8601 format
+     *   indicating when the timer event occurred and the snapshot was recorded.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -90,8 +107,12 @@ export type IHrmTimeTrackTimerSnapshot = {
    *
    * This relation provides access to the timer session's current state and identification. The snapshot is linked to exactly one timer, and multiple snapshots can exist for a single timer as it progresses through its lifecycle.
    *
-   * @x-autobe-database-schema-property timer
-   * @x-autobe-specification Relation mapping from hrm_time_track_timer_snapshots.timer relation. JOIN on hrm_time_track_timer_id to hrm_time_track_timers.id. Returns IHrmTimeTrackTimer.ISummary object with timer identification and status information.
+     * @x-autobe-database-schema-property timer
+     * @x-autobe-specification Relation mapping from
+     *   hrm_time_track_timer_snapshots.timer relation. JOIN on
+     *   hrm_time_track_timer_id to hrm_time_track_timers.id. Returns
+     *   IHrmTimeTrackTimer.ISummary object with timer identification and status
+     *   information.
    */
   timer: IHrmTimeTrackTimer.ISummary;
 
@@ -100,8 +121,12 @@ export type IHrmTimeTrackTimerSnapshot = {
    *
    * This denormalized relation preserves the employee's identity and organizational context at the time of the snapshot event. The data remains accurate even if the employee record is updated or deleted, ensuring complete audit trail integrity.
    *
-   * @x-autobe-database-schema-property employee
-   * @x-autobe-specification Relation mapping from hrm_time_track_timer_snapshots.employee relation. JOIN on hrm_time_track_employee_id to hrm_time_track_employees.id. Returns IHrmTimeTrackEmployee.ISummary object with employee identity and organizational context. Denormalized for audit trail integrity.
+     * @x-autobe-database-schema-property employee
+     * @x-autobe-specification Relation mapping from
+     *   hrm_time_track_timer_snapshots.employee relation. JOIN on
+     *   hrm_time_track_employee_id to hrm_time_track_employees.id. Returns
+     *   IHrmTimeTrackEmployee.ISummary object with employee identity and
+     *   organizational context. Denormalized for audit trail integrity.
    */
   employee: IHrmTimeTrackEmployee.ISummary;
 
@@ -110,8 +135,12 @@ export type IHrmTimeTrackTimerSnapshot = {
    *
    * This denormalized relation preserves the project's identification and status at the time of the snapshot event. Accurate project time tracking is maintained even if the project record is modified or deleted, ensuring reliable audit and reporting data.
    *
-   * @x-autobe-database-schema-property project
-   * @x-autobe-specification Relation mapping from hrm_time_track_timer_snapshots.project relation. JOIN on hrm_time_track_project_id to hrm_time_track_projects.id. Returns IHrmTimeTrackProject.ISummary object with project identification and status. Denormalized for audit trail integrity.
+     * @x-autobe-database-schema-property project
+     * @x-autobe-specification Relation mapping from
+     *   hrm_time_track_timer_snapshots.project relation. JOIN on
+     *   hrm_time_track_project_id to hrm_time_track_projects.id. Returns
+     *   IHrmTimeTrackProject.ISummary object with project identification and
+     *   status. Denormalized for audit trail integrity.
    */
   project: IHrmTimeTrackProject.ISummary;
 
@@ -120,8 +149,13 @@ export type IHrmTimeTrackTimerSnapshot = {
    *
    * This denormalized relation preserves the task association at the time of the snapshot event. Timers can be associated with projects only (without specific tasks), making this field nullable. The data remains accurate even if the task record is modified or deleted.
    *
-   * @x-autobe-database-schema-property task
-   * @x-autobe-specification Relation mapping from hrm_time_track_timer_snapshots.task relation. LEFT JOIN on hrm_time_track_task_id to hrm_time_track_tasks.id. Returns IHrmTimeTrackTask.ISummary object or null. Timers can be associated with projects only (without specific tasks), making this field nullable. Denormalized for audit trail integrity.
+     * @x-autobe-database-schema-property task
+     * @x-autobe-specification Relation mapping from
+     *   hrm_time_track_timer_snapshots.task relation. LEFT JOIN on
+     *   hrm_time_track_task_id to hrm_time_track_tasks.id. Returns
+     *   IHrmTimeTrackTask.ISummary object or null. Timers can be associated
+     *   with projects only (without specific tasks), making this field
+     *   nullable. Denormalized for audit trail integrity.
    */
   task: IHrmTimeTrackTask.ISummary | null;
 
@@ -130,8 +164,12 @@ export type IHrmTimeTrackTimerSnapshot = {
    *
    * This relation identifies which authenticated user performed the action (start, stop, discard, or edit) that triggered the snapshot event. Provides accountability for timer operations in the audit trail.
    *
-   * @x-autobe-database-schema-property member
-   * @x-autobe-specification Relation mapping from hrm_time_track_timer_snapshots.member relation (created_by FK). JOIN on created_by to hrm_time_track_members.id. Returns IHrmTimeTrackMember.ISummary object with member identity. Captures which user performed the action that triggered the snapshot event.
+     * @x-autobe-database-schema-property member
+     * @x-autobe-specification Relation mapping from
+     *   hrm_time_track_timer_snapshots.member relation (created_by FK). JOIN on
+     *   created_by to hrm_time_track_members.id. Returns
+     *   IHrmTimeTrackMember.ISummary object with member identity. Captures
+     *   which user performed the action that triggered the snapshot event.
    */
   member: IHrmTimeTrackMember.ISummary;
 };
@@ -195,8 +233,10 @@ export namespace IHrmTimeTrackTimerSnapshot {
      *
      * This UUID identifies a specific point-in-time capture of a timer's state during its lifecycle event.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from hrm_time_track_timer_snapshots.id. Primary key uniquely identifying each timer snapshot record.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_timer_snapshots.id. Primary key uniquely identifying
+         *   each timer snapshot record.
      */
     id: string & tags.Format<"uuid">;
 
@@ -209,8 +249,11 @@ export namespace IHrmTimeTrackTimerSnapshot {
      * - 'discard': Timer was cancelled without recording time
      * - 'edit': Timer attributes were modified after creation
      *
-     * @x-autobe-database-schema-property event_type
-     * @x-autobe-specification Direct mapping from hrm_time_track_timer_snapshots.event_type. Allowed values: 'start', 'stop', 'discard', 'edit'. Indicates the type of timer lifecycle event that triggered this snapshot.
+         * @x-autobe-database-schema-property event_type
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_timer_snapshots.event_type. Allowed values: 'start',
+         *   'stop', 'discard', 'edit'. Indicates the type of timer lifecycle
+         *   event that triggered this snapshot.
      */
     event_type: string;
 
@@ -219,8 +262,11 @@ export namespace IHrmTimeTrackTimerSnapshot {
      *
      * For 'start' events, this value is 0. For 'stop' events, this contains the total tracked duration. For 'discard' events, this may contain partial duration or 0. For 'edit' events, this reflects the modified duration.
      *
-     * @x-autobe-database-schema-property duration_seconds
-     * @x-autobe-specification Direct mapping from hrm_time_track_timer_snapshots.duration_seconds. Integer value representing the duration in seconds recorded at the time of the snapshot event.
+         * @x-autobe-database-schema-property duration_seconds
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_timer_snapshots.duration_seconds. Integer value
+         *   representing the duration in seconds recorded at the time of the
+         *   snapshot event.
      */
     duration_seconds: number & tags.Type<"int32">;
 
@@ -229,8 +275,11 @@ export namespace IHrmTimeTrackTimerSnapshot {
      *
      * This field captures the start time of the timer session and remains constant across all snapshots for the same timer, even if the timer is edited.
      *
-     * @x-autobe-database-schema-property started_at
-     * @x-autobe-specification Direct mapping from hrm_time_track_timer_snapshots.started_at. Timestamp when the timer was originally started. This field remains constant across all snapshots for the same timer.
+         * @x-autobe-database-schema-property started_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_timer_snapshots.started_at. Timestamp when the timer
+         *   was originally started. This field remains constant across all
+         *   snapshots for the same timer.
      */
     started_at: string & tags.Format<"date-time">;
 
@@ -239,8 +288,11 @@ export namespace IHrmTimeTrackTimerSnapshot {
      *
      * This field is populated for 'stop' and 'edit' events when the timer has been completed. For 'start' events and active timers, this field is null.
      *
-     * @x-autobe-database-schema-property stopped_at
-     * @x-autobe-specification Direct mapping from hrm_time_track_timer_snapshots.stopped_at. Nullable timestamp populated for 'stop' and 'edit' events when the timer has been completed. Null for 'start' events and active timers.
+         * @x-autobe-database-schema-property stopped_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_timer_snapshots.stopped_at. Nullable timestamp
+         *   populated for 'stop' and 'edit' events when the timer has been
+         *   completed. Null for 'start' events and active timers.
      */
     stopped_at: (string & tags.Format<"date-time">) | null;
 
@@ -249,8 +301,11 @@ export namespace IHrmTimeTrackTimerSnapshot {
      *
      * This field captures any additional context or comments provided by the employee about the time being tracked. The note is denormalized from the parent timer to preserve the exact text at the time of the snapshot.
      *
-     * @x-autobe-database-schema-property note
-     * @x-autobe-specification Direct mapping from hrm_time_track_timer_snapshots.note. Nullable string containing optional note or description attached to the timer. Denormalized from parent timer to preserve exact text at snapshot time.
+         * @x-autobe-database-schema-property note
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_timer_snapshots.note. Nullable string containing
+         *   optional note or description attached to the timer. Denormalized
+         *   from parent timer to preserve exact text at snapshot time.
      */
     note: string | null;
 
@@ -259,8 +314,11 @@ export namespace IHrmTimeTrackTimerSnapshot {
      *
      * This field indicates when the timer event occurred and the snapshot was recorded. It serves as the chronological marker for the audit trail.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from hrm_time_track_timer_snapshots.created_at. Timestamp when this snapshot record was created, indicating when the timer event occurred.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_timer_snapshots.created_at. Timestamp when this
+         *   snapshot record was created, indicating when the timer event
+         *   occurred.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -269,8 +327,12 @@ export namespace IHrmTimeTrackTimerSnapshot {
      *
      * This field provides the employee's summary information including their identity, position, department, and role within the organization.
      *
-     * @x-autobe-database-schema-property employee
-     * @x-autobe-specification Relation mapping from hrm_time_track_timer_snapshots.employee (via hrm_time_track_employee_id FK). JOIN to hrm_time_track_employees table. Returns IHrmTimeTrackEmployee.ISummary object representing the employee who owns the timer.
+         * @x-autobe-database-schema-property employee
+         * @x-autobe-specification Relation mapping from
+         *   hrm_time_track_timer_snapshots.employee (via
+         *   hrm_time_track_employee_id FK). JOIN to hrm_time_track_employees
+         *   table. Returns IHrmTimeTrackEmployee.ISummary object representing
+         *   the employee who owns the timer.
      */
     employee: IHrmTimeTrackEmployee.ISummary;
 
@@ -279,8 +341,12 @@ export namespace IHrmTimeTrackTimerSnapshot {
      *
      * This field provides the project's summary information including name, status, and organizational context. Project association is required for all timers.
      *
-     * @x-autobe-database-schema-property project
-     * @x-autobe-specification Relation mapping from hrm_time_track_timer_snapshots.project (via hrm_time_track_project_id FK). JOIN to hrm_time_track_projects table. Returns IHrmTimeTrackProject.ISummary object representing the project the timer is associated with.
+         * @x-autobe-database-schema-property project
+         * @x-autobe-specification Relation mapping from
+         *   hrm_time_track_timer_snapshots.project (via
+         *   hrm_time_track_project_id FK). JOIN to hrm_time_track_projects
+         *   table. Returns IHrmTimeTrackProject.ISummary object representing
+         *   the project the timer is associated with.
      */
     project: IHrmTimeTrackProject.ISummary;
 
@@ -289,8 +355,12 @@ export namespace IHrmTimeTrackTimerSnapshot {
      *
      * This field provides the task's summary information if the timer is associated with a specific task. Timers can be associated with projects only (without specific tasks), making this field nullable.
      *
-     * @x-autobe-database-schema-property task
-     * @x-autobe-specification Relation mapping from hrm_time_track_timer_snapshots.task (via hrm_time_track_task_id FK, nullable). LEFT JOIN to hrm_time_track_tasks table. Returns IHrmTimeTrackTask.ISummary or null. Task association is optional when starting a timer.
+         * @x-autobe-database-schema-property task
+         * @x-autobe-specification Relation mapping from
+         *   hrm_time_track_timer_snapshots.task (via hrm_time_track_task_id FK,
+         *   nullable). LEFT JOIN to hrm_time_track_tasks table. Returns
+         *   IHrmTimeTrackTask.ISummary or null. Task association is optional
+         *   when starting a timer.
      */
     task: IHrmTimeTrackTask.ISummary | null;
 
@@ -299,8 +369,11 @@ export namespace IHrmTimeTrackTimerSnapshot {
      *
      * This field identifies which user performed the action that triggered the snapshot event, providing accountability for timer operations.
      *
-     * @x-autobe-database-schema-property member
-     * @x-autobe-specification Relation mapping from hrm_time_track_timer_snapshots.member (via created_by FK). JOIN to hrm_time_track_members table. Returns IHrmTimeTrackMember.ISummary object representing the member who created this snapshot event.
+         * @x-autobe-database-schema-property member
+         * @x-autobe-specification Relation mapping from
+         *   hrm_time_track_timer_snapshots.member (via created_by FK). JOIN to
+         *   hrm_time_track_members table. Returns IHrmTimeTrackMember.ISummary
+         *   object representing the member who created this snapshot event.
      */
     creator: IHrmTimeTrackMember.ISummary;
   };

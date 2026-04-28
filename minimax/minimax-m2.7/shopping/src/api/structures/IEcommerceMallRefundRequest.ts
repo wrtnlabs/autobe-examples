@@ -37,8 +37,10 @@ export namespace IEcommerceMallRefundRequest {
      *
      * **Guidelines**: Provide specific details such as product defects, wrong item received, or item not matching description. Vague reasons like 'not satisfied' may result in rejection.
      *
-     * @x-autobe-database-schema-property reason
-     * @x-autobe-specification Direct mapping to ecommerce_mall_refund_requests.reason column. Stores the customer-provided text explaining why the refund is requested.
+         * @x-autobe-database-schema-property reason
+         * @x-autobe-specification Direct mapping to
+         *   ecommerce_mall_refund_requests.reason column. Stores the
+         *   customer-provided text explaining why the refund is requested.
      */
     reason: string;
   };
@@ -58,7 +60,16 @@ export namespace IEcommerceMallRefundRequest {
      *
      * **Constraints**: Should be a clear, professional explanation suitable for customer-facing communication.
      *
-     * @x-autobe-specification This request body's reason field is stored in the seller_response_reason column of the ecommerce_mall_refund_request_snapshots table when a rejection snapshot is created. The operation: 1) Creates a new refund_request_snapshot with seller_response='rejected' and seller_response_reason=<this value>. 2) Updates the refund_request status to 'rejected' and seller_response_at to current timestamp. This is NOT stored in the reason column of ecommerce_mall_refund_requests (which holds the customer's original refund request reason).
+         * @x-autobe-specification This request body's reason field is stored in
+         *   the seller_response_reason column of the
+         *   ecommerce_mall_refund_request_snapshots table when a rejection
+         *   snapshot is created. The operation: 1) Creates a new
+         *   refund_request_snapshot with seller_response='rejected' and
+         *   seller_response_reason=<this value>. 2) Updates the refund_request
+         *   status to 'rejected' and seller_response_at to current timestamp.
+         *   This is NOT stored in the reason column of
+         *   ecommerce_mall_refund_requests (which holds the customer's original
+         *   refund request reason).
      */
     reason?: string | undefined;
   };
@@ -129,7 +140,10 @@ export namespace IEcommerceMallRefundRequest {
      *
      * **Usage**: Combine with createdBefore to define a date range, or use alone to find requests after a specific date.
      *
-     * @x-autobe-specification Query parameter for filtering by creation date lower bound. Applied as created_at >= createdAfter comparison against ecommerce_mall_refund_requests.created_at. No direct column mapping - this is a filter parameter.
+         * @x-autobe-specification Query parameter for filtering by creation
+         *   date lower bound. Applied as created_at >= createdAfter comparison
+         *   against ecommerce_mall_refund_requests.created_at. No direct column
+         *   mapping - this is a filter parameter.
      */
     createdAfter?: (string & tags.Format<"date-time">) | undefined;
 
@@ -142,7 +156,10 @@ export namespace IEcommerceMallRefundRequest {
      *
      * **Usage**: Combine with createdAfter to define a date range, or use alone to find requests before a specific date.
      *
-     * @x-autobe-specification Query parameter for filtering by creation date upper bound. Applied as created_at <= createdBefore comparison against ecommerce_mall_refund_requests.created_at. No direct column mapping - this is a filter parameter.
+         * @x-autobe-specification Query parameter for filtering by creation
+         *   date upper bound. Applied as created_at <= createdBefore comparison
+         *   against ecommerce_mall_refund_requests.created_at. No direct column
+         *   mapping - this is a filter parameter.
      */
     createdBefore?: (string & tags.Format<"date-time">) | undefined;
 
@@ -155,7 +172,9 @@ export namespace IEcommerceMallRefundRequest {
      *
      * **Usage**: Use with page parameter to navigate through large result sets.
      *
-     * @x-autobe-specification Pagination control parameter. Calculates offset as (page - 1) * limit. No direct database column mapping. Applies to the query result set size.
+         * @x-autobe-specification Pagination control parameter. Calculates
+         *   offset as (page - 1) * limit. No direct database column mapping.
+         *   Applies to the query result set size.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -170,7 +189,9 @@ export namespace IEcommerceMallRefundRequest {
      *
      * **Usage**: To get page 3 with 20 items per page, set page=3 and limit=20.
      *
-     * @x-autobe-specification Pagination control parameter. Calculates offset as (page - 1) * limit. No direct database column mapping. Controls which page of results to return.
+         * @x-autobe-specification Pagination control parameter. Calculates
+         *   offset as (page - 1) * limit. No direct database column mapping.
+         *   Controls which page of results to return.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -186,7 +207,11 @@ export namespace IEcommerceMallRefundRequest {
      *
      * **Usage**: Omit to return all statuses. Specify one status to filter results.
      *
-     * @x-autobe-specification Query parameter for filtering by status. Applied as status = status comparison against ecommerce_mall_refund_requests.status. Accepts values: pending, approved, rejected. No direct column mapping - this is a filter parameter.
+         * @x-autobe-specification Query parameter for filtering by status.
+         *   Applied as status = status comparison against
+         *   ecommerce_mall_refund_requests.status. Accepts values: pending,
+         *   approved, rejected. No direct column mapping - this is a filter
+         *   parameter.
      */
     status?: "pending" | "approved" | "rejected" | undefined;
   };

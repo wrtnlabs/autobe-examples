@@ -26,7 +26,9 @@ export type IPlatformRoleAnalytic = {
    *
    * This count represents the total result set size before pagination, allowing clients to determine the total number of pages available.
    *
-   * @x-autobe-specification Computed: SELECT COUNT(*) FROM hrm_platform_roles WHERE organization_id = :orgId AND [role_kind filter] AND [name filter] AND [has_employees filter] AND [permission count filters].
+     * @x-autobe-specification Computed: SELECT COUNT(*) FROM hrm_platform_roles
+     *   WHERE organization_id = :orgId AND [role_kind filter] AND [name filter]
+     *   AND [has_employees filter] AND [permission count filters].
    */
   total_count: number & tags.Type<"int32"> & tags.Minimum<0>;
 
@@ -35,7 +37,9 @@ export type IPlatformRoleAnalytic = {
    *
    * Built-in roles are pre-defined by the system and cannot be modified by organization administrators. This count helps track the distribution between system roles and custom roles.
    *
-   * @x-autobe-specification Computed: SELECT COUNT(*) FROM hrm_platform_roles WHERE organization_id = :orgId AND role_kind = 'built_in' AND [name filter] AND [has_employees filter] AND [permission count filters].
+     * @x-autobe-specification Computed: SELECT COUNT(*) FROM hrm_platform_roles
+     *   WHERE organization_id = :orgId AND role_kind = 'built_in' AND [name
+     *   filter] AND [has_employees filter] AND [permission count filters].
    */
   built_in_count: number & tags.Type<"int32"> & tags.Minimum<0>;
 
@@ -44,7 +48,9 @@ export type IPlatformRoleAnalytic = {
    *
    * Custom roles are created by organization administrators with specific permission combinations tailored to organizational needs. This count helps track custom role usage.
    *
-   * @x-autobe-specification Computed: SELECT COUNT(*) FROM hrm_platform_roles WHERE organization_id = :orgId AND role_kind = 'custom' AND [name filter] AND [has_employees filter] AND [permission count filters].
+     * @x-autobe-specification Computed: SELECT COUNT(*) FROM hrm_platform_roles
+     *   WHERE organization_id = :orgId AND role_kind = 'custom' AND [name
+     *   filter] AND [has_employees filter] AND [permission count filters].
    */
   custom_count: number & tags.Type<"int32"> & tags.Minimum<0>;
 
@@ -53,7 +59,11 @@ export type IPlatformRoleAnalytic = {
    *
    * Each role's permission count is computed separately, and this aggregate represents the total permission assignments across all roles. This metric helps assess the overall permission complexity of the organization.
    *
-   * @x-autobe-specification Computed: SELECT SUM(permission_count) FROM (SELECT role.id, COUNT(DISTINCT permission.id) AS permission_count FROM hrm_platform_roles role LEFT JOIN hrm_platform_permissions permission ON permission.role_id = role.id AND permission.deleted_at IS NULL WHERE role.organization_id = :orgId AND [filters] GROUP BY role.id).
+     * @x-autobe-specification Computed: SELECT SUM(permission_count) FROM
+     *   (SELECT role.id, COUNT(DISTINCT permission.id) AS permission_count FROM
+     *   hrm_platform_roles role LEFT JOIN hrm_platform_permissions permission
+     *   ON permission.role_id = role.id AND permission.deleted_at IS NULL WHERE
+     *   role.organization_id = :orgId AND [filters] GROUP BY role.id).
    */
   total_permission_count: number & tags.Type<"int32"> & tags.Minimum<0>;
 
@@ -62,7 +72,10 @@ export type IPlatformRoleAnalytic = {
    *
    * This metric indicates how many roles are actively being used in the organization. Roles with zero employees may be unused templates or deprecated roles that could be reviewed.
    *
-   * @x-autobe-specification Computed: SELECT COUNT(*) FROM hrm_platform_roles WHERE organization_id = :orgId AND [role_kind filter] AND [name filter] AND EXISTS(SELECT 1 FROM hrm_platform_employees WHERE role_id = hrm_platform_roles.id) AND [permission count filters].
+     * @x-autobe-specification Computed: SELECT COUNT(*) FROM hrm_platform_roles
+     *   WHERE organization_id = :orgId AND [role_kind filter] AND [name filter]
+     *   AND EXISTS(SELECT 1 FROM hrm_platform_employees WHERE role_id =
+     *   hrm_platform_roles.id) AND [permission count filters].
    */
   roles_with_employees: number & tags.Type<"int32"> & tags.Minimum<0>;
 
@@ -71,7 +84,10 @@ export type IPlatformRoleAnalytic = {
    *
    * This metric identifies unused roles that may need review or cleanup. High numbers of roles without employees may indicate over-provisioning of role templates.
    *
-   * @x-autobe-specification Computed: SELECT COUNT(*) FROM hrm_platform_roles WHERE organization_id = :orgId AND [role_kind filter] AND [name filter] AND NOT EXISTS(SELECT 1 FROM hrm_platform_employees WHERE role_id = hrm_platform_roles.id) AND [permission count filters].
+     * @x-autobe-specification Computed: SELECT COUNT(*) FROM hrm_platform_roles
+     *   WHERE organization_id = :orgId AND [role_kind filter] AND [name filter]
+     *   AND NOT EXISTS(SELECT 1 FROM hrm_platform_employees WHERE role_id =
+     *   hrm_platform_roles.id) AND [permission count filters].
    */
   roles_without_employees: number & tags.Type<"int32"> & tags.Minimum<0>;
 
@@ -89,7 +105,17 @@ export type IPlatformRoleAnalytic = {
    *
    * Entries are sorted by name ascending by default, or by employee_count descending when sort_by=employees parameter is provided.
    *
-   * @x-autobe-specification Computed: SELECT role.id, role.name, role.description, role.role_kind, (role.role_kind = 'custom') AS is_custom, (SELECT COUNT(DISTINCT permission.id) FROM hrm_platform_permissions permission WHERE permission.role_id = role.id AND permission.deleted_at IS NULL) AS permission_count, (SELECT COUNT(*) FROM hrm_platform_employees emp WHERE emp.role_id = role.id) AS employee_count FROM hrm_platform_roles role WHERE role.organization_id = :orgId AND [role_kind filter] AND [name filter] AND [has_employees filter] AND [permission count filters]. Sort by name ASC (default) or employee_count DESC (if sort_by=employees). Limit and offset applied for pagination.
+     * @x-autobe-specification Computed: SELECT role.id, role.name,
+     *   role.description, role.role_kind, (role.role_kind = 'custom') AS
+     *   is_custom, (SELECT COUNT(DISTINCT permission.id) FROM
+     *   hrm_platform_permissions permission WHERE permission.role_id = role.id
+     *   AND permission.deleted_at IS NULL) AS permission_count, (SELECT
+     *   COUNT(*) FROM hrm_platform_employees emp WHERE emp.role_id = role.id)
+     *   AS employee_count FROM hrm_platform_roles role WHERE
+     *   role.organization_id = :orgId AND [role_kind filter] AND [name filter]
+     *   AND [has_employees filter] AND [permission count filters]. Sort by name
+     *   ASC (default) or employee_count DESC (if sort_by=employees). Limit and
+     *   offset applied for pagination.
    */
   roles: IRoleAnalyticsEntry[];
 };

@@ -8,7 +8,6 @@ export namespace TestAutomationStdio {
   export const getOptions = () =>
     ArgumentParser.parse<TestAutomation.IOptions>(
       async (command, prompt, action) => {
-        command.option("--reset <true|false>", "reset local DB or not");
         command.option(
           "--simultaneous <number>",
           "number of simultaneous requests",
@@ -17,12 +16,6 @@ export namespace TestAutomationStdio {
         command.option("--exclude <string...>", "exclude feature files");
 
         return action(async (options) => {
-          // reset
-          if (typeof options.reset === "string")
-            options.reset = options.reset === "true";
-          options.reset ??= await prompt.boolean("reset")("Reset local DB");
-
-          // simultaneous
           options.simultaneous = Number(
             options.simultaneous ??
               (await prompt.number("simultaneous")(
@@ -45,13 +38,6 @@ export namespace TestAutomationStdio {
         new Date(exec.started_at).getTime();
       trace(`${chalk.yellow(elapsed.toLocaleString())} ms`);
     } else trace(chalk.red(exec.error.name));
-  };
-
-  export const onReset = (start: Date) => (): void => {
-    const now: Date = new Date();
-    console.log(
-      `  - Reset DB: ${(now.getDate() - start.getDate()).toLocaleString()} ms`,
-    );
   };
 
   export const report = (report: DynamicExecutor.IReport): void => {

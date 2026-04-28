@@ -17,8 +17,9 @@ export type IHrmTimeTrackProjectMember = {
    *
    * This UUID serves as the primary key for the project member entity and is used to reference this specific employee-project assignment in update and delete operations.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from hrm_time_track_project_members.id. Auto-generated UUID primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_project_members.id. Auto-generated UUID primary key.
    */
   id: string & tags.Format<"uuid">;
 
@@ -27,8 +28,10 @@ export type IHrmTimeTrackProjectMember = {
    *
    * Allowed values are 'member' for standard access to view and contribute to the project, or 'project-lead' for elevated authority to manage tasks within the assigned project. This role-based control ensures appropriate task management permissions are granted.
    *
-   * @x-autobe-database-schema-property role
-   * @x-autobe-specification Direct mapping from hrm_time_track_project_members.role column. Allowed values: 'member' or 'project-lead'.
+     * @x-autobe-database-schema-property role
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_project_members.role column. Allowed values: 'member' or
+     *   'project-lead'.
    */
   role: string;
 
@@ -37,8 +40,11 @@ export type IHrmTimeTrackProjectMember = {
    *
    * This relation provides summary information about the employee including their identity (member), department, role, position, employment type, and status within the organization.
    *
-   * @x-autobe-database-schema-property employee
-   * @x-autobe-specification Relation from hrm_time_track_project_members.employee via hrm_time_track_employee_id FK. Returns IHrmTimeTrackEmployee.ISummary to avoid circular references.
+     * @x-autobe-database-schema-property employee
+     * @x-autobe-specification Relation from
+     *   hrm_time_track_project_members.employee via hrm_time_track_employee_id
+     *   FK. Returns IHrmTimeTrackEmployee.ISummary to avoid circular
+     *   references.
    */
   employee: IHrmTimeTrackEmployee.ISummary;
 
@@ -47,8 +53,10 @@ export type IHrmTimeTrackProjectMember = {
    *
    * This relation provides summary information about the project including its name, description, color code, status, budget hours, and date range within the organization.
    *
-   * @x-autobe-database-schema-property project
-   * @x-autobe-specification Relation from hrm_time_track_project_members.project via hrm_time_track_project_id FK. Returns IHrmTimeTrackProject.ISummary to avoid circular references.
+     * @x-autobe-database-schema-property project
+     * @x-autobe-specification Relation from
+     *   hrm_time_track_project_members.project via hrm_time_track_project_id
+     *   FK. Returns IHrmTimeTrackProject.ISummary to avoid circular references.
    */
   project: IHrmTimeTrackProject.ISummary;
 
@@ -57,8 +65,10 @@ export type IHrmTimeTrackProjectMember = {
    *
    * This field records when the employee was assigned to the project and is used for audit trails and tracking the history of project team composition.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from hrm_time_track_project_members.created_at. Auto-generated on record creation.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_project_members.created_at. Auto-generated on record
+     *   creation.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -67,8 +77,10 @@ export type IHrmTimeTrackProjectMember = {
    *
    * This field tracks when changes were made to the project member record, such as role modifications, and is automatically maintained by the system.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from hrm_time_track_project_members.updated_at. Auto-updated on record modification.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_project_members.updated_at. Auto-updated on record
+     *   modification.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -77,8 +89,10 @@ export type IHrmTimeTrackProjectMember = {
    *
    * This field enables soft deletion of project memberships, preserving historical data while removing the employee from active project access. When not null, the membership is considered terminated.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from hrm_time_track_project_members.deleted_at. Nullable DateTime for soft-delete support.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_project_members.deleted_at. Nullable DateTime for
+     *   soft-delete support.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -94,8 +108,10 @@ export namespace IHrmTimeTrackProjectMember {
      *
      * This UUID identifies the specific assignment record linking an employee to a project. Used as the primary key for updating or deleting project member assignments.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from hrm_time_track_project_members.id. Primary key uniquely identifying the project member assignment record.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_project_members.id. Primary key uniquely identifying
+         *   the project member assignment record.
      */
     id: string & tags.Format<"uuid">;
 
@@ -104,8 +120,11 @@ export namespace IHrmTimeTrackProjectMember {
      *
      * Allowed values are 'member' for standard access to view and contribute to the project, or 'project-lead' for elevated authority to manage tasks within the assigned project. This role-based control ensures appropriate task management permissions are granted.
      *
-     * @x-autobe-database-schema-property role
-     * @x-autobe-specification Direct mapping from hrm_time_track_project_members.role. Allowed values: 'member' or 'project-lead'. Determines the employee's authority level within the project context.
+         * @x-autobe-database-schema-property role
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_project_members.role. Allowed values: 'member' or
+         *   'project-lead'. Determines the employee's authority level within
+         *   the project context.
      */
     role: string;
 
@@ -114,8 +133,12 @@ export namespace IHrmTimeTrackProjectMember {
      *
      * Contains the employee's summary information including their user identity (name, email), position, department assignment, role, employment type, and current status. The employee must be a valid member of the organization that owns the project.
      *
-     * @x-autobe-database-schema-property employee
-     * @x-autobe-specification Relation via JOIN on hrm_time_track_employee_id to hrm_time_track_employees table. Returns IHrmTimeTrackEmployee.ISummary containing employee identity, position, department, role, employment type, and status. Filter: employee must belong to same organization as project.
+         * @x-autobe-database-schema-property employee
+         * @x-autobe-specification Relation via JOIN on
+         *   hrm_time_track_employee_id to hrm_time_track_employees table.
+         *   Returns IHrmTimeTrackEmployee.ISummary containing employee
+         *   identity, position, department, role, employment type, and status.
+         *   Filter: employee must belong to same organization as project.
      */
     employee: IHrmTimeTrackEmployee.ISummary;
 
@@ -124,8 +147,11 @@ export namespace IHrmTimeTrackProjectMember {
      *
      * Contains the project's summary information including name, description, color code, lifecycle status, budget hours, and timeline. The project belongs to an organization and provides the work context for the employee's contributions.
      *
-     * @x-autobe-database-schema-property project
-     * @x-autobe-specification Relation via JOIN on hrm_time_track_project_id to hrm_time_track_projects table. Returns IHrmTimeTrackProject.ISummary containing project name, description, color code, status, budget, dates, and organization context.
+         * @x-autobe-database-schema-property project
+         * @x-autobe-specification Relation via JOIN on
+         *   hrm_time_track_project_id to hrm_time_track_projects table. Returns
+         *   IHrmTimeTrackProject.ISummary containing project name, description,
+         *   color code, status, budget, dates, and organization context.
      */
     project: IHrmTimeTrackProject.ISummary;
 
@@ -134,8 +160,11 @@ export namespace IHrmTimeTrackProjectMember {
      *
      * Indicates when the employee was first assigned to the project. This timestamp is automatically set by the system and cannot be modified. Used for tracking assignment history and auditing project team changes.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from hrm_time_track_project_members.created_at. Timestamp in ISO 8601 format (date-time). Automatically set by the database when the project member assignment is created.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_project_members.created_at. Timestamp in ISO 8601
+         *   format (date-time). Automatically set by the database when the
+         *   project member assignment is created.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -144,8 +173,11 @@ export namespace IHrmTimeTrackProjectMember {
      *
      * Indicates when the employee's role or assignment details were last modified. This timestamp is automatically updated by the system whenever any field in the assignment record changes. Used for tracking modification history.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from hrm_time_track_project_members.updated_at. Timestamp in ISO 8601 format (date-time). Automatically updated by the database whenever the project member assignment is modified.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_project_members.updated_at. Timestamp in ISO 8601
+         *   format (date-time). Automatically updated by the database whenever
+         *   the project member assignment is modified.
      */
     updated_at: string & tags.Format<"date-time">;
   };
@@ -165,8 +197,12 @@ export namespace IHrmTimeTrackProjectMember {
      *
      * The employee must be a valid member of the organization that owns the project. This identifier links the employee record to the project membership, establishing the employee's authorization to access project resources, view tasks, and log time against the project.
      *
-     * @x-autobe-database-schema-property hrm_time_track_employee_id
-     * @x-autobe-specification Direct mapping to hrm_time_track_employee_id FK column. Validates employee exists and belongs to same organization as the project identified by path parameter {projectId}. Unique constraint enforced with project_id to prevent duplicate assignments.
+         * @x-autobe-database-schema-property hrm_time_track_employee_id
+         * @x-autobe-specification Direct mapping to hrm_time_track_employee_id
+         *   FK column. Validates employee exists and belongs to same
+         *   organization as the project identified by path parameter
+         *   {projectId}. Unique constraint enforced with project_id to prevent
+         *   duplicate assignments.
      */
     employee_id: string & tags.Format<"uuid">;
 
@@ -175,8 +211,11 @@ export namespace IHrmTimeTrackProjectMember {
      *
      * Allowed values are `member` for standard access (view project, view tasks, log time) or `project-lead` for elevated authority (all member capabilities plus create/edit/assign tasks and change task status). If not provided, defaults to `member`.
      *
-     * @x-autobe-database-schema-property role
-     * @x-autobe-specification Direct mapping to role column. Accepts 'member' or 'project-lead' values. Defaults to 'member' if not provided. Role determines the employee's authority level within the project context for task management permissions.
+         * @x-autobe-database-schema-property role
+         * @x-autobe-specification Direct mapping to role column. Accepts
+         *   'member' or 'project-lead' values. Defaults to 'member' if not
+         *   provided. Role determines the employee's authority level within the
+         *   project context for task management permissions.
      */
     role?: string | undefined;
   };
@@ -203,7 +242,11 @@ export namespace IHrmTimeTrackProjectMember {
      *
      * Accepts 'member' for employees with standard access to view and contribute to the project, or 'project-lead' for employees with elevated authority to manage tasks within the project. This filter enables administrators to quickly identify team members with specific responsibility levels.
      *
-     * @x-autobe-specification Filter parameter for exact match on hrm_time_track_project_members.role column. Allowed values: 'member' for standard project access, 'project-lead' for elevated task management authority. When provided, only project members with matching role are returned.
+         * @x-autobe-specification Filter parameter for exact match on
+         *   hrm_time_track_project_members.role column. Allowed values:
+         *   'member' for standard project access, 'project-lead' for elevated
+         *   task management authority. When provided, only project members with
+         *   matching role are returned.
      */
     role?: string | undefined;
 
@@ -212,7 +255,11 @@ export namespace IHrmTimeTrackProjectMember {
      *
      * Performs a text search across employee name fields to find project members whose names match the search term. Supports partial matching, allowing users to find employees by entering fragments of their names. Useful for quickly locating specific team members in large project rosters.
      *
-     * @x-autobe-specification Text search parameter that performs case-insensitive search on employee name fields from hrm_time_track_employees table. The search is executed via JOIN on hrm_time_track_employee_id. Supports partial matching for finding employees by name fragments.
+         * @x-autobe-specification Text search parameter that performs
+         *   case-insensitive search on employee name fields from
+         *   hrm_time_track_employees table. The search is executed via JOIN on
+         *   hrm_time_track_employee_id. Supports partial matching for finding
+         *   employees by name fragments.
      */
     search?: string | undefined;
 
@@ -221,7 +268,12 @@ export namespace IHrmTimeTrackProjectMember {
      *
      * Filters the project member list to show only employees with a specific employment status such as active, on leave, terminated, or pending. This helps administrators manage project teams by focusing on employees who are currently available or filtering out inactive personnel.
      *
-     * @x-autobe-specification Filter parameter for exact match on hrm_time_track_employees.status column via JOIN on hrm_time_track_employee_id. Filters project members by their employment status (e.g., 'active', 'on leave', 'terminated', 'pending'). Only employees with matching status are included in results.
+         * @x-autobe-specification Filter parameter for exact match on
+         *   hrm_time_track_employees.status column via JOIN on
+         *   hrm_time_track_employee_id. Filters project members by their
+         *   employment status (e.g., 'active', 'on leave', 'terminated',
+         *   'pending'). Only employees with matching status are included in
+         *   results.
      */
     status?: string | undefined;
 
@@ -230,7 +282,10 @@ export namespace IHrmTimeTrackProjectMember {
      *
      * Specifies which page of results to retrieve when the total number of project members exceeds the page limit. Page numbering starts from 1 (the first page). Use this parameter along with limit to navigate through large result sets efficiently.
      *
-     * @x-autobe-specification Pagination parameter specifying the current page number to retrieve. 1-indexed (first page is 1, not 0). Defaults to 1 if not provided. Used with limit to control which subset of results is returned. Validates that page >= 1.
+         * @x-autobe-specification Pagination parameter specifying the current
+         *   page number to retrieve. 1-indexed (first page is 1, not 0).
+         *   Defaults to 1 if not provided. Used with limit to control which
+         *   subset of results is returned. Validates that page >= 1.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -239,7 +294,10 @@ export namespace IHrmTimeTrackProjectMember {
      *
      * Controls how many project member records are included in each page of results. Accepts values from 1 to 100. Larger values reduce the number of API calls needed but increase response size. Smaller values enable finer-grained pagination for better performance with large datasets.
      *
-     * @x-autobe-specification Pagination parameter specifying the maximum number of records to return per page. Valid range is 1 to 100. Defaults to system default if not provided. Used with page to control result set size. Validates that 1 <= limit <= 100.
+         * @x-autobe-specification Pagination parameter specifying the maximum
+         *   number of records to return per page. Valid range is 1 to 100.
+         *   Defaults to system default if not provided. Used with page to
+         *   control result set size. Validates that 1 <= limit <= 100.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -250,7 +308,11 @@ export namespace IHrmTimeTrackProjectMember {
      *
      * Determines which attribute is used to order the results. Options include sorting by role (member/project-lead), employee name (alphabetically), or assignment date (when the employee was added to the project). Combine with sortOrder to control ascending or descending order.
      *
-     * @x-autobe-specification Sorting parameter specifying which field to sort results by. Allowed values: 'role' (sort by project member role), 'employee_name' (sort by employee name from joined employees table), 'created_at' (sort by assignment date). Defaults to system default if not provided.
+         * @x-autobe-specification Sorting parameter specifying which field to
+         *   sort results by. Allowed values: 'role' (sort by project member
+         *   role), 'employee_name' (sort by employee name from joined employees
+         *   table), 'created_at' (sort by assignment date). Defaults to system
+         *   default if not provided.
      */
     sort?: string | undefined;
 
@@ -259,7 +321,11 @@ export namespace IHrmTimeTrackProjectMember {
      *
      * Controls whether results are ordered in ascending (A-Z, oldest-first) or descending (Z-A, newest-first) order. Works together with the sort parameter to fully define result ordering. For example, sorting by employee_name with asc gives alphabetical order, while desc gives reverse alphabetical order.
      *
-     * @x-autobe-specification Sorting parameter specifying the sort direction. Allowed values: 'asc' for ascending order (A-Z, oldest-first), 'desc' for descending order (Z-A, newest-first). Defaults to 'asc' if not provided. Used in conjunction with sort parameter.
+         * @x-autobe-specification Sorting parameter specifying the sort
+         *   direction. Allowed values: 'asc' for ascending order (A-Z,
+         *   oldest-first), 'desc' for descending order (Z-A, newest-first).
+         *   Defaults to 'asc' if not provided. Used in conjunction with sort
+         *   parameter.
      */
     sortOrder?: string | undefined;
   };

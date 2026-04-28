@@ -26,9 +26,11 @@ export class TodoappMemberPasswordresetsController {
    *
    * @param connection
    * @param body Search criteria and pagination options for password reset records
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement this operation as an authenticated collection query over todo_app_member_password_resets limited to the current member derived from the session or authentication context.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implement this operation as an authenticated
+     *   collection query over todo_app_member_password_resets limited to the
+     *   current member derived from the session or authentication context.
    *
    * Resolve the signed-in member identifier first. If the request is unauthenticated, reject it before any database access. Do not accept or trust any client-supplied member identifier in the request body because ownership scope must come exclusively from the authenticated account context.
    *
@@ -74,9 +76,11 @@ export class TodoappMemberPasswordresetsController {
    *
    * @param connection
    * @param passwordResetId Target password reset record identifier owned by the current member
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement this operation as a member-authenticated detail lookup on the todo_app_member_password_resets table.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implement this operation as a
+     *   member-authenticated detail lookup on the
+     *   todo_app_member_password_resets table.
    *
    * First, require an authenticated member session and obtain the current member identifier from the authorization context. If no authenticated member is present, reject the request as unauthorized.
    *

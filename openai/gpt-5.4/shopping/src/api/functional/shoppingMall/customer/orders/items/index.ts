@@ -30,7 +30,9 @@ export * as sellerProfilePurchaseSnapshots from "./sellerProfilePurchaseSnapshot
  * @param props.body List filtering, sorting, and pagination options for order items within the target order
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Validate that the caller is authenticated as either the customer who owns the target order or an administrator with platform oversight authority.
+ * @x-autobe-specification Validate that the caller is authenticated as either
+ *   the customer who owns the target order or an administrator with platform
+ *   oversight authority.
  *
  * Load the target order by its identifier and verify that it exists as a preserved confirmed purchase record. If the caller is a customer, enforce ownership by matching the order's customer account to the authenticated principal. If the caller is an administrator, allow cross-platform read access without modifying any data.
  *
@@ -143,7 +145,8 @@ export namespace index {
  * @param props.itemId Unique identifier of the order item within the specified order
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Implement a read-only detail query for a single order item under a specific preserved order.
+ * @x-autobe-specification Implement a read-only detail query for a single order
+ *   item under a specific preserved order.
  *
  * 1. Resolve the parent order by shopping_mall_orders.code using the orderCode path parameter. Do not resolve the parent order by UUID for this endpoint. Reject the request if no order exists for the supplied code.
  *

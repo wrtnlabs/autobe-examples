@@ -12,8 +12,9 @@ export type IRoleStatItem = {
    *
    * This UUID uniquely identifies the role and is used for role assignments, permission lookups, and role-based access control operations within the organization context.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from hrm_platform_roles.id (UUID). Represents the unique identifier of the role in the organization.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from hrm_platform_roles.id (UUID).
+     *   Represents the unique identifier of the role in the organization.
    */
   role_id: string & tags.Format<"uuid">;
 
@@ -22,8 +23,10 @@ export type IRoleStatItem = {
    *
    * This name is used throughout the platform for identification purposes and can be 'Owner', 'Manager', 'Employee' for built-in roles, or a custom name for user-defined roles.
    *
-   * @x-autobe-database-schema-property name
-   * @x-autobe-specification Direct mapping from hrm_platform_roles.name. The role name is unique within the organization and used for display purposes.
+     * @x-autobe-database-schema-property name
+     * @x-autobe-specification Direct mapping from hrm_platform_roles.name. The
+     *   role name is unique within the organization and used for display
+     *   purposes.
    */
   name: string;
 
@@ -32,7 +35,9 @@ export type IRoleStatItem = {
    *
    * This count is computed at query time by counting all employee records linked to this role via the role_id foreign key. Roles with no assigned employees will show a count of zero.
    *
-   * @x-autobe-specification Computed aggregation: COUNT(*) from hrm_platform_employees WHERE role_id = roles.id, using LEFT JOIN to include roles with zero employees.
+     * @x-autobe-specification Computed aggregation: COUNT(*) from
+     *   hrm_platform_employees WHERE role_id = roles.id, using LEFT JOIN to
+     *   include roles with zero employees.
    */
   employee_count: number & tags.Type<"int32">;
 };

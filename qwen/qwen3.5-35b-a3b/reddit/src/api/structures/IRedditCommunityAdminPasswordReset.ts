@@ -18,8 +18,9 @@ export type IRedditCommunityAdminPasswordReset = {
    *
    * This is a UUID-generated primary key that uniquely identifies the token record across the system.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from reddit_community_admin_password_resets.id. UUID primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_admin_password_resets.id. UUID primary key.
    */
   id: string & tags.Format<"uuid">;
 
@@ -28,8 +29,10 @@ export type IRedditCommunityAdminPasswordReset = {
    *
    * **Security**: This field exists for audit purposes, but the actual token value is NEVER exposed directly. Implementation must hash, truncate, or mask the token value before sending response data to prevent token leakage.
    *
-   * @x-autobe-database-schema-property token
-   * @x-autobe-specification Direct mapping from reddit_community_admin_password_resets.token. Implementation MUST mask or hash the actual token value before response to prevent leakage.
+     * @x-autobe-database-schema-property token
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_admin_password_resets.token. Implementation MUST mask
+     *   or hash the actual token value before response to prevent leakage.
    */
   token: string;
 
@@ -38,8 +41,10 @@ export type IRedditCommunityAdminPasswordReset = {
    *
    * This email was copied from the admin profile at the time the reset token was generated. It is used to verify user identity and send reset instructions.
    *
-   * @x-autobe-database-schema-property email
-   * @x-autobe-specification Direct mapping from reddit_community_admin_password_resets.email. Copied from admin profile at time of reset request.
+     * @x-autobe-database-schema-property email
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_admin_password_resets.email. Copied from admin profile
+     *   at time of reset request.
    */
   email: string;
 
@@ -48,8 +53,10 @@ export type IRedditCommunityAdminPasswordReset = {
    *
    * Tokens expire for security reasons and cannot be used after this time. This prevents indefinite token validity and reduces replay attack risk.
    *
-   * @x-autobe-database-schema-property expires_at
-   * @x-autobe-specification Direct mapping from reddit_community_admin_password_resets.expires_at. Tokens expire for security reasons.
+     * @x-autobe-database-schema-property expires_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_admin_password_resets.expires_at. Tokens expire for
+     *   security reasons.
    */
   expires_at: string & tags.Format<"date-time">;
 
@@ -58,8 +65,10 @@ export type IRedditCommunityAdminPasswordReset = {
    *
    * This field is null if the token has not yet been used. When a token is successfully consumed during password reset, this field is set to the current timestamp, marking the token as single-use and preventing reuse.
    *
-   * @x-autobe-database-schema-property used_at
-   * @x-autobe-specification Direct mapping from reddit_community_admin_password_resets.used_at. Nullable - null if token has not been used.
+     * @x-autobe-database-schema-property used_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_admin_password_resets.used_at. Nullable - null if
+     *   token has not been used.
    */
   used_at?: (string & tags.Format<"date-time">) | null | undefined;
 
@@ -68,8 +77,10 @@ export type IRedditCommunityAdminPasswordReset = {
    *
    * This timestamp is used for tracking token age, debugging, and maintaining an audit trail of password reset requests.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from reddit_community_admin_password_resets.created_at. Timestamp when token was generated.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_admin_password_resets.created_at. Timestamp when token
+     *   was generated.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -78,8 +89,10 @@ export type IRedditCommunityAdminPasswordReset = {
    *
    * This field is maintained for consistency with other entities, though password reset tokens are typically append-only records with minimal updates.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from reddit_community_admin_password_resets.updated_at. Maintained for consistency.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_admin_password_resets.updated_at. Maintained for
+     *   consistency.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -88,8 +101,10 @@ export type IRedditCommunityAdminPasswordReset = {
    *
    * This foreign key establishes a one-to-many relationship where one administrator can have multiple password reset tokens over time. Each token is associated with exactly one administrator for accountability and audit purposes.
    *
-   * @x-autobe-database-schema-property reddit_community_admin_id
-   * @x-autobe-specification Direct mapping from reddit_community_admin_password_resets.reddit_community_admin_id. Foreign key column reference to the admin profile.
+     * @x-autobe-database-schema-property reddit_community_admin_id
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_admin_password_resets.reddit_community_admin_id.
+     *   Foreign key column reference to the admin profile.
    */
   reddit_community_admin_id: string & tags.Format<"uuid">;
 
@@ -98,8 +113,12 @@ export type IRedditCommunityAdminPasswordReset = {
    *
    * This object provides summary information about the administrator who requested the password reset. The join is soft-delete aware, excluding deleted accounts from the response.
    *
-   * @x-autobe-database-schema-property admin
-   * @x-autobe-specification Join from reddit_community_admin_password_resets.admin to reddit_community_admins. Returns IRedditCommunityAdmin.ISummary with identity, display_name, is_active, and timestamps. Soft-delete aware query: WHERE deleted_at IS NULL.
+     * @x-autobe-database-schema-property admin
+     * @x-autobe-specification Join from
+     *   reddit_community_admin_password_resets.admin to
+     *   reddit_community_admins. Returns IRedditCommunityAdmin.ISummary with
+     *   identity, display_name, is_active, and timestamps. Soft-delete aware
+     *   query: WHERE deleted_at IS NULL.
    */
   admin: IRedditCommunityAdmin.ISummary;
 
@@ -108,7 +127,10 @@ export type IRedditCommunityAdminPasswordReset = {
    *
    * This is a computed field that compares the current time with the expires_at timestamp. Returns true if the token has expired (current time > expires_at), false otherwise. This allows clients to quickly determine token validity without performing their own time comparison.
    *
-   * @x-autobe-specification Computed field: Compare current time with expires_at timestamp. Returns true if current time > expires_at, false otherwise. This allows clients to check token validity without additional logic.
+     * @x-autobe-specification Computed field: Compare current time with
+     *   expires_at timestamp. Returns true if current time > expires_at, false
+     *   otherwise. This allows clients to check token validity without
+     *   additional logic.
    */
   is_expired: boolean;
 };
@@ -126,8 +148,9 @@ export namespace IRedditCommunityAdminPasswordReset {
      *
      * This UUID uniquely identifies each password reset request in the system, enabling administrators to track individual reset tokens and their lifecycle.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from reddit_community_admin_password_resets.id. UUID primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   reddit_community_admin_password_resets.id. UUID primary key.
      */
     id: string & tags.Format<"uuid">;
 
@@ -136,8 +159,10 @@ export namespace IRedditCommunityAdminPasswordReset {
      *
      * This email is copied from the administrator's profile when the reset request is created. It is used to verify the user's identity during the password reset process.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from reddit_community_admin_password_resets.email. Email address copied from admin profile at time of reset request.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   reddit_community_admin_password_resets.email. Email address copied
+         *   from admin profile at time of reset request.
      */
     email: string & tags.Format<"email">;
 
@@ -146,8 +171,10 @@ export namespace IRedditCommunityAdminPasswordReset {
      *
      * Tokens expire for security reasons and cannot be used after this timestamp. This prevents indefinite token validity and reduces the risk of replay attacks.
      *
-     * @x-autobe-database-schema-property expires_at
-     * @x-autobe-specification Direct mapping from reddit_community_admin_password_resets.expires_at. Tokens expire for security reasons.
+         * @x-autobe-database-schema-property expires_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_community_admin_password_resets.expires_at. Tokens expire
+         *   for security reasons.
      */
     expiresAt: string & tags.Format<"date-time">;
 
@@ -156,8 +183,10 @@ export namespace IRedditCommunityAdminPasswordReset {
      *
      * This field is null if the token has not been used yet. When the token is consumed during password reset, this field is set to the current timestamp, marking it as single-use and preventing reuse.
      *
-     * @x-autobe-database-schema-property used_at
-     * @x-autobe-specification Direct mapping from reddit_community_admin_password_resets.used_at. Null if token has not been used. Set to current time when token is consumed.
+         * @x-autobe-database-schema-property used_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_community_admin_password_resets.used_at. Null if token has
+         *   not been used. Set to current time when token is consumed.
      */
     usedAt: (string & tags.Format<"date-time">) | null;
 
@@ -166,8 +195,10 @@ export namespace IRedditCommunityAdminPasswordReset {
      *
      * This timestamp tracks when the reset request was initiated, which is useful for auditing and determining token age.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from reddit_community_admin_password_resets.created_at. Timestamp when the reset token was generated.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_community_admin_password_resets.created_at. Timestamp when
+         *   the reset token was generated.
      */
     createdAt: string & tags.Format<"date-time">;
 
@@ -176,8 +207,10 @@ export namespace IRedditCommunityAdminPasswordReset {
      *
      * Maintained for consistency with other entities in the system, though password reset tokens are typically append-only records.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from reddit_community_admin_password_resets.updated_at. Maintained for consistency with other entities.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_community_admin_password_resets.updated_at. Maintained for
+         *   consistency with other entities.
      */
     updatedAt: string & tags.Format<"date-time">;
 
@@ -186,8 +219,11 @@ export namespace IRedditCommunityAdminPasswordReset {
      *
      * This reference points to the administrator who initiated the password reset. The included information enables quick identification of which admin account is requesting a password reset without exposing the full admin profile.
      *
-     * @x-autobe-database-schema-property admin
-     * @x-autobe-specification Join from reddit_community_admin_password_resets.admin to reddit_community_admins. Returns ISummary representation of the administrator account.
+         * @x-autobe-database-schema-property admin
+         * @x-autobe-specification Join from
+         *   reddit_community_admin_password_resets.admin to
+         *   reddit_community_admins. Returns ISummary representation of the
+         *   administrator account.
      */
     admin: IRedditCommunityAdmin.ISummary;
   };
@@ -215,7 +251,8 @@ export namespace IRedditCommunityAdminPasswordReset {
      *
      * Matches password reset records where the email contains the provided substring. Useful for finding all password reset requests associated with a specific account or pattern. The search is case-insensitive to improve usability.
      *
-     * @x-autobe-specification Case-insensitive partial match (LIKE) on email field across both member and admin password reset tables.
+         * @x-autobe-specification Case-insensitive partial match (LIKE) on
+         *   email field across both member and admin password reset tables.
      */
     email?: (string & tags.Format<"email">) | undefined;
 
@@ -224,7 +261,9 @@ export namespace IRedditCommunityAdminPasswordReset {
      *
      * Use `member` to query member password resets from reddit_community_member_password_resets, or `admin` to query administrator password resets from reddit_community_admin_password_resets. When omitted, returns results from both sources.
      *
-     * @x-autobe-specification Equality filter on type discriminator field to distinguish between member and admin password reset source tables.
+         * @x-autobe-specification Equality filter on type discriminator field
+         *   to distinguish between member and admin password reset source
+         *   tables.
      */
     accountType?: "member" | "admin" | undefined;
 
@@ -233,7 +272,9 @@ export namespace IRedditCommunityAdminPasswordReset {
      *
      * Use `active` to find tokens that are not yet used and not expired (most common use case), `used` to find already consumed tokens for audit purposes, or `expired` to find tokens that have passed their expiration time. This filter is computed based on current time and token lifecycle.
      *
-     * @x-autobe-specification Precomputed status filter: 'active' (NOT used_at AND expires_at > now), 'used' (used_at IS NOT NULL), 'expired' (expires_at <= now). Applied before returning results.
+         * @x-autobe-specification Precomputed status filter: 'active' (NOT
+         *   used_at AND expires_at > now), 'used' (used_at IS NOT NULL),
+         *   'expired' (expires_at <= now). Applied before returning results.
      */
     status?: "active" | "used" | "expired" | undefined;
 
@@ -242,7 +283,8 @@ export namespace IRedditCommunityAdminPasswordReset {
      *
      * Filters password reset records where the creation timestamp is on or after this datetime. Must be used together with createdAtEnd to define a valid time window. Format: ISO 8601 datetime string.
      *
-     * @x-autobe-specification Range filter: created_at >= this value. Combined with createdAtEnd for a time window.
+         * @x-autobe-specification Range filter: created_at >= this value.
+         *   Combined with createdAtEnd for a time window.
      */
     createdAtStart?: (string & tags.Format<"date-time">) | undefined;
 
@@ -251,7 +293,8 @@ export namespace IRedditCommunityAdminPasswordReset {
      *
      * Filters password reset records where the creation timestamp is on or before this datetime. Must be used together with createdAtStart to define a valid time window where start <= end. Format: ISO 8601 datetime string.
      *
-     * @x-autobe-specification Range filter: created_at <= this value. Combined with createdAtStart for a time window.
+         * @x-autobe-specification Range filter: created_at <= this value.
+         *   Combined with createdAtStart for a time window.
      */
     createdAtEnd?: (string & tags.Format<"date-time">) | undefined;
 
@@ -260,7 +303,8 @@ export namespace IRedditCommunityAdminPasswordReset {
      *
      * Filters password reset records where the expiration timestamp is on or after this datetime. Useful for finding tokens expiring within a specific time window, such as "tokens expiring in the next 24 hours". Format: ISO 8601 datetime string.
      *
-     * @x-autobe-specification Range filter: expires_at >= this value. Useful for finding tokens expiring within a specific time window.
+         * @x-autobe-specification Range filter: expires_at >= this value.
+         *   Useful for finding tokens expiring within a specific time window.
      */
     expiresAtStart?: (string & tags.Format<"date-time">) | undefined;
 
@@ -269,7 +313,8 @@ export namespace IRedditCommunityAdminPasswordReset {
      *
      * Filters password reset records where the expiration timestamp is on or before this datetime. Must be used together with expiresAtStart to define a valid time window. Format: ISO 8601 datetime string.
      *
-     * @x-autobe-specification Range filter: expires_at <= this value. Combined with expiresAtStart for a time window.
+         * @x-autobe-specification Range filter: expires_at <= this value.
+         *   Combined with expiresAtStart for a time window.
      */
     expiresAtEnd?: (string & tags.Format<"date-time">) | undefined;
 
@@ -278,7 +323,8 @@ export namespace IRedditCommunityAdminPasswordReset {
      *
      * Filters password reset records where the usage timestamp (when the token was consumed) is on or after this datetime. Only applies to tokens that have been used (status='used'). For unused tokens, used_at is null and this filter is ignored. Format: ISO 8601 datetime string.
      *
-     * @x-autobe-specification Range filter: used_at >= this value. Only applies to tokens that have been used (used_at IS NOT NULL).
+         * @x-autobe-specification Range filter: used_at >= this value. Only
+         *   applies to tokens that have been used (used_at IS NOT NULL).
      */
     usedAtStart?: (string & tags.Format<"date-time">) | undefined;
 
@@ -287,7 +333,8 @@ export namespace IRedditCommunityAdminPasswordReset {
      *
      * Filters password reset records where the usage timestamp is on or before this datetime. Must be used together with usedAtStart to define a valid time window. Only applies to tokens that have been used (status='used'). Format: ISO 8601 datetime string.
      *
-     * @x-autobe-specification Range filter: used_at <= this value. Combined with usedAtStart for a time window. Only applies to used tokens.
+         * @x-autobe-specification Range filter: used_at <= this value. Combined
+         *   with usedAtStart for a time window. Only applies to used tokens.
      */
     usedAtEnd?: (string & tags.Format<"date-time">) | undefined;
 
@@ -296,7 +343,9 @@ export namespace IRedditCommunityAdminPasswordReset {
      *
      * A base64-encoded timestamp from the previous response's nextCursor or previousCursor field. Use this value to fetch the next or previous page of results. The cursor is computed from the created_at timestamp and ensures consistent pagination even as new records are added.
      *
-     * @x-autobe-specification Base64-encoded created_at timestamp from previous response. Use the nextCursor value from the prior page to fetch the next page. Results sorted by created_at DESC.
+         * @x-autobe-specification Base64-encoded created_at timestamp from
+         *   previous response. Use the nextCursor value from the prior page to
+         *   fetch the next page. Results sorted by created_at DESC.
      */
     cursor?: string | undefined;
 
@@ -305,7 +354,8 @@ export namespace IRedditCommunityAdminPasswordReset {
      *
      * Controls the page size for pagination. Must be an integer between 1 and 100. When omitted, defaults to 20 results per page. Larger limits return more records per request but may impact performance for large datasets.
      *
-     * @x-autobe-specification Integer 1-100, default 20. Maximum number of records to return per page.
+         * @x-autobe-specification Integer 1-100, default 20. Maximum number of
+         *   records to return per page.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -316,7 +366,9 @@ export namespace IRedditCommunityAdminPasswordReset {
      *
      * Specifies which page of results to return. Page numbering starts from 1. If omitted, null, or undefined, defaults to page 1 (first page). Requesting a page beyond the available range returns an empty data array with valid pagination metadata reflecting the actual totals. This parameter is an alternative to cursor-based pagination for simpler use cases.
      *
-     * @x-autobe-specification 1-indexed page number. Defaults to 1 if not provided. Alternative to cursor-based pagination for simple pagination needs.
+         * @x-autobe-specification 1-indexed page number. Defaults to 1 if not
+         *   provided. Alternative to cursor-based pagination for simple
+         *   pagination needs.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };

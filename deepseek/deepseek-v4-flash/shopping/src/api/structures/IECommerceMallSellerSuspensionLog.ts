@@ -16,8 +16,9 @@ export type IECommerceMallSellerSuspensionLog = {
    *
    * This UUID serves as the primary key for the suspension log record and is used to reference specific log entries in API paths.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from e_commerce_mall_seller_suspension_logs.id. Primary key, UUID format.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_seller_suspension_logs.id. Primary key, UUID format.
    */
   id: string & tags.Format<"uuid">;
 
@@ -26,8 +27,11 @@ export type IECommerceMallSellerSuspensionLog = {
    *
    * This is a summary reference to the affected seller, containing the seller's unique identifier, email address, current approval status, and associated shop profile information. The FK column e_commerce_mall_seller_id is transformed into this object relation.
    *
-   * @x-autobe-database-schema-property seller
-   * @x-autobe-specification Join from e_commerce_mall_seller_suspension_logs.e_commerce_mall_seller_id to e_commerce_mall_sellers.id. Returns IECommerceMallSeller.ISummary containing id, email, approval_status, profile, created_at, deleted_at.
+     * @x-autobe-database-schema-property seller
+     * @x-autobe-specification Join from
+     *   e_commerce_mall_seller_suspension_logs.e_commerce_mall_seller_id to
+     *   e_commerce_mall_sellers.id. Returns IECommerceMallSeller.ISummary
+     *   containing id, email, approval_status, profile, created_at, deleted_at.
    */
   seller: IECommerceMallSeller.ISummary;
 
@@ -36,8 +40,10 @@ export type IECommerceMallSellerSuspensionLog = {
    *
    * Valid values are "suspend" to revoke selling privileges or "unsuspend" to restore full selling functionality. This field captures the type of administrative action taken and determines whether the seller's capabilities were restricted or reinstated.
    *
-   * @x-autobe-database-schema-property action
-   * @x-autobe-specification Direct mapping from e_commerce_mall_seller_suspension_logs.action. Valid values are "suspend" or "unsuspend".
+     * @x-autobe-database-schema-property action
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_seller_suspension_logs.action. Valid values are
+     *   "suspend" or "unsuspend".
    */
   action: string;
 
@@ -46,8 +52,10 @@ export type IECommerceMallSellerSuspensionLog = {
    *
    * This field may be null if the acting administrator chose not to provide a reason when performing the action. When present, it contains meaningful context about why the administrative action was taken, such as policy violations or other justifications.
    *
-   * @x-autobe-database-schema-property reason
-   * @x-autobe-specification Direct mapping from e_commerce_mall_seller_suspension_logs.reason. Nullable — may be null if the acting administrator did not provide a reason.
+     * @x-autobe-database-schema-property reason
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_seller_suspension_logs.reason. Nullable — may be null
+     *   if the acting administrator did not provide a reason.
    */
   reason: string | null;
 
@@ -56,8 +64,13 @@ export type IECommerceMallSellerSuspensionLog = {
    *
    * Valid values are "administrator" for regular administrators or "super_administrator" for super administrators. This discriminator indicates which polymorphic subtype table contains the actor's full identity, but the actor details are not resolved in this response — they must be retrieved through separate endpoints.
    *
-   * @x-autobe-database-schema-property actor_type
-   * @x-autobe-specification Direct mapping from e_commerce_mall_seller_suspension_logs.actor_type with camelCase transformation. Valid values are "administrator" or "super_administrator". The polymorphic subtype tables are NOT resolved — caller uses this discriminator to determine which actor type table to query separately.
+     * @x-autobe-database-schema-property actor_type
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_seller_suspension_logs.actor_type with camelCase
+     *   transformation. Valid values are "administrator" or
+     *   "super_administrator". The polymorphic subtype tables are NOT resolved
+     *   — caller uses this discriminator to determine which actor type table to
+     *   query separately.
    */
   actorType: string;
 
@@ -66,8 +79,10 @@ export type IECommerceMallSellerSuspensionLog = {
    *
    * Auto-set on creation in the database. Establishes the chronological order of administrative actions against a seller account for audit trail purposes.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from e_commerce_mall_seller_suspension_logs.created_at with camelCase transformation. ISO 8601 date-time format. Auto-set on creation.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_seller_suspension_logs.created_at with camelCase
+     *   transformation. ISO 8601 date-time format. Auto-set on creation.
    */
   createdAt: string & tags.Format<"date-time">;
 
@@ -76,8 +91,12 @@ export type IECommerceMallSellerSuspensionLog = {
    *
    * This suspension log is an immutable append-only audit trail record. The updated_at value is set equal to created_at upon insertion and never changes, as log entries are never modified after creation. Included for schema consistency across all platform entities.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from e_commerce_mall_seller_suspension_logs.updated_at with camelCase transformation. ISO 8601 date-time format. For this immutable audit log, updated_at is set equal to created_at on creation and never changes.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_seller_suspension_logs.updated_at with camelCase
+     *   transformation. ISO 8601 date-time format. For this immutable audit
+     *   log, updated_at is set equal to created_at on creation and never
+     *   changes.
    */
   updatedAt: string & tags.Format<"date-time">;
 
@@ -86,8 +105,12 @@ export type IECommerceMallSellerSuspensionLog = {
    *
    * This suspension log is an immutable append-only audit trail — records are never removed. The deleted_at field is always null for this entity and is included only for schema consistency across all platform business entities.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from e_commerce_mall_seller_suspension_logs.deleted_at with camelCase transformation. ISO 8601 date-time format or null. For this immutable audit log, deleted_at is always null as records are never removed. Included for schema consistency.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_seller_suspension_logs.deleted_at with camelCase
+     *   transformation. ISO 8601 date-time format or null. For this immutable
+     *   audit log, deleted_at is always null as records are never removed.
+     *   Included for schema consistency.
    */
   deletedAt: (string & tags.Format<"date-time">) | null;
 };
@@ -107,7 +130,9 @@ export namespace IECommerceMallSellerSuspensionLog {
      *
      * Accepts either 'suspend' (seller selling privileges were revoked) or 'unsuspend' (seller selling privileges were restored). Only logs matching the specified action type are returned. Omit this field to include both action types.
      *
-     * @x-autobe-specification Optional exact-match filter against e_commerce_mall_seller_suspension_logs.action column. Valid values: 'suspend', 'unsuspend'. Case-sensitive.
+         * @x-autobe-specification Optional exact-match filter against
+         *   e_commerce_mall_seller_suspension_logs.action column. Valid values:
+         *   'suspend', 'unsuspend'. Case-sensitive.
      */
     action?: string | undefined;
 
@@ -116,7 +141,9 @@ export namespace IECommerceMallSellerSuspensionLog {
      *
      * Accepts either 'administrator' (regular administrators) or 'super_administrator' (super administrators). Only logs matching the specified actor type are returned. Omit this field to include actions from both administrator types.
      *
-     * @x-autobe-specification Optional exact-match filter against e_commerce_mall_seller_suspension_logs.actor_type column. Valid values: 'administrator', 'super_administrator'. Case-sensitive.
+         * @x-autobe-specification Optional exact-match filter against
+         *   e_commerce_mall_seller_suspension_logs.actor_type column. Valid
+         *   values: 'administrator', 'super_administrator'. Case-sensitive.
      */
     actor_type?: string | undefined;
 
@@ -125,7 +152,9 @@ export namespace IECommerceMallSellerSuspensionLog {
      *
      * Only suspension logs created at or after this timestamp are returned. Combine with created_at_to to filter logs within a specific time window. Uses ISO 8601 format (e.g., '2026-01-01T00:00:00Z').
      *
-     * @x-autobe-specification Optional inclusive lower bound filter on e_commerce_mall_seller_suspension_logs.created_at column (>=). Used with created_at_to to form a date range. ISO 8601 format.
+         * @x-autobe-specification Optional inclusive lower bound filter on
+         *   e_commerce_mall_seller_suspension_logs.created_at column (>=). Used
+         *   with created_at_to to form a date range. ISO 8601 format.
      */
     created_at_from?: (string & tags.Format<"date-time">) | undefined;
 
@@ -134,7 +163,9 @@ export namespace IECommerceMallSellerSuspensionLog {
      *
      * Only suspension logs created at or before this timestamp are returned. Combine with created_at_from to filter logs within a specific time window. Uses ISO 8601 format (e.g., '2026-12-31T23:59:59Z').
      *
-     * @x-autobe-specification Optional inclusive upper bound filter on e_commerce_mall_seller_suspension_logs.created_at column (<=). Used with created_at_from to form a date range. ISO 8601 format.
+         * @x-autobe-specification Optional inclusive upper bound filter on
+         *   e_commerce_mall_seller_suspension_logs.created_at column (<=). Used
+         *   with created_at_from to form a date range. ISO 8601 format.
      */
     created_at_to?: (string & tags.Format<"date-time">) | undefined;
 
@@ -143,7 +174,9 @@ export namespace IECommerceMallSellerSuspensionLog {
      *
      * Specifies which page of paginated results to return. The first page is page 1. If omitted, the response defaults to the first page.
      *
-     * @x-autobe-specification Offset-based pagination parameter. 1-indexed page number. Defaults to 1 if omitted. Computed value — no direct DB column mapping.
+         * @x-autobe-specification Offset-based pagination parameter. 1-indexed
+         *   page number. Defaults to 1 if omitted. Computed value — no direct
+         *   DB column mapping.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -152,7 +185,10 @@ export namespace IECommerceMallSellerSuspensionLog {
      *
      * Controls the page size of the paginated response. Must be between 1 and 100 (inclusive). If omitted, a system-defined default page size is used. The actual number of records returned may be less than this value on the last page.
      *
-     * @x-autobe-specification Offset-based pagination parameter. Maximum number of records per page. Defaults to a system-defined value if omitted. Maximum allowed value is 100. Computed value — no direct DB column mapping.
+         * @x-autobe-specification Offset-based pagination parameter. Maximum
+         *   number of records per page. Defaults to a system-defined value if
+         *   omitted. Maximum allowed value is 100. Computed value — no direct
+         *   DB column mapping.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -172,8 +208,10 @@ export namespace IECommerceMallSellerSuspensionLog {
      *
      * Auto-generated UUID primary key assigned when the suspension or unsuspension action is recorded. Used to reference this specific audit log entry in detail views.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from e_commerce_mall_seller_suspension_logs.id. Primary key, UUID format.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_seller_suspension_logs.id. Primary key, UUID
+         *   format.
      */
     id: string & tags.Format<"uuid">;
 
@@ -182,8 +220,10 @@ export namespace IECommerceMallSellerSuspensionLog {
      *
      * Valid values are "suspend" to revoke the seller's selling privileges or "unsuspend" to restore full selling functionality. This field captures the type of administrative action taken against the seller.
      *
-     * @x-autobe-database-schema-property action
-     * @x-autobe-specification Direct mapping from e_commerce_mall_seller_suspension_logs.action. Valid values: 'suspend' or 'unsuspend'.
+         * @x-autobe-database-schema-property action
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_seller_suspension_logs.action. Valid values:
+         *   'suspend' or 'unsuspend'.
      */
     action: string;
 
@@ -192,8 +232,10 @@ export namespace IECommerceMallSellerSuspensionLog {
      *
      * Provided by the administrator or super administrator who performed the action. May be null if no reason was supplied at the time of the action.
      *
-     * @x-autobe-database-schema-property reason
-     * @x-autobe-specification Direct mapping from e_commerce_mall_seller_suspension_logs.reason. Nullable — may be null if the acting administrator did not provide a reason.
+         * @x-autobe-database-schema-property reason
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_seller_suspension_logs.reason. Nullable — may be
+         *   null if the acting administrator did not provide a reason.
      */
     reason: string | null;
 
@@ -202,8 +244,10 @@ export namespace IECommerceMallSellerSuspensionLog {
      *
      * Valid values are "administrator" for regular administrators or "super_administrator" for super administrators. Use this field to identify the acting role category. The full actor identity can be retrieved through the dedicated detail endpoint by joining the corresponding subtype table.
      *
-     * @x-autobe-database-schema-property actor_type
-     * @x-autobe-specification Direct mapping from e_commerce_mall_seller_suspension_logs.actor_type. Discriminator field. Valid values: 'administrator' or 'super_administrator'.
+         * @x-autobe-database-schema-property actor_type
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_seller_suspension_logs.actor_type. Discriminator
+         *   field. Valid values: 'administrator' or 'super_administrator'.
      */
     actor_type: string;
 
@@ -212,8 +256,13 @@ export namespace IECommerceMallSellerSuspensionLog {
      *
      * Contains summary information about the affected seller including their unique identifier, email address, current approval status, and shop profile details.
      *
-     * @x-autobe-database-schema-property seller
-     * @x-autobe-specification BELONGS-TO relation: LEFT JOIN e_commerce_mall_sellers ON e_commerce_mall_seller_suspension_logs.e_commerce_mall_seller_id = e_commerce_mall_sellers.id. Returns IECommerceMallSeller.ISummary containing the seller's id, email, approval_status, profile, created_at, and deleted_at.
+         * @x-autobe-database-schema-property seller
+         * @x-autobe-specification BELONGS-TO relation: LEFT JOIN
+         *   e_commerce_mall_sellers ON
+         *   e_commerce_mall_seller_suspension_logs.e_commerce_mall_seller_id =
+         *   e_commerce_mall_sellers.id. Returns IECommerceMallSeller.ISummary
+         *   containing the seller's id, email, approval_status, profile,
+         *   created_at, and deleted_at.
      */
     seller: IECommerceMallSeller.ISummary;
 
@@ -222,8 +271,10 @@ export namespace IECommerceMallSellerSuspensionLog {
      *
      * Establishes the chronological order of administrative actions against a seller account. Formatted as an ISO 8601 date-time string.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from e_commerce_mall_seller_suspension_logs.created_at. DateTime with timezone. Auto-set on creation.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_seller_suspension_logs.created_at. DateTime with
+         *   timezone. Auto-set on creation.
      */
     created_at: string & tags.Format<"date-time">;
   };

@@ -25,7 +25,8 @@ import { IEcommerceMallOrderItemSnapshot } from "../../../../../../structures/IE
  * @param props.orderItemId The unique identifier of the order item within the order
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Validate that the orderItemId belongs to the specified orderId to prevent unauthorized access to other orders' items.
+ * @x-autobe-specification Validate that the orderItemId belongs to the
+ *   specified orderId to prevent unauthorized access to other orders' items.
  *
  * Query the ecommerce_mall_order_item_snapshots junction table by order_item_id to retrieve the snapshot relationship record.
  *

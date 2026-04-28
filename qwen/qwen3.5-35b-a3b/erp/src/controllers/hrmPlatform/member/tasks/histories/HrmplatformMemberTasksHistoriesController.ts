@@ -20,9 +20,10 @@ export class HrmplatformMemberTasksHistoriesController {
    * @param connection
    * @param taskId UUID of the task to retrieve history for.
    * @param body Pagination and filtering criteria for task history list.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query hrm_platform_task_histories table for all entries where task_id matches the path parameter.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query hrm_platform_task_histories table for all
+     *   entries where task_id matches the path parameter.
    *
    * 1. Validate taskId is a valid UUID format
    * 2. Verify the task exists and is not soft-deleted (deleted_at IS NULL)

@@ -34,7 +34,8 @@ import { IRedditLikeVote } from "../../../../../structures/IRedditLikeVote";
  * @param props.body Vote creation information with vote type
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Cast a vote on a specific post. This operation creates a new vote record in the polymorphic voting system.
+ * @x-autobe-specification Cast a vote on a specific post. This operation
+ *   creates a new vote record in the polymorphic voting system.
  *
  * Implementation steps:
  * 1. Validate the post exists and is not deleted (check reddit_like_posts.is_deleted = false)

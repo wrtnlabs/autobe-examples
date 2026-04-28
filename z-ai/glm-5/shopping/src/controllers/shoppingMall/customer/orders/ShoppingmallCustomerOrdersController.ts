@@ -24,9 +24,13 @@ export class ShoppingmallCustomerOrdersController {
    *
    * @param connection
    * @param orderId Unique identifier of the order to retrieve
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Query shopping_mall_orders table by id to retrieve the order record. Verify data isolation: the shopping_mall_customer_id must match the authenticated customer's ID, or the requester must be an administrator. If not authorized, return 403 Forbidden.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Query shopping_mall_orders table by id to
+     *   retrieve the order record. Verify data isolation: the
+     *   shopping_mall_customer_id must match the authenticated customer's ID,
+     *   or the requester must be an administrator. If not authorized, return
+     *   403 Forbidden.
    *
    * Join with shopping_mall_order_items to retrieve all items belonging to this order. For each order item, join with shopping_mall_order_item_snapshots to get the preserved product name, description, price, seller shop name, and seller logo image. Also join with shopping_mall_order_item_snapshot_variant_options to retrieve the variant option key-value pairs (e.g., color=Red, size=Large).
    *

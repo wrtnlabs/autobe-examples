@@ -155,7 +155,8 @@ export namespace update {
  * @param props.voteId The unique identifier of the vote to retrieve
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query the community_platform_comment_votes table by vote ID to retrieve the vote record.
+ * @x-autobe-specification Query the community_platform_comment_votes table by
+ *   vote ID to retrieve the vote record.
  *
  * Implementation steps:
  * 1. Find the vote by ID from community_platform_comment_votes

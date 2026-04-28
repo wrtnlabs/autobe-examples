@@ -16,42 +16,42 @@ import { IShoppingMallShipment } from "./IShoppingMallShipment";
  */
 export type IShoppingMallOrder = {
   /**
-   * @x-autobe-database-schema-property id
+     * @x-autobe-database-schema-property id
    */
   id: string & tags.Format<"uuid">;
   /**
-   * @x-autobe-database-schema-property code
+     * @x-autobe-database-schema-property code
    */
   code: string;
   /**
-   * @x-autobe-database-schema-property status
+     * @x-autobe-database-schema-property status
    */
   status: string;
   /**
-   * @x-autobe-database-schema-property total_price
+     * @x-autobe-database-schema-property total_price
    */
   total_price: number;
   /**
-   * @x-autobe-database-schema-property customer
+     * @x-autobe-database-schema-property customer
    */
   customer: IShoppingMallCustomer.ISummary;
   /**
-   * @x-autobe-database-schema-property paymentAttempt
+     * @x-autobe-database-schema-property paymentAttempt
    */
   paymentAttempt: IShoppingMallPaymentAttempt.ISummary | null;
   addressSnapshot: IShoppingMallOrderAddressSnapshot;
   items: IShoppingMallOrderItem[];
   shipments: IShoppingMallShipment[];
   /**
-   * @x-autobe-database-schema-property created_at
+     * @x-autobe-database-schema-property created_at
    */
   created_at: string & tags.Format<"date-time">;
   /**
-   * @x-autobe-database-schema-property updated_at
+     * @x-autobe-database-schema-property updated_at
    */
   updated_at: string & tags.Format<"date-time">;
   /**
-   * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-database-schema-property deleted_at
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -63,49 +63,73 @@ export namespace IShoppingMallOrder {
     /**
      * Order code search term used to narrow the order-history results.
      *
-     * @x-autobe-specification Use this string as an exact or partial order-code filter in the query over preserved orders. Apply it to shopping_mall_orders.code during query construction, but treat it as search input rather than as a direct DTO-to-column property mapping.
+         * @x-autobe-specification Use this string as an exact or partial
+         *   order-code filter in the query over preserved orders. Apply it to
+         *   shopping_mall_orders.code during query construction, but treat it
+         *   as search input rather than as a direct DTO-to-column property
+         *   mapping.
      */
     code?: string | undefined;
 
     /**
      * Order status filter used to restrict results to a specific lifecycle state.
      *
-     * @x-autobe-specification Use this string as an order lifecycle status filter in the query over preserved orders. Apply it to shopping_mall_orders.status during query construction, but treat it as search input rather than as a direct DTO-to-column property mapping.
+         * @x-autobe-specification Use this string as an order lifecycle status
+         *   filter in the query over preserved orders. Apply it to
+         *   shopping_mall_orders.status during query construction, but treat it
+         *   as search input rather than as a direct DTO-to-column property
+         *   mapping.
      */
     status?: string | undefined;
 
     /**
      * Inclusive start of the order creation date-time range.
      *
-     * @x-autobe-specification Use this date-time as the inclusive lower bound of the order creation-time filter. Apply it to shopping_mall_orders.created_at during query construction, but treat it as a range parameter rather than as a direct database-mapped DTO property.
+         * @x-autobe-specification Use this date-time as the inclusive lower
+         *   bound of the order creation-time filter. Apply it to
+         *   shopping_mall_orders.created_at during query construction, but
+         *   treat it as a range parameter rather than as a direct
+         *   database-mapped DTO property.
      */
     createdAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Inclusive end of the order creation date-time range.
      *
-     * @x-autobe-specification Use this date-time as the inclusive upper bound of the order creation-time filter. Apply it to shopping_mall_orders.created_at during query construction, but treat it as a range parameter rather than as a direct database-mapped DTO property.
+         * @x-autobe-specification Use this date-time as the inclusive upper
+         *   bound of the order creation-time filter. Apply it to
+         *   shopping_mall_orders.created_at during query construction, but
+         *   treat it as a range parameter rather than as a direct
+         *   database-mapped DTO property.
      */
     createdAtTo?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Sort instruction that controls the ordering of returned order summaries.
      *
-     * @x-autobe-specification Interpret this string as a client-supplied ordering token for the order-history query. Validate it against supported summary-safe sort options and fall back to created_at descending when omitted or invalid.
+         * @x-autobe-specification Interpret this string as a client-supplied
+         *   ordering token for the order-history query. Validate it against
+         *   supported summary-safe sort options and fall back to created_at
+         *   descending when omitted or invalid.
      */
     sort?: string | undefined;
 
     /**
      * Requested page number for paginated order-history browsing.
      *
-     * @x-autobe-specification Use this integer as the 1-indexed page number for paginated retrieval. Convert it into offset logic together with limit; it is a query-control input, not stored order data.
+         * @x-autobe-specification Use this integer as the 1-indexed page number
+         *   for paginated retrieval. Convert it into offset logic together with
+         *   limit; it is a query-control input, not stored order data.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of order summaries to return per page.
      *
-     * @x-autobe-specification Use this integer as the maximum number of order summaries to return in one page. Enforce schema bounds and apply it to query pagination; it is a query-control input, not stored order data.
+         * @x-autobe-specification Use this integer as the maximum number of
+         *   order summaries to return in one page. Enforce schema bounds and
+         *   apply it to query pagination; it is a query-control input, not
+         *   stored order data.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -119,56 +143,70 @@ export namespace IShoppingMallOrder {
     /**
      * Unique identifier of the preserved order record.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_orders.id. Preserve the UUID primary key of the order record for stable identification in list results.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from shopping_mall_orders.id.
+         *   Preserve the UUID primary key of the order record for stable
+         *   identification in list results.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Business order number shown for identifying the order in history and search results.
      *
-     * @x-autobe-database-schema-property code
-     * @x-autobe-specification Direct mapping from shopping_mall_orders.code. Expose the business order number used for customer-facing and administrative lookup.
+         * @x-autobe-database-schema-property code
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_orders.code. Expose the business order number used
+         *   for customer-facing and administrative lookup.
      */
     code: string;
 
     /**
      * Current overall lifecycle status of the order.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from shopping_mall_orders.status. Return the current top-level lifecycle status maintained for the order header.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_orders.status. Return the current top-level lifecycle
+         *   status maintained for the order header.
      */
     status: string;
 
     /**
      * Total amount charged for the order at checkout.
      *
-     * @x-autobe-database-schema-property total_price
-     * @x-autobe-specification Direct mapping from shopping_mall_orders.total_price. Expose the total charged commercial amount for the order as a numeric value.
+         * @x-autobe-database-schema-property total_price
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_orders.total_price. Expose the total charged
+         *   commercial amount for the order as a numeric value.
      */
     total_price: number;
 
     /**
      * Timestamp when the order record was created after successful checkout.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_orders.created_at. Serialize the order creation timestamp in date-time format.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_orders.created_at. Serialize the order creation
+         *   timestamp in date-time format.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when the order header was last updated.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from shopping_mall_orders.updated_at. Serialize the latest order-header update timestamp in date-time format.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_orders.updated_at. Serialize the latest order-header
+         *   update timestamp in date-time format.
      */
     updated_at: string & tags.Format<"date-time">;
 
     /**
      * Soft-deletion timestamp of the order record, or null when the order has not been soft-deleted.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from shopping_mall_orders.deleted_at. Serialize the soft-deletion timestamp in date-time format when present; otherwise return null.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_orders.deleted_at. Serialize the soft-deletion
+         *   timestamp in date-time format when present; otherwise return null.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };

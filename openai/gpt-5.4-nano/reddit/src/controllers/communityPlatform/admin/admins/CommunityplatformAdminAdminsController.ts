@@ -24,9 +24,10 @@ export class CommunityplatformAdminAdminsController {
    *
    * @param connection
    * @param adminId Target administrator account ID (UUID).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Look up a single record from community_platform_admins by primary key.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Look up a single record from
+     *   community_platform_admins by primary key.
    *
    * Implementation steps:
    * 1) Parse `adminId` from path as UUID.

@@ -36,23 +36,25 @@ export class ErphrmMemberTimesheetsController {
    *
    * @param connection
    * @param body Week period for the new timesheet. Must specify a valid Monday start date and Sunday end date.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1. Extract the authenticated member's ID from the JWT session token.
-   * 2. Look up the employee record for the authenticated member within the current organization context (using organization_id from session).
-   * 3. Verify the employee status is 'active' - reject with 403 Forbidden if employee is deactivated.
-   * 4. Validate that week_start_date is a Monday and week_end_date is the following Sunday (7-day week period).
-   * 5. Check if a timesheet already exists for this employee and week_start_date (unique constraint).
-   * 6. If duplicate exists, reject with 409 Conflict error.
-   * 7. Calculate total_hours by summing duration/60 for all timelogs belonging to this employee within the date range [week_start_date, week_end_date].
-   * 8. Create the timesheet record with:
-   *    - employee_id = current employee's ID
-   *    - week_start_date and week_end_date from request
-   *    - status = 'draft'
-   *    - total_hours = calculated sum
-   *    - reviewer_id, submitted_at, reviewed_at, rejection_reason = null
-   * 9. Create associations in erp_hrm_timesheet_timelogs for all matching timelogs.
-   * 10. Return the created timesheet with all fields.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification 1. Extract the authenticated member's ID from the
+     *   JWT session token. 2. Look up the employee record for the authenticated
+     *   member within the current organization context (using organization_id
+     *   from session). 3. Verify the employee status is 'active' - reject with
+     *   403 Forbidden if employee is deactivated. 4. Validate that
+     *   week_start_date is a Monday and week_end_date is the following Sunday
+     *   (7-day week period). 5. Check if a timesheet already exists for this
+     *   employee and week_start_date (unique constraint). 6. If duplicate
+     *   exists, reject with 409 Conflict error. 7. Calculate total_hours by
+     *   summing duration/60 for all timelogs belonging to this employee within
+     *   the date range [week_start_date, week_end_date]. 8. Create the
+     *   timesheet record with: - employee_id = current employee's ID -
+     *   week_start_date and week_end_date from request - status = 'draft' -
+     *   total_hours = calculated sum - reviewer_id, submitted_at, reviewed_at,
+     *   rejection_reason = null 9. Create associations in
+     *   erp_hrm_timesheet_timelogs for all matching timelogs. 10. Return the
+     *   created timesheet with all fields.
    *
    * Edge cases:
    * - Employee not found in organization: 404 Not Found
@@ -95,9 +97,10 @@ export class ErphrmMemberTimesheetsController {
    *
    * @param connection
    * @param body Search criteria including status filter, date range, and pagination parameters
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query erp_hrm_timesheets table with pagination and filtering.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query erp_hrm_timesheets table with pagination
+     *   and filtering.
    *
    * Authorization logic:
    * 1. If user has time:view_all permission: return all timesheets in organization
@@ -151,9 +154,18 @@ export class ErphrmMemberTimesheetsController {
    *
    * @param connection
    * @param timesheetId Unique identifier of the timesheet to retrieve
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query the erp_hrm_timesheets table by primary key id, joining with erp_hrm_employees to verify organization context and ownership. Include related erp_hrm_timesheet_timelogs and their associated erp_hrm_timelogs for the timelog entries. Verify authorization: the requesting user must either own the timesheet (via employee relationship) or have time:view_all permission. Return 404 if timesheet not found or not accessible. Return 403 if user lacks permission to view this timesheet. The response includes the complete timesheet with all timelogs for the week, status information, and review details if applicable.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query the erp_hrm_timesheets table by primary key
+     *   id, joining with erp_hrm_employees to verify organization context and
+     *   ownership. Include related erp_hrm_timesheet_timelogs and their
+     *   associated erp_hrm_timelogs for the timelog entries. Verify
+     *   authorization: the requesting user must either own the timesheet (via
+     *   employee relationship) or have time:view_all permission. Return 404 if
+     *   timesheet not found or not accessible. Return 403 if user lacks
+     *   permission to view this timesheet. The response includes the complete
+     *   timesheet with all timelogs for the week, status information, and
+     *   review details if applicable.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Get(":timesheetId")
@@ -195,9 +207,10 @@ export class ErphrmMemberTimesheetsController {
    * @param connection
    * @param timesheetId Unique identifier of the timesheet to update (UUID format)
    * @param body Updated timesheet data including the list of timelog IDs to associate with this timesheet
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Update the timelog associations of a timesheet. The service layer must:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Update the timelog associations of a timesheet.
+     *   The service layer must:
    *
    * 1. Validate the timesheet exists and belongs to the current organization context
    * 2. Verify the authenticated member owns the employee record (employee_id matches the member's employee in current organization)
@@ -256,9 +269,9 @@ export class ErphrmMemberTimesheetsController {
    *
    * @param connection
    * @param timesheetId Unique identifier of the timesheet to submit. The timesheet must be owned by the authenticated employee and have 'draft' status.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation steps:
    *
    * 1. Validate path parameter timesheetId is a valid UUID
    *
@@ -328,9 +341,9 @@ export class ErphrmMemberTimesheetsController {
    *
    * @param connection
    * @param timesheetId Unique identifier of the timesheet to approve. The timesheet must be in 'submitted' status and belong to the current organization.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation Steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation Steps:
    *
    * 1. **Authorization Check**: Verify the authenticated user has 'time:approve' permission in the current organization context.
    *
@@ -397,9 +410,10 @@ export class ErphrmMemberTimesheetsController {
    * @param connection
    * @param timesheetId Unique identifier of the timesheet to reject
    * @param body Rejection details including the reason for rejection
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Reject a submitted timesheet with the following steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Reject a submitted timesheet with the following
+     *   steps:
    *
    * 1. Validate the timesheet exists and belongs to the current organization
    * 2. Verify the timesheet status is 'submitted' - if not, reject with error

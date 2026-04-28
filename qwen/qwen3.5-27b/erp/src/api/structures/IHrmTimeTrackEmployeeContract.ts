@@ -16,8 +16,10 @@ export type IHrmTimeTrackEmployeeContract = {
    *
    * This UUID serves as the primary key for identifying and referencing the contract across the system. It is automatically generated when the contract is created and remains immutable throughout the contract's lifecycle.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from hrm_time_track_employee_contracts.id. Primary key UUID generated on contract creation.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_employee_contracts.id. Primary key UUID generated on
+     *   contract creation.
    */
   id: string & tags.Format<"uuid">;
 
@@ -26,8 +28,11 @@ export type IHrmTimeTrackEmployeeContract = {
    *
    * This field defines when the employee's compensation terms and working conditions become effective. The start date is mandatory and cannot be modified after the contract is created. It must not be in the past when creating a new contract.
    *
-   * @x-autobe-database-schema-property start_date
-   * @x-autobe-specification Direct mapping from hrm_time_track_employee_contracts.start_date. DateTime field representing when the employment terms begin. Immutable once contract is created.
+     * @x-autobe-database-schema-property start_date
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_employee_contracts.start_date. DateTime field
+     *   representing when the employment terms begin. Immutable once contract
+     *   is created.
    */
   start_date: string & tags.Format<"date-time">;
 
@@ -36,8 +41,11 @@ export type IHrmTimeTrackEmployeeContract = {
    *
    * This field is optional. If not set (null), the contract is considered ongoing until explicitly ended or replaced by a new contract. If set to a future date, the contract will automatically become inactive on that date. Once the end date is in the past, the contract becomes an immutable historical record and cannot be modified. Can be extended when editing an active contract.
    *
-   * @x-autobe-database-schema-property end_date
-   * @x-autobe-specification Direct mapping from hrm_time_track_employee_contracts.end_date. Nullable DateTime field. If null, contract is ongoing. If set to past date, contract is ended and immutable.
+     * @x-autobe-database-schema-property end_date
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_employee_contracts.end_date. Nullable DateTime field. If
+     *   null, contract is ongoing. If set to past date, contract is ended and
+     *   immutable.
    */
   end_date: (string & tags.Format<"date-time">) | null;
 
@@ -46,8 +54,11 @@ export type IHrmTimeTrackEmployeeContract = {
    *
    * This field represents the numerical value of the employee's pay. The actual payment frequency is determined by the pay_period field (hourly, daily, weekly, or monthly). For example, a pay_rate of 25 with pay_period of 'hourly' means $25 per hour, while the same rate with 'monthly' means $25 per month. This field is mandatory and must be a positive number.
    *
-   * @x-autobe-database-schema-property pay_rate
-   * @x-autobe-specification Direct mapping from hrm_time_track_employee_contracts.pay_rate. Double precision number representing compensation amount. Must be positive. Combined with pay_period to determine actual payment frequency.
+     * @x-autobe-database-schema-property pay_rate
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_employee_contracts.pay_rate. Double precision number
+     *   representing compensation amount. Must be positive. Combined with
+     *   pay_period to determine actual payment frequency.
    */
   pay_rate: number;
 
@@ -56,8 +67,11 @@ export type IHrmTimeTrackEmployeeContract = {
    *
    * This field specifies how the pay_rate should be interpreted. Allowed values are: 'hourly' (pay per hour worked), 'daily' (pay per day), 'weekly' (pay per week), or 'monthly' (pay per month). This field is mandatory and must be one of the four allowed values. It works together with pay_rate to define the complete compensation structure.
    *
-   * @x-autobe-database-schema-property pay_period
-   * @x-autobe-specification Direct mapping from hrm_time_track_employee_contracts.pay_period. String field with allowed values: hourly, daily, weekly, monthly. Defines how pay_rate should be interpreted.
+     * @x-autobe-database-schema-property pay_period
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_employee_contracts.pay_period. String field with allowed
+     *   values: hourly, daily, weekly, monthly. Defines how pay_rate should be
+     *   interpreted.
    */
   pay_period: string;
 
@@ -66,8 +80,11 @@ export type IHrmTimeTrackEmployeeContract = {
    *
    * This field defines the standard weekly working hours for the employee under this contract. It is used for time tracking, overtime calculations, and compliance reporting. This field is mandatory and must be a positive number. For example, a full-time employee might have 40 hours per week, while a part-time employee might have 20 hours per week.
    *
-   * @x-autobe-database-schema-property working_hours_per_week
-   * @x-autobe-specification Direct mapping from hrm_time_track_employee_contracts.working_hours_per_week. Double precision number representing expected weekly working hours. Must be positive.
+     * @x-autobe-database-schema-property working_hours_per_week
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_employee_contracts.working_hours_per_week. Double
+     *   precision number representing expected weekly working hours. Must be
+     *   positive.
    */
   working_hours_per_week: number;
 
@@ -76,8 +93,10 @@ export type IHrmTimeTrackEmployeeContract = {
    *
    * This field can store supplementary details about the employment contract that don't fit into the standard fields. It may include special arrangements, exceptions to standard policies, or any other relevant information about the employment terms. This field is optional and can be left empty or null.
    *
-   * @x-autobe-database-schema-property notes
-   * @x-autobe-specification Direct mapping from hrm_time_track_employee_contracts.notes. Nullable string field for additional contract information or special conditions.
+     * @x-autobe-database-schema-property notes
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_employee_contracts.notes. Nullable string field for
+     *   additional contract information or special conditions.
    */
   notes: string | null;
 
@@ -86,8 +105,10 @@ export type IHrmTimeTrackEmployeeContract = {
    *
    * This timestamp is automatically generated when the contract is first created and cannot be modified. It serves as an audit trail for tracking when the employment contract was established. This field is included in responses for record-keeping and compliance purposes.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from hrm_time_track_employee_contracts.created_at. DateTime field automatically set when contract is created. Immutable.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_employee_contracts.created_at. DateTime field
+     *   automatically set when contract is created. Immutable.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -96,8 +117,10 @@ export type IHrmTimeTrackEmployeeContract = {
    *
    * This timestamp is automatically updated whenever the contract is edited. It provides an audit trail for tracking changes to the employment terms. This field helps identify when the most recent modifications were made to the contract's compensation or working conditions.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from hrm_time_track_employee_contracts.updated_at. DateTime field automatically updated on each contract modification.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_employee_contracts.updated_at. DateTime field
+     *   automatically updated on each contract modification.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -106,8 +129,12 @@ export type IHrmTimeTrackEmployeeContract = {
    *
    * This field provides the complete employee record including their user identity (name, email), position, department assignment, role, employment type, and status. The employee information gives organizational context to the contract and helps identify which person this contract belongs to within the organization.
    *
-   * @x-autobe-database-schema-property employee
-   * @x-autobe-specification Join from hrm_time_track_employee_contracts.hrm_time_track_employee_id to hrm_time_track_employees.id. Returns IHrmTimeTrackEmployee.ISummary with employee identity, position, department, role, and status information.
+     * @x-autobe-database-schema-property employee
+     * @x-autobe-specification Join from
+     *   hrm_time_track_employee_contracts.hrm_time_track_employee_id to
+     *   hrm_time_track_employees.id. Returns IHrmTimeTrackEmployee.ISummary
+     *   with employee identity, position, department, role, and status
+     *   information.
    */
   employee: IHrmTimeTrackEmployee.ISummary;
 };
@@ -125,7 +152,10 @@ export namespace IHrmTimeTrackEmployeeContract {
      *
      * Filters contracts where the start_date is on or after this datetime value. This parameter enables filtering contracts that began within a specific time range. When used alone, it returns all contracts starting from this date onwards. When combined with startDateTo, it defines a date range for contract start dates.
      *
-     * @x-autobe-specification Filter parameter for start_date column. Applied as >= comparison. Filters contracts where start_date is on or after this datetime. Used in conjunction with startDateTo for range filtering.
+         * @x-autobe-specification Filter parameter for start_date column.
+         *   Applied as >= comparison. Filters contracts where start_date is on
+         *   or after this datetime. Used in conjunction with startDateTo for
+         *   range filtering.
      */
     startDateFrom?: (string & tags.Format<"date-time">) | undefined;
 
@@ -134,7 +164,10 @@ export namespace IHrmTimeTrackEmployeeContract {
      *
      * Filters contracts where the start_date is on or before this datetime value. This parameter enables filtering contracts that began within a specific time range. When used alone, it returns all contracts up to and including this date. When combined with startDateFrom, it defines a date range for contract start dates.
      *
-     * @x-autobe-specification Filter parameter for start_date column. Applied as <= comparison. Filters contracts where start_date is on or before this datetime. Used in conjunction with startDateFrom for range filtering.
+         * @x-autobe-specification Filter parameter for start_date column.
+         *   Applied as <= comparison. Filters contracts where start_date is on
+         *   or before this datetime. Used in conjunction with startDateFrom for
+         *   range filtering.
      */
     startDateTo?: (string & tags.Format<"date-time">) | undefined;
 
@@ -143,7 +176,10 @@ export namespace IHrmTimeTrackEmployeeContract {
      *
      * Filters contracts where the end_date is on or after this datetime value. This parameter enables filtering contracts that ended within a specific time range. Only applies to contracts with a defined end_date (ended contracts). When used alone, it returns all contracts ending from this date onwards. When combined with endDateTo, it defines a date range for contract end dates.
      *
-     * @x-autobe-specification Filter parameter for end_date column. Applied as >= comparison on non-null end_date values. Filters contracts where end_date is on or after this datetime. Used in conjunction with endDateTo for range filtering.
+         * @x-autobe-specification Filter parameter for end_date column. Applied
+         *   as >= comparison on non-null end_date values. Filters contracts
+         *   where end_date is on or after this datetime. Used in conjunction
+         *   with endDateTo for range filtering.
      */
     endDateFrom?: (string & tags.Format<"date-time">) | undefined;
 
@@ -152,7 +188,10 @@ export namespace IHrmTimeTrackEmployeeContract {
      *
      * Filters contracts where the end_date is on or before this datetime value. This parameter enables filtering contracts that ended within a specific time range. Only applies to contracts with a defined end_date (ended contracts). When used alone, it returns all contracts up to and including this date. When combined with endDateFrom, it defines a date range for contract end dates.
      *
-     * @x-autobe-specification Filter parameter for end_date column. Applied as <= comparison on non-null end_date values. Filters contracts where end_date is on or before this datetime. Used in conjunction with endDateFrom for range filtering.
+         * @x-autobe-specification Filter parameter for end_date column. Applied
+         *   as <= comparison on non-null end_date values. Filters contracts
+         *   where end_date is on or before this datetime. Used in conjunction
+         *   with endDateFrom for range filtering.
      */
     endDateTo?: (string & tags.Format<"date-time">) | undefined;
 
@@ -161,7 +200,10 @@ export namespace IHrmTimeTrackEmployeeContract {
      *
      * Filters contracts by their current status based on the end_date field. Use 'active' to retrieve ongoing contracts (end_date is null), or 'ended' to retrieve completed contracts (end_date is set). This enables quick filtering between current employment terms and historical contracts.
      *
-     * @x-autobe-specification Filter parameter for contract status. Value 'active' filters where end_date IS NULL. Value 'ended' filters where end_date IS NOT NULL. Computed from end_date column nullability.
+         * @x-autobe-specification Filter parameter for contract status. Value
+         *   'active' filters where end_date IS NULL. Value 'ended' filters
+         *   where end_date IS NOT NULL. Computed from end_date column
+         *   nullability.
      */
     status?: string | undefined;
 
@@ -170,7 +212,9 @@ export namespace IHrmTimeTrackEmployeeContract {
      *
      * Filters contracts by their pay period classification. Allowed values are 'hourly', 'daily', 'weekly', or 'monthly'. This parameter enables filtering contracts by how often the employee is compensated, which is useful for payroll categorization and reporting.
      *
-     * @x-autobe-specification Filter parameter for pay_period column. Exact match filter on pay_period values. Allowed values: hourly, daily, weekly, monthly. Filters contracts by compensation frequency type.
+         * @x-autobe-specification Filter parameter for pay_period column. Exact
+         *   match filter on pay_period values. Allowed values: hourly, daily,
+         *   weekly, monthly. Filters contracts by compensation frequency type.
      */
     payPeriod?: string | undefined;
 
@@ -179,7 +223,9 @@ export namespace IHrmTimeTrackEmployeeContract {
      *
      * Specifies which field to use for ordering the returned contracts. Default is 'start_date' if not provided. Supported sort fields include contract dates, pay rate, pay period, and audit timestamps. This parameter works in conjunction with orderBy to control result ordering.
      *
-     * @x-autobe-specification Sorting field name. Specifies which field to sort results by. Default is 'start_date'. Supported fields: start_date, end_date, pay_rate, pay_period, created_at, updated_at.
+         * @x-autobe-specification Sorting field name. Specifies which field to
+         *   sort results by. Default is 'start_date'. Supported fields:
+         *   start_date, end_date, pay_rate, pay_period, created_at, updated_at.
      */
     sort?: string | undefined;
 
@@ -188,7 +234,9 @@ export namespace IHrmTimeTrackEmployeeContract {
      *
      * Specifies whether to sort results in ascending ('asc') or descending ('desc') order. Default is 'desc' (descending) if not provided. This parameter works in conjunction with sort to fully define result ordering. For example, sort=start_date with orderBy=desc shows newest contracts first.
      *
-     * @x-autobe-specification Sort direction. Value 'asc' for ascending order, 'desc' for descending order. Default is 'desc'. Applied to the field specified by sort parameter.
+         * @x-autobe-specification Sort direction. Value 'asc' for ascending
+         *   order, 'desc' for descending order. Default is 'desc'. Applied to
+         *   the field specified by sort parameter.
      */
     orderBy?: string | undefined;
 
@@ -197,7 +245,9 @@ export namespace IHrmTimeTrackEmployeeContract {
      *
      * Specifies which page of results to retrieve. Page numbering starts from 1 (not 0), so the first page is page 1. Default is 1 if not provided. This parameter works with pageSize to enable efficient retrieval of large contract collections in manageable chunks.
      *
-     * @x-autobe-specification Page number for pagination. 1-indexed (first page is 1). Default is 1. Used with pageSize to calculate offset for database query.
+         * @x-autobe-specification Page number for pagination. 1-indexed (first
+         *   page is 1). Default is 1. Used with pageSize to calculate offset
+         *   for database query.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -206,7 +256,9 @@ export namespace IHrmTimeTrackEmployeeContract {
      *
      * Controls how many contracts are returned in each page of results. Default is 20 records per page if not provided. Maximum allowed value is 100 to prevent excessive resource consumption. This parameter works with page to enable pagination through large contract collections.
      *
-     * @x-autobe-specification Number of records per page. Default is 20, maximum is 100. Used to limit result set size and calculate total pages. Server enforces upper bound.
+         * @x-autobe-specification Number of records per page. Default is 20,
+         *   maximum is 100. Used to limit result set size and calculate total
+         *   pages. Server enforces upper bound.
      */
     pageSize?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -217,7 +269,10 @@ export namespace IHrmTimeTrackEmployeeContract {
      *
      * Alternative pagination parameter that specifies the upper limit on returned records. Default is 100 if not provided. When both limit and pageSize are present, pageSize takes precedence. This parameter provides flexibility for different pagination strategies.
      *
-     * @x-autobe-specification Maximum number of records to return. Alternative to pageSize. Default is 100. If both limit and pageSize are provided, pageSize takes precedence. Used for cursor-based pagination fallback.
+         * @x-autobe-specification Maximum number of records to return.
+         *   Alternative to pageSize. Default is 100. If both limit and pageSize
+         *   are provided, pageSize takes precedence. Used for cursor-based
+         *   pagination fallback.
      */
     limit?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };
@@ -231,27 +286,27 @@ export namespace IHrmTimeTrackEmployeeContract {
    */
   export type ICreate = {
     /**
-     * @x-autobe-database-schema-property start_date
+         * @x-autobe-database-schema-property start_date
      */
     start_date: string & tags.Format<"date-time">;
     /**
-     * @x-autobe-database-schema-property end_date
+         * @x-autobe-database-schema-property end_date
      */
     end_date?: (string & tags.Format<"date-time">) | null | undefined;
     /**
-     * @x-autobe-database-schema-property pay_rate
+         * @x-autobe-database-schema-property pay_rate
      */
     pay_rate: number;
     /**
-     * @x-autobe-database-schema-property pay_period
+         * @x-autobe-database-schema-property pay_period
      */
     pay_period: string;
     /**
-     * @x-autobe-database-schema-property working_hours_per_week
+         * @x-autobe-database-schema-property working_hours_per_week
      */
     working_hours_per_week: number;
     /**
-     * @x-autobe-database-schema-property notes
+         * @x-autobe-database-schema-property notes
      */
     notes?: string | null | undefined;
   };
@@ -269,8 +324,9 @@ export namespace IHrmTimeTrackEmployeeContract {
      *
      * This UUID serves as the primary key for identifying and referencing the contract in API operations and database queries.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from hrm_time_track_employee_contracts.id. Primary key UUID.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_employee_contracts.id. Primary key UUID.
      */
     id: string & tags.Format<"uuid">;
 
@@ -279,8 +335,9 @@ export namespace IHrmTimeTrackEmployeeContract {
      *
      * This field is mandatory and immutable once the contract is created. It defines when the employment terms and compensation begin to apply.
      *
-     * @x-autobe-database-schema-property start_date
-     * @x-autobe-specification Direct mapping from hrm_time_track_employee_contracts.start_date. DateTime field.
+         * @x-autobe-database-schema-property start_date
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_employee_contracts.start_date. DateTime field.
      */
     start_date: string & tags.Format<"date-time">;
 
@@ -289,8 +346,10 @@ export namespace IHrmTimeTrackEmployeeContract {
      *
      * This field is optional. A null value indicates an ongoing contract with no predefined end date. Can be extended when editing an active contract.
      *
-     * @x-autobe-database-schema-property end_date
-     * @x-autobe-specification Direct mapping from hrm_time_track_employee_contracts.end_date. Nullable DateTime field.
+         * @x-autobe-database-schema-property end_date
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_employee_contracts.end_date. Nullable DateTime
+         *   field.
      */
     end_date: (string & tags.Format<"date-time">) | null;
 
@@ -299,8 +358,10 @@ export namespace IHrmTimeTrackEmployeeContract {
      *
      * This field is mandatory and represents the numerical pay amount. The actual payment frequency is determined by the pay_period field (hourly, daily, weekly, or monthly).
      *
-     * @x-autobe-database-schema-property pay_rate
-     * @x-autobe-specification Direct mapping from hrm_time_track_employee_contracts.pay_rate. Double precision number.
+         * @x-autobe-database-schema-property pay_rate
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_employee_contracts.pay_rate. Double precision
+         *   number.
      */
     pay_rate: number;
 
@@ -309,8 +370,10 @@ export namespace IHrmTimeTrackEmployeeContract {
      *
      * Allowed values are: hourly, daily, weekly, or monthly. This field is mandatory and determines the frequency at which the pay_rate amount is applied.
      *
-     * @x-autobe-database-schema-property pay_period
-     * @x-autobe-specification Direct mapping from hrm_time_track_employee_contracts.pay_period. String field with allowed values: hourly, daily, weekly, monthly.
+         * @x-autobe-database-schema-property pay_period
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_employee_contracts.pay_period. String field with
+         *   allowed values: hourly, daily, weekly, monthly.
      */
     pay_period: string;
 
@@ -319,8 +382,10 @@ export namespace IHrmTimeTrackEmployeeContract {
      *
      * This field is mandatory and defines the standard weekly working hours for the employee. Used for calculating overtime, part-time status, and workload expectations.
      *
-     * @x-autobe-database-schema-property working_hours_per_week
-     * @x-autobe-specification Direct mapping from hrm_time_track_employee_contracts.working_hours_per_week. Double precision number.
+         * @x-autobe-database-schema-property working_hours_per_week
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_employee_contracts.working_hours_per_week. Double
+         *   precision number.
      */
     working_hours_per_week: number;
 
@@ -329,8 +394,9 @@ export namespace IHrmTimeTrackEmployeeContract {
      *
      * This field can contain text describing special arrangements, exceptions, or other relevant details about the employment contract terms.
      *
-     * @x-autobe-database-schema-property notes
-     * @x-autobe-specification Direct mapping from hrm_time_track_employee_contracts.notes. Nullable string field.
+         * @x-autobe-database-schema-property notes
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_employee_contracts.notes. Nullable string field.
      */
     notes: string | null;
 
@@ -339,8 +405,9 @@ export namespace IHrmTimeTrackEmployeeContract {
      *
      * This field is automatically set by the system when the contract is first created and is used for audit trail and historical tracking purposes.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from hrm_time_track_employee_contracts.created_at. DateTime field.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_employee_contracts.created_at. DateTime field.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -349,8 +416,9 @@ export namespace IHrmTimeTrackEmployeeContract {
      *
      * This field is automatically updated by the system whenever the contract is edited, providing a record of when changes were made to the contract terms.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from hrm_time_track_employee_contracts.updated_at. DateTime field.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_employee_contracts.updated_at. DateTime field.
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -359,8 +427,11 @@ export namespace IHrmTimeTrackEmployeeContract {
      *
      * This field provides the employee's summary information including their identity, position, department, role, and employment status. Each contract belongs to exactly one employee.
      *
-     * @x-autobe-database-schema-property employee
-     * @x-autobe-specification Relation mapping via JOIN from hrm_time_track_employee_contracts.hrm_time_track_employee_id to hrm_time_track_employees.id. Returns IHrmTimeTrackEmployee.ISummary.
+         * @x-autobe-database-schema-property employee
+         * @x-autobe-specification Relation mapping via JOIN from
+         *   hrm_time_track_employee_contracts.hrm_time_track_employee_id to
+         *   hrm_time_track_employees.id. Returns
+         *   IHrmTimeTrackEmployee.ISummary.
      */
     employee: IHrmTimeTrackEmployee.ISummary;
   };

@@ -20,9 +20,10 @@ export class EcommercemallSellersProfileController {
    *
    * @param connection
    * @param sellerId Unique identifier of the seller whose profile to retrieve. Must be a valid UUID.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query the ecommerce_mall_seller_profiles table to find a profile where seller_id matches the provided sellerId parameter.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query the ecommerce_mall_seller_profiles table to
+     *   find a profile where seller_id matches the provided sellerId parameter.
    *
    * Verify the seller exists by checking the ecommerce_mall_sellers table - if the seller does not exist, return 404 with 'Seller not found'.
    *

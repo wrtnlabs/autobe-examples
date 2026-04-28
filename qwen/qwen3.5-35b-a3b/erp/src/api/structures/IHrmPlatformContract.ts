@@ -27,27 +27,27 @@ import { IHrmPlatformOrganization } from "./IHrmPlatformOrganization";
  */
 export type IHrmPlatformContract = {
   /**
-   * @x-autobe-database-schema-property id
+     * @x-autobe-database-schema-property id
    */
   id: string & tags.Format<"uuid">;
   /**
-   * @x-autobe-database-schema-property title
+     * @x-autobe-database-schema-property title
    */
   title: string & tags.MinLength<1> & tags.MaxLength<255>;
   /**
-   * @x-autobe-database-schema-property start_date
+     * @x-autobe-database-schema-property start_date
    */
   start_date: string & tags.Format<"date-time">;
   /**
-   * @x-autobe-database-schema-property end_date
+     * @x-autobe-database-schema-property end_date
    */
   end_date: (string & tags.Format<"date-time">) | null;
   /**
-   * @x-autobe-database-schema-property compensation_amount
+     * @x-autobe-database-schema-property compensation_amount
    */
   compensation_amount: number | null;
   /**
-   * @x-autobe-database-schema-property compensation_currency
+     * @x-autobe-database-schema-property compensation_currency
    */
   compensation_currency: string | null;
 
@@ -59,32 +59,35 @@ export type IHrmPlatformContract = {
    *
    * Only one contract per employee can be active at any time.
    *
-   * @x-autobe-specification Direct mapping from hrm_platform_contracts.status. VARCHAR. Valid values: 'active' or 'ended'. Only one contract per employee can have status 'active' at any time.
-   * @x-autobe-database-schema-property status
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_contracts.status. VARCHAR. Valid values: 'active' or
+     *   'ended'. Only one contract per employee can have status 'active' at any
+     *   time.
+     * @x-autobe-database-schema-property status
    */
   status: string;
   /**
-   * @x-autobe-database-schema-property notes
+     * @x-autobe-database-schema-property notes
    */
   notes: string | null;
   /**
-   * @x-autobe-database-schema-property created_at
+     * @x-autobe-database-schema-property created_at
    */
   created_at: string & tags.Format<"date-time">;
   /**
-   * @x-autobe-database-schema-property updated_at
+     * @x-autobe-database-schema-property updated_at
    */
   updated_at: string & tags.Format<"date-time">;
   /**
-   * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-database-schema-property deleted_at
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
   /**
-   * @x-autobe-database-schema-property employee
+     * @x-autobe-database-schema-property employee
    */
   employee: IHrmPlatformEmployee.ISummary;
   /**
-   * @x-autobe-database-schema-property organization
+     * @x-autobe-database-schema-property organization
    */
   organization: IHrmPlatformOrganization.ISummary;
 };
@@ -181,8 +184,11 @@ export namespace IHrmPlatformContract {
      *
      * This field contains a human-readable title for the contract, such as "Full-Time Employment Agreement" or "Consulting Services Contract". It serves as a quick identifier for the contract in lists and dashboards. The title helps distinguish between multiple contracts for the same employee.
      *
-     * @x-autobe-database-schema-property title
-     * @x-autobe-specification Direct mapping from hrm_platform_contracts.title. VARCHAR(255). Required field in database but optional in Update DTO (user may choose not to change it).
+         * @x-autobe-database-schema-property title
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_contracts.title. VARCHAR(255). Required field in
+         *   database but optional in Update DTO (user may choose not to change
+         *   it).
      */
     title?: string | undefined;
 
@@ -191,8 +197,11 @@ export namespace IHrmPlatformContract {
      *
      * This timestamp indicates when the contractual obligations start taking effect. It is used for calculating employment tenure, benefits eligibility, and payroll processing. The start_date must be a valid datetime in ISO 8601 format and can be in the past (for backdated contracts) or future (for pre-signed agreements).
      *
-     * @x-autobe-database-schema-property start_date
-     * @x-autobe-specification Direct mapping from hrm_platform_contracts.start_date. TIMESTAMP WITH TIME ZONE. Represents when the contract becomes effective. Must be a valid ISO 8601 datetime string.
+         * @x-autobe-database-schema-property start_date
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_contracts.start_date. TIMESTAMP WITH TIME ZONE.
+         *   Represents when the contract becomes effective. Must be a valid ISO
+         *   8601 datetime string.
      */
     start_date?: (string & tags.Format<"date-time">) | undefined;
 
@@ -201,8 +210,12 @@ export namespace IHrmPlatformContract {
      *
      * When set, this timestamp marks the contractual expiration. For contracts with finite terms (e.g., 1-year fixed-term agreements), the end_date defines when the employment relationship terminates. For open-ended or permanent contracts, this field remains null. The system prevents overlapping active contracts by validating that end_date doesn't conflict with other active contracts for the same employee.
      *
-     * @x-autobe-database-schema-property end_date
-     * @x-autobe-specification Direct mapping from hrm_platform_contracts.end_date. TIMESTAMP WITH TIME ZONE, nullable. Represents when the contract ends. Null indicates an ongoing contract without a fixed expiration date. Must be a valid ISO 8601 datetime string.
+         * @x-autobe-database-schema-property end_date
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_contracts.end_date. TIMESTAMP WITH TIME ZONE,
+         *   nullable. Represents when the contract ends. Null indicates an
+         *   ongoing contract without a fixed expiration date. Must be a valid
+         *   ISO 8601 datetime string.
      */
     end_date?: (string & tags.Format<"date-time">) | null | undefined;
 
@@ -211,8 +224,12 @@ export namespace IHrmPlatformContract {
      *
      * This field defines the monetary compensation (salary, wage, or fee) that the employee will receive. The amount is stored as a decimal number and interpreted according to the compensation_currency field. For example, an amount of 50000.00 with currency USD represents fifty thousand US dollars. The field is nullable for contracts without a fixed compensation amount (e.g., hourly contracts with variable pay).
      *
-     * @x-autobe-database-schema-property compensation_amount
-     * @x-autobe-specification Direct mapping from hrm_platform_contracts.compensation_amount. DOUBLE PRECISION, nullable. Represents the monetary compensation amount specified in the contract. Stored as a decimal number (e.g., 50000.00 for 50,000 in the specified currency).
+         * @x-autobe-database-schema-property compensation_amount
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_contracts.compensation_amount. DOUBLE PRECISION,
+         *   nullable. Represents the monetary compensation amount specified in
+         *   the contract. Stored as a decimal number (e.g., 50000.00 for 50,000
+         *   in the specified currency).
      */
     compensation_amount?: number | null | undefined;
 
@@ -221,8 +238,11 @@ export namespace IHrmPlatformContract {
      *
      * This field specifies the monetary unit for the compensation, using ISO 4217 three-letter currency codes (e.g., 'USD' for US Dollar, 'KRW' for Korean Won, 'EUR' for Euro). It must correspond to the compensation_amount to provide a complete monetary value. The currency code is used for payroll processing, tax calculations, and financial reporting. This field is nullable for contracts without fixed currency (e.g., expense reimbursement agreements).
      *
-     * @x-autobe-database-schema-property compensation_currency
-     * @x-autobe-specification Direct mapping from hrm_platform_contracts.compensation_currency. VARCHAR, nullable. ISO 4217 currency code (e.g., 'USD', 'KRW', 'EUR'). Must match the currency format of the compensation_amount.
+         * @x-autobe-database-schema-property compensation_currency
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_contracts.compensation_currency. VARCHAR, nullable.
+         *   ISO 4217 currency code (e.g., 'USD', 'KRW', 'EUR'). Must match the
+         *   currency format of the compensation_amount.
      */
     compensation_currency?: string | null | undefined;
 
@@ -231,8 +251,11 @@ export namespace IHrmPlatformContract {
      *
      * This field provides a free-text area for any supplementary information, special conditions, or additional terms that don't fit into the structured fields. Common uses include bonus structures, performance requirements, non-compete clauses, or other contractual stipulations. The notes field supports longer-form text and is useful for maintaining comprehensive contract documentation in one location.
      *
-     * @x-autobe-database-schema-property notes
-     * @x-autobe-specification Direct mapping from hrm_platform_contracts.notes. TEXT, nullable. Additional contract terms, conditions, or notes. Free-form text field for any supplementary information not captured in other fields.
+         * @x-autobe-database-schema-property notes
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_contracts.notes. TEXT, nullable. Additional contract
+         *   terms, conditions, or notes. Free-form text field for any
+         *   supplementary information not captured in other fields.
      */
     notes?: string | null | undefined;
   };
@@ -289,39 +312,39 @@ export namespace IHrmPlatformContract {
    */
   export type ISummary = {
     /**
-     * @x-autobe-database-schema-property id
+         * @x-autobe-database-schema-property id
      */
     id: string & tags.Format<"uuid">;
     /**
-     * @x-autobe-database-schema-property title
+         * @x-autobe-database-schema-property title
      */
     title: string;
     /**
-     * @x-autobe-database-schema-property start_date
+         * @x-autobe-database-schema-property start_date
      */
     start_date: string & tags.Format<"date-time">;
     /**
-     * @x-autobe-database-schema-property end_date
+         * @x-autobe-database-schema-property end_date
      */
     end_date?: (string & tags.Format<"date-time">) | null | undefined;
     /**
-     * @x-autobe-database-schema-property compensation_amount
+         * @x-autobe-database-schema-property compensation_amount
      */
     compensation_amount?: number | null | undefined;
     /**
-     * @x-autobe-database-schema-property compensation_currency
+         * @x-autobe-database-schema-property compensation_currency
      */
     compensation_currency?: string | null | undefined;
     /**
-     * @x-autobe-database-schema-property status
+         * @x-autobe-database-schema-property status
      */
     status: string;
     /**
-     * @x-autobe-database-schema-property created_at
+         * @x-autobe-database-schema-property created_at
      */
     created_at: string & tags.Format<"date-time">;
     /**
-     * @x-autobe-database-schema-property employee
+         * @x-autobe-database-schema-property employee
      */
     employee: IHrmPlatformEmployee.ISummary;
   };

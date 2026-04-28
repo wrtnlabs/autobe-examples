@@ -16,8 +16,9 @@ export namespace IEcommerceMallWishlist {
      *
      * System-generated UUID that uniquely identifies this wishlist record. Each customer has exactly one wishlist, making this identifier directly tied to the customer account.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_mall_wishlists.id. UUID primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_wishlists.id. UUID primary key.
      */
     id: string & tags.Format<"uuid">;
 
@@ -26,8 +27,9 @@ export namespace IEcommerceMallWishlist {
      *
      * Records when the customer registered on the platform, as wishlists are automatically created during customer registration.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_wishlists.created_at. Timestamptz stored in UTC.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_wishlists.created_at. Timestamptz stored in UTC.
      */
     createdAt: string & tags.Format<"date-time">;
 
@@ -36,8 +38,9 @@ export namespace IEcommerceMallWishlist {
      *
      * Reflects the last time any item was added to or removed from the wishlist. Used for cache invalidation and displaying freshness indicators.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_wishlists.updated_at. Timestamptz stored in UTC.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_wishlists.updated_at. Timestamptz stored in UTC.
      */
     updatedAt: string & tags.Format<"date-time">;
 
@@ -46,8 +49,11 @@ export namespace IEcommerceMallWishlist {
      *
      * Reference to the customer account that owns this wishlist. Each wishlist belongs to exactly one customer, providing ownership context in administrative and customer-facing views.
      *
-     * @x-autobe-database-schema-property customer
-     * @x-autobe-specification JOIN via ecommerce_mall_wishlists.shopping_customer_id to ecommerce_mall_customers.id. Returns IEcommerceMallCustomer.ISummary.
+         * @x-autobe-database-schema-property customer
+         * @x-autobe-specification JOIN via
+         *   ecommerce_mall_wishlists.shopping_customer_id to
+         *   ecommerce_mall_customers.id. Returns
+         *   IEcommerceMallCustomer.ISummary.
      */
     customer: IEcommerceMallCustomer.ISummary;
   };

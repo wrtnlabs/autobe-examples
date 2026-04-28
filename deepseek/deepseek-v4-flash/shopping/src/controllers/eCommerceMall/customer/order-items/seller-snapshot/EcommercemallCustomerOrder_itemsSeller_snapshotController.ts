@@ -20,9 +20,12 @@ export class EcommercemallCustomerOrder_itemsSeller_snapshotController {
    *
    * @param connection
    * @param itemId The unique identifier (UUID) of the order item whose seller snapshot is to be retrieved. The order item must exist and have a seller snapshot associated with it.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Query the e_commerce_mall_order_item_seller_snapshots table using the e_commerce_mall_order_item_id foreign key matching the provided itemId path parameter.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Query the
+     *   e_commerce_mall_order_item_seller_snapshots table using the
+     *   e_commerce_mall_order_item_id foreign key matching the provided itemId
+     *   path parameter.
    *
    * Since this is a 1:1 relationship (enforced by @@unique constraint on e_commerce_mall_order_item_id), at most one record will match. Return the record fields: id, shop_name, shop_logo (nullable), and created_at.
    *

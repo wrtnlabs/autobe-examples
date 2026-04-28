@@ -12,7 +12,9 @@ export type IEcommerceMallProductOverviewStatusBreakdown = {
    *
    * Represents the number of products that have not been soft-deleted and are visible to customers in the catalog.
    *
-   * @x-autobe-specification Computed aggregation: COUNT(*) FROM ecommerce_mall_products WHERE deleted_at IS NULL. Returns integer count of active (non-deleted) products.
+     * @x-autobe-specification Computed aggregation: COUNT(*) FROM
+     *   ecommerce_mall_products WHERE deleted_at IS NULL. Returns integer count
+     *   of active (non-deleted) products.
    */
   active: number & tags.Type<"int32"> & tags.Minimum<0>;
 
@@ -21,7 +23,9 @@ export type IEcommerceMallProductOverviewStatusBreakdown = {
    *
    * Represents products that have been soft-deleted by sellers but remain in the database for audit purposes and can potentially be recovered.
    *
-   * @x-autobe-specification Computed aggregation: COUNT(*) FROM ecommerce_mall_products WHERE deleted_at IS NOT NULL. Returns integer count of soft-deleted products.
+     * @x-autobe-specification Computed aggregation: COUNT(*) FROM
+     *   ecommerce_mall_products WHERE deleted_at IS NOT NULL. Returns integer
+     *   count of soft-deleted products.
    */
   deleted: number & tags.Type<"int32"> & tags.Minimum<0>;
 };

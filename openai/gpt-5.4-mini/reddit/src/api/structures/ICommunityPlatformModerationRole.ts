@@ -11,56 +11,72 @@ export type ICommunityPlatformModerationRole = {
   /**
    * Unique identifier for this moderation role assignment.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from community_platform_moderation_roles.id. Serialize the UUID primary key as-is.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_moderation_roles.id. Serialize the UUID primary key
+     *   as-is.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * The community that owns this moderation role assignment.
    *
-   * @x-autobe-database-schema-property community
-   * @x-autobe-specification Resolve community_platform_moderation_roles.community_platform_community_id to the related community record and serialize it using ICommunityPlatformCommunity.ISummary.
+     * @x-autobe-database-schema-property community
+     * @x-autobe-specification Resolve
+     *   community_platform_moderation_roles.community_platform_community_id to
+     *   the related community record and serialize it using
+     *   ICommunityPlatformCommunity.ISummary.
    */
   community: ICommunityPlatformCommunity.ISummary;
 
   /**
    * The member who was granted moderation authority.
    *
-   * @x-autobe-database-schema-property member
-   * @x-autobe-specification Resolve community_platform_moderation_roles.community_platform_member_id to the related member record and serialize it using ICommunityPlatformMember.ISummary.
+     * @x-autobe-database-schema-property member
+     * @x-autobe-specification Resolve
+     *   community_platform_moderation_roles.community_platform_member_id to the
+     *   related member record and serialize it using
+     *   ICommunityPlatformMember.ISummary.
    */
   member: ICommunityPlatformMember.ISummary;
 
   /**
    * The moderation authority level assigned to the member in this community.
    *
-   * @x-autobe-database-schema-property role_type
-   * @x-autobe-specification Direct mapping from community_platform_moderation_roles.role_type. Persist the domain-approved role value without transforming its meaning.
+     * @x-autobe-database-schema-property role_type
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_moderation_roles.role_type. Persist the
+     *   domain-approved role value without transforming its meaning.
    */
   role_type: string;
 
   /**
    * Timestamp when this moderation role assignment was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from community_platform_moderation_roles.created_at. Serialize as an ISO 8601 date-time string.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_moderation_roles.created_at. Serialize as an ISO
+     *   8601 date-time string.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when this moderation role assignment was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from community_platform_moderation_roles.updated_at. Serialize as an ISO 8601 date-time string.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_moderation_roles.updated_at. Serialize as an ISO
+     *   8601 date-time string.
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when this moderation role assignment was removed from active use, or null if still active.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from community_platform_moderation_roles.deleted_at. Serialize as null when active, or as an ISO 8601 date-time string when soft-deleted.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_moderation_roles.deleted_at. Serialize as null when
+     *   active, or as an ISO 8601 date-time string when soft-deleted.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -72,16 +88,23 @@ export namespace ICommunityPlatformModerationRole {
     /**
      * Identifier of the member who will receive moderation authority in the community.
      *
-     * @x-autobe-database-schema-property community_platform_member_id
-     * @x-autobe-specification Direct scalar mapping to community_platform_moderation_roles.community_platform_member_id. The service must verify that this UUID references an existing member before insert.
+         * @x-autobe-database-schema-property community_platform_member_id
+         * @x-autobe-specification Direct scalar mapping to
+         *   community_platform_moderation_roles.community_platform_member_id.
+         *   The service must verify that this UUID references an existing
+         *   member before insert.
      */
     communityPlatformMemberId: string & tags.Format<"uuid">;
 
     /**
      * Type of moderation authority to grant to the member.
      *
-     * @x-autobe-database-schema-property role_type
-     * @x-autobe-specification Direct scalar mapping to community_platform_moderation_roles.role_type. Persist the canonical role value accepted by the domain rules after validating that the requested role is allowed for community moderation assignments.
+         * @x-autobe-database-schema-property role_type
+         * @x-autobe-specification Direct scalar mapping to
+         *   community_platform_moderation_roles.role_type. Persist the
+         *   canonical role value accepted by the domain rules after validating
+         *   that the requested role is allowed for community moderation
+         *   assignments.
      */
     roleType: string;
   };
@@ -93,56 +116,73 @@ export namespace ICommunityPlatformModerationRole {
     /**
      * Unique identifier of this moderation-role record.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from community_platform_moderation_roles.id. This is the unique moderation-role record identifier.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_moderation_roles.id. This is the unique
+         *   moderation-role record identifier.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Community that this moderation role belongs to.
      *
-     * @x-autobe-database-schema-property community
-     * @x-autobe-specification Join from community_platform_moderation_roles.community_platform_community_id to community_platform_communities.id and expose the related community as ICommunityPlatformCommunity.ISummary.
+         * @x-autobe-database-schema-property community
+         * @x-autobe-specification Join from
+         *   community_platform_moderation_roles.community_platform_community_id
+         *   to community_platform_communities.id and expose the related
+         *   community as ICommunityPlatformCommunity.ISummary.
      */
     community: ICommunityPlatformCommunity.ISummary;
 
     /**
      * Member who holds this moderation role.
      *
-     * @x-autobe-database-schema-property member
-     * @x-autobe-specification Join from community_platform_moderation_roles.community_platform_member_id to community_platform_members.id and expose the related member as ICommunityPlatformMember.ISummary.
+         * @x-autobe-database-schema-property member
+         * @x-autobe-specification Join from
+         *   community_platform_moderation_roles.community_platform_member_id to
+         *   community_platform_members.id and expose the related member as
+         *   ICommunityPlatformMember.ISummary.
      */
     member: ICommunityPlatformMember.ISummary;
 
     /**
      * Authority level assigned to the member within the community.
      *
-     * @x-autobe-database-schema-property role_type
-     * @x-autobe-specification Direct mapping from community_platform_moderation_roles.role_type. Stores the moderation authority level, such as owner or moderator.
+         * @x-autobe-database-schema-property role_type
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_moderation_roles.role_type. Stores the
+         *   moderation authority level, such as owner or moderator.
      */
     role_type: string;
 
     /**
      * Timestamp when this moderation role was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from community_platform_moderation_roles.created_at. Represents when the moderation assignment was created.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_moderation_roles.created_at. Represents when the
+         *   moderation assignment was created.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when this moderation role was last updated.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from community_platform_moderation_roles.updated_at. Represents the most recent update to this moderation assignment.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_moderation_roles.updated_at. Represents the most
+         *   recent update to this moderation assignment.
      */
     updated_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when this moderation role was soft-deleted, or null if active.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from community_platform_moderation_roles.deleted_at. Null means the moderation role is active; a date-time value means it was soft-deleted while preserving history.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_moderation_roles.deleted_at. Null means the
+         *   moderation role is active; a date-time value means it was
+         *   soft-deleted while preserving history.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };
@@ -154,30 +194,44 @@ export namespace ICommunityPlatformModerationRole {
     /**
      * UUID of the member whose moderation role is being assigned or reconciled.
      *
-     * @x-autobe-database-schema-property community_platform_member_id
-     * @x-autobe-specification Direct mapping to community_platform_moderation_roles.community_platform_member_id. This value identifies the member whose moderation-role assignment is being managed within the community context provided by the path.
+         * @x-autobe-database-schema-property community_platform_member_id
+         * @x-autobe-specification Direct mapping to
+         *   community_platform_moderation_roles.community_platform_member_id.
+         *   This value identifies the member whose moderation-role assignment
+         *   is being managed within the community context provided by the path.
      */
     communityPlatformMemberId: string & tags.Format<"uuid">;
 
     /**
      * Moderation role to assign to the member in the target community.
      *
-     * @x-autobe-database-schema-property role_type
-     * @x-autobe-specification Direct mapping to community_platform_moderation_roles.role_type. The service must validate this value against the allowed moderation-role set before applying the reconciliation for the target community.
+         * @x-autobe-database-schema-property role_type
+         * @x-autobe-specification Direct mapping to
+         *   community_platform_moderation_roles.role_type. The service must
+         *   validate this value against the allowed moderation-role set before
+         *   applying the reconciliation for the target community.
      */
     roleType: string;
 
     /**
      * Target page number to retrieve, using 1-indexed pagination.
      *
-     * @x-autobe-specification Pagination control for moderation-role list handling. This value is not persisted in community_platform_moderation_roles; the service layer uses it to select the requested 1-indexed page and defaults to 1 when omitted or null.
+         * @x-autobe-specification Pagination control for moderation-role list
+         *   handling. This value is not persisted in
+         *   community_platform_moderation_roles; the service layer uses it to
+         *   select the requested 1-indexed page and defaults to 1 when omitted
+         *   or null.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
 
     /**
      * Maximum number of records to return per page.
      *
-     * @x-autobe-specification Pagination control for moderation-role list handling. This value is not persisted in community_platform_moderation_roles; the service layer uses it to cap the number of records returned per page and defaults to 100 when omitted or null.
+         * @x-autobe-specification Pagination control for moderation-role list
+         *   handling. This value is not persisted in
+         *   community_platform_moderation_roles; the service layer uses it to
+         *   cap the number of records returned per page and defaults to 100
+         *   when omitted or null.
      */
     limit?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };
@@ -189,8 +243,12 @@ export namespace ICommunityPlatformModerationRole {
     /**
      * The moderation authority level for this community role, such as owner or moderator.
      *
-     * @x-autobe-database-schema-property role_type
-     * @x-autobe-specification Direct mapping to community_platform_moderation_roles.role_type. The endpoint must validate the value against the allowed moderation authority set before applying the update, and the server must persist only this mutable field for the targeted moderation-role row.
+         * @x-autobe-database-schema-property role_type
+         * @x-autobe-specification Direct mapping to
+         *   community_platform_moderation_roles.role_type. The endpoint must
+         *   validate the value against the allowed moderation authority set
+         *   before applying the update, and the server must persist only this
+         *   mutable field for the targeted moderation-role row.
      */
     role_type?: string | undefined;
   };

@@ -27,7 +27,8 @@ import { IPageIEcommerceMallAdminRequest } from "../../../../structures/IPageIEc
  * @param props.body Search criteria including status filter, actor type filter, requested grade filter, date range filters, and pagination parameters.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor superAdmin
- * @x-autobe-specification Query the ecommerce_mall_admin_requests table with the following implementation:
+ * @x-autobe-specification Query the ecommerce_mall_admin_requests table with
+ *   the following implementation:
  *
  * 1. **Base Query**: Start with SELECT on ecommerce_mall_admin_requests filtering by soft-delete (deleted_at IS NULL)
  *
@@ -144,7 +145,8 @@ export namespace index {
  * @param props.requestId Unique identifier (UUID) of the administrator request to retrieve.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor superAdmin
- * @x-autobe-specification Query the ecommerce_mall_admin_requests table by the provided requestId (UUID).
+ * @x-autobe-specification Query the ecommerce_mall_admin_requests table by the
+ *   provided requestId (UUID).
  *
  * Validate that the request exists and is not soft-deleted (deleted_at is null). If the request does not exist or is deleted, return a 404 error with message "Administrator request not found".
  *

@@ -27,9 +27,11 @@ export class CommunityplatformMemberPostsVotesController {
    * @param connection
    * @param postId Target post ID
    * @param body Requested vote direction for the target post
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Authenticate the caller as a member and resolve the acting member's `community_platform_members.id` from the session context. Reject unauthenticated callers.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Authenticate the caller as a member and resolve
+     *   the acting member's `community_platform_members.id` from the session
+     *   context. Reject unauthenticated callers.
    *
    * Load the target post from `community_platform_posts` by `id = postId` and ensure it exists. Validate that the post is in a business state that allows voting by checking `status` and any deletion condition derived from `deleted_at`. Reject requests for unavailable or non-voteable posts.
    *
@@ -79,9 +81,10 @@ export class CommunityplatformMemberPostsVotesController {
    * @param connection
    * @param postId Target post identifier
    * @param body Replacement vote direction for the target post
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Resolve the authenticated member from the active session and reject the request if the caller is not a member.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Resolve the authenticated member from the active
+     *   session and reject the request if the caller is not a member.
    *
    * Load the target record from `community_platform_posts` by `postId`. Reject when the post does not exist. Before applying the vote change, verify the post is in a state that still permits member voting according to platform rules for content availability and moderation status. Do not create or update votes for posts that are unavailable for normal interaction.
    *
@@ -126,9 +129,10 @@ export class CommunityplatformMemberPostsVotesController {
    *
    * @param connection
    * @param postId Target post's ID
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Authenticate the caller as a member and derive the acting member identifier from the session context.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Authenticate the caller as a member and derive
+     *   the acting member identifier from the session context.
    *
    * Load the target community_platform_posts row by id = postId. Reject when the post does not exist. Reject when the post has been deleted or is otherwise not in an active state that can accept vote interaction, based on the post status and deleted_at fields.
    *

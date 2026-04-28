@@ -11,7 +11,13 @@ import { IHrmPlatformTimelog } from "../../../../../structures/IHrmPlatformTimel
  * @param props.connection
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query hrm_platform_timelogs table filtered by the authenticated employee's ID (from JWT token). Order by created_at descending. Limit results to 5 rows. Join with hrm_platform_projects to include project name in response. Exclude soft-deleted timelogs (deleted_at IS NULL). Return full timelog entity data including id, project reference, task reference (if any), start/end datetimes, duration, description, billable flag, and timestamps.
+ * @x-autobe-specification Query hrm_platform_timelogs table filtered by the
+ *   authenticated employee's ID (from JWT token). Order by created_at
+ *   descending. Limit results to 5 rows. Join with hrm_platform_projects to
+ *   include project name in response. Exclude soft-deleted timelogs (deleted_at
+ *   IS NULL). Return full timelog entity data including id, project reference,
+ *   task reference (if any), start/end datetimes, duration, description,
+ *   billable flag, and timestamps.
  *
  * Authentication: Required (member actor). Authorization: Employee can only access their own timelogs. Error handling: Return 401 if unauthenticated, 403 if employee tries to access another employee's data.
  * @path /hrmPlatform/member/timetracking/recent-timelogs

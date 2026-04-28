@@ -69,8 +69,10 @@ export namespace IEcommerceProduct {
      *
      * This is the primary identifier customers use to discover the product. The name should be descriptive and include key product attributes. Required field when provided in update requests, must be a non-empty string.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from ecommerce_products.name. Required when provided, must be non-empty string. Used for product discovery in search results and listings.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from ecommerce_products.name.
+         *   Required when provided, must be non-empty string. Used for product
+         *   discovery in search results and listings.
      */
     name?: string | undefined;
 
@@ -79,8 +81,11 @@ export namespace IEcommerceProduct {
      *
      * This field helps customers understand the product before purchasing. Supports rich text formatting for better presentation. Required field when provided in update requests, must be a non-empty string.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from ecommerce_products.description. Required when provided, must be non-empty string. Supports rich text formatting for better presentation.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_products.description. Required when provided, must be
+         *   non-empty string. Supports rich text formatting for better
+         *   presentation.
      */
     description?: string | undefined;
 
@@ -89,8 +94,11 @@ export namespace IEcommerceProduct {
      *
      * This UUID references a valid category in the ecommerce_categories table. The category must exist and be active (not soft-deleted). Used for product organization, browsing, and filtering. Products can be browsed by category hierarchy.
      *
-     * @x-autobe-database-schema-property category_id
-     * @x-autobe-specification Direct mapping from ecommerce_products.category_id. UUID format. References ecommerce_categories.id. Category must exist and be active. Used for product organization and browsing.
+         * @x-autobe-database-schema-property category_id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_products.category_id. UUID format. References
+         *   ecommerce_categories.id. Category must exist and be active. Used
+         *   for product organization and browsing.
      */
     category_id?: (string & tags.Format<"uuid">) | undefined;
 
@@ -99,8 +107,11 @@ export namespace IEcommerceProduct {
      *
      * This is the base price shown when variants don't override it. Individual product variants can have their own prices that override this base price. Must be a positive number when provided. Used for cart calculations and order totals.
      *
-     * @x-autobe-database-schema-property base_price
-     * @x-autobe-specification Direct mapping from ecommerce_products.base_price. Number type (double precision). Must be positive when provided. Individual variants can override this price. Used for cart calculations and order totals.
+         * @x-autobe-database-schema-property base_price
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_products.base_price. Number type (double precision). Must
+         *   be positive when provided. Individual variants can override this
+         *   price. Used for cart calculations and order totals.
      */
     base_price?: number | undefined;
   };
@@ -132,8 +143,9 @@ export namespace IEcommerceProduct {
      *
      * This is the primary key used to reference this product across all API endpoints. It is a UUID generated when the product is created.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_products.id. UUID primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from ecommerce_products.id.
+         *   UUID primary key.
      */
     id: string & tags.Format<"uuid">;
 
@@ -142,8 +154,9 @@ export namespace IEcommerceProduct {
      *
      * This is the product title shown to customers in search results, category listings, and product cards. It should be descriptive and include key product attributes.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from ecommerce_products.name. Required field.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from ecommerce_products.name.
+         *   Required field.
      */
     name: string;
 
@@ -152,8 +165,9 @@ export namespace IEcommerceProduct {
      *
      * This is the default price shown when variants don't override it. Individual product variants can have their own prices that override this base price.
      *
-     * @x-autobe-database-schema-property base_price
-     * @x-autobe-specification Direct mapping from ecommerce_products.base_price. Double precision float.
+         * @x-autobe-database-schema-property base_price
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_products.base_price. Double precision float.
      */
     base_price: number;
 
@@ -162,8 +176,9 @@ export namespace IEcommerceProduct {
      *
      * This is a reference to the seller account that created and maintains this product listing. The seller has full control over product details, pricing, and inventory management.
      *
-     * @x-autobe-database-schema-property seller
-     * @x-autobe-specification JOIN from ecommerce_products.seller_id to ecommerce_sellers.id. Returns IEcommerceSeller.ISummary.
+         * @x-autobe-database-schema-property seller
+         * @x-autobe-specification JOIN from ecommerce_products.seller_id to
+         *   ecommerce_sellers.id. Returns IEcommerceSeller.ISummary.
      */
     seller: IEcommerceSeller.ISummary;
 
@@ -172,8 +187,9 @@ export namespace IEcommerceProduct {
      *
      * This reference indicates the product's classification within the platform's hierarchical category structure. Products can be browsed by category, and each product belongs to exactly one category.
      *
-     * @x-autobe-database-schema-property category
-     * @x-autobe-specification JOIN from ecommerce_products.category_id to ecommerce_categories.id. Returns IEcommerceCategory.ISummary.
+         * @x-autobe-database-schema-property category
+         * @x-autobe-specification JOIN from ecommerce_products.category_id to
+         *   ecommerce_categories.id. Returns IEcommerceCategory.ISummary.
      */
     category: IEcommerceCategory.ISummary;
 
@@ -182,7 +198,9 @@ export namespace IEcommerceProduct {
      *
      * This is calculated from all customer reviews for the product, excluding deleted reviews. The value ranges from 1.0 to 5.0 stars. Returns null when no reviews exist for the product.
      *
-     * @x-autobe-specification Computed aggregation: AVG(rating) from ecommerce_reviews where product_id matches and deleted_at IS NULL. Returns null if no reviews exist.
+         * @x-autobe-specification Computed aggregation: AVG(rating) from
+         *   ecommerce_reviews where product_id matches and deleted_at IS NULL.
+         *   Returns null if no reviews exist.
      */
     average_rating: number | null;
 
@@ -191,7 +209,9 @@ export namespace IEcommerceProduct {
      *
      * This is the first image in the product's image gallery, ordered by display_order. It is used as the thumbnail in product listings and search results. Returns null if the product has no images.
      *
-     * @x-autobe-specification Computed aggregation: SELECT url FROM ecommerce_product_images WHERE product_id matches ORDER BY display_order ASC LIMIT 1. Returns null if no images exist.
+         * @x-autobe-specification Computed aggregation: SELECT url FROM
+         *   ecommerce_product_images WHERE product_id matches ORDER BY
+         *   display_order ASC LIMIT 1. Returns null if no images exist.
      */
     main_image_url: (string & tags.Format<"url">) | null;
 
@@ -200,7 +220,9 @@ export namespace IEcommerceProduct {
      *
      * This indicates whether the product is currently available for purchase. The status is computed from the sum of inventory quantities across all product variants. Values include 'in_stock' when inventory exists, or 'out_of_stock' when all variants are depleted.
      *
-     * @x-autobe-specification Computed aggregation: SUM of inventory quantity across all product variants. Returns 'in_stock' when total > 0, 'out_of_stock' otherwise.
+         * @x-autobe-specification Computed aggregation: SUM of inventory
+         *   quantity across all product variants. Returns 'in_stock' when total
+         *   > 0, 'out_of_stock' otherwise.
      */
     stock_status: string;
 
@@ -209,8 +231,9 @@ export namespace IEcommerceProduct {
      *
      * This is the date and time when the seller originally created this product listing. It is automatically set by the system and cannot be modified.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from ecommerce_products.created_at. Timestamp with timezone.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_products.created_at. Timestamp with timezone.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -219,8 +242,9 @@ export namespace IEcommerceProduct {
      *
      * This is automatically updated whenever any product field changes. It reflects the most recent edit to the product's name, description, price, or other attributes.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from ecommerce_products.updated_at. Timestamp with timezone.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_products.updated_at. Timestamp with timezone.
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -229,8 +253,9 @@ export namespace IEcommerceProduct {
      *
      * When this field is set, the product no longer appears in search results or category listings. The value is null for active products. Soft-deleted products can be restored by clearing this field.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from ecommerce_products.deleted_at. Nullable timestamp with timezone.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_products.deleted_at. Nullable timestamp with timezone.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };
@@ -272,7 +297,9 @@ export namespace IEcommerceProduct {
      * - Requires gin_trgm_ops index on name column for performance
      * - Empty or null value means no name filtering applied
      *
-     * @x-autobe-specification Query parameter for text search on product names using PostgreSQL trigram matching (gin_trgm_ops index). Maps to name column with ILIKE pattern matching.
+         * @x-autobe-specification Query parameter for text search on product
+         *   names using PostgreSQL trigram matching (gin_trgm_ops index). Maps
+         *   to name column with ILIKE pattern matching.
      */
     search?: string | undefined;
 
@@ -291,8 +318,11 @@ export namespace IEcommerceProduct {
      * - Can use recursive CTE when include_subcategories is enabled
      * - Valid UUID format required
      *
-     * @x-autobe-database-schema-property category_id
-     * @x-autobe-specification Direct mapping from ecommerce_products.category_id. Filters products by exact category match. Can be combined with include_subcategories for recursive category filtering.
+         * @x-autobe-database-schema-property category_id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_products.category_id. Filters products by exact category
+         *   match. Can be combined with include_subcategories for recursive
+         *   category filtering.
      */
     category_id?: (string & tags.Format<"uuid">) | undefined;
 
@@ -311,7 +341,9 @@ export namespace IEcommerceProduct {
      * - Parent-child relationship defined by parent_id foreign key
      * - Two-level hierarchy supported (root categories and subcategories)
      *
-     * @x-autobe-specification Query parameter controlling recursive category filtering. When true, uses recursive CTE to include products from child categories of the specified category_id.
+         * @x-autobe-specification Query parameter controlling recursive
+         *   category filtering. When true, uses recursive CTE to include
+         *   products from child categories of the specified category_id.
      */
     include_subcategories?: boolean | undefined;
 
@@ -330,7 +362,9 @@ export namespace IEcommerceProduct {
      * - Supports decimal precision for currency values
      * - No minimum value constraint (can be 0 or negative)
      *
-     * @x-autobe-specification Query parameter for minimum price filtering. Maps to base_price >= min_price comparison on ecommerce_products table.
+         * @x-autobe-specification Query parameter for minimum price filtering.
+         *   Maps to base_price >= min_price comparison on ecommerce_products
+         *   table.
      */
     min_price?: number | undefined;
 
@@ -349,7 +383,9 @@ export namespace IEcommerceProduct {
      * - Supports decimal precision for currency values
      * - No maximum value constraint
      *
-     * @x-autobe-specification Query parameter for maximum price filtering. Maps to base_price <= max_price comparison on ecommerce_products table.
+         * @x-autobe-specification Query parameter for maximum price filtering.
+         *   Maps to base_price <= max_price comparison on ecommerce_products
+         *   table.
      */
     max_price?: number | undefined;
 
@@ -368,8 +404,10 @@ export namespace IEcommerceProduct {
      * - Requires valid UUID format
      * - Indexed for performance
      *
-     * @x-autobe-database-schema-property seller_id
-     * @x-autobe-specification Direct mapping from ecommerce_products.seller_id. Filters products by exact seller match.
+         * @x-autobe-database-schema-property seller_id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_products.seller_id. Filters products by exact seller
+         *   match.
      */
     seller_id?: (string & tags.Format<"uuid">) | undefined;
 
@@ -388,7 +426,10 @@ export namespace IEcommerceProduct {
      * - Stock calculation: SUM(inventory_records.quantity) for all variants of a product
      * - Product marked as 'available' if any variant has stock > 0
      *
-     * @x-autobe-specification Query parameter for stock availability filtering. When true, filters products where at least one variant has stock > 0 (calculated from sum of inventory_records for all variants).
+         * @x-autobe-specification Query parameter for stock availability
+         *   filtering. When true, filters products where at least one variant
+         *   has stock > 0 (calculated from sum of inventory_records for all
+         *   variants).
      */
     in_stock_only?: boolean | undefined;
 
@@ -413,7 +454,9 @@ export namespace IEcommerceProduct {
      * - Uses indexed columns for performance
      * - String sorting (name) is case-sensitive
      *
-     * @x-autobe-specification Query parameter for sorting control. Maps to ORDER BY clause with allowed values: created_at, updated_at, name, base_price. Applied before pagination.
+         * @x-autobe-specification Query parameter for sorting control. Maps to
+         *   ORDER BY clause with allowed values: created_at, updated_at, name,
+         *   base_price. Applied before pagination.
      */
     sort_by?: "created_at" | "updated_at" | "name" | "base_price" | undefined;
 
@@ -435,7 +478,9 @@ export namespace IEcommerceProduct {
      * - Maps to ASC/DESC in SQL ORDER BY clause
      * - Affects all numeric, date, and string sorting
      *
-     * @x-autobe-specification Query parameter for sort direction. Maps to ASC or DESC in ORDER BY clause. Default is 'desc' for created_at sorting.
+         * @x-autobe-specification Query parameter for sort direction. Maps to
+         *   ASC or DESC in ORDER BY clause. Default is 'desc' for created_at
+         *   sorting.
      */
     sort_order?: "asc" | "desc" | undefined;
 
@@ -455,7 +500,8 @@ export namespace IEcommerceProduct {
      * - Valid range: 1 to 100
      * - Values outside range are clamped or rejected
      *
-     * @x-autobe-specification Query parameter for pagination control. Maps to LIMIT clause in SQL query. Default 20, maximum 100.
+         * @x-autobe-specification Query parameter for pagination control. Maps
+         *   to LIMIT clause in SQL query. Default 20, maximum 100.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -477,7 +523,9 @@ export namespace IEcommerceProduct {
      * - Enables efficient pagination without offset-based queries
      * - Invalid or expired cursors may return error or first page
      *
-     * @x-autobe-specification Query parameter for cursor-based pagination. Encoded cursor value from previous page's last record (created_at and id). Used for fetching next page.
+         * @x-autobe-specification Query parameter for cursor-based pagination.
+         *   Encoded cursor value from previous page's last record (created_at
+         *   and id). Used for fetching next page.
      */
     cursor?: string | undefined;
 
@@ -497,7 +545,9 @@ export namespace IEcommerceProduct {
      * - Combined with limit to calculate offset: offset = (page - 1) * limit
      * - Returns empty data array for non-existent pages
      *
-     * @x-autobe-specification Query parameter for page-based pagination. 1-indexed page number. Defaults to 1 if not provided. Alternative to cursor-based pagination.
+         * @x-autobe-specification Query parameter for page-based pagination.
+         *   1-indexed page number. Defaults to 1 if not provided. Alternative
+         *   to cursor-based pagination.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };
@@ -533,8 +583,9 @@ export namespace IEcommerceProduct {
      * - Non-empty string required
      * - Used in product search indexing
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from ecommerce_products.name. Required field for product identification and search.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from ecommerce_products.name.
+         *   Required field for product identification and search.
      */
     name: string;
 
@@ -547,8 +598,9 @@ export namespace IEcommerceProduct {
      * - Non-empty string required
      * - Supports rich text formatting
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from ecommerce_products.description. Required field for product details.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_products.description. Required field for product details.
      */
     description: string;
 
@@ -562,8 +614,10 @@ export namespace IEcommerceProduct {
      * - Must reference an existing, non-deleted category
      * - Products can be browsed by category
      *
-     * @x-autobe-database-schema-property category_id
-     * @x-autobe-specification Direct mapping from ecommerce_products.category_id. UUID of existing category. Validated against ecommerce_categories table.
+         * @x-autobe-database-schema-property category_id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_products.category_id. UUID of existing category.
+         *   Validated against ecommerce_categories table.
      */
     category_id: string & tags.Format<"uuid">;
 
@@ -576,8 +630,10 @@ export namespace IEcommerceProduct {
      * - Positive number required
      * - Variants may override with their own price
      *
-     * @x-autobe-database-schema-property base_price
-     * @x-autobe-specification Direct mapping from ecommerce_products.base_price. Positive number representing price in platform currency. Individual variants may override this price.
+         * @x-autobe-database-schema-property base_price
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_products.base_price. Positive number representing price
+         *   in platform currency. Individual variants may override this price.
      */
     base_price: number;
 
@@ -592,7 +648,11 @@ export namespace IEcommerceProduct {
      * - Optional price override per variant
      * - Inserted atomically with product creation
      *
-     * @x-autobe-specification Composition: Array of IEcommerceProductVariant.ICreate. Each variant is created as a separate record in ecommerce_product_variants table with product_id foreign key. Backend validates unique sku_code within product. Inserted atomically with product creation in same transaction.
+         * @x-autobe-specification Composition: Array of
+         *   IEcommerceProductVariant.ICreate. Each variant is created as a
+         *   separate record in ecommerce_product_variants table with product_id
+         *   foreign key. Backend validates unique sku_code within product.
+         *   Inserted atomically with product creation in same transaction.
      */
     variants?: IEcommerceProductVariant.ICreate[] | undefined;
 
@@ -606,7 +666,13 @@ export namespace IEcommerceProduct {
      * - System assigns display_order positions
      * - First image becomes product thumbnail
      *
-     * @x-autobe-specification Composition: Array of IEcommerceProductImage.ICreate. Each image is created as a separate record in ecommerce_product_images table with ecommerce_product_id foreign key. Backend assigns display_order starting from next available position. First image (display_order=0) becomes thumbnail. Inserted atomically with product creation in same transaction.
+         * @x-autobe-specification Composition: Array of
+         *   IEcommerceProductImage.ICreate. Each image is created as a separate
+         *   record in ecommerce_product_images table with ecommerce_product_id
+         *   foreign key. Backend assigns display_order starting from next
+         *   available position. First image (display_order=0) becomes
+         *   thumbnail. Inserted atomically with product creation in same
+         *   transaction.
      */
     images?: IEcommerceProductImage.ICreate[] | undefined;
   };

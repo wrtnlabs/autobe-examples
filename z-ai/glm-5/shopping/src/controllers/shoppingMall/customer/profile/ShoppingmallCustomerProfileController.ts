@@ -30,9 +30,9 @@ export class ShoppingmallCustomerProfileController {
    *
    * @param connection
    * @param body Seller profile update data with shop name (required), description (optional), and logo image URL (optional)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Implementation steps for seller profile update:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Implementation steps for seller profile update:
    *
    * 1. **Authentication & Authorization:**
    *    - Extract seller ID from JWT token

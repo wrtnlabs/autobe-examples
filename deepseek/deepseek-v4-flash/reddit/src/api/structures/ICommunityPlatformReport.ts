@@ -71,8 +71,9 @@ export namespace ICommunityPlatformReport {
      *
      * Auto-generated UUID primary key assigned when the report is submitted.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from community_platform_reports.id. UUID primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_reports.id. UUID primary key.
      */
     id: string & tags.Format<"uuid">;
 
@@ -81,8 +82,9 @@ export namespace ICommunityPlatformReport {
      *
      * Required at submission time and used by moderators during review to understand the nature of the violation.
      *
-     * @x-autobe-database-schema-property reason
-     * @x-autobe-specification Direct mapping from community_platform_reports.reason.
+         * @x-autobe-database-schema-property reason
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_reports.reason.
      */
     reason: string;
 
@@ -91,8 +93,10 @@ export namespace ICommunityPlatformReport {
      *
      * Valid values are `post` and `comment`. Determines which polymorphic target association (post target or comment target) holds the foreign key to the reported content.
      *
-     * @x-autobe-database-schema-property target_type
-     * @x-autobe-specification Direct mapping from community_platform_reports.target_type. Values: 'post' or 'comment'.
+         * @x-autobe-database-schema-property target_type
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_reports.target_type. Values: 'post' or
+         *   'comment'.
      */
     target_type: string;
 
@@ -103,8 +107,10 @@ export namespace ICommunityPlatformReport {
      * - `approved`: Moderator approved the report; the reported content was deleted.
      * - `dismissed`: Moderator dismissed the report; the reported content remains unchanged.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from community_platform_reports.status. Values: 'pending', 'approved', 'dismissed'.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_reports.status. Values: 'pending', 'approved',
+         *   'dismissed'.
      */
     status: string;
 
@@ -113,8 +119,11 @@ export namespace ICommunityPlatformReport {
      *
      * Provides a summary of the reporting member including their unique identifier, username, registration timestamp, and soft-deletion status.
      *
-     * @x-autobe-database-schema-property reporter
-     * @x-autobe-specification Join from community_platform_reports.reporter_id to community_platform_members.id. Returns ICommunityPlatformMember.ISummary.
+         * @x-autobe-database-schema-property reporter
+         * @x-autobe-specification Join from
+         *   community_platform_reports.reporter_id to
+         *   community_platform_members.id. Returns
+         *   ICommunityPlatformMember.ISummary.
      */
     reporter: ICommunityPlatformMember.ISummary;
 
@@ -123,8 +132,11 @@ export namespace ICommunityPlatformReport {
      *
      * Provides a summary of the scoping community including its name, description, icon URI, subscriber count, owner, and creation timestamp.
      *
-     * @x-autobe-database-schema-property community
-     * @x-autobe-specification Join from community_platform_reports.community_id to community_platform_communities.id. Returns ICommunityPlatformCommunity.ISummary.
+         * @x-autobe-database-schema-property community
+         * @x-autobe-specification Join from
+         *   community_platform_reports.community_id to
+         *   community_platform_communities.id. Returns
+         *   ICommunityPlatformCommunity.ISummary.
      */
     community: ICommunityPlatformCommunity.ISummary;
 
@@ -133,8 +145,9 @@ export namespace ICommunityPlatformReport {
      *
      * Set automatically upon report creation and immutable afterward.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from community_platform_reports.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_reports.created_at.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -143,8 +156,9 @@ export namespace ICommunityPlatformReport {
      *
      * Updated whenever the report's status changes (e.g., approved or dismissed) or any other field is modified.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from community_platform_reports.updated_at.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_reports.updated_at.
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -153,8 +167,10 @@ export namespace ICommunityPlatformReport {
      *
      * Null indicates the report is active. When set, the report is considered permanently removed from the system (e.g., after retention period expiry).
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from community_platform_reports.deleted_at. Nullable — null indicates an active report.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_reports.deleted_at. Nullable — null indicates an
+         *   active report.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };

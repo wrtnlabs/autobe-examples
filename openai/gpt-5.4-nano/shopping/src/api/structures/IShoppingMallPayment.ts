@@ -8,96 +8,110 @@ export type IShoppingMallPayment = {
   /**
    * Unique identifier of the payment attempt record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Read from shopping_mall_payments.id. Must be a UUID string.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Read from shopping_mall_payments.id. Must be a
+     *   UUID string.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Payment amount that was attempted for this checkout/payment attempt.
    *
-   * @x-autobe-database-schema-property amount
-   * @x-autobe-specification Read from shopping_mall_payments.amount. Represent as a number (decimal in DB).
+     * @x-autobe-database-schema-property amount
+     * @x-autobe-specification Read from shopping_mall_payments.amount.
+     *   Represent as a number (decimal in DB).
    */
   amount: number;
 
   /**
    * Currency code for the attempted payment amount (e.g., KRW, USD).
    *
-   * @x-autobe-database-schema-property currency
-   * @x-autobe-specification Read from shopping_mall_payments.currency. Represent as a string currency code.
+     * @x-autobe-database-schema-property currency
+     * @x-autobe-specification Read from shopping_mall_payments.currency.
+     *   Represent as a string currency code.
    */
   currency: string;
 
   /**
    * Identifier of the payment service/provider used for this payment attempt.
    *
-   * @x-autobe-database-schema-property provider
-   * @x-autobe-specification Read from shopping_mall_payments.provider. Represent as provider identifier string exactly as stored.
+     * @x-autobe-database-schema-property provider
+     * @x-autobe-specification Read from shopping_mall_payments.provider.
+     *   Represent as provider identifier string exactly as stored.
    */
   provider: string;
 
   /**
    * Provider-side reference/transaction identifier for the payment attempt.
    *
-   * @x-autobe-database-schema-property provider_reference
-   * @x-autobe-specification Read from shopping_mall_payments.provider_reference. Represent as provider-side reference string.
+     * @x-autobe-database-schema-property provider_reference
+     * @x-autobe-specification Read from
+     *   shopping_mall_payments.provider_reference. Represent as provider-side
+     *   reference string.
    */
   provider_reference: string;
 
   /**
    * Current payment attempt status (e.g., pending/succeeded/failed) as stored for this attempt.
    *
-   * @x-autobe-database-schema-property status
-   * @x-autobe-specification Read from shopping_mall_payments.status. Treat as an opaque stored status string unless validated in higher layers.
+     * @x-autobe-database-schema-property status
+     * @x-autobe-specification Read from shopping_mall_payments.status. Treat as
+     *   an opaque stored status string unless validated in higher layers.
    */
   status: string;
 
   /**
    * Timestamp when the payment provider confirmed the attempt as successful; null when not successful yet/when failed.
    *
-   * @x-autobe-database-schema-property paid_at
-   * @x-autobe-specification Read from shopping_mall_payments.paid_at. If DB value is null, return null; otherwise return ISO 8601 date-time string.
+     * @x-autobe-database-schema-property paid_at
+     * @x-autobe-specification Read from shopping_mall_payments.paid_at. If DB
+     *   value is null, return null; otherwise return ISO 8601 date-time string.
    */
   paid_at: (string & tags.Format<"date-time">) | null;
 
   /**
    * Provider/application error code when the payment attempt failed; null when not applicable.
    *
-   * @x-autobe-database-schema-property error_code
-   * @x-autobe-specification Read from shopping_mall_payments.error_code. If DB value is null, return null; otherwise return as string.
+     * @x-autobe-database-schema-property error_code
+     * @x-autobe-specification Read from shopping_mall_payments.error_code. If
+     *   DB value is null, return null; otherwise return as string.
    */
   error_code: string | null;
 
   /**
    * Provider/application error message when the payment attempt failed; null when not applicable.
    *
-   * @x-autobe-database-schema-property error_message
-   * @x-autobe-specification Read from shopping_mall_payments.error_message. If DB value is null, return null; otherwise return as string.
+     * @x-autobe-database-schema-property error_message
+     * @x-autobe-specification Read from shopping_mall_payments.error_message.
+     *   If DB value is null, return null; otherwise return as string.
    */
   error_message: string | null;
 
   /**
    * Timestamp when this payment attempt record was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Read from shopping_mall_payments.created_at. Must be timezone-aware; represent as ISO 8601 date-time string.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Read from shopping_mall_payments.created_at. Must
+     *   be timezone-aware; represent as ISO 8601 date-time string.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when this payment attempt record was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Read from shopping_mall_payments.updated_at. Must be timezone-aware; represent as ISO 8601 date-time string.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Read from shopping_mall_payments.updated_at. Must
+     *   be timezone-aware; represent as ISO 8601 date-time string.
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * Soft-deletion timestamp; null when the payment attempt record is active.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Read from shopping_mall_payments.deleted_at. If DB value is null, return null; otherwise return ISO 8601 date-time string.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Read from shopping_mall_payments.deleted_at. If
+     *   DB value is null, return null; otherwise return ISO 8601 date-time
+     *   string.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -109,39 +123,57 @@ export namespace IShoppingMallPayment {
     /**
      * Payment amount attempted for this checkout/order placement (non-negative; must be >0 to initiate a charge).
      *
-     * @x-autobe-database-schema-property amount
-     * @x-autobe-specification Direct mapping from shopping_mall_payments.amount. Validate as a non-negative number at schema level; payment initiation should treat amount<=0 as invalid/non-actionable per domain rules (x-autobe-specification indicates amount>0 for initiating).
+         * @x-autobe-database-schema-property amount
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_payments.amount. Validate as a non-negative number at
+         *   schema level; payment initiation should treat amount<=0 as
+         *   invalid/non-actionable per domain rules (x-autobe-specification
+         *   indicates amount>0 for initiating).
      */
     amount: number & tags.Minimum<0>;
 
     /**
      * Currency code for the payment amount (e.g., KRW, USD).
      *
-     * @x-autobe-database-schema-property currency
-     * @x-autobe-specification Direct mapping from shopping_mall_payments.currency. Validate as a non-empty string (minLength 1) and persist exactly as provided.
+         * @x-autobe-database-schema-property currency
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_payments.currency. Validate as a non-empty string
+         *   (minLength 1) and persist exactly as provided.
      */
     currency: string & tags.MinLength<1>;
 
     /**
      * Payment provider identifier used to process the payment attempt.
      *
-     * @x-autobe-database-schema-property provider
-     * @x-autobe-specification Direct mapping from shopping_mall_payments.provider. Validate as a non-empty string (minLength 1). Use this value to select the external payment provider implementation.
+         * @x-autobe-database-schema-property provider
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_payments.provider. Validate as a non-empty string
+         *   (minLength 1). Use this value to select the external payment
+         *   provider implementation.
      */
     provider: string & tags.MinLength<1>;
 
     /**
      * Provider-side reference/transaction identifier for the payment attempt (used for correlation/idempotency).
      *
-     * @x-autobe-database-schema-property provider_reference
-     * @x-autobe-specification Direct mapping from shopping_mall_payments.provider_reference. Validate as a non-empty string (minLength 1) and persist exactly.
+         * @x-autobe-database-schema-property provider_reference
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_payments.provider_reference. Validate as a non-empty
+         *   string (minLength 1) and persist exactly.
      */
     provider_reference: string & tags.MinLength<1>;
 
     /**
      * Identifier of the member’s current checkout/order placement context that this payment attempt will pay for (UUID).
      *
-     * @x-autobe-specification Use orderPlacementContextId to authorize and resolve the authenticated member’s checkout/order placement context in the service layer. The payment record persisted in shopping_mall_payments is created from the other mapped columns (amount/currency/provider/provider_reference) and linked to order creation only after payment succeeds. Do not attempt to persist orderPlacementContextId into a non-existent shopping_mall_payments column.
+         * @x-autobe-specification Use orderPlacementContextId to authorize and
+         *   resolve the authenticated member’s checkout/order placement context
+         *   in the service layer. The payment record persisted in
+         *   shopping_mall_payments is created from the other mapped columns
+         *   (amount/currency/provider/provider_reference) and linked to order
+         *   creation only after payment succeeds. Do not attempt to persist
+         *   orderPlacementContextId into a non-existent shopping_mall_payments
+         *   column.
      */
     orderPlacementContextId: string & tags.Format<"uuid">;
   };
@@ -158,78 +190,102 @@ export namespace IShoppingMallPayment {
     /**
      * Provider-side reference identifier for this payment attempt, used to locate the stored payment attempt and validate provider callback consistency.
      *
-     * @x-autobe-database-schema-property provider_reference
-     * @x-autobe-specification Direct mapping to shopping_mall_payments.provider_reference. Use to validate that the request targets the correct payment attempt record (within caller scope).
+         * @x-autobe-database-schema-property provider_reference
+         * @x-autobe-specification Direct mapping to
+         *   shopping_mall_payments.provider_reference. Use to validate that the
+         *   request targets the correct payment attempt record (within caller
+         *   scope).
      */
     provider_reference: string;
 
     /**
      * Payment service provider identifier (e.g., the gateway name) for the payment attempt.
      *
-     * @x-autobe-database-schema-property provider
-     * @x-autobe-specification Direct mapping to shopping_mall_payments.provider. Persist the provider identifier associated with the payment attempt.
+         * @x-autobe-database-schema-property provider
+         * @x-autobe-specification Direct mapping to
+         *   shopping_mall_payments.provider. Persist the provider identifier
+         *   associated with the payment attempt.
      */
     provider: string;
 
     /**
      * Payment amount attempted for the order placement flow, as confirmed/processed by the provider.
      *
-     * @x-autobe-database-schema-property amount
-     * @x-autobe-specification Direct mapping to shopping_mall_payments.amount (Float/Double). Used for validation/audit of the payment attempt outcome.
+         * @x-autobe-database-schema-property amount
+         * @x-autobe-specification Direct mapping to
+         *   shopping_mall_payments.amount (Float/Double). Used for
+         *   validation/audit of the payment attempt outcome.
      */
     amount: number;
 
     /**
      * Currency code of the payment amount (e.g., KRW, USD).
      *
-     * @x-autobe-database-schema-property currency
-     * @x-autobe-specification Direct mapping to shopping_mall_payments.currency (e.g., KRW, USD). Used for validation/audit of the payment attempt.
+         * @x-autobe-database-schema-property currency
+         * @x-autobe-specification Direct mapping to
+         *   shopping_mall_payments.currency (e.g., KRW, USD). Used for
+         *   validation/audit of the payment attempt.
      */
     currency: string;
 
     /**
      * Payment attempt status after processing (drives whether the system treats the attempt as succeeded/paid or failed).
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping to shopping_mall_payments.status. Service interprets this value to decide success vs failure handling: set paid_at on success; set error_code/error_message on failure.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping to
+         *   shopping_mall_payments.status. Service interprets this value to
+         *   decide success vs failure handling: set paid_at on success; set
+         *   error_code/error_message on failure.
      */
     status: string;
 
     /**
      * Timestamp when the payment provider confirmed success. Null when the payment attempt failed or is not confirmed as paid.
      *
-     * @x-autobe-database-schema-property paid_at
-     * @x-autobe-specification Direct mapping to shopping_mall_payments.paid_at. Must be non-null only when status represents success; must be null when status represents failure.
+         * @x-autobe-database-schema-property paid_at
+         * @x-autobe-specification Direct mapping to
+         *   shopping_mall_payments.paid_at. Must be non-null only when status
+         *   represents success; must be null when status represents failure.
      */
     paid_at: (string & tags.Format<"date-time">) | null;
 
     /**
      * Provider-side error code when the payment attempt fails; null when there is no provider error.
      *
-     * @x-autobe-database-schema-property error_code
-     * @x-autobe-specification Direct mapping to shopping_mall_payments.error_code. Service should set to null on success (or keep as null if provided) and set a non-null value when status represents failure.
+         * @x-autobe-database-schema-property error_code
+         * @x-autobe-specification Direct mapping to
+         *   shopping_mall_payments.error_code. Service should set to null on
+         *   success (or keep as null if provided) and set a non-null value when
+         *   status represents failure.
      */
     error_code: string | null;
 
     /**
      * Provider-side error message when the payment attempt fails; null when there is no provider error.
      *
-     * @x-autobe-database-schema-property error_message
-     * @x-autobe-specification Direct mapping to shopping_mall_payments.error_message. Service should set to null on success (or keep as null if provided) and set a non-null value when status represents failure.
+         * @x-autobe-database-schema-property error_message
+         * @x-autobe-specification Direct mapping to
+         *   shopping_mall_payments.error_message. Service should set to null on
+         *   success (or keep as null if provided) and set a non-null value when
+         *   status represents failure.
      */
     error_message: string | null;
 
     /**
      * Ignored pagination target for request-shape compatibility; this endpoint does not return paginated payment lists.
      *
-     * @x-autobe-specification Non-DB request helper (ignored by the payment-processing service). If present, it does not affect updates or any order-creation side effects for this endpoint.
+         * @x-autobe-specification Non-DB request helper (ignored by the
+         *   payment-processing service). If present, it does not affect updates
+         *   or any order-creation side effects for this endpoint.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
 
     /**
      * Ignored pagination page-size for request-shape compatibility; this endpoint does not return paginated payment lists.
      *
-     * @x-autobe-specification Non-DB request helper (ignored by the payment-processing service). If present, it does not affect updates or any order-creation side effects for this endpoint.
+         * @x-autobe-specification Non-DB request helper (ignored by the
+         *   payment-processing service). If present, it does not affect updates
+         *   or any order-creation side effects for this endpoint.
      */
     limit?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };

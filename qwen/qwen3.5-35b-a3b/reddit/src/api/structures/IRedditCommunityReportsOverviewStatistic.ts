@@ -12,7 +12,9 @@ export type IRedditCommunityReportsOverviewStatistic = {
    *
    * Aggregated count of all reports in the moderation queue that have not yet been resolved. This count represents the current backlog of reports requiring moderator attention.
    *
-   * @x-autobe-specification Computed via COUNT(*) aggregate function on reports table where status_id=0 (pending) and deleted_at=NULL. Returns the total number of reports awaiting moderator review.
+     * @x-autobe-specification Computed via COUNT(*) aggregate function on
+     *   reports table where status_id=0 (pending) and deleted_at=NULL. Returns
+     *   the total number of reports awaiting moderator review.
    */
   totalPendingCount: number & tags.Type<"int32">;
 
@@ -21,7 +23,10 @@ export type IRedditCommunityReportsOverviewStatistic = {
    *
    * Represents the minimum created_at value among all pending reports (status_id=0, deleted_at=NULL). Helps moderators prioritize review based on report age, as older reports may require urgent attention.
    *
-   * @x-autobe-specification Computed via MIN(created_at) aggregate function on reports table where status_id=0 and deleted_at=NULL. Returns the earliest timestamp among all pending reports, indicating the oldest report waiting in the queue. Returns NULL if no pending reports exist.
+     * @x-autobe-specification Computed via MIN(created_at) aggregate function
+     *   on reports table where status_id=0 and deleted_at=NULL. Returns the
+     *   earliest timestamp among all pending reports, indicating the oldest
+     *   report waiting in the queue. Returns NULL if no pending reports exist.
    */
   oldestReportDate?: (string & tags.Format<"date-time">) | null | undefined;
 
@@ -30,7 +35,11 @@ export type IRedditCommunityReportsOverviewStatistic = {
    *
    * Represents the maximum created_at value among all pending reports (status_id=0, deleted_at=NULL). Provides temporal context for the report queue, showing when the most recent report was submitted.
    *
-   * @x-autobe-specification Computed via MAX(created_at) aggregate function on reports table where status_id=0 and deleted_at=NULL. Returns the latest timestamp among all pending reports, indicating the most recently submitted report in the queue. Returns NULL if no pending reports exist.
+     * @x-autobe-specification Computed via MAX(created_at) aggregate function
+     *   on reports table where status_id=0 and deleted_at=NULL. Returns the
+     *   latest timestamp among all pending reports, indicating the most
+     *   recently submitted report in the queue. Returns NULL if no pending
+     *   reports exist.
    */
   newestReportDate?: (string & tags.Format<"date-time">) | null | undefined;
 };

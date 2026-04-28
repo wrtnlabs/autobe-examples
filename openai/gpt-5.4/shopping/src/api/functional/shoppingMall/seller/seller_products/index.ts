@@ -28,7 +28,8 @@ export * as variants from "./variants/index";
  * @param props.body Product creation information for the authenticated seller
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Implement this operation as seller-scoped creation of a current product record in shopping_mall_products.
+ * @x-autobe-specification Implement this operation as seller-scoped creation of
+ *   a current product record in shopping_mall_products.
  *
  * Authenticate the caller as a seller and derive the owner from the authenticated session instead of client input. Load the seller record from shopping_mall_sellers by authenticated seller id and verify the account is eligible to create products. Reject the request when the seller does not exist, is soft deleted, is banned, is suspended from creating or editing products, or is not in an approved selling state according to approval_status.
  *
@@ -134,7 +135,8 @@ export namespace create {
  * @param props.body Editable fields for the target product.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Implement this operation as a transactional seller product update on shopping_mall_products.
+ * @x-autobe-specification Implement this operation as a transactional seller
+ *   product update on shopping_mall_products.
  *
  * 1. Authenticate the caller as a seller account.
  * 2. Load the target shopping_mall_products row by id = productId and deleted_at IS NULL or, if deleted products remain addressable in seller management, by id alone with subsequent status validation according to service policy.
@@ -261,23 +263,42 @@ export namespace update {
  * @param props.productId Target product's unique identifier
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification 1. Authenticate the caller as a seller account.
- * 2. Load the target `shopping_mall_products` row by `id = productId` and ensure it is not already removed from active use.
- * 3. Verify ownership by comparing `shopping_mall_products.shopping_mall_seller_id` with the authenticated seller's identifier. If they differ, reject the request.
- * 4. Load all `shopping_mall_product_variants` rows for the product, using `shopping_mall_product_variants.shopping_mall_product_id = productId`, and exclude already inactive variants only if the implementation distinguishes active versus removed children through `deleted_at` or status.
- * 5. For every related variant, check `shopping_mall_order_items` for rows with `shopping_mall_product_variant_id` matching the variant and `status` in (`paid`, `shipped`). If any such row exists, reject deletion.
- * 6. For every related variant, inspect related after-sales workflows through `shopping_mall_order_items.id`:
- *    - join to `shopping_mall_cancellation_requests` on `shopping_mall_order_item_id` and reject if any active request has `status = pending`;
- *    - join to `shopping_mall_refund_requests` on `shopping_mall_order_item_id` and reject if any active request has `status = pending`.
- * 7. If no blocking condition exists, perform the deletion in a single transaction. Downstream implementation may either physically remove active rows or mark them out of active use using lifecycle fields already present in schema (`status`, `deleted_at`) so long as the externally observable result is that the product is deleted from active listings.
- * 8. Within the same transaction, remove the product and its variants from active marketplace use. Ensure inventory records tied to the product's variants are also removed from active use if the implementation uses logical deletion for operational tables. Do not alter preserved order-item history or purchase-time snapshots.
- * 9. Commit the transaction and return success with no response body.
- * 10. Error handling:
- *    - product not found or already unavailable: return not-found style failure;
- *    - caller is not the owner seller: return forbidden style failure;
- *    - any `paid` or `shipped` order item exists: return conflict/business-rule failure;
- *    - any pending cancellation or refund request exists: return conflict/business-rule failure.
- * 11. Keep the operation idempotent from an API-consumer perspective where practical: repeated deletion of a non-existent or already unavailable product should not reactivate or mutate preserved history.
+ * @x-autobe-specification 1. Authenticate the caller as a seller account. 2.
+ *   Load the target `shopping_mall_products` row by `id = productId` and ensure
+ *   it is not already removed from active use. 3. Verify ownership by comparing
+ *   `shopping_mall_products.shopping_mall_seller_id` with the authenticated
+ *   seller's identifier. If they differ, reject the request. 4. Load all
+ *   `shopping_mall_product_variants` rows for the product, using
+ *   `shopping_mall_product_variants.shopping_mall_product_id = productId`, and
+ *   exclude already inactive variants only if the implementation distinguishes
+ *   active versus removed children through `deleted_at` or status. 5. For every
+ *   related variant, check `shopping_mall_order_items` for rows with
+ *   `shopping_mall_product_variant_id` matching the variant and `status` in
+ *   (`paid`, `shipped`). If any such row exists, reject deletion. 6. For every
+ *   related variant, inspect related after-sales workflows through
+ *   `shopping_mall_order_items.id`: - join to
+ *   `shopping_mall_cancellation_requests` on `shopping_mall_order_item_id` and
+ *   reject if any active request has `status = pending`; - join to
+ *   `shopping_mall_refund_requests` on `shopping_mall_order_item_id` and reject
+ *   if any active request has `status = pending`. 7. If no blocking condition
+ *   exists, perform the deletion in a single transaction. Downstream
+ *   implementation may either physically remove active rows or mark them out of
+ *   active use using lifecycle fields already present in schema (`status`,
+ *   `deleted_at`) so long as the externally observable result is that the
+ *   product is deleted from active listings. 8. Within the same transaction,
+ *   remove the product and its variants from active marketplace use. Ensure
+ *   inventory records tied to the product's variants are also removed from
+ *   active use if the implementation uses logical deletion for operational
+ *   tables. Do not alter preserved order-item history or purchase-time
+ *   snapshots. 9. Commit the transaction and return success with no response
+ *   body. 10. Error handling: - product not found or already unavailable:
+ *   return not-found style failure; - caller is not the owner seller: return
+ *   forbidden style failure; - any `paid` or `shipped` order item exists:
+ *   return conflict/business-rule failure; - any pending cancellation or refund
+ *   request exists: return conflict/business-rule failure. 11. Keep the
+ *   operation idempotent from an API-consumer perspective where practical:
+ *   repeated deletion of a non-existent or already unavailable product should
+ *   not reactivate or mutate preserved history.
  * @path /shoppingMall/seller/seller-products/:productId
  * @accessor api.functional.shoppingMall.seller.seller_products.erase
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe

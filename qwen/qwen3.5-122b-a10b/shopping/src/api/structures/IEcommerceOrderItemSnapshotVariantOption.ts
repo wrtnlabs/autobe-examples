@@ -26,8 +26,10 @@ export type IEcommerceOrderItemSnapshotVariantOption = {
    *
    * This is the primary key that uniquely identifies this specific option record within the order item snapshot variant options table. It follows UUID format for distributed system compatibility.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_order_item_snapshot_variant_options.id. UUID primary key for this option entry.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_order_item_snapshot_variant_options.id. UUID primary key for
+     *   this option entry.
    */
   id: string & tags.Format<"uuid">;
 
@@ -45,8 +47,10 @@ export type IEcommerceOrderItemSnapshotVariantOption = {
    *
    * Each option key must be unique within its parent variant snapshot, enforced by a database unique constraint on the combination of variant snapshot ID and option key.
    *
-   * @x-autobe-database-schema-property key
-   * @x-autobe-specification Direct mapping from ecommerce_order_item_snapshot_variant_options.key. Option attribute name (e.g., color, size, material).
+     * @x-autobe-database-schema-property key
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_order_item_snapshot_variant_options.key. Option attribute
+     *   name (e.g., color, size, material).
    */
   key: string;
 
@@ -65,8 +69,10 @@ export type IEcommerceOrderItemSnapshotVariantOption = {
    *
    * Once captured at order placement time, this value never changes, even if the seller updates the product variant's options later.
    *
-   * @x-autobe-database-schema-property value
-   * @x-autobe-specification Direct mapping from ecommerce_order_item_snapshot_variant_options.value. Option value matching the attribute name.
+     * @x-autobe-database-schema-property value
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_order_item_snapshot_variant_options.value. Option value
+     *   matching the attribute name.
    */
   value: string;
 
@@ -77,8 +83,10 @@ export type IEcommerceOrderItemSnapshotVariantOption = {
    *
    * **Format**: ISO 8601 date-time string with timezone (e.g., "2024-01-15T10:30:00Z")
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_order_item_snapshot_variant_options.created_at. Timestamp when this option entry was created during variant snapshot creation.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_order_item_snapshot_variant_options.created_at. Timestamp
+     *   when this option entry was created during variant snapshot creation.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -89,8 +97,11 @@ export type IEcommerceOrderItemSnapshotVariantOption = {
    *
    * **Format**: ISO 8601 date-time string with timezone (e.g., "2024-01-15T10:30:00Z")
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from ecommerce_order_item_snapshot_variant_options.updated_at. Timestamp when this option entry was last updated. For snapshot records, typically matches created_at since options are immutable.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_order_item_snapshot_variant_options.updated_at. Timestamp
+     *   when this option entry was last updated. For snapshot records,
+     *   typically matches created_at since options are immutable.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -103,8 +114,11 @@ export type IEcommerceOrderItemSnapshotVariantOption = {
    *
    * **Nullable**: This field can be null, indicating the record is active and not deleted.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from ecommerce_order_item_snapshot_variant_options.deleted_at. Nullable timestamp for soft-delete. Typically null for immutable snapshot records.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_order_item_snapshot_variant_options.deleted_at. Nullable
+     *   timestamp for soft-delete. Typically null for immutable snapshot
+     *   records.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -134,7 +148,11 @@ export namespace IEcommerceOrderItemSnapshotVariantOption {
      * - 'size' returns only size-related options
      * - Not specified returns all options
      *
-     * @x-autobe-specification Optional filter parameter for option attribute name (e.g., 'color', 'size', 'material'). When provided, the query filters ecommerce_order_item_snapshot_variant_options where key column matches this value. If omitted, all options are returned.
+         * @x-autobe-specification Optional filter parameter for option
+         *   attribute name (e.g., 'color', 'size', 'material'). When provided,
+         *   the query filters ecommerce_order_item_snapshot_variant_options
+         *   where key column matches this value. If omitted, all options are
+         *   returned.
      */
     key?: string | undefined;
 
@@ -148,7 +166,10 @@ export namespace IEcommerceOrderItemSnapshotVariantOption {
      * - Must be at least 1
      * - Combined with limit to determine result set boundaries
      *
-     * @x-autobe-specification Pagination parameter for cursor-based navigation. 1-indexed page number. Defaults to 1 if not specified. Used to calculate offset as (page - 1) * limit for querying the database.
+         * @x-autobe-specification Pagination parameter for cursor-based
+         *   navigation. 1-indexed page number. Defaults to 1 if not specified.
+         *   Used to calculate offset as (page - 1) * limit for querying the
+         *   database.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -163,7 +184,9 @@ export namespace IEcommerceOrderItemSnapshotVariantOption {
      * - Maximum: 100 (enforced by server)
      * - Default: Typically 10 or 20 (implementation-specific)
      *
-     * @x-autobe-specification Pagination parameter specifying maximum records per page. Allowed range: 1 to 100. Server enforces maximum of 100 items per request when querying the database.
+         * @x-autobe-specification Pagination parameter specifying maximum
+         *   records per page. Allowed range: 1 to 100. Server enforces maximum
+         *   of 100 items per request when querying the database.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -180,7 +203,10 @@ export namespace IEcommerceOrderItemSnapshotVariantOption {
      * - Can be calculated as (page - 1) * limit when using page-based navigation
      * - Must be at least 0
      *
-     * @x-autobe-specification Pagination parameter for cursor-based navigation. Zero-based offset into the result set. Calculated as (page - 1) * limit when used with page parameter, used for database query OFFSET clause.
+         * @x-autobe-specification Pagination parameter for cursor-based
+         *   navigation. Zero-based offset into the result set. Calculated as
+         *   (page - 1) * limit when used with page parameter, used for database
+         *   query OFFSET clause.
      */
     offset?: (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };
@@ -204,8 +230,9 @@ export namespace IEcommerceOrderItemSnapshotVariantOption {
      *
      * This is the primary key for the option record, generated as a UUID when the order item snapshot is created.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_order_item_snapshot_variant_options.id. UUID primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_order_item_snapshot_variant_options.id. UUID primary key.
      */
     id: string & tags.Format<"uuid">;
 
@@ -218,8 +245,10 @@ export namespace IEcommerceOrderItemSnapshotVariantOption {
      *
      * Lowercase alphanumeric with underscores (e.g., "color", "size", "material", "style").
      *
-     * @x-autobe-database-schema-property key
-     * @x-autobe-specification Direct mapping from ecommerce_order_item_snapshot_variant_options.key. Lowercase alphanumeric with underscores.
+         * @x-autobe-database-schema-property key
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_order_item_snapshot_variant_options.key. Lowercase
+         *   alphanumeric with underscores.
      */
     key: string;
 
@@ -232,8 +261,10 @@ export namespace IEcommerceOrderItemSnapshotVariantOption {
      *
      * Free-form text matching the option value at purchase time (e.g., "Red", "Large", "Cotton", "10.5").
      *
-     * @x-autobe-database-schema-property value
-     * @x-autobe-specification Direct mapping from ecommerce_order_item_snapshot_variant_options.value. Free-form text matching the option value at purchase time.
+         * @x-autobe-database-schema-property value
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_order_item_snapshot_variant_options.value. Free-form text
+         *   matching the option value at purchase time.
      */
     value: string;
 
@@ -242,8 +273,10 @@ export namespace IEcommerceOrderItemSnapshotVariantOption {
      *
      * This timestamp is synchronized with the parent variant snapshot creation, representing the exact moment the order was placed and the variant state was captured for audit purposes.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from ecommerce_order_item_snapshot_variant_options.created_at. Timestamp when snapshot was created.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_order_item_snapshot_variant_options.created_at. Timestamp
+         *   when snapshot was created.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -252,8 +285,11 @@ export namespace IEcommerceOrderItemSnapshotVariantOption {
      *
      * For subsidiary tables in snapshots, this typically matches created_at since options are immutable after snapshot creation. The field exists for schema consistency but remains unchanged for audit records.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from ecommerce_order_item_snapshot_variant_options.updated_at. For snapshot subsidiary tables, typically matches created_at since options are immutable.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_order_item_snapshot_variant_options.updated_at. For
+         *   snapshot subsidiary tables, typically matches created_at since
+         *   options are immutable.
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -266,8 +302,11 @@ export namespace IEcommerceOrderItemSnapshotVariantOption {
      *
      * This field is nullable and will be null for active snapshot records.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from ecommerce_order_item_snapshot_variant_options.deleted_at. Nullable timestamp for soft-delete. For snapshot subsidiary tables, typically null since snapshots are immutable audit records.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_order_item_snapshot_variant_options.deleted_at. Nullable
+         *   timestamp for soft-delete. For snapshot subsidiary tables,
+         *   typically null since snapshots are immutable audit records.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };

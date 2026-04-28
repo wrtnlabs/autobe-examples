@@ -18,8 +18,9 @@ export type IEcommerceMallProductImage = {
    *
    * Auto-generated UUID assigned when the image record is created. Used to reference specific images for reordering and deletion operations.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_product_images.id. UUID primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_product_images.id. UUID primary key.
    */
   id: string & tags.Format<"uuid">;
 
@@ -28,8 +29,9 @@ export type IEcommerceMallProductImage = {
    *
    * The image file is stored in external file storage. Must be a valid URI format. Displayed in product galleries and listings.
    *
-   * @x-autobe-database-schema-property image_url
-   * @x-autobe-specification Direct mapping from ecommerce_mall_product_images.image_url. URI format.
+     * @x-autobe-database-schema-property image_url
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_product_images.image_url. URI format.
    */
   imageUrl: string & tags.Format<"uri">;
 
@@ -38,8 +40,10 @@ export type IEcommerceMallProductImage = {
    *
    * Lower values appear first. First image (order=0) is used as main thumbnail in search results and product listings. Unique constraint ensures no duplicate positions per product.
    *
-   * @x-autobe-database-schema-property display_order
-   * @x-autobe-specification Direct mapping from ecommerce_mall_product_images.display_order. Integer with unique constraint on (product_id, display_order).
+     * @x-autobe-database-schema-property display_order
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_product_images.display_order. Integer with unique
+     *   constraint on (product_id, display_order).
    */
   displayOrder: number & tags.Type<"int32">;
 
@@ -48,8 +52,9 @@ export type IEcommerceMallProductImage = {
    *
    * Summary representation of the parent product including name, base price, category, and seller information. Used for contextual display in admin product management.
    *
-   * @x-autobe-database-schema-property product
-   * @x-autobe-specification Join via ecommerce_mall_product_images.product_id to ecommerce_mall_products.id. Returns IEcommerceMallProduct.ISummary.
+     * @x-autobe-database-schema-property product
+     * @x-autobe-specification Join via ecommerce_mall_product_images.product_id
+     *   to ecommerce_mall_products.id. Returns IEcommerceMallProduct.ISummary.
    */
   product: IEcommerceMallProduct.ISummary;
 
@@ -58,8 +63,9 @@ export type IEcommerceMallProductImage = {
    *
    * Records when the seller uploaded this image to the product gallery. Immutable after creation.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_product_images.created_at. DateTime.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_product_images.created_at. DateTime.
    */
   createdAt: string & tags.Format<"date-time">;
 
@@ -68,8 +74,9 @@ export type IEcommerceMallProductImage = {
    *
    * Updated automatically whenever the image position changes or metadata is modified. Used for cache invalidation and audit purposes.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_product_images.updated_at. DateTime.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_product_images.updated_at. DateTime.
    */
   updatedAt: string & tags.Format<"date-time">;
 };
@@ -85,7 +92,12 @@ export namespace IEcommerceMallProductImage {
      *
      * Array of UUIDs identifying which images to reorder and their new sequence. The first ID in the array becomes the main thumbnail (display_order=0), the second becomes display_order=1, and so on. All existing image IDs for the product must be included; missing IDs will retain their current order values. Duplicate IDs are not allowed.
      *
-     * @x-autobe-specification Array of product image UUIDs. Each element references an id from ecommerce_mall_product_images.id. Array index determines new display_order: imageIds[0] gets display_order=0, imageIds[1] gets display_order=1, etc. Must contain all image IDs for the product to avoid gaps. uniqueItems ensures no duplicate IDs.
+         * @x-autobe-specification Array of product image UUIDs. Each element
+         *   references an id from ecommerce_mall_product_images.id. Array index
+         *   determines new display_order: imageIds[0] gets display_order=0,
+         *   imageIds[1] gets display_order=1, etc. Must contain all image IDs
+         *   for the product to avoid gaps. uniqueItems ensures no duplicate
+         *   IDs.
      */
     imageIds: (string & tags.Format<"uuid">)[] &
       tags.MinItems<1> &
@@ -105,8 +117,10 @@ export namespace IEcommerceMallProductImage {
      *
      * **Validation**: Must be a valid URI format. Maximum file size and format validation occurs during the file upload process (separate from this endpoint).
      *
-     * @x-autobe-database-schema-property image_url
-     * @x-autobe-specification Direct mapping to ecommerce_mall_product_images.image_url column. Must be a valid URI string pointing to a pre-uploaded image file in file storage.
+         * @x-autobe-database-schema-property image_url
+         * @x-autobe-specification Direct mapping to
+         *   ecommerce_mall_product_images.image_url column. Must be a valid URI
+         *   string pointing to a pre-uploaded image file in file storage.
      */
     imageUrl: string & tags.Format<"uri">;
   };
@@ -132,7 +146,12 @@ export namespace IEcommerceMallProductImage {
      *
      * **Validation**: All imageIds must belong to the specified product. Duplicate newDisplayOrder values will cause 409 Conflict error.
      *
-     * @x-autobe-specification Array of {imageId: UUID, newDisplayOrder: positive integer} pairs. Each item identifies an image to move and its target position. Server validates all imageIds exist and belong to the product, then atomically updates display_order values. After assignment, server renumbers all images sequentially from 1 to maintain gapless ordering without unique constraint conflicts.
+         * @x-autobe-specification Array of {imageId: UUID, newDisplayOrder:
+         *   positive integer} pairs. Each item identifies an image to move and
+         *   its target position. Server validates all imageIds exist and belong
+         *   to the product, then atomically updates display_order values. After
+         *   assignment, server renumbers all images sequentially from 1 to
+         *   maintain gapless ordering without unique constraint conflicts.
      */
     reorderItems: IEcommerceMallProductImage.IReorderItem[];
   };
@@ -148,7 +167,11 @@ export namespace IEcommerceMallProductImage {
      *
      * Must be a valid UUID corresponding to an existing product image that belongs to the specified product. The system validates that this image exists and is associated with the product before processing the reorder.
      *
-     * @x-autobe-specification UUID identifier of the product image to be repositioned. Server validates this imageId exists in ecommerce_mall_product_images table and belongs to the target product before applying the reorder. If validation fails, the reorder request is rejected with 404 Not Found.
+         * @x-autobe-specification UUID identifier of the product image to be
+         *   repositioned. Server validates this imageId exists in
+         *   ecommerce_mall_product_images table and belongs to the target
+         *   product before applying the reorder. If validation fails, the
+         *   reorder request is rejected with 404 Not Found.
      */
     imageId: string & tags.Format<"uuid">;
 
@@ -157,7 +180,12 @@ export namespace IEcommerceMallProductImage {
      *
      * Must be a positive integer representing the new position. Lower values appear first in the gallery. Position 1 becomes the main thumbnail. After reordering, the system automatically renumbers all images sequentially starting from 1.
      *
-     * @x-autobe-specification Target display position as a positive integer. Server will update the display_order column of the validated image record to this value. After processing all reorder items in the batch request, the server renumbers all product images sequentially starting from 1 to ensure contiguous ordering without gaps.
+         * @x-autobe-specification Target display position as a positive
+         *   integer. Server will update the display_order column of the
+         *   validated image record to this value. After processing all reorder
+         *   items in the batch request, the server renumbers all product images
+         *   sequentially starting from 1 to ensure contiguous ordering without
+         *   gaps.
      */
     newDisplayOrder: number & tags.Type<"int32"> & tags.Minimum<1>;
   };

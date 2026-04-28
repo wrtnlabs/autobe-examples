@@ -27,7 +27,8 @@ import { IPageIEcommerceMallProductVariantSnapshot } from "../../../../../../str
  * @param props.body Search criteria including pagination parameters, date range filters for snapshot creation time, and sorting options.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Query ecommerce_mall_product_variant_snapshots table filtered by product_id and product_variant_id.
+ * @x-autobe-specification Query ecommerce_mall_product_variant_snapshots table
+ *   filtered by product_id and product_variant_id.
  *
  * 1. Validate that productId and variantId are valid UUIDs
  * 2. Verify variant belongs to the specified product (product_id matches)
@@ -150,7 +151,8 @@ export namespace index {
  * @param props.snapshotId UUID of the specific variant snapshot to retrieve. This is the immutable snapshot identifier created when the variant was last modified.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Query ecommerce_mall_product_variant_snapshots table for the snapshot with the given snapshotId.
+ * @x-autobe-specification Query ecommerce_mall_product_variant_snapshots table
+ *   for the snapshot with the given snapshotId.
  *
  * Authorization:
  * - Seller owner: Verify authenticated user is the seller_id recorded in this snapshot

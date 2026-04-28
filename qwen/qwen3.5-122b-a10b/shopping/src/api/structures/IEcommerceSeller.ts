@@ -65,8 +65,10 @@ export namespace IEcommerceSeller {
      *
      * This field serves as the primary login credential for sellers. It must be unique across all seller accounts and is used for password reset notifications and account communications. Email format is validated and uniqueness is enforced at the database level.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from ecommerce_sellers.email. Unique constraint enforced by database. Used as primary login credential.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from ecommerce_sellers.email.
+         *   Unique constraint enforced by database. Used as primary login
+         *   credential.
      */
     email: string & tags.Format<"email">;
 
@@ -75,8 +77,11 @@ export namespace IEcommerceSeller {
      *
      * This field accepts the user's plain text password during registration. The backend automatically hashes the password using bcrypt before storing it in the database. A minimum length of 8 characters is required for security. The raw password is never stored or logged.
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification Plain text password provided in request, transformed to bcrypt hash for storage in ecommerce_sellers.password_hash. Minimum 8 characters enforced by backend validation.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification Plain text password provided in request,
+         *   transformed to bcrypt hash for storage in
+         *   ecommerce_sellers.password_hash. Minimum 8 characters enforced by
+         *   backend validation.
      */
     password: string & tags.MinLength<8>;
 
@@ -85,7 +90,9 @@ export namespace IEcommerceSeller {
      *
      * This field captures the URI of the page where the registration form was submitted. It is used for session context tracking and analytics purposes. The value is typically extracted from the client's browser or provided by the frontend application.
      *
-     * @x-autobe-specification Session context field from request headers or client-provided. Current page URI for session context tracking. Not mapped to any database column.
+         * @x-autobe-specification Session context field from request headers or
+         *   client-provided. Current page URI for session context tracking. Not
+         *   mapped to any database column.
      */
     href: string & tags.Format<"uri">;
 
@@ -94,7 +101,9 @@ export namespace IEcommerceSeller {
      *
      * This field captures the URI of the page that referred the user to the registration form. It is used for analytics tracking and understanding user acquisition channels. The value is typically extracted from HTTP referrer headers or provided by the frontend application.
      *
-     * @x-autobe-specification Session context field from request headers or client-provided. Referring page URI for analytics and session context. Not mapped to any database column.
+         * @x-autobe-specification Session context field from request headers or
+         *   client-provided. Referring page URI for analytics and session
+         *   context. Not mapped to any database column.
      */
     referrer: string & tags.Format<"uri">;
 
@@ -103,7 +112,10 @@ export namespace IEcommerceSeller {
      *
      * This optional field captures the client's IP address for security and analytics purposes. In server-side rendering (SSR) scenarios where the client cannot determine its own IP, this field may be omitted and the server will capture the IP as a fallback. The IP address is validated to ensure it is in proper IPv4 format.
      *
-     * @x-autobe-specification Session context field from request headers or server-side detection. Client IP address in IPv4 format. Optional for SSR scenarios where IP is determined server-side. Not mapped to any database column.
+         * @x-autobe-specification Session context field from request headers or
+         *   server-side detection. Client IP address in IPv4 format. Optional
+         *   for SSR scenarios where IP is determined server-side. Not mapped to
+         *   any database column.
      */
     ip?: (string & tags.Format<"ipv4">) | undefined;
   };
@@ -141,7 +153,10 @@ export namespace IEcommerceSeller {
      *
      * Use this filter to find sellers at specific stages of the registration workflow. For example, administrators can filter by `pending` to review new registrations.
      *
-     * @x-autobe-specification Query parameter filtering ecommerce_sellers.approval_status column. Allowed values: 'pending', 'approved', 'rejected'. Maps to seller registration workflow state stored in the database.
+         * @x-autobe-specification Query parameter filtering
+         *   ecommerce_sellers.approval_status column. Allowed values:
+         *   'pending', 'approved', 'rejected'. Maps to seller registration
+         *   workflow state stored in the database.
      */
     approval_status?: "pending" | "approved" | "rejected" | undefined;
 
@@ -159,7 +174,9 @@ export namespace IEcommerceSeller {
      *
      * Administrators use this filter to identify sellers with policy violations requiring temporary restriction.
      *
-     * @x-autobe-specification Query parameter filtering ecommerce_sellers.is_suspended column. Boolean value indicating administrative suspension state stored in the database.
+         * @x-autobe-specification Query parameter filtering
+         *   ecommerce_sellers.is_suspended column. Boolean value indicating
+         *   administrative suspension state stored in the database.
      */
     is_suspended?: boolean | undefined;
 
@@ -177,7 +194,9 @@ export namespace IEcommerceSeller {
      *
      * Administrators use this filter to identify sellers with severe policy violations requiring permanent access restriction.
      *
-     * @x-autobe-specification Query parameter filtering ecommerce_sellers.is_banned column. Boolean value indicating administrative ban state stored in the database.
+         * @x-autobe-specification Query parameter filtering
+         *   ecommerce_sellers.is_banned column. Boolean value indicating
+         *   administrative ban state stored in the database.
      */
     is_banned?: boolean | undefined;
 
@@ -194,7 +213,9 @@ export namespace IEcommerceSeller {
      *
      * Combine with `created_at_lte` to specify a date range. Useful for finding sellers registered within a specific time period.
      *
-     * @x-autobe-specification Query parameter filtering ecommerce_sellers.created_at column. ISO 8601 datetime format. Returns sellers created on or after this timestamp.
+         * @x-autobe-specification Query parameter filtering
+         *   ecommerce_sellers.created_at column. ISO 8601 datetime format.
+         *   Returns sellers created on or after this timestamp.
      */
     created_at_gte?: (string & tags.Format<"date-time">) | undefined;
 
@@ -211,7 +232,9 @@ export namespace IEcommerceSeller {
      *
      * Combine with `created_at_gte` to specify a date range. Useful for finding sellers registered within a specific time period.
      *
-     * @x-autobe-specification Query parameter filtering ecommerce_sellers.created_at column. ISO 8601 datetime format. Returns sellers created on or before this timestamp.
+         * @x-autobe-specification Query parameter filtering
+         *   ecommerce_sellers.created_at column. ISO 8601 datetime format.
+         *   Returns sellers created on or before this timestamp.
      */
     created_at_lte?: (string & tags.Format<"date-time">) | undefined;
 
@@ -228,7 +251,10 @@ export namespace IEcommerceSeller {
      *
      * Requires a JOIN to the ecommerce_seller_profiles table. Sellers without profiles are excluded from results when this filter is applied.
      *
-     * @x-autobe-specification Computed filter requiring JOIN to ecommerce_seller_profiles table. Performs partial text search on profiles.shop_name column using LIKE operator. Case-insensitive matching.
+         * @x-autobe-specification Computed filter requiring JOIN to
+         *   ecommerce_seller_profiles table. Performs partial text search on
+         *   profiles.shop_name column using LIKE operator. Case-insensitive
+         *   matching.
      */
     shop_name?: string | undefined;
 
@@ -246,7 +272,9 @@ export namespace IEcommerceSeller {
      *
      * Use in combination with the `limit` parameter for offset-based pagination. Alternatively, use the `cursor` parameter for cursor-based pagination.
      *
-     * @x-autobe-specification Computed pagination parameter. 1-indexed page number for offset-based pagination. Minimum value: 1. Used as alternative to cursor-based pagination.
+         * @x-autobe-specification Computed pagination parameter. 1-indexed page
+         *   number for offset-based pagination. Minimum value: 1. Used as
+         *   alternative to cursor-based pagination.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -264,7 +292,9 @@ export namespace IEcommerceSeller {
      *
      * Use in combination with the `page` parameter for offset-based pagination. Higher values reduce the number of API calls needed but increase response size. The actual number of records returned may be less than the limit on the final page.
      *
-     * @x-autobe-specification Computed pagination parameter. Maximum records per page. Range: 1-100. Defaults to system default if not specified.
+         * @x-autobe-specification Computed pagination parameter. Maximum
+         *   records per page. Range: 1-100. Defaults to system default if not
+         *   specified.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -283,7 +313,10 @@ export namespace IEcommerceSeller {
      *
      * Use this parameter instead of `page` and `limit` for cursor-based pagination. Include the cursor value returned in the previous page's response to fetch the next page. This approach provides consistent results even when data changes between requests.
      *
-     * @x-autobe-specification Computed pagination parameter. Cursor token for cursor-based pagination. Encodes (created_at, id) composite cursor from previous page's last record. Used as alternative to page/limit.
+         * @x-autobe-specification Computed pagination parameter. Cursor token
+         *   for cursor-based pagination. Encodes (created_at, id) composite
+         *   cursor from previous page's last record. Used as alternative to
+         *   page/limit.
      */
     cursor?: string | undefined;
   };
@@ -311,8 +344,10 @@ export namespace IEcommerceSeller {
      *
      * The email format is validated against RFC 5322 standards. The email must be unique across all seller accounts.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from ecommerce_sellers.email. Unique constraint enforced at database level. Used as primary login credential.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from ecommerce_sellers.email.
+         *   Unique constraint enforced at database level. Used as primary login
+         *   credential.
      */
     email: string & tags.Format<"email">;
 
@@ -325,8 +360,10 @@ export namespace IEcommerceSeller {
      *
      * The password is never stored or logged in plain text. It is immediately hashed during the authentication process and discarded after verification.
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification Plain text password provided by user. Server-side transformation: hashed with bcrypt and compared against ecommerce_sellers.password_hash column during authentication.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification Plain text password provided by user.
+         *   Server-side transformation: hashed with bcrypt and compared against
+         *   ecommerce_sellers.password_hash column during authentication.
      */
     password: string & tags.Format<"password">;
 
@@ -339,7 +376,10 @@ export namespace IEcommerceSeller {
      *
      * The href value is stored in the session record along with other session metadata. It helps track login patterns and detect suspicious activity.
      *
-     * @x-autobe-specification Session context field captured from HTTP request headers. Represents the current page URL where the login action was initiated. Stored in ecommerce_seller_sessions upon successful authentication.
+         * @x-autobe-specification Session context field captured from HTTP
+         *   request headers. Represents the current page URL where the login
+         *   action was initiated. Stored in ecommerce_seller_sessions upon
+         *   successful authentication.
      */
     href: string & tags.Format<"uri">;
 
@@ -352,7 +392,9 @@ export namespace IEcommerceSeller {
      *
      * The referrer value is stored in the session record for audit purposes. It may be empty if the browser does not send referrer information.
      *
-     * @x-autobe-specification Session context field captured from HTTP referrer header. Represents the page that linked to the login page. Stored in ecommerce_seller_sessions upon successful authentication.
+         * @x-autobe-specification Session context field captured from HTTP
+         *   referrer header. Represents the page that linked to the login page.
+         *   Stored in ecommerce_seller_sessions upon successful authentication.
      */
     referrer: string & tags.Format<"uri">;
 
@@ -369,7 +411,11 @@ export namespace IEcommerceSeller {
      *
      * The IP address must be in valid IPv4 format (e.g., 192.168.1.1).
      *
-     * @x-autobe-specification Session context field captured from HTTP request. Represents the client's IP address. Optional for SSR scenarios where the server captures the IP as fallback (body.ip ?? serverIp). Stored in ecommerce_seller_sessions upon successful authentication.
+         * @x-autobe-specification Session context field captured from HTTP
+         *   request. Represents the client's IP address. Optional for SSR
+         *   scenarios where the server captures the IP as fallback (body.ip ??
+         *   serverIp). Stored in ecommerce_seller_sessions upon successful
+         *   authentication.
      */
     ip?: (string & tags.Format<"ipv4">) | undefined;
   };
@@ -401,7 +447,10 @@ export namespace IEcommerceSeller {
      *
      * Refresh tokens are single-use in some implementations and tied to specific sessions. Store this token securely and transmit it only to the token refresh endpoint over HTTPS.
      *
-     * @x-autobe-specification JWT refresh token received from client request body. Validated against ecommerce_seller_sessions table for existence, validity, and session status. The token value is not stored in this DTO - it's the input for session validation.
+         * @x-autobe-specification JWT refresh token received from client
+         *   request body. Validated against ecommerce_seller_sessions table for
+         *   existence, validity, and session status. The token value is not
+         *   stored in this DTO - it's the input for session validation.
      */
     refresh_token: string;
   };
@@ -440,7 +489,8 @@ export namespace IEcommerceSeller {
     /**
      * Authorization token.
      *
-     * @x-autobe-specification Authorization token comes from the session table.
+         * @x-autobe-specification Authorization token comes from the session
+         *   table.
      */
     token: IAuthorizationToken;
   };
@@ -468,8 +518,9 @@ export namespace IEcommerceSeller {
      *
      * This UUID serves as the primary key for the seller entity and is used in all API endpoints that reference this seller. It is automatically generated during account registration and cannot be modified.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_sellers.id. Primary key uniquely identifying each seller account.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from ecommerce_sellers.id.
+         *   Primary key uniquely identifying each seller account.
      */
     id: string & tags.Format<"uuid">;
 
@@ -478,8 +529,10 @@ export namespace IEcommerceSeller {
      *
      * New seller accounts start as 'pending' until an administrator reviews and approves or rejects the registration. Approved sellers gain full selling privileges including product creation and order processing. Rejected sellers can view the rejection reason and submit new registration requests after addressing the issues.
      *
-     * @x-autobe-database-schema-property approval_status
-     * @x-autobe-specification Direct mapping from ecommerce_sellers.approval_status. Allowed values: 'pending', 'approved', 'rejected'.
+         * @x-autobe-database-schema-property approval_status
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_sellers.approval_status. Allowed values: 'pending',
+         *   'approved', 'rejected'.
      */
     approval_status: string;
 
@@ -488,8 +541,9 @@ export namespace IEcommerceSeller {
      *
      * Suspended sellers cannot create new products or edit existing products, but they can still process existing orders including shipping items and responding to cancellation or refund requests. Their products are hidden from search and category listings. Suspension is typically used for policy violations requiring temporary restriction rather than permanent ban.
      *
-     * @x-autobe-database-schema-property is_suspended
-     * @x-autobe-specification Direct mapping from ecommerce_sellers.is_suspended. Boolean flag.
+         * @x-autobe-database-schema-property is_suspended
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_sellers.is_suspended. Boolean flag.
      */
     is_suspended: boolean;
 
@@ -498,8 +552,9 @@ export namespace IEcommerceSeller {
      *
      * Banned sellers cannot log in to the platform at all. Unlike suspension, banning prevents all platform access while preserving existing order history for legal and customer service purposes. This is the most severe administrative action against a seller account.
      *
-     * @x-autobe-database-schema-property is_banned
-     * @x-autobe-specification Direct mapping from ecommerce_sellers.is_banned. Boolean flag.
+         * @x-autobe-database-schema-property is_banned
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_sellers.is_banned. Boolean flag.
      */
     is_banned: boolean;
 
@@ -508,8 +563,9 @@ export namespace IEcommerceSeller {
      *
      * This field is automatically set during account registration and cannot be modified. It establishes the account's creation date for audit, reporting, and seller tenure calculations.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from ecommerce_sellers.created_at. Timestamp with timezone.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_sellers.created_at. Timestamp with timezone.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -518,7 +574,9 @@ export namespace IEcommerceSeller {
      *
      * This name is set by the seller during profile setup and represents their business identity to customers. It appears on all product listings, in search results, and on the seller's public profile page. The shop name must be unique across the platform and cannot contain prohibited content.
      *
-     * @x-autobe-specification Computed via JOIN from ecommerce_sellers to ecommerce_seller_profiles on seller_id. Returns shop_name field from the related profile record. Required field in summary DTO.
+         * @x-autobe-specification Computed via JOIN from ecommerce_sellers to
+         *   ecommerce_seller_profiles on seller_id. Returns shop_name field
+         *   from the related profile record. Required field in summary DTO.
      */
     shop_name: string;
 
@@ -527,7 +585,10 @@ export namespace IEcommerceSeller {
      *
      * This field is set by the seller during profile setup and helps customers understand what the seller offers. It may be null if the seller has not provided a description. When present, it appears on the seller's public profile page and may be used in search and discovery features.
      *
-     * @x-autobe-specification Computed via JOIN from ecommerce_sellers to ecommerce_seller_profiles on seller_id. Returns shop_description field from the related profile record. Nullable - may be null if seller has not provided a description.
+         * @x-autobe-specification Computed via JOIN from ecommerce_sellers to
+         *   ecommerce_seller_profiles on seller_id. Returns shop_description
+         *   field from the related profile record. Nullable - may be null if
+         *   seller has not provided a description.
      */
     shop_description?: string | null | undefined;
   };

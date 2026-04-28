@@ -23,7 +23,15 @@ import { IHrmTimeTrackingOwner } from "../../../../structures/IHrmTimeTrackingOw
  * @param props.body Registration payload for creating an owner account.
  * @x-autobe-authorization-type join
  * @x-autobe-authorization-actor owner
- * @x-autobe-specification Implement owner registration by validating the incoming IHrmTimeTrackingOwner.IJoin payload, enforcing uniqueness constraints for the owner sign-in identity, creating the owner account record, initializing any required authentication metadata, and issuing an authorized response containing JWT credentials. The service should normalize credential fields such as email before persistence, hash the submitted password with the platform password hashing strategy, and create the account within a transaction so that partial registration states cannot be committed.
+ * @x-autobe-specification Implement owner registration by validating the
+ *   incoming IHrmTimeTrackingOwner.IJoin payload, enforcing uniqueness
+ *   constraints for the owner sign-in identity, creating the owner account
+ *   record, initializing any required authentication metadata, and issuing an
+ *   authorized response containing JWT credentials. The service should
+ *   normalize credential fields such as email before persistence, hash the
+ *   submitted password with the platform password hashing strategy, and create
+ *   the account within a transaction so that partial registration states cannot
+ *   be committed.
  *
  * The provider should reject duplicate identities, malformed credential input, and registration attempts that violate account lifecycle rules defined by the authentication requirements. After successful creation, the service should mint access and refresh tokens for the new owner account and return them in IHrmTimeTrackingOwner.IAuthorized. If the platform later associates owner accounts with organization ownership records, that association should be initialized in a consistent post-registration flow, but the join operation itself is responsible only for establishing the authenticated owner identity and returning tokens.
  * @path /hrmTimeTracking/auth/owner/join
@@ -122,7 +130,14 @@ export namespace join {
  * @param props.body Credential payload for authenticating an owner account.
  * @x-autobe-authorization-type login
  * @x-autobe-authorization-actor owner
- * @x-autobe-specification Implement owner login by validating the IHrmTimeTrackingOwner.ILogin payload against the persisted owner credentials, verifying the submitted password against the stored password hash, enforcing any account availability checks required by the authentication rules, and issuing a fresh IHrmTimeTrackingOwner.IAuthorized response on success. The service should use a constant-time password verification routine and should not disclose whether failure was caused by an unknown identity or invalid password.
+ * @x-autobe-specification Implement owner login by validating the
+ *   IHrmTimeTrackingOwner.ILogin payload against the persisted owner
+ *   credentials, verifying the submitted password against the stored password
+ *   hash, enforcing any account availability checks required by the
+ *   authentication rules, and issuing a fresh IHrmTimeTrackingOwner.IAuthorized
+ *   response on success. The service should use a constant-time password
+ *   verification routine and should not disclose whether failure was caused by
+ *   an unknown identity or invalid password.
  *
  * The provider should update session-related authentication metadata as needed for the JWT flow and mint both access and refresh tokens for the authenticated owner. The operation should reject malformed payloads, inactive or otherwise unavailable accounts if such lifecycle checks apply, and invalid credentials. Token issuance and any session bookkeeping should be handled consistently with the refresh operation so downstream authorization behavior remains uniform.
  * @path /hrmTimeTracking/auth/owner/login
@@ -221,7 +236,14 @@ export namespace login {
  * @param props.body Refresh-token payload for renewing an owner authorization session.
  * @x-autobe-authorization-type refresh
  * @x-autobe-authorization-actor owner
- * @x-autobe-specification Implement token renewal by validating the IHrmTimeTrackingOwner.IRefresh payload, verifying the refresh token's integrity, expiration, and ownership, and issuing a new IHrmTimeTrackingOwner.IAuthorized response when the token is valid. The service should parse and verify the refresh token using the platform JWT secret or key strategy, confirm that the subject corresponds to an owner account, and reject invalid, expired, malformed, or actor-mismatched refresh attempts.
+ * @x-autobe-specification Implement token renewal by validating the
+ *   IHrmTimeTrackingOwner.IRefresh payload, verifying the refresh token's
+ *   integrity, expiration, and ownership, and issuing a new
+ *   IHrmTimeTrackingOwner.IAuthorized response when the token is valid. The
+ *   service should parse and verify the refresh token using the platform JWT
+ *   secret or key strategy, confirm that the subject corresponds to an owner
+ *   account, and reject invalid, expired, malformed, or actor-mismatched
+ *   refresh attempts.
  *
  * The provider should rotate tokens according to the platform's token policy where applicable, ensuring the new access token and refresh token are generated consistently with the join and login flows. The operation must not require the current access token, because its purpose is to recover from access-token expiration. Any token verification failure should return an authentication error without disclosing internal token validation details.
  * @path /hrmTimeTracking/auth/owner/refresh

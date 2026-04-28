@@ -12,31 +12,31 @@ import { ITodoAppMember } from "./ITodoAppMember";
  */
 export type ITodoAppTodo = {
   /**
-   * @x-autobe-database-schema-property id
+     * @x-autobe-database-schema-property id
    */
   id: string & tags.Format<"uuid">;
   /**
-   * @x-autobe-database-schema-property title
+     * @x-autobe-database-schema-property title
    */
   title: string;
   /**
-   * @x-autobe-database-schema-property description
+     * @x-autobe-database-schema-property description
    */
   description: string | null;
   /**
-   * @x-autobe-database-schema-property start_date
+     * @x-autobe-database-schema-property start_date
    */
   startDate: (string & tags.Format<"date-time">) | null;
   /**
-   * @x-autobe-database-schema-property due_date
+     * @x-autobe-database-schema-property due_date
    */
   dueDate: (string & tags.Format<"date-time">) | null;
   /**
-   * @x-autobe-database-schema-property is_completed
+     * @x-autobe-database-schema-property is_completed
    */
   isCompleted: boolean;
   /**
-   * @x-autobe-database-schema-property member
+     * @x-autobe-database-schema-property member
    */
   member: ITodoAppMember.ISummary;
 
@@ -45,19 +45,24 @@ export type ITodoAppTodo = {
    *
    * This collection shows the todo's change log from most recent to oldest so members can review how the todo evolved over time.
    *
-   * @x-autobe-specification Populate this collection from the related todo_app_todo_edit_histories rows for the current todo. Return the entries in reverse chronological order so the most recent edit appears first, matching the history browsing requirements. This field exists only in the full detail DTO and is not a raw database column on todo_app_todos.
+     * @x-autobe-specification Populate this collection from the related
+     *   todo_app_todo_edit_histories rows for the current todo. Return the
+     *   entries in reverse chronological order so the most recent edit appears
+     *   first, matching the history browsing requirements. This field exists
+     *   only in the full detail DTO and is not a raw database column on
+     *   todo_app_todos.
    */
   todoEditHistories: boolean;
   /**
-   * @x-autobe-database-schema-property created_at
+     * @x-autobe-database-schema-property created_at
    */
   createdAt: string & tags.Format<"date-time">;
   /**
-   * @x-autobe-database-schema-property updated_at
+     * @x-autobe-database-schema-property updated_at
    */
   updatedAt: string & tags.Format<"date-time">;
   /**
-   * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-database-schema-property deleted_at
    */
   deletedAt: (string & tags.Format<"date-time">) | null;
 };
@@ -73,8 +78,10 @@ export namespace ITodoAppTodo {
      *
      * This required field provides the short label for the new todo and is displayed in list and detail views.
      *
-     * @x-autobe-database-schema-property title
-     * @x-autobe-specification Direct mapping to todo_app_todos.title. This required field is accepted from the create request body, validated as the todo title, and persisted as-is after validation.
+         * @x-autobe-database-schema-property title
+         * @x-autobe-specification Direct mapping to todo_app_todos.title. This
+         *   required field is accepted from the create request body, validated
+         *   as the todo title, and persisted as-is after validation.
      */
     title: string;
 
@@ -83,8 +90,10 @@ export namespace ITodoAppTodo {
      *
      * This optional field stores the longer text associated with the todo. It may be omitted when no description is needed.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping to todo_app_todos.description. Accept the optional description from the request body; null is allowed when omitted or intentionally empty.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping to todo_app_todos.description.
+         *   Accept the optional description from the request body; null is
+         *   allowed when omitted or intentionally empty.
      */
     description?: string | null | undefined;
 
@@ -93,8 +102,10 @@ export namespace ITodoAppTodo {
      *
      * This optional field marks when the member intends to begin the task. It may be omitted when the todo is unscheduled.
      *
-     * @x-autobe-database-schema-property start_date
-     * @x-autobe-specification Direct mapping to todo_app_todos.start_date. Accept the optional planned start date from the request body and persist it as a nullable datetime value.
+         * @x-autobe-database-schema-property start_date
+         * @x-autobe-specification Direct mapping to todo_app_todos.start_date.
+         *   Accept the optional planned start date from the request body and
+         *   persist it as a nullable datetime value.
      */
     startDate?: (string & tags.Format<"date-time">) | null | undefined;
 
@@ -103,8 +114,10 @@ export namespace ITodoAppTodo {
      *
      * This optional field marks when the task should be completed. It may be omitted when there is no deadline.
      *
-     * @x-autobe-database-schema-property due_date
-     * @x-autobe-specification Direct mapping to todo_app_todos.due_date. Accept the optional due date from the request body and persist it as a nullable datetime value.
+         * @x-autobe-database-schema-property due_date
+         * @x-autobe-specification Direct mapping to todo_app_todos.due_date.
+         *   Accept the optional due date from the request body and persist it
+         *   as a nullable datetime value.
      */
     dueDate?: (string & tags.Format<"date-time">) | null | undefined;
   };
@@ -120,7 +133,10 @@ export namespace ITodoAppTodo {
      *
      * This value controls which page of the paginated todo list is returned. It is a browsing parameter only and is not stored on the todo record.
      *
-     * @x-autobe-specification Interpret as the 1-indexed page number for the listing query. Use it only to select which page of results is returned after filtering and sorting. If omitted, the service layer applies its default pagination behavior.
+         * @x-autobe-specification Interpret as the 1-indexed page number for
+         *   the listing query. Use it only to select which page of results is
+         *   returned after filtering and sorting. If omitted, the service layer
+         *   applies its default pagination behavior.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -129,7 +145,10 @@ export namespace ITodoAppTodo {
      *
      * This value controls the page size for the todo list response. It is a browsing parameter only and is not stored on the todo record.
      *
-     * @x-autobe-specification Interpret as the maximum number of records per page for the listing query. Use it only to cap the number of returned todos after filtering and sorting. If omitted, the service layer applies its default page size behavior.
+         * @x-autobe-specification Interpret as the maximum number of records
+         *   per page for the listing query. Use it only to cap the number of
+         *   returned todos after filtering and sorting. If omitted, the service
+         *   layer applies its default page size behavior.
      */
     limit?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -138,7 +157,11 @@ export namespace ITodoAppTodo {
      *
      * Use this to show all todos, only completed todos, or only incomplete todos. It controls query filtering and is not stored on the todo record.
      *
-     * @x-autobe-specification Interpret as the completion filter for the authenticated member's own todos. 'all' applies no completion filter, 'complete' selects completed todos, and 'incomplete' selects incomplete todos. Validate the enum before executing the query.
+         * @x-autobe-specification Interpret as the completion filter for the
+         *   authenticated member's own todos. 'all' applies no completion
+         *   filter, 'complete' selects completed todos, and 'incomplete'
+         *   selects incomplete todos. Validate the enum before executing the
+         *   query.
      */
     completionStatus?: "all" | "complete" | "incomplete" | undefined;
 
@@ -147,7 +170,11 @@ export namespace ITodoAppTodo {
      *
      * This controls whether results are ordered by creation date, start date, or due date. It is a browsing parameter only and is not stored on the todo record.
      *
-     * @x-autobe-specification Interpret as the sort key for the todo listing query. 'createdAt' sorts by created_at, 'startDate' sorts by start_date, and 'dueDate' sorts by due_date. When sorting by start_date or due_date, place null values at the end. Validate the enum before executing the query.
+         * @x-autobe-specification Interpret as the sort key for the todo
+         *   listing query. 'createdAt' sorts by created_at, 'startDate' sorts
+         *   by start_date, and 'dueDate' sorts by due_date. When sorting by
+         *   start_date or due_date, place null values at the end. Validate the
+         *   enum before executing the query.
      */
     sortBy?: "createdAt" | "startDate" | "dueDate" | undefined;
 
@@ -156,7 +183,10 @@ export namespace ITodoAppTodo {
      *
      * This controls whether the selected sort field is ordered ascending or descending. It is a browsing parameter only and is not stored on the todo record.
      *
-     * @x-autobe-specification Interpret as the direction for the selected sort key. 'asc' orders results ascending and 'desc' orders them descending. Apply the direction after selecting the sort key and preserve stable pagination.
+         * @x-autobe-specification Interpret as the direction for the selected
+         *   sort key. 'asc' orders results ascending and 'desc' orders them
+         *   descending. Apply the direction after selecting the sort key and
+         *   preserve stable pagination.
      */
     sortOrder?: "asc" | "desc" | undefined;
   };
@@ -174,8 +204,9 @@ export namespace ITodoAppTodo {
      *
      * This value is the todo's UUID primary key and is stable for the lifetime of the record.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from todo_app_todos.id. UUID primary key of the todo record.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from todo_app_todos.id. UUID
+         *   primary key of the todo record.
      */
     id: string & tags.Format<"uuid">;
 
@@ -184,8 +215,9 @@ export namespace ITodoAppTodo {
      *
      * This is the primary human-readable label shown in list-style views.
      *
-     * @x-autobe-database-schema-property title
-     * @x-autobe-specification Direct mapping from todo_app_todos.title. Required short title shown in list and trash views.
+         * @x-autobe-database-schema-property title
+         * @x-autobe-specification Direct mapping from todo_app_todos.title.
+         *   Required short title shown in list and trash views.
      */
     title: string;
 
@@ -194,8 +226,11 @@ export namespace ITodoAppTodo {
      *
      * This is exposed as a summary relation rather than a raw foreign key so list responses can identify ownership without exposing database internals.
      *
-     * @x-autobe-database-schema-property member
-     * @x-autobe-specification Join todo_app_todos.todo_app_member_id to todo_app_members.id and expose the owning member as ITodoAppMember.ISummary. Use the belongs-to relation named member in read output.
+         * @x-autobe-database-schema-property member
+         * @x-autobe-specification Join todo_app_todos.todo_app_member_id to
+         *   todo_app_members.id and expose the owning member as
+         *   ITodoAppMember.ISummary. Use the belongs-to relation named member
+         *   in read output.
      */
     member: ITodoAppMember.ISummary;
 
@@ -204,8 +239,10 @@ export namespace ITodoAppTodo {
      *
      * This field is the todo's current completion status and is used for list filtering and display.
      *
-     * @x-autobe-database-schema-property is_completed
-     * @x-autobe-specification Direct mapping from todo_app_todos.is_completed. Represents the todo completion flag shown in summary views.
+         * @x-autobe-database-schema-property is_completed
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_todos.is_completed. Represents the todo completion flag
+         *   shown in summary views.
      */
     isCompleted: boolean;
 
@@ -214,8 +251,10 @@ export namespace ITodoAppTodo {
      *
      * A null value means the todo has no start date and should be treated as unscheduled.
      *
-     * @x-autobe-database-schema-property start_date
-     * @x-autobe-specification Direct mapping from todo_app_todos.start_date. Preserve null when the todo has no scheduled start date.
+         * @x-autobe-database-schema-property start_date
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_todos.start_date. Preserve null when the todo has no
+         *   scheduled start date.
      */
     startDate: (string & tags.Format<"date-time">) | null;
 
@@ -224,8 +263,9 @@ export namespace ITodoAppTodo {
      *
      * A null value means the todo has no due date and should be treated as unscheduled.
      *
-     * @x-autobe-database-schema-property due_date
-     * @x-autobe-specification Direct mapping from todo_app_todos.due_date. Preserve null when the todo has no due date.
+         * @x-autobe-database-schema-property due_date
+         * @x-autobe-specification Direct mapping from todo_app_todos.due_date.
+         *   Preserve null when the todo has no due date.
      */
     dueDate: (string & tags.Format<"date-time">) | null;
 
@@ -234,8 +274,10 @@ export namespace ITodoAppTodo {
      *
      * This timestamp is included for auditing and for sorting todo lists by creation time.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from todo_app_todos.created_at. Used for auditing and creation-date sorting.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_todos.created_at. Used for auditing and creation-date
+         *   sorting.
      */
     createdAt: string & tags.Format<"date-time">;
 
@@ -244,8 +286,9 @@ export namespace ITodoAppTodo {
      *
      * This timestamp changes whenever the todo's editable fields or completion state change.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from todo_app_todos.updated_at. Updated whenever the todo changes.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_todos.updated_at. Updated whenever the todo changes.
      */
     updatedAt: string & tags.Format<"date-time">;
 
@@ -254,8 +297,10 @@ export namespace ITodoAppTodo {
      *
      * A null value means the todo is active. A timestamp value means the todo is currently in the trash.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from todo_app_todos.deleted_at. Null means the todo is active; non-null means it is in the trash.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_todos.deleted_at. Null means the todo is active; non-null
+         *   means it is in the trash.
      */
     deletedAt: (string & tags.Format<"date-time">) | null;
   };
@@ -273,8 +318,11 @@ export namespace ITodoAppTodo {
      *
      * Provide a new value to change the title. If omitted, the existing title is kept. The title remains subject to todo validation rules whenever it is supplied.
      *
-     * @x-autobe-database-schema-property title
-     * @x-autobe-specification Direct partial mapping to todo_app_todos.title. When present, replace the current title value; when omitted, preserve the existing value. The supplied title must still satisfy todo validation rules.
+         * @x-autobe-database-schema-property title
+         * @x-autobe-specification Direct partial mapping to
+         *   todo_app_todos.title. When present, replace the current title
+         *   value; when omitted, preserve the existing value. The supplied
+         *   title must still satisfy todo validation rules.
      */
     title?: string | undefined;
 
@@ -283,8 +331,11 @@ export namespace ITodoAppTodo {
      *
      * Provide a string to replace the current description, or null to clear it. If omitted, the existing description is kept unchanged.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct partial mapping to todo_app_todos.description. When provided with a string, replace the current description; when provided with null, clear the description; when omitted, preserve the existing value.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct partial mapping to
+         *   todo_app_todos.description. When provided with a string, replace
+         *   the current description; when provided with null, clear the
+         *   description; when omitted, preserve the existing value.
      */
     description?: string | null | undefined;
 
@@ -293,8 +344,11 @@ export namespace ITodoAppTodo {
      *
      * Provide a date-time value to set or replace the start date, or null to clear it. If omitted, the existing start date is kept unchanged.
      *
-     * @x-autobe-database-schema-property start_date
-     * @x-autobe-specification Direct partial mapping to todo_app_todos.start_date. When provided with a date-time value, replace the current start date; when provided with null, clear the start date; when omitted, preserve the existing value.
+         * @x-autobe-database-schema-property start_date
+         * @x-autobe-specification Direct partial mapping to
+         *   todo_app_todos.start_date. When provided with a date-time value,
+         *   replace the current start date; when provided with null, clear the
+         *   start date; when omitted, preserve the existing value.
      */
     startDate?: (string & tags.Format<"date-time">) | null | undefined;
 
@@ -303,8 +357,11 @@ export namespace ITodoAppTodo {
      *
      * Provide a date-time value to set or replace the due date, or null to clear it. If omitted, the existing due date is kept unchanged.
      *
-     * @x-autobe-database-schema-property due_date
-     * @x-autobe-specification Direct partial mapping to todo_app_todos.due_date. When provided with a date-time value, replace the current due date; when provided with null, clear the due date; when omitted, preserve the existing value.
+         * @x-autobe-database-schema-property due_date
+         * @x-autobe-specification Direct partial mapping to
+         *   todo_app_todos.due_date. When provided with a date-time value,
+         *   replace the current due date; when provided with null, clear the
+         *   due date; when omitted, preserve the existing value.
      */
     dueDate?: (string & tags.Format<"date-time">) | null | undefined;
   };

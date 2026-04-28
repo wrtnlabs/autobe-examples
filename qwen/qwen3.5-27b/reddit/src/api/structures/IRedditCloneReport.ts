@@ -18,8 +18,9 @@ export type IRedditCloneReport = {
    *
    * This UUID serves as the primary key for the report and is used to reference the report in API operations and database queries.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from reddit_clone_reports.id. Primary key UUID identifying the report entity.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from reddit_clone_reports.id.
+     *   Primary key UUID identifying the report entity.
    */
   id: string & tags.Format<"uuid">;
 
@@ -28,8 +29,11 @@ export type IRedditCloneReport = {
    *
    * This field indicates whether the report targets a 'post' or 'comment'. The value determines which content reference field (reportedPost or reportedComment) contains data. Exactly one of the two reference fields will be populated based on this discriminator.
    *
-   * @x-autobe-database-schema-property report_type
-   * @x-autobe-specification Direct mapping from reddit_clone_reports.report_type. Discriminator field with values 'post' or 'comment'. Determines which foreign key (reddit_clone_post_id or reddit_clone_comment_id) is populated.
+     * @x-autobe-database-schema-property report_type
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_reports.report_type. Discriminator field with values
+     *   'post' or 'comment'. Determines which foreign key (reddit_clone_post_id
+     *   or reddit_clone_comment_id) is populated.
    */
   report_type: string;
 
@@ -38,8 +42,10 @@ export type IRedditCloneReport = {
    *
    * This required text field contains the member's explanation of why the content violates community guidelines or deserves moderator attention. Moderators review this reason when deciding whether to approve or dismiss the report.
    *
-   * @x-autobe-database-schema-property reason
-   * @x-autobe-specification Direct mapping from reddit_clone_reports.reason. Required text field containing the reporter's explanation for flagging the content. Minimum 10 characters recommended per operation spec.
+     * @x-autobe-database-schema-property reason
+     * @x-autobe-specification Direct mapping from reddit_clone_reports.reason.
+     *   Required text field containing the reporter's explanation for flagging
+     *   the content. Minimum 10 characters recommended per operation spec.
    */
   reason: string;
 
@@ -48,8 +54,11 @@ export type IRedditCloneReport = {
    *
    * Reports progress through three states: 'pending' when awaiting moderator review, 'approved' when the moderator deletes the reported content, or 'dismissed' when the moderator keeps the content visible and removes the report from the active queue. Each report can only be acted upon once.
    *
-   * @x-autobe-database-schema-property status
-   * @x-autobe-specification Direct mapping from reddit_clone_reports.status. Tracks workflow state with values: 'pending' (awaiting review), 'approved' (content deleted), 'dismissed' (content kept, report soft-deleted).
+     * @x-autobe-database-schema-property status
+     * @x-autobe-specification Direct mapping from reddit_clone_reports.status.
+     *   Tracks workflow state with values: 'pending' (awaiting review),
+     *   'approved' (content deleted), 'dismissed' (content kept, report
+     *   soft-deleted).
    */
   status: string;
 
@@ -58,8 +67,11 @@ export type IRedditCloneReport = {
    *
    * This field contains the reporter's profile information including display name, username, and karma. The reporter's identity is visible to moderators reviewing the report but the reporter's email and authentication credentials are never exposed.
    *
-   * @x-autobe-database-schema-property reporter
-   * @x-autobe-specification Relation via JOIN from reddit_clone_reports.reporter to reddit_clone_members on reddit_clone_member_id. Returns IRedditCloneMember.ISummary containing reporter's public profile information.
+     * @x-autobe-database-schema-property reporter
+     * @x-autobe-specification Relation via JOIN from
+     *   reddit_clone_reports.reporter to reddit_clone_members on
+     *   reddit_clone_member_id. Returns IRedditCloneMember.ISummary containing
+     *   reporter's public profile information.
    */
   reporter: IRedditCloneMember.ISummary;
 
@@ -68,8 +80,11 @@ export type IRedditCloneReport = {
    *
    * This field contains the reported post's information including title, content preview, author, and community. The field is null when the report targets a comment instead of a post.
    *
-   * @x-autobe-database-schema-property reportedPost
-   * @x-autobe-specification Relation via JOIN from reddit_clone_reports.reportedPost to reddit_clone_posts on reddit_clone_post_id. Returns IRedditClonePost.ISummary or null. Populated only when report_type is 'post'.
+     * @x-autobe-database-schema-property reportedPost
+     * @x-autobe-specification Relation via JOIN from
+     *   reddit_clone_reports.reportedPost to reddit_clone_posts on
+     *   reddit_clone_post_id. Returns IRedditClonePost.ISummary or null.
+     *   Populated only when report_type is 'post'.
    */
   reportedPost: IRedditClonePost.ISummary | null;
 
@@ -78,8 +93,11 @@ export type IRedditCloneReport = {
    *
    * This field contains the reported comment's information including content, author, parent post, and vote score. The field is null when the report targets a post instead of a comment.
    *
-   * @x-autobe-database-schema-property reportedComment
-   * @x-autobe-specification Relation via JOIN from reddit_clone_reports.reportedComment to reddit_clone_comments on reddit_clone_comment_id. Returns IRedditCloneComment.ISummary or null. Populated only when report_type is 'comment'.
+     * @x-autobe-database-schema-property reportedComment
+     * @x-autobe-specification Relation via JOIN from
+     *   reddit_clone_reports.reportedComment to reddit_clone_comments on
+     *   reddit_clone_comment_id. Returns IRedditCloneComment.ISummary or null.
+     *   Populated only when report_type is 'comment'.
    */
   reportedComment: IRedditCloneComment.ISummary | null;
 
@@ -88,8 +106,11 @@ export type IRedditCloneReport = {
    *
    * This field records the exact date and time when the member first flagged the content for moderator review. Used to sort reports chronologically and track how long reports have been pending.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from reddit_clone_reports.created_at. Timestamp recording when the member first flagged the content for moderation review. Set automatically on report creation.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_reports.created_at. Timestamp recording when the member
+     *   first flagged the content for moderation review. Set automatically on
+     *   report creation.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -98,8 +119,11 @@ export type IRedditCloneReport = {
    *
    * This field tracks the most recent change to the report, typically when a moderator updates the status to 'approved' or 'dismissed'. Used to audit the moderation workflow timeline.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from reddit_clone_reports.updated_at. Timestamp tracking the most recent update to the report status or metadata. Updated when moderator approves or dismisses the report.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_reports.updated_at. Timestamp tracking the most recent
+     *   update to the report status or metadata. Updated when moderator
+     *   approves or dismisses the report.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -108,8 +132,11 @@ export type IRedditCloneReport = {
    *
    * This nullable field is set when a moderator dismisses the report, removing it from the active moderation queue while preserving the record for audit purposes. The field is null for pending and approved reports.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from reddit_clone_reports.deleted_at. Nullable timestamp for soft-delete support. Set when report is dismissed to remove it from active moderation queues. Null for pending and approved reports.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_reports.deleted_at. Nullable timestamp for soft-delete
+     *   support. Set when report is dismissed to remove it from active
+     *   moderation queues. Null for pending and approved reports.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -132,19 +159,19 @@ export namespace IRedditCloneReport {
    */
   export type ICreate = {
     /**
-     * @x-autobe-database-schema-property report_type
+         * @x-autobe-database-schema-property report_type
      */
     report_type: string;
     /**
-     * @x-autobe-database-schema-property reddit_clone_post_id
+         * @x-autobe-database-schema-property reddit_clone_post_id
      */
     post_id?: (string & tags.Format<"uuid">) | null | undefined;
     /**
-     * @x-autobe-database-schema-property reddit_clone_comment_id
+         * @x-autobe-database-schema-property reddit_clone_comment_id
      */
     comment_id?: (string & tags.Format<"uuid">) | null | undefined;
     /**
-     * @x-autobe-database-schema-property reason
+         * @x-autobe-database-schema-property reason
      */
     reason: string;
   };
@@ -162,7 +189,11 @@ export namespace IRedditCloneReport {
      *
      * Accepts one of three values: 'pending' for reports awaiting moderator review, 'approved' for reports where content was deleted, or 'dismissed' for reports where content was kept. When not specified, all report statuses are included in the results.
      *
-     * @x-autobe-specification Filter reports by moderation status. Used to filter reddit_clone_reports.status column in WHERE clause. Accepts values: 'pending', 'approved', 'dismissed'. When not specified, all report statuses are included. Applied as: WHERE status = :status when provided.
+         * @x-autobe-specification Filter reports by moderation status. Used to
+         *   filter reddit_clone_reports.status column in WHERE clause. Accepts
+         *   values: 'pending', 'approved', 'dismissed'. When not specified, all
+         *   report statuses are included. Applied as: WHERE status = :status
+         *   when provided.
      */
     status?: "pending" | "approved" | "dismissed" | undefined;
 
@@ -171,7 +202,11 @@ export namespace IRedditCloneReport {
      *
      * Accepts 'post' to show only reports about posts, or 'comment' to show only reports about comments. When not specified, reports for both content types are included in the results.
      *
-     * @x-autobe-specification Filter reports by target content type. Used to filter reddit_clone_reports.report_type column in WHERE clause. Accepts values: 'post', 'comment'. When not specified, both report types are included. Applied as: WHERE report_type = :report_type when provided.
+         * @x-autobe-specification Filter reports by target content type. Used
+         *   to filter reddit_clone_reports.report_type column in WHERE clause.
+         *   Accepts values: 'post', 'comment'. When not specified, both report
+         *   types are included. Applied as: WHERE report_type = :report_type
+         *   when provided.
      */
     report_type?: "post" | "comment" | undefined;
 
@@ -180,7 +215,10 @@ export namespace IRedditCloneReport {
      *
      * A 1-indexed integer indicating which page of results to retrieve. The first page is page 1. When combined with the limit parameter, this determines which subset of matching reports is returned. Default is page 1 when not specified.
      *
-     * @x-autobe-specification Page number for offset-based pagination. 1-indexed (first page is 1). Default: 1. Used to calculate offset: (page - 1) * limit. Must be >= 1. Applied in SQL as: LIMIT :limit OFFSET :offset.
+         * @x-autobe-specification Page number for offset-based pagination.
+         *   1-indexed (first page is 1). Default: 1. Used to calculate offset:
+         *   (page - 1) * limit. Must be >= 1. Applied in SQL as: LIMIT :limit
+         *   OFFSET :offset.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -189,7 +227,10 @@ export namespace IRedditCloneReport {
      *
      * An integer between 1 and 100 that controls how many report records appear in each page of results. The default is 20 reports per page. This parameter works with the page parameter to enable efficient browsing of large report collections.
      *
-     * @x-autobe-specification Maximum number of records per page. Default: 20. Maximum allowed: 100. Minimum: 1. Used with page parameter for offset-based pagination. Applied as LIMIT clause in SQL query. Validates: 1 <= limit <= 100.
+         * @x-autobe-specification Maximum number of records per page. Default:
+         *   20. Maximum allowed: 100. Minimum: 1. Used with page parameter for
+         *   offset-based pagination. Applied as LIMIT clause in SQL query.
+         *   Validates: 1 <= limit <= 100.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -200,7 +241,10 @@ export namespace IRedditCloneReport {
      *
      * A string specifying which field to use for sorting. Supported values are 'created_at' (when the report was submitted) and 'updated_at' (when the report was last modified). Default is 'created_at' when not specified, showing newest reports first.
      *
-     * @x-autobe-specification Field name to sort results by. Default: 'created_at'. Supported fields: 'created_at', 'updated_at'. Applied as ORDER BY clause in SQL query. Field name must be validated against whitelist to prevent SQL injection.
+         * @x-autobe-specification Field name to sort results by. Default:
+         *   'created_at'. Supported fields: 'created_at', 'updated_at'. Applied
+         *   as ORDER BY clause in SQL query. Field name must be validated
+         *   against whitelist to prevent SQL injection.
      */
     sort?: string | undefined;
 
@@ -209,7 +253,10 @@ export namespace IRedditCloneReport {
      *
      * Accepts 'asc' for ascending order (oldest first, lowest values first) or 'desc' for descending order (newest first, highest values first). Default is 'desc' when not specified, showing the most recent reports first.
      *
-     * @x-autobe-specification Sort direction for ordering results. Default: 'desc'. Values: 'asc' for ascending order, 'desc' for descending order. Applied as ORDER BY ... ASC/DESC in SQL query. Validates: must be 'asc' or 'desc'.
+         * @x-autobe-specification Sort direction for ordering results. Default:
+         *   'desc'. Values: 'asc' for ascending order, 'desc' for descending
+         *   order. Applied as ORDER BY ... ASC/DESC in SQL query. Validates:
+         *   must be 'asc' or 'desc'.
      */
     order?: "asc" | "desc" | undefined;
   };
@@ -223,8 +270,9 @@ export namespace IRedditCloneReport {
     /**
      * Unique identifier for the report record.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from reddit_clone_reports.id. Primary key UUID.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from reddit_clone_reports.id.
+         *   Primary key UUID.
      */
     id: string & tags.Format<"uuid">;
 
@@ -233,8 +281,10 @@ export namespace IRedditCloneReport {
      *
      * This discriminator determines whether the reportedPost or reportedComment field contains data. Only one of these fields will be non-null based on the report type.
      *
-     * @x-autobe-database-schema-property report_type
-     * @x-autobe-specification Direct mapping from reddit_clone_reports.report_type. Discriminator field indicating 'post' or 'comment'. Determines which foreign key is populated.
+         * @x-autobe-database-schema-property report_type
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_reports.report_type. Discriminator field indicating
+         *   'post' or 'comment'. Determines which foreign key is populated.
      */
     report_type: string;
 
@@ -243,8 +293,10 @@ export namespace IRedditCloneReport {
      *
      * This required text field contains the member's description of why the content violates community guidelines or deserves moderator attention.
      *
-     * @x-autobe-database-schema-property reason
-     * @x-autobe-specification Direct mapping from reddit_clone_reports.reason. Required text field containing the reporter's explanation.
+         * @x-autobe-database-schema-property reason
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_reports.reason. Required text field containing the
+         *   reporter's explanation.
      */
     reason: string;
 
@@ -253,8 +305,10 @@ export namespace IRedditCloneReport {
      *
      * Valid values are 'pending' (awaiting moderator review), 'approved' (content deleted), or 'dismissed' (content kept). This field tracks the report through the moderation workflow.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from reddit_clone_reports.status. Tracks workflow state: 'pending', 'approved', or 'dismissed'.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_reports.status. Tracks workflow state: 'pending',
+         *   'approved', or 'dismissed'.
      */
     status: string;
 
@@ -263,8 +317,10 @@ export namespace IRedditCloneReport {
      *
      * This field records the exact date and time when the content was first flagged for moderator review.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from reddit_clone_reports.created_at. Timestamp when report was submitted.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_reports.created_at. Timestamp when report was
+         *   submitted.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -273,8 +329,10 @@ export namespace IRedditCloneReport {
      *
      * Contains the profile information of the user who flagged the content for moderation review.
      *
-     * @x-autobe-database-schema-property reporter
-     * @x-autobe-specification Relation via JOIN from reddit_clone_reports.reporter to reddit_clone_members. Returns IRedditCloneMember.ISummary. Maps to reddit_clone_member_id FK.
+         * @x-autobe-database-schema-property reporter
+         * @x-autobe-specification Relation via JOIN from
+         *   reddit_clone_reports.reporter to reddit_clone_members. Returns
+         *   IRedditCloneMember.ISummary. Maps to reddit_clone_member_id FK.
      */
     reporter: IRedditCloneMember.ISummary;
 
@@ -283,8 +341,11 @@ export namespace IRedditCloneReport {
      *
      * This field contains the reported post's summary information when report_type is 'post'. Null when the report targets a comment instead.
      *
-     * @x-autobe-database-schema-property reportedPost
-     * @x-autobe-specification Polymorphic relation via JOIN from reddit_clone_reports.reportedPost to reddit_clone_posts. Returns IRedditClonePost.ISummary or null. Populated only when report_type is 'post'. Maps to reddit_clone_post_id FK.
+         * @x-autobe-database-schema-property reportedPost
+         * @x-autobe-specification Polymorphic relation via JOIN from
+         *   reddit_clone_reports.reportedPost to reddit_clone_posts. Returns
+         *   IRedditClonePost.ISummary or null. Populated only when report_type
+         *   is 'post'. Maps to reddit_clone_post_id FK.
      */
     reportedPost: IRedditClonePost.ISummary | null;
 
@@ -293,8 +354,11 @@ export namespace IRedditCloneReport {
      *
      * This field contains the reported comment's summary information when report_type is 'comment'. Null when the report targets a post instead.
      *
-     * @x-autobe-database-schema-property reportedComment
-     * @x-autobe-specification Polymorphic relation via JOIN from reddit_clone_reports.reportedComment to reddit_clone_comments. Returns IRedditCloneComment.ISummary or null. Populated only when report_type is 'comment'. Maps to reddit_clone_comment_id FK.
+         * @x-autobe-database-schema-property reportedComment
+         * @x-autobe-specification Polymorphic relation via JOIN from
+         *   reddit_clone_reports.reportedComment to reddit_clone_comments.
+         *   Returns IRedditCloneComment.ISummary or null. Populated only when
+         *   report_type is 'comment'. Maps to reddit_clone_comment_id FK.
      */
     reportedComment: IRedditCloneComment.ISummary | null;
   };

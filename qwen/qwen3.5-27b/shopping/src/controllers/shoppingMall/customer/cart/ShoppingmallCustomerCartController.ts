@@ -17,9 +17,10 @@ export class ShoppingmallCustomerCartController {
    * Cart items that reference unavailable or deleted product variants are marked as unavailable and cannot be included in checkout. The cart persists across sessions and is automatically emptied after successful order placement.
    *
    * @param connection
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Query shopping_mall_customer_carts table for the cart belonging to the authenticated customer's ID.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Query shopping_mall_customer_carts table for the
+     *   cart belonging to the authenticated customer's ID.
    *
    * Join with shopping_mall_customer_cart_items to retrieve all active cart items (deleted_at IS NULL).
    *

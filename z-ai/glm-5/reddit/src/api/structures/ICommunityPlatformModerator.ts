@@ -9,31 +9,31 @@ import { ICommunityPlatformMember } from "./ICommunityPlatformMember";
  */
 export type ICommunityPlatformModerator = {
   /**
-   * @x-autobe-database-schema-property id
+     * @x-autobe-database-schema-property id
    */
   id: string & tags.Format<"uuid">;
   /**
-   * @x-autobe-database-schema-property member
+     * @x-autobe-database-schema-property member
    */
   member: ICommunityPlatformMember.ISummary;
   /**
-   * @x-autobe-database-schema-property community
+     * @x-autobe-database-schema-property community
    */
   community: ICommunityPlatformCommunity.ISummary;
   /**
-   * @x-autobe-database-schema-property role
+     * @x-autobe-database-schema-property role
    */
   role: "owner" | "moderator";
   /**
-   * @x-autobe-database-schema-property created_at
+     * @x-autobe-database-schema-property created_at
    */
   created_at: string & tags.Format<"date-time">;
   /**
-   * @x-autobe-database-schema-property updated_at
+     * @x-autobe-database-schema-property updated_at
    */
   updated_at: string & tags.Format<"date-time">;
   /**
-   * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-database-schema-property deleted_at
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -45,8 +45,14 @@ export namespace ICommunityPlatformModerator {
     /**
      * Unique identifier of the member to be appointed as a moderator.
      *
-     * @x-autobe-database-schema-property community_platform_member_id
-     * @x-autobe-specification Direct mapping to community_platform_moderators.community_platform_member_id FK column. Must reference an existing, non-deleted member in community_platform_members. Service layer validates the member exists and is not already a moderator of this community (unique constraint on [community_platform_community_id, community_platform_member_id]).
+         * @x-autobe-database-schema-property community_platform_member_id
+         * @x-autobe-specification Direct mapping to
+         *   community_platform_moderators.community_platform_member_id FK
+         *   column. Must reference an existing, non-deleted member in
+         *   community_platform_members. Service layer validates the member
+         *   exists and is not already a moderator of this community (unique
+         *   constraint on [community_platform_community_id,
+         *   community_platform_member_id]).
      */
     memberId: string & tags.Format<"uuid">;
   };
@@ -56,19 +62,19 @@ export namespace ICommunityPlatformModerator {
    */
   export type ISummary = {
     /**
-     * @x-autobe-database-schema-property id
+         * @x-autobe-database-schema-property id
      */
     id: string & tags.Format<"uuid">;
     /**
-     * @x-autobe-database-schema-property role
+         * @x-autobe-database-schema-property role
      */
     role: string;
     /**
-     * @x-autobe-database-schema-property created_at
+         * @x-autobe-database-schema-property created_at
      */
     createdAt: string & tags.Format<"date-time">;
     /**
-     * @x-autobe-database-schema-property member
+         * @x-autobe-database-schema-property member
      */
     member: ICommunityPlatformMember.ISummary;
   };
@@ -80,14 +86,16 @@ export namespace ICommunityPlatformModerator {
     /**
      * Filter by moderator role type. 'owner' for community creator with highest authority, 'moderator' for appointed moderators with standard privileges.
      *
-     * @x-autobe-database-schema-property role
+         * @x-autobe-database-schema-property role
      */
     role?: "owner" | "moderator" | null | undefined;
 
     /**
      * Sort order for moderator listing results. Valid values: 'created_at' (by role assignment date), 'username' (by member's username).
      *
-     * @x-autobe-specification Query parameter for result ordering. Valid values: 'created_at' (sort by role assignment date, default) or 'username' (sort by member's username). Optional field.
+         * @x-autobe-specification Query parameter for result ordering. Valid
+         *   values: 'created_at' (sort by role assignment date, default) or
+         *   'username' (sort by member's username). Optional field.
      */
     sort?: string | undefined;
 

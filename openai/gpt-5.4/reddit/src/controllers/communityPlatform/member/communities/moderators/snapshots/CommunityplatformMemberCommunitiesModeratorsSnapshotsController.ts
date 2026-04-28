@@ -30,9 +30,10 @@ export class CommunityplatformMemberCommunitiesModeratorsSnapshotsController {
    * @param connection
    * @param communityId Target community's ID
    * @param moderatorId Target community moderator assignment's ID
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement this operation as an append-only creation workflow for community_platform_community_moderator_snapshots.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implement this operation as an append-only
+     *   creation workflow for community_platform_community_moderator_snapshots.
    *
    * 1. Authenticate the caller as a member. Guests are never eligible. Resolve the caller's member identity from the authenticated session.
    * 2. Load the target community from community_platform_communities by id = :communityId and deleted_at IS NULL. If not found, return a not-found error.
@@ -92,18 +93,34 @@ export class CommunityplatformMemberCommunitiesModeratorsSnapshotsController {
    * @param communityId Target community's unique identifier
    * @param moderatorId Target community moderator assignment's unique identifier
    * @param body Pagination, sorting, and filtering criteria for moderator assignment snapshots
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1. Authenticate the caller and require a logged-in actor.
-   * 2. Load the target community_platform_communities row by communities.id using communityId and reject when not found.
-   * 3. Verify the caller has permission to view moderation data for the target community. Accept a member who holds an active owner or moderator assignment in the same community. If platform policy permits admin oversight, admins may also be accepted. Reject all other actors.
-   * 4. Load the target community_platform_community_moderators row by id using moderatorId and reject when not found.
-   * 5. Validate that the moderator assignment belongs to the specified community by checking community_platform_community_id === communityId. Reject mismatched parent-child combinations.
-   * 6. Parse the request body as ICommunityPlatformCommunityModeratorSnapshot.IRequest. Support pagination inputs, optional createdAt range filters, and sort directives. If no sort is provided, default to created_at descending.
-   * 7. Query community_platform_community_moderator_snapshots where community_platform_community_moderator_id equals moderatorId. Apply validated created_at filters if present.
-   * 8. Return paginated results as IPageICommunityPlatformCommunityModeratorSnapshot.ISummary. Each row should at minimum include snapshot identity and created-at information required for list display.
-   * 9. Ensure pagination metadata is computed from the filtered dataset.
-   * 10. Error handling: reject when the community is missing, the moderator assignment is missing, the assignment is outside the specified community, or the actor lacks community-scoped moderation authority. Do not expose snapshot rows from other communities or moderator assignments.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification 1. Authenticate the caller and require a
+     *   logged-in actor. 2. Load the target community_platform_communities row
+     *   by communities.id using communityId and reject when not found. 3.
+     *   Verify the caller has permission to view moderation data for the target
+     *   community. Accept a member who holds an active owner or moderator
+     *   assignment in the same community. If platform policy permits admin
+     *   oversight, admins may also be accepted. Reject all other actors. 4.
+     *   Load the target community_platform_community_moderators row by id using
+     *   moderatorId and reject when not found. 5. Validate that the moderator
+     *   assignment belongs to the specified community by checking
+     *   community_platform_community_id === communityId. Reject mismatched
+     *   parent-child combinations. 6. Parse the request body as
+     *   ICommunityPlatformCommunityModeratorSnapshot.IRequest. Support
+     *   pagination inputs, optional createdAt range filters, and sort
+     *   directives. If no sort is provided, default to created_at descending.
+     *   7. Query community_platform_community_moderator_snapshots where
+     *   community_platform_community_moderator_id equals moderatorId. Apply
+     *   validated created_at filters if present. 8. Return paginated results as
+     *   IPageICommunityPlatformCommunityModeratorSnapshot.ISummary. Each row
+     *   should at minimum include snapshot identity and created-at information
+     *   required for list display. 9. Ensure pagination metadata is computed
+     *   from the filtered dataset. 10. Error handling: reject when the
+     *   community is missing, the moderator assignment is missing, the
+     *   assignment is outside the specified community, or the actor lacks
+     *   community-scoped moderation authority. Do not expose snapshot rows from
+     *   other communities or moderator assignments.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
@@ -149,9 +166,10 @@ export class CommunityplatformMemberCommunitiesModeratorsSnapshotsController {
    * @param communityId Target community's ID
    * @param moderatorId Target moderator assignment's ID within the community
    * @param snapshotId Target moderator snapshot's ID for the moderator assignment
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement a read-only detail retrieval for one community moderator snapshot.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implement a read-only detail retrieval for one
+     *   community moderator snapshot.
    *
    * 1. Authorize the caller before data access. Allow access only to a platform admin or to a member who has governance authority in the target community. Governance authority means either: (a) the member is the owner of the target community, represented by an active community_platform_community_moderators row for the same community with a related community_platform_community_moderator_owners subtype row; or (b) the member is an active moderator of the same community. Reject guests and ordinary members without community governance standing.
    *

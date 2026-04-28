@@ -25,7 +25,8 @@ import { IPageIHrmTimeTrackingTimesheetSnapshot } from "../../../../../structure
  * @param props.body Snapshot creation data for the target timesheet
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor employee
- * @x-autobe-specification Implement a create-snapshot service for the subsidiary `hrm_time_tracking_timesheet_snapshots` table.
+ * @x-autobe-specification Implement a create-snapshot service for the
+ *   subsidiary `hrm_time_tracking_timesheet_snapshots` table.
  *
  * 1. Resolve the authenticated actor and active organization context. Authorize only actors permitted to preserve or manage timesheet review history in that organization, such as owner and manager permissions for timesheet approval or administrative oversight. Deny employee self-service creation unless an internal business rule explicitly delegates this through a controlled workflow.
  *
@@ -156,22 +157,37 @@ export namespace create {
  * @param props.body Pagination and filter criteria for timesheet snapshots
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor employee
- * @x-autobe-specification 1. Resolve the active authenticated actor and active organization context from the session.
- * 2. Load the parent record from `hrm_time_tracking_timesheets` by `id = :timesheetId` and `deleted_at IS NULL`. If no row exists, return a not-found error.
- * 3. Verify that the parent timesheet belongs to the active organization by comparing `hrm_time_tracking_organization_id` against the session organization context. If it does not match, deny access.
- * 4. Authorize access according to business rules:
- *    - If the caller is an employee actor, allow only when the employee account corresponds to `hrm_time_tracking_employee_id` of the parent timesheet.
- *    - If the caller is an owner or manager, require permission to review timesheets or view the target timesheet in the current organization context.
- *    - Deny access when permission is absent, even if the caller has similar authority in another organization.
- * 5. Query `hrm_time_tracking_timesheet_snapshots` filtered by `hrm_time_tracking_timesheet_id = :timesheetId`.
- * 6. Apply request-driven pagination and deterministic ordering. Default ordering should be stable, such as newest logical snapshot first by snapshot identifier or another supported deterministic sort defined in the DTO implementation. Do not invent business data beyond stored snapshot fields.
- * 7. Build summary rows from snapshot records. Include snapshot identity and the preserved `locked` value. If the DTO layer includes parent-derived contextual fields, derive them from the already loaded parent timesheet rather than issuing repeated queries.
- * 8. Return the result as `IPageIHrmTimeTrackingTimesheetSnapshot.ISummary` with pagination metadata and snapshot summary data.
- * 9. Error handling:
- *    - Return not found when the timesheet does not exist or is deleted.
- *    - Return forbidden when the caller cannot access the parent timesheet in the active organization.
- *    - Return validation failure when pagination or filter inputs are invalid.
- * 10. This operation is read-only. It must not create, update, or remove snapshot records, and it must not alter the parent timesheet, included timelogs, review state, or lock state as a side effect.
+ * @x-autobe-specification 1. Resolve the active authenticated actor and active
+ *   organization context from the session. 2. Load the parent record from
+ *   `hrm_time_tracking_timesheets` by `id = :timesheetId` and `deleted_at IS
+ *   NULL`. If no row exists, return a not-found error. 3. Verify that the
+ *   parent timesheet belongs to the active organization by comparing
+ *   `hrm_time_tracking_organization_id` against the session organization
+ *   context. If it does not match, deny access. 4. Authorize access according
+ *   to business rules: - If the caller is an employee actor, allow only when
+ *   the employee account corresponds to `hrm_time_tracking_employee_id` of the
+ *   parent timesheet. - If the caller is an owner or manager, require
+ *   permission to review timesheets or view the target timesheet in the current
+ *   organization context. - Deny access when permission is absent, even if the
+ *   caller has similar authority in another organization. 5. Query
+ *   `hrm_time_tracking_timesheet_snapshots` filtered by
+ *   `hrm_time_tracking_timesheet_id = :timesheetId`. 6. Apply request-driven
+ *   pagination and deterministic ordering. Default ordering should be stable,
+ *   such as newest logical snapshot first by snapshot identifier or another
+ *   supported deterministic sort defined in the DTO implementation. Do not
+ *   invent business data beyond stored snapshot fields. 7. Build summary rows
+ *   from snapshot records. Include snapshot identity and the preserved `locked`
+ *   value. If the DTO layer includes parent-derived contextual fields, derive
+ *   them from the already loaded parent timesheet rather than issuing repeated
+ *   queries. 8. Return the result as
+ *   `IPageIHrmTimeTrackingTimesheetSnapshot.ISummary` with pagination metadata
+ *   and snapshot summary data. 9. Error handling: - Return not found when the
+ *   timesheet does not exist or is deleted. - Return forbidden when the caller
+ *   cannot access the parent timesheet in the active organization. - Return
+ *   validation failure when pagination or filter inputs are invalid. 10. This
+ *   operation is read-only. It must not create, update, or remove snapshot
+ *   records, and it must not alter the parent timesheet, included timelogs,
+ *   review state, or lock state as a side effect.
  * @path /hrmTimeTracking/employee/timesheets/:timesheetId/snapshots
  * @accessor api.functional.hrmTimeTracking.employee.timesheets.snapshots.index
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -272,7 +288,9 @@ export namespace index {
  * @param props.timesheetSnapshotId Target snapshot ID belonging to the specified timesheet
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor employee
- * @x-autobe-specification Implement this operation as a read-only detail lookup on hrm_time_tracking_timesheet_snapshots joined to hrm_time_tracking_timesheets.
+ * @x-autobe-specification Implement this operation as a read-only detail lookup
+ *   on hrm_time_tracking_timesheet_snapshots joined to
+ *   hrm_time_tracking_timesheets.
  *
  * First, resolve the caller's active organization context and authorization scope. Permit access only when the caller is the employee owner of the parent timesheet for self-view, or the caller is an owner or manager with organization-scoped permission to review or view timesheets in the current organization. Permission checks must use only the active organization context.
  *

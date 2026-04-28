@@ -18,8 +18,10 @@ export type ICommunityPlatformCommunitySnapshot = {
    *
    * A UUID assigned at creation time, used to reference this specific historical state snapshot.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from community_platform_community_snapshots.id. UUID primary key, auto-generated on creation.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_community_snapshots.id. UUID primary key,
+     *   auto-generated on creation.
    */
   id: string & tags.Format<"uuid">;
 
@@ -30,8 +32,11 @@ export type ICommunityPlatformCommunitySnapshot = {
    *
    * This is returned as a summary object containing the community's current identity information.
    *
-   * @x-autobe-database-schema-property community
-   * @x-autobe-specification JOIN from community_platform_community_snapshots.community_platform_community_id to community_platform_communities.id. Returns ICommunityPlatformCommunity.ISummary.
+     * @x-autobe-database-schema-property community
+     * @x-autobe-specification JOIN from
+     *   community_platform_community_snapshots.community_platform_community_id
+     *   to community_platform_communities.id. Returns
+     *   ICommunityPlatformCommunity.ISummary.
    */
   community: ICommunityPlatformCommunity.ISummary;
 
@@ -40,8 +45,10 @@ export type ICommunityPlatformCommunitySnapshot = {
    *
    * Preserved from the parent community's name field at the moment the snapshot was taken, independent of any subsequent name changes.
    *
-   * @x-autobe-database-schema-property name
-   * @x-autobe-specification Direct mapping from community_platform_community_snapshots.name. The community's unique name as it appeared at snapshot time.
+     * @x-autobe-database-schema-property name
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_community_snapshots.name. The community's unique
+     *   name as it appeared at snapshot time.
    */
   name: string;
 
@@ -50,8 +57,10 @@ export type ICommunityPlatformCommunitySnapshot = {
    *
    * Preserves the exact description that was displayed on the community's page when this snapshot was created.
    *
-   * @x-autobe-database-schema-property description
-   * @x-autobe-specification Direct mapping from community_platform_community_snapshots.description. The community's description as it appeared at snapshot time.
+     * @x-autobe-database-schema-property description
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_community_snapshots.description. The community's
+     *   description as it appeared at snapshot time.
    */
   description: string;
 
@@ -60,8 +69,11 @@ export type ICommunityPlatformCommunitySnapshot = {
    *
    * Null if no icon had been set yet when the snapshot was taken. This field preserves the historical icon reference independently of any subsequent icon changes or deletions.
    *
-   * @x-autobe-database-schema-property icon_image_uri
-   * @x-autobe-specification Direct mapping from community_platform_community_snapshots.icon_image_uri. Nullable — null indicates no icon was set when the snapshot was taken. Uses oneOf with null for proper null typing.
+     * @x-autobe-database-schema-property icon_image_uri
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_community_snapshots.icon_image_uri. Nullable — null
+     *   indicates no icon was set when the snapshot was taken. Uses oneOf with
+     *   null for proper null typing.
    */
   icon_image_uri: (string & tags.Format<"uri">) | null;
 
@@ -70,8 +82,13 @@ export type ICommunityPlatformCommunitySnapshot = {
    *
    * This is a denormalized value stored as a plain UUID rather than a foreign key, preserving the historical owner identity even if the member account is later deleted. This ensures the snapshot always accurately reflects who owned the community at the time it was taken.
    *
-   * @x-autobe-database-schema-property owner_member_id
-   * @x-autobe-specification Direct mapping from community_platform_community_snapshots.owner_member_id. Stored as a plain UUID string (not a foreign key constraint) to preserve historical owner identity independently of future member account deletion. Cannot be used to JOIN to community_platform_members — it is a denormalized snapshot value.
+     * @x-autobe-database-schema-property owner_member_id
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_community_snapshots.owner_member_id. Stored as a
+     *   plain UUID string (not a foreign key constraint) to preserve historical
+     *   owner identity independently of future member account deletion. Cannot
+     *   be used to JOIN to community_platform_members — it is a denormalized
+     *   snapshot value.
    */
   owner_member_id: string & tags.Format<"uuid">;
 
@@ -80,8 +97,10 @@ export type ICommunityPlatformCommunitySnapshot = {
    *
    * Reflects how many members were subscribed to the community when this historical state was recorded.
    *
-   * @x-autobe-database-schema-property subscriber_count
-   * @x-autobe-specification Direct mapping from community_platform_community_snapshots.subscriber_count. Integer value representing the subscriber count at snapshot time.
+     * @x-autobe-database-schema-property subscriber_count
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_community_snapshots.subscriber_count. Integer value
+     *   representing the subscriber count at snapshot time.
    */
   subscriber_count: number & tags.Type<"int32">;
 
@@ -90,8 +109,10 @@ export type ICommunityPlatformCommunitySnapshot = {
    *
    * Used for chronological ordering of snapshots, enabling traversal through a community's change history over time.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from community_platform_community_snapshots.created_at. DateTime in ISO 8601 format. Timestamp when this snapshot was recorded.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_community_snapshots.created_at. DateTime in ISO 8601
+     *   format. Timestamp when this snapshot was recorded.
    */
   created_at: string & tags.Format<"date-time">;
 };
@@ -107,8 +128,9 @@ export namespace ICommunityPlatformCommunitySnapshot {
      *
      * Each snapshot is uniquely identified by this UUID. This identifier is used when retrieving a specific snapshot record via the API.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from community_platform_community_snapshots.id. UUID primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_community_snapshots.id. UUID primary key.
      */
     id: string & tags.Format<"uuid">;
 
@@ -117,8 +139,9 @@ export namespace ICommunityPlatformCommunitySnapshot {
      *
      * This field preserves the historical name value independently of subsequent name changes to the parent community. It enables chronological tracking of community name changes over time.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from community_platform_community_snapshots.name.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_community_snapshots.name.
      */
     name: string;
 
@@ -127,8 +150,9 @@ export namespace ICommunityPlatformCommunitySnapshot {
      *
      * This field preserves the historical description value independently of subsequent changes to the parent community's description. It enables tracking of how the community's stated purpose and guidelines evolved over time.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from community_platform_community_snapshots.description.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_community_snapshots.description.
      */
     description: string;
 
@@ -137,8 +161,10 @@ export namespace ICommunityPlatformCommunitySnapshot {
      *
      * This field preserves the historical icon URI independently of subsequent icon changes to the parent community. It enables tracking of community branding changes over time.
      *
-     * @x-autobe-database-schema-property icon_image_uri
-     * @x-autobe-specification Direct mapping from community_platform_community_snapshots.icon_image_uri. Nullable — null indicates no icon was set when snapshot was taken.
+         * @x-autobe-database-schema-property icon_image_uri
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_community_snapshots.icon_image_uri. Nullable —
+         *   null indicates no icon was set when snapshot was taken.
      */
     icon_image_uri: (string & tags.Format<"uri">) | null;
 
@@ -147,8 +173,9 @@ export namespace ICommunityPlatformCommunitySnapshot {
      *
      * This field captures a point-in-time count of how many members were subscribed to the community when the snapshot was recorded. It enables tracking of community growth and engagement trends over time.
      *
-     * @x-autobe-database-schema-property subscriber_count
-     * @x-autobe-specification Direct mapping from community_platform_community_snapshots.subscriber_count.
+         * @x-autobe-database-schema-property subscriber_count
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_community_snapshots.subscriber_count.
      */
     subscriber_count: number & tags.Type<"int32">;
 
@@ -157,8 +184,9 @@ export namespace ICommunityPlatformCommunitySnapshot {
      *
      * This timestamp enables chronological ordering and traversal of the snapshot history for a community. Snapshots are ordered by this field to provide an auditable trail of identity attribute changes over the community's lifetime.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from community_platform_community_snapshots.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_community_snapshots.created_at.
      */
     created_at: string & tags.Format<"date-time">;
   };
@@ -174,7 +202,12 @@ export namespace ICommunityPlatformCommunitySnapshot {
      *
      * Use {@link created_at.gte} to filter snapshots created on or after a specific date, and {@link created_at.lte} to filter snapshots created on or before a specific date. Both fields are optional and can be combined to define a time window.
      *
-     * @x-autobe-specification Query parameter for filtering by snapshot creation timestamp. Maps to SQL WHERE clause on community_platform_community_snapshots.created_at: gte translates to 'created_at >= value', lte translates to 'created_at <= value'. Both can be combined to define a time window. If neither gte nor lte is provided, no date filter is applied.
+         * @x-autobe-specification Query parameter for filtering by snapshot
+         *   creation timestamp. Maps to SQL WHERE clause on
+         *   community_platform_community_snapshots.created_at: gte translates
+         *   to 'created_at >= value', lte translates to 'created_at <= value'.
+         *   Both can be combined to define a time window. If neither gte nor
+         *   lte is provided, no date filter is applied.
      */
     created_at?:
       | {
@@ -188,7 +221,9 @@ export namespace ICommunityPlatformCommunitySnapshot {
      *
      * Defaults to 1 when omitted. Must be a positive integer.
      *
-     * @x-autobe-specification Pagination page number. Offset is computed as (page - 1) * limit. Defaults to 1 when omitted. Must be a positive integer.
+         * @x-autobe-specification Pagination page number. Offset is computed as
+         *   (page - 1) * limit. Defaults to 1 when omitted. Must be a positive
+         *   integer.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -197,7 +232,9 @@ export namespace ICommunityPlatformCommunitySnapshot {
      *
      * Defaults to 20 when omitted. Must be between 1 and 100.
      *
-     * @x-autobe-specification Maximum number of records per page. Applied as SQL LIMIT clause. Defaults to 20 when omitted. Must be between 1 and 100.
+         * @x-autobe-specification Maximum number of records per page. Applied
+         *   as SQL LIMIT clause. Defaults to 20 when omitted. Must be between 1
+         *   and 100.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -208,7 +245,10 @@ export namespace ICommunityPlatformCommunitySnapshot {
      *
      * Use `created_at` for ascending order (oldest first) or `-created_at` for descending order (newest first, default).
      *
-     * @x-autobe-specification Sort order applied via SQL ORDER BY on the created_at column. '-created_at' (default) translates to ORDER BY created_at DESC. 'created_at' translates to ORDER BY created_at ASC. Regex validation: ^(-created_at|created_at)$.
+         * @x-autobe-specification Sort order applied via SQL ORDER BY on the
+         *   created_at column. '-created_at' (default) translates to ORDER BY
+         *   created_at DESC. 'created_at' translates to ORDER BY created_at
+         *   ASC. Regex validation: ^(-created_at|created_at)$.
      */
     sort?: (string & tags.Pattern<"^(-created_at|created_at)$">) | undefined;
   };

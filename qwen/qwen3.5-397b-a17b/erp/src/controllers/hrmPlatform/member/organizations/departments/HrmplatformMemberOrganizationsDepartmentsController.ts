@@ -24,9 +24,10 @@ export class HrmplatformMemberOrganizationsDepartmentsController {
    * @param connection
    * @param organizationId Organization identifier (UUID format) scoping the department creation to a specific organization.
    * @param body Department creation data including required name and optional description and parent department reference.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Create a new department in the specified organization.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Create a new department in the specified
+     *   organization.
    *
    * 1. Validate organizationId exists and the authenticated user has org:manage permission in that organization.
    * 2. Validate request body: name is required and non-empty, description is optional.
@@ -74,9 +75,11 @@ export class HrmplatformMemberOrganizationsDepartmentsController {
    * @param connection
    * @param organizationId UUID of the organization to retrieve departments for. All results are scoped to this organization for data isolation.
    * @param body Search and filter criteria for department listing including name search, description search, parent department filter, and pagination parameters.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query hrm_platform_departments table filtered by hrm_platform_organization_id matching the organizationId path parameter.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query hrm_platform_departments table filtered by
+     *   hrm_platform_organization_id matching the organizationId path
+     *   parameter.
    *
    * Apply search filters from request body:
    * - name: partial match search on department name
@@ -128,9 +131,10 @@ export class HrmplatformMemberOrganizationsDepartmentsController {
    * @param connection
    * @param organizationId Organization ID (UUID format) - scopes the department lookup to ensure multi-tenancy data isolation.
    * @param departmentId Department ID (UUID format) - unique identifier of the department to retrieve.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query hrm_platform_departments table by department ID.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query hrm_platform_departments table by
+     *   department ID.
    *
    * Validate that the department exists and belongs to the specified organization (hrm_platform_organization_id matches organizationId parameter).
    *
@@ -175,17 +179,24 @@ export class HrmplatformMemberOrganizationsDepartmentsController {
    * @param organizationId UUID of the organization that owns the department (scoped to organization context).
    * @param departmentId UUID of the department to update (scoped to organization).
    * @param body Department update data including name, optional description, and optional parent department reference. System-generated fields (id, created_at, updated_at) are excluded.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1. Verify the requesting user has org:manage permission in the specified organization.
-   * 2. Validate that the department exists and belongs to the specified organization.
-   * 3. Validate that the department is not soft-deleted (deleted_at is null).
-   * 4. Check name uniqueness: query hrm_platform_departments where hrm_platform_organization_id equals the path parameter and name equals the input name, excluding the current department ID. If a match exists, reject with 409 Conflict.
-   * 5. If parent_department_id is provided in the request, verify that the parent department exists and belongs to the same organization. Reject with 400 Bad Request if the parent belongs to a different organization.
-   * 6. Update the department record with the provided name, description, and parent_department_id fields.
-   * 7. Automatically update the updated_at timestamp to the current time.
-   * 8. Return the complete updated department entity including all fields.
-   * 9. Handle edge cases: department not found (404), permission denied (403), duplicate name (409), invalid parent department (400).
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification 1. Verify the requesting user has org:manage
+     *   permission in the specified organization. 2. Validate that the
+     *   department exists and belongs to the specified organization. 3.
+     *   Validate that the department is not soft-deleted (deleted_at is null).
+     *   4. Check name uniqueness: query hrm_platform_departments where
+     *   hrm_platform_organization_id equals the path parameter and name equals
+     *   the input name, excluding the current department ID. If a match exists,
+     *   reject with 409 Conflict. 5. If parent_department_id is provided in the
+     *   request, verify that the parent department exists and belongs to the
+     *   same organization. Reject with 400 Bad Request if the parent belongs to
+     *   a different organization. 6. Update the department record with the
+     *   provided name, description, and parent_department_id fields. 7.
+     *   Automatically update the updated_at timestamp to the current time. 8.
+     *   Return the complete updated department entity including all fields. 9.
+     *   Handle edge cases: department not found (404), permission denied (403),
+     *   duplicate name (409), invalid parent department (400).
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Put(":departmentId")
@@ -224,9 +235,10 @@ export class HrmplatformMemberOrganizationsDepartmentsController {
    * @param connection
    * @param organizationId Organization ID (UUID) scoping the department to delete.
    * @param departmentId Department ID (UUID) to delete.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Delete department by ID within organization scope.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Delete department by ID within organization
+     *   scope.
    *
    * 1. Verify caller has org:manage permission for the organization
    * 2. Query hrm_platform_departments WHERE id={departmentId} AND hrm_platform_organization_id={organizationId}

@@ -17,8 +17,9 @@ export type IRedditClonePost = {
    *
    * This UUID is automatically generated when the post is created and serves as the primary key for all post-related operations.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from reddit_clone_posts.id. UUID primary key generated on insert.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from reddit_clone_posts.id. UUID
+     *   primary key generated on insert.
    */
   id: string & tags.Format<"uuid">;
 
@@ -27,8 +28,9 @@ export type IRedditClonePost = {
    *
    * This field is required for all posts and must be provided when creating a post. The title is displayed prominently in post lists, feeds, and search results.
    *
-   * @x-autobe-database-schema-property title
-   * @x-autobe-specification Direct mapping from reddit_clone_posts.title. Required non-null string.
+     * @x-autobe-database-schema-property title
+     * @x-autobe-specification Direct mapping from reddit_clone_posts.title.
+     *   Required non-null string.
    */
   title: string;
 
@@ -37,8 +39,10 @@ export type IRedditClonePost = {
    *
    * Valid values are: 'text' for text posts with body content, 'link' for link posts with external URLs, and 'image' for image posts with image URLs. This discriminator determines which content field should be populated.
    *
-   * @x-autobe-database-schema-property post_type
-   * @x-autobe-specification Direct mapping from reddit_clone_posts.post_type. One of: 'text', 'link', 'image'. Determines which content field is populated.
+     * @x-autobe-database-schema-property post_type
+     * @x-autobe-specification Direct mapping from reddit_clone_posts.post_type.
+     *   One of: 'text', 'link', 'image'. Determines which content field is
+     *   populated.
    */
   post_type: string;
 
@@ -47,8 +51,10 @@ export type IRedditClonePost = {
    *
    * This field is populated only when post_type is 'text'. For link and image posts, this field is null.
    *
-   * @x-autobe-database-schema-property text_content
-   * @x-autobe-specification Direct mapping from reddit_clone_posts.text_content. Nullable string, populated only when post_type is 'text'.
+     * @x-autobe-database-schema-property text_content
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_posts.text_content. Nullable string, populated only when
+     *   post_type is 'text'.
    */
   text_content: string | null;
 
@@ -57,8 +63,10 @@ export type IRedditClonePost = {
    *
    * This field contains the external URL when post_type is 'link'. For text and image posts, this field is null.
    *
-   * @x-autobe-database-schema-property link_url
-   * @x-autobe-specification Direct mapping from reddit_clone_posts.link_url. Nullable string with URL format, populated only when post_type is 'link'.
+     * @x-autobe-database-schema-property link_url
+     * @x-autobe-specification Direct mapping from reddit_clone_posts.link_url.
+     *   Nullable string with URL format, populated only when post_type is
+     *   'link'.
    */
   link_url: (string & tags.Format<"url">) | null;
 
@@ -67,8 +75,10 @@ export type IRedditClonePost = {
    *
    * This field contains the image URL when post_type is 'image'. For text and link posts, this field is null.
    *
-   * @x-autobe-database-schema-property image_url
-   * @x-autobe-specification Direct mapping from reddit_clone_posts.image_url. Nullable string with URL format, populated only when post_type is 'image'.
+     * @x-autobe-database-schema-property image_url
+     * @x-autobe-specification Direct mapping from reddit_clone_posts.image_url.
+     *   Nullable string with URL format, populated only when post_type is
+     *   'image'.
    */
   image_url: (string & tags.Format<"url">) | null;
 
@@ -77,8 +87,10 @@ export type IRedditClonePost = {
    *
    * This field is set automatically when the post is first created and is used for sorting posts by recency.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from reddit_clone_posts.created_at. DateTime field set automatically on insert.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_posts.created_at. DateTime field set automatically on
+     *   insert.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -87,8 +99,10 @@ export type IRedditClonePost = {
    *
    * This field is updated whenever the post content is modified by the author or moderators.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from reddit_clone_posts.updated_at. DateTime field updated on each modification.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_posts.updated_at. DateTime field updated on each
+     *   modification.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -97,8 +111,10 @@ export type IRedditClonePost = {
    *
    * This field is set when the post is deleted by the author or moderators. Posts with a deleted_at value are hidden from normal views but retained for audit purposes.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from reddit_clone_posts.deleted_at. Nullable DateTime field for soft-delete functionality.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_posts.deleted_at. Nullable DateTime field for soft-delete
+     *   functionality.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 
@@ -107,7 +123,9 @@ export type IRedditClonePost = {
    *
    * This value represents the sum of all upvotes (+1) and downvotes (-1) cast on the post. The score can be positive, negative, or zero.
    *
-   * @x-autobe-specification Computed aggregation: SUM of reddit_clone_post_votes.vote_type where post_id matches. Upvote = +1, downvote = -1. Returns integer value representing net score.
+     * @x-autobe-specification Computed aggregation: SUM of
+     *   reddit_clone_post_votes.vote_type where post_id matches. Upvote = +1,
+     *   downvote = -1. Returns integer value representing net score.
    */
   vote_score: number & tags.Type<"int32">;
 
@@ -116,7 +134,9 @@ export type IRedditClonePost = {
    *
    * This count reflects only non-deleted comments. Deleted comments are not included in this total.
    *
-   * @x-autobe-specification Computed aggregation: COUNT of reddit_clone_comments WHERE post_id matches AND deleted_at IS NULL. Returns integer count of active comments only.
+     * @x-autobe-specification Computed aggregation: COUNT of
+     *   reddit_clone_comments WHERE post_id matches AND deleted_at IS NULL.
+     *   Returns integer count of active comments only.
    */
   comment_count: number & tags.Type<"int32">;
 
@@ -125,8 +145,11 @@ export type IRedditClonePost = {
    *
    * Contains the author's public profile information including display name, bio, avatar image, and karma score.
    *
-   * @x-autobe-database-schema-property userProfile
-   * @x-autobe-specification Relation mapping: JOIN reddit_clone_user_profiles on reddit_clone_user_profile_id. Returns IRedditCloneUserProfile.ISummary object with display_name, bio, avatar, karma, created_at.
+     * @x-autobe-database-schema-property userProfile
+     * @x-autobe-specification Relation mapping: JOIN reddit_clone_user_profiles
+     *   on reddit_clone_user_profile_id. Returns
+     *   IRedditCloneUserProfile.ISummary object with display_name, bio, avatar,
+     *   karma, created_at.
    */
   author: IRedditCloneUserProfile.ISummary;
 
@@ -135,8 +158,11 @@ export type IRedditClonePost = {
    *
    * Contains the community's public information including name, description, icon image, owner profile, and subscriber count.
    *
-   * @x-autobe-database-schema-property community
-   * @x-autobe-specification Relation mapping: JOIN reddit_clone_communities on reddit_clone_community_id. Returns IRedditCloneCommunity.ISummary object with id, name, description, icon, owner, subscriber_count, created_at.
+     * @x-autobe-database-schema-property community
+     * @x-autobe-specification Relation mapping: JOIN reddit_clone_communities
+     *   on reddit_clone_community_id. Returns IRedditCloneCommunity.ISummary
+     *   object with id, name, description, icon, owner, subscriber_count,
+     *   created_at.
    */
   community: IRedditCloneCommunity.ISummary;
 };
@@ -156,7 +182,10 @@ export namespace IRedditClonePost {
      *
      * Restricts the post list to only include posts from the specified community. This is useful for community-specific feeds or when searching within a particular community context. The UUID must correspond to an existing community in the system.
      *
-     * @x-autobe-specification Query parameter to filter posts by community. Maps to WHERE reddit_clone_community_id = value in the database query. Used in community-specific feed endpoints and general post search. UUID format required.
+         * @x-autobe-specification Query parameter to filter posts by community.
+         *   Maps to WHERE reddit_clone_community_id = value in the database
+         *   query. Used in community-specific feed endpoints and general post
+         *   search. UUID format required.
      */
     communityId?: (string & tags.Format<"uuid">) | undefined;
 
@@ -165,7 +194,10 @@ export namespace IRedditClonePost {
      *
      * Restricts the post list to only include posts created by the specified user. This is useful for viewing a user's post history on their profile page or when searching for content from a specific author. The UUID must correspond to an existing user profile in the system.
      *
-     * @x-autobe-specification Query parameter to filter posts by author. Maps to WHERE reddit_clone_user_profile_id = value in the database query. Used to retrieve all posts created by a specific user profile. UUID format required.
+         * @x-autobe-specification Query parameter to filter posts by author.
+         *   Maps to WHERE reddit_clone_user_profile_id = value in the database
+         *   query. Used to retrieve all posts created by a specific user
+         *   profile. UUID format required.
      */
     userId?: (string & tags.Format<"uuid">) | undefined;
 
@@ -174,7 +206,10 @@ export namespace IRedditClonePost {
      *
      * Performs a full-text search on post titles using trigram matching for fuzzy search capabilities. Supports partial matches and is case-insensitive. Useful for finding posts by keywords in their titles. Leave empty to skip title filtering.
      *
-     * @x-autobe-specification Query parameter for full-text search on post titles. Uses PostgreSQL trigram index on the title column for efficient text matching. Performs case-insensitive partial matching. Empty or null values are ignored.
+         * @x-autobe-specification Query parameter for full-text search on post
+         *   titles. Uses PostgreSQL trigram index on the title column for
+         *   efficient text matching. Performs case-insensitive partial
+         *   matching. Empty or null values are ignored.
      */
     searchQuery?: string | undefined;
 
@@ -183,7 +218,10 @@ export namespace IRedditClonePost {
      *
      * Restricts results to posts of a specific type: text posts (with body content), link posts (with external URLs), or image posts (with image URLs). This allows users to focus on specific content formats they're interested in viewing.
      *
-     * @x-autobe-specification Query parameter to filter posts by content type. Maps to WHERE post_type = value in the database query. Valid values: 'text' (posts with text_content), 'link' (posts with link_url), 'image' (posts with image_url). Optional filter.
+         * @x-autobe-specification Query parameter to filter posts by content
+         *   type. Maps to WHERE post_type = value in the database query. Valid
+         *   values: 'text' (posts with text_content), 'link' (posts with
+         *   link_url), 'image' (posts with image_url). Optional filter.
      */
     postType?: "text" | "link" | "image" | undefined;
 
@@ -192,7 +230,11 @@ export namespace IRedditClonePost {
      *
      * Determines how posts are ordered in the results. 'hot' shows recent posts with high engagement, 'new' shows most recently created posts, 'top' shows highest vote scores (use with timeFilter), and 'controversial' shows posts with many votes but scores near zero indicating disagreement.
      *
-     * @x-autobe-specification Query parameter for sorting strategy. 'hot': combines recency and vote score using decay algorithm. 'new': ORDER BY created_at DESC. 'top': ORDER BY vote_score DESC (requires timeFilter for time-bounded results). 'controversial': high vote count with score near zero. Default is 'hot' if not specified.
+         * @x-autobe-specification Query parameter for sorting strategy. 'hot':
+         *   combines recency and vote score using decay algorithm. 'new': ORDER
+         *   BY created_at DESC. 'top': ORDER BY vote_score DESC (requires
+         *   timeFilter for time-bounded results). 'controversial': high vote
+         *   count with score near zero. Default is 'hot' if not specified.
      */
     sortType?: "hot" | "new" | "top" | "controversial" | undefined;
 
@@ -201,7 +243,11 @@ export namespace IRedditClonePost {
      *
      * Restricts top-sorted results to a specific time period. Use 'today' for posts from the last 24 hours, 'week' for the last 7 days, 'month' for the last 30 days, 'year' for the last 365 days, or 'all' for no time restriction. This parameter is only applied when sortType is set to 'top'.
      *
-     * @x-autobe-specification Query parameter for time range filtering when sortType is 'top'. Maps to WHERE created_at >= timestamp in the database query. 'today': last 24 hours, 'week': last 7 days, 'month': last 30 days, 'year': last 365 days, 'all': no time restriction. Only used when sortType is 'top'.
+         * @x-autobe-specification Query parameter for time range filtering when
+         *   sortType is 'top'. Maps to WHERE created_at >= timestamp in the
+         *   database query. 'today': last 24 hours, 'week': last 7 days,
+         *   'month': last 30 days, 'year': last 365 days, 'all': no time
+         *   restriction. Only used when sortType is 'top'.
      */
     timeFilter?: "today" | "week" | "month" | "year" | "all" | undefined;
 
@@ -210,7 +256,10 @@ export namespace IRedditClonePost {
      *
      * Specifies which page of results to retrieve when using offset-based pagination. Page numbering starts from 1 (not 0), so the first page is page 1. Use this parameter along with 'limit' to navigate through paginated results. Default is page 1 if not specified.
      *
-     * @x-autobe-specification Query parameter for offset-based pagination. Maps to LIMIT/OFFSET in the database query. Page number is 1-indexed (first page is 1, not 0). Used with 'limit' parameter. Default is 1 if not specified. Must be >= 1.
+         * @x-autobe-specification Query parameter for offset-based pagination.
+         *   Maps to LIMIT/OFFSET in the database query. Page number is
+         *   1-indexed (first page is 1, not 0). Used with 'limit' parameter.
+         *   Default is 1 if not specified. Must be >= 1.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -219,7 +268,11 @@ export namespace IRedditClonePost {
      *
      * Specifies how many posts to include in each page of results. The default is 25 posts per page. Minimum is 1, maximum is 100. Use this parameter along with 'page' to control the size of paginated result sets. Larger page sizes may improve performance for clients but increase response size.
      *
-     * @x-autobe-specification Query parameter for records per page in offset-based pagination. Maps to LIMIT in the database query. Default is 25, minimum is 1, maximum is 100. Used with 'page' parameter. Server will cap values above 100 to prevent performance issues.
+         * @x-autobe-specification Query parameter for records per page in
+         *   offset-based pagination. Maps to LIMIT in the database query.
+         *   Default is 25, minimum is 1, maximum is 100. Used with 'page'
+         *   parameter. Server will cap values above 100 to prevent performance
+         *   issues.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -230,7 +283,11 @@ export namespace IRedditClonePost {
      *
      * An opaque cursor string obtained from the previous page's response, used to retrieve the next page of results. Cursor-based pagination provides better performance than offset-based pagination for large datasets and when dealing with frequently changing data. Use this parameter along with 'firstPageSize' instead of 'page' and 'limit' for cursor-based navigation.
      *
-     * @x-autobe-specification Query parameter for cursor-based pagination. Contains an opaque cursor string from the previous page response. Used with 'firstPageSize' parameter. Server decodes cursor to determine the starting position for the next page. Alternative to offset-based pagination for better performance with large datasets.
+         * @x-autobe-specification Query parameter for cursor-based pagination.
+         *   Contains an opaque cursor string from the previous page response.
+         *   Used with 'firstPageSize' parameter. Server decodes cursor to
+         *   determine the starting position for the next page. Alternative to
+         *   offset-based pagination for better performance with large datasets.
      */
     afterCursor?: string | undefined;
 
@@ -239,7 +296,10 @@ export namespace IRedditClonePost {
      *
      * Specifies how many posts to include in each page when using cursor-based pagination. The default is 25 posts per page. Minimum is 1, maximum is 100. Use this parameter along with 'afterCursor' for cursor-based navigation instead of offset-based pagination.
      *
-     * @x-autobe-specification Query parameter for page size in cursor-based pagination. Maps to LIMIT in the database query. Default is 25, minimum is 1, maximum is 100. Used with 'afterCursor' parameter. Server will cap values above 100 to prevent performance issues.
+         * @x-autobe-specification Query parameter for page size in cursor-based
+         *   pagination. Maps to LIMIT in the database query. Default is 25,
+         *   minimum is 1, maximum is 100. Used with 'afterCursor' parameter.
+         *   Server will cap values above 100 to prevent performance issues.
      */
     firstPageSize?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -250,7 +310,12 @@ export namespace IRedditClonePost {
      *
      * When enabled, restricts the post list to only include posts from communities that the authenticated user has subscribed to. This is primarily used for the home feed to show personalized content. This parameter is only effective for authenticated member users and is ignored for guest users or when set to false.
      *
-     * @x-autobe-specification Query parameter to filter posts from subscribed communities only. When true, performs INNER JOIN with reddit_clone_community_subscriptions WHERE reddit_clone_member_id = authenticated_user_id AND deleted_at IS NULL. Only applies to authenticated member users. Ignored for guest users or when false/null.
+         * @x-autobe-specification Query parameter to filter posts from
+         *   subscribed communities only. When true, performs INNER JOIN with
+         *   reddit_clone_community_subscriptions WHERE reddit_clone_member_id =
+         *   authenticated_user_id AND deleted_at IS NULL. Only applies to
+         *   authenticated member users. Ignored for guest users or when
+         *   false/null.
      */
     subscribedOnly?: boolean | undefined;
   };
@@ -268,8 +333,9 @@ export namespace IRedditClonePost {
      *
      * This UUID serves as the primary key for the post entity and is used to reference the post in API operations, URLs, and related entities (comments, votes, reports).
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from reddit_clone_posts.id. Primary key UUID identifying the post entity.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from reddit_clone_posts.id.
+         *   Primary key UUID identifying the post entity.
      */
     id: string & tags.Format<"uuid">;
 
@@ -278,8 +344,9 @@ export namespace IRedditClonePost {
      *
      * This field is required for all posts and is displayed prominently in feed lists and search results. The title is used for identifying the post content and is indexed for search functionality.
      *
-     * @x-autobe-database-schema-property title
-     * @x-autobe-specification Direct mapping from reddit_clone_posts.title. Required field for all posts.
+         * @x-autobe-database-schema-property title
+         * @x-autobe-specification Direct mapping from reddit_clone_posts.title.
+         *   Required field for all posts.
      */
     title: string;
 
@@ -288,8 +355,10 @@ export namespace IRedditClonePost {
      *
      * Valid values are 'text' for text posts with body content, 'link' for posts sharing external URLs, and 'image' for posts with image content. This field determines which content field is populated and how the preview is generated.
      *
-     * @x-autobe-database-schema-property post_type
-     * @x-autobe-specification Direct mapping from reddit_clone_posts.post_type. Discriminator field with values: 'text', 'link', or 'image'.
+         * @x-autobe-database-schema-property post_type
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_posts.post_type. Discriminator field with values:
+         *   'text', 'link', or 'image'.
      */
     post_type: string;
 
@@ -298,8 +367,12 @@ export namespace IRedditClonePost {
      *
      * Contains the public profile information of the user who created this post, including display name, bio, avatar image, and karma score. This is a reference to IRedditCloneUserProfile.ISummary.
      *
-     * @x-autobe-database-schema-property userProfile
-     * @x-autobe-specification Join from reddit_clone_posts.reddit_clone_user_profile_id to reddit_clone_user_profiles.id. Returns IRedditCloneUserProfile.ISummary with display_name, bio, avatar, karma, created_at.
+         * @x-autobe-database-schema-property userProfile
+         * @x-autobe-specification Join from
+         *   reddit_clone_posts.reddit_clone_user_profile_id to
+         *   reddit_clone_user_profiles.id. Returns
+         *   IRedditCloneUserProfile.ISummary with display_name, bio, avatar,
+         *   karma, created_at.
      */
     author: IRedditCloneUserProfile.ISummary;
 
@@ -308,8 +381,12 @@ export namespace IRedditClonePost {
      *
      * Contains the community information including name, description, icon, owner profile, and subscriber count. This is a reference to IRedditCloneCommunity.ISummary.
      *
-     * @x-autobe-database-schema-property community
-     * @x-autobe-specification Join from reddit_clone_posts.reddit_clone_community_id to reddit_clone_communities.id. Returns IRedditCloneCommunity.ISummary with id, name, description, icon, owner, subscriber_count, created_at.
+         * @x-autobe-database-schema-property community
+         * @x-autobe-specification Join from
+         *   reddit_clone_posts.reddit_clone_community_id to
+         *   reddit_clone_communities.id. Returns IRedditCloneCommunity.ISummary
+         *   with id, name, description, icon, owner, subscriber_count,
+         *   created_at.
      */
     community: IRedditCloneCommunity.ISummary;
 
@@ -318,7 +395,10 @@ export namespace IRedditClonePost {
      *
      * Calculated as the sum of all votes on this post, where upvotes contribute +1 and downvotes contribute -1. The score can be negative if there are more downvotes than upvotes. This metric reflects community engagement and content quality.
      *
-     * @x-autobe-specification Aggregation from reddit_clone_post_votes table. Computed as SUM where vote_type='upvote' adds +1, vote_type='downvote' adds -1. Result is integer that can be negative, zero, or positive.
+         * @x-autobe-specification Aggregation from reddit_clone_post_votes
+         *   table. Computed as SUM where vote_type='upvote' adds +1,
+         *   vote_type='downvote' adds -1. Result is integer that can be
+         *   negative, zero, or positive.
      */
     vote_score: number & tags.Type<"int32">;
 
@@ -327,7 +407,9 @@ export namespace IRedditClonePost {
      *
      * Counts all active (non-deleted) comments associated with this post. This metric indicates the level of discussion and engagement the post has generated. Does not include deleted comments.
      *
-     * @x-autobe-specification Aggregation from reddit_clone_comments table. Computed as COUNT of comments WHERE post_id matches AND deleted_at IS NULL. Returns non-negative integer.
+         * @x-autobe-specification Aggregation from reddit_clone_comments table.
+         *   Computed as COUNT of comments WHERE post_id matches AND deleted_at
+         *   IS NULL. Returns non-negative integer.
      */
     comment_count: number & tags.Type<"int32">;
 
@@ -336,8 +418,10 @@ export namespace IRedditClonePost {
      *
      * Records the exact date and time when the post was first published. Used for sorting posts by recency in feeds and for displaying relative time (e.g., '2 hours ago'). Format: ISO 8601 with timezone offset.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from reddit_clone_posts.created_at. ISO 8601 datetime format with timezone.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_posts.created_at. ISO 8601 datetime format with
+         *   timezone.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -346,7 +430,11 @@ export namespace IRedditClonePost {
      *
      * This field adapts to the post type: text posts show the first 200 characters of the body content (truncated with ellipsis if longer), image posts show the image URL for thumbnail display, and link posts show the domain name extracted from the URL. Provides a quick content preview in list views without loading the full post.
      *
-     * @x-autobe-specification Computed field based on post_type and content fields. For post_type='text': first 200 characters of text_content with ellipsis if truncated. For post_type='image': the image_url value. For post_type='link': domain name extracted from link_url (e.g., 'example.com' from 'https://example.com/path').
+         * @x-autobe-specification Computed field based on post_type and content
+         *   fields. For post_type='text': first 200 characters of text_content
+         *   with ellipsis if truncated. For post_type='image': the image_url
+         *   value. For post_type='link': domain name extracted from link_url
+         *   (e.g., 'example.com' from 'https://example.com/path').
      */
     preview: string;
   };

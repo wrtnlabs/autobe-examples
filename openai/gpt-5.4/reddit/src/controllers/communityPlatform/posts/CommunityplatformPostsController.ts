@@ -26,9 +26,13 @@ export class CommunityplatformPostsController {
    *
    * @param connection
    * @param body Post search filters and pagination options
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Implement this operation as a paginated search over community_platform_posts with optional joins to community_platform_communities, community_platform_members, community_platform_profiles, community_platform_post_texts, community_platform_post_links, and community_platform_post_images.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Implement this operation as a paginated search
+     *   over community_platform_posts with optional joins to
+     *   community_platform_communities, community_platform_members,
+     *   community_platform_profiles, community_platform_post_texts,
+     *   community_platform_post_links, and community_platform_post_images.
    *
    * Start from community_platform_posts as the base query. Exclude rows whose deleted_at is not null. Apply additional visibility predicates based on post status so only browseable posts are returned. Join community_platform_communities to enforce community-level visibility by excluding communities whose deleted_at is not null and filtering by community status when the business rules require only active or otherwise public communities to appear in feeds.
    *
@@ -73,9 +77,11 @@ export class CommunityplatformPostsController {
    *
    * @param connection
    * @param postId Target post identifier.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Implement a read-only service method that loads one post from community_platform_posts by id using the supplied UUID path parameter.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Implement a read-only service method that loads
+     *   one post from community_platform_posts by id using the supplied UUID
+     *   path parameter.
    *
    * First, validate that postId is a syntactically valid UUID. Query community_platform_posts for the matching record and join community_platform_communities and community_platform_members as the required parent relations. Left join community_platform_profiles on community_platform_members.id = community_platform_profiles.community_platform_member_id so the response can expose public author presentation data without leaking member credential fields.
    *

@@ -25,7 +25,11 @@ import { IMultiUserTodoMember } from "../../../../structures/IMultiUserTodoMembe
  * @param props.body Member registration credentials with email and password
  * @x-autobe-authorization-type join
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implementation: Validate email uniqueness against multi_user_todo_members table. Hash password using bcrypt (cost factor 10). Create member record with UUID v7 for id. Create session record with access_token (15 min expiry) and refresh_token (7 days expiry). Return tokens in IAuthorized response.
+ * @x-autobe-specification Implementation: Validate email uniqueness against
+ *   multi_user_todo_members table. Hash password using bcrypt (cost factor 10).
+ *   Create member record with UUID v7 for id. Create session record with
+ *   access_token (15 min expiry) and refresh_token (7 days expiry). Return
+ *   tokens in IAuthorized response.
  *
  * Transaction: Member + Session creation in same transaction.
  *
@@ -132,7 +136,11 @@ export namespace join {
  * @param props.body Member login credentials with email and password
  * @x-autobe-authorization-type login
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implementation: Query multi_user_todo_members by email. Verify password hash matches using bcrypt.compare(). Check if member deleted_at is null (soft deleted members cannot login). Generate new access_token (15 min) and refresh_token (7 days). Create session record in multi_user_todo_member_sessions. Return IAuthorized response.
+ * @x-autobe-specification Implementation: Query multi_user_todo_members by
+ *   email. Verify password hash matches using bcrypt.compare(). Check if member
+ *   deleted_at is null (soft deleted members cannot login). Generate new
+ *   access_token (15 min) and refresh_token (7 days). Create session record in
+ *   multi_user_todo_member_sessions. Return IAuthorized response.
  *
  * Security: Rate limit 5 attempts per IP per minute.
  *
@@ -239,7 +247,12 @@ export namespace login {
  * @param props.body Refresh token to obtain new access token
  * @x-autobe-authorization-type refresh
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implementation: Extract refresh_token from request body. Query multi_user_todo_member_sessions by refresh_token. Verify session exists and expired_at > now(). Check that associated member exists and deleted_at is null. Generate new access_token and new refresh_token with fresh expiry times. Update session record in database. Return IAuthorized with new tokens.
+ * @x-autobe-specification Implementation: Extract refresh_token from request
+ *   body. Query multi_user_todo_member_sessions by refresh_token. Verify
+ *   session exists and expired_at > now(). Check that associated member exists
+ *   and deleted_at is null. Generate new access_token and new refresh_token
+ *   with fresh expiry times. Update session record in database. Return
+ *   IAuthorized with new tokens.
  *
  * Security: Old refresh_token is invalidated immediately (replaced with new one). This prevents token replay attacks.
  *

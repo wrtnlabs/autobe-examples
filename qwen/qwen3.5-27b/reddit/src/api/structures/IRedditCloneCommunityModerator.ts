@@ -17,8 +17,10 @@ export type IRedditCloneCommunityModerator = {
    *
    * This UUID globally identifies the moderator role assignment within the system. It is used to reference specific moderator assignments in API operations and database queries.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from reddit_clone_community_moderators.id. Primary key UUID identifying the moderator assignment record.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_community_moderators.id. Primary key UUID identifying the
+     *   moderator assignment record.
    */
   id: string & tags.Format<"uuid">;
 
@@ -29,8 +31,11 @@ export type IRedditCloneCommunityModerator = {
    * - 'owner': The community creator with highest authority. Can add and remove moderators, and has full control over community settings.
    * - 'moderator': Elevated privileges assigned by the owner. Can moderate content and users but cannot remove the owner or other moderators.
    *
-   * @x-autobe-database-schema-property role
-   * @x-autobe-specification Direct mapping from reddit_clone_community_moderators.role. Accepts 'owner' or 'moderator' string values. Owner is the community creator with highest authority. Moderator has elevated privileges assigned by the owner.
+     * @x-autobe-database-schema-property role
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_community_moderators.role. Accepts 'owner' or 'moderator'
+     *   string values. Owner is the community creator with highest authority.
+     *   Moderator has elevated privileges assigned by the owner.
    */
   role: string;
 
@@ -39,8 +44,11 @@ export type IRedditCloneCommunityModerator = {
    *
    * Contains the public profile information of the user who holds this moderator position, including their display name, bio, avatar image, karma score, and profile creation date.
    *
-   * @x-autobe-database-schema-property userProfile
-   * @x-autobe-specification Join from reddit_clone_community_moderators.reddit_clone_user_profile_id to reddit_clone_user_profiles.id. Returns IRedditCloneUserProfile.ISummary with display name, bio, avatar, karma, and creation timestamp.
+     * @x-autobe-database-schema-property userProfile
+     * @x-autobe-specification Join from
+     *   reddit_clone_community_moderators.reddit_clone_user_profile_id to
+     *   reddit_clone_user_profiles.id. Returns IRedditCloneUserProfile.ISummary
+     *   with display name, bio, avatar, karma, and creation timestamp.
    */
   userProfile: IRedditCloneUserProfile.ISummary;
 
@@ -49,8 +57,12 @@ export type IRedditCloneCommunityModerator = {
    *
    * Contains the community information including its name, description, icon image, owner profile, subscriber count, and creation date. Moderator privileges are scoped to this specific community only.
    *
-   * @x-autobe-database-schema-property community
-   * @x-autobe-specification Join from reddit_clone_community_moderators.reddit_clone_community_id to reddit_clone_communities.id. Returns IRedditCloneCommunity.ISummary with name, description, icon, owner, subscriber count, and creation timestamp.
+     * @x-autobe-database-schema-property community
+     * @x-autobe-specification Join from
+     *   reddit_clone_community_moderators.reddit_clone_community_id to
+     *   reddit_clone_communities.id. Returns IRedditCloneCommunity.ISummary
+     *   with name, description, icon, owner, subscriber count, and creation
+     *   timestamp.
    */
   community: IRedditCloneCommunity.ISummary;
 
@@ -59,8 +71,10 @@ export type IRedditCloneCommunityModerator = {
    *
    * Records the exact date and time when this user was granted moderator privileges in the community. Used for tracking moderator assignment history and sorting by assignment date.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from reddit_clone_community_moderators.created_at. Records the timestamp when the moderator assignment was first created.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_community_moderators.created_at. Records the timestamp
+     *   when the moderator assignment was first created.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -69,8 +83,10 @@ export type IRedditCloneCommunityModerator = {
    *
    * Tracks the most recent modification to this moderator assignment, such as role changes or metadata updates. Updated automatically on any modification to the record.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from reddit_clone_community_moderators.updated_at. Tracks the most recent modification to the moderator assignment record.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_community_moderators.updated_at. Tracks the most recent
+     *   modification to the moderator assignment record.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -79,8 +95,11 @@ export type IRedditCloneCommunityModerator = {
    *
    * Nullable field indicating when this moderator role was removed. When null, the assignment is active. When set, the user no longer has moderator privileges in this community, but the record is retained for audit purposes.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from reddit_clone_community_moderators.deleted_at. Nullable field for soft-delete functionality. When set, the moderator assignment is marked as removed but data is retained.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_community_moderators.deleted_at. Nullable field for
+     *   soft-delete functionality. When set, the moderator assignment is marked
+     *   as removed but data is retained.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -117,8 +136,10 @@ export namespace IRedditCloneCommunityModerator {
      *
      * This UUID identifies a specific moderator assignment record, linking a user to a community with a specific role. Each assignment is a separate record, allowing users to be moderators in multiple communities.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from reddit_clone_community_moderators.id. Primary key UUID identifying the moderator assignment record.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_community_moderators.id. Primary key UUID identifying
+         *   the moderator assignment record.
      */
     id: string & tags.Format<"uuid">;
 
@@ -127,8 +148,10 @@ export namespace IRedditCloneCommunityModerator {
      *
      * Valid values are 'owner' (community creator with highest authority, can add/remove moderators) or 'moderator' (elevated privileges for content management but cannot remove owners or other moderators).
      *
-     * @x-autobe-database-schema-property role
-     * @x-autobe-specification Direct mapping from reddit_clone_community_moderators.role. String value indicating the moderator role type.
+         * @x-autobe-database-schema-property role
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_community_moderators.role. String value indicating the
+         *   moderator role type.
      */
     role: string;
 
@@ -137,8 +160,12 @@ export namespace IRedditCloneCommunityModerator {
      *
      * Contains the community's essential information including its unique name, description, icon image, owner profile, subscriber count, and creation timestamp. This is the organizational unit where the moderator exercises their privileges.
      *
-     * @x-autobe-database-schema-property community
-     * @x-autobe-specification Join from reddit_clone_community_moderators.reddit_clone_community_id to reddit_clone_communities.id. Returns IRedditCloneCommunity.ISummary with community details including name, description, icon, owner, and subscriber count.
+         * @x-autobe-database-schema-property community
+         * @x-autobe-specification Join from
+         *   reddit_clone_community_moderators.reddit_clone_community_id to
+         *   reddit_clone_communities.id. Returns IRedditCloneCommunity.ISummary
+         *   with community details including name, description, icon, owner,
+         *   and subscriber count.
      */
     community: IRedditCloneCommunity.ISummary;
 
@@ -147,8 +174,12 @@ export namespace IRedditCloneCommunityModerator {
      *
      * Contains the moderator's public-facing identity information including their display name, biographical text, avatar image URL, and karma score. This profile is publicly viewable by any user including guests.
      *
-     * @x-autobe-database-schema-property userProfile
-     * @x-autobe-specification Join from reddit_clone_community_moderators.reddit_clone_user_profile_id to reddit_clone_user_profiles.id. Returns IRedditCloneUserProfile.ISummary with user's public profile information including display name, bio, avatar, and karma score.
+         * @x-autobe-database-schema-property userProfile
+         * @x-autobe-specification Join from
+         *   reddit_clone_community_moderators.reddit_clone_user_profile_id to
+         *   reddit_clone_user_profiles.id. Returns
+         *   IRedditCloneUserProfile.ISummary with user's public profile
+         *   information including display name, bio, avatar, and karma score.
      */
     userProfile: IRedditCloneUserProfile.ISummary;
 
@@ -157,8 +188,10 @@ export namespace IRedditCloneCommunityModerator {
      *
      * Records the exact date and time when the user was granted moderator privileges in this community. Used for tracking assignment history and sorting moderator lists by assignment date.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from reddit_clone_community_moderators.created_at. DateTime field recording when the moderator assignment was created.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_community_moderators.created_at. DateTime field
+         *   recording when the moderator assignment was created.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -167,8 +200,10 @@ export namespace IRedditCloneCommunityModerator {
      *
      * Tracks the most recent modification to the assignment record, such as role changes or metadata updates. Useful for auditing changes to moderator permissions.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from reddit_clone_community_moderators.updated_at. DateTime field tracking the most recent modification to the moderator assignment.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_community_moderators.updated_at. DateTime field
+         *   tracking the most recent modification to the moderator assignment.
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -177,8 +212,11 @@ export namespace IRedditCloneCommunityModerator {
      *
      * Nullable field indicating whether the assignment is active or removed. When null, the user currently holds moderator privileges in this community. When set to a timestamp, the assignment has been deleted but the record is retained for audit purposes.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from reddit_clone_community_moderators.deleted_at. Nullable DateTime field for soft-delete functionality. When null, the assignment is active. When set, the assignment has been removed.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_community_moderators.deleted_at. Nullable DateTime
+         *   field for soft-delete functionality. When null, the assignment is
+         *   active. When set, the assignment has been removed.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };
@@ -194,8 +232,11 @@ export namespace IRedditCloneCommunityModerator {
      *
      * This field specifies which user will receive moderator status in the community. The referenced user profile must exist and not be soft-deleted. The user will gain elevated permissions including content deletion, user banning, and report handling within the specified community.
      *
-     * @x-autobe-database-schema-property reddit_clone_user_profile_id
-     * @x-autobe-specification Direct mapping to reddit_clone_user_profile_id foreign key column. References the user profile of the user being assigned moderator privileges. Must be a valid UUID of an existing, non-deleted user profile.
+         * @x-autobe-database-schema-property reddit_clone_user_profile_id
+         * @x-autobe-specification Direct mapping to
+         *   reddit_clone_user_profile_id foreign key column. References the
+         *   user profile of the user being assigned moderator privileges. Must
+         *   be a valid UUID of an existing, non-deleted user profile.
      */
     userProfileId: string & tags.Format<"uuid">;
 
@@ -204,8 +245,12 @@ export namespace IRedditCloneCommunityModerator {
      *
      * Accepts two values: 'owner' or 'moderator'. The 'owner' role is typically assigned during community creation and grants highest authority including the ability to add and remove other moderators. The 'moderator' role grants standard moderation capabilities including content deletion, user banning, and report handling within the community.
      *
-     * @x-autobe-database-schema-property role
-     * @x-autobe-specification Direct mapping to role column. Accepts string values 'owner' or 'moderator'. The 'owner' role grants highest authority (can add/remove moderators, full control). The 'moderator' role grants standard moderation capabilities (content deletion, user banning, report handling).
+         * @x-autobe-database-schema-property role
+         * @x-autobe-specification Direct mapping to role column. Accepts string
+         *   values 'owner' or 'moderator'. The 'owner' role grants highest
+         *   authority (can add/remove moderators, full control). The
+         *   'moderator' role grants standard moderation capabilities (content
+         *   deletion, user banning, report handling).
      */
     role: string;
   };

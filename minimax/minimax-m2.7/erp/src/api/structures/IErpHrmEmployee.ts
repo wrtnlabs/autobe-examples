@@ -107,56 +107,70 @@ export namespace IErpHrmEmployee {
     /**
      * Unique employee identifier.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from erp_hrm_employees.id. UUID primary key with unique constraint.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from erp_hrm_employees.id.
+         *   UUID primary key with unique constraint.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Job title or position of the employee within the organization.
      *
-     * @x-autobe-database-schema-property position
-     * @x-autobe-specification Direct mapping from erp_hrm_employees.position. Nullable field for job title or position within the organization.
+         * @x-autobe-database-schema-property position
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_employees.position. Nullable field for job title or
+         *   position within the organization.
      */
     position?: string | null | undefined;
 
     /**
      * Type of employment classification.
      *
-     * @x-autobe-database-schema-property employment_type
-     * @x-autobe-specification Direct mapping from erp_hrm_employees.employment_type. Enum values: full-time, part-time, contractor, intern.
+         * @x-autobe-database-schema-property employment_type
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_employees.employment_type. Enum values: full-time,
+         *   part-time, contractor, intern.
      */
     employmentType: string;
 
     /**
      * Employment status indicating whether the employee can perform time tracking operations.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from erp_hrm_employees.status. Enum values: active (can log time), deactivated (historical data preserved but cannot perform operations).
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from erp_hrm_employees.status.
+         *   Enum values: active (can log time), deactivated (historical data
+         *   preserved but cannot perform operations).
      */
     status: string;
 
     /**
      * The user account associated with this employee record, containing display name, email, and avatar.
      *
-     * @x-autobe-database-schema-property member
-     * @x-autobe-specification Join from erp_hrm_employees.erp_hrm_member_id to erp_hrm_members.id. Returns IErpHrmMember.ISummary containing user account details: email, display_name, avatar_uri.
+         * @x-autobe-database-schema-property member
+         * @x-autobe-specification Join from erp_hrm_employees.erp_hrm_member_id
+         *   to erp_hrm_members.id. Returns IErpHrmMember.ISummary containing
+         *   user account details: email, display_name, avatar_uri.
      */
     member: IErpHrmMember.ISummary;
 
     /**
      * The role assigned to this employee determining their permissions in the organization.
      *
-     * @x-autobe-database-schema-property role
-     * @x-autobe-specification Join from erp_hrm_employees.erp_hrm_role_id to erp_hrm_roles.id. Returns IErpHrmRole.ISummary containing role details: name, is_builtin, and organization context.
+         * @x-autobe-database-schema-property role
+         * @x-autobe-specification Join from erp_hrm_employees.erp_hrm_role_id
+         *   to erp_hrm_roles.id. Returns IErpHrmRole.ISummary containing role
+         *   details: name, is_builtin, and organization context.
      */
     role: IErpHrmRole.ISummary;
 
     /**
      * Optional department the employee belongs to for organizational grouping.
      *
-     * @x-autobe-database-schema-property department
-     * @x-autobe-specification Join from erp_hrm_employees.erp_hrm_department_id to erp_hrm_departments.id. Returns IErpHrmDepartment.ISummary containing department details: name, description, parent. Nullable relation.
+         * @x-autobe-database-schema-property department
+         * @x-autobe-specification Join from
+         *   erp_hrm_employees.erp_hrm_department_id to erp_hrm_departments.id.
+         *   Returns IErpHrmDepartment.ISummary containing department details:
+         *   name, description, parent. Nullable relation.
      */
     department?: IErpHrmDepartment.ISummary | null | undefined;
   };

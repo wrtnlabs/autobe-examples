@@ -24,8 +24,9 @@ export type IEcommerceMallWishlist = {
    *
    * A UUID (Universally Unique Identifier) that uniquely identifies this wishlist record within the e-commerce platform database. Generated automatically on creation.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_wishlists.id. UUID primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from ecommerce_mall_wishlists.id.
+     *   UUID primary key.
    */
   id: string & tags.Format<"uuid">;
 
@@ -34,8 +35,9 @@ export type IEcommerceMallWishlist = {
    *
    * The exact date and time when this wishlist was first created in the system, recorded with timezone information for accurate chronological tracking.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_wishlists.created_at. TIMESTAMP WITH TIME ZONE.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_wishlists.created_at. TIMESTAMP WITH TIME ZONE.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -44,8 +46,9 @@ export type IEcommerceMallWishlist = {
    *
    * The most recent date and time when any editable attribute of this wishlist was changed, recorded with timezone information. Automatically updated by the database on any modification.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_wishlists.updated_at. TIMESTAMP WITH TIME ZONE.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_wishlists.updated_at. TIMESTAMP WITH TIME ZONE.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -54,8 +57,9 @@ export type IEcommerceMallWishlist = {
    *
    * Set to the current timestamp when the wishlist is soft-deleted by the customer. NULL indicates the wishlist is active and visible. Soft deletion preserves the data for potential recovery within the retention period while hiding it from normal operations.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_wishlists.deleted_at. Nullable TIMESTAMP WITH TIME ZONE.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_wishlists.deleted_at. Nullable TIMESTAMP WITH TIME ZONE.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 
@@ -64,8 +68,10 @@ export type IEcommerceMallWishlist = {
    *
    * Reference to the authenticated member account that created and owns this wishlist, including their customer identifier and display name for display in list views.
    *
-   * @x-autobe-database-schema-property customer
-   * @x-autobe-specification JOIN from ecommerce_mall_wishlists.customer_id to ecommerce_mall_members.id. Returns IEcommerceMallMember.ISummary containing customer ID and display name.
+     * @x-autobe-database-schema-property customer
+     * @x-autobe-specification JOIN from ecommerce_mall_wishlists.customer_id to
+     *   ecommerce_mall_members.id. Returns IEcommerceMallMember.ISummary
+     *   containing customer ID and display name.
    */
   customer: IEcommerceMallMember.ISummary;
 
@@ -74,7 +80,12 @@ export type IEcommerceMallWishlist = {
    *
    * List of wishlist items linking this wishlist to specific products. Each item includes the wishlist item identifier, when it was added, and the associated product's complete information including name, images, price range, and current availability status. Deleted products are automatically excluded from this list. Products are sorted by addition date (oldest first).
    *
-   * @x-autobe-specification Aggregation from ecommerce_mall_wishlist_items where ecommerce_mall_wishlist_id matches and deleted_at IS NULL. Each item joined with ecommerce_mall_products to include product details (id, name, images, variants with stock status). Items sorted by created_at ASC. Product availability calculated: available if any variant has stock > 0.
+     * @x-autobe-specification Aggregation from ecommerce_mall_wishlist_items
+     *   where ecommerce_mall_wishlist_id matches and deleted_at IS NULL. Each
+     *   item joined with ecommerce_mall_products to include product details
+     *   (id, name, images, variants with stock status). Items sorted by
+     *   created_at ASC. Product availability calculated: available if any
+     *   variant has stock > 0.
    */
   items: IEcommerceMallWishlistItem.ISummary[];
 };
@@ -119,8 +130,14 @@ export namespace IEcommerceMallWishlist {
      * - Data migration when merging duplicate customer accounts
      * - Account management scenarios requiring wishlist transfer between verified customer accounts
      *
-     * @x-autobe-database-schema-property customer_id
-     * @x-autobe-specification Direct mapping from ecommerce_mall_wishlists.customer_id. Validation: (1) authenticated customer_id (from JWT session) must match current wishlist.customer_id; (2) new customer_id must reference valid active customer in ecommerce_mall_members; (3) both accounts must be active (deleted_at is NULL). Returns 403 if owner mismatch, 400 if new customer_id invalid or soft-deleted.
+         * @x-autobe-database-schema-property customer_id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_wishlists.customer_id. Validation: (1) authenticated
+         *   customer_id (from JWT session) must match current
+         *   wishlist.customer_id; (2) new customer_id must reference valid
+         *   active customer in ecommerce_mall_members; (3) both accounts must
+         *   be active (deleted_at is NULL). Returns 403 if owner mismatch, 400
+         *   if new customer_id invalid or soft-deleted.
      */
     customer_id?: (string & tags.Format<"uuid">) | undefined;
   };
@@ -149,7 +166,10 @@ export namespace IEcommerceMallWishlist {
      *
      * Use 'active' to show only non-deleted wishlists, or 'deleted' to show soft-deleted wishlists. If omitted, defaults to 'active' for normal browsing.
      *
-     * @x-autobe-specification Filter by wishlist deletion status. Accepts 'active' (deleted_at IS NULL) or 'deleted' (deleted_at IS NOT NULL). If not provided, defaults to 'active' to show only non-deleted wishlists.
+         * @x-autobe-specification Filter by wishlist deletion status. Accepts
+         *   'active' (deleted_at IS NULL) or 'deleted' (deleted_at IS NOT
+         *   NULL). If not provided, defaults to 'active' to show only
+         *   non-deleted wishlists.
      */
     status?: "active" | "deleted" | undefined;
 
@@ -158,7 +178,10 @@ export namespace IEcommerceMallWishlist {
      *
      * Accepts ISO 8601 formatted date-time strings. Only returns wishlists created after the specified time. If omitted, no lower bound is applied.
      *
-     * @x-autobe-specification Filter wishlists created after this timestamp. Accepts ISO 8601 formatted date-time strings. Builds WHERE clause: created_at > {value}. If not provided, no lower bound is applied.
+         * @x-autobe-specification Filter wishlists created after this
+         *   timestamp. Accepts ISO 8601 formatted date-time strings. Builds
+         *   WHERE clause: created_at > {value}. If not provided, no lower bound
+         *   is applied.
      */
     created_after?: (string & tags.Format<"date-time">) | undefined;
 
@@ -167,7 +190,10 @@ export namespace IEcommerceMallWishlist {
      *
      * Accepts ISO 8601 formatted date-time strings. Only returns wishlists created before the specified time. If omitted, no upper bound is applied.
      *
-     * @x-autobe-specification Filter wishlists created before this timestamp. Accepts ISO 8601 formatted date-time strings. Builds WHERE clause: created_at < {value}. If not provided, no upper bound is applied.
+         * @x-autobe-specification Filter wishlists created before this
+         *   timestamp. Accepts ISO 8601 formatted date-time strings. Builds
+         *   WHERE clause: created_at < {value}. If not provided, no upper bound
+         *   is applied.
      */
     created_before?: (string & tags.Format<"date-time">) | undefined;
 
@@ -176,7 +202,11 @@ export namespace IEcommerceMallWishlist {
      *
      * Accepts UUID format. Returns only wishlists that contain the specified product in their items collection. Requires a JOIN with wishlist_items and products tables. If the product doesn't exist or no wishlists contain it, returns an empty result.
      *
-     * @x-autobe-specification Filter wishlists containing this specific product. Accepts UUID format. Requires JOIN with wishlist_items and products tables. Returns only wishlists that have this product in their items collection. If no wishlists contain this product, returns empty result.
+         * @x-autobe-specification Filter wishlists containing this specific
+         *   product. Accepts UUID format. Requires JOIN with wishlist_items and
+         *   products tables. Returns only wishlists that have this product in
+         *   their items collection. If no wishlists contain this product,
+         *   returns empty result.
      */
     product_id?: (string & tags.Format<"uuid">) | undefined;
 
@@ -185,7 +215,10 @@ export namespace IEcommerceMallWishlist {
      *
      * Use 'created_at_asc' for ascending order (oldest wishlists first), or 'created_at_desc' for descending order (newest wishlists first). If omitted, defaults to 'created_at_desc'.
      *
-     * @x-autobe-specification Specify sort order for results. Accepts 'created_at_asc' for ascending order (oldest first) or 'created_at_desc' for descending order (newest first). If not provided, defaults to 'created_at_desc'.
+         * @x-autobe-specification Specify sort order for results. Accepts
+         *   'created_at_asc' for ascending order (oldest first) or
+         *   'created_at_desc' for descending order (newest first). If not
+         *   provided, defaults to 'created_at_desc'.
      */
     sort?: "created_at_asc" | "created_at_desc" | undefined;
 
@@ -194,7 +227,11 @@ export namespace IEcommerceMallWishlist {
      *
      * Specifies which page of results to return. Page numbering starts from 1. If omitted, null, or undefined, defaults to page 1 (first page). Requesting a page beyond the available range returns an empty data array with valid pagination metadata reflecting the actual totals.
      *
-     * @x-autobe-specification Target page number to retrieve (1-indexed). Specifies which page of results to return. Page numbering starts from 1. If omitted, null, or undefined, defaults to page 1. Requesting a page beyond available range returns empty data with valid pagination metadata.
+         * @x-autobe-specification Target page number to retrieve (1-indexed).
+         *   Specifies which page of results to return. Page numbering starts
+         *   from 1. If omitted, null, or undefined, defaults to page 1.
+         *   Requesting a page beyond available range returns empty data with
+         *   valid pagination metadata.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
 
@@ -203,7 +240,11 @@ export namespace IEcommerceMallWishlist {
      *
      * Controls how many records are included in each page response. If omitted, null, or undefined, defaults to 100 records per page. The server may enforce upper bounds to prevent excessive resource consumption on large requests.
      *
-     * @x-autobe-specification Maximum number of records to return per page. Controls how many records are included in each page response. If omitted, null, or undefined, defaults to 100 records per page. The server may enforce upper bounds to prevent excessive resource consumption.
+         * @x-autobe-specification Maximum number of records to return per page.
+         *   Controls how many records are included in each page response. If
+         *   omitted, null, or undefined, defaults to 100 records per page. The
+         *   server may enforce upper bounds to prevent excessive resource
+         *   consumption.
      */
     limit?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };
@@ -231,8 +272,9 @@ export namespace IEcommerceMallWishlist {
      *
      * This UUID is generated when the wishlist is created and remains constant throughout its lifecycle.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_mall_wishlists.id.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_wishlists.id.
      */
     id: string & tags.Format<"uuid">;
 
@@ -241,8 +283,10 @@ export namespace IEcommerceMallWishlist {
      *
      * This is a reference to the customer account that created and manages this wishlist collection. The customer object contains the customer's ID and display name for display purposes.
      *
-     * @x-autobe-database-schema-property customer
-     * @x-autobe-specification JOIN from ecommerce_mall_wishlists.customer_id to ecommerce_mall_members.id. Returns IEcommerceMallMember.ISummary with id and display_name.
+         * @x-autobe-database-schema-property customer
+         * @x-autobe-specification JOIN from
+         *   ecommerce_mall_wishlists.customer_id to ecommerce_mall_members.id.
+         *   Returns IEcommerceMallMember.ISummary with id and display_name.
      */
     customer: IEcommerceMallMember.ISummary;
 
@@ -251,8 +295,9 @@ export namespace IEcommerceMallWishlist {
      *
      * Indicates when the customer initially created this wishlist. This timestamp is immutable and represents the creation date of the wishlist.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_wishlists.created_at. ISO 8601 format.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_wishlists.created_at. ISO 8601 format.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -261,8 +306,10 @@ export namespace IEcommerceMallWishlist {
      *
      * Reflects the most recent change to the wishlist, whether it's adding/removing products, renaming, or other modifications. This field is updated automatically on each update operation.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_wishlists.updated_at. ISO 8601 format. Updated on each modification.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_wishlists.updated_at. ISO 8601 format. Updated on
+         *   each modification.
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -271,8 +318,10 @@ export namespace IEcommerceMallWishlist {
      *
      * Null when the wishlist is active. When set, indicates the wishlist has been soft-deleted and is no longer accessible through normal operations. Soft deletion allows for potential recovery within the retention period.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_wishlists.deleted_at. ISO 8601 format. Nullable - null if active, set if soft-deleted.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_wishlists.deleted_at. ISO 8601 format. Nullable -
+         *   null if active, set if soft-deleted.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };

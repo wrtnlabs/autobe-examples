@@ -24,7 +24,9 @@ import { ICommunityPlatformPostSnapshot } from "../../../../../structures/ICommu
  * @param props.body Creation data for the new post snapshot
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implement this operation as a transactional child-resource creation against `community_platform_post_snapshots` for the parent `community_platform_posts` row identified by `postId`.
+ * @x-autobe-specification Implement this operation as a transactional
+ *   child-resource creation against `community_platform_post_snapshots` for the
+ *   parent `community_platform_posts` row identified by `postId`.
  *
  * 1. Authorize the caller as an authenticated actor permitted to write post history. This should normally be limited to internal application flows triggered by post edit, author deletion, restoration, or moderation actions; reject unauthenticated callers.
  * 2. Load the parent post from `community_platform_posts` by `id = postId`. If no active parent row exists for the supplied identifier, fail with a not-found error. Use the parent row as the authoritative source of scope.

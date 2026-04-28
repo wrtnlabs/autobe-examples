@@ -14,8 +14,10 @@ export type IShoppingMallVariantSnapshotOption = {
    *
    * This UUID serves as the primary key for the shopping_mall_variant_snapshot_options table, ensuring each option entry can be uniquely referenced.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_variant_snapshot_options.id. Primary key UUID that uniquely identifies each variant snapshot option record.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_variant_snapshot_options.id. Primary key UUID that
+     *   uniquely identifies each variant snapshot option record.
    */
   id: string & tags.Format<"uuid">;
 
@@ -24,8 +26,10 @@ export type IShoppingMallVariantSnapshotOption = {
    *
    * This field stores the attribute name that distinguishes product variants. Common examples include 'color', 'size', 'material', 'style', or any other attribute that defines the variant. The key must be unique within each variant snapshot to prevent duplicate attribute definitions.
    *
-   * @x-autobe-database-schema-property key
-   * @x-autobe-specification Direct mapping from shopping_mall_variant_snapshot_options.key. Stores the name of the product variant attribute (e.g., 'color', 'size', 'material').
+     * @x-autobe-database-schema-property key
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_variant_snapshot_options.key. Stores the name of the
+     *   product variant attribute (e.g., 'color', 'size', 'material').
    */
   key: string;
 
@@ -34,8 +38,10 @@ export type IShoppingMallVariantSnapshotOption = {
    *
    * This field stores the actual variant characteristic, such as 'Red' for color, 'Large' for size, or 'Cotton' for material. Combined with the key field, it forms a complete attribute definition for the variant snapshot.
    *
-   * @x-autobe-database-schema-property value
-   * @x-autobe-specification Direct mapping from shopping_mall_variant_snapshot_options.value. Stores the specific value for the option attribute (e.g., 'Red', 'Large', 'Cotton').
+     * @x-autobe-database-schema-property value
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_variant_snapshot_options.value. Stores the specific value
+     *   for the option attribute (e.g., 'Red', 'Large', 'Cotton').
    */
   value: string;
 
@@ -44,8 +50,10 @@ export type IShoppingMallVariantSnapshotOption = {
    *
    * This field records when the option key-value pair was captured as part of a variant snapshot. Since variant snapshots are immutable audit records, this timestamp is set once during snapshot creation and never modified. It provides temporal context for when this option configuration was in effect.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from shopping_mall_variant_snapshot_options.created_at. Timestamp when the option key-value pair was captured as part of a variant snapshot.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_variant_snapshot_options.created_at. Timestamp when the
+     *   option key-value pair was captured as part of a variant snapshot.
    */
   created_at: string & tags.Format<"date-time">;
 };

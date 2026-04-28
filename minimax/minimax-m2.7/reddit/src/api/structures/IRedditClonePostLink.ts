@@ -10,40 +10,46 @@ export type IRedditClonePostLink = {
   /**
    * Unique identifier for the link entity.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from reddit_clone_post_links.id. UUID primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from reddit_clone_post_links.id.
+     *   UUID primary key.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * The external URL for this link post. Displayed in full, with domain name extracted for preview in post listings.
    *
-   * @x-autobe-specification Direct mapping from reddit_clone_post_links.url. VARCHAR(80000) storing the complete external URL with uri format.
-   * @x-autobe-database-schema-property url
+     * @x-autobe-specification Direct mapping from reddit_clone_post_links.url.
+     *   VARCHAR(80000) storing the complete external URL with uri format.
+     * @x-autobe-database-schema-property url
    */
   url: string & tags.Format<"uri">;
 
   /**
    * Timestamp when the link was added to the post.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from reddit_clone_post_links.created_at. Timestamptz.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_post_links.created_at. Timestamptz.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the link URL was last modified.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from reddit_clone_post_links.updated_at. Timestamptz.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_post_links.updated_at. Timestamptz.
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * The parent post that owns this link URL. Provides context about which post this link belongs to.
    *
-   * @x-autobe-database-schema-property post
-   * @x-autobe-specification Join from reddit_clone_post_links.reddit_clone_post_id to reddit_clone_posts.id. Returns IRedditClonePost.ISummary for nested display in link responses.
+     * @x-autobe-database-schema-property post
+     * @x-autobe-specification Join from
+     *   reddit_clone_post_links.reddit_clone_post_id to reddit_clone_posts.id.
+     *   Returns IRedditClonePost.ISummary for nested display in link responses.
    */
   post?: IRedditClonePost.ISummary | undefined;
 };
@@ -55,8 +61,9 @@ export namespace IRedditClonePostLink {
     /**
      * The new external URL to set for the link post. Must be a valid web address (URI format).
      *
-     * @x-autobe-database-schema-property url
-     * @x-autobe-specification Direct mapping to reddit_clone_post_links.url column. Must be a valid URI format.
+         * @x-autobe-database-schema-property url
+         * @x-autobe-specification Direct mapping to reddit_clone_post_links.url
+         *   column. Must be a valid URI format.
      */
     url?: (string & tags.Format<"uri">) | undefined;
   };

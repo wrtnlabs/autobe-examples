@@ -40,8 +40,10 @@ export namespace IShoppingMallProduct {
      *
      * This is the primary identifier for the product shown to customers. Should be descriptive and include key product attributes such as brand, model, and distinguishing features. Used in full-text search queries alongside the description field.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from shopping_mall_products.name. Required non-empty string used for search indexing and product display. Backend validates non-empty.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_products.name. Required non-empty string used for
+         *   search indexing and product display. Backend validates non-empty.
      */
     name: string;
 
@@ -50,8 +52,11 @@ export namespace IShoppingMallProduct {
      *
      * Appears on the product detail page and should include product features, specifications, usage instructions, materials, dimensions, and any other relevant details customers need to make a purchase decision. Used in full-text search queries alongside the name field.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from shopping_mall_products.description. Required non-empty string providing comprehensive product information. Backend validates non-empty.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_products.description. Required non-empty string
+         *   providing comprehensive product information. Backend validates
+         *   non-empty.
      */
     description: string;
 
@@ -60,8 +65,11 @@ export namespace IShoppingMallProduct {
      *
      * Must be a valid category or subcategory ID from the platform's category structure. Categories support one level of nesting (category → subcategory), so this may reference either a top-level category or a subcategory. The product will appear in listings for this category and its parent (if applicable).
      *
-     * @x-autobe-database-schema-property shopping_mall_category_id
-     * @x-autobe-specification Direct mapping from shopping_mall_products.shopping_mall_category_id. Required UUID referencing shopping_mall_categories.id. Backend validates the category exists and is not deleted.
+         * @x-autobe-database-schema-property shopping_mall_category_id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_products.shopping_mall_category_id. Required UUID
+         *   referencing shopping_mall_categories.id. Backend validates the
+         *   category exists and is not deleted.
      */
     shopping_mall_category_id: string & tags.Format<"uuid">;
 
@@ -70,8 +78,12 @@ export namespace IShoppingMallProduct {
      *
      * Represents the standard price before any variant-specific adjustments. Displayed to customers when viewing products without selected variants. Individual product variants can override this price with their own variant_price field when certain configurations have different pricing (e.g., larger sizes cost more).
      *
-     * @x-autobe-database-schema-property base_price
-     * @x-autobe-specification Direct mapping from shopping_mall_products.base_price. Required positive number representing the standard price in platform currency. Backend validates price > 0. Individual variants can override this via their price field.
+         * @x-autobe-database-schema-property base_price
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_products.base_price. Required positive number
+         *   representing the standard price in platform currency. Backend
+         *   validates price > 0. Individual variants can override this via
+         *   their price field.
      */
     base_price: number;
   };
@@ -89,8 +101,10 @@ export namespace IShoppingMallProduct {
      *
      * Used in full-text search queries. Should be descriptive and include key product attributes such as brand, model, and key features. Updating this field will trigger creation of a product snapshot preserving the previous value.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from shopping_mall_products.name. String type. Required field in DB but optional in Update DTO for partial updates.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_products.name. String type. Required field in DB but
+         *   optional in Update DTO for partial updates.
      */
     name?: string | undefined;
 
@@ -99,8 +113,10 @@ export namespace IShoppingMallProduct {
      *
      * Appears on the product detail page and should include product features, specifications, usage instructions, and any other relevant details. Used in full-text search queries alongside name. Updating this field will trigger creation of a product snapshot.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from shopping_mall_products.description. String type, nullable in DB but required in DTO. Optional in Update DTO for partial updates.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_products.description. String type, nullable in DB but
+         *   required in DTO. Optional in Update DTO for partial updates.
      */
     description?: string | undefined;
 
@@ -109,8 +125,11 @@ export namespace IShoppingMallProduct {
      *
      * References a category from the shopping_mall_categories table. Categories support one level of nesting (category → subcategory), so this may reference either a top-level category or a subcategory. Changing the category will update the product's placement in the catalog hierarchy and trigger snapshot creation.
      *
-     * @x-autobe-database-schema-property shopping_mall_category_id
-     * @x-autobe-specification Direct mapping from shopping_mall_products.shopping_mall_category_id. UUID string format. References shopping_mall_categories.id. Optional in Update DTO for partial updates.
+         * @x-autobe-database-schema-property shopping_mall_category_id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_products.shopping_mall_category_id. UUID string
+         *   format. References shopping_mall_categories.id. Optional in Update
+         *   DTO for partial updates.
      */
     shopping_mall_category_id?: (string & tags.Format<"uuid">) | undefined;
 
@@ -119,8 +138,11 @@ export namespace IShoppingMallProduct {
      *
      * Represents the standard price before any variant-specific adjustments. Individual variants can override this price with their own variant_price. Displayed to customers when viewing products without selected variants. Updating this field will trigger creation of a product snapshot.
      *
-     * @x-autobe-database-schema-property base_price
-     * @x-autobe-specification Direct mapping from shopping_mall_products.base_price. Number type (double precision). Represents the standard price before variant-specific adjustments. Optional in Update DTO for partial updates.
+         * @x-autobe-database-schema-property base_price
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_products.base_price. Number type (double precision).
+         *   Represents the standard price before variant-specific adjustments.
+         *   Optional in Update DTO for partial updates.
      */
     base_price?: number | undefined;
   };
@@ -138,8 +160,9 @@ export namespace IShoppingMallProduct {
      *
      * This is the primary key used to reference the product across the system. Used in URLs, API requests, and as a foreign key in related entities like cart items, order items, and wishlist items.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_products.id. UUID format.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_products.id. UUID format.
      */
     id: string & tags.Format<"uuid">;
 
@@ -148,8 +171,9 @@ export namespace IShoppingMallProduct {
      *
      * This is the primary identifier shown to customers. Should be descriptive and include key product attributes like brand and model. Used in full-text search queries alongside description.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from shopping_mall_products.name. Used in full-text search.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_products.name. Used in full-text search.
      */
     name: string;
 
@@ -158,8 +182,10 @@ export namespace IShoppingMallProduct {
      *
      * This is the standard price before any variant-specific adjustments. Individual variants can override this price with their own variant_price. Displayed to customers when viewing products without selected variants.
      *
-     * @x-autobe-database-schema-property base_price
-     * @x-autobe-specification Direct mapping from shopping_mall_products.base_price. Decimal number representing currency value.
+         * @x-autobe-database-schema-property base_price
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_products.base_price. Decimal number representing
+         *   currency value.
      */
     base_price: number;
 
@@ -168,8 +194,11 @@ export namespace IShoppingMallProduct {
      *
      * Categories organize the product catalog and support one level of nesting (category → subcategory). This field provides the immediate parent category reference, enabling customers to navigate the catalog hierarchy.
      *
-     * @x-autobe-database-schema-property category
-     * @x-autobe-specification JOIN from shopping_mall_products.shopping_mall_category_id to shopping_mall_categories.id. Returns IShoppingMallCategory.ISummary.
+         * @x-autobe-database-schema-property category
+         * @x-autobe-specification JOIN from
+         *   shopping_mall_products.shopping_mall_category_id to
+         *   shopping_mall_categories.id. Returns
+         *   IShoppingMallCategory.ISummary.
      */
     category: IShoppingMallCategory.ISummary;
 
@@ -178,8 +207,10 @@ export namespace IShoppingMallProduct {
      *
      * Establishes product ownership and enables customers to identify the source of the product. All product management operations require this ownership relationship. Used for seller reputation and contact purposes.
      *
-     * @x-autobe-database-schema-property seller
-     * @x-autobe-specification JOIN from shopping_mall_products.shopping_mall_seller_id to shopping_mall_sellers.id. Returns IShoppingMallSeller.ISummary.
+         * @x-autobe-database-schema-property seller
+         * @x-autobe-specification JOIN from
+         *   shopping_mall_products.shopping_mall_seller_id to
+         *   shopping_mall_sellers.id. Returns IShoppingMallSeller.ISummary.
      */
     seller: IShoppingMallSeller.ISummary;
 
@@ -188,7 +219,11 @@ export namespace IShoppingMallProduct {
      *
      * Derived from the first product image (lowest display_order value). Used as the primary visual representation in list views and search results. May be null if the product has no images uploaded.
      *
-     * @x-autobe-specification Computed from LEFT JOIN shopping_mall_product_images WHERE shopping_mall_product_images.deleted_at IS NULL ORDER BY display_order ASC LIMIT 1. Returns the URL of the first image or null if no images exist.
+         * @x-autobe-specification Computed from LEFT JOIN
+         *   shopping_mall_product_images WHERE
+         *   shopping_mall_product_images.deleted_at IS NULL ORDER BY
+         *   display_order ASC LIMIT 1. Returns the URL of the first image or
+         *   null if no images exist.
      */
     thumbnailUrl?: (string & tags.Format<"uri">) | null | undefined;
 
@@ -197,7 +232,10 @@ export namespace IShoppingMallProduct {
      *
      * Calculated by checking if at least one product variant has positive inventory quantity. Used in search filters and display badges to inform customers about product availability before they select a specific variant.
      *
-     * @x-autobe-specification Computed from JOIN shopping_mall_product_variants and shopping_mall_inventory_records WHERE SUM(inventory_records.quantity) > 0. Returns true if at least one variant has positive inventory.
+         * @x-autobe-specification Computed from JOIN
+         *   shopping_mall_product_variants and shopping_mall_inventory_records
+         *   WHERE SUM(inventory_records.quantity) > 0. Returns true if at least
+         *   one variant has positive inventory.
      */
     inStock: boolean;
 
@@ -206,8 +244,9 @@ export namespace IShoppingMallProduct {
      *
      * Records the initial creation time of the product listing. Used for sorting products by newest and displaying product age to customers. Set once during product creation and never modified.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_products.created_at. ISO 8601 date-time format.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_products.created_at. ISO 8601 date-time format.
      */
     createdAt: string & tags.Format<"date-time">;
   };
@@ -231,7 +270,13 @@ export namespace IShoppingMallProduct {
      *
      * The search is case-insensitive and supports partial matching. For example, searching for 'phone' will match products with 'Smartphone' in the name or 'phone case' in the description. When combined with sort='relevance', results are ordered by text match score.
      *
-     * @x-autobe-specification Full-text search query parameter. Implemented using PostgreSQL gin_trgm_ops trigram index on shopping_mall_products.name and shopping_mall_products.description columns. When provided, executes LIKE '%query%' or text search operators. Results ranked by relevance score when sort='relevance'. Empty or whitespace-only values are ignored. Special characters are escaped to prevent SQL injection.
+         * @x-autobe-specification Full-text search query parameter. Implemented
+         *   using PostgreSQL gin_trgm_ops trigram index on
+         *   shopping_mall_products.name and shopping_mall_products.description
+         *   columns. When provided, executes LIKE '%query%' or text search
+         *   operators. Results ranked by relevance score when sort='relevance'.
+         *   Empty or whitespace-only values are ignored. Special characters are
+         *   escaped to prevent SQL injection.
      */
     search?: string | undefined;
 
@@ -242,7 +287,13 @@ export namespace IShoppingMallProduct {
      *
      * The category ID must be a valid UUID format. If the category doesn't exist or has been deleted, the endpoint returns a 404 error. This filter is commonly combined with other filters like price range or search queries.
      *
-     * @x-autobe-specification Category filter parameter. Maps to shopping_mall_products.shopping_mall_category_id column for exact match filtering. When provided, validates the UUID format and checks category existence. Optionally includes products from subcategories by recursively querying shopping_mall_categories.children relation. Returns 404 if category ID doesn't exist or refers to a deleted category.
+         * @x-autobe-specification Category filter parameter. Maps to
+         *   shopping_mall_products.shopping_mall_category_id column for exact
+         *   match filtering. When provided, validates the UUID format and
+         *   checks category existence. Optionally includes products from
+         *   subcategories by recursively querying
+         *   shopping_mall_categories.children relation. Returns 404 if category
+         *   ID doesn't exist or refers to a deleted category.
      */
     categoryId?: (string & tags.Format<"uuid">) | undefined;
 
@@ -253,7 +304,12 @@ export namespace IShoppingMallProduct {
      *
      * Must be a non-negative number. When combined with maxPrice, defines a price range. If minPrice exceeds maxPrice, the request returns a validation error. Omitting this parameter removes the lower price bound.
      *
-     * @x-autobe-specification Minimum price filter parameter. Maps to shopping_mall_products.base_price column with >= comparison. Must be a non-negative number. If minPrice > maxPrice when both are provided, returns validation error. Null or omitted means no minimum price constraint. Implemented as WHERE base_price >= minPrice in SQL query.
+         * @x-autobe-specification Minimum price filter parameter. Maps to
+         *   shopping_mall_products.base_price column with >= comparison. Must
+         *   be a non-negative number. If minPrice > maxPrice when both are
+         *   provided, returns validation error. Null or omitted means no
+         *   minimum price constraint. Implemented as WHERE base_price >=
+         *   minPrice in SQL query.
      */
     minPrice?: (number & tags.Minimum<0>) | undefined;
 
@@ -264,7 +320,12 @@ export namespace IShoppingMallProduct {
      *
      * Must be a non-negative number. When combined with minPrice, defines a price range. If maxPrice is less than minPrice, the request returns a validation error. Omitting this parameter removes the upper price bound.
      *
-     * @x-autobe-specification Maximum price filter parameter. Maps to shopping_mall_products.base_price column with <= comparison. Must be a non-negative number. If maxPrice < minPrice when both are provided, returns validation error. Null or omitted means no maximum price constraint. Implemented as WHERE base_price <= maxPrice in SQL query.
+         * @x-autobe-specification Maximum price filter parameter. Maps to
+         *   shopping_mall_products.base_price column with <= comparison. Must
+         *   be a non-negative number. If maxPrice < minPrice when both are
+         *   provided, returns validation error. Null or omitted means no
+         *   maximum price constraint. Implemented as WHERE base_price <=
+         *   maxPrice in SQL query.
      */
     maxPrice?: (number & tags.Minimum<0>) | undefined;
 
@@ -275,7 +336,13 @@ export namespace IShoppingMallProduct {
      *
      * This filter is useful for customers who want to browse only available products. When false or omitted, the results include out-of-stock products, which may be displayed with an 'out of stock' indicator. The stock status is computed in real-time from inventory records.
      *
-     * @x-autobe-specification Stock availability filter parameter. When true, performs JOIN with shopping_mall_product_variants and aggregates stock_quantity from inventory records. Filters to products where SUM(stock_quantity) > 0 across all variants. When false or omitted, includes all products regardless of stock status. Implemented as HAVING SUM(v.stock_quantity) > 0 or omitted based on parameter value.
+         * @x-autobe-specification Stock availability filter parameter. When
+         *   true, performs JOIN with shopping_mall_product_variants and
+         *   aggregates stock_quantity from inventory records. Filters to
+         *   products where SUM(stock_quantity) > 0 across all variants. When
+         *   false or omitted, includes all products regardless of stock status.
+         *   Implemented as HAVING SUM(v.stock_quantity) > 0 or omitted based on
+         *   parameter value.
      */
     inStock?: boolean | undefined;
 
@@ -286,7 +353,11 @@ export namespace IShoppingMallProduct {
      *
      * When omitted or invalid, defaults to page 1. The actual number of pages available depends on the total record count and the limit parameter. Clients can determine total pages from the pagination metadata in the response.
      *
-     * @x-autobe-specification Pagination page number parameter. 1-indexed integer (first page is 1, not 0). Defaults to 1 if not provided or invalid. Used with limit to calculate OFFSET: OFFSET = (page - 1) * limit. Must be >= 1. Implemented in SQL as OFFSET clause. Combined with LIMIT for offset-based pagination.
+         * @x-autobe-specification Pagination page number parameter. 1-indexed
+         *   integer (first page is 1, not 0). Defaults to 1 if not provided or
+         *   invalid. Used with limit to calculate OFFSET: OFFSET = (page - 1) *
+         *   limit. Must be >= 1. Implemented in SQL as OFFSET clause. Combined
+         *   with LIMIT for offset-based pagination.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -297,7 +368,11 @@ export namespace IShoppingMallProduct {
      *
      * The default is 20 items per page. The maximum allowed is 100 items - requests exceeding this are capped at 100. The minimum is 1 item. The actual number of items on the last page may be less than the limit if there are fewer remaining records.
      *
-     * @x-autobe-specification Pagination limit parameter. Maximum number of records per page. Must be >= 1 and <= 100 (enforced maximum). Defaults to 20 if not provided. Used with page to calculate OFFSET. Implemented in SQL as LIMIT clause. Prevents excessive data transfer and query load by capping page size.
+         * @x-autobe-specification Pagination limit parameter. Maximum number of
+         *   records per page. Must be >= 1 and <= 100 (enforced maximum).
+         *   Defaults to 20 if not provided. Used with page to calculate OFFSET.
+         *   Implemented in SQL as LIMIT clause. Prevents excessive data
+         *   transfer and query load by capping page size.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -310,7 +385,14 @@ export namespace IShoppingMallProduct {
      *
      * Available options: 'relevance' orders by text match score (only meaningful with search query), 'price_asc' and 'price_desc' order by base price, 'newest' shows most recently created products first, 'name_asc' orders alphabetically by product name.
      *
-     * @x-autobe-specification Sort field parameter. Accepts: 'relevance' (text search score, used when search query provided), 'price_asc' (base_price ASC), 'price_desc' (base_price DESC), 'newest' (created_at DESC), 'name_asc' (name ASC). When sort includes direction suffix (_asc/_desc), the order parameter is ignored. When sort='relevance', requires search parameter to be provided. Defaults to 'newest' when no search query, or 'relevance' when search is provided.
+         * @x-autobe-specification Sort field parameter. Accepts: 'relevance'
+         *   (text search score, used when search query provided), 'price_asc'
+         *   (base_price ASC), 'price_desc' (base_price DESC), 'newest'
+         *   (created_at DESC), 'name_asc' (name ASC). When sort includes
+         *   direction suffix (_asc/_desc), the order parameter is ignored. When
+         *   sort='relevance', requires search parameter to be provided.
+         *   Defaults to 'newest' when no search query, or 'relevance' when
+         *   search is provided.
      */
     sort?:
       | "relevance"
@@ -327,7 +409,13 @@ export namespace IShoppingMallProduct {
      *
      * This parameter is ignored when the sort field already specifies direction (such as 'price_asc', 'price_desc', 'newest', or 'name_asc'). It's primarily useful for sort fields that don't have a fixed direction, allowing clients to dynamically control ordering.
      *
-     * @x-autobe-specification Sort order direction parameter. Accepts: 'asc' (ascending) or 'desc' (descending). Used when the sort field doesn't include explicit direction (e.g., sort='price' without _asc/_desc suffix). When sort field includes direction (price_asc, price_desc, newest, name_asc), this parameter is ignored. Defaults to 'asc' when sort field is ambiguous. Provides flexibility for dynamic sorting.
+         * @x-autobe-specification Sort order direction parameter. Accepts:
+         *   'asc' (ascending) or 'desc' (descending). Used when the sort field
+         *   doesn't include explicit direction (e.g., sort='price' without
+         *   _asc/_desc suffix). When sort field includes direction (price_asc,
+         *   price_desc, newest, name_asc), this parameter is ignored. Defaults
+         *   to 'asc' when sort field is ambiguous. Provides flexibility for
+         *   dynamic sorting.
      */
     order?: "asc" | "desc" | undefined;
   };

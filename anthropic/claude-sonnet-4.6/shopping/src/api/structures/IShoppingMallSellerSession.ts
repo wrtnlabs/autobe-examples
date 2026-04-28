@@ -10,72 +10,98 @@ export type IShoppingMallSellerSession = {
   /**
    * The unique identifier (UUID) of this seller session record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_seller_sessions.id. UUID primary key, unique across all seller sessions.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_seller_sessions.id. UUID primary key, unique across all
+     *   seller sessions.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * The seller account that owns this session. Provides essential identity and status information about the seller who authenticated.
    *
-   * @x-autobe-database-schema-property seller
-   * @x-autobe-specification Resolved via JOIN from shopping_mall_seller_sessions.shopping_mall_seller_id to shopping_mall_sellers.id. Returns IShoppingMallSeller.ISummary containing the seller's identity and account status fields.
+     * @x-autobe-database-schema-property seller
+     * @x-autobe-specification Resolved via JOIN from
+     *   shopping_mall_seller_sessions.shopping_mall_seller_id to
+     *   shopping_mall_sellers.id. Returns IShoppingMallSeller.ISummary
+     *   containing the seller's identity and account status fields.
    */
   seller: IShoppingMallSeller.ISummary;
 
   /**
    * The JWT access token issued for this session, used by the seller to authenticate API requests. Unique across all sessions.
    *
-   * @x-autobe-database-schema-property access_token
-   * @x-autobe-specification Direct mapping from shopping_mall_seller_sessions.access_token. JWT access token issued to the seller for authenticating API requests. Unique across all sessions (DB unique constraint).
+     * @x-autobe-database-schema-property access_token
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_seller_sessions.access_token. JWT access token issued to
+     *   the seller for authenticating API requests. Unique across all sessions
+     *   (DB unique constraint).
    */
   access_token: string;
 
   /**
    * The JWT refresh token issued for this session, used to obtain a new access token upon expiry. Unique across all sessions.
    *
-   * @x-autobe-database-schema-property refresh_token
-   * @x-autobe-specification Direct mapping from shopping_mall_seller_sessions.refresh_token. JWT refresh token used to obtain a new access token when the current one expires. Unique across all sessions (DB unique constraint).
+     * @x-autobe-database-schema-property refresh_token
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_seller_sessions.refresh_token. JWT refresh token used to
+     *   obtain a new access token when the current one expires. Unique across
+     *   all sessions (DB unique constraint).
    */
   refresh_token: string;
 
   /**
    * The IP address of the client that initiated this session, recorded at login time for security auditing purposes.
    *
-   * @x-autobe-database-schema-property ip
-   * @x-autobe-specification Direct mapping from shopping_mall_seller_sessions.ip. Client IP address captured at the time the seller performed the login request. Stored as a string.
+     * @x-autobe-database-schema-property ip
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_seller_sessions.ip. Client IP address captured at the
+     *   time the seller performed the login request. Stored as a string.
    */
   ip: string;
 
   /**
    * The full URL of the page from which the seller performed the login, recorded for auditing and analytics purposes.
    *
-   * @x-autobe-database-schema-property href
-   * @x-autobe-specification Direct mapping from shopping_mall_seller_sessions.href. Full page URL from which the seller performed the login request. DB column type is VarChar(80000). Stored as a URI-formatted string.
+     * @x-autobe-database-schema-property href
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_seller_sessions.href. Full page URL from which the seller
+     *   performed the login request. DB column type is VarChar(80000). Stored
+     *   as a URI-formatted string.
    */
   href: string & tags.Format<"uri">;
 
   /**
    * The HTTP Referrer header value recorded at login time, indicating the page that linked to the login page. Null if no referrer was present.
    *
-   * @x-autobe-database-schema-property referrer
-   * @x-autobe-specification Direct mapping from shopping_mall_seller_sessions.referrer. Nullable string (DB: String?). Contains the HTTP Referrer header value at login time, indicating the page that linked to the login page. Null when no referrer header was present.
+     * @x-autobe-database-schema-property referrer
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_seller_sessions.referrer. Nullable string (DB: String?).
+     *   Contains the HTTP Referrer header value at login time, indicating the
+     *   page that linked to the login page. Null when no referrer header was
+     *   present.
    */
   referrer: string | null;
 
   /**
    * The timestamp when this session was created, representing the moment the seller authenticated.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from shopping_mall_seller_sessions.created_at (Timestamptz). Records the exact moment the seller authenticated and the session was created.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_seller_sessions.created_at (Timestamptz). Records the
+     *   exact moment the seller authenticated and the session was created.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * The timestamp when this session expires. After this point, the session is considered invalid and the seller must re-authenticate.
    *
-   * @x-autobe-database-schema-property expired_at
-   * @x-autobe-specification Direct mapping from shopping_mall_seller_sessions.expired_at (Timestamptz). After this timestamp, the session is considered invalid and the seller must re-authenticate. Expired sessions remain in the database as historical audit records.
+     * @x-autobe-database-schema-property expired_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_seller_sessions.expired_at (Timestamptz). After this
+     *   timestamp, the session is considered invalid and the seller must
+     *   re-authenticate. Expired sessions remain in the database as historical
+     *   audit records.
    */
   expired_at: string & tags.Format<"date-time">;
 };
@@ -91,48 +117,63 @@ export namespace IShoppingMallSellerSession {
     /**
      * The unique identifier of this seller session record.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_seller_sessions.id. UUID primary key uniquely identifying this session record.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_seller_sessions.id. UUID primary key uniquely
+         *   identifying this session record.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * The IP address of the client that initiated this seller session, recorded at login time for security auditing.
      *
-     * @x-autobe-database-schema-property ip
-     * @x-autobe-specification Direct mapping from shopping_mall_seller_sessions.ip. Stores the client IP address captured at login time for security auditing.
+         * @x-autobe-database-schema-property ip
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_seller_sessions.ip. Stores the client IP address
+         *   captured at login time for security auditing.
      */
     ip: string;
 
     /**
      * The full URL of the page from which the seller initiated the login request, recorded for auditing and analytics.
      *
-     * @x-autobe-database-schema-property href
-     * @x-autobe-specification Direct mapping from shopping_mall_seller_sessions.href. Full URL of the page from which the seller performed the login request, stored as VarChar(80000).
+         * @x-autobe-database-schema-property href
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_seller_sessions.href. Full URL of the page from which
+         *   the seller performed the login request, stored as VarChar(80000).
      */
     href: string;
 
     /**
      * The HTTP Referrer header value recorded at login time, indicating the page that linked to the login page. Null when no referrer header was present.
      *
-     * @x-autobe-database-schema-property referrer
-     * @x-autobe-specification Direct mapping from shopping_mall_seller_sessions.referrer (nullable String?). Null when no HTTP Referrer header was present at the time of login; non-null when a referrer page was detected.
+         * @x-autobe-database-schema-property referrer
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_seller_sessions.referrer (nullable String?). Null
+         *   when no HTTP Referrer header was present at the time of login;
+         *   non-null when a referrer page was detected.
      */
     referrer: string | null;
 
     /**
      * The timestamp when this session was created, i.e., when the seller successfully logged in.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_seller_sessions.created_at (Timestamptz). Represents the exact moment the seller authenticated and the session was created.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_seller_sessions.created_at (Timestamptz). Represents
+         *   the exact moment the seller authenticated and the session was
+         *   created.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * The timestamp when this session expires. After this time, the session is considered invalid and the seller must re-authenticate.
      *
-     * @x-autobe-database-schema-property expired_at
-     * @x-autobe-specification Direct mapping from shopping_mall_seller_sessions.expired_at (Timestamptz). After this timestamp the session is invalid and the seller must re-authenticate.
+         * @x-autobe-database-schema-property expired_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_seller_sessions.expired_at (Timestamptz). After this
+         *   timestamp the session is invalid and the seller must
+         *   re-authenticate.
      */
     expired_at: string & tags.Format<"date-time">;
   };
@@ -144,70 +185,113 @@ export namespace IShoppingMallSellerSession {
     /**
      * Filters sessions whose creation timestamp is on or after this value. When provided, only sessions created from this date-time onward are included in results. Leave null to apply no lower bound.
      *
-     * @x-autobe-specification Query filter targeting shopping_mall_seller_sessions.created_at. Applied as: WHERE created_at >= :createdAtFrom. When null or omitted, no lower bound on creation timestamp is applied. Accepts ISO 8601 date-time string with timezone (timestamptz).
+         * @x-autobe-specification Query filter targeting
+         *   shopping_mall_seller_sessions.created_at. Applied as: WHERE
+         *   created_at >= :createdAtFrom. When null or omitted, no lower bound
+         *   on creation timestamp is applied. Accepts ISO 8601 date-time string
+         *   with timezone (timestamptz).
      */
     createdAtFrom?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * Filters sessions whose creation timestamp is on or before this value. When provided, only sessions created up to and including this date-time are included in results. Leave null to apply no upper bound.
      *
-     * @x-autobe-specification Query filter targeting shopping_mall_seller_sessions.created_at. Applied as: WHERE created_at <= :createdAtTo. When null or omitted, no upper bound on creation timestamp is applied. Accepts ISO 8601 date-time string with timezone (timestamptz).
+         * @x-autobe-specification Query filter targeting
+         *   shopping_mall_seller_sessions.created_at. Applied as: WHERE
+         *   created_at <= :createdAtTo. When null or omitted, no upper bound on
+         *   creation timestamp is applied. Accepts ISO 8601 date-time string
+         *   with timezone (timestamptz).
      */
     createdAtTo?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * Filters sessions whose expiration timestamp is on or after this value. When provided, only sessions expiring from this date-time onward are included. Leave null to apply no lower bound on expiration.
      *
-     * @x-autobe-specification Query filter targeting shopping_mall_seller_sessions.expired_at. Applied as: WHERE expired_at >= :expiredAtFrom. When null or omitted, no lower bound on expiration timestamp is applied. Accepts ISO 8601 date-time string with timezone (timestamptz).
+         * @x-autobe-specification Query filter targeting
+         *   shopping_mall_seller_sessions.expired_at. Applied as: WHERE
+         *   expired_at >= :expiredAtFrom. When null or omitted, no lower bound
+         *   on expiration timestamp is applied. Accepts ISO 8601 date-time
+         *   string with timezone (timestamptz).
      */
     expiredAtFrom?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * Filters sessions whose expiration timestamp is on or before this value. When provided, only sessions expiring up to and including this date-time are included. Leave null to apply no upper bound on expiration.
      *
-     * @x-autobe-specification Query filter targeting shopping_mall_seller_sessions.expired_at. Applied as: WHERE expired_at <= :expiredAtTo. When null or omitted, no upper bound on expiration timestamp is applied. Accepts ISO 8601 date-time string with timezone (timestamptz).
+         * @x-autobe-specification Query filter targeting
+         *   shopping_mall_seller_sessions.expired_at. Applied as: WHERE
+         *   expired_at <= :expiredAtTo. When null or omitted, no upper bound on
+         *   expiration timestamp is applied. Accepts ISO 8601 date-time string
+         *   with timezone (timestamptz).
      */
     expiredAtTo?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * Convenience filter for session expiry status. When `true`, returns only sessions that have already expired. When `false`, returns only currently active (non-expired) sessions. When `null` or omitted, no expiry status filter is applied and all sessions are included regardless of expiry.
      *
-     * @x-autobe-specification Computed boolean filter derived from shopping_mall_seller_sessions.expired_at compared to the current server time. Logic: if true → WHERE expired_at < NOW() (return only expired sessions); if false → WHERE expired_at >= NOW() (return only active sessions); if null or omitted → no expiry filter applied (return all sessions regardless of status). Convenience shortcut that avoids needing to specify explicit date boundaries.
+         * @x-autobe-specification Computed boolean filter derived from
+         *   shopping_mall_seller_sessions.expired_at compared to the current
+         *   server time. Logic: if true → WHERE expired_at < NOW() (return only
+         *   expired sessions); if false → WHERE expired_at >= NOW() (return
+         *   only active sessions); if null or omitted → no expiry filter
+         *   applied (return all sessions regardless of status). Convenience
+         *   shortcut that avoids needing to specify explicit date boundaries.
      */
     isExpired?: boolean | null | undefined;
 
     /**
      * Filters sessions by the client IP address recorded at login time. When provided, only sessions matching this IP address (partial or exact match) are returned. Leave null to include sessions from all IP addresses.
      *
-     * @x-autobe-specification Query filter targeting shopping_mall_seller_sessions.ip. Applied as a partial or exact match: ILIKE '%:ip%' or exact equality per platform policy. When null or omitted, no IP filter is applied. Useful for security audits investigating sessions originating from a specific client IP address.
+         * @x-autobe-specification Query filter targeting
+         *   shopping_mall_seller_sessions.ip. Applied as a partial or exact
+         *   match: ILIKE '%:ip%' or exact equality per platform policy. When
+         *   null or omitted, no IP filter is applied. Useful for security
+         *   audits investigating sessions originating from a specific client IP
+         *   address.
      */
     ip?: string | null | undefined;
 
     /**
      * Specifies the column used to sort the returned session list. Accepted values are `created_at` (session creation time) and `expired_at` (session expiration time). Defaults to `created_at` when not provided.
      *
-     * @x-autobe-specification Selects the ORDER BY column for the query result set. Accepted values: 'created_at' (sorts by shopping_mall_seller_sessions.created_at) or 'expired_at' (sorts by shopping_mall_seller_sessions.expired_at). Defaults to 'created_at' when null or omitted. Direction is controlled separately by the sortOrder parameter.
+         * @x-autobe-specification Selects the ORDER BY column for the query
+         *   result set. Accepted values: 'created_at' (sorts by
+         *   shopping_mall_seller_sessions.created_at) or 'expired_at' (sorts by
+         *   shopping_mall_seller_sessions.expired_at). Defaults to 'created_at'
+         *   when null or omitted. Direction is controlled separately by the
+         *   sortOrder parameter.
      */
     sortBy?: "created_at" | "expired_at" | null | undefined;
 
     /**
      * Specifies the sort direction for the session list. Use `asc` for ascending order (oldest first) or `desc` for descending order (newest first). Defaults to `desc` when not provided.
      *
-     * @x-autobe-specification Selects the ORDER BY direction. Accepted values: 'asc' (ascending, oldest first) or 'desc' (descending, newest first). Defaults to 'desc' when null or omitted, returning the most recent sessions first. Applied together with the sortBy parameter.
+         * @x-autobe-specification Selects the ORDER BY direction. Accepted
+         *   values: 'asc' (ascending, oldest first) or 'desc' (descending,
+         *   newest first). Defaults to 'desc' when null or omitted, returning
+         *   the most recent sessions first. Applied together with the sortBy
+         *   parameter.
      */
     sortOrder?: "asc" | "desc" | null | undefined;
 
     /**
      * The 1-based page number to retrieve. Page 1 returns the first page of results. Defaults to 1 when not provided. If the requested page exceeds the total number of available pages, an empty list is returned.
      *
-     * @x-autobe-specification 1-based page number for offset-based pagination. Applied as: OFFSET = (page - 1) * limit. Minimum value is 1. Defaults to 1 when null or omitted. When the requested page number exceeds the available range, an empty data array is returned along with accurate pagination metadata.
+         * @x-autobe-specification 1-based page number for offset-based
+         *   pagination. Applied as: OFFSET = (page - 1) * limit. Minimum value
+         *   is 1. Defaults to 1 when null or omitted. When the requested page
+         *   number exceeds the available range, an empty data array is returned
+         *   along with accurate pagination metadata.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | null | undefined;
 
     /**
      * The maximum number of session records to return per page. Minimum is 1 and maximum is 100. Defaults to 20 when not provided.
      *
-     * @x-autobe-specification Number of session records to return per page. Applied as SQL LIMIT. Minimum value is 1, maximum value is 100. Defaults to 20 when null or omitted. Controls the size of the data array in the paginated response.
+         * @x-autobe-specification Number of session records to return per page.
+         *   Applied as SQL LIMIT. Minimum value is 1, maximum value is 100.
+         *   Defaults to 20 when null or omitted. Controls the size of the data
+         *   array in the paginated response.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)

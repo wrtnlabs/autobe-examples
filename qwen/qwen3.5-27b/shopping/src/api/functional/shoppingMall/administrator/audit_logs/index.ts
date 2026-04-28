@@ -20,7 +20,8 @@ import { IShoppingMallAdministratorAuditLog } from "../../../../structures/IShop
  * @param props.body Search criteria for filtering administrator audit logs including administrator ID, action type, target type, target ID, IP address, date range, and pagination parameters.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor administrator
- * @x-autobe-specification Query the shopping_mall_administrator_audit_logs table with pagination and filtering based on request body criteria.
+ * @x-autobe-specification Query the shopping_mall_administrator_audit_logs
+ *   table with pagination and filtering based on request body criteria.
  *
  * Filtering rules:
  * - Filter by administrator_id if provided (exact match)
@@ -130,7 +131,8 @@ export namespace index {
  * @param props.logId Unique identifier of the administrator audit log entry to retrieve (UUID format).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor administrator
- * @x-autobe-specification Query the shopping_mall_administrator_audit_logs table by the provided logId (UUID).
+ * @x-autobe-specification Query the shopping_mall_administrator_audit_logs
+ *   table by the provided logId (UUID).
  *
  * Join with shopping_mall_administrator_audit_log_details on shopping_mall_administrator_audit_log_id to retrieve all field-level changes associated with this audit log.
  *

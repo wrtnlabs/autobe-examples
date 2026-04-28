@@ -8,7 +8,9 @@ export type IEcommerceMallProductReviewStat = {
   /**
    * The arithmetic mean of all non-deleted review ratings for this product, expressed as a value from 0.0 to 5.0 with one decimal precision.
    *
-   * @x-autobe-specification Computed as AVG(rating) from ecommerce_mall_reviews where product_id matches and deleted_at is null. Result rounded to 1 decimal place. Returns 0 if no reviews exist.
+     * @x-autobe-specification Computed as AVG(rating) from
+     *   ecommerce_mall_reviews where product_id matches and deleted_at is null.
+     *   Result rounded to 1 decimal place. Returns 0 if no reviews exist.
    */
   averageRating: number &
     tags.Minimum<0> &
@@ -18,14 +20,20 @@ export type IEcommerceMallProductReviewStat = {
   /**
    * The total number of non-deleted reviews for this product.
    *
-   * @x-autobe-specification Computed as COUNT(*) from ecommerce_mall_reviews where product_id matches and deleted_at is null. Returns 0 if no reviews exist.
+     * @x-autobe-specification Computed as COUNT(*) from ecommerce_mall_reviews
+     *   where product_id matches and deleted_at is null. Returns 0 if no
+     *   reviews exist.
    */
   totalCount: number & tags.Type<"int32"> & tags.Minimum<0>;
 
   /**
    * A breakdown showing how many reviews fall into each star rating category from 1 to 5 stars.
    *
-   * @x-autobe-specification Computed as COUNT(*) GROUP BY rating (1-5) from ecommerce_mall_reviews where product_id matches and deleted_at is null. Object keys '1' through '5' represent star ratings, values are the count of reviews with that rating. All values are 0 if no reviews exist.
+     * @x-autobe-specification Computed as COUNT(*) GROUP BY rating (1-5) from
+     *   ecommerce_mall_reviews where product_id matches and deleted_at is null.
+     *   Object keys '1' through '5' represent star ratings, values are the
+     *   count of reviews with that rating. All values are 0 if no reviews
+     *   exist.
    */
   distribution: {
     "1": number & tags.Type<"int32"> & tags.Minimum<0>;

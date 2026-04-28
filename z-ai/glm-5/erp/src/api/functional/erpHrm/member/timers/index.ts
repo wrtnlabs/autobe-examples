@@ -164,7 +164,8 @@ export namespace create {
  * @param props.body Search criteria and pagination parameters for filtering timer records
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query the erp_hrm_timers table with pagination and filtering capabilities.
+ * @x-autobe-specification Query the erp_hrm_timers table with pagination and
+ *   filtering capabilities.
  *
  * 1. Extract organization context from authenticated user's session
  * 2. Apply access control:
@@ -280,7 +281,8 @@ export namespace index {
  * @param props.body Timer update data containing the new project, task, and/or description
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Update a running timer's project, task, or description.
+ * @x-autobe-specification Update a running timer's project, task, or
+ *   description.
  *
  * 1. Authentication: Extract member ID from JWT session token
  * 2. Find employee record for current organization context (erp_hrm_employee_id from session)

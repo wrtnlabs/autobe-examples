@@ -34,9 +34,10 @@ export class HrmtimetrackMemberActivity_logsController {
    *
    * @param connection
    * @param body Search and filter criteria for activity logs including date range, activity types, and entity associations.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query hrm_time_track_activity_logs table with support for:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query hrm_time_track_activity_logs table with
+     *   support for:
    *
    * 1. **Filtering**: Filter by date range, activity_type, organization_id, and optional entity associations (employee_id, project_id, task_id, timesheet_id, role_id, employee_contract_id, department_id)
    *
@@ -80,9 +81,10 @@ export class HrmtimetrackMemberActivity_logsController {
    *
    * @param connection
    * @param activityLogId Unique identifier of the activity log entry to retrieve (global scope)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query the hrm_time_track_activity_logs table for a single record matching the provided activityLogId UUID.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query the hrm_time_track_activity_logs table for
+     *   a single record matching the provided activityLogId UUID.
    *
    * 1. Validate that the activityLogId is a valid UUID format
    * 2. Verify the requesting user has org:manage permission for the organization owning this activity log

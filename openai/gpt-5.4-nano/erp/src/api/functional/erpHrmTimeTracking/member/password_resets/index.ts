@@ -26,18 +26,24 @@ import { IErpHrmTimeTrackingMemberPasswordReset } from "../../../../structures/I
  * @param props.body Password reset verification request including the reset token identifier and the new password to set.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification 1) Parse request body payload into fields: tokenIdentifier and newPassword (and any additional flags present in the request DTO).
- * 2) Look up reset request row in `erp_hrm_time_tracking_member_password_resets` by `token_identifier`.
- *    - If no row exists, reject with a business validation error (invalid token).
- *    - If `deleted_at` is not null, reject (token invalidated).
- *    - If current time is after `expired_at`, reject (token expired).
- * 3) Resolve the associated member via `member_id` relation.
- * 4) Validate the new password using the same password-credential constraints used by the normal password change flow (handled in service layer). If invalid, reject without any DB change.
- * 5) In a single transaction:
- *    - Update `erp_hrm_time_tracking_members.password_hash` for the member.
- *    - Optionally invalidate the reset request (implementation decision): if the platform design expects tokens to be single-use, set `deleted_at` on the reset row; otherwise keep it unchanged. This must be consistent with the broader reset-token lifecycle.
- * 6) If any step fails, rollback and ensure no partial changes.
- * 7) Return a success response body consistent with IErpHrmTimeTrackingMember.ISummary.
+ * @x-autobe-specification 1) Parse request body payload into fields:
+ *   tokenIdentifier and newPassword (and any additional flags present in the
+ *   request DTO). 2) Look up reset request row in
+ *   `erp_hrm_time_tracking_member_password_resets` by `token_identifier`. - If
+ *   no row exists, reject with a business validation error (invalid token). -
+ *   If `deleted_at` is not null, reject (token invalidated). - If current time
+ *   is after `expired_at`, reject (token expired). 3) Resolve the associated
+ *   member via `member_id` relation. 4) Validate the new password using the
+ *   same password-credential constraints used by the normal password change
+ *   flow (handled in service layer). If invalid, reject without any DB change.
+ *   5) In a single transaction: - Update
+ *   `erp_hrm_time_tracking_members.password_hash` for the member. - Optionally
+ *   invalidate the reset request (implementation decision): if the platform
+ *   design expects tokens to be single-use, set `deleted_at` on the reset row;
+ *   otherwise keep it unchanged. This must be consistent with the broader
+ *   reset-token lifecycle. 6) If any step fails, rollback and ensure no partial
+ *   changes. 7) Return a success response body consistent with
+ *   IErpHrmTimeTrackingMember.ISummary.
  *
  * Edge cases:
  * - Race condition: if token is invalidated or expires between lookup and update, re-check `deleted_at`/`expired_at` within the transaction before updating.
@@ -136,14 +142,17 @@ export namespace updatePasswordWithResetToken {
  * @param props.resetId Password reset request identifier (UUID) of the reset row to verify.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implementation steps:
- * 1) Authenticate request per global auth rules for the service (member/guest boundaries) and enforce any authorization gating required by the verification flow.
- * 2) Parse `resetId` from the path and treat it as UUID.
- * 3) Query `erp_hrm_time_tracking_member_password_resets` by `id = resetId`.
- * 4) If no row exists, throw a not-found rejection.
- * 5) If `deleted_at` is not null, reject as invalidated.
- * 6) Compare current time to `expired_at`; if `expired_at` is in the past, reject as expired.
- * 7) Return a DTO containing only verification-relevant fields. Prefer excluding `token_identifier` from the response if the system design expects token secrecy; include `id` and expiry status information as required by the corresponding response DTO.
+ * @x-autobe-specification Implementation steps: 1) Authenticate request per
+ *   global auth rules for the service (member/guest boundaries) and enforce any
+ *   authorization gating required by the verification flow. 2) Parse `resetId`
+ *   from the path and treat it as UUID. 3) Query
+ *   `erp_hrm_time_tracking_member_password_resets` by `id = resetId`. 4) If no
+ *   row exists, throw a not-found rejection. 5) If `deleted_at` is not null,
+ *   reject as invalidated. 6) Compare current time to `expired_at`; if
+ *   `expired_at` is in the past, reject as expired. 7) Return a DTO containing
+ *   only verification-relevant fields. Prefer excluding `token_identifier` from
+ *   the response if the system design expects token secrecy; include `id` and
+ *   expiry status information as required by the corresponding response DTO.
  *
  * Data access details:
  * - Use a single-row select; no transaction is required because this is a read.

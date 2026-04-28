@@ -27,9 +27,10 @@ export class ShoppingmallMemberOrdersHistoryController {
    *
    * @param connection
    * @param body Order history browsing criteria including pagination controls (and any supported filters) for the authenticated customer.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement a customer-scoped order history list operation.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implement a customer-scoped order history list
+     *   operation.
    *
    * 1) Authorization / scope
    * - Require authentication as a member.

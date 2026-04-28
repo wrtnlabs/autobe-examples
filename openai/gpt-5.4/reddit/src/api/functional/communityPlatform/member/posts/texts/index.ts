@@ -27,7 +27,9 @@ import { ICommunityPlatformPostText } from "../../../../../structures/ICommunity
  * @param props.body Full written body content for the text post
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implement this operation inside the post aggregate service as creation of the `community_platform_post_texts` one-to-one subtype.
+ * @x-autobe-specification Implement this operation inside the post aggregate
+ *   service as creation of the `community_platform_post_texts` one-to-one
+ *   subtype.
  *
  * 1. Authenticate the caller as a member. Reject guest callers.
  * 2. Load the parent row from `community_platform_posts` by `id = postId`.
@@ -143,7 +145,9 @@ export namespace create {
  * @param props.body Updated title and text content for the post
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implement this operation as an aggregate update over `community_platform_posts` and `community_platform_post_texts` within a single transaction.
+ * @x-autobe-specification Implement this operation as an aggregate update over
+ *   `community_platform_posts` and `community_platform_post_texts` within a
+ *   single transaction.
  *
  * 1. Authenticate the caller as a member.
  * 2. Load the parent post by `postId` from `community_platform_posts` and the text subtype by `textId` from `community_platform_post_texts`.
@@ -265,7 +269,9 @@ export namespace update {
  * @param props.textId Target text-content record identifier belonging to the specified post.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Resolve the parent record from `community_platform_posts` by `postId` and the child subtype record from `community_platform_post_texts` by `textId` within a single service flow.
+ * @x-autobe-specification Resolve the parent record from
+ *   `community_platform_posts` by `postId` and the child subtype record from
+ *   `community_platform_post_texts` by `textId` within a single service flow.
  *
  * Validate that both records exist, that `community_platform_post_texts.community_platform_post_id` equals the provided `postId`, and that the parent post's `post_type` denotes the text content variant. Reject the request if the subtype does not belong to the parent or if the parent post is not a text-based post.
  *

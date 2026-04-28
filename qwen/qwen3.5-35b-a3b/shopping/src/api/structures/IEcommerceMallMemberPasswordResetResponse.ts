@@ -14,7 +14,10 @@ export type IEcommerceMallMemberPasswordResetResponse = {
    *
    * This message confirms that the system has accepted the password reset request and a secure reset token has been generated and delivered to the provided email address.
    *
-   * @x-autobe-specification Generated confirmation message string indicating password reset request was accepted. Message should be user-friendly and confirm that an email was sent, without exposing any sensitive information like the actual token.
+     * @x-autobe-specification Generated confirmation message string indicating
+     *   password reset request was accepted. Message should be user-friendly
+     *   and confirm that an email was sent, without exposing any sensitive
+     *   information like the actual token.
    */
   message: string;
 
@@ -23,7 +26,10 @@ export type IEcommerceMallMemberPasswordResetResponse = {
    *
    * Indicates the exact moment when the secure reset token was created and queued for email delivery.
    *
-   * @x-autobe-specification Timestamp when the password reset request was processed and the reset token was generated. Conceptually maps to ecommerce_mall_member_password_resets.created_at column, though this confirmation DTO does not directly reference the database schema.
+     * @x-autobe-specification Timestamp when the password reset request was
+     *   processed and the reset token was generated. Conceptually maps to
+     *   ecommerce_mall_member_password_resets.created_at column, though this
+     *   confirmation DTO does not directly reference the database schema.
    */
   reset_requested_at?: (string & tags.Format<"date-time">) | undefined;
 };

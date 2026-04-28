@@ -14,8 +14,10 @@ export type IShoppingMallAdministratorPromotionRequestSnapshot = {
    *
    * This UUID identifies a specific point-in-time snapshot of a promotion request. Each status transition (pending to approved, pending to rejected) creates a new snapshot with a unique ID.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_administrator_promotion_request_snapshots.id. Primary key uniquely identifying this snapshot record.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_administrator_promotion_request_snapshots.id. Primary key
+     *   uniquely identifying this snapshot record.
    */
   id: string & tags.Format<"uuid">;
 
@@ -24,8 +26,10 @@ export type IShoppingMallAdministratorPromotionRequestSnapshot = {
    *
    * This captures the identity of the requesting user (either a customer or seller) at the time the snapshot was taken. Combined with user_type, this uniquely identifies the requesting account.
    *
-   * @x-autobe-database-schema-property user_id
-   * @x-autobe-specification Direct mapping from shopping_mall_administrator_promotion_request_snapshots.user_id. Stores the UUID of the user who submitted the promotion request.
+     * @x-autobe-database-schema-property user_id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_administrator_promotion_request_snapshots.user_id. Stores
+     *   the UUID of the user who submitted the promotion request.
    */
   user_id: string & tags.Format<"uuid">;
 
@@ -34,8 +38,10 @@ export type IShoppingMallAdministratorPromotionRequestSnapshot = {
    *
    * Valid values are 'customer' or 'seller', indicating which actor type submitted the request. Both customers and sellers can request administrator privileges. This field, combined with user_id, uniquely identifies the requesting account.
    *
-   * @x-autobe-database-schema-property user_type
-   * @x-autobe-specification Direct mapping from shopping_mall_administrator_promotion_request_snapshots.user_type. Stores the actor type ('customer' or 'seller') of the requesting user.
+     * @x-autobe-database-schema-property user_type
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_administrator_promotion_request_snapshots.user_type.
+     *   Stores the actor type ('customer' or 'seller') of the requesting user.
    */
   user_type: string;
 
@@ -44,8 +50,11 @@ export type IShoppingMallAdministratorPromotionRequestSnapshot = {
    *
    * This text explains why the user believes they should be granted administrator privileges. The reason is preserved in the snapshot for audit purposes and helps super administrators evaluate the request.
    *
-   * @x-autobe-database-schema-property reason
-   * @x-autobe-specification Direct mapping from shopping_mall_administrator_promotion_request_snapshots.reason. Stores the text explanation provided by the user for wanting administrator privileges.
+     * @x-autobe-database-schema-property reason
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_administrator_promotion_request_snapshots.reason. Stores
+     *   the text explanation provided by the user for wanting administrator
+     *   privileges.
    */
   reason: string;
 
@@ -54,8 +63,11 @@ export type IShoppingMallAdministratorPromotionRequestSnapshot = {
    *
    * Valid values are 'pending' (awaiting review), 'approved' (user became administrator), or 'rejected' (request denied). Each snapshot captures the status at a specific point in the request lifecycle.
    *
-   * @x-autobe-database-schema-property status
-   * @x-autobe-specification Direct mapping from shopping_mall_administrator_promotion_request_snapshots.status. Stores the request status at snapshot time ('pending', 'approved', or 'rejected').
+     * @x-autobe-database-schema-property status
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_administrator_promotion_request_snapshots.status. Stores
+     *   the request status at snapshot time ('pending', 'approved', or
+     *   'rejected').
    */
   status: string;
 
@@ -64,8 +76,11 @@ export type IShoppingMallAdministratorPromotionRequestSnapshot = {
    *
    * This field is populated when a super administrator responds to the promotion request. It is null for snapshots taken when the request status is 'pending'. This provides an audit trail of which administrator made the decision.
    *
-   * @x-autobe-database-schema-property approved_by
-   * @x-autobe-specification Direct mapping from shopping_mall_administrator_promotion_request_snapshots.approved_by. Nullable field storing the UUID of the super administrator who responded to the request. Null for initial pending status snapshots.
+     * @x-autobe-database-schema-property approved_by
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_administrator_promotion_request_snapshots.approved_by.
+     *   Nullable field storing the UUID of the super administrator who
+     *   responded to the request. Null for initial pending status snapshots.
    */
   approved_by: (string & tags.Format<"uuid">) | null;
 
@@ -74,8 +89,11 @@ export type IShoppingMallAdministratorPromotionRequestSnapshot = {
    *
    * This text explains why the promotion request was rejected. It is null for approved requests or snapshots taken when the request status is 'pending'. This field is visible to the requesting user when their request is denied.
    *
-   * @x-autobe-database-schema-property response_reason
-   * @x-autobe-specification Direct mapping from shopping_mall_administrator_promotion_request_snapshots.response_reason. Nullable field storing the rejection reason text. Null for approved requests or pending status snapshots.
+     * @x-autobe-database-schema-property response_reason
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_administrator_promotion_request_snapshots.response_reason.
+     *   Nullable field storing the rejection reason text. Null for approved
+     *   requests or pending status snapshots.
    */
   response_reason: string | null;
 
@@ -84,8 +102,11 @@ export type IShoppingMallAdministratorPromotionRequestSnapshot = {
    *
    * Records the exact moment the promotion request state was captured. Used to establish chronological order of state transitions and to determine when specific status changes occurred.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from shopping_mall_administrator_promotion_request_snapshots.created_at. Timestamp when this snapshot was created, formatted as ISO 8601 date-time.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_administrator_promotion_request_snapshots.created_at.
+     *   Timestamp when this snapshot was created, formatted as ISO 8601
+     *   date-time.
    */
   created_at: string & tags.Format<"date-time">;
 };
@@ -103,7 +124,9 @@ export namespace IShoppingMallAdministratorPromotionRequestSnapshot {
      *
      * Performs a case-insensitive partial match on the reason field of promotion request snapshots. Useful for finding snapshots containing specific keywords or phrases in the user's justification for requesting administrator privileges.
      *
-     * @x-autobe-specification Text search filter applied to reason field using case-insensitive LIKE query. Example: 'experienced' matches reasons containing that word. Partial matching supported.
+         * @x-autobe-specification Text search filter applied to reason field
+         *   using case-insensitive LIKE query. Example: 'experienced' matches
+         *   reasons containing that word. Partial matching supported.
      */
     search?: string | undefined;
 
@@ -112,7 +135,10 @@ export namespace IShoppingMallAdministratorPromotionRequestSnapshot {
      *
      * Valid status values are 'pending' (awaiting administrator review), 'approved' (request granted, user became administrator), or 'rejected' (request denied). This filter helps track the progression of a promotion request through its lifecycle.
      *
-     * @x-autobe-specification Filter snapshots by status value. Valid values: 'pending', 'approved', 'rejected'. Equality comparison on status column. Multiple status values not supported in single request.
+         * @x-autobe-specification Filter snapshots by status value. Valid
+         *   values: 'pending', 'approved', 'rejected'. Equality comparison on
+         *   status column. Multiple status values not supported in single
+         *   request.
      */
     status?: string | undefined;
 
@@ -121,7 +147,9 @@ export namespace IShoppingMallAdministratorPromotionRequestSnapshot {
      *
      * Only snapshots created on or after this timestamp will be included in results. Use ISO 8601 date-time format (e.g., '2024-01-15T00:00:00Z'). Combine with dateTo for date range filtering.
      *
-     * @x-autobe-specification Filter snapshots created on or after this timestamp. Applied as created_at >= dateFrom. ISO 8601 date-time format required. Inclusive boundary.
+         * @x-autobe-specification Filter snapshots created on or after this
+         *   timestamp. Applied as created_at >= dateFrom. ISO 8601 date-time
+         *   format required. Inclusive boundary.
      */
     dateFrom?: (string & tags.Format<"date-time">) | undefined;
 
@@ -130,7 +158,9 @@ export namespace IShoppingMallAdministratorPromotionRequestSnapshot {
      *
      * Only snapshots created on or before this timestamp will be included in results. Use ISO 8601 date-time format (e.g., '2024-01-15T23:59:59Z'). Combine with dateFrom for date range filtering.
      *
-     * @x-autobe-specification Filter snapshots created on or before this timestamp. Applied as created_at <= dateTo. ISO 8601 date-time format required. Inclusive boundary.
+         * @x-autobe-specification Filter snapshots created on or before this
+         *   timestamp. Applied as created_at <= dateTo. ISO 8601 date-time
+         *   format required. Inclusive boundary.
      */
     dateTo?: (string & tags.Format<"date-time">) | undefined;
 
@@ -139,7 +169,10 @@ export namespace IShoppingMallAdministratorPromotionRequestSnapshot {
      *
      * Retrieves the specified page of results when using offset-based pagination. Page numbering starts at 1 (not 0). Combined with the limit parameter to determine which subset of results to return. Cannot be used together with cursor-based pagination.
      *
-     * @x-autobe-specification Offset-based pagination page number (1-indexed). Default is 1. Used with limit parameter to calculate offset: (page - 1) * limit. Cannot be combined with cursor parameter.
+         * @x-autobe-specification Offset-based pagination page number
+         *   (1-indexed). Default is 1. Used with limit parameter to calculate
+         *   offset: (page - 1) * limit. Cannot be combined with cursor
+         *   parameter.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -148,7 +181,9 @@ export namespace IShoppingMallAdministratorPromotionRequestSnapshot {
      *
      * Controls how many snapshot records are included in each page of results. Default is 20 records per page. Minimum is 1, maximum is 100 (server-enforced). Use this with the page parameter for offset-based pagination.
      *
-     * @x-autobe-specification Maximum number of records per page. Default is 20, minimum is 1, maximum is 100. Used with page parameter for offset-based pagination. Server enforces maximum limit of 100.
+         * @x-autobe-specification Maximum number of records per page. Default
+         *   is 20, minimum is 1, maximum is 100. Used with page parameter for
+         *   offset-based pagination. Server enforces maximum limit of 100.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -159,7 +194,10 @@ export namespace IShoppingMallAdministratorPromotionRequestSnapshot {
      *
      * Use this token to retrieve the next page of results in cursor-based pagination. The cursor is provided in the pagination metadata of the previous response. This approach is more efficient than offset-based pagination for large datasets and deep pagination scenarios. Cannot be used together with page/limit parameters.
      *
-     * @x-autobe-specification Cursor-based pagination token for retrieving the next page. Provided in pagination metadata of previous response. Cannot be combined with page/limit parameters. Enables efficient deep pagination.
+         * @x-autobe-specification Cursor-based pagination token for retrieving
+         *   the next page. Provided in pagination metadata of previous
+         *   response. Cannot be combined with page/limit parameters. Enables
+         *   efficient deep pagination.
      */
     cursor?: string | undefined;
   };
@@ -175,8 +213,10 @@ export namespace IShoppingMallAdministratorPromotionRequestSnapshot {
      *
      * This UUID identifies the specific snapshot record in the database. Each snapshot is uniquely identified to enable precise tracking of state transitions in the audit trail.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_administrator_promotion_request_snapshots.id. Primary key, UUID format.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_administrator_promotion_request_snapshots.id. Primary
+         *   key, UUID format.
      */
     id: string & tags.Format<"uuid">;
 
@@ -185,8 +225,10 @@ export namespace IShoppingMallAdministratorPromotionRequestSnapshot {
      *
      * Indicates whether the requesting user is a customer or seller, as both actor types can request administrator privileges. Valid values are 'customer' or 'seller'.
      *
-     * @x-autobe-database-schema-property user_type
-     * @x-autobe-specification Direct mapping from shopping_mall_administrator_promotion_request_snapshots.user_type. String value: 'customer' or 'seller'.
+         * @x-autobe-database-schema-property user_type
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_administrator_promotion_request_snapshots.user_type.
+         *   String value: 'customer' or 'seller'.
      */
     user_type: string;
 
@@ -195,8 +237,11 @@ export namespace IShoppingMallAdministratorPromotionRequestSnapshot {
      *
      * This text explains why the user believes they should be granted administrator privileges. Preserved in snapshots for audit purposes to maintain the original justification at each status transition.
      *
-     * @x-autobe-database-schema-property reason
-     * @x-autobe-specification Direct mapping from shopping_mall_administrator_promotion_request_snapshots.reason. Text field containing the user's justification for requesting administrator privileges.
+         * @x-autobe-database-schema-property reason
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_administrator_promotion_request_snapshots.reason.
+         *   Text field containing the user's justification for requesting
+         *   administrator privileges.
      */
     reason: string;
 
@@ -205,8 +250,10 @@ export namespace IShoppingMallAdministratorPromotionRequestSnapshot {
      *
      * Captures the request status at the moment the snapshot was taken. Valid values are 'pending' (awaiting review), 'approved' (user became administrator), or 'rejected' (request denied). Status transitions trigger snapshot creation.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from shopping_mall_administrator_promotion_request_snapshots.status. String value: 'pending', 'approved', or 'rejected'.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_administrator_promotion_request_snapshots.status.
+         *   String value: 'pending', 'approved', or 'rejected'.
      */
     status: string;
 
@@ -215,8 +262,11 @@ export namespace IShoppingMallAdministratorPromotionRequestSnapshot {
      *
      * This field is populated when a super administrator responds to the request. Null for initial pending status snapshots. Provides an audit trail of which administrator made the approval or rejection decision.
      *
-     * @x-autobe-database-schema-property approved_by
-     * @x-autobe-specification Direct mapping from shopping_mall_administrator_promotion_request_snapshots.approved_by. Nullable UUID referencing the super administrator who responded to the request. Null for initial pending status snapshots.
+         * @x-autobe-database-schema-property approved_by
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_administrator_promotion_request_snapshots.approved_by.
+         *   Nullable UUID referencing the super administrator who responded to
+         *   the request. Null for initial pending status snapshots.
      */
     approved_by: (string & tags.Format<"uuid">) | null;
 
@@ -225,8 +275,11 @@ export namespace IShoppingMallAdministratorPromotionRequestSnapshot {
      *
      * This text explains why the promotion request was rejected. Null for approved requests or pending status snapshots. Visible to the requesting user to provide feedback on their application.
      *
-     * @x-autobe-database-schema-property response_reason
-     * @x-autobe-specification Direct mapping from shopping_mall_administrator_promotion_request_snapshots.response_reason. Nullable text field. Populated only when status is 'rejected', null otherwise.
+         * @x-autobe-database-schema-property response_reason
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_administrator_promotion_request_snapshots.response_reason.
+         *   Nullable text field. Populated only when status is 'rejected', null
+         *   otherwise.
      */
     response_reason: string | null;
 
@@ -235,8 +288,10 @@ export namespace IShoppingMallAdministratorPromotionRequestSnapshot {
      *
      * Records the exact moment the promotion request state was captured. Used to establish chronological order of state transitions. Snapshots are typically sorted by this field in descending order to show the most recent state changes first.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_administrator_promotion_request_snapshots.created_at. DateTime in ISO 8601 format with timezone.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_administrator_promotion_request_snapshots.created_at.
+         *   DateTime in ISO 8601 format with timezone.
      */
     created_at: string & tags.Format<"date-time">;
   };

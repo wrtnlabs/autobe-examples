@@ -34,9 +34,11 @@ export class EcommercemallSellerSellerController {
    *
    * @param connection
    * @param body Seller credentials for authentication and registration resubmission. Email must match an existing rejected seller account.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Validate the seller's email and password using bcrypt comparison against the stored password_hash in ecommerce_mall_sellers table.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Validate the seller's email and password using
+     *   bcrypt comparison against the stored password_hash in
+     *   ecommerce_mall_sellers table.
    *
    * Verify the seller exists by email lookup. Return 404 if no seller found.
    *

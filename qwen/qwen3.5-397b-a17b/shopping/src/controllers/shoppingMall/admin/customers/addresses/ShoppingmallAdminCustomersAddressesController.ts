@@ -23,9 +23,11 @@ export class ShoppingmallAdminCustomersAddressesController {
    * @param connection
    * @param customerId Unique identifier of the customer whose addresses to retrieve (UUID format, scoped to customer account).
    * @param body Search criteria for filtering customer addresses including default status, recipient name, location filters, and pagination parameters.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query shopping_mall_customer_addresses table filtered by shopping_mall_customer_profile_id matching the customerId parameter.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Query shopping_mall_customer_addresses table
+     *   filtered by shopping_mall_customer_profile_id matching the customerId
+     *   parameter.
    *
    * Apply WHERE clause: shopping_mall_customer_profile_id = {customerId} AND deleted_at IS NULL.
    *
@@ -78,9 +80,10 @@ export class ShoppingmallAdminCustomersAddressesController {
    * @param connection
    * @param customerId Customer profile UUID (global scope). Identifies the customer who owns the address.
    * @param addressId Address record UUID (scoped to customer). Unique identifier for the specific address within the customer's address list.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query the shopping_mall_customer_addresses table by address ID.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Query the shopping_mall_customer_addresses table
+     *   by address ID.
    *
    * 1. Validate that both customerId and addressId are valid UUID format.
    * 2. Query shopping_mall_customer_addresses WHERE id = {addressId} AND shopping_mall_customer_profile_id = {customerId} AND deleted_at IS NULL.

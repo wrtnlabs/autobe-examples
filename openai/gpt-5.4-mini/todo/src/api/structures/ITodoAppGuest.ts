@@ -16,7 +16,11 @@ export namespace ITodoAppGuest {
      *
      * This token is the existing guest refresh credential required to renew guest access when the current authorization is expiring or has expired.
      *
-     * @x-autobe-specification Read the refresh token from the request body and pass it to the guest refresh validation flow for POST /todoApp/auth/guest/refresh. The token is verified against the guest authorization/session store and is not persisted on todo_app_guests.
+         * @x-autobe-specification Read the refresh token from the request body
+         *   and pass it to the guest refresh validation flow for POST
+         *   /todoApp/auth/guest/refresh. The token is verified against the
+         *   guest authorization/session store and is not persisted on
+         *   todo_app_guests.
      */
     refreshToken: string & tags.Format<"password">;
   };
@@ -34,14 +38,18 @@ export namespace ITodoAppGuest {
      *
      * This value identifies the anonymous guest account created for the current authentication session. It is returned alongside the token payload so clients can retain a stable guest identity for subsequent guest-authenticated requests.
      *
-     * @x-autobe-specification Return the public guest identifier generated or selected by the guest authentication flow. This value comes from the auth service response context and is not read from a direct database column in this DTO.
+         * @x-autobe-specification Return the public guest identifier generated
+         *   or selected by the guest authentication flow. This value comes from
+         *   the auth service response context and is not read from a direct
+         *   database column in this DTO.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Authorization token.
      *
-     * @x-autobe-specification Authorization token comes from the session table.
+         * @x-autobe-specification Authorization token comes from the session
+         *   table.
      */
     token: IAuthorizationToken;
   };
@@ -59,7 +67,9 @@ export namespace ITodoAppGuest {
      *
      * This identifies the page where the anonymous visitor initiated guest sign-in. It is transient onboarding context and is not stored in the guest record.
      *
-     * @x-autobe-specification Transient current page URI supplied during guest onboarding. Use this request context when creating a guest identity; do not persist it to todo_app_guests.
+         * @x-autobe-specification Transient current page URI supplied during
+         *   guest onboarding. Use this request context when creating a guest
+         *   identity; do not persist it to todo_app_guests.
      */
     href: string & tags.Format<"uri">;
 
@@ -68,7 +78,9 @@ export namespace ITodoAppGuest {
      *
      * This identifies the page that sent the visitor into guest sign-in. It is transient onboarding context and is not stored in the guest record.
      *
-     * @x-autobe-specification Transient referrer URI supplied during guest onboarding. Use this request context when creating a guest identity; do not persist it to todo_app_guests.
+         * @x-autobe-specification Transient referrer URI supplied during guest
+         *   onboarding. Use this request context when creating a guest
+         *   identity; do not persist it to todo_app_guests.
      */
     referrer: string & tags.Format<"uri">;
 
@@ -77,7 +89,10 @@ export namespace ITodoAppGuest {
      *
      * This value is transient onboarding context and may be supplied when the request is produced by SSR or another server-assisted flow. It is not stored in the guest record.
      *
-     * @x-autobe-specification Optional transient IPv4 address accepted for server-assisted guest onboarding flows such as SSR. Use this request context when creating a guest identity; do not persist it to todo_app_guests.
+         * @x-autobe-specification Optional transient IPv4 address accepted for
+         *   server-assisted guest onboarding flows such as SSR. Use this
+         *   request context when creating a guest identity; do not persist it
+         *   to todo_app_guests.
      */
     ip?: (string & tags.Format<"ipv4">) | undefined;
   };

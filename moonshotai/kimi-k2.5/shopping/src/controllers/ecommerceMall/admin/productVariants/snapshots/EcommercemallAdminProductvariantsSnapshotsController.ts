@@ -26,9 +26,10 @@ export class EcommercemallAdminProductvariantsSnapshotsController {
    * @param connection
    * @param variantId UUID of the product variant (scoped context)
    * @param snapshotId UUID of the snapshot to retrieve
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Implement authorization checking based on user role:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Implement authorization checking based on user
+     *   role:
    *
    * 1. For seller role: Verify the product variant identified by variantId belongs to the authenticated seller by joining with ecommerce_mall_product_variants -> ecommerce_mall_products -> seller_id
    * 2. For admin/superAdmin roles: Allow access to any snapshot
@@ -78,9 +79,11 @@ export class EcommercemallAdminProductvariantsSnapshotsController {
    *
    * @param connection
    * @param variantId Unique identifier of the product variant (UUID format)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Validate that the variant exists and is accessible to the requesting user (sellers can only access their own variants, administrators can access any).
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Validate that the variant exists and is
+     *   accessible to the requesting user (sellers can only access their own
+     *   variants, administrators can access any).
    *
    * Validate that both snapshot IDs reference snapshots belonging to the specified variant.
    *

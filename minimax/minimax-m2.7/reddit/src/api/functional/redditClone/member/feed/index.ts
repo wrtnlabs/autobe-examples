@@ -17,7 +17,9 @@ export * as popular from "./popular/index";
  * @param props.connection
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query the reddit_clone_posts table filtered by communities the authenticated user has subscribed to (via reddit_clone_subscriptions).
+ * @x-autobe-specification Query the reddit_clone_posts table filtered by
+ *   communities the authenticated user has subscribed to (via
+ *   reddit_clone_subscriptions).
  *
  * Filter out deleted posts where deleted_at is not null.
  *

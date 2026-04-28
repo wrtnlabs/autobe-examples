@@ -12,35 +12,35 @@ import { IHrmPlatformMember } from "./IHrmPlatformMember";
  */
 export type IHrmPlatformMemberEmailVerification = {
   /**
-   * @x-autobe-database-schema-property id
+     * @x-autobe-database-schema-property id
    */
   id: string & tags.Format<"uuid">;
   /**
-   * @x-autobe-database-schema-property member
+     * @x-autobe-database-schema-property member
    */
   member: IHrmPlatformMember.ISummary;
   /**
-   * @x-autobe-database-schema-property token
+     * @x-autobe-database-schema-property token
    */
   token: string & tags.Format<"uuid">;
   /**
-   * @x-autobe-database-schema-property expires_at
+     * @x-autobe-database-schema-property expires_at
    */
   expires_at: string & tags.Format<"date-time">;
   /**
-   * @x-autobe-database-schema-property used_at
+     * @x-autobe-database-schema-property used_at
    */
   used_at: (string & tags.Format<"date-time">) | null;
   /**
-   * @x-autobe-database-schema-property created_at
+     * @x-autobe-database-schema-property created_at
    */
   created_at: string & tags.Format<"date-time">;
   /**
-   * @x-autobe-database-schema-property updated_at
+     * @x-autobe-database-schema-property updated_at
    */
   updated_at: string & tags.Format<"date-time">;
   /**
-   * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-database-schema-property deleted_at
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -63,7 +63,7 @@ export namespace IHrmPlatformMemberEmailVerification {
    */
   export type IRequest = {
     /**
-     * @x-autobe-database-schema-property hrm_platform_member_id
+         * @x-autobe-database-schema-property hrm_platform_member_id
      */
     member_id?: (string & tags.Format<"uuid">) | undefined;
     status?: "pending" | "verified" | "expired" | "deleted" | undefined;

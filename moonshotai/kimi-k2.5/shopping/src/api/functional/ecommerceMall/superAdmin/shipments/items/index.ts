@@ -19,7 +19,8 @@ import { IPageIEcommerceMallOrderItem } from "../../../../../structures/IPageIEc
  * @param props.body Pagination and filtering criteria for shipment items
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor superAdmin
- * @x-autobe-specification Query the shipment_items junction table joined with order_items to retrieve all items belonging to the specified shipment.
+ * @x-autobe-specification Query the shipment_items junction table joined with
+ *   order_items to retrieve all items belonging to the specified shipment.
  *
  * Validate that the authenticated user has permission to view this shipment (customer who owns the order, or seller who created the shipment, or administrator).
  *

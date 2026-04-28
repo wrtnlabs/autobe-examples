@@ -38,9 +38,10 @@ export class EcommercemallSellerSellerAccountController {
    * This operation requires the seller to be authenticated via a valid JWT token in the Authorization header.
    *
    * @param connection
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification 1. Extract authenticated seller ID from JWT token in Authorization header.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification 1. Extract authenticated seller ID from JWT token
+     *   in Authorization header.
    *
    * 2. Validate pre-deletion conditions by querying the database:
    *    a. Check for pending order items: Query ecommerce_mall_order_items table joined with ecommerce_mall_products where product's ecommerce_mall_seller_id matches the authenticated seller AND order_item.status IN ('paid', 'shipped'). If any results found, return 409 with error message specifying pending orders exist.

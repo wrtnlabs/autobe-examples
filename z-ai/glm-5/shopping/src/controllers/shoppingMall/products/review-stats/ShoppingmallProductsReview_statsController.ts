@@ -23,9 +23,10 @@ export class ShoppingmallProductsReview_statsController {
    *
    * @param connection
    * @param productId Product ID to retrieve review statistics for
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query shopping_mall_reviews table where shopping_mall_product_id = productId AND deleted_at IS NULL.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query shopping_mall_reviews table where
+     *   shopping_mall_product_id = productId AND deleted_at IS NULL.
    *
    * Calculate:
    * 1. COUNT(*) as total_reviews

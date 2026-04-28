@@ -22,7 +22,10 @@ import { IRedditLikeOwnerAuditLog } from "../../../../../structures/IRedditLikeO
  * @param props.body Search criteria and pagination parameters for filtering activity history
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor owner
- * @x-autobe-specification Query audit logs for the currently authenticated user. Filter activities based on type (post, comment, vote), date range, and community. Only return activities belonging to the requesting user - privacy filtering is mandatory.
+ * @x-autobe-specification Query audit logs for the currently authenticated
+ *   user. Filter activities based on type (post, comment, vote), date range,
+ *   and community. Only return activities belonging to the requesting user -
+ *   privacy filtering is mandatory.
  *
  * Join with relevant entities:
  * - Posts: include title, community name

@@ -18,9 +18,11 @@ export class EcommercemallProductsRatingController {
    *
    * @param connection
    * @param productId Unique identifier of the product in UUID format.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query the ecommerce_mall_products table to verify the product exists. If the product does not exist, return a 404 error with message "Product not found".
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query the ecommerce_mall_products table to verify
+     *   the product exists. If the product does not exist, return a 404 error
+     *   with message "Product not found".
    *
    * Query the ecommerce_mall_reviews table filtered by ecommerce_mall_product_id matching the path parameter and where deleted_at is NULL (only active reviews).
    *

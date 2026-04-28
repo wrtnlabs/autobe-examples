@@ -21,10 +21,11 @@ export class RedditcloneMemberPostsLinkController {
    * @param connection
    * @param postId Unique identifier of the post to update (UUID format)
    * @param body The new URL to set for the link post
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Validate the post exists and is of type 'link' by querying reddit_clone_posts table.
-   * Verify the authenticated user is the author of the post (reddit_clone_member_id matches session user).
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Validate the post exists and is of type 'link' by
+     *   querying reddit_clone_posts table. Verify the authenticated user is the
+     *   author of the post (reddit_clone_member_id matches session user).
    *
    * If validation fails:
    * - Post not found → 404 Not Found

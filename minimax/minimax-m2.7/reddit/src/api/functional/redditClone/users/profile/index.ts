@@ -19,7 +19,9 @@ import { IRedditCloneUserProfile } from "../../../../structures/IRedditCloneUser
  * @param props.username Unique username of the user whose profile to retrieve
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query the reddit_clone_members table to find the member by username. If the member does not exist or has been soft-deleted (deleted_at is not null), return a 404 error.
+ * @x-autobe-specification Query the reddit_clone_members table to find the
+ *   member by username. If the member does not exist or has been soft-deleted
+ *   (deleted_at is not null), return a 404 error.
  *
  * Join with reddit_clone_user_profiles to retrieve display_name, bio, and avatar file association. If no profile exists, return a 404 error.
  *

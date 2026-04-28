@@ -8,128 +8,153 @@ export type IErpHrmTimeTrackingTimelogSnapshot = {
   /**
    * Unique identifier of the timelog snapshot record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_timelog_snapshots.id (UUID).
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_tracking_timelog_snapshots.id (UUID).
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Organization (tenant) that owns this snapshot.
    *
-   * @x-autobe-database-schema-property organization_id
-   * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_timelog_snapshots.organization_id (UUID). Used for organization-scoped access control.
+     * @x-autobe-database-schema-property organization_id
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_tracking_timelog_snapshots.organization_id (UUID). Used
+     *   for organization-scoped access control.
    */
   organization_id: string & tags.Format<"uuid">;
 
   /**
    * Employee (member) that owns the underlying timelog interval at the time of snapshot creation.
    *
-   * @x-autobe-database-schema-property employee_id
-   * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_timelog_snapshots.employee_id (UUID).
+     * @x-autobe-database-schema-property employee_id
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_tracking_timelog_snapshots.employee_id (UUID).
    */
   employee_id: string & tags.Format<"uuid">;
 
   /**
    * Project associated with the timelog at the time the snapshot was created.
    *
-   * @x-autobe-database-schema-property project_id
-   * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_timelog_snapshots.project_id (UUID).
+     * @x-autobe-database-schema-property project_id
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_tracking_timelog_snapshots.project_id (UUID).
    */
   project_id: string & tags.Format<"uuid">;
 
   /**
    * Optional task attribution within the project for this snapshot (null when not applicable).
    *
-   * @x-autobe-database-schema-property task_id
-   * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_timelog_snapshots.task_id (UUID or null). Stored as null when the timelog is not tied to a task.
+     * @x-autobe-database-schema-property task_id
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_tracking_timelog_snapshots.task_id (UUID or null). Stored
+     *   as null when the timelog is not tied to a task.
    */
   task_id: (string & tags.Format<"uuid">) | null;
 
   /**
    * Optional timesheet container that included the timelog at snapshot time (null if not included).
    *
-   * @x-autobe-database-schema-property timesheet_id
-   * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_timelog_snapshots.timesheet_id (UUID or null).
+     * @x-autobe-database-schema-property timesheet_id
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_tracking_timelog_snapshots.timesheet_id (UUID or null).
    */
   timesheet_id: (string & tags.Format<"uuid">) | null;
 
   /**
    * Interval start timestamp for the timelog at snapshot creation time.
    *
-   * @x-autobe-database-schema-property started_at
-   * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_timelog_snapshots.started_at (date-time).
+     * @x-autobe-database-schema-property started_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_tracking_timelog_snapshots.started_at (date-time).
    */
   started_at: string & tags.Format<"date-time">;
 
   /**
    * Interval end timestamp for the timelog at snapshot creation time.
    *
-   * @x-autobe-database-schema-property ended_at
-   * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_timelog_snapshots.ended_at (date-time).
+     * @x-autobe-database-schema-property ended_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_tracking_timelog_snapshots.ended_at (date-time).
    */
   ended_at: string & tags.Format<"date-time">;
 
   /**
    * Computed duration in minutes for the interval (started_at → ended_at) as captured by the snapshot.
    *
-   * @x-autobe-database-schema-property duration_minutes
-   * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_timelog_snapshots.duration_minutes (integer minutes).
+     * @x-autobe-database-schema-property duration_minutes
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_tracking_timelog_snapshots.duration_minutes (integer
+     *   minutes).
    */
   duration_minutes: number & tags.Type<"int32">;
 
   /**
    * Free-text note describing the work performed, captured at snapshot creation time.
    *
-   * @x-autobe-database-schema-property work_description
-   * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_timelog_snapshots.work_description (string).
+     * @x-autobe-database-schema-property work_description
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_tracking_timelog_snapshots.work_description (string).
    */
   work_description: string;
 
   /**
    * Optional timer session identifier that produced this timelog (null if not sourced from a timer session).
    *
-   * @x-autobe-database-schema-property source_timer_session_id
-   * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_timelog_snapshots.source_timer_session_id (UUID or null).
+     * @x-autobe-database-schema-property source_timer_session_id
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_tracking_timelog_snapshots.source_timer_session_id (UUID
+     *   or null).
    */
   source_timer_session_id: (string & tags.Format<"uuid">) | null;
 
   /**
    * Workflow status of the timelog at the moment this snapshot was created.
    *
-   * @x-autobe-database-schema-property workflow_status
-   * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_timelog_snapshots.workflow_status (string). Represents the timelog workflow status at snapshot creation time.
+     * @x-autobe-database-schema-property workflow_status
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_tracking_timelog_snapshots.workflow_status (string).
+     *   Represents the timelog workflow status at snapshot creation time.
    */
   workflow_status: string;
 
   /**
    * Timestamp when this timelog snapshot record was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_timelog_snapshots.created_at (date-time). Set by the database on insert.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_tracking_timelog_snapshots.created_at (date-time). Set by
+     *   the database on insert.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when this timelog snapshot record was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_timelog_snapshots.updated_at (date-time). Updated by the database when the snapshot row metadata changes.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_tracking_timelog_snapshots.updated_at (date-time). Updated
+     *   by the database when the snapshot row metadata changes.
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * Soft-deletion timestamp for this snapshot. Null indicates the record is active.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_timelog_snapshots.deleted_at (date-time or null). Null means active; non-null means soft-deleted.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_tracking_timelog_snapshots.deleted_at (date-time or null).
+     *   Null means active; non-null means soft-deleted.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 
   /**
    * Identifier of the timelog whose state was captured in this snapshot.
    *
-   * @x-autobe-database-schema-property erp_hrm_time_tracking_timelog_id
-   * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_timelog_snapshots.erp_hrm_time_tracking_timelog_id (UUID).
+     * @x-autobe-database-schema-property erp_hrm_time_tracking_timelog_id
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_tracking_timelog_snapshots.erp_hrm_time_tracking_timelog_id
+     *   (UUID).
    */
   erp_hrm_time_tracking_timelog_id: string & tags.Format<"uuid">;
 };
@@ -141,128 +166,162 @@ export namespace IErpHrmTimeTrackingTimelogSnapshot {
     /**
      * Unique identifier of this immutable timelog snapshot record.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from `erp_hrm_time_tracking_timelog_snapshots.id` to `id`.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   `erp_hrm_time_tracking_timelog_snapshots.id` to `id`.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Identifier of the live timelog this snapshot represents at the time of snapshot creation.
      *
-     * @x-autobe-database-schema-property erp_hrm_time_tracking_timelog_id
-     * @x-autobe-specification Direct mapping from `erp_hrm_time_tracking_timelog_snapshots.erp_hrm_time_tracking_timelog_id` to `erp_hrm_time_tracking_timelog_id`.
+         * @x-autobe-database-schema-property erp_hrm_time_tracking_timelog_id
+         * @x-autobe-specification Direct mapping from
+         *   `erp_hrm_time_tracking_timelog_snapshots.erp_hrm_time_tracking_timelog_id`
+         *   to `erp_hrm_time_tracking_timelog_id`.
      */
     erp_hrm_time_tracking_timelog_id: string & tags.Format<"uuid">;
 
     /**
      * Organization (tenant) that owns this snapshot record.
      *
-     * @x-autobe-database-schema-property organization_id
-     * @x-autobe-specification Direct mapping from `erp_hrm_time_tracking_timelog_snapshots.organization_id` to `organization_id`. Used for tenant scoping in list/search operations.
+         * @x-autobe-database-schema-property organization_id
+         * @x-autobe-specification Direct mapping from
+         *   `erp_hrm_time_tracking_timelog_snapshots.organization_id` to
+         *   `organization_id`. Used for tenant scoping in list/search
+         *   operations.
      */
     organization_id: string & tags.Format<"uuid">;
 
     /**
      * Employee (member) that owns the timelog interval captured by this snapshot.
      *
-     * @x-autobe-database-schema-property employee_id
-     * @x-autobe-specification Direct mapping from `erp_hrm_time_tracking_timelog_snapshots.employee_id` to `employee_id`.
+         * @x-autobe-database-schema-property employee_id
+         * @x-autobe-specification Direct mapping from
+         *   `erp_hrm_time_tracking_timelog_snapshots.employee_id` to
+         *   `employee_id`.
      */
     employee_id: string & tags.Format<"uuid">;
 
     /**
      * Project associated with the timelog interval at snapshot time.
      *
-     * @x-autobe-database-schema-property project_id
-     * @x-autobe-specification Direct mapping from `erp_hrm_time_tracking_timelog_snapshots.project_id` to `project_id`.
+         * @x-autobe-database-schema-property project_id
+         * @x-autobe-specification Direct mapping from
+         *   `erp_hrm_time_tracking_timelog_snapshots.project_id` to
+         *   `project_id`.
      */
     project_id: string & tags.Format<"uuid">;
 
     /**
      * Optional task within the project associated with this timelog snapshot.
      *
-     * @x-autobe-database-schema-property task_id
-     * @x-autobe-specification Direct mapping from `erp_hrm_time_tracking_timelog_snapshots.task_id` to `task_id`. Return `null` when the DB value is NULL.
+         * @x-autobe-database-schema-property task_id
+         * @x-autobe-specification Direct mapping from
+         *   `erp_hrm_time_tracking_timelog_snapshots.task_id` to `task_id`.
+         *   Return `null` when the DB value is NULL.
      */
     task_id: (string & tags.Format<"uuid">) | null;
 
     /**
      * Optional timesheet container that included this timelog at snapshot time.
      *
-     * @x-autobe-database-schema-property timesheet_id
-     * @x-autobe-specification Direct mapping from `erp_hrm_time_tracking_timelog_snapshots.timesheet_id` to `timesheet_id`. Return `null` when the DB value is NULL.
+         * @x-autobe-database-schema-property timesheet_id
+         * @x-autobe-specification Direct mapping from
+         *   `erp_hrm_time_tracking_timelog_snapshots.timesheet_id` to
+         *   `timesheet_id`. Return `null` when the DB value is NULL.
      */
     timesheet_id: (string & tags.Format<"uuid">) | null;
 
     /**
      * Start timestamp of the work interval captured by this snapshot.
      *
-     * @x-autobe-database-schema-property started_at
-     * @x-autobe-specification Direct mapping from `erp_hrm_time_tracking_timelog_snapshots.started_at` to `started_at`. Returned as ISO date-time string.
+         * @x-autobe-database-schema-property started_at
+         * @x-autobe-specification Direct mapping from
+         *   `erp_hrm_time_tracking_timelog_snapshots.started_at` to
+         *   `started_at`. Returned as ISO date-time string.
      */
     started_at: string & tags.Format<"date-time">;
 
     /**
      * End timestamp of the work interval captured by this snapshot.
      *
-     * @x-autobe-database-schema-property ended_at
-     * @x-autobe-specification Direct mapping from `erp_hrm_time_tracking_timelog_snapshots.ended_at` to `ended_at`. Returned as ISO date-time string.
+         * @x-autobe-database-schema-property ended_at
+         * @x-autobe-specification Direct mapping from
+         *   `erp_hrm_time_tracking_timelog_snapshots.ended_at` to `ended_at`.
+         *   Returned as ISO date-time string.
      */
     ended_at: string & tags.Format<"date-time">;
 
     /**
      * Computed duration of the work interval, in minutes, at snapshot time.
      *
-     * @x-autobe-database-schema-property duration_minutes
-     * @x-autobe-specification Direct mapping from `erp_hrm_time_tracking_timelog_snapshots.duration_minutes` to `duration_minutes` (integer minutes at snapshot time).
+         * @x-autobe-database-schema-property duration_minutes
+         * @x-autobe-specification Direct mapping from
+         *   `erp_hrm_time_tracking_timelog_snapshots.duration_minutes` to
+         *   `duration_minutes` (integer minutes at snapshot time).
      */
     duration_minutes: number & tags.Type<"int32">;
 
     /**
      * Free-text description/notes of the work as recorded at snapshot time.
      *
-     * @x-autobe-database-schema-property work_description
-     * @x-autobe-specification Direct mapping from `erp_hrm_time_tracking_timelog_snapshots.work_description` to `work_description`.
+         * @x-autobe-database-schema-property work_description
+         * @x-autobe-specification Direct mapping from
+         *   `erp_hrm_time_tracking_timelog_snapshots.work_description` to
+         *   `work_description`.
      */
     work_description: string;
 
     /**
      * Optional identifier of the timer session that produced this timelog snapshot.
      *
-     * @x-autobe-database-schema-property source_timer_session_id
-     * @x-autobe-specification Direct mapping from `erp_hrm_time_tracking_timelog_snapshots.source_timer_session_id` to `source_timer_session_id`. Return `null` when the DB value is NULL.
+         * @x-autobe-database-schema-property source_timer_session_id
+         * @x-autobe-specification Direct mapping from
+         *   `erp_hrm_time_tracking_timelog_snapshots.source_timer_session_id`
+         *   to `source_timer_session_id`. Return `null` when the DB value is
+         *   NULL.
      */
     source_timer_session_id: (string & tags.Format<"uuid">) | null;
 
     /**
      * Workflow status of the timelog at snapshot time.
      *
-     * @x-autobe-database-schema-property workflow_status
-     * @x-autobe-specification Direct mapping from `erp_hrm_time_tracking_timelog_snapshots.workflow_status` to `workflow_status`.
+         * @x-autobe-database-schema-property workflow_status
+         * @x-autobe-specification Direct mapping from
+         *   `erp_hrm_time_tracking_timelog_snapshots.workflow_status` to
+         *   `workflow_status`.
      */
     workflow_status: string;
 
     /**
      * Timestamp when this snapshot record was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from `erp_hrm_time_tracking_timelog_snapshots.created_at` to `created_at`. Returned as ISO date-time string.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   `erp_hrm_time_tracking_timelog_snapshots.created_at` to
+         *   `created_at`. Returned as ISO date-time string.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when this snapshot record was last updated.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from `erp_hrm_time_tracking_timelog_snapshots.updated_at` to `updated_at`. Returned as ISO date-time string.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   `erp_hrm_time_tracking_timelog_snapshots.updated_at` to
+         *   `updated_at`. Returned as ISO date-time string.
      */
     updated_at: string & tags.Format<"date-time">;
 
     /**
      * Soft-deletion timestamp for this snapshot record; null when the record is active.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from `erp_hrm_time_tracking_timelog_snapshots.deleted_at` to `deleted_at`. Return `null` when the DB value is NULL (record is active).
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   `erp_hrm_time_tracking_timelog_snapshots.deleted_at` to
+         *   `deleted_at`. Return `null` when the DB value is NULL (record is
+         *   active).
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };
@@ -274,72 +333,100 @@ export namespace IErpHrmTimeTrackingTimelogSnapshot {
     /**
      * Identifier of the live timelog that this snapshot captures.
      *
-     * @x-autobe-database-schema-property erp_hrm_time_tracking_timelog_id
-     * @x-autobe-specification Insert the provided erp_hrm_time_tracking_timelog_id into erp_hrm_time_tracking_timelog_snapshots.erp_hrm_time_tracking_timelog_id after verifying the referenced timelog exists and belongs to the caller’s selected organization.
+         * @x-autobe-database-schema-property erp_hrm_time_tracking_timelog_id
+         * @x-autobe-specification Insert the provided
+         *   erp_hrm_time_tracking_timelog_id into
+         *   erp_hrm_time_tracking_timelog_snapshots.erp_hrm_time_tracking_timelog_id
+         *   after verifying the referenced timelog exists and belongs to the
+         *   caller’s selected organization.
      */
     erp_hrm_time_tracking_timelog_id: string & tags.Format<"uuid">;
 
     /**
      * Optional task identifier associated with the timelog at snapshot time. Null if the timelog is not tied to a task.
      *
-     * @x-autobe-database-schema-property task_id
-     * @x-autobe-specification Persist task_id into erp_hrm_time_tracking_timelog_snapshots.task_id (nullable). The service must validate it matches the referenced timelog’s task attribution at snapshot time (or null if not applicable).
+         * @x-autobe-database-schema-property task_id
+         * @x-autobe-specification Persist task_id into
+         *   erp_hrm_time_tracking_timelog_snapshots.task_id (nullable). The
+         *   service must validate it matches the referenced timelog’s task
+         *   attribution at snapshot time (or null if not applicable).
      */
     task_id?: (string & tags.Format<"uuid">) | null | undefined;
 
     /**
      * Optional timesheet identifier that included this timelog at snapshot time. Null if not included in a timesheet.
      *
-     * @x-autobe-database-schema-property timesheet_id
-     * @x-autobe-specification Persist timesheet_id into erp_hrm_time_tracking_timelog_snapshots.timesheet_id (nullable). The service must validate it matches the referenced timelog’s inclusion state in a timesheet at snapshot time (or null).
+         * @x-autobe-database-schema-property timesheet_id
+         * @x-autobe-specification Persist timesheet_id into
+         *   erp_hrm_time_tracking_timelog_snapshots.timesheet_id (nullable).
+         *   The service must validate it matches the referenced timelog’s
+         *   inclusion state in a timesheet at snapshot time (or null).
      */
     timesheet_id?: (string & tags.Format<"uuid">) | null | undefined;
 
     /**
      * Optional timer session identifier that produced this timelog entry. Null if the timelog was not produced by a timer session.
      *
-     * @x-autobe-database-schema-property source_timer_session_id
-     * @x-autobe-specification Persist source_timer_session_id into erp_hrm_time_tracking_timelog_snapshots.source_timer_session_id (nullable). The service must validate it matches the referenced timelog’s source timer session at snapshot time (or null).
+         * @x-autobe-database-schema-property source_timer_session_id
+         * @x-autobe-specification Persist source_timer_session_id into
+         *   erp_hrm_time_tracking_timelog_snapshots.source_timer_session_id
+         *   (nullable). The service must validate it matches the referenced
+         *   timelog’s source timer session at snapshot time (or null).
      */
     source_timer_session_id?: (string & tags.Format<"uuid">) | null | undefined;
 
     /**
      * Start timestamp of the work interval captured by this snapshot.
      *
-     * @x-autobe-database-schema-property started_at
-     * @x-autobe-specification Persist started_at into erp_hrm_time_tracking_timelog_snapshots.started_at after validating/recomputing consistency with the referenced timelog’s interval rules (reject if interval consistency fails).
+         * @x-autobe-database-schema-property started_at
+         * @x-autobe-specification Persist started_at into
+         *   erp_hrm_time_tracking_timelog_snapshots.started_at after
+         *   validating/recomputing consistency with the referenced timelog’s
+         *   interval rules (reject if interval consistency fails).
      */
     started_at: string & tags.Format<"date-time">;
 
     /**
      * End timestamp of the work interval captured by this snapshot.
      *
-     * @x-autobe-database-schema-property ended_at
-     * @x-autobe-specification Persist ended_at into erp_hrm_time_tracking_timelog_snapshots.ended_at after validating/recomputing consistency with the referenced timelog’s interval rules (reject if ended_at is earlier than started_at).
+         * @x-autobe-database-schema-property ended_at
+         * @x-autobe-specification Persist ended_at into
+         *   erp_hrm_time_tracking_timelog_snapshots.ended_at after
+         *   validating/recomputing consistency with the referenced timelog’s
+         *   interval rules (reject if ended_at is earlier than started_at).
      */
     ended_at: string & tags.Format<"date-time">;
 
     /**
      * Computed duration of the work interval in minutes as captured at snapshot time.
      *
-     * @x-autobe-database-schema-property duration_minutes
-     * @x-autobe-specification Persist duration_minutes into erp_hrm_time_tracking_timelog_snapshots.duration_minutes after validating or recomputing it from the interval between started_at and ended_at according to server-side computation rules.
+         * @x-autobe-database-schema-property duration_minutes
+         * @x-autobe-specification Persist duration_minutes into
+         *   erp_hrm_time_tracking_timelog_snapshots.duration_minutes after
+         *   validating or recomputing it from the interval between started_at
+         *   and ended_at according to server-side computation rules.
      */
     duration_minutes: number & tags.Type<"int32">;
 
     /**
      * Free-text description/notes of the work captured by this snapshot.
      *
-     * @x-autobe-database-schema-property work_description
-     * @x-autobe-specification Persist work_description into erp_hrm_time_tracking_timelog_snapshots.work_description. Validate it matches the referenced timelog’s note/description at snapshot time (or override with authoritative timelog value).
+         * @x-autobe-database-schema-property work_description
+         * @x-autobe-specification Persist work_description into
+         *   erp_hrm_time_tracking_timelog_snapshots.work_description. Validate
+         *   it matches the referenced timelog’s note/description at snapshot
+         *   time (or override with authoritative timelog value).
      */
     work_description: string;
 
     /**
      * Workflow status of the timelog captured by this snapshot (e.g., draft/submitted/approved/rejected).
      *
-     * @x-autobe-database-schema-property workflow_status
-     * @x-autobe-specification Persist workflow_status into erp_hrm_time_tracking_timelog_snapshots.workflow_status. Validate it matches the referenced timelog’s workflow status at snapshot creation time (or override with authoritative timelog value).
+         * @x-autobe-database-schema-property workflow_status
+         * @x-autobe-specification Persist workflow_status into
+         *   erp_hrm_time_tracking_timelog_snapshots.workflow_status. Validate
+         *   it matches the referenced timelog’s workflow status at snapshot
+         *   creation time (or override with authoritative timelog value).
      */
     workflow_status: string;
   };
@@ -351,112 +438,143 @@ export namespace IErpHrmTimeTrackingTimelogSnapshot {
     /**
      * Filter snapshots by the specific timelog identifier the snapshot was taken from.
      *
-     * @x-autobe-database-schema-property erp_hrm_time_tracking_timelog_id
-     * @x-autobe-specification Apply equality filter on erp_hrm_time_tracking_timelog_snapshots.erp_hrm_time_tracking_timelog_id when provided.
+         * @x-autobe-database-schema-property erp_hrm_time_tracking_timelog_id
+         * @x-autobe-specification Apply equality filter on
+         *   erp_hrm_time_tracking_timelog_snapshots.erp_hrm_time_tracking_timelog_id
+         *   when provided.
      */
     erpHrmTimeTrackingTimelogId?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Filter snapshots by the employee (member) identifier the timelog belongs to at snapshot time.
      *
-     * @x-autobe-database-schema-property employee_id
-     * @x-autobe-specification Apply equality filter on erp_hrm_time_tracking_timelog_snapshots.employee_id when provided. Results are still scoped to organization_id from caller context.
+         * @x-autobe-database-schema-property employee_id
+         * @x-autobe-specification Apply equality filter on
+         *   erp_hrm_time_tracking_timelog_snapshots.employee_id when provided.
+         *   Results are still scoped to organization_id from caller context.
      */
     employeeId?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Filter snapshots by the project identifier the timelog was recorded for at snapshot time.
      *
-     * @x-autobe-database-schema-property project_id
-     * @x-autobe-specification Apply equality filter on erp_hrm_time_tracking_timelog_snapshots.project_id when provided. Results are still scoped to organization_id from caller context.
+         * @x-autobe-database-schema-property project_id
+         * @x-autobe-specification Apply equality filter on
+         *   erp_hrm_time_tracking_timelog_snapshots.project_id when provided.
+         *   Results are still scoped to organization_id from caller context.
      */
     projectId?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Filter snapshots by whether the timelog was associated with a specific task. Supports explicit null to match snapshots with no task attribution.
      *
-     * @x-autobe-database-schema-property task_id
-     * @x-autobe-specification Nullable filter semantics: if taskId is provided as null, use task_id IS NULL; if non-null, use task_id = value. Apply only when the request property is present.
+         * @x-autobe-database-schema-property task_id
+         * @x-autobe-specification Nullable filter semantics: if taskId is
+         *   provided as null, use task_id IS NULL; if non-null, use task_id =
+         *   value. Apply only when the request property is present.
      */
     taskId?: (string & tags.Format<"uuid">) | null | undefined;
 
     /**
      * Filter snapshots by the timesheet identifier the timelog was included in at snapshot time. Supports explicit null for snapshots not linked to a timesheet.
      *
-     * @x-autobe-database-schema-property timesheet_id
-     * @x-autobe-specification Nullable filter semantics: if timesheetId is provided as null, use timesheet_id IS NULL; if non-null, use timesheet_id = value. Apply only when the request property is present.
+         * @x-autobe-database-schema-property timesheet_id
+         * @x-autobe-specification Nullable filter semantics: if timesheetId is
+         *   provided as null, use timesheet_id IS NULL; if non-null, use
+         *   timesheet_id = value. Apply only when the request property is
+         *   present.
      */
     timesheetId?: (string & tags.Format<"uuid">) | null | undefined;
 
     /**
      * Filter snapshots by the timer session identifier that produced the timelog (if any). Supports explicit null to match snapshots without a source timer session.
      *
-     * @x-autobe-database-schema-property source_timer_session_id
-     * @x-autobe-specification Nullable filter semantics: if sourceTimerSessionId is provided as null, use source_timer_session_id IS NULL; if non-null, use source_timer_session_id = value. Apply only when the request property is present.
+         * @x-autobe-database-schema-property source_timer_session_id
+         * @x-autobe-specification Nullable filter semantics: if
+         *   sourceTimerSessionId is provided as null, use
+         *   source_timer_session_id IS NULL; if non-null, use
+         *   source_timer_session_id = value. Apply only when the request
+         *   property is present.
      */
     sourceTimerSessionId?: (string & tags.Format<"uuid">) | null | undefined;
 
     /**
      * Filter snapshots by the timelog workflow status recorded in the snapshot (e.g., draft/submitted/approved/rejected).
      *
-     * @x-autobe-database-schema-property workflow_status
-     * @x-autobe-specification Apply equality filter on erp_hrm_time_tracking_timelog_snapshots.workflow_status when provided.
+         * @x-autobe-database-schema-property workflow_status
+         * @x-autobe-specification Apply equality filter on
+         *   erp_hrm_time_tracking_timelog_snapshots.workflow_status when
+         *   provided.
      */
     workflowStatus?: string | undefined;
 
     /**
      * Return only snapshots created at or after this timestamp.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Apply condition erp_hrm_time_tracking_timelog_snapshots.created_at >= createdAtFrom when provided.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Apply condition
+         *   erp_hrm_time_tracking_timelog_snapshots.created_at >= createdAtFrom
+         *   when provided.
      */
     createdAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Return only snapshots created at or before this timestamp.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Apply condition erp_hrm_time_tracking_timelog_snapshots.created_at <= createdAtTo when provided.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Apply condition
+         *   erp_hrm_time_tracking_timelog_snapshots.created_at <= createdAtTo
+         *   when provided.
      */
     createdAtTo?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Return only snapshots whose recorded work interval start time is at or after this timestamp.
      *
-     * @x-autobe-database-schema-property started_at
-     * @x-autobe-specification Apply condition erp_hrm_time_tracking_timelog_snapshots.started_at >= startedAtFrom when provided.
+         * @x-autobe-database-schema-property started_at
+         * @x-autobe-specification Apply condition
+         *   erp_hrm_time_tracking_timelog_snapshots.started_at >= startedAtFrom
+         *   when provided.
      */
     startedAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Return only snapshots whose recorded work interval start time is at or before this timestamp.
      *
-     * @x-autobe-database-schema-property started_at
-     * @x-autobe-specification Apply condition erp_hrm_time_tracking_timelog_snapshots.started_at <= startedAtTo when provided.
+         * @x-autobe-database-schema-property started_at
+         * @x-autobe-specification Apply condition
+         *   erp_hrm_time_tracking_timelog_snapshots.started_at <= startedAtTo
+         *   when provided.
      */
     startedAtTo?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Return only snapshots whose recorded work interval end time is at or after this timestamp.
      *
-     * @x-autobe-database-schema-property ended_at
-     * @x-autobe-specification Apply condition erp_hrm_time_tracking_timelog_snapshots.ended_at >= endedAtFrom when provided.
+         * @x-autobe-database-schema-property ended_at
+         * @x-autobe-specification Apply condition
+         *   erp_hrm_time_tracking_timelog_snapshots.ended_at >= endedAtFrom
+         *   when provided.
      */
     endedAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Return only snapshots whose recorded work interval end time is at or before this timestamp.
      *
-     * @x-autobe-database-schema-property ended_at
-     * @x-autobe-specification Apply condition erp_hrm_time_tracking_timelog_snapshots.ended_at <= endedAtTo when provided.
+         * @x-autobe-database-schema-property ended_at
+         * @x-autobe-specification Apply condition
+         *   erp_hrm_time_tracking_timelog_snapshots.ended_at <= endedAtTo when
+         *   provided.
      */
     endedAtTo?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Return only snapshots with a duration (in minutes) greater than or equal to this value.
      *
-     * @x-autobe-database-schema-property duration_minutes
-     * @x-autobe-specification Apply condition erp_hrm_time_tracking_timelog_snapshots.duration_minutes >= durationMinutesMin when provided.
+         * @x-autobe-database-schema-property duration_minutes
+         * @x-autobe-specification Apply condition
+         *   erp_hrm_time_tracking_timelog_snapshots.duration_minutes >=
+         *   durationMinutesMin when provided.
      */
     durationMinutesMin?:
       | (number & tags.Type<"int32"> & tags.Minimum<0>)
@@ -465,8 +583,10 @@ export namespace IErpHrmTimeTrackingTimelogSnapshot {
     /**
      * Return only snapshots with a duration (in minutes) less than or equal to this value.
      *
-     * @x-autobe-database-schema-property duration_minutes
-     * @x-autobe-specification Apply condition erp_hrm_time_tracking_timelog_snapshots.duration_minutes <= durationMinutesMax when provided.
+         * @x-autobe-database-schema-property duration_minutes
+         * @x-autobe-specification Apply condition
+         *   erp_hrm_time_tracking_timelog_snapshots.duration_minutes <=
+         *   durationMinutesMax when provided.
      */
     durationMinutesMax?:
       | (number & tags.Type<"int32"> & tags.Minimum<0>)
@@ -475,22 +595,30 @@ export namespace IErpHrmTimeTrackingTimelogSnapshot {
     /**
      * Filter snapshots by matching the provided keyword inside the snapshot work description/notes.
      *
-     * @x-autobe-database-schema-property work_description
-     * @x-autobe-specification Apply keyword search against erp_hrm_time_tracking_timelog_snapshots.work_description. Prefer trigram/text search if supported; otherwise use LIKE/ILIKE with wildcarding. Apply only when provided.
+         * @x-autobe-database-schema-property work_description
+         * @x-autobe-specification Apply keyword search against
+         *   erp_hrm_time_tracking_timelog_snapshots.work_description. Prefer
+         *   trigram/text search if supported; otherwise use LIKE/ILIKE with
+         *   wildcarding. Apply only when provided.
      */
     workDescriptionKeyword?: string | undefined;
 
     /**
      * 1-indexed page number to return for the paginated snapshot results.
      *
-     * @x-autobe-specification Use as the 1-indexed page number for pagination. Translate to offset via offset = (page - 1) * limit. Apply stable ordering (typically created_at DESC and id DESC) to keep pagination consistent.
+         * @x-autobe-specification Use as the 1-indexed page number for
+         *   pagination. Translate to offset via offset = (page - 1) * limit.
+         *   Apply stable ordering (typically created_at DESC and id DESC) to
+         *   keep pagination consistent.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of snapshot records to return in a single page.
      *
-     * @x-autobe-specification Use as the maximum number of records to return in the current page (page size). Apply together with page and stable ordering for consistent pagination.
+         * @x-autobe-specification Use as the maximum number of records to
+         *   return in the current page (page size). Apply together with page
+         *   and stable ordering for consistent pagination.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)

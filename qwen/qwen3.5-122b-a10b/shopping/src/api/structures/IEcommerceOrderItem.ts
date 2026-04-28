@@ -28,50 +28,54 @@ import { IEcommerceSeller } from "./IEcommerceSeller";
  */
 export type IEcommerceOrderItem = {
   /**
-   * @x-autobe-database-schema-property id
+     * @x-autobe-database-schema-property id
    */
   id: string & tags.Format<"uuid">;
   /**
-   * @x-autobe-database-schema-property quantity
+     * @x-autobe-database-schema-property quantity
    */
   quantity: number & tags.Type<"int32"> & tags.Minimum<1>;
   /**
-   * @x-autobe-database-schema-property unit_price
+     * @x-autobe-database-schema-property unit_price
    */
   unit_price: number;
   /**
-   * @x-autobe-database-schema-property status
+     * @x-autobe-database-schema-property status
    */
   status: string;
   /**
-   * @x-autobe-database-schema-property created_at
+     * @x-autobe-database-schema-property created_at
    */
   created_at: string & tags.Format<"date-time">;
   /**
-   * @x-autobe-database-schema-property updated_at
+     * @x-autobe-database-schema-property updated_at
    */
   updated_at: string & tags.Format<"date-time">;
   /**
-   * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-database-schema-property deleted_at
    */
   deleted_at?: (string & tags.Format<"date-time">) | null | undefined;
   /**
-   * @x-autobe-database-schema-property order
+     * @x-autobe-database-schema-property order
    */
   order: IEcommerceOrder.ISummary;
   /**
-   * @x-autobe-database-schema-property productVariant
+     * @x-autobe-database-schema-property productVariant
    */
   productVariant: IEcommerceProductVariant.ISummary;
   /**
-   * @x-autobe-database-schema-property seller
+     * @x-autobe-database-schema-property seller
    */
   seller: IEcommerceSeller.ISummary;
 
   /**
    * Historical snapshot preserving product and seller state at purchase time. This immutable record captures the exact state of the product and seller when the order was placed, enabling dispute resolution even after source data changes.
    *
-   * @x-autobe-specification Join from ecommerce_order_items.id to ecommerce_order_item_snapshots.ecommerce_order_item_id. Returns IEcommerceOrderItemSnapshot with product_name, product_description, seller_shop_name, seller_logo_url, base_price, created_at at purchase time.
+     * @x-autobe-specification Join from ecommerce_order_items.id to
+     *   ecommerce_order_item_snapshots.ecommerce_order_item_id. Returns
+     *   IEcommerceOrderItemSnapshot with product_name, product_description,
+     *   seller_shop_name, seller_logo_url, base_price, created_at at purchase
+     *   time.
    */
   snapshot: IEcommerceOrderItemSnapshot;
 };
@@ -113,8 +117,10 @@ export namespace IEcommerceOrderItem {
      *
      * If omitted, all statuses are included in the result set.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from ecommerce_order_items.status. Filters by fulfillment status enum: paid, shipped, delivered, cancelled, refunded.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_order_items.status. Filters by fulfillment status enum:
+         *   paid, shipped, delivered, cancelled, refunded.
      */
     status?: string | undefined;
 
@@ -131,7 +137,9 @@ export namespace IEcommerceOrderItem {
      *
      * Useful for sellers browsing their own order items or administrators filtering by specific seller.
      *
-     * @x-autobe-specification Filters order items by ecommerce_seller_id foreign key. Not a direct column mapping - transforms seller UUID to filter condition WHERE ecommerce_seller_id = {sellerId}.
+         * @x-autobe-specification Filters order items by ecommerce_seller_id
+         *   foreign key. Not a direct column mapping - transforms seller UUID
+         *   to filter condition WHERE ecommerce_seller_id = {sellerId}.
      */
     sellerId?: (string & tags.Format<"uuid">) | undefined;
 
@@ -148,7 +156,9 @@ export namespace IEcommerceOrderItem {
      *
      * Combine with dateTo to retrieve order items within a specific date range.
      *
-     * @x-autobe-specification Filters order items by created_at column. Not a direct column mapping - transforms to WHERE created_at >= {dateFrom} condition.
+         * @x-autobe-specification Filters order items by created_at column. Not
+         *   a direct column mapping - transforms to WHERE created_at >=
+         *   {dateFrom} condition.
      */
     dateFrom?: (string & tags.Format<"date-time">) | undefined;
 
@@ -165,7 +175,9 @@ export namespace IEcommerceOrderItem {
      *
      * Combine with dateFrom to retrieve order items within a specific date range.
      *
-     * @x-autobe-specification Filters order items by created_at column. Not a direct column mapping - transforms to WHERE created_at <= {dateTo} condition.
+         * @x-autobe-specification Filters order items by created_at column. Not
+         *   a direct column mapping - transforms to WHERE created_at <=
+         *   {dateTo} condition.
      */
     dateTo?: (string & tags.Format<"date-time">) | undefined;
 
@@ -185,7 +197,9 @@ export namespace IEcommerceOrderItem {
      *
      * If omitted, defaults to `created_at`.
      *
-     * @x-autobe-specification Query parameter for sorting order items. Not a database column - controls ORDER BY clause. Allowed values: status, quantity, unit_price, created_at.
+         * @x-autobe-specification Query parameter for sorting order items. Not
+         *   a database column - controls ORDER BY clause. Allowed values:
+         *   status, quantity, unit_price, created_at.
      */
     sortBy?: string | undefined;
 
@@ -203,7 +217,9 @@ export namespace IEcommerceOrderItem {
      *
      * If omitted, defaults to `desc`.
      *
-     * @x-autobe-specification Query parameter for sort direction. Not a database column - controls ORDER BY ASC/DESC. Allowed values: asc, desc.
+         * @x-autobe-specification Query parameter for sort direction. Not a
+         *   database column - controls ORDER BY ASC/DESC. Allowed values: asc,
+         *   desc.
      */
     sortOrder?: string | undefined;
 
@@ -228,7 +244,10 @@ export namespace IEcommerceOrderItem {
      * 2. Subsequent requests: use cursor from previous response → returns next page
      * 3. Continue until empty data array returned
      *
-     * @x-autobe-specification Cursor-based pagination parameter. Not a database column - encodes (created_at, id) composite cursor for deterministic pagination. Decoded server-side to WHERE (created_at, id) > (cursor_created_at, cursor_id).
+         * @x-autobe-specification Cursor-based pagination parameter. Not a
+         *   database column - encodes (created_at, id) composite cursor for
+         *   deterministic pagination. Decoded server-side to WHERE (created_at,
+         *   id) > (cursor_created_at, cursor_id).
      */
     cursor?: string | undefined;
 
@@ -247,7 +266,9 @@ export namespace IEcommerceOrderItem {
      *
      * Use to control response size and pagination granularity. Larger values return more data per request but increase payload size.
      *
-     * @x-autobe-specification Pagination page size parameter. Not a database column - controls LIMIT clause. Integer between 1 and 100, default 20.
+         * @x-autobe-specification Pagination page size parameter. Not a
+         *   database column - controls LIMIT clause. Integer between 1 and 100,
+         *   default 20.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -267,7 +288,9 @@ export namespace IEcommerceOrderItem {
      *
      * Alternative to cursor-based pagination. Use cursor for large datasets, page for simpler navigation.
      *
-     * @x-autobe-specification 1-indexed page number parameter. Not a database column - alternative to cursor pagination. Defaults to 1 if null or omitted.
+         * @x-autobe-specification 1-indexed page number parameter. Not a
+         *   database column - alternative to cursor pagination. Defaults to 1
+         *   if null or omitted.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };
@@ -302,8 +325,9 @@ export namespace IEcommerceOrderItem {
      * - Used in shipment item junction table
      * - Primary key for order item snapshot records
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_order_items.id. UUID format. Primary key uniquely identifying this order item.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from ecommerce_order_items.id.
+         *   UUID format. Primary key uniquely identifying this order item.
      */
     id: string & tags.Format<"uuid">;
 
@@ -322,8 +346,10 @@ export namespace IEcommerceOrderItem {
      * - Inventory deduction from product variant stock
      * - Refund calculation for partial or full item refunds
      *
-     * @x-autobe-database-schema-property quantity
-     * @x-autobe-specification Direct mapping from ecommerce_order_items.quantity. Integer type with minimum value of 1. Captures the number of units purchased at order time.
+         * @x-autobe-database-schema-property quantity
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_order_items.quantity. Integer type with minimum value of
+         *   1. Captures the number of units purchased at order time.
      */
     quantity: number & tags.Type<"int32"> & tags.Minimum<1>;
 
@@ -342,8 +368,11 @@ export namespace IEcommerceOrderItem {
      * - Platform currency (no currency conversion in this field)
      * - Should be formatted with 2 decimal places for display
      *
-     * @x-autobe-database-schema-property unit_price
-     * @x-autobe-specification Direct mapping from ecommerce_order_items.unit_price. Double precision float representing currency value. Captures the price per unit at the exact moment of purchase.
+         * @x-autobe-database-schema-property unit_price
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_order_items.unit_price. Double precision float
+         *   representing currency value. Captures the price per unit at the
+         *   exact moment of purchase.
      */
     unit_price: number;
 
@@ -367,8 +396,11 @@ export namespace IEcommerceOrderItem {
      * **Order Status Derivation**
      * The parent order's status is computed from all its items' statuses (all paid → paid, any shipped → shipped, all delivered → delivered, etc.).
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from ecommerce_order_items.status. String enum with values: paid, shipped, delivered, cancelled, refunded. Current fulfillment status of this order item.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_order_items.status. String enum with values: paid,
+         *   shipped, delivered, cancelled, refunded. Current fulfillment status
+         *   of this order item.
      */
     status: string;
 
@@ -388,8 +420,11 @@ export namespace IEcommerceOrderItem {
      * - Navigate to full order details
      * - Verify order ownership and permissions
      *
-     * @x-autobe-database-schema-property order
-     * @x-autobe-specification Relation mapping from ecommerce_order_items.ecommerce_order_id to ecommerce_orders via JOIN. Returns IEcommerceOrder.ISummary. FK-to-object transformation for cleaner API response.
+         * @x-autobe-database-schema-property order
+         * @x-autobe-specification Relation mapping from
+         *   ecommerce_order_items.ecommerce_order_id to ecommerce_orders via
+         *   JOIN. Returns IEcommerceOrder.ISummary. FK-to-object transformation
+         *   for cleaner API response.
      */
     order: IEcommerceOrder.ISummary;
 
@@ -410,8 +445,12 @@ export namespace IEcommerceOrderItem {
      * - Navigate to product detail page
      * - Verify variant availability for replacements
      *
-     * @x-autobe-database-schema-property productVariant
-     * @x-autobe-specification Relation mapping from ecommerce_order_items.ecommerce_product_variant_id to ecommerce_product_variants via JOIN. Returns IEcommerceProductVariant.ISummary. FK-to-object transformation for cleaner API response.
+         * @x-autobe-database-schema-property productVariant
+         * @x-autobe-specification Relation mapping from
+         *   ecommerce_order_items.ecommerce_product_variant_id to
+         *   ecommerce_product_variants via JOIN. Returns
+         *   IEcommerceProductVariant.ISummary. FK-to-object transformation for
+         *   cleaner API response.
      */
     productVariant: IEcommerceProductVariant.ISummary;
 
@@ -432,8 +471,11 @@ export namespace IEcommerceOrderItem {
      * - Verify seller permissions for cancellation/refund requests
      * - Contact seller for order-related inquiries
      *
-     * @x-autobe-database-schema-property seller
-     * @x-autobe-specification Relation mapping from ecommerce_order_items.ecommerce_seller_id to ecommerce_sellers via JOIN. Returns IEcommerceSeller.ISummary. FK-to-object transformation for cleaner API response.
+         * @x-autobe-database-schema-property seller
+         * @x-autobe-specification Relation mapping from
+         *   ecommerce_order_items.ecommerce_seller_id to ecommerce_sellers via
+         *   JOIN. Returns IEcommerceSeller.ISummary. FK-to-object
+         *   transformation for cleaner API response.
      */
     seller: IEcommerceSeller.ISummary;
 
@@ -453,8 +495,11 @@ export namespace IEcommerceOrderItem {
      * **Immutability**
      * This field cannot be modified after creation and serves as a permanent record of when the order was placed.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from ecommerce_order_items.created_at. DateTime with timestamptz format. Automatically set when order is placed and order item record is created.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_order_items.created_at. DateTime with timestamptz format.
+         *   Automatically set when order is placed and order item record is
+         *   created.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -475,8 +520,11 @@ export namespace IEcommerceOrderItem {
      * - Status changes (paid → shipped → delivered)
      * - Administrative status modifications (force-cancel, force-refund)
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from ecommerce_order_items.updated_at. DateTime with timestamptz format. Automatically updated whenever any order item field changes (primarily status updates).
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_order_items.updated_at. DateTime with timestamptz format.
+         *   Automatically updated whenever any order item field changes
+         *   (primarily status updates).
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -500,8 +548,11 @@ export namespace IEcommerceOrderItem {
      * **Security**
      * Soft-deleted order items are still accessible via administrative endpoints for audit and compliance purposes.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from ecommerce_order_items.deleted_at. Nullable DateTime with timestamptz format. Null indicates active record, non-null indicates soft-deleted. Used for audit trail preservation.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_order_items.deleted_at. Nullable DateTime with
+         *   timestamptz format. Null indicates active record, non-null
+         *   indicates soft-deleted. Used for audit trail preservation.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };
@@ -529,7 +580,11 @@ export namespace IEcommerceOrderItem {
      *
      * This field is optional and can be omitted if no reason needs to be recorded. When provided, it should be a concise explanation of the business justification for the force-cancel action.
      *
-     * @x-autobe-specification Optional string field recorded in audit trail when force-cancelling order item. The reason is stored in inventory records created during the cancellation process with reason type 'cancellation'. Not mapped to a specific database column - used for administrative audit purposes.
+         * @x-autobe-specification Optional string field recorded in audit trail
+         *   when force-cancelling order item. The reason is stored in inventory
+         *   records created during the cancellation process with reason type
+         *   'cancellation'. Not mapped to a specific database column - used for
+         *   administrative audit purposes.
      */
     reason?: string | undefined;
   };

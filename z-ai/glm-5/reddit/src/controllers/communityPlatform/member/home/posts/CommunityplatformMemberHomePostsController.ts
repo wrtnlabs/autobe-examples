@@ -29,9 +29,9 @@ export class CommunityplatformMemberHomePostsController {
    *
    * @param connection
    * @param body Search criteria including sorting option, time filter for top sorting, and pagination parameters
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation steps:
    *
    * 1. **Authentication Check**: Verify the request comes from an authenticated member. Return 401 Unauthorized if not authenticated.
    *

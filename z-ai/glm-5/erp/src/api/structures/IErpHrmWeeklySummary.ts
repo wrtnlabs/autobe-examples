@@ -38,35 +38,52 @@ export namespace IErpHrmWeeklySummary {
     /**
      * Start date for the report period (inclusive). Only weeks containing dates from this point forward are included in the summary.
      *
-     * @x-autobe-specification Date range filter parameter applied to erp_hrm_timelogs.start_at column. Used in WHERE clause: start_at >= :from. Combined with 'to' parameter to define the report period. Week boundaries are calculated from this date - the earliest week included starts on the Monday of the week containing this date.
+         * @x-autobe-specification Date range filter parameter applied to
+         *   erp_hrm_timelogs.start_at column. Used in WHERE clause: start_at >=
+         *   :from. Combined with 'to' parameter to define the report period.
+         *   Week boundaries are calculated from this date - the earliest week
+         *   included starts on the Monday of the week containing this date.
      */
     from?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * End date for the report period (inclusive). Only weeks containing dates up to this point are included in the summary.
      *
-     * @x-autobe-specification Date range filter parameter applied to erp_hrm_timelogs.start_at column. Used in WHERE clause: start_at <= :to. Combined with 'from' parameter to define the report period. Week boundaries are calculated from this date - the latest week included ends on the Sunday of the week containing this date.
+         * @x-autobe-specification Date range filter parameter applied to
+         *   erp_hrm_timelogs.start_at column. Used in WHERE clause: start_at <=
+         *   :to. Combined with 'from' parameter to define the report period.
+         *   Week boundaries are calculated from this date - the latest week
+         *   included ends on the Sunday of the week containing this date.
      */
     to?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Filter results to a specific project. When provided, only time entries for this project are included in the weekly aggregations.
      *
-     * @x-autobe-specification Optional project filter. When provided, filters erp_hrm_timelogs by project_id foreign key column: WHERE timelogs.project_id = :project_id. Must reference an existing project within the organization context. When null, aggregates all timelogs across all projects for the organization.
+         * @x-autobe-specification Optional project filter. When provided,
+         *   filters erp_hrm_timelogs by project_id foreign key column: WHERE
+         *   timelogs.project_id = :project_id. Must reference an existing
+         *   project within the organization context. When null, aggregates all
+         *   timelogs across all projects for the organization.
      */
     project_id?: (string & tags.Format<"uuid">) | null | undefined;
 
     /**
      * Page number for paginated results. Use with limit to navigate through large date ranges.
      *
-     * @x-autobe-specification Pagination offset parameter. Calculates OFFSET as (page - 1) * limit. Default value: 1. Used in pagination clause: OFFSET :offset LIMIT :limit. Must be >= 1.
+         * @x-autobe-specification Pagination offset parameter. Calculates
+         *   OFFSET as (page - 1) * limit. Default value: 1. Used in pagination
+         *   clause: OFFSET :offset LIMIT :limit. Must be >= 1.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of weeks to return per page. Use with page to paginate through results.
      *
-     * @x-autobe-specification Pagination size parameter. Controls maximum number of weekly summary records returned per page. Used in LIMIT clause. Default: 20. Maximum: 100. Applied as LIMIT :limit in SQL query. Lower values improve response time for large date ranges.
+         * @x-autobe-specification Pagination size parameter. Controls maximum
+         *   number of weekly summary records returned per page. Used in LIMIT
+         *   clause. Default: 20. Maximum: 100. Applied as LIMIT :limit in SQL
+         *   query. Lower values improve response time for large date ranges.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)

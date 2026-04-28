@@ -27,7 +27,8 @@ import { IPageIEcommerceMallProduct } from "../../../../structures/IPageIEcommer
  * @param props.body Search and filtering criteria for product listing within the category. Includes name search, price range filtering, sorting options, and pagination parameters.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query ecommerce_mall_products table where category_id matches the path parameter and deleted_at is NULL.
+ * @x-autobe-specification Query ecommerce_mall_products table where category_id
+ *   matches the path parameter and deleted_at is NULL.
  *
  * **Database Query**:
  * - SELECT products with category_id = {categoryId} AND deleted_at IS NULL

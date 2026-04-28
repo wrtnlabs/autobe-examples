@@ -30,7 +30,9 @@ import { IRedditLikePopularFeed } from "../../../../structures/IRedditLikePopula
  * @param props.body Search criteria including pagination cursor, page limit, sorting algorithm selection, and optional time filter for top sorting.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query reddit_like_posts table joining with reddit_like_communities and reddit_like_members for author and community information.
+ * @x-autobe-specification Query reddit_like_posts table joining with
+ *   reddit_like_communities and reddit_like_members for author and community
+ *   information.
  *
  * Filter out soft-deleted posts where deleted_at IS NULL.
  *

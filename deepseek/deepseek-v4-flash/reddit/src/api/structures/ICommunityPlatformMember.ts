@@ -19,8 +19,9 @@ export type ICommunityPlatformMember = {
    *
    * This UUID is the system-assigned primary key used to reference the member across all platform operations. It is unique for every registered member and never changes after account creation.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from community_platform_members.id (UUID primary key).
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from community_platform_members.id
+     *   (UUID primary key).
    */
   id: string & tags.Format<"uuid">;
 
@@ -29,8 +30,10 @@ export type ICommunityPlatformMember = {
    *
    * Must be unique across all members. The system validates email format during registration and requires email verification via a verification token before the account is fully active. This value cannot be changed after registration.
    *
-   * @x-autobe-database-schema-property email
-   * @x-autobe-specification Direct mapping from community_platform_members.email. Unique constraint enforced at database level.
+     * @x-autobe-database-schema-property email
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_members.email. Unique constraint enforced at
+     *   database level.
    */
   email: string;
 
@@ -39,8 +42,10 @@ export type ICommunityPlatformMember = {
    *
    * Chosen during registration and displayed alongside posts, comments, and profiles. Must be unique across all members. Cannot be changed after registration.
    *
-   * @x-autobe-database-schema-property username
-   * @x-autobe-specification Direct mapping from community_platform_members.username. Unique constraint enforced at database level.
+     * @x-autobe-database-schema-property username
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_members.username. Unique constraint enforced at
+     *   database level.
    */
   username: string;
 
@@ -49,7 +54,9 @@ export type ICommunityPlatformMember = {
    *
    * Contains the member's display name, optional biography text, optional avatar image URI, and cumulative karma score. Every member has exactly one profile, created automatically upon registration. The profile is included as a nested object in this response and provides the user's public-facing identity across the platform.
    *
-   * @x-autobe-specification 1:1 JOIN from community_platform_members.id to community_platform_profiles.member_id. Returns full ICommunityPlatformProfile object.
+     * @x-autobe-specification 1:1 JOIN from community_platform_members.id to
+     *   community_platform_profiles.member_id. Returns full
+     *   ICommunityPlatformProfile object.
    */
   profile: ICommunityPlatformProfile;
 
@@ -58,8 +65,9 @@ export type ICommunityPlatformMember = {
    *
    * Set automatically upon successful registration. Used for account lifecycle management and data retention calculations.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from community_platform_members.created_at (DateTime with timestamptz).
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_members.created_at (DateTime with timestamptz).
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -68,8 +76,9 @@ export type ICommunityPlatformMember = {
    *
    * Updated on any change to the member record such as a password change. Used for conflict detection and audit purposes.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from community_platform_members.updated_at (DateTime with timestamptz).
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_members.updated_at (DateTime with timestamptz).
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -78,8 +87,11 @@ export type ICommunityPlatformMember = {
    *
    * Null indicates an active account. When set, the account is considered deleted — the member cannot log in and their content is hidden. Data is retained for a recovery window per platform retention policy. For valid member lookups via this endpoint, this value will always be null because the query filters out soft-deleted records.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from community_platform_members.deleted_at (nullable DateTime with timestamptz). Always null in response for active accounts due to the WHERE deleted_at IS NULL filter.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_members.deleted_at (nullable DateTime with
+     *   timestamptz). Always null in response for active accounts due to the
+     *   WHERE deleted_at IS NULL filter.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -99,7 +111,11 @@ export namespace ICommunityPlatformMember {
      *
      * This token should be transmitted securely and stored safely on the client side (e.g., httpOnly cookie or secure local storage) for transparent session renewal without requiring the user to re-enter their credentials.
      *
-     * @x-autobe-specification The raw refresh token string is hashed via SHA-256 before lookup against community_platform_member_sessions.refresh_token_hash. No direct column mapping because the raw token is transformed before storage comparison.
+         * @x-autobe-specification The raw refresh token string is hashed via
+         *   SHA-256 before lookup against
+         *   community_platform_member_sessions.refresh_token_hash. No direct
+         *   column mapping because the raw token is transformed before storage
+         *   comparison.
      */
     refresh: string;
   };
@@ -119,8 +135,10 @@ export namespace ICommunityPlatformMember {
      *
      * On failure (email not found or password mismatch), a generic 'Invalid credentials' error is returned without revealing which specific field was incorrect.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from community_platform_members.email. Used to look up the member account. Must match an existing non-deleted member record.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_members.email. Used to look up the member
+         *   account. Must match an existing non-deleted member record.
      */
     email: string;
 
@@ -131,8 +149,10 @@ export namespace ICommunityPlatformMember {
      *
      * On failure (email not found or password mismatch), a generic 'Invalid credentials' error is returned without revealing which specific field was incorrect.
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification Password sent as plaintext over HTTPS. Backend compares against stored password_hash using bcrypt.compare(). Never store or log the plaintext password.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification Password sent as plaintext over HTTPS.
+         *   Backend compares against stored password_hash using
+         *   bcrypt.compare(). Never store or log the plaintext password.
      */
     password: string & tags.Format<"password">;
 
@@ -141,7 +161,9 @@ export namespace ICommunityPlatformMember {
      *
      * Used for session audit tracking. Records which page the member was on when they triggered the login action. This is stored in the session record upon successful authentication for security monitoring and audit purposes.
      *
-     * @x-autobe-specification Stored in community_platform_member_sessions.href upon successful login. Captured from client-side page URL for session audit tracking.
+         * @x-autobe-specification Stored in
+         *   community_platform_member_sessions.href upon successful login.
+         *   Captured from client-side page URL for session audit tracking.
      */
     href: string & tags.Format<"uri">;
 
@@ -150,7 +172,10 @@ export namespace ICommunityPlatformMember {
      *
      * Used for session audit tracking. Records the referring page or external source that led the member to the login page. This is stored in the session record upon successful authentication for security monitoring and audit purposes.
      *
-     * @x-autobe-specification Stored in community_platform_member_sessions.referrer upon successful login. Captured from HTTP Referrer header or client-provided value for session audit tracking.
+         * @x-autobe-specification Stored in
+         *   community_platform_member_sessions.referrer upon successful login.
+         *   Captured from HTTP Referrer header or client-provided value for
+         *   session audit tracking.
      */
     referrer: string & tags.Format<"uri">;
 
@@ -159,7 +184,10 @@ export namespace ICommunityPlatformMember {
      *
      * Optional field used for session audit and security monitoring. In SSR (Server Side Rendering) contexts, the client cannot determine its own IP address, so the server captures a fallback value. The stored IP address is logged in the session record upon successful authentication.
      *
-     * @x-autobe-specification Stored in community_platform_member_sessions.ip upon successful login. Optional field — in SSR, the client cannot know its own IP, so the server captures fallback value: body.ip ?? serverIp. Format: ipv4.
+         * @x-autobe-specification Stored in
+         *   community_platform_member_sessions.ip upon successful login.
+         *   Optional field — in SSR, the client cannot know its own IP, so the
+         *   server captures fallback value: body.ip ?? serverIp. Format: ipv4.
      */
     ip?: (string & tags.Format<"ipv4">) | null | undefined;
   };
@@ -177,7 +205,9 @@ export namespace ICommunityPlatformMember {
      *
      * When provided, filters the results to only include members whose email address OR username contains the search term as a substring. This is useful for quick lookups when the exact field is unknown.
      *
-     * @x-autobe-specification Applied as a WHERE clause: (email ILIKE '%search%' OR username ILIKE '%search%'). Case-insensitive partial match across both columns.
+         * @x-autobe-specification Applied as a WHERE clause: (email ILIKE
+         *   '%search%' OR username ILIKE '%search%'). Case-insensitive partial
+         *   match across both columns.
      */
     search?: string | undefined;
 
@@ -186,8 +216,10 @@ export namespace ICommunityPlatformMember {
      *
      * When both search and email are provided, they are combined with AND logic, further narrowing results.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Applied as a WHERE clause filter on the email column: email ILIKE '%value%'. Case-insensitive partial match. More specific than the search parameter — filters only the email column.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Applied as a WHERE clause filter on the email
+         *   column: email ILIKE '%value%'. Case-insensitive partial match. More
+         *   specific than the search parameter — filters only the email column.
      */
     email?: string | undefined;
 
@@ -196,8 +228,11 @@ export namespace ICommunityPlatformMember {
      *
      * When combined with other filters, narrows results to members whose username matches the given value.
      *
-     * @x-autobe-database-schema-property username
-     * @x-autobe-specification Applied as a WHERE clause filter on the username column: username ILIKE '%value%'. Case-insensitive partial match. More specific than the search parameter — filters only the username column.
+         * @x-autobe-database-schema-property username
+         * @x-autobe-specification Applied as a WHERE clause filter on the
+         *   username column: username ILIKE '%value%'. Case-insensitive partial
+         *   match. More specific than the search parameter — filters only the
+         *   username column.
      */
     username?: string | undefined;
 
@@ -206,7 +241,10 @@ export namespace ICommunityPlatformMember {
      *
      * Soft-deleted members are accounts that have been deactivated but are still retained in the database per the platform's data retention policy.
      *
-     * @x-autobe-specification When true, omits the default WHERE deleted_at IS NULL clause, allowing soft-deleted members to appear in results. When false/absent, adds WHERE deleted_at IS NULL to exclude deleted accounts.
+         * @x-autobe-specification When true, omits the default WHERE deleted_at
+         *   IS NULL clause, allowing soft-deleted members to appear in results.
+         *   When false/absent, adds WHERE deleted_at IS NULL to exclude deleted
+         *   accounts.
      */
     include_deleted?: boolean | undefined;
 
@@ -215,7 +253,9 @@ export namespace ICommunityPlatformMember {
      *
      * Must be an ISO 8601 date-time string. When used together with created_at_to, defines a date range for filtering members by registration date.
      *
-     * @x-autobe-specification Applied as: WHERE created_at >= :created_at_from. Inclusive lower bound filter on the created_at timestamp column. Combined with other filters via AND.
+         * @x-autobe-specification Applied as: WHERE created_at >=
+         *   :created_at_from. Inclusive lower bound filter on the created_at
+         *   timestamp column. Combined with other filters via AND.
      */
     created_at_from?: (string & tags.Format<"date-time">) | undefined;
 
@@ -224,7 +264,9 @@ export namespace ICommunityPlatformMember {
      *
      * Must be an ISO 8601 date-time string. When used together with created_at_from, defines a date range for filtering members by registration date.
      *
-     * @x-autobe-specification Applied as: WHERE created_at <= :created_at_to. Inclusive upper bound filter on the created_at timestamp column. Combined with other filters via AND.
+         * @x-autobe-specification Applied as: WHERE created_at <=
+         *   :created_at_to. Inclusive upper bound filter on the created_at
+         *   timestamp column. Combined with other filters via AND.
      */
     created_at_to?: (string & tags.Format<"date-time">) | undefined;
 
@@ -233,7 +275,8 @@ export namespace ICommunityPlatformMember {
      *
      * The first page is page 1. Used together with limit to control which slice of results is returned. Automatically bounded to the available page count.
      *
-     * @x-autobe-specification Computed into OFFSET = (page - 1) * limit. 1-indexed: page 1 returns rows 0 through limit-1. Must be >= 1.
+         * @x-autobe-specification Computed into OFFSET = (page - 1) * limit.
+         *   1-indexed: page 1 returns rows 0 through limit-1. Must be >= 1.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -242,7 +285,9 @@ export namespace ICommunityPlatformMember {
      *
      * Determines how many member records are returned in a single response page. The actual count may be less on the last page.
      *
-     * @x-autobe-specification Applied as LIMIT :limit in the SQL query. Maximum 100 items per page to prevent performance degradation. Defaults to platform standard if not provided.
+         * @x-autobe-specification Applied as LIMIT :limit in the SQL query.
+         *   Maximum 100 items per page to prevent performance degradation.
+         *   Defaults to platform standard if not provided.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -253,7 +298,10 @@ export namespace ICommunityPlatformMember {
      *
      * Controls which column is used for ordering the member list. Combined with the direction parameter to determine sort order.
      *
-     * @x-autobe-specification Maps to ORDER BY clause: 'username' → ORDER BY username, 'email' → ORDER BY email, 'created_at' → ORDER BY created_at. Default: 'created_at'. Invalid values should revert to default.
+         * @x-autobe-specification Maps to ORDER BY clause: 'username' → ORDER
+         *   BY username, 'email' → ORDER BY email, 'created_at' → ORDER BY
+         *   created_at. Default: 'created_at'. Invalid values should revert to
+         *   default.
      */
     sort?: string | undefined;
 
@@ -262,7 +310,9 @@ export namespace ICommunityPlatformMember {
      *
      * Determines whether results are ordered ascending (A-Z, earliest first) or descending (Z-A, newest first).
      *
-     * @x-autobe-specification Maps to ORDER BY direction: 'asc' → ASC, 'desc' → DESC. Applied after the sort column. Default: 'desc'. Invalid values should revert to default.
+         * @x-autobe-specification Maps to ORDER BY direction: 'asc' → ASC,
+         *   'desc' → DESC. Applied after the sort column. Default: 'desc'.
+         *   Invalid values should revert to default.
      */
     direction?: string | undefined;
   };
@@ -282,8 +332,11 @@ export namespace ICommunityPlatformMember {
      *
      * Used together with the password for authentication via the member login flow.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from community_platform_members.email. Unique constraint enforced server-side — duplicate email causes registration to fail with field-specific conflict error.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_members.email. Unique constraint enforced
+         *   server-side — duplicate email causes registration to fail with
+         *   field-specific conflict error.
      */
     email: string & tags.Format<"email">;
 
@@ -294,8 +347,11 @@ export namespace ICommunityPlatformMember {
      *
      * Cannot be changed after registration.
      *
-     * @x-autobe-database-schema-property username
-     * @x-autobe-specification Direct mapping from community_platform_members.username. Unique constraint enforced server-side — duplicate username causes registration to fail with field-specific conflict error.
+         * @x-autobe-database-schema-property username
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_members.username. Unique constraint enforced
+         *   server-side — duplicate username causes registration to fail with
+         *   field-specific conflict error.
      */
     username: string;
 
@@ -306,8 +362,11 @@ export namespace ICommunityPlatformMember {
      *
      * Used together with the email address for authentication via the member login flow.
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification Password input mapped to community_platform_members.password_hash via bcrypt one-way hashing before storage. Never stored in plaintext. Minimum length and complexity enforced server-side per business rules.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification Password input mapped to
+         *   community_platform_members.password_hash via bcrypt one-way hashing
+         *   before storage. Never stored in plaintext. Minimum length and
+         *   complexity enforced server-side per business rules.
      */
     password: string & tags.Format<"password">;
 
@@ -318,7 +377,10 @@ export namespace ICommunityPlatformMember {
      *
      * In SSR environments, this is typically extracted from the HTTP Referer header or the current page URI.
      *
-     * @x-autobe-specification Session context: captured from HTTP request headers (Referer or current page URI). Stored in community_platform_member_sessions.href during initial session creation. Not stored in community_platform_members.
+         * @x-autobe-specification Session context: captured from HTTP request
+         *   headers (Referer or current page URI). Stored in
+         *   community_platform_member_sessions.href during initial session
+         *   creation. Not stored in community_platform_members.
      */
     href: string & tags.Format<"uri">;
 
@@ -329,7 +391,10 @@ export namespace ICommunityPlatformMember {
      *
      * Distinct from the internal {@link href} which represents the current application page URI.
      *
-     * @x-autobe-specification Session context: captured from HTTP request headers. Stored in community_platform_member_sessions.referrer during initial session creation. Not stored in community_platform_members.
+         * @x-autobe-specification Session context: captured from HTTP request
+         *   headers. Stored in community_platform_member_sessions.referrer
+         *   during initial session creation. Not stored in
+         *   community_platform_members.
      */
     referrer: string & tags.Format<"uri">;
 
@@ -340,7 +405,11 @@ export namespace ICommunityPlatformMember {
      *
      * Optional field — if not provided, the server automatically captures the detected IP address.
      *
-     * @x-autobe-specification Session context: captured from request IP or headers. Stored in community_platform_member_sessions.ip during initial session creation. Optional — server falls back to detected IP (body.ip ?? detectedIp) in SSR environments. Not stored in community_platform_members.
+         * @x-autobe-specification Session context: captured from request IP or
+         *   headers. Stored in community_platform_member_sessions.ip during
+         *   initial session creation. Optional — server falls back to detected
+         *   IP (body.ip ?? detectedIp) in SSR environments. Not stored in
+         *   community_platform_members.
      */
     ip?: (string & tags.Format<"ipv4">) | undefined;
   };
@@ -356,8 +425,9 @@ export namespace ICommunityPlatformMember {
      *
      * Format is a UUID (v4) string assigned by the system upon registration. This identifier is used to reference the member across the platform, including profile pages, posts, comments, and moderation records.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from community_platform_members.id.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_members.id.
      */
     id: string & tags.Format<"uuid">;
 
@@ -366,8 +436,10 @@ export namespace ICommunityPlatformMember {
      *
      * This is the address used for login credentials and account communication. Must be unique across all members. Set during registration and cannot be changed afterward.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from community_platform_members.email. Unique constraint enforced at database level.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_members.email. Unique constraint enforced at
+         *   database level.
      */
     email: string & tags.Format<"email">;
 
@@ -376,8 +448,10 @@ export namespace ICommunityPlatformMember {
      *
      * Chosen during registration and displayed alongside posts, comments, and profile information. Must be unique across all members. Cannot be changed after registration.
      *
-     * @x-autobe-database-schema-property username
-     * @x-autobe-specification Direct mapping from community_platform_members.username. Unique constraint enforced at database level.
+         * @x-autobe-database-schema-property username
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_members.username. Unique constraint enforced at
+         *   database level.
      */
     username: string;
 
@@ -386,8 +460,9 @@ export namespace ICommunityPlatformMember {
      *
      * Set automatically upon successful registration. Displayed as a relative time (e.g., '3 hours ago') in list views for readability.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from community_platform_members.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_members.created_at.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -396,8 +471,10 @@ export namespace ICommunityPlatformMember {
      *
      * Null indicates an active account. When set, the account has been deleted and the member cannot log in. Data is retained for a recovery window per platform retention policy before permanent deletion.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from community_platform_members.deleted_at. Nullable — null indicates an active account.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_members.deleted_at. Nullable — null indicates an
+         *   active account.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };
@@ -415,7 +492,10 @@ export namespace ICommunityPlatformMember {
      *
      * Uniquely identifies a registered member in the community_platform_members table. This UUID is used as the member's stable identifier across all platform operations and is included in JWT claims for authenticated request routing.
      *
-     * @x-autobe-specification Queried from community_platform_members.id after successful authentication (join, login, or refresh). UUID primary key of the authenticated member, included as a claim in the JWT access token for request routing and identity resolution.
+         * @x-autobe-specification Queried from community_platform_members.id
+         *   after successful authentication (join, login, or refresh). UUID
+         *   primary key of the authenticated member, included as a claim in the
+         *   JWT access token for request routing and identity resolution.
      */
     id: string & tags.Format<"uuid">;
 
@@ -424,7 +504,10 @@ export namespace ICommunityPlatformMember {
      *
      * The email address associated with this member account. Must be unique across all members — enforced by a database unique constraint on community_platform_members.email. Set during registration and cannot be changed after account creation.
      *
-     * @x-autobe-specification Queried from community_platform_members.email after successful authentication. Has a unique constraint enforced at the database level — no two members can share the same email. Set during registration and immutable thereafter.
+         * @x-autobe-specification Queried from community_platform_members.email
+         *   after successful authentication. Has a unique constraint enforced
+         *   at the database level — no two members can share the same email.
+         *   Set during registration and immutable thereafter.
      */
     email: string;
 
@@ -433,7 +516,11 @@ export namespace ICommunityPlatformMember {
      *
      * Chosen during registration and displayed alongside posts, comments, and profiles. Must be unique across all members — enforced by a database unique constraint on community_platform_members.username. Set during registration and cannot be changed after account creation.
      *
-     * @x-autobe-specification Queried from community_platform_members.username after successful authentication. Has a unique constraint enforced at the database level — no two members can share the same username. Chosen during registration and immutable thereafter.
+         * @x-autobe-specification Queried from
+         *   community_platform_members.username after successful
+         *   authentication. Has a unique constraint enforced at the database
+         *   level — no two members can share the same username. Chosen during
+         *   registration and immutable thereafter.
      */
     username: string;
 
@@ -442,7 +529,13 @@ export namespace ICommunityPlatformMember {
      *
      * Each member has exactly one profile, created automatically upon registration. Contains the member's chosen display name, optional biography text, optional avatar image URI, cumulative karma score (net sum of upvotes minus downvotes received across all posts and comments), and timestamps. The profile serves as the member's public-facing identity within the platform.
      *
-     * @x-autobe-specification Joined from community_platform_profiles via the 1:1 belongs-to relation (community_platform_profiles.member_id references community_platform_members.id). Returns ICommunityPlatformProfile containing display_name, biography, avatar_uri, karma, created_at, updated_at, and a nested member summary. Filtered to exclude soft-deleted profiles (deleted_at IS NULL).
+         * @x-autobe-specification Joined from community_platform_profiles via
+         *   the 1:1 belongs-to relation (community_platform_profiles.member_id
+         *   references community_platform_members.id). Returns
+         *   ICommunityPlatformProfile containing display_name, biography,
+         *   avatar_uri, karma, created_at, updated_at, and a nested member
+         *   summary. Filtered to exclude soft-deleted profiles (deleted_at IS
+         *   NULL).
      */
     profile: ICommunityPlatformProfile;
 
@@ -451,7 +544,11 @@ export namespace ICommunityPlatformMember {
      *
      * Set automatically upon successful registration. Used for account lifecycle management and data retention calculations. Formatted as ISO 8601 date-time.
      *
-     * @x-autobe-specification Queried from community_platform_members.created_at after successful authentication. Set automatically upon record creation by the database default. Used for account lifecycle management and data retention calculations.
+         * @x-autobe-specification Queried from
+         *   community_platform_members.created_at after successful
+         *   authentication. Set automatically upon record creation by the
+         *   database default. Used for account lifecycle management and data
+         *   retention calculations.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -460,7 +557,11 @@ export namespace ICommunityPlatformMember {
      *
      * Updated on any change to the member record (e.g., password change). Used for conflict detection and audit purposes. Formatted as ISO 8601 date-time.
      *
-     * @x-autobe-specification Queried from community_platform_members.updated_at after successful authentication. Updated automatically on any change to the member record (e.g., password change). Used for optimistic concurrency and audit purposes.
+         * @x-autobe-specification Queried from
+         *   community_platform_members.updated_at after successful
+         *   authentication. Updated automatically on any change to the member
+         *   record (e.g., password change). Used for optimistic concurrency and
+         *   audit purposes.
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -469,14 +570,19 @@ export namespace ICommunityPlatformMember {
      *
      * Null indicates an active account. When set, the account is considered deleted — the member cannot log in and their content is hidden, but data is retained for a recovery window per platform retention policy. Formatted as ISO 8601 date-time.
      *
-     * @x-autobe-specification Queried from community_platform_members.deleted_at after successful authentication. Nullable — null indicates an active account, a timestamp indicates soft-deletion. Soft-deleted accounts cannot log in (login endpoint checks deleted_at IS NULL).
+         * @x-autobe-specification Queried from
+         *   community_platform_members.deleted_at after successful
+         *   authentication. Nullable — null indicates an active account, a
+         *   timestamp indicates soft-deletion. Soft-deleted accounts cannot log
+         *   in (login endpoint checks deleted_at IS NULL).
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
 
     /**
      * Authorization token.
      *
-     * @x-autobe-specification Authorization token comes from the session table.
+         * @x-autobe-specification Authorization token comes from the session
+         *   table.
      */
     token: IAuthorizationToken;
   };
@@ -492,8 +598,13 @@ export namespace ICommunityPlatformMember {
      *
      * Provide your current password to confirm you are the account owner. The password is verified against the stored hash using a secure comparison. This verification step prevents unauthorized password changes by requiring proof of knowledge of the current credential. If the password is incorrect, the request is rejected with a generic error message.
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification Hash the provided plaintext currentPassword using bcrypt (same algorithm used during registration) and compare against the stored password_hash in the community_platform_members record. If the hash does not match, reject with 400 Bad Request using a generic message ('Current password is incorrect') without revealing how close the attempt was.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification Hash the provided plaintext currentPassword
+         *   using bcrypt (same algorithm used during registration) and compare
+         *   against the stored password_hash in the community_platform_members
+         *   record. If the hash does not match, reject with 400 Bad Request
+         *   using a generic message ('Current password is incorrect') without
+         *   revealing how close the attempt was.
      */
     currentPassword: string & tags.Format<"password">;
 
@@ -502,8 +613,14 @@ export namespace ICommunityPlatformMember {
      *
      * Choose a strong password that satisfies the platform's security requirements. The new password is securely hashed using bcrypt before storage and takes effect immediately upon successful submission. Your current session remains active after the change.
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification Validate newPassword against minimum security requirements (minimum length, complexity). If invalid, reject with a detailed message listing unmet requirements. Hash the validated new password using bcrypt, then update the password_hash and updated_at fields on the community_platform_members record. Keep the member's current session active — do not invalidate existing sessions.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification Validate newPassword against minimum security
+         *   requirements (minimum length, complexity). If invalid, reject with
+         *   a detailed message listing unmet requirements. Hash the validated
+         *   new password using bcrypt, then update the password_hash and
+         *   updated_at fields on the community_platform_members record. Keep
+         *   the member's current session active — do not invalidate existing
+         *   sessions.
      */
     newPassword: string & tags.Format<"password">;
   };

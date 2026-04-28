@@ -18,16 +18,25 @@ export class EcommercemallAdministratorOrder_itemsForce_cancelController {
    *
    * @param connection
    * @param itemId UUID of the order item to force-cancel. Identifies a specific purchased product variant line item within a customer order.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification 1. Lookup the order item by {itemId} in e_commerce_mall_order_items. If not found, reject with 404 Not Found.
-   * 2. Verify the order item's current status. Force-cancel should only apply to items in non-terminal, non-cancelled states. If already 'cancelled' or 'refunded', reject with 409 Conflict explaining the item is already in a terminal state.
-   * 3. Begin a database transaction:
-   *    a. Update the order item's status to 'cancelled' in e_commerce_mall_order_items.
-   *    b. Insert a status log entry in e_commerce_mall_order_item_status_logs with: from_status = current status, to_status = 'cancelled', reason = 'administrator_force_cancel'.
-   *    c. Create an inventory record in e_commerce_mall_inventory_records on the associated product variant (e_commerce_mall_product_variant_id) with: quantity_change = +quantity (restoring the purchased quantity), reason = 'force-cancelled'.
-   *    d. Process the financial refund (external payment gateway integration or internal credit system — implementation dependent).
-   * 4. Commit the transaction. If any step fails, roll back all changes and reject with 500 Internal Server Error.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor administrator
+     * @x-autobe-specification 1. Lookup the order item by {itemId} in
+     *   e_commerce_mall_order_items. If not found, reject with 404 Not Found.
+     *   2. Verify the order item's current status. Force-cancel should only
+     *   apply to items in non-terminal, non-cancelled states. If already
+     *   'cancelled' or 'refunded', reject with 409 Conflict explaining the item
+     *   is already in a terminal state. 3. Begin a database transaction: a.
+     *   Update the order item's status to 'cancelled' in
+     *   e_commerce_mall_order_items. b. Insert a status log entry in
+     *   e_commerce_mall_order_item_status_logs with: from_status = current
+     *   status, to_status = 'cancelled', reason = 'administrator_force_cancel'.
+     *   c. Create an inventory record in e_commerce_mall_inventory_records on
+     *   the associated product variant (e_commerce_mall_product_variant_id)
+     *   with: quantity_change = +quantity (restoring the purchased quantity),
+     *   reason = 'force-cancelled'. d. Process the financial refund (external
+     *   payment gateway integration or internal credit system — implementation
+     *   dependent). 4. Commit the transaction. If any step fails, roll back all
+     *   changes and reject with 500 Internal Server Error.
    *
    * Edge cases:
    * - Item already cancelled/refunded: reject with 409 Conflict.

@@ -16,8 +16,9 @@ export type ICommunityPlatformMemberPasswordReset = {
    *
    * Used as the path parameter `resetId` when retrieving a specific reset record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from community_platform_member_password_resets.id (UUID primary key).
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_member_password_resets.id (UUID primary key).
    */
   id: string & tags.Format<"uuid">;
 
@@ -26,8 +27,11 @@ export type ICommunityPlatformMemberPasswordReset = {
    *
    * Each reset token is tied to exactly one member and can only be used to reset that member's password. Exposed as a summary object containing the member's identifier, email, username, registration timestamp, and deletion status.
    *
-   * @x-autobe-database-schema-property member
-   * @x-autobe-specification BELONGS-TO relation: JOIN community_platform_member_password_resets.community_platform_member_id ON community_platform_members.id. Returns ICommunityPlatformMember.ISummary.
+     * @x-autobe-database-schema-property member
+     * @x-autobe-specification BELONGS-TO relation: JOIN
+     *   community_platform_member_password_resets.community_platform_member_id
+     *   ON community_platform_members.id. Returns
+     *   ICommunityPlatformMember.ISummary.
    */
   member: ICommunityPlatformMember.ISummary;
 
@@ -36,8 +40,10 @@ export type ICommunityPlatformMemberPasswordReset = {
    *
    * Stored as a secure hash and used to verify the reset link presented by the user. This value is not exposed in plaintext; the frontend validates the token through the reset record lookup.
    *
-   * @x-autobe-database-schema-property token
-   * @x-autobe-specification Direct mapping from community_platform_member_password_resets.token. Unique constraint enforced at DB level.
+     * @x-autobe-database-schema-property token
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_member_password_resets.token. Unique constraint
+     *   enforced at DB level.
    */
   token: string;
 
@@ -46,8 +52,10 @@ export type ICommunityPlatformMemberPasswordReset = {
    *
    * A null value indicates the token has not been consumed. Once set, the token is considered spent and cannot be reused even if the token has not yet expired.
    *
-   * @x-autobe-database-schema-property used_at
-   * @x-autobe-specification Direct mapping from community_platform_member_password_resets.used_at. Null when the token has not been consumed yet.
+     * @x-autobe-database-schema-property used_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_member_password_resets.used_at. Null when the token
+     *   has not been consumed yet.
    */
   used_at: (string & tags.Format<"date-time">) | null;
 
@@ -56,8 +64,10 @@ export type ICommunityPlatformMemberPasswordReset = {
    *
    * Tokens have a finite lifespan (typically 15–60 minutes) as a security measure. If the current time is past this timestamp, the token has expired and cannot be used for password reset even if `used_at` is still null.
    *
-   * @x-autobe-database-schema-property expired_at
-   * @x-autobe-specification Direct mapping from community_platform_member_password_resets.expired_at. Always required — tokens have a finite lifespan.
+     * @x-autobe-database-schema-property expired_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_member_password_resets.expired_at. Always required —
+     *   tokens have a finite lifespan.
    */
   expired_at: string & tags.Format<"date-time">;
 
@@ -66,8 +76,9 @@ export type ICommunityPlatformMemberPasswordReset = {
    *
    * Set automatically on token generation. Useful for determining which token is the most recent for a given member during audit and lifecycle management.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from community_platform_member_password_resets.created_at.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_member_password_resets.created_at.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -76,8 +87,10 @@ export type ICommunityPlatformMemberPasswordReset = {
    *
    * Updated automatically when `used_at` transitions from null to a non-null value (token consumption). Otherwise remains equal to `created_at`.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from community_platform_member_password_resets.updated_at. Updated when used_at transitions from null to a non-null value.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_member_password_resets.updated_at. Updated when
+     *   used_at transitions from null to a non-null value.
    */
   updated_at: string & tags.Format<"date-time">;
 };
@@ -97,7 +110,12 @@ export namespace ICommunityPlatformMemberPasswordReset {
      *
      * Provide a member UUID to narrow results to only those password reset tokens belonging to that specific member account. When omitted, records across all members are returned regardless of which member the token belongs to.
      *
-     * @x-autobe-specification Filters the community_platform_member_id FK column in the community_platform_member_password_resets table: WHERE community_platform_member_id = ? (UUID exact match on the FK column referencing the member account). When omitted, no member-level filter is applied and records for all members are returned.
+         * @x-autobe-specification Filters the community_platform_member_id FK
+         *   column in the community_platform_member_password_resets table:
+         *   WHERE community_platform_member_id = ? (UUID exact match on the FK
+         *   column referencing the member account). When omitted, no
+         *   member-level filter is applied and records for all members are
+         *   returned.
      */
     memberId?: (string & tags.Format<"uuid">) | undefined;
 
@@ -106,7 +124,12 @@ export namespace ICommunityPlatformMemberPasswordReset {
      *
      * Set to `true` to only include tokens that have been successfully used to reset a password. Set to `false` to only include pending tokens that remain unused (and still valid if not yet expired). When omitted, both consumed and pending tokens are included in the results.
      *
-     * @x-autobe-specification Computed boolean filter applied to the used_at column: WHEN true → WHERE used_at IS NOT NULL (tokens that have been consumed to reset a password); WHEN false → WHERE used_at IS NULL (pending tokens still available for use, provided not expired). Omit parameter to include both consumed and pending tokens without any filter on the used_at column.
+         * @x-autobe-specification Computed boolean filter applied to the
+         *   used_at column: WHEN true → WHERE used_at IS NOT NULL (tokens that
+         *   have been consumed to reset a password); WHEN false → WHERE used_at
+         *   IS NULL (pending tokens still available for use, provided not
+         *   expired). Omit parameter to include both consumed and pending
+         *   tokens without any filter on the used_at column.
      */
     isUsed?: boolean | undefined;
 
@@ -115,7 +138,11 @@ export namespace ICommunityPlatformMemberPasswordReset {
      *
      * Specify a date-time value to return only records created at or after this timestamp. Combine with `endCreatedAt` to define a bounded time window for audit purposes. When omitted, no lower bound is applied to the creation timestamp range filter.
      *
-     * @x-autobe-specification Inclusive start bound of a range filter on the created_at column: WHERE created_at >= ?. Combine with endCreatedAt to form WHERE created_at BETWEEN ? AND ?. When omitted, no lower bound is applied to the creation timestamp filter.
+         * @x-autobe-specification Inclusive start bound of a range filter on
+         *   the created_at column: WHERE created_at >= ?. Combine with
+         *   endCreatedAt to form WHERE created_at BETWEEN ? AND ?. When
+         *   omitted, no lower bound is applied to the creation timestamp
+         *   filter.
      */
     startCreatedAt?: (string & tags.Format<"date-time">) | undefined;
 
@@ -124,7 +151,11 @@ export namespace ICommunityPlatformMemberPasswordReset {
      *
      * Specify a date-time value to return only records created at or before this timestamp. Combine with `startCreatedAt` to define a bounded time window for audit purposes. When omitted, no upper bound is applied to the creation timestamp range filter.
      *
-     * @x-autobe-specification Inclusive end bound of a range filter on the created_at column: WHERE created_at <= ?. Combine with startCreatedAt to form WHERE created_at BETWEEN ? AND ?. When omitted, no upper bound is applied to the creation timestamp filter.
+         * @x-autobe-specification Inclusive end bound of a range filter on the
+         *   created_at column: WHERE created_at <= ?. Combine with
+         *   startCreatedAt to form WHERE created_at BETWEEN ? AND ?. When
+         *   omitted, no upper bound is applied to the creation timestamp
+         *   filter.
      */
     endCreatedAt?: (string & tags.Format<"date-time">) | undefined;
 
@@ -133,7 +164,11 @@ export namespace ICommunityPlatformMemberPasswordReset {
      *
      * Page numbering starts from 1, so the first page is page 1. Each page contains up to `limit` records. Defaults to 1 when omitted, returning the first page of results.
      *
-     * @x-autobe-specification Pagination page number (1-indexed). Computes offset as (page - 1) * limit for querying the community_platform_member_password_resets table. Defaults to 1 when omitted. Not a database column — this is a request parameter for offset-based pagination only.
+         * @x-autobe-specification Pagination page number (1-indexed). Computes
+         *   offset as (page - 1) * limit for querying the
+         *   community_platform_member_password_resets table. Defaults to 1 when
+         *   omitted. Not a database column — this is a request parameter for
+         *   offset-based pagination only.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -142,7 +177,12 @@ export namespace ICommunityPlatformMemberPasswordReset {
      *
      * Value must be between 1 and 100. The actual number of returned records may be less than this value on the final page or when the total number of matching records is fewer than the requested limit.
      *
-     * @x-autobe-specification Pagination page size. Maximum records to return per page, capped at 100 (enforced server-side). Computes the LIMIT clause for SQL queries on the community_platform_member_password_resets table. Defaults to 20 when omitted. Not a database column — this is a request parameter for offset-based pagination only.
+         * @x-autobe-specification Pagination page size. Maximum records to
+         *   return per page, capped at 100 (enforced server-side). Computes the
+         *   LIMIT clause for SQL queries on the
+         *   community_platform_member_password_resets table. Defaults to 20
+         *   when omitted. Not a database column — this is a request parameter
+         *   for offset-based pagination only.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -160,8 +200,9 @@ export namespace ICommunityPlatformMemberPasswordReset {
      *
      * A UUID that uniquely identifies this password reset token. Used as the primary key for lookup and reference purposes.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from community_platform_member_password_resets.id. UUID primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_member_password_resets.id. UUID primary key.
      */
     id: string & tags.Format<"uuid">;
 
@@ -170,8 +211,12 @@ export namespace ICommunityPlatformMemberPasswordReset {
      *
      * Contains the member's unique identifier, username, email, and account status information. This object is a summary representation that does not include sensitive authentication data.
      *
-     * @x-autobe-database-schema-property member
-     * @x-autobe-specification Join from community_platform_member_password_resets.community_platform_member_id to community_platform_members.id. Returns ICommunityPlatformMember.ISummary (id, username, email, created_at, deleted_at).
+         * @x-autobe-database-schema-property member
+         * @x-autobe-specification Join from
+         *   community_platform_member_password_resets.community_platform_member_id
+         *   to community_platform_members.id. Returns
+         *   ICommunityPlatformMember.ISummary (id, username, email, created_at,
+         *   deleted_at).
      */
     member: ICommunityPlatformMember.ISummary;
 
@@ -180,8 +225,10 @@ export namespace ICommunityPlatformMemberPasswordReset {
      *
      * Null indicates the token has not been consumed yet. Once set, the token is considered used and cannot be reused even if it has not yet expired. Consumers should check this field alongside {@link expired_at} to determine token validity.
      *
-     * @x-autobe-database-schema-property used_at
-     * @x-autobe-specification Direct mapping from community_platform_member_password_resets.used_at. Nullable DateTime. Null indicates the token has not been consumed yet.
+         * @x-autobe-database-schema-property used_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_member_password_resets.used_at. Nullable
+         *   DateTime. Null indicates the token has not been consumed yet.
      */
     used_at: (string & tags.Format<"date-time">) | null;
 
@@ -190,8 +237,10 @@ export namespace ICommunityPlatformMemberPasswordReset {
      *
      * Tokens have a finite lifespan as a security measure. If the current time is past this timestamp, the token has expired and cannot be used for password reset even if {@link used_at} is null.
      *
-     * @x-autobe-database-schema-property expired_at
-     * @x-autobe-specification Direct mapping from community_platform_member_password_resets.expired_at. DateTime (non-nullable).
+         * @x-autobe-database-schema-property expired_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_member_password_resets.expired_at. DateTime
+         *   (non-nullable).
      */
     expired_at: string & tags.Format<"date-time">;
 
@@ -200,8 +249,10 @@ export namespace ICommunityPlatformMemberPasswordReset {
      *
      * Set automatically when the token is generated. Used for chronological ordering in list views and for token lifecycle management.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from community_platform_member_password_resets.created_at. DateTime (non-nullable).
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_member_password_resets.created_at. DateTime
+         *   (non-nullable).
      */
     created_at: string & tags.Format<"date-time">;
   };

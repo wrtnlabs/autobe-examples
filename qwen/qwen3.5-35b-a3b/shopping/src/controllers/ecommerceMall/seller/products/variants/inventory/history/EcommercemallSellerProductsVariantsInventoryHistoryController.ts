@@ -32,9 +32,11 @@ export class EcommercemallSellerProductsVariantsInventoryHistoryController {
    * @param productId Product identifier. The variant must belong to this product.
    * @param variantId Product variant identifier. Must belong to the specified product.
    * @param body Filter and pagination criteria for inventory history list including date range, operation type, quantity direction, and cursor-based pagination parameters.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Query ecommerce_mall_inventory_records table filtered by product_variant_id derived from variantId (which belongs to the specified productId).
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Query ecommerce_mall_inventory_records table
+     *   filtered by product_variant_id derived from variantId (which belongs to
+     *   the specified productId).
    *
    * Apply pagination using cursor-based pagination for efficiency with large result sets. Sort results by created_at DESC (newest first) for chronological browsing.
    *

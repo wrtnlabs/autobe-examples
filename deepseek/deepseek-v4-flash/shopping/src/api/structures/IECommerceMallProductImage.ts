@@ -16,8 +16,10 @@ export type IECommerceMallProductImage = {
    *
    * This UUID serves as the primary key for the image record and is used to reference the image in API operations such as retrieval, update, and deletion.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from e_commerce_mall_product_images.id. UUID primary key, auto-generated on record creation.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_product_images.id. UUID primary key, auto-generated on
+     *   record creation.
    */
   id: string & tags.Format<"uuid">;
 
@@ -26,8 +28,10 @@ export type IECommerceMallProductImage = {
    *
    * This URL is used to fetch and render the image across the platform including search results, category listings, product detail pages, and wishlist displays. The value was captured from the file storage system when the seller uploaded or updated the image.
    *
-   * @x-autobe-specification Direct mapping from e_commerce_mall_product_images.url. URI pointing to the stored image file on the platform's file storage system.
-   * @x-autobe-database-schema-property url
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_product_images.url. URI pointing to the stored image
+     *   file on the platform's file storage system.
+     * @x-autobe-database-schema-property url
    */
   url: string & tags.Format<"uri">;
 
@@ -36,8 +40,11 @@ export type IECommerceMallProductImage = {
    *
    * The image with the lowest sort_order (typically 0) serves as the main thumbnail displayed in search results, category listings, wishlist, and as the primary image on the product detail page. Images are displayed in ascending order of this field. Sort orders can be reassigned through the image reorder endpoint.
    *
-   * @x-autobe-database-schema-property sort_order
-   * @x-autobe-specification Direct mapping from e_commerce_mall_product_images.sort_order. Integer display position, with 0 indicating the main thumbnail. Enforced unique per product via composite unique constraint (e_commerce_mall_product_id, sort_order).
+     * @x-autobe-database-schema-property sort_order
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_product_images.sort_order. Integer display position,
+     *   with 0 indicating the main thumbnail. Enforced unique per product via
+     *   composite unique constraint (e_commerce_mall_product_id, sort_order).
    */
   sort_order: number & tags.Type<"int32">;
 
@@ -46,8 +53,12 @@ export type IECommerceMallProductImage = {
    *
    * Provides a summary representation of the associated product including its identifier, name, base price, thumbnail image, current visibility state, owning seller, assigned category, aggregated rating statistics, and lifecycle timestamps. Each image belongs to exactly one product through its foreign key relationship.
    *
-   * @x-autobe-database-schema-property product
-   * @x-autobe-specification Join from e_commerce_mall_product_images.e_commerce_mall_product_id to e_commerce_mall_products.id. Returns IECommerceMallProduct.ISummary for the parent product, providing the product's name, base price, thumbnail, visibility, seller, category, rating, and timestamps.
+     * @x-autobe-database-schema-property product
+     * @x-autobe-specification Join from
+     *   e_commerce_mall_product_images.e_commerce_mall_product_id to
+     *   e_commerce_mall_products.id. Returns IECommerceMallProduct.ISummary for
+     *   the parent product, providing the product's name, base price,
+     *   thumbnail, visibility, seller, category, rating, and timestamps.
    */
   product: IECommerceMallProduct.ISummary;
 
@@ -56,8 +67,10 @@ export type IECommerceMallProductImage = {
    *
    * Indicates when the image was first associated with the product, either during initial upload or first image addition.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from e_commerce_mall_product_images.created_at. Timestamp set on record creation. System-managed, not user-provided.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_product_images.created_at. Timestamp set on record
+     *   creation. System-managed, not user-provided.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -66,8 +79,11 @@ export type IECommerceMallProductImage = {
    *
    * Updated whenever the image URL is replaced or the sort_order is modified through image reordering operations.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from e_commerce_mall_product_images.updated_at. Timestamp updated when the image URL is changed or the sort_order is modified through reordering. System-managed, not user-provided.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_product_images.updated_at. Timestamp updated when the
+     *   image URL is changed or the sort_order is modified through reordering.
+     *   System-managed, not user-provided.
    */
   updated_at: string & tags.Format<"date-time">;
 };
@@ -85,8 +101,11 @@ export namespace IECommerceMallProductImage {
      *
      * The image file must first be uploaded to the platform's file storage system before submission. The resulting URL is then submitted to this endpoint to create the product image record. This URL is used to fetch and render the image across the platform including search results, category listings, and product detail pages.
      *
-     * @x-autobe-database-schema-property url
-     * @x-autobe-specification Direct mapping from e_commerce_mall_product_images.url. The image file must be uploaded to the platform's file storage system first; the resulting URL from the file storage response is submitted to this endpoint.
+         * @x-autobe-database-schema-property url
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_product_images.url. The image file must be uploaded
+         *   to the platform's file storage system first; the resulting URL from
+         *   the file storage response is submitted to this endpoint.
      */
     url: string & tags.Format<"url">;
   };
@@ -106,7 +125,14 @@ export namespace IECommerceMallProductImage {
      *
      * All image IDs must belong to the specified product. If the array is empty, the existing image order remains unchanged.
      *
-     * @x-autobe-specification Ordered array of image IDs (UUID format) specifying the new display sequence. Each element must reference a valid e_commerce_mall_product_images.id belonging to the target product (validated by querying WHERE id IN (...) AND e_commerce_mall_product_id = productId). The array index determines the assigned sort_order: index 0 → sort_order 0 (thumbnail position), index 1 → sort_order 1, and so on. An empty array is a no-op — existing sort_order values remain unchanged.
+         * @x-autobe-specification Ordered array of image IDs (UUID format)
+         *   specifying the new display sequence. Each element must reference a
+         *   valid e_commerce_mall_product_images.id belonging to the target
+         *   product (validated by querying WHERE id IN (...) AND
+         *   e_commerce_mall_product_id = productId). The array index determines
+         *   the assigned sort_order: index 0 → sort_order 0 (thumbnail
+         *   position), index 1 → sort_order 1, and so on. An empty array is a
+         *   no-op — existing sort_order values remain unchanged.
      */
     values: (string & tags.Format<"uuid">)[];
   };
@@ -128,8 +154,14 @@ export namespace IECommerceMallProductImage {
      *
      * When this image has the lowest sort_order (position 0), it serves as the main thumbnail displayed in search results, category listings, and wishlist views. All image changes are automatically captured in a product snapshot for historical preservation upon successful update.
      *
-     * @x-autobe-database-schema-property url
-     * @x-autobe-specification Direct mapping from e_commerce_mall_product_images.url. Replaces the existing image URL while preserving the image record's ID, sort_order, created_at, and updated_at (which is updated server-side). The URL must point to a stored image file on the platform's file storage system. Upon successful update, a product snapshot is automatically created to preserve the new image state for historical audit purposes.
+         * @x-autobe-database-schema-property url
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_product_images.url. Replaces the existing image URL
+         *   while preserving the image record's ID, sort_order, created_at, and
+         *   updated_at (which is updated server-side). The URL must point to a
+         *   stored image file on the platform's file storage system. Upon
+         *   successful update, a product snapshot is automatically created to
+         *   preserve the new image state for historical audit purposes.
      */
     url?: (string & tags.Format<"uri">) | undefined;
   };

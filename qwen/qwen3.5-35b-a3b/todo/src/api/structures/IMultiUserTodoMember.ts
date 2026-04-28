@@ -14,8 +14,9 @@ export type IMultiUserTodoMember = {
    *
    * This is the primary key used to uniquely identify the member throughout the system.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from multi_user_todo_members.id. UUID primary key for member identification.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from multi_user_todo_members.id.
+     *   UUID primary key for member identification.
    */
   id: string & tags.Format<"uuid">;
 
@@ -24,8 +25,10 @@ export type IMultiUserTodoMember = {
    *
    * This is the primary login credential and must be unique across all accounts in the system. Used exclusively for member actor authentication and authorization.
    *
-   * @x-autobe-database-schema-property email
-   * @x-autobe-specification Direct mapping from multi_user_todo_members.email. Unique lowercase string used as login identifier with uniqueness constraint.
+     * @x-autobe-database-schema-property email
+     * @x-autobe-specification Direct mapping from
+     *   multi_user_todo_members.email. Unique lowercase string used as login
+     *   identifier with uniqueness constraint.
    */
   email: string;
 
@@ -34,8 +37,10 @@ export type IMultiUserTodoMember = {
    *
    * This field captures the exact date and time of account registration in UTC with timezone information.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from multi_user_todo_members.created_at. Timestamp with time zone when the member account was first created.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   multi_user_todo_members.created_at. Timestamp with time zone when the
+     *   member account was first created.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -44,8 +49,10 @@ export type IMultiUserTodoMember = {
    *
    * This field is automatically updated by the database on every INSERT or UPDATE operation, providing the exact date and time of the last change to the account.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from multi_user_todo_members.updated_at. Timestamp with time zone that is automatically updated on every modification to the member record.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   multi_user_todo_members.updated_at. Timestamp with time zone that is
+     *   automatically updated on every modification to the member record.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -54,8 +61,10 @@ export type IMultiUserTodoMember = {
    *
    * This field is null for active accounts. When an account is deleted, this field is set to the current timestamp to mark the account for permanent removal. This enables soft deletion with the possibility of data recovery.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from multi_user_todo_members.deleted_at. Nullable timestamp with time zone; null indicates active account, set value indicates soft deletion.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   multi_user_todo_members.deleted_at. Nullable timestamp with time zone;
+     *   null indicates active account, set value indicates soft deletion.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -71,8 +80,10 @@ export namespace IMultiUserTodoMember {
      *
      * Must be in valid email format and is unique across all registered accounts. The email serves as the primary login identifier and cannot be changed after registration.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from multi_user_todo_members.email. Must be valid email format, unique across all accounts. User-provided input.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   multi_user_todo_members.email. Must be valid email format, unique
+         *   across all accounts. User-provided input.
      */
     email: string & tags.Format<"email">;
 
@@ -81,8 +92,10 @@ export namespace IMultiUserTodoMember {
      *
      * The password is hashed using bcrypt before storage for security. Must be at least 8 characters long. Never stored or transmitted in plaintext after registration.
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification User-provided plain text password. Server transforms this by hashing with bcrypt before storing as password_hash in database. Minimum 8 characters required.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification User-provided plain text password. Server
+         *   transforms this by hashing with bcrypt before storing as
+         *   password_hash in database. Minimum 8 characters required.
      */
     password: string & tags.MinLength<8>;
 
@@ -91,7 +104,9 @@ export namespace IMultiUserTodoMember {
      *
      * Captured for session context and security auditing. Used to track how users initially access the application.
      *
-     * @x-autobe-specification Session context: HTTP referrer URL from the client's browser. Captured during registration to create initial session record. Required field.
+         * @x-autobe-specification Session context: HTTP referrer URL from the
+         *   client's browser. Captured during registration to create initial
+         *   session record. Required field.
      */
     href: string & tags.Format<"uri">;
 
@@ -100,7 +115,9 @@ export namespace IMultiUserTodoMember {
      *
      * Used for session context and security auditing purposes. Required field.
      *
-     * @x-autobe-specification Session context: referrer URL string from the HTTP request. Captured during registration to create initial session record. Required field.
+         * @x-autobe-specification Session context: referrer URL string from the
+         *   HTTP request. Captured during registration to create initial
+         *   session record. Required field.
      */
     referrer: string & tags.Format<"uri">;
 
@@ -109,7 +126,9 @@ export namespace IMultiUserTodoMember {
      *
      * Captured optionally from the HTTP request. Used for security auditing and session management.
      *
-     * @x-autobe-specification Session context: client IP address from request. Optional field, may be captured from server-side or passed in body. Used for session security and tracking.
+         * @x-autobe-specification Session context: client IP address from
+         *   request. Optional field, may be captured from server-side or passed
+         *   in body. Used for session security and tracking.
      */
     ip?: (string & tags.Format<"ipv4">) | undefined;
   };
@@ -139,8 +158,11 @@ export namespace IMultiUserTodoMember {
      *
      * This email is validated for proper format and used to look up the member account in the multi_user_todo_members table. The email must exist in the database and match the stored value for authentication to succeed.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from multi_user_todo_members.email. Used to look up the member account for authentication. Must match the unique email stored in the database.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   multi_user_todo_members.email. Used to look up the member account
+         *   for authentication. Must match the unique email stored in the
+         *   database.
      */
     email: string & tags.Format<"email">;
 
@@ -149,8 +171,11 @@ export namespace IMultiUserTodoMember {
      *
      * This password is verified using bcrypt hashing comparison against the stored password_hash in the database. Never returned in API responses for security. Minimum requirements are enforced by backend validation.
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification User-provided plain password. Backend transforms this via bcrypt hashing and compares against multi_user_todo_members.password_hash. Never exposed or returned in responses.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification User-provided plain password. Backend
+         *   transforms this via bcrypt hashing and compares against
+         *   multi_user_todo_members.password_hash. Never exposed or returned in
+         *   responses.
      */
     password: string;
 
@@ -159,7 +184,9 @@ export namespace IMultiUserTodoMember {
      *
      * Captured for session audit and security monitoring purposes. Helps track user navigation patterns and detect suspicious login behavior. Required for member login operations.
      *
-     * @x-autobe-specification Computed from request context. The URL the user was visiting immediately before accessing the login page. Used for session audit trail and security monitoring. Required field.
+         * @x-autobe-specification Computed from request context. The URL the
+         *   user was visiting immediately before accessing the login page. Used
+         *   for session audit trail and security monitoring. Required field.
      */
     href: string & tags.Format<"uri">;
 
@@ -168,7 +195,10 @@ export namespace IMultiUserTodoMember {
      *
      * Captured for session audit and security monitoring purposes. Provides additional context about user navigation flow and helps detect potential CSRF or suspicious login attempts. Required for member login operations.
      *
-     * @x-autobe-specification Computed from request context. The HTTP Referrer header value indicating the page that linked to the login page. Used for session audit trail and security monitoring. Required field.
+         * @x-autobe-specification Computed from request context. The HTTP
+         *   Referrer header value indicating the page that linked to the login
+         *   page. Used for session audit trail and security monitoring.
+         *   Required field.
      */
     referrer: string & tags.Format<"uri">;
 
@@ -177,7 +207,10 @@ export namespace IMultiUserTodoMember {
      *
      * Used for session security, fraud detection, and geographic authentication tracking. If the client cannot provide this information (e.g., SSR scenarios), the server captures it as a fallback. Optional field.
      *
-     * @x-autobe-specification Computed from request context. Client's IP address obtained from the HTTP request. Used for session security, fraud detection, and geographic authentication. Optional field as client may not have this information in SSR scenarios.
+         * @x-autobe-specification Computed from request context. Client's IP
+         *   address obtained from the HTTP request. Used for session security,
+         *   fraud detection, and geographic authentication. Optional field as
+         *   client may not have this information in SSR scenarios.
      */
     ip?: (string & tags.Format<"ipv4">) | undefined;
   };
@@ -193,7 +226,13 @@ export namespace IMultiUserTodoMember {
      *
      * A long-lived JWT token that allows session continuation when the access token expires. The token is validated against the member_sessions table to ensure it is valid, not expired, and belongs to the authenticated member. Use this token to request new access tokens by calling the POST /auth/refresh endpoint.
      *
-     * @x-autobe-specification JWT refresh token string received from previous auth response. Server decodes and validates the token against multi_user_todo_member_sessions table to verify it belongs to authenticated member, is not expired, and is still active. If valid, server generates new access and refresh tokens, updates session record with new tokens, and returns them in IMultiUserTodoMember.IAuthorized response.
+         * @x-autobe-specification JWT refresh token string received from
+         *   previous auth response. Server decodes and validates the token
+         *   against multi_user_todo_member_sessions table to verify it belongs
+         *   to authenticated member, is not expired, and is still active. If
+         *   valid, server generates new access and refresh tokens, updates
+         *   session record with new tokens, and returns them in
+         *   IMultiUserTodoMember.IAuthorized response.
      */
     refresh_token: string;
   };
@@ -209,7 +248,9 @@ export namespace IMultiUserTodoMember {
      *
      * A UUID extracted from the JWT token payload during authentication. This ID uniquely identifies the member in the multi_user_todo_members table and is used for all member-specific operations.
      *
-     * @x-autobe-specification Member ID extracted from JWT token payload. UUID format representing the authenticated member's unique identifier in the multi_user_todo_members table.
+         * @x-autobe-specification Member ID extracted from JWT token payload.
+         *   UUID format representing the authenticated member's unique
+         *   identifier in the multi_user_todo_members table.
      */
     id: string & tags.Format<"uuid">;
 
@@ -218,7 +259,9 @@ export namespace IMultiUserTodoMember {
      *
      * The lowercase email address used for login, extracted from the JWT token. Used as the primary login identifier and for account identification.
      *
-     * @x-autobe-specification Member email extracted from JWT token payload. Retrieved from multi_user_todo_members table during authentication.
+         * @x-autobe-specification Member email extracted from JWT token
+         *   payload. Retrieved from multi_user_todo_members table during
+         *   authentication.
      */
     email: string;
 
@@ -227,7 +270,9 @@ export namespace IMultiUserTodoMember {
      *
      * ISO 8601 formatted date-time indicating when the member first registered in the system. Extracted from the JWT token during authentication.
      *
-     * @x-autobe-specification Member account creation timestamp extracted from JWT token payload. ISO 8601 timestamp from multi_user_todo_members.created_at.
+         * @x-autobe-specification Member account creation timestamp extracted
+         *   from JWT token payload. ISO 8601 timestamp from
+         *   multi_user_todo_members.created_at.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -236,7 +281,9 @@ export namespace IMultiUserTodoMember {
      *
      * ISO 8601 formatted date-time indicating the most recent modification to the member account. Extracted from the JWT token during authentication.
      *
-     * @x-autobe-specification Member account last update timestamp extracted from JWT token payload. ISO 8601 timestamp from multi_user_todo_members.updated_at.
+         * @x-autobe-specification Member account last update timestamp
+         *   extracted from JWT token payload. ISO 8601 timestamp from
+         *   multi_user_todo_members.updated_at.
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -245,14 +292,18 @@ export namespace IMultiUserTodoMember {
      *
      * Null when the account is active. Set to the deletion timestamp when the account is marked for deletion. This allows the system to retain account history while preventing authentication after deletion.
      *
-     * @x-autobe-specification Member account soft delete timestamp extracted from JWT token payload. Null when account is active, set when account is deleted. ISO 8601 nullable timestamp from multi_user_todo_members.deleted_at.
+         * @x-autobe-specification Member account soft delete timestamp
+         *   extracted from JWT token payload. Null when account is active, set
+         *   when account is deleted. ISO 8601 nullable timestamp from
+         *   multi_user_todo_members.deleted_at.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
 
     /**
      * Authorization token.
      *
-     * @x-autobe-specification Authorization token comes from the session table.
+         * @x-autobe-specification Authorization token comes from the session
+         *   table.
      */
     token: IAuthorizationToken;
   };
@@ -270,8 +321,9 @@ export namespace IMultiUserTodoMember {
      *
      * A UUID v4 value that serves as the primary key for the member entity. This identifier is stable throughout the account's lifecycle and is used to reference this member in API requests and responses.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from multi_user_todo_members.id (UUID).
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   multi_user_todo_members.id (UUID).
      */
     id: string & tags.Format<"uuid">;
 
@@ -280,8 +332,10 @@ export namespace IMultiUserTodoMember {
      *
      * Must be a valid email format, stored in lowercase, and is unique across all member accounts. This field serves as the primary login identifier and cannot be changed after account creation.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from multi_user_todo_members.email. Lowercase, unique constraint enforced.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   multi_user_todo_members.email. Lowercase, unique constraint
+         *   enforced.
      */
     email: string;
 
@@ -290,8 +344,9 @@ export namespace IMultiUserTodoMember {
      *
      * Indicates the account creation date and time in UTC timezone. This value is immutable and cannot be modified after account creation. Useful for audit trails and understanding account age.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from multi_user_todo_members.created_at (TIMESTAMPTZ).
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   multi_user_todo_members.created_at (TIMESTAMPTZ).
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -300,8 +355,10 @@ export namespace IMultiUserTodoMember {
      *
      * Automatically updated by the database on every row modification. This field helps track when account metadata or related data was last modified, useful for caching invalidation and audit logging.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from multi_user_todo_members.updated_at (TIMESTAMPTZ). Auto-updated on row changes.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   multi_user_todo_members.updated_at (TIMESTAMPTZ). Auto-updated on
+         *   row changes.
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -310,8 +367,10 @@ export namespace IMultiUserTodoMember {
      *
      * A nullable timestamp field that is `null` when the account is active. When set, indicates the exact time the account was soft-deleted. This enables the system to track deleted accounts while preserving their data for potential recovery or audit purposes.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from multi_user_todo_members.deleted_at (TIMESTAMPTZ, nullable). Null when active, set when soft-deleted.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   multi_user_todo_members.deleted_at (TIMESTAMPTZ, nullable). Null
+         *   when active, set when soft-deleted.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };

@@ -8,7 +8,10 @@ export type IErpHrmTimePermission = {
   /**
    * List of approved permissions available for role configuration.
    *
-   * @x-autobe-specification Populate this array from non-deleted records in erp_hrm_time_permissions, preserving a stable deterministic order. Each element is an IErpHrmTimePermission record. The wrapper has no direct persistence and exists only as a catalog response.
+     * @x-autobe-specification Populate this array from non-deleted records in
+     *   erp_hrm_time_permissions, preserving a stable deterministic order. Each
+     *   element is an IErpHrmTimePermission record. The wrapper has no direct
+     *   persistence and exists only as a catalog response.
    */
   items: boolean;
 };
@@ -20,24 +23,30 @@ export namespace IErpHrmTimePermission {
     /**
      * Unique identifier of the permission.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from erp_hrm_time_permissions.id. This is the UUID identifier for a permission catalog row.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_permissions.id. This is the UUID identifier for a
+         *   permission catalog row.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Stable permission key.
      *
-     * @x-autobe-database-schema-property key
-     * @x-autobe-specification Direct mapping from erp_hrm_time_permissions.key. This is the canonical permission code consumed by the authorization layer.
+         * @x-autobe-database-schema-property key
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_permissions.key. This is the canonical permission code
+         *   consumed by the authorization layer.
      */
     key: string;
 
     /**
      * Human-readable description of what the permission allows.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from erp_hrm_time_permissions.description. This stores the display text explaining what the permission allows.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_permissions.description. This stores the display text
+         *   explaining what the permission allows.
      */
     description: string;
   };
@@ -49,21 +58,28 @@ export namespace IErpHrmTimePermission {
     /**
      * Text used to search permission keys and descriptions.
      *
-     * @x-autobe-specification Apply this value as a search filter against the permission catalog fields key and description. If omitted, do not apply search filtering.
+         * @x-autobe-specification Apply this value as a search filter against
+         *   the permission catalog fields key and description. If omitted, do
+         *   not apply search filtering.
      */
     search?: string | undefined;
 
     /**
      * Whether to include retired permission records in the response.
      *
-     * @x-autobe-specification Interpret this as a boolean filter for soft-deleted permission records. When true, include retired entries; when false or omitted, exclude them by default.
+         * @x-autobe-specification Interpret this as a boolean filter for
+         *   soft-deleted permission records. When true, include retired
+         *   entries; when false or omitted, exclude them by default.
      */
     deleted?: boolean | undefined;
 
     /**
      * Sort order for permission catalog results.
      *
-     * @x-autobe-specification Use the enumerated sort token to order permission results. Allowed sort modes are by key, description, createdAt, updatedAt, and deletedAt in ascending or descending order. When omitted, default to key ascending.
+         * @x-autobe-specification Use the enumerated sort token to order
+         *   permission results. Allowed sort modes are by key, description,
+         *   createdAt, updatedAt, and deletedAt in ascending or descending
+         *   order. When omitted, default to key ascending.
      */
     sort?:
       | "key_asc"
@@ -81,14 +97,17 @@ export namespace IErpHrmTimePermission {
     /**
      * Page number to retrieve, starting at 1.
      *
-     * @x-autobe-specification Treat this as the 1-indexed page number. Convert it to an offset using (page - 1) * limit after validation.
+         * @x-autobe-specification Treat this as the 1-indexed page number.
+         *   Convert it to an offset using (page - 1) * limit after validation.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of permission records to return per page.
      *
-     * @x-autobe-specification Treat this as the maximum number of records per page and use it together with page to compute pagination offsets.
+         * @x-autobe-specification Treat this as the maximum number of records
+         *   per page and use it together with page to compute pagination
+         *   offsets.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)

@@ -11,48 +11,62 @@ export type ICommunityPlatformCommentSnapshotFile = {
   /**
    * Unique identifier of this historical snapshot-file association record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from community_platform_comment_snapshot_files.id.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_comment_snapshot_files.id.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * The historical comment snapshot that this file association belongs to.
    *
-   * @x-autobe-database-schema-property commentSnapshot
-   * @x-autobe-specification Resolve from the community_platform_comment_snapshot_files.commentSnapshot relation by joining community_platform_comment_snapshots through community_platform_comment_snapshot_id and materialize the related snapshot as ICommunityPlatformCommentSnapshot.
+     * @x-autobe-database-schema-property commentSnapshot
+     * @x-autobe-specification Resolve from the
+     *   community_platform_comment_snapshot_files.commentSnapshot relation by
+     *   joining community_platform_comment_snapshots through
+     *   community_platform_comment_snapshot_id and materialize the related
+     *   snapshot as ICommunityPlatformCommentSnapshot.
    */
   commentSnapshot: ICommunityPlatformCommentSnapshot;
 
   /**
    * The stored comment file linked to this historical snapshot entry.
    *
-   * @x-autobe-database-schema-property commentFile
-   * @x-autobe-specification Resolve from the community_platform_comment_snapshot_files.commentFile relation by joining community_platform_comment_files through community_platform_comment_file_id and materialize the related stored file as ICommunityPlatformCommentFile.
+     * @x-autobe-database-schema-property commentFile
+     * @x-autobe-specification Resolve from the
+     *   community_platform_comment_snapshot_files.commentFile relation by
+     *   joining community_platform_comment_files through
+     *   community_platform_comment_file_id and materialize the related stored
+     *   file as ICommunityPlatformCommentFile.
    */
   commentFile: ICommunityPlatformCommentFile;
 
   /**
    * Timestamp when this snapshot-file association record was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from community_platform_comment_snapshot_files.created_at.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_comment_snapshot_files.created_at.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when this snapshot-file association record was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from community_platform_comment_snapshot_files.updated_at.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_comment_snapshot_files.updated_at.
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * Soft-deletion timestamp for this historical association, or null when the association is still active.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from community_platform_comment_snapshot_files.deleted_at. Return null when the association is active and a date-time value when it has been soft deleted.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_comment_snapshot_files.deleted_at. Return null when
+     *   the association is active and a date-time value when it has been soft
+     *   deleted.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -64,28 +78,52 @@ export namespace ICommunityPlatformCommentSnapshotFile {
     /**
      * Original filename of the file being attached to the selected historical comment snapshot.
      *
-     * @x-autobe-specification Use this value to populate community_platform_comment_files.original_name when creating or resolving the stored comment file record that will later be linked to the resolved snapshot. Preserve the client-supplied display filename for attachment presentation and audit context; this field does not map directly to a property of community_platform_comment_snapshot_files.
+         * @x-autobe-specification Use this value to populate
+         *   community_platform_comment_files.original_name when creating or
+         *   resolving the stored comment file record that will later be linked
+         *   to the resolved snapshot. Preserve the client-supplied display
+         *   filename for attachment presentation and audit context; this field
+         *   does not map directly to a property of
+         *   community_platform_comment_snapshot_files.
      */
     original_name: string;
 
     /**
      * Media type of the file being attached to the selected historical comment snapshot.
      *
-     * @x-autobe-specification Use this value to populate community_platform_comment_files.mime_type when creating or resolving the stored comment file record before inserting the community_platform_comment_snapshot_files linkage. Validate the media type against platform file policy before persistence; this field does not map directly to a property of community_platform_comment_snapshot_files.
+         * @x-autobe-specification Use this value to populate
+         *   community_platform_comment_files.mime_type when creating or
+         *   resolving the stored comment file record before inserting the
+         *   community_platform_comment_snapshot_files linkage. Validate the
+         *   media type against platform file policy before persistence; this
+         *   field does not map directly to a property of
+         *   community_platform_comment_snapshot_files.
      */
     mime_type: string;
 
     /**
      * Stable storage identifier or object key for the file to associate with the selected historical comment snapshot.
      *
-     * @x-autobe-specification Use this value to populate community_platform_comment_files.storage_key when creating or resolving the underlying stored comment file record. Treat it as the stable storage locator and enforce the unique constraint on community_platform_comment_files.storage_key before creating the snapshot-file association; this field does not map directly to a property of community_platform_comment_snapshot_files.
+         * @x-autobe-specification Use this value to populate
+         *   community_platform_comment_files.storage_key when creating or
+         *   resolving the underlying stored comment file record. Treat it as
+         *   the stable storage locator and enforce the unique constraint on
+         *   community_platform_comment_files.storage_key before creating the
+         *   snapshot-file association; this field does not map directly to a
+         *   property of community_platform_comment_snapshot_files.
      */
     storage_key: string;
 
     /**
      * Size of the attached file in bytes.
      *
-     * @x-autobe-specification Use this value to populate community_platform_comment_files.size when creating or resolving the underlying comment file record used by the new snapshot-file linkage. Treat the value as the file size in bytes and validate it against platform file size policy before insertion; this field does not map directly to a property of community_platform_comment_snapshot_files.
+         * @x-autobe-specification Use this value to populate
+         *   community_platform_comment_files.size when creating or resolving
+         *   the underlying comment file record used by the new snapshot-file
+         *   linkage. Treat the value as the file size in bytes and validate it
+         *   against platform file size policy before insertion; this field does
+         *   not map directly to a property of
+         *   community_platform_comment_snapshot_files.
      */
     size: number & tags.Type<"int32">;
   };
@@ -97,14 +135,24 @@ export namespace ICommunityPlatformCommentSnapshotFile {
     /**
      * Page number of the snapshot-file list to retrieve.
      *
-     * @x-autobe-specification Pagination control for the filtered community_platform_comment_snapshot_files query after path validation. Interpret as a 1-indexed page number; when omitted, downstream logic may apply the service default page. Use it together with `limit` to compute offset/skip against rows where community_platform_comment_snapshot_id = snapshotId and deleted_at IS NULL.
+         * @x-autobe-specification Pagination control for the filtered
+         *   community_platform_comment_snapshot_files query after path
+         *   validation. Interpret as a 1-indexed page number; when omitted,
+         *   downstream logic may apply the service default page. Use it
+         *   together with `limit` to compute offset/skip against rows where
+         *   community_platform_comment_snapshot_id = snapshotId and deleted_at
+         *   IS NULL.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of snapshot-file records to return in one page.
      *
-     * @x-autobe-specification Pagination size control for the filtered community_platform_comment_snapshot_files query after path validation. Use the provided integer, subject to schema bounds and server policy, as the maximum number of rows returned for one page of active snapshot-file associations matching snapshotId.
+         * @x-autobe-specification Pagination size control for the filtered
+         *   community_platform_comment_snapshot_files query after path
+         *   validation. Use the provided integer, subject to schema bounds and
+         *   server policy, as the maximum number of rows returned for one page
+         *   of active snapshot-file associations matching snapshotId.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -113,7 +161,12 @@ export namespace ICommunityPlatformCommentSnapshotFile {
     /**
      * Optional ordering option for the snapshot-file list, such as sorting by creation time using supported server-defined rules.
      *
-     * @x-autobe-specification Optional sort expression for the filtered community_platform_comment_snapshot_files collection. Map only to safe server-approved ordering options grounded in actual queryable fields, with created_at as the canonical sortable field for stable historical browsing. Reject or ignore unsupported sort expressions rather than passing arbitrary client text into the query layer.
+         * @x-autobe-specification Optional sort expression for the filtered
+         *   community_platform_comment_snapshot_files collection. Map only to
+         *   safe server-approved ordering options grounded in actual queryable
+         *   fields, with created_at as the canonical sortable field for stable
+         *   historical browsing. Reject or ignore unsupported sort expressions
+         *   rather than passing arbitrary client text into the query layer.
      */
     sort?: string | undefined;
   };
@@ -125,8 +178,18 @@ export namespace ICommunityPlatformCommentSnapshotFile {
     /**
      * Identifier of the stored comment file that should be linked to this historical snapshot association.
      *
-     * @x-autobe-database-schema-property community_platform_comment_file_id
-     * @x-autobe-specification Maps directly to community_platform_comment_snapshot_files.community_platform_comment_file_id. When provided, replace the linked stored comment file for the existing snapshot association with the supplied community_platform_comment_files.id value. The service must verify that the referenced file exists, is valid for the same parent comment context implied by the resolved snapshot hierarchy, and does not violate the unique constraint on the pair (community_platform_comment_snapshot_id, community_platform_comment_file_id). If omitted, keep the current linked file unchanged.
+         * @x-autobe-database-schema-property community_platform_comment_file_id
+         * @x-autobe-specification Maps directly to
+         *   community_platform_comment_snapshot_files.community_platform_comment_file_id.
+         *   When provided, replace the linked stored comment file for the
+         *   existing snapshot association with the supplied
+         *   community_platform_comment_files.id value. The service must verify
+         *   that the referenced file exists, is valid for the same parent
+         *   comment context implied by the resolved snapshot hierarchy, and
+         *   does not violate the unique constraint on the pair
+         *   (community_platform_comment_snapshot_id,
+         *   community_platform_comment_file_id). If omitted, keep the current
+         *   linked file unchanged.
      */
     community_platform_comment_file_id?:
       | (string & tags.Format<"uuid">)
@@ -135,8 +198,15 @@ export namespace ICommunityPlatformCommentSnapshotFile {
     /**
      * Soft-deletion timestamp for the historical snapshot-file association, or null to restore it.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Maps directly to community_platform_comment_snapshot_files.deleted_at. This nullable timestamp controls the soft-deletion state of the snapshot-file association. If omitted, leave the current deletion state unchanged. If provided as a date-time string, mark the association as soft deleted at that timestamp. If provided as null, clear any existing soft-deletion marker and restore the association to active state.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Maps directly to
+         *   community_platform_comment_snapshot_files.deleted_at. This nullable
+         *   timestamp controls the soft-deletion state of the snapshot-file
+         *   association. If omitted, leave the current deletion state
+         *   unchanged. If provided as a date-time string, mark the association
+         *   as soft deleted at that timestamp. If provided as null, clear any
+         *   existing soft-deletion marker and restore the association to active
+         *   state.
      */
     deleted_at?: (string & tags.Format<"date-time">) | null | undefined;
   };
@@ -148,40 +218,49 @@ export namespace ICommunityPlatformCommentSnapshotFile {
     /**
      * Unique identifier of this comment snapshot file association record.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from community_platform_comment_snapshot_files.id.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_comment_snapshot_files.id.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Summary information for the stored comment file that was linked to this historical comment snapshot.
      *
-     * @x-autobe-database-schema-property commentFile
-     * @x-autobe-specification Join community_platform_comment_snapshot_files.community_platform_comment_file_id to community_platform_comment_files.id and serialize the related row as ICommunityPlatformCommentFile.ISummary.
+         * @x-autobe-database-schema-property commentFile
+         * @x-autobe-specification Join
+         *   community_platform_comment_snapshot_files.community_platform_comment_file_id
+         *   to community_platform_comment_files.id and serialize the related
+         *   row as ICommunityPlatformCommentFile.ISummary.
      */
     commentFile: ICommunityPlatformCommentFile.ISummary;
 
     /**
      * Timestamp when this snapshot-file association record was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from community_platform_comment_snapshot_files.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_comment_snapshot_files.created_at.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when this snapshot-file association record was last updated.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from community_platform_comment_snapshot_files.updated_at.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_comment_snapshot_files.updated_at.
      */
     updated_at: string & tags.Format<"date-time">;
 
     /**
      * Soft-deletion timestamp of this snapshot-file association, or null when the association is still active.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from community_platform_comment_snapshot_files.deleted_at. Return the timestamp when the association has been soft deleted, or null when it remains active.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_comment_snapshot_files.deleted_at. Return the
+         *   timestamp when the association has been soft deleted, or null when
+         *   it remains active.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };

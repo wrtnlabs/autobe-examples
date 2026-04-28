@@ -23,7 +23,9 @@ export namespace IEcommerceShopDashboard {
      *
      * Sellers use this metric to understand their shop's product catalog size. A count of zero indicates a new seller who has not yet added any products.
      *
-     * @x-autobe-specification COUNT from ecommerce_products WHERE seller_id = authenticated seller AND deleted_at IS NULL. Returns zero if seller has no products.
+         * @x-autobe-specification COUNT from ecommerce_products WHERE seller_id
+         *   = authenticated seller AND deleted_at IS NULL. Returns zero if
+         *   seller has no products.
      */
     product_count: number & tags.Type<"int32"> & tags.Minimum<0>;
 
@@ -36,7 +38,9 @@ export namespace IEcommerceShopDashboard {
      *
      * This metric helps sellers understand their sales volume. A higher count indicates more products have been sold through their shop.
      *
-     * @x-autobe-specification COUNT from ecommerce_order_items JOIN ecommerce_products on product_variant_id WHERE products.seller_id = authenticated seller. Returns zero if seller has no order items.
+         * @x-autobe-specification COUNT from ecommerce_order_items JOIN
+         *   ecommerce_products on product_variant_id WHERE products.seller_id =
+         *   authenticated seller. Returns zero if seller has no order items.
      */
     order_item_count: number & tags.Type<"int32"> & tags.Minimum<0>;
 
@@ -49,7 +53,11 @@ export namespace IEcommerceShopDashboard {
      *
      * Sellers should review and respond to pending cancellation requests promptly. This metric helps identify how many requests require immediate attention.
      *
-     * @x-autobe-specification COUNT from ecommerce_cancellation_requests JOIN ecommerce_order_items JOIN ecommerce_products WHERE products.seller_id = authenticated seller AND cancellation_requests.status = 'pending'. Returns zero if no pending cancellation requests exist.
+         * @x-autobe-specification COUNT from ecommerce_cancellation_requests
+         *   JOIN ecommerce_order_items JOIN ecommerce_products WHERE
+         *   products.seller_id = authenticated seller AND
+         *   cancellation_requests.status = 'pending'. Returns zero if no
+         *   pending cancellation requests exist.
      */
     pending_cancellation_request_count: number &
       tags.Type<"int32"> &
@@ -64,7 +72,11 @@ export namespace IEcommerceShopDashboard {
      *
      * Sellers should review and respond to pending refund requests promptly. This metric helps identify how many requests require immediate attention.
      *
-     * @x-autobe-specification COUNT from ecommerce_refund_requests JOIN ecommerce_order_items JOIN ecommerce_products WHERE products.seller_id = authenticated seller AND refund_requests.status = 'pending'. Returns zero if no pending refund requests exist.
+         * @x-autobe-specification COUNT from ecommerce_refund_requests JOIN
+         *   ecommerce_order_items JOIN ecommerce_products WHERE
+         *   products.seller_id = authenticated seller AND
+         *   refund_requests.status = 'pending'. Returns zero if no pending
+         *   refund requests exist.
      */
     pending_refund_request_count: number & tags.Type<"int32"> & tags.Minimum<0>;
   };

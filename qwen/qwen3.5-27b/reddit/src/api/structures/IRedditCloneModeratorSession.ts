@@ -24,8 +24,9 @@ export type IRedditCloneModeratorSession = {
    *
    * This UUID serves as the primary key for the session record and is used to reference this specific authentication session in API operations and audit logs.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from reddit_clone_moderator_sessions.id. Primary key, UUID format.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_moderator_sessions.id. Primary key, UUID format.
    */
   id: string & tags.Format<"uuid">;
 
@@ -34,8 +35,11 @@ export type IRedditCloneModeratorSession = {
    *
    * This object contains the moderator's public profile information including display name, email, and account status. The relationship is established through the reddit_clone_moderator_id foreign key in the sessions table.
    *
-   * @x-autobe-database-schema-property moderator
-   * @x-autobe-specification Join from reddit_clone_moderator_sessions.reddit_clone_moderator_id FK to reddit_clone_moderators.id. Returns IRedditCloneModerator.ISummary object with moderator account details.
+     * @x-autobe-database-schema-property moderator
+     * @x-autobe-specification Join from
+     *   reddit_clone_moderator_sessions.reddit_clone_moderator_id FK to
+     *   reddit_clone_moderators.id. Returns IRedditCloneModerator.ISummary
+     *   object with moderator account details.
    */
   moderator: IRedditCloneModerator.ISummary;
 
@@ -44,8 +48,10 @@ export type IRedditCloneModeratorSession = {
    *
    * This field records the network address of the client device during the authentication process. Used for security auditing, session validation, and detecting suspicious login patterns.
    *
-   * @x-autobe-database-schema-property ip
-   * @x-autobe-specification Direct mapping from reddit_clone_moderator_sessions.ip. Client IP address captured at login time.
+     * @x-autobe-database-schema-property ip
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_moderator_sessions.ip. Client IP address captured at login
+     *   time.
    */
   ip: string;
 
@@ -54,8 +60,10 @@ export type IRedditCloneModeratorSession = {
    *
    * This field tracks the post-login destination page or application endpoint accessed through this session. Useful for navigation tracking and user experience analytics.
    *
-   * @x-autobe-database-schema-property href
-   * @x-autobe-specification Direct mapping from reddit_clone_moderator_sessions.href. Destination URL after successful login.
+     * @x-autobe-database-schema-property href
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_moderator_sessions.href. Destination URL after successful
+     *   login.
    */
   href: string & tags.Format<"uri">;
 
@@ -64,8 +72,10 @@ export type IRedditCloneModeratorSession = {
    *
    * This optional field tracks the source page or application that initiated the authentication flow. May be null if the login was initiated directly without a referrer.
    *
-   * @x-autobe-database-schema-property referrer
-   * @x-autobe-specification Direct mapping from reddit_clone_moderator_sessions.referrer. Nullable field tracking the source page that initiated the authentication flow.
+     * @x-autobe-database-schema-property referrer
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_moderator_sessions.referrer. Nullable field tracking the
+     *   source page that initiated the authentication flow.
    */
   referrer: (string & tags.Format<"uri">) | null;
 
@@ -74,8 +84,10 @@ export type IRedditCloneModeratorSession = {
    *
    * Records the exact time when the moderator authenticated and the session token was issued. Used for session age calculations, audit trails, and access pattern analysis.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from reddit_clone_moderator_sessions.created_at. Timestamp when the session was created and authentication token was issued.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_moderator_sessions.created_at. Timestamp when the session
+     *   was created and authentication token was issued.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -84,8 +96,10 @@ export type IRedditCloneModeratorSession = {
    *
    * Defines the session validity period for security purposes. Sessions are automatically invalidated after this time, requiring the moderator to re-authenticate to continue accessing the system.
    *
-   * @x-autobe-database-schema-property expired_at
-   * @x-autobe-specification Direct mapping from reddit_clone_moderator_sessions.expired_at. Timestamp when the session expires and becomes invalid.
+     * @x-autobe-database-schema-property expired_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_moderator_sessions.expired_at. Timestamp when the session
+     *   expires and becomes invalid.
    */
   expired_at: string & tags.Format<"date-time">;
 };
@@ -103,8 +117,10 @@ export namespace IRedditCloneModeratorSession {
      *
      * This UUID identifies the specific session record in the system and is used to reference this session in API operations and audit logs.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from reddit_clone_moderator_sessions.id. Primary key unique identifier for the session record.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_moderator_sessions.id. Primary key unique identifier
+         *   for the session record.
      */
     id: string & tags.Format<"uuid">;
 
@@ -113,8 +129,10 @@ export namespace IRedditCloneModeratorSession {
      *
      * This field captures the network address of the client device during login for security auditing, session validation, and detecting suspicious authentication patterns.
      *
-     * @x-autobe-database-schema-property ip
-     * @x-autobe-specification Direct mapping from reddit_clone_moderator_sessions.ip. Stores the IPv4 or IPv6 address from which the moderator authenticated.
+         * @x-autobe-database-schema-property ip
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_moderator_sessions.ip. Stores the IPv4 or IPv6 address
+         *   from which the moderator authenticated.
      */
     ip: string;
 
@@ -123,8 +141,10 @@ export namespace IRedditCloneModeratorSession {
      *
      * This field records the destination page or application endpoint accessed through this session, useful for navigation tracking and session context.
      *
-     * @x-autobe-database-schema-property href
-     * @x-autobe-specification Direct mapping from reddit_clone_moderator_sessions.href. Stores the URL the user was redirected to after successful authentication.
+         * @x-autobe-database-schema-property href
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_moderator_sessions.href. Stores the URL the user was
+         *   redirected to after successful authentication.
      */
     href: string & tags.Format<"uri">;
 
@@ -133,8 +153,10 @@ export namespace IRedditCloneModeratorSession {
      *
      * This optional field tracks the source page or application that initiated the authentication flow, providing context for how the moderator accessed the system.
      *
-     * @x-autobe-database-schema-property referrer
-     * @x-autobe-specification Direct mapping from reddit_clone_moderator_sessions.referrer. Nullable field storing the source URL that initiated the authentication flow.
+         * @x-autobe-database-schema-property referrer
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_moderator_sessions.referrer. Nullable field storing
+         *   the source URL that initiated the authentication flow.
      */
     referrer: (string & tags.Format<"uri">) | null;
 
@@ -143,8 +165,10 @@ export namespace IRedditCloneModeratorSession {
      *
      * Records the exact time when the moderator authenticated and the session token was issued, used for session age calculations and audit trail purposes.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from reddit_clone_moderator_sessions.created_at. Timestamp when the moderator authenticated and the session token was issued.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_moderator_sessions.created_at. Timestamp when the
+         *   moderator authenticated and the session token was issued.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -153,8 +177,10 @@ export namespace IRedditCloneModeratorSession {
      *
      * Defines the session validity period for security purposes. Sessions are invalidated after this time and require re-authentication to access moderator privileges.
      *
-     * @x-autobe-database-schema-property expired_at
-     * @x-autobe-specification Direct mapping from reddit_clone_moderator_sessions.expired_at. Timestamp defining the session validity period for security purposes.
+         * @x-autobe-database-schema-property expired_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_moderator_sessions.expired_at. Timestamp defining the
+         *   session validity period for security purposes.
      */
     expired_at: string & tags.Format<"date-time">;
 
@@ -163,8 +189,11 @@ export namespace IRedditCloneModeratorSession {
      *
      * This field provides a reference to the authenticated moderator's summary information, including their profile details and account status. The moderator object is returned instead of exposing the raw foreign key ID.
      *
-     * @x-autobe-database-schema-property moderator
-     * @x-autobe-specification Relation mapping via JOIN from reddit_clone_moderator_sessions.reddit_clone_moderator_id to reddit_clone_moderators.id. Returns IRedditCloneModerator.ISummary containing the authenticated moderator's summary information.
+         * @x-autobe-database-schema-property moderator
+         * @x-autobe-specification Relation mapping via JOIN from
+         *   reddit_clone_moderator_sessions.reddit_clone_moderator_id to
+         *   reddit_clone_moderators.id. Returns IRedditCloneModerator.ISummary
+         *   containing the authenticated moderator's summary information.
      */
     moderator: IRedditCloneModerator.ISummary;
   };
@@ -194,20 +223,20 @@ export namespace IRedditCloneModeratorSession {
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
       | undefined;
     /**
-     * @x-autobe-database-schema-property created_at
+         * @x-autobe-database-schema-property created_at
      */
     createdAtFrom?: (string & tags.Format<"date-time">) | undefined;
     /**
-     * @x-autobe-database-schema-property created_at
+         * @x-autobe-database-schema-property created_at
      */
     createdAtTo?: (string & tags.Format<"date-time">) | undefined;
     /**
-     * @x-autobe-database-schema-property ip
+         * @x-autobe-database-schema-property ip
      */
     ip?: string | undefined;
     isExpired?: boolean | undefined;
     /**
-     * @x-autobe-database-schema-property href
+         * @x-autobe-database-schema-property href
      */
     href?: string | undefined;
 
@@ -216,8 +245,11 @@ export namespace IRedditCloneModeratorSession {
      *
      * This optional field tracks the source page or application that initiated the authentication flow, providing context for how the moderator accessed the system.
      *
-     * @x-autobe-database-schema-property referrer
-     * @x-autobe-specification Direct mapping from reddit_clone_moderator_sessions.referrer. Nullable field storing the source URL that initiated the authentication flow. Filter parameter accepts null values.
+         * @x-autobe-database-schema-property referrer
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_moderator_sessions.referrer. Nullable field storing
+         *   the source URL that initiated the authentication flow. Filter
+         *   parameter accepts null values.
      */
     referrer?: string | null | undefined;
   };

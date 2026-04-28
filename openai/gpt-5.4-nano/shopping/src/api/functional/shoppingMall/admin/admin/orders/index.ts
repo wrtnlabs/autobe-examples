@@ -283,7 +283,8 @@ export namespace at {
  * @param props.body Administrator update payload for the target order. The payload expresses the intended administrator decision and any permitted update fields, with side effects applied to associated order items and related workflow outcomes as required by business rules.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Implement PUT /admin/orders/{orderId} as an administrator-scoped order update.
+ * @x-autobe-specification Implement PUT /admin/orders/{orderId} as an
+ *   administrator-scoped order update.
  *
  * 1) Authenticate and authorize:
  * - Require an authenticated administrator actor.
@@ -429,19 +430,28 @@ export namespace update {
  * @param props.orderId Target order identifier to permanently remove.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Implementation steps:
- * 1) Authorization: verify the caller has `admin` privileges.
- * 2) Load target order by `shopping_mall_orders.id = orderId`.
- *    - If not found, return not-found.
- * 3) Start a single database transaction.
- * 4) Deletion execution (order-centric):
- *    - Delete `shopping_mall_order_items` rows belonging to the order (where shopping_mall_order_id = orderId). These rows may have shipment linkage; ensure dependent shipment-item relations (via foreign keys/cascades) are satisfied.
- *    - Delete `shopping_mall_shipments` rows belonging to the order (where shopping_mall_order_id = orderId).
- *    - Delete the `shopping_mall_orders` row itself.
- *    - Because `shopping_mall_orders.shopping_payment_id` is uniquely constrained (`@@unique([shopping_payment_id])`) and linked to `shopping_mall_payments` with `onDelete` semantics defined in the Prisma schema, apply the cascade rules consistently: either allow payment deletion if configured, or avoid deleting payment if it is referenced elsewhere (implementation must follow the actual DB FK constraints).
- * 5) Snapshot trail integrity safeguards:
- *    - Before committing, ensure the cascade will not remove snapshot records required for dispute resolution. If snapshots are stored in `shopping_mall_snapshots` and are linked from order items by `seller_snapshot_id`, validate that foreign keys do not cascade-delete snapshot records. If snapshots would be removed, abort and return an error.
- * 6) Commit transaction and return no content (null response body).
+ * @x-autobe-specification Implementation steps: 1) Authorization: verify the
+ *   caller has `admin` privileges. 2) Load target order by
+ *   `shopping_mall_orders.id = orderId`. - If not found, return not-found. 3)
+ *   Start a single database transaction. 4) Deletion execution (order-centric):
+ *   - Delete `shopping_mall_order_items` rows belonging to the order (where
+ *   shopping_mall_order_id = orderId). These rows may have shipment linkage;
+ *   ensure dependent shipment-item relations (via foreign keys/cascades) are
+ *   satisfied. - Delete `shopping_mall_shipments` rows belonging to the order
+ *   (where shopping_mall_order_id = orderId). - Delete the
+ *   `shopping_mall_orders` row itself. - Because
+ *   `shopping_mall_orders.shopping_payment_id` is uniquely constrained
+ *   (`@@unique([shopping_payment_id])`) and linked to `shopping_mall_payments`
+ *   with `onDelete` semantics defined in the Prisma schema, apply the cascade
+ *   rules consistently: either allow payment deletion if configured, or avoid
+ *   deleting payment if it is referenced elsewhere (implementation must follow
+ *   the actual DB FK constraints). 5) Snapshot trail integrity safeguards: -
+ *   Before committing, ensure the cascade will not remove snapshot records
+ *   required for dispute resolution. If snapshots are stored in
+ *   `shopping_mall_snapshots` and are linked from order items by
+ *   `seller_snapshot_id`, validate that foreign keys do not cascade-delete
+ *   snapshot records. If snapshots would be removed, abort and return an error.
+ *   6) Commit transaction and return no content (null response body).
  *
  * Edge cases:
  * - Order may already be soft-deleted (`shopping_mall_orders.deleted_at` not null). This endpoint must still deterministically remove the record; if the record is not present in active tables but exists in the DB, deletion should still proceed by primary key.

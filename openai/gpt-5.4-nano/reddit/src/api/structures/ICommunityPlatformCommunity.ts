@@ -10,71 +10,88 @@ export type ICommunityPlatformCommunity = {
   /**
    * Unique identifier of the community.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from community_platform_communities.id (UUID).
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_communities.id (UUID).
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * The community owner’s public member identity.
    *
-   * @x-autobe-database-schema-property owner
-   * @x-autobe-specification Resolve community_platform_communities.community_owner_id to community_platform_members.id via the owner relation and project as ICommunityPlatformMember.ISummary.
+     * @x-autobe-database-schema-property owner
+     * @x-autobe-specification Resolve
+     *   community_platform_communities.community_owner_id to
+     *   community_platform_members.id via the owner relation and project as
+     *   ICommunityPlatformMember.ISummary.
    */
   owner: ICommunityPlatformMember.ISummary;
 
   /**
    * Community display name used for discovery and browsing.
    *
-   * @x-autobe-database-schema-property name
-   * @x-autobe-specification Direct mapping from community_platform_communities.name. Uniqueness enforced by DB @@unique([name]).
+     * @x-autobe-database-schema-property name
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_communities.name. Uniqueness enforced by DB
+     *   @@unique([name]).
    */
   name: string;
 
   /**
    * Text description explaining what the community is about.
    *
-   * @x-autobe-database-schema-property description
-   * @x-autobe-specification Direct mapping from community_platform_communities.description.
+     * @x-autobe-database-schema-property description
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_communities.description.
    */
   description: string;
 
   /**
    * Reference URL for the community icon shown in UI views.
    *
-   * @x-autobe-database-schema-property icon_href
-   * @x-autobe-specification Direct mapping from community_platform_communities.icon_href to DTO iconHref.
+     * @x-autobe-database-schema-property icon_href
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_communities.icon_href to DTO iconHref.
    */
   iconHref: string & tags.MaxLength<80000>;
 
   /**
    * Number of active subscribers for this community (null if unavailable).
    *
-   * @x-autobe-specification Compute by counting rows in community_platform_community_subscriptions where community_id = community_platform_communities.id and is_active = true. Use a single aggregate query (LEFT JOIN + COUNT or COUNT subquery). If computation fails/unavailable, still return the identity fields and set subscriberCount to null.
+     * @x-autobe-specification Compute by counting rows in
+     *   community_platform_community_subscriptions where community_id =
+     *   community_platform_communities.id and is_active = true. Use a single
+     *   aggregate query (LEFT JOIN + COUNT or COUNT subquery). If computation
+     *   fails/unavailable, still return the identity fields and set
+     *   subscriberCount to null.
    */
   subscriberCount: (number & tags.Type<"int32">) | null;
 
   /**
    * Timestamp when this community record was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from community_platform_communities.created_at.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_communities.created_at.
    */
   createdAt: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when this community record was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from community_platform_communities.updated_at.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_communities.updated_at.
    */
   updatedAt: string & tags.Format<"date-time">;
 
   /**
    * Soft-deletion timestamp; null when the community is active.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from community_platform_communities.deleted_at. Null means the community is active/not soft-deleted.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_communities.deleted_at. Null means the community is
+     *   active/not soft-deleted.
    */
   deletedAt: (string & tags.Format<"date-time">) | null;
 };
@@ -86,24 +103,33 @@ export namespace ICommunityPlatformCommunity {
     /**
      * Community display name used for discovery and browsing. Must be unique across communities.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from community_platform_communities.name. Validate that the new name does not conflict with another community's unique name (@@unique([name])) excluding the current communityId when performing conflict checks.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_communities.name. Validate that the new name
+         *   does not conflict with another community's unique name
+         *   (@@unique([name])) excluding the current communityId when
+         *   performing conflict checks.
      */
     name?: string | undefined;
 
     /**
      * Community description text that explains what the community is about.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from community_platform_communities.description. Persist as-provided as the community's description shown to users.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_communities.description. Persist as-provided as
+         *   the community's description shown to users.
      */
     description?: string | undefined;
 
     /**
      * Reference URL for the community icon image used in UI rendering.
      *
-     * @x-autobe-database-schema-property icon_href
-     * @x-autobe-specification Direct mapping from community_platform_communities.icon_href. Validate that icon_href is a well-formed URL reference (OpenAPI format: url). Persist as-provided, updating community_platform_communities.icon_href.
+         * @x-autobe-database-schema-property icon_href
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_communities.icon_href. Validate that icon_href
+         *   is a well-formed URL reference (OpenAPI format: url). Persist
+         *   as-provided, updating community_platform_communities.icon_href.
      */
     icon_href?: (string & tags.Format<"url">) | undefined;
   };
@@ -115,71 +141,85 @@ export namespace ICommunityPlatformCommunity {
     /**
      * Unique identifier of the community.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from community_platform_communities.id (UUID).
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_communities.id (UUID).
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * The community owner as a public member summary.
      *
-     * @x-autobe-database-schema-property owner
-     * @x-autobe-specification Join community_platform_communities.owner (community_owner_id) to community_platform_members and return ICommunityPlatformMember.ISummary for the owner.
+         * @x-autobe-database-schema-property owner
+         * @x-autobe-specification Join community_platform_communities.owner
+         *   (community_owner_id) to community_platform_members and return
+         *   ICommunityPlatformMember.ISummary for the owner.
      */
     owner: ICommunityPlatformMember.ISummary;
 
     /**
      * Community display name.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from community_platform_communities.name.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_communities.name.
      */
     name: string;
 
     /**
      * Text description of the community.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from community_platform_communities.description.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_communities.description.
      */
     description: string;
 
     /**
      * Icon URL reference for the community.
      *
-     * @x-autobe-database-schema-property icon_href
-     * @x-autobe-specification Direct mapping from community_platform_communities.icon_href.
+         * @x-autobe-database-schema-property icon_href
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_communities.icon_href.
      */
     icon_href: string & tags.Format<"uri">;
 
     /**
      * Number of active subscribers for this community.
      *
-     * @x-autobe-specification Compute subscriber_count as COUNT of community_platform_community_subscriptions rows per community_id where is_active = true and deleted_at IS NULL. Use LEFT JOIN so communities without subscriptions still return with subscriber_count = 0.
+         * @x-autobe-specification Compute subscriber_count as COUNT of
+         *   community_platform_community_subscriptions rows per community_id
+         *   where is_active = true and deleted_at IS NULL. Use LEFT JOIN so
+         *   communities without subscriptions still return with
+         *   subscriber_count = 0.
      */
     subscriber_count: number & tags.Type<"int32">;
 
     /**
      * Timestamp when the community was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from community_platform_communities.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_communities.created_at.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when the community was last updated.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from community_platform_communities.updated_at.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_communities.updated_at.
      */
     updated_at: string & tags.Format<"date-time">;
 
     /**
      * Soft-deletion timestamp for the community. Null if the community is active.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from community_platform_communities.deleted_at. If the community is not soft-deleted, deleted_at should be null.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_communities.deleted_at. If the community is not
+         *   soft-deleted, deleted_at should be null.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };
@@ -191,24 +231,33 @@ export namespace ICommunityPlatformCommunity {
     /**
      * Unique community display name used for discovery and browsing.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from community_platform_communities.name. The service must validate non-empty input (minLength=1) and rely on the DB unique constraint @@unique([name]) for collision handling; on unique violations, translate to a domain error at the operation layer.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_communities.name. The service must validate
+         *   non-empty input (minLength=1) and rely on the DB unique constraint
+         *   @@unique([name]) for collision handling; on unique violations,
+         *   translate to a domain error at the operation layer.
      */
     name: string & tags.MinLength<1> & tags.MaxLength<65535>;
 
     /**
      * Text description explaining what the community is about.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from community_platform_communities.description. The service must validate non-empty input (minLength=1) before persisting.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_communities.description. The service must
+         *   validate non-empty input (minLength=1) before persisting.
      */
     description: string & tags.MinLength<1> & tags.MaxLength<65535>;
 
     /**
      * Reference URL (or href) for the community icon image.
      *
-     * @x-autobe-database-schema-property icon_href
-     * @x-autobe-specification Direct mapping from community_platform_communities.icon_href. The service must validate presence (minLength=1) and persist the value as provided; store as the community icon reference used by list/detail views.
+         * @x-autobe-database-schema-property icon_href
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_communities.icon_href. The service must validate
+         *   presence (minLength=1) and persist the value as provided; store as
+         *   the community icon reference used by list/detail views.
      */
     icon_href: string & tags.MinLength<1> & tags.MaxLength<80000>;
   };
@@ -220,21 +269,36 @@ export namespace ICommunityPlatformCommunity {
     /**
      * Optional community name filter used to discover/search communities. When provided, the backend matches it against communities' names and returns communities that satisfy the matching rules.
      *
-     * @x-autobe-specification Used to build a WHERE predicate on community_platform_communities.name during the communities discovery/search query. If search is present, apply the business-layer matching behavior to community_platform_communities.name; if absent, omit the name predicate. Always execute with deleted-community exclusion (community_platform_communities.deleted_at IS NULL) in the backing list operation.
+         * @x-autobe-specification Used to build a WHERE predicate on
+         *   community_platform_communities.name during the communities
+         *   discovery/search query. If search is present, apply the
+         *   business-layer matching behavior to
+         *   community_platform_communities.name; if absent, omit the name
+         *   predicate. Always execute with deleted-community exclusion
+         *   (community_platform_communities.deleted_at IS NULL) in the backing
+         *   list operation.
      */
     search?: string | undefined;
 
     /**
      * Current page number (1-indexed) for the communities list.
      *
-     * @x-autobe-specification 1-indexed pagination control for list endpoints. Validate minimum of 1 (schema). Convert to an offset as (page-1) * limit (or equivalent cursor logic) when building the list query. Works together with deterministic ordering to ensure stable pagination.
+         * @x-autobe-specification 1-indexed pagination control for list
+         *   endpoints. Validate minimum of 1 (schema). Convert to an offset as
+         *   (page-1) * limit (or equivalent cursor logic) when building the
+         *   list query. Works together with deterministic ordering to ensure
+         *   stable pagination.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of communities to return in the response page.
      *
-     * @x-autobe-specification Pagination page-size control for list endpoints. Validate minimum of 1 (schema). Use as the LIMIT value (or page size in cursor pagination) when building the list query, combined with deterministic ordering and the computed offset derived from page.
+         * @x-autobe-specification Pagination page-size control for list
+         *   endpoints. Validate minimum of 1 (schema). Use as the LIMIT value
+         *   (or page size in cursor pagination) when building the list query,
+         *   combined with deterministic ordering and the computed offset
+         *   derived from page.
      */
     limit?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
   };

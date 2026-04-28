@@ -21,9 +21,10 @@ export class CommunityplatformGuestGuestsController {
    * Related operations: guest browsing UIs typically pair this entry-point with feed listing operations. Those feed-specific endpoints should be responsible for determining which communities/posts are publicly visible, while this operation only supplies a guest-safe overview needed by the client to proceed with public browsing.
    *
    * @param connection
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor guest
-   * @x-autobe-specification Implement a guest-safe read endpoint that returns a public overview for unauthenticated users.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor guest
+     * @x-autobe-specification Implement a guest-safe read endpoint that returns
+     *   a public overview for unauthenticated users.
    *
    * Service-layer behavior:
    * 1) Authenticate request context: treat requester as guest (no member identity). If an authenticated identity is present, this endpoint should still respond in a guest-safe way (do not return member-specific secrets).

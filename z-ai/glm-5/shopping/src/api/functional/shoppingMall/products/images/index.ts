@@ -158,7 +158,8 @@ export namespace update {
  * @param props.imageId Unique identifier of the product image to retrieve.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query the shopping_mall_product_images table by primary key (id) to retrieve the image record.
+ * @x-autobe-specification Query the shopping_mall_product_images table by
+ *   primary key (id) to retrieve the image record.
  *
  * Implementation steps:
  * 1. Validate both path parameters are valid UUIDs

@@ -10,64 +10,93 @@ export type IShoppingMallCustomer = {
   /**
    * The unique identifier of the customer account. A UUID v4 string that serves as the primary key for this customer record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_customers.id. UUID v4 primary key, auto-generated at record creation. Use this value as the path parameter when targeting a specific customer in other endpoints.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from shopping_mall_customers.id.
+     *   UUID v4 primary key, auto-generated at record creation. Use this value
+     *   as the path parameter when targeting a specific customer in other
+     *   endpoints.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * The customer's unique email address, used as their login identifier. This value is set at registration and cannot be changed thereafter.
    *
-   * @x-autobe-database-schema-property email
-   * @x-autobe-specification Direct mapping from shopping_mall_customers.email. Unique across all customer accounts (@@unique([email])). Immutable after registration — this field cannot be changed by any update operation. Used as the login identifier.
+     * @x-autobe-database-schema-property email
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_customers.email. Unique across all customer accounts
+     *   (@@unique([email])). Immutable after registration — this field cannot
+     *   be changed by any update operation. Used as the login identifier.
    */
   email: string & tags.Format<"email">;
 
   /**
    * The customer's display name shown publicly on the platform, such as in product reviews. This value can be updated by the customer or by an administrator.
    *
-   * @x-autobe-database-schema-property nickname
-   * @x-autobe-specification Direct mapping from shopping_mall_customers.nickname. Non-null string. Mutable — can be updated by the customer via PUT /customer/profile or by an administrator. Displayed publicly on the platform (e.g., alongside product reviews).
+     * @x-autobe-database-schema-property nickname
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_customers.nickname. Non-null string. Mutable — can be
+     *   updated by the customer via PUT /customer/profile or by an
+     *   administrator. Displayed publicly on the platform (e.g., alongside
+     *   product reviews).
    */
   nickname: string;
 
   /**
    * The customer's optional contact phone number. Returns null if the customer has not provided a phone number.
    *
-   * @x-autobe-database-schema-property phone
-   * @x-autobe-specification Direct mapping from shopping_mall_customers.phone. Nullable string column (String?). Returns null when the customer has not provided a contact number. Can be set or cleared via profile update operations.
+     * @x-autobe-database-schema-property phone
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_customers.phone. Nullable string column (String?).
+     *   Returns null when the customer has not provided a contact number. Can
+     *   be set or cleared via profile update operations.
    */
   phone: string | null;
 
   /**
    * Indicates whether this customer account has been banned by an administrator. When true, the customer is prevented from logging in and accessing member-only features. Historical records such as orders and reviews are unaffected by the ban.
    *
-   * @x-autobe-database-schema-property is_banned
-   * @x-autobe-specification Direct mapping from shopping_mall_customers.is_banned. Boolean flag managed exclusively by administrator ban/unban operations. When true, the customer cannot log in or access member-only features. Does not affect historical data (orders, reviews remain intact).
+     * @x-autobe-database-schema-property is_banned
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_customers.is_banned. Boolean flag managed exclusively by
+     *   administrator ban/unban operations. When true, the customer cannot log
+     *   in or access member-only features. Does not affect historical data
+     *   (orders, reviews remain intact).
    */
   isBanned: boolean;
 
   /**
    * The timestamp when the customer account was created. This value is set automatically at registration and never changes.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from shopping_mall_customers.created_at. Timestamptz column set automatically at record insertion. Immutable after creation — never modified by any update operation.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_customers.created_at. Timestamptz column set
+     *   automatically at record insertion. Immutable after creation — never
+     *   modified by any update operation.
    */
   createdAt: string & tags.Format<"date-time">;
 
   /**
    * The timestamp of the most recent modification to the customer account, such as a profile update or a ban/unban action.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from shopping_mall_customers.updated_at. Timestamptz column updated automatically whenever the customer record is modified (e.g., profile update, ban/unban operations). Reflects the most recent modification time.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_customers.updated_at. Timestamptz column updated
+     *   automatically whenever the customer record is modified (e.g., profile
+     *   update, ban/unban operations). Reflects the most recent modification
+     *   time.
    */
   updatedAt: string & tags.Format<"date-time">;
 
   /**
    * The soft-deletion timestamp for this customer account. Returns null for active accounts. When set, the account is considered deleted and the customer can no longer log in, though historical records referencing this account (such as orders and reviews) are preserved.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from shopping_mall_customers.deleted_at. Nullable timestamptz column implementing soft deletion. Null when the account is active. Set to the deletion timestamp when the customer deletes their account. Deleted accounts are preserved in the database to maintain referential integrity for historical orders, reviews, and other records.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_customers.deleted_at. Nullable timestamptz column
+     *   implementing soft deletion. Null when the account is active. Set to the
+     *   deletion timestamp when the customer deletes their account. Deleted
+     *   accounts are preserved in the database to maintain referential
+     *   integrity for historical orders, reviews, and other records.
    */
   deletedAt: (string & tags.Format<"date-time">) | null;
 };
@@ -79,16 +108,24 @@ export namespace IShoppingMallCustomer {
     /**
      * The customer's registered email address used as the unique login identifier. Must match an active account on the platform.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping to shopping_mall_customers.email. Used as the lookup key via the @@unique([email]) index. Must be a valid email format. Returns 401 if no active (deleted_at IS NULL) customer record with this email exists.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping to
+         *   shopping_mall_customers.email. Used as the lookup key via the
+         *   @@unique([email]) index. Must be a valid email format. Returns 401
+         *   if no active (deleted_at IS NULL) customer record with this email
+         *   exists.
      */
     email: string & tags.Format<"email">;
 
     /**
      * The customer's plaintext password. Verified server-side against the stored bcrypt hash. Never stored or logged in plaintext.
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification Client submits the plaintext password. The server calls bcrypt.compare(body.password, customer.password_hash) to verify. The raw value is never stored. Returns 401 on mismatch using the same generic error message as a missing account to prevent user enumeration.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification Client submits the plaintext password. The
+         *   server calls bcrypt.compare(body.password, customer.password_hash)
+         *   to verify. The raw value is never stored. Returns 401 on mismatch
+         *   using the same generic error message as a missing account to
+         *   prevent user enumeration.
      */
     password: string;
   };
@@ -106,7 +143,16 @@ export namespace IShoppingMallCustomer {
      *
      * Submit this token to exchange it for a new access token and refresh token pair. The token is validated server-side to confirm it exists and has not expired. Once exchanged, this token is immediately invalidated and cannot be reused.
      *
-     * @x-autobe-specification This field maps to the `refresh_token` column of the `shopping_mall_customer_sessions` table (cross-table reference; the DTO has no direct databaseSchema). The value is used in: SELECT * FROM shopping_mall_customer_sessions WHERE refresh_token = :refresh_token (via @@unique([refresh_token]) index). Must be a non-empty string. Returns 401 if no matching session is found or if the located session's expired_at <= now(). After validation, this token is atomically replaced with a new refresh_token in the same session row, immediately invalidating the submitted value.
+         * @x-autobe-specification This field maps to the `refresh_token` column
+         *   of the `shopping_mall_customer_sessions` table (cross-table
+         *   reference; the DTO has no direct databaseSchema). The value is used
+         *   in: SELECT * FROM shopping_mall_customer_sessions WHERE
+         *   refresh_token = :refresh_token (via @@unique([refresh_token])
+         *   index). Must be a non-empty string. Returns 401 if no matching
+         *   session is found or if the located session's expired_at <= now().
+         *   After validation, this token is atomically replaced with a new
+         *   refresh_token in the same session row, immediately invalidating the
+         *   submitted value.
      */
     refresh_token: string;
   };
@@ -120,19 +166,19 @@ export namespace IShoppingMallCustomer {
    */
   export type IJoin = {
     /**
-     * @x-autobe-database-schema-property email
+         * @x-autobe-database-schema-property email
      */
     email: string & tags.Format<"email">;
     /**
-     * @x-autobe-database-schema-property password_hash
+         * @x-autobe-database-schema-property password_hash
      */
     password: string & tags.MinLength<8> & tags.Format<"password">;
     /**
-     * @x-autobe-database-schema-property nickname
+         * @x-autobe-database-schema-property nickname
      */
     nickname: string & tags.MinLength<1>;
     /**
-     * @x-autobe-database-schema-property phone
+         * @x-autobe-database-schema-property phone
      */
     phone?: string | null | undefined;
     href: string & tags.Format<"uri">;
@@ -151,78 +197,104 @@ export namespace IShoppingMallCustomer {
     /**
      * Unique identifier of the authenticated customer account. This is the UUID primary key of the customer record in the platform.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_customers.id. UUID primary key of the customer account.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_customers.id. UUID primary key of the customer
+         *   account.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * The customer's registered email address, which serves as their unique login identifier on the platform.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from shopping_mall_customers.email. Unique login identifier. Enforced by @@unique([email]) constraint.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_customers.email. Unique login identifier. Enforced by
+         *   @@unique([email]) constraint.
      */
     email: string & tags.Format<"email">;
 
     /**
      * The customer's display name shown publicly on the platform, for example in product reviews. This does not need to be unique across customer accounts.
      *
-     * @x-autobe-database-schema-property nickname
-     * @x-autobe-specification Direct mapping from shopping_mall_customers.nickname. Display name shown publicly (e.g., in product reviews). Does not need to be unique.
+         * @x-autobe-database-schema-property nickname
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_customers.nickname. Display name shown publicly
+         *   (e.g., in product reviews). Does not need to be unique.
      */
     nickname: string;
 
     /**
      * The customer's optional contact phone number. Null if the customer has not provided a phone number during registration or profile update.
      *
-     * @x-autobe-database-schema-property phone
-     * @x-autobe-specification Direct mapping from shopping_mall_customers.phone (nullable String?). Null when the customer has not provided a contact phone number.
+         * @x-autobe-database-schema-property phone
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_customers.phone (nullable String?). Null when the
+         *   customer has not provided a contact phone number.
      */
     phone: string | null;
 
     /**
      * Indicates whether this customer account has been banned by an administrator. Banned customers cannot log in or access member-only features, though their historical records (orders, reviews, etc.) are preserved.
      *
-     * @x-autobe-database-schema-property is_banned
-     * @x-autobe-specification Direct mapping from shopping_mall_customers.is_banned (Boolean). Indicates whether the account has been banned by an administrator. Defaults to false on account creation.
+         * @x-autobe-database-schema-property is_banned
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_customers.is_banned (Boolean). Indicates whether the
+         *   account has been banned by an administrator. Defaults to false on
+         *   account creation.
      */
     isBanned: boolean;
 
     /**
      * ISO 8601 timestamp indicating when the customer account was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_customers.created_at (DateTime Timestamptz). Set to now() at account creation and never modified thereafter.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_customers.created_at (DateTime Timestamptz). Set to
+         *   now() at account creation and never modified thereafter.
      */
     createdAt: string & tags.Format<"date-time">;
 
     /**
      * ISO 8601 timestamp of the most recent update to the customer account, such as a profile change or ban status modification.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from shopping_mall_customers.updated_at (DateTime Timestamptz). Updated to now() whenever the customer record is modified, such as profile changes or ban status changes.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_customers.updated_at (DateTime Timestamptz). Updated
+         *   to now() whenever the customer record is modified, such as profile
+         *   changes or ban status changes.
      */
     updatedAt: string & tags.Format<"date-time">;
 
     /**
      * ISO 8601 timestamp of when the customer account was soft-deleted, or null if the account is currently active. Soft-deleted customers retain their historical records but cannot authenticate.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from shopping_mall_customers.deleted_at (nullable DateTime? Timestamptz). Null when the account is active. Set to now() on soft deletion. Soft-deleted accounts cannot log in.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_customers.deleted_at (nullable DateTime?
+         *   Timestamptz). Null when the account is active. Set to now() on soft
+         *   deletion. Soft-deleted accounts cannot log in.
      */
     deletedAt: (string & tags.Format<"date-time">) | null;
 
     /**
      * The complete customer profile entity associated with this authorized session. Contains the full set of non-sensitive customer fields (id, email, nickname, phone, ban status, and timestamps).
      *
-     * @x-autobe-specification Computed nested object: select all public columns from shopping_mall_customers (id, email, nickname, phone, is_banned, created_at, updated_at, deleted_at) and construct an IShoppingMallCustomer object. This field carries the same data as the top-level scalar fields but packaged as a standalone entity for clients who prefer the nested format. password_hash is never included.
+         * @x-autobe-specification Computed nested object: select all public
+         *   columns from shopping_mall_customers (id, email, nickname, phone,
+         *   is_banned, created_at, updated_at, deleted_at) and construct an
+         *   IShoppingMallCustomer object. This field carries the same data as
+         *   the top-level scalar fields but packaged as a standalone entity for
+         *   clients who prefer the nested format. password_hash is never
+         *   included.
      */
     customer: IShoppingMallCustomer;
 
     /**
      * Authorization token.
      *
-     * @x-autobe-specification Authorization token comes from the session table.
+         * @x-autobe-specification Authorization token comes from the session
+         *   table.
      */
     token: IAuthorizationToken;
   };
@@ -234,28 +306,47 @@ export namespace IShoppingMallCustomer {
     /**
      * Optional partial text search filter on the customer's display nickname. When provided, returns only customers whose nickname partially matches this value. Supports fuzzy and partial matching.
      *
-     * @x-autobe-specification Optional filter parameter. When provided, applies a pg_trgm trigram similarity/ILIKE '%nickname%' search on the shopping_mall_customers.nickname column, which has a GIN trigram index (gin_trgm_ops) for efficient partial/fuzzy matching. Omitting this field returns customers of all nicknames.
+         * @x-autobe-specification Optional filter parameter. When provided,
+         *   applies a pg_trgm trigram similarity/ILIKE '%nickname%' search on
+         *   the shopping_mall_customers.nickname column, which has a GIN
+         *   trigram index (gin_trgm_ops) for efficient partial/fuzzy matching.
+         *   Omitting this field returns customers of all nicknames.
      */
     nickname?: string | undefined;
 
     /**
      * Optional partial match filter on the customer's email address. When provided, returns only customers whose email contains this value as a substring.
      *
-     * @x-autobe-specification Optional filter parameter. When provided, applies an ILIKE '%email%' partial match against the shopping_mall_customers.email column. The email column is unique per customer. Omitting this field returns customers of all email addresses.
+         * @x-autobe-specification Optional filter parameter. When provided,
+         *   applies an ILIKE '%email%' partial match against the
+         *   shopping_mall_customers.email column. The email column is unique
+         *   per customer. Omitting this field returns customers of all email
+         *   addresses.
      */
     email?: (string & tags.Format<"email">) | undefined;
 
     /**
      * Optional filter on the customer's ban status. When true, returns only banned customers. When false, returns only active customers. Omit to return all customers regardless of ban status.
      *
-     * @x-autobe-specification Optional filter parameter. When provided, applies WHERE is_banned = isBanned on the shopping_mall_customers.is_banned boolean column. When true, returns only banned customers; when false, returns only active (non-banned) customers. Omitting this field returns customers regardless of ban status.
+         * @x-autobe-specification Optional filter parameter. When provided,
+         *   applies WHERE is_banned = isBanned on the
+         *   shopping_mall_customers.is_banned boolean column. When true,
+         *   returns only banned customers; when false, returns only active
+         *   (non-banned) customers. Omitting this field returns customers
+         *   regardless of ban status.
      */
     isBanned?: boolean | undefined;
 
     /**
      * Optional registration date range filter. Specify from and/or to as ISO 8601 date-time strings to restrict results to customers registered within the given period. Either bound may be null for an open-ended range.
      *
-     * @x-autobe-specification Optional date-time range filter applied to shopping_mall_customers.created_at (account registration timestamp). createdAt.from applies WHERE created_at >= from (inclusive lower bound). createdAt.to applies WHERE created_at <= to (inclusive upper bound). Either or both bounds may be null to indicate an open range. Omitting the entire createdAt object applies no date filter.
+         * @x-autobe-specification Optional date-time range filter applied to
+         *   shopping_mall_customers.created_at (account registration
+         *   timestamp). createdAt.from applies WHERE created_at >= from
+         *   (inclusive lower bound). createdAt.to applies WHERE created_at <=
+         *   to (inclusive upper bound). Either or both bounds may be null to
+         *   indicate an open range. Omitting the entire createdAt object
+         *   applies no date filter.
      */
     createdAt?:
       | {
@@ -267,7 +358,11 @@ export namespace IShoppingMallCustomer {
     /**
      * Optional field name to sort results by. Accepted values are 'created_at' (registration date) and 'nickname' (display name). Defaults to sorting by registration date when not specified.
      *
-     * @x-autobe-specification Optional sort column selector. Accepted values: 'created_at' (sort by shopping_mall_customers.created_at) or 'nickname' (sort by shopping_mall_customers.nickname). Defaults to 'created_at' when omitted or null. Applied together with the order field.
+         * @x-autobe-specification Optional sort column selector. Accepted
+         *   values: 'created_at' (sort by shopping_mall_customers.created_at)
+         *   or 'nickname' (sort by shopping_mall_customers.nickname). Defaults
+         *   to 'created_at' when omitted or null. Applied together with the
+         *   order field.
      */
     sort?:
       | (string & tags.Pattern<"^(created_at|nickname)$">)
@@ -277,21 +372,27 @@ export namespace IShoppingMallCustomer {
     /**
      * Optional sort direction. Use 'asc' for ascending order or 'desc' for descending order. Defaults to descending when not specified.
      *
-     * @x-autobe-specification Optional sort direction selector. Accepted values: 'asc' (ascending) or 'desc' (descending). Defaults to 'desc' when omitted or null. Applied together with the sort field.
+         * @x-autobe-specification Optional sort direction selector. Accepted
+         *   values: 'asc' (ascending) or 'desc' (descending). Defaults to
+         *   'desc' when omitted or null. Applied together with the sort field.
      */
     order?: (string & tags.Pattern<"^(asc|desc)$">) | null | undefined;
 
     /**
      * Page number to retrieve, starting from 1. Defaults to the first page when not specified.
      *
-     * @x-autobe-specification Pagination page number (1-indexed). Used to compute the SQL OFFSET as (page - 1) * limit. Defaults to 1 when omitted. Minimum value is 1.
+         * @x-autobe-specification Pagination page number (1-indexed). Used to
+         *   compute the SQL OFFSET as (page - 1) * limit. Defaults to 1 when
+         *   omitted. Minimum value is 1.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of customer records to return per page. Must be between 1 and 100. Defaults to 20 when not specified.
      *
-     * @x-autobe-specification Maximum number of customer records to return per page. Used as the LIMIT in the SQL query. Minimum is 1, maximum is 100. Defaults to 20 when omitted.
+         * @x-autobe-specification Maximum number of customer records to return
+         *   per page. Used as the LIMIT in the SQL query. Minimum is 1, maximum
+         *   is 100. Defaults to 20 when omitted.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -309,56 +410,81 @@ export namespace IShoppingMallCustomer {
     /**
      * Unique identifier of the customer account (UUID).
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_customers.id. UUID primary key, auto-generated at record creation. Used to uniquely identify a customer account across all platform endpoints.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_customers.id. UUID primary key, auto-generated at
+         *   record creation. Used to uniquely identify a customer account
+         *   across all platform endpoints.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * The customer's unique email address, used as their login identifier on the platform.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from shopping_mall_customers.email. Unique constraint enforced at the DB level. Used as the customer's primary login identifier. Returned in email format.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_customers.email. Unique constraint enforced at the DB
+         *   level. Used as the customer's primary login identifier. Returned in
+         *   email format.
      */
     email: string & tags.Format<"email">;
 
     /**
      * The customer's display name shown publicly on the platform, such as on product reviews.
      *
-     * @x-autobe-database-schema-property nickname
-     * @x-autobe-specification Direct mapping from shopping_mall_customers.nickname. Not required to be unique. Displayed publicly (e.g., on product reviews) as the customer's chosen display name.
+         * @x-autobe-database-schema-property nickname
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_customers.nickname. Not required to be unique.
+         *   Displayed publicly (e.g., on product reviews) as the customer's
+         *   chosen display name.
      */
     nickname: string;
 
     /**
      * The customer's optional contact phone number. Returns null if the customer has not provided one.
      *
-     * @x-autobe-database-schema-property phone
-     * @x-autobe-specification Direct mapping from shopping_mall_customers.phone. The DB column is nullable (String?), so this field is exposed as oneOf[string, null]. It is still included in the required array because the nullable union explicitly covers the absent case. Returns null when the customer has not provided a phone number.
+         * @x-autobe-database-schema-property phone
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_customers.phone. The DB column is nullable (String?),
+         *   so this field is exposed as oneOf[string, null]. It is still
+         *   included in the required array because the nullable union
+         *   explicitly covers the absent case. Returns null when the customer
+         *   has not provided a phone number.
      */
     phone: string | null;
 
     /**
      * Indicates whether this customer account has been banned by an administrator. Banned customers cannot log in to the platform.
      *
-     * @x-autobe-database-schema-property is_banned
-     * @x-autobe-specification Direct mapping from shopping_mall_customers.is_banned (Boolean, non-null). Returns true when an administrator has banned this account, preventing the customer from logging in. Returns false for active, unrestricted accounts.
+         * @x-autobe-database-schema-property is_banned
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_customers.is_banned (Boolean, non-null). Returns true
+         *   when an administrator has banned this account, preventing the
+         *   customer from logging in. Returns false for active, unrestricted
+         *   accounts.
      */
     isBanned: boolean;
 
     /**
      * The date and time when the customer account was registered on the platform, in ISO 8601 format.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_customers.created_at (DateTime, Timestamptz). Represents the exact moment the customer account was registered on the platform. Returned as an ISO 8601 date-time string.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_customers.created_at (DateTime, Timestamptz).
+         *   Represents the exact moment the customer account was registered on
+         *   the platform. Returned as an ISO 8601 date-time string.
      */
     createdAt: string & tags.Format<"date-time">;
 
     /**
      * The date and time when the customer account was last updated (e.g., profile changes or ban status changes), in ISO 8601 format.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from shopping_mall_customers.updated_at (DateTime, Timestamptz). Updated whenever any mutable field on the customer record changes, including profile edits and ban status changes. Returned as an ISO 8601 date-time string.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_customers.updated_at (DateTime, Timestamptz). Updated
+         *   whenever any mutable field on the customer record changes,
+         *   including profile edits and ban status changes. Returned as an ISO
+         *   8601 date-time string.
      */
     updatedAt: string & tags.Format<"date-time">;
   };
@@ -370,16 +496,26 @@ export namespace IShoppingMallCustomer {
     /**
      * The customer's display name shown publicly on the platform (e.g., in product reviews). Must be provided and cannot be empty. Does not need to be unique across customer accounts.
      *
-     * @x-autobe-database-schema-property nickname
-     * @x-autobe-specification Direct mapping to the `nickname` column in shopping_mall_customers. Must be a non-empty string. This is a required field; if missing or empty, the service must return a 422 Unprocessable Entity error. Written directly to the DB with a single UPDATE statement along with updated_at.
+         * @x-autobe-database-schema-property nickname
+         * @x-autobe-specification Direct mapping to the `nickname` column in
+         *   shopping_mall_customers. Must be a non-empty string. This is a
+         *   required field; if missing or empty, the service must return a 422
+         *   Unprocessable Entity error. Written directly to the DB with a
+         *   single UPDATE statement along with updated_at.
      */
     nickname: string;
 
     /**
      * The customer's contact phone number. This field must be included in the request. Provide a string value to set or update the phone number, or explicitly pass null to clear the stored phone number.
      *
-     * @x-autobe-database-schema-property phone
-     * @x-autobe-specification Direct mapping to the nullable `phone` column in shopping_mall_customers. This field is REQUIRED in the request body — omitting it entirely must result in a 422 Unprocessable Entity error. When the value is a non-null string, it is written to the phone column as-is. When the value is explicitly null, the phone column is set to NULL (clearing the phone number). Updated in the same UPDATE statement as nickname and updated_at.
+         * @x-autobe-database-schema-property phone
+         * @x-autobe-specification Direct mapping to the nullable `phone` column
+         *   in shopping_mall_customers. This field is REQUIRED in the request
+         *   body — omitting it entirely must result in a 422 Unprocessable
+         *   Entity error. When the value is a non-null string, it is written to
+         *   the phone column as-is. When the value is explicitly null, the
+         *   phone column is set to NULL (clearing the phone number). Updated in
+         *   the same UPDATE statement as nickname and updated_at.
      */
     phone: string | null;
   };

@@ -10,88 +10,104 @@ export type IErpHrmReportParameter = {
   /**
    * Unique identifier for the report parameter configuration.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from erp_hrm_report_parameters.id. UUID primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from erp_hrm_report_parameters.id.
+     *   UUID primary key.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Start date of the report date range filter.
    *
-   * @x-autobe-database-schema-property start_date
-   * @x-autobe-specification Direct mapping from erp_hrm_report_parameters.start_date. ISO 8601 timestamp.
+     * @x-autobe-database-schema-property start_date
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_report_parameters.start_date. ISO 8601 timestamp.
    */
   start_date: string & tags.Format<"date-time">;
 
   /**
    * End date of the report date range filter.
    *
-   * @x-autobe-database-schema-property end_date
-   * @x-autobe-specification Direct mapping from erp_hrm_report_parameters.end_date. ISO 8601 timestamp.
+     * @x-autobe-database-schema-property end_date
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_report_parameters.end_date. ISO 8601 timestamp.
    */
   end_date: string & tags.Format<"date-time">;
 
   /**
    * Optional filter for specific employee. When null, report includes all employees.
    *
-   * @x-autobe-database-schema-property employee_id
-   * @x-autobe-specification Direct mapping from erp_hrm_report_parameters.employee_id. Nullable UUID reference to erp_hrm_employees.
+     * @x-autobe-database-schema-property employee_id
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_report_parameters.employee_id. Nullable UUID reference to
+     *   erp_hrm_employees.
    */
   employee_id?: (string & tags.Format<"uuid">) | null | undefined;
 
   /**
    * Optional filter for specific project. When null, report includes all projects.
    *
-   * @x-autobe-database-schema-property project_id
-   * @x-autobe-specification Direct mapping from erp_hrm_report_parameters.project_id. Nullable UUID reference to erp_hrm_projects.
+     * @x-autobe-database-schema-property project_id
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_report_parameters.project_id. Nullable UUID reference to
+     *   erp_hrm_projects.
    */
   project_id?: (string & tags.Format<"uuid">) | null | undefined;
 
   /**
    * Optional filter for specific task. When null, report includes all tasks.
    *
-   * @x-autobe-database-schema-property task_id
-   * @x-autobe-specification Direct mapping from erp_hrm_report_parameters.task_id. Nullable UUID reference to erp_hrm_tasks.
+     * @x-autobe-database-schema-property task_id
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_report_parameters.task_id. Nullable UUID reference to
+     *   erp_hrm_tasks.
    */
   task_id?: (string & tags.Format<"uuid">) | null | undefined;
 
   /**
    * Filter for billable status. True = billable only, False = non-billable only, null = include all.
    *
-   * @x-autobe-database-schema-property billable
-   * @x-autobe-specification Direct mapping from erp_hrm_report_parameters.billable. Nullable boolean: true=billable only, false=non-billable only, null=include all.
+     * @x-autobe-database-schema-property billable
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_report_parameters.billable. Nullable boolean: true=billable
+     *   only, false=non-billable only, null=include all.
    */
   billable?: boolean | null | undefined;
 
   /**
    * Grouping preference for the report: 'employee', 'project', or 'task'.
    *
-   * @x-autobe-database-schema-property group_by
-   * @x-autobe-specification Direct mapping from erp_hrm_report_parameters.group_by. Enum values: 'employee', 'project', 'task'.
+     * @x-autobe-database-schema-property group_by
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_report_parameters.group_by. Enum values: 'employee', 'project',
+     *   'task'.
    */
   group_by: string;
 
   /**
    * Timestamp when the parameters were created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from erp_hrm_report_parameters.created_at. Server-managed timestamp.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_report_parameters.created_at. Server-managed timestamp.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the parameters were last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from erp_hrm_report_parameters.updated_at. Server-managed timestamp.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_report_parameters.updated_at. Server-managed timestamp.
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * The report this parameter configuration belongs to.
    *
-   * @x-autobe-database-schema-property report
-   * @x-autobe-specification BELONGS-TO relation via erp_hrm_report_id foreign key. JOINs to erp_hrm_reports table. Returns IErpHrmReport.ISummary.
+     * @x-autobe-database-schema-property report
+     * @x-autobe-specification BELONGS-TO relation via erp_hrm_report_id foreign
+     *   key. JOINs to erp_hrm_reports table. Returns IErpHrmReport.ISummary.
    */
   report: IErpHrmReport.ISummary;
 };
@@ -143,88 +159,109 @@ export namespace IErpHrmReportParameter {
     /**
      * Unique identifier of the report parameter.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from erp_hrm_report_parameters.id. UUID primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_report_parameters.id. UUID primary key.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Start date of the report date range filter.
      *
-     * @x-autobe-database-schema-property start_date
-     * @x-autobe-specification Direct mapping from erp_hrm_report_parameters.start_date. DateTime stored as timestamptz.
+         * @x-autobe-database-schema-property start_date
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_report_parameters.start_date. DateTime stored as
+         *   timestamptz.
      */
     startDate: string & tags.Format<"date-time">;
 
     /**
      * End date of the report date range filter.
      *
-     * @x-autobe-database-schema-property end_date
-     * @x-autobe-specification Direct mapping from erp_hrm_report_parameters.end_date. DateTime stored as timestamptz.
+         * @x-autobe-database-schema-property end_date
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_report_parameters.end_date. DateTime stored as timestamptz.
      */
     endDate: string & tags.Format<"date-time">;
 
     /**
      * Optional filter for specific employee. When null, report includes all employees.
      *
-     * @x-autobe-database-schema-property employee_id
-     * @x-autobe-specification Direct mapping from erp_hrm_report_parameters.employee_id. Optional filter - when null, report includes all employees.
+         * @x-autobe-database-schema-property employee_id
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_report_parameters.employee_id. Optional filter - when null,
+         *   report includes all employees.
      */
     employeeId: (string & tags.Format<"uuid">) | null;
 
     /**
      * Optional filter for specific project. When null, report includes all projects.
      *
-     * @x-autobe-database-schema-property project_id
-     * @x-autobe-specification Direct mapping from erp_hrm_report_parameters.project_id. Optional filter - when null, report includes all projects.
+         * @x-autobe-database-schema-property project_id
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_report_parameters.project_id. Optional filter - when null,
+         *   report includes all projects.
      */
     projectId: (string & tags.Format<"uuid">) | null;
 
     /**
      * Optional filter for specific task. When null, report includes all tasks.
      *
-     * @x-autobe-database-schema-property task_id
-     * @x-autobe-specification Direct mapping from erp_hrm_report_parameters.task_id. Optional filter - when null, report includes all tasks.
+         * @x-autobe-database-schema-property task_id
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_report_parameters.task_id. Optional filter - when null,
+         *   report includes all tasks.
      */
     taskId: (string & tags.Format<"uuid">) | null;
 
     /**
      * Filter for billable status. True = billable only, False = non-billable only, null = include all.
      *
-     * @x-autobe-database-schema-property billable
-     * @x-autobe-specification Direct mapping from erp_hrm_report_parameters.billable. Nullable - true=billable only, false=non-billable only, null=include all.
+         * @x-autobe-database-schema-property billable
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_report_parameters.billable. Nullable - true=billable only,
+         *   false=non-billable only, null=include all.
      */
     billable: boolean | null;
 
     /**
      * Grouping preference for the report: 'employee', 'project', or 'task'.
      *
-     * @x-autobe-database-schema-property group_by
-     * @x-autobe-specification Direct mapping from erp_hrm_report_parameters.group_by. String enum values: 'employee', 'project', or 'task'.
+         * @x-autobe-database-schema-property group_by
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_report_parameters.group_by. String enum values: 'employee',
+         *   'project', or 'task'.
      */
     groupBy: string;
 
     /**
      * Timestamp when the parameters were created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from erp_hrm_report_parameters.created_at. DateTime stored as timestamptz.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_report_parameters.created_at. DateTime stored as
+         *   timestamptz.
      */
     createdAt: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when the parameters were last updated.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from erp_hrm_report_parameters.updated_at. DateTime stored as timestamptz.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_report_parameters.updated_at. DateTime stored as
+         *   timestamptz.
      */
     updatedAt: string & tags.Format<"date-time">;
 
     /**
      * The parent report this parameter configuration belongs to, represented as summary with organization and generated-by member context.
      *
-     * @x-autobe-database-schema-property report
-     * @x-autobe-specification Belongs-to relation via erp_hrm_report_id FK. Join with erp_hrm_reports table and return as IErpHrmReport.ISummary. The ISummary excludes its parameter relation to prevent circular reference.
+         * @x-autobe-database-schema-property report
+         * @x-autobe-specification Belongs-to relation via erp_hrm_report_id FK.
+         *   Join with erp_hrm_reports table and return as
+         *   IErpHrmReport.ISummary. The ISummary excludes its parameter
+         *   relation to prevent circular reference.
      */
     report: IErpHrmReport.ISummary;
   };

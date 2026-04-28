@@ -30,7 +30,8 @@ import { IPageIEcommerceMallSellerSuspension } from "../../../../structures/IPag
  * @param props.body Suspension request data including the seller to suspend and the reason for suspension.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor administrator
- * @x-autobe-specification Create a new seller suspension record in the ecommerce_mall_seller_suspensions table.
+ * @x-autobe-specification Create a new seller suspension record in the
+ *   ecommerce_mall_seller_suspensions table.
  *
  * 1. Authorization: Verify caller has administrator or super-administrator role
  * 2. Validate seller_id exists in ecommerce_mall_sellers
@@ -140,7 +141,8 @@ export namespace create {
  * @param props.body Search criteria including seller ID, administrator ID, date range filters, suspension status (active/resolved), pagination parameters, and sorting options.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor administrator
- * @x-autobe-specification Query ecommerce_mall_seller_suspensions table with soft delete filter (deleted_at IS NULL).
+ * @x-autobe-specification Query ecommerce_mall_seller_suspensions table with
+ *   soft delete filter (deleted_at IS NULL).
  *
  * Apply search filters on:
  * - seller_id: filter by specific seller
@@ -247,7 +249,8 @@ export namespace index {
  * @param props.suspensionId Unique identifier of the seller suspension record
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor administrator
- * @x-autobe-specification Query ecommerce_mall_seller_suspensions table by id (UUID).
+ * @x-autobe-specification Query ecommerce_mall_seller_suspensions table by id
+ *   (UUID).
  *
  * Load full record including:
  * - seller_id reference to ecommerce_mall_sellers

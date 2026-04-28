@@ -51,8 +51,9 @@ export type IRedditLikeComment = {
    *
    * Used as the primary key for all comment-related operations including retrieval, updates, and deletions. Also serves as a foreign key reference in vote and report tables.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from reddit_like_comments.id. UUID format, primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from reddit_like_comments.id. UUID
+     *   format, primary key.
    */
   id: string & tags.Format<"uuid">;
 
@@ -74,8 +75,9 @@ export type IRedditLikeComment = {
    *
    * Rendered as markdown or plain text depending on the client implementation. May be truncated in list views with a "read more" link to the full comment.
    *
-   * @x-autobe-database-schema-property content
-   * @x-autobe-specification Direct mapping from reddit_like_comments.content. Non-empty string, full-text searchable via GIN index.
+     * @x-autobe-database-schema-property content
+     * @x-autobe-specification Direct mapping from reddit_like_comments.content.
+     *   Non-empty string, full-text searchable via GIN index.
    */
   content: string;
 
@@ -104,8 +106,10 @@ export type IRedditLikeComment = {
    *
    * Only public profile information is exposed. Email, password, and other sensitive data are never included.
    *
-   * @x-autobe-database-schema-property member
-   * @x-autobe-specification Join from reddit_like_comments.reddit_like_member_id to reddit_like_members.id. Returns IRedditLikeMember.ISummary with public profile information.
+     * @x-autobe-database-schema-property member
+     * @x-autobe-specification Join from
+     *   reddit_like_comments.reddit_like_member_id to reddit_like_members.id.
+     *   Returns IRedditLikeMember.ISummary with public profile information.
    */
   author: IRedditLikeMember.ISummary;
 
@@ -132,8 +136,10 @@ export type IRedditLikeComment = {
    * - Belong to the same post (enforced at application layer)
    * - Not be soft-deleted (business rule, not enforced at database level)
    *
-   * @x-autobe-database-schema-property parent
-   * @x-autobe-specification Self-JOIN from reddit_like_comments.reddit_like_comment_id to reddit_like_comments.id. Returns IRedditLikeComment.ISummary or null for top-level comments.
+     * @x-autobe-database-schema-property parent
+     * @x-autobe-specification Self-JOIN from
+     *   reddit_like_comments.reddit_like_comment_id to reddit_like_comments.id.
+     *   Returns IRedditLikeComment.ISummary or null for top-level comments.
    */
   parent: IRedditLikeComment.ISummary | null;
 
@@ -164,8 +170,10 @@ export type IRedditLikeComment = {
    * - If the post is soft-deleted, the comment is hidden
    * - If the post's community is inaccessible, the comment is hidden
    *
-   * @x-autobe-database-schema-property post
-   * @x-autobe-specification Join from reddit_like_comments.reddit_like_post_id to reddit_like_posts.id. Returns IRedditLikePost.ISummary with post metadata.
+     * @x-autobe-database-schema-property post
+     * @x-autobe-specification Join from
+     *   reddit_like_comments.reddit_like_post_id to reddit_like_posts.id.
+     *   Returns IRedditLikePost.ISummary with post metadata.
    */
   post: IRedditLikePost.ISummary;
 
@@ -193,7 +201,10 @@ export type IRedditLikeComment = {
    *
    * The individual votes that contribute to this score are not exposed in this response. Users can only see their own vote status through dedicated vote endpoints.
    *
-   * @x-autobe-specification Aggregate from reddit_like_votes table: SUM(CASE WHEN type = 'upvote' THEN 1 ELSE -1 END) WHERE reddit_like_comment_id = comment.id AND deleted_at IS NULL. Returns integer representing net votes (upvotes minus downvotes).
+     * @x-autobe-specification Aggregate from reddit_like_votes table: SUM(CASE
+     *   WHEN type = 'upvote' THEN 1 ELSE -1 END) WHERE reddit_like_comment_id =
+     *   comment.id AND deleted_at IS NULL. Returns integer representing net
+     *   votes (upvotes minus downvotes).
    */
   vote_score: number & tags.Type<"int32">;
 
@@ -217,8 +228,10 @@ export type IRedditLikeComment = {
    *
    * Stored in UTC. Client applications should convert to the user's local timezone for display.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from reddit_like_comments.created_at. DateTime with timezone (timestamptz), set automatically on insert.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_comments.created_at. DateTime with timezone (timestamptz),
+     *   set automatically on insert.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -242,8 +255,10 @@ export type IRedditLikeComment = {
    *
    * Set to the same value as {@link created_at} when the comment is first created. Only changes when the comment content is edited.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from reddit_like_comments.updated_at. DateTime with timezone (timestamptz), updated on every content modification.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_comments.updated_at. DateTime with timezone (timestamptz),
+     *   updated on every content modification.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -278,8 +293,10 @@ export type IRedditLikeComment = {
    *
    * Deleted comments can potentially be recovered within the data retention period defined by the platform's data policies.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from reddit_like_comments.deleted_at. DateTime with timezone (timestamptz) or null. Set when comment is soft-deleted by author or moderator.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_comments.deleted_at. DateTime with timezone (timestamptz)
+     *   or null. Set when comment is soft-deleted by author or moderator.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -309,7 +326,11 @@ export namespace IRedditLikeComment {
      * - `new`: Orders by creation timestamp in descending order. Shows most recent comments first.
      * - `controversial`: Orders by total vote count (upvotes + downvotes) descending, then by absolute vote score ascending. Highlights comments with many votes but near-neutral scores, indicating divided opinions.
      *
-     * @x-autobe-specification Sorting strategy for comment ordering. 'best' orders by vote_score DESC (computed from reddit_like_votes: upvotes - downvotes). 'new' orders by created_at DESC. 'controversial' orders by total_vote_count DESC, then ABS(vote_score) ASC. Maps to ORDER BY clause in SQL query.
+         * @x-autobe-specification Sorting strategy for comment ordering. 'best'
+         *   orders by vote_score DESC (computed from reddit_like_votes: upvotes
+         *   - downvotes). 'new' orders by created_at DESC. 'controversial'
+         *   orders by total_vote_count DESC, then ABS(vote_score) ASC. Maps to
+         *   ORDER BY clause in SQL query.
      */
     sort?: "best" | "new" | "controversial" | undefined;
 
@@ -328,7 +349,10 @@ export namespace IRedditLikeComment {
      *
      * Combine with the `cursor` parameter for cursor-based pagination. The server may return fewer items than requested if fewer results remain.
      *
-     * @x-autobe-specification Maximum number of comments to return per page. Controls the LIMIT clause in SQL query. Range: 1-100. Default: 20 if not specified. Used for cursor-based pagination page size control.
+         * @x-autobe-specification Maximum number of comments to return per
+         *   page. Controls the LIMIT clause in SQL query. Range: 1-100.
+         *   Default: 20 if not specified. Used for cursor-based pagination page
+         *   size control.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -349,7 +373,11 @@ export namespace IRedditLikeComment {
      *
      * Cursor-based pagination provides stable results even as data changes, unlike offset-based pagination which can miss or duplicate items when the dataset is modified between requests.
      *
-     * @x-autobe-specification Opaque pagination token for cursor-based pagination. Encodes the last item's created_at timestamp and id for stable ordering. When provided, query starts from the position after this cursor. Format: base64-encoded JSON or server-generated token. Omit for first page.
+         * @x-autobe-specification Opaque pagination token for cursor-based
+         *   pagination. Encodes the last item's created_at timestamp and id for
+         *   stable ordering. When provided, query starts from the position
+         *   after this cursor. Format: base64-encoded JSON or server-generated
+         *   token. Omit for first page.
      */
     cursor?: string | undefined;
 
@@ -368,7 +396,11 @@ export namespace IRedditLikeComment {
      *
      * Use either `page` (offset-based) or `cursor` (cursor-based) for pagination, not both. Cursor-based pagination is recommended for infinite scroll scenarios and datasets that may change during browsing.
      *
-     * @x-autobe-specification Alternative 1-indexed page number for offset-based pagination. When provided instead of cursor, calculates OFFSET as (page - 1) * limit. Defaults to 1 if omitted or null. Conflicts with cursor-based pagination; use either cursor OR page, not both.
+         * @x-autobe-specification Alternative 1-indexed page number for
+         *   offset-based pagination. When provided instead of cursor,
+         *   calculates OFFSET as (page - 1) * limit. Defaults to 1 if omitted
+         *   or null. Conflicts with cursor-based pagination; use either cursor
+         *   OR page, not both.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };
@@ -404,8 +436,11 @@ export namespace IRedditLikeComment {
      *
      * The authenticated member must own the comment being updated. The member ID is extracted from the JWT token and is not included in this request.
      *
-     * @x-autobe-database-schema-property content
-     * @x-autobe-specification Direct mapping from reddit_like_comments.content. User-provided update field. Must be non-empty string when provided. Trimmed and validated before database write.
+         * @x-autobe-database-schema-property content
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_comments.content. User-provided update field. Must be
+         *   non-empty string when provided. Trimmed and validated before
+         *   database write.
      */
     content?: string | undefined;
   };
@@ -438,8 +473,9 @@ export namespace IRedditLikeComment {
      *
      * This is the primary key that uniquely identifies this comment record in the database. It is a UUID generated when the comment is created and never changes.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from reddit_like_comments.id. UUID format, primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from reddit_like_comments.id.
+         *   UUID format, primary key.
      */
     id: string & tags.Format<"uuid">;
 
@@ -450,8 +486,10 @@ export namespace IRedditLikeComment {
      *
      * **Note**: This is a relation object, not a foreign key. The underlying reddit_like_member_id foreign key is not exposed in the response.
      *
-     * @x-autobe-database-schema-property member
-     * @x-autobe-specification JOIN from reddit_like_comments.reddit_like_member_id to reddit_like_members.id. Returns IRedditLikeMember.ISummary.
+         * @x-autobe-database-schema-property member
+         * @x-autobe-specification JOIN from
+         *   reddit_like_comments.reddit_like_member_id to
+         *   reddit_like_members.id. Returns IRedditLikeMember.ISummary.
      */
     author: IRedditLikeMember.ISummary;
 
@@ -460,8 +498,10 @@ export namespace IRedditLikeComment {
      *
      * This contains the actual message text written by the comment author. The content supports full-text search functionality for finding comments by keyword.
      *
-     * @x-autobe-database-schema-property content
-     * @x-autobe-specification Direct mapping from reddit_like_comments.content. Full-text search enabled via GIN index.
+         * @x-autobe-database-schema-property content
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_comments.content. Full-text search enabled via GIN
+         *   index.
      */
     content: string;
 
@@ -472,7 +512,9 @@ export namespace IRedditLikeComment {
      *
      * **Note**: This is a computed field, not stored directly in the comments table.
      *
-     * @x-autobe-specification Computed by aggregating reddit_like_votes table: COUNT(upvotes) - COUNT(downvotes) where reddit_like_comment_id matches this comment's id.
+         * @x-autobe-specification Computed by aggregating reddit_like_votes
+         *   table: COUNT(upvotes) - COUNT(downvotes) where
+         *   reddit_like_comment_id matches this comment's id.
      */
     vote_score: number & tags.Type<"int32">;
 
@@ -481,8 +523,10 @@ export namespace IRedditLikeComment {
      *
      * Records the exact date and time when the comment was initially posted. Used for sorting comments chronologically and displaying relative timestamps (e.g., "2 hours ago") to users.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from reddit_like_comments.created_at. Timestamp with timezone (timestamptz).
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_comments.created_at. Timestamp with timezone
+         *   (timestamptz).
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -491,8 +535,10 @@ export namespace IRedditLikeComment {
      *
      * Updated whenever the comment content is edited by the author. Allows users to see when comments were last changed and helps with synchronization.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from reddit_like_comments.updated_at. Timestamp with timezone (timestamptz).
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_comments.updated_at. Timestamp with timezone
+         *   (timestamptz).
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -503,8 +549,10 @@ export namespace IRedditLikeComment {
      *
      * **Note**: This is a nullable field. Active comments have NULL, deleted comments have a timestamp.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from reddit_like_comments.deleted_at. Nullable timestamp with timezone. NULL if active, non-NULL if deleted.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_comments.deleted_at. Nullable timestamp with timezone.
+         *   NULL if active, non-NULL if deleted.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
 
@@ -515,8 +563,10 @@ export namespace IRedditLikeComment {
      *
      * **Note**: This is a recursive relation. Replies can themselves have replies, creating a tree structure for discussions.
      *
-     * @x-autobe-database-schema-property replies
-     * @x-autobe-specification Recursive HAS-MANY relation from reddit_like_comments where reddit_like_comment_id equals this comment's id. Returns array of IRedditLikeComment.ISummary.
+         * @x-autobe-database-schema-property replies
+         * @x-autobe-specification Recursive HAS-MANY relation from
+         *   reddit_like_comments where reddit_like_comment_id equals this
+         *   comment's id. Returns array of IRedditLikeComment.ISummary.
      */
     replies: IRedditLikeComment.ISummary[];
   };
@@ -542,15 +592,16 @@ export namespace IRedditLikeComment {
    */
   export type ICreate = {
     /**
-     * @x-autobe-database-schema-property content
+         * @x-autobe-database-schema-property content
      */
     content: string & tags.MinLength<1>;
 
     /**
      * Optional parent comment ID for creating nested replies. If omitted or null, creates a top-level comment on the post.
      *
-     * @x-autobe-database-schema-property reddit_like_comment_id
-     * @x-autobe-specification Maps: parentId → reddit_like_comment_id. Nullable String in DB, optional in Create DTO.
+         * @x-autobe-database-schema-property reddit_like_comment_id
+         * @x-autobe-specification Maps: parentId → reddit_like_comment_id.
+         *   Nullable String in DB, optional in Create DTO.
      */
     parentId?: (string & tags.Format<"uuid">) | null | undefined;
   };
@@ -574,7 +625,9 @@ export namespace IRedditLikeComment {
      *
      * This is the primary key from the reddit_like_comments table, formatted as a UUID. It is returned to identify which comment the vote summary belongs to.
      *
-     * @x-autobe-specification Derived from reddit_like_comments.id via lookup by commentId parameter. Returns the UUID of the comment being queried.
+         * @x-autobe-specification Derived from reddit_like_comments.id via
+         *   lookup by commentId parameter. Returns the UUID of the comment
+         *   being queried.
      */
     id: string & tags.Format<"uuid">;
 
@@ -585,7 +638,9 @@ export namespace IRedditLikeComment {
      *
      * A positive score indicates more upvotes than downvotes, while a negative score indicates more downvotes than upvotes.
      *
-     * @x-autobe-specification Computed as COUNT(upvotes) - COUNT(downvotes) from reddit_like_votes where reddit_like_comment_id matches and deleted_at IS NULL.
+         * @x-autobe-specification Computed as COUNT(upvotes) - COUNT(downvotes)
+         *   from reddit_like_votes where reddit_like_comment_id matches and
+         *   deleted_at IS NULL.
      */
     vote_score: number & tags.Type<"int32">;
 
@@ -594,7 +649,8 @@ export namespace IRedditLikeComment {
      *
      * Only includes active (non-deleted) upvotes from the reddit_like_votes table.
      *
-     * @x-autobe-specification COUNT of votes where vote_type = 'upvote' and deleted_at IS NULL from reddit_like_votes table.
+         * @x-autobe-specification COUNT of votes where vote_type = 'upvote' and
+         *   deleted_at IS NULL from reddit_like_votes table.
      */
     upvote_count: number & tags.Type<"int32">;
 
@@ -603,7 +659,8 @@ export namespace IRedditLikeComment {
      *
      * Only includes active (non-deleted) downvotes from the reddit_like_votes table.
      *
-     * @x-autobe-specification COUNT of votes where vote_type = 'downvote' and deleted_at IS NULL from reddit_like_votes table.
+         * @x-autobe-specification COUNT of votes where vote_type = 'downvote'
+         *   and deleted_at IS NULL from reddit_like_votes table.
      */
     downvote_count: number & tags.Type<"int32">;
   };

@@ -11,56 +11,66 @@ export type IErpHrmTimeTrackingDepartment = {
   /**
    * Unique identifier of the department within the system.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_departments.id (UUID).
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_tracking_departments.id (UUID).
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Department display name within the organization.
    *
-   * @x-autobe-database-schema-property name
-   * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_departments.name (string).
+     * @x-autobe-database-schema-property name
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_tracking_departments.name (string).
    */
   name: string;
 
   /**
    * Optional free-text description of what the department is responsible for.
    *
-   * @x-autobe-database-schema-property description
-   * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_departments.description. If DB value is NULL, this DTO value is null.
+     * @x-autobe-database-schema-property description
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_tracking_departments.description. If DB value is NULL,
+     *   this DTO value is null.
    */
   description: string | null;
 
   /**
    * Optional identifier of the parent department (null when this department has no parent).
    *
-   * @x-autobe-database-schema-property parent_department_id
-   * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_departments.parent_department_id. If DB value is NULL, parentDepartmentId is null.
+     * @x-autobe-database-schema-property parent_department_id
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_tracking_departments.parent_department_id. If DB value is
+     *   NULL, parentDepartmentId is null.
    */
   parentDepartmentId: (string & tags.Format<"uuid">) | null;
 
   /**
    * Timestamp when the department record was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_departments.created_at (date-time).
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_tracking_departments.created_at (date-time).
    */
   createdAt: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the department record was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_departments.updated_at (date-time).
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_tracking_departments.updated_at (date-time).
    */
   updatedAt: string & tags.Format<"date-time">;
 
   /**
    * Soft-delete timestamp. Null means active; non-null indicates the record has been deleted.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_departments.deleted_at. If DB value is null, the department is active; otherwise it is soft-deleted.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_tracking_departments.deleted_at. If DB value is null, the
+     *   department is active; otherwise it is soft-deleted.
    */
   deletedAt: (string & tags.Format<"date-time">) | null;
 };
@@ -72,64 +82,79 @@ export namespace IErpHrmTimeTrackingDepartment {
     /**
      * Unique identifier of the department.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_departments.id (UUID).
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_tracking_departments.id (UUID).
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Owning organization (tenant) of this department.
      *
-     * @x-autobe-database-schema-property organization
-     * @x-autobe-specification Join erp_hrm_time_tracking_departments.erp_hrm_time_tracking_organization_id -> erp_hrm_time_tracking_organizations.id and map to IErpHrmTimeTrackingOrganization.ISummary.
+         * @x-autobe-database-schema-property organization
+         * @x-autobe-specification Join
+         *   erp_hrm_time_tracking_departments.erp_hrm_time_tracking_organization_id
+         *   -> erp_hrm_time_tracking_organizations.id and map to
+         *   IErpHrmTimeTrackingOrganization.ISummary.
      */
     organization: IErpHrmTimeTrackingOrganization.ISummary;
 
     /**
      * Optional parent department identifier used to build the department hierarchy.
      *
-     * @x-autobe-database-schema-property parent_department_id
-     * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_departments.parent_department_id. Return null when the department has no parent.
+         * @x-autobe-database-schema-property parent_department_id
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_tracking_departments.parent_department_id. Return null
+         *   when the department has no parent.
      */
     parent_department_id: (string & tags.Format<"uuid">) | null;
 
     /**
      * Department name as displayed in the organization.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_departments.name.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_tracking_departments.name.
      */
     name: string;
 
     /**
      * Optional description of the department’s responsibilities or purpose.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_departments.description; return null when the column is null.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_tracking_departments.description; return null when the
+         *   column is null.
      */
     description: string | null;
 
     /**
      * When the department record was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_departments.created_at. Format as ISO 8601 date-time.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_tracking_departments.created_at. Format as ISO 8601
+         *   date-time.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * When the department record was last updated.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_departments.updated_at. Format as ISO 8601 date-time.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_tracking_departments.updated_at. Format as ISO 8601
+         *   date-time.
      */
     updated_at: string & tags.Format<"date-time">;
 
     /**
      * Soft-deletion timestamp. Null means the department is active.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_departments.deleted_at. Return null for active departments; otherwise return the stored ISO 8601 date-time.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_tracking_departments.deleted_at. Return null for
+         *   active departments; otherwise return the stored ISO 8601 date-time.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };
@@ -141,52 +166,77 @@ export namespace IErpHrmTimeTrackingDepartment {
     /**
      * Optional keyword used to find departments by matching against department name and description (case-insensitive, partial match).
      *
-     * @x-autobe-specification Apply search as a case-insensitive partial-match keyword across erp_hrm_time_tracking_departments.name and erp_hrm_time_tracking_departments.description (when description is non-null). When search is omitted, do not add additional predicates beyond org scope and deleted_at IS NULL.
+         * @x-autobe-specification Apply search as a case-insensitive
+         *   partial-match keyword across erp_hrm_time_tracking_departments.name
+         *   and erp_hrm_time_tracking_departments.description (when description
+         *   is non-null). When search is omitted, do not add additional
+         *   predicates beyond org scope and deleted_at IS NULL.
      */
     search?: IAutoBePaginationSearch | undefined;
 
     /**
      * Optional department name keyword for filtering (case-insensitive, partial match).
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification If request.name is provided, apply a case-insensitive partial match predicate on erp_hrm_time_tracking_departments.name within the selected organization scope and with deleted_at IS NULL.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification If request.name is provided, apply a
+         *   case-insensitive partial match predicate on
+         *   erp_hrm_time_tracking_departments.name within the selected
+         *   organization scope and with deleted_at IS NULL.
      */
     name?: string | undefined;
 
     /**
      * Optional description keyword for filtering (case-insensitive, partial match). When null/omitted, description filtering is not applied.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification If request.description is not null, apply a case-insensitive partial match predicate on erp_hrm_time_tracking_departments.description. If request.description is null, do not apply any description predicate. Always keep org isolation and deleted_at IS NULL.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification If request.description is not null, apply a
+         *   case-insensitive partial match predicate on
+         *   erp_hrm_time_tracking_departments.description. If
+         *   request.description is null, do not apply any description
+         *   predicate. Always keep org isolation and deleted_at IS NULL.
      */
     description?: string | null | undefined;
 
     /**
      * Optional exact parent department ID to filter departments by hierarchy (null means no parent filtering).
      *
-     * @x-autobe-database-schema-property parent_department_id
-     * @x-autobe-specification If request.parent_department_id is provided (non-null), apply exact match erp_hrm_time_tracking_departments.parent_department_id = parent_department_id. Do not validate that the referenced parent exists in this list operation; treat it purely as a filter while preserving org scope and deleted_at IS NULL.
+         * @x-autobe-database-schema-property parent_department_id
+         * @x-autobe-specification If request.parent_department_id is provided
+         *   (non-null), apply exact match
+         *   erp_hrm_time_tracking_departments.parent_department_id =
+         *   parent_department_id. Do not validate that the referenced parent
+         *   exists in this list operation; treat it purely as a filter while
+         *   preserving org scope and deleted_at IS NULL.
      */
     parent_department_id?: (string & tags.Format<"uuid">) | null | undefined;
 
     /**
      * Optional sort instruction for ordering the department list. If null, the server applies a deterministic default ordering.
      *
-     * @x-autobe-specification Interpret request.sort as ordering instructions applied to the departments result set within the selected organization scope and deleted_at IS NULL. Only allow sorting by supported department fields (as implemented by the service). If request.sort is null, apply a deterministic default ordering to keep pagination stable.
+         * @x-autobe-specification Interpret request.sort as ordering
+         *   instructions applied to the departments result set within the
+         *   selected organization scope and deleted_at IS NULL. Only allow
+         *   sorting by supported department fields (as implemented by the
+         *   service). If request.sort is null, apply a deterministic default
+         *   ordering to keep pagination stable.
      */
     sort?: string | null | undefined;
 
     /**
      * 1-indexed page number to retrieve (must be >= 1).
      *
-     * @x-autobe-specification Use request.page as a 1-indexed page number selector (must be >= 1). Convert it to offset/limit for the departments query within org scope and deleted_at IS NULL.
+         * @x-autobe-specification Use request.page as a 1-indexed page number
+         *   selector (must be >= 1). Convert it to offset/limit for the
+         *   departments query within org scope and deleted_at IS NULL.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of department records to return in a single page (min 1, max 100).
      *
-     * @x-autobe-specification Use request.limit as the maximum number of department records to return per page (min 1, max 100). Apply it as the query LIMIT within org scope and deleted_at IS NULL.
+         * @x-autobe-specification Use request.limit as the maximum number of
+         *   department records to return per page (min 1, max 100). Apply it as
+         *   the query LIMIT within org scope and deleted_at IS NULL.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -200,24 +250,32 @@ export namespace IErpHrmTimeTrackingDepartment {
     /**
      * Department display name within the organization.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_departments.name. Validate non-empty string at DTO validation layer; persist exactly as provided.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_tracking_departments.name. Validate non-empty string
+         *   at DTO validation layer; persist exactly as provided.
      */
     name: string;
 
     /**
      * Optional free-text description of the department. Use null to remove the description.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping to erp_hrm_time_tracking_departments.description. Accepts a string to set a value, or null to clear the description (sets description to NULL in DB). Persist as supplied.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping to
+         *   erp_hrm_time_tracking_departments.description. Accepts a string to
+         *   set a value, or null to clear the description (sets description to
+         *   NULL in DB). Persist as supplied.
      */
     description?: string | null | undefined;
 
     /**
      * Optional parent department identifier within the same organization. Use null to make this department a top-level department.
      *
-     * @x-autobe-database-schema-property parent_department_id
-     * @x-autobe-specification Direct mapping to erp_hrm_time_tracking_departments.parent_department_id. Accepts a UUID to set/reassign the department’s parent, or null to set no parent.
+         * @x-autobe-database-schema-property parent_department_id
+         * @x-autobe-specification Direct mapping to
+         *   erp_hrm_time_tracking_departments.parent_department_id. Accepts a
+         *   UUID to set/reassign the department’s parent, or null to set no
+         *   parent.
      *
      * When a non-null parentDepartmentId is provided/changed:
      * - Load the referenced parent department and verify it belongs to the same organization as the target department.
@@ -235,24 +293,34 @@ export namespace IErpHrmTimeTrackingDepartment {
     /**
      * Department display name within the selected organization. Must be unique within the organization.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping to erp_hrm_time_tracking_departments.name. Must satisfy the domain uniqueness constraint scoped by organization (handled server-side via @@unique([erp_hrm_time_tracking_organization_id, name])).
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping to
+         *   erp_hrm_time_tracking_departments.name. Must satisfy the domain
+         *   uniqueness constraint scoped by organization (handled server-side
+         *   via @@unique([erp_hrm_time_tracking_organization_id, name])).
      */
     name: string;
 
     /**
      * Optional free-text description about the department’s purpose or responsibilities.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping to erp_hrm_time_tracking_departments.description. When the client sends null, store null in the column.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping to
+         *   erp_hrm_time_tracking_departments.description. When the client
+         *   sends null, store null in the column.
      */
     description: string | null;
 
     /**
      * Optional parent department ID to create/extend a department hierarchy. Must reference a department within the same organization and satisfy hierarchy rules.
      *
-     * @x-autobe-database-schema-property parent_department_id
-     * @x-autobe-specification Direct mapping to erp_hrm_time_tracking_departments.parent_department_id (nullable). If provided, the server must verify the parent exists, belongs to the same selected organization, and that linking respects the allowed hierarchy/nesting constraints; otherwise the create request is rejected without inserting.
+         * @x-autobe-database-schema-property parent_department_id
+         * @x-autobe-specification Direct mapping to
+         *   erp_hrm_time_tracking_departments.parent_department_id (nullable).
+         *   If provided, the server must verify the parent exists, belongs to
+         *   the same selected organization, and that linking respects the
+         *   allowed hierarchy/nesting constraints; otherwise the create request
+         *   is rejected without inserting.
      */
     parent_department_id: (string & tags.Format<"uuid">) | null;
   };
@@ -264,55 +332,70 @@ export namespace IErpHrmTimeTrackingDepartment {
     /**
      * Department identifier (UUID) for this tree node.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_departments.id.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_tracking_departments.id.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Department name displayed in the hierarchy.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_departments.name.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_tracking_departments.name.
      */
     name: string;
 
     /**
      * Optional department description text. Null when the department has no description.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_departments.description. If the column is NULL, return null.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_tracking_departments.description. If the column is
+         *   NULL, return null.
      */
     description: string | null;
 
     /**
      * Timestamp when the department record was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_departments.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_tracking_departments.created_at.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when the department record was last updated.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_departments.updated_at.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_tracking_departments.updated_at.
      */
     updated_at: string & tags.Format<"date-time">;
 
     /**
      * Soft-deletion timestamp. Null means the department is active.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_departments.deleted_at. If the column is NULL, return null.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_tracking_departments.deleted_at. If the column is
+         *   NULL, return null.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
 
     /**
      * Nested child department nodes under this department. Empty array when no child departments exist.
      *
-     * @x-autobe-specification Build children by recursively querying erp_hrm_time_tracking_departments for the same erp_hrm_time_tracking_organization_id, where parent_department_id equals the current node's id. Serialize resulting records as IErpHrmTimeTrackingDepartment.IInvert nodes. Return an empty array when there are no children. Service-layer constraints may limit nesting depth as required by the domain, but the DTO supports recursive representation.
+         * @x-autobe-specification Build children by recursively querying
+         *   erp_hrm_time_tracking_departments for the same
+         *   erp_hrm_time_tracking_organization_id, where parent_department_id
+         *   equals the current node's id. Serialize resulting records as
+         *   IErpHrmTimeTrackingDepartment.IInvert nodes. Return an empty array
+         *   when there are no children. Service-layer constraints may limit
+         *   nesting depth as required by the domain, but the DTO supports
+         *   recursive representation.
      */
     children: IErpHrmTimeTrackingDepartment.IInvert[];
   };

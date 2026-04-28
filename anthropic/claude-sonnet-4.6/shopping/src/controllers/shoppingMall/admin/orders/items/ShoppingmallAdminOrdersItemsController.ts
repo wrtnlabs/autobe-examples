@@ -29,9 +29,11 @@ export class ShoppingmallAdminOrdersItemsController {
    * @param orderId The unique identifier (UUID) of the parent order containing the target item. References shopping_mall_orders.id.
    * @param itemId The unique identifier (UUID) of the specific order item to force-cancel. References shopping_mall_order_items.id. Must belong to the specified order.
    * @param body Administrator force-cancellation request payload containing the mandatory reason for the cancellation.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification 1. Authentication: Verify the caller is an authenticated admin or superAdmin. Reject with 403 if the caller is a customer or seller.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification 1. Authentication: Verify the caller is an
+     *   authenticated admin or superAdmin. Reject with 403 if the caller is a
+     *   customer or seller.
    *
    * 2. Existence validation:
    *    - Look up the order by `orderId` in `shopping_mall_orders`. Return 404 if not found.
@@ -102,10 +104,11 @@ export class ShoppingmallAdminOrdersItemsController {
    * @param connection
    * @param orderId The UUID of the parent order containing the target order item.
    * @param itemId The UUID of the specific order item to be force-refunded.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification ## Purpose
-   * Administrator-only action to immediately force-refund a specific order item without requiring a pending refund request or seller approval.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification ## Purpose Administrator-only action to
+     *   immediately force-refund a specific order item without requiring a
+     *   pending refund request or seller approval.
    *
    * ## Authorization
    * Only `admin` and `superAdmin` actors may call this endpoint. Reject all other actors with 403 Forbidden.

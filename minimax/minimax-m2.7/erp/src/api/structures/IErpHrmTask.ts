@@ -10,49 +10,64 @@ export type IErpHrmTask = {
   /**
    * Total number of tasks in the project.
    *
-   * @x-autobe-specification COUNT(*) FROM erp_hrm_tasks WHERE erp_hrm_project_id = :projectId. Returns total count of all tasks regardless of status.
+     * @x-autobe-specification COUNT(*) FROM erp_hrm_tasks WHERE
+     *   erp_hrm_project_id = :projectId. Returns total count of all tasks
+     *   regardless of status.
    */
   totalTasks: number & tags.Type<"int32"> & tags.Minimum<0>;
 
   /**
    * Task count breakdown by workflow status (open, in-progress, completed, closed).
    *
-   * @x-autobe-specification COUNT(*) FROM erp_hrm_tasks WHERE erp_hrm_project_id = :projectId GROUP BY status. Returns object with counts for open, in-progress, completed, closed.
+     * @x-autobe-specification COUNT(*) FROM erp_hrm_tasks WHERE
+     *   erp_hrm_project_id = :projectId GROUP BY status. Returns object with
+     *   counts for open, in-progress, completed, closed.
    */
   statusBreakdown: IErpHrmTask.IStatusBreakdown;
 
   /**
    * Task count breakdown by priority level (low, medium, high, urgent).
    *
-   * @x-autobe-specification COUNT(*) FROM erp_hrm_tasks WHERE erp_hrm_project_id = :projectId GROUP BY priority. Returns object with counts for low, medium, high, urgent.
+     * @x-autobe-specification COUNT(*) FROM erp_hrm_tasks WHERE
+     *   erp_hrm_project_id = :projectId GROUP BY priority. Returns object with
+     *   counts for low, medium, high, urgent.
    */
   priorityBreakdown: IErpHrmTask.IPriorityBreakdown;
 
   /**
    * Percentage of tasks that are completed or closed (0-100).
    *
-   * @x-autobe-specification IF totalTasks > 0 THEN (COUNT WHERE status IN ('completed', 'closed')) / totalTasks * 100 ELSE 0. Returns percentage value between 0-100.
+     * @x-autobe-specification IF totalTasks > 0 THEN (COUNT WHERE status IN
+     *   ('completed', 'closed')) / totalTasks * 100 ELSE 0. Returns percentage
+     *   value between 0-100.
    */
   completionRate: number & tags.Minimum<0> & tags.Maximum<100>;
 
   /**
    * Average estimated hours for tasks that have estimates set.
    *
-   * @x-autobe-specification AVG(estimated_hours) FROM erp_hrm_tasks WHERE erp_hrm_project_id = :projectId AND estimated_hours IS NOT NULL. Returns null if no tasks have estimates.
+     * @x-autobe-specification AVG(estimated_hours) FROM erp_hrm_tasks WHERE
+     *   erp_hrm_project_id = :projectId AND estimated_hours IS NOT NULL.
+     *   Returns null if no tasks have estimates.
    */
   averageEstimatedHours: number & tags.Minimum<0>;
 
   /**
    * Number of tasks past their due date that are not completed or closed.
    *
-   * @x-autobe-specification COUNT(*) FROM erp_hrm_tasks WHERE erp_hrm_project_id = :projectId AND due_date < NOW() AND status NOT IN ('completed', 'closed').
+     * @x-autobe-specification COUNT(*) FROM erp_hrm_tasks WHERE
+     *   erp_hrm_project_id = :projectId AND due_date < NOW() AND status NOT IN
+     *   ('completed', 'closed').
    */
   overdueTasks: number & tags.Type<"int32"> & tags.Minimum<0>;
 
   /**
    * Daily task creation counts for the last 30 days.
    *
-   * @x-autobe-specification COUNT(*) FROM erp_hrm_tasks WHERE erp_hrm_project_id = :projectId AND created_at >= NOW() - INTERVAL '30 days' GROUP BY DATE(created_at) ORDER BY date. Returns array of daily counts for last 30 days.
+     * @x-autobe-specification COUNT(*) FROM erp_hrm_tasks WHERE
+     *   erp_hrm_project_id = :projectId AND created_at >= NOW() - INTERVAL '30
+     *   days' GROUP BY DATE(created_at) ORDER BY date. Returns array of daily
+     *   counts for last 30 days.
    */
   temporalTrend: IErpHrmTask.ITemporalTrendItem[];
 };
@@ -78,42 +93,42 @@ export namespace IErpHrmTask {
     /**
      * Task title describing the work to be done.
      *
-     * @x-autobe-database-schema-property title
+         * @x-autobe-database-schema-property title
      */
     title: string & tags.MinLength<1> & tags.MaxLength<255>;
 
     /**
      * Detailed description of the task.
      *
-     * @x-autobe-database-schema-property description
+         * @x-autobe-database-schema-property description
      */
     description?: string | null | undefined;
 
     /**
      * Estimated hours to complete the task.
      *
-     * @x-autobe-database-schema-property estimated_hours
+         * @x-autobe-database-schema-property estimated_hours
      */
     estimatedHours?: number | null | undefined;
 
     /**
      * Task due date for deadline tracking.
      *
-     * @x-autobe-database-schema-property due_date
+         * @x-autobe-database-schema-property due_date
      */
     dueDate?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * UUID of the employee to assign to this task. Must be a project member.
      *
-     * @x-autobe-database-schema-property erp_hrm_employee_id
+         * @x-autobe-database-schema-property erp_hrm_employee_id
      */
     erpHrmEmployeeId?: (string & tags.Format<"uuid">) | null | undefined;
 
     /**
      * UUID of the parent task for subtasking. Must be a task in the same project with no existing parent.
      *
-     * @x-autobe-database-schema-property parent_id
+         * @x-autobe-database-schema-property parent_id
      */
     parentId?: (string & tags.Format<"uuid">) | null | undefined;
   };
@@ -125,49 +140,67 @@ export namespace IErpHrmTask {
     /**
      * Filter tasks by workflow status. Values: open, in-progress, completed, closed.
      *
-     * @x-autobe-specification Filter parameter mapped to erp_hrm_tasks.status column. Apply as exact-match filter in WHERE clause. Valid values: open, in-progress, completed, closed. When omitted, no filter applied.
+         * @x-autobe-specification Filter parameter mapped to
+         *   erp_hrm_tasks.status column. Apply as exact-match filter in WHERE
+         *   clause. Valid values: open, in-progress, completed, closed. When
+         *   omitted, no filter applied.
      */
     status?: string | undefined;
 
     /**
      * Filter tasks by priority level. Values: low, medium, high, urgent.
      *
-     * @x-autobe-specification Filter parameter mapped to erp_hrm_tasks.priority column. Apply as exact-match filter in WHERE clause. Valid values: low, medium, high, urgent. When omitted, no filter applied.
+         * @x-autobe-specification Filter parameter mapped to
+         *   erp_hrm_tasks.priority column. Apply as exact-match filter in WHERE
+         *   clause. Valid values: low, medium, high, urgent. When omitted, no
+         *   filter applied.
      */
     priority?: string | undefined;
 
     /**
      * Filter tasks assigned to a specific employee.
      *
-     * @x-autobe-specification Filter parameter mapped to erp_hrm_tasks.erp_hrm_employee_id column. Apply as exact-match filter to find tasks assigned to specific employee. UUID format. When omitted, no filter applied.
+         * @x-autobe-specification Filter parameter mapped to
+         *   erp_hrm_tasks.erp_hrm_employee_id column. Apply as exact-match
+         *   filter to find tasks assigned to specific employee. UUID format.
+         *   When omitted, no filter applied.
      */
     employeeId?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Field to sort results by. Values: dueDate, priority, createdAt.
      *
-     * @x-autobe-specification Computed query logic field. Maps sort field name to DB column: dueDate -> erp_hrm_tasks.due_date, priority -> erp_hrm_tasks.priority, createdAt -> erp_hrm_tasks.created_at. Default: created_at descending.
+         * @x-autobe-specification Computed query logic field. Maps sort field
+         *   name to DB column: dueDate -> erp_hrm_tasks.due_date, priority ->
+         *   erp_hrm_tasks.priority, createdAt -> erp_hrm_tasks.created_at.
+         *   Default: created_at descending.
      */
     sortBy?: string | undefined;
 
     /**
      * Sort direction. Values: asc, desc.
      *
-     * @x-autobe-specification Computed query logic field. Controls sort direction: asc (ascending) or desc (descending). Applied after sortBy field mapping to DB column. Default: desc.
+         * @x-autobe-specification Computed query logic field. Controls sort
+         *   direction: asc (ascending) or desc (descending). Applied after
+         *   sortBy field mapping to DB column. Default: desc.
      */
     order?: string | undefined;
 
     /**
      * Page number for pagination (1-based).
      *
-     * @x-autobe-specification Computed pagination logic. 1-indexed page number for offset pagination. Calculates offset as (page - 1) * limit. Defaults to 1 if not provided.
+         * @x-autobe-specification Computed pagination logic. 1-indexed page
+         *   number for offset pagination. Calculates offset as (page - 1) *
+         *   limit. Defaults to 1 if not provided.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Number of items per page.
      *
-     * @x-autobe-specification Computed pagination logic. Maximum number of records per page. Bounds enforced: minimum 1, maximum 100, default 20. Used with page to calculate offset for Prisma skip/take.
+         * @x-autobe-specification Computed pagination logic. Maximum number of
+         *   records per page. Bounds enforced: minimum 1, maximum 100, default
+         *   20. Used with page to calculate offset for Prisma skip/take.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -181,32 +214,34 @@ export namespace IErpHrmTask {
     /**
      * Employee assigned to this task. Returns assignee details when assigned, null when unassigned.
      *
-     * @x-autobe-database-schema-property assignee
-     * @x-autobe-specification Nullable FK mapped to erp_hrm_employee_id column. Returns IErpHrmEmployee.ISummary when task has assignee, null otherwise.
+         * @x-autobe-database-schema-property assignee
+         * @x-autobe-specification Nullable FK mapped to erp_hrm_employee_id
+         *   column. Returns IErpHrmEmployee.ISummary when task has assignee,
+         *   null otherwise.
      */
     assignee?: IErpHrmEmployee.ISummary | null | undefined;
     /**
-     * @x-autobe-database-schema-property created_at
+         * @x-autobe-database-schema-property created_at
      */
     created_at: string & tags.Format<"date-time">;
     /**
-     * @x-autobe-database-schema-property due_date
+         * @x-autobe-database-schema-property due_date
      */
     due_date?: (string & tags.Format<"date-time">) | null | undefined;
     /**
-     * @x-autobe-database-schema-property id
+         * @x-autobe-database-schema-property id
      */
     id: string & tags.Format<"uuid">;
     /**
-     * @x-autobe-database-schema-property priority
+         * @x-autobe-database-schema-property priority
      */
     priority: string;
     /**
-     * @x-autobe-database-schema-property status
+         * @x-autobe-database-schema-property status
      */
     status: string;
     /**
-     * @x-autobe-database-schema-property title
+         * @x-autobe-database-schema-property title
      */
     title: string;
   };
@@ -218,28 +253,40 @@ export namespace IErpHrmTask {
     /**
      * Number of tasks with low priority.
      *
-     * @x-autobe-specification COUNT(*) FROM erp_hrm_tasks WHERE erp_hrm_project_id = :projectId AND priority = 'low'. Returns integer count of tasks with low priority. Must include 0 when no low-priority tasks exist.
+         * @x-autobe-specification COUNT(*) FROM erp_hrm_tasks WHERE
+         *   erp_hrm_project_id = :projectId AND priority = 'low'. Returns
+         *   integer count of tasks with low priority. Must include 0 when no
+         *   low-priority tasks exist.
      */
     low: number & tags.Type<"int32"> & tags.Minimum<0>;
 
     /**
      * Number of tasks with medium priority.
      *
-     * @x-autobe-specification COUNT(*) FROM erp_hrm_tasks WHERE erp_hrm_project_id = :projectId AND priority = 'medium'. Returns integer count of tasks with medium priority. Must include 0 when no medium-priority tasks exist.
+         * @x-autobe-specification COUNT(*) FROM erp_hrm_tasks WHERE
+         *   erp_hrm_project_id = :projectId AND priority = 'medium'. Returns
+         *   integer count of tasks with medium priority. Must include 0 when no
+         *   medium-priority tasks exist.
      */
     medium: number & tags.Type<"int32"> & tags.Minimum<0>;
 
     /**
      * Number of tasks with high priority.
      *
-     * @x-autobe-specification COUNT(*) FROM erp_hrm_tasks WHERE erp_hrm_project_id = :projectId AND priority = 'high'. Returns integer count of tasks with high priority. Must include 0 when no high-priority tasks exist.
+         * @x-autobe-specification COUNT(*) FROM erp_hrm_tasks WHERE
+         *   erp_hrm_project_id = :projectId AND priority = 'high'. Returns
+         *   integer count of tasks with high priority. Must include 0 when no
+         *   high-priority tasks exist.
      */
     high: number & tags.Type<"int32"> & tags.Minimum<0>;
 
     /**
      * Number of tasks with urgent priority.
      *
-     * @x-autobe-specification COUNT(*) FROM erp_hrm_tasks WHERE erp_hrm_project_id = :projectId AND priority = 'urgent'. Returns integer count of tasks with urgent priority. Must include 0 when no urgent-priority tasks exist.
+         * @x-autobe-specification COUNT(*) FROM erp_hrm_tasks WHERE
+         *   erp_hrm_project_id = :projectId AND priority = 'urgent'. Returns
+         *   integer count of tasks with urgent priority. Must include 0 when no
+         *   urgent-priority tasks exist.
      */
     urgent: number & tags.Type<"int32"> & tags.Minimum<0>;
   };
@@ -251,14 +298,24 @@ export namespace IErpHrmTask {
     /**
      * Number of tasks created on the specific date, aggregated by the grouping query.
      *
-     * @x-autobe-specification Computed aggregation result from erp_hrm_tasks table. SQL: SELECT DATE(created_at) as date, COUNT(*) as count FROM erp_hrm_tasks WHERE erp_hrm_project_id = :projectId AND created_at >= NOW() - INTERVAL '30 days' GROUP BY DATE(created_at) ORDER BY date. Returns the number of tasks created on each specific date within the 30-day lookback period.
+         * @x-autobe-specification Computed aggregation result from
+         *   erp_hrm_tasks table. SQL: SELECT DATE(created_at) as date, COUNT(*)
+         *   as count FROM erp_hrm_tasks WHERE erp_hrm_project_id = :projectId
+         *   AND created_at >= NOW() - INTERVAL '30 days' GROUP BY
+         *   DATE(created_at) ORDER BY date. Returns the number of tasks created
+         *   on each specific date within the 30-day lookback period.
      */
     count: number & tags.Type<"int32"> & tags.Minimum<0>;
 
     /**
      * The specific calendar date (YYYY-MM-DD format) for this aggregated task creation count entry.
      *
-     * @x-autobe-specification Derived from erp_hrm_tasks.created_at via DATE() extraction. SQL: SELECT DATE(created_at) as date FROM erp_hrm_tasks WHERE erp_hrm_project_id = :projectId AND created_at >= NOW() - INTERVAL '30 days' GROUP BY DATE(created_at) ORDER BY date. Returns date in YYYY-MM-DD string format for each day within the lookback period.
+         * @x-autobe-specification Derived from erp_hrm_tasks.created_at via
+         *   DATE() extraction. SQL: SELECT DATE(created_at) as date FROM
+         *   erp_hrm_tasks WHERE erp_hrm_project_id = :projectId AND created_at
+         *   >= NOW() - INTERVAL '30 days' GROUP BY DATE(created_at) ORDER BY
+         *   date. Returns date in YYYY-MM-DD string format for each day within
+         *   the lookback period.
      */
     date: string & tags.Format<"date">;
   };
@@ -270,28 +327,36 @@ export namespace IErpHrmTask {
     /**
      * Number of tasks with open status.
      *
-     * @x-autobe-specification COUNT(*) FROM erp_hrm_tasks WHERE erp_hrm_project_id = :projectId AND status = 'open'. Returns the total count of tasks with open status.
+         * @x-autobe-specification COUNT(*) FROM erp_hrm_tasks WHERE
+         *   erp_hrm_project_id = :projectId AND status = 'open'. Returns the
+         *   total count of tasks with open status.
      */
     open: number & tags.Type<"int32"> & tags.Minimum<0>;
 
     /**
      * Number of tasks with in-progress status.
      *
-     * @x-autobe-specification COUNT(*) FROM erp_hrm_tasks WHERE erp_hrm_project_id = :projectId AND status = 'in-progress'. Returns the total count of tasks with in-progress status.
+         * @x-autobe-specification COUNT(*) FROM erp_hrm_tasks WHERE
+         *   erp_hrm_project_id = :projectId AND status = 'in-progress'. Returns
+         *   the total count of tasks with in-progress status.
      */
     inProgress: number & tags.Type<"int32"> & tags.Minimum<0>;
 
     /**
      * Number of tasks with completed status.
      *
-     * @x-autobe-specification COUNT(*) FROM erp_hrm_tasks WHERE erp_hrm_project_id = :projectId AND status = 'completed'. Returns the total count of tasks with completed status.
+         * @x-autobe-specification COUNT(*) FROM erp_hrm_tasks WHERE
+         *   erp_hrm_project_id = :projectId AND status = 'completed'. Returns
+         *   the total count of tasks with completed status.
      */
     completed: number & tags.Type<"int32"> & tags.Minimum<0>;
 
     /**
      * Number of tasks with closed status.
      *
-     * @x-autobe-specification COUNT(*) FROM erp_hrm_tasks WHERE erp_hrm_project_id = :projectId AND status = 'closed'. Returns the total count of tasks with closed status.
+         * @x-autobe-specification COUNT(*) FROM erp_hrm_tasks WHERE
+         *   erp_hrm_project_id = :projectId AND status = 'closed'. Returns the
+         *   total count of tasks with closed status.
      */
     closed: number & tags.Type<"int32"> & tags.Minimum<0>;
   };

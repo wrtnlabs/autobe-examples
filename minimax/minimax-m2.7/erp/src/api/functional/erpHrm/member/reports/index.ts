@@ -22,7 +22,8 @@ export * as parameters from "./parameters/index";
  * @param props.body Search criteria including report type filter, date range filter, generator filter, and pagination parameters
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query erp_hrm_reports table filtered by erp_hrm_organization_id from session context.
+ * @x-autobe-specification Query erp_hrm_reports table filtered by
+ *   erp_hrm_organization_id from session context.
  *
  * Apply search filters:
  * - Filter by report_type when specified (time_report, project_budget_report, weekly_summary_report)
@@ -126,7 +127,10 @@ export namespace index {
  * @param props.reportId Unique identifier of the report (UUID)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query the erp_hrm_reports table using the provided reportId. Verify the report belongs to the currently authenticated user's organization context. If the report does not exist or belongs to a different organization, return 404 error.
+ * @x-autobe-specification Query the erp_hrm_reports table using the provided
+ *   reportId. Verify the report belongs to the currently authenticated user's
+ *   organization context. If the report does not exist or belongs to a
+ *   different organization, return 404 error.
  *
  * Join with erp_hrm_report_parameters table to retrieve the associated parameters (1:1 relationship via erp_hrm_report_id). Return the full report entity including:
  * - Report metadata: id, report_type, name, created_at, updated_at

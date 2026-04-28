@@ -29,9 +29,12 @@ export class ShoppingmallSellerSeller_productsVariantsSnapshotsOption_valuesCont
    * @param variantId Target product variant's ID
    * @param productVariantSnapshotId Target product variant snapshot's ID
    * @param body Pagination, sorting, and search criteria for snapshot option values
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Accept a JSON request body of type `IShoppingMallProductVariantSnapshotOptionValue.IRequest` containing pagination, sorting, and optional search criteria for historical option entries.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Accept a JSON request body of type
+     *   `IShoppingMallProductVariantSnapshotOptionValue.IRequest` containing
+     *   pagination, sorting, and optional search criteria for historical option
+     *   entries.
    *
    * Authorize the caller as either the seller who owns the parent product or an administrator performing oversight review. For seller access, resolve `shopping_mall_products` by `productId` and verify its `shopping_mall_seller_id` belongs to the authenticated seller. Then verify that `shopping_mall_product_variants.id = variantId` and `shopping_mall_product_variants.shopping_mall_product_id = productId`. Then verify that `shopping_mall_product_variant_snapshots.id = productVariantSnapshotId` and `shopping_mall_product_variant_snapshots.shopping_mall_product_variant_id = variantId`. Reject the request if any link in this parent-child chain is missing or mismatched.
    *
@@ -87,9 +90,10 @@ export class ShoppingmallSellerSeller_productsVariantsSnapshotsOption_valuesCont
    * @param variantId Target variant's ID under the specified product
    * @param productVariantSnapshotId Target product variant snapshot's ID under the specified variant
    * @param optionValueId Target historical option value entry ID under the specified snapshot
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Implement a read-only detail query for one `shopping_mall_product_variant_snapshot_option_values` row.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Implement a read-only detail query for one
+     *   `shopping_mall_product_variant_snapshot_option_values` row.
    *
    * 1. Authenticate the caller and require either a seller or administrator actor.
    * 2. Resolve the parent chain using the provided UUID path parameters:

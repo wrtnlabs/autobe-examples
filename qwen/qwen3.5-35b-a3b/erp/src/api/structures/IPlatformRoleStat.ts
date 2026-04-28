@@ -14,7 +14,11 @@ export type IPlatformRoleStat = {
    *
    * This object contains three integer counts that summarize the role distribution across the organization. The total count represents all roles, while builtIn counts only the three system-defined roles (Owner, Manager, Employee) that come with every organization. Custom counts represent roles that the organization administrator has created to meet specific organizational needs.
    *
-   * @x-autobe-specification Computed field: roleStats.total = COUNT(*) from hrm_platform_roles where organization_id = session.organization_id. roleStats.builtIn = COUNT(*) where role_kind IN ('Owner', 'Manager', 'Employee'). roleStats.custom = COUNT(*) where role_kind = 'Custom'. All counts are scoped to the authenticated user's organization context.
+     * @x-autobe-specification Computed field: roleStats.total = COUNT(*) from
+     *   hrm_platform_roles where organization_id = session.organization_id.
+     *   roleStats.builtIn = COUNT(*) where role_kind IN ('Owner', 'Manager',
+     *   'Employee'). roleStats.custom = COUNT(*) where role_kind = 'Custom'.
+     *   All counts are scoped to the authenticated user's organization context.
    */
   roleStats: {
     builtIn: number & tags.Type<"int32">;
@@ -27,7 +31,12 @@ export type IPlatformRoleStat = {
    *
    * This array shows role popularity and resource allocation patterns across the organization. Each item represents a role and includes the count of employees assigned to it. Roles with zero employees are included to identify inactive roles. This data is computed at query time using LEFT JOIN and GROUP BY to ensure all roles are represented regardless of employee assignments.
    *
-   * @x-autobe-specification Computed field: employeeDistribution is an array computed via LEFT JOIN from hrm_platform_roles to hrm_platform_employees ON roles.id = employees.role_id, grouped by role. Each item contains role_id (UUID), role_name (string), and employee_count (integer, defaults to 0 for roles with no employees). Results are filtered by organization_id from session context.
+     * @x-autobe-specification Computed field: employeeDistribution is an array
+     *   computed via LEFT JOIN from hrm_platform_roles to
+     *   hrm_platform_employees ON roles.id = employees.role_id, grouped by
+     *   role. Each item contains role_id (UUID), role_name (string), and
+     *   employee_count (integer, defaults to 0 for roles with no employees).
+     *   Results are filtered by organization_id from session context.
    */
   employeeDistribution: IRoleStatItem;
 
@@ -36,7 +45,12 @@ export type IPlatformRoleStat = {
    *
    * This object contains two integer metrics that summarize the permission configuration. total_permissions represents the total number of permission assignments across all roles. unique_permission_codes represents how many distinct permission codes are actually in use, which is useful for understanding the breadth of access control configuration and supporting security audits.
    *
-   * @x-autobe-specification Computed field: permissionStats.total_permissions = COUNT(*) of all entries in the role-permission join table for the organization's roles. permissionStats.unique_permission_codes = COUNT(DISTINCT permission_code) from hrm_platform_permissions where the permission is assigned to at least one role in the organization. Both counts are scoped to the organization context.
+     * @x-autobe-specification Computed field: permissionStats.total_permissions
+     *   = COUNT(*) of all entries in the role-permission join table for the
+     *   organization's roles. permissionStats.unique_permission_codes =
+     *   COUNT(DISTINCT permission_code) from hrm_platform_permissions where the
+     *   permission is assigned to at least one role in the organization. Both
+     *   counts are scoped to the organization context.
    */
   permissionStats: {
     total_permissions: number & tags.Type<"int32">;

@@ -13,64 +13,85 @@ export type IHrmPlatformProjectMembership = {
   /**
    * Unique identifier for the project membership record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from hrm_platform_project_memberships.id. UUID primary key assigned on record creation.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_project_memberships.id. UUID primary key assigned on
+     *   record creation.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Organization context for data isolation. Ensures the membership is scoped to the correct organization.
    *
-   * @x-autobe-database-schema-property organization_id
-   * @x-autobe-specification Direct mapping from hrm_platform_project_memberships.organization_id. UUID reference to the organization that owns this membership, enforcing data isolation boundaries.
+     * @x-autobe-database-schema-property organization_id
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_project_memberships.organization_id. UUID reference to the
+     *   organization that owns this membership, enforcing data isolation
+     *   boundaries.
    */
   organization_id: string & tags.Format<"uuid">;
 
   /**
    * The role assigned to this employee within the project. Valid values: 'member' for standard contributors who can log time and view tasks, or 'project-lead' for employees with management responsibilities including task creation and editing.
    *
-   * @x-autobe-specification Direct mapping from hrm_platform_project_memberships.role. Classification field with allowed values: 'member' (standard contributor) or 'project-lead' (management role).
-   * @x-autobe-database-schema-property role
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_project_memberships.role. Classification field with
+     *   allowed values: 'member' (standard contributor) or 'project-lead'
+     *   (management role).
+     * @x-autobe-database-schema-property role
    */
   role: string;
 
   /**
    * The employee assigned to this project. Provides complete employee summary including identifier code, display name, email, job classification, and organizational context.
    *
-   * @x-autobe-database-schema-property employee
-   * @x-autobe-specification JOIN from hrm_platform_project_memberships.hrm_platform_employee_id to hrm_platform_employees.id. Returns IHrmPlatformEmployee.ISummary with essential employee information.
+     * @x-autobe-database-schema-property employee
+     * @x-autobe-specification JOIN from
+     *   hrm_platform_project_memberships.hrm_platform_employee_id to
+     *   hrm_platform_employees.id. Returns IHrmPlatformEmployee.ISummary with
+     *   essential employee information.
    */
   employee: IHrmPlatformEmployee.ISummary;
 
   /**
    * The project this employee is assigned to. Provides complete project summary including name, status, color code, timeline information, and time tracking aggregations.
    *
-   * @x-autobe-database-schema-property project
-   * @x-autobe-specification JOIN from hrm_platform_project_memberships.hrm_platform_project_id to hrm_platform_projects.id. Returns IHrmPlatformProject.ISummary with essential project information.
+     * @x-autobe-database-schema-property project
+     * @x-autobe-specification JOIN from
+     *   hrm_platform_project_memberships.hrm_platform_project_id to
+     *   hrm_platform_projects.id. Returns IHrmPlatformProject.ISummary with
+     *   essential project information.
    */
   project: IHrmPlatformProject.ISummary;
 
   /**
    * Timestamp when this membership was created. Records when the employee was first assigned to the project.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from hrm_platform_project_memberships.created_at. Timestamp automatically set when the membership record is created.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_project_memberships.created_at. Timestamp automatically
+     *   set when the membership record is created.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when this membership was last modified. Tracks the most recent changes to the employee's project assignment.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from hrm_platform_project_memberships.updated_at. Timestamp automatically updated on every modification to the membership record.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_project_memberships.updated_at. Timestamp automatically
+     *   updated on every modification to the membership record.
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * Soft-delete timestamp indicating membership deletion status. Null when the membership is active; non-null value indicates the membership has been soft-deleted while preserving audit trail.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from hrm_platform_project_memberships.deleted_at. Nullable timestamp used for soft deletion; null indicates active membership, non-null indicates the membership has been removed.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_project_memberships.deleted_at. Nullable timestamp used
+     *   for soft deletion; null indicates active membership, non-null indicates
+     *   the membership has been removed.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -136,8 +157,9 @@ export namespace IHrmPlatformProjectMembership {
      *
      * Unique UUID that identifies this specific employee-to-project assignment within the organization.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from hrm_platform_project_memberships.id (UUID primary key).
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_project_memberships.id (UUID primary key).
      */
     id: string & tags.Format<"uuid">;
 
@@ -146,8 +168,9 @@ export namespace IHrmPlatformProjectMembership {
      *
      * Reference to the employee record that represents the person assigned to the project. Includes employee identification, display name, and role information for display purposes.
      *
-     * @x-autobe-database-schema-property employee
-     * @x-autobe-specification JOIN via hrm_platform_employee_id to hrm_platform_employees.id. Returns IHrmPlatformEmployee.ISummary.
+         * @x-autobe-database-schema-property employee
+         * @x-autobe-specification JOIN via hrm_platform_employee_id to
+         *   hrm_platform_employees.id. Returns IHrmPlatformEmployee.ISummary.
      */
     employee: IHrmPlatformEmployee.ISummary;
 
@@ -156,8 +179,9 @@ export namespace IHrmPlatformProjectMembership {
      *
      * Reference to the project record that defines the work context for this membership. Includes project identification, status, and name for display purposes.
      *
-     * @x-autobe-database-schema-property project
-     * @x-autobe-specification JOIN via hrm_platform_project_id to hrm_platform_projects.id. Returns IHrmPlatformProject.ISummary.
+         * @x-autobe-database-schema-property project
+         * @x-autobe-specification JOIN via hrm_platform_project_id to
+         *   hrm_platform_projects.id. Returns IHrmPlatformProject.ISummary.
      */
     project: IHrmPlatformProject.ISummary;
 
@@ -166,8 +190,9 @@ export namespace IHrmPlatformProjectMembership {
      *
      * Indicates the capacity in which the employee participates in the project. Valid values are 'member' for standard contributors or 'project_lead' for employees with management responsibilities including task management capabilities.
      *
-     * @x-autobe-database-schema-property role
-     * @x-autobe-specification Direct mapping from hrm_platform_project_memberships.role.
+         * @x-autobe-database-schema-property role
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_project_memberships.role.
      */
     role: string;
 
@@ -176,8 +201,10 @@ export namespace IHrmPlatformProjectMembership {
      *
      * Records when the employee was first assigned to the project. Used for tracking membership history and chronological sorting of assignments.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from hrm_platform_project_memberships.created_at (timestamp with timezone).
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_project_memberships.created_at (timestamp with
+         *   timezone).
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -186,8 +213,10 @@ export namespace IHrmPlatformProjectMembership {
      *
      * Null indicates an active membership. When populated, indicates the membership has been removed. Soft deletion preserves historical assignment data for audit purposes while excluding it from active membership lists.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from hrm_platform_project_memberships.deleted_at. Nullable for active memberships.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_project_memberships.deleted_at. Nullable for active
+         *   memberships.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };

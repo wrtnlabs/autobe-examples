@@ -16,8 +16,10 @@ export type IShoppingMallAdministratorPromotionRequest = {
    *
    * This UUID identifies the promotion request across the platform and is used in API endpoints to retrieve, update, or reference this specific request.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_administrator_promotion_requests.id. Primary key, UUID format.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_administrator_promotion_requests.id. Primary key, UUID
+     *   format.
    */
   id: string & tags.Format<"uuid">;
 
@@ -26,8 +28,11 @@ export type IShoppingMallAdministratorPromotionRequest = {
    *
    * This field indicates whether the request was submitted by a customer or a seller. Valid values are 'customer' or 'seller'. The actual user identity is stored in polymorphic subtype tables (shopping_mall_administrator_promotion_request_of_customers or shopping_mall_administrator_promotion_request_of_sellers).
    *
-   * @x-autobe-database-schema-property actor_type
-   * @x-autobe-specification Direct mapping from shopping_mall_administrator_promotion_requests.actor_type. Enum values: 'customer' or 'seller'. Distinguishes the type of user who submitted the request.
+     * @x-autobe-database-schema-property actor_type
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_administrator_promotion_requests.actor_type. Enum values:
+     *   'customer' or 'seller'. Distinguishes the type of user who submitted
+     *   the request.
    */
   actor_type: string;
 
@@ -36,8 +41,11 @@ export type IShoppingMallAdministratorPromotionRequest = {
    *
    * This text field captures the user's justification for requesting administrator privileges. It is required when creating a promotion request and helps super administrators evaluate the request based on the user's qualifications and motivations.
    *
-   * @x-autobe-database-schema-property reason
-   * @x-autobe-specification Direct mapping from shopping_mall_administrator_promotion_requests.reason. Required text field containing the user's justification for requesting administrator privileges.
+     * @x-autobe-database-schema-property reason
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_administrator_promotion_requests.reason. Required text
+     *   field containing the user's justification for requesting administrator
+     *   privileges.
    */
   reason: string;
 
@@ -46,8 +54,11 @@ export type IShoppingMallAdministratorPromotionRequest = {
    *
    * Valid values are 'pending' (awaiting super administrator review), 'approved' (user has been granted administrator privileges), or 'rejected' (request has been denied). The status transitions from 'pending' to either 'approved' or 'rejected' when a super administrator responds to the request.
    *
-   * @x-autobe-database-schema-property status
-   * @x-autobe-specification Direct mapping from shopping_mall_administrator_promotion_requests.status. Enum values: 'pending', 'approved', or 'rejected'. Tracks the lifecycle state of the promotion request.
+     * @x-autobe-database-schema-property status
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_administrator_promotion_requests.status. Enum values:
+     *   'pending', 'approved', or 'rejected'. Tracks the lifecycle state of the
+     *   promotion request.
    */
   status: string;
 
@@ -56,8 +67,11 @@ export type IShoppingMallAdministratorPromotionRequest = {
    *
    * This field is populated only when the status is 'rejected'. It explains why the request was denied and is visible to the requesting user. This field is null for pending or approved requests.
    *
-   * @x-autobe-database-schema-property rejected_reason
-   * @x-autobe-specification Direct mapping from shopping_mall_administrator_promotion_requests.rejected_reason. Nullable string field. Null for pending or approved requests. Contains rejection explanation when status is 'rejected'.
+     * @x-autobe-database-schema-property rejected_reason
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_administrator_promotion_requests.rejected_reason.
+     *   Nullable string field. Null for pending or approved requests. Contains
+     *   rejection explanation when status is 'rejected'.
    */
   rejected_reason: string | null;
 
@@ -66,8 +80,10 @@ export type IShoppingMallAdministratorPromotionRequest = {
    *
    * Records the date and time when the user submitted the administrator promotion request. This timestamp is used for sorting, filtering, and audit trail purposes.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from shopping_mall_administrator_promotion_requests.created_at. DateTime field in UTC timezone with millisecond precision.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_administrator_promotion_requests.created_at. DateTime
+     *   field in UTC timezone with millisecond precision.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -76,8 +92,11 @@ export type IShoppingMallAdministratorPromotionRequest = {
    *
    * Records the date and time of the most recent update to the promotion request, including status changes, rejection reason updates, or any other modifications. This timestamp helps track the request's processing timeline.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from shopping_mall_administrator_promotion_requests.updated_at. DateTime field in UTC timezone with millisecond precision. Updated on any modification to the request.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_administrator_promotion_requests.updated_at. DateTime
+     *   field in UTC timezone with millisecond precision. Updated on any
+     *   modification to the request.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -86,8 +105,11 @@ export type IShoppingMallAdministratorPromotionRequest = {
    *
    * This field is null for active requests. When set, it indicates the request has been soft deleted but preserved for audit purposes. Soft deleted requests are typically excluded from standard queries but retained for compliance and historical records.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from shopping_mall_administrator_promotion_requests.deleted_at. Nullable DateTime field. Null indicates the request is active. Non-null indicates soft deletion.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_administrator_promotion_requests.deleted_at. Nullable
+     *   DateTime field. Null indicates the request is active. Non-null
+     *   indicates soft deletion.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 
@@ -96,8 +118,11 @@ export type IShoppingMallAdministratorPromotionRequest = {
    *
    * This field contains the summary information of the super administrator who processed the request. It is null for pending requests and populated with administrator details (id, email, grade, banned status, creation timestamp) once the request has been approved or rejected. This provides accountability and audit trail for administrative decisions.
    *
-   * @x-autobe-specification Relation mapping via JOIN on processed_by_administrator_id to shopping_mall_administrators table. Returns IShoppingMallAdministrator.ISummary object or null. Null for pending requests, populated for approved or rejected requests.
-   * @x-autobe-database-schema-property processedByAdministrator
+     * @x-autobe-specification Relation mapping via JOIN on
+     *   processed_by_administrator_id to shopping_mall_administrators table.
+     *   Returns IShoppingMallAdministrator.ISummary object or null. Null for
+     *   pending requests, populated for approved or rejected requests.
+     * @x-autobe-database-schema-property processedByAdministrator
    */
   processedByAdministrator?:
     | IShoppingMallAdministrator.ISummary
@@ -118,8 +143,10 @@ export namespace IShoppingMallAdministratorPromotionRequest {
      *
      * This UUID identifies each promotion request submitted by a customer or seller who wants to become an administrator. It is auto-generated when the request is created and remains immutable throughout the request's lifecycle.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_administrator_promotion_requests.id. Primary key, UUID format, auto-generated on insert.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_administrator_promotion_requests.id. Primary key,
+         *   UUID format, auto-generated on insert.
      */
     id: string & tags.Format<"uuid">;
 
@@ -128,8 +155,11 @@ export namespace IShoppingMallAdministratorPromotionRequest {
      *
      * This field distinguishes between requests from customers ('customer') and sellers ('seller'). It enables the polymorphic ownership pattern where the actual user reference is stored in separate subtype tables (shopping_mall_administrator_promotion_request_of_customers or shopping_mall_administrator_promotion_request_of_sellers).
      *
-     * @x-autobe-database-schema-property actor_type
-     * @x-autobe-specification Direct mapping from shopping_mall_administrator_promotion_requests.actor_type. String value: 'customer' or 'seller'. Used for polymorphic ownership pattern to distinguish request source.
+         * @x-autobe-database-schema-property actor_type
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_administrator_promotion_requests.actor_type. String
+         *   value: 'customer' or 'seller'. Used for polymorphic ownership
+         *   pattern to distinguish request source.
      */
     actor_type: string;
 
@@ -138,8 +168,11 @@ export namespace IShoppingMallAdministratorPromotionRequest {
      *
      * This text field captures the user's justification for requesting administrator privileges. It is required when creating a promotion request and helps super administrators evaluate whether to approve or reject the request based on the user's stated qualifications and intentions.
      *
-     * @x-autobe-database-schema-property reason
-     * @x-autobe-specification Direct mapping from shopping_mall_administrator_promotion_requests.reason. String field containing the user's justification for requesting administrator privileges. Required on creation.
+         * @x-autobe-database-schema-property reason
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_administrator_promotion_requests.reason. String field
+         *   containing the user's justification for requesting administrator
+         *   privileges. Required on creation.
      */
     reason: string;
 
@@ -148,8 +181,11 @@ export namespace IShoppingMallAdministratorPromotionRequest {
      *
      * Valid values are 'pending' (awaiting super administrator review), 'approved' (user has become a regular administrator), or 'rejected' (request denied). The status transitions from 'pending' to either 'approved' or 'rejected' when a super administrator processes the request.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from shopping_mall_administrator_promotion_requests.status. String enum: 'pending', 'approved', or 'rejected'. Transitions from 'pending' to 'approved' or 'rejected' when a super administrator responds.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_administrator_promotion_requests.status. String enum:
+         *   'pending', 'approved', or 'rejected'. Transitions from 'pending' to
+         *   'approved' or 'rejected' when a super administrator responds.
      */
     status: string;
 
@@ -158,8 +194,12 @@ export namespace IShoppingMallAdministratorPromotionRequest {
      *
      * This field contains the administrator's summary information when a super administrator has approved or rejected the request. It is null for pending requests that have not yet been processed. The relationship provides an audit trail of which administrator made the approval or rejection decision.
      *
-     * @x-autobe-database-schema-property processedByAdministrator
-     * @x-autobe-specification Relation mapping from shopping_mall_administrator_promotion_requests.processed_by_administrator_id FK to shopping_mall_administrators.id. JOIN returns IShoppingMallAdministrator.ISummary. Nullable: pending requests have null value.
+         * @x-autobe-database-schema-property processedByAdministrator
+         * @x-autobe-specification Relation mapping from
+         *   shopping_mall_administrator_promotion_requests.processed_by_administrator_id
+         *   FK to shopping_mall_administrators.id. JOIN returns
+         *   IShoppingMallAdministrator.ISummary. Nullable: pending requests
+         *   have null value.
      */
     processed_by_administrator: IShoppingMallAdministrator.ISummary | null;
 
@@ -168,8 +208,11 @@ export namespace IShoppingMallAdministratorPromotionRequest {
      *
      * This field is populated only when the request status is 'rejected'. It contains the super administrator's explanation for why the request was denied and is visible to the requesting user. This field is null for pending or approved requests.
      *
-     * @x-autobe-database-schema-property rejected_reason
-     * @x-autobe-specification Direct mapping from shopping_mall_administrator_promotion_requests.rejected_reason. Nullable string. Populated only when status is 'rejected'. Contains super administrator's explanation for denying the request.
+         * @x-autobe-database-schema-property rejected_reason
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_administrator_promotion_requests.rejected_reason.
+         *   Nullable string. Populated only when status is 'rejected'. Contains
+         *   super administrator's explanation for denying the request.
      */
     rejected_reason: string | null;
 
@@ -178,8 +221,11 @@ export namespace IShoppingMallAdministratorPromotionRequest {
      *
      * Records the exact date and time when the user submitted their administrator promotion request. This timestamp is auto-generated by the database on insert and remains immutable. It is used for sorting requests chronologically and for audit trail purposes.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_administrator_promotion_requests.created_at. DateTime field with timestamptz precision. Auto-generated on insert, immutable.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_administrator_promotion_requests.created_at. DateTime
+         *   field with timestamptz precision. Auto-generated on insert,
+         *   immutable.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -188,8 +234,11 @@ export namespace IShoppingMallAdministratorPromotionRequest {
      *
      * This field is null for active requests and contains a timestamp when the request has been soft deleted. Soft deletion preserves the request data for audit purposes while marking it as no longer active. Deleted requests are typically excluded from standard queries but remain accessible for administrative oversight.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from shopping_mall_administrator_promotion_requests.deleted_at. Nullable DateTime field with timestamptz precision. Null indicates active request, non-null indicates soft-deleted.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_administrator_promotion_requests.deleted_at. Nullable
+         *   DateTime field with timestamptz precision. Null indicates active
+         *   request, non-null indicates soft-deleted.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };
@@ -205,7 +254,11 @@ export namespace IShoppingMallAdministratorPromotionRequest {
      *
      * When provided, this parameter performs a case-insensitive partial match on the reason text that users submitted when requesting administrator privileges. Useful for finding specific requests by keywords in their justification.
      *
-     * @x-autobe-specification Text search query applied as LIKE condition on the reason field of shopping_mall_administrator_promotion_requests table. Performs case-insensitive partial match on the reason text provided by the requesting user.
+         * @x-autobe-specification Text search query applied as LIKE condition
+         *   on the reason field of
+         *   shopping_mall_administrator_promotion_requests table. Performs
+         *   case-insensitive partial match on the reason text provided by the
+         *   requesting user.
      */
     search?: string | undefined;
 
@@ -214,7 +267,11 @@ export namespace IShoppingMallAdministratorPromotionRequest {
      *
      * Valid values are 'pending' for requests awaiting administrator review, 'approved' for requests that have been granted, and 'rejected' for requests that have been denied. This allows administrators to view requests at specific stages of the approval workflow.
      *
-     * @x-autobe-specification Filter parameter for the status column in shopping_mall_administrator_promotion_requests table. Valid values are 'pending' (awaiting review), 'approved' (request granted), or 'rejected' (request denied). Applied as WHERE clause equality check.
+         * @x-autobe-specification Filter parameter for the status column in
+         *   shopping_mall_administrator_promotion_requests table. Valid values
+         *   are 'pending' (awaiting review), 'approved' (request granted), or
+         *   'rejected' (request denied). Applied as WHERE clause equality
+         *   check.
      */
     status?: "pending" | "approved" | "rejected" | undefined;
 
@@ -223,7 +280,10 @@ export namespace IShoppingMallAdministratorPromotionRequest {
      *
      * Valid values are 'customer' for requests from registered shoppers and 'seller' for requests from registered shop owners. This helps administrators categorize and process requests based on the requester's current role on the platform.
      *
-     * @x-autobe-specification Filter parameter for the actor_type column in shopping_mall_administrator_promotion_requests table. Valid values are 'customer' or 'seller', indicating which type of user submitted the promotion request. Applied as WHERE clause equality check.
+         * @x-autobe-specification Filter parameter for the actor_type column in
+         *   shopping_mall_administrator_promotion_requests table. Valid values
+         *   are 'customer' or 'seller', indicating which type of user submitted
+         *   the promotion request. Applied as WHERE clause equality check.
      */
     actor_type?: "customer" | "seller" | undefined;
 
@@ -232,7 +292,9 @@ export namespace IShoppingMallAdministratorPromotionRequest {
      *
      * Specifies which page of results to retrieve. Page numbering starts from 1, so the first page is page 1. Combined with the limit parameter, this enables browsing through large result sets in manageable chunks.
      *
-     * @x-autobe-specification Pagination page number (1-indexed). Used to calculate OFFSET in SQL query: OFFSET = (page - 1) * limit. Minimum value is 1. Defaults to 1 if not provided.
+         * @x-autobe-specification Pagination page number (1-indexed). Used to
+         *   calculate OFFSET in SQL query: OFFSET = (page - 1) * limit. Minimum
+         *   value is 1. Defaults to 1 if not provided.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -241,7 +303,9 @@ export namespace IShoppingMallAdministratorPromotionRequest {
      *
      * Defines how many promotion requests to return in each page of results. The minimum is 1 and the maximum is 100. This parameter controls the size of each paginated response, allowing clients to balance between data volume and request frequency.
      *
-     * @x-autobe-specification Number of records per page. Used as LIMIT in SQL query. Minimum value is 1, maximum is 100. Defaults to a system-defined value (typically 20 or 50) if not provided.
+         * @x-autobe-specification Number of records per page. Used as LIMIT in
+         *   SQL query. Minimum value is 1, maximum is 100. Defaults to a
+         *   system-defined value (typically 20 or 50) if not provided.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -252,7 +316,11 @@ export namespace IShoppingMallAdministratorPromotionRequest {
      *
      * Specifies which column to use for ordering the promotion request list. The default is 'created_at' which sorts by request creation time. Other valid fields include id, actor_type, reason, status, updated_at, and deleted_at.
      *
-     * @x-autobe-specification Field name to sort results by. Applied as ORDER BY clause in SQL query. Default is 'created_at'. Must be a valid column name from shopping_mall_administrator_promotion_requests table (id, actor_type, reason, status, created_at, updated_at, deleted_at).
+         * @x-autobe-specification Field name to sort results by. Applied as
+         *   ORDER BY clause in SQL query. Default is 'created_at'. Must be a
+         *   valid column name from
+         *   shopping_mall_administrator_promotion_requests table (id,
+         *   actor_type, reason, status, created_at, updated_at, deleted_at).
      */
     sort?: string | undefined;
 
@@ -261,7 +329,9 @@ export namespace IShoppingMallAdministratorPromotionRequest {
      *
      * Determines whether results are sorted in ascending ('asc') or descending ('desc') order. The default is 'desc' which shows the most recent promotion requests first when combined with the default sort field of 'created_at'.
      *
-     * @x-autobe-specification Sort direction for the ORDER BY clause. Valid values are 'asc' (ascending) or 'desc' (descending). Default is 'desc' to show newest requests first when sorting by created_at.
+         * @x-autobe-specification Sort direction for the ORDER BY clause. Valid
+         *   values are 'asc' (ascending) or 'desc' (descending). Default is
+         *   'desc' to show newest requests first when sorting by created_at.
      */
     order?: "asc" | "desc" | undefined;
   };

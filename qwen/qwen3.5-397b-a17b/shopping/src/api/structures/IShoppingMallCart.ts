@@ -16,8 +16,9 @@ export namespace IShoppingMallCart {
      *
      * This is the primary key of the cart item record in the database. Used internally for cart item management operations such as updating quantity or removing items from the cart.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_cart_items.id. UUID format.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_cart_items.id. UUID format.
      */
     id: string & tags.Format<"uuid">;
 
@@ -28,8 +29,11 @@ export namespace IShoppingMallCart {
      *
      * This relation allows customers to see exactly which variant they are purchasing with all relevant details without needing separate API calls.
      *
-     * @x-autobe-database-schema-property productVariant
-     * @x-autobe-specification JOIN from shopping_mall_cart_items.shopping_mall_product_variant_id to shopping_mall_product_variants.id. Returns IShoppingMallProductVariant.ISummary with nested product summary.
+         * @x-autobe-database-schema-property productVariant
+         * @x-autobe-specification JOIN from
+         *   shopping_mall_cart_items.shopping_mall_product_variant_id to
+         *   shopping_mall_product_variants.id. Returns
+         *   IShoppingMallProductVariant.ISummary with nested product summary.
      */
     productVariant: IShoppingMallProductVariant.ISummary;
 
@@ -40,8 +44,10 @@ export namespace IShoppingMallCart {
      *
      * The quantity must be a positive integer and is validated against the variant's available stock during checkout.
      *
-     * @x-autobe-database-schema-property quantity
-     * @x-autobe-specification Direct mapping from shopping_mall_cart_items.quantity. Integer type representing the number of units.
+         * @x-autobe-database-schema-property quantity
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_cart_items.quantity. Integer type representing the
+         *   number of units.
      */
     quantity: number & tags.Type<"int32">;
 
@@ -52,8 +58,9 @@ export namespace IShoppingMallCart {
      *
      * Format: ISO 8601 date-time string (e.g., '2024-01-15T10:30:00Z').
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_cart_items.created_at. ISO 8601 date-time format.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_cart_items.created_at. ISO 8601 date-time format.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -64,8 +71,9 @@ export namespace IShoppingMallCart {
      *
      * Format: ISO 8601 date-time string (e.g., '2024-01-15T10:30:00Z').
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from shopping_mall_cart_items.updated_at. ISO 8601 date-time format.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_cart_items.updated_at. ISO 8601 date-time format.
      */
     updated_at: string & tags.Format<"date-time">;
   };

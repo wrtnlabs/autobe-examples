@@ -21,9 +21,10 @@ export class HrmtimetrackMemberTasksHistoriesController {
    * @param connection
    * @param taskId UUID identifier of the task whose status history to retrieve (global scope)
    * @param body Search criteria including status filters, date range for history entries, member filters, and pagination parameters.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query hrm_time_track_task_histories table filtering by hrm_time_track_task_id from path parameter.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query hrm_time_track_task_histories table
+     *   filtering by hrm_time_track_task_id from path parameter.
    *
    * Apply search filters from request body on: previous_status, new_status, date range (created_at), and member who made changes.
    *
@@ -71,9 +72,11 @@ export class HrmtimetrackMemberTasksHistoriesController {
    * @param connection
    * @param taskId UUID of the task whose history entry is being retrieved (global scope)
    * @param historyId UUID of the specific task history entry to retrieve (global scope)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query hrm_time_track_task_histories table by composite key (hrm_time_track_task_id, id) to retrieve the specific history entry.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query hrm_time_track_task_histories table by
+     *   composite key (hrm_time_track_task_id, id) to retrieve the specific
+     *   history entry.
    *
    * 1. Validate taskId and historyId are valid UUIDs
    * 2. Verify the history entry exists with the given historyId

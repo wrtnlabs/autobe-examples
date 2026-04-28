@@ -18,8 +18,9 @@ export type IECommerceMallAdminRegistrationRequest = {
    *
    * A UUID v4 generated at creation time, uniquely identifying this registration request across the platform.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from e_commerce_mall_admin_registration_requests.id.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_admin_registration_requests.id.
    */
   id: string & tags.Format<"uuid">;
 
@@ -28,8 +29,12 @@ export type IECommerceMallAdminRegistrationRequest = {
    *
    * Valid values are "customer" and "seller", corresponding to the two actor types that may apply for administrator privileges. This field enables polymorphic resolution through the appropriate subtype table, determining whether the {@link requester} resolves to a customer or seller summary.
    *
-   * @x-autobe-database-schema-property requester_type
-   * @x-autobe-specification Direct mapping from e_commerce_mall_admin_registration_requests.requester_type. Value is 'customer' or 'seller', set at creation based on the authenticated actor's type. Used as discriminator for polymorphic requester resolution.
+     * @x-autobe-database-schema-property requester_type
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_admin_registration_requests.requester_type. Value is
+     *   'customer' or 'seller', set at creation based on the authenticated
+     *   actor's type. Used as discriminator for polymorphic requester
+     *   resolution.
    */
   requester_type: string;
 
@@ -38,8 +43,10 @@ export type IECommerceMallAdminRegistrationRequest = {
    *
    * A free-form justification submitted as part of the registration request, used by super administrators to evaluate the requester's motivation and suitability for elevated platform privileges.
    *
-   * @x-autobe-database-schema-property reason
-   * @x-autobe-specification Direct mapping from e_commerce_mall_admin_registration_requests.reason. Non-empty string provided by the requester at creation time.
+     * @x-autobe-database-schema-property reason
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_admin_registration_requests.reason. Non-empty string
+     *   provided by the requester at creation time.
    */
   reason: string;
 
@@ -48,8 +55,11 @@ export type IECommerceMallAdminRegistrationRequest = {
    *
    * Valid values: "pending" (awaiting super administrator review), "approved" (requester was granted regular administrator status), "rejected" (request was denied by the reviewing super administrator). Only pending requests can be resolved.
    *
-   * @x-autobe-database-schema-property status
-   * @x-autobe-specification Direct mapping from e_commerce_mall_admin_registration_requests.status. Set to 'pending' on creation. Updated to 'approved' or 'rejected' by the reviewing super administrator.
+     * @x-autobe-database-schema-property status
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_admin_registration_requests.status. Set to 'pending' on
+     *   creation. Updated to 'approved' or 'rejected' by the reviewing super
+     *   administrator.
    */
   status: string;
 
@@ -58,8 +68,11 @@ export type IECommerceMallAdminRegistrationRequest = {
    *
    * Present only when status is "rejected". Provides transparency to the requester and guidance for resubmission. Null when the request is pending or has been approved.
    *
-   * @x-autobe-database-schema-property rejection_reason
-   * @x-autobe-specification Direct mapping from e_commerce_mall_admin_registration_requests.rejection_reason. Nullable. Set by the reviewing super administrator when rejecting with status 'rejected'. Remains null when approved or still pending.
+     * @x-autobe-database-schema-property rejection_reason
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_admin_registration_requests.rejection_reason. Nullable.
+     *   Set by the reviewing super administrator when rejecting with status
+     *   'rejected'. Remains null when approved or still pending.
    */
   rejection_reason: string | null;
 
@@ -68,8 +81,12 @@ export type IECommerceMallAdminRegistrationRequest = {
    *
    * Null while the request is in pending status awaiting review. Set when a super administrator either approves or rejects the request, recording the identity of the reviewer for audit trail purposes.
    *
-   * @x-autobe-database-schema-property reviewer
-   * @x-autobe-specification LEFT JOIN from e_commerce_mall_admin_registration_requests.reviewer_super_administrator_id to e_commerce_mall_super_administrators.id. Maps to IECommerceMallSuperAdministrator.ISummary. Null while the request is pending (no reviewer assigned yet).
+     * @x-autobe-database-schema-property reviewer
+     * @x-autobe-specification LEFT JOIN from
+     *   e_commerce_mall_admin_registration_requests.reviewer_super_administrator_id
+     *   to e_commerce_mall_super_administrators.id. Maps to
+     *   IECommerceMallSuperAdministrator.ISummary. Null while the request is
+     *   pending (no reviewer assigned yet).
    */
   reviewer: IECommerceMallSuperAdministrator.ISummary | null;
 
@@ -78,8 +95,12 @@ export type IECommerceMallAdminRegistrationRequest = {
    *
    * Set when the request transitions from pending to approved or rejected. Null while the request is pending awaiting review.
    *
-   * @x-autobe-database-schema-property reviewed_at
-   * @x-autobe-specification Direct mapping from e_commerce_mall_admin_registration_requests.reviewed_at. Nullable datetime. Set to the current timestamp when a super administrator approves or rejects the request. Remains null while the request is pending.
+     * @x-autobe-database-schema-property reviewed_at
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_admin_registration_requests.reviewed_at. Nullable
+     *   datetime. Set to the current timestamp when a super administrator
+     *   approves or rejects the request. Remains null while the request is
+     *   pending.
    */
   reviewed_at: (string & tags.Format<"date-time">) | null;
 
@@ -88,7 +109,14 @@ export type IECommerceMallAdminRegistrationRequest = {
    *
    * Resolved polymorphically based on the {@link requester_type} discriminator field. Returns a customer summary when the requester is a customer, or a seller summary when the requester is a seller. This enables both customer and seller actors to apply for administrator privileges through the same request system.
    *
-   * @x-autobe-specification Polymorphic requester resolution: based on requester_type discriminator ('customer' or 'seller'), JOIN the appropriate subtype table — e_commerce_mall_admin_registration_request_customers (if 'customer') or e_commerce_mall_admin_registration_request_sellers (if 'seller') — to resolve the actor identity. The resolved entity is mapped to IECommerceMallCustomer.ISummary or IECommerceMallSeller.ISummary respectively, using the associated customer or seller table data.
+     * @x-autobe-specification Polymorphic requester resolution: based on
+     *   requester_type discriminator ('customer' or 'seller'), JOIN the
+     *   appropriate subtype table —
+     *   e_commerce_mall_admin_registration_request_customers (if 'customer') or
+     *   e_commerce_mall_admin_registration_request_sellers (if 'seller') — to
+     *   resolve the actor identity. The resolved entity is mapped to
+     *   IECommerceMallCustomer.ISummary or IECommerceMallSeller.ISummary
+     *   respectively, using the associated customer or seller table data.
    */
   requester: IECommerceMallCustomer.ISummary | IECommerceMallSeller.ISummary;
 
@@ -97,8 +125,10 @@ export type IECommerceMallAdminRegistrationRequest = {
    *
    * Automatically set at creation time. Used for sorting and filtering in request list views.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from e_commerce_mall_admin_registration_requests.created_at. Set to the current timestamp on record creation.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_admin_registration_requests.created_at. Set to the
+     *   current timestamp on record creation.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -107,8 +137,10 @@ export type IECommerceMallAdminRegistrationRequest = {
    *
    * Updated when the request status changes (approved/rejected) or when any other field is modified. Reflects the most recent activity on this record.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from e_commerce_mall_admin_registration_requests.updated_at. Updated automatically on any field modification.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_admin_registration_requests.updated_at. Updated
+     *   automatically on any field modification.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -117,8 +149,11 @@ export type IECommerceMallAdminRegistrationRequest = {
    *
    * May be used for archival or cleanup purposes. Null indicates the record is active. Soft-deleted records are excluded from standard queries.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from e_commerce_mall_admin_registration_requests.deleted_at. Nullable. Soft-delete timestamp. Queries should exclude records where deleted_at IS NOT NULL unless explicitly requested.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_admin_registration_requests.deleted_at. Nullable.
+     *   Soft-delete timestamp. Queries should exclude records where deleted_at
+     *   IS NOT NULL unless explicitly requested.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -134,8 +169,11 @@ export namespace IECommerceMallAdminRegistrationRequest {
      *
      * This reason is submitted by the requester to explain their desire for elevated administrator privileges on the platform. A clear and substantive explanation helps the reviewing super administrator make an informed decision on whether to approve or reject the request.
      *
-     * @x-autobe-database-schema-property reason
-     * @x-autobe-specification Direct mapping from e_commerce_mall_admin_registration_requests.reason. User-provided text explaining why the requester wishes to become an administrator. Must be a non-empty string (minLength: 1).
+         * @x-autobe-database-schema-property reason
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_admin_registration_requests.reason. User-provided
+         *   text explaining why the requester wishes to become an
+         *   administrator. Must be a non-empty string (minLength: 1).
      */
     reason: string & tags.MinLength<1>;
   };
@@ -151,7 +189,10 @@ export namespace IECommerceMallAdminRegistrationRequest {
      *
      * Filters results to only include registration requests whose reason text contains the specified keyword. The search is case-insensitive and supports partial matches against the requester's submitted explanation.
      *
-     * @x-autobe-specification Text search using LIKE/ILIKE on the reason column of e_commerce_mall_admin_registration_requests. Case-insensitive partial match. Empty or null values should be ignored.
+         * @x-autobe-specification Text search using LIKE/ILIKE on the reason
+         *   column of e_commerce_mall_admin_registration_requests.
+         *   Case-insensitive partial match. Empty or null values should be
+         *   ignored.
      */
     search?: string | undefined;
 
@@ -160,8 +201,11 @@ export namespace IECommerceMallAdminRegistrationRequest {
      *
      * Restricts results to requests with the specified lifecycle status. Valid values are 'pending' (awaiting super administrator review), 'approved' (requester was granted regular administrator status), and 'rejected' (request was denied by the reviewing super administrator). Only one status value can be specified.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Exact match filter on e_commerce_mall_admin_registration_requests.status column. Valid values are 'pending', 'approved', and 'rejected'. Only one value accepted at a time.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Exact match filter on
+         *   e_commerce_mall_admin_registration_requests.status column. Valid
+         *   values are 'pending', 'approved', and 'rejected'. Only one value
+         *   accepted at a time.
      */
     status?: string | undefined;
 
@@ -170,8 +214,11 @@ export namespace IECommerceMallAdminRegistrationRequest {
      *
      * Restricts results to requests submitted by either customers or sellers. This corresponds to the requester_type discriminator used for polymorphic resolution of the requester's identity through the appropriate subtype table.
      *
-     * @x-autobe-database-schema-property requester_type
-     * @x-autobe-specification Exact match filter on e_commerce_mall_admin_registration_requests.requester_type discriminator column. Valid values are 'customer' and 'seller'. Only one value accepted at a time.
+         * @x-autobe-database-schema-property requester_type
+         * @x-autobe-specification Exact match filter on
+         *   e_commerce_mall_admin_registration_requests.requester_type
+         *   discriminator column. Valid values are 'customer' and 'seller'.
+         *   Only one value accepted at a time.
      */
     requester_type?: string | undefined;
 
@@ -180,7 +227,10 @@ export namespace IECommerceMallAdminRegistrationRequest {
      *
      * Only requests created at or after this timestamp are returned. Used together with the 'to' parameter to define a bounded date range on the created_at field. Must be a valid ISO 8601 datetime string.
      *
-     * @x-autobe-specification Range filter applied as created_at >= from on e_commerce_mall_admin_registration_requests. Must be an ISO 8601 datetime string. Combined with 'to' parameter for date range filtering. Ignored if null or empty.
+         * @x-autobe-specification Range filter applied as created_at >= from on
+         *   e_commerce_mall_admin_registration_requests. Must be an ISO 8601
+         *   datetime string. Combined with 'to' parameter for date range
+         *   filtering. Ignored if null or empty.
      */
     from?: (string & tags.Format<"date-time">) | undefined;
 
@@ -189,7 +239,10 @@ export namespace IECommerceMallAdminRegistrationRequest {
      *
      * Only requests created at or before this timestamp are returned. Used together with the 'from' parameter to define a bounded date range on the created_at field. Must be a valid ISO 8601 datetime string.
      *
-     * @x-autobe-specification Range filter applied as created_at <= to on e_commerce_mall_admin_registration_requests. Must be an ISO 8601 datetime string. Combined with 'from' parameter for date range filtering. Ignored if null or empty.
+         * @x-autobe-specification Range filter applied as created_at <= to on
+         *   e_commerce_mall_admin_registration_requests. Must be an ISO 8601
+         *   datetime string. Combined with 'from' parameter for date range
+         *   filtering. Ignored if null or empty.
      */
     to?: (string & tags.Format<"date-time">) | undefined;
 
@@ -198,7 +251,9 @@ export namespace IECommerceMallAdminRegistrationRequest {
      *
      * Specifies which page of results to retrieve. Page numbering starts at 1, so the first page is page 1. The offset is calculated as (page - 1) * limit. Defaults to 1 when not provided.
      *
-     * @x-autobe-specification Offset-based pagination page number, 1-indexed. OFFSET = (page - 1) * limit. Defaults to 1 when not specified. Minimum value is 1.
+         * @x-autobe-specification Offset-based pagination page number,
+         *   1-indexed. OFFSET = (page - 1) * limit. Defaults to 1 when not
+         *   specified. Minimum value is 1.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -207,7 +262,9 @@ export namespace IECommerceMallAdminRegistrationRequest {
      *
      * Defines the upper bound on how many records can be returned in a single page. The actual number of records may be less on the final page or when total records are fewer than this value. Capped at a maximum of 100. The default value is implementation-dependent.
      *
-     * @x-autobe-specification Maximum records per page for offset-based pagination. Capped at maximum 100. Default implementation-dependent (commonly 20). Minimum value is 1.
+         * @x-autobe-specification Maximum records per page for offset-based
+         *   pagination. Capped at maximum 100. Default implementation-dependent
+         *   (commonly 20). Minimum value is 1.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -244,8 +301,9 @@ export namespace IECommerceMallAdminRegistrationRequest {
      *
      * This UUID is the primary key of the registration request record, used for lookup and reference in API operations.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from e_commerce_mall_admin_registration_requests.id. UUID primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_admin_registration_requests.id. UUID primary key.
      */
     id: string & tags.Format<"uuid">;
 
@@ -254,8 +312,13 @@ export namespace IECommerceMallAdminRegistrationRequest {
      *
      * Determines which actor type submitted this registration request and which subtype table to join for the full requester identity. Valid values are 'customer' and 'seller'.
      *
-     * @x-autobe-database-schema-property requester_type
-     * @x-autobe-specification Direct mapping from e_commerce_mall_admin_registration_requests.requester_type. Valid values: 'customer' or 'seller'. Used as discriminator to resolve the polymorphic requester via appropriate subtype table (adminRegistrationRequestCustomer or adminRegistrationRequestSeller).
+         * @x-autobe-database-schema-property requester_type
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_admin_registration_requests.requester_type. Valid
+         *   values: 'customer' or 'seller'. Used as discriminator to resolve
+         *   the polymorphic requester via appropriate subtype table
+         *   (adminRegistrationRequestCustomer or
+         *   adminRegistrationRequestSeller).
      */
     requester_type: string;
 
@@ -264,7 +327,12 @@ export namespace IECommerceMallAdminRegistrationRequest {
      *
      * Resolved polymorphically based on the {@link requester_type} discriminator. Returns either a customer or seller summary depending on who submitted the request.
      *
-     * @x-autobe-specification Polymorphic relation resolved via requester_type discriminator. If requester_type is 'customer', LEFT JOIN adminRegistrationRequestCustomer → e_commerce_mall_customers and map to IECommerceMallCustomer.ISummary. If requester_type is 'seller', LEFT JOIN adminRegistrationRequestSeller → e_commerce_mall_sellers and map to IECommerceMallSeller.ISummary.
+         * @x-autobe-specification Polymorphic relation resolved via
+         *   requester_type discriminator. If requester_type is 'customer', LEFT
+         *   JOIN adminRegistrationRequestCustomer → e_commerce_mall_customers
+         *   and map to IECommerceMallCustomer.ISummary. If requester_type is
+         *   'seller', LEFT JOIN adminRegistrationRequestSeller →
+         *   e_commerce_mall_sellers and map to IECommerceMallSeller.ISummary.
      */
     requester: IECommerceMallCustomer.ISummary | IECommerceMallSeller.ISummary;
 
@@ -273,8 +341,10 @@ export namespace IECommerceMallAdminRegistrationRequest {
      *
      * This reason is reviewed by super administrators when deciding whether to approve or reject the request.
      *
-     * @x-autobe-database-schema-property reason
-     * @x-autobe-specification Direct mapping from e_commerce_mall_admin_registration_requests.reason. Free-text string provided by the requester.
+         * @x-autobe-database-schema-property reason
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_admin_registration_requests.reason. Free-text
+         *   string provided by the requester.
      */
     reason: string;
 
@@ -283,8 +353,10 @@ export namespace IECommerceMallAdminRegistrationRequest {
      *
      * Possible values are: 'pending' (awaiting super administrator review), 'approved' (requester was granted regular administrator status), or 'rejected' (request was denied by a super administrator).
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from e_commerce_mall_admin_registration_requests.status. Valid values: 'pending', 'approved', 'rejected'. Indexed on (status, created_at).
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_admin_registration_requests.status. Valid values:
+         *   'pending', 'approved', 'rejected'. Indexed on (status, created_at).
      */
     status: string;
 
@@ -293,8 +365,10 @@ export namespace IECommerceMallAdminRegistrationRequest {
      *
      * Present only when the {@link status} is 'rejected'. Provides transparency to the requester and guidance for resubmission.
      *
-     * @x-autobe-database-schema-property rejection_reason
-     * @x-autobe-specification Direct mapping from e_commerce_mall_admin_registration_requests.rejection_reason. Nullable string. Present only when status is 'rejected'.
+         * @x-autobe-database-schema-property rejection_reason
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_admin_registration_requests.rejection_reason.
+         *   Nullable string. Present only when status is 'rejected'.
      */
     rejection_reason: string | null;
 
@@ -303,8 +377,12 @@ export namespace IECommerceMallAdminRegistrationRequest {
      *
      * Present only when the request has been processed (approved or rejected). Null while the request is still in pending status awaiting review.
      *
-     * @x-autobe-database-schema-property reviewer
-     * @x-autobe-specification LEFT JOIN from e_commerce_mall_admin_registration_requests.reviewer_super_administrator_id to e_commerce_mall_super_administrators.id. Nullable — null while the request is pending. Maps to IECommerceMallSuperAdministrator.ISummary.
+         * @x-autobe-database-schema-property reviewer
+         * @x-autobe-specification LEFT JOIN from
+         *   e_commerce_mall_admin_registration_requests.reviewer_super_administrator_id
+         *   to e_commerce_mall_super_administrators.id. Nullable — null while
+         *   the request is pending. Maps to
+         *   IECommerceMallSuperAdministrator.ISummary.
      */
     reviewer: IECommerceMallSuperAdministrator.ISummary | null;
 
@@ -313,8 +391,11 @@ export namespace IECommerceMallAdminRegistrationRequest {
      *
      * Set when the request transitions from pending to approved or rejected. Remains null while the request is pending.
      *
-     * @x-autobe-database-schema-property reviewed_at
-     * @x-autobe-specification Direct mapping from e_commerce_mall_admin_registration_requests.reviewed_at. Nullable datetime with timezone. Set when the request transitions from pending to approved or rejected.
+         * @x-autobe-database-schema-property reviewed_at
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_admin_registration_requests.reviewed_at. Nullable
+         *   datetime with timezone. Set when the request transitions from
+         *   pending to approved or rejected.
      */
     reviewed_at: (string & tags.Format<"date-time">) | null;
 
@@ -323,8 +404,10 @@ export namespace IECommerceMallAdminRegistrationRequest {
      *
      * Automatically set at the time of submission. Used for chronological sorting and display.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from e_commerce_mall_admin_registration_requests.created_at. DateTime with timezone. Automatically set on record creation.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_admin_registration_requests.created_at. DateTime
+         *   with timezone. Automatically set on record creation.
      */
     created_at: string & tags.Format<"date-time">;
   };

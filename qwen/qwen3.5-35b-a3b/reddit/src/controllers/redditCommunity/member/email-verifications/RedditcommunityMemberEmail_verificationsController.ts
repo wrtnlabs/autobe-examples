@@ -20,9 +20,10 @@ export class RedditcommunityMemberEmail_verificationsController {
    *
    * @param connection
    * @param body Search criteria for email verification records. Includes member ID filter, verification status filter, token pattern, date ranges for creation and expiration, pagination parameters (page size and cursor), and sorting options.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query reddit_community_member_email_verifications table with pagination and filtering.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query reddit_community_member_email_verifications
+     *   table with pagination and filtering.
    *
    * Apply the following filters:
    * - reddit_community_member_id: exact match filter (UUID)
@@ -80,9 +81,11 @@ export class RedditcommunityMemberEmail_verificationsController {
    *
    * @param connection
    * @param verificationId The unique UUID identifier of the email verification record to retrieve.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Retrieve a single email verification record from the reddit_community_member_email_verifications table by the provided verification ID.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Retrieve a single email verification record from
+     *   the reddit_community_member_email_verifications table by the provided
+     *   verification ID.
    *
    * Implementation steps:
    * 1. Validate that verificationId is a valid UUID format

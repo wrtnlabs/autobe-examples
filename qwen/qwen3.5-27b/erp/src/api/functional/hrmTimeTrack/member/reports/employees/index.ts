@@ -13,7 +13,8 @@ import { IPageIHrmTimeTrackEmployee } from "../../../../../structures/IPageIHrmT
  * @param props.connection
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query the hrm_time_track_employees table with organization scoping based on the current user's context.
+ * @x-autobe-specification Query the hrm_time_track_employees table with
+ *   organization scoping based on the current user's context.
  *
  * Apply filtering based on query parameters:
  * - Filter by department_id if provided (join with hrm_time_track_departments)

@@ -73,8 +73,12 @@ export namespace IEcommerceMallRefundRequest {
      *
      * This is the UUID of the specific order item that the customer wants to refund. The order item must be in 'delivered' status and belong to an order placed by the authenticated customer. Only one refund request is allowed per order item.
      *
-     * @x-autobe-database-schema-property order_item_id
-     * @x-autobe-specification Direct FK mapping from order_item_id column. UUID reference to the order item being refunded. The order item must have status 'delivered' and belong to the authenticated customer's order. Enforces unique constraint on order_item_id in refund_requests table.
+         * @x-autobe-database-schema-property order_item_id
+         * @x-autobe-specification Direct FK mapping from order_item_id column.
+         *   UUID reference to the order item being refunded. The order item
+         *   must have status 'delivered' and belong to the authenticated
+         *   customer's order. Enforces unique constraint on order_item_id in
+         *   refund_requests table.
      */
     order_item_id: string & tags.Format<"uuid">;
 
@@ -83,8 +87,12 @@ export namespace IEcommerceMallRefundRequest {
      *
      * This field requires the customer to provide a reason text describing why they are requesting a refund. Common reasons include defective product, wrong item received, or item not matching description. This field is mandatory and cannot be empty.
      *
-     * @x-autobe-database-schema-property reason
-     * @x-autobe-specification Direct mapping from reason column. Customer-provided text explaining the refund justification. Must be non-empty and describes the issue or problem that warrants the refund. Indexed for searchability by sellers managing their refund requests.
+         * @x-autobe-database-schema-property reason
+         * @x-autobe-specification Direct mapping from reason column.
+         *   Customer-provided text explaining the refund justification. Must be
+         *   non-empty and describes the issue or problem that warrants the
+         *   refund. Indexed for searchability by sellers managing their refund
+         *   requests.
      */
     reason: string;
   };
@@ -132,8 +140,9 @@ export namespace IEcommerceMallRefundRequest {
      *
      * UUID format that uniquely identifies this refund request within the e-commerce platform. Used as the primary key for database lookups and as the reference in API endpoints when retrieving, updating, or deleting this specific refund request.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_mall_refund_requests.id. UUID primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_refund_requests.id. UUID primary key.
      */
     id: string & tags.Format<"uuid">;
 
@@ -142,8 +151,10 @@ export namespace IEcommerceMallRefundRequest {
      *
      * Required field describing why the customer is requesting a refund for the delivered order item. This text is indexed for searchability by sellers managing their refund requests and provides context for approval/rejection decisions.
      *
-     * @x-autobe-database-schema-property reason
-     * @x-autobe-specification Direct mapping from ecommerce_mall_refund_requests.reason. Customer-provided reason string. Indexed with gin_trgm_ops for text search.
+         * @x-autobe-database-schema-property reason
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_refund_requests.reason. Customer-provided reason
+         *   string. Indexed with gin_trgm_ops for text search.
      */
     reason: string;
 
@@ -152,8 +163,10 @@ export namespace IEcommerceMallRefundRequest {
      *
      * Indicates the current state of the refund request in the approval workflow. Initial status is 'pending' when created by the customer. Transitions to 'approved' when seller approves the request (with stock restoration), or 'rejected' when seller denies the request.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from ecommerce_mall_refund_requests.status. Allowed values: 'pending', 'approved', 'rejected'. Indexed.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_refund_requests.status. Allowed values: 'pending',
+         *   'approved', 'rejected'. Indexed.
      */
     status: string;
 
@@ -162,8 +175,11 @@ export namespace IEcommerceMallRefundRequest {
      *
      * Reference to the original order item that this refund request applies to. This relationship is resolved via the order_item_id foreign key and returns a summary object containing product details, seller information, quantity, and pricing to provide context for the refund request.
      *
-     * @x-autobe-database-schema-property item
-     * @x-autobe-specification Join from ecommerce_mall_refund_requests.order_item_id to ecommerce_mall_order_items.id. Returns IEcommerceMallOrderItem.ISummary for compact display in lists.
+         * @x-autobe-database-schema-property item
+         * @x-autobe-specification Join from
+         *   ecommerce_mall_refund_requests.order_item_id to
+         *   ecommerce_mall_order_items.id. Returns
+         *   IEcommerceMallOrderItem.ISummary for compact display in lists.
      */
     item: IEcommerceMallOrderItem.ISummary;
 
@@ -172,8 +188,11 @@ export namespace IEcommerceMallRefundRequest {
      *
      * Reference to the seller account that approved this refund request, enabling the stock restoration and status change to 'approved'. This field is null when status is 'pending' or 'rejected', and populated only when the seller has approved the request.
      *
-     * @x-autobe-database-schema-property approvedBySeller
-     * @x-autobe-specification Join from ecommerce_mall_refund_requests.approved_by_seller_id to ecommerce_mall_sellers.id. Returns IEcommerceMallSeller.ISummary or null if not yet approved.
+         * @x-autobe-database-schema-property approvedBySeller
+         * @x-autobe-specification Join from
+         *   ecommerce_mall_refund_requests.approved_by_seller_id to
+         *   ecommerce_mall_sellers.id. Returns IEcommerceMallSeller.ISummary or
+         *   null if not yet approved.
      */
     approvedBySeller: IEcommerceMallSeller.ISummary | null;
 
@@ -182,8 +201,11 @@ export namespace IEcommerceMallRefundRequest {
      *
      * Reference to the seller account that rejected this refund request, providing accountability for rejection decisions. This field is null when status is 'pending' or 'approved', and populated only when the seller has rejected the request.
      *
-     * @x-autobe-database-schema-property rejectedBySeller
-     * @x-autobe-specification Join from ecommerce_mall_refund_requests.rejected_by_seller_id to ecommerce_mall_sellers.id. Returns IEcommerceMallSeller.ISummary or null if not yet rejected.
+         * @x-autobe-database-schema-property rejectedBySeller
+         * @x-autobe-specification Join from
+         *   ecommerce_mall_refund_requests.rejected_by_seller_id to
+         *   ecommerce_mall_sellers.id. Returns IEcommerceMallSeller.ISummary or
+         *   null if not yet rejected.
      */
     rejectedBySeller: IEcommerceMallSeller.ISummary | null;
 
@@ -192,8 +214,10 @@ export namespace IEcommerceMallRefundRequest {
      *
      * Immutable record of when the customer first submitted this refund request. Used for tracking request age, audit purposes, and calculating the 7-day refund window from delivery date.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_refund_requests.created_at. ISO 8601 date-time format.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_refund_requests.created_at. ISO 8601 date-time
+         *   format.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -202,8 +226,10 @@ export namespace IEcommerceMallRefundRequest {
      *
      * Tracks when the request status was changed (pending → approved/rejected) or when the reason was edited. Useful for monitoring request processing times and detecting recent changes.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_refund_requests.updated_at. ISO 8601 date-time format.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_refund_requests.updated_at. ISO 8601 date-time
+         *   format.
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -212,8 +238,10 @@ export namespace IEcommerceMallRefundRequest {
      *
      * Null when the refund request is active. When populated, indicates the request has been soft-deleted and is preserved for audit purposes while being hidden from normal listings.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_refund_requests.deleted_at. Nullable date-time field. Null when record is active, populated when soft-deleted.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_refund_requests.deleted_at. Nullable date-time
+         *   field. Null when record is active, populated when soft-deleted.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };

@@ -27,16 +27,17 @@ export class ShoppingmallMemberReviewsController {
    *
    * @param connection
    * @param reviewId Target review identifier to retrieve (primary key of `shopping_mall_reviews`).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Service layer implementation (read-only):
-   * 1) Parse `reviewId` from path.
-   * 2) Query `shopping_mall_reviews` by `id` (primary key).
-   * 3) Join minimal related data only if required by the response DTO (e.g., to compute author-deleted display flags). Do not perform writes.
-   * 4) Apply authorization checks:
-   *    - Member/admin visibility rules must be enforced before returning any review fields.
-   *    - If the record has `deleted_at` set, keep the review content available for display as “deleted user” per requirements.
-   * 5) Return the review DTO.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Service layer implementation (read-only): 1)
+     *   Parse `reviewId` from path. 2) Query `shopping_mall_reviews` by `id`
+     *   (primary key). 3) Join minimal related data only if required by the
+     *   response DTO (e.g., to compute author-deleted display flags). Do not
+     *   perform writes. 4) Apply authorization checks: - Member/admin
+     *   visibility rules must be enforced before returning any review fields. -
+     *   If the record has `deleted_at` set, keep the review content available
+     *   for display as “deleted user” per requirements. 5) Return the review
+     *   DTO.
    *
    * Database query notes:
    * - Primary lookup should use `shopping_mall_reviews` on `id`.
@@ -83,9 +84,9 @@ export class ShoppingmallMemberReviewsController {
    * @param connection
    * @param reviewId The unique identifier of the review to update.
    * @param body Updated review content. Includes the required whole-number rating (1..5) and optional review text to be stored as the review’s latest version.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation steps (service layer):
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation steps (service layer):
    *
    * 1. Validate path parameter `reviewId` is a UUID.
    * 2. Load the target review row from `shopping_mall_reviews` by `id = reviewId`. Include its `shopping_mall_order_item_id`, `shopping_mall_customer_id`, and current state fields required for validation (`deleted_at`, `rating`, `body`, `is_public`, timestamps).
@@ -164,35 +165,38 @@ export class ShoppingmallMemberReviewsController {
    *
    * @param connection
    * @param reviewId Target review identifier to be deleted.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Service-layer algorithm:
-   * 1) Parse `reviewId` from path and load `shopping_mall_reviews` row by `id` (UUID).
-   * 2) Authorization + ownership:
-   *    - Determine requester customer identity from the authenticated member context.
-   *    - Verify the requester is the owner by comparing to `shopping_mall_reviews.shopping_mall_customer_id`.
-   *    - If not owner (or requester is not authenticated), reject with an authorization error; do not modify DB state.
-   * 3) Idempotency:
-   *    - If `shopping_mall_reviews.deleted_at` is already set, treat as already deleted; either return success with no further changes or keep behavior consistent with existing delete semantics (do not create duplicate snapshot events).
-   * 4) Transaction:
-   *    - Begin DB transaction.
-   *    - Set `shopping_mall_reviews.deleted_at = now()` and update `updated_at`.
-   *    - Create immutable snapshot records:
-   *      a) Insert into `shopping_mall_snapshots` with:
-   *         - `source_type` = "review" (or the system’s review discriminator used elsewhere)
-   *         - `source_entity_id` = review.id
-   *         - `source_order_item_id` = NULL unless you have it from joined data (do not assume); prefer direct join from `shopping_mall_order_items` only if required by the schema design.
-   *         - `reason` describing deletion event (e.g., "delete").
-   *         - `created_by_member_id` = requester customer/member id if available in auth context.
-   *      b) Insert into `shopping_mall_review_snapshots_indices` with:
-   *         - `shopping_mall_snapshot_id` = newly created snapshot.id
-   *         - `review_id` = review.id
-   *         - `action_type` = "deleted" (use the action discriminator convention defined by the system; do not invent if not standardized—if conventions exist, reuse them.)
-   *         - `snapshot_sequence` = next sequence number for this review (max(existing snapshot_sequence)+1).
-   *      c) Ensure snapshot ordering determinism by using the existing indexed ordering mechanism.
-   *    - Commit transaction.
-   * 5) Rating aggregation impact:
-   *    - Ensure downstream rating computations filter out deleted reviews by applying `deleted_at IS NULL` semantics.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Service-layer algorithm: 1) Parse `reviewId` from
+     *   path and load `shopping_mall_reviews` row by `id` (UUID). 2)
+     *   Authorization + ownership: - Determine requester customer identity from
+     *   the authenticated member context. - Verify the requester is the owner
+     *   by comparing to `shopping_mall_reviews.shopping_mall_customer_id`. - If
+     *   not owner (or requester is not authenticated), reject with an
+     *   authorization error; do not modify DB state. 3) Idempotency: - If
+     *   `shopping_mall_reviews.deleted_at` is already set, treat as already
+     *   deleted; either return success with no further changes or keep behavior
+     *   consistent with existing delete semantics (do not create duplicate
+     *   snapshot events). 4) Transaction: - Begin DB transaction. - Set
+     *   `shopping_mall_reviews.deleted_at = now()` and update `updated_at`. -
+     *   Create immutable snapshot records: a) Insert into
+     *   `shopping_mall_snapshots` with: - `source_type` = "review" (or the
+     *   system’s review discriminator used elsewhere) - `source_entity_id` =
+     *   review.id - `source_order_item_id` = NULL unless you have it from
+     *   joined data (do not assume); prefer direct join from
+     *   `shopping_mall_order_items` only if required by the schema design. -
+     *   `reason` describing deletion event (e.g., "delete"). -
+     *   `created_by_member_id` = requester customer/member id if available in
+     *   auth context. b) Insert into `shopping_mall_review_snapshots_indices`
+     *   with: - `shopping_mall_snapshot_id` = newly created snapshot.id -
+     *   `review_id` = review.id - `action_type` = "deleted" (use the action
+     *   discriminator convention defined by the system; do not invent if not
+     *   standardized—if conventions exist, reuse them.) - `snapshot_sequence` =
+     *   next sequence number for this review (max(existing
+     *   snapshot_sequence)+1). c) Ensure snapshot ordering determinism by using
+     *   the existing indexed ordering mechanism. - Commit transaction. 5)
+     *   Rating aggregation impact: - Ensure downstream rating computations
+     *   filter out deleted reviews by applying `deleted_at IS NULL` semantics.
    *
    * Queries and constraints:
    * - Enforce uniqueness via `shopping_mall_reviews` @@unique([shopping_mall_order_item_id]); however this operation targets by review.id so no additional uniqueness checks are needed.
@@ -241,26 +245,45 @@ export class ShoppingmallMemberReviewsController {
    *
    * @param connection
    * @param body Creation payload for a customer review tied to a delivered order item purchase context. Includes the target order item identifier, required rating (1–5), and optional review text body.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation steps:
-   * 1) Authenticate actor and ensure role is a registered member eligible to participate in reviews. Reject guests.
-   * 2) Parse request body (order item context + rating + optional body).
-   * 3) Validate rating: must be integer 1..5. Validate optional body constraints (length/format) as defined by IShoppingMallReview.ICreate schema.
-   * 4) Load shopping_mall_order_items by id (from request body) and join to shopping_mall_orders/customer context as needed (if order_items alone does not identify customer, fetch shopping_mall_orders to verify ownership). Also load shopping_mall_products if review product id must be consistent.
-   * 5) Eligibility check: ensure the loaded order item’s line_item_status represents delivered state. If not delivered, reject review creation.
-   * 6) Ownership check: ensure shopping_mall_order_items belongs to the authenticated shopping_mall_customer (customer id).
-   * 7) Consistency check: ensure the reviewed product in the request matches shopping_mall_order_items.shopping_mall_product_variant_id -> its product, or use request’s product id to verify shopping_mall_reviews.shopping_mall_product_id corresponds to the purchase context.
-   * 8) Enforce one-review constraint: attempt insert into shopping_mall_reviews with shopping_mall_order_item_id. Rely on @@unique([shopping_mall_order_item_id]) to prevent duplicates. Convert unique-constraint violation into a domain error (e.g., already reviewed for that order item).
-   * 9) Insert shopping_mall_reviews row with:
-   * - shopping_mall_order_item_id from request
-   * - shopping_mall_product_id from validated purchase context
-   * - shopping_mall_customer_id = authenticated member id
-   * - rating and body
-   * - is_public per creation semantics
-   * - deleted_at should be null (active)
-   * 10) Snapshot/history compatibility: create an initial snapshot record in shopping_mall_snapshots with source_type = 'review' (exact mapping is internal), source_entity_id = new review id, and source_order_item_id = shopping_mall_order_items.id where applicable. Then create a row in shopping_mall_review_snapshots_indices referencing the snapshot and review_id, setting action_type='created' and snapshot_sequence=1 (or max+1 if existing, though creation should be first). Ensure snapshot parties/visibility are set so relevant parties (owner/admin) can view.
-   * 11) Return the created review entity (including any fields defined by IShoppingMallReview).
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation steps: 1) Authenticate actor and
+     *   ensure role is a registered member eligible to participate in reviews.
+     *   Reject guests. 2) Parse request body (order item context + rating +
+     *   optional body). 3) Validate rating: must be integer 1..5. Validate
+     *   optional body constraints (length/format) as defined by
+     *   IShoppingMallReview.ICreate schema. 4) Load shopping_mall_order_items
+     *   by id (from request body) and join to shopping_mall_orders/customer
+     *   context as needed (if order_items alone does not identify customer,
+     *   fetch shopping_mall_orders to verify ownership). Also load
+     *   shopping_mall_products if review product id must be consistent. 5)
+     *   Eligibility check: ensure the loaded order item’s line_item_status
+     *   represents delivered state. If not delivered, reject review creation.
+     *   6) Ownership check: ensure shopping_mall_order_items belongs to the
+     *   authenticated shopping_mall_customer (customer id). 7) Consistency
+     *   check: ensure the reviewed product in the request matches
+     *   shopping_mall_order_items.shopping_mall_product_variant_id -> its
+     *   product, or use request’s product id to verify
+     *   shopping_mall_reviews.shopping_mall_product_id corresponds to the
+     *   purchase context. 8) Enforce one-review constraint: attempt insert into
+     *   shopping_mall_reviews with shopping_mall_order_item_id. Rely on
+   *   @@unique([shopping_mall_order_item_id]) to prevent duplicates. Convert
+   *   unique-constraint violation into a domain error (e.g., already reviewed
+   *   for that order item). 9) Insert shopping_mall_reviews row with: -
+   *   shopping_mall_order_item_id from request - shopping_mall_product_id
+   *   from validated purchase context - shopping_mall_customer_id =
+   *   authenticated member id - rating and body - is_public per creation
+   *   semantics - deleted_at should be null (active) 10) Snapshot/history
+   *   compatibility: create an initial snapshot record in
+   *   shopping_mall_snapshots with source_type = 'review' (exact mapping is
+   *   internal), source_entity_id = new review id, and source_order_item_id =
+   *   shopping_mall_order_items.id where applicable. Then create a row in
+   *   shopping_mall_review_snapshots_indices referencing the snapshot and
+   *   review_id, setting action_type='created' and snapshot_sequence=1 (or
+   *   max+1 if existing, though creation should be first). Ensure snapshot
+   *   parties/visibility are set so relevant parties (owner/admin) can view.
+   *   11) Return the created review entity (including any fields defined by
+   *   IShoppingMallReview).
    *
    * Transactionality:
    * - Use a single DB transaction for creating the review and its initial snapshot/index entries. If snapshot creation fails after review insert, roll back.
@@ -307,9 +330,10 @@ export class ShoppingmallMemberReviewsController {
    *
    * @param connection
    * @param body Search filters and pagination controls for retrieving review summaries.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement PATCH /reviews as a list/search handler over `shopping_mall_reviews`.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implement PATCH /reviews as a list/search handler
+     *   over `shopping_mall_reviews`.
    *
    * 1) Parse request body `IShoppingMallReview.IRequest` to obtain:
    * - pagination parameters (page size / cursor)

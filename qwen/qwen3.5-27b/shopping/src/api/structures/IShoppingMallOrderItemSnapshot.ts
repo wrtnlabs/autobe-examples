@@ -41,8 +41,10 @@ export namespace IShoppingMallOrderItemSnapshot {
      *
      * This UUID identifies the specific snapshot record that captures the product, variant, and seller state at the time of purchase.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_order_item_snapshots.id. Primary key of the snapshot record, UUID format.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_order_item_snapshots.id. Primary key of the snapshot
+         *   record, UUID format.
      */
     id: string & tags.Format<"uuid">;
 
@@ -51,8 +53,10 @@ export namespace IShoppingMallOrderItemSnapshot {
      *
      * This field preserves the exact product name at purchase time, ensuring accurate historical records even if the seller later modifies or deletes the product.
      *
-     * @x-autobe-database-schema-property product_name
-     * @x-autobe-specification Direct mapping from shopping_mall_order_item_snapshots.product_name. Denormalized product name captured at order placement time.
+         * @x-autobe-database-schema-property product_name
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_order_item_snapshots.product_name. Denormalized
+         *   product name captured at order placement time.
      */
     product_name: string;
 
@@ -61,8 +65,10 @@ export namespace IShoppingMallOrderItemSnapshot {
      *
      * This field preserves the category name at purchase time, ensuring accurate historical records even if the category is later renamed or deleted by administrators.
      *
-     * @x-autobe-database-schema-property product_category_name
-     * @x-autobe-specification Direct mapping from shopping_mall_order_item_snapshots.product_category_name. Denormalized category name captured at order placement time.
+         * @x-autobe-database-schema-property product_category_name
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_order_item_snapshots.product_category_name.
+         *   Denormalized category name captured at order placement time.
      */
     product_category_name: string;
 
@@ -71,8 +77,11 @@ export namespace IShoppingMallOrderItemSnapshot {
      *
      * This field preserves the product's base price when the order was placed, regardless of any subsequent price changes by the seller. Used as reference for the variant-specific price.
      *
-     * @x-autobe-database-schema-property product_base_price
-     * @x-autobe-specification Direct mapping from shopping_mall_order_item_snapshots.product_base_price. Base price of the product at order placement time, stored as double precision float.
+         * @x-autobe-database-schema-property product_base_price
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_order_item_snapshots.product_base_price. Base price
+         *   of the product at order placement time, stored as double precision
+         *   float.
      */
     product_base_price: number;
 
@@ -81,8 +90,10 @@ export namespace IShoppingMallOrderItemSnapshot {
      *
      * This unique identifier represents the specific variant combination (e.g., color, size) that was purchased. Preserved for inventory tracking and order fulfillment purposes.
      *
-     * @x-autobe-database-schema-property variant_sku_code
-     * @x-autobe-specification Direct mapping from shopping_mall_order_item_snapshots.variant_sku_code. SKU code of the specific product variant purchased.
+         * @x-autobe-database-schema-property variant_sku_code
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_order_item_snapshots.variant_sku_code. SKU code of
+         *   the specific product variant purchased.
      */
     variant_sku_code: string;
 
@@ -91,8 +102,11 @@ export namespace IShoppingMallOrderItemSnapshot {
      *
      * This field captures the exact price the customer paid, which may differ from the product base price if the variant had a custom price override. Preserved for accurate order history and refund calculations.
      *
-     * @x-autobe-database-schema-property variant_price
-     * @x-autobe-specification Direct mapping from shopping_mall_order_item_snapshots.variant_price. Actual price paid for the specific variant at order placement time, stored as double precision float.
+         * @x-autobe-database-schema-property variant_price
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_order_item_snapshots.variant_price. Actual price paid
+         *   for the specific variant at order placement time, stored as double
+         *   precision float.
      */
     variant_price: number;
 
@@ -101,8 +115,10 @@ export namespace IShoppingMallOrderItemSnapshot {
      *
      * This field preserves the seller's shop name at purchase time, ensuring accurate historical records even if the seller later changes their shop name or deletes their account.
      *
-     * @x-autobe-database-schema-property seller_shop_name
-     * @x-autobe-specification Direct mapping from shopping_mall_order_item_snapshots.seller_shop_name. Seller's shop/business name captured at order placement time.
+         * @x-autobe-database-schema-property seller_shop_name
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_order_item_snapshots.seller_shop_name. Seller's
+         *   shop/business name captured at order placement time.
      */
     seller_shop_name: string;
 
@@ -111,8 +127,11 @@ export namespace IShoppingMallOrderItemSnapshot {
      *
      * This field preserves the seller's logo image URI at purchase time for display in order history, even if the seller later updates or removes their logo.
      *
-     * @x-autobe-database-schema-property seller_shop_logo_uri
-     * @x-autobe-specification Direct mapping from shopping_mall_order_item_snapshots.seller_shop_logo_uri. URL of the seller's logo image captured at order placement time, stored as varchar(80000).
+         * @x-autobe-database-schema-property seller_shop_logo_uri
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_order_item_snapshots.seller_shop_logo_uri. URL of the
+         *   seller's logo image captured at order placement time, stored as
+         *   varchar(80000).
      */
     seller_shop_logo_uri: string & tags.Format<"uri">;
 
@@ -121,8 +140,11 @@ export namespace IShoppingMallOrderItemSnapshot {
      *
      * This field is automatically set to the order placement time and is never modified. Snapshots are immutable records that preserve the exact state of the purchase at the moment it occurred.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_order_item_snapshots.created_at. Timestamp when the snapshot was created, automatically set to order placement time. Format: ISO 8601 date-time with timezone.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_order_item_snapshots.created_at. Timestamp when the
+         *   snapshot was created, automatically set to order placement time.
+         *   Format: ISO 8601 date-time with timezone.
      */
     created_at: string & tags.Format<"date-time">;
   };
@@ -140,7 +162,10 @@ export namespace IShoppingMallOrderItemSnapshot {
      *
      * Filters order item snapshots to only include those belonging to the specified order. This is useful for viewing all purchased items within a single order.
      *
-     * @x-autobe-specification Filter parameter for order ID. Joins shopping_mall_order_item_snapshots → shopping_mall_order_items → shopping_mall_orders and filters by orders.id. Used to find all snapshots belonging to a specific order.
+         * @x-autobe-specification Filter parameter for order ID. Joins
+         *   shopping_mall_order_item_snapshots → shopping_mall_order_items →
+         *   shopping_mall_orders and filters by orders.id. Used to find all
+         *   snapshots belonging to a specific order.
      */
     order_id?: (string & tags.Format<"uuid">) | undefined;
 
@@ -149,7 +174,10 @@ export namespace IShoppingMallOrderItemSnapshot {
      *
      * Filters order item snapshots to only include those for the specified product. This is useful for tracking purchase history of a particular product across multiple orders.
      *
-     * @x-autobe-specification Filter parameter for product ID. Joins shopping_mall_order_item_snapshots → shopping_mall_order_items → shopping_mall_product_variants → shopping_mall_products and filters by products.id. Used to find all snapshots of a specific product.
+         * @x-autobe-specification Filter parameter for product ID. Joins
+         *   shopping_mall_order_item_snapshots → shopping_mall_order_items →
+         *   shopping_mall_product_variants → shopping_mall_products and filters
+         *   by products.id. Used to find all snapshots of a specific product.
      */
     product_id?: (string & tags.Format<"uuid">) | undefined;
 
@@ -158,7 +186,10 @@ export namespace IShoppingMallOrderItemSnapshot {
      *
      * Filters order item snapshots to only include those for the specified product variant. This is useful for tracking purchases of a specific variant (e.g., specific color/size combination).
      *
-     * @x-autobe-specification Filter parameter for product variant ID. Joins shopping_mall_order_item_snapshots → shopping_mall_order_items and filters by product_variant_id. Used to find all snapshots of a specific product variant (SKU).
+         * @x-autobe-specification Filter parameter for product variant ID.
+         *   Joins shopping_mall_order_item_snapshots →
+         *   shopping_mall_order_items and filters by product_variant_id. Used
+         *   to find all snapshots of a specific product variant (SKU).
      */
     variant_id?: (string & tags.Format<"uuid">) | undefined;
 
@@ -167,7 +198,10 @@ export namespace IShoppingMallOrderItemSnapshot {
      *
      * Filters order item snapshots to only include those from orders containing items sold by the specified seller. This is useful for viewing purchase history from a particular seller.
      *
-     * @x-autobe-specification Filter parameter for seller ID. Joins shopping_mall_order_item_snapshots → shopping_mall_order_items and filters by seller_id. Used to find all snapshots from a specific seller.
+         * @x-autobe-specification Filter parameter for seller ID. Joins
+         *   shopping_mall_order_item_snapshots → shopping_mall_order_items and
+         *   filters by seller_id. Used to find all snapshots from a specific
+         *   seller.
      */
     seller_id?: (string & tags.Format<"uuid">) | undefined;
 
@@ -176,7 +210,10 @@ export namespace IShoppingMallOrderItemSnapshot {
      *
      * Filters order item snapshots to only include those belonging to the specified customer. In the customer context, this typically filters to the authenticated customer's own snapshots.
      *
-     * @x-autobe-specification Filter parameter for customer ID. Joins shopping_mall_order_item_snapshots → shopping_mall_order_items → shopping_mall_orders and filters by orders.customer_id. Used to find all snapshots belonging to a specific customer.
+         * @x-autobe-specification Filter parameter for customer ID. Joins
+         *   shopping_mall_order_item_snapshots → shopping_mall_order_items →
+         *   shopping_mall_orders and filters by orders.customer_id. Used to
+         *   find all snapshots belonging to a specific customer.
      */
     customer_id?: (string & tags.Format<"uuid">) | undefined;
 
@@ -185,7 +222,10 @@ export namespace IShoppingMallOrderItemSnapshot {
      *
      * Filters order item snapshots to only include those created on or after this date-time. This is useful for viewing purchase history within a specific date range. Format: ISO 8601 date-time (e.g., 2024-01-15T10:30:00Z).
      *
-     * @x-autobe-specification Filter parameter for start date. Filters shopping_mall_order_item_snapshots.created_at >= created_at_start. Used to find snapshots created on or after this date-time. Must be ISO 8601 format.
+         * @x-autobe-specification Filter parameter for start date. Filters
+         *   shopping_mall_order_item_snapshots.created_at >= created_at_start.
+         *   Used to find snapshots created on or after this date-time. Must be
+         *   ISO 8601 format.
      */
     created_at_start?: (string & tags.Format<"date-time">) | undefined;
 
@@ -194,7 +234,10 @@ export namespace IShoppingMallOrderItemSnapshot {
      *
      * Filters order item snapshots to only include those created on or before this date-time. This is useful for viewing purchase history within a specific date range. Format: ISO 8601 date-time (e.g., 2024-01-15T10:30:00Z).
      *
-     * @x-autobe-specification Filter parameter for end date. Filters shopping_mall_order_item_snapshots.created_at <= created_at_end. Used to find snapshots created on or before this date-time. Must be ISO 8601 format.
+         * @x-autobe-specification Filter parameter for end date. Filters
+         *   shopping_mall_order_item_snapshots.created_at <= created_at_end.
+         *   Used to find snapshots created on or before this date-time. Must be
+         *   ISO 8601 format.
      */
     created_at_end?: (string & tags.Format<"date-time">) | undefined;
 
@@ -203,7 +246,10 @@ export namespace IShoppingMallOrderItemSnapshot {
      *
      * Specifies which page of results to retrieve. Page numbering starts from 1. Combined with the limit parameter to control how many results are returned per page. Default is 1 if not specified.
      *
-     * @x-autobe-specification Pagination parameter for page number. 1-indexed (first page is 1). Default is 1. Used with limit to implement offset-based pagination. Calculates offset as (page - 1) * limit.
+         * @x-autobe-specification Pagination parameter for page number.
+         *   1-indexed (first page is 1). Default is 1. Used with limit to
+         *   implement offset-based pagination. Calculates offset as (page - 1)
+         *   * limit.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -212,7 +258,10 @@ export namespace IShoppingMallOrderItemSnapshot {
      *
      * Specifies how many order item snapshots to return per page. Minimum is 1, maximum is 100. Default is 20 if not specified. This helps control response size and enables efficient browsing of large result sets.
      *
-     * @x-autobe-specification Pagination parameter for results per page. Minimum 1, maximum 100. Default is 20. Used with page to implement offset-based pagination. Limits the number of snapshots returned in a single response.
+         * @x-autobe-specification Pagination parameter for results per page.
+         *   Minimum 1, maximum 100. Default is 20. Used with page to implement
+         *   offset-based pagination. Limits the number of snapshots returned in
+         *   a single response.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -223,7 +272,9 @@ export namespace IShoppingMallOrderItemSnapshot {
      *
      * Specifies which field to use for sorting the order item snapshots. Common options include 'created_at' to sort by purchase time, or 'id' for ID-based ordering. If not specified, defaults to created_at.
      *
-     * @x-autobe-specification Sorting parameter for field name. Specifies which field to sort results by. Valid fields include: created_at, id. If not specified, defaults to created_at.
+         * @x-autobe-specification Sorting parameter for field name. Specifies
+         *   which field to sort results by. Valid fields include: created_at,
+         *   id. If not specified, defaults to created_at.
      */
     sortField?: string | undefined;
 
@@ -232,7 +283,10 @@ export namespace IShoppingMallOrderItemSnapshot {
      *
      * Specifies whether to sort results in ascending ('asc') or descending ('desc') order. Default is 'desc' to display the most recent order item snapshots first. Used together with the sortField parameter.
      *
-     * @x-autobe-specification Sorting parameter for sort direction. Valid values: 'asc' (ascending) or 'desc' (descending). Default is 'desc' to show newest snapshots first. Used with sortField to control result ordering.
+         * @x-autobe-specification Sorting parameter for sort direction. Valid
+         *   values: 'asc' (ascending) or 'desc' (descending). Default is 'desc'
+         *   to show newest snapshots first. Used with sortField to control
+         *   result ordering.
      */
     sortOrder?: string | undefined;
   };

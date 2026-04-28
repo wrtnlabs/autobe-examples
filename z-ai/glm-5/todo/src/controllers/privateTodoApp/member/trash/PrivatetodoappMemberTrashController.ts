@@ -25,9 +25,10 @@ export class PrivatetodoappMemberTrashController {
    *
    * @param connection
    * @param body Search criteria, filters, and pagination parameters for trash items
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query the private_todo_app_todos table with the following filters:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query the private_todo_app_todos table with the
+     *   following filters:
    *
    * 1. Filter by user_id matching the authenticated member's ID
    * 2. Filter by deleted_at IS NOT NULL (only soft-deleted todos)
@@ -82,9 +83,9 @@ export class PrivatetodoappMemberTrashController {
    *
    * @param connection
    * @param todoId Unique identifier of the todo to restore from trash. The todo must belong to the authenticated user and must have been soft-deleted (present in trash).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation logic for todo restoration:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation logic for todo restoration:
    *
    * 1. Authenticate the member from JWT session token
    * 2. Validate todoId path parameter as valid UUID
@@ -138,9 +139,9 @@ export class PrivatetodoappMemberTrashController {
    *
    * @param connection
    * @param todoId Unique identifier of the todo to permanently delete from the trash
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Permanently delete a todo from the trash.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Permanently delete a todo from the trash.
    *
    * Implementation steps:
    * 1. Extract todoId from path parameter and member from JWT authentication context

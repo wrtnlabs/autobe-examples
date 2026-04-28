@@ -28,7 +28,10 @@ import { IEcommerceMallProductReviewStat } from "../../../../../structures/IEcom
  * @param props.productId The unique identifier of the product to get review statistics for
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Query the ecommerce_mall_reviews table filtered by product_id and where deleted_at is null. Calculate the average rating and count. Also query the distribution of ratings grouped by rating value (1-5).
+ * @x-autobe-specification Query the ecommerce_mall_reviews table filtered by
+ *   product_id and where deleted_at is null. Calculate the average rating and
+ *   count. Also query the distribution of ratings grouped by rating value
+ *   (1-5).
  *
  * Return an object containing:
  * - averageRating: float rounded to 1 decimal place (calculated from non-deleted reviews)

@@ -19,9 +19,13 @@ export class MallplatformCustomerCartsActiveController {
    * Access is limited to registered customers with a valid session. If the session is missing or invalid, the request must be rejected as unauthorized. If the customer does not currently have an active cart, the service should return not found rather than creating a new cart implicitly.
    *
    * @param connection
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Resolve the current customer from the authenticated session, then look up the single shopping cart row in mall_platform_shopping_carts that belongs to that customer and represents the active cart. Load related mall_platform_cart_items rows so the response contains the cart contents needed by the UI.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Resolve the current customer from the
+     *   authenticated session, then look up the single shopping cart row in
+     *   mall_platform_shopping_carts that belongs to that customer and
+     *   represents the active cart. Load related mall_platform_cart_items rows
+     *   so the response contains the cart contents needed by the UI.
    *
    * Do not accept any cart identifier from the client. The cart must be selected from the session context to prevent cross-account access. Enforce registered-customer access before querying the database. If the account is absent, banned, or otherwise not allowed to use cart functionality, return an authorization or forbidden error. If no active cart exists for the customer, return not found instead of creating one automatically.
    *
@@ -54,9 +58,12 @@ export class MallplatformCustomerCartsActiveController {
    *
    * @param connection
    * @param body Cart mutation instructions for the authenticated customer's active cart, including item additions, removals, and quantity updates.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Load the authenticated customer from the security context and resolve that customer's unique shopping cart through mall_platform_shopping_carts. Apply the request as a single transaction against mall_platform_cart_items.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Load the authenticated customer from the security
+     *   context and resolve that customer's unique shopping cart through
+     *   mall_platform_shopping_carts. Apply the request as a single transaction
+     *   against mall_platform_cart_items.
    *
    * Use the cart's unique customer ownership to locate the active cart. Never accept owner identifiers from the client payload. If the service requires the cart to exist before updates, create or reuse it only under the authenticated customer's context and only if that behavior is explicitly supported by the surrounding application flow.
    *

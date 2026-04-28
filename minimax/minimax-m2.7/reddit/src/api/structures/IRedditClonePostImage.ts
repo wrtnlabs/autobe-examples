@@ -10,32 +10,40 @@ export type IRedditClonePostImage = {
   /**
    * Unique identifier of the post image association.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from reddit_clone_post_images.id. UUID primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from reddit_clone_post_images.id.
+     *   UUID primary key.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * The uploaded image file associated with this post.
    *
-   * @x-autobe-database-schema-property file
-   * @x-autobe-specification Join from reddit_clone_post_images.reddit_clone_file_id to reddit_clone_files.id. Returns IRedditCloneFile entity with full metadata including original filename, mime type, size, storage path, and status.
+     * @x-autobe-database-schema-property file
+     * @x-autobe-specification Join from
+     *   reddit_clone_post_images.reddit_clone_file_id to reddit_clone_files.id.
+     *   Returns IRedditCloneFile entity with full metadata including original
+     *   filename, mime type, size, storage path, and status.
    */
   file: IRedditCloneFile;
 
   /**
    * Timestamp when the image was associated with the post.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from reddit_clone_post_images.created_at. Timestamp when the image was first associated with the post.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_post_images.created_at. Timestamp when the image was first
+     *   associated with the post.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the image association was last modified.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from reddit_clone_post_images.updated_at. Updated whenever the image association changes.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_post_images.updated_at. Updated whenever the image
+     *   association changes.
    */
   updated_at: string & tags.Format<"date-time">;
 };
@@ -47,8 +55,11 @@ export namespace IRedditClonePostImage {
     /**
      * UUID of the new image file to associate with the post.
      *
-     * @x-autobe-database-schema-property reddit_clone_file_id
-     * @x-autobe-specification Direct mapping to reddit_clone_post_images.reddit_clone_file_id. User provides UUID of an uploaded file they own. Service validates file exists and has 'processed' status before accepting.
+         * @x-autobe-database-schema-property reddit_clone_file_id
+         * @x-autobe-specification Direct mapping to
+         *   reddit_clone_post_images.reddit_clone_file_id. User provides UUID
+         *   of an uploaded file they own. Service validates file exists and has
+         *   'processed' status before accepting.
      */
     redditCloneFileId: string & tags.Format<"uuid">;
   };

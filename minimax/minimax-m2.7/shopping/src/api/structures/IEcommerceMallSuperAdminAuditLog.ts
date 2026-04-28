@@ -25,7 +25,9 @@ export namespace IEcommerceMallSuperAdminAuditLog {
      *
      * The action type string to filter audit log entries by. Examples include 'promote_to_super_admin', 'demote_to_admin', 'login', 'logout', 'delete_admin', 'view_platform_settings'.
      *
-     * @x-autobe-specification Filter by action type. Maps to ecommerce_mall_super_admin_audit_logs.action column via exact match WHERE clause.
+         * @x-autobe-specification Filter by action type. Maps to
+         *   ecommerce_mall_super_admin_audit_logs.action column via exact match
+         *   WHERE clause.
      */
     action?: string | undefined;
 
@@ -34,7 +36,9 @@ export namespace IEcommerceMallSuperAdminAuditLog {
      *
      * The target entity type string to filter by. Examples include 'admin', 'super_admin', 'seller', 'customer', 'product', 'order'.
      *
-     * @x-autobe-specification Filter by target entity type. Maps to ecommerce_mall_super_admin_audit_logs.target_type column via exact match WHERE clause.
+         * @x-autobe-specification Filter by target entity type. Maps to
+         *   ecommerce_mall_super_admin_audit_logs.target_type column via exact
+         *   match WHERE clause.
      */
     target_type?: string | undefined;
 
@@ -43,7 +47,9 @@ export namespace IEcommerceMallSuperAdminAuditLog {
      *
      * The UUID of the specific target entity to filter audit logs by.
      *
-     * @x-autobe-specification Filter by target entity ID. Maps to ecommerce_mall_super_admin_audit_logs.target_id column via exact match WHERE clause.
+         * @x-autobe-specification Filter by target entity ID. Maps to
+         *   ecommerce_mall_super_admin_audit_logs.target_id column via exact
+         *   match WHERE clause.
      */
     target_id?: (string & tags.Format<"uuid">) | undefined;
 
@@ -52,7 +58,9 @@ export namespace IEcommerceMallSuperAdminAuditLog {
      *
      * The UUID of the super administrator whose audit log entries should be returned.
      *
-     * @x-autobe-specification Filter by super admin ID. Maps to ecommerce_mall_super_admin_audit_logs.ecommerce_mall_super_admin_id column via exact match WHERE clause.
+         * @x-autobe-specification Filter by super admin ID. Maps to
+         *   ecommerce_mall_super_admin_audit_logs.ecommerce_mall_super_admin_id
+         *   column via exact match WHERE clause.
      */
     super_admin_id?: (string & tags.Format<"uuid">) | undefined;
 
@@ -61,7 +69,9 @@ export namespace IEcommerceMallSuperAdminAuditLog {
      *
      * ISO 8601 formatted datetime string representing the start of the date range filter for the created_at timestamp.
      *
-     * @x-autobe-specification Date range filter start. Maps to ecommerce_mall_super_admin_audit_logs.created_at column: WHERE created_at >= value.
+         * @x-autobe-specification Date range filter start. Maps to
+         *   ecommerce_mall_super_admin_audit_logs.created_at column: WHERE
+         *   created_at >= value.
      */
     created_at_from?: (string & tags.Format<"date-time">) | undefined;
 
@@ -70,7 +80,9 @@ export namespace IEcommerceMallSuperAdminAuditLog {
      *
      * ISO 8601 formatted datetime string representing the end of the date range filter for the created_at timestamp.
      *
-     * @x-autobe-specification Date range filter end. Maps to ecommerce_mall_super_admin_audit_logs.created_at column: WHERE created_at <= value.
+         * @x-autobe-specification Date range filter end. Maps to
+         *   ecommerce_mall_super_admin_audit_logs.created_at column: WHERE
+         *   created_at <= value.
      */
     created_at_to?: (string & tags.Format<"date-time">) | undefined;
 
@@ -79,7 +91,8 @@ export namespace IEcommerceMallSuperAdminAuditLog {
      *
      * The page number to retrieve. Page numbering starts at 1. If not specified, defaults to page 1.
      *
-     * @x-autobe-specification Pagination parameter for page number. Computed: offset = (page - 1) * limit. Default value: 1.
+         * @x-autobe-specification Pagination parameter for page number.
+         *   Computed: offset = (page - 1) * limit. Default value: 1.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -88,7 +101,8 @@ export namespace IEcommerceMallSuperAdminAuditLog {
      *
      * The maximum number of audit log entries to return in a single page. Must be between 1 and 100. Default is 20.
      *
-     * @x-autobe-specification Pagination parameter for maximum records per page. Controls SQL LIMIT clause. Default: 20, Max: 100.
+         * @x-autobe-specification Pagination parameter for maximum records per
+         *   page. Controls SQL LIMIT clause. Default: 20, Max: 100.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -99,7 +113,8 @@ export namespace IEcommerceMallSuperAdminAuditLog {
      *
      * The field to sort by and the sort direction (asc or desc). Default sort is by created_at in descending order (newest first).
      *
-     * @x-autobe-specification Sorting parameter for result ordering. Default: 'created_at desc'. Controls SQL ORDER BY clause.
+         * @x-autobe-specification Sorting parameter for result ordering.
+         *   Default: 'created_at desc'. Controls SQL ORDER BY clause.
      */
     sort?: string | undefined;
   };
@@ -118,55 +133,59 @@ export namespace IEcommerceMallSuperAdminAuditLog {
     /**
      * Type of action performed by the super administrator. Examples: 'promote_to_super_admin', 'demote_to_admin', 'login', 'logout'.
      *
-     * @x-autobe-database-schema-property action
+         * @x-autobe-database-schema-property action
      */
     action: string;
 
     /**
      * Timestamp when the audit log record was created.
      *
-     * @x-autobe-database-schema-property created_at
+         * @x-autobe-database-schema-property created_at
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * Primary key identifier of the audit log entry.
      *
-     * @x-autobe-database-schema-property id
+         * @x-autobe-database-schema-property id
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * IP address from which the super administrator performed the action.
      *
-     * @x-autobe-database-schema-property ip
+         * @x-autobe-database-schema-property ip
      */
     ip: string;
     /**
-     * @x-autobe-database-schema-property superAdmin
+         * @x-autobe-database-schema-property superAdmin
      */
     superAdmin?: IEcommerceMallSuperAdmin.ISummary | undefined;
 
     /**
      * Unique identifier of the entity that was affected by the action.
      *
-     * @x-autobe-database-schema-property target_id
-     * @x-autobe-specification Direct mapping from ecommerce_mall_super_admin_audit_logs.target_id. Nullable column storing UUID of affected entity.
+         * @x-autobe-database-schema-property target_id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_super_admin_audit_logs.target_id. Nullable column
+         *   storing UUID of affected entity.
      */
     target_id?: (string & tags.Format<"uuid">) | null | undefined;
 
     /**
      * Type of entity that was affected by the action. Examples: 'admin', 'super_admin', 'seller', 'customer'.
      *
-     * @x-autobe-database-schema-property target_type
-     * @x-autobe-specification Direct mapping from ecommerce_mall_super_admin_audit_logs.target_type. Nullable column storing target entity type.
+         * @x-autobe-database-schema-property target_type
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_super_admin_audit_logs.target_type. Nullable column
+         *   storing target entity type.
      */
     target_type?: string | null | undefined;
 
     /**
      * User agent string of the browser or client used by the super administrator.
      *
-     * @x-autobe-database-schema-property user_agent
+         * @x-autobe-database-schema-property user_agent
      */
     user_agent: string;
   };

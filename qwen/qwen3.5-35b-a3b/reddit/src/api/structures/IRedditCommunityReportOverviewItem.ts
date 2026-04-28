@@ -36,8 +36,9 @@ export type IRedditCommunityReportOverviewItem = {
    *
    * UUID assigned when the report is submitted to the moderation queue. Used to reference this specific report for review actions (approve or dismiss).
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from reddit_community_reports.id. UUID format.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from reddit_community_reports.id.
+     *   UUID format.
    */
   id: string & tags.Format<"uuid">;
 
@@ -46,8 +47,9 @@ export type IRedditCommunityReportOverviewItem = {
    *
    * Text describing why the content was reported, as provided by the submitting member. This information helps moderators understand the alleged violation.
    *
-   * @x-autobe-database-schema-property reason
-   * @x-autobe-specification Direct mapping from reddit_community_reports.reason.
+     * @x-autobe-database-schema-property reason
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_reports.reason.
    */
   reason: string;
 
@@ -62,8 +64,11 @@ export type IRedditCommunityReportOverviewItem = {
    *
    * Only pending reports (status_id=0) appear in active review queues. Once a report transitions to approved or dismissed, it cannot be reopened.
    *
-   * @x-autobe-specification Direct mapping from reddit_community_reports.status_id. Integer values: 0=pending, 1=approved, 2=dismissed. Used to filter active review queues (pending=0).
-   * @x-autobe-database-schema-property status_id
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_reports.status_id. Integer values: 0=pending,
+     *   1=approved, 2=dismissed. Used to filter active review queues
+     *   (pending=0).
+     * @x-autobe-database-schema-property status_id
    */
   status_id: number & tags.Type<"int32">;
 
@@ -72,8 +77,9 @@ export type IRedditCommunityReportOverviewItem = {
    *
    * Date and time when the member first submitted this report. Used to sort reports by age and prioritize review based on submission timing.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from reddit_community_reports.created_at. ISO 8601 datetime with timezone.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_reports.created_at. ISO 8601 datetime with timezone.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -84,8 +90,10 @@ export type IRedditCommunityReportOverviewItem = {
    *
    * This is a summary view of the reporter's public profile, excluding sensitive authentication data like email and password hash.
    *
-   * @x-autobe-database-schema-property reporter
-   * @x-autobe-specification Join from reddit_community_reports.reporter_id to reddit_community_members.id. Returns IRedditCommunityMember.ISummary for public profile data.
+     * @x-autobe-database-schema-property reporter
+     * @x-autobe-specification Join from reddit_community_reports.reporter_id to
+     *   reddit_community_members.id. Returns IRedditCommunityMember.ISummary
+     *   for public profile data.
    */
   reporter: IRedditCommunityMember.ISummary;
 
@@ -103,7 +111,10 @@ export type IRedditCommunityReportOverviewItem = {
    *
    * The `type` discriminator field is a string that always appears in the response. When `type` is `"post"`, the response includes post summary details (title, author, community, etc.). When `type` is `"comment"`, the response includes comment summary details (text, author, parent post, etc.).
    *
-   * @x-autobe-specification Computed discriminated union with type discriminator: when type='post', uses IRedditCommunityPost.ISummary; when type='comment', uses IRedditCommunityComment.ISummary. Schema uses $ref to named schemas for post/comment content details.
+     * @x-autobe-specification Computed discriminated union with type
+     *   discriminator: when type='post', uses IRedditCommunityPost.ISummary;
+     *   when type='comment', uses IRedditCommunityComment.ISummary. Schema uses
+     *   $ref to named schemas for post/comment content details.
    */
   targetContent:
     | IRedditCommunityPost.ISummary

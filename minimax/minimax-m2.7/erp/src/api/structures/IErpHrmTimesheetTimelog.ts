@@ -10,24 +10,32 @@ export type IErpHrmTimesheetTimelog = {
   /**
    * Unique identifier for the timesheet-timelog association record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from erp_hrm_timesheet_timelogs.id. UUID primary key generated when the association is created.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_timesheet_timelogs.id. UUID primary key generated when the
+     *   association is created.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Timestamp when the timelog was added to the timesheet.
    *
-   * @x-autobe-database-schema-property added_at
-   * @x-autobe-specification Direct mapping from erp_hrm_timesheet_timelogs.added_at. Timestamp when the timelog was added to the timesheet via the management endpoint.
+     * @x-autobe-database-schema-property added_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_timesheet_timelogs.added_at. Timestamp when the timelog was
+     *   added to the timesheet via the management endpoint.
    */
   addedAt: string & tags.Format<"date-time">;
 
   /**
    * Full timelog entity with date, duration, project, task, description, and billable status.
    *
-   * @x-autobe-database-schema-property timelog
-   * @x-autobe-specification JOIN via erp_hrm_timesheet_timelogs.erp_hrm_timelog_id to erp_hrm_timelogs.id. Returns full IErpHrmTimelog entity with date, duration_minutes, description, billable flag, and embedded employee/project/task summaries.
+     * @x-autobe-database-schema-property timelog
+     * @x-autobe-specification JOIN via
+     *   erp_hrm_timesheet_timelogs.erp_hrm_timelog_id to erp_hrm_timelogs.id.
+     *   Returns full IErpHrmTimelog entity with date, duration_minutes,
+     *   description, billable flag, and embedded employee/project/task
+     *   summaries.
    */
   timelog: IErpHrmTimelog;
 };
@@ -39,14 +47,23 @@ export namespace IErpHrmTimesheetTimelog {
     /**
      * Array of timelog UUIDs to add to the timesheet. Each timelog must belong to the timesheet owner and fall within the timesheet week date range.
      *
-     * @x-autobe-specification Maps to erp_hrm_timelog_id column via junction table. Each UUID in the array creates a new erp_hrm_timesheet_timelogs record linking the timelog to the timesheet. Validates: timelog must belong to timesheet owner, date must fall within week date range, not already associated with this timesheet.
+         * @x-autobe-specification Maps to erp_hrm_timelog_id column via
+         *   junction table. Each UUID in the array creates a new
+         *   erp_hrm_timesheet_timelogs record linking the timelog to the
+         *   timesheet. Validates: timelog must belong to timesheet owner, date
+         *   must fall within week date range, not already associated with this
+         *   timesheet.
      */
     addTimelogIds?: (string & tags.Format<"uuid">)[] | undefined;
 
     /**
      * Array of timelog UUIDs to remove from the timesheet. Each timelog must currently be associated with this timesheet.
      *
-     * @x-autobe-specification Maps to erp_hrm_timelog_id column via junction table. Each UUID in the array deletes the corresponding erp_hrm_timesheet_timelogs record. Validates: timelog must currently be associated with this timesheet. The actual timelog record is preserved; only the association is removed.
+         * @x-autobe-specification Maps to erp_hrm_timelog_id column via
+         *   junction table. Each UUID in the array deletes the corresponding
+         *   erp_hrm_timesheet_timelogs record. Validates: timelog must
+         *   currently be associated with this timesheet. The actual timelog
+         *   record is preserved; only the association is removed.
      */
     removeTimelogIds?: (string & tags.Format<"uuid">)[] | undefined;
 
@@ -58,7 +75,8 @@ export namespace IErpHrmTimesheetTimelog {
      * Requesting a page beyond the available range returns an empty data array
      * with valid pagination metadata reflecting the actual totals.
      *
-     * @x-autobe-specification 1-indexed page number. Defaults to 1 if not provided.
+         * @x-autobe-specification 1-indexed page number. Defaults to 1 if not
+         *   provided.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
 
@@ -70,7 +88,8 @@ export namespace IErpHrmTimesheetTimelog {
      * enforce upper bounds to prevent excessive resource consumption on large
      * requests.
      *
-     * @x-autobe-specification Maximum records per page. Defaults to 100 if not provided.
+         * @x-autobe-specification Maximum records per page. Defaults to 100 if
+         *   not provided.
      */
     limit?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };

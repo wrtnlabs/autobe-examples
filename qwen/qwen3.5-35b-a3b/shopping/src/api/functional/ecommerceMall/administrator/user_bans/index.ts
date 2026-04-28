@@ -34,7 +34,8 @@ import { IPageIEcommerceMallUserBan } from "../../../../structures/IPageIEcommer
  * @param props.body Ban creation request with user type discriminator and ban details.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor administrator
- * @x-autobe-specification Create a new user ban record in the ecommerce_mall_user_bans table.
+ * @x-autobe-specification Create a new user ban record in the
+ *   ecommerce_mall_user_bans table.
  *
  * 1. Validate administrator authorization - only administrators or super administrators can create bans.
  *
@@ -162,7 +163,8 @@ export namespace create {
  * @param props.body Search criteria including user type filter (customer/seller/all), ban status filter (active/completed/all), administrator filter, date range filters (banned_at, created_at), pagination parameters (page, limit), and sorting options.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor administrator
- * @x-autobe-specification Implement search operation on ecommerce_mall_user_bans table with the following requirements:
+ * @x-autobe-specification Implement search operation on
+ *   ecommerce_mall_user_bans table with the following requirements:
  *
  * **Query Logic**:
  * - Filter by user_type: 'customer', 'seller', or 'all' (default: all)
@@ -288,7 +290,8 @@ export namespace index {
  * @param props.banId The unique identifier of the ban record to retrieve.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor administrator
- * @x-autobe-specification Retrieve a single ban record from ecommerce_mall_user_bans by UUID.
+ * @x-autobe-specification Retrieve a single ban record from
+ *   ecommerce_mall_user_bans by UUID.
  *
  * 1. Load the ban record by id from ecommerce_mall_user_bans table
  * 2. Validate that the ban record exists; return 404 if not found

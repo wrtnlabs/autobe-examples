@@ -141,7 +141,8 @@ export namespace resetPassword {
  * @param props.resetId Unique identifier of the password reset record (UUID format)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Query the password reset table by the provided resetId UUID.
+ * @x-autobe-specification Query the password reset table by the provided
+ *   resetId UUID.
  *
  * For customer tokens: query ecommerce_mall_customer_password_resets
  * For seller tokens: query ecommerce_mall_seller_password_resets

@@ -26,9 +26,11 @@ export class ShoppingmallCustomerPasswordresetsController {
    *
    * @param connection
    * @param body Password reset token and new password
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Implement a password recovery completion service centered on `shopping_mall_customer_password_resets` and `shopping_mall_customers`.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Implement a password recovery completion service
+     *   centered on `shopping_mall_customer_password_resets` and
+     *   `shopping_mall_customers`.
    *
    * 1. Accept a JSON request body containing the reset token and the new password value.
    * 2. Query `shopping_mall_customer_password_resets` by its unique `token` and eagerly load the related `customer` relation.
@@ -78,9 +80,10 @@ export class ShoppingmallCustomerPasswordresetsController {
    *
    * @param connection
    * @param passwordResetId Unique identifier of the target customer password reset record
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Implement a read-only detail query against `shopping_mall_customer_password_resets` using the primary key `id`.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Implement a read-only detail query against
+     *   `shopping_mall_customer_password_resets` using the primary key `id`.
    *
    * Validate that `passwordResetId` is a UUID-formatted identifier. Authorize the caller before querying business data. This operation should be available only to privileged administrative actors responsible for platform oversight and security review. Regular customers and sellers must not be allowed to access password reset records through this endpoint.
    *

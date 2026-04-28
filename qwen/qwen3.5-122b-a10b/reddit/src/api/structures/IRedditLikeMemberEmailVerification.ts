@@ -22,8 +22,9 @@ export type IRedditLikeMemberEmailVerification = {
    *
    * This is the primary key used to retrieve the specific verification record from the database.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from reddit_like_member_email_verifications.id. UUID primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_member_email_verifications.id. UUID primary key.
    */
   id: string & tags.Format<"uuid">;
 
@@ -32,8 +33,10 @@ export type IRedditLikeMemberEmailVerification = {
    *
    * This foreign key links the verification token to the member account that is being registered. The member account exists but is not fully activated until email verification is completed.
    *
-   * @x-autobe-database-schema-property reddit_like_member_id
-   * @x-autobe-specification Direct mapping from reddit_like_member_email_verifications.reddit_like_member_id. UUID foreign key to members table.
+     * @x-autobe-database-schema-property reddit_like_member_id
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_member_email_verifications.reddit_like_member_id. UUID
+     *   foreign key to members table.
    */
   reddit_like_member_id: string & tags.Format<"uuid">;
 
@@ -42,8 +45,9 @@ export type IRedditLikeMemberEmailVerification = {
    *
    * This is the actual token value sent to the user's email address. It must be unique across all verification records to prevent collisions and ensure security. Tokens are single-use and expire automatically.
    *
-   * @x-autobe-database-schema-property token
-   * @x-autobe-specification Direct mapping from reddit_like_member_email_verifications.token. Unique string token.
+     * @x-autobe-database-schema-property token
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_member_email_verifications.token. Unique string token.
    */
   token: string;
 
@@ -52,8 +56,9 @@ export type IRedditLikeMemberEmailVerification = {
    *
    * Stores the email address that this token is intended to verify. This allows verification even if the member record is updated before verification completes.
    *
-   * @x-autobe-database-schema-property email
-   * @x-autobe-specification Direct mapping from reddit_like_member_email_verifications.email. Email format string.
+     * @x-autobe-database-schema-property email
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_member_email_verifications.email. Email format string.
    */
   email: string & tags.Format<"email">;
 
@@ -62,8 +67,10 @@ export type IRedditLikeMemberEmailVerification = {
    *
    * The datetime when this verification token becomes invalid. Tokens should be validated against this field to reject expired verification attempts. Format: ISO 8601 timestamp with timezone.
    *
-   * @x-autobe-database-schema-property expires_at
-   * @x-autobe-specification Direct mapping from reddit_like_member_email_verifications.expires_at. Timestamp with timezone.
+     * @x-autobe-database-schema-property expires_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_member_email_verifications.expires_at. Timestamp with
+     *   timezone.
    */
   expires_at: string & tags.Format<"date-time">;
 
@@ -72,8 +79,10 @@ export type IRedditLikeMemberEmailVerification = {
    *
    * When this verification token was generated and sent to the user. Format: ISO 8601 timestamp with timezone.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from reddit_like_member_email_verifications.created_at. Timestamp with timezone.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_member_email_verifications.created_at. Timestamp with
+     *   timezone.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -82,8 +91,10 @@ export type IRedditLikeMemberEmailVerification = {
    *
    * Tracks when this record was last modified, such as when verification status changes. Format: ISO 8601 timestamp with timezone.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from reddit_like_member_email_verifications.updated_at. Timestamp with timezone.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_member_email_verifications.updated_at. Timestamp with
+     *   timezone.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -92,8 +103,10 @@ export type IRedditLikeMemberEmailVerification = {
    *
    * When this verification token was invalidated (either through successful verification or manual cancellation). Null indicates the record is active. Format: ISO 8601 timestamp with timezone or null.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from reddit_like_member_email_verifications.deleted_at. Nullable timestamp with timezone.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_member_email_verifications.deleted_at. Nullable timestamp
+     *   with timezone.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 
@@ -102,8 +115,10 @@ export type IRedditLikeMemberEmailVerification = {
    *
    * The member account that this verification record belongs to. This is a belongs-to relation returned as a summary object containing public profile information.
    *
-   * @x-autobe-database-schema-property member
-   * @x-autobe-specification JOIN from reddit_like_member_email_verifications.reddit_like_member_id to reddit_like_members.id. Returns IRedditLikeMember.ISummary.
+     * @x-autobe-database-schema-property member
+     * @x-autobe-specification JOIN from
+     *   reddit_like_member_email_verifications.reddit_like_member_id to
+     *   reddit_like_members.id. Returns IRedditLikeMember.ISummary.
    */
   member: IRedditLikeMember.ISummary;
 };
@@ -142,8 +157,10 @@ export namespace IRedditLikeMemberEmailVerification {
      *
      * UUID string in RFC4122 format (e.g., "550e8400-e29b-41d4-a716-446655440000").
      *
-     * @x-autobe-database-schema-property reddit_like_member_id
-     * @x-autobe-specification Direct mapping from reddit_like_member_email_verifications.reddit_like_member_id. Exact match filter for member account.
+         * @x-autobe-database-schema-property reddit_like_member_id
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_member_email_verifications.reddit_like_member_id. Exact
+         *   match filter for member account.
      */
     reddit_like_member_id?: (string & tags.Format<"uuid">) | undefined;
 
@@ -156,8 +173,10 @@ export namespace IRedditLikeMemberEmailVerification {
      *
      * Valid email address string. Case-insensitive partial matching is applied.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from reddit_like_member_email_verifications.email. Partial match (LIKE) filter for email address.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_member_email_verifications.email. Partial match (LIKE)
+         *   filter for email address.
      */
     email?: string | undefined;
 
@@ -170,8 +189,10 @@ export namespace IRedditLikeMemberEmailVerification {
      *
      * RFC3339 date-time string (e.g., "2024-01-15T10:30:00Z").
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from reddit_like_member_email_verifications.created_at. Lower bound for creation date range filter (>=).
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_member_email_verifications.created_at. Lower bound for
+         *   creation date range filter (>=).
      */
     created_at_from?: (string & tags.Format<"date-time">) | undefined;
 
@@ -184,8 +205,10 @@ export namespace IRedditLikeMemberEmailVerification {
      *
      * RFC3339 date-time string (e.g., "2024-01-20T15:45:00Z").
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from reddit_like_member_email_verifications.created_at. Upper bound for creation date range filter (<=).
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_member_email_verifications.created_at. Upper bound for
+         *   creation date range filter (<=).
      */
     created_at_to?: (string & tags.Format<"date-time">) | undefined;
 
@@ -198,8 +221,10 @@ export namespace IRedditLikeMemberEmailVerification {
      *
      * RFC3339 date-time string (e.g., "2024-01-15T10:30:00Z").
      *
-     * @x-autobe-database-schema-property expires_at
-     * @x-autobe-specification Direct mapping from reddit_like_member_email_verifications.expires_at. Lower bound for expiration date range filter (>=).
+         * @x-autobe-database-schema-property expires_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_member_email_verifications.expires_at. Lower bound for
+         *   expiration date range filter (>=).
      */
     expires_at_from?: (string & tags.Format<"date-time">) | undefined;
 
@@ -212,8 +237,10 @@ export namespace IRedditLikeMemberEmailVerification {
      *
      * RFC3339 date-time string (e.g., "2024-01-20T15:45:00Z").
      *
-     * @x-autobe-database-schema-property expires_at
-     * @x-autobe-specification Direct mapping from reddit_like_member_email_verifications.expires_at. Upper bound for expiration date range filter (<=).
+         * @x-autobe-database-schema-property expires_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_member_email_verifications.expires_at. Upper bound for
+         *   expiration date range filter (<=).
      */
     expires_at_to?: (string & tags.Format<"date-time">) | undefined;
 
@@ -232,7 +259,11 @@ export namespace IRedditLikeMemberEmailVerification {
      * - `verified` - Successfully verified
      * - `expired` - Expired without verification
      *
-     * @x-autobe-specification Computed status based on reddit_like_member_email_verifications.deleted_at and expires_at columns. Logic: pending = deleted_at IS NULL AND expires_at > NOW; verified = deleted_at IS NOT NULL; expired = expires_at < NOW AND deleted_at IS NULL.
+         * @x-autobe-specification Computed status based on
+         *   reddit_like_member_email_verifications.deleted_at and expires_at
+         *   columns. Logic: pending = deleted_at IS NULL AND expires_at > NOW;
+         *   verified = deleted_at IS NOT NULL; expired = expires_at < NOW AND
+         *   deleted_at IS NULL.
      */
     status?: "pending" | "verified" | "expired" | undefined;
 
@@ -245,7 +276,10 @@ export namespace IRedditLikeMemberEmailVerification {
      *
      * Use this flag for administrative auditing to view all verification records including those that have been verified or cancelled.
      *
-     * @x-autobe-specification Boolean query parameter controlling whether soft-deleted records are included. When true, query includes records where deleted_at IS NOT NULL. When false (default), only records where deleted_at IS NULL are returned.
+         * @x-autobe-specification Boolean query parameter controlling whether
+         *   soft-deleted records are included. When true, query includes
+         *   records where deleted_at IS NOT NULL. When false (default), only
+         *   records where deleted_at IS NULL are returned.
      */
     include_deleted?: boolean | undefined;
 
@@ -263,7 +297,9 @@ export namespace IRedditLikeMemberEmailVerification {
      * - Minimum: 1
      * - Must be a positive integer
      *
-     * @x-autobe-specification Query parameter for pagination. 1-indexed page number. Defaults to 1. Used with limit to calculate offset (offset = (page - 1) * limit).
+         * @x-autobe-specification Query parameter for pagination. 1-indexed
+         *   page number. Defaults to 1. Used with limit to calculate offset
+         *   (offset = (page - 1) * limit).
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -285,7 +321,9 @@ export namespace IRedditLikeMemberEmailVerification {
      *
      * The actual number of records returned may be less than this value on the final page or when total records are fewer than the limit.
      *
-     * @x-autobe-specification Query parameter for pagination. Maximum records per page. Defaults to 100. Used with page to calculate offset.
+         * @x-autobe-specification Query parameter for pagination. Maximum
+         *   records per page. Defaults to 100. Used with page to calculate
+         *   offset.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -309,7 +347,9 @@ export namespace IRedditLikeMemberEmailVerification {
      * - `expires_at` - Expiration timestamp
      * - `deleted_at` - Soft delete timestamp
      *
-     * @x-autobe-specification Query parameter for sorting. Field name to sort by. Default: created_at. Valid values: id, email, created_at, updated_at, expires_at, deleted_at.
+         * @x-autobe-specification Query parameter for sorting. Field name to
+         *   sort by. Default: created_at. Valid values: id, email, created_at,
+         *   updated_at, expires_at, deleted_at.
      */
     sort?: string | undefined;
 
@@ -327,7 +367,8 @@ export namespace IRedditLikeMemberEmailVerification {
      * - `asc` - Ascending order (A-Z, 0-9, earliest to latest)
      * - `desc` - Descending order (Z-A, 9-0, latest to earliest)
      *
-     * @x-autobe-specification Query parameter for sorting direction. Default: desc. Valid values: asc, desc.
+         * @x-autobe-specification Query parameter for sorting direction.
+         *   Default: desc. Valid values: asc, desc.
      */
     order?: "asc" | "desc" | undefined;
   };
@@ -359,8 +400,10 @@ export namespace IRedditLikeMemberEmailVerification {
      *
      * This is the primary key of the verification record, stored as a UUID. It uniquely identifies each verification token created during the member registration process.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from reddit_like_member_email_verifications.id. Primary key, UUID format.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_member_email_verifications.id. Primary key, UUID
+         *   format.
      */
     id: string & tags.Format<"uuid">;
 
@@ -369,8 +412,10 @@ export namespace IRedditLikeMemberEmailVerification {
      *
      * This is the actual token value that the user must provide to verify their email address. The token is unique across all verification records and is single-use only. Once verified or expired, the token becomes invalid.
      *
-     * @x-autobe-database-schema-property token
-     * @x-autobe-specification Direct mapping from reddit_like_member_email_verifications.token. Unique constraint enforced at database level.
+         * @x-autobe-database-schema-property token
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_member_email_verifications.token. Unique constraint
+         *   enforced at database level.
      */
     token: string;
 
@@ -379,8 +424,10 @@ export namespace IRedditLikeMemberEmailVerification {
      *
      * This stores the email address that the member provided during registration. The email is verified when the user submits this token. The email field allows verification even if the member record is updated before verification completes.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from reddit_like_member_email_verifications.email. Email format validated.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_member_email_verifications.email. Email format
+         *   validated.
      */
     email: string & tags.Format<"email">;
 
@@ -389,8 +436,10 @@ export namespace IRedditLikeMemberEmailVerification {
      *
      * Tokens should be validated against this field to reject expired verification attempts. The timestamp is stored with timezone information (RFC3339 format). Once this time passes, the token can no longer be used for verification.
      *
-     * @x-autobe-database-schema-property expires_at
-     * @x-autobe-specification Direct mapping from reddit_like_member_email_verifications.expires_at. DateTime with timezone (timestamptz). Used to validate token expiration.
+         * @x-autobe-database-schema-property expires_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_member_email_verifications.expires_at. DateTime with
+         *   timezone (timestamptz). Used to validate token expiration.
      */
     expires_at: string & tags.Format<"date-time">;
 
@@ -399,8 +448,10 @@ export namespace IRedditLikeMemberEmailVerification {
      *
      * This tracks when the verification token was created. It is automatically set during account registration when the token is generated and email is sent.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from reddit_like_member_email_verifications.created_at. DateTime with timezone (timestamptz). Set automatically when token is generated.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_member_email_verifications.created_at. DateTime with
+         *   timezone (timestamptz). Set automatically when token is generated.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -409,8 +460,10 @@ export namespace IRedditLikeMemberEmailVerification {
      *
      * This tracks when the record was last updated, such as when verification status changes or the token is invalidated. It is automatically updated on any modification to the record.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from reddit_like_member_email_verifications.updated_at. DateTime with timezone (timestamptz). Updated when verification status changes.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_member_email_verifications.updated_at. DateTime with
+         *   timezone (timestamptz). Updated when verification status changes.
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -424,8 +477,11 @@ export namespace IRedditLikeMemberEmailVerification {
      *
      * When set, the token has been used for verification or manually cancelled.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from reddit_like_member_email_verifications.deleted_at. Nullable DateTime with timezone (timestamptz). null = pending verification, set = verified or cancelled.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_member_email_verifications.deleted_at. Nullable
+         *   DateTime with timezone (timestamptz). null = pending verification,
+         *   set = verified or cancelled.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
 
@@ -434,8 +490,10 @@ export namespace IRedditLikeMemberEmailVerification {
      *
      * This represents the member who initiated the email verification during account registration. The relation is established via the reddit_like_member_id foreign key. Returns a summary view of the member account.
      *
-     * @x-autobe-database-schema-property member
-     * @x-autobe-specification BELONGS-TO relation: JOIN reddit_like_member_email_verifications.reddit_like_member_id → reddit_like_members.id. Returns IRedditLikeMember.ISummary.
+         * @x-autobe-database-schema-property member
+         * @x-autobe-specification BELONGS-TO relation: JOIN
+         *   reddit_like_member_email_verifications.reddit_like_member_id →
+         *   reddit_like_members.id. Returns IRedditLikeMember.ISummary.
      */
     member: IRedditLikeMember.ISummary;
   };
@@ -463,8 +521,10 @@ export namespace IRedditLikeMemberEmailVerification {
      *
      * The token is a string value generated by the server during the registration process and delivered to the user via email.
      *
-     * @x-autobe-database-schema-property token
-     * @x-autobe-specification Direct mapping from reddit_like_member_email_verifications.token. Unique verification token string sent to user's email during registration.
+         * @x-autobe-database-schema-property token
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_member_email_verifications.token. Unique verification
+         *   token string sent to user's email during registration.
      */
     token: string;
   };

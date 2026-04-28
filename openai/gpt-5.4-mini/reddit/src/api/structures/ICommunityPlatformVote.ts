@@ -10,56 +10,68 @@ export type ICommunityPlatformVote = {
   /**
    * Unique identifier of the vote record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from community_platform_votes.id.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from community_platform_votes.id.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Identifier of the member who cast this vote.
    *
-   * @x-autobe-database-schema-property community_platform_member_id
-   * @x-autobe-specification Direct mapping from community_platform_votes.community_platform_member_id. This is the stored voter FK used by the read model.
+     * @x-autobe-database-schema-property community_platform_member_id
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_votes.community_platform_member_id. This is the
+     *   stored voter FK used by the read model.
    */
   communityPlatformMemberId: string & tags.Format<"uuid">;
 
   /**
    * Member who cast the vote.
    *
-   * @x-autobe-database-schema-property member
-   * @x-autobe-specification Join community_platform_votes.community_platform_member_id to community_platform_members.id and expose the related member as an ISummary read-only reference.
+     * @x-autobe-database-schema-property member
+     * @x-autobe-specification Join
+     *   community_platform_votes.community_platform_member_id to
+     *   community_platform_members.id and expose the related member as an
+     *   ISummary read-only reference.
    */
   member: ICommunityPlatformMember.ISummary;
 
   /**
    * Vote direction, such as upvote or downvote.
    *
-   * @x-autobe-database-schema-property direction
-   * @x-autobe-specification Direct mapping from community_platform_votes.direction. Positive and negative integer values represent upvote and downvote states used by the voting workflow.
+     * @x-autobe-database-schema-property direction
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_votes.direction. Positive and negative integer
+     *   values represent upvote and downvote states used by the voting
+     *   workflow.
    */
   direction: number & tags.Type<"int32">;
 
   /**
    * When the vote was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from community_platform_votes.created_at.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_votes.created_at.
    */
   createdAt: string & tags.Format<"date-time">;
 
   /**
    * When the vote was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from community_platform_votes.updated_at.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_votes.updated_at.
    */
   updatedAt: string & tags.Format<"date-time">;
 
   /**
    * When the vote was soft-deleted, or null if it is active.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from community_platform_votes.deleted_at. Null means the vote is active; a timestamp means it was soft-deleted.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_votes.deleted_at. Null means the vote is active; a
+     *   timestamp means it was soft-deleted.
    */
   deletedAt: (string & tags.Format<"date-time">) | null;
 };
@@ -71,8 +83,13 @@ export namespace ICommunityPlatformVote {
     /**
      * Desired vote direction for the target post: upvote, downvote, or clear the current vote.
      *
-     * @x-autobe-database-schema-property direction
-     * @x-autobe-specification Direct mapping to community_platform_votes.direction as the requested vote action. Use 1 for upvote, -1 for downvote, and null to clear the current active vote for the authenticated member on the target post. The service applies this value to create, update, or delete the active vote record as needed.
+         * @x-autobe-database-schema-property direction
+         * @x-autobe-specification Direct mapping to
+         *   community_platform_votes.direction as the requested vote action.
+         *   Use 1 for upvote, -1 for downvote, and null to clear the current
+         *   active vote for the authenticated member on the target post. The
+         *   service applies this value to create, update, or delete the active
+         *   vote record as needed.
      */
     direction: 1 | -1 | null;
 
@@ -84,7 +101,8 @@ export namespace ICommunityPlatformVote {
      * Requesting a page beyond the available range returns an empty data array
      * with valid pagination metadata reflecting the actual totals.
      *
-     * @x-autobe-specification 1-indexed page number. Defaults to 1 if not provided.
+         * @x-autobe-specification 1-indexed page number. Defaults to 1 if not
+         *   provided.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
 
@@ -96,7 +114,8 @@ export namespace ICommunityPlatformVote {
      * enforce upper bounds to prevent excessive resource consumption on large
      * requests.
      *
-     * @x-autobe-specification Maximum records per page. Defaults to 100 if not provided.
+         * @x-autobe-specification Maximum records per page. Defaults to 100 if
+         *   not provided.
      */
     limit?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };
@@ -108,8 +127,11 @@ export namespace ICommunityPlatformVote {
     /**
      * Vote direction chosen by the current member for the target post or comment.
      *
-     * @x-autobe-database-schema-property direction
-     * @x-autobe-specification Direct mapping from community_platform_votes.direction. The backend validates that the integer matches the platform’s allowed vote direction values before creating or updating the vote record.
+         * @x-autobe-database-schema-property direction
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_votes.direction. The backend validates that the
+         *   integer matches the platform’s allowed vote direction values before
+         *   creating or updating the vote record.
      */
     direction: number & tags.Type<"int32">;
   };

@@ -13,7 +13,8 @@ import { IHrmTimeTrackEffectivePermission } from "../../../../structures/IHrmTim
  * @param props.connection
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Retrieve the current authenticated member's effective permissions from their role assignment.
+ * @x-autobe-specification Retrieve the current authenticated member's effective
+ *   permissions from their role assignment.
  *
  * 1. Extract member_id from the authentication session token.
  * 2. Extract organization_id from the organization context in the session.

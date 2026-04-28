@@ -37,9 +37,11 @@ export class EcommercemallAdminAdminFulfillmentController {
    * Only authenticated administrators and super administrators can access this endpoint. Regular customers and sellers receive a 403 Forbidden response.
    *
    * @param connection
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query ecommerce_mall_orders, ecommerce_mall_order_items, and ecommerce_mall_shipments tables to compute fulfillment metrics.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Query ecommerce_mall_orders,
+     *   ecommerce_mall_order_items, and ecommerce_mall_shipments tables to
+     *   compute fulfillment metrics.
    *
    * Implementation steps:
    *

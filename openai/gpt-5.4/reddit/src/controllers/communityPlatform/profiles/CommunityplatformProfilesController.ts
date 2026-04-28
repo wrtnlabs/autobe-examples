@@ -24,9 +24,11 @@ export class CommunityplatformProfilesController {
    *
    * @param connection
    * @param body Public profile filtering, pagination, and sorting criteria
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Implement a profile search service over the `community_platform_profiles` primary table and return paginated public-profile summaries.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Implement a profile search service over the
+     *   `community_platform_profiles` primary table and return paginated
+     *   public-profile summaries.
    *
    * Accept a request body of `ICommunityPlatformProfile.IRequest` containing pagination, sorting, and optional search criteria. Support collection browsing use cases such as display-name search and other public-profile filters that are defined by the request DTO. Do not require path parameters because the operation targets the profile collection. Because this is a read-only browsing endpoint, do not perform any mutation and do not alter profile ownership or content.
    *
@@ -67,9 +69,14 @@ export class CommunityplatformProfilesController {
    *
    * @param connection
    * @param profileId Target profile's unique identifier
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Resolve the profile by community_platform_profiles.id using the provided profileId path parameter and ensure the target profile exists. Query the associated community_platform_members record through community_platform_member_id because each profile belongs to exactly one member and must not be returned without a valid owner.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Resolve the profile by
+     *   community_platform_profiles.id using the provided profileId path
+     *   parameter and ensure the target profile exists. Query the associated
+     *   community_platform_members record through community_platform_member_id
+     *   because each profile belongs to exactly one member and must not be
+     *   returned without a valid owner.
    *
    * Load the canonical public profile fields from community_platform_profiles, including display_name and bio. Load related community_platform_profile_files for the profile and select the avatar-style file representation from the file category used for avatar image presentation. Ignore file records that are logically removed if the implementation excludes deleted assets from normal public views.
    *

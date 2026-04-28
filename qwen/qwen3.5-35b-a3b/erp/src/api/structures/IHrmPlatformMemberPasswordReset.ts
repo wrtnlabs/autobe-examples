@@ -14,64 +14,78 @@ export type IHrmPlatformMemberPasswordReset = {
   /**
    * The unique identifier of the password reset record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from hrm_platform_member_password_resets.id. UUID primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_member_password_resets.id. UUID primary key.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * The unique password reset token string used for account recovery. This token is single-use and becomes invalid after being consumed.
    *
-   * @x-autobe-database-schema-property token
-   * @x-autobe-specification Direct mapping from hrm_platform_member_password_resets.token. Unique reset token string.
+     * @x-autobe-database-schema-property token
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_member_password_resets.token. Unique reset token string.
    */
   token: string;
 
   /**
    * The timestamp when the reset token was consumed. Null when the token is unused. Once used, the token cannot be reused.
    *
-   * @x-autobe-database-schema-property used_at
-   * @x-autobe-specification Direct mapping from hrm_platform_member_password_resets.used_at. Nullable timestamp when token is consumed.
+     * @x-autobe-database-schema-property used_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_member_password_resets.used_at. Nullable timestamp when
+     *   token is consumed.
    */
   used_at: (string & tags.Format<"date-time">) | null;
 
   /**
    * The timestamp when the reset token expires. Expired tokens cannot be used for password reset and should be cleaned up periodically.
    *
-   * @x-autobe-database-schema-property expired_at
-   * @x-autobe-specification Direct mapping from hrm_platform_member_password_resets.expired_at. Timestamp when token expires.
+     * @x-autobe-database-schema-property expired_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_member_password_resets.expired_at. Timestamp when token
+     *   expires.
    */
   expired_at: string & tags.Format<"date-time">;
 
   /**
    * The timestamp when the password reset token was generated and became available for use.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from hrm_platform_member_password_resets.created_at. Timestamp when token was generated.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_member_password_resets.created_at. Timestamp when token
+     *   was generated.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * The timestamp when the token state last changed, such as when it was used.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from hrm_platform_member_password_resets.updated_at. Timestamp when token state changed.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_member_password_resets.updated_at. Timestamp when token
+     *   state changed.
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * The soft delete timestamp for the token record. Null indicates active record. When set, marks the token for deletion while preserving data for audit purposes.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from hrm_platform_member_password_resets.deleted_at. Nullable soft delete timestamp.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_member_password_resets.deleted_at. Nullable soft delete
+     *   timestamp.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 
   /**
    * The member account associated with this password reset request. Provides the owner identity for the reset token.
    *
-   * @x-autobe-database-schema-property member
-   * @x-autobe-specification Join from hrm_platform_member_password_resets.member_id to hrm_platform_members.id. Returns ISummary with id and email.
+     * @x-autobe-database-schema-property member
+     * @x-autobe-specification Join from
+     *   hrm_platform_member_password_resets.member_id to
+     *   hrm_platform_members.id. Returns ISummary with id and email.
    */
   member: IHrmPlatformMember.ISummary;
 };
@@ -103,47 +117,58 @@ export namespace IHrmPlatformMemberPasswordReset {
     /**
      * Unique identifier for the password reset token record.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from hrm_platform_member_password_resets.id. UUID primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_member_password_resets.id. UUID primary key.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * The member account that requested the password reset.
      *
-     * @x-autobe-database-schema-property member
-     * @x-autobe-specification Foreign key relation from hrm_platform_member_password_resets.member_id to hrm_platform_members.id. Returns member ISummary.
+         * @x-autobe-database-schema-property member
+         * @x-autobe-specification Foreign key relation from
+         *   hrm_platform_member_password_resets.member_id to
+         *   hrm_platform_members.id. Returns member ISummary.
      */
     member: IHrmPlatformMember.ISummary;
 
     /**
      * The current lifecycle state of the token. 'active' indicates the token is usable, 'used' indicates it has been consumed for a password reset, and 'expired' indicates it has passed its expiration window.
      *
-     * @x-autobe-specification Computed status derived from used_at and expired_at: 'active' if unused & not expired, 'used' if used_at is set, 'expired' if expired_at is in past. No direct DB mapping.
+         * @x-autobe-specification Computed status derived from used_at and
+         *   expired_at: 'active' if unused & not expired, 'used' if used_at is
+         *   set, 'expired' if expired_at is in past. No direct DB mapping.
      */
     status: "active" | "used" | "expired";
 
     /**
      * Timestamp indicating when the password reset token was generated and became available for use.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from hrm_platform_member_password_resets.created_at. Timestamp when token was generated.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_member_password_resets.created_at. Timestamp when
+         *   token was generated.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp indicating when the password reset token is no longer valid.
      *
-     * @x-autobe-database-schema-property expired_at
-     * @x-autobe-specification Direct mapping from hrm_platform_member_password_resets.expired_at. Timestamp when token expires.
+         * @x-autobe-database-schema-property expired_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_member_password_resets.expired_at. Timestamp when
+         *   token expires.
      */
     expired_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp indicating when the token was soft-deleted. Null indicates the token is active in the system.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from hrm_platform_member_password_resets.deleted_at. Nullable timestamp for soft delete tracking.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_member_password_resets.deleted_at. Nullable timestamp
+         *   for soft delete tracking.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };
@@ -170,7 +195,7 @@ export namespace IHrmPlatformMemberPasswordReset {
    */
   export type IRequest = {
     /**
-     * @x-autobe-database-schema-property member_id
+         * @x-autobe-database-schema-property member_id
      */
     member_id?: (string & tags.Format<"uuid">) | undefined;
     status?: "active" | "used" | "expired" | undefined;
@@ -194,7 +219,8 @@ export namespace IHrmPlatformMemberPasswordReset {
      * Requesting a page beyond the available range returns an empty data array
      * with valid pagination metadata reflecting the actual totals.
      *
-     * @x-autobe-specification 1-indexed page number. Defaults to 1 if not provided.
+         * @x-autobe-specification 1-indexed page number. Defaults to 1 if not
+         *   provided.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };

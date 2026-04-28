@@ -24,7 +24,8 @@ import { IPageIEcommerceMallSuperAdminSession } from "../../../../../structures/
  * @param props.body Search criteria including date range filters, session status filter, IP address filter, and pagination parameters.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor superAdmin
- * @x-autobe-specification Query ecommerce_mall_super_admin_sessions table with pagination and filtering.
+ * @x-autobe-specification Query ecommerce_mall_super_admin_sessions table with
+ *   pagination and filtering.
  *
  * 1. **Authentication Check**: Verify the request is from an authenticated super administrator session. Extract the super admin ID from the JWT token.
  *
@@ -133,7 +134,8 @@ export namespace index {
  * @param props.sessionId Unique identifier of the super administrator session (UUID format).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor superAdmin
- * @x-autobe-specification Query ecommerce_mall_super_admin_sessions table using the provided sessionId as the primary key.
+ * @x-autobe-specification Query ecommerce_mall_super_admin_sessions table using
+ *   the provided sessionId as the primary key.
  *
  * Validate that the sessionId is a valid UUID format.
  *

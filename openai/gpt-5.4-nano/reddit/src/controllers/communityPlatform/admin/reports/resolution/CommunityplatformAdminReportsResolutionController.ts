@@ -28,9 +28,9 @@ export class CommunityplatformAdminReportsResolutionController {
    *
    * @param connection
    * @param reportId Target report identifier whose resolution decision should be retrieved.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Implementation steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Implementation steps:
    *
    * 1) Parse `reportId` (UUID) from path.
    *
@@ -95,9 +95,10 @@ export class CommunityplatformAdminReportsResolutionController {
    * @param connection
    * @param reportId Identifier of the moderation report to resolve.
    * @param body Moderator decision payload for resolving the report, including whether the report is approved or dismissed and an optional moderation note.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Perform report resolution as a moderator workflow.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Perform report resolution as a moderator
+     *   workflow.
    *
    * 1) Authorization & scope
    * - Authenticate the caller as a platform member with moderation authority.

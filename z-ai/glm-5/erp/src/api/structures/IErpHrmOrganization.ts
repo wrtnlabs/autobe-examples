@@ -8,50 +8,50 @@ import { IErpHrmMember } from "./IErpHrmMember";
  */
 export type IErpHrmOrganization = {
   /**
-   * @x-autobe-database-schema-property id
+     * @x-autobe-database-schema-property id
    */
   id: string & tags.Format<"uuid">;
   /**
-   * @x-autobe-database-schema-property name
+     * @x-autobe-database-schema-property name
    */
   name: string;
   /**
-   * @x-autobe-database-schema-property description
+     * @x-autobe-database-schema-property description
    */
   description: string | null;
   /**
-   * @x-autobe-database-schema-property logo_image
+     * @x-autobe-database-schema-property logo_image
    */
   logoImage: string | null;
   /**
-   * @x-autobe-database-schema-property currency
+     * @x-autobe-database-schema-property currency
    */
   currency: string;
   /**
-   * @x-autobe-database-schema-property timezone
+     * @x-autobe-database-schema-property timezone
    */
   timezone: string;
   /**
-   * @x-autobe-database-schema-property fiscal_start_month
+     * @x-autobe-database-schema-property fiscal_start_month
    */
   fiscalStartMonth: number &
     tags.Type<"int32"> &
     tags.Minimum<1> &
     tags.Maximum<12>;
   /**
-   * @x-autobe-database-schema-property owner
+     * @x-autobe-database-schema-property owner
    */
   owner: IErpHrmMember.ISummary;
   /**
-   * @x-autobe-database-schema-property created_at
+     * @x-autobe-database-schema-property created_at
    */
   createdAt: string & tags.Format<"date-time">;
   /**
-   * @x-autobe-database-schema-property updated_at
+     * @x-autobe-database-schema-property updated_at
    */
   updatedAt: string & tags.Format<"date-time">;
   /**
-   * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-database-schema-property deleted_at
    */
   deletedAt: (string & tags.Format<"date-time">) | null;
 };
@@ -63,7 +63,7 @@ export namespace IErpHrmOrganization {
     /**
      * Case-insensitive partial match search on organization name
      *
-     * @x-autobe-database-schema-property name
+         * @x-autobe-database-schema-property name
      */
     name?: string | undefined;
 
@@ -95,44 +95,44 @@ export namespace IErpHrmOrganization {
    */
   export type ISummary = {
     /**
-     * @x-autobe-database-schema-property id
+         * @x-autobe-database-schema-property id
      */
     id: string & tags.Format<"uuid">;
     /**
-     * @x-autobe-database-schema-property name
+         * @x-autobe-database-schema-property name
      */
     name: string;
     /**
-     * @x-autobe-database-schema-property description
+         * @x-autobe-database-schema-property description
      */
     description: string | null;
     /**
-     * @x-autobe-database-schema-property logo_image
+         * @x-autobe-database-schema-property logo_image
      */
     logoImage: (string & tags.Format<"url">) | null;
     /**
-     * @x-autobe-database-schema-property currency
+         * @x-autobe-database-schema-property currency
      */
     currency: string;
     /**
-     * @x-autobe-database-schema-property timezone
+         * @x-autobe-database-schema-property timezone
      */
     timezone: string;
     /**
-     * @x-autobe-database-schema-property fiscal_start_month
+         * @x-autobe-database-schema-property fiscal_start_month
      */
     fiscalStartMonth: number &
       tags.Type<"int32"> &
       tags.Minimum<1> &
       tags.Maximum<12>;
     /**
-     * @x-autobe-database-schema-property owner
+         * @x-autobe-database-schema-property owner
      */
     owner: IErpHrmMember.ISummary;
     isOwner: boolean;
     role: string;
     /**
-     * @x-autobe-database-schema-property created_at
+         * @x-autobe-database-schema-property created_at
      */
     createdAt: string & tags.Format<"date-time">;
   };
@@ -144,48 +144,64 @@ export namespace IErpHrmOrganization {
     /**
      * Organization display name used as the primary identifier throughout the platform interface. Must be unique across all active organizations.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping to erp_hrm_organizations.name column. Must be unique across all active organizations (WHERE deleted_at IS NULL). Validate uniqueness before insert, reject with error if duplicate exists.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping to erp_hrm_organizations.name
+         *   column. Must be unique across all active organizations (WHERE
+         *   deleted_at IS NULL). Validate uniqueness before insert, reject with
+         *   error if duplicate exists.
      */
     name: string;
 
     /**
      * Optional additional context about the organization's purpose, nature, or business focus.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping to erp_hrm_organizations.description column. Nullable text field - stores as null if not provided.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping to
+         *   erp_hrm_organizations.description column. Nullable text field -
+         *   stores as null if not provided.
      */
     description?: string | null | undefined;
 
     /**
      * Optional URL to the organization's logo image for visual branding, displayed in the organization interface.
      *
-     * @x-autobe-database-schema-property logo_image
-     * @x-autobe-specification Direct mapping to erp_hrm_organizations.logo_image column. Nullable URL string (up to 80000 chars). Stores as null if not provided.
+         * @x-autobe-database-schema-property logo_image
+         * @x-autobe-specification Direct mapping to
+         *   erp_hrm_organizations.logo_image column. Nullable URL string (up to
+         *   80000 chars). Stores as null if not provided.
      */
     logoImage?: (string & tags.Format<"url">) | null | undefined;
 
     /**
      * Designated currency for financial operations within the organization. Supported values include USD, EUR, KRW, and other common international currencies.
      *
-     * @x-autobe-database-schema-property currency
-     * @x-autobe-specification Direct mapping to erp_hrm_organizations.currency column. Currency code string (e.g., 'USD', 'EUR', 'KRW'). All monetary values in the organization use this currency.
+         * @x-autobe-database-schema-property currency
+         * @x-autobe-specification Direct mapping to
+         *   erp_hrm_organizations.currency column. Currency code string (e.g.,
+         *   'USD', 'EUR', 'KRW'). All monetary values in the organization use
+         *   this currency.
      */
     currency: string;
 
     /**
      * Organization's preferred timezone for time tracking and reporting. Affects how dates and times display for all members within that organization context.
      *
-     * @x-autobe-database-schema-property timezone
-     * @x-autobe-specification Direct mapping to erp_hrm_organizations.timezone column. IANA timezone format string (e.g., 'America/New_York', 'Asia/Seoul', 'Europe/London'). Affects date/time display for all organization members.
+         * @x-autobe-database-schema-property timezone
+         * @x-autobe-specification Direct mapping to
+         *   erp_hrm_organizations.timezone column. IANA timezone format string
+         *   (e.g., 'America/New_York', 'Asia/Seoul', 'Europe/London'). Affects
+         *   date/time display for all organization members.
      */
     timezone: string;
 
     /**
      * Month number (1-12) when the organization's fiscal year begins. Impacts financial reporting and budget tracking features.
      *
-     * @x-autobe-database-schema-property fiscal_start_month
-     * @x-autobe-specification Direct mapping to erp_hrm_organizations.fiscal_start_month column. Integer 1-12 representing month when fiscal year begins. Used for financial reporting alignment.
+         * @x-autobe-database-schema-property fiscal_start_month
+         * @x-autobe-specification Direct mapping to
+         *   erp_hrm_organizations.fiscal_start_month column. Integer 1-12
+         *   representing month when fiscal year begins. Used for financial
+         *   reporting alignment.
      */
     fiscalStartMonth: number &
       tags.Type<"int32"> &
@@ -200,42 +216,42 @@ export namespace IErpHrmOrganization {
     /**
      * Organization display name used as the primary identifier throughout the platform interface. Must be unique across the platform.
      *
-     * @x-autobe-database-schema-property name
+         * @x-autobe-database-schema-property name
      */
     name?: string | undefined;
 
     /**
      * Optional additional context about the organization's purpose, nature, or business focus.
      *
-     * @x-autobe-database-schema-property description
+         * @x-autobe-database-schema-property description
      */
     description?: string | null | undefined;
 
     /**
      * Optional URL to the organization's logo image for visual branding.
      *
-     * @x-autobe-database-schema-property logo_image
+         * @x-autobe-database-schema-property logo_image
      */
     logo_image?: (string & tags.Format<"url">) | null | undefined;
 
     /**
      * Designated currency for financial operations within the organization. Must be a valid ISO 4217 currency code (e.g., USD, EUR, KRW).
      *
-     * @x-autobe-database-schema-property currency
+         * @x-autobe-database-schema-property currency
      */
     currency?: string | undefined;
 
     /**
      * Organization's preferred timezone for time tracking and reporting. Must be a valid IANA timezone identifier (e.g., America/New_York, Asia/Seoul).
      *
-     * @x-autobe-database-schema-property timezone
+         * @x-autobe-database-schema-property timezone
      */
     timezone?: string | undefined;
 
     /**
      * Month number (1-12) when the organization's fiscal year begins. Impacts financial reporting and budget tracking.
      *
-     * @x-autobe-database-schema-property fiscal_start_month
+         * @x-autobe-database-schema-property fiscal_start_month
      */
     fiscal_start_month?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<12>)

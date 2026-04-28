@@ -23,7 +23,9 @@ import { IPageIHrmTimeTrackRoleSnapshotPermission } from "../../../../../structu
  * @param props.body Permission data to add to the role snapshot, including the permission identifier.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Insert a new record into hrm_time_track_role_snapshot_permissions table with the provided permission data.
+ * @x-autobe-specification Insert a new record into
+ *   hrm_time_track_role_snapshot_permissions table with the provided permission
+ *   data.
  *
  * Implementation steps:
  * 1. Validate snapshotId is a valid UUID format
@@ -143,7 +145,8 @@ export namespace addPermission {
  * @param props.body Search criteria for filtering role snapshot permissions including permission name filters, date ranges, and pagination parameters.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query hrm_time_track_role_snapshot_permissions table for records matching the given snapshot ID.
+ * @x-autobe-specification Query hrm_time_track_role_snapshot_permissions table
+ *   for records matching the given snapshot ID.
  *
  * 1. Validate snapshotId exists in hrm_time_track_role_snapshots table
  * 2. Query hrm_time_track_role_snapshot_permissions where hrm_time_track_role_snapshot_id = snapshotId
@@ -258,7 +261,9 @@ export namespace index {
  * @param props.permissionId Unique identifier of the permission record within the role snapshot (global scope).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query hrm_time_track_role_snapshot_permissions table for a single record matching both the snapshot ID and permission ID path parameters.
+ * @x-autobe-specification Query hrm_time_track_role_snapshot_permissions table
+ *   for a single record matching both the snapshot ID and permission ID path
+ *   parameters.
  *
  * Validation:
  * - Verify snapshotId exists in hrm_time_track_role_snapshots table

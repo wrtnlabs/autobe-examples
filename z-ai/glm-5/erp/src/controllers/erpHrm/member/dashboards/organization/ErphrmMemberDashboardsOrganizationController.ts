@@ -35,9 +35,10 @@ export class ErphrmMemberDashboardsOrganizationController {
    * The dashboard provides a starting point for managers to identify areas requiring attention, such as pending approvals or projects approaching budget limits.
    *
    * @param connection
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query erp_hrm_employees table to count active employees (status = 'active') within the organization.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query erp_hrm_employees table to count active
+     *   employees (status = 'active') within the organization.
    *
    * Query erp_hrm_timelogs joined with erp_hrm_employees to calculate total hours logged this week (Monday to Sunday of current week). Sum duration field and convert minutes to hours.
    *

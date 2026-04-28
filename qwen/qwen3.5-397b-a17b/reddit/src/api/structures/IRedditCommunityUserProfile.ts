@@ -16,8 +16,10 @@ export type IRedditCommunityUserProfile = {
    *
    * Unique identifier for the user profile record. Generated as a UUID when the profile is created during member registration.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from reddit_community_user_profiles.id. UUID format generated when profile is created during member registration.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_user_profiles.id. UUID format generated when profile
+     *   is created during member registration.
    */
   id: string & tags.Format<"uuid">;
 
@@ -28,7 +30,10 @@ export type IRedditCommunityUserProfile = {
    *
    * This field is sourced from the members table via a join operation, not stored directly in the profile table.
    *
-   * @x-autobe-specification Joined from reddit_community_members.username via the member relation. Query joins profile table with members table on reddit_community_member_id to retrieve the username associated with the profile.
+     * @x-autobe-specification Joined from reddit_community_members.username via
+     *   the member relation. Query joins profile table with members table on
+     *   reddit_community_member_id to retrieve the username associated with the
+     *   profile.
    */
   username: string;
 
@@ -37,8 +42,10 @@ export type IRedditCommunityUserProfile = {
    *
    * The primary name displayed on the user's profile page and in user listings. Can be edited by the user at any time. If cleared, the username is used as fallback for display purposes.
    *
-   * @x-autobe-database-schema-property display_name
-   * @x-autobe-specification Direct mapping from reddit_community_user_profiles.display_name. Can be edited by the user at any time via profile update endpoint.
+     * @x-autobe-database-schema-property display_name
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_user_profiles.display_name. Can be edited by the user
+     *   at any time via profile update endpoint.
    */
   display_name: string;
 
@@ -49,8 +56,10 @@ export type IRedditCommunityUserProfile = {
    *
    * Null value indicates the user has not set a bio.
    *
-   * @x-autobe-database-schema-property bio
-   * @x-autobe-specification Direct mapping from reddit_community_user_profiles.bio. Nullable - null indicates no bio is set. User can edit or clear at any time via profile update endpoint.
+     * @x-autobe-database-schema-property bio
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_user_profiles.bio. Nullable - null indicates no bio is
+     *   set. User can edit or clear at any time via profile update endpoint.
    */
   bio?: string | null | undefined;
 
@@ -61,8 +70,11 @@ export type IRedditCommunityUserProfile = {
    *
    * Null value indicates the user has not set an avatar.
    *
-   * @x-autobe-specification Direct mapping from reddit_community_user_profiles.avatar_url. Nullable - null indicates no avatar is set. Stored as URI pointing to image file. User can upload new avatar or remove existing via profile update endpoint.
-   * @x-autobe-database-schema-property avatar_url
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_user_profiles.avatar_url. Nullable - null indicates no
+     *   avatar is set. Stored as URI pointing to image file. User can upload
+     *   new avatar or remove existing via profile update endpoint.
+     * @x-autobe-database-schema-property avatar_url
    */
   avatar_url?: (string & tags.Format<"uri">) | null | undefined;
 
@@ -73,8 +85,11 @@ export type IRedditCommunityUserProfile = {
    *
    * This score serves as a metric of the user's contribution quality and community standing.
    *
-   * @x-autobe-database-schema-property karma
-   * @x-autobe-specification Direct mapping from reddit_community_user_profiles.karma. Integer value updated atomically when votes are cast on user's posts and comments via reddit_community_post_votes and reddit_community_comment_votes tables.
+     * @x-autobe-database-schema-property karma
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_user_profiles.karma. Integer value updated atomically
+     *   when votes are cast on user's posts and comments via
+     *   reddit_community_post_votes and reddit_community_comment_votes tables.
    */
   karma: number & tags.Type<"int32">;
 
@@ -85,8 +100,11 @@ export type IRedditCommunityUserProfile = {
    *
    * Format: ISO 8601 datetime with timezone (e.g., 2024-01-15T10:30:00Z).
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from reddit_community_user_profiles.created_at. DateTime with timezone. Set automatically when profile is created during member registration, never modified afterward.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_user_profiles.created_at. DateTime with timezone. Set
+     *   automatically when profile is created during member registration, never
+     *   modified afterward.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -97,8 +115,11 @@ export type IRedditCommunityUserProfile = {
    *
    * Format: ISO 8601 datetime with timezone (e.g., 2024-01-15T10:30:00Z).
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from reddit_community_user_profiles.updated_at. DateTime with timezone. Updated automatically whenever any profile field (display_name, bio, avatar_url) is changed.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_user_profiles.updated_at. DateTime with timezone.
+     *   Updated automatically whenever any profile field (display_name, bio,
+     *   avatar_url) is changed.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -109,8 +130,11 @@ export type IRedditCommunityUserProfile = {
    *
    * Format: ISO 8601 datetime with timezone (e.g., 2024-01-15T10:30:00Z). Null value indicates the account is active.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from reddit_community_user_profiles.deleted_at. Nullable - null indicates active account. Set when member account is soft deleted, triggering cascade deletion of posts and comments.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_user_profiles.deleted_at. Nullable - null indicates
+     *   active account. Set when member account is soft deleted, triggering
+     *   cascade deletion of posts and comments.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };

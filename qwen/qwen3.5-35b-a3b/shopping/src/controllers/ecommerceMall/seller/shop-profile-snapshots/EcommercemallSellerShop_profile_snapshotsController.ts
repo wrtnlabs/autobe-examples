@@ -20,9 +20,10 @@ export class EcommercemallSellerShop_profile_snapshotsController {
    *
    * @param connection
    * @param body Search criteria including shop profile ID filter, date range for created_at, shop name text search, pagination parameters, and sorting options.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Query ecommerce_mall_shop_profile_snapshots table with pagination and filtering.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Query ecommerce_mall_shop_profile_snapshots table
+     *   with pagination and filtering.
    *
    * Filtering:
    * - Apply filter on ecommerce_mall_shop_profile_id (exact match)
@@ -79,9 +80,10 @@ export class EcommercemallSellerShop_profile_snapshotsController {
    *
    * @param connection
    * @param snapshotId The unique identifier of the shop profile snapshot to retrieve (UUID format).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Query ecommerce_mall_shop_profile_snapshots table by id UUID.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Query ecommerce_mall_shop_profile_snapshots table
+     *   by id UUID.
    *
    * 1. Extract snapshotId from path parameter and validate it is a valid UUID format.
    * 2. Query the database to find the snapshot record with matching id.

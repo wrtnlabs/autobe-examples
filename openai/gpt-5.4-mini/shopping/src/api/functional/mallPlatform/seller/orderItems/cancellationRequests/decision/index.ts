@@ -23,7 +23,10 @@ import { IMallPlatformCancellationRequest } from "../../../../../../structures/I
  * @param props.body The seller’s decision payload for the cancellation request, including the final outcome and any reviewer note required by the workflow.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Load the cancellation request by cancellationRequestId and verify that it belongs to the orderItemId provided in the route. If the request is missing or the association does not match, return not found.
+ * @x-autobe-specification Load the cancellation request by
+ *   cancellationRequestId and verify that it belongs to the orderItemId
+ *   provided in the route. If the request is missing or the association does
+ *   not match, return not found.
  *
  * Authorize the caller as the seller of the order item, or as an administrator only if the authorization layer explicitly permits administrative oversight on cancellation decisions. The request must still be pending or otherwise reviewable; if it is already decided, return conflict.
  *

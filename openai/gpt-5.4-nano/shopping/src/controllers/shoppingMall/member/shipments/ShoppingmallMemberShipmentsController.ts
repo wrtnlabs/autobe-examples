@@ -37,20 +37,29 @@ export class ShoppingmallMemberShipmentsController {
    *
    * @param connection
    * @param body Create request specifying the target order and which seller-scoped order items should be included in the new shipment, optionally including seller confirmation/tracking details to initialize tracking visibility.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation steps (transactional):
-   * 1) Start a DB transaction.
-   * 2) Validate input DTO: target order id, list of order item ids, and optional tracking/confirmation fields.
-   * 3) Load shopping_mall_orders by id and ensure it is accessible to the caller (seller ownership or admin oversight).
-   * 4) Load shopping_mall_order_items for provided ids with constraint shopping_mall_order_id == target order id and deleted_at == null when applicable.
-   * 5) Ensure all loaded order items are present and the input list matches exactly.
-   * 6) Determine sellerSnapshotId from the first order item.seller_snapshot_id; verify all order items share identical seller_snapshot_id.
-   * 7) Create shopping_mall_shipments with shopping_mall_order_id, seller_snapshot_id, and an initial status.
-   * 8) Bulk update shopping_mall_order_items set shopping_mall_shipment_id = new shipment id for all included order items.
-   * 9) If the request includes tracking/confirmation details, create shopping_mall_shipment_confirmations for the new shipment: set shopping_mall_shipment_id, confirmation_type, confirmed_at, tracking_url/tracking_number/carrier_name, and optional note.
-   * 10) Commit transaction.
-   * 11) Post-conditions: shipment exists in DB; included order items now reference it; if confirmation was created, tracking visibility is satisfied.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation steps (transactional): 1) Start a
+     *   DB transaction. 2) Validate input DTO: target order id, list of order
+     *   item ids, and optional tracking/confirmation fields. 3) Load
+     *   shopping_mall_orders by id and ensure it is accessible to the caller
+     *   (seller ownership or admin oversight). 4) Load
+     *   shopping_mall_order_items for provided ids with constraint
+     *   shopping_mall_order_id == target order id and deleted_at == null when
+     *   applicable. 5) Ensure all loaded order items are present and the input
+     *   list matches exactly. 6) Determine sellerSnapshotId from the first
+     *   order item.seller_snapshot_id; verify all order items share identical
+     *   seller_snapshot_id. 7) Create shopping_mall_shipments with
+     *   shopping_mall_order_id, seller_snapshot_id, and an initial status. 8)
+     *   Bulk update shopping_mall_order_items set shopping_mall_shipment_id =
+     *   new shipment id for all included order items. 9) If the request
+     *   includes tracking/confirmation details, create
+     *   shopping_mall_shipment_confirmations for the new shipment: set
+     *   shopping_mall_shipment_id, confirmation_type, confirmed_at,
+     *   tracking_url/tracking_number/carrier_name, and optional note. 10)
+     *   Commit transaction. 11) Post-conditions: shipment exists in DB;
+     *   included order items now reference it; if confirmation was created,
+     *   tracking visibility is satisfied.
    *
    * Edge cases:
    * - If any selected order item belongs to a different order, reject.
@@ -102,9 +111,9 @@ export class ShoppingmallMemberShipmentsController {
    *
    * @param connection
    * @param body Shipment search criteria including pagination, sorting, and optional filters for order scope and shipment status.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement as a shipment list/search operation.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implement as a shipment list/search operation.
    *
    * 1) Parse request body (IShoppingMallShipment.IRequest) for:
    * - pagination parameters (page size / cursor)
@@ -170,9 +179,10 @@ export class ShoppingmallMemberShipmentsController {
    *
    * @param connection
    * @param shipmentId The unique identifier of the shipment record to retrieve (UUID).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1) Authenticate/authorize caller according to actor visibility rules for shipments.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification 1) Authenticate/authorize caller according to
+     *   actor visibility rules for shipments.
    *
    * 2) Parse `shipmentId` from path as UUID and query `shopping_mall_shipments` where `id = shipmentId`.
    *    - Select shipment core columns: id, shopping_mall_order_id, seller_snapshot_id, status, created_at, updated_at.
@@ -250,9 +260,9 @@ export class ShoppingmallMemberShipmentsController {
    * @param connection
    * @param shipmentId Target shipment identifier.
    * @param body Seller confirmation data used to transition the shipment state. This payload is stored in `shopping_mall_shipment_confirmations` and drives updates to `shopping_mall_shipments.status`.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation steps (service layer):
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation steps (service layer):
    *
    * 1) Resolve and validate target shipment
    * - Load `shopping_mall_shipments` by `id = shipmentId`.
@@ -323,9 +333,9 @@ export class ShoppingmallMemberShipmentsController {
    *
    * @param connection
    * @param shipmentId Target shipment identifier to remove permanently.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement DELETE /shipments/{shipmentId}.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implement DELETE /shipments/{shipmentId}.
    *
    * 1) Extract `shipmentId` from path.
    * 2) Authorization:

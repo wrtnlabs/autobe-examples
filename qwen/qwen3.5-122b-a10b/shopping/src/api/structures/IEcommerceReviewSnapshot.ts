@@ -20,8 +20,10 @@ export type IEcommerceReviewSnapshot = {
    *
    * This UUID uniquely identifies the snapshot across the entire system. It is generated when the snapshot is created and never changes.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_review_snapshots.id. Primary key, UUID format, globally unique.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_review_snapshots.id. Primary key, UUID format, globally
+     *   unique.
    */
   id: string & tags.Format<"uuid">;
 
@@ -34,8 +36,10 @@ export type IEcommerceReviewSnapshot = {
    * - Minimum: 1 (lowest satisfaction)
    * - Maximum: 5 (highest satisfaction)
    *
-   * @x-autobe-database-schema-property rating
-   * @x-autobe-specification Direct mapping from ecommerce_review_snapshots.rating. Integer type with range 1-5 enforced at database level.
+     * @x-autobe-database-schema-property rating
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_review_snapshots.rating. Integer type with range 1-5 enforced
+     *   at database level.
    */
   rating: number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<5>;
 
@@ -46,8 +50,10 @@ export type IEcommerceReviewSnapshot = {
    *
    * This preserves the historical content value even if the review is later edited or deleted.
    *
-   * @x-autobe-database-schema-property content
-   * @x-autobe-specification Direct mapping from ecommerce_review_snapshots.content. String type, nullable (reviews can be submitted without text content).
+     * @x-autobe-database-schema-property content
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_review_snapshots.content. String type, nullable (reviews can
+     *   be submitted without text content).
    */
   content: string | null;
 
@@ -61,8 +67,10 @@ export type IEcommerceReviewSnapshot = {
    * - Used for audit trail and compliance verification
    * - Format: ISO 8601 date-time with timezone
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_review_snapshots.created_at. DateTime type with timestamptz format, includes timezone information.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_review_snapshots.created_at. DateTime type with timestamptz
+     *   format, includes timezone information.
    */
   created_at: string & tags.Format<"date-time">;
 };
@@ -95,7 +103,9 @@ export namespace IEcommerceReviewSnapshot {
      *
      * **Usage**: Use `page` and `limit` for page-based pagination, or use `offset` and `limit` for offset-based pagination.
      *
-     * @x-autobe-specification 1-indexed page number for pagination. Defaults to 1. Used with limit to calculate offset (offset = (page - 1) * limit).
+         * @x-autobe-specification 1-indexed page number for pagination.
+         *   Defaults to 1. Used with limit to calculate offset (offset = (page
+         *   - 1) * limit).
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -110,7 +120,8 @@ export namespace IEcommerceReviewSnapshot {
      *
      * **Usage**: Use with `page` for page-based pagination, or with `offset` for offset-based pagination.
      *
-     * @x-autobe-specification Maximum number of records per page. Range: 1-100. Combined with page to calculate offset.
+         * @x-autobe-specification Maximum number of records per page. Range:
+         *   1-100. Combined with page to calculate offset.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -125,7 +136,9 @@ export namespace IEcommerceReviewSnapshot {
      *
      * **Example**: offset=0, limit=10 returns the first 10 records. offset=10, limit=10 returns records 11-20.
      *
-     * @x-autobe-specification Offset for offset-based pagination. Use with limit. Calculated as (page - 1) * limit when using page-based pagination.
+         * @x-autobe-specification Offset for offset-based pagination. Use with
+         *   limit. Calculated as (page - 1) * limit when using page-based
+         *   pagination.
      */
     offset?: (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
 
@@ -140,7 +153,9 @@ export namespace IEcommerceReviewSnapshot {
      *
      * **Example**: created_at_from="2024-01-01T00:00:00Z" returns snapshots created on or after January 1, 2024.
      *
-     * @x-autobe-specification Filter snapshots created at or after this timestamp. ISO 8601 date-time format. Used for date range queries on created_at column.
+         * @x-autobe-specification Filter snapshots created at or after this
+         *   timestamp. ISO 8601 date-time format. Used for date range queries
+         *   on created_at column.
      */
     created_at_from?: (string & tags.Format<"date-time">) | undefined;
 
@@ -155,7 +170,9 @@ export namespace IEcommerceReviewSnapshot {
      *
      * **Example**: created_at_to="2024-01-31T23:59:59Z" returns snapshots created on or before January 31, 2024.
      *
-     * @x-autobe-specification Filter snapshots created at or before this timestamp. ISO 8601 date-time format. Used for date range queries on created_at column.
+         * @x-autobe-specification Filter snapshots created at or before this
+         *   timestamp. ISO 8601 date-time format. Used for date range queries
+         *   on created_at column.
      */
     created_at_to?: (string & tags.Format<"date-time">) | undefined;
 
@@ -170,7 +187,8 @@ export namespace IEcommerceReviewSnapshot {
      *
      * **Example**: rating=5 returns only 5-star review snapshots.
      *
-     * @x-autobe-specification Filter snapshots by exact rating value (1-5). Used for equality queries on rating column.
+         * @x-autobe-specification Filter snapshots by exact rating value (1-5).
+         *   Used for equality queries on rating column.
      */
     rating?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<5>)
@@ -187,7 +205,9 @@ export namespace IEcommerceReviewSnapshot {
      *
      * **Example**: rating_from=4 returns snapshots with ratings of 4 or 5 stars.
      *
-     * @x-autobe-specification Filter snapshots with rating greater than or equal to this value. Range: 1-5. Used for >= queries on rating column.
+         * @x-autobe-specification Filter snapshots with rating greater than or
+         *   equal to this value. Range: 1-5. Used for >= queries on rating
+         *   column.
      */
     rating_from?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<5>)
@@ -204,7 +224,9 @@ export namespace IEcommerceReviewSnapshot {
      *
      * **Example**: rating_to=3 returns snapshots with ratings of 1, 2, or 3 stars.
      *
-     * @x-autobe-specification Filter snapshots with rating less than or equal to this value. Range: 1-5. Used for <= queries on rating column.
+         * @x-autobe-specification Filter snapshots with rating less than or
+         *   equal to this value. Range: 1-5. Used for <= queries on rating
+         *   column.
      */
     rating_to?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<5>)
@@ -233,8 +255,10 @@ export namespace IEcommerceReviewSnapshot {
      *
      * This UUID uniquely identifies the snapshot within the system. It is used as the primary key for snapshot retrieval and as a reference in audit logs.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_review_snapshots.id. Unique identifier for this snapshot record.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_review_snapshots.id. Unique identifier for this snapshot
+         *   record.
      */
     id: string & tags.Format<"uuid">;
 
@@ -248,8 +272,9 @@ export namespace IEcommerceReviewSnapshot {
      * - Minimum: 1 (lowest)
      * - Maximum: 5 (highest)
      *
-     * @x-autobe-database-schema-property rating
-     * @x-autobe-specification Direct mapping from ecommerce_review_snapshots.rating. Integer value from 1 to 5.
+         * @x-autobe-database-schema-property rating
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_review_snapshots.rating. Integer value from 1 to 5.
      */
     rating: number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<5>;
 
@@ -260,8 +285,10 @@ export namespace IEcommerceReviewSnapshot {
      *
      * This field may be null if the review was submitted with only a star rating and no written text.
      *
-     * @x-autobe-database-schema-property content
-     * @x-autobe-specification Direct mapping from ecommerce_review_snapshots.content. Nullable string for review text.
+         * @x-autobe-database-schema-property content
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_review_snapshots.content. Nullable string for review
+         *   text.
      */
     content: string | null;
 
@@ -274,8 +301,10 @@ export namespace IEcommerceReviewSnapshot {
      *
      * ISO 8601 datetime with timezone (e.g., "2024-01-15T10:30:00Z")
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from ecommerce_review_snapshots.created_at. ISO 8601 datetime with timezone.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_review_snapshots.created_at. ISO 8601 datetime with
+         *   timezone.
      */
     created_at: string & tags.Format<"date-time">;
   };

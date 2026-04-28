@@ -20,7 +20,9 @@ export type IEcommerceCategoryTree = {
    *
    * UUID-formatted primary key that uniquely identifies this category within the system. Used as reference in product-category relationships and for category-specific API operations.
    *
-   * @x-autobe-specification Computed from ecommerce_categories.id. UUID primary key of the category record, filtered for active categories (deleted_at IS NULL).
+     * @x-autobe-specification Computed from ecommerce_categories.id. UUID
+     *   primary key of the category record, filtered for active categories
+     *   (deleted_at IS NULL).
    */
   id: string & tags.Format<"uuid">;
 
@@ -29,7 +31,8 @@ export type IEcommerceCategoryTree = {
    *
    * Required field used for browsing and displaying categories to customers. Must be unique within the same parent level (root categories share uniqueness scope, subcategories under the same parent share uniqueness scope).
    *
-   * @x-autobe-specification Computed from ecommerce_categories.name. Required field, unique within parent level, filtered for active categories.
+     * @x-autobe-specification Computed from ecommerce_categories.name. Required
+     *   field, unique within parent level, filtered for active categories.
    */
   name: string;
 
@@ -38,7 +41,8 @@ export type IEcommerceCategoryTree = {
    *
    * May be null if no description has been set. When present, provides customers with more information about the types of products available in this category.
    *
-   * @x-autobe-specification Computed from ecommerce_categories.description. Nullable field, filtered for active categories.
+     * @x-autobe-specification Computed from ecommerce_categories.description.
+     *   Nullable field, filtered for active categories.
    */
   description?: string | null | undefined;
 
@@ -47,7 +51,8 @@ export type IEcommerceCategoryTree = {
    *
    * ISO 8601 formatted date-time in UTC with timezone. Records when this category was first added to the system by an administrator.
    *
-   * @x-autobe-specification Computed from ecommerce_categories.created_at. UTC timestamp with timezone, filtered for active categories.
+     * @x-autobe-specification Computed from ecommerce_categories.created_at.
+     *   UTC timestamp with timezone, filtered for active categories.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -56,7 +61,8 @@ export type IEcommerceCategoryTree = {
    *
    * ISO 8601 formatted date-time in UTC with timezone. Updated whenever the category name, description, or parent assignment changes.
    *
-   * @x-autobe-specification Computed from ecommerce_categories.updated_at. UTC timestamp with timezone, filtered for active categories.
+     * @x-autobe-specification Computed from ecommerce_categories.updated_at.
+     *   UTC timestamp with timezone, filtered for active categories.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -65,7 +71,10 @@ export type IEcommerceCategoryTree = {
    *
    * For root categories: contains all immediate child subcategories. For subcategories: always an empty array (two-level hierarchy only). Each subcategory follows the same IEcommerceCategoryTree structure, enabling recursive tree traversal. Empty array indicates no child categories exist.
    *
-   * @x-autobe-specification Computed from ecommerce_categories.subcategories relation. Array of direct child categories where parent_id equals this category's id AND deleted_at IS NULL. Empty array if no children exist. Two-level hierarchy only.
+     * @x-autobe-specification Computed from ecommerce_categories.subcategories
+     *   relation. Array of direct child categories where parent_id equals this
+     *   category's id AND deleted_at IS NULL. Empty array if no children exist.
+     *   Two-level hierarchy only.
    */
   subcategories: IEcommerceCategoryTree[];
 };

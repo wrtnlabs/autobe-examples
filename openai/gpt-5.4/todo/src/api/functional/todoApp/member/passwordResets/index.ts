@@ -26,7 +26,9 @@ import { ITodoAppMemberPasswordReset } from "../../../../structures/ITodoAppMemb
  * @param props.body Search criteria and pagination options for password reset records
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implement this operation as an authenticated collection query over todo_app_member_password_resets limited to the current member derived from the session or authentication context.
+ * @x-autobe-specification Implement this operation as an authenticated
+ *   collection query over todo_app_member_password_resets limited to the
+ *   current member derived from the session or authentication context.
  *
  * Resolve the signed-in member identifier first. If the request is unauthenticated, reject it before any database access. Do not accept or trust any client-supplied member identifier in the request body because ownership scope must come exclusively from the authenticated account context.
  *
@@ -131,7 +133,8 @@ export namespace index {
  * @param props.passwordResetId Target password reset record identifier owned by the current member
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implement this operation as a member-authenticated detail lookup on the todo_app_member_password_resets table.
+ * @x-autobe-specification Implement this operation as a member-authenticated
+ *   detail lookup on the todo_app_member_password_resets table.
  *
  * First, require an authenticated member session and obtain the current member identifier from the authorization context. If no authenticated member is present, reject the request as unauthorized.
  *

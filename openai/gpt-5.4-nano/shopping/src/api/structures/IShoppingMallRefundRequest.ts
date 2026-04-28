@@ -8,72 +8,88 @@ export type IShoppingMallRefundRequest = {
   /**
    * Unique identifier of the refund request record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_refund_requests.id (UUID).
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_refund_requests.id (UUID).
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Identifier of the purchased order item this refund request belongs to.
    *
-   * @x-autobe-database-schema-property shopping_mall_order_item_id
-   * @x-autobe-specification Direct mapping from shopping_mall_refund_requests.shopping_mall_order_item_id (UUID). Used by clients to correlate this refund request to its order item timeline.
+     * @x-autobe-database-schema-property shopping_mall_order_item_id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_refund_requests.shopping_mall_order_item_id (UUID). Used
+     *   by clients to correlate this refund request to its order item timeline.
    */
   shoppingMallOrderItemId: string & tags.Format<"uuid">;
 
   /**
    * Customer-provided reason for requesting a refund.
    *
-   * @x-autobe-database-schema-property customer_reason
-   * @x-autobe-specification Direct mapping from shopping_mall_refund_requests.customer_reason. Stored as the customer’s text reason and persisted unchanged.
+     * @x-autobe-database-schema-property customer_reason
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_refund_requests.customer_reason. Stored as the customer’s
+     *   text reason and persisted unchanged.
    */
   customerReason: string;
 
   /**
    * Current workflow status of the refund request (e.g., pending seller/admin decision, approved, or rejected).
    *
-   * @x-autobe-database-schema-property status
-   * @x-autobe-specification Direct mapping from shopping_mall_refund_requests.status (workflow status value stored as string).
+     * @x-autobe-database-schema-property status
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_refund_requests.status (workflow status value stored as
+     *   string).
    */
   status: string;
 
   /**
    * Optional seller/admin comment recorded at the time of decision. Null when no decision comment exists yet.
    *
-   * @x-autobe-database-schema-property seller_comment
-   * @x-autobe-specification Direct mapping from shopping_mall_refund_requests.seller_comment (nullable). If no decision has been made, return null.
+     * @x-autobe-database-schema-property seller_comment
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_refund_requests.seller_comment (nullable). If no decision
+     *   has been made, return null.
    */
   sellerComment: string | null;
 
   /**
    * Timestamp when the seller/admin made the decision. Null if the request is still undecided.
    *
-   * @x-autobe-database-schema-property decisioned_at
-   * @x-autobe-specification Direct mapping from shopping_mall_refund_requests.decisioned_at (nullable DateTime). If the refund request has not been decided, return null.
+     * @x-autobe-database-schema-property decisioned_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_refund_requests.decisioned_at (nullable DateTime). If the
+     *   refund request has not been decided, return null.
    */
   decisionedAt: (string & tags.Format<"date-time">) | null;
 
   /**
    * Timestamp when this refund request record was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from shopping_mall_refund_requests.created_at (DateTime).
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_refund_requests.created_at (DateTime).
    */
   createdAt: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when this refund request record was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from shopping_mall_refund_requests.updated_at (DateTime). Updates whenever the refund request record changes.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_refund_requests.updated_at (DateTime). Updates whenever
+     *   the refund request record changes.
    */
   updatedAt: string & tags.Format<"date-time">;
 
   /**
    * Soft-delete timestamp. Null when the record is not deleted; non-null when it has been soft-deleted.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from shopping_mall_refund_requests.deleted_at (nullable DateTime). If the record is not soft-deleted, return null.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_refund_requests.deleted_at (nullable DateTime). If the
+     *   record is not soft-deleted, return null.
    */
   deletedAt: (string & tags.Format<"date-time">) | null;
 };
@@ -85,16 +101,23 @@ export namespace IShoppingMallRefundRequest {
     /**
      * The identifier of the single delivered order item for which the member wants to request a refund.
      *
-     * @x-autobe-database-schema-property shopping_mall_order_item_id
-     * @x-autobe-specification Use as the referenced order item identifier. Server validates that the order item exists, belongs to the authenticated member (caller ownership), is eligible for refunds (delivered state/window), and is not soft-deleted before inserting the refund request.
+         * @x-autobe-database-schema-property shopping_mall_order_item_id
+         * @x-autobe-specification Use as the referenced order item identifier.
+         *   Server validates that the order item exists, belongs to the
+         *   authenticated member (caller ownership), is eligible for refunds
+         *   (delivered state/window), and is not soft-deleted before inserting
+         *   the refund request.
      */
     orderItemId: string & tags.Format<"uuid">;
 
     /**
      * Customer-provided reason for the refund request (required).
      *
-     * @x-autobe-database-schema-property customer_reason
-     * @x-autobe-specification Customer-provided reason/details for requesting the refund. Server validates it is present and non-empty, then stores it in shopping_mall_refund_requests.customer_reason.
+         * @x-autobe-database-schema-property customer_reason
+         * @x-autobe-specification Customer-provided reason/details for
+         *   requesting the refund. Server validates it is present and
+         *   non-empty, then stores it in
+         *   shopping_mall_refund_requests.customer_reason.
      */
     customerReason: string;
   };
@@ -106,72 +129,91 @@ export namespace IShoppingMallRefundRequest {
     /**
      * Unique identifier of the refund request.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Map shopping_mall_refund_requests.id (UUID) to DTO.id as a string with UUID format.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Map shopping_mall_refund_requests.id (UUID)
+         *   to DTO.id as a string with UUID format.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Identifier of the order item that this refund request refers to.
      *
-     * @x-autobe-database-schema-property shopping_mall_order_item_id
-     * @x-autobe-specification Map shopping_mall_refund_requests.shopping_mall_order_item_id to DTO.shoppingMallOrderItemId (UUID string).
+         * @x-autobe-database-schema-property shopping_mall_order_item_id
+         * @x-autobe-specification Map
+         *   shopping_mall_refund_requests.shopping_mall_order_item_id to
+         *   DTO.shoppingMallOrderItemId (UUID string).
      */
     shoppingMallOrderItemId: string & tags.Format<"uuid">;
 
     /**
      * Customer-provided reason/details for requesting the refund.
      *
-     * @x-autobe-database-schema-property customer_reason
-     * @x-autobe-specification Map shopping_mall_refund_requests.customer_reason to DTO.customerReason as a string.
+         * @x-autobe-database-schema-property customer_reason
+         * @x-autobe-specification Map
+         *   shopping_mall_refund_requests.customer_reason to DTO.customerReason
+         *   as a string.
      */
     customerReason: string;
 
     /**
      * Current workflow status of the refund request (e.g., pending seller approval, approved, rejected).
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Map shopping_mall_refund_requests.status to DTO.status as a raw status string representing the refund workflow state.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Map shopping_mall_refund_requests.status to
+         *   DTO.status as a raw status string representing the refund workflow
+         *   state.
      */
     status: string;
 
     /**
      * Optional seller/admin note provided when deciding the refund request.
      *
-     * @x-autobe-database-schema-property seller_comment
-     * @x-autobe-specification Map shopping_mall_refund_requests.seller_comment (nullable text) to DTO.sellerComment using oneOf: string when non-null, otherwise null.
+         * @x-autobe-database-schema-property seller_comment
+         * @x-autobe-specification Map
+         *   shopping_mall_refund_requests.seller_comment (nullable text) to
+         *   DTO.sellerComment using oneOf: string when non-null, otherwise
+         *   null.
      */
     sellerComment: string | null;
 
     /**
      * Timestamp when the seller made the refund decision; null if not yet decided.
      *
-     * @x-autobe-database-schema-property decisioned_at
-     * @x-autobe-specification Map shopping_mall_refund_requests.decisioned_at (nullable timestamptz) to DTO.decisionedAt using oneOf: date-time string when non-null, otherwise null.
+         * @x-autobe-database-schema-property decisioned_at
+         * @x-autobe-specification Map
+         *   shopping_mall_refund_requests.decisioned_at (nullable timestamptz)
+         *   to DTO.decisionedAt using oneOf: date-time string when non-null,
+         *   otherwise null.
      */
     decisionedAt: (string & tags.Format<"date-time">) | null;
 
     /**
      * When the refund request record was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Map shopping_mall_refund_requests.created_at (timestamptz) to DTO.createdAt as an ISO-8601 date-time string.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Map shopping_mall_refund_requests.created_at
+         *   (timestamptz) to DTO.createdAt as an ISO-8601 date-time string.
      */
     createdAt: string & tags.Format<"date-time">;
 
     /**
      * When the refund request record was last updated.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Map shopping_mall_refund_requests.updated_at (timestamptz) to DTO.updatedAt as an ISO-8601 date-time string.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Map shopping_mall_refund_requests.updated_at
+         *   (timestamptz) to DTO.updatedAt as an ISO-8601 date-time string.
      */
     updatedAt: string & tags.Format<"date-time">;
 
     /**
      * Soft-deletion timestamp; null when the refund request is not soft-deleted.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Map shopping_mall_refund_requests.deleted_at (nullable timestamptz) to DTO.deletedAt using oneOf: date-time string when non-null, otherwise null. Soft-delete filtering is handled by list visibility rules; this DTO only reports the stored value when present.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Map shopping_mall_refund_requests.deleted_at
+         *   (nullable timestamptz) to DTO.deletedAt using oneOf: date-time
+         *   string when non-null, otherwise null. Soft-delete filtering is
+         *   handled by list visibility rules; this DTO only reports the stored
+         *   value when present.
      */
     deletedAt: (string & tags.Format<"date-time">) | null;
   };
@@ -183,62 +225,84 @@ export namespace IShoppingMallRefundRequest {
     /**
      * Refund request workflow status to filter by (exact match).
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Map directly to shopping_mall_refund_requests.status. When provided, use exact match (WHERE shopping_mall_refund_requests.status = :status).
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Map directly to
+         *   shopping_mall_refund_requests.status. When provided, use exact
+         *   match (WHERE shopping_mall_refund_requests.status = :status).
      */
     status?: string | undefined;
 
     /**
      * Filter refund requests to a specific order item (UUID).
      *
-     * @x-autobe-database-schema-property shopping_mall_order_item_id
-     * @x-autobe-specification Map directly to shopping_mall_refund_requests.shopping_mall_order_item_id. When provided, use equality scoping (WHERE shopping_mall_order_item_id = :shoppingMallOrderItemId).
+         * @x-autobe-database-schema-property shopping_mall_order_item_id
+         * @x-autobe-specification Map directly to
+         *   shopping_mall_refund_requests.shopping_mall_order_item_id. When
+         *   provided, use equality scoping (WHERE shopping_mall_order_item_id =
+         *   :shoppingMallOrderItemId).
      */
     shoppingMallOrderItemId?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Free-text filter for the customer-provided refund reason (case-insensitive contains).
      *
-     * @x-autobe-database-schema-property customer_reason
-     * @x-autobe-specification Map directly to shopping_mall_refund_requests.customer_reason. When provided, use case-insensitive contains search (customer_reason ILIKE '%' || :customerReason || '%').
+         * @x-autobe-database-schema-property customer_reason
+         * @x-autobe-specification Map directly to
+         *   shopping_mall_refund_requests.customer_reason. When provided, use
+         *   case-insensitive contains search (customer_reason ILIKE '%' ||
+         *   :customerReason || '%').
      */
     customerReason?: string | undefined;
 
     /**
      * Optional free-text filter for the seller’s refund decision note (nullable in DB).
      *
-     * @x-autobe-database-schema-property seller_comment
-     * @x-autobe-specification Map to shopping_mall_refund_requests.seller_comment. When sellerComment is provided, apply case-insensitive contains semantics to shopping_mall_refund_requests.seller_comment; DTO represents nullable field and must accept null inputs.
+         * @x-autobe-database-schema-property seller_comment
+         * @x-autobe-specification Map to
+         *   shopping_mall_refund_requests.seller_comment. When sellerComment is
+         *   provided, apply case-insensitive contains semantics to
+         *   shopping_mall_refund_requests.seller_comment; DTO represents
+         *   nullable field and must accept null inputs.
      */
     sellerComment: string | null;
 
     /**
      * Optional timestamp filter for when the refund decision was made (nullable in DB).
      *
-     * @x-autobe-database-schema-property decisioned_at
-     * @x-autobe-specification Map to shopping_mall_refund_requests.decisioned_at. When decisionedAt is provided, filter by provided timestamp value; DTO also supports representing nullability as allowed input.
+         * @x-autobe-database-schema-property decisioned_at
+         * @x-autobe-specification Map to
+         *   shopping_mall_refund_requests.decisioned_at. When decisionedAt is
+         *   provided, filter by provided timestamp value; DTO also supports
+         *   representing nullability as allowed input.
      */
     decisionedAt: (string & tags.Format<"date-time">) | null;
 
     /**
      * Filter refund requests by their creation time (date-time).
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Map directly to shopping_mall_refund_requests.created_at. When provided, apply date-time filtering consistent with the service’s chosen semantics (exact match or range).
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Map directly to
+         *   shopping_mall_refund_requests.created_at. When provided, apply
+         *   date-time filtering consistent with the service’s chosen semantics
+         *   (exact match or range).
      */
     createdAt?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * 1-indexed page number for the results slice.
      *
-     * @x-autobe-specification Use as a 1-indexed page number. Compute OFFSET = (page - 1) * limit and apply OFFSET/LIMIT to the query window.
+         * @x-autobe-specification Use as a 1-indexed page number. Compute
+         *   OFFSET = (page - 1) * limit and apply OFFSET/LIMIT to the query
+         *   window.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of refund request results returned in a single page.
      *
-     * @x-autobe-specification Use as the page size (maximum number of records returned). Apply LIMIT = limit with OFFSET computed from page.
+         * @x-autobe-specification Use as the page size (maximum number of
+         *   records returned). Apply LIMIT = limit with OFFSET computed from
+         *   page.
      */
     limit?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
   };
@@ -250,32 +314,50 @@ export namespace IShoppingMallRefundRequest {
     /**
      * Customer-provided reason/details for requesting the refund (must be non-empty as required by the workflow contract).
      *
-     * @x-autobe-database-schema-property customer_reason
-     * @x-autobe-specification Direct mapping from shopping_mall_refund_requests.customer_reason. Validate non-empty/non-blank according to refund workflow update rules (must not allow blank overwrite). Persist exactly as provided.
+         * @x-autobe-database-schema-property customer_reason
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_refund_requests.customer_reason. Validate
+         *   non-empty/non-blank according to refund workflow update rules (must
+         *   not allow blank overwrite). Persist exactly as provided.
      */
     customer_reason: string;
 
     /**
      * Desired refund request workflow decision status (approve/reject/etc.) as controlled by refund workflow state transitions.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from shopping_mall_refund_requests.status. Validate that the requested status is a legal workflow transition from the current stored refund request status and is allowed by the associated order item eligibility. Persist to shopping_mall_refund_requests.status and update updated_at.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_refund_requests.status. Validate that the requested
+         *   status is a legal workflow transition from the current stored
+         *   refund request status and is allowed by the associated order item
+         *   eligibility. Persist to shopping_mall_refund_requests.status and
+         *   update updated_at.
      */
     status: string;
 
     /**
      * Optional seller/admin note recorded with the refund decision (null when not provided or not required).
      *
-     * @x-autobe-database-schema-property seller_comment
-     * @x-autobe-specification Direct mapping from shopping_mall_refund_requests.seller_comment. Allow null when seller_comment is not required by the target decision status; otherwise validate presence/non-emptiness when required by workflow rules. Persist to shopping_mall_refund_requests.seller_comment.
+         * @x-autobe-database-schema-property seller_comment
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_refund_requests.seller_comment. Allow null when
+         *   seller_comment is not required by the target decision status;
+         *   otherwise validate presence/non-emptiness when required by workflow
+         *   rules. Persist to shopping_mall_refund_requests.seller_comment.
      */
     seller_comment?: string | null | undefined;
 
     /**
      * Timestamp when the decision was made for the refund request (null if not set/when the workflow semantics allow it).
      *
-     * @x-autobe-database-schema-property decisioned_at
-     * @x-autobe-specification Direct mapping from shopping_mall_refund_requests.decisioned_at. If the target status moves the request out of the pending decision state, ensure decisioned_at is set (or validate the provided value if DTO provides it). Allow null only when consistent with the workflow/status semantics per DTO contract. Persist to shopping_mall_refund_requests.decisioned_at.
+         * @x-autobe-database-schema-property decisioned_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_refund_requests.decisioned_at. If the target status
+         *   moves the request out of the pending decision state, ensure
+         *   decisioned_at is set (or validate the provided value if DTO
+         *   provides it). Allow null only when consistent with the
+         *   workflow/status semantics per DTO contract. Persist to
+         *   shopping_mall_refund_requests.decisioned_at.
      */
     decisioned_at?: (string & tags.Format<"date-time">) | null | undefined;
   };

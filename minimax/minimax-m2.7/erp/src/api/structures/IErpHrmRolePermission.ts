@@ -10,40 +10,52 @@ export type IErpHrmRolePermission = {
   /**
    * Unique identifier of the role permission assignment record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from erp_hrm_role_permissions.id (UUID primary key).
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from erp_hrm_role_permissions.id
+     *   (UUID primary key).
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Permission code string assigned to the role.
    *
-   * @x-autobe-database-schema-property permission
-   * @x-autobe-specification Direct mapping from erp_hrm_role_permissions.permission (String). Permission code such as 'org:manage', 'employee:manage', 'employee:view', 'project:manage', 'project:view', 'time:manage', 'time:approve', 'time:view_all', or 'report:view'.
+     * @x-autobe-database-schema-property permission
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_role_permissions.permission (String). Permission code such as
+     *   'org:manage', 'employee:manage', 'employee:view', 'project:manage',
+     *   'project:view', 'time:manage', 'time:approve', 'time:view_all', or
+     *   'report:view'.
    */
   permission: string & tags.Pattern<"^[a-z]+:[a-z_]+$">;
 
   /**
    * The role to which this permission is assigned.
    *
-   * @x-autobe-database-schema-property role
-   * @x-autobe-specification BELONGS-TO relation via erp_hrm_role_id foreign key. Join erp_hrm_role_permissions.erp_hrm_role_id to erp_hrm_roles.id. Returns IErpHrmRole.ISummary object with id, name, isBuiltin, organization, permissionsCount.
+     * @x-autobe-database-schema-property role
+     * @x-autobe-specification BELONGS-TO relation via erp_hrm_role_id foreign
+     *   key. Join erp_hrm_role_permissions.erp_hrm_role_id to erp_hrm_roles.id.
+     *   Returns IErpHrmRole.ISummary object with id, name, isBuiltin,
+     *   organization, permissionsCount.
    */
   role: IErpHrmRole.ISummary;
 
   /**
    * Timestamp when the permission was assigned to the role.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from erp_hrm_role_permissions.created_at. Auto-managed by server on record creation.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_role_permissions.created_at. Auto-managed by server on record
+     *   creation.
    */
   createdAt: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the role permission assignment was last modified.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from erp_hrm_role_permissions.updated_at. Auto-managed by server on record update.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_role_permissions.updated_at. Auto-managed by server on record
+     *   update.
    */
   updatedAt: string & tags.Format<"date-time">;
 };
@@ -55,15 +67,22 @@ export namespace IErpHrmRolePermission {
     /**
      * Array of permission codes currently assigned to the role after the permission set replacement.
      *
-     * @x-autobe-specification Aggregation: SELECT permission FROM erp_hrm_role_permissions WHERE erp_hrm_role_id = :roleId. Returns all permission codes assigned to this role after the atomic replace operation. The column 'permission' is a single string per row, but the response returns all values as an array.
+         * @x-autobe-specification Aggregation: SELECT permission FROM
+         *   erp_hrm_role_permissions WHERE erp_hrm_role_id = :roleId. Returns
+         *   all permission codes assigned to this role after the atomic replace
+         *   operation. The column 'permission' is a single string per row, but
+         *   the response returns all values as an array.
      */
     permissions: string[];
 
     /**
      * The role entity with its updated permission set and organization context.
      *
-     * @x-autobe-database-schema-property role
-     * @x-autobe-specification JOIN erp_hrm_roles ON erp_hrm_role_permissions.erp_hrm_role_id = erp_hrm_roles.id. Returns IErpHrmRole.ISummary with id, name, isBuiltin, organization, createdAt, and permissionsCount.
+         * @x-autobe-database-schema-property role
+         * @x-autobe-specification JOIN erp_hrm_roles ON
+         *   erp_hrm_role_permissions.erp_hrm_role_id = erp_hrm_roles.id.
+         *   Returns IErpHrmRole.ISummary with id, name, isBuiltin,
+         *   organization, createdAt, and permissionsCount.
      */
     role: IErpHrmRole.ISummary;
   };
@@ -75,8 +94,13 @@ export namespace IErpHrmRolePermission {
     /**
      * Permission code string to assign to the role. Must be one of the available system permissions: 'org:manage', 'employee:manage', 'employee:view', 'project:manage', 'project:view', 'time:manage', 'time:approve', 'time:view_all', or 'report:view'.
      *
-     * @x-autobe-database-schema-property permission
-     * @x-autobe-specification Direct mapping to erp_hrm_role_permissions.permission column. The permission string must be one of the allowed system permission codes: 'org:manage', 'employee:manage', 'employee:view', 'project:manage', 'project:view', 'time:manage', 'time:approve', 'time:view_all', or 'report:view'.
+         * @x-autobe-database-schema-property permission
+         * @x-autobe-specification Direct mapping to
+         *   erp_hrm_role_permissions.permission column. The permission string
+         *   must be one of the allowed system permission codes: 'org:manage',
+         *   'employee:manage', 'employee:view', 'project:manage',
+         *   'project:view', 'time:manage', 'time:approve', 'time:view_all', or
+         *   'report:view'.
      */
     permission: string;
   };
@@ -88,7 +112,16 @@ export namespace IErpHrmRolePermission {
     /**
      * Array of permission codes to assign to the role. Valid codes: org:manage, employee:manage, employee:view, project:manage, project:view, time:manage, time:approve, time:view_all, report:view. Empty array removes all permissions.
      *
-     * @x-autobe-specification Permissions array maps to multiple role_permission records in the junction table. Each element in the permissions array becomes one new row with role_id from path parameter roleId and permission column set to the array element value. Operation: Transaction deletes all existing role_permissions for the role, then inserts one row per array element. Empty array clears all permissions. Valid codes: org:manage, employee:manage, employee:view, project:manage, project:view, time:manage, time:approve, time:view_all, report:view. Duplicate codes in request are deduplicated.
+         * @x-autobe-specification Permissions array maps to multiple
+         *   role_permission records in the junction table. Each element in the
+         *   permissions array becomes one new row with role_id from path
+         *   parameter roleId and permission column set to the array element
+         *   value. Operation: Transaction deletes all existing role_permissions
+         *   for the role, then inserts one row per array element. Empty array
+         *   clears all permissions. Valid codes: org:manage, employee:manage,
+         *   employee:view, project:manage, project:view, time:manage,
+         *   time:approve, time:view_all, report:view. Duplicate codes in
+         *   request are deduplicated.
      */
     permissions: string[];
   };
@@ -100,7 +133,11 @@ export namespace IErpHrmRolePermission {
     /**
      * Array of available permissions with their associated role information.
      *
-     * @x-autobe-specification Array wrapper returning role-permission mappings. Each item contains permission code, role object (role_id, role_name), and timestamps. Direct mapping to JOIN results from erp_hrm_role_permissions ON erp_hrm_role_id = erp_hrm_roles.id, ordered by permission ASC.
+         * @x-autobe-specification Array wrapper returning role-permission
+         *   mappings. Each item contains permission code, role object (role_id,
+         *   role_name), and timestamps. Direct mapping to JOIN results from
+         *   erp_hrm_role_permissions ON erp_hrm_role_id = erp_hrm_roles.id,
+         *   ordered by permission ASC.
      */
     items: IErpHrmRolePermission[];
   };

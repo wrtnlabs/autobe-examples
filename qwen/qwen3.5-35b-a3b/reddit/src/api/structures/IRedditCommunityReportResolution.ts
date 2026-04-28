@@ -29,8 +29,9 @@ export type IRedditCommunityReportResolution = {
    *
    * This UUID uniquely identifies a single moderation decision record. Used as the primary key for the resolution entity and referenced by the target post resolution endpoint.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from reddit_community_report_resolutions.id. UUID format.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_report_resolutions.id. UUID format.
    */
   id: string & tags.Format<"uuid">;
 
@@ -45,8 +46,10 @@ export type IRedditCommunityReportResolution = {
    * - `escalated` — The report was escalated to senior admin for further review
    * - `transferred` — The report was transferred to another moderator or admin for handling
    *
-   * @x-autobe-database-schema-property resolution_type
-   * @x-autobe-specification Direct mapping from reddit_community_report_resolutions.resolution_type. Required enum field with four allowed values.
+     * @x-autobe-database-schema-property resolution_type
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_report_resolutions.resolution_type. Required enum
+     *   field with four allowed values.
    */
   resolution_type: string;
 
@@ -62,8 +65,10 @@ export type IRedditCommunityReportResolution = {
    * - `escalated` — Report escalated for further review
    * - `transferred` — Report transferred to another moderator
    *
-   * @x-autobe-database-schema-property status
-   * @x-autobe-specification Direct mapping from reddit_community_report_resolutions.status. Required enum field with five allowed values.
+     * @x-autobe-database-schema-property status
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_report_resolutions.status. Required enum field with
+     *   five allowed values.
    */
   status: string;
 
@@ -74,8 +79,10 @@ export type IRedditCommunityReportResolution = {
    *
    * This field supports GIN full-text search to enable querying by keywords across all moderation notes.
    *
-   * @x-autobe-specification Direct mapping from reddit_community_report_resolutions.resolution_notes. Nullable text field indexed for full-text search.
-   * @x-autobe-database-schema-property resolution_notes
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_report_resolutions.resolution_notes. Nullable text
+     *   field indexed for full-text search.
+     * @x-autobe-database-schema-property resolution_notes
    */
   resolution_notes?: string | null | undefined;
 
@@ -86,8 +93,10 @@ export type IRedditCommunityReportResolution = {
    *
    * This field supports escalation workflow tracking and helps identify patterns that may require policy updates.
    *
-   * @x-autobe-specification Direct mapping from reddit_community_report_resolutions.escalation_reason. Nullable field, only used when resolution_type is 'escalated'.
-   * @x-autobe-database-schema-property escalation_reason
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_report_resolutions.escalation_reason. Nullable field,
+     *   only used when resolution_type is 'escalated'.
+     * @x-autobe-database-schema-property escalation_reason
    */
   escalation_reason?: string | null | undefined;
 
@@ -98,8 +107,10 @@ export type IRedditCommunityReportResolution = {
    *
    * If the referenced admin is soft-deleted, the ID is still included but display_name may be null.
    *
-   * @x-autobe-specification Direct mapping from reddit_community_report_resolutions.transferred_to_admin_id. Nullable UUID field, only populated when resolution_type is 'transferred'.
-   * @x-autobe-database-schema-property transferred_to_admin_id
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_report_resolutions.transferred_to_admin_id. Nullable
+     *   UUID field, only populated when resolution_type is 'transferred'.
+     * @x-autobe-database-schema-property transferred_to_admin_id
    */
   transferred_to_admin_id?: (string & tags.Format<"uuid">) | null | undefined;
 
@@ -110,8 +121,10 @@ export type IRedditCommunityReportResolution = {
    *
    * Nullable for resolutions that are not yet completed (e.g., escalated reports awaiting further review).
    *
-   * @x-autobe-database-schema-property resolved_at
-   * @x-autobe-specification Direct mapping from reddit_community_report_resolutions.resolved_at. Nullable timestamp field. Populated when resolution is finalized.
+     * @x-autobe-database-schema-property resolved_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_report_resolutions.resolved_at. Nullable timestamp
+     *   field. Populated when resolution is finalized.
    */
   resolved_at: (string & tags.Format<"date-time">) | null;
 
@@ -122,8 +135,10 @@ export type IRedditCommunityReportResolution = {
    *
    * Immutable after creation, tracking when the moderation workflow began.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from reddit_community_report_resolutions.created_at. Immutable timestamp field.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_report_resolutions.created_at. Immutable timestamp
+     *   field.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -134,8 +149,10 @@ export type IRedditCommunityReportResolution = {
    *
    * Updated whenever any field is modified during the resolution workflow.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from reddit_community_report_resolutions.updated_at. Auto-updated timestamp field.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_report_resolutions.updated_at. Auto-updated timestamp
+     *   field.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -146,8 +163,10 @@ export type IRedditCommunityReportResolution = {
    *
    * Soft-deleted records are filtered out from query results by default.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from reddit_community_report_resolutions.deleted_at. Nullable timestamp field for soft deletion support.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_report_resolutions.deleted_at. Nullable timestamp
+     *   field for soft deletion support.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 
@@ -158,8 +177,10 @@ export type IRedditCommunityReportResolution = {
    *
    * Returns the admin's summary information including their ID, email, and display name.
    *
-   * @x-autobe-database-schema-property admin
-   * @x-autobe-specification Join from reddit_community_report_resolutions.reddit_community_admin_id to reddit_community_admins.id. Returns IRedditCommunityAdmin.ISummary.
+     * @x-autobe-database-schema-property admin
+     * @x-autobe-specification Join from
+     *   reddit_community_report_resolutions.reddit_community_admin_id to
+     *   reddit_community_admins.id. Returns IRedditCommunityAdmin.ISummary.
    */
   admin: IRedditCommunityAdmin.ISummary;
 
@@ -170,8 +191,10 @@ export type IRedditCommunityReportResolution = {
    *
    * Returns the report's summary information including reporter, community, and target content.
    *
-   * @x-autobe-database-schema-property report
-   * @x-autobe-specification Join from reddit_community_report_resolutions.reddit_community_report_id to reddit_community_reports.id. Returns IRedditCommunityReport.ISummary.
+     * @x-autobe-database-schema-property report
+     * @x-autobe-specification Join from
+     *   reddit_community_report_resolutions.reddit_community_report_id to
+     *   reddit_community_reports.id. Returns IRedditCommunityReport.ISummary.
    */
   report: IRedditCommunityReport.ISummary;
 
@@ -182,7 +205,9 @@ export type IRedditCommunityReportResolution = {
    *
    * Only one of targetPost or targetComment will be populated based on the target of the original report.
    *
-   * @x-autobe-specification Computed: Join report to report.target_post_id to reddit_community_posts.id. Returns IRedditCommunityPost.ISummary if target_post_id exists, null otherwise.
+     * @x-autobe-specification Computed: Join report to report.target_post_id to
+     *   reddit_community_posts.id. Returns IRedditCommunityPost.ISummary if
+     *   target_post_id exists, null otherwise.
    */
   targetPost?: IRedditCommunityPost.ISummary | null | undefined;
 
@@ -193,7 +218,10 @@ export type IRedditCommunityReportResolution = {
    *
    * Only one of targetPost or targetComment will be populated based on the target of the original report.
    *
-   * @x-autobe-specification Computed: Join report to report.target_comment_id to reddit_community_comments.id. Returns IRedditCommunityComment.ISummary if target_comment_id exists, null otherwise.
+     * @x-autobe-specification Computed: Join report to report.target_comment_id
+     *   to reddit_community_comments.id. Returns
+     *   IRedditCommunityComment.ISummary if target_comment_id exists, null
+     *   otherwise.
    */
   targetComment?: IRedditCommunityComment.ISummary | null | undefined;
 };
@@ -250,7 +278,8 @@ export namespace IRedditCommunityReportResolution {
      * Requesting a page beyond the available range returns an empty data array
      * with valid pagination metadata reflecting the actual totals.
      *
-     * @x-autobe-specification 1-indexed page number. Defaults to 1 if not provided.
+         * @x-autobe-specification 1-indexed page number. Defaults to 1 if not
+         *   provided.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
 
@@ -262,7 +291,8 @@ export namespace IRedditCommunityReportResolution {
      * enforce upper bounds to prevent excessive resource consumption on large
      * requests.
      *
-     * @x-autobe-specification Maximum records per page. Defaults to 100 if not provided.
+         * @x-autobe-specification Maximum records per page. Defaults to 100 if
+         *   not provided.
      */
     limit?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };

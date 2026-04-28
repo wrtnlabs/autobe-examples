@@ -23,7 +23,8 @@ import { IPageIEcommerceMallProductVariantSnapshotOptionValue } from "../../../.
  * @param props.body Search criteria and pagination parameters for filtering option values within the snapshot
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Validate the snapshotId path parameter exists and corresponds to a valid product variant snapshot in the database.
+ * @x-autobe-specification Validate the snapshotId path parameter exists and
+ *   corresponds to a valid product variant snapshot in the database.
  *
  * Query the ecommerce_mall_product_variant_snapshot_option_values table filtering by the variant_snapshot_id matching the provided snapshotId.
  *
@@ -133,7 +134,8 @@ export namespace index {
  * @param props.optionValueId The unique identifier of the specific option value record within the snapshot (UUID format). This identifies a single option key-value pair.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Retrieve a single option value record from ecommerce_mall_product_variant_snapshot_option_values table.
+ * @x-autobe-specification Retrieve a single option value record from
+ *   ecommerce_mall_product_variant_snapshot_option_values table.
  *
  * Query Conditions:
  * - Verify the option value exists with the given optionValueId

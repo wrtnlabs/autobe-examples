@@ -33,9 +33,10 @@ export class EcommercemallAdminAdminOrdersController {
    * This endpoint is restricted to administrators and super administrators only. Regular customers cannot access this endpoint. Sellers cannot access other sellers' order information.
    *
    * @param connection
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query ecommerce_mall_orders table with pagination.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Query ecommerce_mall_orders table with
+     *   pagination.
    *
    * Apply optional filtering based on query parameters:
    * - Filter by status if provided (matching order status field)
@@ -79,9 +80,11 @@ export class EcommercemallAdminAdminOrdersController {
    *
    * @param connection
    * @param body Search criteria including order status filter, customer ID filter, date range filters (createdAtFrom, createdAtTo), amount range filters (minTotal, maxTotal), and pagination parameters (page, limit).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query ecommerce_mall_orders table with JOIN on ecommerce_mall_customers for customer email display when customer filter is applied.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Query ecommerce_mall_orders table with JOIN on
+     *   ecommerce_mall_customers for customer email display when customer
+     *   filter is applied.
    *
    * Apply search filters:
    * - Filter by order status (exact match on status field)
@@ -135,9 +138,10 @@ export class EcommercemallAdminAdminOrdersController {
    *
    * @param connection
    * @param orderId Unique identifier of the order to retrieve.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query ecommerce_mall_orders table using the provided orderId.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Query ecommerce_mall_orders table using the
+     *   provided orderId.
    *
    * Validate that the order exists; return 404 if not found.
    *

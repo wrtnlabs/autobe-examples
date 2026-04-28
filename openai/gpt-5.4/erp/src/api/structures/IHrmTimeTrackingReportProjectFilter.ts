@@ -11,40 +11,55 @@ export type IHrmTimeTrackingReportProjectFilter = {
   /**
    * Unique identifier of this saved report project filter selection.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from `hrm_time_tracking_report_project_filters.id`. Return the persisted unique identifier of the saved report project filter row.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   `hrm_time_tracking_report_project_filters.id`. Return the persisted
+     *   unique identifier of the saved report project filter row.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Saved report definition that owns this project filter selection.
    *
-   * @x-autobe-database-schema-property report
-   * @x-autobe-specification Resolve through the `report` relation of `hrm_time_tracking_report_project_filters`, using foreign key `hrm_time_tracking_report_id` to join `hrm_time_tracking_reports.id`, then serialize the related active parent record as `IHrmTimeTrackingReport.ISummary`.
+     * @x-autobe-database-schema-property report
+     * @x-autobe-specification Resolve through the `report` relation of
+     *   `hrm_time_tracking_report_project_filters`, using foreign key
+     *   `hrm_time_tracking_report_id` to join `hrm_time_tracking_reports.id`,
+     *   then serialize the related active parent record as
+     *   `IHrmTimeTrackingReport.ISummary`.
    */
   report: IHrmTimeTrackingReport.ISummary;
 
   /**
    * Project selected by this saved report filter.
    *
-   * @x-autobe-database-schema-property project
-   * @x-autobe-specification Resolve through the `project` relation of `hrm_time_tracking_report_project_filters`, using foreign key `hrm_time_tracking_project_id` to join `hrm_time_tracking_projects.id`, then serialize the related active project as `IHrmTimeTrackingProject.ISummary`.
+     * @x-autobe-database-schema-property project
+     * @x-autobe-specification Resolve through the `project` relation of
+     *   `hrm_time_tracking_report_project_filters`, using foreign key
+     *   `hrm_time_tracking_project_id` to join `hrm_time_tracking_projects.id`,
+     *   then serialize the related active project as
+     *   `IHrmTimeTrackingProject.ISummary`.
    */
   project: IHrmTimeTrackingProject.ISummary;
 
   /**
    * Timestamp when this project filter selection was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from `hrm_time_tracking_report_project_filters.created_at` as an ISO 8601 date-time string.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   `hrm_time_tracking_report_project_filters.created_at` as an ISO 8601
+     *   date-time string.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when this project filter selection was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from `hrm_time_tracking_report_project_filters.updated_at` as an ISO 8601 date-time string. Refresh this value whenever the filter row is updated.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   `hrm_time_tracking_report_project_filters.updated_at` as an ISO 8601
+     *   date-time string. Refresh this value whenever the filter row is
+     *   updated.
    */
   updated_at: string & tags.Format<"date-time">;
 };
@@ -56,14 +71,25 @@ export namespace IHrmTimeTrackingReportProjectFilter {
     /**
      * Page number of the filtered project filter result set to retrieve.
      *
-     * @x-autobe-specification Computed transport parameter that selects the 1-indexed page of `hrm_time_tracking_report_project_filters` results to return after filtering by the parent report resolved from `reportId`. Use it to calculate database offset together with `limit`. When omitted, the service should default to the first page according to shared pagination conventions.
+         * @x-autobe-specification Computed transport parameter that selects the
+         *   1-indexed page of `hrm_time_tracking_report_project_filters`
+         *   results to return after filtering by the parent report resolved
+         *   from `reportId`. Use it to calculate database offset together with
+         *   `limit`. When omitted, the service should default to the first page
+         *   according to shared pagination conventions.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of project filter records to return in a single page.
      *
-     * @x-autobe-specification Computed transport parameter that sets the maximum number of `hrm_time_tracking_report_project_filters` records returned for the selected page. Apply it at the database layer together with `page` after constraining rows by `hrm_time_tracking_report_id = :reportId` and active-record filtering. Respect the schema bounds already defined on this property.
+         * @x-autobe-specification Computed transport parameter that sets the
+         *   maximum number of `hrm_time_tracking_report_project_filters`
+         *   records returned for the selected page. Apply it at the database
+         *   layer together with `page` after constraining rows by
+         *   `hrm_time_tracking_report_id = :reportId` and active-record
+         *   filtering. Respect the schema bounds already defined on this
+         *   property.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -72,7 +98,14 @@ export namespace IHrmTimeTrackingReportProjectFilter {
     /**
      * Sort expression controlling the order of project filter records in the paginated response.
      *
-     * @x-autobe-specification Computed transport parameter that selects the ordering of the filtered `hrm_time_tracking_report_project_filters` collection. The service must translate accepted sort tokens to safe persisted fields such as `created_at` or `id` and reject unsupported values according to shared request parsing rules. If omitted, apply the stable default ordering `created_at DESC, id DESC`. This parameter must not be used to override parent report scoping.
+         * @x-autobe-specification Computed transport parameter that selects the
+         *   ordering of the filtered `hrm_time_tracking_report_project_filters`
+         *   collection. The service must translate accepted sort tokens to safe
+         *   persisted fields such as `created_at` or `id` and reject
+         *   unsupported values according to shared request parsing rules. If
+         *   omitted, apply the stable default ordering `created_at DESC, id
+         *   DESC`. This parameter must not be used to override parent report
+         *   scoping.
      */
     sort?: string | undefined;
   };
@@ -84,40 +117,49 @@ export namespace IHrmTimeTrackingReportProjectFilter {
     /**
      * Unique identifier of this saved report project filter entry.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_report_project_filters.id.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_report_project_filters.id.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Project that is currently selected as a filter in the saved report.
      *
-     * @x-autobe-database-schema-property project
-     * @x-autobe-specification Resolve the belongs-to relation hrm_time_tracking_report_project_filters.project by joining hrm_time_tracking_report_project_filters.hrm_time_tracking_project_id to hrm_time_tracking_projects.id, then serialize the joined row as IHrmTimeTrackingProject.ISummary.
+         * @x-autobe-database-schema-property project
+         * @x-autobe-specification Resolve the belongs-to relation
+         *   hrm_time_tracking_report_project_filters.project by joining
+         *   hrm_time_tracking_report_project_filters.hrm_time_tracking_project_id
+         *   to hrm_time_tracking_projects.id, then serialize the joined row as
+         *   IHrmTimeTrackingProject.ISummary.
      */
     project: IHrmTimeTrackingProject.ISummary;
 
     /**
      * Timestamp when this project filter selection was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_report_project_filters.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_report_project_filters.created_at.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when this project filter selection was last updated.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_report_project_filters.updated_at.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_report_project_filters.updated_at.
      */
     updated_at: string & tags.Format<"date-time">;
 
     /**
      * Soft-deletion timestamp for this project filter selection, or null when it is still active.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_report_project_filters.deleted_at. Return null when the project filter selection has not been soft deleted.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_report_project_filters.deleted_at. Return null
+         *   when the project filter selection has not been soft deleted.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };
@@ -129,8 +171,16 @@ export namespace IHrmTimeTrackingReportProjectFilter {
     /**
      * Identifier of the project that should become the selected project for this saved report filter.
      *
-     * @x-autobe-database-schema-property hrm_time_tracking_project_id
-     * @x-autobe-specification Direct mapping to hrm_time_tracking_report_project_filters.hrm_time_tracking_project_id. Accept a project UUID to replace the currently selected project for the existing filter row. Before persisting, verify the referenced hrm_time_tracking_projects row exists, is not soft-deleted, belongs to the same organization as the parent hrm_time_tracking_reports row identified by reportId, and does not create a duplicate active pair of (hrm_time_tracking_report_id, hrm_time_tracking_project_id).
+         * @x-autobe-database-schema-property hrm_time_tracking_project_id
+         * @x-autobe-specification Direct mapping to
+         *   hrm_time_tracking_report_project_filters.hrm_time_tracking_project_id.
+         *   Accept a project UUID to replace the currently selected project for
+         *   the existing filter row. Before persisting, verify the referenced
+         *   hrm_time_tracking_projects row exists, is not soft-deleted, belongs
+         *   to the same organization as the parent hrm_time_tracking_reports
+         *   row identified by reportId, and does not create a duplicate active
+         *   pair of (hrm_time_tracking_report_id,
+         *   hrm_time_tracking_project_id).
      */
     hrm_time_tracking_project_id?: (string & tags.Format<"uuid">) | undefined;
   };
@@ -142,7 +192,16 @@ export namespace IHrmTimeTrackingReportProjectFilter {
     /**
      * List of project identifiers to add to the selected report's saved project filter set.
      *
-     * @x-autobe-specification Interpret `projectIds` as the set of project UUIDs to attach to the parent report identified by the `reportId` path parameter. For each unique UUID in the array, verify that the referenced `hrm_time_tracking_projects.id` exists and belongs to the same organization as the parent `hrm_time_tracking_reports` record, then create one `hrm_time_tracking_report_project_filters` row with that UUID stored in `hrm_time_tracking_project_id`. Reject an empty array, reject duplicate UUIDs within the same request body, and reject any UUID already linked to the same report by an active filter row.
+         * @x-autobe-specification Interpret `projectIds` as the set of project
+         *   UUIDs to attach to the parent report identified by the `reportId`
+         *   path parameter. For each unique UUID in the array, verify that the
+         *   referenced `hrm_time_tracking_projects.id` exists and belongs to
+         *   the same organization as the parent `hrm_time_tracking_reports`
+         *   record, then create one `hrm_time_tracking_report_project_filters`
+         *   row with that UUID stored in `hrm_time_tracking_project_id`. Reject
+         *   an empty array, reject duplicate UUIDs within the same request
+         *   body, and reject any UUID already linked to the same report by an
+         *   active filter row.
      */
     projectIds: (string & tags.Format<"uuid">)[] &
       tags.MinItems<1> &

@@ -19,7 +19,9 @@ export type IShoppingMallSellerDashboard = {
    *
    * This metric includes all products in the seller's catalog, regardless of their current status (active, soft-deleted, or draft). It provides a quick overview of the seller's total product inventory on the platform.
    *
-   * @x-autobe-specification Computed aggregation: COUNT(*) FROM shopping_mall_products WHERE shopping_mall_seller_id = current_seller_id. Returns 0 if no products exist for the seller.
+     * @x-autobe-specification Computed aggregation: COUNT(*) FROM
+     *   shopping_mall_products WHERE shopping_mall_seller_id =
+     *   current_seller_id. Returns 0 if no products exist for the seller.
    */
   totalProducts: number & tags.Type<"int32"> & tags.Minimum<0>;
 
@@ -28,7 +30,10 @@ export type IShoppingMallSellerDashboard = {
    *
    * This metric represents the cumulative number of individual product variants purchased by customers from this seller. Each order item is counted separately, so if a customer orders 3 units of the same variant in one order, it counts as 1 order item (not 3).
    *
-   * @x-autobe-specification Computed aggregation: COUNT(*) FROM shopping_mall_order_items WHERE shopping_mall_seller_id = current_seller_id. Returns 0 if no order items exist for the seller's products.
+     * @x-autobe-specification Computed aggregation: COUNT(*) FROM
+     *   shopping_mall_order_items WHERE shopping_mall_seller_id =
+     *   current_seller_id. Returns 0 if no order items exist for the seller's
+     *   products.
    */
   totalOrderItems: number & tags.Type<"int32"> & tags.Minimum<0>;
 
@@ -37,7 +42,13 @@ export type IShoppingMallSellerDashboard = {
    *
    * This metric shows how many order item cancellation requests from customers are still in 'pending' status and require the seller's response. Sellers should prioritize reviewing these requests to maintain good customer service and avoid potential disputes.
    *
-   * @x-autobe-specification Computed aggregation: COUNT(*) FROM shopping_mall_cancellation_requests JOIN shopping_mall_order_items ON shopping_mall_cancellation_requests.shopping_mall_order_item_id = shopping_mall_order_items.id WHERE shopping_mall_order_items.shopping_mall_seller_id = current_seller_id AND shopping_mall_cancellation_requests.status = 'pending'. Returns 0 if no pending cancellation requests exist.
+     * @x-autobe-specification Computed aggregation: COUNT(*) FROM
+     *   shopping_mall_cancellation_requests JOIN shopping_mall_order_items ON
+     *   shopping_mall_cancellation_requests.shopping_mall_order_item_id =
+     *   shopping_mall_order_items.id WHERE
+     *   shopping_mall_order_items.shopping_mall_seller_id = current_seller_id
+     *   AND shopping_mall_cancellation_requests.status = 'pending'. Returns 0
+     *   if no pending cancellation requests exist.
    */
   pendingCancellationRequests: number & tags.Type<"int32"> & tags.Minimum<0>;
 
@@ -46,7 +57,13 @@ export type IShoppingMallSellerDashboard = {
    *
    * This metric shows how many refund requests from customers for delivered order items are still in 'pending' status and require the seller's response. Sellers should review these requests promptly to resolve customer concerns and maintain trust.
    *
-   * @x-autobe-specification Computed aggregation: COUNT(*) FROM shopping_mall_refund_requests JOIN shopping_mall_order_items ON shopping_mall_refund_requests.shopping_mall_order_item_id = shopping_mall_order_items.id WHERE shopping_mall_order_items.shopping_mall_seller_id = current_seller_id AND shopping_mall_refund_requests.status = 'pending'. Returns 0 if no pending refund requests exist.
+     * @x-autobe-specification Computed aggregation: COUNT(*) FROM
+     *   shopping_mall_refund_requests JOIN shopping_mall_order_items ON
+     *   shopping_mall_refund_requests.shopping_mall_order_item_id =
+     *   shopping_mall_order_items.id WHERE
+     *   shopping_mall_order_items.shopping_mall_seller_id = current_seller_id
+     *   AND shopping_mall_refund_requests.status = 'pending'. Returns 0 if no
+     *   pending refund requests exist.
    */
   pendingRefundRequests: number & tags.Type<"int32"> & tags.Minimum<0>;
 };

@@ -40,9 +40,10 @@ export class RedditcommunityMemberPostsCommentsReportsController {
    * @param postId The ID of the post containing the reported comment.
    * @param commentId The ID of the comment to report.
    * @param body The reason for reporting the comment.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Create a new reddit_community_comment_reports record.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Create a new reddit_community_comment_reports
+     *   record.
    *
    * 1. Validate postId exists and contains the specified commentId
    * 2. Validate commentId exists and is accessible by the authenticated member
@@ -95,9 +96,10 @@ export class RedditcommunityMemberPostsCommentsReportsController {
    * @param postId UUID of the parent post for path context. Must match the post that the comment belongs to.
    * @param commentId UUID of the comment being reported. This is the primary filter for the report list.
    * @param body Search criteria including status filter, reporter filter, date range filters, pagination parameters, and sort order options.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query reddit_community_reports table where target_comment_id equals the commentId path parameter.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query reddit_community_reports table where
+     *   target_comment_id equals the commentId path parameter.
    *
    * Apply optional filters:
    * - status_id: filter by report status (0=pending, 1=approved, 2=dismissed)
@@ -162,9 +164,10 @@ export class RedditcommunityMemberPostsCommentsReportsController {
    * @param postId The unique identifier of the post where the reported comment exists.
    * @param commentId The unique identifier of the reported comment.
    * @param reportId The unique identifier of the report to retrieve.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Fetch a single report by ID from the reddit_community_reports table with soft-delete filtering.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Fetch a single report by ID from the
+     *   reddit_community_reports table with soft-delete filtering.
    *
    * Implementation steps:
    * 1. Validate path parameters: postId, commentId, reportId (UUID format)

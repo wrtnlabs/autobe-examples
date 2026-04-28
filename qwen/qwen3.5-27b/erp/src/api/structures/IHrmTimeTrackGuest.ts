@@ -14,8 +14,9 @@ export type IHrmTimeTrackGuest = {
   /**
    * Unique identifier of the guest invitation record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from hrm_time_track_guests.id. Primary key, UUID format.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from hrm_time_track_guests.id.
+     *   Primary key, UUID format.
    */
   id: string & tags.Format<"uuid">;
 
@@ -24,8 +25,9 @@ export type IHrmTimeTrackGuest = {
    *
    * This is the email address that was invited to join the organization. When the guest creates an account using this email address, they will be automatically added to the organization. The email must be unique across all pending invitations.
    *
-   * @x-autobe-database-schema-property email
-   * @x-autobe-specification Direct mapping from hrm_time_track_guests.email. Unique constraint across all pending invitations.
+     * @x-autobe-database-schema-property email
+     * @x-autobe-specification Direct mapping from hrm_time_track_guests.email.
+     *   Unique constraint across all pending invitations.
    */
   email: string & tags.Format<"email">;
 
@@ -34,8 +36,9 @@ export type IHrmTimeTrackGuest = {
    *
    * Valid values are 'pending' for active invitations awaiting acceptance, 'accepted' for invitations that have been consumed during account creation, and 'expired' for invitations that have passed their expiration date.
    *
-   * @x-autobe-database-schema-property status
-   * @x-autobe-specification Direct mapping from hrm_time_track_guests.status. Valid values: 'pending', 'accepted', 'expired'.
+     * @x-autobe-database-schema-property status
+     * @x-autobe-specification Direct mapping from hrm_time_track_guests.status.
+     *   Valid values: 'pending', 'accepted', 'expired'.
    */
   status: string;
 
@@ -44,24 +47,29 @@ export type IHrmTimeTrackGuest = {
    *
    * Invitations that have not been accepted by this timestamp are automatically marked as expired. This ensures that old invitations do not remain valid indefinitely.
    *
-   * @x-autobe-database-schema-property expires_at
-   * @x-autobe-specification Direct mapping from hrm_time_track_guests.expires_at. DateTime format.
+     * @x-autobe-database-schema-property expires_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_guests.expires_at. DateTime format.
    */
   expires_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the invitation was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from hrm_time_track_guests.created_at. DateTime format, immutable after creation.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_guests.created_at. DateTime format, immutable after
+     *   creation.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the invitation was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from hrm_time_track_guests.updated_at. DateTime format, updated on any modification.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_guests.updated_at. DateTime format, updated on any
+     *   modification.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -70,8 +78,10 @@ export type IHrmTimeTrackGuest = {
    *
    * Null indicates an active invitation. When set, the invitation is considered deleted but the record remains in the database for audit purposes.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from hrm_time_track_guests.deleted_at. DateTime format, nullable. Null indicates active invitation.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_guests.deleted_at. DateTime format, nullable. Null
+     *   indicates active invitation.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 
@@ -80,8 +90,10 @@ export type IHrmTimeTrackGuest = {
    *
    * This is the organization that created the guest invitation. When the guest accepts the invitation by creating an account, they will be added as a member of this organization.
    *
-   * @x-autobe-database-schema-property organization
-   * @x-autobe-specification Relation via JOIN on hrm_time_track_organization_id to hrm_time_track_organizations.id. Returns IHrmTimeTrackOrganization.ISummary format.
+     * @x-autobe-database-schema-property organization
+     * @x-autobe-specification Relation via JOIN on
+     *   hrm_time_track_organization_id to hrm_time_track_organizations.id.
+     *   Returns IHrmTimeTrackOrganization.ISummary format.
    */
   organization: IHrmTimeTrackOrganization.ISummary;
 
@@ -90,8 +102,9 @@ export type IHrmTimeTrackGuest = {
    *
    * This is the role definition that will be granted to the user when they create an account and accept the invitation. The role determines the member's permissions within the organization.
    *
-   * @x-autobe-database-schema-property role
-   * @x-autobe-specification Relation via JOIN on hrm_time_track_role_id to hrm_time_track_roles.id. Returns IHrmTimeTrackRole.ISummary format.
+     * @x-autobe-database-schema-property role
+     * @x-autobe-specification Relation via JOIN on hrm_time_track_role_id to
+     *   hrm_time_track_roles.id. Returns IHrmTimeTrackRole.ISummary format.
    */
   role: IHrmTimeTrackRole.ISummary;
 };
@@ -111,7 +124,11 @@ export namespace IHrmTimeTrackGuest {
      *
      * The refresh token must be valid and the associated session must have an expired_at timestamp in the future. Upon successful validation, new access and refresh tokens are generated with updated expiration times.
      *
-     * @x-autobe-specification JWT refresh token from previous authentication. This token is decoded to extract guest session ID and email, then validated against hrm_time_track_guest_sessions table. The session must exist and expired_at must be in the future. Upon successful validation, new JWT tokens are generated.
+         * @x-autobe-specification JWT refresh token from previous
+         *   authentication. This token is decoded to extract guest session ID
+         *   and email, then validated against hrm_time_track_guest_sessions
+         *   table. The session must exist and expired_at must be in the future.
+         *   Upon successful validation, new JWT tokens are generated.
      */
     refresh_token: string;
   };
@@ -129,8 +146,9 @@ export namespace IHrmTimeTrackGuest {
      *
      * This UUID serves as the primary key for identifying and referencing guest invitations across the system.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from hrm_time_track_guests.id. Primary key UUID.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from hrm_time_track_guests.id.
+         *   Primary key UUID.
      */
     id: string & tags.Format<"uuid">;
 
@@ -139,8 +157,9 @@ export namespace IHrmTimeTrackGuest {
      *
      * This is the email address that was invited to join the organization. When the guest creates an account using this email address, they will be automatically added to the organization.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from hrm_time_track_guests.email. Unique constraint on email address.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_guests.email. Unique constraint on email address.
      */
     email: string;
 
@@ -149,8 +168,10 @@ export namespace IHrmTimeTrackGuest {
      *
      * Valid values are 'pending' for active invitations awaiting acceptance, 'accepted' for invitations that have been consumed during account creation, and 'expired' for invitations that have passed their expiration date.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from hrm_time_track_guests.status. Valid values: 'pending', 'accepted', 'expired'.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_guests.status. Valid values: 'pending', 'accepted',
+         *   'expired'.
      */
     status: string;
 
@@ -159,8 +180,9 @@ export namespace IHrmTimeTrackGuest {
      *
      * Invitations that have not been accepted by this timestamp are automatically marked as expired. This ensures that old invitations do not remain valid indefinitely.
      *
-     * @x-autobe-database-schema-property expires_at
-     * @x-autobe-specification Direct mapping from hrm_time_track_guests.expires_at. DateTime in ISO 8601 format.
+         * @x-autobe-database-schema-property expires_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_guests.expires_at. DateTime in ISO 8601 format.
      */
     expires_at: string & tags.Format<"date-time">;
 
@@ -169,8 +191,10 @@ export namespace IHrmTimeTrackGuest {
      *
      * This timestamp is recorded automatically when the invitation is first created and cannot be modified.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from hrm_time_track_guests.created_at. DateTime in ISO 8601 format. Immutable after creation.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_guests.created_at. DateTime in ISO 8601 format.
+         *   Immutable after creation.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -179,8 +203,10 @@ export namespace IHrmTimeTrackGuest {
      *
      * When set, the invitation is considered deleted but the record remains in the database for audit purposes. Null indicates the invitation is active.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from hrm_time_track_guests.deleted_at. Nullable DateTime in ISO 8601 format. Null indicates active invitation.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_guests.deleted_at. Nullable DateTime in ISO 8601
+         *   format. Null indicates active invitation.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
 
@@ -189,8 +215,11 @@ export namespace IHrmTimeTrackGuest {
      *
      * This is the organization that created the guest invitation. When the guest accepts the invitation by creating an account, they will be added as a member of this organization.
      *
-     * @x-autobe-database-schema-property organization
-     * @x-autobe-specification Relation mapping from hrm_time_track_guests.organization. JOIN to hrm_time_track_organizations table. Returns IHrmTimeTrackOrganization.ISummary.
+         * @x-autobe-database-schema-property organization
+         * @x-autobe-specification Relation mapping from
+         *   hrm_time_track_guests.organization. JOIN to
+         *   hrm_time_track_organizations table. Returns
+         *   IHrmTimeTrackOrganization.ISummary.
      */
     organization: IHrmTimeTrackOrganization.ISummary;
 
@@ -199,8 +228,10 @@ export namespace IHrmTimeTrackGuest {
      *
      * This foreign key references the role definition that will be granted to the user when they create an account and accept the invitation. The role determines the member's permissions within the organization.
      *
-     * @x-autobe-database-schema-property role
-     * @x-autobe-specification Relation mapping from hrm_time_track_guests.role. JOIN to hrm_time_track_roles table. Returns IHrmTimeTrackRole.ISummary.
+         * @x-autobe-database-schema-property role
+         * @x-autobe-specification Relation mapping from
+         *   hrm_time_track_guests.role. JOIN to hrm_time_track_roles table.
+         *   Returns IHrmTimeTrackRole.ISummary.
      */
     role: IHrmTimeTrackRole.ISummary;
   };
@@ -218,7 +249,11 @@ export namespace IHrmTimeTrackGuest {
      *
      * This email must match a pending invitation in the system. The email is used both to locate the invitation record and to create the new user account. The email address will be unique across all member accounts in the system.
      *
-     * @x-autobe-specification Used to lookup invitation in hrm_time_track_guests.email, then creates account in hrm_time_track_members.email. Must match a pending invitation record. This email is used both to locate the invitation and create the new member account.
+         * @x-autobe-specification Used to lookup invitation in
+         *   hrm_time_track_guests.email, then creates account in
+         *   hrm_time_track_members.email. Must match a pending invitation
+         *   record. This email is used both to locate the invitation and create
+         *   the new member account.
      */
     email: string & tags.Format<"email">;
 
@@ -227,7 +262,10 @@ export namespace IHrmTimeTrackGuest {
      *
      * This token proves that the recipient has access to the invited email address and is authorized to accept the invitation. The token is validated against the invitation record in the system. Without a valid token, the invitation cannot be accepted.
      *
-     * @x-autobe-specification Computed validation field - not stored as a column. Used to validate the invitation by matching against the invitation record's token. Backend retrieves invitation from hrm_time_track_guests using email and verifies token matches.
+         * @x-autobe-specification Computed validation field - not stored as a
+         *   column. Used to validate the invitation by matching against the
+         *   invitation record's token. Backend retrieves invitation from
+         *   hrm_time_track_guests using email and verifies token matches.
      */
     invitationToken: string;
 
@@ -236,7 +274,10 @@ export namespace IHrmTimeTrackGuest {
      *
      * This password will be securely hashed by the backend before storage. Choose a strong password that meets the organization's security requirements. The plain text password is never stored - only the cryptographic hash is retained in the database.
      *
-     * @x-autobe-specification Maps to hrm_time_track_members.password_hashed. Backend receives plain text password, applies secure hashing algorithm (e.g., bcrypt), and stores the hash. Plain text password is never stored.
+         * @x-autobe-specification Maps to
+         *   hrm_time_track_members.password_hashed. Backend receives plain text
+         *   password, applies secure hashing algorithm (e.g., bcrypt), and
+         *   stores the hash. Plain text password is never stored.
      */
     password: string & tags.Format<"password">;
 
@@ -245,7 +286,9 @@ export namespace IHrmTimeTrackGuest {
      *
      * This name will be visible to other members within the organization and used for identification in the system. It appears in user interfaces, reports, and communications. The name should be a recognizable identifier for the user.
      *
-     * @x-autobe-specification Maps to hrm_time_track_user_profiles.name. Creates the user's profile record with this display name. Used for identification across the platform.
+         * @x-autobe-specification Maps to hrm_time_track_user_profiles.name.
+         *   Creates the user's profile record with this display name. Used for
+         *   identification across the platform.
      */
     name: string;
 
@@ -254,7 +297,9 @@ export namespace IHrmTimeTrackGuest {
      *
      * This URL provides context about where the user is accepting the invitation from. It is captured for security tracking and session management purposes. The href helps identify the entry point into the authentication flow.
      *
-     * @x-autobe-specification Maps to hrm_time_track_guest_sessions.href. Captures the current page URL where the invitation acceptance occurred. Used for session context and security tracking.
+         * @x-autobe-specification Maps to hrm_time_track_guest_sessions.href.
+         *   Captures the current page URL where the invitation acceptance
+         *   occurred. Used for session context and security tracking.
      */
     href: string & tags.Format<"uri">;
 
@@ -263,7 +308,10 @@ export namespace IHrmTimeTrackGuest {
      *
      * This referrer URL provides additional context about the user's navigation path. It is captured for security tracking and analytics purposes. The referrer helps understand how users arrive at the invitation acceptance flow.
      *
-     * @x-autobe-specification Maps to hrm_time_track_guest_sessions.referrer. Captures the referring page URL that led to the invitation acceptance page. Used for session context and security tracking.
+         * @x-autobe-specification Maps to
+         *   hrm_time_track_guest_sessions.referrer. Captures the referring page
+         *   URL that led to the invitation acceptance page. Used for session
+         *   context and security tracking.
      */
     referrer: string & tags.Format<"uri">;
 
@@ -272,7 +320,10 @@ export namespace IHrmTimeTrackGuest {
      *
      * This IP address is captured for security tracking and session management. In Server-Side Rendering scenarios, the client may not know its own IP address, so this field is optional. If not provided, the server will capture the IP address automatically as a fallback.
      *
-     * @x-autobe-specification Maps to hrm_time_track_guest_sessions.ip. Optional field - in Server-Side Rendering scenarios, client cannot know its own IP. Server captures IP as fallback if not provided (body.ip ?? serverIp). Format: IPv4 address.
+         * @x-autobe-specification Maps to hrm_time_track_guest_sessions.ip.
+         *   Optional field - in Server-Side Rendering scenarios, client cannot
+         *   know its own IP. Server captures IP as fallback if not provided
+         *   (body.ip ?? serverIp). Format: IPv4 address.
      */
     ip?: (string & tags.Format<"ipv4">) | undefined;
   };
@@ -290,8 +341,9 @@ export namespace IHrmTimeTrackGuest {
      *
      * This UUID identifies the specific guest invitation that was accepted. It is used to track the invitation throughout its lifecycle and can be referenced in audit logs and related operations.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from hrm_time_track_guests.id. Primary key identifying the guest invitation record.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from hrm_time_track_guests.id.
+         *   Primary key identifying the guest invitation record.
      */
     id: string & tags.Format<"uuid">;
 
@@ -300,8 +352,10 @@ export namespace IHrmTimeTrackGuest {
      *
      * This email address was used for the original invitation and becomes the user's authentication credential upon account creation. It is unique across all pending invitations in the system.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from hrm_time_track_guests.email. The email address associated with the guest invitation and newly created user account.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_guests.email. The email address associated with the
+         *   guest invitation and newly created user account.
      */
     email: string & tags.Format<"email">;
 
@@ -310,8 +364,10 @@ export namespace IHrmTimeTrackGuest {
      *
      * Valid values are 'pending' for active invitations awaiting acceptance, 'accepted' for invitations that have been consumed during account creation, and 'expired' for invitations that have passed their expiration date.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from hrm_time_track_guests.status. Invitation status indicating current state (pending, accepted, or expired).
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_guests.status. Invitation status indicating current
+         *   state (pending, accepted, or expired).
      */
     status: string;
 
@@ -320,8 +376,10 @@ export namespace IHrmTimeTrackGuest {
      *
      * Invitations that have not been accepted by this timestamp are automatically marked as expired. This ensures that old invitations do not remain valid indefinitely. Format is ISO 8601 date-time.
      *
-     * @x-autobe-database-schema-property expires_at
-     * @x-autobe-specification Direct mapping from hrm_time_track_guests.expires_at. Timestamp when the invitation expires and can no longer be accepted.
+         * @x-autobe-database-schema-property expires_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_guests.expires_at. Timestamp when the invitation
+         *   expires and can no longer be accepted.
      */
     expires_at: string & tags.Format<"date-time">;
 
@@ -330,8 +388,10 @@ export namespace IHrmTimeTrackGuest {
      *
      * This immutable timestamp records when the invitation was first generated and sent to the guest. Used for audit trail and sorting invitations by creation date. Format is ISO 8601 date-time.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from hrm_time_track_guests.created_at. Timestamp when the invitation was originally created.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_guests.created_at. Timestamp when the invitation was
+         *   originally created.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -340,8 +400,10 @@ export namespace IHrmTimeTrackGuest {
      *
      * This timestamp is updated whenever any field of the invitation is modified, including status changes during acceptance. Used to track invitation modifications and detect stale data. Format is ISO 8601 date-time.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from hrm_time_track_guests.updated_at. Timestamp when the invitation was last modified.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_guests.updated_at. Timestamp when the invitation was
+         *   last modified.
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -350,8 +412,10 @@ export namespace IHrmTimeTrackGuest {
      *
      * When set, the invitation is considered deleted but the record remains in the database for audit purposes. Null indicates an active invitation. Format is ISO 8601 date-time when present.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from hrm_time_track_guests.deleted_at. Nullable timestamp for soft deletion. Null indicates active invitation.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_guests.deleted_at. Nullable timestamp for soft
+         *   deletion. Null indicates active invitation.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
 
@@ -360,8 +424,12 @@ export namespace IHrmTimeTrackGuest {
      *
      * This nested object contains summary information about the organization the guest is being invited to join. The organization context determines the guest's access scope and available features upon acceptance.
      *
-     * @x-autobe-database-schema-property organization
-     * @x-autobe-specification Relation mapping from hrm_time_track_guests.organization relation. FK column hrm_time_track_organization_id is used to join with hrm_time_track_organizations table. Returns IHrmTimeTrackOrganization.ISummary object.
+         * @x-autobe-database-schema-property organization
+         * @x-autobe-specification Relation mapping from
+         *   hrm_time_track_guests.organization relation. FK column
+         *   hrm_time_track_organization_id is used to join with
+         *   hrm_time_track_organizations table. Returns
+         *   IHrmTimeTrackOrganization.ISummary object.
      */
     organization: IHrmTimeTrackOrganization.ISummary;
 
@@ -370,15 +438,19 @@ export namespace IHrmTimeTrackGuest {
      *
      * This nested object contains summary information about the role that will be granted to the user upon account creation. The role determines the member's permissions and access level within the organization.
      *
-     * @x-autobe-database-schema-property role
-     * @x-autobe-specification Relation mapping from hrm_time_track_guests.role relation. FK column hrm_time_track_role_id is used to join with hrm_time_track_roles table. Returns IHrmTimeTrackRole.ISummary object.
+         * @x-autobe-database-schema-property role
+         * @x-autobe-specification Relation mapping from
+         *   hrm_time_track_guests.role relation. FK column
+         *   hrm_time_track_role_id is used to join with hrm_time_track_roles
+         *   table. Returns IHrmTimeTrackRole.ISummary object.
      */
     role: IHrmTimeTrackRole.ISummary;
 
     /**
      * Authorization token.
      *
-     * @x-autobe-specification Authorization token comes from the session table.
+         * @x-autobe-specification Authorization token comes from the session
+         *   table.
      */
     token: IAuthorizationToken;
   };
@@ -396,7 +468,9 @@ export namespace IHrmTimeTrackGuest {
      *
      * Specifies which page of results to retrieve. Page numbering starts from 1, so the first page is page 1. Combined with the limit parameter, this determines which subset of matching records is returned. Use this parameter along with the pagination metadata in the response to navigate through all results.
      *
-     * @x-autobe-specification Pagination page number (1-indexed). Default value is 1. Used to calculate offset for database query: OFFSET = (page - 1) * limit. Validated to be >= 1.
+         * @x-autobe-specification Pagination page number (1-indexed). Default
+         *   value is 1. Used to calculate offset for database query: OFFSET =
+         *   (page - 1) * limit. Validated to be >= 1.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -405,7 +479,9 @@ export namespace IHrmTimeTrackGuest {
      *
      * Specifies the maximum number of guest invitation records to return in a single page. The actual number of records returned may be less than this value on the final page. Default is 20 records per page. Maximum allowed value is 100 to prevent excessive data transfer.
      *
-     * @x-autobe-specification Maximum number of records per page. Range: 1-100. Default value is 20. Used as LIMIT clause in database query. Validated to be between 1 and 100 inclusive.
+         * @x-autobe-specification Maximum number of records per page. Range:
+         *   1-100. Default value is 20. Used as LIMIT clause in database query.
+         *   Validated to be between 1 and 100 inclusive.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -416,7 +492,10 @@ export namespace IHrmTimeTrackGuest {
      *
      * Filters guest invitations by performing a case-insensitive partial match on the email address field. The search term can be a full email address or a partial string. For example, searching for 'john' will match 'john@example.com', 'john.doe@company.org', etc. Leave empty to retrieve all invitations without email filtering.
      *
-     * @x-autobe-specification Search term for filtering guest invitations by email address. Applied as case-insensitive LIKE query on the email column: WHERE email ILIKE '%{search}%'. Empty or null value means no search filter is applied.
+         * @x-autobe-specification Search term for filtering guest invitations
+         *   by email address. Applied as case-insensitive LIKE query on the
+         *   email column: WHERE email ILIKE '%{search}%'. Empty or null value
+         *   means no search filter is applied.
      */
     search?: string | undefined;
 
@@ -425,8 +504,13 @@ export namespace IHrmTimeTrackGuest {
      *
      * Restricts results to invitations with a specific status. Valid status values are: 'pending' for active invitations awaiting guest acceptance, 'accepted' for invitations that have been consumed when the guest created an account, and 'expired' for invitations that have passed their expiration date. Leave empty to retrieve invitations of all statuses.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Filter guest invitations by invitation status. Exact match on the status column: WHERE status = '{status}'. Valid values: 'pending' (awaiting acceptance), 'accepted' (consumed during account creation), 'expired' (past expiration date). Empty or null value means no status filter is applied.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Filter guest invitations by invitation
+         *   status. Exact match on the status column: WHERE status =
+         *   '{status}'. Valid values: 'pending' (awaiting acceptance),
+         *   'accepted' (consumed during account creation), 'expired' (past
+         *   expiration date). Empty or null value means no status filter is
+         *   applied.
      */
     status?: string | undefined;
 
@@ -435,8 +519,12 @@ export namespace IHrmTimeTrackGuest {
      *
      * Restricts results to guest invitations that were created after the specified date and time. Use ISO 8601 datetime format (e.g., '2024-01-15T00:00:00Z'). This is useful for retrieving invitations from a specific time period, such as all invitations sent in the last week or month. Combine with created_before for a date range filter.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Filter guest invitations created after the specified timestamp. Applied as greater-than comparison on created_at column: WHERE created_at > '{created_after}'. ISO 8601 datetime format required (e.g., '2024-01-15T00:00:00Z'). Empty or null value means no lower bound filter is applied.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Filter guest invitations created after the
+         *   specified timestamp. Applied as greater-than comparison on
+         *   created_at column: WHERE created_at > '{created_after}'. ISO 8601
+         *   datetime format required (e.g., '2024-01-15T00:00:00Z'). Empty or
+         *   null value means no lower bound filter is applied.
      */
     created_after?: (string & tags.Format<"date-time">) | undefined;
 
@@ -445,8 +533,12 @@ export namespace IHrmTimeTrackGuest {
      *
      * Restricts results to guest invitations that were created before the specified date and time. Use ISO 8601 datetime format (e.g., '2024-01-15T23:59:59Z'). This is useful for retrieving invitations up to a specific point in time. Combine with created_after for a date range filter.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Filter guest invitations created before the specified timestamp. Applied as less-than comparison on created_at column: WHERE created_at < '{created_before}'. ISO 8601 datetime format required (e.g., '2024-01-15T23:59:59Z'). Empty or null value means no upper bound filter is applied.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Filter guest invitations created before the
+         *   specified timestamp. Applied as less-than comparison on created_at
+         *   column: WHERE created_at < '{created_before}'. ISO 8601 datetime
+         *   format required (e.g., '2024-01-15T23:59:59Z'). Empty or null value
+         *   means no upper bound filter is applied.
      */
     created_before?: (string & tags.Format<"date-time">) | undefined;
   };

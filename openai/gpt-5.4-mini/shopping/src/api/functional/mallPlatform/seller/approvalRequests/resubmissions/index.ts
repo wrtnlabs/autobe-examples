@@ -19,7 +19,13 @@ import { IMallPlatformAdministratorApprovalRequest } from "../../../../../struct
  * @param props.body The applicant identity and reason used to create a new administrator approval request submission.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Create a new row in mall_platform_administrator_approval_requests with a pending status and the applicant-provided reason. Validate that the request is being made by an existing customer or seller account permitted to seek administrator access, and reject attempts from unavailable account states. If the domain model distinguishes applicant identity fields, map them from the create DTO and do not derive them from any previous completed request.
+ * @x-autobe-specification Create a new row in
+ *   mall_platform_administrator_approval_requests with a pending status and the
+ *   applicant-provided reason. Validate that the request is being made by an
+ *   existing customer or seller account permitted to seek administrator access,
+ *   and reject attempts from unavailable account states. If the domain model
+ *   distinguishes applicant identity fields, map them from the create DTO and
+ *   do not derive them from any previous completed request.
  *
  * Before insertion, ensure there is no conflicting pending administrator approval request for the same applicant if the business rules prohibit duplicates. Never update a completed request; resubmission must always create a new record to preserve the approval/rejection history. Return the created request after persistence, including its current status and any review metadata that exists at creation time.
  * @path /mallPlatform/seller/approvalRequests/resubmissions

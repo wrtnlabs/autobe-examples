@@ -30,9 +30,10 @@ export class EcommercemallSuperadminAdminsController {
    *
    * @param connection
    * @param body Search criteria including optional filters for email, name, and status, along with pagination parameters for result set control.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor superAdmin
-   * @x-autobe-specification Query the ecommerce_mall_admins table with the following search criteria:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor superAdmin
+     * @x-autobe-specification Query the ecommerce_mall_admins table with the
+     *   following search criteria:
    *
    * 1. **Email Filter**: If email query is provided, search using case-insensitive partial match (LIKE %email%).
    *
@@ -80,9 +81,11 @@ export class EcommercemallSuperadminAdminsController {
    *
    * @param connection
    * @param adminId Unique identifier of the administrator account (UUID format).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor superAdmin
-   * @x-autobe-specification Query the ecommerce_mall_admins table filtering by id matching the adminId path parameter and deleted_at IS NULL to exclude soft-deleted records.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor superAdmin
+     * @x-autobe-specification Query the ecommerce_mall_admins table filtering
+     *   by id matching the adminId path parameter and deleted_at IS NULL to
+     *   exclude soft-deleted records.
    *
    * Validate that adminId is a valid UUID format. If no matching active administrator is found, return a 404 error with message "Administrator not found".
    *

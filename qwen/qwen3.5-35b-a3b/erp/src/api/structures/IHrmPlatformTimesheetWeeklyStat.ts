@@ -13,104 +13,129 @@ export type IHrmPlatformTimesheetWeeklyStat = {
   /**
    * The unique identifier of the weekly timesheet statistics record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from hrm_platform_timesheet_weekly_stats.id. UUID primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_timesheet_weekly_stats.id. UUID primary key.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * The unique identifier of the organization that owns this timesheet statistics record.
    *
-   * @x-autobe-database-schema-property organization_id
-   * @x-autobe-specification Direct mapping from hrm_platform_timesheet_weekly_stats.organization_id. UUID foreign key to organization.
+     * @x-autobe-database-schema-property organization_id
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_timesheet_weekly_stats.organization_id. UUID foreign key
+     *   to organization.
    */
   organization_id: string & tags.Format<"uuid">;
 
   /**
    * The unique identifier of the employee who owns this timesheet statistics record.
    *
-   * @x-autobe-database-schema-property employee_id
-   * @x-autobe-specification Direct mapping from hrm_platform_timesheet_weekly_stats.employee_id. UUID foreign key to employee.
+     * @x-autobe-database-schema-property employee_id
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_timesheet_weekly_stats.employee_id. UUID foreign key to
+     *   employee.
    */
   employee_id: string & tags.Format<"uuid">;
 
   /**
    * The Monday of the week covered by this aggregation (inclusive). This defines the start of the weekly period for which the aggregated statistics apply.
    *
-   * @x-autobe-database-schema-property week_start
-   * @x-autobe-specification Direct mapping from hrm_platform_timesheet_weekly_stats.week_start. ISO 8601 date-time representing the Monday of the week period.
+     * @x-autobe-database-schema-property week_start
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_timesheet_weekly_stats.week_start. ISO 8601 date-time
+     *   representing the Monday of the week period.
    */
   week_start: string & tags.Format<"date-time">;
 
   /**
    * The Sunday of the week covered by this aggregation (inclusive). Together with week_start, this defines the exact time range covered by the aggregated statistics.
    *
-   * @x-autobe-database-schema-property week_end
-   * @x-autobe-specification Direct mapping from hrm_platform_timesheet_weekly_stats.week_end. ISO 8601 date-time representing the Sunday of the week period.
+     * @x-autobe-database-schema-property week_end
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_timesheet_weekly_stats.week_end. ISO 8601 date-time
+     *   representing the Sunday of the week period.
    */
   week_end: string & tags.Format<"date-time">;
 
   /**
    * Total number of timesheets for this employee within the week period, regardless of status.
    *
-   * @x-autobe-database-schema-property timesheet_count
-   * @x-autobe-specification Direct mapping from hrm_platform_timesheet_weekly_stats.timesheet_count. Integer count of all timesheets within the week period.
+     * @x-autobe-database-schema-property timesheet_count
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_timesheet_weekly_stats.timesheet_count. Integer count of
+     *   all timesheets within the week period.
    */
   timesheet_count: number & tags.Type<"int32">;
 
   /**
    * Sum of all timelog durations in hours across all timesheets in this week. This is the primary metric for payroll calculations and reporting.
    *
-   * @x-autobe-database-schema-property total_hours
-   * @x-autobe-specification Direct mapping from hrm_platform_timesheet_weekly_stats.total_hours. Float representing sum of all timelog durations in hours across all timesheets in this week.
+     * @x-autobe-database-schema-property total_hours
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_timesheet_weekly_stats.total_hours. Float representing sum
+     *   of all timelog durations in hours across all timesheets in this week.
    */
   total_hours: number;
 
   /**
    * Sum of billable timelog durations in hours across all timesheets in this week. Represents time that can be charged to clients or projects.
    *
-   * @x-autobe-database-schema-property billable_hours
-   * @x-autobe-specification Direct mapping from hrm_platform_timesheet_weekly_stats.billable_hours. Float representing sum of billable timelog durations in hours.
+     * @x-autobe-database-schema-property billable_hours
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_timesheet_weekly_stats.billable_hours. Float representing
+     *   sum of billable timelog durations in hours.
    */
   billable_hours: number;
 
   /**
    * Number of timesheets in draft status within this week period. Draft timesheets are being prepared and not yet submitted for approval.
    *
-   * @x-autobe-database-schema-property draft_timesheet_count
-   * @x-autobe-specification Direct mapping from hrm_platform_timesheet_weekly_stats.draft_timesheet_count. Integer count of timesheets in draft status.
+     * @x-autobe-database-schema-property draft_timesheet_count
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_timesheet_weekly_stats.draft_timesheet_count. Integer
+     *   count of timesheets in draft status.
    */
   draft_timesheet_count: number & tags.Type<"int32">;
 
   /**
    * Number of timesheets in submitted status within this week period. These timesheets are awaiting manager approval.
    *
-   * @x-autobe-database-schema-property submitted_timesheet_count
-   * @x-autobe-specification Direct mapping from hrm_platform_timesheet_weekly_stats.submitted_timesheet_count. Integer count of timesheets in submitted status.
+     * @x-autobe-database-schema-property submitted_timesheet_count
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_timesheet_weekly_stats.submitted_timesheet_count. Integer
+     *   count of timesheets in submitted status.
    */
   submitted_timesheet_count: number & tags.Type<"int32">;
 
   /**
    * Number of timesheets in approved status within this week period. Approved timesheets are locked and their hours are considered final for payroll.
    *
-   * @x-autobe-database-schema-property approved_timesheet_count
-   * @x-autobe-specification Direct mapping from hrm_platform_timesheet_weekly_stats.approved_timesheet_count. Integer count of timesheets in approved status.
+     * @x-autobe-database-schema-property approved_timesheet_count
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_timesheet_weekly_stats.approved_timesheet_count. Integer
+     *   count of timesheets in approved status.
    */
   approved_timesheet_count: number & tags.Type<"int32">;
 
   /**
    * Number of timesheets in rejected status within this week period. Rejected timesheets have been returned to draft status with a rejection reason.
    *
-   * @x-autobe-database-schema-property rejected_timesheet_count
-   * @x-autobe-specification Direct mapping from hrm_platform_timesheet_weekly_stats.rejected_timesheet_count. Integer count of timesheets in rejected status.
+     * @x-autobe-database-schema-property rejected_timesheet_count
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_timesheet_weekly_stats.rejected_timesheet_count. Integer
+     *   count of timesheets in rejected status.
    */
   rejected_timesheet_count: number & tags.Type<"int32">;
 
   /**
    * Timestamp indicating when this aggregated record was last computed or refreshed. Used to determine the freshness of the aggregated data.
    *
-   * @x-autobe-database-schema-property last_refreshed_at
-   * @x-autobe-specification Direct mapping from hrm_platform_timesheet_weekly_stats.last_refreshed_at. ISO 8601 date-time indicating when this aggregated record was last computed.
+     * @x-autobe-database-schema-property last_refreshed_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_timesheet_weekly_stats.last_refreshed_at. ISO 8601
+     *   date-time indicating when this aggregated record was last computed.
    */
   last_refreshed_at: string & tags.Format<"date-time">;
 };
@@ -145,8 +170,9 @@ export namespace IHrmPlatformTimesheetWeeklyStat {
      *
      * The primary key uniquely identifies this aggregated weekly statistics entry across the organization's timesheet data. Used for referencing this specific week's statistics in API calls and audit trails.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from hrm_platform_timesheet_weekly_stats.id. UUID primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_timesheet_weekly_stats.id. UUID primary key.
      */
     id: string & tags.Format<"uuid">;
 
@@ -155,8 +181,11 @@ export namespace IHrmPlatformTimesheetWeeklyStat {
      *
      * Provides organizational context for the timesheet statistics, including the tenant boundary and multi-tenancy isolation. The organization reference enables navigation to organization details and enforces data access boundaries.
      *
-     * @x-autobe-database-schema-property organization
-     * @x-autobe-specification Join via organization_id foreign key to hrm_platform_organizations. Returns IHrmPlatformOrganization.ISummary with essential organization identification fields.
+         * @x-autobe-database-schema-property organization
+         * @x-autobe-specification Join via organization_id foreign key to
+         *   hrm_platform_organizations. Returns
+         *   IHrmPlatformOrganization.ISummary with essential organization
+         *   identification fields.
      */
     organization: IHrmPlatformOrganization.ISummary;
 
@@ -165,8 +194,10 @@ export namespace IHrmPlatformTimesheetWeeklyStat {
      *
      * Represents the individual whose work hours and timesheet status are summarized for the specified week period. The employee reference enables access to employee details and organizational assignment context.
      *
-     * @x-autobe-database-schema-property employee
-     * @x-autobe-specification Join via employee_id foreign key to hrm_platform_employees. Returns IHrmPlatformEmployee.ISummary with essential employee identification fields.
+         * @x-autobe-database-schema-property employee
+         * @x-autobe-specification Join via employee_id foreign key to
+         *   hrm_platform_employees. Returns IHrmPlatformEmployee.ISummary with
+         *   essential employee identification fields.
      */
     employee: IHrmPlatformEmployee.ISummary;
 
@@ -175,8 +206,10 @@ export namespace IHrmPlatformTimesheetWeeklyStat {
      *
      * Defines the start boundary of the weekly period for which the aggregated statistics apply. The week runs from this Monday 00:00 through the Sunday 23:59:59 defined by week_end. Used for time-based filtering and dashboard date range selection.
      *
-     * @x-autobe-database-schema-property week_start
-     * @x-autobe-specification Direct mapping from hrm_platform_timesheet_weekly_stats.week_start. ISO 8601 datetime representing the Monday (inclusive) of the week period.
+         * @x-autobe-database-schema-property week_start
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_timesheet_weekly_stats.week_start. ISO 8601 datetime
+         *   representing the Monday (inclusive) of the week period.
      */
     week_start: string & tags.Format<"date-time">;
 
@@ -185,8 +218,11 @@ export namespace IHrmPlatformTimesheetWeeklyStat {
      *
      * Defines the end boundary of the weekly period that corresponds to the week_start Monday. Together, week_start and week_end define the exact time range covered by this aggregated statistics record. The week_end is always exactly 6 days after week_start.
      *
-     * @x-autobe-database-schema-property week_end
-     * @x-autobe-specification Direct mapping from hrm_platform_timesheet_weekly_stats.week_end. ISO 8601 datetime representing the Sunday (inclusive) of the week period, exactly 6 days after week_start.
+         * @x-autobe-database-schema-property week_end
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_timesheet_weekly_stats.week_end. ISO 8601 datetime
+         *   representing the Sunday (inclusive) of the week period, exactly 6
+         *   days after week_start.
      */
     week_end: string & tags.Format<"date-time">;
 
@@ -195,8 +231,10 @@ export namespace IHrmPlatformTimesheetWeeklyStat {
      *
      * Counts all timesheets regardless of status that fall within the week_start to week_end range. This includes draft, submitted, approved, and rejected timesheets. A single employee can have multiple timesheets for the same week if they were submitted and rejected, then resubmitted.
      *
-     * @x-autobe-database-schema-property timesheet_count
-     * @x-autobe-specification Direct mapping from hrm_platform_timesheet_weekly_stats.timesheet_count. Integer count of all timesheets (regardless of status) within the week period.
+         * @x-autobe-database-schema-property timesheet_count
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_timesheet_weekly_stats.timesheet_count. Integer count
+         *   of all timesheets (regardless of status) within the week period.
      */
     timesheet_count: number & tags.Type<"int32">;
 
@@ -205,8 +243,12 @@ export namespace IHrmPlatformTimesheetWeeklyStat {
      *
      * Calculated by summing the duration field from all timelogs included in timesheets that fall within the week period. The duration is stored in minutes in the source timelogs table and converted to hours for this aggregated view (rounded to 2 decimal places). This is the primary metric used for payroll calculations, reporting, and dashboard visualizations.
      *
-     * @x-autobe-database-schema-property total_hours
-     * @x-autobe-specification Direct mapping from hrm_platform_timesheet_weekly_stats.total_hours. Sum of all timelog durations in hours across all timesheets in this week. Calculated from hrm_platform_timelogs duration field converted from minutes to hours.
+         * @x-autobe-database-schema-property total_hours
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_timesheet_weekly_stats.total_hours. Sum of all timelog
+         *   durations in hours across all timesheets in this week. Calculated
+         *   from hrm_platform_timelogs duration field converted from minutes to
+         *   hours.
      */
     total_hours: number;
 
@@ -215,8 +257,11 @@ export namespace IHrmPlatformTimesheetWeeklyStat {
      *
      * Calculated by summing the duration of only those timelogs where the billable flag is true. Billable hours represent time that can be charged to clients or projects and are typically used for billing calculations and project profitability analysis. Non-billable hours (project work, internal meetings, training) are excluded from this count but included in total_hours.
      *
-     * @x-autobe-database-schema-property billable_hours
-     * @x-autobe-specification Direct mapping from hrm_platform_timesheet_weekly_stats.billable_hours. Sum of billable timelog durations in hours across all timesheets in this week. Only includes timelogs where billable flag is true.
+         * @x-autobe-database-schema-property billable_hours
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_timesheet_weekly_stats.billable_hours. Sum of billable
+         *   timelog durations in hours across all timesheets in this week. Only
+         *   includes timelogs where billable flag is true.
      */
     billable_hours: number;
 
@@ -225,8 +270,11 @@ export namespace IHrmPlatformTimesheetWeeklyStat {
      *
      * Counts timesheets that are currently being prepared and not yet submitted for approval. Draft timesheets can still be modified by the employee and are not included in total_hours for approval purposes until submitted. This count helps managers identify employees who have not yet submitted their timesheets for the week.
      *
-     * @x-autobe-database-schema-property draft_timesheet_count
-     * @x-autobe-specification Direct mapping from hrm_platform_timesheet_weekly_stats.draft_timesheet_count. Integer count of timesheets currently in draft status within the week period.
+         * @x-autobe-database-schema-property draft_timesheet_count
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_timesheet_weekly_stats.draft_timesheet_count. Integer
+         *   count of timesheets currently in draft status within the week
+         *   period.
      */
     draft_timesheet_count: number & tags.Type<"int32">;
 
@@ -235,8 +283,11 @@ export namespace IHrmPlatformTimesheetWeeklyStat {
      *
      * Counts timesheets that have been submitted by the employee and are awaiting manager approval. Submitted timesheets cannot be modified by the employee and their total_hours are included in the weekly metrics. This count is used in dashboards to track pending approvals and manager workload.
      *
-     * @x-autobe-database-schema-property submitted_timesheet_count
-     * @x-autobe-specification Direct mapping from hrm_platform_timesheet_weekly_stats.submitted_timesheet_count. Integer count of timesheets currently in submitted status within the week period.
+         * @x-autobe-database-schema-property submitted_timesheet_count
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_timesheet_weekly_stats.submitted_timesheet_count.
+         *   Integer count of timesheets currently in submitted status within
+         *   the week period.
      */
     submitted_timesheet_count: number & tags.Type<"int32">;
 
@@ -245,8 +296,11 @@ export namespace IHrmPlatformTimesheetWeeklyStat {
      *
      * Counts timesheets that have been reviewed and approved by authorized personnel. Approved timesheets are locked from modification and their hours are considered final for payroll and reporting purposes. This is the primary metric for completed timesheet work. Approved timesheets contribute their total_hours to payroll calculations and organizational reporting.
      *
-     * @x-autobe-database-schema-property approved_timesheet_count
-     * @x-autobe-specification Direct mapping from hrm_platform_timesheet_weekly_stats.approved_timesheet_count. Integer count of timesheets currently in approved status within the week period.
+         * @x-autobe-database-schema-property approved_timesheet_count
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_timesheet_weekly_stats.approved_timesheet_count.
+         *   Integer count of timesheets currently in approved status within the
+         *   week period.
      */
     approved_timesheet_count: number & tags.Type<"int32">;
 
@@ -255,8 +309,11 @@ export namespace IHrmPlatformTimesheetWeeklyStat {
      *
      * Counts timesheets that have been rejected and returned to draft status. Rejected timesheets contain a rejection reason and must be modified and resubmitted. This count helps identify timesheets that require employee attention and manager follow-up. Rejected timesheets are not included in payroll calculations until they are resubmitted and approved.
      *
-     * @x-autobe-database-schema-property rejected_timesheet_count
-     * @x-autobe-specification Direct mapping from hrm_platform_timesheet_weekly_stats.rejected_timesheet_count. Integer count of timesheets currently in rejected status within the week period.
+         * @x-autobe-database-schema-property rejected_timesheet_count
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_timesheet_weekly_stats.rejected_timesheet_count.
+         *   Integer count of timesheets currently in rejected status within the
+         *   week period.
      */
     rejected_timesheet_count: number & tags.Type<"int32">;
 
@@ -265,8 +322,11 @@ export namespace IHrmPlatformTimesheetWeeklyStat {
      *
      * This timestamp is used to determine the freshness of the aggregated data and whether a refresh is needed. Materialized views are typically refreshed on a schedule (e.g., nightly) or on-demand after bulk data operations. Dashboard queries can use this timestamp to decide whether to trust the cached data or trigger a refresh.
      *
-     * @x-autobe-database-schema-property last_refreshed_at
-     * @x-autobe-specification Direct mapping from hrm_platform_timesheet_weekly_stats.last_refreshed_at. ISO 8601 datetime when this aggregated record was last computed or refreshed by the external refresh process.
+         * @x-autobe-database-schema-property last_refreshed_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_timesheet_weekly_stats.last_refreshed_at. ISO 8601
+         *   datetime when this aggregated record was last computed or refreshed
+         *   by the external refresh process.
      */
     last_refreshed_at: string & tags.Format<"date-time">;
   };
@@ -309,7 +369,10 @@ export namespace IHrmPlatformTimesheetWeeklyStat {
      *
      * Filters by the Monday (inclusive) of the week period. Accepts gte (greater than or equal) and lte (less than or equal) comparison operators to find weeks within a date range. The week_start represents the Monday boundary of the Monday-to-Sunday week period.
      *
-     * @x-autobe-specification Computed filter. week_start is the Monday of the week period. Range filtering uses gte (weeks starting on or after) and lte (weeks starting on or before). Must match ISO 8601 date-time format.
+         * @x-autobe-specification Computed filter. week_start is the Monday of
+         *   the week period. Range filtering uses gte (weeks starting on or
+         *   after) and lte (weeks starting on or before). Must match ISO 8601
+         *   date-time format.
      */
     week_start?:
       | {
@@ -330,7 +393,10 @@ export namespace IHrmPlatformTimesheetWeeklyStat {
      *
      * Filters by the Sunday (inclusive) of the week period. Accepts gte (greater than or equal) and lte (less than or equal) comparison operators to find weeks within a date range. The week_end represents the Sunday boundary of the Monday-to-Sunday week period, always exactly 6 days after week_start.
      *
-     * @x-autobe-specification Computed filter. week_end is the Sunday of the week period. Range filtering uses gte (weeks ending on or after) and lte (weeks ending on or before). Must match ISO 8601 date-time format.
+         * @x-autobe-specification Computed filter. week_end is the Sunday of
+         *   the week period. Range filtering uses gte (weeks ending on or
+         *   after) and lte (weeks ending on or before). Must match ISO 8601
+         *   date-time format.
      */
     week_end?:
       | {
@@ -351,7 +417,11 @@ export namespace IHrmPlatformTimesheetWeeklyStat {
      *
      * Filters by the total number of timesheets (draft + submitted + approved + rejected) within the week period. Accepts gte and lte comparison operators to find records meeting minimum or maximum count thresholds.
      *
-     * @x-autobe-specification Computed count from hrm_platform_timesheet_weekly_stats.timesheet_count. Range filtering uses gte (greater than or equal) and lte (less than or equal) comparison operators to filter by minimum or maximum timesheet count values.
+         * @x-autobe-specification Computed count from
+         *   hrm_platform_timesheet_weekly_stats.timesheet_count. Range
+         *   filtering uses gte (greater than or equal) and lte (less than or
+         *   equal) comparison operators to filter by minimum or maximum
+         *   timesheet count values.
      */
     timesheet_count?:
       | {
@@ -372,7 +442,10 @@ export namespace IHrmPlatformTimesheetWeeklyStat {
      *
      * Filters by the number of timesheets in draft status (not yet submitted). Accepts gte and lte comparison operators to identify weeks with minimum or maximum number of draft timesheets, useful for finding employees who haven't submitted yet.
      *
-     * @x-autobe-specification Computed count from hrm_platform_timesheet_weekly_stats.draft_timesheet_count. Range filtering uses gte (greater than or equal) and lte (less than or equal) comparison operators to filter by draft timesheet count.
+         * @x-autobe-specification Computed count from
+         *   hrm_platform_timesheet_weekly_stats.draft_timesheet_count. Range
+         *   filtering uses gte (greater than or equal) and lte (less than or
+         *   equal) comparison operators to filter by draft timesheet count.
      */
     draft_timesheet_count?:
       | {
@@ -393,7 +466,11 @@ export namespace IHrmPlatformTimesheetWeeklyStat {
      *
      * Filters by the number of timesheets in submitted status (awaiting manager approval). Accepts gte and lte comparison operators to identify weeks with pending submissions that require review attention.
      *
-     * @x-autobe-specification Computed count from hrm_platform_timesheet_weekly_stats.submitted_timesheet_count. Range filtering uses gte (greater than or equal) and lte (less than or equal) comparison operators to filter by submitted timesheet count.
+         * @x-autobe-specification Computed count from
+         *   hrm_platform_timesheet_weekly_stats.submitted_timesheet_count.
+         *   Range filtering uses gte (greater than or equal) and lte (less than
+         *   or equal) comparison operators to filter by submitted timesheet
+         *   count.
      */
     submitted_timesheet_count?:
       | {
@@ -414,7 +491,10 @@ export namespace IHrmPlatformTimesheetWeeklyStat {
      *
      * Filters by the number of timesheets in approved status (final and locked). Accepts gte and lte comparison operators to identify weeks with confirmed timesheet submissions for payroll and reporting purposes.
      *
-     * @x-autobe-specification Computed count from hrm_platform_timesheet_weekly_stats.approved_timesheet_count. Range filtering uses gte (greater than or equal) and lte (less than or equal) comparison operators to filter by approved timesheet count.
+         * @x-autobe-specification Computed count from
+         *   hrm_platform_timesheet_weekly_stats.approved_timesheet_count. Range
+         *   filtering uses gte (greater than or equal) and lte (less than or
+         *   equal) comparison operators to filter by approved timesheet count.
      */
     approved_timesheet_count?:
       | {
@@ -435,7 +515,10 @@ export namespace IHrmPlatformTimesheetWeeklyStat {
      *
      * Filters by the number of timesheets in rejected status (returned to draft). Accepts gte and lte comparison operators to identify weeks with rejected timesheets that require employee attention and manager follow-up.
      *
-     * @x-autobe-specification Computed count from hrm_platform_timesheet_weekly_stats.rejected_timesheet_count. Range filtering uses gte (greater than or equal) and lte (less than or equal) comparison operators to filter by rejected timesheet count.
+         * @x-autobe-specification Computed count from
+         *   hrm_platform_timesheet_weekly_stats.rejected_timesheet_count. Range
+         *   filtering uses gte (greater than or equal) and lte (less than or
+         *   equal) comparison operators to filter by rejected timesheet count.
      */
     rejected_timesheet_count?:
       | {
@@ -456,7 +539,11 @@ export namespace IHrmPlatformTimesheetWeeklyStat {
      *
      * Controls the primary sorting criterion. Supported values: week_start (default, sorts by week start date), total_hours (sorts by total hours worked), employee_name (sorts by employee display name, requires JOIN). Must be combined with order parameter to specify ascending or descending direction.
      *
-     * @x-autobe-specification Computed sorting field. Options: week_start (default, sorts by week start Monday), total_hours (sum of all timelog durations), employee_name (employee display name via JOIN to hrm_platform_employees). Combined with order parameter to determine ASC or DESC direction.
+         * @x-autobe-specification Computed sorting field. Options: week_start
+         *   (default, sorts by week start Monday), total_hours (sum of all
+         *   timelog durations), employee_name (employee display name via JOIN
+         *   to hrm_platform_employees). Combined with order parameter to
+         *   determine ASC or DESC direction.
      */
     sort?: "week_start" | "total_hours" | "employee_name" | undefined;
 
@@ -465,7 +552,11 @@ export namespace IHrmPlatformTimesheetWeeklyStat {
      *
      * Controls the direction of sorting. Supported values: ASC (ascending order), DESC (descending order). Default is DESC for week_start field (newest weeks first), ASC for other fields (total_hours, employee_name).
      *
-     * @x-autobe-specification Computed sorting direction. Options: ASC (ascending, older weeks first for week_start, lower values first for other fields), DESC (descending, newer weeks first for week_start, higher values first for other fields). Default is DESC for week_start field, ASC for other fields.
+         * @x-autobe-specification Computed sorting direction. Options: ASC
+         *   (ascending, older weeks first for week_start, lower values first
+         *   for other fields), DESC (descending, newer weeks first for
+         *   week_start, higher values first for other fields). Default is DESC
+         *   for week_start field, ASC for other fields.
      */
     order?: "ASC" | "DESC" | undefined;
 
@@ -474,7 +565,10 @@ export namespace IHrmPlatformTimesheetWeeklyStat {
      *
      * Opaque pagination token returned from a previous response's pagination metadata. Use this cursor to fetch the next page of results. Cursor-based pagination is recommended for large datasets as it provides stable navigation across data changes. Cannot be combined with page/limit parameters.
      *
-     * @x-autobe-specification Computed pagination cursor. Opaque token returned from previous response's pagination metadata. Use cursor for cursor-based pagination to fetch the next page of results. Cannot be combined with page/limit parameters.
+         * @x-autobe-specification Computed pagination cursor. Opaque token
+         *   returned from previous response's pagination metadata. Use cursor
+         *   for cursor-based pagination to fetch the next page of results.
+         *   Cannot be combined with page/limit parameters.
      */
     cursor?: string | undefined;
 
@@ -483,7 +577,10 @@ export namespace IHrmPlatformTimesheetWeeklyStat {
      *
      * 1-indexed page number used for offset-based pagination. Use either cursor OR page/limit parameters, not both. Minimum value is 1. Combined with limit parameter to control how many records are returned per page.
      *
-     * @x-autobe-specification Computed pagination page number. 1-indexed page number for offset-based pagination. Use either cursor OR page/limit, not both. Minimum value is 1, maximum is determined by total records divided by limit.
+         * @x-autobe-specification Computed pagination page number. 1-indexed
+         *   page number for offset-based pagination. Use either cursor OR
+         *   page/limit, not both. Minimum value is 1, maximum is determined by
+         *   total records divided by limit.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -492,7 +589,10 @@ export namespace IHrmPlatformTimesheetWeeklyStat {
      *
      * Maximum number of records to return in a single page. Minimum value is 1, maximum is 100 to prevent excessive data retrieval and maintain performance. Use either cursor OR page/limit parameters, not both. Combined with page parameter to navigate through paginated results.
      *
-     * @x-autobe-specification Computed pagination limit. Maximum number of records to return per page. Minimum value is 1, maximum is 100 to prevent excessive data retrieval. Use either cursor OR page/limit parameters, not both.
+         * @x-autobe-specification Computed pagination limit. Maximum number of
+         *   records to return per page. Minimum value is 1, maximum is 100 to
+         *   prevent excessive data retrieval. Use either cursor OR page/limit
+         *   parameters, not both.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)

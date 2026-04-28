@@ -29,9 +29,10 @@ export class ShoppingmallMemberSessionsCurrentSwitch_to_memberController {
    *
    * @param connection
    * @param body Switch request parameters to establish member session context for the current caller. The client supplies any required member identity hints as defined by existing session context rules.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1) Authenticate request middleware ensures there is an active authenticated session bound to the caller.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification 1) Authenticate request middleware ensures there
+     *   is an active authenticated session bound to the caller.
    *
    * 2) Resolve current session owner:
    * - If the active session corresponds to a guest identity, map/switch to the appropriate member identity as determined by the application’s session-context linkage rules.

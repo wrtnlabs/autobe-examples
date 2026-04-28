@@ -14,7 +14,9 @@ export type IHrmPlatformOrganizationDashboard = {
    *
    * This count includes only employees with status 'active' and excludes deactivated employees and soft-deleted records. The value is computed in real-time from the hrm_platform_employees table filtered by the current organization context.
    *
-   * @x-autobe-specification Computed from hrm_platform_employees: COUNT(*) WHERE organization_id = ? AND status = 'active' AND deleted_at IS NULL. Returns 0 when no active employees exist.
+     * @x-autobe-specification Computed from hrm_platform_employees: COUNT(*)
+     *   WHERE organization_id = ? AND status = 'active' AND deleted_at IS NULL.
+     *   Returns 0 when no active employees exist.
    */
   activeEmployeesCount: number & tags.Type<"int32"> & tags.Minimum<0>;
 
@@ -23,7 +25,11 @@ export type IHrmPlatformOrganizationDashboard = {
    *
    * This value represents the sum of all timelog durations from Monday 00:00 to Sunday 23:59 in the organization's configured timezone. The duration is calculated in minutes from hrm_platform_timelogs and converted to hours. Returns 0 when no timelogs exist for the current week.
    *
-   * @x-autobe-specification Computed from hrm_platform_timelogs joined with hrm_platform_employees: SUM(duration_minutes) / 60 WHERE employees.organization_id = ? AND timelogs.date BETWEEN week_start (Monday 00:00) AND week_end (Sunday 23:59) in organization timezone. Returns 0 when no timelogs exist for the current week.
+     * @x-autobe-specification Computed from hrm_platform_timelogs joined with
+     *   hrm_platform_employees: SUM(duration_minutes) / 60 WHERE
+     *   employees.organization_id = ? AND timelogs.date BETWEEN week_start
+     *   (Monday 00:00) AND week_end (Sunday 23:59) in organization timezone.
+     *   Returns 0 when no timelogs exist for the current week.
    */
   totalHoursThisWeek: number & tags.Minimum<0>;
 
@@ -32,7 +38,10 @@ export type IHrmPlatformOrganizationDashboard = {
    *
    * This count includes only timesheets with status 'submitted' that have not yet been approved or rejected. The value is computed by joining hrm_platform_timesheets with hrm_platform_employees to filter by organization context. Returns 0 when no timesheets are pending.
    *
-   * @x-autobe-specification Computed from hrm_platform_timesheets joined with hrm_platform_employees: COUNT(*) WHERE employees.organization_id = ? AND timesheets.status = 'submitted' AND timesheets.deleted_at IS NULL. Returns 0 when no pending timesheets exist.
+     * @x-autobe-specification Computed from hrm_platform_timesheets joined with
+     *   hrm_platform_employees: COUNT(*) WHERE employees.organization_id = ?
+     *   AND timesheets.status = 'submitted' AND timesheets.deleted_at IS NULL.
+     *   Returns 0 when no pending timesheets exist.
    */
   pendingTimesheetsCount: number & tags.Type<"int32"> & tags.Minimum<0>;
 
@@ -41,7 +50,12 @@ export type IHrmPlatformOrganizationDashboard = {
    *
    * This array includes only projects with a defined budget_hours value where the ratio of actual logged hours to budgeted hours is at least 0.8 (80%). Each entry contains the project identifier, name, budgeted hours, actual hours logged this week, and the utilization percentage. Returns an empty array when no projects exceed the threshold.
    *
-   * @x-autobe-specification Computed from hrm_platform_projects with timelog aggregation: For each project with budget_hours > 0, calculate actual_hours from hrm_platform_timelogs for the current week. Filter WHERE (actual_hours / budget_hours) >= 0.8. Returns array of objects with id, name, budgetHours, actualHours, and utilizationPercentage. Returns empty array when no projects exceed 80% budget utilization.
+     * @x-autobe-specification Computed from hrm_platform_projects with timelog
+     *   aggregation: For each project with budget_hours > 0, calculate
+     *   actual_hours from hrm_platform_timelogs for the current week. Filter
+     *   WHERE (actual_hours / budget_hours) >= 0.8. Returns array of objects
+     *   with id, name, budgetHours, actualHours, and utilizationPercentage.
+     *   Returns empty array when no projects exceed 80% budget utilization.
    */
   projectsOverBudget: IHrmPlatformOrganizationDashboard.IProjectBudget[];
 
@@ -50,7 +64,12 @@ export type IHrmPlatformOrganizationDashboard = {
    *
    * This array lists employees sorted by total time logged during the current week (Monday to Sunday), limited to the top 5 performers. Each entry includes the employee identifier, display name from their user profile, and total minutes logged. Returns an empty array when no timelogs exist for the current week.
    *
-   * @x-autobe-specification Computed from hrm_platform_timelogs grouped by employee_id: SUM(duration_minutes) for current week, ORDER BY total DESC LIMIT 5. Joined with hrm_platform_employees and hrm_platform_user_profiles for displayName. Returns array of objects with employeeId, displayName, and totalMinutes. Returns empty array when no timelogs exist.
+     * @x-autobe-specification Computed from hrm_platform_timelogs grouped by
+     *   employee_id: SUM(duration_minutes) for current week, ORDER BY total
+     *   DESC LIMIT 5. Joined with hrm_platform_employees and
+     *   hrm_platform_user_profiles for displayName. Returns array of objects
+     *   with employeeId, displayName, and totalMinutes. Returns empty array
+     *   when no timelogs exist.
    */
   topEmployees: IHrmPlatformOrganizationDashboard.ITopEmployee[];
 };
@@ -68,7 +87,9 @@ export namespace IHrmPlatformOrganizationDashboard {
      *
      * This UUID references the hrm_platform_employees table and uniquely identifies the employee within the platform. The employee must belong to the current organization context.
      *
-     * @x-autobe-specification Sourced from hrm_platform_employees.id (UUID). Joined via employees table in the aggregation query. Identifies the employee record within the platform.
+         * @x-autobe-specification Sourced from hrm_platform_employees.id
+         *   (UUID). Joined via employees table in the aggregation query.
+         *   Identifies the employee record within the platform.
      */
     employeeId: string & tags.Format<"uuid">;
 
@@ -77,7 +98,11 @@ export namespace IHrmPlatformOrganizationDashboard {
      *
      * This name is sourced from hrm_platform_user_profiles.display_name and is shared across all organizations the user belongs to. Used for display purposes in the dashboard.
      *
-     * @x-autobe-specification Sourced from hrm_platform_user_profiles.display_name via join on hrm_platform_employees.user_id = hrm_platform_user_profiles.user_id. String type. Shared across all organizations the user belongs to.
+         * @x-autobe-specification Sourced from
+         *   hrm_platform_user_profiles.display_name via join on
+         *   hrm_platform_employees.user_id =
+         *   hrm_platform_user_profiles.user_id. String type. Shared across all
+         *   organizations the user belongs to.
      */
     displayName: string;
 
@@ -86,7 +111,12 @@ export namespace IHrmPlatformOrganizationDashboard {
      *
      * This value represents the sum of all timelog durations from Monday 00:00 to Sunday 23:59 in the organization's configured timezone. Calculated from hrm_platform_timelogs.duration_minutes for the current week only.
      *
-     * @x-autobe-specification Computed SUM(hrm_platform_timelogs.duration_minutes) for the current week. Week boundaries: Monday 00:00 to Sunday 23:59 in organization's configured timezone. Filters: employees.organization_id = current organization, timelogs.deleted_at IS NULL, timelogs.date within current week. Integer type with minimum 0.
+         * @x-autobe-specification Computed
+         *   SUM(hrm_platform_timelogs.duration_minutes) for the current week.
+         *   Week boundaries: Monday 00:00 to Sunday 23:59 in organization's
+         *   configured timezone. Filters: employees.organization_id = current
+         *   organization, timelogs.deleted_at IS NULL, timelogs.date within
+         *   current week. Integer type with minimum 0.
      */
     totalMinutes: number & tags.Type<"int32"> & tags.Minimum<0>;
   };
@@ -104,7 +134,8 @@ export namespace IHrmPlatformOrganizationDashboard {
      *
      * This UUID references the hrm_platform_projects table and uniquely identifies the project within the platform.
      *
-     * @x-autobe-specification Mapped from hrm_platform_projects.id. UUID format. Source: projects table primary key.
+         * @x-autobe-specification Mapped from hrm_platform_projects.id. UUID
+         *   format. Source: projects table primary key.
      */
     id: string & tags.Format<"uuid">;
 
@@ -113,7 +144,8 @@ export namespace IHrmPlatformOrganizationDashboard {
      *
      * This is the human-readable name assigned to the project when it was created.
      *
-     * @x-autobe-specification Mapped from hrm_platform_projects.name. String type. Source: projects table name column.
+         * @x-autobe-specification Mapped from hrm_platform_projects.name.
+         *   String type. Source: projects table name column.
      */
     name: string;
 
@@ -122,7 +154,10 @@ export namespace IHrmPlatformOrganizationDashboard {
      *
      * This value comes from the project's budget_hours field and represents the planned or estimated hours for completing the project. Only projects with budget_hours > 0 are included in the budget utilization report.
      *
-     * @x-autobe-specification Mapped from hrm_platform_projects.budget_hours. Number type with minimum 0. Source: projects table budget_hours column. Only projects with budget_hours > 0 are included.
+         * @x-autobe-specification Mapped from
+         *   hrm_platform_projects.budget_hours. Number type with minimum 0.
+         *   Source: projects table budget_hours column. Only projects with
+         *   budget_hours > 0 are included.
      */
     budgetHours: number & tags.Minimum<0>;
 
@@ -131,7 +166,11 @@ export namespace IHrmPlatformOrganizationDashboard {
      *
      * This value is computed by summing the duration_minutes from all timelogs associated with this project for the current week (Monday 00:00 to Sunday 23:59 in the organization's timezone), then converting to hours by dividing by 60.
      *
-     * @x-autobe-specification Computed from SUM(hrm_platform_timelogs.duration_minutes) / 60 for current week. Week boundary: Monday 00:00 to Sunday 23:59 in organization's timezone. Only includes timelogs where project_id matches and deleted_at IS NULL.
+         * @x-autobe-specification Computed from
+         *   SUM(hrm_platform_timelogs.duration_minutes) / 60 for current week.
+         *   Week boundary: Monday 00:00 to Sunday 23:59 in organization's
+         *   timezone. Only includes timelogs where project_id matches and
+         *   deleted_at IS NULL.
      */
     actualHours: number & tags.Minimum<0>;
 
@@ -140,7 +179,9 @@ export namespace IHrmPlatformOrganizationDashboard {
      *
      * This value indicates how much of the project's budget has been used. Projects appear in the over-budget list when this value is 80% or higher. A value of 100% means the project has consumed its entire budget.
      *
-     * @x-autobe-specification Computed as (actualHours / budgetHours) * 100. Number type with minimum 0, maximum 100. Only projects where utilizationPercentage >= 80 are included in the response.
+         * @x-autobe-specification Computed as (actualHours / budgetHours) *
+         *   100. Number type with minimum 0, maximum 100. Only projects where
+         *   utilizationPercentage >= 80 are included in the response.
      */
     utilizationPercentage: number & tags.Minimum<0> & tags.Maximum<100>;
   };

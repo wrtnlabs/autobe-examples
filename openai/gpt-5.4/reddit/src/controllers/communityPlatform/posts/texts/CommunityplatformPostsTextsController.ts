@@ -23,9 +23,11 @@ export class CommunityplatformPostsTextsController {
    * @param connection
    * @param postId Target post identifier
    * @param textId Target text-content identifier belonging to the specified post
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Resolve the parent record from community_platform_posts by id = postId and the subtype record from community_platform_post_texts by id = textId within the same read flow.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Resolve the parent record from
+     *   community_platform_posts by id = postId and the subtype record from
+     *   community_platform_post_texts by id = textId within the same read flow.
    *
    * Validate that the community_platform_post_texts.community_platform_post_id value matches the requested postId. If the subtype record exists but belongs to another post, reject the request as not found to avoid cross-post subtype exposure.
    *

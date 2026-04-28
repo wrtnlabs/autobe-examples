@@ -20,9 +20,10 @@ export class ShoppingmallGuestsController {
    *
    * @param connection
    * @param body Search criteria for guest accounts including device fingerprint filter, creation date range, deletion status filter, and pagination parameters.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query shopping_mall_guests table with pagination and filtering capabilities.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query shopping_mall_guests table with pagination
+     *   and filtering capabilities.
    *
    * Search filters:
    * - device_fingerprint: exact match or partial match search
@@ -65,9 +66,10 @@ export class ShoppingmallGuestsController {
    *
    * @param connection
    * @param guestId Unique identifier of the guest account to retrieve (global scope).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query shopping_mall_guests table by primary key (id) matching the guestId parameter.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query shopping_mall_guests table by primary key
+     *   (id) matching the guestId parameter.
    *
    * Return the full guest record including:
    * - id: UUID primary key

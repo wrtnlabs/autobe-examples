@@ -22,7 +22,8 @@ import { IPageIHrmPlatformTaskHistory } from "../../../../structures/IPageIHrmPl
  * @param props.body Search criteria for task history entries including filter parameters, sorting options, and pagination settings. All filters are optional. When no filters are provided, returns all history entries (non-deleted) with default pagination and sorting.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query hrm_platform_task_histories table with pagination and filtering.
+ * @x-autobe-specification Query hrm_platform_task_histories table with
+ *   pagination and filtering.
  *
  * 1. Apply filters from requestBody:
  *    - task_id: Filter by specific task ID
@@ -162,7 +163,8 @@ export namespace index {
  * @param props.historyId Unique identifier of the task history entry to retrieve.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Retrieve task history entry by UUID from hrm_platform_task_histories table.
+ * @x-autobe-specification Retrieve task history entry by UUID from
+ *   hrm_platform_task_histories table.
  *
  * ### Implementation Steps:
  *

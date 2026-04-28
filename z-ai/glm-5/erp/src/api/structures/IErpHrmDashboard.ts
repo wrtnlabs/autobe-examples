@@ -19,35 +19,58 @@ export namespace IErpHrmDashboard {
     /**
      * Count of all employees with active status within the organization, excluding soft-deleted records.
      *
-     * @x-autobe-specification Computed as COUNT(*) FROM erp_hrm_employees WHERE organization_id = current_org_context AND status = 'active' AND deleted_at IS NULL. This counts all employees with active status in the current organization, excluding soft-deleted records.
+         * @x-autobe-specification Computed as COUNT(*) FROM erp_hrm_employees
+         *   WHERE organization_id = current_org_context AND status = 'active'
+         *   AND deleted_at IS NULL. This counts all employees with active
+         *   status in the current organization, excluding soft-deleted records.
      */
     totalActiveEmployees: number & tags.Type<"int32"> & tags.Minimum<0>;
 
     /**
      * Total hours logged by all employees in the current week (Monday through Sunday), calculated from timelog durations converted to decimal hours.
      *
-     * @x-autobe-specification Computed as COALESCE(SUM(duration), 0) / 60 FROM erp_hrm_timelogs joined with erp_hrm_employees, filtered by organization_id and date range from Monday 00:00:00 to Sunday 23:59:59 of the current week. Duration is stored in minutes, converted to decimal hours by dividing by 60.
+         * @x-autobe-specification Computed as COALESCE(SUM(duration), 0) / 60
+         *   FROM erp_hrm_timelogs joined with erp_hrm_employees, filtered by
+         *   organization_id and date range from Monday 00:00:00 to Sunday
+         *   23:59:59 of the current week. Duration is stored in minutes,
+         *   converted to decimal hours by dividing by 60.
      */
     weeklyHours: number & tags.Minimum<0>;
 
     /**
      * Count of timesheets with 'submitted' status awaiting manager review and approval.
      *
-     * @x-autobe-specification Computed as COUNT(*) FROM erp_hrm_timesheets joined with erp_hrm_employees, filtered by organization_id, status = 'submitted', and deleted_at IS NULL. This represents timesheets that have been submitted by employees and are awaiting manager review.
+         * @x-autobe-specification Computed as COUNT(*) FROM erp_hrm_timesheets
+         *   joined with erp_hrm_employees, filtered by organization_id, status
+         *   = 'submitted', and deleted_at IS NULL. This represents timesheets
+         *   that have been submitted by employees and are awaiting manager
+         *   review.
      */
     pendingApprovals: number & tags.Type<"int32"> & tags.Minimum<0>;
 
     /**
      * List of active projects where logged hours exceed 80% of allocated budget hours, requiring attention to prevent budget overrun.
      *
-     * @x-autobe-specification Computed by querying erp_hrm_projects with budget_hours IS NOT NULL, calculating actual_hours from erp_hrm_timelogs (SUM of durations / 60), computing utilization_percentage = (actual_hours / budget_hours) * 100, and filtering projects where utilization > 80. Returns array of IErpHrmOrganizationDashboard.IBudgetAlert sorted by utilization_percentage DESC.
+         * @x-autobe-specification Computed by querying erp_hrm_projects with
+         *   budget_hours IS NOT NULL, calculating actual_hours from
+         *   erp_hrm_timelogs (SUM of durations / 60), computing
+         *   utilization_percentage = (actual_hours / budget_hours) * 100, and
+         *   filtering projects where utilization > 80. Returns array of
+         *   IErpHrmOrganizationDashboard.IBudgetAlert sorted by
+         *   utilization_percentage DESC.
      */
     budgetAlerts: IErpHrmOrganizationDashboard.IBudgetAlert[];
 
     /**
      * Top 5 employees ranked by total hours logged in the current week, providing visibility into team productivity.
      *
-     * @x-autobe-specification Computed by querying erp_hrm_timelogs joined with erp_hrm_employees for the current week (Monday to Sunday), filtering by organization_id and employee status = 'active', grouping by employee_id, summing duration, ordering by total_minutes DESC, and limiting to 5 results. Returns array of IErpHrmOrganizationDashboard.ITopPerformer with employee summary and hours_logged.
+         * @x-autobe-specification Computed by querying erp_hrm_timelogs joined
+         *   with erp_hrm_employees for the current week (Monday to Sunday),
+         *   filtering by organization_id and employee status = 'active',
+         *   grouping by employee_id, summing duration, ordering by
+         *   total_minutes DESC, and limiting to 5 results. Returns array of
+         *   IErpHrmOrganizationDashboard.ITopPerformer with employee summary
+         *   and hours_logged.
      */
     topPerformers: IErpHrmOrganizationDashboard.ITopPerformer[];
   };

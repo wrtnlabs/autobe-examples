@@ -16,8 +16,10 @@ export type IShoppingMallSellerProfile = {
    *
    * This UUID serves as the primary key for the seller profile record and is used to reference the profile across the system in product listings, order records, and API endpoints.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_seller_profiles.id. UUID primary key uniquely identifying each seller profile record.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_seller_profiles.id. UUID primary key uniquely identifying
+     *   each seller profile record.
    */
   id: string & tags.Format<"uuid">;
 
@@ -26,8 +28,10 @@ export type IShoppingMallSellerProfile = {
    *
    * This name is displayed to customers on product listings, order records, and search results. It is required and can be edited by the seller, with each edit creating a snapshot for audit trail purposes.
    *
-   * @x-autobe-database-schema-property shop_name
-   * @x-autobe-specification Direct mapping from shopping_mall_seller_profiles.shop_name. Required non-empty string field.
+     * @x-autobe-database-schema-property shop_name
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_seller_profiles.shop_name. Required non-empty string
+     *   field.
    */
   shop_name: string;
 
@@ -36,8 +40,10 @@ export type IShoppingMallSellerProfile = {
    *
    * This text provides customers with information about the seller's products, services, and business practices. It is displayed on the seller profile page and can be edited by the seller, with changes tracked in snapshots.
    *
-   * @x-autobe-database-schema-property shop_description
-   * @x-autobe-specification Direct mapping from shopping_mall_seller_profiles.shop_description. Required non-empty string field.
+     * @x-autobe-database-schema-property shop_description
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_seller_profiles.shop_description. Required non-empty
+     *   string field.
    */
   shop_description: string;
 
@@ -46,8 +52,10 @@ export type IShoppingMallSellerProfile = {
    *
    * The logo is displayed on the seller profile page, product listings, and order records. Sellers can upload and update their logo, with changes tracked in snapshots. This field is optional and may be null if no logo has been uploaded.
    *
-   * @x-autobe-specification Direct mapping from shopping_mall_seller_profiles.logo_uri. Nullable VARCHAR(80000) field storing image URL.
-   * @x-autobe-database-schema-property logo_uri
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_seller_profiles.logo_uri. Nullable VARCHAR(80000) field
+     *   storing image URL.
+     * @x-autobe-database-schema-property logo_uri
    */
   logo_uri: (string & tags.Format<"uri">) | null;
 
@@ -56,8 +64,10 @@ export type IShoppingMallSellerProfile = {
    *
    * Valid values are: 'pending' for new registrations awaiting administrator review, 'approved' for sellers who have been approved and can operate on the platform, and 'rejected' for sellers whose registration was denied. Rejected sellers can submit a new registration request.
    *
-   * @x-autobe-database-schema-property approval_status
-   * @x-autobe-specification Direct mapping from shopping_mall_seller_profiles.approval_status. String field with values: 'pending', 'approved', or 'rejected'.
+     * @x-autobe-database-schema-property approval_status
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_seller_profiles.approval_status. String field with
+     *   values: 'pending', 'approved', or 'rejected'.
    */
   approval_status: string;
 
@@ -66,8 +76,10 @@ export type IShoppingMallSellerProfile = {
    *
    * This field contains the reason why a seller's registration was rejected. It is visible to the seller when their approval_status is 'rejected' and helps them understand what needs to be corrected before resubmitting. This field is null when the seller is not rejected.
    *
-   * @x-autobe-database-schema-property rejection_reason
-   * @x-autobe-specification Direct mapping from shopping_mall_seller_profiles.rejection_reason. Nullable string field containing administrator's explanation for rejection.
+     * @x-autobe-database-schema-property rejection_reason
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_seller_profiles.rejection_reason. Nullable string field
+     *   containing administrator's explanation for rejection.
    */
   rejection_reason: string | null;
 
@@ -76,8 +88,10 @@ export type IShoppingMallSellerProfile = {
    *
    * When true, the seller's products are hidden from search and category listings and cannot be purchased. However, suspended sellers can still process existing orders including shipping items and responding to cancellation or refund requests. They cannot create new products or edit existing ones.
    *
-   * @x-autobe-database-schema-property is_suspended
-   * @x-autobe-specification Direct mapping from shopping_mall_seller_profiles.is_suspended. Boolean flag for temporary suspension by administrator.
+     * @x-autobe-database-schema-property is_suspended
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_seller_profiles.is_suspended. Boolean flag for temporary
+     *   suspension by administrator.
    */
   is_suspended: boolean;
 
@@ -86,8 +100,10 @@ export type IShoppingMallSellerProfile = {
    *
    * When true, the seller cannot log in to the platform. Their existing orders remain in the system and are preserved for legal and record-keeping purposes. This is a more severe action than suspension.
    *
-   * @x-autobe-database-schema-property is_banned
-   * @x-autobe-specification Direct mapping from shopping_mall_seller_profiles.is_banned. Boolean flag for permanent ban by administrator.
+     * @x-autobe-database-schema-property is_banned
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_seller_profiles.is_banned. Boolean flag for permanent ban
+     *   by administrator.
    */
   is_banned: boolean;
 
@@ -96,8 +112,10 @@ export type IShoppingMallSellerProfile = {
    *
    * This field is set automatically when the seller profile is created and is never modified. It marks the beginning of the seller's business presence on the platform.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from shopping_mall_seller_profiles.created_at. DateTime field with timezone, set automatically on profile creation.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_seller_profiles.created_at. DateTime field with timezone,
+     *   set automatically on profile creation.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -106,8 +124,10 @@ export type IShoppingMallSellerProfile = {
    *
    * This field is updated automatically whenever any field in the profile is changed, including shop name, description, logo, or administrative status changes. It helps track the recency of profile updates.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from shopping_mall_seller_profiles.updated_at. DateTime field with timezone, updated automatically on any profile modification.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_seller_profiles.updated_at. DateTime field with timezone,
+     *   updated automatically on any profile modification.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -116,8 +136,11 @@ export type IShoppingMallSellerProfile = {
    *
    * When a seller deletes their account, this field is set to the current timestamp. The profile record is preserved for order history and legal compliance. Soft-deleted profiles are not visible in public listings but remain accessible to administrators.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from shopping_mall_seller_profiles.deleted_at. Nullable DateTime field with timezone. Null indicates active profile; non-null indicates soft-deleted profile.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_seller_profiles.deleted_at. Nullable DateTime field with
+     *   timezone. Null indicates active profile; non-null indicates
+     *   soft-deleted profile.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -133,8 +156,11 @@ export namespace IShoppingMallSellerProfile {
      *
      * The logo is displayed on the seller profile page, product listings, and order records. This field is optional in updates; if not provided, the existing logo URI is preserved. If provided, must be a valid URI string.
      *
-     * @x-autobe-database-schema-property logo_uri
-     * @x-autobe-specification Direct mapping from shopping_mall_seller_profiles.logo_uri. Nullable VARCHAR(80000) field storing image URI. Optional in Update DTO - if not provided, existing value is preserved.
+         * @x-autobe-database-schema-property logo_uri
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_seller_profiles.logo_uri. Nullable VARCHAR(80000)
+         *   field storing image URI. Optional in Update DTO - if not provided,
+         *   existing value is preserved.
      */
     logo_uri?: (string & tags.Format<"uri">) | null | undefined;
 
@@ -143,8 +169,10 @@ export namespace IShoppingMallSellerProfile {
      *
      * This text provides customers with information about the seller's products, services, and business practices. It is displayed on the seller profile page. This field is optional in updates; if not provided, the existing description is preserved.
      *
-     * @x-autobe-database-schema-property shop_description
-     * @x-autobe-specification Direct mapping from shopping_mall_seller_profiles.shop_description. Required non-empty string in DB, but optional in Update DTO for partial updates.
+         * @x-autobe-database-schema-property shop_description
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_seller_profiles.shop_description. Required non-empty
+         *   string in DB, but optional in Update DTO for partial updates.
      */
     shop_description?: string | undefined;
 
@@ -153,8 +181,10 @@ export namespace IShoppingMallSellerProfile {
      *
      * This name is displayed to customers on product listings, order records, and search results. It is prominently shown throughout the platform. This field is optional in updates; if not provided, the existing shop name is preserved.
      *
-     * @x-autobe-database-schema-property shop_name
-     * @x-autobe-specification Direct mapping from shopping_mall_seller_profiles.shop_name. Required non-empty string in DB, but optional in Update DTO for partial updates.
+         * @x-autobe-database-schema-property shop_name
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_seller_profiles.shop_name. Required non-empty string
+         *   in DB, but optional in Update DTO for partial updates.
      */
     shop_name?: string | undefined;
   };
@@ -172,8 +202,10 @@ export namespace IShoppingMallSellerProfile {
      *
      * This UUID serves as the primary key for the seller profile record and is used to reference the profile across the system in product listings, order records, and API endpoints.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_seller_profiles.id. UUID primary key uniquely identifying each seller profile record.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_seller_profiles.id. UUID primary key uniquely
+         *   identifying each seller profile record.
      */
     id: string & tags.Format<"uuid">;
 
@@ -182,8 +214,10 @@ export namespace IShoppingMallSellerProfile {
      *
      * This name is displayed to customers on product listings, order records, and search results. It is required and can be edited by the seller, with each edit creating a snapshot for audit trail purposes.
      *
-     * @x-autobe-database-schema-property shop_name
-     * @x-autobe-specification Direct mapping from shopping_mall_seller_profiles.shop_name. Required non-empty string field.
+         * @x-autobe-database-schema-property shop_name
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_seller_profiles.shop_name. Required non-empty string
+         *   field.
      */
     shop_name: string;
 
@@ -192,8 +226,10 @@ export namespace IShoppingMallSellerProfile {
      *
      * This text provides customers with information about the seller's products, services, and business practices. It is displayed on the seller profile page and can be edited by the seller, with changes tracked in snapshots.
      *
-     * @x-autobe-database-schema-property shop_description
-     * @x-autobe-specification Direct mapping from shopping_mall_seller_profiles.shop_description. Required non-empty string field.
+         * @x-autobe-database-schema-property shop_description
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_seller_profiles.shop_description. Required non-empty
+         *   string field.
      */
     shop_description: string;
 
@@ -202,8 +238,10 @@ export namespace IShoppingMallSellerProfile {
      *
      * The logo is displayed on the seller profile page, product listings, and order records. Sellers can upload and update their logo, with changes tracked in snapshots. This field is optional and may be null if no logo has been uploaded.
      *
-     * @x-autobe-database-schema-property logo_uri
-     * @x-autobe-specification Direct mapping from shopping_mall_seller_profiles.logo_uri. Nullable VARCHAR(80000) field storing image URL.
+         * @x-autobe-database-schema-property logo_uri
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_seller_profiles.logo_uri. Nullable VARCHAR(80000)
+         *   field storing image URL.
      */
     logo_uri: (string & tags.Format<"uri">) | null;
 
@@ -212,8 +250,10 @@ export namespace IShoppingMallSellerProfile {
      *
      * Valid values are: 'pending' for new registrations awaiting administrator review, 'approved' for sellers who have been approved and can operate on the platform, and 'rejected' for sellers whose registration was denied. Rejected sellers can submit a new registration request.
      *
-     * @x-autobe-database-schema-property approval_status
-     * @x-autobe-specification Direct mapping from shopping_mall_seller_profiles.approval_status. String field with values: 'pending', 'approved', or 'rejected'.
+         * @x-autobe-database-schema-property approval_status
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_seller_profiles.approval_status. String field with
+         *   values: 'pending', 'approved', or 'rejected'.
      */
     approval_status: string;
 
@@ -222,8 +262,10 @@ export namespace IShoppingMallSellerProfile {
      *
      * This field contains the reason why a seller's registration was rejected. It is visible to the seller when their approval_status is 'rejected' and helps them understand what needs to be corrected before resubmitting. This field is null when the seller is not rejected.
      *
-     * @x-autobe-database-schema-property rejection_reason
-     * @x-autobe-specification Direct mapping from shopping_mall_seller_profiles.rejection_reason. Nullable string field containing administrator's explanation for rejection.
+         * @x-autobe-database-schema-property rejection_reason
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_seller_profiles.rejection_reason. Nullable string
+         *   field containing administrator's explanation for rejection.
      */
     rejection_reason: string | null;
 
@@ -232,8 +274,11 @@ export namespace IShoppingMallSellerProfile {
      *
      * This relation provides the authentication identity (email, approval status, account state) for the seller who owns this business profile. It links the business profile to the underlying seller account in the authorization system.
      *
-     * @x-autobe-database-schema-property seller
-     * @x-autobe-specification Join from shopping_mall_seller_profiles.shopping_mall_seller_id to shopping_mall_sellers.id. Returns IShoppingMallSeller.ISummary with seller authentication identity.
+         * @x-autobe-database-schema-property seller
+         * @x-autobe-specification Join from
+         *   shopping_mall_seller_profiles.shopping_mall_seller_id to
+         *   shopping_mall_sellers.id. Returns IShoppingMallSeller.ISummary with
+         *   seller authentication identity.
      */
     seller: IShoppingMallSeller.ISummary;
 
@@ -242,8 +287,10 @@ export namespace IShoppingMallSellerProfile {
      *
      * This field is set automatically when the seller profile is created and is never modified. It marks the beginning of the seller's business presence on the platform.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_seller_profiles.created_at. DateTime field with timezone, set automatically on profile creation.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_seller_profiles.created_at. DateTime field with
+         *   timezone, set automatically on profile creation.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -252,8 +299,10 @@ export namespace IShoppingMallSellerProfile {
      *
      * This field is updated automatically whenever any field in the profile is changed, including shop name, description, logo, or administrative status changes. It helps track the recency of profile updates.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from shopping_mall_seller_profiles.updated_at. DateTime field with timezone, updated automatically on any profile modification.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_seller_profiles.updated_at. DateTime field with
+         *   timezone, updated automatically on any profile modification.
      */
     updated_at: string & tags.Format<"date-time">;
   };

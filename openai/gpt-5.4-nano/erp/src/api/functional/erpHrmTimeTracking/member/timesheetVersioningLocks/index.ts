@@ -25,28 +25,28 @@ import { IErpHrmTimeTrackingTimesheetVersioningLock } from "../../../../structur
  * @param props.body Creation payload for a new timesheet versioning lock. The lock is tied to a specific timesheet and is owned by the requesting user context.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Service-layer steps:
- * 1) Parse request body containing timesheet_id, locked_by_user_id, and lock_reason.
- * 2) Start a DB transaction.
- * 3) Load the target `erp_hrm_time_tracking_timesheets` row by id.
- *    - Confirm it belongs to the caller’s selected organization context (organization isolation).
- * 4) Authorization checks:
- *    - Ensure the caller has permission to edit the timesheet (time-manage/time editing capability as defined by role context).
- *    - Enforce that the employee associated with the timesheet is not deactivated; if deactivated, reject.
- *    - Enforce approved/immutability constraints: if the timesheet is in a workflow state that forbids edits, reject.
- *    - If determining edit eligibility is impossible due to unexpected inconsistency, reject (do not create a lock that would imply edit permission).
- * 5) Uniqueness/concurrency checks:
- *    - Check whether there is already an active (non-deleted) lock for the same timesheet_id.
- *    - If an active lock exists and is held by a different user context or conflicts with the workflow, reject to avoid multiple concurrent editors.
- *    - If the active lock can be reused/allowed only by the same locked_by_user_id, apply the system’s policy; otherwise reject.
- * 6) Create the `erp_hrm_time_tracking_timesheet_versioning_locks` row:
- *    - timesheet_id = request.timesheet_id
- *    - locked_by_user_id = request.locked_by_user_id
- *    - lock_reason = request.lock_reason
- *    - created_at/updated_at set by DB or service.
- *    - deleted_at should be null (active).
- * 7) Commit transaction.
- * 8) Return the created lock entity.
+ * @x-autobe-specification Service-layer steps: 1) Parse request body containing
+ *   timesheet_id, locked_by_user_id, and lock_reason. 2) Start a DB
+ *   transaction. 3) Load the target `erp_hrm_time_tracking_timesheets` row by
+ *   id. - Confirm it belongs to the caller’s selected organization context
+ *   (organization isolation). 4) Authorization checks: - Ensure the caller has
+ *   permission to edit the timesheet (time-manage/time editing capability as
+ *   defined by role context). - Enforce that the employee associated with the
+ *   timesheet is not deactivated; if deactivated, reject. - Enforce
+ *   approved/immutability constraints: if the timesheet is in a workflow state
+ *   that forbids edits, reject. - If determining edit eligibility is impossible
+ *   due to unexpected inconsistency, reject (do not create a lock that would
+ *   imply edit permission). 5) Uniqueness/concurrency checks: - Check whether
+ *   there is already an active (non-deleted) lock for the same timesheet_id. -
+ *   If an active lock exists and is held by a different user context or
+ *   conflicts with the workflow, reject to avoid multiple concurrent editors. -
+ *   If the active lock can be reused/allowed only by the same
+ *   locked_by_user_id, apply the system’s policy; otherwise reject. 6) Create
+ *   the `erp_hrm_time_tracking_timesheet_versioning_locks` row: - timesheet_id
+ *   = request.timesheet_id - locked_by_user_id = request.locked_by_user_id -
+ *   lock_reason = request.lock_reason - created_at/updated_at set by DB or
+ *   service. - deleted_at should be null (active). 7) Commit transaction. 8)
+ *   Return the created lock entity.
  *
  * Edge cases:
  * - Timesheet not found => return 404-style error.

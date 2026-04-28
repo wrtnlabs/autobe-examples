@@ -35,7 +35,8 @@ export * as refund_requests from "./refund_requests/index";
  * @param props.body Search criteria and pagination parameters for filtering order items
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Query the ecommerce_mall_order_items table with pagination and filtering support.
+ * @x-autobe-specification Query the ecommerce_mall_order_items table with
+ *   pagination and filtering support.
  *
  * **Implementation Steps:**
  * 1. Validate user permissions based on actor type:

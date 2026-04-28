@@ -8,56 +8,72 @@ export type ICommunityPlatformGuestSession = {
   /**
    * Unique identifier of this session record (UUID).
    *
-   * @x-autobe-specification When accountType='guest', id corresponds to community_platform_guest_sessions.id. When accountType='member' or 'admin', id corresponds to the corresponding member/admin session table primary key.
+     * @x-autobe-specification When accountType='guest', id corresponds to
+     *   community_platform_guest_sessions.id. When accountType='member' or
+     *   'admin', id corresponds to the corresponding member/admin session table
+     *   primary key.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Client IP address captured when the session was created.
    *
-   * @x-autobe-specification Sourced from the selected underlying session table’s ip column and represents the client IP address recorded for this session creation/establishment.
+     * @x-autobe-specification Sourced from the selected underlying session
+     *   table’s ip column and represents the client IP address recorded for
+     *   this session creation/establishment.
    */
   ip: string;
 
   /**
    * Request URI associated with when the session was created.
    *
-   * @x-autobe-specification Sourced from the selected underlying session table’s href column representing the session-establishment request URI.
+     * @x-autobe-specification Sourced from the selected underlying session
+     *   table’s href column representing the session-establishment request URI.
    */
   href: string;
 
   /**
    * HTTP referrer URL captured when the session was created.
    *
-   * @x-autobe-specification Sourced from the selected underlying session table’s referrer column representing the referrer URL captured at session creation.
+     * @x-autobe-specification Sourced from the selected underlying session
+     *   table’s referrer column representing the referrer URL captured at
+     *   session creation.
    */
   referrer: string;
 
   /**
    * Session creation timestamp.
    *
-   * @x-autobe-specification Sourced from the selected underlying session table’s created_at column (server-managed). Clients must not attempt to set this value on PATCH.
+     * @x-autobe-specification Sourced from the selected underlying session
+     *   table’s created_at column (server-managed). Clients must not attempt to
+     *   set this value on PATCH.
    */
   createdAt: string & tags.Format<"date-time">;
 
   /**
    * Last update timestamp for this session record.
    *
-   * @x-autobe-specification Sourced from the selected underlying session table’s updated_at column. On PATCH, the service must refresh updatedAt when expiredAt/deletedAt changes are applied.
+     * @x-autobe-specification Sourced from the selected underlying session
+     *   table’s updated_at column. On PATCH, the service must refresh updatedAt
+     *   when expiredAt/deletedAt changes are applied.
    */
   updatedAt: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the session becomes invalid (expired).
    *
-   * @x-autobe-specification Sourced from the selected underlying session table’s expired_at column. When expiredAt is in the past, authentication middleware must treat the session as invalid/expired.
+     * @x-autobe-specification Sourced from the selected underlying session
+     *   table’s expired_at column. When expiredAt is in the past,
+     *   authentication middleware must treat the session as invalid/expired.
    */
   expiredAt: string & tags.Format<"date-time">;
 
   /**
    * Soft revocation timestamp. Null means the session is not revoked.
    *
-   * @x-autobe-specification Sourced from the selected underlying session table’s deleted_at column (nullable). If deletedAt is non-null, the session is revoked and must be denied by authentication middleware.
+     * @x-autobe-specification Sourced from the selected underlying session
+     *   table’s deleted_at column (nullable). If deletedAt is non-null, the
+     *   session is revoked and must be denied by authentication middleware.
    */
   deletedAt: (string & tags.Format<"date-time">) | null;
 };
@@ -69,38 +85,63 @@ export namespace ICommunityPlatformGuestSession {
     /**
      * Unique identifier of the guest session record to update.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping to community_platform_guest_sessions.id. Use it to locate the single target session row, then enforce that the row belongs to the authenticated caller context (guest).
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping to
+         *   community_platform_guest_sessions.id. Use it to locate the single
+         *   target session row, then enforce that the row belongs to the
+         *   authenticated caller context (guest).
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Session expiration timestamp. Null means the session has no expiration set (or expiration is cleared by service rules); non-null marks the end of session validity.
      *
-     * @x-autobe-database-schema-property expired_at
-     * @x-autobe-specification Direct mapping to community_platform_guest_sessions.expired_at (nullable). If the update sets expired_at to a non-null value, the service must reject when the session is already revoked (deleted_at is non-null) or already expired (current expired_at in the past) according to service rules. If setting/rotating/clearing is allowed, apply the requested semantics and refresh updated_at only when the change is successfully applied.
+         * @x-autobe-database-schema-property expired_at
+         * @x-autobe-specification Direct mapping to
+         *   community_platform_guest_sessions.expired_at (nullable). If the
+         *   update sets expired_at to a non-null value, the service must reject
+         *   when the session is already revoked (deleted_at is non-null) or
+         *   already expired (current expired_at in the past) according to
+         *   service rules. If setting/rotating/clearing is allowed, apply the
+         *   requested semantics and refresh updated_at only when the change is
+         *   successfully applied.
      */
     expired_at?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * Soft-revocation timestamp for the session. Null means the session is not revoked; non-null indicates the session has been revoked.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping to community_platform_guest_sessions.deleted_at (nullable). If set to a non-null value, the service must revoke/soft-delete the session; if deleted_at is already non-null, reject the update. If set to null, clear revocation according to service rules. Future authentication must respect deleted_at (revoked sessions denied). Refresh updated_at only when the state change is applied successfully.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping to
+         *   community_platform_guest_sessions.deleted_at (nullable). If set to
+         *   a non-null value, the service must revoke/soft-delete the session;
+         *   if deleted_at is already non-null, reject the update. If set to
+         *   null, clear revocation according to service rules. Future
+         *   authentication must respect deleted_at (revoked sessions denied).
+         *   Refresh updated_at only when the state change is applied
+         *   successfully.
      */
     deleted_at?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * Target page number for any list-like response logic that reuses this DTO (defaults to 1). Must be a non-negative integer when provided.
      *
-     * @x-autobe-specification Request-only pagination parameter. Treat as non-persisted input used by any list-like surrounding logic that reuses this DTO. Validate it as a non-negative integer when provided; null/omitted means default page selection (service defaults to page 1).
+         * @x-autobe-specification Request-only pagination parameter. Treat as
+         *   non-persisted input used by any list-like surrounding logic that
+         *   reuses this DTO. Validate it as a non-negative integer when
+         *   provided; null/omitted means default page selection (service
+         *   defaults to page 1).
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
 
     /**
      * Maximum number of records per page for any list-like response logic that reuses this DTO (defaults to 100). Must be a non-negative integer when provided.
      *
-     * @x-autobe-specification Request-only pagination parameter. Treat as non-persisted input used by any list-like surrounding logic that reuses this DTO. Validate it as a non-negative integer when provided; null/omitted means default page size (service defaults to 100).
+         * @x-autobe-specification Request-only pagination parameter. Treat as
+         *   non-persisted input used by any list-like surrounding logic that
+         *   reuses this DTO. Validate it as a non-negative integer when
+         *   provided; null/omitted means default page size (service defaults to
+         *   100).
      */
     limit?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };

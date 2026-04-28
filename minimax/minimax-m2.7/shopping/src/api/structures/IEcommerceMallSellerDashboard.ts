@@ -14,7 +14,10 @@ export namespace IEcommerceMallSellerDashboard {
      *
      * Represents the total number of products the seller has published that are not soft-deleted. Only products with null deleted_at timestamp are counted.
      *
-     * @x-autobe-specification COUNT(ecommerce_mall_products) WHERE ecommerce_mall_seller_id = authenticated_seller_id AND deleted_at IS NULL. Counts only active (non-deleted) products owned by the authenticated seller. Returns 0 if no active products exist.
+         * @x-autobe-specification COUNT(ecommerce_mall_products) WHERE
+         *   ecommerce_mall_seller_id = authenticated_seller_id AND deleted_at
+         *   IS NULL. Counts only active (non-deleted) products owned by the
+         *   authenticated seller. Returns 0 if no active products exist.
      */
     totalProducts: number & tags.Type<"int32"> & tags.Minimum<0>;
 
@@ -23,7 +26,13 @@ export namespace IEcommerceMallSellerDashboard {
      *
      * Aggregates order items from all completed and in-progress orders that contain the seller's products. Includes items with any status.
      *
-     * @x-autobe-specification COUNT(ecommerce_mall_order_items) via JOIN ecommerce_mall_products ON ecommerce_mall_order_items.product_id = ecommerce_mall_products.id WHERE ecommerce_mall_products.ecommerce_mall_seller_id = authenticated_seller_id. Counts all order items regardless of order status (includes paid, shipped, delivered, cancelled, refunded items).
+         * @x-autobe-specification COUNT(ecommerce_mall_order_items) via JOIN
+         *   ecommerce_mall_products ON ecommerce_mall_order_items.product_id =
+         *   ecommerce_mall_products.id WHERE
+         *   ecommerce_mall_products.ecommerce_mall_seller_id =
+         *   authenticated_seller_id. Counts all order items regardless of order
+         *   status (includes paid, shipped, delivered, cancelled, refunded
+         *   items).
      */
     totalOrderItems: number & tags.Type<"int32"> & tags.Minimum<0>;
 
@@ -32,7 +41,11 @@ export namespace IEcommerceMallSellerDashboard {
      *
      * Tracks customer-initiated cancellation requests for order items that are awaiting seller approval or rejection. Only requests with status 'pending' are counted.
      *
-     * @x-autobe-specification COUNT(ecommerce_mall_cancellation_requests) WHERE ecommerce_mall_seller_id = authenticated_seller_id AND status = 'pending'. Only counts cancellation requests with status 'pending' awaiting seller approval or rejection. Returns 0 if no pending cancellation requests exist.
+         * @x-autobe-specification COUNT(ecommerce_mall_cancellation_requests)
+         *   WHERE ecommerce_mall_seller_id = authenticated_seller_id AND status
+         *   = 'pending'. Only counts cancellation requests with status
+         *   'pending' awaiting seller approval or rejection. Returns 0 if no
+         *   pending cancellation requests exist.
      */
     pendingCancellationRequests: number & tags.Type<"int32"> & tags.Minimum<0>;
 
@@ -41,7 +54,11 @@ export namespace IEcommerceMallSellerDashboard {
      *
      * Tracks customer-initiated refund requests for delivered order items that are awaiting seller approval or rejection. Only requests with status 'pending' are counted.
      *
-     * @x-autobe-specification COUNT(ecommerce_mall_refund_requests) WHERE ecommerce_mall_seller_id = authenticated_seller_id AND status = 'pending'. Only counts refund requests with status 'pending' awaiting seller approval or rejection. Returns 0 if no pending refund requests exist.
+         * @x-autobe-specification COUNT(ecommerce_mall_refund_requests) WHERE
+         *   ecommerce_mall_seller_id = authenticated_seller_id AND status =
+         *   'pending'. Only counts refund requests with status 'pending'
+         *   awaiting seller approval or rejection. Returns 0 if no pending
+         *   refund requests exist.
      */
     pendingRefundRequests: number & tags.Type<"int32"> & tags.Minimum<0>;
   };

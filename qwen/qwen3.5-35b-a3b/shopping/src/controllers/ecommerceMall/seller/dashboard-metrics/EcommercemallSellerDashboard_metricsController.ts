@@ -29,9 +29,10 @@ export class EcommercemallSellerDashboard_metricsController {
    *
    * @param connection
    * @param body Search criteria including date range filters, metric value thresholds, pagination parameters, and sorting options.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Query ecommerce_mall_seller_dashboard_metrics table with pagination and filtering.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Query ecommerce_mall_seller_dashboard_metrics
+     *   table with pagination and filtering.
    *
    * 1. Extract seller_id from authentication context (JWT token payload) - the requesting seller's ID
    * 2. Filter by seller_id = authenticated user's seller_id (enforce seller-only access to their own metrics)
@@ -80,9 +81,10 @@ export class EcommercemallSellerDashboard_metricsController {
    *
    * @param connection
    * @param metricsId Unique identifier for the dashboard metrics record (UUID format)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Query ecommerce_mall_seller_dashboard_metrics table by id.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Query ecommerce_mall_seller_dashboard_metrics
+     *   table by id.
    *
    * 1. Validate metricsId is a valid UUID format
    * 2. Fetch the metrics record where id = metricsId

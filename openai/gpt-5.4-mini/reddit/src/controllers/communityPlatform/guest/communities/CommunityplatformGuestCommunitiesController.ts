@@ -21,9 +21,10 @@ export class CommunityplatformGuestCommunitiesController {
    *
    * @param connection
    * @param body Search, sorting, and pagination criteria for community discovery.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor guest
-   * @x-autobe-specification Implement a paginated discovery query against community_platform_communities.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor guest
+     * @x-autobe-specification Implement a paginated discovery query against
+     *   community_platform_communities.
    *
    * Filter the dataset to only include communities that are publicly available for discovery. Exclude records that are no longer available based on the lifecycle status and any deletion state represented by deleted_at. Enforce the requirement that each returned community must have complete identifying information: name, description, and icon_image_url.
    *

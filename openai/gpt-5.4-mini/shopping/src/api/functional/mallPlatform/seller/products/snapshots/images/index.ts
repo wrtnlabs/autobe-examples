@@ -21,7 +21,10 @@ import { IPageIMallPlatformProductSnapshotImage } from "../../../../../../struct
  * @param props.snapshotId The snapshot identifier whose preserved images should be returned.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Load the product snapshot identified by snapshotId and verify it belongs to productId. Then query the product_snapshot_images relation for that snapshot and return the image-state rows in snapshot order.
+ * @x-autobe-specification Load the product snapshot identified by snapshotId
+ *   and verify it belongs to productId. Then query the product_snapshot_images
+ *   relation for that snapshot and return the image-state rows in snapshot
+ *   order.
  *
  * Do not read from the live product_images table for this operation; the purpose is to expose preserved historical state only. Preserve the stored ordering so the first image in the returned collection remains the historical main image/thumbnail.
  *
@@ -118,7 +121,13 @@ export namespace getByProductidAndSnapshotid {
  * @param props.body Search, paging, and sorting criteria for the preserved image-state rows inside a product snapshot.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Resolve the product by productId and verify the snapshot identified by snapshotId belongs to that product. Query mall_platform_product_snapshot_images by mall_platform_product_snapshot_id and return rows ordered by sort_order ascending to preserve the historical gallery sequence. If the request DTO supports search, pagination, or sort overrides, apply them only within the bounds of the snapshot's image rows and never mutate stored ordering data.
+ * @x-autobe-specification Resolve the product by productId and verify the
+ *   snapshot identified by snapshotId belongs to that product. Query
+ *   mall_platform_product_snapshot_images by mall_platform_product_snapshot_id
+ *   and return rows ordered by sort_order ascending to preserve the historical
+ *   gallery sequence. If the request DTO supports search, pagination, or sort
+ *   overrides, apply them only within the bounds of the snapshot's image rows
+ *   and never mutate stored ordering data.
  *
  * This endpoint is read-only because snapshot image rows are immutable historical records. Do not insert, update, or delete any image history here. Enforce access control so the owning seller of the product and administrators can inspect the snapshot history; deny other callers. Return not-found when the product or snapshot is missing or mismatched. Return forbidden for unauthorized access. Keep image_uri and sort_order exactly as stored in the snapshot table.
  * @path /mallPlatform/seller/products/:productId/snapshots/:snapshotId/images
@@ -224,7 +233,10 @@ export namespace index {
  * @param props.imageSnapshotId The product image snapshot identifier within the requested product snapshot.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Load the product image snapshot by imageSnapshotId, then verify that it belongs to the requested product snapshot and product. Use a read-only query path against the historical snapshot tables only; do not read from the live product image table.
+ * @x-autobe-specification Load the product image snapshot by imageSnapshotId,
+ *   then verify that it belongs to the requested product snapshot and product.
+ *   Use a read-only query path against the historical snapshot tables only; do
+ *   not read from the live product image table.
  *
  * If the product, snapshot, or image snapshot does not exist, or if the parent-child relationship is inconsistent, return not found. The operation must not mutate any data and must preserve the immutable nature of snapshots.
  *

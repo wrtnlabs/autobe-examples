@@ -1,0 +1,402 @@
+/// Topic-focused discussion spaces where community members create posts and
+/// engage in threaded conversations.
+///
+/// Communities serve as the foundational organizational unit for content,
+/// each with a unique name that identifies the discussion topic, description
+/// text providing context about community purpose, and optional icon URI
+/// referencing visual identity images.
+///
+/// Every community has a designated creator ({@link
+/// reddit_like_community_members}) who established the space and holds owner
+/// authority for moderation hierarchy.
+///
+/// @namespace community
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_community_communities {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key uniquely identifying each community.
+  id String @id
+  
+  /// Reference to the member who created this community, establishing
+  /// ownership and highest moderation authority.
+  ///
+  /// The creator becomes the owner of the community, holding superior
+  /// authority over all other moderators. They can add moderators, remove
+  /// moderators, and make final decisions on moderation actions. This
+  /// relationship is immutable after creation - the creator remains the
+  /// permanent owner even after community handover scenarios.
+  creator_id String
+  
+  /// Public name of the community displayed in navigation, feeds, and URLs.
+  ///
+  /// Names must be globally unique across all communities and serve as the
+  /// primary identifier for users navigating to community content.
+  name String
+  
+  /// Text description of the community purpose, rules, and scope shared with
+  /// visiting users.
+  ///
+  /// Displayed on the community landing page to inform subscribers and
+  /// potential members about the community focus, posting guidelines, and
+  /// community standards enforced by moderators.
+  description String
+  
+  /// URI reference to the community's icon image file.
+  ///
+  /// Links to an external storage location where the icon image is stored.
+  /// Null when no icon has been assigned to the community.
+  icon_uri String?
+  
+  /// Timestamp recording when the community was initially created.
+  ///
+  /// Set automatically at creation time and never modified. Establishes the
+  /// community age for display purposes and audit trail.
+  created_at DateTime
+  
+  /// Timestamp recording the last modification to community metadata.
+  ///
+  /// Updated when community properties such as name, description, or icon
+  /// references change. Tracks the community's last identity or configuration
+  /// update.
+  updated_at DateTime
+  
+  /// Timestamp recording when the community was soft-deleted.
+  ///
+  /// Null when the community is active. Set when the community is removed,
+  /// preserving historical data for audit and recovery purposes.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  creator reddit_like_community_members @relation(fields: [creator_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  subscriptions reddit_like_community_community_subscriptions[]
+  moderatorAssignments reddit_like_community_community_moderators[]
+  communityBans reddit_like_community_community_bans[]
+  snapshots reddit_like_community_community_snapshots[]
+  posts reddit_like_community_posts[]
+  postSnapshots reddit_like_community_post_snapshots[]
+  moderators reddit_like_community_moderators[]
+  bans reddit_like_community_bans[]
+  reports reddit_like_community_reports[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([creator_id])
+  @@unique([name])
+}
+
+/// Tracks subscription relationships between members and communities in the
+/// community platform.
+///
+/// Subscriptions enable members to participate in communities by granting
+/// post creation privileges. Each subscription records the initial join
+/// timestamp permanently and maintains current membership status to support
+/// active/inactive transitions via unsubscribe operations.
+///
+/// @namespace community
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_community_community_subscriptions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for community subscription records.
+  id String @id
+  
+  /// The member who subscribed to the community.
+  ///
+  /// References the authenticated user account. Subscriptions require a valid
+  /// member to establish the user-community membership relationship.
+  member_id String
+  
+  /// The community that the member subscribed to.
+  ///
+  /// References the target community where the member seeks content creation
+  /// and participation privileges.
+  community_id String
+  
+  /// The date and time when the member first joined the community.
+  ///
+  /// This timestamp serves as a permanent historical record of initial
+  /// membership. The value remains unchanged even if the member unsubscribes
+  /// and later resubscribes to the same community.
+  joined_at DateTime
+  
+  /// Current subscription status indicating active or inactive membership.
+  ///
+  /// True for current subscriptions, false for unsubscribed states.
+  /// Transitions to false when members unsubscribe from communities.
+  is_active Boolean
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last modification timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for record archival.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member reddit_like_community_members @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  community reddit_like_community_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([member_id, community_id], map: "reddit_like_community_community_subscriptions_member_i_ad61e697")
+  // spellchecker: ignore-next-line
+  @@index([community_id, created_at], map: "reddit_like_community_community_subscriptions_communit_625337af")
+  // spellchecker: ignore-next-line
+  @@index([member_id, is_active], map: "reddit_like_community_community_subscriptions_member_i_dc940dd0")
+}
+
+/// Assigns moderation roles to community members, distinguishing between the
+/// community creator (owner) and delegated moderators.
+///
+/// This table serves as a junction table linking `{@link
+/// reddit_like_community_communities}` and `{@link
+/// reddit_like_community_members}` with an additional `role` attribute. A
+/// member can hold at most one active role per community, enforced by a
+/// unique index on the composite foreign keys. The `owner` role
+/// automatically designates the community creator with highest authority,
+/// while the `moderator` role grants delegated permissions for content and
+/// user management. Soft deletes via `deleted_at` maintain an audit trail
+/// for revoked roles.
+///
+/// @namespace community
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_community_community_moderators {
+  //----
+  // COLUMNS
+  //----
+  /// Uniquely identifies the moderation role assignment record.
+  id String @id
+  
+  /// Links the moderation role assignment to the target community.
+  ///
+  /// This identifies the specific community where the member holds authority.
+  /// Cannot be null.
+  reddit_like_community_community_id String
+  
+  /// Identifies the member assigned the moderation role.
+  ///
+  /// This references the authenticated user account who holds the authority
+  /// level within the community. Cannot be null.
+  reddit_like_community_member_id String
+  
+  /// Records the timestamp when this moderation role assignment was initially
+  /// created.
+  created_at DateTime
+  
+  /// Stores the timestamp of the last modification to this moderation role
+  /// assignment record.
+  updated_at DateTime
+  
+  /// Tracks the soft deletion timestamp when a moderation role is revoked.
+  ///
+  /// Maintains a permanent audit trail for compliance and history. The value
+  /// is null while the role is active, and populated when the role is removed
+  /// by the community owner.
+  deleted_at DateTime?
+  
+  /// Defines the specific authority level granted to the member within the
+  /// community.
+  ///
+  /// Allowed values are 'owner' (highest authority, automatically assigned to
+  /// the community creator) or 'moderator' (delegated authority for content
+  /// governance, user banning, and report reviewing). Owners can appoint and
+  /// remove moderators.
+  role String
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  community reddit_like_community_communities @relation(fields: [reddit_like_community_community_id], references: [id], onDelete: Cascade)
+  member reddit_like_community_members @relation(fields: [reddit_like_community_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  bans reddit_like_community_community_bans[]
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([reddit_like_community_member_id], map: "reddit_like_community_community_moderators_reddit_like_d31fb5e1")
+  // spellchecker: ignore-next-line
+  @@unique([reddit_like_community_community_id, reddit_like_community_member_id], map: "reddit_like_community_community_moderators_reddit_like_1747b6da")
+}
+
+/// Community-level user restrictions recording which members are banned from
+/// specific communities, the enforcing moderator context, and the ban
+/// reason.
+///
+/// Each ban prevents a member from creating posts or comments in that
+/// community while still allowing content viewing. Bans are managed by
+/// community owners and moderators and support soft-delete semantics via
+/// deleted_at for unbanning.
+///
+/// @namespace community
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_community_community_bans {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for each unique ban record.
+  id String @id
+  
+  /// Reference to the community where the ban is enforced.
+  ///
+  /// Links the restriction to {@link reddit_like_community_communities},
+  /// establishing the scope of where the banned member is restricted.
+  reddit_like_community_community_id String
+  
+  /// Reference to the member account being banned.
+  ///
+  /// Links the restriction to {@link reddit_like_community_members},
+  /// identifying the user subject to the ban.
+  member_id String
+  
+  /// Reference to the moderator who issued the ban.
+  ///
+  /// Links to {@link reddit_like_community_community_moderators}, attributing
+  /// the enforcement action to a specific moderator within the community.
+  reddit_like_community_community_moderators_id String
+  
+  /// Text explanation provided by the moderator for the ban.
+  ///
+  /// Visible to moderators when reviewing the banned users list. Documents why
+  /// the member was restricted from the community.
+  reason String
+  
+  /// Timestamp when the ban was created.
+  ///
+  /// Records when the moderation action took effect.
+  created_at DateTime
+  
+  /// Timestamp of the last modification to this ban record.
+  ///
+  /// Tracks when the ban record was last changed.
+  updated_at DateTime
+  
+  /// Timestamp when the ban was removed (unbanned).
+  ///
+  /// NULL indicates an active ban. Populated when a moderator lifts the ban,
+  /// supporting soft-delete semantics.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  community reddit_like_community_communities @relation(fields: [reddit_like_community_community_id], references: [id], onDelete: Cascade)
+  member reddit_like_community_members @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  moderator reddit_like_community_community_moderators @relation(fields: [reddit_like_community_community_moderators_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([member_id])
+  // spellchecker: ignore-next-line
+  @@index([reddit_like_community_community_moderators_id], map: "reddit_like_community_community_bans_reddit_like_commu_e5dd8fbe")
+  // spellchecker: ignore-next-line
+  @@unique([reddit_like_community_community_id, member_id], map: "reddit_like_community_community_bans_reddit_like_commu_62edff59")
+  // spellchecker: ignore-next-line
+  @@index([reddit_like_community_community_id, created_at], map: "reddit_like_community_community_bans_reddit_like_commu_c2f23619")
+}
+
+/// Community configuration snapshots capturing point-in-time state of
+/// community identity for audit trail reconstruction. Each snapshot
+/// preserves community name, description, icon, and ownership information at
+/// the exact moment of a configuration change event.
+///
+/// These immutable, append-only records enable historical community state
+/// reconstruction, change auditing, and compliance reporting by maintaining
+/// a chronological chain of all community modifications including name
+/// edits, description updates, icon changes, and ownership transfers.
+///
+/// Multiple snapshots exist per community, created whenever community
+/// configuration changes or ownership is transferred. Snapshots are never
+/// modified or deleted after creation, ensuring data integrity for audit
+/// purposes.
+///
+/// @namespace community
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_community_community_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key uniquely identifying this individual community snapshot
+  /// record within the audit trail table.
+  id String @id
+  
+  /// Reference to the {@link reddit_like_community_communities} community
+  /// entity this snapshot captures. All snapshots sharing this FK value belong
+  /// to the same community, enabling chronological reconstruction of that
+  /// community's complete configuration history.
+  ///
+  /// This FK enables temporal ordering queries to retrieve all historical
+  /// states of a specific community in creation order for audit trail display.
+  reddit_like_community_communities_id String
+  
+  /// Reference to the {@link reddit_like_community_members} account that held
+  /// community ownership at the exact moment this snapshot was captured.
+  /// Preserves ownership history enabling tracking of ownership transfers and
+  /// historical attribution.
+  ///
+  /// Capturing the owner identity separately from the community moderator
+  /// relationship prevents cascading data loss if moderator records are later
+  /// modified or deleted.
+  reddit_like_community_members_id String
+  
+  /// Community name as it existed at the moment this snapshot was captured.
+  /// Preserves the exact name text for historical reconstruction, compliance
+  /// reporting, and display purposes.
+  name String
+  
+  /// Community description text as it existed at the snapshot time. Nullable
+  /// when the community had no description configured at the moment of
+  /// snapshot capture.
+  description String?
+  
+  /// Community icon URI as it existed at the snapshot time. Nullable when the
+  /// community had no icon image configured at the moment of snapshot capture.
+  icon_uri String?
+  
+  /// Timestamp marking the exact moment this snapshot was created,
+  /// representing the point-in-time state capture for chronological audit
+  /// trail ordering.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  community reddit_like_community_communities @relation(fields: [reddit_like_community_communities_id], references: [id], onDelete: Cascade)
+  owner reddit_like_community_members @relation(fields: [reddit_like_community_members_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([reddit_like_community_communities_id, created_at], map: "reddit_like_community_community_snapshots_reddit_like__7283b76e")
+  // spellchecker: ignore-next-line
+  @@index([reddit_like_community_members_id, created_at], map: "reddit_like_community_community_snapshots_reddit_like__8be6fdc0")
+}

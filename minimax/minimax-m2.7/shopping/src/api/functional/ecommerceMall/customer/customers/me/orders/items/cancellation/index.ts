@@ -35,7 +35,8 @@ import { IEcommerceMallCancellationRequest } from "../../../../../../../../struc
  * @param props.itemId The unique identifier of the order item to get cancellation request for.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Query the ecommerce_mall_cancellation_requests table using the order_item_id foreign key from the path parameter.
+ * @x-autobe-specification Query the ecommerce_mall_cancellation_requests table
+ *   using the order_item_id foreign key from the path parameter.
  *
  * 1. Extract itemId from path parameters
  * 2. Validate itemId is a valid UUID format

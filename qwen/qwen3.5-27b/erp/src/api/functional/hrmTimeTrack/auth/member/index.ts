@@ -23,14 +23,14 @@ import { IHrmTimeTrackMember } from "../../../../structures/IHrmTimeTrackMember"
  * @param props.body Registration data for new member account including email and password.
  * @x-autobe-authorization-type join
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implement member registration flow:
- * 1. Validate email format and uniqueness (check hrm_time_track_members.email)
- * 2. Validate password strength requirements
- * 3. Hash password using bcrypt or similar algorithm
- * 4. Create hrm_time_track_members record with email, password_hash, created_at, updated_at
- * 5. Generate email verification token and create hrm_time_track_member_email_verifications record
- * 6. Send verification email to the provided email address
- * 7. Return success response with member ID
+ * @x-autobe-specification Implement member registration flow: 1. Validate email
+ *   format and uniqueness (check hrm_time_track_members.email) 2. Validate
+ *   password strength requirements 3. Hash password using bcrypt or similar
+ *   algorithm 4. Create hrm_time_track_members record with email,
+ *   password_hash, created_at, updated_at 5. Generate email verification token
+ *   and create hrm_time_track_member_email_verifications record 6. Send
+ *   verification email to the provided email address 7. Return success response
+ *   with member ID
  *
  * Error handling:
  * - 409 Conflict if email already exists
@@ -132,18 +132,14 @@ export namespace join {
  * @param props.body Login credentials for member authentication including email and password.
  * @x-autobe-authorization-type login
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implement member login authentication:
- * 1. Validate email format
- * 2. Find member by email in hrm_time_track_members (check deleted_at is NULL)
- * 3. Verify password hash matches provided password
- * 4. Create new session record in hrm_time_track_member_sessions with:
- *    - hrm_time_track_member_id
- *    - hrm_time_track_organization_id (from request or default)
- *    - ip address from request
- *    - href and referrer from request headers
- *    - created_at and expired_at timestamps
- * 5. Generate JWT access and refresh tokens
- * 6. Return tokens in response
+ * @x-autobe-specification Implement member login authentication: 1. Validate
+ *   email format 2. Find member by email in hrm_time_track_members (check
+ *   deleted_at is NULL) 3. Verify password hash matches provided password 4.
+ *   Create new session record in hrm_time_track_member_sessions with: -
+ *   hrm_time_track_member_id - hrm_time_track_organization_id (from request or
+ *   default) - ip address from request - href and referrer from request headers
+ *   - created_at and expired_at timestamps 5. Generate JWT access and refresh
+ *   tokens 6. Return tokens in response
  *
  * Error handling:
  * - 401 Unauthorized if email not found or password incorrect
@@ -245,14 +241,13 @@ export namespace login {
  * @param props.body Refresh token for obtaining new authentication tokens.
  * @x-autobe-authorization-type refresh
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implement token refresh flow:
- * 1. Validate refresh token from request (Authorization header or body)
- * 2. Verify refresh token is valid and not expired
- * 3. Verify refresh token matches an active session in hrm_time_track_member_sessions
- * 4. Check session has not expired (expired_at is in the future)
- * 5. Generate new access and refresh tokens
- * 6. Update session's expired_at timestamp to extend validity
- * 7. Return new tokens in response
+ * @x-autobe-specification Implement token refresh flow: 1. Validate refresh
+ *   token from request (Authorization header or body) 2. Verify refresh token
+ *   is valid and not expired 3. Verify refresh token matches an active session
+ *   in hrm_time_track_member_sessions 4. Check session has not expired
+ *   (expired_at is in the future) 5. Generate new access and refresh tokens 6.
+ *   Update session's expired_at timestamp to extend validity 7. Return new
+ *   tokens in response
  *
  * Error handling:
  * - 401 Unauthorized if refresh token is invalid or expired

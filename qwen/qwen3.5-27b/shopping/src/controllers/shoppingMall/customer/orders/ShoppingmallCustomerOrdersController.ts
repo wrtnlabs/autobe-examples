@@ -20,9 +20,10 @@ export class ShoppingmallCustomerOrdersController {
    *
    * @param connection
    * @param body Search criteria for filtering orders including status, order number, date range, and pagination parameters.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Query shopping_mall_orders table for the authenticated customer's orders with pagination and filtering.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Query shopping_mall_orders table for the
+     *   authenticated customer's orders with pagination and filtering.
    *
    * Implementation steps:
    * 1. Extract customer_id from authentication context (shopping_mall_customer_id foreign key)
@@ -78,9 +79,9 @@ export class ShoppingmallCustomerOrdersController {
    *
    * @param connection
    * @param orderId UUID of the order to retrieve (global scope).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Query shopping_mall_orders table by id parameter.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Query shopping_mall_orders table by id parameter.
    *
    * 1. Validate that the authenticated customer owns this order (shopping_mall_customer_id matches current user).
    * 2. JOIN with shopping_mall_order_items to retrieve all order items for this order.

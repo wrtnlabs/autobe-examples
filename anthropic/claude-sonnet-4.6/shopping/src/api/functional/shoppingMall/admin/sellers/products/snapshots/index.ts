@@ -28,7 +28,9 @@ import { IShoppingMallProductSnapshot } from "../../../../../../structures/IShop
  * @param props.body Pagination and optional filter criteria for the product snapshot list.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification 1. Validate that the authenticated actor is either the seller identified by `sellerId` or an administrator. If neither, return 403 Forbidden.
+ * @x-autobe-specification 1. Validate that the authenticated actor is either
+ *   the seller identified by `sellerId` or an administrator. If neither, return
+ *   403 Forbidden.
  *
  * 2. Confirm that the product identified by `productId` exists in `shopping_mall_products` and that its `shopping_mall_seller_id` matches the `sellerId` path parameter. If the product does not exist (including if it has been permanently deleted and no record exists), return 404. Note: if the product has a `deleted_at` value set (soft-deleted), administrators may still access its snapshots via this endpoint; enforce this by skipping the `deleted_at` filter when the caller is an admin.
  *
@@ -152,16 +154,32 @@ export namespace index {
  * @param props.snapshotId The UUID of the specific product snapshot to retrieve.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification 1. Validate that the authenticated actor is either the seller identified by `sellerId` OR an administrator. If the authenticated seller's ID does not match `sellerId`, return 403 Forbidden.
- * 2. Query `shopping_mall_products` to find the product with `id = productId` AND `shopping_mall_seller_id = sellerId`. If not found (or the product belongs to a different seller), return 404 Not Found. Note: products with a non-null `deleted_at` are still accessible for snapshot viewing — do NOT filter them out.
- * 3. Query `shopping_mall_product_snapshots` for the record with `id = snapshotId` AND `product_id = productId`. If no such snapshot exists, return 404 Not Found.
- * 4. Eagerly load all child records for the snapshot:
- *    - `shopping_mall_product_snapshot_skuses` where `product_snapshot_id = snapshotId`, ordered by `created_at` ASC.
- *    - For each snapshot SKU, eagerly load `shopping_mall_product_snapshot_skus_options` ordered by `sequence` ASC.
- *    - `shopping_mall_product_snapshot_images` where `product_snapshot_id = snapshotId`, ordered by `sequence` ASC.
- * 5. Construct and return the full `IShoppingMallProductSnapshot` DTO including: id, product_id, category_id, category_name, name, description, base_price, created_at, an array of snapshot SKUs (each with id, sku_code, price, product_variant_id, created_at, and options array), and an ordered array of snapshot images (each with id, url, sequence, created_at).
- * 6. No write, update, or delete operations are performed. This is a pure read operation.
- * 7. Edge cases: if the snapshot's `product_id` is null (product was deleted and FK was set to null), verify ownership via the `sellerId` path parameter against the snapshot's originating product — or rely on the admin path for such cases. In practice, for seller access, the product record (even if deleted) should still be queriable for the ownership check.
+ * @x-autobe-specification 1. Validate that the authenticated actor is either
+ *   the seller identified by `sellerId` OR an administrator. If the
+ *   authenticated seller's ID does not match `sellerId`, return 403 Forbidden.
+ *   2. Query `shopping_mall_products` to find the product with `id = productId`
+ *   AND `shopping_mall_seller_id = sellerId`. If not found (or the product
+ *   belongs to a different seller), return 404 Not Found. Note: products with a
+ *   non-null `deleted_at` are still accessible for snapshot viewing — do NOT
+ *   filter them out. 3. Query `shopping_mall_product_snapshots` for the record
+ *   with `id = snapshotId` AND `product_id = productId`. If no such snapshot
+ *   exists, return 404 Not Found. 4. Eagerly load all child records for the
+ *   snapshot: - `shopping_mall_product_snapshot_skuses` where
+ *   `product_snapshot_id = snapshotId`, ordered by `created_at` ASC. - For each
+ *   snapshot SKU, eagerly load `shopping_mall_product_snapshot_skus_options`
+ *   ordered by `sequence` ASC. - `shopping_mall_product_snapshot_images` where
+ *   `product_snapshot_id = snapshotId`, ordered by `sequence` ASC. 5. Construct
+ *   and return the full `IShoppingMallProductSnapshot` DTO including: id,
+ *   product_id, category_id, category_name, name, description, base_price,
+ *   created_at, an array of snapshot SKUs (each with id, sku_code, price,
+ *   product_variant_id, created_at, and options array), and an ordered array of
+ *   snapshot images (each with id, url, sequence, created_at). 6. No write,
+ *   update, or delete operations are performed. This is a pure read operation.
+ *   7. Edge cases: if the snapshot's `product_id` is null (product was deleted
+ *   and FK was set to null), verify ownership via the `sellerId` path parameter
+ *   against the snapshot's originating product — or rely on the admin path for
+ *   such cases. In practice, for seller access, the product record (even if
+ *   deleted) should still be queriable for the ownership check.
  * @path /shoppingMall/admin/sellers/:sellerId/products/:productId/snapshots/:snapshotId
  * @accessor api.functional.shoppingMall.admin.sellers.products.snapshots.at
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe

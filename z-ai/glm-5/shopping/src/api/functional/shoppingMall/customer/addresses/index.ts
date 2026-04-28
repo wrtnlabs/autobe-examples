@@ -159,7 +159,8 @@ export namespace create {
  * @param props.body Search criteria and pagination parameters for filtering addresses
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Query shopping_mall_addresses table with the following implementation:
+ * @x-autobe-specification Query shopping_mall_addresses table with the
+ *   following implementation:
  *
  * 1. Authentication: Extract customer ID from JWT token in Authorization header
  * 2. Authorization: Ensure customer account is active (not banned, not deleted)

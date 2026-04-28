@@ -20,39 +20,33 @@ export class ShoppingmallCustomerCustomersMeCheckoutController {
    *
    * @param connection
    * @param body Checkout request containing the shipping address to use for this order and any payment confirmation token. The shipping address must belong to the authenticated customer and must not be deleted.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification 1. Validate the authenticated customer exists and is not banned or deleted.
-   * 2. Retrieve the customer's shopping cart from shopping_mall_customer_carts.
-   * 3. Validate cart is not empty and all cart items exist and are not deleted.
-   * 4. For each cart item:
-   *    a. Verify the product variant exists, is not deleted, and is available for purchase.
-   *    b. Check inventory availability - variant must have sufficient stock for the requested quantity.
-   *    c. Calculate the price (use variant.price if set, otherwise product.base_price).
-   * 5. Validate the shipping address exists, belongs to the customer, and is not deleted.
-   * 6. Begin database transaction.
-   * 7. Generate a unique order_number (e.g., 'ORD-' + timestamp + random suffix).
-   * 8. Create the order record in shopping_mall_orders with:
-   *    - shopping_mall_customer_id: authenticated customer ID
-   *    - shopping_mall_customer_address_id: selected address ID
-   *    - order_number: generated unique number
-   *    - created_at: current timestamp
-   *    - updated_at: current timestamp
-   *    - deleted_at: null
-   * 9. For each cart item, create an order item in shopping_mall_order_items with:
-   *    - shopping_mall_order_id: newly created order ID
-   *    - shopping_mall_product_variant_id: variant ID from cart item
-   *    - shopping_mall_seller_id: seller ID from the variant's product
-   *    - quantity: quantity from cart item
-   *    - price: calculated price per unit
-   *    - status: 'paid'
-   *    - created_at: current timestamp
-   *    - updated_at: current timestamp
-   *    - deleted_at: null
-   * 10. Deduct inventory for each variant by the ordered quantity.
-   * 11. Soft delete all cart items (set deleted_at to current timestamp) to clear the cart.
-   * 12. Commit the transaction.
-   * 13. Return the created order with all order items included.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification 1. Validate the authenticated customer exists and
+     *   is not banned or deleted. 2. Retrieve the customer's shopping cart from
+     *   shopping_mall_customer_carts. 3. Validate cart is not empty and all
+     *   cart items exist and are not deleted. 4. For each cart item: a. Verify
+     *   the product variant exists, is not deleted, and is available for
+     *   purchase. b. Check inventory availability - variant must have
+     *   sufficient stock for the requested quantity. c. Calculate the price
+     *   (use variant.price if set, otherwise product.base_price). 5. Validate
+     *   the shipping address exists, belongs to the customer, and is not
+     *   deleted. 6. Begin database transaction. 7. Generate a unique
+     *   order_number (e.g., 'ORD-' + timestamp + random suffix). 8. Create the
+     *   order record in shopping_mall_orders with: - shopping_mall_customer_id:
+     *   authenticated customer ID - shopping_mall_customer_address_id: selected
+     *   address ID - order_number: generated unique number - created_at:
+     *   current timestamp - updated_at: current timestamp - deleted_at: null 9.
+     *   For each cart item, create an order item in shopping_mall_order_items
+     *   with: - shopping_mall_order_id: newly created order ID -
+     *   shopping_mall_product_variant_id: variant ID from cart item -
+     *   shopping_mall_seller_id: seller ID from the variant's product -
+     *   quantity: quantity from cart item - price: calculated price per unit -
+     *   status: 'paid' - created_at: current timestamp - updated_at: current
+     *   timestamp - deleted_at: null 10. Deduct inventory for each variant by
+     *   the ordered quantity. 11. Soft delete all cart items (set deleted_at to
+     *   current timestamp) to clear the cart. 12. Commit the transaction. 13.
+     *   Return the created order with all order items included.
    *
    * Error handling:
    * - If any cart item is unavailable (deleted, out of stock), reject the entire order and return 400 Bad Request.

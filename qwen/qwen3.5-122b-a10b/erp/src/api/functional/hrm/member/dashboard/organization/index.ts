@@ -33,7 +33,9 @@ import { IHrmOrganizationDashboard } from "../../../../../structures/IHrmOrganiz
  * @param props.organizationId Unique identifier of the organization (global scope).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implement GET /dashboard/organization/{organizationId} as an aggregated statistics endpoint:
+ * @x-autobe-specification Implement GET
+ *   /dashboard/organization/{organizationId} as an aggregated statistics
+ *   endpoint:
  *
  * **Query Logic**
  *

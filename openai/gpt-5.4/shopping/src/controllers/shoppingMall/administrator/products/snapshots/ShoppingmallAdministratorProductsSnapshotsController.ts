@@ -25,20 +25,43 @@ export class ShoppingmallAdministratorProductsSnapshotsController {
    * @param connection
    * @param productId Target product's unique identifier
    * @param body Snapshot history filters and pagination options
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification 1. Authenticate the caller and determine whether the actor is a seller or administrator.
-   * 2. Resolve the target `shopping_mall_products` row by `id = :productId`.
-   * 3. If no product exists, return a not-found error.
-   * 4. If the caller is a seller, verify that `shopping_mall_products.shopping_mall_seller_id` belongs to the authenticated seller account. If not, reject with a forbidden error.
-   * 5. If the caller is an administrator, allow access for oversight purposes.
-   * 6. Read pagination, sorting, and optional filter criteria from `IShoppingMallProductSnapshot.IRequest`. Supported filters should be limited to fields actually available from the loaded schema, especially snapshot creation time and identifiers. Free-text change filtering is not available directly on `shopping_mall_product_snapshots` because `change_summary` exists on `shopping_mall_product_variant_snapshots`, not on the product snapshot table itself.
-   * 7. Query `shopping_mall_product_snapshots` constrained by `shopping_mall_product_id = :productId`, ordered by `created_at` descending by default so the newest preserved version appears first. Apply pagination constraints from the request body.
-   * 8. For summary enrichment, include lightweight aggregate information derived from child records when needed, such as image copy count from `shopping_mall_product_snapshot_image_copies` and variant snapshot count from `shopping_mall_product_variant_snapshots`, but avoid loading full child payloads for every row in the paginated list unless the summary DTO explicitly requires them.
-   * 9. Return an `IPageIShoppingMallProductSnapshot.ISummary` response containing pagination metadata and snapshot summary rows.
-   * 10. Do not allow mutation of snapshot records anywhere in this flow. Snapshot records are immutable business-audit artifacts. This endpoint only reads preserved history.
-   * 11. Ensure the implementation continues to return existing historical snapshots even if `shopping_mall_products.deleted_at` is populated, because snapshot preservation remains required after listing removal.
-   * 12. Use indexed access patterns on `shopping_mall_product_snapshots` by `(shopping_mall_product_id, created_at)` for efficient history browsing.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor administrator
+     * @x-autobe-specification 1. Authenticate the caller and determine whether
+     *   the actor is a seller or administrator. 2. Resolve the target
+     *   `shopping_mall_products` row by `id = :productId`. 3. If no product
+     *   exists, return a not-found error. 4. If the caller is a seller, verify
+     *   that `shopping_mall_products.shopping_mall_seller_id` belongs to the
+     *   authenticated seller account. If not, reject with a forbidden error. 5.
+     *   If the caller is an administrator, allow access for oversight purposes.
+     *   6. Read pagination, sorting, and optional filter criteria from
+     *   `IShoppingMallProductSnapshot.IRequest`. Supported filters should be
+     *   limited to fields actually available from the loaded schema, especially
+     *   snapshot creation time and identifiers. Free-text change filtering is
+     *   not available directly on `shopping_mall_product_snapshots` because
+     *   `change_summary` exists on `shopping_mall_product_variant_snapshots`,
+     *   not on the product snapshot table itself. 7. Query
+     *   `shopping_mall_product_snapshots` constrained by
+     *   `shopping_mall_product_id = :productId`, ordered by `created_at`
+     *   descending by default so the newest preserved version appears first.
+     *   Apply pagination constraints from the request body. 8. For summary
+     *   enrichment, include lightweight aggregate information derived from
+     *   child records when needed, such as image copy count from
+     *   `shopping_mall_product_snapshot_image_copies` and variant snapshot
+     *   count from `shopping_mall_product_variant_snapshots`, but avoid loading
+     *   full child payloads for every row in the paginated list unless the
+     *   summary DTO explicitly requires them. 9. Return an
+     *   `IPageIShoppingMallProductSnapshot.ISummary` response containing
+     *   pagination metadata and snapshot summary rows. 10. Do not allow
+     *   mutation of snapshot records anywhere in this flow. Snapshot records
+     *   are immutable business-audit artifacts. This endpoint only reads
+     *   preserved history. 11. Ensure the implementation continues to return
+     *   existing historical snapshots even if
+     *   `shopping_mall_products.deleted_at` is populated, because snapshot
+     *   preservation remains required after listing removal. 12. Use indexed
+     *   access patterns on `shopping_mall_product_snapshots` by
+     *   `(shopping_mall_product_id, created_at)` for efficient history
+     *   browsing.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
@@ -76,9 +99,10 @@ export class ShoppingmallAdministratorProductsSnapshotsController {
    * @param connection
    * @param productId Target product's ID that scopes snapshot access
    * @param productSnapshotId Target preserved product snapshot's ID
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Implement this operation as a detail lookup for one immutable product snapshot scoped by product.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor administrator
+     * @x-autobe-specification Implement this operation as a detail lookup for
+     *   one immutable product snapshot scoped by product.
    *
    * 1. Authenticate the caller and allow access for seller and administrator actors.
    * 2. Resolve the target product by `shopping_mall_products.id = :productId`. Do not exclude rows only because `deleted_at` is set, because preserved snapshots of deleted products must remain reviewable by authorized parties.

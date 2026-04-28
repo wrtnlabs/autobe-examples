@@ -11,80 +11,93 @@ export type IErpHrmTimeActivityLogEntry = {
   /**
    * Unique identifier of the activity log entry.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from erp_hrm_time_activity_log_entries.id.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_activity_log_entries.id.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Organization that owns this activity log entry.
    *
-   * @x-autobe-database-schema-property organization
-   * @x-autobe-specification Resolve the belongs-to organization relation from erp_hrm_time_activity_log_entries.organization and expose the related organization summary object.
+     * @x-autobe-database-schema-property organization
+     * @x-autobe-specification Resolve the belongs-to organization relation from
+     *   erp_hrm_time_activity_log_entries.organization and expose the related
+     *   organization summary object.
    */
   organization: IErpHrmTimeOrganizationDashboardSummary.ISummary;
 
   /**
    * Member who performed the recorded action.
    *
-   * @x-autobe-database-schema-property member
-   * @x-autobe-specification Resolve the belongs-to member relation from erp_hrm_time_activity_log_entries.member and expose the related member summary object.
+     * @x-autobe-database-schema-property member
+     * @x-autobe-specification Resolve the belongs-to member relation from
+     *   erp_hrm_time_activity_log_entries.member and expose the related member
+     *   summary object.
    */
   member: IErpHrmTimeMember.ISummary;
 
   /**
    * Canonical type of action that was recorded.
    *
-   * @x-autobe-database-schema-property action_type
-   * @x-autobe-specification Direct mapping from erp_hrm_time_activity_log_entries.action_type.
+     * @x-autobe-database-schema-property action_type
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_activity_log_entries.action_type.
    */
   actionType: string;
 
   /**
    * Type of domain entity affected by the action.
    *
-   * @x-autobe-database-schema-property target_entity_type
-   * @x-autobe-specification Direct mapping from erp_hrm_time_activity_log_entries.target_entity_type.
+     * @x-autobe-database-schema-property target_entity_type
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_activity_log_entries.target_entity_type.
    */
   targetEntityType: string;
 
   /**
    * Identifier of the affected target entity.
    *
-   * @x-autobe-database-schema-property target_entity_id
-   * @x-autobe-specification Direct mapping from erp_hrm_time_activity_log_entries.target_entity_id.
+     * @x-autobe-database-schema-property target_entity_id
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_activity_log_entries.target_entity_id.
    */
   targetEntityId: string & tags.Format<"uuid">;
 
   /**
    * Human-readable audit details describing the event.
    *
-   * @x-autobe-database-schema-property details
-   * @x-autobe-specification Direct mapping from erp_hrm_time_activity_log_entries.details.
+     * @x-autobe-database-schema-property details
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_activity_log_entries.details.
    */
   details: string;
 
   /**
    * Timestamp when the activity was recorded.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from erp_hrm_time_activity_log_entries.created_at.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_activity_log_entries.created_at.
    */
   createdAt: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the activity log entry was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from erp_hrm_time_activity_log_entries.updated_at.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_activity_log_entries.updated_at.
    */
   updatedAt: string & tags.Format<"date-time">;
 
   /**
    * Soft-delete timestamp, or null when the entry is active.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from erp_hrm_time_activity_log_entries.deleted_at. Preserve null when the entry is not soft deleted.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_activity_log_entries.deleted_at. Preserve null when the
+     *   entry is not soft deleted.
    */
   deletedAt: (string & tags.Format<"date-time">) | null;
 };
@@ -96,51 +109,65 @@ export namespace IErpHrmTimeActivityLogEntry {
     /**
      * Filter entries by activity type.
      *
-     * @x-autobe-database-schema-property action_type
-     * @x-autobe-specification Direct filter mapping to erp_hrm_time_activity_log_entries.action_type.
+         * @x-autobe-database-schema-property action_type
+         * @x-autobe-specification Direct filter mapping to
+         *   erp_hrm_time_activity_log_entries.action_type.
      */
     actionType?: string | undefined;
 
     /**
      * Filter entries by the acting member's UUID.
      *
-     * @x-autobe-database-schema-property member_id
-     * @x-autobe-specification Direct filter mapping to erp_hrm_time_activity_log_entries.member_id.
+         * @x-autobe-database-schema-property member_id
+         * @x-autobe-specification Direct filter mapping to
+         *   erp_hrm_time_activity_log_entries.member_id.
      */
     memberId?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Inclusive start of the activity log date range.
      *
-     * @x-autobe-specification Use as the inclusive lower bound when filtering erp_hrm_time_activity_log_entries by created_at. This value is interpreted by the query layer and is not stored in the database.
+         * @x-autobe-specification Use as the inclusive lower bound when
+         *   filtering erp_hrm_time_activity_log_entries by created_at. This
+         *   value is interpreted by the query layer and is not stored in the
+         *   database.
      */
     from?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Inclusive end of the activity log date range.
      *
-     * @x-autobe-specification Use as the inclusive upper bound when filtering erp_hrm_time_activity_log_entries by created_at. This value is interpreted by the query layer and is not stored in the database.
+         * @x-autobe-specification Use as the inclusive upper bound when
+         *   filtering erp_hrm_time_activity_log_entries by created_at. This
+         *   value is interpreted by the query layer and is not stored in the
+         *   database.
      */
     to?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Sort order for the activity log list.
      *
-     * @x-autobe-specification Interpret as a stable ordering directive for activity log browsing. Apply ordering against created_at, defaulting to newest-first when omitted. This value is not persisted.
+         * @x-autobe-specification Interpret as a stable ordering directive for
+         *   activity log browsing. Apply ordering against created_at,
+         *   defaulting to newest-first when omitted. This value is not
+         *   persisted.
      */
     sort?: string | undefined;
 
     /**
      * Page number to retrieve.
      *
-     * @x-autobe-specification Use as the 1-indexed page number for paginated activity log browsing and convert it to the appropriate offset in the query layer.
+         * @x-autobe-specification Use as the 1-indexed page number for
+         *   paginated activity log browsing and convert it to the appropriate
+         *   offset in the query layer.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of entries per page.
      *
-     * @x-autobe-specification Use as the maximum number of activity log entries returned per page in the paginated query.
+         * @x-autobe-specification Use as the maximum number of activity log
+         *   entries returned per page in the paginated query.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -154,80 +181,95 @@ export namespace IErpHrmTimeActivityLogEntry {
     /**
      * Unique identifier of the activity log entry.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from erp_hrm_time_activity_log_entries.id.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_activity_log_entries.id.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Organization associated with this activity log entry.
      *
-     * @x-autobe-database-schema-property organization
-     * @x-autobe-specification Join from erp_hrm_time_activity_log_entries.organization_id to erp_hrm_time_organizations.id and expose the organization summary representation.
+         * @x-autobe-database-schema-property organization
+         * @x-autobe-specification Join from
+         *   erp_hrm_time_activity_log_entries.organization_id to
+         *   erp_hrm_time_organizations.id and expose the organization summary
+         *   representation.
      */
     organization: IErpHrmTimeOrganizationDashboardSummary.ISummary;
 
     /**
      * Member who performed the recorded action.
      *
-     * @x-autobe-database-schema-property member
-     * @x-autobe-specification Join from erp_hrm_time_activity_log_entries.member_id to erp_hrm_time_members.id and expose the member summary representation.
+         * @x-autobe-database-schema-property member
+         * @x-autobe-specification Join from
+         *   erp_hrm_time_activity_log_entries.member_id to
+         *   erp_hrm_time_members.id and expose the member summary
+         *   representation.
      */
     member: IErpHrmTimeMember.ISummary;
 
     /**
      * Normalized type of action that was recorded.
      *
-     * @x-autobe-database-schema-property action_type
-     * @x-autobe-specification Direct mapping from erp_hrm_time_activity_log_entries.action_type.
+         * @x-autobe-database-schema-property action_type
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_activity_log_entries.action_type.
      */
     actionType: string;
 
     /**
      * Type of entity affected by the action.
      *
-     * @x-autobe-database-schema-property target_entity_type
-     * @x-autobe-specification Direct mapping from erp_hrm_time_activity_log_entries.target_entity_type.
+         * @x-autobe-database-schema-property target_entity_type
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_activity_log_entries.target_entity_type.
      */
     targetEntityType: string;
 
     /**
      * Identifier of the affected target entity.
      *
-     * @x-autobe-database-schema-property target_entity_id
-     * @x-autobe-specification Direct mapping from erp_hrm_time_activity_log_entries.target_entity_id.
+         * @x-autobe-database-schema-property target_entity_id
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_activity_log_entries.target_entity_id.
      */
     targetEntityId: string & tags.Format<"uuid">;
 
     /**
      * Human-readable details describing the recorded event.
      *
-     * @x-autobe-database-schema-property details
-     * @x-autobe-specification Direct mapping from erp_hrm_time_activity_log_entries.details.
+         * @x-autobe-database-schema-property details
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_activity_log_entries.details.
      */
     details: string;
 
     /**
      * Timestamp when the activity log entry was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from erp_hrm_time_activity_log_entries.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_activity_log_entries.created_at.
      */
     createdAt: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when the activity log entry was last updated.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from erp_hrm_time_activity_log_entries.updated_at.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_activity_log_entries.updated_at.
      */
     updatedAt: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when the activity log entry was soft-deleted, or null if it remains active.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from erp_hrm_time_activity_log_entries.deleted_at. Preserve nullability in the read shape.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_activity_log_entries.deleted_at. Preserve nullability
+         *   in the read shape.
      */
     deletedAt: (string & tags.Format<"date-time">) | null;
   };

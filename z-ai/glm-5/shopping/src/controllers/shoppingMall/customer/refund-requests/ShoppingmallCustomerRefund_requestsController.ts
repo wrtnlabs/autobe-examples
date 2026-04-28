@@ -26,9 +26,10 @@ export class ShoppingmallCustomerRefund_requestsController {
    *
    * @param connection
    * @param body Refund request creation data including the order item ID and reason
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Implement the following validation and creation logic:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Implement the following validation and creation
+     *   logic:
    *
    * 1. **Authentication Check**: Verify customer is authenticated. Return 401 Unauthorized if not.
    *
@@ -91,9 +92,11 @@ export class ShoppingmallCustomerRefund_requestsController {
    *
    * @param connection
    * @param body Search criteria and pagination parameters for refund requests
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Query shopping_mall_refund_requests table with joins to shopping_mall_order_items, shopping_mall_products, and shopping_mall_customers for seller-scoped filtering.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Query shopping_mall_refund_requests table with
+     *   joins to shopping_mall_order_items, shopping_mall_products, and
+     *   shopping_mall_customers for seller-scoped filtering.
    *
    * Implementation steps:
    * 1. Extract authenticated seller ID from JWT token
@@ -139,9 +142,15 @@ export class ShoppingmallCustomerRefund_requestsController {
    *
    * @param connection
    * @param refundRequestId Unique identifier of the refund request to retrieve.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Query the shopping_mall_refund_requests table by primary key id to retrieve the refund request details. Join with shopping_mall_order_items to include the associated order item information (quantity, price, status). Further join with shopping_mall_orders to get order context (order_number, created_at), and join with shopping_mall_products and shopping_mall_product_variants to include product and variant details for the seller's reference.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Query the shopping_mall_refund_requests table by
+     *   primary key id to retrieve the refund request details. Join with
+     *   shopping_mall_order_items to include the associated order item
+     *   information (quantity, price, status). Further join with
+     *   shopping_mall_orders to get order context (order_number, created_at),
+     *   and join with shopping_mall_products and shopping_mall_product_variants
+     *   to include product and variant details for the seller's reference.
    *
    * Authorization checks:
    * 1. If the requester is a customer, verify that the refund request's order item belongs to an order owned by this customer (shopping_mall_orders.shopping_mall_customer_id matches the authenticated customer's id).

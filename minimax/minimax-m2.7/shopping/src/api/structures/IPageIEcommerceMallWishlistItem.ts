@@ -11,14 +11,15 @@ export namespace IPageIEcommerceMallWishlistItem {
     /**
      * Page information.
      *
-     * @x-autobe-specification Pagination information for the page.
+         * @x-autobe-specification Pagination information for the page.
      */
     pagination: IPage.IPagination;
 
     /**
      * List of records.
      *
-     * @x-autobe-specification List of records of type IEcommerceMallWishlistItem.ISummary.
+         * @x-autobe-specification List of records of type
+         *   IEcommerceMallWishlistItem.ISummary.
      */
     data: IEcommerceMallWishlistItem.ISummary[];
   };
@@ -32,14 +33,15 @@ export namespace IPageIEcommerceMallWishlistItem {
     /**
      * Page information.
      *
-     * @x-autobe-specification Pagination information for the page.
+         * @x-autobe-specification Pagination information for the page.
      */
     pagination: IPage.IPagination;
 
     /**
      * List of records.
      *
-     * @x-autobe-specification List of records of type IEcommerceMallWishlistItem.IInvert.
+         * @x-autobe-specification List of records of type
+         *   IEcommerceMallWishlistItem.IInvert.
      */
     data: IEcommerceMallWishlistItem.IInvert[];
   };

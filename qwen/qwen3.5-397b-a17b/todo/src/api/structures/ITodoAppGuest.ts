@@ -16,15 +16,17 @@ export namespace ITodoAppGuest {
      *
      * This UUID identifies the guest account in the system. It is used to associate the guest with their sessions and todos. The id is auto-generated when the guest account is created and remains constant throughout the account's lifetime.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from todo_app_guests.id. UUID format.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from todo_app_guests.id. UUID
+         *   format.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Authorization token.
      *
-     * @x-autobe-specification Authorization token comes from the session table.
+         * @x-autobe-specification Authorization token comes from the session
+         *   table.
      */
     token: IAuthorizationToken;
   };
@@ -44,8 +46,10 @@ export namespace ITodoAppGuest {
      *
      * The fingerprint should be consistent across browser sessions for the same device to maintain guest identity. Common techniques include combining browser metadata, screen resolution, installed fonts, and other device characteristics.
      *
-     * @x-autobe-database-schema-property device_fingerprint
-     * @x-autobe-specification Direct mapping to todo_app_guests.device_fingerprint. Must be unique across all guest accounts. Generated from browser or device characteristics.
+         * @x-autobe-database-schema-property device_fingerprint
+         * @x-autobe-specification Direct mapping to
+         *   todo_app_guests.device_fingerprint. Must be unique across all guest
+         *   accounts. Generated from browser or device characteristics.
      */
     device_fingerprint: string;
 
@@ -56,7 +60,10 @@ export namespace ITodoAppGuest {
      *
      * Used for audit trails and security analysis to understand user behavior patterns. Also helps in redirecting users back to their intended destination after successful registration.
      *
-     * @x-autobe-specification Session context field captured from HTTP request. Represents the current page URL where registration occurred. Stored in todo_app_guest_sessions metadata, not in todo_app_guests directly.
+         * @x-autobe-specification Session context field captured from HTTP
+         *   request. Represents the current page URL where registration
+         *   occurred. Stored in todo_app_guest_sessions metadata, not in
+         *   todo_app_guests directly.
      */
     href: string & tags.Format<"uri">;
 
@@ -67,7 +74,9 @@ export namespace ITodoAppGuest {
      *
      * Useful for understanding user acquisition sources and navigation flows. May be empty if the user typed the URL directly or if privacy settings block referrer information.
      *
-     * @x-autobe-specification Session context field captured from HTTP request. Represents the previous page URL that navigated to registration. Stored in todo_app_guest_sessions metadata.
+         * @x-autobe-specification Session context field captured from HTTP
+         *   request. Represents the previous page URL that navigated to
+         *   registration. Stored in todo_app_guest_sessions metadata.
      */
     referrer: string & tags.Format<"uri">;
 
@@ -78,7 +87,10 @@ export namespace ITodoAppGuest {
      *
      * Used for security monitoring, fraud detection, and audit trails. The IP address helps identify suspicious registration patterns and provides geographic context for the guest session.
      *
-     * @x-autobe-specification Session context field captured from HTTP request. Client IP address, optional because in SSR the server captures it as fallback. Stored in todo_app_guest_sessions metadata. Format: IPv4.
+         * @x-autobe-specification Session context field captured from HTTP
+         *   request. Client IP address, optional because in SSR the server
+         *   captures it as fallback. Stored in todo_app_guest_sessions
+         *   metadata. Format: IPv4.
      */
     ip?: (string & tags.Format<"ipv4">) | undefined;
   };
@@ -98,7 +110,11 @@ export namespace ITodoAppGuest {
      *
      * The token must be valid, unexpired, and correspond to an active session in the database. Invalid or expired tokens result in authentication failure with a 401 response.
      *
-     * @x-autobe-specification JWT refresh token string validated against todo_app_guest_sessions. Token is decoded to extract session ID, then session is looked up in database. Token must not be expired. Not a direct DB column - token is cryptographic credential that references a session record.
+         * @x-autobe-specification JWT refresh token string validated against
+         *   todo_app_guest_sessions. Token is decoded to extract session ID,
+         *   then session is looked up in database. Token must not be expired.
+         *   Not a direct DB column - token is cryptographic credential that
+         *   references a session record.
      */
     refresh_token: string;
 
@@ -109,8 +125,11 @@ export namespace ITodoAppGuest {
      *
      * Format: URI string (e.g., '/dashboard', '/settings/profile').
      *
-     * @x-autobe-database-schema-property href
-     * @x-autobe-specification Direct mapping from todo_app_guest_sessions.href. Captures the URL path where the refresh request originated. Used for security audit and session tracking.
+         * @x-autobe-database-schema-property href
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_guest_sessions.href. Captures the URL path where the
+         *   refresh request originated. Used for security audit and session
+         *   tracking.
      */
     href: string & tags.Format<"uri">;
 
@@ -121,8 +140,10 @@ export namespace ITodoAppGuest {
      *
      * Format: URI string (e.g., 'https://example.com/dashboard').
      *
-     * @x-autobe-database-schema-property referrer
-     * @x-autobe-specification Direct mapping from todo_app_guest_sessions.referrer. Captures the referrer URL that led to the refresh request. Can be empty for direct access.
+         * @x-autobe-database-schema-property referrer
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_guest_sessions.referrer. Captures the referrer URL that
+         *   led to the refresh request. Can be empty for direct access.
      */
     referrer: string & tags.Format<"uri">;
 
@@ -135,8 +156,11 @@ export namespace ITodoAppGuest {
      *
      * Format: IPv4 address string (e.g., '192.168.1.1').
      *
-     * @x-autobe-database-schema-property ip
-     * @x-autobe-specification Direct mapping from todo_app_guest_sessions.ip. Client IP address for security audit. Optional in request body as server may capture it as fallback (body.ip ?? serverIp) in SSR contexts.
+         * @x-autobe-database-schema-property ip
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_guest_sessions.ip. Client IP address for security audit.
+         *   Optional in request body as server may capture it as fallback
+         *   (body.ip ?? serverIp) in SSR contexts.
      */
     ip?: (string & tags.Format<"ipv4">) | undefined;
   };

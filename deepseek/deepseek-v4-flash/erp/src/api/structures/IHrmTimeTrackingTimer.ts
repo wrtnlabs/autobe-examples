@@ -18,8 +18,9 @@ export type IHrmTimeTrackingTimer = {
    *
    * System-generated UUID assigned at timer creation. Used as the primary key for all timer operations including retrieval, updating, stopping, and discarding.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_timers.id. UUID format, auto-generated on timer creation.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from hrm_time_tracking_timers.id.
+     *   UUID format, auto-generated on timer creation.
    */
   id: string & tags.Format<"uuid">;
 
@@ -28,8 +29,11 @@ export type IHrmTimeTrackingTimer = {
    *
    * Each timer belongs to exactly one employee. The timer owner controls the full lifecycle — start, update, stop, or discard. An employee can have at most one timer in the 'running' status at any time.
    *
-   * @x-autobe-database-schema-property employee
-   * @x-autobe-specification Join from hrm_time_tracking_timers.hrm_time_tracking_employee_id to hrm_time_tracking_employees.id. Returns IHrmTimeTrackingEmployee.ISummary.
+     * @x-autobe-database-schema-property employee
+     * @x-autobe-specification Join from
+     *   hrm_time_tracking_timers.hrm_time_tracking_employee_id to
+     *   hrm_time_tracking_employees.id. Returns
+     *   IHrmTimeTrackingEmployee.ISummary.
    */
   employee: IHrmTimeTrackingEmployee.ISummary;
 
@@ -38,8 +42,12 @@ export type IHrmTimeTrackingTimer = {
    *
    * The timer tracks time against this project. When the timer is stopped, a timelog is created inheriting this project reference. The project must be in 'active' status — archived or completed projects cannot be assigned.
    *
-   * @x-autobe-database-schema-property project
-   * @x-autobe-specification Join from hrm_time_tracking_timers.hrm_time_tracking_project_id to hrm_time_tracking_projects.id. Returns IHrmTimeTrackingProject.ISummary. The project must be active at the time of timer operations.
+     * @x-autobe-database-schema-property project
+     * @x-autobe-specification Join from
+     *   hrm_time_tracking_timers.hrm_time_tracking_project_id to
+     *   hrm_time_tracking_projects.id. Returns
+     *   IHrmTimeTrackingProject.ISummary. The project must be active at the
+     *   time of timer operations.
    */
   project: IHrmTimeTrackingProject.ISummary;
 
@@ -48,8 +56,11 @@ export type IHrmTimeTrackingTimer = {
    *
    * When specified, the task must belong to the selected project. Provides granular tracking of which specific work item the employee is working on. When the timer is stopped, the created timelog inherits this task reference.
    *
-   * @x-autobe-database-schema-property task
-   * @x-autobe-specification LEFT JOIN from hrm_time_tracking_timers.hrm_time_tracking_task_id to hrm_time_tracking_tasks.id. Returns IHrmTimeTrackingTask.ISummary. Nullable — timers can run without a specific task assignment.
+     * @x-autobe-database-schema-property task
+     * @x-autobe-specification LEFT JOIN from
+     *   hrm_time_tracking_timers.hrm_time_tracking_task_id to
+     *   hrm_time_tracking_tasks.id. Returns IHrmTimeTrackingTask.ISummary.
+     *   Nullable — timers can run without a specific task assignment.
    */
   task?: IHrmTimeTrackingTask.ISummary | null | undefined;
 
@@ -58,8 +69,9 @@ export type IHrmTimeTrackingTimer = {
    *
    * Optional free-text notes capturing what the employee is working on. Can be edited while the timer is running. When the timer is stopped, this description is carried over to the created timelog.
    *
-   * @x-autobe-database-schema-property description
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_timers.description. Nullable free-text field.
+     * @x-autobe-database-schema-property description
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_timers.description. Nullable free-text field.
    */
   description?: string | null | undefined;
 
@@ -68,8 +80,10 @@ export type IHrmTimeTrackingTimer = {
    *
    * Set once at timer creation when the employee begins tracking time. Marks the beginning of the work session and is used together with stopped_at to calculate total elapsed duration. Never modified after creation.
    *
-   * @x-autobe-database-schema-property started_at
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_timers.started_at. Set once at timer creation, never modified.
+     * @x-autobe-database-schema-property started_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_timers.started_at. Set once at timer creation, never
+     *   modified.
    */
   started_at: string & tags.Format<"date-time">;
 
@@ -78,8 +92,11 @@ export type IHrmTimeTrackingTimer = {
    *
    * Null while the timer is actively running. Set to a timestamp when the timer is stopped (creating a timelog) or discarded (abandoned). Together with started_at, used to calculate the elapsed work duration.
    *
-   * @x-autobe-database-schema-property stopped_at
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_timers.stopped_at. Nullable — null while the timer is running (status = 'running'). Set when the timer is stopped or discarded.
+     * @x-autobe-database-schema-property stopped_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_timers.stopped_at. Nullable — null while the timer is
+     *   running (status = 'running'). Set when the timer is stopped or
+     *   discarded.
    */
   stopped_at?: (string & tags.Format<"date-time">) | null | undefined;
 
@@ -92,8 +109,12 @@ export type IHrmTimeTrackingTimer = {
    *
    * Once the timer leaves the 'running' state, the status is final.
    *
-   * @x-autobe-database-schema-property status
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_timers.status. Valid values: 'running' (actively counting), 'stopped' (timelog created), 'discarded' (abandoned, no timelog). Once set to 'stopped' or 'discarded', the status is final and cannot transition back.
+     * @x-autobe-database-schema-property status
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_timers.status. Valid values: 'running' (actively
+     *   counting), 'stopped' (timelog created), 'discarded' (abandoned, no
+     *   timelog). Once set to 'stopped' or 'discarded', the status is final and
+     *   cannot transition back.
    */
   status: string;
 
@@ -102,8 +123,10 @@ export type IHrmTimeTrackingTimer = {
    *
    * Set automatically when the timer is started. Indicates when the record was first persisted in the database.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_timers.created_at. Automatically set on creation and never modified.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_timers.created_at. Automatically set on creation and
+     *   never modified.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -112,8 +135,10 @@ export type IHrmTimeTrackingTimer = {
    *
    * Updated automatically on any change to the timer — description edits, project or task reassignment, stopping, or discarding. Tracks the most recent activity on this timer session.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_timers.updated_at. Automatically updated whenever the timer record is modified.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_timers.updated_at. Automatically updated whenever the
+     *   timer record is modified.
    */
   updated_at: string & tags.Format<"date-time">;
 };
@@ -131,8 +156,9 @@ export namespace IHrmTimeTrackingTimer {
      *
      * This UUID primary key is assigned automatically by the system when a timer is started. Used for API resource identification and referencing.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_timers.id.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_timers.id.
      */
     id: string & tags.Format<"uuid">;
 
@@ -141,8 +167,9 @@ export namespace IHrmTimeTrackingTimer {
      *
      * Valid values are `running` (actively counting time), `stopped` (timelog was created and timer ended), and `discarded` (timer was abandoned without creating a timelog). The status follows a one-way lifecycle: running → stopped or discarded, with no return to running.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_timers.status.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_timers.status.
      */
     status: string;
 
@@ -151,8 +178,9 @@ export namespace IHrmTimeTrackingTimer {
      *
      * This value is set once upon timer creation and never modified. The elapsed duration for timelog creation is calculated as `stopped_at - started_at` when the timer is stopped, rounded to the nearest minute.
      *
-     * @x-autobe-database-schema-property started_at
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_timers.started_at.
+         * @x-autobe-database-schema-property started_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_timers.started_at.
      */
     started_at: string & tags.Format<"date-time">;
 
@@ -161,8 +189,10 @@ export namespace IHrmTimeTrackingTimer {
      *
      * A null value indicates the timer is currently running. A non-null value indicates the timer has been resolved — either stopped (timelog created) or discarded. Together with `started_at`, used to calculate the total elapsed duration.
      *
-     * @x-autobe-database-schema-property stopped_at
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_timers.stopped_at. Nullable. Null when the timer is still running.
+         * @x-autobe-database-schema-property stopped_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_timers.stopped_at. Nullable. Null when the timer
+         *   is still running.
      */
     stopped_at: (string & tags.Format<"date-time">) | null;
 
@@ -171,8 +201,9 @@ export namespace IHrmTimeTrackingTimer {
      *
      * The description can be edited while the timer is running. When the timer is stopped, this description is carried over to the created timelog entry.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_timers.description. Nullable.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_timers.description. Nullable.
      */
     description: string | null;
 
@@ -181,8 +212,11 @@ export namespace IHrmTimeTrackingTimer {
      *
      * Each timer belongs to exactly one employee. The owning employee controls the timer lifecycle — start, stop, discard, and edit operations. An employee can have at most one running timer at any time.
      *
-     * @x-autobe-database-schema-property employee
-     * @x-autobe-specification Join from hrm_time_tracking_timers.hrm_time_tracking_employee_id to hrm_time_tracking_employees.id, then to hrm_time_tracking_members for display info. Returns IHrmTimeTrackingEmployee.ISummary.
+         * @x-autobe-database-schema-property employee
+         * @x-autobe-specification Join from
+         *   hrm_time_tracking_timers.hrm_time_tracking_employee_id to
+         *   hrm_time_tracking_employees.id, then to hrm_time_tracking_members
+         *   for display info. Returns IHrmTimeTrackingEmployee.ISummary.
      */
     employee: IHrmTimeTrackingEmployee.ISummary;
 
@@ -191,8 +225,11 @@ export namespace IHrmTimeTrackingTimer {
      *
      * The project is required when starting a timer. When the timer is stopped, the created timelog inherits this project reference. The project must be in active status at the time of timer creation.
      *
-     * @x-autobe-database-schema-property project
-     * @x-autobe-specification Join from hrm_time_tracking_timers.hrm_time_tracking_project_id to hrm_time_tracking_projects.id. Returns IHrmTimeTrackingProject.ISummary.
+         * @x-autobe-database-schema-property project
+         * @x-autobe-specification Join from
+         *   hrm_time_tracking_timers.hrm_time_tracking_project_id to
+         *   hrm_time_tracking_projects.id. Returns
+         *   IHrmTimeTrackingProject.ISummary.
      */
     project: IHrmTimeTrackingProject.ISummary;
 
@@ -201,8 +238,11 @@ export namespace IHrmTimeTrackingTimer {
      *
      * When specified, the task must belong to the selected project. The task assignment can be edited while the timer is running. When the timer is stopped, the created timelog inherits this task reference.
      *
-     * @x-autobe-database-schema-property task
-     * @x-autobe-specification LEFT JOIN from hrm_time_tracking_timers.hrm_time_tracking_task_id to hrm_time_tracking_tasks.id. Nullable. Returns IHrmTimeTrackingTask.ISummary.
+         * @x-autobe-database-schema-property task
+         * @x-autobe-specification LEFT JOIN from
+         *   hrm_time_tracking_timers.hrm_time_tracking_task_id to
+         *   hrm_time_tracking_tasks.id. Nullable. Returns
+         *   IHrmTimeTrackingTask.ISummary.
      */
     task: IHrmTimeTrackingTask.ISummary | null;
 
@@ -211,8 +251,9 @@ export namespace IHrmTimeTrackingTimer {
      *
      * Set automatically by the system upon timer creation and never modified.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_timers.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_timers.created_at.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -221,8 +262,9 @@ export namespace IHrmTimeTrackingTimer {
      *
      * Updated automatically when the timer's description, project, or task changes while running, or when the timer is stopped or discarded.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_timers.updated_at.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_timers.updated_at.
      */
     updated_at: string & tags.Format<"date-time">;
   };
@@ -240,8 +282,12 @@ export namespace IHrmTimeTrackingTimer {
      *
      * The project must be in 'active' status. Archived or completed projects are not accepting new time entries and cannot be assigned to a running timer. The project must belong to the same organization as the timer's owning employee.
      *
-     * @x-autobe-database-schema-property hrm_time_tracking_project_id
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_timers.hrm_time_tracking_project_id. Must reference an active project belonging to the same organization as the timer's employee. Reject with 422 if project is archived or completed.
+         * @x-autobe-database-schema-property hrm_time_tracking_project_id
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_timers.hrm_time_tracking_project_id. Must
+         *   reference an active project belonging to the same organization as
+         *   the timer's employee. Reject with 422 if project is archived or
+         *   completed.
      */
     projectId?: (string & tags.Format<"uuid">) | undefined;
 
@@ -250,8 +296,13 @@ export namespace IHrmTimeTrackingTimer {
      *
      * If provided, the task must belong to the selected project and must not be soft-deleted. The task assignment can be changed while the timer is running. When the timer is later stopped, the created timelog inherits this task reference.
      *
-     * @x-autobe-database-schema-property hrm_time_tracking_task_id
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_timers.hrm_time_tracking_task_id. Nullable — set null to clear task assignment. If provided, the task must belong to the selected project (hrm_time_tracking_project_id matches) and must not be soft-deleted. Reject with 422 if task does not match project.
+         * @x-autobe-database-schema-property hrm_time_tracking_task_id
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_timers.hrm_time_tracking_task_id. Nullable — set
+         *   null to clear task assignment. If provided, the task must belong to
+         *   the selected project (hrm_time_tracking_project_id matches) and
+         *   must not be soft-deleted. Reject with 422 if task does not match
+         *   project.
      */
     taskId?: (string & tags.Format<"uuid">) | null | undefined;
 
@@ -260,8 +311,12 @@ export namespace IHrmTimeTrackingTimer {
      *
      * The description can be edited while the timer is running. When the timer is later stopped, this description is carried over to the created timelog entry.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_timers.description. Nullable — set null to clear the description. Free-text with no enforced length constraint beyond reasonable UI limits. When the timer is stopped, this value is carried over to the created timelog.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_timers.description. Nullable — set null to clear
+         *   the description. Free-text with no enforced length constraint
+         *   beyond reasonable UI limits. When the timer is stopped, this value
+         *   is carried over to the created timelog.
      */
     description?: string | null | undefined;
   };
@@ -279,21 +334,21 @@ export namespace IHrmTimeTrackingTimer {
     /**
      * The project to track time against.
      *
-     * @x-autobe-database-schema-property hrm_time_tracking_project_id
+         * @x-autobe-database-schema-property hrm_time_tracking_project_id
      */
     projectId: string & tags.Format<"uuid">;
 
     /**
      * An optional task within the selected project.
      *
-     * @x-autobe-database-schema-property hrm_time_tracking_task_id
+         * @x-autobe-database-schema-property hrm_time_tracking_task_id
      */
     taskId?: (string & tags.Format<"uuid">) | null | undefined;
 
     /**
      * An optional description of the work being performed.
      *
-     * @x-autobe-database-schema-property description
+         * @x-autobe-database-schema-property description
      */
     description?: string | null | undefined;
   };
@@ -311,7 +366,10 @@ export namespace IHrmTimeTrackingTimer {
      *
      * This filter is only effective for users with the time:view_all permission. Users without this permission will have their own employee ID applied automatically, and any value provided here is silently ignored.
      *
-     * @x-autobe-specification Exact match filter on hrm_time_tracking_timers.hrm_time_tracking_employee_id. Conditionally applied: ignored at the service layer when the requesting user lacks time:view_all permission.
+         * @x-autobe-specification Exact match filter on
+         *   hrm_time_tracking_timers.hrm_time_tracking_employee_id.
+         *   Conditionally applied: ignored at the service layer when the
+         *   requesting user lacks time:view_all permission.
      */
     employeeId?: (string & tags.Format<"uuid">) | undefined;
 
@@ -320,7 +378,9 @@ export namespace IHrmTimeTrackingTimer {
      *
      * Valid values are: running (actively counting time), stopped (timelog created with calculated duration), and discarded (session abandoned without creating a timelog). Running timers have a null stopped_at timestamp.
      *
-     * @x-autobe-specification Exact match filter on hrm_time_tracking_timers.status. Allowed values: running, stopped, discarded.
+         * @x-autobe-specification Exact match filter on
+         *   hrm_time_tracking_timers.status. Allowed values: running, stopped,
+         *   discarded.
      */
     status?: string | undefined;
 
@@ -329,7 +389,10 @@ export namespace IHrmTimeTrackingTimer {
      *
      * Existing timer records for archived or completed projects remain visible through this filter — the archive/completion restriction applies only to creating new timers, not viewing historical ones.
      *
-     * @x-autobe-specification Exact match filter on hrm_time_tracking_timers.hrm_time_tracking_project_id. Archived and completed project timer records are still visible through this filter.
+         * @x-autobe-specification Exact match filter on
+         *   hrm_time_tracking_timers.hrm_time_tracking_project_id. Archived and
+         *   completed project timer records are still visible through this
+         *   filter.
      */
     projectId?: (string & tags.Format<"uuid">) | undefined;
 
@@ -338,7 +401,10 @@ export namespace IHrmTimeTrackingTimer {
      *
      * Pass null to find timer records that were logged without a task assignment. When this field is omitted from the request, no task-based filtering is applied to the results.
      *
-     * @x-autobe-specification Filter on hrm_time_tracking_timers.hrm_time_tracking_task_id. When null is provided explicitly, returns timers without a task assignment. When omitted, no task-based filtering is applied.
+         * @x-autobe-specification Filter on
+         *   hrm_time_tracking_timers.hrm_time_tracking_task_id. When null is
+         *   provided explicitly, returns timers without a task assignment. When
+         *   omitted, no task-based filtering is applied.
      */
     taskId?: (string & tags.Format<"uuid">) | null | undefined;
 
@@ -347,7 +413,10 @@ export namespace IHrmTimeTrackingTimer {
      *
      * Filters for timer sessions whose started_at timestamp is greater than or equal to this value. Combine with startedAtTo to define a complete time range (inclusive on both ends). Format: ISO 8601 date-time.
      *
-     * @x-autobe-specification Lower bound range filter on hrm_time_tracking_timers.started_at. ISO 8601 format. Applied as: started_at >= startedAtFrom. Combine with startedAtTo for inclusive range.
+         * @x-autobe-specification Lower bound range filter on
+         *   hrm_time_tracking_timers.started_at. ISO 8601 format. Applied as:
+         *   started_at >= startedAtFrom. Combine with startedAtTo for inclusive
+         *   range.
      */
     startedAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
@@ -356,7 +425,10 @@ export namespace IHrmTimeTrackingTimer {
      *
      * Filters for timer sessions whose started_at timestamp is less than or equal to this value. Combine with startedAtFrom to define a complete time range (inclusive on both ends). Format: ISO 8601 date-time.
      *
-     * @x-autobe-specification Upper bound range filter on hrm_time_tracking_timers.started_at. ISO 8601 format. Applied as: started_at <= startedAtTo. Combine with startedAtFrom for inclusive range.
+         * @x-autobe-specification Upper bound range filter on
+         *   hrm_time_tracking_timers.started_at. ISO 8601 format. Applied as:
+         *   started_at <= startedAtTo. Combine with startedAtFrom for inclusive
+         *   range.
      */
     startedAtTo?: (string & tags.Format<"date-time">) | undefined;
 
@@ -365,7 +437,11 @@ export namespace IHrmTimeTrackingTimer {
      *
      * Filters for timer sessions whose stopped_at timestamp is greater than or equal to this value. Combine with stoppedAtTo to define a complete time range (inclusive on both ends). Running timers (null stopped_at) are excluded from results when this filter is applied. Format: ISO 8601 date-time.
      *
-     * @x-autobe-specification Lower bound range filter on hrm_time_tracking_timers.stopped_at. ISO 8601 format. Applied as: stopped_at >= stoppedAtFrom. Combine with stoppedAtTo for inclusive range. Running timers (null stopped_at) are excluded when this filter is active.
+         * @x-autobe-specification Lower bound range filter on
+         *   hrm_time_tracking_timers.stopped_at. ISO 8601 format. Applied as:
+         *   stopped_at >= stoppedAtFrom. Combine with stoppedAtTo for inclusive
+         *   range. Running timers (null stopped_at) are excluded when this
+         *   filter is active.
      */
     stoppedAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
@@ -374,7 +450,10 @@ export namespace IHrmTimeTrackingTimer {
      *
      * Filters for timer sessions whose stopped_at timestamp is less than or equal to this value. Combine with stoppedAtFrom to define a complete time range (inclusive on both ends). Format: ISO 8601 date-time.
      *
-     * @x-autobe-specification Upper bound range filter on hrm_time_tracking_timers.stopped_at. ISO 8601 format. Applied as: stopped_at <= stoppedAtTo. Combine with stoppedAtFrom for inclusive range.
+         * @x-autobe-specification Upper bound range filter on
+         *   hrm_time_tracking_timers.stopped_at. ISO 8601 format. Applied as:
+         *   stopped_at <= stoppedAtTo. Combine with stoppedAtFrom for inclusive
+         *   range.
      */
     stoppedAtTo?: (string & tags.Format<"date-time">) | undefined;
 
@@ -383,7 +462,9 @@ export namespace IHrmTimeTrackingTimer {
      *
      * Supports sorting by started_at, stopped_at, or status. The sort direction (ascending/descending) is encoded within the cursor value. Default sorting is by started_at in descending order (newest timer sessions first).
      *
-     * @x-autobe-specification Cursor-based pagination sort field. Allowed values: started_at, stopped_at, status. Sort direction encoded within cursor. Default: started_at descending (newest first).
+         * @x-autobe-specification Cursor-based pagination sort field. Allowed
+         *   values: started_at, stopped_at, status. Sort direction encoded
+         *   within cursor. Default: started_at descending (newest first).
      */
     sort?:
       | (string & tags.Pattern<"^(started_at|stopped_at|status)$">)
@@ -394,7 +475,9 @@ export namespace IHrmTimeTrackingTimer {
      *
      * Controls the page size for cursor-based pagination. Must be between 1 and 100. The actual number of records returned may be less than this value on the final page.
      *
-     * @x-autobe-specification Cursor-based pagination page size. Controls maximum records per page. Minimum: 1, Maximum: 100. Default applied by the service layer if not provided.
+         * @x-autobe-specification Cursor-based pagination page size. Controls
+         *   maximum records per page. Minimum: 1, Maximum: 100. Default applied
+         *   by the service layer if not provided.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -405,7 +488,9 @@ export namespace IHrmTimeTrackingTimer {
      *
      * Provide the cursor value returned in the previous page response to fetch the next set of results. Omit or pass null to retrieve the first page.
      *
-     * @x-autobe-specification Cursor-based pagination continuation token. Opaque string returned from the previous page response. Null/omitted for the first page request.
+         * @x-autobe-specification Cursor-based pagination continuation token.
+         *   Opaque string returned from the previous page response.
+         *   Null/omitted for the first page request.
      */
     cursor?: string | undefined;
 
@@ -414,7 +499,9 @@ export namespace IHrmTimeTrackingTimer {
      *
      * Specifies which page of results to return. Page numbering starts from 1. If omitted, null, or undefined, defaults to page 1 (first page). Requesting a page beyond the available range returns an empty data array with valid pagination metadata reflecting the actual totals.
      *
-     * @x-autobe-specification 1-indexed page number for page-based pagination (fallback). Defaults to 1 if not provided. When both cursor and page are provided, cursor takes precedence.
+         * @x-autobe-specification 1-indexed page number for page-based
+         *   pagination (fallback). Defaults to 1 if not provided. When both
+         *   cursor and page are provided, cursor takes precedence.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };

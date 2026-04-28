@@ -18,8 +18,9 @@ export type IMallPlatformOrderItem = {
    *
    * This value identifies one purchased line item in an order and is used to retrieve, reference, and reconcile the live operational record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from mall_platform_order_items.id. Primary UUID identifier for the live order item row.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from mall_platform_order_items.id.
+     *   Primary UUID identifier for the live order item row.
    */
   id: string & tags.Format<"uuid">;
 
@@ -28,8 +29,11 @@ export type IMallPlatformOrderItem = {
    *
    * This relation lets clients view which order the line item belongs to while keeping the response compact and list-friendly.
    *
-   * @x-autobe-database-schema-property order
-   * @x-autobe-specification Join mall_platform_order_items.mall_platform_order_id to mall_platform_orders.id and expose the related order as IMallPlatformOrder.ISummary.
+     * @x-autobe-database-schema-property order
+     * @x-autobe-specification Join
+     *   mall_platform_order_items.mall_platform_order_id to
+     *   mall_platform_orders.id and expose the related order as
+     *   IMallPlatformOrder.ISummary.
    */
   order: IMallPlatformOrder.ISummary;
 
@@ -38,8 +42,11 @@ export type IMallPlatformOrderItem = {
    *
    * This relation provides the variant identity and display context needed for order history, shipping, cancellation, and refund workflows.
    *
-   * @x-autobe-database-schema-property productVariant
-   * @x-autobe-specification Join mall_platform_order_items.mall_platform_product_variant_id to mall_platform_product_variants.id and expose the purchased variant as IMallPlatformProductVariant.ISummary.
+     * @x-autobe-database-schema-property productVariant
+     * @x-autobe-specification Join
+     *   mall_platform_order_items.mall_platform_product_variant_id to
+     *   mall_platform_product_variants.id and expose the purchased variant as
+     *   IMallPlatformProductVariant.ISummary.
    */
   productVariant: IMallPlatformProductVariant.ISummary;
 
@@ -48,8 +55,11 @@ export type IMallPlatformOrderItem = {
    *
    * This relation exposes the merchant account tied to the item so customers, sellers, and administrators can resolve fulfillment and after-sales workflows.
    *
-   * @x-autobe-specification Join mall_platform_order_items.mall_platform_seller_id to mall_platform_sellers.id and expose the responsible seller as IMallPlatformSeller.ISummary.
-   * @x-autobe-database-schema-property seller
+     * @x-autobe-specification Join
+     *   mall_platform_order_items.mall_platform_seller_id to
+     *   mall_platform_sellers.id and expose the responsible seller as
+     *   IMallPlatformSeller.ISummary.
+     * @x-autobe-database-schema-property seller
    */
   seller: IMallPlatformSeller.ISummary;
 
@@ -58,8 +68,10 @@ export type IMallPlatformOrderItem = {
    *
    * This value is the quantity committed at checkout and is used for totals, fulfillment, and inventory reconciliation.
    *
-   * @x-autobe-database-schema-property quantity
-   * @x-autobe-specification Direct mapping from mall_platform_order_items.quantity. Represents the number of units purchased for this order item.
+     * @x-autobe-database-schema-property quantity
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_order_items.quantity. Represents the number of units
+     *   purchased for this order item.
    */
   quantity: number & tags.Type<"int32">;
 
@@ -68,8 +80,10 @@ export type IMallPlatformOrderItem = {
    *
    * This value reflects the live processing state used by order history, shipping, cancellation, refund, and dispute workflows.
    *
-   * @x-autobe-database-schema-property status
-   * @x-autobe-specification Direct mapping from mall_platform_order_items.status. Stores the current operational status such as paid, shipped, delivered, cancelled, or refunded.
+     * @x-autobe-database-schema-property status
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_order_items.status. Stores the current operational status
+     *   such as paid, shipped, delivered, cancelled, or refunded.
    */
   status: string;
 
@@ -78,8 +92,10 @@ export type IMallPlatformOrderItem = {
    *
    * This timestamp preserves when the purchase line first entered the system and supports history and audit views.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from mall_platform_order_items.created_at. Records when the order item row was created.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_order_items.created_at. Records when the order item row
+     *   was created.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -88,8 +104,10 @@ export type IMallPlatformOrderItem = {
    *
    * This timestamp reflects the latest change to the live record and supports synchronization and audit tracking.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from mall_platform_order_items.updated_at. Records the most recent time the order item row was modified.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_order_items.updated_at. Records the most recent time the
+     *   order item row was modified.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -98,8 +116,11 @@ export type IMallPlatformOrderItem = {
    *
    * A null value means the item is still active. When present, this timestamp preserves historical visibility without removing the record from audit or dispute workflows.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from mall_platform_order_items.deleted_at. Null means the live order item is active; a timestamp means the row was soft deleted while retaining historical visibility.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_order_items.deleted_at. Null means the live order item is
+     *   active; a timestamp means the row was soft deleted while retaining
+     *   historical visibility.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -117,7 +138,10 @@ export namespace IMallPlatformOrderItem {
      *
      * Use this value to match user-provided keywords against supported order-item search fields at query time. It is not stored in the database.
      *
-     * @x-autobe-specification Implement as query-time text search over approved order-item fields. Translate this request control into service-level search predicates only; it does not map to a persisted column.
+         * @x-autobe-specification Implement as query-time text search over
+         *   approved order-item fields. Translate this request control into
+         *   service-level search predicates only; it does not map to a
+         *   persisted column.
      */
     search?: string | undefined;
 
@@ -126,8 +150,10 @@ export namespace IMallPlatformOrderItem {
      *
      * Use this value to narrow results to items belonging to a single order UUID.
      *
-     * @x-autobe-database-schema-property mall_platform_order_id
-     * @x-autobe-specification Map directly to mall_platform_order_items.mall_platform_order_id as an exact UUID filter in the list query.
+         * @x-autobe-database-schema-property mall_platform_order_id
+         * @x-autobe-specification Map directly to
+         *   mall_platform_order_items.mall_platform_order_id as an exact UUID
+         *   filter in the list query.
      */
     mallPlatformOrderId?: (string & tags.Format<"uuid">) | undefined;
 
@@ -136,8 +162,10 @@ export namespace IMallPlatformOrderItem {
      *
      * Use this value to narrow results to items for one product variant UUID.
      *
-     * @x-autobe-database-schema-property mall_platform_product_variant_id
-     * @x-autobe-specification Map directly to mall_platform_order_items.mall_platform_product_variant_id as an exact UUID filter in the list query.
+         * @x-autobe-database-schema-property mall_platform_product_variant_id
+         * @x-autobe-specification Map directly to
+         *   mall_platform_order_items.mall_platform_product_variant_id as an
+         *   exact UUID filter in the list query.
      */
     mallPlatformProductVariantId?: (string & tags.Format<"uuid">) | undefined;
 
@@ -146,8 +174,10 @@ export namespace IMallPlatformOrderItem {
      *
      * Use this value to narrow results to items handled by one seller account.
      *
-     * @x-autobe-database-schema-property mall_platform_seller_id
-     * @x-autobe-specification Map directly to mall_platform_order_items.mall_platform_seller_id as an exact UUID filter in the list query.
+         * @x-autobe-database-schema-property mall_platform_seller_id
+         * @x-autobe-specification Map directly to
+         *   mall_platform_order_items.mall_platform_seller_id as an exact UUID
+         *   filter in the list query.
      */
     mallPlatformSellerId?: (string & tags.Format<"uuid">) | undefined;
 
@@ -156,8 +186,10 @@ export namespace IMallPlatformOrderItem {
      *
      * Use this value to narrow results to a specific fulfillment state such as paid, shipped, delivered, cancelled, or refunded, according to the platform's allowed status values.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Map directly to mall_platform_order_items.status as an exact-match or validated-enum filter, depending on the service rules.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Map directly to
+         *   mall_platform_order_items.status as an exact-match or
+         *   validated-enum filter, depending on the service rules.
      */
     status?: string | undefined;
 
@@ -166,7 +198,9 @@ export namespace IMallPlatformOrderItem {
      *
      * Use this value as the lower boundary for timestamp filtering when browsing order items.
      *
-     * @x-autobe-specification Treat as the inclusive lower bound for filtering mall_platform_order_items.created_at. Convert it into a created_at >= predicate at query time.
+         * @x-autobe-specification Treat as the inclusive lower bound for
+         *   filtering mall_platform_order_items.created_at. Convert it into a
+         *   created_at >= predicate at query time.
      */
     createdAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
@@ -175,7 +209,9 @@ export namespace IMallPlatformOrderItem {
      *
      * Use this value as the upper boundary for timestamp filtering when browsing order items.
      *
-     * @x-autobe-specification Treat as the inclusive upper bound for filtering mall_platform_order_items.created_at. Convert it into a created_at <= predicate at query time.
+         * @x-autobe-specification Treat as the inclusive upper bound for
+         *   filtering mall_platform_order_items.created_at. Convert it into a
+         *   created_at <= predicate at query time.
      */
     createdAtTo?: (string & tags.Format<"date-time">) | undefined;
 
@@ -184,7 +220,9 @@ export namespace IMallPlatformOrderItem {
      *
      * Use this value to control how matching order items are ordered in the response.
      *
-     * @x-autobe-specification Interpret as the ordering directive for the order-item list query. Translate it into an approved ORDER BY clause and reject unsupported sort values.
+         * @x-autobe-specification Interpret as the ordering directive for the
+         *   order-item list query. Translate it into an approved ORDER BY
+         *   clause and reject unsupported sort values.
      */
     sort?: string | undefined;
 
@@ -193,7 +231,9 @@ export namespace IMallPlatformOrderItem {
      *
      * Use this value to select which page of results to return.
      *
-     * @x-autobe-specification Use as the 1-indexed page number for paginating the order-item list. Convert it into the appropriate offset/page mechanics at query time.
+         * @x-autobe-specification Use as the 1-indexed page number for
+         *   paginating the order-item list. Convert it into the appropriate
+         *   offset/page mechanics at query time.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -202,7 +242,9 @@ export namespace IMallPlatformOrderItem {
      *
      * Use this value to control page size for the result set.
      *
-     * @x-autobe-specification Use as the maximum number of records returned per page for the order-item list. Enforce the configured bounds before executing the query.
+         * @x-autobe-specification Use as the maximum number of records returned
+         *   per page for the order-item list. Enforce the configured bounds
+         *   before executing the query.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -222,8 +264,9 @@ export namespace IMallPlatformOrderItem {
      *
      * This value identifies one purchased line item within an order and can be used for detail lookup and selection in related workflows.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from mall_platform_order_items.id.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_order_items.id.
      */
     id: string & tags.Format<"uuid">;
 
@@ -232,8 +275,9 @@ export namespace IMallPlatformOrderItem {
      *
      * This value reflects the quantity captured at checkout and is used to display how many units were bought for the associated product variant.
      *
-     * @x-autobe-database-schema-property quantity
-     * @x-autobe-specification Direct mapping from mall_platform_order_items.quantity.
+         * @x-autobe-database-schema-property quantity
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_order_items.quantity.
      */
     quantity: number & tags.Type<"int32">;
 
@@ -242,8 +286,9 @@ export namespace IMallPlatformOrderItem {
      *
      * This value shows the fulfillment lifecycle of the purchased item, such as paid, shipped, delivered, cancelled, or refunded.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from mall_platform_order_items.status.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_order_items.status.
      */
     status: string;
 
@@ -252,8 +297,12 @@ export namespace IMallPlatformOrderItem {
      *
      * This nested summary identifies the parent order so clients can navigate from an item back to the order it belongs to without reading the raw foreign key.
      *
-     * @x-autobe-database-schema-property order
-     * @x-autobe-specification Resolve the order relation from mall_platform_order_items.mall_platform_order_id to mall_platform_orders.id and expose it as IMallPlatformOrder.ISummary. This is a belongs-to relation in read DTO form, so the raw FK column is not exposed.
+         * @x-autobe-database-schema-property order
+         * @x-autobe-specification Resolve the order relation from
+         *   mall_platform_order_items.mall_platform_order_id to
+         *   mall_platform_orders.id and expose it as
+         *   IMallPlatformOrder.ISummary. This is a belongs-to relation in read
+         *   DTO form, so the raw FK column is not exposed.
      */
     order: IMallPlatformOrder.ISummary;
 
@@ -262,8 +311,12 @@ export namespace IMallPlatformOrderItem {
      *
      * This nested summary identifies the exact variant that was ordered, including its SKU and option combination, so clients can show the purchased configuration.
      *
-     * @x-autobe-database-schema-property productVariant
-     * @x-autobe-specification Resolve the productVariant relation from mall_platform_order_items.mall_platform_product_variant_id to mall_platform_product_variants.id and expose it as IMallPlatformProductVariant.ISummary. This is a belongs-to relation in read DTO form, so the raw FK column is not exposed.
+         * @x-autobe-database-schema-property productVariant
+         * @x-autobe-specification Resolve the productVariant relation from
+         *   mall_platform_order_items.mall_platform_product_variant_id to
+         *   mall_platform_product_variants.id and expose it as
+         *   IMallPlatformProductVariant.ISummary. This is a belongs-to relation
+         *   in read DTO form, so the raw FK column is not exposed.
      */
     productVariant: IMallPlatformProductVariant.ISummary;
 
@@ -272,8 +325,12 @@ export namespace IMallPlatformOrderItem {
      *
      * This nested summary identifies which seller owns the purchased item, which is needed for browsing, support, and order-fulfillment context.
      *
-     * @x-autobe-database-schema-property seller
-     * @x-autobe-specification Resolve the seller relation from mall_platform_order_items.mall_platform_seller_id to mall_platform_sellers.id and expose it as IMallPlatformSeller.ISummary. This is a belongs-to relation in read DTO form, so the raw FK column is not exposed.
+         * @x-autobe-database-schema-property seller
+         * @x-autobe-specification Resolve the seller relation from
+         *   mall_platform_order_items.mall_platform_seller_id to
+         *   mall_platform_sellers.id and expose it as
+         *   IMallPlatformSeller.ISummary. This is a belongs-to relation in read
+         *   DTO form, so the raw FK column is not exposed.
      */
     seller: IMallPlatformSeller.ISummary;
 
@@ -282,8 +339,9 @@ export namespace IMallPlatformOrderItem {
      *
      * This timestamp marks when the purchased item row was first stored and is useful for chronological ordering and audit visibility.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from mall_platform_order_items.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_order_items.created_at.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -292,8 +350,9 @@ export namespace IMallPlatformOrderItem {
      *
      * This timestamp reflects the latest persisted change to the item record and supports auditing and synchronization checks.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from mall_platform_order_items.updated_at.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_order_items.updated_at.
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -302,8 +361,11 @@ export namespace IMallPlatformOrderItem {
      *
      * A null value means the item is still active. When present, this timestamp records when the record was soft-deleted for historical retention.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from mall_platform_order_items.deleted_at. Preserve null when the record is active and use a timestamp only if the item has been soft-deleted.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_order_items.deleted_at. Preserve null when the record
+         *   is active and use a timestamp only if the item has been
+         *   soft-deleted.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };
@@ -319,8 +381,10 @@ export namespace IMallPlatformOrderItem {
      *
      * This value represents how many units are included in the request payload for the order item. It is a positive integer used as the item amount in order-item workflows.
      *
-     * @x-autobe-database-schema-property quantity
-     * @x-autobe-specification Direct mapping from mall_platform_order_items.quantity. This is the requested order-item quantity and must be a positive integer.
+         * @x-autobe-database-schema-property quantity
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_order_items.quantity. This is the requested
+         *   order-item quantity and must be a positive integer.
      */
     quantity: number & tags.Type<"int32"> & tags.Minimum<1>;
   };

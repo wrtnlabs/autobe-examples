@@ -30,9 +30,10 @@ export class EcommerceProductsController {
    *
    * @param connection
    * @param body Search criteria for product listing including text filters, category filters, price ranges, pagination parameters, and sorting options.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Implement product search with the following logic:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Implement product search with the following
+     *   logic:
    *
    * 1. **Query Construction**
    *    - Query ecommerce_products table with filters from request body
@@ -114,9 +115,10 @@ export class EcommerceProductsController {
    *
    * @param connection
    * @param productId Unique identifier of the product to retrieve (UUID format).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query the ecommerce_products table by UUID id parameter.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query the ecommerce_products table by UUID id
+     *   parameter.
    *
    * Filter out soft-deleted products where deleted_at IS NOT NULL (unless requested by administrator with elevated privileges).
    *

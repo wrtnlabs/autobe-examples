@@ -25,7 +25,17 @@ import { IShoppingMallAdministrator } from "../../../../structures/IShoppingMall
  * @param props.body Administrator registration information.
  * @x-autobe-authorization-type join
  * @x-autobe-authorization-actor administrator
- * @x-autobe-specification Create a new administrator account by validating the join payload, normalizing the submitted email, checking that no non-deleted administrator already owns the same unique email address, hashing the provided password, and inserting a row into shopping_mall_administrators with a new UUID, active set according to governance bootstrap policy, banned set to false, and created_at and updated_at timestamps initialized to the current time. After successful creation, issue access and refresh tokens for the new administrator, create a corresponding shopping_mall_administrator_sessions record capturing client context such as IP address, href, referrer, created_at, and expired_at, and return the authorized payload defined by IShoppingMallAdministrator.IAuthorized.
+ * @x-autobe-specification Create a new administrator account by validating the
+ *   join payload, normalizing the submitted email, checking that no non-deleted
+ *   administrator already owns the same unique email address, hashing the
+ *   provided password, and inserting a row into shopping_mall_administrators
+ *   with a new UUID, active set according to governance bootstrap policy,
+ *   banned set to false, and created_at and updated_at timestamps initialized
+ *   to the current time. After successful creation, issue access and refresh
+ *   tokens for the new administrator, create a corresponding
+ *   shopping_mall_administrator_sessions record capturing client context such
+ *   as IP address, href, referrer, created_at, and expired_at, and return the
+ *   authorized payload defined by IShoppingMallAdministrator.IAuthorized.
  *
  * The service must reject duplicate email addresses, malformed credentials, and any attempt to join with data that violates the table's unique email constraint. If bootstrap policy requires administrators to be immediately usable, set active to true; otherwise, set the initial active state according to platform bootstrap configuration while still keeping banned false unless an explicit governance rule says otherwise. The implementation must use a transaction so the account row and session record are either both committed or both rolled back.
  *
@@ -128,7 +138,16 @@ export namespace join {
  * @param props.body Administrator login credentials.
  * @x-autobe-authorization-type login
  * @x-autobe-authorization-actor administrator
- * @x-autobe-specification Authenticate an administrator by validating the login payload against shopping_mall_administrators. Normalize the submitted email, load the matching administrator row by unique email, verify that deleted_at is null, active is true, and banned is false, then compare the submitted password with password_hash using the platform password hasher. If validation succeeds, create a new shopping_mall_administrator_sessions record capturing the authenticated administrator ID, client IP address, href, referrer, created_at, and expired_at, then mint access and refresh tokens bound to the session and return IShoppingMallAdministrator.IAuthorized.
+ * @x-autobe-specification Authenticate an administrator by validating the login
+ *   payload against shopping_mall_administrators. Normalize the submitted
+ *   email, load the matching administrator row by unique email, verify that
+ *   deleted_at is null, active is true, and banned is false, then compare the
+ *   submitted password with password_hash using the platform password hasher.
+ *   If validation succeeds, create a new shopping_mall_administrator_sessions
+ *   record capturing the authenticated administrator ID, client IP address,
+ *   href, referrer, created_at, and expired_at, then mint access and refresh
+ *   tokens bound to the session and return
+ *   IShoppingMallAdministrator.IAuthorized.
  *
  * The service must reject nonexistent email addresses, incorrect passwords, deleted accounts, inactive accounts, and banned accounts with safe authentication errors that do not disclose which part of the credential check failed unless governance policy intentionally distinguishes account-state failures. The implementation should update no credential state on failed login other than optional audit logging handled outside this interface.
  *
@@ -231,7 +250,16 @@ export namespace login {
  * @param props.body Administrator token refresh payload.
  * @x-autobe-authorization-type refresh
  * @x-autobe-authorization-actor administrator
- * @x-autobe-specification Refresh administrator authorization by validating the submitted refresh payload, resolving the associated shopping_mall_administrator_sessions record, checking that the session exists and has not passed expired_at, loading the owning shopping_mall_administrators row, and verifying that the administrator remains active, not banned, and not deleted. If valid, rotate or renew authorization material according to platform JWT policy and return a fresh IShoppingMallAdministrator.IAuthorized payload. When rotation is enabled, persist the new session expiration or replacement session metadata in the database as needed.
+ * @x-autobe-specification Refresh administrator authorization by validating the
+ *   submitted refresh payload, resolving the associated
+ *   shopping_mall_administrator_sessions record, checking that the session
+ *   exists and has not passed expired_at, loading the owning
+ *   shopping_mall_administrators row, and verifying that the administrator
+ *   remains active, not banned, and not deleted. If valid, rotate or renew
+ *   authorization material according to platform JWT policy and return a fresh
+ *   IShoppingMallAdministrator.IAuthorized payload. When rotation is enabled,
+ *   persist the new session expiration or replacement session metadata in the
+ *   database as needed.
  *
  * The service must reject expired refresh credentials, missing sessions, deleted sessions, administrators that were later banned, administrators that became inactive after the original login, and deleted administrator accounts. It should also ensure that refresh cannot resurrect access for an administrator whose governance status changed after token issuance.
  *

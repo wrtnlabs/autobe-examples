@@ -18,8 +18,9 @@ export type IEcommerceMallGuest = {
    *
    * This UUID serves as the permanent identifier for a guest visitor. It is generated automatically on account creation and cannot be changed.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_guests.id. Primary key UUID.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from ecommerce_mall_guests.id.
+     *   Primary key UUID.
    */
   id: string & tags.Format<"uuid">;
 
@@ -28,8 +29,9 @@ export type IEcommerceMallGuest = {
    *
    * Records the IPv4 address from which the guest last accessed the platform. Used for geographic tracking, security purposes, and fraud investigation. May be null if address was not captured.
    *
-   * @x-autobe-database-schema-property ip_address
-   * @x-autobe-specification Direct mapping from ecommerce_mall_guests.ip_address. Nullable field.
+     * @x-autobe-database-schema-property ip_address
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_guests.ip_address. Nullable field.
    */
   ipAddress?: string | null | undefined;
 
@@ -38,8 +40,9 @@ export type IEcommerceMallGuest = {
    *
    * Contains the HTTP User-Agent header from the guest's browser or client application. Used for device identification, analytics, and debugging browser compatibility issues. May be null if not provided.
    *
-   * @x-autobe-database-schema-property user_agent
-   * @x-autobe-specification Direct mapping from ecommerce_mall_guests.user_agent. Nullable field.
+     * @x-autobe-database-schema-property user_agent
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_guests.user_agent. Nullable field.
    */
   userAgent?: string | null | undefined;
 
@@ -48,8 +51,9 @@ export type IEcommerceMallGuest = {
    *
    * Records when the guest last performed any browsing activity on the platform. Updated on each request to maintain session continuity and track engagement patterns. May be null for newly created guests.
    *
-   * @x-autobe-specification Direct mapping from ecommerce_mall_guests.last_active_at. Nullable timestamp with timezone.
-   * @x-autobe-database-schema-property last_active_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_guests.last_active_at. Nullable timestamp with timezone.
+     * @x-autobe-database-schema-property last_active_at
    */
   lastActiveAt?: (string & tags.Format<"date-time">) | null | undefined;
 
@@ -58,8 +62,9 @@ export type IEcommerceMallGuest = {
    *
    * Records the exact date and time when the guest first accessed the platform with this device fingerprint. Used for analytics, account age verification, and audit purposes.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_guests.created_at. Non-nullable timestamp with timezone.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_guests.created_at. Non-nullable timestamp with timezone.
    */
   createdAt: string & tags.Format<"date-time">;
 
@@ -68,8 +73,9 @@ export type IEcommerceMallGuest = {
    *
    * Updated whenever any guest account field is modified, including IP address changes, user agent updates, or activity tracking. Used for cache invalidation and audit trails.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_guests.updated_at. Non-nullable timestamp with timezone.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_guests.updated_at. Non-nullable timestamp with timezone.
    */
   updatedAt: string & tags.Format<"date-time">;
 };
@@ -87,7 +93,12 @@ export namespace IEcommerceMallGuest {
      *
      * Used to obtain a new access token without re-authentication. Present this token to the refresh endpoint to receive fresh authorization credentials. The token encodes session identity; server validates against stored session before issuing new access token.
      *
-     * @x-autobe-specification JWT refresh token string validated server-side. Server extracts session_id from JWT claims, queries ecommerce_mall_guest_sessions table to validate: token not expired, not revoked, session not deleted, guest account not deleted. No direct column mapping - server-side validation logic handles the database lookup internally.
+         * @x-autobe-specification JWT refresh token string validated
+         *   server-side. Server extracts session_id from JWT claims, queries
+         *   ecommerce_mall_guest_sessions table to validate: token not expired,
+         *   not revoked, session not deleted, guest account not deleted. No
+         *   direct column mapping - server-side validation logic handles the
+         *   database lookup internally.
      */
     refreshToken: string & tags.Format<"password">;
   };
@@ -107,8 +118,11 @@ export namespace IEcommerceMallGuest {
      *
      * **Persistence:** Stored in ecommerce_mall_guests.fingerprint with unique constraint.
      *
-     * @x-autobe-database-schema-property fingerprint
-     * @x-autobe-specification Direct mapping from ecommerce_mall_guests.fingerprint. Client-generated device fingerprint string used to uniquely identify the guest's browser or device. Must be non-empty string.
+         * @x-autobe-database-schema-property fingerprint
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_guests.fingerprint. Client-generated device
+         *   fingerprint string used to uniquely identify the guest's browser or
+         *   device. Must be non-empty string.
      */
     fingerprint: string & tags.MinLength<1>;
 
@@ -119,7 +133,10 @@ export namespace IEcommerceMallGuest {
      *
      * **Format:** Absolute URI of the current page (e.g., https://example.com/products/123).
      *
-     * @x-autobe-specification Not stored in ecommerce_mall_guests. Client captures current page URL where guest joined. Stored in ecommerce_mall_guest_sessions.href for navigation analytics. Extracted from browser's window.location.href.
+         * @x-autobe-specification Not stored in ecommerce_mall_guests. Client
+         *   captures current page URL where guest joined. Stored in
+         *   ecommerce_mall_guest_sessions.href for navigation analytics.
+         *   Extracted from browser's window.location.href.
      */
     href: string & tags.Format<"uri">;
 
@@ -130,7 +147,10 @@ export namespace IEcommerceMallGuest {
      *
      * **Format:** Absolute or relative URI of the referring page. Empty string if direct navigation.
      *
-     * @x-autobe-specification Not stored in ecommerce_mall_guests. Client captures the referring URL that directed the guest to the current page. Stored in ecommerce_mall_guest_sessions.referrer for marketing analytics. Extracted from browser's document.referrer.
+         * @x-autobe-specification Not stored in ecommerce_mall_guests. Client
+         *   captures the referring URL that directed the guest to the current
+         *   page. Stored in ecommerce_mall_guest_sessions.referrer for
+         *   marketing analytics. Extracted from browser's document.referrer.
      */
     referrer: string & tags.Format<"uri">;
   };
@@ -153,8 +173,10 @@ export namespace IEcommerceMallGuest {
      *
      * The fingerprint should be generated client-side using available device information (screen resolution, timezone, browser plugins, etc.). The same fingerprint returns the same guest record on subsequent requests.
      *
-     * @x-autobe-database-schema-property fingerprint
-     * @x-autobe-specification Direct mapping from ecommerce_mall_guests.fingerprint. Unique constraint ensures guest identity continuity.
+         * @x-autobe-database-schema-property fingerprint
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_guests.fingerprint. Unique constraint ensures guest
+         *   identity continuity.
      */
     fingerprint: string;
 
@@ -163,8 +185,10 @@ export namespace IEcommerceMallGuest {
      *
      * In SSR (Server Side Rendering) environments, the client may not know its own IP address. When omitted, the server automatically captures the IP from the incoming request as a fallback.
      *
-     * @x-autobe-specification Direct mapping to ecommerce_mall_guests.ip_address column. Optional field; server captures IP from request if not provided (SSR fallback).
-     * @x-autobe-database-schema-property ip_address
+         * @x-autobe-specification Direct mapping to
+         *   ecommerce_mall_guests.ip_address column. Optional field; server
+         *   captures IP from request if not provided (SSR fallback).
+         * @x-autobe-database-schema-property ip_address
      */
     ipAddress?: (string & tags.Format<"ipv4">) | null | undefined;
 
@@ -173,8 +197,10 @@ export namespace IEcommerceMallGuest {
      *
      * Contains information about the client's browser, operating system, and device. Used for tracking device patterns and improving guest identification accuracy.
      *
-     * @x-autobe-specification Direct mapping to ecommerce_mall_guests.user_agent column. Optional field for device identification and analytics.
-     * @x-autobe-database-schema-property user_agent
+         * @x-autobe-specification Direct mapping to
+         *   ecommerce_mall_guests.user_agent column. Optional field for device
+         *   identification and analytics.
+         * @x-autobe-database-schema-property user_agent
      */
     userAgent?: string | null | undefined;
   };
@@ -203,7 +229,8 @@ export namespace IEcommerceMallGuest {
     /**
      * Authorization token.
      *
-     * @x-autobe-specification Authorization token comes from the session table.
+         * @x-autobe-specification Authorization token comes from the session
+         *   table.
      */
     token: IAuthorizationToken;
   };
@@ -225,7 +252,7 @@ export namespace IEcommerceMallGuest {
      *
      * Usage: Used for account age calculation and analytics.
      *
-     * @x-autobe-database-schema-property created_at
+         * @x-autobe-database-schema-property created_at
      */
     createdAt: string & tags.Format<"date-time">;
 
@@ -238,7 +265,7 @@ export namespace IEcommerceMallGuest {
      *
      * Usage: Primary device identification method for guest session association.
      *
-     * @x-autobe-database-schema-property fingerprint
+         * @x-autobe-database-schema-property fingerprint
      */
     fingerprint: string;
 
@@ -249,7 +276,7 @@ export namespace IEcommerceMallGuest {
      *
      * Uniqueness: Globally unique identifier for the guest account.
      *
-     * @x-autobe-database-schema-property id
+         * @x-autobe-database-schema-property id
      */
     id: string & tags.Format<"uuid">;
 
@@ -262,7 +289,7 @@ export namespace IEcommerceMallGuest {
      *
      * Usage: Geographic tracking and security analysis for anonymous visitors.
      *
-     * @x-autobe-database-schema-property ip_address
+         * @x-autobe-database-schema-property ip_address
      */
     ipAddress?: string | null | undefined;
 
@@ -275,7 +302,7 @@ export namespace IEcommerceMallGuest {
      *
      * Usage: Activity tracking and session freshness indicators.
      *
-     * @x-autobe-database-schema-property last_active_at
+         * @x-autobe-database-schema-property last_active_at
      */
     lastActiveAt?: (string & tags.Format<"date-time">) | null | undefined;
 
@@ -288,7 +315,7 @@ export namespace IEcommerceMallGuest {
      *
      * Usage: Device type detection and analytics for browsing patterns.
      *
-     * @x-autobe-database-schema-property user_agent
+         * @x-autobe-database-schema-property user_agent
      */
     userAgent?: string | null | undefined;
   };

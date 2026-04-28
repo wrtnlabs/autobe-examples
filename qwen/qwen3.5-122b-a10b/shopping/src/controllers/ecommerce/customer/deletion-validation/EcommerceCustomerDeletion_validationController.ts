@@ -32,9 +32,10 @@ export class EcommerceCustomerDeletion_validationController {
    * The response includes a boolean indicating whether deletion is allowed, along with an array of blocking reasons if deletion is not permitted. Each blocking reason specifies the resource type and the constraint preventing deletion.
    *
    * @param connection
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Implement deletion validation for authenticated user account based on actor type.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Implement deletion validation for authenticated
+     *   user account based on actor type.
    *
    * **Authorization**
    * - Require valid authentication token (customer or seller)

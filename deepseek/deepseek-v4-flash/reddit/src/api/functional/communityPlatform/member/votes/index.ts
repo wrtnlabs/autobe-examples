@@ -22,7 +22,8 @@ import { IPageICommunityPlatformVote } from "../../../../structures/IPageICommun
  * @param props.body Vote details including the target content type ('post' or 'comment'), the target content UUID, and the vote value (+1 for upvote, -1 for downvote). The voter is inferred from the authenticated member session.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Validate member authentication — only authenticated members can vote. Reject with 401 Unauthorized for guest users.
+ * @x-autobe-specification Validate member authentication — only authenticated
+ *   members can vote. Reject with 401 Unauthorized for guest users.
  *
  * Validate target existence based on target_type:
  * - If target_type is 'post': query community_platform_posts by target_id. Reject with 404 Not Found if no post exists.
@@ -136,7 +137,8 @@ export namespace create {
  * @param props.body Search criteria for filtering vote records including optional filters by member (voter), target content type (post/comment), specific target UUIDs, vote value (+1/-1), creation date range, and pagination parameters.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query community_platform_votes table with pagination and dynamic filtering.
+ * @x-autobe-specification Query community_platform_votes table with pagination
+ *   and dynamic filtering.
  *
  * Filterable fields:
  * - voter_id: filter by voting member UUID (for personal history queries)
@@ -247,7 +249,8 @@ export namespace index {
  * @param props.voteId The unique UUID identifier of the vote record to retrieve.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query the community_platform_votes table by primary key (id) matching the provided {voteId} UUID parameter.
+ * @x-autobe-specification Query the community_platform_votes table by primary
+ *   key (id) matching the provided {voteId} UUID parameter.
  *
  * If no record is found, return a 404 Not Found response.
  *
@@ -340,7 +343,8 @@ export namespace at {
  * @param props.voteId UUID of the vote record to remove. Must reference a vote cast by the authenticated member.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Requires authenticated member. Verify authorization and perform cascade updates.
+ * @x-autobe-specification Requires authenticated member. Verify authorization
+ *   and perform cascade updates.
  *
  * 1. Fetch the vote record by voteId from community_platform_votes. If not found, return 404 Not Found.
  * 2. Verify voter_id on the vote record matches the authenticated member's id. If not, return 403 Forbidden — only the original voter can remove their vote.

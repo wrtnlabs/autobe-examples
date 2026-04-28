@@ -31,18 +31,22 @@ export * as taskTree from "./taskTree/index";
  * @param props.body Project creation payload. Organization scope is derived from the caller’s selected organization context; the client must not provide `erp_hrm_time_tracking_organization_id`.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Service-layer algorithm:
- * 1) Resolve selected organization context from the authenticated member/session (do not accept organization id from request payload).
- * 2) Authorize: verify the caller has project management capability within that selected organization.
- * 3) Validate request payload fields for semantic constraints (non-empty name, valid status value semantics as defined by the system; validate color format as expected by UI conventions).
- * 4) Enforce uniqueness: query `erp_hrm_time_tracking_projects` for an existing row where `erp_hrm_time_tracking_organization_id` = selectedOrganizationId AND `name` = request.name AND `deleted_at` is null (or otherwise matches the system’s availability rule for deleted projects).
- *    - If found, return a conflict error.
- * 5) Insert into `erp_hrm_time_tracking_projects` with:
- *    - `erp_hrm_time_tracking_organization_id` = selectedOrganizationId
- *    - `name` = request.name
- *    - `color` = request.color
- *    - `status` = request.status
- * 6) Return the inserted project record as `IerpHrmTimeTrackingProject` (include `id`, `name`, `color`, `status`, and timestamps if the DTO exposes them).
+ * @x-autobe-specification Service-layer algorithm: 1) Resolve selected
+ *   organization context from the authenticated member/session (do not accept
+ *   organization id from request payload). 2) Authorize: verify the caller has
+ *   project management capability within that selected organization. 3)
+ *   Validate request payload fields for semantic constraints (non-empty name,
+ *   valid status value semantics as defined by the system; validate color
+ *   format as expected by UI conventions). 4) Enforce uniqueness: query
+ *   `erp_hrm_time_tracking_projects` for an existing row where
+ *   `erp_hrm_time_tracking_organization_id` = selectedOrganizationId AND `name`
+ *   = request.name AND `deleted_at` is null (or otherwise matches the system’s
+ *   availability rule for deleted projects). - If found, return a conflict
+ *   error. 5) Insert into `erp_hrm_time_tracking_projects` with: -
+ *   `erp_hrm_time_tracking_organization_id` = selectedOrganizationId - `name` =
+ *   request.name - `color` = request.color - `status` = request.status 6)
+ *   Return the inserted project record as `IerpHrmTimeTrackingProject` (include
+ *   `id`, `name`, `color`, `status`, and timestamps if the DTO exposes them).
  *
  * Database operations:
  * - Use a single transaction for the uniqueness check + insert (or rely on a DB unique constraint and translate its violation to an application-level conflict error).
@@ -257,14 +261,18 @@ export namespace index {
  * @param props.projectId Target project UUID to retrieve.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implementation steps:
- * 1) Extract `projectId` from path parameters.
- * 2) Load the selected organization context from the authenticated actor/session.
- * 3) Query `erp_hrm_time_tracking_projects` by `id = projectId` AND `erp_hrm_time_tracking_organization_id = selectedOrganizationId`.
- *    - Select columns needed by `IErpHrmTimeTrackingProject` mapping: id, erp_hrm_time_tracking_organization_id, name, color, status, created_at, updated_at, deleted_at.
- * 4) If no row matches, return not-found/denied according to standard error mapping.
- * 5) Authorization check: confirm the actor has project viewing capability within the selected organization context (project view access vs project manage access). If not allowed, deny.
- * 6) Return the mapped DTO response.
+ * @x-autobe-specification Implementation steps: 1) Extract `projectId` from
+ *   path parameters. 2) Load the selected organization context from the
+ *   authenticated actor/session. 3) Query `erp_hrm_time_tracking_projects` by
+ *   `id = projectId` AND `erp_hrm_time_tracking_organization_id =
+ *   selectedOrganizationId`. - Select columns needed by
+ *   `IErpHrmTimeTrackingProject` mapping: id,
+ *   erp_hrm_time_tracking_organization_id, name, color, status, created_at,
+ *   updated_at, deleted_at. 4) If no row matches, return not-found/denied
+ *   according to standard error mapping. 5) Authorization check: confirm the
+ *   actor has project viewing capability within the selected organization
+ *   context (project view access vs project manage access). If not allowed,
+ *   deny. 6) Return the mapped DTO response.
  *
  * Edge cases:
  * - If `deleted_at` is non-null, include it according to DTO design; do not attempt recovery in this read endpoint.
@@ -367,10 +375,11 @@ export namespace at {
  * @param props.body Project update payload containing the fields to change for the targeted project. Name and color must be present to keep the project usable in project lists.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification 1) Authorization & context
- * - Require an authenticated member.
- * - Verify the caller has project management capability in the currently selected organization context.
- * - Enforce organization scoping: the project targeted by `projectId` must belong to the selected organization.
+ * @x-autobe-specification 1) Authorization & context - Require an authenticated
+ *   member. - Verify the caller has project management capability in the
+ *   currently selected organization context. - Enforce organization scoping:
+ *   the project targeted by `projectId` must belong to the selected
+ *   organization.
  *
  * 2) Input handling
  * - Read request body of type IErpHrmTimeTrackingProject.IUpdate.
@@ -496,9 +505,9 @@ export namespace update {
  * @param props.projectId Target project's identifier to permanently remove within the currently selected organization context.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification 1) Authorization & organization scoping
- * - Resolve the caller's selected organization context.
- * - Verify caller has project management capability (project:manage) for the selected organization.
+ * @x-autobe-specification 1) Authorization & organization scoping - Resolve the
+ *   caller's selected organization context. - Verify caller has project
+ *   management capability (project:manage) for the selected organization.
  *
  * 2) Load and validate target project
  * - Query erp_hrm_time_tracking_projects by id = {projectId} AND erp_hrm_time_tracking_organization_id = currentOrganizationId.

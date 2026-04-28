@@ -29,9 +29,10 @@ export class EcommerceAdminApprovalsPendingController {
    *
    * @param connection
    * @param body Pagination and sorting parameters for browsing pending approval requests. Includes page size, cursor position, and sort direction controls.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query ecommerce_seller_approvals table filtering where status = 'pending'.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Query ecommerce_seller_approvals table filtering
+     *   where status = 'pending'.
    *
    * Join with ecommerce_sellers to retrieve seller email and approval_status.
    * Join with ecommerce_seller_profiles to retrieve shop_name and shop_description.

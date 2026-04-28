@@ -24,7 +24,8 @@ export * as snapshots from "./snapshots/index";
  * @param props.body Search criteria and pagination parameters for filtering cancellation requests
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Query ecommerce_mall_cancellation_requests table with pagination and filtering.
+ * @x-autobe-specification Query ecommerce_mall_cancellation_requests table with
+ *   pagination and filtering.
  *
  * Authorization and Access Control:
  * - Customers: Only see cancellation requests where customerId matches their authenticated customer ID
@@ -150,7 +151,8 @@ export namespace index {
  * @param props.cancellationRequestId Unique identifier of the cancellation request (UUID format)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Query the ecommerce_mall_cancellation_requests table by the provided cancellationRequestId UUID.
+ * @x-autobe-specification Query the ecommerce_mall_cancellation_requests table
+ *   by the provided cancellationRequestId UUID.
  *
  * Join with ecommerce_mall_order_items to include order item details (product name, variant options, quantity).
  * Join with ecommerce_mall_customers to include customer information.

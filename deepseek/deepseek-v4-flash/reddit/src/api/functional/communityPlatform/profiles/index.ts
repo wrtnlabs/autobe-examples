@@ -21,7 +21,10 @@ import { ICommunityPlatformProfile } from "../../../structures/ICommunityPlatfor
  * @param props.memberId The unique identifier (UUID) of the member whose public profile to retrieve.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query community_platform_profiles by member_id = {memberId}. Filter WHERE deleted_at IS NULL to return only active (non-deleted) profiles. The lookup is deterministic since member_id has a unique constraint (at most one profile per member).
+ * @x-autobe-specification Query community_platform_profiles by member_id =
+ *   {memberId}. Filter WHERE deleted_at IS NULL to return only active
+ *   (non-deleted) profiles. The lookup is deterministic since member_id has a
+ *   unique constraint (at most one profile per member).
  *
  * If no active profile is found for the given memberId, return 404 Not Found. This covers two cases: (1) the member does not exist, or (2) the member's account (and thus profile) has been soft-deleted.
  *

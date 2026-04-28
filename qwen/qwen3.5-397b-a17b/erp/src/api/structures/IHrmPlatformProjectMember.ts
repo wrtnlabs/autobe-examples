@@ -17,8 +17,10 @@ export type IHrmPlatformProjectMember = {
    *
    * Auto-generated UUID assigned when the membership record is created. This identifier is immutable and serves as the primary key for referencing this specific employee-project assignment.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from hrm_platform_project_members.id. Auto-generated UUID on insert. System-managed, immutable after creation.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_project_members.id. Auto-generated UUID on insert.
+     *   System-managed, immutable after creation.
    */
   id: string & tags.Format<"uuid">;
 
@@ -27,8 +29,12 @@ export type IHrmPlatformProjectMember = {
    *
    * Contains summary information about the employee including their position, employment type, activation status, and associated user account. The employee must be active and belong to the same organization as the project to be assigned.
    *
-   * @x-autobe-database-schema-property employee
-   * @x-autobe-specification Relation mapping via JOIN from hrm_platform_project_members.employee to hrm_platform_employees. Returns IHrmPlatformEmployee.ISummary containing essential employee information (id, position, employment_type, status, member, role, department).
+     * @x-autobe-database-schema-property employee
+     * @x-autobe-specification Relation mapping via JOIN from
+     *   hrm_platform_project_members.employee to hrm_platform_employees.
+     *   Returns IHrmPlatformEmployee.ISummary containing essential employee
+     *   information (id, position, employment_type, status, member, role,
+     *   department).
    */
   employee: IHrmPlatformEmployee.ISummary;
 
@@ -37,8 +43,11 @@ export type IHrmPlatformProjectMember = {
    *
    * Contains summary information about the project including its name, color code for UI display, lifecycle status, and owning organization. Only active projects can receive new project member assignments.
    *
-   * @x-autobe-database-schema-property project
-   * @x-autobe-specification Relation mapping via JOIN from hrm_platform_project_members.project to hrm_platform_projects. Returns IHrmPlatformProject.ISummary containing essential project information (id, name, color, status, organization, budget_hours, dates).
+     * @x-autobe-database-schema-property project
+     * @x-autobe-specification Relation mapping via JOIN from
+     *   hrm_platform_project_members.project to hrm_platform_projects. Returns
+     *   IHrmPlatformProject.ISummary containing essential project information
+     *   (id, name, color, status, organization, budget_hours, dates).
    */
   project: IHrmPlatformProject.ISummary;
 
@@ -47,8 +56,11 @@ export type IHrmPlatformProjectMember = {
    *
    * Two possible values: 'member' allows viewing tasks and logging time against the project. 'project-lead' includes all member capabilities plus additional permissions to create, edit, and manage tasks within the project. This role is assigned when the employee is added to the project and can be updated by users with project:manage permission.
    *
-   * @x-autobe-database-schema-property role
-   * @x-autobe-specification Direct mapping from hrm_platform_project_members.role. Valid values: 'member' or 'project-lead'. Determines the employee's capabilities within the project context.
+     * @x-autobe-database-schema-property role
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_project_members.role. Valid values: 'member' or
+     *   'project-lead'. Determines the employee's capabilities within the
+     *   project context.
    */
   role: string;
 
@@ -57,8 +69,10 @@ export type IHrmPlatformProjectMember = {
    *
    * Automatically set by the system when the employee is first assigned to the project. This timestamp is immutable and provides an audit trail of when the project access was granted.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from hrm_platform_project_members.created_at. System-managed timestamp set to current time on record insertion. Immutable after creation.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_project_members.created_at. System-managed timestamp set
+     *   to current time on record insertion. Immutable after creation.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -67,8 +81,11 @@ export type IHrmPlatformProjectMember = {
    *
    * Automatically updated by the system whenever any property of this membership record is changed, such as when the role is updated from 'member' to 'project-lead'. Provides an audit trail of the most recent modification.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from hrm_platform_project_members.updated_at. System-managed timestamp updated on every record modification. Reflects the last time any property of this membership was changed.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_project_members.updated_at. System-managed timestamp
+     *   updated on every record modification. Reflects the last time any
+     *   property of this membership was changed.
    */
   updated_at: string & tags.Format<"date-time">;
 };
@@ -97,7 +114,8 @@ export namespace IHrmPlatformProjectMember {
      * Requesting a page beyond the available range returns an empty data array
      * with valid pagination metadata reflecting the actual totals.
      *
-     * @x-autobe-specification 1-indexed page number. Defaults to 1 if not provided.
+         * @x-autobe-specification 1-indexed page number. Defaults to 1 if not
+         *   provided.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
 
@@ -109,7 +127,8 @@ export namespace IHrmPlatformProjectMember {
      * enforce upper bounds to prevent excessive resource consumption on large
      * requests.
      *
-     * @x-autobe-specification Maximum records per page. Defaults to 100 if not provided.
+         * @x-autobe-specification Maximum records per page. Defaults to 100 if
+         *   not provided.
      */
     limit?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };
@@ -146,8 +165,9 @@ export namespace IHrmPlatformProjectMember {
      *
      * This UUID identifies the specific assignment of an employee to a project. Used for reference in API operations and internal tracking.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from hrm_platform_project_members.id. UUID format.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_project_members.id. UUID format.
      */
     id: string & tags.Format<"uuid">;
 
@@ -156,8 +176,11 @@ export namespace IHrmPlatformProjectMember {
      *
      * Contains the employee's summary information including name, position, department, and employment status. Only active employees are included in results; deactivated employees are filtered out at query time.
      *
-     * @x-autobe-database-schema-property employee
-     * @x-autobe-specification Join via hrm_platform_employee_id to hrm_platform_employees, then to hrm_platform_members and hrm_platform_user_profiles. Returns IHrmPlatformEmployee.ISummary with employee details.
+         * @x-autobe-database-schema-property employee
+         * @x-autobe-specification Join via hrm_platform_employee_id to
+         *   hrm_platform_employees, then to hrm_platform_members and
+         *   hrm_platform_user_profiles. Returns IHrmPlatformEmployee.ISummary
+         *   with employee details.
      */
     employee: IHrmPlatformEmployee.ISummary;
 
@@ -166,8 +189,10 @@ export namespace IHrmPlatformProjectMember {
      *
      * Distinguishes between regular members who can work on tasks and project-leads who have elevated permissions to manage tasks within the project. Valid values are 'member' or 'project-lead'.
      *
-     * @x-autobe-database-schema-property role
-     * @x-autobe-specification Direct mapping from hrm_platform_project_members.role. Values: 'member' or 'project-lead'.
+         * @x-autobe-database-schema-property role
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_project_members.role. Values: 'member' or
+         *   'project-lead'.
      */
     role: string;
 
@@ -176,8 +201,9 @@ export namespace IHrmPlatformProjectMember {
      *
      * Represents the join date of the employee to this project team. Used for tracking team composition history and displaying membership duration.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from hrm_platform_project_members.created_at. ISO 8601 date-time format.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_project_members.created_at. ISO 8601 date-time format.
      */
     created_at: string & tags.Format<"date-time">;
   };

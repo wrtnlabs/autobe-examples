@@ -27,7 +27,9 @@ export * as snapshots from "./snapshots/index";
  * @param props.timesheetId Target timesheet's unique identifier
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor manager
- * @x-autobe-specification Implement an application service action that approves one submitted timesheet by its identifier within the caller's current organization context.
+ * @x-autobe-specification Implement an application service action that approves
+ *   one submitted timesheet by its identifier within the caller's current
+ *   organization context.
  *
  * 1. Authenticate the caller and resolve the current organization context.
  * 2. Authorize the caller against organization-scoped timesheet approval permission. Owners are allowed by default according to their administrative role; managers require the relevant permission in the current organization. Deny access when the caller's permission exists only in another organization.
@@ -150,7 +152,13 @@ export namespace approve {
  * @param props.body Rejection reason for the submitted timesheet
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor manager
- * @x-autobe-specification Validate that the caller is authenticated in a currently selected organization context and has permission to approve or reject timesheets in that organization. Resolve the target `hrm_time_tracking_timesheets` row by `id = :timesheetId` and ensure `deleted_at IS NULL`. Reject the request if the timesheet does not exist, belongs to a different organization than the active context, or the caller lacks review permission in that organization.
+ * @x-autobe-specification Validate that the caller is authenticated in a
+ *   currently selected organization context and has permission to approve or
+ *   reject timesheets in that organization. Resolve the target
+ *   `hrm_time_tracking_timesheets` row by `id = :timesheetId` and ensure
+ *   `deleted_at IS NULL`. Reject the request if the timesheet does not exist,
+ *   belongs to a different organization than the active context, or the caller
+ *   lacks review permission in that organization.
  *
  * Validate the request body and require a non-empty rejection reason. Start a transaction. Re-read the target timesheet row with update locking to prevent concurrent review decisions. Confirm that `status` is exactly `submitted`; if the status is `draft`, `approved`, `rejected`, or any other value, abort with a business validation error because review actions are allowed only for submitted timesheets.
  *

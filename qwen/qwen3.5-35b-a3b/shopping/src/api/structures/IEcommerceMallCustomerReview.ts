@@ -61,8 +61,10 @@ export namespace IEcommerceMallCustomerReview {
      * - Maximum: 5 (highest satisfaction)
      * - Required: true
      *
-     * @x-autobe-database-schema-property rating
-     * @x-autobe-specification Direct mapping from ecommerce_mall_customer_reviews.rating. Required integer between 1 and 5 inclusive. Used to calculate product average ratings.
+         * @x-autobe-database-schema-property rating
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_customer_reviews.rating. Required integer between 1
+         *   and 5 inclusive. Used to calculate product average ratings.
      */
     rating: number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<5>;
 
@@ -71,8 +73,11 @@ export namespace IEcommerceMallCustomerReview {
      *
      * The customer's detailed feedback about their product experience. This field can be omitted if the customer only provides a star rating without written comments.
      *
-     * @x-autobe-database-schema-property text
-     * @x-autobe-specification Direct mapping from ecommerce_mall_customer_reviews.text. Optional string field for customer's written feedback. Can be null if only star rating provided.
+         * @x-autobe-database-schema-property text
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_customer_reviews.text. Optional string field for
+         *   customer's written feedback. Can be null if only star rating
+         *   provided.
      */
     text?: string | null | undefined;
   };

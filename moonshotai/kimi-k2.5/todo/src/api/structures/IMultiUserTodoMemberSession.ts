@@ -10,56 +10,69 @@ export type IMultiUserTodoMemberSession = {
   /**
    * Unique identifier for the session.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from multi_user_todo_member_sessions.id (UUID primary key).
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   multi_user_todo_member_sessions.id (UUID primary key).
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Member who owns this session.
    *
-   * @x-autobe-specification Join via multi_user_todo_members using multi_user_todo_member_sessions.multi_user_todo_member_id. Returns ISummary.
-   * @x-autobe-database-schema-property member
+     * @x-autobe-specification Join via multi_user_todo_members using
+     *   multi_user_todo_member_sessions.multi_user_todo_member_id. Returns
+     *   ISummary.
+     * @x-autobe-database-schema-property member
    */
   member: IMultiUserTodoMember.ISummary;
 
   /**
    * IP address of the client that established this session.
    *
-   * @x-autobe-database-schema-property ip
-   * @x-autobe-specification Direct mapping from multi_user_todo_member_sessions.ip. Captured from request headers or connection metadata.
+     * @x-autobe-database-schema-property ip
+     * @x-autobe-specification Direct mapping from
+     *   multi_user_todo_member_sessions.ip. Captured from request headers or
+     *   connection metadata.
    */
   ip: string;
 
   /**
    * URL path from which the session was initiated.
    *
-   * @x-autobe-database-schema-property href
-   * @x-autobe-specification Direct mapping from multi_user_todo_member_sessions.href. URL path from which the session was initiated.
+     * @x-autobe-database-schema-property href
+     * @x-autobe-specification Direct mapping from
+     *   multi_user_todo_member_sessions.href. URL path from which the session
+     *   was initiated.
    */
   href: string;
 
   /**
    * HTTP Referer header value indicating the previous page the user came from before logging in.
    *
-   * @x-autobe-database-schema-property referrer
-   * @x-autobe-specification Direct mapping from multi_user_todo_member_sessions.referrer. HTTP Referer header value capturing the previous page.
+     * @x-autobe-database-schema-property referrer
+     * @x-autobe-specification Direct mapping from
+     *   multi_user_todo_member_sessions.referrer. HTTP Referer header value
+     *   capturing the previous page.
    */
   referrer: string;
 
   /**
    * Timestamp when the session was first created upon successful authentication.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from multi_user_todo_member_sessions.created_at (timestamptz). Set at session creation.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   multi_user_todo_member_sessions.created_at (timestamptz). Set at
+     *   session creation.
    */
   createdAt: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when this session expires and becomes invalid. Access tokens cannot be refreshed after this time.
    *
-   * @x-autobe-database-schema-property expired_at
-   * @x-autobe-specification Direct mapping from multi_user_todo_member_sessions.expired_at (timestamptz). Calculated at session creation based on configured TTL.
+     * @x-autobe-database-schema-property expired_at
+     * @x-autobe-specification Direct mapping from
+     *   multi_user_todo_member_sessions.expired_at (timestamptz). Calculated at
+     *   session creation based on configured TTL.
    */
   expiredAt: string & tags.Format<"date-time">;
 };
@@ -71,14 +84,19 @@ export namespace IMultiUserTodoMemberSession {
     /**
      * Page number for pagination (1-indexed).
      *
-     * @x-autobe-specification Pagination parameter. 1-indexed page number for offset calculation (OFFSET = (page - 1) * limit). Maps to LIMIT clause offset computation when querying multi_user_todo_member_sessions. Default: 1.
+         * @x-autobe-specification Pagination parameter. 1-indexed page number
+         *   for offset calculation (OFFSET = (page - 1) * limit). Maps to LIMIT
+         *   clause offset computation when querying
+         *   multi_user_todo_member_sessions. Default: 1.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of records to return per page.
      *
-     * @x-autobe-specification Pagination parameter. Maps to LIMIT clause when querying multi_user_todo_member_sessions. Maximum records per page. Default: 20, Maximum: 100.
+         * @x-autobe-specification Pagination parameter. Maps to LIMIT clause
+         *   when querying multi_user_todo_member_sessions. Maximum records per
+         *   page. Default: 20, Maximum: 100.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -87,49 +105,69 @@ export namespace IMultiUserTodoMemberSession {
     /**
      * Filter sessions by IP address (partial match).
      *
-     * @x-autobe-specification Filter parameter mapping to multi_user_todo_member_sessions.ip column via SQL LIKE operator with wildcards for substring matching. Supports partial IP matching for network segmentation queries.
+         * @x-autobe-specification Filter parameter mapping to
+         *   multi_user_todo_member_sessions.ip column via SQL LIKE operator
+         *   with wildcards for substring matching. Supports partial IP matching
+         *   for network segmentation queries.
      */
     ip?: string | undefined;
 
     /**
      * Filter sessions by entry point URL (partial match).
      *
-     * @x-autobe-specification Filter parameter mapping to multi_user_todo_member_sessions.href column via SQL LIKE operator. Captures entry point URL for tracking login sources.
+         * @x-autobe-specification Filter parameter mapping to
+         *   multi_user_todo_member_sessions.href column via SQL LIKE operator.
+         *   Captures entry point URL for tracking login sources.
      */
     href?: string | undefined;
 
     /**
      * Filter sessions by referrer URL (partial match).
      *
-     * @x-autobe-specification Filter parameter mapping to multi_user_todo_member_sessions.referrer column via SQL LIKE operator. Captures previous page URL for analytics and security tracking.
+         * @x-autobe-specification Filter parameter mapping to
+         *   multi_user_todo_member_sessions.referrer column via SQL LIKE
+         *   operator. Captures previous page URL for analytics and security
+         *   tracking.
      */
     referrer?: string | undefined;
 
     /**
      * Start of session creation date range filter (inclusive).
      *
-     * @x-autobe-specification Filter parameter forming lower bound for date range query against multi_user_todo_member_sessions.created_at column (inclusive). Combined with createdAtTo. Format: ISO 8601 date-time.
+         * @x-autobe-specification Filter parameter forming lower bound for date
+         *   range query against multi_user_todo_member_sessions.created_at
+         *   column (inclusive). Combined with createdAtTo. Format: ISO 8601
+         *   date-time.
      */
     createdAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * End of session creation date range filter (inclusive).
      *
-     * @x-autobe-specification Filter parameter forming upper bound for date range query against multi_user_todo_member_sessions.created_at column (inclusive). Combined with createdAtFrom. Format: ISO 8601 date-time.
+         * @x-autobe-specification Filter parameter forming upper bound for date
+         *   range query against multi_user_todo_member_sessions.created_at
+         *   column (inclusive). Combined with createdAtFrom. Format: ISO 8601
+         *   date-time.
      */
     createdAtTo?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Start of session expiration date range filter (inclusive).
      *
-     * @x-autobe-specification Filter parameter forming lower bound for date range query against multi_user_todo_member_sessions.expired_at column (inclusive). Combined with expiredAtTo. Used to find active or soon-to-expire sessions. Format: ISO 8601 date-time.
+         * @x-autobe-specification Filter parameter forming lower bound for date
+         *   range query against multi_user_todo_member_sessions.expired_at
+         *   column (inclusive). Combined with expiredAtTo. Used to find active
+         *   or soon-to-expire sessions. Format: ISO 8601 date-time.
      */
     expiredAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * End of session expiration date range filter (inclusive).
      *
-     * @x-autobe-specification Filter parameter forming upper bound for date range query against multi_user_todo_member_sessions.expired_at column (inclusive). Combined with expiredAtFrom. Used to find expired sessions. Format: ISO 8601 date-time.
+         * @x-autobe-specification Filter parameter forming upper bound for date
+         *   range query against multi_user_todo_member_sessions.expired_at
+         *   column (inclusive). Combined with expiredAtFrom. Used to find
+         *   expired sessions. Format: ISO 8601 date-time.
      */
     expiredAtTo?: (string & tags.Format<"date-time">) | undefined;
   };
@@ -141,56 +179,70 @@ export namespace IMultiUserTodoMemberSession {
     /**
      * Unique identifier for the member session.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from multi_user_todo_member_sessions.id. UUID primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   multi_user_todo_member_sessions.id. UUID primary key.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Timestamp when the authentication session was first created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from multi_user_todo_member_sessions.created_at. Timestamp when session was first created upon successful authentication.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   multi_user_todo_member_sessions.created_at. Timestamp when session
+         *   was first created upon successful authentication.
      */
     createdAt: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when the session expires and becomes invalid.
      *
-     * @x-autobe-database-schema-property expired_at
-     * @x-autobe-specification Direct mapping from multi_user_todo_member_sessions.expired_at. Timestamp when session becomes invalid and tokens can no longer be refreshed.
+         * @x-autobe-database-schema-property expired_at
+         * @x-autobe-specification Direct mapping from
+         *   multi_user_todo_member_sessions.expired_at. Timestamp when session
+         *   becomes invalid and tokens can no longer be refreshed.
      */
     expiredAt: string & tags.Format<"date-time">;
 
     /**
      * IP address of the client that established this session.
      *
-     * @x-autobe-database-schema-property ip
-     * @x-autobe-specification Direct mapping from multi_user_todo_member_sessions.ip. Client IP address captured at session establishment for security auditing.
+         * @x-autobe-database-schema-property ip
+         * @x-autobe-specification Direct mapping from
+         *   multi_user_todo_member_sessions.ip. Client IP address captured at
+         *   session establishment for security auditing.
      */
     ip: string;
 
     /**
      * URL or path from which the session was initiated.
      *
-     * @x-autobe-database-schema-property href
-     * @x-autobe-specification Direct mapping from multi_user_todo_member_sessions.href. URL or path from which the session was initiated.
+         * @x-autobe-database-schema-property href
+         * @x-autobe-specification Direct mapping from
+         *   multi_user_todo_member_sessions.href. URL or path from which the
+         *   session was initiated.
      */
     href: string & tags.Format<"uri">;
 
     /**
      * HTTP referrer header indicating the previous page the user came from.
      *
-     * @x-autobe-database-schema-property referrer
-     * @x-autobe-specification Direct mapping from multi_user_todo_member_sessions.referrer. HTTP referrer header value captured for analytics and security tracking.
+         * @x-autobe-database-schema-property referrer
+         * @x-autobe-specification Direct mapping from
+         *   multi_user_todo_member_sessions.referrer. HTTP referrer header
+         *   value captured for analytics and security tracking.
      */
     referrer: string & tags.Format<"uri">;
 
     /**
      * Masked access token prefix for session identification.
      *
-     * @x-autobe-database-schema-property access_token
-     * @x-autobe-specification Transform from multi_user_todo_member_sessions.access_token. Returns only masked prefix (e.g., 'eyJhbGci...') for identification purposes. Full token never exposed in summary.
+         * @x-autobe-database-schema-property access_token
+         * @x-autobe-specification Transform from
+         *   multi_user_todo_member_sessions.access_token. Returns only masked
+         *   prefix (e.g., 'eyJhbGci...') for identification purposes. Full
+         *   token never exposed in summary.
      */
     accessToken: string;
   };

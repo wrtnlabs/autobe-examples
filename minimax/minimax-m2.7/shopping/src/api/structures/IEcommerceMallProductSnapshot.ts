@@ -19,8 +19,9 @@ export type IEcommerceMallProductSnapshot = {
    *
    * UUID primary key assigned at snapshot creation time. Used to retrieve specific snapshot records for dispute resolution and audit purposes.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_product_snapshots.id (UUID primary key).
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_product_snapshots.id (UUID primary key).
    */
   id: string & tags.Format<"uuid">;
 
@@ -29,8 +30,10 @@ export type IEcommerceMallProductSnapshot = {
    *
    * This field preserves the exact product name for historical reference, allowing dispute resolution when customers claim the product name was different at purchase time.
    *
-   * @x-autobe-database-schema-property name
-   * @x-autobe-specification Direct mapping from ecommerce_mall_product_snapshots.name. Preserves the product name as it appeared at snapshot creation time.
+     * @x-autobe-database-schema-property name
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_product_snapshots.name. Preserves the product name as it
+     *   appeared at snapshot creation time.
    */
   name: string;
 
@@ -39,8 +42,10 @@ export type IEcommerceMallProductSnapshot = {
    *
    * Preserves the complete product description including specifications, features, and content. Used to verify product details were not changed after purchase.
    *
-   * @x-autobe-database-schema-property description
-   * @x-autobe-specification Direct mapping from ecommerce_mall_product_snapshots.description. Preserves the product description as it appeared at snapshot creation time.
+     * @x-autobe-database-schema-property description
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_product_snapshots.description. Preserves the product
+     *   description as it appeared at snapshot creation time.
    */
   description: string;
 
@@ -49,8 +54,10 @@ export type IEcommerceMallProductSnapshot = {
    *
    * This price serves as the default price for variants that do not override pricing. Preserved for price verification in dispute resolution cases.
    *
-   * @x-autobe-database-schema-property base_price
-   * @x-autobe-specification Direct mapping from ecommerce_mall_product_snapshots.base_price (Float/DoublePrecision). Represents the product base price at snapshot creation time.
+     * @x-autobe-database-schema-property base_price
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_product_snapshots.base_price (Float/DoublePrecision).
+     *   Represents the product base price at snapshot creation time.
    */
   basePrice: number;
 
@@ -59,8 +66,10 @@ export type IEcommerceMallProductSnapshot = {
    *
    * Preserves the category classification for historical reference, even if the category is later deleted or renamed.
    *
-   * @x-autobe-database-schema-property category_name
-   * @x-autobe-specification Direct mapping from ecommerce_mall_product_snapshots.category_name. Stores the category name string directly at snapshot creation time.
+     * @x-autobe-database-schema-property category_name
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_product_snapshots.category_name. Stores the category
+     *   name string directly at snapshot creation time.
    */
   categoryName: string;
 
@@ -69,8 +78,9 @@ export type IEcommerceMallProductSnapshot = {
    *
    * Indicates when the product state was captured. Snapshots are created automatically during product edits and order placements.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_product_snapshots.created_at (DateTime/Timestamptz).
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_product_snapshots.created_at (DateTime/Timestamptz).
    */
   createdAt: string & tags.Format<"date-time">;
 
@@ -79,8 +89,10 @@ export type IEcommerceMallProductSnapshot = {
    *
    * Provides the current product summary, useful for linking back to the live product state while preserving the historical snapshot data separately.
    *
-   * @x-autobe-database-schema-property product
-   * @x-autobe-specification BELONGS-TO relation via ecommerce_mall_product_id FK. JOIN to ecommerce_mall_products table. Returns IEcommerceMallProduct.ISummary.
+     * @x-autobe-database-schema-property product
+     * @x-autobe-specification BELONGS-TO relation via ecommerce_mall_product_id
+     *   FK. JOIN to ecommerce_mall_products table. Returns
+     *   IEcommerceMallProduct.ISummary.
    */
   product: IEcommerceMallProduct.ISummary;
 
@@ -89,8 +101,10 @@ export type IEcommerceMallProductSnapshot = {
    *
    * Identifies the seller responsible for the product at snapshot time. Useful for audit and compliance verification.
    *
-   * @x-autobe-database-schema-property seller
-   * @x-autobe-specification BELONGS-TO relation via ecommerce_mall_seller_id FK. JOIN to ecommerce_mall_sellers table. Returns IEcommerceMallSeller.ISummary.
+     * @x-autobe-database-schema-property seller
+     * @x-autobe-specification BELONGS-TO relation via ecommerce_mall_seller_id
+     *   FK. JOIN to ecommerce_mall_sellers table. Returns
+     *   IEcommerceMallSeller.ISummary.
    */
   seller: IEcommerceMallSeller.ISummary;
 
@@ -99,7 +113,11 @@ export type IEcommerceMallProductSnapshot = {
    *
    * Preserves the complete image gallery state including URLs and display order. Each image represents how the product appeared visually at snapshot time.
    *
-   * @x-autobe-specification HAS-MANY to ecommerce_mall_product_snapshot_images via ecommerce_mall_product_snapshot_id FK. JOIN and return array of IEcommerceMallProductSnapshotImage. Computed relation accessed via productSnapshotImages HAS-MANY relation.
+     * @x-autobe-specification HAS-MANY to
+     *   ecommerce_mall_product_snapshot_images via
+     *   ecommerce_mall_product_snapshot_id FK. JOIN and return array of
+     *   IEcommerceMallProductSnapshotImage. Computed relation accessed via
+     *   productSnapshotImages HAS-MANY relation.
    */
   images: IEcommerceMallProductSnapshotImage[];
 
@@ -108,7 +126,11 @@ export type IEcommerceMallProductSnapshot = {
    *
    * Preserves the complete variant configuration including SKU codes, option key-value pairs, price overrides, and stock quantities as they existed at snapshot time.
    *
-   * @x-autobe-specification HAS-MANY to ecommerce_mall_product_snapshot_variants via ecommerce_mall_product_snapshot_id FK. JOIN and return array of IEcommerceMallProductSnapshotVariant. Computed relation accessed via productSnapshotVariants HAS-MANY relation.
+     * @x-autobe-specification HAS-MANY to
+     *   ecommerce_mall_product_snapshot_variants via
+     *   ecommerce_mall_product_snapshot_id FK. JOIN and return array of
+     *   IEcommerceMallProductSnapshotVariant. Computed relation accessed via
+     *   productSnapshotVariants HAS-MANY relation.
    */
   variants: IEcommerceMallProductSnapshotVariant[];
 };
@@ -129,8 +151,10 @@ export namespace IEcommerceMallProductSnapshot {
      *
      * This ID uniquely identifies the snapshot record and is used to retrieve specific snapshot details. Each snapshot has a unique UUID regardless of which product it belongs to.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_mall_product_snapshots.id. UUID primary key assigned at snapshot creation.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_product_snapshots.id. UUID primary key assigned at
+         *   snapshot creation.
      */
     id: string & tags.Format<"uuid">;
 
@@ -139,8 +163,10 @@ export namespace IEcommerceMallProductSnapshot {
      *
      * This field preserves the exact product name as it existed when the snapshot was taken. If the seller later renames the product, this snapshot retains the original name for historical reference and dispute resolution.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from ecommerce_mall_product_snapshots.name. String field capturing product name at snapshot time.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_product_snapshots.name. String field capturing
+         *   product name at snapshot time.
      */
     name: string;
 
@@ -149,8 +175,10 @@ export namespace IEcommerceMallProductSnapshot {
      *
      * This field preserves the full product description exactly as it existed when the snapshot was taken. Useful for resolving disputes where the product description at time of purchase is relevant.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from ecommerce_mall_product_snapshots.description. String field capturing product description at snapshot time.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_product_snapshots.description. String field
+         *   capturing product description at snapshot time.
      */
     description: string;
 
@@ -159,8 +187,10 @@ export namespace IEcommerceMallProductSnapshot {
      *
      * This field stores the default price used for variants when the snapshot was created. Individual variant prices may differ from this base price at the time of snapshot.
      *
-     * @x-autobe-database-schema-property base_price
-     * @x-autobe-specification Direct mapping from ecommerce_mall_product_snapshots.base_price. Float (DoublePrecision) storing the product base price at snapshot time.
+         * @x-autobe-database-schema-property base_price
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_product_snapshots.base_price. Float
+         *   (DoublePrecision) storing the product base price at snapshot time.
      */
     basePrice: number;
 
@@ -169,8 +199,11 @@ export namespace IEcommerceMallProductSnapshot {
      *
      * This field preserves the category name (not ID) for human readability. If the category is later deleted or renamed, this snapshot retains the original category name for historical accuracy.
      *
-     * @x-autobe-database-schema-property category_name
-     * @x-autobe-specification Direct mapping from ecommerce_mall_product_snapshots.category_name. String field capturing the category name the product belonged to at snapshot time.
+         * @x-autobe-database-schema-property category_name
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_product_snapshots.category_name. String field
+         *   capturing the category name the product belonged to at snapshot
+         *   time.
      */
     categoryName: string;
 
@@ -179,8 +212,10 @@ export namespace IEcommerceMallProductSnapshot {
      *
      * This timestamp indicates when the snapshot was taken, either during a product edit or order placement. Use this field to sort snapshots chronologically and determine the sequence of product changes.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_product_snapshots.created_at. Timestamptz storing snapshot creation timestamp.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_product_snapshots.created_at. Timestamptz storing
+         *   snapshot creation timestamp.
      */
     createdAt: string & tags.Format<"date-time">;
 
@@ -189,8 +224,10 @@ export namespace IEcommerceMallProductSnapshot {
      *
      * This UUID identifies the original product from which this snapshot was created. Use this field to group snapshots by product and retrieve all historical states of a specific product.
      *
-     * @x-autobe-database-schema-property ecommerce_mall_product_id
-     * @x-autobe-specification Direct mapping from ecommerce_mall_product_snapshots.ecommerce_mall_product_id. Foreign key reference to the parent product.
+         * @x-autobe-database-schema-property ecommerce_mall_product_id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_product_snapshots.ecommerce_mall_product_id. Foreign
+         *   key reference to the parent product.
      */
     productId: string & tags.Format<"uuid">;
 
@@ -199,8 +236,11 @@ export namespace IEcommerceMallProductSnapshot {
      *
      * This nested object provides essential seller information (ID, email, approval status, shop name) for reference purposes. Useful when displaying snapshots in seller dashboards or admin audit views.
      *
-     * @x-autobe-database-schema-property seller
-     * @x-autobe-specification Join via ecommerce_mall_product_snapshots.ecommerce_mall_seller_id to ecommerce_mall_sellers.id. Returns IEcommerceMallSeller.ISummary object representing the seller who owns the product.
+         * @x-autobe-database-schema-property seller
+         * @x-autobe-specification Join via
+         *   ecommerce_mall_product_snapshots.ecommerce_mall_seller_id to
+         *   ecommerce_mall_sellers.id. Returns IEcommerceMallSeller.ISummary
+         *   object representing the seller who owns the product.
      */
     seller: IEcommerceMallSeller.ISummary;
   };
@@ -220,8 +260,10 @@ export namespace IEcommerceMallProductSnapshot {
      *
      * A globally unique identifier (UUID) assigned when the snapshot is created. Use this value to reference specific snapshots in subsequent API calls.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_mall_product_snapshots.id. UUID primary key generated at snapshot creation time.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_product_snapshots.id. UUID primary key generated at
+         *   snapshot creation time.
      */
     id: string & tags.Format<"uuid">;
 
@@ -230,8 +272,10 @@ export namespace IEcommerceMallProductSnapshot {
      *
      * This field preserves the exact product name as it existed when the snapshot was created, enabling verification of product naming if disputes arise about what was advertised at purchase time.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from ecommerce_mall_product_snapshots.name. Captured at snapshot creation time.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_product_snapshots.name. Captured at snapshot
+         *   creation time.
      */
     name: string;
 
@@ -240,8 +284,10 @@ export namespace IEcommerceMallProductSnapshot {
      *
      * Preserves the detailed product description including specifications, features, and any promotional text that was active when the snapshot was created. Useful for dispute resolution when customers claim product descriptions were different at purchase time.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from ecommerce_mall_product_snapshots.description. Captured at snapshot creation time.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_product_snapshots.description. Captured at snapshot
+         *   creation time.
      */
     description: string;
 
@@ -250,8 +296,10 @@ export namespace IEcommerceMallProductSnapshot {
      *
      * The default price used when variants do not override pricing. This value reflects the base price at snapshot time, which may differ from current pricing if the seller has updated prices since then.
      *
-     * @x-autobe-database-schema-property base_price
-     * @x-autobe-specification Direct mapping from ecommerce_mall_product_snapshots.base_price. Float (DoublePrecision) in database.
+         * @x-autobe-database-schema-property base_price
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_product_snapshots.base_price. Float
+         *   (DoublePrecision) in database.
      */
     basePrice: number;
 
@@ -260,8 +308,10 @@ export namespace IEcommerceMallProductSnapshot {
      *
      * Stores the category name as a string to preserve the category assignment even if the category is later renamed or deleted. This ensures snapshot integrity for historical disputes.
      *
-     * @x-autobe-database-schema-property category_name
-     * @x-autobe-specification Direct mapping from ecommerce_mall_product_snapshots.category_name. Denormalized string field captured at snapshot creation time.
+         * @x-autobe-database-schema-property category_name
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_product_snapshots.category_name. Denormalized string
+         *   field captured at snapshot creation time.
      */
     categoryName: string;
 
@@ -270,8 +320,10 @@ export namespace IEcommerceMallProductSnapshot {
      *
      * Indicates when the snapshot was captured. Snapshots are created automatically during product edits and order placements. Use this timestamp to determine the chronological order of product state changes.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_product_snapshots.created_at. DateTime stored as timestamptz.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_product_snapshots.created_at. DateTime stored as
+         *   timestamptz.
      */
     createdAt: string & tags.Format<"date-time">;
 
@@ -280,8 +332,11 @@ export namespace IEcommerceMallProductSnapshot {
      *
      * Provides the product context for this historical snapshot. The summary includes essential product identifiers, current state, and relationship information. Note that the product may have been modified or deleted since this snapshot was created.
      *
-     * @x-autobe-database-schema-property product
-     * @x-autobe-specification JOIN from ecommerce_mall_product_snapshots.ecommerce_mall_product_id to ecommerce_mall_products.id. Returns IEcommerceMallProduct.ISummary as context.
+         * @x-autobe-database-schema-property product
+         * @x-autobe-specification JOIN from
+         *   ecommerce_mall_product_snapshots.ecommerce_mall_product_id to
+         *   ecommerce_mall_products.id. Returns IEcommerceMallProduct.ISummary
+         *   as context.
      */
     product: IEcommerceMallProduct.ISummary;
 
@@ -290,7 +345,10 @@ export namespace IEcommerceMallProductSnapshot {
      *
      * Contains the complete image gallery as it appeared when the snapshot was created, including all uploaded images ordered by their display sequence. Useful for verifying product imagery in disputes.
      *
-     * @x-autobe-specification JOIN ecommerce_mall_product_snapshot_images table via ecommerce_mall_product_snapshot_id column. Order results by display_order ascending. Maps to IEcommerceMallProductSnapshotImage schema type.
+         * @x-autobe-specification JOIN ecommerce_mall_product_snapshot_images
+         *   table via ecommerce_mall_product_snapshot_id column. Order results
+         *   by display_order ascending. Maps to
+         *   IEcommerceMallProductSnapshotImage schema type.
      */
     productSnapshotImages: IEcommerceMallProductSnapshotImage[];
 
@@ -299,7 +357,12 @@ export namespace IEcommerceMallProductSnapshot {
      *
      * Returns all SKU variants (e.g., size/color combinations) as they existed at snapshot time. Each variant includes its price override from base_price, current stock quantity, and all option key-value pairs describing the variant attributes. Essential for order verification.
      *
-     * @x-autobe-specification JOIN ecommerce_mall_product_snapshot_variants table via ecommerce_mall_product_snapshot_id column. Order results by created_at ascending. For each variant, JOIN ecommerce_mall_product_snapshot_variant_option_values ordered by created_at. Maps to IEcommerceMallProductSnapshotVariant schema type.
+         * @x-autobe-specification JOIN ecommerce_mall_product_snapshot_variants
+         *   table via ecommerce_mall_product_snapshot_id column. Order results
+         *   by created_at ascending. For each variant, JOIN
+         *   ecommerce_mall_product_snapshot_variant_option_values ordered by
+         *   created_at. Maps to IEcommerceMallProductSnapshotVariant schema
+         *   type.
      */
     productSnapshotVariants: IEcommerceMallProductSnapshotVariant[];
   };
@@ -326,7 +389,10 @@ export namespace IEcommerceMallProductSnapshot {
      *
      * Optional query parameter to narrow results to snapshots belonging to a specific product category. Uses exact string matching against the category_name field stored in the snapshot.
      *
-     * @x-autobe-specification Maps to ecommerce_mall_product_snapshots.category_name column. Filters snapshots by the product's category name at snapshot creation time using exact string matching.
+         * @x-autobe-specification Maps to
+         *   ecommerce_mall_product_snapshots.category_name column. Filters
+         *   snapshots by the product's category name at snapshot creation time
+         *   using exact string matching.
      */
     categoryName?: string | undefined;
 
@@ -335,7 +401,11 @@ export namespace IEcommerceMallProductSnapshot {
      *
      * Optional query parameter for date range filtering. Use with createdBefore to specify a date range window. Timestamp must be in ISO 8601 format with timezone (e.g., 2024-01-01T00:00:00Z).
      *
-     * @x-autobe-specification Maps to ecommerce_mall_product_snapshots.created_at column for date range filtering. Represents the start of the date range (inclusive). Combined with createdBefore for range queries using created_at >= createdAfter.
+         * @x-autobe-specification Maps to
+         *   ecommerce_mall_product_snapshots.created_at column for date range
+         *   filtering. Represents the start of the date range (inclusive).
+         *   Combined with createdBefore for range queries using created_at >=
+         *   createdAfter.
      */
     createdAfter?: (string & tags.Format<"date-time">) | undefined;
 
@@ -344,7 +414,11 @@ export namespace IEcommerceMallProductSnapshot {
      *
      * Optional query parameter for date range filtering. Use with createdAfter to specify a date range window. Timestamp must be in ISO 8601 format with timezone (e.g., 2024-12-31T23:59:59Z).
      *
-     * @x-autobe-specification Maps to ecommerce_mall_product_snapshots.created_at column for date range filtering. Represents the end of the date range (inclusive). Combined with createdAfter for range queries using created_at <= createdBefore.
+         * @x-autobe-specification Maps to
+         *   ecommerce_mall_product_snapshots.created_at column for date range
+         *   filtering. Represents the end of the date range (inclusive).
+         *   Combined with createdAfter for range queries using created_at <=
+         *   createdBefore.
      */
     createdBefore?: (string & tags.Format<"date-time">) | undefined;
 
@@ -353,7 +427,9 @@ export namespace IEcommerceMallProductSnapshot {
      *
      * Controls the upper bound of results returned in a single page. Must be between 1 and 100. If not specified, defaults to 20 records per page.
      *
-     * @x-autobe-specification Pure pagination parameter controlling maximum records returned per page. Does not map to any database column. Default value is 20 when not provided. Valid range: 1-100.
+         * @x-autobe-specification Pure pagination parameter controlling maximum
+         *   records returned per page. Does not map to any database column.
+         *   Default value is 20 when not provided. Valid range: 1-100.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -364,7 +440,9 @@ export namespace IEcommerceMallProductSnapshot {
      *
      * Specifies which page of paginated results to return. Page numbering starts at 1. If not specified, defaults to page 1.
      *
-     * @x-autobe-specification Pure pagination parameter controlling which page of results to return. Does not map to any database column. Default value is 1 when not provided.
+         * @x-autobe-specification Pure pagination parameter controlling which
+         *   page of results to return. Does not map to any database column.
+         *   Default value is 1 when not provided.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -373,7 +451,10 @@ export namespace IEcommerceMallProductSnapshot {
      *
      * Optional query parameter to view all snapshots associated with a particular product. Accepts a valid UUID format identifying the product.
      *
-     * @x-autobe-specification Maps to ecommerce_mall_product_snapshots.ecommerce_mall_product_id column. Filters snapshots to those created for a specific product using exact UUID matching.
+         * @x-autobe-specification Maps to
+         *   ecommerce_mall_product_snapshots.ecommerce_mall_product_id column.
+         *   Filters snapshots to those created for a specific product using
+         *   exact UUID matching.
      */
     productId?: (string & tags.Format<"uuid">) | undefined;
 
@@ -382,7 +463,10 @@ export namespace IEcommerceMallProductSnapshot {
      *
      * Optional query parameter for full-text search on product names stored in snapshots. Performs case-insensitive partial matching. Use to find snapshots by product name keywords.
      *
-     * @x-autobe-specification Maps to ecommerce_mall_product_snapshots.name column with case-insensitive partial matching (WHERE name ILIKE '%' || search || '%'). Enables keyword search within snapshot product names.
+         * @x-autobe-specification Maps to ecommerce_mall_product_snapshots.name
+         *   column with case-insensitive partial matching (WHERE name ILIKE '%'
+         *   || search || '%'). Enables keyword search within snapshot product
+         *   names.
      */
     search?: string | undefined;
 
@@ -391,7 +475,10 @@ export namespace IEcommerceMallProductSnapshot {
      *
      * Optional query parameter to view all snapshots created by a particular seller. Accepts a valid UUID format identifying the seller.
      *
-     * @x-autobe-specification Maps to ecommerce_mall_product_snapshots.ecommerce_mall_seller_id column. Filters snapshots created by a specific seller using exact UUID matching.
+         * @x-autobe-specification Maps to
+         *   ecommerce_mall_product_snapshots.ecommerce_mall_seller_id column.
+         *   Filters snapshots created by a specific seller using exact UUID
+         *   matching.
      */
     sellerId?: (string & tags.Format<"uuid">) | undefined;
   };

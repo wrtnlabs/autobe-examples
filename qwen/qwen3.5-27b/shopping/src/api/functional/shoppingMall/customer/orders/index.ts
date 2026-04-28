@@ -23,7 +23,8 @@ export * as shipments from "./shipments/index";
  * @param props.body Search criteria for filtering orders including status, order number, date range, and pagination parameters.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Query shopping_mall_orders table for the authenticated customer's orders with pagination and filtering.
+ * @x-autobe-specification Query shopping_mall_orders table for the
+ *   authenticated customer's orders with pagination and filtering.
  *
  * Implementation steps:
  * 1. Extract customer_id from authentication context (shopping_mall_customer_id foreign key)

@@ -29,9 +29,10 @@ export class CommunityplatformAdminCommunitiesBansSnapshotsController {
    * @param communityId Target community ID that scopes the moderation action
    * @param banId Target community ban ID within the specified community
    * @param body Creation payload for a new community ban snapshot
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Implement a nested create operation for `community_platform_community_ban_snapshots`.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Implement a nested create operation for
+     *   `community_platform_community_ban_snapshots`.
    *
    * 1. Authenticate the caller and require member identity. Authorize only callers with moderation authority in the target community, such as the community owner or a community moderator assigned to that community.
    * 2. Validate `communityId` as a UUID and load the target record from `community_platform_communities` by `id`. Reject when the community does not exist or is not available for moderation actions.
@@ -97,9 +98,11 @@ export class CommunityplatformAdminCommunitiesBansSnapshotsController {
    * @param communityId Target community's ID
    * @param banId Target community ban's ID within the specified community
    * @param body Pagination, sorting, and filter criteria for community ban snapshots
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Implement this operation as a paginated history query over community_platform_community_ban_snapshots constrained by a validated parent community ban context.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Implement this operation as a paginated history
+     *   query over community_platform_community_ban_snapshots constrained by a
+     *   validated parent community ban context.
    *
    * First, authenticate the caller and authorize moderation-history access for the target community. Accept member actors only when they hold the appropriate owner or community moderator authority for the specified community, and allow admin actors only if platform policy grants administrative oversight. Reject guests.
    *
@@ -153,9 +156,13 @@ export class CommunityplatformAdminCommunitiesBansSnapshotsController {
    * @param communityId Target community's ID
    * @param banId Target community ban's ID
    * @param snapshotId Target ban snapshot's ID
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Implement a read-only service that retrieves one community ban snapshot by joining `community_platform_community_ban_snapshots` to its parent `community_platform_community_bans` and validating the enclosing `community_platform_communities` scope.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Implement a read-only service that retrieves one
+     *   community ban snapshot by joining
+     *   `community_platform_community_ban_snapshots` to its parent
+     *   `community_platform_community_bans` and validating the enclosing
+     *   `community_platform_communities` scope.
    *
    * Lookup flow:
    * 1. Validate that `communityId`, `banId`, and `snapshotId` are UUID-shaped path inputs.

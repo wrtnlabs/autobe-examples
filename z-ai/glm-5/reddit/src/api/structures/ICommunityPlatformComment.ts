@@ -8,39 +8,39 @@ import { ICommunityPlatformMember } from "./ICommunityPlatformMember";
  */
 export type ICommunityPlatformComment = {
   /**
-   * @x-autobe-database-schema-property id
+     * @x-autobe-database-schema-property id
    */
   id: string & tags.Format<"uuid">;
   /**
-   * @x-autobe-database-schema-property content
+     * @x-autobe-database-schema-property content
    */
   content: string;
   /**
-   * @x-autobe-database-schema-property vote_score
+     * @x-autobe-database-schema-property vote_score
    */
   voteScore: number & tags.Type<"int32">;
   /**
-   * @x-autobe-database-schema-property author
+     * @x-autobe-database-schema-property author
    */
   author: ICommunityPlatformMember.ISummary;
   /**
-   * @x-autobe-database-schema-property parentComment
+     * @x-autobe-database-schema-property parentComment
    */
   parentComment: ICommunityPlatformComment.ISummary | null;
   /**
-   * @x-autobe-database-schema-property replies
+     * @x-autobe-database-schema-property replies
    */
   replies: ICommunityPlatformComment[];
   /**
-   * @x-autobe-database-schema-property created_at
+     * @x-autobe-database-schema-property created_at
    */
   createdAt: string & tags.Format<"date-time">;
   /**
-   * @x-autobe-database-schema-property updated_at
+     * @x-autobe-database-schema-property updated_at
    */
   updatedAt: string & tags.Format<"date-time">;
   /**
-   * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-database-schema-property deleted_at
    */
   deletedAt: (string & tags.Format<"date-time">) | null;
 };
@@ -52,7 +52,7 @@ export namespace ICommunityPlatformComment {
     /**
      * The updated text body of the comment
      *
-     * @x-autobe-database-schema-property content
+         * @x-autobe-database-schema-property content
      */
     content?: string | undefined;
   };
@@ -64,16 +64,23 @@ export namespace ICommunityPlatformComment {
     /**
      * The text content of the comment. Must be non-empty.
      *
-     * @x-autobe-database-schema-property content
-     * @x-autobe-specification Direct mapping from community_platform_comments.content. Required non-empty string containing the comment body text.
+         * @x-autobe-database-schema-property content
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_comments.content. Required non-empty string
+         *   containing the comment body text.
      */
     content: string & tags.MinLength<1>;
 
     /**
      * UUID of the parent comment for threaded replies. Omit for top-level comments, or provide the ID of the comment being replied to.
      *
-     * @x-autobe-database-schema-property parent_comment_id
-     * @x-autobe-specification Direct mapping from community_platform_comments.parent_comment_id. Optional UUID referencing an existing comment on the same post for threaded replies. Omit or set to null for top-level comments. When provided, must exist in community_platform_comments and belong to the same post.
+         * @x-autobe-database-schema-property parent_comment_id
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_comments.parent_comment_id. Optional UUID
+         *   referencing an existing comment on the same post for threaded
+         *   replies. Omit or set to null for top-level comments. When provided,
+         *   must exist in community_platform_comments and belong to the same
+         *   post.
      */
     parent_comment_id?: (string & tags.Format<"uuid">) | null | undefined;
   };
@@ -105,27 +112,27 @@ export namespace ICommunityPlatformComment {
    */
   export type ISummary = {
     /**
-     * @x-autobe-database-schema-property id
+         * @x-autobe-database-schema-property id
      */
     id: string & tags.Format<"uuid">;
     /**
-     * @x-autobe-database-schema-property content
+         * @x-autobe-database-schema-property content
      */
     content: string;
     /**
-     * @x-autobe-database-schema-property author
+         * @x-autobe-database-schema-property author
      */
     author: ICommunityPlatformMember.ISummary;
     /**
-     * @x-autobe-database-schema-property vote_score
+         * @x-autobe-database-schema-property vote_score
      */
     vote_score: number & tags.Type<"int32">;
     /**
-     * @x-autobe-database-schema-property created_at
+         * @x-autobe-database-schema-property created_at
      */
     created_at: string & tags.Format<"date-time">;
     /**
-     * @x-autobe-database-schema-property replies
+         * @x-autobe-database-schema-property replies
      */
     replies: ICommunityPlatformComment.ISummary[];
   };

@@ -16,8 +16,10 @@ export type IMallPlatformInventoryRecord = {
    *
    * This UUID uniquely identifies one inventory movement entry in the stock history.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from mall_platform_inventory_records.id. This UUID is the immutable identifier of the inventory movement record.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_inventory_records.id. This UUID is the immutable
+     *   identifier of the inventory movement record.
    */
   id: string & tags.Format<"uuid">;
 
@@ -26,8 +28,12 @@ export type IMallPlatformInventoryRecord = {
    *
    * This relation identifies which variant the movement belongs to and is returned as a summary object for read clients.
    *
-   * @x-autobe-database-schema-property productVariant
-   * @x-autobe-specification Join mall_platform_inventory_records.mall_platform_product_variant_id to mall_platform_product_variants.id and expose the related variant as IMallPlatformProductVariant.ISummary. This is a belonged relation, so the DTO returns the variant object instead of only the foreign key.
+     * @x-autobe-database-schema-property productVariant
+     * @x-autobe-specification Join
+     *   mall_platform_inventory_records.mall_platform_product_variant_id to
+     *   mall_platform_product_variants.id and expose the related variant as
+     *   IMallPlatformProductVariant.ISummary. This is a belonged relation, so
+     *   the DTO returns the variant object instead of only the foreign key.
    */
   productVariant: IMallPlatformProductVariant.ISummary;
 
@@ -36,8 +42,11 @@ export type IMallPlatformInventoryRecord = {
    *
    * This value stores the foreign key used to relate the movement row to a specific variant.
    *
-   * @x-autobe-database-schema-property mall_platform_product_variant_id
-   * @x-autobe-specification Direct mapping from mall_platform_inventory_records.mall_platform_product_variant_id. This UUID column stores the owning product variant reference for the inventory history row.
+     * @x-autobe-database-schema-property mall_platform_product_variant_id
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_inventory_records.mall_platform_product_variant_id. This
+     *   UUID column stores the owning product variant reference for the
+     *   inventory history row.
    */
   mall_platform_product_variant_id: string & tags.Format<"uuid">;
 
@@ -46,8 +55,11 @@ export type IMallPlatformInventoryRecord = {
    *
    * Positive values increase stock, while negative values decrease stock or apply an adjustment.
    *
-   * @x-autobe-database-schema-property quantity_change
-   * @x-autobe-specification Direct mapping from mall_platform_inventory_records.quantity_change. Positive values represent stock increases and negative values represent stock decreases or adjustments.
+     * @x-autobe-database-schema-property quantity_change
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_inventory_records.quantity_change. Positive values
+     *   represent stock increases and negative values represent stock decreases
+     *   or adjustments.
    */
   quantity_change: number & tags.Type<"int32">;
 
@@ -56,8 +68,11 @@ export type IMallPlatformInventoryRecord = {
    *
    * This text explains why the stock changed, such as a restock, deduction, refund restore, or manual adjustment.
    *
-   * @x-autobe-database-schema-property reason
-   * @x-autobe-specification Direct mapping from mall_platform_inventory_records.reason. Store the business explanation for the movement, such as restock, order deduction, cancellation restore, refund restore, or manual adjustment.
+     * @x-autobe-database-schema-property reason
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_inventory_records.reason. Store the business explanation
+     *   for the movement, such as restock, order deduction, cancellation
+     *   restore, refund restore, or manual adjustment.
    */
   reason: string;
 
@@ -66,8 +81,10 @@ export type IMallPlatformInventoryRecord = {
    *
    * This timestamp marks when the stock movement entry was recorded for audit and history tracking.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from mall_platform_inventory_records.created_at. This timestamp records when the inventory movement was created in the append-only history.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_inventory_records.created_at. This timestamp records when
+     *   the inventory movement was created in the append-only history.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -76,8 +93,11 @@ export type IMallPlatformInventoryRecord = {
    *
    * This timestamp reflects the most recent system-side modification to the stored row.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from mall_platform_inventory_records.updated_at. This timestamp records the last system-side update applied before the row is treated as historical inventory data.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_inventory_records.updated_at. This timestamp records the
+     *   last system-side update applied before the row is treated as historical
+     *   inventory data.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -86,8 +106,11 @@ export type IMallPlatformInventoryRecord = {
    *
    * A null value means the record remains active; a timestamp means it has been archived while keeping the history intact.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from mall_platform_inventory_records.deleted_at. When present, it indicates the inventory row has been archived or soft-deleted while preserving the historical record.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_inventory_records.deleted_at. When present, it indicates
+     *   the inventory row has been archived or soft-deleted while preserving
+     *   the historical record.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -105,8 +128,9 @@ export namespace IMallPlatformInventoryRecord {
      *
      * This value distinguishes one stock history entry from all others.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from mall_platform_inventory_records.id.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_inventory_records.id.
      */
     id: string & tags.Format<"uuid">;
 
@@ -115,8 +139,11 @@ export namespace IMallPlatformInventoryRecord {
      *
      * This field gives the parent variant context for the stock history entry and replaces the raw foreign key in the read DTO.
      *
-     * @x-autobe-database-schema-property productVariant
-     * @x-autobe-specification Join from mall_platform_inventory_records.mall_platform_product_variant_id to mall_platform_product_variants.id and expose the related variant as IMallPlatformProductVariant.ISummary.
+         * @x-autobe-database-schema-property productVariant
+         * @x-autobe-specification Join from
+         *   mall_platform_inventory_records.mall_platform_product_variant_id to
+         *   mall_platform_product_variants.id and expose the related variant as
+         *   IMallPlatformProductVariant.ISummary.
      */
     productVariant: IMallPlatformProductVariant.ISummary;
 
@@ -125,8 +152,10 @@ export namespace IMallPlatformInventoryRecord {
      *
      * Positive values indicate stock additions, while negative values indicate stock reductions.
      *
-     * @x-autobe-database-schema-property quantity_change
-     * @x-autobe-specification Direct mapping from mall_platform_inventory_records.quantity_change. Positive values increase stock and negative values decrease stock.
+         * @x-autobe-database-schema-property quantity_change
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_inventory_records.quantity_change. Positive values
+         *   increase stock and negative values decrease stock.
      */
     quantityChange: number & tags.Type<"int32">;
 
@@ -135,8 +164,9 @@ export namespace IMallPlatformInventoryRecord {
      *
      * Typical values describe restocks, order deductions, cancellation restores, refund restores, or manual adjustments.
      *
-     * @x-autobe-database-schema-property reason
-     * @x-autobe-specification Direct mapping from mall_platform_inventory_records.reason.
+         * @x-autobe-database-schema-property reason
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_inventory_records.reason.
      */
     reason: string;
 
@@ -145,8 +175,9 @@ export namespace IMallPlatformInventoryRecord {
      *
      * Used to display and sort inventory history chronologically.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from mall_platform_inventory_records.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_inventory_records.created_at.
      */
     createdAt: string & tags.Format<"date-time">;
 
@@ -155,8 +186,9 @@ export namespace IMallPlatformInventoryRecord {
      *
      * This value is part of the audit trail for the stored history entry.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from mall_platform_inventory_records.updated_at.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_inventory_records.updated_at.
      */
     updatedAt: string & tags.Format<"date-time">;
 
@@ -165,8 +197,10 @@ export namespace IMallPlatformInventoryRecord {
      *
      * A null value means the record remains active in the preserved history.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from mall_platform_inventory_records.deleted_at. Use null when the record has not been soft-deleted.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_inventory_records.deleted_at. Use null when the
+         *   record has not been soft-deleted.
      */
     deletedAt: (string & tags.Format<"date-time">) | null;
   };
@@ -182,8 +216,11 @@ export namespace IMallPlatformInventoryRecord {
      *
      * Positive values add stock and negative values subtract stock or record an adjustment. This value is stored as immutable inventory history for the route-resolved product variant.
      *
-     * @x-autobe-database-schema-property quantity_change
-     * @x-autobe-specification Direct mapping to mall_platform_inventory_records.quantity_change. Positive values represent restocks, while negative values represent stock reductions or adjustments allowed by business rules.
+         * @x-autobe-database-schema-property quantity_change
+         * @x-autobe-specification Direct mapping to
+         *   mall_platform_inventory_records.quantity_change. Positive values
+         *   represent restocks, while negative values represent stock
+         *   reductions or adjustments allowed by business rules.
      */
     quantityChange: number & tags.Type<"int32">;
 
@@ -192,8 +229,12 @@ export namespace IMallPlatformInventoryRecord {
      *
      * This field explains why the stock changed and is stored with the immutable inventory record for auditing and reconstruction.
      *
-     * @x-autobe-database-schema-property reason
-     * @x-autobe-specification Direct mapping to mall_platform_inventory_records.reason. Store the caller-provided explanation for the inventory movement, such as restock, order deduction, cancellation restore, refund restore, or manual adjustment.
+         * @x-autobe-database-schema-property reason
+         * @x-autobe-specification Direct mapping to
+         *   mall_platform_inventory_records.reason. Store the caller-provided
+         *   explanation for the inventory movement, such as restock, order
+         *   deduction, cancellation restore, refund restore, or manual
+         *   adjustment.
      */
     reason: string;
   };
@@ -211,7 +252,9 @@ export namespace IMallPlatformInventoryRecord {
      *
      * This value selects which page of inventory history results to return. It works together with limit to page through the matching records.
      *
-     * @x-autobe-specification 1-indexed page number used to paginate the scoped inventory history query over mall_platform_inventory_records.
+         * @x-autobe-specification 1-indexed page number used to paginate the
+         *   scoped inventory history query over
+         *   mall_platform_inventory_records.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -220,7 +263,9 @@ export namespace IMallPlatformInventoryRecord {
      *
      * This value limits how many inventory history rows are returned in one response. It determines the page size used alongside page.
      *
-     * @x-autobe-specification Maximum number of inventory history records to return per page for the scoped mall_platform_inventory_records query.
+         * @x-autobe-specification Maximum number of inventory history records
+         *   to return per page for the scoped mall_platform_inventory_records
+         *   query.
      */
     limit?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -229,7 +274,9 @@ export namespace IMallPlatformInventoryRecord {
      *
      * This value controls how the returned inventory movement rows are ordered before pagination is applied.
      *
-     * @x-autobe-specification Ordering control applied to the scoped mall_platform_inventory_records query after filtering, typically by created_at with newest-first as the default history ordering.
+         * @x-autobe-specification Ordering control applied to the scoped
+         *   mall_platform_inventory_records query after filtering, typically by
+         *   created_at with newest-first as the default history ordering.
      */
     sort?: string | undefined;
 
@@ -238,7 +285,9 @@ export namespace IMallPlatformInventoryRecord {
      *
      * This value filters results to records created at or after the specified timestamp. Use it together with createdAtTo to narrow the history window.
      *
-     * @x-autobe-specification Inclusive lower bound filter on mall_platform_inventory_records.created_at for the scoped inventory history query.
+         * @x-autobe-specification Inclusive lower bound filter on
+         *   mall_platform_inventory_records.created_at for the scoped inventory
+         *   history query.
      */
     createdAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
@@ -247,7 +296,9 @@ export namespace IMallPlatformInventoryRecord {
      *
      * This value filters results to records created at or before the specified timestamp. Use it together with createdAtFrom to narrow the history window.
      *
-     * @x-autobe-specification Inclusive upper bound filter on mall_platform_inventory_records.created_at for the scoped inventory history query.
+         * @x-autobe-specification Inclusive upper bound filter on
+         *   mall_platform_inventory_records.created_at for the scoped inventory
+         *   history query.
      */
     createdAtTo?: (string & tags.Format<"date-time">) | undefined;
 
@@ -256,7 +307,9 @@ export namespace IMallPlatformInventoryRecord {
      *
      * This value narrows the returned history to records whose reason text matches the search criteria. It is useful for finding restocks, adjustments, deductions, and restoration events.
      *
-     * @x-autobe-specification Text search filter applied to mall_platform_inventory_records.reason within the scoped inventory history query.
+         * @x-autobe-specification Text search filter applied to
+         *   mall_platform_inventory_records.reason within the scoped inventory
+         *   history query.
      */
     reason?: string | undefined;
 
@@ -265,7 +318,9 @@ export namespace IMallPlatformInventoryRecord {
      *
      * Use positive to show stock increases and negative to show stock decreases. This helps isolate restocking events from deductions and other reductions.
      *
-     * @x-autobe-specification Sign-based filter for mall_platform_inventory_records.quantity_change. Use positive for quantity_change > 0 and negative for quantity_change < 0.
+         * @x-autobe-specification Sign-based filter for
+         *   mall_platform_inventory_records.quantity_change. Use positive for
+         *   quantity_change > 0 and negative for quantity_change < 0.
      */
     quantityChangeDirection?: "positive" | "negative" | undefined;
   };

@@ -18,7 +18,10 @@ export namespace IHrmPlatformTimeReport {
      *
      * Populated only when the report is grouped by employee. Contains the employee's summary information including their role, department, and employment details. Null when the report is grouped by project or task.
      *
-     * @x-autobe-specification JOIN hrm_platform_employees when groupBy='employee'. Returns IHrmPlatformEmployee.ISummary with id, position, employment_type, status, member, role, department. Null when groupBy is 'project' or 'task'.
+         * @x-autobe-specification JOIN hrm_platform_employees when
+         *   groupBy='employee'. Returns IHrmPlatformEmployee.ISummary with id,
+         *   position, employment_type, status, member, role, department. Null
+         *   when groupBy is 'project' or 'task'.
      */
     employee?: IHrmPlatformEmployee.ISummary | null | undefined;
 
@@ -27,7 +30,10 @@ export namespace IHrmPlatformTimeReport {
      *
      * Populated only when the report is grouped by project. Contains the project's summary information including name, color code for visual distinction, status, and budget hours. Null when the report is grouped by employee or task.
      *
-     * @x-autobe-specification JOIN hrm_platform_projects when groupBy='project'. Returns IHrmPlatformProject.ISummary with id, name, color, status, budget_hours, dates. Null when groupBy is 'employee' or 'task'.
+         * @x-autobe-specification JOIN hrm_platform_projects when
+         *   groupBy='project'. Returns IHrmPlatformProject.ISummary with id,
+         *   name, color, status, budget_hours, dates. Null when groupBy is
+         *   'employee' or 'task'.
      */
     project?: IHrmPlatformProject.ISummary | null | undefined;
 
@@ -36,7 +42,10 @@ export namespace IHrmPlatformTimeReport {
      *
      * Populated only when the report is grouped by task. Contains the task's summary information including title, status, priority, due date, and assigned employee. Null when the report is grouped by employee or project.
      *
-     * @x-autobe-specification JOIN hrm_platform_tasks when groupBy='task'. Returns IHrmPlatformTask.ISummary with id, title, status, priority, due_date, estimated_hours, assignedEmployee. Null when groupBy is 'employee' or 'project'.
+         * @x-autobe-specification JOIN hrm_platform_tasks when groupBy='task'.
+         *   Returns IHrmPlatformTask.ISummary with id, title, status, priority,
+         *   due_date, estimated_hours, assignedEmployee. Null when groupBy is
+         *   'employee' or 'project'.
      */
     task?: IHrmPlatformTask.ISummary | null | undefined;
 
@@ -45,7 +54,9 @@ export namespace IHrmPlatformTimeReport {
      *
      * Represents the sum of all timelog durations within the specified date range and filters. This includes both billable and non-billable time entries. The value is always zero or positive.
      *
-     * @x-autobe-specification SUM(duration_minutes) from hrm_platform_timelogs for the grouping dimension. Includes both billable and non-billable time. Minimum value is 0.
+         * @x-autobe-specification SUM(duration_minutes) from
+         *   hrm_platform_timelogs for the grouping dimension. Includes both
+         *   billable and non-billable time. Minimum value is 0.
      */
     total_minutes: number & tags.Type<"int32"> & tags.Minimum<0>;
 
@@ -54,7 +65,9 @@ export namespace IHrmPlatformTimeReport {
      *
      * Represents the sum of timelog durations where the billable flag is true. Billable time is typically charged to clients or projects for invoicing purposes. The value is always zero or positive.
      *
-     * @x-autobe-specification SUM(CASE WHEN billable=true THEN duration_minutes ELSE 0 END) from hrm_platform_timelogs. Counts only timelogs marked as billable. Minimum value is 0.
+         * @x-autobe-specification SUM(CASE WHEN billable=true THEN
+         *   duration_minutes ELSE 0 END) from hrm_platform_timelogs. Counts
+         *   only timelogs marked as billable. Minimum value is 0.
      */
     billable_minutes: number & tags.Type<"int32"> & tags.Minimum<0>;
 
@@ -63,7 +76,9 @@ export namespace IHrmPlatformTimeReport {
      *
      * Represents the sum of timelog durations where the billable flag is false. Non-billable time includes internal work, training, administrative tasks, and other activities not charged to clients. The value is always zero or positive.
      *
-     * @x-autobe-specification SUM(CASE WHEN billable=false THEN duration_minutes ELSE 0 END) from hrm_platform_timelogs. Counts only timelogs marked as non-billable. Minimum value is 0.
+         * @x-autobe-specification SUM(CASE WHEN billable=false THEN
+         *   duration_minutes ELSE 0 END) from hrm_platform_timelogs. Counts
+         *   only timelogs marked as non-billable. Minimum value is 0.
      */
     non_billable_minutes: number & tags.Type<"int32"> & tags.Minimum<0>;
   };
@@ -83,7 +98,9 @@ export namespace IHrmPlatformTimeReport {
      *
      * Format: ISO 8601 date string (YYYY-MM-DD). Example: 2024-01-01. This field is required along with dateTo to define the report period.
      *
-     * @x-autobe-specification Filter condition: timelog.date >= dateFrom. Applied to hrm_platform_timelogs table date field. ISO 8601 date format (YYYY-MM-DD).
+         * @x-autobe-specification Filter condition: timelog.date >= dateFrom.
+         *   Applied to hrm_platform_timelogs table date field. ISO 8601 date
+         *   format (YYYY-MM-DD).
      */
     dateFrom: string & tags.Format<"date">;
 
@@ -94,7 +111,9 @@ export namespace IHrmPlatformTimeReport {
      *
      * Format: ISO 8601 date string (YYYY-MM-DD). Example: 2024-12-31. This field is required along with dateFrom to define the report period.
      *
-     * @x-autobe-specification Filter condition: timelog.date <= dateTo. Applied to hrm_platform_timelogs table date field. ISO 8601 date format (YYYY-MM-DD).
+         * @x-autobe-specification Filter condition: timelog.date <= dateTo.
+         *   Applied to hrm_platform_timelogs table date field. ISO 8601 date
+         *   format (YYYY-MM-DD).
      */
     dateTo: string & tags.Format<"date">;
 
@@ -105,7 +124,9 @@ export namespace IHrmPlatformTimeReport {
      *
      * Format: Array of UUID strings. Example: ["550e8400-e29b-41d4-a716-446655440000"]. If omitted, includes all employees in the organization.
      *
-     * @x-autobe-specification Filter condition: timelog.employee_id IN employeeIds. JOIN hrm_platform_employees to verify organization membership. Array of UUID strings.
+         * @x-autobe-specification Filter condition: timelog.employee_id IN
+         *   employeeIds. JOIN hrm_platform_employees to verify organization
+         *   membership. Array of UUID strings.
      */
     employeeIds?: (string & tags.Format<"uuid">)[] | undefined;
 
@@ -116,7 +137,9 @@ export namespace IHrmPlatformTimeReport {
      *
      * Format: Array of UUID strings. Example: ["550e8400-e29b-41d4-a716-446655440001"]. If omitted, includes all projects in the organization.
      *
-     * @x-autobe-specification Filter condition: timelog.project_id IN projectIds. JOIN hrm_platform_projects to verify organization membership. Array of UUID strings.
+         * @x-autobe-specification Filter condition: timelog.project_id IN
+         *   projectIds. JOIN hrm_platform_projects to verify organization
+         *   membership. Array of UUID strings.
      */
     projectIds?: (string & tags.Format<"uuid">)[] | undefined;
 
@@ -127,7 +150,9 @@ export namespace IHrmPlatformTimeReport {
      *
      * Format: Array of UUID strings. Example: ["550e8400-e29b-41d4-a716-446655440002"]. If omitted, includes all tasks in the filtered projects.
      *
-     * @x-autobe-specification Filter condition: timelog.task_id IN taskIds. JOIN hrm_platform_tasks to verify task belongs to filtered projects. Array of UUID strings.
+         * @x-autobe-specification Filter condition: timelog.task_id IN taskIds.
+         *   JOIN hrm_platform_tasks to verify task belongs to filtered
+         *   projects. Array of UUID strings.
      */
     taskIds?: (string & tags.Format<"uuid">)[] | undefined;
 
@@ -138,7 +163,9 @@ export namespace IHrmPlatformTimeReport {
      *
      * This filter is useful for generating separate reports for client billing versus internal cost analysis.
      *
-     * @x-autobe-specification Filter condition: timelog.billable = billable (if provided). Applied to hrm_platform_timelogs billable boolean field.
+         * @x-autobe-specification Filter condition: timelog.billable = billable
+         *   (if provided). Applied to hrm_platform_timelogs billable boolean
+         *   field.
      */
     billable?: boolean | undefined;
 
@@ -151,7 +178,10 @@ export namespace IHrmPlatformTimeReport {
      * - 'project': Groups timelogs by project, showing total hours per project. The project field is populated in each result row.
      * - 'task': Groups timelogs by task, showing total hours per task. The task field is populated in each result row.
      *
-     * @x-autobe-specification Determines SQL GROUP BY clause: 'employee' groups by employee_id, 'project' groups by project_id, 'task' groups by task_id. Affects which entity reference is populated in response.
+         * @x-autobe-specification Determines SQL GROUP BY clause: 'employee'
+         *   groups by employee_id, 'project' groups by project_id, 'task'
+         *   groups by task_id. Affects which entity reference is populated in
+         *   response.
      */
     groupBy?: "employee" | "project" | "task" | undefined;
 
@@ -162,7 +192,8 @@ export namespace IHrmPlatformTimeReport {
      *
      * Minimum value: 1. Example: page=1 returns the first page, page=2 returns the second page, and so on.
      *
-     * @x-autobe-specification Pagination offset calculation: offset = (page - 1) * limit. Applied to grouped result set. Minimum value is 1.
+         * @x-autobe-specification Pagination offset calculation: offset = (page
+         *   - 1) * limit. Applied to grouped result set. Minimum value is 1.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -173,7 +204,9 @@ export namespace IHrmPlatformTimeReport {
      *
      * Range: 1 to 100. Example: limit=10 returns up to 10 grouped rows per page. If omitted, uses the system default page size.
      *
-     * @x-autobe-specification Pagination limit: maximum number of grouped result rows to return. Applied to grouped result set. Range: 1 to 100.
+         * @x-autobe-specification Pagination limit: maximum number of grouped
+         *   result rows to return. Applied to grouped result set. Range: 1 to
+         *   100.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)

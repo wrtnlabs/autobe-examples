@@ -28,7 +28,8 @@ import { ICommunityPost } from "../../../../../structures/ICommunityPost";
  * @param props.body Creation payload for a new post, including the required title, post type discriminator, and type-specific content (text body, link URL, or image URL).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification 1. Authenticate the requesting actor — must be a member (not a guest). Return 401 if unauthenticated.
+ * @x-autobe-specification 1. Authenticate the requesting actor — must be a
+ *   member (not a guest). Return 401 if unauthenticated.
  *
  * 2. Validate that the community identified by `communityId` exists in `community_communities` and has a null `deleted_at`. Return 404 if not found or deleted.
  *

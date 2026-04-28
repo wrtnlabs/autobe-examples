@@ -11,48 +11,63 @@ export type ICommunityPlatformModerationActionBan = {
   /**
    * Unique identifier of this moderation-action ban linkage record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from community_platform_moderation_action_bans.id.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_moderation_action_bans.id.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * The moderation action record that was linked to this ban target.
    *
-   * @x-autobe-database-schema-property moderationAction
-   * @x-autobe-specification Resolve through the moderationAction relation on community_platform_moderation_action_bans by joining community_platform_moderation_actions on community_platform_moderation_action_id = community_platform_moderation_actions.id, then serialize the joined record as ICommunityPlatformModerationAction.
+     * @x-autobe-database-schema-property moderationAction
+     * @x-autobe-specification Resolve through the moderationAction relation on
+     *   community_platform_moderation_action_bans by joining
+     *   community_platform_moderation_actions on
+     *   community_platform_moderation_action_id =
+     *   community_platform_moderation_actions.id, then serialize the joined
+     *   record as ICommunityPlatformModerationAction.
    */
   moderationAction: ICommunityPlatformModerationAction;
 
   /**
    * The community ban record that this moderation action targeted.
    *
-   * @x-autobe-database-schema-property communityBan
-   * @x-autobe-specification Resolve through the communityBan relation on community_platform_moderation_action_bans by joining community_platform_community_bans on community_platform_community_ban_id = community_platform_community_bans.id, then serialize the joined record as ICommunityPlatformCommunityBan.
+     * @x-autobe-database-schema-property communityBan
+     * @x-autobe-specification Resolve through the communityBan relation on
+     *   community_platform_moderation_action_bans by joining
+     *   community_platform_community_bans on
+     *   community_platform_community_ban_id =
+     *   community_platform_community_bans.id, then serialize the joined record
+     *   as ICommunityPlatformCommunityBan.
    */
   communityBan: ICommunityPlatformCommunityBan;
 
   /**
    * Timestamp when this moderation-action ban linkage record was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from community_platform_moderation_action_bans.created_at.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_moderation_action_bans.created_at.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when this moderation-action ban linkage record was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from community_platform_moderation_action_bans.updated_at.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_moderation_action_bans.updated_at.
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * Soft-deletion timestamp of this linkage record, or null when it remains active.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from community_platform_moderation_action_bans.deleted_at. Preserve null when the linkage record has not been soft-deleted.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_moderation_action_bans.deleted_at. Preserve null
+     *   when the linkage record has not been soft-deleted.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -64,91 +79,148 @@ export namespace ICommunityPlatformModerationActionBan {
     /**
      * Search text used to find linked ban targets by their moderation reason.
      *
-     * @x-autobe-specification Optional text-search input used to match the joined community ban reason field from community_platform_community_bans.reason, typically with case-insensitive partial matching according to the service search implementation. When omitted, no text-search predicate is applied.
+         * @x-autobe-specification Optional text-search input used to match the
+         *   joined community ban reason field from
+         *   community_platform_community_bans.reason, typically with
+         *   case-insensitive partial matching according to the service search
+         *   implementation. When omitted, no text-search predicate is applied.
      */
     search?: string | undefined;
 
     /**
      * Restricts results to linked ban targets with the specified lifecycle status.
      *
-     * @x-autobe-specification Optional exact-match filter applied to the joined community ban status field sourced from community_platform_community_bans.status after resolving the moderation-action-ban link to its target community ban. When omitted, results are not filtered by status.
+         * @x-autobe-specification Optional exact-match filter applied to the
+         *   joined community ban status field sourced from
+         *   community_platform_community_bans.status after resolving the
+         *   moderation-action-ban link to its target community ban. When
+         *   omitted, results are not filtered by status.
      */
     status?: string | undefined;
 
     /**
      * Earliest allowed ban start time for returned results.
      *
-     * @x-autobe-specification Optional inclusive lower-bound datetime filter applied to the joined community ban start timestamp sourced from community_platform_community_bans.started_at. Only linked ban targets whose start time is greater than or equal to this value are returned when provided.
+         * @x-autobe-specification Optional inclusive lower-bound datetime
+         *   filter applied to the joined community ban start timestamp sourced
+         *   from community_platform_community_bans.started_at. Only linked ban
+         *   targets whose start time is greater than or equal to this value are
+         *   returned when provided.
      */
     startedAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Latest allowed ban start time for returned results.
      *
-     * @x-autobe-specification Optional inclusive upper-bound datetime filter applied to the joined community ban start timestamp sourced from community_platform_community_bans.started_at. Only linked ban targets whose start time is less than or equal to this value are returned when provided.
+         * @x-autobe-specification Optional inclusive upper-bound datetime
+         *   filter applied to the joined community ban start timestamp sourced
+         *   from community_platform_community_bans.started_at. Only linked ban
+         *   targets whose start time is less than or equal to this value are
+         *   returned when provided.
      */
     startedAtTo?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Earliest allowed scheduled expiration time for returned ban targets.
      *
-     * @x-autobe-specification Optional inclusive lower-bound datetime filter applied to the joined community ban expiration timestamp sourced from community_platform_community_bans.expired_at. This condition naturally matches only rows with a non-null expiration timestamp; combine with hasExpiredAt when explicit nullability control is needed.
+         * @x-autobe-specification Optional inclusive lower-bound datetime
+         *   filter applied to the joined community ban expiration timestamp
+         *   sourced from community_platform_community_bans.expired_at. This
+         *   condition naturally matches only rows with a non-null expiration
+         *   timestamp; combine with hasExpiredAt when explicit nullability
+         *   control is needed.
      */
     expiredAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Latest allowed scheduled expiration time for returned ban targets.
      *
-     * @x-autobe-specification Optional inclusive upper-bound datetime filter applied to the joined community ban expiration timestamp sourced from community_platform_community_bans.expired_at. This condition naturally matches only rows with a non-null expiration timestamp; combine with hasExpiredAt when explicit nullability control is needed.
+         * @x-autobe-specification Optional inclusive upper-bound datetime
+         *   filter applied to the joined community ban expiration timestamp
+         *   sourced from community_platform_community_bans.expired_at. This
+         *   condition naturally matches only rows with a non-null expiration
+         *   timestamp; combine with hasExpiredAt when explicit nullability
+         *   control is needed.
      */
     expiredAtTo?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Whether returned ban targets must have, or must not have, a scheduled expiration time.
      *
-     * @x-autobe-specification Optional boolean filter controlling nullability of the joined community ban expiration timestamp sourced from community_platform_community_bans.expired_at. When true, return only linked ban targets whose expiration timestamp is non-null. When false, return only linked ban targets whose expiration timestamp is null. When omitted, do not filter by expiration presence.
+         * @x-autobe-specification Optional boolean filter controlling
+         *   nullability of the joined community ban expiration timestamp
+         *   sourced from community_platform_community_bans.expired_at. When
+         *   true, return only linked ban targets whose expiration timestamp is
+         *   non-null. When false, return only linked ban targets whose
+         *   expiration timestamp is null. When omitted, do not filter by
+         *   expiration presence.
      */
     hasExpiredAt?: boolean | undefined;
 
     /**
      * Earliest allowed manual-lift time for returned ban targets.
      *
-     * @x-autobe-specification Optional inclusive lower-bound datetime filter applied to the joined community ban lift timestamp sourced from community_platform_community_bans.lifted_at. This condition naturally matches only rows with a non-null lift timestamp; combine with hasLiftedAt when explicit nullability control is needed.
+         * @x-autobe-specification Optional inclusive lower-bound datetime
+         *   filter applied to the joined community ban lift timestamp sourced
+         *   from community_platform_community_bans.lifted_at. This condition
+         *   naturally matches only rows with a non-null lift timestamp; combine
+         *   with hasLiftedAt when explicit nullability control is needed.
      */
     liftedAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Latest allowed manual-lift time for returned ban targets.
      *
-     * @x-autobe-specification Optional inclusive upper-bound datetime filter applied to the joined community ban lift timestamp sourced from community_platform_community_bans.lifted_at. This condition naturally matches only rows with a non-null lift timestamp; combine with hasLiftedAt when explicit nullability control is needed.
+         * @x-autobe-specification Optional inclusive upper-bound datetime
+         *   filter applied to the joined community ban lift timestamp sourced
+         *   from community_platform_community_bans.lifted_at. This condition
+         *   naturally matches only rows with a non-null lift timestamp; combine
+         *   with hasLiftedAt when explicit nullability control is needed.
      */
     liftedAtTo?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Whether returned ban targets must have, or must not have, a manual-lift time.
      *
-     * @x-autobe-specification Optional boolean filter controlling nullability of the joined community ban lift timestamp sourced from community_platform_community_bans.lifted_at. When true, return only linked ban targets whose lift timestamp is non-null. When false, return only linked ban targets whose lift timestamp is null. When omitted, do not filter by lift presence.
+         * @x-autobe-specification Optional boolean filter controlling
+         *   nullability of the joined community ban lift timestamp sourced from
+         *   community_platform_community_bans.lifted_at. When true, return only
+         *   linked ban targets whose lift timestamp is non-null. When false,
+         *   return only linked ban targets whose lift timestamp is null. When
+         *   omitted, do not filter by lift presence.
      */
     hasLiftedAt?: boolean | undefined;
 
     /**
      * Sort mode used to order the matched ban targets.
      *
-     * @x-autobe-specification Optional sort token that the service translates into an allowed ordering strategy for the moderation-action ban-target list. Default ordering should return newest linked targets first, typically by community_platform_moderation_action_bans.created_at or the joined community ban started_at, with stable secondary ordering such as id for deterministic pagination.
+         * @x-autobe-specification Optional sort token that the service
+         *   translates into an allowed ordering strategy for the
+         *   moderation-action ban-target list. Default ordering should return
+         *   newest linked targets first, typically by
+         *   community_platform_moderation_action_bans.created_at or the joined
+         *   community ban started_at, with stable secondary ordering such as id
+         *   for deterministic pagination.
      */
     sort?: string | undefined;
 
     /**
      * Page number of the result set to return.
      *
-     * @x-autobe-specification Optional 1-based page number used together with limit to compute offset or skip for paginated retrieval. If omitted, the service applies its standard default page, typically page 1.
+         * @x-autobe-specification Optional 1-based page number used together
+         *   with limit to compute offset or skip for paginated retrieval. If
+         *   omitted, the service applies its standard default page, typically
+         *   page 1.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of ban-target records to include in one response page.
      *
-     * @x-autobe-specification Optional maximum number of linked ban target records to return in a single page. Use with page to paginate results, enforce the schema's validation bounds, and apply the service default when omitted.
+         * @x-autobe-specification Optional maximum number of linked ban target
+         *   records to return in a single page. Use with page to paginate
+         *   results, enforce the schema's validation bounds, and apply the
+         *   service default when omitted.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -162,40 +234,49 @@ export namespace ICommunityPlatformModerationActionBan {
     /**
      * Unique identifier of this moderation-action ban linkage record.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from community_platform_moderation_action_bans.id.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_moderation_action_bans.id.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Summary of the community ban record that this moderation action targeted.
      *
-     * @x-autobe-database-schema-property communityBan
-     * @x-autobe-specification Join community_platform_community_bans on community_platform_moderation_action_bans.community_platform_community_ban_id = community_platform_community_bans.id and map the related row to ICommunityPlatformCommunityBan.ISummary.
+         * @x-autobe-database-schema-property communityBan
+         * @x-autobe-specification Join community_platform_community_bans on
+         *   community_platform_moderation_action_bans.community_platform_community_ban_id
+         *   = community_platform_community_bans.id and map the related row to
+         *   ICommunityPlatformCommunityBan.ISummary.
      */
     communityBan: ICommunityPlatformCommunityBan.ISummary;
 
     /**
      * Timestamp when this moderation-action ban linkage record was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from community_platform_moderation_action_bans.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_moderation_action_bans.created_at.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when this moderation-action ban linkage record was last updated.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from community_platform_moderation_action_bans.updated_at.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_moderation_action_bans.updated_at.
      */
     updated_at: string & tags.Format<"date-time">;
 
     /**
      * Soft-deletion timestamp of this linkage record, or null when it remains active.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from community_platform_moderation_action_bans.deleted_at. Return a date-time string when the linkage record has been soft-deleted, otherwise null.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_moderation_action_bans.deleted_at. Return a
+         *   date-time string when the linkage record has been soft-deleted,
+         *   otherwise null.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };

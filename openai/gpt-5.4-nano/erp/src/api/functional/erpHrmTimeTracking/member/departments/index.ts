@@ -162,7 +162,8 @@ export namespace create {
  * @param props.body Search criteria and pagination options for department list browsing within the selected organization.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implement PATCH /departments as a list/search over erp_hrm_time_tracking_departments.
+ * @x-autobe-specification Implement PATCH /departments as a list/search over
+ *   erp_hrm_time_tracking_departments.
  *
  * 1) Resolve organization scope from the authenticated member’s currently selected organization context.
  *    - All queries must filter by erp_hrm_time_tracking_organization_id = selectedOrganizationId.
@@ -282,7 +283,8 @@ export namespace index {
  * @param props.departmentId Target department identifier (UUID) within the active organization context.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification 1) Authenticate the caller (guest access should be denied for this protected domain operation per actor/session rules).
+ * @x-autobe-specification 1) Authenticate the caller (guest access should be
+ *   denied for this protected domain operation per actor/session rules).
  *
  * 2) Resolve the active organization context for the authenticated member (the organization selected by the user in the current session/context).
  *
@@ -401,10 +403,14 @@ export namespace at {
  * @param props.body Updated department fields. The system will validate organization-scoped parent relationships and enforce at most one level of nesting.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification 1) Authorization & context validation
- * - Resolve the requesting actor and ensure the operation is permitted to manage departments in the currently selected organization context (org:manage as specified for department write permissions).
- * - Load target department by id from `erp_hrm_time_tracking_departments`.
- * - Verify the loaded department’s `erp_hrm_time_tracking_organization_id` equals the selected organization id from the session/context. If mismatch, reject to prevent cross-organization access.
+ * @x-autobe-specification 1) Authorization & context validation - Resolve the
+ *   requesting actor and ensure the operation is permitted to manage
+ *   departments in the currently selected organization context (org:manage as
+ *   specified for department write permissions). - Load target department by id
+ *   from `erp_hrm_time_tracking_departments`. - Verify the loaded department’s
+ *   `erp_hrm_time_tracking_organization_id` equals the selected organization id
+ *   from the session/context. If mismatch, reject to prevent cross-organization
+ *   access.
  *
  * 2) Input validation
  * - Validate request body fields against schema expectations:
@@ -535,10 +541,12 @@ export namespace update {
  * @param props.departmentId The UUID identifier of the department to permanently remove within the currently selected organization context.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification 1) Authorization & scope
- * - Resolve current organization context from the authenticated member/session.
- * - Verify caller has organization owner authority to manage organization data in the selected organization context (owner-only authority for department create/edit/delete).
- * - If the caller lacks permission, reject with an authorization/permission error before any DB changes.
+ * @x-autobe-specification 1) Authorization & scope - Resolve current
+ *   organization context from the authenticated member/session. - Verify caller
+ *   has organization owner authority to manage organization data in the
+ *   selected organization context (owner-only authority for department
+ *   create/edit/delete). - If the caller lacks permission, reject with an
+ *   authorization/permission error before any DB changes.
  *
  * 2) Validate target department
  * - Load the department row by `id = departmentId` from `erp_hrm_time_tracking_departments`.

@@ -37,7 +37,8 @@ import { IRedditLikeComment } from "../../../../../structures/IRedditLikeComment
  * @param props.body Search criteria including sort option (best, new, controversial), pagination parameters (limit, cursor), and filtering options.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor guest
- * @x-autobe-specification Query the reddit_like_comments table filtering by reddit_like_post_id matching the postId path parameter.
+ * @x-autobe-specification Query the reddit_like_comments table filtering by
+ *   reddit_like_post_id matching the postId path parameter.
  *
  * Apply sorting based on the sort option in request body:
  * - 'best': Order by vote score descending (compute from reddit_like_votes: upvotes - downvotes)
@@ -156,7 +157,8 @@ export namespace index {
  * @param props.commentId The unique identifier of the comment to retrieve (global scope).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor guest
- * @x-autobe-specification Query the reddit_like_comments table to retrieve a single comment by ID within a specific post context.
+ * @x-autobe-specification Query the reddit_like_comments table to retrieve a
+ *   single comment by ID within a specific post context.
  *
  * **Implementation Steps**
  *

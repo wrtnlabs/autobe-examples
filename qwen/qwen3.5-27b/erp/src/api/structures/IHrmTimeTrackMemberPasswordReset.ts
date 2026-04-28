@@ -14,8 +14,9 @@ export type IHrmTimeTrackMemberPasswordReset = {
    *
    * This UUID serves as the primary key for identifying and retrieving password reset records in the system.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from hrm_time_track_member_password_resets.id. Primary key, UUID format.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_member_password_resets.id. Primary key, UUID format.
    */
   id: string & tags.Format<"uuid">;
 
@@ -24,8 +25,10 @@ export type IHrmTimeTrackMemberPasswordReset = {
    *
    * This relation provides the member's summary information including their email address and account status.
    *
-   * @x-autobe-database-schema-property member
-   * @x-autobe-specification Join from hrm_time_track_member_password_resets.hrm_time_track_member_id to hrm_time_track_members.id. Returns IHrmTimeTrackMember.ISummary.
+     * @x-autobe-database-schema-property member
+     * @x-autobe-specification Join from
+     *   hrm_time_track_member_password_resets.hrm_time_track_member_id to
+     *   hrm_time_track_members.id. Returns IHrmTimeTrackMember.ISummary.
    */
   member: IHrmTimeTrackMember.ISummary;
 
@@ -34,8 +37,10 @@ export type IHrmTimeTrackMemberPasswordReset = {
    *
    * This unique token is sent to the member's email and must be provided when setting a new password. Each token is single-use only and becomes invalid after expiration or use.
    *
-   * @x-autobe-database-schema-property token
-   * @x-autobe-specification Direct mapping from hrm_time_track_member_password_resets.token. Cryptographically secure unique string.
+     * @x-autobe-database-schema-property token
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_member_password_resets.token. Cryptographically secure
+     *   unique string.
    */
   token: string;
 
@@ -44,8 +49,10 @@ export type IHrmTimeTrackMemberPasswordReset = {
    *
    * This field indicates when the token was created and sent to the member's email address for account recovery.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from hrm_time_track_member_password_resets.created_at. DateTime with timezone.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_member_password_resets.created_at. DateTime with
+     *   timezone.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -54,8 +61,10 @@ export type IHrmTimeTrackMemberPasswordReset = {
    *
    * Tokens have a limited validity period (typically 1 hour) for security. After this timestamp, the token cannot be used to reset the password, and the member must request a new reset token.
    *
-   * @x-autobe-database-schema-property expired_at
-   * @x-autobe-specification Direct mapping from hrm_time_track_member_password_resets.expired_at. DateTime with timezone.
+     * @x-autobe-database-schema-property expired_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_member_password_resets.expired_at. DateTime with
+     *   timezone.
    */
   expired_at: string & tags.Format<"date-time">;
 
@@ -64,8 +73,10 @@ export type IHrmTimeTrackMemberPasswordReset = {
    *
    * This field is null until the token is successfully used. Once a token is used to reset a password, this timestamp is set and the token becomes invalid for future use. This prevents replay attacks.
    *
-   * @x-autobe-database-schema-property used_at
-   * @x-autobe-specification Direct mapping from hrm_time_track_member_password_resets.used_at. Nullable DateTime with timezone. Null until token is consumed.
+     * @x-autobe-database-schema-property used_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_member_password_resets.used_at. Nullable DateTime with
+     *   timezone. Null until token is consumed.
    */
   used_at: (string & tags.Format<"date-time">) | null;
 
@@ -74,8 +85,10 @@ export type IHrmTimeTrackMemberPasswordReset = {
    *
    * When set, the record is logically deleted but preserved for audit purposes. A null value indicates an active record.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from hrm_time_track_member_password_resets.deleted_at. Nullable DateTime with timezone for soft deletion.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_member_password_resets.deleted_at. Nullable DateTime
+     *   with timezone for soft deletion.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -93,7 +106,11 @@ export namespace IHrmTimeTrackMemberPasswordReset {
      *
      * When provided, only returns password reset tokens associated with members whose email matches this value. This filter performs a JOIN with the members table to match against the email field.
      *
-     * @x-autobe-specification JOIN filter with hrm_time_track_members table. Performs INNER JOIN on hrm_time_track_member_id = members.id, then filters where members.email equals the provided value. This allows filtering password reset tokens by the email address of the associated member.
+         * @x-autobe-specification JOIN filter with hrm_time_track_members
+         *   table. Performs INNER JOIN on hrm_time_track_member_id =
+         *   members.id, then filters where members.email equals the provided
+         *   value. This allows filtering password reset tokens by the email
+         *   address of the associated member.
      */
     member_email?: (string & tags.Format<"email">) | undefined;
 
@@ -107,10 +124,10 @@ export namespace IHrmTimeTrackMemberPasswordReset {
      *
      * The status is computed dynamically based on the current timestamp when the query is executed.
      *
-     * @x-autobe-specification Computed filter based on used_at and expired_at columns. Three valid values:
-     * - 'unused': used_at IS NULL AND expired_at > CURRENT_TIMESTAMP
-     * - 'used': used_at IS NOT NULL
-     * - 'expired': expired_at < CURRENT_TIMESTAMP AND used_at IS NULL
+         * @x-autobe-specification Computed filter based on used_at and
+         *   expired_at columns. Three valid values: - 'unused': used_at IS NULL
+         *   AND expired_at > CURRENT_TIMESTAMP - 'used': used_at IS NOT NULL -
+         *   'expired': expired_at < CURRENT_TIMESTAMP AND used_at IS NULL
      *
      * The server evaluates these conditions at query execution time using the current timestamp.
      */
@@ -121,7 +138,10 @@ export namespace IHrmTimeTrackMemberPasswordReset {
      *
      * Only returns tokens whose created_at timestamp is greater than or equal to the provided value. Use with created_at_lte to define a creation date range.
      *
-     * @x-autobe-specification Direct filter on hrm_time_track_member_password_resets.created_at column. Returns tokens where created_at >= provided timestamp. Used in combination with created_at_lte for range queries.
+         * @x-autobe-specification Direct filter on
+         *   hrm_time_track_member_password_resets.created_at column. Returns
+         *   tokens where created_at >= provided timestamp. Used in combination
+         *   with created_at_lte for range queries.
      */
     created_at_gte?: (string & tags.Format<"date-time">) | undefined;
 
@@ -130,7 +150,10 @@ export namespace IHrmTimeTrackMemberPasswordReset {
      *
      * Only returns tokens whose created_at timestamp is less than or equal to the provided value. Use with created_at_gte to define a creation date range.
      *
-     * @x-autobe-specification Direct filter on hrm_time_track_member_password_resets.created_at column. Returns tokens where created_at <= provided timestamp. Used in combination with created_at_gte for range queries.
+         * @x-autobe-specification Direct filter on
+         *   hrm_time_track_member_password_resets.created_at column. Returns
+         *   tokens where created_at <= provided timestamp. Used in combination
+         *   with created_at_gte for range queries.
      */
     created_at_lte?: (string & tags.Format<"date-time">) | undefined;
 
@@ -139,7 +162,10 @@ export namespace IHrmTimeTrackMemberPasswordReset {
      *
      * Only returns tokens whose expired_at timestamp is greater than or equal to the provided value. Use with expired_at_lte to define an expiration date range.
      *
-     * @x-autobe-specification Direct filter on hrm_time_track_member_password_resets.expired_at column. Returns tokens where expired_at >= provided timestamp. Used in combination with expired_at_lte for range queries.
+         * @x-autobe-specification Direct filter on
+         *   hrm_time_track_member_password_resets.expired_at column. Returns
+         *   tokens where expired_at >= provided timestamp. Used in combination
+         *   with expired_at_lte for range queries.
      */
     expired_at_gte?: (string & tags.Format<"date-time">) | undefined;
 
@@ -148,7 +174,10 @@ export namespace IHrmTimeTrackMemberPasswordReset {
      *
      * Only returns tokens whose expired_at timestamp is less than or equal to the provided value. Use with expired_at_gte to define an expiration date range.
      *
-     * @x-autobe-specification Direct filter on hrm_time_track_member_password_resets.expired_at column. Returns tokens where expired_at <= provided timestamp. Used in combination with expired_at_gte for range queries.
+         * @x-autobe-specification Direct filter on
+         *   hrm_time_track_member_password_resets.expired_at column. Returns
+         *   tokens where expired_at <= provided timestamp. Used in combination
+         *   with expired_at_gte for range queries.
      */
     expired_at_lte?: (string & tags.Format<"date-time">) | undefined;
 
@@ -157,7 +186,11 @@ export namespace IHrmTimeTrackMemberPasswordReset {
      *
      * Performs a case-insensitive partial match on the token field. Useful for searching tokens when you have a partial token value. The pattern matches anywhere within the token string.
      *
-     * @x-autobe-specification SQL LIKE query on hrm_time_track_member_password_resets.token field. Performs case-insensitive partial match. The provided pattern is used with SQL LIKE operator (%pattern% wrapping applied server-side for substring matching).
+         * @x-autobe-specification SQL LIKE query on
+         *   hrm_time_track_member_password_resets.token field. Performs
+         *   case-insensitive partial match. The provided pattern is used with
+         *   SQL LIKE operator (%pattern% wrapping applied server-side for
+         *   substring matching).
      */
     token_pattern?: string | undefined;
 
@@ -166,7 +199,9 @@ export namespace IHrmTimeTrackMemberPasswordReset {
      *
      * Specifies which page of results to retrieve. Page numbering starts at 1. Defaults to 1 if not provided. Combined with limit to control which subset of results is returned.
      *
-     * @x-autobe-specification 1-indexed page number for pagination. Minimum value is 1. Defaults to 1 if not provided. Used to calculate OFFSET in SQL query: OFFSET = (page - 1) * limit.
+         * @x-autobe-specification 1-indexed page number for pagination. Minimum
+         *   value is 1. Defaults to 1 if not provided. Used to calculate OFFSET
+         *   in SQL query: OFFSET = (page - 1) * limit.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -175,7 +210,10 @@ export namespace IHrmTimeTrackMemberPasswordReset {
      *
      * Controls how many password reset token records are included in each page of results. Accepts values from 1 to 100. Defaults to a server-defined value if not provided. The maximum of 100 prevents excessive data retrieval in a single request.
      *
-     * @x-autobe-specification Maximum number of records per page. Range: 1-100. Defaults to a server-defined value (typically 20 or 50) if not provided. Used as LIMIT clause in SQL query. Server enforces maximum of 100 to prevent excessive data retrieval.
+         * @x-autobe-specification Maximum number of records per page. Range:
+         *   1-100. Defaults to a server-defined value (typically 20 or 50) if
+         *   not provided. Used as LIMIT clause in SQL query. Server enforces
+         *   maximum of 100 to prevent excessive data retrieval.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -195,8 +233,9 @@ export namespace IHrmTimeTrackMemberPasswordReset {
      *
      * This UUID serves as the primary key for identifying and retrieving password reset records. Each token generated for a password reset request receives a unique identifier.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from hrm_time_track_member_password_resets.id. Primary key UUID.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_member_password_resets.id. Primary key UUID.
      */
     id: string & tags.Format<"uuid">;
 
@@ -205,8 +244,10 @@ export namespace IHrmTimeTrackMemberPasswordReset {
      *
      * This unique, random string serves as proof of authorization for the password reset operation. The token is sent to the member's email and must be provided when setting a new password. Each token is single-use only and becomes invalid after expiration or use.
      *
-     * @x-autobe-database-schema-property token
-     * @x-autobe-specification Direct mapping from hrm_time_track_member_password_resets.token. Cryptographically secure random string, unique constraint.
+         * @x-autobe-database-schema-property token
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_member_password_resets.token. Cryptographically
+         *   secure random string, unique constraint.
      */
     token: string;
 
@@ -215,8 +256,10 @@ export namespace IHrmTimeTrackMemberPasswordReset {
      *
      * This field records the exact date and time when the password reset token was created. It is set automatically when a member requests a password reset via the forgot password flow.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from hrm_time_track_member_password_resets.created_at. DateTime timestamp.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_member_password_resets.created_at. DateTime
+         *   timestamp.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -225,8 +268,10 @@ export namespace IHrmTimeTrackMemberPasswordReset {
      *
      * Tokens have a limited validity period (typically 1 hour) for security. After this timestamp, the token cannot be used to reset the password, and the member must request a new reset token.
      *
-     * @x-autobe-database-schema-property expired_at
-     * @x-autobe-specification Direct mapping from hrm_time_track_member_password_resets.expired_at. DateTime timestamp.
+         * @x-autobe-database-schema-property expired_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_member_password_resets.expired_at. DateTime
+         *   timestamp.
      */
     expired_at: string & tags.Format<"date-time">;
 
@@ -235,8 +280,10 @@ export namespace IHrmTimeTrackMemberPasswordReset {
      *
      * This field is null until the token is successfully used. Once a token is used to reset a password, this timestamp is set and the token becomes invalid for future use. This prevents replay attacks.
      *
-     * @x-autobe-database-schema-property used_at
-     * @x-autobe-specification Direct mapping from hrm_time_track_member_password_resets.used_at. Nullable DateTime timestamp.
+         * @x-autobe-database-schema-property used_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_member_password_resets.used_at. Nullable DateTime
+         *   timestamp.
      */
     used_at: (string & tags.Format<"date-time">) | null;
 
@@ -245,8 +292,9 @@ export namespace IHrmTimeTrackMemberPasswordReset {
      *
      * This relation provides access to the member's identity information, allowing administrators to identify which user requested the password reset. The member object includes essential identification fields from the member summary.
      *
-     * @x-autobe-database-schema-property member
-     * @x-autobe-specification Join via hrm_time_track_member_id to hrm_time_track_members.id. Returns IHrmTimeTrackMember.ISummary.
+         * @x-autobe-database-schema-property member
+         * @x-autobe-specification Join via hrm_time_track_member_id to
+         *   hrm_time_track_members.id. Returns IHrmTimeTrackMember.ISummary.
      */
     member: IHrmTimeTrackMember.ISummary;
   };

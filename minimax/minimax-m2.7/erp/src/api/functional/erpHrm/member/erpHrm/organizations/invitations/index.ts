@@ -25,25 +25,24 @@ import { IPageIErpHrmInvitation } from "../../../../../../structures/IPageIErpHr
  * @param props.body Invitation creation request containing the invitee's email address and optional pre-assignments for role, department, and position.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification 1. Extract organizationId from path parameter (must be valid UUID)
- * 2. Extract email and optional fields from request body: roleId, departmentId, position, note
- * 3. Validate email format using RFC 5322 email validation rules
- * 4. Validate that optional roleId exists in the organization if provided
- * 5. Validate that optional departmentId exists in the organization if provided
- * 6. Query erp_hrm_invitations table to check for existing pending invitation with same erp_hrm_organization_id + email combination
- * 7. If duplicate pending invitation exists, return 409 Conflict error
- * 8. Generate unique invitation token (secure random string, min 32 characters)
- * 9. Set expiration date (default: 30 days from creation)
- * 10. Insert new invitation record into erp_hrm_invitations table with status 'pending'
- * 11. Check if user exists with matching email in erp_hrm_members table
- * 12. If user exists:
- *     a. Query default role for the organization
- *     b. Create employee record linking user to organization with assigned role/department/position
- *     c. Update invitation status to 'accepted' and set accepted_at timestamp
- *     d. Return invitation with accepted status
- * 13. If user does not exist:
- *     a. Return invitation with pending status
- * 14. Log activity in activity log (invitation sent)
+ * @x-autobe-specification 1. Extract organizationId from path parameter (must
+ *   be valid UUID) 2. Extract email and optional fields from request body:
+ *   roleId, departmentId, position, note 3. Validate email format using RFC
+ *   5322 email validation rules 4. Validate that optional roleId exists in the
+ *   organization if provided 5. Validate that optional departmentId exists in
+ *   the organization if provided 6. Query erp_hrm_invitations table to check
+ *   for existing pending invitation with same erp_hrm_organization_id + email
+ *   combination 7. If duplicate pending invitation exists, return 409 Conflict
+ *   error 8. Generate unique invitation token (secure random string, min 32
+ *   characters) 9. Set expiration date (default: 30 days from creation) 10.
+ *   Insert new invitation record into erp_hrm_invitations table with status
+ *   'pending' 11. Check if user exists with matching email in erp_hrm_members
+ *   table 12. If user exists: a. Query default role for the organization b.
+ *   Create employee record linking user to organization with assigned
+ *   role/department/position c. Update invitation status to 'accepted' and set
+ *   accepted_at timestamp d. Return invitation with accepted status 13. If user
+ *   does not exist: a. Return invitation with pending status 14. Log activity
+ *   in activity log (invitation sent)
  *
  * Edge cases:
  * - Invalid email format: return 400 Bad Request
@@ -147,7 +146,8 @@ export namespace create {
  * @param props.body Search criteria, filters, and pagination parameters for invitation list
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query erp_hrm_invitations table filtered by erp_hrm_organization_id from path parameter.
+ * @x-autobe-specification Query erp_hrm_invitations table filtered by
+ *   erp_hrm_organization_id from path parameter.
  *
  * Apply search filters:
  * - Filter by status if provided (pending, accepted, expired values)
@@ -262,7 +262,8 @@ export namespace index {
  * @param props.invitationId Unique identifier of the invitation (UUID)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query erp_hrm_invitations table by id, ensuring the invitation belongs to the specified organization.
+ * @x-autobe-specification Query erp_hrm_invitations table by id, ensuring the
+ *   invitation belongs to the specified organization.
  *
  * Validate that:
  * 1. The invitation with given id exists
@@ -504,7 +505,12 @@ export namespace update {
  * @param props.invitationId Unique identifier of the invitation to cancel (UUID format)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Validate that the invitation exists and belongs to the specified organization. Verify the invitation status is 'pending' - reject with 400 error if invitation is already accepted or expired. Perform soft delete by setting the deleted_at timestamp to current time. Return 204 No Content on successful deletion. Log the cancellation in the activity log with action type 'invitation_cancelled'.
+ * @x-autobe-specification Validate that the invitation exists and belongs to
+ *   the specified organization. Verify the invitation status is 'pending' -
+ *   reject with 400 error if invitation is already accepted or expired. Perform
+ *   soft delete by setting the deleted_at timestamp to current time. Return 204
+ *   No Content on successful deletion. Log the cancellation in the activity log
+ *   with action type 'invitation_cancelled'.
  * @path /erpHrm/member/erpHrm/organizations/:organizationId/invitations/:invitationId
  * @accessor api.functional.erpHrm.member.erpHrm.organizations.invitations.erase
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe

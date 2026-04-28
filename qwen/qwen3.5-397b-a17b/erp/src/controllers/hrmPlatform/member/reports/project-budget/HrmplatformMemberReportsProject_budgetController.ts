@@ -19,9 +19,10 @@ export class HrmplatformMemberReportsProject_budgetController {
    *
    * @param connection
    * @param body Search criteria for project budget report including date range, project filters, status filter, and billable flag filter.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query hrm_platform_projects table joined with hrm_platform_timelogs for actual hours calculation.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query hrm_platform_projects table joined with
+     *   hrm_platform_timelogs for actual hours calculation.
    *
    * Filter projects where budget_hours IS NOT NULL (exclude projects without budget).
    * Calculate actual hours by SUM(duration_minutes) / 60 from timelogs within date range.

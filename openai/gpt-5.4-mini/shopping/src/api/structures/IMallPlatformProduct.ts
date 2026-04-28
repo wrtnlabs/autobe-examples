@@ -17,8 +17,8 @@ export type IMallPlatformProduct = {
    *
    * This value identifies one canonical product record and is used to load the full product detail response.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from mall_platform_products.id.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from mall_platform_products.id.
    */
   id: string & tags.Format<"uuid">;
 
@@ -27,8 +27,10 @@ export type IMallPlatformProduct = {
    *
    * This relation exposes the owning merchant as a summary object so consumers can show seller identity and navigate to the seller record without using the raw foreign key.
    *
-   * @x-autobe-database-schema-property sellerAccount
-   * @x-autobe-specification Join mall_platform_products.seller_account_id to mall_platform_seller_accounts.id and expose the related seller as an IMallPlatformSellerAccount.ISummary object.
+     * @x-autobe-database-schema-property sellerAccount
+     * @x-autobe-specification Join mall_platform_products.seller_account_id to
+     *   mall_platform_seller_accounts.id and expose the related seller as an
+     *   IMallPlatformSellerAccount.ISummary object.
    */
   sellerAccount: IMallPlatformSellerAccount.ISummary;
 
@@ -37,8 +39,11 @@ export type IMallPlatformProduct = {
    *
    * This relation is optional because a product may be uncategorized after administrative changes. When present, it is exposed as a category summary object for browsing and navigation.
    *
-   * @x-autobe-database-schema-property category
-   * @x-autobe-specification Join mall_platform_products.category_id to mall_platform_categories.id and expose the related category as an IMallPlatformCategory.ISummary object when present. Preserve null when the product is uncategorized.
+     * @x-autobe-database-schema-property category
+     * @x-autobe-specification Join mall_platform_products.category_id to
+     *   mall_platform_categories.id and expose the related category as an
+     *   IMallPlatformCategory.ISummary object when present. Preserve null when
+     *   the product is uncategorized.
    */
   category: IMallPlatformCategory.ISummary | null;
 
@@ -47,8 +52,8 @@ export type IMallPlatformProduct = {
    *
    * This is the customer-facing title shown in product listings and the product detail page.
    *
-   * @x-autobe-database-schema-property name
-   * @x-autobe-specification Direct mapping from mall_platform_products.name.
+     * @x-autobe-database-schema-property name
+     * @x-autobe-specification Direct mapping from mall_platform_products.name.
    */
   name: string;
 
@@ -57,8 +62,9 @@ export type IMallPlatformProduct = {
    *
    * This text explains the product on its detail page and in other product presentation surfaces.
    *
-   * @x-autobe-database-schema-property description
-   * @x-autobe-specification Direct mapping from mall_platform_products.description.
+     * @x-autobe-database-schema-property description
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_products.description.
    */
   description: string;
 
@@ -67,8 +73,9 @@ export type IMallPlatformProduct = {
    *
    * This is the fallback catalog price used when variants do not override pricing and is also used for product listing presentation.
    *
-   * @x-autobe-database-schema-property base_price
-   * @x-autobe-specification Direct mapping from mall_platform_products.base_price.
+     * @x-autobe-database-schema-property base_price
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_products.base_price.
    */
   basePrice: number;
 
@@ -77,8 +84,9 @@ export type IMallPlatformProduct = {
    *
    * This timestamp marks when the canonical product record was first persisted.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from mall_platform_products.created_at.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_products.created_at.
    */
   createdAt: string & tags.Format<"date-time">;
 
@@ -87,8 +95,9 @@ export type IMallPlatformProduct = {
    *
    * This timestamp reflects the most recent successful edit applied to the canonical product record.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from mall_platform_products.updated_at.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_products.updated_at.
    */
   updatedAt: string & tags.Format<"date-time">;
 
@@ -97,8 +106,11 @@ export type IMallPlatformProduct = {
    *
    * A null value means the product is still active. When present, this timestamp indicates the product was soft-deleted and hidden from normal browsing.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from mall_platform_products.deleted_at. Preserve null when the product is active and populate the timestamp when the product has been soft-deleted.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_products.deleted_at. Preserve null when the product is
+     *   active and populate the timestamp when the product has been
+     *   soft-deleted.
    */
   deletedAt: (string & tags.Format<"date-time">) | null;
 };
@@ -110,11 +122,11 @@ export namespace IMallPlatformProduct {
    */
   export type IUpdate = {
     /**
-     * @x-autobe-database-schema-property name
+         * @x-autobe-database-schema-property name
      */
     name?: string | undefined;
     /**
-     * @x-autobe-database-schema-property description
+         * @x-autobe-database-schema-property description
      */
     description?: string | undefined;
 
@@ -123,12 +135,17 @@ export namespace IMallPlatformProduct {
      *
      * A UUID value assigns the product to a category, while null clears the current category association.
      *
-     * @x-autobe-database-schema-property category_id
-     * @x-autobe-specification Partial update schema for the editable columns of mall_platform_products. Allow name, description, category_id, and base_price only. category_id may be null to clear the product's category assignment. Do not include id, seller_account_id, timestamps, or nested relations. The product is selected by the path parameter productId.
+         * @x-autobe-database-schema-property category_id
+         * @x-autobe-specification Partial update schema for the editable
+         *   columns of mall_platform_products. Allow name, description,
+         *   category_id, and base_price only. category_id may be null to clear
+         *   the product's category assignment. Do not include id,
+         *   seller_account_id, timestamps, or nested relations. The product is
+         *   selected by the path parameter productId.
      */
     category_id?: (string & tags.Format<"uuid">) | null | undefined;
     /**
-     * @x-autobe-database-schema-property base_price
+         * @x-autobe-database-schema-property base_price
      */
     base_price?: number | undefined;
   };
@@ -142,11 +159,11 @@ export namespace IMallPlatformProduct {
    */
   export type ICreate = {
     /**
-     * @x-autobe-database-schema-property name
+         * @x-autobe-database-schema-property name
      */
     name: string;
     /**
-     * @x-autobe-database-schema-property description
+         * @x-autobe-database-schema-property description
      */
     description: string;
 
@@ -155,12 +172,16 @@ export namespace IMallPlatformProduct {
      *
      * This field links the product to a marketplace category for browsing and navigation. When null, the product is created without a category assignment and can be categorized later according to business rules.
      *
-     * @x-autobe-database-schema-property category_id
-     * @x-autobe-specification Maps to mall_platform_products.category_id for POST /mallPlatform/seller/products. Accept a nullable UUID so a seller can create a product without immediate category assignment when business rules allow. Persist only the scalar foreign key; do not accept a nested category object.
+         * @x-autobe-database-schema-property category_id
+         * @x-autobe-specification Maps to mall_platform_products.category_id
+         *   for POST /mallPlatform/seller/products. Accept a nullable UUID so a
+         *   seller can create a product without immediate category assignment
+         *   when business rules allow. Persist only the scalar foreign key; do
+         *   not accept a nested category object.
      */
     categoryId?: (string & tags.Format<"uuid">) | null | undefined;
     /**
-     * @x-autobe-database-schema-property base_price
+         * @x-autobe-database-schema-property base_price
      */
     basePrice: number;
   };
@@ -178,7 +199,9 @@ export namespace IMallPlatformProduct {
      *
      * Use this value to filter the product list by keyword, typically against the product name.
      *
-     * @x-autobe-specification Apply as a case-insensitive text filter against product name during catalog browsing. Do not persist or store this value.
+         * @x-autobe-specification Apply as a case-insensitive text filter
+         *   against product name during catalog browsing. Do not persist or
+         *   store this value.
      */
     search?: string | undefined;
 
@@ -187,7 +210,11 @@ export namespace IMallPlatformProduct {
      *
      * Use this value to narrow results to products assigned to a specific category, and it must reference an existing category.
      *
-     * @x-autobe-specification Validate the category UUID against mall_platform_categories before using it to scope or refine results. On category-scoped endpoints, the path categoryId is the primary scope and this body field only refines browsing when applicable.
+         * @x-autobe-specification Validate the category UUID against
+         *   mall_platform_categories before using it to scope or refine
+         *   results. On category-scoped endpoints, the path categoryId is the
+         *   primary scope and this body field only refines browsing when
+         *   applicable.
      */
     categoryId?: (string & tags.Format<"uuid">) | undefined;
 
@@ -196,7 +223,9 @@ export namespace IMallPlatformProduct {
      *
      * Use this value to set the lower bound of the price range when browsing products.
      *
-     * @x-autobe-specification Use as the lower bound of the product listing price filter. Apply it against catalog listing price logic derived from product base price and variant pricing rules.
+         * @x-autobe-specification Use as the lower bound of the product listing
+         *   price filter. Apply it against catalog listing price logic derived
+         *   from product base price and variant pricing rules.
      */
     minPrice?: number | undefined;
 
@@ -205,7 +234,9 @@ export namespace IMallPlatformProduct {
      *
      * Use this value to set the upper bound of the price range when browsing products.
      *
-     * @x-autobe-specification Use as the upper bound of the product listing price filter. Apply it against catalog listing price logic derived from product base price and variant pricing rules.
+         * @x-autobe-specification Use as the upper bound of the product listing
+         *   price filter. Apply it against catalog listing price logic derived
+         *   from product base price and variant pricing rules.
      */
     maxPrice?: number | undefined;
 
@@ -214,7 +245,9 @@ export namespace IMallPlatformProduct {
      *
      * When enabled, this limits results to products that currently have at least one in-stock variant.
      *
-     * @x-autobe-specification When true, return only products with at least one currently available variant in stock. When false or omitted, do not enforce stock-only filtering.
+         * @x-autobe-specification When true, return only products with at least
+         *   one currently available variant in stock. When false or omitted, do
+         *   not enforce stock-only filtering.
      */
     inStockOnly?: boolean | undefined;
 
@@ -223,7 +256,10 @@ export namespace IMallPlatformProduct {
      *
      * Use this to order results by newest products or by price from low to high or high to low.
      *
-     * @x-autobe-specification Accept newest, priceAsc, priceDesc, or null. Use newest for recency ordering, priceAsc for low-to-high listing price ordering, and priceDesc for high-to-low ordering. Null means no explicit sort preference beyond the endpoint default.
+         * @x-autobe-specification Accept newest, priceAsc, priceDesc, or null.
+         *   Use newest for recency ordering, priceAsc for low-to-high listing
+         *   price ordering, and priceDesc for high-to-low ordering. Null means
+         *   no explicit sort preference beyond the endpoint default.
      */
     sort?: "newest" | "priceAsc" | "priceDesc" | null | undefined;
 
@@ -232,7 +268,9 @@ export namespace IMallPlatformProduct {
      *
      * Use this to select which page of paginated product results to return.
      *
-     * @x-autobe-specification Use as the 1-indexed page number for paginated product browsing. Default handling is performed by the endpoint if omitted.
+         * @x-autobe-specification Use as the 1-indexed page number for
+         *   paginated product browsing. Default handling is performed by the
+         *   endpoint if omitted.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -241,7 +279,9 @@ export namespace IMallPlatformProduct {
      *
      * Use this to control the page size for the browsing response and keep it within the supported range.
      *
-     * @x-autobe-specification Use as the maximum number of product summaries to return per page, constrained by the endpoint's pagination rules.
+         * @x-autobe-specification Use as the maximum number of product
+         *   summaries to return per page, constrained by the endpoint's
+         *   pagination rules.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -261,8 +301,10 @@ export namespace IMallPlatformProduct {
      *
      * This value identifies the product record in browse views, category listings, and search results. It is stable and can be used to link to the full product detail page.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from mall_platform_products.id. Expose the product UUID as the stable identifier for browse cards and list navigation.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_products.id. Expose the product UUID as the stable
+         *   identifier for browse cards and list navigation.
      */
     id: string & tags.Format<"uuid">;
 
@@ -271,8 +313,12 @@ export namespace IMallPlatformProduct {
      *
      * The property is shown as a summary object so consumers can display the seller alongside the product without fetching the seller record separately. It reflects the current owning seller associated with the product.
      *
-     * @x-autobe-database-schema-property sellerAccount
-     * @x-autobe-specification Join from mall_platform_products.seller_account_id to mall_platform_seller_accounts.id and expose the related seller account as IMallPlatformSellerAccount.ISummary. This is a read-side relation object, not the raw foreign-key column.
+         * @x-autobe-database-schema-property sellerAccount
+         * @x-autobe-specification Join from
+         *   mall_platform_products.seller_account_id to
+         *   mall_platform_seller_accounts.id and expose the related seller
+         *   account as IMallPlatformSellerAccount.ISummary. This is a read-side
+         *   relation object, not the raw foreign-key column.
      */
     sellerAccount: IMallPlatformSellerAccount.ISummary;
 
@@ -281,8 +327,11 @@ export namespace IMallPlatformProduct {
      *
      * This value is an optional summary object for the product's current category. When the product is not categorized, the property is null.
      *
-     * @x-autobe-database-schema-property category
-     * @x-autobe-specification Join from mall_platform_products.category_id to mall_platform_categories.id and expose the related category as IMallPlatformCategory.ISummary when present. Preserve null when the product is uncategorized.
+         * @x-autobe-database-schema-property category
+         * @x-autobe-specification Join from mall_platform_products.category_id
+         *   to mall_platform_categories.id and expose the related category as
+         *   IMallPlatformCategory.ISummary when present. Preserve null when the
+         *   product is uncategorized.
      */
     category: IMallPlatformCategory.ISummary | null;
 
@@ -291,8 +340,10 @@ export namespace IMallPlatformProduct {
      *
      * This is the public name shown in product cards, search results, and category listings.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from mall_platform_products.name. Use the stored product name exactly as persisted for list display and filtering.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_products.name. Use the stored product name exactly as
+         *   persisted for list display and filtering.
      */
     name: string;
 
@@ -301,8 +352,10 @@ export namespace IMallPlatformProduct {
      *
      * This text provides the customer-facing summary of the item and is used in product browsing and detail previews.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from mall_platform_products.description. Return the persisted public description used for browse and detail previews.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_products.description. Return the persisted public
+         *   description used for browse and detail previews.
      */
     description: string;
 
@@ -311,8 +364,11 @@ export namespace IMallPlatformProduct {
      *
      * This is the standard catalog price shown in browse views and search results when no variant-specific price is being highlighted.
      *
-     * @x-autobe-database-schema-property base_price
-     * @x-autobe-specification Direct mapping from mall_platform_products.base_price. Expose the base price as a number for summary/list rendering, including products with or without variant overrides.
+         * @x-autobe-database-schema-property base_price
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_products.base_price. Expose the base price as a
+         *   number for summary/list rendering, including products with or
+         *   without variant overrides.
      */
     basePrice: number;
 
@@ -321,8 +377,10 @@ export namespace IMallPlatformProduct {
      *
      * This value is used to represent record age and to support newest-first browsing and filtering.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from mall_platform_products.created_at. Preserve the creation timestamp for sorting and display in browse contexts.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_products.created_at. Preserve the creation timestamp
+         *   for sorting and display in browse contexts.
      */
     createdAt: string & tags.Format<"date-time">;
 
@@ -331,8 +389,10 @@ export namespace IMallPlatformProduct {
      *
      * This value reflects the most recent edit applied to the product and is useful for freshness indicators and synchronization.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from mall_platform_products.updated_at. Preserve the latest modification timestamp for freshness display and cache invalidation logic.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_products.updated_at. Preserve the latest modification
+         *   timestamp for freshness display and cache invalidation logic.
      */
     updatedAt: string & tags.Format<"date-time">;
 
@@ -341,8 +401,10 @@ export namespace IMallPlatformProduct {
      *
      * A null value means the product is active. When present, this timestamp indicates the product has been removed from active marketplace use while preserving historical references.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from mall_platform_products.deleted_at. Keep the nullable timestamp so consumers can distinguish active products from soft-deleted ones.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_products.deleted_at. Keep the nullable timestamp so
+         *   consumers can distinguish active products from soft-deleted ones.
      */
     deletedAt: (string & tags.Format<"date-time">) | null;
   };

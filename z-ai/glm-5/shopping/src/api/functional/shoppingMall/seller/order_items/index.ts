@@ -35,7 +35,8 @@ import { IShoppingMallOrderItem } from "../../../../structures/IShoppingMallOrde
  * @param props.body Search criteria and pagination parameters for order items
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Query shopping_mall_order_items table with pagination, filtering, and sorting.
+ * @x-autobe-specification Query shopping_mall_order_items table with
+ *   pagination, filtering, and sorting.
  *
  * Apply filters:
  * - shopping_mall_order_id: Filter by parent order UUID

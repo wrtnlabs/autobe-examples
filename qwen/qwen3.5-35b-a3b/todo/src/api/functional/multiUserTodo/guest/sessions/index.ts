@@ -18,7 +18,8 @@ import { IPageIMultiUserTodoMemberSession } from "../../../../structures/IPageIM
  * @param props.body Session search criteria including date range filters, status filter for active or expired sessions, optional IP address pattern matching, and pagination parameters.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor guest
- * @x-autobe-specification Query multi_user_todo_member_sessions table for the authenticated user's sessions.
+ * @x-autobe-specification Query multi_user_todo_member_sessions table for the
+ *   authenticated user's sessions.
  *
  * Apply filters:
  * - Date range on created_at if provided (created_at_gte, created_at_lte)
@@ -130,7 +131,8 @@ export namespace index {
  * @param props.sessionId Unique identifier of the session to retrieve (UUID format).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor guest
- * @x-autobe-specification Query the multi_user_todo_member_sessions table for a session matching the sessionId path parameter.
+ * @x-autobe-specification Query the multi_user_todo_member_sessions table for a
+ *   session matching the sessionId path parameter.
  *
  * 1. Validate that sessionId is a valid UUID format
  * 2. Query session by id = sessionId

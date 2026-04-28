@@ -22,7 +22,8 @@ export * as snapshots from "./snapshots/index";
  * @param props.body Search criteria for employee listing including status filter, department filter, name/email/employee code partial match, job level, employment type, employment date range filters, pending status filter, pagination parameters (first, last, cursor), and sorting options.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query hrm_platform_employees table with organization-scoped filtering and pagination.
+ * @x-autobe-specification Query hrm_platform_employees table with
+ *   organization-scoped filtering and pagination.
  *
  * Apply search filters from requestBody:
  * - status: filter by employment status (active, on-leave, resigned, invited, pending)
@@ -136,7 +137,9 @@ export namespace index {
  * @param props.employeeCode The unique employee code that identifies this employee within the organization (scoped to organization)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query the hrm_platform_employees table for the employee with the given employee_code within the current organization context.
+ * @x-autobe-specification Query the hrm_platform_employees table for the
+ *   employee with the given employee_code within the current organization
+ *   context.
  *
  * 1. Validate that the employee_code exists in the database
  * 2. Verify the employee belongs to the currently active organization (data isolation)

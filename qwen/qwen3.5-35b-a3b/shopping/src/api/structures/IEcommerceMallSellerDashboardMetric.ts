@@ -14,8 +14,9 @@ export type IEcommerceMallSellerDashboardMetric = {
    *
    * Generated automatically when the metrics record is created for a seller.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_seller_dashboard_metrics.id. UUID primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_seller_dashboard_metrics.id. UUID primary key.
    */
   id: string & tags.Format<"uuid">;
 
@@ -24,8 +25,11 @@ export type IEcommerceMallSellerDashboardMetric = {
    *
    * Each seller has exactly one dashboard metrics record. This field provides access to seller identification without exposing sensitive data like password hashes.
    *
-   * @x-autobe-database-schema-property seller
-   * @x-autobe-specification Join from ecommerce_mall_seller_dashboard_metrics.seller_id to ecommerce_mall_sellers.id. Returns IEcommerceMallSeller.ISummary with seller identification and approval status.
+     * @x-autobe-database-schema-property seller
+     * @x-autobe-specification Join from
+     *   ecommerce_mall_seller_dashboard_metrics.seller_id to
+     *   ecommerce_mall_sellers.id. Returns IEcommerceMallSeller.ISummary with
+     *   seller identification and approval status.
    */
   seller: IEcommerceMallSeller.ISummary;
 
@@ -34,8 +38,10 @@ export type IEcommerceMallSellerDashboardMetric = {
    *
    * Represents the current count of active product listings. This count is maintained automatically and updated when products are added or removed.
    *
-   * @x-autobe-database-schema-property product_count
-   * @x-autobe-specification Direct mapping from ecommerce_mall_seller_dashboard_metrics.product_count. Integer count of active products in ecommerce_mall_products where seller_id matches.
+     * @x-autobe-database-schema-property product_count
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_seller_dashboard_metrics.product_count. Integer count of
+     *   active products in ecommerce_mall_products where seller_id matches.
    */
   product_count: number & tags.Type<"int32">;
 
@@ -44,8 +50,11 @@ export type IEcommerceMallSellerDashboardMetric = {
    *
    * Aggregates all order items across all orders, providing a cumulative measure of seller activity and transaction volume.
    *
-   * @x-autobe-database-schema-property order_item_count
-   * @x-autobe-specification Direct mapping from ecommerce_mall_seller_dashboard_metrics.order_item_count. Integer count of all order items in ecommerce_mall_order_items where seller_id matches.
+     * @x-autobe-database-schema-property order_item_count
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_seller_dashboard_metrics.order_item_count. Integer count
+     *   of all order items in ecommerce_mall_order_items where seller_id
+     *   matches.
    */
   order_item_count: number & tags.Type<"int32">;
 
@@ -54,8 +63,11 @@ export type IEcommerceMallSellerDashboardMetric = {
    *
    * Represents customer requests to cancel order items that require seller approval. These are active items on the seller's dashboard for review and action.
    *
-   * @x-autobe-database-schema-property pending_cancellation_count
-   * @x-autobe-specification Direct mapping from ecommerce_mall_seller_dashboard_metrics.pending_cancellation_count. Integer count of ecommerce_mall_cancellation_requests with status 'pending' and seller_id matches.
+     * @x-autobe-database-schema-property pending_cancellation_count
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_seller_dashboard_metrics.pending_cancellation_count.
+     *   Integer count of ecommerce_mall_cancellation_requests with status
+     *   'pending' and seller_id matches.
    */
   pending_cancellation_count: number & tags.Type<"int32">;
 
@@ -64,8 +76,11 @@ export type IEcommerceMallSellerDashboardMetric = {
    *
    * Represents customer requests for refunds on delivered order items that require seller approval. These are active items on the seller's dashboard for review and action.
    *
-   * @x-autobe-database-schema-property pending_refund_count
-   * @x-autobe-specification Direct mapping from ecommerce_mall_seller_dashboard_metrics.pending_refund_count. Integer count of ecommerce_mall_refund_requests with status 'pending' and seller_id matches.
+     * @x-autobe-database-schema-property pending_refund_count
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_seller_dashboard_metrics.pending_refund_count. Integer
+     *   count of ecommerce_mall_refund_requests with status 'pending' and
+     *   seller_id matches.
    */
   pending_refund_count: number & tags.Type<"int32">;
 
@@ -74,8 +89,10 @@ export type IEcommerceMallSellerDashboardMetric = {
    *
    * Automatically set when the metrics record is first generated for a seller. Provides audit trail for metrics history.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_seller_dashboard_metrics.created_at. PostgreSQL timestamptz format.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_seller_dashboard_metrics.created_at. PostgreSQL
+     *   timestamptz format.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -84,8 +101,10 @@ export type IEcommerceMallSellerDashboardMetric = {
    *
    * Automatically updated whenever metrics counts change, providing visibility into when the seller's dashboard data was last refreshed.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_seller_dashboard_metrics.updated_at. PostgreSQL timestamptz format, updated on every modification.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_seller_dashboard_metrics.updated_at. PostgreSQL
+     *   timestamptz format, updated on every modification.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -94,8 +113,10 @@ export type IEcommerceMallSellerDashboardMetric = {
    *
    * When null, the metrics record is active and visible. When populated, indicates the record has been soft deleted and is no longer accessible through standard queries.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_seller_dashboard_metrics.deleted_at. PostgreSQL timestamptz format, nullable to indicate active vs soft-deleted state.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_seller_dashboard_metrics.deleted_at. PostgreSQL
+     *   timestamptz format, nullable to indicate active vs soft-deleted state.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -111,8 +132,9 @@ export namespace IEcommerceMallSellerDashboardMetric {
      *
      * UUID primary key used to reference this specific metrics snapshot in API responses.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_mall_seller_dashboard_metrics.id. UUID primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_seller_dashboard_metrics.id. UUID primary key.
      */
     id: string & tags.Format<"uuid">;
 
@@ -121,8 +143,11 @@ export namespace IEcommerceMallSellerDashboardMetric {
      *
      * Provides seller identification and status information without including sensitive data or large composition arrays. Used for reference in list views.
      *
-     * @x-autobe-database-schema-property seller
-     * @x-autobe-specification Join from ecommerce_mall_seller_dashboard_metrics.seller_id to ecommerce_mall_sellers.id. Returns IEcommerceMallSeller.ISummary with essential seller identification and status information.
+         * @x-autobe-database-schema-property seller
+         * @x-autobe-specification Join from
+         *   ecommerce_mall_seller_dashboard_metrics.seller_id to
+         *   ecommerce_mall_sellers.id. Returns IEcommerceMallSeller.ISummary
+         *   with essential seller identification and status information.
      */
     seller: IEcommerceMallSeller.ISummary;
 
@@ -131,8 +156,10 @@ export namespace IEcommerceMallSellerDashboardMetric {
      *
      * Pre-calculated count of active products in the seller's catalog. This metric helps sellers quickly understand their inventory size on the dashboard.
      *
-     * @x-autobe-database-schema-property product_count
-     * @x-autobe-specification Direct mapping from ecommerce_mall_seller_dashboard_metrics.product_count. Count of active products in ecommerce_mall_products where seller_id matches.
+         * @x-autobe-database-schema-property product_count
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_seller_dashboard_metrics.product_count. Count of
+         *   active products in ecommerce_mall_products where seller_id matches.
      */
     product_count: number & tags.Type<"int32">;
 
@@ -141,8 +168,11 @@ export namespace IEcommerceMallSellerDashboardMetric {
      *
      * Pre-calculated count of all order items across all orders. This metric reflects the seller's overall sales volume and customer engagement.
      *
-     * @x-autobe-database-schema-property order_item_count
-     * @x-autobe-specification Direct mapping from ecommerce_mall_seller_dashboard_metrics.order_item_count. Count of all order items in ecommerce_mall_order_items where seller_id matches.
+         * @x-autobe-database-schema-property order_item_count
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_seller_dashboard_metrics.order_item_count. Count of
+         *   all order items in ecommerce_mall_order_items where seller_id
+         *   matches.
      */
     order_item_count: number & tags.Type<"int32">;
 
@@ -151,8 +181,11 @@ export namespace IEcommerceMallSellerDashboardMetric {
      *
      * Pre-calculated count of customer cancellation requests that require seller review and approval or rejection. Helps sellers prioritize their attention to customer requests.
      *
-     * @x-autobe-database-schema-property pending_cancellation_count
-     * @x-autobe-specification Direct mapping from ecommerce_mall_seller_dashboard_metrics.pending_cancellation_count. Count of cancellation requests with status 'pending' and matching seller_id.
+         * @x-autobe-database-schema-property pending_cancellation_count
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_seller_dashboard_metrics.pending_cancellation_count.
+         *   Count of cancellation requests with status 'pending' and matching
+         *   seller_id.
      */
     pending_cancellation_count: number & tags.Type<"int32">;
 
@@ -161,8 +194,10 @@ export namespace IEcommerceMallSellerDashboardMetric {
      *
      * Pre-calculated count of customer refund requests that require seller review and decision. Helps sellers track refund processing workload.
      *
-     * @x-autobe-database-schema-property pending_refund_count
-     * @x-autobe-specification Direct mapping from ecommerce_mall_seller_dashboard_metrics.pending_refund_count. Count of refund requests with status 'pending' and matching seller_id.
+         * @x-autobe-database-schema-property pending_refund_count
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_seller_dashboard_metrics.pending_refund_count. Count
+         *   of refund requests with status 'pending' and matching seller_id.
      */
     pending_refund_count: number & tags.Type<"int32">;
 
@@ -171,8 +206,10 @@ export namespace IEcommerceMallSellerDashboardMetric {
      *
      * ISO 8601 formatted date-time in UTC. Used for audit trails and to understand when metrics collection started for this seller.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_seller_dashboard_metrics.created_at. Timestamp when this dashboard metrics record was first created.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_seller_dashboard_metrics.created_at. Timestamp when
+         *   this dashboard metrics record was first created.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -181,8 +218,10 @@ export namespace IEcommerceMallSellerDashboardMetric {
      *
      * ISO 8601 formatted date-time in UTC. Changes whenever any metric count is recalculated or updated.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_seller_dashboard_metrics.updated_at. Timestamp when this dashboard metrics record was last updated.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_seller_dashboard_metrics.updated_at. Timestamp when
+         *   this dashboard metrics record was last updated.
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -191,8 +230,10 @@ export namespace IEcommerceMallSellerDashboardMetric {
      *
      * ISO 8601 formatted date-time in UTC. When null, the record is active. When populated, the record is soft-deleted and excluded from normal queries. Preserves historical data for audit purposes.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_seller_dashboard_metrics.deleted_at. Null indicates active record; populated when soft-deleted.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_seller_dashboard_metrics.deleted_at. Null indicates
+         *   active record; populated when soft-deleted.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };
@@ -208,7 +249,8 @@ export namespace IEcommerceMallSellerDashboardMetric {
      *
      * Provides navigation to the next page in a paginated list. Returned from previous page response.
      *
-     * @x-autobe-specification Cursor-based pagination cursor. String token returned from previous page response for navigation.
+         * @x-autobe-specification Cursor-based pagination cursor. String token
+         *   returned from previous page response for navigation.
      */
     cursor?: string | undefined;
 
@@ -217,7 +259,8 @@ export namespace IEcommerceMallSellerDashboardMetric {
      *
      * Limits the number of metric records returned in a single response. Must be between 1 and 100.
      *
-     * @x-autobe-specification Maximum number of records to return per page (1-100). Controls pagination batch size.
+         * @x-autobe-specification Maximum number of records to return per page
+         *   (1-100). Controls pagination batch size.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -228,7 +271,9 @@ export namespace IEcommerceMallSellerDashboardMetric {
      *
      * Specifies which metric or timestamp field to use for ordering results. Must be one of the allowed enum values.
      *
-     * @x-autobe-specification Sort field for results. Allowed values: product_count, order_item_count, pending_cancellation_count, pending_refund_count, created_at, updated_at.
+         * @x-autobe-specification Sort field for results. Allowed values:
+         *   product_count, order_item_count, pending_cancellation_count,
+         *   pending_refund_count, created_at, updated_at.
      */
     sortBy?:
       | "product_count"
@@ -244,7 +289,8 @@ export namespace IEcommerceMallSellerDashboardMetric {
      *
      * Specifies whether to sort results in ascending or descending order.
      *
-     * @x-autobe-specification Sort direction. Allowed values: asc (ascending), desc (descending).
+         * @x-autobe-specification Sort direction. Allowed values: asc
+         *   (ascending), desc (descending).
      */
     sortOrder?: "asc" | "desc" | undefined;
 
@@ -253,7 +299,8 @@ export namespace IEcommerceMallSellerDashboardMetric {
      *
      * Includes only metrics with created_at timestamp greater than or equal to the provided ISO8601 datetime string.
      *
-     * @x-autobe-specification Filter: created_at >= this value. ISO8601 datetime string for date range filtering.
+         * @x-autobe-specification Filter: created_at >= this value. ISO8601
+         *   datetime string for date range filtering.
      */
     createdAtGte?: (string & tags.Format<"date-time">) | undefined;
 
@@ -262,7 +309,8 @@ export namespace IEcommerceMallSellerDashboardMetric {
      *
      * Includes only metrics with created_at timestamp strictly less than the provided ISO8601 datetime string.
      *
-     * @x-autobe-specification Filter: created_at < this value. ISO8601 datetime string for date range filtering.
+         * @x-autobe-specification Filter: created_at < this value. ISO8601
+         *   datetime string for date range filtering.
      */
     createdAtLt?: (string & tags.Format<"date-time">) | undefined;
 
@@ -271,7 +319,8 @@ export namespace IEcommerceMallSellerDashboardMetric {
      *
      * Includes only metrics with updated_at timestamp greater than or equal to the provided ISO8601 datetime string.
      *
-     * @x-autobe-specification Filter: updated_at >= this value. ISO8601 datetime string for date range filtering.
+         * @x-autobe-specification Filter: updated_at >= this value. ISO8601
+         *   datetime string for date range filtering.
      */
     updatedAtGte?: (string & tags.Format<"date-time">) | undefined;
 
@@ -280,7 +329,8 @@ export namespace IEcommerceMallSellerDashboardMetric {
      *
      * Includes only metrics with updated_at timestamp strictly less than the provided ISO8601 datetime string.
      *
-     * @x-autobe-specification Filter: updated_at < this value. ISO8601 datetime string for date range filtering.
+         * @x-autobe-specification Filter: updated_at < this value. ISO8601
+         *   datetime string for date range filtering.
      */
     updatedAtLt?: (string & tags.Format<"date-time">) | undefined;
 
@@ -289,7 +339,8 @@ export namespace IEcommerceMallSellerDashboardMetric {
      *
      * Includes only metrics where product_count is greater than or equal to the provided integer value.
      *
-     * @x-autobe-specification Filter: product_count >= this value. Integer threshold for product count.
+         * @x-autobe-specification Filter: product_count >= this value. Integer
+         *   threshold for product count.
      */
     productCountGte?:
       | (number & tags.Type<"int32"> & tags.Minimum<0>)
@@ -300,7 +351,8 @@ export namespace IEcommerceMallSellerDashboardMetric {
      *
      * Includes only metrics where product_count is less than or equal to the provided integer value.
      *
-     * @x-autobe-specification Filter: product_count <= this value. Integer threshold for product count.
+         * @x-autobe-specification Filter: product_count <= this value. Integer
+         *   threshold for product count.
      */
     productCountLte?:
       | (number & tags.Type<"int32"> & tags.Minimum<0>)
@@ -311,7 +363,8 @@ export namespace IEcommerceMallSellerDashboardMetric {
      *
      * Includes only metrics where order_item_count is greater than or equal to the provided integer value.
      *
-     * @x-autobe-specification Filter: order_item_count >= this value. Integer threshold for order item count.
+         * @x-autobe-specification Filter: order_item_count >= this value.
+         *   Integer threshold for order item count.
      */
     orderItemCountGte?:
       | (number & tags.Type<"int32"> & tags.Minimum<0>)
@@ -322,7 +375,8 @@ export namespace IEcommerceMallSellerDashboardMetric {
      *
      * Includes only metrics where order_item_count is less than or equal to the provided integer value.
      *
-     * @x-autobe-specification Filter: order_item_count <= this value. Integer threshold for order item count.
+         * @x-autobe-specification Filter: order_item_count <= this value.
+         *   Integer threshold for order item count.
      */
     orderItemCountLte?:
       | (number & tags.Type<"int32"> & tags.Minimum<0>)
@@ -333,7 +387,8 @@ export namespace IEcommerceMallSellerDashboardMetric {
      *
      * Includes only metrics where pending_cancellation_count is greater than or equal to the provided integer value.
      *
-     * @x-autobe-specification Filter: pending_cancellation_count >= this value. Integer threshold for pending cancellation count.
+         * @x-autobe-specification Filter: pending_cancellation_count >= this
+         *   value. Integer threshold for pending cancellation count.
      */
     pendingCancellationCountGte?:
       | (number & tags.Type<"int32"> & tags.Minimum<0>)
@@ -344,7 +399,8 @@ export namespace IEcommerceMallSellerDashboardMetric {
      *
      * Includes only metrics where pending_cancellation_count is less than or equal to the provided integer value.
      *
-     * @x-autobe-specification Filter: pending_cancellation_count <= this value. Integer threshold for pending cancellation count.
+         * @x-autobe-specification Filter: pending_cancellation_count <= this
+         *   value. Integer threshold for pending cancellation count.
      */
     pendingCancellationCountLte?:
       | (number & tags.Type<"int32"> & tags.Minimum<0>)
@@ -355,7 +411,8 @@ export namespace IEcommerceMallSellerDashboardMetric {
      *
      * Includes only metrics where pending_refund_count is greater than or equal to the provided integer value.
      *
-     * @x-autobe-specification Filter: pending_refund_count >= this value. Integer threshold for pending refund count.
+         * @x-autobe-specification Filter: pending_refund_count >= this value.
+         *   Integer threshold for pending refund count.
      */
     pendingRefundCountGte?:
       | (number & tags.Type<"int32"> & tags.Minimum<0>)
@@ -366,7 +423,8 @@ export namespace IEcommerceMallSellerDashboardMetric {
      *
      * Includes only metrics where pending_refund_count is less than or equal to the provided integer value.
      *
-     * @x-autobe-specification Filter: pending_refund_count <= this value. Integer threshold for pending refund count.
+         * @x-autobe-specification Filter: pending_refund_count <= this value.
+         *   Integer threshold for pending refund count.
      */
     pendingRefundCountLte?:
       | (number & tags.Type<"int32"> & tags.Minimum<0>)
@@ -377,7 +435,8 @@ export namespace IEcommerceMallSellerDashboardMetric {
      *
      * Specifies which page of results to return. Page numbering starts from 1. If omitted, null, or undefined, defaults to page 1 (first page).
      *
-     * @x-autobe-specification 1-indexed page number. Null or omitted defaults to page 1.
+         * @x-autobe-specification 1-indexed page number. Null or omitted
+         *   defaults to page 1.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };

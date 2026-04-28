@@ -31,7 +31,8 @@ import { ICommunityPlatformCommentVote } from "../../../../../../structures/ICom
  * @param props.body Vote submission payload indicating the desired vote direction for the target comment.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification In service layer, handle member vote submission on a comment scoped by post.
+ * @x-autobe-specification In service layer, handle member vote submission on a
+ *   comment scoped by post.
  *
  * Algorithm:
  * 1) Authenticate requester as member; otherwise return authorization error.
@@ -180,9 +181,9 @@ export namespace create {
  * @param props.body Vote request specifying the desired voting action/direction for the authenticated member on the target comment.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification 1) Authentication & identity
- * - Require authenticated member.
- * - Resolve voterId from the authenticated member identity (map to community_platform_members.id).
+ * @x-autobe-specification 1) Authentication & identity - Require authenticated
+ *   member. - Resolve voterId from the authenticated member identity (map to
+ *   community_platform_members.id).
  *
  * 2) Target validation
  * - Load `community_platform_posts` by id = postId, ensure it is not hard-missing.
@@ -337,16 +338,20 @@ export namespace patchByPostidAndCommentid {
  * @param props.voteId Primary identifier of the comment vote record to retrieve.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implementation steps:
- * 1) Validate path parameters as UUIDs.
- * 2) Load the comment from community_platform_comments by id=commentId and ensure it belongs to the given postId via community_platform_comments.community_platform_post_id. If mismatch or missing, return a not-found error.
- * 3) Load community_platform_comment_votes by id=voteId and comment_id=commentId.
- *    - If no record exists, return not-found.
- *    - If deleted_at is not null, treat the vote as removed: return not-found (do not expose removed vote direction).
- * 4) Authorization checks:
- *    - Resolve the authenticated member from the session.
- *    - Enforce that the requesting actor is allowed to view this vote record in the current context (at minimum, the vote.voter_id must match the requesting member id; also enforce that the post/comment is viewable in general).
- * 5) Return the mapped DTO for the vote, including vote_direction/value and voted_at as defined by the DTO for ICommunityPlatformCommentVote.
+ * @x-autobe-specification Implementation steps: 1) Validate path parameters as
+ *   UUIDs. 2) Load the comment from community_platform_comments by id=commentId
+ *   and ensure it belongs to the given postId via
+ *   community_platform_comments.community_platform_post_id. If mismatch or
+ *   missing, return a not-found error. 3) Load community_platform_comment_votes
+ *   by id=voteId and comment_id=commentId. - If no record exists, return
+ *   not-found. - If deleted_at is not null, treat the vote as removed: return
+ *   not-found (do not expose removed vote direction). 4) Authorization checks:
+ *   - Resolve the authenticated member from the session. - Enforce that the
+ *   requesting actor is allowed to view this vote record in the current context
+ *   (at minimum, the vote.voter_id must match the requesting member id; also
+ *   enforce that the post/comment is viewable in general). 5) Return the mapped
+ *   DTO for the vote, including vote_direction/value and voted_at as defined by
+ *   the DTO for ICommunityPlatformCommentVote.
  *
  * Database access:
  * - Query community_platform_comments for comment existence and post scoping.

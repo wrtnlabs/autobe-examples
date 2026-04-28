@@ -31,9 +31,10 @@ export class ErphrmtimetrackingMemberTimersessionsController {
    *
    * @param connection
    * @param body Timer session browsing criteria including organization-scoped filters, pagination, and sorting.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement a read-only filtered search over `erp_hrm_time_tracking_timer_sessions`.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implement a read-only filtered search over
+     *   `erp_hrm_time_tracking_timer_sessions`.
    *
    * Algorithm / Steps:
    * 1. Parse requestBody as `IErpHrmTimeTrackingTimerSession.IRequest`.
@@ -104,9 +105,9 @@ export class ErphrmtimetrackingMemberTimersessionsController {
    *
    * @param connection
    * @param timerSessionId Identifier of the timer session to retrieve.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation steps for Realize Agent:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation steps for Realize Agent:
    *
    * 1) Parse `timerSessionId` (UUID) from path.
    * 2) Determine the requesting actor’s selected organization context and employee identity (the actor should be authenticated as a member/employee).

@@ -34,9 +34,9 @@ export class RedditlikeMemberPostsCommentsController {
    * @param connection
    * @param postId UUID identifier of the post to comment on (global scope).
    * @param body Comment creation data including the text content and optional parent comment ID for nested replies.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Create a comment on a post. Implementation steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Create a comment on a post. Implementation steps:
    *
    * 1. Validate the post exists by querying reddit_like_posts with the postId. Return 404 if not found.
    * 2. Verify the post is not soft-deleted (deleted_at is null). Return 404 if deleted.
@@ -108,9 +108,10 @@ export class RedditlikeMemberPostsCommentsController {
    * @param connection
    * @param postId UUID of the post to retrieve comments for (global scope).
    * @param body Search criteria including sort option (best, new, controversial), pagination parameters (limit, cursor), and filtering options.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query the reddit_like_comments table filtering by reddit_like_post_id matching the postId path parameter.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query the reddit_like_comments table filtering by
+     *   reddit_like_post_id matching the postId path parameter.
    *
    * Apply sorting based on the sort option in request body:
    * - 'best': Order by vote score descending (compute from reddit_like_votes: upvotes - downvotes)
@@ -166,9 +167,10 @@ export class RedditlikeMemberPostsCommentsController {
    * @param connection
    * @param postId The unique identifier of the post containing this comment (global scope).
    * @param commentId The unique identifier of the comment to retrieve (global scope).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query the reddit_like_comments table to retrieve a single comment by ID within a specific post context.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query the reddit_like_comments table to retrieve
+     *   a single comment by ID within a specific post context.
    *
    * **Implementation Steps**
    *
@@ -241,9 +243,10 @@ export class RedditlikeMemberPostsCommentsController {
    * @param postId The unique identifier of the post containing the comment (UUID format).
    * @param commentId The unique identifier of the comment to update (UUID format).
    * @param body The updated comment content. Only the content field is editable; all other fields remain unchanged.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement the comment update operation with the following logic:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implement the comment update operation with the
+     *   following logic:
    *
    * 1. **Path Parameter Validation**: Validate that postId and commentId are valid UUIDs.
    *
@@ -311,18 +314,18 @@ export class RedditlikeMemberPostsCommentsController {
    * @param connection
    * @param postId UUID of the post containing the comment (global scope).
    * @param commentId UUID of the comment to delete (global scope).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1. Validate postId and commentId are valid UUIDs.
-   * 2. Fetch the comment by commentId from reddit_like_comments table.
-   * 3. Verify the comment exists and is not already deleted (deleted_at IS NULL).
-   * 4. Fetch the associated post to get the community_id.
-   * 5. Fetch the current authenticated member.
-   * 6. Authorization check: Allow if (member.id === comment.reddit_like_member_id) OR (member is moderator of the post's community) OR (member is owner of the post's community).
-   * 7. If unauthorized, return 403 Forbidden.
-   * 8. Set deleted_at to current timestamp (soft delete).
-   * 9. Return 204 No Content on success.
-   * 10. Return 404 Not Found if comment does not exist or is already deleted.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification 1. Validate postId and commentId are valid UUIDs.
+     *   2. Fetch the comment by commentId from reddit_like_comments table. 3.
+     *   Verify the comment exists and is not already deleted (deleted_at IS
+     *   NULL). 4. Fetch the associated post to get the community_id. 5. Fetch
+     *   the current authenticated member. 6. Authorization check: Allow if
+     *   (member.id === comment.reddit_like_member_id) OR (member is moderator
+     *   of the post's community) OR (member is owner of the post's community).
+     *   7. If unauthorized, return 403 Forbidden. 8. Set deleted_at to current
+     *   timestamp (soft delete). 9. Return 204 No Content on success. 10.
+     *   Return 404 Not Found if comment does not exist or is already deleted.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Delete(":commentId")

@@ -24,9 +24,12 @@ export class ShoppingmallSellersController {
    *
    * @param connection
    * @param body Seller search criteria, filters, pagination, and sorting options
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Authorize only administrator and superAdministrator actors before executing the search. Reject customer and seller actors because platform-wide seller account oversight exceeds seller self-service boundaries.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Authorize only administrator and
+     *   superAdministrator actors before executing the search. Reject customer
+     *   and seller actors because platform-wide seller account oversight
+     *   exceeds seller self-service boundaries.
    *
    * Parse the IShoppingMallSeller.IRequest payload as collection query criteria. Support pagination inputs, deterministic sorting, and optional filters for seller lifecycle and governance fields present in shopping_mall_sellers, including approval_status, suspended, banned, created_at range, updated_at range, and text search on email. The implementation may also optionally join shopping_mall_seller_profiles to support search or summary projection of the current public shop name, because each seller has at most one active profile through the unique shopping_mall_seller_id constraint.
    *
@@ -67,9 +70,10 @@ export class ShoppingmallSellersController {
    *
    * @param connection
    * @param sellerId Target seller account ID
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Implement a seller-account detail retrieval service for the shopping_mall_sellers entity.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Implement a seller-account detail retrieval
+     *   service for the shopping_mall_sellers entity.
    *
    * 1. Authorize the caller before loading the record. Allow access when the authenticated actor is an administrator or superAdministrator with seller-oversight authority, or when the authenticated actor is a seller whose authenticated seller account ID matches the requested sellerId. Reject customer actors and unrelated seller actors with a forbidden error.
    *

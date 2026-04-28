@@ -12,7 +12,9 @@ export type IProjectAnalytic = {
    *
    * This is the sum of all time entries (timelogs) associated with the project, regardless of billable status. It represents the complete time investment on the project.
    *
-   * @x-autobe-specification SUM of all timelog duration_minutes where project_id = projectId AND deleted_at IS NULL. Includes both billable and non-billable time. Value is in minutes (integer).
+     * @x-autobe-specification SUM of all timelog duration_minutes where
+     *   project_id = projectId AND deleted_at IS NULL. Includes both billable
+     *   and non-billable time. Value is in minutes (integer).
    */
   total_duration_minutes: number & tags.Type<"int32">;
 
@@ -21,7 +23,9 @@ export type IProjectAnalytic = {
    *
    * This represents the portion of time that can be billed to the client or customer. Only timelogs marked as billable are included in this count.
    *
-   * @x-autobe-specification SUM of duration_minutes from timelogs where project_id = projectId AND billable = true AND deleted_at IS NULL. Value is in minutes (integer).
+     * @x-autobe-specification SUM of duration_minutes from timelogs where
+     *   project_id = projectId AND billable = true AND deleted_at IS NULL.
+     *   Value is in minutes (integer).
    */
   billable_duration_minutes: number & tags.Type<"int32">;
 
@@ -30,7 +34,9 @@ export type IProjectAnalytic = {
    *
    * This represents internal work time that is not billed to clients, such as administrative tasks, meetings, or internal development work.
    *
-   * @x-autobe-specification SUM of duration_minutes from timelogs where project_id = projectId AND billable = false AND deleted_at IS NULL. Value is in minutes (integer).
+     * @x-autobe-specification SUM of duration_minutes from timelogs where
+     *   project_id = projectId AND billable = false AND deleted_at IS NULL.
+     *   Value is in minutes (integer).
    */
   non_billable_duration_minutes: number & tags.Type<"int32">;
 
@@ -39,7 +45,10 @@ export type IProjectAnalytic = {
    *
    * This object shows the count of tasks in each lifecycle stage, providing insight into project progress and workload distribution. All four status categories are always present even if count is zero.
    *
-   * @x-autobe-specification COUNT of tasks grouped by status WHERE project_id = projectId AND deleted_at IS NULL. Returns object with keys: TODO, IN_PROGRESS, IN_REVIEW, DONE. Each value is the count of tasks in that status.
+     * @x-autobe-specification COUNT of tasks grouped by status WHERE project_id
+     *   = projectId AND deleted_at IS NULL. Returns object with keys: TODO,
+     *   IN_PROGRESS, IN_REVIEW, DONE. Each value is the count of tasks in that
+     *   status.
    */
   task_counts: {
     TODO: number & tags.Type<"int32">;
@@ -53,7 +62,10 @@ export type IProjectAnalytic = {
    *
    * This shows what percentage of the allocated budget hours has been consumed. Calculated as (total_logged_hours / budget_hours) * 100. Returns null if the project has no budget set (budget_hours is NULL). A value over 100% indicates the project is over budget.
    *
-   * @x-autobe-specification If project.budget_hours IS NOT NULL: ((total_duration_minutes / 60) / budget_hours) * 100. Returns percentage as number. If budget_hours IS NULL: returns null. Represents percentage of budget hours consumed.
+     * @x-autobe-specification If project.budget_hours IS NOT NULL:
+     *   ((total_duration_minutes / 60) / budget_hours) * 100. Returns
+     *   percentage as number. If budget_hours IS NULL: returns null. Represents
+     *   percentage of budget hours consumed.
    */
   budget_utilization: number | null;
 
@@ -62,7 +74,12 @@ export type IProjectAnalytic = {
    *
    * This counts unique employees who have either logged time on the project (via timelogs) or been assigned tasks. It provides insight into team engagement and resource allocation for the project.
    *
-   * @x-autobe-specification COUNT DISTINCT employee_id from (SELECT employee_id FROM timelogs WHERE project_id = projectId AND deleted_at IS NULL UNION SELECT employee_id FROM task_histories WHERE task_id IN (SELECT id FROM tasks WHERE project_id = projectId AND deleted_at IS NULL)). Counts employees who have either logged time or been assigned tasks.
+     * @x-autobe-specification COUNT DISTINCT employee_id from (SELECT
+     *   employee_id FROM timelogs WHERE project_id = projectId AND deleted_at
+     *   IS NULL UNION SELECT employee_id FROM task_histories WHERE task_id IN
+     *   (SELECT id FROM tasks WHERE project_id = projectId AND deleted_at IS
+     *   NULL)). Counts employees who have either logged time or been assigned
+     *   tasks.
    */
   member_activity_count: number & tags.Type<"int32">;
 };

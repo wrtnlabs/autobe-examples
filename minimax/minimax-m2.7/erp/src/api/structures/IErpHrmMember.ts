@@ -10,64 +10,72 @@ export type IErpHrmMember = {
   /**
    * Unique identifier (UUID) for the member account.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from erp_hrm_members.id. UUID primary key generated on account creation.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from erp_hrm_members.id. UUID
+     *   primary key generated on account creation.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * User's unique email address used for login and account identification.
    *
-   * @x-autobe-database-schema-property email
-   * @x-autobe-specification Direct mapping from erp_hrm_members.email. Unique constraint enforced at database level.
+     * @x-autobe-database-schema-property email
+     * @x-autobe-specification Direct mapping from erp_hrm_members.email. Unique
+     *   constraint enforced at database level.
    */
   email: string & tags.Format<"email">;
 
   /**
    * User's display name shown across all organizations they belong to.
    *
-   * @x-autobe-database-schema-property display_name
-   * @x-autobe-specification Direct mapping from erp_hrm_members.display_name. User-provided name shown across all organizations.
+     * @x-autobe-database-schema-property display_name
+     * @x-autobe-specification Direct mapping from erp_hrm_members.display_name.
+     *   User-provided name shown across all organizations.
    */
   display_name: string;
 
   /**
    * URI to the user's avatar image file, or null if no avatar has been uploaded.
    *
-   * @x-autobe-specification Direct mapping from erp_hrm_members.avatar_uri. Nullable - returns null if no avatar uploaded.
-   * @x-autobe-database-schema-property avatar_uri
+     * @x-autobe-specification Direct mapping from erp_hrm_members.avatar_uri.
+     *   Nullable - returns null if no avatar uploaded.
+     * @x-autobe-database-schema-property avatar_uri
    */
   avatar_uri?: (string & tags.Format<"uri">) | null | undefined;
 
   /**
    * User's phone number for contact purposes within organizations.
    *
-   * @x-autobe-specification Direct mapping from erp_hrm_members.phone. Nullable for optional contact information.
-   * @x-autobe-database-schema-property phone
+     * @x-autobe-specification Direct mapping from erp_hrm_members.phone.
+     *   Nullable for optional contact information.
+     * @x-autobe-database-schema-property phone
    */
   phone?: string | null | undefined;
 
   /**
    * Timestamp when the member account was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from erp_hrm_members.created_at. Set automatically on account registration.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from erp_hrm_members.created_at.
+     *   Set automatically on account registration.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the member account was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from erp_hrm_members.updated_at. Updated automatically when profile fields change.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from erp_hrm_members.updated_at.
+     *   Updated automatically when profile fields change.
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * Soft-deletion timestamp. Null if the account is active; set when the account is deleted.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from erp_hrm_members.deleted_at. Nullable soft-delete timestamp - null means account is active.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from erp_hrm_members.deleted_at.
+     *   Nullable soft-delete timestamp - null means account is active.
    */
   deleted_at?: (string & tags.Format<"date-time">) | null | undefined;
 };
@@ -79,35 +87,47 @@ export namespace IErpHrmMember {
     /**
      * Member's email address used for login and account identification.
      *
-     * @x-autobe-specification Maps to erp_hrm_members.email for member lookup. Used to identify the member account for authentication. Must be unique per database constraint.
+         * @x-autobe-specification Maps to erp_hrm_members.email for member
+         *   lookup. Used to identify the member account for authentication.
+         *   Must be unique per database constraint.
      */
     email: string & tags.Format<"email">;
 
     /**
      * Member's password for authentication. Must be provided in plain text for bcrypt verification.
      *
-     * @x-autobe-specification Plain text password transformed to bcrypt hash and compared against erp_hrm_members.password_hash. Never stored or logged in plain text.
+         * @x-autobe-specification Plain text password transformed to bcrypt
+         *   hash and compared against erp_hrm_members.password_hash. Never
+         *   stored or logged in plain text.
      */
     password: string & tags.Format<"password">;
 
     /**
      * HTTP request URI used for the login request, stored in session record for audit trail.
      *
-     * @x-autobe-specification Session context: Request URI from the HTTP request. Stored in erp_hrm_member_sessions.href for audit and tracking purposes. Not a DB column from erp_hrm_members.
+         * @x-autobe-specification Session context: Request URI from the HTTP
+         *   request. Stored in erp_hrm_member_sessions.href for audit and
+         *   tracking purposes. Not a DB column from erp_hrm_members.
      */
     href: string & tags.Format<"uri">;
 
     /**
      * HTTP referrer header indicating the previous page, stored in session record for analytics.
      *
-     * @x-autobe-specification Session context: HTTP referrer header from the login request. Stored in erp_hrm_member_sessions.referrer for tracking user journey. Not a DB column from erp_hrm_members.
+         * @x-autobe-specification Session context: HTTP referrer header from
+         *   the login request. Stored in erp_hrm_member_sessions.referrer for
+         *   tracking user journey. Not a DB column from erp_hrm_members.
      */
     referrer: string & tags.Format<"uri">;
 
     /**
      * Client IP address for session tracking and security purposes. Optional for SSR fallback.
      *
-     * @x-autobe-specification Session context: Client IP address from request headers or connection. Stored in erp_hrm_member_sessions.ip for security audit. Optional in ILogin because SSR clients cannot reliably know their IP; server captures server IP as fallback. Not a DB column from erp_hrm_members.
+         * @x-autobe-specification Session context: Client IP address from
+         *   request headers or connection. Stored in erp_hrm_member_sessions.ip
+         *   for security audit. Optional in ILogin because SSR clients cannot
+         *   reliably know their IP; server captures server IP as fallback. Not
+         *   a DB column from erp_hrm_members.
      */
     ip?: (string & tags.Format<"ipv4">) | undefined;
   };
@@ -119,8 +139,12 @@ export namespace IErpHrmMember {
     /**
      * The current refresh token from erp_hrm_member_sessions used to obtain a new access token. Must be a valid, non-expired token that exists in the session table.
      *
-     * @x-autobe-database-schema-property refresh_token
-     * @x-autobe-specification Direct mapping to erp_hrm_member_sessions.refresh_token column. The refresh token is validated against stored sessions to ensure it hasn't been revoked or expired. If valid, the server generates a new access token and optionally rotates the refresh token.
+         * @x-autobe-database-schema-property refresh_token
+         * @x-autobe-specification Direct mapping to
+         *   erp_hrm_member_sessions.refresh_token column. The refresh token is
+         *   validated against stored sessions to ensure it hasn't been revoked
+         *   or expired. If valid, the server generates a new access token and
+         *   optionally rotates the refresh token.
      */
     refreshToken: string;
   };
@@ -177,7 +201,8 @@ export namespace IErpHrmMember {
     /**
      * Authorization token.
      *
-     * @x-autobe-specification Authorization token comes from the session table.
+         * @x-autobe-specification Authorization token comes from the session
+         *   table.
      */
     token: IAuthorizationToken;
   };
@@ -187,31 +212,31 @@ export namespace IErpHrmMember {
    */
   export type ISummary = {
     /**
-     * @x-autobe-database-schema-property avatar_uri
+         * @x-autobe-database-schema-property avatar_uri
      */
     avatarUri?: (string & tags.Format<"uri">) | null | undefined;
     /**
-     * @x-autobe-database-schema-property created_at
+         * @x-autobe-database-schema-property created_at
      */
     createdAt: string & tags.Format<"date-time">;
     /**
-     * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-database-schema-property deleted_at
      */
     deletedAt?: (string & tags.Format<"date-time">) | null | undefined;
     /**
-     * @x-autobe-database-schema-property display_name
+         * @x-autobe-database-schema-property display_name
      */
     displayName: string;
     /**
-     * @x-autobe-database-schema-property email
+         * @x-autobe-database-schema-property email
      */
     email: string & tags.Format<"email">;
     /**
-     * @x-autobe-database-schema-property id
+         * @x-autobe-database-schema-property id
      */
     id: string & tags.Format<"uuid">;
     /**
-     * @x-autobe-database-schema-property phone
+         * @x-autobe-database-schema-property phone
      */
     phone?: string | null | undefined;
   };
@@ -237,16 +262,20 @@ export namespace IErpHrmMember {
     /**
      * User's display name shown across all organizations. Max 255 characters.
      *
-     * @x-autobe-database-schema-property display_name
-     * @x-autobe-specification Direct mapping from erp_hrm_members.display_name. String, NOT NULL in DB without default, so minLength:1 prevents empty string violations.
+         * @x-autobe-database-schema-property display_name
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_members.display_name. String, NOT NULL in DB without
+         *   default, so minLength:1 prevents empty string violations.
      */
     display_name?: (string & tags.MaxLength<255>) | undefined;
 
     /**
      * URI to user's avatar image file, or null if no avatar has been uploaded.
      *
-     * @x-autobe-database-schema-property avatar_uri
-     * @x-autobe-specification Direct mapping from erp_hrm_members.avatar_uri. Nullable - returns null if no avatar uploaded.
+         * @x-autobe-database-schema-property avatar_uri
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_members.avatar_uri. Nullable - returns null if no avatar
+         *   uploaded.
      */
     avatar_uri?:
       | (string & tags.MaxLength<80000> & tags.Format<"uri">)
@@ -256,15 +285,16 @@ export namespace IErpHrmMember {
     /**
      * User's phone number for contact purposes.
      *
-     * @x-autobe-database-schema-property phone
-     * @x-autobe-specification Direct mapping from erp_hrm_members.phone. Nullable for optional contact information.
+         * @x-autobe-database-schema-property phone
+         * @x-autobe-specification Direct mapping from erp_hrm_members.phone.
+         *   Nullable for optional contact information.
      */
     phone?: string | null | undefined;
 
     /**
      * New password for the account. Must be at least 8 characters and contain at least one letter and one number. Only available for member actor.
      *
-     * @x-autobe-database-schema-property password_hash
+         * @x-autobe-database-schema-property password_hash
      */
     password?: (string & tags.MinLength<8>) | undefined;
   };
@@ -276,21 +306,29 @@ export namespace IErpHrmMember {
     /**
      * Text search query for partial matching on member display names.
      *
-     * @x-autobe-specification Partial match search on member display name using ILIKE with wildcard wrapping (e.g., '%search%'). Utilizes GIN trigram index for performance. Optional filter - when omitted, returns all non-deleted members.
+         * @x-autobe-specification Partial match search on member display name
+         *   using ILIKE with wildcard wrapping (e.g., '%search%'). Utilizes GIN
+         *   trigram index for performance. Optional filter - when omitted,
+         *   returns all non-deleted members.
      */
     search?: string | undefined;
 
     /**
      * Exact email address filter for finding a specific member.
      *
-     * @x-autobe-specification Exact match filter on member email column. Email is unique indexed. Optional - when omitted, no email filtering applied.
+         * @x-autobe-specification Exact match filter on member email column.
+         *   Email is unique indexed. Optional - when omitted, no email
+         *   filtering applied.
      */
     email?: (string & tags.Format<"email">) | undefined;
 
     /**
      * Date range filter for member account creation timestamp.
      *
-     * @x-autobe-specification Date range filter using gte (greater than or equal) and lte (less than or equal) operators on member creation timestamp. Both gte and lte are optional. Format: ISO 8601 date-time.
+         * @x-autobe-specification Date range filter using gte (greater than or
+         *   equal) and lte (less than or equal) operators on member creation
+         *   timestamp. Both gte and lte are optional. Format: ISO 8601
+         *   date-time.
      */
     createdAt?:
       | {
@@ -302,21 +340,27 @@ export namespace IErpHrmMember {
     /**
      * Boolean flag to include or exclude soft-deleted member accounts.
      *
-     * @x-autobe-specification Boolean filter for soft-deleted members. When true, includes members where deleted_at IS NOT NULL. When false or omitted, excludes soft-deleted members (default behavior).
+         * @x-autobe-specification Boolean filter for soft-deleted members. When
+         *   true, includes members where deleted_at IS NOT NULL. When false or
+         *   omitted, excludes soft-deleted members (default behavior).
      */
     deleted?: boolean | undefined;
 
     /**
      * Page number for pagination (1-indexed).
      *
-     * @x-autobe-specification Offset pagination page number (1-indexed). Default: 1. Used with limit to calculate offset = (page - 1) * limit. Minimum value: 1.
+         * @x-autobe-specification Offset pagination page number (1-indexed).
+         *   Default: 1. Used with limit to calculate offset = (page - 1) *
+         *   limit. Minimum value: 1.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of records to return per page.
      *
-     * @x-autobe-specification Maximum number of records per page. Default: 20. Maximum: 100. Used with page to calculate offset = (page - 1) * limit.
+         * @x-autobe-specification Maximum number of records per page. Default:
+         *   20. Maximum: 100. Used with page to calculate offset = (page - 1) *
+         *   limit.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -325,14 +369,18 @@ export namespace IErpHrmMember {
     /**
      * Field name to sort results by.
      *
-     * @x-autobe-specification Field name for sorting results. Allowed values: created_at, display_name, email. Default: created_at when omitted. Validated against allowed list to prevent SQL injection.
+         * @x-autobe-specification Field name for sorting results. Allowed
+         *   values: created_at, display_name, email. Default: created_at when
+         *   omitted. Validated against allowed list to prevent SQL injection.
      */
     sortBy?: string | undefined;
 
     /**
      * Sort order direction (ascending or descending).
      *
-     * @x-autobe-specification Sorting direction using oneOf const for type safety. Allowed values: asc, desc. Default: desc. Controls ORDER BY direction in SQL query.
+         * @x-autobe-specification Sorting direction using oneOf const for type
+         *   safety. Allowed values: asc, desc. Default: desc. Controls ORDER BY
+         *   direction in SQL query.
      */
     sortOrder?: "asc" | "desc" | undefined;
   };

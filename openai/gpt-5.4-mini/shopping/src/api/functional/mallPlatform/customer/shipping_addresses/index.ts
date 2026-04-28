@@ -22,7 +22,8 @@ export * as _default from "./_default/index";
  * @param props.body The shipping address details to save, including the delivery contact and location information required for checkout and shipment delivery.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Insert a new shipping address row for the currently authenticated customer account.
+ * @x-autobe-specification Insert a new shipping address row for the currently
+ *   authenticated customer account.
  *
  * Use the authentication context to determine ownership; do not accept a customer identifier in the request body. Validate that the request contains all required shipping address fields before insert: recipient name, phone number, street address, city, state or province, postal code, and country. Reject incomplete or invalid payloads and perform the create atomically so there is no partial persistence.
  *
@@ -117,7 +118,8 @@ export namespace create {
  * @param props.body Search, filter, pagination, and sorting criteria for the authenticated customer's saved shipping addresses.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Query mall_platform_shipping_addresses for the authenticated customer only.
+ * @x-autobe-specification Query mall_platform_shipping_addresses for the
+ *   authenticated customer only.
  *
  * Apply filter, sort, and pagination criteria from the request body. Return a paginated result set with a total count and summary rows suitable for address list screens. The implementation must never expose another customer's addresses.
  *
@@ -212,8 +214,12 @@ export namespace index {
  * @param props.shippingAddressId The shipping address UUID to retrieve (customer-scoped).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Fetch one row from mall_platform_shipping_addresses by id.
- * Enforce authenticated customer ownership so the caller can only read their own shipping address. Exclude deleted rows from lookup. Return the complete entity fields available in the schema: id, customer_id, recipient_name, phone_number, street_address, city, state_province, postal_code, country, is_default, created_at, updated_at, and deleted_at.
+ * @x-autobe-specification Fetch one row from mall_platform_shipping_addresses
+ *   by id. Enforce authenticated customer ownership so the caller can only read
+ *   their own shipping address. Exclude deleted rows from lookup. Return the
+ *   complete entity fields available in the schema: id, customer_id,
+ *   recipient_name, phone_number, street_address, city, state_province,
+ *   postal_code, country, is_default, created_at, updated_at, and deleted_at.
  *
  * Do not infer or require any extra fields beyond the schema. If no matching row is found, return a not-found error. This endpoint is read-only and must not mutate the address record.
  * @path /mallPlatform/customer/shipping-addresses/:shippingAddressId
@@ -303,7 +309,9 @@ export namespace at {
  * @param props.body The editable shipping address fields used to replace the existing address details.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Fetch the shipping address by its ID and verify that it belongs to the authenticated customer. Reject requests that target another customer’s address.
+ * @x-autobe-specification Fetch the shipping address by its ID and verify that
+ *   it belongs to the authenticated customer. Reject requests that target
+ *   another customer’s address.
  *
  * Before applying changes, confirm that the address is not locked by order history. If the address is already part of a placed order and the business rule marks it immutable, return a conflict-style error and do not modify the record.
  *
@@ -407,7 +415,17 @@ export namespace update {
  * @param props.shippingAddressId The shipping address identifier within the customer's saved address list.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Look up the shipping address by shippingAddressId and ensure it belongs to the authenticated customer account. If the address is present and owned by the caller, perform the deletion in a single transaction. When the target address is currently marked as the default shipping address, clear the default flag before deleting the row so no deleted address remains selected as default. If the address is missing, already deleted, or not owned by the caller, return the appropriate not-found or forbidden error according to platform authorization rules and do not modify any remaining addresses. The operation must be idempotent from the customer perspective and must not partially update other shipping address records.
+ * @x-autobe-specification Look up the shipping address by shippingAddressId and
+ *   ensure it belongs to the authenticated customer account. If the address is
+ *   present and owned by the caller, perform the deletion in a single
+ *   transaction. When the target address is currently marked as the default
+ *   shipping address, clear the default flag before deleting the row so no
+ *   deleted address remains selected as default. If the address is missing,
+ *   already deleted, or not owned by the caller, return the appropriate
+ *   not-found or forbidden error according to platform authorization rules and
+ *   do not modify any remaining addresses. The operation must be idempotent
+ *   from the customer perspective and must not partially update other shipping
+ *   address records.
  * @path /mallPlatform/customer/shipping-addresses/:shippingAddressId
  * @accessor api.functional.mallPlatform.customer.shipping_addresses.erase
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe

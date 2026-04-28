@@ -16,8 +16,9 @@ export type IRedditCommunityCommunity = {
    *
    * This is the primary key used to reference the community in all API operations. Generated automatically as a UUID v4 when the community is created.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from reddit_community_communities.id. Auto-generated UUID v4.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_communities.id. Auto-generated UUID v4.
    */
   id: string & tags.Format<"uuid">;
 
@@ -26,8 +27,10 @@ export type IRedditCommunityCommunity = {
    *
    * This is the public-facing identifier for the community, displayed in URLs and search results. Must be unique across all communities to prevent naming conflicts. Chosen by the community creator during community creation.
    *
-   * @x-autobe-database-schema-property name
-   * @x-autobe-specification Direct mapping from reddit_community_communities.name. Must be unique across all communities (database unique constraint).
+     * @x-autobe-database-schema-property name
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_communities.name. Must be unique across all
+     *   communities (database unique constraint).
    */
   name: string;
 
@@ -36,8 +39,10 @@ export type IRedditCommunityCommunity = {
    *
    * Provides context for potential subscribers about what content belongs in this community. Displayed on the community page and in search results to help users understand the community's focus.
    *
-   * @x-autobe-database-schema-property description
-   * @x-autobe-specification Direct mapping from reddit_community_communities.description. Plain text explaining community topic and rules.
+     * @x-autobe-database-schema-property description
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_communities.description. Plain text explaining
+     *   community topic and rules.
    */
   description: string;
 
@@ -46,8 +51,10 @@ export type IRedditCommunityCommunity = {
    *
    * Visual identifier displayed alongside the community name in feeds, search results, and community pages. Stored as a URI pointing to the hosted image file. Should be a square image for best display.
    *
-   * @x-autobe-specification Direct mapping from reddit_community_communities.icon. Stored as URI string pointing to hosted image file.
-   * @x-autobe-database-schema-property icon
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_communities.icon. Stored as URI string pointing to
+     *   hosted image file.
+     * @x-autobe-database-schema-property icon
    */
   icon: string & tags.Format<"uri">;
 
@@ -56,8 +63,10 @@ export type IRedditCommunityCommunity = {
    *
    * The owner has the highest authority level within the community, including the ability to add or remove moderators, manage bans, and delete any content. This relationship establishes ownership and administrative control. Returned as a summary object containing the owner's username, display name, and other public profile information.
    *
-   * @x-autobe-database-schema-property owner
-   * @x-autobe-specification Join from reddit_community_communities.owner_id to reddit_community_members.id. Returns IRedditCommunityMember.ISummary with owner's public profile information.
+     * @x-autobe-database-schema-property owner
+     * @x-autobe-specification Join from reddit_community_communities.owner_id
+     *   to reddit_community_members.id. Returns IRedditCommunityMember.ISummary
+     *   with owner's public profile information.
    */
   owner: IRedditCommunityMember.ISummary;
 
@@ -66,7 +75,9 @@ export type IRedditCommunityCommunity = {
    *
    * This count reflects all active subscriptions to the community. Updated in real-time as users subscribe or unsubscribe. Used to display community popularity and is a key metric for community discovery.
    *
-   * @x-autobe-specification Computed via COUNT(*) FROM reddit_community_subscriptions WHERE community_id = {community.id}. Not stored in database - calculated at query time.
+     * @x-autobe-specification Computed via COUNT(*) FROM
+     *   reddit_community_subscriptions WHERE community_id = {community.id}. Not
+     *   stored in database - calculated at query time.
    */
   subscriber_count: number & tags.Type<"int32">;
 
@@ -75,8 +86,10 @@ export type IRedditCommunityCommunity = {
    *
    * Records the exact date and time when the community was first created. Set automatically by the database on insert and never modified afterward. Used for sorting communities by age and displaying community history.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from reddit_community_communities.created_at. Set to current timestamp (NOW()) on insert.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_communities.created_at. Set to current timestamp
+     *   (NOW()) on insert.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -85,8 +98,10 @@ export type IRedditCommunityCommunity = {
    *
    * Records the date and time of the most recent update to any community field. Automatically updated by the database trigger on every UPDATE operation. Used to track when community metadata was last changed.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from reddit_community_communities.updated_at. Updated to current timestamp on every UPDATE operation.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_communities.updated_at. Updated to current timestamp
+     *   on every UPDATE operation.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -95,8 +110,11 @@ export type IRedditCommunityCommunity = {
    *
    * This field implements soft-delete functionality. When null, the community is active and visible. When set to a timestamp, the community has been deleted but retained in the database for recovery purposes. Deleted communities are excluded from normal queries and return 404 when accessed directly.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from reddit_community_communities.deleted_at. Nullable - null means active, datetime means soft-deleted. Filter deleted_at IS NULL in normal queries.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_communities.deleted_at. Nullable - null means active,
+     *   datetime means soft-deleted. Filter deleted_at IS NULL in normal
+     *   queries.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -114,8 +132,10 @@ export namespace IRedditCommunityCommunity {
      *
      * This is the public-facing identifier for the community, displayed in URLs and search results. Must be unique across all communities to prevent naming conflicts. The backend validates uniqueness against the database unique constraint.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from reddit_community_communities.name. Backend validates uniqueness against database unique constraint before insert.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from
+         *   reddit_community_communities.name. Backend validates uniqueness
+         *   against database unique constraint before insert.
      */
     name: string;
 
@@ -124,8 +144,10 @@ export namespace IRedditCommunityCommunity {
      *
      * Provides context for potential subscribers about what content belongs in this community. Displayed on the community page and in search results. Should clearly communicate the community's focus and any posting guidelines.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from reddit_community_communities.description. No validation constraints beyond required field.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   reddit_community_communities.description. No validation constraints
+         *   beyond required field.
      */
     description: string;
 
@@ -134,8 +156,10 @@ export namespace IRedditCommunityCommunity {
      *
      * Visual identifier displayed alongside the community name in feeds, search results, and community pages. Must be a valid URI pointing to a hosted image file. Supports standard image formats accessible via HTTP/HTTPS.
      *
-     * @x-autobe-database-schema-property icon
-     * @x-autobe-specification Direct mapping from reddit_community_communities.icon. Backend validates URI format before insert.
+         * @x-autobe-database-schema-property icon
+         * @x-autobe-specification Direct mapping from
+         *   reddit_community_communities.icon. Backend validates URI format
+         *   before insert.
      */
     icon: string & tags.Format<"uri">;
   };
@@ -153,8 +177,11 @@ export namespace IRedditCommunityCommunity {
      *
      * This is the public-facing identifier for the community, displayed in URLs and search results. Must be unique across all communities to prevent naming conflicts. Changing this field will update all references to the community throughout the platform.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from reddit_community_communities.name. Unique constraint enforced at database level. Backend validates uniqueness against active communities (deleted_at is null) before update.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from
+         *   reddit_community_communities.name. Unique constraint enforced at
+         *   database level. Backend validates uniqueness against active
+         *   communities (deleted_at is null) before update.
      */
     name?: string | undefined;
 
@@ -163,8 +190,10 @@ export namespace IRedditCommunityCommunity {
      *
      * Provides context for potential subscribers about what content belongs in this community. Displayed on the community page and in search results. Can contain markdown formatting for rich text presentation.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from reddit_community_communities.description. Free-form text with no length restrictions enforced at database level.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   reddit_community_communities.description. Free-form text with no
+         *   length restrictions enforced at database level.
      */
     description?: string | undefined;
 
@@ -173,8 +202,10 @@ export namespace IRedditCommunityCommunity {
      *
      * Visual identifier displayed alongside the community name in feeds, search results, and community pages. Stored as a URI pointing to the hosted image file. Should be a valid image URL accessible to all users.
      *
-     * @x-autobe-database-schema-property icon
-     * @x-autobe-specification Direct mapping from reddit_community_communities.icon. Stored as URI string pointing to hosted image file. Format validated as URI.
+         * @x-autobe-database-schema-property icon
+         * @x-autobe-specification Direct mapping from
+         *   reddit_community_communities.icon. Stored as URI string pointing to
+         *   hosted image file. Format validated as URI.
      */
     icon?: (string & tags.Format<"uri">) | undefined;
   };
@@ -192,8 +223,9 @@ export namespace IRedditCommunityCommunity {
      *
      * Primary key used to reference the community in API operations. Generated as a UUID v4 during community creation. Used in URL paths for community-specific endpoints.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from reddit_community_communities.id. UUID format.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   reddit_community_communities.id. UUID format.
      */
     id: string & tags.Format<"uuid">;
 
@@ -202,8 +234,10 @@ export namespace IRedditCommunityCommunity {
      *
      * This is the public-facing identifier for the community, displayed in URLs and search results. Must be unique across all communities to prevent naming conflicts. Chosen by the community creator during creation.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from reddit_community_communities.name. Unique constraint enforced at database level.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from
+         *   reddit_community_communities.name. Unique constraint enforced at
+         *   database level.
      */
     name: string;
 
@@ -212,8 +246,9 @@ export namespace IRedditCommunityCommunity {
      *
      * Provides context for potential subscribers about what content belongs in this community. Displayed on the community page and in search results to help users discover relevant communities.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from reddit_community_communities.description. Plain text content.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   reddit_community_communities.description. Plain text content.
      */
     description: string;
 
@@ -222,8 +257,10 @@ export namespace IRedditCommunityCommunity {
      *
      * Visual identifier displayed alongside the community name in feeds, search results, and community pages. Stored as a URI pointing to the hosted image file. Used for branding and quick visual recognition.
      *
-     * @x-autobe-database-schema-property icon
-     * @x-autobe-specification Direct mapping from reddit_community_communities.icon. URI format pointing to hosted image.
+         * @x-autobe-database-schema-property icon
+         * @x-autobe-specification Direct mapping from
+         *   reddit_community_communities.icon. URI format pointing to hosted
+         *   image.
      */
     icon: string & tags.Format<"uri">;
 
@@ -232,8 +269,11 @@ export namespace IRedditCommunityCommunity {
      *
      * The owner has the highest authority level within the community, including the ability to add or remove moderators, manage bans, and delete any content. This relationship establishes ownership and administrative control. Returns the owner's summary profile information.
      *
-     * @x-autobe-database-schema-property owner
-     * @x-autobe-specification JOIN from reddit_community_communities.owner_id to reddit_community_members.id. Returns IRedditCommunityMember.ISummary.
+         * @x-autobe-database-schema-property owner
+         * @x-autobe-specification JOIN from
+         *   reddit_community_communities.owner_id to
+         *   reddit_community_members.id. Returns
+         *   IRedditCommunityMember.ISummary.
      */
     owner: IRedditCommunityMember.ISummary;
 
@@ -242,7 +282,9 @@ export namespace IRedditCommunityCommunity {
      *
      * Popularity metric computed by counting active subscription records in the reddit_community_subscriptions junction table. Excludes deleted subscriptions. Used to display community size and sort by popularity in discovery features.
      *
-     * @x-autobe-specification Computed from COUNT(reddit_community_subscriptions) WHERE community_id = id AND deleted_at IS NULL. Aggregation query executed at repository level.
+         * @x-autobe-specification Computed from
+         *   COUNT(reddit_community_subscriptions) WHERE community_id = id AND
+         *   deleted_at IS NULL. Aggregation query executed at repository level.
      */
     subscribers_count: number & tags.Type<"int32">;
 
@@ -251,8 +293,9 @@ export namespace IRedditCommunityCommunity {
      *
      * Indicates when the community was established on the platform. Used for sorting communities by age and displaying community history. Format: ISO 8601 date-time string (e.g., "2024-01-15T10:30:00Z").
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from reddit_community_communities.created_at. ISO 8601 date-time format.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_community_communities.created_at. ISO 8601 date-time format.
      */
     created_at: string & tags.Format<"date-time">;
   };
@@ -270,7 +313,9 @@ export namespace IRedditCommunityCommunity {
      *
      * When provided, filters the community list to only include communities whose name contains the search term. The matching is case-insensitive and performs partial matching (e.g., "tech" matches "Technology" and "biotech"). Optional parameter - omitting it returns all communities without name filtering.
      *
-     * @x-autobe-specification Query parameter for case-insensitive partial match on reddit_community_communities.name using ILIKE. Optional - when omitted, no name filter is applied.
+         * @x-autobe-specification Query parameter for case-insensitive partial
+         *   match on reddit_community_communities.name using ILIKE. Optional -
+         *   when omitted, no name filter is applied.
      */
     search?: string | undefined;
 
@@ -279,7 +324,9 @@ export namespace IRedditCommunityCommunity {
      *
      * Controls which page of results is returned. Page 1 returns the first set of results, page 2 returns the next set, and so on. The actual offset is calculated as (page - 1) * limit. Optional parameter - defaults to 1 if not provided, returning the first page of results.
      *
-     * @x-autobe-specification Query parameter for page number in offset-based pagination. Calculates offset as (page - 1) * limit. Defaults to 1 if not provided.
+         * @x-autobe-specification Query parameter for page number in
+         *   offset-based pagination. Calculates offset as (page - 1) * limit.
+         *   Defaults to 1 if not provided.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -288,7 +335,9 @@ export namespace IRedditCommunityCommunity {
      *
      * Controls how many community records are returned in a single page. Must be between 1 and 100 inclusive. Optional parameter - when omitted, uses the default page size configured by the system. Larger limits reduce the number of API calls needed but increase response size.
      *
-     * @x-autobe-specification Query parameter for number of items per page. Constrained between 1 and 100. Used with page to calculate offset for pagination.
+         * @x-autobe-specification Query parameter for number of items per page.
+         *   Constrained between 1 and 100. Used with page to calculate offset
+         *   for pagination.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -304,7 +353,10 @@ export namespace IRedditCommunityCommunity {
      *
      * Optional parameter - defaults to a system-configured sort field when not provided.
      *
-     * @x-autobe-specification Query parameter specifying the field for ORDER BY clause. Valid values: name, subscriber_count, created_at. subscriber_count is computed from COUNT(reddit_community_subscriptions).
+         * @x-autobe-specification Query parameter specifying the field for
+         *   ORDER BY clause. Valid values: name, subscriber_count, created_at.
+         *   subscriber_count is computed from
+         *   COUNT(reddit_community_subscriptions).
      */
     sort?: "name" | "subscriber_count" | "created_at" | undefined;
 
@@ -317,7 +369,9 @@ export namespace IRedditCommunityCommunity {
      *
      * Optional parameter - defaults to a system-configured direction (typically desc) when not provided. Works in conjunction with the sort parameter.
      *
-     * @x-autobe-specification Query parameter for sort direction. Valid values: asc (ascending), desc (descending). Used together with sort parameter.
+         * @x-autobe-specification Query parameter for sort direction. Valid
+         *   values: asc (ascending), desc (descending). Used together with sort
+         *   parameter.
      */
     order?: "asc" | "desc" | undefined;
   };

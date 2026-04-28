@@ -28,7 +28,10 @@ import { IPageIHrmTimeTrackingReportProjectFilter } from "../../../../structures
  * @param props.body Project filter creation payload
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Implement this operation as a nested child-creation use case for the subsidiary table `hrm_time_tracking_report_project_filters` under the parent table `hrm_time_tracking_reports`.
+ * @x-autobe-specification Implement this operation as a nested child-creation
+ *   use case for the subsidiary table
+ *   `hrm_time_tracking_report_project_filters` under the parent table
+ *   `hrm_time_tracking_reports`.
  *
  * 1. Authorize the caller in the currently selected organization context before any report lookup. Require report viewing permission as defined by the reporting access requirements. Evaluate permission only against the caller's active organization role assignments. Reject the request immediately if the caller lacks report viewing permission in the current organization.
  *
@@ -149,7 +152,9 @@ export namespace create {
  * @param props.body Search, pagination, and sorting options for report project filters
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Implement this operation as a collection query over `hrm_time_tracking_report_project_filters` constrained by a validated parent report in `hrm_time_tracking_reports`.
+ * @x-autobe-specification Implement this operation as a collection query over
+ *   `hrm_time_tracking_report_project_filters` constrained by a validated
+ *   parent report in `hrm_time_tracking_reports`.
  *
  * 1. Authenticate the caller and resolve the current organization context from the active workspace selection.
  * 2. Authorize the request by checking report viewing permission for the caller in that current organization context before exposing any filter metadata.
@@ -273,7 +278,9 @@ export namespace index {
  * @param props.projectFilterId Target project filter identifier belonging to the saved report
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Implement a read-only service method that retrieves one hrm_time_tracking_report_project_filters row in the context of its parent hrm_time_tracking_reports row.
+ * @x-autobe-specification Implement a read-only service method that retrieves
+ *   one hrm_time_tracking_report_project_filters row in the context of its
+ *   parent hrm_time_tracking_reports row.
  *
  * First, resolve the authenticated user and current organization context. Validate that the caller has report viewing permission in the selected organization before loading any report filters, consistent with report access rules. Reject the request if report viewing permission is missing.
  *
@@ -382,7 +389,9 @@ export namespace at {
  * @param props.body Replacement values for the selected project filter
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Validate that the authenticated actor is operating inside a selected organization context and has report viewing permission for that current organization before processing the update.
+ * @x-autobe-specification Validate that the authenticated actor is operating
+ *   inside a selected organization context and has report viewing permission
+ *   for that current organization before processing the update.
  *
  * Load the parent record from `hrm_time_tracking_reports` by `reportId` and ensure it exists, is not deleted, and belongs to the caller's current organization via `hrm_time_tracking_organization_id`. Then load the target child record from `hrm_time_tracking_report_project_filters` by `projectFilterId` and ensure it exists, is not deleted, and has `hrm_time_tracking_report_id` equal to the parent report's `id`. Reject the request if the parent-child relationship does not match.
  *
@@ -501,7 +510,8 @@ export namespace update {
  * @param props.projectFilterId Target project filter selection ID that belongs to the specified report.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Implement the operation as a parent-child deletion on the reporting configuration aggregate.
+ * @x-autobe-specification Implement the operation as a parent-child deletion on
+ *   the reporting configuration aggregate.
  *
  * 1. Authenticate the caller and resolve the current organization context from the active session.
  * 2. Authorize the caller for report access and report-management capability within the current organization. Owners are always eligible; managers must possess the relevant reporting permission. Reject unauthorized callers before revealing resource existence details.

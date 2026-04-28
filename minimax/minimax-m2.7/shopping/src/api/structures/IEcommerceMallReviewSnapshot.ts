@@ -12,8 +12,9 @@ export type IEcommerceMallReviewSnapshot = {
    *
    * UUID primary key that uniquely identifies this snapshot record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_review_snapshots.id.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_review_snapshots.id.
    */
   id: string & tags.Format<"uuid">;
 
@@ -22,8 +23,10 @@ export type IEcommerceMallReviewSnapshot = {
    *
    * Integer value from 1 to 5 representing the star rating at the time this snapshot was captured.
    *
-   * @x-autobe-database-schema-property rating
-   * @x-autobe-specification Direct mapping from ecommerce_mall_review_snapshots.rating. Integer 1-5 representing star rating value.
+     * @x-autobe-database-schema-property rating
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_review_snapshots.rating. Integer 1-5 representing star
+     *   rating value.
    */
   rating: number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<5>;
 
@@ -32,8 +35,9 @@ export type IEcommerceMallReviewSnapshot = {
    *
    * Null if the review had no text content at the time of this snapshot.
    *
-   * @x-autobe-specification Direct mapping from ecommerce_mall_review_snapshots.body. Nullable string.
-   * @x-autobe-database-schema-property body
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_review_snapshots.body. Nullable string.
+     * @x-autobe-database-schema-property body
    */
   body?: string | null | undefined;
 
@@ -42,8 +46,9 @@ export type IEcommerceMallReviewSnapshot = {
    *
    * Represents the exact moment when the review edit occurred and this snapshot was captured.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_review_snapshots.created_at. Converted to camelCase.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_review_snapshots.created_at. Converted to camelCase.
    */
   createdAt: string & tags.Format<"date-time">;
 };
@@ -57,11 +62,11 @@ export namespace IEcommerceMallReviewSnapshot {
    */
   export type ISummary = {
     /**
-     * @x-autobe-database-schema-property id
+         * @x-autobe-database-schema-property id
      */
     id: string & tags.Format<"uuid">;
     /**
-     * @x-autobe-database-schema-property rating
+         * @x-autobe-database-schema-property rating
      */
     rating: number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<5>;
 
@@ -70,12 +75,14 @@ export namespace IEcommerceMallReviewSnapshot {
      *
      * Contains the optional text feedback that was part of the review at this snapshot point. May be null if the review had no text content before the edit.
      *
-     * @x-autobe-database-schema-property body
-     * @x-autobe-specification Direct mapping from ecommerce_mall_review_snapshots.body column. Nullable string - reviews may have no text content before edit.
+         * @x-autobe-database-schema-property body
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_review_snapshots.body column. Nullable string -
+         *   reviews may have no text content before edit.
      */
     body?: string | null | undefined;
     /**
-     * @x-autobe-database-schema-property created_at
+         * @x-autobe-database-schema-property created_at
      */
     created_at: string & tags.Format<"date-time">;
   };
@@ -95,7 +102,9 @@ export namespace IEcommerceMallReviewSnapshot {
      *
      * If not provided, defaults to page 1. Used to calculate the offset for fetching records: OFFSET (page - 1) * limit.
      *
-     * @x-autobe-specification Page number for pagination offset. Defaults to 1 if not provided. Applied as offset in database query: OFFSET (page - 1) * limit.
+         * @x-autobe-specification Page number for pagination offset. Defaults
+         *   to 1 if not provided. Applied as offset in database query: OFFSET
+         *   (page - 1) * limit.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -106,7 +115,9 @@ export namespace IEcommerceMallReviewSnapshot {
      *
      * If not provided, uses server default (20). The actual number of records may be less than this value on the last page.
      *
-     * @x-autobe-specification Number of items per page. Defaults to 20 if not provided. Constrained between 1 and 100. Applied as LIMIT in database query.
+         * @x-autobe-specification Number of items per page. Defaults to 20 if
+         *   not provided. Constrained between 1 and 100. Applied as LIMIT in
+         *   database query.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)

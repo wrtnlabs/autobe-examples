@@ -19,8 +19,10 @@ export type ICommunityPlatformCommunityReport = {
    *
    * Assigned by the system upon creation. Used as the primary key for referencing this report in moderation workflows and API operations.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from community_platform_community_reports.id. UUID primary key, auto-generated on insert.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_community_reports.id. UUID primary key,
+     *   auto-generated on insert.
    */
   id: string & tags.Format<"uuid">;
 
@@ -29,8 +31,11 @@ export type ICommunityPlatformCommunityReport = {
    *
    * Every report is scoped to exactly one community. This determines which moderators can view, approve, or dismiss the report — only moderators of this community have access to it.
    *
-   * @x-autobe-database-schema-property community
-   * @x-autobe-specification Join from community_platform_community_reports.community_id to community_platform_communities.id. Rendered as ICommunityPlatformCommunity.ISummary.
+     * @x-autobe-database-schema-property community
+     * @x-autobe-specification Join from
+     *   community_platform_community_reports.community_id to
+     *   community_platform_communities.id. Rendered as
+     *   ICommunityPlatformCommunity.ISummary.
    */
   community: ICommunityPlatformCommunity.ISummary;
 
@@ -39,8 +44,12 @@ export type ICommunityPlatformCommunityReport = {
    *
    * Each report records its author for accountability during moderator review. The reporter's identity is visible to moderators when reviewing the report details.
    *
-   * @x-autobe-database-schema-property reporter
-   * @x-autobe-specification Join from community_platform_community_reports.reporter_id to community_platform_members.id. Rendered as ICommunityPlatformMember.ISummary. Records the member who submitted this report for accountability.
+     * @x-autobe-database-schema-property reporter
+     * @x-autobe-specification Join from
+     *   community_platform_community_reports.reporter_id to
+     *   community_platform_members.id. Rendered as
+     *   ICommunityPlatformMember.ISummary. Records the member who submitted
+     *   this report for accountability.
    */
   reporter: ICommunityPlatformMember.ISummary;
 
@@ -49,8 +58,11 @@ export type ICommunityPlatformCommunityReport = {
    *
    * Allowed values are "post" (targeting a post) or "comment" (targeting a comment). This field determines which of targetPost or targetComment is non-null.
    *
-   * @x-autobe-database-schema-property target_type
-   * @x-autobe-specification Direct mapping from community_platform_community_reports.target_type. Discriminator field: 'post' or 'comment'. Determines which of targetPost or targetComment is populated.
+     * @x-autobe-database-schema-property target_type
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_community_reports.target_type. Discriminator field:
+     *   'post' or 'comment'. Determines which of targetPost or targetComment is
+     *   populated.
    */
   targetType: string;
 
@@ -59,8 +71,11 @@ export type ICommunityPlatformCommunityReport = {
    *
    * Exactly one of targetPost or targetComment is non-null, determined by the targetType discriminator. When the report is approved, the referenced post is permanently deleted from the platform.
    *
-   * @x-autobe-database-schema-property targetPost
-   * @x-autobe-specification Join from community_platform_community_reports.target_post_id to community_platform_posts.id when target_type='post'. Rendered as ICommunityPlatformPost.ISummary. Null when target_type='comment'.
+     * @x-autobe-database-schema-property targetPost
+     * @x-autobe-specification Join from
+     *   community_platform_community_reports.target_post_id to
+     *   community_platform_posts.id when target_type='post'. Rendered as
+     *   ICommunityPlatformPost.ISummary. Null when target_type='comment'.
    */
   targetPost: ICommunityPlatformPost.ISummary | null;
 
@@ -69,8 +84,11 @@ export type ICommunityPlatformCommunityReport = {
    *
    * Exactly one of targetPost or targetComment is non-null, determined by the targetType discriminator. When the report is approved, the referenced comment and all its nested replies are permanently deleted.
    *
-   * @x-autobe-database-schema-property targetComment
-   * @x-autobe-specification Join from community_platform_community_reports.target_comment_id to community_platform_comments.id when target_type='comment'. Rendered as ICommunityPlatformComment.ISummary. Null when target_type='post'.
+     * @x-autobe-database-schema-property targetComment
+     * @x-autobe-specification Join from
+     *   community_platform_community_reports.target_comment_id to
+     *   community_platform_comments.id when target_type='comment'. Rendered as
+     *   ICommunityPlatformComment.ISummary. Null when target_type='post'.
    */
   targetComment: ICommunityPlatformComment.ISummary | null;
 
@@ -79,8 +97,10 @@ export type ICommunityPlatformCommunityReport = {
    *
    * This field enables moderators to understand the nature of the alleged violation when reviewing the report. It is required and must contain a meaningful description of why the content violates community standards.
    *
-   * @x-autobe-database-schema-property reason
-   * @x-autobe-specification Direct mapping from community_platform_community_reports.reason. Free-text string provided by the reporter. Must be non-empty.
+     * @x-autobe-database-schema-property reason
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_community_reports.reason. Free-text string provided
+     *   by the reporter. Must be non-empty.
    */
   reason: string;
 
@@ -89,8 +109,11 @@ export type ICommunityPlatformCommunityReport = {
    *
    * Reports progress through a three-state workflow: "pending" (awaiting moderator review), "approved" (moderator agreed — reported content has been deleted), or "dismissed" (moderator disagreed — content remains unchanged). Once resolved, the status is final and cannot be reverted.
    *
-   * @x-autobe-database-schema-property status
-   * @x-autobe-specification Direct mapping from community_platform_community_reports.status. Current resolution state: 'pending' (awaiting review), 'approved' (moderator agreed), or 'dismissed' (moderator disagreed).
+     * @x-autobe-database-schema-property status
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_community_reports.status. Current resolution state:
+     *   'pending' (awaiting review), 'approved' (moderator agreed), or
+     *   'dismissed' (moderator disagreed).
    */
   status: string;
 
@@ -99,8 +122,10 @@ export type ICommunityPlatformCommunityReport = {
    *
    * Set automatically by the system upon report creation. Indicates when the content was flagged for moderator review.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from community_platform_community_reports.created_at. Timestamp set on initial insert, never modified.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_community_reports.created_at. Timestamp set on
+     *   initial insert, never modified.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -109,8 +134,10 @@ export type ICommunityPlatformCommunityReport = {
    *
    * Updated automatically when a moderator approves or dismisses the report. Reflects the most recent status change in the report's lifecycle.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from community_platform_community_reports.updated_at. Timestamp updated when a moderator approves or dismisses the report.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_community_reports.updated_at. Timestamp updated when
+     *   a moderator approves or dismisses the report.
    */
   updated_at: string & tags.Format<"date-time">;
 };
@@ -128,7 +155,10 @@ export namespace ICommunityPlatformCommunityReport {
      *
      * Only reports belonging to this community are returned. The requesting moderator must have moderation authority over the specified community — if they do not, an empty page is returned without revealing report existence.
      *
-     * @x-autobe-specification Optional UUID filter: WHERE community_platform_community_reports.community_id = communityId. Validates that the requesting moderator manages this community — returns empty page if not authorized.
+         * @x-autobe-specification Optional UUID filter: WHERE
+         *   community_platform_community_reports.community_id = communityId.
+         *   Validates that the requesting moderator manages this community —
+         *   returns empty page if not authorized.
      */
     communityId?: (string & tags.Format<"uuid">) | undefined;
 
@@ -137,7 +167,10 @@ export namespace ICommunityPlatformCommunityReport {
      *
      * Defaults to `'pending'` when omitted, directing moderators to actionable reports first. Use `'approved'` or `'dismissed'` for audit and review purposes.
      *
-     * @x-autobe-specification Optional filter: WHERE community_platform_community_reports.status = status. Server defaults to 'pending' when omitted. Allowed values: 'pending', 'approved', 'dismissed'.
+         * @x-autobe-specification Optional filter: WHERE
+         *   community_platform_community_reports.status = status. Server
+         *   defaults to 'pending' when omitted. Allowed values: 'pending',
+         *   'approved', 'dismissed'.
      */
     status?: "pending" | "approved" | "dismissed" | undefined;
 
@@ -146,7 +179,9 @@ export namespace ICommunityPlatformCommunityReport {
      *
      * Allows moderators to find all reports submitted by a particular member for review or audit purposes.
      *
-     * @x-autobe-specification Optional UUID filter: WHERE community_platform_community_reports.reporter_id = reporterId. Filters reports submitted by a specific member.
+         * @x-autobe-specification Optional UUID filter: WHERE
+         *   community_platform_community_reports.reporter_id = reporterId.
+         *   Filters reports submitted by a specific member.
      */
     reporterId?: (string & tags.Format<"uuid">) | undefined;
 
@@ -155,7 +190,9 @@ export namespace ICommunityPlatformCommunityReport {
      *
      * Only reports created at or after this timestamp are returned. Combine with `endDate` to scope results to a specific time window.
      *
-     * @x-autobe-specification Optional ISO 8601 date-time start of range: WHERE community_platform_community_reports.created_at >= startDate. Used with endDate for time-bounded searches.
+         * @x-autobe-specification Optional ISO 8601 date-time start of range:
+         *   WHERE community_platform_community_reports.created_at >= startDate.
+         *   Used with endDate for time-bounded searches.
      */
     startDate?: (string & tags.Format<"date-time">) | undefined;
 
@@ -164,7 +201,9 @@ export namespace ICommunityPlatformCommunityReport {
      *
      * Only reports created at or before this timestamp are returned. Combine with `startDate` to scope results to a specific time window.
      *
-     * @x-autobe-specification Optional ISO 8601 date-time end of range: WHERE community_platform_community_reports.created_at <= endDate. Used with startDate for time-bounded searches.
+         * @x-autobe-specification Optional ISO 8601 date-time end of range:
+         *   WHERE community_platform_community_reports.created_at <= endDate.
+         *   Used with startDate for time-bounded searches.
      */
     endDate?: (string & tags.Format<"date-time">) | undefined;
 
@@ -173,7 +212,8 @@ export namespace ICommunityPlatformCommunityReport {
      *
      * Defaults to `1` when omitted. The first page is page 1 (not 0). Use together with `limit` to navigate through result sets.
      *
-     * @x-autobe-specification Pagination: 1-indexed page number. Defaults to 1 server-side. OFFSET = (page - 1) * limit. Minimum: 1.
+         * @x-autobe-specification Pagination: 1-indexed page number. Defaults
+         *   to 1 server-side. OFFSET = (page - 1) * limit. Minimum: 1.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -182,7 +222,8 @@ export namespace ICommunityPlatformCommunityReport {
      *
      * Defaults to `20` when omitted. The actual number of records returned may be less on the final page. Use together with `page` to control result set size.
      *
-     * @x-autobe-specification Pagination: maximum records per page (1-100). Defaults to 20 server-side. Actual count may be less on last page.
+         * @x-autobe-specification Pagination: maximum records per page (1-100).
+         *   Defaults to 20 server-side. Actual count may be less on last page.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -193,7 +234,9 @@ export namespace ICommunityPlatformCommunityReport {
      *
      * Supported values: `'created_at'` (sort by creation timestamp, default) or `'status'` (sort by resolution status). Use with `sortDirection` to control ordering.
      *
-     * @x-autobe-specification Sort column selector for ORDER BY clause. Allowed: 'created_at' (default) or 'status'. Server defaults to 'created_at' when omitted.
+         * @x-autobe-specification Sort column selector for ORDER BY clause.
+         *   Allowed: 'created_at' (default) or 'status'. Server defaults to
+         *   'created_at' when omitted.
      */
     sortBy?: "created_at" | "status" | undefined;
 
@@ -202,7 +245,9 @@ export namespace ICommunityPlatformCommunityReport {
      *
      * Supported values: `'asc'` (ascending, oldest first) or `'desc'` (descending, newest first). Defaults to `'desc'` when omitted.
      *
-     * @x-autobe-specification Sort direction: 'asc' (ascending) or 'desc' (descending). Server defaults to 'desc' when omitted. Appended to ORDER BY after sortBy column.
+         * @x-autobe-specification Sort direction: 'asc' (ascending) or 'desc'
+         *   (descending). Server defaults to 'desc' when omitted. Appended to
+         *   ORDER BY after sortBy column.
      */
     sortDirection?: "asc" | "desc" | undefined;
   };
@@ -232,8 +277,9 @@ export namespace ICommunityPlatformCommunityReport {
      *
      * Assigned by the system upon report submission.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from community_platform_community_reports.id (UUID, primary key).
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_community_reports.id (UUID, primary key).
      */
     id: string & tags.Format<"uuid">;
 
@@ -242,8 +288,10 @@ export namespace ICommunityPlatformCommunityReport {
      *
      * Determines which target object (post or comment) is populated. Must be either 'post' or 'comment'.
      *
-     * @x-autobe-database-schema-property target_type
-     * @x-autobe-specification Direct mapping from community_platform_community_reports.target_type. Discriminator: 'post' when targeting a post, 'comment' when targeting a comment.
+         * @x-autobe-database-schema-property target_type
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_community_reports.target_type. Discriminator:
+         *   'post' when targeting a post, 'comment' when targeting a comment.
      */
     target_type: string;
 
@@ -252,8 +300,9 @@ export namespace ICommunityPlatformCommunityReport {
      *
      * This field is required and must contain non-whitespace characters. It enables moderators to understand the nature of the alleged violation when reviewing the report.
      *
-     * @x-autobe-database-schema-property reason
-     * @x-autobe-specification Direct mapping from community_platform_community_reports.reason. Free-text explanation.
+         * @x-autobe-database-schema-property reason
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_community_reports.reason. Free-text explanation.
      */
     reason: string;
 
@@ -264,16 +313,19 @@ export namespace ICommunityPlatformCommunityReport {
      * - **approved**: Moderator agreed — the reported content has been deleted
      * - **dismissed**: Moderator disagreed — the content remains unchanged and the report is removed from the active queue
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from community_platform_community_reports.status. Values: 'pending', 'approved', 'dismissed'.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_community_reports.status. Values: 'pending',
+         *   'approved', 'dismissed'.
      */
     status: string;
 
     /**
      * The timestamp when this report was first submitted.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from community_platform_community_reports.created_at (DateTime).
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_community_reports.created_at (DateTime).
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -282,8 +334,10 @@ export namespace ICommunityPlatformCommunityReport {
      *
      * Updated when a moderator resolves the report by approving or dismissing it.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from community_platform_community_reports.updated_at (DateTime). Updated when a moderator approves or dismisses the report.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_community_reports.updated_at (DateTime). Updated
+         *   when a moderator approves or dismisses the report.
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -292,8 +346,11 @@ export namespace ICommunityPlatformCommunityReport {
      *
      * Provides summary information about the reporter, including their username and profile identifier.
      *
-     * @x-autobe-database-schema-property reporter
-     * @x-autobe-specification BELONGS-TO relation: JOIN community_platform_community_reports.reporter_id with community_platform_members.id. Rendered as ICommunityPlatformMember.ISummary.
+         * @x-autobe-database-schema-property reporter
+         * @x-autobe-specification BELONGS-TO relation: JOIN
+         *   community_platform_community_reports.reporter_id with
+         *   community_platform_members.id. Rendered as
+         *   ICommunityPlatformMember.ISummary.
      */
     reporter: ICommunityPlatformMember.ISummary;
 
@@ -302,8 +359,11 @@ export namespace ICommunityPlatformCommunityReport {
      *
      * Only moderators of this community can view, approve, or dismiss the report.
      *
-     * @x-autobe-database-schema-property community
-     * @x-autobe-specification BELONGS-TO relation: JOIN community_platform_community_reports.community_id with community_platform_communities.id. Rendered as ICommunityPlatformCommunity.ISummary.
+         * @x-autobe-database-schema-property community
+         * @x-autobe-specification BELONGS-TO relation: JOIN
+         *   community_platform_community_reports.community_id with
+         *   community_platform_communities.id. Rendered as
+         *   ICommunityPlatformCommunity.ISummary.
      */
     community: ICommunityPlatformCommunity.ISummary;
 
@@ -312,8 +372,12 @@ export namespace ICommunityPlatformCommunityReport {
      *
      * Populated when target_type is 'post'. Null when target_type is 'comment'. When the report is approved, the referenced post is deleted.
      *
-     * @x-autobe-database-schema-property targetPost
-     * @x-autobe-specification BELONGS-TO relation: LEFT JOIN community_platform_community_reports.target_post_id with community_platform_posts.id. Rendered as ICommunityPlatformPost.ISummary. Null when target_type is 'comment'.
+         * @x-autobe-database-schema-property targetPost
+         * @x-autobe-specification BELONGS-TO relation: LEFT JOIN
+         *   community_platform_community_reports.target_post_id with
+         *   community_platform_posts.id. Rendered as
+         *   ICommunityPlatformPost.ISummary. Null when target_type is
+         *   'comment'.
      */
     targetPost: ICommunityPlatformPost.ISummary | null;
 
@@ -322,8 +386,12 @@ export namespace ICommunityPlatformCommunityReport {
      *
      * Populated when target_type is 'comment'. Null when target_type is 'post'. When the report is approved, the referenced comment and all its nested replies are deleted.
      *
-     * @x-autobe-database-schema-property targetComment
-     * @x-autobe-specification BELONGS-TO relation: LEFT JOIN community_platform_community_reports.target_comment_id with community_platform_comments.id. Rendered as ICommunityPlatformComment.ISummary. Null when target_type is 'post'.
+         * @x-autobe-database-schema-property targetComment
+         * @x-autobe-specification BELONGS-TO relation: LEFT JOIN
+         *   community_platform_community_reports.target_comment_id with
+         *   community_platform_comments.id. Rendered as
+         *   ICommunityPlatformComment.ISummary. Null when target_type is
+         *   'post'.
      */
     targetComment: ICommunityPlatformComment.ISummary | null;
   };

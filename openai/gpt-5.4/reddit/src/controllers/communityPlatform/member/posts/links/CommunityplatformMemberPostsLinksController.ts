@@ -26,9 +26,11 @@ export class CommunityplatformMemberPostsLinksController {
    * @param connection
    * @param postId Target post's ID
    * @param body Link content information for the post
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement this operation as creation of a subsidiary record in community_platform_post_links for the parent community_platform_posts row identified by postId.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implement this operation as creation of a
+     *   subsidiary record in community_platform_post_links for the parent
+     *   community_platform_posts row identified by postId.
    *
    * 1. Authenticate the caller as a member.
    * 2. Load the parent post from community_platform_posts by id = :postId and deleted_at IS NULL. If not found, return a not-found business error.
@@ -78,9 +80,10 @@ export class CommunityplatformMemberPostsLinksController {
    * @param postId Target post's ID
    * @param linkId Target link content record's ID
    * @param body Updated post title and link content
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement this operation as an authenticated member-only update of a link-post aggregate.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implement this operation as an authenticated
+     *   member-only update of a link-post aggregate.
    *
    * 1. Resolve the caller as a member identity.
    * 2. Load `community_platform_posts` by `postId`. If no row exists, return a not-found error.
@@ -141,9 +144,11 @@ export class CommunityplatformMemberPostsLinksController {
    * @param connection
    * @param postId Target post identifier.
    * @param linkId Target link subtype identifier under the specified post.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement a service method that permanently removes a community_platform_post_links record identified by linkId under the parent community_platform_posts record identified by postId.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implement a service method that permanently
+     *   removes a community_platform_post_links record identified by linkId
+     *   under the parent community_platform_posts record identified by postId.
    *
    * 1. Load the parent post from community_platform_posts by id = postId. If no post exists, reject the request.
    * 2. Load the link subtype from community_platform_post_links by id = linkId. If no link subtype exists, reject the request.

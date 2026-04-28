@@ -22,7 +22,9 @@ export type IHrmOrganizationDashboard = {
    *
    * Calculated by counting all employee records where status equals 'active' and deleted_at is null. This represents employees who currently have access to the organization and can perform work activities.
    *
-   * @x-autobe-specification COUNT(*) from hrm_employees WHERE organization_id = {organizationId} AND status = 'active' AND deleted_at IS NULL. Computed aggregation, not a direct database column.
+     * @x-autobe-specification COUNT(*) from hrm_employees WHERE organization_id
+     *   = {organizationId} AND status = 'active' AND deleted_at IS NULL.
+     *   Computed aggregation, not a direct database column.
    */
   totalEmployeeCount: number & tags.Type<"int32"> & tags.Minimum<0>;
 
@@ -31,7 +33,9 @@ export type IHrmOrganizationDashboard = {
    *
    * Calculated by summing the duration_minutes field from all timelogs created during the current week (Monday through Sunday) for employees in the organization, then dividing by 60 to convert to hours. Returns 0 if no timelogs exist for the current week.
    *
-   * @x-autobe-specification SUM(duration_minutes) / 60.0 from hrm_timelogs for current week (Monday to Sunday). Computed aggregation, not a direct database column.
+     * @x-autobe-specification SUM(duration_minutes) / 60.0 from hrm_timelogs
+     *   for current week (Monday to Sunday). Computed aggregation, not a direct
+     *   database column.
    */
   hoursThisWeek: number & tags.Minimum<0>;
 
@@ -40,7 +44,9 @@ export type IHrmOrganizationDashboard = {
    *
    * Counts all timesheets with status 'submitted' that have not yet been approved or rejected. These timesheets require manager or owner review before time entries can be locked.
    *
-   * @x-autobe-specification COUNT(*) from hrm_timesheets WHERE status = 'submitted' AND deleted_at IS NULL. Computed aggregation, not a direct database column.
+     * @x-autobe-specification COUNT(*) from hrm_timesheets WHERE status =
+     *   'submitted' AND deleted_at IS NULL. Computed aggregation, not a direct
+     *   database column.
    */
   pendingTimesheetCount: number & tags.Type<"int32"> & tags.Minimum<0>;
 
@@ -49,7 +55,10 @@ export type IHrmOrganizationDashboard = {
    *
    * Calculated by dividing total actual hours logged (from timelogs) by total budget hours (from projects) and multiplying by 100. Returns null if no active projects have budget_hours specified. Values range from 0 to 100, where 100 indicates budget is fully consumed.
    *
-   * @x-autobe-specification (SUM(actual_hours) / SUM(budget_hours)) * 100 from hrm_projects WHERE status = 'active' AND budget_hours IS NOT NULL. Returns null if no projects have budget_hours. Computed aggregation, not a direct database column.
+     * @x-autobe-specification (SUM(actual_hours) / SUM(budget_hours)) * 100
+     *   from hrm_projects WHERE status = 'active' AND budget_hours IS NOT NULL.
+     *   Returns null if no projects have budget_hours. Computed aggregation,
+     *   not a direct database column.
    */
   budgetUtilization: (number & tags.Minimum<0> & tags.Maximum<100>) | null;
 
@@ -58,7 +67,10 @@ export type IHrmOrganizationDashboard = {
    *
    * Calculated by joining employee records with timelogs from the current week, grouping by employee, summing their hours, and ordering descending. Each entry includes the employee summary (from IHrmEmployee.ISummary) and their total hours for the week. Empty array if no employees logged time this week.
    *
-   * @x-autobe-specification SELECT hrm_employees JOIN hrm_timelogs GROUP BY employee ORDER BY SUM(duration_minutes) DESC LIMIT 5. Returns IHrmEmployee.ISummary array with computed hours. Computed aggregation, not a direct database column.
+     * @x-autobe-specification SELECT hrm_employees JOIN hrm_timelogs GROUP BY
+     *   employee ORDER BY SUM(duration_minutes) DESC LIMIT 5. Returns
+     *   IHrmEmployee.ISummary array with computed hours. Computed aggregation,
+     *   not a direct database column.
    */
   topEmployees: IHrmEmployee.ISummary[] & tags.MaxItems<5>;
 };

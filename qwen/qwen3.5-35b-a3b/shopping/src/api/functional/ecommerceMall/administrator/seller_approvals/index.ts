@@ -22,7 +22,8 @@ export * as pending from "./pending/index";
  * @param props.body Search criteria including status filter, date ranges, pagination parameters, and optional seller email search.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor administrator
- * @x-autobe-specification Query ecommerce_mall_seller_approval_requests table with pagination and filtering.
+ * @x-autobe-specification Query ecommerce_mall_seller_approval_requests table
+ *   with pagination and filtering.
  *
  * Apply search filters on:
  * - status: filter by pending, approved, or rejected (default shows all)
@@ -124,7 +125,8 @@ export namespace index {
  * @param props.requestId UUID of the seller approval request to retrieve
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor administrator
- * @x-autobe-specification Query the ecommerce_mall_seller_approval_requests table by UUID id.
+ * @x-autobe-specification Query the ecommerce_mall_seller_approval_requests
+ *   table by UUID id.
  *
  * Apply soft-delete filtering: exclude records where deleted_at is not null.
  *
@@ -216,7 +218,8 @@ export namespace at {
  * @param props.body Update data including new approval status and optional rejection reason.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor administrator
- * @x-autobe-specification Query ecommerce_mall_seller_approval_requests by UUID requestId.
+ * @x-autobe-specification Query ecommerce_mall_seller_approval_requests by UUID
+ *   requestId.
  *
  * Validate:
  * - Request exists and has status 'pending'

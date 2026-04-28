@@ -27,7 +27,7 @@ import { IEcommerceMallSuperAdministrator } from "./IEcommerceMallSuperAdministr
  */
 export type IEcommerceMallAdministratorApprovalRequests = {
   /**
-   * @x-autobe-database-schema-property id
+     * @x-autobe-database-schema-property id
    */
   id: string & tags.Format<"uuid">;
 
@@ -39,40 +39,43 @@ export type IEcommerceMallAdministratorApprovalRequests = {
    * - `approved`: Request approved, new administrator account created
    * - `rejected`: Request denied by super administrator
    *
-   * @x-autobe-specification Direct mapping from ecommerce_mall_administrator_approval_requests.status column. String type. Valid values: pending, approved, rejected (documented in description).
-   * @x-autobe-database-schema-property status
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_administrator_approval_requests.status column. String
+     *   type. Valid values: pending, approved, rejected (documented in
+     *   description).
+     * @x-autobe-database-schema-property status
    */
   status: string;
   /**
-   * @x-autobe-database-schema-property reason
+     * @x-autobe-database-schema-property reason
    */
   reason: string;
   /**
-   * @x-autobe-database-schema-property created_at
+     * @x-autobe-database-schema-property created_at
    */
   created_at: string & tags.Format<"date-time">;
   /**
-   * @x-autobe-database-schema-property updated_at
+     * @x-autobe-database-schema-property updated_at
    */
   updated_at: string & tags.Format<"date-time">;
   /**
-   * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-database-schema-property deleted_at
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
   /**
-   * @x-autobe-database-schema-property requestingMember
+     * @x-autobe-database-schema-property requestingMember
    */
   requestingMember: IEcommerceMallMember.ISummary | null;
   /**
-   * @x-autobe-database-schema-property requestingSeller
+     * @x-autobe-database-schema-property requestingSeller
    */
   requestingSeller: IEcommerceMallSeller.ISummary | null;
   /**
-   * @x-autobe-database-schema-property reviewingSuperAdmin
+     * @x-autobe-database-schema-property reviewingSuperAdmin
    */
   reviewingSuperAdmin: IEcommerceMallSuperAdministrator.ISummary | null;
   /**
-   * @x-autobe-database-schema-property createdAdmin
+     * @x-autobe-database-schema-property createdAdmin
    */
   createdAdmin: IEcommerceMallAdministrator.ISummary | null;
 };
@@ -125,7 +128,8 @@ export namespace IEcommerceMallAdministratorApprovalRequests {
      *
      * UUID of the last item from the previous page to continue fetching results. When null or omitted, returns the first page of results. Used in combination with `limit` for efficient pagination of large datasets.
      *
-     * @x-autobe-specification UUID of the last item from the previous page for cursor-based pagination.
+         * @x-autobe-specification UUID of the last item from the previous page
+         *   for cursor-based pagination.
      *
      * When provided, the API returns the next page of results after this cursor. For `newest_first` sorting, this means records with id < cursor. For `oldest_first`, records with id > cursor. When null or omitted, returns the first page.
      */
@@ -136,7 +140,8 @@ export namespace IEcommerceMallAdministratorApprovalRequests {
      *
      * ISO 8601 datetime string (e.g., "2024-01-15T00:00:00Z"). Filters administrator approval requests by submission date, returning only requests created on or after this date. When null or omitted, no minimum date filter is applied.
      *
-     * @x-autobe-specification ISO 8601 datetime string representing the start of the date range filter.
+         * @x-autobe-specification ISO 8601 datetime string representing the
+         *   start of the date range filter.
      *
      * Filters requests where created_at >= fromDate. When null or omitted, no lower bound filter is applied to the submission date.
      */
@@ -147,7 +152,8 @@ export namespace IEcommerceMallAdministratorApprovalRequests {
      *
      * Integer between 1 and 100, defaults to 20. Limits the number of administrator approval request records returned in a single response page. Used in combination with pagination parameters for efficient result browsing.
      *
-     * @x-autobe-specification Maximum number of results to return per page (1-100).
+         * @x-autobe-specification Maximum number of results to return per page
+         *   (1-100).
      *
      * Default value: 20. The API will clamp the value to the 1-100 range if provided outside this bounds. Used with cursor-based or page-based pagination.
      */
@@ -160,7 +166,8 @@ export namespace IEcommerceMallAdministratorApprovalRequests {
      *
      * Enum: `newest_first` (results sorted by submission date, newest first - default) or `oldest_first` (results sorted by submission date, oldest first). Controls the chronological ordering of returned approval requests.
      *
-     * @x-autobe-specification Sort order for results: 'newest_first' (ORDER BY created_at DESC) or 'oldest_first' (ORDER BY created_at ASC).
+         * @x-autobe-specification Sort order for results: 'newest_first' (ORDER
+         *   BY created_at DESC) or 'oldest_first' (ORDER BY created_at ASC).
      *
      * Default: 'newest_first'. Controls the order in which approval requests are returned in the response.
      */
@@ -171,7 +178,9 @@ export namespace IEcommerceMallAdministratorApprovalRequests {
      *
      * Enum: `pending` (awaiting super administrator review), `approved` (request approved, administrator account created), or `rejected` (request denied). Filters the results to show only requests with the specified status.
      *
-     * @x-autobe-specification Filter by approval request status: 'pending' (awaiting review), 'approved' (approved and admin created), or 'rejected' (denied).
+         * @x-autobe-specification Filter by approval request status: 'pending'
+         *   (awaiting review), 'approved' (approved and admin created), or
+         *   'rejected' (denied).
      *
      * When provided, only requests matching the specified status are returned. Multiple values are supported via query array or repeated parameters.
      */
@@ -182,7 +191,8 @@ export namespace IEcommerceMallAdministratorApprovalRequests {
      *
      * ISO 8601 datetime string (e.g., "2024-01-15T23:59:59Z"). Filters administrator approval requests by submission date, returning only requests created on or before this date. When null or omitted, no maximum date filter is applied.
      *
-     * @x-autobe-specification ISO 8601 datetime string representing the end of the date range filter.
+         * @x-autobe-specification ISO 8601 datetime string representing the end
+         *   of the date range filter.
      *
      * Filters requests where created_at <= toDate. When null or omitted, no upper bound filter is applied to the submission date.
      */
@@ -193,7 +203,8 @@ export namespace IEcommerceMallAdministratorApprovalRequests {
      *
      * 1-indexed integer representing the page to retrieve (1 = first page, 2 = second page, etc.). Used in combination with `limit` for traditional page-based pagination. When null or omitted, cursor-based pagination is used instead.
      *
-     * @x-autobe-specification 1-indexed page number for traditional pagination (alternative to cursor-based).
+         * @x-autobe-specification 1-indexed page number for traditional
+         *   pagination (alternative to cursor-based).
      *
      * When provided, returns the specified page of results. Page numbering starts from 1. Used in combination with `limit` for traditional page-based pagination instead of cursor-based.
      */

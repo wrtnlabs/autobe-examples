@@ -34,9 +34,10 @@ export class CommunityplatformMemberPostsCommentsVotesController {
    * @param postId Target post ID that scopes the comment voting context.
    * @param commentId Target comment ID within the given post.
    * @param body Vote submission payload indicating the desired vote direction for the target comment.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification In service layer, handle member vote submission on a comment scoped by post.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification In service layer, handle member vote submission
+     *   on a comment scoped by post.
    *
    * Algorithm:
    * 1) Authenticate requester as member; otherwise return authorization error.
@@ -121,11 +122,11 @@ export class CommunityplatformMemberPostsCommentsVotesController {
    * @param postId Target post identifier that provides the context for the comment vote.
    * @param commentId Target comment identifier whose vote is being cast/changed.
    * @param body Vote request specifying the desired voting action/direction for the authenticated member on the target comment.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1) Authentication & identity
-   * - Require authenticated member.
-   * - Resolve voterId from the authenticated member identity (map to community_platform_members.id).
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification 1) Authentication & identity - Require
+     *   authenticated member. - Resolve voterId from the authenticated member
+     *   identity (map to community_platform_members.id).
    *
    * 2) Target validation
    * - Load `community_platform_posts` by id = postId, ensure it is not hard-missing.
@@ -216,18 +217,23 @@ export class CommunityplatformMemberPostsCommentsVotesController {
    * @param postId Target post ID that scopes the comment discussion.
    * @param commentId Target comment ID within the post discussion.
    * @param voteId Primary identifier of the comment vote record to retrieve.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation steps:
-   * 1) Validate path parameters as UUIDs.
-   * 2) Load the comment from community_platform_comments by id=commentId and ensure it belongs to the given postId via community_platform_comments.community_platform_post_id. If mismatch or missing, return a not-found error.
-   * 3) Load community_platform_comment_votes by id=voteId and comment_id=commentId.
-   *    - If no record exists, return not-found.
-   *    - If deleted_at is not null, treat the vote as removed: return not-found (do not expose removed vote direction).
-   * 4) Authorization checks:
-   *    - Resolve the authenticated member from the session.
-   *    - Enforce that the requesting actor is allowed to view this vote record in the current context (at minimum, the vote.voter_id must match the requesting member id; also enforce that the post/comment is viewable in general).
-   * 5) Return the mapped DTO for the vote, including vote_direction/value and voted_at as defined by the DTO for ICommunityPlatformCommentVote.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation steps: 1) Validate path parameters
+     *   as UUIDs. 2) Load the comment from community_platform_comments by
+     *   id=commentId and ensure it belongs to the given postId via
+     *   community_platform_comments.community_platform_post_id. If mismatch or
+     *   missing, return a not-found error. 3) Load
+     *   community_platform_comment_votes by id=voteId and comment_id=commentId.
+     *   - If no record exists, return not-found. - If deleted_at is not null,
+     *   treat the vote as removed: return not-found (do not expose removed vote
+     *   direction). 4) Authorization checks: - Resolve the authenticated member
+     *   from the session. - Enforce that the requesting actor is allowed to
+     *   view this vote record in the current context (at minimum, the
+     *   vote.voter_id must match the requesting member id; also enforce that
+     *   the post/comment is viewable in general). 5) Return the mapped DTO for
+     *   the vote, including vote_direction/value and voted_at as defined by the
+     *   DTO for ICommunityPlatformCommentVote.
    *
    * Database access:
    * - Query community_platform_comments for comment existence and post scoping.
@@ -281,9 +287,9 @@ export class CommunityplatformMemberPostsCommentsVotesController {
    * @param commentId Target comment ID within the post discussion.
    * @param voteId Identifier of the member's vote record to update.
    * @param body Vote update payload including the desired vote direction for the specified comment.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1) Parse path params: postId, commentId, voteId.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification 1) Parse path params: postId, commentId, voteId.
    *
    * 2) Load `community_platform_comments` by id=commentId and verify `community_platform_post_id` == postId.
    *    - If not found, throw NotFound.
@@ -354,9 +360,9 @@ export class CommunityplatformMemberPostsCommentsVotesController {
    * @param postId Target post ID that scopes the discussion context for the comment.
    * @param commentId Target comment ID whose vote is being removed.
    * @param voteId Target vote record ID to permanently remove.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation steps:
    *
    * 1) Parse path parameters: postId, commentId, voteId.
    *

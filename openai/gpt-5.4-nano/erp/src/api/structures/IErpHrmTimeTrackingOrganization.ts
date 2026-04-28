@@ -8,56 +8,66 @@ export type IErpHrmTimeTrackingOrganization = {
   /**
    * Unique identifier (UUID) of the organization tenant.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Return erp_hrm_time_tracking_organizations.id as-is from the selected organization row.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Return erp_hrm_time_tracking_organizations.id
+     *   as-is from the selected organization row.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Human-friendly organization name shown in tenant context.
    *
-   * @x-autobe-database-schema-property name
-   * @x-autobe-specification Return erp_hrm_time_tracking_organizations.name as-is. This is globally unique across organizations per @@unique([name]) at persistence layer.
+     * @x-autobe-database-schema-property name
+     * @x-autobe-specification Return erp_hrm_time_tracking_organizations.name
+     *   as-is. This is globally unique across organizations per
+     *   @@unique([name]) at persistence layer.
    */
   name: string;
 
   /**
    * Brief internal description of the organization for contextual display.
    *
-   * @x-autobe-database-schema-property description
-   * @x-autobe-specification Return erp_hrm_time_tracking_organizations.description as-is.
+     * @x-autobe-database-schema-property description
+     * @x-autobe-specification Return
+     *   erp_hrm_time_tracking_organizations.description as-is.
    */
   description: string;
 
   /**
    * Optional logo image URL for branding the organization in the tenant selector.
    *
-   * @x-autobe-database-schema-property logo_url
-   * @x-autobe-specification Return erp_hrm_time_tracking_organizations.logo_url. If the DB value is NULL, return null.
+     * @x-autobe-database-schema-property logo_url
+     * @x-autobe-specification Return
+     *   erp_hrm_time_tracking_organizations.logo_url. If the DB value is NULL,
+     *   return null.
    */
   logo_url: (string & tags.Format<"uri">) | null;
 
   /**
    * Organization currency code used for financial framing and monetary displays.
    *
-   * @x-autobe-database-schema-property currency_code
-   * @x-autobe-specification Return erp_hrm_time_tracking_organizations.currency_code as-is.
+     * @x-autobe-database-schema-property currency_code
+     * @x-autobe-specification Return
+     *   erp_hrm_time_tracking_organizations.currency_code as-is.
    */
   currency_code: string;
 
   /**
    * IANA timezone identifier used to interpret date/time values within this organization.
    *
-   * @x-autobe-database-schema-property timezone
-   * @x-autobe-specification Return erp_hrm_time_tracking_organizations.timezone as-is (IANA timezone identifier).
+     * @x-autobe-database-schema-property timezone
+     * @x-autobe-specification Return
+     *   erp_hrm_time_tracking_organizations.timezone as-is (IANA timezone
+     *   identifier).
    */
   timezone: string;
 
   /**
    * Fiscal period start month as an integer from 1 to 12.
    *
-   * @x-autobe-database-schema-property fiscal_start_month
-   * @x-autobe-specification Return erp_hrm_time_tracking_organizations.fiscal_start_month as-is.
+     * @x-autobe-database-schema-property fiscal_start_month
+     * @x-autobe-specification Return
+     *   erp_hrm_time_tracking_organizations.fiscal_start_month as-is.
    */
   fiscal_start_month: number &
     tags.Type<"int32"> &
@@ -67,24 +77,30 @@ export type IErpHrmTimeTrackingOrganization = {
   /**
    * Timestamp when the organization record was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Return erp_hrm_time_tracking_organizations.created_at as-is (creation timestamp).
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Return
+     *   erp_hrm_time_tracking_organizations.created_at as-is (creation
+     *   timestamp).
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the organization record was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Return erp_hrm_time_tracking_organizations.updated_at as-is (last update timestamp).
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Return
+     *   erp_hrm_time_tracking_organizations.updated_at as-is (last update
+     *   timestamp).
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * Soft-deletion timestamp; null means the organization is not deleted.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Return erp_hrm_time_tracking_organizations.deleted_at. If the DB value is NULL, return null (organization is active).
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Return
+     *   erp_hrm_time_tracking_organizations.deleted_at. If the DB value is
+     *   NULL, return null (organization is active).
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -96,48 +112,64 @@ export namespace IErpHrmTimeTrackingOrganization {
     /**
      * Organization name (tenant display name). Must be globally unique across organizations.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_organizations.name. Persistence layer must enforce the unique constraint @@unique([name]); reject updates that cause a conflict. Validate string per business rules where applicable.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_tracking_organizations.name. Persistence layer must
+         *   enforce the unique constraint @@unique([name]); reject updates that
+         *   cause a conflict. Validate string per business rules where
+         *   applicable.
      */
     name?: string | undefined;
 
     /**
      * Organization description text shown in the tenant context.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_organizations.description. Persist only when provided in the patch body.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_tracking_organizations.description. Persist only when
+         *   provided in the patch body.
      */
     description?: string | undefined;
 
     /**
      * Optional logo image URL for the organization branding. Accepts null to remove the logo.
      *
-     * @x-autobe-database-schema-property logo_url
-     * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_organizations.logo_url (nullable). If logo_url is provided, validate it as a syntactically valid URL before persisting; allow null to clear the logo.
+         * @x-autobe-database-schema-property logo_url
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_tracking_organizations.logo_url (nullable). If
+         *   logo_url is provided, validate it as a syntactically valid URL
+         *   before persisting; allow null to clear the logo.
      */
     logo_url?: (string & tags.MaxLength<80000>) | null | undefined;
 
     /**
      * Currency code used by the organization for financial framing.
      *
-     * @x-autobe-database-schema-property currency_code
-     * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_organizations.currency_code. Validate that the value matches a supported currency code / required format before persisting.
+         * @x-autobe-database-schema-property currency_code
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_tracking_organizations.currency_code. Validate that
+         *   the value matches a supported currency code / required format
+         *   before persisting.
      */
     currency_code?: string | undefined;
 
     /**
      * IANA timezone identifier used to interpret date/time values for the organization.
      *
-     * @x-autobe-database-schema-property timezone
-     * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_organizations.timezone. Validate that the string is a valid IANA timezone identifier before persisting.
+         * @x-autobe-database-schema-property timezone
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_tracking_organizations.timezone. Validate that the
+         *   string is a valid IANA timezone identifier before persisting.
      */
     timezone?: string | undefined;
 
     /**
      * Fiscal calendar start month (1-12) for the organization.
      *
-     * @x-autobe-database-schema-property fiscal_start_month
-     * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_organizations.fiscal_start_month. Must be an integer in the range 1..12; reject invalid values.
+         * @x-autobe-database-schema-property fiscal_start_month
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_tracking_organizations.fiscal_start_month. Must be an
+         *   integer in the range 1..12; reject invalid values.
      */
     fiscal_start_month?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<12>)
@@ -151,48 +183,59 @@ export namespace IErpHrmTimeTrackingOrganization {
     /**
      * Human-friendly unique organization name used as the tenant identifier during onboarding and context selection.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from request.name to erp_hrm_time_tracking_organizations.name. Persist as-is. Rely on the DB unique constraint @@unique([name]) to reject duplicates.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from request.name to
+         *   erp_hrm_time_tracking_organizations.name. Persist as-is. Rely on
+         *   the DB unique constraint @@unique([name]) to reject duplicates.
      */
     name: string;
 
     /**
      * Internal/contextual description of the organization shown within tenant-selection and configuration UIs.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from request.description to erp_hrm_time_tracking_organizations.description. Persist as-is.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from request.description to
+         *   erp_hrm_time_tracking_organizations.description. Persist as-is.
      */
     description: string;
 
     /**
      * Optional branding logo URL for the organization. Null means no logo has been set.
      *
-     * @x-autobe-database-schema-property logo_url
-     * @x-autobe-specification Direct mapping from request.logo_url to erp_hrm_time_tracking_organizations.logo_url. If the property is omitted or explicitly null, persist NULL in the database.
+         * @x-autobe-database-schema-property logo_url
+         * @x-autobe-specification Direct mapping from request.logo_url to
+         *   erp_hrm_time_tracking_organizations.logo_url. If the property is
+         *   omitted or explicitly null, persist NULL in the database.
      */
     logo_url?: string | null | undefined;
 
     /**
      * Organization currency code used for payroll/financial framing in time-tracking calculations and displays.
      *
-     * @x-autobe-database-schema-property currency_code
-     * @x-autobe-specification Direct mapping from request.currency_code to erp_hrm_time_tracking_organizations.currency_code. Persist as-is.
+         * @x-autobe-database-schema-property currency_code
+         * @x-autobe-specification Direct mapping from request.currency_code to
+         *   erp_hrm_time_tracking_organizations.currency_code. Persist as-is.
      */
     currency_code: string;
 
     /**
      * IANA timezone identifier used to interpret time and date values for all organization-scoped reporting.
      *
-     * @x-autobe-database-schema-property timezone
-     * @x-autobe-specification Direct mapping from request.timezone to erp_hrm_time_tracking_organizations.timezone. Persist as the provided IANA timezone string and do not transform on write.
+         * @x-autobe-database-schema-property timezone
+         * @x-autobe-specification Direct mapping from request.timezone to
+         *   erp_hrm_time_tracking_organizations.timezone. Persist as the
+         *   provided IANA timezone string and do not transform on write.
      */
     timezone: string;
 
     /**
      * The month number (1-12) that defines the start of the organization's fiscal period.
      *
-     * @x-autobe-database-schema-property fiscal_start_month
-     * @x-autobe-specification Direct mapping from request.fiscal_start_month to erp_hrm_time_tracking_organizations.fiscal_start_month. Enforce integer 1..12 as per DTO schema; persist as-is.
+         * @x-autobe-database-schema-property fiscal_start_month
+         * @x-autobe-specification Direct mapping from
+         *   request.fiscal_start_month to
+         *   erp_hrm_time_tracking_organizations.fiscal_start_month. Enforce
+         *   integer 1..12 as per DTO schema; persist as-is.
      */
     fiscal_start_month: number &
       tags.Type<"int32"> &
@@ -207,22 +250,34 @@ export namespace IErpHrmTimeTrackingOrganization {
     /**
      * Organization (tenant) identifier whose stored timezone interpretation will be rebuilt across organization-scoped time reporting views.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_organizations.id. The server must use this UUID to load the organization row and scope authorization and rebuild workflow to exactly this organization.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_tracking_organizations.id. The server must use this
+         *   UUID to load the organization row and scope authorization and
+         *   rebuild workflow to exactly this organization.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Target page number (1-indexed) for any rebuild-related listing that may be returned by the server. Defaults to 1 when omitted.
      *
-     * @x-autobe-specification Treat as an optional pagination hint for any list-like data that the server might include in a rebuild-related response (if the implementation chooses to return such data). Page does not change which organization is rebuilt; organization scope is determined only by id. If omitted or null, the default page is 1 (first page).
+         * @x-autobe-specification Treat as an optional pagination hint for any
+         *   list-like data that the server might include in a rebuild-related
+         *   response (if the implementation chooses to return such data). Page
+         *   does not change which organization is rebuilt; organization scope
+         *   is determined only by id. If omitted or null, the default page is 1
+         *   (first page).
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
 
     /**
      * Maximum number of records per page for any rebuild-related listing the server may return. Defaults to 100 when omitted.
      *
-     * @x-autobe-specification Treat as an optional pagination hint (maximum records per page) for any rebuild-related listing that the server may include (if applicable). It does not affect which organization is rebuilt; organization scope is determined only by id. If omitted or null, the default limit is 100. Server may enforce upper bounds.
+         * @x-autobe-specification Treat as an optional pagination hint (maximum
+         *   records per page) for any rebuild-related listing that the server
+         *   may include (if applicable). It does not affect which organization
+         *   is rebuilt; organization scope is determined only by id. If omitted
+         *   or null, the default limit is 100. Server may enforce upper bounds.
      */
     limit?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };

@@ -56,7 +56,9 @@ export namespace IMallPlatformProductSnapshot {
      *
      * This controls which portion of snapshot history is returned. It is used only for pagination and is not stored in the database.
      *
-     * @x-autobe-specification Use as the 1-indexed page number for the product snapshot history query against mall_platform_product_snapshots scoped by the route parameter.
+         * @x-autobe-specification Use as the 1-indexed page number for the
+         *   product snapshot history query against
+         *   mall_platform_product_snapshots scoped by the route parameter.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -65,7 +67,9 @@ export namespace IMallPlatformProductSnapshot {
      *
      * This controls page size for the history query. It is used only for pagination and is not stored in the database.
      *
-     * @x-autobe-specification Use as the maximum number of snapshot records returned per page for the product snapshot history query against mall_platform_product_snapshots scoped by the route parameter.
+         * @x-autobe-specification Use as the maximum number of snapshot records
+         *   returned per page for the product snapshot history query against
+         *   mall_platform_product_snapshots scoped by the route parameter.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -76,7 +80,10 @@ export namespace IMallPlatformProductSnapshot {
      *
      * This controls how the returned list is ordered. It is a query-only value and is not stored in the database.
      *
-     * @x-autobe-specification Use as the optional ordering directive for the product snapshot history query against mall_platform_product_snapshots. Apply it only within the route-scoped product context.
+         * @x-autobe-specification Use as the optional ordering directive for
+         *   the product snapshot history query against
+         *   mall_platform_product_snapshots. Apply it only within the
+         *   route-scoped product context.
      */
     sort?: string | null | undefined;
 
@@ -85,7 +92,9 @@ export namespace IMallPlatformProductSnapshot {
      *
      * This narrows the history to snapshots of the selected kind. It is a query-only filter and is not stored as part of the request data.
      *
-     * @x-autobe-specification Use as an optional filter on mall_platform_product_snapshots.snapshot_kind when browsing product snapshot history for the product identified by the route parameter.
+         * @x-autobe-specification Use as an optional filter on
+         *   mall_platform_product_snapshots.snapshot_kind when browsing product
+         *   snapshot history for the product identified by the route parameter.
      */
     snapshotKind?: string | null | undefined;
 
@@ -94,7 +103,9 @@ export namespace IMallPlatformProductSnapshot {
      *
      * This narrows the history to snapshots created on or after the supplied timestamp. It is a query-only filter and is not stored in the database.
      *
-     * @x-autobe-specification Use as the inclusive lower bound for mall_platform_product_snapshots.created_at when browsing product snapshot history for the route-scoped product.
+         * @x-autobe-specification Use as the inclusive lower bound for
+         *   mall_platform_product_snapshots.created_at when browsing product
+         *   snapshot history for the route-scoped product.
      */
     createdAtFrom?: (string & tags.Format<"date-time">) | null | undefined;
 
@@ -103,7 +114,9 @@ export namespace IMallPlatformProductSnapshot {
      *
      * This narrows the history to snapshots created on or before the supplied timestamp. It is a query-only filter and is not stored in the database.
      *
-     * @x-autobe-specification Use as the inclusive upper bound for mall_platform_product_snapshots.created_at when browsing product snapshot history for the route-scoped product.
+         * @x-autobe-specification Use as the inclusive upper bound for
+         *   mall_platform_product_snapshots.created_at when browsing product
+         *   snapshot history for the route-scoped product.
      */
     createdAtTo?: (string & tags.Format<"date-time">) | null | undefined;
   };

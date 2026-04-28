@@ -21,9 +21,10 @@ export class RedditcommunityAdminCommunitiesReportsController {
    * @param connection
    * @param communityCode Unique identifier for the community. Must be the community's code field value which is globally unique within the system.
    * @param body Search criteria and pagination parameters for retrieving the report queue.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query reddit_community_reports table with the following constraints and filters:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Query reddit_community_reports table with the
+     *   following constraints and filters:
    *
    * 1. Filter by community_id to match the {communityCode} path parameter - only return reports belonging to the specified community
    * 2. Filter by status_id = 0 (pending) - only return unresolved reports awaiting moderator review
@@ -72,9 +73,10 @@ export class RedditcommunityAdminCommunitiesReportsController {
    * @param connection
    * @param communityId The unique identifier of the community. Moderators can only view reports for communities where they hold moderator privileges.
    * @param body Search and filter criteria for reports, including status filtering, date range, search text, and pagination parameters.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query reddit_community_reports table filtered by community_id.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Query reddit_community_reports table filtered by
+     *   community_id.
    *
    * 1. Validate that the authenticated user has moderator privileges for the specified community by checking reddit_community_moderator_roles table.
    *

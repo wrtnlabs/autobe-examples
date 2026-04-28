@@ -25,9 +25,11 @@ export class CommunityMemberFeedController {
    *
    * @param connection
    * @param body Search, sort, time-range filter, and pagination parameters for the home feed.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1. Authentication: Verify the requesting actor is an authenticated member. Extract the member's ID from the JWT/session token. Return 401 if unauthenticated.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification 1. Authentication: Verify the requesting actor is
+     *   an authenticated member. Extract the member's ID from the JWT/session
+     *   token. Return 401 if unauthenticated.
    *
    * 2. Fetch active subscriptions: Query community_subscriptions WHERE community_member_id = <currentMemberId> AND deleted_at IS NULL to get the set of community_community_ids the member is subscribed to. If this set is empty, return an empty paginated response immediately.
    *

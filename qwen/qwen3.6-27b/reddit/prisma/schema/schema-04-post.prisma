@@ -1,0 +1,453 @@
+/// Main post entity representing user-generated content in communities.
+///
+/// Posts are discussion contributions that allow members to share ideas,
+/// information, or media within a subscribed community. Each post belongs to
+/// exactly one community and is authored by exactly one member. Posts
+/// support three mutually exclusive content types: text posts with written
+/// body content, link posts with external URLs, and image posts managed via
+/// a separate attachment table.
+///
+/// @namespace post
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_community_posts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the post entity.
+  id String @id
+  
+  /// References the member who authored this post.
+  ///
+  /// Each post is permanently associated with its creating member. The author
+  /// retains exclusive editing and deletion rights for their posts.
+  author_id String
+  
+  /// References the community where this post belongs.
+  ///
+  /// Posts exist within the context of a specific community. Members must
+  /// maintain an active subscription to create posts in that community.
+  community_id String
+  
+  /// Required title that summarizes the post topic or purpose.
+  title String
+  
+  /// Content type of the post.
+  ///
+  /// One of three mutually exclusive values: 'text' for text posts with body
+  /// content, 'link' for link posts with external URLs, or 'image' for image
+  /// posts with uploaded images.
+  post_type String
+  
+  /// Written content body for text-type posts.
+  ///
+  /// Only populated when post_type is 'text'. Null for link and image post
+  /// types.
+  body String?
+  
+  /// External web address for link-type posts.
+  ///
+  /// Only populated when post_type is 'link'. Null for text and image post
+  /// types.
+  url String?
+  
+  /// Timestamp when the post was originally created.
+  created_at DateTime
+  
+  /// Timestamp when the post was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the post was soft-deleted.
+  ///
+  /// Null indicates the post is active. When set, the post is marked as
+  /// deleted but retains its record for audit purposes.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  author reddit_like_community_members @relation(fields: [author_id], references: [id], onDelete: Cascade)
+  community reddit_like_community_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  snapshots reddit_like_community_post_snapshots[]
+  postComments reddit_like_community_post_comments[]
+  postImage reddit_like_community_post_images?
+  comments reddit_like_community_comments[]
+  commentCommentSnapshots reddit_like_community_comment_snapshots[]
+  postVotes reddit_like_community_post_votes[]
+  reportOnPosts reddit_like_community_report_on_posts[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([community_id, created_at])
+  @@index([author_id, created_at])
+  @@index([post_type])
+  @@index([deleted_at])
+}
+
+/// Point-in-time snapshots of posts for audit trail, content recovery, and
+/// lifecycle tracking.
+///
+/// Each snapshot captures the complete state of a {@link
+/// reddit_like_community_posts} post at the moment it was created or edited.
+/// This enables content editors and moderators to review historical
+/// versions, recover previously edited content, and track how post content
+/// evolved over time.
+///
+/// Snapshots are append-only records that are never modified once created.
+/// They store denormalized copies of post attributes including the community
+/// and author references to ensure historical accuracy independent of any
+/// future changes to the original post or its associated entities.
+///
+/// @namespace post
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_community_post_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key uniquely identifying this post snapshot record.
+  id String @id
+  
+  /// Reference to the {@link reddit_like_community_posts} post this snapshot
+  /// captures.
+  ///
+  /// Multiple snapshots can exist for the same post, each representing a
+  /// different point in time. This FK is created when a post is first
+  /// published and whenever it is subsequently edited.
+  reddit_like_community_post_id String
+  
+  /// Reference to the {@link reddit_like_community_communities} community the
+  /// post belonged to at the time of this snapshot.
+  ///
+  /// This field is denormalized from the original post to ensure the snapshot
+  /// retains the community context even if the post were to be moved or the
+  /// community modified after the snapshot was taken.
+  reddit_like_community_community_id String
+  
+  /// Reference to the {@link reddit_like_community_members} member who
+  /// authored the post at the time of this snapshot.
+  ///
+  /// This field is denormalized from the original post to preserve the
+  /// authorship record regardless of any subsequent changes to the author's
+  /// account.
+  reddit_like_community_member_id String
+  
+  /// The title of the post at the time this snapshot was taken.
+  ///
+  /// This required field captures the exact title text that existed when this
+  /// snapshot was created. For text and link posts this contains the full
+  /// title; for image posts it may be shorter or minimal.
+  title String
+  
+  /// The type of post captured in this snapshot.
+  ///
+  /// Allowed values are: 'text' for text posts with body content, 'link' for
+  /// link posts with URL content, and 'image' for image posts with uploaded
+  /// media. This determines which content field (body or url) contains
+  /// meaningful data.
+  post_type String
+  
+  /// The text content of the post at the time this snapshot was taken.
+  ///
+  /// Contains the full text body for text-type posts. This field is null for
+  /// link and image posts as they do not carry text body content.
+  body String?
+  
+  /// The URL content of the post at the time this snapshot was taken.
+  ///
+  /// Contains the target web address for link-type posts. This field is null
+  /// for text and image posts as they do not carry URL content.
+  url String?
+  
+  /// The timestamp indicating when this snapshot was created.
+  ///
+  /// Records the exact moment the snapshot was taken, serving as the basis for
+  /// ordering post history chronologically. Earlier snapshots have earlier
+  /// timestamps. This differs from the post's own created_at which indicates
+  /// when the post was first published.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  post reddit_like_community_posts @relation(fields: [reddit_like_community_post_id], references: [id], onDelete: Cascade)
+  community reddit_like_community_communities @relation(fields: [reddit_like_community_community_id], references: [id], onDelete: Cascade)
+  member reddit_like_community_members @relation(fields: [reddit_like_community_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([reddit_like_community_community_id], map: "reddit_like_community_post_snapshots_reddit_like_commu_d39809ab")
+  // spellchecker: ignore-next-line
+  @@index([reddit_like_community_member_id], map: "reddit_like_community_post_snapshots_reddit_like_commu_3a097294")
+  // spellchecker: ignore-next-line
+  @@index([reddit_like_community_post_id, created_at], map: "reddit_like_community_post_snapshots_reddit_like_commu_daa24351")
+}
+
+/// Stores threaded discussion comments on posts with parent-child nesting
+/// for unlimited reply depth.
+///
+/// Each comment contains the author's text contribution to a post
+/// discussion. Comments attach directly to posts as top-level responses or
+/// to other comments as nested replies, forming a recursive tree structure
+/// without depth restrictions.
+///
+/// Comments are independently managed by their authors who retain exclusive
+/// edit and delete rights. Vote scores are dynamically computed from the
+/// {@link reddit_like_community_comment_votes} table and karma impacts
+/// aggregate on the author's {@link reddit_like_community_profiles}.
+///
+/// @namespace post
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_community_post_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key identifying each comment uniquely.
+  id String @id
+  
+  /// References the parent comment in the reply chain.
+  ///
+  /// Nullable for top-level comments that are direct replies to the post. When
+  /// set, establishes the child relationship enabling unlimited nesting depth
+  /// in threaded conversations.
+  reddit_like_community_post_comment_id String?
+  
+  /// References the {@link reddit_like_community_members} who authored this
+  /// comment.
+  ///
+  /// The author retains exclusive modification rights throughout the comment
+  /// lifecycle. Enables aggregation of comment history and karma calculation
+  /// for the member.
+  reddit_like_community_member_id String
+  
+  /// References the {@link reddit_like_community_posts} post that hosts this
+  /// comment.
+  ///
+  /// Establishes the comment's context within the post's discussion thread.
+  /// Comments cascade-delete when their parent post is removed.
+  reddit_like_community_post_id String
+  
+  /// Timestamp when the comment was created.
+  ///
+  /// Immutable after initial creation. Used for chronological sorting and age
+  /// calculations.
+  created_at DateTime
+  
+  /// Timestamp when the comment was soft-deleted.
+  ///
+  /// Nullable - null indicates the comment is currently active. Set only upon
+  /// deletion to preserve historical data and maintain reply chain integrity.
+  deleted_at DateTime?
+  
+  /// The text content of the comment.
+  ///
+  /// Required at creation and cannot be empty. Contains the author's
+  /// contribution to the discussion and is the only editable content field.
+  body String
+  
+  /// Timestamp of the most recent modification.
+  ///
+  /// Updated whenever the author edits the comment body, tracking content
+  /// change history.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  parentComment reddit_like_community_post_comments? @relation("recursive", fields: [reddit_like_community_post_comment_id], references: [id], onDelete: Cascade)
+  authorMember reddit_like_community_members @relation(fields: [reddit_like_community_member_id], references: [id], onDelete: Cascade)
+  post reddit_like_community_posts @relation(fields: [reddit_like_community_post_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  childComments reddit_like_community_post_comments[] @relation("recursive")
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([reddit_like_community_post_id, created_at], map: "reddit_like_community_post_comments_reddit_like_commun_9914f8f5")
+  // spellchecker: ignore-next-line
+  @@index([reddit_like_community_post_comment_id], map: "reddit_like_community_post_comments_reddit_like_commun_946f3d77")
+  // spellchecker: ignore-next-line
+  @@index([reddit_like_community_member_id, created_at], map: "reddit_like_community_post_comments_reddit_like_commun_9369f8eb")
+}
+
+/// Point-in-time snapshots of post comments for audit trail and change history.
+///
+/// Each snapshot captures the full comment content including body text,
+/// parent comment reference for threading, and author context at the time of
+/// creation. Snapshots are immutable records that preserve comment history
+/// even when the original comment is edited or deleted.
+///
+/// @namespace post
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_community_post_comment_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for comment snapshots.
+  id String @id
+  
+  /// The comment being snapshotted.
+  ///
+  /// References the comment whose state is captured by this snapshot. Links to
+  /// {@link reddit_like_community_comments}.
+  comment_id String
+  
+  /// Parent comment for threading hierarchy.
+  ///
+  /// References the parent comment when this snapshot captures a reply.
+  /// Nullable for top-level comments. Links to {@link
+  /// reddit_like_community_comments}.
+  parent_comment_id String?
+  
+  /// Comment text content at snapshot time.
+  ///
+  /// Stores the exact body text of the comment when this snapshot was created.
+  /// Immutable after creation.
+  body String
+  
+  /// Timestamp when this snapshot was recorded.
+  ///
+  /// Immutable timestamp marking when the snapshot was created. Used for
+  /// ordering snapshot history.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  comment reddit_like_community_comments @relation("reddit_like_community_post_comment_snapshots_of_comment_id", fields: [comment_id], references: [id], onDelete: Cascade)
+  parentComment reddit_like_community_comments? @relation("reddit_like_community_post_comment_snapshots_of_parent_c54f5959", fields: [parent_comment_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([parent_comment_id], map: "reddit_like_community_post_comment_snapshots_parent_co_88d5ed44")
+  @@index([created_at])
+  // spellchecker: ignore-next-line
+  @@index([comment_id, created_at], map: "reddit_like_community_post_comment_snapshots_comment_i_9fe7f6c4")
+}
+
+/// Stores image metadata for image-type posts.
+///
+/// Each row holds the external storage location, file dimensions, MIME type,
+/// and integrity hash for a single uploaded image. When a user replaces
+/// their image post, a new row is appended while the old one remains for
+/// auditability.
+///
+/// The platform never mutates or soft-deletes image rows independently; they
+/// persist throughout the lifecycle of the parent. Only the moderator
+/// deleting the post can remove both the post and all its image attachments.
+///
+/// @namespace post
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_community_post_images {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the post that contains this image attachment.
+  ///
+  /// Enforces referential integrity, ensuring the image row cannot exist
+  /// without a valid reddit_like_community_posts row. When the user uploads an
+  /// image for their post, this FK establishes the relationship. Because the
+  /// FK is unique, exactly one active image row may exist per post.
+  post_id String
+  
+  /// Full HTTPS URI pointing to the image file in the external object storage
+  /// provider.
+  ///
+  /// Clients cannot interact with the image file directly; they always
+  /// retrieve the image_url from API responses and request the image from the
+  /// platform's proxy or CDN. The URI must use HTTPS for security enforcement;
+  /// HTTP URIs are rejected at upload time.
+  image_url String
+  
+  /// Original filename extracted from the upload request payload.
+  ///
+  /// Serves user-facing purposes such as display text, download defaults, and
+  /// debugging. The database does not enforce filename length limits; the API
+  /// layer handles truncation or rejection before the row is persisted.
+  ///
+  /// This field is immutable after the row is created.
+  filename String
+  
+  /// File size in bytes at the moment of upload.
+  ///
+  /// Used for server-side validation (rejecting oversized uploads),
+  /// client-side optimization (caching and layout calculations), and aggregate
+  /// storage-cost reporting across all image attachments.
+  file_size_bytes Int
+  
+  /// RFC 6838 MIME type of the uploaded image file.
+  ///
+  /// Only image types are accepted: image/jpeg, image/png, image/webp. The
+  /// platform uses this field for content-type enforcement during upload and
+  /// for setting correct Content-Type headers when serving images to clients.
+  content_type String
+  
+  /// Width of the image in pixels, extracted during upload from the image file
+  /// header.
+  ///
+  /// Clients use the width value for layout calculations such as aspect-ratio
+  /// containers and responsive grid placements. If the platform fails to
+  /// extract dimensions from the file, this field remains NULL.
+  width Int?
+  
+  /// Height of the image in pixels, extracted during upload from the image
+  /// file header.
+  ///
+  /// Clients use the height value alongside
+  /// reddit_like_community_post_images.width to render thumbnails and preview
+  /// boxes. If extraction fails, this field remains NULL.
+  height Int?
+  
+  /// SHA-256 hex digest of the raw image bytes at upload time.
+  ///
+  /// The platform uses this hash for deduplication (detecting identical image
+  /// uploads across the system) and integrity verification (re-hashing the
+  /// stored file to detect corruption). If the platform cannot compute the
+  /// hash during upload, the field remains NULL.
+  hash_sha256 String?
+  
+  /// Timestamp when the platform accepted the image upload and persisted this
+  /// metadata row.
+  ///
+  /// Used for audit ordering, chronological displays on post history pages,
+  /// and determining whether a new upload replaced an older version.
+  created_at DateTime
+  
+  /// Timestamp of the most recent metadata update to this row.
+  ///
+  /// Because this table is append-only, updated_at only changes when a
+  /// background job backfills missing metadata (dimensions, SHA-256 hash). In
+  /// the normal upload path, updated_at equals created_at.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  post reddit_like_community_posts @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([post_id])
+}

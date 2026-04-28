@@ -22,9 +22,12 @@ export class ShoppingmallCustomerPassword_resetsController {
    *
    * @param connection
    * @param body Search criteria for filtering password reset requests including user type, email, status, date range, and pagination parameters.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Query password reset records from shopping_mall_customer_password_resets, shopping_mall_seller_password_resets, and shopping_mall_administrator_password_resets tables.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Query password reset records from
+     *   shopping_mall_customer_password_resets,
+     *   shopping_mall_seller_password_resets, and
+     *   shopping_mall_administrator_password_resets tables.
    *
    * Apply filters from request body:
    * - user_type: filter by 'customer', 'seller', or 'administrator'
@@ -70,9 +73,12 @@ export class ShoppingmallCustomerPassword_resetsController {
    *
    * @param connection
    * @param resetId Unique identifier of the password reset token record (UUID format)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Query password reset tables (shopping_mall_customer_password_resets, shopping_mall_seller_password_resets, shopping_mall_administrator_password_resets) by the provided resetId.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Query password reset tables
+     *   (shopping_mall_customer_password_resets,
+     *   shopping_mall_seller_password_resets,
+     *   shopping_mall_administrator_password_resets) by the provided resetId.
    *
    * 1. Accept resetId as UUID path parameter
    * 2. Search across all three password reset tables to find matching record

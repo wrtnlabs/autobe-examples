@@ -16,8 +16,9 @@ export type IHrmPlatformRole = {
    *
    * This UUID is automatically generated when the role is created and serves as the primary key for role lookups. Used in API paths when retrieving or updating a specific role.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from hrm_platform_roles.id. UUID format generated on role creation.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from hrm_platform_roles.id. UUID
+     *   format generated on role creation.
    */
   id: string & tags.Format<"uuid">;
 
@@ -26,8 +27,10 @@ export type IHrmPlatformRole = {
    *
    * Every role belongs to exactly one organization in the multi-tenancy platform. This property provides the organization context including its ID, name, and basic settings. Used to identify which organization's permission scope this role applies to.
    *
-   * @x-autobe-database-schema-property organization
-   * @x-autobe-specification JOIN from hrm_platform_roles.organization_id to hrm_platform_organizations.id. Returns IHrmPlatformOrganization.ISummary with essential organization fields.
+     * @x-autobe-database-schema-property organization
+     * @x-autobe-specification JOIN from hrm_platform_roles.organization_id to
+     *   hrm_platform_organizations.id. Returns
+     *   IHrmPlatformOrganization.ISummary with essential organization fields.
    */
   organization: IHrmPlatformOrganization.ISummary;
 
@@ -36,8 +39,10 @@ export type IHrmPlatformRole = {
    *
    * For built-in roles, this is one of: 'Owner', 'Manager', or 'Employee'. For custom roles, this is defined by the organization owner during role creation. The name must be unique within the organization to avoid confusion when assigning roles to employees.
    *
-   * @x-autobe-database-schema-property name
-   * @x-autobe-specification Direct mapping from hrm_platform_roles.name. Must be unique within the organization (enforced by @@unique([organization_id, name]) constraint).
+     * @x-autobe-database-schema-property name
+     * @x-autobe-specification Direct mapping from hrm_platform_roles.name. Must
+     *   be unique within the organization (enforced by
+     *   @@unique([organization_id, name]) constraint).
    */
   name: string;
 
@@ -46,8 +51,11 @@ export type IHrmPlatformRole = {
    *
    * Built-in roles (Owner, Manager, Employee) are automatically created for each organization and cannot be deleted. Custom roles have this flag set to false and can be deleted if no employees are assigned to them. This flag also determines whether the role can be modified - built-in roles cannot be updated.
    *
-   * @x-autobe-database-schema-property is_built_in
-   * @x-autobe-specification Direct mapping from hrm_platform_roles.is_built_in. Boolean flag set to true for system-provided roles (Owner, Manager, Employee), false for custom roles.
+     * @x-autobe-database-schema-property is_built_in
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_roles.is_built_in. Boolean flag set to true for
+     *   system-provided roles (Owner, Manager, Employee), false for custom
+     *   roles.
    */
   isBuiltIn: boolean;
 
@@ -56,8 +64,10 @@ export type IHrmPlatformRole = {
    *
    * Primarily used for custom roles to document their intended permissions and responsibilities. Built-in roles may have null descriptions as their purposes are well-defined (Owner has full access, Manager can manage employees and projects, Employee has basic access). Displayed in role management interfaces to help administrators understand role purposes.
    *
-   * @x-autobe-database-schema-property description
-   * @x-autobe-specification Direct mapping from hrm_platform_roles.description. Nullable string - null for built-in roles or custom roles without description.
+     * @x-autobe-database-schema-property description
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_roles.description. Nullable string - null for built-in
+     *   roles or custom roles without description.
    */
   description?: string | null | undefined;
 
@@ -66,8 +76,10 @@ export type IHrmPlatformRole = {
    *
    * Automatically set by the system when the role record is first inserted. Built-in roles are created when the organization is created. Custom roles are created when an organization owner defines a new role. Used for audit trails and sorting roles by creation order.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from hrm_platform_roles.created_at. ISO 8601 date-time format, automatically set on role creation.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_roles.created_at. ISO 8601 date-time format, automatically
+     *   set on role creation.
    */
   createdAt: string & tags.Format<"date-time">;
 
@@ -76,8 +88,10 @@ export type IHrmPlatformRole = {
    *
    * Automatically updated whenever the role's name, description, or permissions are changed. Built-in roles typically have the same createdAt and updatedAt values unless their permissions were modified. Custom roles show the most recent modification time. Used for change tracking and cache invalidation.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from hrm_platform_roles.updated_at. ISO 8601 date-time format, automatically updated on any role modification.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_roles.updated_at. ISO 8601 date-time format, automatically
+     *   updated on any role modification.
    */
   updatedAt: string & tags.Format<"date-time">;
 };
@@ -97,8 +111,10 @@ export namespace IHrmPlatformRole {
      *
      * This field is required when creating a custom role. The user must have appropriate permissions within the specified organization to create roles.
      *
-     * @x-autobe-database-schema-property organization_id
-     * @x-autobe-specification Direct mapping from hrm_platform_roles.organization_id. Must reference existing organization. Foreign key constraint enforced.
+         * @x-autobe-database-schema-property organization_id
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_roles.organization_id. Must reference existing
+         *   organization. Foreign key constraint enforced.
      */
     organization_id: string & tags.Format<"uuid">;
 
@@ -109,8 +125,10 @@ export namespace IHrmPlatformRole {
      *
      * This field is required when creating a custom role. The name cannot duplicate existing role names within the same organization, including the built-in roles 'Owner', 'Manager', and 'Employee'.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from hrm_platform_roles.name. Must be unique within the organization per @@unique([organization_id, name]) constraint.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from hrm_platform_roles.name.
+         *   Must be unique within the organization per
+         *   @@unique([organization_id, name]) constraint.
      */
     name: string;
 
@@ -121,8 +139,10 @@ export namespace IHrmPlatformRole {
      *
      * This field is optional and can be null. Built-in roles may have null descriptions as their purposes are well-defined, while custom roles often benefit from clear descriptions.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from hrm_platform_roles.description. Nullable field - can be null or string. Optional for custom roles.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_roles.description. Nullable field - can be null or
+         *   string. Optional for custom roles.
      */
     description?: string | null | undefined;
 
@@ -133,7 +153,11 @@ export namespace IHrmPlatformRole {
      *
      * This field is optional - a role can be created without permissions and updated later. However, a role with no permissions grants no access to its assigned employees. Available permissions include org:manage, employee:manage, employee:view, project:manage, project:view, time:manage, time:approve, time:view_all, and report:view.
      *
-     * @x-autobe-specification Computed property - not a direct DB column. Each permission_id in the array creates one record in hrm_platform_role_permissions junction table linking the new role to the specified permission. Validation: each ID must reference existing hrm_platform_permissions record.
+         * @x-autobe-specification Computed property - not a direct DB column.
+         *   Each permission_id in the array creates one record in
+         *   hrm_platform_role_permissions junction table linking the new role
+         *   to the specified permission. Validation: each ID must reference
+         *   existing hrm_platform_permissions record.
      */
     permission_ids?: (string & tags.Format<"uuid">)[] | undefined;
   };
@@ -147,29 +171,36 @@ export namespace IHrmPlatformRole {
     /**
      * Partial match filter for role name. Returns roles where the name contains this string (case-insensitive).
      *
-     * @x-autobe-specification Partial match LIKE query on hrm_platform_roles.name field. Case-insensitive. Optional - omit for no name filter.
+         * @x-autobe-specification Partial match LIKE query on
+         *   hrm_platform_roles.name field. Case-insensitive. Optional - omit
+         *   for no name filter.
      */
     search?: string | undefined;
 
     /**
      * Filter by role type. True returns only built-in roles (Owner, Manager, Employee). False returns only custom roles. Omit to return all roles.
      *
-     * @x-autobe-database-schema-property is_built_in
-     * @x-autobe-specification Exact boolean match on hrm_platform_roles.is_built_in. True for built-in roles, false for custom roles. Optional - omit for all roles.
+         * @x-autobe-database-schema-property is_built_in
+         * @x-autobe-specification Exact boolean match on
+         *   hrm_platform_roles.is_built_in. True for built-in roles, false for
+         *   custom roles. Optional - omit for all roles.
      */
     is_built_in?: boolean | undefined;
 
     /**
      * Page number for pagination. Starts at 1. Defaults to 1 if not provided.
      *
-     * @x-autobe-specification Offset-based pagination page number. 1-indexed. Defaults to 1. Used with limit to calculate OFFSET = (page - 1) * limit.
+         * @x-autobe-specification Offset-based pagination page number.
+         *   1-indexed. Defaults to 1. Used with limit to calculate OFFSET =
+         *   (page - 1) * limit.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Number of items per page. Defaults to 20 if not provided. Maximum value is 100.
      *
-     * @x-autobe-specification Number of records per page. Defaults to 20. Maximum 100. Used with page to calculate LIMIT clause.
+         * @x-autobe-specification Number of records per page. Defaults to 20.
+         *   Maximum 100. Used with page to calculate LIMIT clause.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -189,8 +220,10 @@ export namespace IHrmPlatformRole {
      *
      * This value replaces the existing role name. Must be unique within the organization - duplicate names are rejected. For custom roles, this is the display name shown in the UI when assigning roles to employees.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from hrm_platform_roles.name. Must be unique within organization per @@unique([organization_id, name]) constraint. Validated at operation level.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from hrm_platform_roles.name.
+         *   Must be unique within organization per @@unique([organization_id,
+         *   name]) constraint. Validated at operation level.
      */
     name?: string | undefined;
 
@@ -199,8 +232,11 @@ export namespace IHrmPlatformRole {
      *
      * This value replaces the existing role description. Can be null for roles without a description. Primarily used for custom roles to document their intended permissions and responsibilities. Built-in roles may have null descriptions as their purposes are well-defined.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from hrm_platform_roles.description. Nullable field - can be set to null to clear the description. Optional field primarily used for custom roles to document their intended permissions and responsibilities.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_roles.description. Nullable field - can be set to null
+         *   to clear the description. Optional field primarily used for custom
+         *   roles to document their intended permissions and responsibilities.
      */
     description?: string | null | undefined;
 
@@ -211,7 +247,13 @@ export namespace IHrmPlatformRole {
      *
      * An empty array results in a role with no permissions. All permissions in the array are validated to exist before the update is applied.
      *
-     * @x-autobe-specification Manages hrm_platform_role_permissions junction table. The array replaces the entire existing permission set - operation deletes all existing hrm_platform_role_permissions records for this role and inserts new records based on provided permissionIds. Each permissionId must exist in hrm_platform_permissions. Empty array results in role with no permissions.
+         * @x-autobe-specification Manages hrm_platform_role_permissions
+         *   junction table. The array replaces the entire existing permission
+         *   set - operation deletes all existing hrm_platform_role_permissions
+         *   records for this role and inserts new records based on provided
+         *   permissionIds. Each permissionId must exist in
+         *   hrm_platform_permissions. Empty array results in role with no
+         *   permissions.
      */
     permissionIds?: (string & tags.Format<"uuid">)[] | undefined;
   };
@@ -229,8 +271,9 @@ export namespace IHrmPlatformRole {
      *
      * Automatically generated UUID assigned when the role is created. Used to reference this role in API operations and database relationships.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from hrm_platform_roles.id. UUID format.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from hrm_platform_roles.id.
+         *   UUID format.
      */
     id: string & tags.Format<"uuid">;
 
@@ -239,8 +282,9 @@ export namespace IHrmPlatformRole {
      *
      * For built-in roles, this is one of: 'Owner', 'Manager', or 'Employee'. For custom roles, this is the name defined by the organization owner. Must be unique within the organization.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from hrm_platform_roles.name. Must be unique within organization.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from hrm_platform_roles.name.
+         *   Must be unique within organization.
      */
     name: string;
 
@@ -249,8 +293,9 @@ export namespace IHrmPlatformRole {
      *
      * Built-in roles (Owner, Manager, Employee) are created automatically for each organization and cannot be deleted. Custom roles have this flag set to false and can be deleted if no employees are assigned to them.
      *
-     * @x-autobe-database-schema-property is_built_in
-     * @x-autobe-specification Direct mapping from hrm_platform_roles.is_built_in. True for system-provided roles.
+         * @x-autobe-database-schema-property is_built_in
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_roles.is_built_in. True for system-provided roles.
      */
     is_built_in: boolean;
 
@@ -259,8 +304,9 @@ export namespace IHrmPlatformRole {
      *
      * Primarily used for custom roles to document their intended permissions and typical use cases. Built-in roles may have null descriptions as their purposes are well-defined. Null value indicates no description provided.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from hrm_platform_roles.description. Nullable string.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_roles.description. Nullable string.
      */
     description: string | null;
 
@@ -269,7 +315,9 @@ export namespace IHrmPlatformRole {
      *
      * Represents the total count of permissions linked to this role through the role_permissions junction table. Provides quick insight into the role's access level without requiring additional API calls to fetch the full permission list.
      *
-     * @x-autobe-specification Computed aggregation: COUNT of hrm_platform_role_permissions records where role_id matches this role's id. Excludes soft-deleted permissions.
+         * @x-autobe-specification Computed aggregation: COUNT of
+         *   hrm_platform_role_permissions records where role_id matches this
+         *   role's id. Excludes soft-deleted permissions.
      */
     permission_count: number & tags.Type<"int32">;
 
@@ -278,8 +326,9 @@ export namespace IHrmPlatformRole {
      *
      * Automatically set when the role is first created. For built-in roles, this is when the organization was created. For custom roles, this is when the organization owner created the role. Immutable after creation.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from hrm_platform_roles.created_at. ISO 8601 date-time format.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_roles.created_at. ISO 8601 date-time format.
      */
     created_at: string & tags.Format<"date-time">;
   };

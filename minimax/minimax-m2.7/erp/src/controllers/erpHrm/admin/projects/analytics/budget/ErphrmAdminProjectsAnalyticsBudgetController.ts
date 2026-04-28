@@ -19,9 +19,10 @@ export class ErphrmAdminProjectsAnalyticsBudgetController {
    * This operation requires the report:view permission and returns data scoped to the user's current organization context.
    *
    * @param connection
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query all projects belonging to the authenticated user's organization from erp_hrm_projects table.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Query all projects belonging to the authenticated
+     *   user's organization from erp_hrm_projects table.
    *
    * Filter the projects to include only those where budget_hours is NOT NULL AND budget_hours > 0.
    *

@@ -12,8 +12,9 @@ export type IEcommerceMallGuestSession = {
   /**
    * The unique identifier of the authentication session.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_member_sessions.id. UUID primary key for the session.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_member_sessions.id. UUID primary key for the session.
    */
   id: string & tags.Format<"uuid">;
 
@@ -22,8 +23,10 @@ export type IEcommerceMallGuestSession = {
    *
    * This is a polymorphic field that references different tables based on actor_type. For member sessions, this references the members table; for seller sessions, it references the sellers table, and so on.
    *
-   * @x-autobe-database-schema-property ecommerce_mall_member_id
-   * @x-autobe-specification Maps to ecommerce_mall_member_id FK column. This is a polymorphic field - the actual database column depends on actor_type (ecommerce_mall_member_id, ecommerce_mall_seller_id, etc.).
+     * @x-autobe-database-schema-property ecommerce_mall_member_id
+     * @x-autobe-specification Maps to ecommerce_mall_member_id FK column. This
+     *   is a polymorphic field - the actual database column depends on
+     *   actor_type (ecommerce_mall_member_id, ecommerce_mall_seller_id, etc.).
    */
   actor_id: (string & tags.Format<"uuid">) | null;
 
@@ -32,7 +35,12 @@ export type IEcommerceMallGuestSession = {
    *
    * This field identifies which actor category the session is associated with, enabling polymorphic session management across different user types.
    *
-   * @x-autobe-specification Computed discriminator indicating the actor type this session belongs to. Value is determined by which session table the record originated from: 'member' from member sessions, 'seller' from seller sessions, 'administrator' from administrator sessions, 'super_administrator' from super_administrator sessions, or 'guest' from guest sessions.
+     * @x-autobe-specification Computed discriminator indicating the actor type
+     *   this session belongs to. Value is determined by which session table the
+     *   record originated from: 'member' from member sessions, 'seller' from
+     *   seller sessions, 'administrator' from administrator sessions,
+     *   'super_administrator' from super_administrator sessions, or 'guest'
+     *   from guest sessions.
    */
   actor_type:
     | "member"
@@ -46,8 +54,10 @@ export type IEcommerceMallGuestSession = {
    *
    * Used for security auditing and detecting suspicious login activity across multiple devices.
    *
-   * @x-autobe-database-schema-property ip
-   * @x-autobe-specification Direct mapping from ecommerce_mall_member_sessions.ip. Client IP address where the session was created.
+     * @x-autobe-database-schema-property ip
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_member_sessions.ip. Client IP address where the session
+     *   was created.
    */
   ip: string;
 
@@ -56,8 +66,10 @@ export type IEcommerceMallGuestSession = {
    *
    * Provides browsing context for analytics and security tracking of user navigation patterns.
    *
-   * @x-autobe-database-schema-property href
-   * @x-autobe-specification Direct mapping from ecommerce_mall_member_sessions.href. URL path where the login occurred or session was created.
+     * @x-autobe-database-schema-property href
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_member_sessions.href. URL path where the login occurred
+     *   or session was created.
    */
   href: (string & tags.Format<"uri">) | null;
 
@@ -66,8 +78,10 @@ export type IEcommerceMallGuestSession = {
    *
    * Used for analytics and security tracking to understand where users came from before authenticating.
    *
-   * @x-autobe-database-schema-property referrer
-   * @x-autobe-specification Direct mapping from ecommerce_mall_member_sessions.referrer. HTTP referrer header value from the login request.
+     * @x-autobe-database-schema-property referrer
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_member_sessions.referrer. HTTP referrer header value
+     *   from the login request.
    */
   referrer: (string & tags.Format<"uri">) | null;
 
@@ -76,8 +90,10 @@ export type IEcommerceMallGuestSession = {
    *
    * Marks the beginning of the session lifecycle and is used for session duration calculations.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_member_sessions.created_at. Timestamp when the session was created (user logged in).
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_member_sessions.created_at. Timestamp when the session
+     *   was created (user logged in).
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -86,8 +102,10 @@ export type IEcommerceMallGuestSession = {
    *
    * Updated when refresh token is used or session metadata changes. May be null for certain session types that do not track update timestamps.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_member_sessions.updated_at. Can be null for some session types (e.g., super_administrator sessions) based on system policy.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_member_sessions.updated_at. Can be null for some session
+     *   types (e.g., super_administrator sessions) based on system policy.
    */
   updated_at: (string & tags.Format<"date-time">) | null;
 
@@ -96,8 +114,10 @@ export type IEcommerceMallGuestSession = {
    *
    * Critical for security - this defines the session's lifetime and ensures automatic cleanup of stale authentication credentials.
    *
-   * @x-autobe-database-schema-property expired_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_member_sessions.expired_at. Critical for security - sessions must have expiration.
+     * @x-autobe-database-schema-property expired_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_member_sessions.expired_at. Critical for security -
+     *   sessions must have expiration.
    */
   expired_at: string & tags.Format<"date-time">;
 };
@@ -137,7 +157,10 @@ export namespace IEcommerceMallGuestSession {
      *
      * Supports exact IP address match or subnet prefix matching for finding sessions from specific network ranges.
      *
-     * @x-autobe-specification IP address pattern for filtering sessions. Supports exact match and subnet prefix matching (e.g., '192.168.1' matches all IPs starting with this prefix). Maps to ecommerce_mall_guest_sessions.ip column.
+         * @x-autobe-specification IP address pattern for filtering sessions.
+         *   Supports exact match and subnet prefix matching (e.g., '192.168.1'
+         *   matches all IPs starting with this prefix). Maps to
+         *   ecommerce_mall_guest_sessions.ip column.
      */
     ip?: string | undefined;
     session_status?: "active" | "expiring" | "expired" | undefined;
@@ -156,7 +179,8 @@ export namespace IEcommerceMallGuestSession {
      * enforce upper bounds to prevent excessive resource consumption on large
      * requests.
      *
-     * @x-autobe-specification Maximum records per page. Defaults to 100 if not provided.
+         * @x-autobe-specification Maximum records per page. Defaults to 100 if
+         *   not provided.
      */
     limit?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };
@@ -172,7 +196,10 @@ export namespace IEcommerceMallGuestSession {
      *
      * A UUID that uniquely identifies this session record across all actor types on the platform.
      *
-     * @x-autobe-specification UUID primary key from session record. Computed from the underlying actor session table (guest_sessions, member_sessions, seller_sessions, administrator_sessions, or superAdministrator_sessions).
+         * @x-autobe-specification UUID primary key from session record.
+         *   Computed from the underlying actor session table (guest_sessions,
+         *   member_sessions, seller_sessions, administrator_sessions, or
+         *   superAdministrator_sessions).
      */
     id: string & tags.Format<"uuid">;
 
@@ -181,7 +208,10 @@ export namespace IEcommerceMallGuestSession {
      *
      * Indicates whether this session belongs to a customer (member), seller, administrator, super administrator, or guest user.
      *
-     * @x-autobe-specification Enum discriminator indicating the actor type associated with this session. Values: 'member' (customer), 'seller', 'administrator', 'superAdministrator', 'guest'. Computed by examining which actor table the session originates from.
+         * @x-autobe-specification Enum discriminator indicating the actor type
+         *   associated with this session. Values: 'member' (customer),
+         *   'seller', 'administrator', 'superAdministrator', 'guest'. Computed
+         *   by examining which actor table the session originates from.
      */
     actor_type:
       | "member"
@@ -195,7 +225,11 @@ export namespace IEcommerceMallGuestSession {
      *
      * The UUID of the customer, seller, administrator, super administrator, or guest account associated with this session.
      *
-     * @x-autobe-specification UUID reference to the parent actor account. The target table is determined by actor_type: for 'member' and 'seller' it references the respective actor table, for 'administrator' and 'superAdministrator' it references the administrator table, for 'guest' it references the guest table.
+         * @x-autobe-specification UUID reference to the parent actor account.
+         *   The target table is determined by actor_type: for 'member' and
+         *   'seller' it references the respective actor table, for
+         *   'administrator' and 'superAdministrator' it references the
+         *   administrator table, for 'guest' it references the guest table.
      */
     actor_id: string & tags.Format<"uuid">;
 
@@ -204,7 +238,9 @@ export namespace IEcommerceMallGuestSession {
      *
      * The network address from which the actor connected to establish this session.
      *
-     * @x-autobe-specification Client IP address captured when the session was created. Stored as a string (IPv4 or IPv6 format). Computed from the request source IP at session creation time.
+         * @x-autobe-specification Client IP address captured when the session
+         *   was created. Stored as a string (IPv4 or IPv6 format). Computed
+         *   from the request source IP at session creation time.
      */
     ip: string;
 
@@ -213,7 +249,9 @@ export namespace IEcommerceMallGuestSession {
      *
      * The web address the actor was viewing at the time this session was established.
      *
-     * @x-autobe-specification Last URL visited by the actor when the session was created. Captured as a full URL string for analytics and session tracking purposes.
+         * @x-autobe-specification Last URL visited by the actor when the
+         *   session was created. Captured as a full URL string for analytics
+         *   and session tracking purposes.
      */
     href: string;
 
@@ -222,7 +260,9 @@ export namespace IEcommerceMallGuestSession {
      *
      * The date and time when this session was first established.
      *
-     * @x-autobe-specification Timestamp when the session was created, captured as ISO 8601 datetime string. Computed from the created_at field in the underlying session table.
+         * @x-autobe-specification Timestamp when the session was created,
+         *   captured as ISO 8601 datetime string. Computed from the created_at
+         *   field in the underlying session table.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -231,7 +271,9 @@ export namespace IEcommerceMallGuestSession {
      *
      * The date and time after which this session can no longer be used for authentication.
      *
-     * @x-autobe-specification Timestamp when the session expires and becomes invalid, captured as ISO 8601 datetime string. Computed from the expired_at field in the underlying session table.
+         * @x-autobe-specification Timestamp when the session expires and
+         *   becomes invalid, captured as ISO 8601 datetime string. Computed
+         *   from the expired_at field in the underlying session table.
      */
     expired_at: string & tags.Format<"date-time">;
 
@@ -242,7 +284,10 @@ export namespace IEcommerceMallGuestSession {
      * - 'expiring': Session will expire within 1 hour
      * - 'expired': Session has expired and is no longer valid
      *
-     * @x-autobe-specification Computed status based on comparing expired_at with current time: 'active' if expired_at > now, 'expiring' if expired_at is within 1 hour of now, 'expired' if expired_at <= now. This is a runtime computation, not a stored database value.
+         * @x-autobe-specification Computed status based on comparing expired_at
+         *   with current time: 'active' if expired_at > now, 'expiring' if
+         *   expired_at is within 1 hour of now, 'expired' if expired_at <= now.
+         *   This is a runtime computation, not a stored database value.
      */
     session_status: "active" | "expiring" | "expired";
   };

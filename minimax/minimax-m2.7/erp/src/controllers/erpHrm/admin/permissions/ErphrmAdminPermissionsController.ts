@@ -17,9 +17,10 @@ export class ErphrmAdminPermissionsController {
    * The response includes permission codes along with basic metadata such as creation timestamps. This endpoint does not filter by organization since permissions are system-wide definitions.
    *
    * @param connection
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query the erp_hrm_role_permissions table to retrieve all distinct permission codes available in the system.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Query the erp_hrm_role_permissions table to
+     *   retrieve all distinct permission codes available in the system.
    *
    * 1. Execute a SELECT DISTINCT query on the permission column from erp_hrm_role_permissions to get all unique permission codes.
    *

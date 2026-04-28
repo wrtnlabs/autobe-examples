@@ -27,9 +27,10 @@ export class EcommercemallCategoriesController {
    *
    * @param connection
    * @param body Search criteria including optional name filter for category search, parentId filter to retrieve subcategories of a specific parent, and pagination parameters (page, limit).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query ecommerce_mall_categories table with soft-delete filter (deleted_at IS NULL).
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query ecommerce_mall_categories table with
+     *   soft-delete filter (deleted_at IS NULL).
    *
    * Apply optional search filters from request body:
    * - If name filter provided: search using ILIKE pattern matching on category name
@@ -73,9 +74,10 @@ export class EcommercemallCategoriesController {
    *
    * @param connection
    * @param categoryId Unique identifier of the category to retrieve (UUID format).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query the ecommerce_mall_categories table using the provided categoryId as the primary key.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query the ecommerce_mall_categories table using
+     *   the provided categoryId as the primary key.
    *
    * Validate that categoryId is a valid UUID format. Check that deleted_at is NULL - if deleted_at is not null, return 404.
    *

@@ -23,9 +23,9 @@ export class ErphrmtimetrackingReportdefinitionsReportgenerationrunsController {
    * @param connection
    * @param reportDefinitionId Target report definition identifier that owns the requested report generation runs.
    * @param body Generation inputs and/or run selection criteria scoped under the given report definition.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Implementation steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Implementation steps:
    *
    * 1) Resolve scope
    * - Extract `reportDefinitionId` from the path.

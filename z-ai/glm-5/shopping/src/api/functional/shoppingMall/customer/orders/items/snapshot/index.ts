@@ -33,7 +33,8 @@ import { IShoppingMallOrderItemSnapshot } from "../../../../../../structures/ISh
  * @param props.itemId Unique identifier of the order item whose snapshot is being retrieved (UUID format)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Query the shopping_mall_order_item_snapshots table by order_item_id to retrieve the snapshot.
+ * @x-autobe-specification Query the shopping_mall_order_item_snapshots table by
+ *   order_item_id to retrieve the snapshot.
  *
  * **Authorization Steps**:
  * 1. Load the order item using itemId to verify it belongs to the specified orderId

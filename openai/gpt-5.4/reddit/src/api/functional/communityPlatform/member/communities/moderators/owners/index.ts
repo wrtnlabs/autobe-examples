@@ -26,7 +26,13 @@ import { ICommunityPlatformCommunityModeratorOwner } from "../../../../../../str
  * @param props.ownerId Target owner-role subtype record's ID for the moderator assignment
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implement a read-only service that loads a single record from `community_platform_community_moderator_owners` by `id = ownerId` and joins its parent `community_platform_community_moderators` record by `community_platform_community_moderator_id = moderatorId`. Also verify that the joined moderator assignment belongs to `community_platform_communities.id = communityId` through `community_platform_community_id`.
+ * @x-autobe-specification Implement a read-only service that loads a single
+ *   record from `community_platform_community_moderator_owners` by `id =
+ *   ownerId` and joins its parent `community_platform_community_moderators`
+ *   record by `community_platform_community_moderator_id = moderatorId`. Also
+ *   verify that the joined moderator assignment belongs to
+ *   `community_platform_communities.id = communityId` through
+ *   `community_platform_community_id`.
  *
  * Before returning data, validate the nested ownership chain in this order: confirm the community exists; confirm the moderator assignment exists and belongs to that community; confirm the owner subtype record exists and references that moderator assignment. Reject the request when any identifier does not resolve or when the identifiers refer to records from different communities or assignments.
  *
@@ -140,7 +146,11 @@ export namespace at {
  * @param props.body Owner role update data
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Load the community_platform_communities record by communityId, the community_platform_community_moderators record by moderatorId, and the community_platform_community_moderator_owners record by ownerId within a single transaction or equivalent consistent read boundary.
+ * @x-autobe-specification Load the community_platform_communities record by
+ *   communityId, the community_platform_community_moderators record by
+ *   moderatorId, and the community_platform_community_moderator_owners record
+ *   by ownerId within a single transaction or equivalent consistent read
+ *   boundary.
  *
  * Validate referential chain integrity before any update is applied. Confirm that the moderator assignment's community_platform_community_id equals the requested communityId. Confirm that the owner subtype's community_platform_community_moderator_id equals the requested moderatorId. Reject the request if any record is missing, if any record is marked deleted through deleted_at where applicable, or if the moderator assignment has a lifecycle status that makes owner-role maintenance invalid, such as a revoked assignment.
  *
@@ -264,7 +274,8 @@ export namespace update {
  * @param props.ownerId Target owner-role subtype record's unique identifier for the specified moderator assignment.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implement this operation as a transactional nested-resource deletion focused on community governance integrity.
+ * @x-autobe-specification Implement this operation as a transactional
+ *   nested-resource deletion focused on community governance integrity.
  *
  * 1. Authenticate the caller as a member identity. Reject unauthenticated requests.
  * 2. Load the target community from `community_platform_communities` by `communityId` and reject if it does not exist.
@@ -385,7 +396,9 @@ export namespace erase {
  * @param props.moderatorId Target community moderator assignment's ID
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implement this operation as a transactional owner-subtype creation on top of an existing community moderator assignment.
+ * @x-autobe-specification Implement this operation as a transactional
+ *   owner-subtype creation on top of an existing community moderator
+ *   assignment.
  *
  * 1. Authenticate the caller as a member. Do not infer admin privileges. Load the caller's member identity and verify the caller has governance authority in the target community according to community-scoped moderator rules. At minimum, confirm the caller is either the community owner or an active moderator of the community identified by `communityId`.
  *
@@ -504,7 +517,8 @@ export namespace create {
  * @param props.moderatorId Target moderator assignment's ID within the specified community
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implement this operation as a transactional community-governance command.
+ * @x-autobe-specification Implement this operation as a transactional
+ *   community-governance command.
  *
  * 1. Authenticate the caller as a member.
  * 2. Load the community from `community_platform_communities` by `id = :communityId` and reject if not found.

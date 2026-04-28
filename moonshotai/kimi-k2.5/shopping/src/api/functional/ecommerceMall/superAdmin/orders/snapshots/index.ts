@@ -23,7 +23,8 @@ import { IPageIEcommerceMallOrderSnapshot } from "../../../../../structures/IPag
  * @param props.body Search criteria and pagination parameters for filtering order snapshots
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor superAdmin
- * @x-autobe-specification Query order snapshots filtered by the given orderId. Join with order_snapshots table where order_id matches the path parameter.
+ * @x-autobe-specification Query order snapshots filtered by the given orderId.
+ *   Join with order_snapshots table where order_id matches the path parameter.
  *
  * Apply optional filters from request body:
  * - createdAtFrom: filter snapshots created after this timestamp
@@ -134,7 +135,9 @@ export namespace index {
  * @param props.snapshotId The unique identifier of the order snapshot (UUID format)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor superAdmin
- * @x-autobe-specification Query the ecommerce_mall_order_snapshots table filtering by both snapshot_id and order_id to ensure the snapshot belongs to the specified order.
+ * @x-autobe-specification Query the ecommerce_mall_order_snapshots table
+ *   filtering by both snapshot_id and order_id to ensure the snapshot belongs
+ *   to the specified order.
  *
  * Return the complete snapshot record including: id, order_id, created_at, and any embedded order state data captured at snapshot time.
  *

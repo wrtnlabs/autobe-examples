@@ -27,7 +27,11 @@ import { IPageICommunityPlatformPost } from "../../../../structures/IPageICommun
  * @param props.body Community feed pagination and sorting criteria
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Resolve the target community by community_platform_communities.id and verify that the community exists and is in a browsable state before querying posts. If the community cannot be found or is not available for feed browsing, return an appropriate not-found or forbidden-style business error according to platform rules.
+ * @x-autobe-specification Resolve the target community by
+ *   community_platform_communities.id and verify that the community exists and
+ *   is in a browsable state before querying posts. If the community cannot be
+ *   found or is not available for feed browsing, return an appropriate
+ *   not-found or forbidden-style business error according to platform rules.
  *
  * Parse the ICommunityPlatformPost.IRequest body to obtain pagination inputs, requested sort mode, and optional top-period filter. Because this is an index operation, do not read community scope from the request body; the communityId path parameter is the sole community selector. Validate pagination bounds and validate that the top-period filter is accepted only as a ranking constraint when sort is top. If another sort mode is selected, ignore the supplied top-period filter rather than changing the query scope.
  *

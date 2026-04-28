@@ -13,28 +13,28 @@ import { IMallPlatformCustomerProfile } from "./IMallPlatformCustomerProfile";
  */
 export type IMallPlatformCustomer = {
   /**
-   * @x-autobe-database-schema-property id
+     * @x-autobe-database-schema-property id
    */
   id: string & tags.Format<"uuid">;
   /**
-   * @x-autobe-database-schema-property email
+     * @x-autobe-database-schema-property email
    */
   email: string & tags.Format<"email">;
   /**
-   * @x-autobe-database-schema-property status
+     * @x-autobe-database-schema-property status
    */
   status: string;
   profile?: IMallPlatformCustomerProfile | undefined;
   /**
-   * @x-autobe-database-schema-property created_at
+     * @x-autobe-database-schema-property created_at
    */
   created_at: string & tags.Format<"date-time">;
   /**
-   * @x-autobe-database-schema-property updated_at
+     * @x-autobe-database-schema-property updated_at
    */
   updated_at: string & tags.Format<"date-time">;
   /**
-   * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-database-schema-property deleted_at
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -52,8 +52,10 @@ export namespace IMallPlatformCustomer {
      *
      * This value identifies the customer account during authentication and must be a valid email address.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from mall_platform_customers.email. Use this value to locate the customer account before verifying the submitted password.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_customers.email. Use this value to locate the
+         *   customer account before verifying the submitted password.
      */
     email: string & tags.Format<"email">;
 
@@ -62,8 +64,11 @@ export namespace IMallPlatformCustomer {
      *
      * This is the plain-text credential submitted for authentication. It is verified server-side against the stored password hash and is never returned or stored in raw form.
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification Accept the plain-text password submitted by the client and verify it against mall_platform_customers.password_hash on the server. Never store or return the raw password. This field is required for authentication.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification Accept the plain-text password submitted by
+         *   the client and verify it against
+         *   mall_platform_customers.password_hash on the server. Never store or
+         *   return the raw password. This field is required for authentication.
      */
     password: string & tags.Format<"password">;
   };
@@ -79,7 +84,10 @@ export namespace IMallPlatformCustomer {
      *
      * Send this value when the current access token has expired and the session should continue without re-entering credentials.
      *
-     * @x-autobe-specification Accept the refresh token from the POST /mallPlatform/auth/customer/refresh request body. Validate it against the customer session flow, ensure it is not expired or revoked, and use it to mint a new authorization token pair.
+         * @x-autobe-specification Accept the refresh token from the POST
+         *   /mallPlatform/auth/customer/refresh request body. Validate it
+         *   against the customer session flow, ensure it is not expired or
+         *   revoked, and use it to mint a new authorization token pair.
      */
     refreshToken: string & tags.Format<"password">;
   };
@@ -103,7 +111,8 @@ export namespace IMallPlatformCustomer {
     /**
      * Authorization token.
      *
-     * @x-autobe-specification Authorization token comes from the session table.
+         * @x-autobe-specification Authorization token comes from the session
+         *   table.
      */
     token: IAuthorizationToken;
   };
@@ -121,8 +130,9 @@ export namespace IMallPlatformCustomer {
      *
      * This value uniquely identifies the customer account in administrative and user-management contexts.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from mall_platform_customers.id.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_customers.id.
      */
     id: string & tags.Format<"uuid">;
 
@@ -131,8 +141,10 @@ export namespace IMallPlatformCustomer {
      *
      * This value is the unique email used to identify and sign in to the customer account.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from mall_platform_customers.email. This column is unique and used as the account login email.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_customers.email. This column is unique and used as
+         *   the account login email.
      */
     email: string & tags.Format<"email">;
 
@@ -141,8 +153,10 @@ export namespace IMallPlatformCustomer {
      *
      * This value indicates whether the account is active, banned, deleted, or otherwise managed by platform policy.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from mall_platform_customers.status. This column stores the current account lifecycle state used for access control and administration.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_customers.status. This column stores the current
+         *   account lifecycle state used for access control and administration.
      */
     status: string;
 
@@ -151,8 +165,9 @@ export namespace IMallPlatformCustomer {
      *
      * This timestamp is used for administrative browsing, auditing, and account lifecycle tracking.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from mall_platform_customers.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_customers.created_at.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -161,8 +176,9 @@ export namespace IMallPlatformCustomer {
      *
      * This timestamp reflects the most recent modification to the account record.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from mall_platform_customers.updated_at.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_customers.updated_at.
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -171,8 +187,11 @@ export namespace IMallPlatformCustomer {
      *
      * A null value means the account is still active. A non-null value marks the account as soft-deleted for administrative and retention workflows.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from mall_platform_customers.deleted_at. This field is nullable and represents the time the customer account was soft-deleted, if applicable.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_customers.deleted_at. This field is nullable and
+         *   represents the time the customer account was soft-deleted, if
+         *   applicable.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };
@@ -190,7 +209,10 @@ export namespace IMallPlatformCustomer {
      *
      * It must be a valid email address and serves as the customer's unique sign-in identifier. Duplicate addresses are rejected during account creation.
      *
-     * @x-autobe-specification Client-submitted registration email used as the unique customer login identifier. Validate it as an email address and ensure it is unique before creating the customer account.
+         * @x-autobe-specification Client-submitted registration email used as
+         *   the unique customer login identifier. Validate it as an email
+         *   address and ensure it is unique before creating the customer
+         *   account.
      */
     email: string & tags.Format<"email">;
 
@@ -199,7 +221,10 @@ export namespace IMallPlatformCustomer {
      *
      * It is accepted only for account creation, must satisfy the platform's password rules, and is never returned after submission.
      *
-     * @x-autobe-specification Client-submitted plain-text registration password used to create the customer account. Validate it against the platform credential policy, hash it before persistence, and never store or return the plain-text value.
+         * @x-autobe-specification Client-submitted plain-text registration
+         *   password used to create the customer account. Validate it against
+         *   the platform credential policy, hash it before persistence, and
+         *   never store or return the plain-text value.
      */
     password: string & tags.Format<"password">;
 
@@ -208,7 +233,10 @@ export namespace IMallPlatformCustomer {
      *
      * It identifies the page or endpoint from which the registration request was made and is used as request context.
      *
-     * @x-autobe-specification Client-provided request URL for the registration attempt. Capture it from the incoming request context for downstream session or audit processing; it is not a customer account column in this DTO.
+         * @x-autobe-specification Client-provided request URL for the
+         *   registration attempt. Capture it from the incoming request context
+         *   for downstream session or audit processing; it is not a customer
+         *   account column in this DTO.
      */
     href: string & tags.Format<"uri">;
 
@@ -217,7 +245,10 @@ export namespace IMallPlatformCustomer {
      *
      * It indicates where the user navigated from before submitting the registration request and is used as request context.
      *
-     * @x-autobe-specification Client-provided referrer URL for the registration attempt. Capture it from the incoming request context for downstream session or audit processing; it is not a customer account column in this DTO.
+         * @x-autobe-specification Client-provided referrer URL for the
+         *   registration attempt. Capture it from the incoming request context
+         *   for downstream session or audit processing; it is not a customer
+         *   account column in this DTO.
      */
     referrer: string & tags.Format<"uri">;
 
@@ -226,7 +257,10 @@ export namespace IMallPlatformCustomer {
      *
      * It is optional because the client may not know its public address. When omitted, the server can derive the source address from the incoming connection.
      *
-     * @x-autobe-specification Client-provided IPv4 address for the registration attempt. It is optional because the client may not know its public IP; if omitted, the server may derive the source address from the incoming connection.
+         * @x-autobe-specification Client-provided IPv4 address for the
+         *   registration attempt. It is optional because the client may not
+         *   know its public IP; if omitted, the server may derive the source
+         *   address from the incoming connection.
      */
     ip?: (string & tags.Format<"ipv4">) | null | undefined;
   };
@@ -244,7 +278,11 @@ export namespace IMallPlatformCustomer {
      *
      * Use this value to match customers by searchable account fields in the administrative listing. It is a query control rather than a stored customer attribute.
      *
-     * @x-autobe-specification Apply free-text matching across searchable customer account fields supported by the query layer, such as id, email, and status, without mapping to a single database column. This is a request-only control used to broaden administrative browsing.
+         * @x-autobe-specification Apply free-text matching across searchable
+         *   customer account fields supported by the query layer, such as id,
+         *   email, and status, without mapping to a single database column.
+         *   This is a request-only control used to broaden administrative
+         *   browsing.
      */
     search?: string | undefined;
 
@@ -253,8 +291,10 @@ export namespace IMallPlatformCustomer {
      *
      * Provide the UUID of a customer account to narrow the administrative search to that specific record.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct filter mapping from mall_platform_customers.id. Use this value to constrain the customer directory to a specific account identifier.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct filter mapping from
+         *   mall_platform_customers.id. Use this value to constrain the
+         *   customer directory to a specific account identifier.
      */
     id?: (string & tags.Format<"uuid">) | undefined;
 
@@ -263,8 +303,10 @@ export namespace IMallPlatformCustomer {
      *
      * Use this to locate a specific account or narrow the list to accounts with a matching email address.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct filter mapping from mall_platform_customers.email. Use exact or query-layer email matching as supported by the search implementation.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct filter mapping from
+         *   mall_platform_customers.email. Use exact or query-layer email
+         *   matching as supported by the search implementation.
      */
     email?: (string & tags.Format<"email">) | undefined;
 
@@ -273,8 +315,11 @@ export namespace IMallPlatformCustomer {
      *
      * Use this to browse customers by lifecycle state during administrative review and moderation.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct filter mapping from mall_platform_customers.status. Use this to filter customers by lifecycle state such as active, banned, or deleted as supported by the domain.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct filter mapping from
+         *   mall_platform_customers.status. Use this to filter customers by
+         *   lifecycle state such as active, banned, or deleted as supported by
+         *   the domain.
      */
     status?: string | undefined;
 
@@ -283,8 +328,10 @@ export namespace IMallPlatformCustomer {
      *
      * Use this to limit results to accounts created within a specific time window.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Lower-bound filter on mall_platform_customers.created_at. Return customers created at or after the provided timestamp.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Lower-bound filter on
+         *   mall_platform_customers.created_at. Return customers created at or
+         *   after the provided timestamp.
      */
     createdAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
@@ -293,8 +340,10 @@ export namespace IMallPlatformCustomer {
      *
      * Use this to limit results to accounts created within a specific time window.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Upper-bound filter on mall_platform_customers.created_at. Return customers created at or before the provided timestamp.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Upper-bound filter on
+         *   mall_platform_customers.created_at. Return customers created at or
+         *   before the provided timestamp.
      */
     createdAtTo?: (string & tags.Format<"date-time">) | undefined;
 
@@ -303,8 +352,10 @@ export namespace IMallPlatformCustomer {
      *
      * Use this to narrow the list to accounts changed within a specific period.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Lower-bound filter on mall_platform_customers.updated_at. Return customers updated at or after the provided timestamp.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Lower-bound filter on
+         *   mall_platform_customers.updated_at. Return customers updated at or
+         *   after the provided timestamp.
      */
     updatedAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
@@ -313,8 +364,10 @@ export namespace IMallPlatformCustomer {
      *
      * Use this to narrow the list to accounts changed within a specific period.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Upper-bound filter on mall_platform_customers.updated_at. Return customers updated at or before the provided timestamp.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Upper-bound filter on
+         *   mall_platform_customers.updated_at. Return customers updated at or
+         *   before the provided timestamp.
      */
     updatedAtTo?: (string & tags.Format<"date-time">) | undefined;
 
@@ -323,8 +376,11 @@ export namespace IMallPlatformCustomer {
      *
      * Use this to inspect soft-deleted accounts within a specific time window.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Lower-bound filter on mall_platform_customers.deleted_at. Treat null as absence of deletion; only records with a deletion timestamp at or after the provided value should match.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Lower-bound filter on
+         *   mall_platform_customers.deleted_at. Treat null as absence of
+         *   deletion; only records with a deletion timestamp at or after the
+         *   provided value should match.
      */
     deletedAtFrom?: (string & tags.Format<"date-time">) | null | undefined;
 
@@ -333,8 +389,11 @@ export namespace IMallPlatformCustomer {
      *
      * Use this to inspect soft-deleted accounts within a specific time window.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Upper-bound filter on mall_platform_customers.deleted_at. Treat null as absence of deletion; only records with a deletion timestamp at or before the provided value should match.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Upper-bound filter on
+         *   mall_platform_customers.deleted_at. Treat null as absence of
+         *   deletion; only records with a deletion timestamp at or before the
+         *   provided value should match.
      */
     deletedAtTo?: (string & tags.Format<"date-time">) | null | undefined;
 
@@ -343,7 +402,9 @@ export namespace IMallPlatformCustomer {
      *
      * Use this to choose which page of customer search results to return. The first page is 1.
      *
-     * @x-autobe-specification Request-only pagination control. Use as the 1-indexed page number for the administrative customer search query; it does not map to any database field.
+         * @x-autobe-specification Request-only pagination control. Use as the
+         *   1-indexed page number for the administrative customer search query;
+         *   it does not map to any database field.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -352,7 +413,9 @@ export namespace IMallPlatformCustomer {
      *
      * Use this to control how many customer records are returned in each page of results.
      *
-     * @x-autobe-specification Request-only pagination control. Use as the maximum number of records returned per page; it does not map to any database field.
+         * @x-autobe-specification Request-only pagination control. Use as the
+         *   maximum number of records returned per page; it does not map to any
+         *   database field.
      */
     limit?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -361,7 +424,9 @@ export namespace IMallPlatformCustomer {
      *
      * Use this to define how the administrative search results are ordered before pagination is applied.
      *
-     * @x-autobe-specification Request-only sort control. Use to specify the ordering of the administrative customer search results; it does not map to any database field.
+         * @x-autobe-specification Request-only sort control. Use to specify the
+         *   ordering of the administrative customer search results; it does not
+         *   map to any database field.
      */
     sort?: string | undefined;
   };

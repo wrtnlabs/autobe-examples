@@ -25,7 +25,8 @@ import { IShoppingMallShipment } from "../../../../../structures/IShoppingMallSh
  * @param props.body Search criteria and pagination parameters for shipment listing
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Query shopping_mall_shipments table filtering by order_id matching the orderId path parameter.
+ * @x-autobe-specification Query shopping_mall_shipments table filtering by
+ *   order_id matching the orderId path parameter.
  *
  * Implementation steps:
  * 1. Verify the authenticated user has access to the order (customer who placed the order OR seller with items in the order OR administrator)
@@ -144,7 +145,11 @@ export namespace index {
  * @param props.shipmentId Unique identifier of the shipment to retrieve
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Query shopping_mall_shipments table by ID, joining with shopping_mall_orders to verify the shipment belongs to the specified order. Also join with shopping_mall_order_items to retrieve all items included in this shipment, and join with shopping_mall_products and shopping_mall_product_variants to get product details for each item.
+ * @x-autobe-specification Query shopping_mall_shipments table by ID, joining
+ *   with shopping_mall_orders to verify the shipment belongs to the specified
+ *   order. Also join with shopping_mall_order_items to retrieve all items
+ *   included in this shipment, and join with shopping_mall_products and
+ *   shopping_mall_product_variants to get product details for each item.
  *
  * Authorization checks:
  * 1. Verify the shipment exists and belongs to the specified order (shipment.order_id === orderId)

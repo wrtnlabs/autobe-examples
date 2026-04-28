@@ -26,7 +26,8 @@ import { IShoppingMallReview } from "../../../structures/IShoppingMallReview";
  * @param props.body Search criteria including rating filters, customer/product references, date ranges, and pagination parameters
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query shopping_mall_reviews table with full-text search on content field and filtering capabilities.
+ * @x-autobe-specification Query shopping_mall_reviews table with full-text
+ *   search on content field and filtering capabilities.
  *
  * Database queries:
  * 1. Primary query on shopping_mall_reviews with LEFT JOIN to shopping_mall_customers and shopping_mall_products for summary data
@@ -149,7 +150,8 @@ export namespace index {
  * @param props.reviewId Unique identifier of the review to retrieve
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Implement by querying shopping_mall_reviews table with the provided reviewId parameter.
+ * @x-autobe-specification Implement by querying shopping_mall_reviews table
+ *   with the provided reviewId parameter.
  *
  * Query logic:
  * 1. SELECT review by id WHERE deleted_at IS NULL

@@ -28,7 +28,8 @@ import { IPageIEcommerceMallProduct } from "../../../../../structures/IPageIEcom
  * @param props.body Search and filtering criteria for products within the category, including text search, price range filters, sorting options, and pagination parameters.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor administrator
- * @x-autobe-specification Query ecommerce_mall_products table with the following logic:
+ * @x-autobe-specification Query ecommerce_mall_products table with the
+ *   following logic:
  *
  * **Database Query**:
  * - Filter: WHERE category_id = {categoryId} AND deleted_at IS NULL

@@ -23,16 +23,19 @@ import { IMultiUserTodoMember } from "../../../../structures/IMultiUserTodoMembe
  * @param props.body Current password for verification and the new password to set
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification 1. Extract the authenticated member ID from the request context (session/token).
- * 2. Verify the current_password provided in the request body matches the stored password_hash for the member:
- *    - Retrieve the member record from multi_user_todo_members using the authenticated member ID
- *    - Compare the provided current_password with the stored password_hash using appropriate password hashing comparison
- *    - If passwords do not match, return authentication error (401 or 403)
- * 3. Validate the new_password meets password strength requirements (if any business rules apply).
- * 4. Hash the new_password using the same hashing algorithm used for initial registration.
- * 5. Update the password_hash field in multi_user_todo_members table for the member.
- * 6. Update the updated_at timestamp to reflect the password change.
- * 7. Return the updated member record.
+ * @x-autobe-specification 1. Extract the authenticated member ID from the
+ *   request context (session/token). 2. Verify the current_password provided in
+ *   the request body matches the stored password_hash for the member: -
+ *   Retrieve the member record from multi_user_todo_members using the
+ *   authenticated member ID - Compare the provided current_password with the
+ *   stored password_hash using appropriate password hashing comparison - If
+ *   passwords do not match, return authentication error (401 or 403) 3.
+ *   Validate the new_password meets password strength requirements (if any
+ *   business rules apply). 4. Hash the new_password using the same hashing
+ *   algorithm used for initial registration. 5. Update the password_hash field
+ *   in multi_user_todo_members table for the member. 6. Update the updated_at
+ *   timestamp to reflect the password change. 7. Return the updated member
+ *   record.
  *
  * Edge cases:
  * - Current password mismatch: Reject with authentication error

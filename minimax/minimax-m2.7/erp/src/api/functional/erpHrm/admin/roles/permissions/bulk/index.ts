@@ -23,16 +23,16 @@ import { IErpHrmRolePermission } from "../../../../../../structures/IErpHrmRoleP
  * @param props.body Array of permission codes to assign to the role
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification 1. Validate roleId exists and belongs to the current organization context
- * 2. Retrieve the role from erp_hrm_roles table
- * 3. Check role.is_builtin flag - if true, reject with 400 error
- * 4. Validate all permission codes in request body against allowed permissions list: org:manage, employee:manage, employee:view, project:manage, project:view, time:manage, time:approve, time:view_all, report:view
- * 5. Begin transaction:
- *    a. Delete all existing entries from erp_hrm_role_permissions where erp_hrm_role_id matches
- *    b. Insert new permission entries for each permission in request body
- *    c. Update role.updated_at timestamp
- * 6. Commit transaction
- * 7. Return the updated role with its new permission set
+ * @x-autobe-specification 1. Validate roleId exists and belongs to the current
+ *   organization context 2. Retrieve the role from erp_hrm_roles table 3. Check
+ *   role.is_builtin flag - if true, reject with 400 error 4. Validate all
+ *   permission codes in request body against allowed permissions list:
+ *   org:manage, employee:manage, employee:view, project:manage, project:view,
+ *   time:manage, time:approve, time:view_all, report:view 5. Begin transaction:
+ *   a. Delete all existing entries from erp_hrm_role_permissions where
+ *   erp_hrm_role_id matches b. Insert new permission entries for each
+ *   permission in request body c. Update role.updated_at timestamp 6. Commit
+ *   transaction 7. Return the updated role with its new permission set
  *
  * Edge cases:
  * - Empty permissions array: clears all permissions (valid scenario for minimal access roles)

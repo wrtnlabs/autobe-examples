@@ -21,7 +21,9 @@ import { IPageIEcommerceMallCategoriesSnapshot } from "../../../../../structures
  * @param props.body Pagination, sorting, and filtering criteria for retrieving category snapshots.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor administrator
- * @x-autobe-specification Query ecommerce_mall_categories_snapshots table for all snapshots where category_id matches the provided categoryId path parameter.
+ * @x-autobe-specification Query ecommerce_mall_categories_snapshots table for
+ *   all snapshots where category_id matches the provided categoryId path
+ *   parameter.
  *
  * Apply pagination: limit, offset, and cursor-based pagination if requested.
  * Apply sorting: sort by created_at (default: descending) or other snapshot fields.
@@ -132,7 +134,9 @@ export namespace index {
  * @param props.snapshotId The unique identifier of the category snapshot to retrieve.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor administrator
- * @x-autobe-specification Fetch category snapshot record from ecommerce_mall_categories_snapshots table where id matches snapshotId parameter.
+ * @x-autobe-specification Fetch category snapshot record from
+ *   ecommerce_mall_categories_snapshots table where id matches snapshotId
+ *   parameter.
  *
  * **Validation**:
  * 1. Validate categoryId and snapshotId are valid UUID format

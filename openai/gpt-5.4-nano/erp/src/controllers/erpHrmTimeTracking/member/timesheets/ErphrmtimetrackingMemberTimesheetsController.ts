@@ -33,9 +33,9 @@ export class ErphrmtimetrackingMemberTimesheetsController {
    *
    * @param connection
    * @param body Creation payload for a weekly timesheet container, including target employee and the week boundaries (and optionally timelog inclusion inputs if supported by the request DTO).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Realize Agent implementation guidance:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Realize Agent implementation guidance:
    *
    * 1) Authorization & context
    * - Resolve the selected organization context from the authenticated session context.
@@ -115,11 +115,13 @@ export class ErphrmtimetrackingMemberTimesheetsController {
    *
    * @param connection
    * @param body Timesheet list search criteria including pagination, sorting, and optional workflow/status and week-range filters.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1) Parse the request body (IerpHrmTimeTrackingTimesheet.IRequest) to extract:
-   * - pagination parameters (page size / cursor / sorting)
-   * - filter criteria: timesheet status, week_start_at/week_end_at range, and optional target employee filtering.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification 1) Parse the request body
+     *   (IerpHrmTimeTrackingTimesheet.IRequest) to extract: - pagination
+     *   parameters (page size / cursor / sorting) - filter criteria: timesheet
+     *   status, week_start_at/week_end_at range, and optional target employee
+     *   filtering.
    *
    * 2) Determine authorization scope:
    * - Use the caller’s selected organization context.
@@ -192,9 +194,10 @@ export class ErphrmtimetrackingMemberTimesheetsController {
    *
    * @param connection
    * @param timesheetId Target timesheet identifier to retrieve.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement GET detail retrieval for a single timesheet.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implement GET detail retrieval for a single
+     *   timesheet.
    *
    * 1) Parse path parameter timesheetId.
    * 2) Resolve organization context from the authenticated member session (selected organization).
@@ -252,34 +255,44 @@ export class ErphrmtimetrackingMemberTimesheetsController {
    * @param connection
    * @param timesheetId Identifier of the target timesheet to update.
    * @param body Update payload for the target timesheet. The server applies workflow-state and authorization checks before persisting changes.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation steps:
-   * 1. Resolve the current actor’s selected organization context and user identity.
-   * 2. Load `erp_hrm_time_tracking_timesheets` by `id` = {timesheetId}.
-   *    - If not found, reject with a not-found/denied response appropriate to the service’s error contract.
-   *    - Verify `erp_hrm_time_tracking_organization_id` matches the selected organization; otherwise reject with an organization-scoped denial (do not return any timesheet details).
-   *    - Verify the actor has permission to update based on employee ownership and/or role context. Employees must only update their own timesheets.
-   * 3. Workflow state validation using the timesheet fields:
-   *    - Read `status`.
-   *    - Allow updates only for the editable workflow states. If the timesheet is in a non-editable state (e.g., submitted/approved), reject without changing any data.
-   * 4. Versioning lock enforcement:
-   *    - Query `erp_hrm_time_tracking_timesheet_versioning_locks` where `timesheet_id` = timesheet.id and `deleted_at` is null (active locks).
-   *    - If an active lock exists and the current actor/session does not own the lock via `locked_by_user_id`, reject.
-   * 5. Deactivation gating:
-   *    - Determine whether the timesheet’s employee is deactivated in the selected organization. (This requires joining/consulting the employee status from the system; do not proceed with any timelog modifications when deactivated.)
-   *    - If deactivated, reject invalid time-tracking updates.
-   * 6. Apply updates:
-   *    - Update allowed fields on `erp_hrm_time_tracking_timesheets`.
-   *    - If the request includes timelog modifications indirectly, validate each `erp_hrm_time_tracking_timelogs` row belongs to:
-   *      - `erp_hrm_time_tracking_organization_id` = timesheet.erp_hrm_time_tracking_organization_id
-   *      - `erp_hrm_time_tracking_employee_id` = timesheet.erp_hrm_time_tracking_employee_id
-   *      - and (when applicable) `erp_hrm_time_tracking_timesheet_id` equals this timesheet.id.
-   *    - Ensure timelog modifications are consistent with workflow status checks; for non-editable timesheets, never mutate timelogs.
-   * 7. Transactionality:
-   *    - Wrap all updates (timesheet + any timelog modifications) in a single database transaction.
-   *    - If any validation fails, rollback and return an error.
-   * 8. Return the updated timesheet.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation steps: 1. Resolve the current
+     *   actor’s selected organization context and user identity. 2. Load
+     *   `erp_hrm_time_tracking_timesheets` by `id` = {timesheetId}. - If not
+     *   found, reject with a not-found/denied response appropriate to the
+     *   service’s error contract. - Verify
+     *   `erp_hrm_time_tracking_organization_id` matches the selected
+     *   organization; otherwise reject with an organization-scoped denial (do
+     *   not return any timesheet details). - Verify the actor has permission to
+     *   update based on employee ownership and/or role context. Employees must
+     *   only update their own timesheets. 3. Workflow state validation using
+     *   the timesheet fields: - Read `status`. - Allow updates only for the
+     *   editable workflow states. If the timesheet is in a non-editable state
+     *   (e.g., submitted/approved), reject without changing any data. 4.
+     *   Versioning lock enforcement: - Query
+     *   `erp_hrm_time_tracking_timesheet_versioning_locks` where `timesheet_id`
+     *   = timesheet.id and `deleted_at` is null (active locks). - If an active
+     *   lock exists and the current actor/session does not own the lock via
+     *   `locked_by_user_id`, reject. 5. Deactivation gating: - Determine
+     *   whether the timesheet’s employee is deactivated in the selected
+     *   organization. (This requires joining/consulting the employee status
+     *   from the system; do not proceed with any timelog modifications when
+     *   deactivated.) - If deactivated, reject invalid time-tracking updates.
+     *   6. Apply updates: - Update allowed fields on
+     *   `erp_hrm_time_tracking_timesheets`. - If the request includes timelog
+     *   modifications indirectly, validate each
+     *   `erp_hrm_time_tracking_timelogs` row belongs to: -
+     *   `erp_hrm_time_tracking_organization_id` =
+     *   timesheet.erp_hrm_time_tracking_organization_id -
+     *   `erp_hrm_time_tracking_employee_id` =
+     *   timesheet.erp_hrm_time_tracking_employee_id - and (when applicable)
+     *   `erp_hrm_time_tracking_timesheet_id` equals this timesheet.id. - Ensure
+     *   timelog modifications are consistent with workflow status checks; for
+     *   non-editable timesheets, never mutate timelogs. 7. Transactionality: -
+     *   Wrap all updates (timesheet + any timelog modifications) in a single
+     *   database transaction. - If any validation fails, rollback and return an
+     *   error. 8. Return the updated timesheet.
    *
    * Edge cases:
    * - The employee can be deactivated between the client starting the action and the server applying it; re-check deactivation status during step 5.
@@ -327,24 +340,28 @@ export class ErphrmtimetrackingMemberTimesheetsController {
    *
    * @param connection
    * @param timesheetId Target timesheet identifier (UUID) to be removed. This refers to `erp_hrm_time_tracking_timesheets.id`.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Delete service implementation steps:
-   * 1) Parse `timesheetId` (UUID) from path.
-   * 2) Load the `erp_hrm_time_tracking_timesheets` row by id.
-   * 3) Enforce organization scoping using `erp_hrm_time_tracking_organization_id` so the caller can only operate within the selected organization.
-   * 4) Validate workflow eligibility based on `status`:
-   *    - If `status` indicates the timesheet has been approved (business rule from requirements: approved timesheets lock included timelogs for editing and deletion), reject deletion.
-   *    - If `status` allows deletion (e.g., draft/rejected), proceed.
-   * 5) Permission enforcement:
-   *    - Apply the permission matrix logic for timesheet deletion authorization (time:manage/time:approve/time:edit equivalents per role permissions).
-   *    - If the caller lacks required capability, reject.
-   * 6) Transaction:
-   *    - Start a transaction.
-   *    - Delete versioning locks rows associated with `timesheet_id` (if any are active) to avoid orphan lock references.
-   *    - Delete the timesheet row from `erp_hrm_time_tracking_timesheets`.
-   *    - Ensure referential constraints for associated timelogs are satisfied (either cascaded behavior per schema or update nullable FK `erp_hrm_time_tracking_timelogs_erp_hrm_time_tracking_timesheet_id` if required by implementation).
-   * 7) Return success with no response body.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Delete service implementation steps: 1) Parse
+     *   `timesheetId` (UUID) from path. 2) Load the
+     *   `erp_hrm_time_tracking_timesheets` row by id. 3) Enforce organization
+     *   scoping using `erp_hrm_time_tracking_organization_id` so the caller can
+     *   only operate within the selected organization. 4) Validate workflow
+     *   eligibility based on `status`: - If `status` indicates the timesheet
+     *   has been approved (business rule from requirements: approved timesheets
+     *   lock included timelogs for editing and deletion), reject deletion. - If
+     *   `status` allows deletion (e.g., draft/rejected), proceed. 5) Permission
+     *   enforcement: - Apply the permission matrix logic for timesheet deletion
+     *   authorization (time:manage/time:approve/time:edit equivalents per role
+     *   permissions). - If the caller lacks required capability, reject. 6)
+     *   Transaction: - Start a transaction. - Delete versioning locks rows
+     *   associated with `timesheet_id` (if any are active) to avoid orphan lock
+     *   references. - Delete the timesheet row from
+     *   `erp_hrm_time_tracking_timesheets`. - Ensure referential constraints
+     *   for associated timelogs are satisfied (either cascaded behavior per
+     *   schema or update nullable FK
+     *   `erp_hrm_time_tracking_timelogs_erp_hrm_time_tracking_timesheet_id` if
+     *   required by implementation). 7) Return success with no response body.
    *
    * Edge cases:
    * - Timesheet exists but caller targets wrong organization: reject.
@@ -393,13 +410,15 @@ export class ErphrmtimetrackingMemberTimesheetsController {
    *
    * @param connection
    * @param timesheetId Target timesheet identifier to be submitted for approval.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1) Authorization & organization scoping
-   * - Resolve the caller’s selected organization context.
-   * - Load the target erp_hrm_time_tracking_timesheets row by `id = timesheetId`.
-   * - Verify `erp_hrm_time_tracking_timesheets.erp_hrm_time_tracking_organization_id` matches the selected organization.
-   * - Verify the caller is allowed to submit (employee context for the owning employee; reject if cross-user or insufficient permission).
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification 1) Authorization & organization scoping - Resolve
+     *   the caller’s selected organization context. - Load the target
+     *   erp_hrm_time_tracking_timesheets row by `id = timesheetId`. - Verify
+     *   `erp_hrm_time_tracking_timesheets.erp_hrm_time_tracking_organization_id`
+     *   matches the selected organization. - Verify the caller is allowed to
+     *   submit (employee context for the owning employee; reject if cross-user
+     *   or insufficient permission).
    *
    * 2) Validate current workflow state
    * - Read `status` from the timesheet.
@@ -477,9 +496,11 @@ export class ErphrmtimetrackingMemberTimesheetsController {
    * @param connection
    * @param timesheetId Target timesheet identifier to reject. Must refer to a timesheet in the currently selected organization.
    * @param body Rejection payload for the timesheet review workflow. The rejection reason is required to return the timesheet to draft.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement POST /timesheets/{timesheetId}/reject as a workflow transition with strict authorization and state validation.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implement POST /timesheets/{timesheetId}/reject
+     *   as a workflow transition with strict authorization and state
+     *   validation.
    *
    * 1) Input validation
    * - Parse request body and require a non-empty rejectionReason.

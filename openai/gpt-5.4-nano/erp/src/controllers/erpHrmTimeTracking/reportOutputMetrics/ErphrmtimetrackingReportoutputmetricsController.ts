@@ -23,9 +23,9 @@ export class ErphrmtimetrackingReportoutputmetricsController {
    *
    * @param connection
    * @param reportOutputMetricId Identifier of the report output metric line to retrieve (UUID).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Implementation steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Implementation steps:
    *
    * 1) Parse the path parameter reportOutputMetricId (UUID) and load erp_hrm_time_tracking_report_output_metrics where id = reportOutputMetricId AND deleted_at is null (or treat deleted rows as not retrievable, consistent with DTO stance).
    *
@@ -81,17 +81,27 @@ export class ErphrmtimetrackingReportoutputmetricsController {
    * @param connection
    * @param reportOutputMetricId Primary key of the report output metric row to update.
    * @param body Update payload for a single report output metric row. Fields included here should modify the metric breakdown (for example, the numeric metric value), while preserving the parent linkage and uniqueness invariants.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification 1) Extract `reportOutputMetricId` from path.
-   * 2) Parse and validate request body using DTO `IErpHrmTimeTrackingReportOutputMetric.IUpdate`.
-   * 3) Load the metric row by primary key from `erp_hrm_time_tracking_report_output_metrics`.
-   * 4) Authorization: resolve the parent `erp_hrm_time_tracking_report_outputs` row via `erp_hrm_time_tracking_report_output_id`, then resolve its `report_generation_run_id` via `erp_hrm_time_tracking_report_generation_runs` (organization scoping). Enforce that the caller has the required report access within the currently selected organization context.
-   * 5) Apply updates in a transaction:
-   *    - Always keep `erp_hrm_time_tracking_report_output_id` immutable (unless the DTO explicitly allows it; by default updates should only affect `metric_value` and any other mutable fields present in the DTO).
-   *    - If `metric_name` is updatable, validate uniqueness by checking whether another metric row exists with the same `(erp_hrm_time_tracking_report_output_id, metric_name)`.
-   * 6) Persist changes; update `updated_at` automatically as per model behavior.
-   * 7) Return the updated metric entity.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification 1) Extract `reportOutputMetricId` from path. 2)
+     *   Parse and validate request body using DTO
+     *   `IErpHrmTimeTrackingReportOutputMetric.IUpdate`. 3) Load the metric row
+     *   by primary key from `erp_hrm_time_tracking_report_output_metrics`. 4)
+     *   Authorization: resolve the parent
+     *   `erp_hrm_time_tracking_report_outputs` row via
+     *   `erp_hrm_time_tracking_report_output_id`, then resolve its
+     *   `report_generation_run_id` via
+     *   `erp_hrm_time_tracking_report_generation_runs` (organization scoping).
+     *   Enforce that the caller has the required report access within the
+     *   currently selected organization context. 5) Apply updates in a
+     *   transaction: - Always keep `erp_hrm_time_tracking_report_output_id`
+     *   immutable (unless the DTO explicitly allows it; by default updates
+     *   should only affect `metric_value` and any other mutable fields present
+     *   in the DTO). - If `metric_name` is updatable, validate uniqueness by
+     *   checking whether another metric row exists with the same
+     *   `(erp_hrm_time_tracking_report_output_id, metric_name)`. 6) Persist
+     *   changes; update `updated_at` automatically as per model behavior. 7)
+     *   Return the updated metric entity.
    *
    * Error handling:
    * - Not found: return 404 when id does not exist.
@@ -143,9 +153,10 @@ export class ErphrmtimetrackingReportoutputmetricsController {
    *
    * @param connection
    * @param reportOutputMetricId The unique id of the report output metric row to remove (UUID).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Realize DELETE /reportOutputMetrics/{reportOutputMetricId}.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Realize DELETE
+     *   /reportOutputMetrics/{reportOutputMetricId}.
    *
    * 1) Parse and validate reportOutputMetricId as UUID.
    * 2) Resolve the selected organization context for the authenticated member.
@@ -196,20 +207,24 @@ export class ErphrmtimetrackingReportoutputmetricsController {
    *
    * @param connection
    * @param body Creation payload for a single report output metric breakdown line.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Implementation steps:
-   * 1) Validate the actor has permission to create report output metric rows. If the system treats report generation as internal-only, block external callers.
-   * 2) Parse request body into DTO for report output metric creation.
-   * 3) Validate parent linkage by reading `erp_hrm_time_tracking_report_outputs` where `id = erp_hrm_time_tracking_report_output_id`. If not found, reject with a business validation error.
-   * 4) Enforce uniqueness: attempt insert and rely on unique constraint `(report_output_id, metric_name)`. If constraint fails, reject with a clear error stating that the metric_name already exists for the parent output.
-   * 5) Insert into `erp_hrm_time_tracking_report_output_metrics` with:
-   *    - `erp_hrm_time_tracking_report_output_id`
-   *    - `metric_name`
-   *    - `metric_value`
-   *    - timestamps (created_at/updated_at) managed by application or database defaults
-   *    - `deleted_at` should be null on creation.
-   * 6) Return the created record fields required by the response DTO.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Implementation steps: 1) Validate the actor has
+     *   permission to create report output metric rows. If the system treats
+     *   report generation as internal-only, block external callers. 2) Parse
+     *   request body into DTO for report output metric creation. 3) Validate
+     *   parent linkage by reading `erp_hrm_time_tracking_report_outputs` where
+     *   `id = erp_hrm_time_tracking_report_output_id`. If not found, reject
+     *   with a business validation error. 4) Enforce uniqueness: attempt insert
+     *   and rely on unique constraint `(report_output_id, metric_name)`. If
+     *   constraint fails, reject with a clear error stating that the
+     *   metric_name already exists for the parent output. 5) Insert into
+     *   `erp_hrm_time_tracking_report_output_metrics` with: -
+     *   `erp_hrm_time_tracking_report_output_id` - `metric_name` -
+     *   `metric_value` - timestamps (created_at/updated_at) managed by
+     *   application or database defaults - `deleted_at` should be null on
+     *   creation. 6) Return the created record fields required by the response
+     *   DTO.
    *
    * Edge cases:
    * - Concurrent inserts for the same `(output_id, metric_name)` should result in one success and other failure due to the unique constraint.

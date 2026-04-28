@@ -24,51 +24,53 @@ import { IHrmPlatformOrganization } from "./IHrmPlatformOrganization";
  */
 export type IHrmPlatformMemberSession = {
   /**
-   * @x-autobe-database-schema-property id
+     * @x-autobe-database-schema-property id
    */
   id: string & tags.Format<"uuid">;
   /**
-   * @x-autobe-database-schema-property hrm_platform_member_id
+     * @x-autobe-database-schema-property hrm_platform_member_id
    */
   member_id: string & tags.Format<"uuid">;
   /**
-   * @x-autobe-database-schema-property organization_id
+     * @x-autobe-database-schema-property organization_id
    */
   organization_id: (string & tags.Format<"uuid">) | null;
   /**
-   * @x-autobe-database-schema-property access_token_expires_at
+     * @x-autobe-database-schema-property access_token_expires_at
    */
   access_token_expires_at: string & tags.Format<"date-time">;
   /**
-   * @x-autobe-database-schema-property refresh_token_expires_at
+     * @x-autobe-database-schema-property refresh_token_expires_at
    */
   refresh_token_expires_at: string & tags.Format<"date-time">;
   /**
-   * @x-autobe-database-schema-property ip_address
+     * @x-autobe-database-schema-property ip_address
    */
   ip_address: string;
   /**
-   * @x-autobe-database-schema-property user_agent
+     * @x-autobe-database-schema-property user_agent
    */
   user_agent: string;
 
   /**
    * Referring URL from the login request. Captures where the user came from before authentication.
    *
-   * @x-autobe-specification Direct mapping from hrm_platform_member_sessions.referrer column (VarChar 80000 with URI format). Nullable field that may be empty.
-   * @x-autobe-database-schema-property referrer
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_member_sessions.referrer column (VarChar 80000 with URI
+     *   format). Nullable field that may be empty.
+     * @x-autobe-database-schema-property referrer
    */
   referrer: (string & tags.Format<"uri">) | null;
   /**
-   * @x-autobe-database-schema-property created_at
+     * @x-autobe-database-schema-property created_at
    */
   created_at: string & tags.Format<"date-time">;
   /**
-   * @x-autobe-database-schema-property updated_at
+     * @x-autobe-database-schema-property updated_at
    */
   updated_at: string & tags.Format<"date-time">;
   /**
-   * @x-autobe-database-schema-property expired_at
+     * @x-autobe-database-schema-property expired_at
    */
   expired_at: (string & tags.Format<"date-time">) | null;
 };
@@ -106,22 +108,23 @@ export namespace IHrmPlatformMemberSession {
     /**
      * Filter by IP address pattern
      *
-     * @x-autobe-database-schema-property ip_address
+         * @x-autobe-database-schema-property ip_address
      */
     ip_address?: string | undefined;
 
     /**
      * Filter by browser or device user agent pattern
      *
-     * @x-autobe-database-schema-property user_agent
+         * @x-autobe-database-schema-property user_agent
      */
     user_agent?: string | undefined;
 
     /**
      * Filter sessions by organization context
      *
-     * @x-autobe-database-schema-property organization_id
-     * @x-autobe-specification Filter sessions by organization context. Only includes sessions where organization_id matches the filter value.
+         * @x-autobe-database-schema-property organization_id
+         * @x-autobe-specification Filter sessions by organization context. Only
+         *   includes sessions where organization_id matches the filter value.
      */
     organization_id?: (string & tags.Format<"uuid">) | null | undefined;
 
@@ -170,27 +173,27 @@ export namespace IHrmPlatformMemberSession {
    */
   export type ISummary = {
     /**
-     * @x-autobe-database-schema-property id
+         * @x-autobe-database-schema-property id
      */
     id: string & tags.Format<"uuid">;
     /**
-     * @x-autobe-database-schema-property ip_address
+         * @x-autobe-database-schema-property ip_address
      */
     ip_address: string;
     /**
-     * @x-autobe-database-schema-property user_agent
+         * @x-autobe-database-schema-property user_agent
      */
     user_agent: string;
     /**
-     * @x-autobe-database-schema-property created_at
+         * @x-autobe-database-schema-property created_at
      */
     created_at: string & tags.Format<"date-time">;
     /**
-     * @x-autobe-database-schema-property expired_at
+         * @x-autobe-database-schema-property expired_at
      */
     expired_at: (string & tags.Format<"date-time">) | null;
     /**
-     * @x-autobe-database-schema-property organization
+         * @x-autobe-database-schema-property organization
      */
     organization?: IHrmPlatformOrganization.ISummary | null | undefined;
   };

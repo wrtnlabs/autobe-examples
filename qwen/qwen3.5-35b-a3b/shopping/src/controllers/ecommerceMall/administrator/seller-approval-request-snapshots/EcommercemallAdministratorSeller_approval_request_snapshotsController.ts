@@ -26,9 +26,11 @@ export class EcommercemallAdministratorSeller_approval_request_snapshotsControll
    *
    * @param connection
    * @param body Search criteria and pagination parameters for filtering seller approval request snapshots.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Query ecommerce_mall_seller_approval_request_snapshots table with pagination and filtering.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor administrator
+     * @x-autobe-specification Query
+     *   ecommerce_mall_seller_approval_request_snapshots table with pagination
+     *   and filtering.
    *
    * ### Filtering Rules:
    * - Filter by ecommerce_mall_seller_approval_request_id (UUID) to find snapshots for a specific approval request
@@ -85,9 +87,11 @@ export class EcommercemallAdministratorSeller_approval_request_snapshotsControll
    *
    * @param connection
    * @param snapshotId Unique identifier of the approval request snapshot to retrieve. This UUID corresponds to an immutable audit record captured when the approval status changed.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Query the ecommerce_mall_seller_approval_request_snapshots table by id field using the provided snapshotId UUID parameter.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor administrator
+     * @x-autobe-specification Query the
+     *   ecommerce_mall_seller_approval_request_snapshots table by id field
+     *   using the provided snapshotId UUID parameter.
    *
    * Validation:
    * - Verify snapshotId is a valid UUID format

@@ -21,7 +21,8 @@ import { IRedditCommunitySubscription } from "../../../../../structures/IRedditC
  * @param props.body Search criteria including pagination cursor, sorting options, date range filters, and status filters for snapshot retrieval
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Query reddit_community_subscriptions_snapshots table filtered by reddit_community_subscription_id = {subscriptionId}.
+ * @x-autobe-specification Query reddit_community_subscriptions_snapshots table
+ *   filtered by reddit_community_subscription_id = {subscriptionId}.
  *
  * Support search filters on user_id, community_id, status, created_at date range, and snapshot_created_at date range.
  *

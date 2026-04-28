@@ -16,8 +16,9 @@ export type IEcommerceMallSellerProfile = {
    *
    * This UUID serves as the primary key for the seller profile record and is used for lookups when retrieving profile information. Each seller has exactly one associated profile.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_seller_profiles.id. UUID primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_seller_profiles.id. UUID primary key.
    */
   id: string & tags.Format<"uuid">;
 
@@ -26,8 +27,9 @@ export type IEcommerceMallSellerProfile = {
    *
    * This is the public-facing name of the seller's shop shown throughout the platform. It appears on product listings, in order records, and on the seller's public profile page. Should be a recognizable brand or store name.
    *
-   * @x-autobe-database-schema-property name
-   * @x-autobe-specification Direct mapping from ecommerce_mall_seller_profiles.name. String.
+     * @x-autobe-database-schema-property name
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_seller_profiles.name. String.
    */
   name: string;
 
@@ -36,8 +38,9 @@ export type IEcommerceMallSellerProfile = {
    *
    * This field contains the free-form text description that sellers provide about their shop. It is visible to customers on seller profile pages and helps customers make informed purchasing decisions by learning about the seller's background before buying.
    *
-   * @x-autobe-database-schema-property description
-   * @x-autobe-specification Direct mapping from ecommerce_mall_seller_profiles.description. String.
+     * @x-autobe-database-schema-property description
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_seller_profiles.description. String.
    */
   description: string;
 
@@ -46,8 +49,9 @@ export type IEcommerceMallSellerProfile = {
    *
    * This field contains a URI pointing to the shop's logo image. Displayed on product listings and seller pages for brand identification. When null, no logo has been uploaded for this shop profile.
    *
-   * @x-autobe-specification Direct mapping from ecommerce_mall_seller_profiles.logo_uri. URI format string.
-   * @x-autobe-database-schema-property logo_uri
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_seller_profiles.logo_uri. URI format string.
+     * @x-autobe-database-schema-property logo_uri
    */
   logo_uri?: (string & tags.Format<"uri">) | null | undefined;
 
@@ -56,8 +60,11 @@ export type IEcommerceMallSellerProfile = {
    *
    * Contains the associated seller account information including email, approval status, and shop name. This relationship allows consumers to verify seller credentials and approval status directly from the profile response.
    *
-   * @x-autobe-database-schema-property seller
-   * @x-autobe-specification Belongs-to relation via ecommerce_mall_seller_profiles.seller_id FK to ecommerce_mall_sellers.id. Returns nested IEcommerceMallSeller.ISummary object.
+     * @x-autobe-database-schema-property seller
+     * @x-autobe-specification Belongs-to relation via
+     *   ecommerce_mall_seller_profiles.seller_id FK to
+     *   ecommerce_mall_sellers.id. Returns nested IEcommerceMallSeller.ISummary
+     *   object.
    */
   seller: IEcommerceMallSeller.ISummary;
 
@@ -66,8 +73,9 @@ export type IEcommerceMallSellerProfile = {
    *
    * This timestamp is set automatically when the profile record is first created. It does not change on subsequent updates to profile content.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_seller_profiles.created_at. DateTime.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_seller_profiles.created_at. DateTime.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -76,8 +84,10 @@ export type IEcommerceMallSellerProfile = {
    *
    * This timestamp is automatically updated whenever any field in the profile record changes. It does not change when only related snapshots are created. Use this field to determine the freshness of profile information.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_seller_profiles.updated_at. DateTime. Updated automatically on any field change.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_seller_profiles.updated_at. DateTime. Updated
+     *   automatically on any field change.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -86,8 +96,10 @@ export type IEcommerceMallSellerProfile = {
    *
    * When null, the profile is active. When populated, the profile is considered deleted but data is preserved for historical records and audit trails. Deleted profiles are not returned by public endpoints but remain accessible to administrators for compliance review.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_seller_profiles.deleted_at. Nullable DateTime. Set when profile is soft-deleted.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_seller_profiles.deleted_at. Nullable DateTime. Set when
+     *   profile is soft-deleted.
    */
   deleted_at?: null | (string & tags.Format<"date-time">) | undefined;
 };
@@ -101,7 +113,7 @@ export namespace IEcommerceMallSellerProfile {
    */
   export type IUpdate = {
     /**
-     * @x-autobe-database-schema-property description
+         * @x-autobe-database-schema-property description
      */
     description?: (string & tags.MaxLength<10000>) | undefined;
 
@@ -110,15 +122,17 @@ export namespace IEcommerceMallSellerProfile {
      *
      * This field contains a URI pointing to the shop's logo image. Displayed on product listings and seller pages for brand identification. Set to null to remove the logo.
      *
-     * @x-autobe-database-schema-property logo_uri
-     * @x-autobe-specification Direct mapping from ecommerce_mall_seller_profiles.logo_uri. URI format string, nullable for removal.
+         * @x-autobe-database-schema-property logo_uri
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_seller_profiles.logo_uri. URI format string,
+         *   nullable for removal.
      */
     logoUri?:
       | (string & tags.MaxLength<80000> & tags.Format<"uri">)
       | null
       | undefined;
     /**
-     * @x-autobe-database-schema-property name
+         * @x-autobe-database-schema-property name
      */
     name?: (string & tags.MaxLength<200>) | undefined;
   };
@@ -134,7 +148,9 @@ export namespace IEcommerceMallSellerProfile {
      *
      * Case-insensitive partial match is applied. When provided, returns only profiles where the shop name contains the search string. Empty or null returns all profiles matching other filters.
      *
-     * @x-autobe-specification Maps to ecommerce_mall_seller_profiles.name column via case-insensitive partial match (ILIKE). Applied as WHERE clause filter when search string is provided.
+         * @x-autobe-specification Maps to ecommerce_mall_seller_profiles.name
+         *   column via case-insensitive partial match (ILIKE). Applied as WHERE
+         *   clause filter when search string is provided.
      */
     search?: string | undefined;
 
@@ -143,7 +159,10 @@ export namespace IEcommerceMallSellerProfile {
      *
      * Allowed values: pending (seller registration awaiting administrator review), approved (seller can list products), rejected (seller registration denied). When omitted, all approval statuses are included.
      *
-     * @x-autobe-specification Maps to ecommerce_mall_sellers.approval_status via JOIN on seller_id. Filter applied when specified: pending (awaiting review), approved (can list products), or rejected (registration denied).
+         * @x-autobe-specification Maps to
+         *   ecommerce_mall_sellers.approval_status via JOIN on seller_id.
+         *   Filter applied when specified: pending (awaiting review), approved
+         *   (can list products), or rejected (registration denied).
      */
     approval_status?: string | undefined;
 
@@ -152,7 +171,10 @@ export namespace IEcommerceMallSellerProfile {
      *
      * ISO 8601 format required (e.g., 2024-01-01T00:00:00Z). When provided, returns only profiles with created_at >= from_date. Used in combination with to_date for date range filtering.
      *
-     * @x-autobe-specification Maps to ecommerce_mall_seller_profiles.created_at column. Applied as lower bound of date range filter (WHERE created_at >= from_date). ISO 8601 format required.
+         * @x-autobe-specification Maps to
+         *   ecommerce_mall_seller_profiles.created_at column. Applied as lower
+         *   bound of date range filter (WHERE created_at >= from_date). ISO
+         *   8601 format required.
      */
     from_date?: (string & tags.Format<"date-time">) | undefined;
 
@@ -161,7 +183,10 @@ export namespace IEcommerceMallSellerProfile {
      *
      * ISO 8601 format required (e.g., 2024-12-31T23:59:59Z). When provided, returns only profiles with created_at <= to_date. Used in combination with from_date for date range filtering.
      *
-     * @x-autobe-specification Maps to ecommerce_mall_seller_profiles.created_at column. Applied as upper bound of date range filter (WHERE created_at <= to_date). ISO 8601 format required.
+         * @x-autobe-specification Maps to
+         *   ecommerce_mall_seller_profiles.created_at column. Applied as upper
+         *   bound of date range filter (WHERE created_at <= to_date). ISO 8601
+         *   format required.
      */
     to_date?: (string & tags.Format<"date-time">) | undefined;
 
@@ -170,7 +195,9 @@ export namespace IEcommerceMallSellerProfile {
      *
      * Minimum value is 1. Determines the offset for retrieving records. Page 1 returns the first set of results. Must be used with limit parameter.
      *
-     * @x-autobe-specification Computed pagination parameter. Determines which page of results to return. Page numbering is 1-indexed. Offset calculated as (page - 1) * limit.
+         * @x-autobe-specification Computed pagination parameter. Determines
+         *   which page of results to return. Page numbering is 1-indexed.
+         *   Offset calculated as (page - 1) * limit.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -179,7 +206,9 @@ export namespace IEcommerceMallSellerProfile {
      *
      * Minimum 1, maximum 100. Controls the maximum number of seller profile records returned in a single page. Actual count may be less on the final page.
      *
-     * @x-autobe-specification Computed pagination parameter. Controls maximum number of records returned per page. Validated between 1 and 100. Used with page to calculate database offset.
+         * @x-autobe-specification Computed pagination parameter. Controls
+         *   maximum number of records returned per page. Validated between 1
+         *   and 100. Used with page to calculate database offset.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)

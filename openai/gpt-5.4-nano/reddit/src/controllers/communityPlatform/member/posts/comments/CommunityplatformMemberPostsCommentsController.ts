@@ -39,9 +39,10 @@ export class CommunityplatformMemberPostsCommentsController {
    * @param connection
    * @param postId Target post identifier. The new comment will be associated with this post’s discussion thread.
    * @param body Create request payload for a new comment in the target post’s thread.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Service-layer flow for POST /posts/{postId}/comments:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Service-layer flow for POST
+     *   /posts/{postId}/comments:
    *
    * 1) Authenticate caller and resolve authenticated member identity as voter/user context.
    * 2) Resolve target post:
@@ -108,9 +109,10 @@ export class CommunityplatformMemberPostsCommentsController {
    * @param connection
    * @param postId Target post ID whose comment thread will be listed.
    * @param body List request parameters for filtering, sorting, and paginating the comment thread of the given post.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification List comments for a post with pagination and thread-aware sorting.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification List comments for a post with pagination and
+     *   thread-aware sorting.
    *
    * Implementation steps:
    * 1) Parse `postId` from path and pagination/sorting/filter criteria from request body.
@@ -178,9 +180,9 @@ export class CommunityplatformMemberPostsCommentsController {
    * @param connection
    * @param postId Target post ID that scopes which comment thread the request is accessing.
    * @param commentId Target comment ID within the specified post thread.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation steps:
    *
    * 1. Parse `postId` and `commentId` from path.
    * 2. Start a read-only transaction.
@@ -247,9 +249,9 @@ export class CommunityplatformMemberPostsCommentsController {
    * @param postId Target post ID that scopes which comment thread the update applies to.
    * @param commentId Target comment ID to update within the specified post.
    * @param body Update payload for the comment content.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation steps:
    *
    * 1) Parse `postId` and `commentId` from path.
    * 2) Load the target comment by `id = commentId` and additionally verify it belongs to `community_platform_post_id = postId`.
@@ -317,11 +319,13 @@ export class CommunityplatformMemberPostsCommentsController {
    * @param connection
    * @param postId Target post ID that scopes the comment discussion to the correct post.
    * @param commentId Target comment ID to be removed from the specified post discussion.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1) Resolve actor and authorization context
-   * - Extract authenticated actor identity from session/middleware.
-   * - Determine whether actor is a moderator for the community containing the target post (authorization requires joining from comment -> post -> community and then checking moderator membership).
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification 1) Resolve actor and authorization context -
+     *   Extract authenticated actor identity from session/middleware. -
+     *   Determine whether actor is a moderator for the community containing the
+     *   target post (authorization requires joining from comment -> post ->
+     *   community and then checking moderator membership).
    *
    * 2) Validate target scope (postId + commentId)
    * - Query `community_platform_comments` where `id = {commentId}` AND `community_platform_post_id = {postId}`.

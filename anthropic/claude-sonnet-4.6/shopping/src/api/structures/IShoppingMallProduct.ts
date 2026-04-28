@@ -17,41 +17,41 @@ import { IShoppingMallSeller } from "./IShoppingMallSeller";
  */
 export type IShoppingMallProduct = {
   /**
-   * @x-autobe-database-schema-property id
+     * @x-autobe-database-schema-property id
    */
   id: string & tags.Format<"uuid">;
   /**
-   * @x-autobe-database-schema-property seller
+     * @x-autobe-database-schema-property seller
    */
   seller: IShoppingMallSeller.ISummary;
   /**
-   * @x-autobe-database-schema-property category
+     * @x-autobe-database-schema-property category
    */
   category: IShoppingMallCategory.ISummary | null;
   /**
-   * @x-autobe-database-schema-property name
+     * @x-autobe-database-schema-property name
    */
   name: string;
   /**
-   * @x-autobe-database-schema-property description
+     * @x-autobe-database-schema-property description
    */
   description: string;
   /**
-   * @x-autobe-database-schema-property base_price
+     * @x-autobe-database-schema-property base_price
    */
   base_price: number;
   images: IShoppingMallProductImage[];
   variants: IShoppingMallProductVariant[];
   /**
-   * @x-autobe-database-schema-property created_at
+     * @x-autobe-database-schema-property created_at
    */
   created_at: string & tags.Format<"date-time">;
   /**
-   * @x-autobe-database-schema-property updated_at
+     * @x-autobe-database-schema-property updated_at
    */
   updated_at: string & tags.Format<"date-time">;
   /**
-   * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-database-schema-property deleted_at
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -65,84 +65,132 @@ export namespace IShoppingMallProduct {
     /**
      * Optional keyword to search product names. When provided, returns only products whose name contains the keyword (partial, case-insensitive match). Omit to return products regardless of name.
      *
-     * @x-autobe-specification Query parameter (not a DB column). When provided, apply a GIN trigram similarity filter on the `name` column of `shopping_mall_products` using ILIKE '%keyword%' or the @@ operator with pg_trgm. Omitting this field returns products regardless of name. Null/empty string should be treated as no keyword filter.
+         * @x-autobe-specification Query parameter (not a DB column). When
+         *   provided, apply a GIN trigram similarity filter on the `name`
+         *   column of `shopping_mall_products` using ILIKE '%keyword%' or the
+         *   @@ operator with pg_trgm. Omitting this field returns products
+         *   regardless of name. Null/empty string should be treated as no
+         *   keyword filter.
      */
     keyword?: string | undefined;
 
     /**
      * Optional UUID of a category to filter products by. When specified, returns only products assigned to that category or any of its immediate subcategories. Omit to return products from all categories.
      *
-     * @x-autobe-specification Filters shopping_mall_products.shopping_mall_category_id. When provided, filter WHERE shopping_mall_category_id = categoryId. Also resolve subcategories by looking up shopping_mall_categories WHERE parent_id = categoryId and expand the filter to include those IDs as well (two-tier hierarchy support). If the categoryId does not exist, return empty results without error.
+         * @x-autobe-specification Filters
+         *   shopping_mall_products.shopping_mall_category_id. When provided,
+         *   filter WHERE shopping_mall_category_id = categoryId. Also resolve
+         *   subcategories by looking up shopping_mall_categories WHERE
+         *   parent_id = categoryId and expand the filter to include those IDs
+         *   as well (two-tier hierarchy support). If the categoryId does not
+         *   exist, return empty results without error.
      */
     categoryId?: (string & tags.Format<"uuid">) | null | undefined;
 
     /**
      * Optional UUID of a seller to restrict results to products owned by that specific seller. Omit to return products from all sellers.
      *
-     * @x-autobe-specification Filters shopping_mall_products.shopping_mall_seller_id. When provided, filter WHERE shopping_mall_seller_id = sellerId. If the sellerId does not correspond to an existing or active seller, return empty results without error. Note: for the admin-scoped endpoint (PATCH /admin/sellers/{sellerId}/products), the sellerId is already fixed by the path parameter and this field in the body may be redundant but is still accepted.
+         * @x-autobe-specification Filters
+         *   shopping_mall_products.shopping_mall_seller_id. When provided,
+         *   filter WHERE shopping_mall_seller_id = sellerId. If the sellerId
+         *   does not correspond to an existing or active seller, return empty
+         *   results without error. Note: for the admin-scoped endpoint (PATCH
+         *   /admin/sellers/{sellerId}/products), the sellerId is already fixed
+         *   by the path parameter and this field in the body may be redundant
+         *   but is still accepted.
      */
     sellerId?: (string & tags.Format<"uuid">) | null | undefined;
 
     /**
      * Optional minimum base price filter (inclusive). When specified, returns only products with a base price greater than or equal to this value. Omit to apply no lower price bound.
      *
-     * @x-autobe-specification Filters shopping_mall_products.base_price with a lower bound. When provided, apply WHERE base_price >= minPrice. Must be >= 0. Can be combined with maxPrice to define a price range. Omit to apply no lower bound on price.
+         * @x-autobe-specification Filters shopping_mall_products.base_price
+         *   with a lower bound. When provided, apply WHERE base_price >=
+         *   minPrice. Must be >= 0. Can be combined with maxPrice to define a
+         *   price range. Omit to apply no lower bound on price.
      */
     minPrice?: (number & tags.Minimum<0>) | null | undefined;
 
     /**
      * Optional maximum base price filter (inclusive). When specified, returns only products with a base price less than or equal to this value. Omit to apply no upper price bound.
      *
-     * @x-autobe-specification Filters shopping_mall_products.base_price with an upper bound. When provided, apply WHERE base_price <= maxPrice. Must be >= 0. Can be combined with minPrice to define a price range. Omit to apply no upper bound on price.
+         * @x-autobe-specification Filters shopping_mall_products.base_price
+         *   with an upper bound. When provided, apply WHERE base_price <=
+         *   maxPrice. Must be >= 0. Can be combined with minPrice to define a
+         *   price range. Omit to apply no upper bound on price.
      */
     maxPrice?: (number & tags.Minimum<0>) | null | undefined;
 
     /**
      * Optional start of creation date range filter (inclusive). When specified, returns only products created at or after this timestamp. Omit to apply no lower creation date bound.
      *
-     * @x-autobe-specification Filters shopping_mall_products.created_at with a lower bound. When provided, apply WHERE created_at >= createdAfter. ISO 8601 date-time string. Omit to apply no lower bound on creation date.
+         * @x-autobe-specification Filters shopping_mall_products.created_at
+         *   with a lower bound. When provided, apply WHERE created_at >=
+         *   createdAfter. ISO 8601 date-time string. Omit to apply no lower
+         *   bound on creation date.
      */
     createdAfter?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * Optional end of creation date range filter (inclusive). When specified, returns only products created at or before this timestamp. Omit to apply no upper creation date bound.
      *
-     * @x-autobe-specification Filters shopping_mall_products.created_at with an upper bound. When provided, apply WHERE created_at <= createdBefore. ISO 8601 date-time string. Omit to apply no upper bound on creation date.
+         * @x-autobe-specification Filters shopping_mall_products.created_at
+         *   with an upper bound. When provided, apply WHERE created_at <=
+         *   createdBefore. ISO 8601 date-time string. Omit to apply no upper
+         *   bound on creation date.
      */
     createdBefore?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * Administrator-only flag. When set to `true`, includes soft-deleted products (those that have been removed from the catalog) in the result set. Only effective when the caller is an administrator; non-admin callers always receive active products only. Defaults to `false`.
      *
-     * @x-autobe-specification Controls filtering on shopping_mall_products.deleted_at. When true AND the caller is an admin, include products where deleted_at IS NOT NULL (soft-deleted products) in the result set. When false or when caller is not an admin, always enforce deleted_at IS NULL. Default behavior (field omitted) is to exclude deleted products.
+         * @x-autobe-specification Controls filtering on
+         *   shopping_mall_products.deleted_at. When true AND the caller is an
+         *   admin, include products where deleted_at IS NOT NULL (soft-deleted
+         *   products) in the result set. When false or when caller is not an
+         *   admin, always enforce deleted_at IS NULL. Default behavior (field
+         *   omitted) is to exclude deleted products.
      */
     includeDeleted?: boolean | undefined;
 
     /**
      * The field by which to sort the product list. Accepted values: `createdAt` (sort by creation date), `name` (sort alphabetically by product name), `basePrice` (sort by base price). Defaults to `createdAt` when omitted.
      *
-     * @x-autobe-specification Query parameter controlling the ORDER BY field in the query. Allowed values: 'createdAt' -> ORDER BY shopping_mall_products.created_at, 'name' -> ORDER BY shopping_mall_products.name, 'basePrice' -> ORDER BY shopping_mall_products.base_price. Default when omitted: 'createdAt'. Combined with sortDirection to form the complete ORDER BY clause.
+         * @x-autobe-specification Query parameter controlling the ORDER BY
+         *   field in the query. Allowed values: 'createdAt' -> ORDER BY
+         *   shopping_mall_products.created_at, 'name' -> ORDER BY
+         *   shopping_mall_products.name, 'basePrice' -> ORDER BY
+         *   shopping_mall_products.base_price. Default when omitted:
+         *   'createdAt'. Combined with sortDirection to form the complete ORDER
+         *   BY clause.
      */
     sort?: "createdAt" | "name" | "basePrice" | undefined;
 
     /**
      * The direction in which to sort results. `ASC` returns results in ascending order; `DESC` returns results in descending order. Defaults to `DESC` when omitted.
      *
-     * @x-autobe-specification Query parameter controlling the ORDER BY direction applied to the column determined by the `sort` field. Values: 'ASC' for ascending, 'DESC' for descending. Default when omitted: 'DESC'.
+         * @x-autobe-specification Query parameter controlling the ORDER BY
+         *   direction applied to the column determined by the `sort` field.
+         *   Values: 'ASC' for ascending, 'DESC' for descending. Default when
+         *   omitted: 'DESC'.
      */
     sortDirection?: "ASC" | "DESC" | undefined;
 
     /**
      * The page number to retrieve (1-indexed). Specifies which page of results to return. Defaults to `1` (the first page) when omitted.
      *
-     * @x-autobe-specification Pagination query parameter (not a DB column). 1-based page index. Used to calculate the SQL OFFSET = (page - 1) * limit. Default: 1. Minimum: 1.
+         * @x-autobe-specification Pagination query parameter (not a DB column).
+         *   1-based page index. Used to calculate the SQL OFFSET = (page - 1) *
+         *   limit. Default: 1. Minimum: 1.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * The maximum number of products to return per page. Must be between 1 and 100 inclusive. Defaults to `20` when omitted.
      *
-     * @x-autobe-specification Pagination query parameter (not a DB column). Number of records per page applied as SQL LIMIT. Minimum: 1, Maximum: 100. Default: 20.
+         * @x-autobe-specification Pagination query parameter (not a DB column).
+         *   Number of records per page applied as SQL LIMIT. Minimum: 1,
+         *   Maximum: 100. Default: 20.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -172,63 +220,96 @@ export namespace IShoppingMallProduct {
     /**
      * The unique identifier of the product. Use this value to retrieve the full product detail or to perform actions on a specific product.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_products.id. UUID primary key of the product record. Used to identify the product in detail and management endpoints.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_products.id. UUID primary key of the product record.
+         *   Used to identify the product in detail and management endpoints.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * The display name of the product, shown in search results, category browsing pages, and product cards.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from shopping_mall_products.name. The human-readable title of the product displayed to customers in search results and listing pages.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_products.name. The human-readable title of the
+         *   product displayed to customers in search results and listing pages.
      */
     name: string;
 
     /**
      * The base reference price of the product. Individual variants may define their own price that overrides this value. Always greater than or equal to zero.
      *
-     * @x-autobe-database-schema-property base_price
-     * @x-autobe-specification Direct mapping from shopping_mall_products.base_price. Stored as DoublePrecision in the database. Represents the default reference price for the product before any variant-specific pricing is applied.
+         * @x-autobe-database-schema-property base_price
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_products.base_price. Stored as DoublePrecision in the
+         *   database. Represents the default reference price for the product
+         *   before any variant-specific pricing is applied.
      */
     base_price: number & tags.Minimum<0>;
 
     /**
      * The category this product is assigned to. Returns a lightweight category summary including the category's name and hierarchy information. Null if the product's category has been deleted from the platform or was not yet assigned.
      *
-     * @x-autobe-database-schema-property category
-     * @x-autobe-specification Join via shopping_mall_products.shopping_mall_category_id -> shopping_mall_categories.id. Returns IShoppingMallCategory.ISummary if the category exists, or null if shopping_mall_category_id is null (category was deleted or not assigned). The full ISummary includes id, parent_id, name, description, children[], created_at, updated_at.
+         * @x-autobe-database-schema-property category
+         * @x-autobe-specification Join via
+         *   shopping_mall_products.shopping_mall_category_id ->
+         *   shopping_mall_categories.id. Returns IShoppingMallCategory.ISummary
+         *   if the category exists, or null if shopping_mall_category_id is
+         *   null (category was deleted or not assigned). The full ISummary
+         *   includes id, parent_id, name, description, children[], created_at,
+         *   updated_at.
      */
     category: IShoppingMallCategory.ISummary | null;
 
     /**
      * The seller who owns this product. Contains essential seller identity and account status information. Always present for every product listing.
      *
-     * @x-autobe-database-schema-property seller
-     * @x-autobe-specification Join via shopping_mall_products.shopping_mall_seller_id -> shopping_mall_sellers.id. Returns IShoppingMallSeller.ISummary with fields: id, email, shopName, isBanned, isSuspended, createdAt, updatedAt. This relation is always non-null as every product must belong to a seller.
+         * @x-autobe-database-schema-property seller
+         * @x-autobe-specification Join via
+         *   shopping_mall_products.shopping_mall_seller_id ->
+         *   shopping_mall_sellers.id. Returns IShoppingMallSeller.ISummary with
+         *   fields: id, email, shopName, isBanned, isSuspended, createdAt,
+         *   updatedAt. This relation is always non-null as every product must
+         *   belong to a seller.
      */
     seller: IShoppingMallSeller.ISummary;
 
     /**
      * The URL of the product's primary (first-ordered) image, used as the thumbnail in list views and product cards. Null if no images have been uploaded for this product yet.
      *
-     * @x-autobe-specification Computed field. Derived from: LEFT JOIN shopping_mall_product_images ON shopping_mall_product_images.shopping_mall_product_id = shopping_mall_products.id ORDER BY shopping_mall_product_images.sequence ASC LIMIT 1, selecting the url field. Returns null if no images exist for the product. This is the URL of the primary thumbnail image used to represent the product in list views.
+         * @x-autobe-specification Computed field. Derived from: LEFT JOIN
+         *   shopping_mall_product_images ON
+         *   shopping_mall_product_images.shopping_mall_product_id =
+         *   shopping_mall_products.id ORDER BY
+         *   shopping_mall_product_images.sequence ASC LIMIT 1, selecting the
+         *   url field. Returns null if no images exist for the product. This is
+         *   the URL of the primary thumbnail image used to represent the
+         *   product in list views.
      */
     primaryImageUrl: (string & tags.Format<"url">) | null;
 
     /**
      * The timestamp when this product listing was first created on the platform. Returned in ISO 8601 date-time format.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_products.created_at. ISO 8601 datetime string with timezone. Indicates when the product listing was first created by the seller.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_products.created_at. ISO 8601 datetime string with
+         *   timezone. Indicates when the product listing was first created by
+         *   the seller.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * The timestamp when this product was soft-deleted, or null if the product is still active. Deleted products are hidden from all customer-facing discovery surfaces. Administrators may see deleted products in audit and oversight views.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from shopping_mall_products.deleted_at. Nullable ISO 8601 datetime string. When non-null, the product has been soft-deleted and is excluded from all customer-facing search and listing results. In administrative contexts, deleted products may appear in audit queries with this field populated.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_products.deleted_at. Nullable ISO 8601 datetime
+         *   string. When non-null, the product has been soft-deleted and is
+         *   excluded from all customer-facing search and listing results. In
+         *   administrative contexts, deleted products may appear in audit
+         *   queries with this field populated.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };
@@ -246,32 +327,52 @@ export namespace IShoppingMallProduct {
     /**
      * The human-readable title of the product to display in search results and on the product detail page. When provided, replaces the current name. Omit to keep the existing name unchanged.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping to shopping_mall_products.name (String). When provided, replaces the current name value. If omitted, the existing name is retained. This is the human-readable title shown to customers in search results, category pages, and the product detail page.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping to shopping_mall_products.name
+         *   (String). When provided, replaces the current name value. If
+         *   omitted, the existing name is retained. This is the human-readable
+         *   title shown to customers in search results, category pages, and the
+         *   product detail page.
      */
     name?: string | undefined;
 
     /**
      * A detailed description of the product's characteristics, intended use, or any information the seller wishes to share with customers. When provided, replaces the current description. Omit to keep the existing description unchanged.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping to shopping_mall_products.description (String). When provided, replaces the current description value. If omitted, the existing description is retained. This is the detailed narrative text describing the product's characteristics and intended use.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping to
+         *   shopping_mall_products.description (String). When provided,
+         *   replaces the current description value. If omitted, the existing
+         *   description is retained. This is the detailed narrative text
+         *   describing the product's characteristics and intended use.
      */
     description?: string | undefined;
 
     /**
      * The default reference price of the product in the platform's base currency unit. Applied when no variant-specific price override exists. Must be zero or greater. When provided, replaces the current base price. Omit to keep the existing base price unchanged.
      *
-     * @x-autobe-database-schema-property base_price
-     * @x-autobe-specification Direct mapping to shopping_mall_products.base_price (Float, DoublePrecision). When provided, replaces the current base_price value. Must be a non-negative number (minimum: 0). Serves as the default reference price applied when no variant-level price_override is set. If omitted, the existing base_price is retained.
+         * @x-autobe-database-schema-property base_price
+         * @x-autobe-specification Direct mapping to
+         *   shopping_mall_products.base_price (Float, DoublePrecision). When
+         *   provided, replaces the current base_price value. Must be a
+         *   non-negative number (minimum: 0). Serves as the default reference
+         *   price applied when no variant-level price_override is set. If
+         *   omitted, the existing base_price is retained.
      */
     base_price?: (number & tags.Minimum<0>) | undefined;
 
     /**
      * The UUID of the category to assign this product to within the two-tier catalog hierarchy. Set to `null` to remove the product from its current category (making it uncategorized). Provide a valid category UUID to assign or reassign the product's category. When omitted, the current category assignment remains unchanged.
      *
-     * @x-autobe-database-schema-property shopping_mall_category_id
-     * @x-autobe-specification Maps to shopping_mall_products.shopping_mall_category_id (String? UUID, nullable). When provided as a non-null UUID, the backend must verify the category exists in shopping_mall_categories before applying the update (return 422 if not found). When provided as null, the product becomes uncategorized (shopping_mall_category_id set to null). When the field is omitted entirely from the request body, the existing category assignment is retained unchanged.
+         * @x-autobe-database-schema-property shopping_mall_category_id
+         * @x-autobe-specification Maps to
+         *   shopping_mall_products.shopping_mall_category_id (String? UUID,
+         *   nullable). When provided as a non-null UUID, the backend must
+         *   verify the category exists in shopping_mall_categories before
+         *   applying the update (return 422 if not found). When provided as
+         *   null, the product becomes uncategorized (shopping_mall_category_id
+         *   set to null). When the field is omitted entirely from the request
+         *   body, the existing category assignment is retained unchanged.
      */
     categoryId?: (string & tags.Format<"uuid">) | null | undefined;
   };

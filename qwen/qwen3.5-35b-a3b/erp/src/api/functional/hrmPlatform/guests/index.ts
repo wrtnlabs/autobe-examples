@@ -20,7 +20,8 @@ import { IPageIHrmPlatformGuest } from "../../../structures/IPageIHrmPlatformGue
  * @param props.body Search criteria for guest records
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query hrm_platform_guests table with cursor-based pagination.
+ * @x-autobe-specification Query hrm_platform_guests table with cursor-based
+ *   pagination.
  *
  * Apply search filters from requestBody:
  * - device_identifier: exact match or pattern search using ilike

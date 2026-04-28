@@ -14,28 +14,28 @@ import { IErpHrmRolePermission } from "./IErpHrmRolePermission";
  */
 export type IErpHrmRole = {
   /**
-   * @x-autobe-database-schema-property id
+     * @x-autobe-database-schema-property id
    */
   id: string & tags.Format<"uuid">;
   /**
-   * @x-autobe-database-schema-property erp_hrm_organization_id
+     * @x-autobe-database-schema-property erp_hrm_organization_id
    */
   organizationId: string & tags.Format<"uuid">;
   /**
-   * @x-autobe-database-schema-property name
+     * @x-autobe-database-schema-property name
    */
   name: string;
   /**
-   * @x-autobe-database-schema-property is_builtin
+     * @x-autobe-database-schema-property is_builtin
    */
   isBuiltin: boolean;
   permissions: IErpHrmRolePermission[];
   /**
-   * @x-autobe-database-schema-property created_at
+     * @x-autobe-database-schema-property created_at
    */
   createdAt: string & tags.Format<"date-time">;
   /**
-   * @x-autobe-database-schema-property updated_at
+     * @x-autobe-database-schema-property updated_at
    */
   updatedAt: string & tags.Format<"date-time">;
 };
@@ -47,15 +47,29 @@ export namespace IErpHrmRole {
     /**
      * The new display name for the custom role. Must be unique within the organization. Must be a non-empty string.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping to erp_hrm_roles.name. Must be a non-empty string (minLength: 1). Must be unique within the organization per the @@unique([erp_hrm_organization_id, name]) constraint. If a different role in the same organization already holds this name, the server returns 409 Conflict.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping to erp_hrm_roles.name. Must be
+         *   a non-empty string (minLength: 1). Must be unique within the
+         *   organization per the @@unique([erp_hrm_organization_id, name])
+         *   constraint. If a different role in the same organization already
+         *   holds this name, the server returns 409 Conflict.
      */
     name: string & tags.MinLength<1>;
 
     /**
      * The complete set of permission codes to assign to this role, fully replacing any previously held permissions. Each code grants the role access to a specific category of organizational actions. Valid values: `org:manage`, `employee:manage`, `employee:view`, `project:manage`, `project:view`, `time:manage`, `time:approve`, `time:view_all`, `report:view`. Providing an empty array removes all permissions from the role.
      *
-     * @x-autobe-specification Drives a full replacement of erp_hrm_role_permissions rows for this role. Implementation: (1) DELETE all existing erp_hrm_role_permissions rows WHERE role_id = roleId, (2) INSERT one new row per code in this array, each with a fresh UUID id, the role_id, the permission_code value, and created_at = now(). All in a single transaction. Each value must be one of: org:manage, employee:manage, employee:view, project:manage, project:view, time:manage, time:approve, time:view_all, report:view. Duplicate values are prevented by the uniqueItems constraint. An empty array is valid and revokes all permissions from the role.
+         * @x-autobe-specification Drives a full replacement of
+         *   erp_hrm_role_permissions rows for this role. Implementation: (1)
+         *   DELETE all existing erp_hrm_role_permissions rows WHERE role_id =
+         *   roleId, (2) INSERT one new row per code in this array, each with a
+         *   fresh UUID id, the role_id, the permission_code value, and
+         *   created_at = now(). All in a single transaction. Each value must be
+         *   one of: org:manage, employee:manage, employee:view, project:manage,
+         *   project:view, time:manage, time:approve, time:view_all,
+         *   report:view. Duplicate values are prevented by the uniqueItems
+         *   constraint. An empty array is valid and revokes all permissions
+         *   from the role.
      */
     permissionCodes: string[] & tags.UniqueItems;
   };
@@ -69,24 +83,24 @@ export namespace IErpHrmRole {
    */
   export type ISummary = {
     /**
-     * @x-autobe-database-schema-property id
+         * @x-autobe-database-schema-property id
      */
     id: string & tags.Format<"uuid">;
     /**
-     * @x-autobe-database-schema-property name
+         * @x-autobe-database-schema-property name
      */
     name: string;
     /**
-     * @x-autobe-database-schema-property is_builtin
+         * @x-autobe-database-schema-property is_builtin
      */
     is_builtin: boolean;
     permissions: IErpHrmRolePermission[];
     /**
-     * @x-autobe-database-schema-property created_at
+         * @x-autobe-database-schema-property created_at
      */
     created_at: string & tags.Format<"date-time">;
     /**
-     * @x-autobe-database-schema-property updated_at
+         * @x-autobe-database-schema-property updated_at
      */
     updated_at: string & tags.Format<"date-time">;
   };
@@ -102,28 +116,39 @@ export namespace IErpHrmRole {
     /**
      * Optional keyword filter for the role name. Supports partial matching — for example, entering "man" will match roles named "Manager". When omitted, all role names are included.
      *
-     * @x-autobe-specification Optional partial-match filter applied against the erp_hrm_roles.name column using the GIN trigram index (gin_trgm_ops). When omitted, no name filtering is applied and all roles in the organization are returned.
+         * @x-autobe-specification Optional partial-match filter applied against
+         *   the erp_hrm_roles.name column using the GIN trigram index
+         *   (gin_trgm_ops). When omitted, no name filtering is applied and all
+         *   roles in the organization are returned.
      */
     name?: string | undefined;
 
     /**
      * Optional filter to restrict results by role type. Set to `true` to return only system-defined built-in roles (Owner, Manager, Employee), `false` to return only custom roles created by the organization owner, or omit to return all roles.
      *
-     * @x-autobe-specification Optional boolean filter applied against the erp_hrm_roles.is_builtin column. When true, returns only the three system-defined built-in roles (Owner, Manager, Employee). When false, returns only custom roles. When null or omitted, no filtering by this field is applied.
+         * @x-autobe-specification Optional boolean filter applied against the
+         *   erp_hrm_roles.is_builtin column. When true, returns only the three
+         *   system-defined built-in roles (Owner, Manager, Employee). When
+         *   false, returns only custom roles. When null or omitted, no
+         *   filtering by this field is applied.
      */
     is_builtin?: boolean | null | undefined;
 
     /**
      * Page number to retrieve, starting from 1. Defaults to 1 when omitted. Used together with `limit` to navigate through paginated role results.
      *
-     * @x-autobe-specification 1-based page number for LIMIT/OFFSET pagination. Defaults to 1 when omitted. OFFSET is calculated as (page - 1) * limit.
+         * @x-autobe-specification 1-based page number for LIMIT/OFFSET
+         *   pagination. Defaults to 1 when omitted. OFFSET is calculated as
+         *   (page - 1) * limit.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of roles to return per page. Must be between 1 and 100. Defaults to 20 when omitted.
      *
-     * @x-autobe-specification Maximum number of records to return per page. Minimum 1, maximum 100. Defaults to 20 when omitted. Applied as the SQL LIMIT clause.
+         * @x-autobe-specification Maximum number of records to return per page.
+         *   Minimum 1, maximum 100. Defaults to 20 when omitted. Applied as the
+         *   SQL LIMIT clause.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -132,14 +157,19 @@ export namespace IErpHrmRole {
     /**
      * Field to sort the role list by. Use `name` for alphabetical ordering or `created_at` for chronological ordering. Defaults to `created_at` when omitted.
      *
-     * @x-autobe-specification Column to sort results by. Allowed values: 'name' (sorts by erp_hrm_roles.name alphabetically) or 'created_at' (sorts by erp_hrm_roles.created_at chronologically). Defaults to 'created_at' when omitted.
+         * @x-autobe-specification Column to sort results by. Allowed values:
+         *   'name' (sorts by erp_hrm_roles.name alphabetically) or 'created_at'
+         *   (sorts by erp_hrm_roles.created_at chronologically). Defaults to
+         *   'created_at' when omitted.
      */
     sort_by?: "name" | "created_at" | undefined;
 
     /**
      * Sort direction for the results. Use `asc` for ascending order or `desc` for descending order. Defaults to `desc` when omitted.
      *
-     * @x-autobe-specification Sort direction applied to the sort_by field. 'asc' for ascending order, 'desc' for descending order. Defaults to 'desc' when omitted.
+         * @x-autobe-specification Sort direction applied to the sort_by field.
+         *   'asc' for ascending order, 'desc' for descending order. Defaults to
+         *   'desc' when omitted.
      */
     sort_order?: "asc" | "desc" | undefined;
   };
@@ -155,7 +185,7 @@ export namespace IErpHrmRole {
    */
   export type ICreate = {
     /**
-     * @x-autobe-database-schema-property name
+         * @x-autobe-database-schema-property name
      */
     name: string;
     permissions: string[] & tags.MinItems<1> & tags.UniqueItems;

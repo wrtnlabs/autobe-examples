@@ -26,7 +26,8 @@ import { IShoppingMallCancellationRequest } from "../../../../../structures/ISho
  * @param props.body Decision details for responding to the cancellation request
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Implement a service action that records a review response for an existing cancellation request within a single transaction.
+ * @x-autobe-specification Implement a service action that records a review
+ *   response for an existing cancellation request within a single transaction.
  *
  * 1. Resolve the authenticated actor and authorize only `seller` or `administrator` roles for this operation.
  * 2. Load the target row from `shopping_mall_cancellation_requests` by `id = cancellationRequestId` and `deleted_at IS NULL`. Join `shopping_mall_order_items` through `shopping_mall_order_item_id` to obtain `shopping_mall_seller_id`, item status, and other decision-eligibility context needed by business rules.

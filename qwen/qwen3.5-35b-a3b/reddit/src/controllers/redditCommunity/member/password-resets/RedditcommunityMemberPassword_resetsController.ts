@@ -22,9 +22,11 @@ export class RedditcommunityMemberPassword_resetsController {
    *
    * @param connection
    * @param body Search criteria for password reset requests including account type, email, date ranges, token status, and pagination parameters.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query password reset records from both reddit_community_member_password_resets and reddit_community_admin_password_resets tables.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query password reset records from both
+     *   reddit_community_member_password_resets and
+     *   reddit_community_admin_password_resets tables.
    *
    * Join logic:
    * 1. UNION ALL member password resets with type='member' discriminator
@@ -87,9 +89,10 @@ export class RedditcommunityMemberPassword_resetsController {
    *
    * @param connection
    * @param resetId Unique identifier of the password reset token.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query the reddit_community_member_password_resets table for the record matching the resetId parameter.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query the reddit_community_member_password_resets
+     *   table for the record matching the resetId parameter.
    *
    * 1. Validate that resetId is a valid UUID format.
    * 2. Fetch the password reset record by id using soft-delete aware query (filter WHERE deleted_at IS NULL).

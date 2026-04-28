@@ -24,7 +24,10 @@ export type IHrmContractAnalytic = {
    *
    * Provides visibility into the total number of contracts and their distribution between active and historical records. Active contracts are those currently in effect (no end_date), while historical contracts represent past employment arrangements (end_date is set).
    *
-   * @x-autobe-specification Computed from hrm_contracts: total = COUNT(*), active = COUNT(*) WHERE end_date IS NULL, historical = COUNT(*) WHERE end_date IS NOT NULL. Join with hrm_employees filtered by organization_id. Apply soft-delete filter (deleted_at IS NULL).
+     * @x-autobe-specification Computed from hrm_contracts: total = COUNT(*),
+     *   active = COUNT(*) WHERE end_date IS NULL, historical = COUNT(*) WHERE
+     *   end_date IS NOT NULL. Join with hrm_employees filtered by
+     *   organization_id. Apply soft-delete filter (deleted_at IS NULL).
    */
   total_counts: {
     total: number & tags.Type<"int32">;
@@ -37,7 +40,10 @@ export type IHrmContractAnalytic = {
    *
    * Shows how many contracts use each pay period type, providing insight into the organization's compensation structure. Each value represents the count of contracts with that specific pay period.
    *
-   * @x-autobe-specification Computed from hrm_contracts: GROUP BY pay_period, COUNT(*) for each period type (hourly, daily, weekly, monthly). Join with hrm_employees filtered by organization_id. Apply soft-delete filter (deleted_at IS NULL).
+     * @x-autobe-specification Computed from hrm_contracts: GROUP BY pay_period,
+     *   COUNT(*) for each period type (hourly, daily, weekly, monthly). Join
+     *   with hrm_employees filtered by organization_id. Apply soft-delete
+     *   filter (deleted_at IS NULL).
    */
   pay_period_distribution: {
     hourly: number & tags.Type<"int32">;
@@ -51,7 +57,11 @@ export type IHrmContractAnalytic = {
    *
    * Provides aggregated compensation metrics across all contracts. The average_pay_by_period shows mean pay amounts for each payment frequency type, while average_working_hours_per_week represents the mean weekly working hours across all contracts where this value is defined.
    *
-   * @x-autobe-specification Computed from hrm_contracts: average_pay_by_period = AVG(pay_amount) GROUP BY pay_period, average_working_hours_per_week = AVG(working_hours_per_week). Join with hrm_employees filtered by organization_id. Apply soft-delete filter (deleted_at IS NULL).
+     * @x-autobe-specification Computed from hrm_contracts:
+     *   average_pay_by_period = AVG(pay_amount) GROUP BY pay_period,
+     *   average_working_hours_per_week = AVG(working_hours_per_week). Join with
+     *   hrm_employees filtered by organization_id. Apply soft-delete filter
+     *   (deleted_at IS NULL).
    */
   compensation_stats: {
     average_pay_by_period: {
@@ -68,7 +78,10 @@ export type IHrmContractAnalytic = {
    *
    * Shows the composition of the workforce across different employment categories. Each value represents the count of contracts with that specific employment type, providing insight into the organization's hiring patterns and workforce structure.
    *
-   * @x-autobe-specification Computed from hrm_contracts: GROUP BY employment_type, COUNT(*) for each type (full_time, part_time, contractor, intern). Join with hrm_employees filtered by organization_id. Apply soft-delete filter (deleted_at IS NULL).
+     * @x-autobe-specification Computed from hrm_contracts: GROUP BY
+     *   employment_type, COUNT(*) for each type (full_time, part_time,
+     *   contractor, intern). Join with hrm_employees filtered by
+     *   organization_id. Apply soft-delete filter (deleted_at IS NULL).
    */
   employment_type_distribution: {
     full_time: number & tags.Type<"int32">;

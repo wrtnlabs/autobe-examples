@@ -10,24 +10,29 @@ export type IEcommerceMallOrderSnapshot = {
   /**
    * Unique identifier of the order snapshot.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_order_snapshots.id. Primary key, auto-generated UUID.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_order_snapshots.id. Primary key, auto-generated UUID.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * The unique identifier of the order that this snapshot references.
    *
-   * @x-autobe-database-schema-property order_id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_order_snapshots.order_id. References the parent order's ID at the time of snapshot creation.
+     * @x-autobe-database-schema-property order_id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_order_snapshots.order_id. References the parent order's
+     *   ID at the time of snapshot creation.
    */
   orderId: string & tags.Format<"uuid">;
 
   /**
    * The date and time when this snapshot was captured.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_order_snapshots.created_at. Timestamp when the snapshot was created, set automatically by the system.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_order_snapshots.created_at. Timestamp when the snapshot
+     *   was created, set automatically by the system.
    */
   createdAt: string & tags.Format<"date-time">;
 };
@@ -39,30 +44,43 @@ export namespace IEcommerceMallOrderSnapshot {
     /**
      * Start of time range filter. When provided, only snapshots created on or after this timestamp are returned.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Filter condition on ecommerce_mall_order_snapshots.created_at. When provided, query returns only snapshots where created_at >= createdAtFrom. The filter uses the created_at column for time range filtering.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Filter condition on
+         *   ecommerce_mall_order_snapshots.created_at. When provided, query
+         *   returns only snapshots where created_at >= createdAtFrom. The
+         *   filter uses the created_at column for time range filtering.
      */
     createdAtFrom: (string & tags.Format<"date-time">) | null;
 
     /**
      * End of time range filter. When provided, only snapshots created on or before this timestamp are returned.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Filter condition on ecommerce_mall_order_snapshots.created_at. When provided, query returns only snapshots where created_at <= createdAtTo. Combine with createdAtFrom to define a specific time window for snapshot retrieval.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Filter condition on
+         *   ecommerce_mall_order_snapshots.created_at. When provided, query
+         *   returns only snapshots where created_at <= createdAtTo. Combine
+         *   with createdAtFrom to define a specific time window for snapshot
+         *   retrieval.
      */
     createdAtTo: (string & tags.Format<"date-time">) | null;
 
     /**
      * Page number for pagination (1-indexed). Determines which page of results to return. Defaults to 1 if not specified.
      *
-     * @x-autobe-specification Pagination page number for offset-based pagination. Computed parameter used to calculate OFFSET in SQL query as (page - 1) * limit. Default value is 1 if not provided. Determines which page of results to return.
+         * @x-autobe-specification Pagination page number for offset-based
+         *   pagination. Computed parameter used to calculate OFFSET in SQL
+         *   query as (page - 1) * limit. Default value is 1 if not provided.
+         *   Determines which page of results to return.
      */
     page: (number & tags.Type<"int32"> & tags.Minimum<1>) | null;
 
     /**
      * Maximum number of snapshots to return per page. Valid range is 1 to 100. Controls the page size for paginated results.
      *
-     * @x-autobe-specification Maximum number of records to return per page. Computed parameter used in SQL LIMIT clause. Valid range 1-100. Default value applied server-side if not provided. Controls the page size for pagination.
+         * @x-autobe-specification Maximum number of records to return per page.
+         *   Computed parameter used in SQL LIMIT clause. Valid range 1-100.
+         *   Default value applied server-side if not provided. Controls the
+         *   page size for pagination.
      */
     limit:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -76,24 +94,29 @@ export namespace IEcommerceMallOrderSnapshot {
     /**
      * Unique identifier of the order snapshot.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_mall_order_snapshots.id. UUID primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_order_snapshots.id. UUID primary key.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Timestamp when the order snapshot was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_order_snapshots.created_at. ISO 8601 timestamp when the snapshot was created.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_order_snapshots.created_at. ISO 8601 timestamp when
+         *   the snapshot was created.
      */
     createdAt: string & tags.Format<"date-time">;
 
     /**
      * The parent order that this snapshot belongs to.
      *
-     * @x-autobe-database-schema-property order
-     * @x-autobe-specification Join via order_id to ecommerce_mall_orders. Returns IEcommerceMallOrder.ISummary containing order number, status, total price, and customer summary.
+         * @x-autobe-database-schema-property order
+         * @x-autobe-specification Join via order_id to ecommerce_mall_orders.
+         *   Returns IEcommerceMallOrder.ISummary containing order number,
+         *   status, total price, and customer summary.
      */
     order: IEcommerceMallOrder.ISummary;
   };

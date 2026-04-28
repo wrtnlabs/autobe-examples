@@ -23,7 +23,11 @@ import { IPageIECommerceMallCustomerAddress } from "../../../../../structures/IP
  * @param props.body Search and pagination criteria for listing active shipping addresses. Supports optional text search across recipient name, street address, city, state/province, postal code, and country fields; optional filtering by default address status (isDefault flag); and standard pagination parameters (page, limit) for result set control.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor superAdministrator
- * @x-autobe-specification Query the e_commerce_mall_customer_addresses table filtered by e_commerce_mall_customer_id matching the customerId path parameter (UUID). Exclude soft-deleted records with WHERE deleted_at IS NULL. Support pagination using page and limit fields from the request body. Default sort order by created_at DESC (newest first).
+ * @x-autobe-specification Query the e_commerce_mall_customer_addresses table
+ *   filtered by e_commerce_mall_customer_id matching the customerId path
+ *   parameter (UUID). Exclude soft-deleted records with WHERE deleted_at IS
+ *   NULL. Support pagination using page and limit fields from the request body.
+ *   Default sort order by created_at DESC (newest first).
  *
  * Filtering support in the request body:
  * - search: optional string — case-insensitive text search across recipient_name, street_address, city, state_province, postal_code, and country fields using LIKE patterns, combined with OR logic.
@@ -131,7 +135,9 @@ export namespace index {
  * @param props.addressId UUID of the address to retrieve, scoped to the specified customer.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor superAdministrator
- * @x-autobe-specification Query the e_commerce_mall_customer_addresses table by id and e_commerce_mall_customer_id, filtering out soft-deleted records (deleted_at IS NULL).
+ * @x-autobe-specification Query the e_commerce_mall_customer_addresses table by
+ *   id and e_commerce_mall_customer_id, filtering out soft-deleted records
+ *   (deleted_at IS NULL).
  *
  * Use the authenticated customer's ID to enforce the e_commerce_mall_customer_id match — ensure the requesting customer owns this address. Return 404 Not Found if no matching active address is found.
  *

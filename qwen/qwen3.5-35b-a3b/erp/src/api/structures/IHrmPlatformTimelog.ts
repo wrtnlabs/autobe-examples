@@ -26,51 +26,51 @@ import { IHrmPlatformTask } from "./IHrmPlatformTask";
  */
 export type IHrmPlatformTimelog = {
   /**
-   * @x-autobe-database-schema-property id
+     * @x-autobe-database-schema-property id
    */
   id: string & tags.Format<"uuid">;
   /**
-   * @x-autobe-database-schema-property start_datetime
+     * @x-autobe-database-schema-property start_datetime
    */
   start_datetime: string & tags.Format<"date-time">;
   /**
-   * @x-autobe-database-schema-property end_datetime
+     * @x-autobe-database-schema-property end_datetime
    */
   end_datetime: string & tags.Format<"date-time">;
   /**
-   * @x-autobe-database-schema-property duration_minutes
+     * @x-autobe-database-schema-property duration_minutes
    */
   duration_minutes: number & tags.Type<"int32">;
   /**
-   * @x-autobe-database-schema-property description
+     * @x-autobe-database-schema-property description
    */
   description?: string | null | undefined;
   /**
-   * @x-autobe-database-schema-property billable
+     * @x-autobe-database-schema-property billable
    */
   billable: boolean;
   /**
-   * @x-autobe-database-schema-property created_at
+     * @x-autobe-database-schema-property created_at
    */
   created_at: string & tags.Format<"date-time">;
   /**
-   * @x-autobe-database-schema-property updated_at
+     * @x-autobe-database-schema-property updated_at
    */
   updated_at: string & tags.Format<"date-time">;
   /**
-   * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-database-schema-property deleted_at
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
   /**
-   * @x-autobe-database-schema-property employee
+     * @x-autobe-database-schema-property employee
    */
   employee: IHrmPlatformEmployee.ISummary;
   /**
-   * @x-autobe-database-schema-property project
+     * @x-autobe-database-schema-property project
    */
   project: IHrmPlatformProject.ISummary;
   /**
-   * @x-autobe-database-schema-property task
+     * @x-autobe-database-schema-property task
    */
   task?: IHrmPlatformTask.ISummary | null | undefined;
 };
@@ -89,27 +89,27 @@ export namespace IHrmPlatformTimelog {
    */
   export type IUpdate = {
     /**
-     * @x-autobe-database-schema-property billable
+         * @x-autobe-database-schema-property billable
      */
     billable?: boolean | undefined;
     /**
-     * @x-autobe-database-schema-property description
+         * @x-autobe-database-schema-property description
      */
     description?: string | null | undefined;
     /**
-     * @x-autobe-database-schema-property end_datetime
+         * @x-autobe-database-schema-property end_datetime
      */
     end_datetime?: (string & tags.Format<"date-time">) | undefined;
     /**
-     * @x-autobe-database-schema-property project_id
+         * @x-autobe-database-schema-property project_id
      */
     project_id?: (string & tags.Format<"uuid">) | undefined;
     /**
-     * @x-autobe-database-schema-property start_datetime
+         * @x-autobe-database-schema-property start_datetime
      */
     start_datetime?: (string & tags.Format<"date-time">) | undefined;
     /**
-     * @x-autobe-database-schema-property task_id
+         * @x-autobe-database-schema-property task_id
      */
     task_id?: (string & tags.Format<"uuid">) | null | undefined;
   };
@@ -141,35 +141,35 @@ export namespace IHrmPlatformTimelog {
    */
   export type ICreate = {
     /**
-     * @x-autobe-database-schema-property employee_id
+         * @x-autobe-database-schema-property employee_id
      */
     employee_id: string & tags.Format<"uuid">;
     /**
-     * @x-autobe-database-schema-property project_id
+         * @x-autobe-database-schema-property project_id
      */
     project_id: string & tags.Format<"uuid">;
     /**
-     * @x-autobe-database-schema-property task_id
+         * @x-autobe-database-schema-property task_id
      */
     task_id?: (string & tags.Format<"uuid">) | null | undefined;
     /**
-     * @x-autobe-database-schema-property start_datetime
+         * @x-autobe-database-schema-property start_datetime
      */
     start_datetime: string & tags.Format<"date-time">;
     /**
-     * @x-autobe-database-schema-property end_datetime
+         * @x-autobe-database-schema-property end_datetime
      */
     end_datetime: string & tags.Format<"date-time">;
     /**
-     * @x-autobe-database-schema-property duration_minutes
+         * @x-autobe-database-schema-property duration_minutes
      */
     duration_minutes: number & tags.Type<"int32"> & tags.Minimum<1>;
     /**
-     * @x-autobe-database-schema-property description
+         * @x-autobe-database-schema-property description
      */
     description?: string | null | undefined;
     /**
-     * @x-autobe-database-schema-property billable
+         * @x-autobe-database-schema-property billable
      */
     billable: boolean;
   };
@@ -210,7 +210,8 @@ export namespace IHrmPlatformTimelog {
      * Requesting a page beyond the available range returns an empty data array
      * with valid pagination metadata reflecting the actual totals.
      *
-     * @x-autobe-specification 1-indexed page number. Defaults to 1 if not provided.
+         * @x-autobe-specification 1-indexed page number. Defaults to 1 if not
+         *   provided.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };
@@ -248,8 +249,9 @@ export namespace IHrmPlatformTimelog {
      *
      * UUID primary key that uniquely identifies this work session within the HRM platform. Used for referencing the timelog in API operations, timesheet associations, and audit trails. The id is immutable after creation and serves as the primary key for all operations on this timelog.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from hrm_platform_timelogs.id (uuid primary key). Immutable after creation.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from hrm_platform_timelogs.id
+         *   (uuid primary key). Immutable after creation.
      */
     id: string & tags.Format<"uuid">;
 
@@ -258,8 +260,10 @@ export namespace IHrmPlatformTimelog {
      *
      * Marks the beginning of the work period and is used to calculate duration, organize timelogs chronologically, and track work patterns. Combined with end_datetime, it defines the exact time window for this work entry. The timestamp is timezone-aware (ISO 8601 format) to support accurate cross-timezone time tracking and reporting.
      *
-     * @x-autobe-database-schema-property start_datetime
-     * @x-autobe-specification Direct mapping from hrm_platform_timelogs.start_datetime (timestamptz column). Timezone-aware ISO 8601 format for cross-timezone tracking.
+         * @x-autobe-database-schema-property start_datetime
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_timelogs.start_datetime (timestamptz column).
+         *   Timezone-aware ISO 8601 format for cross-timezone tracking.
      */
     start_datetime: string & tags.Format<"date-time">;
 
@@ -268,8 +272,10 @@ export namespace IHrmPlatformTimelog {
      *
      * Marks the completion of the work period and defines the end boundary of the time entry. Combined with start_datetime, it determines the exact time window and duration of the work performed. Both timestamps are timezone-aware (ISO 8601 format) for accurate cross-timezone tracking.
      *
-     * @x-autobe-database-schema-property end_datetime
-     * @x-autobe-specification Direct mapping from hrm_platform_timelogs.end_datetime (timestamptz column). Timezone-aware ISO 8601 format.
+         * @x-autobe-database-schema-property end_datetime
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_timelogs.end_datetime (timestamptz column).
+         *   Timezone-aware ISO 8601 format.
      */
     end_datetime: string & tags.Format<"date-time">;
 
@@ -278,8 +284,10 @@ export namespace IHrmPlatformTimelog {
      *
      * Calculated from the difference between end_datetime and start_datetime. This integer value represents the actual time spent on work and is used for timesheet totals, project cost calculations, and billable hour reporting. The duration is stored as minutes to avoid floating-point precision issues.
      *
-     * @x-autobe-database-schema-property duration_minutes
-     * @x-autobe-specification Direct mapping from hrm_platform_timelogs.duration_minutes (integer column). Stored as minutes to avoid floating-point precision issues.
+         * @x-autobe-database-schema-property duration_minutes
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_timelogs.duration_minutes (integer column). Stored as
+         *   minutes to avoid floating-point precision issues.
      */
     duration_minutes: number & tags.Type<"int32">;
 
@@ -288,8 +296,10 @@ export namespace IHrmPlatformTimelog {
      *
      * Billable work can be charged to external clients and is tracked separately from internal work. This flag is used in financial reports, client billing calculations, and budget utilization analysis. When true, the timelog contributes to billable hours totals for project profitability and client invoicing.
      *
-     * @x-autobe-database-schema-property billable
-     * @x-autobe-specification Direct mapping from hrm_platform_timelogs.billable (boolean column). Used in financial reports and client billing calculations.
+         * @x-autobe-database-schema-property billable
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_timelogs.billable (boolean column). Used in financial
+         *   reports and client billing calculations.
      */
     billable: boolean;
 
@@ -298,8 +308,10 @@ export namespace IHrmPlatformTimelog {
      *
      * Provides context for what was accomplished during the logged period. This field is optional and can be left empty when no specific description is needed. When populated, it helps users and managers understand the nature of the work when reviewing past time entries or generating reports.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from hrm_platform_timelogs.description (nullable string column). Optional field for work context.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_timelogs.description (nullable string column).
+         *   Optional field for work context.
      */
     description?: string | null | undefined;
 
@@ -308,8 +320,11 @@ export namespace IHrmPlatformTimelog {
      *
      * Required reference to the employee record that owns this timelog. The employee reference enables identification of the worker and provides access to their full details (display name, email, role, department) via IHrmPlatformEmployee.ISummary. This relationship is mandatory as each timelog must be associated with exactly one employee for accountability and reporting.
      *
-     * @x-autobe-database-schema-property employee
-     * @x-autobe-specification Join from hrm_platform_timelogs.employee_id to hrm_platform_employees.id. Returns IHrmPlatformEmployee.ISummary. This is a required FK relation in the database.
+         * @x-autobe-database-schema-property employee
+         * @x-autobe-specification Join from hrm_platform_timelogs.employee_id
+         *   to hrm_platform_employees.id. Returns
+         *   IHrmPlatformEmployee.ISummary. This is a required FK relation in
+         *   the database.
      */
     employee: IHrmPlatformEmployee.ISummary;
 
@@ -318,8 +333,10 @@ export namespace IHrmPlatformTimelog {
      *
      * Required reference to the project that serves as the context for this timelog. All time entries must be associated with a project to enable project cost tracking, time reports, and budget utilization analysis. The project reference provides access to project details (name, status, budget hours) via IHrmPlatformProject.ISummary. This relationship is mandatory as each timelog belongs to exactly one project.
      *
-     * @x-autobe-database-schema-property project
-     * @x-autobe-specification Join from hrm_platform_timelogs.project_id to hrm_platform_projects.id. Returns IHrmPlatformProject.ISummary. This is a required FK relation in the database.
+         * @x-autobe-database-schema-property project
+         * @x-autobe-specification Join from hrm_platform_timelogs.project_id to
+         *   hrm_platform_projects.id. Returns IHrmPlatformProject.ISummary.
+         *   This is a required FK relation in the database.
      */
     project: IHrmPlatformProject.ISummary;
 
@@ -328,8 +345,10 @@ export namespace IHrmPlatformTimelog {
      *
      * Optional reference to a task item that provides granular tracking of work at the task level. When present, this enables detailed task-level time analysis and comparison against estimated hours. The task reference is optional because some work may not be tied to a specific task but still needs to be recorded against a project. When null, the timelog is associated only with the project level.
      *
-     * @x-autobe-database-schema-property task
-     * @x-autobe-specification Join from hrm_platform_timelogs.task_id to hrm_platform_tasks.id. Returns IHrmPlatformTask.ISummary (nullable). This is an optional FK relation in the database.
+         * @x-autobe-database-schema-property task
+         * @x-autobe-specification Join from hrm_platform_timelogs.task_id to
+         *   hrm_platform_tasks.id. Returns IHrmPlatformTask.ISummary
+         *   (nullable). This is an optional FK relation in the database.
      */
     task?: IHrmPlatformTask.ISummary | null | undefined;
   };

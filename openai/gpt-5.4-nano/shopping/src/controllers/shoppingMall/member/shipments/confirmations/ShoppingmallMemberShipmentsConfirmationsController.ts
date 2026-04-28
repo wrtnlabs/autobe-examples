@@ -27,9 +27,10 @@ export class ShoppingmallMemberShipmentsConfirmationsController {
    * @param connection
    * @param shipmentId Target shipment identifier whose seller confirmation is being created.
    * @param body Shipment confirmation creation payload submitted by the seller for the given shipment.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement POST /shipments/{shipmentId}/confirmations.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implement POST
+     *   /shipments/{shipmentId}/confirmations.
    *
    * 1) Authorization
    * - Resolve the authenticated actor from context.

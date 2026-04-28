@@ -20,7 +20,8 @@ import { IShoppingMallOrderItem } from "../../../../structures/IShoppingMallOrde
  * @param props.body Search criteria for order items including filters for order ID, status, seller, customer, date ranges, and pagination parameters.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor administrator
- * @x-autobe-specification Query the shopping_mall_order_items table with pagination and filtering support.
+ * @x-autobe-specification Query the shopping_mall_order_items table with
+ *   pagination and filtering support.
  *
  * Apply search filters from the request body:
  * - Filter by order_id to get all items in a specific order
@@ -134,7 +135,8 @@ export namespace index {
  * @param props.itemId Unique identifier of the order item to retrieve (UUID format).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor administrator
- * @x-autobe-specification Query the shopping_mall_order_items table for a single record matching the provided itemId (UUID).
+ * @x-autobe-specification Query the shopping_mall_order_items table for a
+ *   single record matching the provided itemId (UUID).
  *
  * 1. Validate the itemId parameter is a valid UUID format
  * 2. Perform a SELECT query on shopping_mall_order_items WHERE id = itemId AND deleted_at IS NULL

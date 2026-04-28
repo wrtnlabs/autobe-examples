@@ -36,9 +36,11 @@ export class HrmplatformMemberDepartmentsController {
    *
    * @param connection
    * @param body Analytics request criteria including hierarchy type filter (root/child/all), date range filters for creation date, name pattern matching, employee count thresholds, sorting options (field and order), and pagination parameters (page and limit).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query hrm_platform_departments table with organization context restriction (WHERE organization_id = current_context_organization_id).
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query hrm_platform_departments table with
+     *   organization context restriction (WHERE organization_id =
+     *   current_context_organization_id).
    *
    * Compute and return:
    * 1. Total department count

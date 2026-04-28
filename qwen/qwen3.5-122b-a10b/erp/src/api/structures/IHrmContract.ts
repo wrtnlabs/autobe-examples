@@ -22,8 +22,9 @@ export type IHrmContract = {
    *
    * Auto-generated UUID assigned when the contract is created. Serves as the primary key for contract identification and reference in API endpoints.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from hrm_contracts.id. UUID format, auto-generated on creation.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from hrm_contracts.id. UUID
+     *   format, auto-generated on creation.
    */
   id: string & tags.Format<"uuid">;
 
@@ -32,8 +33,10 @@ export type IHrmContract = {
    *
    * Contains essential employee information including user profile reference, organizational context, and employment status. This is a belongs-to relation where each contract is associated with exactly one employee record.
    *
-   * @x-autobe-database-schema-property employee
-   * @x-autobe-specification JOIN from hrm_contracts.hrm_employee_id to hrm_employees.id. Returns IHrmEmployee.ISummary with employee identification and organizational context.
+     * @x-autobe-database-schema-property employee
+     * @x-autobe-specification JOIN from hrm_contracts.hrm_employee_id to
+     *   hrm_employees.id. Returns IHrmEmployee.ISummary with employee
+     *   identification and organizational context.
    */
   employee: IHrmEmployee.ISummary;
 
@@ -42,8 +45,9 @@ export type IHrmContract = {
    *
    * Marks the beginning of the contractual period during which the compensation terms and working conditions are in effect. This field is required and cannot be null. The system validates that the start_date does not overlap with existing active contracts for the same employee.
    *
-   * @x-autobe-database-schema-property start_date
-   * @x-autobe-specification Direct mapping from hrm_contracts.start_date. DateTime with timezone (timestamptz). Required field, cannot be null.
+     * @x-autobe-database-schema-property start_date
+     * @x-autobe-specification Direct mapping from hrm_contracts.start_date.
+     *   DateTime with timezone (timestamptz). Required field, cannot be null.
    */
   start_date: string & tags.Format<"date-time">;
 
@@ -52,8 +56,10 @@ export type IHrmContract = {
    *
    * A NULL value indicates the contract is currently active. When a new contract is created for an employee, the previous active contract's end_date is automatically set to one day before the new contract's start_date. Once end_date is populated, the contract becomes immutable to preserve historical accuracy for audit and compliance purposes.
    *
-   * @x-autobe-database-schema-property end_date
-   * @x-autobe-specification Direct mapping from hrm_contracts.end_date. DateTime with timezone (timestamptz), nullable. NULL indicates active contract.
+     * @x-autobe-database-schema-property end_date
+     * @x-autobe-specification Direct mapping from hrm_contracts.end_date.
+     *   DateTime with timezone (timestamptz), nullable. NULL indicates active
+     *   contract.
    */
   end_date: (string & tags.Format<"date-time">) | null;
 
@@ -62,8 +68,10 @@ export type IHrmContract = {
    *
    * The numeric value represents the pay amount, with the actual unit determined by the pay_period field (per hour, day, week, or month). This value is used for payroll calculations, budget tracking, and employment verification. The amount is stored in the organization's base currency.
    *
-   * @x-autobe-database-schema-property pay_rate
-   * @x-autobe-specification Direct mapping from hrm_contracts.pay_rate. Float/DoublePrecision. Represents compensation amount in organization's base currency.
+     * @x-autobe-database-schema-property pay_rate
+     * @x-autobe-specification Direct mapping from hrm_contracts.pay_rate.
+     *   Float/DoublePrecision. Represents compensation amount in organization's
+     *   base currency.
    */
   pay_rate: number;
 
@@ -72,8 +80,10 @@ export type IHrmContract = {
    *
    * Valid values are: hourly (pay rate per hour worked), daily (pay rate per day worked), weekly (pay rate per week), or monthly (pay rate per month). This field determines how the pay_rate value should be interpreted for payroll calculations and employment classification.
    *
-   * @x-autobe-specification Direct mapping from hrm_contracts.pay_period. String column with enumeration constraint: hourly, daily, weekly, monthly. Used for payroll calculation methodology.
-   * @x-autobe-database-schema-property pay_period
+     * @x-autobe-specification Direct mapping from hrm_contracts.pay_period.
+     *   String column with enumeration constraint: hourly, daily, weekly,
+     *   monthly. Used for payroll calculation methodology.
+     * @x-autobe-database-schema-property pay_period
    */
   pay_period: string;
 
@@ -82,8 +92,10 @@ export type IHrmContract = {
    *
    * Optional field used for full-time versus part-time classification, overtime calculations, and compliance with labor regulations. May be null for contractor or irregular work arrangements where fixed weekly hours do not apply.
    *
-   * @x-autobe-database-schema-property working_hours_per_week
-   * @x-autobe-specification Direct mapping from hrm_contracts.working_hours_per_week. Float/DoublePrecision, nullable. Optional field for hourly tracking.
+     * @x-autobe-database-schema-property working_hours_per_week
+     * @x-autobe-specification Direct mapping from
+     *   hrm_contracts.working_hours_per_week. Float/DoublePrecision, nullable.
+     *   Optional field for hourly tracking.
    */
   working_hours_per_week: number | null;
 
@@ -92,8 +104,9 @@ export type IHrmContract = {
    *
    * Stores free-form text for edge cases or custom arrangements that don't fit the standard contract schema. Examples include remote work agreements, bonus structures, special benefits, or other contractual conditions requiring narrative description.
    *
-   * @x-autobe-database-schema-property notes
-   * @x-autobe-specification Direct mapping from hrm_contracts.notes. String, nullable. Free-form text field for additional terms.
+     * @x-autobe-database-schema-property notes
+     * @x-autobe-specification Direct mapping from hrm_contracts.notes. String,
+     *   nullable. Free-form text field for additional terms.
    */
   notes: string | null;
 
@@ -102,8 +115,9 @@ export type IHrmContract = {
    *
    * Automatically recorded when the contract is first created. Used for audit trail purposes and to track the chronological order of contract history for an employee.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from hrm_contracts.created_at. DateTime with timezone (timestamptz). Auto-set on record creation.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from hrm_contracts.created_at.
+     *   DateTime with timezone (timestamptz). Auto-set on record creation.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -112,8 +126,10 @@ export type IHrmContract = {
    *
    * Automatically updated whenever any mutable field of the contract is changed. For active contracts (end_date is NULL), this reflects the last time compensation terms or working conditions were updated. Once end_date is set, the record becomes immutable and this field should not change.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from hrm_contracts.updated_at. DateTime with timezone (timestamptz). Auto-updated on contract modification.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from hrm_contracts.updated_at.
+     *   DateTime with timezone (timestamptz). Auto-updated on contract
+     *   modification.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -122,8 +138,10 @@ export type IHrmContract = {
    *
    * A NULL value indicates the contract record is active and visible. When set, the contract is marked for deletion while preserving the historical data for audit purposes. Cascade delete applies when the parent employee record is removed.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from hrm_contracts.deleted_at. DateTime with timezone (timestamptz), nullable. NULL indicates active record.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from hrm_contracts.deleted_at.
+     *   DateTime with timezone (timestamptz), nullable. NULL indicates active
+     *   record.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -151,8 +169,10 @@ export namespace IHrmContract {
      *
      * This UUID serves as the primary key for the contract entity, enabling precise reference and retrieval of specific contract records across the system.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from hrm_contracts.id. UUID format primary key uniquely identifying each employment contract record.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from hrm_contracts.id. UUID
+         *   format primary key uniquely identifying each employment contract
+         *   record.
      */
     id: string & tags.Format<"uuid">;
 
@@ -165,8 +185,10 @@ export namespace IHrmContract {
      *
      * This field is required and cannot be null. When creating a new contract, the system automatically terminates the previous active contract by setting its end_date to one day before this start_date.
      *
-     * @x-autobe-database-schema-property start_date
-     * @x-autobe-specification Direct mapping from hrm_contracts.start_date. DateTime with timezone (timestamptz). Required field - cannot be null.
+         * @x-autobe-database-schema-property start_date
+         * @x-autobe-specification Direct mapping from hrm_contracts.start_date.
+         *   DateTime with timezone (timestamptz). Required field - cannot be
+         *   null.
      */
     start_date: string & tags.Format<"date-time">;
 
@@ -179,8 +201,10 @@ export namespace IHrmContract {
      *
      * When a new contract is created for an employee, the system automatically sets this field to one day before the new contract's start_date, ensuring continuous employment history without gaps. Once populated, the contract record becomes immutable.
      *
-     * @x-autobe-database-schema-property end_date
-     * @x-autobe-specification Direct mapping from hrm_contracts.end_date. DateTime with timezone (timestamptz). Nullable - NULL indicates active contract. OneOf with null for proper null handling.
+         * @x-autobe-database-schema-property end_date
+         * @x-autobe-specification Direct mapping from hrm_contracts.end_date.
+         *   DateTime with timezone (timestamptz). Nullable - NULL indicates
+         *   active contract. OneOf with null for proper null handling.
      */
     end_date: (string & tags.Format<"date-time">) | null;
 
@@ -193,8 +217,10 @@ export namespace IHrmContract {
      *
      * This field is used for payroll calculations, budget tracking, and employment verification across different employment types including full-time, part-time, contractor, and intern arrangements.
      *
-     * @x-autobe-database-schema-property pay_rate
-     * @x-autobe-specification Direct mapping from hrm_contracts.pay_rate. Float/Double precision numeric value. Stored in organization's base currency.
+         * @x-autobe-database-schema-property pay_rate
+         * @x-autobe-specification Direct mapping from hrm_contracts.pay_rate.
+         *   Float/Double precision numeric value. Stored in organization's base
+         *   currency.
      */
     pay_rate: number;
 
@@ -212,8 +238,10 @@ export namespace IHrmContract {
      *
      * The combination of pay_rate and pay_period fully defines the compensation structure for the employee.
      *
-     * @x-autobe-database-schema-property pay_period
-     * @x-autobe-specification Direct mapping from hrm_contracts.pay_period. String enumeration field. Valid values: hourly, daily, weekly, monthly.
+         * @x-autobe-database-schema-property pay_period
+         * @x-autobe-specification Direct mapping from hrm_contracts.pay_period.
+         *   String enumeration field. Valid values: hourly, daily, weekly,
+         *   monthly.
      */
     pay_period: string;
 
@@ -226,8 +254,11 @@ export namespace IHrmContract {
      *
      * May be null for contractor arrangements, intern positions, or irregular work schedules where standard weekly hours do not apply. When populated, this value is used for employment type classification and compliance tracking.
      *
-     * @x-autobe-database-schema-property working_hours_per_week
-     * @x-autobe-specification Direct mapping from hrm_contracts.working_hours_per_week. Float/Double precision numeric value. Nullable - may be null for contractor or irregular work arrangements. OneOf with null for proper null handling.
+         * @x-autobe-database-schema-property working_hours_per_week
+         * @x-autobe-specification Direct mapping from
+         *   hrm_contracts.working_hours_per_week. Float/Double precision
+         *   numeric value. Nullable - may be null for contractor or irregular
+         *   work arrangements. OneOf with null for proper null handling.
      */
     working_hours_per_week: number | null;
 
@@ -240,8 +271,11 @@ export namespace IHrmContract {
      *
      * Each contract belongs to exactly one employee through the hrm_employee_id foreign key. The employee record is the parent entity, and contracts are subsidiary records managed through the employee context.
      *
-     * @x-autobe-database-schema-property employee
-     * @x-autobe-specification Belongs-to relation from hrm_contracts.employee via hrm_employee_id foreign key. JOIN operation to hrm_employees table. Returns IHrmEmployee.ISummary projection.
+         * @x-autobe-database-schema-property employee
+         * @x-autobe-specification Belongs-to relation from
+         *   hrm_contracts.employee via hrm_employee_id foreign key. JOIN
+         *   operation to hrm_employees table. Returns IHrmEmployee.ISummary
+         *   projection.
      */
     employee: IHrmEmployee.ISummary;
 
@@ -250,8 +284,10 @@ export namespace IHrmContract {
      *
      * This audit trail field is automatically populated when the contract is first created and never modified afterward. It supports compliance reporting and historical record-keeping requirements.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from hrm_contracts.created_at. DateTime with timezone (timestamptz). Automatically set on contract creation.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from hrm_contracts.created_at.
+         *   DateTime with timezone (timestamptz). Automatically set on contract
+         *   creation.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -264,8 +300,10 @@ export namespace IHrmContract {
      *
      * Once end_date is set, the contract becomes immutable and this timestamp should not change.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from hrm_contracts.updated_at. DateTime with timezone (timestamptz). Automatically updated on any contract field modification.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from hrm_contracts.updated_at.
+         *   DateTime with timezone (timestamptz). Automatically updated on any
+         *   contract field modification.
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -278,8 +316,10 @@ export namespace IHrmContract {
      *
      * Soft deletion allows contracts to be hidden from normal operations while preserving historical data. Cascade delete applies when the parent employee record is removed, ensuring referential integrity.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from hrm_contracts.deleted_at. DateTime with timezone (timestamptz). Nullable - NULL indicates active record. OneOf with null for proper null handling.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from hrm_contracts.deleted_at.
+         *   DateTime with timezone (timestamptz). Nullable - NULL indicates
+         *   active record. OneOf with null for proper null handling.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };
@@ -362,8 +402,11 @@ export namespace IHrmContract {
      * - Must not create gaps in employment history
      * - Backend automatically terminates previous active contract by setting its end_date to one day before this start_date
      *
-     * @x-autobe-database-schema-property start_date
-     * @x-autobe-specification Direct mapping from hrm_contracts.start_date. Required field. DateTime with date-time format. Marks when contractual terms become active. Backend validates start_date does not overlap with existing active contracts.
+         * @x-autobe-database-schema-property start_date
+         * @x-autobe-specification Direct mapping from hrm_contracts.start_date.
+         *   Required field. DateTime with date-time format. Marks when
+         *   contractual terms become active. Backend validates start_date does
+         *   not overlap with existing active contracts.
      */
     start_date: string & tags.Format<"date-time">;
 
@@ -382,8 +425,11 @@ export namespace IHrmContract {
      * - Once end_date is populated, the contract becomes immutable and cannot be edited
      * - Used to preserve historical employment records for audit and compliance
      *
-     * @x-autobe-database-schema-property end_date
-     * @x-autobe-specification Direct mapping from hrm_contracts.end_date. Optional nullable field. DateTime with date-time format or null. NULL value indicates active contract. Once populated, contract becomes immutable.
+         * @x-autobe-database-schema-property end_date
+         * @x-autobe-specification Direct mapping from hrm_contracts.end_date.
+         *   Optional nullable field. DateTime with date-time format or null.
+         *   NULL value indicates active contract. Once populated, contract
+         *   becomes immutable.
      */
     end_date?: (string & tags.Format<"date-time">) | null | undefined;
 
@@ -402,8 +448,11 @@ export namespace IHrmContract {
      *
      * Numeric value (e.g., 50.00 for hourly rate, 2000.00 for monthly salary).
      *
-     * @x-autobe-database-schema-property pay_rate
-     * @x-autobe-specification Direct mapping from hrm_contracts.pay_rate. Required field. Double precision numeric value. Represents compensation amount per pay_period unit. Stored in organization's base currency.
+         * @x-autobe-database-schema-property pay_rate
+         * @x-autobe-specification Direct mapping from hrm_contracts.pay_rate.
+         *   Required field. Double precision numeric value. Represents
+         *   compensation amount per pay_period unit. Stored in organization's
+         *   base currency.
      */
     pay_rate: number;
 
@@ -425,8 +474,11 @@ export namespace IHrmContract {
      * - Used for employment type classification
      * - Required for accurate compensation tracking
      *
-     * @x-autobe-database-schema-property pay_period
-     * @x-autobe-specification Direct mapping from hrm_contracts.pay_period. Required field. String enumeration with values: hourly, daily, weekly, monthly. Determines how pay_rate should be interpreted for payroll calculations.
+         * @x-autobe-database-schema-property pay_period
+         * @x-autobe-specification Direct mapping from hrm_contracts.pay_period.
+         *   Required field. String enumeration with values: hourly, daily,
+         *   weekly, monthly. Determines how pay_rate should be interpreted for
+         *   payroll calculations.
      */
     pay_period: string;
 
@@ -450,8 +502,11 @@ export namespace IHrmContract {
      * - May be null for contractor or irregular work arrangements
      * - Optional field for contracts where hourly tracking is not relevant
      *
-     * @x-autobe-database-schema-property working_hours_per_week
-     * @x-autobe-specification Direct mapping from hrm_contracts.working_hours_per_week. Optional nullable field. Double precision numeric value. Used for full-time vs part-time classification and overtime calculations.
+         * @x-autobe-database-schema-property working_hours_per_week
+         * @x-autobe-specification Direct mapping from
+         *   hrm_contracts.working_hours_per_week. Optional nullable field.
+         *   Double precision numeric value. Used for full-time vs part-time
+         *   classification and overtime calculations.
      */
     working_hours_per_week?: number | null | undefined;
 
@@ -475,8 +530,11 @@ export namespace IHrmContract {
      * - Optional field, may be null
      * - Not validated for content or length beyond database constraints
      *
-     * @x-autobe-database-schema-property notes
-     * @x-autobe-specification Direct mapping from hrm_contracts.notes. Optional nullable field. String value. Stores free-form text for additional contract terms, special conditions, or administrative notes not captured in structured fields.
+         * @x-autobe-database-schema-property notes
+         * @x-autobe-specification Direct mapping from hrm_contracts.notes.
+         *   Optional nullable field. String value. Stores free-form text for
+         *   additional contract terms, special conditions, or administrative
+         *   notes not captured in structured fields.
      */
     notes?: string | null | undefined;
   };

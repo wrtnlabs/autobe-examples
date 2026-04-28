@@ -33,7 +33,9 @@ import { IErpHrmTimeTrackingReportOutput } from "../../../../../structures/IErpH
  * @param props.body Preview request for generating an in-memory report output using a report definition and preview/filter parameters.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implement a report preview flow that resolves a report definition and computes grouped preview outputs without necessarily creating persisted report_generation_runs.
+ * @x-autobe-specification Implement a report preview flow that resolves a
+ *   report definition and computes grouped preview outputs without necessarily
+ *   creating persisted report_generation_runs.
  *
  * Algorithm:
  * 1) Read organization context from the authenticated member/session.

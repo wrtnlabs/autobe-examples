@@ -16,8 +16,9 @@ export type ICommunityPlatformMemberSession = {
    *
    * A UUID that uniquely identifies this authentication session record. Used as the primary key for session lookup and management operations such as retrieval, validation, and logout.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from community_platform_member_sessions.id. Primary key, UUID format.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_member_sessions.id. Primary key, UUID format.
    */
   id: string & tags.Format<"uuid">;
 
@@ -26,8 +27,12 @@ export type ICommunityPlatformMemberSession = {
    *
    * A summary reference to the authenticated member associated with this session, including their unique identifier, email address, chosen username, registration timestamp, and soft-deletion status.
    *
-   * @x-autobe-database-schema-property member
-   * @x-autobe-specification Join from community_platform_member_sessions.member_id to community_platform_members.id. Returns ICommunityPlatformMember.ISummary with id, email, username, created_at, and deleted_at.
+     * @x-autobe-database-schema-property member
+     * @x-autobe-specification Join from
+     *   community_platform_member_sessions.member_id to
+     *   community_platform_members.id. Returns
+     *   ICommunityPlatformMember.ISummary with id, email, username, created_at,
+     *   and deleted_at.
    */
   member: ICommunityPlatformMember.ISummary;
 
@@ -36,8 +41,10 @@ export type ICommunityPlatformMemberSession = {
    *
    * Captured during login for audit and security monitoring purposes. Used to identify the originating network location of the session and detect unusual access patterns.
    *
-   * @x-autobe-database-schema-property ip
-   * @x-autobe-specification Direct mapping from community_platform_member_sessions.ip. Stores the client IP address captured at session creation.
+     * @x-autobe-database-schema-property ip
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_member_sessions.ip. Stores the client IP address
+     *   captured at session creation.
    */
   ip: string;
 
@@ -46,8 +53,10 @@ export type ICommunityPlatformMemberSession = {
    *
    * Captured from the client's current location at the time of login. Provides context for where the authentication event occurred within the application, such as the login page or a specific community page.
    *
-   * @x-autobe-database-schema-property href
-   * @x-autobe-specification Direct mapping from community_platform_member_sessions.href. Captures the client's current page URL where the session was initiated.
+     * @x-autobe-database-schema-property href
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_member_sessions.href. Captures the client's current
+     *   page URL where the session was initiated.
    */
   href: string;
 
@@ -56,8 +65,11 @@ export type ICommunityPlatformMemberSession = {
    *
    * Nullable because not all HTTP requests include a referrer header (e.g., direct URL entry, bookmarks, or privacy-preserving browser settings). Provides insight into how the user arrived at the login page, such as from a shared link or an email notification.
    *
-   * @x-autobe-database-schema-property referrer
-   * @x-autobe-specification Direct mapping from community_platform_member_sessions.referrer. Nullable — not all HTTP requests include a referrer header (direct URL entry, bookmarks, privacy-preserving browser settings).
+     * @x-autobe-database-schema-property referrer
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_member_sessions.referrer. Nullable — not all HTTP
+     *   requests include a referrer header (direct URL entry, bookmarks,
+     *   privacy-preserving browser settings).
    */
   referrer: string | null;
 
@@ -66,8 +78,10 @@ export type ICommunityPlatformMemberSession = {
    *
    * Set automatically upon successful member login. Used for session lifecycle management, determining session age, and calculating retention periods.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from community_platform_member_sessions.created_at. Set automatically on session creation via @default(now()).
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_member_sessions.created_at. Set automatically on
+     *   session creation via @default(now()).
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -76,8 +90,11 @@ export type ICommunityPlatformMemberSession = {
    *
    * Updated on refresh token rotation to track the most recent activity associated with this session. Enables monitoring of session refresh patterns and detection of potentially unusual or suspicious activity.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from community_platform_member_sessions.updated_at. Updated on refresh token rotation to track the most recent activity associated with this session.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_member_sessions.updated_at. Updated on refresh token
+     *   rotation to track the most recent activity associated with this
+     *   session.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -86,8 +103,10 @@ export type ICommunityPlatformMemberSession = {
    *
    * After this time, the refresh token is no longer valid and the member must re-authenticate. The expiration deadline is set at session creation time. Only non-expired sessions are returned by this endpoint — expired sessions result in a 404 Not Found response.
    *
-   * @x-autobe-database-schema-property expired_at
-   * @x-autobe-specification Direct mapping from community_platform_member_sessions.expired_at. Sessions are filtered to only return records where expired_at > now() (session is still valid).
+     * @x-autobe-database-schema-property expired_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_member_sessions.expired_at. Sessions are filtered to
+     *   only return records where expired_at > now() (session is still valid).
    */
   expired_at: string & tags.Format<"date-time">;
 };
@@ -105,8 +124,9 @@ export namespace ICommunityPlatformMemberSession {
      *
      * This UUID serves as the primary key for the session record. It is used in API endpoints to reference a specific session for retrieval and management operations.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from community_platform_member_sessions.id.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_member_sessions.id.
      */
     id: string & tags.Format<"uuid">;
 
@@ -115,8 +135,11 @@ export namespace ICommunityPlatformMemberSession {
      *
      * This is a summary representation of the member account that created this session. Each session belongs to exactly one member, and a member may have multiple active sessions across different devices or browsers.
      *
-     * @x-autobe-database-schema-property member
-     * @x-autobe-specification BELONGS-TO: Transform member_id foreign key to member object via $ref to ICommunityPlatformMember.ISummary. Join from community_platform_member_sessions.member_id to community_platform_members.id.
+         * @x-autobe-database-schema-property member
+         * @x-autobe-specification BELONGS-TO: Transform member_id foreign key
+         *   to member object via $ref to ICommunityPlatformMember.ISummary.
+         *   Join from community_platform_member_sessions.member_id to
+         *   community_platform_members.id.
      */
     member: ICommunityPlatformMember.ISummary;
 
@@ -125,8 +148,9 @@ export namespace ICommunityPlatformMemberSession {
      *
      * Captured for session identification and security auditing purposes. This IP address represents the network location from which the member authenticated and may differ from the member's current IP address for long-lived sessions.
      *
-     * @x-autobe-database-schema-property ip
-     * @x-autobe-specification Direct mapping from community_platform_member_sessions.ip.
+         * @x-autobe-database-schema-property ip
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_member_sessions.ip.
      */
     ip: string;
 
@@ -135,8 +159,9 @@ export namespace ICommunityPlatformMemberSession {
      *
      * Captured from the client's current location at the time of authentication. Used for session metadata and audit trail purposes to identify the entry point of the session.
      *
-     * @x-autobe-database-schema-property href
-     * @x-autobe-specification Direct mapping from community_platform_member_sessions.href. URI format.
+         * @x-autobe-database-schema-property href
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_member_sessions.href. URI format.
      */
     href: string & tags.Format<"uri">;
 
@@ -145,8 +170,11 @@ export namespace ICommunityPlatformMemberSession {
      *
      * Nullable because not all HTTP requests include a referrer header (e.g., direct URL entry, bookmarks, or privacy-preserving browser settings). When present, it provides context for how the member arrived at the login page.
      *
-     * @x-autobe-database-schema-property referrer
-     * @x-autobe-specification Direct mapping from community_platform_member_sessions.referrer. Nullable per DB schema — null when no Referer header was present (e.g., direct URL entry, bookmarks).
+         * @x-autobe-database-schema-property referrer
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_member_sessions.referrer. Nullable per DB schema
+         *   — null when no Referer header was present (e.g., direct URL entry,
+         *   bookmarks).
      */
     referrer: (string & tags.Format<"uri">) | null;
 
@@ -155,8 +183,10 @@ export namespace ICommunityPlatformMemberSession {
      *
      * Set automatically upon successful member login. Used for session lifecycle management and calculating session age.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from community_platform_member_sessions.created_at. DateTime with timezone.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_member_sessions.created_at. DateTime with
+         *   timezone.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -165,8 +195,10 @@ export namespace ICommunityPlatformMemberSession {
      *
      * Updated on refresh token rotation to track the most recent activity associated with this session. Enables monitoring of session refresh patterns and activity recency.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from community_platform_member_sessions.updated_at. DateTime with timezone.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_member_sessions.updated_at. DateTime with
+         *   timezone.
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -175,8 +207,10 @@ export namespace ICommunityPlatformMemberSession {
      *
      * After this time, the refresh token is no longer valid and the member must re-authenticate. The expiration deadline is set at session creation time based on platform security policies.
      *
-     * @x-autobe-database-schema-property expired_at
-     * @x-autobe-specification Direct mapping from community_platform_member_sessions.expired_at. DateTime with timezone.
+         * @x-autobe-database-schema-property expired_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_member_sessions.expired_at. DateTime with
+         *   timezone.
      */
     expired_at: string & tags.Format<"date-time">;
   };
@@ -196,7 +230,11 @@ export namespace ICommunityPlatformMemberSession {
      *
      * When omitted, no text-based filtering is applied and all sessions matching other criteria are returned.
      *
-     * @x-autobe-specification LIKE filter applied to ip, href, and referrer columns. Combines search term across all three columns using OR logic. Case-insensitive matching. Search across ip (string), href (string), referrer (nullable string — null values excluded from search).
+         * @x-autobe-specification LIKE filter applied to ip, href, and referrer
+         *   columns. Combines search term across all three columns using OR
+         *   logic. Case-insensitive matching. Search across ip (string), href
+         *   (string), referrer (nullable string — null values excluded from
+         *   search).
      */
     search?: string | undefined;
 
@@ -207,7 +245,9 @@ export namespace ICommunityPlatformMemberSession {
      *
      * Defaults to 1 when omitted.
      *
-     * @x-autobe-specification Pagination offset parameter. Calculates skip = (page - 1) * limit. Defaults to 1 when omitted. Validated minimum of 1.
+         * @x-autobe-specification Pagination offset parameter. Calculates skip
+         *   = (page - 1) * limit. Defaults to 1 when omitted. Validated minimum
+         *   of 1.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -218,7 +258,9 @@ export namespace ICommunityPlatformMemberSession {
      *
      * Defaults to the system default page size when omitted.
      *
-     * @x-autobe-specification Pagination limit — number of records per page. Maximum 100. Defaults to system default page size when omitted. Applied as LIMIT clause.
+         * @x-autobe-specification Pagination limit — number of records per
+         *   page. Maximum 100. Defaults to system default page size when
+         *   omitted. Applied as LIMIT clause.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)

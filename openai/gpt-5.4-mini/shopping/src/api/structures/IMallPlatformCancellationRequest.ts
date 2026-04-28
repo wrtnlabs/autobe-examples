@@ -18,8 +18,9 @@ export type IMallPlatformCancellationRequest = {
    *
    * This value identifies the request record within the platform and remains stable for the lifetime of the entity.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from mall_platform_cancellation_requests.id.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_cancellation_requests.id.
    */
   id: string & tags.Format<"uuid">;
 
@@ -28,8 +29,11 @@ export type IMallPlatformCancellationRequest = {
    *
    * This property provides the readable item context needed for review and dispute handling, and it always points to exactly one purchased order item.
    *
-   * @x-autobe-database-schema-property orderItem
-   * @x-autobe-specification Join from mall_platform_cancellation_requests.mall_platform_order_item_id to mall_platform_order_items.id and expose the related order item as IMallPlatformOrderItem.ISummary.
+     * @x-autobe-database-schema-property orderItem
+     * @x-autobe-specification Join from
+     *   mall_platform_cancellation_requests.mall_platform_order_item_id to
+     *   mall_platform_order_items.id and expose the related order item as
+     *   IMallPlatformOrderItem.ISummary.
    */
   orderItem: IMallPlatformOrderItem.ISummary;
 
@@ -38,8 +42,13 @@ export type IMallPlatformCancellationRequest = {
    *
    * This value is null until a reviewer acts. When present, it indicates whether an administrator or seller handled the request.
    *
-   * @x-autobe-database-schema-property reviewer
-   * @x-autobe-specification Join from mall_platform_cancellation_requests.reviewer_id to either mall_platform_administrators.id or mall_platform_sellers.id. Expose the related reviewer as IMallPlatformAdministrator.ISummary or IMallPlatformSeller.ISummary, and keep null when the request has not been reviewed yet.
+     * @x-autobe-database-schema-property reviewer
+     * @x-autobe-specification Join from
+     *   mall_platform_cancellation_requests.reviewer_id to either
+     *   mall_platform_administrators.id or mall_platform_sellers.id. Expose the
+     *   related reviewer as IMallPlatformAdministrator.ISummary or
+     *   IMallPlatformSeller.ISummary, and keep null when the request has not
+     *   been reviewed yet.
    */
   reviewer:
     | IMallPlatformAdministrator.ISummary
@@ -51,8 +60,9 @@ export type IMallPlatformCancellationRequest = {
    *
    * This text is shown to reviewers so they can understand why the order item is being cancelled.
    *
-   * @x-autobe-database-schema-property reason
-   * @x-autobe-specification Direct mapping from mall_platform_cancellation_requests.reason.
+     * @x-autobe-database-schema-property reason
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_cancellation_requests.reason.
    */
   reason: string;
 
@@ -61,8 +71,9 @@ export type IMallPlatformCancellationRequest = {
    *
    * This value reflects the request lifecycle, such as pending, approved, or rejected.
    *
-   * @x-autobe-database-schema-property status
-   * @x-autobe-specification Direct mapping from mall_platform_cancellation_requests.status.
+     * @x-autobe-database-schema-property status
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_cancellation_requests.status.
    */
   status: string;
 
@@ -71,8 +82,10 @@ export type IMallPlatformCancellationRequest = {
    *
    * This remains null until a reviewer makes a decision and the review timestamp is recorded.
    *
-   * @x-autobe-database-schema-property reviewed_at
-   * @x-autobe-specification Direct mapping from mall_platform_cancellation_requests.reviewed_at. Preserve null while the request has not yet been reviewed.
+     * @x-autobe-database-schema-property reviewed_at
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_cancellation_requests.reviewed_at. Preserve null while
+     *   the request has not yet been reviewed.
    */
   reviewedAt: (string & tags.Format<"date-time">) | null;
 
@@ -81,8 +94,10 @@ export type IMallPlatformCancellationRequest = {
    *
    * This field captures the result message or decision outcome stored after review and remains null before review.
    *
-   * @x-autobe-database-schema-property review_result
-   * @x-autobe-specification Direct mapping from mall_platform_cancellation_requests.review_result. Preserve null until a review outcome has been recorded.
+     * @x-autobe-database-schema-property review_result
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_cancellation_requests.review_result. Preserve null until
+     *   a review outcome has been recorded.
    */
   reviewResult: string | null;
 
@@ -91,8 +106,10 @@ export type IMallPlatformCancellationRequest = {
    *
    * This field provides additional context for the cancellation decision and is null when no note was supplied.
    *
-   * @x-autobe-database-schema-property reviewer_note
-   * @x-autobe-specification Direct mapping from mall_platform_cancellation_requests.reviewer_note. Preserve null when the reviewer did not leave a note.
+     * @x-autobe-database-schema-property reviewer_note
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_cancellation_requests.reviewer_note. Preserve null when
+     *   the reviewer did not leave a note.
    */
   reviewerNote: string | null;
 
@@ -101,8 +118,9 @@ export type IMallPlatformCancellationRequest = {
    *
    * This timestamp marks when the request entered the review workflow.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from mall_platform_cancellation_requests.created_at.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_cancellation_requests.created_at.
    */
   createdAt: string & tags.Format<"date-time">;
 
@@ -111,8 +129,9 @@ export type IMallPlatformCancellationRequest = {
    *
    * This timestamp changes whenever the request or its review state is modified.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from mall_platform_cancellation_requests.updated_at.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_cancellation_requests.updated_at.
    */
   updatedAt: string & tags.Format<"date-time">;
 
@@ -121,8 +140,10 @@ export type IMallPlatformCancellationRequest = {
    *
    * This remains null while the request is active and contains the deletion timestamp only when the record has been removed from active use.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from mall_platform_cancellation_requests.deleted_at. Preserve null when the request is active.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_cancellation_requests.deleted_at. Preserve null when the
+     *   request is active.
    */
   deletedAt: (string & tags.Format<"date-time">) | null;
 };
@@ -140,8 +161,10 @@ export namespace IMallPlatformCancellationRequest {
      *
      * This field lets the seller or administrator add context when resolving a cancellation request. It may be omitted when no additional note is needed.
      *
-     * @x-autobe-database-schema-property reviewer_note
-     * @x-autobe-specification Optional reviewer note stored with the cancellation request decision. When provided, the server persists it to reviewer_note; when omitted, the stored value remains null.
+         * @x-autobe-database-schema-property reviewer_note
+         * @x-autobe-specification Optional reviewer note stored with the
+         *   cancellation request decision. When provided, the server persists
+         *   it to reviewer_note; when omitted, the stored value remains null.
      */
     reviewerNote?: string | null | undefined;
   };
@@ -157,8 +180,12 @@ export namespace IMallPlatformCancellationRequest {
      *
      * Use this field to explain why the specified order item should be cancelled. The value is stored as the cancellation request reason and is later shown to reviewers during the approval workflow.
      *
-     * @x-autobe-database-schema-property reason
-     * @x-autobe-specification Direct mapping to mall_platform_cancellation_requests.reason. This is the only client-supplied field in the create payload; all parent linkage, review state, reviewer assignment, and timestamps are handled by the server.
+         * @x-autobe-database-schema-property reason
+         * @x-autobe-specification Direct mapping to
+         *   mall_platform_cancellation_requests.reason. This is the only
+         *   client-supplied field in the create payload; all parent linkage,
+         *   review state, reviewer assignment, and timestamps are handled by
+         *   the server.
      */
     reason: string;
   };
@@ -174,7 +201,13 @@ export namespace IMallPlatformCancellationRequest {
      *
      * Set this field to indicate how the pending request should be resolved. The server uses the value to update the request and record the final outcome.
      *
-     * @x-autobe-specification Interpret this field as the approve/reject command for the cancellation decision workflow. The service layer combines it with the route parameters and authenticated reviewer to finalize the request, update persisted state, and write the immutable snapshot. Because the stored record uses status and review metadata instead of a decision column, this field has no direct database mapping.
+         * @x-autobe-specification Interpret this field as the approve/reject
+         *   command for the cancellation decision workflow. The service layer
+         *   combines it with the route parameters and authenticated reviewer to
+         *   finalize the request, update persisted state, and write the
+         *   immutable snapshot. Because the stored record uses status and
+         *   review metadata instead of a decision column, this field has no
+         *   direct database mapping.
      */
     decision: boolean;
 
@@ -183,8 +216,11 @@ export namespace IMallPlatformCancellationRequest {
      *
      * Use this to explain the approval or rejection decision, add context, or leave a short internal comment. It may be omitted when no note is needed.
      *
-     * @x-autobe-database-schema-property reviewer_note
-     * @x-autobe-specification Direct mapping to mall_platform_cancellation_requests.reviewer_note. Persist the note when provided; store null when omitted. This field is optional and is used only as supporting context for the reviewer’s decision.
+         * @x-autobe-database-schema-property reviewer_note
+         * @x-autobe-specification Direct mapping to
+         *   mall_platform_cancellation_requests.reviewer_note. Persist the note
+         *   when provided; store null when omitted. This field is optional and
+         *   is used only as supporting context for the reviewer’s decision.
      */
     reviewerNote?: string | null | undefined;
   };

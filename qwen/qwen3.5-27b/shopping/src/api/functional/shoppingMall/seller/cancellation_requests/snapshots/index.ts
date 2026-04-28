@@ -22,7 +22,8 @@ import { IShoppingMallCancellationRequestSnapshot } from "../../../../../structu
  * @param props.body Search criteria for filtering cancellation request snapshots including cancellation request ID, seller ID, status filters, date range, and pagination parameters.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Query shopping_mall_cancellation_request_snapshots table with pagination and filtering capabilities.
+ * @x-autobe-specification Query shopping_mall_cancellation_request_snapshots
+ *   table with pagination and filtering capabilities.
  *
  * Filtering:
  * - Filter by cancellation request ID (shopping_mall_cancellation_request_id) to view all snapshots for a specific request
@@ -136,7 +137,9 @@ export namespace index {
  * @param props.snapshotId Unique identifier of the cancellation request snapshot to retrieve (global scope)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Query the shopping_mall_cancellation_request_snapshots table by primary key (id) using the snapshotId parameter.
+ * @x-autobe-specification Query the
+ *   shopping_mall_cancellation_request_snapshots table by primary key (id)
+ *   using the snapshotId parameter.
  *
  * Return the complete snapshot record including:
  * - id: Primary key UUID

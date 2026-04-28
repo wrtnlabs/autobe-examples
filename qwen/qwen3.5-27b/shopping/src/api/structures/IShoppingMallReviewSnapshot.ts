@@ -18,8 +18,10 @@ export type IShoppingMallReviewSnapshot = {
    *
    * This UUID identifies a specific point in time when a review was modified. Each snapshot is immutable and represents one modification event in the review's history.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_review_snapshots.id. Primary key uniquely identifying each review snapshot record.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_review_snapshots.id. Primary key uniquely identifying
+     *   each review snapshot record.
    */
   id: string & tags.Format<"uuid">;
 
@@ -28,8 +30,12 @@ export type IShoppingMallReviewSnapshot = {
    *
    * This relation provides the current state of the review that this snapshot captures. The review summary includes the review's identifier, current rating, content, customer information, product reference, and timestamps.
    *
-   * @x-autobe-database-schema-property review
-   * @x-autobe-specification Join from shopping_mall_review_snapshots.shopping_mall_review_id to shopping_mall_reviews.id. Returns IShoppingMallReview.ISummary with review details including id, rating, content, customer, product, and timestamps.
+     * @x-autobe-database-schema-property review
+     * @x-autobe-specification Join from
+     *   shopping_mall_review_snapshots.shopping_mall_review_id to
+     *   shopping_mall_reviews.id. Returns IShoppingMallReview.ISummary with
+     *   review details including id, rating, content, customer, product, and
+     *   timestamps.
    */
   review: IShoppingMallReview.ISummary;
 
@@ -38,8 +44,11 @@ export type IShoppingMallReviewSnapshot = {
    *
    * This relation identifies which customer performed the edit or deletion action. The customer summary provides the customer's identifier and essential identity information for audit trail purposes.
    *
-   * @x-autobe-database-schema-property customer
-   * @x-autobe-specification Join from shopping_mall_review_snapshots.shopping_mall_customer_id to shopping_mall_customers.id. Returns IShoppingMallCustomer.ISummary with customer identity information.
+     * @x-autobe-database-schema-property customer
+     * @x-autobe-specification Join from
+     *   shopping_mall_review_snapshots.shopping_mall_customer_id to
+     *   shopping_mall_customers.id. Returns IShoppingMallCustomer.ISummary with
+     *   customer identity information.
    */
   customer: IShoppingMallCustomer.ISummary;
 
@@ -48,8 +57,11 @@ export type IShoppingMallReviewSnapshot = {
    *
    * This field stores the previous rating that existed before the edit operation. It is nullable if the review was being created for the first time (no previous rating existed). Used to track rating changes in the audit trail.
    *
-   * @x-autobe-database-schema-property rating_before
-   * @x-autobe-specification Direct mapping from shopping_mall_review_snapshots.rating_before. Nullable integer (1-5) representing the rating value before the modification. Null if the review was being created for the first time.
+     * @x-autobe-database-schema-property rating_before
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_review_snapshots.rating_before. Nullable integer (1-5)
+     *   representing the rating value before the modification. Null if the
+     *   review was being created for the first time.
    */
   rating_before:
     | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<5>)
@@ -60,8 +72,11 @@ export type IShoppingMallReviewSnapshot = {
    *
    * This field stores the new rating that was set by the edit operation. It is nullable if the review was deleted (no rating after deletion). Used to track what the rating became after the change.
    *
-   * @x-autobe-database-schema-property rating_after
-   * @x-autobe-specification Direct mapping from shopping_mall_review_snapshots.rating_after. Nullable integer (1-5) representing the rating value after the modification. Null if the review was deleted.
+     * @x-autobe-database-schema-property rating_after
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_review_snapshots.rating_after. Nullable integer (1-5)
+     *   representing the rating value after the modification. Null if the
+     *   review was deleted.
    */
   rating_after:
     | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<5>)
@@ -72,8 +87,11 @@ export type IShoppingMallReviewSnapshot = {
    *
    * This field stores the previous review text that existed before the edit operation. It is nullable if no text content existed previously (rating-only review). Used to track content changes in the audit trail.
    *
-   * @x-autobe-database-schema-property text_content_before
-   * @x-autobe-specification Direct mapping from shopping_mall_review_snapshots.text_content_before. Nullable string representing the review text content before the modification. Null if no text content existed previously.
+     * @x-autobe-database-schema-property text_content_before
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_review_snapshots.text_content_before. Nullable string
+     *   representing the review text content before the modification. Null if
+     *   no text content existed previously.
    */
   text_content_before: string | null;
 
@@ -82,8 +100,11 @@ export type IShoppingMallReviewSnapshot = {
    *
    * This field stores the new review text that was set by the edit operation. It is nullable if the review was deleted or if the text content was removed. Used to track what the content became after the change.
    *
-   * @x-autobe-database-schema-property text_content_after
-   * @x-autobe-specification Direct mapping from shopping_mall_review_snapshots.text_content_after. Nullable string representing the review text content after the modification. Null if the review was deleted or text was removed.
+     * @x-autobe-database-schema-property text_content_after
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_review_snapshots.text_content_after. Nullable string
+     *   representing the review text content after the modification. Null if
+     *   the review was deleted or text was removed.
    */
   text_content_after: string | null;
 
@@ -92,8 +113,11 @@ export type IShoppingMallReviewSnapshot = {
    *
    * This field indicates whether the review was previously deleted (contains timestamp) or active (null). Used to track undeletion operations where a previously deleted review is restored to active state.
    *
-   * @x-autobe-database-schema-property deleted_at_before
-   * @x-autobe-specification Direct mapping from shopping_mall_review_snapshots.deleted_at_before. Nullable datetime representing whether the review was previously deleted (has timestamp) or active (null).
+     * @x-autobe-database-schema-property deleted_at_before
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_review_snapshots.deleted_at_before. Nullable datetime
+     *   representing whether the review was previously deleted (has timestamp)
+     *   or active (null).
    */
   deleted_at_before: (string & tags.Format<"date-time">) | null;
 
@@ -102,8 +126,11 @@ export type IShoppingMallReviewSnapshot = {
    *
    * This field indicates whether the review is now deleted (contains timestamp) or active (null). Used to track deletion operations where an active review is soft-deleted.
    *
-   * @x-autobe-database-schema-property deleted_at_after
-   * @x-autobe-specification Direct mapping from shopping_mall_review_snapshots.deleted_at_after. Nullable datetime representing whether the review is now deleted (has timestamp) or active (null).
+     * @x-autobe-database-schema-property deleted_at_after
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_review_snapshots.deleted_at_after. Nullable datetime
+     *   representing whether the review is now deleted (has timestamp) or
+     *   active (null).
    */
   deleted_at_after: (string & tags.Format<"date-time">) | null;
 
@@ -112,8 +139,11 @@ export type IShoppingMallReviewSnapshot = {
    *
    * Records the exact moment when the review modification occurred and this snapshot was generated. This is the only timestamp on snapshot records, as snapshots are immutable and never updated after creation.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from shopping_mall_review_snapshots.created_at. Datetime representing when this snapshot was created. This is the only timestamp on snapshot records as snapshots are immutable.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_review_snapshots.created_at. Datetime representing when
+     *   this snapshot was created. This is the only timestamp on snapshot
+     *   records as snapshots are immutable.
    */
   created_at: string & tags.Format<"date-time">;
 };
@@ -131,8 +161,10 @@ export namespace IShoppingMallReviewSnapshot {
      *
      * This UUID identifies a specific modification event captured in the snapshot. Each snapshot is immutable and represents a single point in time when a review was modified or deleted.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_review_snapshots.id. Primary key uniquely identifying each review snapshot record.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_review_snapshots.id. Primary key uniquely identifying
+         *   each review snapshot record.
      */
     id: string & tags.Format<"uuid">;
 
@@ -141,8 +173,11 @@ export namespace IShoppingMallReviewSnapshot {
      *
      * This field captures the previous rating (1-5 stars) that existed before the edit operation. It is nullable if the review was being created for the first time (no previous rating existed).
      *
-     * @x-autobe-database-schema-property rating_before
-     * @x-autobe-specification Direct mapping from shopping_mall_review_snapshots.rating_before. Nullable integer (1-5) representing the rating value before the modification. Null if review was being created for the first time.
+         * @x-autobe-database-schema-property rating_before
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_review_snapshots.rating_before. Nullable integer
+         *   (1-5) representing the rating value before the modification. Null
+         *   if review was being created for the first time.
      */
     rating_before:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<5>)
@@ -153,8 +188,11 @@ export namespace IShoppingMallReviewSnapshot {
      *
      * This field captures the new rating (1-5 stars) that was set by the edit operation. It is nullable if the review was deleted (no rating after deletion).
      *
-     * @x-autobe-database-schema-property rating_after
-     * @x-autobe-specification Direct mapping from shopping_mall_review_snapshots.rating_after. Nullable integer (1-5) representing the rating value after the modification. Null if review was deleted.
+         * @x-autobe-database-schema-property rating_after
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_review_snapshots.rating_after. Nullable integer (1-5)
+         *   representing the rating value after the modification. Null if
+         *   review was deleted.
      */
     rating_after:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<5>)
@@ -165,8 +203,11 @@ export namespace IShoppingMallReviewSnapshot {
      *
      * This field indicates whether the review was previously deleted (has timestamp) or active (null). It is used to track undeletion operations where a deleted review is restored to active status.
      *
-     * @x-autobe-database-schema-property deleted_at_before
-     * @x-autobe-specification Direct mapping from shopping_mall_review_snapshots.deleted_at_before. Nullable datetime representing whether the review was previously deleted. Null means the review was active before the modification.
+         * @x-autobe-database-schema-property deleted_at_before
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_review_snapshots.deleted_at_before. Nullable datetime
+         *   representing whether the review was previously deleted. Null means
+         *   the review was active before the modification.
      */
     deleted_at_before: (string & tags.Format<"date-time">) | null;
 
@@ -175,8 +216,11 @@ export namespace IShoppingMallReviewSnapshot {
      *
      * This field indicates whether the review is now deleted (has timestamp) or active (null). It is used to track deletion operations where an active review is soft-deleted.
      *
-     * @x-autobe-database-schema-property deleted_at_after
-     * @x-autobe-specification Direct mapping from shopping_mall_review_snapshots.deleted_at_after. Nullable datetime representing whether the review is now deleted. Null means the review is active after the modification.
+         * @x-autobe-database-schema-property deleted_at_after
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_review_snapshots.deleted_at_after. Nullable datetime
+         *   representing whether the review is now deleted. Null means the
+         *   review is active after the modification.
      */
     deleted_at_after: (string & tags.Format<"date-time">) | null;
 
@@ -185,8 +229,11 @@ export namespace IShoppingMallReviewSnapshot {
      *
      * This field records the exact moment when the review modification occurred. Snapshots are immutable, so this is the only timestamp on snapshot records. It is used for sorting snapshots chronologically and for audit trail purposes.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_review_snapshots.created_at. Datetime representing when this snapshot was created. This is the only timestamp on snapshot records since snapshots are immutable and never updated.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_review_snapshots.created_at. Datetime representing
+         *   when this snapshot was created. This is the only timestamp on
+         *   snapshot records since snapshots are immutable and never updated.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -195,8 +242,11 @@ export namespace IShoppingMallReviewSnapshot {
      *
      * This relation provides the complete review information that underwent the state change captured in this snapshot. Multiple snapshots can exist for a single review, creating a complete modification history.
      *
-     * @x-autobe-database-schema-property review
-     * @x-autobe-specification Relation mapping from shopping_mall_review_snapshots.review via JOIN on shopping_mall_review_id FK to shopping_mall_reviews.id. Returns IShoppingMallReview.ISummary object with review details.
+         * @x-autobe-database-schema-property review
+         * @x-autobe-specification Relation mapping from
+         *   shopping_mall_review_snapshots.review via JOIN on
+         *   shopping_mall_review_id FK to shopping_mall_reviews.id. Returns
+         *   IShoppingMallReview.ISummary object with review details.
      */
     review: IShoppingMallReview.ISummary;
 
@@ -205,8 +255,11 @@ export namespace IShoppingMallReviewSnapshot {
      *
      * This relation identifies which customer performed the edit or deletion action that triggered this snapshot. It enables filtering snapshots by customer and provides customer context for audit purposes.
      *
-     * @x-autobe-database-schema-property customer
-     * @x-autobe-specification Relation mapping from shopping_mall_review_snapshots.customer via JOIN on shopping_mall_customer_id FK to shopping_mall_customers.id. Returns IShoppingMallCustomer.ISummary object with customer details.
+         * @x-autobe-database-schema-property customer
+         * @x-autobe-specification Relation mapping from
+         *   shopping_mall_review_snapshots.customer via JOIN on
+         *   shopping_mall_customer_id FK to shopping_mall_customers.id. Returns
+         *   IShoppingMallCustomer.ISummary object with customer details.
      */
     customer: IShoppingMallCustomer.ISummary;
 
@@ -215,8 +268,12 @@ export namespace IShoppingMallReviewSnapshot {
      *
      * This relation provides audit trail information about the authentication context during the review change. It includes session metadata such as IP address and login page URL for security auditing purposes.
      *
-     * @x-autobe-database-schema-property customerSession
-     * @x-autobe-specification Relation mapping from shopping_mall_review_snapshots.customerSession via JOIN on shopping_mall_customer_session_id FK to shopping_mall_customer_sessions.id. Returns IShoppingMallSession.ISummary object with session details.
+         * @x-autobe-database-schema-property customerSession
+         * @x-autobe-specification Relation mapping from
+         *   shopping_mall_review_snapshots.customerSession via JOIN on
+         *   shopping_mall_customer_session_id FK to
+         *   shopping_mall_customer_sessions.id. Returns
+         *   IShoppingMallSession.ISummary object with session details.
      */
     customerSession: IShoppingMallGuestSession.ISummary;
   };
@@ -240,7 +297,11 @@ export namespace IShoppingMallReviewSnapshot {
      *
      * This optional filter matches review snapshots where the rating (1-5 stars) before the edit operation equals the specified value. Set to null to find snapshots where no previous rating existed (review was being created for the first time).
      *
-     * @x-autobe-specification Maps to shopping_mall_review_snapshots.rating_before column (Int?). Filter parameter accepts null to match snapshots where rating before modification was null, or integer 1-5 to match specific rating values.
+         * @x-autobe-specification Maps to
+         *   shopping_mall_review_snapshots.rating_before column (Int?). Filter
+         *   parameter accepts null to match snapshots where rating before
+         *   modification was null, or integer 1-5 to match specific rating
+         *   values.
      */
     rating_before?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<5>)
@@ -252,7 +313,11 @@ export namespace IShoppingMallReviewSnapshot {
      *
      * This optional filter matches review snapshots where the rating (1-5 stars) after the edit operation equals the specified value. Set to null to find snapshots where the review was deleted (no rating after deletion).
      *
-     * @x-autobe-specification Maps to shopping_mall_review_snapshots.rating_after column (Int?). Filter parameter accepts null to match snapshots where rating after modification was null (review was deleted), or integer 1-5 to match specific rating values.
+         * @x-autobe-specification Maps to
+         *   shopping_mall_review_snapshots.rating_after column (Int?). Filter
+         *   parameter accepts null to match snapshots where rating after
+         *   modification was null (review was deleted), or integer 1-5 to match
+         *   specific rating values.
      */
     rating_after?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<5>)
@@ -264,7 +329,11 @@ export namespace IShoppingMallReviewSnapshot {
      *
      * This optional filter matches review snapshots where the review text before the edit operation contains or matches the specified text. Set to null to find snapshots where no text content existed before the modification.
      *
-     * @x-autobe-specification Maps to shopping_mall_review_snapshots.text_content_before column (String?). Filter parameter accepts null to match snapshots where text content before modification was null, or string to search for specific text content.
+         * @x-autobe-specification Maps to
+         *   shopping_mall_review_snapshots.text_content_before column
+         *   (String?). Filter parameter accepts null to match snapshots where
+         *   text content before modification was null, or string to search for
+         *   specific text content.
      */
     text_content_before?: string | null | undefined;
 
@@ -273,7 +342,11 @@ export namespace IShoppingMallReviewSnapshot {
      *
      * This optional filter matches review snapshots where the review text after the edit operation contains or matches the specified text. Set to null to find snapshots where the review was deleted or text content was removed.
      *
-     * @x-autobe-specification Maps to shopping_mall_review_snapshots.text_content_after column (String?). Filter parameter accepts null to match snapshots where text content after modification was null (review was deleted or text was removed), or string to search for specific text content.
+         * @x-autobe-specification Maps to
+         *   shopping_mall_review_snapshots.text_content_after column (String?).
+         *   Filter parameter accepts null to match snapshots where text content
+         *   after modification was null (review was deleted or text was
+         *   removed), or string to search for specific text content.
      */
     text_content_after?: string | null | undefined;
 
@@ -282,7 +355,11 @@ export namespace IShoppingMallReviewSnapshot {
      *
      * This optional boolean filter matches review snapshots based on the deletion status before the edit operation. Set to true to find snapshots where the review was previously deleted (deleted_at_before is not null), or false to find snapshots where the review was active before the modification (deleted_at_before is null).
      *
-     * @x-autobe-specification Maps to shopping_mall_review_snapshots.deleted_at_before column (DateTime?). DTO uses boolean for null vs not null check: true means deleted_at_before is not null (review was deleted), false means deleted_at_before is null (review was active).
+         * @x-autobe-specification Maps to
+         *   shopping_mall_review_snapshots.deleted_at_before column
+         *   (DateTime?). DTO uses boolean for null vs not null check: true
+         *   means deleted_at_before is not null (review was deleted), false
+         *   means deleted_at_before is null (review was active).
      */
     deleted_at_before?: boolean | undefined;
 
@@ -291,7 +368,11 @@ export namespace IShoppingMallReviewSnapshot {
      *
      * This optional boolean filter matches review snapshots based on the deletion status after the edit operation. Set to true to find snapshots where the review is now deleted (deleted_at_after is not null), or false to find snapshots where the review is active after the modification (deleted_at_after is null).
      *
-     * @x-autobe-specification Maps to shopping_mall_review_snapshots.deleted_at_after column (DateTime?). DTO uses boolean for null vs not null check: true means deleted_at_after is not null (review is deleted), false means deleted_at_after is null (review is active).
+         * @x-autobe-specification Maps to
+         *   shopping_mall_review_snapshots.deleted_at_after column (DateTime?).
+         *   DTO uses boolean for null vs not null check: true means
+         *   deleted_at_after is not null (review is deleted), false means
+         *   deleted_at_after is null (review is active).
      */
     deleted_at_after?: boolean | undefined;
 
@@ -300,7 +381,10 @@ export namespace IShoppingMallReviewSnapshot {
      *
      * This optional filter returns only review snapshots created on or after the specified date-time value. Use this parameter together with created_at_to to define a date range for filtering the review modification audit trail.
      *
-     * @x-autobe-specification Maps to shopping_mall_review_snapshots.created_at column. Filter snapshots where created_at >= this date-time value. Used for date range filtering (start of range).
+         * @x-autobe-specification Maps to
+         *   shopping_mall_review_snapshots.created_at column. Filter snapshots
+         *   where created_at >= this date-time value. Used for date range
+         *   filtering (start of range).
      */
     created_at_from?: (string & tags.Format<"date-time">) | undefined;
 
@@ -309,7 +393,10 @@ export namespace IShoppingMallReviewSnapshot {
      *
      * This optional filter returns only review snapshots created on or before the specified date-time value. Use this parameter together with created_at_from to define a date range for filtering the review modification audit trail.
      *
-     * @x-autobe-specification Maps to shopping_mall_review_snapshots.created_at column. Filter snapshots where created_at <= this date-time value. Used for date range filtering (end of range).
+         * @x-autobe-specification Maps to
+         *   shopping_mall_review_snapshots.created_at column. Filter snapshots
+         *   where created_at <= this date-time value. Used for date range
+         *   filtering (end of range).
      */
     created_at_to?: (string & tags.Format<"date-time">) | undefined;
 
@@ -318,7 +405,9 @@ export namespace IShoppingMallReviewSnapshot {
      *
      * This parameter specifies which field to use for sorting the snapshot results. The only allowed value is 'created_at', which sorts snapshots by their creation timestamp.
      *
-     * @x-autobe-specification Computed query parameter. Fixed value 'created_at' - only sorting by creation timestamp is supported for review snapshots.
+         * @x-autobe-specification Computed query parameter. Fixed value
+         *   'created_at' - only sorting by creation timestamp is supported for
+         *   review snapshots.
      */
     sort_field?: "created_at" | undefined;
 
@@ -327,7 +416,10 @@ export namespace IShoppingMallReviewSnapshot {
      *
      * This parameter specifies the direction of sorting. Use 'asc' for ascending order (oldest snapshots first) or 'desc' for descending order (newest snapshots first). The default is 'desc' to display the most recent review modifications at the top of the list.
      *
-     * @x-autobe-specification Computed query parameter. Allowed values: 'asc' (ascending, oldest first) or 'desc' (descending, newest first). Default is 'desc' for showing most recent modifications first.
+         * @x-autobe-specification Computed query parameter. Allowed values:
+         *   'asc' (ascending, oldest first) or 'desc' (descending, newest
+         *   first). Default is 'desc' for showing most recent modifications
+         *   first.
      */
     sort_order?: "asc" | "desc" | undefined;
 
@@ -336,7 +428,9 @@ export namespace IShoppingMallReviewSnapshot {
      *
      * This optional parameter specifies which page of results to retrieve when browsing review snapshots. Page numbering is 1-indexed, meaning the first page is page 1. Use this parameter to navigate through paginated results when the total number of snapshots exceeds the page limit.
      *
-     * @x-autobe-specification Computed pagination parameter. 1-indexed page number (minimum 1). Used for cursor-based pagination of snapshot results.
+         * @x-autobe-specification Computed pagination parameter. 1-indexed page
+         *   number (minimum 1). Used for cursor-based pagination of snapshot
+         *   results.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -345,7 +439,9 @@ export namespace IShoppingMallReviewSnapshot {
      *
      * This optional parameter specifies how many review snapshots to include in each page of results. The minimum value is 1 and the maximum is 100. Adjust this parameter to control how many snapshots are displayed per page when browsing the audit trail.
      *
-     * @x-autobe-specification Computed pagination parameter. Number of records per page (minimum 1, maximum 100). Controls the page size for snapshot results.
+         * @x-autobe-specification Computed pagination parameter. Number of
+         *   records per page (minimum 1, maximum 100). Controls the page size
+         *   for snapshot results.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)

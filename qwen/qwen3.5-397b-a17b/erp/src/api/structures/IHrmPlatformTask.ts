@@ -19,8 +19,9 @@ export type IHrmPlatformTask = {
    *
    * Auto-generated UUID assigned when the task is created. Used to reference the task in API operations and internal system relationships.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from hrm_platform_tasks.id. UUID format generated on task creation.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from hrm_platform_tasks.id. UUID
+     *   format generated on task creation.
    */
   id: string & tags.Format<"uuid">;
 
@@ -29,8 +30,9 @@ export type IHrmPlatformTask = {
    *
    * Required field that summarizes the task's purpose or work to be done. Should be concise yet informative enough to understand the task at a glance. Used in task lists, boards, and reports.
    *
-   * @x-autobe-database-schema-property title
-   * @x-autobe-specification Direct mapping from hrm_platform_tasks.title. Required field, non-empty string.
+     * @x-autobe-database-schema-property title
+     * @x-autobe-specification Direct mapping from hrm_platform_tasks.title.
+     *   Required field, non-empty string.
    */
   title: string;
 
@@ -39,8 +41,10 @@ export type IHrmPlatformTask = {
    *
    * Optional field providing additional context, acceptance criteria, or detailed instructions for completing the task. Can include markdown formatting for rich text representation. Null indicates no detailed description provided.
    *
-   * @x-autobe-database-schema-property description
-   * @x-autobe-specification Direct mapping from hrm_platform_tasks.description. Nullable string, supports markdown formatting.
+     * @x-autobe-database-schema-property description
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_tasks.description. Nullable string, supports markdown
+     *   formatting.
    */
   description?: string | null | undefined;
 
@@ -49,8 +53,10 @@ export type IHrmPlatformTask = {
    *
    * Tracks task progression through the workflow. Valid values are: open (new or unstarted task), in-progress (actively being worked on), completed (work finished, awaiting review), and closed (finalized and archived). Status changes are automatically recorded in the task history audit trail.
    *
-   * @x-autobe-database-schema-property status
-   * @x-autobe-specification Direct mapping from hrm_platform_tasks.status. Enum values: open, in-progress, completed, closed. Status changes recorded in task history.
+     * @x-autobe-database-schema-property status
+     * @x-autobe-specification Direct mapping from hrm_platform_tasks.status.
+     *   Enum values: open, in-progress, completed, closed. Status changes
+     *   recorded in task history.
    */
   status: string;
 
@@ -59,8 +65,9 @@ export type IHrmPlatformTask = {
    *
    * Four levels available: low (can be deferred, normal backlog), medium (normal priority, standard handling), high (important, should be addressed soon), and urgent (critical, requires immediate attention). Used for sorting and filtering task lists.
    *
-   * @x-autobe-database-schema-property priority
-   * @x-autobe-specification Direct mapping from hrm_platform_tasks.priority. Enum values: low, medium, high, urgent.
+     * @x-autobe-database-schema-property priority
+     * @x-autobe-specification Direct mapping from hrm_platform_tasks.priority.
+     *   Enum values: low, medium, high, urgent.
    */
   priority: string;
 
@@ -69,8 +76,10 @@ export type IHrmPlatformTask = {
    *
    * Optional planning field for capacity estimation and project budget tracking. Helps project leads understand scope and allocate resources appropriately. Null indicates no estimate provided.
    *
-   * @x-autobe-database-schema-property estimated_hours
-   * @x-autobe-specification Direct mapping from hrm_platform_tasks.estimated_hours. Nullable integer, must be positive if provided.
+     * @x-autobe-database-schema-property estimated_hours
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_tasks.estimated_hours. Nullable integer, must be positive
+     *   if provided.
    */
   estimated_hours?: (number & tags.Type<"int32">) | null | undefined;
 
@@ -79,8 +88,9 @@ export type IHrmPlatformTask = {
    *
    * Optional deadline for task completion. Used for scheduling, reminders, and identifying overdue tasks. Null indicates no specific deadline. Format is ISO 8601 datetime with timezone (e.g., 2024-01-15T17:00:00Z).
    *
-   * @x-autobe-database-schema-property due_date
-   * @x-autobe-specification Direct mapping from hrm_platform_tasks.due_date. Nullable datetime in ISO 8601 format with timezone.
+     * @x-autobe-database-schema-property due_date
+     * @x-autobe-specification Direct mapping from hrm_platform_tasks.due_date.
+     *   Nullable datetime in ISO 8601 format with timezone.
    */
   due_date?: (string & tags.Format<"date-time">) | null | undefined;
 
@@ -89,8 +99,9 @@ export type IHrmPlatformTask = {
    *
    * Automatically set when the task record is first created. Used for audit trails, sorting by creation date, and determining task age. Format is ISO 8601 datetime with timezone.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from hrm_platform_tasks.created_at. Auto-set on task creation, immutable.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_tasks.created_at. Auto-set on task creation, immutable.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -99,8 +110,9 @@ export type IHrmPlatformTask = {
    *
    * Automatically updated whenever any task field is modified. Used for change tracking, cache invalidation, and identifying recently modified tasks. Format is ISO 8601 datetime with timezone.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from hrm_platform_tasks.updated_at. Auto-updated on any task modification.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_tasks.updated_at. Auto-updated on any task modification.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -109,8 +121,10 @@ export type IHrmPlatformTask = {
    *
    * Null for active tasks. When set, indicates the task has been soft-deleted and should be excluded from normal queries. Soft-deleted tasks are preserved for audit purposes but not visible in standard task lists. Format is ISO 8601 datetime with timezone.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from hrm_platform_tasks.deleted_at. Nullable datetime, null means active task.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_tasks.deleted_at. Nullable datetime, null means active
+     *   task.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 
@@ -119,8 +133,10 @@ export type IHrmPlatformTask = {
    *
    * Every task must belong to exactly one project. This relation provides context about the project including its name, color, status, and organization. The project determines the task's organizational scope and access permissions.
    *
-   * @x-autobe-database-schema-property project
-   * @x-autobe-specification Relation mapping via JOIN from hrm_platform_tasks.hrm_platform_project_id to hrm_platform_projects.id. Returns IHrmPlatformProject.ISummary.
+     * @x-autobe-database-schema-property project
+     * @x-autobe-specification Relation mapping via JOIN from
+     *   hrm_platform_tasks.hrm_platform_project_id to hrm_platform_projects.id.
+     *   Returns IHrmPlatformProject.ISummary.
    */
   project: IHrmPlatformProject.ISummary;
 
@@ -129,8 +145,10 @@ export type IHrmPlatformTask = {
    *
    * Optional assignment to a specific employee who is responsible for completing the task work. The assigned employee must be a project member of the parent project. Null indicates the task is unassigned and available in the project backlog.
    *
-   * @x-autobe-database-schema-property assignedEmployee
-   * @x-autobe-specification Relation mapping via LEFT JOIN from hrm_platform_tasks.assigned_employee_id to hrm_platform_employees.id. Returns IHrmPlatformEmployee.ISummary or null if unassigned.
+     * @x-autobe-database-schema-property assignedEmployee
+     * @x-autobe-specification Relation mapping via LEFT JOIN from
+     *   hrm_platform_tasks.assigned_employee_id to hrm_platform_employees.id.
+     *   Returns IHrmPlatformEmployee.ISummary or null if unassigned.
    */
   assignedEmployee?: IHrmPlatformEmployee.ISummary | null | undefined;
 
@@ -139,8 +157,10 @@ export type IHrmPlatformTask = {
    *
    * Optional reference to a parent task, enabling one-level subtask hierarchy. When present, this task is a subtask of the referenced parent. Null indicates this is a top-level task. Only one level of nesting is supported - subtasks cannot have their own subtasks.
    *
-   * @x-autobe-database-schema-property parentTask
-   * @x-autobe-specification Self-relation mapping via LEFT JOIN from hrm_platform_tasks.parent_task_id to hrm_platform_tasks.id. Returns IHrmPlatformTask.ISummary or null for top-level tasks.
+     * @x-autobe-database-schema-property parentTask
+     * @x-autobe-specification Self-relation mapping via LEFT JOIN from
+     *   hrm_platform_tasks.parent_task_id to hrm_platform_tasks.id. Returns
+     *   IHrmPlatformTask.ISummary or null for top-level tasks.
    */
   parentTask?: IHrmPlatformTask.ISummary | null | undefined;
 
@@ -149,8 +169,10 @@ export type IHrmPlatformTask = {
    *
    * Array of immediate child subtasks, supporting one-level hierarchy. Each subtask is a full task record with its own status, priority, and assignments. Empty array indicates this task has no subtasks. Subtasks cannot have their own subtasks (one-level nesting only).
    *
-   * @x-autobe-database-schema-property subtasks
-   * @x-autobe-specification Composition relation via recursive query on hrm_platform_tasks.parent_task_id. Returns array of IHrmPlatformTask.ISummary. Empty array if no subtasks.
+     * @x-autobe-database-schema-property subtasks
+     * @x-autobe-specification Composition relation via recursive query on
+     *   hrm_platform_tasks.parent_task_id. Returns array of
+     *   IHrmPlatformTask.ISummary. Empty array if no subtasks.
    */
   subtasks: IHrmPlatformTask.ISummary[];
 };
@@ -170,8 +192,9 @@ export namespace IHrmPlatformTask {
      *
      * Auto-generated UUID assigned when the task is created. Used to reference the task in API operations and relationships.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from hrm_platform_tasks.id. UUID format.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from hrm_platform_tasks.id.
+         *   UUID format.
      */
     id: string & tags.Format<"uuid">;
 
@@ -180,8 +203,9 @@ export namespace IHrmPlatformTask {
      *
      * Required field that summarizes the task's purpose or work to be done. Should be concise yet informative enough to understand the task at a glance.
      *
-     * @x-autobe-database-schema-property title
-     * @x-autobe-specification Direct mapping from hrm_platform_tasks.title. Required field.
+         * @x-autobe-database-schema-property title
+         * @x-autobe-specification Direct mapping from hrm_platform_tasks.title.
+         *   Required field.
      */
     title: string;
 
@@ -190,8 +214,10 @@ export namespace IHrmPlatformTask {
      *
      * Tracks task progression through the workflow: 'open' (new/unstarted), 'in-progress' (actively being worked on), 'completed' (work finished), 'closed' (finalized and archived). Status changes are recorded in task history.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from hrm_platform_tasks.status. Valid values: open, in-progress, completed, closed.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_tasks.status. Valid values: open, in-progress,
+         *   completed, closed.
      */
     status: string;
 
@@ -200,8 +226,10 @@ export namespace IHrmPlatformTask {
      *
      * Four levels: 'low' (can be deferred), 'medium' (normal priority), 'high' (important, should be addressed soon), 'urgent' (critical, immediate attention required). Used for sorting and filtering task lists.
      *
-     * @x-autobe-database-schema-property priority
-     * @x-autobe-specification Direct mapping from hrm_platform_tasks.priority. Valid values: low, medium, high, urgent.
+         * @x-autobe-database-schema-property priority
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_tasks.priority. Valid values: low, medium, high,
+         *   urgent.
      */
     priority: string;
 
@@ -210,8 +238,10 @@ export namespace IHrmPlatformTask {
      *
      * Optional deadline for task completion. Used for scheduling, reminders, and identifying overdue tasks. Null indicates no specific deadline.
      *
-     * @x-autobe-database-schema-property due_date
-     * @x-autobe-specification Direct mapping from hrm_platform_tasks.due_date. Nullable - null means no specific deadline. Format: ISO 8601 date-time.
+         * @x-autobe-database-schema-property due_date
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_tasks.due_date. Nullable - null means no specific
+         *   deadline. Format: ISO 8601 date-time.
      */
     due_date: (string & tags.Format<"date-time">) | null;
 
@@ -220,8 +250,10 @@ export namespace IHrmPlatformTask {
      *
      * Optional planning field for capacity estimation and project budget tracking. Helps project leads understand scope and allocate resources appropriately.
      *
-     * @x-autobe-database-schema-property estimated_hours
-     * @x-autobe-specification Direct mapping from hrm_platform_tasks.estimated_hours. Nullable integer. Null means no estimate provided.
+         * @x-autobe-database-schema-property estimated_hours
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_tasks.estimated_hours. Nullable integer. Null means no
+         *   estimate provided.
      */
     estimated_hours: (number & tags.Type<"int32">) | null;
 
@@ -230,8 +262,11 @@ export namespace IHrmPlatformTask {
      *
      * References the employee record of the person responsible for completing the task. The assigned employee must be a project member of the parent project. Null indicates the task is unassigned and available in the project backlog.
      *
-     * @x-autobe-database-schema-property assignedEmployee
-     * @x-autobe-specification LEFT JOIN from hrm_platform_tasks.assigned_employee_id to hrm_platform_employees.id. Returns IHrmPlatformEmployee.ISummary. Nullable - null means task is unassigned.
+         * @x-autobe-database-schema-property assignedEmployee
+         * @x-autobe-specification LEFT JOIN from
+         *   hrm_platform_tasks.assigned_employee_id to
+         *   hrm_platform_employees.id. Returns IHrmPlatformEmployee.ISummary.
+         *   Nullable - null means task is unassigned.
      */
     assignedEmployee: IHrmPlatformEmployee.ISummary | null;
 
@@ -240,8 +275,11 @@ export namespace IHrmPlatformTask {
      *
      * Indicates if this task is a subtask of another task, enabling one-level subtask nesting. Null value indicates this is a top-level task. Only one level of nesting is supported - subtasks cannot have their own subtasks.
      *
-     * @x-autobe-database-schema-property parentTask
-     * @x-autobe-specification LEFT JOIN from hrm_platform_tasks.parent_task_id to hrm_platform_tasks.id (self-reference). Returns IHrmPlatformTask.ISummary. Nullable - null means this is a top-level task.
+         * @x-autobe-database-schema-property parentTask
+         * @x-autobe-specification LEFT JOIN from
+         *   hrm_platform_tasks.parent_task_id to hrm_platform_tasks.id
+         *   (self-reference). Returns IHrmPlatformTask.ISummary. Nullable -
+         *   null means this is a top-level task.
      */
     parentTask: IHrmPlatformTask.ISummary | null;
 
@@ -250,8 +288,9 @@ export namespace IHrmPlatformTask {
      *
      * Auto-generated when the task record is first inserted. Used for sorting tasks by creation date and tracking when work items were added to the project.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from hrm_platform_tasks.created_at. Format: ISO 8601 date-time.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_tasks.created_at. Format: ISO 8601 date-time.
      */
     created_at: string & tags.Format<"date-time">;
   };
@@ -273,7 +312,10 @@ export namespace IHrmPlatformTask {
      *
      * Accepts one of four status values: open (new/unstarted tasks), in-progress (actively being worked on), completed (work finished), or closed (finalized and archived). When omitted, returns tasks regardless of status.
      *
-     * @x-autobe-specification Filter by exact match on hrm_platform_tasks.status column. Valid values: open, in-progress, completed, closed. Optional parameter - when omitted, returns tasks of all statuses.
+         * @x-autobe-specification Filter by exact match on
+         *   hrm_platform_tasks.status column. Valid values: open, in-progress,
+         *   completed, closed. Optional parameter - when omitted, returns tasks
+         *   of all statuses.
      */
     status?: "open" | "in-progress" | "completed" | "closed" | undefined;
 
@@ -282,7 +324,10 @@ export namespace IHrmPlatformTask {
      *
      * Accepts one of four priority values: low (can be deferred), medium (normal priority), high (important, should be addressed soon), or urgent (critical, immediate attention required). When omitted, returns tasks regardless of priority.
      *
-     * @x-autobe-specification Filter by exact match on hrm_platform_tasks.priority column. Valid values: low, medium, high, urgent. Optional parameter - when omitted, returns tasks of all priority levels.
+         * @x-autobe-specification Filter by exact match on
+         *   hrm_platform_tasks.priority column. Valid values: low, medium,
+         *   high, urgent. Optional parameter - when omitted, returns tasks of
+         *   all priority levels.
      */
     priority?: "low" | "medium" | "high" | "urgent" | undefined;
 
@@ -291,7 +336,11 @@ export namespace IHrmPlatformTask {
      *
      * Pass a valid employee UUID to retrieve only tasks assigned to that employee. Pass null explicitly to retrieve unassigned backlog tasks. When omitted, returns tasks regardless of assignment status.
      *
-     * @x-autobe-specification Filter by hrm_platform_tasks.assigned_employee_id FK column. Pass UUID to find tasks assigned to specific employee. Pass null to find unassigned backlog tasks. Optional - when omitted, returns all tasks regardless of assignment.
+         * @x-autobe-specification Filter by
+         *   hrm_platform_tasks.assigned_employee_id FK column. Pass UUID to
+         *   find tasks assigned to specific employee. Pass null to find
+         *   unassigned backlog tasks. Optional - when omitted, returns all
+         *   tasks regardless of assignment.
      */
     assignedEmployeeId?: (string & tags.Format<"uuid">) | null | undefined;
 
@@ -300,7 +349,10 @@ export namespace IHrmPlatformTask {
      *
      * Performs case-insensitive substring matching against both the title and description fields. Useful for finding tasks by keyword or topic. When omitted, no text filtering is applied.
      *
-     * @x-autobe-specification Text search across hrm_platform_tasks.title and hrm_platform_tasks.description columns using LIKE operator. Case-insensitive substring matching. Optional - when omitted, no text filtering applied.
+         * @x-autobe-specification Text search across hrm_platform_tasks.title
+         *   and hrm_platform_tasks.description columns using LIKE operator.
+         *   Case-insensitive substring matching. Optional - when omitted, no
+         *   text filtering applied.
      */
     search?: string | undefined;
 
@@ -309,7 +361,11 @@ export namespace IHrmPlatformTask {
      *
      * Accepts one of three values: dueDate (sorts by task due date, null values appear last), priority (sorts by urgency: urgent, high, medium, low), or createdAt (sorts by creation timestamp). When omitted, defaults to sorting by createdAt.
      *
-     * @x-autobe-specification Specifies which field to sort by: dueDate (hrm_platform_tasks.due_date, nulls last), priority (enum order: urgent > high > medium > low), or createdAt (hrm_platform_tasks.created_at). Optional - defaults to createdAt if omitted.
+         * @x-autobe-specification Specifies which field to sort by: dueDate
+         *   (hrm_platform_tasks.due_date, nulls last), priority (enum order:
+         *   urgent > high > medium > low), or createdAt
+         *   (hrm_platform_tasks.created_at). Optional - defaults to createdAt
+         *   if omitted.
      */
     sort?: "dueDate" | "priority" | "createdAt" | undefined;
 
@@ -318,7 +374,9 @@ export namespace IHrmPlatformTask {
      *
      * Accepts asc for ascending order or desc for descending order. Works in conjunction with the sort field parameter. When omitted, defaults to ascending order.
      *
-     * @x-autobe-specification Sort direction: asc (ascending) or desc (descending). Works in conjunction with sort field. Optional - defaults to asc if omitted.
+         * @x-autobe-specification Sort direction: asc (ascending) or desc
+         *   (descending). Works in conjunction with sort field. Optional -
+         *   defaults to asc if omitted.
      */
     sortDirection?: "asc" | "desc" | undefined;
 
@@ -327,7 +385,9 @@ export namespace IHrmPlatformTask {
      *
      * Accepts an integer value between 1 and 100. Controls the page size for pagination. When omitted, defaults to 20 records per page. The actual number of records returned may be less on the final page.
      *
-     * @x-autobe-specification Maximum number of records per page. Integer between 1 and 100. Optional - defaults to 20 if omitted. Used for cursor-based pagination.
+         * @x-autobe-specification Maximum number of records per page. Integer
+         *   between 1 and 100. Optional - defaults to 20 if omitted. Used for
+         *   cursor-based pagination.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -338,7 +398,9 @@ export namespace IHrmPlatformTask {
      *
      * Opaque string token obtained from the previous page's response metadata. Use this to retrieve the next or previous page of results. When omitted or null, returns the first page of results.
      *
-     * @x-autobe-specification Opaque cursor string for cursor-based pagination. Obtained from previous page's response metadata. Optional - when omitted or null, returns first page.
+         * @x-autobe-specification Opaque cursor string for cursor-based
+         *   pagination. Obtained from previous page's response metadata.
+         *   Optional - when omitted or null, returns first page.
      */
     cursor?: string | undefined;
 
@@ -347,7 +409,9 @@ export namespace IHrmPlatformTask {
      *
      * Specifies which page of results to return. Page numbering starts from 1. If omitted, null, or 0, defaults to page 1 (first page). Requesting a page beyond the available range returns an empty data array with valid pagination metadata reflecting the actual totals.
      *
-     * @x-autobe-specification 1-indexed page number for pagination. Integer >= 0 (0 or null means page 1). Optional - defaults to 1 if omitted. Alternative to cursor-based navigation.
+         * @x-autobe-specification 1-indexed page number for pagination. Integer
+         *   >= 0 (0 or null means page 1). Optional - defaults to 1 if omitted.
+         *   Alternative to cursor-based navigation.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };
@@ -395,7 +459,7 @@ export namespace IHrmPlatformTask {
     /**
      * Short descriptive title of the task.
      *
-     * @x-autobe-database-schema-property title
+         * @x-autobe-database-schema-property title
      */
     title: string;
 
@@ -404,22 +468,24 @@ export namespace IHrmPlatformTask {
      *
      * Optional field providing additional context, acceptance criteria, or detailed instructions for completing the task. Can include markdown formatting for rich text representation. Setting to null clears the description.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from hrm_platform_tasks.description. Nullable string supports markdown formatting. Null clears the description.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_tasks.description. Nullable string supports markdown
+         *   formatting. Null clears the description.
      */
     description?: string | null | undefined;
 
     /**
      * Current workflow status of the task. Valid values: open, in-progress, completed, closed.
      *
-     * @x-autobe-database-schema-property status
+         * @x-autobe-database-schema-property status
      */
     status?: string | undefined;
 
     /**
      * Priority level indicating task urgency. Valid values: low, medium, high, urgent.
      *
-     * @x-autobe-database-schema-property priority
+         * @x-autobe-database-schema-property priority
      */
     priority?: string | undefined;
 
@@ -428,8 +494,10 @@ export namespace IHrmPlatformTask {
      *
      * Optional planning field for capacity estimation and project budget tracking. Helps project leads understand scope and allocate resources appropriately. Setting to null clears the estimate.
      *
-     * @x-autobe-database-schema-property estimated_hours
-     * @x-autobe-specification Direct mapping from hrm_platform_tasks.estimated_hours. Nullable integer for capacity planning. Null clears the estimate.
+         * @x-autobe-database-schema-property estimated_hours
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_tasks.estimated_hours. Nullable integer for capacity
+         *   planning. Null clears the estimate.
      */
     estimated_hours?:
       | (number & tags.Type<"int32"> & tags.Minimum<1>)
@@ -441,8 +509,10 @@ export namespace IHrmPlatformTask {
      *
      * Optional deadline for task completion. Used for scheduling, reminders, and identifying overdue tasks. Setting to null removes the deadline. Format is ISO 8601 datetime with timezone.
      *
-     * @x-autobe-database-schema-property due_date
-     * @x-autobe-specification Direct mapping from hrm_platform_tasks.due_date. Nullable datetime in ISO 8601 format. Null clears the deadline.
+         * @x-autobe-database-schema-property due_date
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_tasks.due_date. Nullable datetime in ISO 8601 format.
+         *   Null clears the deadline.
      */
     due_date?: (string & tags.Format<"date-time">) | null | undefined;
 
@@ -451,8 +521,10 @@ export namespace IHrmPlatformTask {
      *
      * Optional assignment to a specific employee who is responsible for completing the task work. The assigned employee must be a project member of the parent project. Setting to null removes the assignment, making the task available in the project backlog.
      *
-     * @x-autobe-database-schema-property assigned_employee_id
-     * @x-autobe-specification Direct mapping from hrm_platform_tasks.assigned_employee_id. Nullable UUID referencing employee who must be project member. Null unassigns the task.
+         * @x-autobe-database-schema-property assigned_employee_id
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_tasks.assigned_employee_id. Nullable UUID referencing
+         *   employee who must be project member. Null unassigns the task.
      */
     assigned_employee_id?: (string & tags.Format<"uuid">) | null | undefined;
 
@@ -461,8 +533,11 @@ export namespace IHrmPlatformTask {
      *
      * Optional reference to another task, enabling one-level subtask nesting. When present, this task is a subtask of the parent. The parent task must belong to the same project and cannot be a subtask itself. Setting to null converts this to a top-level task.
      *
-     * @x-autobe-database-schema-property parent_task_id
-     * @x-autobe-specification Direct mapping from hrm_platform_tasks.parent_task_id. Nullable UUID for one-level subtask hierarchy. Must reference task in same project that is not itself a subtask. Null makes this a top-level task.
+         * @x-autobe-database-schema-property parent_task_id
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_tasks.parent_task_id. Nullable UUID for one-level
+         *   subtask hierarchy. Must reference task in same project that is not
+         *   itself a subtask. Null makes this a top-level task.
      */
     parent_task_id?: (string & tags.Format<"uuid">) | null | undefined;
   };

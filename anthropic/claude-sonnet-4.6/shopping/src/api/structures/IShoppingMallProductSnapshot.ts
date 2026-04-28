@@ -13,37 +13,37 @@ import { IShoppingMallProductSnapshotSkus } from "./IShoppingMallProductSnapshot
  */
 export type IShoppingMallProductSnapshot = {
   /**
-   * @x-autobe-database-schema-property id
+     * @x-autobe-database-schema-property id
    */
   id: string & tags.Format<"uuid">;
   /**
-   * @x-autobe-database-schema-property product_id
+     * @x-autobe-database-schema-property product_id
    */
   productId: (string & tags.Format<"uuid">) | null;
   /**
-   * @x-autobe-database-schema-property category_id
+     * @x-autobe-database-schema-property category_id
    */
   categoryId: (string & tags.Format<"uuid">) | null;
   /**
-   * @x-autobe-database-schema-property category_name
+     * @x-autobe-database-schema-property category_name
    */
   categoryName: string | null;
   /**
-   * @x-autobe-database-schema-property name
+     * @x-autobe-database-schema-property name
    */
   name: string;
   /**
-   * @x-autobe-database-schema-property description
+     * @x-autobe-database-schema-property description
    */
   description: string | null;
   /**
-   * @x-autobe-database-schema-property base_price
+     * @x-autobe-database-schema-property base_price
    */
   basePrice: number;
   images: IShoppingMallProductSnapshotImage[];
   skuses: IShoppingMallProductSnapshotSkus[];
   /**
-   * @x-autobe-database-schema-property created_at
+     * @x-autobe-database-schema-property created_at
    */
   createdAt: string & tags.Format<"date-time">;
 };
@@ -57,35 +57,50 @@ export namespace IShoppingMallProductSnapshot {
     /**
      * Optional keyword to filter snapshots by product name. Performs a partial text search against the product name captured in each snapshot. Leave empty to return snapshots regardless of name.
      *
-     * @x-autobe-specification Optional keyword filter for partial text search. Applied as a trigram similarity match against shopping_mall_product_snapshots.name using the GIN trigram index (gin_trgm_ops). When provided, only snapshots whose name matches the keyword are returned. ANDed with other filters.
+         * @x-autobe-specification Optional keyword filter for partial text
+         *   search. Applied as a trigram similarity match against
+         *   shopping_mall_product_snapshots.name using the GIN trigram index
+         *   (gin_trgm_ops). When provided, only snapshots whose name matches
+         *   the keyword are returned. ANDed with other filters.
      */
     name?: string | undefined;
 
     /**
      * Optional start of the date range filter. When provided, only snapshots created at or after this date-time are returned. Must be an ISO 8601 date-time value.
      *
-     * @x-autobe-specification Optional lower bound for the snapshot creation timestamp filter. Translates to WHERE shopping_mall_product_snapshots.created_at >= from in the query. Must be an ISO 8601 date-time string. ANDed with other filters.
+         * @x-autobe-specification Optional lower bound for the snapshot
+         *   creation timestamp filter. Translates to WHERE
+         *   shopping_mall_product_snapshots.created_at >= from in the query.
+         *   Must be an ISO 8601 date-time string. ANDed with other filters.
      */
     from?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Optional end of the date range filter. When provided, only snapshots created at or before this date-time are returned. Must be an ISO 8601 date-time value.
      *
-     * @x-autobe-specification Optional upper bound for the snapshot creation timestamp filter. Translates to WHERE shopping_mall_product_snapshots.created_at <= to in the query. Must be an ISO 8601 date-time string. ANDed with other filters.
+         * @x-autobe-specification Optional upper bound for the snapshot
+         *   creation timestamp filter. Translates to WHERE
+         *   shopping_mall_product_snapshots.created_at <= to in the query. Must
+         *   be an ISO 8601 date-time string. ANDed with other filters.
      */
     to?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Page number for paginated results (1-indexed). Defaults to the first page when omitted.
      *
-     * @x-autobe-specification 1-indexed page number for offset-based pagination. Controls which page of results to return. Defaults to 1 when omitted. The total number of pages is returned in the pagination metadata of the response.
+         * @x-autobe-specification 1-indexed page number for offset-based
+         *   pagination. Controls which page of results to return. Defaults to 1
+         *   when omitted. The total number of pages is returned in the
+         *   pagination metadata of the response.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of snapshot records to include in each page of results. Defaults to 20 when omitted. Cannot exceed 100.
      *
-     * @x-autobe-specification Maximum number of snapshot records to return per page. Defaults to 20 when omitted. Capped at 100. Used together with `page` to implement offset-based pagination.
+         * @x-autobe-specification Maximum number of snapshot records to return
+         *   per page. Defaults to 20 when omitted. Capped at 100. Used together
+         *   with `page` to implement offset-based pagination.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -99,48 +114,67 @@ export namespace IShoppingMallProductSnapshot {
     /**
      * The unique identifier of this product snapshot. UUID format.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_product_snapshots.id. UUID primary key uniquely identifying this snapshot record.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_snapshots.id. UUID primary key uniquely
+         *   identifying this snapshot record.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * The product's name as it existed at the exact moment this snapshot was taken. Reflects the historical value, which may differ from the product's current name.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from shopping_mall_product_snapshots.name. The product name as it existed at the moment this snapshot was created. Immutable after creation.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_snapshots.name. The product name as it
+         *   existed at the moment this snapshot was created. Immutable after
+         *   creation.
      */
     name: string;
 
     /**
      * The product's description as it existed at the exact moment this snapshot was taken. Null if the product had no description at that point in time.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from shopping_mall_product_snapshots.description. Nullable string. Contains the product description as it existed at snapshot creation time. Null if the product had no description at that moment.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_snapshots.description. Nullable string.
+         *   Contains the product description as it existed at snapshot creation
+         *   time. Null if the product had no description at that moment.
      */
     description: string | null;
 
     /**
      * The product's base price at the exact moment this snapshot was taken. Preserved immutably to ensure accurate historical pricing records for orders and audits.
      *
-     * @x-autobe-database-schema-property base_price
-     * @x-autobe-specification Direct mapping from shopping_mall_product_snapshots.base_price (DoublePrecision). The product's base price at the time this snapshot was created. Preserved immutably for accurate historical pricing in order records.
+         * @x-autobe-database-schema-property base_price
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_snapshots.base_price (DoublePrecision). The
+         *   product's base price at the time this snapshot was created.
+         *   Preserved immutably for accurate historical pricing in order
+         *   records.
      */
     base_price: number & tags.Minimum<0>;
 
     /**
      * The name of the category the product belonged to at the exact moment this snapshot was taken. Captured as a denormalized text value for historical integrity. Null if the product was uncategorized at snapshot time.
      *
-     * @x-autobe-database-schema-property category_name
-     * @x-autobe-specification Direct mapping from shopping_mall_product_snapshots.category_name. Nullable string. Denormalized category name captured at snapshot creation time for historical integrity. Null if the product had no category at the time, or if the category had no name.
+         * @x-autobe-database-schema-property category_name
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_snapshots.category_name. Nullable string.
+         *   Denormalized category name captured at snapshot creation time for
+         *   historical integrity. Null if the product had no category at the
+         *   time, or if the category had no name.
      */
     category_name: string | null;
 
     /**
      * The timestamp when this snapshot was created, representing the exact moment the product's state was captured. Use this field to understand the chronological edit history of the product.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_product_snapshots.created_at (Timestamptz). The exact timestamp when this snapshot was created. Snapshots are append-only; this field is set once at creation and never changes.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_snapshots.created_at (Timestamptz). The exact
+         *   timestamp when this snapshot was created. Snapshots are
+         *   append-only; this field is set once at creation and never changes.
      */
     created_at: string & tags.Format<"date-time">;
   };

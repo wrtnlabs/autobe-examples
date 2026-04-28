@@ -23,7 +23,13 @@ import { IPageIErpHrmTimeEmployeeContract } from "../../../../../structures/IPag
  * @param props.body The contract terms to create for the employee.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Resolve the employee within the current organization context, enforcing that the path employee belongs to the selected organization and is visible to the caller. Verify authorization: users with employee management access may create contracts, and users with employee view access may be allowed if business rules permit self-service or read-only contract context, but creation should generally require manage permission.
+ * @x-autobe-specification Resolve the employee within the current organization
+ *   context, enforcing that the path employee belongs to the selected
+ *   organization and is visible to the caller. Verify authorization: users with
+ *   employee management access may create contracts, and users with employee
+ *   view access may be allowed if business rules permit self-service or
+ *   read-only contract context, but creation should generally require manage
+ *   permission.
  *
  * Validate the request body against the actual employee contract schema fields. Create the new contract with the provided start date, pay rate, pay period, working hours per week, and optional end date/notes. Ensure the start date and pay rate are present and that pay period is one of the supported enumerations. Reject negative or invalid numeric values and any contract payload that would violate historical ordering.
  *
@@ -128,7 +134,10 @@ export namespace create {
  * @param props.body Search, sorting, and pagination criteria for the employee contract history.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Resolve the current organization context first and verify that the target employee belongs to that organization. Enforce authorization so that the caller may view their own contracts or must have employee:view permission to view another employee’s contracts.
+ * @x-autobe-specification Resolve the current organization context first and
+ *   verify that the target employee belongs to that organization. Enforce
+ *   authorization so that the caller may view their own contracts or must have
+ *   employee:view permission to view another employee’s contracts.
  *
  * Query erp_hrm_time_employee_contracts filtered by employee_id and the current organization scope. Sort results by start date ascending by default so the history reads in chronological order. Support pagination parameters and any reasonable sort override defined in the request DTO, but keep the default order stable for contract history browsing.
  *
@@ -231,7 +240,11 @@ export namespace index {
  * @param props.employeeContractId The employee contract identifier within the employee's contract history.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Load the employee by employeeId within the current organization context, then load the employee contract by employeeContractId constrained to that employee. Enforce that the contract row exists, belongs to the employee, and the employee belongs to the caller's current organization.
+ * @x-autobe-specification Load the employee by employeeId within the current
+ *   organization context, then load the employee contract by employeeContractId
+ *   constrained to that employee. Enforce that the contract row exists, belongs
+ *   to the employee, and the employee belongs to the caller's current
+ *   organization.
  *
  * Authorize access for either the employee viewing their own contracts or a user with employee:view permission in the same organization. Reject cross-organization access. If the employee exists but the contract does not belong to them, return not found rather than exposing contract existence.
  *
@@ -332,7 +345,11 @@ export namespace at {
  * @param props.body Fields to update on the employee's active contract.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Load the target employee contract by employeeContractId, verify it belongs to employeeId, and ensure both records are within the caller's selected organization context. Reject the request if the contract is not the employee's current active contract; past contracts must remain immutable.
+ * @x-autobe-specification Load the target employee contract by
+ *   employeeContractId, verify it belongs to employeeId, and ensure both
+ *   records are within the caller's selected organization context. Reject the
+ *   request if the contract is not the employee's current active contract; past
+ *   contracts must remain immutable.
  *
  * Apply the incoming fields to the contract row using only the actual schema columns: start_date, end_date, pay_rate, pay_period, working_hours_per_week, and notes. Preserve created_at, updated_at, deleted_at, and the employee foreign key. Validate pay_period against the allowed contract values used by the business rules. Ensure start_date remains valid and does not create an invalid historical sequence. If the updated contract is the active one, keep it as the latest contract for that employee.
  *
@@ -443,7 +460,8 @@ export namespace update {
  * @param props.employeeContractId Identifier of the employment contract to remove, scoped to the specified employee.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Resolve the employee within the active organization context, then resolve the contract by employee ID and contract ID.
+ * @x-autobe-specification Resolve the employee within the active organization
+ *   context, then resolve the contract by employee ID and contract ID.
  *
  * Enforce that the contract belongs to the employee and that both records are inside the current organization scope. Use the contract table’s relationship to employee and honor the employee-scoped unique history model. Before deletion, apply business validation to ensure the record may be removed under the organization’s HR rules; if the contract is the current active contract or otherwise protected by business policy, reject the request with a conflict-style error.
  *

@@ -24,20 +24,22 @@ export class HrmMemberProfilePasswordController {
    *
    * @param connection
    * @param body Password change request containing the current password for verification and the new password to set.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1. Authenticate the request using JWT token from Authorization header.
-   * 2. Extract member ID from the authenticated session.
-   * 3. Retrieve the hrm_members record by ID.
-   * 4. Validate the current_password by comparing against password_hash using bcrypt.compare().
-   * 5. If current password is incorrect, return 401 Unauthorized with error code 'INVALID_CURRENT_PASSWORD'.
-   * 6. Validate new_password meets security requirements (minimum 8 characters, uppercase, lowercase, number, special character).
-   * 7. Validate new_password is different from current_password.
-   * 8. Hash the new_password using bcrypt with appropriate salt rounds.
-   * 9. Update the password_hash field in hrm_members table.
-   * 10. Update the updated_at timestamp.
-   * 11. Invalidate all existing sessions for this member (delete from hrm_member_sessions).
-   * 12. Return the updated member summary (excluding password_hash).
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification 1. Authenticate the request using JWT token from
+     *   Authorization header. 2. Extract member ID from the authenticated
+     *   session. 3. Retrieve the hrm_members record by ID. 4. Validate the
+     *   current_password by comparing against password_hash using
+     *   bcrypt.compare(). 5. If current password is incorrect, return 401
+     *   Unauthorized with error code 'INVALID_CURRENT_PASSWORD'. 6. Validate
+     *   new_password meets security requirements (minimum 8 characters,
+     *   uppercase, lowercase, number, special character). 7. Validate
+     *   new_password is different from current_password. 8. Hash the
+     *   new_password using bcrypt with appropriate salt rounds. 9. Update the
+     *   password_hash field in hrm_members table. 10. Update the updated_at
+     *   timestamp. 11. Invalidate all existing sessions for this member (delete
+     *   from hrm_member_sessions). 12. Return the updated member summary
+     *   (excluding password_hash).
    *
    * **Error Cases**:
    * - 401: Invalid current password

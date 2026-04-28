@@ -25,9 +25,10 @@ export class ShoppingmallAdministratorAdministrator_requestsController {
    *
    * @param connection
    * @param body Search criteria and pagination parameters for administrator requests
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Query administrator requests with pagination and optional filtering.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor administrator
+     * @x-autobe-specification Query administrator requests with pagination and
+     *   optional filtering.
    *
    * Implementation steps:
    * 1. Verify the authenticated user is a super administrator by checking shopping_mall_administrators.grade = 'super'. Return 403 Forbidden if not.
@@ -73,9 +74,9 @@ export class ShoppingmallAdministratorAdministrator_requestsController {
    *
    * @param connection
    * @param administratorRequestId Unique identifier of the administrator request to approve. Must reference a request with pending status.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Implementation steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor administrator
+     * @x-autobe-specification Implementation steps:
    *
    * 1. Authenticate and verify the requester is a super administrator by checking shopping_mall_administrators.grade === 'super'. Reject with 403 Forbidden if not.
    *
@@ -131,9 +132,9 @@ export class ShoppingmallAdministratorAdministrator_requestsController {
    *
    * @param connection
    * @param administratorRequestId Unique identifier of the administrator request to reject. Must be a valid UUID referencing an existing request in 'pending' status.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Implementation steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor administrator
+     * @x-autobe-specification Implementation steps:
    *
    * 1. Authenticate the requesting user and verify they are a super administrator (grade === 'super'). Return 403 Forbidden if not a super administrator.
    *

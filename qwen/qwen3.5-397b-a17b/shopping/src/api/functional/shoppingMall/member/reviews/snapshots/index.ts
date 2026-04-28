@@ -23,7 +23,8 @@ import { IShoppingMallReviewSnapshot } from "../../../../../structures/IShopping
  * @param props.body Search criteria including pagination parameters (page, limit) and optional sorting options for review snapshot history.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query shopping_mall_review_snapshots table filtered by shopping_mall_review_id matching the path parameter.
+ * @x-autobe-specification Query shopping_mall_review_snapshots table filtered
+ *   by shopping_mall_review_id matching the path parameter.
  *
  * Apply pagination using cursor-based or offset-based approach with limit and offset from request body.
  *
@@ -134,7 +135,8 @@ export namespace index {
  * @param props.snapshotId UUID of the specific review snapshot to retrieve. Must correspond to a snapshot belonging to the specified review.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query shopping_mall_review_snapshots table by snapshot ID with review ID validation.
+ * @x-autobe-specification Query shopping_mall_review_snapshots table by
+ *   snapshot ID with review ID validation.
  *
  * Implementation steps:
  * 1. Validate snapshotId exists in shopping_mall_review_snapshots table

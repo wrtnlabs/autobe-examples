@@ -32,7 +32,10 @@ export type IHrmPlatformDashboardIPersonalMetric = {
    *
    * Aggregated from all timelogs where the employee is the owner and the work date matches today's date in the user's timezone. This metric provides immediate visibility into daily time tracking progress and is used in personal dashboard displays and daily work summaries.
    *
-   * @x-autobe-specification Aggregation: SUM(duration_minutes) from hrm_platform_timelogs WHERE employee_id = auth_employee_id AND DATE(start_datetime IN USER_TIMEZONE) = today. Returns integer representing total minutes worked today.
+     * @x-autobe-specification Aggregation: SUM(duration_minutes) from
+     *   hrm_platform_timelogs WHERE employee_id = auth_employee_id AND
+     *   DATE(start_datetime IN USER_TIMEZONE) = today. Returns integer
+     *   representing total minutes worked today.
    */
   hours_logged_today: number & tags.Type<"int32">;
 
@@ -41,7 +44,11 @@ export type IHrmPlatformDashboardIPersonalMetric = {
    *
    * Returns the latest timer record where status is 'started' or 'paused'. This allows users to see their current work session details including elapsed time, associated project and task context. The timer reference includes duration_seconds calculated from last_tick_at to show elapsed time in real-time.
    *
-   * @x-autobe-specification Query hrm_platform_timers for latest record where status is 'started' or 'paused' for the authenticated employee. Return IHrmPlatformTimer.ISummary with project and task references, including duration_seconds calculated from last_tick_at to show elapsed time. Returns null if no active timer exists.
+     * @x-autobe-specification Query hrm_platform_timers for latest record where
+     *   status is 'started' or 'paused' for the authenticated employee. Return
+     *   IHrmPlatformTimer.ISummary with project and task references, including
+     *   duration_seconds calculated from last_tick_at to show elapsed time.
+     *   Returns null if no active timer exists.
    */
   active_timer: IHrmPlatformTimer.ISummary | null;
 
@@ -50,7 +57,11 @@ export type IHrmPlatformDashboardIPersonalMetric = {
    *
    * Provides a quick view of recent work activity with project and task context. Each timelog summary includes start/end times, duration, billable status, and the associated project and task references. Limited to 5 entries to keep the response lightweight for dashboard display.
    *
-   * @x-autobe-specification Query hrm_platform_timelogs WHERE employee_id = auth_employee_id, order by created_at DESC, limit 5. Return IHrmPlatformTimelog.ISummary objects with project and task references included. Ordered by created_at descending to show most recent work first.
+     * @x-autobe-specification Query hrm_platform_timelogs WHERE employee_id =
+     *   auth_employee_id, order by created_at DESC, limit 5. Return
+     *   IHrmPlatformTimelog.ISummary objects with project and task references
+     *   included. Ordered by created_at descending to show most recent work
+     *   first.
    */
   recent_timelogs: IHrmPlatformTimelog.ISummary[] & tags.MaxItems<5>;
 
@@ -59,7 +70,10 @@ export type IHrmPlatformDashboardIPersonalMetric = {
    *
    * Returns the approval status of the timesheet covering the current work week (Monday through Sunday). If the timesheet status is 'rejected', the rejection_reason field contains the manager's feedback. This helps employees track whether their timesheet needs attention or has been approved for payroll processing.
    *
-   * @x-autobe-specification Query hrm_platform_timesheets for the timesheet covering current week (Monday-Sunday) where employee_id = auth_employee_id. Return status field with rejection_reason if status is 'rejected'. Map status values from timesheet.status enum.
+     * @x-autobe-specification Query hrm_platform_timesheets for the timesheet
+     *   covering current week (Monday-Sunday) where employee_id =
+     *   auth_employee_id. Return status field with rejection_reason if status
+     *   is 'rejected'. Map status values from timesheet.status enum.
    */
   pending_timesheet_status: {
     /**
@@ -78,7 +92,11 @@ export type IHrmPlatformDashboardIPersonalMetric = {
    *
    * Filters tasks where assigned_employee_id matches the current employee and status is either 'IN_PROGRESS' or 'TODO'. This provides a focused list of upcoming work items that the employee needs to work on. Each task includes project context and priority to help with prioritization.
    *
-   * @x-autobe-specification Query hrm_platform_tasks WHERE assigned_employee_id = auth_employee_id AND status IN ('IN_PROGRESS', 'TODO'), return IHrmPlatformTask.ISummary objects with project references. Order by due_date ASC (oldest first), then by priority DESC (highest first).
+     * @x-autobe-specification Query hrm_platform_tasks WHERE
+     *   assigned_employee_id = auth_employee_id AND status IN ('IN_PROGRESS',
+     *   'TODO'), return IHrmPlatformTask.ISummary objects with project
+     *   references. Order by due_date ASC (oldest first), then by priority DESC
+     *   (highest first).
    */
   assigned_tasks: IHrmPlatformTask.ISummary[];
 };

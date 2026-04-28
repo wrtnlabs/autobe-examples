@@ -26,9 +26,9 @@ export class CommunityplatformMemberCommunitiesPostsController {
    * @param connection
    * @param communityId The UUID of the community to create the post in. The user must be subscribed to this community to create a post.
    * @param body Post creation data including title, post type, and type-specific content (text body, link URL, or image reference).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation steps for creating a post:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation steps for creating a post:
    *
    * 1. **Authorization Check**: Verify the requester is a member (not guest). Extract member ID from JWT token.
    *
@@ -96,9 +96,9 @@ export class CommunityplatformMemberCommunitiesPostsController {
    * @param connection
    * @param communityId The unique identifier of the community containing the post (UUID format). Used for moderator authorization validation.
    * @param postId The unique identifier of the post to delete (UUID format).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation steps:
    *
    * 1. **Authentication Check**: Verify the requester is an authenticated member.
    *

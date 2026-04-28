@@ -23,9 +23,10 @@ export class ErphrmMemberTimesheetsTimelogsController {
    *
    * @param connection
    * @param timesheetId Unique identifier of the timesheet (global scope)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query the erp_hrm_timesheets table to verify the timesheet exists and belongs to the authenticated user's organization.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query the erp_hrm_timesheets table to verify the
+     *   timesheet exists and belongs to the authenticated user's organization.
    *
    * If the timesheet does not exist, return 404 Not Found.
    *
@@ -70,9 +71,10 @@ export class ErphrmMemberTimesheetsTimelogsController {
    * @param connection
    * @param timesheetId Unique identifier of the timesheet to modify timelog associations for
    * @param body Arrays of timelog IDs to add or remove from the timesheet.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement the following logic for managing timesheet-timelog associations:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implement the following logic for managing
+     *   timesheet-timelog associations:
    *
    * 1. Validate the timesheet exists and retrieve its current status, employee ownership, and week date range.
    * 2. Verify the requesting user has permission to modify this timesheet's timelogs (either owns it or has time:manage permission).

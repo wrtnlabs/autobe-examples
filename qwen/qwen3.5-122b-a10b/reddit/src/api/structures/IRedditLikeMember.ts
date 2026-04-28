@@ -26,8 +26,9 @@ export type IRedditLikeMember = {
    *
    * This is the primary key UUID that uniquely identifies this member account across the platform. It is used in API paths to reference specific members and is immutable after account creation.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from reddit_like_members.id. UUID format, primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from reddit_like_members.id. UUID
+     *   format, primary key.
    */
   id: string & tags.Format<"uuid">;
 
@@ -36,8 +37,9 @@ export type IRedditLikeMember = {
    *
    * This is the primary login credential for the member account. The email must be unique across all member accounts and is used for authentication during login flows, as well as for password reset and email verification communications.
    *
-   * @x-autobe-database-schema-property email
-   * @x-autobe-specification Direct mapping from reddit_like_members.email. Unique constraint enforced at database level.
+     * @x-autobe-database-schema-property email
+     * @x-autobe-specification Direct mapping from reddit_like_members.email.
+     *   Unique constraint enforced at database level.
    */
   email: string & tags.Format<"email">;
 
@@ -46,8 +48,9 @@ export type IRedditLikeMember = {
    *
    * This is the public identifier used for display on posts, comments, and profile pages. The username must be unique across all member accounts and forms part of the member's public identity and profile URL.
    *
-   * @x-autobe-database-schema-property username
-   * @x-autobe-specification Direct mapping from reddit_like_members.username. Unique constraint enforced at database level.
+     * @x-autobe-database-schema-property username
+     * @x-autobe-specification Direct mapping from reddit_like_members.username.
+     *   Unique constraint enforced at database level.
    */
   username: string;
 
@@ -56,7 +59,9 @@ export type IRedditLikeMember = {
    *
    * This is the member's chosen display name that appears on their profile, posts, and comments. It can be different from the username and is editable by the member through the profile update endpoint.
    *
-   * @x-autobe-specification JOIN from reddit_like_members to reddit_like_user_profiles on member_id. Returns display_name from user_profiles table.
+     * @x-autobe-specification JOIN from reddit_like_members to
+     *   reddit_like_user_profiles on member_id. Returns display_name from
+     *   user_profiles table.
    */
   display_name: string;
 
@@ -65,7 +70,9 @@ export type IRedditLikeMember = {
    *
    * This is a free-form text field where members can describe themselves. It is optional and may be null if the member has not set a bio. Displayed on the member's public profile page.
    *
-   * @x-autobe-specification JOIN from reddit_like_members to reddit_like_user_profiles on member_id. Returns bio from user_profiles table. Nullable if not set.
+     * @x-autobe-specification JOIN from reddit_like_members to
+     *   reddit_like_user_profiles on member_id. Returns bio from user_profiles
+     *   table. Nullable if not set.
    */
   bio: string | null;
 
@@ -74,7 +81,9 @@ export type IRedditLikeMember = {
    *
    * This is a URL pointing to the member's avatar image. It may be null if the member has not uploaded a profile picture. When present, it is a valid URI that can be used to fetch the image.
    *
-   * @x-autobe-specification JOIN from reddit_like_members to reddit_like_user_profiles on member_id. Returns avatar URI from user_profiles table. Nullable if not set.
+     * @x-autobe-specification JOIN from reddit_like_members to
+     *   reddit_like_user_profiles on member_id. Returns avatar URI from
+     *   user_profiles table. Nullable if not set.
    */
   avatar: (string & tags.Format<"uri">) | null;
 
@@ -83,7 +92,9 @@ export type IRedditLikeMember = {
    *
    * This integer represents the total karma accumulated by the member from upvotes received on their posts and comments. Karma is a reputation metric that reflects community engagement and content quality.
    *
-   * @x-autobe-specification JOIN from reddit_like_members to reddit_like_user_profiles on member_id. Returns karma_score from user_profiles table. Computed from upvotes on posts and comments.
+     * @x-autobe-specification JOIN from reddit_like_members to
+     *   reddit_like_user_profiles on member_id. Returns karma_score from
+     *   user_profiles table. Computed from upvotes on posts and comments.
    */
   karma_score: number & tags.Type<"int32">;
 
@@ -92,8 +103,9 @@ export type IRedditLikeMember = {
    *
    * This records the exact date and time when the member account was registered. It is set automatically during account creation and cannot be modified. Used for account age calculations and audit trails.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from reddit_like_members.created_at. DateTime with timezone.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_members.created_at. DateTime with timezone.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -102,8 +114,9 @@ export type IRedditLikeMember = {
    *
    * This tracks the last time any field in the member record was modified. It is updated automatically whenever the account is changed. Used for tracking account modifications and synchronization purposes.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from reddit_like_members.updated_at. DateTime with timezone.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_members.updated_at. DateTime with timezone.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -112,8 +125,10 @@ export type IRedditLikeMember = {
    *
    * When this field is non-null, the account is considered deleted but retained for recovery purposes per data retention policies. Active accounts have this field set to null. Soft deletion allows for account recovery within the retention window.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from reddit_like_members.deleted_at. DateTime with timezone, nullable. NULL for active accounts.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_members.deleted_at. DateTime with timezone, nullable. NULL
+     *   for active accounts.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -143,8 +158,10 @@ export namespace IRedditLikeMember {
      * - Must be a valid email format
      * - Must correspond to an existing, non-deleted member account
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from reddit_like_members.email. Used as the primary lookup key for member authentication.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_members.email. Used as the primary lookup key for
+         *   member authentication.
      */
     email: string & tags.Format<"email">;
 
@@ -158,8 +175,10 @@ export namespace IRedditLikeMember {
      * - Hashed server-side using bcrypt before comparison
      * - Never exposed in responses or logs
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification Plain text password input that will be hashed and compared against reddit_like_members.password_hash using bcrypt.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification Plain text password input that will be hashed
+         *   and compared against reddit_like_members.password_hash using
+         *   bcrypt.
      */
     password: string;
   };
@@ -195,7 +214,10 @@ export namespace IRedditLikeMember {
      * - New refresh token is issued with the response
      * - Prevents reuse of compromised tokens
      *
-     * @x-autobe-specification JWT refresh token provided by client. Validated against reddit_like_member_sessions table for signature, expiration, and member account status. Member identity extracted from token claims.
+         * @x-autobe-specification JWT refresh token provided by client.
+         *   Validated against reddit_like_member_sessions table for signature,
+         *   expiration, and member account status. Member identity extracted
+         *   from token claims.
      */
     refresh_token: string;
   };
@@ -227,7 +249,9 @@ export namespace IRedditLikeMember {
      *
      * The search is case-insensitive and supports partial matches. For example, "john" would match usernames like "john_doe", "johnny", and "the_john".
      *
-     * @x-autobe-specification Direct mapping from reddit_like_members.username column. Used for case-insensitive substring matching (ILIKE) to filter members by username.
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_members.username column. Used for case-insensitive
+         *   substring matching (ILIKE) to filter members by username.
      */
     username?: string | undefined;
 
@@ -238,7 +262,10 @@ export namespace IRedditLikeMember {
      *
      * The search is case-insensitive and supports partial matches. This filter joins with the user_profiles table to access the display_name field.
      *
-     * @x-autobe-specification Direct mapping from reddit_like_user_profiles.display_name column. Used for case-insensitive substring matching (ILIKE) to filter members by display name.
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_user_profiles.display_name column. Used for
+         *   case-insensitive substring matching (ILIKE) to filter members by
+         *   display name.
      */
     displayName?: string | undefined;
 
@@ -249,7 +276,9 @@ export namespace IRedditLikeMember {
      *
      * Expected format is ISO 8601 date-time string (e.g., "2024-01-15T00:00:00Z"). If only createdAtFrom is provided without createdAtTo, all members created on or after this date will be included.
      *
-     * @x-autobe-specification Direct mapping from reddit_like_members.created_at column. Used as the lower bound for account creation date range filtering.
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_members.created_at column. Used as the lower bound for
+         *   account creation date range filtering.
      */
     createdAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
@@ -260,7 +289,9 @@ export namespace IRedditLikeMember {
      *
      * Expected format is ISO 8601 date-time string (e.g., "2024-12-31T23:59:59Z"). If only createdAtTo is provided without createdAtFrom, all members created on or before this date will be included.
      *
-     * @x-autobe-specification Direct mapping from reddit_like_members.created_at column. Used as the upper bound for account creation date range filtering.
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_members.created_at column. Used as the upper bound for
+         *   account creation date range filtering.
      */
     createdAtTo?: (string & tags.Format<"date-time">) | undefined;
 
@@ -283,7 +314,10 @@ export namespace IRedditLikeMember {
      *
      * Default sort is createdAt DESC (newest members first).
      *
-     * @x-autobe-specification Sort configuration object for query ordering. field: enum [username, displayName, karmaScore, createdAt]. order: enum [ASC, DESC]. Default: createdAt DESC. Maps to ORDER BY clause in SQL query.
+         * @x-autobe-specification Sort configuration object for query ordering.
+         *   field: enum [username, displayName, karmaScore, createdAt]. order:
+         *   enum [ASC, DESC]. Default: createdAt DESC. Maps to ORDER BY clause
+         *   in SQL query.
      */
     sort?:
       | {
@@ -306,7 +340,10 @@ export namespace IRedditLikeMember {
      *
      * The cursor is automatically included in the pagination metadata of each response for use in subsequent requests.
      *
-     * @x-autobe-specification Cursor-based pagination token. Base64-encoded composite cursor of {createdAt, id} from the last item of the previous page. Used for efficient large dataset navigation without offset-based pagination.
+         * @x-autobe-specification Cursor-based pagination token. Base64-encoded
+         *   composite cursor of {createdAt, id} from the last item of the
+         *   previous page. Used for efficient large dataset navigation without
+         *   offset-based pagination.
      */
     cursor?: string | undefined;
 
@@ -317,7 +354,9 @@ export namespace IRedditLikeMember {
      *
      * The actual number of results returned may be less than this value on the final page when fewer items remain. This parameter helps control response size and pagination granularity.
      *
-     * @x-autobe-specification Maximum number of items per page. Integer between 1 and 100. Defaults to 20 if not provided. Maps to SQL LIMIT clause.
+         * @x-autobe-specification Maximum number of items per page. Integer
+         *   between 1 and 100. Defaults to 20 if not provided. Maps to SQL
+         *   LIMIT clause.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -330,7 +369,9 @@ export namespace IRedditLikeMember {
      *
      * Requesting a page beyond the available range returns an empty data array with valid pagination metadata reflecting the actual totals. This parameter provides an alternative to cursor-based pagination for simpler use cases where exact page numbers are preferred over cursor tokens.
      *
-     * @x-autobe-specification Target page number to retrieve (1-indexed). Integer >= 0. Defaults to 1 if null or omitted. Alternative to cursor-based pagination for simpler use cases.
+         * @x-autobe-specification Target page number to retrieve (1-indexed).
+         *   Integer >= 0. Defaults to 1 if null or omitted. Alternative to
+         *   cursor-based pagination for simpler use cases.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };
@@ -367,8 +408,9 @@ export namespace IRedditLikeMember {
      *
      * **Usage**: Used to reference the member in all related operations including posts, comments, votes, and subscriptions.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from reddit_like_members.id. Primary key, auto-generated UUID on account creation.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from reddit_like_members.id.
+         *   Primary key, auto-generated UUID on account creation.
      */
     id: string & tags.Format<"uuid">;
 
@@ -386,8 +428,10 @@ export namespace IRedditLikeMember {
      * - Password reset communications
      * - Account recovery notifications
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from reddit_like_members.email. Unique constraint enforced at database level.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_members.email. Unique constraint enforced at database
+         *   level.
      */
     email: string & tags.Format<"email">;
 
@@ -405,8 +449,10 @@ export namespace IRedditLikeMember {
      * - Profile page URL identifier
      * - Public mention in community discussions
      *
-     * @x-autobe-database-schema-property username
-     * @x-autobe-specification Direct mapping from reddit_like_members.username. Unique constraint enforced at database level.
+         * @x-autobe-database-schema-property username
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_members.username. Unique constraint enforced at
+         *   database level.
      */
     username: string;
 
@@ -424,7 +470,10 @@ export namespace IRedditLikeMember {
      *
      * **Note**: May be null if member has not set a custom display name (fallback to username)
      *
-     * @x-autobe-specification Join from reddit_like_user_profiles.display_name via member.id = user_profiles.member_id. Returns display name set by member, or falls back to username if not set.
+         * @x-autobe-specification Join from
+         *   reddit_like_user_profiles.display_name via member.id =
+         *   user_profiles.member_id. Returns display name set by member, or
+         *   falls back to username if not set.
      */
     display_name: string;
 
@@ -442,7 +491,9 @@ export namespace IRedditLikeMember {
      *
      * **Note**: Optional field, may be null if not set by member
      *
-     * @x-autobe-specification Join from reddit_like_user_profiles.bio via member.id = user_profiles.member_id. Returns optional bio text set by member.
+         * @x-autobe-specification Join from reddit_like_user_profiles.bio via
+         *   member.id = user_profiles.member_id. Returns optional bio text set
+         *   by member.
      */
     bio: string | null;
 
@@ -460,7 +511,9 @@ export namespace IRedditLikeMember {
      *
      * **Note**: Optional field, may be null if member has not uploaded an avatar (system may use default placeholder)
      *
-     * @x-autobe-specification Join from reddit_like_user_profiles.avatar via member.id = user_profiles.member_id. Returns URI to avatar image if uploaded, null otherwise.
+         * @x-autobe-specification Join from reddit_like_user_profiles.avatar
+         *   via member.id = user_profiles.member_id. Returns URI to avatar
+         *   image if uploaded, null otherwise.
      */
     avatar: (string & tags.Format<"uri">) | null;
 
@@ -478,7 +531,10 @@ export namespace IRedditLikeMember {
      * - Indicator of community trust and contribution quality
      * - May affect certain privileges or visibility
      *
-     * @x-autobe-specification Join from reddit_like_user_profiles.karma_score via member.id = user_profiles.member_id. Computed aggregate from post and comment votes.
+         * @x-autobe-specification Join from
+         *   reddit_like_user_profiles.karma_score via member.id =
+         *   user_profiles.member_id. Computed aggregate from post and comment
+         *   votes.
      */
     karma_score: number & tags.Type<"int32">;
 
@@ -494,8 +550,10 @@ export namespace IRedditLikeMember {
      * - Audit trails and compliance
      * - Display "joined date" on profile pages
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from reddit_like_members.created_at. Auto-set to current timestamp on account creation.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_members.created_at. Auto-set to current timestamp on
+         *   account creation.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -511,8 +569,10 @@ export namespace IRedditLikeMember {
      * - Sync and caching decisions
      * - Audit trails
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from reddit_like_members.updated_at. Auto-updated to current timestamp on any record modification.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_members.updated_at. Auto-updated to current timestamp
+         *   on any record modification.
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -530,15 +590,18 @@ export namespace IRedditLikeMember {
      *
      * **Note**: NULL means account is active. Non-NULL means account is deleted but retained per policy.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from reddit_like_members.deleted_at. NULL for active accounts, set to timestamp on soft deletion. Nullable.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_members.deleted_at. NULL for active accounts, set to
+         *   timestamp on soft deletion. Nullable.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
 
     /**
      * Authorization token.
      *
-     * @x-autobe-specification Authorization token comes from the session table.
+         * @x-autobe-specification Authorization token comes from the session
+         *   table.
      */
     token: IAuthorizationToken;
   };
@@ -590,8 +653,11 @@ export namespace IRedditLikeMember {
      * - Email uniqueness is validated before account creation
      * - Email is stored in plain text (not hashed) for communication purposes
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from reddit_like_members.email. Must be unique across all member accounts. Used as primary login credential and for account recovery communications.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_members.email. Must be unique across all member
+         *   accounts. Used as primary login credential and for account recovery
+         *   communications.
      */
     email: string & tags.Format<"email">;
 
@@ -614,8 +680,11 @@ export namespace IRedditLikeMember {
      * - Can be changed via the password change endpoint
      * - Required for account verification in sensitive operations
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification Plain text password provided by user. Backend transforms to bcrypt hash before storing in reddit_like_members.password_hash. Minimum 8 characters recommended for security.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification Plain text password provided by user. Backend
+         *   transforms to bcrypt hash before storing in
+         *   reddit_like_members.password_hash. Minimum 8 characters recommended
+         *   for security.
      */
     password: string & tags.MinLength<8>;
 
@@ -638,8 +707,11 @@ export namespace IRedditLikeMember {
      * - Part of the public profile URL
      * - Cannot be changed after registration (typically)
      *
-     * @x-autobe-database-schema-property username
-     * @x-autobe-specification Direct mapping from reddit_like_members.username. Must be unique across all member accounts. Used for public identification on posts, comments, and profile pages.
+         * @x-autobe-database-schema-property username
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_members.username. Must be unique across all member
+         *   accounts. Used for public identification on posts, comments, and
+         *   profile pages.
      */
     username: string & tags.MinLength<3> & tags.MaxLength<30>;
 
@@ -665,7 +737,10 @@ export namespace IRedditLikeMember {
      * - Validated to prevent injection attacks
      * - Used in conjunction with referrer for fraud detection
      *
-     * @x-autobe-specification Session context field: URI of the registration page or origin. Not stored in member table, captured for analytics and security audit trails. Required for all registration requests.
+         * @x-autobe-specification Session context field: URI of the
+         *   registration page or origin. Not stored in member table, captured
+         *   for analytics and security audit trails. Required for all
+         *   registration requests.
      */
     href: string & tags.Format<"uri">;
 
@@ -692,7 +767,9 @@ export namespace IRedditLikeMember {
      * - Used in analytics dashboards
      * - May be null in cases where referrer information is not available (e.g., direct navigation, privacy settings)
      *
-     * @x-autobe-specification Session context field: URI of the referring page, if applicable. Not stored in member table, captured for analytics. Optional field, may be null if no referrer is available.
+         * @x-autobe-specification Session context field: URI of the referring
+         *   page, if applicable. Not stored in member table, captured for
+         *   analytics. Optional field, may be null if no referrer is available.
      */
     referrer?: (string & tags.Format<"uri">) | null | undefined;
   };
@@ -716,8 +793,9 @@ export namespace IRedditLikeMember {
      *
      * This is the primary key used to reference the member across all system operations. It is a UUID generated at account creation time and remains immutable throughout the account's lifecycle.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from reddit_like_members.id. UUID format, primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from reddit_like_members.id.
+         *   UUID format, primary key.
      */
     id: string & tags.Format<"uuid">;
 
@@ -726,8 +804,10 @@ export namespace IRedditLikeMember {
      *
      * This unique identifier is used for public identification on posts, comments, and profile pages. It forms part of the member's public identity and may be used in profile URLs. The username cannot be changed after registration.
      *
-     * @x-autobe-database-schema-property username
-     * @x-autobe-specification Direct mapping from reddit_like_members.username. Unique constraint enforced at database level.
+         * @x-autobe-database-schema-property username
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_members.username. Unique constraint enforced at
+         *   database level.
      */
     username: string;
 
@@ -736,7 +816,10 @@ export namespace IRedditLikeMember {
      *
      * This is the public-facing name that appears alongside the member's content. Unlike the username, the display name can be updated by the member through their profile settings. It provides a more personal or flexible identifier than the immutable username.
      *
-     * @x-autobe-specification Computed via JOIN: reddit_like_user_profiles.display_name where members.id = profiles.reddit_like_member_id. This is a derived field from the joined profile table, not a direct column of reddit_like_members.
+         * @x-autobe-specification Computed via JOIN:
+         *   reddit_like_user_profiles.display_name where members.id =
+         *   profiles.reddit_like_member_id. This is a derived field from the
+         *   joined profile table, not a direct column of reddit_like_members.
      */
     display_name: string;
 
@@ -745,7 +828,10 @@ export namespace IRedditLikeMember {
      *
      * This field allows members to provide additional context about themselves, such as their interests, background, or other information they wish to share publicly. It is optional and may be null if the member has not set a bio.
      *
-     * @x-autobe-specification Computed via JOIN: reddit_like_user_profiles.bio where members.id = profiles.reddit_like_member_id. Nullable String in the profiles table.
+         * @x-autobe-specification Computed via JOIN:
+         *   reddit_like_user_profiles.bio where members.id =
+         *   profiles.reddit_like_member_id. Nullable String in the profiles
+         *   table.
      */
     bio?: string | null | undefined;
 
@@ -754,7 +840,9 @@ export namespace IRedditLikeMember {
      *
      * This field contains the URL or path to the member's profile picture. It is optional and may be null if the member has not uploaded a custom avatar. When null, a default avatar is typically displayed.
      *
-     * @x-autobe-specification Computed via JOIN: reddit_like_user_profiles.avatar where members.id = profiles.reddit_like_member_id. Nullable String storing URI.
+         * @x-autobe-specification Computed via JOIN:
+         *   reddit_like_user_profiles.avatar where members.id =
+         *   profiles.reddit_like_member_id. Nullable String storing URI.
      */
     avatar?: string | null | undefined;
 
@@ -763,7 +851,9 @@ export namespace IRedditLikeMember {
      *
      * This integer represents the net score of all upvotes and downvotes received on the member's posts and comments. It serves as a reputation metric within the community and is updated whenever votes are cast on the member's content.
      *
-     * @x-autobe-specification Computed via JOIN: reddit_like_user_profiles.karma_score where members.id = profiles.reddit_like_member_id. Integer type.
+         * @x-autobe-specification Computed via JOIN:
+         *   reddit_like_user_profiles.karma_score where members.id =
+         *   profiles.reddit_like_member_id. Integer type.
      */
     karma_score: number & tags.Type<"int32">;
 
@@ -772,8 +862,10 @@ export namespace IRedditLikeMember {
      *
      * This field records the exact date and time when the member registered their account. It is set automatically by the system during account creation and cannot be modified. It is used for account age calculations and audit purposes.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from reddit_like_members.created_at. Timestamp with timezone, set automatically at registration.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_members.created_at. Timestamp with timezone, set
+         *   automatically at registration.
      */
     created_at: string & tags.Format<"date-time">;
   };
@@ -797,8 +889,10 @@ export namespace IRedditLikeMember {
      *
      * The user must provide their current password in plain text. The backend validates this against the stored password_hash using bcrypt comparison. If validation fails, the request is rejected with a 401 Unauthorized error.
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification Plain text current password for identity verification. Backend validates against stored password_hash using bcrypt comparison. If validation fails, returns 401 Unauthorized.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification Plain text current password for identity
+         *   verification. Backend validates against stored password_hash using
+         *   bcrypt comparison. If validation fails, returns 401 Unauthorized.
      */
     currentPassword: string;
 
@@ -807,8 +901,11 @@ export namespace IRedditLikeMember {
      *
      * The user provides the new password in plain text. The backend validates it meets security requirements including minimum length and complexity constraints, ensures it differs from the current password, then hashes it with bcrypt before storing in the password_hash column.
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification Plain text new password to set. Backend validates security requirements (minimum length, complexity), ensures different from current password, then hashes with bcrypt before storing in password_hash column.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification Plain text new password to set. Backend
+         *   validates security requirements (minimum length, complexity),
+         *   ensures different from current password, then hashes with bcrypt
+         *   before storing in password_hash column.
      */
     newPassword: string;
   };

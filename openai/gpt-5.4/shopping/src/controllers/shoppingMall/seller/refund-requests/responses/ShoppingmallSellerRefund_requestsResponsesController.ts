@@ -26,20 +26,39 @@ export class ShoppingmallSellerRefund_requestsResponsesController {
    * @param connection
    * @param refundRequestId Target refund request ID
    * @param body Response decision details for the refund request
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification 1. Authenticate the caller and require either seller or administrator authority.
-   * 2. Load the target `shopping_mall_refund_requests` record by `refundRequestId` where `deleted_at IS NULL`.
-   * 3. If the refund request does not exist, return a not-found error.
-   * 4. Join the related `shopping_mall_order_items` record using `shopping_mall_order_item_id` to determine item scope and responsible seller.
-   * 5. If the caller is a seller, verify that the authenticated seller identity matches `shopping_mall_order_items.shopping_mall_seller_id`. Reject with a forbidden error when the refund request belongs to another seller.
-   * 6. Validate that the refund request is in a workflow state that can accept a new response. Reject invalid state transitions, duplicate terminal responses, or any request that attempts to apply a response outside item-level refund scope.
-   * 7. Validate the request body fields. The body should provide the target decision status and an optional or required review note according to downstream DTO rules. The service must derive `reviewer_role` from the authenticated actor type instead of trusting a client-supplied role value.
-   * 8. Start a database transaction.
-   * 9. Update the live `shopping_mall_refund_requests` row: set the new `status`, set `reviewer_role` to either `seller` or `administrator`, set `review_note`, set `reviewed_at` to the current timestamp, and update `updated_at`.
-   * 10. Insert a new row into `shopping_mall_refund_request_snapshots` linked by `shopping_mall_refund_request_id = refundRequestId`. Populate `reviewer_actor_id` with the authenticated reviewer identifier. If snapshot payload expansion exists in downstream schema generation, ensure the snapshot captures the changed response state as required by business rules.
-   * 11. Commit the transaction only if both the live refund request update and snapshot insert succeed. On any failure, roll back the transaction.
-   * 12. Return the refreshed `shopping_mall_refund_requests` aggregate as the response payload.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification 1. Authenticate the caller and require either
+     *   seller or administrator authority. 2. Load the target
+     *   `shopping_mall_refund_requests` record by `refundRequestId` where
+     *   `deleted_at IS NULL`. 3. If the refund request does not exist, return a
+     *   not-found error. 4. Join the related `shopping_mall_order_items` record
+     *   using `shopping_mall_order_item_id` to determine item scope and
+     *   responsible seller. 5. If the caller is a seller, verify that the
+     *   authenticated seller identity matches
+     *   `shopping_mall_order_items.shopping_mall_seller_id`. Reject with a
+     *   forbidden error when the refund request belongs to another seller. 6.
+     *   Validate that the refund request is in a workflow state that can accept
+     *   a new response. Reject invalid state transitions, duplicate terminal
+     *   responses, or any request that attempts to apply a response outside
+     *   item-level refund scope. 7. Validate the request body fields. The body
+     *   should provide the target decision status and an optional or required
+     *   review note according to downstream DTO rules. The service must derive
+     *   `reviewer_role` from the authenticated actor type instead of trusting a
+     *   client-supplied role value. 8. Start a database transaction. 9. Update
+     *   the live `shopping_mall_refund_requests` row: set the new `status`, set
+     *   `reviewer_role` to either `seller` or `administrator`, set
+     *   `review_note`, set `reviewed_at` to the current timestamp, and update
+     *   `updated_at`. 10. Insert a new row into
+     *   `shopping_mall_refund_request_snapshots` linked by
+     *   `shopping_mall_refund_request_id = refundRequestId`. Populate
+     *   `reviewer_actor_id` with the authenticated reviewer identifier. If
+     *   snapshot payload expansion exists in downstream schema generation,
+     *   ensure the snapshot captures the changed response state as required by
+     *   business rules. 11. Commit the transaction only if both the live refund
+     *   request update and snapshot insert succeed. On any failure, roll back
+     *   the transaction. 12. Return the refreshed
+     *   `shopping_mall_refund_requests` aggregate as the response payload.
    *
    * Implementation notes:
    * - Never modify or remove prior snapshot rows when recording a later response.

@@ -23,7 +23,10 @@ import { IECommerceMallInventoryRecord } from "../../../../../../structures/IECo
  * @param props.body Inventory adjustment details including the quantity change and a textual explanation for the stock movement. quantity_change must be a non-zero integer (positive for restock, negative for subtraction). reason is a required textual explanation providing business context.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor administrator
- * @x-autobe-specification Verify the requesting seller owns the product identified by productId. Verify the variant identified by variantId belongs to that product. Verify the product's visibility is 'visible' or 'unavailable_but_visible' (not 'suspended' or 'deleted').
+ * @x-autobe-specification Verify the requesting seller owns the product
+ *   identified by productId. Verify the variant identified by variantId belongs
+ *   to that product. Verify the product's visibility is 'visible' or
+ *   'unavailable_but_visible' (not 'suspended' or 'deleted').
  *
  * Validate request body:
  * - quantity_change must be a non-zero integer

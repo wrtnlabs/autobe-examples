@@ -17,8 +17,10 @@ export type IEcommerceMallShipmentItem = {
    *
    * UUID primary key generated when the shipment item is created.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_shipment_items.id. UUID primary key identifying this shipment item record.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_shipment_items.id. UUID primary key identifying this
+     *   shipment item record.
    */
   id: string & tags.Format<"uuid">;
 
@@ -27,8 +29,12 @@ export type IEcommerceMallShipmentItem = {
    *
    * Tracks the fulfillment state: `pending` (order placed but not shipped), `shipped` (in transit), `delivered` (customer confirmed or auto-delivered after 14 days), `cancelled` (order cancelled before shipment). Status updates when shipment is created, tracking info added, or delivery confirmed.
    *
-   * @x-autobe-database-schema-property status
-   * @x-autobe-specification Direct mapping from ecommerce_mall_shipment_items.status. Enum: pending (order placed but not shipped), shipped (in transit), delivered (customer confirmed or auto-delivered after 14 days), cancelled (order cancelled before shipment).
+     * @x-autobe-database-schema-property status
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_shipment_items.status. Enum: pending (order placed but
+     *   not shipped), shipped (in transit), delivered (customer confirmed or
+     *   auto-delivered after 14 days), cancelled (order cancelled before
+     *   shipment).
    */
   status: string;
 
@@ -37,8 +43,11 @@ export type IEcommerceMallShipmentItem = {
    *
    * May differ from original order quantity if partial shipments are allowed. Must be greater than zero and cannot exceed original order quantity.
    *
-   * @x-autobe-database-schema-property quantity_shipped
-   * @x-autobe-specification Direct mapping from ecommerce_mall_shipment_items.quantity_shipped. Integer field representing the quantity of this order item included in this shipment. Must be greater than zero and cannot exceed original order quantity.
+     * @x-autobe-database-schema-property quantity_shipped
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_shipment_items.quantity_shipped. Integer field
+     *   representing the quantity of this order item included in this shipment.
+     *   Must be greater than zero and cannot exceed original order quantity.
    */
   quantity_shipped: number & tags.Type<"int32">;
 
@@ -47,8 +56,11 @@ export type IEcommerceMallShipmentItem = {
    *
    * Automatically set when this shipment item record is created (when item is added to a shipment).
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_shipment_items.created_at. Timestamp automatically set when this shipment item record is created (when item is added to a shipment).
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_shipment_items.created_at. Timestamp automatically set
+     *   when this shipment item record is created (when item is added to a
+     *   shipment).
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -57,8 +69,10 @@ export type IEcommerceMallShipmentItem = {
    *
    * Automatically updated on any record modification to track the most recent change.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_shipment_items.updated_at. Timestamp automatically updated on any record modification to track the most recent change.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_shipment_items.updated_at. Timestamp automatically
+     *   updated on any record modification to track the most recent change.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -67,8 +81,11 @@ export type IEcommerceMallShipmentItem = {
    *
    * Nullable - null means record is active. Set when record is soft-deleted for audit trail compliance.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_shipment_items.deleted_at. Nullable timestamp - null means record is active, set when record is soft-deleted for audit trail compliance.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_shipment_items.deleted_at. Nullable timestamp - null
+     *   means record is active, set when record is soft-deleted for audit trail
+     *   compliance.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 
@@ -77,8 +94,11 @@ export type IEcommerceMallShipmentItem = {
    *
    * Contains shipment tracking details including carrier name, tracking number, and delivery status. Transformed from FK column ecommerce_mall_shipment_id to object reference.
    *
-   * @x-autobe-database-schema-property shipment
-   * @x-autobe-specification JOIN via ecommerce_mall_shipment_id foreign key to ecommerce_mall_shipments table. Returns IEcommerceMallShipment.ISummary with carrier, tracking_number, status, shipped_at, delivered_at.
+     * @x-autobe-database-schema-property shipment
+     * @x-autobe-specification JOIN via ecommerce_mall_shipment_id foreign key
+     *   to ecommerce_mall_shipments table. Returns
+     *   IEcommerceMallShipment.ISummary with carrier, tracking_number, status,
+     *   shipped_at, delivered_at.
    */
   shipment: IEcommerceMallShipment.ISummary;
 
@@ -87,8 +107,11 @@ export type IEcommerceMallShipmentItem = {
    *
    * Contains the order item details including product variant information, original quantity, and unit price. Transformed from FK column ecommerce_mall_order_item_id to object reference.
    *
-   * @x-autobe-database-schema-property orderItem
-   * @x-autobe-specification JOIN via ecommerce_mall_order_item_id foreign key to ecommerce_mall_order_items table. Returns IEcommerceMallOrderItem.ISummary with product name, variant options, quantity, unit_price, status.
+     * @x-autobe-database-schema-property orderItem
+     * @x-autobe-specification JOIN via ecommerce_mall_order_item_id foreign key
+     *   to ecommerce_mall_order_items table. Returns
+     *   IEcommerceMallOrderItem.ISummary with product name, variant options,
+     *   quantity, unit_price, status.
    */
   orderItem: IEcommerceMallOrderItem.ISummary;
 };
@@ -154,8 +177,9 @@ export namespace IEcommerceMallShipmentItem {
      *
      * A UUID that uniquely identifies this specific shipment item, allowing precise reference to individual line items within shipments for tracking and audit purposes.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_mall_shipment_items.id (UUID primary key).
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_shipment_items.id (UUID primary key).
      */
     id: string & tags.Format<"uuid">;
 
@@ -168,8 +192,10 @@ export namespace IEcommerceMallShipmentItem {
      * - `delivered`: Customer confirmed receipt or auto-delivered after 14-day timeout
      * - `cancelled`: Order cancelled before shipment
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from ecommerce_mall_shipment_items.status. Allowed values: 'pending', 'shipped', 'delivered', 'cancelled'.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_shipment_items.status. Allowed values: 'pending',
+         *   'shipped', 'delivered', 'cancelled'.
      */
     status: string;
 
@@ -178,8 +204,11 @@ export namespace IEcommerceMallShipmentItem {
      *
      * May differ from original order quantity if partial shipments are allowed. Must be greater than zero and cannot exceed the original order quantity. Used for accurate delivery confirmation and inventory reconciliation.
      *
-     * @x-autobe-database-schema-property quantity_shipped
-     * @x-autobe-specification Direct mapping from ecommerce_mall_shipment_items.quantity_shipped (INTEGER). Represents the number of units of this order item included in this specific shipment.
+         * @x-autobe-database-schema-property quantity_shipped
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_shipment_items.quantity_shipped (INTEGER).
+         *   Represents the number of units of this order item included in this
+         *   specific shipment.
      */
     quantity_shipped: number & tags.Type<"int32">;
 
@@ -188,8 +217,10 @@ export namespace IEcommerceMallShipmentItem {
      *
      * Represents when the order item was added to a shipment (when the seller initiated the shipment). This immutable record enables tracking of shipment creation timing for performance metrics and audit purposes.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_shipment_items.created_at (TIMESTAMPTZ). Automatically set when the shipment item record is created.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_shipment_items.created_at (TIMESTAMPTZ).
+         *   Automatically set when the shipment item record is created.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -198,8 +229,10 @@ export namespace IEcommerceMallShipmentItem {
      *
      * Tracks when status changes occur (e.g., from 'shipped' to 'delivered') or other record updates. Used for monitoring shipment progression and detecting recent activity.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_shipment_items.updated_at (TIMESTAMPTZ). Automatically updated on any record modification.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_shipment_items.updated_at (TIMESTAMPTZ).
+         *   Automatically updated on any record modification.
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -208,8 +241,13 @@ export namespace IEcommerceMallShipmentItem {
      *
      * Provides access to the complete shipment details including carrier information, tracking number, and delivery status. This relation allows customers and sellers to view all items within a single shipment package and track them collectively.
      *
-     * @x-autobe-database-schema-property shipment
-     * @x-autobe-specification Join from ecommerce_mall_shipment_items.ecommerce_mall_shipment_id to ecommerce_mall_shipments.id. Returns IEcommerceMallShipment.ISummary with carrier, tracking number, and delivery status. FK transformation: shipment_id column → shipment object.
+         * @x-autobe-database-schema-property shipment
+         * @x-autobe-specification Join from
+         *   ecommerce_mall_shipment_items.ecommerce_mall_shipment_id to
+         *   ecommerce_mall_shipments.id. Returns
+         *   IEcommerceMallShipment.ISummary with carrier, tracking number, and
+         *   delivery status. FK transformation: shipment_id column → shipment
+         *   object.
      */
     shipment: IEcommerceMallShipment.ISummary;
 
@@ -218,8 +256,13 @@ export namespace IEcommerceMallShipmentItem {
      *
      * Provides details about what was purchased: product variant name, SKU code, quantity ordered, unit price, and original order information. This relation enables verification that the correct items were included in the shipment.
      *
-     * @x-autobe-database-schema-property orderItem
-     * @x-autobe-specification Join from ecommerce_mall_shipment_items.ecommerce_mall_order_item_id to ecommerce_mall_order_items.id. Returns IEcommerceMallOrderItem.ISummary with product variant details, pricing, and original order quantity. FK transformation: order_item_id column → orderItem object.
+         * @x-autobe-database-schema-property orderItem
+         * @x-autobe-specification Join from
+         *   ecommerce_mall_shipment_items.ecommerce_mall_order_item_id to
+         *   ecommerce_mall_order_items.id. Returns
+         *   IEcommerceMallOrderItem.ISummary with product variant details,
+         *   pricing, and original order quantity. FK transformation:
+         *   order_item_id column → orderItem object.
      */
     orderItem: IEcommerceMallOrderItem.ISummary;
   };

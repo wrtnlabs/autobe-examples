@@ -31,7 +31,11 @@ export type IEcommerceDeletionValidationResult = {
    *
    * This field helps API consumers understand what category of constraint is preventing account deletion.
    *
-   * @x-autobe-specification Computed enum-like string identifying the type of resource blocking deletion. Allowed values: 'order' (active order), 'cancellation_request' (pending cancellation), 'refund_request' (pending refund). Determined at runtime based on which database query found blocking resources.
+     * @x-autobe-specification Computed enum-like string identifying the type of
+     *   resource blocking deletion. Allowed values: 'order' (active order),
+     *   'cancellation_request' (pending cancellation), 'refund_request'
+     *   (pending refund). Determined at runtime based on which database query
+     *   found blocking resources.
    */
   resourceType: string;
 
@@ -46,7 +50,11 @@ export type IEcommerceDeletionValidationResult = {
    *
    * API consumers can use this ID to look up the specific resource via other endpoints if needed.
    *
-   * @x-autobe-specification Computed UUID string identifying the specific resource instance blocking deletion. Format: RFC 4122 UUID. Value is the primary key of the blocking resource (order_id, cancellation_request_id, or refund_request_id) depending on resourceType.
+     * @x-autobe-specification Computed UUID string identifying the specific
+     *   resource instance blocking deletion. Format: RFC 4122 UUID. Value is
+     *   the primary key of the blocking resource (order_id,
+     *   cancellation_request_id, or refund_request_id) depending on
+     *   resourceType.
    */
   resourceId: string & tags.Format<"uuid">;
 
@@ -63,7 +71,12 @@ export type IEcommerceDeletionValidationResult = {
    *
    * These messages help API consumers understand exactly what action (if any) they need to take to enable account deletion.
    *
-   * @x-autobe-specification Computed human-readable string explaining why this resource blocks deletion. Generated at runtime based on business rules. Example formats: 'Customer has active order with items in paid/shipped/delivered status', 'Seller has pending cancellation request awaiting review', 'Seller has pending refund request awaiting approval'.
+     * @x-autobe-specification Computed human-readable string explaining why
+     *   this resource blocks deletion. Generated at runtime based on business
+     *   rules. Example formats: 'Customer has active order with items in
+     *   paid/shipped/delivered status', 'Seller has pending cancellation
+     *   request awaiting review', 'Seller has pending refund request awaiting
+     *   approval'.
    */
   reason: string;
 };

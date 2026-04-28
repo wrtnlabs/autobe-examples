@@ -27,8 +27,9 @@ export type IRedditLikeReportOfPost = {
    *
    * This is the primary key of the reddit_like_report_of_posts table, used to retrieve specific report records via API endpoints.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from reddit_like_report_of_posts.id. UUID primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_report_of_posts.id. UUID primary key.
    */
   id: string & tags.Format<"uuid">;
 
@@ -39,7 +40,10 @@ export type IRedditLikeReportOfPost = {
    *
    * **Source**: reddit_like_reports.reason via join on reddit_like_report_id.
    *
-   * @x-autobe-specification JOIN from reddit_like_report_of_posts.reddiit_like_report_id to reddit_like_reports.id, then fetch reason column. Contains the reporter's explanation for why the content was flagged.
+     * @x-autobe-specification JOIN from
+     *   reddit_like_report_of_posts.reddiit_like_report_id to
+     *   reddit_like_reports.id, then fetch reason column. Contains the
+     *   reporter's explanation for why the content was flagged.
    */
   reason: string;
 
@@ -55,7 +59,10 @@ export type IRedditLikeReportOfPost = {
    *
    * **Source**: reddit_like_reports.status via join on reddit_like_report_id.
    *
-   * @x-autobe-specification JOIN from reddit_like_report_of_posts.reddiit_like_report_id to reddit_like_reports.id, then fetch status column. Allowed values: pending, approved, dismissed.
+     * @x-autobe-specification JOIN from
+     *   reddit_like_report_of_posts.reddiit_like_report_id to
+     *   reddit_like_reports.id, then fetch status column. Allowed values:
+     *   pending, approved, dismissed.
    */
   status: string;
 
@@ -66,7 +73,11 @@ export type IRedditLikeReportOfPost = {
    *
    * **Source**: reddit_like_reports.reddiit_like_member_id via join on reddit_like_report_id, then joined to member and profile tables for summary data.
    *
-   * @x-autobe-specification JOIN from reddit_like_report_of_posts.reddiit_like_report_id to reddit_like_reports.id, then fetch reddit_like_member_id. Transform to IRedditLikeMember.ISummary via additional join to reddit_like_members and reddit_like_user_profiles.
+     * @x-autobe-specification JOIN from
+     *   reddit_like_report_of_posts.reddiit_like_report_id to
+     *   reddit_like_reports.id, then fetch reddit_like_member_id. Transform to
+     *   IRedditLikeMember.ISummary via additional join to reddit_like_members
+     *   and reddit_like_user_profiles.
    */
   reporter: IRedditLikeMember.ISummary;
 
@@ -77,8 +88,12 @@ export type IRedditLikeReportOfPost = {
    *
    * **Source**: reddit_like_posts via join on reddit_like_post_id.
    *
-   * @x-autobe-database-schema-property post
-   * @x-autobe-specification JOIN from reddit_like_report_of_posts.reddiit_like_post_id to reddit_like_posts.id. Return full IRedditLikePost entity including title, content, author, community, vote score, comment count, and timestamps.
+     * @x-autobe-database-schema-property post
+     * @x-autobe-specification JOIN from
+     *   reddit_like_report_of_posts.reddiit_like_post_id to
+     *   reddit_like_posts.id. Return full IRedditLikePost entity including
+     *   title, content, author, community, vote score, comment count, and
+     *   timestamps.
    */
   post: IRedditLikePost;
 
@@ -89,8 +104,10 @@ export type IRedditLikeReportOfPost = {
    *
    * **Format**: ISO 8601 date-time string with timezone (e.g., "2024-01-15T10:30:00Z").
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from reddit_like_report_of_posts.created_at. DateTime with timezone (timestamptz).
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_report_of_posts.created_at. DateTime with timezone
+     *   (timestamptz).
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -101,8 +118,10 @@ export type IRedditLikeReportOfPost = {
    *
    * **Format**: ISO 8601 date-time string with timezone (e.g., "2024-01-15T10:30:00Z").
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from reddit_like_report_of_posts.updated_at. DateTime with timezone (timestamptz). Updated automatically on record modification.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_report_of_posts.updated_at. DateTime with timezone
+     *   (timestamptz). Updated automatically on record modification.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -115,8 +134,10 @@ export type IRedditLikeReportOfPost = {
    *
    * **Note**: This is a nullable field - it will be null for active reports and contain a timestamp for deleted ones.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from reddit_like_report_of_posts.deleted_at. Nullable DateTime with timezone (timestamptz). Null for active records, set when soft-deleted.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_report_of_posts.deleted_at. Nullable DateTime with timezone
+     *   (timestamptz). Null for active records, set when soft-deleted.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };

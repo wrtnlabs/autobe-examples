@@ -17,8 +17,9 @@ export type IMallPlatformReviewSnapshot = {
    *
    * This value identifies one immutable snapshot record and never changes after creation.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from mall_platform_review_snapshots.id.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_review_snapshots.id.
    */
   id: string & tags.Format<"uuid">;
 
@@ -27,8 +28,10 @@ export type IMallPlatformReviewSnapshot = {
    *
    * This value scopes the snapshot to one review history and is used to confirm the snapshot belongs to the requested review.
    *
-   * @x-autobe-database-schema-property mall_platform_review_id
-   * @x-autobe-specification Direct mapping from mall_platform_review_snapshots.mall_platform_review_id. This identifies the review whose state was captured.
+     * @x-autobe-database-schema-property mall_platform_review_id
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_review_snapshots.mall_platform_review_id. This identifies
+     *   the review whose state was captured.
    */
   mall_platform_review_id: string & tags.Format<"uuid">;
 
@@ -37,8 +40,10 @@ export type IMallPlatformReviewSnapshot = {
    *
    * This value identifies the customer tied to the preserved review state and supports ownership and audit use cases.
    *
-   * @x-autobe-database-schema-property mall_platform_customer_id
-   * @x-autobe-specification Direct mapping from mall_platform_review_snapshots.mall_platform_customer_id. This records the customer associated with the snapshot at capture time.
+     * @x-autobe-database-schema-property mall_platform_customer_id
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_review_snapshots.mall_platform_customer_id. This records
+     *   the customer associated with the snapshot at capture time.
    */
   mall_platform_customer_id: string & tags.Format<"uuid">;
 
@@ -47,8 +52,9 @@ export type IMallPlatformReviewSnapshot = {
    *
    * This value records the event that preserved the review state, such as an edit, deletion, or moderation-related change.
    *
-   * @x-autobe-database-schema-property snapshot_action
-   * @x-autobe-specification Direct mapping from mall_platform_review_snapshots.snapshot_action without transformation.
+     * @x-autobe-database-schema-property snapshot_action
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_review_snapshots.snapshot_action without transformation.
    */
   snapshot_action: string;
 
@@ -57,8 +63,10 @@ export type IMallPlatformReviewSnapshot = {
    *
    * This value stores the star score exactly as it existed when the snapshot was created.
    *
-   * @x-autobe-database-schema-property rating
-   * @x-autobe-specification Direct mapping from mall_platform_review_snapshots.rating as the preserved integer rating at snapshot time.
+     * @x-autobe-database-schema-property rating
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_review_snapshots.rating as the preserved integer rating
+     *   at snapshot time.
    */
   rating: number & tags.Type<"int32">;
 
@@ -67,8 +75,10 @@ export type IMallPlatformReviewSnapshot = {
    *
    * This value contains the written review content captured at the time of the snapshot, or null when no content was present.
    *
-   * @x-autobe-database-schema-property content
-   * @x-autobe-specification Direct mapping from mall_platform_review_snapshots.content. Preserve the nullable text value exactly as stored.
+     * @x-autobe-database-schema-property content
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_review_snapshots.content. Preserve the nullable text
+     *   value exactly as stored.
    */
   content: string | null;
 
@@ -77,8 +87,10 @@ export type IMallPlatformReviewSnapshot = {
    *
    * This value preserves the review's deletion state so historical views can show exactly what was true at capture time.
    *
-   * @x-autobe-database-schema-property is_deleted
-   * @x-autobe-specification Direct mapping from mall_platform_review_snapshots.is_deleted as the preserved deletion flag at capture time.
+     * @x-autobe-database-schema-property is_deleted
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_review_snapshots.is_deleted as the preserved deletion
+     *   flag at capture time.
    */
   is_deleted: boolean;
 
@@ -87,8 +99,10 @@ export type IMallPlatformReviewSnapshot = {
    *
    * This value marks when the preserved review state was recorded and is used for chronological audit history.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from mall_platform_review_snapshots.created_at as the immutable snapshot creation timestamp.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_review_snapshots.created_at as the immutable snapshot
+     *   creation timestamp.
    */
   created_at: string & tags.Format<"date-time">;
 };
@@ -106,8 +120,10 @@ export namespace IMallPlatformReviewSnapshot {
      *
      * This value identifies one immutable snapshot record and can be used to distinguish it from other history entries for the same review.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from mall_platform_review_snapshots.id as the immutable snapshot identifier.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_review_snapshots.id as the immutable snapshot
+         *   identifier.
      */
     id: string & tags.Format<"uuid">;
 
@@ -116,8 +132,10 @@ export namespace IMallPlatformReviewSnapshot {
      *
      * This value explains why the snapshot exists, such as an edit, deletion, or moderation-related change.
      *
-     * @x-autobe-database-schema-property snapshot_action
-     * @x-autobe-specification Direct mapping from mall_platform_review_snapshots.snapshot_action. Stores the reason or action that caused this snapshot to be recorded.
+         * @x-autobe-database-schema-property snapshot_action
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_review_snapshots.snapshot_action. Stores the reason
+         *   or action that caused this snapshot to be recorded.
      */
     snapshotAction: string;
 
@@ -126,8 +144,10 @@ export namespace IMallPlatformReviewSnapshot {
      *
      * This value reflects the review rating exactly as it existed when the snapshot was recorded.
      *
-     * @x-autobe-database-schema-property rating
-     * @x-autobe-specification Direct mapping from mall_platform_review_snapshots.rating. Preserves the review rating at the time the snapshot was created.
+         * @x-autobe-database-schema-property rating
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_review_snapshots.rating. Preserves the review rating
+         *   at the time the snapshot was created.
      */
     rating: number & tags.Type<"int32">;
 
@@ -136,8 +156,10 @@ export namespace IMallPlatformReviewSnapshot {
      *
      * This field may be null when the original review had no written content, and otherwise contains the text as it existed at the time of capture.
      *
-     * @x-autobe-database-schema-property content
-     * @x-autobe-specification Direct mapping from mall_platform_review_snapshots.content. Preserve the nullable review text content exactly as stored in the snapshot row.
+         * @x-autobe-database-schema-property content
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_review_snapshots.content. Preserve the nullable
+         *   review text content exactly as stored in the snapshot row.
      */
     content: string | null;
 
@@ -146,8 +168,10 @@ export namespace IMallPlatformReviewSnapshot {
      *
      * This flag preserves the review's deletion state at the time of the snapshot so historical views can remain accurate.
      *
-     * @x-autobe-database-schema-property is_deleted
-     * @x-autobe-specification Direct mapping from mall_platform_review_snapshots.is_deleted. Indicates whether the source review was deleted when this snapshot was created.
+         * @x-autobe-database-schema-property is_deleted
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_review_snapshots.is_deleted. Indicates whether the
+         *   source review was deleted when this snapshot was created.
      */
     isDeleted: boolean;
 
@@ -156,8 +180,10 @@ export namespace IMallPlatformReviewSnapshot {
      *
      * This timestamp marks when the preserved review state was captured and should be treated as immutable history metadata.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from mall_platform_review_snapshots.created_at. Use the snapshot creation timestamp as the immutable history time.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_review_snapshots.created_at. Use the snapshot
+         *   creation timestamp as the immutable history time.
      */
     createdAt: string & tags.Format<"date-time">;
 
@@ -166,8 +192,12 @@ export namespace IMallPlatformReviewSnapshot {
      *
      * This relation identifies the live review record whose state was preserved in this snapshot, exposed as a compact summary reference.
      *
-     * @x-autobe-database-schema-property review
-     * @x-autobe-specification Join mall_platform_review_snapshots.mall_platform_review_id to mall_platform_reviews.id and expose the related review as IMallPlatformReview.ISummary. This is a read-side belongs-to relation, not an embedded snapshot history collection.
+         * @x-autobe-database-schema-property review
+         * @x-autobe-specification Join
+         *   mall_platform_review_snapshots.mall_platform_review_id to
+         *   mall_platform_reviews.id and expose the related review as
+         *   IMallPlatformReview.ISummary. This is a read-side belongs-to
+         *   relation, not an embedded snapshot history collection.
      */
     review: IMallPlatformReview.ISummary;
 
@@ -176,8 +206,12 @@ export namespace IMallPlatformReviewSnapshot {
      *
      * This relation identifies the account associated with the review at snapshot time and is exposed as a compact customer summary reference.
      *
-     * @x-autobe-database-schema-property customer
-     * @x-autobe-specification Join mall_platform_review_snapshots.mall_platform_customer_id to mall_platform_customers.id and expose the owning customer as IMallPlatformCustomer.ISummary. This preserves ownership context without exposing authentication data.
+         * @x-autobe-database-schema-property customer
+         * @x-autobe-specification Join
+         *   mall_platform_review_snapshots.mall_platform_customer_id to
+         *   mall_platform_customers.id and expose the owning customer as
+         *   IMallPlatformCustomer.ISummary. This preserves ownership context
+         *   without exposing authentication data.
      */
     customer: IMallPlatformCustomer.ISummary;
   };
@@ -195,7 +229,9 @@ export namespace IMallPlatformReviewSnapshot {
      *
      * Use this to select which slice of the review snapshot history is returned. It is not stored in the database.
      *
-     * @x-autobe-specification Client-supplied page number for snapshot-history pagination. Apply it to the query scoped by the path reviewId.
+         * @x-autobe-specification Client-supplied page number for
+         *   snapshot-history pagination. Apply it to the query scoped by the
+         *   path reviewId.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -204,7 +240,8 @@ export namespace IMallPlatformReviewSnapshot {
      *
      * Use this to control page size when browsing immutable review snapshots. It is not stored in the database.
      *
-     * @x-autobe-specification Client-supplied maximum number of snapshot rows per page. Apply it to the query scoped by the path reviewId.
+         * @x-autobe-specification Client-supplied maximum number of snapshot
+         *   rows per page. Apply it to the query scoped by the path reviewId.
      */
     limit?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -213,7 +250,10 @@ export namespace IMallPlatformReviewSnapshot {
      *
      * Use this to choose the ordering key for the snapshot list. It affects query ordering only.
      *
-     * @x-autobe-specification Client-supplied sort key for review snapshot browsing. Support ordering by snapshot action, content, deletion state, and created_at, with created_at descending as the default when omitted.
+         * @x-autobe-specification Client-supplied sort key for review snapshot
+         *   browsing. Support ordering by snapshot action, content, deletion
+         *   state, and created_at, with created_at descending as the default
+         *   when omitted.
      */
     sort?: string | undefined;
 
@@ -222,7 +262,9 @@ export namespace IMallPlatformReviewSnapshot {
      *
      * Use this together with sort to control whether results are returned in ascending or descending order. It affects query ordering only.
      *
-     * @x-autobe-specification Client-supplied sort direction for the selected sort key. Apply ascending or descending ordering, and keep descending as the default when sort is omitted.
+         * @x-autobe-specification Client-supplied sort direction for the
+         *   selected sort key. Apply ascending or descending ordering, and keep
+         *   descending as the default when sort is omitted.
      */
     order?: string | undefined;
 
@@ -231,7 +273,9 @@ export namespace IMallPlatformReviewSnapshot {
      *
      * Use this to narrow the immutable snapshot history by matching preserved review text.
      *
-     * @x-autobe-specification Free-text search term for review snapshot browsing. Apply it against preserved snapshot content when querying the snapshot history for the reviewId in the path.
+         * @x-autobe-specification Free-text search term for review snapshot
+         *   browsing. Apply it against preserved snapshot content when querying
+         *   the snapshot history for the reviewId in the path.
      */
     search?: string | undefined;
 
@@ -240,7 +284,9 @@ export namespace IMallPlatformReviewSnapshot {
      *
      * Use this to show only history entries created for a particular kind of change, such as an edit or deletion event.
      *
-     * @x-autobe-specification Filter value for review snapshot browsing by snapshot action. Use it to return only snapshots created for a specific action such as edit, deletion, or moderation change.
+         * @x-autobe-specification Filter value for review snapshot browsing by
+         *   snapshot action. Use it to return only snapshots created for a
+         *   specific action such as edit, deletion, or moderation change.
      */
     snapshotAction?: string | undefined;
 
@@ -249,7 +295,9 @@ export namespace IMallPlatformReviewSnapshot {
      *
      * Use this to narrow the results to snapshots whose stored review text matches the provided value.
      *
-     * @x-autobe-specification Filter value for review snapshot browsing by preserved snapshot content. Apply it as a text match against the content captured in each immutable snapshot row.
+         * @x-autobe-specification Filter value for review snapshot browsing by
+         *   preserved snapshot content. Apply it as a text match against the
+         *   content captured in each immutable snapshot row.
      */
     content?: string | undefined;
 
@@ -258,7 +306,9 @@ export namespace IMallPlatformReviewSnapshot {
      *
      * Use this to filter immutable history by the preserved deletion flag.
      *
-     * @x-autobe-specification Filter value for review snapshot browsing by preserved deletion state. Use it to list only snapshots whose deleted flag matches the requested boolean value.
+         * @x-autobe-specification Filter value for review snapshot browsing by
+         *   preserved deletion state. Use it to list only snapshots whose
+         *   deleted flag matches the requested boolean value.
      */
     isDeleted?: boolean | undefined;
 
@@ -267,7 +317,9 @@ export namespace IMallPlatformReviewSnapshot {
      *
      * Use this to set the lower bound of the snapshot history time range.
      *
-     * @x-autobe-specification Inclusive lower bound for review snapshot creation time. Return only snapshots created at or after the provided date-time.
+         * @x-autobe-specification Inclusive lower bound for review snapshot
+         *   creation time. Return only snapshots created at or after the
+         *   provided date-time.
      */
     createdFrom?: (string & tags.Format<"date-time">) | undefined;
 
@@ -276,7 +328,9 @@ export namespace IMallPlatformReviewSnapshot {
      *
      * Use this to set the upper bound of the snapshot history time range.
      *
-     * @x-autobe-specification Inclusive upper bound for review snapshot creation time. Return only snapshots created at or before the provided date-time.
+         * @x-autobe-specification Inclusive upper bound for review snapshot
+         *   creation time. Return only snapshots created at or before the
+         *   provided date-time.
      */
     createdTo?: (string & tags.Format<"date-time">) | undefined;
   };

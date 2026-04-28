@@ -17,8 +17,10 @@ export type IHrmTimeTrackTimesheetTimelog = {
    *
    * This UUID identifies the specific link between a timelog and a timesheet in the approval workflow. Each association is unique and cannot be duplicated within the same timesheet.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from hrm_time_track_timesheet_timelogs.id. Primary key uniquely identifying this timesheet-timelog association record.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_timesheet_timelogs.id. Primary key uniquely identifying
+     *   this timesheet-timelog association record.
    */
   id: string & tags.Format<"uuid">;
 
@@ -27,8 +29,10 @@ export type IHrmTimeTrackTimesheetTimelog = {
    *
    * This field tracks when the association was created, providing audit information about when timelogs were included in timesheets for approval processing. Useful for tracking timesheet assembly timelines.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from hrm_time_track_timesheet_timelogs.created_at. Records when this timelog was added to the timesheet for approval processing.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_timesheet_timelogs.created_at. Records when this timelog
+     *   was added to the timesheet for approval processing.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -37,8 +41,11 @@ export type IHrmTimeTrackTimesheetTimelog = {
    *
    * This relation provides the weekly approval context for the timelog, including the timesheet's status (draft, submitted, approved, rejected), week boundaries (Monday to Sunday), the employee who owns the timesheet, and the approver information when approved.
    *
-   * @x-autobe-database-schema-property timesheet
-   * @x-autobe-specification Relation via JOIN on hrm_time_track_timesheet_id to hrm_time_track_timesheets table. Returns IHrmTimeTrackTimesheet.ISummary with essential timesheet information (id, status, week dates, employee, approver, total_hours).
+     * @x-autobe-database-schema-property timesheet
+     * @x-autobe-specification Relation via JOIN on hrm_time_track_timesheet_id
+     *   to hrm_time_track_timesheets table. Returns
+     *   IHrmTimeTrackTimesheet.ISummary with essential timesheet information
+     *   (id, status, week dates, employee, approver, total_hours).
    */
   timesheet: IHrmTimeTrackTimesheet.ISummary;
 
@@ -47,8 +54,13 @@ export type IHrmTimeTrackTimesheetTimelog = {
    *
    * This relation contains the actual work time data: the date when work was performed, duration in seconds, billable status, optional task assignment, project association, employee who performed the work, and descriptive notes. This is the core time tracking information being submitted for approval.
    *
-   * @x-autobe-database-schema-property timelog
-   * @x-autobe-specification Relation via JOIN on hrm_time_track_timelog_id to hrm_time_track_timelogs table. Returns full IHrmTimeTrackTimelog entity with all its relations: employee (who performed the work), project (which project the time was logged against), task (optional specific task), and all timelog fields (date, duration_seconds, billable, notes).
+     * @x-autobe-database-schema-property timelog
+     * @x-autobe-specification Relation via JOIN on hrm_time_track_timelog_id to
+     *   hrm_time_track_timelogs table. Returns full IHrmTimeTrackTimelog entity
+     *   with all its relations: employee (who performed the work), project
+     *   (which project the time was logged against), task (optional specific
+     *   task), and all timelog fields (date, duration_seconds, billable,
+     *   notes).
    */
   timelog: IHrmTimeTrackTimelog;
 };

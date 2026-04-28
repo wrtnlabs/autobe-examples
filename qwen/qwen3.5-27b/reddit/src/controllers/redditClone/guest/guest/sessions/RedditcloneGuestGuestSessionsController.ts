@@ -20,9 +20,10 @@ export class RedditcloneGuestGuestSessionsController {
    *
    * @param connection
    * @param body Search criteria including guest ID, IP address, date ranges, expiration status filters, and pagination parameters (page, limit, sort).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor guest
-   * @x-autobe-specification Query reddit_clone_guest_sessions table with pagination and filtering support.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor guest
+     * @x-autobe-specification Query reddit_clone_guest_sessions table with
+     *   pagination and filtering support.
    *
    * Apply search filters from request body:
    * - Filter by reddit_clone_guest_id if provided
@@ -69,9 +70,10 @@ export class RedditcloneGuestGuestSessionsController {
    *
    * @param connection
    * @param sessionId Unique identifier of the guest session to retrieve (UUID format).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor guest
-   * @x-autobe-specification Query reddit_clone_guest_sessions table by primary key id matching the sessionId parameter.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor guest
+     * @x-autobe-specification Query reddit_clone_guest_sessions table by
+     *   primary key id matching the sessionId parameter.
    *
    * Return the complete guest session record including:
    * - Session ID and guest reference ID

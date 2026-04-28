@@ -18,8 +18,9 @@ export type IEcommerceMallAdministratorGrade = {
    *
    * A universally unique identifier (UUID) that uniquely identifies this specific grade change event in the system. Used for API references and audit trail lookups.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_administrator_grades.id. UUID primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_administrator_grades.id. UUID primary key.
    */
   id: string & tags.Format<"uuid">;
 
@@ -28,8 +29,10 @@ export type IEcommerceMallAdministratorGrade = {
    *
    * This foreign key references the target administrator account (ecommerce_mall_administrators.id) whose grade transition is being recorded in this change event.
    *
-   * @x-autobe-database-schema-property administrator_id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_administrator_grades.administrator_id. UUID foreign key referencing the target administrator.
+     * @x-autobe-database-schema-property administrator_id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_administrator_grades.administrator_id. UUID foreign key
+     *   referencing the target administrator.
    */
   administrator_id: string & tags.Format<"uuid">;
 
@@ -38,8 +41,10 @@ export type IEcommerceMallAdministratorGrade = {
    *
    * This foreign key references the actor who performed the grade modification (ecommerce_mall_administrators.id). Typically a super administrator with grade management privileges.
    *
-   * @x-autobe-database-schema-property changed_by
-   * @x-autobe-specification Direct mapping from ecommerce_mall_administrator_grades.changed_by. UUID foreign key referencing the super administrator who initiated the change.
+     * @x-autobe-database-schema-property changed_by
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_administrator_grades.changed_by. UUID foreign key
+     *   referencing the super administrator who initiated the change.
    */
   changed_by: string & tags.Format<"uuid">;
 
@@ -48,8 +53,10 @@ export type IEcommerceMallAdministratorGrade = {
    *
    * The administrator's grade status following this grade transition event. Possible values are 'regular' (standard administrator with platform oversight privileges) or 'super' (elevated privileges including administrator management and grade promotion/demotion capabilities).
    *
-   * @x-autobe-database-schema-property grade
-   * @x-autobe-specification Direct mapping from ecommerce_mall_administrator_grades.grade. String field with allowed values: 'regular' or 'super'.
+     * @x-autobe-database-schema-property grade
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_administrator_grades.grade. String field with allowed
+     *   values: 'regular' or 'super'.
    */
   grade: string;
 
@@ -58,8 +65,10 @@ export type IEcommerceMallAdministratorGrade = {
    *
    * The administrator's grade status prior to this grade transition event. Null for the initial grade assignment when an administrator account is first created. Otherwise contains the previous grade value ('regular' or 'super').
    *
-   * @x-autobe-database-schema-property previous_grade
-   * @x-autobe-specification Direct mapping from ecommerce_mall_administrator_grades.previous_grade. Nullable string field containing the grade before this change.
+     * @x-autobe-database-schema-property previous_grade
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_administrator_grades.previous_grade. Nullable string
+     *   field containing the grade before this change.
    */
   previous_grade: string | null;
 
@@ -68,8 +77,10 @@ export type IEcommerceMallAdministratorGrade = {
    *
    * A string field that can be used to document business justifications for promotions, demotions, or administrative overrides. Left null when no specific reason is provided or when the change is routine.
    *
-   * @x-autobe-database-schema-property reason
-   * @x-autobe-specification Direct mapping from ecommerce_mall_administrator_grades.reason. Nullable string field for optional business justification.
+     * @x-autobe-database-schema-property reason
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_administrator_grades.reason. Nullable string field for
+     *   optional business justification.
    */
   reason: string | null;
 
@@ -78,8 +89,10 @@ export type IEcommerceMallAdministratorGrade = {
    *
    * The exact date and time (with timezone) when this grade change event was recorded in the system. Used for chronological ordering and audit trail analysis.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_administrator_grades.created_at. DateTime field with timezone awareness.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_administrator_grades.created_at. DateTime field with
+     *   timezone awareness.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -88,8 +101,10 @@ export type IEcommerceMallAdministratorGrade = {
    *
    * The date and time (with timezone) when this grade change record was last modified. While grade change records are typically immutable after creation, this field supports audit compliance requirements.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_administrator_grades.updated_at. DateTime field with timezone awareness.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_administrator_grades.updated_at. DateTime field with
+     *   timezone awareness.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -98,8 +113,11 @@ export type IEcommerceMallAdministratorGrade = {
    *
    * Null when the grade change record is active. Set to the deletion timestamp when the record is soft deleted for audit preservation without permanent removal. Allows recovery of accidentally deleted records within retention policies.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_administrator_grades.deleted_at. Nullable DateTime field with timezone awareness. Null if record is active, set when soft deleted.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_administrator_grades.deleted_at. Nullable DateTime field
+     *   with timezone awareness. Null if record is active, set when soft
+     *   deleted.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 
@@ -108,8 +126,12 @@ export type IEcommerceMallAdministratorGrade = {
    *
    * A nested object containing the full administrator account details for the target of this grade change. Includes the administrator's ID, email, display name, current grade, and other profile information. This provides complete context about the affected user without requiring additional API calls.
    *
-   * @x-autobe-database-schema-property administrator
-   * @x-autobe-specification JOIN from ecommerce_mall_administrator_grades.administrator_id to ecommerce_mall_administrators.id. Returns IEcommerceMallAdministrator.ISummary with full administrator account context.
+     * @x-autobe-database-schema-property administrator
+     * @x-autobe-specification JOIN from
+     *   ecommerce_mall_administrator_grades.administrator_id to
+     *   ecommerce_mall_administrators.id. Returns
+     *   IEcommerceMallAdministrator.ISummary with full administrator account
+     *   context.
    */
   administrator: IEcommerceMallAdministrator.ISummary;
 
@@ -118,8 +140,12 @@ export type IEcommerceMallAdministratorGrade = {
    *
    * A nested object containing the full administrator account details of the actor who performed this grade modification. Includes the changer's ID, email, display name, grade level, and other profile information. Provides accountability and audit trail context for the grade change event.
    *
-   * @x-autobe-database-schema-property changedBy
-   * @x-autobe-specification JOIN from ecommerce_mall_administrator_grades.changed_by to ecommerce_mall_administrators.id. Returns IEcommerceMallAdministrator.ISummary with the actor who initiated the change.
+     * @x-autobe-database-schema-property changedBy
+     * @x-autobe-specification JOIN from
+     *   ecommerce_mall_administrator_grades.changed_by to
+     *   ecommerce_mall_administrators.id. Returns
+     *   IEcommerceMallAdministrator.ISummary with the actor who initiated the
+     *   change.
    */
   changedBy: IEcommerceMallAdministrator.ISummary;
 };
@@ -165,7 +191,8 @@ export namespace IEcommerceMallAdministratorGrade {
      * Requesting a page beyond the available range returns an empty data array
      * with valid pagination metadata reflecting the actual totals.
      *
-     * @x-autobe-specification 1-indexed page number. Defaults to 1 if not provided.
+         * @x-autobe-specification 1-indexed page number. Defaults to 1 if not
+         *   provided.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
 
@@ -177,7 +204,8 @@ export namespace IEcommerceMallAdministratorGrade {
      * enforce upper bounds to prevent excessive resource consumption on large
      * requests.
      *
-     * @x-autobe-specification Maximum records per page. Defaults to 100 if not provided.
+         * @x-autobe-specification Maximum records per page. Defaults to 100 if
+         *   not provided.
      */
     limit?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };

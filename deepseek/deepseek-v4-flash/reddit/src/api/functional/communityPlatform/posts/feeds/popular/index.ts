@@ -24,7 +24,10 @@ import { IPageICommunityPlatformPost } from "../../../../../structures/IPageICom
  * @param props.body Pagination, sorting, and optional time filter parameters for the Popular Feed.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query community_platform_posts with INNER JOINs on community_platform_members (author username) and community_platform_communities (community name). Exclude soft-deleted posts (deleted_at IS NULL).
+ * @x-autobe-specification Query community_platform_posts with INNER JOINs on
+ *   community_platform_members (author username) and
+ *   community_platform_communities (community name). Exclude soft-deleted posts
+ *   (deleted_at IS NULL).
  *
  * For type-specific preview content, LEFT JOIN with the appropriate child table based on the post's `type` field:
  * - type='text' → LEFT JOIN community_platform_post_texts, extract first 200 chars of body

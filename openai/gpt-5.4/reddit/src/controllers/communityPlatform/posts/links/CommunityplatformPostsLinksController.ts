@@ -21,9 +21,10 @@ export class CommunityplatformPostsLinksController {
    * @param connection
    * @param postId Target post's ID
    * @param linkId Target link subtype record's ID
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Load the parent record from community_platform_posts by id = postId.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Load the parent record from
+     *   community_platform_posts by id = postId.
    *
    * Validate that the parent post exists and is available for single-post viewing according to platform lifecycle and moderation rules. Do not return link data for a post that cannot be viewed.
    *

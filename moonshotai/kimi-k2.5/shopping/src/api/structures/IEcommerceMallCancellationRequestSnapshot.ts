@@ -8,64 +8,75 @@ export type IEcommerceMallCancellationRequestSnapshot = {
   /**
    * Unique identifier for the cancellation request snapshot.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_cancellation_request_snapshots.id (UUID PK).
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_cancellation_request_snapshots.id (UUID PK).
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Reference to the parent cancellation request that this snapshot belongs to.
    *
-   * @x-autobe-database-schema-property cancellation_request_id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_cancellation_request_snapshots.cancellation_request_id (UUID FK referencing ecommerce_mall_cancellation_requests.id).
+     * @x-autobe-database-schema-property cancellation_request_id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_cancellation_request_snapshots.cancellation_request_id
+     *   (UUID FK referencing ecommerce_mall_cancellation_requests.id).
    */
   cancellationRequestId: string & tags.Format<"uuid">;
 
   /**
    * The cancellation request status before the seller responded to the request.
    *
-   * @x-autobe-database-schema-property status_before
-   * @x-autobe-specification Direct mapping from ecommerce_mall_cancellation_request_snapshots.status_before. Valid values: 'pending', 'approved', 'rejected'.
+     * @x-autobe-database-schema-property status_before
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_cancellation_request_snapshots.status_before. Valid
+     *   values: 'pending', 'approved', 'rejected'.
    */
   statusBefore: string;
 
   /**
    * The cancellation request status after the seller responded to the request.
    *
-   * @x-autobe-database-schema-property status_after
-   * @x-autobe-specification Direct mapping from ecommerce_mall_cancellation_request_snapshots.status_after. Valid values: 'pending', 'approved', 'rejected'.
+     * @x-autobe-database-schema-property status_after
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_cancellation_request_snapshots.status_after. Valid
+     *   values: 'pending', 'approved', 'rejected'.
    */
   statusAfter: string;
 
   /**
    * The customer's cancellation reason before the seller responded, if any.
    *
-   * @x-autobe-database-schema-property reason_before
-   * @x-autobe-specification Direct mapping from ecommerce_mall_cancellation_request_snapshots.reason_before. Nullable.
+     * @x-autobe-database-schema-property reason_before
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_cancellation_request_snapshots.reason_before. Nullable.
    */
   reasonBefore: string | null;
 
   /**
    * The customer's cancellation reason after the seller responded, if any.
    *
-   * @x-autobe-database-schema-property reason_after
-   * @x-autobe-specification Direct mapping from ecommerce_mall_cancellation_request_snapshots.reason_after. Nullable.
+     * @x-autobe-database-schema-property reason_after
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_cancellation_request_snapshots.reason_after. Nullable.
    */
   reasonAfter: string | null;
 
   /**
    * Optional note or explanation provided by the seller when approving or rejecting the cancellation request.
    *
-   * @x-autobe-database-schema-property reviewer_note
-   * @x-autobe-specification Direct mapping from ecommerce_mall_cancellation_request_snapshots.reviewer_note. Nullable.
+     * @x-autobe-database-schema-property reviewer_note
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_cancellation_request_snapshots.reviewer_note. Nullable.
    */
   reviewerNote: string | null;
 
   /**
    * Timestamp when this snapshot was created, capturing the exact moment of the state change.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_cancellation_request_snapshots.created_at (timestamptz).
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_cancellation_request_snapshots.created_at (timestamptz).
    */
   createdAt: string & tags.Format<"date-time">;
 };
@@ -77,14 +88,16 @@ export namespace IEcommerceMallCancellationRequestSnapshot {
     /**
      * Page number for pagination (1-indexed).
      *
-     * @x-autobe-specification Page number for offset pagination. Calculated as (page - 1) * limit for SQL OFFSET clause. Defaults to 1.
+         * @x-autobe-specification Page number for offset pagination. Calculated
+         *   as (page - 1) * limit for SQL OFFSET clause. Defaults to 1.
      */
     page: number & tags.Type<"int32"> & tags.Default<1> & tags.Minimum<1>;
 
     /**
      * Maximum number of records to return per page.
      *
-     * @x-autobe-specification Maximum records per page. Used for SQL LIMIT clause. Range: 1-100, default 20.
+         * @x-autobe-specification Maximum records per page. Used for SQL LIMIT
+         *   clause. Range: 1-100, default 20.
      */
     limit: number &
       tags.Type<"int32"> &
@@ -95,42 +108,51 @@ export namespace IEcommerceMallCancellationRequestSnapshot {
     /**
      * Start of date range filter for snapshot creation time.
      *
-     * @x-autobe-specification Filter snapshots where created_at >= this timestamp. Maps to SQL: created_at >= :createdAtFrom
+         * @x-autobe-specification Filter snapshots where created_at >= this
+         *   timestamp. Maps to SQL: created_at >= :createdAtFrom
      */
     createdAtFrom: (string & tags.Format<"date-time">) | null;
 
     /**
      * End of date range filter for snapshot creation time.
      *
-     * @x-autobe-specification Filter snapshots where created_at <= this timestamp. Maps to SQL: created_at <= :createdAtTo
+         * @x-autobe-specification Filter snapshots where created_at <= this
+         *   timestamp. Maps to SQL: created_at <= :createdAtTo
      */
     createdAtTo: (string & tags.Format<"date-time">) | null;
 
     /**
      * Filter by the status value before the transition occurred.
      *
-     * @x-autobe-specification Filter snapshots by status_before value. Maps to SQL: status_before = :statusBefore. Valid values: 'pending', 'approved', 'rejected'.
+         * @x-autobe-specification Filter snapshots by status_before value. Maps
+         *   to SQL: status_before = :statusBefore. Valid values: 'pending',
+         *   'approved', 'rejected'.
      */
     statusBefore: string | null;
 
     /**
      * Filter by the status value after the transition occurred.
      *
-     * @x-autobe-specification Filter snapshots by status_after value. Maps to SQL: status_after = :statusAfter. Valid values: 'pending', 'approved', 'rejected'.
+         * @x-autobe-specification Filter snapshots by status_after value. Maps
+         *   to SQL: status_after = :statusAfter. Valid values: 'pending',
+         *   'approved', 'rejected'.
      */
     statusAfter: string | null;
 
     /**
      * Field to sort results by (only 'created_at' supported).
      *
-     * @x-autobe-specification Column to sort by. Only 'created_at' supported. Maps to SQL ORDER BY clause.
+         * @x-autobe-specification Column to sort by. Only 'created_at'
+         *   supported. Maps to SQL ORDER BY clause.
      */
     sortField: "created_at" | null;
 
     /**
      * Sort order direction: 'asc' for ascending or 'desc' for descending.
      *
-     * @x-autobe-specification Sort direction. 'asc' for ascending, 'desc' for descending (default desc for newest first). Maps to SQL ASC/DESC.
+         * @x-autobe-specification Sort direction. 'asc' for ascending, 'desc'
+         *   for descending (default desc for newest first). Maps to SQL
+         *   ASC/DESC.
      */
     sortOrder: "asc" | "desc" | null;
   };
@@ -142,56 +164,72 @@ export namespace IEcommerceMallCancellationRequestSnapshot {
     /**
      * Unique identifier for this cancellation request snapshot.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_mall_cancellation_request_snapshots.id. UUID primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_cancellation_request_snapshots.id. UUID primary key.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * The cancellation request status before the change. Valid values: 'pending', 'approved', 'rejected'.
      *
-     * @x-autobe-database-schema-property status_before
-     * @x-autobe-specification Direct mapping from ecommerce_mall_cancellation_request_snapshots.status_before. Snake_case to camelCase transformation.
+         * @x-autobe-database-schema-property status_before
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_cancellation_request_snapshots.status_before.
+         *   Snake_case to camelCase transformation.
      */
     statusBefore: string;
 
     /**
      * The cancellation request status after the change. Valid values: 'pending', 'approved', 'rejected'.
      *
-     * @x-autobe-database-schema-property status_after
-     * @x-autobe-specification Direct mapping from ecommerce_mall_cancellation_request_snapshots.status_after. Snake_case to camelCase transformation.
+         * @x-autobe-database-schema-property status_after
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_cancellation_request_snapshots.status_after.
+         *   Snake_case to camelCase transformation.
      */
     statusAfter: string;
 
     /**
      * The customer's cancellation reason before the change, if any.
      *
-     * @x-autobe-database-schema-property reason_before
-     * @x-autobe-specification Direct mapping from ecommerce_mall_cancellation_request_snapshots.reason_before. Snake_case to camelCase transformation. Nullable when no reason was provided.
+         * @x-autobe-database-schema-property reason_before
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_cancellation_request_snapshots.reason_before.
+         *   Snake_case to camelCase transformation. Nullable when no reason was
+         *   provided.
      */
     reasonBefore?: string | null | undefined;
 
     /**
      * The customer's cancellation reason after the change, if any.
      *
-     * @x-autobe-database-schema-property reason_after
-     * @x-autobe-specification Direct mapping from ecommerce_mall_cancellation_request_snapshots.reason_after. Snake_case to camelCase transformation. Nullable when no reason was provided.
+         * @x-autobe-database-schema-property reason_after
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_cancellation_request_snapshots.reason_after.
+         *   Snake_case to camelCase transformation. Nullable when no reason was
+         *   provided.
      */
     reasonAfter?: string | null | undefined;
 
     /**
      * Optional note or explanation provided by the seller when approving or rejecting the cancellation request.
      *
-     * @x-autobe-database-schema-property reviewer_note
-     * @x-autobe-specification Direct mapping from ecommerce_mall_cancellation_request_snapshots.reviewer_note. Snake_case to camelCase transformation. Nullable when seller provided no note.
+         * @x-autobe-database-schema-property reviewer_note
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_cancellation_request_snapshots.reviewer_note.
+         *   Snake_case to camelCase transformation. Nullable when seller
+         *   provided no note.
      */
     reviewerNote?: string | null | undefined;
 
     /**
      * Timestamp when this snapshot was created, capturing the exact moment of the state change.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_cancellation_request_snapshots.created_at. Snake_case to camelCase transformation. ISO 8601 timestamp format.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_cancellation_request_snapshots.created_at.
+         *   Snake_case to camelCase transformation. ISO 8601 timestamp format.
      */
     createdAt: string & tags.Format<"date-time">;
   };

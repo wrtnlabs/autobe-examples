@@ -23,9 +23,11 @@ export class CommunityplatformMemberPostsFeedsHomeController {
    *
    * @param connection
    * @param body Home feed search criteria including sort option, optional time-range filter for Top sorting, and pagination parameters (page number, page size).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query community_platform_posts filtered to communities where the authenticated member has a subscription in community_platform_subscriptions.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query community_platform_posts filtered to
+     *   communities where the authenticated member has a subscription in
+     *   community_platform_subscriptions.
    *
    * 1. JOIN community_platform_posts with community_platform_subscriptions ON posts.community_id = subscriptions.community_id AND subscriptions.member_id = {currentMemberId}
    * 2. Exclude soft-deleted posts (deleted_at IS NULL) and soft-deleted communities

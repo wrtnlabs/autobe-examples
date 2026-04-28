@@ -170,14 +170,22 @@ export namespace index {
  * @param props.refundRequestId Target refund request ID (UUID) to retrieve.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Implementation steps:
- * 1. Parse `refundRequestId` from path (UUID string).
- * 2. Query `shopping_mall_refund_requests` by `id = refundRequestId` and ensure the record is not excluded by any runtime rule for active views (e.g., deleted_at null filtering if your service applies such filters).
- * 3. Load linked order item context by joining `shopping_mall_order_items` on `shopping_mall_order_items.id = shopping_mall_refund_requests.shopping_mall_order_item_id`.
- * 4. Optionally (if required by the response DTO), load linked order header by joining `shopping_mall_orders` on `shopping_mall_orders.id = shopping_mall_order_items.shopping_mall_order_id` to provide order-level identifiers/details used by the DTO.
- * 5. Map database fields to the response DTO: refund request id, customer_reason, status, seller_comment, decisioned_at, created_at, updated_at.
- * 6. Return 404 if refund request record is not found.
- * 7. Do not perform any status transitions, stock restoration, inventory updates, shipment reconciliation, or snapshot creation; this endpoint must be read-only.
+ * @x-autobe-specification Implementation steps: 1. Parse `refundRequestId` from
+ *   path (UUID string). 2. Query `shopping_mall_refund_requests` by `id =
+ *   refundRequestId` and ensure the record is not excluded by any runtime rule
+ *   for active views (e.g., deleted_at null filtering if your service applies
+ *   such filters). 3. Load linked order item context by joining
+ *   `shopping_mall_order_items` on `shopping_mall_order_items.id =
+ *   shopping_mall_refund_requests.shopping_mall_order_item_id`. 4. Optionally
+ *   (if required by the response DTO), load linked order header by joining
+ *   `shopping_mall_orders` on `shopping_mall_orders.id =
+ *   shopping_mall_order_items.shopping_mall_order_id` to provide order-level
+ *   identifiers/details used by the DTO. 5. Map database fields to the response
+ *   DTO: refund request id, customer_reason, status, seller_comment,
+ *   decisioned_at, created_at, updated_at. 6. Return 404 if refund request
+ *   record is not found. 7. Do not perform any status transitions, stock
+ *   restoration, inventory updates, shipment reconciliation, or snapshot
+ *   creation; this endpoint must be read-only.
  *
  * Edge cases:
  * - If the linked order item exists but the refund request references a missing order item (referential inconsistency), treat as not found or internal error depending on your consistency policy.
@@ -282,28 +290,34 @@ export namespace at {
  * @param props.body Administrator decision payload for updating the refund request workflow outcome. Includes the desired decision status and optional seller comment.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Implementation steps:
- * 1) Authenticate/authorize: require admin privileges for the caller.
- * 2) Parse `refundRequestId` and load the refund request row from `shopping_mall_refund_requests`.
- *    - If not found (or hidden from admin visibility per `shopping_mall_snapshot_parties` rules if applicable), throw not-found/forbidden.
- * 3) Validate decision input from request body:
- *    - Ensure the refund request `status` can transition to the requested administrative outcome.
- *    - Reject contradictory transitions (e.g., if already approved/refused in a way that violates state ordering rules).
- * 4) Transactional update:
- *    - Begin transaction.
- *    - Update `shopping_mall_refund_requests.status` to the requested outcome.
- *    - Set `seller_comment` if provided.
- *    - Set `decisioned_at` when transitioning out of the pending state (follow DTO semantics).
- * 5) Apply related order-item status change:
- *    - Load the referenced `shopping_mall_order_items` row via `shopping_mall_refund_requests.shopping_mall_order_item_id`.
- *    - If approving/refunding: update `shopping_mall_order_items.line_item_status` to the refunded status value required by business rules, ensuring only that order item changes.
- *    - If rejecting: ensure the order item status is not moved into a refunded terminal state.
- *    - Persist the `shopping_mall_order_items` update within the same transaction.
- * 6) Snapshot trail integrity:
- *    - If the business rules require a final decision snapshot, create a new `shopping_mall_snapshots` row with the appropriate `source_type` and `source_order_item_id` / `source_refund_request_id` linkage, and create/attach a payload record in `shopping_mall_snapshot_payloads`.
- *    - Ensure idempotency: if the operation is retried and a snapshot already exists for the same final outcome state, do not create duplicate conflicting snapshots.
- * 7) Commit transaction.
- * 8) Return the updated refund request detail (and any directly embedded related fields required by the `IShoppingMallRefundRequest` response type).
+ * @x-autobe-specification Implementation steps: 1) Authenticate/authorize:
+ *   require admin privileges for the caller. 2) Parse `refundRequestId` and
+ *   load the refund request row from `shopping_mall_refund_requests`. - If not
+ *   found (or hidden from admin visibility per `shopping_mall_snapshot_parties`
+ *   rules if applicable), throw not-found/forbidden. 3) Validate decision input
+ *   from request body: - Ensure the refund request `status` can transition to
+ *   the requested administrative outcome. - Reject contradictory transitions
+ *   (e.g., if already approved/refused in a way that violates state ordering
+ *   rules). 4) Transactional update: - Begin transaction. - Update
+ *   `shopping_mall_refund_requests.status` to the requested outcome. - Set
+ *   `seller_comment` if provided. - Set `decisioned_at` when transitioning out
+ *   of the pending state (follow DTO semantics). 5) Apply related order-item
+ *   status change: - Load the referenced `shopping_mall_order_items` row via
+ *   `shopping_mall_refund_requests.shopping_mall_order_item_id`. - If
+ *   approving/refunding: update `shopping_mall_order_items.line_item_status` to
+ *   the refunded status value required by business rules, ensuring only that
+ *   order item changes. - If rejecting: ensure the order item status is not
+ *   moved into a refunded terminal state. - Persist the
+ *   `shopping_mall_order_items` update within the same transaction. 6) Snapshot
+ *   trail integrity: - If the business rules require a final decision snapshot,
+ *   create a new `shopping_mall_snapshots` row with the appropriate
+ *   `source_type` and `source_order_item_id` / `source_refund_request_id`
+ *   linkage, and create/attach a payload record in
+ *   `shopping_mall_snapshot_payloads`. - Ensure idempotency: if the operation
+ *   is retried and a snapshot already exists for the same final outcome state,
+ *   do not create duplicate conflicting snapshots. 7) Commit transaction. 8)
+ *   Return the updated refund request detail (and any directly embedded related
+ *   fields required by the `IShoppingMallRefundRequest` response type).
  *
  * Edge cases:
  * - If the refund request is already decided, reject or return the existing state depending on the DTO’s semantics.
@@ -416,7 +430,8 @@ export namespace update {
  * @param props.refundRequestId Target refund request identifier to permanently remove.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Implement DELETE for a single refund request by primary key.
+ * @x-autobe-specification Implement DELETE for a single refund request by
+ *   primary key.
  *
  * Algorithm:
  * 1) Authorize caller as admin.

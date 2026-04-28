@@ -26,9 +26,9 @@ export class CommunityplatformCommunitymoderatorsController {
    *
    * @param connection
    * @param communityModeratorId Unique identifier of the community moderator assignment record (primary key).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Implementation steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Implementation steps:
    *
    * 1) Read `{communityModeratorId}` from path.
    * 2) Authorization: verify caller is allowed to read this moderator assignment. Enforce actor boundaries so members cannot access capabilities reserved for higher authorities.
@@ -79,25 +79,32 @@ export class CommunityplatformCommunitymoderatorsController {
    * @param connection
    * @param communityModeratorId The identifier of the community-moderator assignment record to update.
    * @param body Update payload for the community moderator assignment. Fields must correspond to what `community_platform_community_moderators` allows updating (e.g., moderator_user_id and, if supported, community_id), and must be consistent with the acting user's moderation authority.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Implementation steps:
-   * 1) Authenticate the caller and resolve acting actor identity (guest/member/admin boundary must reject write actions for guests).
-   * 2) Load the target `community_platform_community_moderators` row by primary key `id == communityModeratorId`.
-   *    - If not found, throw NotFound.
-   * 3) Determine the target `community_id` from the loaded row (and/or from request body if community scope is being changed) and run authorization checks for moderator management:
-   *    - Require community owner or permitted moderator authority for that community at the time of update.
-   *    - Deny if acting user has lost authority since page render (re-check current authority mapping).
-   *    - Deny if acting user would violate moderator management limits (e.g., removing/altering roles not allowed by the authority model).
-   * 4) Validate request body fields against eligibility rules:
-   *    - If `community_id` is provided and differs, verify acting authority for the destination community.
-   *    - If `moderator_user_id` is provided, verify the member account exists and is eligible to be a moderator for that community (no duplicates per unique constraint on [community_id, moderator_user_id]).
-   * 5) Apply update:
-   *    - Update `moderator_user_id` and/or `community_id` if allowed by the DTO semantics.
-   *    - If request includes disabling/removal semantics (mapped to setting `deleted_at`), set `deleted_at`; otherwise keep it unchanged.
-   *    - Update `updated_at` to current timestamp.
-   * 6) Persist within a transaction to guarantee atomicity between authorization validation and row update.
-   * 7) Return the updated moderator assignment DTO.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Implementation steps: 1) Authenticate the caller
+     *   and resolve acting actor identity (guest/member/admin boundary must
+     *   reject write actions for guests). 2) Load the target
+     *   `community_platform_community_moderators` row by primary key `id ==
+     *   communityModeratorId`. - If not found, throw NotFound. 3) Determine the
+     *   target `community_id` from the loaded row (and/or from request body if
+     *   community scope is being changed) and run authorization checks for
+     *   moderator management: - Require community owner or permitted moderator
+     *   authority for that community at the time of update. - Deny if acting
+     *   user has lost authority since page render (re-check current authority
+     *   mapping). - Deny if acting user would violate moderator management
+     *   limits (e.g., removing/altering roles not allowed by the authority
+     *   model). 4) Validate request body fields against eligibility rules: - If
+     *   `community_id` is provided and differs, verify acting authority for the
+     *   destination community. - If `moderator_user_id` is provided, verify the
+     *   member account exists and is eligible to be a moderator for that
+     *   community (no duplicates per unique constraint on [community_id,
+     *   moderator_user_id]). 5) Apply update: - Update `moderator_user_id`
+     *   and/or `community_id` if allowed by the DTO semantics. - If request
+     *   includes disabling/removal semantics (mapped to setting `deleted_at`),
+     *   set `deleted_at`; otherwise keep it unchanged. - Update `updated_at` to
+     *   current timestamp. 6) Persist within a transaction to guarantee
+     *   atomicity between authorization validation and row update. 7) Return
+     *   the updated moderator assignment DTO.
    *
    * Edge cases:
    * - Unique constraint collision on `(community_id, moderator_user_id)` should return a Conflict.
@@ -138,23 +145,27 @@ export class CommunityplatformCommunitymoderatorsController {
    *
    * @param connection
    * @param communityModeratorId Moderator assignment record ID to remove (primary key of the community-moderator join).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Implementation steps:
-   * 1) Parse `communityModeratorId` path parameter as UUID.
-   * 2) Authorization check:
-   *    - Determine caller actor (guest/member/admin) from session/auth context.
-   *    - Resolve the target moderator assignment row by primary key `community_platform_community_moderators.id`.
-   *    - If not found, throw not-found.
-   *    - Enforce moderation-management rules: allow only community owner to remove moderator assignments subject to constraints (e.g., moderators cannot remove prohibited targets like the owner). If caller lacks permission, reject.
-   * 3) Deletion:
-   *    - Execute a transaction:
-   *      - Permanently remove the row from `community_platform_community_moderators` (delete by primary key).
-   *    - If the schema supports `deleted_at` on this table, ensure the implemented behavior matches the endpoint contract: this endpoint is defined as permanent removal for the assignment record.
-   * 4) Post-conditions:
-   *    - Return 204/200 with empty body as per framework convention (responseBody is null in this spec).
-   * 5) Edge cases:
-   *    - Concurrent requests removing the same moderator assignment should result in idempotent not-found after the first successful deletion (implementation may standardize the response).
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Implementation steps: 1) Parse
+     *   `communityModeratorId` path parameter as UUID. 2) Authorization check:
+     *   - Determine caller actor (guest/member/admin) from session/auth
+     *   context. - Resolve the target moderator assignment row by primary key
+     *   `community_platform_community_moderators.id`. - If not found, throw
+     *   not-found. - Enforce moderation-management rules: allow only community
+     *   owner to remove moderator assignments subject to constraints (e.g.,
+     *   moderators cannot remove prohibited targets like the owner). If caller
+     *   lacks permission, reject. 3) Deletion: - Execute a transaction: -
+     *   Permanently remove the row from
+     *   `community_platform_community_moderators` (delete by primary key). - If
+     *   the schema supports `deleted_at` on this table, ensure the implemented
+     *   behavior matches the endpoint contract: this endpoint is defined as
+     *   permanent removal for the assignment record. 4) Post-conditions: -
+     *   Return 204/200 with empty body as per framework convention
+     *   (responseBody is null in this spec). 5) Edge cases: - Concurrent
+     *   requests removing the same moderator assignment should result in
+     *   idempotent not-found after the first successful deletion
+     *   (implementation may standardize the response).
    *
    * Database access patterns:
    * - SELECT by `community_platform_community_moderators.id` to validate existence and fetch `community_id` for authorization.
@@ -193,9 +204,9 @@ export class CommunityplatformCommunitymoderatorsController {
    *
    * @param connection
    * @param body Creation payload for a community moderator assignment, identifying which community will receive moderator authority and which member account will be granted that authority.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Realize Agent implementation steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Realize Agent implementation steps:
    *
    * 1. Parse request body and extract `communityId` and `moderatorUserId`.
    * 2. Authorization:
@@ -259,29 +270,35 @@ export class CommunityplatformCommunitymoderatorsController {
    *
    * @param connection
    * @param body Moderator assignment update request. Contains the community to manage and the desired moderator membership changes (add/remove) with target member identifiers.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification 1) Authenticate the requester and resolve their acting member identity.
-   * 2) Parse request body to get: communityId, targetMemberId(s), and desired operation type (add/remove).
-   * 3) Load the community row from `community_platform_communities` by id and ensure it exists (and is not in a state that prevents moderation updates if applicable via deleted_at handling).
-   * 4) Determine acting authority:
-   *    - Acting member is community owner if actingMemberId == community_owner_id.
-   *    - Acting member is moderator if they have an active row in `community_platform_community_moderators` for this community (deleted_at == null).
-   * 5) Enforce authorization:
-   *    - If acting member is neither owner nor permitted moderator, reject.
-   *    - Enforce governance constraints:
-   *      a) Prevent removing the community owner as a moderator.
-   *      b) Enforce moderator-to-moderator removal/add rules: only allow operations consistent with authority rules (moderators cannot remove each other in prohibited ways; owner governs when restricted).
-   * 6) For each requested moderator target:
-   *    - If operation is add:
-   *      - Check targetMember exists in `community_platform_members`.
-   *      - Upsert/insert into `community_platform_community_moderators` with unique key (community_id, moderator_user_id) and timestamps.
-   *      - If an existing row exists but is marked as deleted_at, reactivate by clearing deleted_at if model supports it; otherwise create a new assignment row consistent with schema behavior.
-   *    - If operation is remove:
-   *      - Verify a moderator assignment exists and is currently active.
-   *      - Mark deleted_at appropriately (if model uses deleted_at) or delete the row per implementation; ensure owner removal is blocked.
-   * 7) Re-fetch current active moderator assignments for the community and map to summary objects.
-   * 8) Return updated moderator list summary.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification 1) Authenticate the requester and resolve their
+     *   acting member identity. 2) Parse request body to get: communityId,
+     *   targetMemberId(s), and desired operation type (add/remove). 3) Load the
+     *   community row from `community_platform_communities` by id and ensure it
+     *   exists (and is not in a state that prevents moderation updates if
+     *   applicable via deleted_at handling). 4) Determine acting authority: -
+     *   Acting member is community owner if actingMemberId ==
+     *   community_owner_id. - Acting member is moderator if they have an active
+     *   row in `community_platform_community_moderators` for this community
+     *   (deleted_at == null). 5) Enforce authorization: - If acting member is
+     *   neither owner nor permitted moderator, reject. - Enforce governance
+     *   constraints: a) Prevent removing the community owner as a moderator. b)
+     *   Enforce moderator-to-moderator removal/add rules: only allow operations
+     *   consistent with authority rules (moderators cannot remove each other in
+     *   prohibited ways; owner governs when restricted). 6) For each requested
+     *   moderator target: - If operation is add: - Check targetMember exists in
+     *   `community_platform_members`. - Upsert/insert into
+     *   `community_platform_community_moderators` with unique key
+     *   (community_id, moderator_user_id) and timestamps. - If an existing row
+     *   exists but is marked as deleted_at, reactivate by clearing deleted_at
+     *   if model supports it; otherwise create a new assignment row consistent
+     *   with schema behavior. - If operation is remove: - Verify a moderator
+     *   assignment exists and is currently active. - Mark deleted_at
+     *   appropriately (if model uses deleted_at) or delete the row per
+     *   implementation; ensure owner removal is blocked. 7) Re-fetch current
+     *   active moderator assignments for the community and map to summary
+     *   objects. 8) Return updated moderator list summary.
    *
    * Transactionality:
    * - Use a transaction so that all requested add/remove actions either succeed together or the whole request is rejected on first failure.

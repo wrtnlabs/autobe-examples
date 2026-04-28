@@ -27,9 +27,9 @@ export class CommunityplatformMemberReportsDecisionsDismissController {
    *
    * @param connection
    * @param reportId Unique identifier of the moderation report to dismiss.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation steps for Realize Agent:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation steps for Realize Agent:
    *
    * 1) Extract identifiers
    * - Read `reportId` from path parameters.

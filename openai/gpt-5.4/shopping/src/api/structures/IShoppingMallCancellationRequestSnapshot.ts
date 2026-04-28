@@ -10,32 +10,43 @@ export type IShoppingMallCancellationRequestSnapshot = {
   /**
    * Unique identifier of this immutable cancellation request snapshot record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_cancellation_request_snapshots.id.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_cancellation_request_snapshots.id.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Reviewer name label preserved with this historical snapshot, or null when no reviewer identity label was recorded for the event.
    *
-   * @x-autobe-database-schema-property reviewer_display_name
-   * @x-autobe-specification Direct mapping from shopping_mall_cancellation_request_snapshots.reviewer_display_name. This nullable field stores the immutable reviewer name label captured for audit readability when a seller or administrator decision exists.
+     * @x-autobe-database-schema-property reviewer_display_name
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_cancellation_request_snapshots.reviewer_display_name.
+     *   This nullable field stores the immutable reviewer name label captured
+     *   for audit readability when a seller or administrator decision exists.
    */
   reviewer_display_name: string | null;
 
   /**
    * Timestamp when this immutable cancellation request snapshot was recorded.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from shopping_mall_cancellation_request_snapshots.created_at as an ISO 8601 date-time string.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_cancellation_request_snapshots.created_at as an ISO 8601
+     *   date-time string.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Parent cancellation request that this historical snapshot belongs to.
    *
-   * @x-autobe-database-schema-property cancellationRequest
-   * @x-autobe-specification Resolve the belongs-to relation from shopping_mall_cancellation_request_snapshots.shopping_mall_cancellation_request_id to shopping_mall_cancellation_requests.id through shopping_mall_cancellation_request_snapshots.cancellationRequest, then serialize the joined parent row as IShoppingMallCancellationRequest.ISummary.
+     * @x-autobe-database-schema-property cancellationRequest
+     * @x-autobe-specification Resolve the belongs-to relation from
+     *   shopping_mall_cancellation_request_snapshots.shopping_mall_cancellation_request_id
+     *   to shopping_mall_cancellation_requests.id through
+     *   shopping_mall_cancellation_request_snapshots.cancellationRequest, then
+     *   serialize the joined parent row as
+     *   IShoppingMallCancellationRequest.ISummary.
    */
   cancellationRequest: IShoppingMallCancellationRequest.ISummary;
 };
@@ -47,32 +58,42 @@ export namespace IShoppingMallCancellationRequestSnapshot {
     /**
      * Unique identifier of this immutable cancellation-request snapshot entry.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_cancellation_request_snapshots.id.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_cancellation_request_snapshots.id.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Human-readable reviewer name preserved with the snapshot for audit readability, or null when no reviewer label was recorded.
      *
-     * @x-autobe-database-schema-property reviewer_display_name
-     * @x-autobe-specification Direct mapping from shopping_mall_cancellation_request_snapshots.reviewer_display_name. Preserve null when no reviewer display label was recorded for the snapshot event.
+         * @x-autobe-database-schema-property reviewer_display_name
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_cancellation_request_snapshots.reviewer_display_name.
+         *   Preserve null when no reviewer display label was recorded for the
+         *   snapshot event.
      */
     reviewer_display_name: string | null;
 
     /**
      * Timestamp when this immutable snapshot record was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_cancellation_request_snapshots.created_at as an ISO 8601 date-time string.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_cancellation_request_snapshots.created_at as an ISO
+         *   8601 date-time string.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * Parent cancellation request to which this snapshot history entry belongs.
      *
-     * @x-autobe-database-schema-property cancellationRequest
-     * @x-autobe-specification Resolve the shopping_mall_cancellation_request_snapshots.cancellationRequest relation via shopping_mall_cancellation_request_id to shopping_mall_cancellation_requests.id and serialize the joined parent record as IShoppingMallCancellationRequest.ISummary.
+         * @x-autobe-database-schema-property cancellationRequest
+         * @x-autobe-specification Resolve the
+         *   shopping_mall_cancellation_request_snapshots.cancellationRequest
+         *   relation via shopping_mall_cancellation_request_id to
+         *   shopping_mall_cancellation_requests.id and serialize the joined
+         *   parent record as IShoppingMallCancellationRequest.ISummary.
      */
     cancellationRequest: IShoppingMallCancellationRequest.ISummary;
   };
@@ -84,14 +105,25 @@ export namespace IShoppingMallCancellationRequestSnapshot {
     /**
      * Page number of the cancellation request snapshot history to retrieve.
      *
-     * @x-autobe-specification Pagination control for the snapshot history query. Interpret this as a 1-indexed page number when selecting rows from shopping_mall_cancellation_request_snapshots already scoped by cancellationRequestId. When omitted, default to the first page. This does not map to any database column; it controls offset or equivalent pagination logic in the query layer.
+         * @x-autobe-specification Pagination control for the snapshot history
+         *   query. Interpret this as a 1-indexed page number when selecting
+         *   rows from shopping_mall_cancellation_request_snapshots already
+         *   scoped by cancellationRequestId. When omitted, default to the first
+         *   page. This does not map to any database column; it controls offset
+         *   or equivalent pagination logic in the query layer.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of snapshot records to return in one page.
      *
-     * @x-autobe-specification Pagination size control for the snapshot history query. Use this value to cap the number of shopping_mall_cancellation_request_snapshots rows returned for the selected page after applying the parent scope and any created_at filters. Respect the schema constraints of minimum 1 and maximum 100. This property does not map to a database column; it controls query pagination behavior.
+         * @x-autobe-specification Pagination size control for the snapshot
+         *   history query. Use this value to cap the number of
+         *   shopping_mall_cancellation_request_snapshots rows returned for the
+         *   selected page after applying the parent scope and any created_at
+         *   filters. Respect the schema constraints of minimum 1 and maximum
+         *   100. This property does not map to a database column; it controls
+         *   query pagination behavior.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -100,21 +132,40 @@ export namespace IShoppingMallCancellationRequestSnapshot {
     /**
      * Sort direction for the snapshot timeline by creation time.
      *
-     * @x-autobe-specification Sorting control for the snapshot history timeline. Accept only "asc" or "desc" and apply the selected direction to shopping_mall_cancellation_request_snapshots.created_at only. Use ascending for oldest-first review and descending for newest-first review. When omitted, default to descending. This property itself is not stored in the database; it selects the ORDER BY direction for the created_at column.
+         * @x-autobe-specification Sorting control for the snapshot history
+         *   timeline. Accept only "asc" or "desc" and apply the selected
+         *   direction to
+         *   shopping_mall_cancellation_request_snapshots.created_at only. Use
+         *   ascending for oldest-first review and descending for newest-first
+         *   review. When omitted, default to descending. This property itself
+         *   is not stored in the database; it selects the ORDER BY direction
+         *   for the created_at column.
      */
     sort?: "asc" | "desc" | undefined;
 
     /**
      * Earliest snapshot creation time to include in the results.
      *
-     * @x-autobe-specification Inclusive lower-bound timestamp filter for the snapshot history query. When provided, include only shopping_mall_cancellation_request_snapshots rows whose created_at is greater than or equal to this ISO date-time value, in addition to the required parent scope by cancellationRequestId. This property is not itself a database column in the DTO; it supplies a filter condition against the created_at column.
+         * @x-autobe-specification Inclusive lower-bound timestamp filter for
+         *   the snapshot history query. When provided, include only
+         *   shopping_mall_cancellation_request_snapshots rows whose created_at
+         *   is greater than or equal to this ISO date-time value, in addition
+         *   to the required parent scope by cancellationRequestId. This
+         *   property is not itself a database column in the DTO; it supplies a
+         *   filter condition against the created_at column.
      */
     createdAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Latest snapshot creation time to include in the results.
      *
-     * @x-autobe-specification Inclusive upper-bound timestamp filter for the snapshot history query. When provided, include only shopping_mall_cancellation_request_snapshots rows whose created_at is less than or equal to this ISO date-time value, in addition to the required parent scope by cancellationRequestId. This property is not itself a database column in the DTO; it supplies a filter condition against the created_at column.
+         * @x-autobe-specification Inclusive upper-bound timestamp filter for
+         *   the snapshot history query. When provided, include only
+         *   shopping_mall_cancellation_request_snapshots rows whose created_at
+         *   is less than or equal to this ISO date-time value, in addition to
+         *   the required parent scope by cancellationRequestId. This property
+         *   is not itself a database column in the DTO; it supplies a filter
+         *   condition against the created_at column.
      */
     createdAtTo?: (string & tags.Format<"date-time">) | undefined;
   };

@@ -21,7 +21,9 @@ import { ICommunityPlatformMember } from "../../../../structures/ICommunityPlatf
  * @param props.body Object containing the member's current password for verification and the desired new password.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Validate the member's authentication from their session token. Extract member ID from the authenticated session. Receive currentPassword and newPassword from the request body.
+ * @x-autobe-specification Validate the member's authentication from their
+ *   session token. Extract member ID from the authenticated session. Receive
+ *   currentPassword and newPassword from the request body.
  *
  * 1. Hash the provided currentPassword using bcrypt (or the same hashing algorithm used during registration) and compare against the stored password_hash in the community_platform_members record for this member.
  * 2. If currentPassword hash does not match, reject with a 400 Bad Request. Use a generic message ('Current password is incorrect') without revealing how close the attempt was.

@@ -26,7 +26,8 @@ import { IHrmTimeTrackingOrganization } from "../../../../structures/IHrmTimeTra
  * @param props.body Organization identity and preference updates
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor employee
- * @x-autobe-specification Implement this operation as a tenant-scoped update on `hrm_time_tracking_organizations`.
+ * @x-autobe-specification Implement this operation as a tenant-scoped update on
+ *   `hrm_time_tracking_organizations`.
  *
  * 1. Resolve the caller's active organization context and verify that it matches `organizationId` from the path. Do not permit cross-organization updates, even if the authenticated user belongs to multiple organizations.
  * 2. Authorize only callers who have organization-owner level authority for the current organization context, as required by the loaded organization update requirements.

@@ -22,7 +22,8 @@ import { IPageIEcommerceMallSeller } from "../../../structures/IPageIEcommerceMa
  * @param props.body Search criteria and pagination parameters for filtering sellers by approval status, suspension status, display name, email, and registration date. Includes sorting options and pagination controls for efficient browsing of large seller populations.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query ecommerce_mall_sellers table with the following logic:
+ * @x-autobe-specification Query ecommerce_mall_sellers table with the following
+ *   logic:
  *
  * 1. Build WHERE clause based on search filters:
  *    - approval_status: filter by 'pending', 'approved', or 'rejected'
@@ -140,7 +141,8 @@ export namespace index {
  * @param props.sellerId UUID identifier of the seller to retrieve.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Retrieve seller account by UUID from ecommerce_mall_sellers table.
+ * @x-autobe-specification Retrieve seller account by UUID from
+ *   ecommerce_mall_sellers table.
  *
  * 1. Query ecommerce_mall_sellers table where id = {sellerId}
  * 2. Return null if seller not found or soft-deleted (deleted_at is not null)

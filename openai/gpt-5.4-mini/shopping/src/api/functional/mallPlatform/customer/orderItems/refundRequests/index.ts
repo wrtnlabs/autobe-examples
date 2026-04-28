@@ -25,7 +25,12 @@ export * as snapshots from "./snapshots/index";
  * @param props.body The refund request details submitted by the customer, including the reason for requesting a refund.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Load the target order item by orderItemId and verify that it exists. Enforce the refund eligibility rules before insertion: the item must be delivered, must not already be refunded, must not be cancelled, and must not have an existing active refund request. If any condition fails, return a business error without changing the order item or creating a partial record.
+ * @x-autobe-specification Load the target order item by orderItemId and verify
+ *   that it exists. Enforce the refund eligibility rules before insertion: the
+ *   item must be delivered, must not already be refunded, must not be
+ *   cancelled, and must not have an existing active refund request. If any
+ *   condition fails, return a business error without changing the order item or
+ *   creating a partial record.
  *
  * Create the refund request as an item-scoped subsidiary record linked to the order item. The request body should only supply the customer-provided reason and any other create-time fields defined by the refund request schema; do not accept the path identifier in the payload. Perform the duplicate-active-request check and insert atomically in one transaction to avoid race conditions. After creation, return the persisted refund request entity. Any later seller review action must create immutable snapshots of the request state.
  * @path /mallPlatform/customer/orderItems/:orderItemId/refundRequests
@@ -126,7 +131,10 @@ export namespace create {
  * @param props.body Pagination, search, filtering, and sorting options for refund requests belonging to the specified order item.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Validate that the target order item exists and load it as the scope boundary. Query mall_platform_refund_requests by mall_platform_order_item_id and apply pagination, filtering, and sorting from the request body.
+ * @x-autobe-specification Validate that the target order item exists and load
+ *   it as the scope boundary. Query mall_platform_refund_requests by
+ *   mall_platform_order_item_id and apply pagination, filtering, and sorting
+ *   from the request body.
  *
  * Use the unique constraint on mall_platform_refund_requests.mall_platform_order_item_id to preserve the one-request-per-item rule. This endpoint must remain read-only and must not create, update, or delete refund requests or snapshots.
  *
@@ -227,7 +235,8 @@ export namespace index {
  * @param props.refundRequestId The identifier of the refund request within the scope of the specified order item.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Load the refund request by matching the parent order item identifier and the refund request identifier together.
+ * @x-autobe-specification Load the refund request by matching the parent order
+ *   item identifier and the refund request identifier together.
  *
  * Query mall_platform_refund_requests using both the order item reference and the refund request identifier. Do not return a refund request unless it belongs to the supplied order item. No joins are required for the core lookup unless the implementation needs to hydrate related display fields for the response schema.
  *

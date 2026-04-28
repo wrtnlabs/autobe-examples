@@ -6,31 +6,31 @@ import { tags } from "typia";
  */
 export type ICommunityPlatformFile = {
   /**
-   * @x-autobe-database-schema-property id
+     * @x-autobe-database-schema-property id
    */
   id: string & tags.Format<"uuid">;
   /**
-   * @x-autobe-database-schema-property owner_type
+     * @x-autobe-database-schema-property owner_type
    */
   ownerType: string;
   /**
-   * @x-autobe-database-schema-property owner_id
+     * @x-autobe-database-schema-property owner_id
    */
   ownerId: string & tags.Format<"uuid">;
   /**
-   * @x-autobe-database-schema-property path
+     * @x-autobe-database-schema-property path
    */
   path: string;
   /**
-   * @x-autobe-database-schema-property size
+     * @x-autobe-database-schema-property size
    */
   size: number & tags.Type<"int32">;
   /**
-   * @x-autobe-database-schema-property mime_type
+     * @x-autobe-database-schema-property mime_type
    */
   mimeType: string;
   /**
-   * @x-autobe-database-schema-property created_at
+     * @x-autobe-database-schema-property created_at
    */
   createdAt: string & tags.Format<"date-time">;
 };

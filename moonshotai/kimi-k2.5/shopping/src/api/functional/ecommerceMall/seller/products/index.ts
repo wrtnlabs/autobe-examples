@@ -26,7 +26,9 @@ export * as review_stats from "./review_stats/index";
  * @param props.body Product creation data including name, description, category ID, and base price
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification 1. Validate that the authenticated user is a seller with approved registration status. If status is pending or rejected, return 403 Forbidden.
+ * @x-autobe-specification 1. Validate that the authenticated user is a seller
+ *   with approved registration status. If status is pending or rejected, return
+ *   403 Forbidden.
  *
  * 2. Validate request body fields:
  *    - name: required, non-empty string, max length per business rules
@@ -272,7 +274,8 @@ export namespace update {
  * @param props.productId Unique identifier of the product to delete (global scope, UUID format)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification 1. Authorization: Verify the authenticated user is a seller who owns the product (seller_id matches authenticated seller).
+ * @x-autobe-specification 1. Authorization: Verify the authenticated user is a
+ *   seller who owns the product (seller_id matches authenticated seller).
  *
  * 2. Blocker Validation: Query order_items table joined with product_variants to check for any order items with status 'paid' OR 'shipped' belonging to any variant of the product. If any found, return 409 Conflict with error message indicating pending orders exist.
  *

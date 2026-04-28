@@ -16,7 +16,17 @@ export type IEcommerceMallMemberPasswordResetRequest = {
    *
    * For security, this endpoint accepts any valid email format even if the email doesn't exist in the system, to prevent user enumeration attacks.
    *
-   * @x-autobe-specification Accept email from request body. Validate RFC 5322 email format. Query all actor tables (ecommerce_mall_members, ecommerce_mall_sellers, ecommerce_mall_administrators, ecommerce_mall_super_administrators) to determine actor type. Use corresponding password reset table (ecommerce_mall_member_password_resets, ecommerce_mall_seller_password_resets, ecommerce_mall_administrator_password_resets, or ecommerce_mall_super_administrator_password_resets). Generate cryptographically secure token. Security: Accept any valid email format (prevents enumeration).
+     * @x-autobe-specification Accept email from request body. Validate RFC 5322
+     *   email format. Query all actor tables (ecommerce_mall_members,
+     *   ecommerce_mall_sellers, ecommerce_mall_administrators,
+     *   ecommerce_mall_super_administrators) to determine actor type. Use
+     *   corresponding password reset table
+     *   (ecommerce_mall_member_password_resets,
+     *   ecommerce_mall_seller_password_resets,
+     *   ecommerce_mall_administrator_password_resets, or
+     *   ecommerce_mall_super_administrator_password_resets). Generate
+     *   cryptographically secure token. Security: Accept any valid email format
+     *   (prevents enumeration).
    */
   email: string & tags.Format<"email">;
 };

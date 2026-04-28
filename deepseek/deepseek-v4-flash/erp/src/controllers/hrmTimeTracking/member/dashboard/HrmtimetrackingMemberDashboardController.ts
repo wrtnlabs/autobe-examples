@@ -17,9 +17,12 @@ export class HrmtimetrackingMemberDashboardController {
    * This endpoint requires an active authenticated session with a selected organization context. All date calculations respect the organization's configured timezone. Data access is scoped to the current organization only — no cross-organization data is exposed.
    *
    * @param connection
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Authenticate the member and identify the current organization context. Find the employee record for this member in the organization (join hrm_time_tracking_employees by member_id and organization_id). If not found, return 404.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Authenticate the member and identify the current
+     *   organization context. Find the employee record for this member in the
+     *   organization (join hrm_time_tracking_employees by member_id and
+     *   organization_id). If not found, return 404.
    *
    * Personal Dashboard:
    * 1. Hours logged today: SUM(duration_minutes) FROM hrm_time_tracking_timelogs WHERE employee_id = {employeeId} AND date = TODAY (org timezone) AND deleted_at IS NULL. Convert to hours (divide by 60).

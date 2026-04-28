@@ -30,7 +30,11 @@ export * as snapshots from "./snapshots/index";
  * @param props.body Creation data for the new product variant
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Authenticate the requester as a seller account and load the seller row from shopping_mall_sellers using the authenticated principal. Reject the request if the seller account does not exist, is soft deleted, is banned, is suspended, or does not have approval_status that permits selling.
+ * @x-autobe-specification Authenticate the requester as a seller account and
+ *   load the seller row from shopping_mall_sellers using the authenticated
+ *   principal. Reject the request if the seller account does not exist, is soft
+ *   deleted, is banned, is suspended, or does not have approval_status that
+ *   permits selling.
  *
  * Load the parent product from shopping_mall_products by id = productId and deleted_at IS NULL. If no product exists, return a not-found error. Verify that shopping_mall_products.shopping_mall_seller_id equals the authenticated seller id. If ownership does not match, reject the request as a forbidden variant-management attempt according to the owner-only variant management rule.
  *
@@ -256,7 +260,11 @@ export namespace index {
  * @param props.variantId Target product variant identifier
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Load the parent product from `shopping_mall_products` by `productId` and the target variant from `shopping_mall_product_variants` by `variantId`. Verify that the variant's `shopping_mall_product_id` exactly matches the requested `productId`; if not, reject the request as an invalid nested-resource reference.
+ * @x-autobe-specification Load the parent product from `shopping_mall_products`
+ *   by `productId` and the target variant from `shopping_mall_product_variants`
+ *   by `variantId`. Verify that the variant's `shopping_mall_product_id`
+ *   exactly matches the requested `productId`; if not, reject the request as an
+ *   invalid nested-resource reference.
  *
  * For seller access, authorize only when the authenticated seller owns the parent product by matching the product row's `shopping_mall_seller_id` to the authenticated seller account identifier. If the seller does not own the product, reject access according to the owner-only variant management rule. Administrative actors may bypass seller-ownership checks for oversight use if the platform authorization layer permits it.
  *
@@ -361,7 +369,8 @@ export namespace at {
  * @param props.body Replacement data for the product variant
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Implement a seller-authorized variant replacement operation for `shopping_mall_product_variants`.
+ * @x-autobe-specification Implement a seller-authorized variant replacement
+ *   operation for `shopping_mall_product_variants`.
  *
  * 1. Authenticate the caller as a seller and verify the seller is in an approved standing permitted to manage catalog data.
  * 2. Load the parent product from `shopping_mall_products` by `productId` where `deleted_at` is null. If not found, return a not-found error.
@@ -493,16 +502,37 @@ export namespace update {
  * @param props.variantId Target product variant's ID
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification 1. Authenticate the caller as a seller account.
- * 2. Load the product from `shopping_mall_products` by `productId` where `deleted_at IS NULL` if active-only filtering is used by the service. If no product exists, return a not-found error.
- * 3. Verify `shopping_mall_products.shopping_mall_seller_id` matches the authenticated seller. If not, reject with a forbidden error.
- * 4. Load the variant from `shopping_mall_product_variants` by `variantId` and `shopping_mall_product_id = productId`. If no matching variant exists, return a not-found error. If the variant is already removed from active use, reject consistently according to service conventions.
- * 5. Check blocking order commitments in `shopping_mall_order_items` for rows referencing `shopping_mall_product_variant_id = variantId` with `status IN ('paid', 'shipped')` and not logically removed according to service policy. If any row exists, reject deletion.
- * 6. Check pending cancellation requests by joining or querying `shopping_mall_cancellation_requests` for the target variant through its order items. Reject when any active request exists with pending status. Exclude logically removed request rows if the service treats `deleted_at` as inactive.
- * 7. Check pending refund requests by joining or querying `shopping_mall_refund_requests` for the target variant through its order items. Reject when any active request exists with pending status. Exclude logically removed request rows if the service treats `deleted_at` as inactive.
- * 8. Perform the deletion in a transaction. Prefer logical deletion by setting `shopping_mall_product_variants.deleted_at` and updating `updated_at`, or otherwise apply the platform's standard active-record removal strategy for variants. Do not rewrite or delete historical `shopping_mall_inventory_records`, `shopping_mall_order_items`, cancellation records, or refund records that preserve prior business activity.
- * 9. Return the deleted variant representation captured after mutation so the client can reconcile local state.
- * 10. Ensure the variant no longer appears in seller-maintained active catalog views or customer-selectable purchase options after deletion.
+ * @x-autobe-specification 1. Authenticate the caller as a seller account. 2.
+ *   Load the product from `shopping_mall_products` by `productId` where
+ *   `deleted_at IS NULL` if active-only filtering is used by the service. If no
+ *   product exists, return a not-found error. 3. Verify
+ *   `shopping_mall_products.shopping_mall_seller_id` matches the authenticated
+ *   seller. If not, reject with a forbidden error. 4. Load the variant from
+ *   `shopping_mall_product_variants` by `variantId` and
+ *   `shopping_mall_product_id = productId`. If no matching variant exists,
+ *   return a not-found error. If the variant is already removed from active
+ *   use, reject consistently according to service conventions. 5. Check
+ *   blocking order commitments in `shopping_mall_order_items` for rows
+ *   referencing `shopping_mall_product_variant_id = variantId` with `status IN
+ *   ('paid', 'shipped')` and not logically removed according to service policy.
+ *   If any row exists, reject deletion. 6. Check pending cancellation requests
+ *   by joining or querying `shopping_mall_cancellation_requests` for the target
+ *   variant through its order items. Reject when any active request exists with
+ *   pending status. Exclude logically removed request rows if the service
+ *   treats `deleted_at` as inactive. 7. Check pending refund requests by
+ *   joining or querying `shopping_mall_refund_requests` for the target variant
+ *   through its order items. Reject when any active request exists with pending
+ *   status. Exclude logically removed request rows if the service treats
+ *   `deleted_at` as inactive. 8. Perform the deletion in a transaction. Prefer
+ *   logical deletion by setting `shopping_mall_product_variants.deleted_at` and
+ *   updating `updated_at`, or otherwise apply the platform's standard
+ *   active-record removal strategy for variants. Do not rewrite or delete
+ *   historical `shopping_mall_inventory_records`, `shopping_mall_order_items`,
+ *   cancellation records, or refund records that preserve prior business
+ *   activity. 9. Return the deleted variant representation captured after
+ *   mutation so the client can reconcile local state. 10. Ensure the variant no
+ *   longer appears in seller-maintained active catalog views or
+ *   customer-selectable purchase options after deletion.
  *
  * Implementation notes:
  * - The parent product ownership check is mandatory before evaluating deletion eligibility.

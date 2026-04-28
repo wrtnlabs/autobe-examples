@@ -23,7 +23,8 @@ export * as snapshots from "./snapshots/index";
  * @param props.body Search and filter criteria for the employee list. Supports optional filtering by department ID, employment type, and employee status, as well as text search by employee display name. Includes pagination parameters (page number and page size) for controlling the result set.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query the hrm_time_tracking_employees table scoped to the current organization (from auth context).
+ * @x-autobe-specification Query the hrm_time_tracking_employees table scoped to
+ *   the current organization (from auth context).
  *
  * Join with:
  * - hrm_time_tracking_members for the employee's display name (via hrm_time_tracking_member_id)

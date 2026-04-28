@@ -19,8 +19,10 @@ export type ICommunityPlatformCommunityBan = {
    *
    * Automatically generated when the ban is issued. Used to reference this specific ban in subsequent operations such as retrieving ban details or lifting (unbanning) the restriction.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from community_platform_community_bans.id. UUID primary key, auto-generated on creation.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_community_bans.id. UUID primary key, auto-generated
+     *   on creation.
    */
   id: string & tags.Format<"uuid">;
 
@@ -29,8 +31,10 @@ export type ICommunityPlatformCommunityBan = {
    *
    * Provided by the moderator or owner who issued the ban. Displayed in the banned users list to inform other moderators and the community owner of the reason for the restriction.
    *
-   * @x-autobe-database-schema-property reason
-   * @x-autobe-specification Direct mapping from community_platform_community_bans.reason. Free-text string provided by the banning moderator or owner.
+     * @x-autobe-database-schema-property reason
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_community_bans.reason. Free-text string provided by
+     *   the banning moderator or owner.
    */
   reason: string;
 
@@ -39,8 +43,10 @@ export type ICommunityPlatformCommunityBan = {
    *
    * When set, the ban is automatically lifted after the specified time without requiring manual moderator intervention. When null, the ban persists indefinitely until a moderator or the community owner explicitly unbans the member.
    *
-   * @x-autobe-database-schema-property expired_at
-   * @x-autobe-specification Direct mapping from community_platform_community_bans.expired_at. Nullable timestamp. When null, ban is indefinite until manually lifted.
+     * @x-autobe-database-schema-property expired_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_community_bans.expired_at. Nullable timestamp. When
+     *   null, ban is indefinite until manually lifted.
    */
   expired_at: (string & tags.Format<"date-time">) | null;
 
@@ -49,8 +55,10 @@ export type ICommunityPlatformCommunityBan = {
    *
    * Set automatically upon ban creation. Used for chronological sorting in the banned users list and for auditing when the restriction was placed.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from community_platform_community_bans.created_at. Auto-generated timestamp, set at creation.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_community_bans.created_at. Auto-generated timestamp,
+     *   set at creation.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -59,8 +67,10 @@ export type ICommunityPlatformCommunityBan = {
    *
    * Updated automatically whenever the ban record is changed (e.g., reason text updated). Included for consistency with standard temporal field conventions — bans are rarely modified after creation.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from community_platform_community_bans.updated_at. Auto-generated timestamp, updated on modification.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_community_bans.updated_at. Auto-generated timestamp,
+     *   updated on modification.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -69,8 +79,11 @@ export type ICommunityPlatformCommunityBan = {
    *
    * Provides a summary of the banned user including their unique identifier, email, username, registration timestamp, and soft-deletion status. A member may be banned from multiple communities, with each ban recorded independently per community.
    *
-   * @x-autobe-database-schema-property bannedMember
-   * @x-autobe-specification Join from community_platform_community_bans.community_platform_member_id to community_platform_members.id. Returns ICommunityPlatformMember.ISummary.
+     * @x-autobe-database-schema-property bannedMember
+     * @x-autobe-specification Join from
+     *   community_platform_community_bans.community_platform_member_id to
+     *   community_platform_members.id. Returns
+     *   ICommunityPlatformMember.ISummary.
    */
   bannedMember: ICommunityPlatformMember.ISummary;
 
@@ -79,8 +92,11 @@ export type ICommunityPlatformCommunityBan = {
    *
    * Provides a summary of the banning authority including their unique identifier, email, username, registration timestamp, and soft-deletion status. Both moderators and the community owner have authority to ban members from a community.
    *
-   * @x-autobe-database-schema-property bannedBy
-   * @x-autobe-specification Join from community_platform_community_bans.community_platform_moderator_id to community_platform_members.id. Returns ICommunityPlatformMember.ISummary.
+     * @x-autobe-database-schema-property bannedBy
+     * @x-autobe-specification Join from
+     *   community_platform_community_bans.community_platform_moderator_id to
+     *   community_platform_members.id. Returns
+     *   ICommunityPlatformMember.ISummary.
    */
   bannedBy: ICommunityPlatformMember.ISummary;
 
@@ -89,8 +105,11 @@ export type ICommunityPlatformCommunityBan = {
    *
    * Provides a summary of the community including its unique identifier, name, description, icon URI, subscriber count, owner, and creation timestamp. A ban is scoped to exactly one community and does not affect the member's access to other communities on the platform.
    *
-   * @x-autobe-database-schema-property community
-   * @x-autobe-specification Join from community_platform_community_bans.community_platform_community_id to community_platform_communities.id. Returns ICommunityPlatformCommunity.ISummary.
+     * @x-autobe-database-schema-property community
+     * @x-autobe-specification Join from
+     *   community_platform_community_bans.community_platform_community_id to
+     *   community_platform_communities.id. Returns
+     *   ICommunityPlatformCommunity.ISummary.
    */
   community: ICommunityPlatformCommunity.ISummary;
 };
@@ -108,7 +127,9 @@ export namespace ICommunityPlatformCommunityBan {
      *
      * The community is identified by its canonical name (not UUID) for convenience. The system resolves this name to the community's internal identifier before creating the ban record.
      *
-     * @x-autobe-specification Resolve to community_platform_communities.id via the unique `name` field. If not found, return 404. Result stored as community_platform_community_id in the ban record.
+         * @x-autobe-specification Resolve to community_platform_communities.id
+         *   via the unique `name` field. If not found, return 404. Result
+         *   stored as community_platform_community_id in the ban record.
      */
     communityCode: string;
 
@@ -117,7 +138,9 @@ export namespace ICommunityPlatformCommunityBan {
      *
      * The member is identified by their unique username (not UUID) for convenience. The system resolves this username to the member's internal identifier before creating the ban record.
      *
-     * @x-autobe-specification Resolve to community_platform_members.id via the unique `username` field. If not found, return 404. Result stored as community_platform_member_id in the ban record.
+         * @x-autobe-specification Resolve to community_platform_members.id via
+         *   the unique `username` field. If not found, return 404. Result
+         *   stored as community_platform_member_id in the ban record.
      */
     memberCode: string;
 
@@ -126,8 +149,9 @@ export namespace ICommunityPlatformCommunityBan {
      *
      * The reason is displayed in the banned users list to inform both the banned member and other moderators of the justification for the action. Must be provided; bans without a reason are not accepted.
      *
-     * @x-autobe-database-schema-property reason
-     * @x-autobe-specification Direct mapping from reason column in community_platform_community_bans. Free-text string.
+         * @x-autobe-database-schema-property reason
+         * @x-autobe-specification Direct mapping from reason column in
+         *   community_platform_community_bans. Free-text string.
      */
     reason: string;
   };

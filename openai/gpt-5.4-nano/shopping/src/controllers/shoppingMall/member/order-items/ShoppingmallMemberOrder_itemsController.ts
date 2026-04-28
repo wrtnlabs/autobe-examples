@@ -33,9 +33,9 @@ export class ShoppingmallMemberOrder_itemsController {
    *
    * @param connection
    * @param body Order item creation payload including order linkage, purchased product variant, seller snapshot context, quantity, unit price at purchase, initial workflow status, and optional shipment linkage.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement POST /order-items as follows:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implement POST /order-items as follows:
    *
    * 1) Parse request body as `IShoppingMallOrderItem.ICreate`.
    *
@@ -111,9 +111,10 @@ export class ShoppingmallMemberOrder_itemsController {
    *
    * @param connection
    * @param body Order item search criteria and pagination/sorting options.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement PATCH /order-items as a paginated order item query.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implement PATCH /order-items as a paginated order
+     *   item query.
    *
    * 1) Input handling
    * - Parse pagination/sorting/filtering from IShoppingMallOrderItem.IRequest.
@@ -184,23 +185,29 @@ export class ShoppingmallMemberOrder_itemsController {
    *
    * @param connection
    * @param orderItemId Target order item ID to retrieve (UUID).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation steps:
-   * 1) Parse `orderItemId` from path as UUID.
-   * 2) Query `shopping_mall_order_items` by `id = orderItemId`.
-   * 3) Join required linked records needed by `IShoppingMallOrderItem` representation:
-   *    - `shopping_mall_orders` via `shopping_mall_order_id` only if needed for authorization scoping and derived display fields.
-   *    - `shopping_mall_product_variants` via `shopping_mall_product_variant_id` only if the response DTO requires variant details.
-   *    - `shopping_mall_snapshots` via `seller_snapshot_id` to provide seller snapshot context.
-   *    - If shipment context is needed by the response DTO, left join `shopping_mall_shipments` via `shopping_mall_shipment_id`.
-   * 4) Authorization:
-   *    - If requester is a customer/member: ensure the order belongs to them by checking `shopping_mall_orders.shopping_customer_id`.
-   *    - If requester is a seller/member: ensure the order item seller snapshot context is readable for that seller (use snapshot seller linkage logic available via `shopping_mall_snapshots.source_seller_id` when present in the loaded schema).
-   *    - If requester is an admin: allow.
-   * 5) Deleted/visibility handling:
-   *    - If the implementation requires hiding records with `deleted_at` in `shopping_mall_order_items`, treat them as not-found for this operation.
-   * 6) Return a single response DTO matching `IShoppingMallOrderItem`.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation steps: 1) Parse `orderItemId` from
+     *   path as UUID. 2) Query `shopping_mall_order_items` by `id =
+     *   orderItemId`. 3) Join required linked records needed by
+     *   `IShoppingMallOrderItem` representation: - `shopping_mall_orders` via
+     *   `shopping_mall_order_id` only if needed for authorization scoping and
+     *   derived display fields. - `shopping_mall_product_variants` via
+     *   `shopping_mall_product_variant_id` only if the response DTO requires
+     *   variant details. - `shopping_mall_snapshots` via `seller_snapshot_id`
+     *   to provide seller snapshot context. - If shipment context is needed by
+     *   the response DTO, left join `shopping_mall_shipments` via
+     *   `shopping_mall_shipment_id`. 4) Authorization: - If requester is a
+     *   customer/member: ensure the order belongs to them by checking
+     *   `shopping_mall_orders.shopping_customer_id`. - If requester is a
+     *   seller/member: ensure the order item seller snapshot context is
+     *   readable for that seller (use snapshot seller linkage logic available
+     *   via `shopping_mall_snapshots.source_seller_id` when present in the
+     *   loaded schema). - If requester is an admin: allow. 5)
+     *   Deleted/visibility handling: - If the implementation requires hiding
+     *   records with `deleted_at` in `shopping_mall_order_items`, treat them as
+     *   not-found for this operation. 6) Return a single response DTO matching
+     *   `IShoppingMallOrderItem`.
    *
    * Edge cases:
    * - If joins for optional shipment exist: missing shipment record should not fail the read; it should simply reflect null/absence in the response DTO fields.
@@ -246,24 +253,30 @@ export class ShoppingmallMemberOrder_itemsController {
    * @param connection
    * @param orderItemId Target order item identifier (UUID).
    * @param body Update payload for the specified order item. Contains the fields that may be changed for this order item workflow.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation steps:
-   * 1) Extract `orderItemId` from the path parameter.
-   * 2) Authorization: determine caller actor context (customer/member/admin/seller) and verify they are allowed to update this `shopping_mall_order_items` record. Enforce ownership via the related `shopping_mall_orders` record when needed.
-   * 3) Load the target record by id and ensure it is not marked removed for active views (respect `deleted_at` semantics used by the system).
-   * 4) Parse request body as `IShoppingMallOrderItem.IUpdate`.
-   * 5) Validate incoming fields:
-   *    - If `line_item_status` is present/changed: validate allowed status transition(s) for order item workflow.
-   *    - If `quantity` or `seller_price_at_purchase` are provided for update: only allow if business rules permit editing; otherwise reject.
-   *    - If `shopping_mall_shipment_id` is provided/changed: validate consistency with the shipment workflow state.
-   * 6) Special rule handling:
-   *    - For administrator forced cancellation/refund requests (when the update intent corresponds to those actions), translate/validate to the correct terminal `line_item_status` value (cancelled or refunded) and ensure inventory restoration and status-compatibility rules are satisfied.
-   * 7) Perform the update inside a transaction:
-   *    - Update fields on `shopping_mall_order_items`.
-   *    - Update `updated_at` automatically via application or DB default.
-   * 8) Re-read the updated record and map to `IShoppingMallOrderItem`.
-   * 9) Return the response.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation steps: 1) Extract `orderItemId`
+     *   from the path parameter. 2) Authorization: determine caller actor
+     *   context (customer/member/admin/seller) and verify they are allowed to
+     *   update this `shopping_mall_order_items` record. Enforce ownership via
+     *   the related `shopping_mall_orders` record when needed. 3) Load the
+     *   target record by id and ensure it is not marked removed for active
+     *   views (respect `deleted_at` semantics used by the system). 4) Parse
+     *   request body as `IShoppingMallOrderItem.IUpdate`. 5) Validate incoming
+     *   fields: - If `line_item_status` is present/changed: validate allowed
+     *   status transition(s) for order item workflow. - If `quantity` or
+     *   `seller_price_at_purchase` are provided for update: only allow if
+     *   business rules permit editing; otherwise reject. - If
+     *   `shopping_mall_shipment_id` is provided/changed: validate consistency
+     *   with the shipment workflow state. 6) Special rule handling: - For
+     *   administrator forced cancellation/refund requests (when the update
+     *   intent corresponds to those actions), translate/validate to the correct
+     *   terminal `line_item_status` value (cancelled or refunded) and ensure
+     *   inventory restoration and status-compatibility rules are satisfied. 7)
+     *   Perform the update inside a transaction: - Update fields on
+     *   `shopping_mall_order_items`. - Update `updated_at` automatically via
+     *   application or DB default. 8) Re-read the updated record and map to
+     *   `IShoppingMallOrderItem`. 9) Return the response.
    *
    * Edge cases and errors:
    * - 404 if the order item does not exist.
@@ -304,9 +317,10 @@ export class ShoppingmallMemberOrder_itemsController {
    *
    * @param connection
    * @param orderItemId Identifier of the order item to remove.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement delete handler for shopping_mall_order_items by PK `id`.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implement delete handler for
+     *   shopping_mall_order_items by PK `id`.
    *
    * Steps:
    * 1) Parse and validate `orderItemId` as UUID.

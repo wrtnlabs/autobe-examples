@@ -28,11 +28,12 @@ export class HrmtimetrackingMemberTimesheetsController {
    *
    * @param connection
    * @param body The week start date (Monday) identifying the work week for which a draft timesheet should be created. The work week runs Monday to Sunday.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Authenticated employee context:
-   * - Extract employee_id from the authenticated user's active employee record in the current organization.
-   * - Verify employee is active (status !== 'deactivated'). If deactivated, reject with 403 Forbidden.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Authenticated employee context: - Extract
+     *   employee_id from the authenticated user's active employee record in the
+     *   current organization. - Verify employee is active (status !==
+     *   'deactivated'). If deactivated, reject with 403 Forbidden.
    *
    * Create logic:
    * 1. Validate weekStartDate is a Monday (day of week = 1 in JavaScript/ISO). If not, reject with 400 Bad Request.
@@ -86,9 +87,13 @@ export class HrmtimetrackingMemberTimesheetsController {
    *
    * @param connection
    * @param body Search criteria for filtering timesheets by status, date range, and employee. Supports standard pagination parameters.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query hrm_time_tracking_timesheets table with organization-scoped access control. Join with hrm_time_tracking_employees to verify the employee belongs to the authenticated member's organization. Apply organization context from the authenticated member's session.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query hrm_time_tracking_timesheets table with
+     *   organization-scoped access control. Join with
+     *   hrm_time_tracking_employees to verify the employee belongs to the
+     *   authenticated member's organization. Apply organization context from
+     *   the authenticated member's session.
    *
    * Access control:
    * - Employee role: filter by hrm_time_tracking_employee_id = authenticated employee's ID. Only data in draft, submitted, approved, rejected statuses is visible.
@@ -134,9 +139,11 @@ export class HrmtimetrackingMemberTimesheetsController {
    *
    * @param connection
    * @param timesheetId Unique identifier (UUID) of the target timesheet.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query the hrm_time_tracking_timesheets table by id with the given timesheetId parameter. Exclude soft-deleted records by filtering deleted_at IS NULL.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query the hrm_time_tracking_timesheets table by
+     *   id with the given timesheetId parameter. Exclude soft-deleted records
+     *   by filtering deleted_at IS NULL.
    *
    * Authorization: Determine the requesting employee's identity from the authenticated member context (hrm_time_tracking_employee_id).
    * - If the timesheet's hrm_time_tracking_employee_id matches the requesting employee → allow access.
@@ -175,15 +182,24 @@ export class HrmtimetrackingMemberTimesheetsController {
    *
    * @param connection
    * @param timesheetId The unique identifier (UUID) of the timesheet to submit for approval.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1. Validate the timesheet exists and is not soft-deleted (deleted_at is null).
-   * 2. Validate the current status is 'draft' — if already 'submitted', 'approved', or 'rejected', reject with appropriate error.
-   * 3. Validate the timesheet has at least one associated timelog — query hrm_time_tracking_timelogs joined by timesheet_id. If count is 0, reject with 'EmptyTimesheet' error.
-   * 4. Validate no duplicate weekly submission — query hrm_time_tracking_timesheets where employee_id matches, week_start_date matches, and status is 'submitted' or 'approved', excluding the current timesheet's own id. If found, reject with 'DuplicateWeeklyTimesheet' error.
-   * 5. Use a database transaction to atomically: update status to 'submitted', set submitted_at to current timestamp, and update updated_at.
-   * 6. Return the full updated IHrmTimeTrackingTimesheet including the new status and submitted_at timestamp.
-   * 7. Handle concurrent operations: use optimistic locking or row-level locking to prevent two simultaneous submissions from the same employee.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification 1. Validate the timesheet exists and is not
+     *   soft-deleted (deleted_at is null). 2. Validate the current status is
+     *   'draft' — if already 'submitted', 'approved', or 'rejected', reject
+     *   with appropriate error. 3. Validate the timesheet has at least one
+     *   associated timelog — query hrm_time_tracking_timelogs joined by
+     *   timesheet_id. If count is 0, reject with 'EmptyTimesheet' error. 4.
+     *   Validate no duplicate weekly submission — query
+     *   hrm_time_tracking_timesheets where employee_id matches, week_start_date
+     *   matches, and status is 'submitted' or 'approved', excluding the current
+     *   timesheet's own id. If found, reject with 'DuplicateWeeklyTimesheet'
+     *   error. 5. Use a database transaction to atomically: update status to
+     *   'submitted', set submitted_at to current timestamp, and update
+     *   updated_at. 6. Return the full updated IHrmTimeTrackingTimesheet
+     *   including the new status and submitted_at timestamp. 7. Handle
+     *   concurrent operations: use optimistic locking or row-level locking to
+     *   prevent two simultaneous submissions from the same employee.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post(":timesheetId")
@@ -212,9 +228,20 @@ export class HrmtimetrackingMemberTimesheetsController {
    * @param connection
    * @param timesheetId Unique identifier (UUID) of the timesheet to submit for approval. Must belong to the authenticated employee's organization.
    * @param body Submission confirmation for the draft timesheet. The act of submitting requires no additional data beyond authentication context; the presence of the request body with valid structure confirms the submission intent.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Validate the timesheet exists and belongs to the authenticated employee's organization. Verify the timesheet is owned by the requesting employee (self-only submission). Check status is 'draft' — reject with 422 if not draft. Check the timesheet has at least one associated timelog — reject with 422 if empty. Verify no other timesheet for the same work week (same week_start_date) is already in 'submitted' or 'approved' status — reject with 409 Conflict if duplicate exists. On all checks passing: update status to 'submitted', set submitted_at to current timestamp, increment updated_at. Lock all associated timelogs from editing/deletion. Return the updated timesheet with full details including employee reference, timelog summaries, and submission metadata.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Validate the timesheet exists and belongs to the
+     *   authenticated employee's organization. Verify the timesheet is owned by
+     *   the requesting employee (self-only submission). Check status is 'draft'
+     *   — reject with 422 if not draft. Check the timesheet has at least one
+     *   associated timelog — reject with 422 if empty. Verify no other
+     *   timesheet for the same work week (same week_start_date) is already in
+     *   'submitted' or 'approved' status — reject with 409 Conflict if
+     *   duplicate exists. On all checks passing: update status to 'submitted',
+     *   set submitted_at to current timestamp, increment updated_at. Lock all
+     *   associated timelogs from editing/deletion. Return the updated timesheet
+     *   with full details including employee reference, timelog summaries, and
+     *   submission metadata.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Put(":timesheetId")
@@ -249,9 +276,25 @@ export class HrmtimetrackingMemberTimesheetsController {
    *
    * @param connection
    * @param timesheetId Unique identifier of the timesheet to delete (UUID).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Validate the timesheet exists and is not already soft-deleted (deleted_at is null). Verify the requesting user has authorization: either the timesheet belongs to the requesting employee, or the user has the time:manage permission. Check the timesheet status: if status is 'submitted' or 'approved', reject the operation with a business error indicating that submitted/approved timesheets cannot be deleted. Only timesheets with status 'draft' or 'rejected' are eligible for deletion. Perform a soft delete by setting the deleted_at column to the current timestamp using the database's UTC now function. Disassociate all timelogs referencing this timesheet by setting their hrm_time_tracking_timesheet_id foreign key to null (do not delete the timelogs). Update the updated_at timestamp on the timesheet. Do not cascade delete any related records. Return HTTP 204 No Content with no response body on success. If the timesheet is not found or already deleted, return 404 Not Found. If the timesheet is in an invalid status, return 422 Unprocessable Entity with a description of the constraint.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Validate the timesheet exists and is not already
+     *   soft-deleted (deleted_at is null). Verify the requesting user has
+     *   authorization: either the timesheet belongs to the requesting employee,
+     *   or the user has the time:manage permission. Check the timesheet status:
+     *   if status is 'submitted' or 'approved', reject the operation with a
+     *   business error indicating that submitted/approved timesheets cannot be
+     *   deleted. Only timesheets with status 'draft' or 'rejected' are eligible
+     *   for deletion. Perform a soft delete by setting the deleted_at column to
+     *   the current timestamp using the database's UTC now function.
+     *   Disassociate all timelogs referencing this timesheet by setting their
+     *   hrm_time_tracking_timesheet_id foreign key to null (do not delete the
+     *   timelogs). Update the updated_at timestamp on the timesheet. Do not
+     *   cascade delete any related records. Return HTTP 204 No Content with no
+     *   response body on success. If the timesheet is not found or already
+     *   deleted, return 404 Not Found. If the timesheet is in an invalid
+     *   status, return 422 Unprocessable Entity with a description of the
+     *   constraint.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Delete(":timesheetId")
@@ -281,9 +324,25 @@ export class HrmtimetrackingMemberTimesheetsController {
    *
    * @param connection
    * @param timesheetId The unique identifier (UUID) of the timesheet to approve. The timesheet must be in 'submitted' status.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Validate the authenticated user has `time:approve` permission for the organization. Load the timesheet by `timesheetId` (including soft-delete check — reject if deleted). Verify the timesheet status is exactly 'submitted' — reject with conflict if not. Verify the reviewer (`hrm_time_tracking_reviewer_id`) is not the timesheet owner (`hrm_time_tracking_employee_id`) — reject with forbidden if self-approval attempted. Use a database transaction: update timesheet status to 'approved', set `reviewed_at` to current timestamp, set `hrm_time_tracking_reviewer_id` to the reviewer's member ID. Lock all included timelogs (they cannot be edited/deleted after approval — this is enforced via validation when timelog update/delete operations check if their timesheet is approved). Handle concurrent conflicts: if two users attempt to approve simultaneously, only the first succeeds; the second will find the status already changed from 'submitted' and fail with conflict. Return the updated `IHrmTimeTrackingTimesheet` with all fields including total_hours, status, reviewer info.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Validate the authenticated user has
+     *   `time:approve` permission for the organization. Load the timesheet by
+     *   `timesheetId` (including soft-delete check — reject if deleted). Verify
+     *   the timesheet status is exactly 'submitted' — reject with conflict if
+     *   not. Verify the reviewer (`hrm_time_tracking_reviewer_id`) is not the
+     *   timesheet owner (`hrm_time_tracking_employee_id`) — reject with
+     *   forbidden if self-approval attempted. Use a database transaction:
+     *   update timesheet status to 'approved', set `reviewed_at` to current
+     *   timestamp, set `hrm_time_tracking_reviewer_id` to the reviewer's member
+     *   ID. Lock all included timelogs (they cannot be edited/deleted after
+     *   approval — this is enforced via validation when timelog update/delete
+     *   operations check if their timesheet is approved). Handle concurrent
+     *   conflicts: if two users attempt to approve simultaneously, only the
+     *   first succeeds; the second will find the status already changed from
+     *   'submitted' and fail with conflict. Return the updated
+     *   `IHrmTimeTrackingTimesheet` with all fields including total_hours,
+     *   status, reviewer info.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post(":timesheetId/approve")
@@ -316,9 +375,16 @@ export class HrmtimetrackingMemberTimesheetsController {
    * @param connection
    * @param timesheetId The unique identifier of the timesheet to reject (UUID format, scoped to the organization).
    * @param body The rejection payload containing the mandatory rejection reason that explains why the submitted timesheet was rejected.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Validate that the authenticated member has the time:approve permission. Verify the timesheet exists and is not soft-deleted (deleted_at is null). Verify the timesheet status is 'submitted' — if already 'approved', 'rejected', or 'draft', reject with appropriate error. Enforce self-approval restriction: the reviewer employee ID must differ from the timesheet owner (hrm_time_tracking_employee_id). Validate that the rejection reason is provided and non-empty in the request body.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Validate that the authenticated member has the
+     *   time:approve permission. Verify the timesheet exists and is not
+     *   soft-deleted (deleted_at is null). Verify the timesheet status is
+     *   'submitted' — if already 'approved', 'rejected', or 'draft', reject
+     *   with appropriate error. Enforce self-approval restriction: the reviewer
+     *   employee ID must differ from the timesheet owner
+     *   (hrm_time_tracking_employee_id). Validate that the rejection reason is
+     *   provided and non-empty in the request body.
    *
    * On success, perform an atomic update: set status to 'draft', set hrm_time_tracking_reviewer_id to the current member's ID, set reviewed_at to current timestamp, set rejection_reason to the provided value, and update updated_at. Use a database transaction with row-level locking (SELECT FOR UPDATE) to prevent concurrent approval/rejection race conditions — if two reviewers attempt to reject simultaneously, only the first succeeds and the second will see the status has already changed, resulting in rejection of the second request.
    *

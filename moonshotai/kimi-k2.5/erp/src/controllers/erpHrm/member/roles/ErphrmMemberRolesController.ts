@@ -27,9 +27,11 @@ export class ErphrmMemberRolesController {
    *
    * @param connection
    * @param body Role creation information including name, optional description, and array of permissions to grant.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Validate that the requesting member has permission to manage roles (typically Owner). Extract organization_id from the authenticated member's session context.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Validate that the requesting member has
+     *   permission to manage roles (typically Owner). Extract organization_id
+     *   from the authenticated member's session context.
    *
    * Validate the request body:
    * - name: required, non-empty string, unique within organization
@@ -86,9 +88,12 @@ export class ErphrmMemberRolesController {
    *
    * @param connection
    * @param body Search criteria and pagination parameters for roles
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query erp_hrm_roles table with organization_id filter from session context. Support search filters: name (ILIKE partial match), is_builtin boolean filter, created_at date range. Apply pagination with cursor-based offset/limit pattern.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query erp_hrm_roles table with organization_id
+     *   filter from session context. Support search filters: name (ILIKE
+     *   partial match), is_builtin boolean filter, created_at date range. Apply
+     *   pagination with cursor-based offset/limit pattern.
    *
    * Database Query:
    * - JOIN with erp_hrm_role_permissions on role_id to aggregate permission counts for each role summary
@@ -138,9 +143,10 @@ export class ErphrmMemberRolesController {
    *
    * @param connection
    * @param roleId Unique identifier of the role to retrieve
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Execute a SELECT query on the erp_hrm_roles table filtering by the id column matching the roleId path parameter.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Execute a SELECT query on the erp_hrm_roles table
+     *   filtering by the id column matching the roleId path parameter.
    *
    * Implementation details:
    *
@@ -214,9 +220,10 @@ export class ErphrmMemberRolesController {
    * @param connection
    * @param roleId Target role's ID (UUID)
    * @param body Role update information containing fields to modify
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement PUT /roles/{roleId} operation for updating role entity.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implement PUT /roles/{roleId} operation for
+     *   updating role entity.
    *
    * **Service Layer Logic:**
    * 1. Extract roleId from path parameters
@@ -293,9 +300,19 @@ export class ErphrmMemberRolesController {
    *
    * @param connection
    * @param roleId Target role's unique identifier (UUID format)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Validate the requesting user has organization management permission for the target role's organization. Query erp_hrm_roles table by id to locate the role. Check if is_builtin flag is true - if so, reject with error indicating built-in roles cannot be deleted. Query erp_hrm_organization_members table to count members where role_id equals the target role id. If count > 0, reject with error indicating role is in use by assigned employees. If all validations pass, execute DELETE on erp_hrm_roles where id = roleId. Include transaction to ensure atomicity. Return the deleted role data including id, name, description, is_builtin status, timestamps for client confirmation.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Validate the requesting user has organization
+     *   management permission for the target role's organization. Query
+     *   erp_hrm_roles table by id to locate the role. Check if is_builtin flag
+     *   is true - if so, reject with error indicating built-in roles cannot be
+     *   deleted. Query erp_hrm_organization_members table to count members
+     *   where role_id equals the target role id. If count > 0, reject with
+     *   error indicating role is in use by assigned employees. If all
+     *   validations pass, execute DELETE on erp_hrm_roles where id = roleId.
+     *   Include transaction to ensure atomicity. Return the deleted role data
+     *   including id, name, description, is_builtin status, timestamps for
+     *   client confirmation.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Delete(":roleId")

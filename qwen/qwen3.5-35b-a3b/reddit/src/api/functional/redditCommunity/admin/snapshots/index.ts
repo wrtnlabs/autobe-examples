@@ -18,7 +18,8 @@ import { IRedditCommunityPostSnapshot } from "../../../../structures/IRedditComm
  * @param props.body Search and filter criteria for post snapshots including pagination, sorting, and optional filters by date range, post type, community, author, or specific post.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Query the reddit_community_post_snapshots table with the following behavior:
+ * @x-autobe-specification Query the reddit_community_post_snapshots table with
+ *   the following behavior:
  *
  * 1. Pagination: Implement cursor-based or offset-based pagination with configurable page size (default: 20, max: 100).
  * 2. Sorting: Support sorting by created_at (ascending/descending) as the primary sort, with secondary sorting by id.
@@ -126,7 +127,8 @@ export namespace index {
  * @param props.snapshotId Unique identifier of the snapshot to retrieve (UUID format).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Query reddit_community_post_snapshots table by primary key id field.
+ * @x-autobe-specification Query reddit_community_post_snapshots table by
+ *   primary key id field.
  *
  * 1. Accept snapshotId as UUID path parameter
  * 2. Execute SELECT query filtering where id = snapshotId

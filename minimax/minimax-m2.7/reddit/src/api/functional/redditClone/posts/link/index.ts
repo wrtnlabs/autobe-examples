@@ -21,7 +21,8 @@ import { IRedditClonePostLink } from "../../../../structures/IRedditClonePostLin
  * @param props.postId Unique identifier of the parent post (UUID format)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query the reddit_clone_post_links table using the provided postId as the foreign key (reddit_clone_post_id).
+ * @x-autobe-specification Query the reddit_clone_post_links table using the
+ *   provided postId as the foreign key (reddit_clone_post_id).
  *
  * 1. Validate that the postId is a valid UUID format.
  * 2. Query for a single record where reddit_clone_post_id equals the provided postId.

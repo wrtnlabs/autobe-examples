@@ -24,7 +24,10 @@ import { IPageIHrmTimeTrackingOwnerSession } from "../../../../structures/IPageI
  * @param props.body Session search filters and pagination options
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor owner
- * @x-autobe-specification Implement this operation as a normalized search endpoint that reads from hrm_time_tracking_owner_sessions, hrm_time_tracking_manager_sessions, and hrm_time_tracking_employee_sessions and maps them into a unified session summary projection.
+ * @x-autobe-specification Implement this operation as a normalized search
+ *   endpoint that reads from hrm_time_tracking_owner_sessions,
+ *   hrm_time_tracking_manager_sessions, and hrm_time_tracking_employee_sessions
+ *   and maps them into a unified session summary projection.
  *
  * Resolve the authenticated caller first and determine the actor kind and currently selected organization context from the active authentication layer. Apply authorization before querying data. For employee callers, constrain results to rows whose hrm_time_tracking_employee_id belongs to the authenticated employee account only. For owner callers, allow organization-scoped review of rows tied to organizations the owner can access; for owner sessions use hrm_time_tracking_organization_id, and for employee sessions use the same organization column when present. For manager callers, only allow access if the caller has the relevant permission in the current organization context; otherwise reject the request. Never merge or expose rows from organizations outside the authorized scope.
  *
@@ -123,7 +126,9 @@ export namespace index {
  * @param props.sessionId Target session identifier
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor owner
- * @x-autobe-specification Validate that sessionId is a UUID and that the caller is authenticated as one of the supported actors: owner, manager, or employee.
+ * @x-autobe-specification Validate that sessionId is a UUID and that the caller
+ *   is authenticated as one of the supported actors: owner, manager, or
+ *   employee.
  *
  * Resolve the caller's actor type from the authentication context, then query only the corresponding session table for that actor: hrm_time_tracking_owner_sessions for owner callers, hrm_time_tracking_manager_sessions for manager callers, and hrm_time_tracking_employee_sessions for employee callers. Never perform a broad cross-actor lookup that could reveal the existence of another actor type's session record.
  *

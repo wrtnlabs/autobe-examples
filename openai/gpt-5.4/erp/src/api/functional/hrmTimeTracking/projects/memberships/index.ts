@@ -27,7 +27,9 @@ import { IPageIHrmTimeTrackingProjectMembership } from "../../../../structures/I
  * @param props.body Employee assignment data and membership role
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Implement this operation as creation of a child record in `hrm_time_tracking_project_memberships` under the parent `hrm_time_tracking_projects` record identified by `projectId`.
+ * @x-autobe-specification Implement this operation as creation of a child
+ *   record in `hrm_time_tracking_project_memberships` under the parent
+ *   `hrm_time_tracking_projects` record identified by `projectId`.
  *
  * 1. Authorize the caller as an organization owner or manager with project management authority in the current organization context.
  * 2. Resolve the parent project by `projectId` and reject the request if no active project exists or if the project is not accessible in the caller's current organization context. Treat rows with non-null `deleted_at` as unavailable for new membership creation.
@@ -142,7 +144,12 @@ export namespace create {
  * @param props.body Project membership search and pagination criteria
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Validate that `projectId` refers to an existing row in `hrm_time_tracking_projects` and that the project belongs to the caller's currently selected organization via `hrm_time_tracking_organization_id`. Reject the request when the project does not exist, is not accessible in the active organization context, or the caller lacks permission to review project memberships.
+ * @x-autobe-specification Validate that `projectId` refers to an existing row
+ *   in `hrm_time_tracking_projects` and that the project belongs to the
+ *   caller's currently selected organization via
+ *   `hrm_time_tracking_organization_id`. Reject the request when the project
+ *   does not exist, is not accessible in the active organization context, or
+ *   the caller lacks permission to review project memberships.
  *
  * Build a list query rooted in `hrm_time_tracking_project_memberships` filtered by `hrm_time_tracking_project_id = :projectId`. Exclude rows whose `deleted_at` is not null so that removed memberships are not returned as active assignments. Join the related `hrm_time_tracking_employees` row through `hrm_time_tracking_employee_id` to populate employee-facing summary fields required by `IHrmTimeTrackingProjectMembership.ISummary`. If the summary DTO needs project fields, obtain them from the already validated `hrm_time_tracking_projects` row rather than broad cross-project joins.
  *
@@ -251,7 +258,10 @@ export namespace index {
  * @param props.membershipId Target project membership's ID
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Load the target project membership by `membershipId` from `hrm_time_tracking_project_memberships` and verify that its `hrm_time_tracking_project_id` matches the `projectId` path parameter before constructing the response.
+ * @x-autobe-specification Load the target project membership by `membershipId`
+ *   from `hrm_time_tracking_project_memberships` and verify that its
+ *   `hrm_time_tracking_project_id` matches the `projectId` path parameter
+ *   before constructing the response.
  *
  * Join or separately load the parent record from `hrm_time_tracking_projects` to confirm the project exists, belongs to the caller's current organization context, and is the same project referenced by the membership row. Use the project relationship to enforce organization isolation because project memberships must operate only inside the selected organization.
  *
@@ -360,7 +370,9 @@ export namespace at {
  * @param props.body Updated project membership assignment information
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Implement this operation as an update of a single hrm_time_tracking_project_memberships row under a parent hrm_time_tracking_projects row.
+ * @x-autobe-specification Implement this operation as an update of a single
+ *   hrm_time_tracking_project_memberships row under a parent
+ *   hrm_time_tracking_projects row.
  *
  * 1. Authenticate the caller and resolve the current organization context from the session.
  * 2. Authorize only owner actors and manager actors who have project-membership management capability in the selected organization. Reject employee callers unless a higher-level policy explicitly grants them this permission.
@@ -479,7 +491,8 @@ export namespace update {
  * @param props.membershipId UUID of the project membership to remove from the specified project.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Implement this operation as a project-scoped membership removal routine.
+ * @x-autobe-specification Implement this operation as a project-scoped
+ *   membership removal routine.
  *
  * 1. Resolve the caller's authenticated actor and current organization context.
  * 2. Authorize the caller: allow organization owners and managers only when they have project management permission in the current organization. Reject all other callers.

@@ -17,8 +17,9 @@ export type IMallPlatformSeller = {
    *
    * This is the UUID primary key of the seller account record and uniquely identifies the account within the platform.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from mall_platform_seller_accounts.id.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_seller_accounts.id.
    */
   id: string & tags.Format<"uuid">;
 
@@ -27,8 +28,9 @@ export type IMallPlatformSeller = {
    *
    * This is the unique email used for authentication and account identification.
    *
-   * @x-autobe-database-schema-property email
-   * @x-autobe-specification Direct mapping from mall_platform_seller_accounts.email.
+     * @x-autobe-database-schema-property email
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_seller_accounts.email.
    */
   email: string;
 
@@ -37,8 +39,9 @@ export type IMallPlatformSeller = {
    *
    * This reflects the platform-controlled state of the seller account, such as pending, approved, or rejected.
    *
-   * @x-autobe-database-schema-property approval_status
-   * @x-autobe-specification Map mall_platform_seller_accounts.approval_status to the public status field without transforming its stored meaning.
+     * @x-autobe-database-schema-property approval_status
+     * @x-autobe-specification Map mall_platform_seller_accounts.approval_status
+     *   to the public status field without transforming its stored meaning.
    */
   status: string;
 
@@ -47,8 +50,9 @@ export type IMallPlatformSeller = {
    *
    * This field is null unless the seller was rejected during approval review.
    *
-   * @x-autobe-database-schema-property rejection_reason
-   * @x-autobe-specification Direct mapping from mall_platform_seller_accounts.rejection_reason.
+     * @x-autobe-database-schema-property rejection_reason
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_seller_accounts.rejection_reason.
    */
   rejectionReason: string | null;
 
@@ -57,8 +61,9 @@ export type IMallPlatformSeller = {
    *
    * A null value means the account is not currently suspended.
    *
-   * @x-autobe-database-schema-property suspended_at
-   * @x-autobe-specification Direct mapping from mall_platform_seller_accounts.suspended_at.
+     * @x-autobe-database-schema-property suspended_at
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_seller_accounts.suspended_at.
    */
   suspendedAt: (string & tags.Format<"date-time">) | null;
 
@@ -67,8 +72,9 @@ export type IMallPlatformSeller = {
    *
    * A null value means the account is still active in the seller-account table.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from mall_platform_seller_accounts.deleted_at.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_seller_accounts.deleted_at.
    */
   deletedAt: (string & tags.Format<"date-time">) | null;
 
@@ -77,8 +83,9 @@ export type IMallPlatformSeller = {
    *
    * This timestamp marks when the seller record first entered the system.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from mall_platform_seller_accounts.created_at.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_seller_accounts.created_at.
    */
   createdAt: string & tags.Format<"date-time">;
 
@@ -87,8 +94,9 @@ export type IMallPlatformSeller = {
    *
    * This timestamp reflects the most recent persisted change to the seller account record.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from mall_platform_seller_accounts.updated_at.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_seller_accounts.updated_at.
    */
   updatedAt: string & tags.Format<"date-time">;
 
@@ -97,7 +105,11 @@ export type IMallPlatformSeller = {
    *
    * This nested object contains the seller’s storefront-facing profile data, such as shop name, description, and logo. It may be null when the seller has not created a profile yet.
    *
-   * @x-autobe-specification Resolve the optional related mall_platform_seller_profiles record for this seller account and expose it as the nested sellerProfile object in the response. Return null when no related profile exists. This property is not backed by a scalar column in mall_platform_seller_accounts.
+     * @x-autobe-specification Resolve the optional related
+     *   mall_platform_seller_profiles record for this seller account and expose
+     *   it as the nested sellerProfile object in the response. Return null when
+     *   no related profile exists. This property is not backed by a scalar
+     *   column in mall_platform_seller_accounts.
    */
   sellerProfile?: IMallPlatformSellerProfile | undefined;
 };
@@ -115,7 +127,11 @@ export namespace IMallPlatformSeller {
      *
      * Submit this secret credential to renew the current seller session and obtain new authorization tokens.
      *
-     * @x-autobe-specification Client-supplied seller refresh token used by POST /mallPlatform/auth/seller/refresh. Authentication logic must validate the token against the active seller session and deny renewal when the token is invalid, expired, revoked, or no longer associated with an eligible seller account.
+         * @x-autobe-specification Client-supplied seller refresh token used by
+         *   POST /mallPlatform/auth/seller/refresh. Authentication logic must
+         *   validate the token against the active seller session and deny
+         *   renewal when the token is invalid, expired, revoked, or no longer
+         *   associated with an eligible seller account.
      */
     refreshToken: string & tags.Format<"password">;
   };
@@ -131,8 +147,11 @@ export namespace IMallPlatformSeller {
      *
      * This value identifies the seller account for sign-in and must be unique across all seller accounts. It must be a valid email address.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from mall_platform_sellers.email. This is the unique seller login identifier and must be validated for email format and uniqueness before account creation.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_sellers.email. This is the unique seller login
+         *   identifier and must be validated for email format and uniqueness
+         *   before account creation.
      */
     email: string & tags.Format<"email">;
 
@@ -141,8 +160,11 @@ export namespace IMallPlatformSeller {
      *
      * The backend hashes this credential before saving it. The raw password is only used during account creation and is never returned by the API.
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification Accept the plain-text seller password from the client and hash it before persisting to mall_platform_sellers.password_hash. The raw password must never be stored, returned, or exposed elsewhere in the system.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification Accept the plain-text seller password from
+         *   the client and hash it before persisting to
+         *   mall_platform_sellers.password_hash. The raw password must never be
+         *   stored, returned, or exposed elsewhere in the system.
      */
     password: string & tags.Format<"password">;
   };
@@ -160,8 +182,10 @@ export namespace IMallPlatformSeller {
      *
      * This is the login identifier used to locate the merchant account before credential verification.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from mall_platform_sellers.email. Used to identify the seller account before password verification.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_sellers.email. Used to identify the seller account
+         *   before password verification.
      */
     email: string & tags.Format<"email">;
 
@@ -170,8 +194,11 @@ export namespace IMallPlatformSeller {
      *
      * This is the plain-text secret used during authentication. It is compared against the stored password hash and is never exposed by the API.
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification Accept the seller's plain-text password and verify it against mall_platform_sellers.password_hash on the server. Do not persist, expose, or return the password as plain text or hash.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification Accept the seller's plain-text password and
+         *   verify it against mall_platform_sellers.password_hash on the
+         *   server. Do not persist, expose, or return the password as plain
+         *   text or hash.
      */
     password: string & tags.Format<"password">;
   };
@@ -189,8 +216,9 @@ export namespace IMallPlatformSeller {
      *
      * This is the unique UUID of the authenticated seller account returned by the auth flow.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from mall_platform_sellers.id for the authenticated seller account identifier.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from mall_platform_sellers.id
+         *   for the authenticated seller account identifier.
      */
     id: string & tags.Format<"uuid">;
 
@@ -199,8 +227,10 @@ export namespace IMallPlatformSeller {
      *
      * This value identifies the authenticated seller account and is used for sign-in and account recovery flows.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from mall_platform_sellers.email for the authenticated seller login identity.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_sellers.email for the authenticated seller login
+         *   identity.
      */
     email: string;
 
@@ -209,8 +239,10 @@ export namespace IMallPlatformSeller {
      *
      * This reflects the account's moderation state as exposed to the authenticated seller, such as whether the account is pending, approved, rejected, suspended, or banned.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from mall_platform_sellers.status for the seller's current moderation/account state.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_sellers.status for the seller's current
+         *   moderation/account state.
      */
     status: string;
 
@@ -219,8 +251,10 @@ export namespace IMallPlatformSeller {
      *
      * When the account has not been rejected, this value is null.
      *
-     * @x-autobe-database-schema-property rejection_reason
-     * @x-autobe-specification Direct mapping from mall_platform_sellers.rejection_reason. Null when the account is not rejected.
+         * @x-autobe-database-schema-property rejection_reason
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_sellers.rejection_reason. Null when the account is
+         *   not rejected.
      */
     rejectionReason: string | null;
 
@@ -229,7 +263,12 @@ export namespace IMallPlatformSeller {
      *
      * When the account is not suspended or the auth flow cannot provide a suspension timestamp, this value is null.
      *
-     * @x-autobe-specification Computed nullable suspension timestamp for the authenticated seller account. Populate it only when the auth or moderation layer provides a suspension timestamp for the current seller session; otherwise return null. Do not source this value from mall_platform_sellers because that table does not contain a suspension timestamp column.
+         * @x-autobe-specification Computed nullable suspension timestamp for
+         *   the authenticated seller account. Populate it only when the auth or
+         *   moderation layer provides a suspension timestamp for the current
+         *   seller session; otherwise return null. Do not source this value
+         *   from mall_platform_sellers because that table does not contain a
+         *   suspension timestamp column.
      */
     suspendedAt: (string & tags.Format<"date-time">) | null;
 
@@ -238,8 +277,10 @@ export namespace IMallPlatformSeller {
      *
      * When the account is active, this value is null.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from mall_platform_sellers.deleted_at for the seller account soft-delete timestamp.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_sellers.deleted_at for the seller account soft-delete
+         *   timestamp.
      */
     deletedAt: (string & tags.Format<"date-time">) | null;
 
@@ -248,8 +289,10 @@ export namespace IMallPlatformSeller {
      *
      * This timestamp is assigned by the server when the seller account is created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from mall_platform_sellers.created_at for the seller account creation time.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_sellers.created_at for the seller account creation
+         *   time.
      */
     createdAt: string & tags.Format<"date-time">;
 
@@ -258,8 +301,10 @@ export namespace IMallPlatformSeller {
      *
      * This timestamp changes whenever the seller account record is modified.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from mall_platform_sellers.updated_at for the seller account last-update time.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_sellers.updated_at for the seller account last-update
+         *   time.
      */
     updatedAt: string & tags.Format<"date-time">;
 
@@ -268,14 +313,19 @@ export namespace IMallPlatformSeller {
      *
      * This includes the storefront-facing profile information for the seller, such as shop name, description, and logo image, when one exists.
      *
-     * @x-autobe-specification Computed relation-derived profile object for the authenticated seller. Join mall_platform_sellers.sellerProfile to the current mall_platform_seller_profiles row and return that profile when present; otherwise return null. This is not a direct column mapping on mall_platform_sellers.
+         * @x-autobe-specification Computed relation-derived profile object for
+         *   the authenticated seller. Join mall_platform_sellers.sellerProfile
+         *   to the current mall_platform_seller_profiles row and return that
+         *   profile when present; otherwise return null. This is not a direct
+         *   column mapping on mall_platform_sellers.
      */
     sellerProfile: IMallPlatformSellerProfile | null;
 
     /**
      * Authorization token.
      *
-     * @x-autobe-specification Authorization token comes from the session table.
+         * @x-autobe-specification Authorization token comes from the session
+         *   table.
      */
     token: IAuthorizationToken;
   };
@@ -293,8 +343,10 @@ export namespace IMallPlatformSeller {
      *
      * This value uniquely identifies the seller account shown in administrative browsing and moderation views.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from mall_platform_sellers.id. This UUID uniquely identifies the seller account in administrative list responses.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from mall_platform_sellers.id.
+         *   This UUID uniquely identifies the seller account in administrative
+         *   list responses.
      */
     id: string & tags.Format<"uuid">;
 
@@ -303,8 +355,10 @@ export namespace IMallPlatformSeller {
      *
      * This value is the unique sign-in email associated with the seller account and is shown in administrative browsing views.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from mall_platform_sellers.email. This is the unique login email address displayed in the seller summary.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_sellers.email. This is the unique login email address
+         *   displayed in the seller summary.
      */
     email: string & tags.Format<"email">;
 
@@ -313,8 +367,11 @@ export namespace IMallPlatformSeller {
      *
      * This value helps administrators review approval progress and account lifecycle state.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from mall_platform_sellers.status. This field represents the seller account's current moderation state, such as pending, approved, rejected, suspended, or banned.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_sellers.status. This field represents the seller
+         *   account's current moderation state, such as pending, approved,
+         *   rejected, suspended, or banned.
      */
     status: string;
 
@@ -323,8 +380,11 @@ export namespace IMallPlatformSeller {
      *
      * This field is null unless the account is in a rejected state, in which case it explains the rejection decision.
      *
-     * @x-autobe-database-schema-property rejection_reason
-     * @x-autobe-specification Direct mapping from mall_platform_sellers.rejection_reason. Convert the nullable database column to rejectionReason in the DTO and preserve null when no rejection reason exists.
+         * @x-autobe-database-schema-property rejection_reason
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_sellers.rejection_reason. Convert the nullable
+         *   database column to rejectionReason in the DTO and preserve null
+         *   when no rejection reason exists.
      */
     rejectionReason: string | null;
 
@@ -333,8 +393,10 @@ export namespace IMallPlatformSeller {
      *
      * This value helps administrators understand when the account was registered.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from mall_platform_sellers.created_at. Convert the timestamp column to the createdAt DTO property in ISO date-time form.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_sellers.created_at. Convert the timestamp column to
+         *   the createdAt DTO property in ISO date-time form.
      */
     createdAt: string & tags.Format<"date-time">;
 
@@ -343,8 +405,10 @@ export namespace IMallPlatformSeller {
      *
      * This value reflects the most recent account change and supports administrative auditing.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from mall_platform_sellers.updated_at. Convert the timestamp column to the updatedAt DTO property in ISO date-time form.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_sellers.updated_at. Convert the timestamp column to
+         *   the updatedAt DTO property in ISO date-time form.
      */
     updatedAt: string & tags.Format<"date-time">;
 
@@ -353,8 +417,11 @@ export namespace IMallPlatformSeller {
      *
      * This field is null while the seller account remains active and is populated only after deletion.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from mall_platform_sellers.deleted_at. Convert the nullable timestamp column to deletedAt in the DTO and preserve null for active seller accounts.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_sellers.deleted_at. Convert the nullable timestamp
+         *   column to deletedAt in the DTO and preserve null for active seller
+         *   accounts.
      */
     deletedAt: (string & tags.Format<"date-time">) | null;
   };
@@ -372,7 +439,10 @@ export namespace IMallPlatformSeller {
      *
      * This value selects which page of the filtered seller results should be returned. It is used together with limit to control pagination and must be interpreted by the service as a 1-based page index.
      *
-     * @x-autobe-specification Request-page parameter for paginating seller list results. This is not mapped to a database column; the service uses it to choose the result window after filtering mall_platform_sellers.
+         * @x-autobe-specification Request-page parameter for paginating seller
+         *   list results. This is not mapped to a database column; the service
+         *   uses it to choose the result window after filtering
+         *   mall_platform_sellers.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -381,7 +451,10 @@ export namespace IMallPlatformSeller {
      *
      * This value controls page size for the filtered seller list. The service uses it as the upper bound for records returned in a single response and enforces the configured minimum and maximum limits.
      *
-     * @x-autobe-specification Request-limit parameter for paginating seller list results. This is not mapped to a database column; the service uses it to determine the maximum number of seller summaries returned per page.
+         * @x-autobe-specification Request-limit parameter for paginating seller
+         *   list results. This is not mapped to a database column; the service
+         *   uses it to determine the maximum number of seller summaries
+         *   returned per page.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -392,7 +465,11 @@ export namespace IMallPlatformSeller {
      *
      * This value is matched against the seller fields supported by the list endpoint so administrators can quickly find accounts by text. It is a query-only filter and does not represent stored seller data.
      *
-     * @x-autobe-specification Free-text search query for seller list browsing. This is not mapped to a database column because it is a query parameter; the service may apply it across list-safe seller fields such as email or other supported display fields when querying mall_platform_sellers.
+         * @x-autobe-specification Free-text search query for seller list
+         *   browsing. This is not mapped to a database column because it is a
+         *   query parameter; the service may apply it across list-safe seller
+         *   fields such as email or other supported display fields when
+         *   querying mall_platform_sellers.
      */
     search?: string | undefined;
 
@@ -401,7 +478,10 @@ export namespace IMallPlatformSeller {
      *
      * This value tells the service how to order the filtered seller results, such as by newest records first or by another supported list ordering. It is a query-only instruction and does not correspond to a stored seller field.
      *
-     * @x-autobe-specification Sorting instruction for seller list browsing. This is not mapped to a database column; the service interprets it as a list-order directive for the query against mall_platform_sellers and applies deterministic ordering rules.
+         * @x-autobe-specification Sorting instruction for seller list browsing.
+         *   This is not mapped to a database column; the service interprets it
+         *   as a list-order directive for the query against
+         *   mall_platform_sellers and applies deterministic ordering rules.
      */
     sort?: string | undefined;
 
@@ -410,7 +490,11 @@ export namespace IMallPlatformSeller {
      *
      * This value narrows the list to sellers in the specified lifecycle state, such as pending, approved, rejected, suspended, or banned, depending on the endpoint's supported filter behavior. It helps administrators focus on a specific seller review or moderation state.
      *
-     * @x-autobe-specification Seller lifecycle-state filter for browsing mall_platform_sellers. This is a request-only filter value, not a direct database-mapped field in this DTO. The service interprets the supplied status value to constrain seller list results to the requested lifecycle state or supported status set.
+         * @x-autobe-specification Seller lifecycle-state filter for browsing
+         *   mall_platform_sellers. This is a request-only filter value, not a
+         *   direct database-mapped field in this DTO. The service interprets
+         *   the supplied status value to constrain seller list results to the
+         *   requested lifecycle state or supported status set.
      */
     status?: string | undefined;
   };

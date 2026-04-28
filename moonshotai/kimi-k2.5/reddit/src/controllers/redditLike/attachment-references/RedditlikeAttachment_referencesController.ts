@@ -20,9 +20,10 @@ export class RedditlikeAttachment_referencesController {
    *
    * @param connection
    * @param body Search criteria and pagination parameters for filtering attachment references
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query reddit_like_attachment_references table with pagination and filtering support.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query reddit_like_attachment_references table
+     *   with pagination and filtering support.
    *
    * Apply search filters on:
    * - reference_type: filter by attachment type ('profile', 'community', 'post')
@@ -66,9 +67,10 @@ export class RedditlikeAttachment_referencesController {
    *
    * @param connection
    * @param referenceId Unique identifier of the attachment reference (UUID)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query the reddit_like_attachment_references table by primary key id matching the referenceId path parameter.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query the reddit_like_attachment_references table
+     *   by primary key id matching the referenceId path parameter.
    *
    * Perform an inner join with reddit_like_attachments on attachment_id to retrieve complete file metadata including storage_path, original_filename, mime_type, file_size_bytes, checksum_sha256, and timestamps.
    *

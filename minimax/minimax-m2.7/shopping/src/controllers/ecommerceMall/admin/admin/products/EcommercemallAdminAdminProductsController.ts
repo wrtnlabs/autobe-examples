@@ -25,9 +25,10 @@ export class EcommercemallAdminAdminProductsController {
    * By default, only active products are returned. Deleted products (those with deleted_at timestamp set) are excluded from the results to show only currently available listings.
    *
    * @param connection
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query ecommerce_mall_products table with the following logic:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Query ecommerce_mall_products table with the
+     *   following logic:
    *
    * 1. **Soft Delete Filter**: Apply `WHERE deleted_at IS NULL` to return only active products.
    *
@@ -77,9 +78,11 @@ export class EcommercemallAdminAdminProductsController {
    *
    * @param connection
    * @param body Search criteria including optional filters for name query, category, seller, price range, stock availability, and pagination/sorting parameters.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query ecommerce_mall_products table with JOINs to ecommerce_mall_categories and ecommerce_mall_sellers for filter resolution.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Query ecommerce_mall_products table with JOINs to
+     *   ecommerce_mall_categories and ecommerce_mall_sellers for filter
+     *   resolution.
    *
    * Apply soft-delete filter: only return products where deleted_at IS NULL.
    *
@@ -137,9 +140,16 @@ export class EcommercemallAdminAdminProductsController {
    *
    * @param connection
    * @param productId UUID identifier of the product to retrieve.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query the ecommerce_mall_products table by id (UUID). Join with ecommerce_mall_sellers table to retrieve seller information (id, email). Join with ecommerce_mall_categories table to retrieve category information (id, name). Join with ecommerce_mall_product_images table to retrieve all images ordered by display_order. Join with ecommerce_mall_product_variants table to retrieve all non-deleted variants with their option values from ecommerce_mall_product_variant_option_values table.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Query the ecommerce_mall_products table by id
+     *   (UUID). Join with ecommerce_mall_sellers table to retrieve seller
+     *   information (id, email). Join with ecommerce_mall_categories table to
+     *   retrieve category information (id, name). Join with
+     *   ecommerce_mall_product_images table to retrieve all images ordered by
+     *   display_order. Join with ecommerce_mall_product_variants table to
+     *   retrieve all non-deleted variants with their option values from
+     *   ecommerce_mall_product_variant_option_values table.
    *
    * If the product does not exist or is soft-deleted (deleted_at is not null), return a 404 error.
    *
@@ -177,9 +187,10 @@ export class EcommercemallAdminAdminProductsController {
    *
    * @param connection
    * @param productId Unique identifier of the product to delete.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query the ecommerce_mall_products table to locate the product by productId.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Query the ecommerce_mall_products table to locate
+     *   the product by productId.
    *
    * Verify the product exists and is not already deleted (deleted_at must be null). If the product does not exist or is already deleted, return appropriate error response.
    *

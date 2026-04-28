@@ -6,32 +6,40 @@ export type ICommunityPlatformPostImage = {
   /**
    * URL or storage reference for the image attached to the post.
    *
-   * @x-autobe-specification Direct mapping to community_platform_post_images.image_url. Store the uploaded image asset URL or storage URI for the image post child record.
-   * @x-autobe-database-schema-property image_url
+     * @x-autobe-specification Direct mapping to
+     *   community_platform_post_images.image_url. Store the uploaded image
+     *   asset URL or storage URI for the image post child record.
+     * @x-autobe-database-schema-property image_url
    */
   image_url: boolean;
 
   /**
    * Alternative text for the image, used for accessibility and fallback display.
    *
-   * @x-autobe-specification Direct mapping to community_platform_post_images.image_alt_text. Persist optional alt text when provided; allow null when omitted.
-   * @x-autobe-database-schema-property image_alt_text
+     * @x-autobe-specification Direct mapping to
+     *   community_platform_post_images.image_alt_text. Persist optional alt
+     *   text when provided; allow null when omitted.
+     * @x-autobe-database-schema-property image_alt_text
    */
   image_alt_text?: boolean | null | undefined;
 
   /**
    * Suggested display width for rendering the image.
    *
-   * @x-autobe-specification Direct mapping to community_platform_post_images.presentation_width. Persist the optional display width when supplied; allow null when omitted.
-   * @x-autobe-database-schema-property presentation_width
+     * @x-autobe-specification Direct mapping to
+     *   community_platform_post_images.presentation_width. Persist the optional
+     *   display width when supplied; allow null when omitted.
+     * @x-autobe-database-schema-property presentation_width
    */
   presentation_width?: boolean | null | undefined;
 
   /**
    * Suggested display height for rendering the image.
    *
-   * @x-autobe-specification Direct mapping to community_platform_post_images.presentation_height. Persist the optional display height when supplied; allow null when omitted.
-   * @x-autobe-database-schema-property presentation_height
+     * @x-autobe-specification Direct mapping to
+     *   community_platform_post_images.presentation_height. Persist the
+     *   optional display height when supplied; allow null when omitted.
+     * @x-autobe-database-schema-property presentation_height
    */
   presentation_height?: boolean | null | undefined;
 };

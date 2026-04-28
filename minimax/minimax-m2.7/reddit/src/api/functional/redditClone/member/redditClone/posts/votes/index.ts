@@ -276,7 +276,8 @@ export namespace update {
  * @param props.voteId Unique identifier of the vote to remove
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Remove vote from reddit_clone_post_votes table where id equals voteId.
+ * @x-autobe-specification Remove vote from reddit_clone_post_votes table where
+ *   id equals voteId.
  *
  * Verify vote exists before deletion. Retrieve vote direction ('upvote' or 'downvote') to calculate adjustments.
  *

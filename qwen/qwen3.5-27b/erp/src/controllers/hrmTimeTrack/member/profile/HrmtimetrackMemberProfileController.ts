@@ -18,9 +18,10 @@ export class HrmtimetrackMemberProfileController {
    *
    * @param connection
    * @param body Profile update request containing display name, avatar image URL, and/or phone number to update. At least one field must be provided.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Update the authenticated user's global profile information.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Update the authenticated user's global profile
+     *   information.
    *
    * 1. Extract the authenticated user's member_id from the session/context.
    * 2. Validate that the request body contains at least one updatable field (display_name, avatar, or phone_number).

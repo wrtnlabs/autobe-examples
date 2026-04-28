@@ -22,9 +22,11 @@ export class RedditcloneMemberCommunitiesSubscribersController {
    * @param connection
    * @param communityId Unique identifier of the community (UUID)
    * @param body Search criteria and pagination parameters for subscriber list
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query reddit_clone_subscriptions table joined with reddit_clone_members and reddit_clone_user_profiles to retrieve subscriber information.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query reddit_clone_subscriptions table joined
+     *   with reddit_clone_members and reddit_clone_user_profiles to retrieve
+     *   subscriber information.
    *
    * Apply the following filters:
    * - Filter by communityId from path parameter

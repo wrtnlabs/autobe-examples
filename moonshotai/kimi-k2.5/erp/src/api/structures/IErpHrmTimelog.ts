@@ -13,104 +13,124 @@ export type IErpHrmTimelog = {
   /**
    * Unique identifier for the timelog record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from erp_hrm_timelogs.id (UUID primary key).
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from erp_hrm_timelogs.id (UUID
+     *   primary key).
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Start timestamp of the work session in ISO 8601 format.
    *
-   * @x-autobe-database-schema-property start_time
-   * @x-autobe-specification Direct mapping from erp_hrm_timelogs.start_time. Timestamp when work session began.
+     * @x-autobe-database-schema-property start_time
+     * @x-autobe-specification Direct mapping from erp_hrm_timelogs.start_time.
+     *   Timestamp when work session began.
    */
   startTime: string & tags.Format<"date-time">;
 
   /**
    * End timestamp of the work session in ISO 8601 format.
    *
-   * @x-autobe-database-schema-property end_time
-   * @x-autobe-specification Direct mapping from erp_hrm_timelogs.end_time. Timestamp when work session ended.
+     * @x-autobe-database-schema-property end_time
+     * @x-autobe-specification Direct mapping from erp_hrm_timelogs.end_time.
+     *   Timestamp when work session ended.
    */
   endTime: string & tags.Format<"date-time">;
 
   /**
    * Duration of the work session in minutes, calculated from start and end timestamps.
    *
-   * @x-autobe-database-schema-property duration_minutes
-   * @x-autobe-specification Direct mapping from erp_hrm_timelogs.duration_minutes. Calculated from end_time minus start_time, rounded to nearest minute. Positive integer representing session length.
+     * @x-autobe-database-schema-property duration_minutes
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_timelogs.duration_minutes. Calculated from end_time minus
+     *   start_time, rounded to nearest minute. Positive integer representing
+     *   session length.
    */
   durationMinutes: number & tags.Type<"int32">;
 
   /**
    * Whether this time entry is billable to clients (true) or internal/non-billable work (false).
    *
-   * @x-autobe-database-schema-property billable
-   * @x-autobe-specification Direct mapping from erp_hrm_timelogs.billable. Boolean indicating if time is chargeable to client.
+     * @x-autobe-database-schema-property billable
+     * @x-autobe-specification Direct mapping from erp_hrm_timelogs.billable.
+     *   Boolean indicating if time is chargeable to client.
    */
   billable: boolean;
 
   /**
    * Optional description documenting what work was performed during this time entry.
    *
-   * @x-autobe-database-schema-property description
-   * @x-autobe-specification Direct mapping from erp_hrm_timelogs.description. Nullable text field documenting work performed.
+     * @x-autobe-database-schema-property description
+     * @x-autobe-specification Direct mapping from erp_hrm_timelogs.description.
+     *   Nullable text field documenting work performed.
    */
   description: string | null;
 
   /**
    * The project this timelog was recorded against, including name, status, and visual attributes.
    *
-   * @x-autobe-database-schema-property project
-   * @x-autobe-specification Join via erp_hrm_timelogs.project_id to erp_hrm_projects.id. Returns IErpHrmProject.ISummary with project identity and planning information.
+     * @x-autobe-database-schema-property project
+     * @x-autobe-specification Join via erp_hrm_timelogs.project_id to
+     *   erp_hrm_projects.id. Returns IErpHrmProject.ISummary with project
+     *   identity and planning information.
    */
   project: IErpHrmProject.ISummary;
 
   /**
    * Optional specific task within the project that this timelog was recorded against.
    *
-   * @x-autobe-database-schema-property task
-   * @x-autobe-specification Join via erp_hrm_timelogs.task_id (nullable) to erp_hrm_tasks.id. Returns IErpHrmTask.ISummary or null if no task assigned.
+     * @x-autobe-database-schema-property task
+     * @x-autobe-specification Join via erp_hrm_timelogs.task_id (nullable) to
+     *   erp_hrm_tasks.id. Returns IErpHrmTask.ISummary or null if no task
+     *   assigned.
    */
   task: IErpHrmTask.ISummary | null;
 
   /**
    * The organization member (employee) who created this timelog, including their profile and department information.
    *
-   * @x-autobe-database-schema-property organizationMember
-   * @x-autobe-specification Join via erp_hrm_timelogs.organization_member_id to erp_hrm_organization_members.id. Returns IErpHrmOrganizationMember.ISummary with user profile and role context.
+     * @x-autobe-database-schema-property organizationMember
+     * @x-autobe-specification Join via erp_hrm_timelogs.organization_member_id
+     *   to erp_hrm_organization_members.id. Returns
+     *   IErpHrmOrganizationMember.ISummary with user profile and role context.
    */
   organizationMember: IErpHrmOrganizationMember.ISummary;
 
   /**
    * The timesheet this timelog is included in, if any. Provides approval workflow context (draft, submitted, approved, rejected).
    *
-   * @x-autobe-database-schema-property timesheet
-   * @x-autobe-specification Join via erp_hrm_timelogs.timesheet_id (nullable) to erp_hrm_timesheets.id. Returns IErpHrmTimesheet.ISummary or null if timelog not yet included in any timesheet.
+     * @x-autobe-database-schema-property timesheet
+     * @x-autobe-specification Join via erp_hrm_timelogs.timesheet_id (nullable)
+     *   to erp_hrm_timesheets.id. Returns IErpHrmTimesheet.ISummary or null if
+     *   timelog not yet included in any timesheet.
    */
   timesheet: IErpHrmTimesheet.ISummary | null;
 
   /**
    * Timestamp when the timelog record was created in the system.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from erp_hrm_timelogs.created_at. Auto-populated timestamp on record creation.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from erp_hrm_timelogs.created_at.
+     *   Auto-populated timestamp on record creation.
    */
   createdAt: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the timelog record was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from erp_hrm_timelogs.updated_at. Auto-updated timestamp on record modification.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from erp_hrm_timelogs.updated_at.
+     *   Auto-updated timestamp on record modification.
    */
   updatedAt: string & tags.Format<"date-time">;
 
   /**
    * Soft deletion timestamp. Null if the timelog is active; non-null if soft-deleted for data retention purposes.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from erp_hrm_timelogs.deleted_at. Soft delete marker. Null indicates active record. Non-null indicates deleted.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from erp_hrm_timelogs.deleted_at.
+     *   Soft delete marker. Null indicates active record. Non-null indicates
+     *   deleted.
    */
   deletedAt: (string & tags.Format<"date-time">) | null;
 };
@@ -122,14 +142,18 @@ export namespace IErpHrmTimelog {
     /**
      * Page number for pagination (1-indexed).
      *
-     * @x-autobe-specification Pagination page number (1-indexed). Used with limit parameter for offset pagination. Calculated as OFFSET = (page - 1) * limit. Must be >= 1.
+         * @x-autobe-specification Pagination page number (1-indexed). Used with
+         *   limit parameter for offset pagination. Calculated as OFFSET = (page
+         *   - 1) * limit. Must be >= 1.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of records to return per page (1-100).
      *
-     * @x-autobe-specification Maximum number of records per page. Bounds checked: min=1, max=100. Default is 20. Used for LIMIT clause in SQL query.
+         * @x-autobe-specification Maximum number of records per page. Bounds
+         *   checked: min=1, max=100. Default is 20. Used for LIMIT clause in
+         *   SQL query.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -138,49 +162,71 @@ export namespace IErpHrmTimelog {
     /**
      * Filter timelogs by specific project ID (exact match).
      *
-     * @x-autobe-specification Filter by project ID. Maps to exact match filter on erp_hrm_timelogs.project_id column (UUID). When provided, only timelogs for this project are returned.
+         * @x-autobe-specification Filter by project ID. Maps to exact match
+         *   filter on erp_hrm_timelogs.project_id column (UUID). When provided,
+         *   only timelogs for this project are returned.
      */
     projectId?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Filter timelogs by specific task ID (exact match). Set to null to find timelogs without any task assigned.
      *
-     * @x-autobe-specification Filter by task ID. Maps to exact match filter on erp_hrm_timelogs.task_id column (UUID, nullable). When provided, only timelogs for this task are returned. Supports null value to filter timelogs without task assignment.
+         * @x-autobe-specification Filter by task ID. Maps to exact match filter
+         *   on erp_hrm_timelogs.task_id column (UUID, nullable). When provided,
+         *   only timelogs for this task are returned. Supports null value to
+         *   filter timelogs without task assignment.
      */
     taskId?: (string & tags.Format<"uuid">) | null | undefined;
 
     /**
      * Filter timelogs by billable status (true for billable, false for non-billable).
      *
-     * @x-autobe-specification Filter by billable status. Maps to exact match filter on erp_hrm_timelogs.billable column (boolean). When provided, only timelogs with matching billable status are returned. True for client-chargeable hours, false for internal work.
+         * @x-autobe-specification Filter by billable status. Maps to exact
+         *   match filter on erp_hrm_timelogs.billable column (boolean). When
+         *   provided, only timelogs with matching billable status are returned.
+         *   True for client-chargeable hours, false for internal work.
      */
     billable?: boolean | undefined;
 
     /**
      * Filter timelogs that started on or after this date and time (inclusive).
      *
-     * @x-autobe-specification Filter by start date range beginning. Maps to inclusive filter on erp_hrm_timelogs.start_time column (DateTime). When provided, only timelogs with start_time >= this value are returned. Format: ISO 8601 date-time.
+         * @x-autobe-specification Filter by start date range beginning. Maps to
+         *   inclusive filter on erp_hrm_timelogs.start_time column (DateTime).
+         *   When provided, only timelogs with start_time >= this value are
+         *   returned. Format: ISO 8601 date-time.
      */
     startDateFrom?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Filter timelogs that started on or before this date and time (inclusive).
      *
-     * @x-autobe-specification Filter by start date range ending. Maps to inclusive filter on erp_hrm_timelogs.start_time column (DateTime). When provided, only timelogs with start_time <= this value are returned. Format: ISO 8601 date-time.
+         * @x-autobe-specification Filter by start date range ending. Maps to
+         *   inclusive filter on erp_hrm_timelogs.start_time column (DateTime).
+         *   When provided, only timelogs with start_time <= this value are
+         *   returned. Format: ISO 8601 date-time.
      */
     startDateTo?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Free-text search on timelog descriptions (case-insensitive, partial match).
      *
-     * @x-autobe-specification Free-text search on timelog description. Maps to partial match filter using ILIKE on erp_hrm_timelogs.description column (TEXT, nullable). Case-insensitive pattern match. When provided, only timelogs with descriptions containing this text are returned.
+         * @x-autobe-specification Free-text search on timelog description. Maps
+         *   to partial match filter using ILIKE on erp_hrm_timelogs.description
+         *   column (TEXT, nullable). Case-insensitive pattern match. When
+         *   provided, only timelogs with descriptions containing this text are
+         *   returned.
      */
     search?: string | undefined;
 
     /**
      * Field to sort results by. Options: 'start_time' (default), 'created_at', 'duration_minutes', 'project_name'.
      *
-     * @x-autobe-specification Field to sort results by. Maps to ORDER BY clause. 'start_time' and 'created_at' sort on their respective columns directly. 'duration_minutes' sorts on calculated duration. 'project_name' requires JOIN with erp_hrm_projects table and sorts on projects.name column.
+         * @x-autobe-specification Field to sort results by. Maps to ORDER BY
+         *   clause. 'start_time' and 'created_at' sort on their respective
+         *   columns directly. 'duration_minutes' sorts on calculated duration.
+         *   'project_name' requires JOIN with erp_hrm_projects table and sorts
+         *   on projects.name column.
      */
     sortBy?:
       | "start_time"
@@ -192,7 +238,9 @@ export namespace IErpHrmTimelog {
     /**
      * Sort direction: 'asc' for ascending, 'desc' for descending.
      *
-     * @x-autobe-specification Sort direction for ORDER BY clause. 'asc' for ascending order, 'desc' for descending order. Default is 'desc' (most recent first) when sorting by start_time or created_at.
+         * @x-autobe-specification Sort direction for ORDER BY clause. 'asc' for
+         *   ascending order, 'desc' for descending order. Default is 'desc'
+         *   (most recent first) when sorting by start_time or created_at.
      */
     sortDirection?: "asc" | "desc" | undefined;
   };
@@ -204,48 +252,62 @@ export namespace IErpHrmTimelog {
     /**
      * The project ID this time was logged against. The employee must be assigned to this project.
      *
-     * @x-autobe-database-schema-property project_id
-     * @x-autobe-specification Direct mapping to erp_hrm_timelogs.project_id. Must reference a valid project in the current organization. Validation: verify employee is assigned to the project via erp_hrm_project_members.
+         * @x-autobe-database-schema-property project_id
+         * @x-autobe-specification Direct mapping to
+         *   erp_hrm_timelogs.project_id. Must reference a valid project in the
+         *   current organization. Validation: verify employee is assigned to
+         *   the project via erp_hrm_project_members.
      */
     project_id: string & tags.Format<"uuid">;
 
     /**
      * Optional task within the project that this time was logged against. If specified, must belong to the selected project.
      *
-     * @x-autobe-database-schema-property task_id
-     * @x-autobe-specification Direct mapping to erp_hrm_timelogs.task_id. Nullable - can log time against project without specific task. If provided, must belong to the specified project (validated via task.project_id == project_id).
+         * @x-autobe-database-schema-property task_id
+         * @x-autobe-specification Direct mapping to erp_hrm_timelogs.task_id.
+         *   Nullable - can log time against project without specific task. If
+         *   provided, must belong to the specified project (validated via
+         *   task.project_id == project_id).
      */
     task_id?: (string & tags.Format<"uuid">) | null | undefined;
 
     /**
      * Timestamp when the work session began. Must be before the end time.
      *
-     * @x-autobe-database-schema-property start_time
-     * @x-autobe-specification Direct mapping to erp_hrm_timelogs.start_time. ISO 8601 date-time format. Must be before end_time. Used to calculate duration_minutes server-side.
+         * @x-autobe-database-schema-property start_time
+         * @x-autobe-specification Direct mapping to
+         *   erp_hrm_timelogs.start_time. ISO 8601 date-time format. Must be
+         *   before end_time. Used to calculate duration_minutes server-side.
      */
     start_time: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when the work session ended. Must be after the start time.
      *
-     * @x-autobe-database-schema-property end_time
-     * @x-autobe-specification Direct mapping to erp_hrm_timelogs.end_time. ISO 8601 date-time format. Must be after start_time. Duration calculated as rounded difference from start_time in minutes.
+         * @x-autobe-database-schema-property end_time
+         * @x-autobe-specification Direct mapping to erp_hrm_timelogs.end_time.
+         *   ISO 8601 date-time format. Must be after start_time. Duration
+         *   calculated as rounded difference from start_time in minutes.
      */
     end_time: string & tags.Format<"date-time">;
 
     /**
      * Whether this time entry is billable to clients or internal. Defaults to false if not specified.
      *
-     * @x-autobe-database-schema-property billable
-     * @x-autobe-specification Direct mapping to erp_hrm_timelogs.billable. Boolean indicating if time is chargeable to clients. Optional in request - defaults to false if not provided.
+         * @x-autobe-database-schema-property billable
+         * @x-autobe-specification Direct mapping to erp_hrm_timelogs.billable.
+         *   Boolean indicating if time is chargeable to clients. Optional in
+         *   request - defaults to false if not provided.
      */
     billable?: boolean | undefined;
 
     /**
      * Optional description documenting what work was performed during this time entry.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping to erp_hrm_timelogs.description. Nullable text field documenting work performed. No specific format constraints.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping to
+         *   erp_hrm_timelogs.description. Nullable text field documenting work
+         *   performed. No specific format constraints.
      */
     description?: string | null | undefined;
   };
@@ -257,79 +319,94 @@ export namespace IErpHrmTimelog {
     /**
      * Unique identifier for the timelog entry
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from erp_hrm_timelogs.id (UUID primary key)
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from erp_hrm_timelogs.id (UUID
+         *   primary key)
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Duration of the work session in minutes
      *
-     * @x-autobe-database-schema-property duration_minutes
-     * @x-autobe-specification Direct mapping from erp_hrm_timelogs.duration_minutes (Integer)
+         * @x-autobe-database-schema-property duration_minutes
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_timelogs.duration_minutes (Integer)
      */
     durationMinutes: number & tags.Type<"int32">;
 
     /**
      * Whether the time is billable to the client or internal
      *
-     * @x-autobe-database-schema-property billable
-     * @x-autobe-specification Direct mapping from erp_hrm_timelogs.billable (Boolean)
+         * @x-autobe-database-schema-property billable
+         * @x-autobe-specification Direct mapping from erp_hrm_timelogs.billable
+         *   (Boolean)
      */
     billable: boolean;
 
     /**
      * Optional description of work performed during this time entry
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from erp_hrm_timelogs.description (nullable String)
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_timelogs.description (nullable String)
      */
     description: string | null;
 
     /**
      * Start timestamp of the work session in ISO 8601 format
      *
-     * @x-autobe-database-schema-property start_time
-     * @x-autobe-specification Direct mapping from erp_hrm_timelogs.start_time (DateTime)
+         * @x-autobe-database-schema-property start_time
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_timelogs.start_time (DateTime)
      */
     startTime: string & tags.Format<"date-time">;
 
     /**
      * End timestamp of the work session, null if timer is still running
      *
-     * @x-autobe-database-schema-property end_time
-     * @x-autobe-specification Direct mapping from erp_hrm_timelogs.end_time. Nullable DateTime indicating when work session ended; null for ongoing timers.
+         * @x-autobe-database-schema-property end_time
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_timelogs.end_time. Nullable DateTime indicating when work
+         *   session ended; null for ongoing timers.
      */
     endTime: (string & tags.Format<"date-time">) | null;
 
     /**
      * Timestamp when the timelog was created
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from erp_hrm_timelogs.created_at (DateTime)
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_timelogs.created_at (DateTime)
      */
     createdAt: string & tags.Format<"date-time">;
 
     /**
      * Project this timelog is associated with
      *
-     * @x-autobe-database-schema-property project
-     * @x-autobe-specification Join from erp_hrm_timelogs.project_id to erp_hrm_projects.id, returns IErpHrmProject.ISummary
+         * @x-autobe-database-schema-property project
+         * @x-autobe-specification Join from erp_hrm_timelogs.project_id to
+         *   erp_hrm_projects.id, returns IErpHrmProject.ISummary
      */
     project: IErpHrmProject.ISummary;
 
     /**
      * Specific task this timelog is associated with, if any
      *
-     * @x-autobe-database-schema-property task
-     * @x-autobe-specification Join from erp_hrm_timelogs.task_id to erp_hrm_tasks.id, returns IErpHrmTask.ISummary or null if no task assigned
+         * @x-autobe-database-schema-property task
+         * @x-autobe-specification Join from erp_hrm_timelogs.task_id to
+         *   erp_hrm_tasks.id, returns IErpHrmTask.ISummary or null if no task
+         *   assigned
      */
     task: IErpHrmTask.ISummary | null;
 
     /**
      * Approval status of the timesheet this timelog belongs to, if applicable
      *
-     * @x-autobe-specification Computed from timesheet relation - extracts status field from associated erp_hrm_timesheets record via erp_hrm_timelogs.timesheet_id. Returns string representing timesheet status (draft, submitted, approved, rejected) or null if not associated with any timesheet.
+         * @x-autobe-specification Computed from timesheet relation - extracts
+         *   status field from associated erp_hrm_timesheets record via
+         *   erp_hrm_timelogs.timesheet_id. Returns string representing
+         *   timesheet status (draft, submitted, approved, rejected) or null if
+         *   not associated with any timesheet.
      */
     timesheetStatus: string | null;
   };
@@ -341,56 +418,77 @@ export namespace IErpHrmTimelog {
     /**
      * Project ID to assign this timelog to. Must be a project the employee is assigned to.
      *
-     * @x-autobe-database-schema-property project_id
-     * @x-autobe-specification Direct mapping from erp_hrm_timelogs.project_id. Optional for partial updates. When provided, validates requester is member of target project via erp_hrm_project_members. UUID format.
+         * @x-autobe-database-schema-property project_id
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_timelogs.project_id. Optional for partial updates. When
+         *   provided, validates requester is member of target project via
+         *   erp_hrm_project_members. UUID format.
      */
     projectId?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Optional task ID within the project to associate with this timelog. Must belong to the selected project.
      *
-     * @x-autobe-database-schema-property task_id
-     * @x-autobe-specification Direct mapping from erp_hrm_timelogs.task_id. Optional nullable field. When provided, validates task belongs to the selected project. Set to null to remove task association.
+         * @x-autobe-database-schema-property task_id
+         * @x-autobe-specification Direct mapping from erp_hrm_timelogs.task_id.
+         *   Optional nullable field. When provided, validates task belongs to
+         *   the selected project. Set to null to remove task association.
      */
     taskId?: (string & tags.Format<"uuid">) | null | undefined;
 
     /**
      * Timestamp when the work session began. Must be before endTime.
      *
-     * @x-autobe-database-schema-property start_time
-     * @x-autobe-specification Direct mapping from erp_hrm_timelogs.start_time. Optional for partial updates. ISO 8601 date-time format. Must be before end_time. Used to calculate duration_minutes.
+         * @x-autobe-database-schema-property start_time
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_timelogs.start_time. Optional for partial updates. ISO 8601
+         *   date-time format. Must be before end_time. Used to calculate
+         *   duration_minutes.
      */
     startTime?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Timestamp when the work session ended. Must be after startTime.
      *
-     * @x-autobe-database-schema-property end_time
-     * @x-autobe-specification Direct mapping from erp_hrm_timelogs.end_time. Optional for partial updates. ISO 8601 date-time format. Must be after start_time. Used to calculate duration_minutes.
+         * @x-autobe-database-schema-property end_time
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_timelogs.end_time. Optional for partial updates. ISO 8601
+         *   date-time format. Must be after start_time. Used to calculate
+         *   duration_minutes.
      */
     endTime?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Whether this time entry is billable to clients (true) or internal non-billable work (false).
      *
-     * @x-autobe-database-schema-property billable
-     * @x-autobe-specification Direct mapping from erp_hrm_timelogs.billable. Optional boolean for partial updates. True indicates time is billable to clients, false for internal non-billable work.
+         * @x-autobe-database-schema-property billable
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_timelogs.billable. Optional boolean for partial updates.
+         *   True indicates time is billable to clients, false for internal
+         *   non-billable work.
      */
     billable?: boolean | undefined;
 
     /**
      * Optional description documenting what work was performed during this time entry.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from erp_hrm_timelogs.description. Optional nullable text field. Documents what work was performed during the time entry. Max 1000 chars recommended.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_timelogs.description. Optional nullable text field.
+         *   Documents what work was performed during the time entry. Max 1000
+         *   chars recommended.
      */
     description?: string | null | undefined;
 
     /**
      * Organization member ID to reassign this timelog to. Only mutable with time management permissions.
      *
-     * @x-autobe-database-schema-property organization_member_id
-     * @x-autobe-specification Direct mapping from erp_hrm_timelogs.organization_member_id. Optional nullable. Mutable only with time:manage permission. Allows administrators to reassign timelogs between employees. Without permission, original value is preserved.
+         * @x-autobe-database-schema-property organization_member_id
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_timelogs.organization_member_id. Optional nullable. Mutable
+         *   only with time:manage permission. Allows administrators to reassign
+         *   timelogs between employees. Without permission, original value is
+         *   preserved.
      */
     organizationMemberId?: (string & tags.Format<"uuid">) | null | undefined;
   };

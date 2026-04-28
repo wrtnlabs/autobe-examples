@@ -28,9 +28,9 @@ export class ShoppingmallMemberCartFrom_wishlistsController {
    *
    * @param connection
    * @param body Criteria for which wishlist items to convert and how to select the target product variants and quantities for cart line items.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation steps for Realize Agent:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation steps for Realize Agent:
    *
    * 1) Authenticate and identify the member.
    * 2) Load the member's wishlist (`shopping_mall_wishlists`) and its items (`shopping_mall_wishlist_items`) based on request criteria (e.g., specific wishlist item ids). Ensure every wishlist item belongs to the authenticated member.

@@ -18,8 +18,8 @@ export type IMallPlatformReview = {
    *
    * This value identifies one active review record and is stable for the lifetime of the review.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from mall_platform_reviews.id.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from mall_platform_reviews.id.
    */
   id: string & tags.Format<"uuid">;
 
@@ -28,8 +28,10 @@ export type IMallPlatformReview = {
    *
    * This field provides the reviewer as a summary object so clients can show ownership context without exposing the underlying foreign-key value.
    *
-   * @x-autobe-database-schema-property customer
-   * @x-autobe-specification Join mall_platform_reviews.customer_id to mall_platform_customers.id and expose the related customer as IMallPlatformCustomer.ISummary.
+     * @x-autobe-database-schema-property customer
+     * @x-autobe-specification Join mall_platform_reviews.customer_id to
+     *   mall_platform_customers.id and expose the related customer as
+     *   IMallPlatformCustomer.ISummary.
    */
   customer: IMallPlatformCustomer.ISummary;
 
@@ -38,8 +40,10 @@ export type IMallPlatformReview = {
    *
    * This field identifies the purchased item that made the review eligible and allows clients to show the purchase context behind the review.
    *
-   * @x-autobe-database-schema-property orderItem
-   * @x-autobe-specification Join mall_platform_reviews.order_item_id to mall_platform_order_items.id and expose the related order item as IMallPlatformOrderItem.ISummary.
+     * @x-autobe-database-schema-property orderItem
+     * @x-autobe-specification Join mall_platform_reviews.order_item_id to
+     *   mall_platform_order_items.id and expose the related order item as
+     *   IMallPlatformOrderItem.ISummary.
    */
   orderItem: IMallPlatformOrderItem.ISummary;
 
@@ -48,8 +52,10 @@ export type IMallPlatformReview = {
    *
    * This field provides the reviewed catalog item as a summary object so product pages can display the associated product alongside the review.
    *
-   * @x-autobe-database-schema-property product
-   * @x-autobe-specification Join mall_platform_reviews.product_id to mall_platform_products.id and expose the related product as IMallPlatformProduct.ISummary.
+     * @x-autobe-database-schema-property product
+     * @x-autobe-specification Join mall_platform_reviews.product_id to
+     *   mall_platform_products.id and expose the related product as
+     *   IMallPlatformProduct.ISummary.
    */
   product: IMallPlatformProduct.ISummary;
 
@@ -58,8 +64,10 @@ export type IMallPlatformReview = {
    *
    * This value is stored as an integer from 1 to 5 and represents the customer's overall evaluation of the purchase.
    *
-   * @x-autobe-database-schema-property rating
-   * @x-autobe-specification Direct mapping from mall_platform_reviews.rating. Preserve the 1..5 integer constraint enforced by the database and business rules.
+     * @x-autobe-database-schema-property rating
+     * @x-autobe-specification Direct mapping from mall_platform_reviews.rating.
+     *   Preserve the 1..5 integer constraint enforced by the database and
+     *   business rules.
    */
   rating: number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<5>;
 
@@ -68,8 +76,10 @@ export type IMallPlatformReview = {
    *
    * This field contains the customer's free-form comment when provided, and it may be null when the review includes only a star rating.
    *
-   * @x-autobe-database-schema-property content
-   * @x-autobe-specification Direct mapping from mall_platform_reviews.content. Keep null when the review has no written text.
+     * @x-autobe-database-schema-property content
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_reviews.content. Keep null when the review has no written
+     *   text.
    */
   content: string | null;
 
@@ -78,8 +88,9 @@ export type IMallPlatformReview = {
    *
    * This value records when the active review was first written and is managed by the system.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from mall_platform_reviews.created_at.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_reviews.created_at.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -88,8 +99,9 @@ export type IMallPlatformReview = {
    *
    * This value changes whenever the active review is edited and is managed by the system.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from mall_platform_reviews.updated_at.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_reviews.updated_at.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -98,8 +110,10 @@ export type IMallPlatformReview = {
    *
    * This field is null while the review is active and contains the deletion time after the review is removed from normal display.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from mall_platform_reviews.deleted_at. Keep null while the review is active and a timestamp when it has been soft-deleted.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_reviews.deleted_at. Keep null while the review is active
+     *   and a timestamp when it has been soft-deleted.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -115,7 +129,11 @@ export namespace IMallPlatformReview {
      *
      * Use this value to choose which slice of the product's public review feed is returned. Page numbers are 1-based and are used together with limit to navigate the paginated list.
      *
-     * @x-autobe-specification Controls which page of the product's active review list is returned for PATCH /mallPlatform/products/{productId}/reviews. The endpoint applies this value after filtering deleted reviews and ordering the feed. It does not map to a database property.
+         * @x-autobe-specification Controls which page of the product's active
+         *   review list is returned for PATCH
+         *   /mallPlatform/products/{productId}/reviews. The endpoint applies
+         *   this value after filtering deleted reviews and ordering the feed.
+         *   It does not map to a database property.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -124,7 +142,11 @@ export namespace IMallPlatformReview {
      *
      * Use this value to cap how many active review summaries appear in one response page. The actual number returned may be smaller on the last page or when fewer reviews exist.
      *
-     * @x-autobe-specification Controls the maximum number of review summaries returned per page for PATCH /mallPlatform/products/{productId}/reviews. The service applies this limit after filtering and sorting. It does not map to a database property.
+         * @x-autobe-specification Controls the maximum number of review
+         *   summaries returned per page for PATCH
+         *   /mallPlatform/products/{productId}/reviews. The service applies
+         *   this limit after filtering and sorting. It does not map to a
+         *   database property.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -135,7 +157,11 @@ export namespace IMallPlatformReview {
      *
      * Use this value to change how the product's active reviews are ordered before pagination. When not overridden, the feed is shown from newest to oldest so the latest feedback appears first.
      *
-     * @x-autobe-specification Controls the allowed ordering mode for PATCH /mallPlatform/products/{productId}/reviews. The default ordering is newest-first by created_at descending, and supported sort values may override that behavior only when explicitly allowed by the browsing rules. It does not map to a database property.
+         * @x-autobe-specification Controls the allowed ordering mode for PATCH
+         *   /mallPlatform/products/{productId}/reviews. The default ordering is
+         *   newest-first by created_at descending, and supported sort values
+         *   may override that behavior only when explicitly allowed by the
+         *   browsing rules. It does not map to a database property.
      */
     sort?: string | undefined;
 
@@ -144,7 +170,11 @@ export namespace IMallPlatformReview {
      *
      * Use this value to narrow the product's public review feed to reviews whose searchable text matches the entered term. It filters the list without changing the product selected by the path parameter.
      *
-     * @x-autobe-specification Applies free-text filtering to the active review list for PATCH /mallPlatform/products/{productId}/reviews. The service should use this value to match searchable review text according to platform browsing rules. It does not map to a database property.
+         * @x-autobe-specification Applies free-text filtering to the active
+         *   review list for PATCH /mallPlatform/products/{productId}/reviews.
+         *   The service should use this value to match searchable review text
+         *   according to platform browsing rules. It does not map to a database
+         *   property.
      */
     search?: string | undefined;
   };
@@ -160,8 +190,11 @@ export namespace IMallPlatformReview {
      *
      * Provide a value from 1 to 5. This is the primary editable score for the review and is stored directly on the active review record.
      *
-     * @x-autobe-database-schema-property rating
-     * @x-autobe-specification Direct mapping from mall_platform_reviews.rating. Persist the customer's revised star rating on the active review row. The value must satisfy the review rating constraints enforced by the API and business rules.
+         * @x-autobe-database-schema-property rating
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_reviews.rating. Persist the customer's revised star
+         *   rating on the active review row. The value must satisfy the review
+         *   rating constraints enforced by the API and business rules.
      */
     rating: number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<5>;
 
@@ -170,8 +203,12 @@ export namespace IMallPlatformReview {
      *
      * Use this optional text field for the review body. It may be omitted or set to null when the customer does not want a written comment.
      *
-     * @x-autobe-database-schema-property content
-     * @x-autobe-specification Direct mapping from mall_platform_reviews.content. Persist the customer's revised written comment when provided, or store null when the comment is cleared. Allow omission in update payloads so the existing comment remains unchanged when only rating is being updated.
+         * @x-autobe-database-schema-property content
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_reviews.content. Persist the customer's revised
+         *   written comment when provided, or store null when the comment is
+         *   cleared. Allow omission in update payloads so the existing comment
+         *   remains unchanged when only rating is being updated.
      */
     content?: string | null | undefined;
   };
@@ -187,8 +224,11 @@ export namespace IMallPlatformReview {
      *
      * This identifies the exact delivered order item that qualifies the review and is used by the backend to enforce ownership and eligibility rules.
      *
-     * @x-autobe-database-schema-property order_item_id
-     * @x-autobe-specification Direct mapping to mall_platform_reviews.order_item_id. The service must verify that this order item belongs to the authenticated customer, is delivered, and is eligible for review before insert.
+         * @x-autobe-database-schema-property order_item_id
+         * @x-autobe-specification Direct mapping to
+         *   mall_platform_reviews.order_item_id. The service must verify that
+         *   this order item belongs to the authenticated customer, is
+         *   delivered, and is eligible for review before insert.
      */
     orderItemId: string & tags.Format<"uuid">;
 
@@ -197,8 +237,11 @@ export namespace IMallPlatformReview {
      *
      * This identifies the catalog product associated with the delivered order item and is used to prevent mismatched or duplicate review submissions.
      *
-     * @x-autobe-database-schema-property product_id
-     * @x-autobe-specification Direct mapping to mall_platform_reviews.product_id. The service must confirm that this product matches the referenced order item and belongs to the same purchase context before insert.
+         * @x-autobe-database-schema-property product_id
+         * @x-autobe-specification Direct mapping to
+         *   mall_platform_reviews.product_id. The service must confirm that
+         *   this product matches the referenced order item and belongs to the
+         *   same purchase context before insert.
      */
     productId: string & tags.Format<"uuid">;
 
@@ -207,8 +250,11 @@ export namespace IMallPlatformReview {
      *
      * This is the customer’s score for the purchased product, measured on the platform’s five-star scale from 1 to 5.
      *
-     * @x-autobe-database-schema-property rating
-     * @x-autobe-specification Direct mapping to mall_platform_reviews.rating. Persist the customer-provided star rating after validating the 1-to-5 range and the purchase eligibility rules.
+         * @x-autobe-database-schema-property rating
+         * @x-autobe-specification Direct mapping to
+         *   mall_platform_reviews.rating. Persist the customer-provided star
+         *   rating after validating the 1-to-5 range and the purchase
+         *   eligibility rules.
      */
     rating: number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<5>;
 
@@ -217,8 +263,11 @@ export namespace IMallPlatformReview {
      *
      * This field lets the customer add free-form commentary about the purchased product. It may be omitted or set to null when only a rating is provided.
      *
-     * @x-autobe-database-schema-property content
-     * @x-autobe-specification Direct mapping to mall_platform_reviews.content. Persist the optional review body as-is, allowing null when the customer submits rating-only feedback.
+         * @x-autobe-database-schema-property content
+         * @x-autobe-specification Direct mapping to
+         *   mall_platform_reviews.content. Persist the optional review body
+         *   as-is, allowing null when the customer submits rating-only
+         *   feedback.
      */
     content?: string | null | undefined;
   };
@@ -236,8 +285,8 @@ export namespace IMallPlatformReview {
      *
      * This value is used to reference the review record in public detail and moderation-related views.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from mall_platform_reviews.id.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from mall_platform_reviews.id.
      */
     id: string & tags.Format<"uuid">;
 
@@ -246,8 +295,10 @@ export namespace IMallPlatformReview {
      *
      * This field reflects the customer's 1-to-5 score for the purchased product and is used in rating displays and aggregates.
      *
-     * @x-autobe-database-schema-property rating
-     * @x-autobe-specification Direct mapping from mall_platform_reviews.rating. Represents the persisted 1-to-5 review score.
+         * @x-autobe-database-schema-property rating
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_reviews.rating. Represents the persisted 1-to-5
+         *   review score.
      */
     rating: number & tags.Type<"int32">;
 
@@ -256,8 +307,10 @@ export namespace IMallPlatformReview {
      *
      * This field contains the customer-authored comment when provided, and remains null when the review includes only a star rating.
      *
-     * @x-autobe-database-schema-property content
-     * @x-autobe-specification Direct mapping from mall_platform_reviews.content. Preserve null when the customer did not write text.
+         * @x-autobe-database-schema-property content
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_reviews.content. Preserve null when the customer did
+         *   not write text.
      */
     content: string | null;
 
@@ -266,8 +319,10 @@ export namespace IMallPlatformReview {
      *
      * This field exposes the related customer as a compact summary object so consumers can display the author without loading the full customer record.
      *
-     * @x-autobe-database-schema-property customer
-     * @x-autobe-specification Join mall_platform_reviews.customer_id to mall_platform_customers.id and serialize the related customer as IMallPlatformCustomer.ISummary.
+         * @x-autobe-database-schema-property customer
+         * @x-autobe-specification Join mall_platform_reviews.customer_id to
+         *   mall_platform_customers.id and serialize the related customer as
+         *   IMallPlatformCustomer.ISummary.
      */
     customer: IMallPlatformCustomer.ISummary;
 
@@ -276,8 +331,10 @@ export namespace IMallPlatformReview {
      *
      * This field exposes the related product as a compact summary object so consumers can show the reviewed item in lists and detail pages.
      *
-     * @x-autobe-database-schema-property product
-     * @x-autobe-specification Join mall_platform_reviews.product_id to mall_platform_products.id and serialize the related product as IMallPlatformProduct.ISummary.
+         * @x-autobe-database-schema-property product
+         * @x-autobe-specification Join mall_platform_reviews.product_id to
+         *   mall_platform_products.id and serialize the related product as
+         *   IMallPlatformProduct.ISummary.
      */
     product: IMallPlatformProduct.ISummary;
 
@@ -286,8 +343,9 @@ export namespace IMallPlatformReview {
      *
      * This timestamp is used for sorting review lists and showing when the customer first submitted the review.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from mall_platform_reviews.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_reviews.created_at.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -296,8 +354,9 @@ export namespace IMallPlatformReview {
      *
      * This timestamp reflects the most recent edit or moderation update applied to the live review record.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from mall_platform_reviews.updated_at.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_reviews.updated_at.
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -306,8 +365,10 @@ export namespace IMallPlatformReview {
      *
      * A null value means the review is active. A non-null value indicates the review has been deleted while preserving its historical record.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from mall_platform_reviews.deleted_at. Preserve the nullable value so consumers can represent soft-deleted reviews consistently.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_reviews.deleted_at. Preserve the nullable value so
+         *   consumers can represent soft-deleted reviews consistently.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };

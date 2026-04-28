@@ -17,7 +17,8 @@ import { ICommunityPlatformGuest } from "../../../../structures/ICommunityPlatfo
  * @param props.connection
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor guest
- * @x-autobe-specification Implement a guest-safe read endpoint that returns a public overview for unauthenticated users.
+ * @x-autobe-specification Implement a guest-safe read endpoint that returns a
+ *   public overview for unauthenticated users.
  *
  * Service-layer behavior:
  * 1) Authenticate request context: treat requester as guest (no member identity). If an authenticated identity is present, this endpoint should still respond in a guest-safe way (do not return member-specific secrets).

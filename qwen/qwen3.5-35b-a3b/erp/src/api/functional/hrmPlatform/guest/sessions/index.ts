@@ -20,7 +20,8 @@ import { IPageIHrmPlatformMemberSession } from "../../../../structures/IPageIHrm
  * @param props.body Search criteria for filtering member sessions. Includes organization context, date ranges, status filters, pagination parameters, and sort options.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor guest
- * @x-autobe-specification Query hrm_platform_member_sessions table with pagination and filtering.
+ * @x-autobe-specification Query hrm_platform_member_sessions table with
+ *   pagination and filtering.
  *
  * Apply search filters on:
  * - member_id: Filter by member account ID
@@ -128,7 +129,8 @@ export namespace index {
  * @param props.sessionId Unique identifier of the session to retrieve.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor guest
- * @x-autobe-specification Query the hrm_platform_member_sessions table by the session UUID.
+ * @x-autobe-specification Query the hrm_platform_member_sessions table by the
+ *   session UUID.
  *
  * 1. Find session by id = {sessionId}
  * 2. Return full session record if found

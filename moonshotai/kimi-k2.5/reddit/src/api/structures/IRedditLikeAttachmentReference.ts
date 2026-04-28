@@ -10,32 +10,39 @@ export type IRedditLikeAttachmentReference = {
   /**
    * Unique identifier for the attachment reference.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from reddit_like_attachment_references.id. Primary key UUID.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_attachment_references.id. Primary key UUID.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * The type of entity this attachment references: profile (user avatar), community (icon/banner), or post (content image).
    *
-   * @x-autobe-database-schema-property reference_type
-   * @x-autobe-specification Direct mapping from reddit_like_attachment_references.reference_type. Enumerated string: 'profile' | 'community' | 'post'.
+     * @x-autobe-database-schema-property reference_type
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_attachment_references.reference_type. Enumerated string:
+     *   'profile' | 'community' | 'post'.
    */
   referenceType: string;
 
   /**
    * Timestamp when the attachment reference was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from reddit_like_attachment_references.created_at. Timezone-aware timestamp.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_attachment_references.created_at. Timezone-aware timestamp.
    */
   createdAt: string & tags.Format<"date-time">;
 
   /**
    * Complete metadata for the referenced file attachment including storage path, filename, MIME type, and file size.
    *
-   * @x-autobe-database-schema-property attachment
-   * @x-autobe-specification Join via attachment_id FK to reddit_like_attachments. Returns IRedditLikeAttachment with full metadata including storagePath, uploader summary, mimeType, fileSizeBytes, checksumSha256.
+     * @x-autobe-database-schema-property attachment
+     * @x-autobe-specification Join via attachment_id FK to
+     *   reddit_like_attachments. Returns IRedditLikeAttachment with full
+     *   metadata including storagePath, uploader summary, mimeType,
+     *   fileSizeBytes, checksumSha256.
    */
   attachment: IRedditLikeAttachment;
 };
@@ -47,58 +54,83 @@ export namespace IRedditLikeAttachmentReference {
     /**
      * Filter by attachment reference type. Valid values: 'profile' for user avatars, 'community' for community icons/banners, 'post' for post images.
      *
-     * @x-autobe-database-schema-property reference_type
-     * @x-autobe-specification Direct filter on reddit_like_attachment_references.reference_type column. Valid values: 'profile' (user avatars), 'community' (community icons/banners), 'post' (post images). When specified, API joins with corresponding subtype table.
+         * @x-autobe-database-schema-property reference_type
+         * @x-autobe-specification Direct filter on
+         *   reddit_like_attachment_references.reference_type column. Valid
+         *   values: 'profile' (user avatars), 'community' (community
+         *   icons/banners), 'post' (post images). When specified, API joins
+         *   with corresponding subtype table.
      */
     reference_type?: string | undefined;
 
     /**
      * Filter by specific attachment ID to find all entity references linked to a particular file.
      *
-     * @x-autobe-database-schema-property attachment_id
-     * @x-autobe-specification Direct filter on reddit_like_attachment_references.attachment_id column (UUID). Filters to references for a specific uploaded file.
+         * @x-autobe-database-schema-property attachment_id
+         * @x-autobe-specification Direct filter on
+         *   reddit_like_attachment_references.attachment_id column (UUID).
+         *   Filters to references for a specific uploaded file.
      */
     attachment_id?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Filter references linked to a specific user profile for avatar references. Requires reference_type='profile' or returns empty.
      *
-     * @x-autobe-specification Join filter via reddit_like_attachment_reference_of_profiles table. When reference_type='profile', this filters to references linked to specific user profile. Join: reddit_like_attachment_references.id = reddit_like_attachment_reference_of_profiles.attachment_reference_id.
+         * @x-autobe-specification Join filter via
+         *   reddit_like_attachment_reference_of_profiles table. When
+         *   reference_type='profile', this filters to references linked to
+         *   specific user profile. Join: reddit_like_attachment_references.id =
+         *   reddit_like_attachment_reference_of_profiles.attachment_reference_id.
      */
     profile_id?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Filter references linked to a specific community for icon/banner references. Requires reference_type='community' or returns empty.
      *
-     * @x-autobe-specification Join filter via reddit_like_attachment_reference_of_communities table. When reference_type='community', this filters to references linked to specific community. Join: reddit_like_attachment_references.id = reddit_like_attachment_reference_of_communities.attachment_reference_id.
+         * @x-autobe-specification Join filter via
+         *   reddit_like_attachment_reference_of_communities table. When
+         *   reference_type='community', this filters to references linked to
+         *   specific community. Join: reddit_like_attachment_references.id =
+         *   reddit_like_attachment_reference_of_communities.attachment_reference_id.
      */
     community_id?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Filter references linked to a specific post for post image references. Requires reference_type='post' or returns empty.
      *
-     * @x-autobe-specification Join filter via reddit_like_attachment_reference_of_posts table. When reference_type='post', this filters to references linked to specific post. Join: reddit_like_attachment_references.id = reddit_like_attachment_reference_of_posts.attachment_reference_id.
+         * @x-autobe-specification Join filter via
+         *   reddit_like_attachment_reference_of_posts table. When
+         *   reference_type='post', this filters to references linked to
+         *   specific post. Join: reddit_like_attachment_references.id =
+         *   reddit_like_attachment_reference_of_posts.attachment_reference_id.
      */
     post_id?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Filter references created after this timestamp (inclusive). ISO 8601 datetime format.
      *
-     * @x-autobe-specification Computed filter on reddit_like_attachment_references.created_at column. SQL: created_at >= created_at_from. Inclusive range filter. ISO 8601 datetime format.
+         * @x-autobe-specification Computed filter on
+         *   reddit_like_attachment_references.created_at column. SQL:
+         *   created_at >= created_at_from. Inclusive range filter. ISO 8601
+         *   datetime format.
      */
     created_at_from?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Filter references created before this timestamp (inclusive). ISO 8601 datetime format.
      *
-     * @x-autobe-specification Computed filter on reddit_like_attachment_references.created_at column. SQL: created_at <= created_at_to. Inclusive range filter. ISO 8601 datetime format.
+         * @x-autobe-specification Computed filter on
+         *   reddit_like_attachment_references.created_at column. SQL:
+         *   created_at <= created_at_to. Inclusive range filter. ISO 8601
+         *   datetime format.
      */
     created_at_to?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Page number for pagination, starting from 1.
      *
-     * @x-autobe-specification Pagination parameter. 1-indexed page number. SQL: OFFSET (page - 1) * limit. Default: 1. Minimum: 1.
+         * @x-autobe-specification Pagination parameter. 1-indexed page number.
+         *   SQL: OFFSET (page - 1) * limit. Default: 1. Minimum: 1.
      */
     page?:
       | (number & tags.Type<"int32"> & tags.Default<1> & tags.Minimum<1>)
@@ -107,7 +139,8 @@ export namespace IRedditLikeAttachmentReference {
     /**
      * Number of records per page, maximum 100.
      *
-     * @x-autobe-specification Pagination parameter. Records per page. SQL: LIMIT clause. Default: 20. Minimum: 1. Maximum: 100.
+         * @x-autobe-specification Pagination parameter. Records per page. SQL:
+         *   LIMIT clause. Default: 20. Minimum: 1. Maximum: 100.
      */
     limit?:
       | (number &
@@ -125,53 +158,72 @@ export namespace IRedditLikeAttachmentReference {
     /**
      * Unique identifier for the attachment reference record.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from reddit_like_attachment_references.id. Primary key UUID uniquely identifying the attachment reference record.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_attachment_references.id. Primary key UUID uniquely
+         *   identifying the attachment reference record.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Type of entity this attachment references: 'profile' for user avatars, 'community' for community icons/banners, or 'post' for post images.
      *
-     * @x-autobe-database-schema-property reference_type
-     * @x-autobe-specification Direct mapping from reddit_like_attachment_references.reference_type. Enum value determining which entity subtype this attachment belongs to.
+         * @x-autobe-database-schema-property reference_type
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_attachment_references.reference_type. Enum value
+         *   determining which entity subtype this attachment belongs to.
      */
     referenceType: "profile" | "community" | "post";
 
     /**
      * Timestamp when the attachment reference was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from reddit_like_attachment_references.created_at. Timestamp when the attachment reference was created.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_attachment_references.created_at. Timestamp when the
+         *   attachment reference was created.
      */
     createdAt: string & tags.Format<"date-time">;
 
     /**
      * The file attachment metadata including filename, MIME type, size, and uploader information.
      *
-     * @x-autobe-database-schema-property attachment
-     * @x-autobe-specification Belongs-to relation from reddit_like_attachment_references.attachment_id joining to reddit_like_attachments.id. Returns IRedditLikeAttachment.ISummary with file metadata.
+         * @x-autobe-database-schema-property attachment
+         * @x-autobe-specification Belongs-to relation from
+         *   reddit_like_attachment_references.attachment_id joining to
+         *   reddit_like_attachments.id. Returns IRedditLikeAttachment.ISummary
+         *   with file metadata.
      */
     attachment: IRedditLikeAttachment.ISummary;
 
     /**
      * The profile ID if this attachment is a profile avatar, otherwise null.
      *
-     * @x-autobe-specification Computed via LEFT JOIN to reddit_like_attachment_reference_of_profiles table on reference_id when reference_type equals 'profile'. Returns the profile UUID when this attachment is a profile avatar, otherwise null.
+         * @x-autobe-specification Computed via LEFT JOIN to
+         *   reddit_like_attachment_reference_of_profiles table on reference_id
+         *   when reference_type equals 'profile'. Returns the profile UUID when
+         *   this attachment is a profile avatar, otherwise null.
      */
     profileId: (string & tags.Format<"uuid">) | null;
 
     /**
      * The community ID if this attachment is a community icon/banner, otherwise null.
      *
-     * @x-autobe-specification Computed via LEFT JOIN to reddit_like_attachment_reference_of_communities table on reference_id when reference_type equals 'community'. Returns the community UUID when this attachment is a community icon/banner, otherwise null.
+         * @x-autobe-specification Computed via LEFT JOIN to
+         *   reddit_like_attachment_reference_of_communities table on
+         *   reference_id when reference_type equals 'community'. Returns the
+         *   community UUID when this attachment is a community icon/banner,
+         *   otherwise null.
      */
     communityId: (string & tags.Format<"uuid">) | null;
 
     /**
      * The post ID if this attachment is a post image, otherwise null.
      *
-     * @x-autobe-specification Computed via LEFT JOIN to reddit_like_attachment_reference_of_posts table on reference_id when reference_type equals 'post'. Returns the post UUID when this attachment is a post image, otherwise null.
+         * @x-autobe-specification Computed via LEFT JOIN to
+         *   reddit_like_attachment_reference_of_posts table on reference_id
+         *   when reference_type equals 'post'. Returns the post UUID when this
+         *   attachment is a post image, otherwise null.
      */
     postId: (string & tags.Format<"uuid">) | null;
   };
@@ -183,8 +235,11 @@ export namespace IRedditLikeAttachmentReference {
     /**
      * UUID of the attachment file to link to the target entity
      *
-     * @x-autobe-database-schema-property attachment_id
-     * @x-autobe-specification Direct column mapping from reddit_like_attachment_references.attachment_id. Required FK referencing reddit_like_attachments.id. Validate attachment exists and is not soft-deleted before creating reference.
+         * @x-autobe-database-schema-property attachment_id
+         * @x-autobe-specification Direct column mapping from
+         *   reddit_like_attachment_references.attachment_id. Required FK
+         *   referencing reddit_like_attachments.id. Validate attachment exists
+         *   and is not soft-deleted before creating reference.
      */
     attachmentId: string & tags.Format<"uuid">;
   };

@@ -17,11 +17,11 @@ export class HrmplatformMemberTimetrackingDaily_hoursController {
    * The calculation respects the organization's timezone configuration to ensure consistent reporting across different geographical regions.
    *
    * @param connection
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query hrm_platform_timelogs table for entries where:
-   * - employee_id matches the authenticated user's employee_id
-   * - start_datetime date equals today's date in organization timezone
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query hrm_platform_timelogs table for entries
+     *   where: - employee_id matches the authenticated user's employee_id -
+     *   start_datetime date equals today's date in organization timezone
    *
    * Calculate SUM(duration_minutes) from filtered timelogs and convert to hours (divide by 60).
    *

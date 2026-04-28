@@ -22,8 +22,9 @@ export type IRedditLikeMemberPasswordReset = {
    *
    * This is the primary key used to look up the password reset token when validating a reset link.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from reddit_like_member_password_resets.id. Primary key UUID.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_member_password_resets.id. Primary key UUID.
    */
   id: string & tags.Format<"uuid">;
 
@@ -32,8 +33,10 @@ export type IRedditLikeMemberPasswordReset = {
    *
    * This foreign key links the password reset token to the specific member account that will receive the new password upon successful validation.
    *
-   * @x-autobe-database-schema-property reddit_like_member_id
-   * @x-autobe-specification Direct mapping from reddit_like_member_password_resets.reddit_like_member_id. Foreign key to member account.
+     * @x-autobe-database-schema-property reddit_like_member_id
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_member_password_resets.reddit_like_member_id. Foreign key
+     *   to member account.
    */
   reddit_like_member_id: string & tags.Format<"uuid">;
 
@@ -42,8 +45,10 @@ export type IRedditLikeMemberPasswordReset = {
    *
    * Tokens become invalid after this time and cannot be used for password reset. This is a security measure to limit the window of opportunity for token misuse.
    *
-   * @x-autobe-database-schema-property expires_at
-   * @x-autobe-specification Direct mapping from reddit_like_member_password_resets.expires_at. Token expiration timestamp in date-time format.
+     * @x-autobe-database-schema-property expires_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_member_password_resets.expires_at. Token expiration
+     *   timestamp in date-time format.
    */
   expires_at: string & tags.Format<"date-time">;
 
@@ -52,8 +57,10 @@ export type IRedditLikeMemberPasswordReset = {
    *
    * This timestamp is set automatically when the member requests a password reset and the token is generated.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from reddit_like_member_password_resets.created_at. Record creation timestamp in date-time format.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_member_password_resets.created_at. Record creation
+     *   timestamp in date-time format.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -62,8 +69,10 @@ export type IRedditLikeMemberPasswordReset = {
    *
    * This field is updated whenever the record is modified, including when the token is used or soft-deleted.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from reddit_like_member_password_resets.updated_at. Record last update timestamp in date-time format.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_member_password_resets.updated_at. Record last update
+     *   timestamp in date-time format.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -72,8 +81,11 @@ export type IRedditLikeMemberPasswordReset = {
    *
    * When null, the token is active and potentially valid. When set, the token has been used or invalidated and cannot be used for password reset. This field supports audit trails while preventing token reuse.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from reddit_like_member_password_resets.deleted_at. Soft delete timestamp. Null for active tokens, contains deletion timestamp for used/expired tokens.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_member_password_resets.deleted_at. Soft delete timestamp.
+     *   Null for active tokens, contains deletion timestamp for used/expired
+     *   tokens.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 
@@ -91,7 +103,9 @@ export type IRedditLikeMemberPasswordReset = {
    * 2. The `deleted_at` field is null (not soft-deleted)
    * 3. The `expires_at` timestamp is in the future (not expired)
    *
-   * @x-autobe-specification Computed field: true if token exists (id found), deleted_at IS NULL, and expires_at > current timestamp. False otherwise. Not mapped to any database column.
+     * @x-autobe-specification Computed field: true if token exists (id found),
+     *   deleted_at IS NULL, and expires_at > current timestamp. False
+     *   otherwise. Not mapped to any database column.
    */
   valid: boolean;
 };
@@ -116,8 +130,10 @@ export namespace IRedditLikeMemberPasswordReset {
      *
      * This token is generated when a member requests a password reset and is sent to their registered email address. The token must be valid (not expired, not used, not soft-deleted) to complete the password reset flow. Tokens are cryptographically random and single-use.
      *
-     * @x-autobe-database-schema-property token
-     * @x-autobe-specification Direct mapping from reddit_like_member_password_resets.token. One-time use token string.
+         * @x-autobe-database-schema-property token
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_member_password_resets.token. One-time use token
+         *   string.
      */
     token: string;
 
@@ -130,7 +146,10 @@ export namespace IRedditLikeMemberPasswordReset {
      *
      * The password is transmitted over HTTPS and is never stored or logged in plain text.
      *
-     * @x-autobe-specification User-provided plain text password that will be hashed using bcrypt before storage in reddit_like_members.password_hash. Backend validates password meets security requirements (minimum length, complexity).
+         * @x-autobe-specification User-provided plain text password that will
+         *   be hashed using bcrypt before storage in
+         *   reddit_like_members.password_hash. Backend validates password meets
+         *   security requirements (minimum length, complexity).
      */
     password: string;
 
@@ -142,7 +161,8 @@ export namespace IRedditLikeMemberPasswordReset {
      * Requesting a page beyond the available range returns an empty data array
      * with valid pagination metadata reflecting the actual totals.
      *
-     * @x-autobe-specification 1-indexed page number. Defaults to 1 if not provided.
+         * @x-autobe-specification 1-indexed page number. Defaults to 1 if not
+         *   provided.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
 
@@ -154,7 +174,8 @@ export namespace IRedditLikeMemberPasswordReset {
      * enforce upper bounds to prevent excessive resource consumption on large
      * requests.
      *
-     * @x-autobe-specification Maximum records per page. Defaults to 100 if not provided.
+         * @x-autobe-specification Maximum records per page. Defaults to 100 if
+         *   not provided.
      */
     limit?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };
@@ -174,7 +195,9 @@ export namespace IRedditLikeMemberPasswordReset {
      *
      * This boolean field indicates whether the password reset operation completed successfully. A value of `true` means the request was processed without errors. For password reset operations, HTTP 200 OK responses always have `success: true`, while errors are communicated via HTTP status codes (400, 401, etc.) rather than setting this to false.
      *
-     * @x-autobe-specification Indicates whether the password reset operation succeeded. Always true for 200 OK responses. False values are indicated by HTTP error status codes instead.
+         * @x-autobe-specification Indicates whether the password reset
+         *   operation succeeded. Always true for 200 OK responses. False values
+         *   are indicated by HTTP error status codes instead.
      */
     success: boolean;
 
@@ -191,7 +214,10 @@ export namespace IRedditLikeMemberPasswordReset {
      *
      * Confirms the password has been successfully reset and the member can now log in with the new password.
      *
-     * @x-autobe-specification Generic success message that does not reveal whether email/token was valid to prevent enumeration attacks. For POST (initiate), confirms email was accepted for processing. For PATCH (verify), confirms password was reset successfully.
+         * @x-autobe-specification Generic success message that does not reveal
+         *   whether email/token was valid to prevent enumeration attacks. For
+         *   POST (initiate), confirms email was accepted for processing. For
+         *   PATCH (verify), confirms password was reset successfully.
      */
     message: string;
   };
@@ -215,7 +241,10 @@ export namespace IRedditLikeMemberPasswordReset {
      *
      * The response does not indicate whether this email address exists in the system, preventing email enumeration attacks.
      *
-     * @x-autobe-specification User-provided email address. System queries reddit_like_members table by email (case-insensitive lookup) to resolve reddit_like_member_id. If member not found, generic success response returned (security best practice).
+         * @x-autobe-specification User-provided email address. System queries
+         *   reddit_like_members table by email (case-insensitive lookup) to
+         *   resolve reddit_like_member_id. If member not found, generic success
+         *   response returned (security best practice).
      */
     email: string & tags.Format<"email">;
   };
@@ -239,7 +268,11 @@ export namespace IRedditLikeMemberPasswordReset {
      *
      * The password will be hashed using bcrypt or argon2 before storage. All existing sessions for the member are invalidated after successful password reset to prevent unauthorized access with compromised credentials.
      *
-     * @x-autobe-specification Plain text password provided by user. Backend hashes with bcrypt/argon2 and stores in reddit_like_members.password_hash column. Must meet security requirements (minimum length, complexity). After successful reset, token is invalidated and all member sessions are terminated.
+         * @x-autobe-specification Plain text password provided by user. Backend
+         *   hashes with bcrypt/argon2 and stores in
+         *   reddit_like_members.password_hash column. Must meet security
+         *   requirements (minimum length, complexity). After successful reset,
+         *   token is invalidated and all member sessions are terminated.
      */
     password: string;
   };

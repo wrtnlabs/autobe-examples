@@ -33,8 +33,9 @@ export namespace IMallPlatformProductImageSnapshot {
      *
      * This value identifies one immutable history record used for browsing and audit workflows.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from mall_platform_product_image_snapshots.id.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_product_image_snapshots.id.
      */
     id: string & tags.Format<"uuid">;
 
@@ -43,8 +44,11 @@ export namespace IMallPlatformProductImageSnapshot {
      *
      * This is shown as a summary object so clients can tell which product the preserved image state belongs to.
      *
-     * @x-autobe-database-schema-property product
-     * @x-autobe-specification Join mall_platform_product_image_snapshots.mall_platform_product_id to mall_platform_products.id and expose the related product as IMallPlatformProduct.ISummary.
+         * @x-autobe-database-schema-property product
+         * @x-autobe-specification Join
+         *   mall_platform_product_image_snapshots.mall_platform_product_id to
+         *   mall_platform_products.id and expose the related product as
+         *   IMallPlatformProduct.ISummary.
      */
     product: IMallPlatformProduct.ISummary;
 
@@ -53,8 +57,9 @@ export namespace IMallPlatformProductImageSnapshot {
      *
      * This is the exact image address stored when the snapshot was recorded.
      *
-     * @x-autobe-database-schema-property image_url
-     * @x-autobe-specification Direct mapping from mall_platform_product_image_snapshots.image_url.
+         * @x-autobe-database-schema-property image_url
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_product_image_snapshots.image_url.
      */
     imageUrl: string & tags.Format<"uri">;
 
@@ -63,8 +68,9 @@ export namespace IMallPlatformProductImageSnapshot {
      *
      * Lower values indicate earlier placement in the product image sequence.
      *
-     * @x-autobe-database-schema-property image_order
-     * @x-autobe-specification Direct mapping from mall_platform_product_image_snapshots.image_order.
+         * @x-autobe-database-schema-property image_order
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_product_image_snapshots.image_order.
      */
     imageOrder: number & tags.Type<"int32">;
 
@@ -73,8 +79,9 @@ export namespace IMallPlatformProductImageSnapshot {
      *
      * When true, the image was the thumbnail or primary gallery image at the time the snapshot was captured.
      *
-     * @x-autobe-database-schema-property is_main
-     * @x-autobe-specification Direct mapping from mall_platform_product_image_snapshots.is_main.
+         * @x-autobe-database-schema-property is_main
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_product_image_snapshots.is_main.
      */
     isMain: boolean;
 
@@ -83,8 +90,9 @@ export namespace IMallPlatformProductImageSnapshot {
      *
      * This timestamp reflects the business event time preserved by the snapshot.
      *
-     * @x-autobe-database-schema-property changed_at
-     * @x-autobe-specification Direct mapping from mall_platform_product_image_snapshots.changed_at.
+         * @x-autobe-database-schema-property changed_at
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_product_image_snapshots.changed_at.
      */
     changedAt: string & tags.Format<"date-time">;
 
@@ -93,8 +101,9 @@ export namespace IMallPlatformProductImageSnapshot {
      *
      * This audit timestamp shows when the immutable history row was stored.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from mall_platform_product_image_snapshots.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_product_image_snapshots.created_at.
      */
     createdAt: string & tags.Format<"date-time">;
 
@@ -103,8 +112,9 @@ export namespace IMallPlatformProductImageSnapshot {
      *
      * This audit timestamp reflects any internal maintenance or metadata update on the immutable history row.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from mall_platform_product_image_snapshots.updated_at.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_product_image_snapshots.updated_at.
      */
     updatedAt: string & tags.Format<"date-time">;
 
@@ -113,8 +123,10 @@ export namespace IMallPlatformProductImageSnapshot {
      *
      * A null value means the snapshot remains active and available for history browsing.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from mall_platform_product_image_snapshots.deleted_at. Preserve null when the snapshot has not been soft-deleted.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_product_image_snapshots.deleted_at. Preserve null
+         *   when the snapshot has not been soft-deleted.
      */
     deletedAt: (string & tags.Format<"date-time">) | null;
   };
@@ -130,7 +142,10 @@ export namespace IMallPlatformProductImageSnapshot {
      *
      * This value selects which page of snapshot history is returned. It is a request-only browsing control and does not map to a stored snapshot field.
      *
-     * @x-autobe-specification Use as the 1-indexed page number for querying snapshot history. Apply it to the paginated retrieval of mall_platform_product_image_snapshots rows and default to the first page when omitted.
+         * @x-autobe-specification Use as the 1-indexed page number for querying
+         *   snapshot history. Apply it to the paginated retrieval of
+         *   mall_platform_product_image_snapshots rows and default to the first
+         *   page when omitted.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -139,7 +154,10 @@ export namespace IMallPlatformProductImageSnapshot {
      *
      * This value limits how many snapshot history rows appear in one response. It is a request-only browsing control and does not map to a stored snapshot field.
      *
-     * @x-autobe-specification Use as the maximum number of snapshot rows returned per page. Apply it to the paginated retrieval of mall_platform_product_image_snapshots rows and enforce the endpoint's configured upper bound.
+         * @x-autobe-specification Use as the maximum number of snapshot rows
+         *   returned per page. Apply it to the paginated retrieval of
+         *   mall_platform_product_image_snapshots rows and enforce the
+         *   endpoint's configured upper bound.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -150,7 +168,10 @@ export namespace IMallPlatformProductImageSnapshot {
      *
      * This value determines how the snapshot rows are ordered in the response. It is a request-only browsing control rather than a persisted snapshot attribute.
      *
-     * @x-autobe-specification Use as the sort directive for snapshot history retrieval. Apply it to the ordering of mall_platform_product_image_snapshots query results, typically defaulting to newest-first when not provided.
+         * @x-autobe-specification Use as the sort directive for snapshot
+         *   history retrieval. Apply it to the ordering of
+         *   mall_platform_product_image_snapshots query results, typically
+         *   defaulting to newest-first when not provided.
      */
     sort?: string | undefined;
 
@@ -159,8 +180,10 @@ export namespace IMallPlatformProductImageSnapshot {
      *
      * This filter narrows the history to snapshots recorded on or after the specified time. It applies to the stored change timestamp of each snapshot row.
      *
-     * @x-autobe-database-schema-property changed_at
-     * @x-autobe-specification Apply this value as the inclusive lower bound for mall_platform_product_image_snapshots.changed_at. Include only rows whose changed_at is greater than or equal to this timestamp.
+         * @x-autobe-database-schema-property changed_at
+         * @x-autobe-specification Apply this value as the inclusive lower bound
+         *   for mall_platform_product_image_snapshots.changed_at. Include only
+         *   rows whose changed_at is greater than or equal to this timestamp.
      */
     changedAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
@@ -169,8 +192,10 @@ export namespace IMallPlatformProductImageSnapshot {
      *
      * This filter narrows the history to snapshots recorded on or before the specified time. It applies to the stored change timestamp of each snapshot row.
      *
-     * @x-autobe-database-schema-property changed_at
-     * @x-autobe-specification Apply this value as the inclusive upper bound for mall_platform_product_image_snapshots.changed_at. Include only rows whose changed_at is less than or equal to this timestamp.
+         * @x-autobe-database-schema-property changed_at
+         * @x-autobe-specification Apply this value as the inclusive upper bound
+         *   for mall_platform_product_image_snapshots.changed_at. Include only
+         *   rows whose changed_at is less than or equal to this timestamp.
      */
     changedAtTo?: (string & tags.Format<"date-time">) | undefined;
   };

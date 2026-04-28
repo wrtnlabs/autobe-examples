@@ -11,32 +11,43 @@ export type IShoppingMallAdminOfSeller = {
   /**
    * The unique identifier of this seller-origin linkage record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_admin_of_sellers.id. UUID primary key of the linkage record itself.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_admin_of_sellers.id. UUID primary key of the linkage
+     *   record itself.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * A summary of the administrator account that was promoted from a seller identity. Includes the admin's unique identifier, email address, actor type, grade, and account timestamps.
    *
-   * @x-autobe-database-schema-property admin
-   * @x-autobe-specification Populated by JOINing shopping_mall_admins on admin_id. Returns the admin account as IShoppingMallAdmin.ISummary. Never expose password_hash. The unique constraint @@unique([admin_id]) guarantees this is always a 1:1 relationship.
+     * @x-autobe-database-schema-property admin
+     * @x-autobe-specification Populated by JOINing shopping_mall_admins on
+     *   admin_id. Returns the admin account as IShoppingMallAdmin.ISummary.
+     *   Never expose password_hash. The unique constraint @@unique([admin_id])
+     *   guarantees this is always a 1:1 relationship.
    */
   admin: IShoppingMallAdmin.ISummary;
 
   /**
    * A summary of the originating seller account from which the administrator was promoted. Includes the seller's unique identifier, email address, shop name, ban and suspension status flags, and account timestamps.
    *
-   * @x-autobe-database-schema-property seller
-   * @x-autobe-specification Populated by JOINing shopping_mall_sellers on seller_id. Returns the originating seller account as IShoppingMallSeller.ISummary. Never expose password_hash or any sensitive credential field from the seller record.
+     * @x-autobe-database-schema-property seller
+     * @x-autobe-specification Populated by JOINing shopping_mall_sellers on
+     *   seller_id. Returns the originating seller account as
+     *   IShoppingMallSeller.ISummary. Never expose password_hash or any
+     *   sensitive credential field from the seller record.
    */
   seller: IShoppingMallSeller.ISummary;
 
   /**
    * The timestamp recording when the seller account was promoted to administrator status and this linkage record was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from shopping_mall_admin_of_sellers.created_at. Timestamptz column recording the exact moment when the seller account was promoted to administrator and this linkage record was created.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_admin_of_sellers.created_at. Timestamptz column recording
+     *   the exact moment when the seller account was promoted to administrator
+     *   and this linkage record was created.
    */
   created_at: string & tags.Format<"date-time">;
 };

@@ -23,9 +23,10 @@ export class HrmplatformMemberTimesheetsController {
    *
    * @param connection
    * @param body Timesheet creation data including employee assignment, week period, and optional notes.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Create a new timesheet record in hrm_platform_timesheets table.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Create a new timesheet record in
+     *   hrm_platform_timesheets table.
    *
    * 1. Validate that start_date represents a Monday and end_date represents a Sunday of the same week.
    * 2. Validate that end_date is exactly 6 days after start_date (7-day week).
@@ -73,9 +74,10 @@ export class HrmplatformMemberTimesheetsController {
    *
    * @param connection
    * @param body Search criteria including pagination parameters, filter options for status and date ranges, employee ID filter, and sorting configuration.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query hrm_platform_timesheets table with pagination and filtering.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query hrm_platform_timesheets table with
+     *   pagination and filtering.
    *
    * Pagination:
    * - Support page number and page size parameters
@@ -153,9 +155,10 @@ export class HrmplatformMemberTimesheetsController {
    *
    * @param connection
    * @param timesheetId Unique identifier of the timesheet to retrieve
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Retrieve a single timesheet by ID from hrm_platform_timesheets table.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Retrieve a single timesheet by ID from
+     *   hrm_platform_timesheets table.
    *
    * Query the timesheet record where id = timesheetId parameter.
    *
@@ -211,18 +214,20 @@ export class HrmplatformMemberTimesheetsController {
    * @param connection
    * @param timesheetId UUID identifier of the timesheet to update. Must be a valid UUID format.
    * @param body Fields to update on the timesheet. Currently only the notes field can be modified through this operation. Other fields like status, dates, and timesheet totals are controlled by workflow rules and cannot be directly updated.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1. Retrieve timesheet by ID from hrm_platform_timesheets table
-   * 2. Verify timesheet exists and is not soft-deleted (deleted_at IS NULL)
-   * 3. Check timesheet status - allow update only if status is 'pending' or 'rejected'
-   * 4. Verify authorization: authenticated user must be timesheet owner OR have time approval permission for organization
-   * 5. If timesheet belongs to different organization than user's context, reject with 403
-   * 6. Validate request body fields against IHrmPlatformTimesheet.IUpdate schema
-   * 7. Only allow update of 'notes' field - other fields are read-only or workflow-controlled
-   * 8. Update the timesheet record with new values
-   * 9. Update updated_at timestamp to CURRENT_TIMESTAMP
-   * 10. Return updated full timesheet entity with status, owner details, and timelog count
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification 1. Retrieve timesheet by ID from
+     *   hrm_platform_timesheets table 2. Verify timesheet exists and is not
+     *   soft-deleted (deleted_at IS NULL) 3. Check timesheet status - allow
+     *   update only if status is 'pending' or 'rejected' 4. Verify
+     *   authorization: authenticated user must be timesheet owner OR have time
+     *   approval permission for organization 5. If timesheet belongs to
+     *   different organization than user's context, reject with 403 6. Validate
+     *   request body fields against IHrmPlatformTimesheet.IUpdate schema 7.
+     *   Only allow update of 'notes' field - other fields are read-only or
+     *   workflow-controlled 8. Update the timesheet record with new values 9.
+     *   Update updated_at timestamp to CURRENT_TIMESTAMP 10. Return updated
+     *   full timesheet entity with status, owner details, and timelog count
    *
    * Error handling:
    * - 404 Not Found: timesheet does not exist or was soft-deleted
@@ -276,24 +281,27 @@ export class HrmplatformMemberTimesheetsController {
    *
    * @param connection
    * @param timesheetId Unique identifier of the timesheet to delete (UUID format)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1. Validate timesheetId is a valid UUID format
-   * 2. Query hrm_platform_timesheets WHERE id = timesheetId
-   * 3. If record not found, return 404 Not Found with error: "Timesheet not found"
-   * 4. Check authorization:
-   *    - Load the employee record from hrm_platform_employees using timesheet.hrm_platform_employee_id
-   *    - If timesheet.hrm_platform_employee_id equals current member's ID (employee), mark as owner-authorized
-   *    - Load current member's role and check if role has time:manage permission
-   *    - If not owner and not has time:manage permission, return 403 Forbidden
-   * 5. Check if timesheet is in approved status (status = 'approved'):
-   *    - If approved AND current user is NOT time management user, return 403 Forbidden
-   *    - Approved timesheets can only be deleted by time management users
-   * 6. Perform soft delete:
-   *    - Update hrm_platform_timesheets SET deleted_at = NOW() WHERE id = timesheetId
-   *    - Cascade delete will automatically remove associated hrm_platform_timesheet_timelogs and hrm_platform_timesheet_actions records (onDelete: Cascade)
-   * 7. Return the soft-deleted timesheet record with deleted_at timestamp set
-   * 8. Response includes: id, hrm_platform_employee_id, start_date, end_date, status, deleted_at, notes, total_hours
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification 1. Validate timesheetId is a valid UUID format 2.
+     *   Query hrm_platform_timesheets WHERE id = timesheetId 3. If record not
+     *   found, return 404 Not Found with error: "Timesheet not found" 4. Check
+     *   authorization: - Load the employee record from hrm_platform_employees
+     *   using timesheet.hrm_platform_employee_id - If
+     *   timesheet.hrm_platform_employee_id equals current member's ID
+     *   (employee), mark as owner-authorized - Load current member's role and
+     *   check if role has time:manage permission - If not owner and not has
+     *   time:manage permission, return 403 Forbidden 5. Check if timesheet is
+     *   in approved status (status = 'approved'): - If approved AND current
+     *   user is NOT time management user, return 403 Forbidden - Approved
+     *   timesheets can only be deleted by time management users 6. Perform soft
+     *   delete: - Update hrm_platform_timesheets SET deleted_at = NOW() WHERE
+     *   id = timesheetId - Cascade delete will automatically remove associated
+     *   hrm_platform_timesheet_timelogs and hrm_platform_timesheet_actions
+     *   records (onDelete: Cascade) 7. Return the soft-deleted timesheet record
+     *   with deleted_at timestamp set 8. Response includes: id,
+     *   hrm_platform_employee_id, start_date, end_date, status, deleted_at,
+     *   notes, total_hours
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Delete(":timesheetId")

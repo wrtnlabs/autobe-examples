@@ -26,7 +26,9 @@ import { IPageIHrmTimeTrackingProjectBudgetAlert } from "../../../structures/IPa
  * @param props.body Search criteria and pagination options for project budget alerts
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Implement this operation as an organization-scoped search over hrm_time_tracking_project_budget_alerts with mandatory authorization and tenant isolation checks before querying any data.
+ * @x-autobe-specification Implement this operation as an organization-scoped
+ *   search over hrm_time_tracking_project_budget_alerts with mandatory
+ *   authorization and tenant isolation checks before querying any data.
  *
  * Resolve the caller's active organization context from authentication/session state, then verify that the caller is allowed to view project or dashboard insight data in that organization. Deny the request when the caller has no organization-selected access, when the selected organization does not match the caller's membership context, or when the caller lacks the applicable read permission for project insight visibility. Do not permit a role from another organization to influence authorization for the active request.
  *
@@ -133,7 +135,10 @@ export namespace index {
  * @param props.projectBudgetAlertId Target project budget alert record ID
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Implement a read-only service method that retrieves one record from `hrm_time_tracking_project_budget_alerts` by `id` and joins the related `hrm_time_tracking_projects` record for enriched response composition.
+ * @x-autobe-specification Implement a read-only service method that retrieves
+ *   one record from `hrm_time_tracking_project_budget_alerts` by `id` and joins
+ *   the related `hrm_time_tracking_projects` record for enriched response
+ *   composition.
  *
  * Resolve the caller's currently selected organization context first. Authorize only actors who can access organization-level dashboard or reporting information in that active workspace, especially owners and managers. Evaluate permissions only within the current organization context and deny access when the caller lacks the required organization-scoped authority.
  *

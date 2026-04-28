@@ -16,8 +16,9 @@ export type ICommunityPlatformProfile = {
    *
    * This primary key value is auto-generated when the profile is created upon member registration. It is immutable and used for internal referencing. The `id` is distinct from the `member_id` foreign key that links to the owning member's account.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from community_platform_profiles.id (UUID).
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_profiles.id (UUID).
    */
   id: string & tags.Format<"uuid">;
 
@@ -26,8 +27,11 @@ export type ICommunityPlatformProfile = {
    *
    * The member object contains the owner's unique identifier, email address, username, and account creation/deletion timestamps. Every profile belongs to exactly one member, and this relationship is established at registration time via the `member_id` foreign key.
    *
-   * @x-autobe-database-schema-property member
-   * @x-autobe-specification BELONGS-TO JOIN from community_platform_profiles.member_id to community_platform_members.id. Returns ICommunityPlatformMember.ISummary with fields: id, email, username, created_at, deleted_at.
+     * @x-autobe-database-schema-property member
+     * @x-autobe-specification BELONGS-TO JOIN from
+     *   community_platform_profiles.member_id to community_platform_members.id.
+     *   Returns ICommunityPlatformMember.ISummary with fields: id, email,
+     *   username, created_at, deleted_at.
    */
   member: ICommunityPlatformMember.ISummary;
 
@@ -36,8 +40,9 @@ export type ICommunityPlatformProfile = {
    *
    * This name appears in feeds, post listings, comment threads, and the profile page header. It is distinct from the `username` (which is used for authentication and unique identification) and may be updated by the member at any time.
    *
-   * @x-autobe-database-schema-property display_name
-   * @x-autobe-specification Direct mapping from community_platform_profiles.display_name.
+     * @x-autobe-database-schema-property display_name
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_profiles.display_name.
    */
   display_name: string;
 
@@ -46,8 +51,10 @@ export type ICommunityPlatformProfile = {
    *
    * Visible on the profile page. This field is optional — members may choose not to provide a biography. When not set, the value is `null`.
    *
-   * @x-autobe-database-schema-property biography
-   * @x-autobe-specification Direct mapping from community_platform_profiles.biography. Nullable — returns null when no biography is set.
+     * @x-autobe-database-schema-property biography
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_profiles.biography. Nullable — returns null when no
+     *   biography is set.
    */
   biography: string | null;
 
@@ -56,8 +63,10 @@ export type ICommunityPlatformProfile = {
    *
    * Provides visual recognition in feeds, post listings, and comment threads. This field is optional — members who have not uploaded an avatar will have a `null` value.
    *
-   * @x-autobe-database-schema-property avatar_uri
-   * @x-autobe-specification Direct mapping from community_platform_profiles.avatar_uri. Nullable — returns null when no avatar is uploaded.
+     * @x-autobe-database-schema-property avatar_uri
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_profiles.avatar_uri. Nullable — returns null when no
+     *   avatar is uploaded.
    */
   avatar_uri: (string & tags.Format<"uri">) | null;
 
@@ -66,8 +75,10 @@ export type ICommunityPlatformProfile = {
    *
    * Karma starts at 0 and increases by 1 for each upvote received on the member's posts or comments, and decreases by 1 for each downvote. When a vote is retracted or changed, karma adjusts accordingly. The score can be positive, zero, or negative. This is a denormalized aggregate stored in the profile for efficient reads.
    *
-   * @x-autobe-database-schema-property karma
-   * @x-autobe-specification Direct mapping from community_platform_profiles.karma (Int). Denormalized aggregate updated by vote operations — not modifiable via profile update.
+     * @x-autobe-database-schema-property karma
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_profiles.karma (Int). Denormalized aggregate updated
+     *   by vote operations — not modifiable via profile update.
    */
   karma: number & tags.Type<"int32">;
 
@@ -76,8 +87,10 @@ export type ICommunityPlatformProfile = {
    *
    * Set automatically upon member registration. This timestamp is immutable and indicates when the member joined the platform.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from community_platform_profiles.created_at. Set automatically upon profile creation.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_profiles.created_at. Set automatically upon profile
+     *   creation.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -86,8 +99,10 @@ export type ICommunityPlatformProfile = {
    *
    * Updated automatically whenever the profile's mutable fields (display name, biography, avatar, or karma) change. Used for conflict detection and audit purposes.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from community_platform_profiles.updated_at. Updated automatically on any profile change (display_name, biography, avatar_uri, karma).
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_profiles.updated_at. Updated automatically on any
+     *   profile change (display_name, biography, avatar_uri, karma).
    */
   updated_at: string & tags.Format<"date-time">;
 };
@@ -103,8 +118,10 @@ export namespace ICommunityPlatformProfile {
      *
      * This is distinct from the unique username used for authentication and may differ from it. The display name is the primary identifier visible to other users in post listings, comment threads, and feeds. When provided, it must be a non-blank string.
      *
-     * @x-autobe-database-schema-property display_name
-     * @x-autobe-specification Direct mapping from community_platform_profiles.display_name. Must be a non-blank string when provided.
+         * @x-autobe-database-schema-property display_name
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_profiles.display_name. Must be a non-blank
+         *   string when provided.
      */
     display_name?: (string & tags.MinLength<1>) | undefined;
 
@@ -113,8 +130,10 @@ export namespace ICommunityPlatformProfile {
      *
      * Visible on the profile page to introduce the user to visitors. This is an optional field — setting to null clears any existing biography. Members may choose not to set a biography.
      *
-     * @x-autobe-database-schema-property biography
-     * @x-autobe-specification Direct mapping from community_platform_profiles.biography. Nullable column — setting to null clears the bio in DB.
+         * @x-autobe-database-schema-property biography
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_profiles.biography. Nullable column — setting to
+         *   null clears the bio in DB.
      */
     biography?: string | null | undefined;
 
@@ -123,8 +142,11 @@ export namespace ICommunityPlatformProfile {
      *
      * The avatar provides quick visual recognition in feeds, post listings, and comment threads. This is an optional field — setting to null clears any existing avatar. When provided, must be a valid URI string.
      *
-     * @x-autobe-database-schema-property avatar_uri
-     * @x-autobe-specification Direct mapping from community_platform_profiles.avatar_uri. Nullable column — setting to null clears the avatar in DB. Must be a valid URI string when provided.
+         * @x-autobe-database-schema-property avatar_uri
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_profiles.avatar_uri. Nullable column — setting
+         *   to null clears the avatar in DB. Must be a valid URI string when
+         *   provided.
      */
     avatar_uri?: (string & tags.Format<"uri">) | null | undefined;
   };
@@ -142,8 +164,9 @@ export namespace ICommunityPlatformProfile {
      *
      * Format is a UUID (v4) string assigned by the system when the member account is created. This identifier links the profile to its owning member and is used to reference the profile across the platform.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from community_platform_profiles.id.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_profiles.id.
      */
     id: string & tags.Format<"uuid">;
 
@@ -152,8 +175,9 @@ export namespace ICommunityPlatformProfile {
      *
      * Displayed alongside the member's posts, comments, and profile page throughout the platform. This is distinct from the unique username used for authentication and may differ from it.
      *
-     * @x-autobe-database-schema-property display_name
-     * @x-autobe-specification Direct mapping from community_platform_profiles.display_name.
+         * @x-autobe-database-schema-property display_name
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_profiles.display_name.
      */
     display_name: string;
 
@@ -162,8 +186,10 @@ export namespace ICommunityPlatformProfile {
      *
      * Provides quick visual recognition in feeds, post listings, and comment threads. Optional field — members may choose not to set an avatar, in which case a default placeholder image is shown instead.
      *
-     * @x-autobe-database-schema-property avatar_uri
-     * @x-autobe-specification Direct mapping from community_platform_profiles.avatar_uri. Nullable — members may choose not to set an avatar.
+         * @x-autobe-database-schema-property avatar_uri
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_profiles.avatar_uri. Nullable — members may
+         *   choose not to set an avatar.
      */
     avatar_uri: (string & tags.Format<"uri">) | null;
 
@@ -172,8 +198,10 @@ export namespace ICommunityPlatformProfile {
      *
      * The net sum of all upvotes minus all downvotes received across the member's posts and comments. Starts at 0 and can be positive, zero, or negative. Displayed on profile pages and content listings as a measure of the member's community reputation.
      *
-     * @x-autobe-database-schema-property karma
-     * @x-autobe-specification Direct mapping from community_platform_profiles.karma. Denormalized aggregate updated when votes are cast on the member's posts or comments.
+         * @x-autobe-database-schema-property karma
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_profiles.karma. Denormalized aggregate updated
+         *   when votes are cast on the member's posts or comments.
      */
     karma: number & tags.Type<"int32">;
 
@@ -182,8 +210,12 @@ export namespace ICommunityPlatformProfile {
      *
      * Provides identity context including the member's unique identifier, email address, and chosen username. The relationship is one-to-one — each member has exactly one profile.
      *
-     * @x-autobe-database-schema-property member
-     * @x-autobe-specification Join from community_platform_profiles.member_id to community_platform_members.id. Returns ICommunityPlatformMember.ISummary with id, email, username, created_at, and deleted_at.
+         * @x-autobe-database-schema-property member
+         * @x-autobe-specification Join from
+         *   community_platform_profiles.member_id to
+         *   community_platform_members.id. Returns
+         *   ICommunityPlatformMember.ISummary with id, email, username,
+         *   created_at, and deleted_at.
      */
     member: ICommunityPlatformMember.ISummary;
   };

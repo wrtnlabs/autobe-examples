@@ -8,14 +8,32 @@ export namespace IShoppingMallActor {
     /**
      * The actor's current password for security verification. Must match the password associated with the authenticated account before any password change can proceed.
      *
-     * @x-autobe-specification Transient field for security verification. Retrieve password_hash from the appropriate actor table based on JWT token actor type (shopping_mall_customers.password_hash, shopping_mall_sellers.password_hash, or shopping_mall_administrators.password_hash). Verify using constant-time comparison with the same hashing algorithm used during registration. Return 400 error if verification fails. This field is never logged or stored in any form. Maximum length of 128 characters prevents abuse from unreasonably long inputs.
+         * @x-autobe-specification Transient field for security verification.
+         *   Retrieve password_hash from the appropriate actor table based on
+         *   JWT token actor type (shopping_mall_customers.password_hash,
+         *   shopping_mall_sellers.password_hash, or
+         *   shopping_mall_administrators.password_hash). Verify using
+         *   constant-time comparison with the same hashing algorithm used
+         *   during registration. Return 400 error if verification fails. This
+         *   field is never logged or stored in any form. Maximum length of 128
+         *   characters prevents abuse from unreasonably long inputs.
      */
     current_password: string & tags.MinLength<1> & tags.Format<"password">;
 
     /**
      * The new password to set for the account. Must be 8-128 characters and contain at least one uppercase letter, one lowercase letter, one digit, and one special character from: !@#$%^&*()_+-=[]{}|;:'\",.<>?/~`. Cannot match your email address or contain your display name.
      *
-     * @x-autobe-specification Transient field for password update. Validate against complexity requirements: 8-128 characters, at least one uppercase letter (A-Z), at least one lowercase letter (a-z), at least one digit (0-9), at least one special character from !@#$%^&*()_+-=[]{}|;:'\",.<>?/~`. Reject if matches actor's email address. Reject if contains actor's display_name (customers) or shop_name (sellers). Reject if identical to current_password. Check against compromised password patterns. After validation, hash using secure one-way algorithm and store as password_hash in the appropriate actor table. Update actor's updated_at timestamp. Never log or expose this value.
+         * @x-autobe-specification Transient field for password update. Validate
+         *   against complexity requirements: 8-128 characters, at least one
+         *   uppercase letter (A-Z), at least one lowercase letter (a-z), at
+         *   least one digit (0-9), at least one special character from
+         *   !@#$%^&*()_+-=[]{}|;:'\",.<>?/~`. Reject if matches actor's email
+         *   address. Reject if contains actor's display_name (customers) or
+         *   shop_name (sellers). Reject if identical to current_password. Check
+         *   against compromised password patterns. After validation, hash using
+         *   secure one-way algorithm and store as password_hash in the
+         *   appropriate actor table. Update actor's updated_at timestamp. Never
+         *   log or expose this value.
      */
     new_password: string &
       tags.MinLength<8> &

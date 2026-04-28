@@ -14,7 +14,13 @@ export type IShoppingMallGuestSession = {
    *
    * This field helps API clients understand which type of user session is being returned, allowing them to handle the response data appropriately. The value is computed based on which session table the record was retrieved from.
    *
-   * @x-autobe-specification Computed discriminator field indicating the session type. Value is determined by which session table the record was found in: 'guest' (shopping_mall_guest_sessions), 'customer' (shopping_mall_customer_sessions), 'seller' (shopping_mall_seller_sessions), or 'administrator' (shopping_mall_administrator_sessions). This field allows API consumers to handle different session types appropriately.
+     * @x-autobe-specification Computed discriminator field indicating the
+     *   session type. Value is determined by which session table the record was
+     *   found in: 'guest' (shopping_mall_guest_sessions), 'customer'
+     *   (shopping_mall_customer_sessions), 'seller'
+     *   (shopping_mall_seller_sessions), or 'administrator'
+     *   (shopping_mall_administrator_sessions). This field allows API consumers
+     *   to handle different session types appropriately.
    */
   sessionType: "guest" | "customer" | "seller" | "administrator";
 
@@ -23,7 +29,13 @@ export type IShoppingMallGuestSession = {
    *
    * This UUID uniquely identifies the session across all session types. It is used to retrieve specific session details and track session lifecycle events.
    *
-   * @x-autobe-specification Primary key of the session record from the respective session table. For guest sessions: shopping_mall_guest_sessions.id. For customer sessions: shopping_mall_customer_sessions.id. For seller sessions: shopping_mall_seller_sessions.id. For administrator sessions: shopping_mall_administrator_sessions.id. This UUID uniquely identifies the session across all session tables.
+     * @x-autobe-specification Primary key of the session record from the
+     *   respective session table. For guest sessions:
+     *   shopping_mall_guest_sessions.id. For customer sessions:
+     *   shopping_mall_customer_sessions.id. For seller sessions:
+     *   shopping_mall_seller_sessions.id. For administrator sessions:
+     *   shopping_mall_administrator_sessions.id. This UUID uniquely identifies
+     *   the session across all session tables.
    */
   id: string & tags.Format<"uuid">;
 
@@ -32,7 +44,14 @@ export type IShoppingMallGuestSession = {
    *
    * This field contains the UUID of the user (guest, customer, seller, or administrator) who owns this session. For guest sessions, this is the device fingerprint identifier.
    *
-   * @x-autobe-specification Foreign key reference to the user account that owns this session. For guest sessions: shopping_mall_guests_id (references shopping_mall_guests.id). For customer sessions: shopping_mall_customer_id (references shopping_mall_customers.id). For seller sessions: shopping_mall_seller_id (references shopping_mall_sellers.id). For administrator sessions: shopping_mall_administrator_id (references shopping_mall_administrators.id).
+     * @x-autobe-specification Foreign key reference to the user account that
+     *   owns this session. For guest sessions: shopping_mall_guests_id
+     *   (references shopping_mall_guests.id). For customer sessions:
+     *   shopping_mall_customer_id (references shopping_mall_customers.id). For
+     *   seller sessions: shopping_mall_seller_id (references
+     *   shopping_mall_sellers.id). For administrator sessions:
+     *   shopping_mall_administrator_id (references
+     *   shopping_mall_administrators.id).
    */
   userId: string & tags.Format<"uuid">;
 
@@ -41,7 +60,12 @@ export type IShoppingMallGuestSession = {
    *
    * For authenticated users (customer, seller, administrator), this contains their email address. For guest sessions, this contains the device fingerprint identifier since guests do not have email addresses.
    *
-   * @x-autobe-specification Email address from the respective user table via JOIN. For customer sessions: shopping_mall_customers.email. For seller sessions: shopping_mall_sellers.email. For administrator sessions: shopping_mall_administrators.email. For guest sessions: shopping_mall_guests.device_fingerprint (guests do not have email addresses, so device fingerprint is used instead).
+     * @x-autobe-specification Email address from the respective user table via
+     *   JOIN. For customer sessions: shopping_mall_customers.email. For seller
+     *   sessions: shopping_mall_sellers.email. For administrator sessions:
+     *   shopping_mall_administrators.email. For guest sessions:
+     *   shopping_mall_guests.device_fingerprint (guests do not have email
+     *   addresses, so device fingerprint is used instead).
    */
   userEmail: string & tags.Format<"email">;
 
@@ -50,7 +74,13 @@ export type IShoppingMallGuestSession = {
    *
    * This field captures the client's IP address at the time of authentication. It is used for security monitoring, fraud detection, and identifying suspicious login patterns or unauthorized access attempts.
    *
-   * @x-autobe-specification IP address from the respective session table. For guest sessions: shopping_mall_guest_sessions.ip. For customer sessions: shopping_mall_customer_sessions.ip. For seller sessions: shopping_mall_seller_sessions.ip. For administrator sessions: shopping_mall_administrator_sessions.ip. This is the IPv4 address from which the user logged in, captured at session creation time for security auditing.
+     * @x-autobe-specification IP address from the respective session table. For
+     *   guest sessions: shopping_mall_guest_sessions.ip. For customer sessions:
+     *   shopping_mall_customer_sessions.ip. For seller sessions:
+     *   shopping_mall_seller_sessions.ip. For administrator sessions:
+     *   shopping_mall_administrator_sessions.ip. This is the IPv4 address from
+     *   which the user logged in, captured at session creation time for
+     *   security auditing.
    */
   ip: string & tags.Format<"ipv4">;
 
@@ -59,7 +89,13 @@ export type IShoppingMallGuestSession = {
    *
    * This field tracks the entry point for session creation. It is used for session context tracking and security analysis to understand how users access the platform.
    *
-   * @x-autobe-specification URL from the respective session table. For guest sessions: shopping_mall_guest_sessions.href. For customer sessions: shopping_mall_customer_sessions.href. For seller sessions: shopping_mall_seller_sessions.href. For administrator sessions: shopping_mall_administrator_sessions.href. This is the URL where the login request originated, captured for session context and security auditing.
+     * @x-autobe-specification URL from the respective session table. For guest
+     *   sessions: shopping_mall_guest_sessions.href. For customer sessions:
+     *   shopping_mall_customer_sessions.href. For seller sessions:
+     *   shopping_mall_seller_sessions.href. For administrator sessions:
+     *   shopping_mall_administrator_sessions.href. This is the URL where the
+     *   login request originated, captured for session context and security
+     *   auditing.
    */
   href: string & tags.Format<"uri">;
 
@@ -68,7 +104,12 @@ export type IShoppingMallGuestSession = {
    *
    * This field captures the source of user traffic for analytics and session context. It may be null if the user navigated directly to the login page without a referrer.
    *
-   * @x-autobe-specification HTTP referrer from the respective session table. For guest sessions: shopping_mall_guest_sessions.referrer. For customer sessions: shopping_mall_customer_sessions.referrer. For seller sessions: shopping_mall_seller_sessions.referrer. For administrator sessions: shopping_mall_administrator_sessions.referrer. Nullable - may be null if the user navigated directly to the login page.
+     * @x-autobe-specification HTTP referrer from the respective session table.
+     *   For guest sessions: shopping_mall_guest_sessions.referrer. For customer
+     *   sessions: shopping_mall_customer_sessions.referrer. For seller
+     *   sessions: shopping_mall_seller_sessions.referrer. For administrator
+     *   sessions: shopping_mall_administrator_sessions.referrer. Nullable - may
+     *   be null if the user navigated directly to the login page.
    */
   referrer: (string & tags.Format<"uri">) | null;
 
@@ -77,7 +118,14 @@ export type IShoppingMallGuestSession = {
    *
    * This field records the exact time when the user successfully authenticated and the session was established. It is used for session age calculation, expiration tracking, and audit trail purposes.
    *
-   * @x-autobe-specification Creation timestamp from the respective session table. For guest sessions: shopping_mall_guest_sessions.created_at. For customer sessions: shopping_mall_customer_sessions.created_at. For seller sessions: shopping_mall_seller_sessions.created_at. For administrator sessions: shopping_mall_administrator_sessions.created_at. This timestamp records when the session was created (login time) and is used to calculate session age and for audit trail purposes.
+     * @x-autobe-specification Creation timestamp from the respective session
+     *   table. For guest sessions: shopping_mall_guest_sessions.created_at. For
+     *   customer sessions: shopping_mall_customer_sessions.created_at. For
+     *   seller sessions: shopping_mall_seller_sessions.created_at. For
+     *   administrator sessions:
+     *   shopping_mall_administrator_sessions.created_at. This timestamp records
+     *   when the session was created (login time) and is used to calculate
+     *   session age and for audit trail purposes.
    */
   createdAt: string & tags.Format<"date-time">;
 
@@ -86,7 +134,14 @@ export type IShoppingMallGuestSession = {
    *
    * This field indicates the absolute expiration time for the session. Sessions are automatically invalidated after this time regardless of logout status. It is used for automatic session cleanup and validity checking.
    *
-   * @x-autobe-specification Expiration timestamp from the respective session table. For guest sessions: shopping_mall_guest_sessions.expired_at. For customer sessions: shopping_mall_customer_sessions.expired_at. For seller sessions: shopping_mall_seller_sessions.expired_at. For administrator sessions: shopping_mall_administrator_sessions.expired_at. This timestamp indicates when the session expires or was logged out. Sessions with expired_at before current time are considered invalid.
+     * @x-autobe-specification Expiration timestamp from the respective session
+     *   table. For guest sessions: shopping_mall_guest_sessions.expired_at. For
+     *   customer sessions: shopping_mall_customer_sessions.expired_at. For
+     *   seller sessions: shopping_mall_seller_sessions.expired_at. For
+     *   administrator sessions:
+     *   shopping_mall_administrator_sessions.expired_at. This timestamp
+     *   indicates when the session expires or was logged out. Sessions with
+     *   expired_at before current time are considered invalid.
    */
   expiredAt: string & tags.Format<"date-time">;
 };
@@ -104,7 +159,9 @@ export namespace IShoppingMallGuestSession {
      *
      * This UUID identifies a specific guest session on the platform. It is used to reference the session in API operations and for tracking guest activity across the system.
      *
-     * @x-autobe-specification Mapped from shopping_mall_guest_sessions.id column. UUID format unique identifier for each guest session record.
+         * @x-autobe-specification Mapped from shopping_mall_guest_sessions.id
+         *   column. UUID format unique identifier for each guest session
+         *   record.
      */
     id: string & tags.Format<"uuid">;
 
@@ -113,7 +170,10 @@ export namespace IShoppingMallGuestSession {
      *
      * This field is always 'guest' for IShoppingMallGuestSession.ISummary, indicating the session belongs to an unauthenticated guest user identified by device fingerprint.
      *
-     * @x-autobe-specification Computed constant field set to 'guest' for all records from shopping_mall_guest_sessions table. This discriminator identifies the session as belonging to a guest actor type.
+         * @x-autobe-specification Computed constant field set to 'guest' for
+         *   all records from shopping_mall_guest_sessions table. This
+         *   discriminator identifies the session as belonging to a guest actor
+         *   type.
      */
     actorType: "customer" | "seller" | "administrator" | "guest";
 
@@ -122,7 +182,10 @@ export namespace IShoppingMallGuestSession {
      *
      * This UUID references the guest account (identified by device fingerprint) associated with the session. It can be used to look up the guest's details or filter sessions by specific guest.
      *
-     * @x-autobe-specification Mapped from shopping_mall_guests_id foreign key column in shopping_mall_guest_sessions table. UUID format reference to the guest account record in shopping_mall_guests table.
+         * @x-autobe-specification Mapped from shopping_mall_guests_id foreign
+         *   key column in shopping_mall_guest_sessions table. UUID format
+         *   reference to the guest account record in shopping_mall_guests
+         *   table.
      */
     actorId: string & tags.Format<"uuid">;
 
@@ -131,7 +194,10 @@ export namespace IShoppingMallGuestSession {
      *
      * This field is always null for guest sessions since guest accounts do not have registered email addresses. Guests are identified by device fingerprint rather than email-based authentication.
      *
-     * @x-autobe-specification Computed field set to null for all guest sessions since guest accounts do not have email addresses. Guest users are identified by device fingerprint only, not by email credentials.
+         * @x-autobe-specification Computed field set to null for all guest
+         *   sessions since guest accounts do not have email addresses. Guest
+         *   users are identified by device fingerprint only, not by email
+         *   credentials.
      */
     actorEmail: string;
 
@@ -140,7 +206,9 @@ export namespace IShoppingMallGuestSession {
      *
      * This field contains the client IP address captured when the guest session was established. It is used for security monitoring, rate limiting, and detecting suspicious activity patterns.
      *
-     * @x-autobe-specification Mapped from shopping_mall_guest_sessions.ip column. Captures the client IP address at session creation time. String format, may be IPv4 or IPv6 address.
+         * @x-autobe-specification Mapped from shopping_mall_guest_sessions.ip
+         *   column. Captures the client IP address at session creation time.
+         *   String format, may be IPv4 or IPv6 address.
      */
     ip: string;
 
@@ -149,7 +217,9 @@ export namespace IShoppingMallGuestSession {
      *
      * This field tracks the entry point for the guest session, showing which page the guest was on when they first accessed the platform. Used for session context and analytics.
      *
-     * @x-autobe-specification Mapped from shopping_mall_guest_sessions.href column. Captures the URL of the page where the guest session was initiated. String format.
+         * @x-autobe-specification Mapped from shopping_mall_guest_sessions.href
+         *   column. Captures the URL of the page where the guest session was
+         *   initiated. String format.
      */
     href: string;
 
@@ -158,7 +228,10 @@ export namespace IShoppingMallGuestSession {
      *
      * This field records the exact date and time when the guest session was established. Used for calculating session age, expiration tracking, and audit trail purposes.
      *
-     * @x-autobe-specification Mapped from shopping_mall_guest_sessions.created_at column. DateTime in ISO 8601 format with timezone. Automatically set when guest session is created.
+         * @x-autobe-specification Mapped from
+         *   shopping_mall_guest_sessions.created_at column. DateTime in ISO
+         *   8601 format with timezone. Automatically set when guest session is
+         *   created.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -167,7 +240,10 @@ export namespace IShoppingMallGuestSession {
      *
      * This field indicates when the guest session becomes invalid. Sessions with an expired_at time in the past are considered expired. Used for automatic session invalidation and computing the status field.
      *
-     * @x-autobe-specification Mapped from shopping_mall_guest_sessions.expired_at column. DateTime in ISO 8601 format with timezone. Set to a future time upon session creation based on session timeout period.
+         * @x-autobe-specification Mapped from
+         *   shopping_mall_guest_sessions.expired_at column. DateTime in ISO
+         *   8601 format with timezone. Set to a future time upon session
+         *   creation based on session timeout period.
      */
     expired_at: string & tags.Format<"date-time">;
 
@@ -176,7 +252,10 @@ export namespace IShoppingMallGuestSession {
      *
      * This field indicates whether the session is currently active or has expired. 'active' means the session is still valid (expired_at is in the future). 'expired' means the session has timed out (expired_at is in the past).
      *
-     * @x-autobe-specification Computed field based on comparison of expired_at with current timestamp. Set to 'active' if expired_at > NOW(), 'expired' if expired_at <= NOW(). Evaluated at query time, not stored in database.
+         * @x-autobe-specification Computed field based on comparison of
+         *   expired_at with current timestamp. Set to 'active' if expired_at >
+         *   NOW(), 'expired' if expired_at <= NOW(). Evaluated at query time,
+         *   not stored in database.
      */
     status: "active" | "expired";
   };
@@ -194,7 +273,13 @@ export namespace IShoppingMallGuestSession {
      *
      * Specifies which type of user's sessions to retrieve. Valid values are 'customer', 'seller', 'administrator', or 'guest'. If omitted, sessions from all actor types are included in the results. This parameter helps narrow down the search to a specific user type when managing sessions.
      *
-     * @x-autobe-specification Query parameter to filter sessions by actor type. Determines which session table to query: 'customer' -> shopping_mall_customer_sessions, 'seller' -> shopping_mall_seller_sessions, 'administrator' -> shopping_mall_administrator_sessions, 'guest' -> shopping_mall_guest_sessions. If not provided, queries all session tables with UNION ALL.
+         * @x-autobe-specification Query parameter to filter sessions by actor
+         *   type. Determines which session table to query: 'customer' ->
+         *   shopping_mall_customer_sessions, 'seller' ->
+         *   shopping_mall_seller_sessions, 'administrator' ->
+         *   shopping_mall_administrator_sessions, 'guest' ->
+         *   shopping_mall_guest_sessions. If not provided, queries all session
+         *   tables with UNION ALL.
      */
     actorType?: "customer" | "seller" | "administrator" | "guest" | undefined;
 
@@ -203,7 +288,11 @@ export namespace IShoppingMallGuestSession {
      *
      * Filters sessions based on whether they are still valid or have expired. 'active' returns sessions where the expiration time is in the future, while 'expired' returns sessions where the expiration time is in the past. This is a computed field based on the expired_at timestamp compared to the current time.
      *
-     * @x-autobe-specification Query parameter to filter sessions by status. Computed by comparing expired_at timestamp with current time: 'active' means expired_at > NOW(), 'expired' means expired_at <= NOW(). Applied as a WHERE clause filter after querying session tables.
+         * @x-autobe-specification Query parameter to filter sessions by status.
+         *   Computed by comparing expired_at timestamp with current time:
+         *   'active' means expired_at > NOW(), 'expired' means expired_at <=
+         *   NOW(). Applied as a WHERE clause filter after querying session
+         *   tables.
      */
     status?: "active" | "expired" | undefined;
 
@@ -212,7 +301,10 @@ export namespace IShoppingMallGuestSession {
      *
      * Filters sessions by the IP address from which the user logged in. Supports partial matching, so you can search for sessions from a specific IP or IP range. For example, entering '192.168.1' will match all sessions from IP addresses starting with that prefix.
      *
-     * @x-autobe-specification Query parameter to filter sessions by IP address. Uses SQL LIKE operator for partial matching on the ip column. Example: '192.168.1' matches '192.168.1.100', '192.168.1.200', etc. Case-insensitive string matching.
+         * @x-autobe-specification Query parameter to filter sessions by IP
+         *   address. Uses SQL LIKE operator for partial matching on the ip
+         *   column. Example: '192.168.1' matches '192.168.1.100',
+         *   '192.168.1.200', etc. Case-insensitive string matching.
      */
     ip?: string | undefined;
 
@@ -221,7 +313,10 @@ export namespace IShoppingMallGuestSession {
      *
      * Filters sessions to include only those created on or after the specified date and time. Use this parameter combined with createdAtTo to define a date range for session creation. Expects ISO 8601 date-time format.
      *
-     * @x-autobe-specification Query parameter for filtering sessions created on or after this timestamp. Applied as WHERE created_at >= createdAtFrom. Expects ISO 8601 date-time format (e.g., '2024-01-15T10:30:00Z').
+         * @x-autobe-specification Query parameter for filtering sessions
+         *   created on or after this timestamp. Applied as WHERE created_at >=
+         *   createdAtFrom. Expects ISO 8601 date-time format (e.g.,
+         *   '2024-01-15T10:30:00Z').
      */
     createdAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
@@ -230,7 +325,10 @@ export namespace IShoppingMallGuestSession {
      *
      * Filters sessions to include only those created on or before the specified date and time. Use this parameter combined with createdAtFrom to define a date range for session creation. Expects ISO 8601 date-time format.
      *
-     * @x-autobe-specification Query parameter for filtering sessions created on or before this timestamp. Applied as WHERE created_at <= createdAtTo. Expects ISO 8601 date-time format (e.g., '2024-01-15T10:30:00Z').
+         * @x-autobe-specification Query parameter for filtering sessions
+         *   created on or before this timestamp. Applied as WHERE created_at <=
+         *   createdAtTo. Expects ISO 8601 date-time format (e.g.,
+         *   '2024-01-15T10:30:00Z').
      */
     createdAtTo?: (string & tags.Format<"date-time">) | undefined;
 
@@ -239,7 +337,10 @@ export namespace IShoppingMallGuestSession {
      *
      * Filters sessions to include only those that expire on or after the specified date and time. Useful for finding sessions that are still valid or will expire in the future. Expects ISO 8601 date-time format.
      *
-     * @x-autobe-specification Query parameter for filtering sessions that expire on or after this timestamp. Applied as WHERE expired_at >= expiredAtFrom. Expects ISO 8601 date-time format (e.g., '2024-01-15T10:30:00Z').
+         * @x-autobe-specification Query parameter for filtering sessions that
+         *   expire on or after this timestamp. Applied as WHERE expired_at >=
+         *   expiredAtFrom. Expects ISO 8601 date-time format (e.g.,
+         *   '2024-01-15T10:30:00Z').
      */
     expiredAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
@@ -248,7 +349,10 @@ export namespace IShoppingMallGuestSession {
      *
      * Filters sessions to include only those that expire on or before the specified date and time. Useful for finding sessions that have already expired or will expire soon. Expects ISO 8601 date-time format.
      *
-     * @x-autobe-specification Query parameter for filtering sessions that expire on or before this timestamp. Applied as WHERE expired_at <= expiredAtTo. Expects ISO 8601 date-time format (e.g., '2024-01-15T10:30:00Z').
+         * @x-autobe-specification Query parameter for filtering sessions that
+         *   expire on or before this timestamp. Applied as WHERE expired_at <=
+         *   expiredAtTo. Expects ISO 8601 date-time format (e.g.,
+         *   '2024-01-15T10:30:00Z').
      */
     expiredAtTo?: (string & tags.Format<"date-time">) | undefined;
 
@@ -257,7 +361,9 @@ export namespace IShoppingMallGuestSession {
      *
      * Specifies which page of results to retrieve. Page numbering starts at 1 (not 0). For example, page 1 returns the first set of results, page 2 returns the second set, and so on. Defaults to 1 if not specified.
      *
-     * @x-autobe-specification Pagination page number (1-indexed). Defaults to 1 if not provided. Used to calculate OFFSET in SQL: OFFSET = (page - 1) * limit. Must be >= 1.
+         * @x-autobe-specification Pagination page number (1-indexed). Defaults
+         *   to 1 if not provided. Used to calculate OFFSET in SQL: OFFSET =
+         *   (page - 1) * limit. Must be >= 1.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -266,7 +372,10 @@ export namespace IShoppingMallGuestSession {
      *
      * Controls how many session records are returned in each page of results. Minimum is 1, maximum is 100. Defaults to 20 if not specified. Use a higher limit to retrieve more results per page, or a lower limit for smaller, more manageable result sets.
      *
-     * @x-autobe-specification Maximum number of records to return per page. Defaults to 20 if not provided. Valid range: 1 to 100. Used as LIMIT clause in SQL query. Values outside range are clamped to valid bounds.
+         * @x-autobe-specification Maximum number of records to return per page.
+         *   Defaults to 20 if not provided. Valid range: 1 to 100. Used as
+         *   LIMIT clause in SQL query. Values outside range are clamped to
+         *   valid bounds.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -277,7 +386,11 @@ export namespace IShoppingMallGuestSession {
      *
      * Specifies how to sort the returned session records. Format is the field name followed by the sort direction (ASC for ascending, DESC for descending). Default sorting is by created_at in descending order (newest sessions first). Valid sort fields include id, actorType, actorId, ip, href, created_at, and expired_at.
      *
-     * @x-autobe-specification Sort field and direction for result ordering. Format: 'fieldName direction' where direction is 'ASC' or 'DESC'. Default: 'created_at DESC'. Valid fields: id, actorType, actorId, ip, href, created_at, expired_at. Applied as ORDER BY clause in SQL.
+         * @x-autobe-specification Sort field and direction for result ordering.
+         *   Format: 'fieldName direction' where direction is 'ASC' or 'DESC'.
+         *   Default: 'created_at DESC'. Valid fields: id, actorType, actorId,
+         *   ip, href, created_at, expired_at. Applied as ORDER BY clause in
+         *   SQL.
      */
     sort?: string | undefined;
   };

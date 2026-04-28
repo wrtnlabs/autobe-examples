@@ -13,128 +13,158 @@ export type IShoppingMallOrderItem = {
   /**
    * Unique identifier of this purchased order item.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_order_items.id. Use UUID string format.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from shopping_mall_order_items.id.
+     *   Use UUID string format.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Lightweight summary of the parent order that owns this line item.
    *
-   * @x-autobe-database-schema-property order
-   * @x-autobe-specification Resolve shopping_mall_order_items.shopping_mall_order_id -> shopping_mall_orders and return it as IShoppingMallOrder.ISummary. The join should respect active-view semantics (soft-deleted orders are typically excluded; follow endpoint conventions).
+     * @x-autobe-database-schema-property order
+     * @x-autobe-specification Resolve
+     *   shopping_mall_order_items.shopping_mall_order_id ->
+     *   shopping_mall_orders and return it as IShoppingMallOrder.ISummary. The
+     *   join should respect active-view semantics (soft-deleted orders are
+     *   typically excluded; follow endpoint conventions).
    */
   order: IShoppingMallOrder.ISummary;
 
   /**
    * Lightweight summary of the product variant purchased for this order item.
    *
-   * @x-autobe-database-schema-property productVariant
-   * @x-autobe-specification Resolve shopping_mall_order_items.shopping_mall_product_variant_id -> shopping_mall_product_variants and return it as IShoppingMallProductVariant.ISummary.
+     * @x-autobe-database-schema-property productVariant
+     * @x-autobe-specification Resolve
+     *   shopping_mall_order_items.shopping_mall_product_variant_id ->
+     *   shopping_mall_product_variants and return it as
+     *   IShoppingMallProductVariant.ISummary.
    */
   productVariant: IShoppingMallProductVariant.ISummary;
 
   /**
    * Immutable seller snapshot metadata captured at checkout for dispute resolution.
    *
-   * @x-autobe-database-schema-property sellerSnapshot
-   * @x-autobe-specification Resolve shopping_mall_order_items.seller_snapshot_id -> shopping_mall_snapshots and return it as IShoppingMallSnapshot.ISummary.
+     * @x-autobe-database-schema-property sellerSnapshot
+     * @x-autobe-specification Resolve
+     *   shopping_mall_order_items.seller_snapshot_id -> shopping_mall_snapshots
+     *   and return it as IShoppingMallSnapshot.ISummary.
    */
   sellerSnapshot: IShoppingMallSnapshot.ISummary;
 
   /**
    * Shipment grouping summary for fulfillment when this line item has been assigned to a shipment batch; null when unassigned.
    *
-   * @x-autobe-database-schema-property shipment
-   * @x-autobe-specification LEFT JOIN shopping_mall_shipments using shopping_mall_order_items.shopping_mall_shipment_id. If shopping_mall_shipment_id is null (or shipment not found under active-view rules), return shipment as null; otherwise return IShoppingMallShipment.ISummary.
+     * @x-autobe-database-schema-property shipment
+     * @x-autobe-specification LEFT JOIN shopping_mall_shipments using
+     *   shopping_mall_order_items.shopping_mall_shipment_id. If
+     *   shopping_mall_shipment_id is null (or shipment not found under
+     *   active-view rules), return shipment as null; otherwise return
+     *   IShoppingMallShipment.ISummary.
    */
   shipment: IShoppingMallShipment.ISummary | null;
 
   /**
    * Identifier of the parent order that owns this line item.
    *
-   * @x-autobe-database-schema-property shopping_mall_order_id
-   * @x-autobe-specification Direct mapping from shopping_mall_order_items.shopping_mall_order_id as a UUID string.
+     * @x-autobe-database-schema-property shopping_mall_order_id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_order_items.shopping_mall_order_id as a UUID string.
    */
   shoppingMallOrderId: string & tags.Format<"uuid">;
 
   /**
    * Identifier of the product variant that was purchased.
    *
-   * @x-autobe-database-schema-property shopping_mall_product_variant_id
-   * @x-autobe-specification Direct mapping from shopping_mall_order_items.shopping_mall_product_variant_id as a UUID string.
+     * @x-autobe-database-schema-property shopping_mall_product_variant_id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_order_items.shopping_mall_product_variant_id as a UUID
+     *   string.
    */
   shoppingMallProductVariantId: string & tags.Format<"uuid">;
 
   /**
    * Identifier of the seller snapshot captured at purchase time for this line item.
    *
-   * @x-autobe-database-schema-property seller_snapshot_id
-   * @x-autobe-specification Direct mapping from shopping_mall_order_items.seller_snapshot_id as a UUID string.
+     * @x-autobe-database-schema-property seller_snapshot_id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_order_items.seller_snapshot_id as a UUID string.
    */
   sellerSnapshotId: string & tags.Format<"uuid">;
 
   /**
    * Identifier of the shipment batch that currently includes this line item, or null when the item is not assigned to any shipment.
    *
-   * @x-autobe-database-schema-property shopping_mall_shipment_id
-   * @x-autobe-specification Direct mapping from shopping_mall_order_items.shopping_mall_shipment_id. If the column is null, return null; otherwise return the UUID string.
+     * @x-autobe-database-schema-property shopping_mall_shipment_id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_order_items.shopping_mall_shipment_id. If the column is
+     *   null, return null; otherwise return the UUID string.
    */
   shoppingMallShipmentId: (string & tags.Format<"uuid">) | null;
 
   /**
    * Unit price captured at the time of purchase for this line item.
    *
-   * @x-autobe-database-schema-property seller_price_at_purchase
-   * @x-autobe-specification Direct mapping from shopping_mall_order_items.seller_price_at_purchase (Float/decimal) to number.
+     * @x-autobe-database-schema-property seller_price_at_purchase
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_order_items.seller_price_at_purchase (Float/decimal) to
+     *   number.
    */
   sellerPriceAtPurchase: number;
 
   /**
    * Purchased quantity for this order item.
    *
-   * @x-autobe-database-schema-property quantity
-   * @x-autobe-specification Direct mapping from shopping_mall_order_items.quantity (Int) to integer.
+     * @x-autobe-database-schema-property quantity
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_order_items.quantity (Int) to integer.
    */
   quantity: number & tags.Type<"int32">;
 
   /**
    * Current workflow status of the order item line (e.g., created, shipped, delivered, cancellation/refund workflow states).
    *
-   * @x-autobe-database-schema-property line_item_status
-   * @x-autobe-specification Direct mapping from shopping_mall_order_items.line_item_status (string). The value represents the current order-item workflow state as stored in the DB.
+     * @x-autobe-database-schema-property line_item_status
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_order_items.line_item_status (string). The value
+     *   represents the current order-item workflow state as stored in the DB.
    */
   lineItemStatus: string;
 
   /**
    * Timestamp when this order item was locked/placed as part of order placement.
    *
-   * @x-autobe-database-schema-property placed_at
-   * @x-autobe-specification Direct mapping from shopping_mall_order_items.placed_at to RFC3339 date-time string.
+     * @x-autobe-database-schema-property placed_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_order_items.placed_at to RFC3339 date-time string.
    */
   placedAt: string & tags.Format<"date-time">;
 
   /**
    * Creation timestamp of the order item record.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from shopping_mall_order_items.created_at to RFC3339 date-time string.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_order_items.created_at to RFC3339 date-time string.
    */
   createdAt: string & tags.Format<"date-time">;
 
   /**
    * Last update timestamp of the order item record.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from shopping_mall_order_items.updated_at to RFC3339 date-time string.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_order_items.updated_at to RFC3339 date-time string.
    */
   updatedAt: string & tags.Format<"date-time">;
 
   /**
    * Soft-deletion timestamp. Null means the record is not soft-deleted; a date means it has been hidden/removed in active views per endpoint rules.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from shopping_mall_order_items.deleted_at to null or RFC3339 date-time string.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_order_items.deleted_at to null or RFC3339 date-time
+     *   string.
    */
   deletedAt: (string & tags.Format<"date-time">) | null;
 };
@@ -146,96 +176,119 @@ export namespace IShoppingMallOrderItem {
     /**
      * Unique identifier of the purchased order line item.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_order_items.id. Return the UUID as-is.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_order_items.id. Return the UUID as-is.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Identifier of the parent order that owns this order item line.
      *
-     * @x-autobe-database-schema-property shopping_mall_order_id
-     * @x-autobe-specification Direct mapping from shopping_mall_order_items.shopping_mall_order_id. Return the UUID as-is.
+         * @x-autobe-database-schema-property shopping_mall_order_id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_order_items.shopping_mall_order_id. Return the UUID
+         *   as-is.
      */
     shopping_mall_order_id: string & tags.Format<"uuid">;
 
     /**
      * Identifier of the product variant purchased for this order item line.
      *
-     * @x-autobe-database-schema-property shopping_mall_product_variant_id
-     * @x-autobe-specification Direct mapping from shopping_mall_order_items.shopping_mall_product_variant_id. Return the UUID as-is.
+         * @x-autobe-database-schema-property shopping_mall_product_variant_id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_order_items.shopping_mall_product_variant_id. Return
+         *   the UUID as-is.
      */
     shopping_mall_product_variant_id: string & tags.Format<"uuid">;
 
     /**
      * Seller snapshot identifier captured at purchase time for dispute resolution context.
      *
-     * @x-autobe-database-schema-property seller_snapshot_id
-     * @x-autobe-specification Direct mapping from shopping_mall_order_items.seller_snapshot_id. Return the UUID as-is.
+         * @x-autobe-database-schema-property seller_snapshot_id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_order_items.seller_snapshot_id. Return the UUID
+         *   as-is.
      */
     seller_snapshot_id: string & tags.Format<"uuid">;
 
     /**
      * Identifier of the shipment that includes this order item line, or null if not assigned yet.
      *
-     * @x-autobe-database-schema-property shopping_mall_shipment_id
-     * @x-autobe-specification Direct mapping from shopping_mall_order_items.shopping_mall_shipment_id. If the underlying value is null (not yet grouped into a shipment), return null.
+         * @x-autobe-database-schema-property shopping_mall_shipment_id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_order_items.shopping_mall_shipment_id. If the
+         *   underlying value is null (not yet grouped into a shipment), return
+         *   null.
      */
     shopping_mall_shipment_id: (string & tags.Format<"uuid">) | null;
 
     /**
      * Unit price captured at purchase time for this line item (seller price as stored at checkout).
      *
-     * @x-autobe-database-schema-property seller_price_at_purchase
-     * @x-autobe-specification Direct mapping from shopping_mall_order_items.seller_price_at_purchase.
+         * @x-autobe-database-schema-property seller_price_at_purchase
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_order_items.seller_price_at_purchase.
      */
     seller_price_at_purchase: number;
 
     /**
      * Quantity of the purchased product variant for this order item line.
      *
-     * @x-autobe-database-schema-property quantity
-     * @x-autobe-specification Direct mapping from shopping_mall_order_items.quantity.
+         * @x-autobe-database-schema-property quantity
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_order_items.quantity.
      */
     quantity: number & tags.Type<"int32">;
 
     /**
      * Current workflow status of this order item line (e.g., created/shipped/delivered/cancellation/refund outcomes as stored in the system).
      *
-     * @x-autobe-database-schema-property line_item_status
-     * @x-autobe-specification Direct mapping from shopping_mall_order_items.line_item_status. Return the raw workflow status value stored in the row.
+         * @x-autobe-database-schema-property line_item_status
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_order_items.line_item_status. Return the raw workflow
+         *   status value stored in the row.
      */
     line_item_status: string;
 
     /**
      * Timestamp when this order item line was placed/locked as part of the order placement flow.
      *
-     * @x-autobe-database-schema-property placed_at
-     * @x-autobe-specification Direct mapping from shopping_mall_order_items.placed_at. Return as ISO 8601 date-time string.
+         * @x-autobe-database-schema-property placed_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_order_items.placed_at. Return as ISO 8601 date-time
+         *   string.
      */
     placed_at: string & tags.Format<"date-time">;
 
     /**
      * Record creation timestamp for this order item line.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_order_items.created_at. Return as ISO 8601 date-time string.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_order_items.created_at. Return as ISO 8601 date-time
+         *   string.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * Record last update timestamp for this order item line.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from shopping_mall_order_items.updated_at. Return as ISO 8601 date-time string.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_order_items.updated_at. Return as ISO 8601 date-time
+         *   string.
      */
     updated_at: string & tags.Format<"date-time">;
 
     /**
      * Soft-deletion timestamp; null when the order item is active.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from shopping_mall_order_items.deleted_at. If the row is not soft-deleted, return null; otherwise return the ISO 8601 date-time string stored in deleted_at.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_order_items.deleted_at. If the row is not
+         *   soft-deleted, return null; otherwise return the ISO 8601 date-time
+         *   string stored in deleted_at.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };
@@ -247,32 +300,65 @@ export namespace IShoppingMallOrderItem {
     /**
      * The desired workflow status for this purchased order item. Used to progress the order-item lifecycle (e.g., created/shipped/delivered or cancellation/refund-related outcomes) according to allowed state transitions.
      *
-     * @x-autobe-database-schema-property line_item_status
-     * @x-autobe-specification Direct mapping to shopping_mall_order_items.line_item_status. When provided, validate the requested transition from the current persisted line_item_status to the new value against the allowed order-item workflow transitions. Also validate compatibility with shipment linkage changes in the same request: if the item will be linked to a shipment (shopping_mall_shipment_id not null) or unlinked (null), ensure the resulting pair (line_item_status, shopping_mall_shipment_id) is domain-consistent (e.g., shipment-linked statuses cannot conflict with shipment status/grouping).
+         * @x-autobe-database-schema-property line_item_status
+         * @x-autobe-specification Direct mapping to
+         *   shopping_mall_order_items.line_item_status. When provided, validate
+         *   the requested transition from the current persisted
+         *   line_item_status to the new value against the allowed order-item
+         *   workflow transitions. Also validate compatibility with shipment
+         *   linkage changes in the same request: if the item will be linked to
+         *   a shipment (shopping_mall_shipment_id not null) or unlinked (null),
+         *   ensure the resulting pair (line_item_status,
+         *   shopping_mall_shipment_id) is domain-consistent (e.g.,
+         *   shipment-linked statuses cannot conflict with shipment
+         *   status/grouping).
      */
     line_item_status?: string | undefined;
 
     /**
      * The purchased quantity for this order item as stored in the system. This can be changed only when the current workflow state allows it.
      *
-     * @x-autobe-database-schema-property quantity
-     * @x-autobe-specification Direct mapping to shopping_mall_order_items.quantity. Accept only when business rules permit quantity editing at the order item’s current workflow state; otherwise reject. When updated, apply the scalar value exactly to shopping_mall_order_items.quantity in the update transaction while keeping purchase-context consistency for downstream calculations.
+         * @x-autobe-database-schema-property quantity
+         * @x-autobe-specification Direct mapping to
+         *   shopping_mall_order_items.quantity. Accept only when business rules
+         *   permit quantity editing at the order item’s current workflow state;
+         *   otherwise reject. When updated, apply the scalar value exactly to
+         *   shopping_mall_order_items.quantity in the update transaction while
+         *   keeping purchase-context consistency for downstream calculations.
      */
     quantity?: (number & tags.Type<"int32">) | undefined;
 
     /**
      * The unit price captured for this order item at the time of purchase. This can be updated only when the current workflow state allows it.
      *
-     * @x-autobe-database-schema-property seller_price_at_purchase
-     * @x-autobe-specification Direct mapping to shopping_mall_order_items.seller_price_at_purchase. Accept only when business rules permit editing the captured purchase unit price at the order item’s current workflow state; otherwise reject. Apply the provided number exactly to shopping_mall_order_items.seller_price_at_purchase within the update transaction and ensure it remains compatible with any fulfillment/cancellation/refund invariants.
+         * @x-autobe-database-schema-property seller_price_at_purchase
+         * @x-autobe-specification Direct mapping to
+         *   shopping_mall_order_items.seller_price_at_purchase. Accept only
+         *   when business rules permit editing the captured purchase unit price
+         *   at the order item’s current workflow state; otherwise reject. Apply
+         *   the provided number exactly to
+         *   shopping_mall_order_items.seller_price_at_purchase within the
+         *   update transaction and ensure it remains compatible with any
+         *   fulfillment/cancellation/refund invariants.
      */
     seller_price_at_purchase?: number | undefined;
 
     /**
      * Optional shipment linkage for this order item. Provide a shipment UUID to link the item to a shipment batch, or null to unlink it.
      *
-     * @x-autobe-database-schema-property shopping_mall_shipment_id
-     * @x-autobe-specification Direct mapping to shopping_mall_order_items.shopping_mall_shipment_id with nullability support. If shopping_mall_shipment_id is a UUID, link the order item to that shipment by setting shopping_mall_order_items.shopping_mall_shipment_id = UUID. If it is null, unlink by setting shopping_mall_order_items.shopping_mall_shipment_id = null. When linking/unlinking, validate consistency with the target shipment’s status and grouping rules and ensure the combination with (possibly updated) line_item_status remains valid. Persist the change in the same transaction as other provided fields; updated_at must be updated automatically.
+         * @x-autobe-database-schema-property shopping_mall_shipment_id
+         * @x-autobe-specification Direct mapping to
+         *   shopping_mall_order_items.shopping_mall_shipment_id with
+         *   nullability support. If shopping_mall_shipment_id is a UUID, link
+         *   the order item to that shipment by setting
+         *   shopping_mall_order_items.shopping_mall_shipment_id = UUID. If it
+         *   is null, unlink by setting
+         *   shopping_mall_order_items.shopping_mall_shipment_id = null. When
+         *   linking/unlinking, validate consistency with the target shipment’s
+         *   status and grouping rules and ensure the combination with (possibly
+         *   updated) line_item_status remains valid. Persist the change in the
+         *   same transaction as other provided fields; updated_at must be
+         *   updated automatically.
      */
     shopping_mall_shipment_id?:
       | (string & tags.Format<"uuid">)
@@ -287,32 +373,45 @@ export namespace IShoppingMallOrderItem {
     /**
      * Identifier of the customer order that will own this newly created order item.
      *
-     * @x-autobe-database-schema-property shopping_mall_order_id
-     * @x-autobe-specification Direct mapping: shopping_mall_order_items.shopping_mall_order_id. Validate on create that the referenced order exists in the endpoint's visible set (respect soft-deletion conventions).
+         * @x-autobe-database-schema-property shopping_mall_order_id
+         * @x-autobe-specification Direct mapping:
+         *   shopping_mall_order_items.shopping_mall_order_id. Validate on
+         *   create that the referenced order exists in the endpoint's visible
+         *   set (respect soft-deletion conventions).
      */
     shopping_mall_order_id: string & tags.Format<"uuid">;
 
     /**
      * Identifier of the product variant that is being purchased for this order item.
      *
-     * @x-autobe-database-schema-property shopping_mall_product_variant_id
-     * @x-autobe-specification Direct mapping: shopping_mall_order_items.shopping_mall_product_variant_id. Validate on create that the variant exists and is eligible for purchase (e.g., is_active=true and not soft-deleted per availability rules).
+         * @x-autobe-database-schema-property shopping_mall_product_variant_id
+         * @x-autobe-specification Direct mapping:
+         *   shopping_mall_order_items.shopping_mall_product_variant_id.
+         *   Validate on create that the variant exists and is eligible for
+         *   purchase (e.g., is_active=true and not soft-deleted per
+         *   availability rules).
      */
     shopping_mall_product_variant_id: string & tags.Format<"uuid">;
 
     /**
      * Immutable seller snapshot identifier captured at purchase time for dispute resolution and fulfillment consistency.
      *
-     * @x-autobe-database-schema-property seller_snapshot_id
-     * @x-autobe-specification Direct mapping: shopping_mall_order_items.seller_snapshot_id. Validate referential integrity that the snapshot exists in shopping_mall_snapshots.
+         * @x-autobe-database-schema-property seller_snapshot_id
+         * @x-autobe-specification Direct mapping:
+         *   shopping_mall_order_items.seller_snapshot_id. Validate referential
+         *   integrity that the snapshot exists in shopping_mall_snapshots.
      */
     seller_snapshot_id: string & tags.Format<"uuid">;
 
     /**
      * Optional shipment identifier to immediately associate this order item with an existing seller shipment batch for the same order. Use null to create the item without immediate shipment linkage.
      *
-     * @x-autobe-database-schema-property shopping_mall_shipment_id
-     * @x-autobe-specification Direct mapping: shopping_mall_order_items.shopping_mall_shipment_id. If the client supplies null, store NULL. If a non-null id is supplied, validate it exists and belongs to the same shopping_mall_order_id as provided.
+         * @x-autobe-database-schema-property shopping_mall_shipment_id
+         * @x-autobe-specification Direct mapping:
+         *   shopping_mall_order_items.shopping_mall_shipment_id. If the client
+         *   supplies null, store NULL. If a non-null id is supplied, validate
+         *   it exists and belongs to the same shopping_mall_order_id as
+         *   provided.
      */
     shopping_mall_shipment_id?:
       | (string & tags.Format<"uuid">)
@@ -322,32 +421,43 @@ export namespace IShoppingMallOrderItem {
     /**
      * Unit price for this order item captured at purchase time (not recalculated later).
      *
-     * @x-autobe-database-schema-property seller_price_at_purchase
-     * @x-autobe-specification Direct mapping: shopping_mall_order_items.seller_price_at_purchase. Use the value as the persisted unit price at the time the item is placed/ordered.
+         * @x-autobe-database-schema-property seller_price_at_purchase
+         * @x-autobe-specification Direct mapping:
+         *   shopping_mall_order_items.seller_price_at_purchase. Use the value
+         *   as the persisted unit price at the time the item is placed/ordered.
      */
     seller_price_at_purchase: number;
 
     /**
      * Purchased quantity for this order item line.
      *
-     * @x-autobe-database-schema-property quantity
-     * @x-autobe-specification Direct mapping: shopping_mall_order_items.quantity. Validate that quantity is a positive integer according to business rules (and reject invalid values).
+         * @x-autobe-database-schema-property quantity
+         * @x-autobe-specification Direct mapping:
+         *   shopping_mall_order_items.quantity. Validate that quantity is a
+         *   positive integer according to business rules (and reject invalid
+         *   values).
      */
     quantity: number & tags.Type<"int32">;
 
     /**
      * Current workflow status of this order item line at creation time.
      *
-     * @x-autobe-database-schema-property line_item_status
-     * @x-autobe-specification Direct mapping: shopping_mall_order_items.line_item_status. Validate that the provided status value is allowed as an initial/creation state for new order items and matches the domain workflow rules.
+         * @x-autobe-database-schema-property line_item_status
+         * @x-autobe-specification Direct mapping:
+         *   shopping_mall_order_items.line_item_status. Validate that the
+         *   provided status value is allowed as an initial/creation state for
+         *   new order items and matches the domain workflow rules.
      */
     line_item_status: string;
 
     /**
      * Timestamp when this order item was placed/locked as part of the order placement flow.
      *
-     * @x-autobe-database-schema-property placed_at
-     * @x-autobe-specification Direct mapping: shopping_mall_order_items.placed_at. Validate consistency with the surrounding order placement timing (e.g., not in an invalid range per business rules).
+         * @x-autobe-database-schema-property placed_at
+         * @x-autobe-specification Direct mapping:
+         *   shopping_mall_order_items.placed_at. Validate consistency with the
+         *   surrounding order placement timing (e.g., not in an invalid range
+         *   per business rules).
      */
     placed_at: string & tags.Format<"date-time">;
   };
@@ -359,116 +469,141 @@ export namespace IShoppingMallOrderItem {
     /**
      * Optional order id to filter order items by their parent order.
      *
-     * @x-autobe-database-schema-property shopping_mall_order_id
-     * @x-autobe-specification When provided, add predicate: shopping_mall_order_items.shopping_mall_order_id = shoppingOrderId.
+         * @x-autobe-database-schema-property shopping_mall_order_id
+         * @x-autobe-specification When provided, add predicate:
+         *   shopping_mall_order_items.shopping_mall_order_id = shoppingOrderId.
      */
     shoppingOrderId?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Optional product variant id to filter order items by the purchased variant.
      *
-     * @x-autobe-database-schema-property shopping_mall_product_variant_id
-     * @x-autobe-specification When provided, add predicate: shopping_mall_order_items.shopping_mall_product_variant_id = productVariantId.
+         * @x-autobe-database-schema-property shopping_mall_product_variant_id
+         * @x-autobe-specification When provided, add predicate:
+         *   shopping_mall_order_items.shopping_mall_product_variant_id =
+         *   productVariantId.
      */
     productVariantId?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Optional seller snapshot id to filter order items by the seller-context captured at purchase time.
      *
-     * @x-autobe-database-schema-property seller_snapshot_id
-     * @x-autobe-specification When provided, add predicate: shopping_mall_order_items.seller_snapshot_id = sellerSnapshotId.
+         * @x-autobe-database-schema-property seller_snapshot_id
+         * @x-autobe-specification When provided, add predicate:
+         *   shopping_mall_order_items.seller_snapshot_id = sellerSnapshotId.
      */
     sellerSnapshotId?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Optional shipment id to filter order items by shipment membership; use null to request unshipped items (shipment_id IS NULL).
      *
-     * @x-autobe-database-schema-property shopping_mall_shipment_id
-     * @x-autobe-specification If shipmentId is null, add predicate: shopping_mall_order_items.shopping_mall_shipment_id IS NULL. If shipmentId is a uuid, add predicate: shopping_mall_order_items.shopping_mall_shipment_id = shipmentId.
+         * @x-autobe-database-schema-property shopping_mall_shipment_id
+         * @x-autobe-specification If shipmentId is null, add predicate:
+         *   shopping_mall_order_items.shopping_mall_shipment_id IS NULL. If
+         *   shipmentId is a uuid, add predicate:
+         *   shopping_mall_order_items.shopping_mall_shipment_id = shipmentId.
      */
     shipmentId?: (string & tags.Format<"uuid">) | null | undefined;
 
     /**
      * Optional exact workflow status value to filter order items by their current line-item state.
      *
-     * @x-autobe-database-schema-property line_item_status
-     * @x-autobe-specification When provided, add predicate: shopping_mall_order_items.line_item_status = lineItemStatus (exact match). Reject unknown statuses in validation using the domain workflow set.
+         * @x-autobe-database-schema-property line_item_status
+         * @x-autobe-specification When provided, add predicate:
+         *   shopping_mall_order_items.line_item_status = lineItemStatus (exact
+         *   match). Reject unknown statuses in validation using the domain
+         *   workflow set.
      */
     lineItemStatus?: string | undefined;
 
     /**
      * Optional start timestamp (inclusive) for filtering by the line item’s placed_at time.
      *
-     * @x-autobe-database-schema-property placed_at
-     * @x-autobe-specification When provided, add predicate: shopping_mall_order_items.placed_at >= placedAtFrom (inclusive).
+         * @x-autobe-database-schema-property placed_at
+         * @x-autobe-specification When provided, add predicate:
+         *   shopping_mall_order_items.placed_at >= placedAtFrom (inclusive).
      */
     placedAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Optional end timestamp (inclusive) for filtering by the line item’s placed_at time.
      *
-     * @x-autobe-database-schema-property placed_at
-     * @x-autobe-specification When provided, add predicate: shopping_mall_order_items.placed_at <= placedAtTo (inclusive).
+         * @x-autobe-database-schema-property placed_at
+         * @x-autobe-specification When provided, add predicate:
+         *   shopping_mall_order_items.placed_at <= placedAtTo (inclusive).
      */
     placedAtTo?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Optional start timestamp (inclusive) for filtering by shopping_mall_order_items.created_at.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification When provided, add predicate: shopping_mall_order_items.created_at >= createdAtFrom (inclusive).
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification When provided, add predicate:
+         *   shopping_mall_order_items.created_at >= createdAtFrom (inclusive).
      */
     createdAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Optional end timestamp (inclusive) for filtering by shopping_mall_order_items.created_at.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification When provided, add predicate: shopping_mall_order_items.created_at <= createdAtTo (inclusive).
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification When provided, add predicate:
+         *   shopping_mall_order_items.created_at <= createdAtTo (inclusive).
      */
     createdAtTo?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Optional start timestamp (inclusive) for filtering by shopping_mall_order_items.updated_at.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification When provided, add predicate: shopping_mall_order_items.updated_at >= updatedAtFrom (inclusive).
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification When provided, add predicate:
+         *   shopping_mall_order_items.updated_at >= updatedAtFrom (inclusive).
      */
     updatedAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Optional end timestamp (inclusive) for filtering by shopping_mall_order_items.updated_at.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification When provided, add predicate: shopping_mall_order_items.updated_at <= updatedAtTo (inclusive).
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification When provided, add predicate:
+         *   shopping_mall_order_items.updated_at <= updatedAtTo (inclusive).
      */
     updatedAtTo?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Optional sort field key (e.g., placed_at, created_at). The server maps this key to a corresponding database column.
      *
-     * @x-autobe-specification Interpret sortBy as a server-controlled mapping key to an allowed ORDER BY column (for example, placed_at or created_at). Apply default sorting when sortBy is omitted: placed_at DESC with a deterministic tie-break (e.g., created_at DESC).
+         * @x-autobe-specification Interpret sortBy as a server-controlled
+         *   mapping key to an allowed ORDER BY column (for example, placed_at
+         *   or created_at). Apply default sorting when sortBy is omitted:
+         *   placed_at DESC with a deterministic tie-break (e.g., created_at
+         *   DESC).
      */
     sortBy?: string | undefined;
 
     /**
      * Sort direction for sortBy. Must be either asc or desc.
      *
-     * @x-autobe-specification Use sortDirection to set ORDER BY direction (asc or desc) for the column chosen by sortBy. When sortBy is omitted, apply the direction consistently with the default sort column(s).
+         * @x-autobe-specification Use sortDirection to set ORDER BY direction
+         *   (asc or desc) for the column chosen by sortBy. When sortBy is
+         *   omitted, apply the direction consistently with the default sort
+         *   column(s).
      */
     sortDirection?: "asc" | "desc" | undefined;
 
     /**
      * Optional 1-based page index for pagination.
      *
-     * @x-autobe-specification Use page (1-based) to select which slice of the filtered/sorted results to return. Validate page >= 1.
+         * @x-autobe-specification Use page (1-based) to select which slice of
+         *   the filtered/sorted results to return. Validate page >= 1.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Optional page size (maximum records per page).
      *
-     * @x-autobe-specification Use limit to control maximum records returned per page. Validate 1 <= limit <= 100 (per DTO constraints).
+         * @x-autobe-specification Use limit to control maximum records returned
+         *   per page. Validate 1 <= limit <= 100 (per DTO constraints).
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)

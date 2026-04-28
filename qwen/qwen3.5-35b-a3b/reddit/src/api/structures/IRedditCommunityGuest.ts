@@ -14,8 +14,9 @@ export type IRedditCommunityGuest = {
    *
    * A UUID v4 value that uniquely identifies this guest account within the system. Used as the primary key for all guest-related operations and database queries.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from reddit_community_guests.id. UUID format. Primary key identifier for guest account.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from reddit_community_guests.id.
+     *   UUID format. Primary key identifier for guest account.
    */
   id: string & tags.Format<"uuid">;
 
@@ -24,8 +25,10 @@ export type IRedditCommunityGuest = {
    *
    * Used as the primary identifier for guest accounts, allowing the system to track anonymous users across sessions. Each guest must have a unique email address within the system.
    *
-   * @x-autobe-database-schema-property email
-   * @x-autobe-specification Direct mapping from reddit_community_guests.email. String type with unique constraint. Used as the primary identifier for guest accounts.
+     * @x-autobe-database-schema-property email
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_guests.email. String type with unique constraint. Used
+     *   as the primary identifier for guest accounts.
    */
   email: string;
 
@@ -34,8 +37,10 @@ export type IRedditCommunityGuest = {
    *
    * A unique identifier generated from device characteristics that enables the system to detect returning visitors and maintain consistent anonymous sessions across multiple visits.
    *
-   * @x-autobe-database-schema-property device_id
-   * @x-autobe-specification Direct mapping from reddit_community_guests.device_id. Nullable UUID that tracks device identity across visits. Used to detect returning visitors.
+     * @x-autobe-database-schema-property device_id
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_guests.device_id. Nullable UUID that tracks device
+     *   identity across visits. Used to detect returning visitors.
    */
   device_id: (string & tags.Format<"uuid">) | null;
 
@@ -44,8 +49,10 @@ export type IRedditCommunityGuest = {
    *
    * A combined fingerprint derived from multiple browser and device properties including user agent, timezone, language, screen dimensions, and installed plugins. Used to identify and track anonymous users across sessions.
    *
-   * @x-autobe-database-schema-property device_fingerprint
-   * @x-autobe-specification Direct mapping from reddit_community_guests.device_fingerprint. Nullable string containing combined browser and device properties for device recognition.
+     * @x-autobe-database-schema-property device_fingerprint
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_guests.device_fingerprint. Nullable string containing
+     *   combined browser and device properties for device recognition.
    */
   device_fingerprint: string | null;
 
@@ -54,8 +61,10 @@ export type IRedditCommunityGuest = {
    *
    * Recorded when the guest account is first created in the system. Used for auditing, session lifetime calculation, and account age tracking.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from reddit_community_guests.created_at. Timestamp with timezone (UTC). Records when the guest account is first created.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_guests.created_at. Timestamp with timezone (UTC).
+     *   Records when the guest account is first created.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -64,8 +73,10 @@ export type IRedditCommunityGuest = {
    *
    * Updated whenever the guest account is modified (password change, device fingerprint update, etc.). Used to track account activity and freshness.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from reddit_community_guests.updated_at. Timestamp with timezone (UTC). Updated whenever the guest account is modified.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_guests.updated_at. Timestamp with timezone (UTC).
+     *   Updated whenever the guest account is modified.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -74,8 +85,11 @@ export type IRedditCommunityGuest = {
    *
    * Nullable field set when the guest account is logically deleted. Accounts with a deleted_at value are considered removed but retained for audit purposes.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from reddit_community_guests.deleted_at. Nullable timestamp with timezone (UTC). Set when the guest account is logically deleted for soft delete support.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_guests.deleted_at. Nullable timestamp with timezone
+     *   (UTC). Set when the guest account is logically deleted for soft delete
+     *   support.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -91,8 +105,10 @@ export namespace IRedditCommunityGuest {
      *
      * Acts as the primary identifier for the guest account, allowing the system to track anonymous users across sessions. Each guest must have a unique email within the system.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from reddit_community_guests.email. Unique constraint enforced. Used as primary identifier for guest accounts.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   reddit_community_guests.email. Unique constraint enforced. Used as
+         *   primary identifier for guest accounts.
      */
     email: string & tags.Format<"email">;
 
@@ -101,8 +117,10 @@ export namespace IRedditCommunityGuest {
      *
      * Password is hashed using BCrypt algorithm before storage. Never stored in plaintext. Used for authentication during guest login and password verification.
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification Plain text password provided by user, hashed to password_hash using BCrypt before storage. Transformation: plain text → BCrypt hash.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification Plain text password provided by user, hashed
+         *   to password_hash using BCrypt before storage. Transformation: plain
+         *   text → BCrypt hash.
      */
     password: string & tags.Format<"password">;
 
@@ -111,7 +129,9 @@ export namespace IRedditCommunityGuest {
      *
      * Captures the page URL where the guest initiated registration. Used for session tracking, analytics, and understanding user journey through the platform.
      *
-     * @x-autobe-specification Computed from HTTP request context. Extracts the current request URI from the client's browser. Used for session tracking and analytics. Required field.
+         * @x-autobe-specification Computed from HTTP request context. Extracts
+         *   the current request URI from the client's browser. Used for session
+         *   tracking and analytics. Required field.
      */
     href: string & tags.Format<"uri">;
 
@@ -120,7 +140,9 @@ export namespace IRedditCommunityGuest {
      *
      * Captures the source URL from the Referer header, enabling tracking of traffic sources and understanding how users discover the platform.
      *
-     * @x-autobe-specification Computed from HTTP request context. Extracts the Referer header value from the client's browser. Used to track traffic sources and user navigation patterns. Required field.
+         * @x-autobe-specification Computed from HTTP request context. Extracts
+         *   the Referer header value from the client's browser. Used to track
+         *   traffic sources and user navigation patterns. Required field.
      */
     referrer: string & tags.Format<"uri">;
 
@@ -129,7 +151,10 @@ export namespace IRedditCommunityGuest {
      *
      * Optional IPv4 address used to identify the guest's network location. Helps detect returning visitors from the same device and provides geographic context for analytics.
      *
-     * @x-autobe-specification Computed from HTTP request context. Optional IPv4 address captured from the client's connection. In server-side rendering scenarios, may be set by the server if client cannot determine its own IP.
+         * @x-autobe-specification Computed from HTTP request context. Optional
+         *   IPv4 address captured from the client's connection. In server-side
+         *   rendering scenarios, may be set by the server if client cannot
+         *   determine its own IP.
      */
     ip?: (string & tags.Format<"ipv4">) | undefined;
   };
@@ -141,31 +166,31 @@ export namespace IRedditCommunityGuest {
    */
   export type ISummary = {
     /**
-     * @x-autobe-database-schema-property id
+         * @x-autobe-database-schema-property id
      */
     id: string & tags.Format<"uuid">;
     /**
-     * @x-autobe-database-schema-property email
+         * @x-autobe-database-schema-property email
      */
     email: string;
     /**
-     * @x-autobe-database-schema-property device_id
+         * @x-autobe-database-schema-property device_id
      */
     device_id?: (string & tags.Format<"uuid">) | null | undefined;
     /**
-     * @x-autobe-database-schema-property device_fingerprint
+         * @x-autobe-database-schema-property device_fingerprint
      */
     device_fingerprint?: string | null | undefined;
     /**
-     * @x-autobe-database-schema-property created_at
+         * @x-autobe-database-schema-property created_at
      */
     created_at: string & tags.Format<"date-time">;
     /**
-     * @x-autobe-database-schema-property updated_at
+         * @x-autobe-database-schema-property updated_at
      */
     updated_at: string & tags.Format<"date-time">;
     /**
-     * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-database-schema-property deleted_at
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };
@@ -185,7 +210,13 @@ export namespace IRedditCommunityGuest {
      *
      * The token must be a valid JWT string that matches an active session record in the system.
      *
-     * @x-autobe-specification User-provided refresh token string. Extracted from request body and validated against reddit_community_guest_sessions.refresh_token by matching token value, verifying session is not expired (expired_at > current_time), and confirming session is not deleted (deleted_at is null). If validation passes, generates new JWT access and refresh token pair.
+         * @x-autobe-specification User-provided refresh token string. Extracted
+         *   from request body and validated against
+         *   reddit_community_guest_sessions.refresh_token by matching token
+         *   value, verifying session is not expired (expired_at >
+         *   current_time), and confirming session is not deleted (deleted_at is
+         *   null). If validation passes, generates new JWT access and refresh
+         *   token pair.
      */
     refresh_token: string;
   };
@@ -201,7 +232,9 @@ export namespace IRedditCommunityGuest {
      *
      * Allows searching guest accounts by email address using pattern matching (LIKE operator with wildcards). Supports partial matches to find accounts matching a substring of the email address.
      *
-     * @x-autobe-specification Partial match filter on reddit_community_guests.email column using LIKE operator with wildcards. Enables fuzzy search by email address.
+         * @x-autobe-specification Partial match filter on
+         *   reddit_community_guests.email column using LIKE operator with
+         *   wildcards. Enables fuzzy search by email address.
      */
     email?: string | undefined;
 
@@ -210,7 +243,9 @@ export namespace IRedditCommunityGuest {
      *
      * Filters guest accounts by their unique device identifier. Uses exact match comparison to find accounts created from the same device with the same device_id.
      *
-     * @x-autobe-specification Exact match filter on reddit_community_guests.device_id column. Matches guest accounts with the specified device identifier.
+         * @x-autobe-specification Exact match filter on
+         *   reddit_community_guests.device_id column. Matches guest accounts
+         *   with the specified device identifier.
      */
     device_id?: (string & tags.Format<"uuid">) | undefined;
 
@@ -219,7 +254,10 @@ export namespace IRedditCommunityGuest {
      *
      * Searches guest accounts by device fingerprint using pattern matching (LIKE operator with wildcards). Supports partial matches to find accounts with similar browser or device characteristics.
      *
-     * @x-autobe-specification Partial match filter on reddit_community_guests.device_fingerprint column using LIKE operator with wildcards. Enables fuzzy search by fingerprint pattern.
+         * @x-autobe-specification Partial match filter on
+         *   reddit_community_guests.device_fingerprint column using LIKE
+         *   operator with wildcards. Enables fuzzy search by fingerprint
+         *   pattern.
      */
     device_fingerprint?: string | undefined;
 
@@ -228,7 +266,9 @@ export namespace IRedditCommunityGuest {
      *
      * Filters guest accounts by their creation date. Includes accounts created at or after this timestamp. Used to find accounts from a specific time period onwards.
      *
-     * @x-autobe-specification Minimum creation timestamp filter (inclusive). Derives from reddit_community_guests.created_at column. Returns accounts where created_at >= this value.
+         * @x-autobe-specification Minimum creation timestamp filter
+         *   (inclusive). Derives from reddit_community_guests.created_at
+         *   column. Returns accounts where created_at >= this value.
      */
     created_at_min?: (string & tags.Format<"date-time">) | undefined;
 
@@ -237,7 +277,9 @@ export namespace IRedditCommunityGuest {
      *
      * Filters guest accounts by their creation date. Includes accounts created at or before this timestamp. Used to find accounts up to a specific time period.
      *
-     * @x-autobe-specification Maximum creation timestamp filter (inclusive). Derives from reddit_community_guests.created_at column. Returns accounts where created_at <= this value.
+         * @x-autobe-specification Maximum creation timestamp filter
+         *   (inclusive). Derives from reddit_community_guests.created_at
+         *   column. Returns accounts where created_at <= this value.
      */
     created_at_max?: (string & tags.Format<"date-time">) | undefined;
 
@@ -250,7 +292,10 @@ export namespace IRedditCommunityGuest {
      *
      * Enables toggling between active and soft-deleted guest accounts in search results.
      *
-     * @x-autobe-specification Filter by soft deletion status on reddit_community_guests.deleted_at column. true=soft-deleted accounts (deleted_at IS NOT NULL), false=active accounts (deleted_at IS NULL), null=all accounts.
+         * @x-autobe-specification Filter by soft deletion status on
+         *   reddit_community_guests.deleted_at column. true=soft-deleted
+         *   accounts (deleted_at IS NOT NULL), false=active accounts
+         *   (deleted_at IS NULL), null=all accounts.
      */
     deleted_at?: boolean | null | undefined;
 
@@ -259,7 +304,9 @@ export namespace IRedditCommunityGuest {
      *
      * Specifies which page of results to return. Page numbering starts from 1 (first page). Must be a positive integer. Used in conjunction with limit to control pagination.
      *
-     * @x-autobe-specification Page number for pagination (1-indexed). Not a database field. Controls which page of results to return, with page 1 being the first page.
+         * @x-autobe-specification Page number for pagination (1-indexed). Not a
+         *   database field. Controls which page of results to return, with page
+         *   1 being the first page.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -268,7 +315,9 @@ export namespace IRedditCommunityGuest {
      *
      * Defines the maximum number of records to return on each page. Valid range: 1 to 100. Defaults to a reasonable page size if not specified. Used in conjunction with page for pagination.
      *
-     * @x-autobe-specification Maximum number of results per page. Not a database field. Controls the page size with range 1-100. Used with page for pagination.
+         * @x-autobe-specification Maximum number of results per page. Not a
+         *   database field. Controls the page size with range 1-100. Used with
+         *   page for pagination.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -284,7 +333,9 @@ export namespace IRedditCommunityGuest {
      * - device_fingerprint: Sort by device fingerprint
      * - deleted_at: Sort by deletion status
      *
-     * @x-autobe-specification Sort field selector. Not a database field. Can be: created_at, email, device_id, device_fingerprint, deleted_at. Specifies which column to sort results by.
+         * @x-autobe-specification Sort field selector. Not a database field.
+         *   Can be: created_at, email, device_id, device_fingerprint,
+         *   deleted_at. Specifies which column to sort results by.
      */
     sort?:
       | "created_at"
@@ -303,7 +354,9 @@ export namespace IRedditCommunityGuest {
      *
      * Must be used in conjunction with the sort field parameter.
      *
-     * @x-autobe-specification Sort order direction. Not a database field. Values: asc (ascending), desc (descending). Must be used in conjunction with sort field.
+         * @x-autobe-specification Sort order direction. Not a database field.
+         *   Values: asc (ascending), desc (descending). Must be used in
+         *   conjunction with sort field.
      */
     order?: "asc" | "desc" | undefined;
   };
@@ -321,8 +374,10 @@ export namespace IRedditCommunityGuest {
      *
      * A UUID that uniquely identifies this anonymous guest account across the system. Used for database queries and session management.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from reddit_community_guests.id (UUID). Primary identifier for the guest account.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   reddit_community_guests.id (UUID). Primary identifier for the guest
+         *   account.
      */
     id: string & tags.Format<"uuid">;
 
@@ -331,8 +386,10 @@ export namespace IRedditCommunityGuest {
      *
      * Used as the primary identifier for guest accounts, allowing the system to track anonymous users across sessions. Each guest must have a unique email address within the system.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from reddit_community_guests.email (string). Unique identifier for guest account.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   reddit_community_guests.email (string). Unique identifier for guest
+         *   account.
      */
     email: string;
 
@@ -341,8 +398,10 @@ export namespace IRedditCommunityGuest {
      *
      * A UUID generated from device characteristics to detect returning visitors and maintain consistent anonymous sessions across visits. Nullable because device_id may be auto-generated if not provided during registration.
      *
-     * @x-autobe-database-schema-property device_id
-     * @x-autobe-specification Direct mapping from reddit_community_guests.device_id (UUID, nullable). Device identifier for guest identity tracking.
+         * @x-autobe-database-schema-property device_id
+         * @x-autobe-specification Direct mapping from
+         *   reddit_community_guests.device_id (UUID, nullable). Device
+         *   identifier for guest identity tracking.
      */
     device_id: (string & tags.Format<"uuid">) | null;
 
@@ -351,8 +410,10 @@ export namespace IRedditCommunityGuest {
      *
      * Combined fingerprint derived from multiple browser and device properties including user agent, timezone, language, screen dimensions, and installed plugins. Used to identify and track anonymous users. Nullable if fingerprint could not be generated.
      *
-     * @x-autobe-database-schema-property device_fingerprint
-     * @x-autobe-specification Direct mapping from reddit_community_guests.device_fingerprint (string, nullable). Browser fingerprint for device recognition.
+         * @x-autobe-database-schema-property device_fingerprint
+         * @x-autobe-specification Direct mapping from
+         *   reddit_community_guests.device_fingerprint (string, nullable).
+         *   Browser fingerprint for device recognition.
      */
     device_fingerprint: string | null;
 
@@ -361,8 +422,10 @@ export namespace IRedditCommunityGuest {
      *
      * Recorded when the guest account is first created in the system. Used for auditing, session lifetime calculation, and account age tracking. Formatted as ISO 8601 date-time string.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from reddit_community_guests.created_at (timestamptz). Timestamp of guest account creation.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_community_guests.created_at (timestamptz). Timestamp of
+         *   guest account creation.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -371,8 +434,10 @@ export namespace IRedditCommunityGuest {
      *
      * Updated whenever the guest account is modified (password change, device fingerprint update, etc.). Used to track account activity and freshness. Formatted as ISO 8601 date-time string.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from reddit_community_guests.updated_at (timestamptz). Timestamp of last guest account update.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_community_guests.updated_at (timestamptz). Timestamp of last
+         *   guest account update.
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -381,15 +446,18 @@ export namespace IRedditCommunityGuest {
      *
      * Nullable field set when the guest account is logically deleted. Accounts with a deleted_at value are considered removed but retained for audit purposes. If null, the account is active.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from reddit_community_guests.deleted_at (timestamptz, nullable). Timestamp of soft deletion.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_community_guests.deleted_at (timestamptz, nullable).
+         *   Timestamp of soft deletion.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
 
     /**
      * Authorization token.
      *
-     * @x-autobe-specification Authorization token comes from the session table.
+         * @x-autobe-specification Authorization token comes from the session
+         *   table.
      */
     token: IAuthorizationToken;
   };

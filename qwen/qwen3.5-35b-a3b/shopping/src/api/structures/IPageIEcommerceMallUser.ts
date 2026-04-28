@@ -13,14 +13,15 @@ export namespace IPageIEcommerceMallUser {
     /**
      * Page information.
      *
-     * @x-autobe-specification Pagination information for the page.
+         * @x-autobe-specification Pagination information for the page.
      */
     pagination: IPage.IPagination;
 
     /**
      * List of records.
      *
-     * @x-autobe-specification List of records of type IEcommerceMallUser.IRequest.
+         * @x-autobe-specification List of records of type
+         *   IEcommerceMallUser.IRequest.
      */
     data: IEcommerceMallUser.IRequest[];
 
@@ -32,7 +33,8 @@ export namespace IPageIEcommerceMallUser {
      * Requesting a page beyond the available range returns an empty data array
      * with valid pagination metadata reflecting the actual totals.
      *
-     * @x-autobe-specification 1-indexed page number. Defaults to 1 if not provided.
+         * @x-autobe-specification 1-indexed page number. Defaults to 1 if not
+         *   provided.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
 
@@ -44,7 +46,8 @@ export namespace IPageIEcommerceMallUser {
      * enforce upper bounds to prevent excessive resource consumption on large
      * requests.
      *
-     * @x-autobe-specification Maximum records per page. Defaults to 100 if not provided.
+         * @x-autobe-specification Maximum records per page. Defaults to 100 if
+         *   not provided.
      */
     limit?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };
@@ -58,14 +61,15 @@ export namespace IPageIEcommerceMallUser {
     /**
      * Page information.
      *
-     * @x-autobe-specification Pagination information for the page.
+         * @x-autobe-specification Pagination information for the page.
      */
     pagination: IPage.IPagination;
 
     /**
      * List of records.
      *
-     * @x-autobe-specification List of records of type IEcommerceMallUser.ISummary.
+         * @x-autobe-specification List of records of type
+         *   IEcommerceMallUser.ISummary.
      */
     data: IEcommerceMallUser.ISummary[];
   };

@@ -25,12 +25,16 @@ export class ErphrmtimetrackingReportoutputsMetricsController {
    * @param connection
    * @param reportOutputId Target report output row identifier whose metric breakdown lines are being updated.
    * @param body Bulk metric update request. Each item identifies a metric by `metric_name` and provides the new `metric_value`, or instructs the operation to remove (mark as deleted) that metric line for the target report output.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification 1) Authorization & scoping
-   * - Resolve the organization context from the authenticated member/session and ensure the caller has `report:view` permission for the selected organization.
-   * - Load `erp_hrm_time_tracking_report_outputs` by `id = reportOutputId`.
-   * - Verify the report output belongs to the selected organization (join via `reportGenerationRun.reportDefinition.erp_hrm_time_tracking_organization_id`). If not found/visible, reject.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification 1) Authorization & scoping - Resolve the
+     *   organization context from the authenticated member/session and ensure
+     *   the caller has `report:view` permission for the selected organization.
+     *   - Load `erp_hrm_time_tracking_report_outputs` by `id = reportOutputId`.
+     *   - Verify the report output belongs to the selected organization (join
+     *   via
+     *   `reportGenerationRun.reportDefinition.erp_hrm_time_tracking_organization_id`).
+     *   If not found/visible, reject.
    *
    * 2) Request validation
    * - Parse request body containing a list of metric changes keyed by `metric_name`.

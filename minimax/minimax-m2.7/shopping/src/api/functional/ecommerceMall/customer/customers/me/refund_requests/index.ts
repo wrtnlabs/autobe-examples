@@ -19,7 +19,8 @@ import { IPageIEcommerceMallRefundRequest } from "../../../../../../structures/I
  * @param props.connection
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Query ecommerce_mall_refund_requests table filtered by the authenticated customer's ID from the session token.
+ * @x-autobe-specification Query ecommerce_mall_refund_requests table filtered
+ *   by the authenticated customer's ID from the session token.
  *
  * Join with ecommerce_mall_order_items to get order item details (product name, variant info, unit price, quantity).
  *

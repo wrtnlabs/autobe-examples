@@ -27,9 +27,11 @@ export class EcommercemallAdminAdminSeller_approvalsController {
    *
    * @param connection
    * @param body Search and filter criteria including approval status filter, date range filtering, and pagination parameters.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query ecommerce_mall_seller_approvals table with optional status filter (pending, approved, rejected) and created_at date range filter.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Query ecommerce_mall_seller_approvals table with
+     *   optional status filter (pending, approved, rejected) and created_at
+     *   date range filter.
    *
    * Join with ecommerce_mall_sellers table to include seller email address in results.
    *
@@ -78,9 +80,10 @@ export class EcommercemallAdminAdminSeller_approvalsController {
    *
    * @param connection
    * @param approvalId Unique identifier of the seller approval record to retrieve.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query the ecommerce_mall_seller_approvals table using the provided approvalId.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Query the ecommerce_mall_seller_approvals table
+     *   using the provided approvalId.
    *
    * Include the related seller record (ecommerce_mall_sellers) to provide seller information such as email and approval status.
    *

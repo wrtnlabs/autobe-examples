@@ -38,9 +38,9 @@ export class ErphrmtimetrackingMemberDashboardController {
    * - Returns an empty/zero-populated dashboard where the selected organization has no data for the computed windows rather than producing errors.
    *
    * @param connection
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation steps:
    *
    * 1) Resolve organization context
    * - Read the currently selected organization context from the request/session context (no path/body parameters).

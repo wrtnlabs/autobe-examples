@@ -16,56 +16,81 @@ export type IErpHrmTimer = {
   /**
    * The unique identifier of this active timer session. A UUID assigned when the timer is created.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from erp_hrm_timers.id. UUID primary key auto-generated at insert time.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from erp_hrm_timers.id. UUID
+     *   primary key auto-generated at insert time.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * The organization member who owns this active timer session. Identifies which employee is currently tracking time.
    *
-   * @x-autobe-database-schema-property organizationMember
-   * @x-autobe-specification Resolved via JOIN on erp_hrm_timers.organization_member_id → erp_hrm_organization_members.id. Returns IErpHrmOrganizationMember.ISummary. Enforced unique per member by the @@unique([organization_member_id]) constraint, ensuring at most one active timer per employee.
+     * @x-autobe-database-schema-property organizationMember
+     * @x-autobe-specification Resolved via JOIN on
+     *   erp_hrm_timers.organization_member_id →
+     *   erp_hrm_organization_members.id. Returns
+     *   IErpHrmOrganizationMember.ISummary. Enforced unique per member by the
+     *   @@unique([organization_member_id]) constraint, ensuring at most one
+     *   active timer per employee.
    */
   organizationMember: IErpHrmOrganizationMember.ISummary;
 
   /**
    * The project this timer session is being tracked against. Every active timer is associated with exactly one project.
    *
-   * @x-autobe-database-schema-property project
-   * @x-autobe-specification Resolved via JOIN on erp_hrm_timers.project_id → erp_hrm_projects.id. Returns IErpHrmProject.ISummary. The project is always required — every timer must be bound to exactly one project. The project must be non-deleted and belong to the same organization as the timer owner.
+     * @x-autobe-database-schema-property project
+     * @x-autobe-specification Resolved via JOIN on erp_hrm_timers.project_id →
+     *   erp_hrm_projects.id. Returns IErpHrmProject.ISummary. The project is
+     *   always required — every timer must be bound to exactly one project. The
+     *   project must be non-deleted and belong to the same organization as the
+     *   timer owner.
    */
   project: IErpHrmProject.ISummary;
 
   /**
    * The specific task within the project that this timer session is focused on, or null if the member is tracking time at the project level without targeting a particular task.
    *
-   * @x-autobe-database-schema-property task
-   * @x-autobe-specification Resolved via LEFT JOIN on erp_hrm_timers.task_id → erp_hrm_tasks.id. Returns IErpHrmTask.ISummary when task_id is non-null, or null when task_id IS NULL (project-level tracking only). The task must belong to the same project referenced by project_id.
+     * @x-autobe-database-schema-property task
+     * @x-autobe-specification Resolved via LEFT JOIN on erp_hrm_timers.task_id
+     *   → erp_hrm_tasks.id. Returns IErpHrmTask.ISummary when task_id is
+     *   non-null, or null when task_id IS NULL (project-level tracking only).
+     *   The task must belong to the same project referenced by project_id.
    */
   task: IErpHrmTask.ISummary | null;
 
   /**
    * An optional free-text note describing what the member is currently working on during this tracking session. Null if no description was provided.
    *
-   * @x-autobe-database-schema-property description
-   * @x-autobe-specification Direct mapping from erp_hrm_timers.description (String? nullable). Free-text note entered by the member describing what they are currently working on. May be null if no description was provided. Can be updated while the timer is running via the timer update endpoint.
+     * @x-autobe-database-schema-property description
+     * @x-autobe-specification Direct mapping from erp_hrm_timers.description
+     *   (String? nullable). Free-text note entered by the member describing
+     *   what they are currently working on. May be null if no description was
+     *   provided. Can be updated while the timer is running via the timer
+     *   update endpoint.
    */
   description: string | null;
 
   /**
    * The exact timestamp when the member started this timer session. Use this value together with the current wall-clock time to compute the elapsed duration of the live tracking session.
    *
-   * @x-autobe-database-schema-property started_at
-   * @x-autobe-specification Direct mapping from erp_hrm_timers.started_at (DateTime @db.Timestamptz). Set to the server's current timestamp (now()) at the moment the timer record is inserted. Clients use this value together with the current wall-clock time to compute elapsed duration in real time. The server does NOT compute or return elapsed seconds.
+     * @x-autobe-database-schema-property started_at
+     * @x-autobe-specification Direct mapping from erp_hrm_timers.started_at
+     *   (DateTime @db.Timestamptz). Set to the server's current timestamp
+     *   (now()) at the moment the timer record is inserted. Clients use this
+     *   value together with the current wall-clock time to compute elapsed
+     *   duration in real time. The server does NOT compute or return elapsed
+     *   seconds.
    */
   started_at: string & tags.Format<"date-time">;
 
   /**
    * The timestamp when this timer record was created, which is effectively the same as started_at. Retained for auditing consistency.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from erp_hrm_timers.created_at (DateTime @db.Timestamptz). Set to now() on insert, effectively equal to started_at. Retained for audit consistency with other entities in the system.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from erp_hrm_timers.created_at
+     *   (DateTime @db.Timestamptz). Set to now() on insert, effectively equal
+     *   to started_at. Retained for audit consistency with other entities in
+     *   the system.
    */
   created_at: string & tags.Format<"date-time">;
 };
@@ -77,24 +102,39 @@ export namespace IErpHrmTimer {
     /**
      * The UUID of the project this timer session will be tracked against. Must reference a project the authenticated member is currently assigned to as an active project member.
      *
-     * @x-autobe-database-schema-property project_id
-     * @x-autobe-specification Direct mapping to erp_hrm_timers.project_id column (UUID). The service layer must validate that: (1) a project with this id exists in erp_hrm_projects, is non-deleted (deleted_at IS NULL), and belongs to the same organization as the authenticated member; (2) the authenticated member is an active project member of this project via erp_hrm_project_members. Return HTTP 404 if project not found; HTTP 403 if the member is not a project member.
+         * @x-autobe-database-schema-property project_id
+         * @x-autobe-specification Direct mapping to erp_hrm_timers.project_id
+         *   column (UUID). The service layer must validate that: (1) a project
+         *   with this id exists in erp_hrm_projects, is non-deleted (deleted_at
+         *   IS NULL), and belongs to the same organization as the authenticated
+         *   member; (2) the authenticated member is an active project member of
+         *   this project via erp_hrm_project_members. Return HTTP 404 if
+         *   project not found; HTTP 403 if the member is not a project member.
      */
     project_id: string & tags.Format<"uuid">;
 
     /**
      * The optional UUID of a specific task within the selected project that this timer session is focused on. When provided, it must belong to the specified project. When null or omitted, the timer tracks time at the project level only.
      *
-     * @x-autobe-database-schema-property task_id
-     * @x-autobe-specification Direct mapping to erp_hrm_timers.task_id column (nullable UUID). When provided (non-null), the service must validate that the task exists in erp_hrm_tasks with erp_hrm_project_id = the provided project_id and deleted_at IS NULL. Return HTTP 422 if the task does not belong to the given project. When null, the timer is tracked at project level only.
+         * @x-autobe-database-schema-property task_id
+         * @x-autobe-specification Direct mapping to erp_hrm_timers.task_id
+         *   column (nullable UUID). When provided (non-null), the service must
+         *   validate that the task exists in erp_hrm_tasks with
+         *   erp_hrm_project_id = the provided project_id and deleted_at IS
+         *   NULL. Return HTTP 422 if the task does not belong to the given
+         *   project. When null, the timer is tracked at project level only.
      */
     task_id?: (string & tags.Format<"uuid">) | null | undefined;
 
     /**
      * An optional free-text note describing what the member is currently working on during this timer session. Can be left empty and updated later without stopping the timer.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping to erp_hrm_timers.description column (nullable String). Stored as-is without transformation. Can be null or omitted if the member does not provide a note. This field can also be updated later via the timer update endpoint (PUT) without interrupting the running session.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping to erp_hrm_timers.description
+         *   column (nullable String). Stored as-is without transformation. Can
+         *   be null or omitted if the member does not provide a note. This
+         *   field can also be updated later via the timer update endpoint (PUT)
+         *   without interrupting the running session.
      */
     description?: string | null | undefined;
   };
@@ -106,24 +146,44 @@ export namespace IErpHrmTimer {
     /**
      * The UUID of the project to associate with this active timer session. When changed to a different project, the member must be an active project member of the new project. Omit this field to leave the current project unchanged.
      *
-     * @x-autobe-database-schema-property project_id
-     * @x-autobe-specification Direct mapping to erp_hrm_timers.project_id (UUID FK to erp_hrm_projects). When provided and different from the current project_id, the service must verify the authenticated member has an active erp_hrm_project_members record for the new project. If no such membership exists, return 403/422. Additionally, if project_id changes and no new task_id is provided, the server clears task_id to null automatically. Optional in this DTO — omitting it means the project assignment is unchanged.
+         * @x-autobe-database-schema-property project_id
+         * @x-autobe-specification Direct mapping to erp_hrm_timers.project_id
+         *   (UUID FK to erp_hrm_projects). When provided and different from the
+         *   current project_id, the service must verify the authenticated
+         *   member has an active erp_hrm_project_members record for the new
+         *   project. If no such membership exists, return 403/422.
+         *   Additionally, if project_id changes and no new task_id is provided,
+         *   the server clears task_id to null automatically. Optional in this
+         *   DTO — omitting it means the project assignment is unchanged.
      */
     projectId?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * The UUID of the task within the project to focus this timer session on. Provide `null` to explicitly remove the task association and track time at the project level only. Must belong to the effective project (the new project if `projectId` is also being changed, otherwise the existing project). Omit to retain the current task association (unless the project is changing).
      *
-     * @x-autobe-database-schema-property task_id
-     * @x-autobe-specification Direct mapping to erp_hrm_timers.task_id (nullable UUID FK to erp_hrm_tasks). When provided as a non-null UUID, the service verifies the task exists in erp_hrm_tasks and its erp_hrm_project_id matches the effective project (the newly provided projectId if changed, otherwise the existing project_id). Mismatch results in a 422 error. When provided as null, explicitly removes task association and tracks time at project level only. Omitting this field entirely leaves the current task association unchanged — unless project_id was changed in the same request, in which case task_id is automatically cleared to null by the server.
+         * @x-autobe-database-schema-property task_id
+         * @x-autobe-specification Direct mapping to erp_hrm_timers.task_id
+         *   (nullable UUID FK to erp_hrm_tasks). When provided as a non-null
+         *   UUID, the service verifies the task exists in erp_hrm_tasks and its
+         *   erp_hrm_project_id matches the effective project (the newly
+         *   provided projectId if changed, otherwise the existing project_id).
+         *   Mismatch results in a 422 error. When provided as null, explicitly
+         *   removes task association and tracks time at project level only.
+         *   Omitting this field entirely leaves the current task association
+         *   unchanged — unless project_id was changed in the same request, in
+         *   which case task_id is automatically cleared to null by the server.
      */
     taskId?: (string & tags.Format<"uuid">) | null | undefined;
 
     /**
      * An optional free-text note describing the work currently being performed during this timer session. Provide `null` to clear any existing description. Omit to leave the current description unchanged.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping to erp_hrm_timers.description (nullable String). Accepts any string value or null. No validation beyond reasonable length limits. When provided as null, the description is cleared. Omitting this field leaves the current description unchanged.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping to erp_hrm_timers.description
+         *   (nullable String). Accepts any string value or null. No validation
+         *   beyond reasonable length limits. When provided as null, the
+         *   description is cleared. Omitting this field leaves the current
+         *   description unchanged.
      */
     description?: string | null | undefined;
   };
@@ -135,49 +195,81 @@ export namespace IErpHrmTimer {
     /**
      * Optional filter to restrict results to timer sessions associated with a specific project. When provided, only timers linked to the given project UUID are returned.
      *
-     * @x-autobe-specification Optional filter parameter. When provided and non-null, adds WHERE project_id = :projectId to the erp_hrm_timers query, filtering to only timers associated with that project. Accepts a UUID string matching erp_hrm_projects.id. When null or omitted, no project filter is applied.
+         * @x-autobe-specification Optional filter parameter. When provided and
+         *   non-null, adds WHERE project_id = :projectId to the erp_hrm_timers
+         *   query, filtering to only timers associated with that project.
+         *   Accepts a UUID string matching erp_hrm_projects.id. When null or
+         *   omitted, no project filter is applied.
      */
     projectId?: (string & tags.Format<"uuid">) | null | undefined;
 
     /**
      * Optional filter to restrict results to timer sessions owned by a specific organization member. This field is only effective for members with the `time:view_all` permission. Members without that permission always see only their own timer, regardless of this value.
      *
-     * @x-autobe-specification Optional filter parameter. When provided and non-null, adds WHERE organization_member_id = :organizationMemberId to the erp_hrm_timers query. This filter is ONLY applied when the requesting member holds the time:view_all permission. For members without time:view_all, the result set is always restricted to organization_member_id = <current member id> regardless of this field's value. Accepts a UUID string matching erp_hrm_organization_members.id.
+         * @x-autobe-specification Optional filter parameter. When provided and
+         *   non-null, adds WHERE organization_member_id = :organizationMemberId
+         *   to the erp_hrm_timers query. This filter is ONLY applied when the
+         *   requesting member holds the time:view_all permission. For members
+         *   without time:view_all, the result set is always restricted to
+         *   organization_member_id = <current member id> regardless of this
+         *   field's value. Accepts a UUID string matching
+         *   erp_hrm_organization_members.id.
      */
     organizationMemberId?: (string & tags.Format<"uuid">) | null | undefined;
 
     /**
      * Optional boolean filter to narrow results based on whether the timer is associated with a specific task. Set to `true` to include only timers linked to a task; `false` to include only project-level timers with no task; omit or set to `null` to return all timers regardless of task assignment.
      *
-     * @x-autobe-specification Optional boolean filter parameter derived from the task_id column of erp_hrm_timers. When true: WHERE task_id IS NOT NULL (returns only timers tracking a specific task). When false: WHERE task_id IS NULL (returns only project-level timers without a task). When null or omitted: no filter applied, all timers are returned regardless of task assignment.
+         * @x-autobe-specification Optional boolean filter parameter derived
+         *   from the task_id column of erp_hrm_timers. When true: WHERE task_id
+         *   IS NOT NULL (returns only timers tracking a specific task). When
+         *   false: WHERE task_id IS NULL (returns only project-level timers
+         *   without a task). When null or omitted: no filter applied, all
+         *   timers are returned regardless of task assignment.
      */
     hasTask?: boolean | null | undefined;
 
     /**
      * Optional field name to sort the timer list by. Currently only `'started_at'` is supported. Defaults to `'started_at'` when omitted.
      *
-     * @x-autobe-specification Optional sort field selector. Controls which column is used in the ORDER BY clause on erp_hrm_timers. Currently only 'started_at' is supported, corresponding to erp_hrm_timers.started_at. When null or omitted, defaults to sorting by started_at. Used together with sortOrder. Pattern constraint: ^started_at$.
+         * @x-autobe-specification Optional sort field selector. Controls which
+         *   column is used in the ORDER BY clause on erp_hrm_timers. Currently
+         *   only 'started_at' is supported, corresponding to
+         *   erp_hrm_timers.started_at. When null or omitted, defaults to
+         *   sorting by started_at. Used together with sortOrder. Pattern
+         *   constraint: ^started_at$.
      */
     sortBy?: (string & tags.Pattern<"^started_at$">) | null | undefined;
 
     /**
      * Optional sort direction for the results. Use `'asc'` for oldest-first or `'desc'` for newest-first. Defaults to `'desc'` (most recently started timers first) when omitted.
      *
-     * @x-autobe-specification Optional sort direction for the ORDER BY clause. Accepts 'asc' (ascending) or 'desc' (descending). When null or omitted, defaults to 'desc' (most recently started timers first). Used in conjunction with sortBy to construct ORDER BY erp_hrm_timers.started_at ASC|DESC. Pattern constraint: ^(asc|desc)$.
+         * @x-autobe-specification Optional sort direction for the ORDER BY
+         *   clause. Accepts 'asc' (ascending) or 'desc' (descending). When null
+         *   or omitted, defaults to 'desc' (most recently started timers
+         *   first). Used in conjunction with sortBy to construct ORDER BY
+         *   erp_hrm_timers.started_at ASC|DESC. Pattern constraint:
+         *   ^(asc|desc)$.
      */
     sortOrder?: (string & tags.Pattern<"^(asc|desc)$">) | null | undefined;
 
     /**
      * The 1-based page number to retrieve. Defaults to the first page when omitted. Use in combination with `limit` to navigate through large result sets.
      *
-     * @x-autobe-specification 1-based page number for pagination offset calculation. Used to compute SQL OFFSET as (page - 1) * limit on the erp_hrm_timers query. When omitted or not provided, defaults to page 1. Minimum value: 1.
+         * @x-autobe-specification 1-based page number for pagination offset
+         *   calculation. Used to compute SQL OFFSET as (page - 1) * limit on
+         *   the erp_hrm_timers query. When omitted or not provided, defaults to
+         *   page 1. Minimum value: 1.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of timer records to return in a single page. Must be between 1 and 100 inclusive. Defaults to 20 when omitted.
      *
-     * @x-autobe-specification Maximum number of timer records to return per page. Used as the SQL LIMIT value on the erp_hrm_timers query. Minimum: 1, maximum: 100. When omitted, defaults to 20. Combined with page to calculate OFFSET = (page - 1) * limit.
+         * @x-autobe-specification Maximum number of timer records to return per
+         *   page. Used as the SQL LIMIT value on the erp_hrm_timers query.
+         *   Minimum: 1, maximum: 100. When omitted, defaults to 20. Combined
+         *   with page to calculate OFFSET = (page - 1) * limit.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -191,48 +283,65 @@ export namespace IErpHrmTimer {
     /**
      * Unique identifier of this active timer session.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from erp_hrm_timers.id (UUID primary key). No transformation needed.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from erp_hrm_timers.id (UUID
+         *   primary key). No transformation needed.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * The organization member who owns and started this active timer session.
      *
-     * @x-autobe-database-schema-property organizationMember
-     * @x-autobe-specification Resolved from erp_hrm_timers.organization_member_id via JOIN erp_hrm_organization_members. Returns IErpHrmOrganizationMember.ISummary containing the member's identity, role, employment type, and status within the organization.
+         * @x-autobe-database-schema-property organizationMember
+         * @x-autobe-specification Resolved from
+         *   erp_hrm_timers.organization_member_id via JOIN
+         *   erp_hrm_organization_members. Returns
+         *   IErpHrmOrganizationMember.ISummary containing the member's
+         *   identity, role, employment type, and status within the
+         *   organization.
      */
     organizationMember: IErpHrmOrganizationMember.ISummary;
 
     /**
      * The project against which this timer session is tracking time.
      *
-     * @x-autobe-database-schema-property project
-     * @x-autobe-specification Resolved from erp_hrm_timers.project_id via JOIN erp_hrm_projects. Returns IErpHrmProject.ISummary with essential project display fields (id, name, color, status, etc.).
+         * @x-autobe-database-schema-property project
+         * @x-autobe-specification Resolved from erp_hrm_timers.project_id via
+         *   JOIN erp_hrm_projects. Returns IErpHrmProject.ISummary with
+         *   essential project display fields (id, name, color, status, etc.).
      */
     project: IErpHrmProject.ISummary;
 
     /**
      * The specific task within the project that this timer is focused on, or null if the session is tracked at the project level only.
      *
-     * @x-autobe-database-schema-property task
-     * @x-autobe-specification Resolved from erp_hrm_timers.task_id via LEFT JOIN erp_hrm_tasks. Returns IErpHrmTask.ISummary when task_id is non-null, or null when the timer is tracking at the project level only (task_id IS NULL).
+         * @x-autobe-database-schema-property task
+         * @x-autobe-specification Resolved from erp_hrm_timers.task_id via LEFT
+         *   JOIN erp_hrm_tasks. Returns IErpHrmTask.ISummary when task_id is
+         *   non-null, or null when the timer is tracking at the project level
+         *   only (task_id IS NULL).
      */
     task: IErpHrmTask.ISummary | null;
 
     /**
      * An optional free-text note entered by the member describing what they are currently working on during this tracking session. Null if no note was provided.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from erp_hrm_timers.description (nullable String). No transformation. Null when the member did not provide a work note.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_timers.description (nullable String). No transformation.
+         *   Null when the member did not provide a work note.
      */
     description: string | null;
 
     /**
      * The exact timestamp when the member started this timer session. Clients use this value to compute live elapsed duration on the frontend.
      *
-     * @x-autobe-database-schema-property started_at
-     * @x-autobe-specification Direct mapping from erp_hrm_timers.started_at (Timestamptz), returned as an ISO 8601 date-time string. This is the exact moment the member started the timer. Frontend clients use this value to compute the live elapsed duration by subtracting it from the current time.
+         * @x-autobe-database-schema-property started_at
+         * @x-autobe-specification Direct mapping from erp_hrm_timers.started_at
+         *   (Timestamptz), returned as an ISO 8601 date-time string. This is
+         *   the exact moment the member started the timer. Frontend clients use
+         *   this value to compute the live elapsed duration by subtracting it
+         *   from the current time.
      */
     startedAt: string & tags.Format<"date-time">;
   };

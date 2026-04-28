@@ -35,8 +35,9 @@ export namespace IECommerceMallShipment {
      *
      * The shipment's UUID, assigned by the system upon creation and used to reference this shipment in API endpoints for retrieval and management operations.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from e_commerce_mall_shipments.id. UUID primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_shipments.id. UUID primary key.
      */
     id: string & tags.Format<"uuid">;
 
@@ -45,8 +46,9 @@ export namespace IECommerceMallShipment {
      *
      * Examples include local postal services, courier companies, or logistics providers. Entered by the seller when the shipment is created and displayed to the customer for package tracking purposes.
      *
-     * @x-autobe-database-schema-property carrier_name
-     * @x-autobe-specification Direct mapping from e_commerce_mall_shipments.carrier_name.
+         * @x-autobe-database-schema-property carrier_name
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_shipments.carrier_name.
      */
     carrier_name: string;
 
@@ -55,8 +57,9 @@ export namespace IECommerceMallShipment {
      *
      * Together with carrier_name, this enables the customer to monitor the package's transit status through the carrier's tracking system.
      *
-     * @x-autobe-database-schema-property tracking_number
-     * @x-autobe-specification Direct mapping from e_commerce_mall_shipments.tracking_number.
+         * @x-autobe-database-schema-property tracking_number
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_shipments.tracking_number.
      */
     tracking_number: string;
 
@@ -65,8 +68,9 @@ export namespace IECommerceMallShipment {
      *
      * Automatically set when the seller creates the shipment and enters the tracking information. Serves as the official dispatch time and marks the starting point for the 14-day auto-delivery window.
      *
-     * @x-autobe-database-schema-property shipped_at
-     * @x-autobe-specification Direct mapping from e_commerce_mall_shipments.shipped_at. Timestamptz.
+         * @x-autobe-database-schema-property shipped_at
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_shipments.shipped_at. Timestamptz.
      */
     shipped_at: string & tags.Format<"date-time">;
 
@@ -75,8 +79,9 @@ export namespace IECommerceMallShipment {
      *
      * When set, all order items within this shipment transition to delivered status simultaneously. Remains null while the package is in transit.
      *
-     * @x-autobe-database-schema-property delivered_at
-     * @x-autobe-specification Direct mapping from e_commerce_mall_shipments.delivered_at. Nullable timestamptz.
+         * @x-autobe-database-schema-property delivered_at
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_shipments.delivered_at. Nullable timestamptz.
      */
     delivered_at: (string & tags.Format<"date-time">) | null;
 
@@ -85,7 +90,10 @@ export namespace IECommerceMallShipment {
      *
      * Calculated by counting the related shipment-item records associated with this shipment. Provides a quick overview of how many purchased items are included in this package without requiring a separate query.
      *
-     * @x-autobe-specification Aggregation: COUNT(*) FROM e_commerce_mall_shipment_items WHERE e_commerce_mall_shipment_items.shipment_id = e_commerce_mall_shipments.id.
+         * @x-autobe-specification Aggregation: COUNT(*) FROM
+         *   e_commerce_mall_shipment_items WHERE
+         *   e_commerce_mall_shipment_items.shipment_id =
+         *   e_commerce_mall_shipments.id.
      */
     order_items_count: number & tags.Type<"int32">;
 
@@ -94,8 +102,10 @@ export namespace IECommerceMallShipment {
      *
      * Contains the seller's summary information including their unique identifier, shop name, and logo image, accessible via the referenced IECommerceMallSeller.ISummary schema.
      *
-     * @x-autobe-database-schema-property seller
-     * @x-autobe-specification Join from e_commerce_mall_shipments.seller_id to e_commerce_mall_sellers.id. Returns IECommerceMallSeller.ISummary.
+         * @x-autobe-database-schema-property seller
+         * @x-autobe-specification Join from e_commerce_mall_shipments.seller_id
+         *   to e_commerce_mall_sellers.id. Returns
+         *   IECommerceMallSeller.ISummary.
      */
     seller: IECommerceMallSeller.ISummary;
   };
@@ -124,8 +134,10 @@ export namespace IECommerceMallShipment {
      *
      * Examples include local postal services, courier companies, or logistics providers such as FedEx, UPS, DHL, or national postal services. The carrier name is entered by the seller when the shipment is created and is displayed to the customer for package tracking purposes.
      *
-     * @x-autobe-database-schema-property carrier_name
-     * @x-autobe-specification Direct mapping to e_commerce_mall_shipments.carrier_name. Stored as-is from user input.
+         * @x-autobe-database-schema-property carrier_name
+         * @x-autobe-specification Direct mapping to
+         *   e_commerce_mall_shipments.carrier_name. Stored as-is from user
+         *   input.
      */
     carrierName: string;
 
@@ -134,8 +146,10 @@ export namespace IECommerceMallShipment {
      *
      * Together with carrierName, this enables the customer to monitor the package's transit status through the carrier's tracking system. Customers can use these details on the carrier's website to track the delivery progress of their shipment.
      *
-     * @x-autobe-database-schema-property tracking_number
-     * @x-autobe-specification Direct mapping to e_commerce_mall_shipments.tracking_number. Stored as-is from user input.
+         * @x-autobe-database-schema-property tracking_number
+         * @x-autobe-specification Direct mapping to
+         *   e_commerce_mall_shipments.tracking_number. Stored as-is from user
+         *   input.
      */
     trackingNumber: string;
 
@@ -146,7 +160,11 @@ export namespace IECommerceMallShipment {
      *
      * When the shipment is created, all included order items automatically transition from 'paid' to 'shipped' status.
      *
-     * @x-autobe-specification Each order item ID creates an e_commerce_mall_shipment_items record linking the order_item_id to the new shipment.id. Each order item must belong to the authenticated seller, have status='paid', and not already be assigned to another shipment. At least one ID required.
+         * @x-autobe-specification Each order item ID creates an
+         *   e_commerce_mall_shipment_items record linking the order_item_id to
+         *   the new shipment.id. Each order item must belong to the
+         *   authenticated seller, have status='paid', and not already be
+         *   assigned to another shipment. At least one ID required.
      */
     orderItemIds: (string & tags.Format<"uuid">)[] & tags.MinItems<1>;
   };
@@ -166,8 +184,10 @@ export namespace IECommerceMallShipment {
      *
      * Performs a case-insensitive partial text match against the carrier name field. For example, searching 'express' would match carriers containing 'express' in their name such as 'FedEx Express' or 'DHL Express'.
      *
-     * @x-autobe-database-schema-property carrier_name
-     * @x-autobe-specification Partial/fuzzy text match against e_commerce_mall_shipments.carrier_name column. Case-insensitive string search using LIKE or similarity operator.
+         * @x-autobe-database-schema-property carrier_name
+         * @x-autobe-specification Partial/fuzzy text match against
+         *   e_commerce_mall_shipments.carrier_name column. Case-insensitive
+         *   string search using LIKE or similarity operator.
      */
     carrierName?: string | undefined;
 
@@ -176,8 +196,10 @@ export namespace IECommerceMallShipment {
      *
      * Performs a case-insensitive partial text match against the tracking number field, allowing customers to locate a specific package by entering a portion of its tracking number.
      *
-     * @x-autobe-database-schema-property tracking_number
-     * @x-autobe-specification Partial/fuzzy text match against e_commerce_mall_shipments.tracking_number column. Case-insensitive string search using LIKE or similarity operator.
+         * @x-autobe-database-schema-property tracking_number
+         * @x-autobe-specification Partial/fuzzy text match against
+         *   e_commerce_mall_shipments.tracking_number column. Case-insensitive
+         *   string search using LIKE or similarity operator.
      */
     trackingNumber?: string | undefined;
 
@@ -186,7 +208,10 @@ export namespace IECommerceMallShipment {
      *
      * Use together with shippedAtTo to define an inclusive date range for when the package was dispatched by the seller. Only shipments whose shipped timestamp falls on or after this value will be included. Provide a full ISO 8601 date-time string (e.g., '2026-01-01T00:00:00Z').
      *
-     * @x-autobe-specification Inclusive lower bound date range filter applied to e_commerce_mall_shipments.shipped_at column (WHERE shipped_at >= shippedAtFrom). Used together with shippedAtTo to define an inclusive temporal range.
+         * @x-autobe-specification Inclusive lower bound date range filter
+         *   applied to e_commerce_mall_shipments.shipped_at column (WHERE
+         *   shipped_at >= shippedAtFrom). Used together with shippedAtTo to
+         *   define an inclusive temporal range.
      */
     shippedAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
@@ -195,7 +220,10 @@ export namespace IECommerceMallShipment {
      *
      * Use together with shippedAtFrom to define an inclusive date range for when the package was dispatched by the seller. Only shipments whose shipped timestamp falls on or before this value will be included. Provide a full ISO 8601 date-time string (e.g., '2026-12-31T23:59:59Z').
      *
-     * @x-autobe-specification Inclusive upper bound date range filter applied to e_commerce_mall_shipments.shipped_at column (WHERE shipped_at <= shippedAtTo). Used together with shippedAtFrom to define an inclusive temporal range.
+         * @x-autobe-specification Inclusive upper bound date range filter
+         *   applied to e_commerce_mall_shipments.shipped_at column (WHERE
+         *   shipped_at <= shippedAtTo). Used together with shippedAtFrom to
+         *   define an inclusive temporal range.
      */
     shippedAtTo?: (string & tags.Format<"date-time">) | undefined;
 
@@ -204,7 +232,10 @@ export namespace IECommerceMallShipment {
      *
      * Use together with deliveredAtTo to define an inclusive date range for when the package was confirmed delivered. Only shipments with a confirmed delivery timestamp (delivered status) can match this filter. Provide a full ISO 8601 date-time string.
      *
-     * @x-autobe-specification Inclusive lower bound date range filter applied to e_commerce_mall_shipments.delivered_at column (WHERE delivered_at >= deliveredAtFrom). Only shipments with a non-null delivered_at (delivered status) can match this filter.
+         * @x-autobe-specification Inclusive lower bound date range filter
+         *   applied to e_commerce_mall_shipments.delivered_at column (WHERE
+         *   delivered_at >= deliveredAtFrom). Only shipments with a non-null
+         *   delivered_at (delivered status) can match this filter.
      */
     deliveredAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
@@ -213,7 +244,10 @@ export namespace IECommerceMallShipment {
      *
      * Use together with deliveredAtFrom to define an inclusive date range for when the package was confirmed delivered. Only shipments with a confirmed delivery timestamp (delivered status) can match this filter. Provide a full ISO 8601 date-time string.
      *
-     * @x-autobe-specification Inclusive upper bound date range filter applied to e_commerce_mall_shipments.delivered_at column (WHERE delivered_at <= deliveredAtTo). Only shipments with a non-null delivered_at (delivered status) can match this filter.
+         * @x-autobe-specification Inclusive upper bound date range filter
+         *   applied to e_commerce_mall_shipments.delivered_at column (WHERE
+         *   delivered_at <= deliveredAtTo). Only shipments with a non-null
+         *   delivered_at (delivered status) can match this filter.
      */
     deliveredAtTo?: (string & tags.Format<"date-time">) | undefined;
 
@@ -222,7 +256,10 @@ export namespace IECommerceMallShipment {
      *
      * Select 'shipped' to view packages that are currently in transit and have not yet been confirmed as delivered. Select 'delivered' to view packages that have been confirmed received by the customer or auto-delivered after the 14-day window.
      *
-     * @x-autobe-specification Derived enum filter on e_commerce_mall_shipments: 'shipped' maps to delivered_at IS NULL (package in transit), 'delivered' maps to delivered_at IS NOT NULL (confirmed received). Only one value can be selected at a time.
+         * @x-autobe-specification Derived enum filter on
+         *   e_commerce_mall_shipments: 'shipped' maps to delivered_at IS NULL
+         *   (package in transit), 'delivered' maps to delivered_at IS NOT NULL
+         *   (confirmed received). Only one value can be selected at a time.
      */
     deliveryStatus?: "shipped" | "delivered" | undefined;
 
@@ -231,7 +268,9 @@ export namespace IECommerceMallShipment {
      *
      * Use this parameter to navigate through pages of shipment results. The first page is page 1. Omit or set to 1 to retrieve the first page of results. Each page contains up to limit records. Page numbering starts from 1.
      *
-     * @x-autobe-specification 1-based page index for paginated results. Defaults to 1 if not specified. Used to navigate through paginated result sets. Must be >= 1.
+         * @x-autobe-specification 1-based page index for paginated results.
+         *   Defaults to 1 if not specified. Used to navigate through paginated
+         *   result sets. Must be >= 1.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -240,7 +279,10 @@ export namespace IECommerceMallShipment {
      *
      * Controls how many shipments are included in each page of results. The minimum value is 1 and the maximum allowed value is 100. The actual number of records returned may be less than this value on the final page or when total records are fewer.
      *
-     * @x-autobe-specification Maximum number of records per page. Must be between 1 and 100 inclusive. Defaults to a system-defined value if not specified. Actual returned count may be less on the last page or when fewer records exist.
+         * @x-autobe-specification Maximum number of records per page. Must be
+         *   between 1 and 100 inclusive. Defaults to a system-defined value if
+         *   not specified. Actual returned count may be less on the last page
+         *   or when fewer records exist.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -251,7 +293,11 @@ export namespace IECommerceMallShipment {
      *
      * Specify a field name to sort by, optionally prefixed with '-' for descending order. For example, 'shipped_at' sorts by shipment date ascending (oldest first), while '-shipped_at' sorts descending (newest first). Defaults to sorting by creation date descending (newest shipments first).
      *
-     * @x-autobe-specification Sort field and direction directive. Format: 'fieldName' for ascending order or '-fieldName' for descending order. Default is '-created_at' (newest first). Supported sort fields: created_at, shipped_at, delivered_at, carrier_name, tracking_number.
+         * @x-autobe-specification Sort field and direction directive. Format:
+         *   'fieldName' for ascending order or '-fieldName' for descending
+         *   order. Default is '-created_at' (newest first). Supported sort
+         *   fields: created_at, shipped_at, delivered_at, carrier_name,
+         *   tracking_number.
      */
     sort?: string | undefined;
   };

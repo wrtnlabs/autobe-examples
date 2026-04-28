@@ -25,7 +25,10 @@ export * as historyEntries from "./historyEntries/index";
  * @param props.body Task data to create within the specified project. The project id is taken from the path and must not be included here.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Load the target project by projectId and confirm it belongs to the current organization context. Enforce authorization: allow creation only for callers with project:manage permission or callers whose project membership for this project has project_role = 'project-lead'.
+ * @x-autobe-specification Load the target project by projectId and confirm it
+ *   belongs to the current organization context. Enforce authorization: allow
+ *   creation only for callers with project:manage permission or callers whose
+ *   project membership for this project has project_role = 'project-lead'.
  *
  * Create the task with the project id from the path and persist only fields supported by erp_hrm_time_tasks: title, description, status, priority, estimated_hours, due_date, assigned employee, and parent task. Ignore any attempt to pass project context in the request body; the path defines the scope.
  *
@@ -130,7 +133,8 @@ export namespace create {
  * @param props.body Pagination, filtering, and sorting criteria for browsing tasks in a project.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Load the project by id and verify the caller has access to the organization context and project task browsing permission.
+ * @x-autobe-specification Load the project by id and verify the caller has
+ *   access to the organization context and project task browsing permission.
  *
  * Query erp_hrm_time_tasks with erp_hrm_time_project_id equal to the path projectId. Apply optional filters from the request body: status, priority, and assigned employee. The assigned employee filter must be constrained to employees that are members of the same project, because task assignment is project-scoped.
  *
@@ -235,7 +239,10 @@ export namespace index {
  * @param props.taskId The unique identifier of the task within the specified project (UUID, scoped to the current project).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Load the project by projectId within the current organization context, then load the task by taskId constrained to the same project id. Reject the request if the project does not belong to the current organization or if the task does not belong to the project.
+ * @x-autobe-specification Load the project by projectId within the current
+ *   organization context, then load the task by taskId constrained to the same
+ *   project id. Reject the request if the project does not belong to the
+ *   current organization or if the task does not belong to the project.
  *
  * Select the task fields defined in erp_hrm_time_tasks: id, erp_hrm_time_project_id, erp_hrm_time_employee_id, parent_task_id, title, description, status, priority, estimated_hours, due_date, created_at, updated_at, deleted_at. Include related project, employee, and parent task references only as identifiers or nested DTOs if the shared component model supports them, but do not invent fields not present in the schema.
  *
@@ -334,7 +341,10 @@ export namespace at {
  * @param props.body Fields to update on the task.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Load the task by taskId and verify it belongs to projectId within the current organization context. Reject the request with not found if either the project or task does not exist in scope, or if the task is not associated with the specified project.
+ * @x-autobe-specification Load the task by taskId and verify it belongs to
+ *   projectId within the current organization context. Reject the request with
+ *   not found if either the project or task does not exist in scope, or if the
+ *   task is not associated with the specified project.
  *
  * Validate that any assigned employee belongs to the same project before updating the task. Validate that any parent task belongs to the same project and that the resulting relation preserves the one-level subtask rule. Validate status, priority, due date, and estimated hours according to the task business rules defined by the domain model.
  *
@@ -445,7 +455,10 @@ export namespace update {
  * @param props.taskId Identifier of the task to delete within the specified project.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Load the project by projectId within the current organization context, then load the task by taskId constrained to that project. Verify the caller has project management authority or equivalent task deletion permission within the selected organization.
+ * @x-autobe-specification Load the project by projectId within the current
+ *   organization context, then load the task by taskId constrained to that
+ *   project. Verify the caller has project management authority or equivalent
+ *   task deletion permission within the selected organization.
  *
  * Enforce deletion preconditions using actual task relationships: reject if the task is missing, belongs to another project, or violates hierarchy constraints such as having child subtasks. If downstream schema rules require preserving task history or blocking deletes when related records exist, enforce those constraints before issuing the delete.
  *

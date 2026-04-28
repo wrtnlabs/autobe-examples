@@ -28,9 +28,9 @@ export class RedditcommunityMemberPostsCommentsController {
    * @param connection
    * @param postId The UUID of the post to comment on. The post must exist and be active (not deleted) for comment creation.
    * @param body The comment content and optional parent comment reference for nested replies. Content is required and must not be empty.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Create a new comment on the specified post.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Create a new comment on the specified post.
    *
    * **Implementation Steps**:
    *
@@ -94,14 +94,15 @@ export class RedditcommunityMemberPostsCommentsController {
    * @param postId The unique identifier of the post containing this comment.
    * @param commentId The unique identifier of the comment to update.
    * @param body The update data for the comment. Only the content field is required and must be a non-empty string.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1. Verify the comment with id {commentId} exists in reddit_community_comments table
-   * 2. Verify the comment belongs to the post identified by {postId} (reddit_community_post_id = {postId})
-   * 3. Verify the authenticated user is the comment's author (reddit_community_member_id matches user's ID)
-   * 4. Update the comment's content field with the new value from request body
-   * 5. Set updated_at to current timestamp
-   * 6. Return the complete updated comment entity
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification 1. Verify the comment with id {commentId} exists
+     *   in reddit_community_comments table 2. Verify the comment belongs to the
+     *   post identified by {postId} (reddit_community_post_id = {postId}) 3.
+     *   Verify the authenticated user is the comment's author
+     *   (reddit_community_member_id matches user's ID) 4. Update the comment's
+     *   content field with the new value from request body 5. Set updated_at to
+     *   current timestamp 6. Return the complete updated comment entity
    *
    * Error conditions:
    * - 404 if comment does not exist
@@ -142,9 +143,11 @@ export class RedditcommunityMemberPostsCommentsController {
    * @param connection
    * @param postId The UUID of the post this comment belongs to. Must match the post_id foreign key of the comment.
    * @param commentId The UUID of the comment to delete. Must correspond to an existing comment in the system.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Execute a soft delete on the reddit_community_comments record matching the given postId, commentId, and author context.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Execute a soft delete on the
+     *   reddit_community_comments record matching the given postId, commentId,
+     *   and author context.
    *
    * Implementation steps:
    * 1. Verify the comment exists by querying reddit_community_comments WHERE id = :commentId

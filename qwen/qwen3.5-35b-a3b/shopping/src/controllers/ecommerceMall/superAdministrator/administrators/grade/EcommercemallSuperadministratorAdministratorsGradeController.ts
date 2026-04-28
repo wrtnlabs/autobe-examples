@@ -20,23 +20,21 @@ export class EcommercemallSuperadministratorAdministratorsGradeController {
    * @param connection
    * @param adminId The unique identifier of the administrator whose grade is being changed.
    * @param body Grade change details including the new grade level and optional reason for the change.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor superAdministrator
-   * @x-autobe-specification 1. Authorization: Verify current user is a super administrator
-   * 2. Validate adminId exists and is not the current user (cannot demote self)
-   * 3. Validate adminId is not banned
-   * 4. Validate the target grade is either 'regular' or 'super'
-   * 5. Retrieve current administrator record to get current grade
-   * 6. Create grade change record in ecommerce_mall_administrator_grades:
-   *    - administrator_id: adminId
-   *    - changed_by: current super administrator's ID
-   *    - grade: new grade value
-   *    - previous_grade: current grade
-   *    - reason: optional reason from request
-   *    - created_at: current timestamp
-   * 7. Update ecommerce_mall_administrators.grade with new grade
-   * 8. Create snapshot record in ecommerce_mall_administrator_grades_snapshots capturing old_grade and new_grade
-   * 9. Return updated administrator record with new grade
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor superAdministrator
+     * @x-autobe-specification 1. Authorization: Verify current user is a super
+     *   administrator 2. Validate adminId exists and is not the current user
+     *   (cannot demote self) 3. Validate adminId is not banned 4. Validate the
+     *   target grade is either 'regular' or 'super' 5. Retrieve current
+     *   administrator record to get current grade 6. Create grade change record
+     *   in ecommerce_mall_administrator_grades: - administrator_id: adminId -
+     *   changed_by: current super administrator's ID - grade: new grade value -
+     *   previous_grade: current grade - reason: optional reason from request -
+     *   created_at: current timestamp 7. Update
+     *   ecommerce_mall_administrators.grade with new grade 8. Create snapshot
+     *   record in ecommerce_mall_administrator_grades_snapshots capturing
+     *   old_grade and new_grade 9. Return updated administrator record with new
+     *   grade
    *
    * Edge cases:
    * - Cannot demote self: reject if adminId equals current user's ID

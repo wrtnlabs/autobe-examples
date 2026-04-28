@@ -15,56 +15,78 @@ export type IErpHrmProjectMember = {
   /**
    * The unique identifier of this project membership assignment record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from erp_hrm_project_members.id. UUID primary key, auto-generated on insert.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from erp_hrm_project_members.id.
+     *   UUID primary key, auto-generated on insert.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Summary of the project to which this membership assignment belongs. Identifies the project context for the assigned member.
    *
-   * @x-autobe-database-schema-property project
-   * @x-autobe-specification Resolved from erp_hrm_project_members.project_id via JOIN erp_hrm_projects. Returns IErpHrmProject.ISummary with the project's essential display fields (id, name, description, color, status, budget_hours, started_at, ended_at, created_at, updated_at).
+     * @x-autobe-database-schema-property project
+     * @x-autobe-specification Resolved from erp_hrm_project_members.project_id
+     *   via JOIN erp_hrm_projects. Returns IErpHrmProject.ISummary with the
+     *   project's essential display fields (id, name, description, color,
+     *   status, budget_hours, started_at, ended_at, created_at, updated_at).
    */
   project: IErpHrmProject.ISummary;
 
   /**
    * Summary of the organization member assigned to this project. Includes the member's employment type, status, position, linked platform account, assigned role, and optional department.
    *
-   * @x-autobe-database-schema-property organizationMember
-   * @x-autobe-specification Resolved from erp_hrm_project_members.organization_member_id via JOIN erp_hrm_organization_members (with further joins to erp_hrm_members for email and erp_hrm_roles for role, and optional LEFT JOIN erp_hrm_departments for department). Returns IErpHrmOrganizationMember.ISummary.
+     * @x-autobe-database-schema-property organizationMember
+     * @x-autobe-specification Resolved from
+     *   erp_hrm_project_members.organization_member_id via JOIN
+     *   erp_hrm_organization_members (with further joins to erp_hrm_members for
+     *   email and erp_hrm_roles for role, and optional LEFT JOIN
+     *   erp_hrm_departments for department). Returns
+     *   IErpHrmOrganizationMember.ISummary.
    */
   organizationMember: IErpHrmOrganizationMember.ISummary;
 
   /**
    * The project-scoped role assigned to this member. `member` grants standard contributor access (time logging, task viewing). `project-lead` additionally grants authority to create, edit, and manage tasks within this project.
    *
-   * @x-autobe-database-schema-property project_role
-   * @x-autobe-specification Direct mapping from erp_hrm_project_members.project_role. Allowed values: 'member' (standard contributor who can log time and view tasks) or 'project-lead' (project manager with task creation and management authority). Always one of these two values.
+     * @x-autobe-database-schema-property project_role
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_project_members.project_role. Allowed values: 'member'
+     *   (standard contributor who can log time and view tasks) or
+     *   'project-lead' (project manager with task creation and management
+     *   authority). Always one of these two values.
    */
   projectRole: string;
 
   /**
    * The timestamp when this project membership assignment was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from erp_hrm_project_members.created_at. Timestamptz column set to the current timestamp at insert time. Never null.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_project_members.created_at. Timestamptz column set to the
+     *   current timestamp at insert time. Never null.
    */
   createdAt: string & tags.Format<"date-time">;
 
   /**
    * The timestamp when this project membership record was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from erp_hrm_project_members.updated_at. Timestamptz column updated on any modification to the membership record (e.g., project role change).
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_project_members.updated_at. Timestamptz column updated on any
+     *   modification to the membership record (e.g., project role change).
    */
   updatedAt: string & tags.Format<"date-time">;
 
   /**
    * Soft-deletion timestamp. `null` indicates the membership is active. When set, the member has been removed from the project and this record is a historical audit entry.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from erp_hrm_project_members.deleted_at. Nullable timestamptz. Null indicates the membership is active. When set, the member has been removed from the project but the historical record is preserved for audit purposes. Always included in responses as null or a datetime string.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_project_members.deleted_at. Nullable timestamptz. Null
+     *   indicates the membership is active. When set, the member has been
+     *   removed from the project but the historical record is preserved for
+     *   audit purposes. Always included in responses as null or a datetime
+     *   string.
    */
   deletedAt: (string & tags.Format<"date-time">) | null;
 };
@@ -76,16 +98,26 @@ export namespace IErpHrmProjectMember {
     /**
      * The UUID of the organization member to assign to the project. The member must be active and belong to the same organization as the target project. They must not already be assigned to this project.
      *
-     * @x-autobe-database-schema-property organization_member_id
-     * @x-autobe-specification Direct mapping to erp_hrm_project_members.organization_member_id. Must reference an existing, non-deleted erp_hrm_organization_members record that belongs to the same organization as the target project. The member must have an 'active' status; deactivated members cannot be newly assigned to projects.
+         * @x-autobe-database-schema-property organization_member_id
+         * @x-autobe-specification Direct mapping to
+         *   erp_hrm_project_members.organization_member_id. Must reference an
+         *   existing, non-deleted erp_hrm_organization_members record that
+         *   belongs to the same organization as the target project. The member
+         *   must have an 'active' status; deactivated members cannot be newly
+         *   assigned to projects.
      */
     organizationMemberId: string & tags.Format<"uuid">;
 
     /**
      * The project-scoped role to assign to the member. Must be either `member` (standard contributor who can log time and view tasks) or `project-lead` (manager-level role that also grants task creation, editing, and status management authority within the project).
      *
-     * @x-autobe-database-schema-property project_role
-     * @x-autobe-specification Direct mapping to erp_hrm_project_members.project_role. Must be exactly 'member' or 'project-lead'. Any other value is rejected. 'member' grants standard contributor access (time logging, task viewing). 'project-lead' additionally grants task creation, editing, and status management authority within the project.
+         * @x-autobe-database-schema-property project_role
+         * @x-autobe-specification Direct mapping to
+         *   erp_hrm_project_members.project_role. Must be exactly 'member' or
+         *   'project-lead'. Any other value is rejected. 'member' grants
+         *   standard contributor access (time logging, task viewing).
+         *   'project-lead' additionally grants task creation, editing, and
+         *   status management authority within the project.
      */
     projectRole: string;
   };
@@ -97,8 +129,14 @@ export namespace IErpHrmProjectMember {
     /**
      * The new project-scoped role to assign to the membership. Use `member` to grant standard contributor access (time logging, task visibility) or `project-lead` to grant project manager authority (includes creating, editing, and managing tasks within this project). This is the only attribute of a project membership that can be changed after creation.
      *
-     * @x-autobe-database-schema-property project_role
-     * @x-autobe-specification Direct mapping to erp_hrm_project_members.project_role. Accepted values are exactly 'member' or 'project-lead', enforced by the regex pattern `^(member|project-lead)$`. On PUT, write this value to the project_role column and set updated_at = NOW(). If the submitted value matches the existing value, the update is still processed (no-op result) and the record is returned unchanged.
+         * @x-autobe-database-schema-property project_role
+         * @x-autobe-specification Direct mapping to
+         *   erp_hrm_project_members.project_role. Accepted values are exactly
+         *   'member' or 'project-lead', enforced by the regex pattern
+         *   `^(member|project-lead)$`. On PUT, write this value to the
+         *   project_role column and set updated_at = NOW(). If the submitted
+         *   value matches the existing value, the update is still processed
+         *   (no-op result) and the record is returned unchanged.
      */
     project_role: string & tags.Pattern<"^(member|project-lead)$">;
   };
@@ -114,63 +152,95 @@ export namespace IErpHrmProjectMember {
     /**
      * Optional UUID of a specific project to filter by. When provided, only membership records for the specified project are returned. Leave null to retrieve assignments across all projects in the organization.
      *
-     * @x-autobe-specification Optional UUID filter targeting erp_hrm_project_members.project_id. When provided, WHERE erp_hrm_project_members.project_id = :projectId is applied. Not applicable when the endpoint is PATCH /projects/{projectId}/members (the path parameter takes precedence as the project scope). Value must be a well-formed UUID.
+         * @x-autobe-specification Optional UUID filter targeting
+         *   erp_hrm_project_members.project_id. When provided, WHERE
+         *   erp_hrm_project_members.project_id = :projectId is applied. Not
+         *   applicable when the endpoint is PATCH /projects/{projectId}/members
+         *   (the path parameter takes precedence as the project scope). Value
+         *   must be a well-formed UUID.
      */
     projectId?: (string & tags.Format<"uuid">) | null | undefined;
 
     /**
      * Optional UUID of a specific organization member to filter by. When provided, only project membership records for this organization member are returned. Leave null to retrieve assignments for all members.
      *
-     * @x-autobe-specification Optional UUID filter targeting erp_hrm_project_members.organization_member_id. When provided, WHERE erp_hrm_project_members.organization_member_id = :organizationMemberId is applied. Used to find all project assignments for a particular organization member across projects.
+         * @x-autobe-specification Optional UUID filter targeting
+         *   erp_hrm_project_members.organization_member_id. When provided,
+         *   WHERE erp_hrm_project_members.organization_member_id =
+         *   :organizationMemberId is applied. Used to find all project
+         *   assignments for a particular organization member across projects.
      */
     organizationMemberId?: (string & tags.Format<"uuid">) | null | undefined;
 
     /**
      * Optional project role to filter by. Allowed values are `member` (regular contributor) or `project-lead` (project manager with task management authority). When provided, only assignments matching the specified role are returned.
      *
-     * @x-autobe-specification Optional string filter targeting erp_hrm_project_members.project_role. When provided, WHERE erp_hrm_project_members.project_role = :projectRole is applied. Allowed values: 'member' (regular contributor) or 'project-lead' (project manager with task management authority).
+         * @x-autobe-specification Optional string filter targeting
+         *   erp_hrm_project_members.project_role. When provided, WHERE
+         *   erp_hrm_project_members.project_role = :projectRole is applied.
+         *   Allowed values: 'member' (regular contributor) or 'project-lead'
+         *   (project manager with task management authority).
      */
     projectRole?: string | null | undefined;
 
     /**
      * Optional start of the creation date range filter (inclusive). Only project membership records created on or after this datetime are returned. Use together with `createdAtTo` to define a precise time window.
      *
-     * @x-autobe-specification Optional ISO 8601 datetime lower bound filter targeting erp_hrm_project_members.created_at. When provided, WHERE erp_hrm_project_members.created_at >= :createdAtFrom is applied. Combine with createdAtTo to form an inclusive date range filter.
+         * @x-autobe-specification Optional ISO 8601 datetime lower bound filter
+         *   targeting erp_hrm_project_members.created_at. When provided, WHERE
+         *   erp_hrm_project_members.created_at >= :createdAtFrom is applied.
+         *   Combine with createdAtTo to form an inclusive date range filter.
      */
     createdAtFrom?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * Optional end of the creation date range filter (inclusive). Only project membership records created on or before this datetime are returned. Use together with `createdAtFrom` to define a precise time window.
      *
-     * @x-autobe-specification Optional ISO 8601 datetime upper bound filter targeting erp_hrm_project_members.created_at. When provided, WHERE erp_hrm_project_members.created_at <= :createdAtTo is applied. Combine with createdAtFrom to form an inclusive date range filter.
+         * @x-autobe-specification Optional ISO 8601 datetime upper bound filter
+         *   targeting erp_hrm_project_members.created_at. When provided, WHERE
+         *   erp_hrm_project_members.created_at <= :createdAtTo is applied.
+         *   Combine with createdAtFrom to form an inclusive date range filter.
      */
     createdAtTo?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * Page number to retrieve (1-indexed). Defaults to the first page when not specified. Controls which segment of the full result set is returned.
      *
-     * @x-autobe-specification 1-indexed page number for pagination. Used to compute OFFSET = (page - 1) * limit in the SQL query against erp_hrm_project_members. Defaults to 1 if not provided. Minimum value is 1.
+         * @x-autobe-specification 1-indexed page number for pagination. Used to
+         *   compute OFFSET = (page - 1) * limit in the SQL query against
+         *   erp_hrm_project_members. Defaults to 1 if not provided. Minimum
+         *   value is 1.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of records to return per page. Controls the page size of the paginated result set. Must be at least 1.
      *
-     * @x-autobe-specification Maximum number of records to return per page. Applied as SQL LIMIT in the query against erp_hrm_project_members. Minimum value is 1. A server-side maximum (e.g., 100) may be enforced. Defaults to a sensible value (e.g., 20) if not provided.
+         * @x-autobe-specification Maximum number of records to return per page.
+         *   Applied as SQL LIMIT in the query against erp_hrm_project_members.
+         *   Minimum value is 1. A server-side maximum (e.g., 100) may be
+         *   enforced. Defaults to a sensible value (e.g., 20) if not provided.
      */
     limit?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Name of the field to sort results by. Acceptable values include `created_at`, `updated_at`, and `project_role`. Defaults to `created_at` when not specified.
      *
-     * @x-autobe-specification Name of the column to sort results by. Applied as ORDER BY :sort in the query against erp_hrm_project_members. Default value is 'created_at' when null or not provided. Acceptable values include 'created_at', 'updated_at', 'project_role'.
+         * @x-autobe-specification Name of the column to sort results by.
+         *   Applied as ORDER BY :sort in the query against
+         *   erp_hrm_project_members. Default value is 'created_at' when null or
+         *   not provided. Acceptable values include 'created_at', 'updated_at',
+         *   'project_role'.
      */
     sort?: string | null | undefined;
 
     /**
      * Sort order direction. Use `ASC` for ascending order or `DESC` for descending order. Defaults to `DESC` (newest first) when not specified.
      *
-     * @x-autobe-specification Sort direction for the ORDER BY clause in the query against erp_hrm_project_members. Accepted values: 'ASC' (ascending) or 'DESC' (descending). Default value is 'DESC' when null or not provided.
+         * @x-autobe-specification Sort direction for the ORDER BY clause in the
+         *   query against erp_hrm_project_members. Accepted values: 'ASC'
+         *   (ascending) or 'DESC' (descending). Default value is 'DESC' when
+         *   null or not provided.
      */
     order?: string | null | undefined;
   };
@@ -182,48 +252,64 @@ export namespace IErpHrmProjectMember {
     /**
      * The unique identifier of this project membership assignment record.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from erp_hrm_project_members.id. UUID primary key uniquely identifying this project membership assignment record.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_project_members.id. UUID primary key uniquely identifying
+         *   this project membership assignment record.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Summary of the project this membership assignment belongs to, including its name, status, color, and planned date range.
      *
-     * @x-autobe-database-schema-property project
-     * @x-autobe-specification Resolved via JOIN erp_hrm_projects ON erp_hrm_project_members.project_id = erp_hrm_projects.id. Mapped to IErpHrmProject.ISummary.
+         * @x-autobe-database-schema-property project
+         * @x-autobe-specification Resolved via JOIN erp_hrm_projects ON
+         *   erp_hrm_project_members.project_id = erp_hrm_projects.id. Mapped to
+         *   IErpHrmProject.ISummary.
      */
     project: IErpHrmProject.ISummary;
 
     /**
      * Summary of the organization member assigned to this project, including their employment type, status, role, and optional position title.
      *
-     * @x-autobe-database-schema-property organizationMember
-     * @x-autobe-specification Resolved via JOIN erp_hrm_organization_members ON erp_hrm_project_members.organization_member_id = erp_hrm_organization_members.id. Mapped to IErpHrmOrganizationMember.ISummary.
+         * @x-autobe-database-schema-property organizationMember
+         * @x-autobe-specification Resolved via JOIN
+         *   erp_hrm_organization_members ON
+         *   erp_hrm_project_members.organization_member_id =
+         *   erp_hrm_organization_members.id. Mapped to
+         *   IErpHrmOrganizationMember.ISummary.
      */
     organizationMember: IErpHrmOrganizationMember.ISummary;
 
     /**
      * The role of this member within the project. Either `member` (a regular contributor) or `project-lead` (a project manager with task management authority).
      *
-     * @x-autobe-database-schema-property project_role
-     * @x-autobe-specification Direct mapping from erp_hrm_project_members.project_role column. Allowed values: 'member' (regular contributor) or 'project-lead' (project manager with task management authority over other members).
+         * @x-autobe-database-schema-property project_role
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_project_members.project_role column. Allowed values:
+         *   'member' (regular contributor) or 'project-lead' (project manager
+         *   with task management authority over other members).
      */
     projectRole: string;
 
     /**
      * The timestamp when this project membership assignment was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from erp_hrm_project_members.created_at. Timestamptz column recording when this project membership assignment was created.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_project_members.created_at. Timestamptz column recording
+         *   when this project membership assignment was created.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * The timestamp when this project membership record was last updated.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from erp_hrm_project_members.updated_at. Timestamptz column recording when this project membership record was last updated (e.g., when the project role was changed).
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_project_members.updated_at. Timestamptz column recording
+         *   when this project membership record was last updated (e.g., when
+         *   the project role was changed).
      */
     updated_at: string & tags.Format<"date-time">;
   };

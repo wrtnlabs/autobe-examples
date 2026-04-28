@@ -18,9 +18,10 @@ export class HrmplatformGuestsController {
    *
    * @param connection
    * @param body Search criteria for guest records
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query hrm_platform_guests table with cursor-based pagination.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query hrm_platform_guests table with cursor-based
+     *   pagination.
    *
    * Apply search filters from requestBody:
    * - device_identifier: exact match or pattern search using ilike
@@ -76,9 +77,9 @@ export class HrmplatformGuestsController {
    *
    * @param connection
    * @param guestId Unique identifier for the unauthenticated guest session.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query hrm_platform_guests table by id (UUID).
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query hrm_platform_guests table by id (UUID).
    *
    * 1. Validate guestId is valid UUID format
    * 2. Fetch guest record where id = guestId

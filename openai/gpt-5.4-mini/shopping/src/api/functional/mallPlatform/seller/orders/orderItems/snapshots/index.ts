@@ -26,7 +26,11 @@ export * as variantOptions from "./variantOptions/index";
  * @param props.body Pagination, filtering, and sorting criteria for browsing immutable order item snapshots.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Verify that the order exists and that the order item belongs to that order before querying snapshots. Read from the immutable order item snapshot source using the order item identifier as the primary filter, and apply pagination and sorting from the request body. Default ordering should be newest-first unless another supported sort is requested.
+ * @x-autobe-specification Verify that the order exists and that the order item
+ *   belongs to that order before querying snapshots. Read from the immutable
+ *   order item snapshot source using the order item identifier as the primary
+ *   filter, and apply pagination and sorting from the request body. Default
+ *   ordering should be newest-first unless another supported sort is requested.
  *
  * Do not perform any write, update, or delete behavior because snapshots are immutable. Do not modify related orders or order items. If the order or order item is missing, return not found. If there are no snapshots for the item, return an empty page. The implementation should preserve the exact historical values captured in each snapshot and should not attempt to recalculate them from current data.
  * @path /mallPlatform/seller/orders/:orderId/orderItems/:orderItemId/snapshots
@@ -132,7 +136,10 @@ export namespace index {
  * @param props.snapshotId The order item snapshot identifier (UUID).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Load the order by orderId and verify it exists. Load the order item by orderItemId and verify it belongs to the specified order. Then load the snapshot by snapshotId and verify it belongs to that order item.
+ * @x-autobe-specification Load the order by orderId and verify it exists. Load
+ *   the order item by orderItemId and verify it belongs to the specified order.
+ *   Then load the snapshot by snapshotId and verify it belongs to that order
+ *   item.
  *
  * Return the snapshot only when all identifiers form a valid hierarchy. Use a consistent read or transaction so the hierarchy check cannot race against concurrent updates. Include the snapshot’s preserved fields and its normalized variant option rows in the response. Do not expose any write semantics. If any identifier is missing, mismatched, or unauthorized, respond with not found or forbidden according to platform policy.
  * @path /mallPlatform/seller/orders/:orderId/orderItems/:orderItemId/snapshots/:snapshotId

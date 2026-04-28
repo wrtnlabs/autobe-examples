@@ -14,7 +14,9 @@ export type IShoppingMallSellerDashboard = {
    *
    * This count includes all products owned by the authenticated seller regardless of their visibility state (public, private, or deleted). Computed via database aggregation query on the products table.
    *
-   * @x-autobe-specification Computed via COUNT(*) from shopping_mall_products WHERE seller_id = auth.seller_id. Returns total number of products owned by the authenticated seller.
+     * @x-autobe-specification Computed via COUNT(*) from shopping_mall_products
+     *   WHERE seller_id = auth.seller_id. Returns total number of products
+     *   owned by the authenticated seller.
    */
   product_count: number & tags.Type<"int32"> & tags.Minimum<0>;
 
@@ -23,7 +25,10 @@ export type IShoppingMallSellerDashboard = {
    *
    * This count represents all order items across all orders where the seller's products were purchased. Includes order items in any status (pending, shipped, delivered, cancelled, refunded). Computed via database aggregation query on the order_items table.
    *
-   * @x-autobe-specification Computed via COUNT(*) from shopping_mall_order_items WHERE seller_id = auth.seller_id. Returns total number of order items across all orders for the authenticated seller's products.
+     * @x-autobe-specification Computed via COUNT(*) from
+     *   shopping_mall_order_items WHERE seller_id = auth.seller_id. Returns
+     *   total number of order items across all orders for the authenticated
+     *   seller's products.
    */
   order_item_count: number & tags.Type<"int32"> & tags.Minimum<0>;
 
@@ -32,7 +37,10 @@ export type IShoppingMallSellerDashboard = {
    *
    * This count represents cancellation requests submitted by customers for the seller's order items that are currently in 'pending' status, awaiting seller approval or rejection. Computed via database aggregation query with status filter on the cancellation_requests table.
    *
-   * @x-autobe-specification Computed via COUNT(*) from shopping_mall_cancellation_requests WHERE seller_id = auth.seller_id AND status = 'pending'. Returns number of cancellation requests awaiting seller review.
+     * @x-autobe-specification Computed via COUNT(*) from
+     *   shopping_mall_cancellation_requests WHERE seller_id = auth.seller_id
+     *   AND status = 'pending'. Returns number of cancellation requests
+     *   awaiting seller review.
    */
   pending_cancellation_count: number & tags.Type<"int32"> & tags.Minimum<0>;
 
@@ -41,7 +49,10 @@ export type IShoppingMallSellerDashboard = {
    *
    * This count represents refund requests submitted by customers for the seller's delivered order items that are currently in 'pending' status, awaiting seller approval or rejection. Computed via database aggregation query with status filter on the refund_requests table.
    *
-   * @x-autobe-specification Computed via COUNT(*) from shopping_mall_refund_requests WHERE seller_id = auth.seller_id AND status = 'pending'. Returns number of refund requests awaiting seller review.
+     * @x-autobe-specification Computed via COUNT(*) from
+     *   shopping_mall_refund_requests WHERE seller_id = auth.seller_id AND
+     *   status = 'pending'. Returns number of refund requests awaiting seller
+     *   review.
    */
   pending_refund_count: number & tags.Type<"int32"> & tags.Minimum<0>;
 };

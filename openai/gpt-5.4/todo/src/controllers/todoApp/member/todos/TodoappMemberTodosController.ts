@@ -30,9 +30,10 @@ export class TodoappMemberTodosController {
    *
    * @param connection
    * @param body Information required to create a todo
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Authenticate the caller as a member and resolve the owner member ID from the active session context.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Authenticate the caller as a member and resolve
+     *   the owner member ID from the active session context.
    *
    * Validate the request body against ITodoAppTodo.ICreate. Accept only the user-managed creation fields: title as required, and description, startDate, and dueDate as optional fields if those are defined by the DTO mapping for the todo entity. Do not accept ownership fields, completion lifecycle fields, trash lifecycle fields, or timestamp fields from the client.
    *
@@ -78,9 +79,11 @@ export class TodoappMemberTodosController {
    *
    * @param connection
    * @param body Todo list filters, sorting, and pagination criteria
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement this operation as an authenticated member-only search over todo_app_todos for the caller's own active records.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implement this operation as an authenticated
+     *   member-only search over todo_app_todos for the caller's own active
+     *   records.
    *
    * Resolve the current member identity from the authentication context, and do not accept any member identifier from the request body. Build the query with a mandatory ownership predicate todo_app_member_id = authenticated member ID and a mandatory active-list predicate deleted_at IS NULL.
    *
@@ -128,9 +131,11 @@ export class TodoappMemberTodosController {
    *
    * @param connection
    * @param todoId Target todo identifier
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement a read-only service method that retrieves one row from todo_app_todos by id and authenticated ownership.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implement a read-only service method that
+     *   retrieves one row from todo_app_todos by id and authenticated
+     *   ownership.
    *
    * Resolve the authenticated member from the session or request context. Validate that the todoId path parameter is a UUID. Query todo_app_todos with a predicate equivalent to: id = :todoId AND todo_app_member_id = :memberId AND deleted_at IS NULL. Return exactly one record mapped to ITodoAppTodo when found.
    *
@@ -171,9 +176,10 @@ export class TodoappMemberTodosController {
    * @param connection
    * @param todoId Target todo's ID
    * @param body Updated todo information
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Load the target todo_app_todos row by id and authenticated member context.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Load the target todo_app_todos row by id and
+     *   authenticated member context.
    *
    * Validate that a todo with the given id exists and that todo_app_member_id matches the authenticated member's id. If no matching owned row exists, return a not-found or access-denied failure according to the service's ownership-hiding policy. Also validate that the todo is still editable in the active workspace; if deleted_at is not null, reject the update because trashed todos are handled through trash-specific operations rather than normal edit flow.
    *
@@ -222,9 +228,10 @@ export class TodoappMemberTodosController {
    *
    * @param connection
    * @param todoId Target todo's ID.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement a member-authenticated service operation that permanently deletes one todo_app_todos row by its id.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implement a member-authenticated service
+     *   operation that permanently deletes one todo_app_todos row by its id.
    *
    * 1. Resolve the authenticated member identity from the authorization context.
    * 2. Load the target todo_app_todos record by id and owner together, using todo_app_todos.id = :todoId and todo_app_member_id = :currentMemberId.
@@ -271,9 +278,11 @@ export class TodoappMemberTodosController {
    *
    * @param connection
    * @param todoId Target todo's ID
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement a service action that restores a member-owned todo from trash by clearing the deleted-state marker on todo_app_todos.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implement a service action that restores a
+     *   member-owned todo from trash by clearing the deleted-state marker on
+     *   todo_app_todos.
    *
    * Authenticate the caller as a member and resolve the target todo by todo_app_todos.id using the todoId path parameter together with the caller's member identifier. The lookup must enforce ownership by filtering on both id and todo_app_member_id so that one member cannot restore another member's todo.
    *

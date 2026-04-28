@@ -21,9 +21,10 @@ export class RedditcloneMemberPostsCommentsController {
    * @param connection
    * @param postId The unique identifier of the post to comment on (global scope).
    * @param body Comment creation data including the comment content and optional parent comment reference for replies.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Insert a new record into reddit_clone_comments table with the following logic:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Insert a new record into reddit_clone_comments
+     *   table with the following logic:
    *
    * 1. Validate that the postId exists in reddit_clone_posts table. Return 404 if not found.
    * 2. Validate that the creating user is not banned from the community containing the post (check reddit_clone_community_bans).
@@ -72,9 +73,9 @@ export class RedditcloneMemberPostsCommentsController {
    * @param postId UUID of the post that this comment belongs to. Used to verify the comment's parent post context.
    * @param commentId UUID of the comment to update. Must reference an existing, non-deleted comment.
    * @param body Update payload containing the new comment content. Only the content field can be modified.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Update operation for reddit_clone_comments table.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Update operation for reddit_clone_comments table.
    *
    * **Implementation Steps**:
    * 1. Verify the authenticated user's session and retrieve their user_profile_id
@@ -147,9 +148,10 @@ export class RedditcloneMemberPostsCommentsController {
    * @param connection
    * @param postId UUID of the post containing the comment (global scope)
    * @param commentId UUID of the comment to delete (global scope)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query the reddit_clone_comments table for the comment with the given commentId.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query the reddit_clone_comments table for the
+     *   comment with the given commentId.
    *
    * 1. **Validate comment existence**: Query by id = commentId. If not found, return 404 Not Found.
    *

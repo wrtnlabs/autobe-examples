@@ -37,7 +37,11 @@ export type IEcommerceReportGroupedResult = {
    *
    * Null when no grouping dimension was specified.
    *
-   * @x-autobe-specification Derived from GROUP BY grouping type in aggregation query. Date grouping returns ISO 8601 date string (e.g., '2024-01-15'). Category grouping returns category UUID. Seller grouping returns seller UUID. Product grouping returns product UUID. Null when no grouping dimension was specified in the report request.
+     * @x-autobe-specification Derived from GROUP BY grouping type in
+     *   aggregation query. Date grouping returns ISO 8601 date string (e.g.,
+     *   '2024-01-15'). Category grouping returns category UUID. Seller grouping
+     *   returns seller UUID. Product grouping returns product UUID. Null when
+     *   no grouping dimension was specified in the report request.
    */
   dimension: string | null;
 
@@ -53,7 +57,13 @@ export type IEcommerceReportGroupedResult = {
    * - **Customer reports**: unique_customers, customer_acquisition_count, repeat_customer_rate
    * - **Seller reports**: seller_product_count, seller_order_count, seller_fulfillment_rate
    *
-   * @x-autobe-specification Aggregated metrics calculated via SQL aggregate functions (SUM, COUNT, AVG) on the underlying data tables. The specific metrics populated depend on the requested report type: sales reports include revenue and order metrics, inventory reports include stock metrics, customer reports include acquisition and retention metrics, seller reports include performance metrics. Irrelevant metrics are omitted from the response object.
+     * @x-autobe-specification Aggregated metrics calculated via SQL aggregate
+     *   functions (SUM, COUNT, AVG) on the underlying data tables. The specific
+     *   metrics populated depend on the requested report type: sales reports
+     *   include revenue and order metrics, inventory reports include stock
+     *   metrics, customer reports include acquisition and retention metrics,
+     *   seller reports include performance metrics. Irrelevant metrics are
+     *   omitted from the response object.
    */
   metrics: {
     /**

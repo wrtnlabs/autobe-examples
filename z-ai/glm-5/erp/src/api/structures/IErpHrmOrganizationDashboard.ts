@@ -40,35 +40,51 @@ export namespace IErpHrmOrganizationDashboard {
     /**
      * Unique identifier of the project approaching or exceeding budget limit.
      *
-     * @x-autobe-specification Sourced from erp_hrm_projects.id. Query all active projects (deleted_at IS NULL) with budget_hours IS NOT NULL from the current organization context. This ID links the budget alert to the specific project for further action.
+         * @x-autobe-specification Sourced from erp_hrm_projects.id. Query all
+         *   active projects (deleted_at IS NULL) with budget_hours IS NOT NULL
+         *   from the current organization context. This ID links the budget
+         *   alert to the specific project for further action.
      */
     project_id: string & tags.Format<"uuid">;
 
     /**
      * Name of the project for display in the budget alert notification.
      *
-     * @x-autobe-specification Sourced from erp_hrm_projects.name. Provides human-readable project identification in the alert display for managers to quickly identify which project requires attention.
+         * @x-autobe-specification Sourced from erp_hrm_projects.name. Provides
+         *   human-readable project identification in the alert display for
+         *   managers to quickly identify which project requires attention.
      */
     project_name: string;
 
     /**
      * The allocated budget hours for the project.
      *
-     * @x-autobe-specification Sourced from erp_hrm_projects.budget_hours. Represents the planned hour allocation for the project, used as the denominator in utilization calculation. Only projects with non-null budget_hours are included in the alert query.
+         * @x-autobe-specification Sourced from erp_hrm_projects.budget_hours.
+         *   Represents the planned hour allocation for the project, used as the
+         *   denominator in utilization calculation. Only projects with non-null
+         *   budget_hours are included in the alert query.
      */
     budget_hours: number & tags.Minimum<0>;
 
     /**
      * Total hours logged against the project, converted from minutes to decimal hours.
      *
-     * @x-autobe-specification Computed from erp_hrm_timelogs: SELECT COALESCE(SUM(duration), 0) / 60 FROM erp_hrm_timelogs WHERE project_id matches. Duration stored in minutes in database, converted to decimal hours for display. Includes all timelogs regardless of billable status.
+         * @x-autobe-specification Computed from erp_hrm_timelogs: SELECT
+         *   COALESCE(SUM(duration), 0) / 60 FROM erp_hrm_timelogs WHERE
+         *   project_id matches. Duration stored in minutes in database,
+         *   converted to decimal hours for display. Includes all timelogs
+         *   regardless of billable status.
      */
     actual_hours: number & tags.Minimum<0>;
 
     /**
      * Percentage of budget consumed (actual_hours / budget_hours * 100). Alerts trigger when this exceeds 80%.
      *
-     * @x-autobe-specification Computed as (actual_hours / budget_hours) * 100, rounded to 1 decimal place. Alerts are generated when this value exceeds 80%. Projects with budget_hours = 0 are excluded from results to prevent division by zero. Results sorted by this value descending.
+         * @x-autobe-specification Computed as (actual_hours / budget_hours) *
+         *   100, rounded to 1 decimal place. Alerts are generated when this
+         *   value exceeds 80%. Projects with budget_hours = 0 are excluded from
+         *   results to prevent division by zero. Results sorted by this value
+         *   descending.
      */
     utilization_percentage: number & tags.Minimum<0> & tags.Maximum<100>;
   };
@@ -80,14 +96,24 @@ export namespace IErpHrmOrganizationDashboard {
     /**
      * The employee's summary information including unique identifier, display name, avatar, role assignment, department affiliation, position title, and employment classification.
      *
-     * @x-autobe-specification Derived from timelog aggregation JOIN with erp_hrm_employees (on employee_id) and erp_hrm_members (on erp_hrm_member_id). After aggregating timelogs by employee_id, the employee_id is used to fetch employee details and construct IErpHrmEmployee.ISummary. The reference includes employee id, member profile (display_name, avatar_image), role, department, position, employment_type, and status.
+         * @x-autobe-specification Derived from timelog aggregation JOIN with
+         *   erp_hrm_employees (on employee_id) and erp_hrm_members (on
+         *   erp_hrm_member_id). After aggregating timelogs by employee_id, the
+         *   employee_id is used to fetch employee details and construct
+         *   IErpHrmEmployee.ISummary. The reference includes employee id,
+         *   member profile (display_name, avatar_image), role, department,
+         *   position, employment_type, and status.
      */
     employee: IErpHrmEmployee.ISummary;
 
     /**
      * Total work hours logged by this employee during the current week (Monday through Sunday), expressed in decimal hours for easy display and comparison in the top performers ranking.
      *
-     * @x-autobe-specification Computed from erp_hrm_timelogs.duration aggregation: SUM(duration) for the employee within the current week (Monday through Sunday). The database stores duration in minutes; the value is converted to decimal hours by dividing by 60. Minimum 0 constraint ensures non-negative hours display.
+         * @x-autobe-specification Computed from erp_hrm_timelogs.duration
+         *   aggregation: SUM(duration) for the employee within the current week
+         *   (Monday through Sunday). The database stores duration in minutes;
+         *   the value is converted to decimal hours by dividing by 60. Minimum
+         *   0 constraint ensures non-negative hours display.
      */
     hours_logged: number & tags.Minimum<0>;
   };

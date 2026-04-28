@@ -10,32 +10,32 @@ import { IErpHrmTask } from "./IErpHrmTask";
  */
 export type IErpHrmTimer = {
   /**
-   * @x-autobe-database-schema-property id
+     * @x-autobe-database-schema-property id
    */
   id: string & tags.Format<"uuid">;
   /**
-   * @x-autobe-database-schema-property started_at
+     * @x-autobe-database-schema-property started_at
    */
   started_at: string & tags.Format<"date-time">;
   /**
-   * @x-autobe-database-schema-property description
+     * @x-autobe-database-schema-property description
    */
   description: string | null;
   /**
-   * @x-autobe-database-schema-property project
+     * @x-autobe-database-schema-property project
    */
   project: IErpHrmProject.ISummary;
   /**
-   * @x-autobe-database-schema-property task
+     * @x-autobe-database-schema-property task
    */
   task: IErpHrmTask.ISummary | null;
   elapsed_minutes: number & tags.Type<"int32"> & tags.Minimum<0>;
   /**
-   * @x-autobe-database-schema-property created_at
+     * @x-autobe-database-schema-property created_at
    */
   created_at: string & tags.Format<"date-time">;
   /**
-   * @x-autobe-database-schema-property updated_at
+     * @x-autobe-database-schema-property updated_at
    */
   updated_at: string & tags.Format<"date-time">;
 };
@@ -92,32 +92,32 @@ export namespace IErpHrmTimer {
    */
   export type ISummary = {
     /**
-     * @x-autobe-database-schema-property id
+         * @x-autobe-database-schema-property id
      */
     id: string & tags.Format<"uuid">;
     /**
-     * @x-autobe-database-schema-property employee
+         * @x-autobe-database-schema-property employee
      */
     employee: IErpHrmEmployee.ISummary;
     /**
-     * @x-autobe-database-schema-property project
+         * @x-autobe-database-schema-property project
      */
     project: IErpHrmProject.ISummary;
     /**
-     * @x-autobe-database-schema-property task
+         * @x-autobe-database-schema-property task
      */
     task: IErpHrmTask.ISummary | null;
     /**
-     * @x-autobe-database-schema-property started_at
+         * @x-autobe-database-schema-property started_at
      */
     startedAt: string & tags.Format<"date-time">;
     /**
-     * @x-autobe-database-schema-property description
+         * @x-autobe-database-schema-property description
      */
     description: string | null;
     active: boolean;
     /**
-     * @x-autobe-database-schema-property created_at
+         * @x-autobe-database-schema-property created_at
      */
     createdAt: string & tags.Format<"date-time">;
   };
@@ -129,24 +129,35 @@ export namespace IErpHrmTimer {
     /**
      * The project to associate with this timer. Must be an active project where the employee is assigned as a project member.
      *
-     * @x-autobe-database-schema-property erp_hrm_project_id
-     * @x-autobe-specification Direct mapping from erp_hrm_timers.erp_hrm_project_id. Required foreign key referencing erp_hrm_projects.id. Validation: must reference an active project where the authenticated employee is assigned as a project member. Archived or completed projects are rejected.
+         * @x-autobe-database-schema-property erp_hrm_project_id
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_timers.erp_hrm_project_id. Required foreign key referencing
+         *   erp_hrm_projects.id. Validation: must reference an active project
+         *   where the authenticated employee is assigned as a project member.
+         *   Archived or completed projects are rejected.
      */
     project_id: string & tags.Format<"uuid">;
 
     /**
      * Optional task within the project to associate with this timer. If specified, must belong to the same project.
      *
-     * @x-autobe-database-schema-property erp_hrm_task_id
-     * @x-autobe-specification Direct mapping from erp_hrm_timers.erp_hrm_task_id. Optional nullable foreign key referencing erp_hrm_tasks.id. If provided, must belong to the same project specified by project_id. Null indicates timer is not associated with a specific task.
+         * @x-autobe-database-schema-property erp_hrm_task_id
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_timers.erp_hrm_task_id. Optional nullable foreign key
+         *   referencing erp_hrm_tasks.id. If provided, must belong to the same
+         *   project specified by project_id. Null indicates timer is not
+         *   associated with a specific task.
      */
     task_id?: (string & tags.Format<"uuid">) | null | undefined;
 
     /**
      * Optional notes describing what work is being performed during this tracking session.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from erp_hrm_timers.description. Optional nullable text field for notes about the work being performed. Can be edited while the timer is running. Null indicates no description provided.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_timers.description. Optional nullable text field for notes
+         *   about the work being performed. Can be edited while the timer is
+         *   running. Null indicates no description provided.
      */
     description?: string | null | undefined;
   };
@@ -158,24 +169,31 @@ export namespace IErpHrmTimer {
     /**
      * The project to associate with the timer. Must be a project the employee is assigned to as a project member.
      *
-     * @x-autobe-database-schema-property erp_hrm_project_id
-     * @x-autobe-specification Direct mapping from erp_hrm_timers.erp_hrm_project_id. Validates employee is a project member of the new project via erp_hrm_project_members table lookup.
+         * @x-autobe-database-schema-property erp_hrm_project_id
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_timers.erp_hrm_project_id. Validates employee is a project
+         *   member of the new project via erp_hrm_project_members table lookup.
      */
     erp_hrm_project_id?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Optional task within the project. If specified, must belong to the same project selected for the timer. Set to null to remove task association.
      *
-     * @x-autobe-database-schema-property erp_hrm_task_id
-     * @x-autobe-specification Direct mapping from erp_hrm_timers.erp_hrm_task_id. Nullable FK. When specified, validates that task exists and belongs to the selected project via erp_hrm_tasks.project_id match.
+         * @x-autobe-database-schema-property erp_hrm_task_id
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_timers.erp_hrm_task_id. Nullable FK. When specified,
+         *   validates that task exists and belongs to the selected project via
+         *   erp_hrm_tasks.project_id match.
      */
     erp_hrm_task_id?: (string & tags.Format<"uuid">) | null | undefined;
 
     /**
      * Optional notes describing what work is being performed during this tracking session.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from erp_hrm_timers.description. Nullable text field for free-form work session notes.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_timers.description. Nullable text field for free-form work
+         *   session notes.
      */
     description?: string | null | undefined;
   };

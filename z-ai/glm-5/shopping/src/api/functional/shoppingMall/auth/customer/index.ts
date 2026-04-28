@@ -42,7 +42,8 @@ import { IShoppingMallCustomer } from "../../../../structures/IShoppingMallCusto
  * @param props.body Customer registration credentials and optional profile information
  * @x-autobe-authorization-type join
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Implementation specification for customer registration (join):
+ * @x-autobe-specification Implementation specification for customer
+ *   registration (join):
  *
  * 1. **Request Validation**:
  *    - Validate email format (must be valid email address)

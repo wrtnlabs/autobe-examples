@@ -17,9 +17,10 @@ export class RedditcommunityMemberBrowse_communitiesController {
    * Pagination is supported through query parameters to efficiently handle large numbers of communities. Users can navigate through result pages using cursor-based pagination for consistent ordering and optimal performance.
    *
    * @param connection
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query reddit_community_communities table with cursor-based pagination.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query reddit_community_communities table with
+     *   cursor-based pagination.
    *
    * Apply the following logic:
    * 1. Select community fields: id, name, description, icon_url, subscriber_count

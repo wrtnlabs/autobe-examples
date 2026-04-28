@@ -16,43 +16,44 @@ import { IEcommerceMallSuperAdmin } from "./IEcommerceMallSuperAdmin";
  */
 export type IEcommerceMallAdminRequest = {
   /**
-   * @x-autobe-database-schema-property id
+     * @x-autobe-database-schema-property id
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Type of actor submitting the request: 'customer' or 'seller'.
    *
-   * @x-autobe-database-schema-property actor_type
+     * @x-autobe-database-schema-property actor_type
    */
   actorType: string;
 
   /**
    * Requested administrator grade: 'admin' for regular administrator or 'super_admin' for super administrator privileges.
    *
-   * @x-autobe-database-schema-property requested_grade
+     * @x-autobe-database-schema-property requested_grade
    */
   requestedGrade: string;
 
   /**
    * Text explaining the reason for requesting administrative privileges.
    *
-   * @x-autobe-database-schema-property reason
+     * @x-autobe-database-schema-property reason
    */
   reason: string;
 
   /**
    * Current review status: 'pending', 'approved', or 'rejected'.
    *
-   * @x-autobe-database-schema-property status
+     * @x-autobe-database-schema-property status
    */
   status: string;
 
   /**
    * Super administrator who reviewed this request.
    *
-   * @x-autobe-database-schema-property reviewer
-   * @x-autobe-specification BELONGS-TO relation to SuperAdmin via reviewed_by_id. Included when request has been reviewed.
+     * @x-autobe-database-schema-property reviewer
+     * @x-autobe-specification BELONGS-TO relation to SuperAdmin via
+     *   reviewed_by_id. Included when request has been reviewed.
    */
   reviewer?: IEcommerceMallSuperAdmin.ISummary | null | undefined;
 
@@ -69,29 +70,30 @@ export type IEcommerceMallAdminRequest = {
   /**
    * Optional reason provided by super administrator when rejecting the request.
    *
-   * @x-autobe-database-schema-property reviewed_reason
-   * @x-autobe-specification Direct mapping from reviewed_reason column. Nullable - only populated when request is rejected.
+     * @x-autobe-database-schema-property reviewed_reason
+     * @x-autobe-specification Direct mapping from reviewed_reason column.
+     *   Nullable - only populated when request is rejected.
    */
   reviewedReason?: string | null | undefined;
 
   /**
    * Timestamp when the request was submitted.
    *
-   * @x-autobe-database-schema-property created_at
+     * @x-autobe-database-schema-property created_at
    */
   createdAt: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the request was last modified.
    *
-   * @x-autobe-database-schema-property updated_at
+     * @x-autobe-database-schema-property updated_at
    */
   updatedAt: string & tags.Format<"date-time">;
 
   /**
    * Timestamp for soft deletion. Requests are soft-deleted rather than permanently removed.
    *
-   * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-database-schema-property deleted_at
    */
   deletedAt: (string & tags.Format<"date-time">) | null;
 };
@@ -111,7 +113,11 @@ export namespace IEcommerceMallAdminRequest {
      *
      * The actor type discriminator indicates whether the admin request was submitted by a customer or a seller account. Use this filter to narrow results to requests from a specific actor type. When null, requests from both customer and seller actors are included.
      *
-     * @x-autobe-specification Filter parameter for actor_type column in ecommerce_mall_admin_requests table. Filter by the type of actor who submitted the request: 'customer' or 'seller'. This is a polymorphic discriminator field where requests can originate from either customers or sellers.
+         * @x-autobe-specification Filter parameter for actor_type column in
+         *   ecommerce_mall_admin_requests table. Filter by the type of actor
+         *   who submitted the request: 'customer' or 'seller'. This is a
+         *   polymorphic discriminator field where requests can originate from
+         *   either customers or sellers.
      */
     actorType?: "customer" | "seller" | null | undefined;
 
@@ -120,7 +126,10 @@ export namespace IEcommerceMallAdminRequest {
      *
      * The start of the submission date range filter. Only requests submitted at or after this timestamp are included in results. Use together with createdAtTo for date range filtering.
      *
-     * @x-autobe-specification Computed date range filter parameter. Uses ecommerce_mall_admin_requests.created_at column to filter requests created on or after the specified datetime. Part of a range filter pair with createdAtTo.
+         * @x-autobe-specification Computed date range filter parameter. Uses
+         *   ecommerce_mall_admin_requests.created_at column to filter requests
+         *   created on or after the specified datetime. Part of a range filter
+         *   pair with createdAtTo.
      */
     createdAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
@@ -129,7 +138,10 @@ export namespace IEcommerceMallAdminRequest {
      *
      * The end of the submission date range filter. Only requests submitted at or before this timestamp are included in results. Use together with createdAtFrom for date range filtering.
      *
-     * @x-autobe-specification Computed date range filter parameter. Uses ecommerce_mall_admin_requests.created_at column to filter requests created on or before the specified datetime. Part of a range filter pair with createdAtFrom.
+         * @x-autobe-specification Computed date range filter parameter. Uses
+         *   ecommerce_mall_admin_requests.created_at column to filter requests
+         *   created on or before the specified datetime. Part of a range filter
+         *   pair with createdAtFrom.
      */
     createdAtTo?: (string & tags.Format<"date-time">) | undefined;
 
@@ -138,7 +150,9 @@ export namespace IEcommerceMallAdminRequest {
      *
      * Controls the page size for paginated results. The actual number of records returned may be less than this value on the final page or when total records are fewer than the limit. Must be between 1 and 100.
      *
-     * @x-autobe-specification Computed pagination parameter. Not a database column. Controls the maximum number of records to return per page. Defaults to 20 if not specified. Maximum allowed value is 100.
+         * @x-autobe-specification Computed pagination parameter. Not a database
+         *   column. Controls the maximum number of records to return per page.
+         *   Defaults to 20 if not specified. Maximum allowed value is 100.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -149,7 +163,9 @@ export namespace IEcommerceMallAdminRequest {
      *
      * Specifies which page of results to retrieve. Page numbering is 1-indexed, so the first page is page 1 (not 0). Used in conjunction with limit to navigate through paginated results.
      *
-     * @x-autobe-specification Computed pagination parameter. Not a database column. Specifies which page number to retrieve. Page numbering starts from 1. Defaults to 1 if not specified.
+         * @x-autobe-specification Computed pagination parameter. Not a database
+         *   column. Specifies which page number to retrieve. Page numbering
+         *   starts from 1. Defaults to 1 if not specified.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -158,7 +174,10 @@ export namespace IEcommerceMallAdminRequest {
      *
      * The privilege level being requested by the submitter. 'admin' grants regular administrator access while 'super_admin' grants the highest platform management privileges. When null, requests for both grades are included.
      *
-     * @x-autobe-specification Filter parameter for requested_grade column in ecommerce_mall_admin_requests table. Filter by the administrator privilege grade requested: 'admin' for regular administrator or 'super_admin' for super administrator privileges.
+         * @x-autobe-specification Filter parameter for requested_grade column
+         *   in ecommerce_mall_admin_requests table. Filter by the administrator
+         *   privilege grade requested: 'admin' for regular administrator or
+         *   'super_admin' for super administrator privileges.
      */
     requestedGrade?: "admin" | "super_admin" | null | undefined;
 
@@ -167,7 +186,10 @@ export namespace IEcommerceMallAdminRequest {
      *
      * When specified, only requests that were reviewed (approved or rejected) by this super administrator are returned. This is useful for tracking which admin reviewed specific requests.
      *
-     * @x-autobe-specification Filter parameter for reviewed_by_id column in ecommerce_mall_admin_requests table (foreign key to ecommerce_mall_super_admins). Filter to show only requests reviewed by a specific super administrator.
+         * @x-autobe-specification Filter parameter for reviewed_by_id column in
+         *   ecommerce_mall_admin_requests table (foreign key to
+         *   ecommerce_mall_super_admins). Filter to show only requests reviewed
+         *   by a specific super administrator.
      */
     reviewedById?: (string & tags.Format<"uuid">) | undefined;
 
@@ -176,7 +198,10 @@ export namespace IEcommerceMallAdminRequest {
      *
      * The review workflow status indicates whether the admin request is awaiting super administrator review ('pending'), has been approved ('approved'), or has been rejected ('rejected'). When null, requests in all statuses are included.
      *
-     * @x-autobe-specification Filter parameter for status column in ecommerce_mall_admin_requests table. Filter by the current review status of the request: 'pending' (awaiting review), 'approved' (request granted), or 'rejected' (request denied).
+         * @x-autobe-specification Filter parameter for status column in
+         *   ecommerce_mall_admin_requests table. Filter by the current review
+         *   status of the request: 'pending' (awaiting review), 'approved'
+         *   (request granted), or 'rejected' (request denied).
      */
     status?: "pending" | "approved" | "rejected" | null | undefined;
   };
@@ -257,7 +282,11 @@ export namespace IEcommerceMallAdminRequest {
      *
      * Use 'approve' to grant administrator privileges to the requesting user, or 'reject' to deny the request and optionally provide a reason. The action determines whether the request status becomes 'approved' or 'rejected'.
      *
-     * @x-autobe-specification No direct database column mapping. The action value determines business logic: 'approve' sets status to 'approved' and grants admin privileges to the requesting user; 'reject' sets status to 'rejected' and stores the reviewed_reason. This is a command discriminator for the update operation.
+         * @x-autobe-specification No direct database column mapping. The action
+         *   value determines business logic: 'approve' sets status to
+         *   'approved' and grants admin privileges to the requesting user;
+         *   'reject' sets status to 'rejected' and stores the reviewed_reason.
+         *   This is a command discriminator for the update operation.
      */
     action: "approve" | "reject";
 
@@ -266,7 +295,12 @@ export namespace IEcommerceMallAdminRequest {
      *
      * This field is required when the action is 'reject' but ignored when 'approve'. The rejection reason is stored and visible to the requester for transparency. Allows the requester to understand why their request was denied and potentially resubmit with improvements.
      *
-     * @x-autobe-specification When action is 'reject', the reviewed_reason value is stored to the ecommerce_mall_admin_requests.reviewed_reason column. When action is 'approve', this field is ignored even if provided. Min length 1, max length 1000 characters. Required by the service layer when rejecting.
+         * @x-autobe-specification When action is 'reject', the reviewed_reason
+         *   value is stored to the
+         *   ecommerce_mall_admin_requests.reviewed_reason column. When action
+         *   is 'approve', this field is ignored even if provided. Min length 1,
+         *   max length 1000 characters. Required by the service layer when
+         *   rejecting.
      */
     reviewed_reason?:
       | (string & tags.MinLength<1> & tags.MaxLength<1000>)

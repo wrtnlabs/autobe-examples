@@ -19,7 +19,7 @@ export namespace IPage {
      * reflects the page parameter from the request after validation and bounds
      * checking.
      *
-     * @x-autobe-specification 1-indexed current page number. Defaults to 1.
+         * @x-autobe-specification 1-indexed current page number. Defaults to 1.
      */
     current: number & tags.Type<"int32"> & tags.Minimum<0>;
 
@@ -31,7 +31,8 @@ export namespace IPage {
      * actual number of records in the data array may be less than this value on
      * the final page or when total records are fewer than the limit.
      *
-     * @x-autobe-specification Maximum records per page. Actual count may be less on last page.
+         * @x-autobe-specification Maximum records per page. Actual count may be
+         *   less on last page.
      */
     limit: number & tags.Type<"int32"> & tags.Minimum<0>;
 
@@ -43,7 +44,7 @@ export namespace IPage {
      * essential for calculating total pages and displaying pagination UI
      * elements like "Showing 1-10 of 150 results".
      *
-     * @x-autobe-specification Total record count across all pages.
+         * @x-autobe-specification Total record count across all pages.
      */
     records: number & tags.Type<"int32"> & tags.Minimum<0>;
 
@@ -54,7 +55,8 @@ export namespace IPage {
      * records is 0, pages will also be 0. This value enables clients to render
      * page navigation controls and validate page bounds.
      *
-     * @x-autobe-specification Total pages. Calculated as Math.ceil(records / limit).
+         * @x-autobe-specification Total pages. Calculated as Math.ceil(records
+         *   / limit).
      */
     pages: number & tags.Type<"int32"> & tags.Minimum<0>;
   };

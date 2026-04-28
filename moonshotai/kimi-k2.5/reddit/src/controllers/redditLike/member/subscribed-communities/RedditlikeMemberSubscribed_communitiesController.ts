@@ -21,9 +21,10 @@ export class RedditlikeMemberSubscribed_communitiesController {
    *
    * @param connection
    * @param body Search criteria and pagination parameters for filtering subscribed communities
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query reddit_like_community_subscriptions table to retrieve communities the authenticated member is subscribed to.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query reddit_like_community_subscriptions table
+     *   to retrieve communities the authenticated member is subscribed to.
    *
    * 1. Filter by authenticated member's ID from session (reddit_like_member_id)
    * 2. Only return active subscriptions where deleted_at IS NULL

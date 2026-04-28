@@ -22,7 +22,8 @@ import { IShoppingMallCustomerCartItem } from "../../../../structures/IShoppingM
  * @param props.body Search criteria for filtering cart items including availability filters, quantity ranges, date ranges, sorting preferences, and pagination parameters.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Query shopping_mall_customer_cart_items table for the authenticated customer's cart.
+ * @x-autobe-specification Query shopping_mall_customer_cart_items table for the
+ *   authenticated customer's cart.
  *
  * 1. Identify the authenticated customer from the session/token.
  * 2. Find the customer's shopping_mall_customer_carts record using customer_id.

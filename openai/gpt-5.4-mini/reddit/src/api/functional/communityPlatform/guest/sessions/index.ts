@@ -21,7 +21,8 @@ import { IPageICommunityPlatformMemberSession } from "../../../../structures/IPa
  * @param props.connection
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor guest
- * @x-autobe-specification Read the current member session context for the authenticated principal.
+ * @x-autobe-specification Read the current member session context for the
+ *   authenticated principal.
  *
  * Implementation should resolve the caller from the authentication middleware, verify the session is active, and load the matching member session record from the member session store. The handler should return a paginated envelope even if it contains at most one current session record, because the operation name is index and the runtime validation requires a paginated response type.
  *
@@ -82,8 +83,11 @@ export namespace index {
  * @param props.sessionId Target session identifier.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor guest
- * @x-autobe-specification Load the community_platform_member_sessions row by id using a primary-key lookup.
- * Validate that the row exists before returning data. Confirm the caller is authorized: the owning member may read their own session; admins may read sessions only if platform policy allows session inspection.
+ * @x-autobe-specification Load the community_platform_member_sessions row by id
+ *   using a primary-key lookup. Validate that the row exists before returning
+ *   data. Confirm the caller is authorized: the owning member may read their
+ *   own session; admins may read sessions only if platform policy allows
+ *   session inspection.
  *
  * If the row is found, return the session entity as-is, mapping id, community_platform_member_id, ip, href, referrer, created_at, and expired_at. Do not attempt to derive any additional state in the API layer beyond standard serialization. The endpoint is read-only and must not mutate session timestamps or refresh any tokens.
  *

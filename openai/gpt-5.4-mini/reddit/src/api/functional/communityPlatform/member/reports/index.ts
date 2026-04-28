@@ -23,7 +23,8 @@ import { ICommunityPlatformReport } from "../../../../structures/ICommunityPlatf
  * @param props.body Report creation data containing the reported content reference and the reason text.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implement this as a report creation service that runs under member authentication.
+ * @x-autobe-specification Implement this as a report creation service that runs
+ *   under member authentication.
  *
  * 1. Accept a request body containing the reported target reference and the reason text. The target must indicate whether the content is a post or a comment, and must carry the target identifier.
  * 2. Resolve the target record from the content domain before inserting the report. Validate that the target exists and determine its community ownership from the underlying content record.
@@ -130,7 +131,8 @@ export namespace create {
  * @param props.reportId Target report identifier.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implement a read-only lookup against community_platform_reports by report_id.
+ * @x-autobe-specification Implement a read-only lookup against
+ *   community_platform_reports by report_id.
  *
  * Load the report record by primary identifier, then enforce authorization by confirming the authenticated actor is either an admin or a moderator assigned to the report's community. If the user is a moderator, resolve the community relationship from the report's community reference and verify moderation ownership/role before returning data.
  *

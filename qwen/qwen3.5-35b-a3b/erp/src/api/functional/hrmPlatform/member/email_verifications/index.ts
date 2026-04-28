@@ -29,7 +29,8 @@ import { IPageIHrmPlatformMemberEmailVerification } from "../../../../structures
  * @param props.body Search criteria for email verification tokens including member ID, status filters, date range filters, and pagination parameters.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query hrm_platform_member_email_verifications table with pagination and filtering.
+ * @x-autobe-specification Query hrm_platform_member_email_verifications table
+ *   with pagination and filtering.
  *
  * ### Business Rules:
  * 1. **Organization Context**: Non-admin users can only view email verifications for members belonging to their selected organization.
@@ -143,7 +144,8 @@ export namespace index {
  * @param props.verificationId The unique identifier of the email verification to retrieve.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query hrm_platform_member_email_verifications table by id field.
+ * @x-autobe-specification Query hrm_platform_member_email_verifications table
+ *   by id field.
  *
  * Filter criteria:
  * - Match id with the verificationId path parameter (UUID format)

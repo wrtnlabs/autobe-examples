@@ -68,8 +68,9 @@ export namespace IEcommerceOrder {
      *
      * This is the primary key of the order record, stored as a UUID. It uniquely identifies each order in the system and is used for all order-related API operations.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_orders.id. UUID format.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from ecommerce_orders.id. UUID
+         *   format.
      */
     id: string & tags.Format<"uuid">;
 
@@ -78,8 +79,10 @@ export namespace IEcommerceOrder {
      *
      * This field provides a customer-friendly order identifier that is easier to communicate and reference than the UUID. It is used in customer communications, order tracking, and receipts.
      *
-     * @x-autobe-database-schema-property order_number
-     * @x-autobe-specification Direct mapping from ecommerce_orders.order_number. Sequential or timestamp-based format for uniqueness.
+         * @x-autobe-database-schema-property order_number
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_orders.order_number. Sequential or timestamp-based format
+         *   for uniqueness.
      */
     order_number: string;
 
@@ -97,8 +100,10 @@ export namespace IEcommerceOrder {
      * - refunded: All items have been refunded
      * - partially_completed: Mixed states (e.g., some delivered, some refunded)
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from ecommerce_orders.status. Computed from order items statuses. Enum values: paid, shipped, delivered, cancelled, refunded, partially_completed.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from ecommerce_orders.status.
+         *   Computed from order items statuses. Enum values: paid, shipped,
+         *   delivered, cancelled, refunded, partially_completed.
      */
     status: string;
 
@@ -107,8 +112,10 @@ export namespace IEcommerceOrder {
      *
      * This field represents the sum of all order item prices at the time of checkout. It is stored as a double precision number for currency values. Note that this may not include shipping fees or taxes unless explicitly added to order items.
      *
-     * @x-autobe-database-schema-property total_price
-     * @x-autobe-specification Direct mapping from ecommerce_orders.total_price. Double precision floating point for currency values. Calculated at checkout from order items.
+         * @x-autobe-database-schema-property total_price
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_orders.total_price. Double precision floating point for
+         *   currency values. Calculated at checkout from order items.
      */
     total_price: number;
 
@@ -117,8 +124,10 @@ export namespace IEcommerceOrder {
      *
      * This field is automatically set when payment succeeds and the order is confirmed. It is used for order history sorting, retention policies, and auditing purposes. The timestamp includes timezone information.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from ecommerce_orders.created_at. DateTime with timezone (timestamptz). Set automatically when payment succeeds and order is confirmed.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_orders.created_at. DateTime with timezone (timestamptz).
+         *   Set automatically when payment succeeds and order is confirmed.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -127,8 +136,10 @@ export namespace IEcommerceOrder {
      *
      * This is a belongs-to relation that references the customer account associated with the order. It provides customer identification information without exposing sensitive data. The customer can only access their own orders through row-level security enforcement.
      *
-     * @x-autobe-database-schema-property customer
-     * @x-autobe-specification JOIN from ecommerce_orders.ecommerce_customer_id to ecommerce_customers.id. Returns IEcommerceCustomer.ISummary reference.
+         * @x-autobe-database-schema-property customer
+         * @x-autobe-specification JOIN from
+         *   ecommerce_orders.ecommerce_customer_id to ecommerce_customers.id.
+         *   Returns IEcommerceCustomer.ISummary reference.
      */
     customer: IEcommerceCustomer.ISummary;
   };
@@ -166,7 +177,9 @@ export namespace IEcommerceOrder {
      * - Minimum: 0
      * - Used with `limit` to control result set size
      *
-     * @x-autobe-specification Query parameter for pagination. Zero-based page index used to calculate OFFSET in SQL query. Combined with limit to determine which page of results to return.
+         * @x-autobe-specification Query parameter for pagination. Zero-based
+         *   page index used to calculate OFFSET in SQL query. Combined with
+         *   limit to determine which page of results to return.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
 
@@ -185,7 +198,9 @@ export namespace IEcommerceOrder {
      *
      * The 100-record limit prevents memory exhaustion and ensures reasonable response times for large datasets.
      *
-     * @x-autobe-specification Query parameter for pagination. Maximum number of records per page. Used to determine LIMIT in SQL query. Enforced maximum of 100 to prevent excessive data retrieval.
+         * @x-autobe-specification Query parameter for pagination. Maximum
+         *   number of records per page. Used to determine LIMIT in SQL query.
+         *   Enforced maximum of 100 to prevent excessive data retrieval.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -209,8 +224,11 @@ export namespace IEcommerceOrder {
      *
      * Invalid status values will result in a validation error response.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Filter parameter mapped to ecommerce_orders.status column. Validates against allowed enum values: paid, shipped, delivered, cancelled, refunded, partially_completed. Applied as WHERE clause filter in SQL query.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Filter parameter mapped to
+         *   ecommerce_orders.status column. Validates against allowed enum
+         *   values: paid, shipped, delivered, cancelled, refunded,
+         *   partially_completed. Applied as WHERE clause filter in SQL query.
      */
     status?: string | undefined;
 
@@ -230,8 +248,11 @@ export namespace IEcommerceOrder {
      * - Input: "ORD-2024"
      * - Matches: "ORD-2024-001", "ORD-2024-002", etc.
      *
-     * @x-autobe-database-schema-property order_number
-     * @x-autobe-specification Filter parameter mapped to ecommerce_orders.order_number column. Supports partial matching via LIKE or similar pattern matching. Applied as WHERE clause filter in SQL query.
+         * @x-autobe-database-schema-property order_number
+         * @x-autobe-specification Filter parameter mapped to
+         *   ecommerce_orders.order_number column. Supports partial matching via
+         *   LIKE or similar pattern matching. Applied as WHERE clause filter in
+         *   SQL query.
      */
     order_number?: string | undefined;
 
@@ -251,8 +272,11 @@ export namespace IEcommerceOrder {
      * - Omit `created_at_to` to get all orders from this date forward
      * - Omit `created_at_from` to use `created_at_to` as upper bound only
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Filter parameter mapped to ecommerce_orders.created_at column. Represents the start of the date range (inclusive). Applied as WHERE created_at >= ? in SQL query. Format: ISO 8601 date-time string.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Filter parameter mapped to
+         *   ecommerce_orders.created_at column. Represents the start of the
+         *   date range (inclusive). Applied as WHERE created_at >= ? in SQL
+         *   query. Format: ISO 8601 date-time string.
      */
     created_at_from?: (string & tags.Format<"date-time">) | undefined;
 
@@ -272,8 +296,11 @@ export namespace IEcommerceOrder {
      * - Omit `created_at_from` to get all orders up to this date
      * - Omit both for no date filtering (all orders)
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Filter parameter mapped to ecommerce_orders.created_at column. Represents the end of the date range (inclusive). Applied as WHERE created_at <= ? in SQL query. Format: ISO 8601 date-time string.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Filter parameter mapped to
+         *   ecommerce_orders.created_at column. Represents the end of the date
+         *   range (inclusive). Applied as WHERE created_at <= ? in SQL query.
+         *   Format: ISO 8601 date-time string.
      */
     created_at_to?: (string & tags.Format<"date-time">) | undefined;
   };

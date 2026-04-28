@@ -24,8 +24,9 @@ export type IRedditCloneGuestSession = {
    *
    * This UUID uniquely identifies each guest session in the system. Used as the primary key for querying and managing session records.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from reddit_clone_guest_sessions.id. Primary key, UUID format.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_guest_sessions.id. Primary key, UUID format.
    */
   id: string & tags.Format<"uuid">;
 
@@ -34,8 +35,10 @@ export type IRedditCloneGuestSession = {
    *
    * Used for security monitoring and session validation. Helps detect suspicious activity or unauthorized access attempts.
    *
-   * @x-autobe-database-schema-property ip
-   * @x-autobe-specification Direct mapping from reddit_clone_guest_sessions.ip. IP address string where the session was created.
+     * @x-autobe-database-schema-property ip
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_guest_sessions.ip. IP address string where the session was
+     *   created.
    */
   ip: string;
 
@@ -44,8 +47,9 @@ export type IRedditCloneGuestSession = {
    *
    * Tracks the entry point into the application for analytics and user experience optimization.
    *
-   * @x-autobe-database-schema-property href
-   * @x-autobe-specification Direct mapping from reddit_clone_guest_sessions.href. URI string of the entry point.
+     * @x-autobe-database-schema-property href
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_guest_sessions.href. URI string of the entry point.
    */
   href: string & tags.Format<"uri">;
 
@@ -54,8 +58,10 @@ export type IRedditCloneGuestSession = {
    *
    * Captures the source of traffic for analytics and marketing attribution purposes. May be null if the guest arrived without a referrer.
    *
-   * @x-autobe-database-schema-property referrer
-   * @x-autobe-specification Direct mapping from reddit_clone_guest_sessions.referrer. Nullable URI string of the referrer.
+     * @x-autobe-database-schema-property referrer
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_guest_sessions.referrer. Nullable URI string of the
+     *   referrer.
    */
   referrer: (string & tags.Format<"uri">) | null;
 
@@ -64,8 +70,9 @@ export type IRedditCloneGuestSession = {
    *
    * Used to determine session age and calculate expiration. Essential for session lifecycle management.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from reddit_clone_guest_sessions.created_at. DateTime in ISO 8601 format.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_guest_sessions.created_at. DateTime in ISO 8601 format.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -74,8 +81,9 @@ export type IRedditCloneGuestSession = {
    *
    * Determines session validity period. Guest sessions are temporary and must expire for security reasons.
    *
-   * @x-autobe-database-schema-property expired_at
-   * @x-autobe-specification Direct mapping from reddit_clone_guest_sessions.expired_at. DateTime in ISO 8601 format.
+     * @x-autobe-database-schema-property expired_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_guest_sessions.expired_at. DateTime in ISO 8601 format.
    */
   expired_at: string & tags.Format<"date-time">;
 
@@ -84,8 +92,10 @@ export type IRedditCloneGuestSession = {
    *
    * Links the session to a specific guest identified by device fingerprint. Each guest can have multiple sessions across different devices or browsers.
    *
-   * @x-autobe-database-schema-property guest
-   * @x-autobe-specification Relation via JOIN on reddit_clone_guest_id to reddit_clone_guests table. Returns IRedditCloneGuest.ISummary with guest account details.
+     * @x-autobe-database-schema-property guest
+     * @x-autobe-specification Relation via JOIN on reddit_clone_guest_id to
+     *   reddit_clone_guests table. Returns IRedditCloneGuest.ISummary with
+     *   guest account details.
    */
   guest: IRedditCloneGuest.ISummary;
 };
@@ -113,8 +123,9 @@ export namespace IRedditCloneGuestSession {
      *
      * This UUID identifies each guest session uniquely across the system. Used as the primary key for session management and lookup operations.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from reddit_clone_guest_sessions.id. Primary key, UUID format.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_guest_sessions.id. Primary key, UUID format.
      */
     id: string & tags.Format<"uuid">;
 
@@ -123,8 +134,9 @@ export namespace IRedditCloneGuestSession {
      *
      * Captures the client's IP address at session creation time for security monitoring and analytics purposes. Helps detect suspicious activity or unauthorized access attempts.
      *
-     * @x-autobe-database-schema-property ip
-     * @x-autobe-specification Direct mapping from reddit_clone_guest_sessions.ip. IPv4 address format.
+         * @x-autobe-database-schema-property ip
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_guest_sessions.ip. IPv4 address format.
      */
     ip: string & tags.Format<"ipv4">;
 
@@ -133,8 +145,9 @@ export namespace IRedditCloneGuestSession {
      *
      * Tracks the entry point into the application for analytics and user experience optimization. Records the specific page or route where the guest session began.
      *
-     * @x-autobe-database-schema-property href
-     * @x-autobe-specification Direct mapping from reddit_clone_guest_sessions.href. URI format.
+         * @x-autobe-database-schema-property href
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_guest_sessions.href. URI format.
      */
     href: string & tags.Format<"uri">;
 
@@ -143,8 +156,9 @@ export namespace IRedditCloneGuestSession {
      *
      * Captures the source of traffic for analytics and marketing attribution purposes. May be null if the guest accessed the application directly without a referrer.
      *
-     * @x-autobe-database-schema-property referrer
-     * @x-autobe-specification Direct mapping from reddit_clone_guest_sessions.referrer. Nullable URI field (String?).
+         * @x-autobe-database-schema-property referrer
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_guest_sessions.referrer. Nullable URI field (String?).
      */
     referrer?: (string & tags.Format<"uri">) | null | undefined;
 
@@ -153,8 +167,10 @@ export namespace IRedditCloneGuestSession {
      *
      * Used to determine session age and calculate expiration. Essential for session lifecycle management and tracking when the guest first accessed the application.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from reddit_clone_guest_sessions.created_at. DateTime field in ISO 8601 format.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_guest_sessions.created_at. DateTime field in ISO 8601
+         *   format.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -163,8 +179,10 @@ export namespace IRedditCloneGuestSession {
      *
      * Determines session validity period. Guest sessions are temporary and must expire for security reasons. Used to validate whether the session is still active.
      *
-     * @x-autobe-database-schema-property expired_at
-     * @x-autobe-specification Direct mapping from reddit_clone_guest_sessions.expired_at. DateTime field in ISO 8601 format.
+         * @x-autobe-database-schema-property expired_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_guest_sessions.expired_at. DateTime field in ISO 8601
+         *   format.
      */
     expired_at: string & tags.Format<"date-time">;
 
@@ -173,8 +191,11 @@ export namespace IRedditCloneGuestSession {
      *
      * References the guest account identified by device fingerprint. Each guest can have multiple sessions across different devices or browsers. Returns guest account summary information.
      *
-     * @x-autobe-database-schema-property guest
-     * @x-autobe-specification BELONGS-TO relation via reddit_clone_guest_id FK. JOIN to reddit_clone_guests table, returned as IRedditCloneGuest.ISummary with device_fingerprint, created_at, updated_at, deleted_at.
+         * @x-autobe-database-schema-property guest
+         * @x-autobe-specification BELONGS-TO relation via reddit_clone_guest_id
+         *   FK. JOIN to reddit_clone_guests table, returned as
+         *   IRedditCloneGuest.ISummary with device_fingerprint, created_at,
+         *   updated_at, deleted_at.
      */
     guest: IRedditCloneGuest.ISummary;
   };
@@ -200,7 +221,9 @@ export namespace IRedditCloneGuestSession {
      *
      * Specifies which page of results to retrieve from the paginated guest session list. Page numbering starts from 1, so the first page is page 1 (not 0). If not provided, defaults to page 1.
      *
-     * @x-autobe-specification Pagination page number. 1-indexed integer. Default value is 1. Minimum value is 1. Used to retrieve specific page of results from paginated guest session list.
+         * @x-autobe-specification Pagination page number. 1-indexed integer.
+         *   Default value is 1. Minimum value is 1. Used to retrieve specific
+         *   page of results from paginated guest session list.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -209,7 +232,9 @@ export namespace IRedditCloneGuestSession {
      *
      * Controls how many guest session records to return per page. The minimum allowed value is 1, and the maximum is 100. If not provided, defaults to 20 records per page.
      *
-     * @x-autobe-specification Records per page limit. Integer between 1 and 100. Default value is 20. Controls how many guest session records are returned in each page of results.
+         * @x-autobe-specification Records per page limit. Integer between 1 and
+         *   100. Default value is 20. Controls how many guest session records
+         *   are returned in each page of results.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -220,7 +245,12 @@ export namespace IRedditCloneGuestSession {
      *
      * Filters the guest session list to only include sessions belonging to the specified guest account. The guest_id is a UUID that uniquely identifies a guest account (identified by device fingerprint). When provided, the endpoint returns all sessions associated with that specific guest.
      *
-     * @x-autobe-specification Filter by guest account UUID. This parameter filters the guest session list to only include sessions belonging to the specified guest account. The guest_id is a UUID that uniquely identifies a guest account (identified by device fingerprint). Backend implementation: WHERE reddit_clone_guest_id = :guest_id
+         * @x-autobe-specification Filter by guest account UUID. This parameter
+         *   filters the guest session list to only include sessions belonging
+         *   to the specified guest account. The guest_id is a UUID that
+         *   uniquely identifies a guest account (identified by device
+         *   fingerprint). Backend implementation: WHERE reddit_clone_guest_id =
+         *   :guest_id
      */
     guest_id?: (string & tags.Format<"uuid">) | undefined;
 
@@ -229,7 +259,10 @@ export namespace IRedditCloneGuestSession {
      *
      * Filters the guest session list to only include sessions that were created from the specified IP address. The IP address must be in IPv4 format. This is useful for tracking sessions from specific network locations or for security monitoring purposes.
      *
-     * @x-autobe-specification Filter by IP address. This parameter filters the guest session list to only include sessions that were created from the specified IP address. The IP address must be in IPv4 format. Backend implementation: WHERE ip = :ip
+         * @x-autobe-specification Filter by IP address. This parameter filters
+         *   the guest session list to only include sessions that were created
+         *   from the specified IP address. The IP address must be in IPv4
+         *   format. Backend implementation: WHERE ip = :ip
      */
     ip?: (string & tags.Format<"ipv4">) | undefined;
 
@@ -238,7 +271,11 @@ export namespace IRedditCloneGuestSession {
      *
      * Filters the guest session list to only include sessions that were initiated from the specified URL. The href represents the entry point into the application where the guest session began. This is useful for analytics and tracking which pages generate guest sessions.
      *
-     * @x-autobe-specification Filter by entry URL. This parameter filters the guest session list to only include sessions that were initiated from the specified URL. The href represents the entry point into the application where the guest session began. Backend implementation: WHERE href = :href
+         * @x-autobe-specification Filter by entry URL. This parameter filters
+         *   the guest session list to only include sessions that were initiated
+         *   from the specified URL. The href represents the entry point into
+         *   the application where the guest session began. Backend
+         *   implementation: WHERE href = :href
      */
     href?: (string & tags.Format<"uri">) | undefined;
 
@@ -247,7 +284,11 @@ export namespace IRedditCloneGuestSession {
      *
      * Filters the guest session list to only include sessions that were created on or after the specified timestamp. The timestamp must be in ISO 8601 format (e.g., '2024-01-15T10:30:00Z'). This is typically used in combination with created_before to define a date range.
      *
-     * @x-autobe-specification Filter by session creation date (lower bound). This parameter filters the guest session list to only include sessions that were created on or after the specified timestamp. The timestamp must be in ISO 8601 format. Backend implementation: WHERE created_at >= :created_after
+         * @x-autobe-specification Filter by session creation date (lower
+         *   bound). This parameter filters the guest session list to only
+         *   include sessions that were created on or after the specified
+         *   timestamp. The timestamp must be in ISO 8601 format. Backend
+         *   implementation: WHERE created_at >= :created_after
      */
     created_after?: (string & tags.Format<"date-time">) | undefined;
 
@@ -256,7 +297,11 @@ export namespace IRedditCloneGuestSession {
      *
      * Filters the guest session list to only include sessions that were created before the specified timestamp. The timestamp must be in ISO 8601 format (e.g., '2024-01-15T10:30:00Z'). This is typically used in combination with created_after to define a date range.
      *
-     * @x-autobe-specification Filter by session creation date (upper bound). This parameter filters the guest session list to only include sessions that were created before the specified timestamp. The timestamp must be in ISO 8601 format. Backend implementation: WHERE created_at < :created_before
+         * @x-autobe-specification Filter by session creation date (upper
+         *   bound). This parameter filters the guest session list to only
+         *   include sessions that were created before the specified timestamp.
+         *   The timestamp must be in ISO 8601 format. Backend implementation:
+         *   WHERE created_at < :created_before
      */
     created_before?: (string & tags.Format<"date-time">) | undefined;
 
@@ -265,7 +310,11 @@ export namespace IRedditCloneGuestSession {
      *
      * Filters the guest session list by expiration status. When set to true, only returns sessions that have already expired (expired_at is in the past). When set to false, only returns sessions that are still active (expired_at is in the future or present). This is useful for monitoring active vs. expired sessions.
      *
-     * @x-autobe-specification Filter by session expiration status. Boolean parameter: true returns sessions where expired_at < current time (expired sessions), false returns sessions where expired_at >= current time (active sessions). Backend implementation: WHERE (expired_at < NOW()) = :expired
+         * @x-autobe-specification Filter by session expiration status. Boolean
+         *   parameter: true returns sessions where expired_at < current time
+         *   (expired sessions), false returns sessions where expired_at >=
+         *   current time (active sessions). Backend implementation: WHERE
+         *   (expired_at < NOW()) = :expired
      */
     expired?: boolean | undefined;
 
@@ -274,7 +323,10 @@ export namespace IRedditCloneGuestSession {
      *
      * Specifies which field to use for sorting the guest session list results. The accepted values are: created_at (session creation time), expired_at (session expiration time), ip (IP address), or href (entry URL). If not provided, defaults to sorting by created_at.
      *
-     * @x-autobe-specification Sort field name. String value. Accepts: 'created_at', 'expired_at', 'ip', 'href'. Default value is 'created_at'. Determines which field to use for sorting the guest session list results. Backend implementation: ORDER BY :sort
+         * @x-autobe-specification Sort field name. String value. Accepts:
+         *   'created_at', 'expired_at', 'ip', 'href'. Default value is
+         *   'created_at'. Determines which field to use for sorting the guest
+         *   session list results. Backend implementation: ORDER BY :sort
      */
     sort?: string | undefined;
 
@@ -283,7 +335,10 @@ export namespace IRedditCloneGuestSession {
      *
      * Specifies the direction for sorting the guest session list results. Use 'asc' for ascending order (oldest first, A-Z, lowest first) or 'desc' for descending order (newest first, Z-A, highest first). If not provided, defaults to descending order (desc).
      *
-     * @x-autobe-specification Sort direction. String value. Accepts: 'asc' for ascending order, 'desc' for descending order. Default value is 'desc'. Determines the order in which sorted results are returned. Backend implementation: ORDER BY :sort :order
+         * @x-autobe-specification Sort direction. String value. Accepts: 'asc'
+         *   for ascending order, 'desc' for descending order. Default value is
+         *   'desc'. Determines the order in which sorted results are returned.
+         *   Backend implementation: ORDER BY :sort :order
      */
     order?: string | undefined;
   };

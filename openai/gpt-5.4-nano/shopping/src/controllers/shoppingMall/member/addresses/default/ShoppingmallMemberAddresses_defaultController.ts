@@ -24,11 +24,11 @@ export class ShoppingmallMemberAddresses_defaultController {
    * Security: this operation requires an authenticated member (customer) context and must not allow guest access.
    *
    * @param connection
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1) Authorization & actor scope
-   * - Require an authenticated member session for a customer.
-   * - Resolve the authenticated customer identity to `shopping_mall_members.id`.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification 1) Authorization & actor scope - Require an
+     *   authenticated member session for a customer. - Resolve the
+     *   authenticated customer identity to `shopping_mall_members.id`.
    *
    * 2) Query construction
    * - Query `shopping_mall_addresses` for a single row where:
@@ -84,9 +84,9 @@ export class ShoppingmallMemberAddresses_defaultController {
    *
    * @param connection
    * @param body Request payload for selecting a customer address as the default shipping address.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation steps:
    *
    * 1. Authenticate request as a customer (member). Identify the current customer id.
    * 2. Parse request body to get the target address id (and any optional selection intent fields if present in the DTO).

@@ -22,9 +22,9 @@ export class ShoppingmallCustomerCustomersCartItemsController {
    *
    * @param connection
    * @param body Cart item creation data with variant selection and quantity
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Implementation steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Implementation steps:
    *
    * 1. Validate authentication - customer must be logged in
    *

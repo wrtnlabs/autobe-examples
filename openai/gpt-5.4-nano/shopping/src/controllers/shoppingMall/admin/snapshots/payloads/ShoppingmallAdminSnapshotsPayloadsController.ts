@@ -27,17 +27,19 @@ export class ShoppingmallAdminSnapshotsPayloadsController {
    * @param connection
    * @param snapshotId Target snapshot identifier whose payload content will be attached.
    * @param body Serialized payload content to attach to the snapshot. This must exactly represent the point-in-time state captured when the snapshot was created.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Implementation steps:
-   * 1) Validate `snapshotId` is a UUID.
-   * 2) Load `shopping_mall_snapshots` by `id`.
-   * 3) Enforce snapshot access visibility using `shopping_mall_snapshot_parties` for the caller party (owner or admin) and ensure `can_view` is true and no `deleted_at` is set on the visibility row.
-   * 4) Enforce single payload invariant: check `shopping_mall_snapshot_payloads` exists for `shopping_mall_snapshot_id`; since there is `@@unique([shopping_mall_snapshot_id])`, reject if already present.
-   * 5) Insert into `shopping_mall_snapshot_payloads` with:
-   *    - `shopping_mall_snapshot_id` = snapshotId
-   *    - `payload` = request payload string
-   * 6) Return the created payload DTO.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Implementation steps: 1) Validate `snapshotId` is
+     *   a UUID. 2) Load `shopping_mall_snapshots` by `id`. 3) Enforce snapshot
+     *   access visibility using `shopping_mall_snapshot_parties` for the caller
+     *   party (owner or admin) and ensure `can_view` is true and no
+     *   `deleted_at` is set on the visibility row. 4) Enforce single payload
+     *   invariant: check `shopping_mall_snapshot_payloads` exists for
+     *   `shopping_mall_snapshot_id`; since there is
+     *   `@@unique([shopping_mall_snapshot_id])`, reject if already present. 5)
+     *   Insert into `shopping_mall_snapshot_payloads` with: -
+     *   `shopping_mall_snapshot_id` = snapshotId - `payload` = request payload
+     *   string 6) Return the created payload DTO.
    *
    * Error handling:
    * - If snapshot is missing, return an authorization-safe not-found/error.
@@ -94,31 +96,34 @@ export class ShoppingmallAdminSnapshotsPayloadsController {
    * @param connection
    * @param snapshotId Target snapshot record ID whose payload content is being updated.
    * @param body Updated payload content to be stored for the specified snapshot. This payload is stored as the serialized `payload` string in `shopping_mall_snapshot_payloads`.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Implementation steps:
-   * 1) Parse `snapshotId` from path; treat it as UUID matching `shopping_mall_snapshots.id`.
-   * 2) Load `shopping_mall_snapshots` by id.
-   *    - If not found, return 404.
-   * 3) Authorize the caller by checking `shopping_mall_snapshot_parties` for rows where:
-   *    - `shopping_mall_snapshot_id` == snapshot.id
-   *    - `can_view` == true
-   *    - `deleted_at` == null (do not treat deleted visibility rows as active)
-   *    - Match caller identity to (`party_type`, `party_id`) semantics used by the system.
-   *    - If not authorized, return 403.
-   * 4) Enforce snapshot integrity constraints:
-   *    - Snapshot records are intended to be immutable for dispute resolution; reject payload modifications when the system context indicates the snapshot edit would violate history integrity.
-   *    - At minimum, ensure the snapshot metadata is not marked as deleted (`shopping_mall_snapshots.deleted_at` must be null) before proceeding.
-   * 5) Upsert `shopping_mall_snapshot_payloads`:
-   *    - If a payload row exists with `shopping_mall_snapshot_id`, update its `payload` column.
-   *    - If not exists, create one (since `shopping_mall_snapshot_payloads` uses `@@unique([shopping_mall_snapshot_id])`).
-   * 6) Update timestamps in `shopping_mall_snapshot_payloads` (`updated_at`) and return the payload row.
-   * 7) Keep the transaction boundaries tight:
-   *    - Wrap the payload update in a DB transaction.
-   *    - Do not modify `shopping_mall_snapshots` metadata in this operation unless explicitly required by the system.
-   * 8) Error handling:
-   *    - Validation errors for payload content should return 400.
-   *    - Database constraint violations (unique conflict) should be handled by re-checking existence then retrying the update once within the same transaction.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Implementation steps: 1) Parse `snapshotId` from
+     *   path; treat it as UUID matching `shopping_mall_snapshots.id`. 2) Load
+     *   `shopping_mall_snapshots` by id. - If not found, return 404. 3)
+     *   Authorize the caller by checking `shopping_mall_snapshot_parties` for
+     *   rows where: - `shopping_mall_snapshot_id` == snapshot.id - `can_view`
+     *   == true - `deleted_at` == null (do not treat deleted visibility rows as
+     *   active) - Match caller identity to (`party_type`, `party_id`) semantics
+     *   used by the system. - If not authorized, return 403. 4) Enforce
+     *   snapshot integrity constraints: - Snapshot records are intended to be
+     *   immutable for dispute resolution; reject payload modifications when the
+     *   system context indicates the snapshot edit would violate history
+     *   integrity. - At minimum, ensure the snapshot metadata is not marked as
+     *   deleted (`shopping_mall_snapshots.deleted_at` must be null) before
+     *   proceeding. 5) Upsert `shopping_mall_snapshot_payloads`: - If a payload
+     *   row exists with `shopping_mall_snapshot_id`, update its `payload`
+     *   column. - If not exists, create one (since
+     *   `shopping_mall_snapshot_payloads` uses
+     *   `@@unique([shopping_mall_snapshot_id])`). 6) Update timestamps in
+     *   `shopping_mall_snapshot_payloads` (`updated_at`) and return the payload
+     *   row. 7) Keep the transaction boundaries tight: - Wrap the payload
+     *   update in a DB transaction. - Do not modify `shopping_mall_snapshots`
+     *   metadata in this operation unless explicitly required by the system. 8)
+     *   Error handling: - Validation errors for payload content should return
+     *   400. - Database constraint violations (unique conflict) should be
+     *   handled by re-checking existence then retrying the update once within
+     *   the same transaction.
    *
    * DB access plan:
    * - SELECT shopping_mall_snapshots WHERE id = :snapshotId
@@ -162,18 +167,19 @@ export class ShoppingmallAdminSnapshotsPayloadsController {
    * @param connection
    * @param snapshotId Target snapshot identifier that scopes the payload record.
    * @param snapshotPayloadId Target snapshot payload identifier within the scoped snapshot.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Implementation steps:
-   * 1) Authenticate request and determine actor identity (member/admin) or guest context.
-   * 2) Resolve snapshot by snapshotId and ensure the requested snapshotPayloadId belongs to that snapshot.
-   * 3) Enforce snapshot visibility:
-   *    - Check shopping_mall_snapshot_parties for entries matching the snapshot and actor.
-   *    - Apply can_view and ignore entries that are not active due to deleted_at.
-   *    - If no permission, reject with an access-denied error without disclosing existence details.
-   * 4) Load shopping_mall_snapshot_payloads row by id (snapshotPayloadId) and snapshot id (snapshotId).
-   * 5) Return payload content.
-   * 6) No writes occur; do not create snapshots.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Implementation steps: 1) Authenticate request and
+     *   determine actor identity (member/admin) or guest context. 2) Resolve
+     *   snapshot by snapshotId and ensure the requested snapshotPayloadId
+     *   belongs to that snapshot. 3) Enforce snapshot visibility: - Check
+     *   shopping_mall_snapshot_parties for entries matching the snapshot and
+     *   actor. - Apply can_view and ignore entries that are not active due to
+     *   deleted_at. - If no permission, reject with an access-denied error
+     *   without disclosing existence details. 4) Load
+     *   shopping_mall_snapshot_payloads row by id (snapshotPayloadId) and
+     *   snapshot id (snapshotId). 5) Return payload content. 6) No writes
+     *   occur; do not create snapshots.
    *
    * Edge cases:
    * - If snapshot exists but payload does not match the snapshotId, treat as unsuccessful access (do not leak existence).

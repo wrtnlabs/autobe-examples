@@ -16,8 +16,10 @@ export type IECommerceMallCustomerAddress = {
    *
    * A UUID v4 string that uniquely identifies this address record across the platform. Generated automatically upon address creation and immutable thereafter.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from e_commerce_mall_customer_addresses.id. UUID v4 generated on record creation. Immutable after creation.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_customer_addresses.id. UUID v4 generated on record
+     *   creation. Immutable after creation.
    */
   id: string & tags.Format<"uuid">;
 
@@ -26,8 +28,12 @@ export type IECommerceMallCustomerAddress = {
    *
    * Each address belongs to exactly one customer and is scoped to their address book. Only the owning customer can view, edit, or delete the address. When a customer account is soft-deleted, their addresses are cascade-deleted.
    *
-   * @x-autobe-database-schema-property customer
-   * @x-autobe-specification LEFT JOIN from e_commerce_mall_customer_addresses.e_commerce_mall_customer_id to e_commerce_mall_customers.id. Resolved as IECommerceMallCustomer.ISummary. The owning customer is always present (FK is NOT NULL).
+     * @x-autobe-database-schema-property customer
+     * @x-autobe-specification LEFT JOIN from
+     *   e_commerce_mall_customer_addresses.e_commerce_mall_customer_id to
+     *   e_commerce_mall_customers.id. Resolved as
+     *   IECommerceMallCustomer.ISummary. The owning customer is always present
+     *   (FK is NOT NULL).
    */
   customer: IECommerceMallCustomer.ISummary;
 
@@ -36,8 +42,10 @@ export type IECommerceMallCustomerAddress = {
    *
    * This is the person who will receive the package at this address. It may differ from the customer's own display name — for example, a gift shipment to a family member. Must be a non-empty string.
    *
-   * @x-autobe-database-schema-property recipient_name
-   * @x-autobe-specification Direct mapping from e_commerce_mall_customer_addresses.recipient_name. String, NOT NULL. No transformation required.
+     * @x-autobe-database-schema-property recipient_name
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_customer_addresses.recipient_name. String, NOT NULL. No
+     *   transformation required.
    */
   recipient_name: string;
 
@@ -46,8 +54,10 @@ export type IECommerceMallCustomerAddress = {
    *
    * Used by delivery carriers to coordinate successful delivery. Must be a valid contact number. This is the recipient's phone number, not necessarily the customer's personal phone.
    *
-   * @x-autobe-database-schema-property phone_number
-   * @x-autobe-specification Direct mapping from e_commerce_mall_customer_addresses.phone_number. String, NOT NULL. No transformation required.
+     * @x-autobe-database-schema-property phone_number
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_customer_addresses.phone_number. String, NOT NULL. No
+     *   transformation required.
    */
   phone_number: string;
 
@@ -56,8 +66,10 @@ export type IECommerceMallCustomerAddress = {
    *
    * This is the primary location line used by delivery carriers for routing. Examples: '123 Main Street, Apt 4B' or 'Building 7, 456 Oak Avenue'.
    *
-   * @x-autobe-database-schema-property street_address
-   * @x-autobe-specification Direct mapping from e_commerce_mall_customer_addresses.street_address. String, NOT NULL. No transformation required.
+     * @x-autobe-database-schema-property street_address
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_customer_addresses.street_address. String, NOT NULL. No
+     *   transformation required.
    */
   street_address: string;
 
@@ -66,8 +78,10 @@ export type IECommerceMallCustomerAddress = {
    *
    * Used in conjunction with state/province and postal code for complete delivery routing within the country.
    *
-   * @x-autobe-database-schema-property city
-   * @x-autobe-specification Direct mapping from e_commerce_mall_customer_addresses.city. String, NOT NULL. No transformation required.
+     * @x-autobe-database-schema-property city
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_customer_addresses.city. String, NOT NULL. No
+     *   transformation required.
    */
   city: string;
 
@@ -76,8 +90,10 @@ export type IECommerceMallCustomerAddress = {
    *
    * Represents the first-level administrative division within the country. May be the full name (e.g., 'California') or a standard abbreviation (e.g., 'CA').
    *
-   * @x-autobe-database-schema-property state_province
-   * @x-autobe-specification Direct mapping from e_commerce_mall_customer_addresses.state_province. String, NOT NULL. No transformation required.
+     * @x-autobe-database-schema-property state_province
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_customer_addresses.state_province. String, NOT NULL. No
+     *   transformation required.
    */
   state_province: string;
 
@@ -86,8 +102,10 @@ export type IECommerceMallCustomerAddress = {
    *
    * Used by postal services for efficient delivery routing and sorting. Format varies by country (e.g., '12345' for US ZIP codes, '123-4567' for Japanese postal codes).
    *
-   * @x-autobe-database-schema-property postal_code
-   * @x-autobe-specification Direct mapping from e_commerce_mall_customer_addresses.postal_code. String, NOT NULL. No transformation required.
+     * @x-autobe-database-schema-property postal_code
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_customer_addresses.postal_code. String, NOT NULL. No
+     *   transformation required.
    */
   postal_code: string;
 
@@ -96,8 +114,10 @@ export type IECommerceMallCustomerAddress = {
    *
    * Specifies the destination country for the delivery. The full country name should be provided (e.g., 'United States', 'South Korea', 'Japan') rather than a code.
    *
-   * @x-autobe-database-schema-property country
-   * @x-autobe-specification Direct mapping from e_commerce_mall_customer_addresses.country. String, NOT NULL. No transformation required.
+     * @x-autobe-database-schema-property country
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_customer_addresses.country. String, NOT NULL. No
+     *   transformation required.
    */
   country: string;
 
@@ -106,8 +126,11 @@ export type IECommerceMallCustomerAddress = {
    *
    * Only one address per customer can be the default at any time. The default address is pre-selected during checkout if no other address is explicitly chosen. When a new address is created with is_default set to true, any existing default is automatically cleared.
    *
-   * @x-autobe-database-schema-property is_default
-   * @x-autobe-specification Direct mapping from e_commerce_mall_customer_addresses.is_default. Boolean, NOT NULL. Application-layer constraint ensures only one address per customer can be default at a time.
+     * @x-autobe-database-schema-property is_default
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_customer_addresses.is_default. Boolean, NOT NULL.
+     *   Application-layer constraint ensures only one address per customer can
+     *   be default at a time.
    */
   is_default: boolean;
 
@@ -116,8 +139,10 @@ export type IECommerceMallCustomerAddress = {
    *
    * Set automatically at the moment of address creation. Indicates how long the address has been in the customer's address book.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from e_commerce_mall_customer_addresses.created_at. DateTime with timezone. Set automatically on record creation. Immutable.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_customer_addresses.created_at. DateTime with timezone.
+     *   Set automatically on record creation. Immutable.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -126,8 +151,10 @@ export type IECommerceMallCustomerAddress = {
    *
    * Updated automatically whenever any field of the address (recipient name, phone, location fields, or default flag) is modified. Reflects the most recent change made to this address.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from e_commerce_mall_customer_addresses.updated_at. DateTime with timezone. Updated automatically on every field modification.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_customer_addresses.updated_at. DateTime with timezone.
+     *   Updated automatically on every field modification.
    */
   updated_at: string & tags.Format<"date-time">;
 };
@@ -143,8 +170,10 @@ export namespace IECommerceMallCustomerAddress {
      *
      * This is the person who will physically receive the delivery at this address. May differ from the customer's own display name.
      *
-     * @x-autobe-database-schema-property recipient_name
-     * @x-autobe-specification Direct mapping from e_commerce_mall_customer_addresses.recipient_name. Optional in Update (partial update).
+         * @x-autobe-database-schema-property recipient_name
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_customer_addresses.recipient_name. Optional in
+         *   Update (partial update).
      */
     recipient_name?: string | undefined;
 
@@ -153,8 +182,10 @@ export namespace IECommerceMallCustomerAddress {
      *
      * Used by delivery carriers to coordinate successful delivery. Should be a reachable number during delivery hours.
      *
-     * @x-autobe-database-schema-property phone_number
-     * @x-autobe-specification Direct mapping from e_commerce_mall_customer_addresses.phone_number. Optional in Update (partial update).
+         * @x-autobe-database-schema-property phone_number
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_customer_addresses.phone_number. Optional in Update
+         *   (partial update).
      */
     phone_number?: string | undefined;
 
@@ -163,24 +194,30 @@ export namespace IECommerceMallCustomerAddress {
      *
      * This is the primary location line used for delivery routing by postal and courier services.
      *
-     * @x-autobe-database-schema-property street_address
-     * @x-autobe-specification Direct mapping from e_commerce_mall_customer_addresses.street_address. Optional in Update (partial update).
+         * @x-autobe-database-schema-property street_address
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_customer_addresses.street_address. Optional in
+         *   Update (partial update).
      */
     street_address?: string | undefined;
 
     /**
      * The city or municipality name for this shipping address.
      *
-     * @x-autobe-database-schema-property city
-     * @x-autobe-specification Direct mapping from e_commerce_mall_customer_addresses.city. Optional in Update (partial update).
+         * @x-autobe-database-schema-property city
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_customer_addresses.city. Optional in Update
+         *   (partial update).
      */
     city?: string | undefined;
 
     /**
      * The state, province, or region name for this shipping address.
      *
-     * @x-autobe-database-schema-property state_province
-     * @x-autobe-specification Direct mapping from e_commerce_mall_customer_addresses.state_province. Optional in Update (partial update).
+         * @x-autobe-database-schema-property state_province
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_customer_addresses.state_province. Optional in
+         *   Update (partial update).
      */
     state_province?: string | undefined;
 
@@ -189,16 +226,20 @@ export namespace IECommerceMallCustomerAddress {
      *
      * Used by postal services for delivery routing and sorting.
      *
-     * @x-autobe-database-schema-property postal_code
-     * @x-autobe-specification Direct mapping from e_commerce_mall_customer_addresses.postal_code. Optional in Update (partial update).
+         * @x-autobe-database-schema-property postal_code
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_customer_addresses.postal_code. Optional in Update
+         *   (partial update).
      */
     postal_code?: string | undefined;
 
     /**
      * The country name for this shipping address.
      *
-     * @x-autobe-database-schema-property country
-     * @x-autobe-specification Direct mapping from e_commerce_mall_customer_addresses.country. Optional in Update (partial update).
+         * @x-autobe-database-schema-property country
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_customer_addresses.country. Optional in Update
+         *   (partial update).
      */
     country?: string | undefined;
 
@@ -207,8 +248,12 @@ export namespace IECommerceMallCustomerAddress {
      *
      * Only one address per customer can be the default at any time. When set to `true`, any previously default address will have its default flag cleared automatically. The default address is pre-selected during checkout.
      *
-     * @x-autobe-database-schema-property is_default
-     * @x-autobe-specification Direct mapping from e_commerce_mall_customer_addresses.is_default. Optional in Update (partial update). When set to true, the application layer must first clear is_default on all other addresses for this customer (only one default per customer).
+         * @x-autobe-database-schema-property is_default
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_customer_addresses.is_default. Optional in Update
+         *   (partial update). When set to true, the application layer must
+         *   first clear is_default on all other addresses for this customer
+         *   (only one default per customer).
      */
     is_default?: boolean | undefined;
   };
@@ -224,8 +269,9 @@ export namespace IECommerceMallCustomerAddress {
      *
      * Automatically generated as a UUID when the address is created. Used as the primary key for address operations such as retrieval, update, and deletion.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from e_commerce_mall_customer_addresses.id.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_customer_addresses.id.
      */
     id: string & tags.Format<"uuid">;
 
@@ -234,8 +280,9 @@ export namespace IECommerceMallCustomerAddress {
      *
      * This is the person who will receive the delivery at this address. It may differ from the customer's display name. Used by delivery carriers to identify the recipient during the shipping process.
      *
-     * @x-autobe-database-schema-property recipient_name
-     * @x-autobe-specification Direct mapping from e_commerce_mall_customer_addresses.recipient_name.
+         * @x-autobe-database-schema-property recipient_name
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_customer_addresses.recipient_name.
      */
     recipientName: string;
 
@@ -244,8 +291,9 @@ export namespace IECommerceMallCustomerAddress {
      *
      * Used by delivery carriers to contact the recipient for successful delivery coordination and notifications.
      *
-     * @x-autobe-database-schema-property phone_number
-     * @x-autobe-specification Direct mapping from e_commerce_mall_customer_addresses.phone_number.
+         * @x-autobe-database-schema-property phone_number
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_customer_addresses.phone_number.
      */
     phoneNumber: string;
 
@@ -254,8 +302,9 @@ export namespace IECommerceMallCustomerAddress {
      *
      * This is the primary location line used by delivery services for routing and final-mile delivery.
      *
-     * @x-autobe-database-schema-property street_address
-     * @x-autobe-specification Direct mapping from e_commerce_mall_customer_addresses.street_address.
+         * @x-autobe-database-schema-property street_address
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_customer_addresses.street_address.
      */
     streetAddress: string;
 
@@ -264,8 +313,9 @@ export namespace IECommerceMallCustomerAddress {
      *
      * Used alongside the state or province and postal code to determine the delivery region.
      *
-     * @x-autobe-database-schema-property city
-     * @x-autobe-specification Direct mapping from e_commerce_mall_customer_addresses.city.
+         * @x-autobe-database-schema-property city
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_customer_addresses.city.
      */
     city: string;
 
@@ -274,8 +324,9 @@ export namespace IECommerceMallCustomerAddress {
      *
      * Represents the first-level administrative division within the country for delivery routing purposes.
      *
-     * @x-autobe-database-schema-property state_province
-     * @x-autobe-specification Direct mapping from e_commerce_mall_customer_addresses.state_province.
+         * @x-autobe-database-schema-property state_province
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_customer_addresses.state_province.
      */
     stateProvince: string;
 
@@ -284,8 +335,9 @@ export namespace IECommerceMallCustomerAddress {
      *
      * Used by postal and courier services for efficient delivery routing and sorting within the specified city and region.
      *
-     * @x-autobe-database-schema-property postal_code
-     * @x-autobe-specification Direct mapping from e_commerce_mall_customer_addresses.postal_code.
+         * @x-autobe-database-schema-property postal_code
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_customer_addresses.postal_code.
      */
     postalCode: string;
 
@@ -294,8 +346,9 @@ export namespace IECommerceMallCustomerAddress {
      *
      * Specifies the destination country for international delivery coordination.
      *
-     * @x-autobe-database-schema-property country
-     * @x-autobe-specification Direct mapping from e_commerce_mall_customer_addresses.country.
+         * @x-autobe-database-schema-property country
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_customer_addresses.country.
      */
     country: string;
 
@@ -304,8 +357,9 @@ export namespace IECommerceMallCustomerAddress {
      *
      * Only one address per customer can be the default at any given time. When a customer proceeds to checkout, the default address is automatically pre-selected as the shipping destination if no other address is explicitly chosen.
      *
-     * @x-autobe-database-schema-property is_default
-     * @x-autobe-specification Direct mapping from e_commerce_mall_customer_addresses.is_default.
+         * @x-autobe-database-schema-property is_default
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_customer_addresses.is_default.
      */
     isDefault: boolean;
 
@@ -314,8 +368,9 @@ export namespace IECommerceMallCustomerAddress {
      *
      * Set automatically at the time of address creation. Used for sorting address listings, typically with the most recently added addresses appearing first.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from e_commerce_mall_customer_addresses.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_customer_addresses.created_at.
      */
     createdAt: string & tags.Format<"date-time">;
 
@@ -324,8 +379,11 @@ export namespace IECommerceMallCustomerAddress {
      *
      * Each address belongs to a single customer account. This relationship is established when the address is created and is immutable thereafter.
      *
-     * @x-autobe-database-schema-property customer
-     * @x-autobe-specification Join from e_commerce_mall_customer_addresses.e_commerce_mall_customer_id to e_commerce_mall_customers.id. Returns IECommerceMallCustomer.ISummary.
+         * @x-autobe-database-schema-property customer
+         * @x-autobe-specification Join from
+         *   e_commerce_mall_customer_addresses.e_commerce_mall_customer_id to
+         *   e_commerce_mall_customers.id. Returns
+         *   IECommerceMallCustomer.ISummary.
      */
     customer: IECommerceMallCustomer.ISummary;
   };
@@ -343,7 +401,10 @@ export namespace IECommerceMallCustomerAddress {
      *
      * Searches across the recipient name, street address, city, state/province, postal code, and country fields using case-insensitive partial matching. When provided, only addresses matching at least one of these fields are returned. Omit or leave empty to skip text-based filtering.
      *
-     * @x-autobe-specification Case-insensitive text search applied across recipient_name, street_address, city, state_province, postal_code, and country fields using LIKE/contains patterns combined with OR logic. Optional — omitted or empty string means no text filter.
+         * @x-autobe-specification Case-insensitive text search applied across
+         *   recipient_name, street_address, city, state_province, postal_code,
+         *   and country fields using LIKE/contains patterns combined with OR
+         *   logic. Optional — omitted or empty string means no text filter.
      */
     search?: string | undefined;
 
@@ -352,7 +413,11 @@ export namespace IECommerceMallCustomerAddress {
      *
      * When set to `true`, returns only the customer's default shipping address. When set to `false`, returns only non-default addresses. When omitted, all active addresses are returned regardless of default status.
      *
-     * @x-autobe-specification Boolean query filter mapped to the is_default column of e_commerce_mall_customer_addresses. When true, filters results to only the default address. When false, filters to only non-default addresses. Omitted means no filter — return all addresses regardless of default status.
+         * @x-autobe-specification Boolean query filter mapped to the is_default
+         *   column of e_commerce_mall_customer_addresses. When true, filters
+         *   results to only the default address. When false, filters to only
+         *   non-default addresses. Omitted means no filter — return all
+         *   addresses regardless of default status.
      */
     isDefault?: boolean | undefined;
 
@@ -361,7 +426,9 @@ export namespace IECommerceMallCustomerAddress {
      *
      * Page numbering starts from 1 (the first page). Combined with `limit` to control which slice of the result set is returned. Defaults to 1 when not specified.
      *
-     * @x-autobe-specification 1-indexed page number for offset-based pagination. Minimum value is 1. Defaults to 1 when omitted. Computed as: offset = (page - 1) * limit.
+         * @x-autobe-specification 1-indexed page number for offset-based
+         *   pagination. Minimum value is 1. Defaults to 1 when omitted.
+         *   Computed as: offset = (page - 1) * limit.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -370,7 +437,9 @@ export namespace IECommerceMallCustomerAddress {
      *
      * Controls the page size for paginated results. The actual number of returned records may be less than this value on the final page or when total records are fewer than the limit. Must be between 1 and 100 inclusive.
      *
-     * @x-autobe-specification Maximum number of records per page. Must be between 1 and 100 inclusive. Defaults to a system-configured value (typically 20) when omitted.
+         * @x-autobe-specification Maximum number of records per page. Must be
+         *   between 1 and 100 inclusive. Defaults to a system-configured value
+         *   (typically 20) when omitted.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -388,8 +457,10 @@ export namespace IECommerceMallCustomerAddress {
      *
      * This is the person who will receive the delivery at this address. It may differ from the customer's own display name. Must be a non-empty string.
      *
-     * @x-autobe-database-schema-property recipient_name
-     * @x-autobe-specification Direct mapping from e_commerce_mall_customer_addresses.recipient_name. Must be non-empty string.
+         * @x-autobe-database-schema-property recipient_name
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_customer_addresses.recipient_name. Must be
+         *   non-empty string.
      */
     recipient_name: string;
 
@@ -398,8 +469,10 @@ export namespace IECommerceMallCustomerAddress {
      *
      * Used by delivery carriers to contact the recipient for successful delivery coordination. Must be a valid contact number.
      *
-     * @x-autobe-database-schema-property phone_number
-     * @x-autobe-specification Direct mapping from e_commerce_mall_customer_addresses.phone_number. Must be non-empty string.
+         * @x-autobe-database-schema-property phone_number
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_customer_addresses.phone_number. Must be non-empty
+         *   string.
      */
     phone_number: string;
 
@@ -408,8 +481,10 @@ export namespace IECommerceMallCustomerAddress {
      *
      * This is the primary location line for delivery routing. Must be a non-empty string.
      *
-     * @x-autobe-database-schema-property street_address
-     * @x-autobe-specification Direct mapping from e_commerce_mall_customer_addresses.street_address. Must be non-empty string.
+         * @x-autobe-database-schema-property street_address
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_customer_addresses.street_address. Must be
+         *   non-empty string.
      */
     street_address: string;
 
@@ -418,8 +493,9 @@ export namespace IECommerceMallCustomerAddress {
      *
      * Must be a non-empty string.
      *
-     * @x-autobe-database-schema-property city
-     * @x-autobe-specification Direct mapping from e_commerce_mall_customer_addresses.city. Must be non-empty string.
+         * @x-autobe-database-schema-property city
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_customer_addresses.city. Must be non-empty string.
      */
     city: string;
 
@@ -428,8 +504,10 @@ export namespace IECommerceMallCustomerAddress {
      *
      * Must be a non-empty string.
      *
-     * @x-autobe-database-schema-property state_province
-     * @x-autobe-specification Direct mapping from e_commerce_mall_customer_addresses.state_province. Must be non-empty string.
+         * @x-autobe-database-schema-property state_province
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_customer_addresses.state_province. Must be
+         *   non-empty string.
      */
     state_province: string;
 
@@ -438,8 +516,10 @@ export namespace IECommerceMallCustomerAddress {
      *
      * Must be a non-empty string.
      *
-     * @x-autobe-database-schema-property postal_code
-     * @x-autobe-specification Direct mapping from e_commerce_mall_customer_addresses.postal_code. Must be non-empty string.
+         * @x-autobe-database-schema-property postal_code
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_customer_addresses.postal_code. Must be non-empty
+         *   string.
      */
     postal_code: string;
 
@@ -448,8 +528,10 @@ export namespace IECommerceMallCustomerAddress {
      *
      * Must be a non-empty string.
      *
-     * @x-autobe-database-schema-property country
-     * @x-autobe-specification Direct mapping from e_commerce_mall_customer_addresses.country. Must be non-empty string.
+         * @x-autobe-database-schema-property country
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_customer_addresses.country. Must be non-empty
+         *   string.
      */
     country: string;
 
@@ -458,8 +540,13 @@ export namespace IECommerceMallCustomerAddress {
      *
      * Only one address per customer can be the default at any given time. When omitted, the system automatically sets it to `true` if this is the customer's first address, or `false` otherwise. When explicitly set to `true`, any existing default address for this customer is automatically cleared.
      *
-     * @x-autobe-database-schema-property is_default
-     * @x-autobe-specification Direct mapping from e_commerce_mall_customer_addresses.is_default. Optional field — system auto-handles: if customer has zero existing non-deleted addresses, automatically set to true; if customer already has non-deleted addresses, set to false; if explicitly set to true, clear existing default(s) at application layer.
+         * @x-autobe-database-schema-property is_default
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_customer_addresses.is_default. Optional field —
+         *   system auto-handles: if customer has zero existing non-deleted
+         *   addresses, automatically set to true; if customer already has
+         *   non-deleted addresses, set to false; if explicitly set to true,
+         *   clear existing default(s) at application layer.
      */
     is_default?: boolean | undefined;
   };

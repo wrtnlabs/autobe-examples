@@ -28,7 +28,9 @@ import { IPageIHrmTimeTrackingTaskHistory } from "../../../../../structures/IPag
  * @param props.body Status transition data for the new task history entry
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Implement a service method that creates one hrm_time_tracking_task_histories row and synchronizes the current status on the referenced hrm_time_tracking_tasks row inside a single transaction.
+ * @x-autobe-specification Implement a service method that creates one
+ *   hrm_time_tracking_task_histories row and synchronizes the current status on
+ *   the referenced hrm_time_tracking_tasks row inside a single transaction.
  *
  * 1. Resolve the current organization context from authentication/session state.
  * 2. Load the project by hrm_time_tracking_projects.id = projectId and ensure it belongs to the selected organization through hrm_time_tracking_organization_id. Reject if not found or not accessible.
@@ -164,7 +166,9 @@ export namespace create {
  * @param props.body Task history list criteria and pagination options
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Validate that the caller has an authenticated session and an active organization context. Resolve the caller’s actor category and enforce organization-scoped authorization before any data is returned.
+ * @x-autobe-specification Validate that the caller has an authenticated session
+ *   and an active organization context. Resolve the caller’s actor category and
+ *   enforce organization-scoped authorization before any data is returned.
  *
  * Load the project by id from hrm_time_tracking_projects where id = projectId, deleted_at is null, and the project belongs to the caller’s current organization. If no such project exists in the active organization context, return a not-found or authorization-safe rejection. Load the task by id from hrm_time_tracking_tasks where id = taskId, deleted_at is null, and hrm_time_tracking_project_id = projectId. Reject the request if the task does not belong to the specified project.
  *
@@ -284,7 +288,10 @@ export namespace index {
  * @param props.historyId Target task history entry's ID
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Implement a read-only service that fetches one row from `hrm_time_tracking_task_histories` by `id`, joined to `hrm_time_tracking_tasks` and `hrm_time_tracking_projects` to verify the full nested ownership chain.
+ * @x-autobe-specification Implement a read-only service that fetches one row
+ *   from `hrm_time_tracking_task_histories` by `id`, joined to
+ *   `hrm_time_tracking_tasks` and `hrm_time_tracking_projects` to verify the
+ *   full nested ownership chain.
  *
  * Service steps:
  * 1. Resolve the caller's active organization context and actor type.

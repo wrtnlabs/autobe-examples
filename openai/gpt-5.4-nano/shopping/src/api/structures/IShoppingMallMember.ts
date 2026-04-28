@@ -10,40 +10,50 @@ export type IShoppingMallMember = {
   /**
    * The unique identifier of the authenticated member account.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_members.id to IShoppingMallMember.id. Represent as a UUID string in API JSON.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from shopping_mall_members.id to
+     *   IShoppingMallMember.id. Represent as a UUID string in API JSON.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * The member account email address used as the login identifier.
    *
-   * @x-autobe-database-schema-property email
-   * @x-autobe-specification Direct mapping from shopping_mall_members.email to IShoppingMallMember.email. Email must be returned in standard email format.
+     * @x-autobe-database-schema-property email
+     * @x-autobe-specification Direct mapping from shopping_mall_members.email
+     *   to IShoppingMallMember.email. Email must be returned in standard email
+     *   format.
    */
   email: string & tags.Format<"email">;
 
   /**
    * Timestamp when the member account was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from shopping_mall_members.created_at to IShoppingMallMember.created_at. Serialize as ISO 8601 date-time string.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_members.created_at to IShoppingMallMember.created_at.
+     *   Serialize as ISO 8601 date-time string.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the member account was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from shopping_mall_members.updated_at to IShoppingMallMember.updated_at. Serialize as ISO 8601 date-time string.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_members.updated_at to IShoppingMallMember.updated_at.
+     *   Serialize as ISO 8601 date-time string.
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * Soft-deletion timestamp. Null indicates the account is active.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from shopping_mall_members.deleted_at to IShoppingMallMember.deleted_at. If the member is not soft-deleted, return null; otherwise return ISO 8601 date-time string.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_members.deleted_at to IShoppingMallMember.deleted_at. If
+     *   the member is not soft-deleted, return null; otherwise return ISO 8601
+     *   date-time string.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -55,16 +65,24 @@ export namespace IShoppingMallMember {
     /**
      * Member email address used as the unique login identifier for the account.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from IShoppingMallMember.IJoin.email to shopping_mall_members.email. This must satisfy the database uniqueness constraint @@unique([email]) during registration.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   IShoppingMallMember.IJoin.email to shopping_mall_members.email.
+         *   This must satisfy the database uniqueness constraint
+         *   @@unique([email]) during registration.
      */
     email: string & tags.Format<"email">;
 
     /**
      * Plain-text password for the new member account; the server will hash and store it securely.
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification Transform the provided plaintext password (IShoppingMallMember.IJoin.password) into shopping_mall_members.password_hash using the system’s secure password hashing algorithm. Persist only the hashed value to shopping_mall_members.password_hash; never persist or expose plaintext password.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification Transform the provided plaintext password
+         *   (IShoppingMallMember.IJoin.password) into
+         *   shopping_mall_members.password_hash using the system’s secure
+         *   password hashing algorithm. Persist only the hashed value to
+         *   shopping_mall_members.password_hash; never persist or expose
+         *   plaintext password.
      */
     password: string & tags.Format<"password">;
   };
@@ -76,47 +94,55 @@ export namespace IShoppingMallMember {
     /**
      * Member account identifier (UUID).
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_members.id. Use the UUID stored in the member row that is authenticated for join/login/refresh.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from shopping_mall_members.id.
+         *   Use the UUID stored in the member row that is authenticated for
+         *   join/login/refresh.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Member email address used as the login identifier.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from shopping_mall_members.email of the authenticated member record.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_members.email of the authenticated member record.
      */
     email: string & tags.Format<"email">;
 
     /**
      * Timestamp when the member account was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_members.created_at of the authenticated member row.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_members.created_at of the authenticated member row.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when the member account was last updated.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from shopping_mall_members.updated_at of the authenticated member row.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_members.updated_at of the authenticated member row.
      */
     updated_at: string & tags.Format<"date-time">;
 
     /**
      * Soft-deletion timestamp for the member account; null if the account is active.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from shopping_mall_members.deleted_at. If the member is active, return null; if soft-deleted/disabled, return the stored timestamp.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_members.deleted_at. If the member is active, return
+         *   null; if soft-deleted/disabled, return the stored timestamp.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
 
     /**
      * Authorization token.
      *
-     * @x-autobe-specification Authorization token comes from the session table.
+         * @x-autobe-specification Authorization token comes from the session
+         *   table.
      */
     token: IAuthorizationToken;
   };
@@ -128,8 +154,12 @@ export namespace IShoppingMallMember {
     /**
      * The member account login email address to set for the currently authenticated profile.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from shopping_mall_members.email. If the client provides email, validate it as an email string, then update only shopping_mall_members.email for the authenticated member row. Do not allow updates to any other shopping_mall_members columns through this DTO.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_members.email. If the client provides email, validate
+         *   it as an email string, then update only shopping_mall_members.email
+         *   for the authenticated member row. Do not allow updates to any other
+         *   shopping_mall_members columns through this DTO.
      */
     email?: (string & tags.Format<"email">) | undefined;
   };
@@ -141,7 +171,13 @@ export namespace IShoppingMallMember {
     /**
      * Refresh token used to renew the member’s authentication tokens without requiring re-login.
      *
-     * @x-autobe-specification Use refreshToken from the request body to locate the corresponding shopping_mall_member_sessions record. Validate token integrity and expiry using the session record’s stored metadata. If rotation is supported, rotate the refresh token and persist the new token/expiration in shopping_mall_member_sessions, then generate the new access/authorization result returned by the refresh endpoint.
+         * @x-autobe-specification Use refreshToken from the request body to
+         *   locate the corresponding shopping_mall_member_sessions record.
+         *   Validate token integrity and expiry using the session record’s
+         *   stored metadata. If rotation is supported, rotate the refresh token
+         *   and persist the new token/expiration in
+         *   shopping_mall_member_sessions, then generate the new
+         *   access/authorization result returned by the refresh endpoint.
      */
     refreshToken: string;
   };
@@ -153,16 +189,22 @@ export namespace IShoppingMallMember {
     /**
      * Member account email used as the login identifier.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Use request.email as the login identifier to query shopping_mall_members where shopping_mall_members.email equals the provided email. Validate email format before lookup.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Use request.email as the login identifier to
+         *   query shopping_mall_members where shopping_mall_members.email
+         *   equals the provided email. Validate email format before lookup.
      */
     email: string & tags.Format<"email">;
 
     /**
      * Plain-text password for the member account. The server verifies it against the stored password hash.
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification Use request.password (plain text) to verify against shopping_mall_members.password_hash for the located member account using the configured password hashing verification algorithm (e.g., bcrypt/argon2 verify). Never persist or expose the plain text password; never expose password_hash to clients.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification Use request.password (plain text) to verify
+         *   against shopping_mall_members.password_hash for the located member
+         *   account using the configured password hashing verification
+         *   algorithm (e.g., bcrypt/argon2 verify). Never persist or expose the
+         *   plain text password; never expose password_hash to clients.
      */
     password: string & tags.Format<"password">;
   };

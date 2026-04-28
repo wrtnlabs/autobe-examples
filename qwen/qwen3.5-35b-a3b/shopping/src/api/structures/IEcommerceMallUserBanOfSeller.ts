@@ -16,8 +16,9 @@ export type IEcommerceMallUserBanOfSeller = {
    *
    * This UUID serves as the primary key for the polymorphic ban subtype, uniquely identifying this specific seller ban record in the system.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_user_ban_of_sellers.id. UUID primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_user_ban_of_sellers.id. UUID primary key.
    */
   id: string & tags.Format<"uuid">;
 
@@ -26,8 +27,11 @@ export type IEcommerceMallUserBanOfSeller = {
    *
    * The ban object provides the core ban metadata including the reason for the ban, when it was enacted (banned_at), and the user_type discriminator. This is a belongs-to relation establishing the 1:1 relationship with the main ban record.
    *
-   * @x-autobe-database-schema-property ban
-   * @x-autobe-specification Join from ecommerce_mall_user_ban_of_sellers.ecommerce_mall_user_ban_id to ecommerce_mall_user_bans.id. Returns IEcommerceMallUserBan.ISummary with reason, banned_at, and user_type discriminator fields.
+     * @x-autobe-database-schema-property ban
+     * @x-autobe-specification Join from
+     *   ecommerce_mall_user_ban_of_sellers.ecommerce_mall_user_ban_id to
+     *   ecommerce_mall_user_bans.id. Returns IEcommerceMallUserBan.ISummary
+     *   with reason, banned_at, and user_type discriminator fields.
    */
   ban: IEcommerceMallUserBan.ISummary;
 
@@ -36,8 +40,11 @@ export type IEcommerceMallUserBanOfSeller = {
    *
    * The seller object provides the banned seller's profile information including their email address, public display name, and current approval status. This enables administrators to identify which seller account has been restricted from the platform.
    *
-   * @x-autobe-database-schema-property seller
-   * @x-autobe-specification Join from ecommerce_mall_user_ban_of_sellers.seller_id to ecommerce_mall_sellers.id. Returns IEcommerceMallSeller.ISummary with email, display_name, and approval_status fields.
+     * @x-autobe-database-schema-property seller
+     * @x-autobe-specification Join from
+     *   ecommerce_mall_user_ban_of_sellers.seller_id to
+     *   ecommerce_mall_sellers.id. Returns IEcommerceMallSeller.ISummary with
+     *   email, display_name, and approval_status fields.
    */
   seller: IEcommerceMallSeller.ISummary;
 
@@ -46,8 +53,10 @@ export type IEcommerceMallUserBanOfSeller = {
    *
    * This timestamp marks when the ban subtype record was initially generated, typically coinciding with the creation of the parent ban record. Used for audit trail and chronological ordering of ban records.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_user_ban_of_sellers.created_at. ISO 8601 timestamp with timezone.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_user_ban_of_sellers.created_at. ISO 8601 timestamp with
+     *   timezone.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -56,8 +65,10 @@ export type IEcommerceMallUserBanOfSeller = {
    *
    * This field is automatically updated whenever the record is modified, such as when a ban is lifted (deleted_at is set) or when additional metadata is added. Provides visibility into the recency of ban record changes.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_user_ban_of_sellers.updated_at. ISO 8601 timestamp with timezone. Updated on every record modification.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_user_ban_of_sellers.updated_at. ISO 8601 timestamp with
+     *   timezone. Updated on every record modification.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -69,8 +80,11 @@ export type IEcommerceMallUserBanOfSeller = {
    *
    * This field enables soft-deletion of ban records while preserving audit history. When set to a timestamp, the ban subtype is considered logically deleted and is excluded from active ban lists.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_user_ban_of_sellers.deleted_at. Nullable timestamp - null when ban is active (customer currently banned), non-null when ban has been lifted (unbanned).
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_user_ban_of_sellers.deleted_at. Nullable timestamp -
+     *   null when ban is active (customer currently banned), non-null when ban
+     *   has been lifted (unbanned).
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -104,7 +118,7 @@ export namespace IEcommerceMallUserBanOfSeller {
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
       | undefined;
     /**
-     * @x-autobe-database-schema-property seller_id
+         * @x-autobe-database-schema-property seller_id
      */
     seller_id?: (string & tags.Format<"uuid">) | undefined;
     reason?: (string & tags.MinLength<1> & tags.MaxLength<255>) | undefined;
@@ -139,8 +153,10 @@ export namespace IEcommerceMallUserBanOfSeller {
      *
      * This primary key serves as the unique identifier for this seller-specific ban subtype record, enabling efficient database lookups and joins. Each ban record has exactly one subtype, so this ID uniquely identifies the seller-specific ban information.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_mall_user_ban_of_sellers.id (UUID primary key). Unique identifier for this seller ban subtype record.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_user_ban_of_sellers.id (UUID primary key). Unique
+         *   identifier for this seller ban subtype record.
      */
     id: string & tags.Format<"uuid">;
 
@@ -149,8 +165,12 @@ export namespace IEcommerceMallUserBanOfSeller {
      *
      * This relation connects to the main ban record in the ecommerce_mall_user_bans table, which stores general information including the ban reason, effective timestamp (banned_at), and the administrator who issued the ban. Used to access ban details without duplicating the information in this subtype record.
      *
-     * @x-autobe-database-schema-property ban
-     * @x-autobe-specification LEFT JOIN from ecommerce_mall_user_ban_of_sellers.ban_id to ecommerce_mall_user_bans.id. Returns IEcommerceMallUserBan.ISummary containing ban metadata (reason, user_type, banned_at, administrator_id).
+         * @x-autobe-database-schema-property ban
+         * @x-autobe-specification LEFT JOIN from
+         *   ecommerce_mall_user_ban_of_sellers.ban_id to
+         *   ecommerce_mall_user_bans.id. Returns IEcommerceMallUserBan.ISummary
+         *   containing ban metadata (reason, user_type, banned_at,
+         *   administrator_id).
      */
     ban: IEcommerceMallUserBan.ISummary;
 
@@ -159,8 +179,12 @@ export namespace IEcommerceMallUserBanOfSeller {
      *
      * This relation points to the specific seller account in the ecommerce_mall_sellers table that has been banned. Contains the seller's identification information including email address, display name, and seller shop profile. Used to display which specific seller account is restricted from platform access.
      *
-     * @x-autobe-database-schema-property seller
-     * @x-autobe-specification LEFT JOIN from ecommerce_mall_user_ban_of_sellers.seller_id to ecommerce_mall_sellers.id. Returns IEcommerceMallSeller.ISummary containing seller account information (email, display_name, approval_status).
+         * @x-autobe-database-schema-property seller
+         * @x-autobe-specification LEFT JOIN from
+         *   ecommerce_mall_user_ban_of_sellers.seller_id to
+         *   ecommerce_mall_sellers.id. Returns IEcommerceMallSeller.ISummary
+         *   containing seller account information (email, display_name,
+         *   approval_status).
      */
     seller: IEcommerceMallMember.ISummary;
 
@@ -169,8 +193,10 @@ export namespace IEcommerceMallUserBanOfSeller {
      *
      * Indicates when the ban subtype record was first instantiated in the database, marking the creation of this specific seller ban. This timestamp is typically aligned with the parent ban's banned_at value but is stored separately for independent audit queries on seller bans specifically.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_user_ban_of_sellers.created_at (timestamptz). Timestamp when this ban subtype record was first created.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_user_ban_of_sellers.created_at (timestamptz).
+         *   Timestamp when this ban subtype record was first created.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -179,8 +205,10 @@ export namespace IEcommerceMallUserBanOfSeller {
      *
      * Tracks when any changes were made to this record, such as when a ban is lifted (soft delete via deleted_at) or when additional metadata is added. Used for audit purposes and to detect stale ban information in administrative interfaces.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_user_ban_of_sellers.updated_at (timestamptz). Timestamp of the last modification to this record.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_user_ban_of_sellers.updated_at (timestamptz).
+         *   Timestamp of the last modification to this record.
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -192,8 +220,11 @@ export namespace IEcommerceMallUserBanOfSeller {
      *
      * This soft delete pattern preserves ban history for audit purposes while allowing ban removal without permanent data deletion. When deleted_at is set, it marks the exact moment the ban was lifted.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_user_ban_of_sellers.deleted_at (timestamptz, nullable). Null means ban is active, non-null means ban has been lifted.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_user_ban_of_sellers.deleted_at (timestamptz,
+         *   nullable). Null means ban is active, non-null means ban has been
+         *   lifted.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };

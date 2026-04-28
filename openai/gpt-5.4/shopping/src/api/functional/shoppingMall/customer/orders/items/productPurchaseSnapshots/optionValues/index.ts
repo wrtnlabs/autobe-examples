@@ -29,7 +29,9 @@ import { IShoppingMallProductPurchaseSnapshotOptionValue } from "../../../../../
  * @param props.body Creation data for a purchase snapshot option value
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Implement creation against shopping_mall_product_purchase_snapshot_option_values as a child of shopping_mall_product_purchase_snapshots.
+ * @x-autobe-specification Implement creation against
+ *   shopping_mall_product_purchase_snapshot_option_values as a child of
+ *   shopping_mall_product_purchase_snapshots.
  *
  * 1. Resolve the parent order by shopping_mall_orders.code using the orderId path parameter, not by the orders primary key. Reject when no active matching order exists.
  * 2. Resolve the target order item by shopping_mall_order_items.id using itemId and verify shopping_mall_order_id matches the resolved order.id. Reject on mismatch or missing item.
@@ -159,7 +161,13 @@ export namespace create {
  * @param props.body Pagination and filter criteria for purchase snapshot option values
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Validate that `orderId` references an existing `shopping_mall_orders` row, that `itemId` references an existing `shopping_mall_order_items` row belonging to that order, and that `productPurchaseSnapshotId` references an existing `shopping_mall_product_purchase_snapshots` row belonging to that order item. Reject the request when any parent-child relationship is inconsistent.
+ * @x-autobe-specification Validate that `orderId` references an existing
+ *   `shopping_mall_orders` row, that `itemId` references an existing
+ *   `shopping_mall_order_items` row belonging to that order, and that
+ *   `productPurchaseSnapshotId` references an existing
+ *   `shopping_mall_product_purchase_snapshots` row belonging to that order
+ *   item. Reject the request when any parent-child relationship is
+ *   inconsistent.
  *
  * Authorize by actor context before reading child rows. If the caller is a customer, require `shopping_mall_orders.shopping_mall_customer_id` to match the authenticated customer. If the caller is a seller, require `shopping_mall_order_items.shopping_mall_seller_id` to match the authenticated seller. If the caller is an administrator or super administrator, allow access for oversight purposes.
  *
@@ -286,7 +294,9 @@ export namespace index {
  * @param props.optionValueId Target purchase snapshot option value identifier
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Implement a read-only detail query for a single `shopping_mall_product_purchase_snapshot_option_values` row scoped by its full parent chain.
+ * @x-autobe-specification Implement a read-only detail query for a single
+ *   `shopping_mall_product_purchase_snapshot_option_values` row scoped by its
+ *   full parent chain.
  *
  * 1. Authenticate the caller and authorize by actor type. Allow the purchasing customer only when the resolved `shopping_mall_orders.shopping_mall_customer_id` belongs to the authenticated customer. Allow the responsible seller only when the resolved `shopping_mall_order_items.shopping_mall_seller_id` belongs to the authenticated seller. Allow administrators and super administrators for oversight. Deny all other access.
  *

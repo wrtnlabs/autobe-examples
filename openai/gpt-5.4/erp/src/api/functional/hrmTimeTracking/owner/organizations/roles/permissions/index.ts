@@ -28,18 +28,32 @@ import { IHrmTimeTrackingRolePermission } from "../../../../../../structures/IHr
  * @param props.body Permission codes to add to the custom role
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor owner
- * @x-autobe-specification 1. Authorize the caller as an owner within the specified organization context.
- * 2. Load the organization by `organizationId` and ensure it exists and is not logically removed for operational use.
- * 3. Load the role by `roleId` from `hrm_time_tracking_roles` and verify `hrm_time_tracking_organization_id` equals `organizationId`.
- * 4. Reject the request if the role is marked `built_in = true`, because built-in roles are not editable through the custom role administration flow.
- * 5. Parse the request body as `IHrmTimeTrackingRolePermission.ICreate`, requiring at least one permission code to add.
- * 6. Validate every requested permission against the allowed catalog: `org:manage`, `employee:manage`, `employee:view`, `project:manage`, `project:view`, `time:manage`, `time:approve`, `time:view_all`, `report:view`.
- * 7. Normalize the incoming permission list by removing duplicates within the payload before persistence, or reject duplicate entries as invalid input according to service policy.
- * 8. Query existing `hrm_time_tracking_role_permissions` rows for the target role and reject any requested permission that already exists, avoiding violation of the unique constraint on `[hrm_time_tracking_role_id, permission]`.
- * 9. Within a transaction, insert one `hrm_time_tracking_role_permissions` row per accepted permission with generated UUIDs and current timestamps.
- * 10. Update the role's `updated_at` timestamp in `hrm_time_tracking_roles` so downstream clients can detect administrative changes.
- * 11. Re-read the role with its active permission assignments and return it as `IHrmTimeTrackingRole`.
- * 12. Trigger any downstream permission refresh or cache invalidation needed so employees assigned to the role see updated effective access in the current organization without delay.
+ * @x-autobe-specification 1. Authorize the caller as an owner within the
+ *   specified organization context. 2. Load the organization by
+ *   `organizationId` and ensure it exists and is not logically removed for
+ *   operational use. 3. Load the role by `roleId` from
+ *   `hrm_time_tracking_roles` and verify `hrm_time_tracking_organization_id`
+ *   equals `organizationId`. 4. Reject the request if the role is marked
+ *   `built_in = true`, because built-in roles are not editable through the
+ *   custom role administration flow. 5. Parse the request body as
+ *   `IHrmTimeTrackingRolePermission.ICreate`, requiring at least one permission
+ *   code to add. 6. Validate every requested permission against the allowed
+ *   catalog: `org:manage`, `employee:manage`, `employee:view`,
+ *   `project:manage`, `project:view`, `time:manage`, `time:approve`,
+ *   `time:view_all`, `report:view`. 7. Normalize the incoming permission list
+ *   by removing duplicates within the payload before persistence, or reject
+ *   duplicate entries as invalid input according to service policy. 8. Query
+ *   existing `hrm_time_tracking_role_permissions` rows for the target role and
+ *   reject any requested permission that already exists, avoiding violation of
+ *   the unique constraint on `[hrm_time_tracking_role_id, permission]`. 9.
+ *   Within a transaction, insert one `hrm_time_tracking_role_permissions` row
+ *   per accepted permission with generated UUIDs and current timestamps. 10.
+ *   Update the role's `updated_at` timestamp in `hrm_time_tracking_roles` so
+ *   downstream clients can detect administrative changes. 11. Re-read the role
+ *   with its active permission assignments and return it as
+ *   `IHrmTimeTrackingRole`. 12. Trigger any downstream permission refresh or
+ *   cache invalidation needed so employees assigned to the role see updated
+ *   effective access in the current organization without delay.
  *
  * Error handling:
  * - Return not found when the organization or role does not exist.
@@ -155,7 +169,8 @@ export namespace create {
  * @param props.body Updated permission selection for the target role
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor owner
- * @x-autobe-specification Implement this operation as an organization-scoped permission-set reconciliation for one role.
+ * @x-autobe-specification Implement this operation as an organization-scoped
+ *   permission-set reconciliation for one role.
  *
  * 1. Authorize the caller as an organization owner in the current organization context. Reject if the caller is not allowed to administer role definitions for the specified organization.
  * 2. Load the target organization by `organizationId` from `hrm_time_tracking_organizations` and reject if it does not exist or is not active for administration.
@@ -283,7 +298,9 @@ export namespace updatePermissions {
  * @param props.permissionId Target permission assignment's unique identifier within the role
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor owner
- * @x-autobe-specification Implement this operation as a read-only detail lookup for one row in `hrm_time_tracking_role_permissions` scoped through its parent role and organization.
+ * @x-autobe-specification Implement this operation as a read-only detail lookup
+ *   for one row in `hrm_time_tracking_role_permissions` scoped through its
+ *   parent role and organization.
  *
  * 1. Authenticate the caller and resolve the current organization access context. Authorize the request only if the caller is an organization owner for the specified organization or otherwise has role-management authority in that same organization context. Do not grant access based on permissions held in any other organization.
  *
@@ -401,28 +418,34 @@ export namespace at {
  * @param props.body Replacement data for the role permission assignment
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor owner
- * @x-autobe-specification 1. Authenticate the caller and resolve the current organization context.
- * 2. Authorize only the organization owner of the selected organization, because requirements state the owner can edit custom roles and control organization role permissions. Reject callers who do not have permission in the current organization context.
- * 3. Load the role by `roleId` and verify:
- *    - the role exists,
- *    - `hrm_time_tracking_roles.hrm_time_tracking_organization_id` equals `organizationId`,
- *    - the role is active for editing (for example, not logically removed via `deleted_at` if the implementation filters active rows).
- * 4. Load the target permission assignment by `permissionId` and verify:
- *    - the row exists,
- *    - `hrm_time_tracking_role_permissions.hrm_time_tracking_role_id` equals `roleId`,
- *    - the row is active and not marked by `deleted_at`.
- * 5. Validate business rules before update:
- *    - permit updates only for editable custom-role permission configurations; preserve built-in role distinction required by the requirements,
- *    - validate the requested permission code from the body against the supported permission catalog used by role administration,
- *    - reject empty or malformed permission codes,
- *    - check whether another active `hrm_time_tracking_role_permissions` row already exists for the same `roleId` and requested permission; if so, reject to satisfy the unique constraint on (`hrm_time_tracking_role_id`, `permission`).
- * 6. Execute the update in a transaction:
- *    - update `permission`,
- *    - set `updated_at` to the current timestamp,
- *    - keep `created_at` unchanged,
- *    - do not alter parent role metadata.
- * 7. Return the updated permission-assignment entity.
- * 8. Trigger downstream refresh behavior so role-management views and effective access derived from the updated custom role can be recalculated promptly within the same organization context.
+ * @x-autobe-specification 1. Authenticate the caller and resolve the current
+ *   organization context. 2. Authorize only the organization owner of the
+ *   selected organization, because requirements state the owner can edit custom
+ *   roles and control organization role permissions. Reject callers who do not
+ *   have permission in the current organization context. 3. Load the role by
+ *   `roleId` and verify: - the role exists, -
+ *   `hrm_time_tracking_roles.hrm_time_tracking_organization_id` equals
+ *   `organizationId`, - the role is active for editing (for example, not
+ *   logically removed via `deleted_at` if the implementation filters active
+ *   rows). 4. Load the target permission assignment by `permissionId` and
+ *   verify: - the row exists, -
+ *   `hrm_time_tracking_role_permissions.hrm_time_tracking_role_id` equals
+ *   `roleId`, - the row is active and not marked by `deleted_at`. 5. Validate
+ *   business rules before update: - permit updates only for editable
+ *   custom-role permission configurations; preserve built-in role distinction
+ *   required by the requirements, - validate the requested permission code from
+ *   the body against the supported permission catalog used by role
+ *   administration, - reject empty or malformed permission codes, - check
+ *   whether another active `hrm_time_tracking_role_permissions` row already
+ *   exists for the same `roleId` and requested permission; if so, reject to
+ *   satisfy the unique constraint on (`hrm_time_tracking_role_id`,
+ *   `permission`). 6. Execute the update in a transaction: - update
+ *   `permission`, - set `updated_at` to the current timestamp, - keep
+ *   `created_at` unchanged, - do not alter parent role metadata. 7. Return the
+ *   updated permission-assignment entity. 8. Trigger downstream refresh
+ *   behavior so role-management views and effective access derived from the
+ *   updated custom role can be recalculated promptly within the same
+ *   organization context.
  *
  * Error handling:
  * - 404 or equivalent domain error when organization, role, or permission assignment is not found.
@@ -545,7 +568,8 @@ export namespace update {
  * @param props.permissionId Target permission assignment's ID within the role.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor owner
- * @x-autobe-specification Implement this operation as a nested delete on hrm_time_tracking_role_permissions.
+ * @x-autobe-specification Implement this operation as a nested delete on
+ *   hrm_time_tracking_role_permissions.
  *
  * 1. Authenticate the caller and resolve the current organization context.
  * 2. Authorize only the owner actor for the target organization. If the caller is not an owner in the current organization, reject the request.

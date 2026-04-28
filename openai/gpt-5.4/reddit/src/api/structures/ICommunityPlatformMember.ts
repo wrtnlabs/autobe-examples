@@ -11,79 +11,98 @@ export type ICommunityPlatformMember = {
   /**
    * Unique primary identifier of the member account.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from community_platform_members.id.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_members.id.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Stable member account code used as an alternate account identifier.
    *
-   * @x-autobe-database-schema-property code
-   * @x-autobe-specification Direct mapping from community_platform_members.code. This is a stable member account code distinct from the UUID primary key.
+     * @x-autobe-database-schema-property code
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_members.code. This is a stable member account code
+     *   distinct from the UUID primary key.
    */
   code: string;
 
   /**
    * Member account email address used for sign-in and account contact.
    *
-   * @x-autobe-database-schema-property email
-   * @x-autobe-specification Direct mapping from community_platform_members.email. This column is unique and serves as the member's login identifier.
+     * @x-autobe-database-schema-property email
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_members.email. This column is unique and serves as
+     *   the member's login identifier.
    */
   email: string & tags.Format<"email">;
 
   /**
    * Whether the member's email address is currently verified at the account level.
    *
-   * @x-autobe-database-schema-property email_verified
-   * @x-autobe-specification Direct mapping from community_platform_members.email_verified.
+     * @x-autobe-database-schema-property email_verified
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_members.email_verified.
    */
   emailVerified: boolean;
 
   /**
    * Current lifecycle status of the member account.
    *
-   * @x-autobe-database-schema-property status
-   * @x-autobe-specification Direct mapping from community_platform_members.status.
+     * @x-autobe-database-schema-property status
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_members.status.
    */
   status: string;
 
   /**
    * Timestamp of the member's most recent successful sign-in, or null if none has occurred.
    *
-   * @x-autobe-database-schema-property last_signed_in_at
-   * @x-autobe-specification Direct mapping from community_platform_members.last_signed_in_at. Preserve null when the member has not yet completed a successful sign-in.
+     * @x-autobe-database-schema-property last_signed_in_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_members.last_signed_in_at. Preserve null when the
+     *   member has not yet completed a successful sign-in.
    */
   lastSignedInAt: (string & tags.Format<"date-time">) | null;
 
   /**
    * Timestamp when the member account was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from community_platform_members.created_at.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_members.created_at.
    */
   createdAt: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the member account was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from community_platform_members.updated_at.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_members.updated_at.
    */
   updatedAt: string & tags.Format<"date-time">;
 
   /**
    * Soft-deletion timestamp of the member account, or null when the account remains active.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from community_platform_members.deleted_at. Preserve null when the account has not been soft deleted.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_members.deleted_at. Preserve null when the account
+     *   has not been soft deleted.
    */
   deletedAt: (string & tags.Format<"date-time">) | null;
 
   /**
    * Public profile information associated with this member account.
    *
-   * @x-autobe-specification Load the member's one-to-one public profile from community_platform_profiles via community_platform_profiles.community_platform_member_id = community_platform_members.id and serialize it as ICommunityPlatformProfile. This is a cross-table computed projection included by the member detail read contract rather than a direct property of community_platform_members in this review context.
+     * @x-autobe-specification Load the member's one-to-one public profile from
+     *   community_platform_profiles via
+     *   community_platform_profiles.community_platform_member_id =
+     *   community_platform_members.id and serialize it as
+     *   ICommunityPlatformProfile. This is a cross-table computed projection
+     *   included by the member detail read contract rather than a direct
+     *   property of community_platform_members in this review context.
    */
   profile: ICommunityPlatformProfile;
 };
@@ -95,86 +114,105 @@ export namespace ICommunityPlatformMember {
     /**
      * Unique identifier of the authenticated member account.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from community_platform_members.id.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_members.id.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Stable account code for the authenticated member.
      *
-     * @x-autobe-database-schema-property code
-     * @x-autobe-specification Direct mapping from community_platform_members.code. Preserve the stable account code generated for the member.
+         * @x-autobe-database-schema-property code
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_members.code. Preserve the stable account code
+         *   generated for the member.
      */
     code: string;
 
     /**
      * Primary email address used by the authenticated member account.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from community_platform_members.email.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_members.email.
      */
     email: string & tags.Format<"email">;
 
     /**
      * Whether the authenticated member's email address is currently verified.
      *
-     * @x-autobe-database-schema-property email_verified
-     * @x-autobe-specification Map community_platform_members.email_verified to the camelCase API property emailVerified.
+         * @x-autobe-database-schema-property email_verified
+         * @x-autobe-specification Map community_platform_members.email_verified
+         *   to the camelCase API property emailVerified.
      */
     emailVerified: boolean;
 
     /**
      * Current lifecycle status of the authenticated member account.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from community_platform_members.status.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_members.status.
      */
     status: string;
 
     /**
      * Timestamp of the member's most recent successful sign-in, or null when unavailable.
      *
-     * @x-autobe-database-schema-property last_signed_in_at
-     * @x-autobe-specification Map community_platform_members.last_signed_in_at to the camelCase API property lastSignedInAt. Preserve null when the member has never completed a successful sign-in before this authorization flow.
+         * @x-autobe-database-schema-property last_signed_in_at
+         * @x-autobe-specification Map
+         *   community_platform_members.last_signed_in_at to the camelCase API
+         *   property lastSignedInAt. Preserve null when the member has never
+         *   completed a successful sign-in before this authorization flow.
      */
     lastSignedInAt: (string & tags.Format<"date-time">) | null;
 
     /**
      * Timestamp when the member account was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Map community_platform_members.created_at to the camelCase API property createdAt.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Map community_platform_members.created_at to
+         *   the camelCase API property createdAt.
      */
     createdAt: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when the member account was last updated.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Map community_platform_members.updated_at to the camelCase API property updatedAt.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Map community_platform_members.updated_at to
+         *   the camelCase API property updatedAt.
      */
     updatedAt: string & tags.Format<"date-time">;
 
     /**
      * Soft-deletion timestamp of the member account, or null when the account remains active.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Map community_platform_members.deleted_at to the camelCase API property deletedAt. Preserve null for accounts that are not soft deleted.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Map community_platform_members.deleted_at to
+         *   the camelCase API property deletedAt. Preserve null for accounts
+         *   that are not soft deleted.
      */
     deletedAt: (string & tags.Format<"date-time">) | null;
 
     /**
      * Public profile information associated with the authenticated member account, when a profile record exists.
      *
-     * @x-autobe-specification Load the member's public profile from community_platform_profiles where community_platform_profiles.community_platform_member_id = community_platform_members.id and serialize it as ICommunityPlatformProfile when a profile exists; otherwise return null if no profile record exists.
+         * @x-autobe-specification Load the member's public profile from
+         *   community_platform_profiles where
+         *   community_platform_profiles.community_platform_member_id =
+         *   community_platform_members.id and serialize it as
+         *   ICommunityPlatformProfile when a profile exists; otherwise return
+         *   null if no profile record exists.
      */
     profile: ICommunityPlatformProfile;
 
     /**
      * Authorization token.
      *
-     * @x-autobe-specification Authorization token comes from the session table.
+         * @x-autobe-specification Authorization token comes from the session
+         *   table.
      */
     token: IAuthorizationToken;
   };
@@ -186,72 +224,92 @@ export namespace ICommunityPlatformMember {
     /**
      * Unique identifier of the member account.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from community_platform_members.id. Return the member account primary key as a UUID string in list and search projections.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_members.id. Return the member account primary
+         *   key as a UUID string in list and search projections.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Stable unique code assigned to the member account.
      *
-     * @x-autobe-database-schema-property code
-     * @x-autobe-specification Direct mapping from community_platform_members.code. Return the member's stable unique account code used as an alternate identifier.
+         * @x-autobe-database-schema-property code
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_members.code. Return the member's stable unique
+         *   account code used as an alternate identifier.
      */
     code: string;
 
     /**
      * Email address associated with the member account.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from community_platform_members.email. Return the unique login and contact email address for the member account.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_members.email. Return the unique login and
+         *   contact email address for the member account.
      */
     email: string & tags.Format<"email">;
 
     /**
      * Whether the member's email address has been verified.
      *
-     * @x-autobe-database-schema-property email_verified
-     * @x-autobe-specification Direct mapping from community_platform_members.email_verified. Return whether the member currently has a verified email state.
+         * @x-autobe-database-schema-property email_verified
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_members.email_verified. Return whether the
+         *   member currently has a verified email state.
      */
     email_verified: boolean;
 
     /**
      * Current lifecycle status of the member account.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from community_platform_members.status. Return the current lifecycle status string of the member account, such as active or suspended.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_members.status. Return the current lifecycle
+         *   status string of the member account, such as active or suspended.
      */
     status: string;
 
     /**
      * Timestamp of the member's most recent successful sign-in, or null if none has occurred.
      *
-     * @x-autobe-database-schema-property last_signed_in_at
-     * @x-autobe-specification Direct mapping from community_platform_members.last_signed_in_at. Preserve null when the member has never completed a successful sign-in; otherwise return an RFC 3339 date-time string.
+         * @x-autobe-database-schema-property last_signed_in_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_members.last_signed_in_at. Preserve null when
+         *   the member has never completed a successful sign-in; otherwise
+         *   return an RFC 3339 date-time string.
      */
     last_signed_in_at: (string & tags.Format<"date-time">) | null;
 
     /**
      * When the member account was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from community_platform_members.created_at. Return the account creation timestamp as an RFC 3339 date-time string.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_members.created_at. Return the account creation
+         *   timestamp as an RFC 3339 date-time string.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * When the member account was last updated.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from community_platform_members.updated_at. Return the most recent account update timestamp as an RFC 3339 date-time string.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_members.updated_at. Return the most recent
+         *   account update timestamp as an RFC 3339 date-time string.
      */
     updated_at: string & tags.Format<"date-time">;
 
     /**
      * When the member account entered soft-deleted state, or null if the account is not deleted.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from community_platform_members.deleted_at. Preserve null for active accounts; otherwise return the soft-deletion timestamp as an RFC 3339 date-time string.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_members.deleted_at. Preserve null for active
+         *   accounts; otherwise return the soft-deletion timestamp as an RFC
+         *   3339 date-time string.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };
@@ -263,7 +321,12 @@ export namespace ICommunityPlatformMember {
     /**
      * Refresh token used to continue an existing member sign-in session and request a new authorized token set.
      *
-     * @x-autobe-specification Accept the client-provided refresh token string. Use it to resolve and validate the persisted member session in community_platform_member_sessions according to the service's token lookup or token-claim strategy, confirm the session has not expired and is still eligible for refresh, and bind the request to the owning member account before issuing new authorization tokens.
+         * @x-autobe-specification Accept the client-provided refresh token
+         *   string. Use it to resolve and validate the persisted member session
+         *   in community_platform_member_sessions according to the service's
+         *   token lookup or token-claim strategy, confirm the session has not
+         *   expired and is still eligible for refresh, and bind the request to
+         *   the owning member account before issuing new authorization tokens.
      */
     refresh: string;
   };
@@ -275,37 +338,54 @@ export namespace ICommunityPlatformMember {
     /**
      * Email address used as the member's login identifier and contact address.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from request body to community_platform_members.email. Validate email format and uniqueness before inserting the member row.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from request body to
+         *   community_platform_members.email. Validate email format and
+         *   uniqueness before inserting the member row.
      */
     email: string & tags.Format<"email">;
 
     /**
      * Plain text password submitted during registration to create the member's stored authentication credential.
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification Accept plain text password input from the client, validate password rules, hash it securely, and store only the hash in community_platform_members.password_hash. Never persist or return the raw password.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification Accept plain text password input from the
+         *   client, validate password rules, hash it securely, and store only
+         *   the hash in community_platform_members.password_hash. Never persist
+         *   or return the raw password.
      */
     password: string & tags.Format<"password">;
 
     /**
      * Current client page URL associated with the registration request.
      *
-     * @x-autobe-specification Do not store this value in community_platform_members. After successful member creation, pass the request value into the new community_platform_member_sessions record as the session href that captures where registration was initiated.
+         * @x-autobe-specification Do not store this value in
+         *   community_platform_members. After successful member creation, pass
+         *   the request value into the new community_platform_member_sessions
+         *   record as the session href that captures where registration was
+         *   initiated.
      */
     href: string & tags.Format<"uri">;
 
     /**
      * Referring client URL that led to the registration request.
      *
-     * @x-autobe-specification Do not store this value in community_platform_members. After successful member creation, pass the request value into the new community_platform_member_sessions record as the referrer recorded for the initial authenticated session.
+         * @x-autobe-specification Do not store this value in
+         *   community_platform_members. After successful member creation, pass
+         *   the request value into the new community_platform_member_sessions
+         *   record as the referrer recorded for the initial authenticated
+         *   session.
      */
     referrer: string & tags.Format<"uri">;
 
     /**
      * Optional client IPv4 address associated with the initial registration session.
      *
-     * @x-autobe-specification Do not store this value in community_platform_members. Use the provided IPv4 value when creating the initial community_platform_member_sessions record; if omitted, downstream session logic may fall back to the server-observed client IP.
+         * @x-autobe-specification Do not store this value in
+         *   community_platform_members. Use the provided IPv4 value when
+         *   creating the initial community_platform_member_sessions record; if
+         *   omitted, downstream session logic may fall back to the
+         *   server-observed client IP.
      */
     ip?: (string & tags.Format<"ipv4">) | undefined;
   };
@@ -317,37 +397,54 @@ export namespace ICommunityPlatformMember {
     /**
      * Member email address used as the login identifier.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping to community_platform_members.email. Accept the member's unique email address and use it to locate the candidate account for authentication.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping to
+         *   community_platform_members.email. Accept the member's unique email
+         *   address and use it to locate the candidate account for
+         *   authentication.
      */
     email: string & tags.Format<"email">;
 
     /**
      * Plain-text password submitted for credential verification.
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification Accept the member's plain-text password from the request and verify it against community_platform_members.password_hash using the platform password hashing strategy. Never persist or echo the plain-text value.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification Accept the member's plain-text password from
+         *   the request and verify it against
+         *   community_platform_members.password_hash using the platform
+         *   password hashing strategy. Never persist or echo the plain-text
+         *   value.
      */
     password: string & tags.Format<"password">;
 
     /**
      * Client page URL from which the member initiated the login request.
      *
-     * @x-autobe-specification Request-origin URL captured from the login attempt. After successful authentication, persist this value into the newly created community_platform_member_sessions record as session context; it is not read from community_platform_members.
+         * @x-autobe-specification Request-origin URL captured from the login
+         *   attempt. After successful authentication, persist this value into
+         *   the newly created community_platform_member_sessions record as
+         *   session context; it is not read from community_platform_members.
      */
     href: string & tags.Format<"uri">;
 
     /**
      * Referring page URL associated with the login attempt.
      *
-     * @x-autobe-specification Request referrer URL captured from the login attempt. After successful authentication, persist this value into the newly created community_platform_member_sessions record as session context; it is not read from community_platform_members.
+         * @x-autobe-specification Request referrer URL captured from the login
+         *   attempt. After successful authentication, persist this value into
+         *   the newly created community_platform_member_sessions record as
+         *   session context; it is not read from community_platform_members.
      */
     referrer: string & tags.Format<"uri">;
 
     /**
      * Optional client IPv4 address associated with the login attempt.
      *
-     * @x-autobe-specification Optional client IP address supplied at login time. Use body.ip when provided, otherwise allow the server to capture the request IP as fallback before creating the community_platform_member_sessions record. This value is session context, not a community_platform_members column.
+         * @x-autobe-specification Optional client IP address supplied at login
+         *   time. Use body.ip when provided, otherwise allow the server to
+         *   capture the request IP as fallback before creating the
+         *   community_platform_member_sessions record. This value is session
+         *   context, not a community_platform_members column.
      */
     ip?: (string & tags.Format<"ipv4">) | undefined;
   };
@@ -359,95 +456,134 @@ export namespace ICommunityPlatformMember {
     /**
      * Filter members by their stable account code.
      *
-     * @x-autobe-database-schema-property code
-     * @x-autobe-specification Optional equality or service-defined code search filter applied to community_platform_members.code when present in the request body.
+         * @x-autobe-database-schema-property code
+         * @x-autobe-specification Optional equality or service-defined code
+         *   search filter applied to community_platform_members.code when
+         *   present in the request body.
      */
     code?: string | undefined;
 
     /**
      * Filter members by their account email address.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Optional filter applied to community_platform_members.email. The service may implement exact match or partial match behavior according to the endpoint contract, but it must validate the input as an email-formatted string.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Optional filter applied to
+         *   community_platform_members.email. The service may implement exact
+         *   match or partial match behavior according to the endpoint contract,
+         *   but it must validate the input as an email-formatted string.
      */
     email?: (string & tags.Format<"email">) | undefined;
 
     /**
      * Filter members by whether their email address is verified.
      *
-     * @x-autobe-database-schema-property email_verified
-     * @x-autobe-specification Optional boolean filter applied to community_platform_members.email_verified to include only members matching the requested verification state.
+         * @x-autobe-database-schema-property email_verified
+         * @x-autobe-specification Optional boolean filter applied to
+         *   community_platform_members.email_verified to include only members
+         *   matching the requested verification state.
      */
     email_verified?: boolean | undefined;
 
     /**
      * Filter members by account status.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Optional filter applied to community_platform_members.status to narrow the search to members in the requested account lifecycle state.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Optional filter applied to
+         *   community_platform_members.status to narrow the search to members
+         *   in the requested account lifecycle state.
      */
     status?: string | undefined;
 
     /**
      * Include only members created at or after this timestamp.
      *
-     * @x-autobe-specification Optional lower-bound filter for community_platform_members.created_at. When provided, apply created_at >= created_from after parsing the ISO 8601 date-time value.
+         * @x-autobe-specification Optional lower-bound filter for
+         *   community_platform_members.created_at. When provided, apply
+         *   created_at >= created_from after parsing the ISO 8601 date-time
+         *   value.
      */
     created_from?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Include only members created at or before this timestamp.
      *
-     * @x-autobe-specification Optional upper-bound filter for community_platform_members.created_at. When provided, apply created_at <= created_to after parsing the ISO 8601 date-time value.
+         * @x-autobe-specification Optional upper-bound filter for
+         *   community_platform_members.created_at. When provided, apply
+         *   created_at <= created_to after parsing the ISO 8601 date-time
+         *   value.
      */
     created_to?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Include only members updated at or after this timestamp.
      *
-     * @x-autobe-specification Optional lower-bound filter for community_platform_members.updated_at. When provided, apply updated_at >= updated_from after parsing the ISO 8601 date-time value.
+         * @x-autobe-specification Optional lower-bound filter for
+         *   community_platform_members.updated_at. When provided, apply
+         *   updated_at >= updated_from after parsing the ISO 8601 date-time
+         *   value.
      */
     updated_from?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Include only members updated at or before this timestamp.
      *
-     * @x-autobe-specification Optional upper-bound filter for community_platform_members.updated_at. When provided, apply updated_at <= updated_to after parsing the ISO 8601 date-time value.
+         * @x-autobe-specification Optional upper-bound filter for
+         *   community_platform_members.updated_at. When provided, apply
+         *   updated_at <= updated_to after parsing the ISO 8601 date-time
+         *   value.
      */
     updated_to?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Include only members whose most recent sign-in was at or after this timestamp.
      *
-     * @x-autobe-specification Optional lower-bound filter for community_platform_members.last_signed_in_at. When provided, apply last_signed_in_at >= last_signed_in_from after parsing the ISO 8601 date-time value. Records with null last_signed_in_at only match according to service null-handling policy when no bound is supplied.
+         * @x-autobe-specification Optional lower-bound filter for
+         *   community_platform_members.last_signed_in_at. When provided, apply
+         *   last_signed_in_at >= last_signed_in_from after parsing the ISO 8601
+         *   date-time value. Records with null last_signed_in_at only match
+         *   according to service null-handling policy when no bound is
+         *   supplied.
      */
     last_signed_in_from?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Include only members whose most recent sign-in was at or before this timestamp.
      *
-     * @x-autobe-specification Optional upper-bound filter for community_platform_members.last_signed_in_at. When provided, apply last_signed_in_at <= last_signed_in_to after parsing the ISO 8601 date-time value. Records with null last_signed_in_at only match according to service null-handling policy when no bound is supplied.
+         * @x-autobe-specification Optional upper-bound filter for
+         *   community_platform_members.last_signed_in_at. When provided, apply
+         *   last_signed_in_at <= last_signed_in_to after parsing the ISO 8601
+         *   date-time value. Records with null last_signed_in_at only match
+         *   according to service null-handling policy when no bound is
+         *   supplied.
      */
     last_signed_in_to?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Sort order to apply to the member search results.
      *
-     * @x-autobe-specification Optional deterministic sort instruction for the member search query. Interpret the string against a service-defined whitelist of sortable member fields such as code, email, status, created_at, updated_at, or last_signed_in_at, and reject unsupported sort values.
+         * @x-autobe-specification Optional deterministic sort instruction for
+         *   the member search query. Interpret the string against a
+         *   service-defined whitelist of sortable member fields such as code,
+         *   email, status, created_at, updated_at, or last_signed_in_at, and
+         *   reject unsupported sort values.
      */
     sort?: string | undefined;
 
     /**
      * Page number of the member search results to return.
      *
-     * @x-autobe-specification Optional 1-based page number for paginated member search. Use it with limit to calculate the query offset; default handling is defined by the service when omitted.
+         * @x-autobe-specification Optional 1-based page number for paginated
+         *   member search. Use it with limit to calculate the query offset;
+         *   default handling is defined by the service when omitted.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of member records to include in one page of results.
      *
-     * @x-autobe-specification Optional maximum number of member records to return per page. Use this value to bound the query result size and enforce the schema-defined minimum and maximum limits.
+         * @x-autobe-specification Optional maximum number of member records to
+         *   return per page. Use this value to bound the query result size and
+         *   enforce the schema-defined minimum and maximum limits.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)

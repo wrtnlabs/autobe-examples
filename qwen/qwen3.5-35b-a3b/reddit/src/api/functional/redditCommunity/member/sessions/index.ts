@@ -20,7 +20,8 @@ import { IRedditCommunityMemberSession } from "../../../../structures/IRedditCom
  * @param props.body Search criteria for filtering and paginating member sessions. Includes pagination parameters, member ID filter, IP address filter, session status filter, and date range filters for created_at and expired_at.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query the reddit_community_member_sessions table with pagination and filtering.
+ * @x-autobe-specification Query the reddit_community_member_sessions table with
+ *   pagination and filtering.
  *
  * 1. Accept search criteria from request body including:
  *    - pagination: page number (1-based), page size (1-100), sort field, sort order
@@ -138,7 +139,8 @@ export namespace index {
  * @param props.sessionId The unique identifier of the session to retrieve.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query the reddit_community_member_sessions table to find the session record with matching id.
+ * @x-autobe-specification Query the reddit_community_member_sessions table to
+ *   find the session record with matching id.
  *
  * 1. Accept sessionId as path parameter (UUID format)
  * 2. Verify the session exists and is not soft-deleted (deleted_at is null)

@@ -22,9 +22,9 @@ export class CommunityplatformMemberCommunitiesReportsActiveController {
    *
    * @param connection
    * @param communityId Target community identifier to scope the moderator active report queue.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation steps:
    *
    * 1) Authorization:
    * - Load community_platform_communities by id = {communityId} (if required by implementation).

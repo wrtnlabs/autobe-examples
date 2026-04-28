@@ -16,8 +16,9 @@ export type ITodoAppMemberPasswordReset = {
    *
    * Use this value to retrieve or reference the reset request record itself.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from todo_app_member_password_resets.id.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   todo_app_member_password_resets.id.
    */
   id: string & tags.Format<"uuid">;
 
@@ -26,8 +27,9 @@ export type ITodoAppMemberPasswordReset = {
    *
    * This links the reset request to exactly one member account.
    *
-   * @x-autobe-database-schema-property todo_app_member_id
-   * @x-autobe-specification Direct mapping from todo_app_member_password_resets.todo_app_member_id.
+     * @x-autobe-database-schema-property todo_app_member_id
+     * @x-autobe-specification Direct mapping from
+     *   todo_app_member_password_resets.todo_app_member_id.
    */
   todoAppMemberId: string & tags.Format<"uuid">;
 
@@ -36,8 +38,9 @@ export type ITodoAppMemberPasswordReset = {
    *
    * This token is validated before a password change is allowed.
    *
-   * @x-autobe-database-schema-property token
-   * @x-autobe-specification Direct mapping from todo_app_member_password_resets.token.
+     * @x-autobe-database-schema-property token
+     * @x-autobe-specification Direct mapping from
+     *   todo_app_member_password_resets.token.
    */
   token: string;
 
@@ -46,8 +49,9 @@ export type ITodoAppMemberPasswordReset = {
    *
    * After this timestamp, the token must no longer be accepted.
    *
-   * @x-autobe-database-schema-property expired_at
-   * @x-autobe-specification Direct mapping from todo_app_member_password_resets.expired_at.
+     * @x-autobe-database-schema-property expired_at
+     * @x-autobe-specification Direct mapping from
+     *   todo_app_member_password_resets.expired_at.
    */
   expiredAt: string & tags.Format<"date-time">;
 
@@ -56,8 +60,9 @@ export type ITodoAppMemberPasswordReset = {
    *
    * This records when the reset token was issued and supports auditing.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from todo_app_member_password_resets.created_at.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   todo_app_member_password_resets.created_at.
    */
   createdAt: string & tags.Format<"date-time">;
 
@@ -66,8 +71,9 @@ export type ITodoAppMemberPasswordReset = {
    *
    * This reflects the most recent system-side or administrative change.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from todo_app_member_password_resets.updated_at.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   todo_app_member_password_resets.updated_at.
    */
   updatedAt: string & tags.Format<"date-time">;
 
@@ -76,8 +82,10 @@ export type ITodoAppMemberPasswordReset = {
    *
    * A null value means the request is still active.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from todo_app_member_password_resets.deleted_at. This field is nullable because the reset request may be active or soft deleted.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   todo_app_member_password_resets.deleted_at. This field is nullable
+     *   because the reset request may be active or soft deleted.
    */
   deletedAt: (string & tags.Format<"date-time">) | null;
 
@@ -86,8 +94,11 @@ export type ITodoAppMemberPasswordReset = {
    *
    * This is exposed as a summary view of the related member rather than as a raw foreign key object.
    *
-   * @x-autobe-database-schema-property member
-   * @x-autobe-specification Join todo_app_member_password_resets.member to todo_app_members and expose the related member as ITodoAppMember.ISummary. This is a belongs-to relation derived from todo_app_member_id.
+     * @x-autobe-database-schema-property member
+     * @x-autobe-specification Join todo_app_member_password_resets.member to
+     *   todo_app_members and expose the related member as
+     *   ITodoAppMember.ISummary. This is a belongs-to relation derived from
+     *   todo_app_member_id.
    */
   member: ITodoAppMember.ISummary;
 };
@@ -105,8 +116,11 @@ export namespace ITodoAppMemberPasswordReset {
      *
      * This opaque token identifies the pending password reset request. The server uses it to locate the matching reset record and confirm that the request can still be consumed.
      *
-     * @x-autobe-database-schema-property token
-     * @x-autobe-specification Direct mapping from todo_app_member_password_resets.token. Use this token to find the pending reset record, verify it is still valid, and identify the linked member account for the password update.
+         * @x-autobe-database-schema-property token
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_member_password_resets.token. Use this token to find the
+         *   pending reset record, verify it is still valid, and identify the
+         *   linked member account for the password update.
      */
     token: string;
 
@@ -115,7 +129,11 @@ export namespace ITodoAppMemberPasswordReset {
      *
      * This value is submitted in plain text and is used only long enough for server-side validation and hashing. It is never stored as plain text.
      *
-     * @x-autobe-specification Client-supplied plain-text password used only for the reset workflow. It is not stored in todo_app_member_password_resets; instead, validate it against policy, hash it, and persist the hash to todo_app_members.password_hash for the linked member.
+         * @x-autobe-specification Client-supplied plain-text password used only
+         *   for the reset workflow. It is not stored in
+         *   todo_app_member_password_resets; instead, validate it against
+         *   policy, hash it, and persist the hash to
+         *   todo_app_members.password_hash for the linked member.
      */
     password: string & tags.Format<"password">;
 
@@ -127,7 +145,8 @@ export namespace ITodoAppMemberPasswordReset {
      * Requesting a page beyond the available range returns an empty data array
      * with valid pagination metadata reflecting the actual totals.
      *
-     * @x-autobe-specification 1-indexed page number. Defaults to 1 if not provided.
+         * @x-autobe-specification 1-indexed page number. Defaults to 1 if not
+         *   provided.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
 
@@ -139,7 +158,8 @@ export namespace ITodoAppMemberPasswordReset {
      * enforce upper bounds to prevent excessive resource consumption on large
      * requests.
      *
-     * @x-autobe-specification Maximum records per page. Defaults to 100 if not provided.
+         * @x-autobe-specification Maximum records per page. Defaults to 100 if
+         *   not provided.
      */
     limit?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };

@@ -30,9 +30,11 @@ export class EcommercemallMemberCustomerRefund_requestsController {
    *
    * @param connection
    * @param body Search criteria and pagination parameters for refund request list. Includes status filter, date ranges for created_at and updated_at, text search on reason, sorting options, and pagination controls.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query ecommerce_mall_refund_requests table for records where the associated order_item belongs to an order placed by the authenticated customer.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query ecommerce_mall_refund_requests table for
+     *   records where the associated order_item belongs to an order placed by
+     *   the authenticated customer.
    *
    * 1. JOIN ecommerce_mall_refund_requests with ecommerce_mall_order_items and ecommerce_mall_order_items with ecommerce_mall_orders.
    * 2. Filter where order.customer_id equals the authenticated customer's ID.
@@ -87,9 +89,10 @@ export class EcommercemallMemberCustomerRefund_requestsController {
    *
    * @param connection
    * @param requestId Unique identifier for the refund request. Must be a valid UUID format.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Find the refund request by ID from ecommerce_mall_refund_requests table.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Find the refund request by ID from
+     *   ecommerce_mall_refund_requests table.
    *
    * 1. Validate that the requestId is a valid UUID format
    * 2. Query the refund request by id where deleted_at is null

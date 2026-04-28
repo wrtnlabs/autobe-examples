@@ -23,7 +23,9 @@ import { IRedditLikeCommunityModerator } from "../../../../../structures/IReddit
  * @param props.body Search and pagination criteria for filtering and retrieving moderator records.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor guest
- * @x-autobe-specification Query the reddit_like_community_moderators table with a join to reddit_like_members for member details and reddit_like_communities for community validation.
+ * @x-autobe-specification Query the reddit_like_community_moderators table with
+ *   a join to reddit_like_members for member details and
+ *   reddit_like_communities for community validation.
  *
  * 1. Validate the community exists and is not soft-deleted (deleted_at IS NULL)
  * 2. Filter moderators by reddit_like_community_id matching the path parameter

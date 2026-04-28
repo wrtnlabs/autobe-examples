@@ -18,7 +18,8 @@ import { IEcommerceMallSellerDashboard } from "../../../../structures/IEcommerce
  * @param props.connection
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Query and aggregate data for the authenticated seller's dashboard:
+ * @x-autobe-specification Query and aggregate data for the authenticated
+ *   seller's dashboard:
  *
  * 1. Product Count: Count products where product.sellerId equals the authenticated seller's ID.
  * 2. Order Item Count: Count order items where orderItem.sellerId equals the authenticated seller's ID.

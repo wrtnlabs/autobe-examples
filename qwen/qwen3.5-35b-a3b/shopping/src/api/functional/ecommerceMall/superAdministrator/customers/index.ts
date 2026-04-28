@@ -20,7 +20,8 @@ import { IPageIEcommerceMallMember } from "../../../../structures/IPageIEcommerc
  * @param props.body Search and filter criteria for customer accounts including pagination parameters, text search filters, date range filters, and sorting options.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor superAdministrator
- * @x-autobe-specification Query the ecommerce_mall_members table with the following logic:
+ * @x-autobe-specification Query the ecommerce_mall_members table with the
+ *   following logic:
  *
  * 1. Build filter criteria from requestBody:
  *    - Filter by email using LIKE operation with wildcards
@@ -140,7 +141,8 @@ export namespace index {
  * @param props.customerId The UUID identifier of the customer to retrieve.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor superAdministrator
- * @x-autobe-specification Query the ecommerce_mall_members table for a record matching the customerId UUID.
+ * @x-autobe-specification Query the ecommerce_mall_members table for a record
+ *   matching the customerId UUID.
  *
  * 1. Validate that customerId is a valid UUID format
  * 2. Query: SELECT * FROM ecommerce_mall_members WHERE id = customerId

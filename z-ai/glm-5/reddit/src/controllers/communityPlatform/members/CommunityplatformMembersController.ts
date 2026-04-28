@@ -22,9 +22,10 @@ export class CommunityplatformMembersController {
    *
    * @param connection
    * @param body Search criteria including username filter, karma range, sorting options, and pagination parameters
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query community_platform_members table with pagination and filtering.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query community_platform_members table with
+     *   pagination and filtering.
    *
    * Implementation steps:
    * 1. Apply search filter on username using ILIKE for partial matching if search term provided
@@ -69,9 +70,10 @@ export class CommunityplatformMembersController {
    *
    * @param connection
    * @param memberId Unique identifier of the member to retrieve, in UUID format
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query the community_platform_members table by primary key id to retrieve the member record.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query the community_platform_members table by
+     *   primary key id to retrieve the member record.
    *
    * Validation steps:
    * 1. Verify memberId is a valid UUID format

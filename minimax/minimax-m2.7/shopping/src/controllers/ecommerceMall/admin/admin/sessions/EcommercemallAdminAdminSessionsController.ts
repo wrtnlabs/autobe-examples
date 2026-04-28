@@ -27,9 +27,10 @@ export class EcommercemallAdminAdminSessionsController {
    *
    * @param connection
    * @param body Search criteria including administrator ID filter, IP address filter, date range filters for session creation time, and pagination parameters.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query ecommerce_mall_admin_sessions table with pagination and optional filtering.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Query ecommerce_mall_admin_sessions table with
+     *   pagination and optional filtering.
    *
    * Implement cursor-based or offset pagination with configurable page size (default 20, max 100).
    *
@@ -88,9 +89,11 @@ export class EcommercemallAdminAdminSessionsController {
    *
    * @param connection
    * @param sessionId Unique identifier of the administrator session to retrieve (UUID format).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query the ecommerce_mall_admin_sessions table using the provided sessionId parameter. Join with ecommerce_mall_admins table to retrieve associated administrator details (id, email, role).
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Query the ecommerce_mall_admin_sessions table
+     *   using the provided sessionId parameter. Join with ecommerce_mall_admins
+     *   table to retrieve associated administrator details (id, email, role).
    *
    * Validate that the session record exists. If not found, return 404 with appropriate error message.
    *

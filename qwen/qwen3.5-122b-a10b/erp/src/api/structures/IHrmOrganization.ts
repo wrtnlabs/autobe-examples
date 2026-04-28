@@ -20,8 +20,9 @@ export type IHrmOrganization = {
    *
    * Generated automatically upon organization creation. Used as the primary key for all organization-related operations and as a reference in related entities.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from hrm_organizations.id. UUID primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from hrm_organizations.id. UUID
+     *   primary key.
    */
   id: string & tags.Format<"uuid">;
 
@@ -30,8 +31,9 @@ export type IHrmOrganization = {
    *
    * Required for identification and user-facing references. This is the primary name shown in lists, dropdowns, and organizational context headers.
    *
-   * @x-autobe-database-schema-property name
-   * @x-autobe-specification Direct mapping from hrm_organizations.name. Required field.
+     * @x-autobe-database-schema-property name
+     * @x-autobe-specification Direct mapping from hrm_organizations.name.
+     *   Required field.
    */
   name: string;
 
@@ -40,8 +42,9 @@ export type IHrmOrganization = {
    *
    * Optional field providing additional context about the organization's purpose, industry, or mission. Displayed on organization profile pages and in detailed views.
    *
-   * @x-autobe-database-schema-property description
-   * @x-autobe-specification Direct mapping from hrm_organizations.description. Nullable field.
+     * @x-autobe-database-schema-property description
+     * @x-autobe-specification Direct mapping from
+     *   hrm_organizations.description. Nullable field.
    */
   description: string | null;
 
@@ -50,8 +53,10 @@ export type IHrmOrganization = {
    *
    * Used for branding in user interfaces, communications, and reports. Supports external image hosting services. Empty or null value indicates no custom logo is set.
    *
-   * @x-autobe-specification Direct mapping from hrm_organizations.logo_image_url. Nullable field. Max length 80000 characters. URI format.
-   * @x-autobe-database-schema-property logo_image_url
+     * @x-autobe-specification Direct mapping from
+     *   hrm_organizations.logo_image_url. Nullable field. Max length 80000
+     *   characters. URI format.
+     * @x-autobe-database-schema-property logo_image_url
    */
   logo_image_url: (string & tags.Format<"uri">) | null;
 
@@ -60,8 +65,9 @@ export type IHrmOrganization = {
    *
    * Used for all monetary values including contract pay rates, project budgets, and time tracking billable rates. Examples: USD, EUR, KRW, JPY. Cannot be changed after organization creation in most cases.
    *
-   * @x-autobe-database-schema-property currency
-   * @x-autobe-specification Direct mapping from hrm_organizations.currency. Required field. ISO 4217 format.
+     * @x-autobe-database-schema-property currency
+     * @x-autobe-specification Direct mapping from hrm_organizations.currency.
+     *   Required field. ISO 4217 format.
    */
   currency: string;
 
@@ -70,8 +76,9 @@ export type IHrmOrganization = {
    *
    * Used for displaying dates and times to users, calculating timesheet week boundaries, and scheduling recurring events. Examples: America/New_York, Asia/Seoul, Europe/London.
    *
-   * @x-autobe-database-schema-property timezone
-   * @x-autobe-specification Direct mapping from hrm_organizations.timezone. Required field. IANA format.
+     * @x-autobe-database-schema-property timezone
+     * @x-autobe-specification Direct mapping from hrm_organizations.timezone.
+     *   Required field. IANA format.
    */
   timezone: string;
 
@@ -80,8 +87,9 @@ export type IHrmOrganization = {
    *
    * Month number where 1 represents January and 12 represents December. Used to define reporting periods for contract compensation summaries, project budget reports, and annual financial statements.
    *
-   * @x-autobe-database-schema-property fiscal_start_month
-   * @x-autobe-specification Direct mapping from hrm_organizations.fiscal_start_month. Required field. Integer 1-12.
+     * @x-autobe-database-schema-property fiscal_start_month
+     * @x-autobe-specification Direct mapping from
+     *   hrm_organizations.fiscal_start_month. Required field. Integer 1-12.
    */
   fiscal_start_month: number &
     tags.Type<"int32"> &
@@ -93,8 +101,9 @@ export type IHrmOrganization = {
    *
    * Automatically set by the system upon organization creation. Cannot be modified. Used for audit trails and sorting organizations by creation date.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from hrm_organizations.created_at. Auto-generated on insert. ISO 8601 date-time format.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from hrm_organizations.created_at.
+     *   Auto-generated on insert. ISO 8601 date-time format.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -103,8 +112,9 @@ export type IHrmOrganization = {
    *
    * Automatically updated by the system whenever any organization field is modified. Used to track when changes were made and for conflict detection in concurrent update scenarios.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from hrm_organizations.updated_at. Auto-updated on any field modification. ISO 8601 date-time format.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from hrm_organizations.updated_at.
+     *   Auto-updated on any field modification. ISO 8601 date-time format.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -113,8 +123,10 @@ export type IHrmOrganization = {
    *
    * When null, the organization is active and accessible. When set to a date-time value, the organization is marked for deletion but retained for audit purposes. Soft-deleted organizations are not accessible through API endpoints and are excluded from all queries.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from hrm_organizations.deleted_at. Nullable. ISO 8601 date-time format when set. Null indicates active organization.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from hrm_organizations.deleted_at.
+     *   Nullable. ISO 8601 date-time format when set. Null indicates active
+     *   organization.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -170,7 +182,10 @@ export namespace IHrmOrganization {
      *
      * SQL LIKE query with wildcards on both name and description columns. Results must match all search terms.
      *
-     * @x-autobe-specification Case-insensitive partial match filter applied to hrm_organizations.name and hrm_organizations.description fields using SQL LIKE operator. Multiple terms are ANDed together. Empty string or whitespace-only values are ignored.
+         * @x-autobe-specification Case-insensitive partial match filter applied
+         *   to hrm_organizations.name and hrm_organizations.description fields
+         *   using SQL LIKE operator. Multiple terms are ANDed together. Empty
+         *   string or whitespace-only values are ignored.
      */
     search?: string | undefined;
 
@@ -183,7 +198,10 @@ export namespace IHrmOrganization {
      *
      * Typically the created_at value from the last record. Server uses this to query records with created_at greater than the cursor value.
      *
-     * @x-autobe-specification Pagination cursor referencing the created_at timestamp or id of the last retrieved record. Used for cursor-based pagination to fetch the next page. Format: ISO 8601 datetime string or UUID depending on cursor field used.
+         * @x-autobe-specification Pagination cursor referencing the created_at
+         *   timestamp or id of the last retrieved record. Used for cursor-based
+         *   pagination to fetch the next page. Format: ISO 8601 datetime string
+         *   or UUID depending on cursor field used.
      */
     cursor?: string | undefined;
 
@@ -198,7 +216,9 @@ export namespace IHrmOrganization {
      * - Maximum: 100 records
      * - Default: 20 records when not specified
      *
-     * @x-autobe-specification Page size constraint for pagination. Minimum value is 1, maximum is 100. Default is 20 when not specified. Controls the maximum number of records returned per page.
+         * @x-autobe-specification Page size constraint for pagination. Minimum
+         *   value is 1, maximum is 100. Default is 20 when not specified.
+         *   Controls the maximum number of records returned per page.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -215,7 +235,11 @@ export namespace IHrmOrganization {
      * - false: Return only soft-deleted organizations (deleted_at IS NOT NULL)
      * - omitted: Default to active organizations only
      *
-     * @x-autobe-specification Computed boolean filter derived from hrm_organizations.deleted_at column. true translates to deleted_at IS NULL (active organizations). false translates to deleted_at IS NOT NULL (soft-deleted organizations). When omitted, defaults to true (active only).
+         * @x-autobe-specification Computed boolean filter derived from
+         *   hrm_organizations.deleted_at column. true translates to deleted_at
+         *   IS NULL (active organizations). false translates to deleted_at IS
+         *   NOT NULL (soft-deleted organizations). When omitted, defaults to
+         *   true (active only).
      */
     active?: boolean | undefined;
 
@@ -233,7 +257,10 @@ export namespace IHrmOrganization {
      *
      * This DTO primarily uses cursor-based pagination (via cursor parameter). The page field is provided for compatibility with page-based pagination clients.
      *
-     * @x-autobe-specification 1-indexed page number for pagination. Defaults to 1 (first page) when omitted, null, or undefined. Requesting a page beyond available range returns empty data array with valid pagination metadata.
+         * @x-autobe-specification 1-indexed page number for pagination.
+         *   Defaults to 1 (first page) when omitted, null, or undefined.
+         *   Requesting a page beyond available range returns empty data array
+         *   with valid pagination metadata.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };

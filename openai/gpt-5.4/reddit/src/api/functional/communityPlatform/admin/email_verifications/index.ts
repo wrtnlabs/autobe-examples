@@ -25,7 +25,8 @@ import { IPageICommunityPlatformMemberEmailVerification } from "../../../../stru
  * @param props.body Registration information for creating a member account and issuing email verification
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Implement this operation as an atomic registration transaction.
+ * @x-autobe-specification Implement this operation as an atomic registration
+ *   transaction.
  *
  * 1. Authorize the caller as a guest-oriented public operation. If the runtime identifies the caller as an already authenticated member attempting to re-register within the same account context, reject the request according to the registration rules.
  * 2. Validate that the request body contains email, password, and username. Reject when any required field is missing or empty according to service validation standards.
@@ -131,7 +132,8 @@ export namespace create {
  * @param props.body Search criteria, pagination, and sorting options for email verification records
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Implement this operation as a member-scoped query over community_platform_member_email_verifications.
+ * @x-autobe-specification Implement this operation as a member-scoped query
+ *   over community_platform_member_email_verifications.
  *
  * Resolve the authenticated member identity from the session context, then query community_platform_member_email_verifications where community_platform_member_id matches the authenticated member's community_platform_members.id. Exclude records with deleted_at set unless the request DTO explicitly supports privileged historical inclusion and such inclusion is authorized; by default, only active application-visible records should be returned. Join or correlate with community_platform_members only when needed to validate ownership or enrich response fields that are explicitly defined in the DTO schema.
  *
@@ -234,7 +236,8 @@ export namespace index {
  * @param props.emailVerificationId Target email verification record ID
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Implement a read-only service that loads one row from community_platform_member_email_verifications by its primary key id.
+ * @x-autobe-specification Implement a read-only service that loads one row from
+ *   community_platform_member_email_verifications by its primary key id.
  *
  * Validate the emailVerificationId path parameter as a UUID. Query the verification record by id. Enforce visibility rules before returning data: guests are not authorized; a member caller may retrieve the record only when community_platform_member_id maps to the authenticated member identity; an admin caller may retrieve any record if platform policy allows administrative oversight. If no matching row exists, return a not-found error. If the row exists but the caller is not permitted to access it, return a forbidden error without disclosing additional ownership details.
  *
@@ -332,7 +335,9 @@ export namespace at {
  * @param props.body Changes to the member email verification lifecycle record
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Load the target community_platform_member_email_verifications row by id where deleted_at is null.
+ * @x-autobe-specification Load the target
+ *   community_platform_member_email_verifications row by id where deleted_at is
+ *   null.
  *
  * Validate that the caller is operating within an authorized member context for the owning community_platform_member_id, or through an internal application path that is allowed to finalize verification state. Reject the request if the record does not exist, is not visible, or belongs to a different member identity than the caller is allowed to affect.
  *
@@ -444,7 +449,8 @@ export namespace update {
  * @param props.emailVerificationId Unique ID of the target email verification record.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Implement a service-layer deletion routine for a single email verification record by UUID.
+ * @x-autobe-specification Implement a service-layer deletion routine for a
+ *   single email verification record by UUID.
  *
  * 1. Accept emailVerificationId from the path and validate it as a UUID.
  * 2. Resolve the target verification record from the applicable verification storage. Because the loaded schema context includes both community_platform_member_email_verifications and community_platform_admin_email_verifications, the service must determine which verification domain the route is operating against in the actual application composition, or query the appropriate table according to authenticated actor context.

@@ -30,18 +30,17 @@ import { IPageIEcommerceMallWishlistItem } from "../../../../structures/IPageIEc
  * @param props.body Contains the product identifier to add to the customer's wishlist. Only the productId field is required.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification 1. Extract authenticated customer ID from request context (JWT token)
- * 2. Get or validate that the customer has an existing wishlist (should exist from registration)
- * 3. Extract productId from request body
- * 4. Verify the product exists in ecommerce_mall_products and has not been deleted (status = 'ACTIVE')
- * 5. Check if wishlist item already exists for this wishlist and product (prevent duplicates)
- * 6. If duplicate found, return 409 Conflict with descriptive message
- * 7. If product not found or deleted, return 404 Not Found
- * 8. Create new wishlist item with:
- *    - ecommerce_mall_wishlist_id = customer's wishlist id
- *    - ecommerce_mall_product_id = provided productId
- *    - created_at = current timestamp
- * 9. Return created wishlist item with product details included
+ * @x-autobe-specification 1. Extract authenticated customer ID from request
+ *   context (JWT token) 2. Get or validate that the customer has an existing
+ *   wishlist (should exist from registration) 3. Extract productId from request
+ *   body 4. Verify the product exists in ecommerce_mall_products and has not
+ *   been deleted (status = 'ACTIVE') 5. Check if wishlist item already exists
+ *   for this wishlist and product (prevent duplicates) 6. If duplicate found,
+ *   return 409 Conflict with descriptive message 7. If product not found or
+ *   deleted, return 404 Not Found 8. Create new wishlist item with: -
+ *   ecommerce_mall_wishlist_id = customer's wishlist id -
+ *   ecommerce_mall_product_id = provided productId - created_at = current
+ *   timestamp 9. Return created wishlist item with product details included
  *
  * **Edge Cases**:
  * - Customer without a wishlist: Create one automatically
@@ -141,7 +140,8 @@ export namespace create {
  * @param props.body Search criteria including optional product name filter and pagination parameters.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Query the ecommerce_mall_wishlists table to find the customer's wishlist using the authenticated customer ID from the JWT token.
+ * @x-autobe-specification Query the ecommerce_mall_wishlists table to find the
+ *   customer's wishlist using the authenticated customer ID from the JWT token.
  *
  * Query ecommerce_mall_wishlist_items table with JOIN to ecommerce_mall_products to retrieve wishlist items along with their product details.
  *
@@ -253,12 +253,15 @@ export namespace index {
  * @param props.productId UUID of the product to remove from wishlist
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification 1. Extract authenticated customer from JWT session token in Authorization header.
- * 2. Retrieve the customer's wishlist ID from ecommerce_mall_wishlists using shopping_customer_id from session.
- * 3. Query ecommerce_mall_wishlist_items to find entry where ecommerce_mall_wishlist_id equals customer's wishlist ID AND ecommerce_mall_product_id equals {productId}.
- * 4. If no matching wishlist item found, return 404 error with message 'Wishlist item not found'.
- * 5. If found, delete the wishlist item from ecommerce_mall_wishlist_items table.
- * 6. Return 204 No Content on successful deletion.
+ * @x-autobe-specification 1. Extract authenticated customer from JWT session
+ *   token in Authorization header. 2. Retrieve the customer's wishlist ID from
+ *   ecommerce_mall_wishlists using shopping_customer_id from session. 3. Query
+ *   ecommerce_mall_wishlist_items to find entry where
+ *   ecommerce_mall_wishlist_id equals customer's wishlist ID AND
+ *   ecommerce_mall_product_id equals {productId}. 4. If no matching wishlist
+ *   item found, return 404 error with message 'Wishlist item not found'. 5. If
+ *   found, delete the wishlist item from ecommerce_mall_wishlist_items table.
+ *   6. Return 204 No Content on successful deletion.
  *
  * Edge cases:
  * - Invalid productId format (non-UUID): return 400 Bad Request

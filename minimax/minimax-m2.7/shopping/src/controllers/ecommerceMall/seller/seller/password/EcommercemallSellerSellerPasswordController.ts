@@ -20,19 +20,20 @@ export class EcommercemallSellerSellerPasswordController {
    *
    * @param connection
    * @param body Password change request containing the current password for verification and the new password to set.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification 1. Extract authenticated seller from request context (JWT token validated by auth middleware)
-   * 2. Validate request body contains 'currentPassword' and 'newPassword' fields
-   * 3. Retrieve seller record from ecommerce_mall_sellers table by authenticated seller ID
-   * 4. Verify currentPassword matches stored password_hash using bcrypt comparison
-   * 5. If verification fails, return 401 Unauthorized with error message
-   * 6. Validate newPassword meets platform requirements (minimum length, complexity rules)
-   * 7. If validation fails, return 400 Bad Request with validation errors
-   * 8. Hash newPassword using bcrypt with appropriate cost factor
-   * 9. Update password_hash field in ecommerce_mall_sellers table
-   * 10. Update updated_at timestamp
-   * 11. Return 204 No Content on success (seller stays logged in)
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification 1. Extract authenticated seller from request
+     *   context (JWT token validated by auth middleware) 2. Validate request
+     *   body contains 'currentPassword' and 'newPassword' fields 3. Retrieve
+     *   seller record from ecommerce_mall_sellers table by authenticated seller
+     *   ID 4. Verify currentPassword matches stored password_hash using bcrypt
+     *   comparison 5. If verification fails, return 401 Unauthorized with error
+     *   message 6. Validate newPassword meets platform requirements (minimum
+     *   length, complexity rules) 7. If validation fails, return 400 Bad
+     *   Request with validation errors 8. Hash newPassword using bcrypt with
+     *   appropriate cost factor 9. Update password_hash field in
+     *   ecommerce_mall_sellers table 10. Update updated_at timestamp 11. Return
+     *   204 No Content on success (seller stays logged in)
    *
    * Edge cases:
    * - Seller account is suspended: return 403 Forbidden

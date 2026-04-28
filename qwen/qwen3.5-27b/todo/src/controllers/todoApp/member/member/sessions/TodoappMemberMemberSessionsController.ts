@@ -20,9 +20,10 @@ export class TodoappMemberMemberSessionsController {
    *
    * @param connection
    * @param body Search criteria including session status filter, creation date range, IP address patterns, URL patterns, and pagination parameters.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query todo_app_member_sessions table for the authenticated member's sessions.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query todo_app_member_sessions table for the
+     *   authenticated member's sessions.
    *
    * 1. Retrieve current member ID from active session context
    * 2. Apply filtering on:
@@ -72,9 +73,10 @@ export class TodoappMemberMemberSessionsController {
    *
    * @param connection
    * @param sessionId Unique identifier of the member session to retrieve (global scope).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query todo_app_member_sessions table for the session with matching id.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query todo_app_member_sessions table for the
+     *   session with matching id.
    *
    * Validate that the authenticated member owns this session by checking todo_app_member_id matches the current user's ID. Reject with 403 Forbidden if ownership validation fails.
    *

@@ -22,9 +22,12 @@ export class ShoppingmallCustomerAdminrequestsController {
    *
    * @param connection
    * @param body Admin request creation payload containing the reason text explaining why the applicant wishes to become a platform administrator.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification 1. Authentication: Verify that the caller has an active authenticated session as a customer or seller. If the session is missing or invalid, return 401. If the caller is an admin, super admin, or guest, return 403.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification 1. Authentication: Verify that the caller has an
+     *   active authenticated session as a customer or seller. If the session is
+     *   missing or invalid, return 401. If the caller is an admin, super admin,
+     *   or guest, return 403.
    *
    * 2. Request validation: Extract the `reason` field from the request body. If it is absent, null, empty string, or contains only whitespace characters, reject the request with a 422 validation error indicating that the reason text is required.
    *

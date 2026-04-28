@@ -24,8 +24,9 @@ export type IHrmTimeTrackActivityLog = {
    *
    * This UUID serves as the primary key for the activity log record and is used to reference this specific audit entry in other parts of the system. The ID is immutable and globally unique across all organizations.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from hrm_time_track_activity_logs.id. Primary key UUID.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_activity_logs.id. Primary key UUID.
    */
   id: string & tags.Format<"uuid">;
 
@@ -34,8 +35,10 @@ export type IHrmTimeTrackActivityLog = {
    *
    * Standard types include employee_created, employee_deactivated, contract_created, contract_modified, project_created, project_archived, task_status_changed, timesheet_submitted, timesheet_approved, timesheet_rejected, role_assigned, role_created, department_created, and other organizational events. This field enables filtering and categorization of activity logs by event type.
    *
-   * @x-autobe-database-schema-property activity_type
-   * @x-autobe-specification Direct mapping from hrm_time_track_activity_logs.activity_type. String value representing the category of activity.
+     * @x-autobe-database-schema-property activity_type
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_activity_logs.activity_type. String value representing
+     *   the category of activity.
    */
   activity_type: string;
 
@@ -44,8 +47,10 @@ export type IHrmTimeTrackActivityLog = {
    *
    * Provides context about what happened, who was involved, and any relevant details for audit purposes. This field complements the activity_type by providing a more detailed, human-understandable explanation of the event.
    *
-   * @x-autobe-database-schema-property description
-   * @x-autobe-specification Direct mapping from hrm_time_track_activity_logs.description. Human-readable text describing the activity.
+     * @x-autobe-database-schema-property description
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_activity_logs.description. Human-readable text
+     *   describing the activity.
    */
   description: string;
 
@@ -54,8 +59,10 @@ export type IHrmTimeTrackActivityLog = {
    *
    * Stores key-value pairs or JSON-like data for complex activity details that don't fit standard fields. This allows flexible storage of event-specific information while maintaining the core schema. Null when no additional metadata is required for the activity.
    *
-   * @x-autobe-database-schema-property metadata
-   * @x-autobe-specification Direct mapping from hrm_time_track_activity_logs.metadata. Nullable JSON string containing structured data.
+     * @x-autobe-database-schema-property metadata
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_activity_logs.metadata. Nullable JSON string containing
+     *   structured data.
    */
   metadata?: string | null | undefined;
 
@@ -64,8 +71,10 @@ export type IHrmTimeTrackActivityLog = {
    *
    * Used for security auditing and geolocation tracking of activity sources. Captured at the time of the action to provide forensic context. Null if IP information was not available or captured.
    *
-   * @x-autobe-database-schema-property ip_address
-   * @x-autobe-specification Direct mapping from hrm_time_track_activity_logs.ip_address. Nullable string containing client IP address.
+     * @x-autobe-database-schema-property ip_address
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_activity_logs.ip_address. Nullable string containing
+     *   client IP address.
    */
   ip_address?: string | null | undefined;
 
@@ -74,8 +83,10 @@ export type IHrmTimeTrackActivityLog = {
    *
    * Provides technical context about the client environment used to trigger the activity. Useful for identifying the type of client (web browser, mobile app, API client) and for security analysis. Null if user agent information was not captured.
    *
-   * @x-autobe-database-schema-property user_agent
-   * @x-autobe-specification Direct mapping from hrm_time_track_activity_logs.user_agent. Nullable string containing client user agent.
+     * @x-autobe-database-schema-property user_agent
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_activity_logs.user_agent. Nullable string containing
+     *   client user agent.
    */
   user_agent?: string | null | undefined;
 
@@ -84,8 +95,9 @@ export type IHrmTimeTrackActivityLog = {
    *
    * This is the actual time of the event, not when the record was inserted. Used for chronological ordering and time-range queries. The timestamp includes timezone information for accurate event sequencing across different geographic regions.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from hrm_time_track_activity_logs.created_at. DateTime with timezone.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_activity_logs.created_at. DateTime with timezone.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -94,8 +106,10 @@ export type IHrmTimeTrackActivityLog = {
    *
    * All activity logs are scoped to a specific organization for multi-tenancy isolation. Users can only view activity logs from organizations they belong to. This field provides context about which organization the activity occurred in.
    *
-   * @x-autobe-database-schema-property organization
-   * @x-autobe-specification JOIN via hrm_time_track_organization_id to hrm_time_track_organizations. Returns IHrmTimeTrackOrganization.ISummary.
+     * @x-autobe-database-schema-property organization
+     * @x-autobe-specification JOIN via hrm_time_track_organization_id to
+     *   hrm_time_track_organizations. Returns
+     *   IHrmTimeTrackOrganization.ISummary.
    */
   organization: IHrmTimeTrackOrganization.ISummary;
 
@@ -104,8 +118,9 @@ export type IHrmTimeTrackActivityLog = {
    *
    * This establishes accountability by tracking which authenticated user triggered the event. The member reference provides the actor's identity including name and email for audit trail purposes.
    *
-   * @x-autobe-database-schema-property member
-   * @x-autobe-specification JOIN via hrm_time_track_member_id to hrm_time_track_members. Returns IHrmTimeTrackMember.ISummary.
+     * @x-autobe-database-schema-property member
+     * @x-autobe-specification JOIN via hrm_time_track_member_id to
+     *   hrm_time_track_members. Returns IHrmTimeTrackMember.ISummary.
    */
   member: IHrmTimeTrackMember.ISummary;
 
@@ -114,8 +129,10 @@ export type IHrmTimeTrackActivityLog = {
    *
    * Used for employee lifecycle events such as creation, deactivation, department changes, or role assignments. Null when the activity does not involve a specific employee (e.g., organization settings changes, role creation).
    *
-   * @x-autobe-database-schema-property employee
-   * @x-autobe-specification LEFT JOIN via hrm_time_track_employee_id to hrm_time_track_employees. Returns IHrmTimeTrackEmployee.ISummary or null.
+     * @x-autobe-database-schema-property employee
+     * @x-autobe-specification LEFT JOIN via hrm_time_track_employee_id to
+     *   hrm_time_track_employees. Returns IHrmTimeTrackEmployee.ISummary or
+     *   null.
    */
   employee?: IHrmTimeTrackEmployee.ISummary | null | undefined;
 
@@ -124,8 +141,9 @@ export type IHrmTimeTrackActivityLog = {
    *
    * Used for project lifecycle events such as creation, status changes, or archival. Null when the activity does not involve a specific project (e.g., employee management, role assignments).
    *
-   * @x-autobe-database-schema-property project
-   * @x-autobe-specification LEFT JOIN via hrm_time_track_project_id to hrm_time_track_projects. Returns IHrmTimeTrackProject.ISummary or null.
+     * @x-autobe-database-schema-property project
+     * @x-autobe-specification LEFT JOIN via hrm_time_track_project_id to
+     *   hrm_time_track_projects. Returns IHrmTimeTrackProject.ISummary or null.
    */
   project?: IHrmTimeTrackProject.ISummary | null | undefined;
 
@@ -134,8 +152,9 @@ export type IHrmTimeTrackActivityLog = {
    *
    * Used for task status changes, assignment modifications, or due date updates. Null when the activity does not involve a specific task (e.g., project-level changes, employee management).
    *
-   * @x-autobe-database-schema-property task
-   * @x-autobe-specification LEFT JOIN via hrm_time_track_task_id to hrm_time_track_tasks. Returns IHrmTimeTrackTask.ISummary or null.
+     * @x-autobe-database-schema-property task
+     * @x-autobe-specification LEFT JOIN via hrm_time_track_task_id to
+     *   hrm_time_track_tasks. Returns IHrmTimeTrackTask.ISummary or null.
    */
   task?: IHrmTimeTrackTask.ISummary | null | undefined;
 
@@ -144,8 +163,10 @@ export type IHrmTimeTrackActivityLog = {
    *
    * Used for timesheet submission, approval, or rejection events. Null when the activity does not involve a specific timesheet (e.g., task management, project changes).
    *
-   * @x-autobe-database-schema-property timesheet
-   * @x-autobe-specification LEFT JOIN via hrm_time_track_timesheet_id to hrm_time_track_timesheets. Returns IHrmTimeTrackTimesheet.ISummary or null.
+     * @x-autobe-database-schema-property timesheet
+     * @x-autobe-specification LEFT JOIN via hrm_time_track_timesheet_id to
+     *   hrm_time_track_timesheets. Returns IHrmTimeTrackTimesheet.ISummary or
+     *   null.
    */
   timesheet?: IHrmTimeTrackTimesheet.ISummary | null | undefined;
 
@@ -154,8 +175,9 @@ export type IHrmTimeTrackActivityLog = {
    *
    * Used for role creation, modification, or deletion events. Null when the activity does not involve a specific role (e.g., employee lifecycle events, project management).
    *
-   * @x-autobe-database-schema-property role
-   * @x-autobe-specification LEFT JOIN via hrm_time_track_role_id to hrm_time_track_roles. Returns IHrmTimeTrackRole.ISummary or null.
+     * @x-autobe-database-schema-property role
+     * @x-autobe-specification LEFT JOIN via hrm_time_track_role_id to
+     *   hrm_time_track_roles. Returns IHrmTimeTrackRole.ISummary or null.
    */
   role?: IHrmTimeTrackRole.ISummary | null | undefined;
 
@@ -164,8 +186,10 @@ export type IHrmTimeTrackActivityLog = {
    *
    * Used for contract creation, modification, or termination events. Null when the activity does not involve a specific contract (e.g., role changes, project management).
    *
-   * @x-autobe-database-schema-property employeeContract
-   * @x-autobe-specification LEFT JOIN via hrm_time_track_employee_contract_id to hrm_time_track_employee_contracts. Returns IHrmTimeTrackEmployeeContract.ISummary or null.
+     * @x-autobe-database-schema-property employeeContract
+     * @x-autobe-specification LEFT JOIN via hrm_time_track_employee_contract_id
+     *   to hrm_time_track_employee_contracts. Returns
+     *   IHrmTimeTrackEmployeeContract.ISummary or null.
    */
   employeeContract?: IHrmTimeTrackEmployeeContract.ISummary | null | undefined;
 
@@ -174,8 +198,10 @@ export type IHrmTimeTrackActivityLog = {
    *
    * Used for department creation, modification, or deletion events. Null when the activity does not involve a specific department (e.g., task management, timesheet operations).
    *
-   * @x-autobe-database-schema-property department
-   * @x-autobe-specification LEFT JOIN via hrm_time_track_department_id to hrm_time_track_departments. Returns IHrmTimeTrackDepartment.ISummary or null.
+     * @x-autobe-database-schema-property department
+     * @x-autobe-specification LEFT JOIN via hrm_time_track_department_id to
+     *   hrm_time_track_departments. Returns IHrmTimeTrackDepartment.ISummary or
+     *   null.
    */
   department?: IHrmTimeTrackDepartment.ISummary | null | undefined;
 };
@@ -203,7 +229,10 @@ export namespace IHrmTimeTrackActivityLog {
      *
      * Performs a case-insensitive partial text match against the activity log description field. Useful for finding specific events or actions by keyword. Leave empty or omit to return all activity logs within the date range and other filters.
      *
-     * @x-autobe-specification Computed search parameter that performs LIKE query on description column. Supports partial text matching for activity log descriptions. Case-insensitive search enabled. Empty or null value means no search filter applied.
+         * @x-autobe-specification Computed search parameter that performs LIKE
+         *   query on description column. Supports partial text matching for
+         *   activity log descriptions. Case-insensitive search enabled. Empty
+         *   or null value means no search filter applied.
      */
     search?: string | undefined;
 
@@ -212,7 +241,13 @@ export namespace IHrmTimeTrackActivityLog {
      *
      * Restricts results to only logs matching the specified activity type. Common activity types include employee lifecycle events (employee_created, employee_deactivated), contract changes (contract_created, contract_modified), project events (project_created, project_archived), task updates (task_status_changed), timesheet workflow (timesheet_submitted, timesheet_approved, timesheet_rejected), and role/department management events.
      *
-     * @x-autobe-specification Filter parameter that performs exact match on activity_type column in hrm_time_track_activity_logs table. Common values include: employee_created, employee_deactivated, contract_created, contract_modified, project_created, project_archived, task_status_changed, timesheet_submitted, timesheet_approved, timesheet_rejected, role_assigned, role_created, department_created.
+         * @x-autobe-specification Filter parameter that performs exact match on
+         *   activity_type column in hrm_time_track_activity_logs table. Common
+         *   values include: employee_created, employee_deactivated,
+         *   contract_created, contract_modified, project_created,
+         *   project_archived, task_status_changed, timesheet_submitted,
+         *   timesheet_approved, timesheet_rejected, role_assigned,
+         *   role_created, department_created.
      */
     activity_type?: string | undefined;
 
@@ -221,7 +256,11 @@ export namespace IHrmTimeTrackActivityLog {
      *
      * Filters activity logs to include only those created on or after this date-time. Uses ISO 8601 format (e.g., 2026-01-15T00:00:00Z). Typically used with to_date to define a date range for audit reports or compliance reviews.
      *
-     * @x-autobe-specification Computed filter parameter for lower bound of created_at range query. Generates SQL condition: created_at >= from_date. Uses ISO 8601 date-time format. Combined with to_date for range filtering. If from_date provided without to_date, filters logs from that date onwards.
+         * @x-autobe-specification Computed filter parameter for lower bound of
+         *   created_at range query. Generates SQL condition: created_at >=
+         *   from_date. Uses ISO 8601 date-time format. Combined with to_date
+         *   for range filtering. If from_date provided without to_date, filters
+         *   logs from that date onwards.
      */
     from_date?: (string & tags.Format<"date-time">) | undefined;
 
@@ -230,7 +269,11 @@ export namespace IHrmTimeTrackActivityLog {
      *
      * Filters activity logs to include only those created on or before this date-time. Uses ISO 8601 format (e.g., 2026-01-31T23:59:59Z). Typically used with from_date to define a date range for audit reports or compliance reviews.
      *
-     * @x-autobe-specification Computed filter parameter for upper bound of created_at range query. Generates SQL condition: created_at <= to_date. Uses ISO 8601 date-time format. Combined with from_date for range filtering. If to_date provided without from_date, filters logs up to and including that date.
+         * @x-autobe-specification Computed filter parameter for upper bound of
+         *   created_at range query. Generates SQL condition: created_at <=
+         *   to_date. Uses ISO 8601 date-time format. Combined with from_date
+         *   for range filtering. If to_date provided without from_date, filters
+         *   logs up to and including that date.
      */
     to_date?: (string & tags.Format<"date-time">) | undefined;
 
@@ -239,7 +282,11 @@ export namespace IHrmTimeTrackActivityLog {
      *
      * Restricts results to only logs that reference the specified employee. Useful for auditing all activities related to a particular employee, such as their contract changes, role assignments, department changes, or task assignments. Employee ID must be a valid UUID.
      *
-     * @x-autobe-specification Filter parameter that performs exact match on hrm_time_track_employee_id foreign key column in hrm_time_track_activity_logs table. UUID format. Only logs where employee_id matches the provided value are returned. Null employee_id in logs means the activity was not employee-specific.
+         * @x-autobe-specification Filter parameter that performs exact match on
+         *   hrm_time_track_employee_id foreign key column in
+         *   hrm_time_track_activity_logs table. UUID format. Only logs where
+         *   employee_id matches the provided value are returned. Null
+         *   employee_id in logs means the activity was not employee-specific.
      */
     employee_id?: (string & tags.Format<"uuid">) | undefined;
 
@@ -248,7 +295,11 @@ export namespace IHrmTimeTrackActivityLog {
      *
      * Restricts results to only logs that reference the specified project. Useful for auditing all activities related to a particular project, such as project creation, status changes, archival, or task modifications within that project. Project ID must be a valid UUID.
      *
-     * @x-autobe-specification Filter parameter that performs exact match on hrm_time_track_project_id foreign key column in hrm_time_track_activity_logs table. UUID format. Only logs where project_id matches the provided value are returned. Null project_id in logs means the activity was not project-specific.
+         * @x-autobe-specification Filter parameter that performs exact match on
+         *   hrm_time_track_project_id foreign key column in
+         *   hrm_time_track_activity_logs table. UUID format. Only logs where
+         *   project_id matches the provided value are returned. Null project_id
+         *   in logs means the activity was not project-specific.
      */
     project_id?: (string & tags.Format<"uuid">) | undefined;
 
@@ -257,7 +308,11 @@ export namespace IHrmTimeTrackActivityLog {
      *
      * Restricts results to only logs that reference the specified task. Useful for auditing all activities related to a particular task, such as status changes, assignment modifications, or due date updates. Task ID must be a valid UUID.
      *
-     * @x-autobe-specification Filter parameter that performs exact match on hrm_time_track_task_id foreign key column in hrm_time_track_activity_logs table. UUID format. Only logs where task_id matches the provided value are returned. Null task_id in logs means the activity was not task-specific.
+         * @x-autobe-specification Filter parameter that performs exact match on
+         *   hrm_time_track_task_id foreign key column in
+         *   hrm_time_track_activity_logs table. UUID format. Only logs where
+         *   task_id matches the provided value are returned. Null task_id in
+         *   logs means the activity was not task-specific.
      */
     task_id?: (string & tags.Format<"uuid">) | undefined;
 
@@ -266,7 +321,11 @@ export namespace IHrmTimeTrackActivityLog {
      *
      * Restricts results to only logs that reference the specified timesheet. Useful for auditing timesheet workflow events such as submission, approval, or rejection. Timesheet ID must be a valid UUID.
      *
-     * @x-autobe-specification Filter parameter that performs exact match on hrm_time_track_timesheet_id foreign key column in hrm_time_track_activity_logs table. UUID format. Only logs where timesheet_id matches the provided value are returned. Null timesheet_id in logs means the activity was not timesheet-specific.
+         * @x-autobe-specification Filter parameter that performs exact match on
+         *   hrm_time_track_timesheet_id foreign key column in
+         *   hrm_time_track_activity_logs table. UUID format. Only logs where
+         *   timesheet_id matches the provided value are returned. Null
+         *   timesheet_id in logs means the activity was not timesheet-specific.
      */
     timesheet_id?: (string & tags.Format<"uuid">) | undefined;
 
@@ -275,7 +334,11 @@ export namespace IHrmTimeTrackActivityLog {
      *
      * Restricts results to only logs that reference the specified role. Useful for auditing role management events such as role creation, modification, deletion, or permission changes. Role ID must be a valid UUID.
      *
-     * @x-autobe-specification Filter parameter that performs exact match on hrm_time_track_role_id foreign key column in hrm_time_track_activity_logs table. UUID format. Only logs where role_id matches the provided value are returned. Null role_id in logs means the activity was not role-specific.
+         * @x-autobe-specification Filter parameter that performs exact match on
+         *   hrm_time_track_role_id foreign key column in
+         *   hrm_time_track_activity_logs table. UUID format. Only logs where
+         *   role_id matches the provided value are returned. Null role_id in
+         *   logs means the activity was not role-specific.
      */
     role_id?: (string & tags.Format<"uuid">) | undefined;
 
@@ -284,7 +347,12 @@ export namespace IHrmTimeTrackActivityLog {
      *
      * Restricts results to only logs that reference the specified employee contract. Useful for auditing contract lifecycle events such as contract creation, modification, or termination. Contract ID must be a valid UUID.
      *
-     * @x-autobe-specification Filter parameter that performs exact match on hrm_time_track_employee_contract_id foreign key column in hrm_time_track_activity_logs table. UUID format. Only logs where employee_contract_id matches the provided value are returned. Null employee_contract_id in logs means the activity was not contract-specific.
+         * @x-autobe-specification Filter parameter that performs exact match on
+         *   hrm_time_track_employee_contract_id foreign key column in
+         *   hrm_time_track_activity_logs table. UUID format. Only logs where
+         *   employee_contract_id matches the provided value are returned. Null
+         *   employee_contract_id in logs means the activity was not
+         *   contract-specific.
      */
     employee_contract_id?: (string & tags.Format<"uuid">) | undefined;
 
@@ -293,7 +361,12 @@ export namespace IHrmTimeTrackActivityLog {
      *
      * Restricts results to only logs that reference the specified department. Useful for auditing department management events such as department creation, modification, deletion, or employee department assignments. Department ID must be a valid UUID.
      *
-     * @x-autobe-specification Filter parameter that performs exact match on hrm_time_track_department_id foreign key column in hrm_time_track_activity_logs table. UUID format. Only logs where department_id matches the provided value are returned. Null department_id in logs means the activity was not department-specific.
+         * @x-autobe-specification Filter parameter that performs exact match on
+         *   hrm_time_track_department_id foreign key column in
+         *   hrm_time_track_activity_logs table. UUID format. Only logs where
+         *   department_id matches the provided value are returned. Null
+         *   department_id in logs means the activity was not
+         *   department-specific.
      */
     department_id?: (string & tags.Format<"uuid">) | undefined;
 
@@ -302,7 +375,11 @@ export namespace IHrmTimeTrackActivityLog {
      *
      * Specifies which page of activity logs to retrieve. Page numbering starts at 1. Default is page 1 if not provided. Combined with limit parameter to control the number of results per page. Useful for browsing through large result sets without loading all records at once.
      *
-     * @x-autobe-specification Computed pagination parameter for page number (1-indexed). Default value is 1. Minimum value is 1. Used with limit to calculate offset for SQL query: OFFSET = (page - 1) * limit. Validates against total page count to prevent out-of-bounds queries.
+         * @x-autobe-specification Computed pagination parameter for page number
+         *   (1-indexed). Default value is 1. Minimum value is 1. Used with
+         *   limit to calculate offset for SQL query: OFFSET = (page - 1) *
+         *   limit. Validates against total page count to prevent out-of-bounds
+         *   queries.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -311,7 +388,11 @@ export namespace IHrmTimeTrackActivityLog {
      *
      * Controls how many results are included in each page of the paginated response. Minimum is 1, maximum is 100. Default is 20 records per page. Larger limits reduce the number of API calls needed but increase response size. Adjust based on your UI requirements and performance considerations.
      *
-     * @x-autobe-specification Computed pagination parameter for records per page. Default value is 20. Minimum value is 1, maximum value is 100. Used in SQL query LIMIT clause. Validates against configured maximum to prevent excessive resource consumption. Larger limits may impact performance on large datasets.
+         * @x-autobe-specification Computed pagination parameter for records per
+         *   page. Default value is 20. Minimum value is 1, maximum value is
+         *   100. Used in SQL query LIMIT clause. Validates against configured
+         *   maximum to prevent excessive resource consumption. Larger limits
+         *   may impact performance on large datasets.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -331,8 +412,10 @@ export namespace IHrmTimeTrackActivityLog {
      *
      * This UUID serves as the primary key for the activity log record and is used to reference this specific audit entry in queries, updates, and related operations.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from hrm_time_track_activity_logs.id. Primary key uniquely identifying each activity log entry. Generated as UUID on record creation.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_activity_logs.id. Primary key uniquely identifying
+         *   each activity log entry. Generated as UUID on record creation.
      */
     id: string & tags.Format<"uuid">;
 
@@ -341,8 +424,13 @@ export namespace IHrmTimeTrackActivityLog {
      *
      * This field classifies the type of event that occurred in the system. Standard activity types include employee lifecycle events (employee_created, employee_deactivated), contract modifications (contract_created, contract_modified), project lifecycle events (project_created, project_archived), task status changes (task_status_changed), timesheet workflow events (timesheet_submitted, timesheet_approved, timesheet_rejected), and role/department management events (role_assigned, role_created, department_created).
      *
-     * @x-autobe-database-schema-property activity_type
-     * @x-autobe-specification Direct mapping from hrm_time_track_activity_logs.activity_type. Categorizes the type of activity being logged. Examples include: employee_created, employee_deactivated, contract_created, project_archived, task_status_changed, timesheet_submitted, timesheet_approved, role_assigned, department_created.
+         * @x-autobe-database-schema-property activity_type
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_activity_logs.activity_type. Categorizes the type of
+         *   activity being logged. Examples include: employee_created,
+         *   employee_deactivated, contract_created, project_archived,
+         *   task_status_changed, timesheet_submitted, timesheet_approved,
+         *   role_assigned, department_created.
      */
     activity_type: string;
 
@@ -351,8 +439,11 @@ export namespace IHrmTimeTrackActivityLog {
      *
      * This field provides detailed context about what happened, who was involved, and any relevant details for audit purposes. The description complements the activity_type by explaining the specific circumstances of the event.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from hrm_time_track_activity_logs.description. Human-readable text describing what happened in this activity. Provides context for audit and compliance purposes.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_activity_logs.description. Human-readable text
+         *   describing what happened in this activity. Provides context for
+         *   audit and compliance purposes.
      */
     description: string;
 
@@ -361,8 +452,12 @@ export namespace IHrmTimeTrackActivityLog {
      *
      * This optional field stores key-value pairs or JSON-like data for complex activity details that don't fit standard fields. It allows flexible storage of event-specific information while maintaining the core schema. Examples include before/after state changes, additional context parameters, or extended audit information.
      *
-     * @x-autobe-database-schema-property metadata
-     * @x-autobe-specification Direct mapping from hrm_time_track_activity_logs.metadata. Optional JSON string containing structured key-value pairs or complex activity details that don't fit standard fields. Null when no additional structured data is needed.
+         * @x-autobe-database-schema-property metadata
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_activity_logs.metadata. Optional JSON string
+         *   containing structured key-value pairs or complex activity details
+         *   that don't fit standard fields. Null when no additional structured
+         *   data is needed.
      */
     metadata?: string | null | undefined;
 
@@ -371,8 +466,12 @@ export namespace IHrmTimeTrackActivityLog {
      *
      * This optional field captures the client IP address for security auditing and geolocation tracking of activity sources. It helps identify the origin of actions and supports fraud detection and access pattern analysis.
      *
-     * @x-autobe-database-schema-property ip_address
-     * @x-autobe-specification Direct mapping from hrm_time_track_activity_logs.ip_address. Optional IP address of the user who performed the action. Used for security auditing and geolocation tracking. Null when IP information is not available or not captured.
+         * @x-autobe-database-schema-property ip_address
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_activity_logs.ip_address. Optional IP address of the
+         *   user who performed the action. Used for security auditing and
+         *   geolocation tracking. Null when IP information is not available or
+         *   not captured.
      */
     ip_address?: string | null | undefined;
 
@@ -381,8 +480,12 @@ export namespace IHrmTimeTrackActivityLog {
      *
      * This optional field provides technical context about the client environment used to trigger the activity. It includes browser type, version, and platform information, which helps with compatibility tracking and security analysis.
      *
-     * @x-autobe-database-schema-property user_agent
-     * @x-autobe-specification Direct mapping from hrm_time_track_activity_logs.user_agent. Optional browser or client user agent string of the user who performed the action. Provides technical context about the client environment. Null when user agent information is not available.
+         * @x-autobe-database-schema-property user_agent
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_activity_logs.user_agent. Optional browser or client
+         *   user agent string of the user who performed the action. Provides
+         *   technical context about the client environment. Null when user
+         *   agent information is not available.
      */
     user_agent?: string | null | undefined;
 
@@ -391,8 +494,12 @@ export namespace IHrmTimeTrackActivityLog {
      *
      * This field records the exact time when the activity took place. It is used for chronological ordering of audit logs, filtering activities by time range, and generating time-based reports. The timestamp is stored in UTC timezone.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from hrm_time_track_activity_logs.created_at. Timestamp when the activity occurred. This is the actual time of the event, not when the record was inserted. Used for chronological ordering and time-range queries.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_activity_logs.created_at. Timestamp when the
+         *   activity occurred. This is the actual time of the event, not when
+         *   the record was inserted. Used for chronological ordering and
+         *   time-range queries.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -401,8 +508,13 @@ export namespace IHrmTimeTrackActivityLog {
      *
      * This required relation establishes the organizational context for the activity log. All activity logs are scoped to a specific organization for multi-tenancy isolation. Users can only view activity logs from organizations they belong to.
      *
-     * @x-autobe-database-schema-property organization
-     * @x-autobe-specification Relation from hrm_time_track_activity_logs.organization via JOIN on hrm_time_track_organization_id. Returns IHrmTimeTrackOrganization.ISummary. Required relation - every activity log belongs to exactly one organization for multi-tenancy isolation.
+         * @x-autobe-database-schema-property organization
+         * @x-autobe-specification Relation from
+         *   hrm_time_track_activity_logs.organization via JOIN on
+         *   hrm_time_track_organization_id. Returns
+         *   IHrmTimeTrackOrganization.ISummary. Required relation - every
+         *   activity log belongs to exactly one organization for multi-tenancy
+         *   isolation.
      */
     organization: IHrmTimeTrackOrganization.ISummary;
 
@@ -411,8 +523,12 @@ export namespace IHrmTimeTrackActivityLog {
      *
      * This required relation establishes accountability by tracking which authenticated user triggered the event. The member represents the global user identity across all organizations.
      *
-     * @x-autobe-database-schema-property member
-     * @x-autobe-specification Relation from hrm_time_track_activity_logs.member via JOIN on hrm_time_track_member_id. Returns IHrmTimeTrackMember.ISummary. Required relation - every activity log must have an authenticated member who performed the action.
+         * @x-autobe-database-schema-property member
+         * @x-autobe-specification Relation from
+         *   hrm_time_track_activity_logs.member via JOIN on
+         *   hrm_time_track_member_id. Returns IHrmTimeTrackMember.ISummary.
+         *   Required relation - every activity log must have an authenticated
+         *   member who performed the action.
      */
     member: IHrmTimeTrackMember.ISummary;
 
@@ -421,8 +537,12 @@ export namespace IHrmTimeTrackActivityLog {
      *
      * This optional relation is used for employee lifecycle events such as creation, deactivation, department changes, or role assignments. Null when the activity does not involve a specific employee.
      *
-     * @x-autobe-database-schema-property employee
-     * @x-autobe-specification Relation from hrm_time_track_activity_logs.employee via LEFT JOIN on hrm_time_track_employee_id. Returns IHrmTimeTrackEmployee.ISummary or null. Optional relation used for employee lifecycle events such as creation, deactivation, department changes, or role assignments.
+         * @x-autobe-database-schema-property employee
+         * @x-autobe-specification Relation from
+         *   hrm_time_track_activity_logs.employee via LEFT JOIN on
+         *   hrm_time_track_employee_id. Returns IHrmTimeTrackEmployee.ISummary
+         *   or null. Optional relation used for employee lifecycle events such
+         *   as creation, deactivation, department changes, or role assignments.
      */
     employee?: IHrmTimeTrackEmployee.ISummary | null | undefined;
 
@@ -431,8 +551,12 @@ export namespace IHrmTimeTrackActivityLog {
      *
      * This optional relation is used for project lifecycle events such as creation, status changes, or archival. Null when the activity does not involve a specific project.
      *
-     * @x-autobe-database-schema-property project
-     * @x-autobe-specification Relation from hrm_time_track_activity_logs.project via LEFT JOIN on hrm_time_track_project_id. Returns IHrmTimeTrackProject.ISummary or null. Optional relation used for project lifecycle events such as creation, status changes, or archival.
+         * @x-autobe-database-schema-property project
+         * @x-autobe-specification Relation from
+         *   hrm_time_track_activity_logs.project via LEFT JOIN on
+         *   hrm_time_track_project_id. Returns IHrmTimeTrackProject.ISummary or
+         *   null. Optional relation used for project lifecycle events such as
+         *   creation, status changes, or archival.
      */
     project?: IHrmTimeTrackProject.ISummary | null | undefined;
 
@@ -441,8 +565,12 @@ export namespace IHrmTimeTrackActivityLog {
      *
      * This optional relation is used for task status changes, assignment modifications, or due date updates. Null when the activity does not involve a specific task.
      *
-     * @x-autobe-database-schema-property task
-     * @x-autobe-specification Relation from hrm_time_track_activity_logs.task via LEFT JOIN on hrm_time_track_task_id. Returns IHrmTimeTrackTask.ISummary or null. Optional relation used for task status changes, assignment modifications, or due date updates.
+         * @x-autobe-database-schema-property task
+         * @x-autobe-specification Relation from
+         *   hrm_time_track_activity_logs.task via LEFT JOIN on
+         *   hrm_time_track_task_id. Returns IHrmTimeTrackTask.ISummary or null.
+         *   Optional relation used for task status changes, assignment
+         *   modifications, or due date updates.
      */
     task?: IHrmTimeTrackTask.ISummary | null | undefined;
 
@@ -451,8 +579,12 @@ export namespace IHrmTimeTrackActivityLog {
      *
      * This optional relation is used for timesheet submission, approval, or rejection events. Null when the activity does not involve a specific timesheet.
      *
-     * @x-autobe-database-schema-property timesheet
-     * @x-autobe-specification Relation from hrm_time_track_activity_logs.timesheet via LEFT JOIN on hrm_time_track_timesheet_id. Returns IHrmTimeTrackTimesheet.ISummary or null. Optional relation used for timesheet submission, approval, or rejection events.
+         * @x-autobe-database-schema-property timesheet
+         * @x-autobe-specification Relation from
+         *   hrm_time_track_activity_logs.timesheet via LEFT JOIN on
+         *   hrm_time_track_timesheet_id. Returns
+         *   IHrmTimeTrackTimesheet.ISummary or null. Optional relation used for
+         *   timesheet submission, approval, or rejection events.
      */
     timesheet?: IHrmTimeTrackTimesheet.ISummary | null | undefined;
 
@@ -461,8 +593,12 @@ export namespace IHrmTimeTrackActivityLog {
      *
      * This optional relation is used for role creation, modification, or deletion events. Null when the activity does not involve a specific role.
      *
-     * @x-autobe-database-schema-property role
-     * @x-autobe-specification Relation from hrm_time_track_activity_logs.role via LEFT JOIN on hrm_time_track_role_id. Returns IHrmTimeTrackRole.ISummary or null. Optional relation used for role creation, modification, or deletion events.
+         * @x-autobe-database-schema-property role
+         * @x-autobe-specification Relation from
+         *   hrm_time_track_activity_logs.role via LEFT JOIN on
+         *   hrm_time_track_role_id. Returns IHrmTimeTrackRole.ISummary or null.
+         *   Optional relation used for role creation, modification, or deletion
+         *   events.
      */
     role?: IHrmTimeTrackRole.ISummary | null | undefined;
 
@@ -471,8 +607,12 @@ export namespace IHrmTimeTrackActivityLog {
      *
      * This optional relation is used for contract creation, modification, or termination events. Null when the activity does not involve a specific employee contract.
      *
-     * @x-autobe-database-schema-property employeeContract
-     * @x-autobe-specification Relation from hrm_time_track_activity_logs.employeeContract via LEFT JOIN on hrm_time_track_employee_contract_id. Returns IHrmTimeTrackEmployeeContract.ISummary or null. Optional relation used for contract creation, modification, or termination events.
+         * @x-autobe-database-schema-property employeeContract
+         * @x-autobe-specification Relation from
+         *   hrm_time_track_activity_logs.employeeContract via LEFT JOIN on
+         *   hrm_time_track_employee_contract_id. Returns
+         *   IHrmTimeTrackEmployeeContract.ISummary or null. Optional relation
+         *   used for contract creation, modification, or termination events.
      */
     employeeContract?:
       | IHrmTimeTrackEmployeeContract.ISummary
@@ -484,8 +624,12 @@ export namespace IHrmTimeTrackActivityLog {
      *
      * This optional relation is used for department creation, modification, or deletion events. Null when the activity does not involve a specific department.
      *
-     * @x-autobe-database-schema-property department
-     * @x-autobe-specification Relation from hrm_time_track_activity_logs.department via LEFT JOIN on hrm_time_track_department_id. Returns IHrmTimeTrackDepartment.ISummary or null. Optional relation used for department creation, modification, or deletion events.
+         * @x-autobe-database-schema-property department
+         * @x-autobe-specification Relation from
+         *   hrm_time_track_activity_logs.department via LEFT JOIN on
+         *   hrm_time_track_department_id. Returns
+         *   IHrmTimeTrackDepartment.ISummary or null. Optional relation used
+         *   for department creation, modification, or deletion events.
      */
     department?: IHrmTimeTrackDepartment.ISummary | null | undefined;
   };

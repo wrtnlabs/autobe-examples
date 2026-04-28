@@ -17,8 +17,9 @@ export type ICommunityPlatformSubscription = {
    *
    * This UUID serves as the unique identifier for the subscription and is used for direct record retrieval and reference operations.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from community_platform_subscriptions.id. Primary key, UUID format.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_subscriptions.id. Primary key, UUID format.
    */
   id: string & tags.Format<"uuid">;
 
@@ -27,8 +28,10 @@ export type ICommunityPlatformSubscription = {
    *
    * This relationship is resolved by joining the subscription's member_id foreign key to the members table. The member is returned as a summary object containing the member's unique identifier, email address, username, registration timestamp, and soft-deletion status.
    *
-   * @x-autobe-database-schema-property member
-   * @x-autobe-specification LEFT JOIN to community_platform_members on member_id FK. Returns ICommunityPlatformMember.ISummary, which includes id, email, username, created_at, and deleted_at.
+     * @x-autobe-database-schema-property member
+     * @x-autobe-specification LEFT JOIN to community_platform_members on
+     *   member_id FK. Returns ICommunityPlatformMember.ISummary, which includes
+     *   id, email, username, created_at, and deleted_at.
    */
   member: ICommunityPlatformMember.ISummary;
 
@@ -37,8 +40,12 @@ export type ICommunityPlatformSubscription = {
    *
    * This relationship is resolved by joining the subscription's community_id foreign key to the communities table. The community is returned as a summary object containing its unique identifier, canonical name, description, current icon URI, subscriber count, owner information, and creation timestamp.
    *
-   * @x-autobe-database-schema-property community
-   * @x-autobe-specification LEFT JOIN to community_platform_communities on community_id FK. Returns ICommunityPlatformCommunity.ISummary, which includes id, name, description, icon_uri, subscriber_count, owner, and created_at. Only active communities (deleted_at IS NULL) are valid subscription targets.
+     * @x-autobe-database-schema-property community
+     * @x-autobe-specification LEFT JOIN to community_platform_communities on
+     *   community_id FK. Returns ICommunityPlatformCommunity.ISummary, which
+     *   includes id, name, description, icon_uri, subscriber_count, owner, and
+     *   created_at. Only active communities (deleted_at IS NULL) are valid
+     *   subscription targets.
    */
   community: ICommunityPlatformCommunity.ISummary;
 
@@ -47,8 +54,10 @@ export type ICommunityPlatformSubscription = {
    *
    * Set automatically when the member subscribes to the community. Used for chronological ordering in subscription lists and to determine how long a member has been subscribed to a community.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from community_platform_subscriptions.created_at. DateTime with timezone. Set automatically upon record creation (when the member subscribes).
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_subscriptions.created_at. DateTime with timezone.
+     *   Set automatically upon record creation (when the member subscribes).
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -57,8 +66,10 @@ export type ICommunityPlatformSubscription = {
    *
    * Set automatically whenever the subscription record is modified. Used for optimistic concurrency control and audit purposes.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from community_platform_subscriptions.updated_at. DateTime with timezone. Updated automatically on record modification.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_subscriptions.updated_at. DateTime with timezone.
+     *   Updated automatically on record modification.
    */
   updated_at: string & tags.Format<"date-time">;
 };
@@ -83,7 +94,9 @@ export namespace ICommunityPlatformSubscription {
      *
      * When provided, only communities whose name contains the given keyword (case-insensitive partial match) are included in results. Omit or leave empty to return all subscribed communities without name-based filtering.
      *
-     * @x-autobe-specification Optional search keyword. Applied as ILIKE or contains pattern filter on community_platform_communities.name. Only communities whose names match the search term are returned.
+         * @x-autobe-specification Optional search keyword. Applied as ILIKE or
+         *   contains pattern filter on community_platform_communities.name.
+         *   Only communities whose names match the search term are returned.
      */
     search?: string | undefined;
 
@@ -92,7 +105,9 @@ export namespace ICommunityPlatformSubscription {
      *
      * Page numbering starts from 1. The first page is returned when this parameter is omitted or set to 1. If the requested page exceeds the total number of available pages, an empty data array is returned with the correct pagination metadata.
      *
-     * @x-autobe-specification 1-based page number for pagination. Defaults to 1. Clamped to valid range: minimum 1, maximum is last available page. Used in OFFSET-based pagination: OFFSET = (page - 1) * limit.
+         * @x-autobe-specification 1-based page number for pagination. Defaults
+         *   to 1. Clamped to valid range: minimum 1, maximum is last available
+         *   page. Used in OFFSET-based pagination: OFFSET = (page - 1) * limit.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -101,7 +116,10 @@ export namespace ICommunityPlatformSubscription {
      *
      * Use this to control the page size for your UI. The default provides a reasonable batch size for most use cases. Values exceeding 100 are capped at the maximum. The final page may contain fewer items than requested.
      *
-     * @x-autobe-specification Maximum number of records per page. Defaults to the system default page size (typically 20). Maximum allowed value is 100. Passed as LIMIT in SQL query. The actual returned count may be less on the final page.
+         * @x-autobe-specification Maximum number of records per page. Defaults
+         *   to the system default page size (typically 20). Maximum allowed
+         *   value is 100. Passed as LIMIT in SQL query. The actual returned
+         *   count may be less on the final page.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -112,7 +130,13 @@ export namespace ICommunityPlatformSubscription {
      *
      * Choose the attribute that determines the ordering of community entries in the response. Each sort field has a natural direction — for example, subscriber count and timestamps default to descending (newest/highest first), while name defaults to ascending (alphabetical).
      *
-     * @x-autobe-specification Field to sort results by. Supported values: 'name' (alphabetical on community.name), 'subscriber_count' (descending on community.subscriber_count), 'created_at' (community creation date, descending), 'subscription.created_at' (subscription timestamp, descending). Default depends on endpoint — typically 'name' or 'subscription.created_at'. Applied as ORDER BY in SQL query.
+         * @x-autobe-specification Field to sort results by. Supported values:
+         *   'name' (alphabetical on community.name), 'subscriber_count'
+         *   (descending on community.subscriber_count), 'created_at' (community
+         *   creation date, descending), 'subscription.created_at' (subscription
+         *   timestamp, descending). Default depends on endpoint — typically
+         *   'name' or 'subscription.created_at'. Applied as ORDER BY in SQL
+         *   query.
      */
     sort?: string | undefined;
 
@@ -121,7 +145,12 @@ export namespace ICommunityPlatformSubscription {
      *
      * Set to 'asc' for ascending order (A-Z, oldest first) or 'desc' for descending order (Z-A, newest first). When omitted, the natural direction for the chosen sort field is used automatically.
      *
-     * @x-autobe-specification Sort direction. Supported values: 'asc' (ascending), 'desc' (descending). When omitted, uses the natural direction for the selected sort field: 'name' defaults to 'asc', 'subscriber_count' defaults to 'desc', 'created_at' defaults to 'desc', 'subscription.created_at' defaults to 'desc'. Applied as ASC/DESC modifier in ORDER BY clause.
+         * @x-autobe-specification Sort direction. Supported values: 'asc'
+         *   (ascending), 'desc' (descending). When omitted, uses the natural
+         *   direction for the selected sort field: 'name' defaults to 'asc',
+         *   'subscriber_count' defaults to 'desc', 'created_at' defaults to
+         *   'desc', 'subscription.created_at' defaults to 'desc'. Applied as
+         *   ASC/DESC modifier in ORDER BY clause.
      */
     direction?: string | undefined;
   };

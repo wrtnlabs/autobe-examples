@@ -21,25 +21,21 @@ import { IErpHrmInvitation } from "../../../../structures/IErpHrmInvitation";
  * @param props.token Secure token from the invitation link used to verify and accept the invitation
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification 1. Extract token from path parameter
- * 2. Query erp_hrm_invitations table to find invitation by token
- * 3. Validate invitation exists and is not soft-deleted (deleted_at is null)
- * 4. Validate invitation status is 'pending' - reject if already 'accepted' or 'expired'
- * 5. Validate invitation has not expired - check expires_at is null or in the future
- * 6. Validate authenticated user's email matches the invitation's email address
- * 7. Create employee record in erp_hrm_employees with:
- *    - erp_hrm_user_id: authenticated user's ID
- *    - erp_hrm_organization_id: from invitation
- *    - erp_hrm_role_id: from invitation (use default role if null)
- *    - erp_hrm_department_id: from invitation (optional)
- *    - position: from invitation's position field (optional)
- *    - employment_type: default to 'full-time'
- *    - status: 'active'
- * 8. Update invitation record:
- *    - status: 'accepted'
- *    - accepted_at: current timestamp
- * 9. Record activity in erp_hrm_activity_logs
- * 10. Return the accepted invitation with IErpHrmInvitation type
+ * @x-autobe-specification 1. Extract token from path parameter 2. Query
+ *   erp_hrm_invitations table to find invitation by token 3. Validate
+ *   invitation exists and is not soft-deleted (deleted_at is null) 4. Validate
+ *   invitation status is 'pending' - reject if already 'accepted' or 'expired'
+ *   5. Validate invitation has not expired - check expires_at is null or in the
+ *   future 6. Validate authenticated user's email matches the invitation's
+ *   email address 7. Create employee record in erp_hrm_employees with: -
+ *   erp_hrm_user_id: authenticated user's ID - erp_hrm_organization_id: from
+ *   invitation - erp_hrm_role_id: from invitation (use default role if null) -
+ *   erp_hrm_department_id: from invitation (optional) - position: from
+ *   invitation's position field (optional) - employment_type: default to
+ *   'full-time' - status: 'active' 8. Update invitation record: - status:
+ *   'accepted' - accepted_at: current timestamp 9. Record activity in
+ *   erp_hrm_activity_logs 10. Return the accepted invitation with
+ *   IErpHrmInvitation type
  *
  * Error handling:
  * - 404: Invitation not found or invalid token

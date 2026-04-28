@@ -10,48 +10,61 @@ export type ITodoAppMember = {
   /**
    * Unique identifier of the member account.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from `todo_app_members.id`. This is the member account primary key stored as a UUID and used to identify the authenticated account owner.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from `todo_app_members.id`. This
+     *   is the member account primary key stored as a UUID and used to identify
+     *   the authenticated account owner.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Member account email address used for sign-in.
    *
-   * @x-autobe-database-schema-property email
-   * @x-autobe-specification Direct mapping from `todo_app_members.email`. This is the unique email address used as the member's sign-in identity for the private todo account.
+     * @x-autobe-database-schema-property email
+     * @x-autobe-specification Direct mapping from `todo_app_members.email`.
+     *   This is the unique email address used as the member's sign-in identity
+     *   for the private todo account.
    */
   email: string & tags.Format<"email">;
 
   /**
    * Whether the member's email address has been verified.
    *
-   * @x-autobe-database-schema-property email_verified
-   * @x-autobe-specification Direct mapping from `todo_app_members.email_verified`. Indicates whether ownership of the member email address has been verified for the account.
+     * @x-autobe-database-schema-property email_verified
+     * @x-autobe-specification Direct mapping from
+     *   `todo_app_members.email_verified`. Indicates whether ownership of the
+     *   member email address has been verified for the account.
    */
   email_verified: boolean;
 
   /**
    * Timestamp when the member account was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from `todo_app_members.created_at`. Stores when the member account was originally created.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   `todo_app_members.created_at`. Stores when the member account was
+     *   originally created.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the member account was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from `todo_app_members.updated_at`. Stores when the member account record was last updated.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   `todo_app_members.updated_at`. Stores when the member account record
+     *   was last updated.
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * Soft-deletion timestamp for the member account, or null when the account is active.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from `todo_app_members.deleted_at`. This nullable timestamp is present when the member account has been soft-deleted and is `null` when the account is active.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   `todo_app_members.deleted_at`. This nullable timestamp is present when
+     *   the member account has been soft-deleted and is `null` when the account
+     *   is active.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -63,16 +76,24 @@ export namespace ITodoAppMember {
     /**
      * Member email address used to identify the account for login.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from todo_app_members.email. Use this value to locate the member account being authenticated. The login service must compare it against the unique email column and reject unavailable or deleted accounts without exposing which credential failed.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from todo_app_members.email.
+         *   Use this value to locate the member account being authenticated.
+         *   The login service must compare it against the unique email column
+         *   and reject unavailable or deleted accounts without exposing which
+         *   credential failed.
      */
     email: string & tags.Format<"email">;
 
     /**
      * Member password submitted for authentication.
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification Client submits the plain-text password credential. At login time, compare this input against todo_app_members.password_hash using the configured password hashing verification routine; never persist or echo the plain-text value from this DTO.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification Client submits the plain-text password
+         *   credential. At login time, compare this input against
+         *   todo_app_members.password_hash using the configured password
+         *   hashing verification routine; never persist or echo the plain-text
+         *   value from this DTO.
      */
     password: string & tags.Format<"password">;
   };
@@ -84,7 +105,12 @@ export namespace ITodoAppMember {
     /**
      * Refresh token credential used to request renewed authorization for the current member session.
      *
-     * @x-autobe-specification Refresh credential provided by the client for the token renewal workflow. Validate this string against the server's refresh-token strategy, resolve the associated row in `todo_app_member_sessions`, verify the session is still valid for refresh, and then confirm the linked member in `todo_app_members` is still available before issuing replacement authorization tokens.
+         * @x-autobe-specification Refresh credential provided by the client for
+         *   the token renewal workflow. Validate this string against the
+         *   server's refresh-token strategy, resolve the associated row in
+         *   `todo_app_member_sessions`, verify the session is still valid for
+         *   refresh, and then confirm the linked member in `todo_app_members`
+         *   is still available before issuing replacement authorization tokens.
      */
     refresh: string;
   };
@@ -96,48 +122,60 @@ export namespace ITodoAppMember {
     /**
      * Unique identifier of the member account.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from todo_app_members.id. Preserve the UUID value of the member account primary key in the summary response.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from todo_app_members.id.
+         *   Preserve the UUID value of the member account primary key in the
+         *   summary response.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Email address used as the member's sign-in identity.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from todo_app_members.email. Return the unique email address used by the member to sign in.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from todo_app_members.email.
+         *   Return the unique email address used by the member to sign in.
      */
     email: string & tags.Format<"email">;
 
     /**
      * Whether the member's email address has been verified.
      *
-     * @x-autobe-database-schema-property email_verified
-     * @x-autobe-specification Direct mapping from todo_app_members.email_verified. Return whether the member's email ownership has been verified for the account.
+         * @x-autobe-database-schema-property email_verified
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_members.email_verified. Return whether the member's email
+         *   ownership has been verified for the account.
      */
     email_verified: boolean;
 
     /**
      * Timestamp when the member account was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from todo_app_members.created_at. Serialize the member account creation timestamp in date-time format.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_members.created_at. Serialize the member account creation
+         *   timestamp in date-time format.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when the member account was last updated.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from todo_app_members.updated_at. Serialize the most recent member account update timestamp in date-time format.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_members.updated_at. Serialize the most recent member
+         *   account update timestamp in date-time format.
      */
     updated_at: string & tags.Format<"date-time">;
 
     /**
      * Soft-deletion timestamp of the member account, or null when the account is still active.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from todo_app_members.deleted_at. Return the soft-deletion timestamp when the account has been deleted, or null when the account is active because the database column is nullable.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_members.deleted_at. Return the soft-deletion timestamp
+         *   when the account has been deleted, or null when the account is
+         *   active because the database column is nullable.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };
@@ -149,37 +187,56 @@ export namespace ITodoAppMember {
     /**
      * Email address used as the member's sign-in identity.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from the request body to todo_app_members.email. Normalize the submitted email before uniqueness checks and persistence. This value is required for member registration and must satisfy email format validation.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from the request body to
+         *   todo_app_members.email. Normalize the submitted email before
+         *   uniqueness checks and persistence. This value is required for
+         *   member registration and must satisfy email format validation.
      */
     email: string & tags.Format<"email">;
 
     /**
      * Plain-text password that the server hashes and stores as the member credential.
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification Accept plain-text password input from the request body and transform it into a secure hash before storing it in todo_app_members.password_hash. Never persist or expose the raw password value. This value is required for member registration.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification Accept plain-text password input from the
+         *   request body and transform it into a secure hash before storing it
+         *   in todo_app_members.password_hash. Never persist or expose the raw
+         *   password value. This value is required for member registration.
      */
     password: string & tags.Format<"password">;
 
     /**
      * Current client URL associated with the sign-up request.
      *
-     * @x-autobe-specification Use the submitted current page URL as session context when creating the initial todo_app_member_sessions record during the registration transaction. This property is not stored in todo_app_members; it is forwarded to session creation logic and is required in the registration request.
+         * @x-autobe-specification Use the submitted current page URL as session
+         *   context when creating the initial todo_app_member_sessions record
+         *   during the registration transaction. This property is not stored in
+         *   todo_app_members; it is forwarded to session creation logic and is
+         *   required in the registration request.
      */
     href: string & tags.Format<"uri">;
 
     /**
      * Referring client URL that led to the sign-up request.
      *
-     * @x-autobe-specification Use the submitted referrer URL as session context when creating the initial todo_app_member_sessions record during the registration transaction. This property is not stored in todo_app_members; it is forwarded to session creation logic and is required in the registration request.
+         * @x-autobe-specification Use the submitted referrer URL as session
+         *   context when creating the initial todo_app_member_sessions record
+         *   during the registration transaction. This property is not stored in
+         *   todo_app_members; it is forwarded to session creation logic and is
+         *   required in the registration request.
      */
     referrer: string & tags.Format<"uri">;
 
     /**
      * Optional client IPv4 address associated with the sign-up request.
      *
-     * @x-autobe-specification Use the submitted client IPv4 address as optional session context when creating the initial todo_app_member_sessions record during the registration transaction. This property is not stored in todo_app_members. If the client cannot provide it, the server may capture the connection IP as a fallback.
+         * @x-autobe-specification Use the submitted client IPv4 address as
+         *   optional session context when creating the initial
+         *   todo_app_member_sessions record during the registration
+         *   transaction. This property is not stored in todo_app_members. If
+         *   the client cannot provide it, the server may capture the connection
+         *   IP as a fallback.
      */
     ip?: (string & tags.Format<"ipv4">) | undefined;
   };
@@ -191,55 +248,68 @@ export namespace ITodoAppMember {
     /**
      * Unique identifier of the authenticated member account.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from `todo_app_members.id` for the authenticated member account selected by the join, login, or refresh workflow.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from `todo_app_members.id` for
+         *   the authenticated member account selected by the join, login, or
+         *   refresh workflow.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Email address of the authenticated member account.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from `todo_app_members.email` for the authenticated member record after successful authorization.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from `todo_app_members.email`
+         *   for the authenticated member record after successful authorization.
      */
     email: string & tags.Format<"email">;
 
     /**
      * Whether the authenticated member's email address has been verified.
      *
-     * @x-autobe-database-schema-property email_verified
-     * @x-autobe-specification Direct mapping from `todo_app_members.email_verified`. This boolean reflects whether ownership of the member email address has been verified under the application's policy.
+         * @x-autobe-database-schema-property email_verified
+         * @x-autobe-specification Direct mapping from
+         *   `todo_app_members.email_verified`. This boolean reflects whether
+         *   ownership of the member email address has been verified under the
+         *   application's policy.
      */
     email_verified: boolean;
 
     /**
      * Timestamp when the member account was originally created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from `todo_app_members.created_at` for the authenticated member row.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   `todo_app_members.created_at` for the authenticated member row.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when the member account was last updated.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from `todo_app_members.updated_at` for the authenticated member row.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   `todo_app_members.updated_at` for the authenticated member row.
      */
     updated_at: string & tags.Format<"date-time">;
 
     /**
      * Soft-deletion timestamp of the member account, or null when the account is active.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from `todo_app_members.deleted_at`. Return the stored deletion timestamp when the account has been soft-deleted, otherwise return null. The nullable schema is required because the database column is nullable.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   `todo_app_members.deleted_at`. Return the stored deletion timestamp
+         *   when the account has been soft-deleted, otherwise return null. The
+         *   nullable schema is required because the database column is
+         *   nullable.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
 
     /**
      * Authorization token.
      *
-     * @x-autobe-specification Authorization token comes from the session table.
+         * @x-autobe-specification Authorization token comes from the session
+         *   table.
      */
     token: IAuthorizationToken;
   };
@@ -251,63 +321,100 @@ export namespace ITodoAppMember {
     /**
      * Filter by the member account's email address.
      *
-     * @x-autobe-specification Optional query helper applied to todo_app_members.email after authenticated ownership scoping. Service logic may support exact match or approved partial matching consistent with the operation specification, but this property itself is not a persisted field of the DTO; it instructs filtering on the member email column.
+         * @x-autobe-specification Optional query helper applied to
+         *   todo_app_members.email after authenticated ownership scoping.
+         *   Service logic may support exact match or approved partial matching
+         *   consistent with the operation specification, but this property
+         *   itself is not a persisted field of the DTO; it instructs filtering
+         *   on the member email column.
      */
     email?: (string & tags.Format<"email">) | undefined;
 
     /**
      * Filter by whether the member account's email has been verified.
      *
-     * @x-autobe-specification Optional query helper applied to todo_app_members.email_verified after authenticated ownership scoping. Treat the supplied boolean as an exact-match filter on the member email verification status.
+         * @x-autobe-specification Optional query helper applied to
+         *   todo_app_members.email_verified after authenticated ownership
+         *   scoping. Treat the supplied boolean as an exact-match filter on the
+         *   member email verification status.
      */
     email_verified?: boolean | undefined;
 
     /**
      * Inclusive start timestamp for filtering accounts by creation time.
      *
-     * @x-autobe-specification Optional lower-bound query helper for todo_app_members.created_at. When provided, filter rows with created_at greater than or equal to this timestamp after ownership scoping. This property is not stored directly in the database row; it drives range construction for the created_at column.
+         * @x-autobe-specification Optional lower-bound query helper for
+         *   todo_app_members.created_at. When provided, filter rows with
+         *   created_at greater than or equal to this timestamp after ownership
+         *   scoping. This property is not stored directly in the database row;
+         *   it drives range construction for the created_at column.
      */
     created_at_from?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Inclusive end timestamp for filtering accounts by creation time.
      *
-     * @x-autobe-specification Optional upper-bound query helper for todo_app_members.created_at. When provided, filter rows with created_at less than or equal to this timestamp after ownership scoping. This property is not stored directly in the database row; it drives range construction for the created_at column.
+         * @x-autobe-specification Optional upper-bound query helper for
+         *   todo_app_members.created_at. When provided, filter rows with
+         *   created_at less than or equal to this timestamp after ownership
+         *   scoping. This property is not stored directly in the database row;
+         *   it drives range construction for the created_at column.
      */
     created_at_to?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Inclusive start timestamp for filtering accounts by last update time.
      *
-     * @x-autobe-specification Optional lower-bound query helper for todo_app_members.updated_at. When provided, filter rows with updated_at greater than or equal to this timestamp after ownership scoping. This property is not stored directly in the database row; it drives range construction for the updated_at column.
+         * @x-autobe-specification Optional lower-bound query helper for
+         *   todo_app_members.updated_at. When provided, filter rows with
+         *   updated_at greater than or equal to this timestamp after ownership
+         *   scoping. This property is not stored directly in the database row;
+         *   it drives range construction for the updated_at column.
      */
     updated_at_from?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Inclusive end timestamp for filtering accounts by last update time.
      *
-     * @x-autobe-specification Optional upper-bound query helper for todo_app_members.updated_at. When provided, filter rows with updated_at less than or equal to this timestamp after ownership scoping. This property is not stored directly in the database row; it drives range construction for the updated_at column.
+         * @x-autobe-specification Optional upper-bound query helper for
+         *   todo_app_members.updated_at. When provided, filter rows with
+         *   updated_at less than or equal to this timestamp after ownership
+         *   scoping. This property is not stored directly in the database row;
+         *   it drives range construction for the updated_at column.
      */
     updated_at_to?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Filter by whether the account is currently soft-deleted.
      *
-     * @x-autobe-specification Optional boolean query helper derived from todo_app_members.deleted_at nullability. Interpret true as filtering for soft-deleted rows where deleted_at IS NOT NULL, and false as filtering for active rows where deleted_at IS NULL. This property is not a stored column; it controls how the deleted_at column is tested.
+         * @x-autobe-specification Optional boolean query helper derived from
+         *   todo_app_members.deleted_at nullability. Interpret true as
+         *   filtering for soft-deleted rows where deleted_at IS NOT NULL, and
+         *   false as filtering for active rows where deleted_at IS NULL. This
+         *   property is not a stored column; it controls how the deleted_at
+         *   column is tested.
      */
     deleted?: boolean | undefined;
 
     /**
      * Page number to return from the paginated result set.
      *
-     * @x-autobe-specification Optional pagination helper for selecting the 1-indexed result page in the paginated response. This property is not backed by a database column; it is used by the service layer to compute offset or skip after the authenticated member query is built.
+         * @x-autobe-specification Optional pagination helper for selecting the
+         *   1-indexed result page in the paginated response. This property is
+         *   not backed by a database column; it is used by the service layer to
+         *   compute offset or skip after the authenticated member query is
+         *   built.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of records to include in one page of results.
      *
-     * @x-autobe-specification Optional pagination helper for the maximum number of records to include per page, constrained by the schema minimum and maximum. This property is not backed by a database column; it is used by the service layer to compute take or limit for the paginated query.
+         * @x-autobe-specification Optional pagination helper for the maximum
+         *   number of records to include per page, constrained by the schema
+         *   minimum and maximum. This property is not backed by a database
+         *   column; it is used by the service layer to compute take or limit
+         *   for the paginated query.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -316,7 +423,12 @@ export namespace ITodoAppMember {
     /**
      * Sort expression that controls the ordering of the result set.
      *
-     * @x-autobe-specification Optional sorting helper that instructs service logic to order the authenticated member query by an allowed real column such as created_at, updated_at, or email, with optional direction handling defined by the implementation. This property is not a database column itself; it is parsed into ORDER BY clauses against approved member columns.
+         * @x-autobe-specification Optional sorting helper that instructs
+         *   service logic to order the authenticated member query by an allowed
+         *   real column such as created_at, updated_at, or email, with optional
+         *   direction handling defined by the implementation. This property is
+         *   not a database column itself; it is parsed into ORDER BY clauses
+         *   against approved member columns.
      */
     sort?: string | undefined;
   };

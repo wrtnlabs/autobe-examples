@@ -23,9 +23,10 @@ export class HrmplatformMemberEmployeesSnapshotsController {
    * @param connection
    * @param employeeId UUID identifier of the employee whose snapshots to retrieve.
    * @param body Search criteria for filtering and sorting employee snapshots, including status, employment type, date range, pagination, and sort options.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query hrm_platform_employees_snapshots table for snapshots where employee_id matches the path parameter.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query hrm_platform_employees_snapshots table for
+     *   snapshots where employee_id matches the path parameter.
    *
    * Apply filters:
    * - Filter by status (active/deactivated) if provided in request body
@@ -85,9 +86,10 @@ export class HrmplatformMemberEmployeesSnapshotsController {
    * @param connection
    * @param employeeId UUID of the employee whose snapshot is being retrieved. Must match the employee_id stored in the snapshot.
    * @param snapshotId UUID of the snapshot record to retrieve.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query the hrm_platform_employees_snapshots table for the record matching the snapshotId.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query the hrm_platform_employees_snapshots table
+     *   for the record matching the snapshotId.
    *
    * 1. Validate that the found snapshot's employee_id matches the employeeId path parameter
    * 2. If no record is found, return 404 Not Found

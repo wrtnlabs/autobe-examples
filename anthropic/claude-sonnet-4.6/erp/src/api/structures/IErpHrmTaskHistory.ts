@@ -17,48 +17,67 @@ export type IErpHrmTaskHistory = {
   /**
    * The unique identifier of this task history entry.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from erp_hrm_task_histories.id. Primary key UUID uniquely identifying this history entry.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from erp_hrm_task_histories.id.
+     *   Primary key UUID uniquely identifying this history entry.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * The task to which this status change event belongs. Provides essential task context (title, status, priority) for consumers viewing this history entry.
    *
-   * @x-autobe-database-schema-property task
-   * @x-autobe-specification Resolved via the `task` relation on erp_hrm_task_histories (FK: erp_hrm_task_id → erp_hrm_tasks.id). Populate by JOINing erp_hrm_tasks and returning as IErpHrmTask.ISummary.
+     * @x-autobe-database-schema-property task
+     * @x-autobe-specification Resolved via the `task` relation on
+     *   erp_hrm_task_histories (FK: erp_hrm_task_id → erp_hrm_tasks.id).
+     *   Populate by JOINing erp_hrm_tasks and returning as
+     *   IErpHrmTask.ISummary.
    */
   task: IErpHrmTask.ISummary;
 
   /**
    * The organization member who performed the task status change that triggered this history entry. Identifies the actor responsible for the transition.
    *
-   * @x-autobe-database-schema-property organizationMember
-   * @x-autobe-specification Resolved via the `organizationMember` relation on erp_hrm_task_histories (FK: erp_hrm_organization_member_id → erp_hrm_organization_members.id). Populate by JOINing erp_hrm_organization_members and returning as IErpHrmOrganizationMember.ISummary. This is the member who performed the status change that created this history entry.
+     * @x-autobe-database-schema-property organizationMember
+     * @x-autobe-specification Resolved via the `organizationMember` relation on
+     *   erp_hrm_task_histories (FK: erp_hrm_organization_member_id →
+     *   erp_hrm_organization_members.id). Populate by JOINing
+     *   erp_hrm_organization_members and returning as
+     *   IErpHrmOrganizationMember.ISummary. This is the member who performed
+     *   the status change that created this history entry.
    */
   recorder: IErpHrmOrganizationMember.ISummary;
 
   /**
    * The task status immediately before this transition. One of: `open`, `in_progress`, `completed`, `closed`.
    *
-   * @x-autobe-database-schema-property old_status
-   * @x-autobe-specification Direct mapping from erp_hrm_task_histories.old_status. Stored as a plain string. Valid values: 'open', 'in_progress', 'completed', 'closed'. Represents the task status immediately before this transition occurred.
+     * @x-autobe-database-schema-property old_status
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_task_histories.old_status. Stored as a plain string. Valid
+     *   values: 'open', 'in_progress', 'completed', 'closed'. Represents the
+     *   task status immediately before this transition occurred.
    */
   oldStatus: string;
 
   /**
    * The task status immediately after this transition. One of: `open`, `in_progress`, `completed`, `closed`.
    *
-   * @x-autobe-database-schema-property new_status
-   * @x-autobe-specification Direct mapping from erp_hrm_task_histories.new_status. Stored as a plain string. Valid values: 'open', 'in_progress', 'completed', 'closed'. Represents the task status immediately after this transition occurred.
+     * @x-autobe-database-schema-property new_status
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_task_histories.new_status. Stored as a plain string. Valid
+     *   values: 'open', 'in_progress', 'completed', 'closed'. Represents the
+     *   task status immediately after this transition occurred.
    */
   newStatus: string;
 
   /**
    * The exact timestamp when this status transition occurred and this history entry was created. Serves as the authoritative record of when the task status changed.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from erp_hrm_task_histories.created_at (Timestamptz). This is both the record creation timestamp and the authoritative timestamp of the status transition event itself. No updated_at or deleted_at exist on this table — entries are immutable.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_task_histories.created_at (Timestamptz). This is both the
+     *   record creation timestamp and the authoritative timestamp of the status
+     *   transition event itself. No updated_at or deleted_at exist on this
+     *   table — entries are immutable.
    */
   createdAt: string & tags.Format<"date-time">;
 };
@@ -70,56 +89,89 @@ export namespace IErpHrmTaskHistory {
     /**
      * Optional filter to return only history entries where the task status before the transition matches this value. Valid values are: `open`, `in_progress`, `completed`, `closed`. When omitted, no filter is applied on the previous status.
      *
-     * @x-autobe-specification Optional exact-match filter on erp_hrm_task_histories.old_status. When provided, applies WHERE old_status = oldStatus to the query. Valid values: 'open', 'in_progress', 'completed', 'closed'. Null or omitted means no filter is applied on the old_status column.
+         * @x-autobe-specification Optional exact-match filter on
+         *   erp_hrm_task_histories.old_status. When provided, applies WHERE
+         *   old_status = oldStatus to the query. Valid values: 'open',
+         *   'in_progress', 'completed', 'closed'. Null or omitted means no
+         *   filter is applied on the old_status column.
      */
     oldStatus?: string | null | undefined;
 
     /**
      * Optional filter to return only history entries where the task status after the transition matches this value. Valid values are: `open`, `in_progress`, `completed`, `closed`. When omitted, no filter is applied on the resulting status.
      *
-     * @x-autobe-specification Optional exact-match filter on erp_hrm_task_histories.new_status. When provided, applies WHERE new_status = newStatus to the query. Valid values: 'open', 'in_progress', 'completed', 'closed'. Null or omitted means no filter is applied on the new_status column.
+         * @x-autobe-specification Optional exact-match filter on
+         *   erp_hrm_task_histories.new_status. When provided, applies WHERE
+         *   new_status = newStatus to the query. Valid values: 'open',
+         *   'in_progress', 'completed', 'closed'. Null or omitted means no
+         *   filter is applied on the new_status column.
      */
     newStatus?: string | null | undefined;
 
     /**
      * Optional filter to return only history entries recorded by a specific organization member. Provide the UUID of the organization member. When omitted, entries from all recorders are included.
      *
-     * @x-autobe-specification Optional exact-match filter on erp_hrm_task_histories.erp_hrm_organization_member_id. When provided, applies WHERE erp_hrm_organization_member_id = recorderId (UUID) to the query. Null or omitted means entries from all recorders are included.
+         * @x-autobe-specification Optional exact-match filter on
+         *   erp_hrm_task_histories.erp_hrm_organization_member_id. When
+         *   provided, applies WHERE erp_hrm_organization_member_id = recorderId
+         *   (UUID) to the query. Null or omitted means entries from all
+         *   recorders are included.
      */
     recorderId?: (string & tags.Format<"uuid">) | null | undefined;
 
     /**
      * Optional start of a date range filter. When provided, only history entries created at or after this timestamp are returned. Use together with `createdAtTo` to define a specific time window.
      *
-     * @x-autobe-specification Optional lower-bound range filter on erp_hrm_task_histories.created_at. When provided, applies WHERE created_at >= createdAtFrom. May be combined with createdAtTo for a closed date range query. Null or omitted means no lower bound is applied.
+         * @x-autobe-specification Optional lower-bound range filter on
+         *   erp_hrm_task_histories.created_at. When provided, applies WHERE
+         *   created_at >= createdAtFrom. May be combined with createdAtTo for a
+         *   closed date range query. Null or omitted means no lower bound is
+         *   applied.
      */
     createdAtFrom?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * Optional end of a date range filter. When provided, only history entries created at or before this timestamp are returned. Use together with `createdAtFrom` to define a specific time window.
      *
-     * @x-autobe-specification Optional upper-bound range filter on erp_hrm_task_histories.created_at. When provided, applies WHERE created_at <= createdAtTo. May be combined with createdAtFrom for a closed date range query. Null or omitted means no upper bound is applied.
+         * @x-autobe-specification Optional upper-bound range filter on
+         *   erp_hrm_task_histories.created_at. When provided, applies WHERE
+         *   created_at <= createdAtTo. May be combined with createdAtFrom for a
+         *   closed date range query. Null or omitted means no upper bound is
+         *   applied.
      */
     createdAtTo?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * Optional sort direction for the history entries. Use `asc` to return the oldest changes first (chronological order, the default), or `desc` to return the most recent changes first. When omitted, defaults to ascending order.
      *
-     * @x-autobe-specification Controls the ORDER BY direction for erp_hrm_task_histories.created_at. Accepted values: 'asc' (ORDER BY created_at ASC, oldest first — default when null or omitted) and 'desc' (ORDER BY created_at DESC, newest first). Any other value should be treated as 'asc'. Null or omitted defaults to ascending order.
+         * @x-autobe-specification Controls the ORDER BY direction for
+         *   erp_hrm_task_histories.created_at. Accepted values: 'asc' (ORDER BY
+         *   created_at ASC, oldest first — default when null or omitted) and
+         *   'desc' (ORDER BY created_at DESC, newest first). Any other value
+         *   should be treated as 'asc'. Null or omitted defaults to ascending
+         *   order.
      */
     sortOrder?: string | null | undefined;
 
     /**
      * Optional page number for pagination, starting from 1. When omitted or null, the first page is returned. Use in combination with `limit` to navigate through large result sets.
      *
-     * @x-autobe-specification 1-based page number for pagination. When null or omitted, defaults to page 1 (first page). Minimum value is 1. The server computes the OFFSET as (page - 1) * limit. Used together with limit to implement standard page-based pagination over erp_hrm_task_histories results.
+         * @x-autobe-specification 1-based page number for pagination. When null
+         *   or omitted, defaults to page 1 (first page). Minimum value is 1.
+         *   The server computes the OFFSET as (page - 1) * limit. Used together
+         *   with limit to implement standard page-based pagination over
+         *   erp_hrm_task_histories results.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | null | undefined;
 
     /**
      * Maximum number of records to return per page. Controls how many history entries are included in each page response. When omitted or null, defaults to 100 records per page. The server may enforce an upper limit to prevent excessively large responses.
      *
-     * @x-autobe-specification Maximum number of records to return per page from erp_hrm_task_histories. When null or omitted, defaults to 100 records per page. Minimum value is 0. The server may enforce an upper bound to prevent excessive resource consumption. Used together with page for standard pagination.
+         * @x-autobe-specification Maximum number of records to return per page
+         *   from erp_hrm_task_histories. When null or omitted, defaults to 100
+         *   records per page. Minimum value is 0. The server may enforce an
+         *   upper bound to prevent excessive resource consumption. Used
+         *   together with page for standard pagination.
      */
     limit?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };
@@ -131,48 +183,69 @@ export namespace IErpHrmTaskHistory {
     /**
      * The unique identifier of this task history entry. Each status transition event generates a distinct record with its own UUID.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from erp_hrm_task_histories.id. UUID primary key, always non-null.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_task_histories.id. UUID primary key, always non-null.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * The unique identifier of the task to which this history entry belongs. Use this to correlate the status change record with its parent task.
      *
-     * @x-autobe-database-schema-property erp_hrm_task_id
-     * @x-autobe-specification Direct mapping from erp_hrm_task_histories.erp_hrm_task_id. UUID foreign key referencing erp_hrm_tasks.id. Always non-null. Exposed as taskId for client-side traceability so consumers can correlate history entries with their parent task without embedding the full task object.
+         * @x-autobe-database-schema-property erp_hrm_task_id
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_task_histories.erp_hrm_task_id. UUID foreign key
+         *   referencing erp_hrm_tasks.id. Always non-null. Exposed as taskId
+         *   for client-side traceability so consumers can correlate history
+         *   entries with their parent task without embedding the full task
+         *   object.
      */
     taskId: string & tags.Format<"uuid">;
 
     /**
      * The task status immediately before this transition. One of: open, in_progress, completed, closed.
      *
-     * @x-autobe-database-schema-property old_status
-     * @x-autobe-specification Direct mapping from erp_hrm_task_histories.old_status. Always non-null string. Valid values: 'open', 'in_progress', 'completed', 'closed'. Represents the task status immediately before this transition.
+         * @x-autobe-database-schema-property old_status
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_task_histories.old_status. Always non-null string. Valid
+         *   values: 'open', 'in_progress', 'completed', 'closed'. Represents
+         *   the task status immediately before this transition.
      */
     oldStatus: string;
 
     /**
      * The task status immediately after this transition. One of: open, in_progress, completed, closed.
      *
-     * @x-autobe-database-schema-property new_status
-     * @x-autobe-specification Direct mapping from erp_hrm_task_histories.new_status. Always non-null string. Valid values: 'open', 'in_progress', 'completed', 'closed'. Represents the task status immediately after this transition.
+         * @x-autobe-database-schema-property new_status
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_task_histories.new_status. Always non-null string. Valid
+         *   values: 'open', 'in_progress', 'completed', 'closed'. Represents
+         *   the task status immediately after this transition.
      */
     newStatus: string;
 
     /**
      * The organization member who performed the status change and triggered the creation of this history entry. Provides enough detail (identity, role, status) to display the actor in audit trail UIs.
      *
-     * @x-autobe-database-schema-property organizationMember
-     * @x-autobe-specification Resolved by joining erp_hrm_organization_members on erp_hrm_task_histories.erp_hrm_organization_member_id = erp_hrm_organization_members.id. Returns the full IErpHrmOrganizationMember.ISummary (including member, role, department relations). Always non-null — every task history entry has an associated recorder.
+         * @x-autobe-database-schema-property organizationMember
+         * @x-autobe-specification Resolved by joining
+         *   erp_hrm_organization_members on
+         *   erp_hrm_task_histories.erp_hrm_organization_member_id =
+         *   erp_hrm_organization_members.id. Returns the full
+         *   IErpHrmOrganizationMember.ISummary (including member, role,
+         *   department relations). Always non-null — every task history entry
+         *   has an associated recorder.
      */
     recorder: IErpHrmOrganizationMember.ISummary;
 
     /**
      * The exact timestamp when the task status transition occurred and this history entry was created. Entries are returned in chronological order (ascending) by default.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from erp_hrm_task_histories.created_at. ISO 8601 date-time string (UTC). Always non-null. Represents the exact timestamp when the status transition occurred and this immutable history entry was created.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_task_histories.created_at. ISO 8601 date-time string (UTC).
+         *   Always non-null. Represents the exact timestamp when the status
+         *   transition occurred and this immutable history entry was created.
      */
     createdAt: string & tags.Format<"date-time">;
   };

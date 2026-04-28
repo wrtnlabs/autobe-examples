@@ -23,9 +23,10 @@ export class EcommercemallSellerSellersMeDashboardController {
    * - `pendingRefundRequests`: Count of refund requests with 'pending' status requiring seller action
    *
    * @param connection
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Query the authenticated seller's session to obtain the seller ID from the JWT token.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Query the authenticated seller's session to
+     *   obtain the seller ID from the JWT token.
    *
    * Aggregate statistics:
    * 1. Count products where ecommerce_mall_seller_id matches the authenticated seller ID and deleted_at IS NULL

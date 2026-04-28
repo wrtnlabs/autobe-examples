@@ -23,19 +23,18 @@ export * as delivery_status from "./delivery_status/index";
  * @param props.body Search criteria for filtering and paginating shipments. Includes optional filters for order ID, status, date ranges (ship date, delivery date, creation date), sorting options, and pagination parameters (limit, cursor).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification 1. Verify seller is authenticated via JWT token from Authorization header
- * 2. Query ecommerce_mall_shipments table filtered by seller_id = authenticated seller's ID
- * 3. Apply optional filters:
- *    - order_id: exact match filter
- *    - status: filter by 'shipped' or 'delivered'
- *    - shipped_at_after / shipped_at_before: date range filter
- *    - delivered_at_after / delivered_at_before: date range filter
- * 4. Apply sorting (default: created_at DESC): supports created_at, shipped_at, delivered_at, status
- * 5. Implement cursor-based pagination: if cursor provided, use created_at < cursor as offset
- * 6. Apply limit (max 100 items per page)
- * 7. Return paginated results with cursor-based pagination metadata
- * 8. Embed shipmentItems summaries for each shipment (order item details)
- * 9. Calculate and return total count for pagination UI
+ * @x-autobe-specification 1. Verify seller is authenticated via JWT token from
+ *   Authorization header 2. Query ecommerce_mall_shipments table filtered by
+ *   seller_id = authenticated seller's ID 3. Apply optional filters: -
+ *   order_id: exact match filter - status: filter by 'shipped' or 'delivered' -
+ *   shipped_at_after / shipped_at_before: date range filter -
+ *   delivered_at_after / delivered_at_before: date range filter 4. Apply
+ *   sorting (default: created_at DESC): supports created_at, shipped_at,
+ *   delivered_at, status 5. Implement cursor-based pagination: if cursor
+ *   provided, use created_at < cursor as offset 6. Apply limit (max 100 items
+ *   per page) 7. Return paginated results with cursor-based pagination metadata
+ *   8. Embed shipmentItems summaries for each shipment (order item details) 9.
+ *   Calculate and return total count for pagination UI
  *
  * Business Rules:
  * - Sellers can only see their own shipments (seller_id match)
@@ -134,7 +133,8 @@ export namespace index {
  * @param props.shipmentId Unique identifier of the shipment to retrieve. Must be a valid UUID that exists in the database and has not been soft-deleted.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query the ecommerce_mall_shipments table for a single record matching the shipmentId path parameter.
+ * @x-autobe-specification Query the ecommerce_mall_shipments table for a single
+ *   record matching the shipmentId path parameter.
  *
  * 1. Find shipment by id where deleted_at is NULL (soft-delete check)
  * 2. Verify shipment status and timestamps (shipped_at, delivered_at)

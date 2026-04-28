@@ -31,7 +31,9 @@ export type IEcommerceReviewStatistic = {
    * - Rounded to 2 decimal places
    * - Range: 1.0 to 5.0
    *
-   * @x-autobe-specification AVG(rating) from ecommerce_reviews WHERE deleted_at IS NULL, rounded to 2 decimal places. If product_id filter provided, apply WHERE product_id = :product_id.
+     * @x-autobe-specification AVG(rating) from ecommerce_reviews WHERE
+     *   deleted_at IS NULL, rounded to 2 decimal places. If product_id filter
+     *   provided, apply WHERE product_id = :product_id.
    */
   average_rating: number & tags.Minimum<1> & tags.Maximum<5>;
 
@@ -46,7 +48,9 @@ export type IEcommerceReviewStatistic = {
    * - Filtered to include only reviews where deleted_at IS NULL
    * - Minimum value: 0 (when no reviews exist)
    *
-   * @x-autobe-specification COUNT(*) from ecommerce_reviews WHERE deleted_at IS NULL. If product_id filter provided, apply WHERE product_id = :product_id.
+     * @x-autobe-specification COUNT(*) from ecommerce_reviews WHERE deleted_at
+     *   IS NULL. If product_id filter provided, apply WHERE product_id =
+     *   :product_id.
    */
   total_count: number & tags.Type<"int32"> & tags.Minimum<0>;
 
@@ -69,7 +73,10 @@ export type IEcommerceReviewStatistic = {
    * - Filtered to include only reviews where deleted_at IS NULL
    * - All five keys are always present, even if count is 0
    *
-   * @x-autobe-specification COUNT(*) GROUP BY rating from ecommerce_reviews WHERE deleted_at IS NULL. Returns object with keys 1-5, each containing the count of reviews with that star rating. If product_id filter provided, apply WHERE product_id = :product_id.
+     * @x-autobe-specification COUNT(*) GROUP BY rating from ecommerce_reviews
+     *   WHERE deleted_at IS NULL. Returns object with keys 1-5, each containing
+     *   the count of reviews with that star rating. If product_id filter
+     *   provided, apply WHERE product_id = :product_id.
    */
   distribution: {
     /**

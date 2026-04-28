@@ -19,9 +19,10 @@ export class CommunityplatformMemberBansController {
    *
    * @param connection
    * @param banId The unique identifier (UUID) of the ban record to retrieve.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query the community_platform_bans table by the primary key id (UUID).
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query the community_platform_bans table by the
+     *   primary key id (UUID).
    *
    * Return the full ban record including:
    * - id (primary key UUID)
@@ -61,17 +62,20 @@ export class CommunityplatformMemberBansController {
    *
    * @param connection
    * @param banId The unique identifier (UUID) of the ban record to remove. This identifies a specific ban-scope pairing of a member and a community.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1. Load the ban record from community_platform_bans by id (banId).
-   * 2. If not found, return 404 Not Found — the ban does not exist or has already been lifted.
-   * 3. Extract the community_platform_community_id from the loaded ban to identify the affected community.
-   * 4. Authorize: verify the requesting authenticated member is either:
-   *    a. The owner of the community (check community_platform_communities.userId), OR
-   *    b. A moderator of the community (check community_platform_moderators for a record linking the requester to this community).
-   *    Return 403 Forbidden if neither condition is met.
-   * 5. Hard-delete the ban record from community_platform_bans using prisma delete or deleteMany.
-   * 6. Return 204 No Content with no response body.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification 1. Load the ban record from
+     *   community_platform_bans by id (banId). 2. If not found, return 404 Not
+     *   Found — the ban does not exist or has already been lifted. 3. Extract
+     *   the community_platform_community_id from the loaded ban to identify the
+     *   affected community. 4. Authorize: verify the requesting authenticated
+     *   member is either: a. The owner of the community (check
+     *   community_platform_communities.userId), OR b. A moderator of the
+     *   community (check community_platform_moderators for a record linking the
+     *   requester to this community). Return 403 Forbidden if neither condition
+     *   is met. 5. Hard-delete the ban record from community_platform_bans
+     *   using prisma delete or deleteMany. 6. Return 204 No Content with no
+     *   response body.
    *
    * Implementation notes:
    * - Hard-delete is intentional per Section 87: lifted bans are not retained historically.

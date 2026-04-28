@@ -19,7 +19,8 @@ import { IEcommerceMallShipmentItem } from "../../../../structures/IEcommerceMal
  * @param props.shipmentItemId The unique identifier of the shipment item to retrieve.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor administrator
- * @x-autobe-specification Query ecommerce_mall_shipment_items table for the record matching the shipmentItemId UUID path parameter.
+ * @x-autobe-specification Query ecommerce_mall_shipment_items table for the
+ *   record matching the shipmentItemId UUID path parameter.
  *
  * Join with ecommerce_mall_shipments to include carrier and tracking_number fields.
  * Join with ecommerce_mall_order_items to include order item details (product name, variant options, quantity).

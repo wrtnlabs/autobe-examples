@@ -1,0 +1,139 @@
+/// Departments provide organizational structure for grouping employees
+/// within an organization.
+///
+/// Supports optional one-level parent nesting hierarchy for department
+/// sub-groups. Each department belongs to exactly one {@link
+/// hrm_platform_organizations} and can have zero or many child departments
+/// under it for hierarchical grouping.
+///
+/// @namespace hrm_platform.department
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_platform_departments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The organization that contains this department.
+  ///
+  /// Links to a single {@link hrm_platform_organizations} context for data
+  /// isolation and multi-tenancy enforcement.
+  hrm_platform_organization_id String
+  
+  /// References the parent department for hierarchy.
+  ///
+  /// Optional one-level nesting where child departments belong to a parent
+  /// {@link hrm_platform_departments}. This enables two-level department
+  /// hierarchies (root → sub-department).
+  hrm_platform_parent_department_id String?
+  
+  /// The department name.
+  ///
+  /// Must be unique within the same organization. Used for display in employee
+  /// grouping, department lists, and organizational structure views.
+  name String
+  
+  /// The department description.
+  ///
+  /// Optional text providing additional context about the department's purpose
+  /// and scope.
+  description String?
+  
+  /// Record creation timestamp.
+  ///
+  /// Cannot be null. Automatically set when the department is first created.
+  created_at DateTime
+  
+  /// Record update timestamp.
+  ///
+  /// Cannot be null. Updated whenever the department name or description is
+  /// modified.
+  updated_at DateTime
+  
+  /// Record soft-delete timestamp.
+  ///
+  /// Null when the department is active. Set to a timestamp when the
+  /// department is deleted, which unlinks all employee department references
+  /// without removing them.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  organization hrm_platform_organizations @relation(fields: [hrm_platform_organization_id], references: [id], onDelete: Cascade)
+  parentDepartment hrm_platform_departments? @relation("recursive", fields: [hrm_platform_parent_department_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  employees hrm_platform_employees[]
+  childDepartments hrm_platform_departments[] @relation("recursive")
+  snapshots hrm_platform_department_snapshots[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([hrm_platform_parent_department_id])
+  @@unique([hrm_platform_organization_id, name])
+}
+
+/// Audit trail capturing point-in-time snapshots of department configuration
+/// changes.
+///
+/// Stores denormalized copies of department attributes (name, description,
+/// parent hierarchy) at the moment of modification, enabling reconstruction
+/// of organizational structure history for compliance and audit purposes.
+///
+/// Snapshots are append-only records automatically created when department
+/// details change. Each snapshot links back to its source {@link
+/// hrm_platform_departments} record and captures the parent department
+/// relationship valid at the time of the snapshot.
+///
+/// @namespace hrm_platform.department
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_platform_department_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the source {@link hrm_platform_departments} record for which
+  /// this snapshot was captured.
+  hrm_platform_department_id String
+  
+  /// Identifier of the parent department at the time this snapshot was taken.
+  ///
+  /// Captures the hierarchical nesting relationship valid at the point in
+  /// time. Departments support one-level nesting, so this field identifies the
+  /// parent department in that hierarchy. Null when the department has no
+  /// parent.
+  parent_department_id String?
+  
+  /// Denormalized copy of the department name as it existed when this snapshot
+  /// was created.
+  snapshot_name String
+  
+  /// Denormalized copy of the department description as it existed when this
+  /// snapshot was created.
+  snapshot_description String?
+  
+  /// Timestamp when this snapshot record was created, marking the point in
+  /// time the department state was captured.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  department hrm_platform_departments @relation(fields: [hrm_platform_department_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([hrm_platform_department_id, created_at], map: "hrm_platform_department_snapshots_hrm_platform_departm_76cb96fa")
+}

@@ -22,7 +22,9 @@ import { IPageIHrmTimeTrackingProject } from "../../../../../structures/IPageIHr
  * @param props.body Search and pagination criteria for filtering the employee's assigned projects. Supports optional status filter, free-text name search, and pagination parameters.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query hrm_time_tracking_project_members with employee context from the authenticated session, joining hrm_time_tracking_projects for project details:
+ * @x-autobe-specification Query hrm_time_tracking_project_members with employee
+ *   context from the authenticated session, joining hrm_time_tracking_projects
+ *   for project details:
  *
  * 1. Resolve the current employee record from the authenticated member's session and current organization context (hrm_time_tracking_member_id + hrm_time_tracking_organization_id)
  * 2. Query project_members where hrm_time_tracking_employee_id = current employee's id AND deleted_at IS NULL

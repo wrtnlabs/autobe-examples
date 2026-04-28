@@ -24,7 +24,8 @@ import { IPageICommunityPlatformAdmin } from "../../../structures/IPageICommunit
  * @param props.body Administrator search filters and pagination options
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Implement this operation as a paginated search against the community_platform_admins table.
+ * @x-autobe-specification Implement this operation as a paginated search
+ *   against the community_platform_admins table.
  *
  * Accept an ICommunityPlatformAdmin.IRequest body containing pagination, sorting, and filter criteria. Build a query over community_platform_admins using only real columns from the loaded schema. Support exact or partial matching on email as appropriate to the shared list-browsing convention, exact filtering on status, optional date-range filtering on created_at, optional filtering by whether email_verified_at is null, optional filtering by whether last_signed_in_at is null or within a caller-supplied recency window, and optional filtering on whether deleted_at is null so internal callers can choose whether to include deactivated administrator accounts.
  *
@@ -125,7 +126,9 @@ export namespace index {
  * @param props.adminId Target administrator's ID
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Implement a read-only detail lookup against the community_platform_admins table using the path parameter adminId as the primary key.
+ * @x-autobe-specification Implement a read-only detail lookup against the
+ *   community_platform_admins table using the path parameter adminId as the
+ *   primary key.
  *
  * Validate that adminId is a UUID-formatted identifier before querying. Execute a single-record select filtered by community_platform_admins.id = :adminId. Do not query child tables such as community_platform_admin_sessions, community_platform_admin_password_resets, or community_platform_admin_email_verifications for the base implementation of this operation unless the generated DTO layer explicitly requires nested composition.
  *

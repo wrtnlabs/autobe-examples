@@ -24,7 +24,9 @@ export * as refund from "./refund/index";
  * @param props.body Search criteria including status filter and pagination parameters for order items list
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Query shopping_mall_order_items table filtering by shopping_mall_order_id (from path parameter) and optional status filter from request body.
+ * @x-autobe-specification Query shopping_mall_order_items table filtering by
+ *   shopping_mall_order_id (from path parameter) and optional status filter
+ *   from request body.
  *
  * Implementation steps:
  * 1. Validate orderId exists in shopping_mall_orders table
@@ -137,7 +139,8 @@ export namespace index {
  * @param props.itemId UUID of the order item to retrieve (global scope)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Query shopping_mall_order_items table by composite key (shopping_mall_order_id = orderId, id = itemId).
+ * @x-autobe-specification Query shopping_mall_order_items table by composite
+ *   key (shopping_mall_order_id = orderId, id = itemId).
  *
  * Join with shopping_mall_product_variants to get variant details (sku_code, price).
  * Join with shopping_mall_products to get product name and description.

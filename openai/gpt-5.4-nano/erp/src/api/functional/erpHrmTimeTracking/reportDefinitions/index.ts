@@ -35,23 +35,30 @@ export * as reportGenerationRuns from "./reportGenerationRuns/index";
  * @param props.body Payload to create a new organization-scoped report definition with its dimensions and filters configuration.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Implementation steps:
- * 1) Require authenticated member.
- * 2) Enforce active organization context for reports (block if missing).
- * 3) Extract request payload for parent definition fields:
- *    - Map `code`, `name`, optional `description`, `report_type`, and `is_active` to `erp_hrm_time_tracking_report_definitions`.
- *    - Set `erp_hrm_time_tracking_organization_id` from selected organization context (do NOT accept arbitrary org id).
- *    - Set `creator_member_id` from the authenticated member identity.
- * 4) Validate uniqueness of `code` within the organization by relying on DB unique constraint `@@unique([erp_hrm_time_tracking_organization_id, code])`; on conflict, return a business validation error.
- * 5) Begin a DB transaction.
- * 6) Create `erp_hrm_time_tracking_report_definitions` row.
- * 7) Create `definitionDimensions` rows:
- *    - For each dimension item, insert into `erp_hrm_time_tracking_report_definition_dimensions` with `erp_hrm_time_tracking_report_definition_id` = created definition id, `dimension_key`, `dimension_label`, `sort_order`.
- *    - Ensure request-level deduplication on `dimension_key` per definition to avoid unique constraint violation `@@unique([definition_id, dimension_key])`.
- * 8) Create `definitionFilters` rows:
- *    - For each filter item, insert into `erp_hrm_time_tracking_report_definition_filters` with `erp_hrm_time_tracking_report_definition_id` = created definition id, `field_key`, `operator`, `value_text`, optional `value_text_2`, `is_enabled`, `display_order`.
- * 9) Commit transaction.
- * 10) Return response DTO mapped from the created parent row and its child rows.
+ * @x-autobe-specification Implementation steps: 1) Require authenticated
+ *   member. 2) Enforce active organization context for reports (block if
+ *   missing). 3) Extract request payload for parent definition fields: - Map
+ *   `code`, `name`, optional `description`, `report_type`, and `is_active` to
+ *   `erp_hrm_time_tracking_report_definitions`. - Set
+ *   `erp_hrm_time_tracking_organization_id` from selected organization context
+ *   (do NOT accept arbitrary org id). - Set `creator_member_id` from the
+ *   authenticated member identity. 4) Validate uniqueness of `code` within the
+ *   organization by relying on DB unique constraint
+ *   `@@unique([erp_hrm_time_tracking_organization_id, code])`; on conflict,
+ *   return a business validation error. 5) Begin a DB transaction. 6) Create
+ *   `erp_hrm_time_tracking_report_definitions` row. 7) Create
+ *   `definitionDimensions` rows: - For each dimension item, insert into
+ *   `erp_hrm_time_tracking_report_definition_dimensions` with
+ *   `erp_hrm_time_tracking_report_definition_id` = created definition id,
+ *   `dimension_key`, `dimension_label`, `sort_order`. - Ensure request-level
+ *   deduplication on `dimension_key` per definition to avoid unique constraint
+ *   violation `@@unique([definition_id, dimension_key])`. 8) Create
+ *   `definitionFilters` rows: - For each filter item, insert into
+ *   `erp_hrm_time_tracking_report_definition_filters` with
+ *   `erp_hrm_time_tracking_report_definition_id` = created definition id,
+ *   `field_key`, `operator`, `value_text`, optional `value_text_2`,
+ *   `is_enabled`, `display_order`. 9) Commit transaction. 10) Return response
+ *   DTO mapped from the created parent row and its child rows.
  *
  * Edge cases:
  * - Missing/empty dimensions or filters: allow creation as long as business rules for report generation accept it.
@@ -151,7 +158,8 @@ export namespace create {
  * @param props.body Search and pagination criteria for report definitions within the selected organization context.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Implement a list/search handler for `erp_hrm_time_tracking_report_definitions`:
+ * @x-autobe-specification Implement a list/search handler for
+ *   `erp_hrm_time_tracking_report_definitions`:
  *
  * 1) Resolve and validate the selected organization context for the caller.
  *    - If no organization context is selected, reject the request with a business-validation error.
@@ -272,23 +280,23 @@ export namespace index {
  * @param props.reportDefinitionId Identifier of the report definition to retrieve (must belong to the currently selected organization).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Implementation steps:
- * 1) Extract `reportDefinitionId` from path.
- * 2) Enforce organization context requirement for report operations:
- *    - If no organization context is selected for the current member session, block the request with a business validation message.
- * 3) Authorize the current member:
- *    - Verify the member has `report:view` capability within the selected organization.
- *    - If unauthorized, block the request.
- * 4) Fetch report definition row from `erp_hrm_time_tracking_report_definitions` where:
- *    - `id == reportDefinitionId`
- *    - `erp_hrm_time_tracking_organization_id == selectedOrganizationId`
- * 5) Deletion handling:
- *    - If the row exists but `deleted_at` is not null, treat it as inaccessible (return not found or access denied consistent with the API error model).
- * 6) Return a single response DTO representing the report definition entity with fields:
- *    - id, code, name, description, report_type, is_active, created_at, updated_at
- *    (Creator member identity may be included only if the referenced response DTO requires it; otherwise omit at mapping layer.)
- * 7) Edge cases:
- *    - If no row matches (wrong id or wrong organization), return not-found.
+ * @x-autobe-specification Implementation steps: 1) Extract `reportDefinitionId`
+ *   from path. 2) Enforce organization context requirement for report
+ *   operations: - If no organization context is selected for the current member
+ *   session, block the request with a business validation message. 3) Authorize
+ *   the current member: - Verify the member has `report:view` capability within
+ *   the selected organization. - If unauthorized, block the request. 4) Fetch
+ *   report definition row from `erp_hrm_time_tracking_report_definitions`
+ *   where: - `id == reportDefinitionId` -
+ *   `erp_hrm_time_tracking_organization_id == selectedOrganizationId` 5)
+ *   Deletion handling: - If the row exists but `deleted_at` is not null, treat
+ *   it as inaccessible (return not found or access denied consistent with the
+ *   API error model). 6) Return a single response DTO representing the report
+ *   definition entity with fields: - id, code, name, description, report_type,
+ *   is_active, created_at, updated_at (Creator member identity may be included
+ *   only if the referenced response DTO requires it; otherwise omit at mapping
+ *   layer.) 7) Edge cases: - If no row matches (wrong id or wrong
+ *   organization), return not-found.
  *
  * Database access considerations:
  * - Use a single query (or query + authorization join only if needed) and avoid loading unrelated rows.
@@ -386,7 +394,8 @@ export namespace at {
  * @param props.body Update fields for the specified report definition. The `id` and organization ownership are taken from the path and server context; only mutable fields are accepted.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Implement service-layer update for a single report definition.
+ * @x-autobe-specification Implement service-layer update for a single report
+ *   definition.
  *
  * 1) Validate organization context exists before proceeding (organization-scoped gating for all report operations).
  * 2) Parse `reportDefinitionId` path parameter.
@@ -519,19 +528,26 @@ export namespace update {
  * @param props.reportDefinitionId Unique identifier of the report definition to remove. Must be a UUID of an `erp_hrm_time_tracking_report_definitions` record within the selected organization context.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Implementation steps for Realize Agent:
- * 1) Parse `reportDefinitionId` from path and validate it is a UUID.
- * 2) Resolve the caller’s selected organization context (the `erp_hrm_time_tracking_report_definitions.erp_hrm_time_tracking_organization_id` scope).
- * 3) Authorization: require an organization-scoped capability suitable for managing report configurations (at minimum an organization management permission; deny guests and deny members without that capability).
- * 4) Fetch the target row:
- *    - Query `erp_hrm_time_tracking_report_definitions` where `id = reportDefinitionId` AND `erp_hrm_time_tracking_organization_id = selectedOrganizationId`.
- *    - If not found, throw a not-found/not-accessible business error.
- * 5) Perform deletion in a single transaction:
- *    - Update the row’s `deleted_at` to current timestamp.
- *    - Optionally set `is_active` to false if your service layer enforces availability via `is_active`; ensure consistency with how list/search operations filter by active state.
- *    - Update `updated_at` to current timestamp if the schema/service layer requires it.
- * 6) Create an activity log entry (if the service layer for audit requires it) referencing the organization and the actor (`creator_member_id` is the record creator; the performedBy actor for the log should be the authenticated member making the request).
- * 7) Return HTTP success (204) with no response body.
+ * @x-autobe-specification Implementation steps for Realize Agent: 1) Parse
+ *   `reportDefinitionId` from path and validate it is a UUID. 2) Resolve the
+ *   caller’s selected organization context (the
+ *   `erp_hrm_time_tracking_report_definitions.erp_hrm_time_tracking_organization_id`
+ *   scope). 3) Authorization: require an organization-scoped capability
+ *   suitable for managing report configurations (at minimum an organization
+ *   management permission; deny guests and deny members without that
+ *   capability). 4) Fetch the target row: - Query
+ *   `erp_hrm_time_tracking_report_definitions` where `id = reportDefinitionId`
+ *   AND `erp_hrm_time_tracking_organization_id = selectedOrganizationId`. - If
+ *   not found, throw a not-found/not-accessible business error. 5) Perform
+ *   deletion in a single transaction: - Update the row’s `deleted_at` to
+ *   current timestamp. - Optionally set `is_active` to false if your service
+ *   layer enforces availability via `is_active`; ensure consistency with how
+ *   list/search operations filter by active state. - Update `updated_at` to
+ *   current timestamp if the schema/service layer requires it. 6) Create an
+ *   activity log entry (if the service layer for audit requires it) referencing
+ *   the organization and the actor (`creator_member_id` is the record creator;
+ *   the performedBy actor for the log should be the authenticated member making
+ *   the request). 7) Return HTTP success (204) with no response body.
  *
  * Edge cases:
  * - If the definition is already marked as deleted (`deleted_at` not null), either treat the operation as idempotent success or return a business-level error indicating it is unavailable—follow the service’s standard behavior for repeated deletes.

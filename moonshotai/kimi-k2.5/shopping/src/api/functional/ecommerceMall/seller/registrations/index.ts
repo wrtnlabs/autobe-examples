@@ -28,9 +28,11 @@ export * as snapshots from "./snapshots/index";
  * @param props.body Search and filter criteria for registration queries
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Query the ecommerce_mall_seller_registrations table with advanced filtering capabilities. Implement robust permission checks to restrict results based on the requesting actor's role:
- * - Administrators receive a comprehensive view of all registration records
- * - Sellers are limited to their own registration history entries
+ * @x-autobe-specification Query the ecommerce_mall_seller_registrations table
+ *   with advanced filtering capabilities. Implement robust permission checks to
+ *   restrict results based on the requesting actor's role: - Administrators
+ *   receive a comprehensive view of all registration records - Sellers are
+ *   limited to their own registration history entries
  *
  * Support sophisticated filtering mechanisms:
  * - Status filtering: capture pending, approved, and rejected registrations
@@ -135,7 +137,8 @@ export namespace index {
  * @param props.registrationId The unique identifier of the seller registration (UUID format)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Query the ecommerce_mall_seller_registrations table by primary key (id).
+ * @x-autobe-specification Query the ecommerce_mall_seller_registrations table
+ *   by primary key (id).
  *
  * Join with ecommerce_mall_sellers to include applicant seller information.
  * Join with ecommerce_mall_admins to include reviewer information if reviewer_id is present.

@@ -32,7 +32,8 @@ import { IShoppingMallSeller } from "../../../../structures/IShoppingMallSeller"
  * @param props.body Search criteria and pagination parameters for filtering seller accounts
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Implement search query on shopping_mall_sellers table with comprehensive filtering and pagination.
+ * @x-autobe-specification Implement search query on shopping_mall_sellers table
+ *   with comprehensive filtering and pagination.
  *
  * **Query Construction:**
  * 1. Start with base query excluding soft-deleted records (deleted_at IS NULL)
@@ -150,7 +151,8 @@ export namespace index {
  * @param props.sellerId Unique identifier of the seller whose profile is being retrieved
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Query the shopping_mall_sellers table by id (UUID) to retrieve the seller record.
+ * @x-autobe-specification Query the shopping_mall_sellers table by id (UUID) to
+ *   retrieve the seller record.
  *
  * Filter conditions:
  * - id = sellerId (from path parameter)

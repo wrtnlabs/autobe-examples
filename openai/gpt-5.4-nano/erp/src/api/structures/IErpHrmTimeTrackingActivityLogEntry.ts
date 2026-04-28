@@ -8,96 +8,118 @@ export type IErpHrmTimeTrackingActivityLogEntry = {
   /**
    * Unique identifier of the audit activity log entry.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_activity_log_entries.id. Treat as immutable identifier in this DTO.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_tracking_activity_log_entries.id. Treat as immutable
+     *   identifier in this DTO.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Organization (tenant) id that owns this audit entry.
    *
-   * @x-autobe-database-schema-property organization_id
-   * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_activity_log_entries.organization_id. For reads, ensure the row matches the selected organization context before returning it.
+     * @x-autobe-database-schema-property organization_id
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_tracking_activity_log_entries.organization_id. For reads,
+     *   ensure the row matches the selected organization context before
+     *   returning it.
    */
   organization_id: string & tags.Format<"uuid">;
 
   /**
    * Member id of the user who performed the recorded action.
    *
-   * @x-autobe-database-schema-property performed_by_member_id
-   * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_activity_log_entries.performed_by_member_id. This is the member actor who performed the action.
+     * @x-autobe-database-schema-property performed_by_member_id
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_tracking_activity_log_entries.performed_by_member_id. This
+     *   is the member actor who performed the action.
    */
   performed_by_member_id: string & tags.Format<"uuid">;
 
   /**
    * Business action taxonomy key describing what happened.
    *
-   * @x-autobe-database-schema-property action_type
-   * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_activity_log_entries.action_type. Represent the logical event type used for audit categorization.
+     * @x-autobe-database-schema-property action_type
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_tracking_activity_log_entries.action_type. Represent the
+     *   logical event type used for audit categorization.
    */
   action_type: string;
 
   /**
    * Business entity type name of the affected target (polymorphic discriminator).
    *
-   * @x-autobe-database-schema-property target_entity_type
-   * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_activity_log_entries.target_entity_type. Used with target_entity_id to form a typed target reference.
+     * @x-autobe-database-schema-property target_entity_type
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_tracking_activity_log_entries.target_entity_type. Used
+     *   with target_entity_id to form a typed target reference.
    */
   target_entity_type: string;
 
   /**
    * Identifier of the affected target entity (UUID), interpreted together with target_entity_type.
    *
-   * @x-autobe-database-schema-property target_entity_id
-   * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_activity_log_entries.target_entity_id.
+     * @x-autobe-database-schema-property target_entity_id
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_tracking_activity_log_entries.target_entity_id.
    */
   target_entity_id: string & tags.Format<"uuid">;
 
   /**
    * Human-readable short summary of what happened for auditing.
    *
-   * @x-autobe-database-schema-property summary
-   * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_activity_log_entries.summary.
+     * @x-autobe-database-schema-property summary
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_tracking_activity_log_entries.summary.
    */
   summary: string;
 
   /**
    * Optional human-readable additional context describing the action in more detail.
    *
-   * @x-autobe-database-schema-property details
-   * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_activity_log_entries.details. When DB value is null, return null; otherwise return the string.
+     * @x-autobe-database-schema-property details
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_tracking_activity_log_entries.details. When DB value is
+     *   null, return null; otherwise return the string.
    */
   details: string | null;
 
   /**
    * Timestamp representing when the action actually occurred in business time.
    *
-   * @x-autobe-database-schema-property occurred_at
-   * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_activity_log_entries.occurred_at. Returned as ISO 8601 datetime string (date-time format).
+     * @x-autobe-database-schema-property occurred_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_tracking_activity_log_entries.occurred_at. Returned as ISO
+     *   8601 datetime string (date-time format).
    */
   occurred_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the audit entry record was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_activity_log_entries.created_at.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_tracking_activity_log_entries.created_at.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the audit entry record was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_activity_log_entries.updated_at.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_tracking_activity_log_entries.updated_at.
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * Soft deletion timestamp. Null means the audit entry is not soft-deleted.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_activity_log_entries.deleted_at. If the entry is not soft-deleted, return null; otherwise return the stored datetime string.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_tracking_activity_log_entries.deleted_at. If the entry is
+     *   not soft-deleted, return null; otherwise return the stored datetime
+     *   string.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -109,48 +131,67 @@ export namespace IErpHrmTimeTrackingActivityLogEntry {
     /**
      * Logical action key describing what happened (audit taxonomy value).
      *
-     * @x-autobe-database-schema-property action_type
-     * @x-autobe-specification Map directly to erp_hrm_time_tracking_activity_log_entries.action_type. Validate allowed values/format according to the business taxonomy handled in service layer (DTO schema provides type as string). Persist as provided.
+         * @x-autobe-database-schema-property action_type
+         * @x-autobe-specification Map directly to
+         *   erp_hrm_time_tracking_activity_log_entries.action_type. Validate
+         *   allowed values/format according to the business taxonomy handled in
+         *   service layer (DTO schema provides type as string). Persist as
+         *   provided.
      */
     action_type: string;
 
     /**
      * Business entity type name of the affected audit target (used with target_entity_id).
      *
-     * @x-autobe-database-schema-property target_entity_type
-     * @x-autobe-specification Map directly to erp_hrm_time_tracking_activity_log_entries.target_entity_type. Persist as provided and enforce any domain constraints handled by the service layer.
+         * @x-autobe-database-schema-property target_entity_type
+         * @x-autobe-specification Map directly to
+         *   erp_hrm_time_tracking_activity_log_entries.target_entity_type.
+         *   Persist as provided and enforce any domain constraints handled by
+         *   the service layer.
      */
     target_entity_type: string;
 
     /**
      * Business entity identifier of the affected audit target (UUID), paired with target_entity_type.
      *
-     * @x-autobe-database-schema-property target_entity_id
-     * @x-autobe-specification Map directly to erp_hrm_time_tracking_activity_log_entries.target_entity_id. Enforce UUID validity at runtime (schema requires uuid format). Persist as provided.
+         * @x-autobe-database-schema-property target_entity_id
+         * @x-autobe-specification Map directly to
+         *   erp_hrm_time_tracking_activity_log_entries.target_entity_id.
+         *   Enforce UUID validity at runtime (schema requires uuid format).
+         *   Persist as provided.
      */
     target_entity_id: string & tags.Format<"uuid">;
 
     /**
      * Human-readable short summary of the audit action.
      *
-     * @x-autobe-database-schema-property summary
-     * @x-autobe-specification Map directly to erp_hrm_time_tracking_activity_log_entries.summary. Persist as provided.
+         * @x-autobe-database-schema-property summary
+         * @x-autobe-specification Map directly to
+         *   erp_hrm_time_tracking_activity_log_entries.summary. Persist as
+         *   provided.
      */
     summary: string;
 
     /**
      * Optional additional human-readable context for the audit entry (nullable).
      *
-     * @x-autobe-database-schema-property details
-     * @x-autobe-specification Map directly to erp_hrm_time_tracking_activity_log_entries.details. If the client sends null, persist null; if the client sends a string, persist the string. Do not coerce undefined/omitted values because this DTO requires the property.
+         * @x-autobe-database-schema-property details
+         * @x-autobe-specification Map directly to
+         *   erp_hrm_time_tracking_activity_log_entries.details. If the client
+         *   sends null, persist null; if the client sends a string, persist the
+         *   string. Do not coerce undefined/omitted values because this DTO
+         *   requires the property.
      */
     details: string | null;
 
     /**
      * Timestamp (date-time) representing when the action actually occurred in business time.
      *
-     * @x-autobe-database-schema-property occurred_at
-     * @x-autobe-specification Map directly to erp_hrm_time_tracking_activity_log_entries.occurred_at. Validate date-time format (schema enforces date-time). Persist as provided (timestamptz).
+         * @x-autobe-database-schema-property occurred_at
+         * @x-autobe-specification Map directly to
+         *   erp_hrm_time_tracking_activity_log_entries.occurred_at. Validate
+         *   date-time format (schema enforces date-time). Persist as provided
+         *   (timestamptz).
      */
     occurred_at: string & tags.Format<"date-time">;
   };
@@ -162,48 +203,66 @@ export namespace IErpHrmTimeTrackingActivityLogEntry {
     /**
      * Business action taxonomy key describing what happened (used for auditing and filtering).
      *
-     * @x-autobe-database-schema-property action_type
-     * @x-autobe-specification Direct mapping to erp_hrm_time_tracking_activity_log_entries.action_type on INSERT. Server must store exactly the provided action taxonomy key (no client override of actor/tenant).
+         * @x-autobe-database-schema-property action_type
+         * @x-autobe-specification Direct mapping to
+         *   erp_hrm_time_tracking_activity_log_entries.action_type on INSERT.
+         *   Server must store exactly the provided action taxonomy key (no
+         *   client override of actor/tenant).
      */
     action_type: string;
 
     /**
      * Business entity type name of the affected target (polymorphic discriminator).
      *
-     * @x-autobe-database-schema-property target_entity_type
-     * @x-autobe-specification Direct mapping to erp_hrm_time_tracking_activity_log_entries.target_entity_type on INSERT. Validate it is a supported entity-type taxonomy string used for polymorphic targeting.
+         * @x-autobe-database-schema-property target_entity_type
+         * @x-autobe-specification Direct mapping to
+         *   erp_hrm_time_tracking_activity_log_entries.target_entity_type on
+         *   INSERT. Validate it is a supported entity-type taxonomy string used
+         *   for polymorphic targeting.
      */
     target_entity_type: string;
 
     /**
      * Business entity identifier of the affected target referenced by target_entity_type.
      *
-     * @x-autobe-database-schema-property target_entity_id
-     * @x-autobe-specification Direct mapping to erp_hrm_time_tracking_activity_log_entries.target_entity_id on INSERT. Validate it is a UUID and corresponds to the entity identified by target_entity_type.
+         * @x-autobe-database-schema-property target_entity_id
+         * @x-autobe-specification Direct mapping to
+         *   erp_hrm_time_tracking_activity_log_entries.target_entity_id on
+         *   INSERT. Validate it is a UUID and corresponds to the entity
+         *   identified by target_entity_type.
      */
     target_entity_id: string & tags.Format<"uuid">;
 
     /**
      * Human-readable short summary of the action for audit trail display.
      *
-     * @x-autobe-database-schema-property summary
-     * @x-autobe-specification Direct mapping to erp_hrm_time_tracking_activity_log_entries.summary on INSERT. Required to ensure audit entries remain human-readable for support and browsing UIs.
+         * @x-autobe-database-schema-property summary
+         * @x-autobe-specification Direct mapping to
+         *   erp_hrm_time_tracking_activity_log_entries.summary on INSERT.
+         *   Required to ensure audit entries remain human-readable for support
+         *   and browsing UIs.
      */
     summary: string;
 
     /**
      * Optional additional human-readable context explaining the change; null if no extra context is provided.
      *
-     * @x-autobe-database-schema-property details
-     * @x-autobe-specification Map to erp_hrm_time_tracking_activity_log_entries.details on INSERT. Accept a string or null; when omitted by the client it must be treated as null per DTO contract handling.
+         * @x-autobe-database-schema-property details
+         * @x-autobe-specification Map to
+         *   erp_hrm_time_tracking_activity_log_entries.details on INSERT.
+         *   Accept a string or null; when omitted by the client it must be
+         *   treated as null per DTO contract handling.
      */
     details?: string | null | undefined;
 
     /**
      * Business timestamp indicating when the action actually occurred (used for audit ordering).
      *
-     * @x-autobe-database-schema-property occurred_at
-     * @x-autobe-specification Direct mapping to erp_hrm_time_tracking_activity_log_entries.occurred_at on INSERT. Validate it is present and treated as the business timestamp for ordering and timeline retrieval (not the DB created timestamp).
+         * @x-autobe-database-schema-property occurred_at
+         * @x-autobe-specification Direct mapping to
+         *   erp_hrm_time_tracking_activity_log_entries.occurred_at on INSERT.
+         *   Validate it is present and treated as the business timestamp for
+         *   ordering and timeline retrieval (not the DB created timestamp).
      */
     occurred_at: string & tags.Format<"date-time">;
   };
@@ -215,72 +274,91 @@ export namespace IErpHrmTimeTrackingActivityLogEntry {
     /**
      * Unique identifier of the audit log entry.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_activity_log_entries.id (UUID). Serialize/validate as a UUID string.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_tracking_activity_log_entries.id (UUID).
+         *   Serialize/validate as a UUID string.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Organization (tenant) identifier that owns this audit log entry.
      *
-     * @x-autobe-database-schema-property organization_id
-     * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_activity_log_entries.organization_id (UUID). Used to scope/validate tenant isolation in list/timeline queries.
+         * @x-autobe-database-schema-property organization_id
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_tracking_activity_log_entries.organization_id (UUID).
+         *   Used to scope/validate tenant isolation in list/timeline queries.
      */
     organization_id: string & tags.Format<"uuid">;
 
     /**
      * Identifier of the member who performed the recorded action.
      *
-     * @x-autobe-database-schema-property performed_by_member_id
-     * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_activity_log_entries.performed_by_member_id (UUID). Represents the member who performed the action.
+         * @x-autobe-database-schema-property performed_by_member_id
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_tracking_activity_log_entries.performed_by_member_id
+         *   (UUID). Represents the member who performed the action.
      */
     performed_by_member_id: string & tags.Format<"uuid">;
 
     /**
      * Business action type key describing what happened (audit taxonomy).
      *
-     * @x-autobe-database-schema-property action_type
-     * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_activity_log_entries.action_type (string). Treated as a business taxonomy key for the performed action.
+         * @x-autobe-database-schema-property action_type
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_tracking_activity_log_entries.action_type (string).
+         *   Treated as a business taxonomy key for the performed action.
      */
     action_type: string;
 
     /**
      * Type name of the targeted business entity affected by this audit entry.
      *
-     * @x-autobe-database-schema-property target_entity_type
-     * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_activity_log_entries.target_entity_type (string). Combined with target_entity_id to represent the affected entity.
+         * @x-autobe-database-schema-property target_entity_type
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_tracking_activity_log_entries.target_entity_type
+         *   (string). Combined with target_entity_id to represent the affected
+         *   entity.
      */
     target_entity_type: string;
 
     /**
      * Identifier of the targeted business entity affected by this audit entry.
      *
-     * @x-autobe-database-schema-property target_entity_id
-     * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_activity_log_entries.target_entity_id (UUID). Combined with target_entity_type to identify the targeted entity.
+         * @x-autobe-database-schema-property target_entity_id
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_tracking_activity_log_entries.target_entity_id (UUID).
+         *   Combined with target_entity_type to identify the targeted entity.
      */
     target_entity_id: string & tags.Format<"uuid">;
 
     /**
      * Human-readable short summary of the action for auditing and support.
      *
-     * @x-autobe-database-schema-property summary
-     * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_activity_log_entries.summary (string). Use for concise timeline/list display.
+         * @x-autobe-database-schema-property summary
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_tracking_activity_log_entries.summary (string). Use
+         *   for concise timeline/list display.
      */
     summary: string;
 
     /**
      * Optional human-readable additional context about the action (null if not provided).
      *
-     * @x-autobe-database-schema-property details
-     * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_activity_log_entries.details (nullable string). If DB value is null, represent as null in the DTO.
+         * @x-autobe-database-schema-property details
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_tracking_activity_log_entries.details (nullable
+         *   string). If DB value is null, represent as null in the DTO.
      */
     details: string | null;
 
     /**
      * Timestamp (in the business/event timeline) when the action occurred.
      *
-     * @x-autobe-database-schema-property occurred_at
-     * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_activity_log_entries.occurred_at (timestamptz/DateTime). Serialize as an RFC3339 date-time string.
+         * @x-autobe-database-schema-property occurred_at
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_tracking_activity_log_entries.occurred_at
+         *   (timestamptz/DateTime). Serialize as an RFC3339 date-time string.
      */
     occurred_at: string & tags.Format<"date-time">;
   };
@@ -292,14 +370,17 @@ export namespace IErpHrmTimeTrackingActivityLogEntry {
     /**
      * Requested page number for pagination (1-indexed).
      *
-     * @x-autobe-specification Defines the requested 1-indexed page number for the activity log list response. Validate as integer >= 1.
+         * @x-autobe-specification Defines the requested 1-indexed page number
+         *   for the activity log list response. Validate as integer >= 1.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of activity log entries to return in a single page.
      *
-     * @x-autobe-specification Defines the maximum number of activity log entries to return in the page. Validate as integer >= 1 and within the DTO constraint (maximum 100).
+         * @x-autobe-specification Defines the maximum number of activity log
+         *   entries to return in the page. Validate as integer >= 1 and within
+         *   the DTO constraint (maximum 100).
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -308,84 +389,111 @@ export namespace IErpHrmTimeTrackingActivityLogEntry {
     /**
      * Logical sort key the service should use for ordering results (e.g., occurred_at).
      *
-     * @x-autobe-specification If provided, service uses this as the logical sort key for the activity log query (default should be occurred_at DESC when sortBy is omitted). Service must restrict to supported sort keys.
+         * @x-autobe-specification If provided, service uses this as the logical
+         *   sort key for the activity log query (default should be occurred_at
+         *   DESC when sortBy is omitted). Service must restrict to supported
+         *   sort keys.
      */
     sortBy?: string | undefined;
 
     /**
      * Sort direction for sortBy ('asc' or 'desc').
      *
-     * @x-autobe-specification Must be 'asc' or 'desc'. When provided, apply it to the sortBy field. If sortBy is omitted, apply direction to the service default ordering.
+         * @x-autobe-specification Must be 'asc' or 'desc'. When provided, apply
+         *   it to the sortBy field. If sortBy is omitted, apply direction to
+         *   the service default ordering.
      */
     sortOrder?: "asc" | "desc" | undefined;
 
     /**
      * Logical action key describing what occurred (audit taxonomy value).
      *
-     * @x-autobe-specification When provided, add predicate action_type = actionType to the activity log query.
+         * @x-autobe-specification When provided, add predicate action_type =
+         *   actionType to the activity log query.
      */
     actionType?: string | undefined;
 
     /**
      * Business entity type name of the affected target (used with targetEntityId).
      *
-     * @x-autobe-specification When provided, add predicate target_entity_type = targetEntityType to the activity log query.
+         * @x-autobe-specification When provided, add predicate
+         *   target_entity_type = targetEntityType to the activity log query.
      */
     targetEntityType?: string | undefined;
 
     /**
      * Business entity identifier of the affected target (used with targetEntityType).
      *
-     * @x-autobe-specification When provided, add predicate target_entity_id = targetEntityId to the activity log query.
+         * @x-autobe-specification When provided, add predicate target_entity_id
+         *   = targetEntityId to the activity log query.
      */
     targetEntityId?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Member (employee/actor) id who performed the logged action.
      *
-     * @x-autobe-specification When provided, add predicate performed_by_member_id = performedByMemberId to the activity log query.
+         * @x-autobe-specification When provided, add predicate
+         *   performed_by_member_id = performedByMemberId to the activity log
+         *   query.
      */
     performedByMemberId?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Inclusive start of the occurred-at (business time) filter window.
      *
-     * @x-autobe-specification When provided, add predicate occurred_at >= occurredAtFrom. If occurredAtTo is also provided, ensure occurredAtFrom <= occurredAtTo.
+         * @x-autobe-specification When provided, add predicate occurred_at >=
+         *   occurredAtFrom. If occurredAtTo is also provided, ensure
+         *   occurredAtFrom <= occurredAtTo.
      */
     occurredAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Inclusive end of the occurred-at (business time) filter window.
      *
-     * @x-autobe-specification When provided, add predicate occurred_at <= occurredAtTo. If occurredAtFrom is also provided, ensure occurredAtFrom <= occurredAtTo.
+         * @x-autobe-specification When provided, add predicate occurred_at <=
+         *   occurredAtTo. If occurredAtFrom is also provided, ensure
+         *   occurredAtFrom <= occurredAtTo.
      */
     occurredAtTo?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Text search term applied to the activity log entry summary.
      *
-     * @x-autobe-specification When provided, apply trigram/ILIKE-style search over the summary column using summarySearch. Combine with other predicates using logical AND.
+         * @x-autobe-specification When provided, apply trigram/ILIKE-style
+         *   search over the summary column using summarySearch. Combine with
+         *   other predicates using logical AND.
      */
     summarySearch?: string | undefined;
 
     /**
      * Text search term applied to the activity log entry details (when present).
      *
-     * @x-autobe-specification When provided, apply trigram/ILIKE-style search over the nullable details column using detailsSearch. Implement as: only rows with details IS NOT NULL and details matches the search term should be returned. Combine with other predicates using logical AND.
+         * @x-autobe-specification When provided, apply trigram/ILIKE-style
+         *   search over the nullable details column using detailsSearch.
+         *   Implement as: only rows with details IS NOT NULL and details
+         *   matches the search term should be returned. Combine with other
+         *   predicates using logical AND.
      */
     detailsSearch?: string | undefined;
 
     /**
      * Whether the service should prefer snapshot-based reconstruction for returned entries/details (where supported).
      *
-     * @x-autobe-specification If true, the service may reconstruct returned details/timeline information using erp_hrm_time_tracking_activity_log_entry_snapshots after first selecting eligible activity log entries with the predicates from this DTO.
+         * @x-autobe-specification If true, the service may reconstruct returned
+         *   details/timeline information using
+         *   erp_hrm_time_tracking_activity_log_entry_snapshots after first
+         *   selecting eligible activity log entries with the predicates from
+         *   this DTO.
      */
     useSnapshots?: boolean | undefined;
 
     /**
      * If true, include logically deleted activity log entries; otherwise, return only active (not deleted) entries.
      *
-     * @x-autobe-specification When false or omitted, apply predicate deleted_at IS NULL. When true, do not apply the deleted_at IS NULL predicate so both active and logically deleted entries are included.
+         * @x-autobe-specification When false or omitted, apply predicate
+         *   deleted_at IS NULL. When true, do not apply the deleted_at IS NULL
+         *   predicate so both active and logically deleted entries are
+         *   included.
      */
     includeRemovedEntries?: boolean | undefined;
   };

@@ -10,40 +10,46 @@ export type ICommunityPlatformAdmin = {
   /**
    * Unique administrator identifier.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct read mapping from community_platform_admins.id.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct read mapping from
+     *   community_platform_admins.id.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Administrator email address used for sign-in and account contact.
    *
-   * @x-autobe-database-schema-property email
-   * @x-autobe-specification Direct read mapping from community_platform_admins.email.
+     * @x-autobe-database-schema-property email
+     * @x-autobe-specification Direct read mapping from
+     *   community_platform_admins.email.
    */
   email: string;
 
   /**
    * Timestamp when the administrator account was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct read mapping from community_platform_admins.created_at.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct read mapping from
+     *   community_platform_admins.created_at.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the administrator account was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct read mapping from community_platform_admins.updated_at.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct read mapping from
+     *   community_platform_admins.updated_at.
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the administrator account was soft deleted, or null if it is still active.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct read mapping from community_platform_admins.deleted_at. Keep the property nullable because active accounts have no deletion timestamp.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct read mapping from
+     *   community_platform_admins.deleted_at. Keep the property nullable
+     *   because active accounts have no deletion timestamp.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -55,47 +61,63 @@ export namespace ICommunityPlatformAdmin {
     /**
      * Unique identifier of the authenticated administrator.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from community_platform_admins.id. This is the authenticated administrator's primary identifier returned in the authorization payload.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_admins.id. This is the authenticated
+         *   administrator's primary identifier returned in the authorization
+         *   payload.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Administrator email address used for sign-in.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from community_platform_admins.email. This is the administrator's unique sign-in email and public login identity in the authorization payload.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_admins.email. This is the administrator's unique
+         *   sign-in email and public login identity in the authorization
+         *   payload.
      */
     email: string;
 
     /**
      * Timestamp when the administrator account was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from community_platform_admins.created_at. This timestamp is taken from the persisted admin identity record and reflects when the administrator account was created.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_admins.created_at. This timestamp is taken from
+         *   the persisted admin identity record and reflects when the
+         *   administrator account was created.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when the administrator account was last updated.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from community_platform_admins.updated_at. This timestamp comes from the persisted admin identity record and reflects the latest account update time.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_admins.updated_at. This timestamp comes from the
+         *   persisted admin identity record and reflects the latest account
+         *   update time.
      */
     updated_at: string & tags.Format<"date-time">;
 
     /**
      * Soft-deletion timestamp, or null if the account is active.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from community_platform_admins.deleted_at. Preserve null when the account is active; expose the stored soft-deletion timestamp only when the admin record has been deleted.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_admins.deleted_at. Preserve null when the
+         *   account is active; expose the stored soft-deletion timestamp only
+         *   when the admin record has been deleted.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
 
     /**
      * Authorization token.
      *
-     * @x-autobe-specification Authorization token comes from the session table.
+         * @x-autobe-specification Authorization token comes from the session
+         *   table.
      */
     token: IAuthorizationToken;
   };
@@ -107,16 +129,22 @@ export namespace ICommunityPlatformAdmin {
     /**
      * Administrator email address used to sign in.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping to community_platform_admins.email. This value is used as the administrator login identifier and must match the unique email column before password verification proceeds.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping to
+         *   community_platform_admins.email. This value is used as the
+         *   administrator login identifier and must match the unique email
+         *   column before password verification proceeds.
      */
     email: string & tags.Format<"email">;
 
     /**
      * Administrator password used to authenticate the account.
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification Client-provided plaintext password used only for authentication. It is verified against community_platform_admins.password_hash; the hash is never returned or accepted directly in the request body.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification Client-provided plaintext password used only
+         *   for authentication. It is verified against
+         *   community_platform_admins.password_hash; the hash is never returned
+         *   or accepted directly in the request body.
      */
     password: string & tags.Format<"password">;
   };
@@ -128,8 +156,11 @@ export namespace ICommunityPlatformAdmin {
     /**
      * Administrator refresh token used to renew the current authorization session.
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification Secret refresh credential submitted by the client to renew admin authorization. Validate it against server-side auth/session state and issue a new token bundle only when the refresh credential is valid.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification Secret refresh credential submitted by the
+         *   client to renew admin authorization. Validate it against
+         *   server-side auth/session state and issue a new token bundle only
+         *   when the refresh credential is valid.
      */
     refreshToken: string & tags.Format<"password">;
   };
@@ -141,40 +172,50 @@ export namespace ICommunityPlatformAdmin {
     /**
      * Unique identifier for the administrator account.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from community_platform_admins.id. This is the administrator's UUID primary key and is always present.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_admins.id. This is the administrator's UUID
+         *   primary key and is always present.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Administrator email address.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from community_platform_admins.email. This is the unique email address used to identify the administrator account.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_admins.email. This is the unique email address
+         *   used to identify the administrator account.
      */
     email: string & tags.Format<"email">;
 
     /**
      * Timestamp when the administrator account was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from community_platform_admins.created_at. This timestamp records when the administrator account was created.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_admins.created_at. This timestamp records when
+         *   the administrator account was created.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when the administrator account was last updated.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from community_platform_admins.updated_at. This timestamp records the latest update to the administrator account.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_admins.updated_at. This timestamp records the
+         *   latest update to the administrator account.
      */
     updated_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when the administrator account was soft deleted, or null if active.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from community_platform_admins.deleted_at. This value is null while the administrator is active and set when the account is soft deleted.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_admins.deleted_at. This value is null while the
+         *   administrator is active and set when the account is soft deleted.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };
@@ -186,16 +227,22 @@ export namespace ICommunityPlatformAdmin {
     /**
      * Administrator email address used as the login identity.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping to community_platform_admins.email. Must be validated as an email address and persisted as the administrator's unique login identifier.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping to
+         *   community_platform_admins.email. Must be validated as an email
+         *   address and persisted as the administrator's unique login
+         *   identifier.
      */
     email: string & tags.Format<"email">;
 
     /**
      * Administrator password used to create the secured account credential.
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification Accept the raw password from the client, hash it server-side, and persist the resulting hash into community_platform_admins.password_hash. The plain password must never be stored or returned.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification Accept the raw password from the client, hash
+         *   it server-side, and persist the resulting hash into
+         *   community_platform_admins.password_hash. The plain password must
+         *   never be stored or returned.
      */
     password: string & tags.MinLength<1> & tags.Format<"password">;
   };
@@ -207,21 +254,30 @@ export namespace ICommunityPlatformAdmin {
     /**
      * Free-text search term for filtering administrator records by identity fields.
      *
-     * @x-autobe-specification Use as an optional free-text search term in the admin list query. Apply it against administrator identity fields that exist in the loaded database schema, primarily email. This is not stored in the database and should be translated into a WHERE/ILIKE-style filter by the endpoint handler.
+         * @x-autobe-specification Use as an optional free-text search term in
+         *   the admin list query. Apply it against administrator identity
+         *   fields that exist in the loaded database schema, primarily email.
+         *   This is not stored in the database and should be translated into a
+         *   WHERE/ILIKE-style filter by the endpoint handler.
      */
     search?: string | undefined;
 
     /**
      * Page number to retrieve, using 1-based pagination.
      *
-     * @x-autobe-specification Use as the requested page number for paginated browsing. The API layer should treat this as a 1-indexed page cursor and convert it into offset/limit query mechanics when fetching administrator summaries.
+         * @x-autobe-specification Use as the requested page number for
+         *   paginated browsing. The API layer should treat this as a 1-indexed
+         *   page cursor and convert it into offset/limit query mechanics when
+         *   fetching administrator summaries.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of administrator records to return per page.
      *
-     * @x-autobe-specification Use as the maximum number of administrator records to return per page. The API layer should enforce the allowed range and use this value to cap the list query page size.
+         * @x-autobe-specification Use as the maximum number of administrator
+         *   records to return per page. The API layer should enforce the
+         *   allowed range and use this value to cap the list query page size.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)

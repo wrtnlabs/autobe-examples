@@ -20,7 +20,11 @@ export type IHrmMemberPasswordResetVerification = {
    *
    * **Privacy**: The full email is never exposed in this response. Users should verify the masked email matches their expected account before proceeding with password reset.
    *
-   * @x-autobe-specification Computed from hrm_members.email via password reset token's hrm_member_id foreign key. Email is masked for privacy: first character + asterisks + @domain format (e.g., 'j***@example.com'). Masking prevents email enumeration attacks while confirming account identity to the user.
+     * @x-autobe-specification Computed from hrm_members.email via password
+     *   reset token's hrm_member_id foreign key. Email is masked for privacy:
+     *   first character + asterisks + @domain format (e.g.,
+     *   'j***@example.com'). Masking prevents email enumeration attacks while
+     *   confirming account identity to the user.
    */
   email: string;
 };

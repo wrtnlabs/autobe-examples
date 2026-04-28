@@ -26,9 +26,10 @@ export class CommunityplatformAdminReportsController {
    *
    * @param connection
    * @param body Community-scoped report search, filtering, sorting, and pagination criteria.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query community_platform_reports as a paginated moderation queue.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Query community_platform_reports as a paginated
+     *   moderation queue.
    *
    * Filter by community_id as the primary scope, and only return reports visible to the caller's moderation authority. Apply optional filters for status, target_type, member_id (reporting user), and created_at range if provided by the request DTO. Support text search against reason using the existing trigram-enabled index. Sort by created_at descending by default unless the request specifies another supported ordering.
    *
@@ -70,9 +71,10 @@ export class CommunityplatformAdminReportsController {
    *
    * @param connection
    * @param reportId Target report identifier.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Implement a read-only lookup against community_platform_reports by report_id.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Implement a read-only lookup against
+     *   community_platform_reports by report_id.
    *
    * Load the report record by primary identifier, then enforce authorization by confirming the authenticated actor is either an admin or a moderator assigned to the report's community. If the user is a moderator, resolve the community relationship from the report's community reference and verify moderation ownership/role before returning data.
    *
@@ -110,11 +112,12 @@ export class CommunityplatformAdminReportsController {
    *
    * @param connection
    * @param reportId Target report identifier.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Load the report by reportId and verify that it exists.
-   * Ensure the current actor is authorized to moderate the report's community, or is an admin.
-   * Verify the report is still pending review before applying the decision.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Load the report by reportId and verify that it
+     *   exists. Ensure the current actor is authorized to moderate the report's
+     *   community, or is an admin. Verify the report is still pending review
+     *   before applying the decision.
    *
    * Execute the approval as a single transactional moderation workflow:
    * 1) mark the report as approved;
@@ -155,11 +158,15 @@ export class CommunityplatformAdminReportsController {
    *
    * @param connection
    * @param reportId Target report's ID
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Load the report by reportId and verify that it exists.
-   * Confirm the caller has moderator authority for the community that owns the report; reject access if the caller is not a community moderator/owner.
-   * Check that the report is still in a reviewable state before applying the dismissal transition. If the report has already been approved or dismissed, return a conflict-style error and do not change the record.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Load the report by reportId and verify that it
+     *   exists. Confirm the caller has moderator authority for the community
+     *   that owns the report; reject access if the caller is not a community
+     *   moderator/owner. Check that the report is still in a reviewable state
+     *   before applying the dismissal transition. If the report has already
+     *   been approved or dismissed, return a conflict-style error and do not
+     *   change the record.
    *
    * Perform the dismissal in a transaction that updates only the report review state to dismissed. Do not modify the reported post/comment record. Do not remove the report row from the database; it must remain as the moderation record for historical review, but it must no longer be considered active for the community report list.
    *

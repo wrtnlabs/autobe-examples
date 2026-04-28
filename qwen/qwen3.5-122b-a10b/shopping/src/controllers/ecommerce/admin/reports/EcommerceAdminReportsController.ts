@@ -33,9 +33,10 @@ export class EcommerceAdminReportsController {
    *
    * @param connection
    * @param body Report generation request with report type, date range filters, grouping options, and aggregation parameters.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Implement multi-table aggregation query for report generation.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Implement multi-table aggregation query for
+     *   report generation.
    *
    * **Service Logic**
    *

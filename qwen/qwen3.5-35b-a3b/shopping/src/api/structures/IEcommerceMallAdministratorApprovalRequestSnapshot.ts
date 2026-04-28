@@ -49,7 +49,9 @@ export namespace IEcommerceMallAdministratorApprovalRequestSnapshot {
      *
      * Allowed values: `member` (customer requesting admin access), `seller` (seller requesting admin access).
      *
-     * @x-autobe-specification Query parameter filter: requester_type in ('member', 'seller'). Maps to snapshot.requester_type column for filtering.
+         * @x-autobe-specification Query parameter filter: requester_type in
+         *   ('member', 'seller'). Maps to snapshot.requester_type column for
+         *   filtering.
      */
     requester_type?: "member" | "seller" | undefined;
 
@@ -60,7 +62,8 @@ export namespace IEcommerceMallAdministratorApprovalRequestSnapshot {
      *
      * Allowed values: `pending` (awaiting review), `approved` (request approved), `rejected` (request denied).
      *
-     * @x-autobe-specification Query parameter filter: status equals given value. Maps to snapshot.status column for filtering.
+         * @x-autobe-specification Query parameter filter: status equals given
+         *   value. Maps to snapshot.status column for filtering.
      */
     status?: "pending" | "approved" | "rejected" | undefined;
 
@@ -71,7 +74,9 @@ export namespace IEcommerceMallAdministratorApprovalRequestSnapshot {
      *
      * Format: UUID string. Only non-null values included (i.e., snapshots where a decision was made).
      *
-     * @x-autobe-specification Query parameter filter: reviewed_by_administrator_id equals given UUID. Maps to snapshot.reviewed_by_administrator_id column for filtering.
+         * @x-autobe-specification Query parameter filter:
+         *   reviewed_by_administrator_id equals given UUID. Maps to
+         *   snapshot.reviewed_by_administrator_id column for filtering.
      */
     reviewer_id?: (string & tags.Format<"uuid">) | undefined;
 
@@ -82,7 +87,8 @@ export namespace IEcommerceMallAdministratorApprovalRequestSnapshot {
      *
      * Format: ISO 8601 date-time string (e.g., "2024-01-01T00:00:00Z").
      *
-     * @x-autobe-specification Query parameter filter: created_at >= given date-time. Maps to snapshot.created_at column for filtering.
+         * @x-autobe-specification Query parameter filter: created_at >= given
+         *   date-time. Maps to snapshot.created_at column for filtering.
      */
     created_at_min?: (string & tags.Format<"date-time">) | undefined;
 
@@ -93,7 +99,8 @@ export namespace IEcommerceMallAdministratorApprovalRequestSnapshot {
      *
      * Format: ISO 8601 date-time string (e.g., "2024-12-31T23:59:59Z").
      *
-     * @x-autobe-specification Query parameter filter: created_at <= given date-time. Maps to snapshot.created_at column for filtering.
+         * @x-autobe-specification Query parameter filter: created_at <= given
+         *   date-time. Maps to snapshot.created_at column for filtering.
      */
     created_at_max?: (string & tags.Format<"date-time">) | undefined;
 
@@ -104,7 +111,9 @@ export namespace IEcommerceMallAdministratorApprovalRequestSnapshot {
      *
      * Constraints: Minimum value is 1. Defaults to 1 if not provided.
      *
-     * @x-autobe-specification Query parameter: page number for pagination (1-indexed). No DB column mapping - pagination is handled by backend query builder.
+         * @x-autobe-specification Query parameter: page number for pagination
+         *   (1-indexed). No DB column mapping - pagination is handled by
+         *   backend query builder.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -115,7 +124,9 @@ export namespace IEcommerceMallAdministratorApprovalRequestSnapshot {
      *
      * Constraints: Must be between 1 and 100. Defaults to a platform-specified value (typically 20 or 50).
      *
-     * @x-autobe-specification Query parameter: records per page for pagination (1-100). No DB column mapping - pagination is handled by backend query builder.
+         * @x-autobe-specification Query parameter: records per page for
+         *   pagination (1-100). No DB column mapping - pagination is handled by
+         *   backend query builder.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -128,7 +139,8 @@ export namespace IEcommerceMallAdministratorApprovalRequestSnapshot {
      *
      * Allowed values: `created_at` (timestamp), `requester_type` (member/seller), `status` (pending/approved/rejected).
      *
-     * @x-autobe-specification Query parameter: sort field name. No DB column mapping - backend uses this to construct ORDER BY clause.
+         * @x-autobe-specification Query parameter: sort field name. No DB
+         *   column mapping - backend uses this to construct ORDER BY clause.
      */
     sort?: "created_at" | "requester_type" | "status" | undefined;
 
@@ -139,7 +151,9 @@ export namespace IEcommerceMallAdministratorApprovalRequestSnapshot {
      *
      * Allowed values: `asc` (ascending, oldest first), `desc` (descending, newest first). Default is typically `desc` for audit logs (most recent first).
      *
-     * @x-autobe-specification Query parameter: sort direction (asc/desc). No DB column mapping - backend uses this to construct ORDER BY clause.
+         * @x-autobe-specification Query parameter: sort direction (asc/desc).
+         *   No DB column mapping - backend uses this to construct ORDER BY
+         *   clause.
      */
     order?: "asc" | "desc" | undefined;
   };

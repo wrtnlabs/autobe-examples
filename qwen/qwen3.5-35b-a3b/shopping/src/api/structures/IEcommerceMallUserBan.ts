@@ -55,27 +55,27 @@ export namespace IEcommerceMallUserBan {
     user_type?: "customer" | "seller" | "all" | undefined;
     ban_status?: "active" | "completed" | "all" | undefined;
     /**
-     * @x-autobe-database-schema-property administrator_id
+         * @x-autobe-database-schema-property administrator_id
      */
     administrator_id?: (string & tags.Format<"uuid">) | undefined;
     /**
-     * @x-autobe-database-schema-property banned_at
+         * @x-autobe-database-schema-property banned_at
      */
     banned_at_after?: (string & tags.Format<"date-time">) | undefined;
     /**
-     * @x-autobe-database-schema-property banned_at
+         * @x-autobe-database-schema-property banned_at
      */
     banned_at_before?: (string & tags.Format<"date-time">) | undefined;
     /**
-     * @x-autobe-database-schema-property created_at
+         * @x-autobe-database-schema-property created_at
      */
     created_at_after?: (string & tags.Format<"date-time">) | undefined;
     /**
-     * @x-autobe-database-schema-property created_at
+         * @x-autobe-database-schema-property created_at
      */
     created_at_before?: (string & tags.Format<"date-time">) | undefined;
     /**
-     * @x-autobe-database-schema-property reason
+         * @x-autobe-database-schema-property reason
      */
     reason_contains?: string | undefined;
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
@@ -156,11 +156,11 @@ export namespace IEcommerceMallUserBan {
    */
   export type IAt = {
     /**
-     * @x-autobe-database-schema-property id
+         * @x-autobe-database-schema-property id
      */
     id: string & tags.Format<"uuid">;
     /**
-     * @x-autobe-database-schema-property administrator_id
+         * @x-autobe-database-schema-property administrator_id
      */
     administrator_id: string & tags.Format<"uuid">;
 
@@ -169,16 +169,18 @@ export namespace IEcommerceMallUserBan {
      *
      * This field is a string value that determines which subtype table contains the polymorphic reference. Valid values are 'customer' for customer bans or 'seller' for seller bans.
      *
-     * @x-autobe-specification Direct mapping from ecommerce_mall_user_bans.user_type column (string). Values: 'customer' or 'seller'.
-     * @x-autobe-database-schema-property user_type
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_user_bans.user_type column (string). Values:
+         *   'customer' or 'seller'.
+         * @x-autobe-database-schema-property user_type
      */
     user_type: string;
     /**
-     * @x-autobe-database-schema-property reason
+         * @x-autobe-database-schema-property reason
      */
     reason: string;
     /**
-     * @x-autobe-database-schema-property banned_at
+         * @x-autobe-database-schema-property banned_at
      */
     banned_at: string & tags.Format<"date-time">;
 
@@ -187,7 +189,9 @@ export namespace IEcommerceMallUserBan {
      *
      * This field is derived from the customerBan polymorphic relation. When the ban applies to a customer, it contains the customer's UUID. For seller bans, this field is null.
      *
-     * @x-autobe-specification Computed from customerBan relation: customerBan?.id. Returns the banned customer's UUID if user_type is 'customer', null otherwise.
+         * @x-autobe-specification Computed from customerBan relation:
+         *   customerBan?.id. Returns the banned customer's UUID if user_type is
+         *   'customer', null otherwise.
      */
     customer_id: (string & tags.Format<"uuid">) | null;
 
@@ -196,23 +200,25 @@ export namespace IEcommerceMallUserBan {
      *
      * This field is derived from the sellerBan polymorphic relation. When the ban applies to a seller, it contains the seller's UUID. For customer bans, this field is null.
      *
-     * @x-autobe-specification Computed from sellerBan relation: sellerBan?.id. Returns the banned seller's UUID if user_type is 'seller', null otherwise.
+         * @x-autobe-specification Computed from sellerBan relation:
+         *   sellerBan?.id. Returns the banned seller's UUID if user_type is
+         *   'seller', null otherwise.
      */
     seller_id: (string & tags.Format<"uuid">) | null;
     /**
-     * @x-autobe-database-schema-property created_at
+         * @x-autobe-database-schema-property created_at
      */
     created_at: string & tags.Format<"date-time">;
     /**
-     * @x-autobe-database-schema-property updated_at
+         * @x-autobe-database-schema-property updated_at
      */
     updated_at: string & tags.Format<"date-time">;
     /**
-     * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-database-schema-property deleted_at
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
     /**
-     * @x-autobe-database-schema-property administrator
+         * @x-autobe-database-schema-property administrator
      */
     administrator: IEcommerceMallAdministrator.ISummary;
   };

@@ -22,9 +22,15 @@ export class EcommercemallAdminAdminProductsSnapshotsController {
    *
    * @param connection
    * @param productId Unique identifier of the product whose snapshots to retrieve.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query ecommerce_mall_product_snapshots table filtering by productId parameter. Join with ecommerce_mall_product_snapshot_images to include image URLs and display orders. Join with ecommerce_mall_product_snapshot_variants to include variant information. Join with ecommerce_mall_product_snapshot_variant_option_values to include option key-value pairs for each variant.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Query ecommerce_mall_product_snapshots table
+     *   filtering by productId parameter. Join with
+     *   ecommerce_mall_product_snapshot_images to include image URLs and
+     *   display orders. Join with ecommerce_mall_product_snapshot_variants to
+     *   include variant information. Join with
+     *   ecommerce_mall_product_snapshot_variant_option_values to include option
+     *   key-value pairs for each variant.
    *
    * Order results by created_at ascending (oldest first) to show chronological modification history.
    *

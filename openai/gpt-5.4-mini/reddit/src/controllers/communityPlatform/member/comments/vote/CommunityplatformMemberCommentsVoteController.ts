@@ -22,9 +22,10 @@ export class CommunityplatformMemberCommentsVoteController {
    * @param connection
    * @param commentId Target comment identifier.
    * @param body Comment vote choice for the authenticated member.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement as a member-authenticated vote submission endpoint for comment targets.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implement as a member-authenticated vote
+     *   submission endpoint for comment targets.
    *
    * Lookup the target comment by commentId and verify it exists before processing the vote. Resolve the current authenticated member from the session/auth context; never accept voter identity from the request body. Load the member’s existing vote for the same comment target, if any, using the comment-target vote assignment table and the base votes table.
    *
@@ -67,10 +68,12 @@ export class CommunityplatformMemberCommentsVoteController {
    *
    * @param connection
    * @param commentId Target comment identifier.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Resolve the authenticated member and load the target comment by commentId.
-   * Verify the comment exists and the caller is permitted to interact with it (for example, the comment is not otherwise unavailable for voting according to platform rules).
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Resolve the authenticated member and load the
+     *   target comment by commentId. Verify the comment exists and the caller
+     *   is permitted to interact with it (for example, the comment is not
+     *   otherwise unavailable for voting according to platform rules).
    *
    * Look up the active vote record for the current member on this comment. Because comment voting is one-vote-per-user-per-target, there should be at most one matching vote. If no vote exists, return a conflict or not-found style error indicating there is no active vote to remove.
    *

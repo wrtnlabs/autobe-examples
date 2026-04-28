@@ -11,56 +11,70 @@ export type ICommunityPlatformCommentVote = {
   /**
    * Unique identifier of this comment vote record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from community_platform_comment_votes.id.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_comment_votes.id.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Member who cast this vote on the comment.
    *
-   * @x-autobe-database-schema-property member
-   * @x-autobe-specification Resolve the belongs-to relation from community_platform_comment_votes.community_platform_member_id to community_platform_members.id and map the joined row to ICommunityPlatformMember.ISummary.
+     * @x-autobe-database-schema-property member
+     * @x-autobe-specification Resolve the belongs-to relation from
+     *   community_platform_comment_votes.community_platform_member_id to
+     *   community_platform_members.id and map the joined row to
+     *   ICommunityPlatformMember.ISummary.
    */
   member: ICommunityPlatformMember.ISummary;
 
   /**
    * Comment that received this vote.
    *
-   * @x-autobe-specification Resolve the belongs-to relation from community_platform_comment_votes.community_platform_comment_id to community_platform_comments.id and map the joined row to ICommunityPlatformComment.ISummary.
-   * @x-autobe-database-schema-property comment
+     * @x-autobe-specification Resolve the belongs-to relation from
+     *   community_platform_comment_votes.community_platform_comment_id to
+     *   community_platform_comments.id and map the joined row to
+     *   ICommunityPlatformComment.ISummary.
+     * @x-autobe-database-schema-property comment
    */
   comment: ICommunityPlatformComment.ISummary;
 
   /**
    * Current reaction direction recorded for the comment vote.
    *
-   * @x-autobe-database-schema-property direction
-   * @x-autobe-specification Direct mapping from community_platform_comment_votes.direction. Persist and return the current normalized vote stance such as upvote or downvote.
+     * @x-autobe-database-schema-property direction
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_comment_votes.direction. Persist and return the
+     *   current normalized vote stance such as upvote or downvote.
    */
   direction: string;
 
   /**
    * Timestamp when this vote record was first created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from community_platform_comment_votes.created_at.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_comment_votes.created_at.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when this vote record was last changed.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from community_platform_comment_votes.updated_at.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_comment_votes.updated_at.
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * Soft-deletion timestamp for the vote record, or null when the vote is still active.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from community_platform_comment_votes.deleted_at. Return null when the vote has not been soft-deleted, otherwise return the recorded deletion timestamp.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_comment_votes.deleted_at. Return null when the vote
+     *   has not been soft-deleted, otherwise return the recorded deletion
+     *   timestamp.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -72,8 +86,15 @@ export namespace ICommunityPlatformCommentVote {
     /**
      * The desired vote direction to apply as the member's current reaction on the target comment.
      *
-     * @x-autobe-database-schema-property direction
-     * @x-autobe-specification Direct mapping to `community_platform_comment_votes.direction`. Accept the desired current vote stance from the client and persist it as the canonical direction for the authenticated member and target comment pair identified by auth context plus the `commentId` path parameter. On replacement, overwrite the existing row's direction and refresh server-managed timestamps rather than accepting any other mutable fields from the client.
+         * @x-autobe-database-schema-property direction
+         * @x-autobe-specification Direct mapping to
+         *   `community_platform_comment_votes.direction`. Accept the desired
+         *   current vote stance from the client and persist it as the canonical
+         *   direction for the authenticated member and target comment pair
+         *   identified by auth context plus the `commentId` path parameter. On
+         *   replacement, overwrite the existing row's direction and refresh
+         *   server-managed timestamps rather than accepting any other mutable
+         *   fields from the client.
      */
     direction: string;
   };
@@ -85,14 +106,21 @@ export namespace ICommunityPlatformCommentVote {
     /**
      * Page number of the vote list to retrieve.
      *
-     * @x-autobe-specification Pagination control used to calculate the offset for the community_platform_comment_votes query after scoping by path commentId. Interpret as a 1-indexed page number; when omitted, default to the first page according to shared paging behavior.
+         * @x-autobe-specification Pagination control used to calculate the
+         *   offset for the community_platform_comment_votes query after scoping
+         *   by path commentId. Interpret as a 1-indexed page number; when
+         *   omitted, default to the first page according to shared paging
+         *   behavior.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of vote records to return in one page.
      *
-     * @x-autobe-specification Pagination control that sets the maximum number of community_platform_comment_votes rows returned for one page after filters are applied. Honor the schema bounds of minimum 1 and maximum 100, and use service defaults when omitted.
+         * @x-autobe-specification Pagination control that sets the maximum
+         *   number of community_platform_comment_votes rows returned for one
+         *   page after filters are applied. Honor the schema bounds of minimum
+         *   1 and maximum 100, and use service defaults when omitted.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -101,22 +129,34 @@ export namespace ICommunityPlatformCommentVote {
     /**
      * Optional vote direction filter for limiting results to one recorded reaction type.
      *
-     * @x-autobe-database-schema-property direction
-     * @x-autobe-specification Optional equality filter on community_platform_comment_votes.direction. When provided, restrict the scoped query to vote rows whose current stored direction matches the requested value; when omitted, include all directions.
+         * @x-autobe-database-schema-property direction
+         * @x-autobe-specification Optional equality filter on
+         *   community_platform_comment_votes.direction. When provided, restrict
+         *   the scoped query to vote rows whose current stored direction
+         *   matches the requested value; when omitted, include all directions.
      */
     direction?: string | undefined;
 
     /**
      * Whether to include soft-deleted vote records in the results.
      *
-     * @x-autobe-specification Boolean query control for soft-delete visibility. When true, include both active rows and rows whose community_platform_comment_votes.deleted_at is populated; when false or omitted, restrict results to rows where deleted_at is null.
+         * @x-autobe-specification Boolean query control for soft-delete
+         *   visibility. When true, include both active rows and rows whose
+         *   community_platform_comment_votes.deleted_at is populated; when
+         *   false or omitted, restrict results to rows where deleted_at is
+         *   null.
      */
     includeDeleted?: boolean | undefined;
 
     /**
      * Sort order for the vote list using supported created or updated timestamp fields.
      *
-     * @x-autobe-specification Sort selector for the scoped community_platform_comment_votes query. Accept only created_at, -created_at, updated_at, or -updated_at, mapping them to ascending or descending ORDER BY clauses on the corresponding persisted timestamp column, and append id as an internal deterministic tiebreaker.
+         * @x-autobe-specification Sort selector for the scoped
+         *   community_platform_comment_votes query. Accept only created_at,
+         *   -created_at, updated_at, or -updated_at, mapping them to ascending
+         *   or descending ORDER BY clauses on the corresponding persisted
+         *   timestamp column, and append id as an internal deterministic
+         *   tiebreaker.
      */
     sort?:
       | "created_at"
@@ -133,8 +173,15 @@ export namespace ICommunityPlatformCommentVote {
     /**
      * The new active vote direction to apply to the existing comment vote.
      *
-     * @x-autobe-database-schema-property direction
-     * @x-autobe-specification Direct mapping to community_platform_comment_votes.direction. Accept one supported active vote direction for comment reactions and apply it to the existing vote row identified by the route after verifying the authenticated member owns that vote and the target comment is available for participation. This field is required because the operation replaces the current active direction rather than partially patching optional fields.
+         * @x-autobe-database-schema-property direction
+         * @x-autobe-specification Direct mapping to
+         *   community_platform_comment_votes.direction. Accept one supported
+         *   active vote direction for comment reactions and apply it to the
+         *   existing vote row identified by the route after verifying the
+         *   authenticated member owns that vote and the target comment is
+         *   available for participation. This field is required because the
+         *   operation replaces the current active direction rather than
+         *   partially patching optional fields.
      */
     direction: string;
   };

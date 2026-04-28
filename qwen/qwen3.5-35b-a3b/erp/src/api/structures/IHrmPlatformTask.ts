@@ -24,7 +24,8 @@ export type IHrmPlatformTask = {
    *
    * Performs a case-insensitive partial match on the task title field. Use any substring of the task title to find matching tasks.
    *
-   * @x-autobe-specification Case-insensitive LIKE match on task title via SQL LIKE '%{search}%' query.
+     * @x-autobe-specification Case-insensitive LIKE match on task title via SQL
+     *   LIKE '%{search}%' query.
    */
   search?: string | null | undefined;
 
@@ -33,8 +34,9 @@ export type IHrmPlatformTask = {
    *
    * Restricts results to tasks belonging to a specific project. Accepts a UUID format for project identification.
    *
-   * @x-autobe-database-schema-property project_id
-   * @x-autobe-specification Filter tasks by project ID. Matches project_id column in hrm_platform_tasks.
+     * @x-autobe-database-schema-property project_id
+     * @x-autobe-specification Filter tasks by project ID. Matches project_id
+     *   column in hrm_platform_tasks.
    */
   project_id?: (string & tags.Format<"uuid">) | null | undefined;
 
@@ -43,8 +45,10 @@ export type IHrmPlatformTask = {
    *
    * Restricts results to tasks with a specific status value. Allowed values: TODO (not started), IN_PROGRESS (work in progress), IN_REVIEW (pending review), DONE (completed).
    *
-   * @x-autobe-database-schema-property status
-   * @x-autobe-specification Filter tasks by status. Matches status column in hrm_platform_tasks with allowed values: TODO, IN_PROGRESS, IN_REVIEW, DONE.
+     * @x-autobe-database-schema-property status
+     * @x-autobe-specification Filter tasks by status. Matches status column in
+     *   hrm_platform_tasks with allowed values: TODO, IN_PROGRESS, IN_REVIEW,
+     *   DONE.
    */
   status?: string | null | undefined;
 
@@ -53,8 +57,10 @@ export type IHrmPlatformTask = {
    *
    * Restricts results to tasks with a specific priority. Allowed values: LOW (lowest priority), MEDIUM (medium priority, default), HIGH (high priority), CRITICAL (highest priority, immediate attention).
    *
-   * @x-autobe-database-schema-property priority
-   * @x-autobe-specification Filter tasks by priority level. Matches priority column in hrm_platform_tasks with allowed values: LOW, MEDIUM, HIGH, CRITICAL.
+     * @x-autobe-database-schema-property priority
+     * @x-autobe-specification Filter tasks by priority level. Matches priority
+     *   column in hrm_platform_tasks with allowed values: LOW, MEDIUM, HIGH,
+     *   CRITICAL.
    */
   priority?: string | null | undefined;
 
@@ -63,7 +69,8 @@ export type IHrmPlatformTask = {
    *
    * Specifies which page of results to return. Page numbers are 1-indexed (page 1 is the first page). Combined with limit parameter to control result set size and position.
    *
-   * @x-autobe-specification Page number for pagination (1-indexed). Page 1 is the first page of results.
+     * @x-autobe-specification Page number for pagination (1-indexed). Page 1 is
+     *   the first page of results.
    */
   page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | null | undefined;
 
@@ -74,7 +81,8 @@ export type IHrmPlatformTask = {
    *
    * Default value: 100.
    *
-   * @x-autobe-specification Maximum number of results per page (1-100). Controls how many tasks are returned in a single page.
+     * @x-autobe-specification Maximum number of results per page (1-100).
+     *   Controls how many tasks are returned in a single page.
    */
   limit?:
     | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -105,47 +113,51 @@ export namespace IHrmPlatformTask {
    */
   export type IUpdate = {
     /**
-     * @x-autobe-database-schema-property title
+         * @x-autobe-database-schema-property title
      */
     title?: string | undefined;
 
     /**
      * Task details and acceptance criteria.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Nullable description field. Can be updated or cleared by setting to null.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Nullable description field. Can be updated or
+         *   cleared by setting to null.
      */
     description?: string | null | undefined;
     /**
-     * @x-autobe-database-schema-property status
+         * @x-autobe-database-schema-property status
      */
     status?: string | undefined;
     /**
-     * @x-autobe-database-schema-property priority
+         * @x-autobe-database-schema-property priority
      */
     priority?: string | undefined;
 
     /**
      * References another employee in the same organization. Updates task assignment.
      *
-     * @x-autobe-database-schema-property assigned_employee_id
-     * @x-autobe-specification Nullable employee ID. Can be unset by setting to null to remove assignment.
+         * @x-autobe-database-schema-property assigned_employee_id
+         * @x-autobe-specification Nullable employee ID. Can be unset by setting
+         *   to null to remove assignment.
      */
     assigned_employee_id?: (string & tags.Format<"uuid">) | null | undefined;
 
     /**
      * Planned effort in hours (must be >= 0).
      *
-     * @x-autobe-database-schema-property estimated_hours
-     * @x-autobe-specification Nullable estimated hours. Can be updated or cleared by setting to null.
+         * @x-autobe-database-schema-property estimated_hours
+         * @x-autobe-specification Nullable estimated hours. Can be updated or
+         *   cleared by setting to null.
      */
     estimated_hours?: (number & tags.Minimum<0>) | null | undefined;
 
     /**
      * Task deadline for tracking overdue work.
      *
-     * @x-autobe-database-schema-property due_date
-     * @x-autobe-specification Nullable due date. Can be updated or removed by setting to null.
+         * @x-autobe-database-schema-property due_date
+         * @x-autobe-specification Nullable due date. Can be updated or removed
+         *   by setting to null.
      */
     due_date?: (string & tags.Format<"date-time">) | null | undefined;
   };
@@ -177,7 +189,7 @@ export namespace IHrmPlatformTask {
    */
   export type IRequest = {
     /**
-     * @x-autobe-database-schema-property title
+         * @x-autobe-database-schema-property title
      */
     searchTitle?: string | undefined;
 
@@ -186,8 +198,9 @@ export namespace IHrmPlatformTask {
      *
      * Only tasks with a due_date greater than or equal to this value will be included. Tasks without a due date are excluded from this filter.
      *
-     * @x-autobe-database-schema-property due_date
-     * @x-autobe-specification Filter tasks where due_date >= this value. Uses >= operator for inclusive after filter.
+         * @x-autobe-database-schema-property due_date
+         * @x-autobe-specification Filter tasks where due_date >= this value.
+         *   Uses >= operator for inclusive after filter.
      */
     due_date_after?: (string & tags.Format<"date-time">) | null | undefined;
 
@@ -196,28 +209,29 @@ export namespace IHrmPlatformTask {
      *
      * Only tasks with a due_date less than or equal to this value will be included. Tasks without a due date are excluded from this filter.
      *
-     * @x-autobe-database-schema-property due_date
-     * @x-autobe-specification Filter tasks where due_date <= this value. Uses <= operator for inclusive before filter.
+         * @x-autobe-database-schema-property due_date
+         * @x-autobe-specification Filter tasks where due_date <= this value.
+         *   Uses <= operator for inclusive before filter.
      */
     due_date_before?: (string & tags.Format<"date-time">) | null | undefined;
     /**
-     * @x-autobe-database-schema-property created_at
+         * @x-autobe-database-schema-property created_at
      */
     created_after?: (string & tags.Format<"date-time">) | undefined;
     /**
-     * @x-autobe-database-schema-property created_at
+         * @x-autobe-database-schema-property created_at
      */
     created_before?: (string & tags.Format<"date-time">) | undefined;
     /**
-     * @x-autobe-database-schema-property status
+         * @x-autobe-database-schema-property status
      */
     status?: string | undefined;
     /**
-     * @x-autobe-database-schema-property priority
+         * @x-autobe-database-schema-property priority
      */
     priority?: string | undefined;
     /**
-     * @x-autobe-database-schema-property project_id
+         * @x-autobe-database-schema-property project_id
      */
     project_id?: (string & tags.Format<"uuid">) | undefined;
 
@@ -226,8 +240,9 @@ export namespace IHrmPlatformTask {
      *
      * Specify the employee UUID to retrieve only tasks assigned to that employee. Tasks without an assignee are excluded.
      *
-     * @x-autobe-database-schema-property assigned_employee_id
-     * @x-autobe-specification Filter tasks by assigned employee UUID. Uses exact match on assigned_employee_id foreign key.
+         * @x-autobe-database-schema-property assigned_employee_id
+         * @x-autobe-specification Filter tasks by assigned employee UUID. Uses
+         *   exact match on assigned_employee_id foreign key.
      */
     assigned_employee_id?: (string & tags.Format<"uuid">) | null | undefined;
 
@@ -236,8 +251,9 @@ export namespace IHrmPlatformTask {
      *
      * Specify a parent task UUID to retrieve only child tasks under that parent. Used for hierarchical task structure queries. Tasks without a parent (root tasks) are excluded.
      *
-     * @x-autobe-database-schema-property parent_task_id
-     * @x-autobe-specification Filter child tasks by parent task UUID. Used for hierarchical task queries.
+         * @x-autobe-database-schema-property parent_task_id
+         * @x-autobe-specification Filter child tasks by parent task UUID. Used
+         *   for hierarchical task queries.
      */
     parent_task_id?: (string & tags.Format<"uuid">) | null | undefined;
     sortBy?: string | undefined;
@@ -253,7 +269,8 @@ export namespace IHrmPlatformTask {
      * Requesting a page beyond the available range returns an empty data array
      * with valid pagination metadata reflecting the actual totals.
      *
-     * @x-autobe-specification 1-indexed page number. Defaults to 1 if not provided.
+         * @x-autobe-specification 1-indexed page number. Defaults to 1 if not
+         *   provided.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };
@@ -283,39 +300,39 @@ export namespace IHrmPlatformTask {
    */
   export type ISummary = {
     /**
-     * @x-autobe-database-schema-property id
+         * @x-autobe-database-schema-property id
      */
     id: string & tags.Format<"uuid">;
     /**
-     * @x-autobe-database-schema-property title
+         * @x-autobe-database-schema-property title
      */
     title: string;
     /**
-     * @x-autobe-database-schema-property status
+         * @x-autobe-database-schema-property status
      */
     status: string;
     /**
-     * @x-autobe-database-schema-property priority
+         * @x-autobe-database-schema-property priority
      */
     priority: string;
     /**
-     * @x-autobe-database-schema-property created_at
+         * @x-autobe-database-schema-property created_at
      */
     created_at: string & tags.Format<"date-time">;
     /**
-     * @x-autobe-database-schema-property due_date
+         * @x-autobe-database-schema-property due_date
      */
     due_date?: (string & tags.Format<"date-time">) | null | undefined;
     /**
-     * @x-autobe-database-schema-property project
+         * @x-autobe-database-schema-property project
      */
     project: IHrmPlatformProject.ISummary;
     /**
-     * @x-autobe-database-schema-property assignedEmployee
+         * @x-autobe-database-schema-property assignedEmployee
      */
     assignedEmployee?: IHrmPlatformEmployee.ISummary | null | undefined;
     /**
-     * @x-autobe-database-schema-property parentTask
+         * @x-autobe-database-schema-property parentTask
      */
     parentTask?: IHrmPlatformTask.ISummary | null | undefined;
   };

@@ -8,35 +8,51 @@ export type IErpHrmStatistic = {
   /**
    * Total number of active employees in the organization.
    *
-   * @x-autobe-specification COUNT() from erp_hrm_employees WHERE erp_hrm_organization_id = current_org AND status = 'active'. Returns integer count of active employees in the organization.
+     * @x-autobe-specification COUNT() from erp_hrm_employees WHERE
+     *   erp_hrm_organization_id = current_org AND status = 'active'. Returns
+     *   integer count of active employees in the organization.
    */
   employees_count: number & tags.Type<"int32"> & tags.Minimum<0>;
 
   /**
    * Projects where budget utilization has exceeded 80 percent.
    *
-   * @x-autobe-specification JOIN erp_hrm_projects with erp_hrm_timelogs, filter WHERE budget_hours > 0 AND (SUM(duration_minutes)/60 / budget_hours) * 100 >= 80. Returns array of IHighUtilizationProject with name, color, budget_hours, and utilization_percentage. Limited to 10 results sorted by utilization descending.
+     * @x-autobe-specification JOIN erp_hrm_projects with erp_hrm_timelogs,
+     *   filter WHERE budget_hours > 0 AND (SUM(duration_minutes)/60 /
+     *   budget_hours) * 100 >= 80. Returns array of IHighUtilizationProject
+     *   with name, color, budget_hours, and utilization_percentage. Limited to
+     *   10 results sorted by utilization descending.
    */
   high_utilization_projects: IErpHrmStatistic.IHighUtilizationProject[];
 
   /**
    * Number of timesheets awaiting approval.
    *
-   * @x-autobe-specification COUNT() from erp_hrm_timesheets WHERE erp_hrm_organization_id = current_org AND status = 'submitted'. Returns integer count of timesheets awaiting approval.
+     * @x-autobe-specification COUNT() from erp_hrm_timesheets WHERE
+     *   erp_hrm_organization_id = current_org AND status = 'submitted'. Returns
+     *   integer count of timesheets awaiting approval.
    */
   pending_timesheets_count: number & tags.Type<"int32"> & tags.Minimum<0>;
 
   /**
    * Top five employees ranked by hours logged during the current week.
    *
-   * @x-autobe-specification JOIN erp_hrm_employees with erp_hrm_timelogs, filter WHERE timelog date within current Monday-Sunday week. GROUP BY employee, SUM(duration_minutes)/60 as total_hours. JOIN with erp_hrm_departments for department name. ORDER BY total_hours DESC, LIMIT 5. Returns array of ITopEmployee with name, department, and hours.
+     * @x-autobe-specification JOIN erp_hrm_employees with erp_hrm_timelogs,
+     *   filter WHERE timelog date within current Monday-Sunday week. GROUP BY
+     *   employee, SUM(duration_minutes)/60 as total_hours. JOIN with
+     *   erp_hrm_departments for department name. ORDER BY total_hours DESC,
+     *   LIMIT 5. Returns array of ITopEmployee with name, department, and
+     *   hours.
    */
   top_employees: IErpHrmStatistic.ITopEmployee[];
 
   /**
    * Total hours logged this week across all employees.
    *
-   * @x-autobe-specification SUM(duration_minutes)/60 from erp_hrm_timelogs JOIN erp_hrm_employees WHERE erp_hrm_organization_id = current_org AND timelog date within current Monday-Sunday week. Returns total hours as floating-point number.
+     * @x-autobe-specification SUM(duration_minutes)/60 from erp_hrm_timelogs
+     *   JOIN erp_hrm_employees WHERE erp_hrm_organization_id = current_org AND
+     *   timelog date within current Monday-Sunday week. Returns total hours as
+     *   floating-point number.
    */
   weekly_hours: number;
 };
@@ -48,28 +64,32 @@ export namespace IErpHrmStatistic {
     /**
      * Name of the project with high budget utilization.
      *
-     * @x-autobe-specification Direct mapping from erp_hrm_projects.name.
+         * @x-autobe-specification Direct mapping from erp_hrm_projects.name.
      */
     name: string;
 
     /**
      * Color code for UI display of the project.
      *
-     * @x-autobe-specification Direct mapping from erp_hrm_projects.color.
+         * @x-autobe-specification Direct mapping from erp_hrm_projects.color.
      */
     color: string;
 
     /**
      * Configured budget hours for the project.
      *
-     * @x-autobe-specification Direct mapping from erp_hrm_projects.budget_hours. Filter ensures budget_hours > 0.
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_projects.budget_hours. Filter ensures budget_hours > 0.
      */
     budget_hours: number;
 
     /**
      * Budget utilization percentage calculated as actual logged hours divided by budget hours, multiplied by 100.
      *
-     * @x-autobe-specification Calculated aggregation: (SUM(duration_minutes)/60 / budget_hours) * 100. Computed from erp_hrm_timelogs duration joined with erp_hrm_projects.budget_hours. Filter: utilization >= 80%.
+         * @x-autobe-specification Calculated aggregation:
+         *   (SUM(duration_minutes)/60 / budget_hours) * 100. Computed from
+         *   erp_hrm_timelogs duration joined with
+         *   erp_hrm_projects.budget_hours. Filter: utilization >= 80%.
      */
     utilization_percentage: number;
   };
@@ -81,21 +101,29 @@ export namespace IErpHrmStatistic {
     /**
      * Employee's display name.
      *
-     * @x-autobe-specification JOIN erp_hrm_employees.erp_hrm_member_id to erp_hrm_members.id, then extract erp_hrm_members.display_name. This is the employee's global profile display name from the members table.
+         * @x-autobe-specification JOIN erp_hrm_employees.erp_hrm_member_id to
+         *   erp_hrm_members.id, then extract erp_hrm_members.display_name. This
+         *   is the employee's global profile display name from the members
+         *   table.
      */
     name: string;
 
     /**
      * Employee's department name. Null if employee has no department assignment.
      *
-     * @x-autobe-specification JOIN erp_hrm_employees.erp_hrm_department_id to erp_hrm_departments.id, then extract erp_hrm_departments.name. Nullable if employee has no department assignment.
+         * @x-autobe-specification JOIN erp_hrm_employees.erp_hrm_department_id
+         *   to erp_hrm_departments.id, then extract erp_hrm_departments.name.
+         *   Nullable if employee has no department assignment.
      */
     department: string | null;
 
     /**
      * Total hours logged during the current week.
      *
-     * @x-autobe-specification Aggregate from erp_hrm_timelogs: SUM(duration_minutes)/60 as total_hours. Filter by date within current Monday-Sunday week. GROUP BY employee. This is a computed value representing total logged hours.
+         * @x-autobe-specification Aggregate from erp_hrm_timelogs:
+         *   SUM(duration_minutes)/60 as total_hours. Filter by date within
+         *   current Monday-Sunday week. GROUP BY employee. This is a computed
+         *   value representing total logged hours.
      */
     hours: number;
   };

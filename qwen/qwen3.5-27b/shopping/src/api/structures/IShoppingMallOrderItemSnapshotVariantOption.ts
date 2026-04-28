@@ -15,8 +15,10 @@ export type IShoppingMallOrderItemSnapshotVariantOption = {
   /**
    * Unique identifier for the variant option snapshot entry.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_order_item_snapshot_variant_options.id. Primary key UUID for this variant option record.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_order_item_snapshot_variant_options.id. Primary key UUID
+     *   for this variant option record.
    */
   id: string & tags.Format<"uuid">;
 
@@ -25,8 +27,12 @@ export type IShoppingMallOrderItemSnapshotVariantOption = {
    *
    * This field identifies what characteristic of the product variant is being described. Each key is unique within a single order item snapshot, ensuring no duplicate option attributes for the same variant.
    *
-   * @x-autobe-database-schema-property key
-   * @x-autobe-specification Direct mapping from shopping_mall_order_item_snapshot_variant_options.key. Stores the option attribute name (e.g., 'color', 'size', 'material'). Unique within each snapshot, enforced by database unique constraint on (shopping_mall_order_item_snapshot_id, key).
+     * @x-autobe-database-schema-property key
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_order_item_snapshot_variant_options.key. Stores the
+     *   option attribute name (e.g., 'color', 'size', 'material'). Unique
+     *   within each snapshot, enforced by database unique constraint on
+     *   (shopping_mall_order_item_snapshot_id, key).
    */
   key: string;
 
@@ -35,8 +41,10 @@ export type IShoppingMallOrderItemSnapshotVariantOption = {
    *
    * This field contains the specific value for the variant option identified by the key field. For example, if key is 'color', value might be 'Red'. If key is 'size', value might be 'Large'.
    *
-   * @x-autobe-database-schema-property value
-   * @x-autobe-specification Direct mapping from shopping_mall_order_item_snapshot_variant_options.value. Stores the actual option value (e.g., 'Red', 'Large', 'Cotton').
+     * @x-autobe-database-schema-property value
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_order_item_snapshot_variant_options.value. Stores the
+     *   actual option value (e.g., 'Red', 'Large', 'Cotton').
    */
   value: string;
 
@@ -45,8 +53,11 @@ export type IShoppingMallOrderItemSnapshotVariantOption = {
    *
    * This field records the exact time when the order was placed and the snapshot was created. Since snapshots are immutable, this timestamp is never updated and serves as a permanent record of when the purchase occurred.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from shopping_mall_order_item_snapshot_variant_options.created_at. Timestamp when this variant option was captured in the order item snapshot. Set automatically at order placement time and never modified.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_order_item_snapshot_variant_options.created_at. Timestamp
+     *   when this variant option was captured in the order item snapshot. Set
+     *   automatically at order placement time and never modified.
    */
   created_at: string & tags.Format<"date-time">;
 };

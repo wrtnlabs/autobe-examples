@@ -39,9 +39,9 @@ export class ErphrmtimetrackingMemberReportgenerationrunsExportsController {
    *
    * @param connection
    * @param reportGenerationRunId Target report generation run identifier whose persisted outputs will be exported.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1) Extract `reportGenerationRunId` from the path.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification 1) Extract `reportGenerationRunId` from the path.
    *
    * 2) Organization scoping & authorization:
    *    - Resolve the selected organization context for the authenticated member.

@@ -27,9 +27,10 @@ export class EcommercemallAdministratorCategoriesProductsController {
    * @param connection
    * @param categoryId Unique identifier of the category to filter products by. Products in subcategories are NOT included - only products directly assigned to this category.
    * @param body Search and filtering criteria for products within the category, including text search, price range filters, sorting options, and pagination parameters.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Query ecommerce_mall_products table with the following logic:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor administrator
+     * @x-autobe-specification Query ecommerce_mall_products table with the
+     *   following logic:
    *
    * **Database Query**:
    * - Filter: WHERE category_id = {categoryId} AND deleted_at IS NULL

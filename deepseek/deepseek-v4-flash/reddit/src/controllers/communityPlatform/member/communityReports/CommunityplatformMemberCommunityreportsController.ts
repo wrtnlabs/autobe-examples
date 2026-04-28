@@ -20,9 +20,11 @@ export class CommunityplatformMemberCommunityreportsController {
    *
    * @param connection
    * @param body Report submission details including the target content identifier (UUID), the type of target ("post" or "comment"), and a textual explanation of why the content violates community standards. The community scope and reporter identity are automatically derived by the system.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Validate the request body: reason must be a non-empty text string; targetId must be a valid UUID format; targetType must be exactly "post" or "comment".
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Validate the request body: reason must be a
+     *   non-empty text string; targetId must be a valid UUID format; targetType
+     *   must be exactly "post" or "comment".
    *
    * Resolve the target content from targetId:
    * - If targetType is "post": query community_platform_posts by id. If not found, return 404 Not Found.

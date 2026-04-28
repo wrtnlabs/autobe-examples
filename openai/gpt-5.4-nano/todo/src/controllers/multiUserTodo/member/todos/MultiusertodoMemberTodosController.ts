@@ -27,17 +27,22 @@ export class MultiusertodoMemberTodosController {
    *
    * @param connection
    * @param todoId The todo identifier (UUID). Access is restricted to the authenticated member who owns the todo; requests must be rejected if the todo is not owned or is non-retrievable.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1) Authenticate the request as a member.
-   * 2) Parse `todoId` as UUID.
-   * 3) Query `multi_user_todo_todos` for a row where `id = todoId`.
-   * 4) Enforce ownership isolation by ensuring the todo belongs to the authenticated member.
-   *    - Implement by scoping the todo lookup to the authenticated owner (e.g., join or filter using an owner identifier available in the session/context and the todo’s persisted owner scope).
-   * 5) Enforce deletion visibility policy for “permanently deleted / non-retrievable” todos.
-   *    - If the todo is permanently removed or otherwise not accessible through normal/trash views, reject the request.
-   * 6) Map the todo row to the response DTO.
-   * 7) If the response DTO includes edit history data, load related `multi_user_todo_todo_edit_history_entries` for `multi_user_todo_todo_id = todoId`, ordered by `edit_made_at` descending (most recent first), and map to the DTO.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification 1) Authenticate the request as a member. 2) Parse
+     *   `todoId` as UUID. 3) Query `multi_user_todo_todos` for a row where `id
+     *   = todoId`. 4) Enforce ownership isolation by ensuring the todo belongs
+     *   to the authenticated member. - Implement by scoping the todo lookup to
+     *   the authenticated owner (e.g., join or filter using an owner identifier
+     *   available in the session/context and the todo’s persisted owner scope).
+     *   5) Enforce deletion visibility policy for “permanently deleted /
+     *   non-retrievable” todos. - If the todo is permanently removed or
+     *   otherwise not accessible through normal/trash views, reject the
+     *   request. 6) Map the todo row to the response DTO. 7) If the response
+     *   DTO includes edit history data, load related
+     *   `multi_user_todo_todo_edit_history_entries` for
+     *   `multi_user_todo_todo_id = todoId`, ordered by `edit_made_at`
+     *   descending (most recent first), and map to the DTO.
    *
    * Error handling:
    * - Reject when no accessible todo is found (including not-owned or permanently deleted cases). Do not reveal whether the id exists for other users.
@@ -73,39 +78,34 @@ export class MultiusertodoMemberTodosController {
    * @param connection
    * @param todoId Identifier of the todo to update (global scope UUID).
    * @param body Fields to update on the todo. Ownership context is provided by the authenticated member and todoId path parameter.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation steps:
-   * 1. Authenticate the caller as a member.
-   * 2. Validate todoId is a UUID.
-   * 3. Load the todo row by id = {todoId} with an ownership constraint matching the authenticated member (e.g., join/filter by multi_user_todo_todos owner if available in your auth context; if ownership is not directly stored on the todos table, resolve owner via the request context and ensure the todo belongs to that owner).
-   * 4. If no accessible todo exists for the authenticated member, reject the request (do not reveal whether the todo exists).
-   * 5. Reject the request if the targeted todo is permanently deleted/inaccessible per lifecycle/deletion rules (e.g., if it is not eligible for editing due to its lifecycle_state/deleted_at status).
-   * 6. Validate input according to business rules for todos:
-   *    - title is required
-   *    - description can be empty or null (as represented by the request DTO)
-   *    - start_date and due_date may be unset/null
-   * 7. Compute previous values from the loaded todo row for all tracked fields.
-   * 8. Apply updates to multi_user_todo_todos:
-   *    - title
-   *    - description
-   *    - start_date
-   *    - due_date
-   *    - is_complete
-   *    - updated_at = now
-   * 9. Insert a new multi_user_todo_todo_edit_history_entries row capturing:
-   *    - multi_user_todo_todo_id = todo.id
-   *    - multi_user_todo_owner_id = todo owner id (from the authenticated member)
-   *    - edit_made_at = now
-   *    - previous_title/new_title
-   *    - previous_description/new_description
-   *    - previous_start_date/new_start_date (nullable)
-   *    - previous_due_date/new_due_date (nullable)
-   *    - previous_is_complete/new_is_complete
-   *    - created_at = now
-   *    - updated_at = now
-   *    - deleted_at = null (active history entry)
-   * 10. Commit as a single transaction.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation steps: 1. Authenticate the caller
+     *   as a member. 2. Validate todoId is a UUID. 3. Load the todo row by id =
+     *   {todoId} with an ownership constraint matching the authenticated member
+     *   (e.g., join/filter by multi_user_todo_todos owner if available in your
+     *   auth context; if ownership is not directly stored on the todos table,
+     *   resolve owner via the request context and ensure the todo belongs to
+     *   that owner). 4. If no accessible todo exists for the authenticated
+     *   member, reject the request (do not reveal whether the todo exists). 5.
+     *   Reject the request if the targeted todo is permanently
+     *   deleted/inaccessible per lifecycle/deletion rules (e.g., if it is not
+     *   eligible for editing due to its lifecycle_state/deleted_at status). 6.
+     *   Validate input according to business rules for todos: - title is
+     *   required - description can be empty or null (as represented by the
+     *   request DTO) - start_date and due_date may be unset/null 7. Compute
+     *   previous values from the loaded todo row for all tracked fields. 8.
+     *   Apply updates to multi_user_todo_todos: - title - description -
+     *   start_date - due_date - is_complete - updated_at = now 9. Insert a new
+     *   multi_user_todo_todo_edit_history_entries row capturing: -
+     *   multi_user_todo_todo_id = todo.id - multi_user_todo_owner_id = todo
+     *   owner id (from the authenticated member) - edit_made_at = now -
+     *   previous_title/new_title - previous_description/new_description -
+     *   previous_start_date/new_start_date (nullable) -
+     *   previous_due_date/new_due_date (nullable) -
+     *   previous_is_complete/new_is_complete - created_at = now - updated_at =
+     *   now - deleted_at = null (active history entry) 10. Commit as a single
+     *   transaction.
    *
    * Error handling:
    * - Invalid UUID or invalid request DTO values: return validation errors.
@@ -148,9 +148,9 @@ export class MultiusertodoMemberTodosController {
    *
    * @param connection
    * @param todoId UUID of the todo to delete. The todo must be owned by the authenticated member; otherwise the request is rejected (ownership isolation).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement as a member-scoped erase operation.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implement as a member-scoped erase operation.
    *
    * 1) Authenticate and scope
    * - Require authenticated member access.
@@ -204,28 +204,27 @@ export class MultiusertodoMemberTodosController {
    *
    * @param connection
    * @param body Todo creation payload. Title is required; description and scheduling dates are optional. Newly created todos are always stored as incomplete by default.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation steps:
-   * 1) Authenticate the caller as a member and derive the todo owner from the authenticated identity (never accept any owner/user identifier from the client).
-   * 2) Parse JSON body into the component DTO type MultiUserTodoTodo.ICreate.
-   * 3) Validate required fields:
-   *    - Reject if title is missing or empty.
-   * 4) Enforce the creation default:
-   *    - Persist the todo with is_complete=false (incomplete). If the parsed DTO/state indicates a completed initial state, reject the creation.
-   * 5) Map DTO fields to multi_user_todo_todos columns:
-   *    - title -> title
-   *    - description -> description (nullable)
-   *    - start_date -> start_date (nullable)
-   *    - due_date -> due_date (nullable)
-   *    - lifecycle_state -> set to the service’s default “normal list visibility” state used for normal vs trash filtering (do not rely on deleted_at alone).
-   *    - deleted_at -> must be null on creation
-   *    - created_at / updated_at -> set by persistence/database layer
-   * 6) Privacy isolation enforcement:
-   *    - Ensure any subsequent operations use owner scoping; this create endpoint must never write or return data for any other user.
-   * 7) Transactionality:
-   *    - Perform validation before insert; if validation fails, do not create any row.
-   * 8) Return the created todo entity as stored.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation steps: 1) Authenticate the caller
+     *   as a member and derive the todo owner from the authenticated identity
+     *   (never accept any owner/user identifier from the client). 2) Parse JSON
+     *   body into the component DTO type MultiUserTodoTodo.ICreate. 3) Validate
+     *   required fields: - Reject if title is missing or empty. 4) Enforce the
+     *   creation default: - Persist the todo with is_complete=false
+     *   (incomplete). If the parsed DTO/state indicates a completed initial
+     *   state, reject the creation. 5) Map DTO fields to multi_user_todo_todos
+     *   columns: - title -> title - description -> description (nullable) -
+     *   start_date -> start_date (nullable) - due_date -> due_date (nullable) -
+     *   lifecycle_state -> set to the service’s default “normal list
+     *   visibility” state used for normal vs trash filtering (do not rely on
+     *   deleted_at alone). - deleted_at -> must be null on creation -
+     *   created_at / updated_at -> set by persistence/database layer 6) Privacy
+     *   isolation enforcement: - Ensure any subsequent operations use owner
+     *   scoping; this create endpoint must never write or return data for any
+     *   other user. 7) Transactionality: - Perform validation before insert; if
+     *   validation fails, do not create any row. 8) Return the created todo
+     *   entity as stored.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post()
@@ -259,9 +258,10 @@ export class MultiusertodoMemberTodosController {
    *
    * @param connection
    * @param body Search and filtering criteria, including pagination, sorting, and optional filters for the authenticated member’s todos.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement PATCH /todos as a member-scoped list/search over multi_user_todo_todos.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implement PATCH /todos as a member-scoped
+     *   list/search over multi_user_todo_todos.
    *
    * 1) Authentication/identity
    * - Require an authenticated member in the request context.
@@ -319,9 +319,10 @@ export class MultiusertodoMemberTodosController {
    *
    * @param connection
    * @param body Search criteria including filtering by completion and lifecycle/visibility, optional text matching for title/description, sorting selection, and pagination.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement a read-only search over multi_user_todo_todos scoped to the authenticated member.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implement a read-only search over
+     *   multi_user_todo_todos scoped to the authenticated member.
    *
    * 1) Authorization & privacy isolation
    * - Resolve the authenticated user identity (member) and use it as the ownership scope.

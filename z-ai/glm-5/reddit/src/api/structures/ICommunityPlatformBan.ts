@@ -10,31 +10,31 @@ import { ICommunityPlatformModerator } from "./ICommunityPlatformModerator";
  */
 export type ICommunityPlatformBan = {
   /**
-   * @x-autobe-database-schema-property id
+     * @x-autobe-database-schema-property id
    */
   id: string & tags.Format<"uuid">;
   /**
-   * @x-autobe-database-schema-property reason
+     * @x-autobe-database-schema-property reason
    */
   reason: string;
   /**
-   * @x-autobe-database-schema-property created_at
+     * @x-autobe-database-schema-property created_at
    */
   created_at: string & tags.Format<"date-time">;
   /**
-   * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-database-schema-property deleted_at
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
   /**
-   * @x-autobe-database-schema-property member
+     * @x-autobe-database-schema-property member
    */
   member: ICommunityPlatformMember.ISummary;
   /**
-   * @x-autobe-database-schema-property community
+     * @x-autobe-database-schema-property community
    */
   community: ICommunityPlatformCommunity.ISummary;
   /**
-   * @x-autobe-database-schema-property moderator
+     * @x-autobe-database-schema-property moderator
    */
   moderator: ICommunityPlatformModerator;
 };
@@ -86,19 +86,19 @@ export namespace ICommunityPlatformBan {
    */
   export type ISummary = {
     /**
-     * @x-autobe-database-schema-property id
+         * @x-autobe-database-schema-property id
      */
     id: string & tags.Format<"uuid">;
     /**
-     * @x-autobe-database-schema-property member
+         * @x-autobe-database-schema-property member
      */
     member: ICommunityPlatformMember.ISummary;
     /**
-     * @x-autobe-database-schema-property reason
+         * @x-autobe-database-schema-property reason
      */
     reason: string;
     /**
-     * @x-autobe-database-schema-property created_at
+         * @x-autobe-database-schema-property created_at
      */
     created_at: string & tags.Format<"date-time">;
   };
@@ -110,14 +110,14 @@ export namespace ICommunityPlatformBan {
     /**
      * The unique identifier of the member to be banned from the community
      *
-     * @x-autobe-database-schema-property member_id
+         * @x-autobe-database-schema-property member_id
      */
     memberId: string & tags.Format<"uuid">;
 
     /**
      * The explanation for why the ban is being imposed, provided by the moderator
      *
-     * @x-autobe-database-schema-property reason
+         * @x-autobe-database-schema-property reason
      */
     reason: string;
   };

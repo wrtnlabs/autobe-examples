@@ -20,7 +20,11 @@ export namespace IHrmMemberPasswordReset {
      *
      * The API response does not indicate whether the email exists in the system to prevent email enumeration attacks. A success response is returned whether or not the email address is registered.
      *
-     * @x-autobe-specification Input-only field. Backend validates email format, queries hrm_members table by email to find the member account, then uses the resulting hrm_member_id to create the password reset record. The email itself is not stored in hrm_member_password_resets.
+         * @x-autobe-specification Input-only field. Backend validates email
+         *   format, queries hrm_members table by email to find the member
+         *   account, then uses the resulting hrm_member_id to create the
+         *   password reset record. The email itself is not stored in
+         *   hrm_member_password_resets.
      */
     email: string & tags.Format<"email">;
   };
@@ -54,8 +58,11 @@ export namespace IHrmMemberPasswordReset {
      * - Token must not have been used previously (used_at is null)
      * - Associated member account must exist and be active
      *
-     * @x-autobe-database-schema-property token
-     * @x-autobe-specification Direct mapping from hrm_member_password_resets.token. Used to lookup and validate the password reset record. Token must exist, not be expired, and not have been used previously.
+         * @x-autobe-database-schema-property token
+         * @x-autobe-specification Direct mapping from
+         *   hrm_member_password_resets.token. Used to lookup and validate the
+         *   password reset record. Token must exist, not be expired, and not
+         *   have been used previously.
      */
     token: string;
 
@@ -71,7 +78,11 @@ export namespace IHrmMemberPasswordReset {
      * - Password is hashed using bcrypt or equivalent secure algorithm
      * - Password policy requirements must be met
      *
-     * @x-autobe-specification Plain text password input that is hashed using bcrypt and stored in hrm_members.password_hash. This field does not map to any column in hrm_member_password_resets but triggers an update to the member's password in hrm_members table after token validation.
+         * @x-autobe-specification Plain text password input that is hashed
+         *   using bcrypt and stored in hrm_members.password_hash. This field
+         *   does not map to any column in hrm_member_password_resets but
+         *   triggers an update to the member's password in hrm_members table
+         *   after token validation.
      */
     password: string;
 
@@ -83,7 +94,8 @@ export namespace IHrmMemberPasswordReset {
      * Requesting a page beyond the available range returns an empty data array
      * with valid pagination metadata reflecting the actual totals.
      *
-     * @x-autobe-specification 1-indexed page number. Defaults to 1 if not provided.
+         * @x-autobe-specification 1-indexed page number. Defaults to 1 if not
+         *   provided.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
 
@@ -95,7 +107,8 @@ export namespace IHrmMemberPasswordReset {
      * enforce upper bounds to prevent excessive resource consumption on large
      * requests.
      *
-     * @x-autobe-specification Maximum records per page. Defaults to 100 if not provided.
+         * @x-autobe-specification Maximum records per page. Defaults to 100 if
+         *   not provided.
      */
     limit?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };

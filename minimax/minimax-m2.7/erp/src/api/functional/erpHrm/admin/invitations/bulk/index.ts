@@ -21,7 +21,8 @@ import { IErpHrmInvitation } from "../../../../../structures/IErpHrmInvitation";
  * @param props.body Array of invitation data for bulk creation, each containing email address and optional pre-assignments.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Process bulk invitation creation for the current organization.
+ * @x-autobe-specification Process bulk invitation creation for the current
+ *   organization.
  *
  * 1. Extract organization ID from authenticated session context.
  * 2. Validate user has `employee:manage` permission for the organization.

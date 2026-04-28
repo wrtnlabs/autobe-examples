@@ -20,7 +20,9 @@ import { IPageIEcommerceMallCustomerAddress } from "../../../../structures/IPage
  * @param props.body Search and filter criteria for address list including pagination, default status filter, and text search options.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query the ecommerce_mall_customer_addresses table for records belonging to the authenticated customer (filter by ecommerce_mall_member_id from JWT token).
+ * @x-autobe-specification Query the ecommerce_mall_customer_addresses table for
+ *   records belonging to the authenticated customer (filter by
+ *   ecommerce_mall_member_id from JWT token).
  *
  * Apply optional filters:
  * - is_default: filter addresses by default status (true/false)
@@ -127,7 +129,8 @@ export namespace index {
  * @param props.body Updateable fields for the shipping address. Any field not provided will retain its existing value. The is_default field will trigger automatic default reset for other addresses if set to true.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Update a customer shipping address in ecommerce_mall_customer_addresses table.
+ * @x-autobe-specification Update a customer shipping address in
+ *   ecommerce_mall_customer_addresses table.
  *
  * 1. Find the address by addressId (UUID) with soft-delete check (deleted_at is NULL).
  * 2. Verify ownership: address.ecommerce_mall_member_id must match the authenticated member's ID.
@@ -246,16 +249,15 @@ export namespace update {
  * @param props.addressId UUID of the customer shipping address to delete (global scope)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification 1. Validate that the authenticated customer owns the address identified by addressId
- * 2. Check for any pending orders (paid, shipped, or cancelled status) that reference this address
- *    - If address is referenced by pending order, reject with 409 Conflict error
- * 3. Count the customer's remaining active addresses
- *    - If address is the customer's only address, reject with 409 Conflict error
- * 4. Verify address is not already soft-deleted (deleted_at is NULL)
- *    - If already deleted, reject with 404 Not Found error
- * 5. Set deleted_at to current timestamp for soft delete
- * 6. Update updated_at timestamp
- * 7. Return null response body
+ * @x-autobe-specification 1. Validate that the authenticated customer owns the
+ *   address identified by addressId 2. Check for any pending orders (paid,
+ *   shipped, or cancelled status) that reference this address - If address is
+ *   referenced by pending order, reject with 409 Conflict error 3. Count the
+ *   customer's remaining active addresses - If address is the customer's only
+ *   address, reject with 409 Conflict error 4. Verify address is not already
+ *   soft-deleted (deleted_at is NULL) - If already deleted, reject with 404 Not
+ *   Found error 5. Set deleted_at to current timestamp for soft delete 6.
+ *   Update updated_at timestamp 7. Return null response body
  *
  * Error responses:
  * - 401 Unauthorized: Customer not authenticated

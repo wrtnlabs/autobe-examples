@@ -21,9 +21,10 @@ export class EcommercemallSuperadministratorBansController {
    *
    * @param connection
    * @param body Search criteria including user type filter, administrator ID, ban date range, reason text search, and pagination parameters.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor superAdministrator
-   * @x-autobe-specification Query ecommerce_mall_user_bans table with pagination and filtering.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor superAdministrator
+     * @x-autobe-specification Query ecommerce_mall_user_bans table with
+     *   pagination and filtering.
    *
    * Apply search filters from request body:
    * - user_type: filter by 'customer' or 'seller'

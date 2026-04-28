@@ -21,9 +21,10 @@ export class ShoppingmallSellerCancellation_requestsController {
    *
    * @param connection
    * @param body Search criteria including status filter, date range, pagination parameters, and sorting options for cancellation requests.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Query shopping_mall_cancellation_requests table with pagination and filtering support.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Query shopping_mall_cancellation_requests table
+     *   with pagination and filtering support.
    *
    * Apply filters based on request body:
    * - status: Filter by cancellation status (pending, approved, rejected)
@@ -71,9 +72,10 @@ export class ShoppingmallSellerCancellation_requestsController {
    *
    * @param connection
    * @param cancellationRequestId Unique identifier of the cancellation request to retrieve (global scope).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Query the shopping_mall_cancellation_requests table for the record matching the provided cancellationRequestId.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Query the shopping_mall_cancellation_requests
+     *   table for the record matching the provided cancellationRequestId.
    *
    * Join with shopping_mall_customers to include customer details (email, display name, account status).
    *
@@ -131,9 +133,10 @@ export class ShoppingmallSellerCancellation_requestsController {
    * @param connection
    * @param cancellationRequestId UUID of the cancellation request to update (global scope)
    * @param body Update data for the cancellation request including the new status (approved or rejected) and the seller's response reason.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Query the shopping_mall_cancellation_requests table for the cancellation request by ID.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Query the shopping_mall_cancellation_requests
+     *   table for the cancellation request by ID.
    *
    * Validate that the cancellation request exists and is not soft-deleted.
    *

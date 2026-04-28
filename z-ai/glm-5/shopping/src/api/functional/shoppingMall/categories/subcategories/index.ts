@@ -30,7 +30,8 @@ import { IShoppingMallCategory } from "../../../../structures/IShoppingMallCateg
  * @param props.body Search criteria and pagination parameters for filtering subcategories
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query the shopping_mall_categories table for subcategories under a specific parent.
+ * @x-autobe-specification Query the shopping_mall_categories table for
+ *   subcategories under a specific parent.
  *
  * Implementation steps:
  * 1. Validate the categoryId path parameter exists and is not soft-deleted (deleted_at IS NULL)

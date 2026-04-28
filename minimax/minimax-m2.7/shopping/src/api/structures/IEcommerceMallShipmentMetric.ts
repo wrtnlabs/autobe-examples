@@ -28,7 +28,12 @@ export type IEcommerceMallShipmentMetric = {
    * - Identifying high cancellation rates requiring attention
    * - Tracking order flow through fulfillment pipeline
    *
-   * @x-autobe-specification Aggregated from ecommerce_mall_orders table. Compute: COUNT(*) WHERE deleted_at IS NULL as totalOrders; GROUP BY status to get counts for paidOrders, shippedOrders, deliveredOrders, cancelledOrders, refundedOrders, partiallyCompletedOrders. Each status count filters orders WHERE status = '[status_value]' AND deleted_at IS NULL.
+     * @x-autobe-specification Aggregated from ecommerce_mall_orders table.
+     *   Compute: COUNT(*) WHERE deleted_at IS NULL as totalOrders; GROUP BY
+     *   status to get counts for paidOrders, shippedOrders, deliveredOrders,
+     *   cancelledOrders, refundedOrders, partiallyCompletedOrders. Each status
+     *   count filters orders WHERE status = '[status_value]' AND deleted_at IS
+     *   NULL.
    */
   orderStatistics: {
     /**
@@ -82,7 +87,11 @@ export type IEcommerceMallShipmentMetric = {
    * - Identifying items stuck in specific statuses
    * - Understanding average order composition
    *
-   * @x-autobe-specification Aggregated from ecommerce_mall_order_items table. Compute: COUNT(*) as totalItems; GROUP BY status to get counts for paidItems, shippedItems, deliveredItems, cancelledItems, refundedItems; AVG(quantity) as averageQuantityPerItem. Each status count filters items WHERE status = '[status_value]'.
+     * @x-autobe-specification Aggregated from ecommerce_mall_order_items table.
+     *   Compute: COUNT(*) as totalItems; GROUP BY status to get counts for
+     *   paidItems, shippedItems, deliveredItems, cancelledItems, refundedItems;
+     *   AVG(quantity) as averageQuantityPerItem. Each status count filters
+     *   items WHERE status = '[status_value]'.
    */
   orderItemStatistics: {
     /**
@@ -136,7 +145,12 @@ export type IEcommerceMallShipmentMetric = {
    * - Identifying oversized or undersized shipments
    * - Logistics capacity planning
    *
-   * @x-autobe-specification Aggregated from ecommerce_mall_shipments and ecommerce_mall_shipment_items tables. Compute: COUNT(*) WHERE deleted_at IS NULL as totalShipments; COUNT(*) from ecommerce_mall_shipment_items as totalItemsShipped; totalItemsShipped / totalShipments as averageItemsPerShipment. Soft-deleted shipments excluded via WHERE deleted_at IS NULL.
+     * @x-autobe-specification Aggregated from ecommerce_mall_shipments and
+     *   ecommerce_mall_shipment_items tables. Compute: COUNT(*) WHERE
+     *   deleted_at IS NULL as totalShipments; COUNT(*) from
+     *   ecommerce_mall_shipment_items as totalItemsShipped; totalItemsShipped /
+     *   totalShipments as averageItemsPerShipment. Soft-deleted shipments
+     *   excluded via WHERE deleted_at IS NULL.
    */
   shipmentStatistics: {
     /**
@@ -170,7 +184,14 @@ export type IEcommerceMallShipmentMetric = {
    * - Identifying fulfillment speed issues
    * - Tracking customer satisfaction indicators
    *
-   * @x-autobe-specification Cross-table aggregation from ecommerce_mall_orders and ecommerce_mall_order_items. Compute averageFulfillmentTimeSeconds: AVG(TIMESTAMPTZ_DIFF(order_items.created_at, orders.created_at)) for items WHERE status = 'shipped'. Compute deliveryCompletionRate: (COUNT WHERE status = 'delivered' + COUNT WHERE status = 'refunded') / totalItems. Compute cancellationRate: COUNT WHERE status = 'cancelled' / totalItems. Returns null for averages when no relevant data exists.
+     * @x-autobe-specification Cross-table aggregation from
+     *   ecommerce_mall_orders and ecommerce_mall_order_items. Compute
+     *   averageFulfillmentTimeSeconds:
+     *   AVG(TIMESTAMPTZ_DIFF(order_items.created_at, orders.created_at)) for
+     *   items WHERE status = 'shipped'. Compute deliveryCompletionRate: (COUNT
+     *   WHERE status = 'delivered' + COUNT WHERE status = 'refunded') /
+     *   totalItems. Compute cancellationRate: COUNT WHERE status = 'cancelled'
+     *   / totalItems. Returns null for averages when no relevant data exists.
    */
   fulfillmentPerformance: {
     /**

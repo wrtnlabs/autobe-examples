@@ -31,9 +31,11 @@ export class EcommercemallCustomerCustomersMeOrdersController {
    * Order status reflects the combined state of all items: paid (all items paid and waiting to ship), shipped (at least one item shipped), delivered (all items delivered), cancelled (all items cancelled), refunded (all items refunded), or partially_completed (mixed item states).
    *
    * @param connection
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Query ecommerce_mall_orders table filtering by ecommerce_mall_customer_id matching the authenticated customer from JWT token.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Query ecommerce_mall_orders table filtering by
+     *   ecommerce_mall_customer_id matching the authenticated customer from JWT
+     *   token.
    *
    * Sort results by created_at in descending order (newest first).
    *
@@ -107,9 +109,10 @@ export class EcommercemallCustomerCustomersMeOrdersController {
    *
    * @param connection
    * @param body The order creation request containing the shipping address selection for delivery. The customer's cart items are automatically converted to order items. Product prices are frozen at the time of order creation.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Implement the order creation endpoint with the following steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Implement the order creation endpoint with the
+     *   following steps:
    *
    * 1. **Authentication**: Extract authenticated customer from JWT token in Authorization header
    *
@@ -192,9 +195,11 @@ export class EcommercemallCustomerCustomersMeOrdersController {
    *
    * @param connection
    * @param orderId Unique identifier of the order to retrieve. Must belong to the authenticated customer.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Retrieve order by order_id from ecommerce_mall_orders table where ecommerce_mall_customer_id matches the authenticated customer session.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Retrieve order by order_id from
+     *   ecommerce_mall_orders table where ecommerce_mall_customer_id matches
+     *   the authenticated customer session.
    *
    * Verify ownership: Compare ecommerce_mall_customer_id with the customer ID extracted from the authenticated session JWT token. Return 403 Forbidden if the customer does not own this order.
    *
@@ -246,23 +251,23 @@ export class EcommercemallCustomerCustomersMeOrdersController {
    *
    * @param connection
    * @param body Preview request containing the shipping address to use for the order. The selected address determines shipping cost calculation and delivery routing.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification 1. Extract authenticated customer from session (JWT token validation).
-   * 2. Validate request body contains shipping_address_id.
-   * 3. Verify the shipping address belongs to the authenticated customer.
-   * 4. Retrieve customer's cart with cart items using customer_id.
-   * 5. If cart is empty, return validation error: "Cart is empty".
-   * 6. For each cart item, validate:
-   *    a. Product variant exists and is not soft-deleted (deleted_at is null).
-   *    b. Product exists and is not soft-deleted.
-   *    c. Seller is not suspended or deleted.
-   *    d. Available quantity >= requested quantity. If insufficient, flag item in response.
-   * 7. Calculate subtotal: sum of (variant_price * quantity) for all valid items.
-   * 8. Calculate shipping cost based on shipping_address (use shipping fee calculation service).
-   * 9. Calculate total_amount: subtotal + shipping_cost.
-   * 10. Generate temporary order number for preview display (format: PREVIEW-{uuid_prefix}).
-   * 11. Return order preview with all calculated values, validated items, and any warnings.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification 1. Extract authenticated customer from session
+     *   (JWT token validation). 2. Validate request body contains
+     *   shipping_address_id. 3. Verify the shipping address belongs to the
+     *   authenticated customer. 4. Retrieve customer's cart with cart items
+     *   using customer_id. 5. If cart is empty, return validation error: "Cart
+     *   is empty". 6. For each cart item, validate: a. Product variant exists
+     *   and is not soft-deleted (deleted_at is null). b. Product exists and is
+     *   not soft-deleted. c. Seller is not suspended or deleted. d. Available
+     *   quantity >= requested quantity. If insufficient, flag item in response.
+     *   7. Calculate subtotal: sum of (variant_price * quantity) for all valid
+     *   items. 8. Calculate shipping cost based on shipping_address (use
+     *   shipping fee calculation service). 9. Calculate total_amount: subtotal
+     *   + shipping_cost. 10. Generate temporary order number for preview
+     *   display (format: PREVIEW-{uuid_prefix}). 11. Return order preview with
+     *   all calculated values, validated items, and any warnings.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post("preview")

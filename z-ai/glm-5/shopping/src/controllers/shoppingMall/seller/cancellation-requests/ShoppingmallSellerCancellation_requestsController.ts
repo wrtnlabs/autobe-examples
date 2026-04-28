@@ -32,9 +32,10 @@ export class ShoppingmallSellerCancellation_requestsController {
    *
    * @param connection
    * @param cancellationRequestId Unique identifier of the cancellation request to retrieve (UUID format)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Retrieve a single cancellation request by ID from shopping_mall_cancellation_requests table.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Retrieve a single cancellation request by ID from
+     *   shopping_mall_cancellation_requests table.
    *
    * 1. Parse the cancellationRequestId UUID path parameter
    * 2. Query shopping_mall_cancellation_requests where id = cancellationRequestId
@@ -93,9 +94,9 @@ export class ShoppingmallSellerCancellation_requestsController {
    *
    * @param connection
    * @param cancellationRequestId UUID of the cancellation request to approve. Must exist and have 'pending' status. The authenticated seller must own the product associated with this cancellation request's order item.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Implementation steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Implementation steps:
    *
    * 1. **Authentication & Authorization**: Verify the authenticated user is a seller. Query the cancellation request by ID, join with order_items to get the product, then verify the product's seller_id matches the authenticated seller's ID.
    *
@@ -154,9 +155,10 @@ export class ShoppingmallSellerCancellation_requestsController {
    *
    * @param connection
    * @param cancellationRequestId Unique identifier of the cancellation request to reject (UUID format)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Implementation steps for rejecting a cancellation request:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Implementation steps for rejecting a cancellation
+     *   request:
    *
    * 1. Authentication: Verify the requester is an authenticated seller (not customer or administrator).
    *

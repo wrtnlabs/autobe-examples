@@ -26,9 +26,9 @@ export class ShoppingmallAdminOrdersOversightController {
    *
    * @param connection
    * @param body Administrative oversight command payload to force-cancel or force-refund an order item or an entire order, applying the same business outcomes as approved cancellation/refund and ensuring inventory restoration and snapshot trail integrity.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Implementation guidance for Realize Agent.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Implementation guidance for Realize Agent.
    *
    * 1) Authorization
    * - Allow only authenticated administrators (admin actor per authorization rules).

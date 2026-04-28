@@ -22,9 +22,11 @@ export class EcommercemallSellerProductsController {
    *
    * @param connection
    * @param body Product creation data including name, description, category ID, and base price
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification 1. Validate that the authenticated user is a seller with approved registration status. If status is pending or rejected, return 403 Forbidden.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification 1. Validate that the authenticated user is a
+     *   seller with approved registration status. If status is pending or
+     *   rejected, return 403 Forbidden.
    *
    * 2. Validate request body fields:
    *    - name: required, non-empty string, max length per business rules
@@ -76,9 +78,9 @@ export class EcommercemallSellerProductsController {
    * @param connection
    * @param productId The unique identifier of the product to update
    * @param body Product update fields
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Implement the following:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Implement the following:
    *
    * 1. **Authentication & Authorization**: Verify the requesting user is an authenticated seller. Check that the product belongs to the requesting seller by comparing seller_id. Return 403 Forbidden if ownership mismatch.
    *
@@ -150,9 +152,11 @@ export class EcommercemallSellerProductsController {
    *
    * @param connection
    * @param productId Unique identifier of the product to delete (global scope, UUID format)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification 1. Authorization: Verify the authenticated user is a seller who owns the product (seller_id matches authenticated seller).
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification 1. Authorization: Verify the authenticated user
+     *   is a seller who owns the product (seller_id matches authenticated
+     *   seller).
    *
    * 2. Blocker Validation: Query order_items table joined with product_variants to check for any order items with status 'paid' OR 'shipped' belonging to any variant of the product. If any found, return 409 Conflict with error message indicating pending orders exist.
    *

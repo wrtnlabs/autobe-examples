@@ -16,8 +16,10 @@ export type IRedditClonePostSnapshot = {
    *
    * This UUID distinguishes this specific point-in-time capture from other snapshots of the same post. Each snapshot has a unique ID even when multiple snapshots exist for a single post.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from reddit_clone_post_snapshots.id. Primary key UUID that uniquely identifies this snapshot record within the post's edit history.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_post_snapshots.id. Primary key UUID that uniquely
+     *   identifies this snapshot record within the post's edit history.
    */
   id: string & tags.Format<"uuid">;
 
@@ -26,8 +28,11 @@ export type IRedditClonePostSnapshot = {
    *
    * This is a denormalized copy of the post's title field, preserved exactly as it existed when the snapshot was taken. Even if the original post title is later edited, this snapshot retains the historical title value.
    *
-   * @x-autobe-database-schema-property title
-   * @x-autobe-specification Direct mapping from reddit_clone_post_snapshots.title. Denormalized copy of the post title at the moment this snapshot was created. This value is captured from reddit_clone_posts.title at snapshot time and never changes.
+     * @x-autobe-database-schema-property title
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_post_snapshots.title. Denormalized copy of the post title
+     *   at the moment this snapshot was created. This value is captured from
+     *   reddit_clone_posts.title at snapshot time and never changes.
    */
   title: string;
 
@@ -36,8 +41,12 @@ export type IRedditClonePostSnapshot = {
    *
    * Valid values are 'text' for text posts, 'link' for link posts, and 'image' for image posts. This type discriminator determines which content field contains data - only one of text_content, link_url, or image_url will be non-null based on this value.
    *
-   * @x-autobe-database-schema-property post_type
-   * @x-autobe-specification Direct mapping from reddit_clone_post_snapshots.post_type. Denormalized copy of the post type discriminator at snapshot creation. Valid values are 'text', 'link', or 'image'. This determines which content field (text_content, link_url, or image_url) is populated.
+     * @x-autobe-database-schema-property post_type
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_post_snapshots.post_type. Denormalized copy of the post
+     *   type discriminator at snapshot creation. Valid values are 'text',
+     *   'link', or 'image'. This determines which content field (text_content,
+     *   link_url, or image_url) is populated.
    */
   post_type: string;
 
@@ -46,8 +55,11 @@ export type IRedditClonePostSnapshot = {
    *
    * This field contains the full text content for text-type posts. For link or image posts, this field is null. The content is captured exactly as it existed when the snapshot was created, preserving the historical state.
    *
-   * @x-autobe-database-schema-property text_content
-   * @x-autobe-specification Direct mapping from reddit_clone_post_snapshots.text_content. Denormalized copy of the post's text body content at snapshot time. Nullable - only populated when post_type is 'text'. For link and image posts, this field is null.
+     * @x-autobe-database-schema-property text_content
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_post_snapshots.text_content. Denormalized copy of the
+     *   post's text body content at snapshot time. Nullable - only populated
+     *   when post_type is 'text'. For link and image posts, this field is null.
    */
   text_content: string | null;
 
@@ -56,8 +68,11 @@ export type IRedditClonePostSnapshot = {
    *
    * This field contains the full URL for link-type posts, pointing to external content. For text or image posts, this field is null. The URL is preserved exactly as it existed when the snapshot was created.
    *
-   * @x-autobe-specification Direct mapping from reddit_clone_post_snapshots.link_url. Denormalized copy of the post's external URL at snapshot time. Nullable - only populated when post_type is 'link'. For text and image posts, this field is null.
-   * @x-autobe-database-schema-property link_url
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_post_snapshots.link_url. Denormalized copy of the post's
+     *   external URL at snapshot time. Nullable - only populated when post_type
+     *   is 'link'. For text and image posts, this field is null.
+     * @x-autobe-database-schema-property link_url
    */
   link_url: (string & tags.Format<"uri">) | null;
 
@@ -66,8 +81,11 @@ export type IRedditClonePostSnapshot = {
    *
    * This field contains the URL to the hosted image for image-type posts. For text or link posts, this field is null. The image URL is preserved exactly as it existed when the snapshot was created.
    *
-   * @x-autobe-specification Direct mapping from reddit_clone_post_snapshots.image_url. Denormalized copy of the post's image URL at snapshot time. Nullable - only populated when post_type is 'image'. For text and link posts, this field is null.
-   * @x-autobe-database-schema-property image_url
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_post_snapshots.image_url. Denormalized copy of the post's
+     *   image URL at snapshot time. Nullable - only populated when post_type is
+     *   'image'. For text and link posts, this field is null.
+     * @x-autobe-database-schema-property image_url
    */
   image_url: (string & tags.Format<"uri">) | null;
 
@@ -76,8 +94,12 @@ export type IRedditClonePostSnapshot = {
    *
    * This date-time value indicates the exact moment when the post's state was captured and preserved. It is automatically set by the system and cannot be modified. This timestamp enables chronological ordering of snapshots to reconstruct the post's edit history.
    *
-   * @x-autobe-database-schema-property snapshot_created_at
-   * @x-autobe-specification Direct mapping from reddit_clone_post_snapshots.snapshot_created_at. Timestamp in ISO 8601 date-time format indicating when this snapshot was created. This is set automatically by the system at snapshot creation time and represents the exact moment the post state was captured.
+     * @x-autobe-database-schema-property snapshot_created_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_post_snapshots.snapshot_created_at. Timestamp in ISO 8601
+     *   date-time format indicating when this snapshot was created. This is set
+     *   automatically by the system at snapshot creation time and represents
+     *   the exact moment the post state was captured.
    */
   snapshot_created_at: string & tags.Format<"date-time">;
 
@@ -86,8 +108,13 @@ export type IRedditClonePostSnapshot = {
    *
    * This relation provides context about the original post, including its current title, author information, community, engagement metrics (vote score and comment count), and creation timestamp. The post summary shows the post's current state, which may differ from the snapshot if the post has been edited since this snapshot was created.
    *
-   * @x-autobe-database-schema-property post
-   * @x-autobe-specification Relation mapping from reddit_clone_post_snapshots.post. JOIN to reddit_clone_posts table via reddit_clone_post_id foreign key. Returns IRedditClonePost.ISummary containing the parent post's current state including id, title, post_type, author, community, vote_score, comment_count, created_at, and preview fields.
+     * @x-autobe-database-schema-property post
+     * @x-autobe-specification Relation mapping from
+     *   reddit_clone_post_snapshots.post. JOIN to reddit_clone_posts table via
+     *   reddit_clone_post_id foreign key. Returns IRedditClonePost.ISummary
+     *   containing the parent post's current state including id, title,
+     *   post_type, author, community, vote_score, comment_count, created_at,
+     *   and preview fields.
    */
   post: IRedditClonePost.ISummary;
 };
@@ -112,8 +139,10 @@ export namespace IRedditClonePostSnapshot {
      *
      * This UUID identifies a specific point-in-time capture of a post's state. Each snapshot has a unique ID that can be used to reference this specific version in edit history views and audit trails.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from reddit_clone_post_snapshots.id. Primary key uniquely identifying this snapshot record.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_post_snapshots.id. Primary key uniquely identifying
+         *   this snapshot record.
      */
     id: string & tags.Format<"uuid">;
 
@@ -122,8 +151,10 @@ export namespace IRedditClonePostSnapshot {
      *
      * This field captures the exact title text as it existed when the snapshot was taken. Titles may change over time as posts are edited, so this provides a historical record of the title at this specific point in time.
      *
-     * @x-autobe-database-schema-property title
-     * @x-autobe-specification Direct mapping from reddit_clone_post_snapshots.title. Contains the post title at the moment this snapshot was created.
+         * @x-autobe-database-schema-property title
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_post_snapshots.title. Contains the post title at the
+         *   moment this snapshot was created.
      */
     title: string;
 
@@ -132,8 +163,10 @@ export namespace IRedditClonePostSnapshot {
      *
      * Valid values are 'text' for text posts with body content, 'link' for link posts with URLs, and 'image' for image posts. This discriminator determines how the preview field should be interpreted and which content field was populated in the original post.
      *
-     * @x-autobe-database-schema-property post_type
-     * @x-autobe-specification Direct mapping from reddit_clone_post_snapshots.post_type. Contains the post type discriminator (text, link, or image) at snapshot creation time.
+         * @x-autobe-database-schema-property post_type
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_post_snapshots.post_type. Contains the post type
+         *   discriminator (text, link, or image) at snapshot creation time.
      */
     post_type: string;
 
@@ -142,7 +175,12 @@ export namespace IRedditClonePostSnapshot {
      *
      * For text posts, this shows the first 200 characters of the body content. For link posts, this displays the domain name of the URL. For image posts, this indicates the content type. This condensed view allows users to quickly scan snapshot history without loading full content for each version.
      *
-     * @x-autobe-specification Computed field derived from content columns based on post_type: for 'text' posts, return first 200 characters of text_content with ellipsis if truncated; for 'link' posts, extract domain name from link_url using URL parsing; for 'image' posts, return the string 'Image'. Returns null if content field is null or empty.
+         * @x-autobe-specification Computed field derived from content columns
+         *   based on post_type: for 'text' posts, return first 200 characters
+         *   of text_content with ellipsis if truncated; for 'link' posts,
+         *   extract domain name from link_url using URL parsing; for 'image'
+         *   posts, return the string 'Image'. Returns null if content field is
+         *   null or empty.
      */
     preview: string | null;
 
@@ -151,8 +189,10 @@ export namespace IRedditClonePostSnapshot {
      *
      * This field records the exact moment in time when the post's state was captured. Snapshots are created when a post is first published and whenever it is edited. This timestamp allows users to see the chronological order of changes and understand when each version was created.
      *
-     * @x-autobe-database-schema-property snapshot_created_at
-     * @x-autobe-specification Direct mapping from reddit_clone_post_snapshots.snapshot_created_at. DateTime field indicating when this snapshot was created.
+         * @x-autobe-database-schema-property snapshot_created_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_post_snapshots.snapshot_created_at. DateTime field
+         *   indicating when this snapshot was created.
      */
     snapshot_created_at: string & tags.Format<"date-time">;
   };
@@ -168,7 +208,9 @@ export namespace IRedditClonePostSnapshot {
      *
      * Specifies which page of results to retrieve. Page numbering starts from 1, so the first page is page 1. Defaults to 1 if not provided.
      *
-     * @x-autobe-specification 1-indexed page number for cursor-based pagination. Defaults to 1 if not provided. Used with LIMIT/OFFSET in SQL query: OFFSET = (page - 1) * pageSize.
+         * @x-autobe-specification 1-indexed page number for cursor-based
+         *   pagination. Defaults to 1 if not provided. Used with LIMIT/OFFSET
+         *   in SQL query: OFFSET = (page - 1) * pageSize.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -177,7 +219,10 @@ export namespace IRedditClonePostSnapshot {
      *
      * Controls how many snapshot records are returned in each page response. Defaults to 20 if not provided. Must be between 1 and 100 inclusive.
      *
-     * @x-autobe-specification Number of snapshot records per page. Defaults to 20 if not provided. Minimum 1, maximum 100. Used as LIMIT in SQL query. Server validates bounds and rejects requests outside this range.
+         * @x-autobe-specification Number of snapshot records per page. Defaults
+         *   to 20 if not provided. Minimum 1, maximum 100. Used as LIMIT in SQL
+         *   query. Server validates bounds and rejects requests outside this
+         *   range.
      */
     pageSize?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -188,7 +233,9 @@ export namespace IRedditClonePostSnapshot {
      *
      * Determines which field is used for ordering the snapshot list. Defaults to 'snapshot_created_at' if not provided. Supported fields: snapshot_created_at, title.
      *
-     * @x-autobe-specification Field name to sort results by. Valid values: 'snapshot_created_at' (default), 'title'. Maps to ORDER BY clause in SQL query. Server validates against whitelist of allowed fields.
+         * @x-autobe-specification Field name to sort results by. Valid values:
+         *   'snapshot_created_at' (default), 'title'. Maps to ORDER BY clause
+         *   in SQL query. Server validates against whitelist of allowed fields.
      */
     sortBy?: string | undefined;
 
@@ -197,7 +244,10 @@ export namespace IRedditClonePostSnapshot {
      *
      * Determines the direction of sorting. Defaults to 'desc' to display the most recent snapshots first. Valid values are 'asc' and 'desc' (case-insensitive).
      *
-     * @x-autobe-specification Sort direction for the orderBy field. Valid values: 'asc' (ascending) or 'desc' (descending). Defaults to 'desc' to show most recent snapshots first. Appended to ORDER BY clause in SQL query.
+         * @x-autobe-specification Sort direction for the orderBy field. Valid
+         *   values: 'asc' (ascending) or 'desc' (descending). Defaults to
+         *   'desc' to show most recent snapshots first. Appended to ORDER BY
+         *   clause in SQL query.
      */
     sortOrder?: string | undefined;
 
@@ -206,7 +256,10 @@ export namespace IRedditClonePostSnapshot {
      *
      * Restricts results to snapshots created at or after the specified datetime. Format: ISO 8601 datetime string (e.g., '2024-01-15T10:30:00Z'). Optional - omit to include all snapshots regardless of creation date.
      *
-     * @x-autobe-specification ISO 8601 datetime string filtering snapshots created on or after this timestamp. Applied as WHERE snapshot_created_at >= startDate in SQL query. Optional - omitted means no lower bound filter.
+         * @x-autobe-specification ISO 8601 datetime string filtering snapshots
+         *   created on or after this timestamp. Applied as WHERE
+         *   snapshot_created_at >= startDate in SQL query. Optional - omitted
+         *   means no lower bound filter.
      */
     startDate?: (string & tags.Format<"date-time">) | undefined;
 
@@ -215,7 +268,10 @@ export namespace IRedditClonePostSnapshot {
      *
      * Restricts results to snapshots created at or before the specified datetime. Format: ISO 8601 datetime string (e.g., '2024-01-15T10:30:00Z'). Optional - omit to include all snapshots regardless of creation date.
      *
-     * @x-autobe-specification ISO 8601 datetime string filtering snapshots created on or before this timestamp. Applied as WHERE snapshot_created_at <= endDate in SQL query. Optional - omitted means no upper bound filter.
+         * @x-autobe-specification ISO 8601 datetime string filtering snapshots
+         *   created on or before this timestamp. Applied as WHERE
+         *   snapshot_created_at <= endDate in SQL query. Optional - omitted
+         *   means no upper bound filter.
      */
     endDate?: (string & tags.Format<"date-time">) | undefined;
 
@@ -224,7 +280,10 @@ export namespace IRedditClonePostSnapshot {
      *
      * Controls how many records are included in each page response. If omitted, null, or undefined, defaults to 100 records per page. The server may enforce upper bounds to prevent excessive resource consumption on large requests.
      *
-     * @x-autobe-specification Maximum number of records to return per page. Alternative to pageSize with same functionality. Defaults to 100 if not provided or null. Server enforces upper bound to prevent excessive resource consumption.
+         * @x-autobe-specification Maximum number of records to return per page.
+         *   Alternative to pageSize with same functionality. Defaults to 100 if
+         *   not provided or null. Server enforces upper bound to prevent
+         *   excessive resource consumption.
      */
     limit?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };

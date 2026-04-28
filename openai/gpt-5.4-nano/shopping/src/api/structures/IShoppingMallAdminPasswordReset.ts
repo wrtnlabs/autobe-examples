@@ -8,15 +8,26 @@ export type IShoppingMallAdminPasswordReset = {
   /**
    * The issued administrator password reset token that authorizes credential redemption.
    *
-   * @x-autobe-database-schema-property token
-   * @x-autobe-specification Direct mapping from shopping_mall_admin_password_resets.token. Use this value to look up exactly one reset record via the table’s unique constraint; reject redemption if no row exists, deleted_at is non-null, or expires_at is earlier than serverNow.
+     * @x-autobe-database-schema-property token
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_admin_password_resets.token. Use this value to look up
+     *   exactly one reset record via the table’s unique constraint; reject
+     *   redemption if no row exists, deleted_at is non-null, or expires_at is
+     *   earlier than serverNow.
    */
   token: string;
 
   /**
    * The new plain-text password to set for the administrator account associated with the provided reset token.
    *
-   * @x-autobe-specification Treat as the new plain-text administrator password to be validated against the system’s admin password policy. After successful reset-token validation, update the target administrator’s password hash (shopping_mall_admins.password_hash) using the system hashing policy, then consume the reset token by setting deleted_at and updating updated_at. If password policy validation fails, do not update the administrator and do not consume/revoke the reset token.
+     * @x-autobe-specification Treat as the new plain-text administrator
+     *   password to be validated against the system’s admin password policy.
+     *   After successful reset-token validation, update the target
+     *   administrator’s password hash (shopping_mall_admins.password_hash)
+     *   using the system hashing policy, then consume the reset token by
+     *   setting deleted_at and updating updated_at. If password policy
+     *   validation fails, do not update the administrator and do not
+     *   consume/revoke the reset token.
    */
   password: string & tags.Format<"password">;
 };

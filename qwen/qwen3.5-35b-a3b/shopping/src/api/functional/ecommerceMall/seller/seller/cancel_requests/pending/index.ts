@@ -22,7 +22,9 @@ import { IPageIEcommerceMallCancellationRequest } from "../../../../../../struct
  * @param props.body Pagination and sorting parameters for listing pending cancellation requests. Supports cursor-based pagination using created_at timestamp or offset-based pagination with limit and page parameters.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Query ecommerce_mall_cancellation_requests table with where clause: status = 'pending' AND ecommerce_mall_seller_id = current authenticated seller_id.
+ * @x-autobe-specification Query ecommerce_mall_cancellation_requests table with
+ *   where clause: status = 'pending' AND ecommerce_mall_seller_id = current
+ *   authenticated seller_id.
  *
  * Apply cursor-based pagination using created_at timestamp or offset-based pagination with limit/offset parameters from request body.
  *

@@ -20,7 +20,9 @@ export * as snapshots from "./snapshots/index";
  * @param props.connection
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query the community_platform_profiles table joined with community_platform_members to get the profile for the currently authenticated member (identified from JWT token).
+ * @x-autobe-specification Query the community_platform_profiles table joined
+ *   with community_platform_members to get the profile for the currently
+ *   authenticated member (identified from JWT token).
  *
  * Return the full profile record including: display_name, biography, avatar_uri, karma, created_at, updated_at.
  *

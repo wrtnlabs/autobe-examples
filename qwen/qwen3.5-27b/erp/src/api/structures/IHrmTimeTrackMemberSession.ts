@@ -17,8 +17,10 @@ export type IHrmTimeTrackMemberSession = {
    *
    * This UUID serves as the primary key for the session and is used to reference the session in API operations and internal systems.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from hrm_time_track_member_sessions.id. Primary key UUID identifying the session record.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_member_sessions.id. Primary key UUID identifying the
+     *   session record.
    */
   id: string & tags.Format<"uuid">;
 
@@ -27,8 +29,11 @@ export type IHrmTimeTrackMemberSession = {
    *
    * This relation provides access to the member's identity information including email and account status. The ISummary type is used to prevent circular references and reduce payload size.
    *
-   * @x-autobe-database-schema-property member
-   * @x-autobe-specification Join from hrm_time_track_member_sessions.hrm_time_track_member_id to hrm_time_track_members.id. Returns IHrmTimeTrackMember.ISummary to avoid circular references.
+     * @x-autobe-database-schema-property member
+     * @x-autobe-specification Join from
+     *   hrm_time_track_member_sessions.hrm_time_track_member_id to
+     *   hrm_time_track_members.id. Returns IHrmTimeTrackMember.ISummary to
+     *   avoid circular references.
    */
   member: IHrmTimeTrackMember.ISummary;
 
@@ -37,8 +42,11 @@ export type IHrmTimeTrackMemberSession = {
    *
    * This relation establishes the multi-tenant data isolation boundary. All session operations and data access are scoped to this organization. The ISummary type provides essential organization information without exposing full details.
    *
-   * @x-autobe-database-schema-property organization
-   * @x-autobe-specification Join from hrm_time_track_member_sessions.hrm_time_track_organization_id to hrm_time_track_organizations.id. Returns IHrmTimeTrackOrganization.ISummary to avoid circular references.
+     * @x-autobe-database-schema-property organization
+     * @x-autobe-specification Join from
+     *   hrm_time_track_member_sessions.hrm_time_track_organization_id to
+     *   hrm_time_track_organizations.id. Returns
+     *   IHrmTimeTrackOrganization.ISummary to avoid circular references.
    */
   organization: IHrmTimeTrackOrganization.ISummary;
 
@@ -47,8 +55,10 @@ export type IHrmTimeTrackMemberSession = {
    *
    * This field is used for security auditing, anomaly detection, and identifying suspicious login patterns. The IP address is captured at login time and remains immutable for the session lifetime.
    *
-   * @x-autobe-database-schema-property ip
-   * @x-autobe-specification Direct mapping from hrm_time_track_member_sessions.ip. Captured at session creation time for security auditing.
+     * @x-autobe-database-schema-property ip
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_member_sessions.ip. Captured at session creation time
+     *   for security auditing.
    */
   ip: string;
 
@@ -57,8 +67,10 @@ export type IHrmTimeTrackMemberSession = {
    *
    * This field tracks the entry point to the authentication flow for security analysis and user experience tracking. May be null if the user accessed the login page directly without a referrer.
    *
-   * @x-autobe-database-schema-property href
-   * @x-autobe-specification Direct mapping from hrm_time_track_member_sessions.href. Nullable field tracking the referring URL that initiated the login request.
+     * @x-autobe-database-schema-property href
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_member_sessions.href. Nullable field tracking the
+     *   referring URL that initiated the login request.
    */
   href: string | null;
 
@@ -67,8 +79,10 @@ export type IHrmTimeTrackMemberSession = {
    *
    * This field provides additional context about how the user arrived at the login page, used for security auditing and analytics. May be null if the referrer header was not present in the request.
    *
-   * @x-autobe-database-schema-property referrer
-   * @x-autobe-specification Direct mapping from hrm_time_track_member_sessions.referrer. Nullable field containing the HTTP referrer header from the login request.
+     * @x-autobe-database-schema-property referrer
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_member_sessions.referrer. Nullable field containing the
+     *   HTTP referrer header from the login request.
    */
   referrer: string | null;
 
@@ -77,8 +91,10 @@ export type IHrmTimeTrackMemberSession = {
    *
    * This immutable timestamp is used to calculate session age, enforce expiration policies, and track session lifecycle. All times are stored in UTC timezone.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from hrm_time_track_member_sessions.created_at. Timestamp when the session was created during login.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_member_sessions.created_at. Timestamp when the session
+     *   was created during login.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -87,8 +103,10 @@ export type IHrmTimeTrackMemberSession = {
    *
    * Set at session creation based on configured session duration. Sessions are automatically invalidated after this time for security. Used to verify session validity during API requests.
    *
-   * @x-autobe-database-schema-property expired_at
-   * @x-autobe-specification Direct mapping from hrm_time_track_member_sessions.expired_at. Timestamp when the session expires and becomes invalid.
+     * @x-autobe-database-schema-property expired_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_member_sessions.expired_at. Timestamp when the session
+     *   expires and becomes invalid.
    */
   expired_at: string & tags.Format<"date-time">;
 };
@@ -104,7 +122,10 @@ export namespace IHrmTimeTrackMemberSession {
      *
      * Performs case-insensitive partial matching across the href and referrer fields. Useful for finding sessions from specific entry points or referring domains. Empty or null value returns all results without text filtering.
      *
-     * @x-autobe-specification Text search query applied to href and referrer columns using LIKE or full-text search. Computed filter, not a direct column mapping. Search is case-insensitive and matches partial strings.
+         * @x-autobe-specification Text search query applied to href and
+         *   referrer columns using LIKE or full-text search. Computed filter,
+         *   not a direct column mapping. Search is case-insensitive and matches
+         *   partial strings.
      */
     search?: string | undefined;
 
@@ -113,8 +134,11 @@ export namespace IHrmTimeTrackMemberSession {
      *
      * Restricts results to sessions belonging to the specified member. Useful for auditing a particular user's session history or monitoring their active sessions. Must be a valid UUID string.
      *
-     * @x-autobe-database-schema-property hrm_time_track_member_id
-     * @x-autobe-specification Direct mapping to hrm_time_track_member_id column for filtering sessions by member UUID. Applied as WHERE hrm_time_track_member_id = ? in SQL query. UUID format validation required.
+         * @x-autobe-database-schema-property hrm_time_track_member_id
+         * @x-autobe-specification Direct mapping to hrm_time_track_member_id
+         *   column for filtering sessions by member UUID. Applied as WHERE
+         *   hrm_time_track_member_id = ? in SQL query. UUID format validation
+         *   required.
      */
     member_id?: (string & tags.Format<"uuid">) | undefined;
 
@@ -123,8 +147,11 @@ export namespace IHrmTimeTrackMemberSession {
      *
      * Restricts results to sessions within the specified organization. Essential for multi-tenant data isolation, ensuring users only see sessions from their own organization. Must be a valid UUID string.
      *
-     * @x-autobe-database-schema-property hrm_time_track_organization_id
-     * @x-autobe-specification Direct mapping to hrm_time_track_organization_id column for filtering sessions by organization UUID. Applied as WHERE hrm_time_track_organization_id = ? in SQL query. UUID format validation required.
+         * @x-autobe-database-schema-property hrm_time_track_organization_id
+         * @x-autobe-specification Direct mapping to
+         *   hrm_time_track_organization_id column for filtering sessions by
+         *   organization UUID. Applied as WHERE hrm_time_track_organization_id
+         *   = ? in SQL query. UUID format validation required.
      */
     organization_id?: (string & tags.Format<"uuid">) | undefined;
 
@@ -133,8 +160,11 @@ export namespace IHrmTimeTrackMemberSession {
      *
      * Returns only sessions with created_at greater than or equal to this value. Useful for retrieving recent sessions or sessions within a specific time range. ISO 8601 date-time format (e.g., 2024-01-15T10:30:00Z).
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping to created_at column for filtering sessions created after specified timestamp. Applied as WHERE created_at >= ? in SQL query. ISO 8601 date-time format required.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping to created_at column for
+         *   filtering sessions created after specified timestamp. Applied as
+         *   WHERE created_at >= ? in SQL query. ISO 8601 date-time format
+         *   required.
      */
     created_after?: (string & tags.Format<"date-time">) | undefined;
 
@@ -143,8 +173,11 @@ export namespace IHrmTimeTrackMemberSession {
      *
      * Returns only sessions with created_at less than or equal to this value. Useful for retrieving historical sessions or sessions within a specific time range. ISO 8601 date-time format (e.g., 2024-01-15T10:30:00Z).
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping to created_at column for filtering sessions created before specified timestamp. Applied as WHERE created_at <= ? in SQL query. ISO 8601 date-time format required.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping to created_at column for
+         *   filtering sessions created before specified timestamp. Applied as
+         *   WHERE created_at <= ? in SQL query. ISO 8601 date-time format
+         *   required.
      */
     created_before?: (string & tags.Format<"date-time">) | undefined;
 
@@ -153,8 +186,11 @@ export namespace IHrmTimeTrackMemberSession {
      *
      * Returns only sessions with expired_at greater than or equal to this value. Useful for finding long-lived sessions or sessions that will remain active beyond a certain point. ISO 8601 date-time format.
      *
-     * @x-autobe-database-schema-property expired_at
-     * @x-autobe-specification Direct mapping to expired_at column for filtering sessions expiring after specified timestamp. Applied as WHERE expired_at >= ? in SQL query. ISO 8601 date-time format required.
+         * @x-autobe-database-schema-property expired_at
+         * @x-autobe-specification Direct mapping to expired_at column for
+         *   filtering sessions expiring after specified timestamp. Applied as
+         *   WHERE expired_at >= ? in SQL query. ISO 8601 date-time format
+         *   required.
      */
     expired_after?: (string & tags.Format<"date-time">) | undefined;
 
@@ -163,8 +199,11 @@ export namespace IHrmTimeTrackMemberSession {
      *
      * Returns only sessions with expired_at less than or equal to this value. Useful for finding sessions that will soon expire or have already expired. ISO 8601 date-time format.
      *
-     * @x-autobe-database-schema-property expired_at
-     * @x-autobe-specification Direct mapping to expired_at column for filtering sessions expiring before specified timestamp. Applied as WHERE expired_at <= ? in SQL query. ISO 8601 date-time format required.
+         * @x-autobe-database-schema-property expired_at
+         * @x-autobe-specification Direct mapping to expired_at column for
+         *   filtering sessions expiring before specified timestamp. Applied as
+         *   WHERE expired_at <= ? in SQL query. ISO 8601 date-time format
+         *   required.
      */
     expired_before?: (string & tags.Format<"date-time">) | undefined;
 
@@ -173,7 +212,10 @@ export namespace IHrmTimeTrackMemberSession {
      *
      * When set to true, returns only expired sessions (expired_at before current time). When set to false, returns only active sessions (expired_at in the future). Omit this parameter to include both expired and active sessions.
      *
-     * @x-autobe-specification Computed boolean filter comparing current server time against expired_at column. When true: WHERE expired_at < NOW(). When false: WHERE expired_at >= NOW(). Null/undefined means no filter applied.
+         * @x-autobe-specification Computed boolean filter comparing current
+         *   server time against expired_at column. When true: WHERE expired_at
+         *   < NOW(). When false: WHERE expired_at >= NOW(). Null/undefined
+         *   means no filter applied.
      */
     expired?: boolean | undefined;
 
@@ -182,8 +224,10 @@ export namespace IHrmTimeTrackMemberSession {
      *
      * Restricts results to sessions created from the specified IP address. Useful for security auditing, detecting suspicious login patterns, or tracking sessions from specific network locations. IPv4 format (e.g., 192.168.1.1).
      *
-     * @x-autobe-database-schema-property ip
-     * @x-autobe-specification Direct mapping to ip column for filtering sessions by client IP address. Applied as WHERE ip = ? in SQL query. IPv4 format validation required. Exact match only.
+         * @x-autobe-database-schema-property ip
+         * @x-autobe-specification Direct mapping to ip column for filtering
+         *   sessions by client IP address. Applied as WHERE ip = ? in SQL
+         *   query. IPv4 format validation required. Exact match only.
      */
     ip?: (string & tags.Format<"ipv4">) | undefined;
 
@@ -192,7 +236,9 @@ export namespace IHrmTimeTrackMemberSession {
      *
      * 1-indexed page number indicating which page of results to retrieve. Default is page 1. Combined with limit parameter to control result set size. Use cursor parameter instead for cursor-based pagination.
      *
-     * @x-autobe-specification Page-based pagination parameter. 1-indexed page number. Applied as OFFSET = (page - 1) * limit in SQL query. Default value is 1. Minimum value is 1.
+         * @x-autobe-specification Page-based pagination parameter. 1-indexed
+         *   page number. Applied as OFFSET = (page - 1) * limit in SQL query.
+         *   Default value is 1. Minimum value is 1.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -201,7 +247,9 @@ export namespace IHrmTimeTrackMemberSession {
      *
      * Controls the page size for pagination. Default is 20 records. Minimum is 1, maximum is 100. Larger values may impact performance. Use with page parameter for page-based pagination.
      *
-     * @x-autobe-specification Page size parameter for pagination. Applied as LIMIT ? in SQL query. Default value is 20. Minimum is 1, maximum is 100. Validates bounds and clamps to allowed range.
+         * @x-autobe-specification Page size parameter for pagination. Applied
+         *   as LIMIT ? in SQL query. Default value is 20. Minimum is 1, maximum
+         *   is 100. Validates bounds and clamps to allowed range.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -212,7 +260,10 @@ export namespace IHrmTimeTrackMemberSession {
      *
      * Opaque token representing the position in the result set for stable pagination. Use the cursor from the previous page's response to retrieve the next page. Provides consistent results even when data changes between requests.
      *
-     * @x-autobe-specification Cursor-based pagination token for stable ordering. Encoded cursor contains created_at and id for consistent pagination. Applied in WHERE clause for range query. Mutually exclusive with page parameter.
+         * @x-autobe-specification Cursor-based pagination token for stable
+         *   ordering. Encoded cursor contains created_at and id for consistent
+         *   pagination. Applied in WHERE clause for range query. Mutually
+         *   exclusive with page parameter.
      */
     cursor?: string | undefined;
   };
@@ -230,8 +281,10 @@ export namespace IHrmTimeTrackMemberSession {
      *
      * This UUID serves as the primary key for the session record and is used to reference the session in API operations, logging, and administrative tools.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from hrm_time_track_member_sessions.id. Primary key UUID identifying the session record.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_member_sessions.id. Primary key UUID identifying the
+         *   session record.
      */
     id: string & tags.Format<"uuid">;
 
@@ -240,8 +293,10 @@ export namespace IHrmTimeTrackMemberSession {
      *
      * This field is captured for security auditing and anomaly detection purposes. It helps identify suspicious login patterns or unauthorized access attempts by tracking the network location from which the session was initiated.
      *
-     * @x-autobe-database-schema-property ip
-     * @x-autobe-specification Direct mapping from hrm_time_track_member_sessions.ip. Client IP address captured at session creation time.
+         * @x-autobe-database-schema-property ip
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_member_sessions.ip. Client IP address captured at
+         *   session creation time.
      */
     ip: string;
 
@@ -250,8 +305,11 @@ export namespace IHrmTimeTrackMemberSession {
      *
      * This optional field tracks the entry point to the authentication flow, providing context about how the user arrived at the login page. Used for security analysis and user experience tracking. May be null if the user accessed the login page directly without a referrer.
      *
-     * @x-autobe-database-schema-property href
-     * @x-autobe-specification Direct mapping from hrm_time_track_member_sessions.href. Nullable field storing the referring URL that initiated the login request. Uses oneOf with null for nullable type.
+         * @x-autobe-database-schema-property href
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_member_sessions.href. Nullable field storing the
+         *   referring URL that initiated the login request. Uses oneOf with
+         *   null for nullable type.
      */
     href: string | null;
 
@@ -260,8 +318,11 @@ export namespace IHrmTimeTrackMemberSession {
      *
      * This optional field provides additional context about the navigation path to the authentication endpoint. Used for security auditing and tracking user journey patterns. May be null if the browser did not send a referrer header.
      *
-     * @x-autobe-database-schema-property referrer
-     * @x-autobe-specification Direct mapping from hrm_time_track_member_sessions.referrer. Nullable field storing the HTTP referrer header from the login request. Uses oneOf with null for nullable type.
+         * @x-autobe-database-schema-property referrer
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_member_sessions.referrer. Nullable field storing the
+         *   HTTP referrer header from the login request. Uses oneOf with null
+         *   for nullable type.
      */
     referrer: string | null;
 
@@ -270,8 +331,11 @@ export namespace IHrmTimeTrackMemberSession {
      *
      * This relation provides the member's identity information including email and account status. The summary representation includes essential member details without loading the complete member entity, optimizing performance for list views.
      *
-     * @x-autobe-database-schema-property member
-     * @x-autobe-specification Relation mapping from hrm_time_track_member_sessions.member relation. LEFT JOIN to hrm_time_track_members on hrm_time_track_member_id. Returns IHrmTimeTrackMember.ISummary object.
+         * @x-autobe-database-schema-property member
+         * @x-autobe-specification Relation mapping from
+         *   hrm_time_track_member_sessions.member relation. LEFT JOIN to
+         *   hrm_time_track_members on hrm_time_track_member_id. Returns
+         *   IHrmTimeTrackMember.ISummary object.
      */
     member: IHrmTimeTrackMember.ISummary;
 
@@ -280,8 +344,11 @@ export namespace IHrmTimeTrackMemberSession {
      *
      * This relation establishes the multi-tenant data boundary for the session. All operations performed within this session are scoped to this organization, ensuring proper data isolation between tenants. The summary includes organization name, currency, timezone, and other essential settings.
      *
-     * @x-autobe-database-schema-property organization
-     * @x-autobe-specification Relation mapping from hrm_time_track_member_sessions.organization relation. LEFT JOIN to hrm_time_track_organizations on hrm_time_track_organization_id. Returns IHrmTimeTrackOrganization.ISummary object.
+         * @x-autobe-database-schema-property organization
+         * @x-autobe-specification Relation mapping from
+         *   hrm_time_track_member_sessions.organization relation. LEFT JOIN to
+         *   hrm_time_track_organizations on hrm_time_track_organization_id.
+         *   Returns IHrmTimeTrackOrganization.ISummary object.
      */
     organization: IHrmTimeTrackOrganization.ISummary;
 
@@ -290,8 +357,10 @@ export namespace IHrmTimeTrackMemberSession {
      *
      * This immutable timestamp is used to calculate session age and enforce expiration policies. It serves as the reference point for session lifetime calculations and is essential for security compliance and audit trail purposes.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from hrm_time_track_member_sessions.created_at. Timestamp when the session was created during login.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_member_sessions.created_at. Timestamp when the
+         *   session was created during login.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -300,8 +369,10 @@ export namespace IHrmTimeTrackMemberSession {
      *
      * Set at session creation based on configured session duration policies. Sessions are automatically invalidated after this time for security purposes. This field is used to determine session validity and trigger automatic logout or token refresh mechanisms.
      *
-     * @x-autobe-database-schema-property expired_at
-     * @x-autobe-specification Direct mapping from hrm_time_track_member_sessions.expired_at. Timestamp when the session expires and becomes invalid.
+         * @x-autobe-database-schema-property expired_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_member_sessions.expired_at. Timestamp when the
+         *   session expires and becomes invalid.
      */
     expired_at: string & tags.Format<"date-time">;
   };

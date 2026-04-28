@@ -92,7 +92,11 @@ export namespace IHrmPlatformTimesheet {
      *
      * Employees typically filter by their own timesheet statuses. Users with time:approve permission often filter by submitted status to find timesheets awaiting review.
      *
-     * @x-autobe-specification Query parameter filtering hrm_platform_timesheets.status. Enum values: draft, submitted, approved, rejected. Backend performs exact string match. Optional - if omitted, returns timesheets of all statuses accessible to the user.
+         * @x-autobe-specification Query parameter filtering
+         *   hrm_platform_timesheets.status. Enum values: draft, submitted,
+         *   approved, rejected. Backend performs exact string match. Optional -
+         *   if omitted, returns timesheets of all statuses accessible to the
+         *   user.
      */
     status?: "draft" | "submitted" | "approved" | "rejected" | undefined;
 
@@ -103,7 +107,10 @@ export namespace IHrmPlatformTimesheet {
      *
      * Commonly used with week_start_date_lte to define a date range for reporting periods or historical queries.
      *
-     * @x-autobe-specification Query parameter filtering hrm_platform_timesheets.week_start_date with >= comparison. ISO 8601 date-time format. Optional - if omitted, no lower bound is applied. Used with week_start_date_lte to define a date range.
+         * @x-autobe-specification Query parameter filtering
+         *   hrm_platform_timesheets.week_start_date with >= comparison. ISO
+         *   8601 date-time format. Optional - if omitted, no lower bound is
+         *   applied. Used with week_start_date_lte to define a date range.
      */
     week_start_date_gte?:
       | (string & tags.Format<"date-time">)
@@ -117,7 +124,10 @@ export namespace IHrmPlatformTimesheet {
      *
      * Commonly used with week_start_date_gte to define a date range for reporting periods or historical queries.
      *
-     * @x-autobe-specification Query parameter filtering hrm_platform_timesheets.week_start_date with <= comparison. ISO 8601 date-time format. Optional - if omitted, no upper bound is applied. Used with week_start_date_gte to define a date range.
+         * @x-autobe-specification Query parameter filtering
+         *   hrm_platform_timesheets.week_start_date with <= comparison. ISO
+         *   8601 date-time format. Optional - if omitted, no upper bound is
+         *   applied. Used with week_start_date_gte to define a date range.
      */
     week_start_date_lte?:
       | (string & tags.Format<"date-time">)
@@ -131,7 +141,12 @@ export namespace IHrmPlatformTimesheet {
      *
      * Regular employees cannot use this filter - they always see only their own timesheets. Users with time:approve permission can specify an employee_id to review timesheets for a specific employee across the organization.
      *
-     * @x-autobe-specification Query parameter filtering hrm_platform_timesheets.employee_id by UUID. Optional - if omitted, defaults to authenticated user's employee record for regular employees. Users with time:approve permission can specify any employee_id to view that employee's timesheets across the organization.
+         * @x-autobe-specification Query parameter filtering
+         *   hrm_platform_timesheets.employee_id by UUID. Optional - if omitted,
+         *   defaults to authenticated user's employee record for regular
+         *   employees. Users with time:approve permission can specify any
+         *   employee_id to view that employee's timesheets across the
+         *   organization.
      */
     employee_id?: (string & tags.Format<"uuid">) | null | undefined;
 
@@ -142,7 +157,11 @@ export namespace IHrmPlatformTimesheet {
      *
      * Used in conjunction with skip to implement cursor-based pagination. For example, take=20 and skip=0 retrieves the first 20 records, while skip=20 retrieves the next 20.
      *
-     * @x-autobe-specification Cursor-based pagination parameter specifying number of items to retrieve. Integer between 1 and 100. Defaults to 100 if omitted. Used with skip for offset-based cursor pagination. Backend enforces maximum of 100 to prevent excessive resource consumption.
+         * @x-autobe-specification Cursor-based pagination parameter specifying
+         *   number of items to retrieve. Integer between 1 and 100. Defaults to
+         *   100 if omitted. Used with skip for offset-based cursor pagination.
+         *   Backend enforces maximum of 100 to prevent excessive resource
+         *   consumption.
      */
     take?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -155,7 +174,10 @@ export namespace IHrmPlatformTimesheet {
      *
      * Used in conjunction with take. For example, to retrieve page 2 with a page size of 20, use take=20 and skip=20.
      *
-     * @x-autobe-specification Cursor-based pagination parameter specifying number of items to skip. Integer >= 0. Defaults to 0 if omitted. Used with take for offset-based cursor pagination. Represents the offset from the beginning of the result set.
+         * @x-autobe-specification Cursor-based pagination parameter specifying
+         *   number of items to skip. Integer >= 0. Defaults to 0 if omitted.
+         *   Used with take for offset-based cursor pagination. Represents the
+         *   offset from the beginning of the result set.
      */
     skip?: (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
 
@@ -166,7 +188,11 @@ export namespace IHrmPlatformTimesheet {
      *
      * If omitted, defaults to week_start_date:DESC, showing the most recent weeks first.
      *
-     * @x-autobe-specification Sorting parameter in field:direction format. Supported fields: week_start_date, status, created_at. Directions: ASC (ascending) or DESC (descending). Defaults to week_start_date:DESC if omitted. Backend validates field names and direction values.
+         * @x-autobe-specification Sorting parameter in field:direction format.
+         *   Supported fields: week_start_date, status, created_at. Directions:
+         *   ASC (ascending) or DESC (descending). Defaults to
+         *   week_start_date:DESC if omitted. Backend validates field names and
+         *   direction values.
      */
     sort?: string | undefined;
 
@@ -177,7 +203,11 @@ export namespace IHrmPlatformTimesheet {
      *
      * Requesting a page beyond the available range returns an empty data array with valid pagination metadata reflecting the actual totals. Used with limit for page-based pagination.
      *
-     * @x-autobe-specification 1-indexed page number for pagination. Integer >= 0. Defaults to 1 (first page) if omitted or null. Used with limit for page-based pagination alternative to take/skip. Requesting a page beyond available range returns empty data array with valid pagination metadata.
+         * @x-autobe-specification 1-indexed page number for pagination. Integer
+         *   >= 0. Defaults to 1 (first page) if omitted or null. Used with
+         *   limit for page-based pagination alternative to take/skip.
+         *   Requesting a page beyond available range returns empty data array
+         *   with valid pagination metadata.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
 
@@ -188,7 +218,11 @@ export namespace IHrmPlatformTimesheet {
      *
      * The server may enforce upper bounds to prevent excessive resource consumption on large requests. Used with page for page-based pagination, alternative to take/skip cursor pagination.
      *
-     * @x-autobe-specification Maximum number of records per page for page-based pagination. Integer >= 0. Defaults to 100 if omitted or null. Used with page as alternative to take/skip cursor pagination. Backend may enforce upper bounds to prevent excessive resource consumption.
+         * @x-autobe-specification Maximum number of records per page for
+         *   page-based pagination. Integer >= 0. Defaults to 100 if omitted or
+         *   null. Used with page as alternative to take/skip cursor pagination.
+         *   Backend may enforce upper bounds to prevent excessive resource
+         *   consumption.
      */
     limit?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };
@@ -208,8 +242,12 @@ export namespace IHrmPlatformTimesheet {
      *
      * This field is mandatory in the reject request. The server validates that a non-empty reason is provided.
      *
-     * @x-autobe-specification Direct mapping to hrm_platform_timesheets.rejection_reason column. DB column is nullable (only populated on rejection). For IReject request DTO this field is required and must be provided (non-empty string validated by server).
-     * @x-autobe-database-schema-property rejection_reason
+         * @x-autobe-specification Direct mapping to
+         *   hrm_platform_timesheets.rejection_reason column. DB column is
+         *   nullable (only populated on rejection). For IReject request DTO
+         *   this field is required and must be provided (non-empty string
+         *   validated by server).
+         * @x-autobe-database-schema-property rejection_reason
      */
     rejection_reason: string | null;
   };

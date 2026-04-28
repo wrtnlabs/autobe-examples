@@ -31,9 +31,10 @@ export class ShoppingmallCustomerCartsItemsController {
    * @param connection
    * @param cartItemId Unique identifier of the cart item to update
    * @param body New quantity for the cart item
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Update the quantity of an existing cart item belonging to the authenticated customer.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Update the quantity of an existing cart item
+     *   belonging to the authenticated customer.
    *
    * Implementation Steps:
    * 1. Validate the cartItemId path parameter exists and is a valid UUID
@@ -94,9 +95,9 @@ export class ShoppingmallCustomerCartsItemsController {
    *
    * @param connection
    * @param cartItemId Unique identifier of the cart item to remove from the shopping cart. The cart item must belong to the authenticated customer's cart.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Implementation steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Implementation steps:
    *
    * 1. Extract cartItemId from path parameters
    * 2. Query shopping_mall_cart_items table to find the cart item by id

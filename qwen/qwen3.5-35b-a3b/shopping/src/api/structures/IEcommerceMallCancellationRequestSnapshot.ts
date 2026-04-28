@@ -13,88 +13,113 @@ export type IEcommerceMallCancellationRequestSnapshot = {
   /**
    * Unique identifier for this snapshot record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_cancellation_request_snapshots.id. UUID primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_cancellation_request_snapshots.id. UUID primary key.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Reference to the original cancellation request this snapshot belongs to.
    *
-   * @x-autobe-database-schema-property cancellationRequest
-   * @x-autobe-specification Join from ecommerce_mall_cancellation_request_snapshots.cancellation_request_id to ecommerce_mall_cancellation_requests.id. Returns IEcommerceMallCancellationRequest.ISummary.
+     * @x-autobe-database-schema-property cancellationRequest
+     * @x-autobe-specification Join from
+     *   ecommerce_mall_cancellation_request_snapshots.cancellation_request_id
+     *   to ecommerce_mall_cancellation_requests.id. Returns
+     *   IEcommerceMallCancellationRequest.ISummary.
    */
   cancellationRequest: IEcommerceMallCancellationRequest.ISummary;
 
   /**
    * The cancellation request title at the time of snapshot.
    *
-   * @x-autobe-database-schema-property title
-   * @x-autobe-specification Direct mapping from ecommerce_mall_cancellation_request_snapshots.title. Captured when seller approves or rejects.
+     * @x-autobe-database-schema-property title
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_cancellation_request_snapshots.title. Captured when
+     *   seller approves or rejects.
    */
   title: string;
 
   /**
    * The detailed customer-provided cancellation reason, preserved immutably when the seller responds.
    *
-   * @x-autobe-database-schema-property body
-   * @x-autobe-specification Direct mapping from ecommerce_mall_cancellation_request_snapshots.body. Contains the customer's cancellation reason.
+     * @x-autobe-database-schema-property body
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_cancellation_request_snapshots.body. Contains the
+     *   customer's cancellation reason.
    */
   body: string;
 
   /**
    * The type of actor making the cancellation request.
    *
-   * @x-autobe-database-schema-property actor_type
-   * @x-autobe-specification Direct mapping from ecommerce_mall_cancellation_request_snapshots.actor_type. Typically "customer" for cancellation requests.
+     * @x-autobe-database-schema-property actor_type
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_cancellation_request_snapshots.actor_type. Typically
+     *   "customer" for cancellation requests.
    */
   actorType: string;
 
   /**
    * Timestamp when the original cancellation request was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_cancellation_request_snapshots.created_at. DateTime in ISO 8601 format.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_cancellation_request_snapshots.created_at. DateTime in
+     *   ISO 8601 format.
    */
   createdAt: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when seller approved this cancellation request. Null if the request was rejected or is still pending.
    *
-   * @x-autobe-database-schema-property approved_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_cancellation_request_snapshots.approved_at. Nullable DateTime - set only when seller approves the cancellation request. Use oneOf with string and null.
+     * @x-autobe-database-schema-property approved_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_cancellation_request_snapshots.approved_at. Nullable
+     *   DateTime - set only when seller approves the cancellation request. Use
+     *   oneOf with string and null.
    */
   approvedAt: (string & tags.Format<"date-time">) | null;
 
   /**
    * Timestamp when seller rejected this cancellation request. Null if the request was approved or is still pending.
    *
-   * @x-autobe-database-schema-property rejected_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_cancellation_request_snapshots.rejected_at. Nullable DateTime - set only when seller rejects the cancellation request. Use oneOf with string and null.
+     * @x-autobe-database-schema-property rejected_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_cancellation_request_snapshots.rejected_at. Nullable
+     *   DateTime - set only when seller rejects the cancellation request. Use
+     *   oneOf with string and null.
    */
   rejectedAt: (string & tags.Format<"date-time">) | null;
 
   /**
    * Seller's detailed reason for rejecting the cancellation request. Only provided when the request is rejected.
    *
-   * @x-autobe-database-schema-property seller_rejection_reason
-   * @x-autobe-specification Direct mapping from ecommerce_mall_cancellation_request_snapshots.seller_rejection_reason. Nullable String - only populated when seller provides a reason during rejection. Use oneOf with string and null.
+     * @x-autobe-database-schema-property seller_rejection_reason
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_cancellation_request_snapshots.seller_rejection_reason.
+     *   Nullable String - only populated when seller provides a reason during
+     *   rejection. Use oneOf with string and null.
    */
   sellerRejectionReason: string | null;
 
   /**
    * The user ID who created this snapshot record.
    *
-   * @x-autobe-database-schema-property created_by
-   * @x-autobe-specification Direct mapping from ecommerce_mall_cancellation_request_snapshots.created_by. User ID of the actor who created this snapshot record.
+     * @x-autobe-database-schema-property created_by
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_cancellation_request_snapshots.created_by. User ID of
+     *   the actor who created this snapshot record.
    */
   createdBy: string;
 
   /**
    * Soft delete timestamp. Null if the snapshot is active, populated if deleted.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_cancellation_request_snapshots.deleted_at. Nullable DateTime - used for soft deletion. Use oneOf with string and null.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_cancellation_request_snapshots.deleted_at. Nullable
+     *   DateTime - used for soft deletion. Use oneOf with string and null.
    */
   deletedAt: (string & tags.Format<"date-time">) | null;
 };
@@ -108,8 +133,10 @@ export namespace IEcommerceMallCancellationRequestSnapshot {
     /**
      * Unique identifier for this cancellation request snapshot.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_mall_cancellation_request_snapshots.id (UUID). Unique identifier for this snapshot record.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_cancellation_request_snapshots.id (UUID). Unique
+         *   identifier for this snapshot record.
      */
     id: string & tags.Format<"uuid">;
 
@@ -118,8 +145,10 @@ export namespace IEcommerceMallCancellationRequestSnapshot {
      *
      * Captured when seller approves or rejects the cancellation request, preserving the original request title for audit purposes.
      *
-     * @x-autobe-database-schema-property title
-     * @x-autobe-specification Direct mapping from ecommerce_mall_cancellation_request_snapshots.title. Preserves the original cancellation request title at snapshot time.
+         * @x-autobe-database-schema-property title
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_cancellation_request_snapshots.title. Preserves the
+         *   original cancellation request title at snapshot time.
      */
     title: string;
 
@@ -128,8 +157,10 @@ export namespace IEcommerceMallCancellationRequestSnapshot {
      *
      * Always 'customer' as cancellation requests are initiated by customers. Preserved in snapshot for audit integrity.
      *
-     * @x-autobe-database-schema-property actor_type
-     * @x-autobe-specification Direct mapping from ecommerce_mall_cancellation_request_snapshots.actor_type. Always 'customer' for cancellation requests.
+         * @x-autobe-database-schema-property actor_type
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_cancellation_request_snapshots.actor_type. Always
+         *   'customer' for cancellation requests.
      */
     actor_type: string;
 
@@ -138,8 +169,11 @@ export namespace IEcommerceMallCancellationRequestSnapshot {
      *
      * Marks when the customer submitted the cancellation request, even if the seller responded much later.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_cancellation_request_snapshots.created_at (timestamptz). Timestamp when the original cancellation request was created.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_cancellation_request_snapshots.created_at
+         *   (timestamptz). Timestamp when the original cancellation request was
+         *   created.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -148,8 +182,10 @@ export namespace IEcommerceMallCancellationRequestSnapshot {
      *
      * Null if the request was rejected or still pending. When populated, indicates the seller's approval decision.
      *
-     * @x-autobe-database-schema-property approved_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_cancellation_request_snapshots.approved_at (nullable timestamptz). Null if request was rejected or still pending.
+         * @x-autobe-database-schema-property approved_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_cancellation_request_snapshots.approved_at (nullable
+         *   timestamptz). Null if request was rejected or still pending.
      */
     approved_at?: (string & tags.Format<"date-time">) | null | undefined;
 
@@ -158,8 +194,10 @@ export namespace IEcommerceMallCancellationRequestSnapshot {
      *
      * Null if the request was approved or still pending. When populated, indicates the seller's rejection decision.
      *
-     * @x-autobe-database-schema-property rejected_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_cancellation_request_snapshots.rejected_at (nullable timestamptz). Null if request was approved or still pending.
+         * @x-autobe-database-schema-property rejected_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_cancellation_request_snapshots.rejected_at (nullable
+         *   timestamptz). Null if request was approved or still pending.
      */
     rejected_at?: (string & tags.Format<"date-time">) | null | undefined;
 
@@ -168,8 +206,10 @@ export namespace IEcommerceMallCancellationRequestSnapshot {
      *
      * Only populated when seller rejects the cancellation request with a reason. Provides transparency to the customer about why their request was denied.
      *
-     * @x-autobe-database-schema-property seller_rejection_reason
-     * @x-autobe-specification Direct mapping from ecommerce_mall_cancellation_request_snapshots.seller_rejection_reason (nullable string). Only populated when seller rejects the request.
+         * @x-autobe-database-schema-property seller_rejection_reason
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_cancellation_request_snapshots.seller_rejection_reason
+         *   (nullable string). Only populated when seller rejects the request.
      */
     seller_rejection_reason?: string | null | undefined;
 
@@ -178,8 +218,11 @@ export namespace IEcommerceMallCancellationRequestSnapshot {
      *
      * Provides context by linking the snapshot back to the cancellation request entity, allowing retrieval of the full request details when needed.
      *
-     * @x-autobe-database-schema-property cancellationRequest
-     * @x-autobe-specification JOIN from ecommerce_mall_cancellation_request_snapshots.cancellation_request_id to ecommerce_mall_cancellation_requests.id. Returns IEcommerceMallCancellationRequest.ISummary reference.
+         * @x-autobe-database-schema-property cancellationRequest
+         * @x-autobe-specification JOIN from
+         *   ecommerce_mall_cancellation_request_snapshots.cancellation_request_id
+         *   to ecommerce_mall_cancellation_requests.id. Returns
+         *   IEcommerceMallCancellationRequest.ISummary reference.
      */
     cancellationRequest: IEcommerceMallCancellationRequest.ISummary;
   };

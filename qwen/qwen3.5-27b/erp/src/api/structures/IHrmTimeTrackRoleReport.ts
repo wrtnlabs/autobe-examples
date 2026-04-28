@@ -14,7 +14,10 @@ export type IHrmTimeTrackRoleReport = {
    *
    * This UUID identifies the specific role definition and is used to reference the role in employee assignments, permission grants, and other role-related operations.
    *
-   * @x-autobe-specification Computed from hrm_time_track_roles.id. This is the primary key of the role record, retrieved from the base query on hrm_time_track_roles table where deleted_at IS NULL and filtered by current organization ID.
+     * @x-autobe-specification Computed from hrm_time_track_roles.id. This is
+     *   the primary key of the role record, retrieved from the base query on
+     *   hrm_time_track_roles table where deleted_at IS NULL and filtered by
+     *   current organization ID.
    */
   role_id: string & tags.Format<"uuid">;
 
@@ -23,7 +26,10 @@ export type IHrmTimeTrackRoleReport = {
    *
    * Role names are unique within an organization and are used to identify and display roles in the user interface. Examples include 'Administrator', 'Manager', 'Employee', 'Time Keeper'. The name should be descriptive and distinguishable from other roles in the same organization.
    *
-   * @x-autobe-specification Computed from hrm_time_track_roles.name. Human-readable role name retrieved from the base query on hrm_time_track_roles table. Role names are unique within an organization.
+     * @x-autobe-specification Computed from hrm_time_track_roles.name.
+     *   Human-readable role name retrieved from the base query on
+     *   hrm_time_track_roles table. Role names are unique within an
+     *   organization.
    */
   name: string;
 
@@ -32,7 +38,10 @@ export type IHrmTimeTrackRoleReport = {
    *
    * Built-in roles (true) are predefined by the system with standard permission sets and cannot be permanently deleted. Custom roles (false) are created by organization administrators and can be fully managed including deletion. This distinction helps prevent accidental removal of essential system roles while allowing flexibility for organization-specific needs.
    *
-   * @x-autobe-specification Computed from hrm_time_track_roles.is_builtin. Boolean flag retrieved from the base query indicating whether this is a system-defined built-in role (true) or a user-created custom role (false).
+     * @x-autobe-specification Computed from hrm_time_track_roles.is_builtin.
+     *   Boolean flag retrieved from the base query indicating whether this is a
+     *   system-defined built-in role (true) or a user-created custom role
+     *   (false).
    */
   is_builtin: boolean;
 
@@ -41,7 +50,10 @@ export type IHrmTimeTrackRoleReport = {
    *
    * The description provides context about what the role is for and what permissions it typically grants. This helps administrators understand when to assign this role to employees. Descriptions can include information about the role's scope, typical use cases, and any special considerations. This field is optional and may be null.
    *
-   * @x-autobe-specification Computed from hrm_time_track_roles.description. Optional text field retrieved from the base query providing context about the role's purpose and intended use. Can be null if no description is provided.
+     * @x-autobe-specification Computed from hrm_time_track_roles.description.
+     *   Optional text field retrieved from the base query providing context
+     *   about the role's purpose and intended use. Can be null if no
+     *   description is provided.
    */
   description: string | null;
 
@@ -50,7 +62,10 @@ export type IHrmTimeTrackRoleReport = {
    *
    * This count represents how many employees in the organization have this role assigned to them. It includes only active employees (not soft-deleted) and helps administrators understand the usage and distribution of each role across the organization.
    *
-   * @x-autobe-specification Computed aggregation: COUNT of hrm_time_track_employees WHERE hrm_time_track_role_id = role.id AND deleted_at IS NULL. This counts only active (non-deleted) employees assigned to this role within the current organization.
+     * @x-autobe-specification Computed aggregation: COUNT of
+     *   hrm_time_track_employees WHERE hrm_time_track_role_id = role.id AND
+     *   deleted_at IS NULL. This counts only active (non-deleted) employees
+     *   assigned to this role within the current organization.
    */
   employee_count: number & tags.Type<"int32"> & tags.Minimum<0>;
 
@@ -59,7 +74,10 @@ export type IHrmTimeTrackRoleReport = {
    *
    * This count represents the total number of distinct permissions assigned to the role. It helps administrators understand the scope of access that each role provides and can be used to identify roles with overly broad or restrictive permission sets.
    *
-   * @x-autobe-specification Computed aggregation: COUNT of hrm_time_track_role_permissions WHERE hrm_time_track_role_id = role.id. This counts all permission entries granted to this role in the role_permissions junction table.
+     * @x-autobe-specification Computed aggregation: COUNT of
+     *   hrm_time_track_role_permissions WHERE hrm_time_track_role_id = role.id.
+     *   This counts all permission entries granted to this role in the
+     *   role_permissions junction table.
    */
   permission_count: number & tags.Type<"int32"> & tags.Minimum<0>;
 };

@@ -10,88 +10,109 @@ export type IShoppingMallProductVariantSnapshot = {
   /**
    * Snapshot record identifier (UUID).
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_product_variant_snapshots.id. Returned as a UUID string.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_product_variant_snapshots.id. Returned as a UUID string.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Identifier of the product variant this snapshot represents (UUID), captured when the snapshot was created.
    *
-   * @x-autobe-database-schema-property shopping_mall_product_variant_id
-   * @x-autobe-specification Direct mapping from shopping_mall_product_variant_snapshots.shopping_mall_product_variant_id. Returned as a UUID string.
+     * @x-autobe-database-schema-property shopping_mall_product_variant_id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_product_variant_snapshots.shopping_mall_product_variant_id.
+     *   Returned as a UUID string.
    */
   shopping_mall_product_variant_id: string & tags.Format<"uuid">;
 
   /**
    * Snapshot-time variant code (SKU-like identifier).
    *
-   * @x-autobe-database-schema-property code
-   * @x-autobe-specification Direct mapping from shopping_mall_product_variant_snapshots.code. Returned as a string (SKU/code value at snapshot time).
+     * @x-autobe-database-schema-property code
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_product_variant_snapshots.code. Returned as a string
+     *   (SKU/code value at snapshot time).
    */
   code: string;
 
   /**
    * Snapshot-time variant display name/title.
    *
-   * @x-autobe-database-schema-property name
-   * @x-autobe-specification Direct mapping from shopping_mall_product_variant_snapshots.name. Returned as a string (variant display name at snapshot time).
+     * @x-autobe-database-schema-property name
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_product_variant_snapshots.name. Returned as a string
+     *   (variant display name at snapshot time).
    */
   name: string;
 
   /**
    * Snapshot-time unit price of the variant.
    *
-   * @x-autobe-database-schema-property price
-   * @x-autobe-specification Direct mapping from shopping_mall_product_variant_snapshots.price. Returned as a number.
+     * @x-autobe-database-schema-property price
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_product_variant_snapshots.price. Returned as a number.
    */
   price: number;
 
   /**
    * Snapshot-time ISO currency code for the variant price (e.g., KRW, USD).
    *
-   * @x-autobe-database-schema-property currency
-   * @x-autobe-specification Direct mapping from shopping_mall_product_variant_snapshots.currency. Returned as a string (ISO currency code).
+     * @x-autobe-database-schema-property currency
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_product_variant_snapshots.currency. Returned as a string
+     *   (ISO currency code).
    */
   currency: string;
 
   /**
    * Whether the variant was considered available/listable at snapshot time.
    *
-   * @x-autobe-database-schema-property is_available
-   * @x-autobe-specification Direct mapping from shopping_mall_product_variant_snapshots.is_available. Returned as boolean indicating whether the variant was treated as available/listable at snapshot time.
+     * @x-autobe-database-schema-property is_available
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_product_variant_snapshots.is_available. Returned as
+     *   boolean indicating whether the variant was treated as
+     *   available/listable at snapshot time.
    */
   is_available: boolean;
 
   /**
    * Business status of the variant captured at snapshot time.
    *
-   * @x-autobe-database-schema-property variant_status
-   * @x-autobe-specification Direct mapping from shopping_mall_product_variant_snapshots.variant_status. Returned as a string describing the variant’s business status at snapshot time.
+     * @x-autobe-database-schema-property variant_status
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_product_variant_snapshots.variant_status. Returned as a
+     *   string describing the variant’s business status at snapshot time.
    */
   variant_status: string;
 
   /**
    * Timestamp when this snapshot record was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from shopping_mall_product_variant_snapshots.created_at. Returned as ISO 8601 date-time string.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_product_variant_snapshots.created_at. Returned as ISO
+     *   8601 date-time string.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when this snapshot record metadata was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from shopping_mall_product_variant_snapshots.updated_at. Returned as ISO 8601 date-time string.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_product_variant_snapshots.updated_at. Returned as ISO
+     *   8601 date-time string.
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * Soft-deletion timestamp for the snapshot record. Null means the snapshot is not soft-deleted.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from shopping_mall_product_variant_snapshots.deleted_at. Returned as ISO 8601 date-time string when soft-deleted; otherwise null.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_product_variant_snapshots.deleted_at. Returned as ISO
+     *   8601 date-time string when soft-deleted; otherwise null.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -103,88 +124,116 @@ export namespace IShoppingMallProductVariantSnapshot {
     /**
      * The unique identifier of this immutable product-variant snapshot (UUID).
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_product_variant_snapshots.id to IShoppingMallProductVariantSnapshot.ISummary.id.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_variant_snapshots.id to
+         *   IShoppingMallProductVariantSnapshot.ISummary.id.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * The variant code/SKU as it was at the time the snapshot was created.
      *
-     * @x-autobe-database-schema-property code
-     * @x-autobe-specification Direct mapping from shopping_mall_product_variant_snapshots.code to IShoppingMallProductVariantSnapshot.ISummary.code.
+         * @x-autobe-database-schema-property code
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_variant_snapshots.code to
+         *   IShoppingMallProductVariantSnapshot.ISummary.code.
      */
     code: string;
 
     /**
      * The human-readable variant name/title as it was at snapshot creation time.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from shopping_mall_product_variant_snapshots.name to IShoppingMallProductVariantSnapshot.ISummary.name.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_variant_snapshots.name to
+         *   IShoppingMallProductVariantSnapshot.ISummary.name.
      */
     name: string;
 
     /**
      * The unit price of the variant as recorded in the snapshot.
      *
-     * @x-autobe-database-schema-property price
-     * @x-autobe-specification Direct mapping from shopping_mall_product_variant_snapshots.price (double) to IShoppingMallProductVariantSnapshot.ISummary.price.
+         * @x-autobe-database-schema-property price
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_variant_snapshots.price (double) to
+         *   IShoppingMallProductVariantSnapshot.ISummary.price.
      */
     price: number;
 
     /**
      * The ISO currency code (e.g., KRW, USD) used for the snapshot price.
      *
-     * @x-autobe-database-schema-property currency
-     * @x-autobe-specification Direct mapping from shopping_mall_product_variant_snapshots.currency to IShoppingMallProductVariantSnapshot.ISummary.currency.
+         * @x-autobe-database-schema-property currency
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_variant_snapshots.currency to
+         *   IShoppingMallProductVariantSnapshot.ISummary.currency.
      */
     currency: string;
 
     /**
      * Whether the variant was considered available/listable at the snapshot time.
      *
-     * @x-autobe-database-schema-property is_available
-     * @x-autobe-specification Direct mapping from shopping_mall_product_variant_snapshots.is_available to IShoppingMallProductVariantSnapshot.ISummary.is_available.
+         * @x-autobe-database-schema-property is_available
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_variant_snapshots.is_available to
+         *   IShoppingMallProductVariantSnapshot.ISummary.is_available.
      */
     is_available: boolean;
 
     /**
      * The business status of the variant captured at the snapshot time.
      *
-     * @x-autobe-database-schema-property variant_status
-     * @x-autobe-specification Direct mapping from shopping_mall_product_variant_snapshots.variant_status to IShoppingMallProductVariantSnapshot.ISummary.variant_status.
+         * @x-autobe-database-schema-property variant_status
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_variant_snapshots.variant_status to
+         *   IShoppingMallProductVariantSnapshot.ISummary.variant_status.
      */
     variant_status: string;
 
     /**
      * The related current product-variant summary that this snapshot belongs to (joined context).
      *
-     * @x-autobe-database-schema-property productVariant
-     * @x-autobe-specification Join shopping_mall_product_variant_snapshots.shopping_mall_product_variant_id to shopping_mall_product_variants.id and return the joined product variant projected as IShoppingMallProductVariant.ISummary. Use the existing summary rules for IShoppingMallProductVariant.ISummary and include it as the productVariant field.
+         * @x-autobe-database-schema-property productVariant
+         * @x-autobe-specification Join
+         *   shopping_mall_product_variant_snapshots.shopping_mall_product_variant_id
+         *   to shopping_mall_product_variants.id and return the joined product
+         *   variant projected as IShoppingMallProductVariant.ISummary. Use the
+         *   existing summary rules for IShoppingMallProductVariant.ISummary and
+         *   include it as the productVariant field.
      */
     productVariant: IShoppingMallProductVariant.ISummary;
 
     /**
      * When this snapshot record was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_product_variant_snapshots.created_at to IShoppingMallProductVariantSnapshot.ISummary.created_at (date-time string).
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_variant_snapshots.created_at to
+         *   IShoppingMallProductVariantSnapshot.ISummary.created_at (date-time
+         *   string).
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * When this snapshot record metadata was last updated.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from shopping_mall_product_variant_snapshots.updated_at to IShoppingMallProductVariantSnapshot.ISummary.updated_at (date-time string).
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_variant_snapshots.updated_at to
+         *   IShoppingMallProductVariantSnapshot.ISummary.updated_at (date-time
+         *   string).
      */
     updated_at: string & tags.Format<"date-time">;
 
     /**
      * Soft-deletion timestamp of the snapshot record; null if the snapshot is active/visible in audit lookups.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from shopping_mall_product_variant_snapshots.deleted_at. If DB value is NULL, return null; otherwise return the timestamp as a date-time string.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_variant_snapshots.deleted_at. If DB value is
+         *   NULL, return null; otherwise return the timestamp as a date-time
+         *   string.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };
@@ -196,56 +245,76 @@ export namespace IShoppingMallProductVariantSnapshot {
     /**
      * The identifier of the product variant whose state is being snapshotted for historical audit and dispute resolution.
      *
-     * @x-autobe-database-schema-property shopping_mall_product_variant_id
-     * @x-autobe-specification Direct mapping to shopping_mall_product_variant_snapshots.shopping_mall_product_variant_id. Validate that the UUID exists in shopping_mall_product_variants.id before inserting the snapshot row (otherwise reject).
+         * @x-autobe-database-schema-property shopping_mall_product_variant_id
+         * @x-autobe-specification Direct mapping to
+         *   shopping_mall_product_variant_snapshots.shopping_mall_product_variant_id.
+         *   Validate that the UUID exists in shopping_mall_product_variants.id
+         *   before inserting the snapshot row (otherwise reject).
      */
     shopping_mall_product_variant_id: string & tags.Format<"uuid">;
 
     /**
      * Snapshot-time SKU/code used to identify the variant at the moment this audit record is created.
      *
-     * @x-autobe-database-schema-property code
-     * @x-autobe-specification Direct mapping to shopping_mall_product_variant_snapshots.code. Persist the provided code value as the snapshot-time SKU/code (do not derive/lookup from the current variant during creation).
+         * @x-autobe-database-schema-property code
+         * @x-autobe-specification Direct mapping to
+         *   shopping_mall_product_variant_snapshots.code. Persist the provided
+         *   code value as the snapshot-time SKU/code (do not derive/lookup from
+         *   the current variant during creation).
      */
     code: string;
 
     /**
      * Snapshot-time human-readable variant name/title (captured when the snapshot is created).
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping to shopping_mall_product_variant_snapshots.name. Persist the provided name value as the snapshot-time display title (do not derive/lookup from the current variant during creation).
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping to
+         *   shopping_mall_product_variant_snapshots.name. Persist the provided
+         *   name value as the snapshot-time display title (do not derive/lookup
+         *   from the current variant during creation).
      */
     name: string;
 
     /**
      * Snapshot-time unit price of the product variant (stored as a double-precision value).
      *
-     * @x-autobe-database-schema-property price
-     * @x-autobe-specification Direct mapping to shopping_mall_product_variant_snapshots.price. Validate it is a number and store it as the snapshot-time price (double precision).
+         * @x-autobe-database-schema-property price
+         * @x-autobe-specification Direct mapping to
+         *   shopping_mall_product_variant_snapshots.price. Validate it is a
+         *   number and store it as the snapshot-time price (double precision).
      */
     price: number;
 
     /**
      * ISO currency code (e.g., KRW, USD) corresponding to the snapshot-time price.
      *
-     * @x-autobe-database-schema-property currency
-     * @x-autobe-specification Direct mapping to shopping_mall_product_variant_snapshots.currency. Persist the provided currency string as the snapshot-time ISO currency code for the stored price.
+         * @x-autobe-database-schema-property currency
+         * @x-autobe-specification Direct mapping to
+         *   shopping_mall_product_variant_snapshots.currency. Persist the
+         *   provided currency string as the snapshot-time ISO currency code for
+         *   the stored price.
      */
     currency: string;
 
     /**
      * Whether the variant was considered available/listable at the moment the snapshot was created.
      *
-     * @x-autobe-database-schema-property is_available
-     * @x-autobe-specification Direct mapping to shopping_mall_product_variant_snapshots.is_available. Persist the provided boolean indicating whether the variant was considered available/listable at snapshot time.
+         * @x-autobe-database-schema-property is_available
+         * @x-autobe-specification Direct mapping to
+         *   shopping_mall_product_variant_snapshots.is_available. Persist the
+         *   provided boolean indicating whether the variant was considered
+         *   available/listable at snapshot time.
      */
     is_available: boolean;
 
     /**
      * Business status of the variant as recorded at snapshot creation time (for historical reconstruction).
      *
-     * @x-autobe-database-schema-property variant_status
-     * @x-autobe-specification Direct mapping to shopping_mall_product_variant_snapshots.variant_status. Persist the provided status value as the snapshot-time business state of the variant.
+         * @x-autobe-database-schema-property variant_status
+         * @x-autobe-specification Direct mapping to
+         *   shopping_mall_product_variant_snapshots.variant_status. Persist the
+         *   provided status value as the snapshot-time business state of the
+         *   variant.
      */
     variant_status: string;
   };
@@ -257,63 +326,85 @@ export namespace IShoppingMallProductVariantSnapshot {
     /**
      * Product variant UUID used to restrict snapshots to a single variant. Optional filter.
      *
-     * @x-autobe-specification Filter shopping_mall_product_variant_snapshots by shopping_mall_product_variant_snapshots.shopping_mall_product_variant_id = productVariantId. If omitted, do not apply this predicate.
+         * @x-autobe-specification Filter
+         *   shopping_mall_product_variant_snapshots by
+         *   shopping_mall_product_variant_snapshots.shopping_mall_product_variant_id
+         *   = productVariantId. If omitted, do not apply this predicate.
      */
     productVariantId?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Snapshot code (SKU-like) to match. Optional filter.
      *
-     * @x-autobe-specification If provided, filter shopping_mall_product_variant_snapshots.code using exact match and/or LIKE semantics (as supported by the persistence layer). If omitted, do not apply.
+         * @x-autobe-specification If provided, filter
+         *   shopping_mall_product_variant_snapshots.code using exact match
+         *   and/or LIKE semantics (as supported by the persistence layer). If
+         *   omitted, do not apply.
      */
     code?: string | undefined;
 
     /**
      * Snapshot display name to search by. Optional filter.
      *
-     * @x-autobe-specification If provided, filter shopping_mall_product_variant_snapshots.name using substring/LIKE semantics to support searching. If omitted, do not apply.
+         * @x-autobe-specification If provided, filter
+         *   shopping_mall_product_variant_snapshots.name using substring/LIKE
+         *   semantics to support searching. If omitted, do not apply.
      */
     name?: string | undefined;
 
     /**
      * Start of the snapshot creation time range (inclusive). Optional filter.
      *
-     * @x-autobe-specification If provided, apply created_at >= createdAtFrom on shopping_mall_product_variant_snapshots. If omitted, do not apply lower bound.
+         * @x-autobe-specification If provided, apply created_at >=
+         *   createdAtFrom on shopping_mall_product_variant_snapshots. If
+         *   omitted, do not apply lower bound.
      */
     createdAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * End of the snapshot creation time range (inclusive). Optional filter.
      *
-     * @x-autobe-specification If provided, apply created_at <= createdAtTo on shopping_mall_product_variant_snapshots. If omitted, do not apply upper bound.
+         * @x-autobe-specification If provided, apply created_at <= createdAtTo
+         *   on shopping_mall_product_variant_snapshots. If omitted, do not
+         *   apply upper bound.
      */
     createdAtTo?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Whether the snapshot is marked as available/listable at snapshot time. Optional filter.
      *
-     * @x-autobe-specification If provided, filter shopping_mall_product_variant_snapshots.is_available = isAvailable. If omitted, do not apply predicate.
+         * @x-autobe-specification If provided, filter
+         *   shopping_mall_product_variant_snapshots.is_available = isAvailable.
+         *   If omitted, do not apply predicate.
      */
     isAvailable?: boolean | undefined;
 
     /**
      * Variant business status recorded in the snapshot. Optional filter.
      *
-     * @x-autobe-specification If provided, filter shopping_mall_product_variant_snapshots.variant_status = variantStatus. If omitted, do not apply predicate.
+         * @x-autobe-specification If provided, filter
+         *   shopping_mall_product_variant_snapshots.variant_status =
+         *   variantStatus. If omitted, do not apply predicate.
      */
     variantStatus?: string | undefined;
 
     /**
      * 1-indexed page number to return. Minimum 1.
      *
-     * @x-autobe-specification Apply pagination using page as a 1-indexed page number. Validate bounds per schema (minimum 1). Use it together with limit to determine the slice of results, while keeping deterministic ordering (created_at DESC, id DESC).
+         * @x-autobe-specification Apply pagination using page as a 1-indexed
+         *   page number. Validate bounds per schema (minimum 1). Use it
+         *   together with limit to determine the slice of results, while
+         *   keeping deterministic ordering (created_at DESC, id DESC).
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of records to return per page. Minimum 1, maximum 100.
      *
-     * @x-autobe-specification Apply pagination using limit as maximum number of records per page. Validate bounds per schema (minimum 1, maximum 100). Combine with page to compute offset (or cursor) while keeping deterministic ordering (created_at DESC, id DESC).
+         * @x-autobe-specification Apply pagination using limit as maximum
+         *   number of records per page. Validate bounds per schema (minimum 1,
+         *   maximum 100). Combine with page to compute offset (or cursor) while
+         *   keeping deterministic ordering (created_at DESC, id DESC).
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)

@@ -24,21 +24,28 @@ export class CommunityUserprofilesPostsController {
    * @param connection
    * @param userProfileId The UUID of the target user profile record (community_user_profiles.id). Used to resolve the associated member and retrieve their posts.
    * @param body Pagination settings and optional filter/sort criteria for the post list.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification 1. Extract `userProfileId` from the path parameter.
-   * 2. Query `community_user_profiles` WHERE `id = userProfileId`. If not found, throw 404.
-   * 3. Read `community_member_id` from the found profile record.
-   * 4. Parse the request body (`ICommunityPost.IRequest`) to extract pagination (page, limit), sort order (default: created_at DESC), and optional filters (keyword on title, post type filter, date range on created_at).
-   * 5. Query `community_posts` WHERE `community_member_id = <resolved member id>` AND `deleted_at IS NULL`.
-   * 6. Apply any keyword filter using the GIN trigram index on the `title` column.
-   * 7. Apply any post type filter (`type IN (...)`).
-   * 8. Apply date range filter on `created_at` if provided.
-   * 9. Apply sort order (supported: created_at ASC/DESC, vote score computed, comment count computed).
-   * 10. Apply LIMIT and OFFSET based on the page/limit from the request.
-   * 11. Count total matching records for pagination metadata.
-   * 12. For each matching post, build the summary DTO including: post id, title, type, community reference (id + name), created_at, net vote score (computed from community_post_votes), comment count (computed from community_comments WHERE deleted_at IS NULL).
-   * 13. Return the `IPage` envelope with pagination metadata and the array of post summaries.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification 1. Extract `userProfileId` from the path
+     *   parameter. 2. Query `community_user_profiles` WHERE `id =
+     *   userProfileId`. If not found, throw 404. 3. Read `community_member_id`
+     *   from the found profile record. 4. Parse the request body
+     *   (`ICommunityPost.IRequest`) to extract pagination (page, limit), sort
+     *   order (default: created_at DESC), and optional filters (keyword on
+     *   title, post type filter, date range on created_at). 5. Query
+     *   `community_posts` WHERE `community_member_id = <resolved member id>`
+     *   AND `deleted_at IS NULL`. 6. Apply any keyword filter using the GIN
+     *   trigram index on the `title` column. 7. Apply any post type filter
+     *   (`type IN (...)`). 8. Apply date range filter on `created_at` if
+     *   provided. 9. Apply sort order (supported: created_at ASC/DESC, vote
+     *   score computed, comment count computed). 10. Apply LIMIT and OFFSET
+     *   based on the page/limit from the request. 11. Count total matching
+     *   records for pagination metadata. 12. For each matching post, build the
+     *   summary DTO including: post id, title, type, community reference (id +
+     *   name), created_at, net vote score (computed from community_post_votes),
+     *   comment count (computed from community_comments WHERE deleted_at IS
+     *   NULL). 13. Return the `IPage` envelope with pagination metadata and the
+     *   array of post summaries.
    *
    * Edge cases:
    * - If the member associated with the profile has a non-null `deleted_at` on their `community_members` record, still process the query but the result will naturally be empty since all their posts would also be removed.

@@ -10,64 +10,81 @@ export type IEcommerceMallCustomerSession = {
   /**
    * Unique session identifier for authentication and tracking.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_customer_sessions.id. UUID primary key generated at session creation.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_customer_sessions.id. UUID primary key generated at
+     *   session creation.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Customer identifier - the owner of this session.
    *
-   * @x-autobe-database-schema-property ecommerce_mall_customer_id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_customer_sessions.ecommerce_mall_customer_id. References the customer who owns this session.
+     * @x-autobe-database-schema-property ecommerce_mall_customer_id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_customer_sessions.ecommerce_mall_customer_id. References
+     *   the customer who owns this session.
    */
   customerId: string & tags.Format<"uuid">;
 
   /**
    * Summary of the customer who owns this session, including email and display name.
    *
-   * @x-autobe-database-schema-property customer
-   * @x-autobe-specification BELONGS-TO relation via ecommerce_mall_customer_sessions.ecommerce_mall_customer_id → ecommerce_mall_customers.id. Resolved as IEcommerceMallCustomer.ISummary for list view compatibility.
+     * @x-autobe-database-schema-property customer
+     * @x-autobe-specification BELONGS-TO relation via
+     *   ecommerce_mall_customer_sessions.ecommerce_mall_customer_id →
+     *   ecommerce_mall_customers.id. Resolved as
+     *   IEcommerceMallCustomer.ISummary for list view compatibility.
    */
   customer: IEcommerceMallCustomer.ISummary;
 
   /**
    * Client IP address from which the session was established. Used for detecting unauthorized access.
    *
-   * @x-autobe-database-schema-property ip
-   * @x-autobe-specification Direct mapping from ecommerce_mall_customer_sessions.ip. Captured at session creation for security auditing.
+     * @x-autobe-database-schema-property ip
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_customer_sessions.ip. Captured at session creation for
+     *   security auditing.
    */
   ip: string & tags.Format<"ipv4">;
 
   /**
    * Page URL where the session was initiated. Captures the entry point for the session.
    *
-   * @x-autobe-database-schema-property href
-   * @x-autobe-specification Direct mapping from ecommerce_mall_customer_sessions.href. The page URL where the session/login was initiated.
+     * @x-autobe-database-schema-property href
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_customer_sessions.href. The page URL where the
+     *   session/login was initiated.
    */
   href: string & tags.Format<"uri">;
 
   /**
    * HTTP Referer header value indicating the source page that linked to the login endpoint. Used for traffic analysis.
    *
-   * @x-autobe-database-schema-property referrer
-   * @x-autobe-specification Direct mapping from ecommerce_mall_customer_sessions.referrer. HTTP Referer header value indicating the source page.
+     * @x-autobe-database-schema-property referrer
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_customer_sessions.referrer. HTTP Referer header value
+     *   indicating the source page.
    */
   referrer: string & tags.Format<"uri">;
 
   /**
    * Timestamp when the session was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_customer_sessions.created_at. Timestamp when the session record was created.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_customer_sessions.created_at. Timestamp when the session
+     *   record was created.
    */
   createdAt: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the session expires. Sessions are considered invalid after this time and cannot be used for authentication.
    *
-   * @x-autobe-database-schema-property expired_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_customer_sessions.expired_at. Session becomes invalid after this time.
+     * @x-autobe-database-schema-property expired_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_customer_sessions.expired_at. Session becomes invalid
+     *   after this time.
    */
   expiredAt: string & tags.Format<"date-time">;
 };
@@ -79,55 +96,69 @@ export namespace IEcommerceMallCustomerSession {
     /**
      * Unique identifier of the customer session.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_mall_customer_sessions.id. UUID primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_customer_sessions.id. UUID primary key.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Client IP address from which the session was established, used for security auditing.
      *
-     * @x-autobe-database-schema-property ip
-     * @x-autobe-specification Direct mapping from ecommerce_mall_customer_sessions.ip. Captured at session creation time from the client connection.
+         * @x-autobe-database-schema-property ip
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_customer_sessions.ip. Captured at session creation
+         *   time from the client connection.
      */
     ip: string;
 
     /**
      * Page URL where the session was initiated, captures the landing page context.
      *
-     * @x-autobe-database-schema-property href
-     * @x-autobe-specification Direct mapping from ecommerce_mall_customer_sessions.href. The page URL where the login was initiated.
+         * @x-autobe-database-schema-property href
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_customer_sessions.href. The page URL where the login
+         *   was initiated.
      */
     href: string;
 
     /**
      * HTTP Referer header indicating the source page that linked to the login endpoint.
      *
-     * @x-autobe-database-schema-property referrer
-     * @x-autobe-specification Direct mapping from ecommerce_mall_customer_sessions.referrer. HTTP Referer header value at session creation.
+         * @x-autobe-database-schema-property referrer
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_customer_sessions.referrer. HTTP Referer header
+         *   value at session creation.
      */
     referrer: string;
 
     /**
      * Timestamp when the session was created and authentication was successful.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_customer_sessions.created_at. Timestamp with timezone.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_customer_sessions.created_at. Timestamp with
+         *   timezone.
      */
     createdAt: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when the session expires. The session becomes invalid after this time and requires token refresh.
      *
-     * @x-autobe-database-schema-property expired_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_customer_sessions.expired_at. Timestamp with timezone. Sessions are invalid after this time.
+         * @x-autobe-database-schema-property expired_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_customer_sessions.expired_at. Timestamp with
+         *   timezone. Sessions are invalid after this time.
      */
     expiredAt: (string & tags.Format<"date-time">) | null;
 
     /**
      * Indicates whether the session is currently active based on its expiration timestamp.
      *
-     * @x-autobe-specification Computed field: isActive = (expired_at > current_timestamp()). Returns true if the session has not yet expired, false otherwise. Calculation performed server-side at query time.
+         * @x-autobe-specification Computed field: isActive = (expired_at >
+         *   current_timestamp()). Returns true if the session has not yet
+         *   expired, false otherwise. Calculation performed server-side at
+         *   query time.
      */
     isActive: boolean;
   };
@@ -139,62 +170,82 @@ export namespace IEcommerceMallCustomerSession {
     /**
      * Filter sessions created at or after this timestamp (ISO 8601 format).
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Filter by created_at >= value. Maps to ecommerce_mall_customer_sessions.created_at with GTE comparison. Accepts ISO 8601 date-time string.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Filter by created_at >= value. Maps to
+         *   ecommerce_mall_customer_sessions.created_at with GTE comparison.
+         *   Accepts ISO 8601 date-time string.
      */
     createdAtFrom?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * Filter sessions created at or before this timestamp (ISO 8601 format).
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Filter by created_at <= value. Maps to ecommerce_mall_customer_sessions.created_at with LTE comparison. Accepts ISO 8601 date-time string.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Filter by created_at <= value. Maps to
+         *   ecommerce_mall_customer_sessions.created_at with LTE comparison.
+         *   Accepts ISO 8601 date-time string.
      */
     createdAtTo?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * Filter sessions expiring at or after this timestamp (ISO 8601 format).
      *
-     * @x-autobe-database-schema-property expired_at
-     * @x-autobe-specification Filter by expired_at >= value. Maps to ecommerce_mall_customer_sessions.expired_at with GTE comparison. Accepts ISO 8601 date-time string.
+         * @x-autobe-database-schema-property expired_at
+         * @x-autobe-specification Filter by expired_at >= value. Maps to
+         *   ecommerce_mall_customer_sessions.expired_at with GTE comparison.
+         *   Accepts ISO 8601 date-time string.
      */
     expiredAtFrom?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * Filter sessions expiring at or before this timestamp (ISO 8601 format).
      *
-     * @x-autobe-database-schema-property expired_at
-     * @x-autobe-specification Filter by expired_at <= value. Maps to ecommerce_mall_customer_sessions.expired_at with LTE comparison. Accepts ISO 8601 date-time string.
+         * @x-autobe-database-schema-property expired_at
+         * @x-autobe-specification Filter by expired_at <= value. Maps to
+         *   ecommerce_mall_customer_sessions.expired_at with LTE comparison.
+         *   Accepts ISO 8601 date-time string.
      */
     expiredAtTo?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * Filter by session status: 'active' (not expired), 'expired', or 'all'.
      *
-     * @x-autobe-specification Computed filter based on ecommerce_mall_customer_sessions.expired_at comparison with CURRENT_TIMESTAMP. 'active' = expired_at > now, 'expired' = expired_at <= now, 'all' = no status filter applied.
+         * @x-autobe-specification Computed filter based on
+         *   ecommerce_mall_customer_sessions.expired_at comparison with
+         *   CURRENT_TIMESTAMP. 'active' = expired_at > now, 'expired' =
+         *   expired_at <= now, 'all' = no status filter applied.
      */
     status?: "active" | "expired" | "all" | null | undefined;
 
     /**
      * Partial IP address filter for security analysis (substring match).
      *
-     * @x-autobe-database-schema-property ip
-     * @x-autobe-specification Partial match filter on ecommerce_mall_customer_sessions.ip using SQL LIKE operator with %wildcards%. Useful for security analysis to find sessions from specific IP ranges.
+         * @x-autobe-database-schema-property ip
+         * @x-autobe-specification Partial match filter on
+         *   ecommerce_mall_customer_sessions.ip using SQL LIKE operator with
+         *   %wildcards%. Useful for security analysis to find sessions from
+         *   specific IP ranges.
      */
     ip?: string | null | undefined;
 
     /**
      * Pagination cursor (created_at timestamp) - fetch records before this time for descending sort, after for ascending.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Cursor for keyset pagination based on ecommerce_mall_customer_sessions.created_at. Fetch records with created_at < cursor_value when sorting DESC, or created_at > cursor_value when sorting ASC. Enables efficient pagination of large session histories.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Cursor for keyset pagination based on
+         *   ecommerce_mall_customer_sessions.created_at. Fetch records with
+         *   created_at < cursor_value when sorting DESC, or created_at >
+         *   cursor_value when sorting ASC. Enables efficient pagination of
+         *   large session histories.
      */
     cursor?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * Number of results to return (default: 20, max: 100).
      *
-     * @x-autobe-specification Query parameter controlling page size. Not a database column. Validated against min 1, max 100. Default: 20. Used with page parameter for offset pagination.
+         * @x-autobe-specification Query parameter controlling page size. Not a
+         *   database column. Validated against min 1, max 100. Default: 20.
+         *   Used with page parameter for offset pagination.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -204,21 +255,28 @@ export namespace IEcommerceMallCustomerSession {
     /**
      * Field to sort results by (default: created_at).
      *
-     * @x-autobe-specification Query parameter controlling sort field. Not a database column. Valid values: 'created_at' (maps to ecommerce_mall_customer_sessions.created_at), 'expired_at' (maps to ecommerce_mall_customer_sessions.expired_at). Default: created_at.
+         * @x-autobe-specification Query parameter controlling sort field. Not a
+         *   database column. Valid values: 'created_at' (maps to
+         *   ecommerce_mall_customer_sessions.created_at), 'expired_at' (maps to
+         *   ecommerce_mall_customer_sessions.expired_at). Default: created_at.
      */
     sortBy?: "created_at" | "expired_at" | null | undefined;
 
     /**
      * Sort order direction (default: desc for newest first).
      *
-     * @x-autobe-specification Query parameter controlling sort direction. Not a database column. Valid values: 'asc', 'desc'. Default: desc. Applied to the sortBy field.
+         * @x-autobe-specification Query parameter controlling sort direction.
+         *   Not a database column. Valid values: 'asc', 'desc'. Default: desc.
+         *   Applied to the sortBy field.
      */
     sortOrder?: "asc" | "desc" | null | undefined;
 
     /**
      * Target page number to retrieve (1-indexed, default: 1).
      *
-     * @x-autobe-specification Query parameter for 1-indexed page number. Not a database column. Used with limit for offset pagination. Calculated as OFFSET = (page - 1) * limit. Default: 1.
+         * @x-autobe-specification Query parameter for 1-indexed page number.
+         *   Not a database column. Used with limit for offset pagination.
+         *   Calculated as OFFSET = (page - 1) * limit. Default: 1.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };

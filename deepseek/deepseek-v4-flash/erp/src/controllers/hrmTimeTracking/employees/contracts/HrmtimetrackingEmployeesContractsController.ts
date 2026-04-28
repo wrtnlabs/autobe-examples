@@ -26,9 +26,11 @@ export class HrmtimetrackingEmployeesContractsController {
    * @param connection
    * @param employeeId The UUID of the employee for whom the contract is being created. This employee must belong to the requester's organization and must not be deactivated.
    * @param body Contract creation payload containing compensation terms including pay rate, pay period type (hourly, daily, weekly, monthly), working hours per week, start date, optional end date for fixed-term contracts, and optional notes.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Create a new contract record in hrm_time_tracking_employee_contracts for the employee identified by {employeeId}.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Create a new contract record in
+     *   hrm_time_tracking_employee_contracts for the employee identified by
+     *   {employeeId}.
    *
    * 1. Validate that the employee exists and is not soft-deleted (deleted_at IS NULL).
    * 2. Verify the requesting user has employee:manage permission within the employee's organization.
@@ -79,9 +81,11 @@ export class HrmtimetrackingEmployeesContractsController {
    * @param connection
    * @param employeeId UUID of the employee whose contracts are being listed. Must reference an existing employee record within the organization. (scoped to organization)
    * @param body Search criteria for filtering employee contracts, including optional status filter (active/past), pay period filter, date range filters, and pagination parameters.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query hrm_time_tracking_employee_contracts joined with hrm_time_tracking_employees (for organization scope and authorization).
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query hrm_time_tracking_employee_contracts joined
+     *   with hrm_time_tracking_employees (for organization scope and
+     *   authorization).
    *
    * Authorization: Verify the authenticated member's employee record exists in the same organization as the target employee. Allow access if the authenticated member is the same as the target employee OR has the employee:view permission.
    *
@@ -128,9 +132,10 @@ export class HrmtimetrackingEmployeesContractsController {
    * @param connection
    * @param employeeId UUID of the employee who owns the contract (global scope).
    * @param contractId UUID of the contract to retrieve (global scope).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query hrm_time_tracking_employee_contracts table by id (UUID) and hrm_time_tracking_employee_id (UUID).
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query hrm_time_tracking_employee_contracts table
+     *   by id (UUID) and hrm_time_tracking_employee_id (UUID).
    *
    * Authorization: verify the requesting user is either (a) the employee who owns this contract (check that the authenticated user's member ID matches the employee's hrm_time_tracking_member_id), or (b) has the employee:view permission within the organization. Resolve the organization from the employee record (hrm_time_tracking_organization_id).
    *
@@ -166,17 +171,20 @@ export class HrmtimetrackingEmployeesContractsController {
    * @param employeeId UUID of the employee who owns the contract (scoped to organization).
    * @param contractId UUID of the contract to update.
    * @param body Updated compensation terms for the active contract. Only active contracts (end_date is null) can be modified.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification 1. Validate the contract exists and belongs to the specified employee (hrm_time_tracking_employee_id matches employeeId).
-   * 2. Validate the contract is active: end_date IS NULL. If end_date IS NOT NULL, reject with 422 and a message indicating past contracts are immutable.
-   * 3. Validate that the requesting user has employee:manage permission within the organization.
-   * 4. Update allowed mutable fields from request body: pay_rate, pay_period, working_hours_per_week, end_date, notes.
-   * 5. Validate pay_period value is one of: hourly, daily, weekly, monthly.
-   * 6. Validate pay_rate > 0 and working_hours_per_week > 0.
-   * 7. If end_date is being set, validate it is not before start_date.
-   * 8. Set updated_at to current timestamp.
-   * 9. Return the full updated contract record as the response.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification 1. Validate the contract exists and belongs to
+     *   the specified employee (hrm_time_tracking_employee_id matches
+     *   employeeId). 2. Validate the contract is active: end_date IS NULL. If
+     *   end_date IS NOT NULL, reject with 422 and a message indicating past
+     *   contracts are immutable. 3. Validate that the requesting user has
+     *   employee:manage permission within the organization. 4. Update allowed
+     *   mutable fields from request body: pay_rate, pay_period,
+     *   working_hours_per_week, end_date, notes. 5. Validate pay_period value
+     *   is one of: hourly, daily, weekly, monthly. 6. Validate pay_rate > 0 and
+     *   working_hours_per_week > 0. 7. If end_date is being set, validate it is
+     *   not before start_date. 8. Set updated_at to current timestamp. 9.
+     *   Return the full updated contract record as the response.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Put(":contractId")
@@ -210,9 +218,10 @@ export class HrmtimetrackingEmployeesContractsController {
    * @param connection
    * @param employeeId UUID of the employee who owns the contract. The contract must belong to this employee.
    * @param contractId UUID of the contract to soft-delete. Must belong to the specified employee.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Soft-delete a contract by setting its deleted_at column to the current server timestamp.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Soft-delete a contract by setting its deleted_at
+     *   column to the current server timestamp.
    *
    * Validation steps:
    * 1. Verify the contract exists by contractId. If not found, return 404 Not Found.

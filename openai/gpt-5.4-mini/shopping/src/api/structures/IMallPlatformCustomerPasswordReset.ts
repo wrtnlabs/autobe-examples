@@ -12,8 +12,10 @@ export type IMallPlatformCustomerPasswordReset = {
    *
    * This is the unique UUID assigned to the reset record returned by the API.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from mall_platform_customer_password_resets.id. This is the UUID primary key of the stored password reset record.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_customer_password_resets.id. This is the UUID primary key
+     *   of the stored password reset record.
    */
   id: string & tags.Format<"uuid">;
 
@@ -22,8 +24,12 @@ export type IMallPlatformCustomerPasswordReset = {
    *
    * This value is resolved from the related customer account and identifies the account that the reset record belongs to.
    *
-   * @x-autobe-database-schema-property customer
-   * @x-autobe-specification Join mall_platform_customer_password_resets.customer to mall_platform_customers and project the related customer's email into this DTO. The email is derived from the customer relation and is not stored on the reset row itself.
+     * @x-autobe-database-schema-property customer
+     * @x-autobe-specification Join
+     *   mall_platform_customer_password_resets.customer to
+     *   mall_platform_customers and project the related customer's email into
+     *   this DTO. The email is derived from the customer relation and is not
+     *   stored on the reset row itself.
    */
   email: string & tags.Format<"email">;
 
@@ -32,8 +38,10 @@ export type IMallPlatformCustomerPasswordReset = {
    *
    * This timestamp reflects the most recent server-side modification to the stored record.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from mall_platform_customer_password_resets.updated_at into the camelCase property updatedAt.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_customer_password_resets.updated_at into the camelCase
+     *   property updatedAt.
    */
   updatedAt: string & tags.Format<"date-time">;
 };
@@ -49,7 +57,11 @@ export namespace IMallPlatformCustomerPasswordReset {
      *
      * The server uses this value to confirm the caller's identity before changing the credential. It is accepted only as part of the self-service password-change flow and is not stored as-is.
      *
-     * @x-autobe-specification Accept the current password as a plain-text verification input in the authenticated password-change request. The backend compares it against the stored customer credential hash before allowing the password update. This value is not persisted directly and has no database column mapping in this DTO.
+         * @x-autobe-specification Accept the current password as a plain-text
+         *   verification input in the authenticated password-change request.
+         *   The backend compares it against the stored customer credential hash
+         *   before allowing the password update. This value is not persisted
+         *   directly and has no database column mapping in this DTO.
      */
     currentPassword: string & tags.Format<"password">;
 
@@ -58,7 +70,12 @@ export namespace IMallPlatformCustomerPasswordReset {
      *
      * The server validates this value against the platform password policy and replaces the existing credential after the current password is confirmed. Only the hashed form is persisted.
      *
-     * @x-autobe-specification Accept the new password as a plain-text replacement credential in the authenticated password-change request. The backend validates it against password policy and stores only the hashed result in the customer's credential record. This value is not persisted directly and has no database column mapping in this DTO.
+         * @x-autobe-specification Accept the new password as a plain-text
+         *   replacement credential in the authenticated password-change
+         *   request. The backend validates it against password policy and
+         *   stores only the hashed result in the customer's credential record.
+         *   This value is not persisted directly and has no database column
+         *   mapping in this DTO.
      */
     newPassword: string & tags.Format<"password">;
   };
@@ -74,8 +91,13 @@ export namespace IMallPlatformCustomerPasswordReset {
      *
      * Provide the UUID of the customer account that should receive a password reset record. The server uses this value to create the recovery entry and associate it with the matching customer account.
      *
-     * @x-autobe-database-schema-property mall_platform_customer_id
-     * @x-autobe-specification Direct mapping to mall_platform_customer_password_resets.mall_platform_customer_id. This UUID identifies the customer account that will receive the password reset record. The server uses it to create and associate the recovery entry; no nested customer object is accepted in this request body.
+         * @x-autobe-database-schema-property mall_platform_customer_id
+         * @x-autobe-specification Direct mapping to
+         *   mall_platform_customer_password_resets.mall_platform_customer_id.
+         *   This UUID identifies the customer account that will receive the
+         *   password reset record. The server uses it to create and associate
+         *   the recovery entry; no nested customer object is accepted in this
+         *   request body.
      */
     mall_platform_customer_id: string & tags.Format<"uuid">;
   };

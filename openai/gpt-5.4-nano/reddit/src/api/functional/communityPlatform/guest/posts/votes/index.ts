@@ -152,7 +152,8 @@ export namespace at {
  * @param props.body Requested vote direction for the target post for the authenticated member.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor guest
- * @x-autobe-specification 1. Authenticate the caller as a member; if unauthenticated, reject.
+ * @x-autobe-specification 1. Authenticate the caller as a member; if
+ *   unauthenticated, reject.
  *
  * 2. Validate target post existence for normal viewing contexts using `community_platform_posts.id`.
  *    - Query `community_platform_posts` by `id = :postId`.

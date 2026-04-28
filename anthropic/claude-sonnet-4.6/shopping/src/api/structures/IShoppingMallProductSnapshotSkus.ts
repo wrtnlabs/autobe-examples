@@ -14,28 +14,28 @@ import { IShoppingMallProductSnapshotSkusOption } from "./IShoppingMallProductSn
  */
 export type IShoppingMallProductSnapshotSkus = {
   /**
-   * @x-autobe-database-schema-property id
+     * @x-autobe-database-schema-property id
    */
   id: string & tags.Format<"uuid">;
   /**
-   * @x-autobe-database-schema-property product_snapshot_id
+     * @x-autobe-database-schema-property product_snapshot_id
    */
   productSnapshotId: string & tags.Format<"uuid">;
   /**
-   * @x-autobe-database-schema-property product_variant_id
+     * @x-autobe-database-schema-property product_variant_id
    */
   productVariantId: (string & tags.Format<"uuid">) | null;
   /**
-   * @x-autobe-database-schema-property sku_code
+     * @x-autobe-database-schema-property sku_code
    */
   skuCode: string;
   /**
-   * @x-autobe-database-schema-property price
+     * @x-autobe-database-schema-property price
    */
   price: number;
   options: IShoppingMallProductSnapshotSkusOption[];
   /**
-   * @x-autobe-database-schema-property created_at
+     * @x-autobe-database-schema-property created_at
    */
   createdAt: string & tags.Format<"date-time">;
 };
@@ -47,28 +47,52 @@ export namespace IShoppingMallProductSnapshotSkus {
     /**
      * Optional partial SKU code filter. When provided, only snapshot SKU records whose SKU code contains this string are included in the results. Supports partial and case-insensitive matching.
      *
-     * @x-autobe-specification Optional partial text filter applied against shopping_mall_product_snapshot_skuses.sku_code using ILIKE or trigram (GIN) index. When provided, only snapshot SKU records whose sku_code contains the given string (case-insensitive) are returned. When omitted, no SKU code filter is applied.
+         * @x-autobe-specification Optional partial text filter applied against
+         *   shopping_mall_product_snapshot_skuses.sku_code using ILIKE or
+         *   trigram (GIN) index. When provided, only snapshot SKU records whose
+         *   sku_code contains the given string (case-insensitive) are returned.
+         *   When omitted, no SKU code filter is applied.
      */
     skuCode?: string | undefined;
 
     /**
      * Optional minimum price filter (inclusive). When specified, only snapshot SKU records with a price at or above this value are returned. Can be combined with `maxPrice` to define a price range.
      *
-     * @x-autobe-specification Optional inclusive lower bound for the price range filter applied against shopping_mall_product_snapshot_skuses.price. When provided, only records with price >= minPrice are returned. Can be combined with maxPrice for a range query. When omitted, no lower price bound is applied.
+         * @x-autobe-specification Optional inclusive lower bound for the price
+         *   range filter applied against
+         *   shopping_mall_product_snapshot_skuses.price. When provided, only
+         *   records with price >= minPrice are returned. Can be combined with
+         *   maxPrice for a range query. When omitted, no lower price bound is
+         *   applied.
      */
     minPrice?: (number & tags.Minimum<0>) | undefined;
 
     /**
      * Optional maximum price filter (inclusive). When specified, only snapshot SKU records with a price at or below this value are returned. Can be combined with `minPrice` to define a price range.
      *
-     * @x-autobe-specification Optional inclusive upper bound for the price range filter applied against shopping_mall_product_snapshot_skuses.price. When provided, only records with price <= maxPrice are returned. Can be combined with minPrice for a range query. When omitted, no upper price bound is applied.
+         * @x-autobe-specification Optional inclusive upper bound for the price
+         *   range filter applied against
+         *   shopping_mall_product_snapshot_skuses.price. When provided, only
+         *   records with price <= maxPrice are returned. Can be combined with
+         *   minPrice for a range query. When omitted, no upper price bound is
+         *   applied.
      */
     maxPrice?: (number & tags.Minimum<0>) | undefined;
 
     /**
      * Optional list of option key-value pair filters. Each entry narrows results to snapshot SKU records that had a matching option (e.g., `color: red`, `size: XL`) at snapshot time. Multiple filter entries are applied as AND conditions — a SKU must satisfy all provided filters. Supports partial matching on both key and value.
      *
-     * @x-autobe-specification Optional array of option key-value filter criteria. Implementation: JOIN shopping_mall_product_snapshot_skus_options on product_snapshot_skus_id = shopping_mall_product_snapshot_skuses.id, then filter by each entry's key and/or value using GIN trigram index. Multiple entries in this array are applied as AND conditions — a SKU must match all provided filters to be included. Each filter entry uses IShoppingMallProductSnapshotSkusOption.IRequest (key and/or value, both optional, partial match). When omitted, no option filtering is applied.
+         * @x-autobe-specification Optional array of option key-value filter
+         *   criteria. Implementation: JOIN
+         *   shopping_mall_product_snapshot_skus_options on
+         *   product_snapshot_skus_id =
+         *   shopping_mall_product_snapshot_skuses.id, then filter by each
+         *   entry's key and/or value using GIN trigram index. Multiple entries
+         *   in this array are applied as AND conditions — a SKU must match all
+         *   provided filters to be included. Each filter entry uses
+         *   IShoppingMallProductSnapshotSkusOption.IRequest (key and/or value,
+         *   both optional, partial match). When omitted, no option filtering is
+         *   applied.
      */
     optionFilters?:
       | IShoppingMallProductSnapshotSkusOption.IRequest[]
@@ -77,14 +101,19 @@ export namespace IShoppingMallProductSnapshotSkus {
     /**
      * Page number to retrieve, starting from 1. Defaults to the first page when omitted. Used together with `limit` to paginate through the full result set.
      *
-     * @x-autobe-specification 1-based page number for offset pagination. Determines which page of results to return. Default value is 1 when omitted. Combined with limit to compute OFFSET = (page - 1) * limit.
+         * @x-autobe-specification 1-based page number for offset pagination.
+         *   Determines which page of results to return. Default value is 1 when
+         *   omitted. Combined with limit to compute OFFSET = (page - 1) *
+         *   limit.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Number of records to return per page. Minimum is 1 and maximum is 100. Defaults to 20 when omitted. Use together with `page` to navigate through paginated results.
      *
-     * @x-autobe-specification Number of records to return per page. Minimum 1, maximum 100. Default value is 20 when omitted. Combined with page to compute OFFSET = (page - 1) * limit for the SQL query.
+         * @x-autobe-specification Number of records to return per page. Minimum
+         *   1, maximum 100. Default value is 20 when omitted. Combined with
+         *   page to compute OFFSET = (page - 1) * limit for the SQL query.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -102,24 +131,24 @@ export namespace IShoppingMallProductSnapshotSkus {
    */
   export type ISummary = {
     /**
-     * @x-autobe-database-schema-property id
+         * @x-autobe-database-schema-property id
      */
     id: string & tags.Format<"uuid">;
     /**
-     * @x-autobe-database-schema-property sku_code
+         * @x-autobe-database-schema-property sku_code
      */
     skuCode: string;
     /**
-     * @x-autobe-database-schema-property price
+         * @x-autobe-database-schema-property price
      */
     price: number;
     /**
-     * @x-autobe-database-schema-property product_variant_id
+         * @x-autobe-database-schema-property product_variant_id
      */
     productVariantId: (string & tags.Format<"uuid">) | null;
     options: IShoppingMallProductSnapshotSkusOption.ISummary[];
     /**
-     * @x-autobe-database-schema-property created_at
+         * @x-autobe-database-schema-property created_at
      */
     createdAt: string & tags.Format<"date-time">;
   };

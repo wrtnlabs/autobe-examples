@@ -28,7 +28,8 @@ import { IPageIEcommerceMallOrderAnalytic } from "../../../../../structures/IPag
  * @param props.body Analytics search criteria including date range filters, status filters, seller filters, product filters, pagination parameters, and sort options.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor administrator
- * @x-autobe-specification Execute analytics aggregation on ecommerce_mall_orders and related tables.
+ * @x-autobe-specification Execute analytics aggregation on
+ *   ecommerce_mall_orders and related tables.
  *
  * 1. Query Scope:
  *    - Base query: ecommerce_mall_orders

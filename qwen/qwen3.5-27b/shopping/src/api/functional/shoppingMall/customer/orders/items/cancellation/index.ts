@@ -19,7 +19,8 @@ import { IShoppingMallCancellationRequest } from "../../../../../../structures/I
  * @param props.body The customer's reason for requesting cancellation of this order item.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification 1. Validate path parameters: orderId and itemId must be valid UUIDs.
+ * @x-autobe-specification 1. Validate path parameters: orderId and itemId must
+ *   be valid UUIDs.
  *
  * 2. Verify the order item exists by querying shopping_mall_order_items with itemId.
  *

@@ -30,28 +30,22 @@ import { IHrmPlatformTimesheet } from "../../../../../structures/IHrmPlatformTim
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
  * @x-autobe-specification 1. Validate timesheet exists and is not soft-deleted
- * 2. Check user permissions:
- *    - If user is timesheet owner: allow draft modifications
- *    - If user has time:manage permission: allow all modifications
- *    - Otherwise: return 403 Forbidden
- * 3. Validate timesheet status:
- *    - If status is 'submitted', 'approved', or 'rejected': reject with error
- *    - If status is 'draft': allow modifications
- * 4. Parse request body timelog operations:
- *    - For 'add' operations: verify timelog exists and is not already in this timesheet
- *    - For 'remove' operations: verify timelog is currently associated with this timesheet
- * 5. Check timelog approval status:
- *    - Reject 'add' if timelog is already in an approved timesheet
- *    - Reject 'remove' if timelog is in an approved timesheet (cannot break approval chain)
- * 6. Create/update timesheet_timelogs junction records:
- *    - For adds: insert new record with created_at=now()
- *    - For removes: update deleted_at=now() (soft delete)
- * 7. Recalculate timesheet total_hours:
- *    - Sum all non-deleted timelogs' duration_minutes
- *    - Convert to hours (divide by 60)
- *    - Update timesheet.total_hours
- * 8. Update timesheet updated_at timestamp
- * 9. Return updated timesheet with its timelog collection
+ *   2. Check user permissions: - If user is timesheet owner: allow draft
+ *   modifications - If user has time:manage permission: allow all modifications
+ *   - Otherwise: return 403 Forbidden 3. Validate timesheet status: - If status
+ *   is 'submitted', 'approved', or 'rejected': reject with error - If status is
+ *   'draft': allow modifications 4. Parse request body timelog operations: -
+ *   For 'add' operations: verify timelog exists and is not already in this
+ *   timesheet - For 'remove' operations: verify timelog is currently associated
+ *   with this timesheet 5. Check timelog approval status: - Reject 'add' if
+ *   timelog is already in an approved timesheet - Reject 'remove' if timelog is
+ *   in an approved timesheet (cannot break approval chain) 6. Create/update
+ *   timesheet_timelogs junction records: - For adds: insert new record with
+ *   created_at=now() - For removes: update deleted_at=now() (soft delete) 7.
+ *   Recalculate timesheet total_hours: - Sum all non-deleted timelogs'
+ *   duration_minutes - Convert to hours (divide by 60) - Update
+ *   timesheet.total_hours 8. Update timesheet updated_at timestamp 9. Return
+ *   updated timesheet with its timelog collection
  *
  * Edge cases:
  * - Empty request body: return 200 with current timesheet state
@@ -154,7 +148,8 @@ export namespace manage {
  * @param props.timelogId Unique identifier of the timelog entry to retrieve
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query the hrm_platform_timelogs table to retrieve a specific timelog entry by ID.
+ * @x-autobe-specification Query the hrm_platform_timelogs table to retrieve a
+ *   specific timelog entry by ID.
  *
  * Verification steps:
  * 1. Validate that the timesheet exists in hrm_platform_timesheets and has the given timesheetId

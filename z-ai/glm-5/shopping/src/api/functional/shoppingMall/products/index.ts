@@ -32,7 +32,11 @@ export * as review_stats from "./review_stats/index";
  * @param props.body Product search criteria including text search, category filter, price range, stock availability, pagination, and sorting options
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query shopping_mall_products table with LEFT JOIN on shopping_mall_categories for category information, LEFT JOIN on shopping_mall_sellers to filter by seller status, LEFT JOIN on shopping_mall_product_images for primary image, and LEFT JOIN on shopping_mall_product_variants for stock availability calculation.
+ * @x-autobe-specification Query shopping_mall_products table with LEFT JOIN on
+ *   shopping_mall_categories for category information, LEFT JOIN on
+ *   shopping_mall_sellers to filter by seller status, LEFT JOIN on
+ *   shopping_mall_product_images for primary image, and LEFT JOIN on
+ *   shopping_mall_product_variants for stock availability calculation.
  *
  * WHERE clause filters:
  * 1. products.deleted_at IS NULL (active products only)
@@ -144,12 +148,14 @@ export namespace index {
  * @param props.productId Unique identifier of the product to retrieve (UUID format)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query shopping_mall_products table by primary key (id = productId) with joins to:
- * 1. shopping_mall_sellers for seller public profile (shop_name, shop_description, logo_image, approval_status)
- * 2. shopping_mall_categories for category hierarchy
- * 3. shopping_mall_product_images ordered by display_order ascending
- * 4. shopping_mall_product_variants where deleted_at IS NULL (active variants only)
- * 5. shopping_mall_reviews with shopping_mall_customers for review aggregation
+ * @x-autobe-specification Query shopping_mall_products table by primary key (id
+ *   = productId) with joins to: 1. shopping_mall_sellers for seller public
+ *   profile (shop_name, shop_description, logo_image, approval_status) 2.
+ *   shopping_mall_categories for category hierarchy 3.
+ *   shopping_mall_product_images ordered by display_order ascending 4.
+ *   shopping_mall_product_variants where deleted_at IS NULL (active variants
+ *   only) 5. shopping_mall_reviews with shopping_mall_customers for review
+ *   aggregation
  *
  * **Validation Checks**:
  * - Product must exist (404 if not found)

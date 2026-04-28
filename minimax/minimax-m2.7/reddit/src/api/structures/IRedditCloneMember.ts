@@ -11,68 +11,89 @@ export type IRedditCloneMember = {
   /**
    * Unique identifier of the member account.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from reddit_clone_members.id (UUID primary key).
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from reddit_clone_members.id (UUID
+     *   primary key).
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Unique display name chosen by the user for identification in posts, comments, and profiles.
    *
-   * @x-autobe-database-schema-property username
-   * @x-autobe-specification Direct mapping from reddit_clone_members.username. Unique constraint enforced at database level.
+     * @x-autobe-database-schema-property username
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_members.username. Unique constraint enforced at database
+     *   level.
    */
   username: string;
 
   /**
    * User's public display name shown in posts, comments, and profiles. Falls back to username if not set.
    *
-   * @x-autobe-specification Join from reddit_clone_members.id to reddit_clone_user_profiles.reddit_clone_member_id. Maps reddit_clone_user_profiles.display_name to displayName. Defaults to username if display_name is null.
+     * @x-autobe-specification Join from reddit_clone_members.id to
+     *   reddit_clone_user_profiles.reddit_clone_member_id. Maps
+     *   reddit_clone_user_profiles.display_name to displayName. Defaults to
+     *   username if display_name is null.
    */
   displayName: string;
 
   /**
    * User's biography text describing themselves. Null if not set.
    *
-   * @x-autobe-specification Join from reddit_clone_members.id to reddit_clone_user_profiles.reddit_clone_member_id. Maps reddit_clone_user_profiles.bio. Nullable - returns null if user has not set a bio.
+     * @x-autobe-specification Join from reddit_clone_members.id to
+     *   reddit_clone_user_profiles.reddit_clone_member_id. Maps
+     *   reddit_clone_user_profiles.bio. Nullable - returns null if user has not
+     *   set a bio.
    */
   bio?: string | null | undefined;
 
   /**
    * User's avatar image summary for display in posts, comments, and profiles. Null if no avatar is set.
    *
-   * @x-autobe-specification Join chain: reddit_clone_members.id -> reddit_clone_user_profiles.reddit_clone_member_id -> reddit_clone_user_profiles.reddit_clone_file_association_id -> reddit_clone_file_associations.id -> reddit_clone_files.id. Returns IRedditCloneFileAssociation.ISummary for user's avatar. Nullable - returns null if user has not set an avatar.
+     * @x-autobe-specification Join chain: reddit_clone_members.id ->
+     *   reddit_clone_user_profiles.reddit_clone_member_id ->
+     *   reddit_clone_user_profiles.reddit_clone_file_association_id ->
+     *   reddit_clone_file_associations.id -> reddit_clone_files.id. Returns
+     *   IRedditCloneFileAssociation.ISummary for user's avatar. Nullable -
+     *   returns null if user has not set an avatar.
    */
   avatar?: IRedditCloneFileAssociation.ISummary | null | undefined;
 
   /**
    * User's total karma score calculated from upvotes and downvotes on their posts and comments.
    *
-   * @x-autobe-specification Join from reddit_clone_members.id to reddit_clone_user_karmas.reddit_clone_member_id. Maps reddit_clone_user_karmas.karma_score. Returns 0 if karma record does not exist.
+     * @x-autobe-specification Join from reddit_clone_members.id to
+     *   reddit_clone_user_karmas.reddit_clone_member_id. Maps
+     *   reddit_clone_user_karmas.karma_score. Returns 0 if karma record does
+     *   not exist.
    */
   karmaScore: number & tags.Type<"int32">;
 
   /**
    * Timestamp when the member account was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from reddit_clone_members.created_at (DateTime).
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_members.created_at (DateTime).
    */
   createdAt: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the member account was last modified.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from reddit_clone_members.updated_at (DateTime).
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_members.updated_at (DateTime).
    */
   updatedAt: string & tags.Format<"date-time">;
 
   /**
    * Soft-deletion timestamp. Null when account is active, set when account is deleted.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from reddit_clone_members.deleted_at (DateTime). Nullable - null indicates active account, timestamp indicates soft-deleted account.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_members.deleted_at (DateTime). Nullable - null indicates
+     *   active account, timestamp indicates soft-deleted account.
    */
   deletedAt: (string & tags.Format<"date-time">) | null;
 };
@@ -84,14 +105,20 @@ export namespace IRedditCloneMember {
     /**
      * Valid refresh token from a previous login or token refresh operation. Must not be expired.
      *
-     * @x-autobe-specification Validates against reddit_clone_member_sessions.refresh_token and expired_at > now(). The refreshToken is the JWT refresh token string issued during login or previous refresh. Required for token renewal.
+         * @x-autobe-specification Validates against
+         *   reddit_clone_member_sessions.refresh_token and expired_at > now().
+         *   The refreshToken is the JWT refresh token string issued during
+         *   login or previous refresh. Required for token renewal.
      */
     refreshToken: string;
 
     /**
      * Client IP address for security validation against original session.
      *
-     * @x-autobe-specification Client IP address for validating against original session IP. Optional: server uses body.ip ?? serverIp for SSR fallback. Matches reddit_clone_member_sessions.ip_address for security check.
+         * @x-autobe-specification Client IP address for validating against
+         *   original session IP. Optional: server uses body.ip ?? serverIp for
+         *   SSR fallback. Matches reddit_clone_member_sessions.ip_address for
+         *   security check.
      */
     ip?: (string & tags.Format<"ipv4">) | undefined;
   };
@@ -103,70 +130,86 @@ export namespace IRedditCloneMember {
     /**
      * Unique identifier of the authenticated member from the JWT member_id claim.
      *
-     * @x-autobe-specification Direct mapping from reddit_clone_members.id. UUID primary key.
+         * @x-autobe-specification Direct mapping from reddit_clone_members.id.
+         *   UUID primary key.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Unique display name chosen by the member for identification in posts, comments, and profiles.
      *
-     * @x-autobe-specification Direct mapping from reddit_clone_members.username. Unique constraint.
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_members.username. Unique constraint.
      */
     username: string;
 
     /**
      * Member's display name shown publicly on their profile and in content they author.
      *
-     * @x-autobe-specification Join from reddit_clone_members to reddit_clone_user_profiles via member_id. Returns display_name field. Flattened relation for convenience.
+         * @x-autobe-specification Join from reddit_clone_members to
+         *   reddit_clone_user_profiles via member_id. Returns display_name
+         *   field. Flattened relation for convenience.
      */
     displayName: string;
 
     /**
      * Optional biography text that members can write about themselves on their profile.
      *
-     * @x-autobe-specification Join from reddit_clone_members to reddit_clone_user_profiles via member_id. Returns bio field. Nullable.
+         * @x-autobe-specification Join from reddit_clone_members to
+         *   reddit_clone_user_profiles via member_id. Returns bio field.
+         *   Nullable.
      */
     bio?: string | null | undefined;
 
     /**
      * The member's avatar image association for profile display.
      *
-     * @x-autobe-specification Join from reddit_clone_members to reddit_clone_file_associations (target_type='user') to reddit_clone_files. Returns file metadata including URL for avatar image. Nullable.
+         * @x-autobe-specification Join from reddit_clone_members to
+         *   reddit_clone_file_associations (target_type='user') to
+         *   reddit_clone_files. Returns file metadata including URL for avatar
+         *   image. Nullable.
      */
     avatar?: IRedditCloneFileAssociation.ISummary | null | undefined;
 
     /**
      * Member's total karma score calculated from upvotes and downvotes on their posts and comments.
      *
-     * @x-autobe-specification Join from reddit_clone_members to reddit_clone_user_karmas via member_id. Returns score field as integer. Denormalized for efficient display.
+         * @x-autobe-specification Join from reddit_clone_members to
+         *   reddit_clone_user_karmas via member_id. Returns score field as
+         *   integer. Denormalized for efficient display.
      */
     karmaScore: number & tags.Type<"int32">;
 
     /**
      * ISO 8601 timestamp when the member account was created.
      *
-     * @x-autobe-specification Direct mapping from reddit_clone_members.created_at.
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_members.created_at.
      */
     createdAt: string & tags.Format<"date-time">;
 
     /**
      * ISO 8601 timestamp when the member account was last modified.
      *
-     * @x-autobe-specification Direct mapping from reddit_clone_members.updated_at.
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_members.updated_at.
      */
     updatedAt: string & tags.Format<"date-time">;
 
     /**
      * ISO 8601 timestamp when the member account was soft-deleted, null if account is active.
      *
-     * @x-autobe-specification Direct mapping from reddit_clone_members.deleted_at. Nullable. Indicates account deletion status.
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_members.deleted_at. Nullable. Indicates account
+         *   deletion status.
      */
     deletedAt: (string & tags.Format<"date-time">) | null;
 
     /**
      * Authorization token.
      *
-     * @x-autobe-specification Authorization token comes from the session table.
+         * @x-autobe-specification Authorization token comes from the session
+         *   table.
      */
     token: IAuthorizationToken;
   };
@@ -178,45 +221,58 @@ export namespace IRedditCloneMember {
     /**
      * User's email address for account authentication. Must be unique across all member accounts.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from reddit_clone_members.email. Unique constraint enforced at DB level. Format: valid email address.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_members.email. Unique constraint enforced at DB level.
+         *   Format: valid email address.
      */
     email: string & tags.Format<"email">;
 
     /**
      * User's password for account authentication. Will be securely hashed before storage.
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification Maps to reddit_clone_members.password_hash column. User provides plaintext password; backend hashes using bcrypt before storage. Never store or return plain text passwords.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification Maps to reddit_clone_members.password_hash
+         *   column. User provides plaintext password; backend hashes using
+         *   bcrypt before storage. Never store or return plain text passwords.
      */
     password: string;
 
     /**
      * Unique display name chosen by the user for identification in posts, comments, and profiles.
      *
-     * @x-autobe-database-schema-property username
-     * @x-autobe-specification Direct mapping from reddit_clone_members.username. Unique constraint enforced at DB level. Used for display in posts and comments.
+         * @x-autobe-database-schema-property username
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_members.username. Unique constraint enforced at DB
+         *   level. Used for display in posts and comments.
      */
     username: string;
 
     /**
      * The URL of the page that submitted the registration request.
      *
-     * @x-autobe-specification Session context field. Stored in reddit_clone_member_sessions.href for security auditing. Represents the URL the user was on when submitting the registration request.
+         * @x-autobe-specification Session context field. Stored in
+         *   reddit_clone_member_sessions.href for security auditing. Represents
+         *   the URL the user was on when submitting the registration request.
      */
     href: string & tags.Format<"uri">;
 
     /**
      * The URL of the page that linked to the registration page.
      *
-     * @x-autobe-specification Session context field. Stored in reddit_clone_member_sessions.referrer for security auditing. Represents the referring URL that led to the registration page.
+         * @x-autobe-specification Session context field. Stored in
+         *   reddit_clone_member_sessions.referrer for security auditing.
+         *   Represents the referring URL that led to the registration page.
      */
     referrer: string & tags.Format<"uri">;
 
     /**
      * The IP address of the client submitting the registration request. Optional in SSR environments where server captures IP as fallback.
      *
-     * @x-autobe-specification Session context field. Stored in reddit_clone_member_sessions.ip for security auditing. Optional: in SSR, client cannot determine its own IP, so server captures IP as fallback when body.ip is null. Format: IPv4 address.
+         * @x-autobe-specification Session context field. Stored in
+         *   reddit_clone_member_sessions.ip for security auditing. Optional: in
+         *   SSR, client cannot determine its own IP, so server captures IP as
+         *   fallback when body.ip is null. Format: IPv4 address.
      */
     ip?: (string & tags.Format<"ipv4">) | undefined;
   };
@@ -228,21 +284,31 @@ export namespace IRedditCloneMember {
     /**
      * UUID reference to the file association representing the member's avatar image. Set this to change the current avatar.
      *
-     * @x-autobe-specification Cross-table mapping via the profile relation. Updates reddit_clone_user_profiles.avatar_file_association_id. UUID referencing a valid file association where target_type='user'. Must belong to the authenticated member. Optional - if omitted, avatar remains unchanged. Server validates file ownership before updating.
+         * @x-autobe-specification Cross-table mapping via the profile relation.
+         *   Updates reddit_clone_user_profiles.avatar_file_association_id. UUID
+         *   referencing a valid file association where target_type='user'. Must
+         *   belong to the authenticated member. Optional - if omitted, avatar
+         *   remains unchanged. Server validates file ownership before updating.
      */
     avatarFileAssociationId?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Member's biography text displayed on their public profile. Maximum 500 characters.
      *
-     * @x-autobe-specification Cross-table mapping via the profile relation. Updates reddit_clone_user_profiles.bio. String field with maximum 500 characters. Optional - if omitted, existing bio is preserved. Empty string clears the bio.
+         * @x-autobe-specification Cross-table mapping via the profile relation.
+         *   Updates reddit_clone_user_profiles.bio. String field with maximum
+         *   500 characters. Optional - if omitted, existing bio is preserved.
+         *   Empty string clears the bio.
      */
     bio?: (string & tags.MaxLength<500>) | undefined;
 
     /**
      * Member's public display name shown on posts, comments, and profile pages. Maximum 100 characters.
      *
-     * @x-autobe-specification Cross-table mapping via the profile relation. Updates reddit_clone_user_profiles.display_name. String field with maximum 100 characters. Optional - if omitted, existing display name is preserved.
+         * @x-autobe-specification Cross-table mapping via the profile relation.
+         *   Updates reddit_clone_user_profiles.display_name. String field with
+         *   maximum 100 characters. Optional - if omitted, existing display
+         *   name is preserved.
      */
     displayName?: (string & tags.MaxLength<100>) | undefined;
   };
@@ -254,37 +320,47 @@ export namespace IRedditCloneMember {
     /**
      * Email address used for member authentication.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping to reddit_clone_members.email. Unique constraint. Validated against registered member accounts.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping to reddit_clone_members.email.
+         *   Unique constraint. Validated against registered member accounts.
      */
     email: string & tags.Format<"email">;
 
     /**
      * Plain text password for authentication.
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification Plain text password from request transformed via bcrypt/argon2 to match reddit_clone_members.password_hash. Never stored as plain text.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification Plain text password from request transformed
+         *   via bcrypt/argon2 to match reddit_clone_members.password_hash.
+         *   Never stored as plain text.
      */
     password: string & tags.Format<"password">;
 
     /**
      * Current request URL for session tracking.
      *
-     * @x-autobe-specification Session context: current request URL stored in reddit_clone_member_sessions.href for security auditing. Not a member table column.
+         * @x-autobe-specification Session context: current request URL stored
+         *   in reddit_clone_member_sessions.href for security auditing. Not a
+         *   member table column.
      */
     href: string & tags.Format<"uri">;
 
     /**
      * Client IP address for security audit (optional for SSR).
      *
-     * @x-autobe-specification Session context: client IP address stored in reddit_clone_member_sessions.ip for security auditing. Optional for SSR where server captures IP if client cannot provide. Not a member table column.
+         * @x-autobe-specification Session context: client IP address stored in
+         *   reddit_clone_member_sessions.ip for security auditing. Optional for
+         *   SSR where server captures IP if client cannot provide. Not a member
+         *   table column.
      */
     ip?: (string & tags.Format<"ipv4">) | undefined;
 
     /**
      * HTTP referrer header for session tracking.
      *
-     * @x-autobe-specification Session context: HTTP referrer header stored in reddit_clone_member_sessions.referrer for security auditing. Not a member table column.
+         * @x-autobe-specification Session context: HTTP referrer header stored
+         *   in reddit_clone_member_sessions.referrer for security auditing. Not
+         *   a member table column.
      */
     referrer: string & tags.Format<"uri">;
   };
@@ -296,16 +372,19 @@ export namespace IRedditCloneMember {
     /**
      * Unique identifier of the member.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from reddit_clone_members.id (UUID primary key). Unique identifier for the member account.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from reddit_clone_members.id
+         *   (UUID primary key). Unique identifier for the member account.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Unique display name used for identification across the platform.
      *
-     * @x-autobe-database-schema-property username
-     * @x-autobe-specification Direct mapping from reddit_clone_members.username (unique constraint). Display name used for identification across the platform.
+         * @x-autobe-database-schema-property username
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_members.username (unique constraint). Display name
+         *   used for identification across the platform.
      */
     username: string;
   };

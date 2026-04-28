@@ -37,9 +37,9 @@ export class ErphrmMemberProjectsMembersController {
    * @param connection
    * @param projectId The unique identifier of the project to add the member to. The project must exist in the current organization and have 'active' status.
    * @param body The employee to add and their assigned role within the project
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation requires:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation requires:
    *
    * 1. **Authorization Check**: Verify the authenticated member has 'project:manage' permission within the organization. Reject with 403 if lacking permission.
    *
@@ -95,9 +95,11 @@ export class ErphrmMemberProjectsMembersController {
    * @param connection
    * @param projectId Unique identifier of the project whose members are being listed (UUID format)
    * @param body Search criteria including role filter, employee name search, pagination and sorting options
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query erp_hrm_project_members table filtered by erp_hrm_project_id matching the projectId path parameter and deleted_at IS NULL.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query erp_hrm_project_members table filtered by
+     *   erp_hrm_project_id matching the projectId path parameter and deleted_at
+     *   IS NULL.
    *
    * Join with erp_hrm_employees to include employee details (name, position, employment_type).
    * Join with erp_hrm_members to get user profile information (display_name, avatar).
@@ -154,9 +156,10 @@ export class ErphrmMemberProjectsMembersController {
    * @param connection
    * @param projectId Unique identifier of the project containing the membership. Must reference an existing project within the current organization context.
    * @param projectMemberId Unique identifier of the project membership record to retrieve. Must reference a membership belonging to the specified project.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Retrieve a single project membership record from the erp_hrm_project_members table.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Retrieve a single project membership record from
+     *   the erp_hrm_project_members table.
    *
    * Implementation steps:
    * 1. Authenticate the user and resolve organization context from session
@@ -214,9 +217,10 @@ export class ErphrmMemberProjectsMembersController {
    * @param projectId The unique identifier of the project containing the member to update
    * @param projectMemberId The unique identifier of the project member record to update
    * @param body The updated project member role
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Update a project member record's role within the specified project.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Update a project member record's role within the
+     *   specified project.
    *
    * 1. Verify the authenticated user has 'project:manage' permission in the organization
    * 2. Validate projectId exists and belongs to the user's current organization context
@@ -287,9 +291,9 @@ export class ErphrmMemberProjectsMembersController {
    * @param connection
    * @param projectId Unique identifier of the project from which the member is being removed. The project must exist in the current organization.
    * @param projectMemberId Unique identifier of the project membership record to remove. This is the erp_hrm_project_members.id, not the employee ID.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation steps:
    *
    * 1. Authorization check: Verify the authenticated user has 'project:manage' permission in the current organization context. Return 403 Forbidden if lacking permission.
    *

@@ -22,13 +22,13 @@ export class ShoppingmallGuestSessionsController {
    *
    * @param connection
    * @param body Search criteria including IP address filter, creation date range, expiration status filter, text search, and pagination parameters.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor guest
-   * @x-autobe-specification Query the appropriate session table based on authenticated user's actor type:
-   * - member → shopping_mall_member_sessions
-   * - seller → shopping_mall_seller_sessions
-   * - admin → shopping_mall_admin_sessions
-   * - superAdmin → shopping_mall_super_admin_sessions
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor guest
+     * @x-autobe-specification Query the appropriate session table based on
+     *   authenticated user's actor type: - member →
+     *   shopping_mall_member_sessions - seller → shopping_mall_seller_sessions
+     *   - admin → shopping_mall_admin_sessions - superAdmin →
+     *   shopping_mall_super_admin_sessions
    *
    * Apply filters from request body:
    * - ip: exact match on IP address
@@ -70,9 +70,13 @@ export class ShoppingmallGuestSessionsController {
    *
    * @param connection
    * @param sessionId Session ID in UUID format identifying the specific session record to retrieve.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor guest
-   * @x-autobe-specification Query all five session tables (shopping_mall_member_sessions, shopping_mall_seller_sessions, shopping_mall_admin_sessions, shopping_mall_super_admin_sessions, shopping_mall_guest_sessions) to find the session matching the provided sessionId UUID.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor guest
+     * @x-autobe-specification Query all five session tables
+     *   (shopping_mall_member_sessions, shopping_mall_seller_sessions,
+     *   shopping_mall_admin_sessions, shopping_mall_super_admin_sessions,
+     *   shopping_mall_guest_sessions) to find the session matching the provided
+     *   sessionId UUID.
    *
    * Return the first matching session with: id, actorType (enum: 'member' | 'seller' | 'admin' | 'superAdmin' | 'guest'), actorId, ip, href, referrer, created_at, expired_at.
    *

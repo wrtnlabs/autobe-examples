@@ -29,9 +29,9 @@ export class ShoppingmallAdministratorCategoriesSubcategoriesController {
    * @param connection
    * @param categoryId ID of the parent category under which to create the subcategory. Must be a top-level category (not already a subcategory).
    * @param body Subcategory creation data including name and optional description
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Implementation steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor administrator
+     * @x-autobe-specification Implementation steps:
    *
    * 1. Authentication and Authorization:
    *    - Verify the requester is an authenticated administrator

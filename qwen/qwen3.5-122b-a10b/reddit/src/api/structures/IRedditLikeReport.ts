@@ -157,8 +157,9 @@ export namespace IRedditLikeReport {
      *
      * This UUID references the specific content report that the moderator is dismissing. The system will verify that the report exists, is in 'pending' status, and that the authenticated member has permission to dismiss it before updating the status to 'dismissed'.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from reddit_like_reports.id. UUID format. Used to identify which report to dismiss.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from reddit_like_reports.id.
+         *   UUID format. Used to identify which report to dismiss.
      */
     id: string & tags.Format<"uuid">;
   };

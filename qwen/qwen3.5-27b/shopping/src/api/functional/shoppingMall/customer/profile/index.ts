@@ -21,7 +21,8 @@ import { IShoppingMallSellerProfile } from "../../../../structures/IShoppingMall
  * @param props.body Updated seller profile information including shop name, shop description, and optional logo image URI.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Update the shopping_mall_seller_profiles record for the authenticated seller's profile.
+ * @x-autobe-specification Update the shopping_mall_seller_profiles record for
+ *   the authenticated seller's profile.
  *
  * 1. Validate that the seller is authenticated and their account is not banned or suspended.
  * 2. Before updating, capture the current values of shop_name, shop_description, and logo_uri from the database.

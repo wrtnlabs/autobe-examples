@@ -10,52 +10,73 @@ export type ITodoAppTodoEditHistory = {
   /**
    * Unique identifier of this todo edit-history entry.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from todo_app_todo_edit_histories.id.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   todo_app_todo_edit_histories.id.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Summary information for the todo that this history entry belongs to.
    *
-   * @x-autobe-database-schema-property todo
-   * @x-autobe-specification Resolve the belongs-to relation from todo_app_todo_edit_histories.todo_app_todo_id to todo_app_todos.id and serialize the related todo as ITodoAppTodo.ISummary after confirming the parent todo belongs to the authenticated member.
+     * @x-autobe-database-schema-property todo
+     * @x-autobe-specification Resolve the belongs-to relation from
+     *   todo_app_todo_edit_histories.todo_app_todo_id to todo_app_todos.id and
+     *   serialize the related todo as ITodoAppTodo.ISummary after confirming
+     *   the parent todo belongs to the authenticated member.
    */
   todo: ITodoAppTodo.ISummary;
 
   /**
    * Title value captured by this edit event, or null when the title was not changed in that history entry.
    *
-   * @x-autobe-specification Populate from the domain history payload for this edit event. Return the changed todo title recorded by the event when the title was edited in that history entry; otherwise return null. This value is not read from a standalone column on todo_app_todo_edit_histories.
+     * @x-autobe-specification Populate from the domain history payload for this
+     *   edit event. Return the changed todo title recorded by the event when
+     *   the title was edited in that history entry; otherwise return null. This
+     *   value is not read from a standalone column on
+     *   todo_app_todo_edit_histories.
    */
   title: string | null;
 
   /**
    * Description value captured by this edit event, or null when the description was not changed in that history entry.
    *
-   * @x-autobe-specification Populate from the domain history payload for this edit event. Return the changed todo description recorded by the event when the description was edited in that history entry; otherwise return null. This value is not read from a standalone column on todo_app_todo_edit_histories.
+     * @x-autobe-specification Populate from the domain history payload for this
+     *   edit event. Return the changed todo description recorded by the event
+     *   when the description was edited in that history entry; otherwise return
+     *   null. This value is not read from a standalone column on
+     *   todo_app_todo_edit_histories.
    */
   description: string | null;
 
   /**
    * Start date value captured by this edit event, or null when the start date was not changed in that history entry.
    *
-   * @x-autobe-specification Populate from the domain history payload for this edit event. Return the changed todo start_date recorded by the event when the start date was edited in that history entry; otherwise return null. This value is not read from a standalone column on todo_app_todo_edit_histories.
+     * @x-autobe-specification Populate from the domain history payload for this
+     *   edit event. Return the changed todo start_date recorded by the event
+     *   when the start date was edited in that history entry; otherwise return
+     *   null. This value is not read from a standalone column on
+     *   todo_app_todo_edit_histories.
    */
   start_date: (string & tags.Format<"date-time">) | null;
 
   /**
    * Due date value captured by this edit event, or null when the due date was not changed in that history entry.
    *
-   * @x-autobe-specification Populate from the domain history payload for this edit event. Return the changed todo due_date recorded by the event when the due date was edited in that history entry; otherwise return null. This value is not read from a standalone column on todo_app_todo_edit_histories.
+     * @x-autobe-specification Populate from the domain history payload for this
+     *   edit event. Return the changed todo due_date recorded by the event when
+     *   the due date was edited in that history entry; otherwise return null.
+     *   This value is not read from a standalone column on
+     *   todo_app_todo_edit_histories.
    */
   due_date: (string & tags.Format<"date-time">) | null;
 
   /**
    * Timestamp when this edit-history entry was recorded.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from todo_app_todo_edit_histories.created_at.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   todo_app_todo_edit_histories.created_at.
    */
   created_at: string & tags.Format<"date-time">;
 };
@@ -67,14 +88,24 @@ export namespace ITodoAppTodoEditHistory {
     /**
      * Page number of edit-history results to return.
      *
-     * @x-autobe-specification Optional 1-indexed page selector for paginating the todo_app_todo_edit_histories query result after filtering by the path todoId and verifying ownership through todo_app_todos.todo_app_member_id. When omitted, the service may default to the first page. This property does not map to a database column.
+         * @x-autobe-specification Optional 1-indexed page selector for
+         *   paginating the todo_app_todo_edit_histories query result after
+         *   filtering by the path todoId and verifying ownership through
+         *   todo_app_todos.todo_app_member_id. When omitted, the service may
+         *   default to the first page. This property does not map to a database
+         *   column.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of edit-history entries to include in one response page.
      *
-     * @x-autobe-specification Optional maximum number of edit-history rows to return in one page when querying todo_app_todo_edit_histories for the todo identified by the path parameter. Honor the schema bounds of minimum 1 and maximum 100. When omitted, the service may apply a default page size. This property does not map to a database column.
+         * @x-autobe-specification Optional maximum number of edit-history rows
+         *   to return in one page when querying todo_app_todo_edit_histories
+         *   for the todo identified by the path parameter. Honor the schema
+         *   bounds of minimum 1 and maximum 100. When omitted, the service may
+         *   apply a default page size. This property does not map to a database
+         *   column.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -88,24 +119,28 @@ export namespace ITodoAppTodoEditHistory {
     /**
      * Unique identifier of this todo edit history entry.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from todo_app_todo_edit_histories.id.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_todo_edit_histories.id.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * The todo item to which this edit history entry belongs.
      *
-     * @x-autobe-database-schema-property todo
-     * @x-autobe-specification Resolve the belongs-to relation from todo_app_todo_edit_histories.todo_app_todo_id to todo_app_todos.id and serialize the related parent todo as ITodoAppTodo.ISummary.
+         * @x-autobe-database-schema-property todo
+         * @x-autobe-specification Resolve the belongs-to relation from
+         *   todo_app_todo_edit_histories.todo_app_todo_id to todo_app_todos.id
+         *   and serialize the related parent todo as ITodoAppTodo.ISummary.
      */
     todo: ITodoAppTodo.ISummary;
 
     /**
      * Date and time when this edit history entry was recorded.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from todo_app_todo_edit_histories.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_todo_edit_histories.created_at.
      */
     created_at: string & tags.Format<"date-time">;
   };

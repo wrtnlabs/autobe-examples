@@ -25,9 +25,9 @@ export class ShoppingmallSellerProductsController {
    * @param connection
    * @param productId Unique identifier of the product to update
    * @param body Product update data
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Implementation steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Implementation steps:
    *
    * 1. Authenticate the seller from the request context
    * 2. Validate seller is not suspended (check shopping_mall_sellers.suspended = false)
@@ -86,9 +86,11 @@ export class ShoppingmallSellerProductsController {
    * @param connection
    * @param productId Unique identifier of the product to be deleted. This UUID references the shopping_mall_products.id field. Administrators can delete any product regardless of seller ownership.
    * @param body Deletion justification containing the policy violation reason. This field is mandatory for audit documentation and governance compliance. The reason supports accountability for administrative actions and provides documentation for potential appeals.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification 1. Authorization: Validate that the requester is an administrator (actor kind 'admin'). Reject with 403 Forbidden for non-admin users.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification 1. Authorization: Validate that the requester is
+     *   an administrator (actor kind 'admin'). Reject with 403 Forbidden for
+     *   non-admin users.
    *
    * 2. Product Lookup: Query shopping_mall_products table by productId (UUID format). Return 404 Not Found if product does not exist or is already deleted (deleted_at IS NOT NULL).
    *

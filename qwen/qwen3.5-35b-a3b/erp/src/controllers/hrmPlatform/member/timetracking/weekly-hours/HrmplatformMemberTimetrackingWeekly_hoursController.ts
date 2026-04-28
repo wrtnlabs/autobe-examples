@@ -18,9 +18,10 @@ export class HrmplatformMemberTimetrackingWeekly_hoursController {
    *
    * @param connection
    * @param employeeId The unique identifier of the employee whose weekly hours are being retrieved.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Retrieve the current week's total hours logged by the employee from hrm_platform_timesheet_weekly_stats.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Retrieve the current week's total hours logged by
+     *   the employee from hrm_platform_timesheet_weekly_stats.
    *
    * Implementation steps:
    * 1. Extract the employeeId from the authenticated user's context (from organization-scoped session) or use the path parameter

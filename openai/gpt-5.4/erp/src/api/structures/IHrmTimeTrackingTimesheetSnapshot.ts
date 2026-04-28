@@ -10,24 +10,33 @@ export type IHrmTimeTrackingTimesheetSnapshot = {
   /**
    * Unique identifier of this timesheet snapshot record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_timesheet_snapshots.id.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_timesheet_snapshots.id.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Summary of the parent weekly timesheet that this snapshot belongs to.
    *
-   * @x-autobe-database-schema-property timesheet
-   * @x-autobe-specification Resolve the belongs-to relation from hrm_time_tracking_timesheet_snapshots.hrm_time_tracking_timesheet_id to hrm_time_tracking_timesheets.id and serialize the joined parent record as IHrmTimeTrackingTimesheet.ISummary. In nested snapshot endpoints, ensure this joined timesheet is the parent addressed by the route context.
+     * @x-autobe-database-schema-property timesheet
+     * @x-autobe-specification Resolve the belongs-to relation from
+     *   hrm_time_tracking_timesheet_snapshots.hrm_time_tracking_timesheet_id to
+     *   hrm_time_tracking_timesheets.id and serialize the joined parent record
+     *   as IHrmTimeTrackingTimesheet.ISummary. In nested snapshot endpoints,
+     *   ensure this joined timesheet is the parent addressed by the route
+     *   context.
    */
   timesheet: IHrmTimeTrackingTimesheet.ISummary;
 
   /**
    * Whether the parent timesheet was locked against modification when this snapshot was captured.
    *
-   * @x-autobe-database-schema-property locked
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_timesheet_snapshots.locked. Preserve the stored historical value exactly as captured for the snapshot and do not recalculate it from the current timesheet state.
+     * @x-autobe-database-schema-property locked
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_timesheet_snapshots.locked. Preserve the stored
+     *   historical value exactly as captured for the snapshot and do not
+     *   recalculate it from the current timesheet state.
    */
   locked: boolean;
 };
@@ -39,8 +48,13 @@ export namespace IHrmTimeTrackingTimesheetSnapshot {
     /**
      * Whether the source timesheet was locked against modification at the moment this snapshot is recorded.
      *
-     * @x-autobe-database-schema-property locked
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_timesheet_snapshots.locked. Accept a boolean from the request body indicating whether the parent timesheet was locked against modification at the captured moment, then persist that value in the inserted snapshot row together with the server-derived hrm_time_tracking_timesheet_id and generated id.
+         * @x-autobe-database-schema-property locked
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_timesheet_snapshots.locked. Accept a boolean from
+         *   the request body indicating whether the parent timesheet was locked
+         *   against modification at the captured moment, then persist that
+         *   value in the inserted snapshot row together with the server-derived
+         *   hrm_time_tracking_timesheet_id and generated id.
      */
     locked: boolean;
   };
@@ -52,14 +66,23 @@ export namespace IHrmTimeTrackingTimesheetSnapshot {
     /**
      * Page number of the snapshot history to return.
      *
-     * @x-autobe-specification Optional pagination input for the snapshot-history query. When provided, use it as the 1-indexed page number for reading `hrm_time_tracking_timesheet_snapshots` rows already filtered by the path-scoped `timesheetId`. If omitted, implementation should apply the endpoint's default page behavior, typically page 1.
+         * @x-autobe-specification Optional pagination input for the
+         *   snapshot-history query. When provided, use it as the 1-indexed page
+         *   number for reading `hrm_time_tracking_timesheet_snapshots` rows
+         *   already filtered by the path-scoped `timesheetId`. If omitted,
+         *   implementation should apply the endpoint's default page behavior,
+         *   typically page 1.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of snapshot records to include in one response page.
      *
-     * @x-autobe-specification Optional pagination size for the snapshot-history query. When provided, use it to cap the number of `hrm_time_tracking_timesheet_snapshots` rows returned for the filtered parent timesheet. Enforce the schema bounds of minimum 1 and maximum 100 before executing the query.
+         * @x-autobe-specification Optional pagination size for the
+         *   snapshot-history query. When provided, use it to cap the number of
+         *   `hrm_time_tracking_timesheet_snapshots` rows returned for the
+         *   filtered parent timesheet. Enforce the schema bounds of minimum 1
+         *   and maximum 100 before executing the query.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -68,7 +91,13 @@ export namespace IHrmTimeTrackingTimesheetSnapshot {
     /**
      * Sorting rule applied to the snapshot history results.
      *
-     * @x-autobe-specification Optional ordering directive for the snapshot-history query. Interpret supported values as deterministic sort modes over `hrm_time_tracking_timesheet_snapshots` rows filtered by the path-scoped `timesheetId`, typically ordering by snapshot identifier in ascending or descending order. Reject unsupported sort values according to endpoint validation rules rather than inventing ad hoc ordering.
+         * @x-autobe-specification Optional ordering directive for the
+         *   snapshot-history query. Interpret supported values as deterministic
+         *   sort modes over `hrm_time_tracking_timesheet_snapshots` rows
+         *   filtered by the path-scoped `timesheetId`, typically ordering by
+         *   snapshot identifier in ascending or descending order. Reject
+         *   unsupported sort values according to endpoint validation rules
+         *   rather than inventing ad hoc ordering.
      */
     sort?: string | undefined;
   };
@@ -80,16 +109,22 @@ export namespace IHrmTimeTrackingTimesheetSnapshot {
     /**
      * Unique identifier of the timesheet snapshot record.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_timesheet_snapshots.id. This is the primary key UUID of the snapshot row and uniquely identifies one captured snapshot record.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_timesheet_snapshots.id. This is the primary key
+         *   UUID of the snapshot row and uniquely identifies one captured
+         *   snapshot record.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Whether the source timesheet was locked when this snapshot was taken.
      *
-     * @x-autobe-database-schema-property locked
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_timesheet_snapshots.locked. Indicates whether the source timesheet was locked against modification at the moment this snapshot was captured.
+         * @x-autobe-database-schema-property locked
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_timesheet_snapshots.locked. Indicates whether the
+         *   source timesheet was locked against modification at the moment this
+         *   snapshot was captured.
      */
     locked: boolean;
   };

@@ -26,7 +26,9 @@ import { IPageICommunityPlatformMember } from "../../../structures/IPageICommuni
  * @param props.body Member search filters, sorting, and pagination
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Accept a JSON request body of type `ICommunityPlatformMember.IRequest` containing pagination inputs, sortable field selection, and optional search filters.
+ * @x-autobe-specification Accept a JSON request body of type
+ *   `ICommunityPlatformMember.IRequest` containing pagination inputs, sortable
+ *   field selection, and optional search filters.
  *
  * Build the primary query from `community_platform_members` as the root dataset. Support filtering by member account code, exact or partial email according to DTO capabilities, `email_verified`, `status`, created-at range, updated-at range, and last-signed-in-at range if those filters are present in the request body. Exclude internal credential material from all projections. Never return `password_hash`.
  *
@@ -129,7 +131,9 @@ export namespace index {
  * @param props.memberId Target member's primary identifier
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Implement a read-only service method that retrieves one member by community_platform_members.id using the UUID supplied in the memberId path parameter.
+ * @x-autobe-specification Implement a read-only service method that retrieves
+ *   one member by community_platform_members.id using the UUID supplied in the
+ *   memberId path parameter.
  *
  * Query community_platform_members as the root table and left join or separately load the one-to-one community_platform_profiles relation through community_platform_profiles.community_platform_member_id when the response DTO includes profile-facing fields. Treat the member record as the canonical account identity and the profile record as the canonical public presentation source. Do not query by code for this endpoint because the route contract explicitly uses memberId.
  *

@@ -19,7 +19,11 @@ import { IHrmTimeTrackingOrganization } from "../../../../../structures/IHrmTime
  * @param props.organizationId UUID of the organization whose deletion prerequisites are being checked. Only the organization owner can view this information.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Retrieve the organization by organizationId. Verify the authenticated caller is the organization owner by comparing hrm_time_tracking_member_id against the authenticated member's ID. If the organization does not exist, return 404. If the caller is not the owner, return 403.
+ * @x-autobe-specification Retrieve the organization by organizationId. Verify
+ *   the authenticated caller is the organization owner by comparing
+ *   hrm_time_tracking_member_id against the authenticated member's ID. If the
+ *   organization does not exist, return 404. If the caller is not the owner,
+ *   return 403.
  *
  * Requirement 1 — Pending timesheets resolved:
  * Query hrm_time_tracking_timesheets joined to hrm_time_tracking_employees (filtered by hrm_time_tracking_organization_id = organizationId) where status is 'draft' or 'submitted' (unresolved states) and deleted_at IS NULL. Count results. The condition is met (true) when count is 0.

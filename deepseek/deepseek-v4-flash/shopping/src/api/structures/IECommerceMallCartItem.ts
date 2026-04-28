@@ -17,8 +17,9 @@ export type IECommerceMallCartItem = {
    *
    * This UUID is assigned by the system when the cart item is first created and does not change throughout the cart item's lifecycle.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from e_commerce_mall_cart_items.id. Primary key (UUID).
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_cart_items.id. Primary key (UUID).
    */
   id: string & tags.Format<"uuid">;
 
@@ -27,8 +28,10 @@ export type IECommerceMallCartItem = {
    *
    * Must be a positive integer. When a customer adds the same variant to an existing cart item, the quantities are combined by increasing the existing item's quantity by the newly requested quantity. If the quantity is set to zero during modification, the cart item is removed (soft-deleted).
    *
-   * @x-autobe-database-schema-property quantity
-   * @x-autobe-specification Direct mapping from e_commerce_mall_cart_items.quantity. Positive integer representing desired purchase quantity.
+     * @x-autobe-database-schema-property quantity
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_cart_items.quantity. Positive integer representing
+     *   desired purchase quantity.
    */
   quantity: number & tags.Type<"int32">;
 
@@ -37,7 +40,12 @@ export type IECommerceMallCartItem = {
    *
    * If the variant has a non-null price override, that price is used; otherwise the parent product's base price is inherited. This computed value represents the effective price of a single unit of the variant.
    *
-   * @x-autobe-specification Computed: unit_price = variant.price ?? product.base_price. If the variant has a non-null price override (e_commerce_mall_product_variants.price), that price is used; otherwise the parent product's base price (e_commerce_mall_products.base_price) is inherited. Not stored in the database — calculated at query time by joining the variant and its parent product.
+     * @x-autobe-specification Computed: unit_price = variant.price ??
+     *   product.base_price. If the variant has a non-null price override
+     *   (e_commerce_mall_product_variants.price), that price is used; otherwise
+     *   the parent product's base price (e_commerce_mall_products.base_price)
+     *   is inherited. Not stored in the database — calculated at query time by
+     *   joining the variant and its parent product.
    */
   unit_price: number;
 
@@ -46,7 +54,9 @@ export type IECommerceMallCartItem = {
    *
    * This is a derived value shown for display purposes only and may differ from the final charged amount.
    *
-   * @x-autobe-specification Computed: subtotal = unit_price * quantity. Calculated at query time from the computed unit_price and the cart item's quantity. Not stored in the database.
+     * @x-autobe-specification Computed: subtotal = unit_price * quantity.
+     *   Calculated at query time from the computed unit_price and the cart
+     *   item's quantity. Not stored in the database.
    */
   subtotal: number;
 
@@ -55,7 +65,12 @@ export type IECommerceMallCartItem = {
    *
    * A variant is marked as unavailable if it has been soft-deleted or its computed stock quantity is zero. Unavailable cart items are excluded from checkout.
    *
-   * @x-autobe-specification Computed: is_available = (variant.deleted_at IS NULL AND computed stock > 0). A variant is unavailable if it has been soft-deleted (e_commerce_mall_product_variants.deleted_at IS NOT NULL) or its computed stock quantity (SUM of e_commerce_mall_inventory_records.quantity_change) is zero or less. Not stored in the database.
+     * @x-autobe-specification Computed: is_available = (variant.deleted_at IS
+     *   NULL AND computed stock > 0). A variant is unavailable if it has been
+     *   soft-deleted (e_commerce_mall_product_variants.deleted_at IS NOT NULL)
+     *   or its computed stock quantity (SUM of
+     *   e_commerce_mall_inventory_records.quantity_change) is zero or less. Not
+     *   stored in the database.
    */
   is_available: boolean;
 
@@ -64,8 +79,12 @@ export type IECommerceMallCartItem = {
    *
    * Each cart item belongs to exactly one customer. The customer's identity is resolved from the authenticated session and used for ownership verification and display purposes.
    *
-   * @x-autobe-database-schema-property customer
-   * @x-autobe-specification Relation: LEFT JOIN e_commerce_mall_customers using e_commerce_mall_customer_id FK. Mapped as IECommerceMallCustomer.ISummary. The customer is the authenticated actor resolved from the JWT session context — used for ownership verification and display.
+     * @x-autobe-database-schema-property customer
+     * @x-autobe-specification Relation: LEFT JOIN e_commerce_mall_customers
+     *   using e_commerce_mall_customer_id FK. Mapped as
+     *   IECommerceMallCustomer.ISummary. The customer is the authenticated
+     *   actor resolved from the JWT session context — used for ownership
+     *   verification and display.
    */
   customer: IECommerceMallCustomer.ISummary;
 
@@ -74,16 +93,23 @@ export type IECommerceMallCartItem = {
    *
    * Each cart item references exactly one product variant. The variant provides full details including SKU code, option values (e.g., color, size), price override, computed stock quantity, and the parent product information.
    *
-   * @x-autobe-database-schema-property productVariant
-   * @x-autobe-specification Relation: JOIN e_commerce_mall_product_variants using e_commerce_mall_product_variant_id FK. Mapped as IECommerceMallProductVariant (full entity) which includes nested product info, variant options from e_commerce_mall_product_variant_options, and computed stock from SUM(e_commerce_mall_inventory_records.quantity_change).
+     * @x-autobe-database-schema-property productVariant
+     * @x-autobe-specification Relation: JOIN e_commerce_mall_product_variants
+     *   using e_commerce_mall_product_variant_id FK. Mapped as
+     *   IECommerceMallProductVariant (full entity) which includes nested
+     *   product info, variant options from
+     *   e_commerce_mall_product_variant_options, and computed stock from
+     *   SUM(e_commerce_mall_inventory_records.quantity_change).
    */
   productVariant: IECommerceMallProductVariant;
 
   /**
    * The timestamp when this cart item was first created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from e_commerce_mall_cart_items.created_at. Set automatically on record creation.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_cart_items.created_at. Set automatically on record
+     *   creation.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -92,8 +118,10 @@ export type IECommerceMallCartItem = {
    *
    * Updated on any field change such as quantity updates.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from e_commerce_mall_cart_items.updated_at. Updated automatically on each modification such as quantity changes.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_cart_items.updated_at. Updated automatically on each
+     *   modification such as quantity changes.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -104,8 +132,11 @@ export type IECommerceMallCartItem = {
    *
    * This property is null when the cart item is still active.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from e_commerce_mall_cart_items.deleted_at. Nullable DateTime. When set, the cart item is considered soft-deleted and excluded from active cart views.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_cart_items.deleted_at. Nullable DateTime. When set, the
+     *   cart item is considered soft-deleted and excluded from active cart
+     *   views.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -121,8 +152,12 @@ export namespace IECommerceMallCartItem {
      *
      * Each cart item represents intent to purchase exactly one product variant. If the customer already has a cart item for this variant, the requested quantity is combined with the existing item's quantity rather than creating a separate entry. The variant must be available (not deleted) to be added to the cart.
      *
-     * @x-autobe-database-schema-property e_commerce_mall_product_variant_id
-     * @x-autobe-specification Direct mapping from e_commerce_mall_cart_items.e_commerce_mall_product_variant_id. User-provided foreign key as scalar UUID. The referenced variant must exist and must not be soft-deleted (deleted_at IS NULL). Stock availability is validated at checkout, not at add-to-cart time.
+         * @x-autobe-database-schema-property e_commerce_mall_product_variant_id
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_cart_items.e_commerce_mall_product_variant_id.
+         *   User-provided foreign key as scalar UUID. The referenced variant
+         *   must exist and must not be soft-deleted (deleted_at IS NULL). Stock
+         *   availability is validated at checkout, not at add-to-cart time.
      */
     product_variant_id: string & tags.Format<"uuid">;
 
@@ -131,8 +166,12 @@ export namespace IECommerceMallCartItem {
      *
      * Must be a positive integer with a minimum value of 1. When the same variant is added again later, the quantities are combined by increasing the existing cart item's quantity. Stock availability against the final quantity is not validated at add time — stock checks occur during checkout.
      *
-     * @x-autobe-database-schema-property quantity
-     * @x-autobe-specification Direct mapping from e_commerce_mall_cart_items.quantity. Must be a positive integer (minimum 1). Stock availability is validated at checkout, not at add-to-cart time. If the same variant already exists in the cart, quantities are combined.
+         * @x-autobe-database-schema-property quantity
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_cart_items.quantity. Must be a positive integer
+         *   (minimum 1). Stock availability is validated at checkout, not at
+         *   add-to-cart time. If the same variant already exists in the cart,
+         *   quantities are combined.
      */
     quantity: number & tags.Type<"int32"> & tags.Minimum<1>;
   };
@@ -148,8 +187,11 @@ export namespace IECommerceMallCartItem {
      *
      * Must be a non-negative integer. Setting the quantity to zero removes the item from the cart by soft-deleting the cart record rather than physically deleting it, preserving the record for audit purposes.
      *
-     * @x-autobe-database-schema-property quantity
-     * @x-autobe-specification Direct mapping from e_commerce_mall_cart_items.quantity. Must be a non-negative integer. A value of zero triggers soft-deletion (sets deleted_at to current timestamp) rather than hard-deleting the record.
+         * @x-autobe-database-schema-property quantity
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_cart_items.quantity. Must be a non-negative
+         *   integer. A value of zero triggers soft-deletion (sets deleted_at to
+         *   current timestamp) rather than hard-deleting the record.
      */
     quantity?: (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };
@@ -167,7 +209,10 @@ export namespace IECommerceMallCartItem {
      *
      * Controls which page of paginated cart item results to return. Page numbering starts from 1, so the first page is page 1. Combined with the {@link limit} parameter to calculate the offset for the database query. When not specified, defaults to the first page.
      *
-     * @x-autobe-specification Query parameter for offset-based pagination. Page numbers are 1-indexed (first page = 1). Used to calculate SQL OFFSET = (page - 1) * limit. Defaults to 1 if not provided by the client. Validated with minimum value of 1.
+         * @x-autobe-specification Query parameter for offset-based pagination.
+         *   Page numbers are 1-indexed (first page = 1). Used to calculate SQL
+         *   OFFSET = (page - 1) * limit. Defaults to 1 if not provided by the
+         *   client. Validated with minimum value of 1.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -176,7 +221,11 @@ export namespace IECommerceMallCartItem {
      *
      * Defines the page size for paginated results. The actual number of items returned may be less than this value on the final page or when the total number of matching items is fewer than the requested limit. Must be between 1 and 100.
      *
-     * @x-autobe-specification Query parameter for maximum records per page. Clamped between 1 and 100. Used as the SQL LIMIT value. If not provided by the client, defaults to a system-defined page size. When the total matching records are fewer than the limit, fewer items are returned in the current page.
+         * @x-autobe-specification Query parameter for maximum records per page.
+         *   Clamped between 1 and 100. Used as the SQL LIMIT value. If not
+         *   provided by the client, defaults to a system-defined page size.
+         *   When the total matching records are fewer than the limit, fewer
+         *   items are returned in the current page.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -187,7 +236,13 @@ export namespace IECommerceMallCartItem {
      *
      * Specify sort criteria using dot notation in the format `field.direction` (e.g., `created_at.desc` for newest first, `quantity.asc` for lowest quantity first). The field name must match a valid sortable column and the direction must be either `asc` (ascending) or `desc` (descending). Defaults to sorting by creation date in descending order (newest items first) when not specified.
      *
-     * @x-autobe-specification Query parameter for sort configuration. Format: 'field.direction' where field is a valid sortable column name and direction is 'asc' or 'desc'. Valid sortable fields for this endpoint: 'created_at', 'quantity'. Default sort: 'created_at.desc' (newest first). Applied as the SQL ORDER BY clause. The regex pattern enforces dot notation with only alphanumeric characters and underscores in the field name.
+         * @x-autobe-specification Query parameter for sort configuration.
+         *   Format: 'field.direction' where field is a valid sortable column
+         *   name and direction is 'asc' or 'desc'. Valid sortable fields for
+         *   this endpoint: 'created_at', 'quantity'. Default sort:
+         *   'created_at.desc' (newest first). Applied as the SQL ORDER BY
+         *   clause. The regex pattern enforces dot notation with only
+         *   alphanumeric characters and underscores in the field name.
      */
     sort?: (string & tags.Pattern<"^[a-zA-Z_]+\\.[a-zA-Z]+$">) | undefined;
   };
@@ -205,8 +260,9 @@ export namespace IECommerceMallCartItem {
      *
      * Auto-generated UUID assigned when the customer adds a product variant to their shopping cart. Used as a reference for modifying or removing this specific cart item in subsequent API calls.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from e_commerce_mall_cart_items.id.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_cart_items.id.
      */
     id: string & tags.Format<"uuid">;
 
@@ -215,8 +271,11 @@ export namespace IECommerceMallCartItem {
      *
      * Must be a positive integer. When the same variant is added to an existing cart item, the quantities are combined by increasing the existing item's quantity. If the quantity becomes zero during modification, the cart item is removed.
      *
-     * @x-autobe-database-schema-property quantity
-     * @x-autobe-specification Direct mapping from e_commerce_mall_cart_items.quantity. Must be a positive integer. When the same variant is added again, quantities are combined into a single cart item rather than creating a duplicate entry.
+         * @x-autobe-database-schema-property quantity
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_cart_items.quantity. Must be a positive integer.
+         *   When the same variant is added again, quantities are combined into
+         *   a single cart item rather than creating a duplicate entry.
      */
     quantity: number & tags.Type<"int32"> & tags.Minimum<1>;
 
@@ -225,7 +284,12 @@ export namespace IECommerceMallCartItem {
      *
      * Uses the variant's price override if set, otherwise falls back to the parent product's base price. This price is used to calculate the subtotal and represents the price visible to the customer during cart review. The actual price charged at checkout may differ if prices change between cart and order placement.
      *
-     * @x-autobe-specification Computed as COALESCE(variant.price, product.base_price). JOIN e_commerce_mall_product_variants ON e_commerce_mall_product_variant_id, then JOIN e_commerce_mall_products ON product_id. Uses the variant's optional price override; falls back to the parent product's base price when the variant has no price set.
+         * @x-autobe-specification Computed as COALESCE(variant.price,
+         *   product.base_price). JOIN e_commerce_mall_product_variants ON
+         *   e_commerce_mall_product_variant_id, then JOIN
+         *   e_commerce_mall_products ON product_id. Uses the variant's optional
+         *   price override; falls back to the parent product's base price when
+         *   the variant has no price set.
      */
     unit_price: number;
 
@@ -234,7 +298,9 @@ export namespace IECommerceMallCartItem {
      *
      * Displayed for reference during cart review. The actual price charged at checkout is determined at order placement time using the then-current variant price.
      *
-     * @x-autobe-specification Computed as quantity * unit_price. This is a display-only calculation — the actual price at checkout is determined at order placement time.
+         * @x-autobe-specification Computed as quantity * unit_price. This is a
+         *   display-only calculation — the actual price at checkout is
+         *   determined at order placement time.
      */
     subtotal: number;
 
@@ -243,7 +309,12 @@ export namespace IECommerceMallCartItem {
      *
      * `"available"` indicates the variant exists and has sufficient stock to be purchased. `"unavailable"` indicates the variant has been deleted by the seller or is out of stock — cart items marked as unavailable are excluded from checkout eligibility.
      *
-     * @x-autobe-specification Computed status: 'unavailable' when variant.deleted_at IS NOT NULL OR COALESCE(SUM(e_commerce_mall_inventory_records.quantity_change), 0) <= 0. Otherwise 'available'. Uses LEFT JOIN on e_commerce_mall_inventory_records grouped by variant ID to calculate total stock.
+         * @x-autobe-specification Computed status: 'unavailable' when
+         *   variant.deleted_at IS NOT NULL OR
+         *   COALESCE(SUM(e_commerce_mall_inventory_records.quantity_change), 0)
+         *   <= 0. Otherwise 'available'. Uses LEFT JOIN on
+         *   e_commerce_mall_inventory_records grouped by variant ID to
+         *   calculate total stock.
      */
     availability: "available" | "unavailable";
 
@@ -252,7 +323,10 @@ export namespace IECommerceMallCartItem {
      *
      * When `true`, the customer should reduce the quantity to match the available stock before checkout. Only applicable when the item's availability is `"available"` — unavailable items are already excluded from checkout.
      *
-     * @x-autobe-specification Computed as boolean: true when quantity > available_stock, otherwise false. Only relevant when availability is 'available' — unavailable items are excluded from checkout regardless.
+         * @x-autobe-specification Computed as boolean: true when quantity >
+         *   available_stock, otherwise false. Only relevant when availability
+         *   is 'available' — unavailable items are excluded from checkout
+         *   regardless.
      */
     stock_warning: boolean;
 
@@ -261,7 +335,11 @@ export namespace IECommerceMallCartItem {
      *
      * Derived by summing all inventory quantity changes for this variant. Provides customers with visibility into how many units are actually in stock, allowing them to adjust their cart quantity accordingly before checkout.
      *
-     * @x-autobe-specification Computed as COALESCE(SUM(e_commerce_mall_inventory_records.quantity_change), 0) for the product variant joined via e_commerce_mall_product_variant_id. Returns 0 when no inventory records exist for the variant.
+         * @x-autobe-specification Computed as
+         *   COALESCE(SUM(e_commerce_mall_inventory_records.quantity_change), 0)
+         *   for the product variant joined via
+         *   e_commerce_mall_product_variant_id. Returns 0 when no inventory
+         *   records exist for the variant.
      */
     available_stock: number & tags.Type<"int32"> & tags.Minimum<0>;
 
@@ -270,8 +348,13 @@ export namespace IECommerceMallCartItem {
      *
      * Provides access to variant details including SKU code, option values (e.g., color, size), effective price, stock status, and parent product information such as product name and thumbnail image through the referenced summary type.
      *
-     * @x-autobe-database-schema-property productVariant
-     * @x-autobe-specification BELONGS-TO relation: JOIN e_commerce_mall_product_variants ON cart_items.e_commerce_mall_product_variant_id = variants.id. Returns IECommerceMallProductVariant.ISummary via $ref. Nested join through variant→product (e_commerce_mall_products) provides product name and thumbnail image access.
+         * @x-autobe-database-schema-property productVariant
+         * @x-autobe-specification BELONGS-TO relation: JOIN
+         *   e_commerce_mall_product_variants ON
+         *   cart_items.e_commerce_mall_product_variant_id = variants.id.
+         *   Returns IECommerceMallProductVariant.ISummary via $ref. Nested join
+         *   through variant→product (e_commerce_mall_products) provides product
+         *   name and thumbnail image access.
      */
     variant: IECommerceMallProductVariant.ISummary;
 
@@ -280,8 +363,9 @@ export namespace IECommerceMallCartItem {
      *
      * Used for sorting cart items (newest first) to present the most recently added items at the top of the cart view.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from e_commerce_mall_cart_items.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_cart_items.created_at.
      */
     created_at: string & tags.Format<"date-time">;
   };

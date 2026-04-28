@@ -175,7 +175,8 @@ export namespace create {
  * @param props.body Search filters and pagination controls for activity log entry snapshots.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implement organization-scoped snapshot search with pagination.
+ * @x-autobe-specification Implement organization-scoped snapshot search with
+ *   pagination.
  *
  * Implementation steps:
  * 1) Authorize caller as a member for audit log browsing.
@@ -291,7 +292,8 @@ export namespace index {
  * @param props.activityLogEntrySnapshotId Identifier of the activity log entry snapshot row to retrieve.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implement a read-only lookup for `erp_hrm_time_tracking_activity_log_entry_snapshots` by primary key `id`.
+ * @x-autobe-specification Implement a read-only lookup for
+ *   `erp_hrm_time_tracking_activity_log_entry_snapshots` by primary key `id`.
  *
  * 1) Parse `activityLogEntrySnapshotId` from the path and validate it as a UUID.
  * 2) Resolve the currently selected organization from the authenticated member/session context.

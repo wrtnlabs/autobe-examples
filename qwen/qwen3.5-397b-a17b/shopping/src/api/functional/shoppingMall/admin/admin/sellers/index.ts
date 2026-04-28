@@ -20,7 +20,8 @@ import { IShoppingMallSeller } from "../../../../../structures/IShoppingMallSell
  * @param props.body Search criteria including email search, approval status filter, registration date range, and pagination parameters for browsing seller accounts.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Query shopping_mall_sellers table with pagination and filtering support.
+ * @x-autobe-specification Query shopping_mall_sellers table with pagination and
+ *   filtering support.
  *
  * Apply search filters:
  * - email: partial match search using LIKE operator
@@ -129,7 +130,8 @@ export namespace index {
  * @param props.sellerId Unique identifier of the seller account to retrieve (UUID format).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Query the shopping_mall_sellers table by the provided sellerId UUID parameter.
+ * @x-autobe-specification Query the shopping_mall_sellers table by the provided
+ *   sellerId UUID parameter.
  *
  * Join with shopping_mall_seller_profiles table to include profile information (shop_name, shop_description, logo_image_url) in the response. Use LEFT JOIN since profile may not exist for pending/rejected sellers.
  *

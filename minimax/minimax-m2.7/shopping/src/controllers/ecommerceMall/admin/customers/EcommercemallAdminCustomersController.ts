@@ -27,9 +27,10 @@ export class EcommercemallAdminCustomersController {
    *
    * @param connection
    * @param body Search criteria including email filter, date range filters, account status filter, and pagination parameters.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query the ecommerce_mall_customers table with LEFT JOIN on ecommerce_mall_customer_profiles to include profile data.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Query the ecommerce_mall_customers table with
+     *   LEFT JOIN on ecommerce_mall_customer_profiles to include profile data.
    *
    * Apply search filters:
    * - Filter by email using ILIKE for partial matching
@@ -78,9 +79,10 @@ export class EcommercemallAdminCustomersController {
    *
    * @param connection
    * @param customerId Unique identifier of the customer account to retrieve (UUID format).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query the ecommerce_mall_customers table using the provided customerId path parameter as the primary key.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Query the ecommerce_mall_customers table using
+     *   the provided customerId path parameter as the primary key.
    *
    * Validate that customerId is a valid UUID format. Return 400 Bad Request with validation error if the format is invalid.
    *

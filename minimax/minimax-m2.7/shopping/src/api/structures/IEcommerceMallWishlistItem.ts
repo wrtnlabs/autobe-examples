@@ -15,8 +15,9 @@ export type IEcommerceMallWishlistItem = {
    *
    * System-generated UUID that uniquely identifies this wishlist item record. Used for referencing the specific bookmark when removing items or checking existence.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_wishlist_items.id. UUID primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_wishlist_items.id. UUID primary key.
    */
   id: string & tags.Format<"uuid">;
 
@@ -25,8 +26,9 @@ export type IEcommerceMallWishlistItem = {
    *
    * Records when the customer bookmarked this product. Useful for displaying wishlist items in chronological order or showing when items were saved.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_wishlist_items.created_at. DateTime.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_wishlist_items.created_at. DateTime.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -35,8 +37,10 @@ export type IEcommerceMallWishlistItem = {
    *
    * Contains essential product information including name, base price, category, stock availability, and seller details. Used for displaying the product card in wishlist views.
    *
-   * @x-autobe-database-schema-property product
-   * @x-autobe-specification Join from ecommerce_mall_wishlist_items.ecommerce_mall_product_id to ecommerce_mall_products.id. Returns IEcommerceMallProduct.ISummary.
+     * @x-autobe-database-schema-property product
+     * @x-autobe-specification Join from
+     *   ecommerce_mall_wishlist_items.ecommerce_mall_product_id to
+     *   ecommerce_mall_products.id. Returns IEcommerceMallProduct.ISummary.
    */
   product: IEcommerceMallProduct.ISummary;
 
@@ -45,8 +49,10 @@ export type IEcommerceMallWishlistItem = {
    *
    * Provides context about which wishlist this item belongs to. Primarily used in inverted views where parent information accompanies child items.
    *
-   * @x-autobe-database-schema-property wishlist
-   * @x-autobe-specification Join from ecommerce_mall_wishlist_items.ecommerce_mall_wishlist_id to ecommerce_mall_wishlists.id. Returns IEcommerceMallWishlist.ISummary.
+     * @x-autobe-database-schema-property wishlist
+     * @x-autobe-specification Join from
+     *   ecommerce_mall_wishlist_items.ecommerce_mall_wishlist_id to
+     *   ecommerce_mall_wishlists.id. Returns IEcommerceMallWishlist.ISummary.
    */
   wishlist: IEcommerceMallWishlist.ISummary;
 };
@@ -68,8 +74,12 @@ export namespace IEcommerceMallWishlistItem {
      *
      * **Example**: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
      *
-     * @x-autobe-database-schema-property ecommerce_mall_product_id
-     * @x-autobe-specification Maps productId to ecommerce_mall_product_id column in ecommerce_mall_wishlist_items. Validates product exists in ecommerce_mall_products and has not been soft-deleted (deleted_at IS NULL). Unique constraint enforces one item per product per wishlist.
+         * @x-autobe-database-schema-property ecommerce_mall_product_id
+         * @x-autobe-specification Maps productId to ecommerce_mall_product_id
+         *   column in ecommerce_mall_wishlist_items. Validates product exists
+         *   in ecommerce_mall_products and has not been soft-deleted
+         *   (deleted_at IS NULL). Unique constraint enforces one item per
+         *   product per wishlist.
      */
     productId: string & tags.Format<"uuid">;
   };
@@ -89,8 +99,9 @@ export namespace IEcommerceMallWishlistItem {
      *
      * UUID primary key assigned at item creation. Used to reference specific wishlist items for removal operations.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_mall_wishlist_items.id. UUID primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_wishlist_items.id. UUID primary key.
      */
     id: string & tags.Format<"uuid">;
 
@@ -99,8 +110,9 @@ export namespace IEcommerceMallWishlistItem {
      *
      * ISO 8601 formatted datetime indicating when the customer bookmarked this product. Useful for sorting wishlist items by addition date.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_wishlist_items.created_at. Timestamptz.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_wishlist_items.created_at. Timestamptz.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -109,8 +121,11 @@ export namespace IEcommerceMallWishlistItem {
      *
      * Contains essential product information: identifier, name, base price, category name, stock availability indicator, and seller summary. Availability is determined by checking if the product has been soft-deleted (deleted_at IS NULL means available).
      *
-     * @x-autobe-database-schema-property product
-     * @x-autobe-specification Belongs-to relation via ecommerce_mall_product_id FK. Returns IEcommerceMallProduct.ISummary with product id, name, base price, category name, stock availability, seller summary, and timestamps.
+         * @x-autobe-database-schema-property product
+         * @x-autobe-specification Belongs-to relation via
+         *   ecommerce_mall_product_id FK. Returns
+         *   IEcommerceMallProduct.ISummary with product id, name, base price,
+         *   category name, stock availability, seller summary, and timestamps.
      */
     product: IEcommerceMallProduct.ISummary;
   };
@@ -130,7 +145,11 @@ export namespace IEcommerceMallWishlistItem {
      *
      * When this parameter is provided, the endpoint filters wishlist items to only those whose associated product name contains the search query. The search is case-insensitive and supports partial matching. For example, searching "phone" would match products named "Mobile Phone", "Phone Case", etc.
      *
-     * @x-autobe-specification Query parameter for filtering wishlist items. When provided, performs case-insensitive partial match on product name via JOIN with ecommerce_mall_products table. This parameter filters the wishlist items to only those whose associated product names contain the search query.
+         * @x-autobe-specification Query parameter for filtering wishlist items.
+         *   When provided, performs case-insensitive partial match on product
+         *   name via JOIN with ecommerce_mall_products table. This parameter
+         *   filters the wishlist items to only those whose associated product
+         *   names contain the search query.
      */
     search?: string | undefined;
 
@@ -139,7 +158,9 @@ export namespace IEcommerceMallWishlistItem {
      *
      * Specifies which page of results to retrieve. Page numbering starts at 1, so requesting page 1 returns the first set of results. If omitted, the service layer defaults to page 1.
      *
-     * @x-autobe-specification Pagination query parameter specifying the page number to retrieve. 1-indexed (first page is 1). Defaults to 1 if not provided. Service layer applies default value when omitted.
+         * @x-autobe-specification Pagination query parameter specifying the
+         *   page number to retrieve. 1-indexed (first page is 1). Defaults to 1
+         *   if not provided. Service layer applies default value when omitted.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -148,7 +169,10 @@ export namespace IEcommerceMallWishlistItem {
      *
      * Controls how many wishlist items are returned per page. The maximum allowed value is 100 items per page. If omitted, the service layer defaults to 20 items per page.
      *
-     * @x-autobe-specification Pagination query parameter specifying the maximum number of items per page. Must be between 1 and 100. Defaults to 20 if not provided. Service layer applies default value when omitted.
+         * @x-autobe-specification Pagination query parameter specifying the
+         *   maximum number of items per page. Must be between 1 and 100.
+         *   Defaults to 20 if not provided. Service layer applies default value
+         *   when omitted.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -168,8 +192,9 @@ export namespace IEcommerceMallWishlistItem {
      *
      * A UUID v4 identifier that uniquely identifies this wishlist item within the system. This value remains constant throughout the item's lifecycle.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_mall_wishlist_items.id. Primary key, UUID format.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_wishlist_items.id. Primary key, UUID format.
      */
     id: string & tags.Format<"uuid">;
 
@@ -178,8 +203,10 @@ export namespace IEcommerceMallWishlistItem {
      *
      * Records the exact date and time when the customer added this product to their wishlist. Used for sorting and display ordering.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_wishlist_items.created_at. Timestamptz stored in UTC.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_wishlist_items.created_at. Timestamptz stored in
+         *   UTC.
      */
     createdAt: string & tags.Format<"date-time">;
 
@@ -188,8 +215,11 @@ export namespace IEcommerceMallWishlistItem {
      *
      * The product details retrieved at the time of the request. Includes essential product information such as name, base price, category, stock status, and seller information for customers to review while browsing their wishlist.
      *
-     * @x-autobe-database-schema-property product
-     * @x-autobe-specification Join via ecommerce_mall_product_id to ecommerce_mall_products. Returns IEcommerceMallProduct.ISummary containing product id, name, base price, category name, stock availability, and seller summary.
+         * @x-autobe-database-schema-property product
+         * @x-autobe-specification Join via ecommerce_mall_product_id to
+         *   ecommerce_mall_products. Returns IEcommerceMallProduct.ISummary
+         *   containing product id, name, base price, category name, stock
+         *   availability, and seller summary.
      */
     product: IEcommerceMallProduct.ISummary;
 
@@ -198,8 +228,10 @@ export namespace IEcommerceMallWishlistItem {
      *
      * Reference to the parent wishlist this item belongs to. Provides context about which wishlist owns this item and includes the customer summary for multi-wishlist support.
      *
-     * @x-autobe-database-schema-property wishlist
-     * @x-autobe-specification Join via ecommerce_mall_wishlist_id to ecommerce_mall_wishlists. Returns IEcommerceMallWishlist.ISummary containing wishlist id and owner customer summary.
+         * @x-autobe-database-schema-property wishlist
+         * @x-autobe-specification Join via ecommerce_mall_wishlist_id to
+         *   ecommerce_mall_wishlists. Returns IEcommerceMallWishlist.ISummary
+         *   containing wishlist id and owner customer summary.
      */
     wishlist: IEcommerceMallWishlist.ISummary;
   };

@@ -19,9 +19,10 @@ export class EcommercemallSellerCancellation_requestsController {
    *
    * @param connection
    * @param id Unique identifier of the cancellation request
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Retrieve a single cancellation request from ecommerce_mall_cancellation_requests table by UUID.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Retrieve a single cancellation request from
+     *   ecommerce_mall_cancellation_requests table by UUID.
    *
    * 1. Query the cancellation request by id parameter
    * 2. Validate the record exists and is not soft-deleted (deleted_at IS NULL)
@@ -71,9 +72,10 @@ export class EcommercemallSellerCancellation_requestsController {
    * @param connection
    * @param id The unique identifier of the cancellation request.
    * @param body Update payload containing the new status and optional rejection reason.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Update the ecommerce_mall_cancellation_requests record identified by id.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Update the ecommerce_mall_cancellation_requests
+     *   record identified by id.
    *
    * Business Logic:
    * 1. Verify the cancellation request exists and is not already approved or rejected.

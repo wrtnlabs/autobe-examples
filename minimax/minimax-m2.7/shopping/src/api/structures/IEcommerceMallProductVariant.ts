@@ -34,14 +34,14 @@ export namespace IEcommerceMallProductVariant {
     /**
      * Unique SKU code for the variant. Must be globally unique across all variants on the platform.
      *
-     * @x-autobe-database-schema-property sku_code
+         * @x-autobe-database-schema-property sku_code
      */
     skuCode: string & tags.MinLength<1>;
 
     /**
      * Optional price override. When null, the product's base price applies. Must be zero or positive when provided.
      *
-     * @x-autobe-database-schema-property price
+         * @x-autobe-database-schema-property price
      */
     price?: (number & tags.Minimum<0>) | null | undefined;
 
@@ -63,15 +63,15 @@ export namespace IEcommerceMallProductVariant {
    */
   export type IUpdate = {
     /**
-     * @x-autobe-database-schema-property sku_code
+         * @x-autobe-database-schema-property sku_code
      */
     skuCode?: string | undefined;
     /**
-     * @x-autobe-database-schema-property price
+         * @x-autobe-database-schema-property price
      */
     price?: number | null | undefined;
     /**
-     * @x-autobe-database-schema-property quantity
+         * @x-autobe-database-schema-property quantity
      */
     quantity?: (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
     optionValues?: IEcommerceMallProductVariantOptionValue[] | undefined;
@@ -121,7 +121,19 @@ export namespace IEcommerceMallProductVariant {
      *
      * Each variant specifies a unique SKU code, option key-value pairs (e.g., color and size), optional price override, and initial stock quantity. All variants must have globally unique SKU codes across the platform.
      *
-     * @x-autobe-specification Maps to ecommerce_mall_product_variants table for bulk creation. The productId comes from the path parameter (ecommerce_mall_product_id). Each variant object in the variants array creates one ecommerce_mall_product_variants record with sku_code (from skuCode field in ICreate), price (from price field in ICreate, nullable), and quantity (from quantity field in ICreate, defaults to 0). Option values are created via composition with ecommerce_mall_product_variant_option_values through IEcommerceMallProductVariant.ICreate optionValues. Transactional bulk insert - all variants created atomically or none if validation fails. CRITICAL: The nested IEcommerceMallProductVariant.ICreate schema MUST include quantity field (non-negative integer, optional, defaults to 0) to match operation specification.
+         * @x-autobe-specification Maps to ecommerce_mall_product_variants table
+         *   for bulk creation. The productId comes from the path parameter
+         *   (ecommerce_mall_product_id). Each variant object in the variants
+         *   array creates one ecommerce_mall_product_variants record with
+         *   sku_code (from skuCode field in ICreate), price (from price field
+         *   in ICreate, nullable), and quantity (from quantity field in
+         *   ICreate, defaults to 0). Option values are created via composition
+         *   with ecommerce_mall_product_variant_option_values through
+         *   IEcommerceMallProductVariant.ICreate optionValues. Transactional
+         *   bulk insert - all variants created atomically or none if validation
+         *   fails. CRITICAL: The nested IEcommerceMallProductVariant.ICreate
+         *   schema MUST include quantity field (non-negative integer, optional,
+         *   defaults to 0) to match operation specification.
      */
     variants: IEcommerceMallProductVariant.ICreate[] &
       tags.MinItems<1> &
@@ -145,8 +157,9 @@ export namespace IEcommerceMallProductVariant {
      *
      * A UUID that uniquely identifies this specific SKU combination within the product catalog. Used for all variant references in cart, order, and inventory operations.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_mall_product_variants.id.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_product_variants.id.
      */
     id: string & tags.Format<"uuid">;
 
@@ -155,8 +168,10 @@ export namespace IEcommerceMallProductVariant {
      *
      * The SKU code is globally unique across the platform and is used for inventory tracking, order display, and barcode scanning. Cannot be duplicated across any product variants.
      *
-     * @x-autobe-database-schema-property sku_code
-     * @x-autobe-specification Direct mapping from ecommerce_mall_product_variants.sku_code. Unique constraint enforced at DB level.
+         * @x-autobe-database-schema-property sku_code
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_product_variants.sku_code. Unique constraint
+         *   enforced at DB level.
      */
     skuCode: string;
 
@@ -165,8 +180,10 @@ export namespace IEcommerceMallProductVariant {
      *
      * When present, this price is used instead of the product's base price for this specific variant. Null when the variant uses the product's default base pricing. Allows variants with different prices such as larger sizes costing more.
      *
-     * @x-autobe-database-schema-property price
-     * @x-autobe-specification Direct mapping from ecommerce_mall_product_variants.price. Nullable - when null, use product's base price.
+         * @x-autobe-database-schema-property price
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_product_variants.price. Nullable - when null, use
+         *   product's base price.
      */
     price: number | null;
 
@@ -175,8 +192,9 @@ export namespace IEcommerceMallProductVariant {
      *
      * Represents the calculated stock level derived from all inventory records. Positive integer indicating how many units are available for purchase.
      *
-     * @x-autobe-database-schema-property quantity
-     * @x-autobe-specification Direct mapping from ecommerce_mall_product_variants.quantity.
+         * @x-autobe-database-schema-property quantity
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_product_variants.quantity.
      */
     quantity: number & tags.Type<"int32">;
 
@@ -185,8 +203,10 @@ export namespace IEcommerceMallProductVariant {
      *
      * Identifies which product this SKU belongs to. Use this to navigate to the parent product or verify variant ownership.
      *
-     * @x-autobe-database-schema-property ecommerce_mall_product_id
-     * @x-autobe-specification Direct mapping from ecommerce_mall_product_variants.ecommerce_mall_product_id. Exposes parent product reference as scalar UUID.
+         * @x-autobe-database-schema-property ecommerce_mall_product_id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_product_variants.ecommerce_mall_product_id. Exposes
+         *   parent product reference as scalar UUID.
      */
     productId: string & tags.Format<"uuid">;
 
@@ -195,8 +215,9 @@ export namespace IEcommerceMallProductVariant {
      *
      * Records when this specific SKU combination was first created for the product. Used for sorting and audit purposes.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_product_variants.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_product_variants.created_at.
      */
     createdAt: string & tags.Format<"date-time">;
 
@@ -205,8 +226,9 @@ export namespace IEcommerceMallProductVariant {
      *
      * Reflects the last modification time for this variant including price changes, stock updates, or option modifications.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_product_variants.updated_at.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_product_variants.updated_at.
      */
     updatedAt: string & tags.Format<"date-time">;
   };
@@ -226,7 +248,16 @@ export namespace IEcommerceMallProductVariant {
      *
      * Use this array to synchronize client-side variant state and confirm which variants were modified by the bulk update operation.
      *
-     * @x-autobe-specification Array of updated variant records from ecommerce_mall_product_variants table. Each element includes: id (uuid), sku_code (string), price (nullable number), quantity (integer), created_at (date-time), updated_at (date-time), deleted_at (nullable date-time), and optionValues array (HAS-MANY composition from ecommerce_mall_product_variant_option_values). The optionValues are resolved via JOIN on ecommerce_mall_product_variant_id. Since databaseSchema is null (computed type), this specification is the ONLY source of truth for downstream agents.
+         * @x-autobe-specification Array of updated variant records from
+         *   ecommerce_mall_product_variants table. Each element includes: id
+         *   (uuid), sku_code (string), price (nullable number), quantity
+         *   (integer), created_at (date-time), updated_at (date-time),
+         *   deleted_at (nullable date-time), and optionValues array (HAS-MANY
+         *   composition from ecommerce_mall_product_variant_option_values). The
+         *   optionValues are resolved via JOIN on
+         *   ecommerce_mall_product_variant_id. Since databaseSchema is null
+         *   (computed type), this specification is the ONLY source of truth for
+         *   downstream agents.
      */
     variants: IEcommerceMallProductVariant[];
   };
@@ -246,7 +277,11 @@ export namespace IEcommerceMallProductVariant {
      *
      * Partial updates are supported: include only the fields you want to change. All variants must belong to the product specified in the path parameter.
      *
-     * @x-autobe-specification Array of variant update objects. Each IBulkItem contains variantId (required UUID) plus optional fields (sku_code, price, quantity) for partial update. variantId identifies target variant; omitted optional fields retain current values.
+         * @x-autobe-specification Array of variant update objects. Each
+         *   IBulkItem contains variantId (required UUID) plus optional fields
+         *   (sku_code, price, quantity) for partial update. variantId
+         *   identifies target variant; omitted optional fields retain current
+         *   values.
      */
     items: IEcommerceMallProductVariant.BulkUpdateRequest.IBulkItem[];
   };
@@ -264,8 +299,11 @@ export namespace IEcommerceMallProductVariant {
        *
        * This UUID field is required and identifies which specific variant within the product should be modified. All other fields in this object are optional — only fields that are present will be updated, allowing partial modifications to variant properties.
        *
-       * @x-autobe-database-schema-property id
-       * @x-autobe-specification Direct mapping to ecommerce_mall_product_variants.id. Required field identifying which variant to update. The variant must belong to the product identified in the parent request URL path.
+             * @x-autobe-database-schema-property id
+             * @x-autobe-specification Direct mapping to
+             *   ecommerce_mall_product_variants.id. Required field identifying
+             *   which variant to update. The variant must belong to the product
+             *   identified in the parent request URL path.
        */
       variantId: string & tags.Format<"uuid">;
 
@@ -274,8 +312,12 @@ export namespace IEcommerceMallProductVariant {
        *
        * The SKU (Stock Keeping Unit) code must be unique across the entire platform. When provided, this field updates the variant's SKU identifier used in order items for display and inventory tracking. If a duplicate SKU is detected during validation, the entire bulk operation is rejected with a 409 Conflict error.
        *
-       * @x-autobe-database-schema-property sku_code
-       * @x-autobe-specification Direct mapping to ecommerce_mall_product_variants.sku_code. Unique constraint exists in database. Service layer validates uniqueness and returns 409 Conflict if duplicate SKU detected across the platform.
+             * @x-autobe-database-schema-property sku_code
+             * @x-autobe-specification Direct mapping to
+             *   ecommerce_mall_product_variants.sku_code. Unique constraint
+             *   exists in database. Service layer validates uniqueness and
+             *   returns 409 Conflict if duplicate SKU detected across the
+             *   platform.
        */
       skuCode?: string | undefined;
 
@@ -284,8 +326,12 @@ export namespace IEcommerceMallProductVariant {
        *
        * When provided, this number overrides the product's base price specifically for this variant, allowing different prices for different option combinations (e.g., larger size costs more). Set to null to clear a previous price override and revert to the product's base price.
        *
-       * @x-autobe-database-schema-property price
-       * @x-autobe-specification Direct mapping to ecommerce_mall_product_variants.price. Nullable field. When null is provided, any existing price override is cleared and the product's base price will apply. When a number is provided, it overrides the base price for this specific variant.
+             * @x-autobe-database-schema-property price
+             * @x-autobe-specification Direct mapping to
+             *   ecommerce_mall_product_variants.price. Nullable field. When
+             *   null is provided, any existing price override is cleared and
+             *   the product's base price will apply. When a number is provided,
+             *   it overrides the base price for this specific variant.
        */
       price?: null | number | undefined;
 
@@ -294,8 +340,12 @@ export namespace IEcommerceMallProductVariant {
        *
        * This field specifies the new available stock quantity for the variant. Must be a non-negative integer. When provided, it replaces the current quantity value — this is an absolute replacement, not an increment. Use the inventory management endpoint for restocking or adjustment operations that track stock changes.
        *
-       * @x-autobe-database-schema-property quantity
-       * @x-autobe-specification Direct mapping to ecommerce_mall_product_variants.quantity. Non-negative integer representing the new stock quantity value. This replaces the current quantity entirely — not an increment or decrement operation.
+             * @x-autobe-database-schema-property quantity
+             * @x-autobe-specification Direct mapping to
+             *   ecommerce_mall_product_variants.quantity. Non-negative integer
+             *   representing the new stock quantity value. This replaces the
+             *   current quantity entirely — not an increment or decrement
+             *   operation.
        */
       quantity?: (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
     };

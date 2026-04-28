@@ -12,64 +12,74 @@ export type IErpHrmTimer = {
   /**
    * Unique identifier of the timer session.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from erp_hrm_timers.id. UUID format with @db.Uuid.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from erp_hrm_timers.id. UUID
+     *   format with @db.Uuid.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Timestamp when the timer was started. This timestamp is preserved even when the timer is edited.
    *
-   * @x-autobe-database-schema-property started_at
-   * @x-autobe-specification Direct mapping from erp_hrm_timers.started_at. Format: date-time (ISO 8601).
+     * @x-autobe-database-schema-property started_at
+     * @x-autobe-specification Direct mapping from erp_hrm_timers.started_at.
+     *   Format: date-time (ISO 8601).
    */
   startedAt: string & tags.Format<"date-time">;
 
   /**
    * Optional description of the work being timed. Describes what task or activity is being tracked.
    *
-   * @x-autobe-specification Direct mapping from erp_hrm_timers.description. Nullable - employee may not provide description when starting timer.
-   * @x-autobe-database-schema-property description
+     * @x-autobe-specification Direct mapping from erp_hrm_timers.description.
+     *   Nullable - employee may not provide description when starting timer.
+     * @x-autobe-database-schema-property description
    */
   description?: string | null | undefined;
 
   /**
    * The employee who owns and controls this timer session.
    *
-   * @x-autobe-database-schema-property employee
-   * @x-autobe-specification JOIN from erp_hrm_timers.erp_hrm_employee_id to erp_hrm_employees.id, then to erp_hrm_members.id. Returns IErpHrmEmployee.ISummary with nested member info.
+     * @x-autobe-database-schema-property employee
+     * @x-autobe-specification JOIN from erp_hrm_timers.erp_hrm_employee_id to
+     *   erp_hrm_employees.id, then to erp_hrm_members.id. Returns
+     *   IErpHrmEmployee.ISummary with nested member info.
    */
   employee: IErpHrmEmployee.ISummary;
 
   /**
    * The project being timed. The project the employee is tracking time against.
    *
-   * @x-autobe-database-schema-property project
-   * @x-autobe-specification JOIN from erp_hrm_timers.erp_hrm_project_id to erp_hrm_projects.id. Returns IErpHrmProject.ISummary.
+     * @x-autobe-database-schema-property project
+     * @x-autobe-specification JOIN from erp_hrm_timers.erp_hrm_project_id to
+     *   erp_hrm_projects.id. Returns IErpHrmProject.ISummary.
    */
   project: IErpHrmProject.ISummary;
 
   /**
    * Optional task being timed. Must belong to the selected project.
    *
-   * @x-autobe-specification JOIN from erp_hrm_timers.erp_hrm_task_id to erp_hrm_tasks.id. Returns IErpHrmTask.ISummary. Nullable - timer can be started without selecting a task.
-   * @x-autobe-database-schema-property task
+     * @x-autobe-specification JOIN from erp_hrm_timers.erp_hrm_task_id to
+     *   erp_hrm_tasks.id. Returns IErpHrmTask.ISummary. Nullable - timer can be
+     *   started without selecting a task.
+     * @x-autobe-database-schema-property task
    */
   task?: IErpHrmTask.ISummary | null | undefined;
 
   /**
    * Timestamp when the timer record was created in the database.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from erp_hrm_timers.created_at. Format: date-time (ISO 8601). System-managed timestamp.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from erp_hrm_timers.created_at.
+     *   Format: date-time (ISO 8601). System-managed timestamp.
    */
   createdAt: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the timer record was last modified. Updates when description, project, or task is changed.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from erp_hrm_timers.updated_at. Format: date-time (ISO 8601). System-managed timestamp.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from erp_hrm_timers.updated_at.
+     *   Format: date-time (ISO 8601). System-managed timestamp.
    */
   updatedAt: string & tags.Format<"date-time">;
 };
@@ -79,23 +89,23 @@ export namespace IErpHrmTimer {
    */
   export type ISummary = {
     /**
-     * @x-autobe-database-schema-property id
+         * @x-autobe-database-schema-property id
      */
     id: string & tags.Format<"uuid">;
     /**
-     * @x-autobe-database-schema-property started_at
+         * @x-autobe-database-schema-property started_at
      */
     startedAt: string & tags.Format<"date-time">;
     /**
-     * @x-autobe-database-schema-property project
+         * @x-autobe-database-schema-property project
      */
     project: IErpHrmProject.ISummary;
     /**
-     * @x-autobe-database-schema-property task
+         * @x-autobe-database-schema-property task
      */
     task?: IErpHrmTask.ISummary | null | undefined;
     /**
-     * @x-autobe-database-schema-property description
+         * @x-autobe-database-schema-property description
      */
     description?: string | null | undefined;
   };
@@ -107,15 +117,15 @@ export namespace IErpHrmTimer {
     /**
      * Optional description of the work being timed. Can be null to clear.
      *
-     * @x-autobe-database-schema-property description
+         * @x-autobe-database-schema-property description
      */
     description?: string | null | undefined;
     /**
-     * @x-autobe-database-schema-property erp_hrm_project_id
+         * @x-autobe-database-schema-property erp_hrm_project_id
      */
     project_id?: (string & tags.Format<"uuid">) | undefined;
     /**
-     * @x-autobe-database-schema-property erp_hrm_task_id
+         * @x-autobe-database-schema-property erp_hrm_task_id
      */
     task_id?: (string & tags.Format<"uuid">) | null | undefined;
   };
@@ -125,18 +135,18 @@ export namespace IErpHrmTimer {
    */
   export type IInvert = {
     /**
-     * @x-autobe-database-schema-property id
+         * @x-autobe-database-schema-property id
      */
     id: string & tags.Format<"uuid">;
     /**
-     * @x-autobe-database-schema-property started_at
+         * @x-autobe-database-schema-property started_at
      */
     startedAt: string & tags.Format<"date-time">;
 
     /**
      * Optional description of the work being timed.
      *
-     * @x-autobe-database-schema-property description
+         * @x-autobe-database-schema-property description
      */
     description?: string | null | undefined;
 
@@ -148,14 +158,14 @@ export namespace IErpHrmTimer {
       tags.Minimum<0> &
       tags.Maximum<9999999>;
     /**
-     * @x-autobe-database-schema-property project
+         * @x-autobe-database-schema-property project
      */
     project: IErpHrmProject.ISummary;
 
     /**
      * Task being timed, if specified.
      *
-     * @x-autobe-database-schema-property task
+         * @x-autobe-database-schema-property task
      */
     task?: IErpHrmTask.ISummary | null | undefined;
   };
@@ -167,21 +177,21 @@ export namespace IErpHrmTimer {
     /**
      * Optional description of the work being timed.
      *
-     * @x-autobe-database-schema-property description
+         * @x-autobe-database-schema-property description
      */
     description?: string | null | undefined;
 
     /**
      * The project being timed. Must be a project the employee is assigned to as a project member.
      *
-     * @x-autobe-database-schema-property erp_hrm_project_id
+         * @x-autobe-database-schema-property erp_hrm_project_id
      */
     erpHrmProjectId: string & tags.Format<"uuid">;
 
     /**
      * Optional task being timed. Must belong to the selected project.
      *
-     * @x-autobe-database-schema-property erp_hrm_task_id
+         * @x-autobe-database-schema-property erp_hrm_task_id
      */
     erpHrmTaskId?: (string & tags.Format<"uuid">) | null | undefined;
   };
@@ -193,7 +203,9 @@ export namespace IErpHrmTimer {
     /**
      * Maximum number of timer records to return per page.
      *
-     * @x-autobe-specification Pagination control - maximum number of timer records to return per page. Valid range: 1-100. Default handled by service layer. Maps to LIMIT clause in database query.
+         * @x-autobe-specification Pagination control - maximum number of timer
+         *   records to return per page. Valid range: 1-100. Default handled by
+         *   service layer. Maps to LIMIT clause in database query.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -202,28 +214,38 @@ export namespace IErpHrmTimer {
     /**
      * Page number to retrieve (1-indexed).
      *
-     * @x-autobe-specification Pagination control - page number to retrieve (1-indexed). Maps to OFFSET clause: OFFSET = (page - 1) * limit.
+         * @x-autobe-specification Pagination control - page number to retrieve
+         *   (1-indexed). Maps to OFFSET clause: OFFSET = (page - 1) * limit.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * UUID of the project to filter timer records by.
      *
-     * @x-autobe-specification Filter timers by project. JOINs erp_hrm_timers.erp_hrm_project_id to erp_hrm_projects.id. Optional - if not provided, returns timers from all projects.
+         * @x-autobe-specification Filter timers by project. JOINs
+         *   erp_hrm_timers.erp_hrm_project_id to erp_hrm_projects.id. Optional
+         *   - if not provided, returns timers from all projects.
      */
     project_id?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Search text to filter timers by description.
      *
-     * @x-autobe-specification Full-text search filter on timer description. Uses ILIKE/LIKE pattern matching on erp_hrm_timers.description. Optional filter.
+         * @x-autobe-specification Full-text search filter on timer description.
+         *   Uses ILIKE/LIKE pattern matching on erp_hrm_timers.description.
+         *   Optional filter.
      */
     search?: string | undefined;
 
     /**
      * Status filter for timer records ('running' or 'stopped'). Note: stopped timers are converted to timelogs and removed.
      *
-     * @x-autobe-specification Filter by timer status. Runtime logic: 'running' returns timers WHERE id exists in erp_hrm_timers; 'stopped' returns empty (timers are deleted when converted to timelogs). No DB column maps directly - this is computed logic. If not provided, returns all timers (typically running only since stopped timers don't persist).
+         * @x-autobe-specification Filter by timer status. Runtime logic:
+         *   'running' returns timers WHERE id exists in erp_hrm_timers;
+         *   'stopped' returns empty (timers are deleted when converted to
+         *   timelogs). No DB column maps directly - this is computed logic. If
+         *   not provided, returns all timers (typically running only since
+         *   stopped timers don't persist).
      */
     status?: string | undefined;
   };
@@ -235,7 +257,12 @@ export namespace IErpHrmTimer {
     /**
      * When true, discards the timer without creating a timelog entry. When false (default), creates a timelog entry with the calculated duration.
      *
-     * @x-autobe-specification Optional user-provided flag. When true (discard = true), the backend deletes the timer without creating any timelog entry. When false or omitted (discard = false), the backend calculates duration from started_at to current time and creates a timelog entry with the calculated duration. Backend determines which timer to stop via JWT session context.
+         * @x-autobe-specification Optional user-provided flag. When true
+         *   (discard = true), the backend deletes the timer without creating
+         *   any timelog entry. When false or omitted (discard = false), the
+         *   backend calculates duration from started_at to current time and
+         *   creates a timelog entry with the calculated duration. Backend
+         *   determines which timer to stop via JWT session context.
      */
     discard?: boolean | undefined;
   };

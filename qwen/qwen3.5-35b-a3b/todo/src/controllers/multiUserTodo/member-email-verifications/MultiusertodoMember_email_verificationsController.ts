@@ -18,9 +18,11 @@ export class MultiusertodoMember_email_verificationsController {
    *
    * @param connection
    * @param body Search criteria for filtering email verification tokens including email address, verification status, member ID, date ranges, and pagination parameters.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query the multi_user_todo_member_email_verifications table with pagination and filtering capabilities.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query the
+     *   multi_user_todo_member_email_verifications table with pagination and
+     *   filtering capabilities.
    *
    * 1. Accept search criteria in request body including:
    *    - email: Optional string filter for exact email match
@@ -70,9 +72,11 @@ export class MultiusertodoMember_email_verificationsController {
    *
    * @param connection
    * @param verificationId Unique identifier of the email verification record (UUID format)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query the multi_user_todo_member_email_verifications table for a record with matching id.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query the
+     *   multi_user_todo_member_email_verifications table for a record with
+     *   matching id.
    *
    * 1. Validate that verificationId is a valid UUID format
    * 2. Query: SELECT * FROM multi_user_todo_member_email_verifications WHERE id = verificationId

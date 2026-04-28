@@ -31,24 +31,26 @@ export class EcommerceSellerProductsImagesController {
    * @param connection
    * @param productId UUID of the product to add images to (global scope).
    * @param body Array of image URLs to upload for the product. Each URL must be a valid URI pointing to an image file in external storage. The system will automatically assign display order positions starting from the next available value.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification 1. Validate authentication: verify request has valid seller session token.
-   * 2. Extract productId from path parameter (UUID format).
-   * 3. Verify product ownership: query ecommerce_products table, check seller_id matches authenticated seller.
-   * 4. Verify product exists and is not soft-deleted (deleted_at IS NULL).
-   * 5. For each image_url in request body:
-   *    - Validate URL format (string, max 80000 characters per schema).
-   *    - Validate URL points to valid image resource (optional validation).
-   * 6. Determine next display_order values:
-   *    - Query existing images for product: SELECT MAX(display_order) FROM ecommerce_product_images WHERE ecommerce_product_id = ? AND deleted_at IS NULL.
-   *    - Assign sequential display_order values starting from current max + 1.
-   * 7. Create image records in ecommerce_product_images table:
-   *    - Generate UUID for each image id.
-   *    - Set ecommerce_product_id, image_url, display_order, created_at, updated_at.
-   *    - Set deleted_at to NULL.
-   * 8. Create product snapshot: insert into ecommerce_product_snapshots capturing current product state including all images before and after modification.
-   * 9. Return created images with their assigned display_order values.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification 1. Validate authentication: verify request has
+     *   valid seller session token. 2. Extract productId from path parameter
+     *   (UUID format). 3. Verify product ownership: query ecommerce_products
+     *   table, check seller_id matches authenticated seller. 4. Verify product
+     *   exists and is not soft-deleted (deleted_at IS NULL). 5. For each
+     *   image_url in request body: - Validate URL format (string, max 80000
+     *   characters per schema). - Validate URL points to valid image resource
+     *   (optional validation). 6. Determine next display_order values: - Query
+     *   existing images for product: SELECT MAX(display_order) FROM
+     *   ecommerce_product_images WHERE ecommerce_product_id = ? AND deleted_at
+     *   IS NULL. - Assign sequential display_order values starting from current
+     *   max + 1. 7. Create image records in ecommerce_product_images table: -
+     *   Generate UUID for each image id. - Set ecommerce_product_id, image_url,
+     *   display_order, created_at, updated_at. - Set deleted_at to NULL. 8.
+     *   Create product snapshot: insert into ecommerce_product_snapshots
+     *   capturing current product state including all images before and after
+     *   modification. 9. Return created images with their assigned
+     *   display_order values.
    *
    * **Edge Cases**
    *
@@ -104,22 +106,19 @@ export class EcommerceSellerProductsImagesController {
    * @param productId UUID of the parent product that owns this image (global scope)
    * @param imageId UUID of the product image to update (global scope)
    * @param body Fields to update for the product image. At least one field must be provided.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification 1. Validate seller authentication and ownership of parent product
-   * 2. Query ecommerce_product_images by imageId
-   * 3. Verify image belongs to the specified productId (foreign key check)
-   * 4. Verify parent product belongs to authenticated seller
-   * 5. Verify image is not soft-deleted (deleted_at IS NULL)
-   * 6. Validate request body fields:
-   *    - image_url: optional string, valid URI format
-   *    - display_order: optional integer, must be unique within product
-   * 7. Check display_order uniqueness constraint (ecommerce_product_id, display_order)
-   * 8. Begin transaction
-   * 9. Update image_url and/or display_order fields
-   * 10. Set updated_at to current timestamp
-   * 11. Commit transaction
-   * 12. Return updated IEcommerceProductImage entity
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification 1. Validate seller authentication and ownership
+     *   of parent product 2. Query ecommerce_product_images by imageId 3.
+     *   Verify image belongs to the specified productId (foreign key check) 4.
+     *   Verify parent product belongs to authenticated seller 5. Verify image
+     *   is not soft-deleted (deleted_at IS NULL) 6. Validate request body
+     *   fields: - image_url: optional string, valid URI format - display_order:
+     *   optional integer, must be unique within product 7. Check display_order
+     *   uniqueness constraint (ecommerce_product_id, display_order) 8. Begin
+     *   transaction 9. Update image_url and/or display_order fields 10. Set
+     *   updated_at to current timestamp 11. Commit transaction 12. Return
+     *   updated IEcommerceProductImage entity
    *
    * **Error Handling**
    *
@@ -176,19 +175,20 @@ export class EcommerceSellerProductsImagesController {
    * @param connection
    * @param productId UUID of the product containing the image (global scope)
    * @param imageId UUID of the product image to delete (scoped to product)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification 1. Validate authenticated user is seller or admin
-   * 2. Fetch product by productId, verify it exists and is not deleted
-   * 3. If user is seller, verify seller_id matches authenticated user's seller profile
-   * 4. Fetch image by imageId and productId, verify it exists and is not already deleted
-   * 5. Count total non-deleted images for this product
-   * 6. If count === 1, reject with 400 error (minimum image requirement)
-   * 7. Check if deleted image has display_order === 0 (thumbnail)
-   * 8. Soft delete the image by setting deleted_at to current timestamp
-   * 9. If thumbnail was deleted, find image with minimum display_order > 0 and set its display_order to 0
-   * 10. Reorder remaining images to maintain sequence (optional but recommended)
-   * 11. Return 204 No Content on success
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification 1. Validate authenticated user is seller or admin
+     *   2. Fetch product by productId, verify it exists and is not deleted 3.
+     *   If user is seller, verify seller_id matches authenticated user's seller
+     *   profile 4. Fetch image by imageId and productId, verify it exists and
+     *   is not already deleted 5. Count total non-deleted images for this
+     *   product 6. If count === 1, reject with 400 error (minimum image
+     *   requirement) 7. Check if deleted image has display_order === 0
+     *   (thumbnail) 8. Soft delete the image by setting deleted_at to current
+     *   timestamp 9. If thumbnail was deleted, find image with minimum
+     *   display_order > 0 and set its display_order to 0 10. Reorder remaining
+     *   images to maintain sequence (optional but recommended) 11. Return 204
+     *   No Content on success
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Delete(":imageId")

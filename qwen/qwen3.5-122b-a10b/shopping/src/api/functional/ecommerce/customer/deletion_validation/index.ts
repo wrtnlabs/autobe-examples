@@ -28,7 +28,8 @@ import { IEcommerceDeletionValidationResult } from "../../../../structures/IEcom
  * @param props.connection
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Implement deletion validation for authenticated user account based on actor type.
+ * @x-autobe-specification Implement deletion validation for authenticated user
+ *   account based on actor type.
  *
  * **Authorization**
  * - Require valid authentication token (customer or seller)

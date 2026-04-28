@@ -27,9 +27,9 @@ export class ShoppingmallCustomerAddressesController {
    *
    * @param connection
    * @param body Shipping address information to create
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Implementation steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Implementation steps:
    *
    * 1. Extract authenticated customer ID from JWT token context
    *
@@ -103,9 +103,10 @@ export class ShoppingmallCustomerAddressesController {
    *
    * @param connection
    * @param body Search criteria and pagination parameters for filtering addresses
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Query shopping_mall_addresses table with the following implementation:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Query shopping_mall_addresses table with the
+     *   following implementation:
    *
    * 1. Authentication: Extract customer ID from JWT token in Authorization header
    * 2. Authorization: Ensure customer account is active (not banned, not deleted)
@@ -171,9 +172,9 @@ export class ShoppingmallCustomerAddressesController {
    *
    * @param connection
    * @param addressId Unique identifier of the shipping address to retrieve
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Implementation steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Implementation steps:
    *
    * 1. **Authentication Verification**: Extract customer ID from JWT token in request headers. Reject with 401 Unauthorized if not authenticated.
    *
@@ -242,9 +243,9 @@ export class ShoppingmallCustomerAddressesController {
    * @param connection
    * @param addressId Unique identifier of the address to update
    * @param body Address fields to update
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Implementation steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Implementation steps:
    *
    * 1. Extract addressId from path parameters
    * 2. Authenticate customer from JWT token
@@ -312,9 +313,9 @@ export class ShoppingmallCustomerAddressesController {
    *
    * @param connection
    * @param addressId Unique identifier of the shipping address to delete. Must belong to the authenticated customer.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Implementation steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Implementation steps:
    *
    * 1. **Authentication Verification**: Extract authenticated customer ID from JWT token context.
    *

@@ -15,7 +15,8 @@ import { IECommerceMallSellerDashboard } from "../../../../structures/IECommerce
  * @param props.connection
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Identify the seller from the authenticated JWT session token (e_commerce_mall_seller_id).
+ * @x-autobe-specification Identify the seller from the authenticated JWT
+ *   session token (e_commerce_mall_seller_id).
  *
  * Compute four counts from database:
  * 1. totalProducts: SELECT COUNT(*) FROM e_commerce_mall_products WHERE seller_id = {sellerId} AND deleted_at IS NULL

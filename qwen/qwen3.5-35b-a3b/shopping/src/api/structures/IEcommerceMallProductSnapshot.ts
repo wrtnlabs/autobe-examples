@@ -16,8 +16,9 @@ export type IEcommerceMallProductSnapshot = {
    *
    * This immutable identifier is generated when the snapshot is created and never changes. It is used to reference this specific point-in-time record for retrieval, auditing, and dispute resolution purposes.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_product_snapshots.id. UUID primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_product_snapshots.id. UUID primary key.
    */
   id: string & tags.Format<"uuid">;
 
@@ -26,8 +27,9 @@ export type IEcommerceMallProductSnapshot = {
    *
    * This field preserves the exact name displayed to customers at the time of snapshot creation, even if the product name is later modified. It enables historical reconstruction of how products were presented in the catalog.
    *
-   * @x-autobe-database-schema-property name
-   * @x-autobe-specification Direct mapping from ecommerce_mall_product_snapshots.name. Preserved string value.
+     * @x-autobe-database-schema-property name
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_product_snapshots.name. Preserved string value.
    */
   name: string;
 
@@ -36,8 +38,9 @@ export type IEcommerceMallProductSnapshot = {
    *
    * This preserved description enables accurate historical records of product information, supporting compliance requirements and dispute resolution. The text may include specifications, features, and usage instructions that were active at the snapshot point in time.
    *
-   * @x-autobe-database-schema-property description
-   * @x-autobe-specification Direct mapping from ecommerce_mall_product_snapshots.description. Preserved string value.
+     * @x-autobe-database-schema-property description
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_product_snapshots.description. Preserved string value.
    */
   description: string;
 
@@ -46,8 +49,9 @@ export type IEcommerceMallProductSnapshot = {
    *
    * This price is preserved to maintain historical accuracy for financial auditing, price change analysis, and dispute resolution. When variants don't have individual price overrides, this base price applies to all variants of the product at that point in time.
    *
-   * @x-autobe-database-schema-property base_price
-   * @x-autobe-specification Direct mapping from ecommerce_mall_product_snapshots.base_price. Decimal float value.
+     * @x-autobe-database-schema-property base_price
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_product_snapshots.base_price. Decimal float value.
    */
   base_price: number;
 
@@ -56,8 +60,10 @@ export type IEcommerceMallProductSnapshot = {
    *
    * This timestamp represents when the product was first created in the system, not when the snapshot was taken. It remains constant across all snapshots of the same product and is used for chronological tracking and lifecycle analysis.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_product_snapshots.created_at. Timestamp of original product creation.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_product_snapshots.created_at. Timestamp of original
+     *   product creation.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -66,8 +72,10 @@ export type IEcommerceMallProductSnapshot = {
    *
    * This field preserves when the product was most recently updated, enabling reconstruction of the product's modification history and timeline of changes leading up to the snapshot point in time.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_product_snapshots.updated_at. Timestamp of last product update before snapshot.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_product_snapshots.updated_at. Timestamp of last product
+     *   update before snapshot.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -76,8 +84,10 @@ export type IEcommerceMallProductSnapshot = {
    *
    * When null, the product was active when the snapshot was created. When set, this indicates the product had been soft-deleted by the time this snapshot was captured, preserving the deletion state for historical accuracy.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_product_snapshots.deleted_at. Nullable timestamp; null means product was active at snapshot time.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_product_snapshots.deleted_at. Nullable timestamp; null
+     *   means product was active at snapshot time.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 
@@ -86,8 +96,11 @@ export type IEcommerceMallProductSnapshot = {
    *
    * This nested reference preserves the category assignment as it existed when the snapshot was created, even if the product is later moved to a different category. The category object contains the category's name, description, and hierarchical structure at that point in time.
    *
-   * @x-autobe-database-schema-property category
-   * @x-autobe-specification Join from ecommerce_mall_product_snapshots.ecommerce_mall_category_id to ecommerce_mall_categories.id. Returns IEcommerceMallCategory.ISummary with name, description, and hierarchy.
+     * @x-autobe-database-schema-property category
+     * @x-autobe-specification Join from
+     *   ecommerce_mall_product_snapshots.ecommerce_mall_category_id to
+     *   ecommerce_mall_categories.id. Returns IEcommerceMallCategory.ISummary
+     *   with name, description, and hierarchy.
    */
   category: IEcommerceMallCategory.ISummary;
 
@@ -96,8 +109,12 @@ export type IEcommerceMallProductSnapshot = {
    *
    * This nested reference preserves the seller's identity and shop details (shop name, description, logo) as they existed when the snapshot was captured, enabling historical attribution of the product to the correct seller even if the seller account is later modified or suspended.
    *
-   * @x-autobe-database-schema-property sellerSnapshot
-   * @x-autobe-specification Join from ecommerce_mall_product_snapshots.ecommerce_mall_seller_snapshot_id to ecommerce_mall_seller_snapshots.id. Returns IEcommerceMallSellerSnapshot.ISummary with shop_name, shop_description, and shop_logo.
+     * @x-autobe-database-schema-property sellerSnapshot
+     * @x-autobe-specification Join from
+     *   ecommerce_mall_product_snapshots.ecommerce_mall_seller_snapshot_id to
+     *   ecommerce_mall_seller_snapshots.id. Returns
+     *   IEcommerceMallSellerSnapshot.ISummary with shop_name, shop_description,
+     *   and shop_logo.
    */
   sellerSnapshot: IEcommerceMallSellerSnapshot.ISummary;
 
@@ -106,8 +123,12 @@ export type IEcommerceMallProductSnapshot = {
    *
    * This optional nested reference preserves the exact configuration of product variants (SKU codes, option values, prices, stock quantities) as they existed at the snapshot point in time. It enables complete historical reconstruction of the product's variant offerings, even if variants are later added, modified, or removed.
    *
-   * @x-autobe-database-schema-property variantSnapshot
-   * @x-autobe-specification Join from ecommerce_mall_product_snapshots.ecommerce_mall_product_variant_snapshot_id to ecommerce_mall_product_variant_snapshots.id. Returns IEcommerceMallProductVariantSnapshot.ISummary | null. Nullable because snapshot may be taken before variants exist.
+     * @x-autobe-database-schema-property variantSnapshot
+     * @x-autobe-specification Join from
+     *   ecommerce_mall_product_snapshots.ecommerce_mall_product_variant_snapshot_id
+     *   to ecommerce_mall_product_variant_snapshots.id. Returns
+     *   IEcommerceMallProductVariantSnapshot.ISummary | null. Nullable because
+     *   snapshot may be taken before variants exist.
    */
   variantSnapshot: IEcommerceMallProductVariantSnapshot.ISummary | null;
 };
@@ -139,7 +160,10 @@ export namespace IEcommerceMallProductSnapshot {
      *
      * ISO 8601 datetime format (YYYY-MM-DDTHH:mm:ss.sssZ). Filters product snapshots to only return those created on or after this timestamp. Combined with end_date to define a time window for snapshot retrieval.
      *
-     * @x-autobe-specification ISO 8601 datetime string (YYYY-MM-DDTHH:mm:ss.sssZ). Filters snapshots where created_at >= start_date. Used for efficient date range filtering on large historical datasets.
+         * @x-autobe-specification ISO 8601 datetime string
+         *   (YYYY-MM-DDTHH:mm:ss.sssZ). Filters snapshots where created_at >=
+         *   start_date. Used for efficient date range filtering on large
+         *   historical datasets.
      */
     start_date?: (string & tags.Format<"date-time">) | undefined;
 
@@ -148,7 +172,10 @@ export namespace IEcommerceMallProductSnapshot {
      *
      * ISO 8601 datetime format (YYYY-MM-DDTHH:mm:ss.sssZ). Filters product snapshots to only return those created on or before this timestamp. Combined with start_date to define a time window for snapshot retrieval.
      *
-     * @x-autobe-specification ISO 8601 datetime string (YYYY-MM-DDTHH:mm:ss.sssZ). Filters snapshots where created_at <= end_date. Used for efficient date range filtering on large historical datasets.
+         * @x-autobe-specification ISO 8601 datetime string
+         *   (YYYY-MM-DDTHH:mm:ss.sssZ). Filters snapshots where created_at <=
+         *   end_date. Used for efficient date range filtering on large
+         *   historical datasets.
      */
     end_date?: (string & tags.Format<"date-time">) | undefined;
 
@@ -157,7 +184,10 @@ export namespace IEcommerceMallProductSnapshot {
      *
      * Integer value between 1 and 200 (inclusive). Default is 50 items per page. Controls the page size for pagination. Higher limits allow more items per request but may impact performance for large datasets.
      *
-     * @x-autobe-specification Integer value between 1 and 200 (inclusive). Default is 50. Controls maximum number of items returned per page. Higher limits increase response size but reduce number of API calls needed.
+         * @x-autobe-specification Integer value between 1 and 200 (inclusive).
+         *   Default is 50. Controls maximum number of items returned per page.
+         *   Higher limits increase response size but reduce number of API calls
+         *   needed.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<200>)
@@ -168,7 +198,11 @@ export namespace IEcommerceMallProductSnapshot {
      *
      * ISO 8601 datetime format (YYYY-MM-DDTHH:mm:ss.sssZ). Contains the created_at timestamp of the last item from the previous page response. Used to fetch the next page of results efficiently without offset-based pagination issues.
      *
-     * @x-autobe-specification ISO 8601 datetime string (YYYY-MM-DDTHH:mm:ss.sssZ). Cursor timestamp from previous page's last item's created_at. Used for cursor-based pagination to efficiently retrieve large historical datasets without offset-based pagination performance issues.
+         * @x-autobe-specification ISO 8601 datetime string
+         *   (YYYY-MM-DDTHH:mm:ss.sssZ). Cursor timestamp from previous page's
+         *   last item's created_at. Used for cursor-based pagination to
+         *   efficiently retrieve large historical datasets without offset-based
+         *   pagination performance issues.
      */
     cursor?: (string & tags.Format<"date-time">) | undefined;
 
@@ -180,7 +214,10 @@ export namespace IEcommerceMallProductSnapshot {
      *
      * Controls which database field is used for sorting the result set.
      *
-     * @x-autobe-specification Enum value: 'created_at' or 'entity_status'. Specifies which field to sort results by. Combined with sort_direction to control result ordering. 'created_at' provides chronological ordering.
+         * @x-autobe-specification Enum value: 'created_at' or 'entity_status'.
+         *   Specifies which field to sort results by. Combined with
+         *   sort_direction to control result ordering. 'created_at' provides
+         *   chronological ordering.
      */
     sort_by?: "created_at" | "entity_status" | undefined;
 
@@ -192,7 +229,10 @@ export namespace IEcommerceMallProductSnapshot {
      *
      * Combined with sort_by to define the complete sorting behavior for the query.
      *
-     * @x-autobe-specification Enum value: 'ASC' (ascending) or 'DESC' (descending). Controls sort order direction. Combined with sort_by field to define complete sorting behavior. Default is DESC for created_at.
+         * @x-autobe-specification Enum value: 'ASC' (ascending) or 'DESC'
+         *   (descending). Controls sort order direction. Combined with sort_by
+         *   field to define complete sorting behavior. Default is DESC for
+         *   created_at.
      */
     sort_direction?: "ASC" | "DESC" | undefined;
 
@@ -201,7 +241,8 @@ export namespace IEcommerceMallProductSnapshot {
      *
      * Specifies which page of results to return. Page numbering starts from 1. If omitted, null, or undefined, defaults to page 1.
      *
-     * @x-autobe-specification 1-indexed integer (>= 1). Defaults to 1 if not provided. Specifies target page number to retrieve.
+         * @x-autobe-specification 1-indexed integer (>= 1). Defaults to 1 if
+         *   not provided. Specifies target page number to retrieve.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };
@@ -231,8 +272,10 @@ export namespace IEcommerceMallProductSnapshot {
      *
      * Used for referencing specific snapshots in audit trail queries and dispute resolution. Each modification event generates a new snapshot with a unique identifier.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_mall_product_snapshots.id. UUID primary key for snapshot identification in audit trail references.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_product_snapshots.id. UUID primary key for snapshot
+         *   identification in audit trail references.
      */
     id: string & tags.Format<"uuid">;
 
@@ -241,8 +284,11 @@ export namespace IEcommerceMallProductSnapshot {
      *
      * Represents how the product was named when the modification occurred. Preserves historical product names even if the product is later renamed, enabling accurate historical tracking.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from ecommerce_mall_product_snapshots.name. Captures the product name as it existed when the snapshot was created, preserving historical product nomenclature.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_product_snapshots.name. Captures the product name as
+         *   it existed when the snapshot was created, preserving historical
+         *   product nomenclature.
      */
     name: string;
 
@@ -251,8 +297,11 @@ export namespace IEcommerceMallProductSnapshot {
      *
      * Captures the exact product price when the modification occurred, enabling historical price tracking, audit trail reconstruction, and compliance requirements for price change documentation.
      *
-     * @x-autobe-database-schema-property base_price
-     * @x-autobe-specification Direct mapping from ecommerce_mall_product_snapshots.base_price. Floating point price captured at modification time, enabling price history tracking and compliance documentation.
+         * @x-autobe-database-schema-property base_price
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_product_snapshots.base_price. Floating point price
+         *   captured at modification time, enabling price history tracking and
+         *   compliance documentation.
      */
     base_price: number;
 
@@ -261,8 +310,11 @@ export namespace IEcommerceMallProductSnapshot {
      *
      * Marks the exact point in time when the product modification occurred and was captured. Used for chronological browsing of modification history and compliance audit requirements.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_product_snapshots.created_at. Timestamp marking the exact point-in-time when this snapshot was captured, essential for chronological audit trail browsing.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_product_snapshots.created_at. Timestamp marking the
+         *   exact point-in-time when this snapshot was captured, essential for
+         *   chronological audit trail browsing.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -271,7 +323,12 @@ export namespace IEcommerceMallProductSnapshot {
      *
      * Indicates whether this snapshot represents a product creation, update, deletion, or other modification event. Used for filtering snapshot history by modification type and understanding the context of each recorded change.
      *
-     * @x-autobe-specification Computed field: entity_status is derived from the snapshot audit trail system metadata. This field indicates the type of entity action that triggered this snapshot (CREATE/UPDATE/DELETE/other modification types). The audit trail system sets this value based on the operation that created the snapshot.
+         * @x-autobe-specification Computed field: entity_status is derived from
+         *   the snapshot audit trail system metadata. This field indicates the
+         *   type of entity action that triggered this snapshot
+         *   (CREATE/UPDATE/DELETE/other modification types). The audit trail
+         *   system sets this value based on the operation that created the
+         *   snapshot.
      */
     entity_status: string;
 
@@ -280,7 +337,12 @@ export namespace IEcommerceMallProductSnapshot {
      *
      * Provides detailed context about what modification occurred (e.g., price change, name update, category reassignment). Used for granular filtering of modification history and understanding exactly what changed at each snapshot point.
      *
-     * @x-autobe-specification Computed field: action provides specific modification context from the audit trail system. This field contains detailed action type information (e.g., product name change, price update, category change) that triggered snapshot creation. The audit trail system populates this based on the modification operation.
+         * @x-autobe-specification Computed field: action provides specific
+         *   modification context from the audit trail system. This field
+         *   contains detailed action type information (e.g., product name
+         *   change, price update, category change) that triggered snapshot
+         *   creation. The audit trail system populates this based on the
+         *   modification operation.
      */
     action: string;
 
@@ -289,8 +351,13 @@ export namespace IEcommerceMallProductSnapshot {
      *
      * Joins to the category table to display category name and organization context. Provides hierarchical category information for catalog browsing and historical product placement tracking. Includes category identifier, display name, and sort order position.
      *
-     * @x-autobe-database-schema-property category
-     * @x-autobe-specification Relation join: ecommerce_mall_product_snapshots.category joins to ecommerce_mall_categories via ecommerce_mall_category_id FK. Returns IEcommerceMallCategory.ISummary with id, name, and sort_order for display purposes. Excludes nested relations and deletion state.
+         * @x-autobe-database-schema-property category
+         * @x-autobe-specification Relation join:
+         *   ecommerce_mall_product_snapshots.category joins to
+         *   ecommerce_mall_categories via ecommerce_mall_category_id FK.
+         *   Returns IEcommerceMallCategory.ISummary with id, name, and
+         *   sort_order for display purposes. Excludes nested relations and
+         *   deletion state.
      */
     category: IEcommerceMallCategory.ISummary;
   };

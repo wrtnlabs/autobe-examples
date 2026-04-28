@@ -26,9 +26,13 @@ export class HrmtimetrackingReportsEmployeefiltersController {
    * @param connection
    * @param reportId Target saved report definition's ID
    * @param body Employee filter selection to add to the saved report
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Authorize the caller against the currently selected organization context before any data lookup that would expose report configuration. Require report viewing permission in the active organization, because report access validation must occur before showing or modifying report filters.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Authorize the caller against the currently
+     *   selected organization context before any data lookup that would expose
+     *   report configuration. Require report viewing permission in the active
+     *   organization, because report access validation must occur before
+     *   showing or modifying report filters.
    *
    * Load the parent hrm_time_tracking_reports row by id = reportId and deleted_at IS NULL. Reject the request if the report does not exist or if its hrm_time_tracking_organization_id does not match the caller's current organization context.
    *
@@ -73,9 +77,11 @@ export class HrmtimetrackingReportsEmployeefiltersController {
    * @param connection
    * @param reportId Target saved report definition ID
    * @param body Employee filter selection update payload
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Implement this operation as an organization-scoped partial update on the employee-filter collection of one saved report definition.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Implement this operation as an
+     *   organization-scoped partial update on the employee-filter collection of
+     *   one saved report definition.
    *
    * 1. Authenticate the caller and resolve the currently selected organization context.
    * 2. Evaluate report viewing permission in that organization before loading filter data, as report access validation must happen before filters or report results are shown or changed.
@@ -129,9 +135,11 @@ export class HrmtimetrackingReportsEmployeefiltersController {
    * @param connection
    * @param reportId Target saved report definition ID
    * @param employeeFilterId Target employee filter entry ID under the specified report
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Implement a read-only service operation that fetches one employee filter selection belonging to one saved report definition.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Implement a read-only service operation that
+     *   fetches one employee filter selection belonging to one saved report
+     *   definition.
    *
    * 1. Authorize the caller by checking report viewing permission in the currently selected organization context before loading filter details. Reuse the same report-access rule applied to report area access: only users with report viewing permission in the active organization may proceed.
    *
@@ -192,16 +200,42 @@ export class HrmtimetrackingReportsEmployeefiltersController {
    * @param reportId Target saved report definition ID
    * @param employeeFilterId Target employee filter row ID within the saved report
    * @param body Replacement employee selection for the saved report filter
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification 1. Authorize the caller in the currently selected organization context before any data lookup is exposed. Require report access for the selected organization and reject the request when the caller lacks permission to work with organization reports.
-   * 2. Load the parent record from `hrm_time_tracking_reports` by `reportId` and constrain the query by the current organization identifier and `deleted_at IS NULL`. If no active report is found in the current organization, return a not-found or access-denied outcome without exposing records from another organization.
-   * 3. Load the target child record from `hrm_time_tracking_report_employee_filters` by `employeeFilterId` and `hrm_time_tracking_report_id = reportId`. Reject the request if the child record does not belong to the specified parent report.
-   * 4. Validate the request body. The replacement employee identifier is required. Resolve the referenced employee in the same organization as the parent report. Reject the request if the employee does not exist, is inaccessible in the current organization, or belongs to another organization.
-   * 5. Enforce the table-level uniqueness rule on `(hrm_time_tracking_report_id, hrm_time_tracking_employee_id)`. Before updating, check whether another child row for the same report already references the requested employee. If such a row exists and it is not the current `employeeFilterId`, reject the request as a duplicate filter selection.
-   * 6. Update only the target `hrm_time_tracking_report_employee_filters` row so that its `hrm_time_tracking_employee_id` points to the validated replacement employee. Do not modify the parent report row or any sibling filter rows.
-   * 7. Return the updated employee-filter resource. If the implementation exposes related data in the DTO, load only relations that are safe and useful for the reporting UI, and keep all returned data scoped to the current organization.
-   * 8. Handle errors deterministically: reject malformed UUID inputs, reject unauthorized access before revealing report configuration details, reject parent-child mismatches, reject cross-organization references, and surface uniqueness violations as a business validation failure rather than a partial success.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification 1. Authorize the caller in the currently selected
+     *   organization context before any data lookup is exposed. Require report
+     *   access for the selected organization and reject the request when the
+     *   caller lacks permission to work with organization reports. 2. Load the
+     *   parent record from `hrm_time_tracking_reports` by `reportId` and
+     *   constrain the query by the current organization identifier and
+     *   `deleted_at IS NULL`. If no active report is found in the current
+     *   organization, return a not-found or access-denied outcome without
+     *   exposing records from another organization. 3. Load the target child
+     *   record from `hrm_time_tracking_report_employee_filters` by
+     *   `employeeFilterId` and `hrm_time_tracking_report_id = reportId`. Reject
+     *   the request if the child record does not belong to the specified parent
+     *   report. 4. Validate the request body. The replacement employee
+     *   identifier is required. Resolve the referenced employee in the same
+     *   organization as the parent report. Reject the request if the employee
+     *   does not exist, is inaccessible in the current organization, or belongs
+     *   to another organization. 5. Enforce the table-level uniqueness rule on
+     *   `(hrm_time_tracking_report_id, hrm_time_tracking_employee_id)`. Before
+     *   updating, check whether another child row for the same report already
+     *   references the requested employee. If such a row exists and it is not
+     *   the current `employeeFilterId`, reject the request as a duplicate
+     *   filter selection. 6. Update only the target
+     *   `hrm_time_tracking_report_employee_filters` row so that its
+     *   `hrm_time_tracking_employee_id` points to the validated replacement
+     *   employee. Do not modify the parent report row or any sibling filter
+     *   rows. 7. Return the updated employee-filter resource. If the
+     *   implementation exposes related data in the DTO, load only relations
+     *   that are safe and useful for the reporting UI, and keep all returned
+     *   data scoped to the current organization. 8. Handle errors
+     *   deterministically: reject malformed UUID inputs, reject unauthorized
+     *   access before revealing report configuration details, reject
+     *   parent-child mismatches, reject cross-organization references, and
+     *   surface uniqueness violations as a business validation failure rather
+     *   than a partial success.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Put(":employeeFilterId")
@@ -241,14 +275,25 @@ export class HrmtimetrackingReportsEmployeefiltersController {
    * @param connection
    * @param reportId Target saved report definition ID.
    * @param employeeFilterId Target employee filter selection ID within the specified report.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification 1. Resolve the caller's current organization context and verify the caller has permission to manage saved reports in that organization. Reject the request if the caller lacks organization-scoped authority.
-   * 2. Load hrm_time_tracking_reports by id = reportId and hrm_time_tracking_organization_id = currentOrganizationId. Exclude reports whose deleted_at is not null. If no row is found, return a not-found or inaccessible error for the parent report.
-   * 3. Load hrm_time_tracking_report_employee_filters by id = employeeFilterId and hrm_time_tracking_report_id = reportId. If no row is found, return a not-found error for the nested employee filter resource. Do not delete by child id alone.
-   * 4. Delete the matched hrm_time_tracking_report_employee_filters row in a transactionally safe manner. Because the table is a normalized child selection table with no additional mutable business fields, no request payload processing is required.
-   * 5. Update the parent report's updated_at timestamp so downstream consumers can detect that the saved report definition changed.
-   * 6. Return success with no response body.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification 1. Resolve the caller's current organization
+     *   context and verify the caller has permission to manage saved reports in
+     *   that organization. Reject the request if the caller lacks
+     *   organization-scoped authority. 2. Load hrm_time_tracking_reports by id
+     *   = reportId and hrm_time_tracking_organization_id =
+     *   currentOrganizationId. Exclude reports whose deleted_at is not null. If
+     *   no row is found, return a not-found or inaccessible error for the
+     *   parent report. 3. Load hrm_time_tracking_report_employee_filters by id
+     *   = employeeFilterId and hrm_time_tracking_report_id = reportId. If no
+     *   row is found, return a not-found error for the nested employee filter
+     *   resource. Do not delete by child id alone. 4. Delete the matched
+     *   hrm_time_tracking_report_employee_filters row in a transactionally safe
+     *   manner. Because the table is a normalized child selection table with no
+     *   additional mutable business fields, no request payload processing is
+     *   required. 5. Update the parent report's updated_at timestamp so
+     *   downstream consumers can detect that the saved report definition
+     *   changed. 6. Return success with no response body.
    *
    * Validation and edge handling:
    * - Reject requests when the parent report belongs to another organization, even if the child row exists.

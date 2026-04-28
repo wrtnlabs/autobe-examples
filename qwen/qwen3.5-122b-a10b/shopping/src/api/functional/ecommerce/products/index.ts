@@ -180,7 +180,8 @@ export namespace index {
  * @param props.productId Unique identifier of the product to retrieve (UUID format).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query the ecommerce_products table by UUID id parameter.
+ * @x-autobe-specification Query the ecommerce_products table by UUID id
+ *   parameter.
  *
  * Filter out soft-deleted products where deleted_at IS NOT NULL (unless requested by administrator with elevated privileges).
  *

@@ -78,8 +78,9 @@ export namespace IEcommerceMallProduct {
      * - Always present for active products
      * - Used as primary key for product lookups
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_mall_products.id. UUID primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_products.id. UUID primary key.
      */
     id: string & tags.Format<"uuid">;
 
@@ -92,8 +93,9 @@ export namespace IEcommerceMallProduct {
      * - Shown in product cards and wishlist displays
      * - Used as primary identifier for catalog browsing
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from ecommerce_mall_products.name. Display name for catalog browsing.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_products.name. Display name for catalog browsing.
      */
     name: string;
 
@@ -105,8 +107,10 @@ export namespace IEcommerceMallProduct {
      * - May be truncated in list views for display efficiency
      * - Provides comprehensive product information to customers
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from ecommerce_mall_products.description. May be truncated in summary views.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_products.description. May be truncated in summary
+         *   views.
      */
     description?: string | undefined;
 
@@ -119,8 +123,10 @@ export namespace IEcommerceMallProduct {
      * - Product variants may override with individual prices
      * - Includes cents for precise monetary values
      *
-     * @x-autobe-database-schema-property base_price
-     * @x-autobe-specification Direct mapping from ecommerce_mall_products.base_price. Decimal type for currency precision.
+         * @x-autobe-database-schema-property base_price
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_products.base_price. Decimal type for currency
+         *   precision.
      */
     base_price: number;
 
@@ -132,8 +138,11 @@ export namespace IEcommerceMallProduct {
      * - Enables category-based browsing and filtering
      * - Category contains parent-child relationships for nested organization
      *
-     * @x-autobe-database-schema-property category
-     * @x-autobe-specification LEFT JOIN from ecommerce_mall_products.category_id to ecommerce_mall_categories.id. Returns IEcommerceMallCategory.ISummary.
+         * @x-autobe-database-schema-property category
+         * @x-autobe-specification LEFT JOIN from
+         *   ecommerce_mall_products.category_id to
+         *   ecommerce_mall_categories.id. Returns
+         *   IEcommerceMallCategory.ISummary.
      */
     category: IEcommerceMallCategory.ISummary;
 
@@ -145,8 +154,10 @@ export namespace IEcommerceMallProduct {
      * - Shown in product details for buyer confidence
      * - Links to seller profile and shop information
      *
-     * @x-autobe-database-schema-property seller
-     * @x-autobe-specification LEFT JOIN from ecommerce_mall_products.seller_id to ecommerce_mall_sellers.id. Returns IEcommerceMallSeller.ISummary.
+         * @x-autobe-database-schema-property seller
+         * @x-autobe-specification LEFT JOIN from
+         *   ecommerce_mall_products.seller_id to ecommerce_mall_sellers.id.
+         *   Returns IEcommerceMallSeller.ISummary.
      */
     seller: IEcommerceMallSeller.ISummary;
 
@@ -159,7 +170,9 @@ export namespace IEcommerceMallProduct {
      * - Real-time check across all product variants
      * - Updated on inventory changes
      *
-     * @x-autobe-specification Computed: checks if any product variant has stock > 0. Returns 'available' if at least one variant in stock, 'unavailable' otherwise.
+         * @x-autobe-specification Computed: checks if any product variant has
+         *   stock > 0. Returns 'available' if at least one variant in stock,
+         *   'unavailable' otherwise.
      */
     availability_status: "available" | "unavailable";
 
@@ -171,7 +184,9 @@ export namespace IEcommerceMallProduct {
      * - Used in filtering and sorting options
      * - Helps customers identify purchasable items
      *
-     * @x-autobe-specification Computed: TRUE if any product variant has stock > 0, FALSE otherwise. Aggregated from all variants in ecommerce_mall_product_variants.
+         * @x-autobe-specification Computed: TRUE if any product variant has
+         *   stock > 0, FALSE otherwise. Aggregated from all variants in
+         *   ecommerce_mall_product_variants.
      */
     has_available_variants: boolean;
 
@@ -184,7 +199,10 @@ export namespace IEcommerceMallProduct {
      * - May be NULL if no reviews have been written
      * - Updated when reviews are added or modified
      *
-     * @x-autobe-specification Aggregated: AVG(rating) from ecommerce_mall_reviews where product_id matches. LEFT JOIN to ecommerce_mall_product_review_stats. Returns NULL if no reviews exist.
+         * @x-autobe-specification Aggregated: AVG(rating) from
+         *   ecommerce_mall_reviews where product_id matches. LEFT JOIN to
+         *   ecommerce_mall_product_review_stats. Returns NULL if no reviews
+         *   exist.
      */
     average_rating?: number | undefined;
   };
@@ -212,7 +230,12 @@ export namespace IEcommerceMallProduct {
      * - Uses GIN index on name and description columns for performance
      * - Returns products where search term appears in either name or description
      *
-     * @x-autobe-specification Full-text search on ecommerce_mall_products.name and ecommerce_mall_products.description using PostgreSQL ILIKE with trigram matching. WHERE (name ILIKE '%' || {search} || '%') OR (description ILIKE '%' || {search} || '%'). Uses gin_trgm_ops index for performance. Maximum 100 characters enforced.
+         * @x-autobe-specification Full-text search on
+         *   ecommerce_mall_products.name and
+         *   ecommerce_mall_products.description using PostgreSQL ILIKE with
+         *   trigram matching. WHERE (name ILIKE '%' || {search} || '%') OR
+         *   (description ILIKE '%' || {search} || '%'). Uses gin_trgm_ops index
+         *   for performance. Maximum 100 characters enforced.
      */
     search?: (string & tags.MaxLength<100>) | undefined;
 
@@ -226,7 +249,10 @@ export namespace IEcommerceMallProduct {
      * - Maximum 10 categories per request
      * - Empty array or omitted returns all categories
      *
-     * @x-autobe-specification Filter ecommerce_mall_products where category_id IN ({categoryIds}). Array of UUID strings (max 10). If empty or omitted, no category filter applied. All products from any category included unless categoryIds specified.
+         * @x-autobe-specification Filter ecommerce_mall_products where
+         *   category_id IN ({categoryIds}). Array of UUID strings (max 10). If
+         *   empty or omitted, no category filter applied. All products from any
+         *   category included unless categoryIds specified.
      */
     categoryIds?:
       | ((string & tags.Format<"uuid">)[] & tags.MaxItems<10>)
@@ -241,7 +267,10 @@ export namespace IEcommerceMallProduct {
      * - UUID string format
      * - Single seller only per request
      *
-     * @x-autobe-specification Filter ecommerce_mall_products where seller_id = {sellerId}. UUID format required. Single seller filter only. Returns all products owned by specified seller if matching products exist.
+         * @x-autobe-specification Filter ecommerce_mall_products where
+         *   seller_id = {sellerId}. UUID format required. Single seller filter
+         *   only. Returns all products owned by specified seller if matching
+         *   products exist.
      */
     sellerId?: (string & tags.Format<"uuid">) | undefined;
 
@@ -255,7 +284,9 @@ export namespace IEcommerceMallProduct {
      * - Used with maxPrice to define price range
      * - Applies to product base_price field
      *
-     * @x-autobe-specification Filter ecommerce_mall_products where base_price >= {minPrice}. Must be >= 0. Combined with maxPrice to define price range. Returns products within specified price range.
+         * @x-autobe-specification Filter ecommerce_mall_products where
+         *   base_price >= {minPrice}. Must be >= 0. Combined with maxPrice to
+         *   define price range. Returns products within specified price range.
      */
     minPrice?: (number & tags.Minimum<0>) | undefined;
 
@@ -269,7 +300,9 @@ export namespace IEcommerceMallProduct {
      * - Used with minPrice to define price range
      * - Applies to product base_price field
      *
-     * @x-autobe-specification Filter ecommerce_mall_products where base_price <= {maxPrice}. Must be >= 0. Combined with minPrice to define price range. Returns products within specified price range.
+         * @x-autobe-specification Filter ecommerce_mall_products where
+         *   base_price <= {maxPrice}. Must be >= 0. Combined with minPrice to
+         *   define price range. Returns products within specified price range.
      */
     maxPrice?: (number & tags.Minimum<0>) | undefined;
 
@@ -282,7 +315,10 @@ export namespace IEcommerceMallProduct {
      * - true: Only products with available variants
      * - false or omitted: All products regardless of stock status
      *
-     * @x-autobe-specification Boolean flag. If true, INNER JOIN ecommerce_mall_product_variants and filter WHERE stock_quantity > 0 AND deleted_at IS NULL. Returns products that have at least one available variant. If false or omitted, no stock filtering applied.
+         * @x-autobe-specification Boolean flag. If true, INNER JOIN
+         *   ecommerce_mall_product_variants and filter WHERE stock_quantity > 0
+         *   AND deleted_at IS NULL. Returns products that have at least one
+         *   available variant. If false or omitted, no stock filtering applied.
      */
     inStockOnly?: boolean | undefined;
 
@@ -296,7 +332,10 @@ export namespace IEcommerceMallProduct {
      * - `base_price`: Sort by base price (numeric)
      * - `created_at`: Sort by creation date
      *
-     * @x-autobe-specification Enum: 'name' | 'base_price' | 'created_at'. Determines sort column in ORDER BY clause. Case-insensitive string comparison for name, numeric comparison for base_price, timestamp comparison for created_at.
+         * @x-autobe-specification Enum: 'name' | 'base_price' | 'created_at'.
+         *   Determines sort column in ORDER BY clause. Case-insensitive string
+         *   comparison for name, numeric comparison for base_price, timestamp
+         *   comparison for created_at.
      */
     sortBy?: "name" | "base_price" | "created_at" | undefined;
 
@@ -309,7 +348,9 @@ export namespace IEcommerceMallProduct {
      * - `asc`: Ascending order (A-Z, 0-9, oldest first)
      * - `desc`: Descending order (Z-A, 9-0, newest first)
      *
-     * @x-autobe-specification Enum: 'asc' | 'desc'. Determines sort direction in ORDER BY clause. Combined with sortBy field to control sort ordering. Case-insensitive string comparison.
+         * @x-autobe-specification Enum: 'asc' | 'desc'. Determines sort
+         *   direction in ORDER BY clause. Combined with sortBy field to control
+         *   sort ordering. Case-insensitive string comparison.
      */
     sortOrder?: "asc" | "desc" | undefined;
 
@@ -321,7 +362,9 @@ export namespace IEcommerceMallProduct {
      * **Format**:
      * - ISO 8601 datetime string (e.g., '2024-01-01T00:00:00Z')
      *
-     * @x-autobe-specification Filter ecommerce_mall_products where created_at >= {createdAtMin}. ISO 8601 datetime format required. Returns products created on or after specified date.
+         * @x-autobe-specification Filter ecommerce_mall_products where
+         *   created_at >= {createdAtMin}. ISO 8601 datetime format required.
+         *   Returns products created on or after specified date.
      */
     createdAtMin?: (string & tags.Format<"date-time">) | undefined;
 
@@ -333,7 +376,9 @@ export namespace IEcommerceMallProduct {
      * **Format**:
      * - ISO 8601 datetime string (e.g., '2024-12-31T23:59:59Z')
      *
-     * @x-autobe-specification Filter ecommerce_mall_products where created_at <= {createdAtMax}. ISO 8601 datetime format required. Returns products created on or before specified date.
+         * @x-autobe-specification Filter ecommerce_mall_products where
+         *   created_at <= {createdAtMax}. ISO 8601 datetime format required.
+         *   Returns products created on or before specified date.
      */
     createdAtMax?: (string & tags.Format<"date-time">) | undefined;
 
@@ -346,7 +391,10 @@ export namespace IEcommerceMallProduct {
      * - Base64 encoded string of 'created_at|id' (e.g., 'MTcwMDAwMDAwMHx1dWlkLTEyMzQ1Njc4OTA')
      * - Next cursor returned in response for navigation
      *
-     * @x-autobe-specification Cursor-based pagination token. Base64(created_at|id) format. Used for efficient pagination without OFFSET. Client provides cursor from previous page response to fetch next page. Mutually exclusive with page parameter.
+         * @x-autobe-specification Cursor-based pagination token.
+         *   Base64(created_at|id) format. Used for efficient pagination without
+         *   OFFSET. Client provides cursor from previous page response to fetch
+         *   next page. Mutually exclusive with page parameter.
      */
     cursor?: string | undefined;
 
@@ -364,7 +412,9 @@ export namespace IEcommerceMallProduct {
      * - Smaller limits (10-20) for mobile/bandwidth-constrained clients
      * - Larger limits (50-100) for desktop/full-page browsing
      *
-     * @x-autobe-specification Integer 1-100. Maximum records to return per page. Defaults to 20 if omitted. Actual count may be less on final page. Used with cursor or page for pagination.
+         * @x-autobe-specification Integer 1-100. Maximum records to return per
+         *   page. Defaults to 20 if omitted. Actual count may be less on final
+         *   page. Used with cursor or page for pagination.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -380,7 +430,10 @@ export namespace IEcommerceMallProduct {
      * - Mutually exclusive with cursor-based pagination
      * - Defaults to 1 if not provided
      *
-     * @x-autobe-specification 1-indexed page number (integer >= 0). Defaults to 1 if not provided. Requesting page beyond available range returns empty data array with valid pagination metadata. Mutually exclusive with cursor-based pagination.
+         * @x-autobe-specification 1-indexed page number (integer >= 0).
+         *   Defaults to 1 if not provided. Requesting page beyond available
+         *   range returns empty data array with valid pagination metadata.
+         *   Mutually exclusive with cursor-based pagination.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };
@@ -413,8 +466,10 @@ export namespace IEcommerceMallProduct {
      *
      * The name appears in product listings, category pages, search results, and product detail views. Serves as the primary identifier for customers browsing the catalog.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from ecommerce_mall_products.name column. Max length: 100 characters. Must be non-empty string if provided.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_products.name column. Max length: 100 characters.
+         *   Must be non-empty string if provided.
      */
     name?: (string & tags.MaxLength<100>) | undefined;
 
@@ -423,8 +478,10 @@ export namespace IEcommerceMallProduct {
      *
      * Appears on product detail pages to inform customer purchase decisions. Can contain comprehensive product information including dimensions, materials, care instructions, and technical specifications.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from ecommerce_mall_products.description column. No length restriction but should be concise for search indexing. Nullable.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_products.description column. No length restriction
+         *   but should be concise for search indexing. Nullable.
      */
     description?: string | undefined;
 
@@ -433,8 +490,10 @@ export namespace IEcommerceMallProduct {
      *
      * The base price applies when no variant-specific override is set. Used for price range display, comparison shopping, and as the default price for base product variants. Must be a positive number.
      *
-     * @x-autobe-database-schema-property base_price
-     * @x-autobe-specification Direct mapping from ecommerce_mall_products.base_price column. Must be positive (exclusiveMinimum: 0). Type: number (floating point for currency).
+         * @x-autobe-database-schema-property base_price
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_products.base_price column. Must be positive
+         *   (exclusiveMinimum: 0). Type: number (floating point for currency).
      */
     base_price?: number | undefined;
 
@@ -443,8 +502,10 @@ export namespace IEcommerceMallProduct {
      *
      * Assigns the product to a category for browsing and filtering. Categories provide hierarchical structure (parent-child relationships) to organize the product catalog. Reference must be an existing, non-deleted category.
      *
-     * @x-autobe-database-schema-property category_id
-     * @x-autobe-specification Direct mapping from ecommerce_mall_products.category_id column. Must be valid UUID format. Backend validates category exists and deleted_at is NULL.
+         * @x-autobe-database-schema-property category_id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_products.category_id column. Must be valid UUID
+         *   format. Backend validates category exists and deleted_at is NULL.
      */
     category_id?: (string & tags.Format<"uuid">) | undefined;
   };
@@ -474,7 +535,11 @@ export namespace IEcommerceMallProduct {
      * - All IDs must be valid UUIDs belonging to the product
      * - Images must be active (not deleted)
      *
-     * @x-autobe-specification Request body contains ordered array of image UUIDs. Array order determines new display_order values in ecommerce_mall_product_images table (first item = 1, second = 2, etc.). All image IDs must exist, belong to the product, and have deleted_at IS NULL. Validation performed before update.
+         * @x-autobe-specification Request body contains ordered array of image
+         *   UUIDs. Array order determines new display_order values in
+         *   ecommerce_mall_product_images table (first item = 1, second = 2,
+         *   etc.). All image IDs must exist, belong to the product, and have
+         *   deleted_at IS NULL. Validation performed before update.
      */
     image_ids: (string & tags.Format<"uuid">)[] & tags.MinItems<1>;
   };
@@ -494,8 +559,10 @@ export namespace IEcommerceMallProduct {
      * - Used as primary identifier in category browsing
      * - Must be unique within seller's catalog
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from ecommerce_mall_products.name column. Validates: non-empty string, max 100 characters.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_products.name column. Validates: non-empty string,
+         *   max 100 characters.
      */
     name: string;
 
@@ -505,8 +572,10 @@ export namespace IEcommerceMallProduct {
      * **Purpose**:
      * Appears on product detail pages to help customers understand the product. May be summarized in listing views. Provides comprehensive information to support purchase decisions.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from ecommerce_mall_products.description column. No length constraints enforced at API level (database handles max length).
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_products.description column. No length constraints
+         *   enforced at API level (database handles max length).
      */
     description: string;
 
@@ -518,8 +587,11 @@ export namespace IEcommerceMallProduct {
      * - Each product belongs to exactly one category
      * - Category provides hierarchical organization for browsing and filtering
      *
-     * @x-autobe-database-schema-property category_id
-     * @x-autobe-specification Direct mapping from ecommerce_mall_products.category_id column. Validates: valid UUID format, category exists, category not soft-deleted (deleted_at IS NULL).
+         * @x-autobe-database-schema-property category_id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_products.category_id column. Validates: valid UUID
+         *   format, category exists, category not soft-deleted (deleted_at IS
+         *   NULL).
      */
     category_id: string & tags.Format<"uuid">;
 
@@ -532,8 +604,10 @@ export namespace IEcommerceMallProduct {
      * - Used for price range display and comparison shopping
      * - Decimal precision handled by database (DOUBLE PRECISION)
      *
-     * @x-autobe-database-schema-property base_price
-     * @x-autobe-specification Direct mapping from ecommerce_mall_products.base_price column. Validates: numeric value > 0. Excluded empty or zero values.
+         * @x-autobe-database-schema-property base_price
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_products.base_price column. Validates: numeric value
+         *   > 0. Excluded empty or zero values.
      */
     base_price: number;
   };

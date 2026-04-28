@@ -36,7 +36,12 @@ export namespace IShoppingMallOrder {
      *
      * The order status is calculated based on the collective state of all order items within the order. Valid values are: paid (all items paid), shipped (any item shipped, none delivered), delivered (all items delivered), cancelled (all items cancelled), refunded (all items refunded), or partially_completed (items in mixed states).
      *
-     * @x-autobe-specification Filter by derived order status. This status is computed from shopping_mall_order_items.status values: all items 'paid' → 'paid', any item 'shipped' → 'shipped', all items 'delivered' → 'delivered', all items 'cancelled' → 'cancelled', all items 'refunded' → 'refunded', mixed states → 'partially_completed'. Not a direct database column.
+         * @x-autobe-specification Filter by derived order status. This status
+         *   is computed from shopping_mall_order_items.status values: all items
+         *   'paid' → 'paid', any item 'shipped' → 'shipped', all items
+         *   'delivered' → 'delivered', all items 'cancelled' → 'cancelled', all
+         *   items 'refunded' → 'refunded', mixed states →
+         *   'partially_completed'. Not a direct database column.
      */
     status?:
       | "paid"
@@ -52,8 +57,11 @@ export namespace IShoppingMallOrder {
      *
      * Performs a partial match search on the order number field. Useful for finding specific orders when the customer knows part of their order number from confirmation emails or receipts.
      *
-     * @x-autobe-database-schema-property order_number
-     * @x-autobe-specification Direct mapping to shopping_mall_orders.order_number column. Used for partial match search (LIKE query) to find orders by their customer-facing order number.
+         * @x-autobe-database-schema-property order_number
+         * @x-autobe-specification Direct mapping to
+         *   shopping_mall_orders.order_number column. Used for partial match
+         *   search (LIKE query) to find orders by their customer-facing order
+         *   number.
      */
     order_number?: string | undefined;
 
@@ -62,8 +70,11 @@ export namespace IShoppingMallOrder {
      *
      * Specify the start of a date range to retrieve orders placed from this point forward. Use ISO 8601 date-time format (e.g., 2024-01-15T00:00:00Z).
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Filter parameter mapping to shopping_mall_orders.created_at column. Returns orders created on or after this timestamp. Used in conjunction with created_at_to for date range filtering.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Filter parameter mapping to
+         *   shopping_mall_orders.created_at column. Returns orders created on
+         *   or after this timestamp. Used in conjunction with created_at_to for
+         *   date range filtering.
      */
     created_at_from?: (string & tags.Format<"date-time">) | undefined;
 
@@ -72,8 +83,11 @@ export namespace IShoppingMallOrder {
      *
      * Specify the end of a date range to retrieve orders placed up to this point. Use ISO 8601 date-time format (e.g., 2024-01-31T23:59:59Z).
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Filter parameter mapping to shopping_mall_orders.created_at column. Returns orders created on or before this timestamp. Used in conjunction with created_at_from for date range filtering.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Filter parameter mapping to
+         *   shopping_mall_orders.created_at column. Returns orders created on
+         *   or before this timestamp. Used in conjunction with created_at_from
+         *   for date range filtering.
      */
     created_at_to?: (string & tags.Format<"date-time">) | undefined;
 
@@ -82,7 +96,9 @@ export namespace IShoppingMallOrder {
      *
      * Indicates which page of order results to retrieve. Page numbering starts from 1. Defaults to page 1 if not specified. Use this parameter to navigate through multiple pages of order history.
      *
-     * @x-autobe-specification Pagination page number (1-indexed). Not a database column. Defaults to 1 if not provided. Used to navigate through paginated order history results.
+         * @x-autobe-specification Pagination page number (1-indexed). Not a
+         *   database column. Defaults to 1 if not provided. Used to navigate
+         *   through paginated order history results.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -91,7 +107,10 @@ export namespace IShoppingMallOrder {
      *
      * Controls the page size for paginated results. Accepts values from 1 to 100. A higher limit returns more orders per page but may increase response size. Defaults to a reasonable page size if not specified.
      *
-     * @x-autobe-specification Maximum number of orders per page (1-100). Not a database column. Defaults to a reasonable page size if not provided. Controls how many orders are returned in each paginated response.
+         * @x-autobe-specification Maximum number of orders per page (1-100).
+         *   Not a database column. Defaults to a reasonable page size if not
+         *   provided. Controls how many orders are returned in each paginated
+         *   response.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -111,8 +130,14 @@ export namespace IShoppingMallOrder {
      *
      * This UUID references a shipping address from the authenticated customer's address book. The address must exist, belong to the customer, and not be deleted. This address will be used as the delivery destination for all items in the order and is preserved at order placement time even if the address is later modified or deleted.
      *
-     * @x-autobe-database-schema-property shopping_mall_customer_address_id
-     * @x-autobe-specification Direct mapping to shopping_mall_orders.shopping_mall_customer_address_id column. This UUID references a record in shopping_mall_customer_addresses table. The address must belong to the authenticated customer (validated via foreign key constraint and authorization check) and must not be soft-deleted (deleted_at IS NULL). Used to establish the shippingAddress relation on the order.
+         * @x-autobe-database-schema-property shopping_mall_customer_address_id
+         * @x-autobe-specification Direct mapping to
+         *   shopping_mall_orders.shopping_mall_customer_address_id column. This
+         *   UUID references a record in shopping_mall_customer_addresses table.
+         *   The address must belong to the authenticated customer (validated
+         *   via foreign key constraint and authorization check) and must not be
+         *   soft-deleted (deleted_at IS NULL). Used to establish the
+         *   shippingAddress relation on the order.
      */
     shopping_mall_customer_address_id: string & tags.Format<"uuid">;
   };
@@ -130,8 +155,9 @@ export namespace IShoppingMallOrder {
      *
      * This UUID serves as the primary key for database operations and internal system references. Used in API paths for retrieving specific order details.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_orders.id. Primary key UUID identifying the order.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from shopping_mall_orders.id.
+         *   Primary key UUID identifying the order.
      */
     id: string & tags.Format<"uuid">;
 
@@ -140,8 +166,10 @@ export namespace IShoppingMallOrder {
      *
      * This human-readable identifier is displayed to customers in order confirmations, emails, and the order history UI. It is unique across all orders and used for customer support inquiries.
      *
-     * @x-autobe-database-schema-property order_number
-     * @x-autobe-specification Direct mapping from shopping_mall_orders.order_number. Unique human-readable order identifier.
+         * @x-autobe-database-schema-property order_number
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_orders.order_number. Unique human-readable order
+         *   identifier.
      */
     order_number: string;
 
@@ -150,7 +178,12 @@ export namespace IShoppingMallOrder {
      *
      * The status reflects the current processing stage: 'paid' (payment confirmed, awaiting shipment), 'shipped' (one or more items shipped), 'delivered' (all items delivered), 'cancelled' (all items cancelled), 'refunded' (all items refunded), or 'partially_completed' (items in mixed states).
      *
-     * @x-autobe-specification Computed from shopping_mall_order_items.status values. Derivation logic: all items 'paid' → 'paid', any item 'shipped' → 'shipped', all items 'delivered' → 'delivered', all items 'cancelled' → 'cancelled', all items 'refunded' → 'refunded', mixed states → 'partially_completed'.
+         * @x-autobe-specification Computed from
+         *   shopping_mall_order_items.status values. Derivation logic: all
+         *   items 'paid' → 'paid', any item 'shipped' → 'shipped', all items
+         *   'delivered' → 'delivered', all items 'cancelled' → 'cancelled', all
+         *   items 'refunded' → 'refunded', mixed states →
+         *   'partially_completed'.
      */
     status: string;
 
@@ -159,7 +192,9 @@ export namespace IShoppingMallOrder {
      *
      * This is the sum of (quantity × price) for all order items. Represents the amount the customer paid for this order.
      *
-     * @x-autobe-specification Computed as SUM(quantity * price) from shopping_mall_order_items. Aggregates the total cost of all items in the order.
+         * @x-autobe-specification Computed as SUM(quantity * price) from
+         *   shopping_mall_order_items. Aggregates the total cost of all items
+         *   in the order.
      */
     total_price: number;
 
@@ -168,7 +203,9 @@ export namespace IShoppingMallOrder {
      *
      * This count represents the number of line items (product variants) in the order, not the total quantity of products.
      *
-     * @x-autobe-specification Computed as COUNT(*) from shopping_mall_order_items. Returns the number of distinct order items in this order.
+         * @x-autobe-specification Computed as COUNT(*) from
+         *   shopping_mall_order_items. Returns the number of distinct order
+         *   items in this order.
      */
     item_count: number & tags.Type<"int32">;
 
@@ -177,8 +214,12 @@ export namespace IShoppingMallOrder {
      *
      * This address was selected by the customer during checkout and cannot be changed after order placement. It preserves the delivery information even if the customer later modifies or deletes this address from their profile.
      *
-     * @x-autobe-database-schema-property shippingAddress
-     * @x-autobe-specification JOIN from shopping_mall_orders.shopping_mall_customer_address_id to shopping_mall_customer_addresses.id. Returns IShoppingMallCustomerAddress.ISummary. Captured at checkout time, immutable after order placement.
+         * @x-autobe-database-schema-property shippingAddress
+         * @x-autobe-specification JOIN from
+         *   shopping_mall_orders.shopping_mall_customer_address_id to
+         *   shopping_mall_customer_addresses.id. Returns
+         *   IShoppingMallCustomerAddress.ISummary. Captured at checkout time,
+         *   immutable after order placement.
      */
     shipping_address: IShoppingMallCustomerAddress.ISummary;
 
@@ -187,8 +228,10 @@ export namespace IShoppingMallOrder {
      *
      * This marks the moment when the order was created, stock was reserved, and items were removed from the customer's shopping cart. Used for sorting order history chronologically.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_orders.created_at. Timestamp when order was created and payment was successfully processed.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_orders.created_at. Timestamp when order was created
+         *   and payment was successfully processed.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -197,8 +240,10 @@ export namespace IShoppingMallOrder {
      *
      * Updated whenever order-related changes occur, such as when order items change status (paid, shipped, delivered, cancelled, refunded). Tracks the order lifecycle progression.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from shopping_mall_orders.updated_at. Updated whenever order-related changes occur.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_orders.updated_at. Updated whenever order-related
+         *   changes occur.
      */
     updated_at: string & tags.Format<"date-time">;
   };

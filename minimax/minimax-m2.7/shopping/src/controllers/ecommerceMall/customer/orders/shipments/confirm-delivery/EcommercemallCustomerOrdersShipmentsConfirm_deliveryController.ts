@@ -25,21 +25,19 @@ export class EcommercemallCustomerOrdersShipmentsConfirm_deliveryController {
    * @param connection
    * @param orderId Unique identifier of the parent order containing this shipment (global scope).
    * @param shipmentId Unique identifier of the shipment to confirm delivery for (global scope).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification 1. Extract orderId and shipmentId from path parameters.
-   * 2. Validate shipmentId is a valid UUID format.
-   * 3. Retrieve the shipment by shipmentId.
-   * 4. Verify the shipment belongs to the specified orderId.
-   * 5. Verify the authenticated customer owns the order (via session JWT).
-   * 6. Verify the shipment exists and is not soft-deleted (deleted_at is null).
-   * 7. Verify the shipment's order items have 'shipped' status.
-   * 8. Begin database transaction:
-   *    a. Update all order items linked via ecommerce_mall_shipment_items to 'delivered' status
-   *    b. Record the delivery confirmation timestamp
-   *    c. Update order item statuses accordingly
-   * 9. Commit transaction.
-   * 10. Return the updated shipment with its shipment_items and order_item details.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification 1. Extract orderId and shipmentId from path
+     *   parameters. 2. Validate shipmentId is a valid UUID format. 3. Retrieve
+     *   the shipment by shipmentId. 4. Verify the shipment belongs to the
+     *   specified orderId. 5. Verify the authenticated customer owns the order
+     *   (via session JWT). 6. Verify the shipment exists and is not
+     *   soft-deleted (deleted_at is null). 7. Verify the shipment's order items
+     *   have 'shipped' status. 8. Begin database transaction: a. Update all
+     *   order items linked via ecommerce_mall_shipment_items to 'delivered'
+     *   status b. Record the delivery confirmation timestamp c. Update order
+     *   item statuses accordingly 9. Commit transaction. 10. Return the updated
+     *   shipment with its shipment_items and order_item details.
    *
    * **Edge Cases**:
    * - If shipment not found: Return 404.

@@ -21,7 +21,8 @@ import { IRedditClonePostTextContent } from "../../../../structures/IRedditClone
  * @param props.postId Unique identifier of the post (global scope)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query the reddit_clone_post_text_contents table filtering by reddit_clone_post_id matching the provided postId parameter.
+ * @x-autobe-specification Query the reddit_clone_post_text_contents table
+ *   filtering by reddit_clone_post_id matching the provided postId parameter.
  *
  * Join with reddit_clone_posts to verify:
  * 1. The post exists and is not deleted (deleted_at is null)

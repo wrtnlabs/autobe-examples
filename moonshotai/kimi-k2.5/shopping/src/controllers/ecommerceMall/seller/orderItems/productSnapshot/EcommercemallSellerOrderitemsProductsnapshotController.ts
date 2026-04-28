@@ -20,9 +20,11 @@ export class EcommercemallSellerOrderitemsProductsnapshotController {
    *
    * @param connection
    * @param orderItemId The unique identifier of the order item whose product snapshot is being retrieved
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Query the ecommerce_mall_order_item_product_snapshots table by order_item_id using the provided orderItemId path parameter.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Query the
+     *   ecommerce_mall_order_item_product_snapshots table by order_item_id
+     *   using the provided orderItemId path parameter.
    *
    * The query should:
    * 1. Lookup the product snapshot record where order_item_id matches the provided orderItemId

@@ -29,8 +29,9 @@ export type IEcommerceSellerApproval = {
    *
    * Generated as a UUID when the seller registration is created. Serves as the primary key for this approval record and is used in all API endpoints that reference this approval.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_seller_approvals.id. Primary key, UUID format.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_seller_approvals.id. Primary key, UUID format.
    */
   id: string & tags.Format<"uuid">;
 
@@ -39,8 +40,9 @@ export type IEcommerceSellerApproval = {
    *
    * Contains summary information about the seller including their identity, account status, and shop profile. This relation is populated via a JOIN with the seller table using the seller_id foreign key.
    *
-   * @x-autobe-database-schema-property seller
-   * @x-autobe-specification Join from ecommerce_seller_approvals.seller_id to ecommerce_sellers.id. Returns IEcommerceSeller.ISummary via LEFT JOIN.
+     * @x-autobe-database-schema-property seller
+     * @x-autobe-specification Join from ecommerce_seller_approvals.seller_id to
+     *   ecommerce_sellers.id. Returns IEcommerceSeller.ISummary via LEFT JOIN.
    */
   seller: IEcommerceSeller.ISummary;
 
@@ -49,8 +51,11 @@ export type IEcommerceSellerApproval = {
    *
    * Populated when the approval status changes from "pending" to either "approved" or "rejected". Null if the request has not yet been reviewed. Contains summary information about the reviewing administrator.
    *
-   * @x-autobe-database-schema-property reviewingAdmin
-   * @x-autobe-specification Join from ecommerce_seller_approvals.reviewed_by_admin_id to ecommerce_admins.id. Returns IEcommerceAdmin.ISummary via LEFT JOIN (nullable until reviewed).
+     * @x-autobe-database-schema-property reviewingAdmin
+     * @x-autobe-specification Join from
+     *   ecommerce_seller_approvals.reviewed_by_admin_id to ecommerce_admins.id.
+     *   Returns IEcommerceAdmin.ISummary via LEFT JOIN (nullable until
+     *   reviewed).
    */
   reviewedByAdmin?: IEcommerceAdmin.ISummary | null | undefined;
 
@@ -67,8 +72,9 @@ export type IEcommerceSellerApproval = {
    *
    * Status transitions from "pending" to either "approved" or "rejected". Once reviewed, the status cannot be changed.
    *
-   * @x-autobe-specification Direct mapping from ecommerce_seller_approvals.status. Enum: pending, approved, rejected.
-   * @x-autobe-database-schema-property status
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_seller_approvals.status. Enum: pending, approved, rejected.
+     * @x-autobe-database-schema-property status
    */
   status: string;
 
@@ -77,8 +83,10 @@ export type IEcommerceSellerApproval = {
    *
    * This field is populated only when status is "rejected". It provides transparency to the seller about why their registration was denied. Rejected sellers can review this reason before submitting a new registration request. Null when status is "pending" or "approved".
    *
-   * @x-autobe-database-schema-property rejection_reason
-   * @x-autobe-specification Direct mapping from ecommerce_seller_approvals.rejection_reason. Nullable string, required when status is "rejected".
+     * @x-autobe-database-schema-property rejection_reason
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_seller_approvals.rejection_reason. Nullable string, required
+     *   when status is "rejected".
    */
   rejectionReason?: string | null | undefined;
 
@@ -87,8 +95,10 @@ export type IEcommerceSellerApproval = {
    *
    * Populated when status changes from "pending" to either "approved" or "rejected". Null if the request has not yet been reviewed. Recorded in UTC timezone with millisecond precision.
    *
-   * @x-autobe-database-schema-property reviewed_at
-   * @x-autobe-specification Direct mapping from ecommerce_seller_approvals.reviewed_at. Nullable DateTime, populated when status changes from pending.
+     * @x-autobe-database-schema-property reviewed_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_seller_approvals.reviewed_at. Nullable DateTime, populated
+     *   when status changes from pending.
    */
   reviewedAt?: (string & tags.Format<"date-time">) | null | undefined;
 
@@ -97,8 +107,10 @@ export type IEcommerceSellerApproval = {
    *
    * Automatically set when a seller registers their account. Marks the beginning of the approval workflow. Recorded in UTC timezone with millisecond precision.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_seller_approvals.created_at. Required DateTime, automatically set on record creation.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_seller_approvals.created_at. Required DateTime, automatically
+     *   set on record creation.
    */
   createdAt: string & tags.Format<"date-time">;
 
@@ -107,8 +119,10 @@ export type IEcommerceSellerApproval = {
    *
    * Automatically updated whenever the status changes, rejection reason is modified, or any other field is updated. Tracks the most recent activity on this approval record. Recorded in UTC timezone with millisecond precision.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from ecommerce_seller_approvals.updated_at. Required DateTime, automatically updated on any field changes.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_seller_approvals.updated_at. Required DateTime, automatically
+     *   updated on any field changes.
    */
   updatedAt: string & tags.Format<"date-time">;
 
@@ -117,8 +131,10 @@ export type IEcommerceSellerApproval = {
    *
    * Null for active records. When set, the approval record is logically deleted but preserved for audit and compliance purposes. Soft-deleted records are excluded from query results by default. Recorded in UTC timezone with millisecond precision.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from ecommerce_seller_approvals.deleted_at. Nullable DateTime, set when record is soft-deleted.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_seller_approvals.deleted_at. Nullable DateTime, set when
+     *   record is soft-deleted.
    */
   deletedAt?: (string & tags.Format<"date-time">) | null | undefined;
 };
@@ -153,8 +169,12 @@ export namespace IEcommerceSellerApproval {
      * - This field is required in the request body
      * - Once set to a final state, the approval request cannot be re-reviewed
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from ecommerce_seller_approvals.status. Enum values: pending, approved, rejected. In IUpdate, only 'approved' or 'rejected' allowed (cannot update to 'pending'). Required field in request body per business logic.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_seller_approvals.status. Enum values: pending, approved,
+         *   rejected. In IUpdate, only 'approved' or 'rejected' allowed (cannot
+         *   update to 'pending'). Required field in request body per business
+         *   logic.
      */
     status: string;
 
@@ -169,8 +189,11 @@ export namespace IEcommerceSellerApproval {
      * - Optional when status is "approved" (typically null or omitted)
      * - Rejected sellers can review this reason before submitting a new registration request
      *
-     * @x-autobe-database-schema-property rejection_reason
-     * @x-autobe-specification Direct mapping from ecommerce_seller_approvals.rejection_reason. Nullable string. Required when status='rejected' (service-layer validation). Optional when status='approved'.
+         * @x-autobe-database-schema-property rejection_reason
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_seller_approvals.rejection_reason. Nullable string.
+         *   Required when status='rejected' (service-layer validation).
+         *   Optional when status='approved'.
      */
     rejection_reason?: string | null | undefined;
   };
@@ -202,8 +225,10 @@ export namespace IEcommerceSellerApproval {
      *
      * This UUID serves as the primary key for the approval request record and is used to reference the request in API endpoints.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_seller_approvals.id. Unique identifier for each approval request.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_seller_approvals.id. Unique identifier for each approval
+         *   request.
      */
     id: string & tags.Format<"uuid">;
 
@@ -212,8 +237,10 @@ export namespace IEcommerceSellerApproval {
      *
      * Contains summary information about the seller including their email, approval status, and shop profile details. This relation is always present as every approval request is associated with a seller account.
      *
-     * @x-autobe-database-schema-property seller
-     * @x-autobe-specification LEFT JOIN from ecommerce_seller_approvals.seller_id to ecommerce_sellers.id. Returns IEcommerceSeller.ISummary. Required relation.
+         * @x-autobe-database-schema-property seller
+         * @x-autobe-specification LEFT JOIN from
+         *   ecommerce_seller_approvals.seller_id to ecommerce_sellers.id.
+         *   Returns IEcommerceSeller.ISummary. Required relation.
      */
     seller: IEcommerceSeller.ISummary;
 
@@ -222,8 +249,11 @@ export namespace IEcommerceSellerApproval {
      *
      * Contains summary information about the administrator who processed the approval or rejection. This field is null when the request status is pending (not yet reviewed).
      *
-     * @x-autobe-database-schema-property reviewingAdmin
-     * @x-autobe-specification LEFT JOIN from ecommerce_seller_approvals.reviewed_by_admin_id to ecommerce_admins.id. Returns IEcommerceAdmin.ISummary or null. Optional relation, null when status is pending.
+         * @x-autobe-database-schema-property reviewingAdmin
+         * @x-autobe-specification LEFT JOIN from
+         *   ecommerce_seller_approvals.reviewed_by_admin_id to
+         *   ecommerce_admins.id. Returns IEcommerceAdmin.ISummary or null.
+         *   Optional relation, null when status is pending.
      */
     reviewingAdmin?: IEcommerceAdmin.ISummary | null | undefined;
 
@@ -235,8 +265,10 @@ export namespace IEcommerceSellerApproval {
      * - approved: Seller has been approved and can begin selling
      * - rejected: Seller registration was denied (see rejection_reason)
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from ecommerce_seller_approvals.status. Allowed values: pending, approved, rejected.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_seller_approvals.status. Allowed values: pending,
+         *   approved, rejected.
      */
     status: string;
 
@@ -245,8 +277,10 @@ export namespace IEcommerceSellerApproval {
      *
      * This field is populated only when the status is rejected. It explains why the registration was denied, allowing the seller to address the issues before submitting a new registration request.
      *
-     * @x-autobe-database-schema-property rejection_reason
-     * @x-autobe-specification Direct mapping from ecommerce_seller_approvals.rejection_reason. Nullable string, populated only when status is rejected.
+         * @x-autobe-database-schema-property rejection_reason
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_seller_approvals.rejection_reason. Nullable string,
+         *   populated only when status is rejected.
      */
     rejection_reason?: string | null | undefined;
 
@@ -255,8 +289,10 @@ export namespace IEcommerceSellerApproval {
      *
      * This field is populated when the status changes from pending to either approved or rejected. It marks the completion of the administrator review process. Null for pending requests.
      *
-     * @x-autobe-database-schema-property reviewed_at
-     * @x-autobe-specification Direct mapping from ecommerce_seller_approvals.reviewed_at. Nullable DateTime, populated when status changes from pending to approved or rejected.
+         * @x-autobe-database-schema-property reviewed_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_seller_approvals.reviewed_at. Nullable DateTime,
+         *   populated when status changes from pending to approved or rejected.
      */
     reviewed_at?: (string & tags.Format<"date-time">) | null | undefined;
 
@@ -265,8 +301,10 @@ export namespace IEcommerceSellerApproval {
      *
      * Automatically set when a seller registers their account. This marks the beginning of the approval workflow.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from ecommerce_seller_approvals.created_at. Automatically set on approval request creation.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_seller_approvals.created_at. Automatically set on
+         *   approval request creation.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -275,8 +313,10 @@ export namespace IEcommerceSellerApproval {
      *
      * Updated whenever the status changes or rejection reason is modified. Tracks the most recent activity on this approval record.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from ecommerce_seller_approvals.updated_at. Automatically updated on status changes or rejection reason modifications.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_seller_approvals.updated_at. Automatically updated on
+         *   status changes or rejection reason modifications.
      */
     updated_at: string & tags.Format<"date-time">;
   };
@@ -304,15 +344,15 @@ export namespace IEcommerceSellerApproval {
    */
   export type IRequest = {
     /**
-     * @x-autobe-database-schema-property status
+         * @x-autobe-database-schema-property status
      */
     status?: string | undefined;
     /**
-     * @x-autobe-database-schema-property created_at
+         * @x-autobe-database-schema-property created_at
      */
     createdAtFrom?: (string & tags.Format<"date-time">) | undefined;
     /**
-     * @x-autobe-database-schema-property created_at
+         * @x-autobe-database-schema-property created_at
      */
     createdAtTo?: (string & tags.Format<"date-time">) | undefined;
 
@@ -321,8 +361,9 @@ export namespace IEcommerceSellerApproval {
      *
      * Used with reviewedAtTo to specify a date range for filtering approval requests by when they were reviewed. Null values are allowed.
      *
-     * @x-autobe-database-schema-property reviewed_at
-     * @x-autobe-specification Filter by reviewed_at date range start. Nullable DateTime field.
+         * @x-autobe-database-schema-property reviewed_at
+         * @x-autobe-specification Filter by reviewed_at date range start.
+         *   Nullable DateTime field.
      */
     reviewedAtFrom?: (string & tags.Format<"date-time">) | null | undefined;
 
@@ -331,8 +372,9 @@ export namespace IEcommerceSellerApproval {
      *
      * Used with reviewedAtFrom to specify a date range for filtering approval requests by when they were reviewed. Null values are allowed.
      *
-     * @x-autobe-database-schema-property reviewed_at
-     * @x-autobe-specification Filter by reviewed_at date range end. Nullable DateTime field.
+         * @x-autobe-database-schema-property reviewed_at
+         * @x-autobe-specification Filter by reviewed_at date range end.
+         *   Nullable DateTime field.
      */
     reviewedAtTo?: (string & tags.Format<"date-time">) | null | undefined;
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;

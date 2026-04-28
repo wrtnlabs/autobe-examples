@@ -16,8 +16,9 @@ export type IRedditCloneCommunity = {
    *
    * This field contains a UUID that uniquely identifies the community across the entire platform. Used in API paths and references to identify specific communities.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from reddit_clone_communities.id. Primary key UUID.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from reddit_clone_communities.id.
+     *   Primary key UUID.
    */
   id: string & tags.Format<"uuid">;
 
@@ -26,8 +27,10 @@ export type IRedditCloneCommunity = {
    *
    * The name must be unique across all communities and is used to identify the community in URLs and references. Users search and browse communities by this name.
    *
-   * @x-autobe-database-schema-property name
-   * @x-autobe-specification Direct mapping from reddit_clone_communities.name. Unique constraint enforced at database level.
+     * @x-autobe-database-schema-property name
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_communities.name. Unique constraint enforced at database
+     *   level.
    */
   name: string;
 
@@ -36,8 +39,9 @@ export type IRedditCloneCommunity = {
    *
    * This field contains descriptive text about what the community is about, its rules, and what type of content is appropriate. Displayed on the community page for users to understand the community's purpose.
    *
-   * @x-autobe-database-schema-property description
-   * @x-autobe-specification Direct mapping from reddit_clone_communities.description.
+     * @x-autobe-database-schema-property description
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_communities.description.
    */
   description: string;
 
@@ -46,8 +50,9 @@ export type IRedditCloneCommunity = {
    *
    * The icon is displayed alongside the community name in lists, headers, and navigation. Provides visual identification for the community. This field may be null if no icon has been set.
    *
-   * @x-autobe-database-schema-property icon
-   * @x-autobe-specification Direct mapping from reddit_clone_communities.icon. Nullable field storing URI.
+     * @x-autobe-database-schema-property icon
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_communities.icon. Nullable field storing URI.
    */
   icon: (string & tags.Format<"uri">) | null;
 
@@ -56,8 +61,10 @@ export type IRedditCloneCommunity = {
    *
    * The owner is the user who created the community and has the highest authority within it. Owners can add and remove moderators, and have full control over community settings and content.
    *
-   * @x-autobe-database-schema-property owner
-   * @x-autobe-specification JOIN from reddit_clone_communities.owner_id to reddit_clone_user_profiles.id. Returns IRedditCloneUserProfile.ISummary object with display_name, bio, avatar, karma, created_at.
+     * @x-autobe-database-schema-property owner
+     * @x-autobe-specification JOIN from reddit_clone_communities.owner_id to
+     *   reddit_clone_user_profiles.id. Returns IRedditCloneUserProfile.ISummary
+     *   object with display_name, bio, avatar, karma, created_at.
    */
   owner: IRedditCloneUserProfile.ISummary;
 
@@ -66,7 +73,9 @@ export type IRedditCloneCommunity = {
    *
    * This field reflects the current count of active subscriptions to the community and is updated in real time. Used to display community popularity and membership size.
    *
-   * @x-autobe-specification Computed via COUNT(*) from reddit_clone_community_subscriptions WHERE community_id = id AND deleted_at IS NULL. Aggregation query executed at response time.
+     * @x-autobe-specification Computed via COUNT(*) from
+     *   reddit_clone_community_subscriptions WHERE community_id = id AND
+     *   deleted_at IS NULL. Aggregation query executed at response time.
    */
   subscriber_count: number & tags.Type<"int32">;
 
@@ -75,8 +84,9 @@ export type IRedditCloneCommunity = {
    *
    * Records the exact date and time when the community entity was first created. Used for sorting communities by creation date and tracking community age.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from reddit_clone_communities.created_at. DateTime with timezone.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_communities.created_at. DateTime with timezone.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -85,8 +95,9 @@ export type IRedditCloneCommunity = {
    *
    * Tracks the most recent modification to community metadata including name, description, or icon changes.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from reddit_clone_communities.updated_at. DateTime with timezone.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_communities.updated_at. DateTime with timezone.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -95,8 +106,10 @@ export type IRedditCloneCommunity = {
    *
    * Nullable field for soft-delete functionality. When set, the community is marked as deleted but data is retained for potential recovery or audit purposes. Communities with deleted_at set are excluded from normal queries.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from reddit_clone_communities.deleted_at. Nullable DateTime with timezone for soft-delete.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_communities.deleted_at. Nullable DateTime with timezone
+     *   for soft-delete.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -131,7 +144,11 @@ export namespace IRedditCloneCommunity {
      *
      * Performs case-insensitive partial matching on community names. For example, searching "tech" returns communities with names containing "tech" in any case (e.g., "Technology", "TechNews", "MyTechBlog"). Leave empty to retrieve all communities.
      *
-     * @x-autobe-specification Query parameter for case-insensitive partial text search on community name field. Implementation: WHERE name ILIKE '%' || search || '%' in SQL query. Empty or null search returns all communities. Search is applied after soft-delete filter.
+         * @x-autobe-specification Query parameter for case-insensitive partial
+         *   text search on community name field. Implementation: WHERE name
+         *   ILIKE '%' || search || '%' in SQL query. Empty or null search
+         *   returns all communities. Search is applied after soft-delete
+         *   filter.
      */
     search?: string | undefined;
 
@@ -140,7 +157,10 @@ export namespace IRedditCloneCommunity {
      *
      * Indicates which page of results to retrieve. Page numbering starts from 1 (not 0). For example, page=1 returns the first set of results, page=2 returns the second set. Default is page 1 if not specified.
      *
-     * @x-autobe-specification 1-indexed page number for pagination. Implementation: OFFSET = (page - 1) * limit. Minimum value is 1. Default is 1 if not provided. Used with LIMIT clause for result set pagination.
+         * @x-autobe-specification 1-indexed page number for pagination.
+         *   Implementation: OFFSET = (page - 1) * limit. Minimum value is 1.
+         *   Default is 1 if not provided. Used with LIMIT clause for result set
+         *   pagination.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -149,7 +169,10 @@ export namespace IRedditCloneCommunity {
      *
      * Controls how many results appear on each page. Minimum is 1, maximum is 100. Larger values return more results per request but may increase response time. Default is typically around 20 communities per page.
      *
-     * @x-autobe-specification Maximum number of records per page. Implementation: LIMIT clause in SQL. Minimum 1, maximum 100. Default is typically 20 or similar reasonable value. Controls result set size for each page.
+         * @x-autobe-specification Maximum number of records per page.
+         *   Implementation: LIMIT clause in SQL. Minimum 1, maximum 100.
+         *   Default is typically 20 or similar reasonable value. Controls
+         *   result set size for each page.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -160,7 +183,10 @@ export namespace IRedditCloneCommunity {
      *
      * Valid sort fields are: 'name' for alphabetical ordering, 'subscriber_count' for popularity-based ordering (most subscribers first), or 'created_at' for chronological ordering (newest or oldest first depending on direction). Default is 'created_at'.
      *
-     * @x-autobe-specification Field name for sorting results. Valid values: 'name' (alphabetical), 'subscriber_count' (by popularity), 'created_at' (by age). Implementation: ORDER BY {sort} {direction}. Default is 'created_at' if not provided.
+         * @x-autobe-specification Field name for sorting results. Valid values:
+         *   'name' (alphabetical), 'subscriber_count' (by popularity),
+         *   'created_at' (by age). Implementation: ORDER BY {sort} {direction}.
+         *   Default is 'created_at' if not provided.
      */
     sort?: string | undefined;
 
@@ -169,7 +195,10 @@ export namespace IRedditCloneCommunity {
      *
      * Choose 'ASC' for ascending order (A-Z, oldest first, lowest count first) or 'DESC' for descending order (Z-A, newest first, highest count first). Default is 'DESC' (descending). For example, with sort='created_at' and direction='DESC', newest communities appear first.
      *
-     * @x-autobe-specification Sort direction for the specified sort field. Valid values: 'ASC' (ascending) or 'DESC' (descending). Implementation: ORDER BY {sort} {direction}. Default is 'DESC' if not provided. Must match oneOf constraint.
+         * @x-autobe-specification Sort direction for the specified sort field.
+         *   Valid values: 'ASC' (ascending) or 'DESC' (descending).
+         *   Implementation: ORDER BY {sort} {direction}. Default is 'DESC' if
+         *   not provided. Must match oneOf constraint.
      */
     direction?: "ASC" | "DESC" | undefined;
   };

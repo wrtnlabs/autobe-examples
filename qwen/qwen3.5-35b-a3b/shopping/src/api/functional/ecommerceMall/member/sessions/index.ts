@@ -22,7 +22,10 @@ import { IPageIEcommerceMallGuestSession } from "../../../../structures/IPageIEc
  * @param props.body Search criteria for session queries including actor_type filter (enum), created_at range (start/end), expired_at range (start/end), IP address patterns, session status filter, pagination parameters (page, pageSize), and sorting options (sortBy, sortOrder). Actor_type must be one of: member, seller, administrator, superAdministrator, guest. Pagination defaults to page=1, pageSize=20 with range 1-100. Session status can be filtered by active, expiring, expired, or left null for all statuses. SortBy options: created_at, expired_at. SortOrder: asc, desc (default desc).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query session records across all session tables (member_sessions, seller_sessions, administrator_sessions, super_administrator_sessions, guest_sessions) using union type or UNION queries.
+ * @x-autobe-specification Query session records across all session tables
+ *   (member_sessions, seller_sessions, administrator_sessions,
+ *   super_administrator_sessions, guest_sessions) using union type or UNION
+ *   queries.
  *
  * Apply filters on actor_type (enum: member, seller, administrator, superAdministrator, guest), expiration time ranges (created_at, expired_at), IP address patterns, and session status (active, expiring, expired).
  * Join with corresponding actor tables to resolve actor email addresses and display names (member name for customers, shop name for sellers, email for admins).
@@ -130,18 +133,21 @@ export namespace index {
  * @param props.sessionId UUID identifier of the session to retrieve.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification 1. Validate sessionId is a valid UUID format
- * 2. Query session record by ID across the appropriate session table (member/seller/administrator/super_administrator/guest)
- * 3. Determine session type from the session record (check the actor reference)
- * 4. Validate session is not soft-deleted (deleted_at IS NULL)
- * 5. Validate session is not expired (expired_at > current time)
- * 6. If session not found, not expired, or soft-deleted: return 404 Not Found
- * 7. Check authorization:
- *    - If authenticated user: only return session if the session belongs to the requesting user (actor_id matches authenticated user ID)
- *    - If admin/super_admin: allow viewing any session (for support/security purposes)
- * 8. Return session details excluding sensitive data (access_token, refresh_token) from the response
- * 9. Include: id, actor_id (type-specific), actor_type (member/seller/administrator/super_administrator/guest), ip, href, referrer, created_at, updated_at, expired_at
- * 10. Do NOT include access_token or refresh_token in the response (security)
+ * @x-autobe-specification 1. Validate sessionId is a valid UUID format 2. Query
+ *   session record by ID across the appropriate session table
+ *   (member/seller/administrator/super_administrator/guest) 3. Determine
+ *   session type from the session record (check the actor reference) 4.
+ *   Validate session is not soft-deleted (deleted_at IS NULL) 5. Validate
+ *   session is not expired (expired_at > current time) 6. If session not found,
+ *   not expired, or soft-deleted: return 404 Not Found 7. Check authorization:
+ *   - If authenticated user: only return session if the session belongs to the
+ *   requesting user (actor_id matches authenticated user ID) - If
+ *   admin/super_admin: allow viewing any session (for support/security
+ *   purposes) 8. Return session details excluding sensitive data (access_token,
+ *   refresh_token) from the response 9. Include: id, actor_id (type-specific),
+ *   actor_type (member/seller/administrator/super_administrator/guest), ip,
+ *   href, referrer, created_at, updated_at, expired_at 10. Do NOT include
+ *   access_token or refresh_token in the response (security)
  *
  * Edge cases:
  * - Session expired but not yet soft-deleted: return 404

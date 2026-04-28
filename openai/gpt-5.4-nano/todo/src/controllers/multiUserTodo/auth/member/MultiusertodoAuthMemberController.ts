@@ -22,9 +22,9 @@ export class MultiusertodoAuthMemberController {
    *
    * @param connection
    * @param body Member registration payload as defined by IMultiUserTodoMember.IJoin.
-   * @x-autobe-authorization-type join
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement member registration endpoint.
+     * @x-autobe-authorization-type join
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implement member registration endpoint.
    *
    * - Accept request body matching IMultiUserTodoMember.IJoin.
    * - Validate payload according to the DTO constraints.
@@ -64,9 +64,9 @@ export class MultiusertodoAuthMemberController {
    *
    * @param connection
    * @param body Member login credentials as defined by IMultiUserTodoMember.ILogin.
-   * @x-autobe-authorization-type login
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement member login endpoint.
+     * @x-autobe-authorization-type login
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implement member login endpoint.
    *
    * - Accept request body matching IMultiUserTodoMember.ILogin.
    * - Validate DTO payload.
@@ -106,9 +106,9 @@ export class MultiusertodoAuthMemberController {
    *
    * @param connection
    * @param body Member refresh payload as defined by IMultiUserTodoMember.IRefresh.
-   * @x-autobe-authorization-type refresh
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement member refresh endpoint.
+     * @x-autobe-authorization-type refresh
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implement member refresh endpoint.
    *
    * - Accept request body matching IMultiUserTodoMember.IRefresh.
    * - Validate DTO payload.

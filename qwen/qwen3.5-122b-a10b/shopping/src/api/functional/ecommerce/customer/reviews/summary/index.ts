@@ -32,7 +32,8 @@ import { IPageIEcommerceReview } from "../../../../../structures/IPageIEcommerce
  * @param props.body Search criteria including product ID filter, customer ID filter, pagination parameters (page, limit), and sorting options.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Query ecommerce_reviews table with pagination and filtering.
+ * @x-autobe-specification Query ecommerce_reviews table with pagination and
+ *   filtering.
  *
  * Filter by product_id or customer_id if provided in the request body.
  * Exclude reviews where deleted_at is not null (soft-deleted reviews).

@@ -13,47 +13,61 @@ export type IEcommerceMallProductVariantSnapshot = {
   /**
    * Unique identifier for this variant snapshot record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_product_variant_snapshots.id. UUID primary key assigned at snapshot creation time.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_product_variant_snapshots.id. UUID primary key assigned
+     *   at snapshot creation time.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Reference to the parent product variant that was snapshotted.
    *
-   * @x-autobe-database-schema-property product_variant_id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_product_variant_snapshots.product_variant_id. References the parent product variant this snapshot belongs to.
+     * @x-autobe-database-schema-property product_variant_id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_product_variant_snapshots.product_variant_id. References
+     *   the parent product variant this snapshot belongs to.
    */
   productVariantId: string & tags.Format<"uuid">;
 
   /**
    * Stock Keeping Unit code of the variant at the time the snapshot was taken.
    *
-   * @x-autobe-database-schema-property sku_code
-   * @x-autobe-specification Direct mapping from ecommerce_mall_product_variant_snapshots.sku_code. Captured at the moment of snapshot creation to preserve historical SKU value.
+     * @x-autobe-database-schema-property sku_code
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_product_variant_snapshots.sku_code. Captured at the
+     *   moment of snapshot creation to preserve historical SKU value.
    */
   skuCode: string;
 
   /**
    * Price of the variant at the time the snapshot was taken.
    *
-   * @x-autobe-database-schema-property price
-   * @x-autobe-specification Direct mapping from ecommerce_mall_product_variant_snapshots.price. Represents the variant-specific price in decimal format at snapshot creation.
+     * @x-autobe-database-schema-property price
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_product_variant_snapshots.price. Represents the
+     *   variant-specific price in decimal format at snapshot creation.
    */
   price: number;
 
   /**
    * Timestamp when this snapshot was created. Immutable snapshots are append-only.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_product_variant_snapshots.created_at. Timestamptz value indicating when this immutable snapshot was created.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_product_variant_snapshots.created_at. Timestamptz value
+     *   indicating when this immutable snapshot was created.
    */
   createdAt: string & tags.Format<"date-time">;
 
   /**
    * Option values captured at the time of snapshot, such as color and size configurations.
    *
-   * @x-autobe-specification Composition relation joining to ecommerce_mall_product_variant_snapshot_option_values child table on ecommerce_mall_product_variant_snapshot_id FK. Returns array of IEcommerceMallProductVariantSnapshotOptionValue representing option key-value pairs captured at snapshot time.
+     * @x-autobe-specification Composition relation joining to
+     *   ecommerce_mall_product_variant_snapshot_option_values child table on
+     *   ecommerce_mall_product_variant_snapshot_id FK. Returns array of
+     *   IEcommerceMallProductVariantSnapshotOptionValue representing option
+     *   key-value pairs captured at snapshot time.
    */
   optionValues: IEcommerceMallProductVariantSnapshotOptionValue[];
 };
@@ -65,14 +79,18 @@ export namespace IEcommerceMallProductVariantSnapshot {
     /**
      * Page number for pagination (1-indexed).
      *
-     * @x-autobe-specification Pagination parameter. 1-indexed page number. Used to calculate SQL OFFSET as (page - 1) * limit. Default value 1 when not specified.
+         * @x-autobe-specification Pagination parameter. 1-indexed page number.
+         *   Used to calculate SQL OFFSET as (page - 1) * limit. Default value 1
+         *   when not specified.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of records per page (1-100).
      *
-     * @x-autobe-specification Pagination parameter. Maximum number of records to return per page. Used in SQL LIMIT clause. Valid range 1-100. Default value 10 when not specified.
+         * @x-autobe-specification Pagination parameter. Maximum number of
+         *   records to return per page. Used in SQL LIMIT clause. Valid range
+         *   1-100. Default value 10 when not specified.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -81,14 +99,20 @@ export namespace IEcommerceMallProductVariantSnapshot {
     /**
      * Filter snapshots created on or after this timestamp (ISO 8601).
      *
-     * @x-autobe-specification Date filter parameter mapped to ecommerce_mall_product_variant_snapshots.created_at column. Query filters snapshots where created_at >= createdAtFrom. ISO 8601 format. Optional - omit for no lower bound.
+         * @x-autobe-specification Date filter parameter mapped to
+         *   ecommerce_mall_product_variant_snapshots.created_at column. Query
+         *   filters snapshots where created_at >= createdAtFrom. ISO 8601
+         *   format. Optional - omit for no lower bound.
      */
     createdAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Filter snapshots created on or before this timestamp (ISO 8601).
      *
-     * @x-autobe-specification Date filter parameter mapped to ecommerce_mall_product_variant_snapshots.created_at column. Query filters snapshots where created_at <= createdAtTo. ISO 8601 format. Optional - omit for no upper bound.
+         * @x-autobe-specification Date filter parameter mapped to
+         *   ecommerce_mall_product_variant_snapshots.created_at column. Query
+         *   filters snapshots where created_at <= createdAtTo. ISO 8601 format.
+         *   Optional - omit for no upper bound.
      */
     createdAtTo?: (string & tags.Format<"date-time">) | undefined;
   };
@@ -98,28 +122,28 @@ export namespace IEcommerceMallProductVariantSnapshot {
    */
   export type ISummary = {
     /**
-     * @x-autobe-database-schema-property id
+         * @x-autobe-database-schema-property id
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * SKU code of the variant at the time of snapshot
      *
-     * @x-autobe-database-schema-property sku_code
+         * @x-autobe-database-schema-property sku_code
      */
     skuCode: string;
 
     /**
      * Price of the variant at the time of snapshot
      *
-     * @x-autobe-database-schema-property price
+         * @x-autobe-database-schema-property price
      */
     price: number;
 
     /**
      * Timestamp when this snapshot was created
      *
-     * @x-autobe-database-schema-property created_at
+         * @x-autobe-database-schema-property created_at
      */
     createdAt: string & tags.Format<"date-time">;
 
@@ -134,19 +158,19 @@ export namespace IEcommerceMallProductVariantSnapshot {
    */
   export type IInvert = {
     /**
-     * @x-autobe-database-schema-property id
+         * @x-autobe-database-schema-property id
      */
     id: string & tags.Format<"uuid">;
     /**
-     * @x-autobe-database-schema-property sku_code
+         * @x-autobe-database-schema-property sku_code
      */
     skuCode: string;
     /**
-     * @x-autobe-database-schema-property price
+         * @x-autobe-database-schema-property price
      */
     price: number;
     /**
-     * @x-autobe-database-schema-property created_at
+         * @x-autobe-database-schema-property created_at
      */
     createdAt: string & tags.Format<"date-time">;
     optionValues: IEcommerceMallProductVariantSnapshotOptionValue[];
@@ -160,21 +184,34 @@ export namespace IEcommerceMallProductVariantSnapshot {
     /**
      * The earlier snapshot state in the comparison, containing the original values before any changes occurred.
      *
-     * @x-autobe-specification Query the first snapshot by ID from ecommerce_mall_product_variant_snapshots table, JOIN with ecommerce_mall_product_variant_snapshot_option_values to get option key-value pairs. Structure as ISnapshotDatum with id, sku_code, price, created_at, and optionValues object.
+         * @x-autobe-specification Query the first snapshot by ID from
+         *   ecommerce_mall_product_variant_snapshots table, JOIN with
+         *   ecommerce_mall_product_variant_snapshot_option_values to get option
+         *   key-value pairs. Structure as ISnapshotDatum with id, sku_code,
+         *   price, created_at, and optionValues object.
      */
     before: ISnapshotDatum;
 
     /**
      * The later snapshot state in the comparison, containing the values after changes were applied.
      *
-     * @x-autobe-specification Query the second snapshot by ID from ecommerce_mall_product_variant_snapshots table, JOIN with ecommerce_mall_product_variant_snapshot_option_values to get option key-value pairs. Structure as ISnapshotDatum with id, sku_code, price, created_at, and optionValues object.
+         * @x-autobe-specification Query the second snapshot by ID from
+         *   ecommerce_mall_product_variant_snapshots table, JOIN with
+         *   ecommerce_mall_product_variant_snapshot_option_values to get option
+         *   key-value pairs. Structure as ISnapshotDatum with id, sku_code,
+         *   price, created_at, and optionValues object.
      */
     after: ISnapshotDatum;
 
     /**
      * An array of field-level differences detected between the before and after snapshots, each entry indicating what changed and the old versus new values.
      *
-     * @x-autobe-specification Compute field-level differences by comparing before and after ISnapshotDatum objects: 1) Compare sku_code strings, 2) Compare price numbers, 3) Compare optionValues objects (key-value pairs) to identify added/removed/changed options. For each difference found, create an IDifferenceEntry with field name, oldValue, and newValue.
+         * @x-autobe-specification Compute field-level differences by comparing
+         *   before and after ISnapshotDatum objects: 1) Compare sku_code
+         *   strings, 2) Compare price numbers, 3) Compare optionValues objects
+         *   (key-value pairs) to identify added/removed/changed options. For
+         *   each difference found, create an IDifferenceEntry with field name,
+         *   oldValue, and newValue.
      */
     differences: IDifferenceEntry[];
   };

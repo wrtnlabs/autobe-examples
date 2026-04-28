@@ -10,64 +10,82 @@ export type IErpHrmTimeMemberEmailVerification = {
   /**
    * Unique identifier of the email verification record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from erp_hrm_time_member_email_verifications.id. Persisted UUID primary key for the verification record.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_member_email_verifications.id. Persisted UUID primary key
+     *   for the verification record.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Member account that owns this email verification record.
    *
-   * @x-autobe-database-schema-property member
-   * @x-autobe-specification Hydrate from the belongs-to relation member, joined through member_id to the related member record. Expose the member as an IErpHrmTimeMember.ISummary payload in read responses.
+     * @x-autobe-database-schema-property member
+     * @x-autobe-specification Hydrate from the belongs-to relation member,
+     *   joined through member_id to the related member record. Expose the
+     *   member as an IErpHrmTimeMember.ISummary payload in read responses.
    */
   member: IErpHrmTimeMember.ISummary;
 
   /**
    * Secret token used to verify ownership of the member email address.
    *
-   * @x-autobe-database-schema-property token
-   * @x-autobe-specification Direct mapping from erp_hrm_time_member_email_verifications.token. Preserve the stored verification token exactly as persisted.
+     * @x-autobe-database-schema-property token
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_member_email_verifications.token. Preserve the stored
+     *   verification token exactly as persisted.
    */
   token: string;
 
   /**
    * Timestamp when this verification token expires.
    *
-   * @x-autobe-database-schema-property expires_at
-   * @x-autobe-specification Direct mapping from erp_hrm_time_member_email_verifications.expires_at. Preserve the stored expiration timestamp exactly as persisted.
+     * @x-autobe-database-schema-property expires_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_member_email_verifications.expires_at. Preserve the stored
+     *   expiration timestamp exactly as persisted.
    */
   expiresAt: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the token was successfully consumed, or null if it has not been verified yet.
    *
-   * @x-autobe-database-schema-property verified_at
-   * @x-autobe-specification Direct mapping from erp_hrm_time_member_email_verifications.verified_at. The database value is nullable, so the DTO must allow either an ISO date-time or null without additional transformation.
+     * @x-autobe-database-schema-property verified_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_member_email_verifications.verified_at. The database value
+     *   is nullable, so the DTO must allow either an ISO date-time or null
+     *   without additional transformation.
    */
   verifiedAt: (string & tags.Format<"date-time">) | null;
 
   /**
    * Timestamp when this verification record was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from erp_hrm_time_member_email_verifications.created_at. Preserve the stored creation timestamp exactly as persisted.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_member_email_verifications.created_at. Preserve the stored
+     *   creation timestamp exactly as persisted.
    */
   createdAt: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when this verification record was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from erp_hrm_time_member_email_verifications.updated_at. Preserve the stored update timestamp exactly as persisted.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_member_email_verifications.updated_at. Preserve the stored
+     *   update timestamp exactly as persisted.
    */
   updatedAt: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when this verification record was soft deleted, or null if it is active.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from erp_hrm_time_member_email_verifications.deleted_at. The database value is nullable, so the DTO must allow either an ISO date-time or null without additional transformation.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_member_email_verifications.deleted_at. The database value
+     *   is nullable, so the DTO must allow either an ISO date-time or null
+     *   without additional transformation.
    */
   deletedAt: (string & tags.Format<"date-time">) | null;
 };
@@ -79,56 +97,69 @@ export namespace IErpHrmTimeMemberEmailVerification {
     /**
      * Unique identifier for the email verification record.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from erp_hrm_time_member_email_verifications.id. Unique UUID primary key for the verification record.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_member_email_verifications.id. Unique UUID primary key
+         *   for the verification record.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Member account that owns this verification record.
      *
-     * @x-autobe-database-schema-property member
-     * @x-autobe-specification Join erp_hrm_time_member_email_verifications.member_id to erp_hrm_time_members.id and expose the related member as IErpHrmTimeMember.ISummary.
+         * @x-autobe-database-schema-property member
+         * @x-autobe-specification Join
+         *   erp_hrm_time_member_email_verifications.member_id to
+         *   erp_hrm_time_members.id and expose the related member as
+         *   IErpHrmTimeMember.ISummary.
      */
     member: IErpHrmTimeMember.ISummary;
 
     /**
      * When this verification token expires.
      *
-     * @x-autobe-database-schema-property expires_at
-     * @x-autobe-specification Direct mapping from erp_hrm_time_member_email_verifications.expires_at. Use the stored expiration timestamp as-is.
+         * @x-autobe-database-schema-property expires_at
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_member_email_verifications.expires_at. Use the stored
+         *   expiration timestamp as-is.
      */
     expiresAt: string & tags.Format<"date-time">;
 
     /**
      * When the verification was completed, or null if it has not been verified yet.
      *
-     * @x-autobe-database-schema-property verified_at
-     * @x-autobe-specification Direct mapping from erp_hrm_time_member_email_verifications.verified_at. Preserve null when the token has not been consumed.
+         * @x-autobe-database-schema-property verified_at
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_member_email_verifications.verified_at. Preserve null
+         *   when the token has not been consumed.
      */
     verifiedAt: (string & tags.Format<"date-time">) | null;
 
     /**
      * When this verification record was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from erp_hrm_time_member_email_verifications.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_member_email_verifications.created_at.
      */
     createdAt: string & tags.Format<"date-time">;
 
     /**
      * When this verification record was last updated.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from erp_hrm_time_member_email_verifications.updated_at.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_member_email_verifications.updated_at.
      */
     updatedAt: string & tags.Format<"date-time">;
 
     /**
      * When this verification record was soft deleted, or null if it is active.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from erp_hrm_time_member_email_verifications.deleted_at. Preserve null when the record is active.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_member_email_verifications.deleted_at. Preserve null
+         *   when the record is active.
      */
     deletedAt: (string & tags.Format<"date-time">) | null;
   };
@@ -140,77 +171,94 @@ export namespace IErpHrmTimeMemberEmailVerification {
     /**
      * Member account filter for browsing verification records.
      *
-     * @x-autobe-specification Use as a request-side filter for the verification record owner. The service must validate this against the authenticated member context and ignore any value that would violate access rules.
+         * @x-autobe-specification Use as a request-side filter for the
+         *   verification record owner. The service must validate this against
+         *   the authenticated member context and ignore any value that would
+         *   violate access rules.
      */
     memberId?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Verification completion timestamp filter.
      *
-     * @x-autobe-specification Use as a request-side filter for verification state. Null means unverified records; a timestamp narrows results to records verified at that time.
+         * @x-autobe-specification Use as a request-side filter for verification
+         *   state. Null means unverified records; a timestamp narrows results
+         *   to records verified at that time.
      */
     verifiedAt?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * Verification expiration timestamp filter.
      *
-     * @x-autobe-specification Use as a request-side filter for expiration state. Null means records without an expiration timestamp; a timestamp narrows results to a specific expiration instant.
+         * @x-autobe-specification Use as a request-side filter for expiration
+         *   state. Null means records without an expiration timestamp; a
+         *   timestamp narrows results to a specific expiration instant.
      */
     expiresAt?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * Soft-delete timestamp filter.
      *
-     * @x-autobe-specification Use as a request-side filter for soft-delete state. Null returns active records; a timestamp narrows results to soft-deleted records or revoked entries.
+         * @x-autobe-specification Use as a request-side filter for soft-delete
+         *   state. Null returns active records; a timestamp narrows results to
+         *   soft-deleted records or revoked entries.
      */
     deletedAt?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * Start of the created-at range.
      *
-     * @x-autobe-specification Apply this value as the inclusive lower bound for the verification record created-at range.
+         * @x-autobe-specification Apply this value as the inclusive lower bound
+         *   for the verification record created-at range.
      */
     createdAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * End of the created-at range.
      *
-     * @x-autobe-specification Apply this value as the inclusive upper bound for the verification record created-at range.
+         * @x-autobe-specification Apply this value as the inclusive upper bound
+         *   for the verification record created-at range.
      */
     createdAtTo?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Start of the expires-at range.
      *
-     * @x-autobe-specification Apply this value as the inclusive lower bound for the verification record expires-at range.
+         * @x-autobe-specification Apply this value as the inclusive lower bound
+         *   for the verification record expires-at range.
      */
     expiresAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * End of the expires-at range.
      *
-     * @x-autobe-specification Apply this value as the inclusive upper bound for the verification record expires-at range.
+         * @x-autobe-specification Apply this value as the inclusive upper bound
+         *   for the verification record expires-at range.
      */
     expiresAtTo?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Sort order for the results.
      *
-     * @x-autobe-specification Use as the ordering expression for the list query. Default to newest-first by created_at descending when omitted.
+         * @x-autobe-specification Use as the ordering expression for the list
+         *   query. Default to newest-first by created_at descending when
+         *   omitted.
      */
     sort?: string | undefined;
 
     /**
      * Page number to retrieve.
      *
-     * @x-autobe-specification Use as the 1-indexed page number for paginated browsing of verification records.
+         * @x-autobe-specification Use as the 1-indexed page number for
+         *   paginated browsing of verification records.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of records to return per page.
      *
-     * @x-autobe-specification Use as the maximum number of records per page, constrained by validation rules.
+         * @x-autobe-specification Use as the maximum number of records per
+         *   page, constrained by validation rules.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)

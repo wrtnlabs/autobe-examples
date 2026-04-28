@@ -28,8 +28,9 @@ export type IHrmEmployee = {
    *
    * This is the primary key for the member account, generated as a UUID when the account is created. It remains constant throughout the member's lifecycle and is used to reference the member in all related operations across the system.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from hrm_members.id. UUID primary key, non-null, auto-generated on account creation.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from hrm_members.id. UUID primary
+     *   key, non-null, auto-generated on account creation.
    */
   id: string & tags.Format<"uuid">;
 
@@ -38,8 +39,10 @@ export type IHrmEmployee = {
    *
    * This field serves as the primary identifier for member login. It must be unique across all member accounts and is used for authentication, password reset, and email verification flows. The email cannot be changed after account creation without a verification process.
    *
-   * @x-autobe-database-schema-property email
-   * @x-autobe-specification Direct mapping from hrm_members.email. Unique constraint enforced at database level. Used for authentication, password reset, and email verification flows.
+     * @x-autobe-database-schema-property email
+     * @x-autobe-specification Direct mapping from hrm_members.email. Unique
+     *   constraint enforced at database level. Used for authentication,
+     *   password reset, and email verification flows.
    */
   email: string & tags.Format<"email">;
 
@@ -48,8 +51,10 @@ export type IHrmEmployee = {
    *
    * This field records the exact date and time when the member account was initially created. It is set automatically during account registration and cannot be modified. Used for audit trails, account age calculations, and compliance purposes. Stored with timezone information (UTC).
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from hrm_members.created_at. DateTime with timezone (timestamptz). Set automatically upon account registration, non-null.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from hrm_members.created_at.
+     *   DateTime with timezone (timestamptz). Set automatically upon account
+     *   registration, non-null.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -58,8 +63,10 @@ export type IHrmEmployee = {
    *
    * This field records the date and time of the most recent modification to the member account. It is automatically updated whenever any field in the account is changed. Used for tracking account changes, synchronization, and debugging purposes. Stored with timezone information (UTC).
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from hrm_members.updated_at. DateTime with timezone (timestamptz). Automatically updated on any modification to the account record.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from hrm_members.updated_at.
+     *   DateTime with timezone (timestamptz). Automatically updated on any
+     *   modification to the account record.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -68,8 +75,10 @@ export type IHrmEmployee = {
    *
    * This field implements soft delete functionality for member accounts. When null, the account is active. When set to a timestamp, the account is considered deleted but data is retained for audit compliance and potential recovery. The account can be restored by setting this field back to null, subject to business rules around organization ownership and employee records.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from hrm_members.deleted_at. DateTime with timezone (timestamptz), nullable. Null value indicates active account, non-null indicates soft-deleted account.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from hrm_members.deleted_at.
+     *   DateTime with timezone (timestamptz), nullable. Null value indicates
+     *   active account, non-null indicates soft-deleted account.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -106,8 +115,9 @@ export namespace IHrmEmployee {
      * - Foreign key reference in related entities
      * - Immutable once assigned
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from hrm_employees.id. UUID format, primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from hrm_employees.id. UUID
+         *   format, primary key.
      */
     id: string & tags.Format<"uuid">;
 
@@ -121,8 +131,9 @@ export namespace IHrmEmployee {
      * - Filtering and search by job function
      * - Reporting and organizational analysis
      *
-     * @x-autobe-database-schema-property position
-     * @x-autobe-specification Direct mapping from hrm_employees.position. String, required.
+         * @x-autobe-database-schema-property position
+         * @x-autobe-specification Direct mapping from hrm_employees.position.
+         *   String, required.
      */
     position: string;
 
@@ -142,8 +153,10 @@ export namespace IHrmEmployee {
      * - Benefits eligibility determination
      * - Compliance reporting
      *
-     * @x-autobe-database-schema-property employment_type
-     * @x-autobe-specification Direct mapping from hrm_employees.employment_type. Enum: full-time, part-time, contractor, intern.
+         * @x-autobe-database-schema-property employment_type
+         * @x-autobe-specification Direct mapping from
+         *   hrm_employees.employment_type. Enum: full-time, part-time,
+         *   contractor, intern.
      */
     employment_type: string;
 
@@ -161,8 +174,9 @@ export namespace IHrmEmployee {
      * - Employee list filtering (show only active employees)
      * - Audit trail for employment lifecycle
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from hrm_employees.status. Enum: active, deactivated.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from hrm_employees.status.
+         *   Enum: active, deactivated.
      */
     status: string;
 
@@ -176,8 +190,10 @@ export namespace IHrmEmployee {
      * - Link to user profile for detailed information
      * - Authentication context for employee actions
      *
-     * @x-autobe-database-schema-property user
-     * @x-autobe-specification JOIN from hrm_employees.user_id to hrm_members.id. Returns IHrmMember.ISummary via belongs-to relation.
+         * @x-autobe-database-schema-property user
+         * @x-autobe-specification JOIN from hrm_employees.user_id to
+         *   hrm_members.id. Returns IHrmMember.ISummary via belongs-to
+         *   relation.
      */
     user: IHrmMember.ISummary;
 
@@ -191,8 +207,10 @@ export namespace IHrmEmployee {
      * - Filter employees by organization in multi-tenant scenarios
      * - Validate organization-level permissions
      *
-     * @x-autobe-database-schema-property organization
-     * @x-autobe-specification JOIN from hrm_employees.organization_id to hrm_organizations.id. Returns IHrmOrganization.ISummary via belongs-to relation.
+         * @x-autobe-database-schema-property organization
+         * @x-autobe-specification JOIN from hrm_employees.organization_id to
+         *   hrm_organizations.id. Returns IHrmOrganization.ISummary via
+         *   belongs-to relation.
      */
     organization: IHrmOrganization.ISummary;
 
@@ -206,8 +224,9 @@ export namespace IHrmEmployee {
      * - Permission checking for API operations
      * - Role-based filtering and reporting
      *
-     * @x-autobe-database-schema-property role
-     * @x-autobe-specification JOIN from hrm_employees.role_id to hrm_roles.id. Returns IHrmRole.ISummary via belongs-to relation.
+         * @x-autobe-database-schema-property role
+         * @x-autobe-specification JOIN from hrm_employees.role_id to
+         *   hrm_roles.id. Returns IHrmRole.ISummary via belongs-to relation.
      */
     role: IHrmRole.ISummary;
 
@@ -225,8 +244,11 @@ export namespace IHrmEmployee {
      * - Filter employees by department
      * - Organizational structure visualization
      *
-     * @x-autobe-database-schema-property department
-     * @x-autobe-specification LEFT JOIN from hrm_employees.department_id to hrm_departments.id. Returns IHrmDepartment.ISummary or null via belongs-to relation. Nullable because department assignment is optional.
+         * @x-autobe-database-schema-property department
+         * @x-autobe-specification LEFT JOIN from hrm_employees.department_id to
+         *   hrm_departments.id. Returns IHrmDepartment.ISummary or null via
+         *   belongs-to relation. Nullable because department assignment is
+         *   optional.
      */
     department?: IHrmDepartment.ISummary | null | undefined;
 
@@ -242,8 +264,9 @@ export namespace IHrmEmployee {
      * - Sort employees by hire date
      * - Compliance and audit reporting
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from hrm_employees.created_at. DateTime with timestamptz format.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from hrm_employees.created_at.
+         *   DateTime with timestamptz format.
      */
     created_at: string & tags.Format<"date-time">;
   };
@@ -302,7 +325,10 @@ export namespace IHrmEmployee {
      * - Search is case-insensitive
      * - Results include employees whose display name contains the search term anywhere
      *
-     * @x-autobe-specification Text search parameter for filtering employees by user display name. Performs case-insensitive LIKE query on hrm_members.display_name via JOIN with hrm_employees table. Wildcards applied automatically for partial matching.
+         * @x-autobe-specification Text search parameter for filtering employees
+         *   by user display name. Performs case-insensitive LIKE query on
+         *   hrm_members.display_name via JOIN with hrm_employees table.
+         *   Wildcards applied automatically for partial matching.
      */
     search?: string | undefined;
 
@@ -322,7 +348,10 @@ export namespace IHrmEmployee {
      * - Department hierarchy is one-level only (parent_department_id)
      * - Use GET /hrm/member/organizations/{organizationId}/departments to retrieve available departments
      *
-     * @x-autobe-specification Filter parameter mapped to hrm_employees.department_id column. Filters employees by exact department match using UUID. Employees with NULL department_id are excluded when this filter is applied.
+         * @x-autobe-specification Filter parameter mapped to
+         *   hrm_employees.department_id column. Filters employees by exact
+         *   department match using UUID. Employees with NULL department_id are
+         *   excluded when this filter is applied.
      */
     department_id?: (string & tags.Format<"uuid">) | undefined;
 
@@ -344,7 +373,9 @@ export namespace IHrmEmployee {
      * - Multiple values not supported (single value only)
      * - Combine with other filters for refined results
      *
-     * @x-autobe-specification Filter parameter mapped to hrm_employees.employment_type column. Enum filter with exact value matching. Allowed values: full-time, part-time, contractor, intern.
+         * @x-autobe-specification Filter parameter mapped to
+         *   hrm_employees.employment_type column. Enum filter with exact value
+         *   matching. Allowed values: full-time, part-time, contractor, intern.
      */
     employment_type?:
       | "full-time"
@@ -370,7 +401,9 @@ export namespace IHrmEmployee {
      * - When specified, only employees matching the status are returned
      * - Deactivated employees preserve their records but cannot log time or access protected resources
      *
-     * @x-autobe-specification Filter parameter mapped to hrm_employees.status column. Enum filter with exact value matching. Allowed values: active, deactivated.
+         * @x-autobe-specification Filter parameter mapped to
+         *   hrm_employees.status column. Enum filter with exact value matching.
+         *   Allowed values: active, deactivated.
      */
     status?: "active" | "deactivated" | undefined;
 
@@ -392,7 +425,9 @@ export namespace IHrmEmployee {
      * - pagination.current: Current page number in response
      * - pagination.pages: Total number of pages available
      *
-     * @x-autobe-specification Query parameter for pagination control. 1-indexed page number. Default: 1. Minimum: 1. Used to calculate offset as (page - 1) * pageSize.
+         * @x-autobe-specification Query parameter for pagination control.
+         *   1-indexed page number. Default: 1. Minimum: 1. Used to calculate
+         *   offset as (page - 1) * pageSize.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -420,7 +455,9 @@ export namespace IHrmEmployee {
      * - pagination.limit: Maximum records per page in response
      * - pagination.records: Total record count across all pages
      *
-     * @x-autobe-specification Query parameter for pagination control. Number of records per page. Default: 20. Minimum: 1. Maximum: 100. Used to calculate offset as (page - 1) * pageSize.
+         * @x-autobe-specification Query parameter for pagination control.
+         *   Number of records per page. Default: 20. Minimum: 1. Maximum: 100.
+         *   Used to calculate offset as (page - 1) * pageSize.
      */
     pageSize?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -455,7 +492,11 @@ export namespace IHrmEmployee {
      * - sortOrder: Sort direction (asc or desc)
      * - Default sort order is descending (newest first)
      *
-     * @x-autobe-specification Query parameter for sort field selection. Specifies which database column to sort results by. Default: created_at. Valid values include: id, position, employment_type, status, created_at, updated_at, department_id, organization_id, user_id, role_id.
+         * @x-autobe-specification Query parameter for sort field selection.
+         *   Specifies which database column to sort results by. Default:
+         *   created_at. Valid values include: id, position, employment_type,
+         *   status, created_at, updated_at, department_id, organization_id,
+         *   user_id, role_id.
      */
     sortBy?: string | undefined;
 
@@ -485,7 +526,9 @@ export namespace IHrmEmployee {
      * - sortBy: Field to sort by
      * - Default sort: created_at DESC (newest employees first)
      *
-     * @x-autobe-specification Query parameter for sort direction. Controls ascending or descending sort order. Allowed values: asc, desc. Default: desc. Applied to the sortBy field.
+         * @x-autobe-specification Query parameter for sort direction. Controls
+         *   ascending or descending sort order. Allowed values: asc, desc.
+         *   Default: desc. Applied to the sortBy field.
      */
     sortOrder?: "asc" | "desc" | undefined;
 
@@ -512,7 +555,10 @@ export namespace IHrmEmployee {
      * - pagination.limit: Maximum records per page in response
      * - pagination.records: Total record count across all pages
      *
-     * @x-autobe-specification Query parameter for pagination control. Maximum records per page. Optional field. If null or omitted, defaults to 100. Server may enforce upper bounds to prevent excessive resource consumption.
+         * @x-autobe-specification Query parameter for pagination control.
+         *   Maximum records per page. Optional field. If null or omitted,
+         *   defaults to 100. Server may enforce upper bounds to prevent
+         *   excessive resource consumption.
      */
     limit?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };

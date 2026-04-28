@@ -14,8 +14,10 @@ export type IEcommerceMallProductOverviewSeller = {
    *
    * UUID-formatted seller ID used to identify the seller in product overview listings. This ID is derived from the ecommerce_mall_sellers.id column and serves as the primary key for the aggregation join.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_sellers.id (UUID format). Serves as the aggregation join key when joining sellers with products.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from ecommerce_mall_sellers.id
+     *   (UUID format). Serves as the aggregation join key when joining sellers
+     *   with products.
    */
   seller_id: string & tags.Format<"uuid">;
 
@@ -24,8 +26,10 @@ export type IEcommerceMallProductOverviewSeller = {
    *
    * This is the name shown to customers when browsing products. It appears in product listings, seller profiles, and order confirmations. Different from the shop name, this is the personal display name of the seller.
    *
-   * @x-autobe-database-schema-property display_name
-   * @x-autobe-specification Direct mapping from ecommerce_mall_sellers.display_name. String field containing the seller's public display name.
+     * @x-autobe-database-schema-property display_name
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_sellers.display_name. String field containing the
+     *   seller's public display name.
    */
   display_name: string;
 
@@ -34,7 +38,10 @@ export type IEcommerceMallProductOverviewSeller = {
    *
    * This is a computed aggregation showing the number of products owned by the seller that are currently active (not soft-deleted). The count is calculated by joining with the ecommerce_mall_products table and counting records where deleted_at IS NULL. This metric is used for sorting sellers by catalog size in product overviews.
    *
-   * @x-autobe-specification Computed aggregation: COUNT(*) FROM ecommerce_mall_products WHERE products.seller_id = sellers.id AND products.deleted_at IS NULL. Returns integer >= 0 representing active product count.
+     * @x-autobe-specification Computed aggregation: COUNT(*) FROM
+     *   ecommerce_mall_products WHERE products.seller_id = sellers.id AND
+     *   products.deleted_at IS NULL. Returns integer >= 0 representing active
+     *   product count.
    */
   product_count: number & tags.Type<"int32"> & tags.Minimum<0>;
 };

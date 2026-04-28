@@ -22,9 +22,10 @@ export class EcommercemallAdministratorRefund_requestsController {
    *
    * @param connection
    * @param body Search criteria for filtering refund requests. Supports filtering by status, creation date range, customer, seller, and order item. Includes pagination and sorting parameters.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Query e_commerce_mall_refund_returns table with pagination, filtering, and sorting.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor administrator
+     * @x-autobe-specification Query e_commerce_mall_refund_returns table with
+     *   pagination, filtering, and sorting.
    *
    * ## Authentication & Data Isolation
    * - **Customers**: Automatically scope query by `e_commerce_mall_customer_id = current customer id`. Customers can only see their own refund requests.
@@ -82,9 +83,11 @@ export class EcommercemallAdministratorRefund_requestsController {
    *
    * @param connection
    * @param refundRequestId The unique identifier (UUID) of the refund request to retrieve.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Query e_commerce_mall_refund_requests table by id matching the refundRequestId path parameter. If no active record is found (matching id and deleted_at IS NULL), return 404 Not Found.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor administrator
+     * @x-autobe-specification Query e_commerce_mall_refund_requests table by id
+     *   matching the refundRequestId path parameter. If no active record is
+     *   found (matching id and deleted_at IS NULL), return 404 Not Found.
    *
    * Include the following columns in the response: id, e_commerce_mall_order_item_id, e_commerce_mall_customer_id, e_commerce_mall_seller_id, reason, status, response_timestamp, created_at, updated_at. The deleted_at column is excluded — only active (non-deleted) records are returned.
    *

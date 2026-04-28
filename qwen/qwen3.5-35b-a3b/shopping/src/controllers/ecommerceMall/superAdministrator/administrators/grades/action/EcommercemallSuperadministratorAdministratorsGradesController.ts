@@ -32,9 +32,10 @@ export class EcommercemallSuperadministratorAdministratorsGradesController {
    * @param connection
    * @param administratorId The ID of the administrator whose grade is being changed.
    * @param body Grade change action payload
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor superAdministrator
-   * @x-autobe-specification Process grade change action for the target administrator.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor superAdministrator
+     * @x-autobe-specification Process grade change action for the target
+     *   administrator.
    *
    * Business Rules:
    * - Only super administrators can perform grade changes

@@ -23,12 +23,13 @@ import { ITodoAppGuest } from "../../../../structures/ITodoAppGuest";
  * @param props.body Guest registration request containing device fingerprint identifier
  * @x-autobe-authorization-type join
  * @x-autobe-authorization-actor guest
- * @x-autobe-specification 1. Extract deviceFingerprint from request body
- * 2. Check if guest with this deviceFingerprint already exists in todo_app_guests table
- * 3. If exists, update lastActiveAt timestamp; if not, create new guest record with current timestamp
- * 4. Generate JWT access token and refresh token with guest identity
- * 5. Create session record in todo_app_guest_sessions with tokens and expiration
- * 6. Return tokens in IAuthorized response format
+ * @x-autobe-specification 1. Extract deviceFingerprint from request body 2.
+ *   Check if guest with this deviceFingerprint already exists in
+ *   todo_app_guests table 3. If exists, update lastActiveAt timestamp; if not,
+ *   create new guest record with current timestamp 4. Generate JWT access token
+ *   and refresh token with guest identity 5. Create session record in
+ *   todo_app_guest_sessions with tokens and expiration 6. Return tokens in
+ *   IAuthorized response format
  *
  * Edge cases:
  * - Handle duplicate device fingerprints gracefully by reusing existing guest
@@ -130,13 +131,12 @@ export namespace join {
  * @param props.body Token refresh request containing valid refresh token
  * @x-autobe-authorization-type refresh
  * @x-autobe-authorization-actor guest
- * @x-autobe-specification 1. Extract refreshToken from request body
- * 2. Validate refresh token signature and expiration
- * 3. Look up guest session in todo_app_guest_sessions table using refresh token
- * 4. Verify session is still valid and not expired
- * 5. Generate new access token and refresh token pair
- * 6. Update session record in todo_app_guest_sessions with new tokens and expiration
- * 7. Return new tokens in IAuthorized response format
+ * @x-autobe-specification 1. Extract refreshToken from request body 2. Validate
+ *   refresh token signature and expiration 3. Look up guest session in
+ *   todo_app_guest_sessions table using refresh token 4. Verify session is
+ *   still valid and not expired 5. Generate new access token and refresh token
+ *   pair 6. Update session record in todo_app_guest_sessions with new tokens
+ *   and expiration 7. Return new tokens in IAuthorized response format
  *
  * Error handling:
  * - Return 401 if refresh token is invalid or expired

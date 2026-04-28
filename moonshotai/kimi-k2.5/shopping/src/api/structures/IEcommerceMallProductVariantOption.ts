@@ -8,48 +8,60 @@ export type IEcommerceMallProductVariantOption = {
   /**
    * Unique identifier of the product variant option.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_product_variant_options.id (UUID primary key, auto-generated).
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_product_variant_options.id (UUID primary key,
+     *   auto-generated).
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Reference to the parent product variant this option belongs to.
    *
-   * @x-autobe-database-schema-property product_variant_id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_product_variant_options.product_variant_id (UUID FK to ecommerce_mall_product_variants.id).
+     * @x-autobe-database-schema-property product_variant_id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_product_variant_options.product_variant_id (UUID FK to
+     *   ecommerce_mall_product_variants.id).
    */
   productVariantId: string & tags.Format<"uuid">;
 
   /**
    * The option type or key (e.g., 'Color', 'Size', 'Material').
    *
-   * @x-autobe-database-schema-property option_name
-   * @x-autobe-specification Direct mapping from ecommerce_mall_product_variant_options.option_name (string, NOT NULL). Represents the classification dimension.
+     * @x-autobe-database-schema-property option_name
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_product_variant_options.option_name (string, NOT NULL).
+     *   Represents the classification dimension.
    */
   optionName: string;
 
   /**
    * The specific value for this option type (e.g., 'Red', 'Large', 'Cotton').
    *
-   * @x-autobe-database-schema-property option_value
-   * @x-autobe-specification Direct mapping from ecommerce_mall_product_variant_options.option_value (string, NOT NULL). Represents the concrete selection value.
+     * @x-autobe-database-schema-property option_value
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_product_variant_options.option_value (string, NOT NULL).
+     *   Represents the concrete selection value.
    */
   optionValue: string;
 
   /**
    * Timestamp when this option record was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_product_variant_options.created_at (timestamptz, auto-generated on insert).
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_product_variant_options.created_at (timestamptz,
+     *   auto-generated on insert).
    */
   createdAt: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when this option record was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_product_variant_options.updated_at (timestamptz, auto-updated on modification).
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_product_variant_options.updated_at (timestamptz,
+     *   auto-updated on modification).
    */
   updatedAt: string & tags.Format<"date-time">;
 };
@@ -61,21 +73,32 @@ export namespace IEcommerceMallProductVariantOption {
     /**
      * Filter by option name using partial text matching (case-insensitive). Matches against the option name field (e.g., 'Color', 'Size').
      *
-     * @x-autobe-specification Filter parameter that maps to ecommerce_mall_product_variant_options.option_name column. Uses partial case-insensitive matching (ILIKE '%{value}%') leveraging the gin_trgm_ops index. When provided, query filters results to options where option_name contains the specified text.
+         * @x-autobe-specification Filter parameter that maps to
+         *   ecommerce_mall_product_variant_options.option_name column. Uses
+         *   partial case-insensitive matching (ILIKE '%{value}%') leveraging
+         *   the gin_trgm_ops index. When provided, query filters results to
+         *   options where option_name contains the specified text.
      */
     optionName?: string | undefined;
 
     /**
      * Filter by option value using partial text matching (case-insensitive). Matches against the option value field (e.g., 'Red', 'Large').
      *
-     * @x-autobe-specification Filter parameter that maps to ecommerce_mall_product_variant_options.option_value column. Uses partial case-insensitive matching (ILIKE '%{value}%') leveraging the gin_trgm_ops index. When provided, query filters results to options where option_value contains the specified text.
+         * @x-autobe-specification Filter parameter that maps to
+         *   ecommerce_mall_product_variant_options.option_value column. Uses
+         *   partial case-insensitive matching (ILIKE '%{value}%') leveraging
+         *   the gin_trgm_ops index. When provided, query filters results to
+         *   options where option_value contains the specified text.
      */
     optionValue?: string | undefined;
 
     /**
      * Page number for pagination (1-based). Determines which subset of results to return.
      *
-     * @x-autobe-specification Pagination control parameter (computed, not a database column). Specifies which page of results to return (1-based indexing). Default is 1. Used with limit to calculate SQL OFFSET: OFFSET = (page - 1) * limit.
+         * @x-autobe-specification Pagination control parameter (computed, not a
+         *   database column). Specifies which page of results to return
+         *   (1-based indexing). Default is 1. Used with limit to calculate SQL
+         *   OFFSET: OFFSET = (page - 1) * limit.
      */
     page?:
       | (number & tags.Type<"int32"> & tags.Default<1> & tags.Minimum<1>)
@@ -84,7 +107,9 @@ export namespace IEcommerceMallProductVariantOption {
     /**
      * Maximum number of items to return per page (1-100).
      *
-     * @x-autobe-specification Pagination control parameter (computed, not a database column). Specifies maximum records per page. Range: 1-100, default: 20. Used in SQL LIMIT clause.
+         * @x-autobe-specification Pagination control parameter (computed, not a
+         *   database column). Specifies maximum records per page. Range: 1-100,
+         *   default: 20. Used in SQL LIMIT clause.
      */
     limit?:
       | (number &
@@ -97,14 +122,19 @@ export namespace IEcommerceMallProductVariantOption {
     /**
      * Field to sort results by. Supports 'optionName' or 'createdAt'.
      *
-     * @x-autobe-specification Sorting control parameter (computed, not a database column). Specifies sort field. 'optionName' maps to option_name column, 'createdAt' maps to created_at column. Mapped to actual column names in SQL ORDER BY clause.
+         * @x-autobe-specification Sorting control parameter (computed, not a
+         *   database column). Specifies sort field. 'optionName' maps to
+         *   option_name column, 'createdAt' maps to created_at column. Mapped
+         *   to actual column names in SQL ORDER BY clause.
      */
     sort?: "optionName" | "createdAt" | undefined;
 
     /**
      * Sort direction: 'asc' for ascending or 'desc' for descending.
      *
-     * @x-autobe-specification Sorting control parameter (computed, not a database column). Specifies sort direction: 'asc' maps to ASC, 'desc' maps to DESC in SQL ORDER BY clause.
+         * @x-autobe-specification Sorting control parameter (computed, not a
+         *   database column). Specifies sort direction: 'asc' maps to ASC,
+         *   'desc' maps to DESC in SQL ORDER BY clause.
      */
     sortOrder?: "asc" | "desc" | undefined;
   };
@@ -116,16 +146,22 @@ export namespace IEcommerceMallProductVariantOption {
     /**
      * The option type or key that classifies this variant characteristic (e.g., 'Color', 'Size', 'Material').
      *
-     * @x-autobe-database-schema-property option_name
-     * @x-autobe-specification Direct mapping from option_name column. Represents the option classification dimension (e.g., 'Color', 'Size', 'Material'). Combined with option_value must be unique per variant.
+         * @x-autobe-database-schema-property option_name
+         * @x-autobe-specification Direct mapping from option_name column.
+         *   Represents the option classification dimension (e.g., 'Color',
+         *   'Size', 'Material'). Combined with option_value must be unique per
+         *   variant.
      */
     optionName?: string | undefined;
 
     /**
      * The specific value for this option type (e.g., 'Red', 'Large', 'Cotton').
      *
-     * @x-autobe-database-schema-property option_value
-     * @x-autobe-specification Direct mapping from option_value column. Represents the specific value within the option classification (e.g., 'Red', 'Large', 'Cotton'). Combined with option_name must be unique per variant.
+         * @x-autobe-database-schema-property option_value
+         * @x-autobe-specification Direct mapping from option_value column.
+         *   Represents the specific value within the option classification
+         *   (e.g., 'Red', 'Large', 'Cotton'). Combined with option_name must be
+         *   unique per variant.
      */
     optionValue?: string | undefined;
   };
@@ -137,16 +173,23 @@ export namespace IEcommerceMallProductVariantOption {
     /**
      * The option type or attribute name (e.g., 'Color', 'Size', 'Material'). Represents the classification dimension for this variant option. Must be unique within a variant - a variant cannot have two options with the same name.
      *
-     * @x-autobe-database-schema-property option_name
-     * @x-autobe-specification Direct mapping from ecommerce_mall_product_variant_options.option_name. Non-nullable string. Must be unique per variant (enforced by DB constraint @@unique([product_variant_id, option_name])). Examples: 'Color', 'Size', 'Material'.
+         * @x-autobe-database-schema-property option_name
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_product_variant_options.option_name. Non-nullable
+         *   string. Must be unique per variant (enforced by DB constraint
+         *   @@unique([product_variant_id, option_name])). Examples: 'Color',
+         *   'Size', 'Material'.
      */
     optionName: string;
 
     /**
      * The specific value for this option type (e.g., 'Red', 'Large', 'Cotton'). Represents the concrete selection value within the option classification. Combined with optionName, uniquely identifies a variant configuration.
      *
-     * @x-autobe-database-schema-property option_value
-     * @x-autobe-specification Direct mapping from ecommerce_mall_product_variant_options.option_value. Non-nullable string. Examples: 'Red', 'Large', 'Cotton'. Paired with option_name to define a specific variant configuration.
+         * @x-autobe-database-schema-property option_value
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_product_variant_options.option_value. Non-nullable
+         *   string. Examples: 'Red', 'Large', 'Cotton'. Paired with option_name
+         *   to define a specific variant configuration.
      */
     optionValue: string;
   };
@@ -158,24 +201,29 @@ export namespace IEcommerceMallProductVariantOption {
     /**
      * Unique identifier for the product variant option.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_mall_product_variant_options.id. Primary key UUID.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_product_variant_options.id. Primary key UUID.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * The option type or key (e.g., 'Color', 'Size', 'Material').
      *
-     * @x-autobe-database-schema-property option_name
-     * @x-autobe-specification Direct mapping from ecommerce_mall_product_variant_options.option_name. Represents the classification dimension (e.g., 'Color', 'Size').
+         * @x-autobe-database-schema-property option_name
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_product_variant_options.option_name. Represents the
+         *   classification dimension (e.g., 'Color', 'Size').
      */
     optionName: string;
 
     /**
      * The specific value for this option type (e.g., 'Red', 'Large', 'Cotton').
      *
-     * @x-autobe-database-schema-property option_value
-     * @x-autobe-specification Direct mapping from ecommerce_mall_product_variant_options.option_value. Represents the concrete selection value (e.g., 'Red', 'Large').
+         * @x-autobe-database-schema-property option_value
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_product_variant_options.option_value. Represents the
+         *   concrete selection value (e.g., 'Red', 'Large').
      */
     optionValue: string;
   };

@@ -33,9 +33,10 @@ export class EcommerceSellerOrdersItemsRefund_requestsController {
    * @param orderId Unique identifier of the parent order (UUID format).
    * @param itemId Unique identifier of the order item within the order (UUID format).
    * @param body Search criteria for filtering refund requests including status, date ranges, and pagination parameters.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Query ecommerce_refund_requests table filtered by ecommerce_order_item_id.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Query ecommerce_refund_requests table filtered by
+     *   ecommerce_order_item_id.
    *
    * **Implementation Steps**
    *
@@ -104,9 +105,10 @@ export class EcommerceSellerOrdersItemsRefund_requestsController {
    * @param orderId Unique identifier of the parent order (UUID format).
    * @param itemId Unique identifier of the order item within the order (UUID format).
    * @param requestId Unique identifier of the refund request (UUID format).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Query the ecommerce_refund_requests table by primary key (id) with foreign key validation.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Query the ecommerce_refund_requests table by
+     *   primary key (id) with foreign key validation.
    *
    * **Implementation Steps**
    * 1. Validate the order exists and belongs to the authenticated customer (or is accessible by seller/admin)
@@ -171,25 +173,26 @@ export class EcommerceSellerOrdersItemsRefund_requestsController {
    * @param itemId UUID of the order item being refunded (scoped to order)
    * @param requestId UUID of the refund request to update (scoped to order item)
    * @param body Update data for the refund request including the seller's decision (approved or rejected) and optional response message or required rejection reason.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification 1. Validate path parameters: orderId (UUID), itemId (UUID), requestId (UUID)
-   * 2. Verify the refund request exists and belongs to the specified order item (ecommerce_order_item_id must match itemId, and the order item must belong to orderId)
-   * 3. Verify the refund request status is "pending" - return 409 Conflict if already approved or rejected
-   * 4. Verify authorization: the authenticated seller must own the product variant referenced by the order item
-   * 5. Validate request body:
-   *    - If status is "approved": seller_response is optional
-   *    - If status is "rejected": rejection_reason is required and must not be empty
-   * 6. Begin database transaction:
-   *    a. Update refund request: set status, responded_at, seller_response/rejection_reason
-   *    b. Create refund request snapshot with the new state
-   *    c. If status is "approved":
-   *       - Update order item status to "refunded"
-   *       - Create inventory record to restore stock quantity
-   *       - Recalculate parent order status based on all order items
-   *    d. Commit transaction
-   * 7. Return updated refund request with 200 OK
-   * 8. Handle errors: 404 Not Found (refund request or order item not found), 403 Forbidden (seller does not own the item), 409 Conflict (refund request not in pending status)
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification 1. Validate path parameters: orderId (UUID),
+     *   itemId (UUID), requestId (UUID) 2. Verify the refund request exists and
+     *   belongs to the specified order item (ecommerce_order_item_id must match
+     *   itemId, and the order item must belong to orderId) 3. Verify the refund
+     *   request status is "pending" - return 409 Conflict if already approved
+     *   or rejected 4. Verify authorization: the authenticated seller must own
+     *   the product variant referenced by the order item 5. Validate request
+     *   body: - If status is "approved": seller_response is optional - If
+     *   status is "rejected": rejection_reason is required and must not be
+     *   empty 6. Begin database transaction: a. Update refund request: set
+     *   status, responded_at, seller_response/rejection_reason b. Create refund
+     *   request snapshot with the new state c. If status is "approved": -
+     *   Update order item status to "refunded" - Create inventory record to
+     *   restore stock quantity - Recalculate parent order status based on all
+     *   order items d. Commit transaction 7. Return updated refund request with
+     *   200 OK 8. Handle errors: 404 Not Found (refund request or order item
+     *   not found), 403 Forbidden (seller does not own the item), 409 Conflict
+     *   (refund request not in pending status)
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Put(":requestId")

@@ -28,9 +28,9 @@ export class ShoppingmallCustomerRefund_requestsSnapshotsController {
    * @param connection
    * @param refundRequestId Unique identifier of the refund request whose snapshots are being retrieved (UUID format)
    * @param body Search criteria including status filtering, date range, pagination parameters, and sorting options
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Implementation Guide:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Implementation Guide:
    *
    * 1. Authentication and Authorization:
    *    - Extract authenticated user from JWT token
@@ -100,9 +100,10 @@ export class ShoppingmallCustomerRefund_requestsSnapshotsController {
    * @param connection
    * @param refundRequestId The unique identifier of the refund request (UUID format)
    * @param snapshotId The unique identifier of the refund request snapshot (UUID format)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Retrieve a single refund request snapshot by ID with authorization validation.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Retrieve a single refund request snapshot by ID
+     *   with authorization validation.
    *
    * 1. Parse path parameters: refundRequestId (UUID), snapshotId (UUID)
    *

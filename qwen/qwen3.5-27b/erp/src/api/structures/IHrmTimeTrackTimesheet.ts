@@ -41,7 +41,11 @@ export namespace IHrmTimeTrackTimesheet {
      *
      * Accepts one of four status values: 'draft' (unsubmitted timesheets), 'submitted' (pending approval), 'approved' (approved and locked), or 'rejected' (returned for revision). When this filter is applied, only timesheets matching the specified status are included in the results.
      *
-     * @x-autobe-specification Filter timesheets by approval status. This parameter maps to the hrm_time_track_timesheets.status column in the database. Allowed values: 'draft', 'submitted', 'approved', 'rejected'. When provided, the query filters timesheets where status equals the specified value.
+         * @x-autobe-specification Filter timesheets by approval status. This
+         *   parameter maps to the hrm_time_track_timesheets.status column in
+         *   the database. Allowed values: 'draft', 'submitted', 'approved',
+         *   'rejected'. When provided, the query filters timesheets where
+         *   status equals the specified value.
      */
     status?: "draft" | "submitted" | "approved" | "rejected" | undefined;
 
@@ -50,7 +54,11 @@ export namespace IHrmTimeTrackTimesheet {
      *
      * Specifies the beginning of the date range for timesheet week start dates. Only timesheets with week_start_date on or after this date will be included. Typically used with to_date to define a complete date range for timesheet browsing.
      *
-     * @x-autobe-specification Filter timesheets by week start date (inclusive). This parameter maps to the hrm_time_track_timesheets.week_start_date column. The query returns timesheets where week_start_date >= from_date. Used in conjunction with to_date for date range filtering.
+         * @x-autobe-specification Filter timesheets by week start date
+         *   (inclusive). This parameter maps to the
+         *   hrm_time_track_timesheets.week_start_date column. The query returns
+         *   timesheets where week_start_date >= from_date. Used in conjunction
+         *   with to_date for date range filtering.
      */
     from_date?: (string & tags.Format<"date-time">) | undefined;
 
@@ -59,7 +67,11 @@ export namespace IHrmTimeTrackTimesheet {
      *
      * Specifies the end of the date range for timesheet week start dates. Only timesheets with week_start_date on or before this date will be included. Typically used with from_date to define a complete date range for timesheet browsing.
      *
-     * @x-autobe-specification Filter timesheets by week start date (inclusive). This parameter maps to the hrm_time_track_timesheets.week_start_date column. The query returns timesheets where week_start_date <= to_date. Used in conjunction with from_date for date range filtering.
+         * @x-autobe-specification Filter timesheets by week start date
+         *   (inclusive). This parameter maps to the
+         *   hrm_time_track_timesheets.week_start_date column. The query returns
+         *   timesheets where week_start_date <= to_date. Used in conjunction
+         *   with from_date for date range filtering.
      */
     to_date?: (string & tags.Format<"date-time">) | undefined;
 
@@ -68,7 +80,12 @@ export namespace IHrmTimeTrackTimesheet {
      *
      * When provided, only timesheets belonging to the employee with the specified UUID are returned. Employees can only filter their own timesheets. Users with time:approve permission can filter timesheets for any employee within their organization.
      *
-     * @x-autobe-specification Filter timesheets by employee. This parameter maps to the hrm_time_track_timesheets.hrm_time_track_employee_id column. When provided, the query filters timesheets where hrm_time_track_employee_id equals the specified UUID. Authorization check ensures user has permission to view the specified employee's timesheets.
+         * @x-autobe-specification Filter timesheets by employee. This parameter
+         *   maps to the hrm_time_track_timesheets.hrm_time_track_employee_id
+         *   column. When provided, the query filters timesheets where
+         *   hrm_time_track_employee_id equals the specified UUID. Authorization
+         *   check ensures user has permission to view the specified employee's
+         *   timesheets.
      */
     employee_id?: (string & tags.Format<"uuid">) | undefined;
 
@@ -77,7 +94,10 @@ export namespace IHrmTimeTrackTimesheet {
      *
      * Specifies which page of results to retrieve when using offset-based pagination. Page numbering starts from 1 (not 0). The actual records returned are calculated as: offset = (page - 1) * limit. Minimum value is 1. Default is page 1 when not specified.
      *
-     * @x-autobe-specification Offset-based pagination page number (1-indexed). Not mapped to any database column. Used to calculate offset for LIMIT/OFFSET query: offset = (page - 1) * limit. Minimum value is 1. Default is 1 when not provided.
+         * @x-autobe-specification Offset-based pagination page number
+         *   (1-indexed). Not mapped to any database column. Used to calculate
+         *   offset for LIMIT/OFFSET query: offset = (page - 1) * limit. Minimum
+         *   value is 1. Default is 1 when not provided.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -86,7 +106,11 @@ export namespace IHrmTimeTrackTimesheet {
      *
      * Controls how many timesheet records are included in each page of results. Valid values range from 1 to 100 records per page. This parameter works with the page parameter to implement offset-based pagination. Higher limits reduce the number of requests needed but increase response size.
      *
-     * @x-autobe-specification Maximum number of records per page for offset-based pagination. Not mapped to any database column. Used as LIMIT clause in SQL query. Valid range: 1-100. Default is typically 20 or similar when not provided. Used with page parameter for offset calculation.
+         * @x-autobe-specification Maximum number of records per page for
+         *   offset-based pagination. Not mapped to any database column. Used as
+         *   LIMIT clause in SQL query. Valid range: 1-100. Default is typically
+         *   20 or similar when not provided. Used with page parameter for
+         *   offset calculation.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -97,7 +121,11 @@ export namespace IHrmTimeTrackTimesheet {
      *
      * A string token representing the position in the result set for cursor-based pagination. Use the cursor value from the previous page's response metadata to fetch the next page. This approach is more efficient for large datasets compared to offset-based pagination. Cannot be used together with page/limit parameters.
      *
-     * @x-autobe-specification Cursor for cursor-based pagination. Not mapped to any database column. Cursor encodes the position in the result set (typically week_start_date and id). Use cursor from previous response's pagination metadata to fetch the next page. Mutually exclusive with page/limit pagination.
+         * @x-autobe-specification Cursor for cursor-based pagination. Not
+         *   mapped to any database column. Cursor encodes the position in the
+         *   result set (typically week_start_date and id). Use cursor from
+         *   previous response's pagination metadata to fetch the next page.
+         *   Mutually exclusive with page/limit pagination.
      */
     cursor?: string | undefined;
 
@@ -106,7 +134,11 @@ export namespace IHrmTimeTrackTimesheet {
      *
      * Specifies which attribute to use for sorting the timesheet list. Options include: 'week_start_date' (sort by week period), 'status' (sort by approval status), or 'total_hours' (sort by total hours worked). Works with sort_order to determine ascending or descending order. Default is typically week_start_date in descending order.
      *
-     * @x-autobe-specification Field to sort results by. Not mapped to any database column directly. Allowed values: 'week_start_date' (sorts on hrm_time_track_timesheets.week_start_date), 'status' (sorts on hrm_time_track_timesheets.status), 'total_hours' (sorts on computed aggregation of timelog durations). Used in ORDER BY clause.
+         * @x-autobe-specification Field to sort results by. Not mapped to any
+         *   database column directly. Allowed values: 'week_start_date' (sorts
+         *   on hrm_time_track_timesheets.week_start_date), 'status' (sorts on
+         *   hrm_time_track_timesheets.status), 'total_hours' (sorts on computed
+         *   aggregation of timelog durations). Used in ORDER BY clause.
      */
     sort_by?: "week_start_date" | "status" | "total_hours" | undefined;
 
@@ -115,7 +147,11 @@ export namespace IHrmTimeTrackTimesheet {
      *
      * Determines whether results are sorted in ascending ('asc') or descending ('desc') order. For example, with sort_by='week_start_date' and sort_order='desc', the newest timesheets appear first. With sort_order='asc', the oldest timesheets appear first. Default is typically 'desc' to show recent timesheets first.
      *
-     * @x-autobe-specification Sort direction for the sort_by field. Not mapped to any database column. Allowed values: 'asc' (ascending) or 'desc' (descending). Used in ORDER BY clause as ASC or DESC. Default is typically 'desc' for week_start_date to show newest timesheets first.
+         * @x-autobe-specification Sort direction for the sort_by field. Not
+         *   mapped to any database column. Allowed values: 'asc' (ascending) or
+         *   'desc' (descending). Used in ORDER BY clause as ASC or DESC.
+         *   Default is typically 'desc' for week_start_date to show newest
+         *   timesheets first.
      */
     sort_order?: "asc" | "desc" | undefined;
   };
@@ -131,8 +167,14 @@ export namespace IHrmTimeTrackTimesheet {
      *
      * Allowed values are 'draft' (editable by employee), 'submitted' (locked, awaiting approval), 'approved' (immutable, official record), or 'rejected' (returned to draft with rejection reason). This field controls the workflow transition and must follow valid status transition rules. The backend validates that the requested transition is permitted based on current status and user permissions.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Maps to timesheet status transitions. Allowed values: 'draft', 'submitted', 'approved', 'rejected'. Backend validates: (1) timesheet exists, (2) user has permission, (3) status transition is valid per workflow rules (draft→submitted, submitted→approved/rejected, rejected→draft, approved→locked). Server automatically sets approved_at/rejected_at timestamps and hrm_time_track_member_id approver reference based on transition.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Maps to timesheet status transitions. Allowed
+         *   values: 'draft', 'submitted', 'approved', 'rejected'. Backend
+         *   validates: (1) timesheet exists, (2) user has permission, (3)
+         *   status transition is valid per workflow rules (draft→submitted,
+         *   submitted→approved/rejected, rejected→draft, approved→locked).
+         *   Server automatically sets approved_at/rejected_at timestamps and
+         *   hrm_time_track_member_id approver reference based on transition.
      */
     status?: string | undefined;
 
@@ -141,8 +183,13 @@ export namespace IHrmTimeTrackTimesheet {
      *
      * This field is required when rejecting a submitted timesheet and must contain a non-empty explanation of issues to address. The reason is recorded for the employee to review and address before resubmission. This field is optional for other status transitions (draft, submitted, approved) and will be null for timesheets not in rejected state.
      *
-     * @x-autobe-database-schema-property rejection_reason
-     * @x-autobe-specification Maps to timesheet rejection_reason column. Required when status transitions to 'rejected'. Must be non-empty string providing reason for rejection to inform employee of issues to address. Backend validates rejection_reason is provided and not empty when status is 'rejected'. Field is nullable in database for timesheets not in rejected state.
+         * @x-autobe-database-schema-property rejection_reason
+         * @x-autobe-specification Maps to timesheet rejection_reason column.
+         *   Required when status transitions to 'rejected'. Must be non-empty
+         *   string providing reason for rejection to inform employee of issues
+         *   to address. Backend validates rejection_reason is provided and not
+         *   empty when status is 'rejected'. Field is nullable in database for
+         *   timesheets not in rejected state.
      */
     rejection_reason?: string | null | undefined;
   };
@@ -158,7 +205,15 @@ export namespace IHrmTimeTrackTimesheet {
      *
      * Each UUID in this array represents a timelog that will be associated with the specified timesheet. The backend validates that each timelog exists, belongs to the same employee as the timesheet, and has a date within the timesheet's week range. Duplicate associations are skipped without error.
      *
-     * @x-autobe-specification Array of timelog UUIDs to associate with the timesheet. Each UUID is validated against hrm_time_track_timelogs table: timelog must exist and not be soft-deleted, must belong to same employee as the timesheet (hrm_time_track_employee_id match), timelog date must fall within timesheet week range (week_start_date to week_end_date). For each valid UUID, a new record is created in hrm_time_track_timesheet_timelogs junction table linking the timesheet to the timelog. Duplicate associations (timelog already in timesheet) are skipped without error.
+         * @x-autobe-specification Array of timelog UUIDs to associate with the
+         *   timesheet. Each UUID is validated against hrm_time_track_timelogs
+         *   table: timelog must exist and not be soft-deleted, must belong to
+         *   same employee as the timesheet (hrm_time_track_employee_id match),
+         *   timelog date must fall within timesheet week range (week_start_date
+         *   to week_end_date). For each valid UUID, a new record is created in
+         *   hrm_time_track_timesheet_timelogs junction table linking the
+         *   timesheet to the timelog. Duplicate associations (timelog already
+         *   in timesheet) are skipped without error.
      */
     add?: (string & tags.Format<"uuid">)[] | undefined;
 
@@ -167,7 +222,13 @@ export namespace IHrmTimeTrackTimesheet {
      *
      * Each UUID in this array represents a timelog that will be disassociated from the specified timesheet. The backend validates that each association exists before deletion. This operation only removes the timelog from the timesheet collection; the timelog itself remains in the system and can be added to other timesheets.
      *
-     * @x-autobe-specification Array of timelog UUIDs to disassociate from the timesheet. Each UUID is validated against hrm_time_track_timesheet_timelogs junction table: the association record must exist between the timesheet and timelog. For each valid UUID, the association record is deleted from the junction table. This does not delete the timelog itself, only removes it from the timesheet's collection.
+         * @x-autobe-specification Array of timelog UUIDs to disassociate from
+         *   the timesheet. Each UUID is validated against
+         *   hrm_time_track_timesheet_timelogs junction table: the association
+         *   record must exist between the timesheet and timelog. For each valid
+         *   UUID, the association record is deleted from the junction table.
+         *   This does not delete the timelog itself, only removes it from the
+         *   timesheet's collection.
      */
     remove?: (string & tags.Format<"uuid">)[] | undefined;
   };
@@ -185,8 +246,13 @@ export namespace IHrmTimeTrackTimesheet {
      *
      * This field specifies the Monday date that marks the beginning of the week period for this timesheet. The system automatically calculates the week end date as the corresponding Sunday (6 days after the start date). The week_start_date must fall on a Monday, and the combination of employee ID and week_start_date must be unique to prevent duplicate timesheets for the same employee and week.
      *
-     * @x-autobe-database-schema-property week_start_date
-     * @x-autobe-specification Direct mapping from hrm_time_track_timesheets.week_start_date. Value must be a Monday date. System validates that week_start_date falls on Monday and calculates week_end_date as Sunday (6 days after). Used in unique constraint with hrm_time_track_employee_id to prevent duplicate timesheets for the same employee and week.
+         * @x-autobe-database-schema-property week_start_date
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_timesheets.week_start_date. Value must be a Monday
+         *   date. System validates that week_start_date falls on Monday and
+         *   calculates week_end_date as Sunday (6 days after). Used in unique
+         *   constraint with hrm_time_track_employee_id to prevent duplicate
+         *   timesheets for the same employee and week.
      */
     week_start_date: string & tags.Format<"date-time">;
   };
@@ -204,8 +270,10 @@ export namespace IHrmTimeTrackTimesheet {
      *
      * This UUID serves as the primary key for the timesheet and is used to reference the timesheet in API operations, relationships, and audit trails.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from hrm_time_track_timesheets.id. Primary key UUID identifying the timesheet record.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_timesheets.id. Primary key UUID identifying the
+         *   timesheet record.
      */
     id: string & tags.Format<"uuid">;
 
@@ -214,8 +282,10 @@ export namespace IHrmTimeTrackTimesheet {
      *
      * Timesheets progress through four states: 'draft' (editable by employee), 'submitted' (awaiting approval), 'approved' (finalized), and 'rejected' (returned to employee). This status determines available operations and access permissions.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from hrm_time_track_timesheets.status. Allowed values: 'draft', 'submitted', 'approved', 'rejected'.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_timesheets.status. Allowed values: 'draft',
+         *   'submitted', 'approved', 'rejected'.
      */
     status: string;
 
@@ -224,8 +294,10 @@ export namespace IHrmTimeTrackTimesheet {
      *
      * Timesheets follow a weekly cycle from Monday to Sunday. This field marks the beginning of the week period and is used for filtering timesheets by week and enforcing the one-timesheet-per-week constraint per employee.
      *
-     * @x-autobe-database-schema-property week_start_date
-     * @x-autobe-specification Direct mapping from hrm_time_track_timesheets.week_start_date. DateTime representing Monday of the timesheet week.
+         * @x-autobe-database-schema-property week_start_date
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_timesheets.week_start_date. DateTime representing
+         *   Monday of the timesheet week.
      */
     week_start_date: string & tags.Format<"date-time">;
 
@@ -234,8 +306,10 @@ export namespace IHrmTimeTrackTimesheet {
      *
      * This field marks the end of the week period. Together with week_start_date, it defines the complete week range for the timesheet and is used for date range queries and timesheet validation.
      *
-     * @x-autobe-database-schema-property week_end_date
-     * @x-autobe-specification Direct mapping from hrm_time_track_timesheets.week_end_date. DateTime representing Sunday of the timesheet week.
+         * @x-autobe-database-schema-property week_end_date
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_timesheets.week_end_date. DateTime representing
+         *   Sunday of the timesheet week.
      */
     week_end_date: string & tags.Format<"date-time">;
 
@@ -244,7 +318,11 @@ export namespace IHrmTimeTrackTimesheet {
      *
      * This computed field aggregates all timelog durations for the week period, providing a quick summary of work hours without requiring individual timelog fetches. Used for payroll calculations, capacity planning, and workload monitoring.
      *
-     * @x-autobe-specification Computed aggregation: SUM(duration_seconds) / 3600 from hrm_time_track_timelogs where timelog.date BETWEEN week_start_date AND week_end_date AND timelog.deleted_at IS NULL AND timelog.hrm_time_track_employee_id matches timesheet employee. Returns total hours as decimal number.
+         * @x-autobe-specification Computed aggregation: SUM(duration_seconds) /
+         *   3600 from hrm_time_track_timelogs where timelog.date BETWEEN
+         *   week_start_date AND week_end_date AND timelog.deleted_at IS NULL
+         *   AND timelog.hrm_time_track_employee_id matches timesheet employee.
+         *   Returns total hours as decimal number.
      */
     total_hours: number;
 
@@ -253,8 +331,11 @@ export namespace IHrmTimeTrackTimesheet {
      *
      * This relation provides the employee's essential information including their user identity (name, email), position, role, department assignment, and employment status. The employee creates, manages, and submits the timesheet for approval.
      *
-     * @x-autobe-database-schema-property employee
-     * @x-autobe-specification Relation via JOIN on hrm_time_track_employee_id to hrm_time_track_employees. Returns IHrmTimeTrackEmployee.ISummary with employee identity, position, role, department, and status.
+         * @x-autobe-database-schema-property employee
+         * @x-autobe-specification Relation via JOIN on
+         *   hrm_time_track_employee_id to hrm_time_track_employees. Returns
+         *   IHrmTimeTrackEmployee.ISummary with employee identity, position,
+         *   role, department, and status.
      */
     employee: IHrmTimeTrackEmployee.ISummary;
 
@@ -263,8 +344,11 @@ export namespace IHrmTimeTrackTimesheet {
      *
      * This relation is populated only when the timesheet status is 'approved'. The approver must have time:approve permission. This field is null for timesheets in draft, submitted, or rejected status. Used for audit trail and approval tracking.
      *
-     * @x-autobe-database-schema-property approver
-     * @x-autobe-specification Relation via LEFT JOIN on hrm_time_track_member_id to hrm_time_track_members. Returns IHrmTimeTrackMember.ISummary or null. Populated only when timesheet status is 'approved'.
+         * @x-autobe-database-schema-property approver
+         * @x-autobe-specification Relation via LEFT JOIN on
+         *   hrm_time_track_member_id to hrm_time_track_members. Returns
+         *   IHrmTimeTrackMember.ISummary or null. Populated only when timesheet
+         *   status is 'approved'.
      */
     approver: IHrmTimeTrackMember.ISummary | null;
   };

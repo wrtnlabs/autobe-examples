@@ -28,9 +28,9 @@ export class HrmplatformMemberProjectsMembershipsController {
    * @param connection
    * @param projectId Unique identifier of the project to assign the employee to.
    * @param body Request body containing the employee assignment and role specification. The employee must belong to the same organization as the project. Role must be either 'member' or 'project_lead'.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Create a new project membership record.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Create a new project membership record.
    *
    * Service Logic:
    * 1. Validate that the project exists and is not soft-deleted
@@ -87,9 +87,11 @@ export class HrmplatformMemberProjectsMembershipsController {
    * @param body Search and pagination criteria for filtering project memberships.
    *
    *             Includes optional filters for member role, employee, assignment date range, and pagination parameters for cursor-based navigation.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query hrm_platform_project_memberships table where hrm_platform_project_id matches the path parameter and deleted_at is null.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query hrm_platform_project_memberships table
+     *   where hrm_platform_project_id matches the path parameter and deleted_at
+     *   is null.
    *
    * Apply search filters from request body:
    * - role: filter by member or project_lead
@@ -137,9 +139,10 @@ export class HrmplatformMemberProjectsMembershipsController {
    * @param connection
    * @param projectId The unique identifier of the project that the membership belongs to. Used for context and validation.
    * @param membershipId The unique identifier of the project membership to retrieve.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Retrieve a project membership by its ID from hrm_platform_project_memberships table.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Retrieve a project membership by its ID from
+     *   hrm_platform_project_memberships table.
    *
    * 1. Query the membership where id = {membershipId}
    * 2. Verify the membership's organization matches the active organization context
@@ -197,9 +200,10 @@ export class HrmplatformMemberProjectsMembershipsController {
    * @param projectId Unique identifier of the project containing this membership.
    * @param membershipId Unique identifier of the project membership to update.
    * @param body Update data for project membership. Contains the new role assignment for the employee within this project.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Perform a database UPDATE on hrm_platform_project_memberships table.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Perform a database UPDATE on
+     *   hrm_platform_project_memberships table.
    *
    * **Implementation Steps**:
    * 1. Validate membership exists and is not soft-deleted (deleted_at IS NULL)
@@ -258,9 +262,10 @@ export class HrmplatformMemberProjectsMembershipsController {
    * @param connection
    * @param projectId The unique identifier of the project from which to remove the membership.
    * @param membershipId The unique identifier of the project membership to remove.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Delete the project membership record identified by membershipId.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Delete the project membership record identified
+     *   by membershipId.
    *
    * 1. Fetch the membership record from hrm_platform_project_memberships
    * 2. Verify the membership exists and is not already soft-deleted (deleted_at is null)

@@ -30,7 +30,11 @@ export type IEcommerceStatistic = {
    *
    * For sellers, only counts for orders containing their products are included. Administrators see platform-wide totals.
    *
-   * @x-autobe-specification Computed aggregation from ecommerce_orders table. Count orders grouped by status field (paid, shipped, delivered, cancelled, refunded, partially_completed). For sellers: filter by seller_id in related products and order_items. For admins: platform-wide count.
+     * @x-autobe-specification Computed aggregation from ecommerce_orders table.
+     *   Count orders grouped by status field (paid, shipped, delivered,
+     *   cancelled, refunded, partially_completed). For sellers: filter by
+     *   seller_id in related products and order_items. For admins:
+     *   platform-wide count.
    */
   orders: {
     paid: number & tags.Type<"int32">;
@@ -48,7 +52,10 @@ export type IEcommerceStatistic = {
    *
    * For sellers, this shows the count of products they own. For administrators, this shows the total product count across all sellers on the platform.
    *
-   * @x-autobe-specification Computed count from ecommerce_products table. Excludes soft-deleted records (deleted_at IS NULL). For sellers: count products where seller_id matches authenticated user. For admins: count all products platform-wide.
+     * @x-autobe-specification Computed count from ecommerce_products table.
+     *   Excludes soft-deleted records (deleted_at IS NULL). For sellers: count
+     *   products where seller_id matches authenticated user. For admins: count
+     *   all products platform-wide.
    */
   products: number & tags.Type<"int32">;
 
@@ -59,7 +66,10 @@ export type IEcommerceStatistic = {
    *
    * For sellers, this shows pending requests for order items containing their products. For administrators, this shows all pending cancellation requests across the platform.
    *
-   * @x-autobe-specification Computed count from ecommerce_cancellation_requests table. Filter where status='pending'. For sellers: count requests for order items containing their products. For admins: count all pending requests platform-wide.
+     * @x-autobe-specification Computed count from
+     *   ecommerce_cancellation_requests table. Filter where status='pending'.
+     *   For sellers: count requests for order items containing their products.
+     *   For admins: count all pending requests platform-wide.
    */
   pendingCancellationRequests: number & tags.Type<"int32">;
 
@@ -70,7 +80,10 @@ export type IEcommerceStatistic = {
    *
    * For sellers, this shows pending requests for order items containing their products. For administrators, this shows all pending refund requests across the platform.
    *
-   * @x-autobe-specification Computed count from ecommerce_refund_requests table. Filter where status='pending'. For sellers: count requests for order items containing their products. For admins: count all pending requests platform-wide.
+     * @x-autobe-specification Computed count from ecommerce_refund_requests
+     *   table. Filter where status='pending'. For sellers: count requests for
+     *   order items containing their products. For admins: count all pending
+     *   requests platform-wide.
    */
   pendingRefundRequests: number & tags.Type<"int32">;
 };

@@ -22,7 +22,8 @@ import { IPageIHrmPlatformActivityLog } from "../../../../structures/IPageIHrmPl
  * @param props.body Search criteria including action type filters, user filters, date range filters, and pagination parameters.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query hrm_platform_activity_logs table with pagination and filtering.
+ * @x-autobe-specification Query hrm_platform_activity_logs table with
+ *   pagination and filtering.
  *
  * Apply filters from request body:
  * - actionType: filter by specific action types (employee:invite, employee:deactivate, employee:reactivate, contract:create, contract:edit, timesheet:submit, timesheet:approve, timesheet:reject, task:status-change, project:create, project:archive, project:complete, project:delete, role:assign, role:change)
@@ -127,7 +128,8 @@ export namespace index {
  * @param props.activityLogId Unique identifier of the activity log entry (UUID format).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query hrm_platform_activity_logs table by primary key id (UUID).
+ * @x-autobe-specification Query hrm_platform_activity_logs table by primary key
+ *   id (UUID).
  *
  * Implementation steps:
  * 1. Validate the activityLogId parameter is a valid UUID format

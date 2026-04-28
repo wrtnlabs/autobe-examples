@@ -34,7 +34,8 @@ import { IPageIEcommerceAdministratorGrade } from "../../../../structures/IPageI
  * @param props.body Grade assignment creation request containing the target administrator ID and the grade level to assign.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Create administrator grade assignment with the following implementation logic:
+ * @x-autobe-specification Create administrator grade assignment with the
+ *   following implementation logic:
  *
  * 1. **Authorization Check**: Verify the requesting administrator has super grade level. Return 403 Forbidden if regular administrator.
  *
@@ -159,7 +160,8 @@ export namespace create {
  * @param props.body Search criteria for filtering administrator grade assignments including grade level, administrator email, date ranges, and pagination parameters.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Query ecommerce_administrator_grades table with optional filtering and pagination.
+ * @x-autobe-specification Query ecommerce_administrator_grades table with
+ *   optional filtering and pagination.
  *
  * **Implementation Steps**
  *
@@ -286,7 +288,8 @@ export namespace index {
  * @param props.adminId Unique identifier of the administrator account (UUID format).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Query the ecommerce_administrator_grades table by ecommerce_admin_id to retrieve the current grade assignment.
+ * @x-autobe-specification Query the ecommerce_administrator_grades table by
+ *   ecommerce_admin_id to retrieve the current grade assignment.
  *
  * Implementation steps:
  * 1. Validate adminId parameter is a valid UUID format

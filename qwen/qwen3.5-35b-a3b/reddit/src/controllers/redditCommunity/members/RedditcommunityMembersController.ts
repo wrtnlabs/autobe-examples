@@ -18,9 +18,10 @@ export class RedditcommunityMembersController {
    *
    * @param connection
    * @param body Search criteria for member accounts including optional filters and pagination parameters.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query the reddit_community_members table with pagination and optional filtering.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query the reddit_community_members table with
+     *   pagination and optional filtering.
    *
    * Search Criteria:
    * - username: Optional exact or partial match on username field (case-insensitive)
@@ -73,9 +74,9 @@ export class RedditcommunityMembersController {
    *
    * @param connection
    * @param memberId The unique identifier of the member whose profile is being retrieved
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query the reddit_community_members table by ID.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query the reddit_community_members table by ID.
    *
    * 1. Retrieve the member record where id matches the {memberId} path parameter.
    * 2. Verify the member is not soft-deleted (deleted_at is null).

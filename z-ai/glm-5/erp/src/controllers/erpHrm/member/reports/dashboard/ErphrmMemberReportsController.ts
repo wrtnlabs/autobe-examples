@@ -26,9 +26,10 @@ export class ErphrmMemberReportsController {
    * This operation supports organizational oversight workflows described in the weekly time tracking and approval scenarios, enabling managers and owners to monitor productivity, identify budget concerns, and track timesheet approval queues.
    *
    * @param connection
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query multiple tables to compute organization dashboard metrics:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query multiple tables to compute organization
+     *   dashboard metrics:
    *
    * 1. Count active employees: SELECT COUNT(*) FROM erp_hrm_employees WHERE organization_id = current_org AND status = 'active' AND deleted_at IS NULL
    *

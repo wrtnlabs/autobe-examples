@@ -31,9 +31,9 @@ export class ShoppingmallMemberWishlistsItemsController {
    * @param connection
    * @param wishlistId Target wishlist identifier. The wishlist must be owned by the authenticated member.
    * @param body Payload to add a product to the target wishlist. The server will create a new wishlist-item record for the (wishlist, product) pair while preventing duplicates and enforcing product eligibility rules.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation steps:
    *
    * 1) Authorization: authenticate the caller as a member. Load `shopping_mall_wishlists` by `id = wishlistId` and verify `shopping_mall_member_id` matches the authenticated member’s id. If not found or not owned, return an authorization/ownership error.
    *
@@ -105,13 +105,14 @@ export class ShoppingmallMemberWishlistsItemsController {
    * @param connection
    * @param wishlistId Target wishlist identifier that scopes wishlist-item operations. Must belong to the authenticated member.
    * @param body Instruction payload describing which product(s) should be added/removed (or otherwise modified) within the specified wishlist. The implementation must be idempotent with respect to the (wishlist, product) uniqueness constraint and must respect deleted_at visibility rules.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1) Authorization and ownership
-   * - Authenticate caller as a member/customer.
-   * - Load shopping_mall_wishlists by id = wishlistId.
-   * - Verify the authenticated member id matches shopping_mall_wishlists.shopping_mall_member_id. If not, return authorization/ownership error.
-   * - If shopping_mall_wishlists.deleted_at is not null, treat wishlist as hidden/unavailable and reject.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification 1) Authorization and ownership - Authenticate
+     *   caller as a member/customer. - Load shopping_mall_wishlists by id =
+     *   wishlistId. - Verify the authenticated member id matches
+     *   shopping_mall_wishlists.shopping_mall_member_id. If not, return
+     *   authorization/ownership error. - If shopping_mall_wishlists.deleted_at
+     *   is not null, treat wishlist as hidden/unavailable and reject.
    *
    * 2) Input interpretation
    * - Parse the request body into an operation instruction for wishlist items under this wishlistId (as defined by IShoppingMallWishlistItem.IRequest).
@@ -189,9 +190,10 @@ export class ShoppingmallMemberWishlistsItemsController {
    * @param connection
    * @param wishlistId The target wishlist container ID owned by the requesting member.
    * @param wishlistItemId The wishlist item record ID within the given wishlist.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1) Authenticate requester as a member; block guests.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification 1) Authenticate requester as a member; block
+     *   guests.
    *
    * 2) Input handling:
    * - Validate `wishlistId` and `wishlistItemId` are UUID strings.
@@ -263,9 +265,10 @@ export class ShoppingmallMemberWishlistsItemsController {
    * @param wishlistId Target wishlist identifier whose ownership is checked against the authenticated member.
    * @param wishlistItemId Target wishlist item identifier within the specified wishlist.
    * @param body Update payload for the specified wishlist item. Use it to change the product association or the item visibility state represented by `deleted_at` (or related fields exposed in the DTO).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1) Authenticate the caller as a member; deny if not authenticated.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification 1) Authenticate the caller as a member; deny if
+     *   not authenticated.
    *
    * 2) Load the wishlist by `shopping_mall_wishlists.id = wishlistId`.
    *    - Verify that `shopping_mall_wishlists.shopping_mall_member_id` matches the current authenticated member.
@@ -336,9 +339,12 @@ export class ShoppingmallMemberWishlistsItemsController {
    * @param connection
    * @param wishlistId Target wishlist id whose items are being managed.
    * @param wishlistItemId Target wishlist item id to remove from the wishlist.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1) Authorization: Resolve the authenticated member identity and load `shopping_mall_wishlists` by `id = wishlistId`. Verify `shopping_mall_member_id` matches the caller. If not, reject with forbidden/not-found per error policy.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification 1) Authorization: Resolve the authenticated
+     *   member identity and load `shopping_mall_wishlists` by `id =
+     *   wishlistId`. Verify `shopping_mall_member_id` matches the caller. If
+     *   not, reject with forbidden/not-found per error policy.
    *
    * 2) Target lookup (scoped): In a single transaction, query `shopping_mall_wishlist_items` with:
    *    - `id = wishlistItemId`

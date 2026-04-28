@@ -12,48 +12,70 @@ export type IEcommerceMallOrderItemSnapshot = {
   /**
    * Unique identifier for this order item snapshot junction record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_order_item_snapshots.id (UUID primary key).
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_order_item_snapshots.id (UUID primary key).
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Reference to the order item this snapshot belongs to.
    *
-   * @x-autobe-database-schema-property order_item_id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_order_item_snapshots.order_item_id (UUID foreign key to ecommerce_mall_order_items.id). One-to-one relationship enforced by @@unique constraint.
+     * @x-autobe-database-schema-property order_item_id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_order_item_snapshots.order_item_id (UUID foreign key to
+     *   ecommerce_mall_order_items.id). One-to-one relationship enforced by
+     *   @@unique constraint.
    */
   orderItemId: string & tags.Format<"uuid">;
 
   /**
    * Timestamp when this snapshot was created (at time of order placement).
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_order_item_snapshots.created_at (timestamp with timezone, set at order creation time).
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_order_item_snapshots.created_at (timestamp with
+     *   timezone, set at order creation time).
    */
   createdAt: string & tags.Format<"date-time">;
 
   /**
    * Immutable snapshot of the product as it appeared at purchase time, including name, description, category, base price, and images.
    *
-   * @x-autobe-database-schema-property productSnapshot
-   * @x-autobe-specification JOIN from ecommerce_mall_order_item_snapshots.product_snapshot_id to ecommerce_mall_order_item_product_snapshots.id. Returns IEcommerceMallOrderItemProductSnapshot containing: id, name, description, category_name, base_price, and nested images array. Preserves product state at purchase time for legal compliance.
+     * @x-autobe-database-schema-property productSnapshot
+     * @x-autobe-specification JOIN from
+     *   ecommerce_mall_order_item_snapshots.product_snapshot_id to
+     *   ecommerce_mall_order_item_product_snapshots.id. Returns
+     *   IEcommerceMallOrderItemProductSnapshot containing: id, name,
+     *   description, category_name, base_price, and nested images array.
+     *   Preserves product state at purchase time for legal compliance.
    */
   product: IEcommerceMallOrderItemProductSnapshot;
 
   /**
    * Immutable snapshot of the product variant (SKU) as it appeared at purchase time, including SKU code, price, and option values.
    *
-   * @x-autobe-database-schema-property variantSnapshot
-   * @x-autobe-specification JOIN from ecommerce_mall_order_item_snapshots.variant_snapshot_id to ecommerce_mall_order_item_variant_snapshots.id. Returns IEcommerceMallProductVariantSnapshot.IInvert containing: id, skuCode, price, createdAt, and nested optionValues array (key-value pairs like Color/Red, Size/Large). SKU and pricing preserved exactly as at purchase time.
+     * @x-autobe-database-schema-property variantSnapshot
+     * @x-autobe-specification JOIN from
+     *   ecommerce_mall_order_item_snapshots.variant_snapshot_id to
+     *   ecommerce_mall_order_item_variant_snapshots.id. Returns
+     *   IEcommerceMallProductVariantSnapshot.IInvert containing: id, skuCode,
+     *   price, createdAt, and nested optionValues array (key-value pairs like
+     *   Color/Red, Size/Large). SKU and pricing preserved exactly as at
+     *   purchase time.
    */
   variant: IEcommerceMallProductVariantSnapshot.IInvert;
 
   /**
    * Immutable snapshot of the seller's shop profile as it appeared at purchase time, including shop name and logo.
    *
-   * @x-autobe-database-schema-property sellerSnapshot
-   * @x-autobe-specification JOIN from ecommerce_mall_order_item_snapshots.seller_snapshot_id to ecommerce_mall_order_item_seller_snapshots.id. Returns IEcommerceMallOrderItemSellerSnapshot containing: id, shopName, logoUrl. Preserves seller identity at transaction time regardless of subsequent profile changes.
+     * @x-autobe-database-schema-property sellerSnapshot
+     * @x-autobe-specification JOIN from
+     *   ecommerce_mall_order_item_snapshots.seller_snapshot_id to
+     *   ecommerce_mall_order_item_seller_snapshots.id. Returns
+     *   IEcommerceMallOrderItemSellerSnapshot containing: id, shopName,
+     *   logoUrl. Preserves seller identity at transaction time regardless of
+     *   subsequent profile changes.
    */
   seller: IEcommerceMallOrderItemSellerSnapshot;
 };

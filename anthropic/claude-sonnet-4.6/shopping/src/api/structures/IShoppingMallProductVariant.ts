@@ -33,11 +33,11 @@ export namespace IShoppingMallProductVariant {
    */
   export type ICreate = {
     /**
-     * @x-autobe-database-schema-property sku
+         * @x-autobe-database-schema-property sku
      */
     sku: string & tags.MinLength<1>;
     /**
-     * @x-autobe-database-schema-property price_override
+         * @x-autobe-database-schema-property price_override
      */
     priceOverride?: number | null | undefined;
     options: IShoppingMallProductVariantOption[] & tags.MinItems<1>;
@@ -54,36 +54,41 @@ export namespace IShoppingMallProductVariant {
    */
   export type ISummary = {
     /**
-     * @x-autobe-database-schema-property id
+         * @x-autobe-database-schema-property id
      */
     id: string & tags.Format<"uuid">;
     /**
-     * @x-autobe-database-schema-property sku
+         * @x-autobe-database-schema-property sku
      */
     sku: string;
     /**
-     * @x-autobe-database-schema-property price_override
+         * @x-autobe-database-schema-property price_override
      */
     price_override: number | null;
 
     /**
      * The complete set of option key-value pairs that define this variant's purchasable configuration (e.g., color: Red, size: Large). Each option is ordered by its display sequence. Together, all options uniquely distinguish this variant from other variants of the same product.
      *
-     * @x-autobe-specification JOIN shopping_mall_product_variant_options ON product_variant_id = shopping_mall_product_variants.id, ordered by sequence ASC. Map each record to IShoppingMallProductVariantOption.ISummary. All option dimensions for the variant are included, forming its complete purchasable configuration.
+         * @x-autobe-specification JOIN shopping_mall_product_variant_options ON
+         *   product_variant_id = shopping_mall_product_variants.id, ordered by
+         *   sequence ASC. Map each record to
+         *   IShoppingMallProductVariantOption.ISummary. All option dimensions
+         *   for the variant are included, forming its complete purchasable
+         *   configuration.
      */
     options: IShoppingMallProductVariantOption.ISummary[];
     inStock: boolean;
     stockQuantity: number & tags.Type<"int32"> & tags.Minimum<0>;
     /**
-     * @x-autobe-database-schema-property created_at
+         * @x-autobe-database-schema-property created_at
      */
     created_at: string & tags.Format<"date-time">;
     /**
-     * @x-autobe-database-schema-property updated_at
+         * @x-autobe-database-schema-property updated_at
      */
     updated_at: string & tags.Format<"date-time">;
     /**
-     * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-database-schema-property deleted_at
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };
@@ -97,11 +102,11 @@ export namespace IShoppingMallProductVariant {
    */
   export type IUpdate = {
     /**
-     * @x-autobe-database-schema-property sku
+         * @x-autobe-database-schema-property sku
      */
     sku: string & tags.MinLength<1>;
     /**
-     * @x-autobe-database-schema-property price_override
+         * @x-autobe-database-schema-property price_override
      */
     priceOverride?: (number & tags.Minimum<0>) | null | undefined;
     options: IShoppingMallProductVariantOption.ICreate[] & tags.MinItems<1>;
@@ -114,14 +119,25 @@ export namespace IShoppingMallProductVariant {
     /**
      * Optional keyword to search product variants by SKU code. Partial, case-insensitive match is applied against the variant's unique SKU identifier.
      *
-     * @x-autobe-specification When non-null, apply a case-insensitive partial match (ILIKE / GIN trigram index) on the shopping_mall_product_variants.sku column. E.g., skuKeyword='RED' matches 'VAR-RED-L', 'RED-001'. When null, no SKU filter is applied.
+         * @x-autobe-specification When non-null, apply a case-insensitive
+         *   partial match (ILIKE / GIN trigram index) on the
+         *   shopping_mall_product_variants.sku column. E.g., skuKeyword='RED'
+         *   matches 'VAR-RED-L', 'RED-001'. When null, no SKU filter is
+         *   applied.
      */
     skuKeyword?: string | null | undefined;
 
     /**
      * Optional list of option key-value pairs to filter variants by their configuration dimensions. All specified pairs must match conjunctively (e.g., [{ key: 'color', value: 'Red' }, { key: 'size', value: 'L' }] returns only Red/L variants). When omitted, variants are returned regardless of options.
      *
-     * @x-autobe-specification When non-null and non-empty, JOIN shopping_mall_product_variant_options on product_variant_id = shopping_mall_product_variants.id. For each { key, value } pair in optionFilters, an exact match on both the key and value columns is required (conjunctive AND). Only variants that satisfy all provided option pairs are returned. Each element is an IShoppingMallProductVariantOption.IRequest object. When null or empty, no option filtering is applied.
+         * @x-autobe-specification When non-null and non-empty, JOIN
+         *   shopping_mall_product_variant_options on product_variant_id =
+         *   shopping_mall_product_variants.id. For each { key, value } pair in
+         *   optionFilters, an exact match on both the key and value columns is
+         *   required (conjunctive AND). Only variants that satisfy all provided
+         *   option pairs are returned. Each element is an
+         *   IShoppingMallProductVariantOption.IRequest object. When null or
+         *   empty, no option filtering is applied.
      */
     optionFilters?:
       | IShoppingMallProductVariantOption.IRequest[]
@@ -131,56 +147,88 @@ export namespace IShoppingMallProductVariant {
     /**
      * When true, only variants with a positive current stock level (derived from aggregating inventory records) are returned. When false or omitted, variants are returned regardless of stock availability.
      *
-     * @x-autobe-specification When true, restrict results to variants where SUM(quantity) FROM shopping_mall_inventory_records WHERE shopping_mall_product_variant_id = variants.id > 0. Computed via a subquery or GROUP BY aggregation on shopping_mall_inventory_records. When false or null, no stock filter is applied and all variants (including out-of-stock) are returned.
+         * @x-autobe-specification When true, restrict results to variants where
+         *   SUM(quantity) FROM shopping_mall_inventory_records WHERE
+         *   shopping_mall_product_variant_id = variants.id > 0. Computed via a
+         *   subquery or GROUP BY aggregation on
+         *   shopping_mall_inventory_records. When false or null, no stock
+         *   filter is applied and all variants (including out-of-stock) are
+         *   returned.
      */
     inStockOnly?: boolean | null | undefined;
 
     /**
      * Optional minimum effective price filter (inclusive). Applies to the variant's effective price: the variant-level price override when set, otherwise the parent product's base price.
      *
-     * @x-autobe-specification When non-null, filter variants where COALESCE(shopping_mall_product_variants.price_override, shopping_mall_products.base_price) >= priceMin. Requires a JOIN on shopping_mall_products to resolve base_price when price_override is null. Must be >= 0.
+         * @x-autobe-specification When non-null, filter variants where
+         *   COALESCE(shopping_mall_product_variants.price_override,
+         *   shopping_mall_products.base_price) >= priceMin. Requires a JOIN on
+         *   shopping_mall_products to resolve base_price when price_override is
+         *   null. Must be >= 0.
      */
     priceMin?: (number & tags.Minimum<0>) | null | undefined;
 
     /**
      * Optional maximum effective price filter (inclusive). Applies to the variant's effective price: the variant-level price override when set, otherwise the parent product's base price.
      *
-     * @x-autobe-specification When non-null, filter variants where COALESCE(shopping_mall_product_variants.price_override, shopping_mall_products.base_price) <= priceMax. Requires a JOIN on shopping_mall_products to resolve base_price when price_override is null. Must be >= 0.
+         * @x-autobe-specification When non-null, filter variants where
+         *   COALESCE(shopping_mall_product_variants.price_override,
+         *   shopping_mall_products.base_price) <= priceMax. Requires a JOIN on
+         *   shopping_mall_products to resolve base_price when price_override is
+         *   null. Must be >= 0.
      */
     priceMax?: (number & tags.Minimum<0>) | null | undefined;
 
     /**
      * When true, soft-deleted variants (those removed by the seller) are included in the results alongside active variants. Only available to the product's owning seller and administrators. Customers always see active variants only.
      *
-     * @x-autobe-specification By default, only variants with deleted_at IS NULL in shopping_mall_product_variants are returned. When includeDeleted is true, remove the deleted_at IS NULL predicate so soft-deleted variants also appear. This flag is only honored if the authenticated actor is the seller who owns the product or an administrator. A non-owning seller setting includeDeleted=true must receive HTTP 403. When null or false, deleted_at IS NULL is always enforced.
+         * @x-autobe-specification By default, only variants with deleted_at IS
+         *   NULL in shopping_mall_product_variants are returned. When
+         *   includeDeleted is true, remove the deleted_at IS NULL predicate so
+         *   soft-deleted variants also appear. This flag is only honored if the
+         *   authenticated actor is the seller who owns the product or an
+         *   administrator. A non-owning seller setting includeDeleted=true must
+         *   receive HTTP 403. When null or false, deleted_at IS NULL is always
+         *   enforced.
      */
     includeDeleted?: boolean | null | undefined;
 
     /**
      * The field to sort the variant list by. Accepts 'created_at' (creation date), 'sku' (SKU code alphabetically), or 'price' (effective price). Defaults to 'created_at' when omitted.
      *
-     * @x-autobe-specification Controls the ORDER BY column. Accepted values: 'created_at' -> ORDER BY shopping_mall_product_variants.created_at; 'sku' -> ORDER BY shopping_mall_product_variants.sku; 'price' -> ORDER BY COALESCE(shopping_mall_product_variants.price_override, shopping_mall_products.base_price). Default when null: 'created_at'.
+         * @x-autobe-specification Controls the ORDER BY column. Accepted
+         *   values: 'created_at' -> ORDER BY
+         *   shopping_mall_product_variants.created_at; 'sku' -> ORDER BY
+         *   shopping_mall_product_variants.sku; 'price' -> ORDER BY
+         *   COALESCE(shopping_mall_product_variants.price_override,
+         *   shopping_mall_products.base_price). Default when null:
+         *   'created_at'.
      */
     sortField?: "created_at" | "sku" | "price" | null | undefined;
 
     /**
      * The sort direction for the results. 'asc' returns the lowest values first; 'desc' returns the highest values first. Defaults to 'desc' (newest first) when omitted.
      *
-     * @x-autobe-specification Controls the sort direction of the ORDER BY clause. 'asc' -> ASC, 'desc' -> DESC. Default when null: 'desc' (most recently created first).
+         * @x-autobe-specification Controls the sort direction of the ORDER BY
+         *   clause. 'asc' -> ASC, 'desc' -> DESC. Default when null: 'desc'
+         *   (most recently created first).
      */
     sortOrder?: "asc" | "desc" | null | undefined;
 
     /**
      * The page number to retrieve (1-based). Returns the corresponding page of paginated results. Defaults to page 1 when omitted.
      *
-     * @x-autobe-specification 1-based page number for offset pagination. Offset is calculated as (page - 1) * limit. Default when null: 1. Must be >= 1.
+         * @x-autobe-specification 1-based page number for offset pagination.
+         *   Offset is calculated as (page - 1) * limit. Default when null: 1.
+         *   Must be >= 1.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | null | undefined;
 
     /**
      * The maximum number of variants to return per page. Defaults to 20 when omitted. Maximum allowed value is 100.
      *
-     * @x-autobe-specification Maximum number of variants to return per page. Default when null: 20. Maximum allowed: 100. Must be >= 1.
+         * @x-autobe-specification Maximum number of variants to return per
+         *   page. Default when null: 20. Maximum allowed: 100. Must be >= 1.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)

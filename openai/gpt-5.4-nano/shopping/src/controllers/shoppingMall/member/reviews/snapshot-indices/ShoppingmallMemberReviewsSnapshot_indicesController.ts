@@ -27,27 +27,39 @@ export class ShoppingmallMemberReviewsSnapshot_indicesController {
    *
    * @param connection
    * @param reviewId Target review identifier whose snapshot history index entry will be created.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation steps:
-   * 1) Authenticate the caller and resolve authorization to the `shopping_mall_reviews` record referenced by `{reviewId}` by loading the review row and verifying ownership/permission (align with review unauthorized edit/delete error scenarios).
-   * 2) Determine the snapshot event context (created/updated/deleted) from the service-layer workflow that invoked this endpoint. Map that into `shopping_mall_review_snapshots_indices.action_type`.
-   * 3) Create a new `shopping_mall_snapshots` record for the review snapshot event:
-   *    - `source_type` should be the snapshot discriminator for reviews (use the implementation’s established source type string for reviews).
-   *    - `source_entity_id` should be the review’s id (`shopping_mall_reviews.id`).
-   *    - `source_review_id` should also be populated with the same review id.
-   *    - `reason` should describe the event (edit/delete/workflow reason) in a way consistent with platform audit requirements.
-   *    - Set `created_by_member_id` if the implementation tracks the initiating member for dispute context.
-   * 4) Compute `snapshot_sequence` for this review:
-   *    - Query `shopping_mall_review_snapshots_indices` for the latest `snapshot_sequence` for the `review_id`, then set `snapshot_sequence = last + 1`.
-   *    - Ensure deterministic ordering by using the existing `@@index([review_id, snapshot_sequence])` ordering.
-   * 5) Insert into `shopping_mall_review_snapshots_indices`:
-   *    - `shopping_mall_snapshot_id` = newly created snapshot id.
-   *    - `review_id` = `{reviewId}`.
-   *    - `action_type` = mapped event.
-   *    - Populate `created_at`/`updated_at` timestamps.
-   * 6) Wrap snapshot metadata creation and index creation in a single database transaction so that failure of any step rejects the overall operation (no partial snapshot records).
-   * 7) Do not modify `shopping_mall_reviews` content here; active display and “deleted user” rendering are handled by the review update/delete workflow that triggers snapshot creation.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation steps: 1) Authenticate the caller
+     *   and resolve authorization to the `shopping_mall_reviews` record
+     *   referenced by `{reviewId}` by loading the review row and verifying
+     *   ownership/permission (align with review unauthorized edit/delete error
+     *   scenarios). 2) Determine the snapshot event context
+     *   (created/updated/deleted) from the service-layer workflow that invoked
+     *   this endpoint. Map that into
+     *   `shopping_mall_review_snapshots_indices.action_type`. 3) Create a new
+     *   `shopping_mall_snapshots` record for the review snapshot event: -
+     *   `source_type` should be the snapshot discriminator for reviews (use the
+     *   implementation’s established source type string for reviews). -
+     *   `source_entity_id` should be the review’s id
+     *   (`shopping_mall_reviews.id`). - `source_review_id` should also be
+     *   populated with the same review id. - `reason` should describe the event
+     *   (edit/delete/workflow reason) in a way consistent with platform audit
+     *   requirements. - Set `created_by_member_id` if the implementation tracks
+     *   the initiating member for dispute context. 4) Compute
+     *   `snapshot_sequence` for this review: - Query
+     *   `shopping_mall_review_snapshots_indices` for the latest
+     *   `snapshot_sequence` for the `review_id`, then set `snapshot_sequence =
+     *   last + 1`. - Ensure deterministic ordering by using the existing
+     *   `@@index([review_id, snapshot_sequence])` ordering. 5) Insert into
+     *   `shopping_mall_review_snapshots_indices`: - `shopping_mall_snapshot_id`
+     *   = newly created snapshot id. - `review_id` = `{reviewId}`. -
+     *   `action_type` = mapped event. - Populate `created_at`/`updated_at`
+     *   timestamps. 6) Wrap snapshot metadata creation and index creation in a
+     *   single database transaction so that failure of any step rejects the
+     *   overall operation (no partial snapshot records). 7) Do not modify
+     *   `shopping_mall_reviews` content here; active display and “deleted user”
+     *   rendering are handled by the review update/delete workflow that
+     *   triggers snapshot creation.
    *
    * Edge cases:
    * - If the review does not exist, return a not-found error.
@@ -97,23 +109,31 @@ export class ShoppingmallMemberReviewsSnapshot_indicesController {
    * @param connection
    * @param reviewId Target review ID whose snapshot index events will be listed.
    * @param body List query criteria for pagination and ordering of the review’s snapshot index events.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1) Validate path parameter reviewId as UUID.
-   * 2) Authorization: load shopping_mall_reviews by id.
-   *    - If the caller is a customer/member, ensure shopping_mall_reviews.shopping_mall_customer_id matches the caller’s customer/member id.
-   *    - If mismatch, reject with an authorization error (no data returned).
-   *    - If caller is admin, allow.
-   * 3) Query shopping_mall_review_snapshots_indices where review_id = reviewId.
-   * 4) Select fields required for the index list and ordering reconstruction:
-   *    - id, shopping_mall_snapshot_id, review_id, action_type, snapshot_sequence, created_at, updated_at (and deleted_at only if the DTO includes it).
-   * 5) Sorting: primary order by snapshot_sequence ascending for deterministic reconstruction; for timeline display UIs that want newest-first, support a client-controlled sort direction via request criteria but keep deterministic mapping by snapshot_sequence.
-   * 6) Pagination: apply cursor/offset pagination based on requestBody DTO (IShoppingMallReviewSnapshotsIndex.IRequest pattern).
-   * 7) Return paginated list of index summaries with pagination metadata.
-   * 8) No writes: do not create/update/delete any records; no snapshot creation should occur.
-   * Edge cases:
-   * - If no index entries exist for the review, return an empty paginated result.
-   * - If snapshot index entries include logically deleted markers (deleted_at), include them only according to request criteria; default should show all events needed to reconstruct history.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification 1) Validate path parameter reviewId as UUID. 2)
+     *   Authorization: load shopping_mall_reviews by id. - If the caller is a
+     *   customer/member, ensure shopping_mall_reviews.shopping_mall_customer_id
+     *   matches the caller’s customer/member id. - If mismatch, reject with an
+     *   authorization error (no data returned). - If caller is admin, allow. 3)
+     *   Query shopping_mall_review_snapshots_indices where review_id =
+     *   reviewId. 4) Select fields required for the index list and ordering
+     *   reconstruction: - id, shopping_mall_snapshot_id, review_id,
+     *   action_type, snapshot_sequence, created_at, updated_at (and deleted_at
+     *   only if the DTO includes it). 5) Sorting: primary order by
+     *   snapshot_sequence ascending for deterministic reconstruction; for
+     *   timeline display UIs that want newest-first, support a
+     *   client-controlled sort direction via request criteria but keep
+     *   deterministic mapping by snapshot_sequence. 6) Pagination: apply
+     *   cursor/offset pagination based on requestBody DTO
+     *   (IShoppingMallReviewSnapshotsIndex.IRequest pattern). 7) Return
+     *   paginated list of index summaries with pagination metadata. 8) No
+     *   writes: do not create/update/delete any records; no snapshot creation
+     *   should occur. Edge cases: - If no index entries exist for the review,
+     *   return an empty paginated result. - If snapshot index entries include
+     *   logically deleted markers (deleted_at), include them only according to
+     *   request criteria; default should show all events needed to reconstruct
+     *   history.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
@@ -153,9 +173,12 @@ export class ShoppingmallMemberReviewsSnapshot_indicesController {
    * @param connection
    * @param reviewId Target review identifier whose snapshot index history event is being accessed.
    * @param snapshotIndexId Target snapshot index identifier representing one immutable review state change event.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Look up a single shopping_mall_review_snapshots_indices row scoped by shopping_mall_review_snapshots_indices.review_id == reviewId and shopping_mall_review_snapshots_indices.id == snapshotIndexId.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Look up a single
+     *   shopping_mall_review_snapshots_indices row scoped by
+     *   shopping_mall_review_snapshots_indices.review_id == reviewId and
+     *   shopping_mall_review_snapshots_indices.id == snapshotIndexId.
    *
    * Implementation steps:
    * 1) Parse path parameters as UUID.

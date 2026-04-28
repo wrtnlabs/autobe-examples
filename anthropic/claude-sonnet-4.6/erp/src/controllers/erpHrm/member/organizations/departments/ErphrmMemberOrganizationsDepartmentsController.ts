@@ -32,9 +32,13 @@ export class ErphrmMemberOrganizationsDepartmentsController {
    * @param connection
    * @param organizationId The UUID of the organization within which the new department will be created.
    * @param body Details required to create a new department, including name, optional description, and optional parent department reference.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1. Authenticate the requesting member and verify the member belongs to the organization identified by `organizationId` (check erp_hrm_organization_members where organization_id = organizationId and member_id = authenticated member's id and deleted_at IS NULL).
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification 1. Authenticate the requesting member and verify
+     *   the member belongs to the organization identified by `organizationId`
+     *   (check erp_hrm_organization_members where organization_id =
+     *   organizationId and member_id = authenticated member's id and deleted_at
+     *   IS NULL).
    *
    * 2. Verify the requesting member's role has the 'organization manage' permission by checking erp_hrm_roles and erp_hrm_role_permissions. If the member lacks this permission, return 403 Forbidden.
    *
@@ -97,9 +101,12 @@ export class ErphrmMemberOrganizationsDepartmentsController {
    * @param connection
    * @param organizationId The UUID of the organization whose department list is being retrieved (globally unique).
    * @param body Search criteria and pagination parameters for filtering the department list.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1. Authenticate the requesting member and verify they are an active member of the organization identified by `organizationId`. Reject with 403 if not a member or organization not found (deleted_at IS NOT NULL).
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification 1. Authenticate the requesting member and verify
+     *   they are an active member of the organization identified by
+     *   `organizationId`. Reject with 403 if not a member or organization not
+     *   found (deleted_at IS NOT NULL).
    *
    * 2. Query the `erp_hrm_departments` table with `WHERE organization_id = :organizationId AND deleted_at IS NULL`.
    *
@@ -158,16 +165,26 @@ export class ErphrmMemberOrganizationsDepartmentsController {
    * @param connection
    * @param organizationId The UUID of the organization that owns the department. Used to enforce organizational data isolation.
    * @param departmentId The UUID of the target department to retrieve.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1. Authenticate the requesting member and resolve their current organization context.
-   * 2. Verify the requesting member belongs to the organization identified by organizationId (i.e., an active erp_hrm_organization_members record exists with organization_id = organizationId and member_id = authenticated member's id, and deleted_at IS NULL).
-   * 3. If the member does not belong to this organization, reject with 403 Forbidden.
-   * 4. Query the erp_hrm_departments table WHERE id = departmentId AND organization_id = organizationId AND deleted_at IS NULL.
-   * 5. If no matching record is found, respond with 404 Not Found.
-   * 6. If found, return the department record including its id, organization_id, parent_id (nullable), name, description (nullable), created_at, updated_at.
-   * 7. Optionally, join with the parent department record (if parent_id is not null) to return parent department's id and name as a nested summary object.
-   * 8. All members of the organization — regardless of their role or permission level — are authorized to retrieve department details. No additional permission check is required beyond organizational membership verification.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification 1. Authenticate the requesting member and resolve
+     *   their current organization context. 2. Verify the requesting member
+     *   belongs to the organization identified by organizationId (i.e., an
+     *   active erp_hrm_organization_members record exists with organization_id
+     *   = organizationId and member_id = authenticated member's id, and
+     *   deleted_at IS NULL). 3. If the member does not belong to this
+     *   organization, reject with 403 Forbidden. 4. Query the
+     *   erp_hrm_departments table WHERE id = departmentId AND organization_id =
+     *   organizationId AND deleted_at IS NULL. 5. If no matching record is
+     *   found, respond with 404 Not Found. 6. If found, return the department
+     *   record including its id, organization_id, parent_id (nullable), name,
+     *   description (nullable), created_at, updated_at. 7. Optionally, join
+     *   with the parent department record (if parent_id is not null) to return
+     *   parent department's id and name as a nested summary object. 8. All
+     *   members of the organization — regardless of their role or permission
+     *   level — are authorized to retrieve department details. No additional
+     *   permission check is required beyond organizational membership
+     *   verification.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Get(":departmentId")
@@ -214,9 +231,12 @@ export class ErphrmMemberOrganizationsDepartmentsController {
    * @param organizationId The UUID of the organization to which the department belongs (global scope).
    * @param departmentId The UUID of the department to update (scoped to the organization).
    * @param body Updated field values for the department, including name, optional description, and optional parent department assignment.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1. Authenticate the requesting member and confirm they hold an active membership in the organization identified by `organizationId`. Reject with 403 if the member does not belong to this organization or if their session's organization context does not match.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification 1. Authenticate the requesting member and confirm
+     *   they hold an active membership in the organization identified by
+     *   `organizationId`. Reject with 403 if the member does not belong to this
+     *   organization or if their session's organization context does not match.
    *
    * 2. Load the member's role and verify they possess the organization management permission. Reject with 403 if the permission is absent.
    *
@@ -278,18 +298,23 @@ export class ErphrmMemberOrganizationsDepartmentsController {
    * @param connection
    * @param organizationId The unique identifier (UUID) of the organization that owns the department.
    * @param departmentId The unique identifier (UUID) of the department to be deleted.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1. Authenticate the requesting member's session and resolve their current organization context.
-   * 2. Verify that the requesting member belongs to the organization identified by organizationId. Return 403 if not.
-   * 3. Check that the member's assigned role includes the organization management permission code. Return 403 Forbidden if not.
-   * 4. Look up the erp_hrm_departments record where id = departmentId AND organization_id = organizationId AND deleted_at IS NULL. Return 404 if not found.
-   * 5. Begin a database transaction:
-   *    a. Set deleted_at = NOW() on the target erp_hrm_departments record (soft-delete at DB layer).
-   *    b. Update all erp_hrm_organization_members records where department_id = departmentId: set department_id = NULL.
-   *    c. Update all erp_hrm_departments records where parent_id = departmentId: set parent_id = NULL.
-   * 6. Commit the transaction. If any step fails, rollback and return 500.
-   * 7. Return HTTP 204 No Content on success.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification 1. Authenticate the requesting member's session
+     *   and resolve their current organization context. 2. Verify that the
+     *   requesting member belongs to the organization identified by
+     *   organizationId. Return 403 if not. 3. Check that the member's assigned
+     *   role includes the organization management permission code. Return 403
+     *   Forbidden if not. 4. Look up the erp_hrm_departments record where id =
+     *   departmentId AND organization_id = organizationId AND deleted_at IS
+     *   NULL. Return 404 if not found. 5. Begin a database transaction: a. Set
+     *   deleted_at = NOW() on the target erp_hrm_departments record
+     *   (soft-delete at DB layer). b. Update all erp_hrm_organization_members
+     *   records where department_id = departmentId: set department_id = NULL.
+     *   c. Update all erp_hrm_departments records where parent_id =
+     *   departmentId: set parent_id = NULL. 6. Commit the transaction. If any
+     *   step fails, rollback and return 500. 7. Return HTTP 204 No Content on
+     *   success.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Delete(":departmentId")

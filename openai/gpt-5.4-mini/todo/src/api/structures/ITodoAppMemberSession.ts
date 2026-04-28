@@ -16,8 +16,9 @@ export type ITodoAppMemberSession = {
    *
    * This UUID uniquely identifies the session record returned by the API.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from todo_app_member_sessions.id to the session UUID identifier.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from todo_app_member_sessions.id
+     *   to the session UUID identifier.
    */
   id: string & tags.Format<"uuid">;
 
@@ -26,8 +27,10 @@ export type ITodoAppMemberSession = {
    *
    * This is returned as a private member summary reference rather than a raw foreign key value.
    *
-   * @x-autobe-database-schema-property member
-   * @x-autobe-specification Join todo_app_member_sessions.todo_app_member_id to todo_app_members.id and expose the owning member as ITodoAppMember.ISummary.
+     * @x-autobe-database-schema-property member
+     * @x-autobe-specification Join todo_app_member_sessions.todo_app_member_id
+     *   to todo_app_members.id and expose the owning member as
+     *   ITodoAppMember.ISummary.
    */
   member: ITodoAppMember.ISummary;
 
@@ -36,8 +39,9 @@ export type ITodoAppMemberSession = {
    *
    * This value is recorded at session creation time for auditing and security review.
    *
-   * @x-autobe-database-schema-property ip
-   * @x-autobe-specification Direct mapping from todo_app_member_sessions.ip to the IP address captured when the session was issued.
+     * @x-autobe-database-schema-property ip
+     * @x-autobe-specification Direct mapping from todo_app_member_sessions.ip
+     *   to the IP address captured when the session was issued.
    */
   ip: string;
 
@@ -46,8 +50,9 @@ export type ITodoAppMemberSession = {
    *
    * This records the URL requested when the session was created and provides audit context.
    *
-   * @x-autobe-database-schema-property href
-   * @x-autobe-specification Direct mapping from todo_app_member_sessions.href to the request URL captured when the session was issued.
+     * @x-autobe-database-schema-property href
+     * @x-autobe-specification Direct mapping from todo_app_member_sessions.href
+     *   to the request URL captured when the session was issued.
    */
   href: string & tags.Format<"uri">;
 
@@ -56,8 +61,10 @@ export type ITodoAppMemberSession = {
    *
    * This captures the referring location at session creation time for auditing and diagnostics.
    *
-   * @x-autobe-database-schema-property referrer
-   * @x-autobe-specification Direct mapping from todo_app_member_sessions.referrer to the referrer URL captured when the session was issued.
+     * @x-autobe-database-schema-property referrer
+     * @x-autobe-specification Direct mapping from
+     *   todo_app_member_sessions.referrer to the referrer URL captured when the
+     *   session was issued.
    */
   referrer: string & tags.Format<"uri">;
 
@@ -66,8 +73,9 @@ export type ITodoAppMemberSession = {
    *
    * This timestamp marks when the session record was issued and is used for chronological display and auditing.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from todo_app_member_sessions.created_at to the session creation timestamp.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   todo_app_member_sessions.created_at to the session creation timestamp.
    */
   createdAt: string & tags.Format<"date-time">;
 
@@ -76,8 +84,10 @@ export type ITodoAppMemberSession = {
    *
    * This timestamp indicates when the session becomes invalid and can no longer be used for authentication.
    *
-   * @x-autobe-database-schema-property expired_at
-   * @x-autobe-specification Direct mapping from todo_app_member_sessions.expired_at to the session expiration timestamp.
+     * @x-autobe-database-schema-property expired_at
+     * @x-autobe-specification Direct mapping from
+     *   todo_app_member_sessions.expired_at to the session expiration
+     *   timestamp.
    */
   expiredAt: string & tags.Format<"date-time">;
 };
@@ -93,7 +103,11 @@ export namespace ITodoAppMemberSession {
      *
      * Use this to filter the authenticated member's sessions by the fields exposed in the summary response. The search applies only to your own sessions.
      *
-     * @x-autobe-specification Free-text search control for the authenticated member's session list. Apply it against the visible session summary fields returned by the endpoint. It is not stored in todo_app_member_sessions and therefore has no direct database column mapping.
+         * @x-autobe-specification Free-text search control for the
+         *   authenticated member's session list. Apply it against the visible
+         *   session summary fields returned by the endpoint. It is not stored
+         *   in todo_app_member_sessions and therefore has no direct database
+         *   column mapping.
      */
     search?: string | undefined;
 
@@ -102,7 +116,9 @@ export namespace ITodoAppMemberSession {
      *
      * Pages start at 1. This selects which slice of your session history is returned.
      *
-     * @x-autobe-specification 1-indexed page number used to select which page of the authenticated member's sessions to return. This is pagination input only and does not map to a database column.
+         * @x-autobe-specification 1-indexed page number used to select which
+         *   page of the authenticated member's sessions to return. This is
+         *   pagination input only and does not map to a database column.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -111,7 +127,9 @@ export namespace ITodoAppMemberSession {
      *
      * This sets the page size for your session history list.
      *
-     * @x-autobe-specification Maximum number of session records to return per page for the authenticated member's list query. This is pagination input only and does not map to a database column.
+         * @x-autobe-specification Maximum number of session records to return
+         *   per page for the authenticated member's list query. This is
+         *   pagination input only and does not map to a database column.
      */
     limit?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -120,7 +138,11 @@ export namespace ITodoAppMemberSession {
      *
      * Choose one of the supported visible fields. If omitted, the server sorts by creation time descending.
      *
-     * @x-autobe-specification Sort key for the authenticated member's session list. Allowed values are the visible session fields exposed by the endpoint: createdAt, expiredAt, ip, href, and referrer. The server translates this into ordering logic and defaults to created_at descending when omitted.
+         * @x-autobe-specification Sort key for the authenticated member's
+         *   session list. Allowed values are the visible session fields exposed
+         *   by the endpoint: createdAt, expiredAt, ip, href, and referrer. The
+         *   server translates this into ordering logic and defaults to
+         *   created_at descending when omitted.
      */
     sort?: "createdAt" | "expiredAt" | "ip" | "href" | "referrer" | undefined;
 
@@ -129,7 +151,11 @@ export namespace ITodoAppMemberSession {
      *
      * Use this together with the sort field to choose ascending or descending order. If no sort field is provided, the server applies the default newest-first ordering.
      *
-     * @x-autobe-specification Sort direction paired with sort for the authenticated member's session list. Accepts ascending or descending order and is interpreted by the query layer, not stored in the database. When sort is omitted, the default order is newest-first by created_at.
+         * @x-autobe-specification Sort direction paired with sort for the
+         *   authenticated member's session list. Accepts ascending or
+         *   descending order and is interpreted by the query layer, not stored
+         *   in the database. When sort is omitted, the default order is
+         *   newest-first by created_at.
      */
     order?: "asc" | "desc" | undefined;
   };
@@ -147,8 +173,10 @@ export namespace ITodoAppMemberSession {
      *
      * This value distinguishes one member session from another and is returned as part of the summary response for browsing sessions.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from todo_app_member_sessions.id. Return the primary key exactly as stored for the session record.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_member_sessions.id. Return the primary key exactly as
+         *   stored for the session record.
      */
     id: string & tags.Format<"uuid">;
 
@@ -157,8 +185,12 @@ export namespace ITodoAppMemberSession {
      *
      * This is the private account associated with the session record, exposed as a summary object rather than a raw identifier.
      *
-     * @x-autobe-database-schema-property member
-     * @x-autobe-specification Join todo_app_member_sessions.todo_app_member_id to todo_app_members.id and expose the related member as ITodoAppMember.ISummary. This property represents the owning member, not the scalar foreign key column.
+         * @x-autobe-database-schema-property member
+         * @x-autobe-specification Join
+         *   todo_app_member_sessions.todo_app_member_id to todo_app_members.id
+         *   and expose the related member as ITodoAppMember.ISummary. This
+         *   property represents the owning member, not the scalar foreign key
+         *   column.
      */
     member: ITodoAppMember.ISummary;
 
@@ -167,8 +199,10 @@ export namespace ITodoAppMemberSession {
      *
      * This value is captured at session creation time and is used for security review and anomaly detection.
      *
-     * @x-autobe-database-schema-property ip
-     * @x-autobe-specification Direct mapping from todo_app_member_sessions.ip. Preserve the stored IP address exactly as recorded when the session was created.
+         * @x-autobe-database-schema-property ip
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_member_sessions.ip. Preserve the stored IP address exactly
+         *   as recorded when the session was created.
      */
     ip: string;
 
@@ -177,8 +211,10 @@ export namespace ITodoAppMemberSession {
      *
      * This value records the context of the login or session issuance request for auditing and diagnostics.
      *
-     * @x-autobe-database-schema-property href
-     * @x-autobe-specification Direct mapping from todo_app_member_sessions.href. Preserve the stored request URL exactly as recorded when the session was created.
+         * @x-autobe-database-schema-property href
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_member_sessions.href. Preserve the stored request URL
+         *   exactly as recorded when the session was created.
      */
     href: string & tags.Format<"uri">;
 
@@ -187,8 +223,10 @@ export namespace ITodoAppMemberSession {
      *
      * This value captures the origin of the request that created the session and supports traffic analysis and security diagnostics.
      *
-     * @x-autobe-database-schema-property referrer
-     * @x-autobe-specification Direct mapping from todo_app_member_sessions.referrer. Preserve the stored referrer URL exactly as recorded when the session was created.
+         * @x-autobe-database-schema-property referrer
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_member_sessions.referrer. Preserve the stored referrer URL
+         *   exactly as recorded when the session was created.
      */
     referrer: string & tags.Format<"uri">;
 
@@ -197,8 +235,10 @@ export namespace ITodoAppMemberSession {
      *
      * This timestamp is used for auditing and for ordering session records in list responses.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from todo_app_member_sessions.created_at. Return the session creation timestamp unchanged.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_member_sessions.created_at. Return the session creation
+         *   timestamp unchanged.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -207,8 +247,10 @@ export namespace ITodoAppMemberSession {
      *
      * This timestamp indicates when the session stops being valid and helps clients understand session lifetime.
      *
-     * @x-autobe-database-schema-property expired_at
-     * @x-autobe-specification Direct mapping from todo_app_member_sessions.expired_at. Return the session expiration timestamp unchanged.
+         * @x-autobe-database-schema-property expired_at
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_member_sessions.expired_at. Return the session expiration
+         *   timestamp unchanged.
      */
     expired_at: string & tags.Format<"date-time">;
   };

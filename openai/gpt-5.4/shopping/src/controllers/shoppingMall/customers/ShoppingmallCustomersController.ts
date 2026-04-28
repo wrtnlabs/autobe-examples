@@ -24,9 +24,11 @@ export class ShoppingmallCustomersController {
    *
    * @param connection
    * @param body Customer search filters, pagination, and sorting options
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Implement this operation as an administrative customer-account search over `shopping_mall_customers` with optional one-to-one enrichment from `shopping_mall_customer_profiles`.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Implement this operation as an administrative
+     *   customer-account search over `shopping_mall_customers` with optional
+     *   one-to-one enrichment from `shopping_mall_customer_profiles`.
    *
    * Accept an `IShoppingMallCustomer.IRequest` body containing pagination, sorting, and filter criteria. Support filters only on schema-backed attributes: customer `email`, `banned_at`, `created_at`, `updated_at`, `deleted_at`, and joined profile `display_name` and `phone_number` where the request DTO defines them. Do not invent unsupported filters. Build the base query from `shopping_mall_customers` and LEFT JOIN `shopping_mall_customer_profiles` on `shopping_mall_customer_profiles.shopping_mall_customer_id = shopping_mall_customers.id` so customers without an active profile row, including deleted-account cases, can still appear in results.
    *
@@ -71,9 +73,10 @@ export class ShoppingmallCustomersController {
    *
    * @param connection
    * @param customerId Target customer account ID
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Load one row from shopping_mall_customers by primary key id using the customerId path parameter.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Load one row from shopping_mall_customers by
+     *   primary key id using the customerId path parameter.
    *
    * Validate that customerId is a UUID-formatted identifier before querying. Execute a single-record lookup on shopping_mall_customers where id equals customerId. If no row exists, return a not-found error.
    *

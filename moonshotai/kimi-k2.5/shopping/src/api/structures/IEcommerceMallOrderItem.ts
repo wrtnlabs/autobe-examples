@@ -11,47 +11,49 @@ import { IEcommerceMallSeller } from "./IEcommerceMallSeller";
  */
 export type IEcommerceMallOrderItem = {
   /**
-   * @x-autobe-database-schema-property id
+     * @x-autobe-database-schema-property id
    */
   id: string & tags.Format<"uuid">;
   /**
-   * @x-autobe-database-schema-property quantity
+     * @x-autobe-database-schema-property quantity
    */
   quantity: number & tags.Type<"int32"> & tags.Minimum<1>;
   /**
-   * @x-autobe-database-schema-property price_at_purchase
+     * @x-autobe-database-schema-property price_at_purchase
    */
   priceAtPurchase: number;
 
   /**
    * Current fulfillment status of the order item.
    *
-   * @x-autobe-specification Direct mapping from ecommerce_mall_order_items.status column (String type). Status values: 'paid', 'shipped', 'delivered', 'cancelled', 'refunded'.
-   * @x-autobe-database-schema-property status
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_order_items.status column (String type). Status values:
+     *   'paid', 'shipped', 'delivered', 'cancelled', 'refunded'.
+     * @x-autobe-database-schema-property status
    */
   status: string;
   /**
-   * @x-autobe-database-schema-property order
+     * @x-autobe-database-schema-property order
    */
   order: IEcommerceMallOrder.ISummary;
   /**
-   * @x-autobe-database-schema-property product
+     * @x-autobe-database-schema-property product
    */
   product: IEcommerceMallProduct.ISummary;
   /**
-   * @x-autobe-database-schema-property variant
+     * @x-autobe-database-schema-property variant
    */
   variant: IEcommerceMallProductVariant.ISummary;
   /**
-   * @x-autobe-database-schema-property seller
+     * @x-autobe-database-schema-property seller
    */
   seller: IEcommerceMallSeller.ISummary;
   /**
-   * @x-autobe-database-schema-property created_at
+     * @x-autobe-database-schema-property created_at
    */
   createdAt: string & tags.Format<"date-time">;
   /**
-   * @x-autobe-database-schema-property updated_at
+     * @x-autobe-database-schema-property updated_at
    */
   updatedAt: string & tags.Format<"date-time">;
 };
@@ -90,14 +92,19 @@ export namespace IEcommerceMallOrderItem {
     /**
      * Page number for pagination (1-indexed). Defaults to 1.
      *
-     * @x-autobe-specification Pagination control parameter. 1-indexed page number for offset-based pagination. Default: 1. Used to calculate OFFSET = (page - 1) * limit for SQL queries against ecommerce_mall_order_items table.
+         * @x-autobe-specification Pagination control parameter. 1-indexed page
+         *   number for offset-based pagination. Default: 1. Used to calculate
+         *   OFFSET = (page - 1) * limit for SQL queries against
+         *   ecommerce_mall_order_items table.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of records per page. Range: 1-100, defaults to 20.
      *
-     * @x-autobe-specification Pagination control parameter. Maximum number of records to return per page. Min: 1, Max: 100. Default: 20. Used as LIMIT in SQL queries against ecommerce_mall_order_items table.
+         * @x-autobe-specification Pagination control parameter. Maximum number
+         *   of records to return per page. Min: 1, Max: 100. Default: 20. Used
+         *   as LIMIT in SQL queries against ecommerce_mall_order_items table.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -106,35 +113,56 @@ export namespace IEcommerceMallOrderItem {
     /**
      * Filter by order ID. Returns only order items belonging to this order.
      *
-     * @x-autobe-specification Filter parameter corresponding to ecommerce_mall_order_items.order_id column. When provided, adds WHERE order_id = ? clause to filter results to items belonging to the specified order. Supports exact UUID match only. Optional filter.
+         * @x-autobe-specification Filter parameter corresponding to
+         *   ecommerce_mall_order_items.order_id column. When provided, adds
+         *   WHERE order_id = ? clause to filter results to items belonging to
+         *   the specified order. Supports exact UUID match only. Optional
+         *   filter.
      */
     orderId?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Filter by product ID. Returns only order items for this product.
      *
-     * @x-autobe-specification Filter parameter corresponding to ecommerce_mall_order_items.product_id column. When provided, adds WHERE product_id = ? clause to filter results to items for the specified product. Supports exact UUID match only. Optional filter.
+         * @x-autobe-specification Filter parameter corresponding to
+         *   ecommerce_mall_order_items.product_id column. When provided, adds
+         *   WHERE product_id = ? clause to filter results to items for the
+         *   specified product. Supports exact UUID match only. Optional filter.
      */
     productId?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Filter by product variant ID. Returns only order items for this variant.
      *
-     * @x-autobe-specification Filter parameter corresponding to ecommerce_mall_order_items.variant_id column. When provided, adds WHERE variant_id = ? clause to filter results to items for the specified product variant. Supports exact UUID match only. Optional filter.
+         * @x-autobe-specification Filter parameter corresponding to
+         *   ecommerce_mall_order_items.variant_id column. When provided, adds
+         *   WHERE variant_id = ? clause to filter results to items for the
+         *   specified product variant. Supports exact UUID match only. Optional
+         *   filter.
      */
     variantId?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Filter by seller ID. Returns only order items sold by this seller.
      *
-     * @x-autobe-specification Filter parameter corresponding to ecommerce_mall_order_items.seller_id column. When provided, adds WHERE seller_id = ? clause to filter results to items sold by the specified seller. Supports exact UUID match only. Note: For seller-scoped endpoints, this filter may be ignored or restricted to the authenticated seller.
+         * @x-autobe-specification Filter parameter corresponding to
+         *   ecommerce_mall_order_items.seller_id column. When provided, adds
+         *   WHERE seller_id = ? clause to filter results to items sold by the
+         *   specified seller. Supports exact UUID match only. Note: For
+         *   seller-scoped endpoints, this filter may be ignored or restricted
+         *   to the authenticated seller.
      */
     sellerId?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Filter by order item status. Valid values: paid, shipped, delivered, cancelled, refunded.
      *
-     * @x-autobe-specification Filter parameter corresponding to ecommerce_mall_order_items.status column. When provided, adds WHERE status = ? clause to filter results to items with the specified fulfillment status. Supports exact match only. Valid values: 'paid', 'shipped', 'delivered', 'cancelled', 'refunded'. Optional filter.
+         * @x-autobe-specification Filter parameter corresponding to
+         *   ecommerce_mall_order_items.status column. When provided, adds WHERE
+         *   status = ? clause to filter results to items with the specified
+         *   fulfillment status. Supports exact match only. Valid values:
+         *   'paid', 'shipped', 'delivered', 'cancelled', 'refunded'. Optional
+         *   filter.
      */
     status?:
       | "paid"
@@ -147,14 +175,23 @@ export namespace IEcommerceMallOrderItem {
     /**
      * Filter by start of creation date range. Returns items created on or after this timestamp.
      *
-     * @x-autobe-specification Date range filter start parameter corresponding to ecommerce_mall_order_items.created_at column. When provided with createdAtTo, adds WHERE created_at >= ? clause to filter results to items created within the specified date range. Uses >= comparison. Optional filter. Format: ISO 8601 date-time string.
+         * @x-autobe-specification Date range filter start parameter
+         *   corresponding to ecommerce_mall_order_items.created_at column. When
+         *   provided with createdAtTo, adds WHERE created_at >= ? clause to
+         *   filter results to items created within the specified date range.
+         *   Uses >= comparison. Optional filter. Format: ISO 8601 date-time
+         *   string.
      */
     createdAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Filter by end of creation date range. Returns items created on or before this timestamp.
      *
-     * @x-autobe-specification Date range filter end parameter corresponding to ecommerce_mall_order_items.created_at column. When provided with createdAtFrom, adds WHERE created_at <= ? clause to filter results to items created within the specified date range. Uses <= comparison. Optional filter. Format: ISO 8601 date-time string.
+         * @x-autobe-specification Date range filter end parameter corresponding
+         *   to ecommerce_mall_order_items.created_at column. When provided with
+         *   createdAtFrom, adds WHERE created_at <= ? clause to filter results
+         *   to items created within the specified date range. Uses <=
+         *   comparison. Optional filter. Format: ISO 8601 date-time string.
      */
     createdAtTo?: (string & tags.Format<"date-time">) | undefined;
   };

@@ -22,7 +22,8 @@ import { IPageIEcommerceMallSeller } from "../../../../structures/IPageIEcommerc
  * @param props.body Search criteria and pagination parameters for archived sellers
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Query ecommerce_mall_sellers table filtering for records where deleted_at IS NOT NULL.
+ * @x-autobe-specification Query ecommerce_mall_sellers table filtering for
+ *   records where deleted_at IS NOT NULL.
  *
  * Apply filters from request:
  * - deletedAtFrom/deletedAtTo: Filter by deletion date range

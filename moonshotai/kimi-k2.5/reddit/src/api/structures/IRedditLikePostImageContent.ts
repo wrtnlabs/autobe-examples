@@ -10,48 +10,55 @@ export type IRedditLikePostImageContent = {
   /**
    * Unique identifier for the image content record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from reddit_like_post_image_contents.id. UUID primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_post_image_contents.id. UUID primary key.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * The uploaded image file attachment.
    *
-   * @x-autobe-database-schema-property attachment
-   * @x-autobe-specification JOIN via attachment_id FK to reddit_like_attachments. Returns IRedditLikeAttachment.ISummary.
+     * @x-autobe-database-schema-property attachment
+     * @x-autobe-specification JOIN via attachment_id FK to
+     *   reddit_like_attachments. Returns IRedditLikeAttachment.ISummary.
    */
   attachment: IRedditLikeAttachment.ISummary;
 
   /**
    * Optional thumbnail variant for optimized display.
    *
-   * @x-autobe-database-schema-property thumbnailAttachment
-   * @x-autobe-specification LEFT JOIN via thumbnail_attachment_id FK to reddit_like_attachments. Returns nullable IRedditLikeAttachment.ISummary.
+     * @x-autobe-database-schema-property thumbnailAttachment
+     * @x-autobe-specification LEFT JOIN via thumbnail_attachment_id FK to
+     *   reddit_like_attachments. Returns nullable
+     *   IRedditLikeAttachment.ISummary.
    */
   thumbnail: IRedditLikeAttachment.ISummary | null;
 
   /**
    * Whether thumbnail generation is complete.
    *
-   * @x-autobe-database-schema-property thumbnail_generated
-   * @x-autobe-specification Direct mapping from reddit_like_post_image_contents.thumbnail_generated.
+     * @x-autobe-database-schema-property thumbnail_generated
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_post_image_contents.thumbnail_generated.
    */
   thumbnailGenerated: boolean;
 
   /**
    * Timestamp when the record was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from reddit_like_post_image_contents.created_at. ISO 8601 format.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_post_image_contents.created_at. ISO 8601 format.
    */
   createdAt: string;
 
   /**
    * Timestamp when the record was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from reddit_like_post_image_contents.updated_at. ISO 8601 format.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_post_image_contents.updated_at. ISO 8601 format.
    */
   updatedAt: string;
 };

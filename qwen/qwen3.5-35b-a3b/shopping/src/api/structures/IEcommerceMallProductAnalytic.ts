@@ -12,7 +12,8 @@ export type IEcommerceMallProductAnalytic = {
    *
    * This field uniquely identifies the product in the ecommerce_mall_products table and serves as the primary key for all product-related queries.
    *
-   * @x-autobe-specification Direct mapping from ecommerce_mall_products.id column. Retrieved from products table during analytics aggregation.
+     * @x-autobe-specification Direct mapping from ecommerce_mall_products.id
+     *   column. Retrieved from products table during analytics aggregation.
    */
   product_id: string & tags.Format<"uuid">;
 
@@ -21,7 +22,9 @@ export type IEcommerceMallProductAnalytic = {
    *
    * This field identifies the seller account that owns and manages this product listing. It is used for seller verification and ownership context.
    *
-   * @x-autobe-specification Direct mapping from ecommerce_mall_products.seller_id column. Retrieved from products table during analytics aggregation.
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_products.seller_id column. Retrieved from products table
+     *   during analytics aggregation.
    */
   seller_id: string & tags.Format<"uuid">;
 
@@ -30,7 +33,9 @@ export type IEcommerceMallProductAnalytic = {
    *
    * This field identifies the product category that organizes and classifies this product in the catalog. Used for category-based filtering and context.
    *
-   * @x-autobe-specification Direct mapping from ecommerce_mall_products.category_id column. Retrieved from products table during analytics aggregation.
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_products.category_id column. Retrieved from products
+     *   table during analytics aggregation.
    */
   category_id: string & tags.Format<"uuid">;
 
@@ -41,7 +46,10 @@ export type IEcommerceMallProductAnalytic = {
    *
    * **Calculation**: Aggregates data from ecommerce_mall_order_items table, counting only items with status='delivered'. Excludes cancelled or pending orders.
    *
-   * @x-autobe-specification Aggregation from ecommerce_mall_order_items: COUNT(order_items) WHERE product_variant_id IN (SELECT id FROM ecommerce_mall_product_variants WHERE product_id = {product_id}) AND status = 'delivered'.
+     * @x-autobe-specification Aggregation from ecommerce_mall_order_items:
+     *   COUNT(order_items) WHERE product_variant_id IN (SELECT id FROM
+     *   ecommerce_mall_product_variants WHERE product_id = {product_id}) AND
+     *   status = 'delivered'.
    */
   total_sales_count: number & tags.Type<"int32"> & tags.Minimum<0>;
 
@@ -52,7 +60,10 @@ export type IEcommerceMallProductAnalytic = {
    *
    * **Calculation**: Sums order item subtotals only for delivered orders, excluding cancelled or refunded items.
    *
-   * @x-autobe-specification Aggregation from ecommerce_mall_order_items: SUM(subtotal) WHERE product_variant_id IN (SELECT id FROM ecommerce_mall_product_variants WHERE product_id = {product_id}) AND status = 'delivered'.
+     * @x-autobe-specification Aggregation from ecommerce_mall_order_items:
+     *   SUM(subtotal) WHERE product_variant_id IN (SELECT id FROM
+     *   ecommerce_mall_product_variants WHERE product_id = {product_id}) AND
+     *   status = 'delivered'.
    */
   total_revenue: number & tags.Minimum<0>;
 
@@ -63,7 +74,9 @@ export type IEcommerceMallProductAnalytic = {
    *
    * **Calculation**: Aggregates from ecommerce_mall_product_variants, counting only variants with positive stock levels.
    *
-   * @x-autobe-specification Aggregation from ecommerce_mall_product_variants: SUM(stock_quantity) WHERE product_id = {product_id} AND stock_quantity > 0.
+     * @x-autobe-specification Aggregation from ecommerce_mall_product_variants:
+     *   SUM(stock_quantity) WHERE product_id = {product_id} AND stock_quantity
+     *   > 0.
    */
   total_inventory: number & tags.Type<"int32"> & tags.Minimum<0>;
 
@@ -72,7 +85,8 @@ export type IEcommerceMallProductAnalytic = {
    *
    * The count of all unique product variants (SKUs) configured for this product, including all option combinations regardless of current stock availability. This represents the total number of distinct product configurations.
    *
-   * @x-autobe-specification Aggregation from ecommerce_mall_product_variants: COUNT(*) WHERE product_id = {product_id}.
+     * @x-autobe-specification Aggregation from ecommerce_mall_product_variants:
+     *   COUNT(*) WHERE product_id = {product_id}.
    */
   total_variants: number & tags.Type<"int32"> & tags.Minimum<0>;
 
@@ -83,7 +97,8 @@ export type IEcommerceMallProductAnalytic = {
    *
    * **Calculation**: Counts variants with positive stock levels only.
    *
-   * @x-autobe-specification Aggregation from ecommerce_mall_product_variants: COUNT(*) WHERE product_id = {product_id} AND stock_quantity > 0.
+     * @x-autobe-specification Aggregation from ecommerce_mall_product_variants:
+     *   COUNT(*) WHERE product_id = {product_id} AND stock_quantity > 0.
    */
   in_stock_variants: number & tags.Type<"int32"> & tags.Minimum<0>;
 
@@ -94,7 +109,9 @@ export type IEcommerceMallProductAnalytic = {
    *
    * **Source**: Retrieved from ecommerce_mall_product_review_stats pre-calculated statistics table for efficient querying.
    *
-   * @x-autobe-specification Aggregation from ecommerce_mall_product_review_stats: total_reviews WHERE product_id = {product_id}.
+     * @x-autobe-specification Aggregation from
+     *   ecommerce_mall_product_review_stats: total_reviews WHERE product_id =
+     *   {product_id}.
    */
   total_reviews: number & tags.Type<"int32"> & tags.Minimum<0>;
 
@@ -105,7 +122,9 @@ export type IEcommerceMallProductAnalytic = {
    *
    * **Format**: Number between 0 and 5, where 5 represents perfect rating and 0 represents no rating. Retrieved from pre-calculated review statistics.
    *
-   * @x-autobe-specification Aggregation from ecommerce_mall_product_review_stats: average_rating WHERE product_id = {product_id}.
+     * @x-autobe-specification Aggregation from
+     *   ecommerce_mall_product_review_stats: average_rating WHERE product_id =
+     *   {product_id}.
    */
   average_rating: number & tags.Minimum<0> & tags.Maximum<5>;
 
@@ -116,7 +135,9 @@ export type IEcommerceMallProductAnalytic = {
    *
    * **Purpose**: Quick availability check without examining individual variant stock levels.
    *
-   * @x-autobe-specification Computed boolean: (in_stock_variants > 0). True if product has at least one variant with available stock, false otherwise. Derived from aggregated in_stock_variants calculation.
+     * @x-autobe-specification Computed boolean: (in_stock_variants > 0). True
+     *   if product has at least one variant with available stock, false
+     *   otherwise. Derived from aggregated in_stock_variants calculation.
    */
   is_available: boolean;
 };

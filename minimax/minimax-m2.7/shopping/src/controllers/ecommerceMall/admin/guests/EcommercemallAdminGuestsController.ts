@@ -23,9 +23,10 @@ export class EcommercemallAdminGuestsController {
    *
    * @param connection
    * @param body Identification and browsing context data. The fingerprint is required to identify the guest. Other fields update the guest's browsing context and are optional.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query the ecommerce_mall_guests table by fingerprint.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Query the ecommerce_mall_guests table by
+     *   fingerprint.
    *
    * If a guest record exists:
    * - Update ip_address with the provided value (if given)
@@ -82,9 +83,10 @@ export class EcommercemallAdminGuestsController {
    *
    * @param connection
    * @param guestId Unique identifier of the guest account (UUID format).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query the ecommerce_mall_guests table using the provided guestId as the primary key lookup.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Query the ecommerce_mall_guests table using the
+     *   provided guestId as the primary key lookup.
    *
    * 1. Validate the guestId format - must be a valid UUID
    * 2. Query database: SELECT * FROM ecommerce_mall_guests WHERE id = :guestId AND deleted_at IS NULL

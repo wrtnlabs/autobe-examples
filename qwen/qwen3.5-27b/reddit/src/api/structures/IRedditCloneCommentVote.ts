@@ -20,8 +20,9 @@ export type IRedditCloneCommentVote = {
    *
    * This UUID serves as the primary key for identifying and retrieving individual vote records across the system.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from reddit_clone_comment_votes.id column. Primary key UUID identifying the vote record uniquely.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from reddit_clone_comment_votes.id
+     *   column. Primary key UUID identifying the vote record uniquely.
    */
   id: string & tags.Format<"uuid">;
 
@@ -35,8 +36,11 @@ export type IRedditCloneCommentVote = {
    *
    * When a user removes their vote, the vote_type is set to null but the record is retained for audit purposes.
    *
-   * @x-autobe-database-schema-property vote_type
-   * @x-autobe-specification Direct mapping from reddit_clone_comment_votes.vote_type column (nullable String). Accepts 'upvote' (increases score by 1), 'downvote' (decreases score by 1), or null (vote removed, no effect on score).
+     * @x-autobe-database-schema-property vote_type
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_comment_votes.vote_type column (nullable String). Accepts
+     *   'upvote' (increases score by 1), 'downvote' (decreases score by 1), or
+     *   null (vote removed, no effect on score).
    */
   vote_type: string | null;
 
@@ -45,8 +49,10 @@ export type IRedditCloneCommentVote = {
    *
    * This field records the exact date and time when the vote was originally created and is used for tracking vote history and audit purposes.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from reddit_clone_comment_votes.created_at column (NOT NULL DateTime). Records when the vote was first cast.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_comment_votes.created_at column (NOT NULL DateTime).
+     *   Records when the vote was first cast.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -55,8 +61,10 @@ export type IRedditCloneCommentVote = {
    *
    * This field is updated whenever the vote type changes (upvote to downvote or vice versa) or when a vote is removed. Used for tracking vote modification history.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from reddit_clone_comment_votes.updated_at column (NOT NULL DateTime). Updated whenever the vote type changes or is removed.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_comment_votes.updated_at column (NOT NULL DateTime).
+     *   Updated whenever the vote type changes or is removed.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -65,8 +73,11 @@ export type IRedditCloneCommentVote = {
    *
    * This relation provides the authenticated user's profile information who created this vote. Used to track voting history and enforce vote ownership rules (only the voter can modify their own vote).
    *
-   * @x-autobe-database-schema-property member
-   * @x-autobe-specification Relation via reddit_clone_member_id JOIN to reddit_clone_members table. Returns IRedditCloneMember.ISummary containing the member's public profile information. Each vote is tied to a specific member account.
+     * @x-autobe-database-schema-property member
+     * @x-autobe-specification Relation via reddit_clone_member_id JOIN to
+     *   reddit_clone_members table. Returns IRedditCloneMember.ISummary
+     *   containing the member's public profile information. Each vote is tied
+     *   to a specific member account.
    */
   member: IRedditCloneMember.ISummary;
 
@@ -75,8 +86,11 @@ export type IRedditCloneCommentVote = {
    *
    * This relation provides the comment's information that was voted on. Used to calculate comment scores and determine which comments receive karma for their authors.
    *
-   * @x-autobe-database-schema-property comment
-   * @x-autobe-specification Relation via reddit_clone_comment_id JOIN to reddit_clone_comments table. Returns IRedditCloneComment.ISummary containing the comment's essential information. Each vote targets a specific comment.
+     * @x-autobe-database-schema-property comment
+     * @x-autobe-specification Relation via reddit_clone_comment_id JOIN to
+     *   reddit_clone_comments table. Returns IRedditCloneComment.ISummary
+     *   containing the comment's essential information. Each vote targets a
+     *   specific comment.
    */
   comment: IRedditCloneComment.ISummary;
 };

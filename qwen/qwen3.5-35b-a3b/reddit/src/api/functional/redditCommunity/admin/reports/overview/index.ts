@@ -30,10 +30,10 @@ import { IRedditCommunityReportsOverviewRequest } from "../../../../../structure
  * @param props.body Search criteria for the report queue overview, including pagination, sorting, and filtering parameters.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Retrieve all reports from reddit_community_reports table where:
- * - community_id matches the community where the authenticated admin holds moderator privileges (enforced via authentication middleware)
- * - status_id = 0 (pending)
- * - deleted_at is NULL
+ * @x-autobe-specification Retrieve all reports from reddit_community_reports
+ *   table where: - community_id matches the community where the authenticated
+ *   admin holds moderator privileges (enforced via authentication middleware) -
+ *   status_id = 0 (pending) - deleted_at is NULL
  *
  * Apply filters from request body:
  * - date range filters (created_at between)

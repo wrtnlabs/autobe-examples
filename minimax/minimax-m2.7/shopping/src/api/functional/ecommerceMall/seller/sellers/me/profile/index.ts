@@ -22,7 +22,8 @@ export * as snapshots from "./snapshots/index";
  * @param props.connection
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Query the ecommerce_mall_seller_profiles table using the seller_id from the authenticated session context.
+ * @x-autobe-specification Query the ecommerce_mall_seller_profiles table using
+ *   the seller_id from the authenticated session context.
  *
  * Return all profile fields: id, shop_name, description, logo_image, created_at, updated_at.
  *
@@ -87,7 +88,8 @@ export namespace at {
  * @param props.body Update payload containing the shop profile fields to modify. All fields are optional but at least one must be provided.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Update the authenticated seller's shop profile in ecommerce_mall_seller_profiles table.
+ * @x-autobe-specification Update the authenticated seller's shop profile in
+ *   ecommerce_mall_seller_profiles table.
  *
  * Implementation steps:
  * 1. Extract authenticated seller from request context
@@ -206,24 +208,20 @@ export namespace put {
  * @param props.body Fields to update. All fields are optional - only provided fields will be modified. Shop name is required if any update is intended.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification 1. Extract authenticated seller from request context (seller session/JWT).
- * 2. Query the ecommerce_mall_seller_profiles table using seller_id from the authenticated seller.
- * 3. Validate that the seller profile exists (return 404 if not found).
- * 4. Validate input fields:
- *    - If name is provided, verify length <= 200 characters.
- *    - If description is provided, verify length <= 10000 characters.
- *    - If logo_uri is provided, verify it is a valid URI format.
- * 5. Create a snapshot BEFORE applying changes:
- *    - Insert into ecommerce_mall_seller_profile_snapshots with:
- *      - ecommerce_mall_seller_profile_id = current profile id
- *      - shop_name = current name
- *      - shop_description = current description
- *      - logo_url = current logo_uri
- *      - created_at = current timestamp
- * 6. Apply updates to ecommerce_mall_seller_profiles:
- *    - Update only the fields that were provided in the request.
- *    - Set updated_at = current timestamp.
- * 7. Return the updated seller profile.
+ * @x-autobe-specification 1. Extract authenticated seller from request context
+ *   (seller session/JWT). 2. Query the ecommerce_mall_seller_profiles table
+ *   using seller_id from the authenticated seller. 3. Validate that the seller
+ *   profile exists (return 404 if not found). 4. Validate input fields: - If
+ *   name is provided, verify length <= 200 characters. - If description is
+ *   provided, verify length <= 10000 characters. - If logo_uri is provided,
+ *   verify it is a valid URI format. 5. Create a snapshot BEFORE applying
+ *   changes: - Insert into ecommerce_mall_seller_profile_snapshots with: -
+ *   ecommerce_mall_seller_profile_id = current profile id - shop_name = current
+ *   name - shop_description = current description - logo_url = current logo_uri
+ *   - created_at = current timestamp 6. Apply updates to
+ *   ecommerce_mall_seller_profiles: - Update only the fields that were provided
+ *   in the request. - Set updated_at = current timestamp. 7. Return the updated
+ *   seller profile.
  *
  * **Error Handling**:
  * - If seller profile not found: Return 404 with message "Seller profile not found".

@@ -25,7 +25,9 @@ import { ICommunityPlatformPostVote } from "../../../../structures/ICommunityPla
  * @param props.body Vote creation data including target type, target ID, and vote type
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Create a vote record in either community_platform_post_votes or community_platform_comment_votes table based on targetType.
+ * @x-autobe-specification Create a vote record in either
+ *   community_platform_post_votes or community_platform_comment_votes table
+ *   based on targetType.
  *
  * Implementation steps:
  * 1. Extract memberId from authenticated session (member actor only)
@@ -129,7 +131,8 @@ export namespace create {
  * @param props.body Vote parameters including target type (post or comment), target ID, and desired vote state
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implementation handles three scenarios based on voteType:
+ * @x-autobe-specification Implementation handles three scenarios based on
+ *   voteType:
  *
  * 1. **Create vote** (no existing vote):
  *    - Verify member has not voted on target (post or comment)
@@ -239,7 +242,9 @@ export namespace cast {
  * @param props.voteId Unique identifier of the vote to retrieve (global scope - identifies votes on both posts and comments)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query both community_platform_post_votes and community_platform_comment_votes tables by the provided voteId UUID. Since UUIDs are globally unique, only one table will contain the record.
+ * @x-autobe-specification Query both community_platform_post_votes and
+ *   community_platform_comment_votes tables by the provided voteId UUID. Since
+ *   UUIDs are globally unique, only one table will contain the record.
  *
  * Implementation steps:
  * 1. Validate voteId is a valid UUID format

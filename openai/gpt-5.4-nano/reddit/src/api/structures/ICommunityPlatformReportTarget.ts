@@ -10,56 +10,77 @@ export type ICommunityPlatformReportTarget = {
   /**
    * Unique identifier of the report target context record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from community_platform_report_targets.id (UUID). Use row identity for lookups of single-record endpoints.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_report_targets.id (UUID). Use row identity for
+     *   lookups of single-record endpoints.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Summary of the moderation report that owns this target context.
    *
-   * @x-autobe-database-schema-property report
-   * @x-autobe-specification Populate by joining community_platform_report_targets.community_platform_report_id to community_platform_reports.id and projecting the joined community_platform_reports row as an ICommunityPlatformReport.ISummary. The DTO consumer should use this summary to render the report context without additional queries.
+     * @x-autobe-database-schema-property report
+     * @x-autobe-specification Populate by joining
+     *   community_platform_report_targets.community_platform_report_id to
+     *   community_platform_reports.id and projecting the joined
+     *   community_platform_reports row as an ICommunityPlatformReport.ISummary.
+     *   The DTO consumer should use this summary to render the report context
+     *   without additional queries.
    */
   report: ICommunityPlatformReport.ISummary;
 
   /**
    * Discriminator indicating the type of content being reported within the community moderation context.
    *
-   * @x-autobe-database-schema-property target_type
-   * @x-autobe-specification Direct mapping from community_platform_report_targets.target_type (non-empty string). Represents the content kind inside the community moderation workflow (e.g., post or comment).
+     * @x-autobe-database-schema-property target_type
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_report_targets.target_type (non-empty string).
+     *   Represents the content kind inside the community moderation workflow
+     *   (e.g., post or comment).
    */
   target_type: string;
 
   /**
    * Identifier of the concrete target content instance referenced by target_type.
    *
-   * @x-autobe-database-schema-property target_id
-   * @x-autobe-specification Direct mapping from community_platform_report_targets.target_id (UUID string). Together with target_type, identifies the concrete content instance referenced by the report.
+     * @x-autobe-database-schema-property target_id
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_report_targets.target_id (UUID string). Together
+     *   with target_type, identifies the concrete content instance referenced
+     *   by the report.
    */
   target_id: string & tags.Format<"uuid">;
 
   /**
    * Timestamp when this report target context record was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from community_platform_report_targets.created_at (date-time). Server sets on creation and it must be treated as immutable for this DTO.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_report_targets.created_at (date-time). Server sets
+     *   on creation and it must be treated as immutable for this DTO.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when this report target context record was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from community_platform_report_targets.updated_at (date-time). Update endpoints that modify target_type/target_id must persist updated_at server-side; this DTO only exposes the value.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_report_targets.updated_at (date-time). Update
+     *   endpoints that modify target_type/target_id must persist updated_at
+     *   server-side; this DTO only exposes the value.
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * Soft-delete timestamp for this target context; null means the record is not deleted.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from community_platform_report_targets.deleted_at. If the value is null, the target-context record is active; if non-null, it is soft-deleted and should be treated as not editable by update workflows.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_report_targets.deleted_at. If the value is null, the
+     *   target-context record is active; if non-null, it is soft-deleted and
+     *   should be treated as not editable by update workflows.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -71,16 +92,26 @@ export namespace ICommunityPlatformReportTarget {
     /**
      * Target discriminator indicating what kind of content this report targets (for example, a post or a comment).
      *
-     * @x-autobe-database-schema-property target_type
-     * @x-autobe-specification Direct mapping from community_platform_report_targets.target_type. Treated as a discriminator for the concrete content referenced by target_id (e.g., post vs comment). Server must validate that the discriminator value is supported and can be resolved to real content within the report's community scope.
+         * @x-autobe-database-schema-property target_type
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_report_targets.target_type. Treated as a
+         *   discriminator for the concrete content referenced by target_id
+         *   (e.g., post vs comment). Server must validate that the
+         *   discriminator value is supported and can be resolved to real
+         *   content within the report's community scope.
      */
     target_type: string;
 
     /**
      * UUID identifier of the concrete content instance being reported (the target instance corresponding to target_type).
      *
-     * @x-autobe-database-schema-property target_id
-     * @x-autobe-specification Direct mapping from community_platform_report_targets.target_id (UUID). Server must validate that the referenced content exists and belongs to the same community as the report referenced by {reportId}, according to the provided target_type. Used for idempotency checks when deduplicating existing report-target mappings.
+         * @x-autobe-database-schema-property target_id
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_report_targets.target_id (UUID). Server must
+         *   validate that the referenced content exists and belongs to the same
+         *   community as the report referenced by {reportId}, according to the
+         *   provided target_type. Used for idempotency checks when
+         *   deduplicating existing report-target mappings.
      */
     target_id: string & tags.Format<"uuid">;
   };
@@ -92,16 +123,26 @@ export namespace ICommunityPlatformReportTarget {
     /**
      * Discriminator indicating the type of content being reported for this moderation report (e.g., post or comment).
      *
-     * @x-autobe-database-schema-property target_type
-     * @x-autobe-specification Directly map to community_platform_report_targets.target_type. Treat this as the discriminator of the reported target content type within the community moderation scope (e.g., values expected by the service such as 'post' or 'comment'). Validate on the server that the provided value is supported for the report-target workflow.
+         * @x-autobe-database-schema-property target_type
+         * @x-autobe-specification Directly map to
+         *   community_platform_report_targets.target_type. Treat this as the
+         *   discriminator of the reported target content type within the
+         *   community moderation scope (e.g., values expected by the service
+         *   such as 'post' or 'comment'). Validate on the server that the
+         *   provided value is supported for the report-target workflow.
      */
     target_type: string;
 
     /**
      * UUID of the concrete content instance (within the report’s community) referenced by target_type.
      *
-     * @x-autobe-database-schema-property target_id
-     * @x-autobe-specification Directly map to community_platform_report_targets.target_id. This must be the identifier (UUID) of the concrete target content instance within the same community as the report; the server must verify the cross-entity/community-scoped consistency during authorization/validation.
+         * @x-autobe-database-schema-property target_id
+         * @x-autobe-specification Directly map to
+         *   community_platform_report_targets.target_id. This must be the
+         *   identifier (UUID) of the concrete target content instance within
+         *   the same community as the report; the server must verify the
+         *   cross-entity/community-scoped consistency during
+         *   authorization/validation.
      */
     target_id: string & tags.Format<"uuid">;
   };

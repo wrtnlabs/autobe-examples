@@ -28,9 +28,9 @@ export class CommunityplatformGuestPostsLinkController {
    *
    * @param connection
    * @param postId Target post identifier whose link representation is requested.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor guest
-   * @x-autobe-specification Implementation steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor guest
+     * @x-autobe-specification Implementation steps:
    *
    * 1) Parse postId from path.
    * 2) Query community_platform_posts by id = postId, applying the normal browsing visibility rule: require deleted_at IS NULL so removed posts are not returned.
@@ -91,9 +91,13 @@ export class CommunityplatformGuestPostsLinkController {
    * @param connection
    * @param postId Target post identifier whose link content should be updated.
    * @param body Link-content update payload. Includes the canonical external URL and fields required to refresh the post’s link preview metadata.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor guest
-   * @x-autobe-specification Validate update intent: load community_platform_posts by postId ensuring the row is eligible for editing and that the caller has permission to modify the post. Load (or upsert as designed) the related community_platform_post_links row for the post.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor guest
+     * @x-autobe-specification Validate update intent: load
+     *   community_platform_posts by postId ensuring the row is eligible for
+     *   editing and that the caller has permission to modify the post. Load (or
+     *   upsert as designed) the related community_platform_post_links row for
+     *   the post.
    *
    * Business validation:
    * - Ensure the target post is treated as link-type for rendering purposes (community_platform_posts.post_type). If the system’s policy requires it, update community_platform_posts.post_type to the link value or reject if mismatch.

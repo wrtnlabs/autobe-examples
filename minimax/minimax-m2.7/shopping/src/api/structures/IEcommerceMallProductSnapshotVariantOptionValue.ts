@@ -19,8 +19,10 @@ export type IEcommerceMallProductSnapshotVariantOptionValue = {
    *
    * Primary key in UUID format for global uniqueness across all snapshot variant option values.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_product_snapshot_variant_option_values.id. UUID primary key with global uniqueness across all snapshot variant option values.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_product_snapshot_variant_option_values.id. UUID primary
+     *   key with global uniqueness across all snapshot variant option values.
    */
   id: string & tags.Format<"uuid">;
 
@@ -29,8 +31,12 @@ export type IEcommerceMallProductSnapshotVariantOptionValue = {
    *
    * Examples include 'color', 'size', 'material', or any custom attribute identifier. Each key must be unique within a variant snapshot.
    *
-   * @x-autobe-database-schema-property key
-   * @x-autobe-specification Direct mapping from ecommerce_mall_product_snapshot_variant_option_values.key. Option name identifying the attribute type such as color, size, material, or style. Each key must be unique within a variant snapshot per unique constraint.
+     * @x-autobe-database-schema-property key
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_product_snapshot_variant_option_values.key. Option name
+     *   identifying the attribute type such as color, size, material, or style.
+     *   Each key must be unique within a variant snapshot per unique
+     *   constraint.
    */
   key: string;
 
@@ -39,8 +45,11 @@ export type IEcommerceMallProductSnapshotVariantOptionValue = {
    *
    * Examples include 'Red', 'Large', 'Cotton', or any corresponding attribute value. Paired with key to form a complete option specification for display.
    *
-   * @x-autobe-database-schema-property value
-   * @x-autobe-specification Direct mapping from ecommerce_mall_product_snapshot_variant_option_values.value. Option value for the specified attribute such as Red, Large, or Cotton. Paired with key to form a complete option specification for display.
+     * @x-autobe-database-schema-property value
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_product_snapshot_variant_option_values.value. Option
+     *   value for the specified attribute such as Red, Large, or Cotton. Paired
+     *   with key to form a complete option specification for display.
    */
   value: string;
 
@@ -49,8 +58,11 @@ export type IEcommerceMallProductSnapshotVariantOptionValue = {
    *
    * Records when this specific option key-value pair was frozen during the product snapshot creation. Useful for audit trails and chronological ordering of snapshot changes.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_product_snapshot_variant_option_values.created_at. Timestamptz format. Records when this specific option key-value pair was frozen during product snapshot creation.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_product_snapshot_variant_option_values.created_at.
+     *   Timestamptz format. Records when this specific option key-value pair
+     *   was frozen during product snapshot creation.
    */
   createdAt: string & tags.Format<"date-time">;
 };

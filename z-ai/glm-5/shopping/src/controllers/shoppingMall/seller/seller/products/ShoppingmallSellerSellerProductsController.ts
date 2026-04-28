@@ -24,9 +24,9 @@ export class ShoppingmallSellerSellerProductsController {
    *
    * @param connection
    * @param body Product creation data including name, description, category assignment, and base price
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Implementation steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Implementation steps:
    *
    * 1. Authenticate the seller via JWT token from the Authorization header
    * 2. Verify the seller's account status:

@@ -22,9 +22,10 @@ export class MultiusertodoMemberTodosBulk_restore_from_trashController {
    *
    * @param connection
    * @param body Bulk restore request containing the list of todo IDs to restore from the authenticated member’s trash.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement the endpoint as an all-or-nothing bulk restore.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implement the endpoint as an all-or-nothing bulk
+     *   restore.
    *
    * 1) Identify request scope and ownership
    * - Obtain the authenticated member’s user id from session/context.

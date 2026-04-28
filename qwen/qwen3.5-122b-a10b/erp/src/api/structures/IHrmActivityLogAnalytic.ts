@@ -18,7 +18,11 @@ export type IHrmActivityLogAnalytic = {
    *
    * The action types correspond to the action_type column in the hrm_activity_logs table. This data helps administrators understand which types of activities are most common in their organization.
    *
-   * @x-autobe-specification Computed aggregation: SELECT action_type, COUNT(*) FROM hrm_activity_logs WHERE organization context filters applied GROUP BY action_type. Returns a map where keys are action type strings (e.g., 'employee_invited', 'contract_created', 'task_status_changed') and values are integer counts.
+     * @x-autobe-specification Computed aggregation: SELECT action_type,
+     *   COUNT(*) FROM hrm_activity_logs WHERE organization context filters
+     *   applied GROUP BY action_type. Returns a map where keys are action type
+     *   strings (e.g., 'employee_invited', 'contract_created',
+     *   'task_status_changed') and values are integer counts.
    */
   action_type_counts: {
     [key: string]: number & tags.Type<"int32">;
@@ -31,7 +35,12 @@ export type IHrmActivityLogAnalytic = {
    *
    * The time periods are derived from the timestamp column in the hrm_activity_logs table. The granularity of time buckets is automatically determined based on the date range of the query, ensuring readable and meaningful aggregations. This data helps identify patterns such as peak activity times, weekly trends, or seasonal variations in organizational activity.
    *
-   * @x-autobe-specification Computed aggregation: SELECT time_bucket, COUNT(*) FROM hrm_activity_logs WHERE organization context filters applied GROUP BY time_bucket. Time buckets are computed from the timestamp column (daily/weekly/monthly granularity depending on date range). Returns an array of objects with period information and activity counts.
+     * @x-autobe-specification Computed aggregation: SELECT time_bucket,
+     *   COUNT(*) FROM hrm_activity_logs WHERE organization context filters
+     *   applied GROUP BY time_bucket. Time buckets are computed from the
+     *   timestamp column (daily/weekly/monthly granularity depending on date
+     *   range). Returns an array of objects with period information and
+     *   activity counts.
    */
   temporal_trends: IHrmActivityLogAnalytic.ITemporalTrend[];
 
@@ -42,7 +51,12 @@ export type IHrmActivityLogAnalytic = {
    *
    * The data is computed by joining hrm_activity_logs with hrm_members, grouping by member ID, and counting their activity entries. This helps administrators identify engaged team members and understand participation patterns across the organization.
    *
-   * @x-autobe-specification Computed aggregation: SELECT hrm_members_id, COUNT(*) as activity_count FROM hrm_activity_logs WHERE organization context filters applied GROUP BY hrm_members_id ORDER BY activity_count DESC LIMIT N. JOINs with hrm_members table to include member profile information. Returns an array of top performer objects with member details and their activity counts.
+     * @x-autobe-specification Computed aggregation: SELECT hrm_members_id,
+     *   COUNT(*) as activity_count FROM hrm_activity_logs WHERE organization
+     *   context filters applied GROUP BY hrm_members_id ORDER BY activity_count
+     *   DESC LIMIT N. JOINs with hrm_members table to include member profile
+     *   information. Returns an array of top performer objects with member
+     *   details and their activity counts.
    */
   top_performers: IHrmActivityLogAnalytic.ITopPerformer[];
 
@@ -53,7 +67,10 @@ export type IHrmActivityLogAnalytic = {
    *
    * This count serves as a summary metric for the analytics query and can be used for pagination metadata or to provide context for the other aggregated statistics (action_type_counts, temporal_trends, top_performers).
    *
-   * @x-autobe-specification Computed aggregation: SELECT COUNT(*) FROM hrm_activity_logs WHERE organization context filters applied. Returns the total number of activity log entries matching the filter criteria (organization context, optional date range).
+     * @x-autobe-specification Computed aggregation: SELECT COUNT(*) FROM
+     *   hrm_activity_logs WHERE organization context filters applied. Returns
+     *   the total number of activity log entries matching the filter criteria
+     *   (organization context, optional date range).
    */
   total_count: number & tags.Type<"int32">;
 };
@@ -71,7 +88,11 @@ export namespace IHrmActivityLogAnalytic {
      *
      * This computed field represents the beginning of an aggregated time window (daily, weekly, or monthly). The specific granularity is determined automatically based on the queried date range to provide meaningful visualizations. For example, a 30-day range might use daily buckets, while a 2-year range might use monthly buckets.
      *
-     * @x-autobe-specification Computed time bucket identifier. Generated from hrm_activity_logs.timestamp column using time_bucket aggregation function. Format: ISO 8601 datetime representing the start of the time period (day/week/month boundary). Time granularity automatically determined by query date range.
+         * @x-autobe-specification Computed time bucket identifier. Generated
+         *   from hrm_activity_logs.timestamp column using time_bucket
+         *   aggregation function. Format: ISO 8601 datetime representing the
+         *   start of the time period (day/week/month boundary). Time
+         *   granularity automatically determined by query date range.
      */
     period: string & tags.Format<"date-time">;
 
@@ -80,7 +101,10 @@ export namespace IHrmActivityLogAnalytic {
      *
      * This computed field contains the total count of activity log records that occurred during the time window represented by the period field. The count reflects all activity types recorded in the system for the specified time bucket, providing insight into activity volume trends over time.
      *
-     * @x-autobe-specification Computed COUNT(*) aggregation of hrm_activity_logs records within the time bucket. Integer value representing the number of activity log entries that fall within the period time range.
+         * @x-autobe-specification Computed COUNT(*) aggregation of
+         *   hrm_activity_logs records within the time bucket. Integer value
+         *   representing the number of activity log entries that fall within
+         *   the period time range.
      */
     count: number & tags.Type<"int32"> & tags.Minimum<0>;
   };
@@ -109,7 +133,11 @@ export namespace IHrmActivityLogAnalytic {
      * **Included Fields**: id, email, created_at, updated_at, deleted_at
      * **Excluded Fields**: password_hash, sessions, and other sensitive data
      *
-     * @x-autobe-specification Computed join from hrm_activity_logs.hrm_members_id to hrm_members.id. Returns IHrmMember.ISummary containing id, email, created_at, updated_at, and deleted_at fields. The join filters by organization context and groups activity logs by member.
+         * @x-autobe-specification Computed join from
+         *   hrm_activity_logs.hrm_members_id to hrm_members.id. Returns
+         *   IHrmMember.ISummary containing id, email, created_at, updated_at,
+         *   and deleted_at fields. The join filters by organization context and
+         *   groups activity logs by member.
      */
     member: IHrmMember.ISummary;
 
@@ -122,7 +150,10 @@ export namespace IHrmActivityLogAnalytic {
      * **Computation**: GROUP BY hrm_members_id with organization context filters
      * **Purpose**: Activity ranking and engagement metrics
      *
-     * @x-autobe-specification Computed aggregation: COUNT(*) from hrm_activity_logs GROUP BY hrm_members_id. Counts all activity log entries for the member within the filtered organization context and time range.
+         * @x-autobe-specification Computed aggregation: COUNT(*) from
+         *   hrm_activity_logs GROUP BY hrm_members_id. Counts all activity log
+         *   entries for the member within the filtered organization context and
+         *   time range.
      */
     activity_count: number & tags.Type<"int32">;
   };

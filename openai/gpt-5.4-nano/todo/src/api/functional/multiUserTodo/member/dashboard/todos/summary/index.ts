@@ -20,22 +20,22 @@ import { IMultiUserTodoTodoEditHistoryEntry } from "../../../../../../structures
  * @param props.connection
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implementation steps:
- * 1) Authenticate request as member; derive authenticatedMemberId from auth context.
- * 2) Query multi_user_todo_todos for records scoped to the authenticated owner.
- *    - Use multi_user_todos.deleted_at to separate buckets:
- *      - Normal bucket: deleted_at IS NULL.
- *      - Trash bucket: deleted_at IS NOT NULL.
- *    - Apply lifecycle_state constraints consistently if the service-layer defines additional trash/visibility semantics for lifecycle_state; otherwise keep visibility aligned with deleted_at rules.
- * 3) Compute aggregates for each bucket using only the fields available in the schema:
- *    - totalCount: COUNT(*).
- *    - completeCount: COUNT WHERE is_complete = true.
- *    - incompleteCount: COUNT WHERE is_complete = false.
- *    - startDateSetCount: COUNT WHERE start_date IS NOT NULL.
- *    - dueDateSetCount: COUNT WHERE due_date IS NOT NULL.
- *    - createdAtNewestAt/OldestAt (if supported by the DTO): derive from created_at.
- * 4) Never expose individual todo rows or any content beyond the summary DTO.
- * 5) Return a single JSON object matching IMultiUserTodoTodoSummary.
+ * @x-autobe-specification Implementation steps: 1) Authenticate request as
+ *   member; derive authenticatedMemberId from auth context. 2) Query
+ *   multi_user_todo_todos for records scoped to the authenticated owner. - Use
+ *   multi_user_todos.deleted_at to separate buckets: - Normal bucket:
+ *   deleted_at IS NULL. - Trash bucket: deleted_at IS NOT NULL. - Apply
+ *   lifecycle_state constraints consistently if the service-layer defines
+ *   additional trash/visibility semantics for lifecycle_state; otherwise keep
+ *   visibility aligned with deleted_at rules. 3) Compute aggregates for each
+ *   bucket using only the fields available in the schema: - totalCount:
+ *   COUNT(*). - completeCount: COUNT WHERE is_complete = true. -
+ *   incompleteCount: COUNT WHERE is_complete = false. - startDateSetCount:
+ *   COUNT WHERE start_date IS NOT NULL. - dueDateSetCount: COUNT WHERE due_date
+ *   IS NOT NULL. - createdAtNewestAt/OldestAt (if supported by the DTO): derive
+ *   from created_at. 4) Never expose individual todo rows or any content beyond
+ *   the summary DTO. 5) Return a single JSON object matching
+ *   IMultiUserTodoTodoSummary.
  *
  * Edge cases:
  * - No rows in a bucket: return counts as 0.

@@ -168,7 +168,8 @@ export namespace create {
  * @param props.body List request parameters for filtering, sorting, and paginating the comment thread of the given post.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification List comments for a post with pagination and thread-aware sorting.
+ * @x-autobe-specification List comments for a post with pagination and
+ *   thread-aware sorting.
  *
  * Implementation steps:
  * 1) Parse `postId` from path and pagination/sorting/filter criteria from request body.
@@ -558,9 +559,11 @@ export namespace update {
  * @param props.commentId Target comment ID to be removed from the specified post discussion.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification 1) Resolve actor and authorization context
- * - Extract authenticated actor identity from session/middleware.
- * - Determine whether actor is a moderator for the community containing the target post (authorization requires joining from comment -> post -> community and then checking moderator membership).
+ * @x-autobe-specification 1) Resolve actor and authorization context - Extract
+ *   authenticated actor identity from session/middleware. - Determine whether
+ *   actor is a moderator for the community containing the target post
+ *   (authorization requires joining from comment -> post -> community and then
+ *   checking moderator membership).
  *
  * 2) Validate target scope (postId + commentId)
  * - Query `community_platform_comments` where `id = {commentId}` AND `community_platform_post_id = {postId}`.

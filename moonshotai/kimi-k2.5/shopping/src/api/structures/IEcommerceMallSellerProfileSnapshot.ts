@@ -10,48 +10,58 @@ export type IEcommerceMallSellerProfileSnapshot = {
   /**
    * Unique identifier of the seller profile snapshot.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_seller_profile_snapshots.id. Primary key UUID.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_seller_profile_snapshots.id. Primary key UUID.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * The seller whose profile state is captured in this snapshot.
    *
-   * @x-autobe-database-schema-property seller
-   * @x-autobe-specification Join via seller_id FK to ecommerce_mall_sellers. Returns IEcommerceMallSeller.ISummary summary object containing seller identity information.
+     * @x-autobe-database-schema-property seller
+     * @x-autobe-specification Join via seller_id FK to ecommerce_mall_sellers.
+     *   Returns IEcommerceMallSeller.ISummary summary object containing seller
+     *   identity information.
    */
   seller: IEcommerceMallSeller.ISummary;
 
   /**
    * The shop name of the seller at the time the snapshot was created.
    *
-   * @x-autobe-database-schema-property shop_name
-   * @x-autobe-specification Direct mapping from ecommerce_mall_seller_profile_snapshots.shop_name.
+     * @x-autobe-database-schema-property shop_name
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_seller_profile_snapshots.shop_name.
    */
   shopName: string;
 
   /**
    * The shop description of the seller at the time the snapshot was created. May be null if no description was set.
    *
-   * @x-autobe-database-schema-property shop_description
-   * @x-autobe-specification Direct mapping from ecommerce_mall_seller_profile_snapshots.shop_description. Nullable field.
+     * @x-autobe-database-schema-property shop_description
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_seller_profile_snapshots.shop_description. Nullable
+     *   field.
    */
   shopDescription: string | null;
 
   /**
    * The URL of the seller's logo image at the time the snapshot was created. May be null if no logo image was set.
    *
-   * @x-autobe-database-schema-property logo_image_url
-   * @x-autobe-specification Direct mapping from ecommerce_mall_seller_profile_snapshots.logo_image_url. Nullable field with URL format validation.
+     * @x-autobe-database-schema-property logo_image_url
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_seller_profile_snapshots.logo_image_url. Nullable field
+     *   with URL format validation.
    */
   logoImageUrl: (string & tags.Format<"url">) | null;
 
   /**
    * Timestamp when this snapshot was created to preserve the seller profile state.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_seller_profile_snapshots.created_at. Timestamp when this snapshot was created.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_seller_profile_snapshots.created_at. Timestamp when this
+     *   snapshot was created.
    */
   createdAt: string & tags.Format<"date-time">;
 };
@@ -63,28 +73,40 @@ export namespace IEcommerceMallSellerProfileSnapshot {
     /**
      * Filter snapshots created on or after this datetime (ISO 8601 format). Used to view recent profile changes.
      *
-     * @x-autobe-specification Query parameter filtering by created_at column from ecommerce_mall_seller_profile_snapshots table. Filters snapshots where created_at >= this value. Used for date range queries to view profile changes within a specific time period. Combined with createdBefore for precise date window filtering.
+         * @x-autobe-specification Query parameter filtering by created_at
+         *   column from ecommerce_mall_seller_profile_snapshots table. Filters
+         *   snapshots where created_at >= this value. Used for date range
+         *   queries to view profile changes within a specific time period.
+         *   Combined with createdBefore for precise date window filtering.
      */
     createdAfter: (string & tags.Format<"date-time">) | null;
 
     /**
      * Filter snapshots created on or before this datetime (ISO 8601 format). Used to view older profile changes.
      *
-     * @x-autobe-specification Query parameter filtering by created_at column from ecommerce_mall_seller_profile_snapshots table. Filters snapshots where created_at <= this value. Used for date range queries to view profile changes within a specific time period. Combined with createdAfter for precise date window filtering.
+         * @x-autobe-specification Query parameter filtering by created_at
+         *   column from ecommerce_mall_seller_profile_snapshots table. Filters
+         *   snapshots where created_at <= this value. Used for date range
+         *   queries to view profile changes within a specific time period.
+         *   Combined with createdAfter for precise date window filtering.
      */
     createdBefore: (string & tags.Format<"date-time">) | null;
 
     /**
      * Page number for pagination (1-indexed). Default is 1 if not specified.
      *
-     * @x-autobe-specification Computed pagination parameter. 1-indexed page number for offset-based pagination. Calculated as (offset / limit) + 1. Null uses default page 1.
+         * @x-autobe-specification Computed pagination parameter. 1-indexed page
+         *   number for offset-based pagination. Calculated as (offset / limit)
+         *   + 1. Null uses default page 1.
      */
     page: (number & tags.Type<"int32"> & tags.Minimum<1>) | null;
 
     /**
      * Maximum number of snapshots to return per page (1-100). Default is 20.
      *
-     * @x-autobe-specification Computed pagination parameter. Maximum number of records to return per page. Capped at 100 for performance. Default typically 20. Maps to SQL LIMIT clause.
+         * @x-autobe-specification Computed pagination parameter. Maximum number
+         *   of records to return per page. Capped at 100 for performance.
+         *   Default typically 20. Maps to SQL LIMIT clause.
      */
     limit:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -98,48 +120,61 @@ export namespace IEcommerceMallSellerProfileSnapshot {
     /**
      * Unique identifier of the seller profile snapshot.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_mall_seller_profile_snapshots.id. UUID primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_seller_profile_snapshots.id. UUID primary key.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * The seller whose profile state is captured in this snapshot.
      *
-     * @x-autobe-database-schema-property seller
-     * @x-autobe-specification Join via seller_id to ecommerce_mall_sellers. Returns IEcommerceMallSeller.ISummary reference.
+         * @x-autobe-database-schema-property seller
+         * @x-autobe-specification Join via seller_id to ecommerce_mall_sellers.
+         *   Returns IEcommerceMallSeller.ISummary reference.
      */
     seller: IEcommerceMallSeller.ISummary;
 
     /**
      * The shop name of the seller at the time the snapshot was created.
      *
-     * @x-autobe-database-schema-property shop_name
-     * @x-autobe-specification Direct mapping from ecommerce_mall_seller_profile_snapshots.shop_name. Preserves the exact shop name that was displayed to customers at snapshot time.
+         * @x-autobe-database-schema-property shop_name
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_seller_profile_snapshots.shop_name. Preserves the
+         *   exact shop name that was displayed to customers at snapshot time.
      */
     shopName: string;
 
     /**
      * The shop description of the seller at the time the snapshot was created. May be null if no description was set.
      *
-     * @x-autobe-database-schema-property shop_description
-     * @x-autobe-specification Direct mapping from ecommerce_mall_seller_profile_snapshots.shop_description. Nullable string preserving brand representation and store narrative at snapshot time.
+         * @x-autobe-database-schema-property shop_description
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_seller_profile_snapshots.shop_description. Nullable
+         *   string preserving brand representation and store narrative at
+         *   snapshot time.
      */
     shopDescription: string | null;
 
     /**
      * The URL of the seller's logo image at the time the snapshot was created. May be null if no logo image was set.
      *
-     * @x-autobe-database-schema-property logo_image_url
-     * @x-autobe-specification Direct mapping from ecommerce_mall_seller_profile_snapshots.logo_image_url. Nullable URL preserving visual identity at snapshot time. Format: URL string up to 80000 chars.
+         * @x-autobe-database-schema-property logo_image_url
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_seller_profile_snapshots.logo_image_url. Nullable
+         *   URL preserving visual identity at snapshot time. Format: URL string
+         *   up to 80000 chars.
      */
     logoImageUrl: (string & tags.Format<"url">) | null;
 
     /**
      * Timestamp when this snapshot was created to preserve the seller profile state.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_seller_profile_snapshots.created_at. ISO 8601 datetime with timezone (Timestamptz). Captures exact moment of profile edit that triggered this snapshot.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_seller_profile_snapshots.created_at. ISO 8601
+         *   datetime with timezone (Timestamptz). Captures exact moment of
+         *   profile edit that triggered this snapshot.
      */
     createdAt: string & tags.Format<"date-time">;
   };

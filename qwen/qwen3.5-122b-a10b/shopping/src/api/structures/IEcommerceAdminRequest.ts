@@ -28,8 +28,9 @@ export type IEcommerceAdminRequest = {
    *
    * This UUID serves as the primary key for the admin request entity and is used to reference the request in API operations.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_admin_requests.id. Primary key, UUID format.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from ecommerce_admin_requests.id.
+     *   Primary key, UUID format.
    */
   id: string & tags.Format<"uuid">;
 
@@ -38,8 +39,10 @@ export type IEcommerceAdminRequest = {
    *
    * This field is populated only when the requester_type is 'customer'. It remains null for seller requests. The corresponding requestingCustomer relation provides the full customer summary when this field is non-null.
    *
-   * @x-autobe-database-schema-property requester_customer_id
-   * @x-autobe-specification Direct mapping from ecommerce_admin_requests.requester_customer_id. Populated when requester_type is 'customer', null otherwise.
+     * @x-autobe-database-schema-property requester_customer_id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_admin_requests.requester_customer_id. Populated when
+     *   requester_type is 'customer', null otherwise.
    */
   requester_customer_id: (string & tags.Format<"uuid">) | null;
 
@@ -48,8 +51,10 @@ export type IEcommerceAdminRequest = {
    *
    * This field is populated only when the requester_type is 'seller'. It remains null for customer requests. The corresponding requestingSeller relation provides the full seller summary when this field is non-null.
    *
-   * @x-autobe-database-schema-property requester_seller_id
-   * @x-autobe-specification Direct mapping from ecommerce_admin_requests.requester_seller_id. Populated when requester_type is 'seller', null otherwise.
+     * @x-autobe-database-schema-property requester_seller_id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_admin_requests.requester_seller_id. Populated when
+     *   requester_type is 'seller', null otherwise.
    */
   requester_seller_id: (string & tags.Format<"uuid">) | null;
 
@@ -58,8 +63,10 @@ export type IEcommerceAdminRequest = {
    *
    * Allowed values are 'customer' or 'seller'. This field determines whether requester_customer_id or requester_seller_id is populated. Exactly one of these foreign keys will have a value based on this discriminator.
    *
-   * @x-autobe-database-schema-property requester_type
-   * @x-autobe-specification Direct mapping from ecommerce_admin_requests.requester_type. Values: 'customer' or 'seller'. Determines which requester FK is populated.
+     * @x-autobe-database-schema-property requester_type
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_admin_requests.requester_type. Values: 'customer' or
+     *   'seller'. Determines which requester FK is populated.
    */
   requester_type: string;
 
@@ -68,8 +75,9 @@ export type IEcommerceAdminRequest = {
    *
    * This required field provides context for administrators reviewing the request. The reason should explain why the applicant believes they should be granted administrator privileges on the platform.
    *
-   * @x-autobe-database-schema-property reason
-   * @x-autobe-specification Direct mapping from ecommerce_admin_requests.reason. Required field, non-empty string.
+     * @x-autobe-database-schema-property reason
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_admin_requests.reason. Required field, non-empty string.
    */
   reason: string;
 
@@ -78,8 +86,10 @@ export type IEcommerceAdminRequest = {
    *
    * Allowed values are 'pending', 'approved', or 'rejected'. Requests are created with 'pending' status and transition to 'approved' or 'rejected' after a super administrator reviews the request. When approved, the requesting user becomes a regular administrator.
    *
-   * @x-autobe-database-schema-property status
-   * @x-autobe-specification Direct mapping from ecommerce_admin_requests.status. Values: 'pending', 'approved', or 'rejected'.
+     * @x-autobe-database-schema-property status
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_admin_requests.status. Values: 'pending', 'approved', or
+     *   'rejected'.
    */
   status: string;
 
@@ -88,8 +98,10 @@ export type IEcommerceAdminRequest = {
    *
    * This field is required when the status is 'rejected' and null for 'pending' or 'approved' requests. It ensures transparency in the rejection process by informing the applicant why their request was denied.
    *
-   * @x-autobe-database-schema-property rejection_reason
-   * @x-autobe-specification Direct mapping from ecommerce_admin_requests.rejection_reason. Required when status is 'rejected', null otherwise.
+     * @x-autobe-database-schema-property rejection_reason
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_admin_requests.rejection_reason. Required when status is
+     *   'rejected', null otherwise.
    */
   rejection_reason: string | null;
 
@@ -98,8 +110,10 @@ export type IEcommerceAdminRequest = {
    *
    * This field is populated when the request status changes from 'pending' to either 'approved' or 'rejected'. It remains null while the request is pending review. The reviewingAdmin relation provides the full administrator summary when this field is non-null.
    *
-   * @x-autobe-database-schema-property reviewed_by_id
-   * @x-autobe-specification Direct mapping from ecommerce_admin_requests.reviewed_by_id. Populated when request is reviewed (status changes from 'pending').
+     * @x-autobe-database-schema-property reviewed_by_id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_admin_requests.reviewed_by_id. Populated when request is
+     *   reviewed (status changes from 'pending').
    */
   reviewed_by_id: (string & tags.Format<"uuid">) | null;
 
@@ -108,8 +122,10 @@ export type IEcommerceAdminRequest = {
    *
    * This field is populated when the request status changes from 'pending' to either 'approved' or 'rejected'. It remains null while the request is pending review. The timestamp uses the database timezone (timestamptz).
    *
-   * @x-autobe-database-schema-property reviewed_at
-   * @x-autobe-specification Direct mapping from ecommerce_admin_requests.reviewed_at. Populated when request is reviewed (status changes from 'pending').
+     * @x-autobe-database-schema-property reviewed_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_admin_requests.reviewed_at. Populated when request is
+     *   reviewed (status changes from 'pending').
    */
   reviewed_at: (string & tags.Format<"date-time">) | null;
 
@@ -118,8 +134,9 @@ export type IEcommerceAdminRequest = {
    *
    * This field is automatically set when the request is created and cannot be modified. It uses the database timezone (timestamptz) and provides an audit trail for when the request was submitted.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_admin_requests.created_at. Auto-set on record creation.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_admin_requests.created_at. Auto-set on record creation.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -128,8 +145,10 @@ export type IEcommerceAdminRequest = {
    *
    * This field is automatically updated whenever any field in the request is modified, such as when status changes or a rejection reason is added. It uses the database timezone (timestamptz) and provides an audit trail for the most recent activity.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from ecommerce_admin_requests.updated_at. Auto-updated on any field modification.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_admin_requests.updated_at. Auto-updated on any field
+     *   modification.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -138,8 +157,11 @@ export type IEcommerceAdminRequest = {
    *
    * This relation is populated via a LEFT JOIN from requester_customer_id to the customers table. It returns null when the requester_type is 'seller'. The summary includes the customer's identity information (id, email, display_name) without exposing sensitive data like password hash.
    *
-   * @x-autobe-database-schema-property requestingCustomer
-   * @x-autobe-specification JOIN from ecommerce_admin_requests.requester_customer_id to ecommerce_customers.id. Returns IEcommerceCustomer.ISummary or null if requester_type is not 'customer'.
+     * @x-autobe-database-schema-property requestingCustomer
+     * @x-autobe-specification JOIN from
+     *   ecommerce_admin_requests.requester_customer_id to
+     *   ecommerce_customers.id. Returns IEcommerceCustomer.ISummary or null if
+     *   requester_type is not 'customer'.
    */
   requestingCustomer: IEcommerceCustomer.ISummary | null;
 
@@ -148,8 +170,11 @@ export type IEcommerceAdminRequest = {
    *
    * This relation is populated via a LEFT JOIN from requester_seller_id to the sellers table. It returns null when the requester_type is 'customer'. The summary includes the seller's identity information (id, email, approval_status) along with shop profile data (shop_name) without exposing sensitive data like password hash.
    *
-   * @x-autobe-database-schema-property requestingSeller
-   * @x-autobe-specification JOIN from ecommerce_admin_requests.requester_seller_id to ecommerce_sellers.id. Returns IEcommerceSeller.ISummary or null if requester_type is not 'seller'.
+     * @x-autobe-database-schema-property requestingSeller
+     * @x-autobe-specification JOIN from
+     *   ecommerce_admin_requests.requester_seller_id to ecommerce_sellers.id.
+     *   Returns IEcommerceSeller.ISummary or null if requester_type is not
+     *   'seller'.
    */
   requestingSeller: IEcommerceSeller.ISummary | null;
 
@@ -158,8 +183,10 @@ export type IEcommerceAdminRequest = {
    *
    * This relation is populated via a LEFT JOIN from reviewed_by_id to the admins table. It returns null while the request is pending review (reviewed_by_id is null). The summary includes the administrator's identity information (id, email, grade) without exposing sensitive data like password hash.
    *
-   * @x-autobe-database-schema-property reviewingAdmin
-   * @x-autobe-specification JOIN from ecommerce_admin_requests.reviewed_by_id to ecommerce_admins.id. Returns IEcommerceAdmin.ISummary or null if request is still pending.
+     * @x-autobe-database-schema-property reviewingAdmin
+     * @x-autobe-specification JOIN from ecommerce_admin_requests.reviewed_by_id
+     *   to ecommerce_admins.id. Returns IEcommerceAdmin.ISummary or null if
+     *   request is still pending.
    */
   reviewingAdmin: IEcommerceAdmin.ISummary | null;
 };
@@ -191,8 +218,11 @@ export namespace IEcommerceAdminRequest {
      *
      * Specifies the approval status to filter requests by. Allowed values are 'pending' (awaiting review), 'approved' (accepted by administrator), or 'rejected' (denied by administrator). When omitted, requests of all statuses are returned.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from ecommerce_admin_requests.status column. Filters requests by approval status: 'pending', 'approved', or 'rejected'. Optional field for flexible filtering.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_admin_requests.status column. Filters requests by
+         *   approval status: 'pending', 'approved', or 'rejected'. Optional
+         *   field for flexible filtering.
      */
     status?: string | undefined;
 
@@ -201,8 +231,11 @@ export namespace IEcommerceAdminRequest {
      *
      * Specifies the type of user who submitted the request. Allowed values are 'customer' (registered buyer) or 'seller' (registered merchant). When omitted, requests from both applicant types are returned.
      *
-     * @x-autobe-database-schema-property requester_type
-     * @x-autobe-specification Direct mapping from ecommerce_admin_requests.requester_type column. Filters requests by applicant type: 'customer' or 'seller'. Optional field for flexible filtering.
+         * @x-autobe-database-schema-property requester_type
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_admin_requests.requester_type column. Filters requests by
+         *   applicant type: 'customer' or 'seller'. Optional field for flexible
+         *   filtering.
      */
     requester_type?: string | undefined;
 
@@ -211,7 +244,10 @@ export namespace IEcommerceAdminRequest {
      *
      * Performs case-insensitive substring matching on the applicant's stated reason for requesting administrator access. Returns requests where the reason field contains the search term. Useful for finding requests by keyword or topic.
      *
-     * @x-autobe-specification Computed query parameter. Performs LIKE search on ecommerce_admin_requests.reason column. Case-insensitive substring matching across the applicant's stated reason for requesting administrator access.
+         * @x-autobe-specification Computed query parameter. Performs LIKE
+         *   search on ecommerce_admin_requests.reason column. Case-insensitive
+         *   substring matching across the applicant's stated reason for
+         *   requesting administrator access.
      */
     search?: string | undefined;
 
@@ -220,7 +256,9 @@ export namespace IEcommerceAdminRequest {
      *
      * Specifies the earliest submission date for requests to include. Only requests created at or after this timestamp are returned. Use ISO 8601 format (e.g., '2024-01-15T00:00:00Z').
      *
-     * @x-autobe-specification Computed query parameter. Filters ecommerce_admin_requests.created_at column for timestamps greater than or equal to this value. ISO 8601 date-time format required.
+         * @x-autobe-specification Computed query parameter. Filters
+         *   ecommerce_admin_requests.created_at column for timestamps greater
+         *   than or equal to this value. ISO 8601 date-time format required.
      */
     created_at_from?: (string & tags.Format<"date-time">) | undefined;
 
@@ -229,7 +267,9 @@ export namespace IEcommerceAdminRequest {
      *
      * Specifies the latest submission date for requests to include. Only requests created at or before this timestamp are returned. Use ISO 8601 format (e.g., '2024-01-31T23:59:59Z').
      *
-     * @x-autobe-specification Computed query parameter. Filters ecommerce_admin_requests.created_at column for timestamps less than or equal to this value. ISO 8601 date-time format required.
+         * @x-autobe-specification Computed query parameter. Filters
+         *   ecommerce_admin_requests.created_at column for timestamps less than
+         *   or equal to this value. ISO 8601 date-time format required.
      */
     created_at_to?: (string & tags.Format<"date-time">) | undefined;
 
@@ -238,7 +278,9 @@ export namespace IEcommerceAdminRequest {
      *
      * Specifies the earliest review date for requests to include. Only requests reviewed at or after this timestamp are returned. Use ISO 8601 format (e.g., '2024-01-15T00:00:00Z'). Only affects requests with non-null reviewed_at values.
      *
-     * @x-autobe-specification Computed query parameter. Filters ecommerce_admin_requests.reviewed_at column for timestamps greater than or equal to this value. ISO 8601 date-time format required.
+         * @x-autobe-specification Computed query parameter. Filters
+         *   ecommerce_admin_requests.reviewed_at column for timestamps greater
+         *   than or equal to this value. ISO 8601 date-time format required.
      */
     reviewed_at_from?: (string & tags.Format<"date-time">) | undefined;
 
@@ -247,7 +289,9 @@ export namespace IEcommerceAdminRequest {
      *
      * Specifies the latest review date for requests to include. Only requests reviewed at or before this timestamp are returned. Use ISO 8601 format (e.g., '2024-01-31T23:59:59Z'). Only affects requests with non-null reviewed_at values.
      *
-     * @x-autobe-specification Computed query parameter. Filters ecommerce_admin_requests.reviewed_at column for timestamps less than or equal to this value. ISO 8601 date-time format required.
+         * @x-autobe-specification Computed query parameter. Filters
+         *   ecommerce_admin_requests.reviewed_at column for timestamps less
+         *   than or equal to this value. ISO 8601 date-time format required.
      */
     reviewed_at_to?: (string & tags.Format<"date-time">) | undefined;
 
@@ -256,7 +300,10 @@ export namespace IEcommerceAdminRequest {
      *
      * Specifies which page of results to return. Uses 1-based indexing, so the first page is page 1. Must be at least 1. Combined with the limit parameter to control the number of results per page.
      *
-     * @x-autobe-specification Computed pagination parameter. Determines which page of results to return. 1-based indexing (first page is 1). Minimum value is 1. Used with limit parameter for cursor-based pagination.
+         * @x-autobe-specification Computed pagination parameter. Determines
+         *   which page of results to return. 1-based indexing (first page is
+         *   1). Minimum value is 1. Used with limit parameter for cursor-based
+         *   pagination.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -265,7 +312,9 @@ export namespace IEcommerceAdminRequest {
      *
      * Specifies the upper bound on how many records can be returned in a single page. Must be between 1 and 100 (inclusive). The actual number of results may be less than this value on the final page or when fewer results exist.
      *
-     * @x-autobe-specification Computed pagination parameter. Specifies maximum number of results per page. Minimum value is 1, maximum is 100. Used with page parameter for cursor-based pagination.
+         * @x-autobe-specification Computed pagination parameter. Specifies
+         *   maximum number of results per page. Minimum value is 1, maximum is
+         *   100. Used with page parameter for cursor-based pagination.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -295,8 +344,10 @@ export namespace IEcommerceAdminRequest {
      *
      * Allowed values are 'approved' or 'rejected'. The request must currently be in 'pending' status to be updated. When set to 'approved', the requesting user becomes a regular administrator. When set to 'rejected', a rejection_reason must be provided.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from ecommerce_admin_requests.status. Allowed values: 'approved', 'rejected'. Request must be in 'pending' status to update.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_admin_requests.status. Allowed values: 'approved',
+         *   'rejected'. Request must be in 'pending' status to update.
      */
     status: string;
 
@@ -305,8 +356,10 @@ export namespace IEcommerceAdminRequest {
      *
      * This field is required when the status is set to 'rejected' and should be null for 'approved' requests. It ensures transparency in the rejection process by informing the applicant why their request was denied.
      *
-     * @x-autobe-database-schema-property rejection_reason
-     * @x-autobe-specification Direct mapping from ecommerce_admin_requests.rejection_reason. Required when status is 'rejected', null otherwise.
+         * @x-autobe-database-schema-property rejection_reason
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_admin_requests.rejection_reason. Required when status is
+         *   'rejected', null otherwise.
      */
     rejection_reason?: string | null | undefined;
   };
@@ -336,8 +389,11 @@ export namespace IEcommerceAdminRequest {
      * - Minimum and maximum length constraints may apply based on system configuration
      * - Should be descriptive enough for administrators to make an informed decision
      *
-     * @x-autobe-database-schema-property reason
-     * @x-autobe-specification Direct mapping from ecommerce_admin_requests.reason. User-provided string explaining why the applicant seeks administrator access. Required field, non-empty validation.
+         * @x-autobe-database-schema-property reason
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_admin_requests.reason. User-provided string explaining
+         *   why the applicant seeks administrator access. Required field,
+         *   non-empty validation.
      */
     reason: string;
   };
@@ -365,8 +421,9 @@ export namespace IEcommerceAdminRequest {
      *
      * This UUID uniquely identifies the request record in the database and is used for all subsequent operations on this request.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_admin_requests.id. UUID primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_admin_requests.id. UUID primary key.
      */
     id: string & tags.Format<"uuid">;
 
@@ -375,8 +432,10 @@ export namespace IEcommerceAdminRequest {
      *
      * This discriminator field determines whether the applicant is a customer or seller. Valid values are 'customer' or 'seller'. This value also determines which schema (IEcommerceCustomer.ISummary or IEcommerceSeller.ISummary) is used for the applicant field.
      *
-     * @x-autobe-database-schema-property requester_type
-     * @x-autobe-specification Direct mapping from ecommerce_admin_requests.requester_type. Discriminator for applicant union.
+         * @x-autobe-database-schema-property requester_type
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_admin_requests.requester_type. Discriminator for
+         *   applicant union.
      */
     requester_type: string;
 
@@ -385,8 +444,9 @@ export namespace IEcommerceAdminRequest {
      *
      * This field contains the justification provided by the customer or seller when submitting their request to become a platform administrator. It is required and visible to administrators during the review process.
      *
-     * @x-autobe-database-schema-property reason
-     * @x-autobe-specification Direct mapping from ecommerce_admin_requests.reason. Required field.
+         * @x-autobe-database-schema-property reason
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_admin_requests.reason. Required field.
      */
     reason: string;
 
@@ -400,8 +460,10 @@ export namespace IEcommerceAdminRequest {
      *
      * When status is 'rejected', the rejection_reason field contains the administrator's explanation.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from ecommerce_admin_requests.status. Allowed values: 'pending', 'approved', 'rejected'.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_admin_requests.status. Allowed values: 'pending',
+         *   'approved', 'rejected'.
      */
     status: string;
 
@@ -410,8 +472,10 @@ export namespace IEcommerceAdminRequest {
      *
      * This field is populated only when the request status is 'rejected'. It contains the administrator's explanation for denying the access request, providing transparency to the applicant. Null for pending or approved requests.
      *
-     * @x-autobe-database-schema-property rejection_reason
-     * @x-autobe-specification Direct mapping from ecommerce_admin_requests.rejection_reason. Nullable. Required when status is 'rejected'.
+         * @x-autobe-database-schema-property rejection_reason
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_admin_requests.rejection_reason. Nullable. Required when
+         *   status is 'rejected'.
      */
     rejection_reason?: string | null | undefined;
 
@@ -420,8 +484,10 @@ export namespace IEcommerceAdminRequest {
      *
      * This field is populated when the request status changes from 'pending' to either 'approved' or 'rejected'. It indicates when the administrator made their decision. Null for pending requests.
      *
-     * @x-autobe-database-schema-property reviewed_at
-     * @x-autobe-specification Direct mapping from ecommerce_admin_requests.reviewed_at. Nullable. Populated when status transitions from 'pending' to 'approved' or 'rejected'.
+         * @x-autobe-database-schema-property reviewed_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_admin_requests.reviewed_at. Nullable. Populated when
+         *   status transitions from 'pending' to 'approved' or 'rejected'.
      */
     reviewed_at?: (string & tags.Format<"date-time">) | null | undefined;
 
@@ -430,8 +496,9 @@ export namespace IEcommerceAdminRequest {
      *
      * This field is automatically set when the request is created and cannot be modified. It represents when the customer or seller submitted their request to become an administrator.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from ecommerce_admin_requests.created_at. Immutable timestamp.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_admin_requests.created_at. Immutable timestamp.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -440,8 +507,9 @@ export namespace IEcommerceAdminRequest {
      *
      * This field is automatically updated whenever the request is modified, such as when status changes or a rejection reason is added. It reflects the most recent activity on this request record.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from ecommerce_admin_requests.updated_at. Auto-updated on modifications.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_admin_requests.updated_at. Auto-updated on modifications.
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -450,7 +518,12 @@ export namespace IEcommerceAdminRequest {
      *
      * This is a union type containing either IEcommerceCustomer.ISummary or IEcommerceSeller.ISummary, determined by the requester_type discriminator field. It provides the applicant's basic information (id, email, display name/shop name) without exposing sensitive authentication credentials like password hashes.
      *
-     * @x-autobe-specification Computed union from requestingCustomer or requestingSeller relations based on requester_type discriminator. JOIN with ecommerce_customers when requester_type='customer', JOIN with ecommerce_sellers when requester_type='seller'. Returns IEcommerceCustomer.ISummary or IEcommerceSeller.ISummary respectively.
+         * @x-autobe-specification Computed union from requestingCustomer or
+         *   requestingSeller relations based on requester_type discriminator.
+         *   JOIN with ecommerce_customers when requester_type='customer', JOIN
+         *   with ecommerce_sellers when requester_type='seller'. Returns
+         *   IEcommerceCustomer.ISummary or IEcommerceSeller.ISummary
+         *   respectively.
      */
     applicant: IEcommerceCustomer.ISummary | IEcommerceSeller.ISummary;
 
@@ -459,7 +532,10 @@ export namespace IEcommerceAdminRequest {
      *
      * This field contains the reviewing administrator's summary information when the request has been processed (status is 'approved' or 'rejected'). It includes the administrator's id, email, and grade level. Null for pending requests that have not yet been reviewed.
      *
-     * @x-autobe-specification Computed from reviewingAdmin relation via reviewed_by_id foreign key. JOIN with ecommerce_admins when reviewed_by_id is not null. Returns IEcommerceAdmin.ISummary or null if request is still pending.
+         * @x-autobe-specification Computed from reviewingAdmin relation via
+         *   reviewed_by_id foreign key. JOIN with ecommerce_admins when
+         *   reviewed_by_id is not null. Returns IEcommerceAdmin.ISummary or
+         *   null if request is still pending.
      */
     reviewer?: IEcommerceAdmin.ISummary | null | undefined;
   };

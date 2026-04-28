@@ -28,22 +28,17 @@ export class HrmplatformMemberRolesPermissionsController {
    * @param connection
    * @param roleId UUID of the role to add the permission to.
    * @param body Permission details including the unique permission code and optional description. The organization context is inherited from the target role.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1. Find role by roleId from hrm_platform_roles table
-   * 2. Validate role exists and is not soft-deleted
-   * 3. Extract organization_id from the role
-   * 4. Check if permission code already exists in the same organization using @@unique([organization_id, code]) constraint
-   * 5. Create new hrm_platform_permissions record with:
-   *    - id: generate UUID
-   *    - role_id: from path parameter
-   *    - organization_id: from role
-   *    - code: from request body
-   *    - description: from request body (nullable)
-   *    - created_at: current timestamp
-   *    - updated_at: current timestamp
-   *    - deleted_at: null
-   * 6. Return the created permission record
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification 1. Find role by roleId from hrm_platform_roles
+     *   table 2. Validate role exists and is not soft-deleted 3. Extract
+     *   organization_id from the role 4. Check if permission code already
+     *   exists in the same organization using @@unique([organization_id, code])
+     *   constraint 5. Create new hrm_platform_permissions record with: - id:
+     *   generate UUID - role_id: from path parameter - organization_id: from
+     *   role - code: from request body - description: from request body
+     *   (nullable) - created_at: current timestamp - updated_at: current
+     *   timestamp - deleted_at: null 6. Return the created permission record
    *
    * Error scenarios:
    * - 404: Role not found or soft-deleted
@@ -83,19 +78,25 @@ export class HrmplatformMemberRolesPermissionsController {
    * @param connection
    * @param roleId UUID of the role whose permissions are being updated.
    * @param body Set of permission codes to assign to the role. The list replaces all existing permission assignments for the role. Only permission codes that exist in the organization are valid. Built-in roles cannot have their permissions modified.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1. Validate that the roleId exists in the hrm_platform_roles table and belongs to the requesting organization.
-   * 2. Verify the role is a custom role (role_kind = 'custom'). If the role is a built-in role (role_kind = 'built_in'), return 400 Bad Request with error message.
-   * 3. Validate the request body contains a non-empty array of permission codes.
-   * 4. For each permission code in the request:
-   *    a. Validate the permission code exists in the hrm_platform_permissions table and belongs to the same organization.
-   *    b. Collect valid permission IDs for assignment.
-   * 5. Delete all existing permissions assigned to this role from hrm_platform_permissions.
-   * 6. Insert new permission records for each valid permission code, linking them to the roleId.
-   * 7. Return the updated role with its new set of permissions.
-   * 8. Log the permission change in hrm_platform_activity_logs for audit trail.
-   * 9. Error handling: Return 404 if role not found, 403 if user lacks permission to modify roles, 400 for invalid permission codes or built-in role attempts, 409 if permission codes already assigned (should not occur given replace behavior).
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification 1. Validate that the roleId exists in the
+     *   hrm_platform_roles table and belongs to the requesting organization. 2.
+     *   Verify the role is a custom role (role_kind = 'custom'). If the role is
+     *   a built-in role (role_kind = 'built_in'), return 400 Bad Request with
+     *   error message. 3. Validate the request body contains a non-empty array
+     *   of permission codes. 4. For each permission code in the request: a.
+     *   Validate the permission code exists in the hrm_platform_permissions
+     *   table and belongs to the same organization. b. Collect valid permission
+     *   IDs for assignment. 5. Delete all existing permissions assigned to this
+     *   role from hrm_platform_permissions. 6. Insert new permission records
+     *   for each valid permission code, linking them to the roleId. 7. Return
+     *   the updated role with its new set of permissions. 8. Log the permission
+     *   change in hrm_platform_activity_logs for audit trail. 9. Error
+     *   handling: Return 404 if role not found, 403 if user lacks permission to
+     *   modify roles, 400 for invalid permission codes or built-in role
+     *   attempts, 409 if permission codes already assigned (should not occur
+     *   given replace behavior).
    *
    * Business Rules:
    * - Only organization owners can modify role permissions (requires employee:manage permission based on Section 128 and 195).
@@ -136,16 +137,19 @@ export class HrmplatformMemberRolesPermissionsController {
    * @param connection
    * @param roleId UUID identifier of the role containing this permission
    * @param permissionId UUID identifier of the permission to retrieve
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1. Validate that both roleId and permissionId are valid UUID format
-   * 2. Verify that the role exists and belongs to the requesting user's organization
-   * 3. Query hrm_platform_permissions to find the permission with the given permissionId
-   * 4. Validate that the permission's role_id matches the provided roleId
-   * 5. If permission doesn't exist or doesn't belong to the role, return 404 Not Found
-   * 6. Join with hrm_platform_roles and hrm_platform_organizations to include role name and organization details
-   * 7. Return the complete permission entity with all fields (id, code, description, createdAt, updatedAt, role, organization)
-   * 8. Handle soft-deleted permissions (deleted_at is not null) - exclude from results
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification 1. Validate that both roleId and permissionId are
+     *   valid UUID format 2. Verify that the role exists and belongs to the
+     *   requesting user's organization 3. Query hrm_platform_permissions to
+     *   find the permission with the given permissionId 4. Validate that the
+     *   permission's role_id matches the provided roleId 5. If permission
+     *   doesn't exist or doesn't belong to the role, return 404 Not Found 6.
+     *   Join with hrm_platform_roles and hrm_platform_organizations to include
+     *   role name and organization details 7. Return the complete permission
+     *   entity with all fields (id, code, description, createdAt, updatedAt,
+     *   role, organization) 8. Handle soft-deleted permissions (deleted_at is
+     *   not null) - exclude from results
    *
    * Business Rules:
    * - Permissions follow the code convention: 'organization.*', 'employee.*', 'project.*', 'time.*', 'report.*'

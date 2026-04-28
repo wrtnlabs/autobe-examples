@@ -13,8 +13,9 @@ export type IEcommerceMallSellerSuspension = {
    *
    * Auto-generated server timestamp marking when the audit trail entry was created. ISO 8601 format with timezone.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_seller_suspensions.created_at.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_seller_suspensions.created_at.
    */
   createdAt: string & tags.Format<"date-time">;
 
@@ -23,8 +24,9 @@ export type IEcommerceMallSellerSuspension = {
    *
    * Auto-generated UUID assigned at suspension creation. Used for API references and audit trail lookups.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_seller_suspensions.id. UUID primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_seller_suspensions.id. UUID primary key.
    */
   id: string & tags.Format<"uuid">;
 
@@ -33,8 +35,9 @@ export type IEcommerceMallSellerSuspension = {
    *
    * Free-text explanation provided by the administrator at suspension time. Recorded for accountability and dispute resolution.
    *
-   * @x-autobe-database-schema-property reason
-   * @x-autobe-specification Direct mapping from ecommerce_mall_seller_suspensions.reason.
+     * @x-autobe-database-schema-property reason
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_seller_suspensions.reason.
    */
   reason: string;
 
@@ -43,8 +46,10 @@ export type IEcommerceMallSellerSuspension = {
    *
    * Null when the seller is actively suspended. Set to the restoration timestamp when an administrator unsuspends the account.
    *
-   * @x-autobe-database-schema-property restored_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_seller_suspensions.restored_at. Nullable - null indicates seller is still suspended.
+     * @x-autobe-database-schema-property restored_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_seller_suspensions.restored_at. Nullable - null
+     *   indicates seller is still suspended.
    */
   restoredAt?: (string & tags.Format<"date-time">) | null | undefined;
 
@@ -53,8 +58,11 @@ export type IEcommerceMallSellerSuspension = {
    *
    * Reference to the administrator who unsuspended the seller. Null when the seller is still actively suspended.
    *
-   * @x-autobe-specification Join via ecommerce_mall_seller_suspensions.restored_by_id -> ecommerce_mall_admins.id. Returns IEcommerceMallAdmin.ISummary. Nullable - null indicates seller not yet restored.
-   * @x-autobe-database-schema-property restoredBy
+     * @x-autobe-specification Join via
+     *   ecommerce_mall_seller_suspensions.restored_by_id ->
+     *   ecommerce_mall_admins.id. Returns IEcommerceMallAdmin.ISummary.
+     *   Nullable - null indicates seller not yet restored.
+     * @x-autobe-database-schema-property restoredBy
    */
   restoredBy?: IEcommerceMallAdmin.ISummary | null | undefined;
 
@@ -63,8 +71,10 @@ export type IEcommerceMallSellerSuspension = {
    *
    * Free-text note provided by the administrator when unsuspending. May explain the rationale or conditions for restoration.
    *
-   * @x-autobe-database-schema-property restored_reason
-   * @x-autobe-specification Direct mapping from ecommerce_mall_seller_suspensions.restored_reason. Nullable - optional note from restoring admin.
+     * @x-autobe-database-schema-property restored_reason
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_seller_suspensions.restored_reason. Nullable - optional
+     *   note from restoring admin.
    */
   restoredReason?: null | string | undefined;
 
@@ -73,8 +83,10 @@ export type IEcommerceMallSellerSuspension = {
    *
    * Reference to the seller account that was suspended. Contains seller identification, approval status, and shop information.
    *
-   * @x-autobe-database-schema-property seller
-   * @x-autobe-specification Join via ecommerce_mall_seller_suspensions.ecommerce_mall_seller_id -> ecommerce_mall_sellers.id. Returns IEcommerceMallSeller.ISummary.
+     * @x-autobe-database-schema-property seller
+     * @x-autobe-specification Join via
+     *   ecommerce_mall_seller_suspensions.ecommerce_mall_seller_id ->
+     *   ecommerce_mall_sellers.id. Returns IEcommerceMallSeller.ISummary.
    */
   seller: IEcommerceMallSeller.ISummary;
 
@@ -83,8 +95,9 @@ export type IEcommerceMallSellerSuspension = {
    *
    * Server-generated timestamp indicating when the suspension took effect. ISO 8601 format with timezone.
    *
-   * @x-autobe-database-schema-property suspended_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_seller_suspensions.suspended_at.
+     * @x-autobe-database-schema-property suspended_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_seller_suspensions.suspended_at.
    */
   suspendedAt: string & tags.Format<"date-time">;
 
@@ -93,8 +106,10 @@ export type IEcommerceMallSellerSuspension = {
    *
    * Reference to the administrator who initiated the suspension. Contains administrator identification and display name for audit purposes.
    *
-   * @x-autobe-database-schema-property suspendedBy
-   * @x-autobe-specification Join via ecommerce_mall_seller_suspensions.suspended_by_id -> ecommerce_mall_admins.id. Returns IEcommerceMallAdmin.ISummary.
+     * @x-autobe-database-schema-property suspendedBy
+     * @x-autobe-specification Join via
+     *   ecommerce_mall_seller_suspensions.suspended_by_id ->
+     *   ecommerce_mall_admins.id. Returns IEcommerceMallAdmin.ISummary.
    */
   suspendedBy: IEcommerceMallAdmin.ISummary;
 
@@ -103,8 +118,9 @@ export type IEcommerceMallSellerSuspension = {
    *
    * Updated when restoration details are added. ISO 8601 format with timezone.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_seller_suspensions.updated_at.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_seller_suspensions.updated_at.
    */
   updatedAt: string & tags.Format<"date-time">;
 };
@@ -140,8 +156,10 @@ export namespace IEcommerceMallSellerSuspension {
      * - Displayed to the seller when viewing suspension status
      * - Used for dispute resolution and accountability
      *
-     * @x-autobe-database-schema-property reason
-     * @x-autobe-specification Direct mapping to ecommerce_mall_seller_suspensions.reason column. Validation: reason must not be empty (minLength: 1).
+         * @x-autobe-database-schema-property reason
+         * @x-autobe-specification Direct mapping to
+         *   ecommerce_mall_seller_suspensions.reason column. Validation: reason
+         *   must not be empty (minLength: 1).
      */
     reason: string;
   };
@@ -157,7 +175,7 @@ export namespace IEcommerceMallSellerSuspension {
    */
   export type IRequest = {
     /**
-     * @x-autobe-database-schema-property ecommerce_mall_seller_id
+         * @x-autobe-database-schema-property ecommerce_mall_seller_id
      */
     sellerId?: (string & tags.Format<"uuid">) | undefined;
 
@@ -166,27 +184,27 @@ export namespace IEcommerceMallSellerSuspension {
      */
     status?: "active" | "resolved" | undefined;
     /**
-     * @x-autobe-database-schema-property suspended_at
+         * @x-autobe-database-schema-property suspended_at
      */
     suspendedAtFrom?: (string & tags.Format<"date-time">) | undefined;
     /**
-     * @x-autobe-database-schema-property suspended_at
+         * @x-autobe-database-schema-property suspended_at
      */
     suspendedAtTo?: (string & tags.Format<"date-time">) | undefined;
     /**
-     * @x-autobe-database-schema-property restored_at
+         * @x-autobe-database-schema-property restored_at
      */
     restoredAtFrom?: (string & tags.Format<"date-time">) | null | undefined;
     /**
-     * @x-autobe-database-schema-property restored_at
+         * @x-autobe-database-schema-property restored_at
      */
     restoredAtTo?: (string & tags.Format<"date-time">) | null | undefined;
     /**
-     * @x-autobe-database-schema-property suspended_by_id
+         * @x-autobe-database-schema-property suspended_by_id
      */
     suspendedById?: (string & tags.Format<"uuid">) | undefined;
     /**
-     * @x-autobe-database-schema-property restored_by_id
+         * @x-autobe-database-schema-property restored_by_id
      */
     restoredById?: (string & tags.Format<"uuid">) | null | undefined;
 
@@ -220,43 +238,43 @@ export namespace IEcommerceMallSellerSuspension {
    */
   export type IInvert = {
     /**
-     * @x-autobe-database-schema-property id
+         * @x-autobe-database-schema-property id
      */
     id: string & tags.Format<"uuid">;
     /**
-     * @x-autobe-database-schema-property reason
+         * @x-autobe-database-schema-property reason
      */
     reason: string;
     /**
-     * @x-autobe-database-schema-property restored_reason
+         * @x-autobe-database-schema-property restored_reason
      */
     restored_reason?: string | null | undefined;
     /**
-     * @x-autobe-database-schema-property suspended_at
+         * @x-autobe-database-schema-property suspended_at
      */
     suspended_at: string & tags.Format<"date-time">;
     /**
-     * @x-autobe-database-schema-property restored_at
+         * @x-autobe-database-schema-property restored_at
      */
     restored_at?: (string & tags.Format<"date-time">) | null | undefined;
     /**
-     * @x-autobe-database-schema-property created_at
+         * @x-autobe-database-schema-property created_at
      */
     created_at: string & tags.Format<"date-time">;
     /**
-     * @x-autobe-database-schema-property updated_at
+         * @x-autobe-database-schema-property updated_at
      */
     updated_at: string & tags.Format<"date-time">;
     /**
-     * @x-autobe-database-schema-property seller
+         * @x-autobe-database-schema-property seller
      */
     seller: IEcommerceMallSeller.ISummary;
     /**
-     * @x-autobe-database-schema-property suspendedBy
+         * @x-autobe-database-schema-property suspendedBy
      */
     suspendedBy: IEcommerceMallAdmin.ISummary;
     /**
-     * @x-autobe-database-schema-property restoredBy
+         * @x-autobe-database-schema-property restoredBy
      */
     restoredBy?: IEcommerceMallAdmin.ISummary | null | undefined;
   };
@@ -274,8 +292,9 @@ export namespace IEcommerceMallSellerSuspension {
      *
      * Each suspension record has a unique UUID for programmatic access and reference. Used as primary key in list filtering and individual record retrieval.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_mall_seller_suspensions.id (UUID primary key).
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_seller_suspensions.id (UUID primary key).
      */
     id: string & tags.Format<"uuid">;
 
@@ -284,8 +303,9 @@ export namespace IEcommerceMallSellerSuspension {
      *
      * Provided by the administrator when suspending the seller. Documents the policy violation or issue that led to the suspension for audit and transparency purposes.
      *
-     * @x-autobe-database-schema-property reason
-     * @x-autobe-specification Direct mapping from ecommerce_mall_seller_suspensions.reason.
+         * @x-autobe-database-schema-property reason
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_seller_suspensions.reason.
      */
     reason: string;
 
@@ -294,8 +314,9 @@ export namespace IEcommerceMallSellerSuspension {
      *
      * When an administrator restores a suspended seller, they may provide a reason explaining the decision. This field is only populated when the seller has been unsuspended.
      *
-     * @x-autobe-database-schema-property restored_reason
-     * @x-autobe-specification Direct mapping from ecommerce_mall_seller_suspensions.restored_reason. Nullable.
+         * @x-autobe-database-schema-property restored_reason
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_seller_suspensions.restored_reason. Nullable.
      */
     restored_reason?: null | string | undefined;
 
@@ -304,8 +325,9 @@ export namespace IEcommerceMallSellerSuspension {
      *
      * Indicates when the suspension action was taken by an administrator. Used to determine suspension duration and for chronological listing of suspension records.
      *
-     * @x-autobe-database-schema-property suspended_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_seller_suspensions.suspended_at.
+         * @x-autobe-database-schema-property suspended_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_seller_suspensions.suspended_at.
      */
     suspended_at: string & tags.Format<"date-time">;
 
@@ -314,8 +336,10 @@ export namespace IEcommerceMallSellerSuspension {
      *
      * When null, the seller remains suspended. When populated, indicates the date and time when an administrator lifted the suspension and restored the seller's access to the platform.
      *
-     * @x-autobe-database-schema-property restored_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_seller_suspensions.restored_at. Nullable - NULL indicates seller is still suspended.
+         * @x-autobe-database-schema-property restored_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_seller_suspensions.restored_at. Nullable - NULL
+         *   indicates seller is still suspended.
      */
     restored_at?: null | (string & tags.Format<"date-time">) | undefined;
 
@@ -324,8 +348,9 @@ export namespace IEcommerceMallSellerSuspension {
      *
      * This timestamp indicates when the suspension action was recorded in the system. Used for chronological listing and audit trail purposes.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_seller_suspensions.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_seller_suspensions.created_at.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -334,8 +359,9 @@ export namespace IEcommerceMallSellerSuspension {
      *
      * Updated when restoration fields are populated. Used for cache invalidation and synchronization purposes in list displays.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_seller_suspensions.updated_at.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_seller_suspensions.updated_at.
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -344,8 +370,9 @@ export namespace IEcommerceMallSellerSuspension {
      *
      * Summary information about the suspended seller including their identifier, email, approval status, and current suspension status. Used to identify which seller was affected by this suspension record.
      *
-     * @x-autobe-database-schema-property seller
-     * @x-autobe-specification Join via ecommerce_mall_seller_id FK to ecommerce_mall_sellers.id. Returns IEcommerceMallSeller.ISummary.
+         * @x-autobe-database-schema-property seller
+         * @x-autobe-specification Join via ecommerce_mall_seller_id FK to
+         *   ecommerce_mall_sellers.id. Returns IEcommerceMallSeller.ISummary.
      */
     seller: IEcommerceMallSeller.ISummary;
 
@@ -354,8 +381,9 @@ export namespace IEcommerceMallSellerSuspension {
      *
      * Summary information about the administrator who performed the suspension action. Includes administrator identifier, name, and email for accountability and audit trail purposes.
      *
-     * @x-autobe-database-schema-property suspendedBy
-     * @x-autobe-specification Join via suspended_by_id FK to ecommerce_mall_admins.id. Returns IEcommerceMallAdmin.ISummary.
+         * @x-autobe-database-schema-property suspendedBy
+         * @x-autobe-specification Join via suspended_by_id FK to
+         *   ecommerce_mall_admins.id. Returns IEcommerceMallAdmin.ISummary.
      */
     suspendedBy: IEcommerceMallAdmin.ISummary;
 
@@ -364,8 +392,10 @@ export namespace IEcommerceMallSellerSuspension {
      *
      * Summary information about the administrator who lifted the suspension. Only present when the suspension has been restored; null if the seller is currently suspended.
      *
-     * @x-autobe-database-schema-property restoredBy
-     * @x-autobe-specification Join via restored_by_id FK to ecommerce_mall_admins.id. Returns IEcommerceMallAdmin.ISummary. Nullable - only present when seller has been restored.
+         * @x-autobe-database-schema-property restoredBy
+         * @x-autobe-specification Join via restored_by_id FK to
+         *   ecommerce_mall_admins.id. Returns IEcommerceMallAdmin.ISummary.
+         *   Nullable - only present when seller has been restored.
      */
     restoredBy?: null | IEcommerceMallAdmin.ISummary | undefined;
   };

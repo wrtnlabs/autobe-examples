@@ -26,8 +26,9 @@ export type IHrmMemberSession = {
    *
    * This is the primary key of the session, generated as a UUID when the session is created. It is used to reference this specific session in API endpoints.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from hrm_member_sessions.id. UUID primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from hrm_member_sessions.id. UUID
+     *   primary key.
    */
   id: string & tags.Format<"uuid">;
 
@@ -36,8 +37,9 @@ export type IHrmMemberSession = {
    *
    * This is a summary representation of the member user who created this session. It includes essential identification information (id, email, timestamps) without sensitive credentials. The member relation is resolved via the hrm_member_id foreign key.
    *
-   * @x-autobe-database-schema-property member
-   * @x-autobe-specification JOIN from hrm_member_sessions.hrm_member_id to hrm_members.id. Returns IHrmMember.ISummary.
+     * @x-autobe-database-schema-property member
+     * @x-autobe-specification JOIN from hrm_member_sessions.hrm_member_id to
+     *   hrm_members.id. Returns IHrmMember.ISummary.
    */
   member: IHrmMember.ISummary;
 
@@ -46,8 +48,9 @@ export type IHrmMemberSession = {
    *
    * This field captures the client's IP address at the time the session was established. It is used for security auditing and detecting unauthorized access from unusual locations. The IP address is stored as a string in standard IPv4 or IPv6 format.
    *
-   * @x-autobe-database-schema-property ip
-   * @x-autobe-specification Direct mapping from hrm_member_sessions.ip. Captured at session creation.
+     * @x-autobe-database-schema-property ip
+     * @x-autobe-specification Direct mapping from hrm_member_sessions.ip.
+     *   Captured at session creation.
    */
   ip: string;
 
@@ -56,8 +59,10 @@ export type IHrmMemberSession = {
    *
    * This captures the page context where the user initiated the login or session refresh. The value may be null if the session was created from a context where the current page URL is not available (e.g., mobile applications, API clients, or server-side rendering scenarios).
    *
-   * @x-autobe-database-schema-property href
-   * @x-autobe-specification Direct mapping from hrm_member_sessions.href. Nullable - may not be captured in all contexts (e.g., mobile apps, API clients).
+     * @x-autobe-database-schema-property href
+     * @x-autobe-specification Direct mapping from hrm_member_sessions.href.
+     *   Nullable - may not be captured in all contexts (e.g., mobile apps, API
+     *   clients).
    */
   href: string | null;
 
@@ -66,8 +71,9 @@ export type IHrmMemberSession = {
    *
    * This tracks the source page that led to the authentication action, useful for understanding user navigation patterns. The value may be null if the session was created from a context where referrer information is not available or was not sent by the client.
    *
-   * @x-autobe-database-schema-property referrer
-   * @x-autobe-specification Direct mapping from hrm_member_sessions.referrer. Nullable - may not be captured in all contexts.
+     * @x-autobe-database-schema-property referrer
+     * @x-autobe-specification Direct mapping from hrm_member_sessions.referrer.
+     *   Nullable - may not be captured in all contexts.
    */
   referrer: string | null;
 
@@ -76,8 +82,10 @@ export type IHrmMemberSession = {
    *
    * This field records the exact moment the session was established, including timezone information. It is used for session ordering, calculating session age, and audit trail purposes. The timestamp is stored in UTC and returned in ISO 8601 format.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from hrm_member_sessions.created_at. Timestamp with timezone (timestamptz) in ISO 8601 format.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_member_sessions.created_at. Timestamp with timezone (timestamptz)
+     *   in ISO 8601 format.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -86,8 +94,10 @@ export type IHrmMemberSession = {
    *
    * This field defines the expiration time of the session. Sessions are automatically invalidated after this timestamp. The field is NOT NULL to enforce explicit session expiration policies. The timestamp is stored in UTC and returned in ISO 8601 format.
    *
-   * @x-autobe-database-schema-property expired_at
-   * @x-autobe-specification Direct mapping from hrm_member_sessions.expired_at. Timestamp with timezone (timestamptz) in ISO 8601 format. NOT NULL - all sessions have defined expiration.
+     * @x-autobe-database-schema-property expired_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_member_sessions.expired_at. Timestamp with timezone (timestamptz)
+     *   in ISO 8601 format. NOT NULL - all sessions have defined expiration.
    */
   expired_at: string & tags.Format<"date-time">;
 };
@@ -111,8 +121,9 @@ export namespace IHrmMemberSession {
      *
      * This is the primary key for the session record, used to reference specific sessions in API operations and session management endpoints.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from hrm_member_sessions.id. UUID format primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from hrm_member_sessions.id.
+         *   UUID format primary key.
      */
     id: string & tags.Format<"uuid">;
 
@@ -121,8 +132,10 @@ export namespace IHrmMemberSession {
      *
      * This relation provides context about session ownership, linking the session to the authenticated user's global profile. The relation is exposed as a summary reference rather than a full member object to avoid data duplication in session listings.
      *
-     * @x-autobe-database-schema-property member
-     * @x-autobe-specification Join from hrm_member_sessions.hrm_member_id to hrm_members.id. Returns IHrmMember.ISummary reference via association pattern.
+         * @x-autobe-database-schema-property member
+         * @x-autobe-specification Join from hrm_member_sessions.hrm_member_id
+         *   to hrm_members.id. Returns IHrmMember.ISummary reference via
+         *   association pattern.
      */
     member: IHrmMember.ISummary;
 
@@ -131,8 +144,9 @@ export namespace IHrmMemberSession {
      *
      * Used for security auditing and detecting suspicious session activity from unusual geographic locations or devices. This field helps members identify potentially unauthorized access to their accounts.
      *
-     * @x-autobe-database-schema-property ip
-     * @x-autobe-specification Direct mapping from hrm_member_sessions.ip. Captures client IP at session creation.
+         * @x-autobe-database-schema-property ip
+         * @x-autobe-specification Direct mapping from hrm_member_sessions.ip.
+         *   Captures client IP at session creation.
      */
     ip: string;
 
@@ -141,8 +155,9 @@ export namespace IHrmMemberSession {
      *
      * This field captures the context of the authentication action, showing which page the user was on when they logged in or refreshed their session. Nullable because some authentication flows may not have a valid href context.
      *
-     * @x-autobe-database-schema-property href
-     * @x-autobe-specification Direct mapping from hrm_member_sessions.href. Nullable - captures the page URL when session was created.
+         * @x-autobe-database-schema-property href
+         * @x-autobe-specification Direct mapping from hrm_member_sessions.href.
+         *   Nullable - captures the page URL when session was created.
      */
     href: (string & tags.Format<"uri">) | null;
 
@@ -151,8 +166,10 @@ export namespace IHrmMemberSession {
      *
      * Tracks the source page that directed the user to the login or authentication flow. Nullable because referrer information may not be available in all authentication scenarios (e.g., direct navigation, mobile apps).
      *
-     * @x-autobe-database-schema-property referrer
-     * @x-autobe-specification Direct mapping from hrm_member_sessions.referrer. Nullable - captures the referrer URL when session was created.
+         * @x-autobe-database-schema-property referrer
+         * @x-autobe-specification Direct mapping from
+         *   hrm_member_sessions.referrer. Nullable - captures the referrer URL
+         *   when session was created.
      */
     referrer: (string & tags.Format<"uri">) | null;
 
@@ -161,8 +178,10 @@ export namespace IHrmMemberSession {
      *
      * Used for session ordering, calculating session age, and auditing purposes. The timestamp includes timezone information and represents when the authentication flow successfully completed and the session was established.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from hrm_member_sessions.created_at. Timestamp with timezone (timestamptz).
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_member_sessions.created_at. Timestamp with timezone
+         *   (timestamptz).
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -171,8 +190,10 @@ export namespace IHrmMemberSession {
      *
      * Sessions are automatically invalidated after this timestamp. This field is not nullable to enforce explicit session expiration policies and ensure all sessions have defined lifecycles for security compliance.
      *
-     * @x-autobe-database-schema-property expired_at
-     * @x-autobe-specification Direct mapping from hrm_member_sessions.expired_at. Timestamp with timezone (timestamptz). Not nullable - enforces explicit session expiration.
+         * @x-autobe-database-schema-property expired_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_member_sessions.expired_at. Timestamp with timezone
+         *   (timestamptz). Not nullable - enforces explicit session expiration.
      */
     expired_at: string & tags.Format<"date-time">;
   };
@@ -207,7 +228,9 @@ export namespace IHrmMemberSession {
      * - `start`: Sessions created on or after this timestamp (inclusive)
      * - `end`: Sessions created on or before this timestamp (inclusive)
      *
-     * @x-autobe-specification Filters sessions by created_at within start/end timestamps. Both start and end are optional date-time values.
+         * @x-autobe-specification Filters sessions by created_at within
+         *   start/end timestamps. Both start and end are optional date-time
+         *   values.
      */
     date_range?:
       | {
@@ -221,7 +244,8 @@ export namespace IHrmMemberSession {
      *
      * When `true`, returns only sessions that are still active (not yet expired). When `false`, returns only expired sessions. When omitted, includes all sessions regardless of expiration status.
      *
-     * @x-autobe-specification Filters by expiration status: true = expired_at > current_time, false = expired_at <= current_time
+         * @x-autobe-specification Filters by expiration status: true =
+         *   expired_at > current_time, false = expired_at <= current_time
      */
     is_active?: boolean | undefined;
 
@@ -230,8 +254,9 @@ export namespace IHrmMemberSession {
      *
      * Returns only sessions created from the specified IP address. Useful for identifying sessions from specific devices or detecting suspicious activity from unusual locations.
      *
-     * @x-autobe-database-schema-property ip
-     * @x-autobe-specification Direct filter on hrm_member_sessions.ip for exact IP address match
+         * @x-autobe-database-schema-property ip
+         * @x-autobe-specification Direct filter on hrm_member_sessions.ip for
+         *   exact IP address match
      */
     ip_address?: string | undefined;
 
@@ -240,7 +265,8 @@ export namespace IHrmMemberSession {
      *
      * An encoded string representing the current position in the result set. Used for cursor-based pagination to efficiently navigate large session histories without offset-based performance issues.
      *
-     * @x-autobe-specification Cursor-based pagination using encoded position from created_at and id
+         * @x-autobe-specification Cursor-based pagination using encoded
+         *   position from created_at and id
      */
     cursor?: string | undefined;
 
@@ -249,7 +275,7 @@ export namespace IHrmMemberSession {
      *
      * Controls the page size for pagination. Must be between 1 and 100. The actual number of records returned may be less than this value on the final page or when fewer records match the filter criteria.
      *
-     * @x-autobe-specification Maximum records per page (1-100)
+         * @x-autobe-specification Maximum records per page (1-100)
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -260,7 +286,7 @@ export namespace IHrmMemberSession {
      *
      * Determines which field is used for sorting the session list. Available options are `created_at` (session creation timestamp) or `id` (session UUID). Default is `created_at`.
      *
-     * @x-autobe-specification Sort field: created_at or id
+         * @x-autobe-specification Sort field: created_at or id
      */
     sort_by?: "created_at" | "id" | undefined;
 
@@ -269,7 +295,7 @@ export namespace IHrmMemberSession {
      *
      * Determines whether results are sorted in ascending (`asc`) or descending (`desc`) order. Default is `desc` for `created_at` (newest sessions first).
      *
-     * @x-autobe-specification Sort direction: asc or desc
+         * @x-autobe-specification Sort direction: asc or desc
      */
     order?: "asc" | "desc" | undefined;
 
@@ -278,7 +304,7 @@ export namespace IHrmMemberSession {
      *
      * Specifies which page of results to retrieve using 1-based indexing. If omitted, null, or undefined, defaults to page 1 (first page). Requesting a page beyond the available range returns an empty data array with valid pagination metadata.
      *
-     * @x-autobe-specification 1-indexed page number, defaults to 1
+         * @x-autobe-specification 1-indexed page number, defaults to 1
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };

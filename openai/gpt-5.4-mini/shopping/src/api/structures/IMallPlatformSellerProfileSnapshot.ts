@@ -14,8 +14,9 @@ export type IMallPlatformSellerProfileSnapshot = {
    *
    * This value uniquely identifies the preserved seller profile snapshot record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from mall_platform_seller_profile_snapshots.id.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_seller_profile_snapshots.id.
    */
   id: string & tags.Format<"uuid">;
 
@@ -24,8 +25,11 @@ export type IMallPlatformSellerProfileSnapshot = {
    *
    * This field identifies which seller account's shop profile state is preserved by the snapshot.
    *
-   * @x-autobe-database-schema-property sellerProfile
-   * @x-autobe-specification Join mall_platform_seller_profile_snapshots.seller_profile_id to mall_platform_seller_profiles.id and expose the related seller profile as IMallPlatformSellerProfile.ISummary.
+     * @x-autobe-database-schema-property sellerProfile
+     * @x-autobe-specification Join
+     *   mall_platform_seller_profile_snapshots.seller_profile_id to
+     *   mall_platform_seller_profiles.id and expose the related seller profile
+     *   as IMallPlatformSellerProfile.ISummary.
    */
   sellerProfile: IMallPlatformSellerProfile.ISummary;
 
@@ -34,8 +38,9 @@ export type IMallPlatformSellerProfileSnapshot = {
    *
    * This preserves the storefront name exactly as it existed when the snapshot was recorded.
    *
-   * @x-autobe-database-schema-property shop_name
-   * @x-autobe-specification Direct mapping from mall_platform_seller_profile_snapshots.shop_name.
+     * @x-autobe-database-schema-property shop_name
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_seller_profile_snapshots.shop_name.
    */
   shopName: string;
 
@@ -44,8 +49,9 @@ export type IMallPlatformSellerProfileSnapshot = {
    *
    * This preserves the seller's public shop description at the time the snapshot was created.
    *
-   * @x-autobe-database-schema-property shop_description
-   * @x-autobe-specification Direct mapping from mall_platform_seller_profile_snapshots.shop_description.
+     * @x-autobe-database-schema-property shop_description
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_seller_profile_snapshots.shop_description.
    */
   shopDescription: string;
 
@@ -54,8 +60,10 @@ export type IMallPlatformSellerProfileSnapshot = {
    *
    * This is the storefront logo reference stored at snapshot time, and it may be null when no logo was available.
    *
-   * @x-autobe-database-schema-property logo_image_uri
-   * @x-autobe-specification Direct mapping from mall_platform_seller_profile_snapshots.logo_image_uri. Preserve the stored value as-is, including null when no logo image was set.
+     * @x-autobe-database-schema-property logo_image_uri
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_seller_profile_snapshots.logo_image_uri. Preserve the
+     *   stored value as-is, including null when no logo image was set.
    */
   logoImageUri: (string & tags.Format<"url">) | null;
 
@@ -64,8 +72,9 @@ export type IMallPlatformSellerProfileSnapshot = {
    *
    * This indicates when the preserved seller profile state was recorded and is used to order snapshots chronologically.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from mall_platform_seller_profile_snapshots.created_at.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_seller_profile_snapshots.created_at.
    */
   createdAt: string & tags.Format<"date-time">;
 };
@@ -81,7 +90,10 @@ export namespace IMallPlatformSellerProfileSnapshot {
      *
      * This value selects which page of seller profile snapshot results to fetch. It is a request-only control and does not map to persisted data.
      *
-     * @x-autobe-specification Use this as the 1-indexed page number when querying mall_platform_seller_profile_snapshots for one seller's snapshot history. It affects pagination only and is not stored in the database.
+         * @x-autobe-specification Use this as the 1-indexed page number when
+         *   querying mall_platform_seller_profile_snapshots for one seller's
+         *   snapshot history. It affects pagination only and is not stored in
+         *   the database.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -90,7 +102,10 @@ export namespace IMallPlatformSellerProfileSnapshot {
      *
      * This value limits how many seller profile snapshots appear in one response page. It is a request-only control and does not map to persisted data.
      *
-     * @x-autobe-specification Use this as the maximum number of snapshot rows returned per page when querying mall_platform_seller_profile_snapshots. It affects pagination only and is not stored in the database.
+         * @x-autobe-specification Use this as the maximum number of snapshot
+         *   rows returned per page when querying
+         *   mall_platform_seller_profile_snapshots. It affects pagination only
+         *   and is not stored in the database.
      */
     limit?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -99,7 +114,11 @@ export namespace IMallPlatformSellerProfileSnapshot {
      *
      * This value controls how seller profile snapshots are ordered for browsing. It is a request-only instruction and does not represent a stored field.
      *
-     * @x-autobe-specification Interpret this as the sort directive for seller profile snapshot history. The implementation should default to created_at descending and may accept additional safe sort directives only if the API layer translates them; it is not backed by a database column.
+         * @x-autobe-specification Interpret this as the sort directive for
+         *   seller profile snapshot history. The implementation should default
+         *   to created_at descending and may accept additional safe sort
+         *   directives only if the API layer translates them; it is not backed
+         *   by a database column.
      */
     sort?: string | undefined;
 
@@ -108,7 +127,11 @@ export namespace IMallPlatformSellerProfileSnapshot {
      *
      * Use this to filter the seller's profile snapshot history by searchable snapshot content. It is only used for query filtering and is not stored in the database.
      *
-     * @x-autobe-specification Apply this as an optional text filter when querying seller profile snapshots. It should match browse-relevant snapshot content such as captured shop name or shop description fields where supported by the search implementation, and it is not a persisted database property.
+         * @x-autobe-specification Apply this as an optional text filter when
+         *   querying seller profile snapshots. It should match browse-relevant
+         *   snapshot content such as captured shop name or shop description
+         *   fields where supported by the search implementation, and it is not
+         *   a persisted database property.
      */
     search?: string | undefined;
 
@@ -117,7 +140,10 @@ export namespace IMallPlatformSellerProfileSnapshot {
      *
      * Use this to return only snapshots created at or after the specified timestamp. It is a request-only filter and does not correspond to stored data.
      *
-     * @x-autobe-specification Use this as the inclusive lower bound for filtering seller profile snapshot rows by created_at. It applies only to the snapshot history query and is not persisted in the database.
+         * @x-autobe-specification Use this as the inclusive lower bound for
+         *   filtering seller profile snapshot rows by created_at. It applies
+         *   only to the snapshot history query and is not persisted in the
+         *   database.
      */
     createdAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
@@ -126,7 +152,10 @@ export namespace IMallPlatformSellerProfileSnapshot {
      *
      * Use this to return only snapshots created at or before the specified timestamp. It is a request-only filter and does not correspond to stored data.
      *
-     * @x-autobe-specification Use this as the inclusive upper bound for filtering seller profile snapshot rows by created_at. It applies only to the snapshot history query and is not persisted in the database.
+         * @x-autobe-specification Use this as the inclusive upper bound for
+         *   filtering seller profile snapshot rows by created_at. It applies
+         *   only to the snapshot history query and is not persisted in the
+         *   database.
      */
     createdAtTo?: (string & tags.Format<"date-time">) | undefined;
   };

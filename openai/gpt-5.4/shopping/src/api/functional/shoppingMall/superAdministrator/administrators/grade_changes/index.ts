@@ -29,7 +29,8 @@ import { IShoppingMallAdministratorGradeChange } from "../../../../../structures
  * @param props.body Promotion reason for the administrator grade change
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor superAdministrator
- * @x-autobe-specification Implement this operation as an authenticated super-administrator-only governance command.
+ * @x-autobe-specification Implement this operation as an authenticated
+ *   super-administrator-only governance command.
  *
  * 1. Resolve the acting identity from the authenticated session and verify that the actor has super administrator authority. Do not accept the acting authority identifier from the request body.
  * 2. Load the target row from `shopping_mall_administrators` by `administratorId`.
@@ -152,7 +153,12 @@ export namespace promote {
  * @param props.body Filtering, sorting, and pagination criteria for administrator grade-change history
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor superAdministrator
- * @x-autobe-specification Validate that the authenticated actor is an administrator or superAdministrator with governance-view permission. Resolve the target administrator by shopping_mall_administrators.id using the administratorId path parameter and reject the request if no matching administrator exists or if the administrator record is not viewable under current governance rules.
+ * @x-autobe-specification Validate that the authenticated actor is an
+ *   administrator or superAdministrator with governance-view permission.
+ *   Resolve the target administrator by shopping_mall_administrators.id using
+ *   the administratorId path parameter and reject the request if no matching
+ *   administrator exists or if the administrator record is not viewable under
+ *   current governance rules.
  *
  * Query shopping_mall_administrator_grade_changes as an immutable audit source filtered by shopping_mall_administrator_id = :administratorId. Build the list query from IShoppingMallAdministratorGradeChange.IRequest, supporting pagination, stable sorting, and optional filters over previous_grade, new_grade, shopping_mall_super_administrator_id, created_at range, and free-text reason where such fields are defined in the request DTO. Default sort should prioritize created_at descending so the newest governance events appear first.
  *
@@ -264,7 +270,11 @@ export namespace index {
  * @param props.gradeChangeId Identifier of the administrator grade change record under the target administrator.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor superAdministrator
- * @x-autobe-specification Implement a read-only detail query against shopping_mall_administrator_grade_changes joined to shopping_mall_administrators and, if needed for DTO composition, the acting super administrator identity referenced by shopping_mall_super_administrator_id.
+ * @x-autobe-specification Implement a read-only detail query against
+ *   shopping_mall_administrator_grade_changes joined to
+ *   shopping_mall_administrators and, if needed for DTO composition, the acting
+ *   super administrator identity referenced by
+ *   shopping_mall_super_administrator_id.
  *
  * Step 1: Authorize the caller as an administrative actor. Reject customer and seller actors. If the platform's authorization policy distinguishes between administrator and super administrator for read access, enforce that policy before database access.
  *

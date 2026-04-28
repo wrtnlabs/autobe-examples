@@ -23,9 +23,12 @@ export class RedditlikeGuestSessionsController {
    *
    * @param connection
    * @param body Search criteria and filters for session queries including actor type, date range, and active status filters
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor guest
-   * @x-autobe-specification Query session records across reddit_like_guest_sessions, reddit_like_member_sessions, reddit_like_moderator_sessions, and reddit_like_owner_sessions tables based on search criteria.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor guest
+     * @x-autobe-specification Query session records across
+     *   reddit_like_guest_sessions, reddit_like_member_sessions,
+     *   reddit_like_moderator_sessions, and reddit_like_owner_sessions tables
+     *   based on search criteria.
    *
    * Filter by:
    * - actorType: guest | member | moderator | owner (optional, defaults to all)
@@ -81,9 +84,10 @@ export class RedditlikeGuestSessionsController {
    *
    * @param connection
    * @param sessionId Unique identifier of the session to retrieve
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor guest
-   * @x-autobe-specification Query the reddit_like_member_sessions table (or moderator/owner session tables) by the provided sessionId UUID.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor guest
+     * @x-autobe-specification Query the reddit_like_member_sessions table (or
+     *   moderator/owner session tables) by the provided sessionId UUID.
    *
    * Retrieve session record with the following fields: id, reddit_like_member_id (or equivalent actor id), ip, href, referrer, user_agent, created_at, expires_at, refresh_expires_at.
    *

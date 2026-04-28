@@ -14,8 +14,10 @@ export type IShoppingMallCustomerProfile = {
    *
    * This UUID serves as the primary key for the profile record and is used internally to reference the profile in database operations. The ID is automatically generated when the customer account is created and remains constant throughout the profile's lifecycle.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_customer_profiles.id. Primary key UUID identifying the customer profile record.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_customer_profiles.id. Primary key UUID identifying the
+     *   customer profile record.
    */
   id: string & tags.Format<"uuid">;
 
@@ -24,8 +26,10 @@ export type IShoppingMallCustomerProfile = {
    *
    * This is the name visible to sellers and other platform users. Customers can edit this field at any time through the profile update endpoint. The display name is used in order confirmations, shipping labels, review author attribution, and anywhere the customer's identity needs to be displayed publicly.
    *
-   * @x-autobe-database-schema-property display_name
-   * @x-autobe-specification Direct mapping from shopping_mall_customer_profiles.display_name. Customer's public-facing name stored as a string.
+     * @x-autobe-database-schema-property display_name
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_customer_profiles.display_name. Customer's public-facing
+     *   name stored as a string.
    */
   display_name: string;
 
@@ -34,8 +38,10 @@ export type IShoppingMallCustomerProfile = {
    *
    * This is an optional field that customers can provide for seller communication regarding orders. Sellers use this number to contact customers about shipping issues, order clarifications, or delivery coordination. The phone number is not required for account creation and can be added or removed at any time.
    *
-   * @x-autobe-database-schema-property phone_number
-   * @x-autobe-specification Direct mapping from shopping_mall_customer_profiles.phone_number. Optional contact phone number stored as nullable string.
+     * @x-autobe-database-schema-property phone_number
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_customer_profiles.phone_number. Optional contact phone
+     *   number stored as nullable string.
    */
   phone_number?: string | null | undefined;
 
@@ -44,8 +50,10 @@ export type IShoppingMallCustomerProfile = {
    *
    * This field is set automatically when the customer account is registered and cannot be modified. It represents the account creation date and is used for audit trail purposes, account age calculations, and chronological sorting of customer records.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from shopping_mall_customer_profiles.created_at. Timestamp when the profile was first created, stored as DateTime with timezone.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_customer_profiles.created_at. Timestamp when the profile
+     *   was first created, stored as DateTime with timezone.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -54,8 +62,10 @@ export type IShoppingMallCustomerProfile = {
    *
    * This field is automatically updated whenever any profile field (display_name or phone_number) is changed. It is used to track recent profile modifications, implement cache invalidation strategies, and determine the freshness of profile data.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from shopping_mall_customer_profiles.updated_at. Timestamp when the profile was last modified, stored as DateTime with timezone.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_customer_profiles.updated_at. Timestamp when the profile
+     *   was last modified, stored as DateTime with timezone.
    */
   updated_at: string & tags.Format<"date-time">;
 };
@@ -71,7 +81,12 @@ export namespace IShoppingMallCustomerProfile {
      *
      * When specified, only profiles of the selected type are returned. When omitted, both customer and seller profiles are included in the search results. This enables administrators to focus their search on a specific user type or retrieve a combined view of all platform profiles.
      *
-     * @x-autobe-specification Computed filter parameter that determines which profile table(s) to query. When set to 'customer', query shopping_mall_customer_profiles. When set to 'seller', query shopping_mall_seller_profiles. When not specified, query both tables and combine results. This parameter enables administrators to filter results by profile type for targeted searches.
+         * @x-autobe-specification Computed filter parameter that determines
+         *   which profile table(s) to query. When set to 'customer', query
+         *   shopping_mall_customer_profiles. When set to 'seller', query
+         *   shopping_mall_seller_profiles. When not specified, query both
+         *   tables and combine results. This parameter enables administrators
+         *   to filter results by profile type for targeted searches.
      */
     profile_type?: "customer" | "seller" | undefined;
 
@@ -80,7 +95,14 @@ export namespace IShoppingMallCustomerProfile {
      *
      * Performs a case-insensitive partial match search across display names, shop names, and email addresses. Enter any portion of a name or email to find matching profiles. Useful for quickly locating specific users when you know part of their identifying information.
      *
-     * @x-autobe-specification Computed search parameter that performs case-insensitive LIKE matching across multiple fields. For customer profiles, searches display_name and email fields from shopping_mall_customer_profiles and shopping_mall_customers. For seller profiles, searches shop_name, shop_description, and email fields from shopping_mall_seller_profiles and shopping_mall_sellers. Uses SQL LIKE with wildcards for partial matching.
+         * @x-autobe-specification Computed search parameter that performs
+         *   case-insensitive LIKE matching across multiple fields. For customer
+         *   profiles, searches display_name and email fields from
+         *   shopping_mall_customer_profiles and shopping_mall_customers. For
+         *   seller profiles, searches shop_name, shop_description, and email
+         *   fields from shopping_mall_seller_profiles and
+         *   shopping_mall_sellers. Uses SQL LIKE with wildcards for partial
+         *   matching.
      */
     search?: string | undefined;
 
@@ -89,7 +111,13 @@ export namespace IShoppingMallCustomerProfile {
      *
      * This filter applies only to seller profiles and has no effect when searching customer profiles. Use this to view sellers awaiting approval, active sellers on the platform, or sellers whose applications were denied. Helpful for administrators managing the seller approval workflow.
      *
-     * @x-autobe-specification Computed filter parameter that applies only to seller profiles. Filters shopping_mall_seller_profiles by the approval_status column. Valid values are 'pending' (awaiting administrator approval), 'approved' (seller can operate on platform), or 'rejected' (application denied). When searching customer profiles or when this parameter is omitted, this filter has no effect.
+         * @x-autobe-specification Computed filter parameter that applies only
+         *   to seller profiles. Filters shopping_mall_seller_profiles by the
+         *   approval_status column. Valid values are 'pending' (awaiting
+         *   administrator approval), 'approved' (seller can operate on
+         *   platform), or 'rejected' (application denied). When searching
+         *   customer profiles or when this parameter is omitted, this filter
+         *   has no effect.
      */
     approval_status?: "pending" | "approved" | "rejected" | undefined;
 
@@ -98,7 +126,13 @@ export namespace IShoppingMallCustomerProfile {
      *
      * When set to true, returns only profiles that are currently suspended. When set to false, returns only active profiles that are not suspended. When omitted, includes all profiles regardless of their suspension status. This helps administrators monitor suspended accounts or view only active users.
      *
-     * @x-autobe-specification Computed filter parameter that filters profiles by suspension status. For customer profiles, checks the banned flag in shopping_mall_customers. For seller profiles, checks the is_suspended flag in shopping_mall_seller_profiles. When set to true, returns only suspended/banned profiles. When set to false, returns only active (non-suspended) profiles. When omitted, includes all profiles regardless of suspension status.
+         * @x-autobe-specification Computed filter parameter that filters
+         *   profiles by suspension status. For customer profiles, checks the
+         *   banned flag in shopping_mall_customers. For seller profiles, checks
+         *   the is_suspended flag in shopping_mall_seller_profiles. When set to
+         *   true, returns only suspended/banned profiles. When set to false,
+         *   returns only active (non-suspended) profiles. When omitted,
+         *   includes all profiles regardless of suspension status.
      */
     is_suspended?: boolean | undefined;
 
@@ -107,7 +141,13 @@ export namespace IShoppingMallCustomerProfile {
      *
      * When set to true, returns only profiles that are permanently banned from the platform. When set to false, returns only profiles that are not banned. When omitted, includes all profiles regardless of their ban status. This helps administrators review banned accounts or focus on active users.
      *
-     * @x-autobe-specification Computed filter parameter that filters profiles by ban status. For customer profiles, checks the banned flag in shopping_mall_customers. For seller profiles, checks the is_banned flag in shopping_mall_seller_profiles. When set to true, returns only banned profiles. When set to false, returns only non-banned profiles. When omitted, includes all profiles regardless of ban status.
+         * @x-autobe-specification Computed filter parameter that filters
+         *   profiles by ban status. For customer profiles, checks the banned
+         *   flag in shopping_mall_customers. For seller profiles, checks the
+         *   is_banned flag in shopping_mall_seller_profiles. When set to true,
+         *   returns only banned profiles. When set to false, returns only
+         *   non-banned profiles. When omitted, includes all profiles regardless
+         *   of ban status.
      */
     is_banned?: boolean | undefined;
 
@@ -116,7 +156,12 @@ export namespace IShoppingMallCustomerProfile {
      *
      * Specify an ISO 8601 date-time string to include only profiles that were created at or after this moment. Useful for viewing recently registered users or analyzing user growth over specific time periods. Can be combined with created_before to define a date range.
      *
-     * @x-autobe-specification Computed filter parameter that applies a lower bound date filter on profile creation. Filters shopping_mall_customer_profiles or shopping_mall_seller_profiles by the created_at column using >= comparison. The value must be a valid ISO 8601 date-time string. Profiles created on or after this timestamp are included in results.
+         * @x-autobe-specification Computed filter parameter that applies a
+         *   lower bound date filter on profile creation. Filters
+         *   shopping_mall_customer_profiles or shopping_mall_seller_profiles by
+         *   the created_at column using >= comparison. The value must be a
+         *   valid ISO 8601 date-time string. Profiles created on or after this
+         *   timestamp are included in results.
      */
     created_after?: (string & tags.Format<"date-time">) | undefined;
 
@@ -125,7 +170,12 @@ export namespace IShoppingMallCustomerProfile {
      *
      * Specify an ISO 8601 date-time string to include only profiles that were created before this moment. Useful for viewing historical user data or analyzing user registrations within specific time periods. Can be combined with created_after to define a date range.
      *
-     * @x-autobe-specification Computed filter parameter that applies an upper bound date filter on profile creation. Filters shopping_mall_customer_profiles or shopping_mall_seller_profiles by the created_at column using < comparison. The value must be a valid ISO 8601 date-time string. Profiles created before this timestamp are included in results.
+         * @x-autobe-specification Computed filter parameter that applies an
+         *   upper bound date filter on profile creation. Filters
+         *   shopping_mall_customer_profiles or shopping_mall_seller_profiles by
+         *   the created_at column using < comparison. The value must be a valid
+         *   ISO 8601 date-time string. Profiles created before this timestamp
+         *   are included in results.
      */
     created_before?: (string & tags.Format<"date-time">) | undefined;
 
@@ -134,7 +184,11 @@ export namespace IShoppingMallCustomerProfile {
      *
      * Specifies which page of results to return, starting from page 1. Each page contains up to 'limit' number of profiles. Use this parameter to navigate through large result sets. The default is page 1 when this parameter is omitted.
      *
-     * @x-autobe-specification Computed pagination parameter that specifies which page of results to retrieve. Uses 1-indexed pagination (page 1 is the first page). The value must be a positive integer (minimum 1). Combined with the limit parameter to calculate the OFFSET in SQL queries. Default value is 1 when not specified.
+         * @x-autobe-specification Computed pagination parameter that specifies
+         *   which page of results to retrieve. Uses 1-indexed pagination (page
+         *   1 is the first page). The value must be a positive integer (minimum
+         *   1). Combined with the limit parameter to calculate the OFFSET in
+         *   SQL queries. Default value is 1 when not specified.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -143,7 +197,12 @@ export namespace IShoppingMallCustomerProfile {
      *
      * Controls how many profile records are included in each page of results. The minimum is 1 and the maximum is 100. Use a larger limit to retrieve more data per request, or a smaller limit for finer pagination control. The default is typically 20 profiles per page.
      *
-     * @x-autobe-specification Computed pagination parameter that specifies the maximum number of profiles to return per page. The value must be a positive integer between 1 and 100 (inclusive). Used as the LIMIT clause in SQL queries. Default value is typically 20 or similar when not specified. Maximum is capped at 100 to prevent excessive data retrieval.
+         * @x-autobe-specification Computed pagination parameter that specifies
+         *   the maximum number of profiles to return per page. The value must
+         *   be a positive integer between 1 and 100 (inclusive). Used as the
+         *   LIMIT clause in SQL queries. Default value is typically 20 or
+         *   similar when not specified. Maximum is capped at 100 to prevent
+         *   excessive data retrieval.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -165,7 +224,13 @@ export namespace IShoppingMallCustomerProfile {
      *
      * This field distinguishes between the two profile types in the union schema. Value is 'customer' for customer profiles or 'seller' for seller profiles. Used by API consumers to determine which profile-specific fields are present in the response and how to interpret the data.
      *
-     * @x-autobe-specification Computed discriminator field. Set to 'customer' when data originates from shopping_mall_customer_profiles joined with shopping_mall_customers, or 'seller' when data originates from shopping_mall_seller_profiles joined with shopping_mall_sellers. Used as discriminator for oneOf union type to distinguish between customer and seller profile variants in the response.
+         * @x-autobe-specification Computed discriminator field. Set to
+         *   'customer' when data originates from
+         *   shopping_mall_customer_profiles joined with
+         *   shopping_mall_customers, or 'seller' when data originates from
+         *   shopping_mall_seller_profiles joined with shopping_mall_sellers.
+         *   Used as discriminator for oneOf union type to distinguish between
+         *   customer and seller profile variants in the response.
      */
     profile_type: string;
 
@@ -174,7 +239,12 @@ export namespace IShoppingMallCustomerProfile {
      *
      * Universally Unique Identifier (UUID) that uniquely identifies this profile within the system. This field is immutable and serves as the primary key for the profile table (either customer_profiles or seller_profiles depending on profile_type). Used to reference the profile in other API operations.
      *
-     * @x-autobe-specification Primary key identifier from the respective profile table. For customer profiles: mapping from shopping_mall_customer_profiles.id. For seller profiles: mapping from shopping_mall_seller_profiles.id. UUID format, immutable after creation. Retrieved from the respective profile table based on profile_type discriminator in the UNION query.
+         * @x-autobe-specification Primary key identifier from the respective
+         *   profile table. For customer profiles: mapping from
+         *   shopping_mall_customer_profiles.id. For seller profiles: mapping
+         *   from shopping_mall_seller_profiles.id. UUID format, immutable after
+         *   creation. Retrieved from the respective profile table based on
+         *   profile_type discriminator in the UNION query.
      */
     id: string & tags.Format<"uuid">;
 
@@ -183,7 +253,14 @@ export namespace IShoppingMallCustomerProfile {
      *
      * The unique email address used for authentication and account identification. This field is populated from the linked customer or seller account (depending on profile_type) and serves as the primary login credential. Email addresses are unique across all user accounts in the system and are used for sending notifications and password reset links.
      *
-     * @x-autobe-specification Email address from joined actor table. For customer profiles: mapping from shopping_mall_customers.email via LEFT JOIN on customer_profiles.shopping_mall_customer_id = customers.id. For seller profiles: mapping from shopping_mall_sellers.email via LEFT JOIN on seller_profiles.seller_id = sellers.id. Unique constraint enforced at actor table level. Used for authentication and account identification.
+         * @x-autobe-specification Email address from joined actor table. For
+         *   customer profiles: mapping from shopping_mall_customers.email via
+         *   LEFT JOIN on customer_profiles.shopping_mall_customer_id =
+         *   customers.id. For seller profiles: mapping from
+         *   shopping_mall_sellers.email via LEFT JOIN on
+         *   seller_profiles.seller_id = sellers.id. Unique constraint enforced
+         *   at actor table level. Used for authentication and account
+         *   identification.
      */
     email: string;
 
@@ -192,7 +269,13 @@ export namespace IShoppingMallCustomerProfile {
      *
      * ISO 8601 formatted date-time string in UTC timezone representing the moment when this profile record was initially created in the system. This field is server-generated and immutable, providing an audit trail for profile creation and account age calculations.
      *
-     * @x-autobe-specification Creation timestamp from the respective profile table. For customer profiles: mapping from shopping_mall_customer_profiles.created_at. For seller profiles: mapping from shopping_mall_seller_profiles.created_at. ISO 8601 date-time format in UTC timezone. Server-generated on profile creation during user registration, immutable after initial creation.
+         * @x-autobe-specification Creation timestamp from the respective
+         *   profile table. For customer profiles: mapping from
+         *   shopping_mall_customer_profiles.created_at. For seller profiles:
+         *   mapping from shopping_mall_seller_profiles.created_at. ISO 8601
+         *   date-time format in UTC timezone. Server-generated on profile
+         *   creation during user registration, immutable after initial
+         *   creation.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -201,7 +284,12 @@ export namespace IShoppingMallCustomerProfile {
      *
      * A user-friendly name displayed in place of or alongside the email address for customer accounts. This field is only applicable to customer profiles (profile_type='customer'). For seller profiles, the shop_name field is used instead. Customers can update this field to their preferred display name, which appears in order confirmations, shipping labels, and review author attribution.
      *
-     * @x-autobe-specification Customer profile display name. Mapping from shopping_mall_customer_profiles.display_name. Only present for customer profiles (profile_type='customer'). For seller profiles, this field is not applicable and will be null or omitted from the response. User-provided field that can be updated by the customer at any time.
+         * @x-autobe-specification Customer profile display name. Mapping from
+         *   shopping_mall_customer_profiles.display_name. Only present for
+         *   customer profiles (profile_type='customer'). For seller profiles,
+         *   this field is not applicable and will be null or omitted from the
+         *   response. User-provided field that can be updated by the customer
+         *   at any time.
      */
     display_name?: string | undefined;
 
@@ -210,7 +298,12 @@ export namespace IShoppingMallCustomerProfile {
      *
      * Contact phone number for customer accounts, used for order notifications and seller communication regarding shipping issues or order clarifications. This field is only applicable to customer profiles (profile_type='customer') and is optional - customers may choose not to provide a phone number. For seller profiles, this field is not present.
      *
-     * @x-autobe-specification Customer profile phone number. Mapping from shopping_mall_customer_profiles.phone_number. Only present for customer profiles (profile_type='customer'). Nullable field - customers may choose not to provide a phone number. For seller profiles, this field is not applicable and will be null or omitted from the response.
+         * @x-autobe-specification Customer profile phone number. Mapping from
+         *   shopping_mall_customer_profiles.phone_number. Only present for
+         *   customer profiles (profile_type='customer'). Nullable field -
+         *   customers may choose not to provide a phone number. For seller
+         *   profiles, this field is not applicable and will be null or omitted
+         *   from the response.
      */
     phone_number?: string | null | undefined;
 
@@ -219,7 +312,12 @@ export namespace IShoppingMallCustomerProfile {
      *
      * The business or shop name displayed for seller accounts on the platform. This field is only applicable to seller profiles (profile_type='seller') and is required for seller registration. The shop name is visible to customers browsing products and is used in order communications. For customer profiles, this field is not present.
      *
-     * @x-autobe-specification Seller profile shop name. Mapping from shopping_mall_seller_profiles.shop_name. Only present for seller profiles (profile_type='seller'). Required field for seller profiles during registration. For customer profiles, this field is not applicable and will be null or omitted from the response. User-provided field that can be updated by the seller.
+         * @x-autobe-specification Seller profile shop name. Mapping from
+         *   shopping_mall_seller_profiles.shop_name. Only present for seller
+         *   profiles (profile_type='seller'). Required field for seller
+         *   profiles during registration. For customer profiles, this field is
+         *   not applicable and will be null or omitted from the response.
+         *   User-provided field that can be updated by the seller.
      */
     shop_name?: string | undefined;
 
@@ -228,7 +326,13 @@ export namespace IShoppingMallCustomerProfile {
      *
      * Uniform Resource Identifier (URI) pointing to the seller's shop logo image. This field is only applicable to seller profiles (profile_type='seller') and is optional - sellers may choose not to upload a logo. The logo is displayed on the seller's shop page and in product listings. For customer profiles, this field is not present.
      *
-     * @x-autobe-specification Seller profile logo URI. Mapping from shopping_mall_seller_profiles.logo_uri. Only present for seller profiles (profile_type='seller'). Nullable field - sellers may choose not to upload a logo. URI format pointing to uploaded image file stored in the platform's file storage. For customer profiles, this field is not applicable and will be null or omitted from the response.
+         * @x-autobe-specification Seller profile logo URI. Mapping from
+         *   shopping_mall_seller_profiles.logo_uri. Only present for seller
+         *   profiles (profile_type='seller'). Nullable field - sellers may
+         *   choose not to upload a logo. URI format pointing to uploaded image
+         *   file stored in the platform's file storage. For customer profiles,
+         *   this field is not applicable and will be null or omitted from the
+         *   response.
      */
     logo_uri?: (string & tags.Format<"uri">) | null | undefined;
 
@@ -237,7 +341,15 @@ export namespace IShoppingMallCustomerProfile {
      *
      * Current approval state of the seller's registration request. This field is only applicable to seller profiles (profile_type='seller') and can have values: 'pending' (awaiting administrator review), 'approved' (seller can list products), or 'rejected' (registration denied, may reapply). For customer profiles, this field is not present as customer accounts are immediately active upon registration.
      *
-     * @x-autobe-specification Seller profile approval status. Mapping from shopping_mall_seller_profiles.approval_status. Only present for seller profiles (profile_type='seller'). Enumerated field with values: 'pending' (awaiting administrator review), 'approved' (seller can list products), or 'rejected' (registration denied, may reapply). For customer profiles, this field is not applicable as customer accounts are immediately active upon registration, and will be null or omitted from the response. Updated by administrators during seller approval process.
+         * @x-autobe-specification Seller profile approval status. Mapping from
+         *   shopping_mall_seller_profiles.approval_status. Only present for
+         *   seller profiles (profile_type='seller'). Enumerated field with
+         *   values: 'pending' (awaiting administrator review), 'approved'
+         *   (seller can list products), or 'rejected' (registration denied, may
+         *   reapply). For customer profiles, this field is not applicable as
+         *   customer accounts are immediately active upon registration, and
+         *   will be null or omitted from the response. Updated by
+         *   administrators during seller approval process.
      */
     approval_status?: string | undefined;
 
@@ -246,7 +358,14 @@ export namespace IShoppingMallCustomerProfile {
      *
      * Boolean flag indicating whether the seller account is temporarily suspended. This field is only applicable to seller profiles (profile_type='seller'). When true, the seller cannot list new products or fulfill orders but retains access to view their account. Suspension is temporary and can be lifted by administrators. For customer profiles, this field is not present.
      *
-     * @x-autobe-specification Seller profile suspension flag. Mapping from shopping_mall_seller_profiles.is_suspended. Only present for seller profiles (profile_type='seller'). Boolean field indicating temporary account suspension. When true, the seller cannot list new products or fulfill orders but retains access to view their account. For customer profiles, this field is not applicable and will be null or omitted from the response. Updated by administrators.
+         * @x-autobe-specification Seller profile suspension flag. Mapping from
+         *   shopping_mall_seller_profiles.is_suspended. Only present for seller
+         *   profiles (profile_type='seller'). Boolean field indicating
+         *   temporary account suspension. When true, the seller cannot list new
+         *   products or fulfill orders but retains access to view their
+         *   account. For customer profiles, this field is not applicable and
+         *   will be null or omitted from the response. Updated by
+         *   administrators.
      */
     is_suspended?: boolean | undefined;
 
@@ -255,7 +374,15 @@ export namespace IShoppingMallCustomerProfile {
      *
      * Boolean flag indicating whether the account is permanently banned from the platform. This field applies to both customer and seller profiles. When true, the user cannot authenticate or access any platform features. Banned accounts retain their data for audit purposes but are completely inaccessible to the user. Ban actions are performed by administrators and are permanent.
      *
-     * @x-autobe-specification Account ban status from joined actor table. For customer profiles: mapping from shopping_mall_customers.banned via LEFT JOIN on customer_profiles.shopping_mall_customer_id = customers.id. For seller profiles: mapping from shopping_mall_sellers.banned via LEFT JOIN on seller_profiles.seller_id = sellers.id. Boolean field indicating permanent account ban. When true, user cannot authenticate or access the platform. Applies to both customer and seller profiles. Updated by administrators.
+         * @x-autobe-specification Account ban status from joined actor table.
+         *   For customer profiles: mapping from shopping_mall_customers.banned
+         *   via LEFT JOIN on customer_profiles.shopping_mall_customer_id =
+         *   customers.id. For seller profiles: mapping from
+         *   shopping_mall_sellers.banned via LEFT JOIN on
+         *   seller_profiles.seller_id = sellers.id. Boolean field indicating
+         *   permanent account ban. When true, user cannot authenticate or
+         *   access the platform. Applies to both customer and seller profiles.
+         *   Updated by administrators.
      */
     is_banned?: boolean | undefined;
   };

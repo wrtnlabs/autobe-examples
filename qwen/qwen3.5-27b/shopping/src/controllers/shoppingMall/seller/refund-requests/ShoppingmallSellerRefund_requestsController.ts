@@ -22,9 +22,10 @@ export class ShoppingmallSellerRefund_requestsController {
    *
    * @param connection
    * @param body Search criteria for refund requests including status filter, customer or seller scope, date range filters, reason text search, pagination parameters (limit, cursor), and sorting preferences.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Query shopping_mall_refund_requests table with pagination and filtering support.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Query shopping_mall_refund_requests table with
+     *   pagination and filtering support.
    *
    * Filtering:
    * - Filter by status (pending, approved, rejected)
@@ -88,9 +89,10 @@ export class ShoppingmallSellerRefund_requestsController {
    *
    * @param connection
    * @param refundRequestId Unique identifier of the refund request to retrieve (UUID format).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Query the shopping_mall_refund_requests table by the refundRequestId parameter (UUID primary key).
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Query the shopping_mall_refund_requests table by
+     *   the refundRequestId parameter (UUID primary key).
    *
    * Join with shopping_mall_order_items to retrieve order item details including product variant information, quantity, price, and current status.
    *

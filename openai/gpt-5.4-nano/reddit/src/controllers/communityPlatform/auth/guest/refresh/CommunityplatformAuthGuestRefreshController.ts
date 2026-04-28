@@ -28,9 +28,16 @@ export class CommunityplatformAuthGuestRefreshController {
    *
    * @param connection
    * @param body Guest token refresh payload as defined by ICommunityPlatformGuest.IRefresh, typically including the refresh token.
-   * @x-autobe-authorization-type refresh
-   * @x-autobe-authorization-actor guest
-   * @x-autobe-specification Implement refresh for guest tokens. Accept payload defined by ICommunityPlatformGuest.IRefresh (e.g., refreshToken and possibly session identifiers). Verify token integrity and expiry. Look up the guest session record in community_platform_guest_sessions to ensure the refresh token is associated with an active/valid session. Apply token rotation semantics consistent with the session schema (update stored rotation context or create a new session row) and revoke/retire the old refresh token context as applicable.
+     * @x-autobe-authorization-type refresh
+     * @x-autobe-authorization-actor guest
+     * @x-autobe-specification Implement refresh for guest tokens. Accept
+     *   payload defined by ICommunityPlatformGuest.IRefresh (e.g., refreshToken
+     *   and possibly session identifiers). Verify token integrity and expiry.
+     *   Look up the guest session record in community_platform_guest_sessions
+     *   to ensure the refresh token is associated with an active/valid session.
+     *   Apply token rotation semantics consistent with the session schema
+     *   (update stored rotation context or create a new session row) and
+     *   revoke/retire the old refresh token context as applicable.
    *
    * Return a new `ICommunityPlatformGuest.IAuthorized` response containing rotated access/refresh tokens.
    *

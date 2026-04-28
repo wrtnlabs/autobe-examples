@@ -26,7 +26,8 @@ import { IPageIEcommerceMallCancellationRequest } from "../../../../structures/I
  * @param props.body Cancellation request creation data including the order item identifier and customer-provided reason for cancellation.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Create a new cancellation request in ecommerce_mall_cancellation_requests table.
+ * @x-autobe-specification Create a new cancellation request in
+ *   ecommerce_mall_cancellation_requests table.
  *
  * Implementation steps:
  * 1. Extract orderItemId and reason from request body
@@ -140,7 +141,8 @@ export namespace create {
  * @param props.body Search criteria including status filter, order ID, date ranges, pagination parameters (limit, cursor), and sorting options.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query ecommerce_mall_cancellation_requests table for customer's cancellation requests.
+ * @x-autobe-specification Query ecommerce_mall_cancellation_requests table for
+ *   customer's cancellation requests.
  *
  * Filtering:
  * - Automatically filter by ecommerce_mall_order_item_id to get only customer's requests (from order item relationship)
@@ -265,7 +267,8 @@ export namespace index {
  * @param props.id Unique identifier of the cancellation request
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Retrieve a single cancellation request from ecommerce_mall_cancellation_requests table by UUID.
+ * @x-autobe-specification Retrieve a single cancellation request from
+ *   ecommerce_mall_cancellation_requests table by UUID.
  *
  * 1. Query the cancellation request by id parameter
  * 2. Validate the record exists and is not soft-deleted (deleted_at IS NULL)

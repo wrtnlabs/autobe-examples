@@ -32,9 +32,11 @@ export class EcommercemallSuperadministratorAdmin_requestsController {
    *
    * @param connection
    * @param body Search criteria for filtering and sorting pending administrator approval requests by date range and sorting order.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor superAdministrator
-   * @x-autobe-specification Query ecommerce_mall_administrator_approval_requests table with the following logic:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor superAdministrator
+     * @x-autobe-specification Query
+     *   ecommerce_mall_administrator_approval_requests table with the following
+     *   logic:
    *
    * 1. Filter requests where status = 'pending' and deleted_at IS NULL
    * 2. Apply optional date range filter on created_at column:
@@ -106,9 +108,10 @@ export class EcommercemallSuperadministratorAdmin_requestsController {
    * @param connection
    * @param requestId The unique identifier of the administrator approval request to review.
    * @param body Update data for reviewing the administrator access request. Must include the new status and may include rejection reason if rejecting.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor superAdministrator
-   * @x-autobe-specification Find the administrator approval request by requestId from ecommerce_mall_administrator_approval_requests table.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor superAdministrator
+     * @x-autobe-specification Find the administrator approval request by
+     *   requestId from ecommerce_mall_administrator_approval_requests table.
    *
    * Validation:
    * 1. Verify the request exists and is not soft-deleted (deleted_at IS NULL)

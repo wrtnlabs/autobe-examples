@@ -22,9 +22,10 @@ export class EcommercemallAdministratorSellersSuspension_historyController {
    *
    * @param connection
    * @param sellerId Unique identifier of the seller whose suspension history is being retrieved.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Query the ecommerce_mall_seller_suspensions table for all records where seller_id matches the provided UUID.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor administrator
+     * @x-autobe-specification Query the ecommerce_mall_seller_suspensions table
+     *   for all records where seller_id matches the provided UUID.
    *
    * Join with ecommerce_mall_administrators to retrieve the suspendedByAdmin details (name, email) for each suspension record.
    *

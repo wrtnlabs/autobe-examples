@@ -21,7 +21,8 @@ import { IPageIEcommerceMallWishlistItem } from "../../../../../structures/IPage
  * @param props.body Search criteria including pagination parameters (page number, page size), sorting options (by creation date or product name), and filter criteria (product name search, availability status).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query ecommerce_mall_wishlist_items table scoped to the specified wishlistId from path parameter.
+ * @x-autobe-specification Query ecommerce_mall_wishlist_items table scoped to
+ *   the specified wishlistId from path parameter.
  *
  * Filter conditions:
  * - WHERE ecommerce_mall_wishlist_id = {wishlistId}
@@ -149,7 +150,8 @@ export namespace index {
  * @param props.itemId The unique identifier of the wishlist item to retrieve.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query ecommerce_mall_wishlist_items table by wishlistId and itemId path parameters.
+ * @x-autobe-specification Query ecommerce_mall_wishlist_items table by
+ *   wishlistId and itemId path parameters.
  *
  * 1. Fetch the wishlist item record where id = itemId AND ecommerce_mall_wishlist_id = wishlistId
  * 2. Join with ecommerce_mall_wishlists to fetch wishlist data (customer reference)

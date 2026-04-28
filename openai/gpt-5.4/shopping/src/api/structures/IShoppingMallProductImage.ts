@@ -10,64 +10,79 @@ export type IShoppingMallProductImage = {
   /**
    * Unique identifier of this product gallery image record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_product_images.id.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_product_images.id.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Summary information for the product that owns this gallery image.
    *
-   * @x-autobe-database-schema-property product
-   * @x-autobe-specification Resolve the belongs-to relation from shopping_mall_product_images.shopping_mall_product_id to shopping_mall_products.id and serialize the parent product as IShoppingMallProduct.ISummary.
+     * @x-autobe-database-schema-property product
+     * @x-autobe-specification Resolve the belongs-to relation from
+     *   shopping_mall_product_images.shopping_mall_product_id to
+     *   shopping_mall_products.id and serialize the parent product as
+     *   IShoppingMallProduct.ISummary.
    */
   product: IShoppingMallProduct.ISummary;
 
   /**
    * Stored URI of the product gallery image resource.
    *
-   * @x-autobe-database-schema-property image_uri
-   * @x-autobe-specification Direct mapping from shopping_mall_product_images.image_uri. Store and return the persisted media resource URI for the image.
+     * @x-autobe-database-schema-property image_uri
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_product_images.image_uri. Store and return the persisted
+     *   media resource URI for the image.
    */
   image_uri: string;
 
   /**
    * Display order of the image within its product's gallery.
    *
-   * @x-autobe-database-schema-property sequence
-   * @x-autobe-specification Direct mapping from shopping_mall_product_images.sequence. This integer expresses the product-scoped display order used to arrange the gallery.
+     * @x-autobe-database-schema-property sequence
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_product_images.sequence. This integer expresses the
+     *   product-scoped display order used to arrange the gallery.
    */
   sequence: number & tags.Type<"int32">;
 
   /**
    * Whether this image is the current thumbnail for the product.
    *
-   * @x-autobe-database-schema-property is_thumbnail
-   * @x-autobe-specification Direct mapping from shopping_mall_product_images.is_thumbnail. Indicates whether this row is the current primary gallery image for listing and detail presentation.
+     * @x-autobe-database-schema-property is_thumbnail
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_product_images.is_thumbnail. Indicates whether this row
+     *   is the current primary gallery image for listing and detail
+     *   presentation.
    */
   is_thumbnail: boolean;
 
   /**
    * Timestamp when this product image record was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from shopping_mall_product_images.created_at.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_product_images.created_at.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when this product image record was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from shopping_mall_product_images.updated_at.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_product_images.updated_at.
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * Soft-deletion timestamp for the image, or null when the image is still active.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from shopping_mall_product_images.deleted_at. Return null when the image is still active and a timestamp when it has been soft-deleted.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_product_images.deleted_at. Return null when the image is
+     *   still active and a timestamp when it has been soft-deleted.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -79,24 +94,38 @@ export namespace IShoppingMallProductImage {
     /**
      * Resource URI of the product gallery image.
      *
-     * @x-autobe-database-schema-property image_uri
-     * @x-autobe-specification Maps to shopping_mall_product_images.image_uri using camelCase request-field naming. Accept the new stored resource URI for the live gallery image being updated. The service should validate that the URI is acceptable for product media before persisting the change.
+         * @x-autobe-database-schema-property image_uri
+         * @x-autobe-specification Maps to
+         *   shopping_mall_product_images.image_uri using camelCase
+         *   request-field naming. Accept the new stored resource URI for the
+         *   live gallery image being updated. The service should validate that
+         *   the URI is acceptable for product media before persisting the
+         *   change.
      */
     imageUri?: (string & tags.Format<"uri">) | undefined;
 
     /**
      * Display order of the image within the product's gallery.
      *
-     * @x-autobe-database-schema-property sequence
-     * @x-autobe-specification Direct mapping to shopping_mall_product_images.sequence. Represents the intended display order of the image within its parent product gallery. The service must normalize final ordering within the product so active images keep unique valid sequence positions.
+         * @x-autobe-database-schema-property sequence
+         * @x-autobe-specification Direct mapping to
+         *   shopping_mall_product_images.sequence. Represents the intended
+         *   display order of the image within its parent product gallery. The
+         *   service must normalize final ordering within the product so active
+         *   images keep unique valid sequence positions.
      */
     sequence?: (number & tags.Type<"int32">) | undefined;
 
     /**
      * Whether the client intends this image to be the gallery's thumbnail image.
      *
-     * @x-autobe-database-schema-property is_thumbnail
-     * @x-autobe-specification Maps to shopping_mall_product_images.is_thumbnail using camelCase request-field naming. Treat this value as client thumbnail intent for the current image, but after applying the update the service must normalize the gallery so only one active image remains the effective thumbnail according to the final ordering policy.
+         * @x-autobe-database-schema-property is_thumbnail
+         * @x-autobe-specification Maps to
+         *   shopping_mall_product_images.is_thumbnail using camelCase
+         *   request-field naming. Treat this value as client thumbnail intent
+         *   for the current image, but after applying the update the service
+         *   must normalize the gallery so only one active image remains the
+         *   effective thumbnail according to the final ordering policy.
      */
     isThumbnail?: boolean | undefined;
   };
@@ -108,24 +137,41 @@ export namespace IShoppingMallProductImage {
     /**
      * URI of the product gallery image to attach to the selected product.
      *
-     * @x-autobe-database-schema-property image_uri
-     * @x-autobe-specification Direct mapping from shopping_mall_product_images.image_uri. Accept the uploaded product-gallery media URI supplied by the seller and persist it for the new image row after request validation. This field is required in the create body because the image cannot be registered without a resource location.
+         * @x-autobe-database-schema-property image_uri
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_images.image_uri. Accept the uploaded
+         *   product-gallery media URI supplied by the seller and persist it for
+         *   the new image row after request validation. This field is required
+         *   in the create body because the image cannot be registered without a
+         *   resource location.
      */
     image_uri: string & tags.Format<"uri">;
 
     /**
      * Optional gallery position to request for the new image within the product's ordered image list.
      *
-     * @x-autobe-database-schema-property sequence
-     * @x-autobe-specification Direct mapping to shopping_mall_product_images.sequence for the newly created row. When provided, treat it as the seller's requested gallery position within the target product's active images and normalize sibling sequences transactionally so each image keeps a unique deterministic order. When omitted, append the new image after the current highest active sequence.
+         * @x-autobe-database-schema-property sequence
+         * @x-autobe-specification Direct mapping to
+         *   shopping_mall_product_images.sequence for the newly created row.
+         *   When provided, treat it as the seller's requested gallery position
+         *   within the target product's active images and normalize sibling
+         *   sequences transactionally so each image keeps a unique
+         *   deterministic order. When omitted, append the new image after the
+         *   current highest active sequence.
      */
     sequence?: (number & tags.Type<"int32">) | undefined;
 
     /**
      * Optional flag indicating whether the new image should become the product's primary thumbnail image.
      *
-     * @x-autobe-database-schema-property is_thumbnail
-     * @x-autobe-specification Direct mapping to shopping_mall_product_images.is_thumbnail for the new row. When provided as true, interpret it as a request for this image to become the product's thumbnail, but enforce the gallery's single-thumbnail rule by updating sibling thumbnail flags as needed during the same transaction. When omitted, apply the service's default thumbnail behavior for the resulting gallery state.
+         * @x-autobe-database-schema-property is_thumbnail
+         * @x-autobe-specification Direct mapping to
+         *   shopping_mall_product_images.is_thumbnail for the new row. When
+         *   provided as true, interpret it as a request for this image to
+         *   become the product's thumbnail, but enforce the gallery's
+         *   single-thumbnail rule by updating sibling thumbnail flags as needed
+         *   during the same transaction. When omitted, apply the service's
+         *   default thumbnail behavior for the resulting gallery state.
      */
     is_thumbnail?: boolean | undefined;
   };

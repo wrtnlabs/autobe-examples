@@ -26,7 +26,9 @@ import { IPageIHrmTimeTrackingActivityLog } from "../../../../structures/IPageIH
  * @param props.body Activity log search filters and pagination options
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor owner
- * @x-autobe-specification Implement a read-only search service over `hrm_time_tracking_activity_logs` scoped to the authenticated user's current organization.
+ * @x-autobe-specification Implement a read-only search service over
+ *   `hrm_time_tracking_activity_logs` scoped to the authenticated user's
+ *   current organization.
  *
  * 1. Resolve the caller's active organization context from authentication/session state, not from the request body.
  * 2. Authorize the caller by checking organization management permission within that organization context. Do not consider permissions from other organizations. Reject unauthorized requests before querying data.

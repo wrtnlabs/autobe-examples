@@ -25,16 +25,23 @@ export class EcommercemallCustomerAddressesController {
    *
    * @param connection
    * @param body Address creation payload containing recipient and location details. The `is_default` field is optional; when omitted, the system automatically sets it to `true` if this is the customer's first address, or `false` otherwise. All string fields must be non-empty.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification 1. Extract authenticated customer ID from the JWT session token.
-   * 2. Validate required fields: recipient_name, phone_number, street_address, city, state_province, postal_code, country must all be non-empty strings.
-   * 3. Handle is_default logic:
-   *    - If is_default is explicitly set to true: query all non-deleted addresses for this customer where is_default = true and set them all to is_default = false (application-layer singleton enforcement).
-   *    - If is_default is not provided (null/undefined) and the customer has zero existing non-deleted addresses: automatically set is_default = true (first address becomes default).
-   *    - If is_default is not provided and the customer already has non-deleted addresses: set is_default = false.
-   * 4. Create the address record with the customer ID from auth context. System-managed fields (id, created_at, updated_at, deleted_at) are auto-populated. deleted_at is set to null (address is active).
-   * 5. Return HTTP 201 (Created) with the full created address record.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification 1. Extract authenticated customer ID from the JWT
+     *   session token. 2. Validate required fields: recipient_name,
+     *   phone_number, street_address, city, state_province, postal_code,
+     *   country must all be non-empty strings. 3. Handle is_default logic: - If
+     *   is_default is explicitly set to true: query all non-deleted addresses
+     *   for this customer where is_default = true and set them all to
+     *   is_default = false (application-layer singleton enforcement). - If
+     *   is_default is not provided (null/undefined) and the customer has zero
+     *   existing non-deleted addresses: automatically set is_default = true
+     *   (first address becomes default). - If is_default is not provided and
+     *   the customer already has non-deleted addresses: set is_default = false.
+     *   4. Create the address record with the customer ID from auth context.
+     *   System-managed fields (id, created_at, updated_at, deleted_at) are
+     *   auto-populated. deleted_at is set to null (address is active). 5.
+     *   Return HTTP 201 (Created) with the full created address record.
    *
    * Edge cases:
    * - Duplicate addresses: no unique constraint on address content (recipient + location fields). Allow duplicate addresses to exist; the customer is responsible for managing duplicates.
@@ -71,9 +78,19 @@ export class EcommercemallCustomerAddressesController {
    *
    * @param connection
    * @param body Search criteria for filtering and paginating the customer's saved addresses. Supports filtering by default status, text search across recipient name and location fields, and pagination parameters to control result set size and page position.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Query e_commerce_mall_customer_addresses with WHERE e_commerce_mall_customer_id = (auth customer ID) AND deleted_at IS NULL. Support pagination via page cursor or offset/limit. Apply optional filters: is_default (Boolean), recipient_name search (LIKE/contains), city, state_province, country exact match or partial. Sort by created_at descending by default, or by is_default descending (default addresses first) with secondary sort by created_at. Return IPageIECommerceMallCustomerAddress.ISummary with id, recipient_name, phone_number, street_address, city, state_province, postal_code, country, is_default, created_at. Exclude soft-deleted records from results.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Query e_commerce_mall_customer_addresses with
+     *   WHERE e_commerce_mall_customer_id = (auth customer ID) AND deleted_at
+     *   IS NULL. Support pagination via page cursor or offset/limit. Apply
+     *   optional filters: is_default (Boolean), recipient_name search
+     *   (LIKE/contains), city, state_province, country exact match or partial.
+     *   Sort by created_at descending by default, or by is_default descending
+     *   (default addresses first) with secondary sort by created_at. Return
+     *   IPageIECommerceMallCustomerAddress.ISummary with id, recipient_name,
+     *   phone_number, street_address, city, state_province, postal_code,
+     *   country, is_default, created_at. Exclude soft-deleted records from
+     *   results.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
@@ -103,9 +120,16 @@ export class EcommercemallCustomerAddressesController {
    *
    * @param connection
    * @param addressId Unique identifier (UUID) of the shipping address to retrieve, scoped to the authenticated customer's address book.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Query the e_commerce_mall_customer_addresses table by id (UUID) and the authenticated customer's ID (from JWT session). Apply a filter to exclude soft-deleted records: WHERE deleted_at IS NULL. If no matching record is found (either the address doesn't exist, belongs to another customer, or has been soft-deleted), return a 404 Not Found response. Return all columns: id, recipient_name, phone_number, street_address, city, state_province, postal_code, country, is_default, created_at, updated_at.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Query the e_commerce_mall_customer_addresses
+     *   table by id (UUID) and the authenticated customer's ID (from JWT
+     *   session). Apply a filter to exclude soft-deleted records: WHERE
+     *   deleted_at IS NULL. If no matching record is found (either the address
+     *   doesn't exist, belongs to another customer, or has been soft-deleted),
+     *   return a 404 Not Found response. Return all columns: id,
+     *   recipient_name, phone_number, street_address, city, state_province,
+     *   postal_code, country, is_default, created_at, updated_at.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Get(":addressId")
@@ -136,9 +160,18 @@ export class EcommercemallCustomerAddressesController {
    * @param connection
    * @param addressId The unique identifier (UUID) of the address to update.
    * @param body Updated address fields including recipient name, phone number, street address, city, state/province, postal code, country, and whether this address should be the default shipping address.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Look up the address by addressId (id field). Verify the address belongs to the authenticated customer by matching e_commerce_mall_customer_id against the customer's session identity. Reject with 404 if not found or not owned. Check that the address is not soft-deleted (deleted_at must be null) - reject with 404 if deleted. Update all provided fields on the address record. If is_default is being set to true, clear the is_default flag on all other addresses belonging to this customer first (application-layer constraint: only one default per customer). Set updated_at to current timestamp. Return the full updated address record.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Look up the address by addressId (id field).
+     *   Verify the address belongs to the authenticated customer by matching
+     *   e_commerce_mall_customer_id against the customer's session identity.
+     *   Reject with 404 if not found or not owned. Check that the address is
+     *   not soft-deleted (deleted_at must be null) - reject with 404 if
+     *   deleted. Update all provided fields on the address record. If
+     *   is_default is being set to true, clear the is_default flag on all other
+     *   addresses belonging to this customer first (application-layer
+     *   constraint: only one default per customer). Set updated_at to current
+     *   timestamp. Return the full updated address record.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Put(":addressId")
@@ -173,9 +206,13 @@ export class EcommercemallCustomerAddressesController {
    *
    * @param connection
    * @param addressId The unique identifier (UUID) of the shipping address to delete. Must belong to the authenticated customer.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Verify the address exists and belongs to the authenticated customer by checking `e_commerce_mall_customer_id` matches the requesting customer's ID. If the address is not found or does not belong to the customer, return 404 Not Found without revealing ownership details.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Verify the address exists and belongs to the
+     *   authenticated customer by checking `e_commerce_mall_customer_id`
+     *   matches the requesting customer's ID. If the address is not found or
+     *   does not belong to the customer, return 404 Not Found without revealing
+     *   ownership details.
    *
    * Perform a soft delete by setting `deleted_at` to the current timestamp. If the address has `is_default = true`, also set `is_default` to `false` before setting `deleted_at`, since the customer cannot retain a default that references a deleted address. Update both `updated_at` and `deleted_at` timestamps.
    *

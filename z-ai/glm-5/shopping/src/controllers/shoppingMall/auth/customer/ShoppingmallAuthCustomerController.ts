@@ -41,9 +41,10 @@ export class ShoppingmallAuthCustomerController {
    *
    * @param connection
    * @param body Customer registration credentials and optional profile information
-   * @x-autobe-authorization-type join
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Implementation specification for customer registration (join):
+     * @x-autobe-authorization-type join
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Implementation specification for customer
+     *   registration (join):
    *
    * 1. **Request Validation**:
    *    - Validate email format (must be valid email address)
@@ -141,9 +142,9 @@ export class ShoppingmallAuthCustomerController {
    *
    * @param connection
    * @param body Customer login credentials for authentication
-   * @x-autobe-authorization-type login
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Implementation specification for customer login:
+     * @x-autobe-authorization-type login
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Implementation specification for customer login:
    *
    * 1. **Request Validation**:
    *    - Validate email format
@@ -253,9 +254,9 @@ export class ShoppingmallAuthCustomerController {
    *
    * @param connection
    * @param body Refresh token for obtaining new access token
-   * @x-autobe-authorization-type refresh
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Implementation specification for token refresh:
+     * @x-autobe-authorization-type refresh
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Implementation specification for token refresh:
    *
    * 1. **Request Validation**:
    *    - Validate refresh token is provided in request body

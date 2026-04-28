@@ -13,7 +13,8 @@ import { IPageIRedditCommunityCommunity } from "../../../../structures/IPageIRed
  * @param props.connection
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor guest
- * @x-autobe-specification Query reddit_community_communities table with cursor-based pagination.
+ * @x-autobe-specification Query reddit_community_communities table with
+ *   cursor-based pagination.
  *
  * Apply the following logic:
  * 1. Select community fields: id, name, description, icon_url, subscriber_count

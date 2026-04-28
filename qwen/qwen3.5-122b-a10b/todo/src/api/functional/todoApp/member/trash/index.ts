@@ -26,12 +26,12 @@ import { ITodoAppTodo } from "../../../../structures/ITodoAppTodo";
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
  * @x-autobe-specification 1. Extract todoId from path parameter (UUID format)
- * 2. Verify authentication - reject if no valid session
- * 3. Query todo_app_todos WHERE id = todoId AND todo_app_member_id = authenticated_member_id
- * 4. If not found, return 404 Not Found
- * 5. Check deleted_at is NOT null - if null, return 400 Bad Request (todo not deleted)
- * 6. Update deleted_at to NULL and updated_at to current timestamp
- * 7. Return the restored todo entity with all fields
+ *   2. Verify authentication - reject if no valid session 3. Query
+ *   todo_app_todos WHERE id = todoId AND todo_app_member_id =
+ *   authenticated_member_id 4. If not found, return 404 Not Found 5. Check
+ *   deleted_at is NOT null - if null, return 400 Bad Request (todo not deleted)
+ *   6. Update deleted_at to NULL and updated_at to current timestamp 7. Return
+ *   the restored todo entity with all fields
  *
  * **Edge Cases**
  * - Todo does not exist: 404 Not Found

@@ -22,7 +22,9 @@ import { IEcommerceMallProductVariantSnapshot } from "../../../../../../structur
  * @param props.orderItemId UUID of the specific order item within the order (scoped to order)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification 1. Validate the order exists and the requesting customer/seller/admin has access permissions per section 372 (Cross-Customer Order Access Control).
+ * @x-autobe-specification 1. Validate the order exists and the requesting
+ *   customer/seller/admin has access permissions per section 372
+ *   (Cross-Customer Order Access Control).
  *
  * 2. Locate the order item by orderItemId within the specified order (orderId).
  *

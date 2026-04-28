@@ -12,38 +12,52 @@ export type IShoppingMallProductSnapshot = {
   /**
    * Unique identifier of this preserved product snapshot.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_product_snapshots.id.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_product_snapshots.id.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Summary information for the product that this historical snapshot belongs to.
    *
-   * @x-autobe-database-schema-property product
-   * @x-autobe-specification Resolve the shopping_mall_product_snapshots.product relation by joining shopping_mall_product_id to shopping_mall_products.id and materialize the related product as IShoppingMallProduct.ISummary.
+     * @x-autobe-database-schema-property product
+     * @x-autobe-specification Resolve the
+     *   shopping_mall_product_snapshots.product relation by joining
+     *   shopping_mall_product_id to shopping_mall_products.id and materialize
+     *   the related product as IShoppingMallProduct.ISummary.
    */
   product: IShoppingMallProduct.ISummary;
 
   /**
    * Preserved gallery images captured in this snapshot, including historical display order and thumbnail designation.
    *
-   * @x-autobe-specification Query shopping_mall_product_snapshot_image_copies where shopping_mall_product_snapshot_id = shopping_mall_product_snapshots.id, order rows by sequence ascending, and materialize them as IShoppingMallProductSnapshotImageCopy to preserve the historical gallery state captured for this snapshot.
+     * @x-autobe-specification Query shopping_mall_product_snapshot_image_copies
+     *   where shopping_mall_product_snapshot_id =
+     *   shopping_mall_product_snapshots.id, order rows by sequence ascending,
+     *   and materialize them as IShoppingMallProductSnapshotImageCopy to
+     *   preserve the historical gallery state captured for this snapshot.
    */
   imageCopies: IShoppingMallProductSnapshotImageCopy[];
 
   /**
    * Historical variant snapshots that were preserved as part of this product snapshot.
    *
-   * @x-autobe-specification Query shopping_mall_product_variant_snapshots where shopping_mall_product_snapshot_id = shopping_mall_product_snapshots.id, apply deterministic ordering, and materialize each row as IShoppingMallProductVariantSnapshot so the historical variant state captured with this product snapshot is returned.
+     * @x-autobe-specification Query shopping_mall_product_variant_snapshots
+     *   where shopping_mall_product_snapshot_id =
+     *   shopping_mall_product_snapshots.id, apply deterministic ordering, and
+     *   materialize each row as IShoppingMallProductVariantSnapshot so the
+     *   historical variant state captured with this product snapshot is
+     *   returned.
    */
   variantSnapshots: IShoppingMallProductVariantSnapshot[];
 
   /**
    * Timestamp when this immutable product snapshot record was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from shopping_mall_product_snapshots.created_at.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_product_snapshots.created_at.
    */
   created_at: string & tags.Format<"date-time">;
 };
@@ -55,42 +69,69 @@ export namespace IShoppingMallProductSnapshot {
     /**
      * Specific preserved product snapshot identifier to filter for a single snapshot in the selected product's history.
      *
-     * @x-autobe-specification Optional exact-match filter for the snapshot identifier. When provided, constrain the already path-scoped `shopping_mall_product_snapshots` query to the single row whose `id` equals this UUID. Do not treat this property as a standalone path key; it is a body-level filter applied within the `productId` scope.
+         * @x-autobe-specification Optional exact-match filter for the snapshot
+         *   identifier. When provided, constrain the already path-scoped
+         *   `shopping_mall_product_snapshots` query to the single row whose
+         *   `id` equals this UUID. Do not treat this property as a standalone
+         *   path key; it is a body-level filter applied within the `productId`
+         *   scope.
      */
     id?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Inclusive start timestamp for limiting snapshot history to records created at or after this time.
      *
-     * @x-autobe-specification Optional inclusive lower-bound filter for snapshot creation time. When present, apply a predicate equivalent to `created_at >= createdAtFrom` to the `shopping_mall_product_snapshots` rows that are already constrained by `shopping_mall_product_id = :productId`. Omit the predicate when this field is absent.
+         * @x-autobe-specification Optional inclusive lower-bound filter for
+         *   snapshot creation time. When present, apply a predicate equivalent
+         *   to `created_at >= createdAtFrom` to the
+         *   `shopping_mall_product_snapshots` rows that are already constrained
+         *   by `shopping_mall_product_id = :productId`. Omit the predicate when
+         *   this field is absent.
      */
     createdAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Inclusive end timestamp for limiting snapshot history to records created at or before this time.
      *
-     * @x-autobe-specification Optional inclusive upper-bound filter for snapshot creation time. When present, apply a predicate equivalent to `created_at <= createdAtTo` to the `shopping_mall_product_snapshots` rows that are already constrained by `shopping_mall_product_id = :productId`. Omit the predicate when this field is absent.
+         * @x-autobe-specification Optional inclusive upper-bound filter for
+         *   snapshot creation time. When present, apply a predicate equivalent
+         *   to `created_at <= createdAtTo` to the
+         *   `shopping_mall_product_snapshots` rows that are already constrained
+         *   by `shopping_mall_product_id = :productId`. Omit the predicate when
+         *   this field is absent.
      */
     createdAtTo?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Sort option for ordering the product snapshot history by creation time.
      *
-     * @x-autobe-specification Optional ordering directive for the history query. Interpret `created_at_desc` as descending order by snapshot creation time and `created_at_asc` as ascending order by snapshot creation time. If omitted, default to descending order so the newest preserved snapshots are returned first.
+         * @x-autobe-specification Optional ordering directive for the history
+         *   query. Interpret `created_at_desc` as descending order by snapshot
+         *   creation time and `created_at_asc` as ascending order by snapshot
+         *   creation time. If omitted, default to descending order so the
+         *   newest preserved snapshots are returned first.
      */
     sort?: "created_at_desc" | "created_at_asc" | undefined;
 
     /**
      * Page number to return from the filtered and sorted snapshot history results.
      *
-     * @x-autobe-specification Optional 1-indexed page selector for paginated history browsing. Use this value together with `limit` after all filters and ordering have been applied to compute the query offset. If omitted, treat the request as asking for the first page.
+         * @x-autobe-specification Optional 1-indexed page selector for
+         *   paginated history browsing. Use this value together with `limit`
+         *   after all filters and ordering have been applied to compute the
+         *   query offset. If omitted, treat the request as asking for the first
+         *   page.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of snapshot history records to include in a single response page.
      *
-     * @x-autobe-specification Optional maximum page size for paginated history browsing. Use this value together with `page` after all filters and ordering have been applied to determine the slice of rows to return. Enforce the schema-defined bounds and use the operation default when omitted.
+         * @x-autobe-specification Optional maximum page size for paginated
+         *   history browsing. Use this value together with `page` after all
+         *   filters and ordering have been applied to determine the slice of
+         *   rows to return. Enforce the schema-defined bounds and use the
+         *   operation default when omitted.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -104,38 +145,52 @@ export namespace IShoppingMallProductSnapshot {
     /**
      * Unique identifier of the preserved product snapshot event.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_product_snapshots.id.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_snapshots.id.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Current summary of the product to which this preserved snapshot belongs.
      *
-     * @x-autobe-database-schema-property product
-     * @x-autobe-specification Resolve through the shopping_mall_product_snapshots.product belongs-to relation by joining shopping_mall_products via shopping_mall_product_id, then serialize the joined current product record as IShoppingMallProduct.ISummary.
+         * @x-autobe-database-schema-property product
+         * @x-autobe-specification Resolve through the
+         *   shopping_mall_product_snapshots.product belongs-to relation by
+         *   joining shopping_mall_products via shopping_mall_product_id, then
+         *   serialize the joined current product record as
+         *   IShoppingMallProduct.ISummary.
      */
     product: IShoppingMallProduct.ISummary;
 
     /**
      * Number of preserved image copies recorded in this product snapshot.
      *
-     * @x-autobe-specification Compute as COUNT(*) of related product snapshot image copy records for the snapshot, grouped by shopping_mall_product_snapshots.id. This value summarizes the number of preserved image copies without loading the imageCopies collection.
+         * @x-autobe-specification Compute as COUNT(*) of related product
+         *   snapshot image copy records for the snapshot, grouped by
+         *   shopping_mall_product_snapshots.id. This value summarizes the
+         *   number of preserved image copies without loading the imageCopies
+         *   collection.
      */
     image_copy_count: number & tags.Type<"int32">;
 
     /**
      * Number of preserved variant snapshots included in this product snapshot.
      *
-     * @x-autobe-specification Compute as COUNT(*) of related product variant snapshot records for the snapshot, grouped by shopping_mall_product_snapshots.id. This value summarizes the number of preserved variant snapshots without loading the variantSnapshots collection.
+         * @x-autobe-specification Compute as COUNT(*) of related product
+         *   variant snapshot records for the snapshot, grouped by
+         *   shopping_mall_product_snapshots.id. This value summarizes the
+         *   number of preserved variant snapshots without loading the
+         *   variantSnapshots collection.
      */
     variant_snapshot_count: number & tags.Type<"int32">;
 
     /**
      * Timestamp when this product snapshot event was created and preserved.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_product_snapshots.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_snapshots.created_at.
      */
     created_at: string & tags.Format<"date-time">;
   };

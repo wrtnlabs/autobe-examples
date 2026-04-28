@@ -22,7 +22,8 @@ import { IPageIMultiUserTodoMemberPasswordReset } from "../../../structures/IPag
  * @param props.body Search criteria for filtering password reset requests. Includes pagination parameters, member ID filter, expiration status filter, and date range filters.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query multi_user_todo_member_password_resets table with pagination and filtering.
+ * @x-autobe-specification Query multi_user_todo_member_password_resets table
+ *   with pagination and filtering.
  *
  * Implementation:
  * 1. Validate authentication - require active session with valid access_token
@@ -141,7 +142,8 @@ export namespace index {
  * @param props.resetId UUID of the password reset token to retrieve
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Retrieve password reset token by UUID from multi_user_todo_member_password_resets table.
+ * @x-autobe-specification Retrieve password reset token by UUID from
+ *   multi_user_todo_member_password_resets table.
  *
  * Query the table using resetId as the primary key to fetch the complete token record.
  *

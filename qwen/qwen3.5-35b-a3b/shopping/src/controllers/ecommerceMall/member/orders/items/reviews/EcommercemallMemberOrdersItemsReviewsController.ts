@@ -20,9 +20,10 @@ export class EcommercemallMemberOrdersItemsReviewsController {
    * @param orderId UUID of the order containing the item to be reviewed
    * @param itemId UUID of the specific order item that was delivered and is being reviewed
    * @param body Review data including rating and optional text content. Rating must be between 1 and 5 stars.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Create a customer review for a delivered order item.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Create a customer review for a delivered order
+     *   item.
    *
    * Implementation steps:
    * 1. Validate path parameters: orderId and itemId must be valid UUIDs

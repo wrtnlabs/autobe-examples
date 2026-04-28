@@ -24,9 +24,11 @@ export class HrmtimetrackMemberRole_snapshotsPermissionsController {
    * @param connection
    * @param snapshotId UUID of the role snapshot to add the permission to. This snapshot must exist and belong to an organization the requesting user has access to.
    * @param body Permission data to add to the role snapshot, including the permission identifier.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Insert a new record into hrm_time_track_role_snapshot_permissions table with the provided permission data.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Insert a new record into
+     *   hrm_time_track_role_snapshot_permissions table with the provided
+     *   permission data.
    *
    * Implementation steps:
    * 1. Validate snapshotId is a valid UUID format
@@ -83,9 +85,10 @@ export class HrmtimetrackMemberRole_snapshotsPermissionsController {
    * @param connection
    * @param snapshotId Unique identifier of the role snapshot to query permissions for (global scope)
    * @param body Search criteria for filtering role snapshot permissions including permission name filters, date ranges, and pagination parameters.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query hrm_time_track_role_snapshot_permissions table for records matching the given snapshot ID.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query hrm_time_track_role_snapshot_permissions
+     *   table for records matching the given snapshot ID.
    *
    * 1. Validate snapshotId exists in hrm_time_track_role_snapshots table
    * 2. Query hrm_time_track_role_snapshot_permissions where hrm_time_track_role_snapshot_id = snapshotId
@@ -137,9 +140,11 @@ export class HrmtimetrackMemberRole_snapshotsPermissionsController {
    * @param connection
    * @param snapshotId Unique identifier of the role snapshot containing this permission record (global scope).
    * @param permissionId Unique identifier of the permission record within the role snapshot (global scope).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query hrm_time_track_role_snapshot_permissions table for a single record matching both the snapshot ID and permission ID path parameters.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query hrm_time_track_role_snapshot_permissions
+     *   table for a single record matching both the snapshot ID and permission
+     *   ID path parameters.
    *
    * Validation:
    * - Verify snapshotId exists in hrm_time_track_role_snapshots table

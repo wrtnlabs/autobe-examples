@@ -11,56 +11,71 @@ export type ICommunityPlatformPostVote = {
   /**
    * Unique identifier of this post vote record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from community_platform_post_votes.id.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_post_votes.id.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Member who currently owns this vote on the post.
    *
-   * @x-autobe-database-schema-property member
-   * @x-autobe-specification Join community_platform_post_votes.community_platform_member_id to community_platform_members.id and materialize the belongs-to relation member as ICommunityPlatformMember.ISummary.
+     * @x-autobe-database-schema-property member
+     * @x-autobe-specification Join
+     *   community_platform_post_votes.community_platform_member_id to
+     *   community_platform_members.id and materialize the belongs-to relation
+     *   member as ICommunityPlatformMember.ISummary.
    */
   member: ICommunityPlatformMember.ISummary;
 
   /**
    * Post that this vote applies to.
    *
-   * @x-autobe-database-schema-property post
-   * @x-autobe-specification Join community_platform_post_votes.community_platform_post_id to community_platform_posts.id and materialize the belongs-to relation post as ICommunityPlatformPost.ISummary.
+     * @x-autobe-database-schema-property post
+     * @x-autobe-specification Join
+     *   community_platform_post_votes.community_platform_post_id to
+     *   community_platform_posts.id and materialize the belongs-to relation
+     *   post as ICommunityPlatformPost.ISummary.
    */
   post: ICommunityPlatformPost.ISummary;
 
   /**
    * Current vote direction recorded for the post.
    *
-   * @x-autobe-database-schema-property direction
-   * @x-autobe-specification Direct mapping from community_platform_post_votes.direction. The value stores the member's current vote stance for the post and should be validated against the supported post-vote domain values by the service layer.
+     * @x-autobe-database-schema-property direction
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_post_votes.direction. The value stores the member's
+     *   current vote stance for the post and should be validated against the
+     *   supported post-vote domain values by the service layer.
    */
   direction: string;
 
   /**
    * Timestamp when this vote record was first created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from community_platform_post_votes.created_at.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_post_votes.created_at.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when this vote record was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from community_platform_post_votes.updated_at.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_post_votes.updated_at.
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * Soft-deletion timestamp for this vote, or null when the vote is still active.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from community_platform_post_votes.deleted_at. Return null when the vote is still active and a date-time value when the vote has been soft deleted or removed from active use.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_post_votes.deleted_at. Return null when the vote is
+     *   still active and a date-time value when the vote has been soft deleted
+     *   or removed from active use.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -72,8 +87,13 @@ export namespace ICommunityPlatformPostVote {
     /**
      * The vote direction the authenticated member wants to apply to the target post.
      *
-     * @x-autobe-database-schema-property direction
-     * @x-autobe-specification Direct mapping from `community_platform_post_votes.direction`. Accept only supported post vote domain values representing the caller's intended current stance, such as upvote or downvote, and use the validated value when creating or updating the unique member-post vote row resolved from authentication context and the `postId` path parameter.
+         * @x-autobe-database-schema-property direction
+         * @x-autobe-specification Direct mapping from
+         *   `community_platform_post_votes.direction`. Accept only supported
+         *   post vote domain values representing the caller's intended current
+         *   stance, such as upvote or downvote, and use the validated value
+         *   when creating or updating the unique member-post vote row resolved
+         *   from authentication context and the `postId` path parameter.
      */
     direction: string;
   };
@@ -85,70 +105,103 @@ export namespace ICommunityPlatformPostVote {
     /**
      * Filters results to vote records with the specified direction.
      *
-     * @x-autobe-specification Optional request filter for the stored vote direction. When present, apply it to the community_platform_post_votes search so that only rows with the matching direction value are returned after authenticated-member scoping is applied.
+         * @x-autobe-specification Optional request filter for the stored vote
+         *   direction. When present, apply it to the
+         *   community_platform_post_votes search so that only rows with the
+         *   matching direction value are returned after authenticated-member
+         *   scoping is applied.
      */
     direction?: string | undefined;
 
     /**
      * Determines whether removed vote records are included in the results.
      *
-     * @x-autobe-specification Boolean request control for deleted-state handling. When false or omitted, restrict the result set to active vote rows only. When true, allow rows representing removed vote records to appear in the paginated search results according to the endpoint's deleted-state policy.
+         * @x-autobe-specification Boolean request control for deleted-state
+         *   handling. When false or omitted, restrict the result set to active
+         *   vote rows only. When true, allow rows representing removed vote
+         *   records to appear in the paginated search results according to the
+         *   endpoint's deleted-state policy.
      */
     includeDeleted?: boolean | undefined;
 
     /**
      * Returns only vote records created at or after this timestamp.
      *
-     * @x-autobe-specification Optional inclusive lower bound for the vote creation timestamp filter. If provided, return only rows whose creation time is greater than or equal to this date-time after member scoping and other filters are applied.
+         * @x-autobe-specification Optional inclusive lower bound for the vote
+         *   creation timestamp filter. If provided, return only rows whose
+         *   creation time is greater than or equal to this date-time after
+         *   member scoping and other filters are applied.
      */
     createdFrom?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Returns only vote records created at or before this timestamp.
      *
-     * @x-autobe-specification Optional inclusive upper bound for the vote creation timestamp filter. If provided, return only rows whose creation time is less than or equal to this date-time after member scoping and other filters are applied.
+         * @x-autobe-specification Optional inclusive upper bound for the vote
+         *   creation timestamp filter. If provided, return only rows whose
+         *   creation time is less than or equal to this date-time after member
+         *   scoping and other filters are applied.
      */
     createdTo?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Returns only vote records updated at or after this timestamp.
      *
-     * @x-autobe-specification Optional inclusive lower bound for the vote update timestamp filter. If provided, return only rows whose last update time is greater than or equal to this date-time after member scoping and other filters are applied.
+         * @x-autobe-specification Optional inclusive lower bound for the vote
+         *   update timestamp filter. If provided, return only rows whose last
+         *   update time is greater than or equal to this date-time after member
+         *   scoping and other filters are applied.
      */
     updatedFrom?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Returns only vote records updated at or before this timestamp.
      *
-     * @x-autobe-specification Optional inclusive upper bound for the vote update timestamp filter. If provided, return only rows whose last update time is less than or equal to this date-time after member scoping and other filters are applied.
+         * @x-autobe-specification Optional inclusive upper bound for the vote
+         *   update timestamp filter. If provided, return only rows whose last
+         *   update time is less than or equal to this date-time after member
+         *   scoping and other filters are applied.
      */
     updatedTo?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Limits results to vote records associated with the specified posts.
      *
-     * @x-autobe-specification Optional list filter for target posts. When provided, constrain the search to vote rows whose target post identifier belongs to the supplied UUID collection, using set-membership logic after authenticated-member scoping is applied.
+         * @x-autobe-specification Optional list filter for target posts. When
+         *   provided, constrain the search to vote rows whose target post
+         *   identifier belongs to the supplied UUID collection, using
+         *   set-membership logic after authenticated-member scoping is applied.
      */
     postIds?: (string & tags.Format<"uuid">)[] | undefined;
 
     /**
      * Controls the order in which matching vote records are returned.
      *
-     * @x-autobe-specification Sorting directive for the post vote search. Interpret this value only against a validated whitelist of supported sort keys, such as created_at or updated_at, and translate it into the query's ORDER BY clause with a stable secondary sort by id when necessary for deterministic pagination.
+         * @x-autobe-specification Sorting directive for the post vote search.
+         *   Interpret this value only against a validated whitelist of
+         *   supported sort keys, such as created_at or updated_at, and
+         *   translate it into the query's ORDER BY clause with a stable
+         *   secondary sort by id when necessary for deterministic pagination.
      */
     sort?: string | undefined;
 
     /**
      * Specifies which page of matching vote records to return.
      *
-     * @x-autobe-specification 1-indexed page selector for paginated browsing. Use it with limit to determine which slice of the filtered result set to return, typically by converting it to a query offset after validation and default handling.
+         * @x-autobe-specification 1-indexed page selector for paginated
+         *   browsing. Use it with limit to determine which slice of the
+         *   filtered result set to return, typically by converting it to a
+         *   query offset after validation and default handling.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Specifies the maximum number of vote records to return per page.
      *
-     * @x-autobe-specification Maximum number of rows to return in one paginated response page. Validate it against the schema bounds and apply it as the query page size when building the filtered result set and pagination metadata.
+         * @x-autobe-specification Maximum number of rows to return in one
+         *   paginated response page. Validate it against the schema bounds and
+         *   apply it as the query page size when building the filtered result
+         *   set and pagination metadata.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -162,48 +215,62 @@ export namespace ICommunityPlatformPostVote {
     /**
      * Unique identifier of this post vote record.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from community_platform_post_votes.id.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_post_votes.id.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Current vote direction recorded for the post.
      *
-     * @x-autobe-database-schema-property direction
-     * @x-autobe-specification Direct mapping from community_platform_post_votes.direction. Stores the member's current reaction direction for the post, such as upvote or downvote.
+         * @x-autobe-database-schema-property direction
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_post_votes.direction. Stores the member's
+         *   current reaction direction for the post, such as upvote or
+         *   downvote.
      */
     direction: string;
 
     /**
      * Summary information for the post that this vote applies to.
      *
-     * @x-autobe-database-schema-property post
-     * @x-autobe-specification Join community_platform_post_votes.community_platform_post_id to community_platform_posts.id and serialize the related post through ICommunityPlatformPost.ISummary.
+         * @x-autobe-database-schema-property post
+         * @x-autobe-specification Join
+         *   community_platform_post_votes.community_platform_post_id to
+         *   community_platform_posts.id and serialize the related post through
+         *   ICommunityPlatformPost.ISummary.
      */
     post: ICommunityPlatformPost.ISummary;
 
     /**
      * Timestamp when this vote record was first created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from community_platform_post_votes.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_post_votes.created_at.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when this vote record was last updated.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from community_platform_post_votes.updated_at. Reflects the most recent change to the vote record, including direction changes or soft-delete state changes.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_post_votes.updated_at. Reflects the most recent
+         *   change to the vote record, including direction changes or
+         *   soft-delete state changes.
      */
     updated_at: string & tags.Format<"date-time">;
 
     /**
      * Soft-deletion timestamp for the vote, or null when the vote is still active.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from community_platform_post_votes.deleted_at. Return null when the vote is currently active and a timestamp when the vote has been removed from active use.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_post_votes.deleted_at. Return null when the vote
+         *   is currently active and a timestamp when the vote has been removed
+         *   from active use.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };
@@ -215,8 +282,14 @@ export namespace ICommunityPlatformPostVote {
     /**
      * The new vote direction that should become the authenticated member's current stance on the target post.
      *
-     * @x-autobe-database-schema-property direction
-     * @x-autobe-specification Direct mapping to community_platform_post_votes.direction for the authenticated member's active vote on the post identified by the postId path parameter. Persist the submitted value as the replacement current stance during the vote upsert or update flow. The service must not accept vote id, member id, post id, or lifecycle timestamps from this DTO.
+         * @x-autobe-database-schema-property direction
+         * @x-autobe-specification Direct mapping to
+         *   community_platform_post_votes.direction for the authenticated
+         *   member's active vote on the post identified by the postId path
+         *   parameter. Persist the submitted value as the replacement current
+         *   stance during the vote upsert or update flow. The service must not
+         *   accept vote id, member id, post id, or lifecycle timestamps from
+         *   this DTO.
      */
     direction: string;
   };

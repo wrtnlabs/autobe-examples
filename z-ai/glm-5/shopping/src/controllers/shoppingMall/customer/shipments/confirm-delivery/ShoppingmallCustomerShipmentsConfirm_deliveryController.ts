@@ -24,9 +24,9 @@ export class ShoppingmallCustomerShipmentsConfirm_deliveryController {
    *
    * @param connection
    * @param shipmentId Unique identifier of the shipment to confirm delivery for
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Implementation steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Implementation steps:
    *
    * 1. Validate shipment exists by ID from path parameter
    * 2. Retrieve the shipment with its related order via order_id foreign key

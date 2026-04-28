@@ -30,7 +30,9 @@ import { IPageIErpHrmTimeTrackingReportOutput } from "../../../../structures/IPa
  * @param props.body Filtering, sorting, and pagination criteria for selecting a subset of generated outputs from the specified report generation run.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification 1) Resolve caller context (member) and active organization context; if missing, deny report access with the required business message.
+ * @x-autobe-specification 1) Resolve caller context (member) and active
+ *   organization context; if missing, deny report access with the required
+ *   business message.
  *
  * 2) Authorize the caller for `report:view` within the resolved organization.
  *

@@ -26,7 +26,8 @@ export * as reviews from "./reviews/index";
  * @param props.body Product search criteria including text search, filters, sorting, and pagination parameters
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query ecommerce_mall_products table filtering by deleted_at IS NULL to exclude soft-deleted products.
+ * @x-autobe-specification Query ecommerce_mall_products table filtering by
+ *   deleted_at IS NULL to exclude soft-deleted products.
  *
  * Join with ecommerce_mall_sellers to filter for approved sellers only (approval_status = 'approved' AND deleted_at IS NULL).
  *
@@ -142,7 +143,17 @@ export namespace index {
  * @param props.productId Unique identifier of the product to retrieve (global scope)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query the ecommerce_mall_products table by the provided productId UUID parameter. Join with ecommerce_mall_product_variants to fetch all variants including their SKU codes, option values, prices, and calculated stock quantities from inventory records. Join with ecommerce_mall_product_images to retrieve all associated images ordered by display_order. Join with ecommerce_mall_sellers and ecommerce_mall_seller_profiles to get seller shop information. Join with ecommerce_mall_reviews and ecommerce_mall_customers to get review data including ratings and reviewer names. Join with ecommerce_mall_categories to get category name and hierarchy information.
+ * @x-autobe-specification Query the ecommerce_mall_products table by the
+ *   provided productId UUID parameter. Join with
+ *   ecommerce_mall_product_variants to fetch all variants including their SKU
+ *   codes, option values, prices, and calculated stock quantities from
+ *   inventory records. Join with ecommerce_mall_product_images to retrieve all
+ *   associated images ordered by display_order. Join with
+ *   ecommerce_mall_sellers and ecommerce_mall_seller_profiles to get seller
+ *   shop information. Join with ecommerce_mall_reviews and
+ *   ecommerce_mall_customers to get review data including ratings and reviewer
+ *   names. Join with ecommerce_mall_categories to get category name and
+ *   hierarchy information.
  *
  *  Implement authorization checks: allow customers to access active products only (products with at least one variant), allow sellers to access their own products regardless of status, allow administrators to access any product. Return 404 if product not found or user lacks permission. Calculate average rating from non-deleted reviews. Calculate stock quantity by summing all inventory records for each variant.
  * @path /ecommerceMall/products/:productId

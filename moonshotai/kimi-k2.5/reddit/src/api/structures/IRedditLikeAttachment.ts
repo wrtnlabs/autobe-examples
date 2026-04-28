@@ -10,72 +10,89 @@ export type IRedditLikeAttachment = {
   /**
    * Unique identifier for the file attachment (UUID format).
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from reddit_like_attachments.id column. UUID format validated.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from reddit_like_attachments.id
+     *   column. UUID format validated.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Summary information about the member who uploaded this file attachment.
    *
-   * @x-autobe-database-schema-property uploadedByMember
-   * @x-autobe-specification JOIN transformation: reddit_like_attachments.uploaded_by_member_id → reddit_like_members.id, resolving to IRedditLikeMember.ISummary with essential member info (id, email, username, emailVerified, createdAt).
+     * @x-autobe-database-schema-property uploadedByMember
+     * @x-autobe-specification JOIN transformation:
+     *   reddit_like_attachments.uploaded_by_member_id → reddit_like_members.id,
+     *   resolving to IRedditLikeMember.ISummary with essential member info (id,
+     *   email, username, emailVerified, createdAt).
    */
   uploader: IRedditLikeMember.ISummary;
 
   /**
    * Storage system path where the file is persisted. Can be absolute or relative path depending on storage configuration.
    *
-   * @x-autobe-database-schema-property storage_path
-   * @x-autobe-specification Direct mapping from reddit_like_attachments.storage_path column. Absolute or relative path to the file in storage system.
+     * @x-autobe-database-schema-property storage_path
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_attachments.storage_path column. Absolute or relative path
+     *   to the file in storage system.
    */
   storagePath: string;
 
   /**
    * Original filename provided by the user when uploading the file.
    *
-   * @x-autobe-database-schema-property original_filename
-   * @x-autobe-specification Direct mapping from reddit_like_attachments.original_filename column. Preserves the filename provided by the user during upload.
+     * @x-autobe-database-schema-property original_filename
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_attachments.original_filename column. Preserves the
+     *   filename provided by the user during upload.
    */
   originalFilename: string;
 
   /**
    * MIME type of the file content, automatically detected during upload process.
    *
-   * @x-autobe-database-schema-property mime_type
-   * @x-autobe-specification Direct mapping from reddit_like_attachments.mime_type column. Auto-detected during upload (e.g., image/png, image/jpeg, application/pdf).
+     * @x-autobe-database-schema-property mime_type
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_attachments.mime_type column. Auto-detected during upload
+     *   (e.g., image/png, image/jpeg, application/pdf).
    */
   mimeType: string;
 
   /**
    * Size of the file in bytes.
    *
-   * @x-autobe-database-schema-property file_size_bytes
-   * @x-autobe-specification Direct mapping from reddit_like_attachments.file_size_bytes column. Integer value in bytes.
+     * @x-autobe-database-schema-property file_size_bytes
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_attachments.file_size_bytes column. Integer value in bytes.
    */
   fileSizeBytes: number & tags.Type<"int32"> & tags.Minimum<0>;
 
   /**
    * SHA-256 hash of the file content used for integrity verification and deduplication.
    *
-   * @x-autobe-database-schema-property checksum_sha256
-   * @x-autobe-specification Direct mapping from reddit_like_attachments.checksum_sha256 column. SHA-256 hash calculated during upload for integrity verification.
+     * @x-autobe-database-schema-property checksum_sha256
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_attachments.checksum_sha256 column. SHA-256 hash calculated
+     *   during upload for integrity verification.
    */
   checksumSha256: string;
 
   /**
    * Timestamp when the file attachment was uploaded and created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from reddit_like_attachments.created_at column. ISO 8601 timestamp with timezone (Timestamptz).
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_attachments.created_at column. ISO 8601 timestamp with
+     *   timezone (Timestamptz).
    */
   createdAt: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the attachment metadata was last modified.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from reddit_like_attachments.updated_at column. ISO 8601 timestamp with timezone (Timestamptz). Updated when metadata changes.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_attachments.updated_at column. ISO 8601 timestamp with
+     *   timezone (Timestamptz). Updated when metadata changes.
    */
   updatedAt: string & tags.Format<"date-time">;
 };
@@ -87,42 +104,65 @@ export namespace IRedditLikeAttachment {
     /**
      * UUID of the member who uploaded the attachment. Filter to show only attachments uploaded by a specific member.
      *
-     * @x-autobe-specification Filter by uploader member ID. References reddit_like_attachments.uploaded_by_member_id column via LEFT JOIN or WHERE clause filtering. When provided, filters results to show only attachments uploaded by the specified member UUID.
+         * @x-autobe-specification Filter by uploader member ID. References
+         *   reddit_like_attachments.uploaded_by_member_id column via LEFT JOIN
+         *   or WHERE clause filtering. When provided, filters results to show
+         *   only attachments uploaded by the specified member UUID.
      */
     uploadedByMemberId: (string & tags.Format<"uuid">) | null;
 
     /**
      * Original filename filter with partial text matching. Used to search attachments where the filename contains the provided substring (case-insensitive).
      *
-     * @x-autobe-specification Filter by original filename pattern. References reddit_like_attachments.original_filename column using case-insensitive partial text matching (e.g., ILIKE '%pattern%'). Enables substring search on filenames.
+         * @x-autobe-specification Filter by original filename pattern.
+         *   References reddit_like_attachments.original_filename column using
+         *   case-insensitive partial text matching (e.g., ILIKE '%pattern%').
+         *   Enables substring search on filenames.
      */
     originalFilename: string | null;
 
     /**
      * MIME type filter for exact matching. Used to filter results by specific file types such as 'image/png', 'image/jpeg', 'application/pdf'.
      *
-     * @x-autobe-specification Filter by MIME type. References reddit_like_attachments.mime_type column with exact string matching. Validates against known MIME types like 'image/png', 'image/jpeg', 'application/pdf'.
+         * @x-autobe-specification Filter by MIME type. References
+         *   reddit_like_attachments.mime_type column with exact string
+         *   matching. Validates against known MIME types like 'image/png',
+         *   'image/jpeg', 'application/pdf'.
      */
     mimeType: string | null;
 
     /**
      * Filter by the type of entity this attachment is associated with. 'profile' for avatar images, 'community' for community icons, 'post' for post images.
      *
-     * @x-autobe-specification Filter by attachment association type. Computed parameter requiring JOIN with reddit_like_attachment_references and polymorphic subtype tables. When 'profile' → LEFT JOIN reddit_like_attachment_reference_of_profiles; 'community' → LEFT JOIN reddit_like_attachment_reference_of_communities; 'post' → LEFT JOIN reddit_like_attachment_reference_of_posts. Filters attachments linked to the specified entity type.
+         * @x-autobe-specification Filter by attachment association type.
+         *   Computed parameter requiring JOIN with
+         *   reddit_like_attachment_references and polymorphic subtype tables.
+         *   When 'profile' → LEFT JOIN
+         *   reddit_like_attachment_reference_of_profiles; 'community' → LEFT
+         *   JOIN reddit_like_attachment_reference_of_communities; 'post' → LEFT
+         *   JOIN reddit_like_attachment_reference_of_posts. Filters attachments
+         *   linked to the specified entity type.
      */
     referenceType: "profile" | "community" | "post" | null;
 
     /**
      * Opaque pagination cursor from previous page results. Used for efficient pagination on large datasets. Pass the cursor returned from a previous response to get the next page.
      *
-     * @x-autobe-specification Pagination cursor token. Computed opaque string typically encoding the last record's sort key values (base64-encoded). Used in cursor-based pagination (seek method) for efficient navigation through large datasets without OFFSET calculation. When provided, overrides page-based pagination.
+         * @x-autobe-specification Pagination cursor token. Computed opaque
+         *   string typically encoding the last record's sort key values
+         *   (base64-encoded). Used in cursor-based pagination (seek method) for
+         *   efficient navigation through large datasets without OFFSET
+         *   calculation. When provided, overrides page-based pagination.
      */
     cursor: string | null;
 
     /**
      * Maximum number of attachments to return per page (1-100). Higher values allow fetching more data per request but increase response size.
      *
-     * @x-autobe-specification Pagination limit. Computed parameter specifying maximum records per page. Used in SQL LIMIT clause. Constrained between 1-100. Default value is 20 if null. Determines the size of each page in the paginated response.
+         * @x-autobe-specification Pagination limit. Computed parameter
+         *   specifying maximum records per page. Used in SQL LIMIT clause.
+         *   Constrained between 1-100. Default value is 20 if null. Determines
+         *   the size of each page in the paginated response.
      */
     limit:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -131,7 +171,11 @@ export namespace IRedditLikeAttachment {
     /**
      * Target page number for results (1-indexed). Used for traditional page-based pagination when cursor is not provided.
      *
-     * @x-autobe-specification Explicit page number. Computed 1-indexed page number used for traditional offset-based pagination when cursor is absent. Formula: OFFSET = (page - 1) * limit. When cursor is provided, this is typically ignored in favor of cursor-based navigation.
+         * @x-autobe-specification Explicit page number. Computed 1-indexed page
+         *   number used for traditional offset-based pagination when cursor is
+         *   absent. Formula: OFFSET = (page - 1) * limit. When cursor is
+         *   provided, this is typically ignored in favor of cursor-based
+         *   navigation.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };
@@ -143,48 +187,57 @@ export namespace IRedditLikeAttachment {
     /**
      * Unique identifier for the file attachment.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from reddit_like_attachments.id. UUID primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_attachments.id. UUID primary key.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Original filename provided by the user during upload.
      *
-     * @x-autobe-database-schema-property original_filename
-     * @x-autobe-specification Direct mapping from reddit_like_attachments.original_filename. User-provided filename at upload time.
+         * @x-autobe-database-schema-property original_filename
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_attachments.original_filename. User-provided filename
+         *   at upload time.
      */
     originalFilename: string;
 
     /**
      * MIME type of the file (e.g., image/png, application/pdf).
      *
-     * @x-autobe-database-schema-property mime_type
-     * @x-autobe-specification Direct mapping from reddit_like_attachments.mime_type. Standard MIME type format.
+         * @x-autobe-database-schema-property mime_type
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_attachments.mime_type. Standard MIME type format.
      */
     mimeType: string;
 
     /**
      * Size of the file in bytes.
      *
-     * @x-autobe-database-schema-property file_size_bytes
-     * @x-autobe-specification Direct mapping from reddit_like_attachments.file_size_bytes. Integer byte count.
+         * @x-autobe-database-schema-property file_size_bytes
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_attachments.file_size_bytes. Integer byte count.
      */
     fileSizeBytes: number & tags.Type<"int32"> & tags.Minimum<0>;
 
     /**
      * The member who uploaded this file attachment.
      *
-     * @x-autobe-database-schema-property uploadedByMember
-     * @x-autobe-specification JOIN via uploaded_by_member_id FK to reddit_like_members. Returns IRedditLikeMember.ISummary with id, email, username, emailVerified, createdAt.
+         * @x-autobe-database-schema-property uploadedByMember
+         * @x-autobe-specification JOIN via uploaded_by_member_id FK to
+         *   reddit_like_members. Returns IRedditLikeMember.ISummary with id,
+         *   email, username, emailVerified, createdAt.
      */
     uploadedByMember: IRedditLikeMember.ISummary;
 
     /**
      * Timestamp when the file was uploaded.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from reddit_like_attachments.created_at. ISO 8601 timestamp with timezone.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_attachments.created_at. ISO 8601 timestamp with
+         *   timezone.
      */
     createdAt: string & tags.Format<"date-time">;
   };
@@ -196,15 +249,23 @@ export namespace IRedditLikeAttachment {
     /**
      * URI of the file to be uploaded. The infrastructure layer processes this URI to store the file and calculate metadata including MIME type, size, and checksum.
      *
-     * @x-autobe-specification File URI provided by client for infrastructure layer to process. Infrastructure downloads/processes file to generate: storage_path (where file is stored), mime_type (detected content type), file_size_bytes (file size), checksum_sha256 (SHA-256 hash for integrity). Supports uri format for file locations.
+         * @x-autobe-specification File URI provided by client for
+         *   infrastructure layer to process. Infrastructure downloads/processes
+         *   file to generate: storage_path (where file is stored), mime_type
+         *   (detected content type), file_size_bytes (file size),
+         *   checksum_sha256 (SHA-256 hash for integrity). Supports uri format
+         *   for file locations.
      */
     fileUri: string & tags.Format<"uri">;
 
     /**
      * Original filename provided by the user when uploading the file.
      *
-     * @x-autobe-database-schema-property original_filename
-     * @x-autobe-specification Direct mapping to reddit_like_attachments.original_filename. String representing the original filename provided by the user during upload. Required field - preserves original naming for display purposes.
+         * @x-autobe-database-schema-property original_filename
+         * @x-autobe-specification Direct mapping to
+         *   reddit_like_attachments.original_filename. String representing the
+         *   original filename provided by the user during upload. Required
+         *   field - preserves original naming for display purposes.
      */
     originalFilename: string;
   };
@@ -216,21 +277,31 @@ export namespace IRedditLikeAttachment {
     /**
      * Only include attachments deleted before this timestamp. Leave null to include all soft-deleted attachments regardless of deletion date.
      *
-     * @x-autobe-specification Filter by attachment deletion timestamp. Query reddit_like_attachments table where deleted_at is not null AND deleted_at < deletedBefore. When null, no date filter applied.
+         * @x-autobe-specification Filter by attachment deletion timestamp.
+         *   Query reddit_like_attachments table where deleted_at is not null
+         *   AND deleted_at < deletedBefore. When null, no date filter applied.
      */
     deletedBefore?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * If true, only include orphaned attachments with no active references to profiles, communities, or posts. When false, include all attachments matching other criteria.
      *
-     * @x-autobe-specification When true, filter to only orphaned attachments by checking reddit_like_attachment_references table for absence of any referencing record (profile, community, or post references). Query subquery: NOT EXISTS (SELECT 1 FROM reddit_like_attachment_references WHERE attachment_id = attachments.id AND deleted_at IS NULL).
+         * @x-autobe-specification When true, filter to only orphaned
+         *   attachments by checking reddit_like_attachment_references table for
+         *   absence of any referencing record (profile, community, or post
+         *   references). Query subquery: NOT EXISTS (SELECT 1 FROM
+         *   reddit_like_attachment_references WHERE attachment_id =
+         *   attachments.id AND deleted_at IS NULL).
      */
     orphanedOnly?: boolean | undefined;
 
     /**
      * If true, preview which attachments would be deleted without actually performing the deletion. Useful for estimating storage reclamation before committing changes.
      *
-     * @x-autobe-specification When true, execute the query and return results preview without actually deleting any files or records. No database mutation performed, just validation and count/aggregate calculation.
+         * @x-autobe-specification When true, execute the query and return
+         *   results preview without actually deleting any files or records. No
+         *   database mutation performed, just validation and count/aggregate
+         *   calculation.
      */
     dryRun?: boolean | undefined;
   };
@@ -242,28 +313,41 @@ export namespace IRedditLikeAttachment {
     /**
      * Total number of attachment files that were permanently deleted during the cleanup operation.
      *
-     * @x-autobe-specification Computed as COUNT of attachment records permanently deleted during cleanup operation. Query reddit_like_attachments for records matching cleanup criteria, delete them, and return the count. Minimum value 0 indicates no attachments were cleaned.
+         * @x-autobe-specification Computed as COUNT of attachment records
+         *   permanently deleted during cleanup operation. Query
+         *   reddit_like_attachments for records matching cleanup criteria,
+         *   delete them, and return the count. Minimum value 0 indicates no
+         *   attachments were cleaned.
      */
     cleanedCount: number & tags.Type<"int32"> & tags.Minimum<0>;
 
     /**
      * Total storage space in bytes that was reclaimed by deleting the cleaned attachment files.
      *
-     * @x-autobe-specification Computed as SUM of file_size_bytes from all deleted attachment records. Query file_size_bytes from reddit_like_attachments for each attachment marked for cleanup and aggregate the total storage space reclaimed.
+         * @x-autobe-specification Computed as SUM of file_size_bytes from all
+         *   deleted attachment records. Query file_size_bytes from
+         *   reddit_like_attachments for each attachment marked for cleanup and
+         *   aggregate the total storage space reclaimed.
      */
     totalBytesFreed: number & tags.Type<"int32"> & tags.Minimum<0>;
 
     /**
      * Indicates whether the cleanup operation was executed in preview mode (true) or actually deleted files (false).
      *
-     * @x-autobe-specification Carried from ICleanup request body dryRun parameter. When true, the operation previewed what would be deleted without actually removing files or database records. Set to false when actual deletion occurred.
+         * @x-autobe-specification Carried from ICleanup request body dryRun
+         *   parameter. When true, the operation previewed what would be deleted
+         *   without actually removing files or database records. Set to false
+         *   when actual deletion occurred.
      */
     dryRun: boolean;
 
     /**
      * Array of error messages encountered during the cleanup process when deletion of specific attachments failed.
      *
-     * @x-autobe-specification Collected error messages during cleanup execution. Each error represents a failure to delete a specific attachment (file system errors, database constraint violations, etc). Array is empty when all deletions succeeded.
+         * @x-autobe-specification Collected error messages during cleanup
+         *   execution. Each error represents a failure to delete a specific
+         *   attachment (file system errors, database constraint violations,
+         *   etc). Array is empty when all deletions succeeded.
      */
     errors: string[];
   };

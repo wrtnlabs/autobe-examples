@@ -42,7 +42,9 @@ export namespace IECommerceMallProductSnapshot {
      *
      * Page numbering starts from 1, so the first page is page 1 (not 0). When omitted, defaults to 1 and returns the first page of results. Used together with the limit parameter to determine which subset of results to return.
      *
-     * @x-autobe-specification 1-indexed page number for offset-based pagination. Defaults to 1 when omitted. Used together with limit to calculate SKIP (limit * (page - 1)).
+         * @x-autobe-specification 1-indexed page number for offset-based
+         *   pagination. Defaults to 1 when omitted. Used together with limit to
+         *   calculate SKIP (limit * (page - 1)).
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -51,7 +53,9 @@ export namespace IECommerceMallProductSnapshot {
      *
      * The actual number of records returned may be less than this value on the last page or when total records are fewer than the limit. Maximum allowed value is 100 to prevent excessive data transfer.
      *
-     * @x-autobe-specification Maximum number of snapshot records to return per page. Defaults to implementation-defined value (max 100). Used together with page to calculate how many records to skip.
+         * @x-autobe-specification Maximum number of snapshot records to return
+         *   per page. Defaults to implementation-defined value (max 100). Used
+         *   together with page to calculate how many records to skip.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -62,7 +66,9 @@ export namespace IECommerceMallProductSnapshot {
      *
      * When specified, only snapshots created at or after this timestamp are returned. Combine with created_at_to to narrow results to a specific time window.
      *
-     * @x-autobe-specification Optional inclusive lower bound filter on created_at. When provided, only snapshots with created_at >= this value are returned. Combined with created_at_to for range queries.
+         * @x-autobe-specification Optional inclusive lower bound filter on
+         *   created_at. When provided, only snapshots with created_at >= this
+         *   value are returned. Combined with created_at_to for range queries.
      */
     created_at_from?: (string & tags.Format<"date-time">) | undefined;
 
@@ -71,7 +77,10 @@ export namespace IECommerceMallProductSnapshot {
      *
      * When specified, only snapshots created at or before this timestamp are returned. Combine with created_at_from to narrow results to a specific time window.
      *
-     * @x-autobe-specification Optional inclusive upper bound filter on created_at. When provided, only snapshots with created_at <= this value are returned. Combined with created_at_from for range queries.
+         * @x-autobe-specification Optional inclusive upper bound filter on
+         *   created_at. When provided, only snapshots with created_at <= this
+         *   value are returned. Combined with created_at_from for range
+         *   queries.
      */
     created_at_to?: (string & tags.Format<"date-time">) | undefined;
   };
@@ -89,8 +98,9 @@ export namespace IECommerceMallProductSnapshot {
      *
      * Used as the primary key for referencing individual snapshots when retrieving full snapshot details or snapshot-specific variant and image records.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from e_commerce_mall_product_snapshots.id. UUID primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_product_snapshots.id. UUID primary key.
      */
     id: string & tags.Format<"uuid">;
 
@@ -99,8 +109,10 @@ export namespace IECommerceMallProductSnapshot {
      *
      * This is a preserved copy of the product's name, ensuring historical accuracy even if the product name is later changed or the product is deleted by the seller or an administrator.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from e_commerce_mall_product_snapshots.name. Denormalized copy of the product name at snapshot time.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_product_snapshots.name. Denormalized copy of the
+         *   product name at snapshot time.
      */
     name: string;
 
@@ -109,8 +121,10 @@ export namespace IECommerceMallProductSnapshot {
      *
      * This is a preserved copy of the product's base price, ensuring historical pricing records are available for financial auditing, dispute resolution, and order-related reference.
      *
-     * @x-autobe-database-schema-property base_price
-     * @x-autobe-specification Direct mapping from e_commerce_mall_product_snapshots.base_price. Double precision float.
+         * @x-autobe-database-schema-property base_price
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_product_snapshots.base_price. Double precision
+         *   float.
      */
     base_price: number;
 
@@ -119,8 +133,11 @@ export namespace IECommerceMallProductSnapshot {
      *
      * Links the snapshot to its source product record. A product may have many snapshots over its lifetime, each triggered by a seller edit. This reference enables navigation from a historical snapshot back to the current product listing.
      *
-     * @x-autobe-database-schema-property product
-     * @x-autobe-specification JOIN from e_commerce_mall_product_snapshots.e_commerce_mall_product_id to e_commerce_mall_products.id. Returns IECommerceMallProduct.ISummary.
+         * @x-autobe-database-schema-property product
+         * @x-autobe-specification JOIN from
+         *   e_commerce_mall_product_snapshots.e_commerce_mall_product_id to
+         *   e_commerce_mall_products.id. Returns
+         *   IECommerceMallProduct.ISummary.
      */
     product: IECommerceMallProduct.ISummary;
 
@@ -129,8 +146,11 @@ export namespace IECommerceMallProductSnapshot {
      *
      * May be null if the category was later deleted by an administrator. The snapshot preserves the category assignment as it existed at capture time for historical accuracy, even if the category no longer exists in the current system.
      *
-     * @x-autobe-database-schema-property category
-     * @x-autobe-specification LEFT JOIN from e_commerce_mall_product_snapshots.e_commerce_mall_category_id to e_commerce_mall_categories.id. Returns IECommerceMallCategory.ISummary or null.
+         * @x-autobe-database-schema-property category
+         * @x-autobe-specification LEFT JOIN from
+         *   e_commerce_mall_product_snapshots.e_commerce_mall_category_id to
+         *   e_commerce_mall_categories.id. Returns
+         *   IECommerceMallCategory.ISummary or null.
      */
     category: IECommerceMallCategory.ISummary | null;
 
@@ -139,7 +159,8 @@ export namespace IECommerceMallProductSnapshot {
      *
      * Represents how many product variant configurations (SKUs, prices, option values) existed for the product at the time the snapshot was taken. A value of 0 is valid and indicates the product had no variants at that point.
      *
-     * @x-autobe-specification COUNT(e_commerce_mall_product_snapshot_variants) grouped by snapshot ID. Aggregation query.
+         * @x-autobe-specification COUNT(e_commerce_mall_product_snapshot_variants)
+         *   grouped by snapshot ID. Aggregation query.
      */
     variants_count: number & tags.Type<"int32">;
 
@@ -148,7 +169,8 @@ export namespace IECommerceMallProductSnapshot {
      *
      * Represents how many images were associated with the product at the time the snapshot was taken. A value of 0 is valid and indicates the product had no images at that point.
      *
-     * @x-autobe-specification COUNT(e_commerce_mall_product_snapshot_images) grouped by snapshot ID. Aggregation query.
+         * @x-autobe-specification COUNT(e_commerce_mall_product_snapshot_images)
+         *   grouped by snapshot ID. Aggregation query.
      */
     images_count: number & tags.Type<"int32">;
 
@@ -157,8 +179,9 @@ export namespace IECommerceMallProductSnapshot {
      *
      * This serves as the chronological reference point and corresponds to the exact moment the product edit was saved. Snapshots are ordered by this timestamp when browsing historical versions (newest first). As snapshots are immutable, this timestamp is never updated.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from e_commerce_mall_product_snapshots.created_at. Immutable timestamp.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_product_snapshots.created_at. Immutable timestamp.
      */
     created_at: string & tags.Format<"date-time">;
   };
@@ -177,8 +200,10 @@ export namespace IECommerceMallProductSnapshot {
      *
      * This is the primary key of the preserved image entry within the parent product snapshot, used for referencing individual snapshot images in API responses.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from e_commerce_mall_product_snapshot_images.id. UUID primary key, immutable.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_product_snapshot_images.id. UUID primary key,
+         *   immutable.
      */
     id: string & tags.Format<"uuid">;
 
@@ -187,8 +212,11 @@ export namespace IECommerceMallProductSnapshot {
      *
      * Contains the exact URL (typically a file storage reference) of the product image as it existed when the parent product snapshot was created. This URL is an immutable record — it will never change and points to the version of the image archived at snapshot time for historical accuracy.
      *
-     * @x-autobe-database-schema-property url
-     * @x-autobe-specification Direct mapping from e_commerce_mall_product_snapshot_images.url. Stored as VarChar(80000) in the database — represents a file storage URL reference.
+         * @x-autobe-database-schema-property url
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_product_snapshot_images.url. Stored as
+         *   VarChar(80000) in the database — represents a file storage URL
+         *   reference.
      */
     url: string & tags.Format<"uri">;
 
@@ -197,8 +225,11 @@ export namespace IECommerceMallProductSnapshot {
      *
      * Lower values indicate higher priority. The first image (sort_order = 0) serves as the thumbnail representation of the product at the time the snapshot was taken. Images are returned in ascending order by sort_order in array responses, reflecting their arrangement at the moment of capture.
      *
-     * @x-autobe-database-schema-property sort_order
-     * @x-autobe-specification Direct mapping from e_commerce_mall_product_snapshot_images.sort_order. Integer starting at 0, ascending order. Indexed together with parent snapshot ID for ordered retrieval.
+         * @x-autobe-database-schema-property sort_order
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_product_snapshot_images.sort_order. Integer
+         *   starting at 0, ascending order. Indexed together with parent
+         *   snapshot ID for ordered retrieval.
      */
     sort_order: number & tags.Type<"int32"> & tags.Minimum<0>;
 
@@ -207,8 +238,11 @@ export namespace IECommerceMallProductSnapshot {
      *
      * Since snapshot records are immutable, this field indicates the exact moment the image state was captured as part of the parent product snapshot creation. Serves as the chronological reference point for when this particular image arrangement was archived.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from e_commerce_mall_product_snapshot_images.created_at. Timestamptz format. Immutable — this is the timestamp of when the image state was captured as part of the parent snapshot creation.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_product_snapshot_images.created_at. Timestamptz
+         *   format. Immutable — this is the timestamp of when the image state
+         *   was captured as part of the parent snapshot creation.
      */
     created_at: string & tags.Format<"date-time">;
   };
@@ -226,8 +260,10 @@ export namespace IECommerceMallProductSnapshot {
      *
      * Assigned automatically when the parent product snapshot is created during a product edit. Used as the primary key for identifying specific variant snapshots within the product snapshot's variant collection.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from e_commerce_mall_product_snapshot_variants.id. UUID primary key, auto-generated on snapshot creation.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_product_snapshot_variants.id. UUID primary key,
+         *   auto-generated on snapshot creation.
      */
     id: string & tags.Format<"uuid">;
 
@@ -236,8 +272,10 @@ export namespace IECommerceMallProductSnapshot {
      *
      * This is the variant's stock-keeping unit identifier preserved for historical tracking. The SKU enables traceability of which specific variant configuration was available at any point in time, supporting order fulfillment verification and inventory audit.
      *
-     * @x-autobe-database-schema-property sku
-     * @x-autobe-specification Direct mapping from e_commerce_mall_product_snapshot_variants.sku. String, unique globally as the stock-keeping unit identifier.
+         * @x-autobe-database-schema-property sku
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_product_snapshot_variants.sku. String, unique
+         *   globally as the stock-keeping unit identifier.
      */
     sku: string;
 
@@ -246,8 +284,11 @@ export namespace IECommerceMallProductSnapshot {
      *
      * Stores the human-readable description of the variant's configuration — such as color, size, or other distinguishing options — in a formatted display format (e.g., 'Red / Large'). This field serves as the historical record of what options the variant offered at that specific point in time.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from e_commerce_mall_product_snapshot_variants.name. Stores the formatted display name combining variant option values (e.g., 'Red / Large').
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_product_snapshot_variants.name. Stores the
+         *   formatted display name combining variant option values (e.g., 'Red
+         *   / Large').
      */
     name: string;
 
@@ -256,8 +297,13 @@ export namespace IECommerceMallProductSnapshot {
      *
      * A variant can optionally override the product's base price with its own price. This field captures that override value. When null, the variant did not have its own price and the product's base price (preserved in the parent snapshot) applied to this variant at that time.
      *
-     * @x-autobe-database-schema-property price
-     * @x-autobe-specification Direct mapping from e_commerce_mall_product_snapshot_variants.price. Nullable Double (Float?) — when null, it means the variant did not have its own price override and the product's base price (preserved in the parent IECommerceMallProductSnapshot) applied to this variant at that time.
+         * @x-autobe-database-schema-property price
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_product_snapshot_variants.price. Nullable Double
+         *   (Float?) — when null, it means the variant did not have its own
+         *   price override and the product's base price (preserved in the
+         *   parent IECommerceMallProductSnapshot) applied to this variant at
+         *   that time.
      */
     price: number | null;
 
@@ -266,8 +312,10 @@ export namespace IECommerceMallProductSnapshot {
      *
      * Corresponds to the moment the parent product snapshot was generated upon a product edit. Establishes the historical context of when the variant's state was captured. Matches the parent product snapshot's creation timestamp.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from e_commerce_mall_product_snapshot_variants.created_at. Timestamptz, matches the parent snapshot's creation timestamp.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_product_snapshot_variants.created_at. Timestamptz,
+         *   matches the parent snapshot's creation timestamp.
      */
     created_at: string & tags.Format<"date-time">;
   };

@@ -28,7 +28,8 @@ import { IPageIErpHrmTimeTrackingActivityLogEntrySnapshot } from "../../../../..
  * @param props.body Timeline search criteria for a specific target entity. Includes target identification and time range to browse immutable snapshot records, optionally with pagination and text filters.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implement as a read-only search over erp_hrm_time_tracking_activity_log_entry_snapshots.
+ * @x-autobe-specification Implement as a read-only search over
+ *   erp_hrm_time_tracking_activity_log_entry_snapshots.
  *
  * 1) Validate input:
  *    - targetEntityType must be a non-empty string matching allowed domain taxonomy naming (validate non-empty at least).

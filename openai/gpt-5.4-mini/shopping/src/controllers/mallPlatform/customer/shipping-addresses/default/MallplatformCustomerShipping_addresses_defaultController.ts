@@ -20,9 +20,12 @@ export class MallplatformCustomerShipping_addresses_defaultController {
    *
    * @param connection
    * @param shippingAddressId The identifier of the shipping address to mark as default.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Resolve the shipping address by shippingAddressId and verify that it belongs to the authenticated customer. Reject the request with a not-found or forbidden response if the record is missing or not owned by the caller.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Resolve the shipping address by shippingAddressId
+     *   and verify that it belongs to the authenticated customer. Reject the
+     *   request with a not-found or forbidden response if the record is missing
+     *   or not owned by the caller.
    *
    * Execute the change in a transaction. Clear the default designation from any other shipping address owned by the same customer, then set the target address as the default. Preserve all other address fields unchanged. If the target is already the default, return it as-is without changing other rows.
    *

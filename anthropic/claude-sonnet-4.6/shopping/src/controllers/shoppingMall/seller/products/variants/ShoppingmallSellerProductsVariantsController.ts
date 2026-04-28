@@ -38,12 +38,13 @@ export class ShoppingmallSellerProductsVariantsController {
    * @param connection
    * @param productId The UUID of the parent product to which the new variant will be added. The authenticated seller must own this product.
    * @param body Variant creation payload including the globally unique SKU, one or more option key-value pairs defining the variant's configuration, and an optional price override.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification 1. Authentication & Authorization:
-   *    - Require authenticated seller session.
-   *    - Load the product by productId from shopping_mall_products where id = productId AND deleted_at IS NULL.
-   *    - Verify shopping_mall_products.shopping_mall_seller_id matches the authenticated seller's ID. Return 403 Forbidden if not.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification 1. Authentication & Authorization: - Require
+     *   authenticated seller session. - Load the product by productId from
+     *   shopping_mall_products where id = productId AND deleted_at IS NULL. -
+     *   Verify shopping_mall_products.shopping_mall_seller_id matches the
+     *   authenticated seller's ID. Return 403 Forbidden if not.
    *
    * 2. Request Validation:
    *    - Validate that sku is non-empty and unique across ALL shopping_mall_product_variants (@@unique([sku])). Return 409 Conflict if a variant with the same SKU already exists.
@@ -122,22 +123,34 @@ export class ShoppingmallSellerProductsVariantsController {
    * @param productId The UUID of the product that owns the variant being updated (global scope).
    * @param variantId The UUID of the product variant to update (scoped to the specified product).
    * @param body Updated fields for the product variant including SKU code, optional price override, and full option key-value configuration.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification 1. Authenticate the requesting actor as a seller or administrator.
-   * 2. Look up the product by `productId` (UUID) in `shopping_mall_products`. Return 404 if not found or if `deleted_at` is set.
-   * 3. For seller actors, verify that `shopping_mall_products.shopping_mall_seller_id` matches the authenticated seller's ID. Return 403 if ownership check fails. Administrators bypass this check.
-   * 4. Look up the variant by `variantId` (UUID) in `shopping_mall_product_variants` where `shopping_mall_product_id = productId` AND `deleted_at IS NULL`. Return 404 if not found.
-   * 5. Validate the request body:
-   *    a. `sku`: Must be non-empty. Check platform-wide uniqueness in `shopping_mall_product_variants.sku` excluding the current variant. Return 409 if duplicate SKU found.
-   *    b. `price_override`: Optional float; if provided must be >= 0.
-   *    c. `options`: Array of option key-value pairs. Each option must have a non-empty `key` and `value`. Validate that `key` values are unique within the submitted options array (no duplicate keys for the same variant).
-   * 6. Within a database transaction:
-   *    a. Update `shopping_mall_product_variants` record: set `sku`, `price_override`, and `updated_at = NOW()`.
-   *    b. Delete all existing `shopping_mall_product_variant_options` records for this variant.
-   *    c. Insert new `shopping_mall_product_variant_options` records with the provided key-value pairs and computed `sequence` from their array position.
-   *    d. Create a new `shopping_mall_product_snapshots` record capturing the current full product state including all variants.
-   * 7. Return the updated variant with its options as `IShoppingMallProductVariant`.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification 1. Authenticate the requesting actor as a seller
+     *   or administrator. 2. Look up the product by `productId` (UUID) in
+     *   `shopping_mall_products`. Return 404 if not found or if `deleted_at` is
+     *   set. 3. For seller actors, verify that
+     *   `shopping_mall_products.shopping_mall_seller_id` matches the
+     *   authenticated seller's ID. Return 403 if ownership check fails.
+     *   Administrators bypass this check. 4. Look up the variant by `variantId`
+     *   (UUID) in `shopping_mall_product_variants` where
+     *   `shopping_mall_product_id = productId` AND `deleted_at IS NULL`. Return
+     *   404 if not found. 5. Validate the request body: a. `sku`: Must be
+     *   non-empty. Check platform-wide uniqueness in
+     *   `shopping_mall_product_variants.sku` excluding the current variant.
+     *   Return 409 if duplicate SKU found. b. `price_override`: Optional float;
+     *   if provided must be >= 0. c. `options`: Array of option key-value
+     *   pairs. Each option must have a non-empty `key` and `value`. Validate
+     *   that `key` values are unique within the submitted options array (no
+     *   duplicate keys for the same variant). 6. Within a database transaction:
+     *   a. Update `shopping_mall_product_variants` record: set `sku`,
+     *   `price_override`, and `updated_at = NOW()`. b. Delete all existing
+     *   `shopping_mall_product_variant_options` records for this variant. c.
+     *   Insert new `shopping_mall_product_variant_options` records with the
+     *   provided key-value pairs and computed `sequence` from their array
+     *   position. d. Create a new `shopping_mall_product_snapshots` record
+     *   capturing the current full product state including all variants. 7.
+     *   Return the updated variant with its options as
+     *   `IShoppingMallProductVariant`.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Put(":variantId")
@@ -180,19 +193,38 @@ export class ShoppingmallSellerProductsVariantsController {
    * @param connection
    * @param productId The UUID of the parent product that owns the variant. Used to validate seller ownership before executing the deletion.
    * @param variantId The UUID of the product variant to be deleted.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification 1. Authenticate the requesting actor. Accept both seller (member) and admin (admin) actors.
-   * 2. Look up the product by productId in shopping_mall_products. Return 404 if not found or if deleted_at is already set.
-   * 3. If the actor is a seller: verify shopping_mall_products.shopping_mall_seller_id matches the authenticated seller's ID. Return 403 if mismatch. Also verify the seller is not suspended; return 403 if suspended.
-   * 4. Look up the variant by variantId in shopping_mall_product_variants where shopping_mall_product_id = productId. Return 404 if not found or if deleted_at is already set.
-   * 5. Check for blocking order items: query shopping_mall_order_items where shopping_mall_product_variant_id = variantId AND status IN ('paid', 'shipped'). If any rows exist, return 422 with error indicating pending orders must be resolved.
-   * 6. Check for pending cancellation requests: join shopping_mall_order_items → shopping_mall_cancellation_requests where order item variant = variantId AND cancellation_requests status = 'pending'. If any exist, return 422.
-   * 7. Check for pending refund requests: join shopping_mall_order_items → shopping_mall_refund_requests where order item variant = variantId AND refund_requests status = 'pending'. If any exist, return 422.
-   * 8. All checks passed: set shopping_mall_product_variants.deleted_at = NOW() and updated_at = NOW() within a database transaction.
-   * 9. Mark all shopping_mall_cart_items referencing this variant as unavailable (per CartItem rules — set the cart item's availability flag or equivalent column to indicate the variant is no longer purchasable).
-   * 10. Do NOT delete shopping_mall_product_snapshots, shopping_mall_product_snapshot_skuses, shopping_mall_order_item_snapshots, or any historical records. These are preserved for audit and order history.
-   * 11. Return HTTP 204 No Content on success.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification 1. Authenticate the requesting actor. Accept both
+     *   seller (member) and admin (admin) actors. 2. Look up the product by
+     *   productId in shopping_mall_products. Return 404 if not found or if
+     *   deleted_at is already set. 3. If the actor is a seller: verify
+     *   shopping_mall_products.shopping_mall_seller_id matches the
+     *   authenticated seller's ID. Return 403 if mismatch. Also verify the
+     *   seller is not suspended; return 403 if suspended. 4. Look up the
+     *   variant by variantId in shopping_mall_product_variants where
+     *   shopping_mall_product_id = productId. Return 404 if not found or if
+     *   deleted_at is already set. 5. Check for blocking order items: query
+     *   shopping_mall_order_items where shopping_mall_product_variant_id =
+     *   variantId AND status IN ('paid', 'shipped'). If any rows exist, return
+     *   422 with error indicating pending orders must be resolved. 6. Check for
+     *   pending cancellation requests: join shopping_mall_order_items →
+     *   shopping_mall_cancellation_requests where order item variant =
+     *   variantId AND cancellation_requests status = 'pending'. If any exist,
+     *   return 422. 7. Check for pending refund requests: join
+     *   shopping_mall_order_items → shopping_mall_refund_requests where order
+     *   item variant = variantId AND refund_requests status = 'pending'. If any
+     *   exist, return 422. 8. All checks passed: set
+     *   shopping_mall_product_variants.deleted_at = NOW() and updated_at =
+     *   NOW() within a database transaction. 9. Mark all
+     *   shopping_mall_cart_items referencing this variant as unavailable (per
+     *   CartItem rules — set the cart item's availability flag or equivalent
+     *   column to indicate the variant is no longer purchasable). 10. Do NOT
+     *   delete shopping_mall_product_snapshots,
+     *   shopping_mall_product_snapshot_skuses,
+     *   shopping_mall_order_item_snapshots, or any historical records. These
+     *   are preserved for audit and order history. 11. Return HTTP 204 No
+     *   Content on success.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Delete(":variantId")

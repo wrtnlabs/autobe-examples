@@ -14,8 +14,9 @@ export type IEcommerceMallSuperAdminAuditLogMetadatum = {
    *
    * UUID format identifier that uniquely identifies this metadata entry within the super administrator audit log system.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_super_admin_audit_log_metadata.id. UUID primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_super_admin_audit_log_metadata.id. UUID primary key.
    */
   id: string & tags.Format<"uuid">;
 
@@ -24,8 +25,10 @@ export type IEcommerceMallSuperAdminAuditLogMetadatum = {
    *
    * Examples include 'previous_state', 'new_state', 'reason', or 'target_entity_type'. This field identifies what kind of contextual data this metadata entry contains.
    *
-   * @x-autobe-database-schema-property key
-   * @x-autobe-specification Direct mapping from ecommerce_mall_super_admin_audit_log_metadata.key. Metadata property name.
+     * @x-autobe-database-schema-property key
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_super_admin_audit_log_metadata.key. Metadata property
+     *   name.
    */
   key: string;
 
@@ -34,8 +37,10 @@ export type IEcommerceMallSuperAdminAuditLogMetadatum = {
    *
    * Contains the actual contextual data corresponding to the key. For example, if key is 'previous_state', value contains the previous state value before the action was performed.
    *
-   * @x-autobe-database-schema-property value
-   * @x-autobe-specification Direct mapping from ecommerce_mall_super_admin_audit_log_metadata.value. Metadata property value.
+     * @x-autobe-database-schema-property value
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_super_admin_audit_log_metadata.value. Metadata property
+     *   value.
    */
   value: string;
 
@@ -44,8 +49,10 @@ export type IEcommerceMallSuperAdminAuditLogMetadatum = {
    *
    * ISO 8601 formatted datetime indicating when this metadata entry was added to the audit log. Reflects the moment the audit action occurred.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_super_admin_audit_log_metadata.created_at. Converted to ISO 8601 date-time string.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_super_admin_audit_log_metadata.created_at. Converted to
+     *   ISO 8601 date-time string.
    */
   createdAt: string & tags.Format<"date-time">;
 
@@ -54,8 +61,10 @@ export type IEcommerceMallSuperAdminAuditLogMetadatum = {
    *
    * The audit log entry this metadata belongs to, included for context. Contains essential audit log information such as the action performed, target details, and actor information.
    *
-   * @x-autobe-database-schema-property auditLog
-   * @x-autobe-specification JOIN to ecommerce_mall_super_admin_audit_logs via ecommerce_mall_super_admin_audit_log_id foreign key. Returns ISummary projection.
+     * @x-autobe-database-schema-property auditLog
+     * @x-autobe-specification JOIN to ecommerce_mall_super_admin_audit_logs via
+     *   ecommerce_mall_super_admin_audit_log_id foreign key. Returns ISummary
+     *   projection.
    */
   auditLog: IEcommerceMallSuperAdminAuditLog.ISummary;
 };
@@ -73,8 +82,9 @@ export namespace IEcommerceMallSuperAdminAuditLogMetadatum {
      *
      * A UUID that uniquely identifies this specific metadata key-value pair within the audit log system.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_mall_super_admin_audit_log_metadata.id. Primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_super_admin_audit_log_metadata.id. Primary key.
      */
     id: string & tags.Format<"uuid">;
 
@@ -83,8 +93,10 @@ export namespace IEcommerceMallSuperAdminAuditLogMetadatum {
      *
      * Examples include 'previous_state', 'new_state', 'reason', 'target_entity_type', or other contextual property names that describe what the value represents.
      *
-     * @x-autobe-database-schema-property key
-     * @x-autobe-specification Direct mapping from ecommerce_mall_super_admin_audit_log_metadata.key. Metadata property name.
+         * @x-autobe-database-schema-property key
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_super_admin_audit_log_metadata.key. Metadata
+         *   property name.
      */
     key: string;
 
@@ -93,8 +105,10 @@ export namespace IEcommerceMallSuperAdminAuditLogMetadatum {
      *
      * Contains the actual value corresponding to the key, such as a state name, entity identifier, reason text, or other contextual data associated with the audit action.
      *
-     * @x-autobe-database-schema-property value
-     * @x-autobe-specification Direct mapping from ecommerce_mall_super_admin_audit_log_metadata.value. Metadata property value.
+         * @x-autobe-database-schema-property value
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_super_admin_audit_log_metadata.value. Metadata
+         *   property value.
      */
     value: string;
 
@@ -103,8 +117,10 @@ export namespace IEcommerceMallSuperAdminAuditLogMetadatum {
      *
      * Indicates when this specific metadata entry was recorded in the system.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_super_admin_audit_log_metadata.created_at. Timestamp when metadata entry was created.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_super_admin_audit_log_metadata.created_at. Timestamp
+         *   when metadata entry was created.
      */
     created_at: string & tags.Format<"date-time">;
   };

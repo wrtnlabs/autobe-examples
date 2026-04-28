@@ -24,7 +24,10 @@ import { IShoppingMallAdministratorRequest } from "../../../../structures/IShopp
  * @param props.body Administrator request creation data
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Validate that the caller is authenticated as either a customer or a seller member actor. Reject requests from unauthenticated callers and reject callers whose session does not correspond to a supported applicant actor type.
+ * @x-autobe-specification Validate that the caller is authenticated as either a
+ *   customer or a seller member actor. Reject requests from unauthenticated
+ *   callers and reject callers whose session does not correspond to a supported
+ *   applicant actor type.
  *
  * Parse the request body as IShoppingMallAdministratorRequest.ICreate. Use only client-supplied creation fields that are appropriate for initial submission, primarily the application reason. Do not accept or persist server-controlled review fields from the client. The server must determine applicant_type from the authenticated session context, not from an arbitrary foreign key supplied by the caller.
  *
@@ -125,7 +128,8 @@ export namespace create {
  * @param props.body Administrator request search criteria and pagination
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Implement this operation as a paginated search over shopping_mall_administrator_requests.
+ * @x-autobe-specification Implement this operation as a paginated search over
+ *   shopping_mall_administrator_requests.
  *
  * Accept a JSON request body of type IShoppingMallAdministratorRequest.IRequest containing pagination, sorting, and filter criteria. At minimum, support filters that map directly to verified schema fields: status, applicantType, createdAt range, reviewedAt range, approvedAt range, rejectedAt range, and free-text search on reason, reviewNote, and rejectionReason. Because the schema defines trigram GIN indexes for reason, review_note, and rejection_reason, text search may be implemented efficiently with partial matching behavior appropriate to the persistence layer. Support sorting by created_at and, where useful, by reviewed_at or status.
  *
@@ -226,7 +230,9 @@ export namespace index {
  * @param props.administratorRequestId Identifier of the target administrator request
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Load the administrator request by its primary identifier from the shopping_mall_administrator_requests table and return the fully mapped IShoppingMallAdministratorRequest DTO.
+ * @x-autobe-specification Load the administrator request by its primary
+ *   identifier from the shopping_mall_administrator_requests table and return
+ *   the fully mapped IShoppingMallAdministratorRequest DTO.
  *
  * Validate that the caller is authenticated with a super-administrator session before any resource data is disclosed. Ordinary administrators, sellers, customers, and unauthenticated callers must be denied. Authorization should be checked early to preserve governance data confidentiality.
  *

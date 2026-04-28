@@ -25,7 +25,9 @@ import { IPageIEcommerceMallCustomerSession } from "../../../../structures/IPage
  * @param props.body Search criteria and pagination parameters for filtering sessions
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Query session records from all session tables (guest, customer, seller, admin, super_admin) with JOINs to respective user tables for identity information.
+ * @x-autobe-specification Query session records from all session tables (guest,
+ *   customer, seller, admin, super_admin) with JOINs to respective user tables
+ *   for identity information.
  *
  * Apply filters from request body: actorType to filter by user type, status (active/expired) to filter by expired_at comparison with current time, createdAt range for date filtering, and userId for specific user sessions.
  *
@@ -124,7 +126,9 @@ export namespace index {
  * @param props.sessionId Unique identifier of the session to retrieve (UUID format)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Query the session table matching the sessionId parameter against the id column. Return the session record if found and the requester has authorization to view it.
+ * @x-autobe-specification Query the session table matching the sessionId
+ *   parameter against the id column. Return the session record if found and the
+ *   requester has authorization to view it.
  *
  * Authorization rules:
  * - Customers can retrieve their own customer sessions

@@ -24,23 +24,21 @@ export * as snapshots from "./snapshots/index";
  * @param props.body Timer creation request containing the project association and optional task and description. Project is required and must belong to the employee's organization. Task is optional but must belong to the specified project if provided.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification 1. Extract the authenticated employee from the session context (member_id + organization_id).
- * 2. Query hrm_time_track_timers to check if an active timer exists for this employee (is_active = true).
- * 3. If an active timer exists, return 409 Conflict error.
- * 4. Validate that the project_id belongs to the employee's organization.
- * 5. Validate that the employee is assigned to the project via hrm_time_track_project_members.
- * 6. If task_id is provided, validate that the task belongs to the specified project.
- * 7. Create a new timer record in hrm_time_track_timers with:
- *    - id: generate UUID
- *    - hrm_time_track_employee_id: from authenticated employee
- *    - hrm_time_track_project_id: from request body
- *    - hrm_time_track_task_id: from request body (nullable)
- *    - started_at: current timestamp (DateTime.now())
- *    - description: from request body (nullable)
- *    - is_active: true
- *    - created_at: current timestamp
- *    - updated_at: current timestamp
- * 8. Return the created timer entity with 201 Created status.
+ * @x-autobe-specification 1. Extract the authenticated employee from the
+ *   session context (member_id + organization_id). 2. Query
+ *   hrm_time_track_timers to check if an active timer exists for this employee
+ *   (is_active = true). 3. If an active timer exists, return 409 Conflict
+ *   error. 4. Validate that the project_id belongs to the employee's
+ *   organization. 5. Validate that the employee is assigned to the project via
+ *   hrm_time_track_project_members. 6. If task_id is provided, validate that
+ *   the task belongs to the specified project. 7. Create a new timer record in
+ *   hrm_time_track_timers with: - id: generate UUID -
+ *   hrm_time_track_employee_id: from authenticated employee -
+ *   hrm_time_track_project_id: from request body - hrm_time_track_task_id: from
+ *   request body (nullable) - started_at: current timestamp (DateTime.now()) -
+ *   description: from request body (nullable) - is_active: true - created_at:
+ *   current timestamp - updated_at: current timestamp 8. Return the created
+ *   timer entity with 201 Created status.
  *
  * Error handling:
  * - 401 Unauthorized: if no authenticated employee in session
@@ -135,7 +133,8 @@ export namespace create {
  * @param props.body Search criteria for timers including employee, project, task filters, active status filter, and pagination parameters.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query hrm_time_track_timers table with pagination and filtering based on request body parameters.
+ * @x-autobe-specification Query hrm_time_track_timers table with pagination and
+ *   filtering based on request body parameters.
  *
  * Filtering:
  * - Filter by employee_id (hrm_time_track_employee_id) - required for employee-scoped queries
@@ -258,7 +257,8 @@ export namespace index {
  * @param props.timerId Unique identifier of the timer session to retrieve (global scope)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query the hrm_time_track_timers table by the provided timerId (UUID).
+ * @x-autobe-specification Query the hrm_time_track_timers table by the provided
+ *   timerId (UUID).
  *
  * Verify authorization: ensure the requesting employee's ID matches the hrm_time_track_employee_id of the retrieved timer. Throw unauthorized error if mismatch.
  *
@@ -356,7 +356,17 @@ export namespace at {
  * @param props.body Editable fields for the timer including optional description, project ID, and optional task ID.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Retrieve the timer by timerId and verify the requesting employee owns this timer (check hrm_time_track_employee_id matches authenticated employee). Validate that the timer is currently active (is_active = true). If updating project, verify the employee has access to the new project through hrm_time_track_project_members. If updating task, verify the task belongs to the new project (or existing project if project not changed) and the employee has access to it. Update the editable fields: description, hrm_time_track_project_id, and hrm_time_track_task_id. Set updated_at to current timestamp. Return the updated timer entity with all fields including nested project and task information.
+ * @x-autobe-specification Retrieve the timer by timerId and verify the
+ *   requesting employee owns this timer (check hrm_time_track_employee_id
+ *   matches authenticated employee). Validate that the timer is currently
+ *   active (is_active = true). If updating project, verify the employee has
+ *   access to the new project through hrm_time_track_project_members. If
+ *   updating task, verify the task belongs to the new project (or existing
+ *   project if project not changed) and the employee has access to it. Update
+ *   the editable fields: description, hrm_time_track_project_id, and
+ *   hrm_time_track_task_id. Set updated_at to current timestamp. Return the
+ *   updated timer entity with all fields including nested project and task
+ *   information.
  * @path /hrmTimeTrack/member/timers/:timerId
  * @accessor api.functional.hrmTimeTrack.member.timers.update
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -452,16 +462,17 @@ export namespace update {
  * @param props.timerId Unique identifier of the timer session to discard (global scope).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification 1. Retrieve the timer record by timerId from hrm_time_track_timers table.
- * 2. Verify the timer exists and is currently active (is_active = true).
- * 3. Validate that the authenticated employee (from session) matches the timer's hrm_time_track_employee_id.
- * 4. If ownership validation fails, return 403 Forbidden error.
- * 5. If timer not found, return 404 Not Found error.
- * 6. Delete the timer record from the database.
- * 7. Do NOT create a timelog - discarding means no time is recorded.
- * 8. Return 204 No Content on successful deletion.
- * 9. Handle concurrent modification: if timer was already stopped/discarded, return appropriate error.
- * 10. Log the discard action in activity_logs for audit trail (if required by organization policy).
+ * @x-autobe-specification 1. Retrieve the timer record by timerId from
+ *   hrm_time_track_timers table. 2. Verify the timer exists and is currently
+ *   active (is_active = true). 3. Validate that the authenticated employee
+ *   (from session) matches the timer's hrm_time_track_employee_id. 4. If
+ *   ownership validation fails, return 403 Forbidden error. 5. If timer not
+ *   found, return 404 Not Found error. 6. Delete the timer record from the
+ *   database. 7. Do NOT create a timelog - discarding means no time is
+ *   recorded. 8. Return 204 No Content on successful deletion. 9. Handle
+ *   concurrent modification: if timer was already stopped/discarded, return
+ *   appropriate error. 10. Log the discard action in activity_logs for audit
+ *   trail (if required by organization policy).
  * @path /hrmTimeTrack/member/timers/:timerId
  * @accessor api.functional.hrmTimeTrack.member.timers.erase
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe

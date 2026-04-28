@@ -98,7 +98,7 @@ export namespace IHrmPlatformTimesheet {
     /**
      * Filter by employee ID (employees can only filter their own timesheets)
      *
-     * @x-autobe-database-schema-property hrm_platform_employee_id
+         * @x-autobe-database-schema-property hrm_platform_employee_id
      */
     employee_id?: (string & tags.Format<"uuid">) | undefined;
 
@@ -128,23 +128,25 @@ export namespace IHrmPlatformTimesheet {
    */
   export type ICreate = {
     /**
-     * @x-autobe-database-schema-property start_date
+         * @x-autobe-database-schema-property start_date
      */
     start_date: string & tags.Format<"date-time">;
     /**
-     * @x-autobe-database-schema-property end_date
+         * @x-autobe-database-schema-property end_date
      */
     end_date: string & tags.Format<"date-time">;
     /**
-     * @x-autobe-database-schema-property hrm_platform_employee_id
+         * @x-autobe-database-schema-property hrm_platform_employee_id
      */
     hrm_platform_employee_id: string & tags.Format<"uuid">;
 
     /**
      * Optional notes or comments on the timesheet.
      *
-     * @x-autobe-database-schema-property notes
-     * @x-autobe-specification Direct mapping from hrm_platform_timesheets.notes column. Optional field for employee comments or explanations when creating timesheet.
+         * @x-autobe-database-schema-property notes
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_timesheets.notes column. Optional field for employee
+         *   comments or explanations when creating timesheet.
      */
     notes?: string | null | undefined;
   };
@@ -172,8 +174,11 @@ export namespace IHrmPlatformTimesheet {
      *
      * Can contain employee explanations, manager feedback, or other contextual information about the timesheet contents. This field is nullable and can be updated freely while the timesheet is in pending or rejected status.
      *
-     * @x-autobe-database-schema-property notes
-     * @x-autobe-specification Direct mapping from hrm_platform_timesheets.notes (nullable string). Optional field for comments, explanations, or manager feedback. Can be null or contain text.
+         * @x-autobe-database-schema-property notes
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_timesheets.notes (nullable string). Optional field for
+         *   comments, explanations, or manager feedback. Can be null or contain
+         *   text.
      */
     notes?: string | null | undefined;
   };
@@ -196,7 +201,13 @@ export namespace IHrmPlatformTimesheet {
      * - Timelogs cannot be added if they are already approved in another timesheet
      * - Timesheet must be in draft status to allow additions
      *
-     * @x-autobe-specification Array of timelog UUIDs to add to this timesheet. Each UUID references a timelog record in hrm_platform_timelogs. The server validates that: (1) timelog exists, (2) timelog is not already in this timesheet, (3) timelog is not in an approved timesheet (cannot duplicate across approvals), (4) timesheet status is draft (pending). Operations insert into hrm_platform_timesheet_timelogs junction table.
+         * @x-autobe-specification Array of timelog UUIDs to add to this
+         *   timesheet. Each UUID references a timelog record in
+         *   hrm_platform_timelogs. The server validates that: (1) timelog
+         *   exists, (2) timelog is not already in this timesheet, (3) timelog
+         *   is not in an approved timesheet (cannot duplicate across
+         *   approvals), (4) timesheet status is draft (pending). Operations
+         *   insert into hrm_platform_timesheet_timelogs junction table.
      */
     adds?: (string & tags.Format<"uuid">)[] | undefined;
 
@@ -210,7 +221,14 @@ export namespace IHrmPlatformTimesheet {
      * - Timelogs cannot be removed if they are part of an approved timesheet (cannot break the approval chain)
      * - Timesheet must be in draft status to allow removals
      *
-     * @x-autobe-specification Array of timelog UUIDs to remove from this timesheet. Each UUID must reference a timelog that is currently associated with this timesheet in hrm_platform_timesheet_timelogs. The server validates that: (1) timelog exists, (2) timelog is currently in this timesheet, (3) timelog is not in an approved timesheet (cannot break approval chain). Operations soft delete hrm_platform_timesheet_timelogs records. The timesheet's total_hours is recalculated after removals.
+         * @x-autobe-specification Array of timelog UUIDs to remove from this
+         *   timesheet. Each UUID must reference a timelog that is currently
+         *   associated with this timesheet in hrm_platform_timesheet_timelogs.
+         *   The server validates that: (1) timelog exists, (2) timelog is
+         *   currently in this timesheet, (3) timelog is not in an approved
+         *   timesheet (cannot break approval chain). Operations soft delete
+         *   hrm_platform_timesheet_timelogs records. The timesheet's
+         *   total_hours is recalculated after removals.
      */
     removes?: (string & tags.Format<"uuid">)[] | undefined;
   };

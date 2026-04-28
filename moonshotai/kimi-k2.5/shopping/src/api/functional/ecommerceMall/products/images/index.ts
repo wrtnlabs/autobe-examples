@@ -24,7 +24,9 @@ import { IEcommerceMallProductImage } from "../../../../structures/IEcommerceMal
  * @param props.body New ordering configuration for product images
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Validate that the requesting seller owns the product identified by productId. Query all non-deleted images for the product from ecommerce_mall_product_images table ordered by display_order.
+ * @x-autobe-specification Validate that the requesting seller owns the product
+ *   identified by productId. Query all non-deleted images for the product from
+ *   ecommerce_mall_product_images table ordered by display_order.
  *
  * Validate the reorder request: ensure all image IDs in the request belong to this product, ensure no duplicate image IDs, ensure all existing images are included (unless specified otherwise by requirements).
  *
@@ -131,7 +133,8 @@ export namespace updateOrder {
  * @param props.productImageId Product image unique identifier (UUID)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Validate both productId and productImageId are valid UUIDs.
+ * @x-autobe-specification Validate both productId and productImageId are valid
+ *   UUIDs.
  *
  * Query the ecommerce_mall_product_images table:
  * - Join with ecommerce_mall_products to verify product exists and ownership

@@ -23,13 +23,15 @@ import { IMultiUserTodoUserProfile } from "../../../../structures/IMultiUserTodo
  * @param props.connection
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implementation steps:
- * 1) Require member authentication (reject unauthenticated requests).
- * 2) Resolve the authenticated user's id from the session context.
- * 3) Query multi_user_todo_user_profiles for exactly one row where multi_user_todo_user_id = authenticated user id.
- * 4) If no row exists, return a profile-not-found/unavailable error.
- * 5) If deleted_at is set (non-null), treat the profile as unavailable and return the same profile-not-found/unavailable error.
- * 6) Map the row to the response DTO, including at minimum: id and display_name.
+ * @x-autobe-specification Implementation steps: 1) Require member
+ *   authentication (reject unauthenticated requests). 2) Resolve the
+ *   authenticated user's id from the session context. 3) Query
+ *   multi_user_todo_user_profiles for exactly one row where
+ *   multi_user_todo_user_id = authenticated user id. 4) If no row exists,
+ *   return a profile-not-found/unavailable error. 5) If deleted_at is set
+ *   (non-null), treat the profile as unavailable and return the same
+ *   profile-not-found/unavailable error. 6) Map the row to the response DTO,
+ *   including at minimum: id and display_name.
  *
  * DB mapping reference:
  * - Table: multi_user_todo_user_profiles
@@ -95,7 +97,8 @@ export namespace at {
  * @param props.body Update payload containing the new non-empty display name for the authenticated user’s profile.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implement PUT /profile as an ownership-scoped update on multi_user_todo_user_profiles.display_name.
+ * @x-autobe-specification Implement PUT /profile as an ownership-scoped update
+ *   on multi_user_todo_user_profiles.display_name.
  *
  * Service logic:
  * 1) Authentication requirement:
@@ -212,7 +215,8 @@ export namespace put {
  * @param props.body Payload containing the new display_name value for the authenticated member’s private profile.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implement PATCH /profile as an authenticated, user-scoped update against multi_user_todo_user_profiles.
+ * @x-autobe-specification Implement PATCH /profile as an authenticated,
+ *   user-scoped update against multi_user_todo_user_profiles.
  *
  * 1) Authentication & scope resolution
  * - Require an authenticated member.

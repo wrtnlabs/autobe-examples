@@ -23,9 +23,9 @@ export class RedditlikeMemberAttachmentsController {
    *
    * @param connection
    * @param body File upload information including the file URI and metadata
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Handle file upload for authenticated members.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Handle file upload for authenticated members.
    *
    * 1. Verify the requesting user is authenticated as a member
    * 2. Check member's current storage usage against their allocated quota
@@ -92,9 +92,10 @@ export class RedditlikeMemberAttachmentsController {
    *
    * @param connection
    * @param attachmentId The unique identifier of the attachment file to delete
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Verify the requesting user's identity from the authentication token.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Verify the requesting user's identity from the
+     *   authentication token.
    *
    * Query the reddit_like_attachments table to find the attachment by attachmentId.
    *

@@ -24,7 +24,8 @@ import { IShoppingMallCancellationRequest } from "../../../../../structures/ISho
  * @param props.body Search criteria including status filter and date range parameters for cancellation request listing
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Query shopping_mall_cancellation_requests table with pagination and filtering.
+ * @x-autobe-specification Query shopping_mall_cancellation_requests table with
+ *   pagination and filtering.
  *
  * 1. Authentication: Extract seller from JWT token, verify seller is approved (approval_status='approved') and not banned.
  *

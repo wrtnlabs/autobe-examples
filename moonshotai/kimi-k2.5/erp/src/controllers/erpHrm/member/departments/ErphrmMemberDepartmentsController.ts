@@ -25,9 +25,9 @@ export class ErphrmMemberDepartmentsController {
    *
    * @param connection
    * @param body Department creation data with required name, optional description, and optional parent department reference for hierarchical structure
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Create department implementation:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Create department implementation:
    *
    * 1. Authorization: Verify the requesting member has 'organizations:write' or 'manage_organization' permission.
    *
@@ -94,9 +94,10 @@ export class ErphrmMemberDepartmentsController {
    *
    * @param connection
    * @param body Search criteria and pagination parameters for filtering departments
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query erp_hrm_departments table filtering by the current organization context from the member's session.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query erp_hrm_departments table filtering by the
+     *   current organization context from the member's session.
    *
    * Search capabilities:
    * - Name partial matching using the GIN index on name field (gin_trgm_ops)
@@ -157,9 +158,10 @@ export class ErphrmMemberDepartmentsController {
    *
    * @param connection
    * @param departmentId Target department's unique identifier
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Retrieve a department record by its primary key ID from the erp_hrm_departments table.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Retrieve a department record by its primary key
+     *   ID from the erp_hrm_departments table.
    *
    * Implementation steps:
    * 1. Validate the departmentId path parameter as a valid UUID format
@@ -211,9 +213,11 @@ export class ErphrmMemberDepartmentsController {
    * @param connection
    * @param departmentId Target department's unique identifier
    * @param body Department update data with fields to modify
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Lookup the target department by departmentId from the erp_hrm_departments table ensuring it belongs to the current organization context and is not soft-deleted.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Lookup the target department by departmentId from
+     *   the erp_hrm_departments table ensuring it belongs to the current
+     *   organization context and is not soft-deleted.
    *
    * Validate the requesting user has organization management permission for the current organization context.
    *
@@ -270,9 +274,9 @@ export class ErphrmMemberDepartmentsController {
    *
    * @param connection
    * @param departmentId Target department's unique identifier (UUID format)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation steps:
    *
    * 1. **Authentication & Authorization**: Verify the requesting user has an active member session with organization context. Check that the user has the 'org:manage' permission in their role within the current organization context.
    *

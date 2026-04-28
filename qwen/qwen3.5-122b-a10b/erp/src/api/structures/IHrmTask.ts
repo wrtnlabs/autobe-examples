@@ -86,8 +86,11 @@ export namespace IHrmTask {
      *
      * When this status is submitted, the system automatically records the transition in the task history table ({@link hrm_task_histories}), capturing the previous status, new status, exact timestamp, and the member who made the change.
      *
-     * @x-autobe-specification Direct mapping from hrm_tasks.status column. Allowed values: open, in-progress, completed, closed. Backend validates value, fetches current status, updates task, and records transition in hrm_task_histories.
-     * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from hrm_tasks.status column.
+         *   Allowed values: open, in-progress, completed, closed. Backend
+         *   validates value, fetches current status, updates task, and records
+         *   transition in hrm_task_histories.
+         * @x-autobe-database-schema-property status
      */
     status: string;
   };
@@ -112,23 +115,23 @@ export namespace IHrmTask {
    */
   export type ISummary = {
     /**
-     * @x-autobe-database-schema-property id
+         * @x-autobe-database-schema-property id
      */
     id: string & tags.Format<"uuid">;
     /**
-     * @x-autobe-database-schema-property title
+         * @x-autobe-database-schema-property title
      */
     title: string;
     /**
-     * @x-autobe-database-schema-property status
+         * @x-autobe-database-schema-property status
      */
     status: string;
     /**
-     * @x-autobe-database-schema-property priority
+         * @x-autobe-database-schema-property priority
      */
     priority: string;
     /**
-     * @x-autobe-database-schema-property project
+         * @x-autobe-database-schema-property project
      */
     project: IHrmProject.ISummary;
 
@@ -139,8 +142,10 @@ export namespace IHrmTask {
      *
      * **Nullability**: Nullable - tasks can exist without an assigned employee
      *
-     * @x-autobe-database-schema-property assignedEmployee
-     * @x-autobe-specification JOIN from hrm_tasks.assigned_employee_id to hrm_employees.id. Returns IHrmEmployee.ISummary or null via LEFT JOIN.
+         * @x-autobe-database-schema-property assignedEmployee
+         * @x-autobe-specification JOIN from hrm_tasks.assigned_employee_id to
+         *   hrm_employees.id. Returns IHrmEmployee.ISummary or null via LEFT
+         *   JOIN.
      */
     assignedEmployee: IHrmEmployee.ISummary | null;
 
@@ -151,24 +156,26 @@ export namespace IHrmTask {
      *
      * **Nullability**: Nullable - top-level tasks have no parent
      *
-     * @x-autobe-database-schema-property parentTask
-     * @x-autobe-specification LEFT JOIN from hrm_tasks.parent_task_id to hrm_tasks.id. Returns IHrmTask.ISummary or null for tasks without parent.
+         * @x-autobe-database-schema-property parentTask
+         * @x-autobe-specification LEFT JOIN from hrm_tasks.parent_task_id to
+         *   hrm_tasks.id. Returns IHrmTask.ISummary or null for tasks without
+         *   parent.
      */
     parentTask: IHrmTask.ISummary | null;
     /**
-     * @x-autobe-database-schema-property due_date
+         * @x-autobe-database-schema-property due_date
      */
     dueDate?: (string & tags.Format<"date-time">) | null | undefined;
     /**
-     * @x-autobe-database-schema-property estimated_hours
+         * @x-autobe-database-schema-property estimated_hours
      */
     estimatedHours?: number | null | undefined;
     /**
-     * @x-autobe-database-schema-property created_at
+         * @x-autobe-database-schema-property created_at
      */
     createdAt: string & tags.Format<"date-time">;
     /**
-     * @x-autobe-database-schema-property updated_at
+         * @x-autobe-database-schema-property updated_at
      */
     updatedAt: string & tags.Format<"date-time">;
   };
@@ -194,7 +201,7 @@ export namespace IHrmTask {
    */
   export type ICreate = {
     /**
-     * @x-autobe-database-schema-property title
+         * @x-autobe-database-schema-property title
      */
     title: string;
 
@@ -203,12 +210,13 @@ export namespace IHrmTask {
      *
      * This optional field provides additional context about the task's purpose, requirements, and acceptance criteria. It can be omitted or set to null when creating a task.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from hrm_tasks.description. Optional nullable field.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from hrm_tasks.description.
+         *   Optional nullable field.
      */
     description?: string | null | undefined;
     /**
-     * @x-autobe-database-schema-property priority
+         * @x-autobe-database-schema-property priority
      */
     priority: string;
 
@@ -217,8 +225,10 @@ export namespace IHrmTask {
      *
      * If omitted or null, the task remains unassigned and can be assigned later. When provided, the employee must be a member of the target project.
      *
-     * @x-autobe-database-schema-property assigned_employee_id
-     * @x-autobe-specification Direct mapping from hrm_tasks.assigned_employee_id. Nullable UUID foreign key to hrm_employees. Task can remain unassigned.
+         * @x-autobe-database-schema-property assigned_employee_id
+         * @x-autobe-specification Direct mapping from
+         *   hrm_tasks.assigned_employee_id. Nullable UUID foreign key to
+         *   hrm_employees. Task can remain unassigned.
      */
     assigned_employee_id?: (string & tags.Format<"uuid">) | null | undefined;
 
@@ -227,12 +237,14 @@ export namespace IHrmTask {
      *
      * If omitted or null, the task is a top-level task. When provided, the parent task must belong to the same project. Only one level of nesting is supported.
      *
-     * @x-autobe-database-schema-property parent_task_id
-     * @x-autobe-specification Direct mapping from hrm_tasks.parent_task_id. Nullable UUID foreign key for self-reference enabling one-level task hierarchy.
+         * @x-autobe-database-schema-property parent_task_id
+         * @x-autobe-specification Direct mapping from hrm_tasks.parent_task_id.
+         *   Nullable UUID foreign key for self-reference enabling one-level
+         *   task hierarchy.
      */
     parent_task_id?: (string & tags.Format<"uuid">) | null | undefined;
     /**
-     * @x-autobe-database-schema-property status
+         * @x-autobe-database-schema-property status
      */
     status?: string | undefined;
 
@@ -241,8 +253,10 @@ export namespace IHrmTask {
      *
      * This optional field is used for project planning and capacity forecasting. It can be omitted or set to null when estimation is not available.
      *
-     * @x-autobe-database-schema-property estimated_hours
-     * @x-autobe-specification Direct mapping from hrm_tasks.estimated_hours. Optional nullable number for time estimation in hours.
+         * @x-autobe-database-schema-property estimated_hours
+         * @x-autobe-specification Direct mapping from
+         *   hrm_tasks.estimated_hours. Optional nullable number for time
+         *   estimation in hours.
      */
     estimated_hours?: number | null | undefined;
 
@@ -251,8 +265,9 @@ export namespace IHrmTask {
      *
      * This optional field is used for deadline tracking and overdue notifications. It can be omitted or set to null when there is no specific deadline.
      *
-     * @x-autobe-database-schema-property due_date
-     * @x-autobe-specification Direct mapping from hrm_tasks.due_date. Optional nullable date-time for target completion date.
+         * @x-autobe-database-schema-property due_date
+         * @x-autobe-specification Direct mapping from hrm_tasks.due_date.
+         *   Optional nullable date-time for target completion date.
      */
     due_date?: (string & tags.Format<"date-time">) | null | undefined;
   };
@@ -281,7 +296,7 @@ export namespace IHrmTask {
    */
   export type IUpdate = {
     /**
-     * @x-autobe-database-schema-property title
+         * @x-autobe-database-schema-property title
      */
     title?: string | undefined;
 
@@ -290,16 +305,17 @@ export namespace IHrmTask {
      *
      * Optional field providing additional information about task goals, deliverables, and specifications. Can be null if not applicable.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from hrm_tasks.description. Nullable string, optional in Update DTO.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from hrm_tasks.description.
+         *   Nullable string, optional in Update DTO.
      */
     description?: string | null | undefined;
     /**
-     * @x-autobe-database-schema-property status
+         * @x-autobe-database-schema-property status
      */
     status?: string | undefined;
     /**
-     * @x-autobe-database-schema-property priority
+         * @x-autobe-database-schema-property priority
      */
     priority?: string | undefined;
 
@@ -308,8 +324,9 @@ export namespace IHrmTask {
      *
      * Optional planning field for capacity forecasting. Can be null if estimation is not available or not applicable.
      *
-     * @x-autobe-database-schema-property estimated_hours
-     * @x-autobe-specification Direct mapping from hrm_tasks.estimated_hours. Nullable number (double precision).
+         * @x-autobe-database-schema-property estimated_hours
+         * @x-autobe-specification Direct mapping from
+         *   hrm_tasks.estimated_hours. Nullable number (double precision).
      */
     estimated_hours?: number | null | undefined;
 
@@ -318,8 +335,9 @@ export namespace IHrmTask {
      *
      * Optional field for deadline tracking and overdue notifications. Can be null if no specific deadline is set.
      *
-     * @x-autobe-database-schema-property due_date
-     * @x-autobe-specification Direct mapping from hrm_tasks.due_date. Nullable timestamptz.
+         * @x-autobe-database-schema-property due_date
+         * @x-autobe-specification Direct mapping from hrm_tasks.due_date.
+         *   Nullable timestamptz.
      */
     due_date?: (string & tags.Format<"date-time">) | null | undefined;
 
@@ -328,8 +346,10 @@ export namespace IHrmTask {
      *
      * Optional field. When assigned, only the designated employee can update the task in most workflows. Must reference an employee in the same organization. Can be null for unassigned tasks.
      *
-     * @x-autobe-database-schema-property assigned_employee_id
-     * @x-autobe-specification Direct mapping from hrm_tasks.assigned_employee_id. Nullable UUID, validates employee belongs to same organization.
+         * @x-autobe-database-schema-property assigned_employee_id
+         * @x-autobe-specification Direct mapping from
+         *   hrm_tasks.assigned_employee_id. Nullable UUID, validates employee
+         *   belongs to same organization.
      */
     assigned_employee_id?: (string & tags.Format<"uuid">) | null | undefined;
 
@@ -338,8 +358,9 @@ export namespace IHrmTask {
      *
      * Optional field enabling hierarchical task organization. Must reference a task in the same project. Can be null for top-level tasks. Circular parent-child references are prevented.
      *
-     * @x-autobe-database-schema-property parent_task_id
-     * @x-autobe-specification Direct mapping from hrm_tasks.parent_task_id. Nullable UUID, validates parent task belongs to same project.
+         * @x-autobe-database-schema-property parent_task_id
+         * @x-autobe-specification Direct mapping from hrm_tasks.parent_task_id.
+         *   Nullable UUID, validates parent task belongs to same project.
      */
     parent_task_id?: (string & tags.Format<"uuid">) | null | undefined;
   };
@@ -373,7 +394,9 @@ export namespace IHrmTask {
      *
      * Performs case-insensitive pattern matching across task title and description fields using PostgreSQL trigram indexes for efficient search performance.
      *
-     * @x-autobe-specification Text search using trigram index on hrm_tasks.title and hrm_tasks.description. Implements LIKE %query% pattern matching.
+         * @x-autobe-specification Text search using trigram index on
+         *   hrm_tasks.title and hrm_tasks.description. Implements LIKE %query%
+         *   pattern matching.
      */
     search?: string | undefined;
 
@@ -382,8 +405,10 @@ export namespace IHrmTask {
      *
      * Multiple values can be provided to filter by multiple statuses simultaneously. The server applies an IN clause on the status column.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from hrm_tasks.status. IN clause filtering for workflow states: open, in-progress, completed, closed.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from hrm_tasks.status. IN
+         *   clause filtering for workflow states: open, in-progress, completed,
+         *   closed.
      */
     status?: string | undefined;
 
@@ -392,8 +417,9 @@ export namespace IHrmTask {
      *
      * Multiple values can be provided to filter by multiple priority levels simultaneously. The server applies an IN clause on the priority column.
      *
-     * @x-autobe-database-schema-property priority
-     * @x-autobe-specification Direct mapping from hrm_tasks.priority. IN clause filtering for priority levels: low, medium, high, urgent.
+         * @x-autobe-database-schema-property priority
+         * @x-autobe-specification Direct mapping from hrm_tasks.priority. IN
+         *   clause filtering for priority levels: low, medium, high, urgent.
      */
     priority?: string | undefined;
 
@@ -402,8 +428,10 @@ export namespace IHrmTask {
      *
      * When provided, filters tasks assigned to the specified employee. When explicitly set to null, filters tasks that have no assigned employee.
      *
-     * @x-autobe-database-schema-property assigned_employee_id
-     * @x-autobe-specification Direct mapping from hrm_tasks.assigned_employee_id. Equality filter for specific employee, or IS NULL for unassigned tasks.
+         * @x-autobe-database-schema-property assigned_employee_id
+         * @x-autobe-specification Direct mapping from
+         *   hrm_tasks.assigned_employee_id. Equality filter for specific
+         *   employee, or IS NULL for unassigned tasks.
      */
     assigned_employee_id?: (string & tags.Format<"uuid">) | null | undefined;
 
@@ -412,7 +440,8 @@ export namespace IHrmTask {
      *
      * Combined with due_date_to to create a date range filter. Uses >= comparison on the due_date column.
      *
-     * @x-autobe-specification Range filter on hrm_tasks.due_date. Implements >= comparison for lower bound.
+         * @x-autobe-specification Range filter on hrm_tasks.due_date.
+         *   Implements >= comparison for lower bound.
      */
     due_date_from?: (string & tags.Format<"date-time">) | undefined;
 
@@ -421,7 +450,8 @@ export namespace IHrmTask {
      *
      * Combined with due_date_from to create a date range filter. Uses <= comparison on the due_date column.
      *
-     * @x-autobe-specification Range filter on hrm_tasks.due_date. Implements <= comparison for upper bound.
+         * @x-autobe-specification Range filter on hrm_tasks.due_date.
+         *   Implements <= comparison for upper bound.
      */
     due_date_to?: (string & tags.Format<"date-time">) | undefined;
 
@@ -430,7 +460,8 @@ export namespace IHrmTask {
      *
      * Combined with created_to to create a date range filter. Uses >= comparison on the created_at column.
      *
-     * @x-autobe-specification Range filter on hrm_tasks.created_at. Implements >= comparison for lower bound.
+         * @x-autobe-specification Range filter on hrm_tasks.created_at.
+         *   Implements >= comparison for lower bound.
      */
     created_from?: (string & tags.Format<"date-time">) | undefined;
 
@@ -439,7 +470,8 @@ export namespace IHrmTask {
      *
      * Combined with created_from to create a date range filter. Uses <= comparison on the created_at column.
      *
-     * @x-autobe-specification Range filter on hrm_tasks.created_at. Implements <= comparison for upper bound.
+         * @x-autobe-specification Range filter on hrm_tasks.created_at.
+         *   Implements <= comparison for upper bound.
      */
     created_to?: (string & tags.Format<"date-time">) | undefined;
 
@@ -448,7 +480,8 @@ export namespace IHrmTask {
      *
      * Controls which page of results to return. Combined with limit to determine the result set offset and size.
      *
-     * @x-autobe-specification Pagination offset calculation: (page - 1) * limit. 1-indexed page number.
+         * @x-autobe-specification Pagination offset calculation: (page - 1) *
+         *   limit. 1-indexed page number.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -457,7 +490,8 @@ export namespace IHrmTask {
      *
      * Controls the maximum number of results returned in a single response. Server enforces a maximum limit of 100 to prevent excessive data retrieval.
      *
-     * @x-autobe-specification Pagination limit parameter. Maximum 100 results per page enforced by server.
+         * @x-autobe-specification Pagination limit parameter. Maximum 100
+         *   results per page enforced by server.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)

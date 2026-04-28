@@ -21,7 +21,11 @@ import { IPageIErpHrmTimeDepartment } from "../../../../../structures/IPageIErpH
  * @param props.body Pagination, search, and sorting criteria for retrieving child departments.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Load the parent department by id and verify it belongs to the currently selected organization. Query erp_hrm_time_departments for records where parent_department_id equals the parent id, erp_hrm_time_organization_id matches the current organization, and deleted_at is null if the service filters retained rows.
+ * @x-autobe-specification Load the parent department by id and verify it
+ *   belongs to the currently selected organization. Query
+ *   erp_hrm_time_departments for records where parent_department_id equals the
+ *   parent id, erp_hrm_time_organization_id matches the current organization,
+ *   and deleted_at is null if the service filters retained rows.
  *
  * Apply pagination, search, and sorting from the request body. Search should target department name and optionally description if supported by the list DTO. The operation must only expose direct children and must not traverse deeper descendants, because the business rule limits department nesting to one level.
  *
@@ -122,7 +126,10 @@ export namespace index {
  * @param props.childDepartmentId The child department identifier within the current organization scope.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Load the child department by matching id = childDepartmentId and erp_hrm_time_organization_id to the current organization context, while also verifying parent_department_id = departmentId. Return the full department record if found.
+ * @x-autobe-specification Load the child department by matching id =
+ *   childDepartmentId and erp_hrm_time_organization_id to the current
+ *   organization context, while also verifying parent_department_id =
+ *   departmentId. Return the full department record if found.
  *
  * Enforce organization isolation on both identifiers. If the parent department does not exist in the selected organization, or the child department is not directly nested under that parent, return a not-found or forbidden-style domain error consistent with the service error contract.
  *

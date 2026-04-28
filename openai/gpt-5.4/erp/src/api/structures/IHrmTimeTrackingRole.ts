@@ -11,63 +11,78 @@ export type IHrmTimeTrackingRole = {
   /**
    * Unique identifier of the role within the organization role catalog.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_roles.id.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from hrm_time_tracking_roles.id.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Display name of the role used to identify it within the organization.
    *
-   * @x-autobe-database-schema-property name
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_roles.name. This value is unique within a single organization according to the organization-scoped uniqueness constraint.
+     * @x-autobe-database-schema-property name
+     * @x-autobe-specification Direct mapping from hrm_time_tracking_roles.name.
+     *   This value is unique within a single organization according to the
+     *   organization-scoped uniqueness constraint.
    */
   name: string;
 
   /**
    * Whether this role is a built-in platform role rather than a custom organization-defined role.
    *
-   * @x-autobe-database-schema-property built_in
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_roles.built_in. True indicates a platform-provided protected role such as Owner, Manager, or Employee; false indicates an organization-defined custom role.
+     * @x-autobe-database-schema-property built_in
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_roles.built_in. True indicates a platform-provided
+     *   protected role such as Owner, Manager, or Employee; false indicates an
+     *   organization-defined custom role.
    */
   built_in: boolean;
 
   /**
    * Organization that owns this role and within which the role is valid.
    *
-   * @x-autobe-database-schema-property organization
-   * @x-autobe-specification Join hrm_time_tracking_roles.hrm_time_tracking_organization_id to hrm_time_tracking_organizations.id and serialize the related record as IHrmTimeTrackingOrganization.ISummary.
+     * @x-autobe-database-schema-property organization
+     * @x-autobe-specification Join
+     *   hrm_time_tracking_roles.hrm_time_tracking_organization_id to
+     *   hrm_time_tracking_organizations.id and serialize the related record as
+     *   IHrmTimeTrackingOrganization.ISummary.
    */
   organization: IHrmTimeTrackingOrganization.ISummary;
 
   /**
    * Permission assignments currently granted to this role.
    *
-   * @x-autobe-specification Query hrm_time_tracking_role_permissions where hrm_time_tracking_role_id equals this role's id and deleted_at is null, then serialize the resulting rows as IHrmTimeTrackingRolePermission[] in query-defined order.
+     * @x-autobe-specification Query hrm_time_tracking_role_permissions where
+     *   hrm_time_tracking_role_id equals this role's id and deleted_at is null,
+     *   then serialize the resulting rows as IHrmTimeTrackingRolePermission[]
+     *   in query-defined order.
    */
   permissions: IHrmTimeTrackingRolePermission[];
 
   /**
    * Timestamp when the role record was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_roles.created_at.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_roles.created_at.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the role record was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_roles.updated_at.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_roles.updated_at.
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * Soft-deletion timestamp for the role, or null when the role is active.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_roles.deleted_at. Return null when the role is active and a timestamp when it has been soft deleted.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_roles.deleted_at. Return null when the role is active
+     *   and a timestamp when it has been soft deleted.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -79,15 +94,31 @@ export namespace IHrmTimeTrackingRole {
     /**
      * Replacement display name for the role within the selected organization.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from `hrm_time_tracking_roles.name`. When this optional property is present, use it as the replacement display name for the target role identified by `roleId`. Validate that the resulting name remains unique within the organization identified by `organizationId`, excluding the current role from the uniqueness check. When omitted, leave the persisted role name unchanged.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from
+         *   `hrm_time_tracking_roles.name`. When this optional property is
+         *   present, use it as the replacement display name for the target role
+         *   identified by `roleId`. Validate that the resulting name remains
+         *   unique within the organization identified by `organizationId`,
+         *   excluding the current role from the uniqueness check. When omitted,
+         *   leave the persisted role name unchanged.
      */
     name?: string | undefined;
 
     /**
      * Requested permission update payload used to replace the permissions currently granted to the role.
      *
-     * @x-autobe-specification Computed request payload used to replace the role's granted permissions. Consume the array of `IHrmTimeTrackingRole.IUpdatePermission` items, extract the submitted permission code strings from their nested `permissions` arrays, validate every code against the supported permission catalog, reject duplicates across the effective submitted set, then reconcile the target role's rows in `hrm_time_tracking_role_permissions` so the persisted assignments match the request. This property is not a direct column or relation field on `hrm_time_tracking_roles`; it is the input contract for cross-table permission-set replacement logic.
+         * @x-autobe-specification Computed request payload used to replace the
+         *   role's granted permissions. Consume the array of
+         *   `IHrmTimeTrackingRole.IUpdatePermission` items, extract the
+         *   submitted permission code strings from their nested `permissions`
+         *   arrays, validate every code against the supported permission
+         *   catalog, reject duplicates across the effective submitted set, then
+         *   reconcile the target role's rows in
+         *   `hrm_time_tracking_role_permissions` so the persisted assignments
+         *   match the request. This property is not a direct column or relation
+         *   field on `hrm_time_tracking_roles`; it is the input contract for
+         *   cross-table permission-set replacement logic.
      */
     permissions?: IHrmTimeTrackingRole.IUpdatePermission[] | undefined;
   };
@@ -99,7 +130,16 @@ export namespace IHrmTimeTrackingRole {
     /**
      * Complete list of permission codes that should be assigned to the target role after the update is applied.
      *
-     * @x-autobe-specification Interpret this array as the complete desired set of granted permission codes for the role identified by the path parameters. Validate every item as a supported permission code, reject duplicate strings before persistence, then diff the submitted set against existing `hrm_time_tracking_role_permissions.permission` values for the target role to insert newly granted codes and remove revoked ones. This property is request-computed rather than a direct database field because the database stores one permission assignment per row, not a string array column on `hrm_time_tracking_roles`.
+         * @x-autobe-specification Interpret this array as the complete desired
+         *   set of granted permission codes for the role identified by the path
+         *   parameters. Validate every item as a supported permission code,
+         *   reject duplicate strings before persistence, then diff the
+         *   submitted set against existing
+         *   `hrm_time_tracking_role_permissions.permission` values for the
+         *   target role to insert newly granted codes and remove revoked ones.
+         *   This property is request-computed rather than a direct database
+         *   field because the database stores one permission assignment per
+         *   row, not a string array column on `hrm_time_tracking_roles`.
      */
     permissions: string[];
   };
@@ -111,28 +151,42 @@ export namespace IHrmTimeTrackingRole {
     /**
      * Free-text keyword used to narrow the role list by matching role names.
      *
-     * @x-autobe-specification Optional free-text search input used to filter roles inside the already-authorized organization scope. Implement by applying the service's supported text-matching strategy against role names from hrm_time_tracking_roles before pagination.
+         * @x-autobe-specification Optional free-text search input used to
+         *   filter roles inside the already-authorized organization scope.
+         *   Implement by applying the service's supported text-matching
+         *   strategy against role names from hrm_time_tracking_roles before
+         *   pagination.
      */
     search?: string | undefined;
 
     /**
      * Whether to limit results by built-in role classification.
      *
-     * @x-autobe-specification Optional boolean filter that controls whether the result set includes built-in roles or custom roles. Implement by translating true or false into filtering behavior over the role built-in classification in hrm_time_tracking_roles; when omitted, do not filter by that classification.
+         * @x-autobe-specification Optional boolean filter that controls whether
+         *   the result set includes built-in roles or custom roles. Implement
+         *   by translating true or false into filtering behavior over the role
+         *   built-in classification in hrm_time_tracking_roles; when omitted,
+         *   do not filter by that classification.
      */
     built_in?: boolean | undefined;
 
     /**
      * Page number of the result set to return.
      *
-     * @x-autobe-specification Optional 1-indexed page number used to choose which page of matching role results to return after organization scoping, filtering, and sorting. If omitted, the implementation should use its default first-page behavior.
+         * @x-autobe-specification Optional 1-indexed page number used to choose
+         *   which page of matching role results to return after organization
+         *   scoping, filtering, and sorting. If omitted, the implementation
+         *   should use its default first-page behavior.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of matching roles to include in one result page.
      *
-     * @x-autobe-specification Optional maximum number of role records to include in a single page of results. Apply this limit after filtering and sorting, honoring the schema bounds when calculating pagination behavior.
+         * @x-autobe-specification Optional maximum number of role records to
+         *   include in a single page of results. Apply this limit after
+         *   filtering and sorting, honoring the schema bounds when calculating
+         *   pagination behavior.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -141,7 +195,11 @@ export namespace IHrmTimeTrackingRole {
     /**
      * Sort instruction that controls the order of returned roles.
      *
-     * @x-autobe-specification Optional sort token interpreted by the service into a stable ordering over supported role fields within the authorized organization scope, such as name or lifecycle timestamps. Unsupported tokens must be rejected, and ordering must remain deterministic for safe pagination.
+         * @x-autobe-specification Optional sort token interpreted by the
+         *   service into a stable ordering over supported role fields within
+         *   the authorized organization scope, such as name or lifecycle
+         *   timestamps. Unsupported tokens must be rejected, and ordering must
+         *   remain deterministic for safe pagination.
      */
     sort?: string | undefined;
   };
@@ -153,56 +211,67 @@ export namespace IHrmTimeTrackingRole {
     /**
      * Unique identifier of the role record.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_roles.id.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_roles.id.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Organization that owns and scopes this role definition.
      *
-     * @x-autobe-database-schema-property organization
-     * @x-autobe-specification Join hrm_time_tracking_roles.hrm_time_tracking_organization_id to hrm_time_tracking_organizations.id and project the related organization as IHrmTimeTrackingOrganization.ISummary.
+         * @x-autobe-database-schema-property organization
+         * @x-autobe-specification Join
+         *   hrm_time_tracking_roles.hrm_time_tracking_organization_id to
+         *   hrm_time_tracking_organizations.id and project the related
+         *   organization as IHrmTimeTrackingOrganization.ISummary.
      */
     organization: IHrmTimeTrackingOrganization.ISummary;
 
     /**
      * Display name of the role within the organization.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_roles.name. Preserve the stored role name used within the organization.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_roles.name. Preserve the stored role name used
+         *   within the organization.
      */
     name: string;
 
     /**
      * Whether the role is a platform-provided built-in role instead of an organization-defined custom role.
      *
-     * @x-autobe-database-schema-property built_in
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_roles.built_in.
+         * @x-autobe-database-schema-property built_in
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_roles.built_in.
      */
     built_in: boolean;
 
     /**
      * Timestamp when the role record was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_roles.created_at as an ISO 8601 date-time string.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_roles.created_at as an ISO 8601 date-time string.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when the role record was last updated.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_roles.updated_at as an ISO 8601 date-time string.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_roles.updated_at as an ISO 8601 date-time string.
      */
     updated_at: string & tags.Format<"date-time">;
 
     /**
      * Soft-deletion timestamp of the role, or null when the role is still active.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_roles.deleted_at as an ISO 8601 date-time string when soft deleted, otherwise null for active roles.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_roles.deleted_at as an ISO 8601 date-time string
+         *   when soft deleted, otherwise null for active roles.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };
@@ -214,15 +283,24 @@ export namespace IHrmTimeTrackingRole {
     /**
      * Display name of the custom role to create within the selected organization.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping to hrm_time_tracking_roles.name. Accept the client-supplied display name for the new custom role and validate organization-scoped uniqueness before insert. This field identifies the role within the selected organization's role catalog.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping to
+         *   hrm_time_tracking_roles.name. Accept the client-supplied display
+         *   name for the new custom role and validate organization-scoped
+         *   uniqueness before insert. This field identifies the role within the
+         *   selected organization's role catalog.
      */
     name: string;
 
     /**
      * Permission assignment payloads that specify which access rights should be granted to the new custom role.
      *
-     * @x-autobe-specification Cross-table creation input. This array does not persist into a single column of hrm_time_tracking_roles. Instead, after the parent role row is inserted, each IHrmTimeTrackingRolePermission.ICreate item is processed to create one or more hrm_time_tracking_role_permissions rows linked to the new role id within the same transaction.
+         * @x-autobe-specification Cross-table creation input. This array does
+         *   not persist into a single column of hrm_time_tracking_roles.
+         *   Instead, after the parent role row is inserted, each
+         *   IHrmTimeTrackingRolePermission.ICreate item is processed to create
+         *   one or more hrm_time_tracking_role_permissions rows linked to the
+         *   new role id within the same transaction.
      */
     permissions: IHrmTimeTrackingRolePermission.ICreate[];
   };

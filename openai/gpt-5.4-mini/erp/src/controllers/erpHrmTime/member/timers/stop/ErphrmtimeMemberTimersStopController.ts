@@ -17,9 +17,12 @@ export class ErphrmtimeMemberTimersStopController {
    * The timer must belong to the employee in the current organization context, and the employee must be active. If no timer is running, the request cannot be completed. If the timer was already discarded or the employee is not allowed to use timer actions in the current organization, the operation returns an error. The created timelog can then be used in timesheets and time reporting flows.
    *
    * @param connection
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Load the authenticated member and resolve the selected organization context first. Verify that the employee belongs to the current organization and is active; reject the request if the employee is deactivated or the organization context does not match.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Load the authenticated member and resolve the
+     *   selected organization context first. Verify that the employee belongs
+     *   to the current organization and is active; reject the request if the
+     *   employee is deactivated or the organization context does not match.
    *
    * Query the running timer for the employee with an exclusive lock to prevent duplicate stop attempts. If no active timer exists, return a not-found or conflict-style domain error consistent with the service conventions. Ensure the timer has not been discarded and is still eligible to stop.
    *

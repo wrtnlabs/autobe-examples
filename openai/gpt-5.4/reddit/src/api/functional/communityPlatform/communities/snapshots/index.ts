@@ -25,7 +25,9 @@ import { IPageICommunityPlatformCommunitySnapshot } from "../../../../structures
  * @param props.body Snapshot search criteria and pagination parameters
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Implement this operation as a read-only paginated query over community_platform_community_snapshots scoped to one parent row in community_platform_communities.
+ * @x-autobe-specification Implement this operation as a read-only paginated
+ *   query over community_platform_community_snapshots scoped to one parent row
+ *   in community_platform_communities.
  *
  * First, resolve the parent community by community_platform_communities.slug using the communitySlug path parameter. The lookup must enforce ordinary browseability rules for the community record. If no matching community exists, return a not-found error. If the matching community is logically removed or otherwise unavailable for normal discovery and review according to its lifecycle state or deleted_at value, reject the request according to platform access policy rather than returning snapshot data.
  *
@@ -134,7 +136,8 @@ export namespace index {
  * @param props.snapshotId Target community snapshot ID
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Implement a read-only service that resolves a single community snapshot within the scope of a parent community.
+ * @x-autobe-specification Implement a read-only service that resolves a single
+ *   community snapshot within the scope of a parent community.
  *
  * 1. Resolve the parent community from `community_platform_communities` by `slug = :communitySlug`. Use the unique slug index for lookup. Reject the request as not found when no community exists for the slug. For public-facing retrieval, exclude rows whose `deleted_at` is not null unless the platform's higher-level policy explicitly permits historical inspection of removed communities. Consider the community `status` when determining whether the resource is eligible for public retrieval.
  *

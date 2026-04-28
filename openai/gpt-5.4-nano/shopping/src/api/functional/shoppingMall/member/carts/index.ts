@@ -28,19 +28,19 @@ export * as items from "./items/index";
  * @param props.body No additional fields are required to create a cart container for the authenticated member. The cart will be associated to the caller’s member identity.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Realize steps:
- * 1) Authenticate request as member.
- * 2) Resolve authenticated member's shopping_mall_members.id.
- * 3) Check for an existing cart row for this member that is treated as active (cart.deleted_at must be null).
- *    - If policy is to reuse: return the existing cart with its current cartItems set filtered to deleted_at is null (if cartItems are included in the response DTO).
- *    - If policy is to create new: insert a new shopping_mall_carts row with:
- *      - shopping_mall_member_id = authenticated member id
- *      - warning_inventory_insufficient = false (empty cart)
- *      - created_at/updated_at set by DB or application
- *      - deleted_at = null
- * 4) Wrap persistence in a transaction.
- * 5) Map DB model to response DTO IShoppingMallCart.
- * 6) Ensure consistent behavior when concurrent requests occur (use a transaction isolation strategy and/or unique constraint policy if any; otherwise re-check after insert for reuse).
+ * @x-autobe-specification Realize steps: 1) Authenticate request as member. 2)
+ *   Resolve authenticated member's shopping_mall_members.id. 3) Check for an
+ *   existing cart row for this member that is treated as active
+ *   (cart.deleted_at must be null). - If policy is to reuse: return the
+ *   existing cart with its current cartItems set filtered to deleted_at is null
+ *   (if cartItems are included in the response DTO). - If policy is to create
+ *   new: insert a new shopping_mall_carts row with: - shopping_mall_member_id =
+ *   authenticated member id - warning_inventory_insufficient = false (empty
+ *   cart) - created_at/updated_at set by DB or application - deleted_at = null
+ *   4) Wrap persistence in a transaction. 5) Map DB model to response DTO
+ *   IShoppingMallCart. 6) Ensure consistent behavior when concurrent requests
+ *   occur (use a transaction isolation strategy and/or unique constraint policy
+ *   if any; otherwise re-check after insert for reuse).
  *
  * @path /shoppingMall/member/carts
  * @accessor api.functional.shoppingMall.member.carts.create
@@ -279,8 +279,9 @@ export namespace updateCart {
  * @param props.cartId Target cart identifier (UUID). The cart must belong to the authenticated customer; otherwise the operation is rejected to prevent disclosure of other customers’ cart contents.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification 1) Authentication/authorization gate
- * - Require an authenticated customer (member actor). If the session/member context is missing or invalid, reject the request without revealing cart contents.
+ * @x-autobe-specification 1) Authentication/authorization gate - Require an
+ *   authenticated customer (member actor). If the session/member context is
+ *   missing or invalid, reject the request without revealing cart contents.
  *
  * 2) Load target cart with ownership check
  * - Parse cartId from path as UUID.
@@ -534,16 +535,21 @@ export namespace update {
  * @param props.cartId Target cart identifier to remove. Must be a UUID corresponding to shopping_mall_carts.id.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implementation steps:
- * 1. Authenticate requester as a member.
- * 2. Load shopping_mall_carts by id=cartId, retrieving shopping_mall_member_id and deleted_at.
- * 3. If cart not found: return error (not found) per service conventions.
- * 4. If cart.shopping_mall_member_id != authenticated member id: return authorization/ownership error without leaking existence details.
- * 5. Start a database transaction.
- * 6. Mark cart as removed by setting shopping_mall_carts.deleted_at=now (if it is not already set). Set cart updated_at if the schema updates it.
- * 7. Mark all related shopping_mall_cart_items for this cart as removed by setting shopping_mall_cart_items.deleted_at=now where deleted_at is null. This ensures removed items disappear from active cart item listings.
- * 8. Ensure cart warning state (shopping_mall_carts.warning_inventory_insufficient) is consistent for an empty/removed cart view (implementation choice: set to false or leave as-is, but do not compute new warnings from deleted items).
- * 9. Commit transaction and return no response body.
+ * @x-autobe-specification Implementation steps: 1. Authenticate requester as a
+ *   member. 2. Load shopping_mall_carts by id=cartId, retrieving
+ *   shopping_mall_member_id and deleted_at. 3. If cart not found: return error
+ *   (not found) per service conventions. 4. If cart.shopping_mall_member_id !=
+ *   authenticated member id: return authorization/ownership error without
+ *   leaking existence details. 5. Start a database transaction. 6. Mark cart as
+ *   removed by setting shopping_mall_carts.deleted_at=now (if it is not already
+ *   set). Set cart updated_at if the schema updates it. 7. Mark all related
+ *   shopping_mall_cart_items for this cart as removed by setting
+ *   shopping_mall_cart_items.deleted_at=now where deleted_at is null. This
+ *   ensures removed items disappear from active cart item listings. 8. Ensure
+ *   cart warning state (shopping_mall_carts.warning_inventory_insufficient) is
+ *   consistent for an empty/removed cart view (implementation choice: set to
+ *   false or leave as-is, but do not compute new warnings from deleted items).
+ *   9. Commit transaction and return no response body.
  *
  * Edge cases:
  * - Idempotency: if shopping_mall_carts.deleted_at is already set, still ensure associated cart_items deleted_at are set for any remaining undeleted items, or simply return success; never un-delete.

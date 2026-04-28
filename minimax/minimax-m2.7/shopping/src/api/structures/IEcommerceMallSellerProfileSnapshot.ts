@@ -17,8 +17,9 @@ export namespace IEcommerceMallSellerProfileSnapshot {
      *
      * This UUID uniquely identifies each snapshot in the system. Use this identifier when retrieving specific snapshots or referencing them in related operations.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_mall_seller_profile_snapshots.id. UUID primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_seller_profile_snapshots.id. UUID primary key.
      */
     id: string & tags.Format<"uuid">;
 
@@ -27,8 +28,9 @@ export namespace IEcommerceMallSellerProfileSnapshot {
      *
      * This field preserves the exact shop name as it appeared when the snapshot was captured, allowing historical tracking of name changes over time.
      *
-     * @x-autobe-database-schema-property shop_name
-     * @x-autobe-specification Direct mapping from ecommerce_mall_seller_profile_snapshots.shop_name. String.
+         * @x-autobe-database-schema-property shop_name
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_seller_profile_snapshots.shop_name. String.
      */
     shopName: string;
 
@@ -39,8 +41,10 @@ export namespace IEcommerceMallSellerProfileSnapshot {
      *
      * Use this to track how the shop's business description evolved over time.
      *
-     * @x-autobe-database-schema-property shop_description
-     * @x-autobe-specification Direct mapping from ecommerce_mall_seller_profile_snapshots.shop_description. Nullable string.
+         * @x-autobe-database-schema-property shop_description
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_seller_profile_snapshots.shop_description. Nullable
+         *   string.
      */
     shopDescription: string | null;
 
@@ -51,8 +55,9 @@ export namespace IEcommerceMallSellerProfileSnapshot {
      *
      * This URL references the logo image as it appeared when the snapshot was captured.
      *
-     * @x-autobe-database-schema-property logo_url
-     * @x-autobe-specification Direct mapping from ecommerce_mall_seller_profile_snapshots.logo_url. Nullable string.
+         * @x-autobe-database-schema-property logo_url
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_seller_profile_snapshots.logo_url. Nullable string.
      */
     logoUrl: string | null;
 
@@ -61,8 +66,10 @@ export namespace IEcommerceMallSellerProfileSnapshot {
      *
      * This timestamp indicates when the snapshot was automatically created, either during a profile edit or when an order was placed. Use this to establish chronological order of profile changes.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_seller_profile_snapshots.created_at. DateTime stored as ISO 8601 string.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_seller_profile_snapshots.created_at. DateTime stored
+         *   as ISO 8601 string.
      */
     createdAt: string & tags.Format<"date-time">;
   };

@@ -21,9 +21,10 @@ export class RedditcommunityGuestFeedsPopularController {
    *
    * @param connection
    * @param body Filter and sort criteria for the popular feed including sort option, time period filter, and pagination parameters.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor guest
-   * @x-autobe-specification Query reddit_community_posts table filtering deleted_at = NULL to exclude soft-deleted posts.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor guest
+     * @x-autobe-specification Query reddit_community_posts table filtering
+     *   deleted_at = NULL to exclude soft-deleted posts.
    *
    * Apply sorting:
    * - Default: hot sort - calculate based on vote_score and created_at (recent posts with many upvotes ranked higher)

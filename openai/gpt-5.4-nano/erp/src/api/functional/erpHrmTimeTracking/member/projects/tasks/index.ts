@@ -319,7 +319,8 @@ export namespace index {
  * @param props.taskId Target task identifier within the specified project.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implement a GET detail lookup that is strictly scoped by the provided `projectId` and `taskId`.
+ * @x-autobe-specification Implement a GET detail lookup that is strictly scoped
+ *   by the provided `projectId` and `taskId`.
  *
  * 1) Parse `projectId` and `taskId` from path parameters.
  * 2) Determine the caller’s selected organization context from the authenticated session/middleware (do not accept organizationId from the client).

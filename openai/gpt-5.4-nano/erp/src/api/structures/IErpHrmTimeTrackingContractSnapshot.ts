@@ -8,112 +8,137 @@ export type IErpHrmTimeTrackingContractSnapshot = {
   /**
    * Unique identifier of the contract snapshot record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_contract_snapshots.id. Serialized as a string UUID in API responses.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_tracking_contract_snapshots.id. Serialized as a string
+     *   UUID in API responses.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Identifier of the employment contract this snapshot was taken from.
    *
-   * @x-autobe-database-schema-property erp_hrm_time_tracking_contract_id
-   * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_contract_snapshots.erp_hrm_time_tracking_contract_id. Serialized as a string UUID.
+     * @x-autobe-database-schema-property erp_hrm_time_tracking_contract_id
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_tracking_contract_snapshots.erp_hrm_time_tracking_contract_id.
+     *   Serialized as a string UUID.
    */
   erp_hrm_time_tracking_contract_id: string & tags.Format<"uuid">;
 
   /**
    * Identifier of the employee associated with this snapshot (preserved for historical reads).
    *
-   * @x-autobe-database-schema-property employee_id
-   * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_contract_snapshots.employee_id. Serialized as a string UUID.
+     * @x-autobe-database-schema-property employee_id
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_tracking_contract_snapshots.employee_id. Serialized as a
+     *   string UUID.
    */
   employee_id: string & tags.Format<"uuid">;
 
   /**
    * Identifier of the tenant organization that owns this snapshot.
    *
-   * @x-autobe-database-schema-property organization_id
-   * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_contract_snapshots.organization_id. Serialized as a string UUID. The endpoint/service layer must ensure this matches the caller’s selected organization context.
+     * @x-autobe-database-schema-property organization_id
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_tracking_contract_snapshots.organization_id. Serialized as
+     *   a string UUID. The endpoint/service layer must ensure this matches the
+     *   caller’s selected organization context.
    */
   organization_id: string & tags.Format<"uuid">;
 
   /**
    * Business code/reference of the contract captured at the snapshot time.
    *
-   * @x-autobe-database-schema-property contract_code
-   * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_contract_snapshots.contract_code.
+     * @x-autobe-database-schema-property contract_code
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_tracking_contract_snapshots.contract_code.
    */
   contract_code: string;
 
   /**
    * Contract start date/time captured at the snapshot time.
    *
-   * @x-autobe-database-schema-property start_date
-   * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_contract_snapshots.start_date. Serialized as ISO-8601 date-time string.
+     * @x-autobe-database-schema-property start_date
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_tracking_contract_snapshots.start_date. Serialized as
+     *   ISO-8601 date-time string.
    */
   start_date: string & tags.Format<"date-time">;
 
   /**
    * Optional contract end date/time captured at the snapshot time. Null means the agreement was open-ended at snapshot time.
    *
-   * @x-autobe-database-schema-property end_date
-   * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_contract_snapshots.end_date. If the DB value is null, return null; otherwise serialize to ISO-8601 date-time string.
+     * @x-autobe-database-schema-property end_date
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_tracking_contract_snapshots.end_date. If the DB value is
+     *   null, return null; otherwise serialize to ISO-8601 date-time string.
    */
   end_date: (string & tags.Format<"date-time">) | null;
 
   /**
    * Optional free-form notes captured at the snapshot time.
    *
-   * @x-autobe-database-schema-property notes
-   * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_contract_snapshots.notes. If DB value is null, return null; otherwise return the string notes.
+     * @x-autobe-database-schema-property notes
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_tracking_contract_snapshots.notes. If DB value is null,
+     *   return null; otherwise return the string notes.
    */
   notes: string | null;
 
   /**
    * Hourly pay rate captured at the snapshot time.
    *
-   * @x-autobe-database-schema-property hourly_rate
-   * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_contract_snapshots.hourly_rate.
+     * @x-autobe-database-schema-property hourly_rate
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_tracking_contract_snapshots.hourly_rate.
    */
   hourly_rate: number;
 
   /**
    * Currency code used for monetary values captured in this snapshot.
    *
-   * @x-autobe-database-schema-property currency
-   * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_contract_snapshots.currency.
+     * @x-autobe-database-schema-property currency
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_tracking_contract_snapshots.currency.
    */
   currency: string;
 
   /**
    * Working term/employment arrangement captured at the snapshot time.
    *
-   * @x-autobe-database-schema-property work_term
-   * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_contract_snapshots.work_term.
+     * @x-autobe-database-schema-property work_term
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_tracking_contract_snapshots.work_term.
    */
   work_term: string;
 
   /**
    * Timestamp when the snapshot record was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_contract_snapshots.created_at. Serialized as ISO-8601 date-time string.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_tracking_contract_snapshots.created_at. Serialized as
+     *   ISO-8601 date-time string.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the snapshot record was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_contract_snapshots.updated_at. Serialized as ISO-8601 date-time string.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_tracking_contract_snapshots.updated_at. Serialized as
+     *   ISO-8601 date-time string.
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * Soft-deletion timestamp for the snapshot record. Null means the record is not soft-deleted.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_contract_snapshots.deleted_at. If DB value is null, return null; otherwise serialize to ISO-8601 date-time string.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_tracking_contract_snapshots.deleted_at. If DB value is
+     *   null, return null; otherwise serialize to ISO-8601 date-time string.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -125,64 +150,87 @@ export namespace IErpHrmTimeTrackingContractSnapshot {
     /**
      * Identifier of the contract snapshot record to update.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Map PATCH request `id` directly to erp_hrm_time_tracking_contract_snapshots.id to load the target snapshot. The server uses this to apply the update transaction.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Map PATCH request `id` directly to
+         *   erp_hrm_time_tracking_contract_snapshots.id to load the target
+         *   snapshot. The server uses this to apply the update transaction.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Snapshot contract code (business/external reference) captured at the time of this snapshot.
      *
-     * @x-autobe-database-schema-property contract_code
-     * @x-autobe-specification Direct mapping to erp_hrm_time_tracking_contract_snapshots.contract_code. When present in the request, update the snapshot’s recorded contract code for history; when omitted, keep existing value.
+         * @x-autobe-database-schema-property contract_code
+         * @x-autobe-specification Direct mapping to
+         *   erp_hrm_time_tracking_contract_snapshots.contract_code. When
+         *   present in the request, update the snapshot’s recorded contract
+         *   code for history; when omitted, keep existing value.
      */
     contract_code?: string | undefined;
 
     /**
      * Snapshot contract start date/time.
      *
-     * @x-autobe-database-schema-property start_date
-     * @x-autobe-specification Direct mapping to erp_hrm_time_tracking_contract_snapshots.start_date (ISO date-time string). When present in the request, update the snapshot start date; when omitted, keep existing value.
+         * @x-autobe-database-schema-property start_date
+         * @x-autobe-specification Direct mapping to
+         *   erp_hrm_time_tracking_contract_snapshots.start_date (ISO date-time
+         *   string). When present in the request, update the snapshot start
+         *   date; when omitted, keep existing value.
      */
     start_date?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Snapshot contract end date/time. Use null for an open-ended contract.
      *
-     * @x-autobe-database-schema-property end_date
-     * @x-autobe-specification Direct mapping to erp_hrm_time_tracking_contract_snapshots.end_date. Support null to represent an open-ended agreement. When the field is provided (including null), update the snapshot value; otherwise keep existing.
+         * @x-autobe-database-schema-property end_date
+         * @x-autobe-specification Direct mapping to
+         *   erp_hrm_time_tracking_contract_snapshots.end_date. Support null to
+         *   represent an open-ended agreement. When the field is provided
+         *   (including null), update the snapshot value; otherwise keep
+         *   existing.
      */
     end_date?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * Optional free-form notes captured for this contract snapshot.
      *
-     * @x-autobe-database-schema-property notes
-     * @x-autobe-specification Direct mapping to erp_hrm_time_tracking_contract_snapshots.notes. Support null to clear notes. When provided, update the snapshot notes; otherwise keep existing.
+         * @x-autobe-database-schema-property notes
+         * @x-autobe-specification Direct mapping to
+         *   erp_hrm_time_tracking_contract_snapshots.notes. Support null to
+         *   clear notes. When provided, update the snapshot notes; otherwise
+         *   keep existing.
      */
     notes?: string | null | undefined;
 
     /**
      * Snapshot pay rate per hour.
      *
-     * @x-autobe-database-schema-property hourly_rate
-     * @x-autobe-specification Direct mapping to erp_hrm_time_tracking_contract_snapshots.hourly_rate. When present, update the snapshot hourly rate; otherwise keep existing. Validate that the provided value is a valid number per persistence/domain rules.
+         * @x-autobe-database-schema-property hourly_rate
+         * @x-autobe-specification Direct mapping to
+         *   erp_hrm_time_tracking_contract_snapshots.hourly_rate. When present,
+         *   update the snapshot hourly rate; otherwise keep existing. Validate
+         *   that the provided value is a valid number per persistence/domain
+         *   rules.
      */
     hourly_rate?: number | undefined;
 
     /**
      * Currency code used for the snapshot hourly rate.
      *
-     * @x-autobe-database-schema-property currency
-     * @x-autobe-specification Direct mapping to erp_hrm_time_tracking_contract_snapshots.currency. When present, update the snapshot currency code; otherwise keep existing.
+         * @x-autobe-database-schema-property currency
+         * @x-autobe-specification Direct mapping to
+         *   erp_hrm_time_tracking_contract_snapshots.currency. When present,
+         *   update the snapshot currency code; otherwise keep existing.
      */
     currency?: string | undefined;
 
     /**
      * Working term / employment arrangement for this snapshot (e.g., full-time, part-time).
      *
-     * @x-autobe-database-schema-property work_term
-     * @x-autobe-specification Direct mapping to erp_hrm_time_tracking_contract_snapshots.work_term. When present, update the snapshot work term; otherwise keep existing.
+         * @x-autobe-database-schema-property work_term
+         * @x-autobe-specification Direct mapping to
+         *   erp_hrm_time_tracking_contract_snapshots.work_term. When present,
+         *   update the snapshot work term; otherwise keep existing.
      */
     work_term?: string | undefined;
   };

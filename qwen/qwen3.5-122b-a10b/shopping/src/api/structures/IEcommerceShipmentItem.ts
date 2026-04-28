@@ -30,8 +30,9 @@ export type IEcommerceShipmentItem = {
    *
    * This is the primary key of the junction table, stored as a UUID. It uniquely identifies the relationship between a specific shipment and a specific order item.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_shipment_items.id. UUID primary key uniquely identifying this junction record.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from ecommerce_shipment_items.id.
+     *   UUID primary key uniquely identifying this junction record.
    */
   id: string & tags.Format<"uuid">;
 
@@ -40,8 +41,11 @@ export type IEcommerceShipmentItem = {
    *
    * This is a belongs-to relation referencing the order item that is being shipped in this package. Each order item can only be in one shipment at a time, enforced by the unique constraint on this foreign key.
    *
-   * @x-autobe-database-schema-property orderItem
-   * @x-autobe-specification JOIN from ecommerce_shipment_items.ecommerce_order_item_id to ecommerce_order_items.id. Returns IEcommerceOrderItem.ISummary via belongs-to relation.
+     * @x-autobe-database-schema-property orderItem
+     * @x-autobe-specification JOIN from
+     *   ecommerce_shipment_items.ecommerce_order_item_id to
+     *   ecommerce_order_items.id. Returns IEcommerceOrderItem.ISummary via
+     *   belongs-to relation.
    */
   order_item: IEcommerceOrderItem.ISummary;
 
@@ -50,8 +54,10 @@ export type IEcommerceShipmentItem = {
    *
    * Automatically set when the shipment is created and the order item is added to it. Used for audit trail and debugging purposes. Stored with timezone information.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_shipment_items.created_at. DateTime with timezone automatically set on record creation.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_shipment_items.created_at. DateTime with timezone
+     *   automatically set on record creation.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -60,8 +66,10 @@ export type IEcommerceShipmentItem = {
    *
    * Automatically updated when the record is modified. Used for tracking changes and cache invalidation. Stored with timezone information.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from ecommerce_shipment_items.updated_at. DateTime with timezone automatically updated on record modification.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_shipment_items.updated_at. DateTime with timezone
+     *   automatically updated on record modification.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -70,8 +78,10 @@ export type IEcommerceShipmentItem = {
    *
    * Set when the record is soft-deleted. NULL for active records. Preserves audit trail while marking record as inactive. The unique constraint on order item ensures it cannot be shipped twice.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from ecommerce_shipment_items.deleted_at. Nullable DateTime with timezone for soft-delete functionality.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_shipment_items.deleted_at. Nullable DateTime with timezone
+     *   for soft-delete functionality.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };

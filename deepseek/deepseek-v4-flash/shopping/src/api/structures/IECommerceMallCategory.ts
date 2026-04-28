@@ -14,8 +14,9 @@ export type IECommerceMallCategory = {
    *
    * System-generated when the category is created. Used as a stable reference for API operations such as retrieval, update, and deletion.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from e_commerce_mall_categories.id. Auto-generated UUID primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_categories.id. Auto-generated UUID primary key.
    */
   id: string & tags.Format<"uuid">;
 
@@ -24,8 +25,9 @@ export type IECommerceMallCategory = {
    *
    * The name is the primary identifier visible to customers when browsing categories and must clearly convey what type of products belong here.
    *
-   * @x-autobe-database-schema-property name
-   * @x-autobe-specification Direct mapping from e_commerce_mall_categories.name.
+     * @x-autobe-database-schema-property name
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_categories.name.
    */
   name: string;
 
@@ -34,8 +36,9 @@ export type IECommerceMallCategory = {
    *
    * Helps customers understand the scope of the category and decide whether to browse its contents when navigating the product catalog.
    *
-   * @x-autobe-database-schema-property description
-   * @x-autobe-specification Direct mapping from e_commerce_mall_categories.description.
+     * @x-autobe-database-schema-property description
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_categories.description.
    */
   description: string;
 
@@ -44,16 +47,21 @@ export type IECommerceMallCategory = {
    *
    * When this category is a subcategory (e.g., "Smartphones"), the parent field contains the summary of the top-level parent (e.g., "Electronics"). When this category is itself a top-level category, the field is {@code null}. Only one level of nesting is supported.
    *
-   * @x-autobe-database-schema-property parent
-   * @x-autobe-specification Join via parent_id FK to the same table (self-referencing relation). Resolve the parent category row where e_commerce_mall_categories.id = this.parent_id. Return null for top-level categories where parent_id is null.
+     * @x-autobe-database-schema-property parent
+     * @x-autobe-specification Join via parent_id FK to the same table
+     *   (self-referencing relation). Resolve the parent category row where
+     *   e_commerce_mall_categories.id = this.parent_id. Return null for
+     *   top-level categories where parent_id is null.
    */
   parent: IECommerceMallCategory.ISummary | null;
 
   /**
    * Timestamp when the category was first created by an administrator.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from e_commerce_mall_categories.created_at. Set at creation time by the system.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_categories.created_at. Set at creation time by the
+     *   system.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -62,8 +70,10 @@ export type IECommerceMallCategory = {
    *
    * Includes changes to name and description. The parent relationship is not included here as it is immutable after creation.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from e_commerce_mall_categories.updated_at. Updated automatically to current timestamp on every name or description change.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_categories.updated_at. Updated automatically to current
+     *   timestamp on every name or description change.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -72,8 +82,11 @@ export type IECommerceMallCategory = {
    *
    * When deleted, products assigned to this category become uncategorized. Soft deletion preserves referential integrity with existing product references and snapshot records that may still reference this category ID.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from e_commerce_mall_categories.deleted_at. Null when the category is active. Soft-deleted categories have a non-null timestamp and are excluded from all read endpoints via WHERE deleted_at IS NULL.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_categories.deleted_at. Null when the category is
+     *   active. Soft-deleted categories have a non-null timestamp and are
+     *   excluded from all read endpoints via WHERE deleted_at IS NULL.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -91,8 +104,10 @@ export namespace IECommerceMallCategory {
      *
      * Filters the category list to only include categories whose names contain the provided search term. The matching is case-insensitive and supports partial matches — for example, searching for "elec" will match categories like "Electronics". When omitted or empty, no name-based filtering is applied.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Execute a case-insensitive partial match (LIKE) query on the name column of e_commerce_mall_categories. Empty or absent search means no name filter is applied.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Execute a case-insensitive partial match
+         *   (LIKE) query on the name column of e_commerce_mall_categories.
+         *   Empty or absent search means no name filter is applied.
      */
     search?: string | undefined;
 
@@ -101,8 +116,12 @@ export namespace IECommerceMallCategory {
      *
      * Provide a UUID value to retrieve only the subcategories belonging to a specific parent category. Provide null to retrieve only top-level categories (categories without a parent). When this parameter is absent from the request, no parent-based filtering is applied and categories at all hierarchy levels are returned.
      *
-     * @x-autobe-database-schema-property parent_id
-     * @x-autobe-specification Direct mapping to e_commerce_mall_categories.parent_id column. Exact match filter: provide a UUID to filter subcategories of that parent, provide null to retrieve only top-level categories (parent_id IS NULL), omit to return all categories regardless of parent relationship.
+         * @x-autobe-database-schema-property parent_id
+         * @x-autobe-specification Direct mapping to
+         *   e_commerce_mall_categories.parent_id column. Exact match filter:
+         *   provide a UUID to filter subcategories of that parent, provide null
+         *   to retrieve only top-level categories (parent_id IS NULL), omit to
+         *   return all categories regardless of parent relationship.
      */
     parent_id?: (string & tags.Format<"uuid">) | null | undefined;
 
@@ -111,7 +130,11 @@ export namespace IECommerceMallCategory {
      *
      * By default, only active (non-deleted) categories are returned. This filter is primarily intended for administrators who need to view or manage the full category list including deleted entries. Regular customers and sellers should not use this filter.
      *
-     * @x-autobe-specification Query flag controlling soft-delete visibility. When true, the deleted_at IS NULL filter is removed from the query, returning both active and soft-deleted categories. When false or absent, only active categories (deleted_at IS NULL) are returned. This flag is intended for administrator use only.
+         * @x-autobe-specification Query flag controlling soft-delete
+         *   visibility. When true, the deleted_at IS NULL filter is removed
+         *   from the query, returning both active and soft-deleted categories.
+         *   When false or absent, only active categories (deleted_at IS NULL)
+         *   are returned. This flag is intended for administrator use only.
      */
     include_deleted?: boolean | undefined;
 
@@ -120,7 +143,9 @@ export namespace IECommerceMallCategory {
      *
      * Indicates which page of the result set to retrieve. Each page contains up to the number of records specified by the limit parameter. Defaults to the first page when not provided.
      *
-     * @x-autobe-specification Pagination parameter: 1-indexed page number for paginated results. Computed offset is (page - 1) * limit. Defaults to 1 when absent.
+         * @x-autobe-specification Pagination parameter: 1-indexed page number
+         *   for paginated results. Computed offset is (page - 1) * limit.
+         *   Defaults to 1 when absent.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -129,7 +154,9 @@ export namespace IECommerceMallCategory {
      *
      * Controls the page size for paginated browsing. The value must be between 1 and 100. When not provided, a system-configured default page size is used.
      *
-     * @x-autobe-specification Pagination parameter: maximum number of records to return per page. Defaults to a system-configured value. Maximum allowed value is 100 to prevent excessive data retrieval.
+         * @x-autobe-specification Pagination parameter: maximum number of
+         *   records to return per page. Defaults to a system-configured value.
+         *   Maximum allowed value is 100 to prevent excessive data retrieval.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -147,8 +174,10 @@ export namespace IECommerceMallCategory {
      *
      * The name is the primary identifier visible to customers when browsing categories and must clearly convey what type of products belong here. This field is optional — if omitted, the existing name is preserved.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from e_commerce_mall_categories.name. Optional field — only updated if provided in the request body.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_categories.name. Optional field — only updated if
+         *   provided in the request body.
      */
     name?: string | undefined;
 
@@ -157,8 +186,10 @@ export namespace IECommerceMallCategory {
      *
      * Helps customers understand the scope of the category when browsing the product catalog. This field is optional — if omitted, the existing description is preserved.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from e_commerce_mall_categories.description. Optional field — only updated if provided in the request body.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_categories.description. Optional field — only
+         *   updated if provided in the request body.
      */
     description?: string | undefined;
   };
@@ -172,21 +203,21 @@ export namespace IECommerceMallCategory {
     /**
      * Short descriptive label identifying the category (e.g., "Electronics", "Clothing"). The name is the primary identifier visible to customers when browsing categories.
      *
-     * @x-autobe-database-schema-property name
+         * @x-autobe-database-schema-property name
      */
     name: string & tags.MinLength<1>;
 
     /**
      * Textual explanation of what types of products belong in this category. Helps customers understand the scope of the category.
      *
-     * @x-autobe-database-schema-property description
+         * @x-autobe-database-schema-property description
      */
     description: string & tags.MinLength<1>;
 
     /**
      * Optional UUID of the parent top-level category. If provided, the referenced category must be a top-level category (where parent_id is null) and not marked as deleted. Creates a subcategory under the specified parent.
      *
-     * @x-autobe-database-schema-property parent_id
+         * @x-autobe-database-schema-property parent_id
      */
     parent_id?: (string & tags.Format<"uuid">) | null | undefined;
   };
@@ -204,8 +235,10 @@ export namespace IECommerceMallCategory {
      *
      * Assigned automatically by the system when the category is created by an administrator. Used as the primary key for all category-related operations including retrieval, updates, and product assignment.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from e_commerce_mall_categories.id. UUID primary key, auto-generated by the database.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_categories.id. UUID primary key, auto-generated by
+         *   the database.
      */
     id: string & tags.Format<"uuid">;
 
@@ -214,8 +247,9 @@ export namespace IECommerceMallCategory {
      *
      * A short descriptive label such as "Electronics" or "Clothing" that identifies the category for customers browsing the product catalog. Must clearly convey what types of products belong here.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from e_commerce_mall_categories.name.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_categories.name.
      */
     name: string;
 
@@ -224,8 +258,9 @@ export namespace IECommerceMallCategory {
      *
      * Helps customers understand what types of products belong in this category when navigating the catalog hierarchy.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from e_commerce_mall_categories.description.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_categories.description.
      */
     description: string;
 
@@ -234,8 +269,12 @@ export namespace IECommerceMallCategory {
      *
      * When non-null, this category is a subcategory belonging to the referenced parent (e.g., "Smartphones" under "Electronics"). When null, this category is a top-level category. Only one level of nesting is supported — subcategories cannot have further subcategories.
      *
-     * @x-autobe-database-schema-property parent
-     * @x-autobe-specification Self-join on e_commerce_mall_categories.parent_id referencing the same table's id. Null for top-level categories. Only one level of nesting is supported — a subcategory cannot itself be a parent to further subcategories.
+         * @x-autobe-database-schema-property parent
+         * @x-autobe-specification Self-join on
+         *   e_commerce_mall_categories.parent_id referencing the same table's
+         *   id. Null for top-level categories. Only one level of nesting is
+         *   supported — a subcategory cannot itself be a parent to further
+         *   subcategories.
      */
     parent: IECommerceMallCategory.ISummary | null;
 
@@ -244,8 +283,11 @@ export namespace IECommerceMallCategory {
      *
      * Contains the direct subcategories organized under this parent. Empty array for leaf subcategories and for top-level categories that have no children assigned.
      *
-     * @x-autobe-database-schema-property subcategories
-     * @x-autobe-specification Self-join where parent_id = id on e_commerce_mall_categories filtered by deleted_at IS NULL. Empty array for leaf subcategories and for top-level categories with no children.
+         * @x-autobe-database-schema-property subcategories
+         * @x-autobe-specification Self-join where parent_id = id on
+         *   e_commerce_mall_categories filtered by deleted_at IS NULL. Empty
+         *   array for leaf subcategories and for top-level categories with no
+         *   children.
      */
     subcategories: IECommerceMallCategory.ISummary[];
 
@@ -254,7 +296,9 @@ export namespace IECommerceMallCategory {
      *
      * Provides quick context on the quantity of products available within this category for browsing.
      *
-     * @x-autobe-specification Computed via COUNT on e_commerce_mall_products where category_id = this.id AND deleted_at IS NULL. Aggregation query, not a stored column.
+         * @x-autobe-specification Computed via COUNT on
+         *   e_commerce_mall_products where category_id = this.id AND deleted_at
+         *   IS NULL. Aggregation query, not a stored column.
      */
     products_count?:
       | (number & tags.Type<"int32"> & tags.Minimum<0>)
@@ -263,8 +307,9 @@ export namespace IECommerceMallCategory {
     /**
      * The timestamp when the category was first created by an administrator.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from e_commerce_mall_categories.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_categories.created_at.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -273,8 +318,9 @@ export namespace IECommerceMallCategory {
      *
      * Updated whenever name, description, or parent relationship is changed by an administrator.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from e_commerce_mall_categories.updated_at.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_categories.updated_at.
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -283,8 +329,10 @@ export namespace IECommerceMallCategory {
      *
      * When present, the category has been deleted by an administrator. Soft deletion preserves referential integrity with existing product references and snapshot records. Products assigned to a deleted category become uncategorized.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from e_commerce_mall_categories.deleted_at. Null when the category is active. Non-null indicates soft-deletion.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_categories.deleted_at. Null when the category is
+         *   active. Non-null indicates soft-deletion.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };
@@ -300,7 +348,11 @@ export namespace IECommerceMallCategory {
      *
      * Filters the hierarchy to only include categories whose names contain the search term. When a subcategory name matches the search term, its parent top-level category is automatically included in the result to preserve the two-level hierarchy structure. When omitted, all non-deleted categories are returned.
      *
-     * @x-autobe-specification Optional search term. Apply case-insensitive partial matching (LIKE/ILIKE) against the `name` column of e_commerce_mall_categories WHERE deleted_at IS NULL. When a subcategory matches, include its parent top-level category to preserve hierarchy context.
+         * @x-autobe-specification Optional search term. Apply case-insensitive
+         *   partial matching (LIKE/ILIKE) against the `name` column of
+         *   e_commerce_mall_categories WHERE deleted_at IS NULL. When a
+         *   subcategory matches, include its parent top-level category to
+         *   preserve hierarchy context.
      */
     name?: string | undefined;
   };
@@ -320,7 +372,16 @@ export namespace IECommerceMallCategory {
      *
      * When a name-based search filter is applied, this array includes only those top-level categories that either match the filter directly or have subcategories that match — ensuring customers can navigate to matching subcategories with their full hierarchy context preserved.
      *
-     * @x-autobe-specification Computed array: query e_commerce_mall_categories WHERE deleted_at IS NULL AND parent_id IS NULL, ordered by created_at ASC. For each top-level category, query subcategories WHERE parent_id = this.id AND deleted_at IS NULL, ordered by created_at ASC. Each resulting IHierarchyNode contains direct category fields plus nested subcategories array. If a name search filter is provided, filter all categories by case-insensitive partial name match FIRST, then for any matching subcategory, include its parent in the top-level result set regardless of whether the parent itself matches the filter.
+         * @x-autobe-specification Computed array: query
+         *   e_commerce_mall_categories WHERE deleted_at IS NULL AND parent_id
+         *   IS NULL, ordered by created_at ASC. For each top-level category,
+         *   query subcategories WHERE parent_id = this.id AND deleted_at IS
+         *   NULL, ordered by created_at ASC. Each resulting IHierarchyNode
+         *   contains direct category fields plus nested subcategories array. If
+         *   a name search filter is provided, filter all categories by
+         *   case-insensitive partial name match FIRST, then for any matching
+         *   subcategory, include its parent in the top-level result set
+         *   regardless of whether the parent itself matches the filter.
      */
     topLevelCategories: IECommerceMallCategory.IHierarchyNode[];
   };
@@ -338,8 +399,10 @@ export namespace IECommerceMallCategory {
      *
      * Assigned automatically by the system when the category is created by an administrator. Used as the primary key for all category-related operations including retrieval, updates, and product assignment.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from e_commerce_mall_categories.id. UUID primary key, auto-generated by the database.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_categories.id. UUID primary key, auto-generated by
+         *   the database.
      */
     id: string & tags.Format<"uuid">;
 
@@ -348,8 +411,9 @@ export namespace IECommerceMallCategory {
      *
      * A short descriptive label such as 'Electronics' or 'Clothing' that identifies the category for customers browsing the product catalog. Must clearly convey what types of products belong here.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from e_commerce_mall_categories.name.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_categories.name.
      */
     name: string;
 
@@ -358,8 +422,9 @@ export namespace IECommerceMallCategory {
      *
      * Helps customers understand what types of products belong in this category when navigating the catalog hierarchy.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from e_commerce_mall_categories.description.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_categories.description.
      */
     description: string;
 
@@ -368,8 +433,13 @@ export namespace IECommerceMallCategory {
      *
      * When non-null, this category is a subcategory belonging to the referenced parent (e.g., 'Smartphones' under 'Electronics'). When null, this category is a top-level category. Only one level of nesting is supported — subcategories cannot have further subcategories.
      *
-     * @x-autobe-database-schema-property parent
-     * @x-autobe-specification Self-join on e_commerce_mall_categories.parent_id referencing the same table's id. Null for top-level categories where parent_id IS NULL. Only one level of nesting is supported — a subcategory cannot itself be a parent to further subcategories. Resolved as IECommerceMallCategory.ISummary.
+         * @x-autobe-database-schema-property parent
+         * @x-autobe-specification Self-join on
+         *   e_commerce_mall_categories.parent_id referencing the same table's
+         *   id. Null for top-level categories where parent_id IS NULL. Only one
+         *   level of nesting is supported — a subcategory cannot itself be a
+         *   parent to further subcategories. Resolved as
+         *   IECommerceMallCategory.ISummary.
      */
     parent: IECommerceMallCategory.ISummary | null;
 
@@ -378,8 +448,12 @@ export namespace IECommerceMallCategory {
      *
      * Contains the direct subcategories organized under this parent, each represented as a full IHierarchyNode to support recursive tree rendering. Empty array for leaf subcategories and for top-level categories that have no children assigned.
      *
-     * @x-autobe-database-schema-property subcategories
-     * @x-autobe-specification Self-join where parent_id = this.id on e_commerce_mall_categories filtered by deleted_at IS NULL. Each child mapped recursively as IECommerceMallCategory.IHierarchyNode. Empty array for leaf subcategories and for top-level categories with no children.
+         * @x-autobe-database-schema-property subcategories
+         * @x-autobe-specification Self-join where parent_id = this.id on
+         *   e_commerce_mall_categories filtered by deleted_at IS NULL. Each
+         *   child mapped recursively as IECommerceMallCategory.IHierarchyNode.
+         *   Empty array for leaf subcategories and for top-level categories
+         *   with no children.
      */
     subcategories: IECommerceMallCategory.IHierarchyNode[];
 
@@ -388,15 +462,18 @@ export namespace IECommerceMallCategory {
      *
      * Provides quick context on the quantity of products available within this category for browsing. Computed dynamically rather than stored.
      *
-     * @x-autobe-specification Computed via COUNT on e_commerce_mall_products where category_id = this.id AND deleted_at IS NULL. Aggregation query, not a stored column.
+         * @x-autobe-specification Computed via COUNT on
+         *   e_commerce_mall_products where category_id = this.id AND deleted_at
+         *   IS NULL. Aggregation query, not a stored column.
      */
     products_count: number & tags.Type<"int32"> & tags.Minimum<0>;
 
     /**
      * The timestamp when the category was first created by an administrator.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from e_commerce_mall_categories.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_categories.created_at.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -405,8 +482,9 @@ export namespace IECommerceMallCategory {
      *
      * Updated whenever name, description, or parent relationship is changed by an administrator.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from e_commerce_mall_categories.updated_at.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_categories.updated_at.
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -415,8 +493,10 @@ export namespace IECommerceMallCategory {
      *
      * When present, the category has been deleted by an administrator. Soft deletion preserves referential integrity with existing product references and snapshot records. Products assigned to a deleted category become uncategorized.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from e_commerce_mall_categories.deleted_at. Null when the category is active. Non-null indicates soft-deletion by an administrator.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_categories.deleted_at. Null when the category is
+         *   active. Non-null indicates soft-deletion by an administrator.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };

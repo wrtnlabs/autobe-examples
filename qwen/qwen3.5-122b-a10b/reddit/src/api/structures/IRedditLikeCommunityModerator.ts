@@ -23,8 +23,9 @@ export type IRedditLikeCommunityModerator = {
    *
    * This is the primary key that uniquely identifies this specific moderator assignment in the system.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from reddit_like_community_moderators.id. UUID primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_community_moderators.id. UUID primary key.
    */
   id: string & tags.Format<"uuid">;
 
@@ -33,8 +34,10 @@ export type IRedditLikeCommunityModerator = {
    *
    * This relation provides summary information about the community, including its identifier, name, and owner. The moderator assignment grants the member authority to manage content within this specific community.
    *
-   * @x-autobe-database-schema-property community
-   * @x-autobe-specification Join from reddit_like_community_moderators.reddit_like_community_id to reddit_like_communities.id. Returns IRedditLikeCommunity.ISummary.
+     * @x-autobe-database-schema-property community
+     * @x-autobe-specification Join from
+     *   reddit_like_community_moderators.reddit_like_community_id to
+     *   reddit_like_communities.id. Returns IRedditLikeCommunity.ISummary.
    */
   community: IRedditLikeCommunity.ISummary;
 
@@ -43,8 +46,10 @@ export type IRedditLikeCommunityModerator = {
    *
    * This relation provides summary information about the member, including their identifier, username, and profile details. The member can perform moderation actions such as deleting posts and comments, banning users, and reviewing reports within this community.
    *
-   * @x-autobe-database-schema-property member
-   * @x-autobe-specification Join from reddit_like_community_moderators.reddit_like_member_id to reddit_like_members.id. Returns IRedditLikeMember.ISummary.
+     * @x-autobe-database-schema-property member
+     * @x-autobe-specification Join from
+     *   reddit_like_community_moderators.reddit_like_member_id to
+     *   reddit_like_members.id. Returns IRedditLikeMember.ISummary.
    */
   member: IRedditLikeMember.ISummary;
 
@@ -53,8 +58,10 @@ export type IRedditLikeCommunityModerator = {
    *
    * Records the exact moment when the member was appointed as moderator in this community.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from reddit_like_community_moderators.created_at. Auto-generated on record creation.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_community_moderators.created_at. Auto-generated on record
+     *   creation.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -63,8 +70,10 @@ export type IRedditLikeCommunityModerator = {
    *
    * Updated whenever the moderator assignment record is modified, such as when soft-deleted.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from reddit_like_community_moderators.updated_at. Auto-updated on record modification.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_community_moderators.updated_at. Auto-updated on record
+     *   modification.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -73,8 +82,10 @@ export type IRedditLikeCommunityModerator = {
    *
    * When present, indicates the moderator privileges have been revoked. The record is retained for audit purposes but should be filtered out from active queries.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from reddit_like_community_moderators.deleted_at. Nullable soft-delete marker.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_community_moderators.deleted_at. Nullable soft-delete
+     *   marker.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -94,7 +105,9 @@ export namespace IRedditLikeCommunityModerator {
      *
      * When provided, only moderators whose usernames contain the search term will be included in the results. This enables clients to implement search-as-you-type functionality for finding specific moderators.
      *
-     * @x-autobe-specification LIKE filter on member username via JOIN with reddit_like_members table. Filters moderators by matching search term against member username.
+         * @x-autobe-specification LIKE filter on member username via JOIN with
+         *   reddit_like_members table. Filters moderators by matching search
+         *   term against member username.
      */
     search?: string | undefined;
 
@@ -103,7 +116,9 @@ export namespace IRedditLikeCommunityModerator {
      *
      * This offset value determines where in the result set to begin returning records. Combined with the limit parameter, it enables clients to navigate through paginated results. When page is provided instead, offset is calculated automatically as (page - 1) * limit.
      *
-     * @x-autobe-specification Pagination offset for skipping records. Default 0. Combined with limit to control page size. Calculated as (page - 1) * limit when page is provided.
+         * @x-autobe-specification Pagination offset for skipping records.
+         *   Default 0. Combined with limit to control page size. Calculated as
+         *   (page - 1) * limit when page is provided.
      */
     offset?: (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
 
@@ -112,7 +127,9 @@ export namespace IRedditLikeCommunityModerator {
      *
      * The server enforces a maximum limit of 100 records per page to prevent excessive data transfer. If a larger limit is requested, it will be capped at 100. The default limit is 20 records per page when not specified.
      *
-     * @x-autobe-specification Maximum number of records to return per page. Default 20, maximum 100. Minimum 1. Controls the page size for pagination.
+         * @x-autobe-specification Maximum number of records to return per page.
+         *   Default 20, maximum 100. Minimum 1. Controls the page size for
+         *   pagination.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -123,7 +140,9 @@ export namespace IRedditLikeCommunityModerator {
      *
      * If omitted, null, or undefined, defaults to page 1 (first page). Requesting a page beyond the available range returns an empty data array with valid pagination metadata reflecting the actual totals. When both page and offset are provided, page takes precedence.
      *
-     * @x-autobe-specification 1-indexed page number to retrieve. Defaults to 1 if not provided or null. Converts to offset internally as (page - 1) * limit.
+         * @x-autobe-specification 1-indexed page number to retrieve. Defaults
+         *   to 1 if not provided or null. Converts to offset internally as
+         *   (page - 1) * limit.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };
@@ -150,8 +169,10 @@ export namespace IRedditLikeCommunityModerator {
      *
      * This UUID serves as the primary key for the moderator assignment, distinguishing each moderator-community pairing. It is auto-generated upon creation and remains immutable throughout the record's lifecycle.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from reddit_like_community_moderators.id. Primary key identifier for the moderator assignment record.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_community_moderators.id. Primary key identifier for the
+         *   moderator assignment record.
      */
     id: string & tags.Format<"uuid">;
 
@@ -162,8 +183,10 @@ export namespace IRedditLikeCommunityModerator {
      *
      * **Access Control**: This information is publicly visible as moderator assignments are part of community governance transparency.
      *
-     * @x-autobe-database-schema-property member
-     * @x-autobe-specification Join via reddit_like_member_id to reddit_like_members.id. Returns IRedditLikeMember.ISummary with public profile information.
+         * @x-autobe-database-schema-property member
+         * @x-autobe-specification Join via reddit_like_member_id to
+         *   reddit_like_members.id. Returns IRedditLikeMember.ISummary with
+         *   public profile information.
      */
     member: IRedditLikeMember.ISummary;
 
@@ -174,8 +197,10 @@ export namespace IRedditLikeCommunityModerator {
      *
      * **Context**: Moderator privileges are scoped to this specific community and do not extend to other communities.
      *
-     * @x-autobe-database-schema-property community
-     * @x-autobe-specification Join via reddit_like_community_id to reddit_like_communities.id. Returns IRedditLikeCommunity.ISummary with community metadata.
+         * @x-autobe-database-schema-property community
+         * @x-autobe-specification Join via reddit_like_community_id to
+         *   reddit_like_communities.id. Returns IRedditLikeCommunity.ISummary
+         *   with community metadata.
      */
     community: IRedditLikeCommunity.ISummary;
 
@@ -186,8 +211,10 @@ export namespace IRedditLikeCommunityModerator {
      *
      * **Usage**: Used to display when a moderator was appointed, providing historical context for community governance.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from reddit_like_community_moderators.created_at. Records when the moderator assignment was created.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_community_moderators.created_at. Records when the
+         *   moderator assignment was created.
      */
     created_at: string & tags.Format<"date-time">;
   };
@@ -215,8 +242,10 @@ export namespace IRedditLikeCommunityModerator {
      *
      * **Format**: UUID string (e.g., "550e8400-e29b-41d4-a716-446655440000")
      *
-     * @x-autobe-database-schema-property reddit_like_member_id
-     * @x-autobe-specification Direct mapping from reddit_like_community_moderators.reddit_like_member_id. UUID format. Identifies the member to be appointed as moderator.
+         * @x-autobe-database-schema-property reddit_like_member_id
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_community_moderators.reddit_like_member_id. UUID
+         *   format. Identifies the member to be appointed as moderator.
      */
     member_id: string & tags.Format<"uuid">;
   };

@@ -10,64 +10,79 @@ export type IErpHrmAdminAuditLog = {
   /**
    * Unique identifier of the audit log entry.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from erp_hrm_admin_audit_logs.id. UUID primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from erp_hrm_admin_audit_logs.id.
+     *   UUID primary key.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Type of administrative action performed (e.g., employee_invited, contract_created, project_archived, timesheet_approved).
    *
-   * @x-autobe-database-schema-property action_type
-   * @x-autobe-specification Direct mapping from erp_hrm_admin_audit_logs.action_type. Examples: employee_invited, contract_created, project_archived, timesheet_approved.
+     * @x-autobe-database-schema-property action_type
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_admin_audit_logs.action_type. Examples: employee_invited,
+     *   contract_created, project_archived, timesheet_approved.
    */
   action_type: string;
 
   /**
    * Type of entity that was affected by this action (e.g., employee, contract, project, task, timesheet, role).
    *
-   * @x-autobe-database-schema-property target_entity
-   * @x-autobe-specification Direct mapping from erp_hrm_admin_audit_logs.target_entity. Examples: employee, contract, project, task, timesheet, role.
+     * @x-autobe-database-schema-property target_entity
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_admin_audit_logs.target_entity. Examples: employee, contract,
+     *   project, task, timesheet, role.
    */
   target_entity: string;
 
   /**
    * UUID of the entity that was affected by this action.
    *
-   * @x-autobe-database-schema-property target_id
-   * @x-autobe-specification Direct mapping from erp_hrm_admin_audit_logs.target_id. UUID of the affected entity.
+     * @x-autobe-database-schema-property target_id
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_admin_audit_logs.target_id. UUID of the affected entity.
    */
   target_id: string & tags.Format<"uuid">;
 
   /**
    * JSON-formatted additional context about the action including old/new values, reason for rejection, or other supplementary notes.
    *
-   * @x-autobe-specification Direct mapping from erp_hrm_admin_audit_logs.metadata (JSON string column). Contains additional context such as old/new values, rejection reason, or other relevant details. Nullable.
-   * @x-autobe-database-schema-property metadata
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_admin_audit_logs.metadata (JSON string column). Contains
+     *   additional context such as old/new values, rejection reason, or other
+     *   relevant details. Nullable.
+     * @x-autobe-database-schema-property metadata
    */
   metadata?: string | null | undefined;
 
   /**
    * IP address from which the admin performed this action for security auditing.
    *
-   * @x-autobe-database-schema-property ip_address
-   * @x-autobe-specification Direct mapping from erp_hrm_admin_audit_logs.ip_address. Nullable. Captured for security auditing purposes.
+     * @x-autobe-database-schema-property ip_address
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_admin_audit_logs.ip_address. Nullable. Captured for security
+     *   auditing purposes.
    */
   ip_address?: string | null | undefined;
 
   /**
    * Timestamp when this action was performed. Audit records are immutable.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from erp_hrm_admin_audit_logs.created_at. Timestamp when the action was performed.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_admin_audit_logs.created_at. Timestamp when the action was
+     *   performed.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Reference to the administrator who performed this action.
    *
-   * @x-autobe-database-schema-property admin
-   * @x-autobe-specification BELONGS-TO relation: Join erp_hrm_admin_audit_logs.erp_hrm_admin_id to erp_hrm_admins.id. Returns IErpHrmAdmin.ISummary.
+     * @x-autobe-database-schema-property admin
+     * @x-autobe-specification BELONGS-TO relation: Join
+     *   erp_hrm_admin_audit_logs.erp_hrm_admin_id to erp_hrm_admins.id. Returns
+     *   IErpHrmAdmin.ISummary.
    */
   admin: IErpHrmAdmin.ISummary;
 };
@@ -79,64 +94,75 @@ export namespace IErpHrmAdminAuditLog {
     /**
      * Unique identifier for this audit log entry.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from erp_hrm_admin_audit_logs.id (UUID primary key).
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_admin_audit_logs.id (UUID primary key).
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Type of administrative action performed (e.g., employee_invited, contract_created, project_archived, timesheet_approved).
      *
-     * @x-autobe-database-schema-property action_type
-     * @x-autobe-specification Direct mapping from erp_hrm_admin_audit_logs.action_type (String).
+         * @x-autobe-database-schema-property action_type
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_admin_audit_logs.action_type (String).
      */
     actionType: string;
 
     /**
      * Type of entity affected by this action (e.g., employee, contract, project, task, timesheet, role).
      *
-     * @x-autobe-database-schema-property target_entity
-     * @x-autobe-specification Direct mapping from erp_hrm_admin_audit_logs.target_entity (String).
+         * @x-autobe-database-schema-property target_entity
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_admin_audit_logs.target_entity (String).
      */
     targetEntity: string;
 
     /**
      * Unique identifier of the entity that was affected by this action.
      *
-     * @x-autobe-database-schema-property target_id
-     * @x-autobe-specification Direct mapping from erp_hrm_admin_audit_logs.target_id (UUID).
+         * @x-autobe-database-schema-property target_id
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_admin_audit_logs.target_id (UUID).
      */
     targetId: string & tags.Format<"uuid">;
 
     /**
      * Optional JSON metadata providing additional context about the action.
      *
-     * @x-autobe-database-schema-property metadata
-     * @x-autobe-specification Direct mapping from erp_hrm_admin_audit_logs.metadata (String, nullable). JSON-formatted additional context such as old/new values, rejection reason, or other relevant details.
+         * @x-autobe-database-schema-property metadata
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_admin_audit_logs.metadata (String, nullable).
+         *   JSON-formatted additional context such as old/new values, rejection
+         *   reason, or other relevant details.
      */
     metadata?: string | null | undefined;
 
     /**
      * IP address from which the admin performed this action, used for security auditing.
      *
-     * @x-autobe-database-schema-property ip_address
-     * @x-autobe-specification Direct mapping from erp_hrm_admin_audit_logs.ip_address (String, nullable).
+         * @x-autobe-database-schema-property ip_address
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_admin_audit_logs.ip_address (String, nullable).
      */
     ipAddress?: string | null | undefined;
 
     /**
      * Timestamp when this action was performed. Audit records are immutable.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from erp_hrm_admin_audit_logs.created_at (DateTime/Timestamptz).
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_admin_audit_logs.created_at (DateTime/Timestamptz).
      */
     createdAt: string & tags.Format<"date-time">;
 
     /**
      * The administrator who performed this action.
      *
-     * @x-autobe-database-schema-property admin
-     * @x-autobe-specification BELONGS-TO relation: Join erp_hrm_admin_audit_logs.erp_hrm_admin_id to erp_hrm_admins.id. Returns IErpHrmAdmin.ISummary with essential admin display info.
+         * @x-autobe-database-schema-property admin
+         * @x-autobe-specification BELONGS-TO relation: Join
+         *   erp_hrm_admin_audit_logs.erp_hrm_admin_id to erp_hrm_admins.id.
+         *   Returns IErpHrmAdmin.ISummary with essential admin display info.
      */
     admin: IErpHrmAdmin.ISummary;
   };
@@ -148,42 +174,58 @@ export namespace IErpHrmAdminAuditLog {
     /**
      * Filter by the type of administrative action performed. Examples: employee_invited, employee_deactivated, contract_created, project_archived, timesheet_approved.
      *
-     * @x-autobe-specification Maps to erp_hrm_admin_audit_logs.action_type column for exact match filtering. The action_type column stores strings like 'employee_invited', 'employee_deactivated', 'contract_created', 'project_archived', etc.
+         * @x-autobe-specification Maps to erp_hrm_admin_audit_logs.action_type
+         *   column for exact match filtering. The action_type column stores
+         *   strings like 'employee_invited', 'employee_deactivated',
+         *   'contract_created', 'project_archived', etc.
      */
     actionType?: string | undefined;
 
     /**
      * Filter by the unique identifier of the administrator who performed the action.
      *
-     * @x-autobe-specification Maps to erp_hrm_admin_audit_logs.erp_hrm_admin_id column for exact match filtering. Filters audit logs to show only actions performed by a specific admin.
+         * @x-autobe-specification Maps to
+         *   erp_hrm_admin_audit_logs.erp_hrm_admin_id column for exact match
+         *   filtering. Filters audit logs to show only actions performed by a
+         *   specific admin.
      */
     adminId?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Filter audit logs created on or after this date and time (inclusive). Use ISO 8601 format.
      *
-     * @x-autobe-specification Start of date range filter applied to erp_hrm_admin_audit_logs.created_at column. Only audit logs with created_at >= this value are included. Use ISO 8601 date-time format.
+         * @x-autobe-specification Start of date range filter applied to
+         *   erp_hrm_admin_audit_logs.created_at column. Only audit logs with
+         *   created_at >= this value are included. Use ISO 8601 date-time
+         *   format.
      */
     createdAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Filter audit logs created on or before this date and time (inclusive). Use ISO 8601 format.
      *
-     * @x-autobe-specification End of date range filter applied to erp_hrm_admin_audit_logs.created_at column. Only audit logs with created_at <= this value are included. Use ISO 8601 date-time format.
+         * @x-autobe-specification End of date range filter applied to
+         *   erp_hrm_admin_audit_logs.created_at column. Only audit logs with
+         *   created_at <= this value are included. Use ISO 8601 date-time
+         *   format.
      */
     createdAtTo?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Filter by the IP address from which the admin performed the action.
      *
-     * @x-autobe-specification Maps to erp_hrm_admin_audit_logs.ip_address column for exact match filtering. Filters audit logs to show only actions performed from a specific IP address.
+         * @x-autobe-specification Maps to erp_hrm_admin_audit_logs.ip_address
+         *   column for exact match filtering. Filters audit logs to show only
+         *   actions performed from a specific IP address.
      */
     ipAddress?: string | undefined;
 
     /**
      * Maximum number of audit log entries to return per page. Values between 1 and 100.
      *
-     * @x-autobe-specification Maximum number of records to return per page. Controls LIMIT clause in query. Must be between 1 and 100. Default is typically 20 if not specified.
+         * @x-autobe-specification Maximum number of records to return per page.
+         *   Controls LIMIT clause in query. Must be between 1 and 100. Default
+         *   is typically 20 if not specified.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -192,21 +234,28 @@ export namespace IErpHrmAdminAuditLog {
     /**
      * Page number to retrieve. Page 1 is the first page.
      *
-     * @x-autobe-specification Page number for pagination. Controls OFFSET clause in query. Calculated as OFFSET = (page - 1) * limit. Minimum value is 1.
+         * @x-autobe-specification Page number for pagination. Controls OFFSET
+         *   clause in query. Calculated as OFFSET = (page - 1) * limit. Minimum
+         *   value is 1.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Filter by the type of entity affected by the action. Examples: employee, contract, project, task, timesheet, role.
      *
-     * @x-autobe-specification Maps to erp_hrm_admin_audit_logs.target_entity column for exact match filtering. Target entity types include: employee, contract, project, task, timesheet, role.
+         * @x-autobe-specification Maps to
+         *   erp_hrm_admin_audit_logs.target_entity column for exact match
+         *   filtering. Target entity types include: employee, contract,
+         *   project, task, timesheet, role.
      */
     targetEntity?: string | undefined;
 
     /**
      * Filter by the unique identifier of the entity that was affected by the action.
      *
-     * @x-autobe-specification Maps to erp_hrm_admin_audit_logs.target_id column for exact match filtering. Filters audit logs to show only actions performed on a specific entity by its UUID.
+         * @x-autobe-specification Maps to erp_hrm_admin_audit_logs.target_id
+         *   column for exact match filtering. Filters audit logs to show only
+         *   actions performed on a specific entity by its UUID.
      */
     targetId?: (string & tags.Format<"uuid">) | undefined;
   };

@@ -43,9 +43,9 @@ export class CommunityplatformMemberReportsController {
    *
    * @param connection
    * @param body Creation payload for a moderation report, including the community context, the reported target discriminator (post/comment), the reported target identifier, and a mandatory reason for why the content should be reviewed.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation steps (service layer):
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation steps (service layer):
    *
    * 1) Authenticate caller as member; obtain `memberId`.
    * 2) Validate request body fields are non-empty as required by DTO/schema:
@@ -106,9 +106,9 @@ export class CommunityplatformMemberReportsController {
    *
    * @param connection
    * @param body Moderation report search and pagination criteria scoped to a community the caller is allowed to moderate.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation steps for Realize Agent:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation steps for Realize Agent:
    *
    * 1) Parse request body (ICommunityPlatformReport.IRequest) for:
    * - communityId (or equivalent scope input)
@@ -173,27 +173,39 @@ export class CommunityplatformMemberReportsController {
    *
    * @param connection
    * @param reportId Unique identifier of the moderation report to retrieve.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1) Parse `reportId` from path as UUID.
-   * 2) Load the report row from `community_platform_reports` where `id = reportId` and enforce visibility rules:
-   *    - If the caller is a moderator: verify the caller’s moderator community matches `community_platform_reports.community_id`.
-   *    - If the caller is a community owner: treat as authorized for that community.
-   *    - If the caller is not authorized: return an access-denied error that does not confirm existence.
-   * 3) Join/attach report target context from `community_platform_report_targets` using `community_platform_report_targets.community_platform_report_id = community_platform_reports.id` (polymorphic target via `target_type` + `target_id`).
-   * 4) Load the latest or most relevant snapshot record(s) for the report from `community_platform_report_snapshots`:
-   *    - Prefer the snapshot with the most recent `captured_at`.
-   *    - Include `snapshot_reason`, `snapshot_status`, and decision linkage if `community_platform_report_resolution_id` is present.
-   * 5) If a resolution exists via `community_platform_report_resolutions`, load it (joined by `community_platform_report_resolution_id`) to provide moderation decision details:
-   *    - resolution decision (`resolution_decision`), moderator attribution (`moderated_by_user_id`), moderation note (`moderation_note`), and `resolved_at`.
-   * 6) Apply deleted/obsoleted handling:
-   *    - If `community_platform_reports.deleted_at` is set, treat as not found (or denied consistently) to avoid leaking.
-   *    - If snapshot or target context rows are soft-deleted, either omit those parts or treat as not found per product decision; ensure no existence disclosure.
-   * 7) Return a single report detail DTO matching `ICommunityPlatformReport`.
-   * 8) Use a read-only transaction.
-   * 9) Error mapping:
-   *    - Unauthorized: return access denied without revealing whether the report exists.
-   *    - Not found / deleted: return not found or access denied (consistent with the chosen strategy) without disclosing internals.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification 1) Parse `reportId` from path as UUID. 2) Load
+     *   the report row from `community_platform_reports` where `id = reportId`
+     *   and enforce visibility rules: - If the caller is a moderator: verify
+     *   the caller’s moderator community matches
+     *   `community_platform_reports.community_id`. - If the caller is a
+     *   community owner: treat as authorized for that community. - If the
+     *   caller is not authorized: return an access-denied error that does not
+     *   confirm existence. 3) Join/attach report target context from
+     *   `community_platform_report_targets` using
+     *   `community_platform_report_targets.community_platform_report_id =
+     *   community_platform_reports.id` (polymorphic target via `target_type` +
+     *   `target_id`). 4) Load the latest or most relevant snapshot record(s)
+     *   for the report from `community_platform_report_snapshots`: - Prefer the
+     *   snapshot with the most recent `captured_at`. - Include
+     *   `snapshot_reason`, `snapshot_status`, and decision linkage if
+     *   `community_platform_report_resolution_id` is present. 5) If a
+     *   resolution exists via `community_platform_report_resolutions`, load it
+     *   (joined by `community_platform_report_resolution_id`) to provide
+     *   moderation decision details: - resolution decision
+     *   (`resolution_decision`), moderator attribution
+     *   (`moderated_by_user_id`), moderation note (`moderation_note`), and
+     *   `resolved_at`. 6) Apply deleted/obsoleted handling: - If
+     *   `community_platform_reports.deleted_at` is set, treat as not found (or
+     *   denied consistently) to avoid leaking. - If snapshot or target context
+     *   rows are soft-deleted, either omit those parts or treat as not found
+     *   per product decision; ensure no existence disclosure. 7) Return a
+     *   single report detail DTO matching `ICommunityPlatformReport`. 8) Use a
+     *   read-only transaction. 9) Error mapping: - Unauthorized: return access
+     *   denied without revealing whether the report exists. - Not found /
+     *   deleted: return not found or access denied (consistent with the chosen
+     *   strategy) without disclosing internals.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Get(":reportId")
@@ -232,9 +244,9 @@ export class CommunityplatformMemberReportsController {
    * @param connection
    * @param reportId The unique identifier of the report to resolve.
    * @param body Resolution input for the moderator decision to apply to the specified report.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation guidance:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation guidance:
    *
    * 1) Parse inputs:
    * - Read `reportId` from path.
@@ -333,9 +345,11 @@ export class CommunityplatformMemberReportsController {
    *
    * @param connection
    * @param reportId Identifier of the report to be dismissed/removed from the active report list.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement DELETE /reports/{reportId} as a moderation dismissal that removes the report from the active list while preserving the reported content.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implement DELETE /reports/{reportId} as a
+     *   moderation dismissal that removes the report from the active list while
+     *   preserving the reported content.
    *
    * 1) Input handling
    * - Read `reportId` from path.

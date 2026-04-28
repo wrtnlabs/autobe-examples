@@ -13,88 +13,106 @@ export type ICommunityPlatformReport = {
   /**
    * Unique identifier for this moderation report.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from community_platform_reports.id.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_reports.id.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * The community that owns this report and its moderation queue.
    *
-   * @x-autobe-database-schema-property community
-   * @x-autobe-specification Join community_platform_reports.community_id to community_platform_communities.id and expose the related community as a summary object.
+     * @x-autobe-database-schema-property community
+     * @x-autobe-specification Join community_platform_reports.community_id to
+     *   community_platform_communities.id and expose the related community as a
+     *   summary object.
    */
   community: ICommunityPlatformCommunity.ISummary;
 
   /**
    * The member who submitted this report.
    *
-   * @x-autobe-database-schema-property member
-   * @x-autobe-specification Join community_platform_reports.member_id to community_platform_members.id and expose the reporting member as a summary object.
+     * @x-autobe-database-schema-property member
+     * @x-autobe-specification Join community_platform_reports.member_id to
+     *   community_platform_members.id and expose the reporting member as a
+     *   summary object.
    */
   member: ICommunityPlatformMember.ISummary;
 
   /**
    * Type of content that was reported.
    *
-   * @x-autobe-database-schema-property target_type
-   * @x-autobe-specification Direct mapping from community_platform_reports.target_type. Indicates whether the report targets a post or a comment.
+     * @x-autobe-database-schema-property target_type
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_reports.target_type. Indicates whether the report
+     *   targets a post or a comment.
    */
   target_type: string;
 
   /**
    * Identifier of the reported content item.
    *
-   * @x-autobe-database-schema-property target_id
-   * @x-autobe-specification Direct mapping from community_platform_reports.target_id. Combined with target_type to identify the reported post or comment.
+     * @x-autobe-database-schema-property target_id
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_reports.target_id. Combined with target_type to
+     *   identify the reported post or comment.
    */
   target_id: string & tags.Format<"uuid">;
 
   /**
    * Explanation provided by the reporting member.
    *
-   * @x-autobe-database-schema-property reason
-   * @x-autobe-specification Direct mapping from community_platform_reports.reason.
+     * @x-autobe-database-schema-property reason
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_reports.reason.
    */
   reason: string;
 
   /**
    * Current moderation status of the report.
    *
-   * @x-autobe-database-schema-property status
-   * @x-autobe-specification Direct mapping from community_platform_reports.status. Reflects the current moderation state such as pending, approved, or dismissed.
+     * @x-autobe-database-schema-property status
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_reports.status. Reflects the current moderation
+     *   state such as pending, approved, or dismissed.
    */
   status: string;
 
   /**
    * Time when the report was reviewed, or null if it has not been reviewed yet.
    *
-   * @x-autobe-database-schema-property reviewed_at
-   * @x-autobe-specification Direct mapping from community_platform_reports.reviewed_at. Nullable timestamp set when moderation staff reviews the report.
+     * @x-autobe-database-schema-property reviewed_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_reports.reviewed_at. Nullable timestamp set when
+     *   moderation staff reviews the report.
    */
   reviewed_at: (string & tags.Format<"date-time">) | null;
 
   /**
    * Time when the report was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from community_platform_reports.created_at.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_reports.created_at.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Time when the report was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from community_platform_reports.updated_at.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_reports.updated_at.
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * Time when the report was soft deleted, or null if it is still active.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from community_platform_reports.deleted_at. Nullable timestamp used for soft deletion and retention workflows.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_reports.deleted_at. Nullable timestamp used for soft
+     *   deletion and retention workflows.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -106,24 +124,33 @@ export namespace ICommunityPlatformReport {
     /**
      * Type of content being reported, such as post or comment.
      *
-     * @x-autobe-database-schema-property target_type
-     * @x-autobe-specification Direct scalar mapping to community_platform_reports.target_type. The service uses this value to determine whether the report points to a post or a comment before resolving the target record and its community.
+         * @x-autobe-database-schema-property target_type
+         * @x-autobe-specification Direct scalar mapping to
+         *   community_platform_reports.target_type. The service uses this value
+         *   to determine whether the report points to a post or a comment
+         *   before resolving the target record and its community.
      */
     targetType: string;
 
     /**
      * Identifier of the post or comment being reported.
      *
-     * @x-autobe-database-schema-property target_id
-     * @x-autobe-specification Direct scalar mapping to community_platform_reports.target_id. The service uses this UUID to locate the reported post or comment, verify that it exists, and derive the owning community before inserting the report row.
+         * @x-autobe-database-schema-property target_id
+         * @x-autobe-specification Direct scalar mapping to
+         *   community_platform_reports.target_id. The service uses this UUID to
+         *   locate the reported post or comment, verify that it exists, and
+         *   derive the owning community before inserting the report row.
      */
     targetId: string & tags.Format<"uuid">;
 
     /**
      * Text explanation describing why the content is being reported.
      *
-     * @x-autobe-database-schema-property reason
-     * @x-autobe-specification Direct scalar mapping to community_platform_reports.reason. The server stores the user-provided explanation as the moderation case rationale and validates that it is not empty or whitespace only.
+         * @x-autobe-database-schema-property reason
+         * @x-autobe-specification Direct scalar mapping to
+         *   community_platform_reports.reason. The server stores the
+         *   user-provided explanation as the moderation case rationale and
+         *   validates that it is not empty or whitespace only.
      */
     reason: string & tags.MinLength<1>;
   };
@@ -135,88 +162,111 @@ export namespace ICommunityPlatformReport {
     /**
      * Unique identifier of this report.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from community_platform_reports.id. Preserve the UUID value as the report's primary identifier.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_reports.id. Preserve the UUID value as the
+         *   report's primary identifier.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * The community where this report belongs.
      *
-     * @x-autobe-database-schema-property community
-     * @x-autobe-specification Join community_platform_reports.community_id to community_platform_communities.id and expose the related community as ICommunityPlatformCommunity.ISummary.
+         * @x-autobe-database-schema-property community
+         * @x-autobe-specification Join community_platform_reports.community_id
+         *   to community_platform_communities.id and expose the related
+         *   community as ICommunityPlatformCommunity.ISummary.
      */
     community: ICommunityPlatformCommunity.ISummary;
 
     /**
      * The member who submitted this report.
      *
-     * @x-autobe-database-schema-property member
-     * @x-autobe-specification Join community_platform_reports.member_id to community_platform_members.id and expose the reporting member as ICommunityPlatformMember.ISummary.
+         * @x-autobe-database-schema-property member
+         * @x-autobe-specification Join community_platform_reports.member_id to
+         *   community_platform_members.id and expose the reporting member as
+         *   ICommunityPlatformMember.ISummary.
      */
     member: ICommunityPlatformMember.ISummary;
 
     /**
      * Type of content being reported, such as post or comment.
      *
-     * @x-autobe-database-schema-property target_type
-     * @x-autobe-specification Direct mapping from community_platform_reports.target_type. Preserve the stored discriminator value that identifies whether the report targets a post or a comment.
+         * @x-autobe-database-schema-property target_type
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_reports.target_type. Preserve the stored
+         *   discriminator value that identifies whether the report targets a
+         *   post or a comment.
      */
     targetType: string;
 
     /**
      * Identifier of the reported post or comment.
      *
-     * @x-autobe-database-schema-property target_id
-     * @x-autobe-specification Direct mapping from community_platform_reports.target_id. This stores the UUID of the reported post or comment in the content domain.
+         * @x-autobe-database-schema-property target_id
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_reports.target_id. This stores the UUID of the
+         *   reported post or comment in the content domain.
      */
     targetId: string & tags.Format<"uuid">;
 
     /**
      * Reason the content was reported.
      *
-     * @x-autobe-database-schema-property reason
-     * @x-autobe-specification Direct mapping from community_platform_reports.reason. Store the free-text reason provided by the reporting member.
+         * @x-autobe-database-schema-property reason
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_reports.reason. Store the free-text reason
+         *   provided by the reporting member.
      */
     reason: string;
 
     /**
      * Current moderation status of the report.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from community_platform_reports.status. Preserve the persisted moderation state used by the review workflow.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_reports.status. Preserve the persisted
+         *   moderation state used by the review workflow.
      */
     status: string;
 
     /**
      * When the report was reviewed, if it has been reviewed.
      *
-     * @x-autobe-database-schema-property reviewed_at
-     * @x-autobe-specification Direct mapping from community_platform_reports.reviewed_at. Use null when the report has not yet been reviewed.
+         * @x-autobe-database-schema-property reviewed_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_reports.reviewed_at. Use null when the report
+         *   has not yet been reviewed.
      */
     reviewedAt: (string & tags.Format<"date-time">) | null;
 
     /**
      * When the report was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from community_platform_reports.created_at. Record when the report was created.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_reports.created_at. Record when the report was
+         *   created.
      */
     createdAt: string & tags.Format<"date-time">;
 
     /**
      * When the report was last updated.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from community_platform_reports.updated_at. Record the last modification timestamp for the report.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_reports.updated_at. Record the last modification
+         *   timestamp for the report.
      */
     updatedAt: string & tags.Format<"date-time">;
 
     /**
      * When the report was soft deleted, if applicable.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from community_platform_reports.deleted_at. Use null while the report remains active.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_reports.deleted_at. Use null while the report
+         *   remains active.
      */
     deletedAt: (string & tags.Format<"date-time">) | null;
   };
@@ -228,77 +278,100 @@ export namespace ICommunityPlatformReport {
     /**
      * Filter reports to a specific community by its identifier.
      *
-     * @x-autobe-specification Use this as an optional community scope filter in the moderation report query. Translate the value to a condition on community_platform_reports.community_id at runtime.
+         * @x-autobe-specification Use this as an optional community scope
+         *   filter in the moderation report query. Translate the value to a
+         *   condition on community_platform_reports.community_id at runtime.
      */
     communityId?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Filter reports by the reporting member's identifier.
      *
-     * @x-autobe-specification Use this as an optional reporter filter in the moderation report query. Translate the value to a condition on community_platform_reports.member_id at runtime.
+         * @x-autobe-specification Use this as an optional reporter filter in
+         *   the moderation report query. Translate the value to a condition on
+         *   community_platform_reports.member_id at runtime.
      */
     memberId?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Filter reports by the type of reported content.
      *
-     * @x-autobe-specification Use this as an optional reported-content type filter. Translate the value to a condition on community_platform_reports.target_type at runtime.
+         * @x-autobe-specification Use this as an optional reported-content type
+         *   filter. Translate the value to a condition on
+         *   community_platform_reports.target_type at runtime.
      */
     targetType?: string | undefined;
 
     /**
      * Filter reports by the reported content identifier.
      *
-     * @x-autobe-specification Use this as an optional reported-content identifier filter. Translate the value to a condition on community_platform_reports.target_id at runtime.
+         * @x-autobe-specification Use this as an optional reported-content
+         *   identifier filter. Translate the value to a condition on
+         *   community_platform_reports.target_id at runtime.
      */
     targetId?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Filter reports by moderation status.
      *
-     * @x-autobe-specification Use this as an optional moderation status filter. Translate the value to a condition on community_platform_reports.status at runtime.
+         * @x-autobe-specification Use this as an optional moderation status
+         *   filter. Translate the value to a condition on
+         *   community_platform_reports.status at runtime.
      */
     status?: string | undefined;
 
     /**
      * Search reports by reason text.
      *
-     * @x-autobe-specification Use this as an optional text-search term against the report reason. Translate it to a search condition on community_platform_reports.reason at runtime, ideally using the existing trigram index.
+         * @x-autobe-specification Use this as an optional text-search term
+         *   against the report reason. Translate it to a search condition on
+         *   community_platform_reports.reason at runtime, ideally using the
+         *   existing trigram index.
      */
     reason?: string | undefined;
 
     /**
      * Return reports created on or after this date and time.
      *
-     * @x-autobe-specification Use this as an inclusive lower-bound timestamp filter. Translate the value to a condition on community_platform_reports.created_at at runtime.
+         * @x-autobe-specification Use this as an inclusive lower-bound
+         *   timestamp filter. Translate the value to a condition on
+         *   community_platform_reports.created_at at runtime.
      */
     createdAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Return reports created on or before this date and time.
      *
-     * @x-autobe-specification Use this as an inclusive upper-bound timestamp filter. Translate the value to a condition on community_platform_reports.created_at at runtime.
+         * @x-autobe-specification Use this as an inclusive upper-bound
+         *   timestamp filter. Translate the value to a condition on
+         *   community_platform_reports.created_at at runtime.
      */
     createdAtTo?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Sort order for the moderation report list.
      *
-     * @x-autobe-specification Use this as the requested moderation queue sort mode. If omitted, default to created_at descending; implement supported ordering in the list query at runtime.
+         * @x-autobe-specification Use this as the requested moderation queue
+         *   sort mode. If omitted, default to created_at descending; implement
+         *   supported ordering in the list query at runtime.
      */
     sort?: string | undefined;
 
     /**
      * Page number to retrieve.
      *
-     * @x-autobe-specification Use this as the 1-indexed page number for paginated moderation queue retrieval. Convert it into the appropriate offset/skip value at query time.
+         * @x-autobe-specification Use this as the 1-indexed page number for
+         *   paginated moderation queue retrieval. Convert it into the
+         *   appropriate offset/skip value at query time.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of records to return per page.
      *
-     * @x-autobe-specification Use this as the maximum number of records to return per page. Enforce bounds during validation and apply it as the query page size at runtime.
+         * @x-autobe-specification Use this as the maximum number of records to
+         *   return per page. Enforce bounds during validation and apply it as
+         *   the query page size at runtime.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -312,88 +385,110 @@ export namespace ICommunityPlatformReport {
     /**
      * Unique identifier of the moderation report.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from community_platform_reports.id. Primary identifier for the report record loaded by report id.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_reports.id. Primary identifier for the report
+         *   record loaded by report id.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Community associated with the report for moderation scope.
      *
-     * @x-autobe-database-schema-property community
-     * @x-autobe-specification Join community_platform_reports.community_id to community_platform_communities.id and expose the related community as ICommunityPlatformCommunity.ISummary.
+         * @x-autobe-database-schema-property community
+         * @x-autobe-specification Join community_platform_reports.community_id
+         *   to community_platform_communities.id and expose the related
+         *   community as ICommunityPlatformCommunity.ISummary.
      */
     community: ICommunityPlatformCommunity.ISummary;
 
     /**
      * Member who submitted the report.
      *
-     * @x-autobe-database-schema-property member
-     * @x-autobe-specification Join community_platform_reports.member_id to community_platform_members.id and expose the reporting member as ICommunityPlatformMember.ISummary.
+         * @x-autobe-database-schema-property member
+         * @x-autobe-specification Join community_platform_reports.member_id to
+         *   community_platform_members.id and expose the reporting member as
+         *   ICommunityPlatformMember.ISummary.
      */
     member: ICommunityPlatformMember.ISummary;
 
     /**
      * Type of content that was reported, such as post or comment.
      *
-     * @x-autobe-database-schema-property target_type
-     * @x-autobe-specification Direct mapping from community_platform_reports.target_type. Stores whether the reported item is a post or a comment.
+         * @x-autobe-database-schema-property target_type
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_reports.target_type. Stores whether the reported
+         *   item is a post or a comment.
      */
     targetType: string;
 
     /**
      * Identifier of the reported post or comment.
      *
-     * @x-autobe-database-schema-property target_id
-     * @x-autobe-specification Direct mapping from community_platform_reports.target_id. References the reported content record in the content domain.
+         * @x-autobe-database-schema-property target_id
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_reports.target_id. References the reported
+         *   content record in the content domain.
      */
     targetId: string & tags.Format<"uuid">;
 
     /**
      * Reason provided by the reporting member.
      *
-     * @x-autobe-database-schema-property reason
-     * @x-autobe-specification Direct mapping from community_platform_reports.reason. Stores the reporter's explanation for the moderation case.
+         * @x-autobe-database-schema-property reason
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_reports.reason. Stores the reporter's
+         *   explanation for the moderation case.
      */
     reason: string;
 
     /**
      * Current moderation review status of the report.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from community_platform_reports.status. Represents the current moderation review state of the report.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_reports.status. Represents the current
+         *   moderation review state of the report.
      */
     status: string;
 
     /**
      * Time when the report was reviewed, or null if it has not been reviewed.
      *
-     * @x-autobe-database-schema-property reviewed_at
-     * @x-autobe-specification Direct mapping from community_platform_reports.reviewed_at. Preserve null when the report has not been reviewed yet.
+         * @x-autobe-database-schema-property reviewed_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_reports.reviewed_at. Preserve null when the
+         *   report has not been reviewed yet.
      */
     reviewedAt: (string & tags.Format<"date-time">) | null;
 
     /**
      * Time when the report was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from community_platform_reports.created_at. Creation timestamp of the moderation report.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_reports.created_at. Creation timestamp of the
+         *   moderation report.
      */
     createdAt: string & tags.Format<"date-time">;
 
     /**
      * Time when the report was last updated.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from community_platform_reports.updated_at. Last modification timestamp for the report record.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_reports.updated_at. Last modification timestamp
+         *   for the report record.
      */
     updatedAt: string & tags.Format<"date-time">;
 
     /**
      * Time when the report was soft-deleted, or null if it is active.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from community_platform_reports.deleted_at. Preserve null when the report is active and not soft-deleted.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_reports.deleted_at. Preserve null when the
+         *   report is active and not soft-deleted.
      */
     deletedAt: (string & tags.Format<"date-time">) | null;
   };

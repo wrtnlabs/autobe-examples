@@ -18,8 +18,8 @@ export type IMallPlatformOrder = {
    *
    * This is the primary key of the persisted order record and is used to identify the order in detail views and related workflows.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from mall_platform_orders.id.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from mall_platform_orders.id.
    */
   id: string & tags.Format<"uuid">;
 
@@ -28,8 +28,10 @@ export type IMallPlatformOrder = {
    *
    * This is the related customer account shown as a summary object so consumers can identify the order owner without exposing the raw foreign-key column.
    *
-   * @x-autobe-database-schema-property customer
-   * @x-autobe-specification Join mall_platform_orders.customer_id to the related customer record and expose it as IMallPlatformCustomer.ISummary.
+     * @x-autobe-database-schema-property customer
+     * @x-autobe-specification Join mall_platform_orders.customer_id to the
+     *   related customer record and expose it as
+     *   IMallPlatformCustomer.ISummary.
    */
   customer: IMallPlatformCustomer.ISummary;
 
@@ -38,8 +40,9 @@ export type IMallPlatformOrder = {
    *
    * This identifier is shown to customers and support staff for order lookup, history browsing, and dispute handling.
    *
-   * @x-autobe-database-schema-property order_number
-   * @x-autobe-specification Direct mapping from mall_platform_orders.order_number.
+     * @x-autobe-database-schema-property order_number
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_orders.order_number.
    */
   orderNumber: string;
 
@@ -48,8 +51,10 @@ export type IMallPlatformOrder = {
    *
    * This value reflects the current derived state of the order for browsing and support workflows.
    *
-   * @x-autobe-database-schema-property status
-   * @x-autobe-specification Direct mapping from mall_platform_orders.status. This is the persisted overall order status used by history and oversight views.
+     * @x-autobe-database-schema-property status
+     * @x-autobe-specification Direct mapping from mall_platform_orders.status.
+     *   This is the persisted overall order status used by history and
+     *   oversight views.
    */
   status: string;
 
@@ -58,8 +63,9 @@ export type IMallPlatformOrder = {
    *
    * This is the total checkout amount recorded for the purchase, including all ordered items.
    *
-   * @x-autobe-database-schema-property total_amount
-   * @x-autobe-specification Direct mapping from mall_platform_orders.total_amount.
+     * @x-autobe-database-schema-property total_amount
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_orders.total_amount.
    */
   totalAmount: number;
 
@@ -68,8 +74,9 @@ export type IMallPlatformOrder = {
    *
    * This value is captured at checkout and remains unchanged so historical order details stay accurate even if the customer's address book changes later.
    *
-   * @x-autobe-database-schema-property recipient_name
-   * @x-autobe-specification Direct mapping from mall_platform_orders.recipient_name.
+     * @x-autobe-database-schema-property recipient_name
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_orders.recipient_name.
    */
   recipientName: string;
 
@@ -78,8 +85,9 @@ export type IMallPlatformOrder = {
    *
    * This value is captured at checkout and retained with the order for fulfillment and historical reference.
    *
-   * @x-autobe-database-schema-property recipient_phone
-   * @x-autobe-specification Direct mapping from mall_platform_orders.recipient_phone.
+     * @x-autobe-database-schema-property recipient_phone
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_orders.recipient_phone.
    */
   recipientPhone: string;
 
@@ -88,8 +96,9 @@ export type IMallPlatformOrder = {
    *
    * This address is stored with the order so the shipping destination remains visible in historical order views.
    *
-   * @x-autobe-database-schema-property street_address
-   * @x-autobe-specification Direct mapping from mall_platform_orders.street_address.
+     * @x-autobe-database-schema-property street_address
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_orders.street_address.
    */
   streetAddress: string;
 
@@ -98,8 +107,8 @@ export type IMallPlatformOrder = {
    *
    * This value is part of the checkout-time shipping destination stored with the order.
    *
-   * @x-autobe-database-schema-property city
-   * @x-autobe-specification Direct mapping from mall_platform_orders.city.
+     * @x-autobe-database-schema-property city
+     * @x-autobe-specification Direct mapping from mall_platform_orders.city.
    */
   city: string;
 
@@ -108,8 +117,9 @@ export type IMallPlatformOrder = {
    *
    * This value is stored with the order to preserve the full historical shipping destination.
    *
-   * @x-autobe-database-schema-property state_province
-   * @x-autobe-specification Direct mapping from mall_platform_orders.state_province.
+     * @x-autobe-database-schema-property state_province
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_orders.state_province.
    */
   stateProvince: string;
 
@@ -118,8 +128,9 @@ export type IMallPlatformOrder = {
    *
    * This value is retained with the order as part of the checkout-time shipping destination.
    *
-   * @x-autobe-database-schema-property postal_code
-   * @x-autobe-specification Direct mapping from mall_platform_orders.postal_code.
+     * @x-autobe-database-schema-property postal_code
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_orders.postal_code.
    */
   postalCode: string;
 
@@ -128,8 +139,8 @@ export type IMallPlatformOrder = {
    *
    * This value is stored with the order to keep the destination historically accurate.
    *
-   * @x-autobe-database-schema-property country
-   * @x-autobe-specification Direct mapping from mall_platform_orders.country.
+     * @x-autobe-database-schema-property country
+     * @x-autobe-specification Direct mapping from mall_platform_orders.country.
    */
   country: string;
 
@@ -138,7 +149,10 @@ export type IMallPlatformOrder = {
    *
    * This collection contains the purchased items and their preserved purchase context for detail views and dispute review.
    *
-   * @x-autobe-specification Resolve the related order item collection from mall_platform_order_items where mall_platform_order_id matches the order id. Expose the full historical order item records needed by the detail view.
+     * @x-autobe-specification Resolve the related order item collection from
+     *   mall_platform_order_items where mall_platform_order_id matches the
+     *   order id. Expose the full historical order item records needed by the
+     *   detail view.
    */
   orderItems: IMallPlatformOrderItem[];
 
@@ -147,7 +161,10 @@ export type IMallPlatformOrder = {
    *
    * This collection shows the delivery packages created for the order and lets consumers inspect tracking history and included items.
    *
-   * @x-autobe-specification Resolve the related shipment collection from mall_platform_shipments where mall_platform_order_id matches the order id. Expose the shipment records needed for delivery tracking and order history views.
+     * @x-autobe-specification Resolve the related shipment collection from
+     *   mall_platform_shipments where mall_platform_order_id matches the order
+     *   id. Expose the shipment records needed for delivery tracking and order
+     *   history views.
    */
   shipments: IMallPlatformShipment[];
 
@@ -156,8 +173,9 @@ export type IMallPlatformOrder = {
    *
    * This value is used for order history browsing and audit purposes.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from mall_platform_orders.created_at.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_orders.created_at.
    */
   createdAt: string & tags.Format<"date-time">;
 
@@ -166,8 +184,9 @@ export type IMallPlatformOrder = {
    *
    * This value reflects the most recent persisted change to the order record.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from mall_platform_orders.updated_at.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_orders.updated_at.
    */
   updatedAt: string & tags.Format<"date-time">;
 
@@ -176,8 +195,11 @@ export type IMallPlatformOrder = {
    *
    * A null value means the order is still active. When present, the timestamp indicates when the record was logically removed while still preserved for historical access.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from mall_platform_orders.deleted_at. Preserve the nullable shape because the order may be active or soft-deleted while remaining visible for historical purposes.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_orders.deleted_at. Preserve the nullable shape because
+     *   the order may be active or soft-deleted while remaining visible for
+     *   historical purposes.
    */
   deletedAt: (string & tags.Format<"date-time">) | null;
 };
@@ -195,7 +217,10 @@ export namespace IMallPlatformOrder {
      *
      * This is a 1-indexed pagination value used to browse the authenticated customer's order history. It works together with limit to select which slice of summarized orders is returned.
      *
-     * @x-autobe-specification Use as the 1-indexed page number for the authenticated customer's order-history query. Combine with limit to paginate mall_platform_orders results. Customer scoping must come from authorization, not from this field.
+         * @x-autobe-specification Use as the 1-indexed page number for the
+         *   authenticated customer's order-history query. Combine with limit to
+         *   paginate mall_platform_orders results. Customer scoping must come
+         *   from authorization, not from this field.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -204,7 +229,10 @@ export namespace IMallPlatformOrder {
      *
      * This controls the page size for browsing the authenticated customer's order history. The server may still enforce its own bounds, but this is the client-requested page length.
      *
-     * @x-autobe-specification Use as the maximum number of order summaries returned per page for the authenticated customer's order-history query. Combine with page to paginate mall_platform_orders results. Customer scoping must come from authorization, not from this field.
+         * @x-autobe-specification Use as the maximum number of order summaries
+         *   returned per page for the authenticated customer's order-history
+         *   query. Combine with page to paginate mall_platform_orders results.
+         *   Customer scoping must come from authorization, not from this field.
      */
     limit?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -213,7 +241,11 @@ export namespace IMallPlatformOrder {
      *
      * This selects one of the supported browsing sort modes for the authenticated customer's orders before pagination is applied.
      *
-     * @x-autobe-specification Use as the requested sort mode for the authenticated customer's order-history query. Interpret it as a supported sorting instruction over mall_platform_orders list results rather than a direct column mapping. Customer scoping still comes from authorization.
+         * @x-autobe-specification Use as the requested sort mode for the
+         *   authenticated customer's order-history query. Interpret it as a
+         *   supported sorting instruction over mall_platform_orders list
+         *   results rather than a direct column mapping. Customer scoping still
+         *   comes from authorization.
      */
     sort?: string | undefined;
 
@@ -222,7 +254,11 @@ export namespace IMallPlatformOrder {
      *
      * This narrows the authenticated customer's order history to orders whose overall status matches the requested value. If omitted, orders of all statuses are returned.
      *
-     * @x-autobe-specification Use as an optional filter on the derived overall order status when querying mall_platform_orders for the authenticated customer. Match the platform's order status rules for browsing history. Do not accept customer identifiers through this DTO.
+         * @x-autobe-specification Use as an optional filter on the derived
+         *   overall order status when querying mall_platform_orders for the
+         *   authenticated customer. Match the platform's order status rules for
+         *   browsing history. Do not accept customer identifiers through this
+         *   DTO.
      */
     status?: string | undefined;
 
@@ -231,7 +267,10 @@ export namespace IMallPlatformOrder {
      *
      * This sets the inclusive start of the order-history date range filter. Orders created before this timestamp are excluded from the results.
      *
-     * @x-autobe-specification Use as the inclusive lower bound of the order creation timestamp filter when querying mall_platform_orders for the authenticated customer. Apply it only within the customer-scoped history query.
+         * @x-autobe-specification Use as the inclusive lower bound of the order
+         *   creation timestamp filter when querying mall_platform_orders for
+         *   the authenticated customer. Apply it only within the
+         *   customer-scoped history query.
      */
     createdAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
@@ -240,7 +279,10 @@ export namespace IMallPlatformOrder {
      *
      * This sets the inclusive end of the order-history date range filter. Orders created after this timestamp are excluded from the results.
      *
-     * @x-autobe-specification Use as the inclusive upper bound of the order creation timestamp filter when querying mall_platform_orders for the authenticated customer. Apply it only within the customer-scoped history query.
+         * @x-autobe-specification Use as the inclusive upper bound of the order
+         *   creation timestamp filter when querying mall_platform_orders for
+         *   the authenticated customer. Apply it only within the
+         *   customer-scoped history query.
      */
     createdAtTo?: (string & tags.Format<"date-time">) | undefined;
   };
@@ -258,8 +300,8 @@ export namespace IMallPlatformOrder {
      *
      * This value identifies one order record and is used to reference the order in list and detail views.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from mall_platform_orders.id.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from mall_platform_orders.id.
      */
     id: string & tags.Format<"uuid">;
 
@@ -268,8 +310,10 @@ export namespace IMallPlatformOrder {
      *
      * This field exposes the owning customer as summary data so clients can show who made the purchase without loading the full customer record.
      *
-     * @x-autobe-database-schema-property customer
-     * @x-autobe-specification Join mall_platform_orders.customer_id to mall_platform_customers.id and expose the related customer as IMallPlatformCustomer.ISummary.
+         * @x-autobe-database-schema-property customer
+         * @x-autobe-specification Join mall_platform_orders.customer_id to
+         *   mall_platform_customers.id and expose the related customer as
+         *   IMallPlatformCustomer.ISummary.
      */
     customer: IMallPlatformCustomer.ISummary;
 
@@ -278,8 +322,9 @@ export namespace IMallPlatformOrder {
      *
      * This value is the public-facing order identifier shown to customers and support staff.
      *
-     * @x-autobe-database-schema-property order_number
-     * @x-autobe-specification Direct mapping from mall_platform_orders.order_number.
+         * @x-autobe-database-schema-property order_number
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_orders.order_number.
      */
     orderNumber: string;
 
@@ -288,8 +333,10 @@ export namespace IMallPlatformOrder {
      *
      * This value reflects the order's derived lifecycle state for list views and order history browsing.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from mall_platform_orders.status. This value represents the derived overall order status used for history and browsing.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_orders.status. This value represents the derived
+         *   overall order status used for history and browsing.
      */
     status: string;
 
@@ -298,8 +345,9 @@ export namespace IMallPlatformOrder {
      *
      * This value represents the total checkout amount for the entire order, including all purchased items.
      *
-     * @x-autobe-database-schema-property total_amount
-     * @x-autobe-specification Direct mapping from mall_platform_orders.total_amount.
+         * @x-autobe-database-schema-property total_amount
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_orders.total_amount.
      */
     totalAmount: number;
 
@@ -308,8 +356,10 @@ export namespace IMallPlatformOrder {
      *
      * This value captures the recipient name as it was stored at checkout and remains available for historical order viewing.
      *
-     * @x-autobe-database-schema-property recipient_name
-     * @x-autobe-specification Direct mapping from mall_platform_orders.recipient_name. Preserve the checkout-time shipping recipient name for historical order context.
+         * @x-autobe-database-schema-property recipient_name
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_orders.recipient_name. Preserve the checkout-time
+         *   shipping recipient name for historical order context.
      */
     recipientName: string;
 
@@ -318,8 +368,10 @@ export namespace IMallPlatformOrder {
      *
      * This value captures the recipient phone number as it was stored at checkout and remains available for historical order viewing.
      *
-     * @x-autobe-database-schema-property recipient_phone
-     * @x-autobe-specification Direct mapping from mall_platform_orders.recipient_phone. Preserve the checkout-time shipping recipient phone number for historical order context.
+         * @x-autobe-database-schema-property recipient_phone
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_orders.recipient_phone. Preserve the checkout-time
+         *   shipping recipient phone number for historical order context.
      */
     recipientPhone: string;
 
@@ -328,8 +380,10 @@ export namespace IMallPlatformOrder {
      *
      * This value stores the shipping street address selected at checkout so the order history remains accurate even if the customer later changes saved addresses.
      *
-     * @x-autobe-database-schema-property street_address
-     * @x-autobe-specification Direct mapping from mall_platform_orders.street_address. Preserve the checkout-time shipping street address.
+         * @x-autobe-database-schema-property street_address
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_orders.street_address. Preserve the checkout-time
+         *   shipping street address.
      */
     streetAddress: string;
 
@@ -338,8 +392,10 @@ export namespace IMallPlatformOrder {
      *
      * This value stores the shipping city selected at checkout for historical order context.
      *
-     * @x-autobe-database-schema-property city
-     * @x-autobe-specification Direct mapping from mall_platform_orders.city. Preserve the checkout-time shipping city.
+         * @x-autobe-database-schema-property city
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_orders.city. Preserve the checkout-time shipping
+         *   city.
      */
     city: string;
 
@@ -348,8 +404,10 @@ export namespace IMallPlatformOrder {
      *
      * This value stores the shipping state or province selected at checkout for historical order context.
      *
-     * @x-autobe-database-schema-property state_province
-     * @x-autobe-specification Direct mapping from mall_platform_orders.state_province. Preserve the checkout-time shipping state or province.
+         * @x-autobe-database-schema-property state_province
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_orders.state_province. Preserve the checkout-time
+         *   shipping state or province.
      */
     stateProvince: string;
 
@@ -358,8 +416,10 @@ export namespace IMallPlatformOrder {
      *
      * This value stores the shipping postal code selected at checkout for historical order context.
      *
-     * @x-autobe-database-schema-property postal_code
-     * @x-autobe-specification Direct mapping from mall_platform_orders.postal_code. Preserve the checkout-time shipping postal code.
+         * @x-autobe-database-schema-property postal_code
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_orders.postal_code. Preserve the checkout-time
+         *   shipping postal code.
      */
     postalCode: string;
 
@@ -368,8 +428,10 @@ export namespace IMallPlatformOrder {
      *
      * This value stores the shipping country selected at checkout for historical order context.
      *
-     * @x-autobe-database-schema-property country
-     * @x-autobe-specification Direct mapping from mall_platform_orders.country. Preserve the checkout-time shipping country.
+         * @x-autobe-database-schema-property country
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_orders.country. Preserve the checkout-time shipping
+         *   country.
      */
     country: string;
 
@@ -378,8 +440,9 @@ export namespace IMallPlatformOrder {
      *
      * This value records when the order was first placed and is used for browsing and sorting order history.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from mall_platform_orders.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_orders.created_at.
      */
     createdAt: string & tags.Format<"date-time">;
 
@@ -388,8 +451,9 @@ export namespace IMallPlatformOrder {
      *
      * This value records the most recent change to the order and supports audit and history views.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from mall_platform_orders.updated_at.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_orders.updated_at.
      */
     updatedAt: string & tags.Format<"date-time">;
 
@@ -398,8 +462,11 @@ export namespace IMallPlatformOrder {
      *
      * A null value means the order is still active in historical browsing views. A timestamp indicates the record was soft-deleted but retained for preservation and audit purposes.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from mall_platform_orders.deleted_at. Preserve soft-delete visibility in order history; null means active and a timestamp means soft-deleted but retained for preservation and audit.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_orders.deleted_at. Preserve soft-delete visibility in
+         *   order history; null means active and a timestamp means soft-deleted
+         *   but retained for preservation and audit.
      */
     deletedAt: (string & tags.Format<"date-time">) | null;
   };
@@ -419,7 +486,13 @@ export namespace IMallPlatformOrder {
      *
      * The server verifies ownership and eligibility for each listed item before executing the refund.
      *
-     * @x-autobe-specification Optional array of order item UUIDs to include in the forced refund for the order identified by the path parameter. When present, each UUID must be validated against the target order and forced-refund eligibility before any state changes occur. When absent, the service applies the refund to all eligible items in the order. Do not persist this field; it is request-only input.
+         * @x-autobe-specification Optional array of order item UUIDs to include
+         *   in the forced refund for the order identified by the path
+         *   parameter. When present, each UUID must be validated against the
+         *   target order and forced-refund eligibility before any state changes
+         *   occur. When absent, the service applies the refund to all eligible
+         *   items in the order. Do not persist this field; it is request-only
+         *   input.
      */
     orderItemIds?: (string & tags.Format<"uuid">)[] | undefined;
   };
@@ -435,7 +508,13 @@ export namespace IMallPlatformOrder {
      *
      * Use wholeOrder to apply the intervention to every eligible item on the order referenced by the URL path. Use selectedItems to cancel only the order items listed in orderItemIds.
      *
-     * @x-autobe-specification Use this field to choose the scope of the administrator force-cancel action for the order identified by the URL path. wholeOrder means cancel every eligible item in the referenced order. selectedItems means cancel only the order items listed in orderItemIds after verifying each item belongs to the target order and is eligible for cancellation. This value is not persisted to mall_platform_orders and has no database mapping.
+         * @x-autobe-specification Use this field to choose the scope of the
+         *   administrator force-cancel action for the order identified by the
+         *   URL path. wholeOrder means cancel every eligible item in the
+         *   referenced order. selectedItems means cancel only the order items
+         *   listed in orderItemIds after verifying each item belongs to the
+         *   target order and is eligible for cancellation. This value is not
+         *   persisted to mall_platform_orders and has no database mapping.
      */
     scope: "wholeOrder" | "selectedItems";
 
@@ -444,7 +523,12 @@ export namespace IMallPlatformOrder {
      *
      * This field is used only when scope is selectedItems and must contain UUIDs for order items that belong to the order in the URL path.
      *
-     * @x-autobe-specification Provide the UUIDs of the order items to cancel when scope is selectedItems. Each UUID must reference an order item that belongs to the order identified by the URL path and is eligible for administrative cancellation. The list must contain unique UUIDs and is ignored when scope is wholeOrder. This value is not persisted to mall_platform_orders and has no database mapping.
+         * @x-autobe-specification Provide the UUIDs of the order items to
+         *   cancel when scope is selectedItems. Each UUID must reference an
+         *   order item that belongs to the order identified by the URL path and
+         *   is eligible for administrative cancellation. The list must contain
+         *   unique UUIDs and is ignored when scope is wholeOrder. This value is
+         *   not persisted to mall_platform_orders and has no database mapping.
      */
     orderItemIds?:
       | ((string & tags.Format<"uuid">)[] & tags.MinItems<1> & tags.UniqueItems)

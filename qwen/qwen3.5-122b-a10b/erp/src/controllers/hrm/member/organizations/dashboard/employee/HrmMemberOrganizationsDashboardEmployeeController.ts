@@ -24,9 +24,10 @@ export class HrmMemberOrganizationsDashboardEmployeeController {
    *
    * @param connection
    * @param organizationId UUID identifier of the organization containing the employee dashboard (organization scope).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement as a composite read operation aggregating data from multiple tables:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implement as a composite read operation
+     *   aggregating data from multiple tables:
    *
    * 1. **Hours Calculation**: Query hrm_timelogs for the current employee_id, filter by date ranges (today: current date, this week: Monday to current date), sum duration_minutes and convert to hours.
    *

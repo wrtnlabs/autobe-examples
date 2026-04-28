@@ -25,7 +25,11 @@ export type IHrmEmployeeAnalyticIStatusBreakdown = {
    *
    * This field represents one category in the employee status distribution. Only status values with at least one employee are included in the result array.
    *
-   * @x-autobe-specification Derived from hrm_employees.status column via GROUP BY aggregation. Returns one of two enum values: 'active' for currently employed employees, 'deactivated' for former or inactive employees. Each status value appears once in the result array if at least one employee has that status.
+     * @x-autobe-specification Derived from hrm_employees.status column via
+     *   GROUP BY aggregation. Returns one of two enum values: 'active' for
+     *   currently employed employees, 'deactivated' for former or inactive
+     *   employees. Each status value appears once in the result array if at
+     *   least one employee has that status.
    */
   status: "active" | "deactivated";
 
@@ -36,7 +40,10 @@ export type IHrmEmployeeAnalyticIStatusBreakdown = {
    *
    * This count is computed via SQL aggregation (COUNT(*)) and reflects the current state of employees in the organization after applying any request filters (date range, department, employment type, etc.).
    *
-   * @x-autobe-specification Computed via COUNT(*) aggregation from hrm_employees table, grouped by status. Returns the total number of employees matching the corresponding status value in the filtered organization context. Always non-negative integer.
+     * @x-autobe-specification Computed via COUNT(*) aggregation from
+     *   hrm_employees table, grouped by status. Returns the total number of
+     *   employees matching the corresponding status value in the filtered
+     *   organization context. Always non-negative integer.
    */
   count: number & tags.Type<"int32"> & tags.Minimum<0>;
 };

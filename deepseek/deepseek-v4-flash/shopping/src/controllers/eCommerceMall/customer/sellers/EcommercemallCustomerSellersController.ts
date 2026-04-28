@@ -20,9 +20,11 @@ export class EcommercemallCustomerSellersController {
    *
    * @param connection
    * @param sellerId Unique identifier (UUID) of the seller account to retrieve.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Query e_commerce_mall_sellers by id (UUID), joining with e_commerce_mall_seller_profiles via the one-to-one relationship on e_commerce_mall_seller_id.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Query e_commerce_mall_sellers by id (UUID),
+     *   joining with e_commerce_mall_seller_profiles via the one-to-one
+     *   relationship on e_commerce_mall_seller_id.
    *
    * Exclude soft-deleted sellers (deleted_at IS NOT NULL) — return 404 if the seller is not found or has been soft-deleted.
    *

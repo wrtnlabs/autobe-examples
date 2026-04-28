@@ -20,8 +20,9 @@ export type IHrmPlatformGuest = {
    *
    * A UUID primary key that uniquely identifies this guest session within the system. Used as the path parameter for all guest-related API operations.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from hrm_platform_guests.id (UUID primary key). Unique identifier for the unauthenticated guest session.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from hrm_platform_guests.id (UUID
+     *   primary key). Unique identifier for the unauthenticated guest session.
    */
   id: string & tags.Format<"uuid">;
 
@@ -30,8 +31,10 @@ export type IHrmPlatformGuest = {
    *
    * A cryptographic hash or fingerprint generated from browser and device characteristics that uniquely identifies this guest across sessions. Used for attribution tracking and fraud detection. Indexed for efficient query performance.
    *
-   * @x-autobe-database-schema-property device_identifier
-   * @x-autobe-specification Direct mapping from hrm_platform_guests.device_identifier. Unique device fingerprint derived from browser/device characteristics. Indexed for fast lookup.
+     * @x-autobe-database-schema-property device_identifier
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_guests.device_identifier. Unique device fingerprint
+     *   derived from browser/device characteristics. Indexed for fast lookup.
    */
   device_identifier: string;
 
@@ -40,8 +43,11 @@ export type IHrmPlatformGuest = {
    *
    * The network address from which the guest accessed the platform. Used for session attribution, geographic analytics, fraud detection, and audit trail purposes. Stored as a string to support both IPv4 and IPv6 addresses.
    *
-   * @x-autobe-database-schema-property ip_address
-   * @x-autobe-specification Direct mapping from hrm_platform_guests.ip_address. String representation of the IP address used by the guest during their session. Indexed for geographic and temporal queries.
+     * @x-autobe-database-schema-property ip_address
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_guests.ip_address. String representation of the IP address
+     *   used by the guest during their session. Indexed for geographic and
+     *   temporal queries.
    */
   ip_address: string;
 
@@ -50,8 +56,10 @@ export type IHrmPlatformGuest = {
    *
    * The complete user agent string captured when the guest accessed the platform. Used for device type identification, browser compatibility tracking, and session attribution. Supports full-text search capabilities for analytics queries.
    *
-   * @x-autobe-database-schema-property user_agent
-   * @x-autobe-specification Direct mapping from hrm_platform_guests.user_agent. Browser and OS user agent string for device identification. Indexed with GIN for text search capabilities.
+     * @x-autobe-database-schema-property user_agent
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_guests.user_agent. Browser and OS user agent string for
+     *   device identification. Indexed with GIN for text search capabilities.
    */
   user_agent: string;
 
@@ -60,8 +68,10 @@ export type IHrmPlatformGuest = {
    *
    * The precise date and time (with timezone) when this unauthenticated guest session was first initiated in the system. Used for session duration tracking, audit compliance, and temporal analytics. Always present and never null.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from hrm_platform_guests.created_at (timestamptz). Timestamp when the guest account was created. Automatically set by database on insert.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_guests.created_at (timestamptz). Timestamp when the guest
+     *   account was created. Automatically set by database on insert.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -70,8 +80,11 @@ export type IHrmPlatformGuest = {
    *
    * The most recent date and time (with timezone) when this guest record was modified. Used for detecting stale sessions, audit trail analysis, and synchronization tracking. Always present and never null.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from hrm_platform_guests.updated_at (timestamptz). Timestamp when the guest account was last updated. Automatically updated by database triggers on modifications.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_guests.updated_at (timestamptz). Timestamp when the guest
+     *   account was last updated. Automatically updated by database triggers on
+     *   modifications.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -80,8 +93,11 @@ export type IHrmPlatformGuest = {
    *
    * Indicates whether this guest session has been marked for deletion. NULL means the session is active and valid. A non-NULL value represents the date and time (with timezone) when soft deletion occurred for compliance and audit trail preservation. Soft deletion preserves data for legal requirements while hiding it from active queries.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from hrm_platform_guests.deleted_at (nullable timestamptz). Timestamp when the guest account was soft-deleted. NULL indicates active session, non-NULL indicates deleted for compliance.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_guests.deleted_at (nullable timestamptz). Timestamp when
+     *   the guest account was soft-deleted. NULL indicates active session,
+     *   non-NULL indicates deleted for compliance.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -99,63 +115,72 @@ export namespace IHrmPlatformGuest {
     /**
      * Unique identifier for the guest account.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from guests.id. Primary key for guest entity.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from guests.id. Primary key
+         *   for guest entity.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Unique device fingerprint identifying the guest's browser and device combination for session tracking.
      *
-     * @x-autobe-database-schema-property device_identifier
-     * @x-autobe-specification Direct mapping from guests.device_identifier. Unique device fingerprint identifying the guest's browser/device combination.
+         * @x-autobe-database-schema-property device_identifier
+         * @x-autobe-specification Direct mapping from guests.device_identifier.
+         *   Unique device fingerprint identifying the guest's browser/device
+         *   combination.
      */
     device_identifier: string;
 
     /**
      * IP address used by the guest during their session for security auditing and tracking.
      *
-     * @x-autobe-database-schema-property ip_address
-     * @x-autobe-specification Direct mapping from guests.ip_address. IP address used by the guest during their session.
+         * @x-autobe-database-schema-property ip_address
+         * @x-autobe-specification Direct mapping from guests.ip_address. IP
+         *   address used by the guest during their session.
      */
     ip_address: string;
 
     /**
      * Browser and OS user agent string for device identification and security auditing.
      *
-     * @x-autobe-database-schema-property user_agent
-     * @x-autobe-specification Direct mapping from guests.user_agent. Browser and OS user agent string for device identification.
+         * @x-autobe-database-schema-property user_agent
+         * @x-autobe-specification Direct mapping from guests.user_agent.
+         *   Browser and OS user agent string for device identification.
      */
     user_agent: string;
 
     /**
      * Timestamp when the guest account was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from guests.created_at. Timestamp when the guest account was created.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from guests.created_at.
+         *   Timestamp when the guest account was created.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when the guest account was last updated.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from guests.updated_at. Timestamp when the guest account was last updated.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from guests.updated_at.
+         *   Timestamp when the guest account was last updated.
      */
     updated_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when the guest account was soft-deleted. Null if the account is still active.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from guests.deleted_at. Timestamp when the guest account was soft-deleted (nullable).
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from guests.deleted_at.
+         *   Timestamp when the guest account was soft-deleted (nullable).
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
 
     /**
      * Authorization token.
      *
-     * @x-autobe-specification Authorization token comes from the session table.
+         * @x-autobe-specification Authorization token comes from the session
+         *   table.
      */
     token: IAuthorizationToken;
 
@@ -164,7 +189,11 @@ export namespace IHrmPlatformGuest {
      *
      * This field references the session record that was created when the guest first accessed the platform or last refreshed their token. If no active session exists (e.g., session was cleaned up due to expiration), this field will be null.
      *
-     * @x-autobe-specification Maps to hrm_platform_guest_sessions.id (FK from guest_sessions table). Nullable: session may not exist if guest record exists but session was cleaned up or never created. Required: session_id should still be in required array but nullable accepted.
+         * @x-autobe-specification Maps to hrm_platform_guest_sessions.id (FK
+         *   from guest_sessions table). Nullable: session may not exist if
+         *   guest record exists but session was cleaned up or never created.
+         *   Required: session_id should still be in required array but nullable
+         *   accepted.
      */
     session_id: (string & tags.Format<"uuid">) | null;
 
@@ -173,7 +202,10 @@ export namespace IHrmPlatformGuest {
      *
      * Guests are unauthenticated visitors without any organizational affiliation. This field will always be null. Only after a guest completes registration and becomes a member will they be associated with an organization (but the response will then be from IHrmPlatformMember.IAuthorized, not IHrmPlatformGuest.IAuthorized).
      *
-     * @x-autobe-specification Always null for guest actors. Guests are unauthenticated and have no organization affiliation. After guest completes registration and becomes a member, the member account gets organization_id, but guest responses always return null.
+         * @x-autobe-specification Always null for guest actors. Guests are
+         *   unauthenticated and have no organization affiliation. After guest
+         *   completes registration and becomes a member, the member account
+         *   gets organization_id, but guest responses always return null.
      */
     organization_id: (string & tags.Format<"uuid">) | null;
   };
@@ -189,8 +221,9 @@ export namespace IHrmPlatformGuest {
      *
      * This UUID is generated when the guest session is created and serves as the primary key for referencing the guest in other operations.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from hrm_platform_guests.id. UUID primary key generated at account creation.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from hrm_platform_guests.id.
+         *   UUID primary key generated at account creation.
      */
     id: string & tags.Format<"uuid">;
 
@@ -199,8 +232,10 @@ export namespace IHrmPlatformGuest {
      *
      * This identifier is generated from device fingerprinting and provides a consistent way to track unauthenticated visitors across sessions from the same device.
      *
-     * @x-autobe-database-schema-property device_identifier
-     * @x-autobe-specification Direct mapping from hrm_platform_guests.device_identifier. Unique constraint ensures one guest per device.
+         * @x-autobe-database-schema-property device_identifier
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_guests.device_identifier. Unique constraint ensures
+         *   one guest per device.
      */
     device_identifier: string;
 
@@ -209,8 +244,10 @@ export namespace IHrmPlatformGuest {
      *
      * This field is optional and may be null if the IP was not captured during session creation. Used for audit and security purposes.
      *
-     * @x-autobe-database-schema-property ip_address
-     * @x-autobe-specification Direct mapping from hrm_platform_guests.ip_address. Nullable field storing the guest's IP during session creation. May be null if IP was not captured.
+         * @x-autobe-database-schema-property ip_address
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_guests.ip_address. Nullable field storing the guest's
+         *   IP during session creation. May be null if IP was not captured.
      */
     ip_address?: string | null | undefined;
 
@@ -219,8 +256,10 @@ export namespace IHrmPlatformGuest {
      *
      * This timestamp is in UTC and formatted as an ISO 8601 date-time string. It represents when the device fingerprint was first registered in the system.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from hrm_platform_guests.created_at. Timestamp when the guest account was created (timestamptz).
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_guests.created_at. Timestamp when the guest account
+         *   was created (timestamptz).
      */
     created_at: string & tags.Format<"date-time">;
   };
@@ -264,15 +303,15 @@ export namespace IHrmPlatformGuest {
    */
   export type IRequest = {
     /**
-     * @x-autobe-database-schema-property device_identifier
+         * @x-autobe-database-schema-property device_identifier
      */
     device_identifier?: string | undefined;
     /**
-     * @x-autobe-database-schema-property ip_address
+         * @x-autobe-database-schema-property ip_address
      */
     ip_address?: string | undefined;
     /**
-     * @x-autobe-database-schema-property user_agent
+         * @x-autobe-database-schema-property user_agent
      */
     user_agent?: string | undefined;
 
@@ -281,7 +320,9 @@ export namespace IHrmPlatformGuest {
      *
      * Filters guest records by creation date range using `gte` (minimum) and `lte` (maximum) properties. Both values are ISO 8601 date-time strings. When omitted, no date range filter is applied.
      *
-     * @x-autobe-specification Date range filter with gte/lte properties for filtering by creation timestamp. GTE and LTE values are ISO 8601 date-time strings.
+         * @x-autobe-specification Date range filter with gte/lte properties for
+         *   filtering by creation timestamp. GTE and LTE values are ISO 8601
+         *   date-time strings.
      */
     created_at?:
       | {
@@ -295,7 +336,9 @@ export namespace IHrmPlatformGuest {
      *
      * Filters guest records by update date range using `gte` (minimum) and `lte` (maximum) properties. Both values are ISO 8601 date-time strings. When omitted, no date range filter is applied.
      *
-     * @x-autobe-specification Date range filter with gte/lte properties for filtering by update timestamp. GTE and LTE values are ISO 8601 date-time strings.
+         * @x-autobe-specification Date range filter with gte/lte properties for
+         *   filtering by update timestamp. GTE and LTE values are ISO 8601
+         *   date-time strings.
      */
     updated_at?:
       | {
@@ -313,7 +356,8 @@ export namespace IHrmPlatformGuest {
      *
      * Note: This is a filter flag, not the deleted_at timestamp itself.
      *
-     * @x-autobe-specification Boolean filter flag: null/omitted = active only, true = include deleted records.
+         * @x-autobe-specification Boolean filter flag: null/omitted = active
+         *   only, true = include deleted records.
      */
     deleted_at?: boolean | undefined;
     sortBy?:
@@ -336,7 +380,8 @@ export namespace IHrmPlatformGuest {
      * Requesting a page beyond the available range returns an empty data array
      * with valid pagination metadata reflecting the actual totals.
      *
-     * @x-autobe-specification 1-indexed page number. Defaults to 1 if not provided.
+         * @x-autobe-specification 1-indexed page number. Defaults to 1 if not
+         *   provided.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };
@@ -358,7 +403,10 @@ export namespace IHrmPlatformGuest {
      *
      * Use this value when the access token has expired but the guest session is still active. Submit it in the request body to obtain a new access token and refresh token pair without requiring the guest to re-authenticate.
      *
-     * @x-autobe-specification Client-provided refresh token for session renewal. Validated against hrm_platform_guest_sessions.session_token where expired_at > NOW(). If valid, new tokens are generated and old ones invalidated.
+         * @x-autobe-specification Client-provided refresh token for session
+         *   renewal. Validated against
+         *   hrm_platform_guest_sessions.session_token where expired_at > NOW().
+         *   If valid, new tokens are generated and old ones invalidated.
      */
     refresh_token: string;
   };
@@ -382,8 +430,9 @@ export namespace IHrmPlatformGuest {
     /**
      * IP address used by the guest during their session. Optional field for server-side rendering cases where the client cannot determine its own IP.
      *
-     * @x-autobe-database-schema-property ip_address
-     * @x-autobe-specification Client IP address. Optional: server uses body.ip ?? server-captured IP in SSR cases.
+         * @x-autobe-database-schema-property ip_address
+         * @x-autobe-specification Client IP address. Optional: server uses
+         *   body.ip ?? server-captured IP in SSR cases.
      */
     ip?: (string & tags.Format<"ipv4">) | null | undefined;
   };

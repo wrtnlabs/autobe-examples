@@ -22,7 +22,8 @@ import { ITodoAppMemberSession } from "../../../../structures/ITodoAppMemberSess
  * @param props.body Search criteria for listing member sessions, including status filter (active/expired/all), creation date range, sort direction, and pagination parameters.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor guest
- * @x-autobe-specification Query todo_app_member_sessions table filtered by the authenticated member's ID (todo_app_member_id).
+ * @x-autobe-specification Query todo_app_member_sessions table filtered by the
+ *   authenticated member's ID (todo_app_member_id).
  *
  * Support the following search criteria in the request body:
  * - Filter by session status: 'active' (expired_at > current time) or 'expired' (expired_at <= current time), or 'all' (no filter)
@@ -130,7 +131,8 @@ export namespace index {
  * @param props.sessionId The unique identifier (UUID) of the session to retrieve. Must correspond to a session owned by the authenticated member.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor guest
- * @x-autobe-specification Query the todo_app_member_sessions table by the provided sessionId (UUID primary key).
+ * @x-autobe-specification Query the todo_app_member_sessions table by the
+ *   provided sessionId (UUID primary key).
  *
  * Ensure data isolation: the authenticated member's ID must match todo_app_member_id in the retrieved record. If no record is found for the given sessionId, or if the record exists but belongs to a different member, return a 404 Not Found error without distinguishing between "session not found" and "session belongs to another member."
  *

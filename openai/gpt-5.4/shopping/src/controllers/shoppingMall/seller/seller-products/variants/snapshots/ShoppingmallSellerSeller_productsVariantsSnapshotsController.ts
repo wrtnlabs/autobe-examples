@@ -30,9 +30,12 @@ export class ShoppingmallSellerSeller_productsVariantsSnapshotsController {
    * @param productId Target seller product identifier
    * @param variantId Target product variant identifier within the specified product
    * @param body Search criteria and pagination options for product variant snapshot history
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification 1. Authenticate the caller and authorize access for either (a) the seller who owns the target product or (b) an administrator with oversight permissions. Do not allow general customer access.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification 1. Authenticate the caller and authorize access
+     *   for either (a) the seller who owns the target product or (b) an
+     *   administrator with oversight permissions. Do not allow general customer
+     *   access.
    *
    * 2. Validate `productId` and `variantId` as UUID identifiers. Load the target product from `shopping_mall_products` by `id`. Load the target variant from `shopping_mall_product_variants` by `id` and verify `shopping_mall_product_id = productId`. If either record is missing, or if the variant does not belong to the given product, reject the request.
    *
@@ -94,9 +97,10 @@ export class ShoppingmallSellerSeller_productsVariantsSnapshotsController {
    * @param productId Target seller product's ID
    * @param variantId Target product variant's ID
    * @param productVariantSnapshotId Target product variant snapshot's ID
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Implement this operation as a detail lookup over the seller product, variant, and snapshot hierarchy.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Implement this operation as a detail lookup over
+     *   the seller product, variant, and snapshot hierarchy.
    *
    * 1. Load the target `shopping_mall_product_variant_snapshots` row by `productVariantSnapshotId` and join its parent `shopping_mall_product_variants` row and parent `shopping_mall_products` row. Also load child `shopping_mall_product_variant_snapshot_option_values` rows ordered consistently for stable output.
    * 2. Validate hierarchy consistency before returning data:

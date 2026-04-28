@@ -16,8 +16,10 @@ export type IHrmTimeTrackMember = {
    *
    * This UUID serves as the primary key and globally unique identifier for the member across all organizations. It is used to reference the member in related entities and API operations.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from hrm_time_track_members.id. Primary key of the member table, UUID format. This is the globally unique identifier for the member account across all organizations.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from hrm_time_track_members.id.
+     *   Primary key of the member table, UUID format. This is the globally
+     *   unique identifier for the member account across all organizations.
    */
   id: string & tags.Format<"uuid">;
 
@@ -26,8 +28,10 @@ export type IHrmTimeTrackMember = {
    *
    * This email address serves as the primary identifier for login and must be unique across all members. It is case-sensitive and stored in lowercase for consistency. The email is used for authentication, password recovery, and account notifications.
    *
-   * @x-autobe-database-schema-property email
-   * @x-autobe-specification Direct mapping from hrm_time_track_members.email. Unique constraint ensures no duplicate email addresses. Used as the primary authentication credential for member login.
+     * @x-autobe-database-schema-property email
+     * @x-autobe-specification Direct mapping from hrm_time_track_members.email.
+     *   Unique constraint ensures no duplicate email addresses. Used as the
+     *   primary authentication credential for member login.
    */
   email: string;
 
@@ -36,8 +40,11 @@ export type IHrmTimeTrackMember = {
    *
    * This field is set automatically upon account creation and is never updated. It serves as the official account creation timestamp for auditing purposes and account age calculations.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from hrm_time_track_members.created_at. Timestamp in ISO 8601 format with timezone (timestamptz). Set automatically upon account creation and never modified.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_members.created_at. Timestamp in ISO 8601 format with
+     *   timezone (timestamptz). Set automatically upon account creation and
+     *   never modified.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -46,8 +53,11 @@ export type IHrmTimeTrackMember = {
    *
    * This field is updated on any modification to account settings or security credentials. It tracks the most recent change to the member record for audit and synchronization purposes.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from hrm_time_track_members.updated_at. Timestamp in ISO 8601 format with timezone (timestamptz). Updated on any modification to account settings or security credentials.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_members.updated_at. Timestamp in ISO 8601 format with
+     *   timezone (timestamptz). Updated on any modification to account settings
+     *   or security credentials.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -56,8 +66,11 @@ export type IHrmTimeTrackMember = {
    *
    * When set, the account is logically deleted but data is preserved for audit purposes. A null value indicates an active account. Soft-deleted accounts cannot be used for authentication and are excluded from active member queries.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from hrm_time_track_members.deleted_at. Nullable timestamp in ISO 8601 format with timezone (timestamptz). NULL indicates active account, non-null indicates soft-deleted account.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_members.deleted_at. Nullable timestamp in ISO 8601
+     *   format with timezone (timestamptz). NULL indicates active account,
+     *   non-null indicates soft-deleted account.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -75,8 +88,10 @@ export namespace IHrmTimeTrackMember {
      *
      * This field must match an existing member account in the system that has not been deleted. The email is case-sensitive and serves as the primary identifier for login. Email format validation is performed on the client side, but server-side validation also occurs.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from hrm_time_track_members.email column. Email format validation required. Used to look up member account for authentication.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_members.email column. Email format validation
+         *   required. Used to look up member account for authentication.
      */
     email: string & tags.Format<"email">;
 
@@ -85,8 +100,12 @@ export namespace IHrmTimeTrackMember {
      *
      * The password is provided in plain text and will be securely hashed on the server side for comparison with the stored password hash. This field must match the password associated with the provided email address. Passwords should be transmitted over HTTPS only.
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification Maps to hrm_time_track_members.password_hash column. Password is provided in plain text by the client and verified against the stored hash on the server side using the same hashing algorithm (e.g., bcrypt, argon2). Never store or transmit plain text passwords in logs or responses.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification Maps to hrm_time_track_members.password_hash
+         *   column. Password is provided in plain text by the client and
+         *   verified against the stored hash on the server side using the same
+         *   hashing algorithm (e.g., bcrypt, argon2). Never store or transmit
+         *   plain text passwords in logs or responses.
      */
     password: string & tags.Format<"password">;
 
@@ -95,7 +114,10 @@ export namespace IHrmTimeTrackMember {
      *
      * This field captures the client's current location before authentication, enabling the system to redirect the user back to their intended destination after successful login. Also used for security auditing and session context tracking.
      *
-     * @x-autobe-specification Session context field captured from request headers (e.g., Referer or custom header). Stored in hrm_time_track_member_sessions.href upon successful authentication. Used for security auditing and session tracking. Required field.
+         * @x-autobe-specification Session context field captured from request
+         *   headers (e.g., Referer or custom header). Stored in
+         *   hrm_time_track_member_sessions.href upon successful authentication.
+         *   Used for security auditing and session tracking. Required field.
      */
     href: string & tags.Format<"uri">;
 
@@ -104,7 +126,11 @@ export namespace IHrmTimeTrackMember {
      *
      * This field tracks the navigation path that led the user to authentication, providing context for session analysis and security monitoring. Different from href, which represents the current page location.
      *
-     * @x-autobe-specification Session context field captured from request headers (Referrer header). Stored in hrm_time_track_member_sessions.referrer upon successful authentication. Used to track how users arrived at the login page for analytics and security purposes. Required field.
+         * @x-autobe-specification Session context field captured from request
+         *   headers (Referrer header). Stored in
+         *   hrm_time_track_member_sessions.referrer upon successful
+         *   authentication. Used to track how users arrived at the login page
+         *   for analytics and security purposes. Required field.
      */
     referrer: string & tags.Format<"uri">;
 
@@ -113,7 +139,12 @@ export namespace IHrmTimeTrackMember {
      *
      * This field is optional because in Server Side Rendering (SSR) scenarios, the client cannot know its own IP address. If not provided, the server will capture the IP from the network request. Used for security auditing, fraud detection, and session management.
      *
-     * @x-autobe-specification Session context field representing the client's IP address. In SSR (Server Side Rendering) contexts, the client may not know its own IP, so this field is optional. If not provided by client, the server will capture it from the request. Stored in hrm_time_track_member_sessions.ip upon successful authentication. Format: IPv4 address.
+         * @x-autobe-specification Session context field representing the
+         *   client's IP address. In SSR (Server Side Rendering) contexts, the
+         *   client may not know its own IP, so this field is optional. If not
+         *   provided by client, the server will capture it from the request.
+         *   Stored in hrm_time_track_member_sessions.ip upon successful
+         *   authentication. Format: IPv4 address.
      */
     ip?: (string & tags.Format<"ipv4">) | undefined;
   };
@@ -129,8 +160,11 @@ export namespace IHrmTimeTrackMember {
      *
      * Supports partial, case-insensitive matching to find member accounts by email address. Useful for searching members when you know part of their email. The filter uses SQL ILIKE operator for flexible matching.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Maps to hrm_time_track_members.email column using ILIKE operator for case-insensitive partial matching. Example: 'john@example.com' matches 'John.Doe@example.com'. Applied as WHERE email ILIKE '%' || :email || '%'.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Maps to hrm_time_track_members.email column
+         *   using ILIKE operator for case-insensitive partial matching.
+         *   Example: 'john@example.com' matches 'John.Doe@example.com'. Applied
+         *   as WHERE email ILIKE '%' || :email || '%'.
      */
     email?: string | undefined;
 
@@ -139,7 +173,11 @@ export namespace IHrmTimeTrackMember {
      *
      * Filters members by their account status. Use 'active' to retrieve only accounts that are not soft-deleted (deleted_at is NULL). Use 'deleted' to retrieve soft-deleted accounts (deleted_at has a timestamp). This enables viewing both active and deleted members based on administrative needs.
      *
-     * @x-autobe-specification Computed field derived from hrm_time_track_members.deleted_at column. When status='active', apply WHERE deleted_at IS NULL. When status='deleted', apply WHERE deleted_at IS NOT NULL. Implements soft-delete status filtering through enum abstraction.
+         * @x-autobe-specification Computed field derived from
+         *   hrm_time_track_members.deleted_at column. When status='active',
+         *   apply WHERE deleted_at IS NULL. When status='deleted', apply WHERE
+         *   deleted_at IS NOT NULL. Implements soft-delete status filtering
+         *   through enum abstraction.
      */
     status?: "active" | "deleted" | undefined;
 
@@ -148,8 +186,11 @@ export namespace IHrmTimeTrackMember {
      *
      * Retrieves only member accounts that were created at or after the specified date-time. Useful for finding recently registered members or filtering by a specific time period. Accepts ISO 8601 formatted date-time strings.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Maps to hrm_time_track_members.created_at column using >= operator. Filters members created on or after the specified timestamp. Expected format: ISO 8601 date-time string (e.g., '2024-01-15T00:00:00Z').
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Maps to hrm_time_track_members.created_at
+         *   column using >= operator. Filters members created on or after the
+         *   specified timestamp. Expected format: ISO 8601 date-time string
+         *   (e.g., '2024-01-15T00:00:00Z').
      */
     created_at_gte?: (string & tags.Format<"date-time">) | undefined;
 
@@ -158,8 +199,11 @@ export namespace IHrmTimeTrackMember {
      *
      * Retrieves only member accounts that were created at or before the specified date-time. Useful for finding members registered before a certain date or filtering by a specific time period. Accepts ISO 8601 formatted date-time strings.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Maps to hrm_time_track_members.created_at column using <= operator. Filters members created on or before the specified timestamp. Expected format: ISO 8601 date-time string (e.g., '2024-01-15T23:59:59Z').
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Maps to hrm_time_track_members.created_at
+         *   column using <= operator. Filters members created on or before the
+         *   specified timestamp. Expected format: ISO 8601 date-time string
+         *   (e.g., '2024-01-15T23:59:59Z').
      */
     created_at_lte?: (string & tags.Format<"date-time">) | undefined;
 
@@ -168,7 +212,10 @@ export namespace IHrmTimeTrackMember {
      *
      * Specifies which page of results to retrieve. Page numbering starts from 1, so the first page is page 1. Combined with the limit parameter to control which subset of results is returned. Default is page 1 if not specified.
      *
-     * @x-autobe-specification Pagination page number (1-indexed). Not mapped to any database column. Used to calculate OFFSET in SQL: OFFSET = (page - 1) * limit. Default value is 1 if not provided. Minimum value is 1.
+         * @x-autobe-specification Pagination page number (1-indexed). Not
+         *   mapped to any database column. Used to calculate OFFSET in SQL:
+         *   OFFSET = (page - 1) * limit. Default value is 1 if not provided.
+         *   Minimum value is 1.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -177,7 +224,10 @@ export namespace IHrmTimeTrackMember {
      *
      * Controls how many member records are returned in each page of results. Setting a higher limit reduces the number of pages but increases response size. Minimum is 1, maximum is 100 to prevent performance issues from excessive data retrieval.
      *
-     * @x-autobe-specification Pagination results per page. Not mapped to any database column. Used as LIMIT in SQL query. Default value is typically 20 or similar. Minimum is 1, maximum is 100 to prevent excessive data retrieval.
+         * @x-autobe-specification Pagination results per page. Not mapped to
+         *   any database column. Used as LIMIT in SQL query. Default value is
+         *   typically 20 or similar. Minimum is 1, maximum is 100 to prevent
+         *   excessive data retrieval.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -197,8 +247,10 @@ export namespace IHrmTimeTrackMember {
      *
      * This field serves as the unique identifier for the member account and is used for login authentication. The email must be valid and not already registered in the system. It is case-sensitive and stored in lowercase for consistency.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from hrm_time_track_members.email. Must be unique across all members. Used as primary authentication identifier.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_members.email. Must be unique across all members.
+         *   Used as primary authentication identifier.
      */
     email: string & tags.Format<"email">;
 
@@ -207,8 +259,11 @@ export namespace IHrmTimeTrackMember {
      *
      * The password is provided in plain text and will be hashed by the backend using a secure cryptographic algorithm before storage. Password strength requirements must be met (minimum length, complexity). The hashed password is never exposed in API responses.
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification Maps to hrm_time_track_members.password_hash. Backend hashes the plain text password using bcrypt or similar algorithm before storage. Never store or transmit plain text passwords.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification Maps to hrm_time_track_members.password_hash.
+         *   Backend hashes the plain text password using bcrypt or similar
+         *   algorithm before storage. Never store or transmit plain text
+         *   passwords.
      */
     password: string & tags.Format<"password">;
 
@@ -217,7 +272,9 @@ export namespace IHrmTimeTrackMember {
      *
      * This field captures the current page URL from which the user initiated the registration process. It is used for audit trail and security analysis to understand user registration patterns and sources.
      *
-     * @x-autobe-specification Session context field captured during registration. Not stored in hrm_time_track_members table. Used for audit trail to track registration source URL.
+         * @x-autobe-specification Session context field captured during
+         *   registration. Not stored in hrm_time_track_members table. Used for
+         *   audit trail to track registration source URL.
      */
     href: string & tags.Format<"uri">;
 
@@ -226,7 +283,9 @@ export namespace IHrmTimeTrackMember {
      *
      * This field captures the referrer URL from the browser, indicating which page or external site directed the user to the registration flow. It is used for analytics and security monitoring.
      *
-     * @x-autobe-specification Session context field captured during registration. Not stored in hrm_time_track_members table. Used for audit trail to track referring URL.
+         * @x-autobe-specification Session context field captured during
+         *   registration. Not stored in hrm_time_track_members table. Used for
+         *   audit trail to track referring URL.
      */
     referrer: string & tags.Format<"uri">;
 
@@ -235,7 +294,10 @@ export namespace IHrmTimeTrackMember {
      *
      * This field captures the client's IP address for security and audit purposes. In server-side rendering scenarios, the client may not know its own IP, so the server can provide a fallback value. The field is optional to accommodate different deployment scenarios.
      *
-     * @x-autobe-specification Session context field captured during registration. Not stored in hrm_time_track_members table. In SSR (Server Side Rendering), client cannot know its own IP, so server captures it as fallback. Optional field.
+         * @x-autobe-specification Session context field captured during
+         *   registration. Not stored in hrm_time_track_members table. In SSR
+         *   (Server Side Rendering), client cannot know its own IP, so server
+         *   captures it as fallback. Optional field.
      */
     ip?: (string & tags.Format<"ipv4">) | undefined;
   };
@@ -255,7 +317,13 @@ export namespace IHrmTimeTrackMember {
      *
      * The backend validates this token against the member's active session in the system to verify authenticity and expiration status before issuing new tokens.
      *
-     * @x-autobe-specification JWT refresh token string provided by client. Not a database column. Backend validates this token against hrm_time_track_member_sessions.refresh_token column to verify: (1) cryptographic match with stored token, (2) session exists and is active, (3) session expired_at is in the future, (4) associated member account is not deleted. Token is extracted from request body and validated by JWT service before database lookup.
+         * @x-autobe-specification JWT refresh token string provided by client.
+         *   Not a database column. Backend validates this token against
+         *   hrm_time_track_member_sessions.refresh_token column to verify: (1)
+         *   cryptographic match with stored token, (2) session exists and is
+         *   active, (3) session expired_at is in the future, (4) associated
+         *   member account is not deleted. Token is extracted from request body
+         *   and validated by JWT service before database lookup.
      */
     refresh_token: string;
   };
@@ -273,7 +341,10 @@ export namespace IHrmTimeTrackMember {
      *
      * This UUID serves as the primary key in the hrm_time_track_members table and uniquely identifies the member across the system. It is used to associate the member with their employee records, sessions, and other related entities.
      *
-     * @x-autobe-specification Member ID extracted from hrm_time_track_members.id via JWT payload or authentication service. This is the primary key of the authenticated member account, returned in authorization response.
+         * @x-autobe-specification Member ID extracted from
+         *   hrm_time_track_members.id via JWT payload or authentication
+         *   service. This is the primary key of the authenticated member
+         *   account, returned in authorization response.
      */
     id: string & tags.Format<"uuid">;
 
@@ -282,7 +353,9 @@ export namespace IHrmTimeTrackMember {
      *
      * This field contains the member's unique email address used for login authentication. The email is case-sensitive and stored in lowercase for consistency. It serves as the primary identifier for member accounts.
      *
-     * @x-autobe-specification Member email extracted from hrm_time_track_members.email via JWT payload or authentication service. This is the unique email address used for authentication.
+         * @x-autobe-specification Member email extracted from
+         *   hrm_time_track_members.email via JWT payload or authentication
+         *   service. This is the unique email address used for authentication.
      */
     email: string;
 
@@ -291,7 +364,9 @@ export namespace IHrmTimeTrackMember {
      *
      * This ISO 8601 datetime field indicates when the member account was originally registered in the system. It is set automatically upon account creation and never updated, serving as the official account creation timestamp for auditing purposes.
      *
-     * @x-autobe-specification Member account creation timestamp extracted from hrm_time_track_members.created_at. This timestamp is set when the member account was first created and never updated.
+         * @x-autobe-specification Member account creation timestamp extracted
+         *   from hrm_time_track_members.created_at. This timestamp is set when
+         *   the member account was first created and never updated.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -300,7 +375,9 @@ export namespace IHrmTimeTrackMember {
      *
      * This ISO 8601 datetime field is updated on any modification to account settings or security credentials. It tracks the most recent change to the member record for audit and monitoring purposes.
      *
-     * @x-autobe-specification Member account update timestamp extracted from hrm_time_track_members.updated_at. This timestamp is updated on any modification to account settings or security credentials.
+         * @x-autobe-specification Member account update timestamp extracted
+         *   from hrm_time_track_members.updated_at. This timestamp is updated
+         *   on any modification to account settings or security credentials.
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -309,14 +386,17 @@ export namespace IHrmTimeTrackMember {
      *
      * This ISO 8601 datetime field is set when the account is marked as deleted (soft delete). A null value indicates an active account. When set, the account is logically deleted but data is preserved for audit purposes.
      *
-     * @x-autobe-specification Member account soft delete timestamp extracted from hrm_time_track_members.deleted_at. Nullable field indicating soft delete status - null means active account.
+         * @x-autobe-specification Member account soft delete timestamp
+         *   extracted from hrm_time_track_members.deleted_at. Nullable field
+         *   indicating soft delete status - null means active account.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
 
     /**
      * Authorization token.
      *
-     * @x-autobe-specification Authorization token comes from the session table.
+         * @x-autobe-specification Authorization token comes from the session
+         *   table.
      */
     token: IAuthorizationToken;
   };
@@ -334,8 +414,9 @@ export namespace IHrmTimeTrackMember {
      *
      * This UUID serves as the primary key for the member record and is used globally across the system to reference the authenticated user identity. Each member account receives a unique identifier upon creation that remains constant throughout the account lifecycle.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from hrm_time_track_members.id. Primary key UUID.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_members.id. Primary key UUID.
      */
     id: string & tags.Format<"uuid">;
 
@@ -344,8 +425,10 @@ export namespace IHrmTimeTrackMember {
      *
      * This field serves as the primary identifier for login and must be unique across all members. The email address is case-sensitive and stored in lowercase for consistency. Used for account recovery, notifications, and user identification in administrative interfaces.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from hrm_time_track_members.email. Unique constraint enforced at database level.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_members.email. Unique constraint enforced at
+         *   database level.
      */
     email: string & tags.Format<"email">;
 
@@ -354,8 +437,10 @@ export namespace IHrmTimeTrackMember {
      *
      * This immutable timestamp records when the account was initially registered in the system. Used for account age calculations, audit trail purposes, and filtering members by registration date. Format follows ISO 8601 date-time standard with timezone information.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from hrm_time_track_members.created_at. Immutable timestamp set on account creation.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_members.created_at. Immutable timestamp set on
+         *   account creation.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -364,8 +449,10 @@ export namespace IHrmTimeTrackMember {
      *
      * This field is automatically updated on any modification to account settings or security credentials. Used to track account changes, detect stale data, and sort members by recent activity. Format follows ISO 8601 date-time standard with timezone information.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from hrm_time_track_members.updated_at. Automatically updated on any account modification.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_members.updated_at. Automatically updated on any
+         *   account modification.
      */
     updated_at: string & tags.Format<"date-time">;
   };

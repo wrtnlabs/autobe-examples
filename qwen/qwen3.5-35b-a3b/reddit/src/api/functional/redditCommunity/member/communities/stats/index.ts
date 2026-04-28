@@ -17,7 +17,8 @@ import { IRedditCommunityCommunity } from "../../../../../structures/IRedditComm
  * @param props.communityId The unique identifier of the community.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query the reddit_community_communities table by UUID to fetch the community record.
+ * @x-autobe-specification Query the reddit_community_communities table by UUID
+ *   to fetch the community record.
  *
  * Compute and return the following metrics:
  * - subscriber_count: Count of active subscriptions for this community (status='active', deleted_at IS NULL)

@@ -18,9 +18,10 @@ export class CommunityplatformMembersController {
    *
    * @param connection
    * @param body Search and pagination criteria for filtering member accounts. Supports partial matching on email and username fields, filtering by account status (active only or include deleted), date range on creation timestamp, and standard pagination parameters.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query the community_platform_members table with pagination and optional filters.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query the community_platform_members table with
+     *   pagination and optional filters.
    *
    * Search/filter logic:
    * - email: partial/fuzzy match against the email column (case-insensitive)
@@ -72,9 +73,10 @@ export class CommunityplatformMembersController {
    *
    * @param connection
    * @param memberId The UUID primary key of the member to retrieve.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query the community_platform_members table by id (UUID primary key).
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query the community_platform_members table by id
+     *   (UUID primary key).
    *
    * SQL pattern: SELECT id, email, username, created_at, updated_at FROM community_platform_members WHERE id = {memberId} AND deleted_at IS NULL
    *

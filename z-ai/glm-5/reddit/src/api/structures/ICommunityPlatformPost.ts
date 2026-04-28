@@ -11,92 +11,117 @@ export type ICommunityPlatformPost = {
   /**
    * Unique identifier for the post.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from community_platform_posts.id. Primary key UUID generated on creation.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from community_platform_posts.id.
+     *   Primary key UUID generated on creation.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * The title of the post, displayed in feeds and post listings.
    *
-   * @x-autobe-database-schema-property title
-   * @x-autobe-specification Direct mapping from community_platform_posts.title. Required string for all post types.
+     * @x-autobe-database-schema-property title
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_posts.title. Required string for all post types.
    */
   title: string;
 
   /**
    * The content type of the post: text, link, or image.
    *
-   * @x-autobe-database-schema-property post_type
-   * @x-autobe-specification Direct mapping from community_platform_posts.post_type. Enum discriminator: 'text' for text posts, 'link' for URL posts, 'image' for uploaded image posts.
+     * @x-autobe-database-schema-property post_type
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_posts.post_type. Enum discriminator: 'text' for text
+     *   posts, 'link' for URL posts, 'image' for uploaded image posts.
    */
   postType: "text" | "link" | "image";
 
   /**
    * The member who created this post.
    *
-   * @x-autobe-database-schema-property author
-   * @x-autobe-specification Belongs-to relation via author_id foreign key. JOIN with community_platform_members table to retrieve ICommunityPlatformMember.ISummary object.
+     * @x-autobe-database-schema-property author
+     * @x-autobe-specification Belongs-to relation via author_id foreign key.
+     *   JOIN with community_platform_members table to retrieve
+     *   ICommunityPlatformMember.ISummary object.
    */
   author: ICommunityPlatformMember.ISummary;
 
   /**
    * The community this post belongs to.
    *
-   * @x-autobe-database-schema-property community
-   * @x-autobe-specification Belongs-to relation via community_id foreign key. JOIN with community_platform_communities table to retrieve ICommunityPlatformCommunity.ISummary object.
+     * @x-autobe-database-schema-property community
+     * @x-autobe-specification Belongs-to relation via community_id foreign key.
+     *   JOIN with community_platform_communities table to retrieve
+     *   ICommunityPlatformCommunity.ISummary object.
    */
   community: ICommunityPlatformCommunity.ISummary;
 
   /**
    * Net vote score (upvotes minus downvotes) for this post.
    *
-   * @x-autobe-specification Computed field: SUM of votes from community_platform_post_votes table. Upvotes count as +1, downvotes count as -1. Aggregated on-demand via LEFT JOIN and SUM(CASE WHEN vote_type='upvote' THEN 1 ELSE -1 END).
+     * @x-autobe-specification Computed field: SUM of votes from
+     *   community_platform_post_votes table. Upvotes count as +1, downvotes
+     *   count as -1. Aggregated on-demand via LEFT JOIN and SUM(CASE WHEN
+     *   vote_type='upvote' THEN 1 ELSE -1 END).
    */
   voteScore: number & tags.Type<"int32">;
 
   /**
    * Total number of comments on this post.
    *
-   * @x-autobe-specification Computed field: COUNT of non-deleted comments from community_platform_comments table. Aggregated on-demand via LEFT JOIN and COUNT(*) WHERE deleted_at IS NULL.
+     * @x-autobe-specification Computed field: COUNT of non-deleted comments
+     *   from community_platform_comments table. Aggregated on-demand via LEFT
+     *   JOIN and COUNT(*) WHERE deleted_at IS NULL.
    */
   commentCount: number & tags.Type<"int32">;
 
   /**
    * Timestamp when the post was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from community_platform_posts.created_at. Timestamp auto-generated on post creation.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_posts.created_at. Timestamp auto-generated on post
+     *   creation.
    */
   createdAt: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the post was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from community_platform_posts.updated_at. Timestamp auto-refreshed on post update.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_posts.updated_at. Timestamp auto-refreshed on post
+     *   update.
    */
   updatedAt: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the post was soft-deleted, or null if the post is active.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from community_platform_posts.deleted_at. Nullable timestamp set on soft-delete. Null if post is active. Use oneOf with null type for nullable representation.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_posts.deleted_at. Nullable timestamp set on
+     *   soft-delete. Null if post is active. Use oneOf with null type for
+     *   nullable representation.
    */
   deletedAt: (string & tags.Format<"date-time">) | null;
 
   /**
    * The text body content for text-type posts. Only present when postType is 'text'.
    *
-   * @x-autobe-specification Fetched from community_platform_post_text_contents.content via LEFT JOIN on post_id. Only present when postType='text'. Contains the written body content of text posts.
+     * @x-autobe-specification Fetched from
+     *   community_platform_post_text_contents.content via LEFT JOIN on post_id.
+     *   Only present when postType='text'. Contains the written body content of
+     *   text posts.
    */
   content: string | null;
 
   /**
    * The external URL for link-type posts. Only present when postType is 'link'.
    *
-   * @x-autobe-specification Fetched from community_platform_post_link_urls.url via LEFT JOIN on post_id. Only present when postType='link'. Contains the external URL being shared.
+     * @x-autobe-specification Fetched from
+     *   community_platform_post_link_urls.url via LEFT JOIN on post_id. Only
+     *   present when postType='link'. Contains the external URL being shared.
    */
   url: (string & tags.Format<"url">) | null;
 };
@@ -108,28 +133,52 @@ export namespace ICommunityPlatformPost {
     /**
      * Sorting algorithm for the post feed. 'hot' surfaces trending content with recent high engagement, 'new' shows most recently created posts, 'top' displays posts with highest vote scores (can be filtered by time_range), 'controversial' highlights posts with significant disagreement (many votes but score near zero).
      *
-     * @x-autobe-specification Sorting algorithm for post feed queries. 'hot': ORDER BY (vote_score / POWER(EXTRACT(EPOCH FROM (NOW() - created_at)) / 3600 + 2, 1.8)) DESC - surfaces trending content with recent high engagement. 'new': ORDER BY created_at DESC - most recently created posts first. 'top': ORDER BY vote_score DESC - highest vote scores, optionally filtered by time_range. 'controversial': ORDER BY ABS(vote_score) ASC, (upvote_count + downvote_count) DESC - posts with high total votes but score near zero indicating divided opinion. Default is 'hot' when not specified.
+         * @x-autobe-specification Sorting algorithm for post feed queries.
+         *   'hot': ORDER BY (vote_score / POWER(EXTRACT(EPOCH FROM (NOW() -
+         *   created_at)) / 3600 + 2, 1.8)) DESC - surfaces trending content
+         *   with recent high engagement. 'new': ORDER BY created_at DESC - most
+         *   recently created posts first. 'top': ORDER BY vote_score DESC -
+         *   highest vote scores, optionally filtered by time_range.
+         *   'controversial': ORDER BY ABS(vote_score) ASC, (upvote_count +
+         *   downvote_count) DESC - posts with high total votes but score near
+         *   zero indicating divided opinion. Default is 'hot' when not
+         *   specified.
      */
     sort?: "hot" | "new" | "top" | "controversial" | null | undefined;
 
     /**
      * Time filter for 'top' sorting mode. Limits posts to those created within the specified time period: today (last 24 hours), week (last 7 days), month (last 30 days), year (last 365 days), all (no time restriction). Only meaningful when sort is 'top'.
      *
-     * @x-autobe-specification Time filter applied only when sort is 'top'. Translates to created_at >= threshold in WHERE clause. 'today': created_at >= NOW() - INTERVAL '1 day' (last 24 hours). 'week': created_at >= NOW() - INTERVAL '7 days' (last 7 days). 'month': created_at >= NOW() - INTERVAL '30 days' (last 30 days). 'year': created_at >= NOW() - INTERVAL '365 days' (last 365 days). 'all': no time filter applied. Ignored when sort is not 'top'. Default is 'all' when not specified.
+         * @x-autobe-specification Time filter applied only when sort is 'top'.
+         *   Translates to created_at >= threshold in WHERE clause. 'today':
+         *   created_at >= NOW() - INTERVAL '1 day' (last 24 hours). 'week':
+         *   created_at >= NOW() - INTERVAL '7 days' (last 7 days). 'month':
+         *   created_at >= NOW() - INTERVAL '30 days' (last 30 days). 'year':
+         *   created_at >= NOW() - INTERVAL '365 days' (last 365 days). 'all':
+         *   no time filter applied. Ignored when sort is not 'top'. Default is
+         *   'all' when not specified.
      */
     time_range?: "today" | "week" | "month" | "year" | "all" | null | undefined;
 
     /**
      * Page number for pagination. Starts at 1. Used with limit parameter to navigate through large result sets.
      *
-     * @x-autobe-specification Page number for pagination, 1-indexed. Used to calculate OFFSET for SQL query: OFFSET = (page - 1) * limit. Minimum value is 1. Default value is 1 when not specified. Works in conjunction with limit parameter to navigate through paginated result sets.
+         * @x-autobe-specification Page number for pagination, 1-indexed. Used
+         *   to calculate OFFSET for SQL query: OFFSET = (page - 1) * limit.
+         *   Minimum value is 1. Default value is 1 when not specified. Works in
+         *   conjunction with limit parameter to navigate through paginated
+         *   result sets.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | null | undefined;
 
     /**
      * Number of posts per page. Maximum allowed is 100 to prevent excessive load. Default is typically 25 when not specified.
      *
-     * @x-autobe-specification Number of posts to return per page. Used directly as LIMIT clause in SQL query. Minimum value is 1, maximum is 100 to prevent excessive database load. Default value is 25 when not specified. Works with page parameter for pagination: OFFSET = (page - 1) * limit.
+         * @x-autobe-specification Number of posts to return per page. Used
+         *   directly as LIMIT clause in SQL query. Minimum value is 1, maximum
+         *   is 100 to prevent excessive database load. Default value is 25 when
+         *   not specified. Works with page parameter for pagination: OFFSET =
+         *   (page - 1) * limit.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -144,83 +193,115 @@ export namespace ICommunityPlatformPost {
     /**
      * Unique identifier for the post.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from community_platform_posts.id. UUID primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_posts.id. UUID primary key.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * The post title displayed in feed lists and post detail views.
      *
-     * @x-autobe-database-schema-property title
-     * @x-autobe-specification Direct mapping from community_platform_posts.title. String field required for all post types.
+         * @x-autobe-database-schema-property title
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_posts.title. String field required for all post
+         *   types.
      */
     title: string;
 
     /**
      * Content type of the post: text, link, or image.
      *
-     * @x-autobe-database-schema-property post_type
-     * @x-autobe-specification Direct mapping from community_platform_posts.post_type. Discriminator indicating content type: 'text', 'link', or 'image'. Used to determine which preview field to display.
+         * @x-autobe-database-schema-property post_type
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_posts.post_type. Discriminator indicating
+         *   content type: 'text', 'link', or 'image'. Used to determine which
+         *   preview field to display.
      */
     postType: string;
 
     /**
      * The member who created this post, displayed with their username in feeds.
      *
-     * @x-autobe-database-schema-property author
-     * @x-autobe-specification JOIN from community_platform_posts.author_id to community_platform_members.id. Returns ICommunityPlatformMember.ISummary containing id, username, displayName, bio, karma, avatar, createdAt.
+         * @x-autobe-database-schema-property author
+         * @x-autobe-specification JOIN from community_platform_posts.author_id
+         *   to community_platform_members.id. Returns
+         *   ICommunityPlatformMember.ISummary containing id, username,
+         *   displayName, bio, karma, avatar, createdAt.
      */
     author: ICommunityPlatformMember.ISummary;
 
     /**
      * The community this post belongs to, displayed with community name in feeds.
      *
-     * @x-autobe-database-schema-property community
-     * @x-autobe-specification JOIN from community_platform_posts.community_id to community_platform_communities.id. Returns ICommunityPlatformCommunity.ISummary containing id, name, description, icon, subscriber_count, owner, created_at.
+         * @x-autobe-database-schema-property community
+         * @x-autobe-specification JOIN from
+         *   community_platform_posts.community_id to
+         *   community_platform_communities.id. Returns
+         *   ICommunityPlatformCommunity.ISummary containing id, name,
+         *   description, icon, subscriber_count, owner, created_at.
      */
     community: ICommunityPlatformCommunity.ISummary;
 
     /**
      * Net vote score (upvotes minus downvotes) indicating community reception of the post.
      *
-     * @x-autobe-specification Aggregation from community_platform_post_votes: SUM(CASE WHEN vote_type='upvote' THEN 1 ELSE -1 END) WHERE post_id = posts.id. Can be negative if downvotes exceed upvotes. Computed on-demand for each post in feed.
+         * @x-autobe-specification Aggregation from
+         *   community_platform_post_votes: SUM(CASE WHEN vote_type='upvote'
+         *   THEN 1 ELSE -1 END) WHERE post_id = posts.id. Can be negative if
+         *   downvotes exceed upvotes. Computed on-demand for each post in feed.
      */
     voteScore: number & tags.Type<"int32">;
 
     /**
      * Number of top-level comments on this post, displayed to indicate discussion activity.
      *
-     * @x-autobe-specification Aggregation from community_platform_comments: COUNT(*) WHERE post_id = posts.id AND parent_comment_id IS NULL (top-level comments only, excluding nested replies). Computed on-demand for each post in feed.
+         * @x-autobe-specification Aggregation from community_platform_comments:
+         *   COUNT(*) WHERE post_id = posts.id AND parent_comment_id IS NULL
+         *   (top-level comments only, excluding nested replies). Computed
+         *   on-demand for each post in feed.
      */
     commentCount: number & tags.Type<"int32">;
 
     /**
      * First 200 characters of text post content for preview display. Only populated for text posts.
      *
-     * @x-autobe-specification LEFT JOIN community_platform_post_text_contents on post_id. For text-type posts, extracts first 200 characters from body content. Null for non-text posts. Used to show content preview in feed lists.
+         * @x-autobe-specification LEFT JOIN
+         *   community_platform_post_text_contents on post_id. For text-type
+         *   posts, extracts first 200 characters from body content. Null for
+         *   non-text posts. Used to show content preview in feed lists.
      */
     textPreview?: string | undefined;
 
     /**
      * Domain of the linked URL for preview display. Only populated for link posts.
      *
-     * @x-autobe-specification LEFT JOIN community_platform_post_link_urls on post_id. For link-type posts, extracts the domain from the URL (e.g., 'example.com' from 'https://example.com/article'). Null for non-link posts. Used to show link target in feed lists.
+         * @x-autobe-specification LEFT JOIN community_platform_post_link_urls
+         *   on post_id. For link-type posts, extracts the domain from the URL
+         *   (e.g., 'example.com' from 'https://example.com/article'). Null for
+         *   non-link posts. Used to show link target in feed lists.
      */
     urlDomain?: string | undefined;
 
     /**
      * URL to the thumbnail image for preview display. Only populated for image posts.
      *
-     * @x-autobe-specification For image-type posts, generates thumbnail URL from file storage based on post's image file reference. The thumbnail is a resized version optimized for feed display. Null for non-image posts. Nullable because thumbnail generation may not be available.
+         * @x-autobe-specification For image-type posts, generates thumbnail URL
+         *   from file storage based on post's image file reference. The
+         *   thumbnail is a resized version optimized for feed display. Null for
+         *   non-image posts. Nullable because thumbnail generation may not be
+         *   available.
      */
     thumbnailUrl?: (string & tags.Format<"uri">) | null | undefined;
 
     /**
      * Timestamp when the post was created, used to display relative time in feeds.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from community_platform_posts.created_at. ISO 8601 timestamp stored as timestamptz. Displayed as relative time (e.g., '2 hours ago') in feed lists.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_posts.created_at. ISO 8601 timestamp stored as
+         *   timestamptz. Displayed as relative time (e.g., '2 hours ago') in
+         *   feed lists.
      */
     createdAt: string & tags.Format<"date-time">;
   };
@@ -232,7 +313,7 @@ export namespace ICommunityPlatformPost {
     /**
      * The updated post title
      *
-     * @x-autobe-database-schema-property title
+         * @x-autobe-database-schema-property title
      */
     title?: string | undefined;
 
@@ -254,37 +335,57 @@ export namespace ICommunityPlatformPost {
     /**
      * The post title displayed in feeds and post listings. Required for all post types.
      *
-     * @x-autobe-database-schema-property title
-     * @x-autobe-specification Direct mapping to community_platform_posts.title column. Required string with minimum length of 1 character. Stored as-is without transformation.
+         * @x-autobe-database-schema-property title
+         * @x-autobe-specification Direct mapping to
+         *   community_platform_posts.title column. Required string with minimum
+         *   length of 1 character. Stored as-is without transformation.
      */
     title: string & tags.MinLength<1>;
 
     /**
      * Post content type discriminator. Determines which type-specific field is required: 'text' requires content, 'link' requires url, 'image' requires imageFileId.
      *
-     * @x-autobe-database-schema-property post_type
-     * @x-autobe-specification Direct mapping to community_platform_posts.post_type column. Discriminator determining which subsidiary table to populate: 'text' -> community_platform_post_text_contents, 'link' -> community_platform_post_link_urls, 'image' -> polymorphic file reference. One of: 'text', 'link', 'image'.
+         * @x-autobe-database-schema-property post_type
+         * @x-autobe-specification Direct mapping to
+         *   community_platform_posts.post_type column. Discriminator
+         *   determining which subsidiary table to populate: 'text' ->
+         *   community_platform_post_text_contents, 'link' ->
+         *   community_platform_post_link_urls, 'image' -> polymorphic file
+         *   reference. One of: 'text', 'link', 'image'.
      */
     postType: "text" | "link" | "image";
 
     /**
      * Text body content for text posts. Required when postType is 'text'. Provides the main written content of the post.
      *
-     * @x-autobe-specification Maps to community_platform_post_text_contents.content column. Only used when postType='text'. Value inserted into subsidiary table with foreign key reference to the created post. Minimum length of 1 character required for text posts.
+         * @x-autobe-specification Maps to
+         *   community_platform_post_text_contents.content column. Only used
+         *   when postType='text'. Value inserted into subsidiary table with
+         *   foreign key reference to the created post. Minimum length of 1
+         *   character required for text posts.
      */
     content?: (string & tags.MinLength<1>) | undefined;
 
     /**
      * External URL for link posts. Required when postType is 'link'. Points to the external resource being shared with the community.
      *
-     * @x-autobe-specification Maps to community_platform_post_link_urls.url column. Only used when postType='link'. Value validated as URL format, inserted into subsidiary table with foreign key reference to the created post. Domain extracted and stored separately for display.
+         * @x-autobe-specification Maps to community_platform_post_link_urls.url
+         *   column. Only used when postType='link'. Value validated as URL
+         *   format, inserted into subsidiary table with foreign key reference
+         *   to the created post. Domain extracted and stored separately for
+         *   display.
      */
     url?: (string & tags.Format<"url">) | undefined;
 
     /**
      * Reference to uploaded image file for image posts. Required when postType is 'image'. The image must be uploaded before creating the post.
      *
-     * @x-autobe-specification Polymorphic file reference stored in community_platform_files table. Only used when postType='image'. After post creation, a file record is created with owner_type='post_image' and owner_id set to the new post's ID. The imageFileId provided by the client references a pre-uploaded file that gets associated with the post during creation.
+         * @x-autobe-specification Polymorphic file reference stored in
+         *   community_platform_files table. Only used when postType='image'.
+         *   After post creation, a file record is created with
+         *   owner_type='post_image' and owner_id set to the new post's ID. The
+         *   imageFileId provided by the client references a pre-uploaded file
+         *   that gets associated with the post during creation.
      */
     imageFileId?: (string & tags.Format<"uuid">) | undefined;
   };

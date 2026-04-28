@@ -21,7 +21,10 @@ import { IEcommerceMallSeller } from "../../../../../structures/IEcommerceMallSe
  * @param props.sellerId The unique identifier (UUID) of the seller whose profile is being retrieved
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Query the ecommerce_mall_seller_profiles table by seller_id to retrieve the seller's profile record. The query should join with the ecommerce_mall_sellers table to verify the seller exists and their account status.
+ * @x-autobe-specification Query the ecommerce_mall_seller_profiles table by
+ *   seller_id to retrieve the seller's profile record. The query should join
+ *   with the ecommerce_mall_sellers table to verify the seller exists and their
+ *   account status.
  *
  * Return the profile fields: shop name, shop description, and logo image URL. If the seller account is suspended, the profile should still be returned but with an indicator of the suspension status.
  *

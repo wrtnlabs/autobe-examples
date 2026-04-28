@@ -25,7 +25,8 @@ import { IPageIEcommerceMallReview } from "../../../../structures/IPageIEcommerc
  * @param props.body Search filters and pagination parameters for product reviews
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query ecommerce_mall_reviews table filtering by product_id matching the path parameter.
+ * @x-autobe-specification Query ecommerce_mall_reviews table filtering by
+ *   product_id matching the path parameter.
  *
  * Filtering capabilities:
  * - Filter by customer_id to see reviews from a specific customer

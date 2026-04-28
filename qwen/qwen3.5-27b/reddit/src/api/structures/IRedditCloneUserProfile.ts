@@ -17,8 +17,10 @@ export type IRedditCloneUserProfile = {
    *
    * This UUID serves as the primary key for the user profile entity and is used to reference the profile across the platform in posts, comments, and other related entities.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from reddit_clone_user_profiles.id. Primary key UUID identifying the user profile.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_user_profiles.id. Primary key UUID identifying the user
+     *   profile.
    */
   id: string & tags.Format<"uuid">;
 
@@ -27,8 +29,10 @@ export type IRedditCloneUserProfile = {
    *
    * This is the visible name that appears on posts, comments, and the user's profile page. Users can edit this independently from their authentication username.
    *
-   * @x-autobe-database-schema-property display_name
-   * @x-autobe-specification Direct mapping from reddit_clone_user_profiles.display_name. Required string field for public display name.
+     * @x-autobe-database-schema-property display_name
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_user_profiles.display_name. Required string field for
+     *   public display name.
    */
   display_name: string;
 
@@ -37,8 +41,10 @@ export type IRedditCloneUserProfile = {
    *
    * Users can add a short bio to their profile page. This field is nullable as not all users will provide biographical information.
    *
-   * @x-autobe-database-schema-property bio
-   * @x-autobe-specification Direct mapping from reddit_clone_user_profiles.bio. Nullable string field for optional biographical text.
+     * @x-autobe-database-schema-property bio
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_user_profiles.bio. Nullable string field for optional
+     *   biographical text.
    */
   bio: string | null;
 
@@ -47,8 +53,10 @@ export type IRedditCloneUserProfile = {
    *
    * Users can upload and set an avatar image that appears on their profile and next to their content. This field is nullable for users who haven't set an avatar.
    *
-   * @x-autobe-database-schema-property avatar
-   * @x-autobe-specification Direct mapping from reddit_clone_user_profiles.avatar. Nullable string field with URI format for avatar image URL.
+     * @x-autobe-database-schema-property avatar
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_user_profiles.avatar. Nullable string field with URI
+     *   format for avatar image URL.
    */
   avatar: (string & tags.Format<"uri">) | null;
 
@@ -57,8 +65,10 @@ export type IRedditCloneUserProfile = {
    *
    * Karma increases by 1 for each upvote and decreases by 1 for each downvote on the user's posts and comments. This value is denormalized for performance rather than computed on-the-fly. Karma can be negative.
    *
-   * @x-autobe-database-schema-property karma
-   * @x-autobe-specification Direct mapping from reddit_clone_user_profiles.karma. Integer field representing denormalized karma score from votes on user's posts and comments.
+     * @x-autobe-database-schema-property karma
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_user_profiles.karma. Integer field representing
+     *   denormalized karma score from votes on user's posts and comments.
    */
   karma: number & tags.Type<"int32">;
 
@@ -67,8 +77,10 @@ export type IRedditCloneUserProfile = {
    *
    * This field records the exact date and time when the user profile was first created and is used to display account age and sort profiles chronologically.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from reddit_clone_user_profiles.created_at. DateTime field for profile creation timestamp.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_user_profiles.created_at. DateTime field for profile
+     *   creation timestamp.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -77,8 +89,10 @@ export type IRedditCloneUserProfile = {
    *
    * This field is updated whenever the user modifies their profile information including display name, bio, or avatar.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from reddit_clone_user_profiles.updated_at. DateTime field for last update timestamp.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_user_profiles.updated_at. DateTime field for last update
+     *   timestamp.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -87,8 +101,10 @@ export type IRedditCloneUserProfile = {
    *
    * When a user deletes their account, their profile is soft deleted. This field is set to the deletion time. Profiles with a deleted_at value are hidden from normal views but retained for potential recovery within retention periods.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from reddit_clone_user_profiles.deleted_at. Nullable DateTime field for soft delete timestamp.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_user_profiles.deleted_at. Nullable DateTime field for soft
+     *   delete timestamp.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 
@@ -97,7 +113,10 @@ export type IRedditCloneUserProfile = {
    *
    * This array contains summary information for each post authored by the user, including title, post type, author, community, vote score, comment count, and creation timestamp. Only non-deleted posts are included.
    *
-   * @x-autobe-specification Computed aggregation: Query reddit_clone_posts where reddit_clone_user_profile_id equals this profile's id and deleted_at is null. Return as IRedditClonePost.ISummary array. Order by created_at descending.
+     * @x-autobe-specification Computed aggregation: Query reddit_clone_posts
+     *   where reddit_clone_user_profile_id equals this profile's id and
+     *   deleted_at is null. Return as IRedditClonePost.ISummary array. Order by
+     *   created_at descending.
    */
   posts: IRedditClonePost.ISummary[];
 
@@ -106,7 +125,10 @@ export type IRedditCloneUserProfile = {
    *
    * This array contains summary information for each comment authored by the user, including content, author, post reference, vote score, and timestamps. Only non-deleted comments are included.
    *
-   * @x-autobe-specification Computed aggregation: Query reddit_clone_comments where reddit_clone_user_profile_id equals this profile's id and deleted_at is null. Return as IRedditCloneComment.ISummary array. Order by created_at descending.
+     * @x-autobe-specification Computed aggregation: Query reddit_clone_comments
+     *   where reddit_clone_user_profile_id equals this profile's id and
+     *   deleted_at is null. Return as IRedditCloneComment.ISummary array. Order
+     *   by created_at descending.
    */
   comments: IRedditCloneComment.ISummary[];
 };
@@ -122,7 +144,9 @@ export namespace IRedditCloneUserProfile {
      *
      * Performs a case-insensitive partial match against user display names. For example, searching 'john' will match 'John Doe', 'Johnny', etc. Leave empty or omit to include all profiles regardless of display name.
      *
-     * @x-autobe-specification Query parameter for filtering profiles by display_name. Performs partial match, case-insensitive search on the display_name column. Empty or null values disable this filter.
+         * @x-autobe-specification Query parameter for filtering profiles by
+         *   display_name. Performs partial match, case-insensitive search on
+         *   the display_name column. Empty or null values disable this filter.
      */
     search?: string | undefined;
 
@@ -131,7 +155,10 @@ export namespace IRedditCloneUserProfile {
      *
      * Only returns profiles with karma greater than or equal to this value. Karma can be negative, so this parameter supports negative values. Omit to include all karma scores.
      *
-     * @x-autobe-specification Query parameter for filtering profiles with karma >= karmaMin. Filters the karma column with a greater-than-or-equal comparison. Null or omitted values disable this filter.
+         * @x-autobe-specification Query parameter for filtering profiles with
+         *   karma >= karmaMin. Filters the karma column with a
+         *   greater-than-or-equal comparison. Null or omitted values disable
+         *   this filter.
      */
     karmaMin?: (number & tags.Type<"int32">) | undefined;
 
@@ -140,7 +167,10 @@ export namespace IRedditCloneUserProfile {
      *
      * Only returns profiles with karma less than or equal to this value. Karma can be negative, so this parameter supports negative values. Omit to include all karma scores.
      *
-     * @x-autobe-specification Query parameter for filtering profiles with karma <= karmaMax. Filters the karma column with a less-than-or-equal comparison. Null or omitted values disable this filter.
+         * @x-autobe-specification Query parameter for filtering profiles with
+         *   karma <= karmaMax. Filters the karma column with a
+         *   less-than-or-equal comparison. Null or omitted values disable this
+         *   filter.
      */
     karmaMax?: (number & tags.Type<"int32">) | undefined;
 
@@ -149,7 +179,10 @@ export namespace IRedditCloneUserProfile {
      *
      * Accepts 'karma' to sort by karma score (highest first, default) or 'createdAt' to sort by account creation date (newest first). Invalid values default to karma-based sorting.
      *
-     * @x-autobe-specification Query parameter for sorting order. Accepts 'karma' (default, descending by karma score) or 'createdAt' (descending by created_at timestamp). Invalid values default to 'karma'.
+         * @x-autobe-specification Query parameter for sorting order. Accepts
+         *   'karma' (default, descending by karma score) or 'createdAt'
+         *   (descending by created_at timestamp). Invalid values default to
+         *   'karma'.
      */
     sortBy?: string | undefined;
 
@@ -158,7 +191,9 @@ export namespace IRedditCloneUserProfile {
      *
      * Specifies which page of results to retrieve. Page numbering starts from 1. Default is page 1 if omitted. Must be at least 1.
      *
-     * @x-autobe-specification Query parameter for pagination page number. 1-indexed, minimum value is 1. Default is 1 if omitted. Used with limit to retrieve specific page of results.
+         * @x-autobe-specification Query parameter for pagination page number.
+         *   1-indexed, minimum value is 1. Default is 1 if omitted. Used with
+         *   limit to retrieve specific page of results.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -167,7 +202,9 @@ export namespace IRedditCloneUserProfile {
      *
      * Controls how many profile records are returned in each page. Minimum is 1, maximum is 100. Default is 20 if omitted. Use with page parameter for pagination.
      *
-     * @x-autobe-specification Query parameter for number of records per page. Minimum 1, maximum 100. Default is 20 if omitted. Controls how many profiles are returned per page.
+         * @x-autobe-specification Query parameter for number of records per
+         *   page. Minimum 1, maximum 100. Default is 20 if omitted. Controls
+         *   how many profiles are returned per page.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)

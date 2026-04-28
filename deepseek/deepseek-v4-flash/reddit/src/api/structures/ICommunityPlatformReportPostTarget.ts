@@ -17,8 +17,9 @@ export type ICommunityPlatformReportPostTarget = {
    *
    * Auto-generated UUID primary key assigned when the post target link is created upon report submission.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from community_platform_report_post_targets.id. UUID primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_report_post_targets.id. UUID primary key.
    */
   id: string & tags.Format<"uuid">;
 
@@ -27,8 +28,10 @@ export type ICommunityPlatformReportPostTarget = {
    *
    * Links this post target record to its parent report via a unique 1:1 foreign key constraint, ensuring each report targets at most one post.
    *
-   * @x-autobe-database-schema-property report
-   * @x-autobe-specification INNER JOIN community_platform_reports on community_platform_report_id. Returns ICommunityPlatformReport.ISummary.
+     * @x-autobe-database-schema-property report
+     * @x-autobe-specification INNER JOIN community_platform_reports on
+     *   community_platform_report_id. Returns
+     *   ICommunityPlatformReport.ISummary.
    */
   report: ICommunityPlatformReport.ISummary;
 
@@ -37,8 +40,9 @@ export type ICommunityPlatformReportPostTarget = {
    *
    * The specific post being reported. Multiple distinct reports can independently target the same post, enabling community moderators to aggregate and review all flags filed against a given piece of content.
    *
-   * @x-autobe-database-schema-property post
-   * @x-autobe-specification INNER JOIN community_platform_posts on community_platform_post_id. Returns ICommunityPlatformPost.ISummary.
+     * @x-autobe-database-schema-property post
+     * @x-autobe-specification INNER JOIN community_platform_posts on
+     *   community_platform_post_id. Returns ICommunityPlatformPost.ISummary.
    */
   post: ICommunityPlatformPost.ISummary;
 
@@ -47,8 +51,9 @@ export type ICommunityPlatformReportPostTarget = {
    *
    * Set automatically upon report submission when the target content is a post.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from community_platform_report_post_targets.created_at.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_report_post_targets.created_at.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -57,8 +62,9 @@ export type ICommunityPlatformReportPostTarget = {
    *
    * Updated on any change to the association record. Currently there are no mutable fields on this entity, so this timestamp remains equal to created_at.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from community_platform_report_post_targets.updated_at.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_report_post_targets.updated_at.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -67,8 +73,10 @@ export type ICommunityPlatformReportPostTarget = {
    *
    * Null indicates the association is active. When set, the record is considered deleted for data retention and recovery purposes in accordance with platform content lifecycle policies.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from community_platform_report_post_targets.deleted_at. Nullable — null indicates active record.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_report_post_targets.deleted_at. Nullable — null
+     *   indicates active record.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };

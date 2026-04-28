@@ -14,7 +14,9 @@ export type IHrmTimeTrackingOrganizationDashboard = {
    *
    * This metric counts all employee records where the employment status is set to 'active' and the record has not been soft-deleted. It provides a quick headcount of the current workforce available for assignment and time tracking.
    *
-   * @x-autobe-specification COUNT of hrm_time_tracking_employees WHERE organization_id = current AND status = 'active' AND deleted_at IS NULL. Returns total number of currently active employees in the organization.
+     * @x-autobe-specification COUNT of hrm_time_tracking_employees WHERE
+     *   organization_id = current AND status = 'active' AND deleted_at IS NULL.
+     *   Returns total number of currently active employees in the organization.
    */
   activeEmployeeCount: number & tags.Type<"int32"> & tags.Minimum<0>;
 
@@ -23,7 +25,11 @@ export type IHrmTimeTrackingOrganizationDashboard = {
    *
    * The current week is defined as Monday through Sunday, calculated using the organization's configured timezone setting. This aggregate sums all timelog durations across every employee, providing a team-wide view of weekly productivity.
    *
-   * @x-autobe-specification SUM(duration_minutes)/60.0 from hrm_time_tracking_timelogs JOIN hrm_time_tracking_employees WHERE employee.organization_id = current AND timelog.date within current Monday-Sunday week (use organization's timezone for week boundaries) AND timelog.deleted_at IS NULL. Returns total hours as a float.
+     * @x-autobe-specification SUM(duration_minutes)/60.0 from
+     *   hrm_time_tracking_timelogs JOIN hrm_time_tracking_employees WHERE
+     *   employee.organization_id = current AND timelog.date within current
+     *   Monday-Sunday week (use organization's timezone for week boundaries)
+     *   AND timelog.deleted_at IS NULL. Returns total hours as a float.
    */
   weeklyHours: number & tags.Minimum<0>;
 
@@ -32,7 +38,10 @@ export type IHrmTimeTrackingOrganizationDashboard = {
    *
    * Timesheets enter the 'submitted' state when employees finalize their weekly entries. This metric helps managers identify outstanding approval work that needs their attention.
    *
-   * @x-autobe-specification COUNT of hrm_time_tracking_timesheets JOIN hrm_time_tracking_employees WHERE employee.organization_id = current AND timesheet.status = 'submitted' AND timesheet.deleted_at IS NULL. Returns count of timesheets awaiting approval.
+     * @x-autobe-specification COUNT of hrm_time_tracking_timesheets JOIN
+     *   hrm_time_tracking_employees WHERE employee.organization_id = current
+     *   AND timesheet.status = 'submitted' AND timesheet.deleted_at IS NULL.
+     *   Returns count of timesheets awaiting approval.
    */
   pendingTimesheetCount: number & tags.Type<"int32"> & tags.Minimum<0>;
 
@@ -41,7 +50,14 @@ export type IHrmTimeTrackingOrganizationDashboard = {
    *
    * This alert helps managers proactively monitor budget consumption. Only active projects with a defined budget are evaluated. The utilization percentage is calculated as (total logged hours ÷ budgeted hours) × 100. Projects exceeding the 80% threshold are returned with their budget details and current utilization rate, enabling timely intervention before budgets are fully consumed.
    *
-   * @x-autobe-specification Query hrm_time_tracking_projects WHERE organization_id = current AND status = 'active' AND budget_hours IS NOT NULL AND deleted_at IS NULL. For each project, calculate total logged hours from timelogs (SUM duration_minutes/60 where deleted_at IS NULL). Compute utilization_pct = total_logged / budget_hours * 100. Return projects where utilization_pct > 80 as an array of { projectId, projectName, budgetHours, totalLoggedHours, utilizationPercent } objects.
+     * @x-autobe-specification Query hrm_time_tracking_projects WHERE
+     *   organization_id = current AND status = 'active' AND budget_hours IS NOT
+     *   NULL AND deleted_at IS NULL. For each project, calculate total logged
+     *   hours from timelogs (SUM duration_minutes/60 where deleted_at IS NULL).
+     *   Compute utilization_pct = total_logged / budget_hours * 100. Return
+     *   projects where utilization_pct > 80 as an array of { projectId,
+     *   projectName, budgetHours, totalLoggedHours, utilizationPercent }
+     *   objects.
    */
   budgetAlerts: IHrmTimeTrackingOrganizationDashboard.IBudgetAlert[];
 
@@ -50,7 +66,12 @@ export type IHrmTimeTrackingOrganizationDashboard = {
    *
    * Employees are ranked in descending order based on the sum of their timelog durations. This metric highlights the most active contributors and provides visibility into workload distribution across the team.
    *
-   * @x-autobe-specification GROUP BY employee_id on hrm_time_tracking_timelogs within current Monday-Sunday week (same week boundaries as weeklyHours), SUM(duration_minutes), ORDER BY SUM DESC, LIMIT 5. JOIN with hrm_time_tracking_employees for employee name. Returns array of { employeeId, employeeName, totalHours } objects ordered by hours descending.
+     * @x-autobe-specification GROUP BY employee_id on
+     *   hrm_time_tracking_timelogs within current Monday-Sunday week (same week
+     *   boundaries as weeklyHours), SUM(duration_minutes), ORDER BY SUM DESC,
+     *   LIMIT 5. JOIN with hrm_time_tracking_employees for employee name.
+     *   Returns array of { employeeId, employeeName, totalHours } objects
+     *   ordered by hours descending.
    */
   topEmployees: IHrmTimeTrackingOrganizationDashboard.ITopEmployee[];
 };
@@ -68,7 +89,10 @@ export namespace IHrmTimeTrackingOrganizationDashboard {
      *
      * This identifier references the project record from which all budget alert data is derived. It can be used to navigate to the full project details or to cross-reference with other project-related endpoints.
      *
-     * @x-autobe-specification Data sourced from hrm_time_tracking_projects.id. UUID primary key of the project record that qualifies for budget alert status (active status, has budget_hours defined, utilization > 80%, not deleted).
+         * @x-autobe-specification Data sourced from
+         *   hrm_time_tracking_projects.id. UUID primary key of the project
+         *   record that qualifies for budget alert status (active status, has
+         *   budget_hours defined, utilization > 80%, not deleted).
      */
     projectId: string;
 
@@ -77,7 +101,9 @@ export namespace IHrmTimeTrackingOrganizationDashboard {
      *
      * This human-readable name helps managers quickly identify which project requires attention without needing to cross-reference project IDs.
      *
-     * @x-autobe-specification Data sourced from hrm_time_tracking_projects.name. The display name of the project from the qualifying project record.
+         * @x-autobe-specification Data sourced from
+         *   hrm_time_tracking_projects.name. The display name of the project
+         *   from the qualifying project record.
      */
     projectName: string;
 
@@ -86,7 +112,9 @@ export namespace IHrmTimeTrackingOrganizationDashboard {
      *
      * This is the planned time allocation against which actual logged hours are compared. Projects without a defined budget are excluded from budget utilization evaluations. The value is stored as a decimal number representing hours.
      *
-     * @x-autobe-specification Data sourced from hrm_time_tracking_projects.budget_hours. Only populated when budget_hours IS NOT NULL for active, non-deleted projects.
+         * @x-autobe-specification Data sourced from
+         *   hrm_time_tracking_projects.budget_hours. Only populated when
+         *   budget_hours IS NOT NULL for active, non-deleted projects.
      */
     budgetHours: number & tags.Minimum<0>;
 
@@ -95,7 +123,10 @@ export namespace IHrmTimeTrackingOrganizationDashboard {
      *
      * Calculated by summing all timelog durations (recorded in minutes) linked to this project, then converting to hours. This value is compared against the budgeted hours to determine the budget utilization percentage. Only timelogs that have not been soft-deleted are included in the calculation.
      *
-     * @x-autobe-specification Computed as SUM(hrm_time_tracking_timelogs.duration_minutes) / 60.0 for timelogs WHERE timelog.hrm_time_tracking_project_id = project.id AND timelog.deleted_at IS NULL. Rounded to 2 decimal places.
+         * @x-autobe-specification Computed as
+         *   SUM(hrm_time_tracking_timelogs.duration_minutes) / 60.0 for
+         *   timelogs WHERE timelog.hrm_time_tracking_project_id = project.id
+         *   AND timelog.deleted_at IS NULL. Rounded to 2 decimal places.
      */
     totalLoggedHours: number & tags.Minimum<0>;
 
@@ -104,7 +135,10 @@ export namespace IHrmTimeTrackingOrganizationDashboard {
      *
      * Calculated as (totalLoggedHours / budgetHours) * 100. Only projects exceeding 80% utilization are included in this budget alert list. Values approaching or exceeding 100% indicate the project has fully consumed or exceeded its allocated time budget, signaling the need for immediate management attention.
      *
-     * @x-autobe-specification Computed as (totalLoggedHours / budgetHours) * 100. This value is always > 80 due to the query filter as only projects exceeding 80% utilization are returned. Rounded to 2 decimal places.
+         * @x-autobe-specification Computed as (totalLoggedHours / budgetHours)
+         *   * 100. This value is always > 80 due to the query filter as only
+         *   projects exceeding 80% utilization are returned. Rounded to 2
+         *   decimal places.
      */
     utilizationPercent: number & tags.Minimum<0>;
   };
@@ -120,7 +154,13 @@ export namespace IHrmTimeTrackingOrganizationDashboard {
      *
      * This value corresponds to the primary key of the employee record within the organization, used to identify the employee in subsequent API calls or detail views.
      *
-     * @x-autobe-specification Resolved by including hrm_time_tracking_employees.id in the SELECT clause during GROUP BY aggregation on hrm_time_tracking_timelogs.hrm_time_tracking_employee_id, joined via hrm_time_tracking_employees.id = hrm_time_tracking_timelogs.hrm_time_tracking_employee_id. Maps to hrm_time_tracking_employees.id (UUID).
+         * @x-autobe-specification Resolved by including
+         *   hrm_time_tracking_employees.id in the SELECT clause during GROUP BY
+         *   aggregation on
+         *   hrm_time_tracking_timelogs.hrm_time_tracking_employee_id, joined
+         *   via hrm_time_tracking_employees.id =
+         *   hrm_time_tracking_timelogs.hrm_time_tracking_employee_id. Maps to
+         *   hrm_time_tracking_employees.id (UUID).
      */
     employeeId: string & tags.Format<"uuid">;
 
@@ -129,7 +169,13 @@ export namespace IHrmTimeTrackingOrganizationDashboard {
      *
      * The employee's display name is sourced from their linked member account's global profile, ensuring consistent naming across all organizations the user belongs to. This value comes from the member record, not the employee record.
      *
-     * @x-autobe-specification Resolved by joining hrm_time_tracking_employees.member relation (hrm_time_tracking_member_id -> hrm_time_tracking_members.id) to retrieve hrm_time_tracking_members.display_name. The employees table does NOT have a name column; the display name is sourced from the linked member account's global profile shared across all organizations.
+         * @x-autobe-specification Resolved by joining
+         *   hrm_time_tracking_employees.member relation
+         *   (hrm_time_tracking_member_id -> hrm_time_tracking_members.id) to
+         *   retrieve hrm_time_tracking_members.display_name. The employees
+         *   table does NOT have a name column; the display name is sourced from
+         *   the linked member account's global profile shared across all
+         *   organizations.
      */
     employeeName: string;
 
@@ -138,7 +184,15 @@ export namespace IHrmTimeTrackingOrganizationDashboard {
      *
      * The value is derived by summing all timelog durations (in minutes) for the employee within the current week boundaries and converting to hours. Only active, non-deleted timelogs are included in the calculation. Hours are displayed as a decimal number.
      *
-     * @x-autobe-specification Computed as SUM(hrm_time_tracking_timelogs.duration_minutes) / 60.0, grouped by hrm_time_tracking_employee_id, filtered to the current Monday-to-Sunday week using the organization's configured timezone. Only non-deleted timelogs (hrm_time_tracking_timelogs.deleted_at IS NULL) from non-deleted employees (hrm_time_tracking_employees.deleted_at IS NULL) within the current organization context are included. Results are ordered by SUM(duration_minutes) DESC and limited to 5.
+         * @x-autobe-specification Computed as
+         *   SUM(hrm_time_tracking_timelogs.duration_minutes) / 60.0, grouped by
+         *   hrm_time_tracking_employee_id, filtered to the current
+         *   Monday-to-Sunday week using the organization's configured timezone.
+         *   Only non-deleted timelogs (hrm_time_tracking_timelogs.deleted_at IS
+         *   NULL) from non-deleted employees
+         *   (hrm_time_tracking_employees.deleted_at IS NULL) within the current
+         *   organization context are included. Results are ordered by
+         *   SUM(duration_minutes) DESC and limited to 5.
      */
     totalHours: number & tags.Minimum<0>;
   };

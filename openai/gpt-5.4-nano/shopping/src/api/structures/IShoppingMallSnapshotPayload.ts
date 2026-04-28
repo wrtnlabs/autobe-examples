@@ -8,48 +8,64 @@ export type IShoppingMallSnapshotPayload = {
   /**
    * Unique identifier of the snapshot payload record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_snapshot_payloads.id (UUID). Used to uniquely identify the payload record returned by payload read endpoints.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_snapshot_payloads.id (UUID). Used to uniquely identify
+     *   the payload record returned by payload read endpoints.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Identifier of the parent snapshot metadata record that this payload content belongs to.
    *
-   * @x-autobe-database-schema-property shopping_mall_snapshot_id
-   * @x-autobe-specification Direct mapping from shopping_mall_snapshot_payloads.shopping_mall_snapshot_id (UUID). This scopes the payload to its parent snapshot metadata record in shopping_mall_snapshots.
+     * @x-autobe-database-schema-property shopping_mall_snapshot_id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_snapshot_payloads.shopping_mall_snapshot_id (UUID). This
+     *   scopes the payload to its parent snapshot metadata record in
+     *   shopping_mall_snapshots.
    */
   shopping_mall_snapshot_id: string & tags.Format<"uuid">;
 
   /**
    * Serialized snapshot payload content stored for point-in-time dispute resolution.
    *
-   * @x-autobe-database-schema-property payload
-   * @x-autobe-specification Direct mapping from shopping_mall_snapshot_payloads.payload (string). Represents the serialized point-in-time snapshot payload content used during dispute resolution.
+     * @x-autobe-database-schema-property payload
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_snapshot_payloads.payload (string). Represents the
+     *   serialized point-in-time snapshot payload content used during dispute
+     *   resolution.
    */
   payload: string;
 
   /**
    * Timestamp when this snapshot payload record was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from shopping_mall_snapshot_payloads.created_at (timestamptz). Indicates when the payload record was created.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_snapshot_payloads.created_at (timestamptz). Indicates
+     *   when the payload record was created.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when this snapshot payload record was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from shopping_mall_snapshot_payloads.updated_at (timestamptz). Updates when the payload content is modified via authorized snapshot payload update flows.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_snapshot_payloads.updated_at (timestamptz). Updates when
+     *   the payload content is modified via authorized snapshot payload update
+     *   flows.
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * Soft-deletion timestamp for this snapshot payload record, or null if it has not been deleted.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from shopping_mall_snapshot_payloads.deleted_at (timestamptz nullable). When null the record is active; when non-null it indicates the payload record was soft-deleted and should generally be treated as unavailable.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_snapshot_payloads.deleted_at (timestamptz nullable). When
+     *   null the record is active; when non-null it indicates the payload
+     *   record was soft-deleted and should generally be treated as unavailable.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -61,8 +77,11 @@ export namespace IShoppingMallSnapshotPayload {
     /**
      * Serialized snapshot payload content attached to the snapshot. This must exactly represent the point-in-time state captured when the snapshot was created.
      *
-     * @x-autobe-database-schema-property payload
-     * @x-autobe-specification Direct mapping from request.payload to shopping_mall_snapshot_payloads.payload (String). The server must persist it verbatim as the immutable point-in-time serialized content for the target snapshot.
+         * @x-autobe-database-schema-property payload
+         * @x-autobe-specification Direct mapping from request.payload to
+         *   shopping_mall_snapshot_payloads.payload (String). The server must
+         *   persist it verbatim as the immutable point-in-time serialized
+         *   content for the target snapshot.
      */
     payload: string;
   };
@@ -74,8 +93,12 @@ export namespace IShoppingMallSnapshotPayload {
     /**
      * Serialized snapshot payload content stored for the specified snapshot.
      *
-     * @x-autobe-database-schema-property payload
-     * @x-autobe-specification Direct mapping to `shopping_mall_snapshot_payloads.payload`. Persist the provided string into the payload column for the snapshot payload row identified by `shopping_mall_snapshot_id` (derived from the path `snapshotId`).
+         * @x-autobe-database-schema-property payload
+         * @x-autobe-specification Direct mapping to
+         *   `shopping_mall_snapshot_payloads.payload`. Persist the provided
+         *   string into the payload column for the snapshot payload row
+         *   identified by `shopping_mall_snapshot_id` (derived from the path
+         *   `snapshotId`).
      */
     payload: string;
   };

@@ -1,0 +1,333 @@
+/// Registered member accounts with email and password authentication
+/// credentials and user profile information.
+///
+/// This actor table stores the core identity for users who can create,
+/// manage, and track their private todos in the application. Each member has
+/// unique email credentials for login, a hashed password for secure
+/// authentication, and an optional display name for their profile.
+///
+/// Account lifecycle follows registration → active → deletion pattern. When
+/// a member deletes their account, associated {@link todo_app_todos} and
+/// {@link todo_app_edit_histories} are cascade-deleted.
+///
+/// @namespace auth
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_members {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for member account.
+  id String @id
+  
+  /// Unique email address used for member login and account identification.
+  ///
+  /// This field serves as the primary login identifier for members. Each email
+  /// must be unique across all member accounts to ensure proper authentication
+  /// and account isolation. Email is immutable after registration.
+  email String
+  
+  /// Hashed password for secure authentication.
+  ///
+  /// The password hash is computed using a secure hashing algorithm (e.g.,
+  /// bcrypt, argon2) during registration. This field stores only the hash,
+  /// never plain-text passwords. Updated when members change their passwords.
+  password_hash String
+  
+  /// Optional display name for the member's profile.
+  ///
+  /// Allow members to set a personalized name for their profile. The display
+  /// name can be left empty or updated at any time by the member.
+  display_name String?
+  
+  /// Timestamp when the member account was created.
+  ///
+  /// This records the exact time the member account was registered. The
+  /// timestamp is set automatically during account creation and never changes.
+  created_at DateTime
+  
+  /// Timestamp when the member account was last updated.
+  ///
+  /// This tracks when any field on the member account was modified, such as
+  /// display name changes. Updates automatically on every mutation.
+  updated_at DateTime
+  
+  /// Nullable timestamp when the member account was soft-deleted.
+  ///
+  /// When a member deletes their account, this field is set to the deletion
+  /// timestamp. A value of NULL means the account is active. When set, the
+  /// account enters a deleted state where all associated {@link
+  /// todo_app_todos} and {@link todo_app_edit_histories} are cascade-deleted.
+  deleted_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  memberSessions todo_app_member_sessions[]
+  passwordResets todo_app_member_password_resets[]
+  todos todo_app_todos[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([email])
+}
+
+/// Session records for authenticated member users, storing IP address, page
+/// URL, referrer, and expiration time for each login session.
+///
+/// Each session is tied to exactly one {@link todo_app_members} account and
+/// serves as the authentication context when members access their private
+/// todo list, edit history, and account management features. Sessions are
+/// append-only records created during login and logically terminated during
+/// logout.
+///
+/// No updated_at or deleted_at fields are present since sessions are never
+/// modified or soft-deleted; they either expire naturally or are marked
+/// invalid upon logout.
+///
+/// @namespace auth
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_member_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the member account that owns this session.
+  ///
+  /// Sessions are exclusively tied to one member account. All session-based
+  /// authentication and authorization checks resolve the user identity through
+  /// this foreign key.
+  todo_app_member_id String
+  
+  /// IP address of the client device when the session was created.
+  ///
+  /// Used for security auditing and session anomaly detection.
+  ip String
+  
+  /// Page URL where the session was initiated (e.g., login page URL).
+  ///
+  /// Captures the entry point of the authentication flow.
+  href String
+  
+  /// Referrer page URL that led the user to the login page.
+  ///
+  /// Used for security auditing and traffic source analysis.
+  referrer String?
+  
+  /// Timestamp when this session was created during login.
+  ///
+  /// Used to determine session age and order sessions chronologically.
+  created_at DateTime
+  
+  /// Timestamp when this session expires and is no longer valid.
+  ///
+  /// Set to a future time upon creation; sessions past this timestamp are
+  /// rejected during authentication checks.
+  expired_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member todo_app_members @relation(fields: [todo_app_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([todo_app_member_id, created_at])
+}
+
+/// Password reset tokens for member account recovery.
+///
+/// This table stores securely generated tokens that allow authenticated
+/// members to request password changes when they have lost access to their
+/// account. Each token is single-use and time-limited to prevent abuse.
+///
+/// Tokens are cryptographically generated and stored in hashed form for
+/// security. The expiration mechanism ensures tokens cannot be used
+/// indefinitely, limiting the window of vulnerability if a token is
+/// intercepted.
+///
+/// @namespace auth
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_member_password_resets {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the password reset token record.
+  id String @id
+  
+  /// Foreign key to the member account requesting the password reset.
+  ///
+  /// A password reset token belongs to exactly one member. This establishes
+  /// the ownership relationship and allows the system to validate which
+  /// account a reset token is intended for.
+  ///
+  /// Each member may have only one active (unused, unexpired) reset token at a
+  /// time, enforced at the application layer.
+  todo_app_member_id String
+  
+  /// Cryptographically hashed password reset token.
+  ///
+  /// This field stores the hash of the actual token sent to the user. The hash
+  /// prevents token theft from compromising accounts even if the database is
+  /// breached. The unique constraint ensures no two reset tokens share the
+  /// same hash value.
+  token_hash String
+  
+  /// Expiration timestamp for the reset token.
+  ///
+  /// Defines the deadline by which the token must be used to initiate a
+  /// password change. Tokens past this timestamp are considered invalid and
+  /// cannot be used. Typically set to 24 hours from creation for security.
+  expired_at DateTime
+  
+  /// Optional timestamp indicating when the token was consumed.
+  ///
+  /// When a member successfully completes a password reset using this token,
+  /// this field is updated with the consumption time. Null indicates the token
+  /// is still active and unused. Once set, the token is permanently
+  /// invalidated and cannot be reused.
+  used_at DateTime?
+  
+  /// Timestamp when the password reset token was created.
+  ///
+  /// Recorded automatically upon token generation. Used to calculate token age
+  /// and support token expiration enforcement.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member todo_app_members @relation(fields: [todo_app_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([token_hash])
+  // spellchecker: ignore-next-line
+  @@index([todo_app_member_id, created_at], map: "todo_app_member_password_resets_todo_app_member_id_cre_ec559a42")
+}
+
+/// Temporary guest accounts identified by device fingerprint data.
+///
+/// Guests are unregistered visitors with no authentication credentials.
+/// Before signing up, guests are tracked via device fingerprints to maintain
+/// pre-registration state. Once a guest signs up and transitions into a
+/// registered {@link todo_app_members} account, this guest record is
+/// soft-deleted.
+///
+/// Guests exist outside the authenticated user ecosystem and have zero
+/// permissions within the application.
+///
+/// @namespace auth
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_guests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the guest account record.
+  id String @id
+  
+  /// Unique device fingerprint identifying the guest's browser or device.
+  ///
+  /// This is a computed hash derived from browser characteristics such as user
+  /// agent, screen resolution, installed fonts, and other browser properties.
+  /// Used to track the same guest across multiple visits before registration.
+  device_fingerprint String
+  
+  /// Timestamp when this guest record was first created.
+  ///
+  /// Set when the guest's device is first detected visiting the application.
+  created_at DateTime
+  
+  /// Timestamp when this guest record was last modified.
+  ///
+  /// Updated on guest record changes.
+  updated_at DateTime
+  
+  /// Timestamp when this guest record was soft-deleted.
+  ///
+  /// Set when the guest signs up and transitions to a registered {@link
+  /// todo_app_members} account. Null indicates the guest record is still
+  /// active.
+  deleted_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  sessions todo_app_guest_sessions[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([device_fingerprint])
+  @@index([deleted_at])
+  @@index([created_at])
+}
+
+/// Temporary session tokens for guest access to public registration pages.
+///
+/// Tracks ephemeral guest states with device network information,
+/// originating URLs, current access paths, and strict expiration timers to
+/// ensure secure, unauthenticated browser sessions do not persist
+/// indefinitely.
+///
+/// @namespace auth
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_guest_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the guest session.
+  id String @id
+  
+  /// References the guest identity associated with this session.
+  ///
+  /// Links the temporary session token to the specific guest record for
+  /// tracking device fingerprints and granting access to public pages.
+  todo_app_guest_id String
+  
+  /// IP address recorded at session creation.
+  ///
+  /// Used for security tracking, fraud prevention, and validating session
+  /// network origins.
+  ip String
+  
+  /// URL path or address currently being accessed during the session.
+  ///
+  /// Tracks the specific page or resource the guest is interacting with.
+  href String
+  
+  /// Referrer URL that led the guest to the accessed page.
+  ///
+  /// Used for analytics, entry point tracing, and security context validation.
+  referrer String
+  
+  /// Timestamp when the guest session was created.
+  ///
+  /// Used for session lifecycle management and calculating session duration.
+  created_at DateTime
+  
+  /// Timestamp when the guest session expires.
+  ///
+  /// Enforces automatic session termination for security, ensuring
+  /// unauthenticated states do not persist beyond a safe duration.
+  expired_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  guest todo_app_guests @relation(fields: [todo_app_guest_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([todo_app_guest_id, created_at])
+}

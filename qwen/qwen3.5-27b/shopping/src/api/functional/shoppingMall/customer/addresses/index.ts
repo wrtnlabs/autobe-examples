@@ -20,13 +20,15 @@ import { IShoppingMallCustomerAddress } from "../../../../structures/IShoppingMa
  * @param props.body New shipping address details including recipient name, contact number, and complete location information for package delivery.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification 1. Validate the request body contains all required fields: recipient_name, phone_number, street_address, city, postal_code, country.
- * 2. Set is_default to false initially (can be set as default later via separate endpoint).
- * 3. Set created_at and updated_at to the current timestamp.
- * 4. Set deleted_at to null (address is active).
- * 5. Associate the address with the currently authenticated customer (shopping_mall_customer_id).
- * 6. Insert the new record into shopping_mall_customer_addresses table.
- * 7. Return the complete address object including the generated id.
+ * @x-autobe-specification 1. Validate the request body contains all required
+ *   fields: recipient_name, phone_number, street_address, city, postal_code,
+ *   country. 2. Set is_default to false initially (can be set as default later
+ *   via separate endpoint). 3. Set created_at and updated_at to the current
+ *   timestamp. 4. Set deleted_at to null (address is active). 5. Associate the
+ *   address with the currently authenticated customer
+ *   (shopping_mall_customer_id). 6. Insert the new record into
+ *   shopping_mall_customer_addresses table. 7. Return the complete address
+ *   object including the generated id.
  *
  * Error handling:
  * - Return 401 if user is not authenticated.
@@ -122,7 +124,8 @@ export namespace create {
  * @param props.body Search and pagination criteria for customer addresses. Supports filtering by recipient name, default status, and country. Includes sorting options and pagination parameters for efficient list navigation.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Query shopping_mall_customer_addresses table for the authenticated customer's addresses.
+ * @x-autobe-specification Query shopping_mall_customer_addresses table for the
+ *   authenticated customer's addresses.
  *
  * Apply filtering based on request body criteria:
  * - Search by recipient_name (partial match)
@@ -231,7 +234,8 @@ export namespace index {
  * @param props.addressId Unique identifier of the shipping address to retrieve (global scope)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Query the shopping_mall_customer_addresses table for a single record matching the provided addressId parameter.
+ * @x-autobe-specification Query the shopping_mall_customer_addresses table for
+ *   a single record matching the provided addressId parameter.
  *
  * Authentication: Verify the request is made by an authenticated customer. Extract the customer ID from the session token.
  *
@@ -333,7 +337,8 @@ export namespace at {
  * @param props.addressId UUID of the address to delete (global scope)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification DELETE operation for removing a customer's shipping address from their account.
+ * @x-autobe-specification DELETE operation for removing a customer's shipping
+ *   address from their account.
  *
  * **Authorization**: Verify the authenticated customer owns the address being deleted (check shopping_mall_customer_id matches current user).
  *

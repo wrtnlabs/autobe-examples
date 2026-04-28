@@ -23,7 +23,8 @@ import { IShoppingMallProductVariantSnapshot } from "../../../../../../structure
  * @param props.variantSnapshotId Variant snapshot ID (UUID format) identifying the specific variant snapshot to retrieve.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Query shopping_mall_product_variant_snapshots table by variantSnapshotId.
+ * @x-autobe-specification Query shopping_mall_product_variant_snapshots table
+ *   by variantSnapshotId.
  *
  * Validate ownership chain:
  * 1. Join with shopping_mall_product_snapshots on snapshotId

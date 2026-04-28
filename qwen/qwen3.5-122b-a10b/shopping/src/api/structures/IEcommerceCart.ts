@@ -17,7 +17,8 @@ export type IEcommerceCart = {
    *
    * This UUID serves as the primary key for the cart record. It is auto-generated when the cart is created and remains immutable throughout the cart's lifecycle.
    *
-   * @x-autobe-specification Maps to ecommerce_carts.id. Unique identifier for the shopping cart.
+     * @x-autobe-specification Maps to ecommerce_carts.id. Unique identifier for
+     *   the shopping cart.
    */
   id: string & tags.Format<"uuid">;
 
@@ -26,7 +27,8 @@ export type IEcommerceCart = {
    *
    * Each cart belongs to exactly one customer. This relation provides access to the customer's identity information including email and display name for display purposes.
    *
-   * @x-autobe-specification Join from ecommerce_carts.ecommerce_customer_id to ecommerce_customers.id. Returns IEcommerceCustomer.ISummary.
+     * @x-autobe-specification Join from ecommerce_carts.ecommerce_customer_id
+     *   to ecommerce_customers.id. Returns IEcommerceCustomer.ISummary.
    */
   customer: IEcommerceCustomer.ISummary;
 
@@ -35,7 +37,9 @@ export type IEcommerceCart = {
    *
    * Each item represents a product variant added by the customer with a specific quantity. Items are filtered to exclude soft-deleted entries. The array includes embedded product and variant details for display, along with real-time stock availability status.
    *
-   * @x-autobe-specification Join from ecommerce_carts.id to ecommerce_cart_items.ecommerce_cart_id. Filter where deleted_at IS NULL. Returns array of IEcommerceCartItem.
+     * @x-autobe-specification Join from ecommerce_carts.id to
+     *   ecommerce_cart_items.ecommerce_cart_id. Filter where deleted_at IS
+     *   NULL. Returns array of IEcommerceCartItem.
    */
   items: IEcommerceCartItem[];
 
@@ -44,7 +48,9 @@ export type IEcommerceCart = {
    *
    * Calculated as the sum of (quantity × price) for each cart item that is available (in stock and not deleted). Only available items contribute to this total. Unavailable items are excluded from the calculation.
    *
-   * @x-autobe-specification Computed by summing (quantity × price) for all available cart items where availability = true. Price uses variant.price if set, otherwise product.base_price.
+     * @x-autobe-specification Computed by summing (quantity × price) for all
+     *   available cart items where availability = true. Price uses
+     *   variant.price if set, otherwise product.base_price.
    */
   total_amount: number;
 
@@ -53,7 +59,8 @@ export type IEcommerceCart = {
    *
    * This count includes all cart items, both available and unavailable. It represents the total distinct product variants the customer has added to their cart.
    *
-   * @x-autobe-specification Computed by counting all cart items where deleted_at IS NULL, regardless of availability status.
+     * @x-autobe-specification Computed by counting all cart items where
+     *   deleted_at IS NULL, regardless of availability status.
    */
   item_count: number & tags.Type<"int32">;
 
@@ -62,7 +69,8 @@ export type IEcommerceCart = {
    *
    * An item is marked unavailable if its product variant is out of stock (inventory quantity equals zero) or if the variant has been deleted by the seller. Customers cannot proceed to checkout with any unavailable items in their cart.
    *
-   * @x-autobe-specification Computed by counting cart items where availability = false (stock_status = 'out_of_stock' or 'deleted').
+     * @x-autobe-specification Computed by counting cart items where
+     *   availability = false (stock_status = 'out_of_stock' or 'deleted').
    */
   unavailable_count: number & tags.Type<"int32">;
 
@@ -71,7 +79,8 @@ export type IEcommerceCart = {
    *
    * This field is automatically set when the cart is first created (typically when a customer registers). It cannot be modified and is used for auditing purposes.
    *
-   * @x-autobe-specification Maps to ecommerce_carts.created_at. Set automatically when cart is created.
+     * @x-autobe-specification Maps to ecommerce_carts.created_at. Set
+     *   automatically when cart is created.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -80,7 +89,8 @@ export type IEcommerceCart = {
    *
    * This field is automatically updated whenever any cart property changes, such as when items are added, quantities are updated, or items are removed. It is used for auditing and conflict detection.
    *
-   * @x-autobe-specification Maps to ecommerce_carts.updated_at. Automatically updated on any cart modification.
+     * @x-autobe-specification Maps to ecommerce_carts.updated_at. Automatically
+     *   updated on any cart modification.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -89,7 +99,8 @@ export type IEcommerceCart = {
    *
    * This field is null for active carts. When a cart is deleted (e.g., customer account deletion or manual cart clear), this field is set to the deletion timestamp. The cart remains in the database for recovery purposes but is excluded from active queries.
    *
-   * @x-autobe-specification Maps to ecommerce_carts.deleted_at. Null while cart is active, set to timestamp when cart is soft-deleted.
+     * @x-autobe-specification Maps to ecommerce_carts.deleted_at. Null while
+     *   cart is active, set to timestamp when cart is soft-deleted.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -109,7 +120,10 @@ export namespace IEcommerceCart {
      *
      * When set to true, the response includes full product and variant details (name, description, options, etc.) for each cart item. When false or omitted, only essential item data (quantity, variant ID) is returned to reduce payload size.
      *
-     * @x-autobe-specification Boolean flag controlling whether detailed product and variant information should be included in cart items response. When true, includes full product/variant details; when false or omitted, returns minimal item data.
+         * @x-autobe-specification Boolean flag controlling whether detailed
+         *   product and variant information should be included in cart items
+         *   response. When true, includes full product/variant details; when
+         *   false or omitted, returns minimal item data.
      */
     include_details?: boolean | undefined;
 
@@ -118,7 +132,10 @@ export namespace IEcommerceCart {
      *
      * When enabled, the system queries inventory records to determine current stock levels for each product variant in the cart. Items with zero stock are marked as out of stock. This validation helps customers identify unavailable items before checkout.
      *
-     * @x-autobe-specification Boolean flag controlling whether stock availability validation should be performed. When true, queries inventory_records to calculate current stock for each variant and marks items as out of stock if quantity is zero.
+         * @x-autobe-specification Boolean flag controlling whether stock
+         *   availability validation should be performed. When true, queries
+         *   inventory_records to calculate current stock for each variant and
+         *   marks items as out of stock if quantity is zero.
      */
     validate_stock?: boolean | undefined;
 
@@ -127,7 +144,10 @@ export namespace IEcommerceCart {
      *
      * When enabled, the system validates each cart item's availability status by checking if the associated product or variant has been deleted or is out of stock. Unavailable items are flagged in the response, preventing checkout if any item is unavailable.
      *
-     * @x-autobe-specification Boolean flag controlling whether item availability checks should be performed. When true, checks if products are deleted (deleted_at IS NOT NULL) or variants are deleted/out of stock, marking unavailable items accordingly.
+         * @x-autobe-specification Boolean flag controlling whether item
+         *   availability checks should be performed. When true, checks if
+         *   products are deleted (deleted_at IS NOT NULL) or variants are
+         *   deleted/out of stock, marking unavailable items accordingly.
      */
     validate_availability?: boolean | undefined;
 
@@ -136,7 +156,10 @@ export namespace IEcommerceCart {
      *
      * Specifies which page of results to return. Page numbering starts from 1. If omitted, null, or undefined, defaults to page 1 (first page). Requesting a page beyond the available range returns an empty data array with valid pagination metadata reflecting the actual totals.
      *
-     * @x-autobe-specification 1-indexed page number for pagination. Defaults to 1 if not provided, null, or undefined. Requesting a page beyond available range returns empty data array with valid pagination metadata.
+         * @x-autobe-specification 1-indexed page number for pagination.
+         *   Defaults to 1 if not provided, null, or undefined. Requesting a
+         *   page beyond available range returns empty data array with valid
+         *   pagination metadata.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
 
@@ -145,7 +168,9 @@ export namespace IEcommerceCart {
      *
      * Controls how many records are included in each page response. If omitted, null, or undefined, defaults to 100 records per page. The server may enforce upper bounds to prevent excessive resource consumption on large requests.
      *
-     * @x-autobe-specification Maximum records per page. Defaults to 100 if not provided. Server may enforce upper bounds to prevent excessive resource consumption on large requests.
+         * @x-autobe-specification Maximum records per page. Defaults to 100 if
+         *   not provided. Server may enforce upper bounds to prevent excessive
+         *   resource consumption on large requests.
      */
     limit?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };
@@ -165,7 +190,9 @@ export namespace IEcommerceCart {
      *
      * This UUID uniquely identifies the customer's shopping cart in the system. Each customer has exactly one cart, and this ID is used to retrieve or update cart contents. The ID is sourced from the ecommerce_carts table.
      *
-     * @x-autobe-specification Direct mapping from ecommerce_carts.id. UUID primary key retrieved by querying cart where ecommerce_customer_id matches authenticated user from JWT session.
+         * @x-autobe-specification Direct mapping from ecommerce_carts.id. UUID
+         *   primary key retrieved by querying cart where ecommerce_customer_id
+         *   matches authenticated user from JWT session.
      */
     id: string & tags.Format<"uuid">;
 
@@ -176,7 +203,11 @@ export namespace IEcommerceCart {
      *
      * **Stock Availability**: Each item includes an `available` flag indicating whether the variant has sufficient stock. Items are marked unavailable if the variant has been soft-deleted by the seller or if available stock is less than the requested quantity.
      *
-     * @x-autobe-specification Query joins ecommerce_cart_items (WHERE deleted_at IS NULL) with ecommerce_product_variants and ecommerce_products. Each item includes variant details (sku_code, option_values, price), product name, quantity, unit price, subtotal, and stock availability status.
+         * @x-autobe-specification Query joins ecommerce_cart_items (WHERE
+         *   deleted_at IS NULL) with ecommerce_product_variants and
+         *   ecommerce_products. Each item includes variant details (sku_code,
+         *   option_values, price), product name, quantity, unit price,
+         *   subtotal, and stock availability status.
      */
     items: IEcommerceCartItem.ISummary[];
 
@@ -187,7 +218,10 @@ export namespace IEcommerceCart {
      *
      * **Price Calculation**: If a variant has a price override, that price is used. Otherwise, the product's base price is used. The total does not include shipping costs or taxes, which are calculated during checkout.
      *
-     * @x-autobe-specification Computed aggregation: SUM of all cart item subtotals. Each item subtotal = (variant.price OR product.base_price) * cart_item.quantity. Total = SUM(all item subtotals).
+         * @x-autobe-specification Computed aggregation: SUM of all cart item
+         *   subtotals. Each item subtotal = (variant.price OR
+         *   product.base_price) * cart_item.quantity. Total = SUM(all item
+         *   subtotals).
      */
     total_price: number;
   };

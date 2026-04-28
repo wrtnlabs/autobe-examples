@@ -33,8 +33,10 @@ export namespace IRedditCloneGuest {
      *
      * Filters guest accounts by their unique device identifier. Supports both exact matching and partial matching (contains) to find guests with similar or matching device fingerprints. This is useful for tracking guest activity across sessions or identifying specific devices.
      *
-     * @x-autobe-database-schema-property device_fingerprint
-     * @x-autobe-specification Filter parameter for device_fingerprint column. Supports exact match or partial match (contains) for finding guest accounts by device identifier.
+         * @x-autobe-database-schema-property device_fingerprint
+         * @x-autobe-specification Filter parameter for device_fingerprint
+         *   column. Supports exact match or partial match (contains) for
+         *   finding guest accounts by device identifier.
      */
     deviceFingerprint?: string | undefined;
 
@@ -43,8 +45,10 @@ export namespace IRedditCloneGuest {
      *
      * Filters guest accounts to include only those created on or after this timestamp. Used in combination with createdAtTo to define a creation date range. Accepts ISO 8601 date-time format.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Filter parameter for created_at column. Lower bound of date range filter. Returns guests created on or after this timestamp.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Filter parameter for created_at column. Lower
+         *   bound of date range filter. Returns guests created on or after this
+         *   timestamp.
      */
     createdAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
@@ -53,8 +57,10 @@ export namespace IRedditCloneGuest {
      *
      * Filters guest accounts to include only those created on or before this timestamp. Used in combination with createdAtFrom to define a creation date range. Accepts ISO 8601 date-time format.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Filter parameter for created_at column. Upper bound of date range filter. Returns guests created on or before this timestamp.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Filter parameter for created_at column. Upper
+         *   bound of date range filter. Returns guests created on or before
+         *   this timestamp.
      */
     createdAtTo?: (string & tags.Format<"date-time">) | undefined;
 
@@ -63,8 +69,10 @@ export namespace IRedditCloneGuest {
      *
      * Filters guest accounts to include only those last updated on or after this timestamp. Useful for finding recently active guests. Used in combination with updatedAtTo to define an activity date range. Accepts ISO 8601 date-time format.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Filter parameter for updated_at column. Lower bound of date range filter. Returns guests last updated on or after this timestamp.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Filter parameter for updated_at column. Lower
+         *   bound of date range filter. Returns guests last updated on or after
+         *   this timestamp.
      */
     updatedAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
@@ -73,8 +81,10 @@ export namespace IRedditCloneGuest {
      *
      * Filters guest accounts to include only those last updated on or before this timestamp. Useful for finding guests with activity within a specific time window. Used in combination with updatedAtFrom to define an activity date range. Accepts ISO 8601 date-time format.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Filter parameter for updated_at column. Upper bound of date range filter. Returns guests last updated on or before this timestamp.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Filter parameter for updated_at column. Upper
+         *   bound of date range filter. Returns guests last updated on or
+         *   before this timestamp.
      */
     updatedAtTo?: (string & tags.Format<"date-time">) | undefined;
 
@@ -83,8 +93,11 @@ export namespace IRedditCloneGuest {
      *
      * Filters guest accounts by their deletion status. When set to null, returns only active (non-deleted) guest accounts. When set to a specific timestamp, returns only deleted guest accounts. This allows administrators to view either active guests or deleted guests separately.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Filter parameter for deleted_at column. When null, returns only active (non-deleted) guests. When non-null, returns only deleted guests. Used to filter by account deletion status.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Filter parameter for deleted_at column. When
+         *   null, returns only active (non-deleted) guests. When non-null,
+         *   returns only deleted guests. Used to filter by account deletion
+         *   status.
      */
     deletedAt?: (string & tags.Format<"date-time">) | null | undefined;
 
@@ -93,7 +106,9 @@ export namespace IRedditCloneGuest {
      *
      * Cursor-based pagination token for efficient navigation through large datasets. The cursor represents the position in the result set and is used to retrieve the next or previous page of results. Server generates cursors based on the last record of the previous page.
      *
-     * @x-autobe-specification Cursor-based pagination token. Not mapped to database column. Used for efficient pagination of large result sets. Server generates cursor from last record of previous page.
+         * @x-autobe-specification Cursor-based pagination token. Not mapped to
+         *   database column. Used for efficient pagination of large result
+         *   sets. Server generates cursor from last record of previous page.
      */
     cursor?: string | undefined;
 
@@ -102,7 +117,9 @@ export namespace IRedditCloneGuest {
      *
      * Controls how many guest account records are included in each page of results. Accepts values from 1 to 100, with a default of 20 records per page. This parameter helps balance between data volume and API response size.
      *
-     * @x-autobe-specification Pagination parameter for records per page. Not mapped to database column. Range: 1-100, default: 20. Controls LIMIT clause in SQL query.
+         * @x-autobe-specification Pagination parameter for records per page.
+         *   Not mapped to database column. Range: 1-100, default: 20. Controls
+         *   LIMIT clause in SQL query.
      */
     pageSize?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -113,7 +130,9 @@ export namespace IRedditCloneGuest {
      *
      * Specifies which field to use for sorting the guest account list. Supported values are 'createdAt' to sort by account creation time, or 'updatedAt' to sort by last activity time. Combined with sortOrder to control result ordering.
      *
-     * @x-autobe-specification Sorting field parameter. Not mapped to database column. Allowed values: 'createdAt' (sorts by created_at), 'updatedAt' (sorts by updated_at). Maps to ORDER BY clause in SQL.
+         * @x-autobe-specification Sorting field parameter. Not mapped to
+         *   database column. Allowed values: 'createdAt' (sorts by created_at),
+         *   'updatedAt' (sorts by updated_at). Maps to ORDER BY clause in SQL.
      */
     sortBy?: "createdAt" | "updatedAt" | undefined;
 
@@ -122,7 +141,9 @@ export namespace IRedditCloneGuest {
      *
      * Controls the ordering direction of the sorted results. 'asc' sorts in ascending order (oldest first, A-Z), while 'desc' sorts in descending order (newest first, Z-A). Used in combination with sortBy to fully specify result ordering.
      *
-     * @x-autobe-specification Sorting direction parameter. Not mapped to database column. Allowed values: 'asc' (ascending), 'desc' (descending). Maps to ORDER BY ASC/DESC in SQL.
+         * @x-autobe-specification Sorting direction parameter. Not mapped to
+         *   database column. Allowed values: 'asc' (ascending), 'desc'
+         *   (descending). Maps to ORDER BY ASC/DESC in SQL.
      */
     sortOrder?: "asc" | "desc" | undefined;
 
@@ -131,7 +152,10 @@ export namespace IRedditCloneGuest {
      *
      * Specifies which page of results to return. Page numbering starts from 1, so the first page is page 1 (not 0). If omitted, null, or undefined, defaults to page 1 (first page). Requesting a page beyond the available range returns an empty data array with valid pagination metadata reflecting the actual totals.
      *
-     * @x-autobe-specification 1-indexed page number for offset-based pagination. Not mapped to database column. Defaults to 1 if not provided. Used with limit to calculate OFFSET in SQL: OFFSET = (page - 1) * limit.
+         * @x-autobe-specification 1-indexed page number for offset-based
+         *   pagination. Not mapped to database column. Defaults to 1 if not
+         *   provided. Used with limit to calculate OFFSET in SQL: OFFSET =
+         *   (page - 1) * limit.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
 
@@ -140,7 +164,9 @@ export namespace IRedditCloneGuest {
      *
      * Controls how many records are included in each page response. If omitted, null, or undefined, defaults to 100 records per page. The server may enforce upper bounds to prevent excessive resource consumption on large requests. This is an alternative to the pageSize parameter.
      *
-     * @x-autobe-specification Maximum number of records to return per page. Not mapped to database column. Alternative to pageSize. Defaults to 100 if not provided. Used in SQL LIMIT clause.
+         * @x-autobe-specification Maximum number of records to return per page.
+         *   Not mapped to database column. Alternative to pageSize. Defaults to
+         *   100 if not provided. Used in SQL LIMIT clause.
      */
     limit?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };
@@ -158,7 +184,13 @@ export namespace IRedditCloneGuest {
      *
      * This JWT token is used to obtain new access and refresh tokens without requiring the guest to re-register. The token is validated against the session table to verify the session is still active and has not expired. Guests should call the refresh operation periodically to maintain their browsing session while viewing public content.
      *
-     * @x-autobe-specification JWT refresh token string provided by client. This token is decoded and validated against the reddit_clone_guest_sessions table to find the corresponding session record. The token payload contains session ID which is used to lookup the session. If session exists, is not expired (expired_at check), and the associated guest account exists, new tokens are generated.
+         * @x-autobe-specification JWT refresh token string provided by client.
+         *   This token is decoded and validated against the
+         *   reddit_clone_guest_sessions table to find the corresponding session
+         *   record. The token payload contains session ID which is used to
+         *   lookup the session. If session exists, is not expired (expired_at
+         *   check), and the associated guest account exists, new tokens are
+         *   generated.
      */
     refresh_token: string;
   };
@@ -176,8 +208,13 @@ export namespace IRedditCloneGuest {
      *
      * This string uniquely identifies the guest's device or browser across multiple sessions. The device fingerprint is generated from various browser characteristics including user agent, screen resolution, installed fonts, and other device-specific attributes. This allows the system to recognize returning guests and maintain session continuity without requiring traditional authentication credentials.
      *
-     * @x-autobe-database-schema-property device_fingerprint
-     * @x-autobe-specification Direct mapping to reddit_clone_guests.device_fingerprint column. This unique string identifies the guest's device/browser across sessions. Generated from browser fingerprinting data (user agent, screen resolution, installed fonts, etc.). Used to recognize returning guests and maintain session continuity without authentication.
+         * @x-autobe-database-schema-property device_fingerprint
+         * @x-autobe-specification Direct mapping to
+         *   reddit_clone_guests.device_fingerprint column. This unique string
+         *   identifies the guest's device/browser across sessions. Generated
+         *   from browser fingerprinting data (user agent, screen resolution,
+         *   installed fonts, etc.). Used to recognize returning guests and
+         *   maintain session continuity without authentication.
      */
     device_fingerprint: string;
 
@@ -186,7 +223,11 @@ export namespace IRedditCloneGuest {
      *
      * This field captures the entry point URL where the guest accessed the application. It is used for analytics purposes to understand user behavior patterns and for optimizing the user experience by tracking which pages or features attract the most guest traffic.
      *
-     * @x-autobe-specification Session context field captured during join operation. Stored in reddit_clone_guest_sessions.href column. Represents the current page URL where the guest session was initiated. Used for analytics and user experience optimization to track entry points into the application.
+         * @x-autobe-specification Session context field captured during join
+         *   operation. Stored in reddit_clone_guest_sessions.href column.
+         *   Represents the current page URL where the guest session was
+         *   initiated. Used for analytics and user experience optimization to
+         *   track entry points into the application.
      */
     href: string & tags.Format<"uri">;
 
@@ -195,7 +236,11 @@ export namespace IRedditCloneGuest {
      *
      * This optional field captures the source page or external website that referred the guest to the application. It is used for traffic source attribution, marketing analytics, and understanding user acquisition channels. The field is nullable because guests may access the application directly without a referrer.
      *
-     * @x-autobe-specification Session context field captured during join operation. Stored in reddit_clone_guest_sessions.referrer column (nullable). Represents the referrer URL that led the guest to the application. Used for traffic source attribution and marketing analytics.
+         * @x-autobe-specification Session context field captured during join
+         *   operation. Stored in reddit_clone_guest_sessions.referrer column
+         *   (nullable). Represents the referrer URL that led the guest to the
+         *   application. Used for traffic source attribution and marketing
+         *   analytics.
      */
     referrer?: (string & tags.Format<"uri">) | undefined;
 
@@ -204,7 +249,12 @@ export namespace IRedditCloneGuest {
      *
      * This optional field records the client's IP address for security monitoring and session validation purposes. In client-side rendering, the client can provide its own IP. In server-side rendering scenarios, the client may not know its IP address, so the server captures it as a fallback. This helps detect suspicious activity, unauthorized access attempts, and provides geographic context for analytics.
      *
-     * @x-autobe-specification Session context field captured during join operation. Stored in reddit_clone_guest_sessions.ip column. Optional field because in Server-Side Rendering (SSR) scenarios, the client cannot know its own IP address - the server captures it as fallback (body.ip ?? serverIp). Used for security monitoring, session validation, and detecting suspicious activity.
+         * @x-autobe-specification Session context field captured during join
+         *   operation. Stored in reddit_clone_guest_sessions.ip column.
+         *   Optional field because in Server-Side Rendering (SSR) scenarios,
+         *   the client cannot know its own IP address - the server captures it
+         *   as fallback (body.ip ?? serverIp). Used for security monitoring,
+         *   session validation, and detecting suspicious activity.
      */
     ip?: (string & tags.Format<"ipv4">) | undefined;
   };
@@ -222,8 +272,9 @@ export namespace IRedditCloneGuest {
      *
      * This UUID identifies the guest account in the reddit_clone_guests table. It is used to associate the guest with their sessions and track their activity across the platform.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from reddit_clone_guests.id. Primary key uniquely identifying the guest account.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from reddit_clone_guests.id.
+         *   Primary key uniquely identifying the guest account.
      */
     id: string & tags.Format<"uuid">;
 
@@ -232,8 +283,10 @@ export namespace IRedditCloneGuest {
      *
      * This string uniquely identifies the guest's device or browser using fingerprinting data such as user agent, screen resolution, and installed fonts. It allows the system to recognize returning guests and maintain session continuity without traditional authentication credentials.
      *
-     * @x-autobe-database-schema-property device_fingerprint
-     * @x-autobe-specification Direct mapping from reddit_clone_guests.device_fingerprint. Unique device identifier extracted from browser fingerprinting data.
+         * @x-autobe-database-schema-property device_fingerprint
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_guests.device_fingerprint. Unique device identifier
+         *   extracted from browser fingerprinting data.
      */
     device_fingerprint: string;
 
@@ -242,8 +295,10 @@ export namespace IRedditCloneGuest {
      *
      * This ISO 8601 formatted datetime indicates when the guest account was initially registered in the system. It is used to track account age and for analytics purposes.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from reddit_clone_guests.created_at. ISO 8601 timestamp when the guest account was first created.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_guests.created_at. ISO 8601 timestamp when the guest
+         *   account was first created.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -252,8 +307,10 @@ export namespace IRedditCloneGuest {
      *
      * This ISO 8601 formatted datetime indicates the most recent modification to the guest account record. It is automatically updated when the guest performs actions that modify their account state.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from reddit_clone_guests.updated_at. ISO 8601 timestamp when the guest account was last updated.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_guests.updated_at. ISO 8601 timestamp when the guest
+         *   account was last updated.
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -262,8 +319,10 @@ export namespace IRedditCloneGuest {
      *
      * This nullable ISO 8601 formatted datetime indicates when the guest account was deleted. Guest accounts may be deleted after extended inactivity or when the user registers as a member. A null value indicates the account is currently active.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from reddit_clone_guests.deleted_at. Nullable ISO 8601 timestamp indicating soft-delete status. Null means active account.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_guests.deleted_at. Nullable ISO 8601 timestamp
+         *   indicating soft-delete status. Null means active account.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
 
@@ -272,14 +331,19 @@ export namespace IRedditCloneGuest {
      *
      * This array contains all authentication sessions created for the guest across different devices or browsers. Each session includes metadata about the session origin (IP address, entry URL, referrer) and expiration information.
      *
-     * @x-autobe-specification Computed property representing the has-many relation to reddit_clone_guest_sessions. Query all sessions from reddit_clone_guest_sessions table where reddit_clone_guest_id equals this guest's id. Returns array of IRedditCloneGuestSession objects.
+         * @x-autobe-specification Computed property representing the has-many
+         *   relation to reddit_clone_guest_sessions. Query all sessions from
+         *   reddit_clone_guest_sessions table where reddit_clone_guest_id
+         *   equals this guest's id. Returns array of IRedditCloneGuestSession
+         *   objects.
      */
     sessions: IRedditCloneGuestSession[];
 
     /**
      * Authorization token.
      *
-     * @x-autobe-specification Authorization token comes from the session table.
+         * @x-autobe-specification Authorization token comes from the session
+         *   table.
      */
     token: IAuthorizationToken;
   };
@@ -295,8 +359,9 @@ export namespace IRedditCloneGuest {
      *
      * This UUID serves as the primary key for the guest record and is used to reference the guest across the system, including in guest sessions and related operations.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from reddit_clone_guests.id. Primary key UUID identifying the guest account.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from reddit_clone_guests.id.
+         *   Primary key UUID identifying the guest account.
      */
     id: string & tags.Format<"uuid">;
 
@@ -305,8 +370,11 @@ export namespace IRedditCloneGuest {
      *
      * This string uniquely identifies the guest's device or browser. It is generated from browser fingerprinting data including user agent, screen resolution, installed fonts, and other device characteristics. Used to recognize returning guests and maintain session continuity without requiring authentication.
      *
-     * @x-autobe-database-schema-property device_fingerprint
-     * @x-autobe-specification Direct mapping from reddit_clone_guests.device_fingerprint. Unique constraint on this field. Generated from browser/device fingerprinting data (user agent, screen resolution, installed fonts, etc.).
+         * @x-autobe-database-schema-property device_fingerprint
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_guests.device_fingerprint. Unique constraint on this
+         *   field. Generated from browser/device fingerprinting data (user
+         *   agent, screen resolution, installed fonts, etc.).
      */
     device_fingerprint: string;
 
@@ -315,8 +383,10 @@ export namespace IRedditCloneGuest {
      *
      * This indicates when the guest's device fingerprint was first registered in the system. Used for tracking guest account age and for sorting guest records by creation time.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from reddit_clone_guests.created_at. Timestamp when the guest account was first created in the database.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_guests.created_at. Timestamp when the guest account
+         *   was first created in the database.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -325,8 +395,10 @@ export namespace IRedditCloneGuest {
      *
      * This field is automatically updated by the database whenever any field in the guest record is modified. Useful for tracking recent activity and detecting stale guest accounts.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from reddit_clone_guests.updated_at. Timestamp automatically updated whenever the guest record is modified.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_guests.updated_at. Timestamp automatically updated
+         *   whenever the guest record is modified.
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -335,8 +407,11 @@ export namespace IRedditCloneGuest {
      *
      * This field is nullable. When null, the guest account is active. When set to a timestamp, the account is marked as deleted but retained in the database for audit purposes. Guest accounts may be deleted after extended inactivity or when the user registers as a member.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from reddit_clone_guests.deleted_at. Nullable timestamp for soft delete. When null, the guest account is active. When set, the account is soft-deleted.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_guests.deleted_at. Nullable timestamp for soft delete.
+         *   When null, the guest account is active. When set, the account is
+         *   soft-deleted.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };

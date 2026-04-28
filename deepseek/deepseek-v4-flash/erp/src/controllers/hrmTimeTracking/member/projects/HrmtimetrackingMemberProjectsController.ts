@@ -23,9 +23,10 @@ export class HrmtimetrackingMemberProjectsController {
    *
    * @param connection
    * @param body Project creation payload with the new project's display name, hex color code for UI differentiation, optional description, optional budget hours for planning, and optional start/end dates for project timeline.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query: Insert a new record into hrm_time_tracking_projects table with the provided fields.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query: Insert a new record into
+     *   hrm_time_tracking_projects table with the provided fields.
    *
    * Fields to include in insert:
    * - id: auto-generated UUID
@@ -80,9 +81,11 @@ export class HrmtimetrackingMemberProjectsController {
    *
    * @param connection
    * @param body Search criteria for filtering and paginating projects within the organization. Supports partial name search, status filtering, date range filters on planning dates, budget hour range, sorting, and cursor/offset-based pagination.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query hrm_time_tracking_projects table scoped to the authenticated user's current organization (hrm_time_tracking_organization_id from session context).
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query hrm_time_tracking_projects table scoped to
+     *   the authenticated user's current organization
+     *   (hrm_time_tracking_organization_id from session context).
    *
    * Apply search and filter criteria from the request body:
    * - name: partial match search on the project name field (case-insensitive LIKE/ILIKE)
@@ -128,9 +131,10 @@ export class HrmtimetrackingMemberProjectsController {
    *
    * @param connection
    * @param projectId The unique identifier (UUID) of the project to retrieve.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query hrm_time_tracking_projects by primary key id matching {projectId}.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query hrm_time_tracking_projects by primary key
+     *   id matching {projectId}.
    *
    * 1. Scoped to the authenticated user's selected organization — hrm_time_tracking_organization_id must match the user's current organization context.
    * 2. Respect soft deletion: if deleted_at is non-null, treat as not found (return 404 or equivalent).
@@ -167,9 +171,11 @@ export class HrmtimetrackingMemberProjectsController {
    * @param connection
    * @param projectId UUID primary key of the project to update. Must correspond to an existing non-deleted project within the current organization context.
    * @param body Updated project attributes. Only editable fields are accepted — system-managed fields (id, organization_id, created_at, updated_at, deleted_at) are ignored or rejected.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query hrm_time_tracking_projects by id and verify the project belongs to the currently selected organization (hrm_time_tracking_organization_id from member's session context).
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query hrm_time_tracking_projects by id and verify
+     *   the project belongs to the currently selected organization
+     *   (hrm_time_tracking_organization_id from member's session context).
    *
    * Verify the authenticated member has project:manage permission within the organization.
    *
@@ -229,9 +235,22 @@ export class HrmtimetrackingMemberProjectsController {
    *
    * @param connection
    * @param projectId The unique identifier (UUID) of the project to delete, scoped to the authenticated user's organization.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Verify the authenticated user has `project:manage` permission within the current organization session. Look up the project by `projectId` where `hrm_time_tracking_organization_id` matches the current org — return 404 if not found or if `deleted_at` is already non-null (already deleted). Check for associated timelogs: query `hrm_time_tracking_timelogs` where `hrm_time_tracking_project_id` = project's id and `deleted_at` is null. If any timelogs exist, reject with 422 status explaining that projects with existing timelogs cannot be deleted. Perform soft deletion: set `deleted_at` to current timestamp and update `updated_at` accordingly. Fire a project-deleted real-time event with the project details for notification delivery to authorized users and project members. Return the soft-deleted project entity (with `deleted_at` populated) as confirmation.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Verify the authenticated user has
+     *   `project:manage` permission within the current organization session.
+     *   Look up the project by `projectId` where
+     *   `hrm_time_tracking_organization_id` matches the current org — return
+     *   404 if not found or if `deleted_at` is already non-null (already
+     *   deleted). Check for associated timelogs: query
+     *   `hrm_time_tracking_timelogs` where `hrm_time_tracking_project_id` =
+     *   project's id and `deleted_at` is null. If any timelogs exist, reject
+     *   with 422 status explaining that projects with existing timelogs cannot
+     *   be deleted. Perform soft deletion: set `deleted_at` to current
+     *   timestamp and update `updated_at` accordingly. Fire a project-deleted
+     *   real-time event with the project details for notification delivery to
+     *   authorized users and project members. Return the soft-deleted project
+     *   entity (with `deleted_at` populated) as confirmation.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Delete(":projectId")

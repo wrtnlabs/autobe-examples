@@ -28,9 +28,10 @@ export class CommunityplatformMemberPostsController {
    *
    * @param connection
    * @param body Information required to create a new post
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement this operation in the post service as a transactional create workflow for the primary post aggregate.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implement this operation in the post service as a
+     *   transactional create workflow for the primary post aggregate.
    *
    * 1. Authenticate the caller and require a member session. Reject guest and unauthenticated callers before any write logic begins.
    * 2. Validate the request body against ICommunityPlatformPost.ICreate. Require the title and the target community identifier from the payload, and validate the post type and its corresponding content fields. Do not accept client-supplied author identity; derive the author from the authenticated member.
@@ -87,9 +88,15 @@ export class CommunityplatformMemberPostsController {
    * @param connection
    * @param postId Target post's ID
    * @param body Updated post title and type-specific content
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Load the target row from community_platform_posts by id = :postId and deleted_at IS NULL, including its related community, current subtype row, and author member reference. Fail with not found if no active post exists for the identifier. Authenticate the caller as a member and verify the loaded post.community_platform_member_id matches the authenticated member id; otherwise reject with forbidden.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Load the target row from community_platform_posts
+     *   by id = :postId and deleted_at IS NULL, including its related
+     *   community, current subtype row, and author member reference. Fail with
+     *   not found if no active post exists for the identifier. Authenticate the
+     *   caller as a member and verify the loaded
+     *   post.community_platform_member_id matches the authenticated member id;
+     *   otherwise reject with forbidden.
    *
    * Validate the request body against ICommunityPlatformPost.IUpdate. Allow updates only to mutable post fields: title and variant-specific content corresponding to the existing post_type stored in community_platform_posts. Do not permit changes to community_platform_community_id, community_platform_member_id, post_type, status, created_at, updated_at, or deleted_at from client input. Enforce that title is present and non-empty according to DTO validation rules.
    *
@@ -136,9 +143,10 @@ export class CommunityplatformMemberPostsController {
    *
    * @param connection
    * @param postId Target post's ID
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement a service method that accepts the authenticated member context and the target postId.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implement a service method that accepts the
+     *   authenticated member context and the target postId.
    *
    * Load the target record from the community_platform_posts table by its primary identifier. If no active record exists for the supplied postId, return a not-found error.
    *

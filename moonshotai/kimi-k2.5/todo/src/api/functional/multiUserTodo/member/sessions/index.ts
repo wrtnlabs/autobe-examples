@@ -15,7 +15,10 @@ import typia from "typia";
  * @param props.connection
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Identify the current session from the authentication token in the request headers. Determine whether the session belongs to a member (member_sessions table) or guest (guest_sessions table) based on the token type.
+ * @x-autobe-specification Identify the current session from the authentication
+ *   token in the request headers. Determine whether the session belongs to a
+ *   member (member_sessions table) or guest (guest_sessions table) based on the
+ *   token type.
  *
  * Delete the session record from the appropriate table using the session ID extracted from the token. The operation should be atomic - once the session is deleted, the token is immediately无效 (invalid).
  *

@@ -23,7 +23,9 @@ import { ICommunityPlatformPostVote } from "../../../../../structures/ICommunity
  * @param props.postId The unique identifier of the post to retrieve the vote for. Must be a valid UUID referencing an existing post.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query the community_platform_post_votes table for the vote record where post_id equals the path parameter and member_id equals the authenticated member's ID.
+ * @x-autobe-specification Query the community_platform_post_votes table for the
+ *   vote record where post_id equals the path parameter and member_id equals
+ *   the authenticated member's ID.
  *
  * Implementation steps:
  * 1. Extract postId from path parameters
@@ -362,7 +364,8 @@ export namespace update {
  * @param props.postId The unique identifier of the post from which to remove the vote (UUID format). This must be an existing post that the authenticated member has previously voted on.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Remove the authenticated member's vote from the specified post.
+ * @x-autobe-specification Remove the authenticated member's vote from the
+ *   specified post.
  *
  * 1. Extract member_id from authentication context (must be authenticated member)
  * 2. Find the vote record where post_id = {postId} AND member_id = authenticated_member_id

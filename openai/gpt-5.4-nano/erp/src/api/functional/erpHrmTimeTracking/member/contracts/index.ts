@@ -29,31 +29,34 @@ import { IPageIErpHrmTimeTrackingContract } from "../../../../structures/IPageIE
  * @param props.body Contract creation payload. Provides the target employee and required employment terms for the new agreement, including pay details and the working-term start date (and optional end date and notes).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implementation steps:
- * 1) Authenticate actor and resolve the selected organization context.
- * 2) Validate request body:
- *    - Ensure required fields for a contract create are present: contract_number, contract_title, pay_amount, pay_currency, pay_frequency, work_term_start_date, working-term required field(s) as defined by the Contract create DTO, status rules.
- *    - Validate dates: work_term_end_date if provided must be >= work_term_start_date; otherwise reject.
- *    - Validate pay_amount numeric constraints per schema-level expectations (accept the DTO type definition).
- * 3) Authorization:
- *    - Verify the actor has authority to manage contracts in the selected organization.
- *    - Verify erp_hrm_time_tracking_employee_id belongs to the selected organization (erp_hrm_time_tracking_contracts.erp_hrm_time_tracking_organization_id scoping requirement).
- * 4) Transactional creation (single DB transaction):
- *    a) Determine if there is a currently active contract for that employee within the organization based on status and work term window rules.
- *    b) If an active contract exists, update it so it becomes ended as of the day before the new contract start date. Concretely, set its work_term_end_date accordingly (or update status to ended as your domain mapping dictates). Do not modify past contracts other than the previously active one.
- *    c) Insert the new contract row into `erp_hrm_time_tracking_contracts` with:
- *       - erp_hrm_time_tracking_employee_id
- *       - erp_hrm_time_tracking_organization_id
- *       - contract_number
- *       - contract_title
- *       - pay_amount, pay_currency, pay_frequency
- *       - work_term_start_date, work_term_end_date (nullable)
- *       - notes
- *       - status (consistent with the lifecycle rules; typically marks the new contract as active)
- *       - created_at/updated_at handled by DB or service
- *       - deleted_at must be null for newly created active records
- *    d) Update timestamps where necessary.
- * 5) Return the created contract entity including all fields required by `IErpHrmTimeTrackingContract` response type.
+ * @x-autobe-specification Implementation steps: 1) Authenticate actor and
+ *   resolve the selected organization context. 2) Validate request body: -
+ *   Ensure required fields for a contract create are present: contract_number,
+ *   contract_title, pay_amount, pay_currency, pay_frequency,
+ *   work_term_start_date, working-term required field(s) as defined by the
+ *   Contract create DTO, status rules. - Validate dates: work_term_end_date if
+ *   provided must be >= work_term_start_date; otherwise reject. - Validate
+ *   pay_amount numeric constraints per schema-level expectations (accept the
+ *   DTO type definition). 3) Authorization: - Verify the actor has authority to
+ *   manage contracts in the selected organization. - Verify
+ *   erp_hrm_time_tracking_employee_id belongs to the selected organization
+ *   (erp_hrm_time_tracking_contracts.erp_hrm_time_tracking_organization_id
+ *   scoping requirement). 4) Transactional creation (single DB transaction): a)
+ *   Determine if there is a currently active contract for that employee within
+ *   the organization based on status and work term window rules. b) If an
+ *   active contract exists, update it so it becomes ended as of the day before
+ *   the new contract start date. Concretely, set its work_term_end_date
+ *   accordingly (or update status to ended as your domain mapping dictates). Do
+ *   not modify past contracts other than the previously active one. c) Insert
+ *   the new contract row into `erp_hrm_time_tracking_contracts` with: -
+ *   erp_hrm_time_tracking_employee_id - erp_hrm_time_tracking_organization_id -
+ *   contract_number - contract_title - pay_amount, pay_currency, pay_frequency
+ *   - work_term_start_date, work_term_end_date (nullable) - notes - status
+ *   (consistent with the lifecycle rules; typically marks the new contract as
+ *   active) - created_at/updated_at handled by DB or service - deleted_at must
+ *   be null for newly created active records d) Update timestamps where
+ *   necessary. 5) Return the created contract entity including all fields
+ *   required by `IErpHrmTimeTrackingContract` response type.
  *
  * Error handling:
  * - If employee does not exist in the selected organization context, deny access/validation failure.
@@ -154,7 +157,8 @@ export namespace createContract {
  * @param props.body Contract list search criteria, pagination, and sorting options.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implement a read-only list/search operation for contracts.
+ * @x-autobe-specification Implement a read-only list/search operation for
+ *   contracts.
  *
  * 1) Resolve tenant scope:
  * - Determine selected organization id from request context (organization context middleware).
@@ -281,17 +285,20 @@ export namespace index {
  * @param props.contractId Target contract identifier (UUID) of the employment agreement record to retrieve within the selected organization context.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implementation steps:
- * 1) Extract contractId from path.
- * 2) Resolve acting context organizationId from the selected organization context established by authentication/session middleware.
- * 3) Query erp_hrm_time_tracking_contracts by id AND erp_hrm_time_tracking_organization_id == selected organizationId.
- *    - Select all relevant columns for the contract response.
- *    - Ensure records with deleted_at != null are treated as retired (based on existing project conventions for this model); do not return them as active contract details if the service layer defines that behavior.
- * 4) Authorization enforcement:
- *    - Determine employeeId corresponding to acting user within the selected organization (acting user may be an employee).
- *    - If acting user is requesting their own contract (employee_id matches), allow.
- *    - Else require employee:view permission in the selected organization; if missing, reject.
- * 5) Return the loaded contract entity.
+ * @x-autobe-specification Implementation steps: 1) Extract contractId from
+ *   path. 2) Resolve acting context organizationId from the selected
+ *   organization context established by authentication/session middleware. 3)
+ *   Query erp_hrm_time_tracking_contracts by id AND
+ *   erp_hrm_time_tracking_organization_id == selected organizationId. - Select
+ *   all relevant columns for the contract response. - Ensure records with
+ *   deleted_at != null are treated as retired (based on existing project
+ *   conventions for this model); do not return them as active contract details
+ *   if the service layer defines that behavior. 4) Authorization enforcement: -
+ *   Determine employeeId corresponding to acting user within the selected
+ *   organization (acting user may be an employee). - If acting user is
+ *   requesting their own contract (employee_id matches), allow. - Else require
+ *   employee:view permission in the selected organization; if missing, reject.
+ *   5) Return the loaded contract entity.
  *
  * Edge cases:
  * - If contractId exists but belongs to a different organization than the selected one, treat as not-found to prevent cross-organization leakage.
@@ -389,28 +396,34 @@ export namespace at {
  * @param props.body Updated contract fields. The system will accept changes only when the target contract is the employee's currently active agreement within the selected organization.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implementation steps:
- * 1) Parse `contractId` from path.
- * 2) Load the contract row from `erp_hrm_time_tracking_contracts` by `id`.
- * 3) Authorization & organization scope:
- *    - Determine selected organization context from the authenticated member session (middleware).
- *    - Verify the loaded contract's `erp_hrm_time_tracking_organization_id` matches the selected organization id.
- *    - Verify caller has `employee:manage` permission for the employee within the selected organization context.
- * 4) Enforce immutability of past contracts:
- *    - Determine the employee's current active contract using the contract timeline semantics defined in requirements:
- *      - Active is defined as the contract that is currently in effect based on `work_term_start_date` and `work_term_end_date` (null means ongoing).
- *      - Only the single active contract is eligible for editing.
- *    - Compare the loaded contract id against the computed active contract id.
- *    - If they do not match, reject with an error indicating the contract is not editable because only the current active contract can be edited.
- * 5) Validate request body fields:
- *    - Accept updates for mutable fields such as `contract_number`, `contract_title`, pay fields, `work_term_start_date`, `work_term_end_date`, `notes`, and `status` according to the DTO contract update definition.
- *    - Ensure `work_term_end_date` logic is consistent (e.g., may be null for ongoing; if provided, it must be after/equal to start date according to timeline validity constraints).
- *    - Ensure uniqueness of `contract_number` for the employee within the organization according to @@unique([erp_hrm_time_tracking_employee_id, contract_number]). If the updated contract_number conflicts with another contract for the same employee, reject.
- * 6) Persist:
- *    - Execute update on `erp_hrm_time_tracking_contracts` for the target row.
- *    - Set `updated_at` to current time.
- *    - Do not alter `id`, `created_at`.
- * 7) Return the updated contract entity by selecting the row after update.
+ * @x-autobe-specification Implementation steps: 1) Parse `contractId` from
+ *   path. 2) Load the contract row from `erp_hrm_time_tracking_contracts` by
+ *   `id`. 3) Authorization & organization scope: - Determine selected
+ *   organization context from the authenticated member session (middleware). -
+ *   Verify the loaded contract's `erp_hrm_time_tracking_organization_id`
+ *   matches the selected organization id. - Verify caller has `employee:manage`
+ *   permission for the employee within the selected organization context. 4)
+ *   Enforce immutability of past contracts: - Determine the employee's current
+ *   active contract using the contract timeline semantics defined in
+ *   requirements: - Active is defined as the contract that is currently in
+ *   effect based on `work_term_start_date` and `work_term_end_date` (null means
+ *   ongoing). - Only the single active contract is eligible for editing. -
+ *   Compare the loaded contract id against the computed active contract id. -
+ *   If they do not match, reject with an error indicating the contract is not
+ *   editable because only the current active contract can be edited. 5)
+ *   Validate request body fields: - Accept updates for mutable fields such as
+ *   `contract_number`, `contract_title`, pay fields, `work_term_start_date`,
+ *   `work_term_end_date`, `notes`, and `status` according to the DTO contract
+ *   update definition. - Ensure `work_term_end_date` logic is consistent (e.g.,
+ *   may be null for ongoing; if provided, it must be after/equal to start date
+ *   according to timeline validity constraints). - Ensure uniqueness of
+ *   `contract_number` for the employee within the organization according to
+ *   @@unique([erp_hrm_time_tracking_employee_id, contract_number]). If the
+ *   updated contract_number conflicts with another contract for the same
+ *   employee, reject. 6) Persist: - Execute update on
+ *   `erp_hrm_time_tracking_contracts` for the target row. - Set `updated_at` to
+ *   current time. - Do not alter `id`, `created_at`. 7) Return the updated
+ *   contract entity by selecting the row after update.
  *
  * Transactions/locking:
  * - Use a single transaction for the read (active contract determination) + uniqueness check + update to avoid race conditions where another update could change the active contract status concurrently.
@@ -518,7 +531,8 @@ export namespace update {
  * @param props.contractId Unique identifier of the contract record to permanently remove.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implement erase as a direct removal of one record in erp_hrm_time_tracking_contracts.
+ * @x-autobe-specification Implement erase as a direct removal of one record in
+ *   erp_hrm_time_tracking_contracts.
  *
  * Algorithm (service layer):
  * 1. Parse `contractId`.

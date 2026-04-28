@@ -29,9 +29,13 @@ export class EcommerceCustomerWishlistController {
    *
    * @param connection
    * @param body Pagination parameters and optional filters for browsing wishlist items.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Query ecommerce_wishlist_items table for the authenticated customer's wishlist, filtering out soft-deleted items (deleted_at IS NULL). Join with ecommerce_products to fetch current product information including name, main image, price, and availability status.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Query ecommerce_wishlist_items table for the
+     *   authenticated customer's wishlist, filtering out soft-deleted items
+     *   (deleted_at IS NULL). Join with ecommerce_products to fetch current
+     *   product information including name, main image, price, and availability
+     *   status.
    *
    * Implement cursor-based pagination using created_at timestamp and id for stable ordering. Support optional filtering by product availability status.
    *

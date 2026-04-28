@@ -26,9 +26,14 @@ export class EcommercemallCustomerCustomersMeCancellation_requestsSnapshotsContr
    *
    * @param connection
    * @param requestId Unique identifier of the cancellation request whose snapshots are being retrieved. Must be a valid UUID.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Query the ecommerce_mall_cancellation_requests table to verify the request exists and belongs to the authenticated customer. Compare the ecommerce_mall_customer_id field with the authenticated customer ID extracted from the JWT token. If the cancellation request does not exist or ownership validation fails, return a 404 error.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Query the ecommerce_mall_cancellation_requests
+     *   table to verify the request exists and belongs to the authenticated
+     *   customer. Compare the ecommerce_mall_customer_id field with the
+     *   authenticated customer ID extracted from the JWT token. If the
+     *   cancellation request does not exist or ownership validation fails,
+     *   return a 404 error.
    *
    * If valid, query the ecommerce_mall_cancellation_request_snapshots table where ecommerce_mall_cancellation_request_id matches the requestId path parameter.
    *

@@ -8,21 +8,37 @@ export type IShoppingMallReviewStatistic = {
   /**
    * The unique identifier (UUID) of the product whose review statistics are being reported. This is the same value as the `productId` path parameter used to request these statistics.
    *
-   * @x-autobe-specification Derived from the productId path parameter supplied by the caller. The value is echoed back in the response to confirm which product these statistics belong to. It corresponds to shopping_mall_reviews.product_id (UUID FK to shopping_mall_products.id). Validated against shopping_mall_products before the aggregation is performed.
+     * @x-autobe-specification Derived from the productId path parameter
+     *   supplied by the caller. The value is echoed back in the response to
+     *   confirm which product these statistics belong to. It corresponds to
+     *   shopping_mall_reviews.product_id (UUID FK to
+     *   shopping_mall_products.id). Validated against shopping_mall_products
+     *   before the aggregation is performed.
    */
   product_id: string & tags.Format<"uuid">;
 
   /**
    * The arithmetic mean of all star ratings (on a 1–5 scale) submitted by customers for this product, computed only from non-deleted purchase-verified reviews. Returns `null` when the product has no active reviews, distinguishing 'no reviews yet' from a low average score.
    *
-   * @x-autobe-specification Computed as AVG(rating) from shopping_mall_reviews WHERE product_id = :productId AND deleted_at IS NULL, rounded to 2 decimal places. If no qualifying rows exist (review_count = 0), this field is null rather than 0, to clearly signal the absence of any reviews. Rating values in the source table are integers 1–5; the averaged result is a floating-point number in the range [1.0, 5.0] or null.
+     * @x-autobe-specification Computed as AVG(rating) from
+     *   shopping_mall_reviews WHERE product_id = :productId AND deleted_at IS
+     *   NULL, rounded to 2 decimal places. If no qualifying rows exist
+     *   (review_count = 0), this field is null rather than 0, to clearly signal
+     *   the absence of any reviews. Rating values in the source table are
+     *   integers 1–5; the averaged result is a floating-point number in the
+     *   range [1.0, 5.0] or null.
    */
   average_rating: (number & tags.Minimum<1> & tags.Maximum<5>) | null;
 
   /**
    * The total number of active, non-deleted purchase-verified customer reviews for this product. This count directly corresponds to the number of reviews used to compute the `average_rating`. A value of 0 means the product has no active reviews.
    *
-   * @x-autobe-specification Computed as COUNT(*) from shopping_mall_reviews WHERE product_id = :productId AND deleted_at IS NULL. Represents the total number of active (non-deleted) reviews contributing to the average_rating calculation. Always a non-negative integer (minimum 0). Deleted reviews (deleted_at IS NOT NULL) are fully excluded from this count regardless of when they were deleted.
+     * @x-autobe-specification Computed as COUNT(*) from shopping_mall_reviews
+     *   WHERE product_id = :productId AND deleted_at IS NULL. Represents the
+     *   total number of active (non-deleted) reviews contributing to the
+     *   average_rating calculation. Always a non-negative integer (minimum 0).
+     *   Deleted reviews (deleted_at IS NOT NULL) are fully excluded from this
+     *   count regardless of when they were deleted.
    */
   review_count: number & tags.Type<"int32"> & tags.Minimum<0>;
 };

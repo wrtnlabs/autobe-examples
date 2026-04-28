@@ -19,9 +19,10 @@ export class EcommercemallSellerSellerRejection_reasonController {
    * **Error Handling**: Returns 401 if the seller is not authenticated. Returns 404 if the seller account is not found.
    *
    * @param connection
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Retrieve the rejection reason for the authenticated seller from the ecommerce_mall_sellers table.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Retrieve the rejection reason for the
+     *   authenticated seller from the ecommerce_mall_sellers table.
    *
    * 1. Extract seller ID from the authenticated session/JWT token.
    * 2. Query the ecommerce_mall_sellers table to find the seller by ID.

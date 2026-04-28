@@ -8,28 +8,37 @@ export type IEcommerceMallSellerDashboard = {
   /**
    * Total number of active products currently listed by this seller.
    *
-   * @x-autobe-specification Count of products in ecommerce_mall_products table where ecommerce_mall_seller_id matches the authenticated seller ID. Excludes soft-deleted products.
+     * @x-autobe-specification Count of products in ecommerce_mall_products
+     *   table where ecommerce_mall_seller_id matches the authenticated seller
+     *   ID. Excludes soft-deleted products.
    */
   totalProducts: number & tags.Type<"int32">;
 
   /**
    * Total number of order items purchased across all of this seller's products.
    *
-   * @x-autobe-specification Count of order items in ecommerce_mall_order_items table joined with ecommerce_mall_products on product_id where the product's ecommerce_mall_seller_id matches authenticated seller ID.
+     * @x-autobe-specification Count of order items in
+     *   ecommerce_mall_order_items table joined with ecommerce_mall_products on
+     *   product_id where the product's ecommerce_mall_seller_id matches
+     *   authenticated seller ID.
    */
   totalOrderItems: number & tags.Type<"int32">;
 
   /**
    * Total number of pending cancellation requests awaiting seller response for this seller's order items.
    *
-   * @x-autobe-specification Count of cancellation requests in ecommerce_mall_cancellation_requests table with status PENDING, joined through ecommerce_mall_order_items to filter by seller ownership.
+     * @x-autobe-specification Count of cancellation requests in
+     *   ecommerce_mall_cancellation_requests table with status PENDING, joined
+     *   through ecommerce_mall_order_items to filter by seller ownership.
    */
   pendingCancellationRequests: number & tags.Type<"int32">;
 
   /**
    * Total number of pending refund requests awaiting seller response for this seller's delivered order items.
    *
-   * @x-autobe-specification Count of refund requests in ecommerce_mall_refund_requests table with status PENDING, joined through ecommerce_mall_order_items to filter by seller ownership.
+     * @x-autobe-specification Count of refund requests in
+     *   ecommerce_mall_refund_requests table with status PENDING, joined
+     *   through ecommerce_mall_order_items to filter by seller ownership.
    */
   pendingRefundRequests: number & tags.Type<"int32">;
 };

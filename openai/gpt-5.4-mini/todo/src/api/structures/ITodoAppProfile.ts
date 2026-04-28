@@ -14,8 +14,8 @@ export type ITodoAppProfile = {
    *
    * This value uniquely identifies the private profile row for the authenticated member.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from todo_app_profiles.id.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from todo_app_profiles.id.
    */
   id: string & tags.Format<"uuid">;
 
@@ -24,8 +24,9 @@ export type ITodoAppProfile = {
    *
    * This is the profile label shown inside the private todo application.
    *
-   * @x-autobe-database-schema-property display_name
-   * @x-autobe-specification Direct mapping from todo_app_profiles.display_name.
+     * @x-autobe-database-schema-property display_name
+     * @x-autobe-specification Direct mapping from
+     *   todo_app_profiles.display_name.
    */
   display_name: string;
 
@@ -34,8 +35,10 @@ export type ITodoAppProfile = {
    *
    * This relation returns the member summary linked to the profile owner and preserves the private account boundary.
    *
-   * @x-autobe-database-schema-property member
-   * @x-autobe-specification Join todo_app_profiles.member through todo_app_profiles.todo_app_member_id to the owning todo_app_members record, and expose the member summary for the current account.
+     * @x-autobe-database-schema-property member
+     * @x-autobe-specification Join todo_app_profiles.member through
+     *   todo_app_profiles.todo_app_member_id to the owning todo_app_members
+     *   record, and expose the member summary for the current account.
    */
   member: ITodoAppMember.ISummary;
 
@@ -44,8 +47,8 @@ export type ITodoAppProfile = {
    *
    * This timestamp records when the profile row was first created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from todo_app_profiles.created_at.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from todo_app_profiles.created_at.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -54,8 +57,8 @@ export type ITodoAppProfile = {
    *
    * This timestamp changes whenever the profile row is modified, including display name updates.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from todo_app_profiles.updated_at.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from todo_app_profiles.updated_at.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -64,8 +67,10 @@ export type ITodoAppProfile = {
    *
    * A null value means the profile is active. When present, the timestamp indicates the row was logically deleted while preserving lifecycle history.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from todo_app_profiles.deleted_at. Keep null when the profile is active; otherwise expose the stored soft-delete timestamp.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from todo_app_profiles.deleted_at.
+     *   Keep null when the profile is active; otherwise expose the stored
+     *   soft-delete timestamp.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -81,8 +86,12 @@ export namespace ITodoAppProfile {
      *
      * This is the only field allowed in the update request. It changes the label shown for the signed-in member's private profile and does not include identifiers, timestamps, or ownership data.
      *
-     * @x-autobe-database-schema-property display_name
-     * @x-autobe-specification Direct mapping to todo_app_profiles.display_name. The authenticated member is resolved from session context, so the request body contains only the new display name and no ownership or lifecycle fields. Extra properties are rejected.
+         * @x-autobe-database-schema-property display_name
+         * @x-autobe-specification Direct mapping to
+         *   todo_app_profiles.display_name. The authenticated member is
+         *   resolved from session context, so the request body contains only
+         *   the new display name and no ownership or lifecycle fields. Extra
+         *   properties are rejected.
      */
     displayName: string;
   };

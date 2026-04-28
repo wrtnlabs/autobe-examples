@@ -13,96 +13,114 @@ export type IErpHrmTimeTimeReportRow = {
   /**
    * Unique identifier of the time report row.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from erp_hrm_time_time_report_rows.id.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_time_report_rows.id.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Organization that owns this report row.
    *
-   * @x-autobe-database-schema-property organization
-   * @x-autobe-specification Join erp_hrm_time_time_report_rows.organization_id to the organization summary reference. This relation is required because organization_id is non-null.
+     * @x-autobe-database-schema-property organization
+     * @x-autobe-specification Join
+     *   erp_hrm_time_time_report_rows.organization_id to the organization
+     *   summary reference. This relation is required because organization_id is
+     *   non-null.
    */
   organization: IErpHrmTimeOrganizationDashboardSummary.ISummary;
 
   /**
    * Employee dimension for this report row, if the row is scoped to a specific employee.
    *
-   * @x-autobe-specification Join erp_hrm_time_time_report_rows.employee_id to the employee relation and expose the related employee as a nullable summary object. Preserve null when employee_id is null.
-   * @x-autobe-database-schema-property employee
+     * @x-autobe-specification Join erp_hrm_time_time_report_rows.employee_id to
+     *   the employee relation and expose the related employee as a nullable
+     *   summary object. Preserve null when employee_id is null.
+     * @x-autobe-database-schema-property employee
    */
   employee: IErpHrmTimeEmployeeDashboardSummary.ISummary | null;
 
   /**
    * Project dimension for this report row, if the row is scoped to a specific project.
    *
-   * @x-autobe-specification Join erp_hrm_time_time_report_rows.project_id to the project relation and expose the related project as a nullable summary object. Preserve null when project_id is null.
-   * @x-autobe-database-schema-property project
+     * @x-autobe-specification Join erp_hrm_time_time_report_rows.project_id to
+     *   the project relation and expose the related project as a nullable
+     *   summary object. Preserve null when project_id is null.
+     * @x-autobe-database-schema-property project
    */
   project: IErpHrmTimeProject.ISummary | null;
 
   /**
    * Task dimension for this report row, if the row is scoped to a specific task.
    *
-   * @x-autobe-specification Join erp_hrm_time_time_report_rows.task_id to the task relation and expose the related task as a nullable summary object. Preserve null when task_id is null.
-   * @x-autobe-database-schema-property task
+     * @x-autobe-specification Join erp_hrm_time_time_report_rows.task_id to the
+     *   task relation and expose the related task as a nullable summary object.
+     *   Preserve null when task_id is null.
+     * @x-autobe-database-schema-property task
    */
   task: IErpHrmTimeTaskHistoryEntry.ISummary | null;
 
   /**
    * Calendar date represented by this aggregated report row.
    *
-   * @x-autobe-database-schema-property report_date
-   * @x-autobe-specification Direct mapping from erp_hrm_time_time_report_rows.report_date.
+     * @x-autobe-database-schema-property report_date
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_time_report_rows.report_date.
    */
   reportDate: string & tags.Format<"date-time">;
 
   /**
    * Whether the logged time in this row is billable.
    *
-   * @x-autobe-database-schema-property billable
-   * @x-autobe-specification Direct mapping from erp_hrm_time_time_report_rows.billable.
+     * @x-autobe-database-schema-property billable
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_time_report_rows.billable.
    */
   billable: boolean;
 
   /**
    * Total logged minutes included in this report row.
    *
-   * @x-autobe-database-schema-property logged_minutes
-   * @x-autobe-specification Direct mapping from erp_hrm_time_time_report_rows.logged_minutes.
+     * @x-autobe-database-schema-property logged_minutes
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_time_report_rows.logged_minutes.
    */
   loggedMinutes: number & tags.Type<"int32">;
 
   /**
    * Total logged hours included in this report row.
    *
-   * @x-autobe-database-schema-property logged_hours
-   * @x-autobe-specification Direct mapping from erp_hrm_time_time_report_rows.logged_hours.
+     * @x-autobe-database-schema-property logged_hours
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_time_report_rows.logged_hours.
    */
   loggedHours: number;
 
   /**
    * Timestamp when this report row was generated.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from erp_hrm_time_time_report_rows.created_at.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_time_report_rows.created_at.
    */
   createdAt: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when this report row was last refreshed.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from erp_hrm_time_time_report_rows.updated_at.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_time_report_rows.updated_at.
    */
   updatedAt: string & tags.Format<"date-time">;
 
   /**
    * Soft-delete timestamp for obsolete report rows, or null when active.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from erp_hrm_time_time_report_rows.deleted_at. Preserve null when the row is active.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_time_report_rows.deleted_at. Preserve null when the row is
+     *   active.
    */
   deletedAt: (string & tags.Format<"date-time">) | null;
 };
@@ -114,96 +132,116 @@ export namespace IErpHrmTimeTimeReportRow {
     /**
      * Unique identifier for this time report row.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from erp_hrm_time_time_report_rows.id.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_time_report_rows.id.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Organization this report row belongs to.
      *
-     * @x-autobe-database-schema-property organization
-     * @x-autobe-specification Join from erp_hrm_time_time_report_rows.organization_id to the organization summary representation.
+         * @x-autobe-database-schema-property organization
+         * @x-autobe-specification Join from
+         *   erp_hrm_time_time_report_rows.organization_id to the organization
+         *   summary representation.
      */
     organization: IErpHrmTimeOrganizationDashboardSummary.ISummary;
 
     /**
      * Employee included in this report row, when the row is scoped to a specific employee.
      *
-     * @x-autobe-database-schema-property employee
-     * @x-autobe-specification Join from erp_hrm_time_time_report_rows.employee_id to the employee summary representation when the foreign key is present; otherwise return null.
+         * @x-autobe-database-schema-property employee
+         * @x-autobe-specification Join from
+         *   erp_hrm_time_time_report_rows.employee_id to the employee summary
+         *   representation when the foreign key is present; otherwise return
+         *   null.
      */
     employee: IErpHrmTimeEmployeeDashboardSummary.ISummary | null;
 
     /**
      * Project included in this report row, when the row is scoped to a specific project.
      *
-     * @x-autobe-database-schema-property project
-     * @x-autobe-specification Join from erp_hrm_time_time_report_rows.project_id to the project summary representation when the foreign key is present; otherwise return null.
+         * @x-autobe-database-schema-property project
+         * @x-autobe-specification Join from
+         *   erp_hrm_time_time_report_rows.project_id to the project summary
+         *   representation when the foreign key is present; otherwise return
+         *   null.
      */
     project: IErpHrmTimeProject.ISummary | null;
 
     /**
      * Task included in this report row, when the row is scoped to a specific task.
      *
-     * @x-autobe-database-schema-property task
-     * @x-autobe-specification Join from erp_hrm_time_time_report_rows.task_id to the task summary representation when the foreign key is present; otherwise return null.
+         * @x-autobe-database-schema-property task
+         * @x-autobe-specification Join from
+         *   erp_hrm_time_time_report_rows.task_id to the task summary
+         *   representation when the foreign key is present; otherwise return
+         *   null.
      */
     task: IErpHrmTimeTaskHistoryEntry.ISummary | null;
 
     /**
      * Calendar date represented by this aggregated report row.
      *
-     * @x-autobe-database-schema-property report_date
-     * @x-autobe-specification Direct mapping from erp_hrm_time_time_report_rows.report_date.
+         * @x-autobe-database-schema-property report_date
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_time_report_rows.report_date.
      */
     reportDate: string & tags.Format<"date-time">;
 
     /**
      * Whether the logged time in this row is billable.
      *
-     * @x-autobe-database-schema-property billable
-     * @x-autobe-specification Direct mapping from erp_hrm_time_time_report_rows.billable.
+         * @x-autobe-database-schema-property billable
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_time_report_rows.billable.
      */
     billable: boolean;
 
     /**
      * Total logged minutes included in this report row.
      *
-     * @x-autobe-database-schema-property logged_minutes
-     * @x-autobe-specification Direct mapping from erp_hrm_time_time_report_rows.logged_minutes.
+         * @x-autobe-database-schema-property logged_minutes
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_time_report_rows.logged_minutes.
      */
     loggedMinutes: number & tags.Type<"int32">;
 
     /**
      * Total logged hours included in this report row.
      *
-     * @x-autobe-database-schema-property logged_hours
-     * @x-autobe-specification Direct mapping from erp_hrm_time_time_report_rows.logged_hours.
+         * @x-autobe-database-schema-property logged_hours
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_time_report_rows.logged_hours.
      */
     loggedHours: number;
 
     /**
      * Timestamp when this report row was generated.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from erp_hrm_time_time_report_rows.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_time_report_rows.created_at.
      */
     createdAt: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when this report row was last refreshed.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from erp_hrm_time_time_report_rows.updated_at.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_time_report_rows.updated_at.
      */
     updatedAt: string & tags.Format<"date-time">;
 
     /**
      * Soft-delete timestamp for obsolete report rows, or null when active.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from erp_hrm_time_time_report_rows.deleted_at. Return null when the report row is active.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_time_report_rows.deleted_at. Return null when the
+         *   report row is active.
      */
     deletedAt: (string & tags.Format<"date-time">) | null;
   };
@@ -215,63 +253,79 @@ export namespace IErpHrmTimeTimeReportRow {
     /**
      * Start date for filtering time report rows.
      *
-     * @x-autobe-specification Apply as an inclusive lower-bound filter on the report date dimension of the organization time report query. If omitted, do not constrain the start date.
+         * @x-autobe-specification Apply as an inclusive lower-bound filter on
+         *   the report date dimension of the organization time report query. If
+         *   omitted, do not constrain the start date.
      */
     reportDateFrom?: (string & tags.Format<"date">) | null | undefined;
 
     /**
      * End date for filtering time report rows.
      *
-     * @x-autobe-specification Apply as an inclusive upper-bound filter on the report date dimension of the organization time report query. If omitted, do not constrain the end date.
+         * @x-autobe-specification Apply as an inclusive upper-bound filter on
+         *   the report date dimension of the organization time report query. If
+         *   omitted, do not constrain the end date.
      */
     reportDateTo?: (string & tags.Format<"date">) | null | undefined;
 
     /**
      * Employee ID used to filter the report rows.
      *
-     * @x-autobe-specification Filter the report query by the employee dimension when provided. Null means do not filter by employee.
+         * @x-autobe-specification Filter the report query by the employee
+         *   dimension when provided. Null means do not filter by employee.
      */
     employeeId?: (string & tags.Format<"uuid">) | null | undefined;
 
     /**
      * Project ID used to filter the report rows.
      *
-     * @x-autobe-specification Filter the report query by the project dimension when provided. Null means do not filter by project.
+         * @x-autobe-specification Filter the report query by the project
+         *   dimension when provided. Null means do not filter by project.
      */
     projectId?: (string & tags.Format<"uuid">) | null | undefined;
 
     /**
      * Task ID used to filter the report rows.
      *
-     * @x-autobe-specification Filter the report query by the task dimension when provided. Null means do not filter by task.
+         * @x-autobe-specification Filter the report query by the task dimension
+         *   when provided. Null means do not filter by task.
      */
     taskId?: (string & tags.Format<"uuid">) | null | undefined;
 
     /**
      * Billable flag used to filter the report rows.
      *
-     * @x-autobe-specification Filter the report query by the billable flag when provided. Null means do not filter by billable status.
+         * @x-autobe-specification Filter the report query by the billable flag
+         *   when provided. Null means do not filter by billable status.
      */
     billable?: boolean | null | undefined;
 
     /**
      * Sort order for the report rows.
      *
-     * @x-autobe-specification Use as the sort directive for the organization time report query. Default ordering is report_date when no explicit sort is provided. The value should be interpreted by the service layer according to the supported report-row sort contract.
+         * @x-autobe-specification Use as the sort directive for the
+         *   organization time report query. Default ordering is report_date
+         *   when no explicit sort is provided. The value should be interpreted
+         *   by the service layer according to the supported report-row sort
+         *   contract.
      */
     sort?: string | undefined;
 
     /**
      * Page number for paginated results.
      *
-     * @x-autobe-specification Use as the 1-indexed page number for paginating the report-row list. The service should validate the minimum bound and translate it to offset/limit for the query.
+         * @x-autobe-specification Use as the 1-indexed page number for
+         *   paginating the report-row list. The service should validate the
+         *   minimum bound and translate it to offset/limit for the query.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of report rows returned per page.
      *
-     * @x-autobe-specification Use as the maximum number of report rows returned per page. The service should honor the schema bounds and use this value to size the paginated query.
+         * @x-autobe-specification Use as the maximum number of report rows
+         *   returned per page. The service should honor the schema bounds and
+         *   use this value to size the paginated query.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)

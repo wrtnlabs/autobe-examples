@@ -25,9 +25,12 @@ export class ShoppingmallSellerSeller_approval_requestsController {
    *
    * @param connection
    * @param body Seller approval request submission data
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Authenticate the caller and require the seller actor. Resolve the submitting seller account from the authenticated session context instead of accepting seller identity from the client payload.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Authenticate the caller and require the seller
+     *   actor. Resolve the submitting seller account from the authenticated
+     *   session context instead of accepting seller identity from the client
+     *   payload.
    *
    * Validate whether the seller is allowed to open a new seller approval review cycle under the business rules. Creation is valid for initial selling-access registration and for re-registration after a prior rejected outcome. If the current seller state or most recent approval workflow state makes a new submission invalid, reject the request with an appropriate business error.
    *
@@ -71,9 +74,10 @@ export class ShoppingmallSellerSeller_approval_requestsController {
    *
    * @param connection
    * @param body Search filters and pagination options for seller approval requests
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Implement a seller approval request search service over shopping_mall_seller_approval_requests.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Implement a seller approval request search
+     *   service over shopping_mall_seller_approval_requests.
    *
    * Accept an IShoppingMallSellerApprovalRequest.IRequest body containing pagination, sorting, and optional filter fields relevant to the loaded schema. Support filtering by status, shoppingMallSellerApprovalRequest id, seller id (shopping_mall_seller_id), reviewer id (shopping_mall_administrator_id), created_at range, reviewed_at range, and text search against reason. Do not assume fields that are not present in the schema. If the common request DTO framework supports generic search, map only valid searchable columns from this table and permitted joined identifiers.
    *
@@ -121,9 +125,11 @@ export class ShoppingmallSellerSeller_approval_requestsController {
    *
    * @param connection
    * @param sellerApprovalRequestId Target seller approval request identifier
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Implement a read-only detail query for the seller approval request aggregate rooted at shopping_mall_seller_approval_requests.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Implement a read-only detail query for the seller
+     *   approval request aggregate rooted at
+     *   shopping_mall_seller_approval_requests.
    *
    * 1. Resolve the record by sellerApprovalRequestId.
    * 2. If no record exists, return a not-found error.

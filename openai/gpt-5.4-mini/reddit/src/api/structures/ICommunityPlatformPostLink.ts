@@ -6,8 +6,11 @@ export type ICommunityPlatformPostLink = {
   /**
    * Destination URL for the link post.
    *
-   * @x-autobe-specification Direct mapping to community_platform_post_links.url. Accept the destination URL as a string; any validation, normalization, or preview extraction should happen in the service layer after receipt.
-   * @x-autobe-database-schema-property url
+     * @x-autobe-specification Direct mapping to
+     *   community_platform_post_links.url. Accept the destination URL as a
+     *   string; any validation, normalization, or preview extraction should
+     *   happen in the service layer after receipt.
+     * @x-autobe-database-schema-property url
    */
   url: boolean;
 };

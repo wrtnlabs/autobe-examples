@@ -18,9 +18,14 @@ export class ErphrmtimeMemberStatusDeactivateController {
    *
    * @param connection
    * @param body No request body is required because the employee being deactivated is determined from the current organization-scoped context.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Validate the active organization context and confirm the caller has employee management permission. Resolve the target employee from the authenticated member or organization-scoped employee context used by this endpoint. Load the employee row, ensure it belongs to the current organization, and verify its current status is active.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Validate the active organization context and
+     *   confirm the caller has employee management permission. Resolve the
+     *   target employee from the authenticated member or organization-scoped
+     *   employee context used by this endpoint. Load the employee row, ensure
+     *   it belongs to the current organization, and verify its current status
+     *   is active.
    *
    * Update the employee status to deactivated in a transaction. Do not delete the employee record or cascade-remove historical time data. Preserve all related timelogs and timesheets unchanged. After the status update, insert an activity log entry capturing the deactivation event with organization_id, member_id, target_entity_type set to employee, target_entity_id set to the employee id, action_type indicating deactivation, and details describing the status change.
    *

@@ -23,9 +23,10 @@ export class EcommercemallSellerCancellation_requestsController {
    *
    * @param connection
    * @param body Search criteria and pagination parameters for filtering cancellation requests
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Query ecommerce_mall_cancellation_requests table with pagination and filtering.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Query ecommerce_mall_cancellation_requests table
+     *   with pagination and filtering.
    *
    * Authorization and Access Control:
    * - Customers: Only see cancellation requests where customerId matches their authenticated customer ID
@@ -92,9 +93,10 @@ export class EcommercemallSellerCancellation_requestsController {
    *
    * @param connection
    * @param cancellationRequestId Unique identifier of the cancellation request (UUID format)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Query the ecommerce_mall_cancellation_requests table by the provided cancellationRequestId UUID.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Query the ecommerce_mall_cancellation_requests
+     *   table by the provided cancellationRequestId UUID.
    *
    * Join with ecommerce_mall_order_items to include order item details (product name, variant options, quantity).
    * Join with ecommerce_mall_customers to include customer information.
@@ -138,9 +140,9 @@ export class EcommercemallSellerCancellation_requestsController {
    * @param connection
    * @param cancellationRequestId Unique identifier of the cancellation request to update (global scope)
    * @param body Seller's response to the cancellation request including approval/rejection decision and optional explanation
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Implementation must perform the following:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Implementation must perform the following:
    *
    * 1. **Authentication**: Verify the requesting user is authenticated as a seller.
    *

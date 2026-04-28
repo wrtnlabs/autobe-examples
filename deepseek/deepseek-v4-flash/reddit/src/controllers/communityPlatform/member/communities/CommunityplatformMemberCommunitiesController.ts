@@ -22,9 +22,9 @@ export class CommunityplatformMemberCommunitiesController {
    *
    * @param connection
    * @param body Community creation payload containing the unique community name, descriptive text explaining the community's purpose and guidelines, and a URI reference to the uploaded icon image file.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Create a new community resource.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Create a new community resource.
    *
    * 1. Validate the authenticated member session exists and is active.
    * 2. Extract community name, description, and icon image URI from the request body.
@@ -71,9 +71,10 @@ export class CommunityplatformMemberCommunitiesController {
    * @param connection
    * @param communityId The UUID of the community to update. (global scope)
    * @param body Updated community attributes: name (must be unique across all communities), description text, and optionally the new icon image details.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Validate that the authenticated member is the owner of the community (owner_id matches the member's id).
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Validate that the authenticated member is the
+     *   owner of the community (owner_id matches the member's id).
    *
    * Query the community_platform_communities table by communityId (id). If not found or deleted_at is not null, return 404 Not Found.
    *
@@ -118,9 +119,13 @@ export class CommunityplatformMemberCommunitiesController {
    *
    * @param connection
    * @param communityId Unique identifier (UUID) of the community to delete.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query the community_platform_communities table by id matching {communityId}. Verify the community exists and is not already soft-deleted (deleted_at IS NULL). Authenticate the requesting user via session JWT and verify user.id matches community.owner_id — reject with 403 Forbidden if not the owner.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query the community_platform_communities table by
+     *   id matching {communityId}. Verify the community exists and is not
+     *   already soft-deleted (deleted_at IS NULL). Authenticate the requesting
+     *   user via session JWT and verify user.id matches community.owner_id —
+     *   reject with 403 Forbidden if not the owner.
    *
    * Perform soft delete by setting deleted_at = now(). Do NOT hard-delete the row. The retention period policy is defined externally; the service merely sets the timestamp.
    *

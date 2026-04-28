@@ -13,94 +13,114 @@ export type IShoppingMallProduct = {
   /**
    * Unique identifier of the current product listing.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_products.id.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from shopping_mall_products.id.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Current product name shown in listings and detail pages.
    *
-   * @x-autobe-database-schema-property name
-   * @x-autobe-specification Direct mapping from shopping_mall_products.name.
+     * @x-autobe-database-schema-property name
+     * @x-autobe-specification Direct mapping from shopping_mall_products.name.
    */
   name: string;
 
   /**
    * Current seller-provided description of the product.
    *
-   * @x-autobe-database-schema-property description
-   * @x-autobe-specification Direct mapping from shopping_mall_products.description.
+     * @x-autobe-database-schema-property description
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_products.description.
    */
   description: string;
 
   /**
    * Base selling price of the product before any variant-specific price override is applied.
    *
-   * @x-autobe-database-schema-property base_price
-   * @x-autobe-specification Direct mapping from shopping_mall_products.base_price. This is the parent product price used when a variant does not provide its own override.
+     * @x-autobe-database-schema-property base_price
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_products.base_price. This is the parent product price
+     *   used when a variant does not provide its own override.
    */
   base_price: number;
 
   /**
    * Current lifecycle and listing status of the product.
    *
-   * @x-autobe-database-schema-property status
-   * @x-autobe-specification Direct mapping from shopping_mall_products.status.
+     * @x-autobe-database-schema-property status
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_products.status.
    */
   status: string;
 
   /**
    * Seller account that owns this product listing.
    *
-   * @x-autobe-database-schema-property seller
-   * @x-autobe-specification Resolve the shopping_mall_products.seller relation through shopping_mall_products.shopping_mall_seller_id to shopping_mall_sellers.id and expose it as IShoppingMallSeller.ISummary.
+     * @x-autobe-database-schema-property seller
+     * @x-autobe-specification Resolve the shopping_mall_products.seller
+     *   relation through shopping_mall_products.shopping_mall_seller_id to
+     *   shopping_mall_sellers.id and expose it as IShoppingMallSeller.ISummary.
    */
   seller: IShoppingMallSeller.ISummary;
 
   /**
    * Current category assigned to this product, or null when the product is uncategorized.
    *
-   * @x-autobe-database-schema-property category
-   * @x-autobe-specification Resolve the shopping_mall_products.category relation through shopping_mall_products.shopping_mall_category_id to shopping_mall_categories.id and expose it as IShoppingMallCategory.ISummary. Return null when shopping_mall_category_id is null.
+     * @x-autobe-database-schema-property category
+     * @x-autobe-specification Resolve the shopping_mall_products.category
+     *   relation through shopping_mall_products.shopping_mall_category_id to
+     *   shopping_mall_categories.id and expose it as
+     *   IShoppingMallCategory.ISummary. Return null when
+     *   shopping_mall_category_id is null.
    */
   category: IShoppingMallCategory.ISummary | null;
 
   /**
    * Current active gallery images for this product in display order.
    *
-   * @x-autobe-specification Query shopping_mall_product_images where shopping_mall_product_id equals the current shopping_mall_products.id, filter to rows where deleted_at is null, order by sequence ascending, and map the results to IShoppingMallProductImage.
+     * @x-autobe-specification Query shopping_mall_product_images where
+     *   shopping_mall_product_id equals the current shopping_mall_products.id,
+     *   filter to rows where deleted_at is null, order by sequence ascending,
+     *   and map the results to IShoppingMallProductImage.
    */
   images: IShoppingMallProductImage[];
 
   /**
    * Current active purchasable variants available under this product.
    *
-   * @x-autobe-specification Query shopping_mall_product_variants where shopping_mall_product_id equals the current shopping_mall_products.id, filter to rows where deleted_at is null, and map the results to IShoppingMallProductVariant.
+     * @x-autobe-specification Query shopping_mall_product_variants where
+     *   shopping_mall_product_id equals the current shopping_mall_products.id,
+     *   filter to rows where deleted_at is null, and map the results to
+     *   IShoppingMallProductVariant.
    */
   variants: IShoppingMallProductVariant[];
 
   /**
    * Timestamp when this product listing was first created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from shopping_mall_products.created_at.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_products.created_at.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the current live product record was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from shopping_mall_products.updated_at.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_products.updated_at.
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * Soft-deletion timestamp of the product listing, or null when the listing is still active.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from shopping_mall_products.deleted_at. Preserve null when the product is still active and a timestamp when it has been soft deleted.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_products.deleted_at. Preserve null when the product is
+     *   still active and a timestamp when it has been soft deleted.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -112,49 +132,74 @@ export namespace IShoppingMallProduct {
     /**
      * Optional keyword used to search product names and descriptions in the storefront catalog.
      *
-     * @x-autobe-specification Use this optional search keyword to build a case-insensitive text predicate over shopping_mall_products.name and shopping_mall_products.description. Treat it as query input rather than a stored column. Normalize or ignore empty text according to service validation rules.
+         * @x-autobe-specification Use this optional search keyword to build a
+         *   case-insensitive text predicate over shopping_mall_products.name
+         *   and shopping_mall_products.description. Treat it as query input
+         *   rather than a stored column. Normalize or ignore empty text
+         *   according to service validation rules.
      */
     search?: string | undefined;
 
     /**
      * Optional category identifier used to limit results to products currently assigned to a specific catalog category.
      *
-     * @x-autobe-specification Use this optional UUID value as a category filter parameter. Apply it to shopping_mall_products.shopping_mall_category_id when building the catalog query so that only products currently assigned to the specified category are returned. When omitted, do not restrict results by category.
+         * @x-autobe-specification Use this optional UUID value as a category
+         *   filter parameter. Apply it to
+         *   shopping_mall_products.shopping_mall_category_id when building the
+         *   catalog query so that only products currently assigned to the
+         *   specified category are returned. When omitted, do not restrict
+         *   results by category.
      */
     category_id?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Optional minimum base price for narrowing catalog results to products at or above the given amount.
      *
-     * @x-autobe-specification Use this optional lower bound to filter shopping_mall_products.base_price with a greater-than-or-equal predicate. This property is a request-side range parameter, not a stored column.
+         * @x-autobe-specification Use this optional lower bound to filter
+         *   shopping_mall_products.base_price with a greater-than-or-equal
+         *   predicate. This property is a request-side range parameter, not a
+         *   stored column.
      */
     minimumBasePrice?: number | undefined;
 
     /**
      * Optional maximum base price for narrowing catalog results to products at or below the given amount.
      *
-     * @x-autobe-specification Use this optional upper bound to filter shopping_mall_products.base_price with a less-than-or-equal predicate. This property is a request-side range parameter, not a stored column.
+         * @x-autobe-specification Use this optional upper bound to filter
+         *   shopping_mall_products.base_price with a less-than-or-equal
+         *   predicate. This property is a request-side range parameter, not a
+         *   stored column.
      */
     maximumBasePrice?: number | undefined;
 
     /**
      * Optional sort option that controls how matching product listings are ordered in the response.
      *
-     * @x-autobe-specification Interpret this optional value as a validated sort key and direction selector for the product listing query. Map it to supported deterministic ORDER BY clauses such as created_at, updated_at, name, or base_price, and apply a stable secondary tie-breaker such as id to prevent pagination drift.
+         * @x-autobe-specification Interpret this optional value as a validated
+         *   sort key and direction selector for the product listing query. Map
+         *   it to supported deterministic ORDER BY clauses such as created_at,
+         *   updated_at, name, or base_price, and apply a stable secondary
+         *   tie-breaker such as id to prevent pagination drift.
      */
     sort?: string | undefined;
 
     /**
      * Optional 1-indexed page number for paginating product listing results.
      *
-     * @x-autobe-specification Use this optional 1-indexed page number to calculate the result offset for paginated catalog retrieval. When omitted, default to the first page according to service conventions.
+         * @x-autobe-specification Use this optional 1-indexed page number to
+         *   calculate the result offset for paginated catalog retrieval. When
+         *   omitted, default to the first page according to service
+         *   conventions.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Optional maximum number of product listings to return in a single page.
      *
-     * @x-autobe-specification Use this optional maximum row count to cap the number of product summaries returned per page. Enforce the schema-defined bounds and service defaults before applying the pagination size control.
+         * @x-autobe-specification Use this optional maximum row count to cap
+         *   the number of product summaries returned per page. Enforce the
+         *   schema-defined bounds and service defaults before applying the
+         *   pagination size control.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -168,8 +213,14 @@ export namespace IShoppingMallProduct {
     /**
      * Identifier of the category to assign to the product, or null to remove the current category assignment.
      *
-     * @x-autobe-database-schema-property shopping_mall_category_id
-     * @x-autobe-specification Direct mapping to shopping_mall_products.shopping_mall_category_id in the update payload. When provided with a UUID value, validate that the referenced shopping_mall_categories row exists and has deleted_at IS NULL before persisting. When provided as null, clear the category assignment so the product becomes uncategorized. When omitted, leave the current category assignment unchanged.
+         * @x-autobe-database-schema-property shopping_mall_category_id
+         * @x-autobe-specification Direct mapping to
+         *   shopping_mall_products.shopping_mall_category_id in the update
+         *   payload. When provided with a UUID value, validate that the
+         *   referenced shopping_mall_categories row exists and has deleted_at
+         *   IS NULL before persisting. When provided as null, clear the
+         *   category assignment so the product becomes uncategorized. When
+         *   omitted, leave the current category assignment unchanged.
      */
     shopping_mall_category_id?:
       | (string & tags.Format<"uuid">)
@@ -179,32 +230,49 @@ export namespace IShoppingMallProduct {
     /**
      * Current product name to use for the listing if the seller wants to rename it.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping to shopping_mall_products.name. Apply this value only when the property is present in the request body; otherwise preserve the existing product name. Persist it as the current listing name shown in seller management and storefront product views.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping to
+         *   shopping_mall_products.name. Apply this value only when the
+         *   property is present in the request body; otherwise preserve the
+         *   existing product name. Persist it as the current listing name shown
+         *   in seller management and storefront product views.
      */
     name?: string | undefined;
 
     /**
      * Current product description to store for the listing if the seller wants to change the detail text.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping to shopping_mall_products.description. Apply this value only when the property is present in the request body; otherwise preserve the existing description. Persist it as the seller-provided product detail text displayed for the current listing state.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping to
+         *   shopping_mall_products.description. Apply this value only when the
+         *   property is present in the request body; otherwise preserve the
+         *   existing description. Persist it as the seller-provided product
+         *   detail text displayed for the current listing state.
      */
     description?: string | undefined;
 
     /**
      * Base selling price for the product before any variant-level price override is considered.
      *
-     * @x-autobe-database-schema-property base_price
-     * @x-autobe-specification Direct mapping to shopping_mall_products.base_price. Accept this field only when present in the request body and validate it as a non-negative number before persisting. This value becomes the product's current base merchandise price used unless a variant-specific override applies.
+         * @x-autobe-database-schema-property base_price
+         * @x-autobe-specification Direct mapping to
+         *   shopping_mall_products.base_price. Accept this field only when
+         *   present in the request body and validate it as a non-negative
+         *   number before persisting. This value becomes the product's current
+         *   base merchandise price used unless a variant-specific override
+         *   applies.
      */
     base_price?: (number & tags.Minimum<0>) | undefined;
 
     /**
      * Lifecycle status to apply to the product listing, such as whether it remains active or otherwise changes its current availability state.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping to shopping_mall_products.status. Apply this value only when present in the request body; otherwise preserve the existing status. Validate the submitted value against the product lifecycle states supported by the service before updating the current listing state.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping to
+         *   shopping_mall_products.status. Apply this value only when present
+         *   in the request body; otherwise preserve the existing status.
+         *   Validate the submitted value against the product lifecycle states
+         *   supported by the service before updating the current listing state.
      */
     status?: string | undefined;
   };
@@ -216,80 +284,97 @@ export namespace IShoppingMallProduct {
     /**
      * Unique identifier of the product listing.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_products.id.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_products.id.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Current product name shown in catalog listings and search results.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from shopping_mall_products.name.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_products.name.
      */
     name: string;
 
     /**
      * Current seller-provided description of the product.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from shopping_mall_products.description.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_products.description.
      */
     description: string;
 
     /**
      * Current base price of the product before variant-specific price differences are applied.
      *
-     * @x-autobe-database-schema-property base_price
-     * @x-autobe-specification Direct mapping from shopping_mall_products.base_price as the product's current base merchandise price before any variant-level override logic.
+         * @x-autobe-database-schema-property base_price
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_products.base_price as the product's current base
+         *   merchandise price before any variant-level override logic.
      */
     base_price: number;
 
     /**
      * Current lifecycle and listing status of the product.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from shopping_mall_products.status.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_products.status.
      */
     status: string;
 
     /**
      * Seller account summary for the owner of this product listing.
      *
-     * @x-autobe-database-schema-property seller
-     * @x-autobe-specification Resolve through the shopping_mall_products.seller relation using shopping_mall_seller_id and serialize the joined seller row as IShoppingMallSeller.ISummary.
+         * @x-autobe-database-schema-property seller
+         * @x-autobe-specification Resolve through the
+         *   shopping_mall_products.seller relation using
+         *   shopping_mall_seller_id and serialize the joined seller row as
+         *   IShoppingMallSeller.ISummary.
      */
     seller: IShoppingMallSeller.ISummary;
 
     /**
      * Assigned category summary for this product, or null when the product is uncategorized.
      *
-     * @x-autobe-database-schema-property category
-     * @x-autobe-specification Resolve through the nullable shopping_mall_products.category relation using shopping_mall_category_id and serialize the joined category row as IShoppingMallCategory.ISummary; return null when the product is currently uncategorized.
+         * @x-autobe-database-schema-property category
+         * @x-autobe-specification Resolve through the nullable
+         *   shopping_mall_products.category relation using
+         *   shopping_mall_category_id and serialize the joined category row as
+         *   IShoppingMallCategory.ISummary; return null when the product is
+         *   currently uncategorized.
      */
     category: IShoppingMallCategory.ISummary | null;
 
     /**
      * Timestamp when the product listing was first created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_products.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_products.created_at.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when the current product record was last updated.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from shopping_mall_products.updated_at.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_products.updated_at.
      */
     updated_at: string & tags.Format<"date-time">;
 
     /**
      * Soft-deletion timestamp for the product listing, or null when the product is still active in current records.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from shopping_mall_products.deleted_at; return null when the product has not been soft deleted.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_products.deleted_at; return null when the product has
+         *   not been soft deleted.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };
@@ -305,24 +390,28 @@ export namespace IShoppingMallProduct {
     /**
      * Identifier of the category assigned to the new product, or null when no category is assigned.
      *
-     * @x-autobe-database-schema-property shopping_mall_category_id
-     * @x-autobe-specification Maps directly to shopping_mall_products.shopping_mall_category_id. Accept a category UUID or null in the request payload, and when a UUID is provided validate that the referenced shopping_mall_categories row exists and deleted_at is null before insert.
+         * @x-autobe-database-schema-property shopping_mall_category_id
+         * @x-autobe-specification Maps directly to
+         *   shopping_mall_products.shopping_mall_category_id. Accept a category
+         *   UUID or null in the request payload, and when a UUID is provided
+         *   validate that the referenced shopping_mall_categories row exists
+         *   and deleted_at is null before insert.
      */
     shopping_mall_category_id: (string & tags.Format<"uuid">) | null;
     /**
-     * @x-autobe-database-schema-property name
+         * @x-autobe-database-schema-property name
      */
     name: string;
     /**
-     * @x-autobe-database-schema-property description
+         * @x-autobe-database-schema-property description
      */
     description: string;
     /**
-     * @x-autobe-database-schema-property base_price
+         * @x-autobe-database-schema-property base_price
      */
     base_price: number;
     /**
-     * @x-autobe-database-schema-property status
+         * @x-autobe-database-schema-property status
      */
     status: string;
   };

@@ -10,72 +10,98 @@ export type IShoppingMallAdminSession = {
   /**
    * The unique identifier (UUID) of this administrator session record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_admin_sessions.id. UUID primary key uniquely identifying this session record.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_admin_sessions.id. UUID primary key uniquely identifying
+     *   this session record.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * A summary of the regular administrator account that owns this session. Provides key identity information about the administrator who established this login session.
    *
-   * @x-autobe-database-schema-property admin
-   * @x-autobe-specification Resolved via the `admin` belongs-to relation from shopping_mall_admin_sessions to shopping_mall_admins using shopping_mall_admin_id. Returns a lightweight IShoppingMallAdmin.ISummary object containing the owning administrator's key profile fields.
+     * @x-autobe-database-schema-property admin
+     * @x-autobe-specification Resolved via the `admin` belongs-to relation from
+     *   shopping_mall_admin_sessions to shopping_mall_admins using
+     *   shopping_mall_admin_id. Returns a lightweight
+     *   IShoppingMallAdmin.ISummary object containing the owning
+     *   administrator's key profile fields.
    */
   admin: IShoppingMallAdmin.ISummary;
 
   /**
    * The JWT access token issued for this session, used to authenticate API requests on behalf of the administrator.
    *
-   * @x-autobe-database-schema-property access_token
-   * @x-autobe-specification Direct mapping from shopping_mall_admin_sessions.access_token. The JWT access token issued at session creation. Returned as a plain string. Unique per session (unique index on column).
+     * @x-autobe-database-schema-property access_token
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_admin_sessions.access_token. The JWT access token issued
+     *   at session creation. Returned as a plain string. Unique per session
+     *   (unique index on column).
    */
   accessToken: string;
 
   /**
    * The JWT refresh token for this session, used to obtain a new access token upon expiry without requiring the administrator to re-authenticate.
    *
-   * @x-autobe-database-schema-property refresh_token
-   * @x-autobe-specification Direct mapping from shopping_mall_admin_sessions.refresh_token. The JWT refresh token used to obtain a new access token when the current one expires. Returned as a plain string. Unique per session (unique index on column).
+     * @x-autobe-database-schema-property refresh_token
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_admin_sessions.refresh_token. The JWT refresh token used
+     *   to obtain a new access token when the current one expires. Returned as
+     *   a plain string. Unique per session (unique index on column).
    */
   refreshToken: string;
 
   /**
    * The IP address of the client device that initiated this administrator session, recorded for security auditing purposes.
    *
-   * @x-autobe-database-schema-property ip
-   * @x-autobe-specification Direct mapping from shopping_mall_admin_sessions.ip. The IPv4 address of the client device recorded at session creation for security auditing purposes.
+     * @x-autobe-database-schema-property ip
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_admin_sessions.ip. The IPv4 address of the client device
+     *   recorded at session creation for security auditing purposes.
    */
   ip: string & tags.Format<"ipv4">;
 
   /**
    * The full URL of the page from which the administrator's login request was initiated, recorded for auditing and security tracking purposes.
    *
-   * @x-autobe-database-schema-property href
-   * @x-autobe-specification Direct mapping from shopping_mall_admin_sessions.href. The full URL of the page from which the administrator login request was made, recorded at session creation.
+     * @x-autobe-database-schema-property href
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_admin_sessions.href. The full URL of the page from which
+     *   the administrator login request was made, recorded at session creation.
    */
   href: string & tags.Format<"uri">;
 
   /**
    * The HTTP Referer header value recorded at session creation, representing the URL of the referring page that directed the administrator to the login page.
    *
-   * @x-autobe-database-schema-property referrer
-   * @x-autobe-specification Direct mapping from shopping_mall_admin_sessions.referrer. The HTTP Referer header value captured at session creation, representing the URL of the page that linked to the login page.
+     * @x-autobe-database-schema-property referrer
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_admin_sessions.referrer. The HTTP Referer header value
+     *   captured at session creation, representing the URL of the page that
+     *   linked to the login page.
    */
   referrer: string & tags.Format<"uri">;
 
   /**
    * The date and time when this administrator session was created, corresponding to the moment of successful login.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from shopping_mall_admin_sessions.created_at (Timestamptz). The timestamp at which this session was created (i.e., when the administrator successfully logged in).
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_admin_sessions.created_at (Timestamptz). The timestamp at
+     *   which this session was created (i.e., when the administrator
+     *   successfully logged in).
    */
   createdAt: string & tags.Format<"date-time">;
 
   /**
    * The date and time when this administrator session expires or was explicitly invalidated via logout. If this value is in the future, the session is still active; otherwise it has expired or been terminated.
    *
-   * @x-autobe-database-schema-property expired_at
-   * @x-autobe-specification Direct mapping from shopping_mall_admin_sessions.expired_at (Timestamptz). The timestamp when this session expires or was explicitly invalidated. A session is considered active if this value is in the future; otherwise it is expired or logged out.
+     * @x-autobe-database-schema-property expired_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_admin_sessions.expired_at (Timestamptz). The timestamp
+     *   when this session expires or was explicitly invalidated. A session is
+     *   considered active if this value is in the future; otherwise it is
+     *   expired or logged out.
    */
   expiredAt: string & tags.Format<"date-time">;
 };
@@ -87,55 +113,76 @@ export namespace IShoppingMallAdminSession {
     /**
      * Unique identifier of this administrator session record (UUID).
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_admin_sessions.id (UUID primary key). Uniquely identifies this session record.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_admin_sessions.id (UUID primary key). Uniquely
+         *   identifies this session record.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * IP address of the client device that initiated this administrator session, recorded at login time for security auditing purposes.
      *
-     * @x-autobe-database-schema-property ip
-     * @x-autobe-specification Direct mapping from shopping_mall_admin_sessions.ip. Recorded at the moment the administrator initiates a login request. Used for security auditing.
+         * @x-autobe-database-schema-property ip
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_admin_sessions.ip. Recorded at the moment the
+         *   administrator initiates a login request. Used for security
+         *   auditing.
      */
     ip: string;
 
     /**
      * Full URL of the page from which the administrator login request was initiated, recorded at session creation for security auditing.
      *
-     * @x-autobe-database-schema-property href
-     * @x-autobe-specification Direct mapping from shopping_mall_admin_sessions.href. The full URL of the page from which the login request was made. Stored for security auditing.
+         * @x-autobe-database-schema-property href
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_admin_sessions.href. The full URL of the page from
+         *   which the login request was made. Stored for security auditing.
      */
     href: string & tags.Format<"uri">;
 
     /**
      * HTTP Referer header value recorded at the time this administrator session was created, indicating the originating page before the login action.
      *
-     * @x-autobe-database-schema-property referrer
-     * @x-autobe-specification Direct mapping from shopping_mall_admin_sessions.referrer. The HTTP Referer header value captured at session creation. Used for security auditing.
+         * @x-autobe-database-schema-property referrer
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_admin_sessions.referrer. The HTTP Referer header
+         *   value captured at session creation. Used for security auditing.
      */
     referrer: string & tags.Format<"uri">;
 
     /**
      * Computed indicator of whether this session is currently active. True if the session has not yet expired and has not been explicitly logged out; false otherwise.
      *
-     * @x-autobe-specification Computed field. Set to true when shopping_mall_admin_sessions.expired_at > current server timestamp (NOW()); set to false when expired_at <= NOW() or when the session has been explicitly invalidated via logout (expired_at set to past timestamp). This field is never persisted; it is calculated at query time.
+         * @x-autobe-specification Computed field. Set to true when
+         *   shopping_mall_admin_sessions.expired_at > current server timestamp
+         *   (NOW()); set to false when expired_at <= NOW() or when the session
+         *   has been explicitly invalidated via logout (expired_at set to past
+         *   timestamp). This field is never persisted; it is calculated at
+         *   query time.
      */
     isActive: boolean;
 
     /**
      * Timestamp indicating when this administrator session was created (i.e., when the administrator logged in).
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_admin_sessions.created_at (TIMESTAMPTZ). Records the exact moment the administrator logged in and the session was established.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_admin_sessions.created_at (TIMESTAMPTZ). Records the
+         *   exact moment the administrator logged in and the session was
+         *   established.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when this session expires or was explicitly invalidated via logout. A session is considered active if this value is in the future.
      *
-     * @x-autobe-database-schema-property expired_at
-     * @x-autobe-specification Direct mapping from shopping_mall_admin_sessions.expired_at (TIMESTAMPTZ). Set to the intended expiry time at session creation. Updated to a past timestamp upon explicit logout, effectively invalidating the session immediately.
+         * @x-autobe-database-schema-property expired_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_admin_sessions.expired_at (TIMESTAMPTZ). Set to the
+         *   intended expiry time at session creation. Updated to a past
+         *   timestamp upon explicit logout, effectively invalidating the
+         *   session immediately.
      */
     expired_at: string & tags.Format<"date-time">;
   };
@@ -147,42 +194,61 @@ export namespace IShoppingMallAdminSession {
     /**
      * When set to true, only currently active sessions (those whose expiration timestamp is in the future) are returned. When false or omitted, both active and expired sessions are included.
      *
-     * @x-autobe-specification Computed filter against shopping_mall_admin_sessions.expired_at. If true, add WHERE expired_at > NOW() to restrict results to currently active sessions. If false or omitted, no expiry filter is applied and all sessions including expired ones are returned.
+         * @x-autobe-specification Computed filter against
+         *   shopping_mall_admin_sessions.expired_at. If true, add WHERE
+         *   expired_at > NOW() to restrict results to currently active
+         *   sessions. If false or omitted, no expiry filter is applied and all
+         *   sessions including expired ones are returned.
      */
     onlyActive?: boolean | undefined;
 
     /**
      * Filter sessions by the client IP address recorded at session creation. Supports partial/substring matching. If omitted, sessions from all IP addresses are returned.
      *
-     * @x-autobe-specification Filter against shopping_mall_admin_sessions.ip column. If provided, apply WHERE ip LIKE '%{ip}%' for substring match. If omitted, no IP filter is applied.
+         * @x-autobe-specification Filter against
+         *   shopping_mall_admin_sessions.ip column. If provided, apply WHERE ip
+         *   LIKE '%{ip}%' for substring match. If omitted, no IP filter is
+         *   applied.
      */
     ip?: string | undefined;
 
     /**
      * The inclusive start of the creation date range filter. Only sessions created on or after this timestamp are returned. If omitted, there is no lower-bound restriction on the creation date.
      *
-     * @x-autobe-specification Lower-bound filter against shopping_mall_admin_sessions.created_at. If provided, apply WHERE created_at >= createdAtFrom. If omitted, no lower-bound date filter is applied.
+         * @x-autobe-specification Lower-bound filter against
+         *   shopping_mall_admin_sessions.created_at. If provided, apply WHERE
+         *   created_at >= createdAtFrom. If omitted, no lower-bound date filter
+         *   is applied.
      */
     createdAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * The inclusive end of the creation date range filter. Only sessions created on or before this timestamp are returned. If omitted, there is no upper-bound restriction on the creation date.
      *
-     * @x-autobe-specification Upper-bound filter against shopping_mall_admin_sessions.created_at. If provided, apply WHERE created_at <= createdAtTo. If omitted, no upper-bound date filter is applied.
+         * @x-autobe-specification Upper-bound filter against
+         *   shopping_mall_admin_sessions.created_at. If provided, apply WHERE
+         *   created_at <= createdAtTo. If omitted, no upper-bound date filter
+         *   is applied.
      */
     createdAtTo?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * The page number to retrieve (1-indexed). Defaults to the first page if omitted. Used in combination with `limit` to paginate through the full result set.
      *
-     * @x-autobe-specification 1-indexed page number for pagination. OFFSET = (page - 1) * limit. Minimum value is 1. Defaults to 1 if omitted. Used together with limit to paginate query results against shopping_mall_admin_sessions.
+         * @x-autobe-specification 1-indexed page number for pagination. OFFSET
+         *   = (page - 1) * limit. Minimum value is 1. Defaults to 1 if omitted.
+         *   Used together with limit to paginate query results against
+         *   shopping_mall_admin_sessions.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * The maximum number of session records to return per page. Must be between 1 and 100. Defaults to the platform default if omitted.
      *
-     * @x-autobe-specification Maximum number of records to return per page. Applied as SQL LIMIT to the shopping_mall_admin_sessions query. Valid range is 1–100. Defaults to platform default (e.g. 20) if omitted.
+         * @x-autobe-specification Maximum number of records to return per page.
+         *   Applied as SQL LIMIT to the shopping_mall_admin_sessions query.
+         *   Valid range is 1–100. Defaults to platform default (e.g. 20) if
+         *   omitted.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)

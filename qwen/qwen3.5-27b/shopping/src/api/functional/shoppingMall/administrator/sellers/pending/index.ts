@@ -22,7 +22,8 @@ import { IShoppingMallSeller } from "../../../../../structures/IShoppingMallSell
  * @param props.body Search criteria for filtering pending seller accounts, including email filter, registration date range, and pagination parameters.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor administrator
- * @x-autobe-specification Query shopping_mall_sellers table where approval_status equals 'pending'.
+ * @x-autobe-specification Query shopping_mall_sellers table where
+ *   approval_status equals 'pending'.
  *
  * Join with shopping_mall_seller_profiles to include shop_name, shop_description, and logo_uri in the response.
  *

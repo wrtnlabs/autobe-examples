@@ -33,72 +33,85 @@ export namespace IErpHrmTask {
     /**
      * Unique task identifier.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from erp_hrm_tasks.id. Primary key as UUID.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from erp_hrm_tasks.id. Primary
+         *   key as UUID.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Task title or name. Brief summary of the work to be performed.
      *
-     * @x-autobe-database-schema-property title
-     * @x-autobe-specification Direct mapping from erp_hrm_tasks.title. Brief summary of the work to be performed.
+         * @x-autobe-database-schema-property title
+         * @x-autobe-specification Direct mapping from erp_hrm_tasks.title.
+         *   Brief summary of the work to be performed.
      */
     title: string;
 
     /**
      * Current status of the task. Open indicates ready to start, In-Progress indicates actively being worked, Completed indicates finished but not yet closed, Closed indicates archived or no longer active.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from erp_hrm_tasks.status. Allowed values: 'Open', 'In-Progress', 'Completed', 'Closed'.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from erp_hrm_tasks.status.
+         *   Allowed values: 'Open', 'In-Progress', 'Completed', 'Closed'.
      */
     status: string;
 
     /**
      * Priority level of the task. Determines relative importance and urgency for work planning.
      *
-     * @x-autobe-database-schema-property priority
-     * @x-autobe-specification Direct mapping from erp_hrm_tasks.priority. Allowed values: 'Low', 'Medium', 'High', 'Critical'.
+         * @x-autobe-database-schema-property priority
+         * @x-autobe-specification Direct mapping from erp_hrm_tasks.priority.
+         *   Allowed values: 'Low', 'Medium', 'High', 'Critical'.
      */
     priority: string;
 
     /**
      * Optional deadline for task completion. When specified, indicates when the task should be finished.
      *
-     * @x-autobe-database-schema-property due_date
-     * @x-autobe-specification Direct mapping from erp_hrm_tasks.due_date. Nullable timestamp. Format: ISO 8601 date-time.
+         * @x-autobe-database-schema-property due_date
+         * @x-autobe-specification Direct mapping from erp_hrm_tasks.due_date.
+         *   Nullable timestamp. Format: ISO 8601 date-time.
      */
     dueDate: (string & tags.Format<"date-time">) | null;
 
     /**
      * Optional estimated effort in hours required to complete the task. Used for planning and capacity management.
      *
-     * @x-autobe-database-schema-property estimated_hours
-     * @x-autobe-specification Direct mapping from erp_hrm_tasks.estimated_hours. Nullable Float. Used for planning and capacity management.
+         * @x-autobe-database-schema-property estimated_hours
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_tasks.estimated_hours. Nullable Float. Used for planning
+         *   and capacity management.
      */
     estimatedHours: number | null;
 
     /**
      * Timestamp when the task was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from erp_hrm_tasks.created_at. Timestamp when the task was created.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from erp_hrm_tasks.created_at.
+         *   Timestamp when the task was created.
      */
     createdAt: string & tags.Format<"date-time">;
 
     /**
      * The organization member assigned to complete this task. Null if the task is unassigned.
      *
-     * @x-autobe-database-schema-property assignee
-     * @x-autobe-specification BELONGS-TO relation via erp_hrm_tasks.assigned_to_id → erp_hrm_organization_members.id. Returns IErpHrmOrganizationMember.ISummary. Null if unassigned.
+         * @x-autobe-database-schema-property assignee
+         * @x-autobe-specification BELONGS-TO relation via
+         *   erp_hrm_tasks.assigned_to_id → erp_hrm_organization_members.id.
+         *   Returns IErpHrmOrganizationMember.ISummary. Null if unassigned.
      */
     assignee: IErpHrmOrganizationMember.ISummary | null;
 
     /**
      * For sub-tasks, references the parent task. Limited to single-level nesting - child tasks cannot have their own children. Null for top-level tasks.
      *
-     * @x-autobe-database-schema-property parentTask
-     * @x-autobe-specification BELONGS-TO relation via erp_hrm_tasks.parent_task_id → erp_hrm_tasks.id. Self-referential join returning IErpHrmTask.ISummary. Limited to single-level nesting. Null for top-level tasks.
+         * @x-autobe-database-schema-property parentTask
+         * @x-autobe-specification BELONGS-TO relation via
+         *   erp_hrm_tasks.parent_task_id → erp_hrm_tasks.id. Self-referential
+         *   join returning IErpHrmTask.ISummary. Limited to single-level
+         *   nesting. Null for top-level tasks.
      */
     parentTask: IErpHrmTask.ISummary | null;
   };
@@ -110,64 +123,93 @@ export namespace IErpHrmTask {
     /**
      * Task title or name. Brief summary of the work to be performed.
      *
-     * @x-autobe-database-schema-property title
-     * @x-autobe-specification Direct mapping from erp_hrm_tasks.title. Required non-empty string. Validated: minLength=1. Represents the task name or brief summary of work to be performed.
+         * @x-autobe-database-schema-property title
+         * @x-autobe-specification Direct mapping from erp_hrm_tasks.title.
+         *   Required non-empty string. Validated: minLength=1. Represents the
+         *   task name or brief summary of work to be performed.
      */
     title: string;
 
     /**
      * Detailed description of the task. May include requirements, acceptance criteria, or additional context.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from erp_hrm_tasks.description. Nullable column. Optional detailed description including requirements, acceptance criteria, or additional context.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_tasks.description. Nullable column. Optional detailed
+         *   description including requirements, acceptance criteria, or
+         *   additional context.
      */
     description?: string | null | undefined;
 
     /**
      * Current status of the task. Allowed values: 'Open', 'In-Progress', 'Completed', 'Closed'. Defaults to 'Open' if not specified.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from erp_hrm_tasks.status. Nullable column with default 'Open' if not provided. Enum validation: 'Open', 'In-Progress', 'Completed', 'Closed'. Open=ready to start, In-Progress=actively worked, Completed=finished but not closed, Closed=archived/inactive.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from erp_hrm_tasks.status.
+         *   Nullable column with default 'Open' if not provided. Enum
+         *   validation: 'Open', 'In-Progress', 'Completed', 'Closed'.
+         *   Open=ready to start, In-Progress=actively worked,
+         *   Completed=finished but not closed, Closed=archived/inactive.
      */
     status?: "Open" | "In-Progress" | "Completed" | "Closed" | null | undefined;
 
     /**
      * Priority level of the task. Allowed values: 'Low', 'Medium', 'High', 'Critical'. Defaults to 'Medium' if not specified.
      *
-     * @x-autobe-database-schema-property priority
-     * @x-autobe-specification Direct mapping from erp_hrm_tasks.priority. Nullable column with default 'Medium' if not provided. Enum validation: 'Low', 'Medium', 'High', 'Critical'. Determines relative importance and urgency for work planning.
+         * @x-autobe-database-schema-property priority
+         * @x-autobe-specification Direct mapping from erp_hrm_tasks.priority.
+         *   Nullable column with default 'Medium' if not provided. Enum
+         *   validation: 'Low', 'Medium', 'High', 'Critical'. Determines
+         *   relative importance and urgency for work planning.
      */
     priority?: "Low" | "Medium" | "High" | "Critical" | null | undefined;
 
     /**
      * Optional deadline for task completion. When specified, indicates when the task should be finished.
      *
-     * @x-autobe-database-schema-property due_date
-     * @x-autobe-specification Direct mapping from erp_hrm_tasks.due_date. Nullable DateTime column. Optional deadline for task completion. When specified, must be a valid future timestamp in ISO 8601 format.
+         * @x-autobe-database-schema-property due_date
+         * @x-autobe-specification Direct mapping from erp_hrm_tasks.due_date.
+         *   Nullable DateTime column. Optional deadline for task completion.
+         *   When specified, must be a valid future timestamp in ISO 8601
+         *   format.
      */
     due_date?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * Optional estimated effort in hours required to complete the task. Used for planning and capacity management.
      *
-     * @x-autobe-database-schema-property estimated_hours
-     * @x-autobe-specification Direct mapping from erp_hrm_tasks.estimated_hours. Nullable Float/Double column. Optional estimated effort in hours required to complete the task. Must be positive number (minimum 0). Used for planning and capacity management.
+         * @x-autobe-database-schema-property estimated_hours
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_tasks.estimated_hours. Nullable Float/Double column.
+         *   Optional estimated effort in hours required to complete the task.
+         *   Must be positive number (minimum 0). Used for planning and capacity
+         *   management.
      */
     estimated_hours?: (number & tags.Minimum<0>) | null | undefined;
 
     /**
      * Organization member ID to assign this task to. References an organization member who must be a project member. Null if task is unassigned.
      *
-     * @x-autobe-database-schema-property assigned_to_id
-     * @x-autobe-specification Direct mapping from erp_hrm_tasks.assigned_to_id. Nullable UUID column referencing erp_hrm_organization_members.id. The organization member responsible for completing this task. When provided, must reference a valid organization member who is a project member. Null if unassigned.
+         * @x-autobe-database-schema-property assigned_to_id
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_tasks.assigned_to_id. Nullable UUID column referencing
+         *   erp_hrm_organization_members.id. The organization member
+         *   responsible for completing this task. When provided, must reference
+         *   a valid organization member who is a project member. Null if
+         *   unassigned.
      */
     assigned_to_id?: (string & tags.Format<"uuid">) | null | undefined;
 
     /**
      * Parent task ID for creating sub-tasks. References a task within the same project. Limited to single-level nesting - cannot use a task that is already a child task.
      *
-     * @x-autobe-database-schema-property parent_task_id
-     * @x-autobe-specification Direct mapping from erp_hrm_tasks.parent_task_id. Nullable UUID column referencing erp_hrm_tasks.id. For sub-tasks, references the parent task. Limited to single-level nesting - child tasks cannot have their own children. Must reference a task within the same project and must not already be a child task.
+         * @x-autobe-database-schema-property parent_task_id
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_tasks.parent_task_id. Nullable UUID column referencing
+         *   erp_hrm_tasks.id. For sub-tasks, references the parent task.
+         *   Limited to single-level nesting - child tasks cannot have their own
+         *   children. Must reference a task within the same project and must
+         *   not already be a child task.
      */
     parent_task_id?: (string & tags.Format<"uuid">) | null | undefined;
   };
@@ -179,14 +221,17 @@ export namespace IErpHrmTask {
     /**
      * Page number for pagination (1-indexed).
      *
-     * @x-autobe-specification Pagination page number (1-indexed). Computed query parameter for LIMIT/OFFSET calculation: OFFSET = (page - 1) * limit.
+         * @x-autobe-specification Pagination page number (1-indexed). Computed
+         *   query parameter for LIMIT/OFFSET calculation: OFFSET = (page - 1) *
+         *   limit.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of records to return per page (1-100).
      *
-     * @x-autobe-specification Maximum records per page. Computed query parameter for SQL LIMIT clause. Constrained to 1-100 range.
+         * @x-autobe-specification Maximum records per page. Computed query
+         *   parameter for SQL LIMIT clause. Constrained to 1-100 range.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -195,87 +240,111 @@ export namespace IErpHrmTask {
     /**
      * Filter tasks by status (Open, In-Progress, Completed, Closed).
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Filter by erp_hrm_tasks.status column. Allowed values: 'Open', 'In-Progress', 'Completed', 'Closed'. Maps directly to DB column with exact match filtering.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Filter by erp_hrm_tasks.status column.
+         *   Allowed values: 'Open', 'In-Progress', 'Completed', 'Closed'. Maps
+         *   directly to DB column with exact match filtering.
      */
     status?: "Open" | "In-Progress" | "Completed" | "Closed" | null | undefined;
 
     /**
      * Filter tasks by priority level (Low, Medium, High, Critical).
      *
-     * @x-autobe-database-schema-property priority
-     * @x-autobe-specification Filter by erp_hrm_tasks.priority column. Allowed values: 'Low', 'Medium', 'High', 'Critical'. Maps directly to DB column with exact match filtering.
+         * @x-autobe-database-schema-property priority
+         * @x-autobe-specification Filter by erp_hrm_tasks.priority column.
+         *   Allowed values: 'Low', 'Medium', 'High', 'Critical'. Maps directly
+         *   to DB column with exact match filtering.
      */
     priority?: "Low" | "Medium" | "High" | "Critical" | null | undefined;
 
     /**
      * Filter tasks by assigned organization member ID.
      *
-     * @x-autobe-database-schema-property assigned_to_id
-     * @x-autobe-specification Filter by erp_hrm_tasks.assigned_to_id column (UUID foreign key). Maps to assigned_to_id column for filtering tasks by assignee organization member. Null for unassigned tasks.
+         * @x-autobe-database-schema-property assigned_to_id
+         * @x-autobe-specification Filter by erp_hrm_tasks.assigned_to_id column
+         *   (UUID foreign key). Maps to assigned_to_id column for filtering
+         *   tasks by assignee organization member. Null for unassigned tasks.
      */
     assignedToId?: (string & tags.Format<"uuid">) | null | undefined;
 
     /**
      * Filter tasks by parent task ID (for sub-task queries). Use null for top-level tasks only.
      *
-     * @x-autobe-database-schema-property parent_task_id
-     * @x-autobe-specification Filter by erp_hrm_tasks.parent_task_id column (UUID foreign key, self-referential). Used for sub-task queries. Set to null for top-level tasks only. Maps to parent_task_id column.
+         * @x-autobe-database-schema-property parent_task_id
+         * @x-autobe-specification Filter by erp_hrm_tasks.parent_task_id column
+         *   (UUID foreign key, self-referential). Used for sub-task queries.
+         *   Set to null for top-level tasks only. Maps to parent_task_id
+         *   column.
      */
     parentTaskId?: (string & tags.Format<"uuid">) | null | undefined;
 
     /**
      * Filter tasks with due date on or after this timestamp (inclusive).
      *
-     * @x-autobe-database-schema-property due_date
-     * @x-autobe-specification Filter tasks where erp_hrm_tasks.due_date >= dueDateFrom. Date range start for due_date column filtering (inclusive).
+         * @x-autobe-database-schema-property due_date
+         * @x-autobe-specification Filter tasks where erp_hrm_tasks.due_date >=
+         *   dueDateFrom. Date range start for due_date column filtering
+         *   (inclusive).
      */
     dueDateFrom?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * Filter tasks with due date on or before this timestamp (inclusive).
      *
-     * @x-autobe-database-schema-property due_date
-     * @x-autobe-specification Filter tasks where erp_hrm_tasks.due_date <= dueDateTo. Date range end for due_date column filtering (inclusive).
+         * @x-autobe-database-schema-property due_date
+         * @x-autobe-specification Filter tasks where erp_hrm_tasks.due_date <=
+         *   dueDateTo. Date range end for due_date column filtering
+         *   (inclusive).
      */
     dueDateTo?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * Filter tasks created on or after this timestamp (inclusive).
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Filter tasks where erp_hrm_tasks.created_at >= createdAtFrom. Date range start for created_at column filtering (inclusive).
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Filter tasks where erp_hrm_tasks.created_at
+         *   >= createdAtFrom. Date range start for created_at column filtering
+         *   (inclusive).
      */
     createdAtFrom?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * Filter tasks created on or before this timestamp (inclusive).
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Filter tasks where erp_hrm_tasks.created_at <= createdAtTo. Date range end for created_at column filtering (inclusive).
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Filter tasks where erp_hrm_tasks.created_at
+         *   <= createdAtTo. Date range end for created_at column filtering
+         *   (inclusive).
      */
     createdAtTo?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * Filter tasks with estimated hours greater than or equal to this value (inclusive).
      *
-     * @x-autobe-database-schema-property estimated_hours
-     * @x-autobe-specification Filter tasks where erp_hrm_tasks.estimated_hours >= estimatedHoursMin. Range minimum for estimated_hours column filtering (inclusive).
+         * @x-autobe-database-schema-property estimated_hours
+         * @x-autobe-specification Filter tasks where
+         *   erp_hrm_tasks.estimated_hours >= estimatedHoursMin. Range minimum
+         *   for estimated_hours column filtering (inclusive).
      */
     estimatedHoursMin?: number | null | undefined;
 
     /**
      * Filter tasks with estimated hours less than or equal to this value (inclusive).
      *
-     * @x-autobe-database-schema-property estimated_hours
-     * @x-autobe-specification Filter tasks where erp_hrm_tasks.estimated_hours <= estimatedHoursMax. Range maximum for estimated_hours column filtering (inclusive).
+         * @x-autobe-database-schema-property estimated_hours
+         * @x-autobe-specification Filter tasks where
+         *   erp_hrm_tasks.estimated_hours <= estimatedHoursMax. Range maximum
+         *   for estimated_hours column filtering (inclusive).
      */
     estimatedHoursMax?: number | null | undefined;
 
     /**
      * Search query string for filtering tasks by title or description (partial text matching).
      *
-     * @x-autobe-specification Text search across erp_hrm_tasks.title and erp_hrm_tasks.description columns using ILIKE/partial matching with wildcards. Computed filter applying pattern matching to multiple columns with OR logic.
+         * @x-autobe-specification Text search across erp_hrm_tasks.title and
+         *   erp_hrm_tasks.description columns using ILIKE/partial matching with
+         *   wildcards. Computed filter applying pattern matching to multiple
+         *   columns with OR logic.
      */
     search?: string | null | undefined;
   };
@@ -287,64 +356,87 @@ export namespace IErpHrmTask {
     /**
      * Task title or name. Brief summary of the work to be performed.
      *
-     * @x-autobe-database-schema-property title
-     * @x-autobe-specification Direct mapping from erp_hrm_tasks.title. Optional for partial updates. String field storing task title or name.
+         * @x-autobe-database-schema-property title
+         * @x-autobe-specification Direct mapping from erp_hrm_tasks.title.
+         *   Optional for partial updates. String field storing task title or
+         *   name.
      */
     title?: string | undefined;
 
     /**
      * Detailed description of the task. Optional field providing requirements, acceptance criteria, or additional context.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from erp_hrm_tasks.description. Nullable string. Optional for partial updates. May include requirements, acceptance criteria, or additional context.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_tasks.description. Nullable string. Optional for partial
+         *   updates. May include requirements, acceptance criteria, or
+         *   additional context.
      */
     description?: string | null | undefined;
 
     /**
      * Current status of the task. Open indicates ready to start, In-Progress indicates actively being worked, Completed indicates finished but not yet closed, Closed indicates archived or no longer active.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from erp_hrm_tasks.status. Optional for partial updates. Valid values: 'Open', 'In-Progress', 'Completed', 'Closed'. Status changes trigger automatic TaskHistory creation server-side.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from erp_hrm_tasks.status.
+         *   Optional for partial updates. Valid values: 'Open', 'In-Progress',
+         *   'Completed', 'Closed'. Status changes trigger automatic TaskHistory
+         *   creation server-side.
      */
     status?: "Open" | "In-Progress" | "Completed" | "Closed" | undefined;
 
     /**
      * Priority level of the task. Low, Medium, High, or Critical. Determines relative importance and urgency for work planning.
      *
-     * @x-autobe-database-schema-property priority
-     * @x-autobe-specification Direct mapping from erp_hrm_tasks.priority. Optional for partial updates. Valid values: 'Low', 'Medium', 'High', 'Critical'. Determines relative importance and urgency for work planning.
+         * @x-autobe-database-schema-property priority
+         * @x-autobe-specification Direct mapping from erp_hrm_tasks.priority.
+         *   Optional for partial updates. Valid values: 'Low', 'Medium',
+         *   'High', 'Critical'. Determines relative importance and urgency for
+         *   work planning.
      */
     priority?: "Low" | "Medium" | "High" | "Critical" | undefined;
 
     /**
      * Optional deadline for task completion. When specified, indicates when the task should be finished.
      *
-     * @x-autobe-database-schema-property due_date
-     * @x-autobe-specification Direct mapping from erp_hrm_tasks.due_date. Nullable DateTime. Optional for partial updates. ISO 8601 format via date-time string. Optional deadline for task completion.
+         * @x-autobe-database-schema-property due_date
+         * @x-autobe-specification Direct mapping from erp_hrm_tasks.due_date.
+         *   Nullable DateTime. Optional for partial updates. ISO 8601 format
+         *   via date-time string. Optional deadline for task completion.
      */
     due_date?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * Optional estimated effort in hours required to complete the task. Used for planning and capacity management.
      *
-     * @x-autobe-database-schema-property estimated_hours
-     * @x-autobe-specification Direct mapping from erp_hrm_tasks.estimated_hours. Nullable Float (DoublePrecision). Optional for partial updates. Used for planning and capacity management.
+         * @x-autobe-database-schema-property estimated_hours
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_tasks.estimated_hours. Nullable Float (DoublePrecision).
+         *   Optional for partial updates. Used for planning and capacity
+         *   management.
      */
     estimated_hours?: number | null | undefined;
 
     /**
      * The organization member assigned to this task. References an OrganizationMember ID who must be a member of the project. Null if unassigned.
      *
-     * @x-autobe-database-schema-property assigned_to_id
-     * @x-autobe-specification Direct mapping from erp_hrm_tasks.assigned_to_id. Nullable UUID. Optional for partial updates. References erp_hrm_organization_members.id. Must be a member of the project via erp_hrm_project_members validation.
+         * @x-autobe-database-schema-property assigned_to_id
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_tasks.assigned_to_id. Nullable UUID. Optional for partial
+         *   updates. References erp_hrm_organization_members.id. Must be a
+         *   member of the project via erp_hrm_project_members validation.
      */
     assigned_to_id?: (string & tags.Format<"uuid">) | null | undefined;
 
     /**
      * Parent task ID for sub-tasks. References another task in the same project to create single-level parent-child relationships. Null for top-level tasks.
      *
-     * @x-autobe-database-schema-property parent_task_id
-     * @x-autobe-specification Direct mapping from erp_hrm_tasks.parent_task_id. Nullable UUID. Optional for partial updates. References erp_hrm_tasks.id. Must exist in same project. Single-level nesting only - child tasks cannot have their own children. Null for top-level tasks.
+         * @x-autobe-database-schema-property parent_task_id
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_tasks.parent_task_id. Nullable UUID. Optional for partial
+         *   updates. References erp_hrm_tasks.id. Must exist in same project.
+         *   Single-level nesting only - child tasks cannot have their own
+         *   children. Null for top-level tasks.
      */
     parent_task_id?: (string & tags.Format<"uuid">) | null | undefined;
   };

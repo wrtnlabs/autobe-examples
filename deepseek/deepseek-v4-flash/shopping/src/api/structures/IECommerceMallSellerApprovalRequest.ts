@@ -17,8 +17,9 @@ export type IECommerceMallSellerApprovalRequest = {
    *
    * Auto-generated upon creation and used as the primary key for referencing the approval request in API operations and path parameters.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from e_commerce_mall_seller_approval_requests.id.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_seller_approval_requests.id.
    */
   id: string & tags.Format<"uuid">;
 
@@ -27,8 +28,9 @@ export type IECommerceMallSellerApprovalRequest = {
    *
    * Possible values: `pending` — awaiting administrator review (initial state upon submission), `approved` — seller registration accepted and selling privileges granted, or `rejected` — registration declined with a reason provided by the reviewing administrator. The status transitions from `pending` to either `approved` or `rejected` when an administrator reviews the request, and cannot be changed afterward.
    *
-   * @x-autobe-database-schema-property status
-   * @x-autobe-specification Direct mapping from e_commerce_mall_seller_approval_requests.status.
+     * @x-autobe-database-schema-property status
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_seller_approval_requests.status.
    */
   status: string;
 
@@ -37,8 +39,10 @@ export type IECommerceMallSellerApprovalRequest = {
    *
    * Provided by the reviewing administrator when the status is `rejected`. Contains a textual explanation visible to the seller so they understand why their registration was declined and can submit a new request with corrected information. Remains `null` when the request is in `pending` or `approved` status.
    *
-   * @x-autobe-database-schema-property rejection_reason
-   * @x-autobe-specification Direct mapping from e_commerce_mall_seller_approval_requests.rejection_reason. Null when status is not 'rejected'.
+     * @x-autobe-database-schema-property rejection_reason
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_seller_approval_requests.rejection_reason. Null when
+     *   status is not 'rejected'.
    */
   rejection_reason: string | null;
 
@@ -47,8 +51,10 @@ export type IECommerceMallSellerApprovalRequest = {
    *
    * Set when the status transitions from `pending` to either `approved` or `rejected`. Remains `null` while the request is awaiting administrator review.
    *
-   * @x-autobe-database-schema-property reviewed_at
-   * @x-autobe-specification Direct mapping from e_commerce_mall_seller_approval_requests.reviewed_at. Null when status is 'pending'.
+     * @x-autobe-database-schema-property reviewed_at
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_seller_approval_requests.reviewed_at. Null when status
+     *   is 'pending'.
    */
   reviewed_at: (string & tags.Format<"date-time">) | null;
 
@@ -57,8 +63,9 @@ export type IECommerceMallSellerApprovalRequest = {
    *
    * Set automatically upon record creation and remains immutable afterward.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from e_commerce_mall_seller_approval_requests.created_at.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_seller_approval_requests.created_at.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -67,8 +74,9 @@ export type IECommerceMallSellerApprovalRequest = {
    *
    * Updated automatically whenever the request's status, rejection reason, reviewer assignment, or other mutable fields change.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from e_commerce_mall_seller_approval_requests.updated_at.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_seller_approval_requests.updated_at.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -77,8 +85,10 @@ export type IECommerceMallSellerApprovalRequest = {
    *
    * Set when the associated seller account is deleted, preserving data integrity for audit trails. `null` indicates the record is active and has not been soft-deleted.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from e_commerce_mall_seller_approval_requests.deleted_at. Null indicates active record.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_seller_approval_requests.deleted_at. Null indicates
+     *   active record.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 
@@ -87,8 +97,11 @@ export type IECommerceMallSellerApprovalRequest = {
    *
    * Contains the seller's identifying information including email address, current approval status, and public shop profile. Each seller can have multiple approval requests over time if they resubmit after a rejection.
    *
-   * @x-autobe-database-schema-property seller
-   * @x-autobe-specification INNER JOIN from e_commerce_mall_seller_approval_requests.seller_id to e_commerce_mall_sellers.id. Returns IECommerceMallSeller.ISummary containing id, email, approval_status, profile, created_at, deleted_at.
+     * @x-autobe-database-schema-property seller
+     * @x-autobe-specification INNER JOIN from
+     *   e_commerce_mall_seller_approval_requests.seller_id to
+     *   e_commerce_mall_sellers.id. Returns IECommerceMallSeller.ISummary
+     *   containing id, email, approval_status, profile, created_at, deleted_at.
    */
   seller: IECommerceMallSeller.ISummary;
 
@@ -97,8 +110,12 @@ export type IECommerceMallSellerApprovalRequest = {
    *
    * Contains the administrator's identifying information including email and grade. Set when an administrator approves or rejects the request. Remains `null` while the request is in `pending` status awaiting review.
    *
-   * @x-autobe-database-schema-property reviewer
-   * @x-autobe-specification LEFT JOIN from e_commerce_mall_seller_approval_requests.reviewer_id to e_commerce_mall_administrators.id. Returns IECommerceMallAdministrator.ISummary or null. Null when the request has not been reviewed yet (pending status).
+     * @x-autobe-database-schema-property reviewer
+     * @x-autobe-specification LEFT JOIN from
+     *   e_commerce_mall_seller_approval_requests.reviewer_id to
+     *   e_commerce_mall_administrators.id. Returns
+     *   IECommerceMallAdministrator.ISummary or null. Null when the request has
+     *   not been reviewed yet (pending status).
    */
   reviewer: IECommerceMallAdministrator.ISummary | null;
 };
@@ -116,7 +133,9 @@ export namespace IECommerceMallSellerApprovalRequest {
      *
      * Performs a partial match (LIKE/ILIKE) against seller emails by joining the e_commerce_mall_sellers table. Results include all requests where the seller's email contains the search keyword (case-insensitive).
      *
-     * @x-autobe-specification LIKE/ILIKE partial match against e_commerce_mall_sellers.email via JOIN. Applied only when non-empty and non-null.
+         * @x-autobe-specification LIKE/ILIKE partial match against
+         *   e_commerce_mall_sellers.email via JOIN. Applied only when non-empty
+         *   and non-null.
      */
     search?: string | undefined;
 
@@ -125,8 +144,10 @@ export namespace IECommerceMallSellerApprovalRequest {
      *
      * Possible values are: "pending" (awaiting administrator review), "approved" (registration accepted), or "rejected" (registration declined). When omitted, requests of all statuses are returned.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct filter on e_commerce_mall_seller_approval_requests.status column. Accepts "pending", "approved", or "rejected". Omit to return all statuses.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct filter on
+         *   e_commerce_mall_seller_approval_requests.status column. Accepts
+         *   "pending", "approved", or "rejected". Omit to return all statuses.
      */
     status?: string | undefined;
 
@@ -135,7 +156,9 @@ export namespace IECommerceMallSellerApprovalRequest {
      *
      * Performs a partial match (LIKE/ILIKE) against administrator emails by joining the e_commerce_mall_administrators table. Only applies to requests that have already been reviewed (status is "approved" or "rejected") since pending requests have no reviewer assigned.
      *
-     * @x-autobe-specification LIKE/ILIKE partial match against e_commerce_mall_administrators.email via LEFT JOIN. Only matches requests that have been reviewed (reviewer_id IS NOT NULL).
+         * @x-autobe-specification LIKE/ILIKE partial match against
+         *   e_commerce_mall_administrators.email via LEFT JOIN. Only matches
+         *   requests that have been reviewed (reviewer_id IS NOT NULL).
      */
     reviewer_email?: string | undefined;
 
@@ -144,7 +167,9 @@ export namespace IECommerceMallSellerApprovalRequest {
      *
      * Only approval requests created at or after this timestamp are returned. Use together with created_at_to to define a submission date range.
      *
-     * @x-autobe-specification Lower bound filter on e_commerce_mall_seller_approval_requests.created_at (inclusive). Applied as: created_at >= created_at_from.
+         * @x-autobe-specification Lower bound filter on
+         *   e_commerce_mall_seller_approval_requests.created_at (inclusive).
+         *   Applied as: created_at >= created_at_from.
      */
     created_at_from?: (string & tags.Format<"date-time">) | undefined;
 
@@ -153,7 +178,9 @@ export namespace IECommerceMallSellerApprovalRequest {
      *
      * Only approval requests created at or before this timestamp are returned. Use together with created_at_from to define a submission date range.
      *
-     * @x-autobe-specification Upper bound filter on e_commerce_mall_seller_approval_requests.created_at (inclusive). Applied as: created_at <= created_at_to.
+         * @x-autobe-specification Upper bound filter on
+         *   e_commerce_mall_seller_approval_requests.created_at (inclusive).
+         *   Applied as: created_at <= created_at_to.
      */
     created_at_to?: (string & tags.Format<"date-time">) | undefined;
 
@@ -162,7 +189,10 @@ export namespace IECommerceMallSellerApprovalRequest {
      *
      * Only approval requests reviewed at or after this timestamp are returned. Only applies to requests that have been reviewed (status is "approved" or "rejected").
      *
-     * @x-autobe-specification Lower bound filter on e_commerce_mall_seller_approval_requests.reviewed_at (inclusive). Applied as: reviewed_at >= reviewed_at_from. Only applies to requests where reviewed_at IS NOT NULL (already reviewed).
+         * @x-autobe-specification Lower bound filter on
+         *   e_commerce_mall_seller_approval_requests.reviewed_at (inclusive).
+         *   Applied as: reviewed_at >= reviewed_at_from. Only applies to
+         *   requests where reviewed_at IS NOT NULL (already reviewed).
      */
     reviewed_at_from?: (string & tags.Format<"date-time">) | undefined;
 
@@ -171,7 +201,10 @@ export namespace IECommerceMallSellerApprovalRequest {
      *
      * Only approval requests reviewed at or before this timestamp are returned. Only applies to requests that have been reviewed (status is "approved" or "rejected").
      *
-     * @x-autobe-specification Upper bound filter on e_commerce_mall_seller_approval_requests.reviewed_at (inclusive). Applied as: reviewed_at <= reviewed_at_to. Only applies to requests where reviewed_at IS NOT NULL (already reviewed).
+         * @x-autobe-specification Upper bound filter on
+         *   e_commerce_mall_seller_approval_requests.reviewed_at (inclusive).
+         *   Applied as: reviewed_at <= reviewed_at_to. Only applies to requests
+         *   where reviewed_at IS NOT NULL (already reviewed).
      */
     reviewed_at_to?: (string & tags.Format<"date-time">) | undefined;
 
@@ -180,7 +213,8 @@ export namespace IECommerceMallSellerApprovalRequest {
      *
      * Page numbering starts at 1. The offset is calculated as (page - 1) × limit. Defaults to the first page when omitted.
      *
-     * @x-autobe-specification Page number for offset-based pagination. Offset = (page - 1) * limit. Defaults to 1 if omitted (minimum 1).
+         * @x-autobe-specification Page number for offset-based pagination.
+         *   Offset = (page - 1) * limit. Defaults to 1 if omitted (minimum 1).
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -189,7 +223,9 @@ export namespace IECommerceMallSellerApprovalRequest {
      *
      * The maximum allowed value is 100 to prevent excessive data transfer. The actual number of records in the response may be less than this value on the final page.
      *
-     * @x-autobe-specification Number of records per page (take/limit). Maximum allowed value is 100. Defaults to a system-configured value (typically 20) if omitted.
+         * @x-autobe-specification Number of records per page (take/limit).
+         *   Maximum allowed value is 100. Defaults to a system-configured value
+         *   (typically 20) if omitted.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -207,8 +243,10 @@ export namespace IECommerceMallSellerApprovalRequest {
      *
      * This UUID serves as the primary key for the approval request record and is used to reference the request in API endpoints.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from e_commerce_mall_seller_approval_requests.id. Primary key, UUID format.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_seller_approval_requests.id. Primary key, UUID
+         *   format.
      */
     id: string & tags.Format<"uuid">;
 
@@ -217,8 +255,12 @@ export namespace IECommerceMallSellerApprovalRequest {
      *
      * The seller information includes their registered email, current approval status, shop profile details, and account timestamps. Each seller can have multiple approval requests over time — for example, if they resubmit after a prior rejection.
      *
-     * @x-autobe-database-schema-property seller
-     * @x-autobe-specification Join from e_commerce_mall_seller_approval_requests.seller_id to e_commerce_mall_sellers.id. Returns IECommerceMallSeller.ISummary containing the seller's id, email, approval_status, profile, created_at, and deleted_at.
+         * @x-autobe-database-schema-property seller
+         * @x-autobe-specification Join from
+         *   e_commerce_mall_seller_approval_requests.seller_id to
+         *   e_commerce_mall_sellers.id. Returns IECommerceMallSeller.ISummary
+         *   containing the seller's id, email, approval_status, profile,
+         *   created_at, and deleted_at.
      */
     seller: IECommerceMallSeller.ISummary;
 
@@ -227,8 +269,11 @@ export namespace IECommerceMallSellerApprovalRequest {
      *
      * The status progresses through the review lifecycle: 'pending' when awaiting administrator review after submission, 'approved' when the registration is accepted, or 'rejected' when the registration is declined with a reason provided by the reviewing administrator.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from e_commerce_mall_seller_approval_requests.status. Possible values: 'pending' (awaiting review), 'approved' (registration accepted), 'rejected' (registration declined).
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_seller_approval_requests.status. Possible values:
+         *   'pending' (awaiting review), 'approved' (registration accepted),
+         *   'rejected' (registration declined).
      */
     status: string;
 
@@ -237,8 +282,11 @@ export namespace IECommerceMallSellerApprovalRequest {
      *
      * Required when the status is 'rejected'. Remains null for 'pending' and 'approved' requests. Visible to the seller so they understand why their registration was declined, enabling them to address the issues before resubmitting a new request.
      *
-     * @x-autobe-database-schema-property rejection_reason
-     * @x-autobe-specification Direct mapping from e_commerce_mall_seller_approval_requests.rejection_reason. Null when status is not 'rejected'. Only populated when an administrator rejects the request.
+         * @x-autobe-database-schema-property rejection_reason
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_seller_approval_requests.rejection_reason. Null
+         *   when status is not 'rejected'. Only populated when an administrator
+         *   rejects the request.
      */
     rejection_reason: string | null;
 
@@ -247,8 +295,12 @@ export namespace IECommerceMallSellerApprovalRequest {
      *
      * Set when an administrator approves or rejects the request. Contains the administrator's id, email, grade level, and account creation timestamp. Remains null while the request is in 'pending' status awaiting review.
      *
-     * @x-autobe-database-schema-property reviewer
-     * @x-autobe-specification LEFT JOIN from e_commerce_mall_seller_approval_requests.reviewer_id to e_commerce_mall_administrators.id. Returns IECommerceMallAdministrator.ISummary. Null when status is 'pending' as no administrator has reviewed yet.
+         * @x-autobe-database-schema-property reviewer
+         * @x-autobe-specification LEFT JOIN from
+         *   e_commerce_mall_seller_approval_requests.reviewer_id to
+         *   e_commerce_mall_administrators.id. Returns
+         *   IECommerceMallAdministrator.ISummary. Null when status is 'pending'
+         *   as no administrator has reviewed yet.
      */
     reviewer: IECommerceMallAdministrator.ISummary | null;
 
@@ -257,8 +309,11 @@ export namespace IECommerceMallSellerApprovalRequest {
      *
      * Set when the status transitions from 'pending' to either 'approved' or 'rejected'. Remains null while the request is pending administrator review.
      *
-     * @x-autobe-database-schema-property reviewed_at
-     * @x-autobe-specification Direct mapping from e_commerce_mall_seller_approval_requests.reviewed_at. Null when status is 'pending'. Set when admin transitions status from 'pending' to 'approved' or 'rejected'.
+         * @x-autobe-database-schema-property reviewed_at
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_seller_approval_requests.reviewed_at. Null when
+         *   status is 'pending'. Set when admin transitions status from
+         *   'pending' to 'approved' or 'rejected'.
      */
     reviewed_at: (string & tags.Format<"date-time">) | null;
 
@@ -267,8 +322,10 @@ export namespace IECommerceMallSellerApprovalRequest {
      *
      * This field is set automatically upon request creation and remains unchanged throughout the review lifecycle.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from e_commerce_mall_seller_approval_requests.created_at. Set automatically upon request submission.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_seller_approval_requests.created_at. Set
+         *   automatically upon request submission.
      */
     created_at: string & tags.Format<"date-time">;
   };

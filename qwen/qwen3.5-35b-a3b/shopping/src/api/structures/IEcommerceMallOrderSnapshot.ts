@@ -12,75 +12,75 @@ import { IEcommerceMallOrder } from "./IEcommerceMallOrder";
  */
 export type IEcommerceMallOrderSnapshot = {
   /**
-   * @x-autobe-database-schema-property id
+     * @x-autobe-database-schema-property id
    */
   id: string & tags.Format<"uuid">;
   /**
-   * @x-autobe-database-schema-property order_number
+     * @x-autobe-database-schema-property order_number
    */
   order_number: string;
   /**
-   * @x-autobe-database-schema-property order_date
+     * @x-autobe-database-schema-property order_date
    */
   order_date: string & tags.Format<"date-time">;
   /**
-   * @x-autobe-database-schema-property customer_name
+     * @x-autobe-database-schema-property customer_name
    */
   customer_name: string;
   /**
-   * @x-autobe-database-schema-property customer_phone
+     * @x-autobe-database-schema-property customer_phone
    */
   customer_phone: string;
   /**
-   * @x-autobe-database-schema-property shipping_recipient_name
+     * @x-autobe-database-schema-property shipping_recipient_name
    */
   shipping_recipient_name: string;
   /**
-   * @x-autobe-database-schema-property shipping_phone
+     * @x-autobe-database-schema-property shipping_phone
    */
   shipping_phone: string;
   /**
-   * @x-autobe-database-schema-property shipping_street
+     * @x-autobe-database-schema-property shipping_street
    */
   shipping_street: string;
   /**
-   * @x-autobe-database-schema-property shipping_city
+     * @x-autobe-database-schema-property shipping_city
    */
   shipping_city: string;
   /**
-   * @x-autobe-database-schema-property shipping_state
+     * @x-autobe-database-schema-property shipping_state
    */
   shipping_state: string;
   /**
-   * @x-autobe-database-schema-property shipping_postal_code
+     * @x-autobe-database-schema-property shipping_postal_code
    */
   shipping_postal_code: string;
   /**
-   * @x-autobe-database-schema-property shipping_country
+     * @x-autobe-database-schema-property shipping_country
    */
   shipping_country: string;
   /**
-   * @x-autobe-database-schema-property item_count
+     * @x-autobe-database-schema-property item_count
    */
   item_count: number & tags.Type<"int32">;
   /**
-   * @x-autobe-database-schema-property subtotal
+     * @x-autobe-database-schema-property subtotal
    */
   subtotal: number;
   /**
-   * @x-autobe-database-schema-property shipping_fee
+     * @x-autobe-database-schema-property shipping_fee
    */
   shipping_fee: number;
   /**
-   * @x-autobe-database-schema-property total_amount
+     * @x-autobe-database-schema-property total_amount
    */
   total_amount: number;
   /**
-   * @x-autobe-database-schema-property order_status
+     * @x-autobe-database-schema-property order_status
    */
   order_status: string;
   /**
-   * @x-autobe-database-schema-property order
+     * @x-autobe-database-schema-property order
    */
   order: IEcommerceMallOrder.ISummary;
 };
@@ -96,71 +96,71 @@ export namespace IEcommerceMallOrderSnapshot {
    */
   export type ISummary = {
     /**
-     * @x-autobe-database-schema-property id
+         * @x-autobe-database-schema-property id
      */
     id: string & tags.Format<"uuid">;
     /**
-     * @x-autobe-database-schema-property order_number
+         * @x-autobe-database-schema-property order_number
      */
     order_number: string;
     /**
-     * @x-autobe-database-schema-property order_date
+         * @x-autobe-database-schema-property order_date
      */
     order_date: string & tags.Format<"date-time">;
     /**
-     * @x-autobe-database-schema-property customer_name
+         * @x-autobe-database-schema-property customer_name
      */
     customer_name: string;
     /**
-     * @x-autobe-database-schema-property customer_phone
+         * @x-autobe-database-schema-property customer_phone
      */
     customer_phone: string;
     /**
-     * @x-autobe-database-schema-property shipping_recipient_name
+         * @x-autobe-database-schema-property shipping_recipient_name
      */
     shipping_recipient_name: string;
     /**
-     * @x-autobe-database-schema-property shipping_phone
+         * @x-autobe-database-schema-property shipping_phone
      */
     shipping_phone: string;
     /**
-     * @x-autobe-database-schema-property shipping_street
+         * @x-autobe-database-schema-property shipping_street
      */
     shipping_street: string;
     /**
-     * @x-autobe-database-schema-property shipping_city
+         * @x-autobe-database-schema-property shipping_city
      */
     shipping_city: string;
     /**
-     * @x-autobe-database-schema-property shipping_state
+         * @x-autobe-database-schema-property shipping_state
      */
     shipping_state: string;
     /**
-     * @x-autobe-database-schema-property shipping_postal_code
+         * @x-autobe-database-schema-property shipping_postal_code
      */
     shipping_postal_code: string;
     /**
-     * @x-autobe-database-schema-property shipping_country
+         * @x-autobe-database-schema-property shipping_country
      */
     shipping_country: string;
     /**
-     * @x-autobe-database-schema-property item_count
+         * @x-autobe-database-schema-property item_count
      */
     item_count: number & tags.Type<"int32">;
     /**
-     * @x-autobe-database-schema-property subtotal
+         * @x-autobe-database-schema-property subtotal
      */
     subtotal: number;
     /**
-     * @x-autobe-database-schema-property shipping_fee
+         * @x-autobe-database-schema-property shipping_fee
      */
     shipping_fee: number;
     /**
-     * @x-autobe-database-schema-property total_amount
+         * @x-autobe-database-schema-property total_amount
      */
     total_amount: number;
     /**
-     * @x-autobe-database-schema-property order_status
+         * @x-autobe-database-schema-property order_status
      */
     order_status: string;
   };

@@ -17,8 +17,10 @@ export type IHrmTimeTrackingOrganizationSnapshot = {
    *
    * Automatically generated as a UUID when the snapshot is created. Used by the system as the primary key for identifying and retrieving specific snapshots from the audit trail.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_organization_snapshots.id. UUID primary key, auto-generated on snapshot creation.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_organization_snapshots.id. UUID primary key,
+     *   auto-generated on snapshot creation.
    */
   id: string & tags.Format<"uuid">;
 
@@ -27,8 +29,13 @@ export type IHrmTimeTrackingOrganizationSnapshot = {
    *
    * Resolved as a summary object containing the organization's identifying details and operational configuration. The snapshot belongs to a single organization and captures its complete attributes at a specific point in time when a lifecycle event occurred.
    *
-   * @x-autobe-database-schema-property organization
-   * @x-autobe-specification Join from hrm_time_tracking_organization_snapshots.hrm_time_tracking_organization_id to hrm_time_tracking_organizations.id. Returns IHrmTimeTrackingOrganization.ISummary containing the organization's id, name, description, currency, timezone, fiscal_start_month, status, and owner summary.
+     * @x-autobe-database-schema-property organization
+     * @x-autobe-specification Join from
+     *   hrm_time_tracking_organization_snapshots.hrm_time_tracking_organization_id
+     *   to hrm_time_tracking_organizations.id. Returns
+     *   IHrmTimeTrackingOrganization.ISummary containing the organization's id,
+     *   name, description, currency, timezone, fiscal_start_month, status, and
+     *   owner summary.
    */
   organization: IHrmTimeTrackingOrganization.ISummary;
 
@@ -37,8 +44,12 @@ export type IHrmTimeTrackingOrganizationSnapshot = {
    *
    * Resolved as a summary object containing the user's core profile information. Identifies the user whose action — creation, settings update, ownership transfer, deletion, or manual snapshot — caused the organizational state to be captured, providing accountability for every organizational change.
    *
-   * @x-autobe-database-schema-property actor
-   * @x-autobe-specification Join from hrm_time_tracking_organization_snapshots.hrm_time_tracking_member_id to hrm_time_tracking_members.id. Returns IHrmTimeTrackingMember.ISummary containing the member's id, email, display_name, avatar, and phone_number.
+     * @x-autobe-database-schema-property actor
+     * @x-autobe-specification Join from
+     *   hrm_time_tracking_organization_snapshots.hrm_time_tracking_member_id to
+     *   hrm_time_tracking_members.id. Returns IHrmTimeTrackingMember.ISummary
+     *   containing the member's id, email, display_name, avatar, and
+     *   phone_number.
    */
   actor: IHrmTimeTrackingMember.ISummary;
 
@@ -47,8 +58,10 @@ export type IHrmTimeTrackingOrganizationSnapshot = {
    *
    * Denormalized from the organization record to preserve the historical record of what the organization was named at the moment the event occurred, ensuring accurate historical reference even if the organization is renamed later.
    *
-   * @x-autobe-database-schema-property name
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_organization_snapshots.name. Denormalized copy of the organization name at the time of snapshot creation.
+     * @x-autobe-database-schema-property name
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_organization_snapshots.name. Denormalized copy of the
+     *   organization name at the time of snapshot creation.
    */
   name: string;
 
@@ -57,8 +70,10 @@ export type IHrmTimeTrackingOrganizationSnapshot = {
    *
    * Denormalized from the organization to preserve historical context. May be null if no description was configured at the time of the event.
    *
-   * @x-autobe-database-schema-property description
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_organization_snapshots.description. Nullable — null when the organization had no description set at the time of snapshot.
+     * @x-autobe-database-schema-property description
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_organization_snapshots.description. Nullable — null
+     *   when the organization had no description set at the time of snapshot.
    */
   description: string | null;
 
@@ -67,8 +82,10 @@ export type IHrmTimeTrackingOrganizationSnapshot = {
    *
    * Denormalized from the organization to preserve historical branding information. May be null if no logo was set when the event occurred.
    *
-   * @x-autobe-database-schema-property logo_uri
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_organization_snapshots.logo_uri. Nullable URL — null when the organization had no logo uploaded at the time of snapshot.
+     * @x-autobe-database-schema-property logo_uri
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_organization_snapshots.logo_uri. Nullable URL — null
+     *   when the organization had no logo uploaded at the time of snapshot.
    */
   logo_uri: (string & tags.Format<"url">) | null;
 
@@ -77,8 +94,10 @@ export type IHrmTimeTrackingOrganizationSnapshot = {
    *
    * Denormalized from the organization's operational configuration. Represents the monetary unit used for pay rates and financial reporting at the moment of the event.
    *
-   * @x-autobe-database-schema-property currency
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_organization_snapshots.currency. Three-letter ISO 4217 currency code (e.g., USD, EUR, KRW).
+     * @x-autobe-database-schema-property currency
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_organization_snapshots.currency. Three-letter ISO
+     *   4217 currency code (e.g., USD, EUR, KRW).
    */
   currency: string;
 
@@ -87,8 +106,10 @@ export type IHrmTimeTrackingOrganizationSnapshot = {
    *
    * Denormalized from the organization's operational configuration. Governs how time-based data such as timelogs and timesheets are interpreted and displayed for the organization's business operations at the moment of the event.
    *
-   * @x-autobe-database-schema-property timezone
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_organization_snapshots.timezone. IANA timezone identifier (e.g., America/New_York, Asia/Seoul).
+     * @x-autobe-database-schema-property timezone
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_organization_snapshots.timezone. IANA timezone
+     *   identifier (e.g., America/New_York, Asia/Seoul).
    */
   timezone: string;
 
@@ -97,8 +118,10 @@ export type IHrmTimeTrackingOrganizationSnapshot = {
    *
    * Denormalized from the organization's operational configuration. Represents the month that marks the beginning of the organization's financial year, used for budgeting, reporting, and financial period calculations at the moment of the event.
    *
-   * @x-autobe-database-schema-property fiscal_start_month
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_organization_snapshots.fiscal_start_month. Integer 1-12 (1=January, 12=December).
+     * @x-autobe-database-schema-property fiscal_start_month
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_organization_snapshots.fiscal_start_month. Integer
+     *   1-12 (1=January, 12=December).
    */
   fiscal_start_month: number &
     tags.Type<"int32"> &
@@ -110,8 +133,11 @@ export type IHrmTimeTrackingOrganizationSnapshot = {
    *
    * Denormalized from the organization to preserve historical ownership records. This UUID references the same member identity as the actor, but represents the owner of the organization rather than the person who triggered the event.
    *
-   * @x-autobe-database-schema-property owner_member_id
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_organization_snapshots.owner_member_id. UUID referencing the hrm_time_tracking_members table. Denormalized from the organization's owner at the time of snapshot.
+     * @x-autobe-database-schema-property owner_member_id
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_organization_snapshots.owner_member_id. UUID
+     *   referencing the hrm_time_tracking_members table. Denormalized from the
+     *   organization's owner at the time of snapshot.
    */
   owner_member_id: string & tags.Format<"uuid">;
 
@@ -120,8 +146,11 @@ export type IHrmTimeTrackingOrganizationSnapshot = {
    *
    * Denormalized from the user profile to ensure the owner's identity is preserved accurately even if the user later changes their display name. Provides human-readable identification of who owned the organization at the moment of the event.
    *
-   * @x-autobe-database-schema-property owner_display_name
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_organization_snapshots.owner_display_name. Denormalized string — copied from the owner's member display_name at the time of snapshot creation.
+     * @x-autobe-database-schema-property owner_display_name
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_organization_snapshots.owner_display_name.
+     *   Denormalized string — copied from the owner's member display_name at
+     *   the time of snapshot creation.
    */
   owner_display_name: string;
 
@@ -130,8 +159,11 @@ export type IHrmTimeTrackingOrganizationSnapshot = {
    *
    * Denormalized from the organization's lifecycle status. Typical values include 'active' for operational organizations and 'deleted' for terminated ones, reflecting the state at the exact moment the event occurred.
    *
-   * @x-autobe-database-schema-property status
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_organization_snapshots.status. Values include 'active' and 'deleted'. Denormalized from the organization at the time of snapshot.
+     * @x-autobe-database-schema-property status
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_organization_snapshots.status. Values include
+     *   'active' and 'deleted'. Denormalized from the organization at the time
+     *   of snapshot.
    */
   status: string;
 
@@ -140,8 +172,12 @@ export type IHrmTimeTrackingOrganizationSnapshot = {
    *
    * Classification of the action that caused the snapshot to be created. Possible values include 'created' for organization creation, 'settings_updated' for configuration changes, 'ownership_transferred' for owner changes, 'deleted' for organization deletion, and 'snapshot' for manual captures triggered by the owner.
    *
-   * @x-autobe-database-schema-property event_type
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_organization_snapshots.event_type. Values: 'created' (org creation), 'settings_updated' (config change), 'ownership_transferred' (owner change), 'deleted' (org deletion), 'snapshot' (manual capture).
+     * @x-autobe-database-schema-property event_type
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_organization_snapshots.event_type. Values: 'created'
+     *   (org creation), 'settings_updated' (config change),
+     *   'ownership_transferred' (owner change), 'deleted' (org deletion),
+     *   'snapshot' (manual capture).
    */
   event_type: string;
 
@@ -150,8 +186,11 @@ export type IHrmTimeTrackingOrganizationSnapshot = {
    *
    * Optional field capturing additional context such as a summary of what changed, e.g., 'Currency changed from USD to EUR' or relevant identifiers. May be null if no additional details were recorded at the time of the event.
    *
-   * @x-autobe-database-schema-property event_details
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_organization_snapshots.event_details. Nullable free-form text providing additional context about the event that triggered the snapshot.
+     * @x-autobe-database-schema-property event_details
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_organization_snapshots.event_details. Nullable
+     *   free-form text providing additional context about the event that
+     *   triggered the snapshot.
    */
   event_details: string | null;
 
@@ -160,8 +199,10 @@ export type IHrmTimeTrackingOrganizationSnapshot = {
    *
    * Records the exact moment the organization state was captured. This field is immutable after creation, preserving the precise chronological order of events in the audit trail. Formatted as an ISO 8601 date-time string.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_organization_snapshots.created_at. DateTime with timezone. Auto-generated timestamp immutable after snapshot creation.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_organization_snapshots.created_at. DateTime with
+     *   timezone. Auto-generated timestamp immutable after snapshot creation.
    */
   created_at: string & tags.Format<"date-time">;
 };
@@ -177,8 +218,9 @@ export namespace IHrmTimeTrackingOrganizationSnapshot {
      *
      * Each snapshot is assigned a UUID primary key at creation time. This identifier is used to retrieve the snapshot record from the organization's snapshot audit trail.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_organization_snapshots.id.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_organization_snapshots.id.
      */
     id: string & tags.Format<"uuid">;
 
@@ -187,8 +229,9 @@ export namespace IHrmTimeTrackingOrganizationSnapshot {
      *
      * Classifies the organizational action that caused the state to be captured: 'created' for organization creation, 'settings_updated' for configuration changes, 'ownership_transferred' for owner change, 'deleted' for organization deletion.
      *
-     * @x-autobe-database-schema-property event_type
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_organization_snapshots.event_type.
+         * @x-autobe-database-schema-property event_type
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_organization_snapshots.event_type.
      */
     event_type: string;
 
@@ -197,8 +240,9 @@ export namespace IHrmTimeTrackingOrganizationSnapshot {
      *
      * Optional field capturing additional context such as a summary of what changed, e.g., 'Currency changed from USD to EUR' or relevant identifiers. Null when no additional details are available.
      *
-     * @x-autobe-database-schema-property event_details
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_organization_snapshots.event_details. Nullable.
+         * @x-autobe-database-schema-property event_details
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_organization_snapshots.event_details. Nullable.
      */
     event_details: string | null;
 
@@ -207,8 +251,9 @@ export namespace IHrmTimeTrackingOrganizationSnapshot {
      *
      * Records the exact moment the organization state was captured, in ISO 8601 format. This field is immutable after creation and is used for chronological ordering in audit trail displays.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_organization_snapshots.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_organization_snapshots.created_at.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -217,8 +262,11 @@ export namespace IHrmTimeTrackingOrganizationSnapshot {
      *
      * References the user whose action — creation, settings update, ownership transfer, or deletion — caused the organization state to be captured. Provides accountability for every organizational change in the audit trail.
      *
-     * @x-autobe-database-schema-property actor
-     * @x-autobe-specification Join from hrm_time_tracking_member_id on hrm_time_tracking_organization_snapshots to hrm_time_tracking_members.id. Returns ISummary with id, email, display_name, avatar.
+         * @x-autobe-database-schema-property actor
+         * @x-autobe-specification Join from hrm_time_tracking_member_id on
+         *   hrm_time_tracking_organization_snapshots to
+         *   hrm_time_tracking_members.id. Returns ISummary with id, email,
+         *   display_name, avatar.
      */
     actor: IHrmTimeTrackingMember.ISummary;
 
@@ -227,8 +275,9 @@ export namespace IHrmTimeTrackingOrganizationSnapshot {
      *
      * Denormalized from the organization to preserve the historical record of what the organization was named at the moment of the event. This ensures the audit trail reflects the organization's identity as it existed, regardless of future name changes.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_organization_snapshots.name. Denormalized.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_organization_snapshots.name. Denormalized.
      */
     name: string;
 
@@ -237,8 +286,10 @@ export namespace IHrmTimeTrackingOrganizationSnapshot {
      *
      * Denormalized from the organization to preserve historical context. Null if no description was set at the time of the event.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_organization_snapshots.description. Nullable. Denormalized.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_organization_snapshots.description. Nullable.
+         *   Denormalized.
      */
     description: string | null;
 
@@ -247,8 +298,10 @@ export namespace IHrmTimeTrackingOrganizationSnapshot {
      *
      * Denormalized from the organization to preserve historical branding information. Null if no logo was set at the time of the event.
      *
-     * @x-autobe-database-schema-property logo_uri
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_organization_snapshots.logo_uri. Nullable URL. Denormalized.
+         * @x-autobe-database-schema-property logo_uri
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_organization_snapshots.logo_uri. Nullable URL.
+         *   Denormalized.
      */
     logo_uri: (string & tags.Format<"uri">) | null;
 
@@ -257,8 +310,9 @@ export namespace IHrmTimeTrackingOrganizationSnapshot {
      *
      * Three-letter ISO 4217 currency code (e.g., 'USD', 'EUR', 'KRW') used for financial calculations. Denormalized from the organization to preserve the historical value.
      *
-     * @x-autobe-database-schema-property currency
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_organization_snapshots.currency. Denormalized.
+         * @x-autobe-database-schema-property currency
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_organization_snapshots.currency. Denormalized.
      */
     currency: string;
 
@@ -267,8 +321,9 @@ export namespace IHrmTimeTrackingOrganizationSnapshot {
      *
      * IANA timezone identifier (e.g., 'America/New_York', 'Asia/Seoul') used for date/time calculations and timesheet week boundaries. Denormalized from the organization to preserve the historical value.
      *
-     * @x-autobe-database-schema-property timezone
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_organization_snapshots.timezone. Denormalized.
+         * @x-autobe-database-schema-property timezone
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_organization_snapshots.timezone. Denormalized.
      */
     timezone: string;
 
@@ -277,8 +332,10 @@ export namespace IHrmTimeTrackingOrganizationSnapshot {
      *
      * Numeric month (1=January through 12=December) indicating the start of the fiscal year. Denormalized from the organization to preserve the historical value for fiscal period calculations.
      *
-     * @x-autobe-database-schema-property fiscal_start_month
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_organization_snapshots.fiscal_start_month. Denormalized.
+         * @x-autobe-database-schema-property fiscal_start_month
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_organization_snapshots.fiscal_start_month.
+         *   Denormalized.
      */
     fiscal_start_month: number & tags.Type<"int32">;
 
@@ -287,8 +344,10 @@ export namespace IHrmTimeTrackingOrganizationSnapshot {
      *
      * Denormalized from the organization to preserve historical ownership records. References the same user identity as the members table. Used to identify the owner even if ownership has since been transferred.
      *
-     * @x-autobe-database-schema-property owner_member_id
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_organization_snapshots.owner_member_id. Denormalized UUID.
+         * @x-autobe-database-schema-property owner_member_id
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_organization_snapshots.owner_member_id.
+         *   Denormalized UUID.
      */
     owner_member_id: string & tags.Format<"uuid">;
 
@@ -297,8 +356,10 @@ export namespace IHrmTimeTrackingOrganizationSnapshot {
      *
      * Denormalized from the user profile to ensure the owner's identity is preserved even if the user later changes their display name.
      *
-     * @x-autobe-database-schema-property owner_display_name
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_organization_snapshots.owner_display_name. Denormalized.
+         * @x-autobe-database-schema-property owner_display_name
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_organization_snapshots.owner_display_name.
+         *   Denormalized.
      */
     owner_display_name: string;
 
@@ -307,8 +368,9 @@ export namespace IHrmTimeTrackingOrganizationSnapshot {
      *
      * Indicates whether the organization was 'active' or 'deleted' at the moment the snapshot was captured. Denormalized to preserve the historical state regardless of the organization's current status.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_organization_snapshots.status. Denormalized.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_organization_snapshots.status. Denormalized.
      */
     status: string;
   };
@@ -326,7 +388,10 @@ export namespace IHrmTimeTrackingOrganizationSnapshot {
      *
      * Filters results to only include snapshots whose event_details text contains the search term. Uses a pattern-matching (LIKE/contains) comparison against the event_details column.
      *
-     * @x-autobe-specification Free-text search applied to the event_details column of hrm_time_tracking_organization_snapshots using LIKE/contains pattern. Not a direct column mapping — a query abstraction that searches across event_details text.
+         * @x-autobe-specification Free-text search applied to the event_details
+         *   column of hrm_time_tracking_organization_snapshots using
+         *   LIKE/contains pattern. Not a direct column mapping — a query
+         *   abstraction that searches across event_details text.
      */
     search?: string | undefined;
 
@@ -335,7 +400,10 @@ export namespace IHrmTimeTrackingOrganizationSnapshot {
      *
      * Filters the audit trail to only include snapshots triggered by a specific type of event. Valid values are: 'created' (organization creation), 'settings_updated' (configuration changes), 'ownership_transferred' (owner change), and 'deleted' (organization deletion).
      *
-     * @x-autobe-specification Exact-match filter corresponding to the event_type column of hrm_time_tracking_organization_snapshots. One of: 'created', 'settings_updated', 'ownership_transferred', 'deleted'. Applied as WHERE event_type = value.
+         * @x-autobe-specification Exact-match filter corresponding to the
+         *   event_type column of hrm_time_tracking_organization_snapshots. One
+         *   of: 'created', 'settings_updated', 'ownership_transferred',
+         *   'deleted'. Applied as WHERE event_type = value.
      */
     event_type?: string | undefined;
 
@@ -344,7 +412,10 @@ export namespace IHrmTimeTrackingOrganizationSnapshot {
      *
      * Filters results to only include snapshots created at or after this timestamp. Combine with the upper bound parameter to define a specific date range.
      *
-     * @x-autobe-specification Inclusive lower bound range filter on the created_at column of hrm_time_tracking_organization_snapshots. Combined with created_at_to to form a date range filter (WHERE created_at >= created_at_from).
+         * @x-autobe-specification Inclusive lower bound range filter on the
+         *   created_at column of hrm_time_tracking_organization_snapshots.
+         *   Combined with created_at_to to form a date range filter (WHERE
+         *   created_at >= created_at_from).
      */
     created_at_from?: (string & tags.Format<"date-time">) | undefined;
 
@@ -353,7 +424,10 @@ export namespace IHrmTimeTrackingOrganizationSnapshot {
      *
      * Filters results to only include snapshots created at or before this timestamp. Combine with the lower bound parameter to define a specific date range.
      *
-     * @x-autobe-specification Inclusive upper bound range filter on the created_at column of hrm_time_tracking_organization_snapshots. Combined with created_at_from to form a date range filter (WHERE created_at <= created_at_to).
+         * @x-autobe-specification Inclusive upper bound range filter on the
+         *   created_at column of hrm_time_tracking_organization_snapshots.
+         *   Combined with created_at_from to form a date range filter (WHERE
+         *   created_at <= created_at_to).
      */
     created_at_to?: (string & tags.Format<"date-time">) | undefined;
 
@@ -362,7 +436,11 @@ export namespace IHrmTimeTrackingOrganizationSnapshot {
      *
      * Filters the audit trail to only include snapshots that were created by a specific member (user). Use this to find all changes made by a particular person.
      *
-     * @x-autobe-specification Exact-match filter on the hrm_time_tracking_member_id column (actor FK referencing hrm_time_tracking_members) of hrm_time_tracking_organization_snapshots. Applied as WHERE hrm_time_tracking_member_id = value.
+         * @x-autobe-specification Exact-match filter on the
+         *   hrm_time_tracking_member_id column (actor FK referencing
+         *   hrm_time_tracking_members) of
+         *   hrm_time_tracking_organization_snapshots. Applied as WHERE
+         *   hrm_time_tracking_member_id = value.
      */
     hrm_time_tracking_member_id?: (string & tags.Format<"uuid">) | undefined;
 
@@ -371,7 +449,9 @@ export namespace IHrmTimeTrackingOrganizationSnapshot {
      *
      * Specifies which page of results to return. Page numbering starts from 1, so the first page is page 1. Used together with the limit parameter to control result windowing.
      *
-     * @x-autobe-specification 1-based page number for pagination. Minimum 1. Used with limit for offset-based pagination. Not a DB column — a query parameter controlling result windowing.
+         * @x-autobe-specification 1-based page number for pagination. Minimum
+         *   1. Used with limit for offset-based pagination. Not a DB column — a
+         *   query parameter controlling result windowing.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -380,7 +460,9 @@ export namespace IHrmTimeTrackingOrganizationSnapshot {
      *
      * Defines the maximum number of snapshot records to return in a single page. The actual number of records returned may be less on the final page. Maximum allowed value is 100.
      *
-     * @x-autobe-specification Maximum number of records per page. Minimum 1, maximum 100. Default depends on system configuration. Not a DB column — a query parameter controlling result page size.
+         * @x-autobe-specification Maximum number of records per page. Minimum
+         *   1, maximum 100. Default depends on system configuration. Not a DB
+         *   column — a query parameter controlling result page size.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -391,7 +473,10 @@ export namespace IHrmTimeTrackingOrganizationSnapshot {
      *
      * Specifies which attribute of the snapshot record to use for sorting the results. Common sort fields include 'created_at' (the default sort field), 'event_type', and 'name'.
      *
-     * @x-autobe-specification Column name to order results by against hrm_time_tracking_organization_snapshots table. Common values: 'created_at', 'event_type', 'name'. Default is 'created_at'. Not a DB column — a query parameter controlling ORDER BY clause.
+         * @x-autobe-specification Column name to order results by against
+         *   hrm_time_tracking_organization_snapshots table. Common values:
+         *   'created_at', 'event_type', 'name'. Default is 'created_at'. Not a
+         *   DB column — a query parameter controlling ORDER BY clause.
      */
     sort_field?: string | undefined;
 
@@ -400,7 +485,9 @@ export namespace IHrmTimeTrackingOrganizationSnapshot {
      *
      * Specifies whether to sort results in ascending ('asc') or descending ('desc') order. The default direction is descending, showing the most recent snapshots first. Ascending order shows the oldest snapshots first.
      *
-     * @x-autobe-specification Sort direction for ORDER BY clause. One of: 'asc' (ascending), 'desc' (descending). Default is 'desc' (newest first). Not a DB column — a query parameter controlling sort order.
+         * @x-autobe-specification Sort direction for ORDER BY clause. One of:
+         *   'asc' (ascending), 'desc' (descending). Default is 'desc' (newest
+         *   first). Not a DB column — a query parameter controlling sort order.
      */
     sort_direction?: string | undefined;
   };
@@ -416,7 +503,7 @@ export namespace IHrmTimeTrackingOrganizationSnapshot {
     /**
      * Free-form contextual details annotating why this snapshot was created and what changes it precedes. For example: 'Capturing configuration before currency change from USD to EUR' or 'Pre-restructuring baseline for Q3 2025.'
      *
-     * @x-autobe-database-schema-property event_details
+         * @x-autobe-database-schema-property event_details
      */
     eventDetails?: string | null | undefined;
   };

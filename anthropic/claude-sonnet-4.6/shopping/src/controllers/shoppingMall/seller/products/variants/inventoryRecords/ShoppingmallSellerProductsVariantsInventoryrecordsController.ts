@@ -35,11 +35,11 @@ export class ShoppingmallSellerProductsVariantsInventoryrecordsController {
    * @param productId The UUID of the product that owns the target variant. Used to verify that the authenticated seller owns this product before allowing the inventory record to be created.
    * @param variantId The UUID of the product variant for which the inventory record will be created. Must belong to the product identified by productId.
    * @param body Manual inventory adjustment details including the signed quantity change and a mandatory human-readable note describing the reason for the stock movement.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification 1. Authentication & Authorization:
-   *    - Verify the request is authenticated as a seller actor.
-   *    - Retrieve the seller's ID from the session/token.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification 1. Authentication & Authorization: - Verify the
+     *   request is authenticated as a seller actor. - Retrieve the seller's ID
+     *   from the session/token.
    *
    * 2. Ownership Validation:
    *    - Query shopping_mall_products to find the product with id = productId AND shopping_mall_seller_id = authenticated seller's ID AND deleted_at IS NULL.
@@ -122,22 +122,31 @@ export class ShoppingmallSellerProductsVariantsInventoryrecordsController {
    * @param productId The UUID of the product that owns the target variant. Used to scope the request to a specific product and verify seller ownership.
    * @param variantId The UUID of the product variant whose inventory history is being retrieved. Must belong to the product identified by productId.
    * @param body Optional filter criteria and pagination parameters for the inventory record history query.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification 1. Authenticate the seller from the JWT session token.
-   * 2. Look up the product by `productId` (UUID). If not found, return 404.
-   * 3. Verify that the product's `shopping_mall_seller_id` matches the authenticated seller's ID. If not, return 403.
-   * 4. Look up the variant by `variantId` (UUID) in `shopping_mall_product_variants`, filtering also by `shopping_mall_product_id = productId`. If not found or the variant belongs to a different product, return 404.
-   * 5. Parse the request body for optional filter criteria:
-   *    - `reasonTypes`: array of reason type strings to include (e.g., ['manual_restock', 'order_placement'])
-   *    - `dateFrom` / `dateTo`: ISO datetime range filter applied on `created_at`
-   *    - `page` and `limit`: pagination controls
-   *    - `sort`: 'asc' or 'desc' by `created_at` (default 'asc')
-   * 6. Query `shopping_mall_inventory_records` WHERE `shopping_mall_product_variant_id = variantId`, applying any active filters.
-   * 7. Apply pagination using the composite index `(shopping_mall_product_variant_id, created_at)` for efficient ordered retrieval.
-   * 8. Return results wrapped in a standard IPage envelope with pagination metadata (total count, current page, page size, total pages).
-   * 9. Each record in the data array should include: `id`, `quantity`, `reason_type`, `note` (nullable), `created_at`.
-   * 10. Records of reason types `order_placement`, `order_cancellation`, and `order_refund` will have `note = null`; this is expected and must be represented correctly in the response.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification 1. Authenticate the seller from the JWT session
+     *   token. 2. Look up the product by `productId` (UUID). If not found,
+     *   return 404. 3. Verify that the product's `shopping_mall_seller_id`
+     *   matches the authenticated seller's ID. If not, return 403. 4. Look up
+     *   the variant by `variantId` (UUID) in `shopping_mall_product_variants`,
+     *   filtering also by `shopping_mall_product_id = productId`. If not found
+     *   or the variant belongs to a different product, return 404. 5. Parse the
+     *   request body for optional filter criteria: - `reasonTypes`: array of
+     *   reason type strings to include (e.g., ['manual_restock',
+     *   'order_placement']) - `dateFrom` / `dateTo`: ISO datetime range filter
+     *   applied on `created_at` - `page` and `limit`: pagination controls -
+     *   `sort`: 'asc' or 'desc' by `created_at` (default 'asc') 6. Query
+     *   `shopping_mall_inventory_records` WHERE
+     *   `shopping_mall_product_variant_id = variantId`, applying any active
+     *   filters. 7. Apply pagination using the composite index
+     *   `(shopping_mall_product_variant_id, created_at)` for efficient ordered
+     *   retrieval. 8. Return results wrapped in a standard IPage envelope with
+     *   pagination metadata (total count, current page, page size, total
+     *   pages). 9. Each record in the data array should include: `id`,
+     *   `quantity`, `reason_type`, `note` (nullable), `created_at`. 10. Records
+     *   of reason types `order_placement`, `order_cancellation`, and
+     *   `order_refund` will have `note = null`; this is expected and must be
+     *   represented correctly in the response.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
@@ -183,15 +192,22 @@ export class ShoppingmallSellerProductsVariantsInventoryrecordsController {
    * @param productId The UUID of the product that owns the target variant. Used to verify seller ownership before returning the inventory record.
    * @param variantId The UUID of the product variant whose inventory record is being retrieved. Must belong to the specified product.
    * @param recordId The UUID of the specific inventory record to retrieve. Must belong to the specified product variant.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification 1. Authenticate the requesting user as a seller.
-   * 2. Fetch the product record from `shopping_mall_products` where `id = productId` and `deleted_at IS NULL`. If not found, return 404.
-   * 3. Verify that `shopping_mall_products.shopping_mall_seller_id` matches the authenticated seller's ID. If not, return 403 Forbidden.
-   * 4. Fetch the variant record from `shopping_mall_product_variants` where `id = variantId` AND `shopping_mall_product_id = productId` and `deleted_at IS NULL`. If not found, return 404.
-   * 5. Fetch the inventory record from `shopping_mall_inventory_records` where `id = recordId` AND `shopping_mall_product_variant_id = variantId`. If not found, return 404.
-   * 6. Return the full inventory record DTO including: id, shopping_mall_product_variant_id, quantity, reason_type, note (nullable), and created_at.
-   * 7. No pagination or filtering needed — this is a single-record retrieval.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification 1. Authenticate the requesting user as a seller.
+     *   2. Fetch the product record from `shopping_mall_products` where `id =
+     *   productId` and `deleted_at IS NULL`. If not found, return 404. 3.
+     *   Verify that `shopping_mall_products.shopping_mall_seller_id` matches
+     *   the authenticated seller's ID. If not, return 403 Forbidden. 4. Fetch
+     *   the variant record from `shopping_mall_product_variants` where `id =
+     *   variantId` AND `shopping_mall_product_id = productId` and `deleted_at
+     *   IS NULL`. If not found, return 404. 5. Fetch the inventory record from
+     *   `shopping_mall_inventory_records` where `id = recordId` AND
+     *   `shopping_mall_product_variant_id = variantId`. If not found, return
+     *   404. 6. Return the full inventory record DTO including: id,
+     *   shopping_mall_product_variant_id, quantity, reason_type, note
+     *   (nullable), and created_at. 7. No pagination or filtering needed — this
+     *   is a single-record retrieval.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Get(":recordId")

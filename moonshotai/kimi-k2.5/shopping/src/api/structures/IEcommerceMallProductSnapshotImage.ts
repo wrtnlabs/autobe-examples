@@ -33,14 +33,16 @@ export namespace IEcommerceMallProductSnapshotImage {
     /**
      * Page number for paginated results (1-indexed).
      *
-     * @x-autobe-specification Pagination parameter specifying which page of results to return. Applied as OFFSET in SQL query calculation.
+         * @x-autobe-specification Pagination parameter specifying which page of
+         *   results to return. Applied as OFFSET in SQL query calculation.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of images to return per page.
      *
-     * @x-autobe-specification Pagination parameter specifying maximum records per page. Applied as LIMIT in SQL query.
+         * @x-autobe-specification Pagination parameter specifying maximum
+         *   records per page. Applied as LIMIT in SQL query.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -49,7 +51,8 @@ export namespace IEcommerceMallProductSnapshotImage {
     /**
      * Minimum display order position filter (inclusive).
      *
-     * @x-autobe-specification Filter parameter for minimum display_order value. SQL: display_order >= displayOrderMin.
+         * @x-autobe-specification Filter parameter for minimum display_order
+         *   value. SQL: display_order >= displayOrderMin.
      */
     displayOrderMin?:
       | (number & tags.Type<"int32"> & tags.Minimum<1>)
@@ -58,7 +61,8 @@ export namespace IEcommerceMallProductSnapshotImage {
     /**
      * Maximum display order position filter (inclusive).
      *
-     * @x-autobe-specification Filter parameter for maximum display_order value. SQL: display_order <= displayOrderMax.
+         * @x-autobe-specification Filter parameter for maximum display_order
+         *   value. SQL: display_order <= displayOrderMax.
      */
     displayOrderMax?:
       | (number & tags.Type<"int32"> & tags.Minimum<1>)
@@ -72,32 +76,40 @@ export namespace IEcommerceMallProductSnapshotImage {
     /**
      * Unique identifier for the snapshot image.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_mall_product_snapshot_images.id. UUID primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_product_snapshot_images.id. UUID primary key.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * URL or path to the image file stored at the time of snapshot.
      *
-     * @x-autobe-database-schema-property url
-     * @x-autobe-specification Direct mapping from ecommerce_mall_product_snapshot_images.url. Stores URL or path to the image file as it existed at snapshot time.
+         * @x-autobe-database-schema-property url
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_product_snapshot_images.url. Stores URL or path to
+         *   the image file as it existed at snapshot time.
      */
     url: string & tags.Format<"uri">;
 
     /**
      * Display order of the image within the snapshot. First image (1) is the main/thumbnail image.
      *
-     * @x-autobe-database-schema-property display_order
-     * @x-autobe-specification Direct mapping from ecommerce_mall_product_snapshot_images.display_order. Integer starting from 1. First image (order 1) serves as the thumbnail/main image.
+         * @x-autobe-database-schema-property display_order
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_product_snapshot_images.display_order. Integer
+         *   starting from 1. First image (order 1) serves as the thumbnail/main
+         *   image.
      */
     display_order: number & tags.Type<"int32"> & tags.Minimum<1>;
 
     /**
      * Timestamp when this snapshot image record was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_product_snapshot_images.created_at. Timestamp when this snapshot image record was created.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_product_snapshot_images.created_at. Timestamp when
+         *   this snapshot image record was created.
      */
     created_at: string & tags.Format<"date-time">;
   };

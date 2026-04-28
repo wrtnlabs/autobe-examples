@@ -24,9 +24,9 @@ export class ShoppingmallProductsImagesController {
    * @param connection
    * @param productId Unique identifier of the product whose images are being reordered (UUID format)
    * @param body Batch update data containing image IDs and their new display order positions
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Implementation steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Implementation steps:
    *
    * 1. **Authentication**: Verify seller is authenticated via session token.
    *
@@ -92,9 +92,10 @@ export class ShoppingmallProductsImagesController {
    * @param connection
    * @param productId Unique identifier of the product whose image is being retrieved.
    * @param imageId Unique identifier of the product image to retrieve.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query the shopping_mall_product_images table by primary key (id) to retrieve the image record.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query the shopping_mall_product_images table by
+     *   primary key (id) to retrieve the image record.
    *
    * Implementation steps:
    * 1. Validate both path parameters are valid UUIDs

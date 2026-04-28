@@ -21,9 +21,10 @@ export class EcommercemallCustomerSearchProductsController {
    *
    * @param connection
    * @param body Search criteria including product name search term, optional category filter (by category ID), minimum and maximum price range bounds, in-stock only flag, sort order option (newest, price_asc, price_desc), and pagination parameters (page, limit).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Query e_commerce_mall_products with visibility='visible' to exclude deleted/suspended products.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Query e_commerce_mall_products with
+     *   visibility='visible' to exclude deleted/suspended products.
    *
    * Search: Apply pattern matching on product name using GIN trigram index when a search term is provided.
    *

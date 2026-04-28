@@ -29,9 +29,9 @@ export class CommunityplatformAdminBansController {
    *
    * @param connection
    * @param body Ban application request specifying the target community, the member to ban, effective timing, and the moderator-provided reason.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Service-layer algorithm for POST /bans:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Service-layer algorithm for POST /bans:
    *
    * 1) Parse request body fields:
    * - communityId (maps to community_platform_communities.id)
@@ -132,9 +132,10 @@ export class CommunityplatformAdminBansController {
    *
    * @param connection
    * @param body Search criteria and pagination/sorting controls for community bans.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Implement a read-only filtered search over `community_platform_community_bans`.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Implement a read-only filtered search over
+     *   `community_platform_community_bans`.
    *
    * Algorithm:
    * 1) Authenticate request actor and enforce authorization to view ban records (community owner/moderator authority model). Reject unauthorized actors.
@@ -200,18 +201,26 @@ export class CommunityplatformAdminBansController {
    *
    * @param connection
    * @param banId Unique identifier of the community ban record to retrieve (UUID).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Implementation steps:
-   * 1. Validate `banId` format (UUID expected by DTO mapping).
-   * 2. Load the row from `community_platform_community_bans` by `id = banId`, selecting at least: `community_id`, `banned_user_id`, `applied_by_moderator_id`, `banned_at`, `unbanned_at`, `ban_reason`, `created_at`, `updated_at`, and `deleted_at` (if present) to determine accessibility.
-   * 3. If no row exists, return not found.
-   * 4. Determine the requesting actor’s permissions for the derived `community_id`:
-   *    - The community owner (from `community_platform_communities.community_owner_id`) is highest authority.
-   *    - An assigned moderator is authorized when `community_platform_community_moderators` contains an active assignment for that community and the actor’s member identity.
-   *    - If the actor does not have authority for the community at this time, deny.
-   * 5. Map the live ban record fields to the response DTO (`ICommunityPlatformCommunityBan`).
-   * 6. Do not auto-embed snapshot history; snapshots are available via `community_platform_community_ban_snapshots` but should be fetched only by a separate endpoint.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Implementation steps: 1. Validate `banId` format
+     *   (UUID expected by DTO mapping). 2. Load the row from
+     *   `community_platform_community_bans` by `id = banId`, selecting at
+     *   least: `community_id`, `banned_user_id`, `applied_by_moderator_id`,
+     *   `banned_at`, `unbanned_at`, `ban_reason`, `created_at`, `updated_at`,
+     *   and `deleted_at` (if present) to determine accessibility. 3. If no row
+     *   exists, return not found. 4. Determine the requesting actor’s
+     *   permissions for the derived `community_id`: - The community owner (from
+     *   `community_platform_communities.community_owner_id`) is highest
+     *   authority. - An assigned moderator is authorized when
+     *   `community_platform_community_moderators` contains an active assignment
+     *   for that community and the actor’s member identity. - If the actor does
+     *   not have authority for the community at this time, deny. 5. Map the
+     *   live ban record fields to the response DTO
+     *   (`ICommunityPlatformCommunityBan`). 6. Do not auto-embed snapshot
+     *   history; snapshots are available via
+     *   `community_platform_community_ban_snapshots` but should be fetched only
+     *   by a separate endpoint.
    *
    * Transactionality: read-only operation; no transaction required beyond a consistent read.
    *
@@ -255,17 +264,19 @@ export class CommunityplatformAdminBansController {
    * @param connection
    * @param banId Identifier of the community ban record to update.
    * @param body Ban update payload describing the intended lifecycle action (apply ban vs unban) and the moderator-provided reason/reason update.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification 1) Authorization and lookup
-   * - Parse banId from path.
-   * - Load community_platform_community_bans by id where deleted_at is null.
-   * - Load the related community_platform_communities to identify the community_owner_id.
-   * - Determine caller actor identity and role (owner vs moderator) and verify authority:
-   *   - Owner: allow if caller is the community owner.
-   *   - Moderator: allow if caller is assigned as moderator in community_platform_community_moderators for this community and the caller is managing a ban within their authority constraints.
-   *   - Prevent invalid authority cases (e.g., moderators cannot remove/ban the owner if such a scenario would imply managing authority outside allowed limits).
-   * - If not authorized, reject.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification 1) Authorization and lookup - Parse banId from
+     *   path. - Load community_platform_community_bans by id where deleted_at
+     *   is null. - Load the related community_platform_communities to identify
+     *   the community_owner_id. - Determine caller actor identity and role
+     *   (owner vs moderator) and verify authority: - Owner: allow if caller is
+     *   the community owner. - Moderator: allow if caller is assigned as
+     *   moderator in community_platform_community_moderators for this community
+     *   and the caller is managing a ban within their authority constraints. -
+     *   Prevent invalid authority cases (e.g., moderators cannot remove/ban the
+     *   owner if such a scenario would imply managing authority outside allowed
+     *   limits). - If not authorized, reject.
    *
    * 2) Determine target lifecycle action
    * - Use request body to identify whether the intention is to apply a ban or lift (unban) it.
@@ -346,15 +357,14 @@ export class CommunityplatformAdminBansController {
    *
    * @param connection
    * @param banId Unique identifier of the community ban record to remove.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification 1) Authorization
-   * - Load the target community_platform_community_bans row by id = banId.
-   * - Determine the target community_id from the loaded ban.
-   * - Enforce moderation authority for that community:
-   *   - community owner can unban
-   *   - moderator can unban within authority constraints
-   *   - reject if caller is not authorized (do not modify any rows).
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification 1) Authorization - Load the target
+     *   community_platform_community_bans row by id = banId. - Determine the
+     *   target community_id from the loaded ban. - Enforce moderation authority
+     *   for that community: - community owner can unban - moderator can unban
+     *   within authority constraints - reject if caller is not authorized (do
+     *   not modify any rows).
    *
    * 2) Data change
    * - Permanently remove the community_platform_community_bans record with id = banId.

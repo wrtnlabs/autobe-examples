@@ -16,8 +16,9 @@ export type IShoppingMallAdminSession = {
    *
    * This UUID identifies a specific login session record in the system. Used for session lookup, auditing, and management operations.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_admin_sessions.id. UUID format.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_admin_sessions.id. UUID format.
    */
   id: string & tags.Format<"uuid">;
 
@@ -26,7 +27,9 @@ export type IShoppingMallAdminSession = {
    *
    * For this schema, always returns the constant value 'admin' indicating this session belongs to a regular administrator account. Used to distinguish session ownership across different actor types in unified session queries.
    *
-   * @x-autobe-specification Computed constant value 'admin'. Not stored in database - derived from the session table context (shopping_mall_admin_sessions implies actorType is 'admin').
+     * @x-autobe-specification Computed constant value 'admin'. Not stored in
+     *   database - derived from the session table context
+     *   (shopping_mall_admin_sessions implies actorType is 'admin').
    */
   actorType: "admin";
 
@@ -35,8 +38,10 @@ export type IShoppingMallAdminSession = {
    *
    * This UUID references the administrator account (shopping_mall_admins) that created this session. Used to associate session activity with the specific administrator account for auditing and access control purposes.
    *
-   * @x-autobe-database-schema-property shopping_mall_admin_id
-   * @x-autobe-specification Direct mapping from shopping_mall_admin_sessions.shopping_mall_admin_id. References shopping_mall_admins.id. UUID format.
+     * @x-autobe-database-schema-property shopping_mall_admin_id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_admin_sessions.shopping_mall_admin_id. References
+     *   shopping_mall_admins.id. UUID format.
    */
   actorId: string & tags.Format<"uuid">;
 
@@ -45,8 +50,9 @@ export type IShoppingMallAdminSession = {
    *
    * Captured at login time for security auditing and suspicious activity detection. Used to identify potentially unauthorized access from unfamiliar locations or to track administrator login patterns.
    *
-   * @x-autobe-database-schema-property ip
-   * @x-autobe-specification Direct mapping from shopping_mall_admin_sessions.ip. Captured at session creation time.
+     * @x-autobe-database-schema-property ip
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_admin_sessions.ip. Captured at session creation time.
    */
   ip: string;
 
@@ -55,8 +61,10 @@ export type IShoppingMallAdminSession = {
    *
    * Records the entry point of the authentication flow for analytics and security monitoring. Helps track which parts of the administrative interface trigger login flows and detect unusual access patterns.
    *
-   * @x-autobe-database-schema-property href
-   * @x-autobe-specification Direct mapping from shopping_mall_admin_sessions.href. Records the URL path where login was initiated.
+     * @x-autobe-database-schema-property href
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_admin_sessions.href. Records the URL path where login was
+     *   initiated.
    */
   href: string & tags.Format<"uri">;
 
@@ -65,8 +73,10 @@ export type IShoppingMallAdminSession = {
    *
    * Captures the referring page or external source that led to the administrator login. Useful for understanding authentication flow patterns, detecting suspicious referral sources, and forensic analysis of login attempts.
    *
-   * @x-autobe-database-schema-property referrer
-   * @x-autobe-specification Direct mapping from shopping_mall_admin_sessions.referrer. Captures HTTP referrer header at session creation.
+     * @x-autobe-database-schema-property referrer
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_admin_sessions.referrer. Captures HTTP referrer header at
+     *   session creation.
    */
   referrer: string & tags.Format<"uri">;
 
@@ -75,8 +85,10 @@ export type IShoppingMallAdminSession = {
    *
    * Records the exact time of successful administrator authentication. Used for session age calculation, audit trails, compliance reporting, and identifying patterns in administrator login behavior.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from shopping_mall_admin_sessions.created_at. ISO 8601 date-time format with timezone.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_admin_sessions.created_at. ISO 8601 date-time format with
+     *   timezone.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -85,8 +97,10 @@ export type IShoppingMallAdminSession = {
    *
    * Determines the maximum validity period for this session. Sessions are automatically invalidated after this time, requiring re-authentication. Critical for security compliance, limiting exposure from compromised tokens, and enforcing session timeout policies.
    *
-   * @x-autobe-database-schema-property expired_at
-   * @x-autobe-specification Direct mapping from shopping_mall_admin_sessions.expired_at. ISO 8601 date-time format with timezone. Sessions are invalid after this time.
+     * @x-autobe-database-schema-property expired_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_admin_sessions.expired_at. ISO 8601 date-time format with
+     *   timezone. Sessions are invalid after this time.
    */
   expired_at: string & tags.Format<"date-time">;
 };
@@ -106,8 +120,9 @@ export namespace IShoppingMallAdminSession {
      *
      * This UUID serves as the primary key for the session table and is used to reference specific sessions in session management operations such as viewing session details or revoking sessions.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_admin_sessions.id. UUID format primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_admin_sessions.id. UUID format primary key.
      */
     id: string & tags.Format<"uuid">;
 
@@ -116,8 +131,10 @@ export namespace IShoppingMallAdminSession {
      *
      * This value is captured automatically during the login process and stored for security auditing purposes. It helps administrators and security teams identify the geographic location and network origin of login attempts, enabling detection of suspicious access patterns or unauthorized login attempts from unfamiliar locations.
      *
-     * @x-autobe-database-schema-property ip
-     * @x-autobe-specification Direct mapping from shopping_mall_admin_sessions.ip. Captured at session creation time for security auditing.
+         * @x-autobe-database-schema-property ip
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_admin_sessions.ip. Captured at session creation time
+         *   for security auditing.
      */
     ip: string;
 
@@ -126,8 +143,10 @@ export namespace IShoppingMallAdminSession {
      *
      * This field records the entry point of the authentication flow within the application. It is useful for analytics to understand which parts of the admin interface trigger login flows, and for security monitoring to detect unusual authentication patterns or potential phishing attempts.
      *
-     * @x-autobe-database-schema-property href
-     * @x-autobe-specification Direct mapping from shopping_mall_admin_sessions.href. URL path where login was initiated, stored as URI format.
+         * @x-autobe-database-schema-property href
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_admin_sessions.href. URL path where login was
+         *   initiated, stored as URI format.
      */
     href: string & tags.Format<"uri">;
 
@@ -136,8 +155,10 @@ export namespace IShoppingMallAdminSession {
      *
      * This field captures the referring page or external source that led to the login action. It helps track authentication flow patterns, understand user navigation behavior, and detect suspicious referral sources that might indicate automated attacks or unauthorized access attempts.
      *
-     * @x-autobe-database-schema-property referrer
-     * @x-autobe-specification Direct mapping from shopping_mall_admin_sessions.referrer. HTTP referrer header captured at session creation, stored as URI format.
+         * @x-autobe-database-schema-property referrer
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_admin_sessions.referrer. HTTP referrer header
+         *   captured at session creation, stored as URI format.
      */
     referrer: string & tags.Format<"uri">;
 
@@ -146,8 +167,10 @@ export namespace IShoppingMallAdminSession {
      *
      * This value records the exact time of successful authentication and is used for session age calculation, audit trail maintenance, and identifying patterns in administrator login behavior. It helps security teams correlate session activity with other system events and detect anomalous login patterns.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_admin_sessions.created_at. Timestamp with date-time format indicating when session was created.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_admin_sessions.created_at. Timestamp with date-time
+         *   format indicating when session was created.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -156,8 +179,10 @@ export namespace IShoppingMallAdminSession {
      *
      * This field determines the maximum validity period for the session. Sessions are automatically invalidated after this time, requiring the administrator to re-authenticate. This is critical for security compliance and limiting exposure from compromised tokens. The expiration time is typically set based on organizational security policies.
      *
-     * @x-autobe-database-schema-property expired_at
-     * @x-autobe-specification Direct mapping from shopping_mall_admin_sessions.expired_at. Timestamp with date-time format indicating session expiration time.
+         * @x-autobe-database-schema-property expired_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_admin_sessions.expired_at. Timestamp with date-time
+         *   format indicating session expiration time.
      */
     expired_at: string & tags.Format<"date-time">;
 
@@ -168,8 +193,12 @@ export namespace IShoppingMallAdminSession {
      *
      * Including the admin summary allows session lists to display administrator identity information without requiring additional API calls. This is useful for administrators managing multiple accounts or for super administrators monitoring platform-wide session activity.
      *
-     * @x-autobe-database-schema-property admin
-     * @x-autobe-specification Relation mapping via shopping_mall_admin_id foreign key. JOIN to shopping_mall_admins table, returning IShoppingMallAdmin.ISummary. The FK column shopping_mall_admin_id is excluded from the DTO as it is replaced by this nested admin object.
+         * @x-autobe-database-schema-property admin
+         * @x-autobe-specification Relation mapping via shopping_mall_admin_id
+         *   foreign key. JOIN to shopping_mall_admins table, returning
+         *   IShoppingMallAdmin.ISummary. The FK column shopping_mall_admin_id
+         *   is excluded from the DTO as it is replaced by this nested admin
+         *   object.
      */
     admin: IShoppingMallAdmin.ISummary;
   };
@@ -185,7 +214,7 @@ export namespace IShoppingMallAdminSession {
     /**
      * Filter sessions by exact IP address match.
      *
-     * @x-autobe-database-schema-property ip
+         * @x-autobe-database-schema-property ip
      */
     ip?: (string & tags.Format<"ipv4">) | undefined;
 

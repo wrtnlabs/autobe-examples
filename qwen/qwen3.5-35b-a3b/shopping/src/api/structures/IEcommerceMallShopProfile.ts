@@ -13,7 +13,7 @@ import { IEcommerceMallShopProfileSnapshot } from "./IEcommerceMallShopProfileSn
  */
 export type IEcommerceMallShopProfile = {
   /**
-   * @x-autobe-database-schema-property id
+     * @x-autobe-database-schema-property id
    */
   id: string & tags.Format<"uuid">;
 
@@ -22,12 +22,16 @@ export type IEcommerceMallShopProfile = {
    *
    * Object reference to the seller account. Contains seller identification and status information including display name, approval status, and suspension state. Transformed from the seller_id foreign key column.
    *
-   * @x-autobe-specification Transform FK column ecommerce_mall_shop_profiles.seller_id to seller object. Join with ecommerce_mall_sellers table and return IEcommerceMallSeller.ISummary. Database column seller_id is the FK; this property exposes it as a nested object.
-   * @x-autobe-database-schema-property seller
+     * @x-autobe-specification Transform FK column
+     *   ecommerce_mall_shop_profiles.seller_id to seller object. Join with
+     *   ecommerce_mall_sellers table and return IEcommerceMallSeller.ISummary.
+     *   Database column seller_id is the FK; this property exposes it as a
+     *   nested object.
+     * @x-autobe-database-schema-property seller
    */
   seller: IEcommerceMallSeller.ISummary;
   /**
-   * @x-autobe-database-schema-property shop_name
+     * @x-autobe-database-schema-property shop_name
    */
   shop_name: string;
 
@@ -36,8 +40,10 @@ export type IEcommerceMallShopProfile = {
    *
    * Optional field that can be null or empty string. Provides background information about the seller's business operations and policies.
    *
-   * @x-autobe-database-schema-property shop_description
-   * @x-autobe-specification Direct mapping from ecommerce_mall_shop_profiles.shop_description. Nullable field allowing empty shop description.
+     * @x-autobe-database-schema-property shop_description
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_shop_profiles.shop_description. Nullable field allowing
+     *   empty shop description.
    */
   shop_description: string | null;
 
@@ -46,20 +52,22 @@ export type IEcommerceMallShopProfile = {
    *
    * Optional field containing a valid URI. May be null if no logo is set.
    *
-   * @x-autobe-database-schema-property logo_url
-   * @x-autobe-specification Direct mapping from ecommerce_mall_shop_profiles.logo_url. Nullable URI field storing logo image URL.
+     * @x-autobe-database-schema-property logo_url
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_shop_profiles.logo_url. Nullable URI field storing logo
+     *   image URL.
    */
   logo_url: (string & tags.Format<"uri">) | null;
   /**
-   * @x-autobe-database-schema-property created_at
+     * @x-autobe-database-schema-property created_at
    */
   created_at: string & tags.Format<"date-time">;
   /**
-   * @x-autobe-database-schema-property updated_at
+     * @x-autobe-database-schema-property updated_at
    */
   updated_at: string & tags.Format<"date-time">;
   /**
-   * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-database-schema-property deleted_at
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
   snapshots: IEcommerceMallShopProfileSnapshot.ISummary[];
@@ -74,11 +82,11 @@ export namespace IEcommerceMallShopProfile {
    */
   export type IUpdate = {
     /**
-     * @x-autobe-database-schema-property shop_name
+         * @x-autobe-database-schema-property shop_name
      */
     shop_name?: (string & tags.MinLength<1> & tags.MaxLength<100>) | undefined;
     /**
-     * @x-autobe-database-schema-property shop_description
+         * @x-autobe-database-schema-property shop_description
      */
     shop_description?: (string & tags.MaxLength<5000>) | null | undefined;
 
@@ -89,8 +97,12 @@ export namespace IEcommerceMallShopProfile {
      *
      * This field is optional in the Update DTO - provide it only when you want to update the logo URL.
      *
-     * @x-autobe-database-schema-property logo_url
-     * @x-autobe-specification PATCH request body for updating shop profile fields. Maps to ecommerce_mall_shop_profiles.columns. shop_name: 1-100 chars, required if provided. shop_description: 0-5000 chars or null. logo_url: valid URI max 80000 chars, nullable. At least one field required by business logic.
+         * @x-autobe-database-schema-property logo_url
+         * @x-autobe-specification PATCH request body for updating shop profile
+         *   fields. Maps to ecommerce_mall_shop_profiles.columns. shop_name:
+         *   1-100 chars, required if provided. shop_description: 0-5000 chars
+         *   or null. logo_url: valid URI max 80000 chars, nullable. At least
+         *   one field required by business logic.
      */
     logo_url?:
       | (string & tags.MaxLength<80000> & tags.Format<"uri">)
@@ -109,14 +121,14 @@ export namespace IEcommerceMallShopProfile {
     /**
      * The unique identifier of the shop profile.
      *
-     * @x-autobe-database-schema-property id
+         * @x-autobe-database-schema-property id
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * The name of the seller's shop displayed to customers.
      *
-     * @x-autobe-database-schema-property shop_name
+         * @x-autobe-database-schema-property shop_name
      */
     shop_name: string;
 
@@ -125,36 +137,38 @@ export namespace IEcommerceMallShopProfile {
      *
      * This optional field provides context about the seller's shop offerings, policies, and specialties. Sellers may choose to leave this blank.
      *
-     * @x-autobe-database-schema-property shop_description
-     * @x-autobe-specification Nullable field from ecommerce_mall_shop_profiles.shop_description (String?). Represents optional shop business description.
+         * @x-autobe-database-schema-property shop_description
+         * @x-autobe-specification Nullable field from
+         *   ecommerce_mall_shop_profiles.shop_description (String?). Represents
+         *   optional shop business description.
      */
     shop_description: string | null;
 
     /**
      * The URL reference to the shop's logo image. Can be null if no logo is set.
      *
-     * @x-autobe-database-schema-property logo_url
+         * @x-autobe-database-schema-property logo_url
      */
     logo_url: (string & tags.Format<"uri">) | null;
 
     /**
      * The timestamp when the shop profile was created.
      *
-     * @x-autobe-database-schema-property created_at
+         * @x-autobe-database-schema-property created_at
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * The timestamp when the shop profile was last updated.
      *
-     * @x-autobe-database-schema-property updated_at
+         * @x-autobe-database-schema-property updated_at
      */
     updated_at: string & tags.Format<"date-time">;
 
     /**
      * The timestamp when the shop profile was soft-deleted. Null if still active.
      *
-     * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-database-schema-property deleted_at
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };

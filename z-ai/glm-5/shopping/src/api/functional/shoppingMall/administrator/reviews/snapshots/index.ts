@@ -27,7 +27,8 @@ import { IShoppingMallReviewSnapshot } from "../../../../../structures/IShopping
  * @param props.body Search criteria and pagination parameters for retrieving review snapshots
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor administrator
- * @x-autobe-specification Query shopping_mall_review_snapshots table filtering by shopping_mall_review_id matching the provided reviewId path parameter.
+ * @x-autobe-specification Query shopping_mall_review_snapshots table filtering
+ *   by shopping_mall_review_id matching the provided reviewId path parameter.
  *
  * Authorization checks:
  * 1. If authenticated user is a customer, verify they own the review (shopping_mall_customer_id matches current user)
@@ -147,7 +148,9 @@ export namespace index {
  * @param props.snapshotId UUID of the specific snapshot to retrieve, identifying the preserved state before an edit (scoped to the review)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor administrator
- * @x-autobe-specification Retrieve a specific snapshot from the shopping_mall_review_snapshots table by the snapshot's UUID, with authorization validation against the parent review.
+ * @x-autobe-specification Retrieve a specific snapshot from the
+ *   shopping_mall_review_snapshots table by the snapshot's UUID, with
+ *   authorization validation against the parent review.
  *
  * Implementation steps:
  * 1. Query shopping_mall_review_snapshots by id (snapshotId) and shopping_mall_review_id (reviewId)

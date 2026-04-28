@@ -8,23 +8,23 @@ import { IShoppingMallReview } from "./IShoppingMallReview";
  */
 export type IShoppingMallReviewSnapshot = {
   /**
-   * @x-autobe-database-schema-property id
+     * @x-autobe-database-schema-property id
    */
   id: string & tags.Format<"uuid">;
   /**
-   * @x-autobe-database-schema-property rating
+     * @x-autobe-database-schema-property rating
    */
   rating: number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<5>;
   /**
-   * @x-autobe-database-schema-property content
+     * @x-autobe-database-schema-property content
    */
   content: string | null;
   /**
-   * @x-autobe-database-schema-property review
+     * @x-autobe-database-schema-property review
    */
   review: IShoppingMallReview.ISummary;
   /**
-   * @x-autobe-database-schema-property created_at
+     * @x-autobe-database-schema-property created_at
    */
   created_at: string & tags.Format<"date-time">;
 };
@@ -36,32 +36,41 @@ export namespace IShoppingMallReviewSnapshot {
     /**
      * Unique identifier of the review snapshot.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_review_snapshots.id. UUID primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_review_snapshots.id. UUID primary key.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Star rating value (1-5) as it existed before the edit was applied.
      *
-     * @x-autobe-database-schema-property rating
-     * @x-autobe-specification Direct mapping from shopping_mall_review_snapshots.rating. Integer constrained to values 1-5 inclusive, representing star rating before the edit.
+         * @x-autobe-database-schema-property rating
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_review_snapshots.rating. Integer constrained to
+         *   values 1-5 inclusive, representing star rating before the edit.
      */
     rating: number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<5>;
 
     /**
      * Text content of the review as it existed before the edit. May be null if the review had no text content at the time of the snapshot.
      *
-     * @x-autobe-database-schema-property content
-     * @x-autobe-specification Direct mapping from shopping_mall_review_snapshots.content. Nullable text field preserving the exact review text before edit. May be null if the review had no text content.
+         * @x-autobe-database-schema-property content
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_review_snapshots.content. Nullable text field
+         *   preserving the exact review text before edit. May be null if the
+         *   review had no text content.
      */
     content: string | null;
 
     /**
      * Timestamp when the snapshot was created, marking the exact moment when the review was edited.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_review_snapshots.created_at. Timestamp with timezone marking the exact moment when the review was edited and the snapshot was created.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_review_snapshots.created_at. Timestamp with timezone
+         *   marking the exact moment when the review was edited and the
+         *   snapshot was created.
      */
     created_at: string & tags.Format<"date-time">;
   };
@@ -73,14 +82,19 @@ export namespace IShoppingMallReviewSnapshot {
     /**
      * Page number for pagination, starting from 1. Specify which page of results to retrieve.
      *
-     * @x-autobe-specification Pagination parameter for page number. Used in OFFSET calculation: OFFSET = (page - 1) * limit. Must be >= 1. Defaults to 1 if not specified.
+         * @x-autobe-specification Pagination parameter for page number. Used in
+         *   OFFSET calculation: OFFSET = (page - 1) * limit. Must be >= 1.
+         *   Defaults to 1 if not specified.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Number of snapshots to retrieve per page. Maximum 100 to prevent excessive data transfer.
      *
-     * @x-autobe-specification Pagination parameter for records per page. Used in LIMIT clause of query. Must be between 1 and 100. Maximum 100 prevents excessive data transfer and ensures response times remain acceptable.
+         * @x-autobe-specification Pagination parameter for records per page.
+         *   Used in LIMIT clause of query. Must be between 1 and 100. Maximum
+         *   100 prevents excessive data transfer and ensures response times
+         *   remain acceptable.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -89,7 +103,11 @@ export namespace IShoppingMallReviewSnapshot {
     /**
      * Sort order for results. Use 'created_at' for ascending (oldest first) or '-created_at' for descending (newest first). Default is chronological order (oldest first).
      *
-     * @x-autobe-specification Sorting parameter for result ordering. Format: field name for ascending, '-' prefix for descending. Supported values: 'created_at' (ascending/oldest first), '-created_at' (descending/newest first). Default: created_at ASC for chronological order showing edit progression.
+         * @x-autobe-specification Sorting parameter for result ordering.
+         *   Format: field name for ascending, '-' prefix for descending.
+         *   Supported values: 'created_at' (ascending/oldest first),
+         *   '-created_at' (descending/newest first). Default: created_at ASC
+         *   for chronological order showing edit progression.
      */
     sort?: string | undefined;
   };

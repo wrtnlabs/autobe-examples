@@ -23,7 +23,8 @@ import { IShoppingMallRefundRequestSnapshot } from "../../../../../structures/IS
  * @param props.body Search criteria including status filter, created_at date range, and pagination parameters (page, limit, sort).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query shopping_mall_refund_request_snapshots table filtered by shopping_mall_refund_request_id parameter.
+ * @x-autobe-specification Query shopping_mall_refund_request_snapshots table
+ *   filtered by shopping_mall_refund_request_id parameter.
  *
  * Apply pagination with cursor-based or offset-based pagination. Support filtering by status field (pending, approved, rejected) and created_at date range.
  *
@@ -132,7 +133,8 @@ export namespace index {
  * @param props.snapshotId UUID of the snapshot record to retrieve (globally unique identifier).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query shopping_mall_refund_request_snapshots table by snapshot ID.
+ * @x-autobe-specification Query shopping_mall_refund_request_snapshots table by
+ *   snapshot ID.
  *
  * Validate that the snapshot exists and belongs to the specified refund request by checking shopping_mall_refund_request_id matches the path parameter.
  *

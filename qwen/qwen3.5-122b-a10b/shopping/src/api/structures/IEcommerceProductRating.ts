@@ -20,7 +20,9 @@ export type IEcommerceProductRating = {
    *
    * Returns null when review_count is 0, indicating no reviews have been submitted for this product.
    *
-   * @x-autobe-specification Calculated as AVG(rating) from ecommerce_reviews where deleted_at IS NULL and product_id matches. Returns null when no non-deleted reviews exist.
+     * @x-autobe-specification Calculated as AVG(rating) from ecommerce_reviews
+     *   where deleted_at IS NULL and product_id matches. Returns null when no
+     *   non-deleted reviews exist.
    */
   average_rating: (number & tags.Minimum<1> & tags.Maximum<5>) | null;
 
@@ -33,7 +35,8 @@ export type IEcommerceProductRating = {
    *
    * The minimum value is 0, which occurs when no reviews have been submitted or all reviews have been deleted.
    *
-   * @x-autobe-specification Calculated as COUNT(*) from ecommerce_reviews where deleted_at IS NULL and product_id matches.
+     * @x-autobe-specification Calculated as COUNT(*) from ecommerce_reviews
+     *   where deleted_at IS NULL and product_id matches.
    */
   review_count: number & tags.Type<"int32"> & tags.Minimum<0>;
 };

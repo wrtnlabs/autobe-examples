@@ -21,9 +21,10 @@ export class HrmtimetrackMemberTimersSnapshotsController {
    * @param connection
    * @param timerId UUID of the timer to retrieve snapshots for (global scope)
    * @param body Search criteria for filtering timer snapshots including event type, date ranges, and pagination parameters.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query hrm_time_track_timer_snapshots table filtering by hrm_time_track_timer_id from path parameter.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query hrm_time_track_timer_snapshots table
+     *   filtering by hrm_time_track_timer_id from path parameter.
    *
    * Apply search filters from request body:
    * - event_type filter (start, stop, discard, edit)
@@ -74,9 +75,10 @@ export class HrmtimetrackMemberTimersSnapshotsController {
    * @param connection
    * @param timerId Unique identifier of the parent timer session that this snapshot belongs to.
    * @param snapshotId Unique identifier of the timer snapshot record to retrieve.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query the hrm_time_track_timer_snapshots table for a single record matching the provided snapshotId.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query the hrm_time_track_timer_snapshots table
+     *   for a single record matching the provided snapshotId.
    *
    * Validation:
    * - Verify the snapshotId exists and is a valid UUID

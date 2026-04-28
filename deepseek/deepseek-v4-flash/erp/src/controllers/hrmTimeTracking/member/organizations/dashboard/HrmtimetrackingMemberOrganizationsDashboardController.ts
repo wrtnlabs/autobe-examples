@@ -25,9 +25,10 @@ export class HrmtimetrackingMemberOrganizationsDashboardController {
    *
    * @param connection
    * @param organizationId Target organization UUID. All dashboard metrics are scoped to this organization's multi-tenant boundary.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Fetch organization dashboard data scoped to the organization context.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Fetch organization dashboard data scoped to the
+     *   organization context.
    *
    * 1. **Active employees count**: Query `hrm_time_tracking_employees` WHERE `hrm_time_tracking_organization_id` = organizationId AND `status` = 'active' AND `deleted_at` IS NULL. Return COUNT(*).
    *

@@ -21,7 +21,9 @@ import { IPageIRedditCommunityComment } from "../../../../../structures/IPageIRe
  * @param props.username Unique username of the member whose comments to retrieve (global scope).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query reddit_community_comments table filtering by reddit_community_member_id obtained from reddit_community_members lookup by username.
+ * @x-autobe-specification Query reddit_community_comments table filtering by
+ *   reddit_community_member_id obtained from reddit_community_members lookup by
+ *   username.
  *
  * 1. First, query reddit_community_members WHERE username = {username} AND deleted_at IS NULL to get the member's UUID
  * 2. If member not found, return 404 Not Found

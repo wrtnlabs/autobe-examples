@@ -25,9 +25,10 @@ export class ErphrmtimetrackingMemberReportdefinitionsGenerateController {
    *
    * @param connection
    * @param body Parameters for generating a time-tracking report from a specific persisted report definition, including the requested date range and any report-type-specific grouping and filter selections.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Create a new report generation run and compute outputs.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Create a new report generation run and compute
+     *   outputs.
    *
    * 1) Validate organization context and authorization
    * - Resolve the organization tenant context from the authenticated member session.

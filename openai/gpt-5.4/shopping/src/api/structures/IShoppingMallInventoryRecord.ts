@@ -10,64 +10,78 @@ export type IShoppingMallInventoryRecord = {
   /**
    * Unique identifier of this inventory ledger entry.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_inventory_records.id.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_inventory_records.id.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * The product variant whose stock was changed by this inventory record.
    *
-   * @x-autobe-database-schema-property productVariant
-   * @x-autobe-specification Join from shopping_mall_inventory_records.shopping_mall_product_variant_id to shopping_mall_product_variants.id and serialize the related variant as IShoppingMallProductVariant.ISummary.
+     * @x-autobe-database-schema-property productVariant
+     * @x-autobe-specification Join from
+     *   shopping_mall_inventory_records.shopping_mall_product_variant_id to
+     *   shopping_mall_product_variants.id and serialize the related variant as
+     *   IShoppingMallProductVariant.ISummary.
    */
   productVariant: IShoppingMallProductVariant.ISummary;
 
   /**
    * Signed stock delta recorded by this inventory event.
    *
-   * @x-autobe-database-schema-property quantity_change
-   * @x-autobe-specification Direct mapping from shopping_mall_inventory_records.quantity_change. Positive values increase stock and negative values decrease stock.
+     * @x-autobe-database-schema-property quantity_change
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_inventory_records.quantity_change. Positive values
+     *   increase stock and negative values decrease stock.
    */
   quantity_change: number & tags.Type<"int32">;
 
   /**
    * Business reason describing why the inventory changed.
    *
-   * @x-autobe-database-schema-property reason
-   * @x-autobe-specification Direct mapping from shopping_mall_inventory_records.reason.
+     * @x-autobe-database-schema-property reason
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_inventory_records.reason.
    */
   reason: string;
 
   /**
    * Timestamp when the stock movement occurred for ledger purposes.
    *
-   * @x-autobe-database-schema-property occurred_at
-   * @x-autobe-specification Direct mapping from shopping_mall_inventory_records.occurred_at.
+     * @x-autobe-database-schema-property occurred_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_inventory_records.occurred_at.
    */
   occurred_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when this inventory record was stored.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from shopping_mall_inventory_records.created_at.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_inventory_records.created_at.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when this inventory record was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from shopping_mall_inventory_records.updated_at. Although inventory records are intended to be immutable, this timestamp reflects the row's last metadata update time.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_inventory_records.updated_at. Although inventory records
+     *   are intended to be immutable, this timestamp reflects the row's last
+     *   metadata update time.
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * Soft-deletion timestamp for this inventory record, or null when the record remains active.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from shopping_mall_inventory_records.deleted_at. Return the stored timestamp when the record is logically deleted, otherwise return null.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_inventory_records.deleted_at. Return the stored timestamp
+     *   when the record is logically deleted, otherwise return null.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -79,24 +93,37 @@ export namespace IShoppingMallInventoryRecord {
     /**
      * Signed inventory change to record for the product variant. Positive values add stock and negative values reduce stock.
      *
-     * @x-autobe-database-schema-property quantity_change
-     * @x-autobe-specification Direct mapping from the request body to shopping_mall_inventory_records.quantity_change. Positive integers increase stock and negative integers reduce stock for the target variant ledger. Validate business semantics for stock movement and reject invalid no-op usage if the service disallows zero-quantity movements.
+         * @x-autobe-database-schema-property quantity_change
+         * @x-autobe-specification Direct mapping from the request body to
+         *   shopping_mall_inventory_records.quantity_change. Positive integers
+         *   increase stock and negative integers reduce stock for the target
+         *   variant ledger. Validate business semantics for stock movement and
+         *   reject invalid no-op usage if the service disallows zero-quantity
+         *   movements.
      */
     quantity_change: number & tags.Type<"int32">;
 
     /**
      * Business reason explaining why this inventory movement is being recorded.
      *
-     * @x-autobe-database-schema-property reason
-     * @x-autobe-specification Direct mapping from the request body to shopping_mall_inventory_records.reason. Persist the seller-provided business explanation describing why the stock changed, such as restock, manual adjustment, or loss correction. Require a meaningful non-empty value according to service validation.
+         * @x-autobe-database-schema-property reason
+         * @x-autobe-specification Direct mapping from the request body to
+         *   shopping_mall_inventory_records.reason. Persist the seller-provided
+         *   business explanation describing why the stock changed, such as
+         *   restock, manual adjustment, or loss correction. Require a
+         *   meaningful non-empty value according to service validation.
      */
     reason: string;
 
     /**
      * Date and time when the inventory movement occurred for business stock-history purposes.
      *
-     * @x-autobe-database-schema-property occurred_at
-     * @x-autobe-specification Direct mapping from the request body to shopping_mall_inventory_records.occurred_at. Use the submitted date-time value as the business-effective timestamp for the stock movement in the immutable inventory ledger, distinct from server-generated created_at.
+         * @x-autobe-database-schema-property occurred_at
+         * @x-autobe-specification Direct mapping from the request body to
+         *   shopping_mall_inventory_records.occurred_at. Use the submitted
+         *   date-time value as the business-effective timestamp for the stock
+         *   movement in the immutable inventory ledger, distinct from
+         *   server-generated created_at.
      */
     occurred_at: string & tags.Format<"date-time">;
   };
@@ -108,28 +135,46 @@ export namespace IShoppingMallInventoryRecord {
     /**
      * Optional business-reason filter that narrows inventory history to ledger entries with matching stock-movement reasons.
      *
-     * @x-autobe-specification Optional text filter used to constrain inventory-history results by the business reason recorded on ledger entries. Implement this by applying the value against `shopping_mall_inventory_records.reason` using the platform's supported text-filter behavior for browsing endpoints. If omitted, do not filter by reason.
+         * @x-autobe-specification Optional text filter used to constrain
+         *   inventory-history results by the business reason recorded on ledger
+         *   entries. Implement this by applying the value against
+         *   `shopping_mall_inventory_records.reason` using the platform's
+         *   supported text-filter behavior for browsing endpoints. If omitted,
+         *   do not filter by reason.
      */
     reason?: string | undefined;
 
     /**
      * Optional start timestamp for the occurrence-time filter range. Only inventory history entries that occurred at or after this time are included.
      *
-     * @x-autobe-specification Optional inclusive lower-bound date-time filter for inventory-history browsing. Implement this by returning only records whose `shopping_mall_inventory_records.occurred_at` is greater than or equal to the provided timestamp. This is a query helper field rather than a direct database property in the DTO.
+         * @x-autobe-specification Optional inclusive lower-bound date-time
+         *   filter for inventory-history browsing. Implement this by returning
+         *   only records whose `shopping_mall_inventory_records.occurred_at` is
+         *   greater than or equal to the provided timestamp. This is a query
+         *   helper field rather than a direct database property in the DTO.
      */
     occurred_from?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Optional end timestamp for the occurrence-time filter range. Only inventory history entries that occurred at or before this time are included.
      *
-     * @x-autobe-specification Optional inclusive upper-bound date-time filter for inventory-history browsing. Implement this by returning only records whose `shopping_mall_inventory_records.occurred_at` is less than or equal to the provided timestamp. This is a query helper field rather than a direct database property in the DTO.
+         * @x-autobe-specification Optional inclusive upper-bound date-time
+         *   filter for inventory-history browsing. Implement this by returning
+         *   only records whose `shopping_mall_inventory_records.occurred_at` is
+         *   less than or equal to the provided timestamp. This is a query
+         *   helper field rather than a direct database property in the DTO.
      */
     occurred_to?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Optional sort order for inventory history results, allowing chronological ordering by occurrence time or record creation time.
      *
-     * @x-autobe-specification Optional sort selector for inventory-history browsing. Map the allowed enum values to ORDER BY clauses over `shopping_mall_inventory_records.occurred_at` or `shopping_mall_inventory_records.created_at` in the requested direction. If omitted, default to descending occurrence time with a stable secondary sort to keep pagination deterministic.
+         * @x-autobe-specification Optional sort selector for inventory-history
+         *   browsing. Map the allowed enum values to ORDER BY clauses over
+         *   `shopping_mall_inventory_records.occurred_at` or
+         *   `shopping_mall_inventory_records.created_at` in the requested
+         *   direction. If omitted, default to descending occurrence time with a
+         *   stable secondary sort to keep pagination deterministic.
      */
     sort?:
       | "occurred_at_desc"
@@ -141,14 +186,22 @@ export namespace IShoppingMallInventoryRecord {
     /**
      * Optional page number for paginated inventory history results.
      *
-     * @x-autobe-specification Optional 1-indexed page number for paginating filtered inventory-history results. Combine this with `limit` to compute query offset and bounds according to shared pagination conventions. If omitted, treat the request as asking for the first page.
+         * @x-autobe-specification Optional 1-indexed page number for paginating
+         *   filtered inventory-history results. Combine this with `limit` to
+         *   compute query offset and bounds according to shared pagination
+         *   conventions. If omitted, treat the request as asking for the first
+         *   page.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Optional maximum number of inventory history entries to return in a single page.
      *
-     * @x-autobe-specification Optional maximum number of inventory-history records to return in one page. Enforce the schema constraints of minimum 1 and maximum 100, and use this value together with `page` to limit the query result set. If omitted, apply the platform default page size.
+         * @x-autobe-specification Optional maximum number of inventory-history
+         *   records to return in one page. Enforce the schema constraints of
+         *   minimum 1 and maximum 100, and use this value together with `page`
+         *   to limit the query result set. If omitted, apply the platform
+         *   default page size.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -162,64 +215,78 @@ export namespace IShoppingMallInventoryRecord {
     /**
      * Unique identifier of this inventory ledger entry.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_inventory_records.id.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_inventory_records.id.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Summary information for the product variant whose inventory changed.
      *
-     * @x-autobe-database-schema-property productVariant
-     * @x-autobe-specification Join through shopping_mall_inventory_records.productVariant using shopping_mall_product_variant_id to shopping_mall_product_variants.id, then project the related row as IShoppingMallProductVariant.ISummary.
+         * @x-autobe-database-schema-property productVariant
+         * @x-autobe-specification Join through
+         *   shopping_mall_inventory_records.productVariant using
+         *   shopping_mall_product_variant_id to
+         *   shopping_mall_product_variants.id, then project the related row as
+         *   IShoppingMallProductVariant.ISummary.
      */
     productVariant: IShoppingMallProductVariant.ISummary;
 
     /**
      * Signed quantity change applied by this inventory movement.
      *
-     * @x-autobe-database-schema-property quantity_change
-     * @x-autobe-specification Direct mapping from shopping_mall_inventory_records.quantity_change. Positive values increase stock and negative values decrease stock.
+         * @x-autobe-database-schema-property quantity_change
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_inventory_records.quantity_change. Positive values
+         *   increase stock and negative values decrease stock.
      */
     quantity_change: number & tags.Type<"int32">;
 
     /**
      * Business reason explaining why the inventory changed.
      *
-     * @x-autobe-database-schema-property reason
-     * @x-autobe-specification Direct mapping from shopping_mall_inventory_records.reason.
+         * @x-autobe-database-schema-property reason
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_inventory_records.reason.
      */
     reason: string;
 
     /**
      * Timestamp when the inventory movement occurred in business terms.
      *
-     * @x-autobe-database-schema-property occurred_at
-     * @x-autobe-specification Direct mapping from shopping_mall_inventory_records.occurred_at.
+         * @x-autobe-database-schema-property occurred_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_inventory_records.occurred_at.
      */
     occurred_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when this inventory record was stored.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_inventory_records.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_inventory_records.created_at.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when this inventory record was last updated.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from shopping_mall_inventory_records.updated_at.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_inventory_records.updated_at.
      */
     updated_at: string & tags.Format<"date-time">;
 
     /**
      * Soft-deletion timestamp for this inventory record, or null if the record is active.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from shopping_mall_inventory_records.deleted_at. Return the timestamp when the record was soft deleted, or null when it remains active and preserved in normal audit history.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_inventory_records.deleted_at. Return the timestamp
+         *   when the record was soft deleted, or null when it remains active
+         *   and preserved in normal audit history.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };

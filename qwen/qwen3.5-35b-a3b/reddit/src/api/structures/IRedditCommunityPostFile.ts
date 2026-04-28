@@ -33,8 +33,9 @@ export type IRedditCommunityPostFile = {
    *
    * A globally unique UUID that identifies this specific file attachment within the system. Used as the primary key for database operations and API references.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from reddit_community_post_files.id (UUID primary key).
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_post_files.id (UUID primary key).
    */
   id: string & tags.Format<"uuid">;
 
@@ -43,8 +44,10 @@ export type IRedditCommunityPostFile = {
    *
    * This field maintains the filename exactly as the user uploaded it, preserving the original naming convention. For security and storage optimization, the actual stored file may use a different internal filename while this field displays the original name to users.
    *
-   * @x-autobe-database-schema-property file_name
-   * @x-autobe-specification Direct mapping from reddit_community_post_files.file_name. Preserves the user's original filename as provided during upload.
+     * @x-autobe-database-schema-property file_name
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_post_files.file_name. Preserves the user's original
+     *   filename as provided during upload.
    */
   file_name: string;
 
@@ -53,8 +56,10 @@ export type IRedditCommunityPostFile = {
    *
    * Represents the content type of the file using standard MIME type format (e.g., `image/png`, `image/jpeg`, `image/gif`). Used for content validation, proper rendering in browsers, and determining the appropriate file handling behavior.
    *
-   * @x-autobe-database-schema-property file_type
-   * @x-autobe-specification Direct mapping from reddit_community_post_files.file_type. Stores the MIME type classification of the uploaded file.
+     * @x-autobe-database-schema-property file_type
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_post_files.file_type. Stores the MIME type
+     *   classification of the uploaded file.
    */
   file_type: string;
 
@@ -63,8 +68,9 @@ export type IRedditCommunityPostFile = {
    *
    * Integer value representing the exact size of the file in bytes. Used for storage quota tracking, upload validation, display purposes (showing file size to users), and implementing file size limits or restrictions.
    *
-   * @x-autobe-database-schema-property file_size
-   * @x-autobe-specification Direct mapping from reddit_community_post_files.file_size (INTEGER). Size stored in bytes.
+     * @x-autobe-database-schema-property file_size
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_post_files.file_size (INTEGER). Size stored in bytes.
    */
   file_size: number & tags.Type<"int32">;
 
@@ -73,8 +79,10 @@ export type IRedditCommunityPostFile = {
    *
    * Complete URI that points to the actual file location where the content is stored. Used for downloading the file, displaying images in the browser, or accessing the file content through HTTP requests. The URL follows standard URI format and includes any necessary authentication or path information.
    *
-   * @x-autobe-database-schema-property file_url
-   * @x-autobe-specification Direct mapping from reddit_community_post_files.file_url (VARCHAR). URI pointing to the file storage location.
+     * @x-autobe-database-schema-property file_url
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_post_files.file_url (VARCHAR). URI pointing to the
+     *   file storage location.
    */
   file_url: string & tags.Format<"uri">;
 
@@ -83,8 +91,10 @@ export type IRedditCommunityPostFile = {
    *
    * Records the exact moment the file was uploaded and stored in the system. Stored in UTC timezone with millisecond precision. Used for audit trails, chronological ordering, and displaying upload time to users (e.g., "Uploaded 2 hours ago").
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from reddit_community_post_files.created_at (TIMESTAMPTZ). Timestamp when the file was uploaded.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_post_files.created_at (TIMESTAMPTZ). Timestamp when
+     *   the file was uploaded.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -93,8 +103,10 @@ export type IRedditCommunityPostFile = {
    *
    * Tracks the most recent modification time for the file metadata. Updated whenever the file record is modified. Used for cache invalidation, change detection, and determining if the file metadata has been modified since the last check.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from reddit_community_post_files.updated_at (TIMESTAMPTZ). Timestamp of the last modification.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_post_files.updated_at (TIMESTAMPTZ). Timestamp of the
+     *   last modification.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -103,8 +115,10 @@ export type IRedditCommunityPostFile = {
    *
    * Nullable field that is populated when the file is marked for deletion. Null values indicate the file is still active and accessible. When populated, the file is marked for removal but retained in the database for audit purposes and historical record keeping.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from reddit_community_post_files.deleted_at (TIMESTAMPTZ nullable). Populated when file is soft-deleted for audit trail purposes.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_post_files.deleted_at (TIMESTAMPTZ nullable).
+     *   Populated when file is soft-deleted for audit trail purposes.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 
@@ -113,8 +127,12 @@ export type IRedditCommunityPostFile = {
    *
    * The complete post object representing the parent entity that this file is attached to. This is a belongs-to relationship where the post reference provides access to all post metadata including title, author, community, and content. The post is loaded via a JOIN on the reddit_community_post_id foreign key.
    *
-   * @x-autobe-database-schema-property post
-   * @x-autobe-specification Join via reddit_community_post_files.reddit_community_post_id FK to reddit_community_posts.id. Returns IRedditCommunityPost.ISummary object representing the parent post. This transforms the FK column into an object reference for better encapsulation.
+     * @x-autobe-database-schema-property post
+     * @x-autobe-specification Join via
+     *   reddit_community_post_files.reddit_community_post_id FK to
+     *   reddit_community_posts.id. Returns IRedditCommunityPost.ISummary object
+     *   representing the parent post. This transforms the FK column into an
+     *   object reference for better encapsulation.
    */
   post: IRedditCommunityPost.ISummary;
 };
@@ -132,7 +150,9 @@ export namespace IRedditCommunityPostFile {
      *
      * Controls which page of results is returned, starting from 1. Default value is 1 when not provided. Used for paginating large result sets across multiple API calls.
      *
-     * @x-autobe-specification Page number for pagination (1-indexed). Default is 1. This parameter controls which page of results is returned. Must be an integer >= 1.
+         * @x-autobe-specification Page number for pagination (1-indexed).
+         *   Default is 1. This parameter controls which page of results is
+         *   returned. Must be an integer >= 1.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -141,7 +161,10 @@ export namespace IRedditCommunityPostFile {
      *
      * Maximum number of records to return in a single page. Valid range is 1 to 100. Default value is typically 25 when not specified. Controls the page size for pagination.
      *
-     * @x-autobe-specification Maximum number of records per page. Range: 1-100. Default value typically 25. This parameter controls how many records are returned in a single page. Must be an integer between 1 and 100 inclusive.
+         * @x-autobe-specification Maximum number of records per page. Range:
+         *   1-100. Default value typically 25. This parameter controls how many
+         *   records are returned in a single page. Must be an integer between 1
+         *   and 100 inclusive.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -152,7 +175,9 @@ export namespace IRedditCommunityPostFile {
      *
      * Specifies which field's values determine the sort order of returned files. Supported values: file_size (file size in bytes), file_name (original filename), created_at (upload timestamp).
      *
-     * @x-autobe-specification Field to sort results by. Valid values: file_size, file_name, created_at. When not specified, defaults to a system-defined order (typically creation date descending).
+         * @x-autobe-specification Field to sort results by. Valid values:
+         *   file_size, file_name, created_at. When not specified, defaults to a
+         *   system-defined order (typically creation date descending).
      */
     sortBy?: "file_size" | "file_name" | "created_at" | undefined;
 
@@ -161,7 +186,10 @@ export namespace IRedditCommunityPostFile {
      *
      * Determines whether results are ordered in ascending or descending order. Use asc for ascending (smallest to largest, earliest to latest), desc for descending (largest to smallest, latest to earliest).
      *
-     * @x-autobe-specification Sort direction. Valid values: asc (ascending), desc (descending). Default is typically desc for timestamp-based fields like created_at. Must match the sortBy field semantics.
+         * @x-autobe-specification Sort direction. Valid values: asc
+         *   (ascending), desc (descending). Default is typically desc for
+         *   timestamp-based fields like created_at. Must match the sortBy field
+         *   semantics.
      */
     sortOrder?: "asc" | "desc" | undefined;
 
@@ -170,7 +198,9 @@ export namespace IRedditCommunityPostFile {
      *
      * Narrows results to files matching the specified MIME type. Common values include image/png, image/jpeg, image/gif, image/webp. When not specified, all file types are included in results.
      *
-     * @x-autobe-specification Filter results by MIME type. Examples: image/png, image/jpeg, image/gif. When not specified, includes all file types. Used to narrow results to specific content types.
+         * @x-autobe-specification Filter results by MIME type. Examples:
+         *   image/png, image/jpeg, image/gif. When not specified, includes all
+         *   file types. Used to narrow results to specific content types.
      */
     fileType?: string | undefined;
 
@@ -179,7 +209,10 @@ export namespace IRedditCommunityPostFile {
      *
      * Controls whether files marked as soft-deleted (deleted_at timestamp set) are included. Default is false, excluding deleted files. Set to true to include soft-deleted files for administrative or audit purposes.
      *
-     * @x-autobe-specification Include soft-deleted files in results. Default is false (excludes deleted files). Set to true to include files where deleted_at is not null. Useful for admin/audit scenarios.
+         * @x-autobe-specification Include soft-deleted files in results.
+         *   Default is false (excludes deleted files). Set to true to include
+         *   files where deleted_at is not null. Useful for admin/audit
+         *   scenarios.
      */
     includeDeleted?: boolean | undefined;
 
@@ -188,7 +221,9 @@ export namespace IRedditCommunityPostFile {
      *
      * Only includes files where the created_at timestamp is greater than the provided value. Uses ISO 8601 date-time format (e.g., 2024-01-15T10:30:00Z). Useful for retrieving recent files within a date range.
      *
-     * @x-autobe-specification Filter files uploaded after this timestamp. ISO 8601 date-time format. Only files with created_at > this value are included. Used for date range queries.
+         * @x-autobe-specification Filter files uploaded after this timestamp.
+         *   ISO 8601 date-time format. Only files with created_at > this value
+         *   are included. Used for date range queries.
      */
     createdAfter?: (string & tags.Format<"date-time">) | undefined;
 
@@ -197,7 +232,9 @@ export namespace IRedditCommunityPostFile {
      *
      * Only includes files where the created_at timestamp is less than the provided value. Uses ISO 8601 date-time format (e.g., 2024-01-15T10:30:00Z). Useful for retrieving historical files within a date range.
      *
-     * @x-autobe-specification Filter files uploaded before this timestamp. ISO 8601 date-time format. Only files with created_at < this value are included. Used for date range queries.
+         * @x-autobe-specification Filter files uploaded before this timestamp.
+         *   ISO 8601 date-time format. Only files with created_at < this value
+         *   are included. Used for date range queries.
      */
     createdBefore?: (string & tags.Format<"date-time">) | undefined;
   };
@@ -211,72 +248,87 @@ export namespace IRedditCommunityPostFile {
     /**
      * Unique identifier for the file attachment.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from reddit_community_post_files.id. UUID primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   reddit_community_post_files.id. UUID primary key.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Original filename of the uploaded file as provided by the user.
      *
-     * @x-autobe-database-schema-property file_name
-     * @x-autobe-specification Direct mapping from reddit_community_post_files.file_name. Original filename as uploaded by user.
+         * @x-autobe-database-schema-property file_name
+         * @x-autobe-specification Direct mapping from
+         *   reddit_community_post_files.file_name. Original filename as
+         *   uploaded by user.
      */
     file_name: string;
 
     /**
      * MIME type of the uploaded file (e.g., image/png, image/jpeg, image/gif).
      *
-     * @x-autobe-database-schema-property file_type
-     * @x-autobe-specification Direct mapping from reddit_community_post_files.file_type. MIME type classification (e.g., image/png, image/jpeg).
+         * @x-autobe-database-schema-property file_type
+         * @x-autobe-specification Direct mapping from
+         *   reddit_community_post_files.file_type. MIME type classification
+         *   (e.g., image/png, image/jpeg).
      */
     file_type: string;
 
     /**
      * Size of the uploaded file in bytes.
      *
-     * @x-autobe-database-schema-property file_size
-     * @x-autobe-specification Direct mapping from reddit_community_post_files.file_size. Size in bytes.
+         * @x-autobe-database-schema-property file_size
+         * @x-autobe-specification Direct mapping from
+         *   reddit_community_post_files.file_size. Size in bytes.
      */
     file_size: number & tags.Type<"int32">;
 
     /**
      * URL path to the stored file in object storage.
      *
-     * @x-autobe-database-schema-property file_url
-     * @x-autobe-specification Direct mapping from reddit_community_post_files.file_url. URL path to the stored file in object storage.
+         * @x-autobe-database-schema-property file_url
+         * @x-autobe-specification Direct mapping from
+         *   reddit_community_post_files.file_url. URL path to the stored file
+         *   in object storage.
      */
     file_url: string & tags.Format<"uri">;
 
     /**
      * Timestamp when this file record was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from reddit_community_post_files.created_at. Timestamp when the file record was created.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_community_post_files.created_at. Timestamp when the file
+         *   record was created.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when this file record was last updated.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from reddit_community_post_files.updated_at. Timestamp when the file record was last updated.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_community_post_files.updated_at. Timestamp when the file
+         *   record was last updated.
      */
     updated_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when this file was soft deleted, or null if still active.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from reddit_community_post_files.deleted_at. Nullable timestamp when the file was soft deleted.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_community_post_files.deleted_at. Nullable timestamp when the
+         *   file was soft deleted.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
 
     /**
      * Reference to the parent post that owns this file attachment.
      *
-     * @x-autobe-database-schema-property post
-     * @x-autobe-specification Join via reddit_community_post_id FK. Returns IRedditCommunityPost.ISummary reference.
+         * @x-autobe-database-schema-property post
+         * @x-autobe-specification Join via reddit_community_post_id FK. Returns
+         *   IRedditCommunityPost.ISummary reference.
      */
     post: IRedditCommunityPost.ISummary;
   };

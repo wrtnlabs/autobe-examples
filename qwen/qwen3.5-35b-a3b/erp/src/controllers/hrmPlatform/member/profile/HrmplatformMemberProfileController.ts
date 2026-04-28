@@ -20,9 +20,10 @@ export class HrmplatformMemberProfileController {
    *
    * @param connection
    * @param body Profile update data containing optional fields for display_name, avatar_uri, and phone_number. All fields are optional to support partial updates.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query: Find hrm_platform_members record by authenticated user's ID (from session context).
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query: Find hrm_platform_members record by
+     *   authenticated user's ID (from session context).
    *
    * Update: Modify display_name, avatar_uri, and/or phone_number fields based on provided values in request body. All three fields are optional - partial updates are supported.
    *

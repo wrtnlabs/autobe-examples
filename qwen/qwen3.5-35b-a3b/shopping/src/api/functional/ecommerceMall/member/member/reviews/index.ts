@@ -18,7 +18,8 @@ import { IPageIEcommerceMallReview } from "../../../../../structures/IPageIEcomm
  * @param props.body Search and filtering criteria for member reviews including rating filters, product filters, date ranges, sorting options, and pagination parameters.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query ecommerce_mall_reviews table filtering by member_id from authenticated session.
+ * @x-autobe-specification Query ecommerce_mall_reviews table filtering by
+ *   member_id from authenticated session.
  *
  * 1. Apply member identity from JWT session token
  * 2. Filter out deleted reviews (deleted_at IS NULL) unless showDeleted=true

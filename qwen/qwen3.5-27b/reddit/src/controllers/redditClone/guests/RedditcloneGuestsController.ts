@@ -29,9 +29,10 @@ export class RedditcloneGuestsController {
    *
    * @param connection
    * @param body Search criteria for guest accounts including device fingerprint filter, date range filters, status filter, and pagination parameters.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query reddit_clone_guests table with pagination and filtering support.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query reddit_clone_guests table with pagination
+     *   and filtering support.
    *
    * Filtering capabilities:
    * - device_fingerprint: exact match or partial match (contains)
@@ -84,9 +85,10 @@ export class RedditcloneGuestsController {
    *
    * @param connection
    * @param guestId Unique identifier of the guest account (UUID format).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query the reddit_clone_guests table by primary key id (UUID).
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query the reddit_clone_guests table by primary
+     *   key id (UUID).
    *
    * Implementation steps:
    * 1. Validate guestId parameter is a valid UUID format

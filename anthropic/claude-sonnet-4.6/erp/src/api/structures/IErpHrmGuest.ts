@@ -10,7 +10,15 @@ export namespace IErpHrmGuest {
     /**
      * The JWT refresh token previously issued by the guest join or refresh endpoint. Submit this value to obtain a new access token and refresh token pair for the guest session.
      *
-     * @x-autobe-specification This field holds the JWT refresh token string issued to the guest during the join flow (POST /erpHrm/auth/guest/join) or a previous refresh. The backend decodes this token to extract the embedded erp_hrm_guest_session_id, queries erp_hrm_guest_sessions to verify the session record exists and that expired_at > now(), and loads the associated erp_hrm_guests record. An invalid, malformed, expired, or orphaned token results in a 401 Unauthorized response. No direct DB column mapping — this is a server-issued opaque credential.
+         * @x-autobe-specification This field holds the JWT refresh token string
+         *   issued to the guest during the join flow (POST
+         *   /erpHrm/auth/guest/join) or a previous refresh. The backend decodes
+         *   this token to extract the embedded erp_hrm_guest_session_id,
+         *   queries erp_hrm_guest_sessions to verify the session record exists
+         *   and that expired_at > now(), and loads the associated
+         *   erp_hrm_guests record. An invalid, malformed, expired, or orphaned
+         *   token results in a 401 Unauthorized response. No direct DB column
+         *   mapping — this is a server-issued opaque credential.
      */
     refresh: string;
   };
@@ -22,29 +30,43 @@ export namespace IErpHrmGuest {
     /**
      * Device fingerprint or client-generated identifier that uniquely identifies this unauthenticated visitor. Used to correlate anonymous activity across sessions and to reuse an existing guest record if one already exists.
      *
-     * @x-autobe-database-schema-property fingerprint
-     * @x-autobe-specification Direct mapping from erp_hrm_guests.fingerprint. Used to look up an existing guest record via the unique index. If no record is found with this fingerprint, a new erp_hrm_guests row is inserted with a generated UUID and current timestamps.
+         * @x-autobe-database-schema-property fingerprint
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_guests.fingerprint. Used to look up an existing guest
+         *   record via the unique index. If no record is found with this
+         *   fingerprint, a new erp_hrm_guests row is inserted with a generated
+         *   UUID and current timestamps.
      */
     fingerprint: string;
 
     /**
      * Full URL of the page the guest was visiting when they initiated the join request. Recorded in the session for audit and analytics purposes.
      *
-     * @x-autobe-specification Stored in erp_hrm_guest_sessions.href upon session creation. Captures the full URL of the page from which the guest initiated the join request. Required for session audit and analytics.
+         * @x-autobe-specification Stored in erp_hrm_guest_sessions.href upon
+         *   session creation. Captures the full URL of the page from which the
+         *   guest initiated the join request. Required for session audit and
+         *   analytics.
      */
     href: string & tags.Format<"uri">;
 
     /**
      * HTTP referrer URL indicating the page that directed the guest to the current page. Recorded in the session for audit and analytics purposes.
      *
-     * @x-autobe-specification Stored in erp_hrm_guest_sessions.referrer upon session creation. Captures the HTTP Referer header value indicating the page that linked to the current page. Required for session audit and analytics.
+         * @x-autobe-specification Stored in erp_hrm_guest_sessions.referrer
+         *   upon session creation. Captures the HTTP Referer header value
+         *   indicating the page that linked to the current page. Required for
+         *   session audit and analytics.
      */
     referrer: string & tags.Format<"uri">;
 
     /**
      * Client's IPv4 address at the time of the join request. Optional — intended for server-side rendering (SSR) environments where the backend cannot directly determine the client IP from the request. If not provided, the server will capture the IP automatically.
      *
-     * @x-autobe-specification Stored in erp_hrm_guest_sessions.ip upon session creation. If the client provides this value, it is used directly. If null or absent, the server extracts the client IP from the incoming HTTP request headers (e.g., X-Forwarded-For or remote address). Format must be IPv4.
+         * @x-autobe-specification Stored in erp_hrm_guest_sessions.ip upon
+         *   session creation. If the client provides this value, it is used
+         *   directly. If null or absent, the server extracts the client IP from
+         *   the incoming HTTP request headers (e.g., X-Forwarded-For or remote
+         *   address). Format must be IPv4.
      */
     ip?: (string & tags.Format<"ipv4">) | null | undefined;
   };
@@ -56,31 +78,40 @@ export namespace IErpHrmGuest {
     /**
      * Unique identifier of the guest record. A UUID that persists across sessions for the same device fingerprint.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from erp_hrm_guests.id. UUID primary key uniquely identifying the guest record. Auto-generated server-side on first guest creation.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from erp_hrm_guests.id. UUID
+         *   primary key uniquely identifying the guest record. Auto-generated
+         *   server-side on first guest creation.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Device fingerprint or client-generated identifier that uniquely identifies this unauthenticated visitor. Used to correlate guest activity across sessions before account creation or login.
      *
-     * @x-autobe-database-schema-property fingerprint
-     * @x-autobe-specification Direct mapping from erp_hrm_guests.fingerprint. The unique device fingerprint or client-generated identifier provided by the client during the join request. Has a unique index in the database.
+         * @x-autobe-database-schema-property fingerprint
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_guests.fingerprint. The unique device fingerprint or
+         *   client-generated identifier provided by the client during the join
+         *   request. Has a unique index in the database.
      */
     fingerprint: string;
 
     /**
      * Authorization token.
      *
-     * @x-autobe-specification Authorization token comes from the session table.
+         * @x-autobe-specification Authorization token comes from the session
+         *   table.
      */
     token: IAuthorizationToken;
 
     /**
      * Timestamp when the guest identity was first created on the platform. Reflects the moment the visitor first identified themselves with this device fingerprint.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from erp_hrm_guests.created_at. Timestamp (with timezone) when the guest record was first created. Set server-side at INSERT time and never changed.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_guests.created_at. Timestamp (with timezone) when the guest
+         *   record was first created. Set server-side at INSERT time and never
+         *   changed.
      */
     created_at: string & tags.Format<"date-time">;
   };
@@ -92,24 +123,30 @@ export namespace IErpHrmGuest {
     /**
      * Unique identifier of the guest record. A UUID assigned by the system when the guest is first registered.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from erp_hrm_guests.id. UUID primary key, auto-generated by the system on guest record creation.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from erp_hrm_guests.id. UUID
+         *   primary key, auto-generated by the system on guest record creation.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Device fingerprint or client-generated identifier that uniquely identifies the unauthenticated visitor. Used to correlate guest activity across sessions before account creation or login.
      *
-     * @x-autobe-database-schema-property fingerprint
-     * @x-autobe-specification Direct mapping from erp_hrm_guests.fingerprint. Unique NOT NULL string. Used to correlate the unauthenticated visitor across pre-authentication sessions.
+         * @x-autobe-database-schema-property fingerprint
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_guests.fingerprint. Unique NOT NULL string. Used to
+         *   correlate the unauthenticated visitor across pre-authentication
+         *   sessions.
      */
     fingerprint: string;
 
     /**
      * Timestamp indicating when the guest record was first created. ISO 8601 date-time string in UTC.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from erp_hrm_guests.created_at (Timestamptz NOT NULL). Represents the moment the guest record was first persisted in the database.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from erp_hrm_guests.created_at
+         *   (Timestamptz NOT NULL). Represents the moment the guest record was
+         *   first persisted in the database.
      */
     createdAt: string & tags.Format<"date-time">;
   };

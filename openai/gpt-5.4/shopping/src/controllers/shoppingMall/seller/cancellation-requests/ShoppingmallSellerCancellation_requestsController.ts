@@ -25,9 +25,13 @@ export class ShoppingmallSellerCancellation_requestsController {
    * @param connection
    * @param cancellationRequestId Target cancellation request identifier
    * @param body Updated review and status information for the cancellation request
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Load the target shopping_mall_cancellation_requests row by id where deleted_at is null. Join or subsequently load the related shopping_mall_order_items row, its shopping_mall_seller_id, and the parent shopping_mall_orders row if needed for contextual validation.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Load the target
+     *   shopping_mall_cancellation_requests row by id where deleted_at is null.
+     *   Join or subsequently load the related shopping_mall_order_items row,
+     *   its shopping_mall_seller_id, and the parent shopping_mall_orders row if
+     *   needed for contextual validation.
    *
    * Authorize based on actor type. If the caller is a seller, verify the linked order item's shopping_mall_seller_id matches the authenticated seller id. If the caller is an administrator or super administrator, allow oversight update. Reject customer and unauthenticated callers.
    *

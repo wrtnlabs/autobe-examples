@@ -26,17 +26,21 @@ import { IPageICommunityPlatformCommunity } from "../../../structures/IPageIComm
  * @param props.communityId Target community identifier. This value selects exactly one community record by its primary key (UUID).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Implementation steps:
- * 1) Parse communityId from path and treat it as UUID.
- * 2) Load the community record from community_platform_communities where id = communityId.
- *    - Apply the platform’s browsing availability rule for deleted records by excluding rows with deleted_at set (consistent with the listing/search requirements).
- * 3) Compute subscriber count:
- *    - Count rows in community_platform_community_subscriptions where community_id = communityId.
- *    - Restrict to active subscriptions using is_active = true.
- *    - Subscriber count must be computed efficiently (single aggregate query).
- * 4) Error resilience for subscriber count:
- *    - If the aggregate query fails or returns unavailable results, still return the community identity fields, and set subscriber count to whatever representation the response DTO supports for “unavailable” (implementation must not block the entire operation).
- * 5) Build and return the response DTO type ICommunityPlatformCommunity.
+ * @x-autobe-specification Implementation steps: 1) Parse communityId from path
+ *   and treat it as UUID. 2) Load the community record from
+ *   community_platform_communities where id = communityId. - Apply the
+ *   platform’s browsing availability rule for deleted records by excluding rows
+ *   with deleted_at set (consistent with the listing/search requirements). 3)
+ *   Compute subscriber count: - Count rows in
+ *   community_platform_community_subscriptions where community_id =
+ *   communityId. - Restrict to active subscriptions using is_active = true. -
+ *   Subscriber count must be computed efficiently (single aggregate query). 4)
+ *   Error resilience for subscriber count: - If the aggregate query fails or
+ *   returns unavailable results, still return the community identity fields,
+ *   and set subscriber count to whatever representation the response DTO
+ *   supports for “unavailable” (implementation must not block the entire
+ *   operation). 5) Build and return the response DTO type
+ *   ICommunityPlatformCommunity.
  *
  * Database interaction:
  * - One query for the community record.
@@ -138,7 +142,8 @@ export namespace at {
  * @param props.body Fields to update for the community’s public identity used in discovery and browsing.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Implement PUT /communities/{communityId} by performing a transactional update on community_platform_communities.
+ * @x-autobe-specification Implement PUT /communities/{communityId} by
+ *   performing a transactional update on community_platform_communities.
  *
  * 1) Input handling
  * - Read {communityId} from path.
@@ -273,25 +278,25 @@ export namespace updateCommunity {
  * @param props.communityId Target community identifier (UUID). This value maps to community_platform_communities.id.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Implementation steps:
- * 1. Parse path parameter communityId (UUID).
- * 2. Authorization:
- *    - Determine the caller’s actor type (guest/member/admin) and permissions.
- *    - Allow community removal only for callers with sufficient authority for community-level actions.
- *    - If the caller is not authorized (including ownership/role constraints), reject the request.
- * 3. Load community_platform_communities by id=communityId.
- *    - If not found, reject with a not-found style error.
- * 4. Removal behavior:
- *    - Apply the removal semantics consistent with community_platform_communities.deleted_at (treat as removed for normal browsing/search).
- *    - Update deleted_at to current timestamp (and update updated_at if your implementation requires it), or physically remove the row only if the project’s data policy specifies physical deletion.
- *    - Ensure any uniqueness constraints (name) are not violated unexpectedly by the chosen removal strategy.
- * 5. Post-conditions:
- *    - Ensure subsequent community list/search/detail queries exclude the removed record.
- *    - Ensure related UI components that rely on community details do not display removed community information.
- * 6. Transactionality:
- *    - Perform the update/removal in a single transaction.
- * 7. Error handling:
- *    - Handle database errors (e.g., concurrency) and authorization failures distinctly.
+ * @x-autobe-specification Implementation steps: 1. Parse path parameter
+ *   communityId (UUID). 2. Authorization: - Determine the caller’s actor type
+ *   (guest/member/admin) and permissions. - Allow community removal only for
+ *   callers with sufficient authority for community-level actions. - If the
+ *   caller is not authorized (including ownership/role constraints), reject the
+ *   request. 3. Load community_platform_communities by id=communityId. - If not
+ *   found, reject with a not-found style error. 4. Removal behavior: - Apply
+ *   the removal semantics consistent with
+ *   community_platform_communities.deleted_at (treat as removed for normal
+ *   browsing/search). - Update deleted_at to current timestamp (and update
+ *   updated_at if your implementation requires it), or physically remove the
+ *   row only if the project’s data policy specifies physical deletion. - Ensure
+ *   any uniqueness constraints (name) are not violated unexpectedly by the
+ *   chosen removal strategy. 5. Post-conditions: - Ensure subsequent community
+ *   list/search/detail queries exclude the removed record. - Ensure related UI
+ *   components that rely on community details do not display removed community
+ *   information. 6. Transactionality: - Perform the update/removal in a single
+ *   transaction. 7. Error handling: - Handle database errors (e.g.,
+ *   concurrency) and authorization failures distinctly.
  *
  * No request body is required.
  * @path /communityPlatform/communities/:communityId
@@ -386,7 +391,8 @@ export namespace erase {
  * @param props.body Community creation payload. Clients provide the community’s unique display name, descriptive text, and icon reference. Ownership is assigned from the authenticated user identity.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Implement community creation as a single transaction that inserts into `community_platform_communities`.
+ * @x-autobe-specification Implement community creation as a single transaction
+ *   that inserts into `community_platform_communities`.
  *
  * Algorithm / service-layer steps:
  * 1) Authorization: require an authenticated member (or admin). If unauthenticated, deny.
@@ -514,7 +520,8 @@ export namespace create {
  * @param props.body Search and pagination criteria for communities discovery and name-based search.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Implement as a community discovery/search list endpoint.
+ * @x-autobe-specification Implement as a community discovery/search list
+ *   endpoint.
  *
  * 1) Input parsing (request body)
  * - Read pagination controls (page size / cursor offset) and optional name-search criteria from `ICommunityPlatformCommunities.IRequest`.

@@ -22,7 +22,8 @@ import { IPageICommunityPlatformMemberPasswordReset } from "../../../../structur
  * @param props.body Search criteria and pagination options for member password reset records.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Implement a paginated search over community_platform_member_password_resets.
+ * @x-autobe-specification Implement a paginated search over
+ *   community_platform_member_password_resets.
  *
  * Accept filter criteria in the request body for member-scoped and admin-scoped lookup, including account identity constraints and any lifecycle fields that exist in the actual schema. Apply authorization before query execution: members may only query their own recovery records, while admins may query across all records. Do not expose token secrets, hashes, or full reset links in the response payload.
  *
@@ -120,7 +121,9 @@ export namespace index {
  * @param props.resetId Unique password reset token identifier.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Implement a direct lookup against community_platform_member_password_resets using the unique token value represented by resetId.
+ * @x-autobe-specification Implement a direct lookup against
+ *   community_platform_member_password_resets using the unique token value
+ *   represented by resetId.
  *
  * Validate that resetId is present and treat it as the reset token lookup key. Query by token, not by primary key, because the schema defines a unique token constraint and the public reset link is token-based. Return the row with id, community_platform_member_id, token, created_at, expired_at, used_at, and revoked_at so the caller can determine token validity.
  *

@@ -26,16 +26,19 @@ export class EcommercemallCustomerOrder_itemsCan_write_reviewController {
    *
    * @param connection
    * @param orderItemId Order item identifier (UUID format). Represents a specific purchased product variant within a customer order.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification 1. Extract orderItemId from path parameter (UUID format)
-   * 2. Authenticate the customer and extract customer_id from session/token
-   * 3. Query ecommerce_mall_order_items table where id = orderItemId
-   * 4. Check ownership: order_item.customer_id must match authenticated customer_id - return unauthorized error if mismatch
-   * 5. Check if order_item.status = 'delivered' - if not, return { eligible: false, reason: 'ITEM_NOT_DELIVERED' }
-   * 6. Check if a review exists: query ecommerce_mall_reviews where order_item_id = orderItemId
-   * 7. If review exists, return { eligible: false, reason: 'REVIEW_ALREADY_EXISTS' }
-   * 8. If all checks pass, return { eligible: true }
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification 1. Extract orderItemId from path parameter (UUID
+     *   format) 2. Authenticate the customer and extract customer_id from
+     *   session/token 3. Query ecommerce_mall_order_items table where id =
+     *   orderItemId 4. Check ownership: order_item.customer_id must match
+     *   authenticated customer_id - return unauthorized error if mismatch 5.
+     *   Check if order_item.status = 'delivered' - if not, return { eligible:
+     *   false, reason: 'ITEM_NOT_DELIVERED' } 6. Check if a review exists:
+     *   query ecommerce_mall_reviews where order_item_id = orderItemId 7. If
+     *   review exists, return { eligible: false, reason:
+     *   'REVIEW_ALREADY_EXISTS' } 8. If all checks pass, return { eligible:
+     *   true }
    *
    * Security: Verify customer ownership of the order item before returning any information. Log access attempts for audit purposes.
    *

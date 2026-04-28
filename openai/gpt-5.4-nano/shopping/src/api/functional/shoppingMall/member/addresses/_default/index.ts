@@ -24,9 +24,9 @@ import { IShoppingMallAddress } from "../../../../../structures/IShoppingMallAdd
  * @param props.connection
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification 1) Authorization & actor scope
- * - Require an authenticated member session for a customer.
- * - Resolve the authenticated customer identity to `shopping_mall_members.id`.
+ * @x-autobe-specification 1) Authorization & actor scope - Require an
+ *   authenticated member session for a customer. - Resolve the authenticated
+ *   customer identity to `shopping_mall_members.id`.
  *
  * 2) Query construction
  * - Query `shopping_mall_addresses` for a single row where:

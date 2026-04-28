@@ -18,9 +18,10 @@ export class ShoppingmallCustomersController {
    *
    * @param connection
    * @param body Search criteria including email filter, banned status, registration date ranges, sorting options, and pagination parameters.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query the shopping_mall_customers table with pagination and filtering capabilities.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query the shopping_mall_customers table with
+     *   pagination and filtering capabilities.
    *
    * Filtering Logic:
    * - Apply email filter using LIKE query for partial matching
@@ -71,9 +72,13 @@ export class ShoppingmallCustomersController {
    *
    * @param connection
    * @param customerId Unique identifier of the customer account (global scope)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query the shopping_mall_customers table for the customer record matching the provided customerId UUID. Perform a LEFT JOIN with shopping_mall_customer_profiles on shopping_mall_customer_id to include profile data. Return the complete customer object with nested profile information.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query the shopping_mall_customers table for the
+     *   customer record matching the provided customerId UUID. Perform a LEFT
+     *   JOIN with shopping_mall_customer_profiles on shopping_mall_customer_id
+     *   to include profile data. Return the complete customer object with
+     *   nested profile information.
    *
    * Validation: Verify the customerId is a valid UUID format. Check if the customer record exists - return 404 if not found. If the customer has deleted_at set (soft deleted), still return the record but mark as deleted.
    *

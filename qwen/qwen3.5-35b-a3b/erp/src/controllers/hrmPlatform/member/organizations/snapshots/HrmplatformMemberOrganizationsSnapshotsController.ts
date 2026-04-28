@@ -22,9 +22,10 @@ export class HrmplatformMemberOrganizationsSnapshotsController {
    * @param connection
    * @param organizationId Unique identifier of the organization to create a snapshot for (global scope)
    * @param body Configuration data to capture in the organization snapshot. Includes organization name, description, branding, financial settings, and status. All fields except metadata are required.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Create a new organization snapshot record with the provided configuration.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Create a new organization snapshot record with
+     *   the provided configuration.
    *
    * Validation:
    * 1. Verify organizationId exists in hrm_platform_organizations table
@@ -79,9 +80,10 @@ export class HrmplatformMemberOrganizationsSnapshotsController {
    * @param connection
    * @param organizationId UUID of the organization whose snapshots to retrieve.
    * @param body Search criteria including date range filters, status filter, name search, and pagination parameters.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query hrm_platform_organizations_snapshots table filtered by hrm_platform_organization_id = organizationId.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query hrm_platform_organizations_snapshots table
+     *   filtered by hrm_platform_organization_id = organizationId.
    *
    * Apply pagination with cursor-based or offset-based approach.
    * Apply search filters: created_at date range, name search, status filter.
@@ -125,9 +127,11 @@ export class HrmplatformMemberOrganizationsSnapshotsController {
    * @param connection
    * @param organizationId Unique identifier of the parent organization
    * @param snapshotId Unique identifier of the snapshot to retrieve
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query hrm_platform_organizations_snapshots table for the snapshot with matching ID and verify it belongs to the specified organization.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query hrm_platform_organizations_snapshots table
+     *   for the snapshot with matching ID and verify it belongs to the
+     *   specified organization.
    *
    * 1. Fetch snapshot record where id = snapshotId AND hrm_platform_organization_id = organizationId
    * 2. Return the full snapshot entity if found

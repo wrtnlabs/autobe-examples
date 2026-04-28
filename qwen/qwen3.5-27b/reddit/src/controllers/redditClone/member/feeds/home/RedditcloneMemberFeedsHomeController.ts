@@ -19,9 +19,10 @@ export class RedditcloneMemberFeedsHomeController {
    *
    * @param connection
    * @param body Search and pagination criteria for the home feed including sorting option (hot, new, top, controversial), time filter for top sorting (today, this week, this month, this year, all time), page number, and page size.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query reddit_clone_posts table with the following logic:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query reddit_clone_posts table with the following
+     *   logic:
    *
    * 1. Filter posts by authenticated user's subscriptions:
    *    - Join reddit_clone_posts with reddit_clone_community_subscriptions on community_id

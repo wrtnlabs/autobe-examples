@@ -20,7 +20,12 @@ export namespace IECommerceMallGuest {
      *
      * If a guest record already exists for the given device_identifier, the existing guest is reused with a new session. Otherwise, a new guest record is created.
      *
-     * @x-autobe-specification Maps to e_commerce_mall_guests.device_identifier column. Used to find existing guest record (where deleted_at IS NULL) or create a new one. Unique constraint on device_identifier prevents duplicate guest records. Client-side fingerprinting technique collects this value.
+         * @x-autobe-specification Maps to
+         *   e_commerce_mall_guests.device_identifier column. Used to find
+         *   existing guest record (where deleted_at IS NULL) or create a new
+         *   one. Unique constraint on device_identifier prevents duplicate
+         *   guest records. Client-side fingerprinting technique collects this
+         *   value.
      */
     device_identifier: string;
 
@@ -29,7 +34,10 @@ export namespace IECommerceMallGuest {
      *
      * Captures the navigation context for session tracking and analytics purposes. Limited to login and registration pages per the guest actor restrictions — guests cannot access any other platform pages.
      *
-     * @x-autobe-specification Maps to e_commerce_mall_guest_sessions.href column. Stores the current page URL the guest is accessing within the authentication boundary. Used during session creation alongside server-captured session metadata.
+         * @x-autobe-specification Maps to e_commerce_mall_guest_sessions.href
+         *   column. Stores the current page URL the guest is accessing within
+         *   the authentication boundary. Used during session creation alongside
+         *   server-captured session metadata.
      */
     href: string & tags.Format<"uri">;
 
@@ -38,7 +46,10 @@ export namespace IECommerceMallGuest {
      *
      * Used for navigation flow tracking and analytics within the authentication boundary. Helps identify how guests arrive at login and registration pages.
      *
-     * @x-autobe-specification Maps to e_commerce_mall_guest_sessions.referrer column. Stores the HTTP Referrer header value indicating the previous page URL. Used during session creation for navigation flow tracking.
+         * @x-autobe-specification Maps to
+         *   e_commerce_mall_guest_sessions.referrer column. Stores the HTTP
+         *   Referrer header value indicating the previous page URL. Used during
+         *   session creation for navigation flow tracking.
      */
     referrer: string & tags.Format<"uri">;
 
@@ -47,7 +58,12 @@ export namespace IECommerceMallGuest {
      *
      * Typically captured automatically by the server from the HTTP request context. In server-side rendering (SSR) scenarios where the server cannot determine the true client IP, the client may explicitly provide this value. Used for security monitoring, rate limiting, and audit purposes.
      *
-     * @x-autobe-specification Maps to e_commerce_mall_guest_sessions.ip column. IP address is captured server-side from the HTTP request context by default. In SSR (Server-Side Rendering) scenarios, the client may explicitly provide this value as a fallback when the server cannot determine the true client IP (e.g., behind a proxy). The specification uses: body.ip ?? serverCapturedIp.
+         * @x-autobe-specification Maps to e_commerce_mall_guest_sessions.ip
+         *   column. IP address is captured server-side from the HTTP request
+         *   context by default. In SSR (Server-Side Rendering) scenarios, the
+         *   client may explicitly provide this value as a fallback when the
+         *   server cannot determine the true client IP (e.g., behind a proxy).
+         *   The specification uses: body.ip ?? serverCapturedIp.
      */
     ip?: (string & tags.Format<"ipv4">) | undefined;
   };
@@ -63,7 +79,13 @@ export namespace IECommerceMallGuest {
      *
      * Used for token rotation to obtain a new session with updated access and refresh tokens. The old session associated with this refresh token is invalidated upon successful rotation, and a new session is created with a fresh expiration timestamp. If a previously rotated refresh token is presented (reuse detection), all active sessions for that guest should be invalidated as a precaution against token theft.
      *
-     * @x-autobe-specification JWT refresh token issued during a previous guest join or successful refresh operation. Used for token rotation: the existing session associated with this token is invalidated, and a new session with fresh tokens is created. No direct DB column — the token is a computed JWT whose payload contains claims linking back to the guest session record for validation purposes.
+         * @x-autobe-specification JWT refresh token issued during a previous
+         *   guest join or successful refresh operation. Used for token
+         *   rotation: the existing session associated with this token is
+         *   invalidated, and a new session with fresh tokens is created. No
+         *   direct DB column — the token is a computed JWT whose payload
+         *   contains claims linking back to the guest session record for
+         *   validation purposes.
      */
     refreshToken: string;
 
@@ -72,7 +94,10 @@ export namespace IECommerceMallGuest {
      *
      * Used for session context tracking and analytics. Captures the current page context for accurate session metadata on each refresh operation. This value is stored in the new session record created during refresh.
      *
-     * @x-autobe-specification Carries the guest's current page URL within the authentication boundary. This value from the request body is stored in the e_commerce_mall_guest_sessions.href column of the new session record created during the refresh operation.
+         * @x-autobe-specification Carries the guest's current page URL within
+         *   the authentication boundary. This value from the request body is
+         *   stored in the e_commerce_mall_guest_sessions.href column of the new
+         *   session record created during the refresh operation.
      */
     href: string & tags.Format<"uri">;
 
@@ -81,7 +106,10 @@ export namespace IECommerceMallGuest {
      *
      * Used for navigation flow tracking and analytics within the authentication boundary. This value is stored in the new session record created during refresh to maintain accurate session context.
      *
-     * @x-autobe-specification Carries the HTTP Referrer header value. This value from the request body is stored in the e_commerce_mall_guest_sessions.referrer column of the new session record created during the refresh operation.
+         * @x-autobe-specification Carries the HTTP Referrer header value. This
+         *   value from the request body is stored in the
+         *   e_commerce_mall_guest_sessions.referrer column of the new session
+         *   record created during the refresh operation.
      */
     referrer: string & tags.Format<"uri">;
   };
@@ -99,14 +127,20 @@ export namespace IECommerceMallGuest {
      *
      * This UUID maps to the primary key of the guest record in e_commerce_mall_guests, identified during registration or session refresh. It identifies the guest across their sessions on the platform and is associated with the device fingerprint used for guest recognition. This is the guest's permanent identity UUID, distinct from any session-level identifiers.
      *
-     * @x-autobe-specification Direct mapping from e_commerce_mall_guests.id. Retrieved during guest registration (join) which creates or reuses the guest record, or during session refresh which returns the same guest ID. This is the guest's identity UUID, distinct from any session-level IDs in e_commerce_mall_guest_sessions.
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_guests.id. Retrieved during guest registration
+         *   (join) which creates or reuses the guest record, or during session
+         *   refresh which returns the same guest ID. This is the guest's
+         *   identity UUID, distinct from any session-level IDs in
+         *   e_commerce_mall_guest_sessions.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Authorization token.
      *
-     * @x-autobe-specification Authorization token comes from the session table.
+         * @x-autobe-specification Authorization token comes from the session
+         *   table.
      */
     token: IAuthorizationToken;
   };

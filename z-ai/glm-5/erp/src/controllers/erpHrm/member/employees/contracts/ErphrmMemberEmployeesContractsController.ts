@@ -27,9 +27,10 @@ export class ErphrmMemberEmployeesContractsController {
    * @param connection
    * @param employeeId Unique identifier of the employee to create the contract for. Must exist within the current organization context.
    * @param body Contract creation data including start date, compensation details, and working hours.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Create a new employment contract for the specified employee.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Create a new employment contract for the
+     *   specified employee.
    *
    * 1. Validate the requesting user has employee:manage permission in the current organization context.
    * 2. Validate the employeeId exists and belongs to the current organization.
@@ -98,9 +99,10 @@ export class ErphrmMemberEmployeesContractsController {
    * @param connection
    * @param employeeId Target employee's unique identifier (UUID format)
    * @param body Search criteria and pagination parameters for filtering contracts
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query erp_hrm_contracts table filtered by erp_hrm_employee_id matching the path parameter.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query erp_hrm_contracts table filtered by
+     *   erp_hrm_employee_id matching the path parameter.
    *
    * Authorization checks:
    * 1. Verify the requesting member has an active employee record in the same organization
@@ -157,9 +159,9 @@ export class ErphrmMemberEmployeesContractsController {
    * @param connection
    * @param employeeId The unique identifier of the employee whose contract is being retrieved (UUID format, scoped to current organization)
    * @param contractId The unique identifier of the contract to retrieve (UUID format, must belong to the specified employee)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Retrieve a specific contract record by ID.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Retrieve a specific contract record by ID.
    *
    * Implementation steps:
    * 1. Verify the employeeId exists and belongs to the current organization context (from JWT session)
@@ -230,9 +232,10 @@ export class ErphrmMemberEmployeesContractsController {
    * @param employeeId The UUID of the employee whose contract is being updated. The employee must belong to the current organization context.
    * @param contractId The UUID of the contract to update. The contract must belong to the specified employee and must be active (start_date passed, end_date null or future).
    * @param body Contract update details. Only active contracts can be modified. The start_date field is immutable and cannot be changed.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Update an existing employment contract for an employee.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Update an existing employment contract for an
+     *   employee.
    *
    * ## Validation Steps
    * 1. Verify user has employee:manage permission in the organization

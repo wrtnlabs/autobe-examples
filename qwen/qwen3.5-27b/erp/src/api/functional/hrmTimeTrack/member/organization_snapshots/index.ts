@@ -20,7 +20,8 @@ import { IPageIHrmTimeTrackOrganizationSnapshot } from "../../../../structures/I
  * @param props.body Search criteria for organization snapshots including filters for date range, organization, name, currency, and pagination parameters.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query hrm_time_track_organization_snapshots table with pagination and filtering.
+ * @x-autobe-specification Query hrm_time_track_organization_snapshots table
+ *   with pagination and filtering.
  *
  * 1. Apply organization context scoping - only return snapshots for the current organization in the user's session context.
  *
@@ -131,7 +132,8 @@ export namespace index {
  * @param props.snapshotId Unique identifier of the organization snapshot to retrieve (global scope).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query the hrm_time_track_organization_snapshots table by the snapshot ID (primary key).
+ * @x-autobe-specification Query the hrm_time_track_organization_snapshots table
+ *   by the snapshot ID (primary key).
  *
  * Verify that the requesting user has access to the parent organization referenced by hrm_time_track_organization_id. The user must be a member of that organization.
  *

@@ -8,40 +8,56 @@ export type IShoppingMallProductSnapshotSkusOption = {
   /**
    * The unique identifier of this product snapshot SKU option record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_product_snapshot_skus_options.id (UUID, primary key). Used as the unique identifier for point-lookups on this option record.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_product_snapshot_skus_options.id (UUID, primary key).
+     *   Used as the unique identifier for point-lookups on this option record.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * The unique identifier of the parent product snapshot SKU record that owns this option. All options sharing this value together form the complete variant configuration captured at snapshot time.
    *
-   * @x-autobe-database-schema-property product_snapshot_skus_id
-   * @x-autobe-specification Direct mapping from shopping_mall_product_snapshot_skus_options.product_snapshot_skus_id (UUID, FK → shopping_mall_product_snapshot_skuses.id). Must equal the skuId path parameter when validating the request hierarchy.
+     * @x-autobe-database-schema-property product_snapshot_skus_id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_product_snapshot_skus_options.product_snapshot_skus_id
+     *   (UUID, FK → shopping_mall_product_snapshot_skuses.id). Must equal the
+     *   skuId path parameter when validating the request hierarchy.
    */
   product_snapshot_skus_id: string & tags.Format<"uuid">;
 
   /**
    * The display order of this option within the parent snapshot SKU's full option combination. Lower values appear first. Ensures the complete variant configuration is always presented in a consistent, deterministic sequence.
    *
-   * @x-autobe-database-schema-property sequence
-   * @x-autobe-specification Direct mapping from shopping_mall_product_snapshot_skus_options.sequence (integer ≥ 0). Lower values appear first. Used to consistently reconstruct and present the variant's full option combination in its original display order.
+     * @x-autobe-database-schema-property sequence
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_product_snapshot_skus_options.sequence (integer ≥ 0).
+     *   Lower values appear first. Used to consistently reconstruct and present
+     *   the variant's full option combination in its original display order.
    */
   sequence: number & tags.Type<"int32"> & tags.Minimum<0>;
 
   /**
    * The option dimension name as captured at snapshot time — for example, `'color'`, `'size'`, or `'material'`. Represents the attribute category that this option entry describes within the variant's full configuration.
    *
-   * @x-autobe-database-schema-property key
-   * @x-autobe-specification Direct mapping from shopping_mall_product_snapshot_skus_options.key (string). Represents the attribute category name as it existed at snapshot time — e.g., 'color', 'size', 'material'. The value is preserved verbatim and never modified after creation.
+     * @x-autobe-database-schema-property key
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_product_snapshot_skus_options.key (string). Represents
+     *   the attribute category name as it existed at snapshot time — e.g.,
+     *   'color', 'size', 'material'. The value is preserved verbatim and never
+     *   modified after creation.
    */
   key: string;
 
   /**
    * The option dimension value as captured at snapshot time — for example, `'red'`, `'XL'`, or `'cotton'`. Represents the specific attribute value that was selected for the variant when this snapshot was created.
    *
-   * @x-autobe-database-schema-property value
-   * @x-autobe-specification Direct mapping from shopping_mall_product_snapshot_skus_options.value (string). Represents the specific attribute value selected for the variant at snapshot time — e.g., 'red', 'XL', 'cotton'. The value is preserved verbatim and never modified after creation.
+     * @x-autobe-database-schema-property value
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_product_snapshot_skus_options.value (string). Represents
+     *   the specific attribute value selected for the variant at snapshot time
+     *   — e.g., 'red', 'XL', 'cotton'. The value is preserved verbatim and
+     *   never modified after creation.
    */
   value: string;
 };
@@ -53,28 +69,50 @@ export namespace IShoppingMallProductSnapshotSkusOption {
     /**
      * Optional search keyword to filter option entries by their dimension name (e.g., 'color', 'size', 'material'). Supports partial text matching — entering 'col' will match option entries with key 'color'. When omitted, no filtering is applied on the option dimension name.
      *
-     * @x-autobe-specification Optional partial-text filter targeting the `key` column of shopping_mall_product_snapshot_skus_options. Applied as ILIKE / trigram partial match (GIN index on `key` column is available). When provided, only records whose `key` value contains the given substring (case-insensitive) are returned. When omitted, no filter is applied on the option dimension name. The `product_snapshot_skus_id` scope comes from the `skuId` path parameter and is applied separately server-side.
+         * @x-autobe-specification Optional partial-text filter targeting the
+         *   `key` column of shopping_mall_product_snapshot_skus_options.
+         *   Applied as ILIKE / trigram partial match (GIN index on `key` column
+         *   is available). When provided, only records whose `key` value
+         *   contains the given substring (case-insensitive) are returned. When
+         *   omitted, no filter is applied on the option dimension name. The
+         *   `product_snapshot_skus_id` scope comes from the `skuId` path
+         *   parameter and is applied separately server-side.
      */
     key?: string | undefined;
 
     /**
      * Optional search keyword to filter option entries by their dimension value (e.g., 'red', 'XL', 'cotton'). Supports partial text matching — entering 'XL' will match option entries with value 'XL'. When omitted, no filtering is applied on the option dimension value.
      *
-     * @x-autobe-specification Optional partial-text filter targeting the `value` column of shopping_mall_product_snapshot_skus_options. Applied as ILIKE / trigram partial match (GIN index on `value` column is available). When provided, only records whose `value` contains the given substring (case-insensitive) are returned. When omitted, no filter is applied on the option dimension value. The `product_snapshot_skus_id` scope comes from the `skuId` path parameter and is applied separately server-side.
+         * @x-autobe-specification Optional partial-text filter targeting the
+         *   `value` column of shopping_mall_product_snapshot_skus_options.
+         *   Applied as ILIKE / trigram partial match (GIN index on `value`
+         *   column is available). When provided, only records whose `value`
+         *   contains the given substring (case-insensitive) are returned. When
+         *   omitted, no filter is applied on the option dimension value. The
+         *   `product_snapshot_skus_id` scope comes from the `skuId` path
+         *   parameter and is applied separately server-side.
      */
     value?: string | undefined;
 
     /**
      * The 1-based page number to retrieve. Defaults to the first page when omitted. Use in combination with `limit` to navigate through large result sets.
      *
-     * @x-autobe-specification 1-based page index for pagination against shopping_mall_product_snapshot_skus_options results. Determines which page of results to return. Defaults to 1 if omitted. Applied as OFFSET ((page - 1) * limit) in the SQL query after filtering by key/value and ordering by sequence ASC.
+         * @x-autobe-specification 1-based page index for pagination against
+         *   shopping_mall_product_snapshot_skus_options results. Determines
+         *   which page of results to return. Defaults to 1 if omitted. Applied
+         *   as OFFSET ((page - 1) * limit) in the SQL query after filtering by
+         *   key/value and ordering by sequence ASC.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of option records to return per page. When omitted, a server-defined default page size is used. Use in combination with `page` to control result set pagination.
      *
-     * @x-autobe-specification Maximum number of shopping_mall_product_snapshot_skus_options records to return per page. Applied as LIMIT in the SQL query. When omitted, an implementation-defined default (e.g., 20) is used. Must be a positive integer (minimum 1).
+         * @x-autobe-specification Maximum number of
+         *   shopping_mall_product_snapshot_skus_options records to return per
+         *   page. Applied as LIMIT in the SQL query. When omitted, an
+         *   implementation-defined default (e.g., 20) is used. Must be a
+         *   positive integer (minimum 1).
      */
     limit?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
   };
@@ -86,40 +124,55 @@ export namespace IShoppingMallProductSnapshotSkusOption {
     /**
      * Unique identifier of this product snapshot SKU option record.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_product_snapshot_skus_options.id. UUID primary key, auto-generated at record creation time.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_snapshot_skus_options.id. UUID primary key,
+         *   auto-generated at record creation time.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * The unique identifier of the parent product snapshot SKU record that this option belongs to.
      *
-     * @x-autobe-database-schema-property product_snapshot_skus_id
-     * @x-autobe-specification Direct mapping from shopping_mall_product_snapshot_skus_options.product_snapshot_skus_id. FK referencing shopping_mall_product_snapshot_skuses.id. Used to filter all options belonging to a given snapshot SKU.
+         * @x-autobe-database-schema-property product_snapshot_skus_id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_snapshot_skus_options.product_snapshot_skus_id.
+         *   FK referencing shopping_mall_product_snapshot_skuses.id. Used to
+         *   filter all options belonging to a given snapshot SKU.
      */
     product_snapshot_skus_id: string & tags.Format<"uuid">;
 
     /**
      * Display order of this option within the parent snapshot SKU's full option combination. Lower values appear first.
      *
-     * @x-autobe-database-schema-property sequence
-     * @x-autobe-specification Direct mapping from shopping_mall_product_snapshot_skus_options.sequence. Non-negative integer. Lower values appear first. Used to consistently reconstruct and present the variant's option set in the correct order. Default sort order is ASC by this field.
+         * @x-autobe-database-schema-property sequence
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_snapshot_skus_options.sequence. Non-negative
+         *   integer. Lower values appear first. Used to consistently
+         *   reconstruct and present the variant's option set in the correct
+         *   order. Default sort order is ASC by this field.
      */
     sequence: number & tags.Type<"int32"> & tags.Minimum<0>;
 
     /**
      * The option dimension name as it existed at snapshot time (e.g., 'color', 'size', 'material').
      *
-     * @x-autobe-database-schema-property key
-     * @x-autobe-specification Direct mapping from shopping_mall_product_snapshot_skus_options.key. Stores the option attribute category name as captured at snapshot time (e.g., 'color', 'size', 'material'). Immutable after creation.
+         * @x-autobe-database-schema-property key
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_snapshot_skus_options.key. Stores the option
+         *   attribute category name as captured at snapshot time (e.g.,
+         *   'color', 'size', 'material'). Immutable after creation.
      */
     key: string;
 
     /**
      * The option dimension value as it existed at snapshot time (e.g., 'red', 'XL', 'cotton').
      *
-     * @x-autobe-database-schema-property value
-     * @x-autobe-specification Direct mapping from shopping_mall_product_snapshot_skus_options.value. Stores the specific attribute value selected for this variant at snapshot time (e.g., 'red', 'XL', 'cotton'). Immutable after creation.
+         * @x-autobe-database-schema-property value
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_snapshot_skus_options.value. Stores the
+         *   specific attribute value selected for this variant at snapshot time
+         *   (e.g., 'red', 'XL', 'cotton'). Immutable after creation.
      */
     value: string;
   };

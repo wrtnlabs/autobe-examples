@@ -28,7 +28,10 @@ export type IHrmEmployeeAnalyticIDepartmentBreakdown = {
    *
    * A null value indicates employees who are not assigned to any department within the organization. These employees are grouped together in a single 'Unassigned' category.
    *
-   * @x-autobe-specification Department identifier from the aggregation GROUP BY clause. Derived from hrm_employees.department_id column. Null value represents the 'Unassigned' category for employees without department assignment.
+     * @x-autobe-specification Department identifier from the aggregation GROUP
+     *   BY clause. Derived from hrm_employees.department_id column. Null value
+     *   represents the 'Unassigned' category for employees without department
+     *   assignment.
    */
   department_id: (string & tags.Format<"uuid">) | null;
 
@@ -41,7 +44,9 @@ export type IHrmEmployeeAnalyticIDepartmentBreakdown = {
    *
    * This field provides a human-readable label for the department in analytics dashboards and reports, eliminating the need for additional lookups when displaying department breakdown data.
    *
-   * @x-autobe-specification Department display name computed from hrm_departments.name when department_id is not null, or the literal string 'Unassigned' when department_id is null.
+     * @x-autobe-specification Department display name computed from
+     *   hrm_departments.name when department_id is not null, or the literal
+     *   string 'Unassigned' when department_id is null.
    */
   department_name: string;
 
@@ -54,7 +59,9 @@ export type IHrmEmployeeAnalyticIDepartmentBreakdown = {
    *
    * The count is always at least 1 since departments with zero employees matching the filter criteria are omitted from the breakdown array entirely. This ensures the array only contains departments with actual employee assignments.
    *
-   * @x-autobe-specification Employee count computed via COUNT(*) aggregation for the department group. Minimum value is 1 since empty departments are omitted from the result array.
+     * @x-autobe-specification Employee count computed via COUNT(*) aggregation
+     *   for the department group. Minimum value is 1 since empty departments
+     *   are omitted from the result array.
    */
   count: number & tags.Type<"int32"> & tags.Minimum<1>;
 };

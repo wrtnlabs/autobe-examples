@@ -16,8 +16,10 @@ export type IHrmTimeTrackingRolePermission = {
    *
    * System-generated UUID assigned automatically when the permission is assigned to the role.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_role_permissions.id. System-generated UUID primary key, auto-assigned on creation.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_role_permissions.id. System-generated UUID primary
+     *   key, auto-assigned on creation.
    */
   id: string & tags.Format<"uuid">;
 
@@ -26,8 +28,12 @@ export type IHrmTimeTrackingRolePermission = {
    *
    * Must be one of the nine valid system permission codes: org:manage, employee:manage, employee:view, project:manage, project:view, time:manage, time:approve, time:view_all, or report:view. The composite unique constraint with the role ensures no duplicate permission assignments within the same role.
    *
-   * @x-autobe-database-schema-property permission_code
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_role_permissions.permission_code. Must be one of 9 fixed values: org:manage, employee:manage, employee:view, project:manage, project:view, time:manage, time:approve, time:view_all, report:view.
+     * @x-autobe-database-schema-property permission_code
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_role_permissions.permission_code. Must be one of 9
+     *   fixed values: org:manage, employee:manage, employee:view,
+     *   project:manage, project:view, time:manage, time:approve, time:view_all,
+     *   report:view.
    */
   permission_code: string;
 
@@ -36,8 +42,12 @@ export type IHrmTimeTrackingRolePermission = {
    *
    * Provides the role's summary information including its unique identifier, display name, type classification (built_in or custom), creation and update timestamps, employee count, and parent organization reference. The role context determines whether the permission set can be modified — built-in roles have immutable permission sets.
    *
-   * @x-autobe-database-schema-property role
-   * @x-autobe-specification Belongs-to relation: JOIN from hrm_time_tracking_role_permissions.hrm_time_tracking_role_id to hrm_time_tracking_roles.id. Returns IHrmTimeTrackingRole.ISummary containing the role's id, name, type, timestamps, employee count, and parent organization summary.
+     * @x-autobe-database-schema-property role
+     * @x-autobe-specification Belongs-to relation: JOIN from
+     *   hrm_time_tracking_role_permissions.hrm_time_tracking_role_id to
+     *   hrm_time_tracking_roles.id. Returns IHrmTimeTrackingRole.ISummary
+     *   containing the role's id, name, type, timestamps, employee count, and
+     *   parent organization summary.
    */
   role: IHrmTimeTrackingRole.ISummary;
 
@@ -46,8 +56,10 @@ export type IHrmTimeTrackingRolePermission = {
    *
    * Set automatically by the server when the permission is first assigned to the role.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_role_permissions.created_at. Set automatically at record creation.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_role_permissions.created_at. Set automatically at
+     *   record creation.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -56,8 +68,10 @@ export type IHrmTimeTrackingRolePermission = {
    *
    * Updated automatically whenever the record is changed, such as when a soft-deleted assignment is restored.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_role_permissions.updated_at. Updated automatically on record modification.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_role_permissions.updated_at. Updated automatically on
+     *   record modification.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -66,8 +80,10 @@ export type IHrmTimeTrackingRolePermission = {
    *
    * When null, the permission assignment is active. When set to a timestamp, the assignment is considered deleted and can be restored by re-assigning the same permission code.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_role_permissions.deleted_at. Nullable timestamp — null means active, non-null means soft-deleted.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_role_permissions.deleted_at. Nullable timestamp —
+     *   null means active, non-null means soft-deleted.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -85,8 +101,15 @@ export namespace IHrmTimeTrackingRolePermission {
      *
      * Must be one of the nine valid system permission codes: `org:manage`, `employee:manage`, `employee:view`, `project:manage`, `project:view`, `time:manage`, `time:approve`, `time:view_all`, or `report:view`. The composite unique constraint on (role, permission_code) ensures no duplicate permission assignments within the same role. If the permission was previously assigned and soft-deleted, the server restores the existing record instead of rejecting the request.
      *
-     * @x-autobe-database-schema-property permission_code
-     * @x-autobe-specification Direct mapping from request body's permission_code to the permission_code column in hrm_time_tracking_role_permissions. Validated server-side against the 9 fixed system permission codes: org:manage, employee:manage, employee:view, project:manage, project:view, time:manage, time:approve, time:view_all, report:view. Composite unique constraint on (hrm_time_tracking_role_id, permission_code) ensures no duplicate assignments per role.
+         * @x-autobe-database-schema-property permission_code
+         * @x-autobe-specification Direct mapping from request body's
+         *   permission_code to the permission_code column in
+         *   hrm_time_tracking_role_permissions. Validated server-side against
+         *   the 9 fixed system permission codes: org:manage, employee:manage,
+         *   employee:view, project:manage, project:view, time:manage,
+         *   time:approve, time:view_all, report:view. Composite unique
+         *   constraint on (hrm_time_tracking_role_id, permission_code) ensures
+         *   no duplicate assignments per role.
      */
     permission_code: string;
   };

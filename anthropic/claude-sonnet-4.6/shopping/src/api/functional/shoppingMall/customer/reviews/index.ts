@@ -26,7 +26,8 @@ import { IShoppingMallReview } from "../../../../structures/IShoppingMallReview"
  * @param props.body Search criteria and pagination parameters for listing reviews
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Query the `shopping_mall_reviews` table with pagination, filtering, and sorting.
+ * @x-autobe-specification Query the `shopping_mall_reviews` table with
+ *   pagination, filtering, and sorting.
  *
  * 1. **Default behavior**: Filter out records where `deleted_at IS NOT NULL` unless the requesting actor is an administrator and explicitly requests deleted reviews.
  *

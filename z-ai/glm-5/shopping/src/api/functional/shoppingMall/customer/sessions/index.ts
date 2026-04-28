@@ -24,7 +24,10 @@ import { IShoppingMallCustomerSession } from "../../../../structures/IShoppingMa
  * @param props.body Search criteria including actor type filter, user identifier, IP/href patterns, date ranges, and pagination parameters
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Query session records from shopping_mall_customer_sessions, shopping_mall_seller_sessions, and shopping_mall_administrator_sessions tables with unified result aggregation.
+ * @x-autobe-specification Query session records from
+ *   shopping_mall_customer_sessions, shopping_mall_seller_sessions, and
+ *   shopping_mall_administrator_sessions tables with unified result
+ *   aggregation.
  *
  * Service layer implementation:
  * 1. Parse IRequest filters for actor type, user ID, IP, href, referrer, and date ranges
@@ -139,7 +142,9 @@ export namespace index {
  * @param props.sessionId Unique session identifier (UUID) used to locate the specific authentication session
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Query session data across all three session tables (shopping_mall_customer_sessions, shopping_mall_seller_sessions, shopping_mall_administrator_sessions) by the provided sessionId UUID.
+ * @x-autobe-specification Query session data across all three session tables
+ *   (shopping_mall_customer_sessions, shopping_mall_seller_sessions,
+ *   shopping_mall_administrator_sessions) by the provided sessionId UUID.
  *
  * Implementation steps:
  * 1. Validate sessionId is a valid UUID format

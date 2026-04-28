@@ -10,64 +10,80 @@ export type IShoppingMallSellerProfile = {
   /**
    * Unique identifier of the current seller profile record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_seller_profiles.id.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_seller_profiles.id.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Seller account that owns this public storefront profile, represented as a minimal safe summary for storefront context.
    *
-   * @x-autobe-specification Join from shopping_mall_seller_profiles.shopping_mall_seller_id to shopping_mall_sellers.id and return a minimized public-safe seller summary representation for ownership context in storefront responses. The relation should remain a BELONGS-TO summary object and must avoid exposing governance-oriented seller account details that are unnecessary for reading a public seller profile.
-   * @x-autobe-database-schema-property seller
+     * @x-autobe-specification Join from
+     *   shopping_mall_seller_profiles.shopping_mall_seller_id to
+     *   shopping_mall_sellers.id and return a minimized public-safe seller
+     *   summary representation for ownership context in storefront responses.
+     *   The relation should remain a BELONGS-TO summary object and must avoid
+     *   exposing governance-oriented seller account details that are
+     *   unnecessary for reading a public seller profile.
+     * @x-autobe-database-schema-property seller
    */
   seller: IShoppingMallSeller.ISummary;
 
   /**
    * Public shop name displayed in storefronts, listings, and seller profile pages.
    *
-   * @x-autobe-database-schema-property shop_name
-   * @x-autobe-specification Direct mapping from shopping_mall_seller_profiles.shop_name.
+     * @x-autobe-database-schema-property shop_name
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_seller_profiles.shop_name.
    */
   shop_name: string;
 
   /**
    * Seller-provided public description shown on the seller's storefront profile page.
    *
-   * @x-autobe-database-schema-property shop_description
-   * @x-autobe-specification Direct mapping from shopping_mall_seller_profiles.shop_description.
+     * @x-autobe-database-schema-property shop_description
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_seller_profiles.shop_description.
    */
   shop_description: string;
 
   /**
    * URI of the logo image used for the seller's public shop branding.
    *
-   * @x-autobe-database-schema-property logo_uri
-   * @x-autobe-specification Direct mapping from shopping_mall_seller_profiles.logo_uri. Expose the stored URI string as a URI-formatted value.
+     * @x-autobe-database-schema-property logo_uri
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_seller_profiles.logo_uri. Expose the stored URI string as
+     *   a URI-formatted value.
    */
   logo_uri: string & tags.Format<"uri">;
 
   /**
    * Timestamp when this seller profile was first created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from shopping_mall_seller_profiles.created_at.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_seller_profiles.created_at.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when this seller profile was most recently updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from shopping_mall_seller_profiles.updated_at.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_seller_profiles.updated_at.
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * Soft-deletion timestamp of the seller profile, or null when the profile is still active.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from shopping_mall_seller_profiles.deleted_at. This value is null while the profile is active and contains a timestamp if the profile was soft deleted.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_seller_profiles.deleted_at. This value is null while the
+     *   profile is active and contains a timestamp if the profile was soft
+     *   deleted.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -79,64 +95,81 @@ export namespace IShoppingMallSellerProfile {
     /**
      * Unique identifier of the seller profile record.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_seller_profiles.id.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_seller_profiles.id.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Public shop name displayed for the seller storefront.
      *
-     * @x-autobe-database-schema-property shop_name
-     * @x-autobe-specification Direct mapping from shopping_mall_seller_profiles.shop_name.
+         * @x-autobe-database-schema-property shop_name
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_seller_profiles.shop_name.
      */
     shop_name: string;
 
     /**
      * Public description that introduces the seller's shop to customers.
      *
-     * @x-autobe-database-schema-property shop_description
-     * @x-autobe-specification Direct mapping from shopping_mall_seller_profiles.shop_description.
+         * @x-autobe-database-schema-property shop_description
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_seller_profiles.shop_description.
      */
     shop_description: string;
 
     /**
      * URI of the shop logo image used for seller branding.
      *
-     * @x-autobe-database-schema-property logo_uri
-     * @x-autobe-specification Direct mapping from shopping_mall_seller_profiles.logo_uri. Expose the stored logo URI as a public-facing image reference.
+         * @x-autobe-database-schema-property logo_uri
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_seller_profiles.logo_uri. Expose the stored logo URI
+         *   as a public-facing image reference.
      */
     logo_uri: string & tags.Format<"uri">;
 
     /**
      * Summary of the seller that owns this storefront profile.
      *
-     * @x-autobe-database-schema-property seller
-     * @x-autobe-specification Resolve the shopping_mall_seller_profiles.seller relation through shopping_mall_seller_profiles.shopping_mall_seller_id -> shopping_mall_sellers.id and serialize it as IShoppingMallSeller.ISummary only to identify the owning seller context for this profile response. This relation must not be used to broaden the profile summary into seller-account credential, session, or governance data exposure.
+         * @x-autobe-database-schema-property seller
+         * @x-autobe-specification Resolve the
+         *   shopping_mall_seller_profiles.seller relation through
+         *   shopping_mall_seller_profiles.shopping_mall_seller_id ->
+         *   shopping_mall_sellers.id and serialize it as
+         *   IShoppingMallSeller.ISummary only to identify the owning seller
+         *   context for this profile response. This relation must not be used
+         *   to broaden the profile summary into seller-account credential,
+         *   session, or governance data exposure.
      */
     seller: IShoppingMallSeller.ISummary;
 
     /**
      * Timestamp when this seller profile was first created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_seller_profiles.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_seller_profiles.created_at.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when this seller profile was last updated.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from shopping_mall_seller_profiles.updated_at.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_seller_profiles.updated_at.
      */
     updated_at: string & tags.Format<"date-time">;
 
     /**
      * Soft-deletion timestamp for the seller profile, or null when the profile is still active.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from shopping_mall_seller_profiles.deleted_at. Serialize null when the profile is still active and a date-time value when it has been soft deleted.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_seller_profiles.deleted_at. Serialize null when the
+         *   profile is still active and a date-time value when it has been soft
+         *   deleted.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };
@@ -148,42 +181,73 @@ export namespace IShoppingMallSellerProfile {
     /**
      * Keyword used to search seller storefront profiles by public text fields.
      *
-     * @x-autobe-specification Computed query parameter for PATCH /shoppingMall/seller-profiles. The service should translate this value into partial-match predicates across supported public storefront text fields in the seller profile search domain, primarily current shop name and optionally current shop description. This property is not stored as a single database column.
+         * @x-autobe-specification Computed query parameter for PATCH
+         *   /shoppingMall/seller-profiles. The service should translate this
+         *   value into partial-match predicates across supported public
+         *   storefront text fields in the seller profile search domain,
+         *   primarily current shop name and optionally current shop
+         *   description. This property is not stored as a single database
+         *   column.
      */
     search?: string | undefined;
 
     /**
      * Specific shop name filter for narrowing seller storefront results.
      *
-     * @x-autobe-specification Computed request filter for PATCH /shoppingMall/seller-profiles. The service should use this value to narrow results by the current seller storefront name, typically by applying a constrained predicate to the underlying shop-name field in the seller profile query. This property is expressed as request criteria rather than a direct row projection.
+         * @x-autobe-specification Computed request filter for PATCH
+         *   /shoppingMall/seller-profiles. The service should use this value to
+         *   narrow results by the current seller storefront name, typically by
+         *   applying a constrained predicate to the underlying shop-name field
+         *   in the seller profile query. This property is expressed as request
+         *   criteria rather than a direct row projection.
      */
     shop_name?: string | undefined;
 
     /**
      * Soft-deletion filter used to control how deleted seller profiles are included in results.
      *
-     * @x-autobe-specification Computed request filter for PATCH /shoppingMall/seller-profiles. The service should interpret this optional date-time value as soft-deletion criteria when querying current seller profiles, such as restricting results by deletion state or matching deletion timestamp semantics defined by the listing service. This property is request-side filtering logic, not a direct DTO projection from a row.
+         * @x-autobe-specification Computed request filter for PATCH
+         *   /shoppingMall/seller-profiles. The service should interpret this
+         *   optional date-time value as soft-deletion criteria when querying
+         *   current seller profiles, such as restricting results by deletion
+         *   state or matching deletion timestamp semantics defined by the
+         *   listing service. This property is request-side filtering logic, not
+         *   a direct DTO projection from a row.
      */
     deleted_at?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * Requested sort order for the seller profile result list.
      *
-     * @x-autobe-specification Computed sort-control parameter for PATCH /shoppingMall/seller-profiles. Validate the value against the service allowlist of supported ordering tokens and translate it into deterministic ordering over seller profile result fields so pagination stays stable across repeated requests. This property is not stored in the database.
+         * @x-autobe-specification Computed sort-control parameter for PATCH
+         *   /shoppingMall/seller-profiles. Validate the value against the
+         *   service allowlist of supported ordering tokens and translate it
+         *   into deterministic ordering over seller profile result fields so
+         *   pagination stays stable across repeated requests. This property is
+         *   not stored in the database.
      */
     sort?: string | undefined;
 
     /**
      * Page number of the seller profile results to retrieve.
      *
-     * @x-autobe-specification Computed pagination parameter for PATCH /shoppingMall/seller-profiles. Use this integer as the 1-based page selector in the shared page-based paging convention when calculating which slice of matched seller profiles to return. This property is request metadata, not persisted seller profile data.
+         * @x-autobe-specification Computed pagination parameter for PATCH
+         *   /shoppingMall/seller-profiles. Use this integer as the 1-based page
+         *   selector in the shared page-based paging convention when
+         *   calculating which slice of matched seller profiles to return. This
+         *   property is request metadata, not persisted seller profile data.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of seller profile results to return per page.
      *
-     * @x-autobe-specification Computed pagination parameter for PATCH /shoppingMall/seller-profiles. Use this integer to cap the number of matched seller profiles returned in one page, enforcing the schema minimum and maximum bounds and any service-level limits. This property is request metadata, not persisted seller profile data.
+         * @x-autobe-specification Computed pagination parameter for PATCH
+         *   /shoppingMall/seller-profiles. Use this integer to cap the number
+         *   of matched seller profiles returned in one page, enforcing the
+         *   schema minimum and maximum bounds and any service-level limits.
+         *   This property is request metadata, not persisted seller profile
+         *   data.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)

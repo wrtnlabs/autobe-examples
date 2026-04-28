@@ -28,7 +28,8 @@ export * as snapshots from "./snapshots/index";
  * @param props.body Review creation input
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Implement a customer-authenticated service that inserts a new row into shopping_mall_reviews.
+ * @x-autobe-specification Implement a customer-authenticated service that
+ *   inserts a new row into shopping_mall_reviews.
  *
  * 1. Resolve the authenticated customer ID from the session context. Never accept customer identity from the request body.
  * 2. Validate that the referenced shopping_mall_orders row exists, is not outside the caller's ownership, and belongs to the authenticated customer.
@@ -135,7 +136,9 @@ export namespace create {
  * @param props.body Filtering, sorting, and pagination criteria for the authenticated customer's review list
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Implement this operation as a customer-scoped search over shopping_mall_reviews with mandatory authorization context from the authenticated customer session.
+ * @x-autobe-specification Implement this operation as a customer-scoped search
+ *   over shopping_mall_reviews with mandatory authorization context from the
+ *   authenticated customer session.
  *
  * 1. Resolve the signed-in customer identity and build the base query with WHERE shopping_mall_customer_id = auth.customer.id. Never trust a customer identifier from the request body for access control.
  * 2. Apply optional filters only when present in IShoppingMallReview.IRequest. Valid filter targets must map to actual schema fields: shopping_mall_product_id, shopping_mall_order_id, shopping_mall_order_item_id, rating, content, created_at, updated_at, and deleted_at. Treat deletion-state filters as conditions on whether deleted_at is null or not null. If range filtering is supported for rating or timestamps, map them directly to the integer and timestamptz columns.
@@ -237,7 +240,8 @@ export namespace index {
  * @param props.reviewId Unique identifier of the target review
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Load a single row from shopping_mall_reviews by its primary key id using the reviewId path parameter.
+ * @x-autobe-specification Load a single row from shopping_mall_reviews by its
+ *   primary key id using the reviewId path parameter.
  *
  * Before returning the row, perform authorization checks. If the authenticated actor is a customer, allow access only when shopping_mall_customer_id matches the authenticated customer account. If the actor is an administrator or superAdministrator, allow access for oversight and dispute handling. Reject access for unrelated customers. Do not treat this endpoint as an anonymous or general storefront read path.
  *
@@ -335,7 +339,8 @@ export namespace at {
  * @param props.body Updated review rating and content
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Implement this operation in the customer review service as an ownership-scoped update of shopping_mall_reviews.
+ * @x-autobe-specification Implement this operation in the customer review
+ *   service as an ownership-scoped update of shopping_mall_reviews.
  *
  * 1. Authenticate the caller as a customer and load the target shopping_mall_reviews row by id = reviewId.
  * 2. If no review exists, return a not-found error.
@@ -453,7 +458,9 @@ export namespace update {
  * @param props.reviewId Identifier of the customer-owned review to remove from the active review set.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Implement review deletion as an ownership-validated state change on the shopping_mall_reviews primary entity identified by reviewId.
+ * @x-autobe-specification Implement review deletion as an ownership-validated
+ *   state change on the shopping_mall_reviews primary entity identified by
+ *   reviewId.
  *
  * 1. Authenticate the caller as a customer session.
  * 2. Load the target review by its primary identifier.

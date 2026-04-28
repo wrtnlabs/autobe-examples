@@ -41,48 +41,64 @@ export namespace IEcommerceMallOrder {
     /**
      * Unique identifier for the order.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_mall_orders.id. Primary key UUID.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from ecommerce_mall_orders.id.
+         *   Primary key UUID.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Unique order reference number displayed to customers.
      *
-     * @x-autobe-database-schema-property order_number
-     * @x-autobe-specification Direct mapping from ecommerce_mall_orders.order_number. Unique human-readable order reference number.
+         * @x-autobe-database-schema-property order_number
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_orders.order_number. Unique human-readable order
+         *   reference number.
      */
     orderNumber: string;
 
     /**
      * Total price of all items in the order.
      *
-     * @x-autobe-database-schema-property total_price
-     * @x-autobe-specification Direct mapping from ecommerce_mall_orders.total_price. Double precision decimal representing total order amount in the platform's currency.
+         * @x-autobe-database-schema-property total_price
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_orders.total_price. Double precision decimal
+         *   representing total order amount in the platform's currency.
      */
     totalPrice: number;
 
     /**
      * Current status of the order indicating its fulfillment state.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from ecommerce_mall_orders.status. String value representing derived order state: paid, shipped, delivered, cancelled, refunded, partially_completed. Calculated from aggregated order item statuses.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_orders.status. String value representing derived
+         *   order state: paid, shipped, delivered, cancelled, refunded,
+         *   partially_completed. Calculated from aggregated order item
+         *   statuses.
      */
     status: string;
 
     /**
      * Timestamp when the order was placed.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_orders.created_at. Timestamptz indicating when the order was created (payment succeeded). ISO 8601 format with timezone.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_orders.created_at. Timestamptz indicating when the
+         *   order was created (payment succeeded). ISO 8601 format with
+         *   timezone.
      */
     createdAt: string & tags.Format<"date-time">;
 
     /**
      * Customer who placed the order.
      *
-     * @x-autobe-database-schema-property customer
-     * @x-autobe-specification Relation mapping via ecommerce_mall_orders.customer_id FK to ecommerce_mall_customers.id. Returns IEcommerceMallCustomer.ISummary with essential customer details for list display.
+         * @x-autobe-database-schema-property customer
+         * @x-autobe-specification Relation mapping via
+         *   ecommerce_mall_orders.customer_id FK to
+         *   ecommerce_mall_customers.id. Returns
+         *   IEcommerceMallCustomer.ISummary with essential customer details for
+         *   list display.
      */
     customer: IEcommerceMallCustomer.ISummary;
   };
@@ -94,70 +110,101 @@ export namespace IEcommerceMallOrder {
     /**
      * Filter orders by their current status. Returns only orders matching the specified status. When null or omitted, orders of any status are returned.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Filter by order status field in ecommerce_mall_orders.status. Valid values: paid (all items paid), shipped (any item shipped), delivered (all items delivered), cancelled (all items cancelled), refunded (all items refunded), partially_completed (mixed states). Null means no status filter applied.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Filter by order status field in
+         *   ecommerce_mall_orders.status. Valid values: paid (all items paid),
+         *   shipped (any item shipped), delivered (all items delivered),
+         *   cancelled (all items cancelled), refunded (all items refunded),
+         *   partially_completed (mixed states). Null means no status filter
+         *   applied.
      */
     status?: string | null | undefined;
 
     /**
      * Filter orders to show only those placed by a specific customer. Only administrators can filter by other customers' IDs; customers automatically see only their own orders.
      *
-     * @x-autobe-database-schema-property customer_id
-     * @x-autobe-specification Filter by customer_id in ecommerce_mall_orders table. Only valid for admin/superAdmin actors; ignored for customers who can only view their own orders. UUID format matching ecommerce_mall_customers.id. Null means no customer filter (admin sees all customers).
+         * @x-autobe-database-schema-property customer_id
+         * @x-autobe-specification Filter by customer_id in
+         *   ecommerce_mall_orders table. Only valid for admin/superAdmin
+         *   actors; ignored for customers who can only view their own orders.
+         *   UUID format matching ecommerce_mall_customers.id. Null means no
+         *   customer filter (admin sees all customers).
      */
     customerId?: (string & tags.Format<"uuid">) | null | undefined;
 
     /**
      * Filter orders with total price greater than or equal to this value. Used to set the lower bound of a price range search.
      *
-     * @x-autobe-database-schema-property total_price
-     * @x-autobe-specification Filter minimum bound for ecommerce_mall_orders.total_price. Orders with total_price >= this value are included. Used in combination with maxTotalPrice to define a price range. Null means no minimum price constraint.
+         * @x-autobe-database-schema-property total_price
+         * @x-autobe-specification Filter minimum bound for
+         *   ecommerce_mall_orders.total_price. Orders with total_price >= this
+         *   value are included. Used in combination with maxTotalPrice to
+         *   define a price range. Null means no minimum price constraint.
      */
     minTotalPrice?: number | null | undefined;
 
     /**
      * Filter orders with total price less than or equal to this value. Used to set the upper bound of a price range search.
      *
-     * @x-autobe-database-schema-property total_price
-     * @x-autobe-specification Filter maximum bound for ecommerce_mall_orders.total_price. Orders with total_price <= this value are included. Used in combination with minTotalPrice to define a price range. Null means no maximum price constraint.
+         * @x-autobe-database-schema-property total_price
+         * @x-autobe-specification Filter maximum bound for
+         *   ecommerce_mall_orders.total_price. Orders with total_price <= this
+         *   value are included. Used in combination with minTotalPrice to
+         *   define a price range. Null means no maximum price constraint.
      */
     maxTotalPrice?: number | null | undefined;
 
     /**
      * Filter orders placed on or after this date and time. Use ISO 8601 format (e.g., 2026-04-01T00:00:00Z).
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Filter start date/time bound for ecommerce_mall_orders.created_at. Orders with created_at >= this ISO 8601 timestamp are included. Used with createdBefore to define a date range. Null means no start date constraint.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Filter start date/time bound for
+         *   ecommerce_mall_orders.created_at. Orders with created_at >= this
+         *   ISO 8601 timestamp are included. Used with createdBefore to define
+         *   a date range. Null means no start date constraint.
      */
     createdAfter?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * Filter orders placed on or before this date and time. Use ISO 8601 format (e.g., 2026-04-01T23:59:59Z).
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Filter end date/time bound for ecommerce_mall_orders.created_at. Orders with created_at <= this ISO 8601 timestamp are included. Used with createdAfter to define a date range. Null means no end date constraint.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Filter end date/time bound for
+         *   ecommerce_mall_orders.created_at. Orders with created_at <= this
+         *   ISO 8601 timestamp are included. Used with createdAfter to define a
+         *   date range. Null means no end date constraint.
      */
     createdBefore?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * Search for orders by order number. Performs partial matching on the order number field to find orders containing the specified text.
      *
-     * @x-autobe-database-schema-property order_number
-     * @x-autobe-specification Perform substring/partial match search on ecommerce_mall_orders.order_number. Case-insensitive matching recommended. Matches any portion of the order number string. Null means no order number search filter.
+         * @x-autobe-database-schema-property order_number
+         * @x-autobe-specification Perform substring/partial match search on
+         *   ecommerce_mall_orders.order_number. Case-insensitive matching
+         *   recommended. Matches any portion of the order number string. Null
+         *   means no order number search filter.
      */
     orderNumber?: string | null | undefined;
 
     /**
      * The page number to retrieve for paginated results. Page numbers start at 1. Higher page numbers return older or later items depending on sort order.
      *
-     * @x-autobe-specification Pagination parameter - the page number to retrieve (1-indexed). Not a database column; used by the pagination system to calculate OFFSET for the SQL query. Default value: 1. Minimum: 1. Calculated as OFFSET = (page - 1) * limit. Null defaults to 1.
+         * @x-autobe-specification Pagination parameter - the page number to
+         *   retrieve (1-indexed). Not a database column; used by the pagination
+         *   system to calculate OFFSET for the SQL query. Default value: 1.
+         *   Minimum: 1. Calculated as OFFSET = (page - 1) * limit. Null
+         *   defaults to 1.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | null | undefined;
 
     /**
      * The maximum number of orders to return per page. Default is 20, maximum is 100. Adjust to control response size and pagination granularity.
      *
-     * @x-autobe-specification Pagination parameter - the maximum number of records per page. Not a database column; controls the LIMIT clause in SQL query. Default: 20, Maximum: 100. Used to calculate pages count in response. Null defaults to 20.
+         * @x-autobe-specification Pagination parameter - the maximum number of
+         *   records per page. Not a database column; controls the LIMIT clause
+         *   in SQL query. Default: 20, Maximum: 100. Used to calculate pages
+         *   count in response. Null defaults to 20.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)

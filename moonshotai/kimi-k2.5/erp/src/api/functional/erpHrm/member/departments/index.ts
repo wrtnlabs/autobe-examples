@@ -148,7 +148,8 @@ export namespace create {
  * @param props.body Search criteria and pagination parameters for filtering departments
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query erp_hrm_departments table filtering by the current organization context from the member's session.
+ * @x-autobe-specification Query erp_hrm_departments table filtering by the
+ *   current organization context from the member's session.
  *
  * Search capabilities:
  * - Name partial matching using the GIN index on name field (gin_trgm_ops)
@@ -268,7 +269,8 @@ export namespace index {
  * @param props.departmentId Target department's unique identifier
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Retrieve a department record by its primary key ID from the erp_hrm_departments table.
+ * @x-autobe-specification Retrieve a department record by its primary key ID
+ *   from the erp_hrm_departments table.
  *
  * Implementation steps:
  * 1. Validate the departmentId path parameter as a valid UUID format
@@ -375,7 +377,9 @@ export namespace at {
  * @param props.body Department update data with fields to modify
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Lookup the target department by departmentId from the erp_hrm_departments table ensuring it belongs to the current organization context and is not soft-deleted.
+ * @x-autobe-specification Lookup the target department by departmentId from the
+ *   erp_hrm_departments table ensuring it belongs to the current organization
+ *   context and is not soft-deleted.
  *
  * Validate the requesting user has organization management permission for the current organization context.
  *

@@ -21,7 +21,9 @@ import { IRedditCloneUserKarma } from "../../../../structures/IRedditCloneUserKa
  * @param props.username Unique username of the user
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query the reddit_clone_members table to find the member by username. Join with reddit_clone_user_karmas table using the member's id. Return the karma_score field.
+ * @x-autobe-specification Query the reddit_clone_members table to find the
+ *   member by username. Join with reddit_clone_user_karmas table using the
+ *   member's id. Return the karma_score field.
  *
  * Handle the case where the user does not exist by returning a 404 error.
  *

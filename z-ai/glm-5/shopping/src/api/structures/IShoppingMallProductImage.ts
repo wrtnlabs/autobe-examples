@@ -10,40 +10,52 @@ export type IShoppingMallProductImage = {
   /**
    * Unique identifier for the product image.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_product_images.id. UUID primary key auto-generated on image upload.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_product_images.id. UUID primary key auto-generated on
+     *   image upload.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * The product this image belongs to, containing essential product information for display context.
    *
-   * @x-autobe-database-schema-property product
-   * @x-autobe-specification Belongs-to relation resolved via shopping_mall_product_id FK. JOIN shopping_mall_products table to retrieve IShoppingMallProduct.ISummary containing id, name, base_price, category, seller, primary_image, and created_at.
+     * @x-autobe-database-schema-property product
+     * @x-autobe-specification Belongs-to relation resolved via
+     *   shopping_mall_product_id FK. JOIN shopping_mall_products table to
+     *   retrieve IShoppingMallProduct.ISummary containing id, name, base_price,
+     *   category, seller, primary_image, and created_at.
    */
   product: IShoppingMallProduct.ISummary;
 
   /**
    * URL pointing to the product image file. Uses secure HTTPS protocol.
    *
-   * @x-autobe-database-schema-property image_url
-   * @x-autobe-specification Direct mapping from shopping_mall_product_images.image_url. Must use HTTPS protocol pointing to accessible image file (JPEG, PNG, WebP formats).
+     * @x-autobe-database-schema-property image_url
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_product_images.image_url. Must use HTTPS protocol
+     *   pointing to accessible image file (JPEG, PNG, WebP formats).
    */
   imageUrl: string & tags.Format<"url">;
 
   /**
    * Numerical display order determining image position in the product gallery. Lower values appear first.
    *
-   * @x-autobe-database-schema-property display_order
-   * @x-autobe-specification Direct mapping from shopping_mall_product_images.display_order. Lower values appear first in gallery. The image with lowest display_order serves as main thumbnail in search results.
+     * @x-autobe-database-schema-property display_order
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_product_images.display_order. Lower values appear first
+     *   in gallery. The image with lowest display_order serves as main
+     *   thumbnail in search results.
    */
   displayOrder: number & tags.Type<"int32">;
 
   /**
    * Timestamp when the image was uploaded to the product gallery.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from shopping_mall_product_images.created_at. Auto-generated timestamp on image upload.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_product_images.created_at. Auto-generated timestamp on
+     *   image upload.
    */
   createdAt: string & tags.Format<"date-time">;
 };
@@ -55,16 +67,23 @@ export namespace IShoppingMallProductImage {
     /**
      * URL pointing to the product image file. Must use HTTPS protocol and point to an accessible location. Supports JPEG, PNG, and WebP image formats.
      *
-     * @x-autobe-database-schema-property image_url
-     * @x-autobe-specification Direct mapping to image_url column (VARCHAR 80000). Must be HTTPS URL protocol. Stored as-is after URL format validation. Used for product gallery display.
+         * @x-autobe-database-schema-property image_url
+         * @x-autobe-specification Direct mapping to image_url column (VARCHAR
+         *   80000). Must be HTTPS URL protocol. Stored as-is after URL format
+         *   validation. Used for product gallery display.
      */
     imageUrl: string & tags.Format<"url">;
 
     /**
      * Numerical display order determining the image's position in the product gallery. Lower values appear first. The image with the lowest display order serves as the main thumbnail. Optional field - if omitted, the system assigns the next available position.
      *
-     * @x-autobe-database-schema-property display_order
-     * @x-autobe-specification Direct mapping to display_order column (INTEGER). Determines image position in gallery - lower values appear first. Must be unique within the same product (enforced by database constraint). If not provided, service calculates next available order as MAX(display_order) + 1 or 0 if no existing images.
+         * @x-autobe-database-schema-property display_order
+         * @x-autobe-specification Direct mapping to display_order column
+         *   (INTEGER). Determines image position in gallery - lower values
+         *   appear first. Must be unique within the same product (enforced by
+         *   database constraint). If not provided, service calculates next
+         *   available order as MAX(display_order) + 1 or 0 if no existing
+         *   images.
      */
     displayOrder?: (number & tags.Type<"int32">) | undefined;
   };
@@ -76,24 +95,36 @@ export namespace IShoppingMallProductImage {
     /**
      * Unique identifier of the product image to update. Required for batch reordering operations to identify which image's display order to change. Not needed for individual PUT operations where imageId is in the path.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_product_images.id. Required for batch PATCH operations to identify which image's display_order to update. Not used in individual PUT operations where imageId is provided in the path parameter instead.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_images.id. Required for batch PATCH
+         *   operations to identify which image's display_order to update. Not
+         *   used in individual PUT operations where imageId is provided in the
+         *   path parameter instead.
      */
     id?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * URL pointing to the product image file. Must use HTTPS protocol and point to an accessible location. Supports JPEG, PNG, and WebP image formats.
      *
-     * @x-autobe-database-schema-property image_url
-     * @x-autobe-specification Direct mapping from shopping_mall_product_images.image_url. Must be valid HTTPS URL pointing to accessible image file. Supports JPEG, PNG, and WebP formats. Use to replace existing image with new version during individual PUT update.
+         * @x-autobe-database-schema-property image_url
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_images.image_url. Must be valid HTTPS URL
+         *   pointing to accessible image file. Supports JPEG, PNG, and WebP
+         *   formats. Use to replace existing image with new version during
+         *   individual PUT update.
      */
     image_url?: (string & tags.Format<"uri">) | undefined;
 
     /**
      * Numerical display order determining the image's position in the product gallery. Lower values appear first. The image with the lowest display_order is used as the main thumbnail in product listings and search results.
      *
-     * @x-autobe-database-schema-property display_order
-     * @x-autobe-specification Direct mapping from shopping_mall_product_images.display_order. Numerical position in gallery (lower values first). Must be unique within product. Image with lowest value becomes main thumbnail in listings. System auto-compacts sequences to eliminate gaps.
+         * @x-autobe-database-schema-property display_order
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_images.display_order. Numerical position in
+         *   gallery (lower values first). Must be unique within product. Image
+         *   with lowest value becomes main thumbnail in listings. System
+         *   auto-compacts sequences to eliminate gaps.
      */
     display_order?: (number & tags.Type<"int32">) | undefined;
   };
@@ -105,32 +136,42 @@ export namespace IShoppingMallProductImage {
     /**
      * Unique identifier for the product image.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_product_images.id. UUID primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_images.id. UUID primary key.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * URL pointing to the product image file. Uses secure HTTPS protocol.
      *
-     * @x-autobe-database-schema-property image_url
-     * @x-autobe-specification Direct mapping from shopping_mall_product_images.image_url. Must use HTTPS protocol. Supports JPEG, PNG, and WebP formats.
+         * @x-autobe-database-schema-property image_url
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_images.image_url. Must use HTTPS protocol.
+         *   Supports JPEG, PNG, and WebP formats.
      */
     image_url: string & tags.Format<"url">;
 
     /**
      * Numerical display order determining the image's position in the product gallery. Lower values appear first. Position 1 is the main thumbnail shown in listings.
      *
-     * @x-autobe-database-schema-property display_order
-     * @x-autobe-specification Direct mapping from shopping_mall_product_images.display_order. Lower values appear first in the gallery. The image with display_order=1 is used as the main thumbnail in product listings and search results. Unique within the same product.
+         * @x-autobe-database-schema-property display_order
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_images.display_order. Lower values appear
+         *   first in the gallery. The image with display_order=1 is used as the
+         *   main thumbnail in product listings and search results. Unique
+         *   within the same product.
      */
     display_order: number & tags.Type<"int32">;
 
     /**
      * Timestamp when the image was uploaded.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_product_images.created_at. ISO 8601 timestamp with timezone. Used as secondary sort criterion when display_order ties occur.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_images.created_at. ISO 8601 timestamp with
+         *   timezone. Used as secondary sort criterion when display_order ties
+         *   occur.
      */
     created_at: string & tags.Format<"date-time">;
   };
@@ -142,14 +183,24 @@ export namespace IShoppingMallProductImage {
     /**
      * Array of image UUIDs to reorder. Each UUID must reference an existing image belonging to the product.
      *
-     * @x-autobe-specification Array of UUIDs referencing shopping_mall_product_images.id for batch display_order update. Each UUID must: (1) exist in the table, (2) belong to the product specified in path parameter productId. Server validates all IDs belong to the same product before processing. No duplicate IDs allowed. Array length must match displayOrders array.
+         * @x-autobe-specification Array of UUIDs referencing
+         *   shopping_mall_product_images.id for batch display_order update.
+         *   Each UUID must: (1) exist in the table, (2) belong to the product
+         *   specified in path parameter productId. Server validates all IDs
+         *   belong to the same product before processing. No duplicate IDs
+         *   allowed. Array length must match displayOrders array.
      */
     imageIds: (string & tags.Format<"uuid">)[] & tags.MinItems<1>;
 
     /**
      * Array of new display positions corresponding to imageIds by index. Must be sequential starting from 1.
      *
-     * @x-autobe-specification Array of new display_order values for shopping_mall_product_images.display_order column. Processed by index: the image at imageIds[i] receives displayOrders[i] as its new position. Must be sequential integers starting from 1 (e.g., [1, 2, 3] or [1, 2, 3, 4]). Array length must match imageIds array. Position 1 designates the main thumbnail for product listings.
+         * @x-autobe-specification Array of new display_order values for
+         *   shopping_mall_product_images.display_order column. Processed by
+         *   index: the image at imageIds[i] receives displayOrders[i] as its
+         *   new position. Must be sequential integers starting from 1 (e.g.,
+         *   [1, 2, 3] or [1, 2, 3, 4]). Array length must match imageIds array.
+         *   Position 1 designates the main thumbnail for product listings.
      */
     displayOrders: (number & tags.Type<"int32"> & tags.Minimum<1>)[] &
       tags.MinItems<1>;

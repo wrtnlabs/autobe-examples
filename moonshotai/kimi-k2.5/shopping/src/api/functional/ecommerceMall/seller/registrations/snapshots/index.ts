@@ -138,7 +138,8 @@ export namespace index {
  * @param props.snapshotId The UUID of the specific snapshot to retrieve (scoped to the registration)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Query the ecommerce_mall_seller_registration_snapshots table by snapshotId UUID.
+ * @x-autobe-specification Query the
+ *   ecommerce_mall_seller_registration_snapshots table by snapshotId UUID.
  *
  * Join with ecommerce_mall_admins to retrieve reviewer details when ecommerce_mall_admin_id is present. Include the related ecommerce_mall_seller_registrations record to provide registration context.
  *

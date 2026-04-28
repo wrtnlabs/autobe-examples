@@ -28,7 +28,8 @@ import { IEcommerceMallRefundRequestSnapshot } from "../../../../structures/IEco
  * @param props.id UUID of the refund request snapshot to retrieve.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Query ecommerce_mall_refund_request_snapshots table by ID.
+ * @x-autobe-specification Query ecommerce_mall_refund_request_snapshots table
+ *   by ID.
  *
  * **Implementation Details**:
  * 1. Find ecommerce_mall_refund_request_snapshots by UUID parameter id

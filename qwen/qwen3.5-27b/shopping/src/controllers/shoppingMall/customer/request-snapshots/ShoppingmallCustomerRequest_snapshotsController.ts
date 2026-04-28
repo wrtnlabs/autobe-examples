@@ -22,9 +22,10 @@ export class ShoppingmallCustomerRequest_snapshotsController {
    *
    * @param connection
    * @param body Search criteria for request snapshots including filters for request type, order item, customer, seller, status changes, date range, and pagination parameters.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Query shopping_mall_request_snapshots table with pagination and filtering support.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Query shopping_mall_request_snapshots table with
+     *   pagination and filtering support.
    *
    * Filtering capabilities:
    * - Filter by request_type ('cancellation' or 'refund')
@@ -83,9 +84,12 @@ export class ShoppingmallCustomerRequest_snapshotsController {
    *
    * @param connection
    * @param snapshotId Unique identifier of the request snapshot to retrieve (global scope).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Query the request snapshot tables (shopping_mall_cancellation_request_snapshots or shopping_mall_refund_request_snapshots) by the provided snapshotId UUID.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Query the request snapshot tables
+     *   (shopping_mall_cancellation_request_snapshots or
+     *   shopping_mall_refund_request_snapshots) by the provided snapshotId
+     *   UUID.
    *
    * 1. Validate the snapshotId parameter is a valid UUID format.
    * 2. Query both cancellation and refund request snapshot tables to find the matching snapshot.

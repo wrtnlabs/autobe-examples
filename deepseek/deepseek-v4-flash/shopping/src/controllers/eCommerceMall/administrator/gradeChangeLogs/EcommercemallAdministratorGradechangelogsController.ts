@@ -22,16 +22,18 @@ export class EcommercemallAdministratorGradechangelogsController {
    *
    * @param connection
    * @param body Search criteria for filtering administrator grade change log records. Supports filtering by target administrator, acting super administrator, grade transition values, and date range. Includes pagination parameters.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Query e_commerce_mall_admin_grade_change_logs table with optional filter criteria:
-   * - Filter by administrator_id when administratorId parameter is provided in request body
-   * - Filter by super_administrator_id when superAdministratorId parameter is provided
-   * - Filter by previous_grade when previousGrade parameter is provided (valid values: 'regular', 'super')
-   * - Filter by new_grade when newGrade parameter is provided (valid values: 'regular', 'super')
-   * - Filter by date range using created_at when fromDate/toDate parameters are provided
-   * - Sort by created_at descending by default
-   * - Implement cursor-based or offset pagination using page and limit parameters
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor administrator
+     * @x-autobe-specification Query e_commerce_mall_admin_grade_change_logs
+     *   table with optional filter criteria: - Filter by administrator_id when
+     *   administratorId parameter is provided in request body - Filter by
+     *   super_administrator_id when superAdministratorId parameter is provided
+     *   - Filter by previous_grade when previousGrade parameter is provided
+     *   (valid values: 'regular', 'super') - Filter by new_grade when newGrade
+     *   parameter is provided (valid values: 'regular', 'super') - Filter by
+     *   date range using created_at when fromDate/toDate parameters are
+     *   provided - Sort by created_at descending by default - Implement
+     *   cursor-based or offset pagination using page and limit parameters
    *
    * Apply data access control: regular administrators can only see logs where administrator_id matches their own administrator id. Super administrators can see all grade change logs.
    *
@@ -67,9 +69,10 @@ export class EcommercemallAdministratorGradechangelogsController {
    *
    * @param connection
    * @param logId The unique identifier (UUID) of the administrator grade change log to retrieve.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Query the e_commerce_mall_admin_grade_change_logs table by primary key (id).
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor administrator
+     * @x-autobe-specification Query the e_commerce_mall_admin_grade_change_logs
+     *   table by primary key (id).
    *
    * Return HTTP 404 (Not Found) if no record matches the given logId.
    *

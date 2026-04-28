@@ -19,9 +19,10 @@ export class HrmtimetrackingMemberProjectsStatusController {
    * @param connection
    * @param projectId The unique identifier (UUID) of the project whose status is to be changed.
    * @param body The new status value for the project. Valid values are "archived" (move project to inactive state with data preserved) or "completed" (mark project as finished). Only active projects can transition to a new status.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Validate that the requesting user has `project:manage` permission for the organization owning the project.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Validate that the requesting user has
+     *   `project:manage` permission for the organization owning the project.
    *
    * 1. Look up the project by projectId (UUID) within the user's organization context.
    * 2. Verify the project exists and is not soft-deleted (deleted_at is null).

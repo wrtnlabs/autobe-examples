@@ -29,9 +29,13 @@ export class HrmtimetrackingEmployeeTimersController {
    *
    * @param connection
    * @param body Information required to start a running timer
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor employee
-   * @x-autobe-specification Authenticate the caller and resolve the active organization context from the session. Resolve the employee identity associated with the authenticated principal for that organization context and deny the request if the caller is not permitted to start a personal timer in the current organization.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor employee
+     * @x-autobe-specification Authenticate the caller and resolve the active
+     *   organization context from the session. Resolve the employee identity
+     *   associated with the authenticated principal for that organization
+     *   context and deny the request if the caller is not permitted to start a
+     *   personal timer in the current organization.
    *
    * Validate the request body against the creation DTO. Require a project identifier. Accept an optional task identifier and optional description. Do not accept employee or organization ownership fields from the client; derive `hrm_time_tracking_organization_id` and `hrm_time_tracking_employee_id` internally.
    *
@@ -77,9 +81,11 @@ export class HrmtimetrackingEmployeeTimersController {
    *
    * @param connection
    * @param body Timer search filters, pagination, and sorting options
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor employee
-   * @x-autobe-specification Implement this operation as a paginated search over hrm_time_tracking_timers limited to the authenticated user's currently selected organization context.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor employee
+     * @x-autobe-specification Implement this operation as a paginated search
+     *   over hrm_time_tracking_timers limited to the authenticated user's
+     *   currently selected organization context.
    *
    * Build the base query from hrm_time_tracking_timers where hrm_time_tracking_organization_id equals the current organization identifier from auth/context, and deleted_at is null so that only active live timers are returned. Never infer organization scope from another tenant membership. Reject the operation when the caller lacks permission to view timer data in the current organization.
    *
@@ -123,9 +129,11 @@ export class HrmtimetrackingEmployeeTimersController {
    *
    * @param connection
    * @param timerId Target timer's ID
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor employee
-   * @x-autobe-specification Load a single timer row from hrm_time_tracking_timers by primary key `id` using the `timerId` path parameter.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor employee
+     * @x-autobe-specification Load a single timer row from
+     *   hrm_time_tracking_timers by primary key `id` using the `timerId` path
+     *   parameter.
    *
    * Before returning data, enforce authentication and current-organization context. Join or otherwise validate the referenced employee membership so the service can confirm the timer belongs to the selected organization through `hrm_time_tracking_organization_id`. Reject the request if the caller does not have access in the current organization context. For employee callers, additionally require that `hrm_time_tracking_employee_id` matches the caller's employee record in the selected organization unless broader timer-view permission exists for managers or owners.
    *
@@ -170,9 +178,10 @@ export class HrmtimetrackingEmployeeTimersController {
    * @param connection
    * @param timerId Target running timer's ID
    * @param body Updated live timer project, task, and description
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor employee
-   * @x-autobe-specification Implement this operation as an authenticated employee-owned timer update against `hrm_time_tracking_timers`.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor employee
+     * @x-autobe-specification Implement this operation as an authenticated
+     *   employee-owned timer update against `hrm_time_tracking_timers`.
    *
    * 1. Resolve the authenticated user as an employee in the currently selected organization context. Reject the request if there is no active organization-scoped employee identity for the caller.
    * 2. Load the timer by `id = {timerId}` from `hrm_time_tracking_timers` and ensure it belongs to both the current organization and the authenticated employee. Treat records with `deleted_at` set as unavailable for update. If no eligible record is found, return a not-found or forbidden-style failure according to platform conventions.
@@ -230,9 +239,11 @@ export class HrmtimetrackingEmployeeTimersController {
    *
    * @param connection
    * @param timerId Target timer identifier.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor employee
-   * @x-autobe-specification Implement a delete-timer service that targets hrm_time_tracking_timers by primary key id and current organization context.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor employee
+     * @x-autobe-specification Implement a delete-timer service that targets
+     *   hrm_time_tracking_timers by primary key id and current organization
+     *   context.
    *
    * 1. Resolve the caller's active organization context from authentication/session state.
    * 2. Load the timer by id from hrm_time_tracking_timers and include enough fields to validate ownership and referential context: id, hrm_time_tracking_organization_id, hrm_time_tracking_employee_id, hrm_time_tracking_project_id, hrm_time_tracking_task_id, started_at, deleted_at.

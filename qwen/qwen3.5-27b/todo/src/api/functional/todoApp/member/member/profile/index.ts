@@ -19,7 +19,8 @@ import { ITodoAppMember } from "../../../../../structures/ITodoAppMember";
  * @param props.body Profile update payload containing the new display name. The display name can be set to a string value or null to clear it. Empty strings are not allowed.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Update the current authenticated member's display name.
+ * @x-autobe-specification Update the current authenticated member's display
+ *   name.
  *
  * 1. Verify the member is authenticated via session middleware.
  * 2. Extract the member ID from the authenticated session.

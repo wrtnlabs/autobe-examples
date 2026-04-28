@@ -1,0 +1,173 @@
+/// Organization-scoped workforce members linked to global user accounts,
+/// with employment type, status, department, position, and role assignment.
+///
+/// Employees represent the workforce within an organization, connecting a
+/// global user account ({@link hrm_platform_members}). Each employee is
+/// assigned exactly one role ({@link hrm_platform_roles}) and may belong to
+/// an optional department ({@link hrm_platform_departments}). Employment
+/// details include position title, employment type (full-time, part-time,
+/// contractor, intern), and status (active, deactivated).
+///
+/// @namespace hrm_platform.employee
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_platform_employees {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Identifies the organization this employee belongs to.
+  ///
+  /// Each employee record is strictly scoped to a single {@link
+  /// hrm_platform_organizations}.
+  hrm_platform_organization_id String
+  
+  /// Links the employee to their global user account.
+  ///
+  /// The {@link hrm_platform_members} table stores registered member accounts
+  /// shared across organizations.
+  hrm_platform_member_id String
+  
+  /// Assigns exactly one role to the employee within this organization.
+  ///
+  /// The {@link hrm_platform_roles} table defines organization-scoped
+  /// authorization templates.
+  hrm_platform_role_id String
+  
+  /// Optionally groups the employee under an organizational department.
+  ///
+  /// The {@link hrm_platform_departments} table provides hierarchy
+  /// structuring. If null, the employee reports directly to the organization
+  /// level.
+  hrm_platform_department_id String?
+  
+  /// Optional job title or position name for the employee within the
+  /// organization.
+  position String?
+  
+  /// Defines the employment arrangement: full-time, part-time, contractor, or
+  /// intern.
+  employment_type String
+  
+  /// Current employment status: active or deactivated. Deactivated employees
+  /// cannot log time or submit timesheets, but historical data is preserved.
+  status String
+  
+  /// Timestamp when the employee record was created.
+  created_at DateTime
+  
+  /// Timestamp when the employee record was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the employee record was soft-deleted.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  organization hrm_platform_organizations @relation(fields: [hrm_platform_organization_id], references: [id], onDelete: Cascade)
+  member hrm_platform_members @relation(fields: [hrm_platform_member_id], references: [id], onDelete: Cascade)
+  role hrm_platform_roles @relation(fields: [hrm_platform_role_id], references: [id], onDelete: Cascade)
+  department hrm_platform_departments? @relation(fields: [hrm_platform_department_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  contracts hrm_platform_employee_contracts[]
+  projectMemberships hrm_platform_project_memberships[]
+  tasks hrm_platform_tasks[]
+  timelogs hrm_platform_timelogs[]
+  timesheets hrm_platform_timesheets[]
+  hrmPlatformTimers hrm_platform_timers[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([hrm_platform_member_id])
+  @@index([hrm_platform_role_id])
+  @@index([hrm_platform_department_id])
+  // spellchecker: ignore-next-line
+  @@unique([hrm_platform_organization_id, hrm_platform_member_id], map: "hrm_platform_employees_hrm_platform_organization_id_hr_ad6ff176")
+  @@index([status])
+  @@index([employment_type])
+}
+
+/// Historical employment agreements recording pay rate, pay period, working
+/// hours, and effective dates per employee.
+///
+/// Contracts capture the formalized terms of the employment relationship
+/// between an employee and their organization. Each employee may maintain
+/// multiple contracts over their tenure, with the system ensuring only one
+/// active contract exists at any given moment.
+///
+/// Active contracts have a mandatory start_date and a nullable end_date —
+/// when null, the contract represents an ongoing employment relationship
+/// with no predefined conclusion. Creating a new contract automatically
+/// terminates the previous active contract by setting its end date.
+///
+/// Past contracts serve as immutable historical records for audit and
+/// reference purposes. Only the currently active contract may be edited by
+/// authorized users with employee:manage permission.
+///
+/// @namespace hrm_platform.employee
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_platform_employee_contracts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Foreign key to the {@link hrm_platform_employees} table linking the
+  /// employment agreement to the employee whose terms it defines.
+  hrm_platform_employee_id String
+  
+  /// Mandatory date marking the initiation of this contract agreement.
+  start_date DateTime
+  
+  /// Date marking the conclusion of this fixed-term contract. When null, the
+  /// agreement represents an ongoing employment relationship with no
+  /// predefined end.
+  end_date DateTime?
+  
+  /// Base compensation amount representing the numerical pay rate value for
+  /// the employee's labor.
+  pay_rate Float
+  
+  /// Categorizes how the pay rate is applied to the employee's work. Allowed
+  /// values: hourly, daily, weekly, monthly.
+  pay_period String
+  
+  /// Expected duration of active labor time within a standard seven-day work
+  /// week, measured in hours.
+  working_hours_per_week Int
+  
+  /// Optional qualitative text describing special terms, conditions, or
+  /// qualitative notes agreed upon by the parties.
+  notes String?
+  
+  /// Timestamp when this contract record was created in the system.
+  created_at DateTime
+  
+  /// Timestamp of the most recent modification to this contract record.
+  updated_at DateTime
+  
+  /// Timestamp when this contract was soft-deleted. Null indicates the record
+  /// remains active and accessible.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  employee hrm_platform_employees @relation(fields: [hrm_platform_employee_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([hrm_platform_employee_id, start_date], map: "hrm_platform_employee_contracts_hrm_platform_employee__aa4b4e2e")
+}

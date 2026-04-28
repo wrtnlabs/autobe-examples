@@ -29,9 +29,10 @@ export class EcommerceCustomerSession_statusController {
    * The response includes session creation timestamp and expiration time, allowing clients to track session longevity and plan for re-authentication before expiration.
    *
    * @param connection
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Query the active session for the authenticated user based on the JWT token in the Authorization header.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Query the active session for the authenticated
+     *   user based on the JWT token in the Authorization header.
    *
    * **Implementation Steps**
    *

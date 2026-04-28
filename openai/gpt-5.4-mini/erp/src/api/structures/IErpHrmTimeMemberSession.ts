@@ -8,56 +8,71 @@ export type IErpHrmTimeMemberSession = {
   /**
    * Unique identifier of the member session.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from erp_hrm_time_member_sessions.id. Return the stored session UUID exactly as persisted.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_member_sessions.id. Return the stored session UUID exactly
+     *   as persisted.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Identifier of the member account that owns this session.
    *
-   * @x-autobe-database-schema-property erp_hrm_time_member_id
-   * @x-autobe-specification Direct mapping from erp_hrm_time_member_sessions.erp_hrm_time_member_id. Expose the owning member reference as a UUID scalar rather than hydrating the member relation object.
+     * @x-autobe-database-schema-property erp_hrm_time_member_id
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_member_sessions.erp_hrm_time_member_id. Expose the owning
+     *   member reference as a UUID scalar rather than hydrating the member
+     *   relation object.
    */
   erp_hrm_time_member_id: string & tags.Format<"uuid">;
 
   /**
    * IP address recorded for this session.
    *
-   * @x-autobe-database-schema-property ip
-   * @x-autobe-specification Direct mapping from erp_hrm_time_member_sessions.ip. Preserve the stored IP string exactly as saved by the session lifecycle.
+     * @x-autobe-database-schema-property ip
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_member_sessions.ip. Preserve the stored IP string exactly
+     *   as saved by the session lifecycle.
    */
   ip: string;
 
   /**
    * Current or entry URL associated with this session.
    *
-   * @x-autobe-database-schema-property href
-   * @x-autobe-specification Direct mapping from erp_hrm_time_member_sessions.href. Preserve the stored request or entry URL string exactly as saved.
+     * @x-autobe-database-schema-property href
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_member_sessions.href. Preserve the stored request or entry
+     *   URL string exactly as saved.
    */
   href: string;
 
   /**
    * Referrer URL captured for this session.
    *
-   * @x-autobe-database-schema-property referrer
-   * @x-autobe-specification Direct mapping from erp_hrm_time_member_sessions.referrer. Preserve the stored referrer URL string exactly as saved.
+     * @x-autobe-database-schema-property referrer
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_member_sessions.referrer. Preserve the stored referrer URL
+     *   string exactly as saved.
    */
   referrer: string;
 
   /**
    * Timestamp when this session was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from erp_hrm_time_member_sessions.created_at. Return the stored timestamp without transformation.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_member_sessions.created_at. Return the stored timestamp
+     *   without transformation.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when this session expires.
    *
-   * @x-autobe-database-schema-property expired_at
-   * @x-autobe-specification Direct mapping from erp_hrm_time_member_sessions.expired_at. Return the stored expiration timestamp without transformation.
+     * @x-autobe-database-schema-property expired_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_member_sessions.expired_at. Return the stored expiration
+     *   timestamp without transformation.
    */
   expired_at: string & tags.Format<"date-time">;
 };
@@ -69,63 +84,82 @@ export namespace IErpHrmTimeMemberSession {
     /**
      * Search term for matching session details such as IP address, entry URL, or referrer.
      *
-     * @x-autobe-specification Apply a case-insensitive search across the authenticated member's session records, matching fields such as ip, href, and referrer. The member scope comes from auth context, not from the request body.
+         * @x-autobe-specification Apply a case-insensitive search across the
+         *   authenticated member's session records, matching fields such as ip,
+         *   href, and referrer. The member scope comes from auth context, not
+         *   from the request body.
      */
     search?: string | undefined;
 
     /**
      * Start of the session creation date-time range, inclusive.
      *
-     * @x-autobe-specification Filter sessions whose created_at value is greater than or equal to this timestamp. Interpret alongside createdAtTo as an inclusive date-time range filter.
+         * @x-autobe-specification Filter sessions whose created_at value is
+         *   greater than or equal to this timestamp. Interpret alongside
+         *   createdAtTo as an inclusive date-time range filter.
      */
     createdAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * End of the session creation date-time range, inclusive.
      *
-     * @x-autobe-specification Filter sessions whose created_at value is less than or equal to this timestamp. Interpret alongside createdAtFrom as an inclusive date-time range filter.
+         * @x-autobe-specification Filter sessions whose created_at value is
+         *   less than or equal to this timestamp. Interpret alongside
+         *   createdAtFrom as an inclusive date-time range filter.
      */
     createdAtTo?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Start of the session expiration date-time range, inclusive.
      *
-     * @x-autobe-specification Filter sessions whose expired_at value is greater than or equal to this timestamp. Use it together with expiredAtTo as an inclusive date-time range filter.
+         * @x-autobe-specification Filter sessions whose expired_at value is
+         *   greater than or equal to this timestamp. Use it together with
+         *   expiredAtTo as an inclusive date-time range filter.
      */
     expiredAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * End of the session expiration date-time range, inclusive.
      *
-     * @x-autobe-specification Filter sessions whose expired_at value is less than or equal to this timestamp. Use it together with expiredAtFrom as an inclusive date-time range filter.
+         * @x-autobe-specification Filter sessions whose expired_at value is
+         *   less than or equal to this timestamp. Use it together with
+         *   expiredAtFrom as an inclusive date-time range filter.
      */
     expiredAtTo?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Field used to sort session results.
      *
-     * @x-autobe-specification Select the session ordering field. Only createdAt and expiredAt are valid values, mapping to created_at and expired_at respectively. Default to created_at when omitted.
+         * @x-autobe-specification Select the session ordering field. Only
+         *   createdAt and expiredAt are valid values, mapping to created_at and
+         *   expired_at respectively. Default to created_at when omitted.
      */
     sort?: "createdAt" | "expiredAt" | undefined;
 
     /**
      * Sort direction for the selected sort field.
      *
-     * @x-autobe-specification Set the sort direction for the selected sort field. Accept asc or desc only. Default to desc so the newest sessions appear first when no explicit order is provided.
+         * @x-autobe-specification Set the sort direction for the selected sort
+         *   field. Accept asc or desc only. Default to desc so the newest
+         *   sessions appear first when no explicit order is provided.
      */
     order?: "asc" | "desc" | undefined;
 
     /**
      * Page number to retrieve.
      *
-     * @x-autobe-specification Use as the 1-indexed page number for paginated session results. Apply standard pagination validation and default to page 1 when omitted.
+         * @x-autobe-specification Use as the 1-indexed page number for
+         *   paginated session results. Apply standard pagination validation and
+         *   default to page 1 when omitted.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of session records per page.
      *
-     * @x-autobe-specification Use as the maximum number of session records returned per page. Enforce the configured bounds and default server behavior when omitted.
+         * @x-autobe-specification Use as the maximum number of session records
+         *   returned per page. Enforce the configured bounds and default server
+         *   behavior when omitted.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -139,48 +173,54 @@ export namespace IErpHrmTimeMemberSession {
     /**
      * Unique identifier of this session record.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from erp_hrm_time_member_sessions.id.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_member_sessions.id.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * IP address captured for this session.
      *
-     * @x-autobe-database-schema-property ip
-     * @x-autobe-specification Direct mapping from erp_hrm_time_member_sessions.ip.
+         * @x-autobe-database-schema-property ip
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_member_sessions.ip.
      */
     ip: string;
 
     /**
      * Current or entry URL associated with this session.
      *
-     * @x-autobe-database-schema-property href
-     * @x-autobe-specification Direct mapping from erp_hrm_time_member_sessions.href.
+         * @x-autobe-database-schema-property href
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_member_sessions.href.
      */
     href: string;
 
     /**
      * Referrer URL captured for this session.
      *
-     * @x-autobe-database-schema-property referrer
-     * @x-autobe-specification Direct mapping from erp_hrm_time_member_sessions.referrer.
+         * @x-autobe-database-schema-property referrer
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_member_sessions.referrer.
      */
     referrer: string;
 
     /**
      * Timestamp when this session was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from erp_hrm_time_member_sessions.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_member_sessions.created_at.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when this session expires.
      *
-     * @x-autobe-database-schema-property expired_at
-     * @x-autobe-specification Direct mapping from erp_hrm_time_member_sessions.expired_at.
+         * @x-autobe-database-schema-property expired_at
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_member_sessions.expired_at.
      */
     expired_at: string & tags.Format<"date-time">;
   };

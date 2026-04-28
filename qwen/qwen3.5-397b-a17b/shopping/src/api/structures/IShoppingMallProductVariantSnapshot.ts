@@ -17,8 +17,9 @@ export type IShoppingMallProductVariantSnapshot = {
    *
    * This UUID serves as the primary key for the variant snapshot record, enabling precise identification when retrieving historical variant states within a product snapshot hierarchy.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_product_variant_snapshots.id. UUID format.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_product_variant_snapshots.id. UUID format.
    */
   id: string & tags.Format<"uuid">;
 
@@ -27,8 +28,10 @@ export type IShoppingMallProductVariantSnapshot = {
    *
    * This unique identifier was assigned to the variant combination when the product snapshot was created. The SKU code is preserved even if the variant's SKU is later modified, enabling accurate historical reconstruction and order item references.
    *
-   * @x-autobe-database-schema-property sku_code
-   * @x-autobe-specification Direct mapping from shopping_mall_product_variant_snapshots.sku_code. Transformed to camelCase skuCode in DTO.
+     * @x-autobe-database-schema-property sku_code
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_product_variant_snapshots.sku_code. Transformed to
+     *   camelCase skuCode in DTO.
    */
   skuCode: string;
 
@@ -37,8 +40,10 @@ export type IShoppingMallProductVariantSnapshot = {
    *
    * Represents the specific option values that define this variant (e.g., 'Red / Large', 'Blue / Small'). This string representation preserves the exact option configuration displayed to customers at the time of the product snapshot, enabling accurate historical display in order items and dispute resolution.
    *
-   * @x-autobe-database-schema-property option_values
-   * @x-autobe-specification Direct mapping from shopping_mall_product_variant_snapshots.option_values. Human-readable text representation of option combination.
+     * @x-autobe-database-schema-property option_values
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_product_variant_snapshots.option_values. Human-readable
+     *   text representation of option combination.
    */
   optionValues: string;
 
@@ -47,8 +52,10 @@ export type IShoppingMallProductVariantSnapshot = {
    *
    * Captures the price that may override the product's base price. This enables accurate historical pricing information for order item snapshots and dispute resolution. The price is preserved exactly as it was when the product snapshot was created.
    *
-   * @x-autobe-database-schema-property price
-   * @x-autobe-specification Direct mapping from shopping_mall_product_variant_snapshots.price. Number type representing the price at snapshot time.
+     * @x-autobe-database-schema-property price
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_product_variant_snapshots.price. Number type representing
+     *   the price at snapshot time.
    */
   price: number;
 
@@ -57,8 +64,10 @@ export type IShoppingMallProductVariantSnapshot = {
    *
    * Preserves the inventory level at the moment the product snapshot was created. This provides historical context for availability at the time of product edits and helps reconstruct the state of the variant for audit purposes.
    *
-   * @x-autobe-database-schema-property stock_quantity
-   * @x-autobe-specification Direct mapping from shopping_mall_product_variant_snapshots.stock_quantity. Integer representing inventory level at snapshot time.
+     * @x-autobe-database-schema-property stock_quantity
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_product_variant_snapshots.stock_quantity. Integer
+     *   representing inventory level at snapshot time.
    */
   stockQuantity: number & tags.Type<"int32">;
 
@@ -67,8 +76,10 @@ export type IShoppingMallProductVariantSnapshot = {
    *
    * Records the exact moment the snapshot was generated, which corresponds to when the parent product was edited. Used for chronological ordering of variant history and audit trail purposes. The timestamp is stored in UTC with timezone information.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from shopping_mall_product_variant_snapshots.created_at. ISO 8601 date-time format (timestamptz).
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_product_variant_snapshots.created_at. ISO 8601 date-time
+     *   format (timestamptz).
    */
   createdAt: string & tags.Format<"date-time">;
 
@@ -77,8 +88,11 @@ export type IShoppingMallProductVariantSnapshot = {
    *
    * When a product is edited, a product snapshot is created along with snapshots of all its variants at that moment. This relation establishes the containment hierarchy, enabling navigation from a variant snapshot to its parent product snapshot which includes the product name, description, base price, and category at the time of edit.
    *
-   * @x-autobe-database-schema-property productSnapshot
-   * @x-autobe-specification Relation via JOIN from shopping_mall_product_variant_snapshots.shopping_mall_product_snapshot_id to shopping_mall_product_snapshots.id. Returns IShoppingMallProductSnapshot.ISummary.
+     * @x-autobe-database-schema-property productSnapshot
+     * @x-autobe-specification Relation via JOIN from
+     *   shopping_mall_product_variant_snapshots.shopping_mall_product_snapshot_id
+     *   to shopping_mall_product_snapshots.id. Returns
+     *   IShoppingMallProductSnapshot.ISummary.
    */
   productSnapshot: IShoppingMallProductSnapshot.ISummary;
 
@@ -87,8 +101,11 @@ export type IShoppingMallProductVariantSnapshot = {
    *
    * This link identifies which variant's state was captured, enabling historical tracking of a specific variant across multiple snapshots. Multiple snapshots can reference the same variant over time as the product is edited, allowing comparison of how the variant's configuration changed.
    *
-   * @x-autobe-database-schema-property productVariant
-   * @x-autobe-specification Relation via JOIN from shopping_mall_product_variant_snapshots.shopping_mall_product_variant_id to shopping_mall_product_variants.id. Returns IShoppingMallProductVariant.ISummary.
+     * @x-autobe-database-schema-property productVariant
+     * @x-autobe-specification Relation via JOIN from
+     *   shopping_mall_product_variant_snapshots.shopping_mall_product_variant_id
+     *   to shopping_mall_product_variants.id. Returns
+     *   IShoppingMallProductVariant.ISummary.
    */
   productVariant: IShoppingMallProductVariant.ISummary;
 };
@@ -108,7 +125,10 @@ export namespace IShoppingMallProductVariantSnapshot {
      *
      * Optional parameter - omit to return all variants without SKU filtering.
      *
-     * @x-autobe-specification Computed filter parameter. Applied as LIKE '%search%' on shopping_mall_product_variant_snapshots.sku_code column. Case-insensitive partial match for finding variants by SKU code.
+         * @x-autobe-specification Computed filter parameter. Applied as LIKE
+         *   '%search%' on shopping_mall_product_variant_snapshots.sku_code
+         *   column. Case-insensitive partial match for finding variants by SKU
+         *   code.
      */
     search?: string | undefined;
 
@@ -119,7 +139,10 @@ export namespace IShoppingMallProductVariantSnapshot {
      *
      * Optional parameter - omit to include variants at any price point.
      *
-     * @x-autobe-specification Computed filter parameter. Applied as price >= price_min on shopping_mall_product_variant_snapshots.price column. Filters variants with price at or above the minimum threshold.
+         * @x-autobe-specification Computed filter parameter. Applied as price
+         *   >= price_min on shopping_mall_product_variant_snapshots.price
+         *   column. Filters variants with price at or above the minimum
+         *   threshold.
      */
     price_min?: number | undefined;
 
@@ -130,7 +153,10 @@ export namespace IShoppingMallProductVariantSnapshot {
      *
      * Optional parameter - omit to include variants at any price point.
      *
-     * @x-autobe-specification Computed filter parameter. Applied as price <= price_max on shopping_mall_product_variant_snapshots.price column. Filters variants with price at or below the maximum threshold.
+         * @x-autobe-specification Computed filter parameter. Applied as price
+         *   <= price_max on shopping_mall_product_variant_snapshots.price
+         *   column. Filters variants with price at or below the maximum
+         *   threshold.
      */
     price_max?: number | undefined;
 
@@ -141,7 +167,10 @@ export namespace IShoppingMallProductVariantSnapshot {
      *
      * Optional parameter - omit to include variants regardless of stock level.
      *
-     * @x-autobe-specification Computed filter parameter. Applied as stock_quantity >= stock_min on shopping_mall_product_variant_snapshots.stock_quantity column. Filters variants with stock at or above the minimum threshold.
+         * @x-autobe-specification Computed filter parameter. Applied as
+         *   stock_quantity >= stock_min on
+         *   shopping_mall_product_variant_snapshots.stock_quantity column.
+         *   Filters variants with stock at or above the minimum threshold.
      */
     stock_min?: (number & tags.Type<"int32">) | undefined;
 
@@ -152,7 +181,10 @@ export namespace IShoppingMallProductVariantSnapshot {
      *
      * Optional parameter - omit to include variants regardless of stock level.
      *
-     * @x-autobe-specification Computed filter parameter. Applied as stock_quantity <= stock_max on shopping_mall_product_variant_snapshots.stock_quantity column. Filters variants with stock at or below the maximum threshold.
+         * @x-autobe-specification Computed filter parameter. Applied as
+         *   stock_quantity <= stock_max on
+         *   shopping_mall_product_variant_snapshots.stock_quantity column.
+         *   Filters variants with stock at or below the maximum threshold.
      */
     stock_max?: (number & tags.Type<"int32">) | undefined;
 
@@ -163,7 +195,9 @@ export namespace IShoppingMallProductVariantSnapshot {
      *
      * Optional parameter - defaults to page 1 if not specified.
      *
-     * @x-autobe-specification Computed pagination parameter. 1-indexed page number. Default is 1 if not provided. Used with limit to calculate OFFSET: OFFSET = (page - 1) * limit.
+         * @x-autobe-specification Computed pagination parameter. 1-indexed page
+         *   number. Default is 1 if not provided. Used with limit to calculate
+         *   OFFSET: OFFSET = (page - 1) * limit.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -174,7 +208,9 @@ export namespace IShoppingMallProductVariantSnapshot {
      *
      * Optional parameter - defaults to a system-configured value (typically 10-20) if not specified. Maximum allowed value is 100.
      *
-     * @x-autobe-specification Computed pagination parameter. Number of records per page. Must be between 1 and 100. Default is typically 10-20 if not provided. Controls the LIMIT clause in the query.
+         * @x-autobe-specification Computed pagination parameter. Number of
+         *   records per page. Must be between 1 and 100. Default is typically
+         *   10-20 if not provided. Controls the LIMIT clause in the query.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -194,8 +230,9 @@ export namespace IShoppingMallProductVariantSnapshot {
      *
      * This UUID identifies a specific snapshot record capturing the variant's state at the time of a product edit. Used for referencing individual snapshots in detail endpoints and audit trail queries.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_product_variant_snapshots.id. UUID format.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_variant_snapshots.id. UUID format.
      */
     id: string & tags.Format<"uuid">;
 
@@ -204,8 +241,10 @@ export namespace IShoppingMallProductVariantSnapshot {
      *
      * The SKU code is preserved exactly as it was when the product snapshot was created, enabling accurate historical reconstruction even if the variant's SKU is later modified. Used for inventory tracking and order item references.
      *
-     * @x-autobe-database-schema-property sku_code
-     * @x-autobe-specification Direct mapping from shopping_mall_product_variant_snapshots.sku_code. Transformed to camelCase (skuCode) for TypeScript convention.
+         * @x-autobe-database-schema-property sku_code
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_variant_snapshots.sku_code. Transformed to
+         *   camelCase (skuCode) for TypeScript convention.
      */
     skuCode: string;
 
@@ -214,8 +253,10 @@ export namespace IShoppingMallProductVariantSnapshot {
      *
      * Stores human-readable option values such as 'Color: Red, Size: Large' or 'Blue / Small'. This value is preserved exactly as displayed to customers when the product snapshot was created, used for historical display in order items and audit trails.
      *
-     * @x-autobe-database-schema-property option_values
-     * @x-autobe-specification Direct mapping from shopping_mall_product_variant_snapshots.option_values. Transformed to camelCase (optionValues) for TypeScript convention.
+         * @x-autobe-database-schema-property option_values
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_variant_snapshots.option_values. Transformed
+         *   to camelCase (optionValues) for TypeScript convention.
      */
     optionValues: string;
 
@@ -224,8 +265,10 @@ export namespace IShoppingMallProductVariantSnapshot {
      *
      * Captures the price that may override the product's base price. This enables accurate historical pricing information for order item snapshots and dispute resolution. Preserved even if the variant's price is later modified.
      *
-     * @x-autobe-database-schema-property price
-     * @x-autobe-specification Direct mapping from shopping_mall_product_variant_snapshots.price. Number type representing the variant price at snapshot time.
+         * @x-autobe-database-schema-property price
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_variant_snapshots.price. Number type
+         *   representing the variant price at snapshot time.
      */
     price: number;
 
@@ -234,8 +277,11 @@ export namespace IShoppingMallProductVariantSnapshot {
      *
      * Preserves the inventory level at the moment the product snapshot was created. This provides historical context for availability at the time of product edits, useful for audit trail and dispute resolution.
      *
-     * @x-autobe-database-schema-property stock_quantity
-     * @x-autobe-specification Direct mapping from shopping_mall_product_variant_snapshots.stock_quantity. Integer type. Transformed to camelCase (stockQuantity) for TypeScript convention.
+         * @x-autobe-database-schema-property stock_quantity
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_variant_snapshots.stock_quantity. Integer
+         *   type. Transformed to camelCase (stockQuantity) for TypeScript
+         *   convention.
      */
     stockQuantity: number & tags.Type<"int32">;
 
@@ -244,8 +290,11 @@ export namespace IShoppingMallProductVariantSnapshot {
      *
      * Records the exact moment the snapshot was generated, which corresponds to when the parent product was edited. Used for chronological ordering of variant history and audit trail purposes. Format: ISO 8601 date-time string.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_product_variant_snapshots.created_at. ISO 8601 date-time format. Transformed to camelCase (createdAt) for TypeScript convention.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_variant_snapshots.created_at. ISO 8601
+         *   date-time format. Transformed to camelCase (createdAt) for
+         *   TypeScript convention.
      */
     createdAt: string & tags.Format<"date-time">;
 
@@ -254,8 +303,11 @@ export namespace IShoppingMallProductVariantSnapshot {
      *
      * This link identifies which variant's state was captured, enabling historical tracking of a specific variant across multiple snapshots. The summary includes essential variant identification fields without excessive detail.
      *
-     * @x-autobe-database-schema-property productVariant
-     * @x-autobe-specification Relation mapping via JOIN from shopping_mall_product_variant_snapshots.shopping_mall_product_variant_id to shopping_mall_product_variants.id. Returns IShoppingMallProductVariant.ISummary.
+         * @x-autobe-database-schema-property productVariant
+         * @x-autobe-specification Relation mapping via JOIN from
+         *   shopping_mall_product_variant_snapshots.shopping_mall_product_variant_id
+         *   to shopping_mall_product_variants.id. Returns
+         *   IShoppingMallProductVariant.ISummary.
      */
     productVariant: IShoppingMallProductVariant.ISummary;
   };

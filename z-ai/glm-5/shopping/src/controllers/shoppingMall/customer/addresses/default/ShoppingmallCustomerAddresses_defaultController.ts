@@ -40,9 +40,9 @@ export class ShoppingmallCustomerAddresses_defaultController {
    *
    * @param connection
    * @param addressId UUID of the shipping address to designate as default. Must belong to the authenticated customer.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Implementation steps for setting default address:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Implementation steps for setting default address:
    *
    * 1. **Authentication Validation**: Extract customer ID from JWT session token. Verify customer account is active (not banned, not deleted).
    *

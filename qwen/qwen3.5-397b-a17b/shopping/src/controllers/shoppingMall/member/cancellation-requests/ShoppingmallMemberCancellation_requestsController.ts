@@ -23,9 +23,10 @@ export class ShoppingmallMemberCancellation_requestsController {
    *
    * @param connection
    * @param body Cancellation request creation data including the order item to cancel and the customer's reason for cancellation.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Create a new cancellation request record in the shopping_mall_cancellation_requests table.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Create a new cancellation request record in the
+     *   shopping_mall_cancellation_requests table.
    *
    * 1. Validate the authenticated customer (member) exists and is active.
    * 2. Verify the order item exists and belongs to the authenticated customer's order.
@@ -78,9 +79,10 @@ export class ShoppingmallMemberCancellation_requestsController {
    *
    * @param connection
    * @param body Search criteria including status filters, order item reference, date ranges for creation and response timestamps, and pagination parameters for cursor-based navigation.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query shopping_mall_cancellation_requests table with pagination and filtering.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query shopping_mall_cancellation_requests table
+     *   with pagination and filtering.
    *
    * Apply role-based data isolation:
    * - member (customer): Filter by shopping_mall_member_id = current user's ID
@@ -132,9 +134,10 @@ export class ShoppingmallMemberCancellation_requestsController {
    *
    * @param connection
    * @param cancellationRequestId Unique identifier of the cancellation request to retrieve (UUID format).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query the shopping_mall_cancellation_requests table by the provided cancellationRequestId UUID parameter.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query the shopping_mall_cancellation_requests
+     *   table by the provided cancellationRequestId UUID parameter.
    *
    * Retrieve the complete record including: id, shopping_mall_order_item_id, shopping_mall_member_id, reason, status, responded_at, created_at, updated_at, deleted_at.
    *

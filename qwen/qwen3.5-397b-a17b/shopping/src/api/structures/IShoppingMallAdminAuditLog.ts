@@ -16,8 +16,9 @@ export type IShoppingMallAdminAuditLog = {
    *
    * This UUID serves as the primary key for the audit log record, enabling precise retrieval and reference. Generated automatically upon creation of the audit log entry.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_admin_audit_logs.id. UUID format primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_admin_audit_logs.id. UUID format primary key.
    */
   id: string & tags.Format<"uuid">;
 
@@ -26,8 +27,10 @@ export type IShoppingMallAdminAuditLog = {
    *
    * This relation identifies which administrator executed the operation recorded in this audit log. Includes the administrator's ID, email, grade level, account status, and associated member profile information for accountability and audit trail purposes.
    *
-   * @x-autobe-database-schema-property admin
-   * @x-autobe-specification Relation mapping via JOIN on shopping_mall_admin_id to shopping_mall_admins. Returns IShoppingMallAdmin.ISummary with administrator details.
+     * @x-autobe-database-schema-property admin
+     * @x-autobe-specification Relation mapping via JOIN on
+     *   shopping_mall_admin_id to shopping_mall_admins. Returns
+     *   IShoppingMallAdmin.ISummary with administrator details.
    */
   admin: IShoppingMallAdmin.ISummary;
 
@@ -36,8 +39,12 @@ export type IShoppingMallAdminAuditLog = {
    *
    * This field categorizes the operation for filtering, reporting, and audit analysis. Common action types include seller approval workflows (approve, reject), account management (ban, unban, suspend, unsuspend), grade changes (promote, demote), and intervention actions (force_cancel, force_refund).
    *
-   * @x-autobe-database-schema-property action_type
-   * @x-autobe-specification Direct mapping from shopping_mall_admin_audit_logs.action_type. String enum values include: 'create', 'update', 'delete', 'approve', 'reject', 'suspend', 'unsuspend', 'ban', 'unban', 'promote', 'demote', 'force_cancel', 'force_refund'.
+     * @x-autobe-database-schema-property action_type
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_admin_audit_logs.action_type. String enum values include:
+     *   'create', 'update', 'delete', 'approve', 'reject', 'suspend',
+     *   'unsuspend', 'ban', 'unban', 'promote', 'demote', 'force_cancel',
+     *   'force_refund'.
    */
   actionType: string;
 
@@ -46,8 +53,11 @@ export type IShoppingMallAdminAuditLog = {
    *
    * This field identifies which domain entity category was modified, enabling auditors to filter logs by entity type. Used together with targetEntityId to locate the specific record that was impacted by the administrative operation.
    *
-   * @x-autobe-database-schema-property target_entity_type
-   * @x-autobe-specification Direct mapping from shopping_mall_admin_audit_logs.target_entity_type. String values identify the domain entity type: 'seller', 'product', 'category', 'customer', 'order', 'order_item', 'administrator'.
+     * @x-autobe-database-schema-property target_entity_type
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_admin_audit_logs.target_entity_type. String values
+     *   identify the domain entity type: 'seller', 'product', 'category',
+     *   'customer', 'order', 'order_item', 'administrator'.
    */
   targetEntityType: string;
 
@@ -56,8 +66,10 @@ export type IShoppingMallAdminAuditLog = {
    *
    * This UUID stores the primary key of the target entity that was created, updated, deleted, or otherwise modified. Combined with targetEntityType, this field enables precise identification of the exact record impacted by the administrative action for audit trail reconstruction.
    *
-   * @x-autobe-database-schema-property target_entity_id
-   * @x-autobe-specification Direct mapping from shopping_mall_admin_audit_logs.target_entity_id. UUID format identifying the specific record affected.
+     * @x-autobe-database-schema-property target_entity_id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_admin_audit_logs.target_entity_id. UUID format
+     *   identifying the specific record affected.
    */
   targetEntityId: string & tags.Format<"uuid">;
 
@@ -66,8 +78,11 @@ export type IShoppingMallAdminAuditLog = {
    *
    * This field contains substantive information about the specific modifications performed, such as field values before and after changes, reasons for approval or rejection decisions, or other contextual details that explain what occurred beyond the basic action type classification. Essential for forensic analysis and compliance auditing.
    *
-   * @x-autobe-database-schema-property action_details
-   * @x-autobe-specification Direct mapping from shopping_mall_admin_audit_logs.action_details. Human-readable string containing specific modification details, field values before/after changes, approval/rejection reasons, or other contextual information.
+     * @x-autobe-database-schema-property action_details
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_admin_audit_logs.action_details. Human-readable string
+     *   containing specific modification details, field values before/after
+     *   changes, approval/rejection reasons, or other contextual information.
    */
   actionDetails: string;
 
@@ -76,8 +91,10 @@ export type IShoppingMallAdminAuditLog = {
    *
    * This field captures the network origin of the request for security monitoring and forensic analysis. Helps identify suspicious access patterns, unauthorized access attempts from unexpected locations, or compromised administrator accounts by tracking where administrative operations originated.
    *
-   * @x-autobe-database-schema-property ip_address
-   * @x-autobe-specification Direct mapping from shopping_mall_admin_audit_logs.ip_address. String format capturing the network origin of the administrative request.
+     * @x-autobe-database-schema-property ip_address
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_admin_audit_logs.ip_address. String format capturing the
+     *   network origin of the administrative request.
    */
   ipAddress: string;
 
@@ -86,8 +103,11 @@ export type IShoppingMallAdminAuditLog = {
    *
    * This field records browser or client application information for security auditing purposes. Useful for detecting automated attacks, identifying compromised sessions through unusual client signatures, or understanding the technical context of administrative actions.
    *
-   * @x-autobe-database-schema-property user_agent
-   * @x-autobe-specification Direct mapping from shopping_mall_admin_audit_logs.user_agent. String containing the browser or client application identifier from the administrative request.
+     * @x-autobe-database-schema-property user_agent
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_admin_audit_logs.user_agent. String containing the
+     *   browser or client application identifier from the administrative
+     *   request.
    */
   userAgent: string;
 
@@ -96,8 +116,11 @@ export type IShoppingMallAdminAuditLog = {
    *
    * This field records the exact time the action occurred, establishing a chronological audit trail. Used for sorting audit logs by time, investigating incidents within specific time windows, compliance reporting, and correlating administrative actions with other system events.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from shopping_mall_admin_audit_logs.created_at. ISO 8601 date-time format (timestamptz in database). Records the exact time the administrative action occurred.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_admin_audit_logs.created_at. ISO 8601 date-time format
+     *   (timestamptz in database). Records the exact time the administrative
+     *   action occurred.
    */
   createdAt: string & tags.Format<"date-time">;
 };
@@ -119,8 +142,12 @@ export namespace IShoppingMallAdminAuditLog {
      *
      * Matches specific operation categories recorded in the audit trail. Common values include 'create', 'update', 'delete', 'approve', 'reject', 'suspend', 'ban', 'promote', and 'demote'. Use this field to narrow results to specific action types when investigating administrative activities or generating compliance reports.
      *
-     * @x-autobe-database-schema-property action_type
-     * @x-autobe-specification Direct mapping to shopping_mall_admin_audit_logs.action_type column. Exact match filter for action categories: create, update, delete, approve, reject, suspend, unsuspend, ban, unban, promote, demote, force_cancel, force_refund.
+         * @x-autobe-database-schema-property action_type
+         * @x-autobe-specification Direct mapping to
+         *   shopping_mall_admin_audit_logs.action_type column. Exact match
+         *   filter for action categories: create, update, delete, approve,
+         *   reject, suspend, unsuspend, ban, unban, promote, demote,
+         *   force_cancel, force_refund.
      */
     action_type?: string | undefined;
 
@@ -129,8 +156,11 @@ export namespace IShoppingMallAdminAuditLog {
      *
      * Identifies which domain entity was modified by the administrative operation. Valid values include 'seller', 'product', 'category', 'customer', 'order', 'order_item', and 'administrator'. Use this field to focus audit queries on specific entity types when reviewing administrative oversight activities.
      *
-     * @x-autobe-database-schema-property target_entity_type
-     * @x-autobe-specification Direct mapping to shopping_mall_admin_audit_logs.target_entity_type column. Exact match filter for entity types: seller, product, category, customer, order, order_item, administrator.
+         * @x-autobe-database-schema-property target_entity_type
+         * @x-autobe-specification Direct mapping to
+         *   shopping_mall_admin_audit_logs.target_entity_type column. Exact
+         *   match filter for entity types: seller, product, category, customer,
+         *   order, order_item, administrator.
      */
     target_entity_type?: string | undefined;
 
@@ -139,8 +169,11 @@ export namespace IShoppingMallAdminAuditLog {
      *
      * Accepts a UUID identifying a specific administrator account. Returns only audit log entries where the specified administrator executed the action. Useful for investigating individual administrator activity, reviewing work history, or auditing specific user accounts for compliance purposes.
      *
-     * @x-autobe-database-schema-property shopping_mall_admin_id
-     * @x-autobe-specification Direct mapping to shopping_mall_admin_audit_logs.shopping_mall_admin_id column. UUID format filter for specific administrator account. Used to query all actions performed by a particular administrator.
+         * @x-autobe-database-schema-property shopping_mall_admin_id
+         * @x-autobe-specification Direct mapping to
+         *   shopping_mall_admin_audit_logs.shopping_mall_admin_id column. UUID
+         *   format filter for specific administrator account. Used to query all
+         *   actions performed by a particular administrator.
      */
     shopping_mall_admin_id?: (string & tags.Format<"uuid">) | undefined;
 
@@ -149,7 +182,10 @@ export namespace IShoppingMallAdminAuditLog {
      *
      * Accepts an ISO 8601 formatted date-time string. Returns only audit log entries created at or after this timestamp. Use this parameter to establish the beginning of a time window when investigating administrative actions within specific date ranges or generating time-bounded compliance reports.
      *
-     * @x-autobe-specification Computed filter parameter. Maps to shopping_mall_admin_audit_logs.created_at >= timestamp condition. ISO 8601 date-time format. Filters audit logs from this timestamp onwards (inclusive).
+         * @x-autobe-specification Computed filter parameter. Maps to
+         *   shopping_mall_admin_audit_logs.created_at >= timestamp condition.
+         *   ISO 8601 date-time format. Filters audit logs from this timestamp
+         *   onwards (inclusive).
      */
     created_at_from?: (string & tags.Format<"date-time">) | undefined;
 
@@ -158,7 +194,10 @@ export namespace IShoppingMallAdminAuditLog {
      *
      * Accepts an ISO 8601 formatted date-time string. Returns only audit log entries created at or before this timestamp. Use this parameter together with created_at_from to define a complete time window for investigating administrative actions within specific date ranges.
      *
-     * @x-autobe-specification Computed filter parameter. Maps to shopping_mall_admin_audit_logs.created_at <= timestamp condition. ISO 8601 date-time format. Filters audit logs up to this timestamp (inclusive).
+         * @x-autobe-specification Computed filter parameter. Maps to
+         *   shopping_mall_admin_audit_logs.created_at <= timestamp condition.
+         *   ISO 8601 date-time format. Filters audit logs up to this timestamp
+         *   (inclusive).
      */
     created_at_to?: (string & tags.Format<"date-time">) | undefined;
 
@@ -167,7 +206,10 @@ export namespace IShoppingMallAdminAuditLog {
      *
      * Performs fuzzy text matching against the action_details field using PostgreSQL trigram indexing. Searches for keywords or phrases describing what changes were made during administrative actions. Useful for finding specific operations when you know descriptive details but not the exact action type or target entity.
      *
-     * @x-autobe-specification Computed search parameter. Performs PostgreSQL trigram-based text search on shopping_mall_admin_audit_logs.action_details column. Enables fuzzy matching for finding specific action descriptions.
+         * @x-autobe-specification Computed search parameter. Performs
+         *   PostgreSQL trigram-based text search on
+         *   shopping_mall_admin_audit_logs.action_details column. Enables fuzzy
+         *   matching for finding specific action descriptions.
      */
     search?: string | undefined;
 
@@ -176,7 +218,9 @@ export namespace IShoppingMallAdminAuditLog {
      *
      * Specifies which page of results to retrieve, using 1-based indexing (first page is 1, not 0). Defaults to page 1 if omitted. Use this parameter together with limit to navigate through large audit log result sets efficiently.
      *
-     * @x-autobe-specification Computed pagination parameter. 1-indexed page number for cursor-based pagination. Defaults to 1 if not provided. Used with limit to control result set pagination.
+         * @x-autobe-specification Computed pagination parameter. 1-indexed page
+         *   number for cursor-based pagination. Defaults to 1 if not provided.
+         *   Used with limit to control result set pagination.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -185,7 +229,9 @@ export namespace IShoppingMallAdminAuditLog {
      *
      * Controls the page size for paginated audit log results. Must be between 1 and 100 inclusive. Defaults to 20 records per page if not specified. The actual number of records returned may be less than this value on the final page or when total matching records are fewer than the limit.
      *
-     * @x-autobe-specification Computed pagination parameter. Maximum number of records per page. Minimum value is 1, maximum is 100. Defaults to 20 if not provided. Controls page size for pagination.
+         * @x-autobe-specification Computed pagination parameter. Maximum number
+         *   of records per page. Minimum value is 1, maximum is 100. Defaults
+         *   to 20 if not provided. Controls page size for pagination.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -205,8 +251,9 @@ export namespace IShoppingMallAdminAuditLog {
      *
      * This UUID serves as the primary key for the audit log record, enabling precise identification of specific administrative actions for compliance reporting and forensic investigation.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_admin_audit_logs.id. UUID format.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_admin_audit_logs.id. UUID format.
      */
     id: string & tags.Format<"uuid">;
 
@@ -215,8 +262,10 @@ export namespace IShoppingMallAdminAuditLog {
      *
      * Categorizes the operation for filtering and reporting. Common values include: 'create', 'update', 'delete', 'approve', 'reject', 'suspend', 'unsuspend', 'ban', 'unban', 'promote', 'demote', 'force_cancel', 'force_refund'. This field enables quick filtering of audit logs by action category.
      *
-     * @x-autobe-database-schema-property action_type
-     * @x-autobe-specification Direct mapping from shopping_mall_admin_audit_logs.action_type. String value categorizing the operation.
+         * @x-autobe-database-schema-property action_type
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_admin_audit_logs.action_type. String value
+         *   categorizing the operation.
      */
     actionType: string;
 
@@ -225,8 +274,10 @@ export namespace IShoppingMallAdminAuditLog {
      *
      * Identifies which domain entity was modified, such as: 'seller', 'product', 'category', 'customer', 'order', 'order_item', 'administrator'. Used together with targetEntityId to locate the specific record that was affected.
      *
-     * @x-autobe-database-schema-property target_entity_type
-     * @x-autobe-specification Direct mapping from shopping_mall_admin_audit_logs.target_entity_type. String identifying the domain entity type.
+         * @x-autobe-database-schema-property target_entity_type
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_admin_audit_logs.target_entity_type. String
+         *   identifying the domain entity type.
      */
     targetEntityType: string;
 
@@ -235,8 +286,10 @@ export namespace IShoppingMallAdminAuditLog {
      *
      * Stores the primary key of the target entity that was created, updated, deleted, or otherwise modified. Combined with targetEntityType, this identifies the exact record impacted by the administrative action.
      *
-     * @x-autobe-database-schema-property target_entity_id
-     * @x-autobe-specification Direct mapping from shopping_mall_admin_audit_logs.target_entity_id. UUID of the affected record.
+         * @x-autobe-database-schema-property target_entity_id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_admin_audit_logs.target_entity_id. UUID of the
+         *   affected record.
      */
     targetEntityId: string & tags.Format<"uuid">;
 
@@ -245,8 +298,10 @@ export namespace IShoppingMallAdminAuditLog {
      *
      * Contains human-readable information about the specific modifications, such as field values before and after changes, approval/rejection reasons, or other contextual details. This field provides the substantive content of what occurred beyond the basic action type classification.
      *
-     * @x-autobe-database-schema-property action_details
-     * @x-autobe-specification Direct mapping from shopping_mall_admin_audit_logs.action_details. String containing human-readable change description.
+         * @x-autobe-database-schema-property action_details
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_admin_audit_logs.action_details. String containing
+         *   human-readable change description.
      */
     actionDetails: string;
 
@@ -255,8 +310,10 @@ export namespace IShoppingMallAdminAuditLog {
      *
      * Captures the network origin of the request for security monitoring and forensic analysis. Helps identify suspicious access patterns or unauthorized access attempts from unexpected locations.
      *
-     * @x-autobe-database-schema-property ip_address
-     * @x-autobe-specification Direct mapping from shopping_mall_admin_audit_logs.ip_address. String format IP address.
+         * @x-autobe-database-schema-property ip_address
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_admin_audit_logs.ip_address. String format IP
+         *   address.
      */
     ipAddress: string;
 
@@ -265,8 +322,10 @@ export namespace IShoppingMallAdminAuditLog {
      *
      * Records browser or client application information for security auditing. Useful for detecting automated attacks, identifying compromised sessions, or understanding the context of administrative actions.
      *
-     * @x-autobe-database-schema-property user_agent
-     * @x-autobe-specification Direct mapping from shopping_mall_admin_audit_logs.user_agent. String containing browser/client identification.
+         * @x-autobe-database-schema-property user_agent
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_admin_audit_logs.user_agent. String containing
+         *   browser/client identification.
      */
     userAgent: string;
 
@@ -275,8 +334,10 @@ export namespace IShoppingMallAdminAuditLog {
      *
      * Records the exact time the action occurred, establishing a chronological audit trail. Used for sorting audit logs, investigating incidents within specific time windows, and compliance reporting.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_admin_audit_logs.created_at. ISO 8601 date-time format.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_admin_audit_logs.created_at. ISO 8601 date-time
+         *   format.
      */
     createdAt: string & tags.Format<"date-time">;
 
@@ -285,8 +346,10 @@ export namespace IShoppingMallAdminAuditLog {
      *
      * References the administrator who executed the action, establishing accountability for all administrative operations. Provides essential context for audit trail review by including the administrator's identity and grade level.
      *
-     * @x-autobe-database-schema-property admin
-     * @x-autobe-specification Relation mapping via shopping_mall_admin_id FK to shopping_mall_admins table. Returns IShoppingMallAdmin.ISummary via JOIN.
+         * @x-autobe-database-schema-property admin
+         * @x-autobe-specification Relation mapping via shopping_mall_admin_id
+         *   FK to shopping_mall_admins table. Returns
+         *   IShoppingMallAdmin.ISummary via JOIN.
      */
     admin: IShoppingMallAdmin.ISummary;
   };

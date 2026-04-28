@@ -32,7 +32,8 @@ export * as members from "./members/index";
  * @param props.body Search criteria for filtering projects including status, name pattern, date ranges, and pagination parameters.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implement PATCH /projects as a paginated project list endpoint with search capabilities.
+ * @x-autobe-specification Implement PATCH /projects as a paginated project list
+ *   endpoint with search capabilities.
  *
  * **Implementation Steps**
  * 1. Extract organization context from authenticated user session

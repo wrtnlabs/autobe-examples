@@ -21,7 +21,10 @@ import { IPageIMallPlatformProductImageSnapshot } from "../../../../../structure
  * @param props.body Pagination, filtering, and sorting criteria for browsing a product's image snapshot history.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Verify that the product exists and that the caller is allowed to view its history under product visibility and role-based access rules. Query the product image snapshot records for the given productId, ordered newest first by default.
+ * @x-autobe-specification Verify that the product exists and that the caller is
+ *   allowed to view its history under product visibility and role-based access
+ *   rules. Query the product image snapshot records for the given productId,
+ *   ordered newest first by default.
  *
  * Use the request body for pagination and any supported filtering or sorting criteria. Return an empty page when no snapshots exist. If the product does not exist, return a not-found error. If the caller is not authorized to view the historical records, return a forbidden error.
  *
@@ -122,7 +125,11 @@ export namespace index {
  * @param props.snapshotId The UUID of the product image snapshot to retrieve within that product scope.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Query mall_platform_product_image_snapshots for a single row using snapshotId and verify that mall_platform_product_id matches productId before returning it. Return the complete snapshot entity with id, mall_platform_product_id, image_url, image_order, is_main, changed_at, created_at, updated_at, and deleted_at.
+ * @x-autobe-specification Query mall_platform_product_image_snapshots for a
+ *   single row using snapshotId and verify that mall_platform_product_id
+ *   matches productId before returning it. Return the complete snapshot entity
+ *   with id, mall_platform_product_id, image_url, image_order, is_main,
+ *   changed_at, created_at, updated_at, and deleted_at.
  *
  * Use a scoped lookup or an equivalent existence check on the parent product to ensure the snapshot cannot be fetched outside its product context. If either identifier is invalid or no matching row exists, return a not-found error. Do not update product images, do not regenerate snapshots, and do not alter history records.
  * @path /mallPlatform/seller/products/:productId/imageSnapshots/:snapshotId

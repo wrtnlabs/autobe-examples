@@ -20,7 +20,10 @@ import { IPageIECommerceMallSellerApprovalRequest } from "../../../../structures
  * @param props.body Search criteria for filtering seller registration approval requests, supporting status filter, seller email keyword search, reviewer email search, submission and review date range filters, and pagination parameters.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor administrator
- * @x-autobe-specification Query the e_commerce_mall_seller_approval_requests table joined with e_commerce_mall_sellers (for seller email) and e_commerce_mall_administrators (for reviewer info). Exclude soft-deleted records (deleted_at IS NULL).
+ * @x-autobe-specification Query the e_commerce_mall_seller_approval_requests
+ *   table joined with e_commerce_mall_sellers (for seller email) and
+ *   e_commerce_mall_administrators (for reviewer info). Exclude soft-deleted
+ *   records (deleted_at IS NULL).
  *
  * Apply search filters:
  * - status: filter by "pending", "approved", or "rejected" (all statuses if omitted)
@@ -119,7 +122,12 @@ export namespace index {
  * @param props.requestId Unique identifier (UUID) of the seller approval request to retrieve.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor administrator
- * @x-autobe-specification Query e_commerce_mall_seller_approval_requests table by primary key id matching the requestId path parameter. Exclude soft-deleted records by filtering WHERE deleted_at IS NULL. Join with e_commerce_mall_sellers (seller_id) to include seller email and current approval_status. Join with e_commerce_mall_administrators (reviewer_id) to include reviewer details when the request has been reviewed.
+ * @x-autobe-specification Query e_commerce_mall_seller_approval_requests table
+ *   by primary key id matching the requestId path parameter. Exclude
+ *   soft-deleted records by filtering WHERE deleted_at IS NULL. Join with
+ *   e_commerce_mall_sellers (seller_id) to include seller email and current
+ *   approval_status. Join with e_commerce_mall_administrators (reviewer_id) to
+ *   include reviewer details when the request has been reviewed.
  *
  * Authorization: Sellers can only view their own approval requests — filter by seller_id matching the authenticated seller's ID. Administrators can view any approval request regardless of seller. Return 404 Not Found if the record does not exist, is soft-deleted, or the requesting user is not authorized to view it. Return the full approval request record including seller and reviewer relationship data.
  * @path /eCommerceMall/administrator/approval-requests/:requestId
@@ -209,7 +217,8 @@ export namespace at {
  * @param props.body The review decision for the seller approval request. Includes the review outcome status ('approved' or 'rejected') and, when rejecting, a required textual reason explaining the rejection.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor administrator
- * @x-autobe-specification Validate the approval request exists and its status is 'pending' (reject if already reviewed).
+ * @x-autobe-specification Validate the approval request exists and its status
+ *   is 'pending' (reject if already reviewed).
  *
  * Validate the current actor is an administrator (authorization handled by auth middleware).
  *

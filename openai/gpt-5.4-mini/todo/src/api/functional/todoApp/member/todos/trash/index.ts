@@ -20,7 +20,9 @@ import { ITodoAppTodo } from "../../../../../structures/ITodoAppTodo";
  * @param props.body Trash list search criteria including pagination, completion-status filtering, and sort options for the current member's deleted todos.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query the todo_app_todos table for rows owned by the authenticated member and marked as deleted/trash according to the application's trash state handling. Exclude all non-trashed todos.
+ * @x-autobe-specification Query the todo_app_todos table for rows owned by the
+ *   authenticated member and marked as deleted/trash according to the
+ *   application's trash state handling. Exclude all non-trashed todos.
  *
  * Apply pagination from the request body and return a paginated result set sorted according to the requested sort order. Support completion-status filtering for all, complete only, or incomplete only trashed todos if the request DTO includes those fields. For date-based sorting, ensure todos with null start date or due date are placed at the end when sorting by that field, matching the business rules.
  *

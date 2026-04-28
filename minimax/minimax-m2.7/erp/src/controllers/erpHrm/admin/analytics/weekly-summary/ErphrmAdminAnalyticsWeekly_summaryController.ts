@@ -23,9 +23,10 @@ export class ErphrmAdminAnalyticsWeekly_summaryController {
    *
    * @param connection
    * @param body Date range and optional project filter for the weekly summary report
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query erp_hrm_timelogs table with date range filtering from startDate to endDate.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Query erp_hrm_timelogs table with date range
+     *   filtering from startDate to endDate.
    *
    * For each complete week (Monday 00:00:00 to Sunday 23:59:59) within the date range:
    * 1. Calculate total hours: SUM(duration_minutes) / 60.0

@@ -21,9 +21,11 @@ export class EcommercemallAdministratorCategoriesSnapshotsController {
    * @param connection
    * @param categoryId The UUID of the category to retrieve snapshots for.
    * @param body Pagination, sorting, and filtering criteria for retrieving category snapshots.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Query ecommerce_mall_categories_snapshots table for all snapshots where category_id matches the provided categoryId path parameter.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor administrator
+     * @x-autobe-specification Query ecommerce_mall_categories_snapshots table
+     *   for all snapshots where category_id matches the provided categoryId
+     *   path parameter.
    *
    * Apply pagination: limit, offset, and cursor-based pagination if requested.
    * Apply sorting: sort by created_at (default: descending) or other snapshot fields.
@@ -73,9 +75,11 @@ export class EcommercemallAdministratorCategoriesSnapshotsController {
    * @param connection
    * @param categoryId The unique identifier of the category that was modified.
    * @param snapshotId The unique identifier of the category snapshot to retrieve.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Fetch category snapshot record from ecommerce_mall_categories_snapshots table where id matches snapshotId parameter.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor administrator
+     * @x-autobe-specification Fetch category snapshot record from
+     *   ecommerce_mall_categories_snapshots table where id matches snapshotId
+     *   parameter.
    *
    * **Validation**:
    * 1. Validate categoryId and snapshotId are valid UUID format

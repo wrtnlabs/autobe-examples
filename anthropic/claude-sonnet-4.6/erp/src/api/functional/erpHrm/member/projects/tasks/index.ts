@@ -31,7 +31,9 @@ export * as histories from "./histories/index";
  * @param props.body Creation payload for a new task, including title, status, priority, optional assignee, optional parent task reference, and planning metadata.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification 1. Authenticate the calling member and resolve their organization_member record scoped to the organization that owns the target project.
+ * @x-autobe-specification 1. Authenticate the calling member and resolve their
+ *   organization_member record scoped to the organization that owns the target
+ *   project.
  *
  * 2. Look up the project by `projectId` in `erp_hrm_projects` where `deleted_at IS NULL`. Return 404 if not found or if the project does not belong to the caller's current organization.
  *
@@ -165,23 +167,36 @@ export namespace create {
  * @param props.body Search criteria including status/priority/assignee filters, sort field and order, and pagination parameters.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification 1. Authenticate the requesting member session and resolve their organization context.
- * 2. Look up the target project by `projectId` (UUID) in `erp_hrm_projects`. Verify that the project belongs to the requester's organization and is not deleted (`deleted_at IS NULL`). Return 404 if not found.
- * 3. Authorization check:
- *    a. If the requester has the `project:manage` permission (check their role's permissions via `erp_hrm_role_permissions`), allow access regardless of project membership.
- *    b. If the requester is a project lead of this project (check `erp_hrm_project_members` where `project_id = projectId` AND `organization_member_id = requester's org member id` AND `project_role = 'project-lead'` AND `deleted_at IS NULL`), allow access.
- *    c. Otherwise, verify the requester is an active project member (`erp_hrm_project_members` where `project_id = projectId` AND `organization_member_id = requester's org member id` AND `deleted_at IS NULL`). If not found, return 403.
- * 4. Build a query against `erp_hrm_tasks` WHERE `erp_hrm_project_id = projectId` AND `deleted_at IS NULL`.
- * 5. Apply filters from request body:
- *    - If `statuses` array is provided and non-empty, add `status IN (...)` clause. Reject invalid status values with 400.
- *    - If `priorities` array is provided and non-empty, add `priority IN (...)` clause. Reject invalid priority values with 400.
- *    - If `assigneeId` is provided, add `erp_hrm_organization_member_id = assigneeId` clause.
- * 6. Apply sorting:
- *    - Map `sortBy` field values: 'dueDate' → `due_date`, 'priority' → `priority` (use custom sort order: urgent > high > medium > low for DESC, reverse for ASC), 'createdAt' → `created_at`.
- *    - Apply `sortOrder` (asc/desc). Default: `created_at DESC`.
- * 7. Apply pagination: calculate OFFSET and LIMIT from `page` and `limit` parameters. Count total matching records for pagination metadata.
- * 8. Join with `erp_hrm_organization_members` for assignee summary info if `erp_hrm_organization_member_id` is set.
- * 9. Return paginated results as `IPageIErpHrmTask.ISummary` with pagination metadata (total count, current page, page size, total pages).
+ * @x-autobe-specification 1. Authenticate the requesting member session and
+ *   resolve their organization context. 2. Look up the target project by
+ *   `projectId` (UUID) in `erp_hrm_projects`. Verify that the project belongs
+ *   to the requester's organization and is not deleted (`deleted_at IS NULL`).
+ *   Return 404 if not found. 3. Authorization check: a. If the requester has
+ *   the `project:manage` permission (check their role's permissions via
+ *   `erp_hrm_role_permissions`), allow access regardless of project membership.
+ *   b. If the requester is a project lead of this project (check
+ *   `erp_hrm_project_members` where `project_id = projectId` AND
+ *   `organization_member_id = requester's org member id` AND `project_role =
+ *   'project-lead'` AND `deleted_at IS NULL`), allow access. c. Otherwise,
+ *   verify the requester is an active project member (`erp_hrm_project_members`
+ *   where `project_id = projectId` AND `organization_member_id = requester's
+ *   org member id` AND `deleted_at IS NULL`). If not found, return 403. 4.
+ *   Build a query against `erp_hrm_tasks` WHERE `erp_hrm_project_id =
+ *   projectId` AND `deleted_at IS NULL`. 5. Apply filters from request body: -
+ *   If `statuses` array is provided and non-empty, add `status IN (...)`
+ *   clause. Reject invalid status values with 400. - If `priorities` array is
+ *   provided and non-empty, add `priority IN (...)` clause. Reject invalid
+ *   priority values with 400. - If `assigneeId` is provided, add
+ *   `erp_hrm_organization_member_id = assigneeId` clause. 6. Apply sorting: -
+ *   Map `sortBy` field values: 'dueDate' → `due_date`, 'priority' → `priority`
+ *   (use custom sort order: urgent > high > medium > low for DESC, reverse for
+ *   ASC), 'createdAt' → `created_at`. - Apply `sortOrder` (asc/desc). Default:
+ *   `created_at DESC`. 7. Apply pagination: calculate OFFSET and LIMIT from
+ *   `page` and `limit` parameters. Count total matching records for pagination
+ *   metadata. 8. Join with `erp_hrm_organization_members` for assignee summary
+ *   info if `erp_hrm_organization_member_id` is set. 9. Return paginated
+ *   results as `IPageIErpHrmTask.ISummary` with pagination metadata (total
+ *   count, current page, page size, total pages).
  * @path /erpHrm/member/projects/:projectId/tasks
  * @accessor api.functional.erpHrm.member.projects.tasks.index
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -284,21 +299,25 @@ export namespace index {
  * @param props.taskId The UUID of the task to retrieve.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification 1. Validate that the authenticated member belongs to the organization that owns the project identified by projectId (via erp_hrm_projects.organization_id).
- * 2. Look up the project in erp_hrm_projects by projectId (UUID). If not found or deleted_at is set, return 404.
- * 3. Check authorization:
- *    a. If the member's role has the 'project:manage' permission, allow access regardless of project membership.
- *    b. Otherwise, verify that an active (deleted_at IS NULL) erp_hrm_project_members record exists linking the calling member to this project. If not found, return 403.
- * 4. Look up the task in erp_hrm_tasks by taskId (UUID) where erp_hrm_project_id = projectId and deleted_at IS NULL. If not found, return 404.
- * 5. Eagerly load related data:
- *    a. Task histories from erp_hrm_task_histories WHERE erp_hrm_task_id = taskId, ordered by created_at ASC.
- *    b. Assignee info from erp_hrm_organization_members (if erp_hrm_organization_member_id is set).
- *    c. Parent task summary (if parent_id is set) — only top-level fields (id, title, status) to avoid deep nesting.
- *    d. Subtasks list from erp_hrm_tasks WHERE parent_id = taskId AND deleted_at IS NULL.
- * 6. Return the assembled IErpHrmTask response object.
- * 7. Edge cases:
- *    - If taskId does not belong to the given projectId, return 404.
- *    - Soft-deleted tasks (deleted_at IS NOT NULL) must not be returned.
+ * @x-autobe-specification 1. Validate that the authenticated member belongs to
+ *   the organization that owns the project identified by projectId (via
+ *   erp_hrm_projects.organization_id). 2. Look up the project in
+ *   erp_hrm_projects by projectId (UUID). If not found or deleted_at is set,
+ *   return 404. 3. Check authorization: a. If the member's role has the
+ *   'project:manage' permission, allow access regardless of project membership.
+ *   b. Otherwise, verify that an active (deleted_at IS NULL)
+ *   erp_hrm_project_members record exists linking the calling member to this
+ *   project. If not found, return 403. 4. Look up the task in erp_hrm_tasks by
+ *   taskId (UUID) where erp_hrm_project_id = projectId and deleted_at IS NULL.
+ *   If not found, return 404. 5. Eagerly load related data: a. Task histories
+ *   from erp_hrm_task_histories WHERE erp_hrm_task_id = taskId, ordered by
+ *   created_at ASC. b. Assignee info from erp_hrm_organization_members (if
+ *   erp_hrm_organization_member_id is set). c. Parent task summary (if
+ *   parent_id is set) — only top-level fields (id, title, status) to avoid deep
+ *   nesting. d. Subtasks list from erp_hrm_tasks WHERE parent_id = taskId AND
+ *   deleted_at IS NULL. 6. Return the assembled IErpHrmTask response object. 7.
+ *   Edge cases: - If taskId does not belong to the given projectId, return 404.
+ *   - Soft-deleted tasks (deleted_at IS NOT NULL) must not be returned.
  * @path /erpHrm/member/projects/:projectId/tasks/:taskId
  * @accessor api.functional.erpHrm.member.projects.tasks.at
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -398,23 +417,35 @@ export namespace at {
  * @param props.body Fields to update on the task. Only provided fields are modified; omitted fields retain their current values.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification 1. Authenticate the requesting member and resolve their organization context.
- * 2. Look up the project by projectId in erp_hrm_projects where deleted_at IS NULL. Return 404 if not found.
- * 3. Look up the task by taskId in erp_hrm_tasks where erp_hrm_project_id = projectId AND deleted_at IS NULL. Return 404 if not found or does not belong to the project.
- * 4. Authorize the request: check if the requesting organization member holds `project:manage` permission via their role's erp_hrm_role_permissions, OR if they have a record in erp_hrm_project_members with project_id = projectId AND project_role = 'project-lead' AND deleted_at IS NULL. If neither condition is met, return 403.
- * 5. Validate request body fields:
- *    a. title: if provided, must be a non-empty string.
- *    b. status: if provided, must be one of ['open', 'in-progress', 'completed', 'closed'].
- *    c. priority: if provided, must be one of ['low', 'medium', 'high', 'urgent'].
- *    d. estimated_hours: if provided, must be a positive number.
- *    e. due_date: if provided, must be a valid ISO datetime.
- *    f. assignee_id: if provided (non-null), verify that the referenced organization member has an active record in erp_hrm_project_members with project_id = projectId AND deleted_at IS NULL. Return 422 if not a project member.
- *    g. parent_id: if provided, verify the referenced parent task belongs to the same project, is not itself a subtask (its own parent_id must be null), and is not the current task itself. Return 422 if violation.
- * 6. Begin a database transaction:
- *    a. If status is being changed: capture old_status from the current task record. After updating the task, insert a new row into erp_hrm_task_histories with: task_id, old_status, new_status, changed_by_organization_member_id (requester), and created_at = NOW().
- *    b. Apply all provided field updates to erp_hrm_tasks (set updated_at = NOW()).
- * 7. Commit the transaction.
- * 8. Return the full updated task record joined with relevant relations (project info, assignee info, parent task summary if applicable) as IErpHrmTask.
+ * @x-autobe-specification 1. Authenticate the requesting member and resolve
+ *   their organization context. 2. Look up the project by projectId in
+ *   erp_hrm_projects where deleted_at IS NULL. Return 404 if not found. 3. Look
+ *   up the task by taskId in erp_hrm_tasks where erp_hrm_project_id = projectId
+ *   AND deleted_at IS NULL. Return 404 if not found or does not belong to the
+ *   project. 4. Authorize the request: check if the requesting organization
+ *   member holds `project:manage` permission via their role's
+ *   erp_hrm_role_permissions, OR if they have a record in
+ *   erp_hrm_project_members with project_id = projectId AND project_role =
+ *   'project-lead' AND deleted_at IS NULL. If neither condition is met, return
+ *   403. 5. Validate request body fields: a. title: if provided, must be a
+ *   non-empty string. b. status: if provided, must be one of ['open',
+ *   'in-progress', 'completed', 'closed']. c. priority: if provided, must be
+ *   one of ['low', 'medium', 'high', 'urgent']. d. estimated_hours: if
+ *   provided, must be a positive number. e. due_date: if provided, must be a
+ *   valid ISO datetime. f. assignee_id: if provided (non-null), verify that the
+ *   referenced organization member has an active record in
+ *   erp_hrm_project_members with project_id = projectId AND deleted_at IS NULL.
+ *   Return 422 if not a project member. g. parent_id: if provided, verify the
+ *   referenced parent task belongs to the same project, is not itself a subtask
+ *   (its own parent_id must be null), and is not the current task itself.
+ *   Return 422 if violation. 6. Begin a database transaction: a. If status is
+ *   being changed: capture old_status from the current task record. After
+ *   updating the task, insert a new row into erp_hrm_task_histories with:
+ *   task_id, old_status, new_status, changed_by_organization_member_id
+ *   (requester), and created_at = NOW(). b. Apply all provided field updates to
+ *   erp_hrm_tasks (set updated_at = NOW()). 7. Commit the transaction. 8.
+ *   Return the full updated task record joined with relevant relations (project
+ *   info, assignee info, parent task summary if applicable) as IErpHrmTask.
  * @path /erpHrm/member/projects/:projectId/tasks/:taskId
  * @accessor api.functional.erpHrm.member.projects.tasks.update
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -522,18 +553,35 @@ export namespace update {
  * @param props.taskId The unique identifier (UUID) of the task to be deleted within the specified project.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification 1. Authenticate the requesting member and retrieve their organization context.
- * 2. Load the project record from erp_hrm_projects where id = projectId and deleted_at IS NULL. Return 404 if not found.
- * 3. Verify that the requesting member belongs to the same organization as the project (via erp_hrm_organization_members.organization_id). Return 403 if not.
- * 4. Authorization check: the requesting member must either (a) hold the 'project:manage' permission (verified through their role's permissions in erp_hrm_role_permissions), OR (b) have a project membership record in erp_hrm_project_members where project_id = projectId AND organization_member_id = requestingMemberId AND project_role = 'project-lead' AND deleted_at IS NULL. Return 403 if neither condition is met.
- * 5. Load the task record from erp_hrm_tasks where id = taskId AND erp_hrm_project_id = projectId AND deleted_at IS NULL. Return 404 if not found or already deleted.
- * 6. Begin a database transaction.
- * 7. If the task has subtasks (parent_id = taskId in erp_hrm_tasks), set their deleted_at to NOW() as well.
- * 8. Set erp_hrm_tasks.deleted_at = NOW() and erp_hrm_tasks.updated_at = NOW() for the target task.
- * 9. Note: erp_hrm_task_histories entries are automatically cascade-deleted by the DB onDelete: Cascade relationship when the parent task is deleted; however, since this is a soft deletion approach, task history records remain unless the task is physically deleted. For consistency with the soft-delete pattern, retain task histories as historical data.
- * 10. Commit the transaction.
- * 11. Return the full task record (as it was at the time of deletion, including the newly set deleted_at timestamp).
- * 12. Edge cases: if taskId refers to a subtask, only that subtask is deleted (not siblings). If the task is already soft-deleted, return 404. Verify the task's erp_hrm_project_id matches the given projectId to prevent cross-project deletion.
+ * @x-autobe-specification 1. Authenticate the requesting member and retrieve
+ *   their organization context. 2. Load the project record from
+ *   erp_hrm_projects where id = projectId and deleted_at IS NULL. Return 404 if
+ *   not found. 3. Verify that the requesting member belongs to the same
+ *   organization as the project (via
+ *   erp_hrm_organization_members.organization_id). Return 403 if not. 4.
+ *   Authorization check: the requesting member must either (a) hold the
+ *   'project:manage' permission (verified through their role's permissions in
+ *   erp_hrm_role_permissions), OR (b) have a project membership record in
+ *   erp_hrm_project_members where project_id = projectId AND
+ *   organization_member_id = requestingMemberId AND project_role =
+ *   'project-lead' AND deleted_at IS NULL. Return 403 if neither condition is
+ *   met. 5. Load the task record from erp_hrm_tasks where id = taskId AND
+ *   erp_hrm_project_id = projectId AND deleted_at IS NULL. Return 404 if not
+ *   found or already deleted. 6. Begin a database transaction. 7. If the task
+ *   has subtasks (parent_id = taskId in erp_hrm_tasks), set their deleted_at to
+ *   NOW() as well. 8. Set erp_hrm_tasks.deleted_at = NOW() and
+ *   erp_hrm_tasks.updated_at = NOW() for the target task. 9. Note:
+ *   erp_hrm_task_histories entries are automatically cascade-deleted by the DB
+ *   onDelete: Cascade relationship when the parent task is deleted; however,
+ *   since this is a soft deletion approach, task history records remain unless
+ *   the task is physically deleted. For consistency with the soft-delete
+ *   pattern, retain task histories as historical data. 10. Commit the
+ *   transaction. 11. Return the full task record (as it was at the time of
+ *   deletion, including the newly set deleted_at timestamp). 12. Edge cases: if
+ *   taskId refers to a subtask, only that subtask is deleted (not siblings). If
+ *   the task is already soft-deleted, return 404. Verify the task's
+ *   erp_hrm_project_id matches the given projectId to prevent cross-project
+ *   deletion.
  * @path /erpHrm/member/projects/:projectId/tasks/:taskId
  * @accessor api.functional.erpHrm.member.projects.tasks.erase
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe

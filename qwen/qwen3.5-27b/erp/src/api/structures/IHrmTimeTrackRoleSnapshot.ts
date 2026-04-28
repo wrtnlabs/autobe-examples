@@ -36,8 +36,10 @@ export namespace IHrmTimeTrackRoleSnapshot {
      *
      * This UUID serves as the primary key for the snapshot, allowing precise identification and retrieval of specific role state captures in the audit trail.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from hrm_time_track_role_snapshots.id. Primary key UUID identifying the snapshot record.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_role_snapshots.id. Primary key UUID identifying the
+         *   snapshot record.
      */
     id: string & tags.Format<"uuid">;
 
@@ -46,8 +48,10 @@ export namespace IHrmTimeTrackRoleSnapshot {
      *
      * This field preserves the role's name at the point in time when the snapshot was taken, enabling audit tracking of name changes over the role's lifecycle.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from hrm_time_track_role_snapshots.name. Captures the role name at snapshot time.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_role_snapshots.name. Captures the role name at
+         *   snapshot time.
      */
     name: string;
 
@@ -56,8 +60,10 @@ export namespace IHrmTimeTrackRoleSnapshot {
      *
      * This field may be null if the role had no description at the time of snapshot. It preserves the descriptive context of the role for audit trail purposes.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from hrm_time_track_role_snapshots.description. Nullable field capturing the role description at snapshot time.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_role_snapshots.description. Nullable field capturing
+         *   the role description at snapshot time.
      */
     description: string | null;
 
@@ -66,8 +72,10 @@ export namespace IHrmTimeTrackRoleSnapshot {
      *
      * Built-in roles (such as Owner, Manager, Employee) are predefined by the system and cannot be permanently deleted. This field captures the built-in status for audit trail purposes.
      *
-     * @x-autobe-database-schema-property is_builtin
-     * @x-autobe-specification Direct mapping from hrm_time_track_role_snapshots.is_builtin. Boolean indicating whether the role is built-in at snapshot time.
+         * @x-autobe-database-schema-property is_builtin
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_role_snapshots.is_builtin. Boolean indicating
+         *   whether the role is built-in at snapshot time.
      */
     is_builtin: boolean;
 
@@ -76,8 +84,10 @@ export namespace IHrmTimeTrackRoleSnapshot {
      *
      * This datetime field records the exact point in time when the role state was captured, enabling chronological ordering of snapshots and precise audit trail reconstruction.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from hrm_time_track_role_snapshots.created_at. Timestamp when the snapshot was created.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_role_snapshots.created_at. Timestamp when the
+         *   snapshot was created.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -86,8 +96,10 @@ export namespace IHrmTimeTrackRoleSnapshot {
      *
      * This relation provides access to the current state of the role being snapshot, including its organization context and active status. The snapshot captures a historical state while this relation links to the live role record.
      *
-     * @x-autobe-database-schema-property role
-     * @x-autobe-specification Relation mapping via JOIN from hrm_time_track_role_snapshots.hrm_time_track_role_id to hrm_time_track_roles.id. Returns IHrmTimeTrackRole.ISummary object.
+         * @x-autobe-database-schema-property role
+         * @x-autobe-specification Relation mapping via JOIN from
+         *   hrm_time_track_role_snapshots.hrm_time_track_role_id to
+         *   hrm_time_track_roles.id. Returns IHrmTimeTrackRole.ISummary object.
      */
     role: IHrmTimeTrackRole.ISummary;
 
@@ -96,8 +108,11 @@ export namespace IHrmTimeTrackRoleSnapshot {
      *
      * This field is nullable and may be null for system-generated snapshots (such as initial role creation during organization setup). When present, it identifies which user performed the role modification that created this snapshot.
      *
-     * @x-autobe-database-schema-property createdByMember
-     * @x-autobe-specification Relation mapping via JOIN from hrm_time_track_role_snapshots.created_by_member_id to hrm_time_track_members.id. Returns IHrmTimeTrackMember.ISummary object or null for system-generated snapshots.
+         * @x-autobe-database-schema-property createdByMember
+         * @x-autobe-specification Relation mapping via JOIN from
+         *   hrm_time_track_role_snapshots.created_by_member_id to
+         *   hrm_time_track_members.id. Returns IHrmTimeTrackMember.ISummary
+         *   object or null for system-generated snapshots.
      */
     createdByMember: IHrmTimeTrackMember.ISummary | null;
   };
@@ -117,7 +132,11 @@ export namespace IHrmTimeTrackRoleSnapshot {
      *
      * This parameter is optional. When omitted, no name filtering is applied.
      *
-     * @x-autobe-specification Computed filter parameter. Performs LIKE pattern matching on hrm_time_track_role_snapshots.name column. The search string is used with SQL LIKE operator (e.g., '%search%') to find role snapshots with names containing the search term. Case-insensitive matching is recommended.
+         * @x-autobe-specification Computed filter parameter. Performs LIKE
+         *   pattern matching on hrm_time_track_role_snapshots.name column. The
+         *   search string is used with SQL LIKE operator (e.g., '%search%') to
+         *   find role snapshots with names containing the search term.
+         *   Case-insensitive matching is recommended.
      */
     search?: string | undefined;
 
@@ -128,7 +147,11 @@ export namespace IHrmTimeTrackRoleSnapshot {
      *
      * This parameter is optional. When omitted, snapshots from all accessible roles are returned.
      *
-     * @x-autobe-specification Query filter parameter. Equality filter on hrm_time_track_role_snapshots.hrm_time_track_role_id column. Filters snapshots to return only those belonging to the specified role UUID. The provided UUID is used in WHERE hrm_time_track_role_id = {value} clause.
+         * @x-autobe-specification Query filter parameter. Equality filter on
+         *   hrm_time_track_role_snapshots.hrm_time_track_role_id column.
+         *   Filters snapshots to return only those belonging to the specified
+         *   role UUID. The provided UUID is used in WHERE
+         *   hrm_time_track_role_id = {value} clause.
      */
     hrm_time_track_role_id?: (string & tags.Format<"uuid">) | undefined;
 
@@ -139,7 +162,12 @@ export namespace IHrmTimeTrackRoleSnapshot {
      *
      * This parameter is optional. When omitted, snapshots created by all members (and system-generated snapshots) are returned.
      *
-     * @x-autobe-specification Query filter parameter. Equality filter on hrm_time_track_role_snapshots.created_by_member_id column. Filters snapshots to return only those created by the specified member UUID. The provided UUID is used in WHERE created_by_member_id = {value} clause. Handles NULL values gracefully (system-generated snapshots have NULL created_by_member_id).
+         * @x-autobe-specification Query filter parameter. Equality filter on
+         *   hrm_time_track_role_snapshots.created_by_member_id column. Filters
+         *   snapshots to return only those created by the specified member
+         *   UUID. The provided UUID is used in WHERE created_by_member_id =
+         *   {value} clause. Handles NULL values gracefully (system-generated
+         *   snapshots have NULL created_by_member_id).
      */
     created_by_member_id?: (string & tags.Format<"uuid">) | undefined;
 
@@ -150,7 +178,10 @@ export namespace IHrmTimeTrackRoleSnapshot {
      *
      * This parameter is optional and can be combined with 'created_at_to' to define a date range. When omitted, no lower bound filtering is applied.
      *
-     * @x-autobe-specification Computed filter parameter. Lower bound of range filter on hrm_time_track_role_snapshots.created_at column. Returns snapshots where created_at >= created_at_from. Uses ISO 8601 datetime format (e.g., '2024-01-15T00:00:00Z').
+         * @x-autobe-specification Computed filter parameter. Lower bound of
+         *   range filter on hrm_time_track_role_snapshots.created_at column.
+         *   Returns snapshots where created_at >= created_at_from. Uses ISO
+         *   8601 datetime format (e.g., '2024-01-15T00:00:00Z').
      */
     created_at_from?: (string & tags.Format<"date-time">) | undefined;
 
@@ -161,7 +192,10 @@ export namespace IHrmTimeTrackRoleSnapshot {
      *
      * This parameter is optional and can be combined with 'created_at_from' to define a date range. When omitted, no upper bound filtering is applied.
      *
-     * @x-autobe-specification Computed filter parameter. Upper bound of range filter on hrm_time_track_role_snapshots.created_at column. Returns snapshots where created_at <= created_at_to. Uses ISO 8601 datetime format (e.g., '2024-01-15T23:59:59Z').
+         * @x-autobe-specification Computed filter parameter. Upper bound of
+         *   range filter on hrm_time_track_role_snapshots.created_at column.
+         *   Returns snapshots where created_at <= created_at_to. Uses ISO 8601
+         *   datetime format (e.g., '2024-01-15T23:59:59Z').
      */
     created_at_to?: (string & tags.Format<"date-time">) | undefined;
 
@@ -172,7 +206,11 @@ export namespace IHrmTimeTrackRoleSnapshot {
      *
      * This parameter is optional. When omitted, snapshots of both built-in and custom roles are returned.
      *
-     * @x-autobe-specification Query filter parameter. Equality filter on hrm_time_track_role_snapshots.is_builtin column. Filters snapshots to return only those with the specified built-in status (true for built-in roles, false for custom roles). The provided boolean is used in WHERE is_builtin = {value} clause.
+         * @x-autobe-specification Query filter parameter. Equality filter on
+         *   hrm_time_track_role_snapshots.is_builtin column. Filters snapshots
+         *   to return only those with the specified built-in status (true for
+         *   built-in roles, false for custom roles). The provided boolean is
+         *   used in WHERE is_builtin = {value} clause.
      */
     is_builtin?: boolean | undefined;
 
@@ -183,7 +221,10 @@ export namespace IHrmTimeTrackRoleSnapshot {
      *
      * This parameter is optional. When omitted, defaults to page 1 (the first page of results).
      *
-     * @x-autobe-specification Computed pagination parameter. Specifies which page of results to retrieve (1-indexed). Default value is 1. Used with 'limit' to implement server-side pagination. The actual query uses OFFSET = (page - 1) * limit.
+         * @x-autobe-specification Computed pagination parameter. Specifies
+         *   which page of results to retrieve (1-indexed). Default value is 1.
+         *   Used with 'limit' to implement server-side pagination. The actual
+         *   query uses OFFSET = (page - 1) * limit.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -194,7 +235,11 @@ export namespace IHrmTimeTrackRoleSnapshot {
      *
      * This parameter is optional. When omitted, a default limit (typically 20) is applied.
      *
-     * @x-autobe-specification Computed pagination parameter. Specifies the maximum number of records to return per page. Valid range is 1-100. Default value is typically 20 or similar. Used with 'page' to implement server-side pagination. The actual query uses LIMIT clause.
+         * @x-autobe-specification Computed pagination parameter. Specifies the
+         *   maximum number of records to return per page. Valid range is 1-100.
+         *   Default value is typically 20 or similar. Used with 'page' to
+         *   implement server-side pagination. The actual query uses LIMIT
+         *   clause.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)

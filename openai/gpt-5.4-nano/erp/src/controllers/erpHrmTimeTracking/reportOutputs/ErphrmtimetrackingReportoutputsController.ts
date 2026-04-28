@@ -25,23 +25,33 @@ export class ErphrmtimetrackingReportoutputsController {
    *
    * @param connection
    * @param reportOutputId Identifier of the generated report output row to retrieve.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification 1) Parse `reportOutputId` as UUID.
-   * 2) Resolve the `erp_hrm_time_tracking_report_outputs` row by primary key `id = reportOutputId`.
-   * 3) Enforce organization context scoping:
-   *    - Join `erp_hrm_time_tracking_report_outputs` -> `erp_hrm_time_tracking_report_generation_runs` via `report_generation_run_id`.
-   *    - Join `erp_hrm_time_tracking_report_generation_runs` -> `erp_hrm_time_tracking_report_definitions` via `erp_hrm_time_tracking_report_definition_id`.
-   *    - Verify `erp_hrm_time_tracking_report_definitions.erp_hrm_time_tracking_organization_id` matches the currently selected organization context.
-   *    - Also verify the caller has `report:view` permission for the selected organization (per report viewing flow).
-   * 4) If not found under the selected organization, reject with business validation error (no partial results).
-   * 5) Fetch metric breakdown rows from `erp_hrm_time_tracking_report_output_metrics` where `report_output_output_id = reportOutputId`.
-   *    - Include only rows where `deleted_at` is null (treat rows with `deleted_at` as removed).
-   *    - Return metric_name and metric_value along with any required metadata fields defined by the response DTO.
-   * 6) Fetch/attach foreign key referenced grouping entities as required by the response DTO:
-   *    - `employee_id`, `project_id`, optional `task_id`, optional `week_start_date_id`.
-   *    - Note: if the DTO includes expanded related objects, load them via relations; otherwise only return ids and grouping keys.
-   * 7) Return a single `I...ReportOutput` DTO.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification 1) Parse `reportOutputId` as UUID. 2) Resolve the
+     *   `erp_hrm_time_tracking_report_outputs` row by primary key `id =
+     *   reportOutputId`. 3) Enforce organization context scoping: - Join
+     *   `erp_hrm_time_tracking_report_outputs` ->
+     *   `erp_hrm_time_tracking_report_generation_runs` via
+     *   `report_generation_run_id`. - Join
+     *   `erp_hrm_time_tracking_report_generation_runs` ->
+     *   `erp_hrm_time_tracking_report_definitions` via
+     *   `erp_hrm_time_tracking_report_definition_id`. - Verify
+     *   `erp_hrm_time_tracking_report_definitions.erp_hrm_time_tracking_organization_id`
+     *   matches the currently selected organization context. - Also verify the
+     *   caller has `report:view` permission for the selected organization (per
+     *   report viewing flow). 4) If not found under the selected organization,
+     *   reject with business validation error (no partial results). 5) Fetch
+     *   metric breakdown rows from
+     *   `erp_hrm_time_tracking_report_output_metrics` where
+     *   `report_output_output_id = reportOutputId`. - Include only rows where
+     *   `deleted_at` is null (treat rows with `deleted_at` as removed). -
+     *   Return metric_name and metric_value along with any required metadata
+     *   fields defined by the response DTO. 6) Fetch/attach foreign key
+     *   referenced grouping entities as required by the response DTO: -
+     *   `employee_id`, `project_id`, optional `task_id`, optional
+     *   `week_start_date_id`. - Note: if the DTO includes expanded related
+     *   objects, load them via relations; otherwise only return ids and
+     *   grouping keys. 7) Return a single `I...ReportOutput` DTO.
    *
    * Edge cases:
    * - Output exists but has zero metric rows: still return the output row with an empty metrics array.
@@ -81,9 +91,9 @@ export class ErphrmtimetrackingReportoutputsController {
    * @param connection
    * @param reportOutputId Target report output row identifier.
    * @param body Updated fields for the generated report output row. Only the writable fields defined by IErpHrmTimeTrackingReportOutput.IUpdate are accepted; grouping identity fields are rejected.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Implementation steps for Realize Agent:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Implementation steps for Realize Agent:
    *
    * 1) Parse inputs:
    * - Read `reportOutputId` from path.
@@ -156,9 +166,10 @@ export class ErphrmtimetrackingReportoutputsController {
    *
    * @param connection
    * @param reportOutputId Identifier of the report output row to permanently remove (UUID).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Implement erase operation for erp_hrm_time_tracking_report_outputs.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Implement erase operation for
+     *   erp_hrm_time_tracking_report_outputs.
    *
    * Steps:
    * 1. Parse path parameter reportOutputId as UUID.
@@ -208,9 +219,9 @@ export class ErphrmtimetrackingReportoutputsController {
    *
    * @param connection
    * @param body Creation payload for a report output row to be associated with a report generation run and to persist its grouping composition.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification 1) Read and validate request payload (ICreate).
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification 1) Read and validate request payload (ICreate).
    *
    * 2) Authorization & scoping:
    * - Resolve the target `erp_hrm_time_tracking_report_generation_runs` row by `reportGenerationRunId`.

@@ -22,7 +22,8 @@ import { IRedditCloneCommunity } from "../../../../structures/IRedditCloneCommun
  * @param props.body Search criteria, sorting preference, and pagination parameters
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query reddit_clone_communities table excluding soft-deleted records (WHERE deleted_at IS NULL).
+ * @x-autobe-specification Query reddit_clone_communities table excluding
+ *   soft-deleted records (WHERE deleted_at IS NULL).
  *
  * Apply case-insensitive partial matching on name field when searchTerm is provided.
  *

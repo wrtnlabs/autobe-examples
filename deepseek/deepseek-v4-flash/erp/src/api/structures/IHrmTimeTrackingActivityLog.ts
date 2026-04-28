@@ -18,8 +18,9 @@ export type IHrmTimeTrackingActivityLog = {
    *
    * This UUID serves as the primary key and is used to reference the activity log in API paths and external systems. Automatically generated when the entry is created.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_activity_logs.id. UUID format.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_activity_logs.id. UUID format.
    */
   id: string & tags.Format<"uuid">;
 
@@ -28,8 +29,12 @@ export type IHrmTimeTrackingActivityLog = {
    *
    * Every activity log entry is strictly scoped to exactly one organization. Users can only view entries within their currently selected organization context, enforcing data isolation between tenants. The summary includes the organization's unique identifier, display name, optional description, operational configuration (currency, timezone, fiscal start month), lifecycle status, and owner information.
    *
-   * @x-autobe-database-schema-property organization
-   * @x-autobe-specification Join from hrm_time_tracking_activity_logs.hrm_time_tracking_organization_id to hrm_time_tracking_organizations.id. Returns IHrmTimeTrackingOrganization.ISummary (id, name, description, currency, timezone, fiscal_start_month, status, owner).
+     * @x-autobe-database-schema-property organization
+     * @x-autobe-specification Join from
+     *   hrm_time_tracking_activity_logs.hrm_time_tracking_organization_id to
+     *   hrm_time_tracking_organizations.id. Returns
+     *   IHrmTimeTrackingOrganization.ISummary (id, name, description, currency,
+     *   timezone, fiscal_start_month, status, owner).
    */
   organization: IHrmTimeTrackingOrganization.ISummary;
 
@@ -38,8 +43,12 @@ export type IHrmTimeTrackingActivityLog = {
    *
    * The actor's identity (display name and email) is preserved as part of the immutable record — even if the user account is later deactivated or deleted, the activity log entry remains intact and continues to display the original actor's identity. The summary includes the member's unique identifier, email address, display name, optional avatar URL, optional phone number, and account lifecycle timestamps.
    *
-   * @x-autobe-database-schema-property member
-   * @x-autobe-specification Join from hrm_time_tracking_activity_logs.hrm_time_tracking_member_id to hrm_time_tracking_members.id. Returns IHrmTimeTrackingMember.ISummary (id, email, display_name, avatar, phone_number, created_at, updated_at, deleted_at).
+     * @x-autobe-database-schema-property member
+     * @x-autobe-specification Join from
+     *   hrm_time_tracking_activity_logs.hrm_time_tracking_member_id to
+     *   hrm_time_tracking_members.id. Returns IHrmTimeTrackingMember.ISummary
+     *   (id, email, display_name, avatar, phone_number, created_at, updated_at,
+     *   deleted_at).
    */
   member: IHrmTimeTrackingMember.ISummary;
 
@@ -48,8 +57,12 @@ export type IHrmTimeTrackingActivityLog = {
    *
    * Categorizes the recorded action into a predefined type (e.g., employee.invited, project.created, timesheet.approved). Action types are system-defined reference data seeded during organization initialization and cannot be modified by users. The summary includes the type's unique identifier, dot-notation code for stable reference, business category for filtering, human-readable display name, and contextual description.
    *
-   * @x-autobe-database-schema-property activityLogType
-   * @x-autobe-specification Join from hrm_time_tracking_activity_logs.hrm_time_tracking_activity_log_type_id to hrm_time_tracking_activity_log_types.id. Returns IHrmTimeTrackingActivityLogType.ISummary (id, code, category, name, description).
+     * @x-autobe-database-schema-property activityLogType
+     * @x-autobe-specification Join from
+     *   hrm_time_tracking_activity_logs.hrm_time_tracking_activity_log_type_id
+     *   to hrm_time_tracking_activity_log_types.id. Returns
+     *   IHrmTimeTrackingActivityLogType.ISummary (id, code, category, name,
+     *   description).
    */
   activityLogType: IHrmTimeTrackingActivityLogType.ISummary;
 
@@ -58,8 +71,11 @@ export type IHrmTimeTrackingActivityLog = {
    *
    * Identifies the kind of entity targeted by the action (e.g., Employee, Contract, Project, Task, Timesheet, Role). Stored as a string rather than a foreign key because the target could reference any of several entity types. Used in conjunction with {@link targetEntityId} to uniquely reference the affected entity.
    *
-   * @x-autobe-database-schema-property target_entity_type
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_activity_logs.target_entity_type. Stored as a string categorizing the target entity kind (e.g., 'Employee', 'Project', 'Task').
+     * @x-autobe-database-schema-property target_entity_type
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_activity_logs.target_entity_type. Stored as a string
+     *   categorizing the target entity kind (e.g., 'Employee', 'Project',
+     *   'Task').
    */
   targetEntityType: string;
 
@@ -68,8 +84,10 @@ export type IHrmTimeTrackingActivityLog = {
    *
    * Identifies the specific entity instance that was affected by the action. Used in conjunction with {@link targetEntityType} to uniquely reference the affected entity. This field stores the entity's UUID but is not a formal foreign key constraint since the target could be any of several entity types.
    *
-   * @x-autobe-database-schema-property target_entity_id
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_activity_logs.target_entity_id. UUID format referencing the affected entity.
+     * @x-autobe-database-schema-property target_entity_id
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_activity_logs.target_entity_id. UUID format
+     *   referencing the affected entity.
    */
   targetEntityId: string & tags.Format<"uuid">;
 
@@ -78,8 +96,10 @@ export type IHrmTimeTrackingActivityLog = {
    *
    * Stores the display name or title of the entity (e.g., employee name, project name, task title) as it existed when the action occurred. This field is intentionally denormalized — it preserves the entity's name even if the entity is later renamed or deleted, ensuring the audit record remains meaningful over time.
    *
-   * @x-autobe-database-schema-property target_entity_name
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_activity_logs.target_entity_name. Denormalized display name captured at the time of the action.
+     * @x-autobe-database-schema-property target_entity_name
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_activity_logs.target_entity_name. Denormalized
+     *   display name captured at the time of the action.
    */
   targetEntityName: string;
 
@@ -88,8 +108,10 @@ export type IHrmTimeTrackingActivityLog = {
    *
    * Captures a human-readable summary of what changed, such as status transitions, modified values, or relevant identifiers. Examples include 'Status changed from draft to submitted', 'Pay rate updated from $40/hr to $45/hr', or 'Role changed from Employee to Manager'. This field is nullable as some action types may not require additional context beyond the action type and target reference.
    *
-   * @x-autobe-database-schema-property details
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_activity_logs.details. Nullable string — some action types may not require additional context.
+     * @x-autobe-database-schema-property details
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_activity_logs.details. Nullable string — some action
+     *   types may not require additional context.
    */
   details: string | null;
 
@@ -98,8 +120,10 @@ export type IHrmTimeTrackingActivityLog = {
    *
    * Records the exact moment the action was performed, used for chronological ordering and date range filtering. Displayed in the organization's configured timezone. Since activity log entries are immutable, this timestamp never changes after creation.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_activity_logs.created_at. Date-time format. Immutable — never changes after creation.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_activity_logs.created_at. Date-time format. Immutable
+     *   — never changes after creation.
    */
   createdAt: string & tags.Format<"date-time">;
 };
@@ -119,7 +143,9 @@ export namespace IHrmTimeTrackingActivityLog {
      *
      * Leave empty or omit to skip keyword filtering.
      *
-     * @x-autobe-specification Applies LIKE pattern matching on target_entity_name and details columns of hrm_time_tracking_activity_logs. Case-insensitive search.
+         * @x-autobe-specification Applies LIKE pattern matching on
+         *   target_entity_name and details columns of
+         *   hrm_time_tracking_activity_logs. Case-insensitive search.
      */
     search?: string | undefined;
 
@@ -130,7 +156,10 @@ export namespace IHrmTimeTrackingActivityLog {
      *
      * Omit to include all action types.
      *
-     * @x-autobe-specification Filters by JOINing to hrm_time_tracking_activity_log_types on the code column. Uses dot-notation codes like 'employee.invited', 'project.created', 'timesheet.approved'.
+         * @x-autobe-specification Filters by JOINing to
+         *   hrm_time_tracking_activity_log_types on the code column. Uses
+         *   dot-notation codes like 'employee.invited', 'project.created',
+         *   'timesheet.approved'.
      */
     activity_log_type_code?: string | undefined;
 
@@ -141,8 +170,9 @@ export namespace IHrmTimeTrackingActivityLog {
      *
      * Omit to include all actors.
      *
-     * @x-autobe-database-schema-property hrm_time_tracking_member_id
-     * @x-autobe-specification Direct filter on hrm_time_tracking_member_id column. Compares against the member UUID.
+         * @x-autobe-database-schema-property hrm_time_tracking_member_id
+         * @x-autobe-specification Direct filter on hrm_time_tracking_member_id
+         *   column. Compares against the member UUID.
      */
     member_id?: (string & tags.Format<"uuid">) | undefined;
 
@@ -153,7 +183,9 @@ export namespace IHrmTimeTrackingActivityLog {
      *
      * Omit to include entries from all dates up to the upper bound.
      *
-     * @x-autobe-specification Applies lower bound filter on created_at column: created_at >= from_date. Used together with to_date for range queries.
+         * @x-autobe-specification Applies lower bound filter on created_at
+         *   column: created_at >= from_date. Used together with to_date for
+         *   range queries.
      */
     from_date?: (string & tags.Format<"date-time">) | undefined;
 
@@ -164,7 +196,10 @@ export namespace IHrmTimeTrackingActivityLog {
      *
      * Omit to include entries from all dates after the lower bound.
      *
-     * @x-autobe-specification Applies exclusive upper bound filter on created_at column: created_at < to_date. Used together with from_date for range queries. The upper bound is exclusive to avoid overlap when querying adjacent time ranges.
+         * @x-autobe-specification Applies exclusive upper bound filter on
+         *   created_at column: created_at < to_date. Used together with
+         *   from_date for range queries. The upper bound is exclusive to avoid
+         *   overlap when querying adjacent time ranges.
      */
     to_date?: (string & tags.Format<"date-time">) | undefined;
 
@@ -175,7 +210,9 @@ export namespace IHrmTimeTrackingActivityLog {
      *
      * Defaults to 1 when omitted.
      *
-     * @x-autobe-specification 1-indexed page number for cursor-based pagination. Sorted by created_at descending. Defaults to 1 when omitted.
+         * @x-autobe-specification 1-indexed page number for cursor-based
+         *   pagination. Sorted by created_at descending. Defaults to 1 when
+         *   omitted.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -186,7 +223,8 @@ export namespace IHrmTimeTrackingActivityLog {
      *
      * Defaults to a system-defined page size when omitted.
      *
-     * @x-autobe-specification Maximum number of records per page. Capped at 100. Defaults to a system-defined value when omitted.
+         * @x-autobe-specification Maximum number of records per page. Capped at
+         *   100. Defaults to a system-defined value when omitted.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -204,8 +242,9 @@ export namespace IHrmTimeTrackingActivityLog {
     /**
      * Unique identifier for the activity log entry.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_activity_logs.id. UUID primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_activity_logs.id. UUID primary key.
      */
     id: string & tags.Format<"uuid">;
 
@@ -214,8 +253,9 @@ export namespace IHrmTimeTrackingActivityLog {
      *
      * Records the exact moment the action was performed, used for chronological ordering and date range filtering. Since activity log entries are immutable, this timestamp never changes after creation.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_activity_logs.created_at. Mapped as createdAt.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_activity_logs.created_at. Mapped as createdAt.
      */
     createdAt: string & tags.Format<"date-time">;
 
@@ -224,8 +264,10 @@ export namespace IHrmTimeTrackingActivityLog {
      *
      * Identifies the user whose action triggered this activity log entry. The actor's identity is preserved as part of the immutable record — even if the user account is later deactivated or deleted, the activity log entry remains intact.
      *
-     * @x-autobe-database-schema-property member
-     * @x-autobe-specification Join via hrm_time_tracking_member_id to hrm_time_tracking_members. Returns ISummary with id, displayName, email, avatar.
+         * @x-autobe-database-schema-property member
+         * @x-autobe-specification Join via hrm_time_tracking_member_id to
+         *   hrm_time_tracking_members. Returns ISummary with id, displayName,
+         *   email, avatar.
      */
     actor: IHrmTimeTrackingMember.ISummary;
 
@@ -234,8 +276,11 @@ export namespace IHrmTimeTrackingActivityLog {
      *
      * Categorizes the action into a predefined action type (e.g., employee.invited, project.created, timesheet.approved). The action type classification enables filtering and grouping of activity log entries for audit and investigation purposes.
      *
-     * @x-autobe-database-schema-property activityLogType
-     * @x-autobe-specification Join via hrm_time_tracking_activity_log_type_id to hrm_time_tracking_activity_log_types. Returns ISummary with id, code, name.
+         * @x-autobe-database-schema-property activityLogType
+         * @x-autobe-specification Join via
+         *   hrm_time_tracking_activity_log_type_id to
+         *   hrm_time_tracking_activity_log_types. Returns ISummary with id,
+         *   code, name.
      */
     activityLogType: IHrmTimeTrackingActivityLogType.ISummary;
 
@@ -244,8 +289,9 @@ export namespace IHrmTimeTrackingActivityLog {
      *
      * Identifies the kind of entity targeted by the action (e.g., Employee, Contract, Project, Task, Timesheet, Role). Used in conjunction with targetEntityId to uniquely reference the affected entity.
      *
-     * @x-autobe-database-schema-property target_entity_type
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_activity_logs.target_entity_type.
+         * @x-autobe-database-schema-property target_entity_type
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_activity_logs.target_entity_type.
      */
     targetEntityType: string;
 
@@ -254,8 +300,9 @@ export namespace IHrmTimeTrackingActivityLog {
      *
      * Identifies the specific entity instance that was affected by the action. Used in conjunction with targetEntityType to uniquely reference the affected entity.
      *
-     * @x-autobe-database-schema-property target_entity_id
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_activity_logs.target_entity_id. UUID format.
+         * @x-autobe-database-schema-property target_entity_id
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_activity_logs.target_entity_id. UUID format.
      */
     targetEntityId: string & tags.Format<"uuid">;
 
@@ -264,8 +311,9 @@ export namespace IHrmTimeTrackingActivityLog {
      *
      * Stores the display name or title of the entity (e.g., employee name, project name, task title) as it existed when the action occurred. This field is intentionally denormalized — it preserves the entity's name even if the entity is later renamed or deleted, ensuring the audit record remains meaningful over time.
      *
-     * @x-autobe-database-schema-property target_entity_name
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_activity_logs.target_entity_name.
+         * @x-autobe-database-schema-property target_entity_name
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_activity_logs.target_entity_name.
      */
     targetEntityName: string;
 
@@ -274,8 +322,10 @@ export namespace IHrmTimeTrackingActivityLog {
      *
      * Captures a human-readable summary of what changed, such as status transitions, modified values, or relevant identifiers. Examples include 'Status changed from draft to submitted', 'Pay rate updated from $40/hr to $45/hr', or 'Role changed from Employee to Manager'. This field is nullable as some action types may not require additional context beyond the action type and target reference.
      *
-     * @x-autobe-database-schema-property details
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_activity_logs.details. Nullable in DB, represented as oneOf string|null.
+         * @x-autobe-database-schema-property details
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_activity_logs.details. Nullable in DB,
+         *   represented as oneOf string|null.
      */
     details: string | null;
   };

@@ -21,8 +21,8 @@ export type IHrmTimeTrackingMember = {
    *
    * This UUID serves as the stable identifier for the member record across all system interactions, including API references, employee associations, and audit trail entries. It is generated automatically at account creation and never modified.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_members.id.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from hrm_time_tracking_members.id.
    */
   id: string & tags.Format<"uuid">;
 
@@ -31,8 +31,10 @@ export type IHrmTimeTrackingMember = {
    *
    * Used for authentication (login) and communication purposes. No two accounts can share the same email address — enforced by a unique constraint at the database level. The email is set at registration and managed through account settings.
    *
-   * @x-autobe-database-schema-property email
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_members.email. Unique constraint enforced at database level.
+     * @x-autobe-database-schema-property email
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_members.email. Unique constraint enforced at database
+     *   level.
    */
   email: string;
 
@@ -41,8 +43,9 @@ export type IHrmTimeTrackingMember = {
    *
    * Appears in timelog entries, timesheet reviews, project member lists, activity log entries, and all other user-facing contexts across every organization the member belongs to. This is part of the global profile — updates take effect immediately in all organization contexts.
    *
-   * @x-autobe-database-schema-property display_name
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_members.display_name.
+     * @x-autobe-database-schema-property display_name
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_members.display_name.
    */
   display_name: string;
 
@@ -51,8 +54,9 @@ export type IHrmTimeTrackingMember = {
    *
    * Appears next to the user's name in lists, comments, and profile views. Part of the global profile shared across all organizations. When null, the UI should display a default avatar or initials-based fallback.
    *
-   * @x-autobe-database-schema-property avatar
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_members.avatar. Nullable URL string.
+     * @x-autobe-database-schema-property avatar
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_members.avatar. Nullable URL string.
    */
   avatar: (string & tags.Format<"uri">) | null;
 
@@ -61,8 +65,9 @@ export type IHrmTimeTrackingMember = {
    *
    * Part of the global profile shared across all organizations the member belongs to. When null, no phone number is associated with the account.
    *
-   * @x-autobe-database-schema-property phone_number
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_members.phone_number. Nullable string.
+     * @x-autobe-database-schema-property phone_number
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_members.phone_number. Nullable string.
    */
   phone_number: string | null;
 
@@ -71,8 +76,9 @@ export type IHrmTimeTrackingMember = {
    *
    * Set automatically at account creation and never modified after. Useful for account age calculation, registration date queries, and chronological sorting.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_members.created_at.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_members.created_at.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -81,8 +87,9 @@ export type IHrmTimeTrackingMember = {
    *
    * Updated automatically whenever any profile field (display_name, avatar, phone_number) or the password is changed. Indicates the most recent modification to the account record.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_members.updated_at.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_members.updated_at.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -91,8 +98,9 @@ export type IHrmTimeTrackingMember = {
    *
    * When a user deletes their account, the record is marked as deleted rather than immediately removed. A null value indicates the account is active. A non-null timestamp indicates the account has been deleted, allowing for recovery or cleanup processes before permanent data removal.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_members.deleted_at. Nullable timestamp.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_members.deleted_at. Nullable timestamp.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 
@@ -101,7 +109,10 @@ export type IHrmTimeTrackingMember = {
    *
    * Each entry represents the member's employment in a specific organization, including their assigned role, department, position, employment type, and current status. A single member may be an employee in multiple organizations, providing access to each organization's features and data through their employee record.
    *
-   * @x-autobe-specification HAS-MANY relation: LEFT JOIN hrm_time_tracking_employees ON hrm_time_tracking_member_id. Returns IHrmTimeTrackingEmployee.ISummary[] scoped to all organizations the member belongs to. Filter by active employee status if needed.
+     * @x-autobe-specification HAS-MANY relation: LEFT JOIN
+     *   hrm_time_tracking_employees ON hrm_time_tracking_member_id. Returns
+     *   IHrmTimeTrackingEmployee.ISummary[] scoped to all organizations the
+     *   member belongs to. Filter by active employee status if needed.
    */
   employees: IHrmTimeTrackingEmployee.ISummary[];
 
@@ -110,7 +121,10 @@ export type IHrmTimeTrackingMember = {
    *
    * Each session entry captures metadata about a login instance including the client IP address, page URL where authentication occurred, and HTTP referrer. A member may have multiple concurrent sessions from different devices or browsers. Expired sessions (past their expired_at timestamp) are excluded from active listings.
    *
-   * @x-autobe-specification HAS-MANY relation: LEFT JOIN hrm_time_tracking_member_sessions ON hrm_time_tracking_member_id. Returns IHrmTimeTrackingMemberSession.ISummary[]. Filter out expired sessions (expired_at < now) for active session listings.
+     * @x-autobe-specification HAS-MANY relation: LEFT JOIN
+     *   hrm_time_tracking_member_sessions ON hrm_time_tracking_member_id.
+     *   Returns IHrmTimeTrackingMemberSession.ISummary[]. Filter out expired
+     *   sessions (expired_at < now) for active session listings.
    */
   sessions: IHrmTimeTrackingMemberSession.ISummary[];
 
@@ -119,7 +133,10 @@ export type IHrmTimeTrackingMember = {
    *
    * The owner has full control over organization settings, configuration attributes, and lifecycle management including deletion. Only the owner can edit or delete the organization. This list provides quick access to all organizations the member has created and administers.
    *
-   * @x-autobe-specification HAS-MANY relation: LEFT JOIN hrm_time_tracking_organizations ON hrm_time_tracking_member_id. Returns IHrmTimeTrackingOrganization.ISummary[]. Filter by active status if needed.
+     * @x-autobe-specification HAS-MANY relation: LEFT JOIN
+     *   hrm_time_tracking_organizations ON hrm_time_tracking_member_id. Returns
+     *   IHrmTimeTrackingOrganization.ISummary[]. Filter by active status if
+     *   needed.
    */
   ownedOrganizations: IHrmTimeTrackingOrganization.ISummary[];
 };
@@ -139,8 +156,10 @@ export namespace IHrmTimeTrackingMember {
      *
      * The email serves as the primary lookup key when authenticating. The system looks up the member by this email in the members table. If no matching active account is found, a generic error is returned to prevent account enumeration.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_members.email. Used for SELECT lookup during authentication. Email is unique across the platform (unique index).
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_members.email. Used for SELECT lookup during
+         *   authentication. Email is unique across the platform (unique index).
      */
     email: string & tags.Format<"email">;
 
@@ -149,8 +168,12 @@ export namespace IHrmTimeTrackingMember {
      *
      * The password is provided in plain text over HTTPS. The backend securely compares it against the stored bcrypt hash using bcrypt.compare(). The original password is never stored in plain text — only the hash is persisted in the database. A generic error is returned for incorrect passwords to prevent account enumeration.
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification Plain text password received from the client. Backend calls bcrypt.compare() against hrm_time_tracking_members.password_hash to authenticate. The password hash itself is never exposed to the client. The original plain-text password is never stored.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification Plain text password received from the client.
+         *   Backend calls bcrypt.compare() against
+         *   hrm_time_tracking_members.password_hash to authenticate. The
+         *   password hash itself is never exposed to the client. The original
+         *   plain-text password is never stored.
      */
     password: string & tags.Format<"password">;
 
@@ -159,7 +182,10 @@ export namespace IHrmTimeTrackingMember {
      *
      * Records the entry point URL for the session, useful for analytics and understanding user navigation patterns. This value is captured from the HTTP request context and stored in the session record upon successful authentication.
      *
-     * @x-autobe-specification Session context field. Captured from the HTTP request's current page URL. Stored in hrm_time_tracking_member_sessions.href upon successful authentication. Not stored in hrm_time_tracking_members.
+         * @x-autobe-specification Session context field. Captured from the HTTP
+         *   request's current page URL. Stored in
+         *   hrm_time_tracking_member_sessions.href upon successful
+         *   authentication. Not stored in hrm_time_tracking_members.
      */
     href: string & tags.Format<"uri">;
 
@@ -168,7 +194,10 @@ export namespace IHrmTimeTrackingMember {
      *
      * Indicates the previous page the member was on before logging in, useful for traffic source analysis and navigation flow understanding. This value is captured from the HTTP request context and stored in the session record upon successful authentication.
      *
-     * @x-autobe-specification Session context field. Captured from the HTTP Referer header. Stored in hrm_time_tracking_member_sessions.referrer upon successful authentication. Not stored in hrm_time_tracking_members.
+         * @x-autobe-specification Session context field. Captured from the HTTP
+         *   Referer header. Stored in
+         *   hrm_time_tracking_member_sessions.referrer upon successful
+         *   authentication. Not stored in hrm_time_tracking_members.
      */
     referrer: string & tags.Format<"uri">;
 
@@ -177,7 +206,12 @@ export namespace IHrmTimeTrackingMember {
      *
      * Captured for audit and security monitoring purposes. This field is optional because in server-side rendering scenarios the client cannot know its own IP address — the server captures the source IP as a fallback when this field is not provided.
      *
-     * @x-autobe-specification Session context field. Captured from the HTTP request source IP address. Stored in hrm_time_tracking_member_sessions.ip upon successful authentication. Optional in SSR scenarios where the client cannot determine its own IP — the server captures it as fallback (body.ip ?? serverIp). Not stored in hrm_time_tracking_members.
+         * @x-autobe-specification Session context field. Captured from the HTTP
+         *   request source IP address. Stored in
+         *   hrm_time_tracking_member_sessions.ip upon successful
+         *   authentication. Optional in SSR scenarios where the client cannot
+         *   determine its own IP — the server captures it as fallback (body.ip
+         *   ?? serverIp). Not stored in hrm_time_tracking_members.
      */
     ip?: (string & tags.Format<"ipv4">) | undefined;
   };
@@ -197,7 +231,14 @@ export namespace IHrmTimeTrackingMember {
      *
      * The token should be stored securely on the client and transmitted only to the refresh endpoint. Its validity is tied to the underlying session record — if the session is expired or the member account is deactivated, this token will be rejected even if the JWT signature is still valid.
      *
-     * @x-autobe-specification The refresh token JWT string is received as-is from the client in the request body. Backend decodes the JWT to extract the session ID and member ID claims. It then queries hrm_time_tracking_member_sessions by session ID to validate: (1) the session record exists, (2) expired_at is in the future (not expired), and (3) the associated hrm_time_tracking_members record is active (deleted_at IS NULL). If all validations pass, new JWT access and refresh tokens are issued and returned.
+         * @x-autobe-specification The refresh token JWT string is received
+         *   as-is from the client in the request body. Backend decodes the JWT
+         *   to extract the session ID and member ID claims. It then queries
+         *   hrm_time_tracking_member_sessions by session ID to validate: (1)
+         *   the session record exists, (2) expired_at is in the future (not
+         *   expired), and (3) the associated hrm_time_tracking_members record
+         *   is active (deleted_at IS NULL). If all validations pass, new JWT
+         *   access and refresh tokens are issued and returned.
      */
     refresh: string;
   };
@@ -216,21 +257,21 @@ export namespace IHrmTimeTrackingMember {
     /**
      * Exact or partial match filter on the email address field.
      *
-     * @x-autobe-database-schema-property email
+         * @x-autobe-database-schema-property email
      */
     email?: string | undefined;
 
     /**
      * Partial match filter on the user's display name.
      *
-     * @x-autobe-database-schema-property display_name
+         * @x-autobe-database-schema-property display_name
      */
     display_name?: string | undefined;
 
     /**
      * Partial match filter on the user's phone number.
      *
-     * @x-autobe-database-schema-property phone_number
+         * @x-autobe-database-schema-property phone_number
      */
     phone_number?: string | null | undefined;
 
@@ -280,8 +321,10 @@ export namespace IHrmTimeTrackingMember {
      *
      * Used for authentication (login) and communication purposes. No two accounts can share the same email address — enforced by a unique constraint at the database level. Must be a valid email format containing the '@' symbol.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_members.email. Unique constraint enforced at DB level. Must contain '@' character per validation.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_members.email. Unique constraint enforced at DB
+         *   level. Must contain '@' character per validation.
      */
     email: string & tags.Format<"email">;
 
@@ -290,8 +333,10 @@ export namespace IHrmTimeTrackingMember {
      *
      * Hashed using bcrypt before storage; the original plaintext is never stored in the database. Must be at least 8 characters long. Security best practices recommend a mix of uppercase, lowercase, numbers, and special characters.
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification Transformed via bcrypt hash before storage into hrm_time_tracking_members.password_hash. Original plaintext never stored. Minimum 8 characters enforced.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification Transformed via bcrypt hash before storage
+         *   into hrm_time_tracking_members.password_hash. Original plaintext
+         *   never stored. Minimum 8 characters enforced.
      */
     password: string & tags.MinLength<8>;
 
@@ -300,8 +345,10 @@ export namespace IHrmTimeTrackingMember {
      *
      * Appears in timelog entries, timesheet reviews, project member lists, and activity log entries. Part of the global profile shared across all organizations the user belongs to or later joins.
      *
-     * @x-autobe-database-schema-property display_name
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_members.display_name. Part of global profile shared across all organizations.
+         * @x-autobe-database-schema-property display_name
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_members.display_name. Part of global profile
+         *   shared across all organizations.
      */
     display_name: string;
 
@@ -310,7 +357,9 @@ export namespace IHrmTimeTrackingMember {
      *
      * Records the entry point URL for the session, useful for analytics and understanding user navigation patterns. This session context is captured at registration time for audit purposes.
      *
-     * @x-autobe-specification Session context captured at registration. Forwarded to hrm_time_tracking_member_sessions.href during session creation. Records the page URL where registration occurred.
+         * @x-autobe-specification Session context captured at registration.
+         *   Forwarded to hrm_time_tracking_member_sessions.href during session
+         *   creation. Records the page URL where registration occurred.
      */
     href: string & tags.Format<"uri">;
 
@@ -319,7 +368,9 @@ export namespace IHrmTimeTrackingMember {
      *
      * Indicates the previous page the user was on before registering, useful for traffic source analysis and navigation flow understanding. This session context is captured for audit purposes.
      *
-     * @x-autobe-specification Session context captured at registration. Forwarded to hrm_time_tracking_member_sessions.referrer during session creation. Records the HTTP Referrer header.
+         * @x-autobe-specification Session context captured at registration.
+         *   Forwarded to hrm_time_tracking_member_sessions.referrer during
+         *   session creation. Records the HTTP Referrer header.
      */
     referrer: string & tags.Format<"uri">;
 
@@ -328,7 +379,10 @@ export namespace IHrmTimeTrackingMember {
      *
      * Captured from the HTTP request source IP for audit and security monitoring purposes. Optional field — in server-side rendering scenarios where the client cannot know its own IP, the server captures it as a fallback. IPv4 format expected.
      *
-     * @x-autobe-specification Session context captured at registration. Forwarded to hrm_time_tracking_member_sessions.ip during session creation. Optional — in SSR scenarios the server captures client IP as fallback (body.ip ?? serverIp). IPv4 format.
+         * @x-autobe-specification Session context captured at registration.
+         *   Forwarded to hrm_time_tracking_member_sessions.ip during session
+         *   creation. Optional — in SSR scenarios the server captures client IP
+         *   as fallback (body.ip ?? serverIp). IPv4 format.
      */
     ip?: (string & tags.Format<"ipv4">) | undefined;
   };
@@ -346,8 +400,10 @@ export namespace IHrmTimeTrackingMember {
      *
      * Part of the global profile shared across all organizations the member belongs to. Updating this field immediately reflects the change in every organization context.
      *
-     * @x-autobe-database-schema-property display_name
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_members.display_name. Required at service layer — operation spec enforces non-empty validation.
+         * @x-autobe-database-schema-property display_name
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_members.display_name. Required at service layer —
+         *   operation spec enforces non-empty validation.
      */
     display_name?: string | undefined;
 
@@ -356,8 +412,11 @@ export namespace IHrmTimeTrackingMember {
      *
      * Part of the global profile shared across all organizations the member belongs to. Send null to remove the current avatar.
      *
-     * @x-autobe-database-schema-property avatar
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_members.avatar. Nullable DB column — send null or omit to clear the avatar URL. URI format validation expected in consumer.
+         * @x-autobe-database-schema-property avatar
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_members.avatar. Nullable DB column — send null or
+         *   omit to clear the avatar URL. URI format validation expected in
+         *   consumer.
      */
     avatar?: (string & tags.Format<"uri">) | null | undefined;
 
@@ -366,8 +425,10 @@ export namespace IHrmTimeTrackingMember {
      *
      * Part of the global profile shared across all organizations the member belongs to. Send null to remove the current phone number.
      *
-     * @x-autobe-database-schema-property phone_number
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_members.phone_number. Nullable DB column — send null or omit to clear the phone number.
+         * @x-autobe-database-schema-property phone_number
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_members.phone_number. Nullable DB column — send
+         *   null or omit to clear the phone number.
      */
     phone_number?: string | null | undefined;
   };
@@ -385,7 +446,9 @@ export namespace IHrmTimeTrackingMember {
      *
      * This UUID references the member's account record in the hrm_time_tracking_members table. It serves as the primary key for the member across the entire platform.
      *
-     * @x-autobe-specification Maps to hrm_time_tracking_members.id. Primary key, UUID format, auto-generated on account creation. Direct column mapping from the member's account record.
+         * @x-autobe-specification Maps to hrm_time_tracking_members.id. Primary
+         *   key, UUID format, auto-generated on account creation. Direct column
+         *   mapping from the member's account record.
      */
     id: string & tags.Format<"uuid">;
 
@@ -394,7 +457,9 @@ export namespace IHrmTimeTrackingMember {
      *
      * Used for authentication (login) and communication purposes. No two accounts can share the same email address — enforced by a database-level unique constraint. Part of the global member profile shared across all organizations.
      *
-     * @x-autobe-specification Maps to hrm_time_tracking_members.email. Globally unique, enforced by database unique constraint. Direct column mapping.
+         * @x-autobe-specification Maps to hrm_time_tracking_members.email.
+         *   Globally unique, enforced by database unique constraint. Direct
+         *   column mapping.
      */
     email: string;
 
@@ -403,7 +468,9 @@ export namespace IHrmTimeTrackingMember {
      *
      * Appears in timelog entries, timesheet reviews, project member lists, and activity log entries. Part of the global profile shared across all organizations the member belongs to.
      *
-     * @x-autobe-specification Maps to hrm_time_tracking_members.display_name. Part of the global member profile shared across all organizations. Direct column mapping.
+         * @x-autobe-specification Maps to
+         *   hrm_time_tracking_members.display_name. Part of the global member
+         *   profile shared across all organizations. Direct column mapping.
      */
     display_name: string;
 
@@ -412,7 +479,9 @@ export namespace IHrmTimeTrackingMember {
      *
      * Used for visual identification across the user interface, appearing next to the member's name in lists, comments, and profile views. Part of the global profile shared across all organizations. May be null if no avatar has been set.
      *
-     * @x-autobe-specification Maps to hrm_time_tracking_members.avatar. Nullable URL string, stored in VarChar(80000). Direct column mapping.
+         * @x-autobe-specification Maps to hrm_time_tracking_members.avatar.
+         *   Nullable URL string, stored in VarChar(80000). Direct column
+         *   mapping.
      */
     avatar: (string & tags.Format<"uri">) | null;
 
@@ -421,7 +490,9 @@ export namespace IHrmTimeTrackingMember {
      *
      * Part of the global profile shared across all organizations the member belongs to. May be null if no phone number has been provided.
      *
-     * @x-autobe-specification Maps to hrm_time_tracking_members.phone_number. Nullable string, optional field. Direct column mapping.
+         * @x-autobe-specification Maps to
+         *   hrm_time_tracking_members.phone_number. Nullable string, optional
+         *   field. Direct column mapping.
      */
     phone_number: string | null;
 
@@ -430,7 +501,9 @@ export namespace IHrmTimeTrackingMember {
      *
      * Set automatically upon successful registration and never modified after. Indicates when the member first joined the platform.
      *
-     * @x-autobe-specification Maps to hrm_time_tracking_members.created_at. Set automatically on account creation, never modified after. Direct column mapping.
+         * @x-autobe-specification Maps to hrm_time_tracking_members.created_at.
+         *   Set automatically on account creation, never modified after. Direct
+         *   column mapping.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -439,7 +512,9 @@ export namespace IHrmTimeTrackingMember {
      *
      * Updated automatically whenever the member edits their profile or changes their password. Reflects the most recent modification to the global account record.
      *
-     * @x-autobe-specification Maps to hrm_time_tracking_members.updated_at. Updated automatically on profile edits or password changes. Direct column mapping.
+         * @x-autobe-specification Maps to hrm_time_tracking_members.updated_at.
+         *   Updated automatically on profile edits or password changes. Direct
+         *   column mapping.
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -448,7 +523,9 @@ export namespace IHrmTimeTrackingMember {
      *
      * Null when the account is active. When set, the account has been deactivated and the member cannot log in. Soft deletion preserves referential integrity with historical data while preventing further authentication.
      *
-     * @x-autobe-specification Maps to hrm_time_tracking_members.deleted_at. Nullable timestamp — null means active account, non-null means soft-deleted. Direct column mapping.
+         * @x-autobe-specification Maps to hrm_time_tracking_members.deleted_at.
+         *   Nullable timestamp — null means active account, non-null means
+         *   soft-deleted. Direct column mapping.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
 
@@ -457,7 +534,10 @@ export namespace IHrmTimeTrackingMember {
      *
      * Each entry represents the member's organizational membership in a specific organization, including their role, department assignment, position, employment type, and status. A member can be an employee in multiple organizations, but only once per organization.
      *
-     * @x-autobe-specification Maps to HAS-MANY relation hrm_time_tracking_employees from hrm_time_tracking_members. JOIN ON hrm_time_tracking_member_id, scoped across all organizations. Returns array of IHrmTimeTrackingEmployee.ISummary via $ref.
+         * @x-autobe-specification Maps to HAS-MANY relation
+         *   hrm_time_tracking_employees from hrm_time_tracking_members. JOIN ON
+         *   hrm_time_tracking_member_id, scoped across all organizations.
+         *   Returns array of IHrmTimeTrackingEmployee.ISummary via $ref.
      */
     employees: IHrmTimeTrackingEmployee.ISummary[];
 
@@ -466,7 +546,10 @@ export namespace IHrmTimeTrackingMember {
      *
      * Each entry represents a login session with metadata including the client IP address, page URL where authentication occurred, HTTP referrer, and session validity timestamps. A member may have multiple concurrent sessions from different devices or browsers.
      *
-     * @x-autobe-specification Maps to HAS-MANY relation hrm_time_tracking_member_sessions from hrm_time_tracking_members. JOIN ON hrm_time_tracking_member_id. Returns array of IHrmTimeTrackingMemberSession.ISummary via $ref.
+         * @x-autobe-specification Maps to HAS-MANY relation
+         *   hrm_time_tracking_member_sessions from hrm_time_tracking_members.
+         *   JOIN ON hrm_time_tracking_member_id. Returns array of
+         *   IHrmTimeTrackingMemberSession.ISummary via $ref.
      */
     sessions: IHrmTimeTrackingMemberSession.ISummary[];
 
@@ -475,14 +558,18 @@ export namespace IHrmTimeTrackingMember {
      *
      * The owner has full control over organization settings, configuration attributes, and lifecycle management including deletion. Only the owner can edit or delete the organization. A member may own zero or more organizations.
      *
-     * @x-autobe-specification Maps to HAS-MANY relation hrm_time_tracking_organizations from hrm_time_tracking_members. JOIN ON hrm_time_tracking_member_id. Returns array of IHrmTimeTrackingOrganization.ISummary via $ref.
+         * @x-autobe-specification Maps to HAS-MANY relation
+         *   hrm_time_tracking_organizations from hrm_time_tracking_members.
+         *   JOIN ON hrm_time_tracking_member_id. Returns array of
+         *   IHrmTimeTrackingOrganization.ISummary via $ref.
      */
     ownedOrganizations: IHrmTimeTrackingOrganization.ISummary[];
 
     /**
      * Authorization token.
      *
-     * @x-autobe-specification Authorization token comes from the session table.
+         * @x-autobe-specification Authorization token comes from the session
+         *   table.
      */
     token: IAuthorizationToken;
   };
@@ -500,8 +587,9 @@ export namespace IHrmTimeTrackingMember {
      *
      * This UUID serves as the primary key across all system operations and is used in API paths and references from other entities.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_members.id. UUID format.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_members.id. UUID format.
      */
     id: string & tags.Format<"uuid">;
 
@@ -510,8 +598,10 @@ export namespace IHrmTimeTrackingMember {
      *
      * No two accounts can share the same email address. This email is used for authentication and is the primary way members identify themselves in the system.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_members.email. Unique constraint enforced at database level.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_members.email. Unique constraint enforced at
+         *   database level.
      */
     email: string & tags.Format<"email">;
 
@@ -520,8 +610,9 @@ export namespace IHrmTimeTrackingMember {
      *
      * Appears in timelog entries, timesheet reviews, project member lists, activity log entries, and all other user-facing contexts. Part of the global profile shared across all organizations the member belongs to.
      *
-     * @x-autobe-database-schema-property display_name
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_members.display_name.
+         * @x-autobe-database-schema-property display_name
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_members.display_name.
      */
     display_name: string;
 
@@ -530,8 +621,10 @@ export namespace IHrmTimeTrackingMember {
      *
      * Displayed next to the member's name in lists, comments, profile views, and throughout the user interface. May be null when no avatar has been configured. Part of the global profile shared across all organizations.
      *
-     * @x-autobe-database-schema-property avatar
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_members.avatar. Nullable URI — returns the storage URL or null if no avatar is set.
+         * @x-autobe-database-schema-property avatar
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_members.avatar. Nullable URI — returns the
+         *   storage URL or null if no avatar is set.
      */
     avatar: (string & tags.Format<"uri">) | null;
 
@@ -540,8 +633,9 @@ export namespace IHrmTimeTrackingMember {
      *
      * Optional field used for contact purposes. Part of the global profile shared across all organizations the member belongs to.
      *
-     * @x-autobe-database-schema-property phone_number
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_members.phone_number. Nullable string.
+         * @x-autobe-database-schema-property phone_number
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_members.phone_number. Nullable string.
      */
     phone_number: string | null;
 
@@ -550,8 +644,9 @@ export namespace IHrmTimeTrackingMember {
      *
      * Recorded at the moment of successful registration and remains unchanged for the lifetime of the account.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_members.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_members.created_at.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -560,8 +655,9 @@ export namespace IHrmTimeTrackingMember {
      *
      * Updated automatically whenever the member's profile fields (display name, avatar, phone number) or password are modified.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_members.updated_at.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_members.updated_at.
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -570,8 +666,10 @@ export namespace IHrmTimeTrackingMember {
      *
      * A null value indicates the account is active. A non-null timestamp indicates the account has been deleted and is no longer accessible, though the record is retained for potential recovery or cleanup processes.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_members.deleted_at. Nullable — null indicates an active account.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_members.deleted_at. Nullable — null indicates an
+         *   active account.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };

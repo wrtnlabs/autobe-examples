@@ -29,7 +29,8 @@ import { IShoppingMallCartItem } from "../../../../../../../structures/IShopping
  * @param props.body Reconciliation input for cart item availability cleanup. Allows optional targeting by cart or cart item scope, while always applying ownership scoping to the authenticated member.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implement a write-side reconciliation transaction for the authenticated member's active cart(s).
+ * @x-autobe-specification Implement a write-side reconciliation transaction for
+ *   the authenticated member's active cart(s).
  *
  * Algorithm:
  * 1) Identify target cart scope:

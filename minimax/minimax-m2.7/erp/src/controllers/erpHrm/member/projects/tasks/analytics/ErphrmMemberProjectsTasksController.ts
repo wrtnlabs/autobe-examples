@@ -20,9 +20,10 @@ export class ErphrmMemberProjectsTasksController {
    *
    * @param connection
    * @param projectId Unique identifier of the project to retrieve task analytics for (UUID format)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query erp_hrm_projects table to verify project exists and user has access permission. Return 404 if project not found.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query erp_hrm_projects table to verify project
+     *   exists and user has access permission. Return 404 if project not found.
    *
    * Query erp_hrm_tasks table filtered by erp_hrm_project_id matching the path parameter.
    *

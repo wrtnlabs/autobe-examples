@@ -27,7 +27,11 @@ export * as snapshots from "./snapshots/index";
  * @param props.body Product creation data including the name, description, category, and base price.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Insert a new row into mall_platform_products for the authenticated seller. Validate that the seller account is active and allowed to sell, and reject creation if the seller is banned, suspended, rejected, or otherwise unavailable. Validate that the referenced category exists and can be assigned to a product, including subcategories.
+ * @x-autobe-specification Insert a new row into mall_platform_products for the
+ *   authenticated seller. Validate that the seller account is active and
+ *   allowed to sell, and reject creation if the seller is banned, suspended,
+ *   rejected, or otherwise unavailable. Validate that the referenced category
+ *   exists and can be assigned to a product, including subcategories.
  *
  * Persist only the fields defined by the create DTO. Do not accept client-provided ownership fields, timestamps, or other system-managed values. Do not create a snapshot on insert. If any validation or persistence step fails, roll back the transaction and return an error without partial writes. Return the created product after successful insertion.
  * @path /mallPlatform/seller/products
@@ -119,7 +123,10 @@ export namespace create {
  * @param props.body The product fields that can be edited by the owning seller or an authorized administrator.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Load the target product by productId and verify that it exists and is editable. Enforce ownership so that only the seller who owns the product can update it, unless the calling actor has administrator override privileges defined by the platform rules.
+ * @x-autobe-specification Load the target product by productId and verify that
+ *   it exists and is editable. Enforce ownership so that only the seller who
+ *   owns the product can update it, unless the calling actor has administrator
+ *   override privileges defined by the platform rules.
  *
  * Validate the incoming fields against the product update contract. Apply updates to the product name, description, category, and base price only. Ensure the referenced category exists and is valid, including subcategories. Do not alter seller ownership through this operation.
  *
@@ -221,7 +228,8 @@ export namespace update {
  * @param props.productId The identifier of the product to delete.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Load the product by productId and authorize the caller as either the owning seller or an administrator.
+ * @x-autobe-specification Load the product by productId and authorize the
+ *   caller as either the owning seller or an administrator.
  *
  * Reject the request with not found when the product does not exist. Reject with forbidden when the caller is neither the owner nor an administrator with product oversight authority.
  *

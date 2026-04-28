@@ -14,8 +14,9 @@ export type IECommerceMallSellerProfile = {
    *
    * Automatically generated UUID that serves as the primary key for the seller's profile record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from e_commerce_mall_seller_profiles.id. Primary key (UUID).
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_seller_profiles.id. Primary key (UUID).
    */
   id: string & tags.Format<"uuid">;
 
@@ -24,8 +25,12 @@ export type IECommerceMallSellerProfile = {
    *
    * Contains the seller's unique identifier, email address, current approval status, and a summary of the seller's own profile. This relationship links the seller's authentication and identity record to their public-facing shop profile.
    *
-   * @x-autobe-database-schema-property seller
-   * @x-autobe-specification Join via e_commerce_mall_seller_id to e_commerce_mall_sellers. Returns IECommerceMallSeller.ISummary containing id, email, approval_status, profile summary, created_at, and deleted_at. 1:1 unique constraint ensures exactly one seller per profile.
+     * @x-autobe-database-schema-property seller
+     * @x-autobe-specification Join via e_commerce_mall_seller_id to
+     *   e_commerce_mall_sellers. Returns IECommerceMallSeller.ISummary
+     *   containing id, email, approval_status, profile summary, created_at, and
+     *   deleted_at. 1:1 unique constraint ensures exactly one seller per
+     *   profile.
    */
   seller: IECommerceMallSeller.ISummary;
 
@@ -34,8 +39,10 @@ export type IECommerceMallSellerProfile = {
    *
    * This name appears alongside products in search results, category listings, and product detail pages. It is also preserved in order history snapshots even after the seller's account is deleted.
    *
-   * @x-autobe-database-schema-property shop_name
-   * @x-autobe-specification Direct mapping from e_commerce_mall_seller_profiles.shop_name. Public-facing brand name of the seller's store.
+     * @x-autobe-database-schema-property shop_name
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_seller_profiles.shop_name. Public-facing brand name of
+     *   the seller's store.
    */
   shopName: string;
 
@@ -44,8 +51,9 @@ export type IECommerceMallSellerProfile = {
    *
    * Displayed on the seller's public profile page for customers to read when learning about a merchant before making a purchase.
    *
-   * @x-autobe-database-schema-property shop_description
-   * @x-autobe-specification Direct mapping from e_commerce_mall_seller_profiles.shop_description. Nullable text field.
+     * @x-autobe-database-schema-property shop_description
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_seller_profiles.shop_description. Nullable text field.
    */
   shopDescription: string | null;
 
@@ -54,16 +62,18 @@ export type IECommerceMallSellerProfile = {
    *
    * Displayed on the seller's public profile page alongside the shop name and description.
    *
-   * @x-autobe-database-schema-property logo_image
-   * @x-autobe-specification Direct mapping from e_commerce_mall_seller_profiles.logo_image. URI string, nullable.
+     * @x-autobe-database-schema-property logo_image
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_seller_profiles.logo_image. URI string, nullable.
    */
   logoImage: (string & tags.Format<"uri">) | null;
 
   /**
    * The timestamp when this seller profile was first created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from e_commerce_mall_seller_profiles.created_at. DateTime with timezone.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_seller_profiles.created_at. DateTime with timezone.
    */
   createdAt: string & tags.Format<"date-time">;
 
@@ -72,8 +82,9 @@ export type IECommerceMallSellerProfile = {
    *
    * Updated whenever the seller edits their shop name, description, or logo image.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from e_commerce_mall_seller_profiles.updated_at. DateTime with timezone.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_seller_profiles.updated_at. DateTime with timezone.
    */
   updatedAt: string & tags.Format<"date-time">;
 
@@ -82,8 +93,10 @@ export type IECommerceMallSellerProfile = {
    *
    * When set, the profile is no longer publicly accessible. The data is preserved for order history and legal purposes.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from e_commerce_mall_seller_profiles.deleted_at. Nullable DateTime with timezone.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_seller_profiles.deleted_at. Nullable DateTime with
+     *   timezone.
    */
   deletedAt: (string & tags.Format<"date-time">) | null;
 };
@@ -101,8 +114,9 @@ export namespace IECommerceMallSellerProfile {
      *
      * This UUID is the primary key of the seller profile record and serves as the stable reference for linking to seller details across the platform.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from e_commerce_mall_seller_profiles.id. UUID primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_seller_profiles.id. UUID primary key.
      */
     id: string & tags.Format<"uuid">;
 
@@ -111,8 +125,10 @@ export namespace IECommerceMallSellerProfile {
      *
      * This name appears alongside products in search results, category listings, product detail pages, and is preserved in order history snapshots even after the seller's account is deleted.
      *
-     * @x-autobe-database-schema-property shop_name
-     * @x-autobe-specification Direct mapping from e_commerce_mall_seller_profiles.shop_name. The public-facing brand name of the seller's store.
+         * @x-autobe-database-schema-property shop_name
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_seller_profiles.shop_name. The public-facing brand
+         *   name of the seller's store.
      */
     shop_name: string;
 
@@ -121,8 +137,10 @@ export namespace IECommerceMallSellerProfile {
      *
      * Displayed on the seller's public profile page alongside the shop name and description. May be null if the seller has not uploaded a logo.
      *
-     * @x-autobe-database-schema-property logo_image
-     * @x-autobe-specification Direct mapping from e_commerce_mall_seller_profiles.logo_image. Nullable URL field (VarChar 80000).
+         * @x-autobe-database-schema-property logo_image
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_seller_profiles.logo_image. Nullable URL field
+         *   (VarChar 80000).
      */
     logo_image: (string & tags.Format<"url">) | null;
   };

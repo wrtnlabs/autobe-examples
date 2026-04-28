@@ -22,16 +22,24 @@ export namespace IShoppingMallOrderItemSnapshot {
     /**
      * Name of the variant option attribute, such as 'color', 'size', 'material', or 'storage'. Preserved exactly as defined at purchase time for historical accuracy.
      *
-     * @x-autobe-database-schema-property option_key
-     * @x-autobe-specification Direct mapping from shopping_mall_order_item_snapshot_variant_options.option_key column. Preserved exactly as defined in the original product variant at purchase time. Used to identify the attribute type (e.g., 'color', 'size', 'material', 'storage').
+         * @x-autobe-database-schema-property option_key
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_order_item_snapshot_variant_options.option_key
+         *   column. Preserved exactly as defined in the original product
+         *   variant at purchase time. Used to identify the attribute type
+         *   (e.g., 'color', 'size', 'material', 'storage').
      */
     optionKey: string;
 
     /**
      * Value of the variant option selected by the customer, such as 'Red', 'Large', 'Cotton', or '256GB'. Captures the exact customer selection at purchase time for order verification and dispute resolution.
      *
-     * @x-autobe-database-schema-property option_value
-     * @x-autobe-specification Direct mapping from shopping_mall_order_item_snapshot_variant_options.option_value column. Captures the exact customer selection at purchase time. Used to identify the chosen value for the corresponding option key (e.g., 'Red' for color, 'Large' for size).
+         * @x-autobe-database-schema-property option_value
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_order_item_snapshot_variant_options.option_value
+         *   column. Captures the exact customer selection at purchase time.
+         *   Used to identify the chosen value for the corresponding option key
+         *   (e.g., 'Red' for color, 'Large' for size).
      */
     optionValue: string;
   };

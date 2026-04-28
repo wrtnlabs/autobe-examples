@@ -17,8 +17,9 @@ export type IRedditCloneModerator = {
    *
    * This UUID serves as the primary key for the moderator record and is used to reference the moderator across the system. It is immutable and globally unique.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from reddit_clone_moderators.id. Primary key UUID identifying the moderator account.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from reddit_clone_moderators.id.
+     *   Primary key UUID identifying the moderator account.
    */
   id: string & tags.Format<"uuid">;
 
@@ -27,8 +28,10 @@ export type IRedditCloneModerator = {
    *
    * This email must be unique across all moderator accounts and serves as the primary identifier for login. The email cannot be changed after account creation.
    *
-   * @x-autobe-database-schema-property email
-   * @x-autobe-specification Direct mapping from reddit_clone_moderators.email. Unique email address used for moderator authentication.
+     * @x-autobe-database-schema-property email
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_moderators.email. Unique email address used for moderator
+     *   authentication.
    */
   email: string;
 
@@ -37,8 +40,10 @@ export type IRedditCloneModerator = {
    *
    * This UUID links the moderator authentication record to the public user profile containing display information. Each moderator has exactly one associated user profile.
    *
-   * @x-autobe-database-schema-property reddit_clone_user_profile_id
-   * @x-autobe-specification Direct mapping from reddit_clone_moderators.reddit_clone_user_profile_id. Foreign key referencing reddit_clone_user_profiles.id.
+     * @x-autobe-database-schema-property reddit_clone_user_profile_id
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_moderators.reddit_clone_user_profile_id. Foreign key
+     *   referencing reddit_clone_user_profiles.id.
    */
   reddit_clone_user_profile_id: string & tags.Format<"uuid">;
 
@@ -47,8 +52,10 @@ export type IRedditCloneModerator = {
    *
    * This field is set automatically on account creation and is used for audit trails and account age calculations.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from reddit_clone_moderators.created_at. Timestamp when the moderator account was created.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_moderators.created_at. Timestamp when the moderator
+     *   account was created.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -57,8 +64,10 @@ export type IRedditCloneModerator = {
    *
    * This field is updated on any profile or authentication field changes and is used for tracking modification history. The timestamp is in ISO 8601 format with timezone information.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from reddit_clone_moderators.updated_at. Timestamp when the moderator account was last updated.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_moderators.updated_at. Timestamp when the moderator
+     *   account was last updated.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -67,8 +76,10 @@ export type IRedditCloneModerator = {
    *
    * This nullable field supports soft delete functionality. When set, the account is marked as deleted but data is retained for audit purposes. Null indicates the account is active.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from reddit_clone_moderators.deleted_at. Nullable timestamp for soft delete support.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_moderators.deleted_at. Nullable timestamp for soft delete
+     *   support.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 
@@ -77,8 +88,11 @@ export type IRedditCloneModerator = {
    *
    * This nested object contains the public-facing display information for the moderator including display name, bio, avatar URL, and karma score. The profile is accessible to all users including guests.
    *
-   * @x-autobe-database-schema-property userProfile
-   * @x-autobe-specification BELONGS-TO relation via JOIN on reddit_clone_user_profile_id to reddit_clone_user_profiles.id. Returns IRedditCloneUserProfile.ISummary with display_name, bio, avatar, karma, created_at.
+     * @x-autobe-database-schema-property userProfile
+     * @x-autobe-specification BELONGS-TO relation via JOIN on
+     *   reddit_clone_user_profile_id to reddit_clone_user_profiles.id. Returns
+     *   IRedditCloneUserProfile.ISummary with display_name, bio, avatar, karma,
+     *   created_at.
    */
   userProfile: IRedditCloneUserProfile.ISummary;
 };
@@ -98,8 +112,11 @@ export namespace IRedditCloneModerator {
      *
      * This email serves as the primary identifier for logging in and must be unique across all moderator accounts in the system. The email format is validated to ensure it conforms to standard email address patterns. Once registered, this email cannot be changed and is used for all authentication operations including login and password reset.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping to reddit_clone_moderators.email column. Must be unique across all moderator accounts. Validated for proper email format. Used as the primary login identifier for moderator authentication.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping to
+         *   reddit_clone_moderators.email column. Must be unique across all
+         *   moderator accounts. Validated for proper email format. Used as the
+         *   primary login identifier for moderator authentication.
      */
     email: string & tags.Format<"email">;
 
@@ -108,8 +125,13 @@ export namespace IRedditCloneModerator {
      *
      * The password must meet complexity requirements including a minimum length of 8 characters with at least one uppercase letter, one lowercase letter, and one numeric character. Upon submission, the password is immediately hashed using bcrypt and the hash is stored in the database. The plain text password is never stored or returned by the API. This password is required for subsequent login operations.
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification Maps to reddit_clone_moderators.password_hash column. Plain text password provided by user is hashed using bcrypt with minimum 10 salt rounds before storage. Password must meet complexity requirements: minimum 8 characters, at least one uppercase letter, one lowercase letter, and one numeric character. Never stored or transmitted in plain text after initial submission.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification Maps to reddit_clone_moderators.password_hash
+         *   column. Plain text password provided by user is hashed using bcrypt
+         *   with minimum 10 salt rounds before storage. Password must meet
+         *   complexity requirements: minimum 8 characters, at least one
+         *   uppercase letter, one lowercase letter, and one numeric character.
+         *   Never stored or transmitted in plain text after initial submission.
      */
     password: string & tags.MinLength<8> & tags.Format<"password">;
 
@@ -118,7 +140,13 @@ export namespace IRedditCloneModerator {
      *
      * This is the visible name that appears on the moderator's profile page, next to any content they create, and in moderation actions. The display name is editable after registration and is separate from the authentication email. It provides a user-friendly identifier that can be changed independently from the login credentials.
      *
-     * @x-autobe-specification Cross-table mapping to reddit_clone_user_profiles.display_name column. During moderator registration, backend creates a new user profile record with this display name and links it to the moderator via reddit_clone_user_profile_id foreign key. Display name is the public-facing identifier shown on the moderator's profile and next to their content. Minimum length of 1 character enforced.
+         * @x-autobe-specification Cross-table mapping to
+         *   reddit_clone_user_profiles.display_name column. During moderator
+         *   registration, backend creates a new user profile record with this
+         *   display name and links it to the moderator via
+         *   reddit_clone_user_profile_id foreign key. Display name is the
+         *   public-facing identifier shown on the moderator's profile and next
+         *   to their content. Minimum length of 1 character enforced.
      */
     display_name: string & tags.MinLength<1>;
 
@@ -127,7 +155,12 @@ export namespace IRedditCloneModerator {
      *
      * This field allows moderators to add a short bio to their public profile page. The bio is optional and can be left empty during registration. It provides a way for moderators to introduce themselves or describe their role in the community. The bio can be updated after registration through the profile update endpoint.
      *
-     * @x-autobe-specification Cross-table mapping to reddit_clone_user_profiles.bio column. During moderator registration, backend creates a new user profile record with this bio text and links it to the moderator. Nullable field in database, optional in request. Stores short biographical text describing the moderator.
+         * @x-autobe-specification Cross-table mapping to
+         *   reddit_clone_user_profiles.bio column. During moderator
+         *   registration, backend creates a new user profile record with this
+         *   bio text and links it to the moderator. Nullable field in database,
+         *   optional in request. Stores short biographical text describing the
+         *   moderator.
      */
     bio?: string | undefined;
 
@@ -136,7 +169,13 @@ export namespace IRedditCloneModerator {
      *
      * This field stores the URL of an image that appears on the moderator's profile page and next to their content. The avatar is optional and can be added or updated after registration. The URL must point to a valid image resource and is limited to 80000 characters to accommodate various image hosting service URLs.
      *
-     * @x-autobe-specification Cross-table mapping to reddit_clone_user_profiles.avatar column. During moderator registration, backend creates a new user profile record with this avatar URL and links it to the moderator. Nullable field in database, optional in request. Stores URL to avatar image (max 80000 characters). Avatar appears on profile and next to moderator content.
+         * @x-autobe-specification Cross-table mapping to
+         *   reddit_clone_user_profiles.avatar column. During moderator
+         *   registration, backend creates a new user profile record with this
+         *   avatar URL and links it to the moderator. Nullable field in
+         *   database, optional in request. Stores URL to avatar image (max
+         *   80000 characters). Avatar appears on profile and next to moderator
+         *   content.
      */
     avatar?: (string & tags.MaxLength<80000> & tags.Format<"url">) | undefined;
 
@@ -145,7 +184,13 @@ export namespace IRedditCloneModerator {
      *
      * This field captures the current page URL at the time of registration for security auditing purposes. It helps track user navigation patterns and can be used to detect suspicious registration attempts. The href is stored in the session record associated with the newly created moderator account.
      *
-     * @x-autobe-specification Cross-table mapping to reddit_clone_moderator_sessions.href column. During moderator registration, backend creates a new session record with this href value. Captures the current page URL where the registration request originated. Used for security auditing and session tracking. After successful registration, this value is stored in the session record for audit purposes.
+         * @x-autobe-specification Cross-table mapping to
+         *   reddit_clone_moderator_sessions.href column. During moderator
+         *   registration, backend creates a new session record with this href
+         *   value. Captures the current page URL where the registration request
+         *   originated. Used for security auditing and session tracking. After
+         *   successful registration, this value is stored in the session record
+         *   for audit purposes.
      */
     href: string & tags.Format<"uri">;
 
@@ -154,7 +199,13 @@ export namespace IRedditCloneModerator {
      *
      * This field captures the referrer URL from the HTTP request headers, indicating which page the user came from before accessing the registration endpoint. It is used for security auditing, analytics, and tracking user acquisition sources. The referrer is stored in the session record for the newly created moderator account.
      *
-     * @x-autobe-specification Cross-table mapping to reddit_clone_moderator_sessions.referrer column. During moderator registration, backend creates a new session record with this referrer value. Captures the referrer URL (previous page) that led to the registration page. Used for security auditing and analytics. After successful registration, this value is stored in the session record.
+         * @x-autobe-specification Cross-table mapping to
+         *   reddit_clone_moderator_sessions.referrer column. During moderator
+         *   registration, backend creates a new session record with this
+         *   referrer value. Captures the referrer URL (previous page) that led
+         *   to the registration page. Used for security auditing and analytics.
+         *   After successful registration, this value is stored in the session
+         *   record.
      */
     referrer: string & tags.Format<"uri">;
 
@@ -163,7 +214,14 @@ export namespace IRedditCloneModerator {
      *
      * This field captures the client's IP address for security auditing and session management. In client-side applications, the client may provide its own IP. In Server Side Rendering (SSR) scenarios, this field may be omitted as the server will capture the IP address from the request. The IP is stored in the session record and used for detecting suspicious activity and validating session continuity.
      *
-     * @x-autobe-specification Cross-table mapping to reddit_clone_moderator_sessions.ip column. During moderator registration, backend creates a new session record with this IP address. Captures the client's IP address. Optional in request because in Server Side Rendering (SSR) scenarios, the client cannot know its own IP - the server captures it as fallback (body.ip ?? serverIp). After successful registration, the IP is stored in the session record for security auditing and session validation.
+         * @x-autobe-specification Cross-table mapping to
+         *   reddit_clone_moderator_sessions.ip column. During moderator
+         *   registration, backend creates a new session record with this IP
+         *   address. Captures the client's IP address. Optional in request
+         *   because in Server Side Rendering (SSR) scenarios, the client cannot
+         *   know its own IP - the server captures it as fallback (body.ip ??
+         *   serverIp). After successful registration, the IP is stored in the
+         *   session record for security auditing and session validation.
      */
     ip?: (string & tags.Format<"ipv4">) | undefined;
   };
@@ -183,7 +241,14 @@ export namespace IRedditCloneModerator {
      *
      * The token must be included in the request body and will be validated for signature, expiration, and actor type. If valid, new tokens are generated with fresh expiration times.
      *
-     * @x-autobe-specification JWT refresh token provided by the client in the request body. Backend validates the token: verifies JWT signature, checks expiration (must not be expired), confirms actor type is 'moderator', extracts moderator ID from subject claim. Uses moderator ID to query reddit_clone_moderators for account existence and reddit_clone_moderator_sessions for active session validation. This token is NOT stored in the database as-is; it's a cryptographic JWT that encodes the session information.
+         * @x-autobe-specification JWT refresh token provided by the client in
+         *   the request body. Backend validates the token: verifies JWT
+         *   signature, checks expiration (must not be expired), confirms actor
+         *   type is 'moderator', extracts moderator ID from subject claim. Uses
+         *   moderator ID to query reddit_clone_moderators for account existence
+         *   and reddit_clone_moderator_sessions for active session validation.
+         *   This token is NOT stored in the database as-is; it's a
+         *   cryptographic JWT that encodes the session information.
      */
     refresh_token: string;
   };
@@ -201,7 +266,9 @@ export namespace IRedditCloneModerator {
      *
      * This UUID serves as the primary key for the moderator record and is used to identify the authenticated user in all subsequent API requests. The ID is embedded in the JWT access token's subject claim for stateless authentication.
      *
-     * @x-autobe-specification Primary key from reddit_clone_moderators.id table. Extracted from the authenticated moderator record and embedded in JWT token subject claim for stateless authentication.
+         * @x-autobe-specification Primary key from reddit_clone_moderators.id
+         *   table. Extracted from the authenticated moderator record and
+         *   embedded in JWT token subject claim for stateless authentication.
      */
     id: string & tags.Format<"uuid">;
 
@@ -210,7 +277,9 @@ export namespace IRedditCloneModerator {
      *
      * This email serves as the unique identifier for login purposes. It must be unique across all moderator accounts in the system. The email is used to look up the moderator record during the login process.
      *
-     * @x-autobe-specification Email address from reddit_clone_moderators.email column. Unique identifier used for moderator authentication and login.
+         * @x-autobe-specification Email address from
+         *   reddit_clone_moderators.email column. Unique identifier used for
+         *   moderator authentication and login.
      */
     email: string;
 
@@ -219,8 +288,10 @@ export namespace IRedditCloneModerator {
      *
      * This UUID links the moderator authentication record to the public user profile containing display information. Each moderator has exactly one associated user profile.
      *
-     * @x-autobe-database-schema-property reddit_clone_user_profile_id
-     * @x-autobe-specification Direct mapping from reddit_clone_moderators.reddit_clone_user_profile_id. Foreign key referencing reddit_clone_user_profiles.id.
+         * @x-autobe-database-schema-property reddit_clone_user_profile_id
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_moderators.reddit_clone_user_profile_id. Foreign key
+         *   referencing reddit_clone_user_profiles.id.
      */
     reddit_clone_user_profile_id: string & tags.Format<"uuid">;
 
@@ -229,7 +300,10 @@ export namespace IRedditCloneModerator {
      *
      * This ISO 8601 datetime indicates when the moderator first registered in the system. The timestamp is set automatically upon account creation and remains immutable throughout the account's lifecycle.
      *
-     * @x-autobe-specification Creation timestamp from reddit_clone_moderators.created_at column. Automatically set when moderator account is created, immutable throughout account lifecycle.
+         * @x-autobe-specification Creation timestamp from
+         *   reddit_clone_moderators.created_at column. Automatically set when
+         *   moderator account is created, immutable throughout account
+         *   lifecycle.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -238,7 +312,9 @@ export namespace IRedditCloneModerator {
      *
      * This ISO 8601 datetime is automatically updated whenever any field in the moderator record is modified. It provides an audit trail for tracking when the account was last changed.
      *
-     * @x-autobe-specification Update timestamp from reddit_clone_moderators.updated_at column. Automatically updated whenever moderator record is modified, provides audit trail.
+         * @x-autobe-specification Update timestamp from
+         *   reddit_clone_moderators.updated_at column. Automatically updated
+         *   whenever moderator record is modified, provides audit trail.
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -247,7 +323,10 @@ export namespace IRedditCloneModerator {
      *
      * This ISO 8601 datetime indicates when the account was marked as deleted. A null value means the account is currently active. When set, the account cannot be used for authentication but the data is retained for audit purposes.
      *
-     * @x-autobe-specification Soft delete timestamp from reddit_clone_moderators.deleted_at column. Nullable field - null means account is active, datetime value indicates when account was soft-deleted.
+         * @x-autobe-specification Soft delete timestamp from
+         *   reddit_clone_moderators.deleted_at column. Nullable field - null
+         *   means account is active, datetime value indicates when account was
+         *   soft-deleted.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
 
@@ -256,14 +335,20 @@ export namespace IRedditCloneModerator {
      *
      * This nested object contains the moderator's public-facing identity including display name, bio, avatar image URL, and karma score. The profile is viewable by any user (including guests) and represents the moderator's public identity in the community.
      *
-     * @x-autobe-specification User profile data from reddit_clone_user_profiles table. Joined via reddit_clone_moderators.reddit_clone_user_profile_id foreign key to reddit_clone_user_profiles.id. Returns IRedditCloneUserProfile.ISummary format with display_name, bio, avatar, karma, created_at.
+         * @x-autobe-specification User profile data from
+         *   reddit_clone_user_profiles table. Joined via
+         *   reddit_clone_moderators.reddit_clone_user_profile_id foreign key to
+         *   reddit_clone_user_profiles.id. Returns
+         *   IRedditCloneUserProfile.ISummary format with display_name, bio,
+         *   avatar, karma, created_at.
      */
     userProfile: IRedditCloneUserProfile.ISummary;
 
     /**
      * Authorization token.
      *
-     * @x-autobe-specification Authorization token comes from the session table.
+         * @x-autobe-specification Authorization token comes from the session
+         *   table.
      */
     token: IAuthorizationToken;
   };
@@ -281,8 +366,9 @@ export namespace IRedditCloneModerator {
      *
      * This UUID serves as the primary key for identifying moderator accounts across the system. Used in API requests to reference specific moderators and in audit logs to track moderator actions.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from reddit_clone_moderators.id column. Primary key with UUID format.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_moderators.id column. Primary key with UUID format.
      */
     id: string & tags.Format<"uuid">;
 
@@ -291,8 +377,10 @@ export namespace IRedditCloneModerator {
      *
      * This email serves as the unique identifier for moderator login. It must be unique across all moderators and cannot be changed after account creation. Used for authentication and account recovery purposes.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from reddit_clone_moderators.email column. Unique constraint enforced at database level.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_moderators.email column. Unique constraint enforced at
+         *   database level.
      */
     email: string & tags.Format<"email">;
 
@@ -301,8 +389,11 @@ export namespace IRedditCloneModerator {
      *
      * This nested object provides the moderator's public-facing identity including their display name, biographical text, avatar image URL, and karma score. All profile fields are publicly viewable by any user including guests.
      *
-     * @x-autobe-database-schema-property userProfile
-     * @x-autobe-specification Join via reddit_clone_user_profile_id FK to reddit_clone_user_profiles.id. Returns IRedditCloneUserProfile.ISummary containing display_name, bio, avatar, karma, and created_at.
+         * @x-autobe-database-schema-property userProfile
+         * @x-autobe-specification Join via reddit_clone_user_profile_id FK to
+         *   reddit_clone_user_profiles.id. Returns
+         *   IRedditCloneUserProfile.ISummary containing display_name, bio,
+         *   avatar, karma, and created_at.
      */
     profile: IRedditCloneUserProfile.ISummary;
 
@@ -311,8 +402,10 @@ export namespace IRedditCloneModerator {
      *
      * This field records the exact date and time when the moderator account was first created. Used for audit trails, account age calculations, and sorting moderator records chronologically.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from reddit_clone_moderators.created_at column. DateTime with timezone in ISO 8601 format.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_moderators.created_at column. DateTime with timezone
+         *   in ISO 8601 format.
      */
     created_at: string & tags.Format<"date-time">;
   };
@@ -330,8 +423,11 @@ export namespace IRedditCloneModerator {
      *
      * This email must match an existing moderator account in the system. The email format is validated according to RFC 5322 standards. If no moderator account exists with this email, or if the account has been soft-deleted, the login attempt will fail with a 401 Unauthorized response.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from reddit_clone_moderators.email column. Used as unique identifier to lookup moderator account during authentication. Email format validated per RFC 5322 standards.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_moderators.email column. Used as unique identifier to
+         *   lookup moderator account during authentication. Email format
+         *   validated per RFC 5322 standards.
      */
     email: string & tags.Format<"email">;
 
@@ -340,8 +436,11 @@ export namespace IRedditCloneModerator {
      *
      * This password will be bcrypt-hashed and compared against the stored password hash in the database. The plain text password is never stored or returned. If the password does not match the stored hash for the provided email, the login attempt will fail with a 401 Unauthorized response.
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification Maps to reddit_clone_moderators.password_hash column with bcrypt transformation. The plain text password provided in the request is bcrypt-hashed and compared against the stored hash. Plain text password is never stored in the database.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification Maps to reddit_clone_moderators.password_hash
+         *   column with bcrypt transformation. The plain text password provided
+         *   in the request is bcrypt-hashed and compared against the stored
+         *   hash. Plain text password is never stored in the database.
      */
     password: string & tags.Format<"password">;
 
@@ -350,7 +449,11 @@ export namespace IRedditCloneModerator {
      *
      * This field captures the web page context where the moderator initiated the login. It is stored in the session table for security tracking, audit purposes, and potential fraud detection. The value is obtained from the client's browser location and helps track the login flow path.
      *
-     * @x-autobe-specification Computed session context field. Captured from client request and stored in reddit_clone_moderator_sessions.href column during login. Represents the current page URL where the login request originated, obtained from the client's browser location.
+         * @x-autobe-specification Computed session context field. Captured from
+         *   client request and stored in reddit_clone_moderator_sessions.href
+         *   column during login. Represents the current page URL where the
+         *   login request originated, obtained from the client's browser
+         *   location.
      */
     href: string & tags.Format<"uri">;
 
@@ -359,7 +462,11 @@ export namespace IRedditCloneModerator {
      *
      * This field captures the referrer URL — the page that directed the user to the login page. It is stored in the session table for analytics, attribution tracking, and security purposes. The value is obtained from the browser's Referer header and helps understand user navigation patterns.
      *
-     * @x-autobe-specification Computed session context field. Captured from client request and stored in reddit_clone_moderator_sessions.referrer column during login. Represents the source page URL that directed the user to the login page, obtained from the browser's Referer header.
+         * @x-autobe-specification Computed session context field. Captured from
+         *   client request and stored in
+         *   reddit_clone_moderator_sessions.referrer column during login.
+         *   Represents the source page URL that directed the user to the login
+         *   page, obtained from the browser's Referer header.
      */
     referrer: string & tags.Format<"uri">;
 
@@ -368,7 +475,12 @@ export namespace IRedditCloneModerator {
      *
      * This field captures the IP address of the client device during login. It is optional because in Server-Side Rendering (SSR) scenarios, the client cannot know its own IP address — the server captures it as a fallback. Used for security monitoring, rate limiting, fraud detection, and geographic access tracking.
      *
-     * @x-autobe-specification Computed session context field. Captured from client request and stored in reddit_clone_moderator_sessions.ip column during login. Optional field because in Server-Side Rendering (SSR) scenarios, the client cannot know its own IP address — the server captures it as a fallback (body.ip ?? serverIp).
+         * @x-autobe-specification Computed session context field. Captured from
+         *   client request and stored in reddit_clone_moderator_sessions.ip
+         *   column during login. Optional field because in Server-Side
+         *   Rendering (SSR) scenarios, the client cannot know its own IP
+         *   address — the server captures it as a fallback (body.ip ??
+         *   serverIp).
      */
     ip?: (string & tags.Format<"ipv4">) | undefined;
   };

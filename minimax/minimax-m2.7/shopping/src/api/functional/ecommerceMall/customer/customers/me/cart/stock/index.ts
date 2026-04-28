@@ -26,7 +26,8 @@ import { IEcommerceMallCart } from "../../../../../../../structures/IEcommerceMa
  * @param props.body Cart item IDs to validate. If empty, validates all items in the cart. Maximum 50 item IDs per request.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Query the authenticated customer's shopping cart using the session context.
+ * @x-autobe-specification Query the authenticated customer's shopping cart
+ *   using the session context.
  *
  * For each cart item ID provided in the request (or all cart items if array is empty):
  * 1. Fetch the cart item with its associated product variant

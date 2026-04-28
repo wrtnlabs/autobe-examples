@@ -29,9 +29,11 @@ export class HrmtimetrackingEmployeeTimesheetsTimelogsController {
    * @param connection
    * @param timesheetId Target weekly timesheet ID
    * @param body Timelog inclusion information
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor employee
-   * @x-autobe-specification Implement a service action that creates one inclusion row in `hrm_time_tracking_timesheet_timelogs` for the parent timesheet identified by `timesheetId`.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor employee
+     * @x-autobe-specification Implement a service action that creates one
+     *   inclusion row in `hrm_time_tracking_timesheet_timelogs` for the parent
+     *   timesheet identified by `timesheetId`.
    *
    * 1. Authorize the caller in the current organization context. The primary allowed actor is the employee who owns the target timesheet. If the platform later supports delegated draft editing by privileged roles, enforce that through explicit permission checks, but do not bypass organization scoping.
    * 2. Load the target row from `hrm_time_tracking_timesheets` by `id = timesheetId` and `deleted_at IS NULL`. If it does not exist, return a not-found error.
@@ -94,9 +96,12 @@ export class HrmtimetrackingEmployeeTimesheetsTimelogsController {
    * @param connection
    * @param timesheetId Target timesheet's ID
    * @param body Filtering, sorting, and pagination options for included timelogs
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor employee
-   * @x-autobe-specification Implement this operation as a nested list query over `hrm_time_tracking_timesheet_timelogs` joined to `hrm_time_tracking_timelogs` and validated against `hrm_time_tracking_timesheets`.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor employee
+     * @x-autobe-specification Implement this operation as a nested list query
+     *   over `hrm_time_tracking_timesheet_timelogs` joined to
+     *   `hrm_time_tracking_timelogs` and validated against
+     *   `hrm_time_tracking_timesheets`.
    *
    * 1. Authorize the caller in the current organization context. Owners and managers may read timesheet contents according to organization-scoped review permissions. Employees may read only their own timesheet contents. Reject access when the target timesheet does not belong to the active organization context or when the caller lacks permission to read that employee's weekly record.
    *
@@ -152,9 +157,16 @@ export class HrmtimetrackingEmployeeTimesheetsTimelogsController {
    * @param connection
    * @param timesheetId Target timesheet ID
    * @param timelogId Target timelog ID included in the specified timesheet
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor employee
-   * @x-autobe-specification Load the parent timesheet from `hrm_time_tracking_timesheets` by `id = timesheetId` and ensure it is not logically deleted by checking `deleted_at IS NULL`. Enforce organization-scoped authorization using the current actor context. If the actor is an employee, allow access only when the timesheet belongs to that employee and organization. If the actor is an owner or manager with timesheet approval authority in the same organization, allow access according to organization membership and approval permissions.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor employee
+     * @x-autobe-specification Load the parent timesheet from
+     *   `hrm_time_tracking_timesheets` by `id = timesheetId` and ensure it is
+     *   not logically deleted by checking `deleted_at IS NULL`. Enforce
+     *   organization-scoped authorization using the current actor context. If
+     *   the actor is an employee, allow access only when the timesheet belongs
+     *   to that employee and organization. If the actor is an owner or manager
+     *   with timesheet approval authority in the same organization, allow
+     *   access according to organization membership and approval permissions.
    *
    * Load the inclusion row from `hrm_time_tracking_timesheet_timelogs` where `hrm_time_tracking_timesheet_id = timesheetId`, `hrm_time_tracking_timelog_id = timelogId`, and `deleted_at IS NULL`. If no such row exists, return a not-found error for the nested resource, because the target timelog is not included in the specified timesheet.
    *
@@ -202,9 +214,10 @@ export class HrmtimetrackingEmployeeTimesheetsTimelogsController {
    * @param connection
    * @param timesheetId Target timesheet's ID
    * @param timelogId Target timelog's ID
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor employee
-   * @x-autobe-specification Implement this operation as a transactional delete of a timelog within the context of a specific timesheet.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor employee
+     * @x-autobe-specification Implement this operation as a transactional
+     *   delete of a timelog within the context of a specific timesheet.
    *
    * 1. Load the target timesheet by `timesheetId` from `hrm_time_tracking_timesheets` where `deleted_at IS NULL`.
    * 2. Load the target timelog by `timelogId` from `hrm_time_tracking_timelogs` where `deleted_at IS NULL`.

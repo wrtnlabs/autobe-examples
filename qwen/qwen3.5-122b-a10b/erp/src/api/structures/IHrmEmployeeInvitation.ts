@@ -32,8 +32,9 @@ export type IHrmEmployeeInvitation = {
    *
    * This UUID serves as the primary key for the invitation and is used in all API endpoints to reference the specific invitation. It is auto-generated when the invitation is created.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from hrm_employee_invitations.id. UUID format, primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from hrm_employee_invitations.id.
+     *   UUID format, primary key.
    */
   id: string & tags.Format<"uuid">;
 
@@ -42,8 +43,10 @@ export type IHrmEmployeeInvitation = {
    *
    * The invited user must register with this exact email address to accept the invitation. Combined with organization_id and status, ensures only one pending invitation per email per organization.
    *
-   * @x-autobe-database-schema-property email
-   * @x-autobe-specification Direct mapping from hrm_employee_invitations.email. Unique constraint with organization_id and status.
+     * @x-autobe-database-schema-property email
+     * @x-autobe-specification Direct mapping from
+     *   hrm_employee_invitations.email. Unique constraint with organization_id
+     *   and status.
    */
   email: string;
 
@@ -58,8 +61,10 @@ export type IHrmEmployeeInvitation = {
    *
    * Status transitions: pending → accepted, pending → expired, pending → cancelled. Once accepted, expired, or cancelled, the invitation cannot be reactivated.
    *
-   * @x-autobe-database-schema-property status
-   * @x-autobe-specification Direct mapping from hrm_employee_invitations.status. Allowed values: pending, accepted, expired, cancelled.
+     * @x-autobe-database-schema-property status
+     * @x-autobe-specification Direct mapping from
+     *   hrm_employee_invitations.status. Allowed values: pending, accepted,
+     *   expired, cancelled.
    */
   status: string;
 
@@ -68,8 +73,10 @@ export type IHrmEmployeeInvitation = {
    *
    * Generated when the invitation is created and sent to the invited user's email address. Used to verify and accept the invitation securely. Must be provided when calling the accept invitation endpoint. The token is unique across all invitations to prevent token collision attacks.
    *
-   * @x-autobe-database-schema-property token
-   * @x-autobe-specification Direct mapping from hrm_employee_invitations.token. Unique constraint across all invitations.
+     * @x-autobe-database-schema-property token
+     * @x-autobe-specification Direct mapping from
+     *   hrm_employee_invitations.token. Unique constraint across all
+     *   invitations.
    */
   token: string;
 
@@ -78,8 +85,9 @@ export type IHrmEmployeeInvitation = {
    *
    * Invitations become invalid after this timestamp and cannot be accepted. Expired invitations remain in the database for audit purposes but are filtered out from active invitation lists. Typical expiration is 7-30 days from creation based on organization settings.
    *
-   * @x-autobe-database-schema-property expires_at
-   * @x-autobe-specification Direct mapping from hrm_employee_invitations.expires_at. DateTime with timestamptz format.
+     * @x-autobe-database-schema-property expires_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_employee_invitations.expires_at. DateTime with timestamptz format.
    */
   expires_at: string & tags.Format<"date-time">;
 
@@ -88,8 +96,9 @@ export type IHrmEmployeeInvitation = {
    *
    * Set automatically when the invitation is first created. Used for audit trails and tracking invitation age.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from hrm_employee_invitations.created_at. DateTime with timestamptz format.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_employee_invitations.created_at. DateTime with timestamptz format.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -98,8 +107,9 @@ export type IHrmEmployeeInvitation = {
    *
    * Automatically updated when invitation properties change, such as when status changes to accepted, expired, or cancelled, or when member_id is populated upon acceptance.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from hrm_employee_invitations.updated_at. DateTime with timestamptz format.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_employee_invitations.updated_at. DateTime with timestamptz format.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -108,8 +118,10 @@ export type IHrmEmployeeInvitation = {
    *
    * Soft deletes allow audit trail preservation while hiding invitations from active queries. When null, the invitation is active. When set, the invitation is marked for deletion but retained for compliance or data retention policies.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from hrm_employee_invitations.deleted_at. Nullable DateTime with timestamptz format.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_employee_invitations.deleted_at. Nullable DateTime with timestamptz
+     *   format.
    */
   deleted_at?: (string & tags.Format<"date-time">) | null | undefined;
 
@@ -118,8 +130,10 @@ export type IHrmEmployeeInvitation = {
    *
    * Each invitation is scoped to a specific organization and cannot be transferred between organizations. The organization must exist and be active when the invitation is created. This field is populated via JOIN on the organization_id foreign key.
    *
-   * @x-autobe-database-schema-property organization
-   * @x-autobe-specification Join from hrm_employee_invitations.organization_id to hrm_organizations.id. Returns IHrmOrganization.ISummary.
+     * @x-autobe-database-schema-property organization
+     * @x-autobe-specification Join from
+     *   hrm_employee_invitations.organization_id to hrm_organizations.id.
+     *   Returns IHrmOrganization.ISummary.
    */
   organization: IHrmOrganization.ISummary;
 
@@ -128,8 +142,9 @@ export type IHrmEmployeeInvitation = {
    *
    * The role must exist within the target organization. Both built-in roles (Owner, Manager, Employee) and custom roles defined by the organization are supported. The role determines the permissions the new employee will have. This field is populated via JOIN on the role_id foreign key.
    *
-   * @x-autobe-database-schema-property role
-   * @x-autobe-specification Join from hrm_employee_invitations.role_id to hrm_roles.id. Returns IHrmRole.ISummary.
+     * @x-autobe-database-schema-property role
+     * @x-autobe-specification Join from hrm_employee_invitations.role_id to
+     *   hrm_roles.id. Returns IHrmRole.ISummary.
    */
   role: IHrmRole.ISummary;
 
@@ -138,8 +153,9 @@ export type IHrmEmployeeInvitation = {
    *
    * Tracks which organization member initiated the invitation for audit and accountability purposes. This references the member account of the authenticated user who sent the invitation. This field is populated via JOIN on the invited_by_id foreign key.
    *
-   * @x-autobe-database-schema-property inviter
-   * @x-autobe-specification Join from hrm_employee_invitations.invited_by_id to hrm_members.id. Returns IHrmMember.ISummary.
+     * @x-autobe-database-schema-property inviter
+     * @x-autobe-specification Join from hrm_employee_invitations.invited_by_id
+     *   to hrm_members.id. Returns IHrmMember.ISummary.
    */
   inviter: IHrmMember.ISummary;
 
@@ -148,8 +164,10 @@ export type IHrmEmployeeInvitation = {
    *
    * Remains null while the invitation is pending. Populated with the member ID when the invited user signs up and accepts the invitation via the unique token. This creates the link between the invitation and the actual member account. Once populated, the invitation status changes to 'accepted' and cannot be reused.
    *
-   * @x-autobe-database-schema-property member
-   * @x-autobe-specification Join from hrm_employee_invitations.member_id to hrm_members.id. Returns IHrmMember.ISummary, nullable when invitation is pending.
+     * @x-autobe-database-schema-property member
+     * @x-autobe-specification Join from hrm_employee_invitations.member_id to
+     *   hrm_members.id. Returns IHrmMember.ISummary, nullable when invitation
+     *   is pending.
    */
   member?: IHrmMember.ISummary | null | undefined;
 };
@@ -177,8 +195,11 @@ export namespace IHrmEmployeeInvitation {
      * **Validation**
      * If the token does not match the invitation record, the request is rejected with a 401 Unauthorized response.
      *
-     * @x-autobe-database-schema-property token
-     * @x-autobe-specification Direct mapping from hrm_employee_invitations.token. Unique verification token sent via email to invited user. Must match invitation token exactly for security. Required field for acceptance validation.
+         * @x-autobe-database-schema-property token
+         * @x-autobe-specification Direct mapping from
+         *   hrm_employee_invitations.token. Unique verification token sent via
+         *   email to invited user. Must match invitation token exactly for
+         *   security. Required field for acceptance validation.
      */
     token: string;
   };
@@ -211,8 +232,12 @@ export namespace IHrmEmployeeInvitation {
      * - Must be a valid email format
      * - Combined with organization_id, only one pending invitation allowed per email
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from hrm_employee_invitations.email. Valid email format required. Used to match invited user when they sign up. Combined with organization_id and status, ensures unique pending invitation per email per organization.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   hrm_employee_invitations.email. Valid email format required. Used
+         *   to match invited user when they sign up. Combined with
+         *   organization_id and status, ensures unique pending invitation per
+         *   email per organization.
      */
     email: string & tags.Format<"email">;
 
@@ -231,8 +256,11 @@ export namespace IHrmEmployeeInvitation {
      * - Must reference an existing role in the target organization
      * - Returns 404 if role not found
      *
-     * @x-autobe-database-schema-property role_id
-     * @x-autobe-specification Direct mapping from hrm_employee_invitations.role_id. Must reference existing role within the target organization. Both built-in roles (Owner, Manager, Employee) and custom roles are supported.
+         * @x-autobe-database-schema-property role_id
+         * @x-autobe-specification Direct mapping from
+         *   hrm_employee_invitations.role_id. Must reference existing role
+         *   within the target organization. Both built-in roles (Owner,
+         *   Manager, Employee) and custom roles are supported.
      */
     role_id: string & tags.Format<"uuid">;
 
@@ -252,8 +280,12 @@ export namespace IHrmEmployeeInvitation {
      * - Invitations with past expiration dates are filtered from active lists
      * - Expired invitations remain in the database for audit purposes
      *
-     * @x-autobe-database-schema-property expires_at
-     * @x-autobe-specification Direct mapping from hrm_employee_invitations.expires_at. Optional field. If not provided, system uses organization's default invitation expiration period (typically 7-30 days). Invitations become invalid after this timestamp.
+         * @x-autobe-database-schema-property expires_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_employee_invitations.expires_at. Optional field. If not
+         *   provided, system uses organization's default invitation expiration
+         *   period (typically 7-30 days). Invitations become invalid after this
+         *   timestamp.
      */
     expires_at?: (string & tags.Format<"date-time">) | undefined;
   };
@@ -284,8 +316,9 @@ export namespace IHrmEmployeeInvitation {
      *
      * This UUID serves as the primary key for the invitation and is used to reference the invitation in API operations such as accepting or cancelling.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from hrm_employee_invitations.id. UUID format, primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   hrm_employee_invitations.id. UUID format, primary key.
      */
     id: string & tags.Format<"uuid">;
 
@@ -294,8 +327,9 @@ export namespace IHrmEmployeeInvitation {
      *
      * The invited user must register with this exact email address to accept the invitation. Combined with organization_id and status, ensures only one pending invitation per email per organization.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from hrm_employee_invitations.email. Email format validation.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   hrm_employee_invitations.email. Email format validation.
      */
     email: string & tags.Format<"email">;
 
@@ -311,8 +345,10 @@ export namespace IHrmEmployeeInvitation {
      * **Status Transitions**
      * Status can transition from `pending` to `accepted`, `expired`, or `cancelled`. Once in a terminal state (accepted, expired, cancelled), the invitation cannot be reactivated.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from hrm_employee_invitations.status. String enum: pending, accepted, expired, cancelled.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   hrm_employee_invitations.status. String enum: pending, accepted,
+         *   expired, cancelled.
      */
     status: string;
 
@@ -321,8 +357,9 @@ export namespace IHrmEmployeeInvitation {
      *
      * Invitations become invalid after this timestamp and cannot be accepted. Expired invitations remain in the database for audit purposes but are filtered out from active invitation lists. Typical expiration is 7-30 days from creation.
      *
-     * @x-autobe-database-schema-property expires_at
-     * @x-autobe-specification Direct mapping from hrm_employee_invitations.expires_at. DateTime format, timestamptz.
+         * @x-autobe-database-schema-property expires_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_employee_invitations.expires_at. DateTime format, timestamptz.
      */
     expires_at: string & tags.Format<"date-time">;
 
@@ -331,8 +368,9 @@ export namespace IHrmEmployeeInvitation {
      *
      * Set automatically when the invitation is sent to the invited user. Used for audit trails and calculating invitation age.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from hrm_employee_invitations.created_at. DateTime format, timestamptz.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_employee_invitations.created_at. DateTime format, timestamptz.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -341,8 +379,10 @@ export namespace IHrmEmployeeInvitation {
      *
      * Each invitation is scoped to a specific organization and cannot be transferred between organizations. The organization must exist and be active when the invitation is created. This summary includes essential organization identification and configuration information.
      *
-     * @x-autobe-database-schema-property organization
-     * @x-autobe-specification Join from hrm_employee_invitations.organization_id to hrm_organizations.id. Returns IHrmOrganization.ISummary via INNER JOIN.
+         * @x-autobe-database-schema-property organization
+         * @x-autobe-specification Join from
+         *   hrm_employee_invitations.organization_id to hrm_organizations.id.
+         *   Returns IHrmOrganization.ISummary via INNER JOIN.
      */
     organization: IHrmOrganization.ISummary;
 
@@ -351,8 +391,9 @@ export namespace IHrmEmployeeInvitation {
      *
      * The role must exist within the target organization. Both built-in roles (Owner, Manager, Employee) and custom roles defined by the organization are supported. The role determines the permissions the new employee will have after accepting the invitation.
      *
-     * @x-autobe-database-schema-property role
-     * @x-autobe-specification Join from hrm_employee_invitations.role_id to hrm_roles.id. Returns IHrmRole.ISummary via INNER JOIN.
+         * @x-autobe-database-schema-property role
+         * @x-autobe-specification Join from hrm_employee_invitations.role_id to
+         *   hrm_roles.id. Returns IHrmRole.ISummary via INNER JOIN.
      */
     role: IHrmRole.ISummary;
 
@@ -361,8 +402,10 @@ export namespace IHrmEmployeeInvitation {
      *
      * Tracks which organization member initiated the invitation for audit and accountability purposes. This references the authenticated user who sent the invitation to the invited email address.
      *
-     * @x-autobe-database-schema-property inviter
-     * @x-autobe-specification Join from hrm_employee_invitations.invited_by_id to hrm_members.id. Returns IHrmMember.ISummary via INNER JOIN.
+         * @x-autobe-database-schema-property inviter
+         * @x-autobe-specification Join from
+         *   hrm_employee_invitations.invited_by_id to hrm_members.id. Returns
+         *   IHrmMember.ISummary via INNER JOIN.
      */
     inviter: IHrmMember.ISummary;
 
@@ -371,8 +414,10 @@ export namespace IHrmEmployeeInvitation {
      *
      * Remains null while the invitation is in `pending` status. Populated with the member record when the invited user signs up with the matching email address and accepts the invitation via the unique token. Once accepted, this field contains the newly created member account information.
      *
-     * @x-autobe-database-schema-property member
-     * @x-autobe-specification Join from hrm_employee_invitations.member_id to hrm_members.id. Returns IHrmMember.ISummary via LEFT JOIN. Null when invitation is pending.
+         * @x-autobe-database-schema-property member
+         * @x-autobe-specification Join from hrm_employee_invitations.member_id
+         *   to hrm_members.id. Returns IHrmMember.ISummary via LEFT JOIN. Null
+         *   when invitation is pending.
      */
     member?: IHrmMember.ISummary | null | undefined;
   };

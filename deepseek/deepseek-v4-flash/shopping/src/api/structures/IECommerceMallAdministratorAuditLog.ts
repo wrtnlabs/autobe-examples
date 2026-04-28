@@ -16,8 +16,9 @@ export type IECommerceMallAdministratorAuditLog = {
    *
    * Auto-generated UUID primary key used for direct lookup of individual audit log records via the API path parameter.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from e_commerce_mall_administrator_audit_logs.id. Primary key, UUID format.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_administrator_audit_logs.id. Primary key, UUID format.
    */
   id: string & tags.Format<"uuid">;
 
@@ -26,8 +27,12 @@ export type IECommerceMallAdministratorAuditLog = {
    *
    * Contains summary information about the administrator account including their unique identifier, email address, grade level (regular or super), and account creation timestamp. This provides accountability context for the audit trail record by identifying who performed the governance action.
    *
-   * @x-autobe-database-schema-property administrator
-   * @x-autobe-specification LEFT JOIN from e_commerce_mall_administrator_audit_logs.e_commerce_mall_administrator_id to e_commerce_mall_administrators.id. Returned as IECommerceMallAdministrator.ISummary. Exclude soft-deleted administrators (deleted_at IS NULL).
+     * @x-autobe-database-schema-property administrator
+     * @x-autobe-specification LEFT JOIN from
+     *   e_commerce_mall_administrator_audit_logs.e_commerce_mall_administrator_id
+     *   to e_commerce_mall_administrators.id. Returned as
+     *   IECommerceMallAdministrator.ISummary. Exclude soft-deleted
+     *   administrators (deleted_at IS NULL).
    */
   administrator: IECommerceMallAdministrator.ISummary;
 
@@ -36,8 +41,9 @@ export type IECommerceMallAdministratorAuditLog = {
    *
    * Examples include: force_cancel_order_item (forcibly cancelling a paid order item), force_refund_order_item (forcibly refunding a delivered order item), ban_customer, unban_customer, suspend_seller, unsuspend_seller, approve_seller (approving a seller registration), reject_seller (rejecting a seller registration), delete_product (removing a product for policy violations), create_category, edit_category, and delete_category.
    *
-   * @x-autobe-database-schema-property action_type
-   * @x-autobe-specification Direct mapping from e_commerce_mall_administrator_audit_logs.action_type. String value.
+     * @x-autobe-database-schema-property action_type
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_administrator_audit_logs.action_type. String value.
    */
   action_type: string;
 
@@ -46,8 +52,9 @@ export type IECommerceMallAdministratorAuditLog = {
    *
    * Examples include: order_item, customer, seller, product, category, seller_approval_request, and admin_registration_request. This field enables entity-scoped queries of audit history by grouping actions by the kind of entity they affected.
    *
-   * @x-autobe-database-schema-property target_type
-   * @x-autobe-specification Direct mapping from e_commerce_mall_administrator_audit_logs.target_type. String value.
+     * @x-autobe-database-schema-property target_type
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_administrator_audit_logs.target_type. String value.
    */
   target_type: string;
 
@@ -56,8 +63,9 @@ export type IECommerceMallAdministratorAuditLog = {
    *
    * Stores the ID of the affected entity (e.g., order_item_id, customer_id, seller_id, product_id, or category_id), enabling cross-referencing with the affected record for audit trail completeness and forensic investigation.
    *
-   * @x-autobe-database-schema-property target_id
-   * @x-autobe-specification Direct mapping from e_commerce_mall_administrator_audit_logs.target_id. UUID format.
+     * @x-autobe-database-schema-property target_id
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_administrator_audit_logs.target_id. UUID format.
    */
   target_id: string & tags.Format<"uuid">;
 
@@ -66,8 +74,10 @@ export type IECommerceMallAdministratorAuditLog = {
    *
    * Required for certain actions such as seller registration rejections and customer bans to provide transparency and justification for the administrative decision. May be null for self-explanatory actions where no additional context is needed.
    *
-   * @x-autobe-database-schema-property reason
-   * @x-autobe-specification Direct mapping from e_commerce_mall_administrator_audit_logs.reason. Nullable string — may be null for self-explanatory actions.
+     * @x-autobe-database-schema-property reason
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_administrator_audit_logs.reason. Nullable string — may
+     *   be null for self-explanatory actions.
    */
   reason: string | null;
 
@@ -76,8 +86,10 @@ export type IECommerceMallAdministratorAuditLog = {
    *
    * Represents the exact moment the administrator action was performed and recorded in the audit trail. Used for chronological ordering and audit timeline reconstruction.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from e_commerce_mall_administrator_audit_logs.created_at. DateTime with timezone.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_administrator_audit_logs.created_at. DateTime with
+     *   timezone.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -86,8 +98,10 @@ export type IECommerceMallAdministratorAuditLog = {
    *
    * While audit logs are append-only and immutable in practice, this field follows the standard temporal field convention consistently across all platform entities. In practice, this value will always equal the creation timestamp since audit log records are never modified after creation.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from e_commerce_mall_administrator_audit_logs.updated_at. DateTime with timezone. Follows standard temporal field convention.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_administrator_audit_logs.updated_at. DateTime with
+     *   timezone. Follows standard temporal field convention.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -96,8 +110,11 @@ export type IECommerceMallAdministratorAuditLog = {
    *
    * Audit logs are immutable append-only records and are never actually deleted in practice, so this field will always be null. It follows the standard temporal field convention for consistency across all platform entities.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from e_commerce_mall_administrator_audit_logs.deleted_at. Nullable DateTime with timezone. Follows standard temporal field convention — will always be null for immutable audit logs.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_administrator_audit_logs.deleted_at. Nullable DateTime
+     *   with timezone. Follows standard temporal field convention — will always
+     *   be null for immutable audit logs.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -113,8 +130,9 @@ export namespace IECommerceMallAdministratorAuditLog {
     /**
      * Unique identifier of the audit log entry.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from e_commerce_mall_administrator_audit_logs.id.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_administrator_audit_logs.id.
      */
     id: string & tags.Format<"uuid">;
 
@@ -123,8 +141,9 @@ export namespace IECommerceMallAdministratorAuditLog {
      *
      * Examples include: force_cancel_order_item, force_refund_order_item, ban_customer, unban_customer, suspend_seller, unsuspend_seller, approve_seller, reject_seller, delete_product, create_category, edit_category, and delete_category.
      *
-     * @x-autobe-database-schema-property action_type
-     * @x-autobe-specification Direct mapping from e_commerce_mall_administrator_audit_logs.action_type.
+         * @x-autobe-database-schema-property action_type
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_administrator_audit_logs.action_type.
      */
     action_type: string;
 
@@ -133,8 +152,9 @@ export namespace IECommerceMallAdministratorAuditLog {
      *
      * Examples include: order_item, customer, seller, product, category, seller_approval_request, and admin_registration_request. This field enables entity-scoped queries of audit history.
      *
-     * @x-autobe-database-schema-property target_type
-     * @x-autobe-specification Direct mapping from e_commerce_mall_administrator_audit_logs.target_type.
+         * @x-autobe-database-schema-property target_type
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_administrator_audit_logs.target_type.
      */
     target_type: string;
 
@@ -143,8 +163,9 @@ export namespace IECommerceMallAdministratorAuditLog {
      *
      * Stores the ID of the affected entity (e.g., order_item_id, customer_id, seller_id, product_id, or category_id), enabling cross-referencing with the affected record for audit trail completeness.
      *
-     * @x-autobe-database-schema-property target_id
-     * @x-autobe-specification Direct mapping from e_commerce_mall_administrator_audit_logs.target_id.
+         * @x-autobe-database-schema-property target_id
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_administrator_audit_logs.target_id.
      */
     target_id: string & tags.Format<"uuid">;
 
@@ -153,8 +174,10 @@ export namespace IECommerceMallAdministratorAuditLog {
      *
      * Required for certain actions such as seller registration rejections and customer bans to provide transparency and justification for the administrative decision.
      *
-     * @x-autobe-database-schema-property reason
-     * @x-autobe-specification Direct mapping from e_commerce_mall_administrator_audit_logs.reason. Nullable — may be null for self-explanatory actions.
+         * @x-autobe-database-schema-property reason
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_administrator_audit_logs.reason. Nullable — may be
+         *   null for self-explanatory actions.
      */
     reason: string | null;
 
@@ -163,8 +186,12 @@ export namespace IECommerceMallAdministratorAuditLog {
      *
      * Provides a summary reference to the administrator account that executed the action, including the administrator's unique identifier, email address, grade level, and account creation timestamp.
      *
-     * @x-autobe-database-schema-property administrator
-     * @x-autobe-specification JOIN from e_commerce_mall_administrator_audit_logs.e_commerce_mall_administrator_id to e_commerce_mall_administrators.id. Returns IECommerceMallAdministrator.ISummary fields (id, email, grade, created_at).
+         * @x-autobe-database-schema-property administrator
+         * @x-autobe-specification JOIN from
+         *   e_commerce_mall_administrator_audit_logs.e_commerce_mall_administrator_id
+         *   to e_commerce_mall_administrators.id. Returns
+         *   IECommerceMallAdministrator.ISummary fields (id, email, grade,
+         *   created_at).
      */
     administrator: IECommerceMallAdministrator.ISummary;
 
@@ -173,8 +200,9 @@ export namespace IECommerceMallAdministratorAuditLog {
      *
      * Represents the exact moment the administrative action was performed and recorded in the audit trail.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from e_commerce_mall_administrator_audit_logs.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_administrator_audit_logs.created_at.
      */
     created_at: string & tags.Format<"date-time">;
   };
@@ -192,7 +220,9 @@ export namespace IECommerceMallAdministratorAuditLog {
      *
      * Filters the audit log results to entries whose action_type or target_type contain the specified search term. Returns all matching entries across both fields. This parameter is optional.
      *
-     * @x-autobe-specification LIKE search applied against action_type and target_type columns. Not a direct DB column — computed query parameter for cross-field text matching.
+         * @x-autobe-specification LIKE search applied against action_type and
+         *   target_type columns. Not a direct DB column — computed query
+         *   parameter for cross-field text matching.
      */
     search?: string | undefined;
 
@@ -201,8 +231,10 @@ export namespace IECommerceMallAdministratorAuditLog {
      *
      * Accepts an exact action type value (e.g., force_cancel_order_item, approve_seller, delete_product, create_category). Only entries matching this action type are returned. For partial or multi-field text search, use the search parameter instead.
      *
-     * @x-autobe-database-schema-property action_type
-     * @x-autobe-specification Exact match filter on e_commerce_mall_administrator_audit_logs.action_type column. For partial matching, use the search parameter instead.
+         * @x-autobe-database-schema-property action_type
+         * @x-autobe-specification Exact match filter on
+         *   e_commerce_mall_administrator_audit_logs.action_type column. For
+         *   partial matching, use the search parameter instead.
      */
     action_type?: string | undefined;
 
@@ -211,8 +243,9 @@ export namespace IECommerceMallAdministratorAuditLog {
      *
      * Accepts an exact target entity type (e.g., order_item, customer, seller, product, category). Only entries targeting the specified entity type are returned.
      *
-     * @x-autobe-database-schema-property target_type
-     * @x-autobe-specification Exact match filter on e_commerce_mall_administrator_audit_logs.target_type column.
+         * @x-autobe-database-schema-property target_type
+         * @x-autobe-specification Exact match filter on
+         *   e_commerce_mall_administrator_audit_logs.target_type column.
      */
     target_type?: string | undefined;
 
@@ -221,7 +254,14 @@ export namespace IECommerceMallAdministratorAuditLog {
      *
      * If provided, only audit logs created within the specified range are returned. You may specify a start date (from), an end date (to), or both.
      *
-     * @x-autobe-specification Range filter on e_commerce_mall_administrator_audit_logs.created_at column. from/to are optional ISO 8601 datetime strings. If only from is provided, filter for entries on or after that timestamp. If only to is provided, filter for entries on or before that timestamp. If both provided, filter for entries within the inclusive range. Not a direct column mapping — computed filter object wrapping the created_at datetime column.
+         * @x-autobe-specification Range filter on
+         *   e_commerce_mall_administrator_audit_logs.created_at column. from/to
+         *   are optional ISO 8601 datetime strings. If only from is provided,
+         *   filter for entries on or after that timestamp. If only to is
+         *   provided, filter for entries on or before that timestamp. If both
+         *   provided, filter for entries within the inclusive range. Not a
+         *   direct column mapping — computed filter object wrapping the
+         *   created_at datetime column.
      */
     created_at?:
       | {
@@ -235,7 +275,9 @@ export namespace IECommerceMallAdministratorAuditLog {
      *
      * Determines the sort order of returned audit log entries. Common values include created_at (sort by timestamp) for chronological or reverse-chronological ordering. Defaults to newest first if not specified.
      *
-     * @x-autobe-specification Column name for ordering query results. Accepted values include: created_at (default, descending), action_type, target_type. Maps to SQL ORDER BY clause.
+         * @x-autobe-specification Column name for ordering query results.
+         *   Accepted values include: created_at (default, descending),
+         *   action_type, target_type. Maps to SQL ORDER BY clause.
      */
     sort?: string | undefined;
 
@@ -244,7 +286,9 @@ export namespace IECommerceMallAdministratorAuditLog {
      *
      * Specifies which page of the filtered audit log results to retrieve. The first page is page 1. Use in combination with the limit parameter to control pagination.
      *
-     * @x-autobe-specification 1-indexed page number for cursor-based pagination. Used with limit to paginate through filtered results. Maps to SQL OFFSET/LIMIT pagination.
+         * @x-autobe-specification 1-indexed page number for cursor-based
+         *   pagination. Used with limit to paginate through filtered results.
+         *   Maps to SQL OFFSET/LIMIT pagination.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -253,7 +297,8 @@ export namespace IECommerceMallAdministratorAuditLog {
      *
      * Controls the page size for paginated results. The actual number of returned records may be less than this value on the last page. Must be between 1 and 100.
      *
-     * @x-autobe-specification Maximum number of records per page. Accepted values range from 1 to 100. Maps to SQL LIMIT clause.
+         * @x-autobe-specification Maximum number of records per page. Accepted
+         *   values range from 1 to 100. Maps to SQL LIMIT clause.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)

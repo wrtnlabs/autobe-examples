@@ -10,88 +10,110 @@ export type IShoppingMallCancellationRequest = {
   /**
    * Unique identifier of the cancellation request.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Return shopping_mall_cancellation_requests.id as a UUID string.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Return shopping_mall_cancellation_requests.id as
+     *   a UUID string.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Identifier of the order item this cancellation request targets.
    *
-   * @x-autobe-database-schema-property shopping_mall_order_item_id
-   * @x-autobe-specification Return shopping_mall_cancellation_requests.shopping_mall_order_item_id as a UUID string.
+     * @x-autobe-database-schema-property shopping_mall_order_item_id
+     * @x-autobe-specification Return
+     *   shopping_mall_cancellation_requests.shopping_mall_order_item_id as a
+     *   UUID string.
    */
   shoppingMallOrderItemId: string & tags.Format<"uuid">;
 
   /**
    * Customer-provided reason for requesting the cancellation.
    *
-   * @x-autobe-database-schema-property reason
-   * @x-autobe-specification Return shopping_mall_cancellation_requests.reason as the cancellation reason text provided by the customer at request time.
+     * @x-autobe-database-schema-property reason
+     * @x-autobe-specification Return shopping_mall_cancellation_requests.reason
+     *   as the cancellation reason text provided by the customer at request
+     *   time.
    */
   reason: string;
 
   /**
    * Timestamp when the cancellation request was placed by the customer.
    *
-   * @x-autobe-database-schema-property requested_at
-   * @x-autobe-specification Return shopping_mall_cancellation_requests.requested_at as an ISO 8601 date-time string.
+     * @x-autobe-database-schema-property requested_at
+     * @x-autobe-specification Return
+     *   shopping_mall_cancellation_requests.requested_at as an ISO 8601
+     *   date-time string.
    */
   requestedAt: string & tags.Format<"date-time">;
 
   /**
    * Current workflow status of the cancellation request (seller/admin decision state).
    *
-   * @x-autobe-database-schema-property status
-   * @x-autobe-specification Return shopping_mall_cancellation_requests.status as the raw workflow status value.
+     * @x-autobe-database-schema-property status
+     * @x-autobe-specification Return shopping_mall_cancellation_requests.status
+     *   as the raw workflow status value.
    */
   status: string;
 
   /**
    * Timestamp when the seller/admin decision was made; null until decided.
    *
-   * @x-autobe-database-schema-property seller_decisioned_at
-   * @x-autobe-specification Return shopping_mall_cancellation_requests.seller_decisioned_at as an ISO 8601 date-time string, or null if the seller/admin decision has not been finalized yet.
+     * @x-autobe-database-schema-property seller_decisioned_at
+     * @x-autobe-specification Return
+     *   shopping_mall_cancellation_requests.seller_decisioned_at as an ISO 8601
+     *   date-time string, or null if the seller/admin decision has not been
+     *   finalized yet.
    */
   sellerDecisionedAt: (string & tags.Format<"date-time">) | null;
 
   /**
    * Optional seller/admin explanation associated with the decision; null if not provided.
    *
-   * @x-autobe-database-schema-property seller_response_reason
-   * @x-autobe-specification Return shopping_mall_cancellation_requests.seller_response_reason as a string, or null if no seller response reason is stored.
+     * @x-autobe-database-schema-property seller_response_reason
+     * @x-autobe-specification Return
+     *   shopping_mall_cancellation_requests.seller_response_reason as a string,
+     *   or null if no seller response reason is stored.
    */
   sellerResponseReason: string | null;
 
   /**
    * Record creation timestamp for the cancellation request.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Return shopping_mall_cancellation_requests.created_at as an ISO 8601 date-time string.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Return
+     *   shopping_mall_cancellation_requests.created_at as an ISO 8601 date-time
+     *   string.
    */
   createdAt: string & tags.Format<"date-time">;
 
   /**
    * Record last update timestamp for the cancellation request.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Return shopping_mall_cancellation_requests.updated_at as an ISO 8601 date-time string.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Return
+     *   shopping_mall_cancellation_requests.updated_at as an ISO 8601 date-time
+     *   string.
    */
   updatedAt: string & tags.Format<"date-time">;
 
   /**
    * Soft-delete timestamp; null if the request is not deleted.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Return shopping_mall_cancellation_requests.deleted_at as an ISO 8601 date-time string, or null if not soft-deleted.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Return
+     *   shopping_mall_cancellation_requests.deleted_at as an ISO 8601 date-time
+     *   string, or null if not soft-deleted.
    */
   deletedAt: (string & tags.Format<"date-time">) | null;
 
   /**
    * Lightweight summary of the target order item this cancellation request is attached to.
    *
-   * @x-autobe-database-schema-property orderItem
-   * @x-autobe-specification Join shopping_mall_cancellation_requests.shopping_mall_order_item_id to shopping_mall_order_items.id, and project the joined row into IShoppingMallOrderItem.ISummary.
+     * @x-autobe-database-schema-property orderItem
+     * @x-autobe-specification Join
+     *   shopping_mall_cancellation_requests.shopping_mall_order_item_id to
+     *   shopping_mall_order_items.id, and project the joined row into
+     *   IShoppingMallOrderItem.ISummary.
    */
   orderItem: IShoppingMallOrderItem.ISummary;
 };
@@ -103,16 +125,22 @@ export namespace IShoppingMallCancellationRequest {
     /**
      * UUID of the purchased order item that the authenticated member wants to request cancellation for.
      *
-     * @x-autobe-database-schema-property shopping_mall_order_item_id
-     * @x-autobe-specification Direct mapping from request.orderItemId to shopping_mall_cancellation_requests.shopping_mall_order_item_id. Validate ownership and eligibility server-side by loading shopping_mall_order_items and checking line_item_status.
+         * @x-autobe-database-schema-property shopping_mall_order_item_id
+         * @x-autobe-specification Direct mapping from request.orderItemId to
+         *   shopping_mall_cancellation_requests.shopping_mall_order_item_id.
+         *   Validate ownership and eligibility server-side by loading
+         *   shopping_mall_order_items and checking line_item_status.
      */
     orderItemId: string & tags.Format<"uuid">;
 
     /**
      * Customer-provided reason for requesting cancellation of the order item.
      *
-     * @x-autobe-database-schema-property reason
-     * @x-autobe-specification Direct mapping from request.reason to shopping_mall_cancellation_requests.reason. Persist as provided; the server will store it alongside the initial request timestamps and pending seller-approval status.
+         * @x-autobe-database-schema-property reason
+         * @x-autobe-specification Direct mapping from request.reason to
+         *   shopping_mall_cancellation_requests.reason. Persist as provided;
+         *   the server will store it alongside the initial request timestamps
+         *   and pending seller-approval status.
      */
     reason: string;
   };
@@ -124,80 +152,100 @@ export namespace IShoppingMallCancellationRequest {
     /**
      * Unique identifier of the cancellation request record.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Map directly from shopping_mall_cancellation_requests.id. Render as a string UUID.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Map directly from
+         *   shopping_mall_cancellation_requests.id. Render as a string UUID.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Identifier of the order item that this cancellation request targets.
      *
-     * @x-autobe-database-schema-property shopping_mall_order_item_id
-     * @x-autobe-specification Map directly from shopping_mall_cancellation_requests.shopping_mall_order_item_id. Render as a string UUID.
+         * @x-autobe-database-schema-property shopping_mall_order_item_id
+         * @x-autobe-specification Map directly from
+         *   shopping_mall_cancellation_requests.shopping_mall_order_item_id.
+         *   Render as a string UUID.
      */
     shopping_mall_order_item_id: string & tags.Format<"uuid">;
 
     /**
      * Customer-provided reason for requesting cancellation of the order item.
      *
-     * @x-autobe-database-schema-property reason
-     * @x-autobe-specification Map directly from shopping_mall_cancellation_requests.reason.
+         * @x-autobe-database-schema-property reason
+         * @x-autobe-specification Map directly from
+         *   shopping_mall_cancellation_requests.reason.
      */
     reason: string;
 
     /**
      * Timestamp when the customer created/placed the cancellation request.
      *
-     * @x-autobe-database-schema-property requested_at
-     * @x-autobe-specification Map directly from shopping_mall_cancellation_requests.requested_at and serialize as ISO 8601 date-time string.
+         * @x-autobe-database-schema-property requested_at
+         * @x-autobe-specification Map directly from
+         *   shopping_mall_cancellation_requests.requested_at and serialize as
+         *   ISO 8601 date-time string.
      */
     requested_at: string & tags.Format<"date-time">;
 
     /**
      * Current seller/admin approval workflow status for this cancellation request.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Map directly from shopping_mall_cancellation_requests.status. Treat as an opaque workflow state string per business rules.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Map directly from
+         *   shopping_mall_cancellation_requests.status. Treat as an opaque
+         *   workflow state string per business rules.
      */
     status: string;
 
     /**
      * Timestamp when the seller made the approval/rejection decision. Null if the decision has not been made yet.
      *
-     * @x-autobe-database-schema-property seller_decisioned_at
-     * @x-autobe-specification Map from shopping_mall_cancellation_requests.seller_decisioned_at. If DB value is NULL, output JSON null; otherwise serialize as ISO 8601 date-time string.
+         * @x-autobe-database-schema-property seller_decisioned_at
+         * @x-autobe-specification Map from
+         *   shopping_mall_cancellation_requests.seller_decisioned_at. If DB
+         *   value is NULL, output JSON null; otherwise serialize as ISO 8601
+         *   date-time string.
      */
     seller_decisioned_at: (string & tags.Format<"date-time">) | null;
 
     /**
      * Optional explanation provided by the seller when rejecting (and/or when explaining) the cancellation request.
      *
-     * @x-autobe-database-schema-property seller_response_reason
-     * @x-autobe-specification Map directly from shopping_mall_cancellation_requests.seller_response_reason. If DB value is NULL, output JSON null; otherwise output the string.
+         * @x-autobe-database-schema-property seller_response_reason
+         * @x-autobe-specification Map directly from
+         *   shopping_mall_cancellation_requests.seller_response_reason. If DB
+         *   value is NULL, output JSON null; otherwise output the string.
      */
     seller_response_reason: string | null;
 
     /**
      * Record creation timestamp.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Map directly from shopping_mall_cancellation_requests.created_at and serialize as ISO 8601 date-time string.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Map directly from
+         *   shopping_mall_cancellation_requests.created_at and serialize as ISO
+         *   8601 date-time string.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * Record last update timestamp.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Map directly from shopping_mall_cancellation_requests.updated_at and serialize as ISO 8601 date-time string.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Map directly from
+         *   shopping_mall_cancellation_requests.updated_at and serialize as ISO
+         *   8601 date-time string.
      */
     updated_at: string & tags.Format<"date-time">;
 
     /**
      * Soft-delete timestamp. Null means the cancellation request has not been deleted; non-null means it is treated as deleted while preserving history.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Map from shopping_mall_cancellation_requests.deleted_at. If DB value is NULL, output JSON null; otherwise serialize as ISO 8601 date-time string.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Map from
+         *   shopping_mall_cancellation_requests.deleted_at. If DB value is
+         *   NULL, output JSON null; otherwise serialize as ISO 8601 date-time
+         *   string.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };
@@ -209,16 +257,27 @@ export namespace IShoppingMallCancellationRequest {
     /**
      * The seller/admin workflow decision status for this cancellation request (e.g., pending/approved/rejected per the domain’s cancellation workflow states).
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Directly map dto.status to shopping_mall_cancellation_requests.status for the loaded cancellation request row. Validate that the transition is allowed given current status and seller_decisioned_at; reject if already decided or if the transition conflicts with workflow rules. Persist within the same transaction as other decision field updates.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Directly map dto.status to
+         *   shopping_mall_cancellation_requests.status for the loaded
+         *   cancellation request row. Validate that the transition is allowed
+         *   given current status and seller_decisioned_at; reject if already
+         *   decided or if the transition conflicts with workflow rules. Persist
+         *   within the same transaction as other decision field updates.
      */
     status?: string | undefined;
 
     /**
      * Optional explanation provided by the seller/admin for this decision (typically used when rejecting). Pass null to clear any previously stored seller response reason.
      *
-     * @x-autobe-database-schema-property seller_response_reason
-     * @x-autobe-specification Directly map dto.seller_response_reason to shopping_mall_cancellation_requests.seller_response_reason for the loaded cancellation request row. The field is nullable: when dto.seller_response_reason is null, clear the stored seller_response_reason. Ensure it is consistent with the resulting decision status per workflow validation rules (e.g., rejection may require an explanation, while approval may clear it).
+         * @x-autobe-database-schema-property seller_response_reason
+         * @x-autobe-specification Directly map dto.seller_response_reason to
+         *   shopping_mall_cancellation_requests.seller_response_reason for the
+         *   loaded cancellation request row. The field is nullable: when
+         *   dto.seller_response_reason is null, clear the stored
+         *   seller_response_reason. Ensure it is consistent with the resulting
+         *   decision status per workflow validation rules (e.g., rejection may
+         *   require an explanation, while approval may clear it).
      */
     seller_response_reason?: string | null | undefined;
   };
@@ -230,14 +289,18 @@ export namespace IShoppingMallCancellationRequest {
     /**
      * 1-based page number for pagination.
      *
-     * @x-autobe-specification Use page as pagination index (1-based). Service should apply page/limit to compute offsets/cursors for the cancellation-request listing.
+         * @x-autobe-specification Use page as pagination index (1-based).
+         *   Service should apply page/limit to compute offsets/cursors for the
+         *   cancellation-request listing.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of items per page.
      *
-     * @x-autobe-specification Use limit as maximum number of items per page. Service should enforce the DTO constraint (max 100) and apply it to the query.
+         * @x-autobe-specification Use limit as maximum number of items per
+         *   page. Service should enforce the DTO constraint (max 100) and apply
+         *   it to the query.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -246,99 +309,145 @@ export namespace IShoppingMallCancellationRequest {
     /**
      * Field to sort by.
      *
-     * @x-autobe-specification When sorting, map to ORDER BY column as follows: created_at => shopping_mall_cancellation_requests.created_at; requested_at => shopping_mall_cancellation_requests.requested_at; seller_decisioned_at => shopping_mall_cancellation_requests.seller_decisioned_at. When omitted, default ordering should be consistent with endpoint expectations (created_at).
+         * @x-autobe-specification When sorting, map to ORDER BY column as
+         *   follows: created_at =>
+         *   shopping_mall_cancellation_requests.created_at; requested_at =>
+         *   shopping_mall_cancellation_requests.requested_at;
+         *   seller_decisioned_at =>
+         *   shopping_mall_cancellation_requests.seller_decisioned_at. When
+         *   omitted, default ordering should be consistent with endpoint
+         *   expectations (created_at).
      */
     sortBy?: "created_at" | "requested_at" | "seller_decisioned_at" | undefined;
 
     /**
      * Sort direction.
      *
-     * @x-autobe-specification Use asc/desc to set ORDER BY direction for the chosen sortBy column. When omitted, service should default to desc for created_at-based sorting.
+         * @x-autobe-specification Use asc/desc to set ORDER BY direction for
+         *   the chosen sortBy column. When omitted, service should default to
+         *   desc for created_at-based sorting.
      */
     sortDirection?: "asc" | "desc" | undefined;
 
     /**
      * Target order item id to scope cancellation requests.
      *
-     * @x-autobe-specification Filter cancellation requests where shopping_mall_cancellation_requests.shopping_mall_order_item_id equals this UUID. If workflow action inputs are supplied, service should still scope and validate against the same target order item.
+         * @x-autobe-specification Filter cancellation requests where
+         *   shopping_mall_cancellation_requests.shopping_mall_order_item_id
+         *   equals this UUID. If workflow action inputs are supplied, service
+         *   should still scope and validate against the same target order item.
      */
     shoppingMallOrderItemId?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Cancellation request workflow status value to filter or, when workflow action inputs are provided, to set as the intended new status.
      *
-     * @x-autobe-specification List filter mode: select rows where shopping_mall_cancellation_requests.status equals this value.
-     * Workflow intent mode: when newStatus is also provided, service layer uses status as the current/guard or desired workflow context per domain rules, and primarily applies newStatus as the intended status; service must validate transition consistency before writing.
+         * @x-autobe-specification List filter mode: select rows where
+         *   shopping_mall_cancellation_requests.status equals this value.
+         *   Workflow intent mode: when newStatus is also provided, service
+         *   layer uses status as the current/guard or desired workflow context
+         *   per domain rules, and primarily applies newStatus as the intended
+         *   status; service must validate transition consistency before
+         *   writing.
      */
     status?: string | undefined;
 
     /**
      * Filter: include records with requested_at >= this value.
      *
-     * @x-autobe-specification If provided, apply predicate shopping_mall_cancellation_requests.requested_at >= requestedAtFrom.
+         * @x-autobe-specification If provided, apply predicate
+         *   shopping_mall_cancellation_requests.requested_at >=
+         *   requestedAtFrom.
      */
     requestedAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Filter: include records with requested_at <= this value.
      *
-     * @x-autobe-specification If provided, apply predicate shopping_mall_cancellation_requests.requested_at <= requestedAtTo.
+         * @x-autobe-specification If provided, apply predicate
+         *   shopping_mall_cancellation_requests.requested_at <= requestedAtTo.
      */
     requestedAtTo?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Filter: include records with created_at >= this value.
      *
-     * @x-autobe-specification If provided, apply predicate shopping_mall_cancellation_requests.created_at >= createdAtFrom.
+         * @x-autobe-specification If provided, apply predicate
+         *   shopping_mall_cancellation_requests.created_at >= createdAtFrom.
      */
     createdAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Filter: include records with created_at <= this value.
      *
-     * @x-autobe-specification If provided, apply predicate shopping_mall_cancellation_requests.created_at <= createdAtTo.
+         * @x-autobe-specification If provided, apply predicate
+         *   shopping_mall_cancellation_requests.created_at <= createdAtTo.
      */
     createdAtTo?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Filter: include records with seller_decisioned_at >= this value.
      *
-     * @x-autobe-specification If provided, apply predicate shopping_mall_cancellation_requests.seller_decisioned_at >= sellerDecisionedAtFrom. Because seller_decisioned_at is nullable, default range filtering should naturally exclude nulls unless service explicitly includes them.
+         * @x-autobe-specification If provided, apply predicate
+         *   shopping_mall_cancellation_requests.seller_decisioned_at >=
+         *   sellerDecisionedAtFrom. Because seller_decisioned_at is nullable,
+         *   default range filtering should naturally exclude nulls unless
+         *   service explicitly includes them.
      */
     sellerDecisionedAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Filter: include records with seller_decisioned_at <= this value.
      *
-     * @x-autobe-specification If provided, apply predicate shopping_mall_cancellation_requests.seller_decisioned_at <= sellerDecisionedAtTo. Because seller_decisioned_at is nullable, default range filtering should naturally exclude nulls unless service explicitly includes them.
+         * @x-autobe-specification If provided, apply predicate
+         *   shopping_mall_cancellation_requests.seller_decisioned_at <=
+         *   sellerDecisionedAtTo. Because seller_decisioned_at is nullable,
+         *   default range filtering should naturally exclude nulls unless
+         *   service explicitly includes them.
      */
     sellerDecisionedAtTo?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * If true, include soft-deleted cancellation requests (deleted_at is not null).
      *
-     * @x-autobe-specification If includeDeleted is true, include records where deleted_at is not null as well; otherwise restrict to deleted_at IS NULL.
+         * @x-autobe-specification If includeDeleted is true, include records
+         *   where deleted_at is not null as well; otherwise restrict to
+         *   deleted_at IS NULL.
      */
     includeDeleted?: boolean | undefined;
 
     /**
      * Optional workflow action input: seller_decisioned_at to be set when performing an approval decision.
      *
-     * @x-autobe-specification When workflow action inputs are enabled by caller authorization and a decision update is being performed, apply sellerDecisionedAt as the intended value for shopping_mall_cancellation_requests.seller_decisioned_at. Service must enforce whether this field must be non-null depending on the chosen status/newStatus and decision outcome rules.
+         * @x-autobe-specification When workflow action inputs are enabled by
+         *   caller authorization and a decision update is being performed,
+         *   apply sellerDecisionedAt as the intended value for
+         *   shopping_mall_cancellation_requests.seller_decisioned_at. Service
+         *   must enforce whether this field must be non-null depending on the
+         *   chosen status/newStatus and decision outcome rules.
      */
     sellerDecisionedAt?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * Optional workflow action input: seller_response_reason (required/optional per service-layer rules depending on the chosen decision).
      *
-     * @x-autobe-specification When workflow action inputs are enabled and a decision update is being performed, apply sellerResponseReason to shopping_mall_cancellation_requests.seller_response_reason. Service must enforce whether this is required/non-null (or allowed null) depending on the final decision/status outcome as defined by business rules.
+         * @x-autobe-specification When workflow action inputs are enabled and a
+         *   decision update is being performed, apply sellerResponseReason to
+         *   shopping_mall_cancellation_requests.seller_response_reason. Service
+         *   must enforce whether this is required/non-null (or allowed null)
+         *   depending on the final decision/status outcome as defined by
+         *   business rules.
      */
     sellerResponseReason?: string | null | undefined;
 
     /**
      * Optional workflow action input: intended new status for the cancellation request.
      *
-     * @x-autobe-specification When performing an approval decision update, treat newStatus as the intended replacement value for shopping_mall_cancellation_requests.status. Service must validate allowed transitions vs the current persisted cancellation request status and the related order item line_item_status before writing.
+         * @x-autobe-specification When performing an approval decision update,
+         *   treat newStatus as the intended replacement value for
+         *   shopping_mall_cancellation_requests.status. Service must validate
+         *   allowed transitions vs the current persisted cancellation request
+         *   status and the related order item line_item_status before writing.
      */
     newStatus?: string | undefined;
   };

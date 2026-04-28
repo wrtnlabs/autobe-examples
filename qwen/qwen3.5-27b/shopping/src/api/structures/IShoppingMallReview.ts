@@ -18,8 +18,9 @@ export type IShoppingMallReview = {
    *
    * This UUID identifies the review across the platform and is used in API operations to retrieve, update, or delete specific reviews. The ID is generated automatically when a review is created and never changes.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_reviews.id. Primary key, UUID format, auto-generated on review creation.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from shopping_mall_reviews.id.
+     *   Primary key, UUID format, auto-generated on review creation.
    */
   id: string & tags.Format<"uuid">;
 
@@ -28,8 +29,9 @@ export type IShoppingMallReview = {
    *
    * This is a required field that captures the numerical rating component of the review. Values are constrained to the range 1-5 stars. The average of all non-deleted reviews for a product is displayed on the product detail page.
    *
-   * @x-autobe-database-schema-property rating
-   * @x-autobe-specification Direct mapping from shopping_mall_reviews.rating. Integer field constrained to 1-5 range. Required field.
+     * @x-autobe-database-schema-property rating
+     * @x-autobe-specification Direct mapping from shopping_mall_reviews.rating.
+     *   Integer field constrained to 1-5 range. Required field.
    */
   rating: number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<5>;
 
@@ -38,8 +40,10 @@ export type IShoppingMallReview = {
    *
    * Customers can write additional comments explaining their rating. This field is nullable to allow rating-only reviews. Content can be edited by the customer, with changes tracked in snapshots.
    *
-   * @x-autobe-database-schema-property content
-   * @x-autobe-specification Direct mapping from shopping_mall_reviews.content. Nullable string field for optional text feedback. Can be empty or null for rating-only reviews.
+     * @x-autobe-database-schema-property content
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_reviews.content. Nullable string field for optional text
+     *   feedback. Can be empty or null for rating-only reviews.
    */
   content?: string | null | undefined;
 
@@ -48,8 +52,10 @@ export type IShoppingMallReview = {
    *
    * This field records when the customer first submitted their review. It is used for sorting reviews by newest first on product pages and for audit purposes.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from shopping_mall_reviews.created_at. DateTime field in ISO 8601 format with timezone. Auto-generated on review creation.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_reviews.created_at. DateTime field in ISO 8601 format
+     *   with timezone. Auto-generated on review creation.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -58,8 +64,10 @@ export type IShoppingMallReview = {
    *
    * This field is updated whenever the customer edits their review content or rating. It helps identify recently modified reviews and is used to trigger snapshot creation.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from shopping_mall_reviews.updated_at. DateTime field in ISO 8601 format with timezone. Updated on every review modification.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_reviews.updated_at. DateTime field in ISO 8601 format
+     *   with timezone. Updated on every review modification.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -68,8 +76,10 @@ export type IShoppingMallReview = {
    *
    * When set, the review is hidden from public display but preserved in the database. Deleted reviews are not included in average rating calculations. Snapshots are preserved even after deletion for dispute resolution.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from shopping_mall_reviews.deleted_at. Nullable DateTime field in ISO 8601 format. Null means active review, non-null means soft-deleted.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_reviews.deleted_at. Nullable DateTime field in ISO 8601
+     *   format. Null means active review, non-null means soft-deleted.
    */
   deleted_at?: (string & tags.Format<"date-time">) | null | undefined;
 
@@ -78,8 +88,11 @@ export type IShoppingMallReview = {
    *
    * This object contains the customer's identity information including their display name and account status. Reviews by deleted customers are shown as 'deleted user' but remain accessible for audit purposes.
    *
-   * @x-autobe-database-schema-property customer
-   * @x-autobe-specification JOIN from shopping_mall_reviews.shopping_mall_customer_id to shopping_mall_customers.id. Returns IShoppingMallCustomer.ISummary with customer identity information. FK transformed to $ref object.
+     * @x-autobe-database-schema-property customer
+     * @x-autobe-specification JOIN from
+     *   shopping_mall_reviews.shopping_mall_customer_id to
+     *   shopping_mall_customers.id. Returns IShoppingMallCustomer.ISummary with
+     *   customer identity information. FK transformed to $ref object.
    */
   customer: IShoppingMallCustomer.ISummary;
 
@@ -88,8 +101,11 @@ export type IShoppingMallReview = {
    *
    * This object contains essential product information including name, price, and seller details. The product reference allows customers to navigate from a review to the full product detail page.
    *
-   * @x-autobe-database-schema-property product
-   * @x-autobe-specification JOIN from shopping_mall_reviews.shopping_mall_product_id to shopping_mall_products.id. Returns IShoppingMallProduct.ISummary with product details. FK transformed to $ref object.
+     * @x-autobe-database-schema-property product
+     * @x-autobe-specification JOIN from
+     *   shopping_mall_reviews.shopping_mall_product_id to
+     *   shopping_mall_products.id. Returns IShoppingMallProduct.ISummary with
+     *   product details. FK transformed to $ref object.
    */
   product: IShoppingMallProduct.ISummary;
 
@@ -98,8 +114,12 @@ export type IShoppingMallReview = {
    *
    * This object contains the purchased product variant details including quantity, price at time of purchase, and fulfillment status. The order item reference ensures customers can only review products they have actually purchased and received.
    *
-   * @x-autobe-database-schema-property orderItem
-   * @x-autobe-specification JOIN from shopping_mall_reviews.shopping_mall_order_item_id to shopping_mall_order_items.id. Returns IShoppingMallOrderItem.ISummary with order item details. FK transformed to $ref object. Unique constraint ensures one review per order item.
+     * @x-autobe-database-schema-property orderItem
+     * @x-autobe-specification JOIN from
+     *   shopping_mall_reviews.shopping_mall_order_item_id to
+     *   shopping_mall_order_items.id. Returns IShoppingMallOrderItem.ISummary
+     *   with order item details. FK transformed to $ref object. Unique
+     *   constraint ensures one review per order item.
    */
   orderItem: IShoppingMallOrderItem.ISummary;
 };
@@ -117,7 +137,11 @@ export namespace IShoppingMallReview {
      *
      * Performs case-insensitive text search across review content fields. Supports partial matching and keyword search. When provided, only reviews containing the search terms in their content are returned. Can be combined with other filters (product, customer, rating, date range) for refined results.
      *
-     * @x-autobe-specification Computed text search parameter. Performs full-text search on shopping_mall_reviews.content column using PostgreSQL trigram or tsvector. Returns reviews where content matches search terms. Case-insensitive partial matching. Combined with other filters using AND logic.
+         * @x-autobe-specification Computed text search parameter. Performs
+         *   full-text search on shopping_mall_reviews.content column using
+         *   PostgreSQL trigram or tsvector. Returns reviews where content
+         *   matches search terms. Case-insensitive partial matching. Combined
+         *   with other filters using AND logic.
      */
     search?: string | undefined;
 
@@ -126,8 +150,12 @@ export namespace IShoppingMallReview {
      *
      * When provided, returns only reviews for the specified product. Use this parameter to display all customer reviews on a product detail page. The product ID must be a valid UUID referencing an existing product in the shopping_mall_products table.
      *
-     * @x-autobe-database-schema-property shopping_mall_product_id
-     * @x-autobe-specification Direct mapping to shopping_mall_product_id foreign key column. Filters reviews by product using equality comparison (WHERE shopping_mall_product_id = ?). Used to retrieve all reviews for a specific product on product detail pages. UUID format validation required.
+         * @x-autobe-database-schema-property shopping_mall_product_id
+         * @x-autobe-specification Direct mapping to shopping_mall_product_id
+         *   foreign key column. Filters reviews by product using equality
+         *   comparison (WHERE shopping_mall_product_id = ?). Used to retrieve
+         *   all reviews for a specific product on product detail pages. UUID
+         *   format validation required.
      */
     productId?: (string & tags.Format<"uuid">) | undefined;
 
@@ -136,8 +164,12 @@ export namespace IShoppingMallReview {
      *
      * When provided, returns only reviews written by the specified customer. Use this parameter to display a customer's review history or for administrative oversight of customer activity. The customer ID must be a valid UUID referencing an existing customer account.
      *
-     * @x-autobe-database-schema-property shopping_mall_customer_id
-     * @x-autobe-specification Direct mapping to shopping_mall_customer_id foreign key column. Filters reviews by customer using equality comparison (WHERE shopping_mall_customer_id = ?). Used to retrieve all reviews written by a specific customer. UUID format validation required.
+         * @x-autobe-database-schema-property shopping_mall_customer_id
+         * @x-autobe-specification Direct mapping to shopping_mall_customer_id
+         *   foreign key column. Filters reviews by customer using equality
+         *   comparison (WHERE shopping_mall_customer_id = ?). Used to retrieve
+         *   all reviews written by a specific customer. UUID format validation
+         *   required.
      */
     customerId?: (string & tags.Format<"uuid">) | undefined;
 
@@ -146,8 +178,12 @@ export namespace IShoppingMallReview {
      *
      * When provided, returns only reviews with a rating greater than or equal to this value. Use this to filter for highly-rated reviews. Must be an integer between 1 and 5. Can be combined with ratingMax to define a rating range.
      *
-     * @x-autobe-database-schema-property rating
-     * @x-autobe-specification Maps to rating column with greater-than-or-equal comparison (WHERE rating >= ?). Filters reviews to include only those with rating at or above the specified minimum. Valid range: 1-5 stars. Combined with ratingMax using AND logic if both provided.
+         * @x-autobe-database-schema-property rating
+         * @x-autobe-specification Maps to rating column with
+         *   greater-than-or-equal comparison (WHERE rating >= ?). Filters
+         *   reviews to include only those with rating at or above the specified
+         *   minimum. Valid range: 1-5 stars. Combined with ratingMax using AND
+         *   logic if both provided.
      */
     ratingMin?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<5>)
@@ -158,8 +194,12 @@ export namespace IShoppingMallReview {
      *
      * When provided, returns only reviews with a rating less than or equal to this value. Use this to filter for lower-rated reviews or to define an upper bound on a rating range. Must be an integer between 1 and 5. Can be combined with ratingMin to define a rating range.
      *
-     * @x-autobe-database-schema-property rating
-     * @x-autobe-specification Maps to rating column with less-than-or-equal comparison (WHERE rating <= ?). Filters reviews to include only those with rating at or below the specified maximum. Valid range: 1-5 stars. Combined with ratingMin using AND logic if both provided.
+         * @x-autobe-database-schema-property rating
+         * @x-autobe-specification Maps to rating column with less-than-or-equal
+         *   comparison (WHERE rating <= ?). Filters reviews to include only
+         *   those with rating at or below the specified maximum. Valid range:
+         *   1-5 stars. Combined with ratingMin using AND logic if both
+         *   provided.
      */
     ratingMax?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<5>)
@@ -170,7 +210,12 @@ export namespace IShoppingMallReview {
      *
      * When set to false or omitted, returns only active reviews that are visible to customers. When set to true, returns only soft-deleted reviews (visible only to administrators). Deleted reviews are excluded from average rating calculations and public displays. Default behavior (parameter omitted) returns active reviews only.
      *
-     * @x-autobe-specification Computed boolean filter parameter. Translates to NULL check on deleted_at column: when deleted=false or omitted, applies WHERE deleted_at IS NULL to return active reviews; when deleted=true, applies WHERE deleted_at IS NOT NULL to return soft-deleted reviews. This boolean interface abstracts the underlying DateTime column for easier API consumption.
+         * @x-autobe-specification Computed boolean filter parameter. Translates
+         *   to NULL check on deleted_at column: when deleted=false or omitted,
+         *   applies WHERE deleted_at IS NULL to return active reviews; when
+         *   deleted=true, applies WHERE deleted_at IS NOT NULL to return
+         *   soft-deleted reviews. This boolean interface abstracts the
+         *   underlying DateTime column for easier API consumption.
      */
     deleted?: boolean | undefined;
 
@@ -179,8 +224,12 @@ export namespace IShoppingMallReview {
      *
      * When provided, returns only reviews created on or after this timestamp. Use this to retrieve reviews from a specific time period. Format must be ISO 8601 date-time (e.g., "2024-01-15T00:00:00Z"). Can be combined with createdAtTo to define a date range for filtering.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Maps to created_at column with greater-than-or-equal comparison (WHERE created_at >= ?). Filters reviews to include only those created on or after the specified timestamp. ISO 8601 date-time format required. Combined with createdAtTo using AND logic if both provided.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Maps to created_at column with
+         *   greater-than-or-equal comparison (WHERE created_at >= ?). Filters
+         *   reviews to include only those created on or after the specified
+         *   timestamp. ISO 8601 date-time format required. Combined with
+         *   createdAtTo using AND logic if both provided.
      */
     createdAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
@@ -189,8 +238,12 @@ export namespace IShoppingMallReview {
      *
      * When provided, returns only reviews created on or before this timestamp. Use this to retrieve reviews up to a specific point in time. Format must be ISO 8601 date-time (e.g., "2024-01-15T23:59:59Z"). Can be combined with createdAtFrom to define a date range for filtering.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Maps to created_at column with less-than-or-equal comparison (WHERE created_at <= ?). Filters reviews to include only those created on or before the specified timestamp. ISO 8601 date-time format required. Combined with createdAtFrom using AND logic if both provided.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Maps to created_at column with
+         *   less-than-or-equal comparison (WHERE created_at <= ?). Filters
+         *   reviews to include only those created on or before the specified
+         *   timestamp. ISO 8601 date-time format required. Combined with
+         *   createdAtFrom using AND logic if both provided.
      */
     createdAtTo?: (string & tags.Format<"date-time">) | undefined;
 
@@ -199,7 +252,12 @@ export namespace IShoppingMallReview {
      *
      * Determines the order in which reviews are returned. Common options include sorting by creation date (newest or oldest first), by rating (highest or lowest first), or by last update time. When not specified, reviews are sorted by creation date in descending order, showing the most recent reviews at the top.
      *
-     * @x-autobe-specification Computed sorting parameter. Determines ORDER BY clause in query. Supported values: "created_at" (default, descending), "created_at_desc", "created_at_asc", "rating", "rating_desc", "rating_asc", "updated_at", "updated_at_desc", "updated_at_asc". Default behavior when omitted: ORDER BY created_at DESC (newest reviews first).
+         * @x-autobe-specification Computed sorting parameter. Determines ORDER
+         *   BY clause in query. Supported values: "created_at" (default,
+         *   descending), "created_at_desc", "created_at_asc", "rating",
+         *   "rating_desc", "rating_asc", "updated_at", "updated_at_desc",
+         *   "updated_at_asc". Default behavior when omitted: ORDER BY
+         *   created_at DESC (newest reviews first).
      */
     sort?: string | undefined;
 
@@ -208,7 +266,11 @@ export namespace IShoppingMallReview {
      *
      * Indicates which page of the result set to return. Page numbering is 1-indexed, so the first page is page 1. Use this parameter to navigate through large collections of reviews. The API response includes pagination metadata with total page count and record count to help clients implement navigation controls.
      *
-     * @x-autobe-specification Computed pagination parameter. 1-indexed page number for offset-based pagination. Used to calculate OFFSET in SQL query: OFFSET = (page - 1) * limit. Minimum value: 1. Default: 1 when omitted. Validates against total record count to prevent out-of-range requests.
+         * @x-autobe-specification Computed pagination parameter. 1-indexed page
+         *   number for offset-based pagination. Used to calculate OFFSET in SQL
+         *   query: OFFSET = (page - 1) * limit. Minimum value: 1. Default: 1
+         *   when omitted. Validates against total record count to prevent
+         *   out-of-range requests.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -217,7 +279,11 @@ export namespace IShoppingMallReview {
      *
      * Controls how many review records are included in each page of results. Accepts values from 1 to 100. Larger values reduce the number of API calls required to retrieve all results but increase individual response sizes. When not specified, the server applies a sensible default page size.
      *
-     * @x-autobe-specification Computed pagination parameter. Maximum number of records to return per page. Used as LIMIT clause in SQL query. Valid range: 1-100. Default: 20 when omitted (server-side default). Server enforces maximum of 100 to prevent excessive data transfer and database load.
+         * @x-autobe-specification Computed pagination parameter. Maximum number
+         *   of records to return per page. Used as LIMIT clause in SQL query.
+         *   Valid range: 1-100. Default: 20 when omitted (server-side default).
+         *   Server enforces maximum of 100 to prevent excessive data transfer
+         *   and database load.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -231,13 +297,13 @@ export namespace IShoppingMallReview {
    */
   export type IUpdate = {
     /**
-     * @x-autobe-database-schema-property rating
+         * @x-autobe-database-schema-property rating
      */
     rating?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<5>)
       | undefined;
     /**
-     * @x-autobe-database-schema-property content
+         * @x-autobe-database-schema-property content
      */
     content?: string | null | undefined;
   };
@@ -251,31 +317,31 @@ export namespace IShoppingMallReview {
    */
   export type ISummary = {
     /**
-     * @x-autobe-database-schema-property id
+         * @x-autobe-database-schema-property id
      */
     id: string & tags.Format<"uuid">;
     /**
-     * @x-autobe-database-schema-property rating
+         * @x-autobe-database-schema-property rating
      */
     rating: number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<5>;
     /**
-     * @x-autobe-database-schema-property content
+         * @x-autobe-database-schema-property content
      */
     content: string | null;
     /**
-     * @x-autobe-database-schema-property customer
+         * @x-autobe-database-schema-property customer
      */
     customer: IShoppingMallCustomer.ISummary;
     /**
-     * @x-autobe-database-schema-property product
+         * @x-autobe-database-schema-property product
      */
     product: IShoppingMallProduct.ISummary;
     /**
-     * @x-autobe-database-schema-property created_at
+         * @x-autobe-database-schema-property created_at
      */
     created_at: string & tags.Format<"date-time">;
     /**
-     * @x-autobe-database-schema-property updated_at
+         * @x-autobe-database-schema-property updated_at
      */
     updated_at: string & tags.Format<"date-time">;
   };
@@ -287,19 +353,19 @@ export namespace IShoppingMallReview {
    */
   export type ICreate = {
     /**
-     * @x-autobe-database-schema-property shopping_mall_product_id
+         * @x-autobe-database-schema-property shopping_mall_product_id
      */
     shopping_mall_product_id: string & tags.Format<"uuid">;
     /**
-     * @x-autobe-database-schema-property shopping_mall_order_item_id
+         * @x-autobe-database-schema-property shopping_mall_order_item_id
      */
     shopping_mall_order_item_id: string & tags.Format<"uuid">;
     /**
-     * @x-autobe-database-schema-property rating
+         * @x-autobe-database-schema-property rating
      */
     rating: number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<5>;
     /**
-     * @x-autobe-database-schema-property content
+         * @x-autobe-database-schema-property content
      */
     content?: string | null | undefined;
   };

@@ -23,7 +23,8 @@ import { IPageICommunityPlatformBan } from "../../../../../structures/IPageIComm
  * @param props.body Ban creation details for the target member.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implement this as a moderation-only create flow for community_platform_bans.
+ * @x-autobe-specification Implement this as a moderation-only create flow for
+ *   community_platform_bans.
  *
  * 1. Resolve the community by communityId from the path and verify it exists and is not deleted.
  * 2. Authenticate the caller and confirm they hold moderation authority for that community. Accept either owner or moderator role from community_platform_moderation_roles, excluding deleted role rows.
@@ -148,7 +149,8 @@ export namespace create {
  * @param props.body Search, filtering, and pagination criteria for the community ban list.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implement a paginated ban listing query scoped to one community.
+ * @x-autobe-specification Implement a paginated ban listing query scoped to one
+ *   community.
  *
  * Resolve the community by communityId, verify the caller is the community owner or a moderator assigned to that community, and reject access for unauthorized users. Query community_platform_bans using community_platform_community_id = communityId, and exclude records that are not currently visible to moderation browsing if the business layer treats ended or deleted bans as inactive. Use created_at or started_at ordering consistently, with the newest bans first unless the request DTO specifies another allowed sort.
  *
@@ -253,7 +255,8 @@ export namespace index {
  * @param props.banId Target ban record's unique identifier within the community scope.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Load the ban record by communityId and banId in a single read operation.
+ * @x-autobe-specification Load the ban record by communityId and banId in a
+ *   single read operation.
  *
  * Implementation should first verify that the authenticated actor has moderation authority in the requested community. Then query community_platform_bans by id = banId and community_platform_community_id = communityId, ensuring the record exists and belongs to the same community scope. Because the schema defines a direct relation to both community_platform_communities and community_platform_members, the read should include those relations or at least validate ownership/association so the response can be trusted as community-scoped.
  *
@@ -356,7 +359,13 @@ export namespace at {
  * @param props.body Fields to update on the community ban record.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Load the ban by composite scope: communityId path parameter plus banId path parameter. First verify the authenticated actor has moderation authority for the given community (owner or permitted moderator role according to moderation rules). Then fetch the ban row from community_platform_bans using both id = banId and community_platform_community_id = communityId to prevent cross-community access.
+ * @x-autobe-specification Load the ban by composite scope: communityId path
+ *   parameter plus banId path parameter. First verify the authenticated actor
+ *   has moderation authority for the given community (owner or permitted
+ *   moderator role according to moderation rules). Then fetch the ban row from
+ *   community_platform_bans using both id = banId and
+ *   community_platform_community_id = communityId to prevent cross-community
+ *   access.
  *
  * Apply partial field updates from the request body to mutable ban fields only. Reason is the primary editable moderation note. If the schema allows changing the ban period, validate started_at and ended_at as a coherent interval; ended_at may be null for an ongoing ban, but if provided it must not be earlier than started_at. Do not allow updates to immutable identity fields such as id, community_platform_member_id, or community_platform_community_id.
  *

@@ -27,9 +27,10 @@ export class ShoppingmallCategoriesController {
    *
    * @param connection
    * @param body Search criteria and pagination parameters for filtering and browsing the category list
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query the shopping_mall_categories table to return a paginated list of categories.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query the shopping_mall_categories table to
+     *   return a paginated list of categories.
    *
    * 1. FILTERING:
    *    - If a name filter is provided in the request body, apply a case-insensitive partial match against the `name` column (the table has a GIN trigram index on `name` for this purpose).
@@ -88,9 +89,11 @@ export class ShoppingmallCategoriesController {
    *
    * @param connection
    * @param categoryId The unique identifier (UUID) of the target category to retrieve.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Implement this operation by querying the `shopping_mall_categories` table for the record whose `id` column matches the provided `categoryId` UUID path parameter.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Implement this operation by querying the
+     *   `shopping_mall_categories` table for the record whose `id` column
+     *   matches the provided `categoryId` UUID path parameter.
    *
    * Query logic:
    * 1. Execute a SELECT on `shopping_mall_categories` WHERE `id = :categoryId`.
@@ -136,9 +139,10 @@ export class ShoppingmallCategoriesController {
    * Related operations: Use the product listing endpoints to retrieve products under a specific category or subcategory after selecting one from this tree.
    *
    * @param connection
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query the shopping_mall_categories table to build and return the full two-tier category tree.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query the shopping_mall_categories table to build
+     *   and return the full two-tier category tree.
    *
    * Implementation steps:
    * 1. Fetch all top-level categories (where parent_id IS NULL), ordered by created_at or name for consistent display.

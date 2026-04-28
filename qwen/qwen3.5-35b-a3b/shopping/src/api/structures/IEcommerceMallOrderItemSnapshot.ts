@@ -12,55 +12,55 @@ import { tags } from "typia";
  */
 export type IEcommerceMallOrderItemSnapshot = {
   /**
-   * @x-autobe-database-schema-property id
+     * @x-autobe-database-schema-property id
    */
   id: string & tags.Format<"uuid">;
   /**
-   * @x-autobe-database-schema-property order_id
+     * @x-autobe-database-schema-property order_id
    */
   order_id: string & tags.Format<"uuid">;
   /**
-   * @x-autobe-database-schema-property product_id
+     * @x-autobe-database-schema-property product_id
    */
   product_id: string & tags.Format<"uuid">;
   /**
-   * @x-autobe-database-schema-property product_name
+     * @x-autobe-database-schema-property product_name
    */
   product_name: string;
   /**
-   * @x-autobe-database-schema-property product_variant_id
+     * @x-autobe-database-schema-property product_variant_id
    */
   product_variant_id: string & tags.Format<"uuid">;
   /**
-   * @x-autobe-database-schema-property product_variant_options
+     * @x-autobe-database-schema-property product_variant_options
    */
   product_variant_options: string;
   /**
-   * @x-autobe-database-schema-property seller_id
+     * @x-autobe-database-schema-property seller_id
    */
   seller_id: string & tags.Format<"uuid">;
   /**
-   * @x-autobe-database-schema-property seller_name
+     * @x-autobe-database-schema-property seller_name
    */
   seller_name: string;
   /**
-   * @x-autobe-database-schema-property quantity
+     * @x-autobe-database-schema-property quantity
    */
   quantity: number & tags.Type<"int32">;
   /**
-   * @x-autobe-database-schema-property unit_price
+     * @x-autobe-database-schema-property unit_price
    */
   unit_price: number;
   /**
-   * @x-autobe-database-schema-property total_price
+     * @x-autobe-database-schema-property total_price
    */
   total_price: number;
   /**
-   * @x-autobe-database-schema-property snapshot_type
+     * @x-autobe-database-schema-property snapshot_type
    */
   snapshot_type: "checkout" | "cancellation" | "refund";
   /**
-   * @x-autobe-database-schema-property created_at
+     * @x-autobe-database-schema-property created_at
    */
   created_at: string & tags.Format<"date-time">;
 };

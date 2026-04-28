@@ -10,80 +10,90 @@ export type IErpHrmOrganization = {
   /**
    * Unique identifier of the organization in UUID format.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from erp_hrm_organizations.id. Auto-generated UUID primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from erp_hrm_organizations.id.
+     *   Auto-generated UUID primary key.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Organization display name shown throughout the application.
    *
-   * @x-autobe-database-schema-property name
-   * @x-autobe-specification Direct mapping from erp_hrm_organizations.name. Unique constraint across platform.
+     * @x-autobe-database-schema-property name
+     * @x-autobe-specification Direct mapping from erp_hrm_organizations.name.
+     *   Unique constraint across platform.
    */
   name: string;
 
   /**
    * Optional description of the organization's purpose or industry.
    *
-   * @x-autobe-database-schema-property description
-   * @x-autobe-specification Direct mapping from erp_hrm_organizations.description. Nullable field.
+     * @x-autobe-database-schema-property description
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_organizations.description. Nullable field.
    */
   description?: string | null | undefined;
 
   /**
    * URL to the organization's logo image for branding display.
    *
-   * @x-autobe-database-schema-property logo_uri
-   * @x-autobe-specification Direct mapping from erp_hrm_organizations.logo_uri. Nullable field, max 80000 characters.
+     * @x-autobe-database-schema-property logo_uri
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_organizations.logo_uri. Nullable field, max 80000 characters.
    */
   logoUri?: (string & tags.Format<"uri">) | null | undefined;
 
   /**
    * Organization's primary currency code for billing and reports (e.g., USD, EUR, KRW).
    *
-   * @x-autobe-database-schema-property currency
-   * @x-autobe-specification Direct mapping from erp_hrm_organizations.currency. ISO 4217 currency code.
+     * @x-autobe-database-schema-property currency
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_organizations.currency. ISO 4217 currency code.
    */
   currency: string;
 
   /**
    * Organization's timezone for time tracking and scheduling (e.g., Asia/Seoul, America/New_York).
    *
-   * @x-autobe-database-schema-property timezone
-   * @x-autobe-specification Direct mapping from erp_hrm_organizations.timezone. IANA timezone string.
+     * @x-autobe-database-schema-property timezone
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_organizations.timezone. IANA timezone string.
    */
   timezone: string;
 
   /**
    * Month (1-12) when the organization's fiscal year starts, determining fiscal period boundaries for reporting.
    *
-   * @x-autobe-database-schema-property fiscal_start_month
-   * @x-autobe-specification Direct mapping from erp_hrm_organizations.fiscal_start_month. Integer 1-12.
+     * @x-autobe-database-schema-property fiscal_start_month
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_organizations.fiscal_start_month. Integer 1-12.
    */
   fiscalStartMonth: number & tags.Type<"int32">;
 
   /**
    * Timestamp when the organization was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from erp_hrm_organizations.created_at. ISO 8601 date-time format.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_organizations.created_at. ISO 8601 date-time format.
    */
   createdAt: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the organization was last modified.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from erp_hrm_organizations.updated_at. ISO 8601 date-time format.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_organizations.updated_at. ISO 8601 date-time format.
    */
   updatedAt: string & tags.Format<"date-time">;
 
   /**
    * The member account that owns this organization, having full administrative control.
    *
-   * @x-autobe-database-schema-property owner
-   * @x-autobe-specification Join from erp_hrm_organizations.owner_id to erp_hrm_members.id. Returns IErpHrmMember.ISummary.
+     * @x-autobe-database-schema-property owner
+     * @x-autobe-specification Join from erp_hrm_organizations.owner_id to
+     *   erp_hrm_members.id. Returns IErpHrmMember.ISummary.
    */
   owner: IErpHrmMember.ISummary;
 };
@@ -93,41 +103,41 @@ export namespace IErpHrmOrganization {
    */
   export type ISummary = {
     /**
-     * @x-autobe-database-schema-property created_at
+         * @x-autobe-database-schema-property created_at
      */
     created_at: string & tags.Format<"date-time">;
     /**
-     * @x-autobe-database-schema-property currency
+         * @x-autobe-database-schema-property currency
      */
     currency: string;
 
     /**
      * Optional description of the organization.
      *
-     * @x-autobe-database-schema-property description
+         * @x-autobe-database-schema-property description
      */
     description?: string | null | undefined;
     /**
-     * @x-autobe-database-schema-property id
+         * @x-autobe-database-schema-property id
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * URL to the organization's logo image.
      *
-     * @x-autobe-database-schema-property logo_uri
+         * @x-autobe-database-schema-property logo_uri
      */
     logo_uri?: (string & tags.Format<"uri">) | null | undefined;
     /**
-     * @x-autobe-database-schema-property name
+         * @x-autobe-database-schema-property name
      */
     name: string;
     /**
-     * @x-autobe-database-schema-property owner
+         * @x-autobe-database-schema-property owner
      */
     owner: IErpHrmMember.ISummary;
     /**
-     * @x-autobe-database-schema-property timezone
+         * @x-autobe-database-schema-property timezone
      */
     timezone: string;
   };
@@ -139,21 +149,30 @@ export namespace IErpHrmOrganization {
     /**
      * Optional search term to filter organizations by name (partial match).
      *
-     * @x-autobe-specification Partial match filter on erp_hrm_organizations.name using SQL LIKE operator (name LIKE %search%). Applied case-insensitively. Null or empty string returns all organizations the user belongs to.
+         * @x-autobe-specification Partial match filter on
+         *   erp_hrm_organizations.name using SQL LIKE operator (name LIKE
+         *   %search%). Applied case-insensitively. Null or empty string returns
+         *   all organizations the user belongs to.
      */
     search?: string | undefined;
 
     /**
      * Page number for pagination (1-based index). Defaults to 1 if not provided.
      *
-     * @x-autobe-specification 1-indexed page number for cursor-based pagination. Minimum value is 1. When omitted or less than 1, defaults to page 1. Used with limit to calculate offset: offset = (page - 1) * limit.
+         * @x-autobe-specification 1-indexed page number for cursor-based
+         *   pagination. Minimum value is 1. When omitted or less than 1,
+         *   defaults to page 1. Used with limit to calculate offset: offset =
+         *   (page - 1) * limit.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Number of items per page (between 1 and 100).
      *
-     * @x-autobe-specification Maximum number of organization records to return per page. Must be between 1 and 100. When omitted, defaults to 20. Used with page to calculate offset and determine page size for the result set.
+         * @x-autobe-specification Maximum number of organization records to
+         *   return per page. Must be between 1 and 100. When omitted, defaults
+         *   to 20. Used with page to calculate offset and determine page size
+         *   for the result set.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -167,21 +186,21 @@ export namespace IErpHrmOrganization {
     /**
      * Organization's primary currency code for billing and reports (e.g., USD, EUR, KRW).
      *
-     * @x-autobe-database-schema-property currency
+         * @x-autobe-database-schema-property currency
      */
     currency: string & tags.MinLength<3> & tags.MaxLength<3>;
 
     /**
      * Optional description of the organization.
      *
-     * @x-autobe-database-schema-property description
+         * @x-autobe-database-schema-property description
      */
     description?: (string & tags.MaxLength<1000>) | null | undefined;
 
     /**
      * Month (1-12) when the organization's fiscal year starts.
      *
-     * @x-autobe-database-schema-property fiscal_start_month
+         * @x-autobe-database-schema-property fiscal_start_month
      */
     fiscalStartMonth: number &
       tags.Type<"int32"> &
@@ -191,21 +210,21 @@ export namespace IErpHrmOrganization {
     /**
      * URL to the organization's logo image.
      *
-     * @x-autobe-database-schema-property logo_uri
+         * @x-autobe-database-schema-property logo_uri
      */
     logoUri?: (string & tags.Format<"uri">) | null | undefined;
 
     /**
      * Organization display name shown throughout the application.
      *
-     * @x-autobe-database-schema-property name
+         * @x-autobe-database-schema-property name
      */
     name: string & tags.MinLength<1> & tags.MaxLength<255>;
 
     /**
      * Organization's timezone for time tracking and scheduling (e.g., Asia/Seoul, America/New_York).
      *
-     * @x-autobe-database-schema-property timezone
+         * @x-autobe-database-schema-property timezone
      */
     timezone: string;
   };

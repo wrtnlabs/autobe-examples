@@ -35,9 +35,9 @@ export class CommunityplatformMemberReportsTargetsController {
    * @param body Target-context creation payload for a moderation report.
    *
    *             Specifies the concrete reported content referenced by this report using a discriminator (target_type) plus the concrete content identifier (target_id). The system validates that the referenced content exists and belongs to the same community as the report.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation steps:
    *
    * 1) Authorization
    * - Resolve the community moderation scope for the provided reportId by loading community_platform_reports (including community_id).
@@ -119,9 +119,10 @@ export class CommunityplatformMemberReportsTargetsController {
    * @param connection
    * @param reportId Target report identifier whose moderation target context is being updated.
    * @param body Updated target binding for the report: the discriminator identifying whether the report targets a post or a comment, and the concrete target content identifier within the same community as the report.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Realize Agent implementation guide for PATCH /reports/{reportId}/targets.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Realize Agent implementation guide for PATCH
+     *   /reports/{reportId}/targets.
    *
    * 1) AuthZ:
    * - Identify current actor and determine authorization to update moderation-relevant report target mappings.
@@ -208,9 +209,9 @@ export class CommunityplatformMemberReportsTargetsController {
    * @param connection
    * @param reportId Identifier of the moderation report whose target context should be retrieved.
    * @param targetId Identifier of the concrete report target context record to retrieve; must belong to the specified report.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1) Parse path params: reportId, targetId.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification 1) Parse path params: reportId, targetId.
    *
    * 2) Authorization scoping:
    * - Query community_platform_reports by id = reportId.
@@ -271,26 +272,24 @@ export class CommunityplatformMemberReportsTargetsController {
    * @param reportId Target report identifier whose community moderation scope is used for authorization.
    * @param targetId Identifier of the report target context record to update.
    * @param body Updated target context for the report. This changes what concrete content (post/comment) the report targets within its community.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation steps:
-   * 1) Start a transaction.
-   * 2) Load `community_platform_reports` by `id = reportId`.
-   *    - If not found, return 404.
-   * 3) Determine `community_id` from the report row.
-   * 4) Authorization check:
-   *    - Verify caller is allowed to manage report targets for that `community_id` based on moderation scope rules.
-   *    - If not authorized, return 403 without disclosing existence.
-   * 5) Load `community_platform_report_targets` by `id = targetId`.
-   *    - Ensure its `community_platform_report_id` equals the loaded report’s id; if not, return 404.
-   *    - If `deleted_at` is not null, treat as not editable; return 404 or 409 depending on standard for deleted/hidden records.
-   * 6) Validate request body fields:
-   *    - `target_type`: non-empty string.
-   *    - `target_id`: must be a valid UUID string (schema layer should enforce format).
-   * 7) Update the record fields (`target_type`, `target_id`) and persist `updated_at`.
-   *    - Do not touch `created_at`.
-   * 8) Commit transaction.
-   * 9) Return the updated `community_platform_report_targets` data as the response DTO.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation steps: 1) Start a transaction. 2)
+     *   Load `community_platform_reports` by `id = reportId`. - If not found,
+     *   return 404. 3) Determine `community_id` from the report row. 4)
+     *   Authorization check: - Verify caller is allowed to manage report
+     *   targets for that `community_id` based on moderation scope rules. - If
+     *   not authorized, return 403 without disclosing existence. 5) Load
+     *   `community_platform_report_targets` by `id = targetId`. - Ensure its
+     *   `community_platform_report_id` equals the loaded report’s id; if not,
+     *   return 404. - If `deleted_at` is not null, treat as not editable;
+     *   return 404 or 409 depending on standard for deleted/hidden records. 6)
+     *   Validate request body fields: - `target_type`: non-empty string. -
+     *   `target_id`: must be a valid UUID string (schema layer should enforce
+     *   format). 7) Update the record fields (`target_type`, `target_id`) and
+     *   persist `updated_at`. - Do not touch `created_at`. 8) Commit
+     *   transaction. 9) Return the updated `community_platform_report_targets`
+     *   data as the response DTO.
    *
    * Edge cases:
    * - Mismatched (reportId, targetId) pair must not be accepted.
@@ -354,21 +353,27 @@ export class CommunityplatformMemberReportsTargetsController {
    * @param connection
    * @param reportId The identifier of the moderation report whose target-context row will be removed.
    * @param targetId The identifier of the specific report-target context record to remove.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Service-layer steps:
-   * 1) Parse `reportId` and `targetId` from path.
-   * 2) Authorization: verify caller is an admin or a moderator who is allowed to manage moderation report data within the scope of the referenced report.
-   *    - Determine the report’s `community_id` via `community_platform_reports` and then enforce moderator membership for that community (or admin override).
-   * 3) Locate the target-context row:
-   *    - Query `community_platform_report_targets` with `id = targetId` AND `community_platform_report_id = reportId`.
-   * 4) If not found, throw a not-found error.
-   * 5) Delete behavior:
-   *    - Execute deletion of the `community_platform_report_targets` row by primary key.
-   *    - If soft-deletion semantics are implemented via `deleted_at`, use the column accordingly; otherwise perform a hard delete.
-   *    - Ensure the operation respects referential integrity with `community_platform_report_snapshots` (snapshots reference `community_platform_report_target_id`).
-   *      - If snapshots are configured with cascade in the ORM, deletion will cascade; if not, explicitly handle the constraint violation by either rejecting or removing/archiving dependent snapshots per internal consistency rules.
-   * 6) Return deleted target summary DTO.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Service-layer steps: 1) Parse `reportId` and
+     *   `targetId` from path. 2) Authorization: verify caller is an admin or a
+     *   moderator who is allowed to manage moderation report data within the
+     *   scope of the referenced report. - Determine the report’s `community_id`
+     *   via `community_platform_reports` and then enforce moderator membership
+     *   for that community (or admin override). 3) Locate the target-context
+     *   row: - Query `community_platform_report_targets` with `id = targetId`
+     *   AND `community_platform_report_id = reportId`. 4) If not found, throw a
+     *   not-found error. 5) Delete behavior: - Execute deletion of the
+     *   `community_platform_report_targets` row by primary key. - If
+     *   soft-deletion semantics are implemented via `deleted_at`, use the
+     *   column accordingly; otherwise perform a hard delete. - Ensure the
+     *   operation respects referential integrity with
+     *   `community_platform_report_snapshots` (snapshots reference
+     *   `community_platform_report_target_id`). - If snapshots are configured
+     *   with cascade in the ORM, deletion will cascade; if not, explicitly
+     *   handle the constraint violation by either rejecting or
+     *   removing/archiving dependent snapshots per internal consistency rules.
+     *   6) Return deleted target summary DTO.
    *
    * Database queries/transactions:
    * - Use a transaction that covers:

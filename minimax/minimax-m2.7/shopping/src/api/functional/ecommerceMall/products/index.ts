@@ -29,7 +29,8 @@ export * as rating from "./rating/index";
  * @param props.body Search criteria including optional filters for name query, category, price range, stock availability, sorting order, and pagination parameters.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query the ecommerce_mall_products table applying the following filters:
+ * @x-autobe-specification Query the ecommerce_mall_products table applying the
+ *   following filters:
  *
  * 1. **Name Search**: If 'query' is provided, perform case-insensitive partial match on name field using ILIKE pattern '%query%'.
  *

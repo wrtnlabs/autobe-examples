@@ -10,72 +10,87 @@ export type IRedditCloneFileScan = {
   /**
    * Unique identifier for the virus scan record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from reddit_clone_file_scans.id. UUID primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from reddit_clone_file_scans.id.
+     *   UUID primary key.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Timestamp when the virus scan was performed.
    *
-   * @x-autobe-database-schema-property scanned_at
-   * @x-autobe-specification Direct mapping from reddit_clone_file_scans.scanned_at. DateTime.
+     * @x-autobe-database-schema-property scanned_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_file_scans.scanned_at. DateTime.
    */
   scannedAt: string & tags.Format<"date-time">;
 
   /**
    * Name and version of the virus scanner used (e.g., 'ClamAV 0.103.0').
    *
-   * @x-autobe-database-schema-property scanner
-   * @x-autobe-specification Direct mapping from reddit_clone_file_scans.scanner. String.
+     * @x-autobe-database-schema-property scanner
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_file_scans.scanner. String.
    */
   scanner: string;
 
   /**
    * Result status of the scan indicating whether the file passed or contains threats.
    *
-   * @x-autobe-database-schema-property status
-   * @x-autobe-specification Direct mapping from reddit_clone_file_scans.status. String enum: 'clean', 'infected', 'error'.
+     * @x-autobe-database-schema-property status
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_file_scans.status. String enum: 'clean', 'infected',
+     *   'error'.
    */
   status: string;
 
   /**
    * Name of the detected threat when the file is infected, null otherwise.
    *
-   * @x-autobe-specification Direct mapping from reddit_clone_file_scans.threat_name. Nullable string - name of detected threat if file is infected (e.g., 'Eicar.Test.File', 'Trojan.Generic'). Null if status is not 'infected'.
-   * @x-autobe-database-schema-property threat_name
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_file_scans.threat_name. Nullable string - name of detected
+     *   threat if file is infected (e.g., 'Eicar.Test.File', 'Trojan.Generic').
+     *   Null if status is not 'infected'.
+     * @x-autobe-database-schema-property threat_name
    */
   threatName?: string | null | undefined;
 
   /**
    * Additional details from the scanner output including signature matches or remediation recommendations.
    *
-   * @x-autobe-specification Direct mapping from reddit_clone_file_scans.details. Nullable string - additional scanner output details such as signature matches or remediation recommendations.
-   * @x-autobe-database-schema-property details
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_file_scans.details. Nullable string - additional scanner
+     *   output details such as signature matches or remediation
+     *   recommendations.
+     * @x-autobe-database-schema-property details
    */
   details?: string | null | undefined;
 
   /**
    * Timestamp when this scan record was created in the database.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from reddit_clone_file_scans.created_at. DateTime.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_file_scans.created_at. DateTime.
    */
   createdAt: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when this scan record was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from reddit_clone_file_scans.updated_at. DateTime.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_file_scans.updated_at. DateTime.
    */
   updatedAt: string & tags.Format<"date-time">;
 
   /**
    * The uploaded file that was scanned, represented as a summary object with metadata and uploader information.
    *
-   * @x-autobe-database-schema-property file
-   * @x-autobe-specification BELONGS-TO relation: Join from reddit_clone_file_scans.reddit_clone_file_id to reddit_clone_files.id. Returns IRedditCloneFile.ISummary with uploader info and thumbnails.
+     * @x-autobe-database-schema-property file
+     * @x-autobe-specification BELONGS-TO relation: Join from
+     *   reddit_clone_file_scans.reddit_clone_file_id to reddit_clone_files.id.
+     *   Returns IRedditCloneFile.ISummary with uploader info and thumbnails.
    */
   file: IRedditCloneFile.ISummary;
 };

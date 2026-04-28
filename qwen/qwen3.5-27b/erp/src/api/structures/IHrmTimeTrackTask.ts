@@ -13,59 +13,59 @@ import { IHrmTimeTrackProject } from "./IHrmTimeTrackProject";
  */
 export type IHrmTimeTrackTask = {
   /**
-   * @x-autobe-database-schema-property id
+     * @x-autobe-database-schema-property id
    */
   id: string & tags.Format<"uuid">;
   /**
-   * @x-autobe-database-schema-property title
+     * @x-autobe-database-schema-property title
    */
   title: string;
   /**
-   * @x-autobe-database-schema-property description
+     * @x-autobe-database-schema-property description
    */
   description: string | null;
   /**
-   * @x-autobe-database-schema-property priority
+     * @x-autobe-database-schema-property priority
    */
   priority: string;
   /**
-   * @x-autobe-database-schema-property status
+     * @x-autobe-database-schema-property status
    */
   status: string;
   /**
-   * @x-autobe-database-schema-property effort_estimate
+     * @x-autobe-database-schema-property effort_estimate
    */
   effort_estimate: number | null;
   /**
-   * @x-autobe-database-schema-property effort_actual
+     * @x-autobe-database-schema-property effort_actual
    */
   effort_actual: number | null;
   /**
-   * @x-autobe-database-schema-property created_at
+     * @x-autobe-database-schema-property created_at
    */
   created_at: string & tags.Format<"date-time">;
   /**
-   * @x-autobe-database-schema-property updated_at
+     * @x-autobe-database-schema-property updated_at
    */
   updated_at: string & tags.Format<"date-time">;
   /**
-   * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-database-schema-property deleted_at
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
   /**
-   * @x-autobe-database-schema-property project
+     * @x-autobe-database-schema-property project
    */
   project: IHrmTimeTrackProject.ISummary;
   /**
-   * @x-autobe-database-schema-property employee
+     * @x-autobe-database-schema-property employee
    */
   employee: IHrmTimeTrackEmployee.ISummary | null;
   /**
-   * @x-autobe-database-schema-property parentTask
+     * @x-autobe-database-schema-property parentTask
    */
   parentTask: IHrmTimeTrackTask.ISummary | null;
   /**
-   * @x-autobe-database-schema-property subtasks
+     * @x-autobe-database-schema-property subtasks
    */
   subtasks: IHrmTimeTrackTask.ISummary[];
 };
@@ -77,23 +77,23 @@ export namespace IHrmTimeTrackTask {
    */
   export type IRequest = {
     /**
-     * @x-autobe-database-schema-property status
+         * @x-autobe-database-schema-property status
      */
     status?: string | undefined;
     /**
-     * @x-autobe-database-schema-property priority
+         * @x-autobe-database-schema-property priority
      */
     priority?: string | undefined;
     /**
-     * @x-autobe-database-schema-property hrm_time_track_employee_id
+         * @x-autobe-database-schema-property hrm_time_track_employee_id
      */
     employee_id?: (string & tags.Format<"uuid">) | null | undefined;
     /**
-     * @x-autobe-database-schema-property hrm_time_track_project_id
+         * @x-autobe-database-schema-property hrm_time_track_project_id
      */
     project_id?: (string & tags.Format<"uuid">) | undefined;
     /**
-     * @x-autobe-database-schema-property parent_task_id
+         * @x-autobe-database-schema-property parent_task_id
      */
     parent_task_id?: (string & tags.Format<"uuid">) | null | undefined;
     sort_by?: string | undefined;
@@ -114,38 +114,38 @@ export namespace IHrmTimeTrackTask {
    */
   export type ICreate = {
     /**
-     * @x-autobe-database-schema-property hrm_time_track_project_id
+         * @x-autobe-database-schema-property hrm_time_track_project_id
      */
     hrm_time_track_project_id: string & tags.Format<"uuid">;
     /**
-     * @x-autobe-database-schema-property title
+         * @x-autobe-database-schema-property title
      */
     title: string;
     /**
-     * @x-autobe-database-schema-property hrm_time_track_employee_id
+         * @x-autobe-database-schema-property hrm_time_track_employee_id
      */
     hrm_time_track_employee_id?:
       | (string & tags.Format<"uuid">)
       | null
       | undefined;
     /**
-     * @x-autobe-database-schema-property parent_task_id
+         * @x-autobe-database-schema-property parent_task_id
      */
     parent_task_id?: (string & tags.Format<"uuid">) | null | undefined;
     /**
-     * @x-autobe-database-schema-property description
+         * @x-autobe-database-schema-property description
      */
     description?: string | null | undefined;
     /**
-     * @x-autobe-database-schema-property priority
+         * @x-autobe-database-schema-property priority
      */
     priority?: string | undefined;
     /**
-     * @x-autobe-database-schema-property status
+         * @x-autobe-database-schema-property status
      */
     status?: string | undefined;
     /**
-     * @x-autobe-database-schema-property effort_estimate
+         * @x-autobe-database-schema-property effort_estimate
      */
     effort_estimate?: number | null | undefined;
   };
@@ -157,38 +157,38 @@ export namespace IHrmTimeTrackTask {
    */
   export type IUpdate = {
     /**
-     * @x-autobe-database-schema-property title
+         * @x-autobe-database-schema-property title
      */
     title: string & tags.MinLength<1>;
     /**
-     * @x-autobe-database-schema-property description
+         * @x-autobe-database-schema-property description
      */
     description?: string | null | undefined;
     /**
-     * @x-autobe-database-schema-property status
+         * @x-autobe-database-schema-property status
      */
     status?: string | undefined;
     /**
-     * @x-autobe-database-schema-property priority
+         * @x-autobe-database-schema-property priority
      */
     priority?: string | undefined;
     /**
-     * @x-autobe-database-schema-property effort_estimate
+         * @x-autobe-database-schema-property effort_estimate
      */
     effort_estimate?: number | null | undefined;
     /**
-     * @x-autobe-database-schema-property effort_actual
+         * @x-autobe-database-schema-property effort_actual
      */
     effort_actual?: number | null | undefined;
     /**
-     * @x-autobe-database-schema-property hrm_time_track_employee_id
+         * @x-autobe-database-schema-property hrm_time_track_employee_id
      */
     hrm_time_track_employee_id?:
       | (string & tags.Format<"uuid">)
       | null
       | undefined;
     /**
-     * @x-autobe-database-schema-property parent_task_id
+         * @x-autobe-database-schema-property parent_task_id
      */
     parent_task_id?: (string & tags.Format<"uuid">) | null | undefined;
   };
@@ -206,8 +206,9 @@ export namespace IHrmTimeTrackTask {
      *
      * This UUID serves as the primary key for the task record and is used to reference the task in API operations, relationships, and audit logs.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from hrm_time_track_tasks.id. Primary key UUID.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from hrm_time_track_tasks.id.
+         *   Primary key UUID.
      */
     id: string & tags.Format<"uuid">;
 
@@ -216,8 +217,9 @@ export namespace IHrmTimeTrackTask {
      *
      * This required field provides a concise identifier for the task, used in list displays and task references throughout the system.
      *
-     * @x-autobe-database-schema-property title
-     * @x-autobe-specification Direct mapping from hrm_time_track_tasks.title. Required string field.
+         * @x-autobe-database-schema-property title
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_tasks.title. Required string field.
      */
     title: string;
 
@@ -226,8 +228,10 @@ export namespace IHrmTimeTrackTask {
      *
      * Allowed values are low, medium, high, or critical. This field helps teams prioritize work and manage task queues effectively.
      *
-     * @x-autobe-database-schema-property priority
-     * @x-autobe-specification Direct mapping from hrm_time_track_tasks.priority. String field with constrained values (low, medium, high, critical).
+         * @x-autobe-database-schema-property priority
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_tasks.priority. String field with constrained values
+         *   (low, medium, high, critical).
      */
     priority: string;
 
@@ -236,8 +240,10 @@ export namespace IHrmTimeTrackTask {
      *
      * This field tracks task progress through its lifecycle stages, enabling status-based filtering and workflow management in list views and dashboards.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from hrm_time_track_tasks.status. String field tracking task workflow state.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_tasks.status. String field tracking task workflow
+         *   state.
      */
     status: string;
 
@@ -246,8 +252,10 @@ export namespace IHrmTimeTrackTask {
      *
      * This immutable field records the exact date and time when the task was first created in the system, useful for sorting and audit purposes.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from hrm_time_track_tasks.created_at. DateTime field with date-time format.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_tasks.created_at. DateTime field with date-time
+         *   format.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -256,8 +264,10 @@ export namespace IHrmTimeTrackTask {
      *
      * This field is automatically updated whenever the task record is modified, providing visibility into recent changes and activity.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from hrm_time_track_tasks.updated_at. DateTime field with date-time format.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_tasks.updated_at. DateTime field with date-time
+         *   format.
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -266,8 +276,10 @@ export namespace IHrmTimeTrackTask {
      *
      * This nullable field supports soft delete functionality, allowing tasks to be logically removed while preserving data for audit and recovery purposes.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from hrm_time_track_tasks.deleted_at. Nullable DateTime field with date-time format. Null indicates active task.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_tasks.deleted_at. Nullable DateTime field with
+         *   date-time format. Null indicates active task.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
 
@@ -276,8 +288,10 @@ export namespace IHrmTimeTrackTask {
      *
      * This required relationship shows which project the task is associated with. The project provides organizational context and determines access permissions for the task.
      *
-     * @x-autobe-database-schema-property project
-     * @x-autobe-specification Relation via JOIN on hrm_time_track_project_id to hrm_time_track_projects. Returns IHrmTimeTrackProject.ISummary. Required relation.
+         * @x-autobe-database-schema-property project
+         * @x-autobe-specification Relation via JOIN on
+         *   hrm_time_track_project_id to hrm_time_track_projects. Returns
+         *   IHrmTimeTrackProject.ISummary. Required relation.
      */
     project: IHrmTimeTrackProject.ISummary;
 
@@ -286,8 +300,10 @@ export namespace IHrmTimeTrackTask {
      *
      * This optional relationship indicates which team member is responsible for completing the task. Null value means the task is unassigned.
      *
-     * @x-autobe-database-schema-property employee
-     * @x-autobe-specification Relation via LEFT JOIN on hrm_time_track_employee_id to hrm_time_track_employees. Returns IHrmTimeTrackEmployee.ISummary or null. Nullable relation.
+         * @x-autobe-database-schema-property employee
+         * @x-autobe-specification Relation via LEFT JOIN on
+         *   hrm_time_track_employee_id to hrm_time_track_employees. Returns
+         *   IHrmTimeTrackEmployee.ISummary or null. Nullable relation.
      */
     employee: IHrmTimeTrackEmployee.ISummary | null;
 
@@ -296,8 +312,11 @@ export namespace IHrmTimeTrackTask {
      *
      * This optional self-referencing relationship enables task breakdown structures with one level of nesting. Top-level tasks have no parent (null), while subtasks reference their parent task.
      *
-     * @x-autobe-database-schema-property parentTask
-     * @x-autobe-specification Self-referencing relation via LEFT JOIN on parent_task_id to hrm_time_track_tasks. Returns IHrmTimeTrackTask.ISummary or null. Nullable relation. Only one level of nesting supported.
+         * @x-autobe-database-schema-property parentTask
+         * @x-autobe-specification Self-referencing relation via LEFT JOIN on
+         *   parent_task_id to hrm_time_track_tasks. Returns
+         *   IHrmTimeTrackTask.ISummary or null. Nullable relation. Only one
+         *   level of nesting supported.
      */
     parentTask: IHrmTimeTrackTask.ISummary | null;
   };

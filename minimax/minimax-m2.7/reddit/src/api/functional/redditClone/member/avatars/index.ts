@@ -22,7 +22,8 @@ import { IRedditCloneFileAssociation } from "../../../../structures/IRedditClone
  * @param props.body Avatar image file data and metadata for upload
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Handle avatar image upload for the authenticated user's profile.
+ * @x-autobe-specification Handle avatar image upload for the authenticated
+ *   user's profile.
  *
  * 1. Authentication: Extract authenticated member ID from session/token. Return 401 if not authenticated.
  *
@@ -153,7 +154,8 @@ export namespace create {
  * @param props.body Search criteria including user ID filter, file status filter, MIME type filter, and pagination parameters
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query the reddit_clone_file_associations table filtered by target_type='user' to identify avatar associations.
+ * @x-autobe-specification Query the reddit_clone_file_associations table
+ *   filtered by target_type='user' to identify avatar associations.
  *
  * Join with reddit_clone_files table on reddit_clone_file_id to retrieve file metadata including original_filename, stored_filename, mime_type, file_size, storage_path, status, and created_at.
  *

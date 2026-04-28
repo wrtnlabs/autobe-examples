@@ -26,7 +26,9 @@ import { IHrmTimeTrackingReportTaskFilter } from "../../../../structures/IHrmTim
  * @param props.body Task filter selection to add to the saved report
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Authorize the caller using report viewing permission evaluated in the currently selected organization context. Do not infer access from permissions granted in any other organization.
+ * @x-autobe-specification Authorize the caller using report viewing permission
+ *   evaluated in the currently selected organization context. Do not infer
+ *   access from permissions granted in any other organization.
  *
  * Load the parent row from `hrm_time_tracking_reports` by `id = reportId` and `deleted_at IS NULL`. If the report does not exist, return a not-found error. Verify that `hrm_time_tracking_organization_id` of the report matches the caller's current organization context; otherwise reject the request as out-of-scope.
  *
@@ -139,7 +141,10 @@ export namespace create {
  * @param props.body Replacement set of task filters for the saved report
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Authorize the caller against the current organization context before any report configuration lookup. Require report viewing permission in the selected organization; if permission is missing, reject the request without exposing whether the report exists.
+ * @x-autobe-specification Authorize the caller against the current organization
+ *   context before any report configuration lookup. Require report viewing
+ *   permission in the selected organization; if permission is missing, reject
+ *   the request without exposing whether the report exists.
  *
  * Load the target row from `hrm_time_tracking_reports` by `id = reportId` and `deleted_at IS NULL`. Verify that its `hrm_time_tracking_organization_id` matches the caller's current organization context. If no matching report exists in the active organization, return a not-found or access-denied outcome consistent with the service's security policy.
  *
@@ -250,16 +255,30 @@ export namespace updateTaskFilters {
  * @param props.taskFilterId Target task filter selection's ID
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification 1. Authenticate the caller and resolve the currently selected organization context.
- * 2. Authorize the request by checking that the caller has report viewing permission in the current organization before exposing report filters or report metadata.
- * 3. Query `hrm_time_tracking_reports` by `id = reportId`, `hrm_time_tracking_organization_id = currentOrganizationId`, and an active-record condition excluding rows whose `deleted_at` is not null.
- * 4. If no matching report exists in the current organization context, reject the request as not found or inaccessible without disclosing cross-organization existence details.
- * 5. Query `hrm_time_tracking_report_task_filters` by `id = taskFilterId`, `hrm_time_tracking_report_id = reportId`, and an active-record condition excluding rows whose `deleted_at` is not null`.
- * 6. If the child row is not found, reject the request because the specified task filter does not belong to the specified saved report or is no longer active.
- * 7. Load any fields required by the `IHrmTimeTrackingReportTaskFilter` response contract. If the DTO includes related task details, join the referenced task through `hrm_time_tracking_task_id` using a read-only lookup. Do not include unrelated report filters.
- * 8. Return the resolved child resource as a single JSON object.
- * 9. Error handling must cover: missing permission, missing current-organization report, mismatched parent-child relationship, and logically removed rows.
- * 10. No mutation, transaction with writes, or report recalculation is required for this endpoint; it is a read-only detail retrieval.
+ * @x-autobe-specification 1. Authenticate the caller and resolve the currently
+ *   selected organization context. 2. Authorize the request by checking that
+ *   the caller has report viewing permission in the current organization before
+ *   exposing report filters or report metadata. 3. Query
+ *   `hrm_time_tracking_reports` by `id = reportId`,
+ *   `hrm_time_tracking_organization_id = currentOrganizationId`, and an
+ *   active-record condition excluding rows whose `deleted_at` is not null. 4.
+ *   If no matching report exists in the current organization context, reject
+ *   the request as not found or inaccessible without disclosing
+ *   cross-organization existence details. 5. Query
+ *   `hrm_time_tracking_report_task_filters` by `id = taskFilterId`,
+ *   `hrm_time_tracking_report_id = reportId`, and an active-record condition
+ *   excluding rows whose `deleted_at` is not null`. 6. If the child row is not
+ *   found, reject the request because the specified task filter does not belong
+ *   to the specified saved report or is no longer active. 7. Load any fields
+ *   required by the `IHrmTimeTrackingReportTaskFilter` response contract. If
+ *   the DTO includes related task details, join the referenced task through
+ *   `hrm_time_tracking_task_id` using a read-only lookup. Do not include
+ *   unrelated report filters. 8. Return the resolved child resource as a single
+ *   JSON object. 9. Error handling must cover: missing permission, missing
+ *   current-organization report, mismatched parent-child relationship, and
+ *   logically removed rows. 10. No mutation, transaction with writes, or report
+ *   recalculation is required for this endpoint; it is a read-only detail
+ *   retrieval.
  * @path /hrmTimeTracking/reports/:reportId/taskFilters/:taskFilterId
  * @accessor api.functional.hrmTimeTracking.reports.taskFilters.at
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -356,7 +375,9 @@ export namespace at {
  * @param props.body Replacement values for the task filter
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Implement this operation as an authenticated organization-scoped update on the hrm_time_tracking_report_task_filters subsidiary resource.
+ * @x-autobe-specification Implement this operation as an authenticated
+ *   organization-scoped update on the hrm_time_tracking_report_task_filters
+ *   subsidiary resource.
  *
  * 1. Resolve the caller's currently selected organization context and verify that the caller has report viewing permission in that organization before any filter data is exposed or mutated.
  * 2. Load the parent hrm_time_tracking_reports row by id = reportId and deleted_at IS NULL. Reject if not found.
@@ -476,7 +497,9 @@ export namespace update {
  * @param props.taskFilterId Identifier of the task filter selection belonging to the specified report.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Implement this operation as a hard delete of one hrm_time_tracking_report_task_filters row scoped to its owning hrm_time_tracking_reports record.
+ * @x-autobe-specification Implement this operation as a hard delete of one
+ *   hrm_time_tracking_report_task_filters row scoped to its owning
+ *   hrm_time_tracking_reports record.
  *
  * 1. Resolve the caller's current organization context and verify the caller has report viewing permission for that organization. If the caller lacks permission, reject the request before querying report data.
  * 2. Load the parent hrm_time_tracking_reports row by reportId and verify its hrm_time_tracking_organization_id matches the caller's current organization. If no matching report exists in scope, return a not-found or access-denied style failure according to service conventions.

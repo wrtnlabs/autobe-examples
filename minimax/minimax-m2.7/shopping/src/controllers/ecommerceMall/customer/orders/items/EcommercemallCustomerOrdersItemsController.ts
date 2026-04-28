@@ -25,9 +25,12 @@ export class EcommercemallCustomerOrdersItemsController {
    *
    * @param connection
    * @param orderId Unique identifier of the order (UUID format). Must belong to the authenticated customer.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Query the ecommerce_mall_orders table to verify the order exists and belongs to the authenticated customer. If the order is not found or ownership check fails, return 404 or 403 error accordingly.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Query the ecommerce_mall_orders table to verify
+     *   the order exists and belongs to the authenticated customer. If the
+     *   order is not found or ownership check fails, return 404 or 403 error
+     *   accordingly.
    *
    * Query the ecommerce_mall_order_items table with the validated order_id to retrieve all associated order items. Join with ecommerce_mall_product_snapshots to include product details (name, description, option key-value pairs) at purchase time. Join with ecommerce_mall_seller_profile_snapshots to include seller shop details (shop name, logo URL) at purchase time.
    *
@@ -68,9 +71,11 @@ export class EcommercemallCustomerOrdersItemsController {
    * @param connection
    * @param orderId Unique identifier of the parent order (UUID format). Must belong to the authenticated customer.
    * @param itemId Unique identifier of the order item to retrieve (UUID format). Must belong to the specified order.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Query the ecommerce_mall_order_items table filtering by id equal to itemId and ecommerce_mall_order_id equal to orderId.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Query the ecommerce_mall_order_items table
+     *   filtering by id equal to itemId and ecommerce_mall_order_id equal to
+     *   orderId.
    *
    * Join with ecommerce_mall_product_snapshots to retrieve the product state at purchase time (name, description, base_price, category_name).
    *

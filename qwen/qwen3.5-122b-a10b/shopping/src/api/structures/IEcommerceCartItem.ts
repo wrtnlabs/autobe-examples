@@ -28,8 +28,9 @@ export type IEcommerceCartItem = {
    *
    * Auto-generated UUID assigned when the cart item is created. Used as the primary key for all cart item operations including retrieval, updates, and deletion.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_cart_items.id. Auto-generated UUID on creation.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from ecommerce_cart_items.id.
+     *   Auto-generated UUID on creation.
    */
   id: string & tags.Format<"uuid">;
 
@@ -38,8 +39,9 @@ export type IEcommerceCartItem = {
    *
    * Must be a positive integer with a minimum value of 1. When adding the same variant to an existing cart, this value is incremented rather than creating a duplicate row. Setting quantity to 0 or less will soft-delete the cart item.
    *
-   * @x-autobe-database-schema-property quantity
-   * @x-autobe-specification Direct mapping from ecommerce_cart_items.quantity. Must be positive integer (minimum 1).
+     * @x-autobe-database-schema-property quantity
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_cart_items.quantity. Must be positive integer (minimum 1).
    */
   quantity: number & tags.Type<"int32"> & tags.Minimum<1>;
 
@@ -48,8 +50,11 @@ export type IEcommerceCartItem = {
    *
    * Contains the SKU code, option values, price, and parent product information for the variant selected by the customer. The variant data is joined from the product variants table and returned as a summary object to avoid additional API calls.
    *
-   * @x-autobe-database-schema-property productVariant
-   * @x-autobe-specification JOIN from ecommerce_cart_items.ecommerce_product_variant_id to ecommerce_product_variants.id. Returns IEcommerceProductVariant.ISummary.
+     * @x-autobe-database-schema-property productVariant
+     * @x-autobe-specification JOIN from
+     *   ecommerce_cart_items.ecommerce_product_variant_id to
+     *   ecommerce_product_variants.id. Returns
+     *   IEcommerceProductVariant.ISummary.
    */
   productVariant: IEcommerceProductVariant.ISummary;
 
@@ -58,7 +63,9 @@ export type IEcommerceCartItem = {
    *
    * Computed in real-time by summing all inventory records for the associated product variant. Returns `true` if the variant has available stock (quantity > 0), `false` if out of stock. This status is used to prevent adding out-of-stock items to the cart and to display availability warnings to customers.
    *
-   * @x-autobe-specification Computed from SUM(ecommerce_inventory_records.quantity) for the variant's product_variant_id. Returns true if total stock > 0, false otherwise.
+     * @x-autobe-specification Computed from
+     *   SUM(ecommerce_inventory_records.quantity) for the variant's
+     *   product_variant_id. Returns true if total stock > 0, false otherwise.
    */
   availabilityStatus: boolean;
 
@@ -67,8 +74,9 @@ export type IEcommerceCartItem = {
    *
    * Automatically set by the database when the cart item record is created. Cannot be modified after creation. Used for audit purposes and to track when items were added to the cart.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_cart_items.created_at. Auto-set on record creation.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_cart_items.created_at. Auto-set on record creation.
    */
   createdAt: string & tags.Format<"date-time">;
 
@@ -77,8 +85,9 @@ export type IEcommerceCartItem = {
    *
    * Automatically updated by the database whenever the cart item's quantity is changed. Used to track the most recent modification time for audit and debugging purposes.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from ecommerce_cart_items.updated_at. Auto-updated on quantity changes.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_cart_items.updated_at. Auto-updated on quantity changes.
    */
   updatedAt: string & tags.Format<"date-time">;
 
@@ -87,8 +96,9 @@ export type IEcommerceCartItem = {
    *
    * Null while the cart item is active in the cart. Set to the current timestamp when the item is removed from the cart via soft delete. Allows for recovery of accidentally deleted cart items and maintains historical records.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from ecommerce_cart_items.deleted_at. Null while active, set on soft delete.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_cart_items.deleted_at. Null while active, set on soft delete.
    */
   deletedAt: (string & tags.Format<"date-time">) | null;
 };
@@ -133,8 +143,11 @@ export namespace IEcommerceCartItem {
      *
      * If this variant already exists in the cart, the system will increment the quantity rather than creating a duplicate entry. Each variant can appear only once per cart.
      *
-     * @x-autobe-database-schema-property ecommerce_product_variant_id
-     * @x-autobe-specification Direct mapping from ecommerce_cart_items.ecommerce_product_variant_id. Foreign key referencing ecommerce_product_variants.id. Must be a valid UUID of an existing, non-deleted product variant with available stock.
+         * @x-autobe-database-schema-property ecommerce_product_variant_id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_cart_items.ecommerce_product_variant_id. Foreign key
+         *   referencing ecommerce_product_variants.id. Must be a valid UUID of
+         *   an existing, non-deleted product variant with available stock.
      */
     ecommerce_product_variant_id: string & tags.Format<"uuid">;
 
@@ -155,8 +168,11 @@ export namespace IEcommerceCartItem {
      *
      * Setting quantity to 0 via update endpoints removes the item from the cart, but this Create endpoint requires quantity >= 1.
      *
-     * @x-autobe-database-schema-property quantity
-     * @x-autobe-specification Direct mapping from ecommerce_cart_items.quantity. Integer field representing the number of units. Minimum value is 1. Maximum value depends on available stock.
+         * @x-autobe-database-schema-property quantity
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_cart_items.quantity. Integer field representing the
+         *   number of units. Minimum value is 1. Maximum value depends on
+         *   available stock.
      */
     quantity: number & tags.Type<"int32"> & tags.Minimum<1>;
   };
@@ -194,8 +210,11 @@ export namespace IEcommerceCartItem {
      * - The product variant must have sufficient stock availability
      * - The cart item must exist and be associated with the authenticated customer's cart
      *
-     * @x-autobe-database-schema-property quantity
-     * @x-autobe-specification Direct mapping from ecommerce_cart_items.quantity. Represents the desired quantity of this product variant in the cart. Setting to zero or less triggers soft deletion of the cart item.
+         * @x-autobe-database-schema-property quantity
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_cart_items.quantity. Represents the desired quantity of
+         *   this product variant in the cart. Setting to zero or less triggers
+         *   soft deletion of the cart item.
      */
     quantity?: (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };
@@ -228,8 +247,9 @@ export namespace IEcommerceCartItem {
      *
      * UUID v4 string format (e.g., "550e8400-e29b-41d4-a716-446655440000").
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_cart_items.id. Primary key, UUID format.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from ecommerce_cart_items.id.
+         *   Primary key, UUID format.
      */
     id: string & tags.Format<"uuid">;
 
@@ -244,8 +264,10 @@ export namespace IEcommerceCartItem {
      * - Setting quantity to zero or less via update triggers soft deletion
      * - When the same variant is added again, this value is incremented rather than creating a duplicate row
      *
-     * @x-autobe-database-schema-property quantity
-     * @x-autobe-specification Direct mapping from ecommerce_cart_items.quantity. Integer, must be positive for active items.
+         * @x-autobe-database-schema-property quantity
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_cart_items.quantity. Integer, must be positive for active
+         *   items.
      */
     quantity: number & tags.Type<"int32">;
 
@@ -258,8 +280,10 @@ export namespace IEcommerceCartItem {
      *
      * ISO 8601 date-time format with timezone (e.g., "2026-04-05T15:25:50.752Z").
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from ecommerce_cart_items.created_at. Timestamp with timezone (timestamptz).
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_cart_items.created_at. Timestamp with timezone
+         *   (timestamptz).
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -272,8 +296,10 @@ export namespace IEcommerceCartItem {
      *
      * ISO 8601 date-time format with timezone (e.g., "2026-04-05T15:25:50.752Z").
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from ecommerce_cart_items.updated_at. Timestamp with timezone (timestamptz).
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_cart_items.updated_at. Timestamp with timezone
+         *   (timestamptz).
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -293,8 +319,10 @@ export namespace IEcommerceCartItem {
      *
      * ISO 8601 date-time format with timezone (e.g., "2026-04-05T15:25:50.752Z"), or null for active items.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from ecommerce_cart_items.deleted_at. Nullable timestamp with timezone. Null means active, non-null means soft-deleted.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_cart_items.deleted_at. Nullable timestamp with timezone.
+         *   Null means active, non-null means soft-deleted.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
 
@@ -317,8 +345,11 @@ export namespace IEcommerceCartItem {
      *
      * The product variant represents a specific combination of options for a product. For example, a "T-Shirt" product might have variants for "Red/Large", "Blue/Medium", etc. Each variant has its own SKU code, price (optional override), and stock tracking.
      *
-     * @x-autobe-database-schema-property productVariant
-     * @x-autobe-specification Join from ecommerce_cart_items.ecommerce_product_variant_id to ecommerce_product_variants.id. Returns IEcommerceProductVariant.ISummary with SKU, options, and price.
+         * @x-autobe-database-schema-property productVariant
+         * @x-autobe-specification Join from
+         *   ecommerce_cart_items.ecommerce_product_variant_id to
+         *   ecommerce_product_variants.id. Returns
+         *   IEcommerceProductVariant.ISummary with SKU, options, and price.
      */
     productVariant: IEcommerceProductVariant.ISummary;
   };

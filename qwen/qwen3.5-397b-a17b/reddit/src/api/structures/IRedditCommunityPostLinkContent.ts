@@ -14,8 +14,10 @@ export type IRedditCommunityPostLinkContent = {
    *
    * This is the full URL pointing to the external content (article, video, image, etc.) that the user wants to share. Must be a valid HTTP or HTTPS URL. The backend validates the URL format and extracts the domain name for the domain field.
    *
-   * @x-autobe-database-schema-property url
-   * @x-autobe-specification Direct mapping from reddit_community_post_links.url. Must be valid URI format. Backend validates URL format on creation and update.
+     * @x-autobe-database-schema-property url
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_post_links.url. Must be valid URI format. Backend
+     *   validates URL format on creation and update.
    */
   url: string & tags.Format<"uri">;
 
@@ -24,8 +26,10 @@ export type IRedditCommunityPostLinkContent = {
    *
    * This field contains just the domain portion of the URL (e.g., 'youtube.com', 'github.com', 'nytimes.com'). It is automatically extracted by the backend from the url field during post creation and update. Used for display in feeds and post listings to help users quickly identify the source of the linked content.
    *
-   * @x-autobe-database-schema-property domain
-   * @x-autobe-specification Direct mapping from reddit_community_post_links.domain. Backend automatically extracts this from the url field during post creation and update operations.
+     * @x-autobe-database-schema-property domain
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_post_links.domain. Backend automatically extracts this
+     *   from the url field during post creation and update operations.
    */
   domain: string;
 };

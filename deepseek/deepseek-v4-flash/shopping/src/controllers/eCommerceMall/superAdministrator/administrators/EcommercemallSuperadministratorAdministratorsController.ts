@@ -25,9 +25,10 @@ export class EcommercemallSuperadministratorAdministratorsController {
    *
    * @param connection
    * @param body Search criteria for filtering and paginating the administrator list. Supports email partial match, grade filtering (regular or super), date range on created_at, pagination parameters (page, limit), and sorting configuration (field and direction).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor superAdministrator
-   * @x-autobe-specification Query e_commerce_mall_administrators table with pagination and filtering.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor superAdministrator
+     * @x-autobe-specification Query e_commerce_mall_administrators table with
+     *   pagination and filtering.
    *
    * 1. Apply search filters:
    *    - email: partial match (LIKE/ILIKE) on the email field
@@ -76,9 +77,10 @@ export class EcommercemallSuperadministratorAdministratorsController {
    *
    * @param connection
    * @param administratorId Unique identifier (UUID) of the administrator account to retrieve.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor superAdministrator
-   * @x-autobe-specification Query the e_commerce_mall_administrators table by the primary key `id` matching the provided administratorId parameter.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor superAdministrator
+     * @x-autobe-specification Query the e_commerce_mall_administrators table by
+     *   the primary key `id` matching the provided administratorId parameter.
    *
    * - Use `findFirst` or `findUnique` with the UUID id field.
    * - Exclude the `password_hash` field from the response to prevent credential exposure.
@@ -121,9 +123,11 @@ export class EcommercemallSuperadministratorAdministratorsController {
    *
    * @param connection
    * @param administratorId The UUID of the regular administrator to promote to super administrator status.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor superAdministrator
-   * @x-autobe-specification Validate the authenticated caller is a super administrator by checking the session token. If not, reject with 403 Forbidden.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor superAdministrator
+     * @x-autobe-specification Validate the authenticated caller is a super
+     *   administrator by checking the session token. If not, reject with 403
+     *   Forbidden.
    *
    * Look up the target e_commerce_mall_administrator by the {administratorId} path parameter (UUID). If not found, reject with 404 Not Found.
    *
@@ -185,9 +189,10 @@ export class EcommercemallSuperadministratorAdministratorsController {
    *
    * @param connection
    * @param administratorId UUID of the administrator to demote from super administrator to regular administrator grade.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor superAdministrator
-   * @x-autobe-specification Validate that the authenticated actor is a super administrator (check e_commerce_mall_super_administrators table).
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor superAdministrator
+     * @x-autobe-specification Validate that the authenticated actor is a super
+     *   administrator (check e_commerce_mall_super_administrators table).
    *
    * Validate the target administrator exists by querying e_commerce_mall_administrators with the given administratorId. Return 404 if not found.
    *

@@ -18,7 +18,9 @@ export namespace IHrmPlatformProjectBudgetReport {
      *
      * Format: ISO 8601 date-time (e.g., 2024-01-01T00:00:00Z). Optional - if omitted, no lower date bound is applied.
      *
-     * @x-autobe-specification Filters timelogs where date >= date_from (inclusive). Maps to timelog.date column comparison. ISO 8601 date-time format.
+         * @x-autobe-specification Filters timelogs where date >= date_from
+         *   (inclusive). Maps to timelog.date column comparison. ISO 8601
+         *   date-time format.
      */
     date_from?: (string & tags.Format<"date-time">) | undefined;
 
@@ -29,7 +31,9 @@ export namespace IHrmPlatformProjectBudgetReport {
      *
      * Format: ISO 8601 date-time (e.g., 2024-12-31T23:59:59Z). Optional - if omitted, no upper date bound is applied.
      *
-     * @x-autobe-specification Filters timelogs where date <= date_to (inclusive). Maps to timelog.date column comparison. ISO 8601 date-time format.
+         * @x-autobe-specification Filters timelogs where date <= date_to
+         *   (inclusive). Maps to timelog.date column comparison. ISO 8601
+         *   date-time format.
      */
     date_to?: (string & tags.Format<"date-time">) | undefined;
 
@@ -40,7 +44,9 @@ export namespace IHrmPlatformProjectBudgetReport {
      *
      * Format: UUID string. Optional - if omitted, all projects with budget hours are included.
      *
-     * @x-autobe-specification Filters by specific project UUID. Maps to hrm_platform_projects.id column. When provided, only timelogs for this project are included.
+         * @x-autobe-specification Filters by specific project UUID. Maps to
+         *   hrm_platform_projects.id column. When provided, only timelogs for
+         *   this project are included.
      */
     project_id?: (string & tags.Format<"uuid">) | undefined;
 
@@ -51,7 +57,9 @@ export namespace IHrmPlatformProjectBudgetReport {
      *
      * Allowed values: active, archived, completed. Optional - if omitted, projects of all statuses are included.
      *
-     * @x-autobe-specification Filters projects by status enum. Maps to hrm_platform_projects.status column. Accepts: active, archived, completed.
+         * @x-autobe-specification Filters projects by status enum. Maps to
+         *   hrm_platform_projects.status column. Accepts: active, archived,
+         *   completed.
      */
     status?: "active" | "archived" | "completed" | undefined;
 
@@ -62,7 +70,10 @@ export namespace IHrmPlatformProjectBudgetReport {
      *
      * Type: boolean. Optional - if omitted, both billable and non-billable timelogs are included.
      *
-     * @x-autobe-specification Filters timelogs by billable flag. Maps to hrm_platform_timelogs.billable column. When true, includes only client-billable work. When false, includes only internal non-billable work.
+         * @x-autobe-specification Filters timelogs by billable flag. Maps to
+         *   hrm_platform_timelogs.billable column. When true, includes only
+         *   client-billable work. When false, includes only internal
+         *   non-billable work.
      */
     billable?: boolean | undefined;
 
@@ -73,7 +84,9 @@ export namespace IHrmPlatformProjectBudgetReport {
      *
      * Type: integer (1-indexed). Optional - defaults to page 1 if omitted or null. Requesting a page beyond the available range returns an empty data array with valid pagination metadata.
      *
-     * @x-autobe-specification Pagination parameter for result paging. 1-indexed page number. Defaults to 1 if not provided. Not mapped to any database column.
+         * @x-autobe-specification Pagination parameter for result paging.
+         *   1-indexed page number. Defaults to 1 if not provided. Not mapped to
+         *   any database column.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
 
@@ -84,7 +97,9 @@ export namespace IHrmPlatformProjectBudgetReport {
      *
      * Type: integer. Optional - defaults to 100 records per page if omitted or null. The actual number of records on the last page may be less than this value.
      *
-     * @x-autobe-specification Pagination parameter controlling page size. Maximum records per page. Defaults to 100 if not provided. Not mapped to any database column.
+         * @x-autobe-specification Pagination parameter controlling page size.
+         *   Maximum records per page. Defaults to 100 if not provided. Not
+         *   mapped to any database column.
      */
     limit?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };
@@ -102,7 +117,11 @@ export namespace IHrmPlatformProjectBudgetReport {
      *
      * Contains essential project identification including the project ID, name, color code for visual distinction, and current status. This reference allows users to identify which project the budget metrics belong to in the report.
      *
-     * @x-autobe-specification Join from hrm_platform_projects via timelog.hrm_platform_project_id. Returns IHrmPlatformProject.ISummary with id, name, color, status, and timestamps. Data source: hrm_platform_projects table joined through timelog foreign key.
+         * @x-autobe-specification Join from hrm_platform_projects via
+         *   timelog.hrm_platform_project_id. Returns
+         *   IHrmPlatformProject.ISummary with id, name, color, status, and
+         *   timestamps. Data source: hrm_platform_projects table joined through
+         *   timelog foreign key.
      */
     project: IHrmPlatformProject.ISummary;
 
@@ -111,7 +130,10 @@ export namespace IHrmPlatformProjectBudgetReport {
      *
      * This value comes from the project's budget_hours field and represents the planned capacity for the project. Used as the baseline for calculating budget utilization. Only projects with defined budget hours appear in this report.
      *
-     * @x-autobe-specification Direct value from hrm_platform_projects.budget_hours column. Nullable in DB but filtered to non-null in this report. Represents the total estimated/planned hours for the project.
+         * @x-autobe-specification Direct value from
+         *   hrm_platform_projects.budget_hours column. Nullable in DB but
+         *   filtered to non-null in this report. Represents the total
+         *   estimated/planned hours for the project.
      */
     budget_hours: number;
 
@@ -120,7 +142,11 @@ export namespace IHrmPlatformProjectBudgetReport {
      *
      * Calculated by summing the duration of all timelog entries associated with this project within the specified date range. Represents the real work effort expended. Used to compare against budgeted hours and calculate remaining capacity.
      *
-     * @x-autobe-specification Computed by SUM(hrm_platform_timelogs.duration_minutes) / 60 from all timelogs associated with the project within the requested date range. Filters: timelog.deleted_at IS NULL. Aggregation groups by project_id.
+         * @x-autobe-specification Computed by
+         *   SUM(hrm_platform_timelogs.duration_minutes) / 60 from all timelogs
+         *   associated with the project within the requested date range.
+         *   Filters: timelog.deleted_at IS NULL. Aggregation groups by
+         *   project_id.
      */
     actual_hours: number;
 
@@ -129,7 +155,9 @@ export namespace IHrmPlatformProjectBudgetReport {
      *
      * Calculated by subtracting actual_hours from budget_hours. Positive values indicate remaining capacity, while negative values indicate the project has exceeded its budget. Helps identify projects at risk of overruns.
      *
-     * @x-autobe-specification Computed as budget_hours - actual_hours. Can be negative if actual hours exceed budget. Represents the remaining budget capacity.
+         * @x-autobe-specification Computed as budget_hours - actual_hours. Can
+         *   be negative if actual hours exceed budget. Represents the remaining
+         *   budget capacity.
      */
     remaining_hours: number;
 
@@ -138,7 +166,9 @@ export namespace IHrmPlatformProjectBudgetReport {
      *
      * Calculated as (actual_hours divided by budget_hours) multiplied by 100. A value of 100% means the project has used its entire budget. Values over 100% indicate budget overrun. Results are sorted by this field descending to highlight high-utilization projects.
      *
-     * @x-autobe-specification Computed as (actual_hours / budget_hours) * 100. Returns percentage value. Can exceed 100% if actual hours exceed budget. Used for sorting results by utilization descending.
+         * @x-autobe-specification Computed as (actual_hours / budget_hours) *
+         *   100. Returns percentage value. Can exceed 100% if actual hours
+         *   exceed budget. Used for sorting results by utilization descending.
      */
     utilization_percentage: number;
   };

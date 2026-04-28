@@ -27,7 +27,9 @@ import { IShoppingMallShipmentConfirmation } from "../../../../structures/IShopp
  * @param props.body Shipment confirmation submission payload containing the target shipment id, confirmation type, confirmation timestamp, and optional tracking information.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Persist a new shopping_mall_shipment_confirmations row and trigger shipment/order-item status transitions according to the submitted confirmation_type.
+ * @x-autobe-specification Persist a new shopping_mall_shipment_confirmations
+ *   row and trigger shipment/order-item status transitions according to the
+ *   submitted confirmation_type.
  *
  * Implementation steps:
  * 1) Validate request body shape:
@@ -161,9 +163,10 @@ export namespace create {
  * @param props.body Shipment confirmation submission payload identifying the target shipment and the confirmation details (shipped/delivered) to apply for fulfillment transitions.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification 1) Validate request payload.
- * - Require: shoppingMallShipmentConfirmationRequest must include shoppingMallShipmentId (UUID) and confirmationType (string) and confirmedAt (date-time).
- * - Optional: trackingUrl, trackingNumber, carrierName, note.
+ * @x-autobe-specification 1) Validate request payload. - Require:
+ *   shoppingMallShipmentConfirmationRequest must include shoppingMallShipmentId
+ *   (UUID) and confirmationType (string) and confirmedAt (date-time). -
+ *   Optional: trackingUrl, trackingNumber, carrierName, note.
  *
  * 2) Authorization.
  * - Resolve target shipment by shopping_mall_shipment_confirmations/shopping_mall_shipments using shopping_mall_shipment_id.
@@ -284,17 +287,23 @@ export namespace submitShipmentConfirmation {
  * @param props.shipmentConfirmationId Unique identifier of the shipment confirmation record to retrieve.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implementation steps:
- * 1) Parse shipmentConfirmationId from path as UUID.
- * 2) Query shopping_mall_shipment_confirmations by id.
- *    - Select all columns required by the response DTO (at minimum: id, shopping_mall_shipment_id, confirmation_type, confirmed_at, tracking_url, tracking_number, carrier_name, note, created_at, updated_at).
- *    - Apply retrieval rules: if shopping_mall_shipment_confirmations.deleted_at is not null, treat as not found.
- * 3) Authorization/access check:
- *    - Load the referenced shipment (shopping_mall_shipments) using shopping_mall_shipment_confirmations.shopping_mall_shipment_id.
- *    - Determine caller actor (guest/member/admin) from the request context and validate whether they can view this shipment confirmation.
- *    - The authorization rule must rely on the relationship between the shipment and the caller (e.g., customer ownership through shopping_mall_orders.shopping_customer_id, or seller context via seller_snapshot_id), using only fields available in schema and loaded joins.
- * 4) If not found or not viewable, return an error response.
- * 5) Map the DB row to IShoppingMallShipmentConfirmation response DTO and return JSON.
+ * @x-autobe-specification Implementation steps: 1) Parse shipmentConfirmationId
+ *   from path as UUID. 2) Query shopping_mall_shipment_confirmations by id. -
+ *   Select all columns required by the response DTO (at minimum: id,
+ *   shopping_mall_shipment_id, confirmation_type, confirmed_at, tracking_url,
+ *   tracking_number, carrier_name, note, created_at, updated_at). - Apply
+ *   retrieval rules: if shopping_mall_shipment_confirmations.deleted_at is not
+ *   null, treat as not found. 3) Authorization/access check: - Load the
+ *   referenced shipment (shopping_mall_shipments) using
+ *   shopping_mall_shipment_confirmations.shopping_mall_shipment_id. - Determine
+ *   caller actor (guest/member/admin) from the request context and validate
+ *   whether they can view this shipment confirmation. - The authorization rule
+ *   must rely on the relationship between the shipment and the caller (e.g.,
+ *   customer ownership through shopping_mall_orders.shopping_customer_id, or
+ *   seller context via seller_snapshot_id), using only fields available in
+ *   schema and loaded joins. 4) If not found or not viewable, return an error
+ *   response. 5) Map the DB row to IShoppingMallShipmentConfirmation response
+ *   DTO and return JSON.
  *
  * Edge cases:
  * - Repeated reads of delivered shipments should continue to return the same confirmation data.
@@ -542,19 +551,20 @@ export namespace update {
  * @param props.shipmentConfirmationId Unique identifier of the shipment confirmation record to remove.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification RealizeAgent steps:
- * 1) Parse path parameter shipmentConfirmationId (UUID).
- * 2) In a transaction (read + delete consistency), load shopping_mall_shipment_confirmations by id.
- *    - Query: SELECT * FROM shopping_mall_shipment_confirmations WHERE id = :id AND (deleted_at IS NULL OR no filter if hard-delete is expected by system design).
- *    - If not found: return not-found error.
- * 3) Fetch the related shipment (shopping_mall_shipments) by shopping_mall_shipment_id to support authorization.
- * 4) Authorization check:
- *    - Determine the authenticated actor’s permissions and the shipment’s seller ownership context.
- *    - If not permitted: return forbidden/unauthorized.
- * 5) Permanently remove the confirmation row:
- *    - Execute: DELETE FROM shopping_mall_shipment_confirmations WHERE id = :id.
- * 6) Commit transaction.
- * 7) Return 204-like semantics if supported by the framework; otherwise return an empty JSON body with HTTP 200/204.
+ * @x-autobe-specification RealizeAgent steps: 1) Parse path parameter
+ *   shipmentConfirmationId (UUID). 2) In a transaction (read + delete
+ *   consistency), load shopping_mall_shipment_confirmations by id. - Query:
+ *   SELECT * FROM shopping_mall_shipment_confirmations WHERE id = :id AND
+ *   (deleted_at IS NULL OR no filter if hard-delete is expected by system
+ *   design). - If not found: return not-found error. 3) Fetch the related
+ *   shipment (shopping_mall_shipments) by shopping_mall_shipment_id to support
+ *   authorization. 4) Authorization check: - Determine the authenticated
+ *   actor’s permissions and the shipment’s seller ownership context. - If not
+ *   permitted: return forbidden/unauthorized. 5) Permanently remove the
+ *   confirmation row: - Execute: DELETE FROM
+ *   shopping_mall_shipment_confirmations WHERE id = :id. 6) Commit transaction.
+ *   7) Return 204-like semantics if supported by the framework; otherwise
+ *   return an empty JSON body with HTTP 200/204.
  *
  * Edge cases:
  * - If the shipment is in a state where confirmations are expected, the service should either allow deletion only when domain rules permit, or rely on higher-level workflow checks. This spec does not implement those domain rules unless they are enforced elsewhere; at minimum, ensure referential integrity and authorization.

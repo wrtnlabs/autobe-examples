@@ -21,8 +21,9 @@ export type IECommerceMallRefundRequest = {
    *
    * Automatically generated when the refund request is created. Used as a stable reference for API operations and is the path parameter for individual refund request endpoints.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from e_commerce_mall_refund_requests.id. Primary key, UUID format.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_refund_requests.id. Primary key, UUID format.
    */
   id: string & tags.Format<"uuid">;
 
@@ -33,8 +34,12 @@ export type IECommerceMallRefundRequest = {
    *
    * This relationship links the refund request to the specific purchased product variant that the customer is seeking a refund for.
    *
-   * @x-autobe-database-schema-property orderItem
-   * @x-autobe-specification Join via e_commerce_mall_order_item_id FK to e_commerce_mall_order_items. Returns IECommerceMallOrderItem.ISummary, which contains flattened snapshot data (product_name, variant_sku, variant_options, shop_name), quantity, unit_price, subtotal, status, and references to the parent order and product variant.
+     * @x-autobe-database-schema-property orderItem
+     * @x-autobe-specification Join via e_commerce_mall_order_item_id FK to
+     *   e_commerce_mall_order_items. Returns IECommerceMallOrderItem.ISummary,
+     *   which contains flattened snapshot data (product_name, variant_sku,
+     *   variant_options, shop_name), quantity, unit_price, subtotal, status,
+     *   and references to the parent order and product variant.
    */
   orderItem: IECommerceMallOrderItem.ISummary;
 
@@ -45,8 +50,11 @@ export type IECommerceMallRefundRequest = {
    *
    * This relationship enables customer dashboard views and administrative oversight of refund activity.
    *
-   * @x-autobe-database-schema-property customer
-   * @x-autobe-specification Join via e_commerce_mall_customer_id FK to e_commerce_mall_customers. Returns IECommerceMallCustomer.ISummary with id, email, profile (display_name, phone_number), timestamps, and status indicators (banned_at, deleted_at).
+     * @x-autobe-database-schema-property customer
+     * @x-autobe-specification Join via e_commerce_mall_customer_id FK to
+     *   e_commerce_mall_customers. Returns IECommerceMallCustomer.ISummary with
+     *   id, email, profile (display_name, phone_number), timestamps, and status
+     *   indicators (banned_at, deleted_at).
    */
   customer: IECommerceMallCustomer.ISummary;
 
@@ -57,8 +65,11 @@ export type IECommerceMallRefundRequest = {
    *
    * This relationship enables seller dashboards to display pending refund requests requiring their response.
    *
-   * @x-autobe-database-schema-property seller
-   * @x-autobe-specification Join via e_commerce_mall_seller_id FK to e_commerce_mall_sellers. Returns IECommerceMallSeller.ISummary with id, email, approval_status, profile (shop_name, logo_image), created_at, deleted_at.
+     * @x-autobe-database-schema-property seller
+     * @x-autobe-specification Join via e_commerce_mall_seller_id FK to
+     *   e_commerce_mall_sellers. Returns IECommerceMallSeller.ISummary with id,
+     *   email, approval_status, profile (shop_name, logo_image), created_at,
+     *   deleted_at.
    */
   seller: IECommerceMallSeller.ISummary;
 
@@ -67,8 +78,10 @@ export type IECommerceMallRefundRequest = {
    *
    * This reason is captured when the refund request is created and is required for processing. It is preserved in the immutable refund request snapshot created when the seller responds, ensuring the customer's original rationale is maintained for audit and dispute resolution purposes.
    *
-   * @x-autobe-database-schema-property reason
-   * @x-autobe-specification Direct mapping from e_commerce_mall_refund_requests.reason. Captured at creation time and preserved in snapshots.
+     * @x-autobe-database-schema-property reason
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_refund_requests.reason. Captured at creation time and
+     *   preserved in snapshots.
    */
   reason: string;
 
@@ -83,8 +96,13 @@ export type IECommerceMallRefundRequest = {
    *
    * Status transitions are forward-only. Once a request reaches 'approved' or 'rejected', no further state changes occur.
    *
-   * @x-autobe-database-schema-property status
-   * @x-autobe-specification Direct mapping from e_commerce_mall_refund_requests.status. Allowed values: 'pending' (initial, awaiting seller response), 'approved' (seller accepted, triggers refund and stock restoration), 'rejected' (seller denied). Status changes are forward-only; 'pending' transitions to either 'approved' or 'rejected' which are terminal.
+     * @x-autobe-database-schema-property status
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_refund_requests.status. Allowed values: 'pending'
+     *   (initial, awaiting seller response), 'approved' (seller accepted,
+     *   triggers refund and stock restoration), 'rejected' (seller denied).
+     *   Status changes are forward-only; 'pending' transitions to either
+     *   'approved' or 'rejected' which are terminal.
    */
   status: string;
 
@@ -93,8 +111,11 @@ export type IECommerceMallRefundRequest = {
    *
    * This field is null while the request is in 'pending' status, and is set at the moment the seller makes a decision to approve or reject the request. The value is captured in the immutable snapshot for audit purposes.
    *
-   * @x-autobe-database-schema-property response_timestamp
-   * @x-autobe-specification Direct mapping from e_commerce_mall_refund_requests.response_timestamp. Nullable datetime. Remains null while status is 'pending'. Set to current timestamp when seller responds (status changes to 'approved' or 'rejected').
+     * @x-autobe-database-schema-property response_timestamp
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_refund_requests.response_timestamp. Nullable datetime.
+     *   Remains null while status is 'pending'. Set to current timestamp when
+     *   seller responds (status changes to 'approved' or 'rejected').
    */
   response_timestamp: (string & tags.Format<"date-time">) | null;
 
@@ -105,7 +126,13 @@ export type IECommerceMallRefundRequest = {
    *
    * Snapshots are append-only records that cannot be modified or deleted after creation. A snapshot is created each time the seller responds to the refund request.
    *
-   * @x-autobe-specification One-to-many join from e_commerce_mall_refund_request_snapshots via e_commerce_mall_refund_request_id FK. Returns array of IECommerceMallRefundRequestSnapshot (full entity). Ordered by created_at ascending. Each element is an immutable record preserving the customer's reason, seller's decision, and response timestamp at the moment of seller response.
+     * @x-autobe-specification One-to-many join from
+     *   e_commerce_mall_refund_request_snapshots via
+     *   e_commerce_mall_refund_request_id FK. Returns array of
+     *   IECommerceMallRefundRequestSnapshot (full entity). Ordered by
+     *   created_at ascending. Each element is an immutable record preserving
+     *   the customer's reason, seller's decision, and response timestamp at the
+     *   moment of seller response.
    */
   refundRequestSnapshots: IECommerceMallRefundRequestSnapshot[];
 
@@ -114,8 +141,10 @@ export type IECommerceMallRefundRequest = {
    *
    * Automatically set when the customer submits the refund request. Used for sorting and determining the refund request's age.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from e_commerce_mall_refund_requests.created_at. Automatically set on record creation.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_refund_requests.created_at. Automatically set on record
+     *   creation.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -124,8 +153,10 @@ export type IECommerceMallRefundRequest = {
    *
    * Updated automatically whenever the refund request changes state — most notably when the seller responds, transitioning the status from 'pending' to 'approved' or 'rejected'.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from e_commerce_mall_refund_requests.updated_at. Updated automatically on status changes (e.g., pending to approved/rejected).
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_refund_requests.updated_at. Updated automatically on
+     *   status changes (e.g., pending to approved/rejected).
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -134,8 +165,11 @@ export type IECommerceMallRefundRequest = {
    *
    * Null indicates the refund request is active and visible. When set, the record is considered deleted but is preserved in the database for audit, legal, and historical reference purposes.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from e_commerce_mall_refund_requests.deleted_at. Nullable datetime. Null indicates the record is active. When set, the refund request is considered soft-deleted but preserved for audit and legal purposes.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_refund_requests.deleted_at. Nullable datetime. Null
+     *   indicates the record is active. When set, the refund request is
+     *   considered soft-deleted but preserved for audit and legal purposes.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -153,8 +187,13 @@ export namespace IECommerceMallRefundRequest {
      *
      * The specified order item must belong to the authenticated customer, have a status of "delivered", and be within the 7-day refund window from the delivery date. Each order item can have at most one pending refund request at a time.
      *
-     * @x-autobe-database-schema-property e_commerce_mall_order_item_id
-     * @x-autobe-specification Direct mapping to e_commerce_mall_order_item_id. Before creation, validate: (1) the authenticated customer owns this order item, (2) the order item's status is 'delivered', (3) the request is within 7 calendar days of delivery, (4) no duplicate pending refund request exists for this order item.
+         * @x-autobe-database-schema-property e_commerce_mall_order_item_id
+         * @x-autobe-specification Direct mapping to
+         *   e_commerce_mall_order_item_id. Before creation, validate: (1) the
+         *   authenticated customer owns this order item, (2) the order item's
+         *   status is 'delivered', (3) the request is within 7 calendar days of
+         *   delivery, (4) no duplicate pending refund request exists for this
+         *   order item.
      */
     orderItemId: string & tags.Format<"uuid">;
 
@@ -163,8 +202,10 @@ export namespace IECommerceMallRefundRequest {
      *
      * This reason is captured when the request is created and is preserved in an immutable snapshot at the time the seller responds to the request, providing an audit trail for dispute resolution.
      *
-     * @x-autobe-database-schema-property reason
-     * @x-autobe-specification Direct mapping from input to reason column. Stored as-is in the refund request record and preserved in immutablesnapshot when the seller responds.
+         * @x-autobe-database-schema-property reason
+         * @x-autobe-specification Direct mapping from input to reason column.
+         *   Stored as-is in the refund request record and preserved in
+         *   immutablesnapshot when the seller responds.
      */
     reason: string;
   };
@@ -182,7 +223,10 @@ export namespace IECommerceMallRefundRequest {
      *
      * Performs a partial (LIKE) match against the refund reason provided by the customer. Matching is case-insensitive. When omitted, no text-based filtering is applied.
      *
-     * @x-autobe-specification LIKE/ILIKE partial text search against the e_commerce_mall_refund_requests.reason column. Applied as WHERE reason LIKE '%search%'. Optional; when absent, no text filter is applied.
+         * @x-autobe-specification LIKE/ILIKE partial text search against the
+         *   e_commerce_mall_refund_requests.reason column. Applied as WHERE
+         *   reason LIKE '%search%'. Optional; when absent, no text filter is
+         *   applied.
      */
     search?: string | undefined;
 
@@ -191,7 +235,11 @@ export namespace IECommerceMallRefundRequest {
      *
      * Accepts a single status value or an array of statuses for multi-value filtering. Allowed values are: pending (awaiting seller response), approved (seller approved the refund), and rejected (seller denied the request). When omitted, results include all statuses.
      *
-     * @x-autobe-specification Exact match or IN-clause filter on e_commerce_mall_refund_requests.status column. Accepts a single status value or an array for multi-value filtering. Allowed values: pending, approved, rejected. When omitted, all statuses are returned.
+         * @x-autobe-specification Exact match or IN-clause filter on
+         *   e_commerce_mall_refund_requests.status column. Accepts a single
+         *   status value or an array for multi-value filtering. Allowed values:
+         *   pending, approved, rejected. When omitted, all statuses are
+         *   returned.
      */
     status?:
       | "pending"
@@ -205,7 +253,9 @@ export namespace IECommerceMallRefundRequest {
      *
      * Filters refund requests created at or after this timestamp (inclusive). Combine with toCreatedAt to define a date range. When omitted, no lower bound is applied.
      *
-     * @x-autobe-specification Start bound of created_at range filter. WHERE e_commerce_mall_refund_requests.created_at >= fromCreatedAt. Inclusive. Optional; when absent, no lower bound is applied.
+         * @x-autobe-specification Start bound of created_at range filter. WHERE
+         *   e_commerce_mall_refund_requests.created_at >= fromCreatedAt.
+         *   Inclusive. Optional; when absent, no lower bound is applied.
      */
     fromCreatedAt?: (string & tags.Format<"date-time">) | undefined;
 
@@ -214,7 +264,9 @@ export namespace IECommerceMallRefundRequest {
      *
      * Filters refund requests created at or before this timestamp (inclusive). Combine with fromCreatedAt to define a date range. When omitted, no upper bound is applied.
      *
-     * @x-autobe-specification End bound of created_at range filter. WHERE e_commerce_mall_refund_requests.created_at <= toCreatedAt. Inclusive. Optional; when absent, no upper bound is applied.
+         * @x-autobe-specification End bound of created_at range filter. WHERE
+         *   e_commerce_mall_refund_requests.created_at <= toCreatedAt.
+         *   Inclusive. Optional; when absent, no upper bound is applied.
      */
     toCreatedAt?: (string & tags.Format<"date-time">) | undefined;
 
@@ -223,7 +275,11 @@ export namespace IECommerceMallRefundRequest {
      *
      * Restricted to administrator use for cross-user search. Customers are automatically scoped to their own refund requests and cannot use this filter. Sellers see refund requests for their own products regardless.
      *
-     * @x-autobe-specification Exact match filter on e_commerce_mall_refund_requests.e_commerce_mall_customer_id FK column. Restricted to administrator role in authorization logic — customers are auto-scoped to their own ID, sellers cannot filter by customer. Optional.
+         * @x-autobe-specification Exact match filter on
+         *   e_commerce_mall_refund_requests.e_commerce_mall_customer_id FK
+         *   column. Restricted to administrator role in authorization logic —
+         *   customers are auto-scoped to their own ID, sellers cannot filter by
+         *   customer. Optional.
      */
     customerId?: (string & tags.Format<"uuid">) | undefined;
 
@@ -232,7 +288,11 @@ export namespace IECommerceMallRefundRequest {
      *
      * Restricted to administrator use for cross-user search. Sellers are automatically scoped to refund requests for their own products and cannot use this filter. Customers see their own refund requests regardless.
      *
-     * @x-autobe-specification Exact match filter on e_commerce_mall_refund_requests.e_commerce_mall_seller_id FK column. Restricted to administrator role in authorization logic — sellers are auto-scoped to their own ID, customers cannot filter by seller. Optional.
+         * @x-autobe-specification Exact match filter on
+         *   e_commerce_mall_refund_requests.e_commerce_mall_seller_id FK
+         *   column. Restricted to administrator role in authorization logic —
+         *   sellers are auto-scoped to their own ID, customers cannot filter by
+         *   seller. Optional.
      */
     sellerId?: (string & tags.Format<"uuid">) | undefined;
 
@@ -241,7 +301,10 @@ export namespace IECommerceMallRefundRequest {
      *
      * Available to all actor types. When specified, returns only refund requests associated with that order item. Useful for viewing the refund status of a particular purchase.
      *
-     * @x-autobe-specification Exact match filter on e_commerce_mall_refund_requests.e_commerce_mall_order_item_id FK column. Available to all actor types (customer, seller, administrator). Optional.
+         * @x-autobe-specification Exact match filter on
+         *   e_commerce_mall_refund_requests.e_commerce_mall_order_item_id FK
+         *   column. Available to all actor types (customer, seller,
+         *   administrator). Optional.
      */
     orderItemId?: (string & tags.Format<"uuid">) | undefined;
 
@@ -250,7 +313,9 @@ export namespace IECommerceMallRefundRequest {
      *
      * 1-based index indicating which page of results to retrieve. The first page is page 1. Defaults to 1 when omitted.
      *
-     * @x-autobe-specification Offset-based pagination parameter. Page number (1-based). Applied as: LIMIT {limit} OFFSET {(page - 1) * limit}. Defaults to 1 when omitted.
+         * @x-autobe-specification Offset-based pagination parameter. Page
+         *   number (1-based). Applied as: LIMIT {limit} OFFSET {(page - 1) *
+         *   limit}. Defaults to 1 when omitted.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -259,7 +324,9 @@ export namespace IECommerceMallRefundRequest {
      *
      * Controls the page size for paginated results. Must be between 1 and 100. The actual number of records returned may be less on the final page.
      *
-     * @x-autobe-specification Maximum records per page. Applied as LIMIT clause. Range: 1-100. Defaults to a system-configured value (typically 20) when omitted.
+         * @x-autobe-specification Maximum records per page. Applied as LIMIT
+         *   clause. Range: 1-100. Defaults to a system-configured value
+         *   (typically 20) when omitted.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -270,7 +337,10 @@ export namespace IECommerceMallRefundRequest {
      *
      * Supported sort fields: created_at (creation timestamp, default), status (alphabetical by status), response_timestamp (when seller responded). Sort direction is descending (newest or most recent first). When omitted, defaults to sorting by created_at descending.
      *
-     * @x-autobe-specification ORDER BY field specification for the query. Supported values: created_at (default), status, response_timestamp. Sort direction defaults to descending (newest first). When omitted, defaults to created_at DESC.
+         * @x-autobe-specification ORDER BY field specification for the query.
+         *   Supported values: created_at (default), status, response_timestamp.
+         *   Sort direction defaults to descending (newest first). When omitted,
+         *   defaults to created_at DESC.
      */
     sort?: "created_at" | "response_timestamp" | "status" | undefined;
   };
@@ -290,8 +360,14 @@ export namespace IECommerceMallRefundRequest {
      *
      * Only refund requests in "pending" status are eligible for a response. Once a decision is made, it is final and a snapshot of the request state is created for audit purposes.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from e_commerce_mall_refund_requests.status. Allowed values: 'approved' or 'rejected'. Business logic validates current status is 'pending' before allowing update. On 'approved': update order_item status to 'refunded' and create positive inventory record. On 'rejected': no stock/status changes to order item. A snapshot is always created on response.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_refund_requests.status. Allowed values: 'approved'
+         *   or 'rejected'. Business logic validates current status is 'pending'
+         *   before allowing update. On 'approved': update order_item status to
+         *   'refunded' and create positive inventory record. On 'rejected': no
+         *   stock/status changes to order item. A snapshot is always created on
+         *   response.
      */
     status?: string | undefined;
   };
@@ -309,8 +385,9 @@ export namespace IECommerceMallRefundRequest {
      *
      * This UUID is assigned at creation time and serves as the primary identifier for referencing the refund request across the platform, including in URL paths for retrieving or responding to individual requests.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from e_commerce_mall_refund_requests.id. UUID primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_refund_requests.id. UUID primary key.
      */
     id: string & tags.Format<"uuid">;
 
@@ -319,8 +396,10 @@ export namespace IECommerceMallRefundRequest {
      *
      * This reason is captured when the refund request is submitted and is preserved permanently. It is visible to the seller reviewing the request and is included in the snapshot created when the seller responds, ensuring an immutable audit trail of the request's justification.
      *
-     * @x-autobe-database-schema-property reason
-     * @x-autobe-specification Direct mapping from e_commerce_mall_refund_requests.reason. Text provided by the customer.
+         * @x-autobe-database-schema-property reason
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_refund_requests.reason. Text provided by the
+         *   customer.
      */
     reason: string;
 
@@ -334,8 +413,10 @@ export namespace IECommerceMallRefundRequest {
      *
      * Pending is the initial status upon creation. Approved and Rejected are terminal states — once reached, no further status changes occur.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from e_commerce_mall_refund_requests.status. Possible values: pending, approved, rejected.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_refund_requests.status. Possible values: pending,
+         *   approved, rejected.
      */
     status: string;
 
@@ -344,8 +425,10 @@ export namespace IECommerceMallRefundRequest {
      *
      * This field remains null while the request is in `pending` status and is set at the moment the seller makes a decision. The value is preserved in the snapshot for audit purposes.
      *
-     * @x-autobe-database-schema-property response_timestamp
-     * @x-autobe-specification Direct mapping from e_commerce_mall_refund_requests.response_timestamp. Nullable DateTime, null while pending.
+         * @x-autobe-database-schema-property response_timestamp
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_refund_requests.response_timestamp. Nullable
+         *   DateTime, null while pending.
      */
     response_timestamp: (string & tags.Format<"date-time">) | null;
 
@@ -354,8 +437,11 @@ export namespace IECommerceMallRefundRequest {
      *
      * This is the delivered order item that the customer is seeking a refund for. The summary includes the product name, variant details, quantity, unit price, and current item status.
      *
-     * @x-autobe-database-schema-property orderItem
-     * @x-autobe-specification BELONGS-TO join from e_commerce_mall_refund_requests.e_commerce_mall_order_item_id to e_commerce_mall_order_items.id. Returns IECommerceMallOrderItem.ISummary.
+         * @x-autobe-database-schema-property orderItem
+         * @x-autobe-specification BELONGS-TO join from
+         *   e_commerce_mall_refund_requests.e_commerce_mall_order_item_id to
+         *   e_commerce_mall_order_items.id. Returns
+         *   IECommerceMallOrderItem.ISummary.
      */
     orderItem: IECommerceMallOrderItem.ISummary;
 
@@ -364,8 +450,11 @@ export namespace IECommerceMallRefundRequest {
      *
      * Only the customer who purchased the order item can initiate a refund for it. The summary includes the customer's email and profile information.
      *
-     * @x-autobe-database-schema-property customer
-     * @x-autobe-specification BELONGS-TO join from e_commerce_mall_refund_requests.e_commerce_mall_customer_id to e_commerce_mall_customers.id. Returns IECommerceMallCustomer.ISummary.
+         * @x-autobe-database-schema-property customer
+         * @x-autobe-specification BELONGS-TO join from
+         *   e_commerce_mall_refund_requests.e_commerce_mall_customer_id to
+         *   e_commerce_mall_customers.id. Returns
+         *   IECommerceMallCustomer.ISummary.
      */
     customer: IECommerceMallCustomer.ISummary;
 
@@ -374,8 +463,10 @@ export namespace IECommerceMallRefundRequest {
      *
      * The seller reviews the refund reason and decides whether to approve or reject the request. The summary includes the seller's shop name and email.
      *
-     * @x-autobe-database-schema-property seller
-     * @x-autobe-specification BELONGS-TO join from e_commerce_mall_refund_requests.e_commerce_mall_seller_id to e_commerce_mall_sellers.id. Returns IECommerceMallSeller.ISummary.
+         * @x-autobe-database-schema-property seller
+         * @x-autobe-specification BELONGS-TO join from
+         *   e_commerce_mall_refund_requests.e_commerce_mall_seller_id to
+         *   e_commerce_mall_sellers.id. Returns IECommerceMallSeller.ISummary.
      */
     seller: IECommerceMallSeller.ISummary;
 
@@ -384,7 +475,10 @@ export namespace IECommerceMallRefundRequest {
      *
      * A snapshot is created when the seller responds to the refund request (approves or rejects). A count of 0 indicates the request is still pending. A count of 1 or more indicates the seller has responded and the request has been resolved.
      *
-     * @x-autobe-specification Aggregation: COUNT of e_commerce_mall_refund_request_snapshots WHERE refund_request_id = e_commerce_mall_refund_requests.id. 0 when no snapshots exist (still pending).
+         * @x-autobe-specification Aggregation: COUNT of
+         *   e_commerce_mall_refund_request_snapshots WHERE refund_request_id =
+         *   e_commerce_mall_refund_requests.id. 0 when no snapshots exist
+         *   (still pending).
      */
     snapshots_count: number & tags.Type<"int32">;
 
@@ -393,8 +487,9 @@ export namespace IECommerceMallRefundRequest {
      *
      * Automatically set upon creation and used for sorting refund requests by submission date in list views.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from e_commerce_mall_refund_requests.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_refund_requests.created_at.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -403,8 +498,9 @@ export namespace IECommerceMallRefundRequest {
      *
      * Updated when the seller responds to the request, changing the status and setting the response timestamp.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from e_commerce_mall_refund_requests.updated_at.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_refund_requests.updated_at.
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -413,8 +509,9 @@ export namespace IECommerceMallRefundRequest {
      *
      * Null indicates the record is active. When set, the refund request is considered deleted but the record is preserved for audit and legal purposes.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from e_commerce_mall_refund_requests.deleted_at. Nullable.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_refund_requests.deleted_at. Nullable.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };

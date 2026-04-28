@@ -18,7 +18,9 @@ export type IRedditLikeCommunityStatistic = {
    *
    * This count reflects only active subscriptions where the subscription record has not been soft-deleted. Unsubscribing creates a soft-delete record, which is excluded from this count.
    *
-   * @x-autobe-specification COUNT from reddit_like_community_subscriptions WHERE reddit_like_community_id matches the target community and deleted_at IS NULL. Returns the number of active subscriptions.
+     * @x-autobe-specification COUNT from reddit_like_community_subscriptions
+     *   WHERE reddit_like_community_id matches the target community and
+     *   deleted_at IS NULL. Returns the number of active subscriptions.
    */
   subscriber_count: number & tags.Type<"int32">;
 
@@ -27,7 +29,9 @@ export type IRedditLikeCommunityStatistic = {
    *
    * This count reflects only active posts where the post record has not been soft-deleted. Deleted posts are excluded from this count.
    *
-   * @x-autobe-specification COUNT from reddit_like_posts WHERE reddit_like_community_id matches the target community and deleted_at IS NULL. Returns the number of active posts.
+     * @x-autobe-specification COUNT from reddit_like_posts WHERE
+     *   reddit_like_community_id matches the target community and deleted_at IS
+     *   NULL. Returns the number of active posts.
    */
   post_count: number & tags.Type<"int32">;
 
@@ -36,7 +40,10 @@ export type IRedditLikeCommunityStatistic = {
    *
    * This count reflects only active comments where both the comment and its parent post have not been soft-deleted. Deleted comments or comments on deleted posts are excluded from this count.
    *
-   * @x-autobe-specification COUNT from reddit_like_comments joined with reddit_like_posts WHERE the post's reddit_like_community_id matches the target community and both post.deleted_at IS NULL and comment.deleted_at IS NULL. Returns the number of active comments.
+     * @x-autobe-specification COUNT from reddit_like_comments joined with
+     *   reddit_like_posts WHERE the post's reddit_like_community_id matches the
+     *   target community and both post.deleted_at IS NULL and
+     *   comment.deleted_at IS NULL. Returns the number of active comments.
    */
   comment_count: number & tags.Type<"int32">;
 };

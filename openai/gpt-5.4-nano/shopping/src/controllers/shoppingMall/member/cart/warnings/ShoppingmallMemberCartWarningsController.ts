@@ -26,12 +26,13 @@ export class ShoppingmallMemberCartWarningsController {
    * - If the cart itself is marked with `warning_inventory_insufficient`, the response must still include per-item warning/unavailability details consistent with current availability rules.
    *
    * @param connection
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1) Authentication/authorization gate
-   * - Require authenticated member context.
-   * - Use member identity to locate the owned cart via `shopping_mall_carts.shopping_mall_member_id`.
-   * - If session is missing/invalid or caller is not authorized, deny without revealing cart details.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification 1) Authentication/authorization gate - Require
+     *   authenticated member context. - Use member identity to locate the owned
+     *   cart via `shopping_mall_carts.shopping_mall_member_id`. - If session is
+     *   missing/invalid or caller is not authorized, deny without revealing
+     *   cart details.
    *
    * 2) Load cart and items
    * - Fetch the cart row (if any) from `shopping_mall_carts`.

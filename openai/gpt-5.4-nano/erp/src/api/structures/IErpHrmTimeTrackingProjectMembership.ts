@@ -11,72 +11,99 @@ export type IErpHrmTimeTrackingProjectMembership = {
   /**
    * Unique identifier of the project membership record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_project_memberships.id. UUID string.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_tracking_project_memberships.id. UUID string.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * The project to which this membership belongs (lightweight summary).
    *
-   * @x-autobe-database-schema-property project
-   * @x-autobe-specification Join erp_hrm_time_tracking_project_memberships.project_id -> erp_hrm_time_tracking_projects.id and return the project as IErpHrmTimeTrackingProject.ISummary. Do not expand child relations (tasks, memberships, etc.) beyond what the ISummary includes.
+     * @x-autobe-database-schema-property project
+     * @x-autobe-specification Join
+     *   erp_hrm_time_tracking_project_memberships.project_id ->
+     *   erp_hrm_time_tracking_projects.id and return the project as
+     *   IErpHrmTimeTrackingProject.ISummary. Do not expand child relations
+     *   (tasks, memberships, etc.) beyond what the ISummary includes.
    */
   project: IErpHrmTimeTrackingProject.ISummary;
 
   /**
    * Identifier of the project this membership is assigned to.
    *
-   * @x-autobe-database-schema-property project_id
-   * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_project_memberships.project_id (UUID). Used for scoping and for correlating the membership with the project summary relation.
+     * @x-autobe-database-schema-property project_id
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_tracking_project_memberships.project_id (UUID). Used for
+     *   scoping and for correlating the membership with the project summary
+     *   relation.
    */
   project_id: string & tags.Format<"uuid">;
 
   /**
    * The employee account linked to this membership (lightweight summary).
    *
-   * @x-autobe-database-schema-property employee
-   * @x-autobe-specification Join erp_hrm_time_tracking_project_memberships.employee_id -> erp_hrm_time_tracking_members.id and return the employee as IErpHrmTimeTrackingMember.ISummary. Do not include credentials; rely on ISummary fields only.
+     * @x-autobe-database-schema-property employee
+     * @x-autobe-specification Join
+     *   erp_hrm_time_tracking_project_memberships.employee_id ->
+     *   erp_hrm_time_tracking_members.id and return the employee as
+     *   IErpHrmTimeTrackingMember.ISummary. Do not include credentials; rely on
+     *   ISummary fields only.
    */
   employee: IErpHrmTimeTrackingMember.ISummary;
 
   /**
    * Identifier of the employee linked to this membership.
    *
-   * @x-autobe-database-schema-property employee_id
-   * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_project_memberships.employee_id (UUID). Used for scoping and for correlating the membership with the employee summary relation.
+     * @x-autobe-database-schema-property employee_id
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_tracking_project_memberships.employee_id (UUID). Used for
+     *   scoping and for correlating the membership with the employee summary
+     *   relation.
    */
   employee_id: string & tags.Format<"uuid">;
 
   /**
    * Role of the employee within this project, used to drive project-scoped permissions.
    *
-   * @x-autobe-database-schema-property membership_role
-   * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_project_memberships.membership_role (string). Service-layer must validate it against the allowed domain vocabulary when creating/updating memberships.
+     * @x-autobe-database-schema-property membership_role
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_tracking_project_memberships.membership_role (string).
+     *   Service-layer must validate it against the allowed domain vocabulary
+     *   when creating/updating memberships.
    */
   membership_role: string;
 
   /**
    * When this membership record was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_project_memberships.created_at (DateTime). Set on creation by the server/ORM.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_tracking_project_memberships.created_at (DateTime). Set on
+     *   creation by the server/ORM.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * When this membership record was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_project_memberships.updated_at (DateTime). Refreshed when the membership is updated (e.g., membership_role changes).
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_tracking_project_memberships.updated_at (DateTime).
+     *   Refreshed when the membership is updated (e.g., membership_role
+     *   changes).
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * Soft-deletion timestamp. Null means the membership is active; a DateTime means it has been soft-deleted.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_project_memberships.deleted_at (DateTime|null). If null, the membership is active; if non-null, it is soft-deleted. The schema carries the stored value; whether it is shown is enforced by service-layer authorization/visibility rules.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_tracking_project_memberships.deleted_at (DateTime|null).
+     *   If null, the membership is active; if non-null, it is soft-deleted. The
+     *   schema carries the stored value; whether it is shown is enforced by
+     *   service-layer authorization/visibility rules.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -88,8 +115,16 @@ export namespace IErpHrmTimeTrackingProjectMembership {
     /**
      * The employee’s role/responsibility level within the specified project membership. This value drives project-scoped permissions (e.g., whether the employee can manage project tasks).
      *
-     * @x-autobe-database-schema-property membership_role
-     * @x-autobe-specification Map request `membership_role` directly to `erp_hrm_time_tracking_project_memberships.membership_role` for the target membership row. Validate the provided value against the allowed domain membership role values used by the service authorization logic. Update only this column; do not change `project_id` or `employee_id`. Persist and let the endpoint/service refresh `updated_at` automatically. If the membership row is soft-deleted (`deleted_at` not null), the service must reject the update (handled by endpoint/service logic, not by this DTO).
+         * @x-autobe-database-schema-property membership_role
+         * @x-autobe-specification Map request `membership_role` directly to
+         *   `erp_hrm_time_tracking_project_memberships.membership_role` for the
+         *   target membership row. Validate the provided value against the
+         *   allowed domain membership role values used by the service
+         *   authorization logic. Update only this column; do not change
+         *   `project_id` or `employee_id`. Persist and let the endpoint/service
+         *   refresh `updated_at` automatically. If the membership row is
+         *   soft-deleted (`deleted_at` not null), the service must reject the
+         *   update (handled by endpoint/service logic, not by this DTO).
      */
     membership_role?: (string & tags.MinLength<1>) | undefined;
   };
@@ -101,8 +136,9 @@ export namespace IErpHrmTimeTrackingProjectMembership {
     /**
      * The UUID of the employee to assign to the target project.
      *
-     * @x-autobe-database-schema-property employee_id
-     * @x-autobe-specification Direct mapping to `erp_hrm_time_tracking_project_memberships.employee_id`.
+         * @x-autobe-database-schema-property employee_id
+         * @x-autobe-specification Direct mapping to
+         *   `erp_hrm_time_tracking_project_memberships.employee_id`.
      *
      * - Treat as the employee identifier whose membership will be created for the target project.
      * - The service layer must validate that this employee belongs to the same organization as the target project and is eligible for assignment.
@@ -112,8 +148,9 @@ export namespace IErpHrmTimeTrackingProjectMembership {
     /**
      * The employee’s role within the target project. This value is used to drive project-scoped authorization decisions.
      *
-     * @x-autobe-database-schema-property membership_role
-     * @x-autobe-specification Direct mapping to `erp_hrm_time_tracking_project_memberships.membership_role`.
+         * @x-autobe-database-schema-property membership_role
+         * @x-autobe-specification Direct mapping to
+         *   `erp_hrm_time_tracking_project_memberships.membership_role`.
      *
      * - Persist the provided string as-is into the membership record.
      * - Service layer must validate the value is part of the allowed domain vocabulary for project membership roles (since the DB column type is String).
@@ -128,56 +165,71 @@ export namespace IErpHrmTimeTrackingProjectMembership {
     /**
      * Unique identifier of the project membership record.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Return `erp_hrm_time_tracking_project_memberships.id` as a UUID string.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Return
+         *   `erp_hrm_time_tracking_project_memberships.id` as a UUID string.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Identifier of the project that owns this membership assignment.
      *
-     * @x-autobe-database-schema-property project_id
-     * @x-autobe-specification Return `erp_hrm_time_tracking_project_memberships.project_id` as a UUID string representing the target project of this membership.
+         * @x-autobe-database-schema-property project_id
+         * @x-autobe-specification Return
+         *   `erp_hrm_time_tracking_project_memberships.project_id` as a UUID
+         *   string representing the target project of this membership.
      */
     project_id: string & tags.Format<"uuid">;
 
     /**
      * Identifier of the employee who is assigned to the project.
      *
-     * @x-autobe-database-schema-property employee_id
-     * @x-autobe-specification Return `erp_hrm_time_tracking_project_memberships.employee_id` as a UUID string representing the employee assigned to the project.
+         * @x-autobe-database-schema-property employee_id
+         * @x-autobe-specification Return
+         *   `erp_hrm_time_tracking_project_memberships.employee_id` as a UUID
+         *   string representing the employee assigned to the project.
      */
     employee_id: string & tags.Format<"uuid">;
 
     /**
      * Role of the employee within the project (used for project-scoped permissions and UI presentation).
      *
-     * @x-autobe-database-schema-property membership_role
-     * @x-autobe-specification Return `erp_hrm_time_tracking_project_memberships.membership_role` as the role indicator value stored for this employee within the project.
+         * @x-autobe-database-schema-property membership_role
+         * @x-autobe-specification Return
+         *   `erp_hrm_time_tracking_project_memberships.membership_role` as the
+         *   role indicator value stored for this employee within the project.
      */
     membership_role: string;
 
     /**
      * Soft-deletion timestamp for the membership. Null means the membership is active; non-null means it is inactive/removed.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Return `erp_hrm_time_tracking_project_memberships.deleted_at` as RFC3339 date-time string when non-null; return null when the membership is active.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Return
+         *   `erp_hrm_time_tracking_project_memberships.deleted_at` as RFC3339
+         *   date-time string when non-null; return null when the membership is
+         *   active.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
 
     /**
      * Timestamp when this membership record was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Return `erp_hrm_time_tracking_project_memberships.created_at` as an RFC3339 date-time string.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Return
+         *   `erp_hrm_time_tracking_project_memberships.created_at` as an
+         *   RFC3339 date-time string.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when this membership record was last updated.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Return `erp_hrm_time_tracking_project_memberships.updated_at` as an RFC3339 date-time string reflecting the last membership mutation affecting this row.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Return
+         *   `erp_hrm_time_tracking_project_memberships.updated_at` as an
+         *   RFC3339 date-time string reflecting the last membership mutation
+         *   affecting this row.
      */
     updated_at: string & tags.Format<"date-time">;
   };

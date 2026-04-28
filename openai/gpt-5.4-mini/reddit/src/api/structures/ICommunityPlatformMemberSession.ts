@@ -10,56 +10,72 @@ export type ICommunityPlatformMemberSession = {
   /**
    * Unique identifier for the member session.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from community_platform_member_sessions.id. Stable UUID primary key for the session record.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_member_sessions.id. Stable UUID primary key for the
+     *   session record.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * The member who owns this session.
    *
-   * @x-autobe-database-schema-property member
-   * @x-autobe-specification Load the belongs-to relation from community_platform_member_sessions.community_platform_member_id and expose it as an ICommunityPlatformMember.ISummary object. This is a read-only association derived from the session row's foreign key.
+     * @x-autobe-database-schema-property member
+     * @x-autobe-specification Load the belongs-to relation from
+     *   community_platform_member_sessions.community_platform_member_id and
+     *   expose it as an ICommunityPlatformMember.ISummary object. This is a
+     *   read-only association derived from the session row's foreign key.
    */
   member: ICommunityPlatformMember.ISummary;
 
   /**
    * IP address associated with the session.
    *
-   * @x-autobe-database-schema-property ip
-   * @x-autobe-specification Direct mapping from community_platform_member_sessions.ip. Use the stored IP address captured when the session was created or refreshed.
+     * @x-autobe-database-schema-property ip
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_member_sessions.ip. Use the stored IP address
+     *   captured when the session was created or refreshed.
    */
   ip: string;
 
   /**
    * Request URL or entry point associated with the session.
    *
-   * @x-autobe-database-schema-property href
-   * @x-autobe-specification Direct mapping from community_platform_member_sessions.href. Preserve the request URL or entry point recorded for the session context.
+     * @x-autobe-database-schema-property href
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_member_sessions.href. Preserve the request URL or
+     *   entry point recorded for the session context.
    */
   href: string;
 
   /**
    * Referrer URL associated with the session.
    *
-   * @x-autobe-database-schema-property referrer
-   * @x-autobe-specification Direct mapping from community_platform_member_sessions.referrer. Preserve the referrer URL exactly as stored in the session row.
+     * @x-autobe-database-schema-property referrer
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_member_sessions.referrer. Preserve the referrer URL
+     *   exactly as stored in the session row.
    */
   referrer: string;
 
   /**
    * Timestamp when the session was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from community_platform_member_sessions.created_at. Serialize the stored timestamptz value as an ISO date-time string.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_member_sessions.created_at. Serialize the stored
+     *   timestamptz value as an ISO date-time string.
    */
   createdAt: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the session expires.
    *
-   * @x-autobe-database-schema-property expired_at
-   * @x-autobe-specification Direct mapping from community_platform_member_sessions.expired_at. Serialize the stored timestamptz value as an ISO date-time string representing when the session should no longer be accepted.
+     * @x-autobe-database-schema-property expired_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_member_sessions.expired_at. Serialize the stored
+     *   timestamptz value as an ISO date-time string representing when the
+     *   session should no longer be accepted.
    */
   expiredAt: string & tags.Format<"date-time">;
 };

@@ -21,7 +21,9 @@ export type IEcommerceMallShipmentMetric = {
    *
    * This metric represents the complete number of shipment records that are currently active (not soft-deleted). It is calculated by counting all records in the ecommerce_mall_shipments table where deleted_at is NULL.
    *
-   * @x-autobe-specification COUNT(*) from ecommerce_mall_shipments WHERE deleted_at IS NULL. Returns the total number of active shipment records in the system.
+     * @x-autobe-specification COUNT(*) from ecommerce_mall_shipments WHERE
+     *   deleted_at IS NULL. Returns the total number of active shipment records
+     *   in the system.
    */
   total_shipments: number & tags.Type<"int32">;
 
@@ -35,7 +37,10 @@ export type IEcommerceMallShipmentMetric = {
    *
    * These counts are mutually exclusive and sum to total_shipments.
    *
-   * @x-autobe-specification COUNT by status field from ecommerce_mall_shipments WHERE deleted_at IS NULL, grouped into 'shipped' and 'delivered' keys. Each count represents the number of shipments with that specific status.
+     * @x-autobe-specification COUNT by status field from
+     *   ecommerce_mall_shipments WHERE deleted_at IS NULL, grouped into
+     *   'shipped' and 'delivered' keys. Each count represents the number of
+     *   shipments with that specific status.
    */
   status_distribution: {
     /**
@@ -54,7 +59,9 @@ export type IEcommerceMallShipmentMetric = {
    *
    * This metric is calculated by summing the quantity_shipped field from all active records in the ecommerce_mall_shipment_items table. It represents the total number of individual items (units) that have been included in shipments.
    *
-   * @x-autobe-specification SUM(quantity_shipped) FROM ecommerce_mall_shipment_items WHERE deleted_at IS NULL. Returns the cumulative quantity of all order items included in active shipments.
+     * @x-autobe-specification SUM(quantity_shipped) FROM
+     *   ecommerce_mall_shipment_items WHERE deleted_at IS NULL. Returns the
+     *   cumulative quantity of all order items included in active shipments.
    */
   total_items_shipped: number & tags.Type<"int32">;
 
@@ -70,7 +77,10 @@ export type IEcommerceMallShipmentMetric = {
    *
    * Returns 0 when there are no shipments to avoid division by zero errors.
    *
-   * @x-autobe-specification (COUNT of shipments with status='delivered' / total_shipments) * 100. Returns 0 if total_shipments is 0 to avoid division by zero. Returns a number between 0 and 100 representing the percentage of delivered shipments.
+     * @x-autobe-specification (COUNT of shipments with status='delivered' /
+     *   total_shipments) * 100. Returns 0 if total_shipments is 0 to avoid
+     *   division by zero. Returns a number between 0 and 100 representing the
+     *   percentage of delivered shipments.
    */
   delivery_rate: number & tags.Minimum<0> & tags.Maximum<100>;
 
@@ -83,7 +93,10 @@ export type IEcommerceMallShipmentMetric = {
    * - Positive numbers represent the average number of days from shipment creation to delivery confirmation
    * - This is a key performance indicator for fulfillment efficiency
    *
-   * @x-autobe-specification AVG(EXTRACT(DAY FROM (delivered_at - shipped_at))) FROM ecommerce_mall_shipments WHERE status='delivered' AND delivered_at IS NOT NULL AND shipped_at IS NOT NULL. Returns null if no delivered shipments exist.
+     * @x-autobe-specification AVG(EXTRACT(DAY FROM (delivered_at -
+     *   shipped_at))) FROM ecommerce_mall_shipments WHERE status='delivered'
+     *   AND delivered_at IS NOT NULL AND shipped_at IS NOT NULL. Returns null
+     *   if no delivered shipments exist.
    */
   average_delivery_duration_days: (number & tags.Minimum<0>) | null;
 
@@ -96,7 +109,9 @@ export type IEcommerceMallShipmentMetric = {
    * - Positive numbers represent the average number of days from order creation to shipment
    * - This is a key performance indicator for order fulfillment efficiency
    *
-   * @x-autobe-specification AVG(EXTRACT(DAY FROM (shipped_at - created_at))) FROM ecommerce_mall_shipments WHERE shipped_at IS NOT NULL. Returns null if no shipments have been created with shipped_at set.
+     * @x-autobe-specification AVG(EXTRACT(DAY FROM (shipped_at - created_at)))
+     *   FROM ecommerce_mall_shipments WHERE shipped_at IS NOT NULL. Returns
+     *   null if no shipments have been created with shipped_at set.
    */
   average_processing_time_days: (number & tags.Minimum<0>) | null;
 };

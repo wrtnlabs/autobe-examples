@@ -25,9 +25,12 @@ export class CommunityplatformPostsCommentsController {
    * @param connection
    * @param postId Target post's ID
    * @param body Comment sorting and pagination criteria for the post discussion
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Accept `postId` as the target post identifier and a JSON request body typed as `ICommunityPlatformComment.IRequest` containing pagination and thread-browsing criteria, including the requested sorting mode for the discussion.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Accept `postId` as the target post identifier and
+     *   a JSON request body typed as `ICommunityPlatformComment.IRequest`
+     *   containing pagination and thread-browsing criteria, including the
+     *   requested sorting mode for the discussion.
    *
    * Validate that the target post exists in `community_platform_posts` and is available for discussion browsing. If the post cannot be found or is not available, return the appropriate business error for comment browsing on an unavailable post.
    *
@@ -74,9 +77,11 @@ export class CommunityplatformPostsCommentsController {
    * @param connection
    * @param postId Target post's ID
    * @param commentId Target comment's ID within the post discussion
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Implement a read-only service method that loads a single record from the comment domain scoped by both the parent post identifier and the comment identifier.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Implement a read-only service method that loads a
+     *   single record from the comment domain scoped by both the parent post
+     *   identifier and the comment identifier.
    *
    * First, validate that `postId` and `commentId` are syntactically valid UUID values. Query `community_platform_posts` to confirm that the target post exists and is viewable in its community context. Then query `community_platform_comments` by `id = commentId` and `post_id = postId` in the same lookup condition so that a comment cannot be retrieved through an unrelated post path. If no row matches both conditions, return a not-found error.
    *

@@ -18,8 +18,9 @@ export type IHrmTimeTrackTimer = {
    *
    * This UUID identifies the specific timer session and is used to reference it in subsequent operations such as updating or stopping the timer.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from hrm_time_track_timers.id. Primary key uniquely identifying the timer session.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from hrm_time_track_timers.id.
+     *   Primary key uniquely identifying the timer session.
    */
   id: string & tags.Format<"uuid">;
 
@@ -28,8 +29,10 @@ export type IHrmTimeTrackTimer = {
    *
    * This field is set automatically when the timer is started and serves as the reference point for calculating elapsed time. The duration is calculated by subtracting started_at from the current time when the timer is stopped, rounded to the nearest minute for the resulting timelog.
    *
-   * @x-autobe-database-schema-property started_at
-   * @x-autobe-specification Direct mapping from hrm_time_track_timers.started_at. Timestamp when the timer session began, set automatically when timer is created.
+     * @x-autobe-database-schema-property started_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_timers.started_at. Timestamp when the timer session
+     *   began, set automatically when timer is created.
    */
   started_at: string & tags.Format<"date-time">;
 
@@ -38,8 +41,10 @@ export type IHrmTimeTrackTimer = {
    *
    * Employees can use this field to note what specific work is being done, providing context for the time being tracked. This description can be edited while the timer is running, allowing corrections and updates to work context without stopping the timer session.
    *
-   * @x-autobe-database-schema-property description
-   * @x-autobe-specification Direct mapping from hrm_time_track_timers.description. Nullable field for optional work notes describing what is being tracked.
+     * @x-autobe-database-schema-property description
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_timers.description. Nullable field for optional work
+     *   notes describing what is being tracked.
    */
   description: string | null;
 
@@ -48,8 +53,10 @@ export type IHrmTimeTrackTimer = {
    *
    * This field distinguishes between active timers (is_active = true) and inactive timers (is_active = false). The system enforces that each employee can have at most one active timer at any time through a unique constraint on (hrm_time_track_employee_id, is_active).
    *
-   * @x-autobe-database-schema-property is_active
-   * @x-autobe-specification Direct mapping from hrm_time_track_timers.is_active. Boolean flag indicating whether this timer session is currently running.
+     * @x-autobe-database-schema-property is_active
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_timers.is_active. Boolean flag indicating whether this
+     *   timer session is currently running.
    */
   is_active: boolean;
 
@@ -58,8 +65,10 @@ export type IHrmTimeTrackTimer = {
    *
    * This field is automatically set when the timer session is started and provides an audit trail of when the timer was initiated. It should match or be very close to the started_at timestamp.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from hrm_time_track_timers.created_at. Timestamp when this timer record was created in the database.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_timers.created_at. Timestamp when this timer record was
+     *   created in the database.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -68,8 +77,10 @@ export type IHrmTimeTrackTimer = {
    *
    * This field is updated whenever the timer's description, project, or task assignment is edited while the timer is running. It provides visibility into when changes were made to the timer session context.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from hrm_time_track_timers.updated_at. Timestamp when this timer record was last modified.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_timers.updated_at. Timestamp when this timer record was
+     *   last modified.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -78,8 +89,11 @@ export type IHrmTimeTrackTimer = {
    *
    * This nested object provides the employee's identifying information including their user identity (name, email), position, department, role, employment type, and status within the organization. The employee must be assigned to the project associated with this timer.
    *
-   * @x-autobe-database-schema-property employee
-   * @x-autobe-specification Relation mapping via JOIN on hrm_time_track_employee_id to hrm_time_track_employees table. Returns IHrmTimeTrackEmployee.ISummary with employee identity and organizational context.
+     * @x-autobe-database-schema-property employee
+     * @x-autobe-specification Relation mapping via JOIN on
+     *   hrm_time_track_employee_id to hrm_time_track_employees table. Returns
+     *   IHrmTimeTrackEmployee.ISummary with employee identity and
+     *   organizational context.
    */
   employee: IHrmTimeTrackEmployee.ISummary;
 
@@ -88,8 +102,11 @@ export type IHrmTimeTrackTimer = {
    *
    * This nested object provides the project's identifying information including name, description, color code, lifecycle status, budget hours, and planned dates. Project association is required when starting a timer, and the employee must be assigned to this project through hrm_time_track_project_members.
    *
-   * @x-autobe-database-schema-property project
-   * @x-autobe-specification Relation mapping via JOIN on hrm_time_track_project_id to hrm_time_track_projects table. Returns IHrmTimeTrackProject.ISummary with project identification and status information.
+     * @x-autobe-database-schema-property project
+     * @x-autobe-specification Relation mapping via JOIN on
+     *   hrm_time_track_project_id to hrm_time_track_projects table. Returns
+     *   IHrmTimeTrackProject.ISummary with project identification and status
+     *   information.
    */
   project: IHrmTimeTrackProject.ISummary;
 
@@ -98,8 +115,11 @@ export type IHrmTimeTrackTimer = {
    *
    * This nested object (or null) provides the task's identifying information including title, priority, status, and relationships. Task association is optional when starting a timer. If specified, the task must belong to the project referenced in this timer, and the employee should have access to this task.
    *
-   * @x-autobe-database-schema-property task
-   * @x-autobe-specification Relation mapping via LEFT JOIN on hrm_time_track_task_id to hrm_time_track_tasks table. Returns IHrmTimeTrackTask.ISummary or null. Task association is optional when starting a timer.
+     * @x-autobe-database-schema-property task
+     * @x-autobe-specification Relation mapping via LEFT JOIN on
+     *   hrm_time_track_task_id to hrm_time_track_tasks table. Returns
+     *   IHrmTimeTrackTask.ISummary or null. Task association is optional when
+     *   starting a timer.
    */
   task: IHrmTimeTrackTask.ISummary | null;
 };
@@ -111,15 +131,15 @@ export namespace IHrmTimeTrackTimer {
    */
   export type IUpdate = {
     /**
-     * @x-autobe-database-schema-property description
+         * @x-autobe-database-schema-property description
      */
     description?: string | null | undefined;
     /**
-     * @x-autobe-database-schema-property hrm_time_track_project_id
+         * @x-autobe-database-schema-property hrm_time_track_project_id
      */
     hrm_time_track_project_id?: (string & tags.Format<"uuid">) | undefined;
     /**
-     * @x-autobe-database-schema-property hrm_time_track_task_id
+         * @x-autobe-database-schema-property hrm_time_track_task_id
      */
     hrm_time_track_task_id?: (string & tags.Format<"uuid">) | null | undefined;
   };
@@ -133,11 +153,11 @@ export namespace IHrmTimeTrackTimer {
    */
   export type ISummary = {
     /**
-     * @x-autobe-database-schema-property id
+         * @x-autobe-database-schema-property id
      */
     id: string & tags.Format<"uuid">;
     /**
-     * @x-autobe-database-schema-property started_at
+         * @x-autobe-database-schema-property started_at
      */
     started_at: string & tags.Format<"date-time">;
 
@@ -146,28 +166,31 @@ export namespace IHrmTimeTrackTimer {
      *
      * Employees can use this field to note what specific work is being done, providing context for the time being tracked. This description can be edited while the timer is running, allowing corrections and updates to work context without stopping the timer session. Null when no description is provided.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from hrm_time_track_timers.description. Optional description of work being performed during timer session. Nullable in database - employees may not provide a description.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_timers.description. Optional description of work
+         *   being performed during timer session. Nullable in database -
+         *   employees may not provide a description.
      */
     description: string | null;
     /**
-     * @x-autobe-database-schema-property is_active
+         * @x-autobe-database-schema-property is_active
      */
     is_active: boolean;
     /**
-     * @x-autobe-database-schema-property created_at
+         * @x-autobe-database-schema-property created_at
      */
     created_at: string & tags.Format<"date-time">;
     /**
-     * @x-autobe-database-schema-property employee
+         * @x-autobe-database-schema-property employee
      */
     employee: IHrmTimeTrackEmployee.ISummary;
     /**
-     * @x-autobe-database-schema-property project
+         * @x-autobe-database-schema-property project
      */
     project: IHrmTimeTrackProject.ISummary;
     /**
-     * @x-autobe-database-schema-property task
+         * @x-autobe-database-schema-property task
      */
     task?: IHrmTimeTrackTask.ISummary | null | undefined;
   };
@@ -181,7 +204,7 @@ export namespace IHrmTimeTrackTimer {
    */
   export type ICreate = {
     /**
-     * @x-autobe-database-schema-property hrm_time_track_project_id
+         * @x-autobe-database-schema-property hrm_time_track_project_id
      */
     project_id: string & tags.Format<"uuid">;
 
@@ -190,8 +213,11 @@ export namespace IHrmTimeTrackTimer {
      *
      * This field allows employees to associate the timer with a specific task within the selected project. Task association is optional - if not provided, the time will be tracked at the project level only. If specified, the task must belong to the project referenced in project_id.
      *
-     * @x-autobe-database-schema-property hrm_time_track_task_id
-     * @x-autobe-specification Direct mapping from hrm_time_track_timers.hrm_time_track_task_id. Optional task association for granular time tracking. Nullable in database, exposed as optional in Create DTO.
+         * @x-autobe-database-schema-property hrm_time_track_task_id
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_timers.hrm_time_track_task_id. Optional task
+         *   association for granular time tracking. Nullable in database,
+         *   exposed as optional in Create DTO.
      */
     task_id?: (string & tags.Format<"uuid">) | null | undefined;
 
@@ -200,8 +226,10 @@ export namespace IHrmTimeTrackTimer {
      *
      * Employees can use this field to document what specific work is being tracked. This description provides context for the time entry and can be edited while the timer is running. If not provided, the timer will have no description.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from hrm_time_track_timers.description. Optional work description field. Nullable in database, exposed as optional in Create DTO.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_timers.description. Optional work description field.
+         *   Nullable in database, exposed as optional in Create DTO.
      */
     description?: string | null | undefined;
   };
@@ -213,11 +241,11 @@ export namespace IHrmTimeTrackTimer {
    */
   export type IRequest = {
     /**
-     * @x-autobe-database-schema-property hrm_time_track_employee_id
+         * @x-autobe-database-schema-property hrm_time_track_employee_id
      */
     employee_id?: (string & tags.Format<"uuid">) | undefined;
     /**
-     * @x-autobe-database-schema-property is_active
+         * @x-autobe-database-schema-property is_active
      */
     is_active?: boolean | undefined;
     order?: "asc" | "desc" | undefined;
@@ -226,7 +254,7 @@ export namespace IHrmTimeTrackTimer {
       | undefined;
     page_token?: string | undefined;
     /**
-     * @x-autobe-database-schema-property hrm_time_track_project_id
+         * @x-autobe-database-schema-property hrm_time_track_project_id
      */
     project_id?: (string & tags.Format<"uuid">) | undefined;
     sort?:
@@ -237,7 +265,7 @@ export namespace IHrmTimeTrackTimer {
       | "created_at"
       | undefined;
     /**
-     * @x-autobe-database-schema-property hrm_time_track_task_id
+         * @x-autobe-database-schema-property hrm_time_track_task_id
      */
     task_id?: (string & tags.Format<"uuid">) | null | undefined;
 
@@ -249,7 +277,8 @@ export namespace IHrmTimeTrackTimer {
      * Requesting a page beyond the available range returns an empty data array
      * with valid pagination metadata reflecting the actual totals.
      *
-     * @x-autobe-specification 1-indexed page number. Defaults to 1 if not provided.
+         * @x-autobe-specification 1-indexed page number. Defaults to 1 if not
+         *   provided.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
 
@@ -261,7 +290,8 @@ export namespace IHrmTimeTrackTimer {
      * enforce upper bounds to prevent excessive resource consumption on large
      * requests.
      *
-     * @x-autobe-specification Maximum records per page. Defaults to 100 if not provided.
+         * @x-autobe-specification Maximum records per page. Defaults to 100 if
+         *   not provided.
      */
     limit?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };

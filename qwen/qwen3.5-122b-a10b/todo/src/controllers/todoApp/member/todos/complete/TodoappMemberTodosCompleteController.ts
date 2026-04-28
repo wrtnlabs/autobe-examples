@@ -25,14 +25,15 @@ export class TodoappMemberTodosCompleteController {
    * @param connection
    * @param todoId Unique identifier of the todo task to toggle completion status (UUID format).
    * @param body Toggle request containing the target completion status value.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1. Validate authenticated member owns the todo by checking todo_app_member_id matches current user.
-   * 2. Verify todo exists and is not permanently deleted (deleted_at IS NULL).
-   * 3. Update is_completed field to the target value from request body.
-   * 4. Update updated_at timestamp to current time.
-   * 5. Create corresponding snapshot record in todo_app_snapshots table for edit history.
-   * 6. Return the updated todo entity.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification 1. Validate authenticated member owns the todo by
+     *   checking todo_app_member_id matches current user. 2. Verify todo exists
+     *   and is not permanently deleted (deleted_at IS NULL). 3. Update
+     *   is_completed field to the target value from request body. 4. Update
+     *   updated_at timestamp to current time. 5. Create corresponding snapshot
+     *   record in todo_app_snapshots table for edit history. 6. Return the
+     *   updated todo entity.
    *
    * Error cases:
    * - 404 if todo not found or belongs to different user

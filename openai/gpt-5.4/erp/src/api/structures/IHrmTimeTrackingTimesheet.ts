@@ -12,110 +12,141 @@ export type IHrmTimeTrackingTimesheet = {
   /**
    * Unique identifier of the timesheet record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_timesheets.id.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_timesheets.id.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Organization workspace that owns this timesheet.
    *
-   * @x-autobe-database-schema-property organization
-   * @x-autobe-specification Resolve the belongs-to relation from hrm_time_tracking_timesheets.organization using hrm_time_tracking_organization_id and project it as IHrmTimeTrackingOrganization.ISummary.
+     * @x-autobe-database-schema-property organization
+     * @x-autobe-specification Resolve the belongs-to relation from
+     *   hrm_time_tracking_timesheets.organization using
+     *   hrm_time_tracking_organization_id and project it as
+     *   IHrmTimeTrackingOrganization.ISummary.
    */
   organization: IHrmTimeTrackingOrganization.ISummary;
 
   /**
    * Employee who owns and submitted this weekly timesheet.
    *
-   * @x-autobe-database-schema-property employee
-   * @x-autobe-specification Resolve the belongs-to relation from hrm_time_tracking_timesheets.employee using hrm_time_tracking_employee_id and project it as IHrmTimeTrackingEmployee.ISummary.
+     * @x-autobe-database-schema-property employee
+     * @x-autobe-specification Resolve the belongs-to relation from
+     *   hrm_time_tracking_timesheets.employee using
+     *   hrm_time_tracking_employee_id and project it as
+     *   IHrmTimeTrackingEmployee.ISummary.
    */
   employee: IHrmTimeTrackingEmployee.ISummary;
 
   /**
    * Start date-time of the reporting week covered by this timesheet.
    *
-   * @x-autobe-database-schema-property week_start_date
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_timesheets.week_start_date. Represents the Monday boundary of the reporting week.
+     * @x-autobe-database-schema-property week_start_date
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_timesheets.week_start_date. Represents the Monday
+     *   boundary of the reporting week.
    */
   week_start_date: string & tags.Format<"date-time">;
 
   /**
    * End date-time of the reporting week covered by this timesheet.
    *
-   * @x-autobe-database-schema-property week_end_date
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_timesheets.week_end_date. Represents the Sunday boundary of the reporting week.
+     * @x-autobe-database-schema-property week_end_date
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_timesheets.week_end_date. Represents the Sunday
+     *   boundary of the reporting week.
    */
   week_end_date: string & tags.Format<"date-time">;
 
   /**
    * Current workflow status of the timesheet.
    *
-   * @x-autobe-database-schema-property status
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_timesheets.status. Business values include draft, submitted, approved, and rejected.
+     * @x-autobe-database-schema-property status
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_timesheets.status. Business values include draft,
+     *   submitted, approved, and rejected.
    */
   status: string;
 
   /**
    * Timelog entries currently included in this weekly timesheet.
    *
-   * @x-autobe-specification Load active inclusion rows from hrm_time_tracking_timesheet_timelogs where hrm_time_tracking_timesheet_id equals this timesheet id, join each included hrm_time_tracking_timelogs record, and serialize the linked timelogs as IHrmTimeTrackingTimelog items. Exclude deleted inclusion rows and deleted timelog rows according to active-read rules.
+     * @x-autobe-specification Load active inclusion rows from
+     *   hrm_time_tracking_timesheet_timelogs where
+     *   hrm_time_tracking_timesheet_id equals this timesheet id, join each
+     *   included hrm_time_tracking_timelogs record, and serialize the linked
+     *   timelogs as IHrmTimeTrackingTimelog items. Exclude deleted inclusion
+     *   rows and deleted timelog rows according to active-read rules.
    */
   timelogs: IHrmTimeTrackingTimelog[];
 
   /**
    * Total hours represented by the timelogs included in this timesheet.
    *
-   * @x-autobe-specification Compute from the included timelogs loaded for this timesheet by summing their duration_minutes and converting the summed minutes to hours as a number at read time. Do not persist this value to hrm_time_tracking_timesheets.
+     * @x-autobe-specification Compute from the included timelogs loaded for
+     *   this timesheet by summing their duration_minutes and converting the
+     *   summed minutes to hours as a number at read time. Do not persist this
+     *   value to hrm_time_tracking_timesheets.
    */
   total_hours: number;
 
   /**
    * Timestamp when the employee submitted the timesheet for approval, or null if it has not been submitted.
    *
-   * @x-autobe-database-schema-property submitted_at
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_timesheets.submitted_at. Null until the employee submits the draft for review.
+     * @x-autobe-database-schema-property submitted_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_timesheets.submitted_at. Null until the employee
+     *   submits the draft for review.
    */
   submitted_at: (string & tags.Format<"date-time">) | null;
 
   /**
    * Timestamp when the submitted timesheet was reviewed, or null if no review decision has been made.
    *
-   * @x-autobe-database-schema-property reviewed_at
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_timesheets.reviewed_at. Null until an approval or rejection decision is recorded.
+     * @x-autobe-database-schema-property reviewed_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_timesheets.reviewed_at. Null until an approval or
+     *   rejection decision is recorded.
    */
   reviewed_at: (string & tags.Format<"date-time">) | null;
 
   /**
    * Reason explaining why the timesheet was rejected, or null when it has not been rejected.
    *
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_timesheets.rejection_reason. Present only when the review outcome is rejection; otherwise null.
-   * @x-autobe-database-schema-property rejection_reason
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_timesheets.rejection_reason. Present only when the
+     *   review outcome is rejection; otherwise null.
+     * @x-autobe-database-schema-property rejection_reason
    */
   rejection_reason: null | null;
 
   /**
    * Timestamp when this timesheet record was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_timesheets.created_at.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_timesheets.created_at.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when this timesheet record was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_timesheets.updated_at.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_timesheets.updated_at.
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * Soft-deletion timestamp for this timesheet, or null when the record is still active.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_timesheets.deleted_at. Null means the timesheet remains active; a timestamp indicates soft deletion.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_timesheets.deleted_at. Null means the timesheet
+     *   remains active; a timestamp indicates soft deletion.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -127,8 +158,17 @@ export namespace IHrmTimeTrackingTimesheet {
     /**
      * Start datetime of the reporting week to create as a draft timesheet. It identifies the Monday boundary of the week the employee wants to open for time reporting.
      *
-     * @x-autobe-database-schema-property week_start_date
-     * @x-autobe-specification Maps directly to hrm_time_tracking_timesheets.week_start_date as the requested weekly reporting-period anchor. The service must validate that this date-time represents the Monday boundary for the target week in the current organization's timezone, use it as the persisted week_start_date value for the new timesheet, and derive week_end_date for the same Monday-to-Sunday period. This field also participates in duplicate prevention together with the authenticated employee identity because timesheets are unique per employee and week_start_date.
+         * @x-autobe-database-schema-property week_start_date
+         * @x-autobe-specification Maps directly to
+         *   hrm_time_tracking_timesheets.week_start_date as the requested
+         *   weekly reporting-period anchor. The service must validate that this
+         *   date-time represents the Monday boundary for the target week in the
+         *   current organization's timezone, use it as the persisted
+         *   week_start_date value for the new timesheet, and derive
+         *   week_end_date for the same Monday-to-Sunday period. This field also
+         *   participates in duplicate prevention together with the
+         *   authenticated employee identity because timesheets are unique per
+         *   employee and week_start_date.
      */
     week_start_date: string & tags.Format<"date-time">;
   };
@@ -140,14 +180,14 @@ export namespace IHrmTimeTrackingTimesheet {
    */
   export type IUpdate = {
     /**
-     * @x-autobe-database-schema-property status
+         * @x-autobe-database-schema-property status
      */
     status: string;
 
     /**
      * Reason explaining why the timesheet was rejected, or null when no rejection reason is being provided.
      *
-     * @x-autobe-database-schema-property rejection_reason
+         * @x-autobe-database-schema-property rejection_reason
      */
     rejection_reason?: string | null | undefined;
   };
@@ -159,96 +199,121 @@ export namespace IHrmTimeTrackingTimesheet {
     /**
      * Unique identifier of the timesheet record.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_timesheets.id.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_timesheets.id.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Organization workspace that owns this timesheet.
      *
-     * @x-autobe-database-schema-property organization
-     * @x-autobe-specification Resolve hrm_time_tracking_timesheets.organization by joining hrm_time_tracking_timesheets.hrm_time_tracking_organization_id to hrm_time_tracking_organizations.id and map the result to IHrmTimeTrackingOrganization.ISummary.
+         * @x-autobe-database-schema-property organization
+         * @x-autobe-specification Resolve
+         *   hrm_time_tracking_timesheets.organization by joining
+         *   hrm_time_tracking_timesheets.hrm_time_tracking_organization_id to
+         *   hrm_time_tracking_organizations.id and map the result to
+         *   IHrmTimeTrackingOrganization.ISummary.
      */
     organization: IHrmTimeTrackingOrganization.ISummary;
 
     /**
      * Employee account that owns this timesheet.
      *
-     * @x-autobe-database-schema-property employee
-     * @x-autobe-specification Resolve hrm_time_tracking_timesheets.employee by joining hrm_time_tracking_timesheets.hrm_time_tracking_employee_id to hrm_time_tracking_employees.id and map the result to IHrmTimeTrackingEmployee.ISummary.
+         * @x-autobe-database-schema-property employee
+         * @x-autobe-specification Resolve hrm_time_tracking_timesheets.employee
+         *   by joining
+         *   hrm_time_tracking_timesheets.hrm_time_tracking_employee_id to
+         *   hrm_time_tracking_employees.id and map the result to
+         *   IHrmTimeTrackingEmployee.ISummary.
      */
     employee: IHrmTimeTrackingEmployee.ISummary;
 
     /**
      * Start date-time of the week covered by this timesheet.
      *
-     * @x-autobe-database-schema-property week_start_date
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_timesheets.week_start_date. This timestamp represents the Monday boundary of the reporting week.
+         * @x-autobe-database-schema-property week_start_date
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_timesheets.week_start_date. This timestamp
+         *   represents the Monday boundary of the reporting week.
      */
     week_start_date: string & tags.Format<"date-time">;
 
     /**
      * End date-time of the week covered by this timesheet.
      *
-     * @x-autobe-database-schema-property week_end_date
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_timesheets.week_end_date. This timestamp represents the Sunday boundary of the reporting week.
+         * @x-autobe-database-schema-property week_end_date
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_timesheets.week_end_date. This timestamp
+         *   represents the Sunday boundary of the reporting week.
      */
     week_end_date: string & tags.Format<"date-time">;
 
     /**
      * Current workflow status of the timesheet.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_timesheets.status. Business values are stored as strings such as draft, submitted, approved, and rejected.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_timesheets.status. Business values are stored as
+         *   strings such as draft, submitted, approved, and rejected.
      */
     status: string;
 
     /**
      * Timestamp when the employee submitted the timesheet for approval, or null if it is still unsubmitted.
      *
-     * @x-autobe-database-schema-property submitted_at
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_timesheets.submitted_at. Null when the timesheet has not yet been submitted for review.
+         * @x-autobe-database-schema-property submitted_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_timesheets.submitted_at. Null when the timesheet
+         *   has not yet been submitted for review.
      */
     submitted_at: (string & tags.Format<"date-time">) | null;
 
     /**
      * Timestamp when the submitted timesheet was reviewed, or null if no review decision has been made.
      *
-     * @x-autobe-database-schema-property reviewed_at
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_timesheets.reviewed_at. Null until a submitted timesheet is approved or rejected.
+         * @x-autobe-database-schema-property reviewed_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_timesheets.reviewed_at. Null until a submitted
+         *   timesheet is approved or rejected.
      */
     reviewed_at: (string & tags.Format<"date-time">) | null;
 
     /**
      * Reason for rejection when the timesheet is rejected, or null otherwise.
      *
-     * @x-autobe-database-schema-property rejection_reason
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_timesheets.rejection_reason. Null unless the workflow outcome is rejected and a reviewer supplied a reason.
+         * @x-autobe-database-schema-property rejection_reason
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_timesheets.rejection_reason. Null unless the
+         *   workflow outcome is rejected and a reviewer supplied a reason.
      */
     rejection_reason: string | null;
 
     /**
      * Timestamp when the timesheet record was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_timesheets.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_timesheets.created_at.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when the timesheet record was last updated.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_timesheets.updated_at.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_timesheets.updated_at.
      */
     updated_at: string & tags.Format<"date-time">;
 
     /**
      * Soft-deletion timestamp of the timesheet, or null when the record is still active.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_timesheets.deleted_at. Null means the timesheet remains active and not soft deleted.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_timesheets.deleted_at. Null means the timesheet
+         *   remains active and not soft deleted.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };
@@ -260,50 +325,76 @@ export namespace IHrmTimeTrackingTimesheet {
     /**
      * Optional workflow status to match when filtering weekly timesheets.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Optional equality filter mapped directly to hrm_time_tracking_timesheets.status. Accept only the business workflow values draft, submitted, approved, or rejected. When omitted, do not constrain the query by status.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Optional equality filter mapped directly to
+         *   hrm_time_tracking_timesheets.status. Accept only the business
+         *   workflow values draft, submitted, approved, or rejected. When
+         *   omitted, do not constrain the query by status.
      */
     status?: "draft" | "submitted" | "approved" | "rejected" | undefined;
 
     /**
      * Optional earliest reporting-week start date to include in the results.
      *
-     * @x-autobe-specification Optional inclusive lower-bound filter parameter for hrm_time_tracking_timesheets.week_start_date. If provided, return only timesheets whose week_start_date is greater than or equal to this date-time value. This property is a request-side query control, not a persisted column.
+         * @x-autobe-specification Optional inclusive lower-bound filter
+         *   parameter for hrm_time_tracking_timesheets.week_start_date. If
+         *   provided, return only timesheets whose week_start_date is greater
+         *   than or equal to this date-time value. This property is a
+         *   request-side query control, not a persisted column.
      */
     weekStartDateFrom?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Optional latest reporting-week start date to include in the results.
      *
-     * @x-autobe-specification Optional inclusive upper-bound filter parameter for hrm_time_tracking_timesheets.week_start_date. If provided, return only timesheets whose week_start_date is less than or equal to this date-time value. This property is a request-side query control, not a persisted column.
+         * @x-autobe-specification Optional inclusive upper-bound filter
+         *   parameter for hrm_time_tracking_timesheets.week_start_date. If
+         *   provided, return only timesheets whose week_start_date is less than
+         *   or equal to this date-time value. This property is a request-side
+         *   query control, not a persisted column.
      */
     weekStartDateTo?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Optional earliest reporting-week end date to include in the results.
      *
-     * @x-autobe-specification Optional inclusive lower-bound filter parameter for hrm_time_tracking_timesheets.week_end_date. If provided, return only timesheets whose week_end_date is greater than or equal to this date-time value. This property is a request-side query control, not a persisted column.
+         * @x-autobe-specification Optional inclusive lower-bound filter
+         *   parameter for hrm_time_tracking_timesheets.week_end_date. If
+         *   provided, return only timesheets whose week_end_date is greater
+         *   than or equal to this date-time value. This property is a
+         *   request-side query control, not a persisted column.
      */
     weekEndDateFrom?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Optional latest reporting-week end date to include in the results.
      *
-     * @x-autobe-specification Optional inclusive upper-bound filter parameter for hrm_time_tracking_timesheets.week_end_date. If provided, return only timesheets whose week_end_date is less than or equal to this date-time value. This property is a request-side query control, not a persisted column.
+         * @x-autobe-specification Optional inclusive upper-bound filter
+         *   parameter for hrm_time_tracking_timesheets.week_end_date. If
+         *   provided, return only timesheets whose week_end_date is less than
+         *   or equal to this date-time value. This property is a request-side
+         *   query control, not a persisted column.
      */
     weekEndDateTo?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Optional page number of the timesheet results to return.
      *
-     * @x-autobe-specification Optional 1-indexed page number used for paginating the list query result. Convert this request control into offset-based slicing together with limit after applying organization and filter predicates. This property does not map to a database column.
+         * @x-autobe-specification Optional 1-indexed page number used for
+         *   paginating the list query result. Convert this request control into
+         *   offset-based slicing together with limit after applying
+         *   organization and filter predicates. This property does not map to a
+         *   database column.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Optional maximum number of timesheet results to include in one page.
      *
-     * @x-autobe-specification Optional maximum number of timesheet records to return per page. Use it with page to compute result slicing after filters are applied. Enforce the schema bounds of minimum 1 and maximum 100. This property does not map to a database column.
+         * @x-autobe-specification Optional maximum number of timesheet records
+         *   to return per page. Use it with page to compute result slicing
+         *   after filters are applied. Enforce the schema bounds of minimum 1
+         *   and maximum 100. This property does not map to a database column.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -317,8 +408,16 @@ export namespace IHrmTimeTrackingTimesheet {
     /**
      * Reason explaining why the submitted timesheet is being rejected and returned to draft for correction.
      *
-     * @x-autobe-specification Map request body rejection_reason to hrm_time_tracking_timesheets.rejection_reason during the reject review transaction for the timesheet identified by the timesheetId path parameter. For this reject command DTO, the client must provide a non-empty reason string; the service validates the target timesheet is currently submitted, sets status back to draft, writes the provided rejection_reason, stamps reviewed_at with the current timestamp, preserves submitted_at, and leaves timesheetTimelogs unchanged.
-     * @x-autobe-database-schema-property rejection_reason
+         * @x-autobe-specification Map request body rejection_reason to
+         *   hrm_time_tracking_timesheets.rejection_reason during the reject
+         *   review transaction for the timesheet identified by the timesheetId
+         *   path parameter. For this reject command DTO, the client must
+         *   provide a non-empty reason string; the service validates the target
+         *   timesheet is currently submitted, sets status back to draft, writes
+         *   the provided rejection_reason, stamps reviewed_at with the current
+         *   timestamp, preserves submitted_at, and leaves timesheetTimelogs
+         *   unchanged.
+         * @x-autobe-database-schema-property rejection_reason
      */
     rejection_reason: null;
   };

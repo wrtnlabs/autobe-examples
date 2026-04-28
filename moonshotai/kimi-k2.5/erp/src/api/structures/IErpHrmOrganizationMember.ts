@@ -13,120 +13,154 @@ export type IErpHrmOrganizationMember = {
   /**
    * Unique identifier for the organization member record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from erp_hrm_organization_members.id. UUID primary key generated on creation.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_organization_members.id. UUID primary key generated on
+     *   creation.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Organization identifier that this membership belongs to.
    *
-   * @x-autobe-database-schema-property organization_id
-   * @x-autobe-specification Direct mapping from erp_hrm_organization_members.organization_id. References erp_hrm_organizations.id.
+     * @x-autobe-database-schema-property organization_id
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_organization_members.organization_id. References
+     *   erp_hrm_organizations.id.
    */
   organizationId: string & tags.Format<"uuid">;
 
   /**
    * Global user account identifier linked to this organization membership.
    *
-   * @x-autobe-database-schema-property user_id
-   * @x-autobe-specification Direct mapping from erp_hrm_organization_members.user_id. References erp_hrm_members.id. Links to global user account.
+     * @x-autobe-database-schema-property user_id
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_organization_members.user_id. References erp_hrm_members.id.
+     *   Links to global user account.
    */
   userId: string & tags.Format<"uuid">;
 
   /**
    * Assigned role identifier that determines member permissions within the organization.
    *
-   * @x-autobe-database-schema-property role_id
-   * @x-autobe-specification Direct mapping from erp_hrm_organization_members.role_id. References erp_hrm_roles.id. Determines member permissions.
+     * @x-autobe-database-schema-property role_id
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_organization_members.role_id. References erp_hrm_roles.id.
+     *   Determines member permissions.
    */
   roleId: string & tags.Format<"uuid">;
 
   /**
    * Optional department identifier for member's organizational placement. Null if not assigned to a department.
    *
-   * @x-autobe-database-schema-property department_id
-   * @x-autobe-specification Direct mapping from erp_hrm_organization_members.department_id. Nullable foreign key referencing erp_hrm_departments.id. Null when member is not assigned to any department.
+     * @x-autobe-database-schema-property department_id
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_organization_members.department_id. Nullable foreign key
+     *   referencing erp_hrm_departments.id. Null when member is not assigned to
+     *   any department.
    */
   departmentId?: (string & tags.Format<"uuid">) | null | undefined;
 
   /**
    * Job title or position within the organization (e.g., 'Senior Developer', 'Project Manager').
    *
-   * @x-autobe-database-schema-property position
-   * @x-autobe-specification Direct mapping from erp_hrm_organization_members.position. Nullable string storing job title or position name.
+     * @x-autobe-database-schema-property position
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_organization_members.position. Nullable string storing job
+     *   title or position name.
    */
   position?: string | null | undefined;
 
   /**
    * Classification of working relationship: full_time, part_time, contractor, or intern.
    *
-   * @x-autobe-database-schema-property employment_type
-   * @x-autobe-specification Direct mapping from erp_hrm_organization_members.employment_type. Enum values: 'full_time', 'part_time', 'contractor', 'intern'.
+     * @x-autobe-database-schema-property employment_type
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_organization_members.employment_type. Enum values: 'full_time',
+     *   'part_time', 'contractor', 'intern'.
    */
   employmentType: string;
 
   /**
    * Activation status indicating whether the member can perform work activities. True for active, false for deactivated.
    *
-   * @x-autobe-database-schema-property is_active
-   * @x-autobe-specification Direct mapping from erp_hrm_organization_members.is_active. Boolean flag controlling member access to work activities.
+     * @x-autobe-database-schema-property is_active
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_organization_members.is_active. Boolean flag controlling member
+     *   access to work activities.
    */
   isActive: boolean;
 
   /**
    * Timestamp when the membership record was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from erp_hrm_organization_members.created_at. Timestamp set on record creation.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_organization_members.created_at. Timestamp set on record
+     *   creation.
    */
   createdAt: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the membership record was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from erp_hrm_organization_members.updated_at. Timestamp automatically updated on record modifications.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_organization_members.updated_at. Timestamp automatically
+     *   updated on record modifications.
    */
   updatedAt: string & tags.Format<"date-time">;
 
   /**
    * Soft deletion timestamp. Null if membership is active, set to deletion time if soft-deleted.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from erp_hrm_organization_members.deleted_at. Nullable timestamp for soft deletion. Null for active records, set to deletion time for soft-deleted records. Records with non-null deleted_at must be excluded from API responses.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_organization_members.deleted_at. Nullable timestamp for soft
+     *   deletion. Null for active records, set to deletion time for
+     *   soft-deleted records. Records with non-null deleted_at must be excluded
+     *   from API responses.
    */
   deletedAt: (string & tags.Format<"date-time">) | null;
 
   /**
    * Global user profile information including email, name, and avatar.
    *
-   * @x-autobe-database-schema-property user
-   * @x-autobe-specification JOIN from erp_hrm_organization_members.user_id to erp_hrm_members.id. Returns IErpHrmMember with user profile details (email, firstName, lastName, avatarUrl).
+     * @x-autobe-database-schema-property user
+     * @x-autobe-specification JOIN from erp_hrm_organization_members.user_id to
+     *   erp_hrm_members.id. Returns IErpHrmMember with user profile details
+     *   (email, firstName, lastName, avatarUrl).
    */
   user: IErpHrmMember;
 
   /**
    * Assigned role details including name, description, and built-in status.
    *
-   * @x-autobe-database-schema-property role
-   * @x-autobe-specification JOIN from erp_hrm_organization_members.role_id to erp_hrm_roles.id. Returns IErpHrmRole with role details (name, description, isBuiltin).
+     * @x-autobe-database-schema-property role
+     * @x-autobe-specification JOIN from erp_hrm_organization_members.role_id to
+     *   erp_hrm_roles.id. Returns IErpHrmRole with role details (name,
+     *   description, isBuiltin).
    */
   role: IErpHrmRole;
 
   /**
    * Department details if member is assigned to a department. Null if not assigned to any department.
    *
-   * @x-autobe-database-schema-property department
-   * @x-autobe-specification LEFT JOIN from erp_hrm_organization_members.department_id to erp_hrm_departments.id. Returns IErpHrmDepartment or null if department_id is null.
+     * @x-autobe-database-schema-property department
+     * @x-autobe-specification LEFT JOIN from
+     *   erp_hrm_organization_members.department_id to erp_hrm_departments.id.
+     *   Returns IErpHrmDepartment or null if department_id is null.
    */
   department: IErpHrmDepartment | null;
 
   /**
    * Organization details that this membership belongs to.
    *
-   * @x-autobe-database-schema-property organization
-   * @x-autobe-specification JOIN from erp_hrm_organization_members.organization_id to erp_hrm_organizations.id. Returns IErpHrmOrganization with organization details.
+     * @x-autobe-database-schema-property organization
+     * @x-autobe-specification JOIN from
+     *   erp_hrm_organization_members.organization_id to
+     *   erp_hrm_organizations.id. Returns IErpHrmOrganization with organization
+     *   details.
    */
   organization: IErpHrmOrganization;
 };
@@ -138,22 +172,33 @@ export namespace IErpHrmOrganizationMember {
     /**
      * Text search across member first name, last name, email, and position fields using case-insensitive partial matching
      *
-     * @x-autobe-specification Computed search parameter. Query joins erp_hrm_members and performs ILIKE search across: members.first_name, members.last_name, members.email, and organization_members.position. Uses Gin trigram indexes for performance. Case-insensitive partial matching with OR condition between fields.
+         * @x-autobe-specification Computed search parameter. Query joins
+         *   erp_hrm_members and performs ILIKE search across:
+         *   members.first_name, members.last_name, members.email, and
+         *   organization_members.position. Uses Gin trigram indexes for
+         *   performance. Case-insensitive partial matching with OR condition
+         *   between fields.
      */
     search?: string | undefined;
 
     /**
      * Filter by assigned role IDs. Returns members with any of the specified roles.
      *
-     * @x-autobe-database-schema-property role_id
-     * @x-autobe-specification Direct filter mapping to erp_hrm_organization_members.role_id column. Query uses IN clause for array matching. Validates UUID format per item. Empty array or omitted = no role filter applied.
+         * @x-autobe-database-schema-property role_id
+         * @x-autobe-specification Direct filter mapping to
+         *   erp_hrm_organization_members.role_id column. Query uses IN clause
+         *   for array matching. Validates UUID format per item. Empty array or
+         *   omitted = no role filter applied.
      */
     roleIds?: (string & tags.Format<"uuid">)[] | undefined;
 
     /**
      * Filter by department assignment. Use 'unassigned' sentinel value to find members without a department. UUID values filter by specific departments.
      *
-     * @x-autobe-specification Computed filter parameter for department_id with special sentinel handling. Query processes array items: UUID strings map to department_id IN (...), 'unassigned' sentinel triggers department_id IS NULL condition. Supports mixed filtering.
+         * @x-autobe-specification Computed filter parameter for department_id
+         *   with special sentinel handling. Query processes array items: UUID
+         *   strings map to department_id IN (...), 'unassigned' sentinel
+         *   triggers department_id IS NULL condition. Supports mixed filtering.
      */
     departmentIds?:
       | ((string & tags.Format<"uuid">) | "unassigned")[]
@@ -162,16 +207,22 @@ export namespace IErpHrmOrganizationMember {
     /**
      * Filter by member activation status. True returns active members, false returns deactivated members. Omit to include all.
      *
-     * @x-autobe-database-schema-property is_active
-     * @x-autobe-specification Direct filter mapping to erp_hrm_organization_members.is_active column. True filters for active members, false for deactivated. Omitted/null returns all members.
+         * @x-autobe-database-schema-property is_active
+         * @x-autobe-specification Direct filter mapping to
+         *   erp_hrm_organization_members.is_active column. True filters for
+         *   active members, false for deactivated. Omitted/null returns all
+         *   members.
      */
     isActive?: boolean | undefined;
 
     /**
      * Filter by employment classification. Single value or array of values: full_time, part_time, contractor, intern.
      *
-     * @x-autobe-database-schema-property employment_type
-     * @x-autobe-specification Direct filter mapping to erp_hrm_organization_members.employment_type column. Accepts single string or array. Valid values: 'full_time', 'part_time', 'contractor', 'intern'. Query uses IN clause for array.
+         * @x-autobe-database-schema-property employment_type
+         * @x-autobe-specification Direct filter mapping to
+         *   erp_hrm_organization_members.employment_type column. Accepts single
+         *   string or array. Valid values: 'full_time', 'part_time',
+         *   'contractor', 'intern'. Query uses IN clause for array.
      */
     employmentType?:
       | "full_time"
@@ -184,14 +235,18 @@ export namespace IErpHrmOrganizationMember {
     /**
      * Pagination cursor for fetching the next page. Obtained from previous response pagination metadata. Null for first page.
      *
-     * @x-autobe-specification Computed pagination cursor. Base64-encoded string containing composite key for cursor-based pagination. Null indicates first page request.
+         * @x-autobe-specification Computed pagination cursor. Base64-encoded
+         *   string containing composite key for cursor-based pagination. Null
+         *   indicates first page request.
      */
     cursor?: string | null | undefined;
 
     /**
      * Number of results per page. Maximum 100, default typically 20.
      *
-     * @x-autobe-specification Computed pagination parameter specifying max records per page. Validates min 1 max 100. Defaults to 20. Passed to query as LIMIT clause.
+         * @x-autobe-specification Computed pagination parameter specifying max
+         *   records per page. Validates min 1 max 100. Defaults to 20. Passed
+         *   to query as LIMIT clause.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -200,7 +255,9 @@ export namespace IErpHrmOrganizationMember {
     /**
      * Target page number to retrieve (1-indexed). Page numbering starts from 1. If omitted, defaults to page 1.
      *
-     * @x-autobe-specification Computed pagination parameter as 1-indexed page number. Calculates OFFSET as (page - 1) * limit. Defaults to 1. Used when cursor is null.
+         * @x-autobe-specification Computed pagination parameter as 1-indexed
+         *   page number. Calculates OFFSET as (page - 1) * limit. Defaults to
+         *   1. Used when cursor is null.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };
@@ -212,56 +269,73 @@ export namespace IErpHrmOrganizationMember {
     /**
      * ID of the organization where the member will be assigned.
      *
-     * @x-autobe-database-schema-property organization_id
-     * @x-autobe-specification Direct mapping from erp_hrm_organization_members.organization_id. References the organization that the member belongs to.
+         * @x-autobe-database-schema-property organization_id
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_organization_members.organization_id. References the
+         *   organization that the member belongs to.
      */
     organizationId: string & tags.Format<"uuid">;
 
     /**
      * ID of the user to be assigned as an organization member.
      *
-     * @x-autobe-database-schema-property user_id
-     * @x-autobe-specification Direct mapping from erp_hrm_organization_members.user_id. References the global user account to be assigned as an organization member.
+         * @x-autobe-database-schema-property user_id
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_organization_members.user_id. References the global user
+         *   account to be assigned as an organization member.
      */
     userId: string & tags.Format<"uuid">;
 
     /**
      * ID of the role to assign to the member, controlling their permissions within the organization.
      *
-     * @x-autobe-database-schema-property role_id
-     * @x-autobe-specification Direct mapping from erp_hrm_organization_members.role_id. References the role assigned to the member within the organization, determining their permissions.
+         * @x-autobe-database-schema-property role_id
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_organization_members.role_id. References the role assigned
+         *   to the member within the organization, determining their
+         *   permissions.
      */
     roleId: string & tags.Format<"uuid">;
 
     /**
      * Optional ID of the department where the member will be placed. Null if not assigned to any department.
      *
-     * @x-autobe-database-schema-property department_id
-     * @x-autobe-specification Direct mapping from erp_hrm_organization_members.department_id. Nullable column allowing department assignment to be optional when creating a member.
+         * @x-autobe-database-schema-property department_id
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_organization_members.department_id. Nullable column
+         *   allowing department assignment to be optional when creating a
+         *   member.
      */
     departmentId?: (string & tags.Format<"uuid">) | null | undefined;
 
     /**
      * Job title or position name of the member (e.g., 'Software Engineer', 'Project Manager').
      *
-     * @x-autobe-database-schema-property position
-     * @x-autobe-specification Direct mapping from erp_hrm_organization_members.position. Stores the job title or position title of the member within the organization.
+         * @x-autobe-database-schema-property position
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_organization_members.position. Stores the job title or
+         *   position title of the member within the organization.
      */
     position?: string | null | undefined;
 
     /**
      * Classification of employment type (e.g., 'full_time', 'part_time', 'contractor', 'intern').
      *
-     * @x-autobe-database-schema-property employment_type
-     * @x-autobe-specification Direct mapping from erp_hrm_organization_members.employment_type. Stores the employment classification for the member.
+         * @x-autobe-database-schema-property employment_type
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_organization_members.employment_type. Stores the employment
+         *   classification for the member.
      */
     employmentType: "full_time" | "part_time" | "contractor" | "intern";
 
     /**
      * Whether the organization member is active and can access organization resources. Inactive members retain their records but cannot perform actions.
      *
-     * @x-autobe-database-schema-property is_active
-     * @x-autobe-specification Direct mapping from erp_hrm_organization_members.is_active. Boolean flag controlling whether the member is active. Defaults to true in database if not provided.
+         * @x-autobe-database-schema-property is_active
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_organization_members.is_active. Boolean flag controlling
+         *   whether the member is active. Defaults to true in database if not
+         *   provided.
      */
     isActive: boolean;
   };
@@ -271,19 +345,19 @@ export namespace IErpHrmOrganizationMember {
    */
   export type IUpdate = {
     /**
-     * @x-autobe-database-schema-property role_id
+         * @x-autobe-database-schema-property role_id
      */
     role_id?: (string & tags.Format<"uuid">) | null | undefined;
     /**
-     * @x-autobe-database-schema-property department_id
+         * @x-autobe-database-schema-property department_id
      */
     department_id?: (string & tags.Format<"uuid">) | null | undefined;
     /**
-     * @x-autobe-database-schema-property position
+         * @x-autobe-database-schema-property position
      */
     position?: string | null | undefined;
     /**
-     * @x-autobe-database-schema-property employment_type
+         * @x-autobe-database-schema-property employment_type
      */
     employment_type?:
       | "full_time"
@@ -292,7 +366,7 @@ export namespace IErpHrmOrganizationMember {
       | "intern"
       | undefined;
     /**
-     * @x-autobe-database-schema-property is_active
+         * @x-autobe-database-schema-property is_active
      */
     is_active?: boolean | undefined;
   };
@@ -304,72 +378,92 @@ export namespace IErpHrmOrganizationMember {
     /**
      * Unique identifier for the organization membership (employee) record.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from erp_hrm_organization_members.id PRIMARY KEY.uuid.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_organization_members.id PRIMARY KEY.uuid.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Employee's job title or position within the organization (e.g., 'Senior Developer', 'Project Manager'). May be null if not assigned.
      *
-     * @x-autobe-database-schema-property position
-     * @x-autobe-specification Direct mapping from erp_hrm_organization_members.position. Nullable field representing the employee's job title or position within the organization.
+         * @x-autobe-database-schema-property position
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_organization_members.position. Nullable field representing
+         *   the employee's job title or position within the organization.
      */
     position?: string | null | undefined;
 
     /**
      * Classification of the employee's working relationship with the organization.
      *
-     * @x-autobe-database-schema-property employment_type
-     * @x-autobe-specification Direct mapping from erp_hrm_organization_members.employment_type VARCHAR. Valid values: 'full_time', 'part_time', 'contractor', 'intern'.
+         * @x-autobe-database-schema-property employment_type
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_organization_members.employment_type VARCHAR. Valid values:
+         *   'full_time', 'part_time', 'contractor', 'intern'.
      */
     employment_type: string;
 
     /**
      * Activation status indicating whether the employee can perform work activities in the organization.
      *
-     * @x-autobe-database-schema-property is_active
-     * @x-autobe-specification Direct mapping from erp_hrm_organization_members.is_active BOOLEAN. Indicates whether the membership allows the employee to perform work activities.
+         * @x-autobe-database-schema-property is_active
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_organization_members.is_active BOOLEAN. Indicates whether
+         *   the membership allows the employee to perform work activities.
      */
     is_active: boolean;
 
     /**
      * Summary of the global user account associated with this organization membership, containing email, name, and avatar information.
      *
-     * @x-autobe-database-schema-property user
-     * @x-autobe-specification Join via erp_hrm_organization_members.user_id to erp_hrm_members. Returns IErpHrmMember.ISummary with user's identity and profile. Required - every membership must have an associated user.
+         * @x-autobe-database-schema-property user
+         * @x-autobe-specification Join via erp_hrm_organization_members.user_id
+         *   to erp_hrm_members. Returns IErpHrmMember.ISummary with user's
+         *   identity and profile. Required - every membership must have an
+         *   associated user.
      */
     user: IErpHrmMember.ISummary;
 
     /**
      * Summary of the assigned role that determines the employee's permissions and access rights within the organization.
      *
-     * @x-autobe-database-schema-property role
-     * @x-autobe-specification Join via erp_hrm_organization_members.role_id to erp_hrm_roles. Returns IErpHrmRole.ISummary with role name and description. Required - every membership must have an assigned role for permission control.
+         * @x-autobe-database-schema-property role
+         * @x-autobe-specification Join via erp_hrm_organization_members.role_id
+         *   to erp_hrm_roles. Returns IErpHrmRole.ISummary with role name and
+         *   description. Required - every membership must have an assigned role
+         *   for permission control.
      */
     role: IErpHrmRole.ISummary;
 
     /**
      * Optional summary of the department this employee belongs to, including department name and hierarchy information.
      *
-     * @x-autobe-database-schema-property department
-     * @x-autobe-specification Optional LEFT JOIN via erp_hrm_organization_members.department_id to erp_hrm_departments. Returns IErpHrmDepartment.ISummary or null. Department assignment is optional - employee may not belong to any department.
+         * @x-autobe-database-schema-property department
+         * @x-autobe-specification Optional LEFT JOIN via
+         *   erp_hrm_organization_members.department_id to erp_hrm_departments.
+         *   Returns IErpHrmDepartment.ISummary or null. Department assignment
+         *   is optional - employee may not belong to any department.
      */
     department: IErpHrmDepartment.ISummary | null;
 
     /**
      * Timestamp when the organization membership was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from erp_hrm_organization_members.created_at TIMESTAMPTZ. Represents when the membership record was initially created.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_organization_members.created_at TIMESTAMPTZ. Represents
+         *   when the membership record was initially created.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when the organization membership was last updated.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from erp_hrm_organization_members.updated_at TIMESTAMPTZ. Represents when the membership record was last modified.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_organization_members.updated_at TIMESTAMPTZ. Represents
+         *   when the membership record was last modified.
      */
     updated_at: string & tags.Format<"date-time">;
   };

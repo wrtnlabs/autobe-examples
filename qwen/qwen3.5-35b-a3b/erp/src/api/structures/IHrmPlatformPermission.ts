@@ -29,8 +29,9 @@ export type IHrmPlatformPermission = {
    *
    * This UUID primary key uniquely identifies the permission within the database. It is automatically generated when the permission is created and cannot be modified afterward.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from hrm_platform_permissions.id. UUID primary key generated on record creation.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from hrm_platform_permissions.id.
+     *   UUID primary key generated on record creation.
    */
   id: string & tags.Format<"uuid">;
 
@@ -39,8 +40,11 @@ export type IHrmPlatformPermission = {
    *
    * The code defines the specific action or capability this permission grants (e.g., 'employee.view', 'project.manage', 'organization.create'). Codes must be unique within each organization and follow the dot notation convention for hierarchical organization. Built-in roles (Owner, Manager, Employee) have fixed permission sets while custom roles can have any combination of permissions.
    *
-   * @x-autobe-database-schema-property code
-   * @x-autobe-specification Direct mapping from hrm_platform_permissions.code. Permission identifier code following dot notation (e.g., 'employee.view', 'project.manage'). Unique within organization scope per @@unique([organization_id, code]) constraint.
+     * @x-autobe-database-schema-property code
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_permissions.code. Permission identifier code following dot
+     *   notation (e.g., 'employee.view', 'project.manage'). Unique within
+     *   organization scope per @@unique([organization_id, code]) constraint.
    */
   code: string;
 
@@ -49,8 +53,11 @@ export type IHrmPlatformPermission = {
    *
    * This field provides context about what the permission code represents, making it easier for administrators to understand and assign appropriate permissions when creating or editing roles. Can be null if no description is provided.
    *
-   * @x-autobe-database-schema-property description
-   * @x-autobe-specification Direct mapping from hrm_platform_permissions.description. Nullable field containing optional human-readable description of the permission's purpose. Can be null when no description is provided.
+     * @x-autobe-database-schema-property description
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_permissions.description. Nullable field containing
+     *   optional human-readable description of the permission's purpose. Can be
+     *   null when no description is provided.
    */
   description: string | null;
 
@@ -59,8 +66,12 @@ export type IHrmPlatformPermission = {
    *
    * This belongs-to relationship references the parent role entity that owns this permission. The role defines the group of permissions that users with that role can access. Access role details via the role reference without needing to fetch the full role entity separately.
    *
-   * @x-autobe-database-schema-property role
-   * @x-autobe-specification Relation property mapping from hrm_platform_permissions.role (belongs-to relation to hrm_platform_roles). FK (role_id) is transformed to object reference $ref. Returns IHrmPlatformRole.ISummary containing role identifier, name, and role kind. Join via role_id to hrm_platform_roles.id.
+     * @x-autobe-database-schema-property role
+     * @x-autobe-specification Relation property mapping from
+     *   hrm_platform_permissions.role (belongs-to relation to
+     *   hrm_platform_roles). FK (role_id) is transformed to object reference
+     *   $ref. Returns IHrmPlatformRole.ISummary containing role identifier,
+     *   name, and role kind. Join via role_id to hrm_platform_roles.id.
    */
   role: IHrmPlatformRole.ISummary;
 
@@ -69,8 +80,14 @@ export type IHrmPlatformPermission = {
    *
    * This belongs-to relationship enforces multi-tenancy by scoping permissions to organizations. Each organization maintains its own set of permission codes, preventing conflicts across tenants. The organization reference provides the organizational context for the permission and enables organization-level access control.
    *
-   * @x-autobe-database-schema-property organization
-   * @x-autobe-specification Relation property mapping from hrm_platform_permissions.organization (belongs-to relation to hrm_platform_organizations). FK (organization_id) is transformed to object reference $ref. Returns IHrmPlatformOrganization.ISummary containing organization identification and context. Join via organization_id to hrm_platform_organizations.id. Enforces multi-tenancy isolation.
+     * @x-autobe-database-schema-property organization
+     * @x-autobe-specification Relation property mapping from
+     *   hrm_platform_permissions.organization (belongs-to relation to
+     *   hrm_platform_organizations). FK (organization_id) is transformed to
+     *   object reference $ref. Returns IHrmPlatformOrganization.ISummary
+     *   containing organization identification and context. Join via
+     *   organization_id to hrm_platform_organizations.id. Enforces
+     *   multi-tenancy isolation.
    */
   organization: IHrmPlatformOrganization.ISummary;
 
@@ -79,8 +96,11 @@ export type IHrmPlatformPermission = {
    *
    * This auto-generated timestamp marks the exact moment the permission was added to the system. It is immutable and serves as an audit trail marker for permission creation history. The timestamp is stored with timezone information (timestamptz) for accurate historical tracking.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from hrm_platform_permissions.created_at. Auto-generated timestamp set to current time when the permission record is created. Uses timestamptz column type for timezone-aware storage.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_permissions.created_at. Auto-generated timestamp set to
+     *   current time when the permission record is created. Uses timestamptz
+     *   column type for timezone-aware storage.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -89,8 +109,12 @@ export type IHrmPlatformPermission = {
    *
    * This auto-updated timestamp is modified whenever the permission record changes, including updates to the code or description fields. It provides a reliable indicator of the most recent modification for caching invalidation, audit purposes, and change tracking. The timestamp is stored with timezone information (timestamptz) for accurate historical tracking.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from hrm_platform_permissions.updated_at. Auto-updated timestamp modified on every write operation including permission code changes, description updates, or metadata modifications. Uses timestamptz column type for timezone-aware storage.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_permissions.updated_at. Auto-updated timestamp modified on
+     *   every write operation including permission code changes, description
+     *   updates, or metadata modifications. Uses timestamptz column type for
+     *   timezone-aware storage.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -99,8 +123,13 @@ export type IHrmPlatformPermission = {
    *
    * This nullable field indicates whether the permission has been soft-deleted. A null value means the permission is active and can be assigned to roles. When a permission is marked for deletion, this field is set to the current timestamp, excluding the permission from active use while preserving it for compliance, audit, and historical review purposes. Soft delete enables data recovery and maintains referential integrity.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from hrm_platform_permissions.deleted_at. Nullable timestamp for soft delete support. Null when the permission is active. When set, marks the permission for deletion while preserving data for compliance and audit purposes. Soft deleted permissions are excluded from active role assignments but retained for historical review.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_permissions.deleted_at. Nullable timestamp for soft delete
+     *   support. Null when the permission is active. When set, marks the
+     *   permission for deletion while preserving data for compliance and audit
+     *   purposes. Soft deleted permissions are excluded from active role
+     *   assignments but retained for historical review.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -116,8 +145,9 @@ export namespace IHrmPlatformPermission {
      *
      * A UUID (Universally Unique Identifier) that uniquely identifies this permission within the organization. Used for references in role assignments and permission checks.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from hrm_platform_permissions.id. UUID format.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_permissions.id. UUID format.
      */
     id: string & tags.Format<"uuid">;
 
@@ -126,8 +156,9 @@ export namespace IHrmPlatformPermission {
      *
      * The code represents the specific action and resource combination that defines the access right (e.g., 'employee.view', 'project.manage', 'timesheet.approve'). This identifier is used by the authorization middleware to grant or deny access to operations. Must be unique within the organization.
      *
-     * @x-autobe-database-schema-property code
-     * @x-autobe-specification Direct mapping from hrm_platform_permissions.code. Unique permission identifier code.
+         * @x-autobe-database-schema-property code
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_permissions.code. Unique permission identifier code.
      */
     code: string;
 
@@ -136,8 +167,9 @@ export namespace IHrmPlatformPermission {
      *
      * Provides context about what the permission enables. Used in role management user interfaces to help administrators understand the purpose of each permission when building or modifying roles. Optional field that may be null.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from hrm_platform_permissions.description. Optional human-readable text.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_permissions.description. Optional human-readable text.
      */
     description: string | null;
   };

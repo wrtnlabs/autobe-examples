@@ -21,9 +21,11 @@ export class ShoppingmallMemberOrdersItemsSnapshotController {
    * @param connection
    * @param orderId UUID of the parent order containing this order item (used for authorization and verification scope).
    * @param orderItemId UUID of the order item whose snapshot is being retrieved.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query the shopping_mall_order_item_snapshots table by joining with shopping_mall_order_items to verify the orderId matches the orderItemId.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query the shopping_mall_order_item_snapshots
+     *   table by joining with shopping_mall_order_items to verify the orderId
+     *   matches the orderItemId.
    *
    * First, verify the orderItemId belongs to the specified orderId by checking shopping_mall_order_items where id = orderItemId AND shopping_mall_order_id = orderId. If no match, return 404.
    *

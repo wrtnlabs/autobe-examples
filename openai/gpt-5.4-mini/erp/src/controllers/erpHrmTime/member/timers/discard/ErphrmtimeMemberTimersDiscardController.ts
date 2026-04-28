@@ -17,9 +17,13 @@ export class ErphrmtimeMemberTimersDiscardController {
    * The timer action is scoped to the currently selected organization and only applies to the employee's own active timer. If the employee has no running timer, if the timer has already been stopped or discarded, or if the employee is deactivated, the request must be rejected. The response should allow clients to update timer controls and clear any running-timer state in the user interface.
    *
    * @param connection
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Resolve the authenticated member's current employee record within the selected organization context, then load the employee's active timer. Verify that exactly one active timer exists and that it belongs to the current organization and employee. Confirm the employee is active; deactivated employees cannot discard timers.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Resolve the authenticated member's current
+     *   employee record within the selected organization context, then load the
+     *   employee's active timer. Verify that exactly one active timer exists
+     *   and that it belongs to the current organization and employee. Confirm
+     *   the employee is active; deactivated employees cannot discard timers.
    *
    * Within a transaction, mark the timer as discarded according to the timer persistence model, ensuring it is no longer treated as active and cannot be edited, stopped, or resumed afterward. Do not create any timelog record. Do not modify other organization data.
    *

@@ -17,8 +17,9 @@ export type IECommerceMallAdminGradeChangeLog = {
    *
    * UUID format primary key that uniquely identifies each immutable grade change event recorded in the append-only audit trail. This identifier can be used to reference a specific grade change record in API operations.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from e_commerce_mall_admin_grade_change_logs.id. UUID format primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_admin_grade_change_logs.id. UUID format primary key.
    */
   id: string & tags.Format<"uuid">;
 
@@ -27,8 +28,11 @@ export type IECommerceMallAdminGradeChangeLog = {
    *
    * Contains the summary information of the administrator who was promoted or demoted by this grade change event. The summary includes the administrator's unique identifier, email address, current grade level, and account creation timestamp. Resolved via a relationship join from the foreign key stored in this log entry.
    *
-   * @x-autobe-database-schema-property administrator
-   * @x-autobe-specification LEFT JOIN from e_commerce_mall_admin_grade_change_logs.administrator_id to e_commerce_mall_administrators.id. Maps to IECommerceMallAdministrator.ISummary (id, email, grade, created_at).
+     * @x-autobe-database-schema-property administrator
+     * @x-autobe-specification LEFT JOIN from
+     *   e_commerce_mall_admin_grade_change_logs.administrator_id to
+     *   e_commerce_mall_administrators.id. Maps to
+     *   IECommerceMallAdministrator.ISummary (id, email, grade, created_at).
    */
   administrator: IECommerceMallAdministrator.ISummary;
 
@@ -37,8 +41,12 @@ export type IECommerceMallAdminGradeChangeLog = {
    *
    * Contains the summary information of the super administrator who authorized and executed this grade promotion or demotion. Per platform governance rules, a super administrator cannot demote themselves, so this actor is always a different super administrator than the target administrator. Resolved via a relationship join from the foreign key stored in this log entry.
    *
-   * @x-autobe-database-schema-property actor
-   * @x-autobe-specification LEFT JOIN from e_commerce_mall_admin_grade_change_logs.super_administrator_id to e_commerce_mall_super_administrators.id. Maps to IECommerceMallSuperAdministrator.ISummary (id, email, administrator, created_at, updated_at, deleted_at).
+     * @x-autobe-database-schema-property actor
+     * @x-autobe-specification LEFT JOIN from
+     *   e_commerce_mall_admin_grade_change_logs.super_administrator_id to
+     *   e_commerce_mall_super_administrators.id. Maps to
+     *   IECommerceMallSuperAdministrator.ISummary (id, email, administrator,
+     *   created_at, updated_at, deleted_at).
    */
   actor: IECommerceMallSuperAdministrator.ISummary;
 
@@ -47,8 +55,10 @@ export type IECommerceMallAdminGradeChangeLog = {
    *
    * Indicates the grade level immediately prior to the grade change event. Possible values are `"regular"` for a standard administrator and `"super"` for a super administrator. This field, together with `new_grade`, documents the grade transition that occurred.
    *
-   * @x-autobe-database-schema-property previous_grade
-   * @x-autobe-specification Direct mapping from e_commerce_mall_admin_grade_change_logs.previous_grade. String values: 'regular' or 'super'.
+     * @x-autobe-database-schema-property previous_grade
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_admin_grade_change_logs.previous_grade. String values:
+     *   'regular' or 'super'.
    */
   previous_grade: string;
 
@@ -57,8 +67,10 @@ export type IECommerceMallAdminGradeChangeLog = {
    *
    * Indicates the grade level immediately after the grade change event. Possible values are `"regular"` for a standard administrator and `"super"` for a super administrator. This field, together with `previous_grade`, documents the grade transition that occurred.
    *
-   * @x-autobe-database-schema-property new_grade
-   * @x-autobe-specification Direct mapping from e_commerce_mall_admin_grade_change_logs.new_grade. String values: 'regular' or 'super'.
+     * @x-autobe-database-schema-property new_grade
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_admin_grade_change_logs.new_grade. String values:
+     *   'regular' or 'super'.
    */
   new_grade: string;
 
@@ -67,8 +79,10 @@ export type IECommerceMallAdminGradeChangeLog = {
    *
    * Date and time in ISO 8601 format indicating when the grade change event was persisted to the audit trail. As records in this log are immutable and append-only, this timestamp accurately represents the moment the grade transition occurred and never changes after creation.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from e_commerce_mall_admin_grade_change_logs.created_at. DateTime with timezone.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_admin_grade_change_logs.created_at. DateTime with
+     *   timezone.
    */
   created_at: string & tags.Format<"date-time">;
 };
@@ -88,7 +102,12 @@ export namespace IECommerceMallAdminGradeChangeLog {
      *
      * Provide the UUID of the target administrator whose grade change history you want to view. When omitted, records for all administrators are returned (subject to access control restrictions).
      *
-     * @x-autobe-specification Query parameter mapping to e_commerce_mall_admin_grade_change_logs.administrator_id. When provided, adds a WHERE administrator_id = :administratorId clause to filter results by the target administrator. For regular administrators, this filter is overridden server-side to only their own administrator ID for access control.
+         * @x-autobe-specification Query parameter mapping to
+         *   e_commerce_mall_admin_grade_change_logs.administrator_id. When
+         *   provided, adds a WHERE administrator_id = :administratorId clause
+         *   to filter results by the target administrator. For regular
+         *   administrators, this filter is overridden server-side to only their
+         *   own administrator ID for access control.
      */
     administratorId?: (string & tags.Format<"uuid">) | undefined;
 
@@ -97,7 +116,11 @@ export namespace IECommerceMallAdminGradeChangeLog {
      *
      * Provide the UUID of the acting super administrator who performed the grade promotion or demotion. When omitted, records for all acting super administrators are returned.
      *
-     * @x-autobe-specification Query parameter mapping to e_commerce_mall_admin_grade_change_logs.super_administrator_id. When provided, adds a WHERE super_administrator_id = :superAdministratorId clause to filter results by the acting super administrator.
+         * @x-autobe-specification Query parameter mapping to
+         *   e_commerce_mall_admin_grade_change_logs.super_administrator_id.
+         *   When provided, adds a WHERE super_administrator_id =
+         *   :superAdministratorId clause to filter results by the acting super
+         *   administrator.
      */
     superAdministratorId?: (string & tags.Format<"uuid">) | undefined;
 
@@ -106,7 +129,10 @@ export namespace IECommerceMallAdminGradeChangeLog {
      *
      * Allowed values are "regular" (regular administrator) and "super" (super administrator). When omitted, no grade-before filter is applied, meaning records for all previous grades are returned.
      *
-     * @x-autobe-specification Query parameter mapping to e_commerce_mall_admin_grade_change_logs.previous_grade. When provided, adds a WHERE previous_grade = :previousGrade clause. Valid values are 'regular' and 'super'.
+         * @x-autobe-specification Query parameter mapping to
+         *   e_commerce_mall_admin_grade_change_logs.previous_grade. When
+         *   provided, adds a WHERE previous_grade = :previousGrade clause.
+         *   Valid values are 'regular' and 'super'.
      */
     previousGrade?: string | undefined;
 
@@ -115,7 +141,10 @@ export namespace IECommerceMallAdminGradeChangeLog {
      *
      * Allowed values are "regular" (regular administrator) and "super" (super administrator). When omitted, no grade-after filter is applied, meaning records for all resulting grades are returned.
      *
-     * @x-autobe-specification Query parameter mapping to e_commerce_mall_admin_grade_change_logs.new_grade. When provided, adds a WHERE new_grade = :newGrade clause. Valid values are 'regular' and 'super'.
+         * @x-autobe-specification Query parameter mapping to
+         *   e_commerce_mall_admin_grade_change_logs.new_grade. When provided,
+         *   adds a WHERE new_grade = :newGrade clause. Valid values are
+         *   'regular' and 'super'.
      */
     newGrade?: string | undefined;
 
@@ -124,7 +153,11 @@ export namespace IECommerceMallAdminGradeChangeLog {
      *
      * Provide an ISO 8601 datetime string. When combined with toDate, restricts results to events occurring within the [fromDate, toDate) window. Use alone to query all events from a point in time onward.
      *
-     * @x-autobe-specification Query parameter mapping to e_commerce_mall_admin_grade_change_logs.created_at with inclusive lower bound. When provided, adds a WHERE created_at >= :fromDate clause. Can be used alone for an open-ended start filter or combined with toDate for a complete range.
+         * @x-autobe-specification Query parameter mapping to
+         *   e_commerce_mall_admin_grade_change_logs.created_at with inclusive
+         *   lower bound. When provided, adds a WHERE created_at >= :fromDate
+         *   clause. Can be used alone for an open-ended start filter or
+         *   combined with toDate for a complete range.
      */
     fromDate?: (string & tags.Format<"date-time">) | undefined;
 
@@ -133,7 +166,11 @@ export namespace IECommerceMallAdminGradeChangeLog {
      *
      * Provide an ISO 8601 datetime string. When combined with fromDate, restricts results to events occurring within the [fromDate, toDate) window. Use alone to query all events before a point in time.
      *
-     * @x-autobe-specification Query parameter mapping to e_commerce_mall_admin_grade_change_logs.created_at with exclusive upper bound. When provided, adds a WHERE created_at < :toDate clause. Can be used alone for an open-ended end filter or combined with fromDate for a complete range.
+         * @x-autobe-specification Query parameter mapping to
+         *   e_commerce_mall_admin_grade_change_logs.created_at with exclusive
+         *   upper bound. When provided, adds a WHERE created_at < :toDate
+         *   clause. Can be used alone for an open-ended end filter or combined
+         *   with fromDate for a complete range.
      */
     toDate?: (string & tags.Format<"date-time">) | undefined;
 
@@ -142,7 +179,8 @@ export namespace IECommerceMallAdminGradeChangeLog {
      *
      * Page numbering starts at 1. The first page returns the first set of records based on the limit parameter. Defaults to 1 when not specified.
      *
-     * @x-autobe-specification Computed pagination parameter. Calculates offset as (page - 1) * limit for SQL OFFSET clause. Defaults to 1.
+         * @x-autobe-specification Computed pagination parameter. Calculates
+         *   offset as (page - 1) * limit for SQL OFFSET clause. Defaults to 1.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -151,7 +189,10 @@ export namespace IECommerceMallAdminGradeChangeLog {
      *
      * Limited to 100 records per page. The actual number of records returned may be less than this value on the final page of results. Defaults to the system default page size when not specified.
      *
-     * @x-autobe-specification Computed pagination parameter. Controls the maximum number of records per page via SQL LIMIT clause. Maximum value is 100. Defaults to the system default page size (typically 20).
+         * @x-autobe-specification Computed pagination parameter. Controls the
+         *   maximum number of records per page via SQL LIMIT clause. Maximum
+         *   value is 100. Defaults to the system default page size (typically
+         *   20).
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -169,8 +210,9 @@ export namespace IECommerceMallAdminGradeChangeLog {
      *
      * This primary key is a UUID that uniquely identifies each immutable audit trail entry recording an administrator grade change event.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from e_commerce_mall_admin_grade_change_logs.id. UUID primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_admin_grade_change_logs.id. UUID primary key.
      */
     id: string & tags.Format<"uuid">;
 
@@ -179,8 +221,11 @@ export namespace IECommerceMallAdminGradeChangeLog {
      *
      * This is the target administrator who was promoted or demoted by this grade change event. The relationship is resolved by joining through the `administrator_id` foreign key to the administrators table.
      *
-     * @x-autobe-database-schema-property administrator
-     * @x-autobe-specification Join from e_commerce_mall_admin_grade_change_logs.administrator_id to e_commerce_mall_administrators.id. Returns IECommerceMallAdministrator.ISummary.
+         * @x-autobe-database-schema-property administrator
+         * @x-autobe-specification Join from
+         *   e_commerce_mall_admin_grade_change_logs.administrator_id to
+         *   e_commerce_mall_administrators.id. Returns
+         *   IECommerceMallAdministrator.ISummary.
      */
     administrator: IECommerceMallAdministrator.ISummary;
 
@@ -189,8 +234,11 @@ export namespace IECommerceMallAdminGradeChangeLog {
      *
      * Only super administrators have the authority to promote or demote other administrators. Self-demotion is prohibited, so this actor is always a different super administrator than the target administrator.
      *
-     * @x-autobe-database-schema-property actor
-     * @x-autobe-specification Join from e_commerce_mall_admin_grade_change_logs.super_administrator_id to e_commerce_mall_super_administrators.id. DB relation name is 'actor'. Returns IECommerceMallSuperAdministrator.ISummary.
+         * @x-autobe-database-schema-property actor
+         * @x-autobe-specification Join from
+         *   e_commerce_mall_admin_grade_change_logs.super_administrator_id to
+         *   e_commerce_mall_super_administrators.id. DB relation name is
+         *   'actor'. Returns IECommerceMallSuperAdministrator.ISummary.
      */
     superAdministrator: IECommerceMallSuperAdministrator.ISummary;
 
@@ -199,8 +247,10 @@ export namespace IECommerceMallAdminGradeChangeLog {
      *
      * Possible values are "regular" for regular administrator and "super" for super administrator. This field captures the grade held by the administrator prior to this promotion or demotion event.
      *
-     * @x-autobe-database-schema-property previous_grade
-     * @x-autobe-specification Direct mapping from e_commerce_mall_admin_grade_change_logs.previous_grade. Valid values: 'regular' or 'super'.
+         * @x-autobe-database-schema-property previous_grade
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_admin_grade_change_logs.previous_grade. Valid
+         *   values: 'regular' or 'super'.
      */
     previousGrade: string;
 
@@ -209,8 +259,10 @@ export namespace IECommerceMallAdminGradeChangeLog {
      *
      * Possible values are "regular" for regular administrator and "super" for super administrator. This field captures the new grade assigned to the administrator as a result of this promotion or demotion event.
      *
-     * @x-autobe-database-schema-property new_grade
-     * @x-autobe-specification Direct mapping from e_commerce_mall_admin_grade_change_logs.new_grade. Valid values: 'regular' or 'super'.
+         * @x-autobe-database-schema-property new_grade
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_admin_grade_change_logs.new_grade. Valid values:
+         *   'regular' or 'super'.
      */
     newGrade: string;
 
@@ -219,8 +271,10 @@ export namespace IECommerceMallAdminGradeChangeLog {
      *
      * This immutable timestamp indicates when the grade change occurred and is never modified after creation, ensuring a complete and tamper-evident audit trail.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from e_commerce_mall_admin_grade_change_logs.created_at. Timestamptz. Immutable — never modified after creation.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_admin_grade_change_logs.created_at. Timestamptz.
+         *   Immutable — never modified after creation.
      */
     createdAt: string & tags.Format<"date-time">;
   };

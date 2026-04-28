@@ -26,9 +26,10 @@ export class EcommercemallCustomerCustomerAccountController {
    * - All product reviews (displayed as "deleted user")
    *
    * @param connection
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Perform customer account deletion for the authenticated user.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Perform customer account deletion for the
+     *   authenticated user.
    *
    * 1. Authenticate the customer using the JWT token from Authorization header.
    * 2. Verify the customer account exists and is not already deleted (deleted_at is null).

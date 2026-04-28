@@ -135,7 +135,7 @@ export namespace IErpHrmReport {
     /**
      * Optional display name for the report.
      *
-     * @x-autobe-database-schema-property name
+         * @x-autobe-database-schema-property name
      */
     name?: string | null | undefined;
 

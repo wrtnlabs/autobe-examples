@@ -32,9 +32,9 @@ export class ErphrmtimetrackingMemberTimesheetsApproveController {
    * @param connection
    * @param timesheetId Target timesheet identifier to approve. The timesheet must belong to the currently selected organization context.
    * @param body Approval request payload. Includes any optional approval metadata required by the system (e.g., reviewer notes) used for audit details.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation steps for Realize Agent:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation steps for Realize Agent:
    *
    * 1) Input handling
    * - Read `timesheetId` from path.

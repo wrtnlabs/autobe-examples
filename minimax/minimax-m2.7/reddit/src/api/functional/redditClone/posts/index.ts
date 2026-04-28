@@ -27,7 +27,8 @@ export * as votes from "./votes/index";
  * @param props.postId Unique identifier of the post to retrieve
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query the reddit_clone_posts table filtering by id equal to postId.
+ * @x-autobe-specification Query the reddit_clone_posts table filtering by id
+ *   equal to postId.
  *
  * Verify the post exists and deleted_at is null (exclude soft-deleted posts).
  *
@@ -133,7 +134,8 @@ export namespace at {
  * @param props.body Search criteria including sort order, filters, and pagination parameters
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query the reddit_clone_posts table with the following implementation details:
+ * @x-autobe-specification Query the reddit_clone_posts table with the following
+ *   implementation details:
  *
  * 1. Base Query: Start with reddit_clone_posts table joined with reddit_clone_members (for author username) and reddit_clone_communities (for community name).
  *

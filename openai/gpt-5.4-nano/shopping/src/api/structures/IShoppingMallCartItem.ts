@@ -8,64 +8,80 @@ export type IShoppingMallCartItem = {
   /**
    * Unique identifier of the cart line item.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_cart_items.id. Treat as immutable identifier for this cart line.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from shopping_mall_cart_items.id.
+     *   Treat as immutable identifier for this cart line.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Identifier of the cart that this line item belongs to.
    *
-   * @x-autobe-database-schema-property shopping_mall_cart_id
-   * @x-autobe-specification Direct mapping from shopping_mall_cart_items.shopping_mall_cart_id. Used for authorization scoping and client correlation.
+     * @x-autobe-database-schema-property shopping_mall_cart_id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_cart_items.shopping_mall_cart_id. Used for authorization
+     *   scoping and client correlation.
    */
   shoppingMallCartId: string & tags.Format<"uuid">;
 
   /**
    * Identifier of the product variant selected for this cart line item.
    *
-   * @x-autobe-database-schema-property shopping_mall_product_variant_id
-   * @x-autobe-specification Direct mapping from shopping_mall_cart_items.shopping_mall_product_variant_id. Identifies which product variant was added to the cart.
+     * @x-autobe-database-schema-property shopping_mall_product_variant_id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_cart_items.shopping_mall_product_variant_id. Identifies
+     *   which product variant was added to the cart.
    */
   shoppingMallProductVariantId: string & tags.Format<"uuid">;
 
   /**
    * Quantity of the selected product variant in this cart line item.
    *
-   * @x-autobe-database-schema-property quantity
-   * @x-autobe-specification Direct mapping from shopping_mall_cart_items.quantity. Should be a positive integer for active items (service validation).
+     * @x-autobe-database-schema-property quantity
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_cart_items.quantity. Should be a positive integer for
+     *   active items (service validation).
    */
   quantity: number & tags.Type<"int32"> & tags.Minimum<1>;
 
   /**
    * Stored line subtotal amount for this cart item.
    *
-   * @x-autobe-database-schema-property subtotal_amount
-   * @x-autobe-specification Direct mapping from shopping_mall_cart_items.subtotal_amount. This is the stored subtotal captured when the cart item was created/updated (typically computed as variant price * quantity).
+     * @x-autobe-database-schema-property subtotal_amount
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_cart_items.subtotal_amount. This is the stored subtotal
+     *   captured when the cart item was created/updated (typically computed as
+     *   variant price * quantity).
    */
   subtotalAmount: number;
 
   /**
    * Timestamp when this cart line item was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from shopping_mall_cart_items.created_at. Set by DB upon creation.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_cart_items.created_at. Set by DB upon creation.
    */
   createdAt: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when this cart line item was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from shopping_mall_cart_items.updated_at. Updated when quantity (or other mutable fields) change.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_cart_items.updated_at. Updated when quantity (or other
+     *   mutable fields) change.
    */
   updatedAt: string & tags.Format<"date-time">;
 
   /**
    * Soft-delete timestamp for this cart line item. Null if the item is active.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from shopping_mall_cart_items.deleted_at. Null means the cart line is active; non-null means the cart line is logically removed (soft-deleted).
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_cart_items.deleted_at. Null means the cart line is
+     *   active; non-null means the cart line is logically removed
+     *   (soft-deleted).
    */
   deletedAt: (string & tags.Format<"date-time">) | null;
 };
@@ -77,15 +93,26 @@ export namespace IShoppingMallCartItem {
     /**
      * Desired quantity of the product variant in this cart line. When provided (and remove is not true), the server updates the cart item quantity and recalculates the line subtotal.
      *
-     * @x-autobe-database-schema-property quantity
-     * @x-autobe-specification Direct mapping to shopping_mall_cart_items.quantity. Apply only when remove is not true. After persisting quantity, recompute shopping_mall_cart_items.subtotal_amount = shopping_mall_product_variants.price * quantity (using the variant price at update time) and persist it. Ensure deleted_at remains null for active items.
+         * @x-autobe-database-schema-property quantity
+         * @x-autobe-specification Direct mapping to
+         *   shopping_mall_cart_items.quantity. Apply only when remove is not
+         *   true. After persisting quantity, recompute
+         *   shopping_mall_cart_items.subtotal_amount =
+         *   shopping_mall_product_variants.price * quantity (using the variant
+         *   price at update time) and persist it. Ensure deleted_at remains
+         *   null for active items.
      */
     quantity?: (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
 
     /**
      * Whether to logically remove this cart line from the cart (soft-delete). If true, the server will set deleted_at and treat the cart item as removed.
      *
-     * @x-autobe-specification Intent flag for logical removal. When remove=true, set shopping_mall_cart_items.deleted_at = now() (soft-delete) and update shopping_mall_cart_items.updated_at. When remove is not true, deleted_at should remain null (active). If remove=true, quantity changes should be ignored/overridden by deletion semantics.
+         * @x-autobe-specification Intent flag for logical removal. When
+         *   remove=true, set shopping_mall_cart_items.deleted_at = now()
+         *   (soft-delete) and update shopping_mall_cart_items.updated_at. When
+         *   remove is not true, deleted_at should remain null (active). If
+         *   remove=true, quantity changes should be ignored/overridden by
+         *   deletion semantics.
      */
     remove?: boolean | undefined;
   };
@@ -97,56 +124,71 @@ export namespace IShoppingMallCartItem {
     /**
      * Unique identifier of this cart line item.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Return shopping_mall_cart_items.id directly from the selected cart-item row.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Return shopping_mall_cart_items.id directly
+         *   from the selected cart-item row.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Identifier of the product variant represented by this cart line item.
      *
-     * @x-autobe-database-schema-property shopping_mall_product_variant_id
-     * @x-autobe-specification Return shopping_mall_cart_items.shopping_mall_product_variant_id directly from the selected cart-item row.
+         * @x-autobe-database-schema-property shopping_mall_product_variant_id
+         * @x-autobe-specification Return
+         *   shopping_mall_cart_items.shopping_mall_product_variant_id directly
+         *   from the selected cart-item row.
      */
     shopping_mall_product_variant_id: string & tags.Format<"uuid">;
 
     /**
      * Quantity of the referenced product variant in this cart line item.
      *
-     * @x-autobe-database-schema-property quantity
-     * @x-autobe-specification Return shopping_mall_cart_items.quantity directly from the selected cart-item row. The operation layer updates this and recalculates subtotal_amount when quantities change.
+         * @x-autobe-database-schema-property quantity
+         * @x-autobe-specification Return shopping_mall_cart_items.quantity
+         *   directly from the selected cart-item row. The operation layer
+         *   updates this and recalculates subtotal_amount when quantities
+         *   change.
      */
     quantity: number & tags.Type<"int32"> & tags.Minimum<0>;
 
     /**
      * Stored line subtotal amount for this cart item (variant price multiplied by quantity at the time it was saved).
      *
-     * @x-autobe-database-schema-property subtotal_amount
-     * @x-autobe-specification Return shopping_mall_cart_items.subtotal_amount directly (do not recompute in the mapper). The cart update operation recalculates this as variant price * quantity when applicable.
+         * @x-autobe-database-schema-property subtotal_amount
+         * @x-autobe-specification Return
+         *   shopping_mall_cart_items.subtotal_amount directly (do not recompute
+         *   in the mapper). The cart update operation recalculates this as
+         *   variant price * quantity when applicable.
      */
     subtotal_amount: number;
 
     /**
      * When this cart line item record was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Return shopping_mall_cart_items.created_at directly from the selected cart-item row as an ISO-8601 datetime string.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Return shopping_mall_cart_items.created_at
+         *   directly from the selected cart-item row as an ISO-8601 datetime
+         *   string.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * When this cart line item record was last updated.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Return shopping_mall_cart_items.updated_at directly from the selected cart-item row as an ISO-8601 datetime string.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Return shopping_mall_cart_items.updated_at
+         *   directly from the selected cart-item row as an ISO-8601 datetime
+         *   string.
      */
     updated_at: string & tags.Format<"date-time">;
 
     /**
      * Soft-delete timestamp. Null when the cart line item is active; a timestamp when it is treated as removed/unavailable.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Return shopping_mall_cart_items.deleted_at as an ISO-8601 datetime string when the cart item is soft-removed/unavailable; return null when the cart item is active.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Return shopping_mall_cart_items.deleted_at as
+         *   an ISO-8601 datetime string when the cart item is
+         *   soft-removed/unavailable; return null when the cart item is active.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };
@@ -158,16 +200,24 @@ export namespace IShoppingMallCartItem {
     /**
      * UUID of the product variant to add to the cart.
      *
-     * @x-autobe-database-schema-property shopping_mall_product_variant_id
-     * @x-autobe-specification Set shopping_mall_cart_items.shopping_mall_product_variant_id from shoppingMallProductVariantId. Validate the referenced shopping_mall_product_variants row exists and is eligible for cart purchasing (e.g., not soft-deleted and marked active) before inserting.
+         * @x-autobe-database-schema-property shopping_mall_product_variant_id
+         * @x-autobe-specification Set
+         *   shopping_mall_cart_items.shopping_mall_product_variant_id from
+         *   shoppingMallProductVariantId. Validate the referenced
+         *   shopping_mall_product_variants row exists and is eligible for cart
+         *   purchasing (e.g., not soft-deleted and marked active) before
+         *   inserting.
      */
     shoppingMallProductVariantId: string & tags.Format<"uuid">;
 
     /**
      * Number of units of the selected variant to add (minimum 1).
      *
-     * @x-autobe-database-schema-property quantity
-     * @x-autobe-specification Set shopping_mall_cart_items.quantity from quantity. Validate quantity is an integer >= 1. Compute shopping_mall_cart_items.subtotal_amount = current shopping_mall_product_variants.price * quantity at insert time.
+         * @x-autobe-database-schema-property quantity
+         * @x-autobe-specification Set shopping_mall_cart_items.quantity from
+         *   quantity. Validate quantity is an integer >= 1. Compute
+         *   shopping_mall_cart_items.subtotal_amount = current
+         *   shopping_mall_product_variants.price * quantity at insert time.
      */
     quantity: number & tags.Type<"int32"> & tags.Minimum<1>;
   };
@@ -179,22 +229,34 @@ export namespace IShoppingMallCartItem {
     /**
      * Non-empty array of cart line update entries indicating which cart items to update and the new desired quantities.
      *
-     * @x-autobe-database-schema-property quantity
-     * @x-autobe-specification items is a non-empty array of cart line update entries (IRequestItem). For each entry, the service validates the cart-line row belongs to the cartId path scope and to the authenticated member, then sets shopping_mall_cart_items.quantity to the requested quantity. After updating quantity, the service recalculates shopping_mall_cart_items.subtotal_amount and applies inventory availability logic (setting deleted_at when a line becomes unavailable).
+         * @x-autobe-database-schema-property quantity
+         * @x-autobe-specification items is a non-empty array of cart line
+         *   update entries (IRequestItem). For each entry, the service
+         *   validates the cart-line row belongs to the cartId path scope and to
+         *   the authenticated member, then sets
+         *   shopping_mall_cart_items.quantity to the requested quantity. After
+         *   updating quantity, the service recalculates
+         *   shopping_mall_cart_items.subtotal_amount and applies inventory
+         *   availability logic (setting deleted_at when a line becomes
+         *   unavailable).
      */
     items: IShoppingMallCartItem.IRequestItem[] & tags.MinItems<1>;
 
     /**
      * 1-indexed page number to use for response shaping. Defaults to page 1 if omitted or null.
      *
-     * @x-autobe-specification Optional pagination parameter (1-indexed). If omitted or null, the implementation defaults to page 1 when shaping any paged portion of the response/processing results.
+         * @x-autobe-specification Optional pagination parameter (1-indexed). If
+         *   omitted or null, the implementation defaults to page 1 when shaping
+         *   any paged portion of the response/processing results.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
 
     /**
      * Maximum number of records to include per page. Defaults to 100 if omitted or null.
      *
-     * @x-autobe-specification Optional page size parameter. If omitted or null, the implementation defaults to 100 records per page and may enforce server-side upper bounds.
+         * @x-autobe-specification Optional page size parameter. If omitted or
+         *   null, the implementation defaults to 100 records per page and may
+         *   enforce server-side upper bounds.
      */
     limit?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };
@@ -206,16 +268,20 @@ export namespace IShoppingMallCartItem {
     /**
      * Identifier of the existing cart line item whose quantity should be updated.
      *
-     * @x-autobe-specification Use shopping_mall_cart_items.id as lookup key for the cart line item within the validated cart scope (outer cartId).
-     * @x-autobe-database-schema-property id
+         * @x-autobe-specification Use shopping_mall_cart_items.id as lookup key
+         *   for the cart line item within the validated cart scope (outer
+         *   cartId).
+         * @x-autobe-database-schema-property id
      */
     shopping_mall_cart_item_id: null;
 
     /**
      * Desired quantity for the specified cart line item.
      *
-     * @x-autobe-specification Set shopping_mall_cart_items.quantity to the provided quantity, then recompute subtotal_amount and apply inventory/availability rules.
-     * @x-autobe-database-schema-property quantity
+         * @x-autobe-specification Set shopping_mall_cart_items.quantity to the
+         *   provided quantity, then recompute subtotal_amount and apply
+         *   inventory/availability rules.
+         * @x-autobe-database-schema-property quantity
      */
     quantity: null;
   };

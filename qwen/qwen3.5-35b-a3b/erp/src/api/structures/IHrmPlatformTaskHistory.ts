@@ -28,88 +28,110 @@ export type IHrmPlatformTaskHistory = {
   /**
    * Unique identifier for the task history entry.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from hrm_platform_task_histories.id. UUID primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_task_histories.id. UUID primary key.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * The task that this history entry records changes for. Transformed from task_id FK to object reference.
    *
-   * @x-autobe-database-schema-property task
-   * @x-autobe-specification Join from hrm_platform_task_histories.task_id to hrm_platform_tasks.id. Returns IHrmPlatformTask.ISummary.
+     * @x-autobe-database-schema-property task
+     * @x-autobe-specification Join from hrm_platform_task_histories.task_id to
+     *   hrm_platform_tasks.id. Returns IHrmPlatformTask.ISummary.
    */
   task: IHrmPlatformTask.ISummary;
 
   /**
    * The member who made the change recorded in this history entry. Transformed from actor_id FK to object reference.
    *
-   * @x-autobe-database-schema-property actor
-   * @x-autobe-specification Join from hrm_platform_task_histories.actor_id to hrm_platform_members.id. Returns IHrmPlatformMember.ISummary.
+     * @x-autobe-database-schema-property actor
+     * @x-autobe-specification Join from hrm_platform_task_histories.actor_id to
+     *   hrm_platform_members.id. Returns IHrmPlatformMember.ISummary.
    */
   actor: IHrmPlatformMember.ISummary;
 
   /**
    * The category of change being recorded. Indicates what type of modification occurred to the task, such as a status transition, assignment change, or field update.
    *
-   * @x-autobe-database-schema-property action_type
-   * @x-autobe-specification Direct mapping from hrm_platform_task_histories.action_type. String enum: status_change, assignment_change, title_change, description_change, priority_change, parent_change, due_date_change, start_date_change.
+     * @x-autobe-database-schema-property action_type
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_task_histories.action_type. String enum: status_change,
+     *   assignment_change, title_change, description_change, priority_change,
+     *   parent_change, due_date_change, start_date_change.
    */
   action_type: string;
 
   /**
    * The previous status value before the change occurred. Only populated when the action type is a status change; otherwise null.
    *
-   * @x-autobe-database-schema-property status_before
-   * @x-autobe-specification Direct mapping from hrm_platform_task_histories.status_before. Nullable string field populated only when action_type is status_change, otherwise null.
+     * @x-autobe-database-schema-property status_before
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_task_histories.status_before. Nullable string field
+     *   populated only when action_type is status_change, otherwise null.
    */
   status_before?: string | null | undefined;
 
   /**
    * The new status value after the change was applied. Only populated when the action type is a status change; otherwise null.
    *
-   * @x-autobe-database-schema-property status_after
-   * @x-autobe-specification Direct mapping from hrm_platform_task_histories.status_after. Nullable string field populated only when action_type is status_change, otherwise null.
+     * @x-autobe-database-schema-property status_after
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_task_histories.status_after. Nullable string field
+     *   populated only when action_type is status_change, otherwise null.
    */
   status_after?: string | null | undefined;
 
   /**
    * Additional structured change data in JSON format for non-status actions. Contains before/after values for specific change types like assignment changes, date changes, or field updates.
    *
-   * @x-autobe-database-schema-property details
-   * @x-autobe-specification Direct mapping from hrm_platform_task_histories.details. Nullable JSON string field containing structured change data for non-status actions (e.g., old_assignee_id, new_assignee_id for assignment changes).
+     * @x-autobe-database-schema-property details
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_task_histories.details. Nullable JSON string field
+     *   containing structured change data for non-status actions (e.g.,
+     *   old_assignee_id, new_assignee_id for assignment changes).
    */
   details?: string | null | undefined;
 
   /**
    * The exact timestamp when the change was applied to the task. This is the authoritative audit timestamp for the change event.
    *
-   * @x-autobe-database-schema-property changed_at
-   * @x-autobe-specification Direct mapping from hrm_platform_task_histories.changed_at. Timestamp when the change was applied to the task (authoritative audit timestamp).
+     * @x-autobe-database-schema-property changed_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_task_histories.changed_at. Timestamp when the change was
+     *   applied to the task (authoritative audit timestamp).
    */
   changed_at: string & tags.Format<"date-time">;
 
   /**
    * When this history record was created and inserted into the audit trail.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from hrm_platform_task_histories.created_at. Timestamp when this history record was inserted into the database.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_task_histories.created_at. Timestamp when this history
+     *   record was inserted into the database.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * When this history record was last updated. Tracks modifications to the audit entry itself.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from hrm_platform_task_histories.updated_at. Timestamp of the last modification to this history record.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_task_histories.updated_at. Timestamp of the last
+     *   modification to this history record.
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * The timestamp when this history entry was soft-deleted. NULL if the record is active; otherwise contains the deletion timestamp for compliance and audit purposes.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from hrm_platform_task_histories.deleted_at. Nullable timestamp for soft-delete support. NULL if active, set when soft-deleted for compliance.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_task_histories.deleted_at. Nullable timestamp for
+     *   soft-delete support. NULL if active, set when soft-deleted for
+     *   compliance.
    */
   deleted_at?: (string & tags.Format<"date-time">) | null | undefined;
 };
@@ -140,23 +162,23 @@ export namespace IHrmPlatformTaskHistory {
    */
   export type IRequest = {
     /**
-     * @x-autobe-database-schema-property task_id
+         * @x-autobe-database-schema-property task_id
      */
     task_id?: (string & tags.Format<"uuid">) | undefined;
     /**
-     * @x-autobe-database-schema-property actor_id
+         * @x-autobe-database-schema-property actor_id
      */
     actor_id?: (string & tags.Format<"uuid">) | undefined;
     /**
-     * @x-autobe-database-schema-property action_type
+         * @x-autobe-database-schema-property action_type
      */
     action_type?: string | undefined;
     /**
-     * @x-autobe-database-schema-property changed_at
+         * @x-autobe-database-schema-property changed_at
      */
     changed_at_gte?: (string & tags.Format<"date-time">) | undefined;
     /**
-     * @x-autobe-database-schema-property changed_at
+         * @x-autobe-database-schema-property changed_at
      */
     changed_at_lte?: (string & tags.Format<"date-time">) | undefined;
 
@@ -165,8 +187,10 @@ export namespace IHrmPlatformTaskHistory {
      *
      * Only applicable when action_type=status_change. Restricts results to entries where the previous status matched this value.
      *
-     * @x-autobe-database-schema-property status_before
-     * @x-autobe-specification Filter by status_before string. Used with action_type=status_change. Queries hrm_platform_task_histories.status_before = {value}.
+         * @x-autobe-database-schema-property status_before
+         * @x-autobe-specification Filter by status_before string. Used with
+         *   action_type=status_change. Queries
+         *   hrm_platform_task_histories.status_before = {value}.
      */
     status_before?: string | null | undefined;
 
@@ -175,8 +199,10 @@ export namespace IHrmPlatformTaskHistory {
      *
      * Only applicable when action_type=status_change. Restricts results to entries where the new status matched this value.
      *
-     * @x-autobe-database-schema-property status_after
-     * @x-autobe-specification Filter by status_after string. Used with action_type=status_change. Queries hrm_platform_task_histories.status_after = {value}.
+         * @x-autobe-database-schema-property status_after
+         * @x-autobe-specification Filter by status_after string. Used with
+         *   action_type=status_change. Queries
+         *   hrm_platform_task_histories.status_after = {value}.
      */
     status_after?: string | null | undefined;
     sort_by?: string | undefined;
@@ -207,39 +233,39 @@ export namespace IHrmPlatformTaskHistory {
    */
   export type ISummary = {
     /**
-     * @x-autobe-database-schema-property id
+         * @x-autobe-database-schema-property id
      */
     id: string & tags.Format<"uuid">;
     /**
-     * @x-autobe-database-schema-property task
+         * @x-autobe-database-schema-property task
      */
     task: IHrmPlatformTask.ISummary;
     /**
-     * @x-autobe-database-schema-property actor
+         * @x-autobe-database-schema-property actor
      */
     actor: IHrmPlatformMember.ISummary;
     /**
-     * @x-autobe-database-schema-property action_type
+         * @x-autobe-database-schema-property action_type
      */
     action_type: string;
     /**
-     * @x-autobe-database-schema-property status_before
+         * @x-autobe-database-schema-property status_before
      */
     status_before: string | null;
     /**
-     * @x-autobe-database-schema-property status_after
+         * @x-autobe-database-schema-property status_after
      */
     status_after: string | null;
     /**
-     * @x-autobe-database-schema-property details
+         * @x-autobe-database-schema-property details
      */
     details: string | null;
     /**
-     * @x-autobe-database-schema-property changed_at
+         * @x-autobe-database-schema-property changed_at
      */
     changed_at: string & tags.Format<"date-time">;
     /**
-     * @x-autobe-database-schema-property created_at
+         * @x-autobe-database-schema-property created_at
      */
     created_at: string & tags.Format<"date-time">;
   };

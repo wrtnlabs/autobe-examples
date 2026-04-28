@@ -40,7 +40,8 @@ import { IShoppingMallProduct } from "../../../../structures/IShoppingMallProduc
  * @param props.body Search criteria including query text, filters, sorting options, and pagination parameters
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Implementation involves querying shopping_mall_products with multiple joins and filters.
+ * @x-autobe-specification Implementation involves querying
+ *   shopping_mall_products with multiple joins and filters.
  *
  * **Primary Query**
  * 1. SELECT from shopping_mall_products with LEFT JOIN to shopping_mall_sellers, shopping_mall_categories, shopping_mall_product_images, shopping_mall_product_variants, and shopping_mall_reviews

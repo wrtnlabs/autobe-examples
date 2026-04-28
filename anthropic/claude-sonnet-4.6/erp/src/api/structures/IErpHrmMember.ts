@@ -10,40 +10,55 @@ export type IErpHrmMember = {
   /**
    * Unique identifier for this member account. A UUID that serves as the primary key across the ERP HRM platform.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from erp_hrm_members.id. UUID primary key, auto-generated at record creation. Use this value to identify and reference the member across all API operations.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from erp_hrm_members.id. UUID
+     *   primary key, auto-generated at record creation. Use this value to
+     *   identify and reference the member across all API operations.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * The member's email address and platform-wide login identifier. Unique across all member accounts on the ERP HRM platform.
    *
-   * @x-autobe-database-schema-property email
-   * @x-autobe-specification Direct mapping from erp_hrm_members.email. Unique at the platform level (enforced by a unique index). Used as the member's login identifier for authentication. Must be a valid email format.
+     * @x-autobe-database-schema-property email
+     * @x-autobe-specification Direct mapping from erp_hrm_members.email. Unique
+     *   at the platform level (enforced by a unique index). Used as the
+     *   member's login identifier for authentication. Must be a valid email
+     *   format.
    */
   email: string & tags.Format<"email">;
 
   /**
    * The date and time when this member account was created (registration timestamp). Returned as an ISO 8601 date-time string.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from erp_hrm_members.created_at. Set once at registration time and never modified thereafter. Stored as a timestamptz in the database and returned as an ISO 8601 date-time string.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from erp_hrm_members.created_at.
+     *   Set once at registration time and never modified thereafter. Stored as
+     *   a timestamptz in the database and returned as an ISO 8601 date-time
+     *   string.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * The date and time when this member account was last updated. Reflects the most recent modification, such as a password change or profile update.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from erp_hrm_members.updated_at. Automatically updated whenever the member record is modified (e.g., password change, email update). Stored as a timestamptz and returned as an ISO 8601 date-time string.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from erp_hrm_members.updated_at.
+     *   Automatically updated whenever the member record is modified (e.g.,
+     *   password change, email update). Stored as a timestamptz and returned as
+     *   an ISO 8601 date-time string.
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * Soft-deletion timestamp for this member account. Returns `null` when the account is active, or an ISO 8601 timestamp indicating when the account was deactivated. A non-null value means the member can no longer access the platform.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from erp_hrm_members.deleted_at. Nullable timestamptz column. Null when the account is active; set to the deletion timestamp when the account has been soft-deleted. When non-null, the member's access is denied across all endpoints. Always present in API responses.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from erp_hrm_members.deleted_at.
+     *   Nullable timestamptz column. Null when the account is active; set to
+     *   the deletion timestamp when the account has been soft-deleted. When
+     *   non-null, the member's access is denied across all endpoints. Always
+     *   present in API responses.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -55,7 +70,16 @@ export namespace IErpHrmMember {
     /**
      * The JWT refresh token previously received from a login or token refresh response. Submit this token to obtain a new access and refresh token pair, extending the session without re-entering credentials.
      *
-     * @x-autobe-specification The JWT refresh token string previously issued by the login (POST /erpHrm/auth/member/login) or a prior token refresh (POST /erpHrm/auth/member/refresh) endpoint. On receipt: 1) Verify the JWT signature. 2) Extract claims: erp_hrm_members.id and erp_hrm_member_sessions.id. 3) Query erp_hrm_member_sessions WHERE id = session_id from claims — return 401 if not found. 4) Check erp_hrm_member_sessions.expired_at > NOW() — return 401 if expired. 5) Load erp_hrm_members record, verify deleted_at IS NULL — return 401 if deleted. On success, update or replace the session record and issue a new token pair.
+         * @x-autobe-specification The JWT refresh token string previously
+         *   issued by the login (POST /erpHrm/auth/member/login) or a prior
+         *   token refresh (POST /erpHrm/auth/member/refresh) endpoint. On
+         *   receipt: 1) Verify the JWT signature. 2) Extract claims:
+         *   erp_hrm_members.id and erp_hrm_member_sessions.id. 3) Query
+         *   erp_hrm_member_sessions WHERE id = session_id from claims — return
+         *   401 if not found. 4) Check erp_hrm_member_sessions.expired_at >
+         *   NOW() — return 401 if expired. 5) Load erp_hrm_members record,
+         *   verify deleted_at IS NULL — return 401 if deleted. On success,
+         *   update or replace the session record and issue a new token pair.
      */
     refresh: string;
   };
@@ -67,16 +91,24 @@ export namespace IErpHrmMember {
     /**
      * The registered email address of the member account used as the login identifier. Must match an existing, non-deactivated account.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping to erp_hrm_members.email. The server queries: SELECT * FROM erp_hrm_members WHERE email = :email AND deleted_at IS NULL. Must be a valid email format. Unique at the platform level.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping to erp_hrm_members.email. The
+         *   server queries: SELECT * FROM erp_hrm_members WHERE email = :email
+         *   AND deleted_at IS NULL. Must be a valid email format. Unique at the
+         *   platform level.
      */
     email: string & tags.Format<"email">;
 
     /**
      * The member's plaintext password for credential verification. The server validates this against the securely stored bcrypt hash. This value is never stored or returned.
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification Maps to erp_hrm_members.password_hash via bcrypt verification. The client submits the plaintext password; the server calls bcrypt.verify(password, password_hash). The raw hash is never returned to the client. If verification fails, a 401 is returned with the same message as 'email not found' to prevent enumeration.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification Maps to erp_hrm_members.password_hash via
+         *   bcrypt verification. The client submits the plaintext password; the
+         *   server calls bcrypt.verify(password, password_hash). The raw hash
+         *   is never returned to the client. If verification fails, a 401 is
+         *   returned with the same message as 'email not found' to prevent
+         *   enumeration.
      */
     password: string & tags.Format<"password">;
   };
@@ -92,37 +124,61 @@ export namespace IErpHrmMember {
     /**
      * The email address to register with. Must be a valid email format and must be unique across the platform. This becomes the member's permanent login identifier and cannot be shared with any other account.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping to erp_hrm_members.email. Must be validated as a valid email format (RFC 5321) before use. Must be unique across the entire erp_hrm_members table (enforced by a unique index). If a duplicate is found, return HTTP 409 Conflict. Stored as-is (not transformed).
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping to erp_hrm_members.email. Must
+         *   be validated as a valid email format (RFC 5321) before use. Must be
+         *   unique across the entire erp_hrm_members table (enforced by a
+         *   unique index). If a duplicate is found, return HTTP 409 Conflict.
+         *   Stored as-is (not transformed).
      */
     email: string & tags.Format<"email">;
 
     /**
      * Plain-text password for the new account. The server hashes this value securely before storage — the original password is never persisted. Must meet the platform's minimum password strength requirements.
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification Plain-text password provided by the registering user. Server-side implementation must: (1) validate password strength (minimum length and complexity requirements per business rules), then (2) hash using bcrypt with an appropriate cost factor, and (3) store the resulting hash in erp_hrm_members.password_hash. The plain-text value is never stored or logged.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification Plain-text password provided by the
+         *   registering user. Server-side implementation must: (1) validate
+         *   password strength (minimum length and complexity requirements per
+         *   business rules), then (2) hash using bcrypt with an appropriate
+         *   cost factor, and (3) store the resulting hash in
+         *   erp_hrm_members.password_hash. The plain-text value is never stored
+         *   or logged.
      */
     password: string & tags.Format<"password">;
 
     /**
      * The full URL of the page from which the registration was initiated. Captured for session context and audit trail purposes.
      *
-     * @x-autobe-specification Session context field. Captured at registration time and stored in a newly created erp_hrm_member_sessions record (href column) to track the full URL of the page from which the registration was initiated. Not written to erp_hrm_members. Required for all Join requests.
+         * @x-autobe-specification Session context field. Captured at
+         *   registration time and stored in a newly created
+         *   erp_hrm_member_sessions record (href column) to track the full URL
+         *   of the page from which the registration was initiated. Not written
+         *   to erp_hrm_members. Required for all Join requests.
      */
     href: string & tags.Format<"uri">;
 
     /**
      * The HTTP referrer URL — the address of the page that linked or redirected the user to the registration page. Captured for session context and audit trail purposes.
      *
-     * @x-autobe-specification Session context field. Captured at registration time and stored in a newly created erp_hrm_member_sessions record (referrer column) to track the HTTP referrer URL that brought the user to the registration page. Not written to erp_hrm_members. Required for all Join requests.
+         * @x-autobe-specification Session context field. Captured at
+         *   registration time and stored in a newly created
+         *   erp_hrm_member_sessions record (referrer column) to track the HTTP
+         *   referrer URL that brought the user to the registration page. Not
+         *   written to erp_hrm_members. Required for all Join requests.
      */
     referrer: string & tags.Format<"uri">;
 
     /**
      * The IPv4 address of the client at the time of registration. Optional — if not provided by the client (e.g., in server-side rendering scenarios), the server will use the detected request IP address as a fallback.
      *
-     * @x-autobe-specification Session context field. Captured at registration time and stored in a newly created erp_hrm_member_sessions record (ip column). If the client supplies an IP address, that value is used; otherwise the server falls back to the IP address detected from the incoming request (e.g., X-Forwarded-For or socket remote address). Not written to erp_hrm_members. Optional in the Join request body.
+         * @x-autobe-specification Session context field. Captured at
+         *   registration time and stored in a newly created
+         *   erp_hrm_member_sessions record (ip column). If the client supplies
+         *   an IP address, that value is used; otherwise the server falls back
+         *   to the IP address detected from the incoming request (e.g.,
+         *   X-Forwarded-For or socket remote address). Not written to
+         *   erp_hrm_members. Optional in the Join request body.
      */
     ip?: (string & tags.Format<"ipv4">) | null | undefined;
   };
@@ -140,14 +196,21 @@ export namespace IErpHrmMember {
     /**
      * The authenticated member's public platform-level identity, including their unique ID, email address, and account lifecycle timestamps. Sensitive credentials such as the password hash are never included.
      *
-     * @x-autobe-specification Build the IErpHrmMember object by reading the erp_hrm_members row for the authenticated member. Include: id, email, created_at, updated_at, deleted_at. Exclude password_hash (security). This is always the member who performed the auth action (join, login, or refresh). The IErpHrmMember type is defined in components/schemas and contains the member's public platform-level identity.
+         * @x-autobe-specification Build the IErpHrmMember object by reading the
+         *   erp_hrm_members row for the authenticated member. Include: id,
+         *   email, created_at, updated_at, deleted_at. Exclude password_hash
+         *   (security). This is always the member who performed the auth action
+         *   (join, login, or refresh). The IErpHrmMember type is defined in
+         *   components/schemas and contains the member's public platform-level
+         *   identity.
      */
     member: IErpHrmMember;
 
     /**
      * Authorization token.
      *
-     * @x-autobe-specification Authorization token comes from the session table.
+         * @x-autobe-specification Authorization token comes from the session
+         *   table.
      */
     token: IAuthorizationToken;
   };
@@ -159,24 +222,30 @@ export namespace IErpHrmMember {
     /**
      * The unique identifier of the member account on the platform. A UUID that permanently and globally identifies this member across all organizations.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from erp_hrm_members.id. Primary key UUID, auto-generated at account creation. NOT NULL.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from erp_hrm_members.id.
+         *   Primary key UUID, auto-generated at account creation. NOT NULL.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * The member's unique email address used as their login identifier across the entire platform. This value is unique among all registered member accounts.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from erp_hrm_members.email. Unique constraint enforced at the platform level. Used as the member's login identifier. NOT NULL.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from erp_hrm_members.email.
+         *   Unique constraint enforced at the platform level. Used as the
+         *   member's login identifier. NOT NULL.
      */
     email: string & tags.Format<"email">;
 
     /**
      * The timestamp when the member account was created (i.e., when the user first registered on the platform). Expressed in ISO 8601 date-time format with timezone information.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from erp_hrm_members.created_at. ISO 8601 datetime with timezone (Timestamptz). Represents when the member account was first registered. NOT NULL.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_members.created_at. ISO 8601 datetime with timezone
+         *   (Timestamptz). Represents when the member account was first
+         *   registered. NOT NULL.
      */
     created_at: string & tags.Format<"date-time">;
   };

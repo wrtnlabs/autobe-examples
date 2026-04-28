@@ -19,9 +19,11 @@ export class EcommercemallSuperadministratorAdministration_requestsController {
    *
    * @param connection
    * @param body Query parameters for filtering and pagination: status (pending, approved, rejected), date range (from, to), requester type (member, seller, both), limit, and cursor.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor superAdministrator
-   * @x-autobe-specification Query ecommerce_mall_administrator_approval_requests table with pagination and filtering.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor superAdministrator
+     * @x-autobe-specification Query
+     *   ecommerce_mall_administrator_approval_requests table with pagination
+     *   and filtering.
    *
    * Apply filters on:
    * - status: pending, approved, rejected (optional multiple values)

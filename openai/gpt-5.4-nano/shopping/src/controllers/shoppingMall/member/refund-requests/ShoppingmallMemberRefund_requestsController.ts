@@ -30,9 +30,9 @@ export class ShoppingmallMemberRefund_requestsController {
    *
    * @param connection
    * @param body Creation payload to initiate a refund request for one delivered order item, including the required customer reason.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation steps:
    *
    * 1. Parse request body (IShoppingMallRefundRequest.ICreate) to obtain:
    *    - shopping_mall_order_item_id (as orderItemId in DTO)
@@ -108,9 +108,10 @@ export class ShoppingmallMemberRefund_requestsController {
    *
    * @param connection
    * @param body Search criteria, pagination, and sorting options for refund requests.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation guidance for a list/search endpoint on refund requests.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation guidance for a list/search
+     *   endpoint on refund requests.
    *
    * 1) Resolve caller and visibility
    * - Determine actor context (member/customer, seller, admin) in the service layer.
@@ -179,9 +180,10 @@ export class ShoppingmallMemberRefund_requestsController {
    *
    * @param connection
    * @param refundRequestId Target refund request identifier.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement a read-only lookup of a single shopping_mall_refund_requests row by id.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implement a read-only lookup of a single
+     *   shopping_mall_refund_requests row by id.
    *
    * Steps:
    * 1) Extract refundRequestId from path.
@@ -235,11 +237,12 @@ export class ShoppingmallMemberRefund_requestsController {
    * @param connection
    * @param refundRequestId Target refund request identifier.
    * @param body Seller decision update payload for the refund request (approve/reject plus any seller decision fields required by the refund workflow).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1) Validate input
-   * - Load shopping_mall_refund_requests by id = refundRequestId where deleted_at is null (or treated as active per existing system convention).
-   * - Verify caller authorization for modifying refund decision fields.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification 1) Validate input - Load
+     *   shopping_mall_refund_requests by id = refundRequestId where deleted_at
+     *   is null (or treated as active per existing system convention). - Verify
+     *   caller authorization for modifying refund decision fields.
    *
    * 2) Load required context
    * - Load the associated shopping_mall_order_items row via shopping_mall_refund_requests.shopping_mall_order_item_id.
@@ -314,22 +317,29 @@ export class ShoppingmallMemberRefund_requestsController {
    *
    * @param connection
    * @param refundRequestId Target refund request identifier to remove permanently.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation steps (service-layer):
-   * 1) Parse `refundRequestId` (UUID) from path.
-   * 2) Authorization: verify caller is allowed to remove this refund request.
-   *    - Determine the refund request owner scope by loading `shopping_mall_refund_requests` joined to `shopping_mall_order_items` and `shopping_mall_orders`.
-   *    - Compare `shopping_mall_orders.shopping_customer_id` with the authenticated member’s id, or allow admin actor per governance rules.
-   * 3) Load refund request row by `id = refundRequestId`.
-   *    - If not found: return 404.
-   * 4) Business rule check: if deletion is blocked for the current refund request `status` (or if related order-item workflow constraints require approval), reject with a domain-specific 409/422 error; do not delete the row.
-   *    - The exact status transition/deletion eligibility logic must follow the refund request rules from the business requirements.
-   * 5) Deletion: execute a permanent removal of the refund request row from `shopping_mall_refund_requests`.
-   *    - Use a transaction.
-   *    - Ensure foreign-key cascade behavior is consistent with the schema (order item reference is onDelete: Cascade at relation level).
-   * 6) Snapshot/consistency: if snapshots are used for dispute resolution timelines, ensure snapshot references remain valid. If the system mandates snapshot preservation, do not delete snapshot metadata; only remove the refund request record.
-   * 7) Return success with no body.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation steps (service-layer): 1) Parse
+     *   `refundRequestId` (UUID) from path. 2) Authorization: verify caller is
+     *   allowed to remove this refund request. - Determine the refund request
+     *   owner scope by loading `shopping_mall_refund_requests` joined to
+     *   `shopping_mall_order_items` and `shopping_mall_orders`. - Compare
+     *   `shopping_mall_orders.shopping_customer_id` with the authenticated
+     *   member’s id, or allow admin actor per governance rules. 3) Load refund
+     *   request row by `id = refundRequestId`. - If not found: return 404. 4)
+     *   Business rule check: if deletion is blocked for the current refund
+     *   request `status` (or if related order-item workflow constraints require
+     *   approval), reject with a domain-specific 409/422 error; do not delete
+     *   the row. - The exact status transition/deletion eligibility logic must
+     *   follow the refund request rules from the business requirements. 5)
+     *   Deletion: execute a permanent removal of the refund request row from
+     *   `shopping_mall_refund_requests`. - Use a transaction. - Ensure
+     *   foreign-key cascade behavior is consistent with the schema (order item
+     *   reference is onDelete: Cascade at relation level). 6)
+     *   Snapshot/consistency: if snapshots are used for dispute resolution
+     *   timelines, ensure snapshot references remain valid. If the system
+     *   mandates snapshot preservation, do not delete snapshot metadata; only
+     *   remove the refund request record. 7) Return success with no body.
    *
    * Database queries:
    * - Primary lookup: `shopping_mall_refund_requests` by `id`.

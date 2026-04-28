@@ -18,9 +18,10 @@ export class RedditcloneMemberProfileController {
    *
    * @param connection
    * @param body Profile update data containing display name, bio text, and optional avatar file association ID.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Handle PUT request to update the authenticated user's profile.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Handle PUT request to update the authenticated
+     *   user's profile.
    *
    * 1. Extract authenticated member from session/token context (do NOT use path parameter for user identification).
    *

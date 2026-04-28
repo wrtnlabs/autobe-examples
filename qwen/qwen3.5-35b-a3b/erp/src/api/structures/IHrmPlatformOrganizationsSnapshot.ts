@@ -23,11 +23,11 @@ import { tags } from "typia";
  */
 export type IHrmPlatformOrganizationsSnapshot = {
   /**
-   * @x-autobe-database-schema-property id
+     * @x-autobe-database-schema-property id
    */
   id: string & tags.Format<"uuid">;
   /**
-   * @x-autobe-database-schema-property name
+     * @x-autobe-database-schema-property name
    */
   name: string;
 
@@ -36,8 +36,9 @@ export type IHrmPlatformOrganizationsSnapshot = {
    *
    * This field preserves the organizational context captured when the snapshot was created.
    *
-   * @x-autobe-database-schema-property description
-   * @x-autobe-specification Organization description captured at snapshot time. Nullable: matches database field description (String?)
+     * @x-autobe-database-schema-property description
+     * @x-autobe-specification Organization description captured at snapshot
+     *   time. Nullable: matches database field description (String?)
    */
   description: string | null;
 
@@ -46,12 +47,14 @@ export type IHrmPlatformOrganizationsSnapshot = {
    *
    * Format: uri. Maximum length: 80000 characters as per database VarChar constraint.
    *
-   * @x-autobe-database-schema-property logo_uri
-   * @x-autobe-specification URL to organization logo captured at snapshot time. Nullable: matches database field logo_uri (String?) with max 80000 characters
+     * @x-autobe-database-schema-property logo_uri
+     * @x-autobe-specification URL to organization logo captured at snapshot
+     *   time. Nullable: matches database field logo_uri (String?) with max
+     *   80000 characters
    */
   logo_uri: (string & tags.Format<"uri">) | null;
   /**
-   * @x-autobe-database-schema-property currency
+     * @x-autobe-database-schema-property currency
    */
   currency: string;
 
@@ -60,8 +63,9 @@ export type IHrmPlatformOrganizationsSnapshot = {
    *
    * Format: uri. Example: Asia/Seoul, America/New_York. Follows IANA timezone database format.
    *
-   * @x-autobe-database-schema-property timezone
-   * @x-autobe-specification Organization timezone identifier captured at snapshot time. Nullable: matches database field timezone (String?)
+     * @x-autobe-database-schema-property timezone
+     * @x-autobe-specification Organization timezone identifier captured at
+     *   snapshot time. Nullable: matches database field timezone (String?)
    */
   timezone: string | null;
 
@@ -70,8 +74,10 @@ export type IHrmPlatformOrganizationsSnapshot = {
    *
    * Range: integer between 1 (January) and 12 (December). Used for financial reporting periods.
    *
-   * @x-autobe-database-schema-property fiscal_start_month
-   * @x-autobe-specification First month of organization fiscal year captured at snapshot time. Nullable: matches database field fiscal_start_month (Int?). Range: 1-12 (January-December)
+     * @x-autobe-database-schema-property fiscal_start_month
+     * @x-autobe-specification First month of organization fiscal year captured
+     *   at snapshot time. Nullable: matches database field fiscal_start_month
+     *   (Int?). Range: 1-12 (January-December)
    */
   fiscal_start_month: (number & tags.Type<"int32">) | null;
 
@@ -80,8 +86,10 @@ export type IHrmPlatformOrganizationsSnapshot = {
    *
    * Values: active, suspended, archived. Represents the operational state of the organization.
    *
-   * @x-autobe-specification Organization status at snapshot time. Database column type: String. Allowed values: active, suspended, archived (application-level constraints).
-   * @x-autobe-database-schema-property status
+     * @x-autobe-specification Organization status at snapshot time. Database
+     *   column type: String. Allowed values: active, suspended, archived
+     *   (application-level constraints).
+     * @x-autobe-database-schema-property status
    */
   status: string;
 
@@ -90,16 +98,18 @@ export type IHrmPlatformOrganizationsSnapshot = {
    *
    * Format: json-pointer. Can contain arbitrary key-value pairs for extended organizational data.
    *
-   * @x-autobe-specification JSON metadata captured at snapshot time. Database column type: String? (nullable). Stored as string with json-pointer format.
-   * @x-autobe-database-schema-property metadata
+     * @x-autobe-specification JSON metadata captured at snapshot time. Database
+     *   column type: String? (nullable). Stored as string with json-pointer
+     *   format.
+     * @x-autobe-database-schema-property metadata
    */
   metadata: string | null;
   /**
-   * @x-autobe-database-schema-property created_at
+     * @x-autobe-database-schema-property created_at
    */
   created_at: string & tags.Format<"date-time">;
   /**
-   * @x-autobe-database-schema-property hrm_platform_organization_id
+     * @x-autobe-database-schema-property hrm_platform_organization_id
    */
   hrm_platform_organization_id: string & tags.Format<"uuid">;
 };
@@ -115,7 +125,9 @@ export namespace IHrmPlatformOrganizationsSnapshot {
      *
      * Performs a LIKE query on the name field to match snapshots whose names contain the search term. The search is case-insensitive and supports partial word matching. Useful for finding specific snapshots when you know part of the organization name.
      *
-     * @x-autobe-specification Search term for filtering snapshots by name using LIKE query. Matches substring in name field case-insensitively.
+         * @x-autobe-specification Search term for filtering snapshots by name
+         *   using LIKE query. Matches substring in name field
+         *   case-insensitively.
      */
     search?: string | undefined;
 
@@ -124,7 +136,9 @@ export namespace IHrmPlatformOrganizationsSnapshot {
      *
      * Restricts results to snapshots created on or after the specified date-time. Uses ISO 8601 format with timezone (e.g., '2024-01-15T00:00:00Z'). When omitted, no lower bound is applied to the date range.
      *
-     * @x-autobe-specification Minimum date-time filter for snapshot creation date. Uses >= comparison against created_at field. Only snapshots created on or after this timestamp are returned.
+         * @x-autobe-specification Minimum date-time filter for snapshot
+         *   creation date. Uses >= comparison against created_at field. Only
+         *   snapshots created on or after this timestamp are returned.
      */
     created_at_min?: (string & tags.Format<"date-time">) | undefined;
 
@@ -133,7 +147,9 @@ export namespace IHrmPlatformOrganizationsSnapshot {
      *
      * Restricts results to snapshots created on or before the specified date-time. Uses ISO 8601 format with timezone (e.g., '2024-01-15T23:59:59Z'). When omitted, no upper bound is applied to the date range.
      *
-     * @x-autobe-specification Maximum date-time filter for snapshot creation date. Uses <= comparison against created_at field. Only snapshots created on or before this timestamp are returned.
+         * @x-autobe-specification Maximum date-time filter for snapshot
+         *   creation date. Uses <= comparison against created_at field. Only
+         *   snapshots created on or before this timestamp are returned.
      */
     created_at_max?: (string & tags.Format<"date-time">) | undefined;
 
@@ -142,8 +158,10 @@ export namespace IHrmPlatformOrganizationsSnapshot {
      *
      * Restricts results to snapshots with the specified status. Common values include 'active', 'suspended', and 'archived'. Use this parameter to find snapshots with a specific state without retrieving all snapshots.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Filter snapshots by status field. Exact match against snapshot status value (e.g., 'active', 'suspended', 'archived').
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Filter snapshots by status field. Exact match
+         *   against snapshot status value (e.g., 'active', 'suspended',
+         *   'archived').
      */
     status?: string | undefined;
 
@@ -152,7 +170,10 @@ export namespace IHrmPlatformOrganizationsSnapshot {
      *
      * Specifies which page of results to return in the paginated response. Page numbering is 1-indexed (first page is 1). Must be greater than 0. Used together with limit parameter to control the amount of data returned per request.
      *
-     * @x-autobe-specification Page number for pagination (1-indexed). Determines which page of results to return. Defaults to 1 if not specified. Combined with limit, controls how many records are returned in the response.
+         * @x-autobe-specification Page number for pagination (1-indexed).
+         *   Determines which page of results to return. Defaults to 1 if not
+         *   specified. Combined with limit, controls how many records are
+         *   returned in the response.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -161,7 +182,9 @@ export namespace IHrmPlatformOrganizationsSnapshot {
      *
      * Controls the size of each page in the paginated response. Minimum value is 1, maximum is 100. The default value is 10 records per page. This parameter helps balance response size with the number of requests needed to retrieve all data.
      *
-     * @x-autobe-specification Maximum number of records per page (1-100). Controls the size of each page. Default value is 10. Enforced maximum is 100 to prevent excessive data transfer.
+         * @x-autobe-specification Maximum number of records per page (1-100).
+         *   Controls the size of each page. Default value is 10. Enforced
+         *   maximum is 100 to prevent excessive data transfer.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -197,8 +220,9 @@ export namespace IHrmPlatformOrganizationsSnapshot {
      *
      * A UUID v4 value that uniquely identifies this point-in-time snapshot of the organization. Used as the primary key for snapshot retrieval and as a reference in audit trail queries.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from hrm_platform_organizations_snapshots.id.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_organizations_snapshots.id.
      */
     id: string & tags.Format<"uuid">;
 
@@ -207,8 +231,9 @@ export namespace IHrmPlatformOrganizationsSnapshot {
      *
      * The display name of the organization captured at the moment this snapshot was created. This represents the organization's identity at that point in time, preserving historical naming even if the name has changed since.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from hrm_platform_organizations_snapshots.name.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_organizations_snapshots.name.
      */
     name: string;
 
@@ -217,8 +242,9 @@ export namespace IHrmPlatformOrganizationsSnapshot {
      *
      * The descriptive text about the organization's business or purpose as it existed when this snapshot was captured. May be null if no description was set at the time.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from hrm_platform_organizations_snapshots.description. Nullable field.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_organizations_snapshots.description. Nullable field.
      */
     description?: null | string | undefined;
 
@@ -227,8 +253,9 @@ export namespace IHrmPlatformOrganizationsSnapshot {
      *
      * The currency classification (e.g., USD, EUR, KRW) that was active for this organization when the snapshot was created. Used for financial reporting and ensures historical accuracy of monetary values.
      *
-     * @x-autobe-database-schema-property currency
-     * @x-autobe-specification Direct mapping from hrm_platform_organizations_snapshots.currency.
+         * @x-autobe-database-schema-property currency
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_organizations_snapshots.currency.
      */
     currency: string;
 
@@ -237,8 +264,9 @@ export namespace IHrmPlatformOrganizationsSnapshot {
      *
      * The IANA timezone identifier (e.g., 'Asia/Seoul', 'America/New_York') that was configured for the organization when this snapshot was captured. May be null if not explicitly set.
      *
-     * @x-autobe-database-schema-property timezone
-     * @x-autobe-specification Direct mapping from hrm_platform_organizations_snapshots.timezone. Nullable field.
+         * @x-autobe-database-schema-property timezone
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_organizations_snapshots.timezone. Nullable field.
      */
     timezone?: null | string | undefined;
 
@@ -247,8 +275,10 @@ export namespace IHrmPlatformOrganizationsSnapshot {
      *
      * The month (1-12) when the organization's fiscal year began at the time this snapshot was created. Used for financial reporting consistency and historical fiscal period calculations.
      *
-     * @x-autobe-database-schema-property fiscal_start_month
-     * @x-autobe-specification Direct mapping from hrm_platform_organizations_snapshots.fiscal_start_month. Nullable field with range validation (1-12).
+         * @x-autobe-database-schema-property fiscal_start_month
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_organizations_snapshots.fiscal_start_month. Nullable
+         *   field with range validation (1-12).
      */
     fiscal_start_month?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<12>)
@@ -260,8 +290,9 @@ export namespace IHrmPlatformOrganizationsSnapshot {
      *
      * The active state of the organization when this snapshot was captured, such as 'active', 'suspended', or 'archived'. Provides historical context for understanding organizational lifecycle.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from hrm_platform_organizations_snapshots.status.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_organizations_snapshots.status.
      */
     status: string;
 
@@ -270,8 +301,10 @@ export namespace IHrmPlatformOrganizationsSnapshot {
      *
      * The exact point in time when this immutable record was captured, representing when the organization's state was frozen for audit purposes. Used for chronological ordering of snapshots and determining snapshot recency.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from hrm_platform_organizations_snapshots.created_at. Format: date-time (ISO 8601).
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_organizations_snapshots.created_at. Format: date-time
+         *   (ISO 8601).
      */
     created_at: string & tags.Format<"date-time">;
   };

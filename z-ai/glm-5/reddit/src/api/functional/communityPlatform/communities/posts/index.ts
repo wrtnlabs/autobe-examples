@@ -25,7 +25,9 @@ import { IPageICommunityPlatformPost } from "../../../../structures/IPageICommun
  * @param props.body Pagination, sorting, and time filter parameters for the community feed
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query community_platform_posts table filtered by community_id, joining with community_platform_members for author username and community_platform_communities for community name.
+ * @x-autobe-specification Query community_platform_posts table filtered by
+ *   community_id, joining with community_platform_members for author username
+ *   and community_platform_communities for community name.
  *
  * Sorting algorithms:
  * - Hot: ORDER BY (vote_score / EXTRACT(EPOCH FROM (NOW() - created_at))) DESC - surfaces trending content with recent high engagement

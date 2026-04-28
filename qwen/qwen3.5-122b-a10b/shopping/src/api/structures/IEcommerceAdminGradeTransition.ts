@@ -26,8 +26,10 @@ export type IEcommerceAdminGradeTransition = {
    *
    * This field serves as the primary key for the audit trail entry. It is a UUID that uniquely identifies each grade change event in the system.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_admin_grade_transitions.id. Unique identifier for this grade transition record (UUID format).
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_admin_grade_transitions.id. Unique identifier for this grade
+     *   transition record (UUID format).
    */
   id: string & tags.Format<"uuid">;
 
@@ -44,8 +46,11 @@ export type IEcommerceAdminGradeTransition = {
    * - updated_at: Last modification timestamp
    * - deleted_at: Soft-delete timestamp (null for active accounts)
    *
-   * @x-autobe-database-schema-property admin
-   * @x-autobe-specification Join from ecommerce_admin_grade_transitions.ecommerce_admin_id to ecommerce_admins.id. Returns IEcommerceAdmin.ISummary object containing admin identification and grade information.
+     * @x-autobe-database-schema-property admin
+     * @x-autobe-specification Join from
+     *   ecommerce_admin_grade_transitions.ecommerce_admin_id to
+     *   ecommerce_admins.id. Returns IEcommerceAdmin.ISummary object containing
+     *   admin identification and grade information.
    */
   admin: IEcommerceAdmin.ISummary;
 
@@ -62,8 +67,11 @@ export type IEcommerceAdminGradeTransition = {
    * - updated_at: Last modification timestamp
    * - deleted_at: Soft-delete timestamp (null for active accounts)
    *
-   * @x-autobe-database-schema-property performedByAdmin
-   * @x-autobe-specification Join from ecommerce_admin_grade_transitions.performed_by_admin_id to ecommerce_admins.id. Returns IEcommerceAdmin.ISummary object containing the administrator who performed the grade change.
+     * @x-autobe-database-schema-property performedByAdmin
+     * @x-autobe-specification Join from
+     *   ecommerce_admin_grade_transitions.performed_by_admin_id to
+     *   ecommerce_admins.id. Returns IEcommerceAdmin.ISummary object containing
+     *   the administrator who performed the grade change.
    */
   performedByAdmin: IEcommerceAdmin.ISummary;
 
@@ -76,8 +84,10 @@ export type IEcommerceAdminGradeTransition = {
    *
    * This field preserves the historical state before the transition occurred.
    *
-   * @x-autobe-database-schema-property from_grade
-   * @x-autobe-specification Direct mapping from ecommerce_admin_grade_transitions.from_grade. Enumerated string value: 'regular' or 'super'.
+     * @x-autobe-database-schema-property from_grade
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_admin_grade_transitions.from_grade. Enumerated string value:
+     *   'regular' or 'super'.
    */
   from_grade: string;
 
@@ -90,8 +100,10 @@ export type IEcommerceAdminGradeTransition = {
    *
    * A valid transition must have from_grade different from to_grade.
    *
-   * @x-autobe-database-schema-property to_grade
-   * @x-autobe-specification Direct mapping from ecommerce_admin_grade_transitions.to_grade. Enumerated string value: 'regular' or 'super'.
+     * @x-autobe-database-schema-property to_grade
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_admin_grade_transitions.to_grade. Enumerated string value:
+     *   'regular' or 'super'.
    */
   to_grade: string;
 
@@ -100,8 +112,10 @@ export type IEcommerceAdminGradeTransition = {
    *
    * This represents the exact moment the administrator's grade was modified in the system. Used for chronological ordering of grade history and audit timeline reconstruction.
    *
-   * @x-autobe-database-schema-property changed_at
-   * @x-autobe-specification Direct mapping from ecommerce_admin_grade_transitions.changed_at. DateTime with timezone (timestamptz format).
+     * @x-autobe-database-schema-property changed_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_admin_grade_transitions.changed_at. DateTime with timezone
+     *   (timestamptz format).
    */
   changed_at: string & tags.Format<"date-time">;
 
@@ -115,8 +129,9 @@ export type IEcommerceAdminGradeTransition = {
    *
    * This field is nullable as some automated or system-initiated changes may not require a human-readable explanation.
    *
-   * @x-autobe-database-schema-property reason
-   * @x-autobe-specification Direct mapping from ecommerce_admin_grade_transitions.reason. Nullable string field.
+     * @x-autobe-database-schema-property reason
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_admin_grade_transitions.reason. Nullable string field.
    */
   reason?: string | null | undefined;
 
@@ -125,8 +140,11 @@ export type IEcommerceAdminGradeTransition = {
    *
    * Automatically set when the grade transition is recorded. Used for database-level audit trail consistency.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_admin_grade_transitions.created_at. DateTime with timezone (timestamptz format). Automatically set when the grade transition is recorded.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_admin_grade_transitions.created_at. DateTime with timezone
+     *   (timestamptz format). Automatically set when the grade transition is
+     *   recorded.
    */
   created_at: string & tags.Format<"date-time">;
 };
@@ -187,8 +205,10 @@ export namespace IEcommerceAdminGradeTransition {
      *
      * This UUID uniquely identifies a single grade change event in the system. Used to retrieve specific transition records for audit review and dispute resolution.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_admin_grade_transitions.id. UUID primary key for this grade transition record.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_admin_grade_transitions.id. UUID primary key for this
+         *   grade transition record.
      */
     id: string & tags.Format<"uuid">;
 
@@ -201,8 +221,10 @@ export namespace IEcommerceAdminGradeTransition {
      *
      * This field preserves the historical state before the transition occurred.
      *
-     * @x-autobe-database-schema-property from_grade
-     * @x-autobe-specification Direct mapping from ecommerce_admin_grade_transitions.from_grade. String value representing grade before change.
+         * @x-autobe-database-schema-property from_grade
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_admin_grade_transitions.from_grade. String value
+         *   representing grade before change.
      */
     from_grade: string;
 
@@ -215,8 +237,10 @@ export namespace IEcommerceAdminGradeTransition {
      *
      * A valid transition must have from_grade different from to_grade.
      *
-     * @x-autobe-database-schema-property to_grade
-     * @x-autobe-specification Direct mapping from ecommerce_admin_grade_transitions.to_grade. String value representing grade after change.
+         * @x-autobe-database-schema-property to_grade
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_admin_grade_transitions.to_grade. String value
+         *   representing grade after change.
      */
     to_grade: string;
 
@@ -225,8 +249,10 @@ export namespace IEcommerceAdminGradeTransition {
      *
      * This represents the exact moment the administrator's grade was modified in the system. Used for chronological ordering of grade history and audit timeline reconstruction.
      *
-     * @x-autobe-database-schema-property changed_at
-     * @x-autobe-specification Direct mapping from ecommerce_admin_grade_transitions.changed_at. DateTime with timezone.
+         * @x-autobe-database-schema-property changed_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_admin_grade_transitions.changed_at. DateTime with
+         *   timezone.
      */
     changed_at: string & tags.Format<"date-time">;
 
@@ -240,8 +266,10 @@ export namespace IEcommerceAdminGradeTransition {
      *
      * This field is nullable as some automated or system-initiated changes may not require a human-readable explanation.
      *
-     * @x-autobe-database-schema-property reason
-     * @x-autobe-specification Direct mapping from ecommerce_admin_grade_transitions.reason. Nullable string with optional explanation.
+         * @x-autobe-database-schema-property reason
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_admin_grade_transitions.reason. Nullable string with
+         *   optional explanation.
      */
     reason?: string | null | undefined;
 
@@ -252,8 +280,10 @@ export namespace IEcommerceAdminGradeTransition {
      *
      * Returns a summary representation of the administrator account without sensitive credentials.
      *
-     * @x-autobe-database-schema-property admin
-     * @x-autobe-specification Join from ecommerce_admin_grade_transitions.ecommerce_admin_id to ecommerce_admins.id. Returns IEcommerceAdmin.ISummary via relation.
+         * @x-autobe-database-schema-property admin
+         * @x-autobe-specification Join from
+         *   ecommerce_admin_grade_transitions.ecommerce_admin_id to
+         *   ecommerce_admins.id. Returns IEcommerceAdmin.ISummary via relation.
      */
     admin: IEcommerceAdmin.ISummary;
 
@@ -264,8 +294,10 @@ export namespace IEcommerceAdminGradeTransition {
      *
      * Returns a summary representation of the administrator account without sensitive credentials.
      *
-     * @x-autobe-database-schema-property performedByAdmin
-     * @x-autobe-specification Join from ecommerce_admin_grade_transitions.performed_by_admin_id to ecommerce_admins.id. Returns IEcommerceAdmin.ISummary via relation.
+         * @x-autobe-database-schema-property performedByAdmin
+         * @x-autobe-specification Join from
+         *   ecommerce_admin_grade_transitions.performed_by_admin_id to
+         *   ecommerce_admins.id. Returns IEcommerceAdmin.ISummary via relation.
      */
     performedByAdmin: IEcommerceAdmin.ISummary;
   };

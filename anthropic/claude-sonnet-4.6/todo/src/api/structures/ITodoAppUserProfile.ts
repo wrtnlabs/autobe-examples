@@ -14,40 +14,55 @@ export type ITodoAppUserProfile = {
   /**
    * The unique identifier of this user profile record. A UUID assigned at profile creation and never changed thereafter.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from todo_app_user_profiles.id. UUID primary key, generated at profile creation time. Unique across all profiles.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from todo_app_user_profiles.id.
+     *   UUID primary key, generated at profile creation time. Unique across all
+     *   profiles.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * The unique identifier of the member account that owns this profile. References the authenticated member's account and enforces the one-to-one relationship between member and profile.
    *
-   * @x-autobe-database-schema-property todo_app_member_id
-   * @x-autobe-specification Direct mapping from todo_app_user_profiles.todo_app_member_id. References todo_app_members.id. A @@unique constraint enforces the 1:1 relationship — each member has exactly one profile.
+     * @x-autobe-database-schema-property todo_app_member_id
+     * @x-autobe-specification Direct mapping from
+     *   todo_app_user_profiles.todo_app_member_id. References
+     *   todo_app_members.id. A @@unique constraint enforces the 1:1
+     *   relationship — each member has exactly one profile.
    */
   memberId: string & tags.Format<"uuid">;
 
   /**
    * The human-readable display name chosen by the member to represent themselves within the application. Purely presentational and non-unique. The member may change this at any time.
    *
-   * @x-autobe-database-schema-property display_name
-   * @x-autobe-specification Direct mapping from todo_app_user_profiles.display_name. A non-empty string chosen by the member. Purely presentational — carries no authentication significance and does not need to be unique across the application. Updated via PUT /todoApp/member/profile.
+     * @x-autobe-database-schema-property display_name
+     * @x-autobe-specification Direct mapping from
+     *   todo_app_user_profiles.display_name. A non-empty string chosen by the
+     *   member. Purely presentational — carries no authentication significance
+     *   and does not need to be unique across the application. Updated via PUT
+     *   /todoApp/member/profile.
    */
   displayName: string;
 
   /**
    * The ISO 8601 timestamp recording when this profile was first created. Set at account registration and immutable thereafter.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from todo_app_user_profiles.created_at. Set once at profile creation (automatically triggered at member account registration) and never modified thereafter. Stored as timestamptz.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   todo_app_user_profiles.created_at. Set once at profile creation
+     *   (automatically triggered at member account registration) and never
+     *   modified thereafter. Stored as timestamptz.
    */
   createdAt: string & tags.Format<"date-time">;
 
   /**
    * The ISO 8601 timestamp recording the most recent moment at which the profile information was changed. Updated whenever the member modifies their display name.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from todo_app_user_profiles.updated_at. Updated to NOW() every time the member modifies their display name via the PUT /todoApp/member/profile endpoint. Stored as timestamptz.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   todo_app_user_profiles.updated_at. Updated to NOW() every time the
+     *   member modifies their display name via the PUT /todoApp/member/profile
+     *   endpoint. Stored as timestamptz.
    */
   updatedAt: string & tags.Format<"date-time">;
 };
@@ -59,8 +74,12 @@ export namespace ITodoAppUserProfile {
     /**
      * The new display name to apply to the authenticated member's profile. Must be a non-empty string. This is the human-readable label that identifies the member within the application and may be changed freely at any time.
      *
-     * @x-autobe-database-schema-property display_name
-     * @x-autobe-specification Direct mapping to todo_app_user_profiles.display_name. Must be a non-empty string (minLength: 1). The server rejects the request with 422 if the value is missing, null, or blank after trimming. Upon a valid request the column is updated with this value.
+         * @x-autobe-database-schema-property display_name
+         * @x-autobe-specification Direct mapping to
+         *   todo_app_user_profiles.display_name. Must be a non-empty string
+         *   (minLength: 1). The server rejects the request with 422 if the
+         *   value is missing, null, or blank after trimming. Upon a valid
+         *   request the column is updated with this value.
      */
     displayName: string & tags.MinLength<1>;
   };

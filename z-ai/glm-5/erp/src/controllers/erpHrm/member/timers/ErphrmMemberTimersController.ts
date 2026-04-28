@@ -30,9 +30,9 @@ export class ErphrmMemberTimersController {
    *
    * @param connection
    * @param body Timer creation parameters including project assignment, optional task, and optional description
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation steps:
    *
    * 1. Extract authenticated employee ID from the current user context (the employee record for the selected organization)
    *
@@ -109,9 +109,10 @@ export class ErphrmMemberTimersController {
    *
    * @param connection
    * @param body Search criteria and pagination parameters for filtering timer records
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query the erp_hrm_timers table with pagination and filtering capabilities.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query the erp_hrm_timers table with pagination
+     *   and filtering capabilities.
    *
    * 1. Extract organization context from authenticated user's session
    * 2. Apply access control:
@@ -168,9 +169,10 @@ export class ErphrmMemberTimersController {
    * @param connection
    * @param timerId Unique identifier of the timer to update. The timer must be active and belong to the authenticated employee.
    * @param body Timer update data containing the new project, task, and/or description
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Update a running timer's project, task, or description.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Update a running timer's project, task, or
+     *   description.
    *
    * 1. Authentication: Extract member ID from JWT session token
    * 2. Find employee record for current organization context (erp_hrm_employee_id from session)
@@ -246,9 +248,9 @@ export class ErphrmMemberTimersController {
    *
    * @param connection
    * @param timerId Unique identifier of the timer to discard (UUID format)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation steps:
    *
    * 1. Extract timerId from path parameter and validate UUID format
    *
@@ -312,9 +314,9 @@ export class ErphrmMemberTimersController {
    *
    * @param connection
    * @param timerId Unique identifier of the timer to stop. Must be an active timer owned by the authenticated employee.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation steps:
    *
    * 1. Extract timerId from path parameter
    * 2. Authenticate the current member and get their employee record in current organization context

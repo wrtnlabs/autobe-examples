@@ -22,9 +22,10 @@ export class RedditcommunityAdminPostsReportsController {
    * @param connection
    * @param postId The UUID of the post for which reports are being reviewed.
    * @param body Search criteria including optional status filter, date range filters, reporter filter, and pagination parameters.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query reddit_community_reports table for reports targeting the specified postId.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Query reddit_community_reports table for reports
+     *   targeting the specified postId.
    *
    * 1. Verify the user has moderator privileges for the community containing this post
    * 2. Filter reports where target_post_id matches the path parameter
@@ -69,9 +70,11 @@ export class RedditcommunityAdminPostsReportsController {
    * @param connection
    * @param postId UUID of the post that was reported. Identifies the parent post resource.
    * @param reportId UUID of the specific report record to retrieve.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Retrieve a single report record from reddit_community_reports table where target_post_id matches the postId parameter.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Retrieve a single report record from
+     *   reddit_community_reports table where target_post_id matches the postId
+     *   parameter.
    *
    * Implementation steps:
    * 1. Validate that postId and reportId are valid UUIDs

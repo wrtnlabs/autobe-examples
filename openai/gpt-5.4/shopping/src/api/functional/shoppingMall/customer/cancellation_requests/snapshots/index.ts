@@ -25,7 +25,8 @@ import { IShoppingMallCancellationRequestSnapshot } from "../../../../../structu
  * @param props.body History browsing criteria and pagination options
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Implement a paginated history query scoped to one parent row in `shopping_mall_cancellation_requests`.
+ * @x-autobe-specification Implement a paginated history query scoped to one
+ *   parent row in `shopping_mall_cancellation_requests`.
  *
  * 1. Resolve the path parameter `cancellationRequestId` as a UUID and load the parent cancellation request from `shopping_mall_cancellation_requests` by `id`, excluding logically removed records as appropriate for active-history access if the service layer treats `deleted_at` as non-browsable to normal actors.
  * 2. Authorize access before loading snapshot history:
@@ -151,7 +152,9 @@ export namespace index {
  * @param props.snapshotId Identifier of the cancellation request snapshot
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Implement a read-only detail query for a single `shopping_mall_cancellation_request_snapshots` row scoped by its parent cancellation request.
+ * @x-autobe-specification Implement a read-only detail query for a single
+ *   `shopping_mall_cancellation_request_snapshots` row scoped by its parent
+ *   cancellation request.
  *
  * 1. Parse `cancellationRequestId` and `snapshotId` as UUID values.
  * 2. Load the parent row from `shopping_mall_cancellation_requests` by `id = cancellationRequestId`. If not found, return a not-found error.

@@ -307,23 +307,24 @@ export namespace update {
  * @param props.reportGenerationRunId Target report generation run identifier to permanently remove.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Implementation steps for DELETE /reportGenerationRuns/{reportGenerationRunId}:
- * 1) Parse and validate `reportGenerationRunId` as UUID.
- * 2) Authorization:
- *    - Resolve the caller's effective permissions in the currently selected organization context.
- *    - Determine the owning organization by loading the `erp_hrm_time_tracking_report_generation_runs` row along with its `reportDefinition` relation (erp_hrm_time_tracking_report_definition_id -> erp_hrm_time_tracking_report_definitions -> organization).
- *    - Reject if the run belongs to a different organization than the selected context.
- * 3) Existence check:
- *    - Query `erp_hrm_time_tracking_report_generation_runs` by `id`.
- *    - If not found (or not found under the scoped organization), return an error indicating the run is unavailable.
- * 4) Deletion:
- *    - Execute a single transaction to permanently remove the row by primary key.
- *    - Rely on the ORM/database cascade rule for the `reportDefinition` relation (onDelete: Cascade) to handle dependent records.
- * 5) Response:
- *    - Return HTTP 200/204 with an empty JSON body as defined by `responseBody: null`.
- * Edge cases:
- * - If the run has already been removed, treat it as unavailable (not found).
- * - If database-level constraints/cascades fail, surface an internal error.
+ * @x-autobe-specification Implementation steps for DELETE
+ *   /reportGenerationRuns/{reportGenerationRunId}: 1) Parse and validate
+ *   `reportGenerationRunId` as UUID. 2) Authorization: - Resolve the caller's
+ *   effective permissions in the currently selected organization context. -
+ *   Determine the owning organization by loading the
+ *   `erp_hrm_time_tracking_report_generation_runs` row along with its
+ *   `reportDefinition` relation (erp_hrm_time_tracking_report_definition_id ->
+ *   erp_hrm_time_tracking_report_definitions -> organization). - Reject if the
+ *   run belongs to a different organization than the selected context. 3)
+ *   Existence check: - Query `erp_hrm_time_tracking_report_generation_runs` by
+ *   `id`. - If not found (or not found under the scoped organization), return
+ *   an error indicating the run is unavailable. 4) Deletion: - Execute a single
+ *   transaction to permanently remove the row by primary key. - Rely on the
+ *   ORM/database cascade rule for the `reportDefinition` relation (onDelete:
+ *   Cascade) to handle dependent records. 5) Response: - Return HTTP 200/204
+ *   with an empty JSON body as defined by `responseBody: null`. Edge cases: -
+ *   If the run has already been removed, treat it as unavailable (not found). -
+ *   If database-level constraints/cascades fail, surface an internal error.
  *
  * @path /erpHrmTimeTracking/reportGenerationRuns/:reportGenerationRunId
  * @accessor api.functional.erpHrmTimeTracking.reportGenerationRuns.eraseReportGenerationRun
@@ -417,19 +418,24 @@ export namespace eraseReportGenerationRun {
  * @param props.body Creation request payload for initiating a report generation run for a specific report definition. The payload includes the report definition identifier and generation parameters whose deterministic summary will be stored in parameters_summary.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification 1) Validate that authenticated member has report:view (or the required permission for initiating report generation) within the selected organization context.
- * 2) Resolve the target report definition by the request-provided report definition identifier; verify it belongs to the selected organization.
- * 3) Create erp_hrm_time_tracking_report_generation_runs row with:
- *    - erp_hrm_time_tracking_report_definition_id set from request
- *    - status initialized to the implementation’s initial lifecycle value (e.g., pending) consistent with allowed status strings
- *    - parameters_summary set to a deterministic summary of generation parameters derived from request
- *    - started_at/finished_at left null initially (until the generation worker transitions status)
- *    - error_message null
- * 4) Enqueue or trigger asynchronous generation processing (worker/job) that will:
- *    - update started_at when generation begins
- *    - compute grouped outputs and metric breakdown lines, persisting into erp_hrm_time_tracking_report_outputs and erp_hrm_time_tracking_report_output_metrics
- *    - update status, finished_at, and error_message (when failures occur)
- * 5) Return the created report generation run DTO.
+ * @x-autobe-specification 1) Validate that authenticated member has report:view
+ *   (or the required permission for initiating report generation) within the
+ *   selected organization context. 2) Resolve the target report definition by
+ *   the request-provided report definition identifier; verify it belongs to the
+ *   selected organization. 3) Create
+ *   erp_hrm_time_tracking_report_generation_runs row with: -
+ *   erp_hrm_time_tracking_report_definition_id set from request - status
+ *   initialized to the implementation’s initial lifecycle value (e.g., pending)
+ *   consistent with allowed status strings - parameters_summary set to a
+ *   deterministic summary of generation parameters derived from request -
+ *   started_at/finished_at left null initially (until the generation worker
+ *   transitions status) - error_message null 4) Enqueue or trigger asynchronous
+ *   generation processing (worker/job) that will: - update started_at when
+ *   generation begins - compute grouped outputs and metric breakdown lines,
+ *   persisting into erp_hrm_time_tracking_report_outputs and
+ *   erp_hrm_time_tracking_report_output_metrics - update status, finished_at,
+ *   and error_message (when failures occur) 5) Return the created report
+ *   generation run DTO.
  *
  * Database interactions:
  * - Transactionally insert the run row.

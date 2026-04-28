@@ -11,47 +11,47 @@ import { IEcommerceMallSeller } from "./IEcommerceMallSeller";
  */
 export type IEcommerceMallCancellationRequest = {
   /**
-   * @x-autobe-database-schema-property id
+     * @x-autobe-database-schema-property id
    */
   id: string & tags.Format<"uuid">;
   /**
-   * @x-autobe-database-schema-property reason
+     * @x-autobe-database-schema-property reason
    */
   reason: string;
   /**
-   * @x-autobe-database-schema-property status
+     * @x-autobe-database-schema-property status
    */
   status: string;
   /**
-   * @x-autobe-database-schema-property response_reason
+     * @x-autobe-database-schema-property response_reason
    */
   responseReason: string | null;
   /**
-   * @x-autobe-database-schema-property responded_at
+     * @x-autobe-database-schema-property responded_at
    */
   respondedAt: (string & tags.Format<"date-time">) | null;
   /**
-   * @x-autobe-database-schema-property created_at
+     * @x-autobe-database-schema-property created_at
    */
   createdAt: string & tags.Format<"date-time">;
   /**
-   * @x-autobe-database-schema-property updated_at
+     * @x-autobe-database-schema-property updated_at
    */
   updatedAt: string & tags.Format<"date-time">;
   /**
-   * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-database-schema-property deleted_at
    */
   deletedAt: (string & tags.Format<"date-time">) | null;
   /**
-   * @x-autobe-database-schema-property orderItem
+     * @x-autobe-database-schema-property orderItem
    */
   orderItem: IEcommerceMallOrderItem;
   /**
-   * @x-autobe-database-schema-property customer
+     * @x-autobe-database-schema-property customer
    */
   customer: IEcommerceMallCustomer.ISummary;
   /**
-   * @x-autobe-database-schema-property seller
+     * @x-autobe-database-schema-property seller
    */
   seller: IEcommerceMallSeller.ISummary | null;
   snapshots: IEcommerceMallCancellationRequestSnapshot[];
@@ -72,16 +72,22 @@ export namespace IEcommerceMallCancellationRequest {
     /**
      * The UUID of the order item the customer wants to cancel. Must be a paid order item that hasn't been shipped yet.
      *
-     * @x-autobe-database-schema-property order_item_id
-     * @x-autobe-specification Direct mapping to ecommerce_mall_cancellation_requests.order_item_id. UUID of order item to cancel. Must exist in ecommerce_mall_order_items table, belong to authenticated customer, and have 'paid' status.
+         * @x-autobe-database-schema-property order_item_id
+         * @x-autobe-specification Direct mapping to
+         *   ecommerce_mall_cancellation_requests.order_item_id. UUID of order
+         *   item to cancel. Must exist in ecommerce_mall_order_items table,
+         *   belong to authenticated customer, and have 'paid' status.
      */
     orderItemId: string & tags.Format<"uuid">;
 
     /**
      * Customer's explanation for requesting cancellation. This reason will be visible to the seller when reviewing the cancellation request.
      *
-     * @x-autobe-database-schema-property reason
-     * @x-autobe-specification Direct mapping to ecommerce_mall_cancellation_requests.reason. Non-empty string explaining why customer wants to cancel. Stored as-is for seller review and audit purposes.
+         * @x-autobe-database-schema-property reason
+         * @x-autobe-specification Direct mapping to
+         *   ecommerce_mall_cancellation_requests.reason. Non-empty string
+         *   explaining why customer wants to cancel. Stored as-is for seller
+         *   review and audit purposes.
      */
     reason: string & tags.MinLength<1>;
   };
@@ -93,80 +99,103 @@ export namespace IEcommerceMallCancellationRequest {
     /**
      * Unique identifier for the cancellation request.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_mall_cancellation_requests.id. UUID primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_cancellation_requests.id. UUID primary key.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Current status of the cancellation request: pending, approved, or rejected.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from ecommerce_mall_cancellation_requests.status. Values: 'pending' (awaiting seller response), 'approved' (seller approved, item cancelled), 'rejected' (seller rejected the request).
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_cancellation_requests.status. Values: 'pending'
+         *   (awaiting seller response), 'approved' (seller approved, item
+         *   cancelled), 'rejected' (seller rejected the request).
      */
     status: string;
 
     /**
      * Customer's reason for requesting cancellation of the order item.
      *
-     * @x-autobe-database-schema-property reason
-     * @x-autobe-specification Direct mapping from ecommerce_mall_cancellation_requests.reason. Customer's explanation for requesting cancellation.
+         * @x-autobe-database-schema-property reason
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_cancellation_requests.reason. Customer's explanation
+         *   for requesting cancellation.
      */
     reason: string;
 
     /**
      * Seller's explanation for approving or rejecting the cancellation request. Null while status is pending.
      *
-     * @x-autobe-database-schema-property response_reason
-     * @x-autobe-specification Direct mapping from ecommerce_mall_cancellation_requests.response_reason. Nullable. Contains seller's explanation when approving or rejecting the request.
+         * @x-autobe-database-schema-property response_reason
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_cancellation_requests.response_reason. Nullable.
+         *   Contains seller's explanation when approving or rejecting the
+         *   request.
      */
     responseReason: string | null;
 
     /**
      * Timestamp when the seller responded to the cancellation request. Null if still pending.
      *
-     * @x-autobe-database-schema-property responded_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_cancellation_requests.responded_at. Nullable timestamp when seller responded. Null while status is pending.
+         * @x-autobe-database-schema-property responded_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_cancellation_requests.responded_at. Nullable
+         *   timestamp when seller responded. Null while status is pending.
      */
     respondedAt: (string & tags.Format<"date-time">) | null;
 
     /**
      * The order item that the customer wants to cancel.
      *
-     * @x-autobe-database-schema-property orderItem
-     * @x-autobe-specification Join via order_item_id to ecommerce_mall_order_items. Returns IEcommerceMallOrderItem.ISummary with product, variant, and seller details.
+         * @x-autobe-database-schema-property orderItem
+         * @x-autobe-specification Join via order_item_id to
+         *   ecommerce_mall_order_items. Returns
+         *   IEcommerceMallOrderItem.ISummary with product, variant, and seller
+         *   details.
      */
     orderItem: IEcommerceMallOrderItem.ISummary;
 
     /**
      * The customer who submitted the cancellation request.
      *
-     * @x-autobe-database-schema-property customer
-     * @x-autobe-specification Join via customer_id to ecommerce_mall_customers. Returns IEcommerceMallCustomer.ISummary with customer identification and profile display name.
+         * @x-autobe-database-schema-property customer
+         * @x-autobe-specification Join via customer_id to
+         *   ecommerce_mall_customers. Returns IEcommerceMallCustomer.ISummary
+         *   with customer identification and profile display name.
      */
     customer: IEcommerceMallCustomer.ISummary;
 
     /**
      * The seller who owns the order item and responds to the request. Null initially, populated when seller reviews.
      *
-     * @x-autobe-database-schema-property seller
-     * @x-autobe-specification Join via seller_id to ecommerce_mall_sellers when seller_id is not null. Returns IEcommerceMallSeller.ISummary|null. Nullable initially, set when seller reviews the request.
+         * @x-autobe-database-schema-property seller
+         * @x-autobe-specification Join via seller_id to ecommerce_mall_sellers
+         *   when seller_id is not null. Returns
+         *   IEcommerceMallSeller.ISummary|null. Nullable initially, set when
+         *   seller reviews the request.
      */
     seller: IEcommerceMallSeller.ISummary | null;
 
     /**
      * Timestamp when the cancellation request was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_cancellation_requests.created_at. Timestamp when the cancellation request was submitted.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_cancellation_requests.created_at. Timestamp when the
+         *   cancellation request was submitted.
      */
     createdAt: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when the cancellation request was last updated.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_cancellation_requests.updated_at. Timestamp of most recent modification.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_cancellation_requests.updated_at. Timestamp of most
+         *   recent modification.
      */
     updatedAt: string & tags.Format<"date-time">;
   };

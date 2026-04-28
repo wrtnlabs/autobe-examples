@@ -22,7 +22,8 @@ import { IPageIEcommerceMallSellerProfileSnapshot } from "../../../../structures
  * @param props.body Search criteria and pagination parameters for filtering profile snapshots by seller, date range, and pagination options
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Query the `ecommerce_mall_seller_profile_snapshots` table with pagination and optional filtering.
+ * @x-autobe-specification Query the `ecommerce_mall_seller_profile_snapshots`
+ *   table with pagination and optional filtering.
  *
  * **Authorization**: Verify the caller is either the seller who owns the profile snapshots or an administrator with system-wide access.
  *
@@ -135,7 +136,8 @@ export namespace index {
  * @param props.snapshotId Unique identifier of the seller profile snapshot (UUID format)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Query the ecommerce_mall_seller_profile_snapshots table by ID (UUID) provided in the path parameter.
+ * @x-autobe-specification Query the ecommerce_mall_seller_profile_snapshots
+ *   table by ID (UUID) provided in the path parameter.
  *
  * Implementation steps:
  * 1. Parse and validate snapshotId parameter as UUID format

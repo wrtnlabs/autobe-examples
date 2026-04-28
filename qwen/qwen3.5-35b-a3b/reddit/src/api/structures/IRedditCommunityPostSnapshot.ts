@@ -25,11 +25,11 @@ import { IRedditCommunityPost } from "./IRedditCommunityPost";
  */
 export type IRedditCommunityPostSnapshot = {
   /**
-   * @x-autobe-database-schema-property id
+     * @x-autobe-database-schema-property id
    */
   id: string & tags.Format<"uuid">;
   /**
-   * @x-autobe-database-schema-property title
+     * @x-autobe-database-schema-property title
    */
   title: string;
 
@@ -38,12 +38,14 @@ export type IRedditCommunityPostSnapshot = {
    *
    * Determines how the post content is displayed and which additional fields are populated. Fixed at snapshot creation time. Allowed values: 'text', 'link', 'image'.
    *
-   * @x-autobe-specification Post type classification. Allowed values: 'text' for text posts, 'link' for URL posts, 'image' for image uploads. Immutable after creation. DB column type: String.
-   * @x-autobe-database-schema-property post_type
+     * @x-autobe-specification Post type classification. Allowed values: 'text'
+     *   for text posts, 'link' for URL posts, 'image' for image uploads.
+     *   Immutable after creation. DB column type: String.
+     * @x-autobe-database-schema-property post_type
    */
   post_type: string;
   /**
-   * @x-autobe-database-schema-property content
+     * @x-autobe-database-schema-property content
    */
   content?: string | null | undefined;
 
@@ -52,8 +54,10 @@ export type IRedditCommunityPostSnapshot = {
    *
    * Only populated for link posts (post_type: 'link'). Maximum 80000 characters per database constraint.
    *
-   * @x-autobe-specification URL for link posts. Maximum 80000 characters as per DB schema. Null for text posts and image posts. DB column type: String.
-   * @x-autobe-database-schema-property link_url
+     * @x-autobe-specification URL for link posts. Maximum 80000 characters as
+     *   per DB schema. Null for text posts and image posts. DB column type:
+     *   String.
+     * @x-autobe-database-schema-property link_url
    */
   link_url?:
     | (string & tags.MaxLength<80000> & tags.Format<"uri">)
@@ -65,24 +69,26 @@ export type IRedditCommunityPostSnapshot = {
    *
    * Indicates whether the post was publicly visible ('active') or had been deleted ('deleted') at the time this snapshot was captured. Allowed values: 'active', 'deleted'.
    *
-   * @x-autobe-specification Post status at snapshot time. Values: 'active' for publicly visible posts, 'deleted' for soft-deleted posts. DB column type: String.
-   * @x-autobe-database-schema-property status
+     * @x-autobe-specification Post status at snapshot time. Values: 'active'
+     *   for publicly visible posts, 'deleted' for soft-deleted posts. DB column
+     *   type: String.
+     * @x-autobe-database-schema-property status
    */
   status: string;
   /**
-   * @x-autobe-database-schema-property created_at
+     * @x-autobe-database-schema-property created_at
    */
   created_at: string & tags.Format<"date-time">;
   /**
-   * @x-autobe-database-schema-property author
+     * @x-autobe-database-schema-property author
    */
   author: IRedditCommunityMember.ISummary;
   /**
-   * @x-autobe-database-schema-property community
+     * @x-autobe-database-schema-property community
    */
   community: IRedditCommunityCommunity.ISummary;
   /**
-   * @x-autobe-database-schema-property redditCommunityPost
+     * @x-autobe-database-schema-property redditCommunityPost
    */
   redditCommunityPost: IRedditCommunityPost.ISummary;
 };
@@ -127,7 +133,9 @@ export namespace IRedditCommunityPostSnapshot {
      *
      * This parameter controls which page of results is returned. Page numbering is 1-indexed, meaning the first page is page 1, not page 0. The system calculates the database offset as (page - 1) * limit to retrieve the correct page of snapshots.
      *
-     * @x-autobe-specification 1-indexed page number for cursor-based pagination. Default: 1. Minimum: 1. Used to calculate offset as (page - 1) * limit for database query.
+         * @x-autobe-specification 1-indexed page number for cursor-based
+         *   pagination. Default: 1. Minimum: 1. Used to calculate offset as
+         *   (page - 1) * limit for database query.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -136,7 +144,10 @@ export namespace IRedditCommunityPostSnapshot {
      *
      * Controls the batch size of snapshots returned in a single response. Acceptable values range from 1 to 100, with a default of 20 records per page. This parameter balances between reducing the number of API requests needed (larger limits) and minimizing payload size per request (smaller limits).
      *
-     * @x-autobe-specification Maximum number of records to return per page. Minimum: 1, Maximum: 100. Default: 20. Used to limit the result set size for efficient browsing. Larger limits reduce number of requests but increase payload size.
+         * @x-autobe-specification Maximum number of records to return per page.
+         *   Minimum: 1, Maximum: 100. Default: 20. Used to limit the result set
+         *   size for efficient browsing. Larger limits reduce number of
+         *   requests but increase payload size.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -147,7 +158,10 @@ export namespace IRedditCommunityPostSnapshot {
      *
      * Determines the primary sort field for the result set. Acceptable values are created_at (sorts by when the snapshot was created, the default), id (sorts by snapshot UUID), or status (sorts by post status at snapshot time: active or deleted).
      *
-     * @x-autobe-specification Field name to sort results by. Allowed values: created_at (snapshot creation time, default), id (snapshot UUID), status (post status at snapshot). Used in ORDER BY clause of database query.
+         * @x-autobe-specification Field name to sort results by. Allowed
+         *   values: created_at (snapshot creation time, default), id (snapshot
+         *   UUID), status (post status at snapshot). Used in ORDER BY clause of
+         *   database query.
      */
     sortBy?: "created_at" | "id" | "status" | undefined;
 
@@ -156,7 +170,9 @@ export namespace IRedditCommunityPostSnapshot {
      *
      * Controls whether results are sorted in ascending (asc) or descending (desc) order. When sortBy is created_at with asc, oldest snapshots appear first; with desc, newest snapshots appear first.
      *
-     * @x-autobe-specification Sort direction for sortBy field. Allowed values: asc (ascending, default), desc (descending). Combined with sortBy to form the complete ORDER BY clause.
+         * @x-autobe-specification Sort direction for sortBy field. Allowed
+         *   values: asc (ascending, default), desc (descending). Combined with
+         *   sortBy to form the complete ORDER BY clause.
      */
     sortOrder?: "asc" | "desc" | undefined;
 
@@ -165,7 +181,10 @@ export namespace IRedditCommunityPostSnapshot {
      *
      * When provided, limits the result set to only snapshots belonging to the specified post. This is useful for viewing the complete modification history of a single post by retrieving all snapshots associated with it.
      *
-     * @x-autobe-specification UUID filter to narrow results to snapshots belonging to a specific post. Used in WHERE clause: reddit_community_post_id = postId. When provided, all returned snapshots are guaranteed to be for the same post.
+         * @x-autobe-specification UUID filter to narrow results to snapshots
+         *   belonging to a specific post. Used in WHERE clause:
+         *   reddit_community_post_id = postId. When provided, all returned
+         *   snapshots are guaranteed to be for the same post.
      */
     postId?: (string & tags.Format<"uuid">) | undefined;
 
@@ -174,7 +193,10 @@ export namespace IRedditCommunityPostSnapshot {
      *
      * When provided, limits the result set to only snapshots belonging to posts within the specified community. This enables browsing snapshot history for all posts published in a particular community.
      *
-     * @x-autobe-specification UUID filter to narrow results to snapshots from a specific community. Used in WHERE clause: reddit_community_community_id = communityId. Useful for browsing snapshots within a single community.
+         * @x-autobe-specification UUID filter to narrow results to snapshots
+         *   from a specific community. Used in WHERE clause:
+         *   reddit_community_community_id = communityId. Useful for browsing
+         *   snapshots within a single community.
      */
     communityId?: (string & tags.Format<"uuid">) | undefined;
 
@@ -183,7 +205,10 @@ export namespace IRedditCommunityPostSnapshot {
      *
      * When provided, limits the result set to only snapshots belonging to posts authored by the specified member. This enables browsing the complete snapshot history of all posts created by a particular user.
      *
-     * @x-autobe-specification UUID filter to narrow results to snapshots authored by a specific member. Used in WHERE clause: reddit_community_member_id = memberId. Useful for viewing all snapshots by a particular user.
+         * @x-autobe-specification UUID filter to narrow results to snapshots
+         *   authored by a specific member. Used in WHERE clause:
+         *   reddit_community_member_id = memberId. Useful for viewing all
+         *   snapshots by a particular user.
      */
     memberId?: (string & tags.Format<"uuid">) | undefined;
 
@@ -192,7 +217,10 @@ export namespace IRedditCommunityPostSnapshot {
      *
      * Filters snapshots by the original post type classification. Acceptable values are text (for written content posts), link (for URL-based posts), or image (for uploaded image posts). This enables browsing snapshots of a specific content category.
      *
-     * @x-autobe-specification Content type filter for posts. Allowed values: text (text posts), link (link posts), image (image posts). Used in WHERE clause: post_type = postType. Narrow results to a specific content category.
+         * @x-autobe-specification Content type filter for posts. Allowed
+         *   values: text (text posts), link (link posts), image (image posts).
+         *   Used in WHERE clause: post_type = postType. Narrow results to a
+         *   specific content category.
      */
     postType?: "text" | "link" | "image" | undefined;
 
@@ -201,7 +229,10 @@ export namespace IRedditCommunityPostSnapshot {
      *
      * Filters snapshots by whether the post was active (publicly visible) or deleted (soft-deleted) when the snapshot was captured. This enables viewing the modification history of posts that have since been deleted.
      *
-     * @x-autobe-specification Status filter for post state at snapshot time. Allowed values: active (publicly visible), deleted (soft-deleted). Used in WHERE clause: status = status. Useful for viewing deleted post history.
+         * @x-autobe-specification Status filter for post state at snapshot
+         *   time. Allowed values: active (publicly visible), deleted
+         *   (soft-deleted). Used in WHERE clause: status = status. Useful for
+         *   viewing deleted post history.
      */
     status?: "active" | "deleted" | undefined;
 
@@ -210,7 +241,10 @@ export namespace IRedditCommunityPostSnapshot {
      *
      * An object containing min and max ISO 8601 date-time strings that defines a time window for snapshot creation. Only snapshots created within this range (inclusive) are returned. Both min and max fields are required. Useful for browsing snapshots from a specific time period.
      *
-     * @x-autobe-specification Date range filter for snapshot creation time. Object with min and max ISO 8601 date-time strings. Used in WHERE clause: created_at >= min AND created_at <= max. Both min and max are required fields.
+         * @x-autobe-specification Date range filter for snapshot creation time.
+         *   Object with min and max ISO 8601 date-time strings. Used in WHERE
+         *   clause: created_at >= min AND created_at <= max. Both min and max
+         *   are required fields.
      */
     dateRange?:
       | {

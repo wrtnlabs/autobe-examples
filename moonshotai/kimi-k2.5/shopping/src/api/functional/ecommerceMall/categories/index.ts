@@ -24,7 +24,8 @@ import { IPageIEcommerceMallCategory } from "../../../structures/IPageIEcommerce
  * @param props.body Search criteria and pagination parameters for category listing
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query ecommerce_mall_categories table with pagination support.
+ * @x-autobe-specification Query ecommerce_mall_categories table with pagination
+ *   support.
  *
  * Apply optional filters:
  * - parentId: Filter by parent category to get subcategories. When null or omitted, return top-level categories (where parent_id IS NULL).
@@ -136,7 +137,8 @@ export namespace index {
  * @param props.categoryId Unique identifier of the category (UUID format)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query the ecommerce_mall_categories table by id (UUID primary key).
+ * @x-autobe-specification Query the ecommerce_mall_categories table by id (UUID
+ *   primary key).
  *
  * Exclude categories where deleted_at is not null (soft deleted categories).
  *

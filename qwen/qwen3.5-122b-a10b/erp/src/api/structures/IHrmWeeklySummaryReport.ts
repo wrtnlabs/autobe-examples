@@ -39,7 +39,10 @@ export type IHrmWeeklySummaryReport = {
    *
    * ISO 8601 date-time format (YYYY-MM-DDT00:00:00Z) set to midnight of Monday in the organization's timezone.
    *
-   * @x-autobe-specification Computed Monday date for the week period. Derived from hrm_timelogs.created_at by grouping records into Monday-Sunday weeks based on hrm_organizations.timezone. Format: ISO 8601 date-time (YYYY-MM-DDT00:00:00Z).
+     * @x-autobe-specification Computed Monday date for the week period. Derived
+     *   from hrm_timelogs.created_at by grouping records into Monday-Sunday
+     *   weeks based on hrm_organizations.timezone. Format: ISO 8601 date-time
+     *   (YYYY-MM-DDT00:00:00Z).
    */
   week_start_date: string & tags.Format<"date-time">;
 
@@ -52,7 +55,10 @@ export type IHrmWeeklySummaryReport = {
    *
    * ISO 8601 date-time format (YYYY-MM-DDT23:59:59Z) set to end of day on Sunday in the organization's timezone.
    *
-   * @x-autobe-specification Computed Sunday date for the week period. Derived from hrm_timelogs.created_at by grouping records into Monday-Sunday weeks based on hrm_organizations.timezone. Format: ISO 8601 date-time (YYYY-MM-DDT23:59:59Z).
+     * @x-autobe-specification Computed Sunday date for the week period. Derived
+     *   from hrm_timelogs.created_at by grouping records into Monday-Sunday
+     *   weeks based on hrm_organizations.timezone. Format: ISO 8601 date-time
+     *   (YYYY-MM-DDT23:59:59Z).
    */
   week_end_date: string & tags.Format<"date-time">;
 
@@ -65,7 +71,10 @@ export type IHrmWeeklySummaryReport = {
    *
    * Sum of all timelog duration_minutes divided by 60 to convert to hours. Includes all timelogs where the logged date falls within the week_start_date to week_end_date range for employees belonging to the organization.
    *
-   * @x-autobe-specification Computed sum of all timelog durations in the week. Aggregation: SUM(hrm_timelogs.duration_minutes) / 60. Includes all timelogs within the week_start_date to week_end_date range for employees belonging to the organization.
+     * @x-autobe-specification Computed sum of all timelog durations in the
+     *   week. Aggregation: SUM(hrm_timelogs.duration_minutes) / 60. Includes
+     *   all timelogs within the week_start_date to week_end_date range for
+     *   employees belonging to the organization.
    */
   total_hours: number;
 
@@ -78,7 +87,10 @@ export type IHrmWeeklySummaryReport = {
    *
    * Sum of timelog duration_minutes where billable=true, divided by 60 to convert to hours. Only includes timelogs explicitly marked as billable in the database.
    *
-   * @x-autobe-specification Computed sum of billable timelog durations in the week. Aggregation: SUM(hrm_timelogs.duration_minutes where hrm_timelogs.billable=true) / 60. Only includes timelogs marked as billable.
+     * @x-autobe-specification Computed sum of billable timelog durations in the
+     *   week. Aggregation: SUM(hrm_timelogs.duration_minutes where
+     *   hrm_timelogs.billable=true) / 60. Only includes timelogs marked as
+     *   billable.
    */
   billable_hours: number;
 
@@ -91,7 +103,10 @@ export type IHrmWeeklySummaryReport = {
    *
    * Derived as the difference between total_hours and billable_hours. This ensures the values always sum correctly: total_hours = billable_hours + non_billable_hours.
    *
-   * @x-autobe-specification Computed difference between total_hours and billable_hours. Formula: non_billable_hours = total_hours - billable_hours. Represents internal work, administrative tasks, and non-client time.
+     * @x-autobe-specification Computed difference between total_hours and
+     *   billable_hours. Formula: non_billable_hours = total_hours -
+     *   billable_hours. Represents internal work, administrative tasks, and
+     *   non-client time.
    */
   non_billable_hours: number;
 
@@ -104,7 +119,10 @@ export type IHrmWeeklySummaryReport = {
    *
    * Count of distinct hrm_employee_id values in hrm_timelogs within the week period, joined with hrm_employees to verify organization membership.
    *
-   * @x-autobe-specification Computed count of unique employees who logged time during the week. Aggregation: COUNT(DISTINCT hrm_timelogs.hrm_employee_id). Joins with hrm_employees to filter by organization_id.
+     * @x-autobe-specification Computed count of unique employees who logged
+     *   time during the week. Aggregation: COUNT(DISTINCT
+     *   hrm_timelogs.hrm_employee_id). Joins with hrm_employees to filter by
+     *   organization_id.
    */
   employee_count: number & tags.Type<"int32">;
 
@@ -117,7 +135,10 @@ export type IHrmWeeklySummaryReport = {
    *
    * Count of distinct hrm_project_id values in hrm_timelogs within the week period, joined with hrm_projects to verify organization membership.
    *
-   * @x-autobe-specification Computed count of unique projects with time entries during the week. Aggregation: COUNT(DISTINCT hrm_timelogs.hrm_project_id). Joins with hrm_projects to filter by organization_id.
+     * @x-autobe-specification Computed count of unique projects with time
+     *   entries during the week. Aggregation: COUNT(DISTINCT
+     *   hrm_timelogs.hrm_project_id). Joins with hrm_projects to filter by
+     *   organization_id.
    */
   project_count: number & tags.Type<"int32">;
 
@@ -134,7 +155,11 @@ export type IHrmWeeklySummaryReport = {
    *
    * Projects are ranked by total hours logged in descending order. Only projects with at least one timelog entry during the week are included. Maximum of 5 projects returned.
    *
-   * @x-autobe-specification Computed array of top 5 projects ranked by total hours logged. Aggregation: SELECT TOP 5 hrm_project_id, SUM(duration_minutes) FROM hrm_timelogs GROUP BY hrm_project_id ORDER BY SUM(duration_minutes) DESC. Returns IHrmProject.ISummary objects with additional hours_breakdown field.
+     * @x-autobe-specification Computed array of top 5 projects ranked by total
+     *   hours logged. Aggregation: SELECT TOP 5 hrm_project_id,
+     *   SUM(duration_minutes) FROM hrm_timelogs GROUP BY hrm_project_id ORDER
+     *   BY SUM(duration_minutes) DESC. Returns IHrmProject.ISummary objects
+     *   with additional hours_breakdown field.
    */
   top_projects?: IHrmWeeklySummaryReport.ITopProject[] | undefined;
 
@@ -151,7 +176,11 @@ export type IHrmWeeklySummaryReport = {
    *
    * Only employees who logged at least one timelog entry during the week are included in this array. The array is sorted by total hours in descending order.
    *
-   * @x-autobe-specification Computed array of employee participation details. Aggregation: SELECT hrm_employee_id, SUM(duration_minutes), SUM(duration_minutes where billable=true) FROM hrm_timelogs GROUP BY hrm_employee_id. Returns IHrmEmployee.ISummary objects with additional hours_breakdown field.
+     * @x-autobe-specification Computed array of employee participation details.
+     *   Aggregation: SELECT hrm_employee_id, SUM(duration_minutes),
+     *   SUM(duration_minutes where billable=true) FROM hrm_timelogs GROUP BY
+     *   hrm_employee_id. Returns IHrmEmployee.ISummary objects with additional
+     *   hours_breakdown field.
    */
   employee_participation?:
     | IHrmWeeklySummaryReport.IEmployeeParticipation[]
@@ -183,7 +212,10 @@ export namespace IHrmWeeklySummaryReport {
      *
      * ISO 8601 date format (YYYY-MM-DD). Example: 2024-01-01
      *
-     * @x-autobe-specification Filter timelogs and timesheets by date >= start_date. Used in WHERE clause: timelog.date >= start_date. Defaults to current fiscal quarter start when omitted. Format: YYYY-MM-DD.
+         * @x-autobe-specification Filter timelogs and timesheets by date >=
+         *   start_date. Used in WHERE clause: timelog.date >= start_date.
+         *   Defaults to current fiscal quarter start when omitted. Format:
+         *   YYYY-MM-DD.
      */
     start_date?: (string & tags.Format<"date">) | undefined;
 
@@ -198,7 +230,9 @@ export namespace IHrmWeeklySummaryReport {
      *
      * ISO 8601 date format (YYYY-MM-DD). Example: 2024-03-31
      *
-     * @x-autobe-specification Filter timelogs and timesheets by date <= end_date. Used in WHERE clause: timelog.date <= end_date. Defaults to current fiscal quarter end when omitted. Format: YYYY-MM-DD.
+         * @x-autobe-specification Filter timelogs and timesheets by date <=
+         *   end_date. Used in WHERE clause: timelog.date <= end_date. Defaults
+         *   to current fiscal quarter end when omitted. Format: YYYY-MM-DD.
      */
     end_date?: (string & tags.Format<"date">) | undefined;
 
@@ -213,7 +247,9 @@ export namespace IHrmWeeklySummaryReport {
      *
      * Use this parameter to generate reports focused on billable work (for client invoicing) or non-billable work (for internal analysis).
      *
-     * @x-autobe-specification Filter timelogs by billable flag. Used in WHERE clause: timelog.billable = billable when provided. When omitted, both billable and non-billable timelogs are included.
+         * @x-autobe-specification Filter timelogs by billable flag. Used in
+         *   WHERE clause: timelog.billable = billable when provided. When
+         *   omitted, both billable and non-billable timelogs are included.
      */
     billable?: boolean | undefined;
 
@@ -232,7 +268,9 @@ export namespace IHrmWeeklySummaryReport {
      *
      * Use this parameter to generate reports for specific projects, such as client project billing summaries or internal project tracking.
      *
-     * @x-autobe-specification Filter timelogs by project ID. Used in WHERE clause: timelog.hrm_project_id IN (project_ids). When omitted, timelogs from all projects are included. Array of UUID format.
+         * @x-autobe-specification Filter timelogs by project ID. Used in WHERE
+         *   clause: timelog.hrm_project_id IN (project_ids). When omitted,
+         *   timelogs from all projects are included. Array of UUID format.
      */
     project_ids?: (string & tags.Format<"uuid">)[] | undefined;
 
@@ -251,7 +289,9 @@ export namespace IHrmWeeklySummaryReport {
      *
      * Use this parameter to generate reports for specific team members, such as individual productivity analysis or team workload distribution.
      *
-     * @x-autobe-specification Filter timelogs by employee ID. Used in WHERE clause: timelog.hrm_employee_id IN (employee_ids). When omitted, timelogs from all employees are included. Array of UUID format.
+         * @x-autobe-specification Filter timelogs by employee ID. Used in WHERE
+         *   clause: timelog.hrm_employee_id IN (employee_ids). When omitted,
+         *   timelogs from all employees are included. Array of UUID format.
      */
     employee_ids?: (string & tags.Format<"uuid">)[] | undefined;
 
@@ -274,7 +314,9 @@ export namespace IHrmWeeklySummaryReport {
      *
      * Combine with the limit parameter to paginate through large result sets. The response includes pagination metadata (current page, total pages, total records) to help navigate results.
      *
-     * @x-autobe-specification Pagination page number (1-indexed). Used to calculate OFFSET: (page - 1) * limit. Minimum value is 1. When omitted, defaults to 1.
+         * @x-autobe-specification Pagination page number (1-indexed). Used to
+         *   calculate OFFSET: (page - 1) * limit. Minimum value is 1. When
+         *   omitted, defaults to 1.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -298,7 +340,9 @@ export namespace IHrmWeeklySummaryReport {
      *
      * The actual number of records returned may be less than the limit on the final page or when the total number of records is fewer than the limit.
      *
-     * @x-autobe-specification Pagination page size (maximum records per page). Used as LIMIT in SQL query. Minimum 1, maximum 100. When omitted, defaults to 10.
+         * @x-autobe-specification Pagination page size (maximum records per
+         *   page). Used as LIMIT in SQL query. Minimum 1, maximum 100. When
+         *   omitted, defaults to 10.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -331,7 +375,8 @@ export namespace IHrmWeeklySummaryReport {
      *
      * UUID primary key used for project identification and API references.
      *
-     * @x-autobe-specification Direct mapping from hrm_projects.id column. UUID primary key of the project.
+         * @x-autobe-specification Direct mapping from hrm_projects.id column.
+         *   UUID primary key of the project.
      */
     id: string & tags.Format<"uuid">;
 
@@ -340,7 +385,8 @@ export namespace IHrmWeeklySummaryReport {
      *
      * Required field used throughout the UI for project identification, navigation, and references.
      *
-     * @x-autobe-specification Direct mapping from hrm_projects.name column. Required display field.
+         * @x-autobe-specification Direct mapping from hrm_projects.name column.
+         *   Required display field.
      */
     name: string;
 
@@ -349,7 +395,8 @@ export namespace IHrmWeeklySummaryReport {
      *
      * Optional field providing additional context about project goals, deliverables, and requirements.
      *
-     * @x-autobe-specification Direct mapping from hrm_projects.description column. Optional text field.
+         * @x-autobe-specification Direct mapping from hrm_projects.description
+         *   column. Optional text field.
      */
     description?: string | null | undefined;
 
@@ -358,7 +405,8 @@ export namespace IHrmWeeklySummaryReport {
      *
      * Used for project badges, timeline indicators, and dashboard visualizations. Format: #RRGGBB or #RRGGBBAA.
      *
-     * @x-autobe-specification Direct mapping from hrm_projects.color_code column. Hex color format.
+         * @x-autobe-specification Direct mapping from hrm_projects.color_code
+         *   column. Hex color format.
      */
     color_code: string;
 
@@ -367,7 +415,8 @@ export namespace IHrmWeeklySummaryReport {
      *
      * Indicates whether the project is active (current work), archived (inactive but preserved), or completed (finished work). Active projects accept new timelogs and task assignments.
      *
-     * @x-autobe-specification Direct mapping from hrm_projects.status column. Enum: active, archived, completed.
+         * @x-autobe-specification Direct mapping from hrm_projects.status
+         *   column. Enum: active, archived, completed.
      */
     status: string;
 
@@ -376,7 +425,8 @@ export namespace IHrmWeeklySummaryReport {
      *
      * Optional field marking when project work began or is scheduled to begin. Stored as ISO 8601 datetime.
      *
-     * @x-autobe-specification Direct mapping from hrm_projects.start_date column. Nullable datetime.
+         * @x-autobe-specification Direct mapping from hrm_projects.start_date
+         *   column. Nullable datetime.
      */
     start_date?: (string & tags.Format<"date-time">) | null | undefined;
 
@@ -385,7 +435,8 @@ export namespace IHrmWeeklySummaryReport {
      *
      * Optional field marking when project is expected to finish or has finished. Stored as ISO 8601 datetime.
      *
-     * @x-autobe-specification Direct mapping from hrm_projects.end_date column. Nullable datetime.
+         * @x-autobe-specification Direct mapping from hrm_projects.end_date
+         *   column. Nullable datetime.
      */
     end_date?: (string & tags.Format<"date-time">) | null | undefined;
 
@@ -394,7 +445,10 @@ export namespace IHrmWeeklySummaryReport {
      *
      * Each project belongs to exactly one organization. Organization context is enforced on all project operations for multi-tenancy data isolation. Returns summary representation with id, name, currency, timezone, fiscal_start_month, and created_at.
      *
-     * @x-autobe-specification Join via hrm_projects.hrm_organization_id to hrm_organizations.id. Returns IHrmOrganization.ISummary with id, name, description, logo_image_url, currency, timezone, fiscal_start_month, created_at.
+         * @x-autobe-specification Join via hrm_projects.hrm_organization_id to
+         *   hrm_organizations.id. Returns IHrmOrganization.ISummary with id,
+         *   name, description, logo_image_url, currency, timezone,
+         *   fiscal_start_month, created_at.
      */
     organization: IHrmOrganization.ISummary;
 
@@ -403,7 +457,8 @@ export namespace IHrmWeeklySummaryReport {
      *
      * Automatically set on project creation. Stored as ISO 8601 datetime with timezone.
      *
-     * @x-autobe-specification Direct mapping from hrm_projects.created_at column. ISO 8601 datetime.
+         * @x-autobe-specification Direct mapping from hrm_projects.created_at
+         *   column. ISO 8601 datetime.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -418,7 +473,13 @@ export namespace IHrmWeeklySummaryReport {
      *
      * All values are rounded to reasonable precision for display purposes.
      *
-     * @x-autobe-specification Computed aggregation from hrm_timelogs for the reporting week. total_hours = SUM(hrm_timelogs.duration_minutes)/60, billable_hours = SUM(CASE WHEN billable=true THEN duration_minutes ELSE 0 END)/60, non_billable_hours = total_hours - billable_hours. Joins hrm_projects to hrm_timelogs on hrm_project_id, filters by date range and deleted_at IS NULL, groups by project id.
+         * @x-autobe-specification Computed aggregation from hrm_timelogs for
+         *   the reporting week. total_hours =
+         *   SUM(hrm_timelogs.duration_minutes)/60, billable_hours = SUM(CASE
+         *   WHEN billable=true THEN duration_minutes ELSE 0 END)/60,
+         *   non_billable_hours = total_hours - billable_hours. Joins
+         *   hrm_projects to hrm_timelogs on hrm_project_id, filters by date
+         *   range and deleted_at IS NULL, groups by project id.
      */
     hours_breakdown: IHrmWeeklySummaryReportHoursBreakdown;
   };
@@ -453,7 +514,11 @@ export namespace IHrmWeeklySummaryReport {
      *
      * Computed by joining the aggregated timelog employee ID to the hrm_employees table, then including all belongs-to relations as summary objects. The department reference may be null if the employee has no department assignment.
      *
-     * @x-autobe-specification Computed via JOIN from aggregated hrm_timelogs.hrm_employee_id to hrm_employees.id, then includes belongs-to relations (user→hrm_members, organization→hrm_organizations, role→hrm_roles, department→hrm_departments). Returns IHrmEmployee.ISummary object.
+         * @x-autobe-specification Computed via JOIN from aggregated
+         *   hrm_timelogs.hrm_employee_id to hrm_employees.id, then includes
+         *   belongs-to relations (user→hrm_members,
+         *   organization→hrm_organizations, role→hrm_roles,
+         *   department→hrm_departments). Returns IHrmEmployee.ISummary object.
      */
     employee: IHrmEmployee.ISummary;
 
@@ -468,7 +533,11 @@ export namespace IHrmWeeklySummaryReport {
      * - billable_hours: Sum of timelog duration_minutes where billable=true, converted to decimal hours. Represents client-facing or chargeable work time
      * - non_billable_hours: Derived as total_hours minus billable_hours. Represents internal work, administrative tasks, meetings, training, and other non-client time
      *
-     * @x-autobe-specification Computed via SQL aggregation: SUM(duration_minutes) AS total_minutes, SUM(duration_minutes WHERE billable=true) AS billable_minutes FROM hrm_timelogs GROUP BY hrm_employee_id. Hours = minutes / 60. non_billable_hours = total_hours - billable_hours.
+         * @x-autobe-specification Computed via SQL aggregation:
+         *   SUM(duration_minutes) AS total_minutes, SUM(duration_minutes WHERE
+         *   billable=true) AS billable_minutes FROM hrm_timelogs GROUP BY
+         *   hrm_employee_id. Hours = minutes / 60. non_billable_hours =
+         *   total_hours - billable_hours.
      */
     hours_breakdown: {
       /**

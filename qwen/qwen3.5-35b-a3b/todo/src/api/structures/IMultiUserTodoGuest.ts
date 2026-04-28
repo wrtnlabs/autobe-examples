@@ -14,8 +14,9 @@ export type IMultiUserTodoGuest = {
    *
    * UUID format identifying this specific guest account in the system.
    *
-   * @x-autobe-specification Direct mapping from multi_user_todo_guests.id (UUID). Primary key identifying the guest session.
-   * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from multi_user_todo_guests.id
+     *   (UUID). Primary key identifying the guest session.
+     * @x-autobe-database-schema-property id
    */
   id: string & tags.Format<"uuid">;
 
@@ -24,8 +25,10 @@ export type IMultiUserTodoGuest = {
    *
    * Combined from user agent, IP address, and browser characteristics to create a persistent identifier for unauthenticated users.
    *
-   * @x-autobe-specification Direct mapping from multi_user_todo_guests.fingerprint_hash. Hashed value combining user agent, IP address, and browser characteristics.
-   * @x-autobe-database-schema-property fingerprint_hash
+     * @x-autobe-specification Direct mapping from
+     *   multi_user_todo_guests.fingerprint_hash. Hashed value combining user
+     *   agent, IP address, and browser characteristics.
+     * @x-autobe-database-schema-property fingerprint_hash
    */
   fingerprint_hash: string;
 
@@ -34,8 +37,10 @@ export type IMultiUserTodoGuest = {
    *
    * Optional field containing the client's user agent header for debugging and session tracking purposes.
    *
-   * @x-autobe-specification Direct mapping from multi_user_todo_guests.user_agent. Optional field (nullable) captured at session creation.
-   * @x-autobe-database-schema-property user_agent
+     * @x-autobe-specification Direct mapping from
+     *   multi_user_todo_guests.user_agent. Optional field (nullable) captured
+     *   at session creation.
+     * @x-autobe-database-schema-property user_agent
    */
   user_agent?: string | null | undefined;
 
@@ -44,8 +49,10 @@ export type IMultiUserTodoGuest = {
    *
    * Optional field containing the client's IP address for session tracking and security monitoring.
    *
-   * @x-autobe-specification Direct mapping from multi_user_todo_guests.ip_address. Optional field (nullable) captured at session creation.
-   * @x-autobe-database-schema-property ip_address
+     * @x-autobe-specification Direct mapping from
+     *   multi_user_todo_guests.ip_address. Optional field (nullable) captured
+     *   at session creation.
+     * @x-autobe-database-schema-property ip_address
    */
   ip_address?: string | null | undefined;
 
@@ -54,8 +61,9 @@ export type IMultiUserTodoGuest = {
    *
    * The session lifecycle state: `active` (valid), `expired` (access token expired), or `deleted` (soft deleted).
    *
-   * @x-autobe-specification Direct mapping from multi_user_todo_guests.status. Enum values: active, expired, deleted.
-   * @x-autobe-database-schema-property status
+     * @x-autobe-specification Direct mapping from
+     *   multi_user_todo_guests.status. Enum values: active, expired, deleted.
+     * @x-autobe-database-schema-property status
    */
   status: string;
 
@@ -64,8 +72,9 @@ export type IMultiUserTodoGuest = {
    *
    * UTC timestamp marking when this guest session was first established in the system.
    *
-   * @x-autobe-specification Direct mapping from multi_user_todo_guests.created_at. DateTime@timestamptz format.
-   * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   multi_user_todo_guests.created_at. DateTime@timestamptz format.
+     * @x-autobe-database-schema-property created_at
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -74,8 +83,10 @@ export type IMultiUserTodoGuest = {
    *
    * UTC timestamp reflecting the most recent modification to this guest record.
    *
-   * @x-autobe-specification Direct mapping from multi_user_todo_guests.updated_at. DateTime@timestamptz format, updated on every modification.
-   * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   multi_user_todo_guests.updated_at. DateTime@timestamptz format, updated
+     *   on every modification.
+     * @x-autobe-database-schema-property updated_at
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -84,8 +95,10 @@ export type IMultiUserTodoGuest = {
    *
    * Nullable field indicating deletion time. NULL means the guest account is still active. Not NULL means the guest was soft deleted at this timestamp.
    *
-   * @x-autobe-specification Direct mapping from multi_user_todo_guests.deleted_at. DateTime@timestamptz format, nullable for soft delete (NULL = not deleted).
-   * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   multi_user_todo_guests.deleted_at. DateTime@timestamptz format,
+     *   nullable for soft delete (NULL = not deleted).
+     * @x-autobe-database-schema-property deleted_at
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 
@@ -94,7 +107,9 @@ export type IMultiUserTodoGuest = {
    *
    * Aggregation count of child session records from multi_user_todo_guest_sessions table. Indicates total session instances created for this guest identity.
    *
-   * @x-autobe-specification Computed aggregation: COUNT of multi_user_todo_guest_sessions rows where guest_id = id. Returns integer count of child sessions for this guest.
+     * @x-autobe-specification Computed aggregation: COUNT of
+     *   multi_user_todo_guest_sessions rows where guest_id = id. Returns
+     *   integer count of child sessions for this guest.
    */
   sessions_count: number & tags.Type<"int32">;
 };
@@ -112,7 +127,9 @@ export namespace IMultiUserTodoGuest {
      *
      * Specifies which page of results to return when browsing guest sessions. The first page is page 1. This parameter works with the limit parameter to control the size of the result set.
      *
-     * @x-autobe-specification 1-indexed page number for cursor-based pagination. page=1 is the first page. Defaults to 1 if not provided.
+         * @x-autobe-specification 1-indexed page number for cursor-based
+         *   pagination. page=1 is the first page. Defaults to 1 if not
+         *   provided.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -121,7 +138,9 @@ export namespace IMultiUserTodoGuest {
      *
      * Controls how many guest session records are returned in a single response. Must be between 1 and 100. The default is 20 records per page. Adjust this parameter to balance between detailed views and performance.
      *
-     * @x-autobe-specification Number of records per page, constrained to 1-100. Defaults to 20 if not provided. Used together with page for cursor-based pagination.
+         * @x-autobe-specification Number of records per page, constrained to
+         *   1-100. Defaults to 20 if not provided. Used together with page for
+         *   cursor-based pagination.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -132,7 +151,9 @@ export namespace IMultiUserTodoGuest {
      *
      * Restricts the results to sessions matching the specified status. Use 'all' to return sessions regardless of status. Individual status values allow focused queries on active sessions, expired sessions, or deleted sessions.
      *
-     * @x-autobe-specification Filter by session status enum. Values: all (no filter), active, expired, deleted. Defaults to all if not provided.
+         * @x-autobe-specification Filter by session status enum. Values: all
+         *   (no filter), active, expired, deleted. Defaults to all if not
+         *   provided.
      */
     status?: "all" | "active" | "expired" | "deleted" | undefined;
 
@@ -141,7 +162,10 @@ export namespace IMultiUserTodoGuest {
      *
      * Allows filtering guest sessions by their creation date using ISO 8601 date format. Supports date ranges with '..' separator (e.g., '2024-01-01..2024-01-31') or specific dates. Useful for auditing and compliance workflows.
      *
-     * @x-autobe-specification Optional string filter on created_at date range. Format: 'YYYY-MM-DD..YYYY-MM-DD' for date ranges, or 'YYYY-MM-DD' for specific dates. Allows fuzzy matching for convenience.
+         * @x-autobe-specification Optional string filter on created_at date
+         *   range. Format: 'YYYY-MM-DD..YYYY-MM-DD' for date ranges, or
+         *   'YYYY-MM-DD' for specific dates. Allows fuzzy matching for
+         *   convenience.
      */
     search?: string | undefined;
   };
@@ -157,8 +181,9 @@ export namespace IMultiUserTodoGuest {
      *
      * A UUID v4 value that uniquely identifies this guest account across the system. Used as the primary key for all guest session operations.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from multi_user_todo_guests.id. UUID format.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   multi_user_todo_guests.id. UUID format.
      */
     id: string & tags.Format<"uuid">;
 
@@ -167,8 +192,10 @@ export namespace IMultiUserTodoGuest {
      *
      * The first 8 characters of the full device fingerprint hash, used to identify the guest session without exposing the complete hash. The full fingerprint is stored securely and only accessible through detailed session views.
      *
-     * @x-autobe-database-schema-property fingerprint_hash
-     * @x-autobe-specification Direct mapping from multi_user_todo_guests.fingerprint_hash, truncated to first 8 characters for privacy protection in summary views.
+         * @x-autobe-database-schema-property fingerprint_hash
+         * @x-autobe-specification Direct mapping from
+         *   multi_user_todo_guests.fingerprint_hash, truncated to first 8
+         *   characters for privacy protection in summary views.
      */
     fingerprint_hash: string & tags.MinLength<8> & tags.MaxLength<8>;
 
@@ -177,8 +204,10 @@ export namespace IMultiUserTodoGuest {
      *
      * Indicates the current state of the guest account: 'active' for sessions in use, 'expired' for sessions that have exceeded their validity period, or 'deleted' for soft-deleted sessions.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from multi_user_todo_guests.status. Enum values: active, expired, deleted.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   multi_user_todo_guests.status. Enum values: active, expired,
+         *   deleted.
      */
     status: string;
 
@@ -187,8 +216,9 @@ export namespace IMultiUserTodoGuest {
      *
      * The UTC datetime in ISO 8601 format when this guest account was first established. Used for tracking session age and auditing purposes.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from multi_user_todo_guests.created_at. ISO 8601 datetime with timezone.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   multi_user_todo_guests.created_at. ISO 8601 datetime with timezone.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -197,8 +227,10 @@ export namespace IMultiUserTodoGuest {
      *
      * The UTC datetime in ISO 8601 format when this guest account was last modified. Updated automatically on every change to track session activity.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from multi_user_todo_guests.updated_at. ISO 8601 datetime with timezone, updated on each modification.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   multi_user_todo_guests.updated_at. ISO 8601 datetime with timezone,
+         *   updated on each modification.
      */
     updated_at: string & tags.Format<"date-time">;
   };
@@ -214,7 +246,11 @@ export namespace IMultiUserTodoGuest {
      *
      * A JWT token that identifies the guest session and allows obtaining new access and refresh tokens without re-logging in. The token contains encoded session information and must be sent exactly as received when calling the refresh endpoint.
      *
-     * @x-autobe-specification JWT refresh token string from client request. Contains embedded guest identity (id, fingerprint_hash) and session validation information. Token is decoded and validated against active sessions in multi_user_todo_guest_sessions table before issuing new tokens.
+         * @x-autobe-specification JWT refresh token string from client request.
+         *   Contains embedded guest identity (id, fingerprint_hash) and session
+         *   validation information. Token is decoded and validated against
+         *   active sessions in multi_user_todo_guest_sessions table before
+         *   issuing new tokens.
      */
     refresh_token: string;
   };
@@ -236,7 +272,10 @@ export namespace IMultiUserTodoGuest {
      *
      * Note: This email is not directly stored as a column in the guest table but is used to identify and create the guest account with fingerprint-based tracking.
      *
-     * @x-autobe-specification Guest account identifier. Unique string in valid email format. Triggers creation of multi_user_todo_guests record with status='active' and computed fingerprint_hash from device context.
+         * @x-autobe-specification Guest account identifier. Unique string in
+         *   valid email format. Triggers creation of multi_user_todo_guests
+         *   record with status='active' and computed fingerprint_hash from
+         *   device context.
      */
     email: string & tags.Format<"email">;
 
@@ -247,7 +286,10 @@ export namespace IMultiUserTodoGuest {
      *
      * Security: Passwords should never be transmitted in plain text. Use HTTPS for all authentication endpoints. Server must implement rate limiting on authentication attempts to prevent brute-force attacks.
      *
-     * @x-autobe-specification Guest account password for authentication. Minimum 8 characters. Server must hash before storage using secure password hashing algorithm (e.g., bcrypt). Triggers creation of guest record and authentication session.
+         * @x-autobe-specification Guest account password for authentication.
+         *   Minimum 8 characters. Server must hash before storage using secure
+         *   password hashing algorithm (e.g., bcrypt). Triggers creation of
+         *   guest record and authentication session.
      */
     password: string & tags.MinLength<8>;
 
@@ -258,7 +300,10 @@ export namespace IMultiUserTodoGuest {
      *
      * The href field captures the browsing context at the time of account creation, enabling analysis of how users arrive at the registration page and their navigation patterns.
      *
-     * @x-autobe-specification Current page URL (the page the user is viewing). Captured from request headers or client-side JavaScript. Used for session analytics and browsing context tracking. Format: valid URI.
+         * @x-autobe-specification Current page URL (the page the user is
+         *   viewing). Captured from request headers or client-side JavaScript.
+         *   Used for session analytics and browsing context tracking. Format:
+         *   valid URI.
      */
     href: string & tags.Format<"uri">;
 
@@ -269,7 +314,10 @@ export namespace IMultiUserTodoGuest {
      *
      * The referrer field helps track user journey from external sources and enables measurement of conversion rates from different traffic channels.
      *
-     * @x-autobe-specification Referrer URL (the page that led the user to this site). Captured from HTTP Referrer header. Used for analytics to understand traffic sources and user acquisition channels. Format: valid URI.
+         * @x-autobe-specification Referrer URL (the page that led the user to
+         *   this site). Captured from HTTP Referrer header. Used for analytics
+         *   to understand traffic sources and user acquisition channels.
+         *   Format: valid URI.
      */
     referrer: string & tags.Format<"uri">;
 
@@ -280,7 +328,10 @@ export namespace IMultiUserTodoGuest {
      *
      * Format: IPv4 address (e.g., '192.168.1.1'). In server-side rendering contexts, this may be captured from the request headers and can be omitted by the client (server provides fallback).
      *
-     * @x-autobe-specification Client IP address captured from request. Used to derive ip_address column in guest record and as part of fingerprint_hash computation. Format: IPv4 (e.g., '192.168.1.1'). May be optional in SSR contexts where server provides fallback.
+         * @x-autobe-specification Client IP address captured from request. Used
+         *   to derive ip_address column in guest record and as part of
+         *   fingerprint_hash computation. Format: IPv4 (e.g., '192.168.1.1').
+         *   May be optional in SSR contexts where server provides fallback.
      */
     ip?: (string & tags.Format<"ipv4">) | undefined;
   };
@@ -298,7 +349,9 @@ export namespace IMultiUserTodoGuest {
      *
      * A UUID that uniquely identifies this guest session. This ID is also embedded in the JWT token payload for authentication and session tracking across the system.
      *
-     * @x-autobe-specification Guest UUID from multi_user_todo_guests table. Embedded in JWT token payload for authentication. Returned as string UUID format.
+         * @x-autobe-specification Guest UUID from multi_user_todo_guests table.
+         *   Embedded in JWT token payload for authentication. Returned as
+         *   string UUID format.
      */
     id: string & tags.Format<"uuid">;
 
@@ -307,7 +360,10 @@ export namespace IMultiUserTodoGuest {
      *
      * Computed from device characteristics including user agent string, IP address, and browser properties. This hash enables the system to recognize returning users even without registration, and to correlate multiple sessions from the same device.
      *
-     * @x-autobe-specification Hashed device fingerprint from multi_user_todo_guests table. Computed from device fingerprint (user agent, IP address, browser characteristics) and stored in fingerprint_hash column. Used for session correlation.
+         * @x-autobe-specification Hashed device fingerprint from
+         *   multi_user_todo_guests table. Computed from device fingerprint
+         *   (user agent, IP address, browser characteristics) and stored in
+         *   fingerprint_hash column. Used for session correlation.
      */
     fingerprint_hash: string;
 
@@ -316,7 +372,11 @@ export namespace IMultiUserTodoGuest {
      *
      * Stores the User-Agent HTTP header value from the initial request. This helps with analytics, device detection, and security monitoring. May be null in server-side rendering scenarios where the client cannot provide this information directly.
      *
-     * @x-autobe-specification Browser user agent from multi_user_todo_guests.user_agent column. Nullable field storing browser user agent string captured at session creation. Optional because server-side rendering may not have access to client user agent.
+         * @x-autobe-specification Browser user agent from
+         *   multi_user_todo_guests.user_agent column. Nullable field storing
+         *   browser user agent string captured at session creation. Optional
+         *   because server-side rendering may not have access to client user
+         *   agent.
      */
     user_agent: string | null;
 
@@ -325,7 +385,10 @@ export namespace IMultiUserTodoGuest {
      *
      * Stores the IP address from which the guest session was initiated. Used for security monitoring, abuse prevention, and geographic analytics. May be null in server-side rendering scenarios where proxy headers determine the actual client IP.
      *
-     * @x-autobe-specification Client IP address from multi_user_todo_guests.ip_address column. Nullable field storing client IP address captured at session creation. Optional because server-side rendering may not have access to client IP.
+         * @x-autobe-specification Client IP address from
+         *   multi_user_todo_guests.ip_address column. Nullable field storing
+         *   client IP address captured at session creation. Optional because
+         *   server-side rendering may not have access to client IP.
      */
     ip_address: string | null;
 
@@ -334,7 +397,10 @@ export namespace IMultiUserTodoGuest {
      *
      * Indicates the lifecycle state of the guest account. Values: 'active' (valid and usable), 'expired' (token has expired, cannot be refreshed), 'deleted' (user or system has deleted the session).
      *
-     * @x-autobe-specification Session status from multi_user_todo_guests.status column. String enum: 'active', 'expired', 'deleted'. Reflects the current lifecycle state of the guest session.
+         * @x-autobe-specification Session status from
+         *   multi_user_todo_guests.status column. String enum: 'active',
+         *   'expired', 'deleted'. Reflects the current lifecycle state of the
+         *   guest session.
      */
     status: "active" | "expired" | "deleted";
 
@@ -343,7 +409,9 @@ export namespace IMultiUserTodoGuest {
      *
      * ISO 8601 formatted datetime with timezone information. Represents the exact moment when this guest session was initiated and the account was registered in the system.
      *
-     * @x-autobe-specification Session creation timestamp from multi_user_todo_guests.created_at column. ISO 8601 timestamp with timezone. Captures when the guest account was first created.
+         * @x-autobe-specification Session creation timestamp from
+         *   multi_user_todo_guests.created_at column. ISO 8601 timestamp with
+         *   timezone. Captures when the guest account was first created.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -352,7 +420,10 @@ export namespace IMultiUserTodoGuest {
      *
      * ISO 8601 formatted datetime with timezone. Automatically updated whenever any field of the guest record is modified. Useful for determining session recency and last activity.
      *
-     * @x-autobe-specification Last update timestamp from multi_user_todo_guests.updated_at column. ISO 8601 timestamp with timezone. Updated automatically on every modification to the guest record.
+         * @x-autobe-specification Last update timestamp from
+         *   multi_user_todo_guests.updated_at column. ISO 8601 timestamp with
+         *   timezone. Updated automatically on every modification to the guest
+         *   record.
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -361,7 +432,10 @@ export namespace IMultiUserTodoGuest {
      *
      * ISO 8601 formatted datetime. Null when the account is active or expired. Non-null when the account has been deleted (soft delete), making it inaccessible for new sessions but preserved for audit purposes.
      *
-     * @x-autobe-specification Soft delete timestamp from multi_user_todo_guests.deleted_at column. Nullable ISO 8601 timestamp. When not null, indicates the guest account has been soft deleted and is no longer accessible.
+         * @x-autobe-specification Soft delete timestamp from
+         *   multi_user_todo_guests.deleted_at column. Nullable ISO 8601
+         *   timestamp. When not null, indicates the guest account has been soft
+         *   deleted and is no longer accessible.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
 
@@ -370,14 +444,18 @@ export namespace IMultiUserTodoGuest {
      *
      * A computed aggregation that counts all sessions (active and expired) linked to this guest account across multi_user_todo_guest_sessions table. Useful for monitoring device usage patterns and detecting suspicious multiple concurrent sessions.
      *
-     * @x-autobe-specification Computed field: COUNT of multi_user_todo_guest_sessions records where guest_id equals the id field. Aggregation performed by the service layer. Provides total number of active and expired sessions associated with this guest.
+         * @x-autobe-specification Computed field: COUNT of
+         *   multi_user_todo_guest_sessions records where guest_id equals the id
+         *   field. Aggregation performed by the service layer. Provides total
+         *   number of active and expired sessions associated with this guest.
      */
     sessions_count: number & tags.Type<"int32">;
 
     /**
      * Authorization token.
      *
-     * @x-autobe-specification Authorization token comes from the session table.
+         * @x-autobe-specification Authorization token comes from the session
+         *   table.
      */
     token: IAuthorizationToken;
   };

@@ -22,7 +22,8 @@ import typia from "typia";
  * @param props.connection
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Authenticate the requesting member using session/token middleware. Extract member ID from authentication context.
+ * @x-autobe-specification Authenticate the requesting member using
+ *   session/token middleware. Extract member ID from authentication context.
  *
  * Validate the member exists in multi_user_todo_members table by id. If not found, return 404 error.
  *

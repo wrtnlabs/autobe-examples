@@ -34,30 +34,26 @@ export class EcommercemallAdministratorUser_ban_of_sellersController {
    *
    * @param connection
    * @param body Search criteria including pagination, filters for seller_id, ban reason, date range, and status options.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification 1. Verify requesting user has administrator role
-   * 2. Parse pagination parameters from request body (page, limit, cursor)
-   * 3. Parse filter parameters from request body:
-   *    - seller_id: Optional UUID to filter by specific seller
-   *    - reason: Optional string to search in ban reason
-   *    - banned_after: Optional datetime for ban timestamp range
-   *    - banned_before: Optional datetime for ban timestamp range
-   *    - include_unbanned: Boolean to include soft-deleted records (default: false)
-   * 4. Query ecommerce_mall_user_ban_of_sellers with:
-   *    - JOIN with ecommerce_mall_sellers to get seller details
-   *    - JOIN with ecommerce_mall_user_bans to get ban reason and ban date
-   *    - Apply all filter conditions
-   *    - Sort by banned_at descending (newest first) unless specified otherwise
-   *    - Apply pagination with cursor-based or offset-based approach
-   * 5. For each record, include:
-   *    - Ban subtype record fields (id, seller_id, created_at, updated_at, deleted_at)
-   *    - Ban reason from parent ecommerce_mall_user_bans
-   *    - Ban timestamp from parent ecommerce_mall_user_bans
-   *    - Seller profile information (id, shop_profile)
-   * 6. Return paginated response with:
-   *    - List of ban subtype summaries
-   *    - Pagination metadata (hasMore, nextCursor, totalCount)
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor administrator
+     * @x-autobe-specification 1. Verify requesting user has administrator role
+     *   2. Parse pagination parameters from request body (page, limit, cursor)
+     *   3. Parse filter parameters from request body: - seller_id: Optional
+     *   UUID to filter by specific seller - reason: Optional string to search
+     *   in ban reason - banned_after: Optional datetime for ban timestamp range
+     *   - banned_before: Optional datetime for ban timestamp range -
+     *   include_unbanned: Boolean to include soft-deleted records (default:
+     *   false) 4. Query ecommerce_mall_user_ban_of_sellers with: - JOIN with
+     *   ecommerce_mall_sellers to get seller details - JOIN with
+     *   ecommerce_mall_user_bans to get ban reason and ban date - Apply all
+     *   filter conditions - Sort by banned_at descending (newest first) unless
+     *   specified otherwise - Apply pagination with cursor-based or
+     *   offset-based approach 5. For each record, include: - Ban subtype record
+     *   fields (id, seller_id, created_at, updated_at, deleted_at) - Ban reason
+     *   from parent ecommerce_mall_user_bans - Ban timestamp from parent
+     *   ecommerce_mall_user_bans - Seller profile information (id,
+     *   shop_profile) 6. Return paginated response with: - List of ban subtype
+     *   summaries - Pagination metadata (hasMore, nextCursor, totalCount)
    *
    * ### Error Cases:
    * - 401: Not authenticated or no administrator role
@@ -96,9 +92,10 @@ export class EcommercemallAdministratorUser_ban_of_sellersController {
    *
    * @param connection
    * @param banOfSellerId UUID identifier of the ban subtype record to retrieve.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Query the ecommerce_mall_user_ban_of_sellers table for the record matching banOfSellerId.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor administrator
+     * @x-autobe-specification Query the ecommerce_mall_user_ban_of_sellers
+     *   table for the record matching banOfSellerId.
    *
    * 1. Find the ban subtype record by its UUID id field.
    * 2. Include the related ban record (ecommerce_mall_user_bans) with reason, banned_at timestamp, and user_type discriminator.

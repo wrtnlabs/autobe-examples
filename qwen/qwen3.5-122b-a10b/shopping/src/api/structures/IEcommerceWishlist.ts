@@ -33,8 +33,9 @@ export type IEcommerceWishlist = {
    * - Example: "550e8400-e29b-41d4-a716-446655440000"
    * - Generated: Automatically by the system during customer registration
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_wishlists.id. UUID format, primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from ecommerce_wishlists.id. UUID
+     *   format, primary key.
    */
   id: string & tags.Format<"uuid">;
 
@@ -57,8 +58,11 @@ export type IEcommerceWishlist = {
    * - created_at: Account creation timestamp
    * - deleted_at: Soft-delete status
    *
-   * @x-autobe-database-schema-property customer
-   * @x-autobe-specification JOIN from ecommerce_wishlists.ecommerce_customer_id to ecommerce_customers.id. Returns IEcommerceCustomer.ISummary. Validates authenticated customer ownership.
+     * @x-autobe-database-schema-property customer
+     * @x-autobe-specification JOIN from
+     *   ecommerce_wishlists.ecommerce_customer_id to ecommerce_customers.id.
+     *   Returns IEcommerceCustomer.ISummary. Validates authenticated customer
+     *   ownership.
    */
   customer: IEcommerceCustomer.ISummary;
 
@@ -83,7 +87,10 @@ export type IEcommerceWishlist = {
    * - updated_at: Last modification timestamp
    * - deleted_at: Soft-delete status (null for active items)
    *
-   * @x-autobe-specification Computed aggregation: JOIN ecommerce_wishlist_items on ecommerce_wishlist_id = id, filter deleted_at IS NULL. For each item, JOIN ecommerce_products for product summary. Returns array of IEcommerceWishlistItem.
+     * @x-autobe-specification Computed aggregation: JOIN
+     *   ecommerce_wishlist_items on ecommerce_wishlist_id = id, filter
+     *   deleted_at IS NULL. For each item, JOIN ecommerce_products for product
+     *   summary. Returns array of IEcommerceWishlistItem.
    */
   items: IEcommerceWishlistItem[];
 
@@ -98,8 +105,9 @@ export type IEcommerceWishlist = {
    * - Example: "2024-01-15T09:30:00.000Z"
    * - Generated: Automatically by the database on insert
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_wishlists.created_at. DateTime with timezone (timestamptz).
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_wishlists.created_at. DateTime with timezone (timestamptz).
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -114,8 +122,10 @@ export type IEcommerceWishlist = {
    * - Example: "2024-01-20T14:45:00.000Z"
    * - Updated: Automatically by the database on any UPDATE operation
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from ecommerce_wishlists.updated_at. DateTime with timezone (timestamptz). Automatically updated on any modification.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_wishlists.updated_at. DateTime with timezone (timestamptz).
+     *   Automatically updated on any modification.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -135,8 +145,10 @@ export type IEcommerceWishlist = {
    *
    * When a customer deletes their account, their wishlist is soft-deleted along with all associated wishlist items. This preserves historical data while removing the wishlist from active use.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from ecommerce_wishlists.deleted_at. DateTime with timezone (timestamptz) or null. Null indicates active wishlist.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_wishlists.deleted_at. DateTime with timezone (timestamptz) or
+     *   null. Null indicates active wishlist.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -173,8 +185,9 @@ export namespace IEcommerceWishlist {
      * - Auto-generated on creation
      * - Never changes throughout the wishlist's lifetime
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_wishlists.id. Primary key, UUID format, non-null.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from ecommerce_wishlists.id.
+         *   Primary key, UUID format, non-null.
      */
     id: string & tags.Format<"uuid">;
 
@@ -192,8 +205,12 @@ export namespace IEcommerceWishlist {
      * - BELONGS-TO: ecommerce_wishlists.ecommerce_customer_id → ecommerce_customers.id
      * - Returns: IEcommerceCustomer.ISummary (customer summary, not full profile)
      *
-     * @x-autobe-database-schema-property customer
-     * @x-autobe-specification BELONGS-TO relation via JOIN from ecommerce_wishlists.ecommerce_customer_id to ecommerce_customers.id. Returns IEcommerceCustomer.ISummary. FK column ecommerce_customer_id excluded and replaced with this customer object.
+         * @x-autobe-database-schema-property customer
+         * @x-autobe-specification BELONGS-TO relation via JOIN from
+         *   ecommerce_wishlists.ecommerce_customer_id to
+         *   ecommerce_customers.id. Returns IEcommerceCustomer.ISummary. FK
+         *   column ecommerce_customer_id excluded and replaced with this
+         *   customer object.
      */
     customer: IEcommerceCustomer.ISummary;
 
@@ -208,8 +225,10 @@ export namespace IEcommerceWishlist {
      * - Auto-generated on creation
      * - Never changes
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from ecommerce_wishlists.created_at. Auto-set on wishlist creation during customer registration, timestamp with timezone.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_wishlists.created_at. Auto-set on wishlist creation
+         *   during customer registration, timestamp with timezone.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -223,8 +242,10 @@ export namespace IEcommerceWishlist {
      * - ISO 8601 date-time with timezone (timestamptz)
      * - Auto-updated on any modification
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from ecommerce_wishlists.updated_at. Auto-updated whenever wishlist metadata changes or items are added/removed.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_wishlists.updated_at. Auto-updated whenever wishlist
+         *   metadata changes or items are added/removed.
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -244,8 +265,10 @@ export namespace IEcommerceWishlist {
      * - Nullable: null for active wishlists, date-time for deleted wishlists
      * - ISO 8601 date-time with timezone when set
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from ecommerce_wishlists.deleted_at. Nullable, soft-delete timestamp. Null means active wishlist.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_wishlists.deleted_at. Nullable, soft-delete timestamp.
+         *   Null means active wishlist.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };

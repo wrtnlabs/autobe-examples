@@ -19,14 +19,15 @@ export class EcommercemallAdministratorSeller_approvalsPendingController {
    *
    * @param connection
    * @param body Search criteria including email filter, shop name filter, date range filters, and pagination parameters.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Query ecommerce_mall_seller_approval_requests table filtered by status='pending'.
-   * Join with ecommerce_mall_sellers table to include seller.email and shop name from shop_profiles.
-   * Apply search filters on email, shop name, and submission date range.
-   * Support pagination with cursor-based or offset-based pagination.
-   * Order by created_at descending (newest first).
-   * Return paginated results with IPageIEcommerceMallSellerApprovalRequest.ISummary format.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor administrator
+     * @x-autobe-specification Query ecommerce_mall_seller_approval_requests
+     *   table filtered by status='pending'. Join with ecommerce_mall_sellers
+     *   table to include seller.email and shop name from shop_profiles. Apply
+     *   search filters on email, shop name, and submission date range. Support
+     *   pagination with cursor-based or offset-based pagination. Order by
+     *   created_at descending (newest first). Return paginated results with
+     *   IPageIEcommerceMallSellerApprovalRequest.ISummary format.
    *
    * Implementation steps:
    * 1. Validate status filter is 'pending' if provided

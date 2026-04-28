@@ -16,8 +16,10 @@ export type ITodoAppTodoEditHistory = {
    *
    * This value is the database primary key for the immutable history record and identifies the row in the detail response.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from todo_app_todo_edit_histories.id. UUID primary key of the immutable history row.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   todo_app_todo_edit_histories.id. UUID primary key of the immutable
+     *   history row.
    */
   id: string & tags.Format<"uuid">;
 
@@ -26,8 +28,11 @@ export type ITodoAppTodoEditHistory = {
    *
    * This value links the edit record back to its parent todo while keeping the response flat and identifier-based.
    *
-   * @x-autobe-database-schema-property todo_app_todo_id
-   * @x-autobe-specification Direct mapping from todo_app_todo_edit_histories.todo_app_todo_id. UUID foreign key to the owning todo; kept as a scalar identifier rather than a nested todo object.
+     * @x-autobe-database-schema-property todo_app_todo_id
+     * @x-autobe-specification Direct mapping from
+     *   todo_app_todo_edit_histories.todo_app_todo_id. UUID foreign key to the
+     *   owning todo; kept as a scalar identifier rather than a nested todo
+     *   object.
    */
   todo_app_todo_id: string & tags.Format<"uuid">;
 
@@ -36,8 +41,10 @@ export type ITodoAppTodoEditHistory = {
    *
    * This timestamp records when the todo change occurred and is used to display and order history entries from newest to oldest.
    *
-   * @x-autobe-database-schema-property edited_at
-   * @x-autobe-specification Direct mapping from todo_app_todo_edit_histories.edited_at. Use the business timestamp recorded when the revision occurred.
+     * @x-autobe-database-schema-property edited_at
+     * @x-autobe-specification Direct mapping from
+     *   todo_app_todo_edit_histories.edited_at. Use the business timestamp
+     *   recorded when the revision occurred.
    */
   edited_at: string & tags.Format<"date-time">;
 
@@ -46,8 +53,11 @@ export type ITodoAppTodoEditHistory = {
    *
    * This field is null when the title was not changed in the edit. When present, it contains the todo title after the revision was applied.
    *
-   * @x-autobe-database-schema-property title
-   * @x-autobe-specification Direct mapping from todo_app_todo_edit_histories.title. Nullable because the title may not have changed in this revision; when present, it stores the updated title value after the edit.
+     * @x-autobe-database-schema-property title
+     * @x-autobe-specification Direct mapping from
+     *   todo_app_todo_edit_histories.title. Nullable because the title may not
+     *   have changed in this revision; when present, it stores the updated
+     *   title value after the edit.
    */
   title: string | null;
 
@@ -56,8 +66,11 @@ export type ITodoAppTodoEditHistory = {
    *
    * This field is null when the description was not changed in the edit. When present, it contains the todo description after the revision was applied.
    *
-   * @x-autobe-database-schema-property description
-   * @x-autobe-specification Direct mapping from todo_app_todo_edit_histories.description. Nullable because the description may not have changed in this revision; when present, it stores the updated description value after the edit.
+     * @x-autobe-database-schema-property description
+     * @x-autobe-specification Direct mapping from
+     *   todo_app_todo_edit_histories.description. Nullable because the
+     *   description may not have changed in this revision; when present, it
+     *   stores the updated description value after the edit.
    */
   description: string | null;
 
@@ -66,8 +79,11 @@ export type ITodoAppTodoEditHistory = {
    *
    * This field is null when the start date was not changed in the edit. When present, it contains the todo start date after the revision was applied.
    *
-   * @x-autobe-database-schema-property start_date
-   * @x-autobe-specification Direct mapping from todo_app_todo_edit_histories.start_date. Nullable because the start date may not have changed or may have been cleared in this revision; when present, it stores the updated start date value.
+     * @x-autobe-database-schema-property start_date
+     * @x-autobe-specification Direct mapping from
+     *   todo_app_todo_edit_histories.start_date. Nullable because the start
+     *   date may not have changed or may have been cleared in this revision;
+     *   when present, it stores the updated start date value.
    */
   start_date: (string & tags.Format<"date-time">) | null;
 
@@ -76,8 +92,11 @@ export type ITodoAppTodoEditHistory = {
    *
    * This field is null when the due date was not changed in the edit. When present, it contains the todo due date after the revision was applied.
    *
-   * @x-autobe-database-schema-property due_date
-   * @x-autobe-specification Direct mapping from todo_app_todo_edit_histories.due_date. Nullable because the due date may not have changed or may have been cleared in this revision; when present, it stores the updated due date value.
+     * @x-autobe-database-schema-property due_date
+     * @x-autobe-specification Direct mapping from
+     *   todo_app_todo_edit_histories.due_date. Nullable because the due date
+     *   may not have changed or may have been cleared in this revision; when
+     *   present, it stores the updated due date value.
    */
   due_date: (string & tags.Format<"date-time">) | null;
 
@@ -86,8 +105,10 @@ export type ITodoAppTodoEditHistory = {
    *
    * This timestamp records when the database row was inserted and supports immutable audit-trail behavior for the edit history entry.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from todo_app_todo_edit_histories.created_at. Database creation timestamp of the immutable history row.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   todo_app_todo_edit_histories.created_at. Database creation timestamp of
+     *   the immutable history row.
    */
   created_at: string & tags.Format<"date-time">;
 };
@@ -105,7 +126,11 @@ export namespace ITodoAppTodoEditHistory {
      *
      * This value selects which page of the edit-history list is returned. It is a browsing control only and does not represent stored data.
      *
-     * @x-autobe-specification Use as the requested page number for browsing a todo's edit history. This value is applied after resolving the todo from the path and scoping results to the authenticated member's todo. It does not map to a database field; it only controls pagination of the query result.
+         * @x-autobe-specification Use as the requested page number for browsing
+         *   a todo's edit history. This value is applied after resolving the
+         *   todo from the path and scoping results to the authenticated
+         *   member's todo. It does not map to a database field; it only
+         *   controls pagination of the query result.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -114,7 +139,10 @@ export namespace ITodoAppTodoEditHistory {
      *
      * This value controls the page size for browsing the list. It is a request-only limit and does not represent stored data.
      *
-     * @x-autobe-specification Use as the maximum number of edit-history records to return for the requested page. Apply it after scoping to the authenticated member's todo. It does not map to a database field; it only controls page size for the query result.
+         * @x-autobe-specification Use as the maximum number of edit-history
+         *   records to return for the requested page. Apply it after scoping to
+         *   the authenticated member's todo. It does not map to a database
+         *   field; it only controls page size for the query result.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -125,7 +153,10 @@ export namespace ITodoAppTodoEditHistory {
      *
      * This filter is optional and is applied to the member's own todo history after ownership checks. It is used only for browsing and is not stored.
      *
-     * @x-autobe-specification Use as an optional free-text filter when browsing a todo's edit history. Apply the filter only after scoping to the authenticated member's todo. It does not map to a database field; it affects which history records are returned by the query.
+         * @x-autobe-specification Use as an optional free-text filter when
+         *   browsing a todo's edit history. Apply the filter only after scoping
+         *   to the authenticated member's todo. It does not map to a database
+         *   field; it affects which history records are returned by the query.
      */
     search?: string | undefined;
 
@@ -134,7 +165,12 @@ export namespace ITodoAppTodoEditHistory {
      *
      * This value controls which history attribute the list is ordered by. It is a browsing parameter only and does not represent stored data.
      *
-     * @x-autobe-specification Use as the field selector for ordering edit-history results. Supported values must correspond to the queryable history ordering logic for this endpoint, and ordering must be applied after scoping to the authenticated member's todo. It does not map to a database field; it controls how the result set is sorted.
+         * @x-autobe-specification Use as the field selector for ordering
+         *   edit-history results. Supported values must correspond to the
+         *   queryable history ordering logic for this endpoint, and ordering
+         *   must be applied after scoping to the authenticated member's todo.
+         *   It does not map to a database field; it controls how the result set
+         *   is sorted.
      */
     sort?: string | undefined;
 
@@ -143,7 +179,11 @@ export namespace ITodoAppTodoEditHistory {
      *
      * This value selects whether results are returned in ascending or descending order. It is a request-only control and does not represent stored data.
      *
-     * @x-autobe-specification Use as the sort direction for the edit-history query, such as ascending or descending order. Apply it together with the sort field after scoping to the authenticated member's todo. It does not map to a database field; it only controls result ordering.
+         * @x-autobe-specification Use as the sort direction for the
+         *   edit-history query, such as ascending or descending order. Apply it
+         *   together with the sort field after scoping to the authenticated
+         *   member's todo. It does not map to a database field; it only
+         *   controls result ordering.
      */
     order?: "asc" | "desc" | undefined;
   };
@@ -161,8 +201,10 @@ export namespace ITodoAppTodoEditHistory {
      *
      * This value identifies one immutable revision record and can be used to reference the entry in API responses.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from todo_app_todo_edit_histories.id. Stable UUID identifier for this immutable history entry.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_todo_edit_histories.id. Stable UUID identifier for this
+         *   immutable history entry.
      */
     id: string & tags.Format<"uuid">;
 
@@ -171,8 +213,11 @@ export namespace ITodoAppTodoEditHistory {
      *
      * This is a summary view of the parent todo, provided so clients can identify which todo the revision belongs to without loading the full todo record.
      *
-     * @x-autobe-database-schema-property todoAppTodo
-     * @x-autobe-specification Join todo_app_todo_edit_histories.todo_app_todo_id to todo_app_todos.id and expose the parent as ITodoAppTodo.ISummary. The relation source is todoAppTodo, not the raw foreign key column.
+         * @x-autobe-database-schema-property todoAppTodo
+         * @x-autobe-specification Join
+         *   todo_app_todo_edit_histories.todo_app_todo_id to todo_app_todos.id
+         *   and expose the parent as ITodoAppTodo.ISummary. The relation source
+         *   is todoAppTodo, not the raw foreign key column.
      */
     todo: ITodoAppTodo.ISummary;
 
@@ -181,8 +226,10 @@ export namespace ITodoAppTodoEditHistory {
      *
      * This timestamp records when the todo change occurred and is the primary ordering field for browsing history.
      *
-     * @x-autobe-database-schema-property edited_at
-     * @x-autobe-specification Direct mapping from todo_app_todo_edit_histories.edited_at. This is the business timestamp used to order history entries from newest to oldest.
+         * @x-autobe-database-schema-property edited_at
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_todo_edit_histories.edited_at. This is the business
+         *   timestamp used to order history entries from newest to oldest.
      */
     editedAt: string & tags.Format<"date-time">;
 
@@ -191,8 +238,10 @@ export namespace ITodoAppTodoEditHistory {
      *
      * When the title was not modified in the revision, this field is null.
      *
-     * @x-autobe-database-schema-property title
-     * @x-autobe-specification Direct mapping from todo_app_todo_edit_histories.title. Nullable because the title is only populated when that field changed in the edit event.
+         * @x-autobe-database-schema-property title
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_todo_edit_histories.title. Nullable because the title is
+         *   only populated when that field changed in the edit event.
      */
     title: string | null;
 
@@ -201,8 +250,11 @@ export namespace ITodoAppTodoEditHistory {
      *
      * When the description was not modified in the revision, this field is null.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from todo_app_todo_edit_histories.description. Nullable because the description is only populated when that field changed in the edit event.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_todo_edit_histories.description. Nullable because the
+         *   description is only populated when that field changed in the edit
+         *   event.
      */
     description: string | null;
 
@@ -211,8 +263,11 @@ export namespace ITodoAppTodoEditHistory {
      *
      * When the start date was not modified in the revision, this field is null.
      *
-     * @x-autobe-database-schema-property start_date
-     * @x-autobe-specification Direct mapping from todo_app_todo_edit_histories.start_date. Nullable because the start date is only populated when that field changed or was cleared in the edit event.
+         * @x-autobe-database-schema-property start_date
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_todo_edit_histories.start_date. Nullable because the start
+         *   date is only populated when that field changed or was cleared in
+         *   the edit event.
      */
     startDate: (string & tags.Format<"date-time">) | null;
 
@@ -221,8 +276,11 @@ export namespace ITodoAppTodoEditHistory {
      *
      * When the due date was not modified in the revision, this field is null.
      *
-     * @x-autobe-database-schema-property due_date
-     * @x-autobe-specification Direct mapping from todo_app_todo_edit_histories.due_date. Nullable because the due date is only populated when that field changed or was cleared in the edit event.
+         * @x-autobe-database-schema-property due_date
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_todo_edit_histories.due_date. Nullable because the due
+         *   date is only populated when that field changed or was cleared in
+         *   the edit event.
      */
     dueDate: (string & tags.Format<"date-time">) | null;
 
@@ -231,8 +289,10 @@ export namespace ITodoAppTodoEditHistory {
      *
      * This audit timestamp reflects when the database row was inserted and preserves the immutable edit trail.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from todo_app_todo_edit_histories.created_at. This records when the immutable history row was inserted into the database.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_todo_edit_histories.created_at. This records when the
+         *   immutable history row was inserted into the database.
      */
     createdAt: string & tags.Format<"date-time">;
   };

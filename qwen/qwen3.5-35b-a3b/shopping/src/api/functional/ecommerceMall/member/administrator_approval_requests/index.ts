@@ -17,7 +17,8 @@ import { IEcommerceMallAdministratorApprovalRequests } from "../../../../structu
  * @param props.body Administrator approval request submission data including the requesting user identifier and reason for seeking administrator privileges.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Create a new administrator approval request record in ecommerce_mall_administrator_approval_requests table.
+ * @x-autobe-specification Create a new administrator approval request record in
+ *   ecommerce_mall_administrator_approval_requests table.
  *
  * 1. Validate that the requesting user ID is provided (either requesting_member_id or requesting_seller_id, not both)
  * 2. Validate that the reason field is not empty or null

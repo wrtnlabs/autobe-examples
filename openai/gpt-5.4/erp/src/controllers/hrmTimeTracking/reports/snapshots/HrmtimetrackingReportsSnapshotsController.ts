@@ -26,9 +26,10 @@ export class HrmtimetrackingReportsSnapshotsController {
    * @param connection
    * @param reportId Target saved report identifier
    * @param body Information required to create a persisted report snapshot
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Implement a service that creates a child snapshot record for an existing saved report definition.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Implement a service that creates a child snapshot
+     *   record for an existing saved report definition.
    *
    * 1. Authorize the caller in the current organization context before any report lookup results are exposed. Require report viewing permission for the selected organization, following the organization-scoped report access rules.
    * 2. Load the parent record from `hrm_time_tracking_reports` by `id = reportId` and `deleted_at IS NULL`. Verify that its `hrm_time_tracking_organization_id` matches the caller's currently selected organization. If not found in scope, reject the request as inaccessible.
@@ -74,9 +75,13 @@ export class HrmtimetrackingReportsSnapshotsController {
    * @param connection
    * @param reportId Target saved report's ID in the current organization
    * @param body Snapshot list filters, sorting, and pagination options
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Validate that the caller is authenticated as an organization actor and resolve the currently selected organization context from the session. Enforce report viewing permission before processing any business query logic. Reject the request if the caller lacks permission in the active organization.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Validate that the caller is authenticated as an
+     *   organization actor and resolve the currently selected organization
+     *   context from the session. Enforce report viewing permission before
+     *   processing any business query logic. Reject the request if the caller
+     *   lacks permission in the active organization.
    *
    * Load the parent record from `hrm_time_tracking_reports` by `id = reportId`, `hrm_time_tracking_organization_id = currentOrganizationId`, and `deleted_at IS NULL`. If no such report exists, return a not-found or access-denied result according to the service's standard security policy, without exposing whether a report exists in another organization.
    *
@@ -125,9 +130,11 @@ export class HrmtimetrackingReportsSnapshotsController {
    * @param connection
    * @param reportId Target saved report ID
    * @param snapshotId Target report snapshot ID
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Implement a read-only service that loads one report snapshot from `hrm_time_tracking_report_snapshots` joined to its parent `hrm_time_tracking_reports` record.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Implement a read-only service that loads one
+     *   report snapshot from `hrm_time_tracking_report_snapshots` joined to its
+     *   parent `hrm_time_tracking_reports` record.
    *
    * Authorize the caller before returning any report data. Resolve the caller's current organization context, then verify the caller has report viewing permission in that organization. Apply organization-scoped access evaluation only within the current organization context.
    *

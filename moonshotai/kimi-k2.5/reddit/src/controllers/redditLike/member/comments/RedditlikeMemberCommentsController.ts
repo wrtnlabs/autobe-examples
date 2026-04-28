@@ -24,9 +24,10 @@ export class RedditlikeMemberCommentsController {
    *
    * @param connection
    * @param body Search criteria, sorting options, and pagination parameters for comment listing
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query reddit_like_comments table with advanced filtering and sorting.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query reddit_like_comments table with advanced
+     *   filtering and sorting.
    *
    * Filters:
    * - postId: Filter comments belonging to a specific post

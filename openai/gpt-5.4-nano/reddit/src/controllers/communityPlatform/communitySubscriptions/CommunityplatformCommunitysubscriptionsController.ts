@@ -33,20 +33,21 @@ export class CommunityplatformCommunitysubscriptionsController {
    *
    * @param connection
    * @param communitySubscriptionId Identifier of the community subscription relationship record to retrieve.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Implementation steps:
-   * 1) Parse `communitySubscriptionId` as UUID and load the row from `community_platform_community_subscriptions` by `id`.
-   * 2) Authorization:
-   *    - Determine caller actor identity.
-   *    - Allow if caller is admin.
-   *    - Allow if caller is the owning member of the loaded row (match caller member identity to `member_id` on the subscription row).
-   *    - Deny otherwise.
-   * 3) If no row exists, return a not-found error.
-   * 4) Map the database row fields to the response DTO:
-   *    - include `id` (communitySubscriptionId), `community_id`, `member_id`, `subscribed_at`, `is_active`, `created_at`, `updated_at`.
-   *    - include `deleted_at` only if the platform DTO exposes it; if DTO omits it, still treat the row as its current record and return only DTO fields.
-   * 5) Return the mapped DTO as JSON with HTTP 200.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Implementation steps: 1) Parse
+     *   `communitySubscriptionId` as UUID and load the row from
+     *   `community_platform_community_subscriptions` by `id`. 2) Authorization:
+     *   - Determine caller actor identity. - Allow if caller is admin. - Allow
+     *   if caller is the owning member of the loaded row (match caller member
+     *   identity to `member_id` on the subscription row). - Deny otherwise. 3)
+     *   If no row exists, return a not-found error. 4) Map the database row
+     *   fields to the response DTO: - include `id` (communitySubscriptionId),
+     *   `community_id`, `member_id`, `subscribed_at`, `is_active`,
+     *   `created_at`, `updated_at`. - include `deleted_at` only if the platform
+     *   DTO exposes it; if DTO omits it, still treat the row as its current
+     *   record and return only DTO fields. 5) Return the mapped DTO as JSON
+     *   with HTTP 200.
    *
    * Edge cases:
    * - Deleted/removed subscription records: the database includes `deleted_at`; the implementation must respect the domain expectation that only active subscriptions participate in subscribed views. For this endpoint, return the row consistently; however, authorization rules should still be applied first. If the product decides this endpoint should hide removed records, implement an additional filter `deleted_at IS NULL` before loading.
@@ -90,13 +91,12 @@ export class CommunityplatformCommunitysubscriptionsController {
    * @param connection
    * @param communitySubscriptionId Unique identifier of the community subscription relationship to update.
    * @param body Update payload for the community subscription record. Changes the active participation state and related fields as allowed by the business rules.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification 1) Authorization
-   * - Authenticate caller.
-   * - If caller is guest: return 403.
-   * - If caller is member: allow only when the member owns the subscription record referenced by communitySubscriptionId.
-   * - If caller is admin: allow.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification 1) Authorization - Authenticate caller. - If
+     *   caller is guest: return 403. - If caller is member: allow only when the
+     *   member owns the subscription record referenced by
+     *   communitySubscriptionId. - If caller is admin: allow.
    *
    * 2) Validate target record
    * - Load community_platform_community_subscriptions by id.
@@ -152,17 +152,18 @@ export class CommunityplatformCommunitysubscriptionsController {
    *
    * @param connection
    * @param communitySubscriptionId Target community subscription ID to unsubscribe the authenticated member from.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Steps:
-   * 1) Authenticate caller (must be a logged-in member; guests are not allowed).
-   * 2) Validate `communitySubscriptionId` format as UUID.
-   * 3) Load `community_platform_community_subscriptions` row by `id`.
-   * 4) Authorization check: verify the row’s `member_id` matches the authenticated member identity.
-   * 5) Apply removal:
-   *    - If the schema uses `deleted_at` for removed state, set `deleted_at` to current timestamp (timestamptz) and update `is_active` to false as appropriate.
-   *    - Ensure only the targeted subscription row is affected.
-   * 6) Return success with no response body.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Steps: 1) Authenticate caller (must be a
+     *   logged-in member; guests are not allowed). 2) Validate
+     *   `communitySubscriptionId` format as UUID. 3) Load
+     *   `community_platform_community_subscriptions` row by `id`. 4)
+     *   Authorization check: verify the row’s `member_id` matches the
+     *   authenticated member identity. 5) Apply removal: - If the schema uses
+     *   `deleted_at` for removed state, set `deleted_at` to current timestamp
+     *   (timestamptz) and update `is_active` to false as appropriate. - Ensure
+     *   only the targeted subscription row is affected. 6) Return success with
+     *   no response body.
    *
    * Edge cases:
    * - If no subscription row exists for the given ID: reject with an appropriate not-found/invalid-id error.
@@ -216,9 +217,9 @@ export class CommunityplatformCommunitysubscriptionsController {
    *
    * @param connection
    * @param body Create request payload for a community subscription. Supplies the target community to subscribe to; the member identity is derived from the authenticated session.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Realize logic for POST /communitySubscriptions.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Realize logic for POST /communitySubscriptions.
    *
    * 1) Authorization & identity
    * - Require authenticated actor of kind “member”. Derive member_id from the member session (do not accept member_id in client payload).
@@ -272,9 +273,11 @@ export class CommunityplatformCommunitysubscriptionsController {
    *
    * @param connection
    * @param body Subscription search criteria and pagination/sorting controls.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Build a query over `community_platform_community_subscriptions` with optional filters from ICommunityPlatformCommunitySubscription.IRequest.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Build a query over
+     *   `community_platform_community_subscriptions` with optional filters from
+     *   ICommunityPlatformCommunitySubscription.IRequest.
    *
    * Implementation steps:
    * 1) Authorization gate:

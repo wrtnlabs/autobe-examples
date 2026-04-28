@@ -17,8 +17,9 @@ export type ICommunityPlatformProfileSnapshot = {
    *
    * This UUID is the primary key of the snapshot, used to reference the record in API operations such as retrieval or audit queries. Once created, the identifier is immutable and never reassigned.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from community_platform_profile_snapshots.id. Primary key, UUID v4 format.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_profile_snapshots.id. Primary key, UUID v4 format.
    */
   id: string & tags.Format<"uuid">;
 
@@ -27,8 +28,10 @@ export type ICommunityPlatformProfileSnapshot = {
    *
    * Provides a reference to the profile entity whose state was recorded at this point in time. The summary includes the profile's display name and key public attributes. Multiple snapshots may reference the same profile, each representing a different point-in-time view of its state.
    *
-   * @x-autobe-database-schema-property profile
-   * @x-autobe-specification Join via community_platform_profile_id FK → community_platform_profiles.id. Returns ICommunityPlatformProfile.ISummary.
+     * @x-autobe-database-schema-property profile
+     * @x-autobe-specification Join via community_platform_profile_id FK →
+     *   community_platform_profiles.id. Returns
+     *   ICommunityPlatformProfile.ISummary.
    */
   profile: ICommunityPlatformProfile.ISummary;
 
@@ -37,7 +40,9 @@ export type ICommunityPlatformProfileSnapshot = {
    *
    * Provides a reference to the member who owns the snapshotted profile. The summary includes the member's unique identifier, email, username, and account timestamps. This field is resolved by joining the denormalized member identifier stored in the snapshot record.
    *
-   * @x-autobe-specification Join via denormalized community_platform_member_id column → community_platform_members.id. Returns ICommunityPlatformMember.ISummary.
+     * @x-autobe-specification Join via denormalized
+     *   community_platform_member_id column → community_platform_members.id.
+     *   Returns ICommunityPlatformMember.ISummary.
    */
   member: ICommunityPlatformMember.ISummary;
 
@@ -46,8 +51,9 @@ export type ICommunityPlatformProfileSnapshot = {
    *
    * Captures the user-chosen public-facing name that was displayed on their profile page when the snapshot was created. This value is a direct capture from the profile's display_name attribute and may differ from the member's unique username.
    *
-   * @x-autobe-database-schema-property display_name
-   * @x-autobe-specification Direct mapping from community_platform_profile_snapshots.display_name.
+     * @x-autobe-database-schema-property display_name
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_profile_snapshots.display_name.
    */
   display_name: string;
 
@@ -56,8 +62,9 @@ export type ICommunityPlatformProfileSnapshot = {
    *
    * Captures the user-written self-description that was displayed on their profile page. May be null if no biography was set at the time of snapshot creation.
    *
-   * @x-autobe-database-schema-property biography
-   * @x-autobe-specification Direct mapping from community_platform_profile_snapshots.biography. Nullable column.
+     * @x-autobe-database-schema-property biography
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_profile_snapshots.biography. Nullable column.
    */
   biography: string | null;
 
@@ -66,8 +73,10 @@ export type ICommunityPlatformProfileSnapshot = {
    *
    * Captures the reference to the user's profile picture as it existed when the snapshot was created. May be null if no avatar was set.
    *
-   * @x-autobe-database-schema-property avatar
-   * @x-autobe-specification Direct mapping from community_platform_profile_snapshots.avatar. Nullable column, stores URI format.
+     * @x-autobe-database-schema-property avatar
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_profile_snapshots.avatar. Nullable column, stores
+     *   URI format.
    */
   avatar: (string & tags.Format<"uri">) | null;
 
@@ -76,8 +85,9 @@ export type ICommunityPlatformProfileSnapshot = {
    *
    * Represents the net sum of all upvotes minus downvotes received on the member's posts and comments at that specific point in time. Can be positive, zero, or negative.
    *
-   * @x-autobe-database-schema-property karma
-   * @x-autobe-specification Direct mapping from community_platform_profile_snapshots.karma. Integer, can be negative.
+     * @x-autobe-database-schema-property karma
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_profile_snapshots.karma. Integer, can be negative.
    */
   karma: number & tags.Type<"int32">;
 
@@ -86,8 +96,10 @@ export type ICommunityPlatformProfileSnapshot = {
    *
    * Records the exact moment the profile state was captured and persisted. Used for chronological ordering and time-based queries such as filtering snapshots within a retention period. Snapshots are immutable after creation, so this value is never updated.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from community_platform_profile_snapshots.created_at. DateTime with timezone.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_profile_snapshots.created_at. DateTime with
+     *   timezone.
    */
   created_at: string & tags.Format<"date-time">;
 };
@@ -103,8 +115,11 @@ export namespace ICommunityPlatformProfileSnapshot {
      *
      * When provided, only snapshots belonging to the specified member are returned. This is a direct filter on the denormalized member ID stored in each snapshot record for efficient lookup without requiring a join through the profiles table. Optional filter field — when omitted, no member-level filtering is applied.
      *
-     * @x-autobe-database-schema-property community_platform_member_id
-     * @x-autobe-specification Filter by community_platform_member_id column using exact uuid match. When provided, returns only snapshots belonging to the specified member. Optional — omitted filters are not applied.
+         * @x-autobe-database-schema-property community_platform_member_id
+         * @x-autobe-specification Filter by community_platform_member_id column
+         *   using exact uuid match. When provided, returns only snapshots
+         *   belonging to the specified member. Optional — omitted filters are
+         *   not applied.
      */
     memberId?: (string & tags.Format<"uuid">) | undefined;
 
@@ -113,8 +128,11 @@ export namespace ICommunityPlatformProfileSnapshot {
      *
      * When provided, only snapshots of the specified profile are returned. Multiple snapshots may exist for a single profile, each capturing a different point in time. Optional filter field — when omitted, no profile-level filtering is applied.
      *
-     * @x-autobe-database-schema-property community_platform_profile_id
-     * @x-autobe-specification Filter by community_platform_profile_id column using exact uuid match. When provided, returns only snapshots associated with the specified profile record. Optional — omitted filters are not applied.
+         * @x-autobe-database-schema-property community_platform_profile_id
+         * @x-autobe-specification Filter by community_platform_profile_id
+         *   column using exact uuid match. When provided, returns only
+         *   snapshots associated with the specified profile record. Optional —
+         *   omitted filters are not applied.
      */
     profileId?: (string & tags.Format<"uuid">) | undefined;
 
@@ -123,8 +141,11 @@ export namespace ICommunityPlatformProfileSnapshot {
      *
      * Filters snapshots to those created at or after this timestamp. Combine with the `to` parameter to define a time-bounded window. When provided without `to`, returns all snapshots from this point forward. Optional filter field — when omitted, no start-date filtering is applied.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Inclusive start of created_at date range filter. Filters snapshots where created_at >= from value. Combined with 'to' (exclusive end) for bounded queries. Optional — when omitted, no lower-bound filtering is applied.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Inclusive start of created_at date range
+         *   filter. Filters snapshots where created_at >= from value. Combined
+         *   with 'to' (exclusive end) for bounded queries. Optional — when
+         *   omitted, no lower-bound filtering is applied.
      */
     from?: (string & tags.Format<"date-time">) | undefined;
 
@@ -133,8 +154,11 @@ export namespace ICommunityPlatformProfileSnapshot {
      *
      * Filters snapshots to those created before this timestamp. Combine with the `from` parameter to define a time-bounded window. When provided without `from`, returns all snapshots created before this point. Optional filter field — when omitted, no end-date filtering is applied.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Exclusive end of created_at date range filter. Filters snapshots where created_at < to value. Combined with 'from' (inclusive start) for bounded queries. Optional — when omitted, no upper-bound filtering is applied.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Exclusive end of created_at date range
+         *   filter. Filters snapshots where created_at < to value. Combined
+         *   with 'from' (inclusive start) for bounded queries. Optional — when
+         *   omitted, no upper-bound filtering is applied.
      */
     to?: (string & tags.Format<"date-time">) | undefined;
 
@@ -143,7 +167,9 @@ export namespace ICommunityPlatformProfileSnapshot {
      *
      * Specifies which page of snapshot records to retrieve. Page numbering starts from 1. The response includes pagination metadata with total record count and total page count for navigation.
      *
-     * @x-autobe-specification Pagination page number (1-based). Used to compute offset: (page - 1) * limit. Defaults to 1 when not provided.
+         * @x-autobe-specification Pagination page number (1-based). Used to
+         *   compute offset: (page - 1) * limit. Defaults to 1 when not
+         *   provided.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -152,7 +178,9 @@ export namespace ICommunityPlatformProfileSnapshot {
      *
      * Controls the page size for paginated results. Must be between 1 and 100. The actual number of records returned may be less than this value on the final page or when fewer records match the filters.
      *
-     * @x-autobe-specification Maximum number of records per page (1-100). Controls the page size for paginated results. Defaults to 20 when not provided.
+         * @x-autobe-specification Maximum number of records per page (1-100).
+         *   Controls the page size for paginated results. Defaults to 20 when
+         *   not provided.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -181,8 +209,9 @@ export namespace ICommunityPlatformProfileSnapshot {
      *
      * Auto-generated UUID used as the primary key for referencing and retrieving individual snapshot records.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from community_platform_profile_snapshots.id. UUID primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_profile_snapshots.id. UUID primary key.
      */
     id: string & tags.Format<"uuid">;
 
@@ -191,8 +220,10 @@ export namespace ICommunityPlatformProfileSnapshot {
      *
      * This is the public-facing name shown alongside the member's posts and comments throughout the platform, captured at the exact moment the snapshot was taken.
      *
-     * @x-autobe-database-schema-property display_name
-     * @x-autobe-specification Direct mapping from community_platform_profile_snapshots.display_name. Captures the profile's display name at the time the snapshot was taken.
+         * @x-autobe-database-schema-property display_name
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_profile_snapshots.display_name. Captures the
+         *   profile's display name at the time the snapshot was taken.
      */
     display_name: string;
 
@@ -201,8 +232,10 @@ export namespace ICommunityPlatformProfileSnapshot {
      *
      * Short free-form description that the member wrote about themselves. May be null if no biography was set at the time the snapshot was taken.
      *
-     * @x-autobe-database-schema-property biography
-     * @x-autobe-specification Direct mapping from community_platform_profile_snapshots.biography. Nullable via oneOf[type:string, type:null].
+         * @x-autobe-database-schema-property biography
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_profile_snapshots.biography. Nullable via
+         *   oneOf[type:string, type:null].
      */
     biography: string | null;
 
@@ -211,8 +244,10 @@ export namespace ICommunityPlatformProfileSnapshot {
      *
      * Provides a reference to the profile picture file that was active at the time the snapshot was taken. May be null if no avatar was set.
      *
-     * @x-autobe-database-schema-property avatar
-     * @x-autobe-specification Direct mapping from community_platform_profile_snapshots.avatar. Nullable via oneOf[type:string format:uri, type:null].
+         * @x-autobe-database-schema-property avatar
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_profile_snapshots.avatar. Nullable via
+         *   oneOf[type:string format:uri, type:null].
      */
     avatar: (string & tags.Format<"uri">) | null;
 
@@ -221,8 +256,10 @@ export namespace ICommunityPlatformProfileSnapshot {
      *
      * Reflects the net sum of all upvotes minus downvotes received on the member's posts and comments up to the moment the snapshot was taken. Can be positive, zero, or negative.
      *
-     * @x-autobe-database-schema-property karma
-     * @x-autobe-specification Direct mapping from community_platform_profile_snapshots.karma. Integer value representing cumulative upvotes minus downvotes at snapshot time.
+         * @x-autobe-database-schema-property karma
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_profile_snapshots.karma. Integer value
+         *   representing cumulative upvotes minus downvotes at snapshot time.
      */
     karma: number & tags.Type<"int32">;
 
@@ -231,8 +268,10 @@ export namespace ICommunityPlatformProfileSnapshot {
      *
      * Records the exact moment the profile state was captured. Used for chronological ordering and determining which snapshot is the most recent representation of the member's profile.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from community_platform_profile_snapshots.created_at. Timestamp in ISO 8601 date-time format.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_profile_snapshots.created_at. Timestamp in ISO
+         *   8601 date-time format.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -241,8 +280,11 @@ export namespace ICommunityPlatformProfileSnapshot {
      *
      * Denormalized foreign key providing direct lookup of all snapshots associated with a specific member without requiring a join through the profiles table.
      *
-     * @x-autobe-database-schema-property community_platform_member_id
-     * @x-autobe-specification Direct mapping from community_platform_profile_snapshots.community_platform_member_id. Denormalized FK for efficient member-scoped queries without joining through profiles table.
+         * @x-autobe-database-schema-property community_platform_member_id
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_profile_snapshots.community_platform_member_id.
+         *   Denormalized FK for efficient member-scoped queries without joining
+         *   through profiles table.
      */
     member_id: string & tags.Format<"uuid">;
 
@@ -251,8 +293,11 @@ export namespace ICommunityPlatformProfileSnapshot {
      *
      * Provides a summary reference to the profile entity whose state was captured in this snapshot record, enabling navigation to the full profile context.
      *
-     * @x-autobe-database-schema-property profile
-     * @x-autobe-specification BELONGS-TO join from community_platform_profile_snapshots.community_platform_profile_id to community_platform_profiles.id. Returns ICommunityPlatformProfile.ISummary.
+         * @x-autobe-database-schema-property profile
+         * @x-autobe-specification BELONGS-TO join from
+         *   community_platform_profile_snapshots.community_platform_profile_id
+         *   to community_platform_profiles.id. Returns
+         *   ICommunityPlatformProfile.ISummary.
      */
     profile: ICommunityPlatformProfile.ISummary;
   };

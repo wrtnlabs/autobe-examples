@@ -10,40 +10,49 @@ export type IShoppingMallWishlist = {
   /**
    * Unique identifier of this wishlist container.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_wishlists.id (UUID primary key). Include the value as-is in the response.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from shopping_mall_wishlists.id
+     *   (UUID primary key). Include the value as-is in the response.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Identifier of the member account that owns this wishlist.
    *
-   * @x-autobe-database-schema-property shopping_mall_member_id
-   * @x-autobe-specification Direct mapping from shopping_mall_wishlists.shopping_mall_member_id (UUID). Use it to indicate ownership of the wishlist container.
+     * @x-autobe-database-schema-property shopping_mall_member_id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_wishlists.shopping_mall_member_id (UUID). Use it to
+     *   indicate ownership of the wishlist container.
    */
   shoppingMallMemberId: string & tags.Format<"uuid">;
 
   /**
    * Timestamp when this wishlist container record was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from shopping_mall_wishlists.created_at to createdAt as an ISO 8601 date-time string.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_wishlists.created_at to createdAt as an ISO 8601
+     *   date-time string.
    */
   createdAt: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when this wishlist container record was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from shopping_mall_wishlists.updated_at to updatedAt as an ISO 8601 date-time string.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_wishlists.updated_at to updatedAt as an ISO 8601
+     *   date-time string.
    */
   updatedAt: string & tags.Format<"date-time">;
 
   /**
    * Soft-deletion timestamp indicating whether the wishlist is hidden; null means the wishlist is active.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from shopping_mall_wishlists.deleted_at. If the DB value is NULL, return deletedAt as null; otherwise return it as an ISO 8601 date-time string.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_wishlists.deleted_at. If the DB value is NULL, return
+     *   deletedAt as null; otherwise return it as an ISO 8601 date-time string.
    */
   deletedAt: (string & tags.Format<"date-time">) | null;
 };
@@ -55,14 +64,21 @@ export namespace IShoppingMallWishlist {
     /**
      * 1-indexed page number to retrieve (minimum 1). The first page is page 1.
      *
-     * @x-autobe-specification Treat as a 1-indexed page number for the wishlists list. Validate minimum=1 when provided; if omitted, use default page=1. Convert page into offset (or cursor) inside the list implementation according to the paging strategy used by the service.
+         * @x-autobe-specification Treat as a 1-indexed page number for the
+         *   wishlists list. Validate minimum=1 when provided; if omitted, use
+         *   default page=1. Convert page into offset (or cursor) inside the
+         *   list implementation according to the paging strategy used by the
+         *   service.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of wishlist records to return in a single page (min 1, max 100).
      *
-     * @x-autobe-specification Treat as the maximum number of wishlist records to return per page. Validate minimum=1 and maximum=100 when provided; if omitted, use the server-defined default page size. Use limit to bound the query’s page size.
+         * @x-autobe-specification Treat as the maximum number of wishlist
+         *   records to return per page. Validate minimum=1 and maximum=100 when
+         *   provided; if omitted, use the server-defined default page size. Use
+         *   limit to bound the query’s page size.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -76,32 +92,41 @@ export namespace IShoppingMallWishlist {
     /**
      * The unique identifier of the wishlist container.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_wishlists.id. Use the UUID/string identifier stored in the table row.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_wishlists.id. Use the UUID/string identifier stored
+         *   in the table row.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * When the wishlist was originally created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_wishlists.created_at. Return as an ISO-8601 date-time string.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_wishlists.created_at. Return as an ISO-8601 date-time
+         *   string.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * When the wishlist was last updated.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from shopping_mall_wishlists.updated_at. Return as an ISO-8601 date-time string.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_wishlists.updated_at. Return as an ISO-8601 date-time
+         *   string.
      */
     updated_at: string & tags.Format<"date-time">;
 
     /**
      * Soft-deletion timestamp of the wishlist; null when the wishlist is active.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from shopping_mall_wishlists.deleted_at. If the wishlist is active, deleted_at is null; if soft-deleted, deleted_at contains the deletion timestamp.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_wishlists.deleted_at. If the wishlist is active,
+         *   deleted_at is null; if soft-deleted, deleted_at contains the
+         *   deletion timestamp.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };
@@ -120,8 +145,13 @@ export namespace IShoppingMallWishlist {
     /**
      * Soft-deletion timestamp for the wishlist. Provide a date-time to mark the wishlist as deleted, or null to restore it (making it active again).
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from shopping_mall_wishlists.deleted_at. Accept an ISO-8601 date-time string to set deleted_at for soft-deletion, or accept null to restore (deleted_at=NULL). Authorization and row resolution are handled by the endpoint using the path id and authenticated member identity. updated_at must be set server-side on any update.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_wishlists.deleted_at. Accept an ISO-8601 date-time
+         *   string to set deleted_at for soft-deletion, or accept null to
+         *   restore (deleted_at=NULL). Authorization and row resolution are
+         *   handled by the endpoint using the path id and authenticated member
+         *   identity. updated_at must be set server-side on any update.
      */
     deleted_at?: (string & tags.Format<"date-time">) | null | undefined;
   };

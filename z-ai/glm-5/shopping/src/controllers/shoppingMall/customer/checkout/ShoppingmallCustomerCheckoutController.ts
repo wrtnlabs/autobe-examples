@@ -23,9 +23,9 @@ export class ShoppingmallCustomerCheckoutController {
    *
    * @param connection
    * @param body Checkout details including the shipping address selection for order delivery
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Implementation steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Implementation steps:
    *
    * 1. Authentication: Verify customer JWT token, extract customer ID, check banned status
    *
@@ -115,9 +115,9 @@ export class ShoppingmallCustomerCheckoutController {
    *
    * @param connection
    * @param body Checkout completion request with selected shipping address
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Implementation flow for checkout completion:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Implementation flow for checkout completion:
    *
    * 1. **Authentication & Authorization**: Extract customer from JWT session, reject if not authenticated.
    *

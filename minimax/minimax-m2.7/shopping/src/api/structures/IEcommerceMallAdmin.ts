@@ -16,8 +16,9 @@ export type IEcommerceMallAdmin = {
    *
    * This UUID serves as the primary key for identifying administrator records in the database. Used for referencing specific administrators in API endpoints and database relationships.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_admins.id. Primary key UUID identifier for the administrator account.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from ecommerce_mall_admins.id.
+     *   Primary key UUID identifier for the administrator account.
    */
   id: string & tags.Format<"uuid">;
 
@@ -26,8 +27,9 @@ export type IEcommerceMallAdmin = {
    *
    * The email serves as the unique login identifier for the administrator account. It is used for authentication purposes and must remain immutable after account creation.
    *
-   * @x-autobe-database-schema-property email
-   * @x-autobe-specification Direct mapping from ecommerce_mall_admins.email. Unique constraint enforced at database level.
+     * @x-autobe-database-schema-property email
+     * @x-autobe-specification Direct mapping from ecommerce_mall_admins.email.
+     *   Unique constraint enforced at database level.
    */
   email: string & tags.Format<"email">;
 
@@ -36,8 +38,9 @@ export type IEcommerceMallAdmin = {
    *
    * This name is shown throughout the admin dashboard interface and recorded in audit logs when the administrator performs actions. Administrators can update their display name via the profile update endpoint.
    *
-   * @x-autobe-database-schema-property name
-   * @x-autobe-specification Direct mapping from ecommerce_mall_admins.name. Display name shown in admin dashboard and audit logs.
+     * @x-autobe-database-schema-property name
+     * @x-autobe-specification Direct mapping from ecommerce_mall_admins.name.
+     *   Display name shown in admin dashboard and audit logs.
    */
   name: string;
 
@@ -46,8 +49,10 @@ export type IEcommerceMallAdmin = {
    *
    * This field records the exact date and time when the administrator registered or was created on the platform. Useful for auditing and reporting purposes.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_admins.created_at. Timestamp when the administrator account was created.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_admins.created_at. Timestamp when the administrator
+     *   account was created.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -56,8 +61,10 @@ export type IEcommerceMallAdmin = {
    *
    * This field is automatically updated by the database trigger whenever the administrator record is modified, including profile updates and name changes.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_admins.updated_at. Automatically updated when the admin record is modified.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_admins.updated_at. Automatically updated when the admin
+     *   record is modified.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -68,8 +75,10 @@ export type IEcommerceMallAdmin = {
    *
    * **With timestamp**: Account has been soft-deleted. The timestamp indicates when the deletion occurred. Soft-deleted accounts are excluded from normal queries but retained for audit purposes.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_admins.deleted_at. Nullable timestamp for soft deletion. NULL when active, timestamp when soft-deleted.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_admins.deleted_at. Nullable timestamp for soft deletion.
+     *   NULL when active, timestamp when soft-deleted.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -89,8 +98,9 @@ export namespace IEcommerceMallAdmin {
      *
      * Example: "550e8400-e29b-41d4-a716-446655440000"
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_mall_admins.id. UUID format.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from ecommerce_mall_admins.id.
+         *   UUID format.
      */
     id: string & tags.Format<"uuid">;
 
@@ -103,8 +113,9 @@ export namespace IEcommerceMallAdmin {
      *
      * Constraints: Must be unique across all administrator accounts.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from ecommerce_mall_admins.email. Unique constraint.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_admins.email. Unique constraint.
      */
     email: string;
 
@@ -115,8 +126,9 @@ export namespace IEcommerceMallAdmin {
      *
      * Constraints: Maximum 100 characters.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from ecommerce_mall_admins.name.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_admins.name.
      */
     name: string;
 
@@ -127,8 +139,9 @@ export namespace IEcommerceMallAdmin {
      *
      * Format: ISO 8601 date-time format (e.g., "2024-01-15T10:30:00Z").
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_admins.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_admins.created_at.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -139,8 +152,9 @@ export namespace IEcommerceMallAdmin {
      *
      * Format: ISO 8601 date-time format when present, null when active.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_admins.deleted_at. Nullable - set when soft-deleted.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_admins.deleted_at. Nullable - set when soft-deleted.
      */
     deleted_at?: null | (string & tags.Format<"date-time">) | undefined;
   };
@@ -158,7 +172,10 @@ export namespace IEcommerceMallAdmin {
      *
      * The refresh token previously issued during login or a prior refresh. Must be a valid, non-expired token stored in ecommerce_mall_admin_sessions. Upon validation, new access and refresh tokens are issued and the old refresh token is invalidated.
      *
-     * @x-autobe-specification User-provided refresh token validated against ecommerce_mall_admin_sessions.refresh_token by the service layer. The token is extracted from request body and exchanged for new access/refresh token pair upon successful validation.
+         * @x-autobe-specification User-provided refresh token validated against
+         *   ecommerce_mall_admin_sessions.refresh_token by the service layer.
+         *   The token is extracted from request body and exchanged for new
+         *   access/refresh token pair upon successful validation.
      */
     refresh: string;
   };
@@ -174,8 +191,9 @@ export namespace IEcommerceMallAdmin {
      *
      * The email must match an existing administrator account in the system. It is case-insensitive and must be a valid email format.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from ecommerce_mall_admins.email. Unique constraint applied.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_admins.email. Unique constraint applied.
      */
     email: string & tags.Format<"email">;
 
@@ -184,8 +202,10 @@ export namespace IEcommerceMallAdmin {
      *
      * The password is transmitted securely over HTTPS and hashed server-side using bcrypt before comparison with the stored hash. Minimum password requirements are enforced during authentication.
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification Maps to ecommerce_mall_admins.password_hash via server-side bcrypt transformation. Plain text password received in request is hashed before comparison.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification Maps to ecommerce_mall_admins.password_hash
+         *   via server-side bcrypt transformation. Plain text password received
+         *   in request is hashed before comparison.
      */
     password: string;
 
@@ -194,7 +214,9 @@ export namespace IEcommerceMallAdmin {
      *
      * This field captures the HTTP Referer header indicating the originating page. Used for security auditing and session tracking purposes.
      *
-     * @x-autobe-specification Session context: HTTP Referer header captured from the login request for security auditing. Stored in ecommerce_mall_admin_sessions table.
+         * @x-autobe-specification Session context: HTTP Referer header captured
+         *   from the login request for security auditing. Stored in
+         *   ecommerce_mall_admin_sessions table.
      */
     href: string & tags.Format<"uri">;
 
@@ -203,7 +225,9 @@ export namespace IEcommerceMallAdmin {
      *
      * This field captures the HTTP Origin header for CORS and security validation. Used to verify the request originates from an allowed domain.
      *
-     * @x-autobe-specification Session context: HTTP Origin header captured from the login request for security auditing. Stored in ecommerce_mall_admin_sessions table.
+         * @x-autobe-specification Session context: HTTP Origin header captured
+         *   from the login request for security auditing. Stored in
+         *   ecommerce_mall_admin_sessions table.
      */
     referrer: string & tags.Format<"uri">;
 
@@ -212,7 +236,10 @@ export namespace IEcommerceMallAdmin {
      *
      * This field is optional because server-side rendering clients cannot reliably determine their own IP. When omitted, the server automatically captures the client IP from the request connection.
      *
-     * @x-autobe-specification Session context: Client IP address captured for security auditing. Optional in ILogin because SSR clients cannot reliably determine their own IP; server captures IP as fallback and stores in ecommerce_mall_admin_sessions.ip.
+         * @x-autobe-specification Session context: Client IP address captured
+         *   for security auditing. Optional in ILogin because SSR clients
+         *   cannot reliably determine their own IP; server captures IP as
+         *   fallback and stores in ecommerce_mall_admin_sessions.ip.
      */
     ip?: (string & tags.Format<"ipv4">) | undefined;
   };
@@ -228,7 +255,9 @@ export namespace IEcommerceMallAdmin {
      *
      * Specifies the earliest creation timestamp to include in search results. Only administrators with created_at greater than or equal to this value will be returned. Use ISO 8601 format for datetime values.
      *
-     * @x-autobe-specification Filter admins WHERE ecommerce_mall_admins.created_at >= this datetime value. ISO 8601 format required. Optional filter.
+         * @x-autobe-specification Filter admins WHERE
+         *   ecommerce_mall_admins.created_at >= this datetime value. ISO 8601
+         *   format required. Optional filter.
      */
     createdAfter?: (string & tags.Format<"date-time">) | undefined;
 
@@ -237,7 +266,9 @@ export namespace IEcommerceMallAdmin {
      *
      * Specifies the latest creation timestamp to include in search results. Only administrators with created_at less than or equal to this value will be returned. Use ISO 8601 format for datetime values.
      *
-     * @x-autobe-specification Filter admins WHERE ecommerce_mall_admins.created_at <= this datetime value. ISO 8601 format required. Optional filter.
+         * @x-autobe-specification Filter admins WHERE
+         *   ecommerce_mall_admins.created_at <= this datetime value. ISO 8601
+         *   format required. Optional filter.
      */
     createdBefore?: (string & tags.Format<"date-time">) | undefined;
 
@@ -246,7 +277,9 @@ export namespace IEcommerceMallAdmin {
      *
      * Performs case-insensitive partial matching on administrator email addresses. For example, 'admin' would match 'admin@example.com', 'superadmin@example.com', etc. Leave empty or omit to bypass email filtering.
      *
-     * @x-autobe-specification Filter admins WHERE ecommerce_mall_admins.email ILIKE '%' || email || '%'. Case-insensitive partial match. Optional filter.
+         * @x-autobe-specification Filter admins WHERE
+         *   ecommerce_mall_admins.email ILIKE '%' || email || '%'.
+         *   Case-insensitive partial match. Optional filter.
      */
     email?: string | undefined;
 
@@ -255,7 +288,9 @@ export namespace IEcommerceMallAdmin {
      *
      * Controls how many administrator records are returned per page. Higher values reduce the number of pages but increase response payload size. The actual number of records may be less than the limit on the final page.
      *
-     * @x-autobe-specification Controls maximum records per page. Must be between 1 and 100. Default: 20. Applied after filtering, before sorting.
+         * @x-autobe-specification Controls maximum records per page. Must be
+         *   between 1 and 100. Default: 20. Applied after filtering, before
+         *   sorting.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -266,7 +301,9 @@ export namespace IEcommerceMallAdmin {
      *
      * Performs case-insensitive partial matching on administrator display names. For example, 'john' would match 'John Doe', 'Johnny Smith', etc. Leave empty or omit to bypass name filtering.
      *
-     * @x-autobe-specification Filter admins WHERE ecommerce_mall_admins.name ILIKE '%' || name || '%'. Case-insensitive partial match. Optional filter.
+         * @x-autobe-specification Filter admins WHERE
+         *   ecommerce_mall_admins.name ILIKE '%' || name || '%'.
+         *   Case-insensitive partial match. Optional filter.
      */
     name?: string | undefined;
 
@@ -275,7 +312,9 @@ export namespace IEcommerceMallAdmin {
      *
      * Specifies which page of results to retrieve. Page numbering is 1-indexed (first page is 1, not 0). Combine with limit to paginate through large result sets.
      *
-     * @x-autobe-specification Controls which page of results to return. 1-indexed. Must be >= 1. Default: 1. Used with limit to calculate offset.
+         * @x-autobe-specification Controls which page of results to return.
+         *   1-indexed. Must be >= 1. Default: 1. Used with limit to calculate
+         *   offset.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -284,7 +323,9 @@ export namespace IEcommerceMallAdmin {
      *
      * Determines whether results are sorted in ascending or descending order. Ascending order shows oldest records first; descending order shows newest records first.
      *
-     * @x-autobe-specification Controls sort direction for ORDER BY clause. Values: 'asc' or 'desc'. Default: 'desc' (newest first). Applied after filtering, before pagination.
+         * @x-autobe-specification Controls sort direction for ORDER BY clause.
+         *   Values: 'asc' or 'desc'. Default: 'desc' (newest first). Applied
+         *   after filtering, before pagination.
      */
     sort?: "asc" | "desc" | undefined;
 
@@ -293,7 +334,9 @@ export namespace IEcommerceMallAdmin {
      *
      * Specifies which administrator attribute to sort results by. Options include email address, display name, or account creation timestamp.
      *
-     * @x-autobe-specification Controls which field to sort by in ORDER BY clause. Values: 'email', 'name', 'created_at'. Default: 'created_at'. Combined with sort for direction.
+         * @x-autobe-specification Controls which field to sort by in ORDER BY
+         *   clause. Values: 'email', 'name', 'created_at'. Default:
+         *   'created_at'. Combined with sort for direction.
      */
     sortBy?: "created_at" | "email" | "name" | undefined;
 
@@ -302,7 +345,10 @@ export namespace IEcommerceMallAdmin {
      *
      * Filters administrator accounts based on their soft deletion status. Active administrators have a null deleted_at timestamp, while deleted administrators have a non-null deleted_at value set at deletion time.
      *
-     * @x-autobe-specification Filter admins by soft deletion status. 'active' = WHERE deleted_at IS NULL. 'deleted' = WHERE deleted_at IS NOT NULL. Default behavior when omitted varies by endpoint (some show all, some show active only).
+         * @x-autobe-specification Filter admins by soft deletion status.
+         *   'active' = WHERE deleted_at IS NULL. 'deleted' = WHERE deleted_at
+         *   IS NOT NULL. Default behavior when omitted varies by endpoint (some
+         *   show all, some show active only).
      */
     status?: "active" | "deleted" | undefined;
   };
@@ -326,8 +372,10 @@ export namespace IEcommerceMallAdmin {
      *
      * **Constraints**: Must be unique across all administrators.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from ecommerce_mall_admins.email. Unique constraint enforced at database level.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_admins.email. Unique constraint enforced at database
+         *   level.
      */
     email: string & tags.Format<"email">;
 
@@ -340,8 +388,10 @@ export namespace IEcommerceMallAdmin {
      *
      * **Security**: Password is hashed with bcrypt; never stored in plain text.
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification Transforms plain text password to bcrypt hash before storing in ecommerce_mall_admins.password_hash. Server-side transformation required - plain text password never stored.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification Transforms plain text password to bcrypt hash
+         *   before storing in ecommerce_mall_admins.password_hash. Server-side
+         *   transformation required - plain text password never stored.
      */
     password: string & tags.MinLength<8> & tags.Format<"password">;
 
@@ -352,8 +402,9 @@ export namespace IEcommerceMallAdmin {
      *
      * **Constraints**: Minimum 1 character.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from ecommerce_mall_admins.name.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_admins.name.
      */
     name: string & tags.MinLength<1>;
 
@@ -366,7 +417,10 @@ export namespace IEcommerceMallAdmin {
      *
      * **Purpose**: Session tracking and analytics.
      *
-     * @x-autobe-specification Session context: URI of the page where registration was initiated. Stored in ecommerce_mall_admin_sessions.href upon session creation. Captured from request for audit and analytics tracking.
+         * @x-autobe-specification Session context: URI of the page where
+         *   registration was initiated. Stored in
+         *   ecommerce_mall_admin_sessions.href upon session creation. Captured
+         *   from request for audit and analytics tracking.
      */
     href: string & tags.Format<"uri">;
 
@@ -379,7 +433,10 @@ export namespace IEcommerceMallAdmin {
      *
      * **Purpose**: Traffic source tracking and analytics.
      *
-     * @x-autobe-specification Session context: Referrer URI indicating the source that directed to the registration page. Stored in ecommerce_mall_admin_sessions.referrer upon session creation. Captured from request for traffic source analytics.
+         * @x-autobe-specification Session context: Referrer URI indicating the
+         *   source that directed to the registration page. Stored in
+         *   ecommerce_mall_admin_sessions.referrer upon session creation.
+         *   Captured from request for traffic source analytics.
      */
     referrer: string & tags.Format<"uri">;
 
@@ -392,7 +449,11 @@ export namespace IEcommerceMallAdmin {
      *
      * **Purpose**: Audit logging and security tracking. Optional for SSR scenarios.
      *
-     * @x-autobe-specification Session context: Client IP address for server-side rendering scenarios. Optional in IJoin because SSR clients cannot reliably know their own IP; server captures it as fallback. Stored in ecommerce_mall_admin_sessions.ip for audit and security tracking.
+         * @x-autobe-specification Session context: Client IP address for
+         *   server-side rendering scenarios. Optional in IJoin because SSR
+         *   clients cannot reliably know their own IP; server captures it as
+         *   fallback. Stored in ecommerce_mall_admin_sessions.ip for audit and
+         *   security tracking.
      */
     ip?: (string & tags.Format<"ipv4">) | undefined;
   };
@@ -414,8 +475,11 @@ export namespace IEcommerceMallAdmin {
      *
      * **Constraints**: Maximum length follows database column constraints. Unicode characters are supported.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from ecommerce_mall_admins.name column. The display name shown throughout the admin dashboard and audit logs. Must not be empty if provided.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_admins.name column. The display name shown
+         *   throughout the admin dashboard and audit logs. Must not be empty if
+         *   provided.
      */
     name: string;
   };
@@ -439,8 +503,9 @@ export namespace IEcommerceMallAdmin {
      *
      * This field contains the universally unique identifier (UUID) assigned to the administrator account during registration. It serves as the primary key for identifying this administrator in all subsequent API requests and database operations.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_mall_admins.id (UUID primary key).
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from ecommerce_mall_admins.id
+         *   (UUID primary key).
      */
     id: string & tags.Format<"uuid">;
 
@@ -449,8 +514,10 @@ export namespace IEcommerceMallAdmin {
      *
      * This field contains the administrator's unique email address used for login authentication. The email serves as the primary identifier for the administrator account.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from ecommerce_mall_admins.email. Unique constraint enforced at database level.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_admins.email. Unique constraint enforced at database
+         *   level.
      */
     email: string & tags.Format<"email">;
 
@@ -459,8 +526,9 @@ export namespace IEcommerceMallAdmin {
      *
      * This field contains the administrator's display name shown throughout the admin dashboard and recorded in audit logs for accountability purposes.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from ecommerce_mall_admins.name.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_admins.name.
      */
     name: string;
 
@@ -469,8 +537,9 @@ export namespace IEcommerceMallAdmin {
      *
      * This field records the exact date and time when the administrator account was first created in the system. Useful for auditing and account age tracking.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_admins.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_admins.created_at.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -479,8 +548,9 @@ export namespace IEcommerceMallAdmin {
      *
      * This field records the last date and time when any administrator account property was updated. Automatically managed by the system.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_admins.updated_at.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_admins.updated_at.
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -489,15 +559,18 @@ export namespace IEcommerceMallAdmin {
      *
      * This field is null when the administrator account is active. When the account is soft-deleted, this field contains the timestamp of deletion. A non-null value indicates the account has been deactivated.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_admins.deleted_at. Nullable - null when account is active, set to timestamp when soft-deleted.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_admins.deleted_at. Nullable - null when account is
+         *   active, set to timestamp when soft-deleted.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
 
     /**
      * Authorization token.
      *
-     * @x-autobe-specification Authorization token comes from the session table.
+         * @x-autobe-specification Authorization token comes from the session
+         *   table.
      */
     token: IAuthorizationToken;
   };
@@ -517,8 +590,11 @@ export namespace IEcommerceMallAdmin {
      *
      * The current password must match the stored credentials exactly before the password change is permitted. This field is required and must not be empty. Verification failure results in 401 Unauthorized.
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification Direct mapping for password verification. Backend compares the cleartext currentPassword against the stored password_hash using bcrypt comparison. If verification fails, returns 401 Unauthorized.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification Direct mapping for password verification.
+         *   Backend compares the cleartext currentPassword against the stored
+         *   password_hash using bcrypt comparison. If verification fails,
+         *   returns 401 Unauthorized.
      */
     currentPassword: string & tags.MinLength<1> & tags.Format<"password">;
 
@@ -527,8 +603,11 @@ export namespace IEcommerceMallAdmin {
      *
      * Must meet platform security requirements including minimum length of 8 characters. The new password is validated and then hashed server-side before storage. Cannot be the same as the current password.
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification Direct mapping for password storage after transformation. Backend validates newPassword against platform security requirements (minimum 8 characters), hashes it using bcrypt, and stores the result in password_hash field.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification Direct mapping for password storage after
+         *   transformation. Backend validates newPassword against platform
+         *   security requirements (minimum 8 characters), hashes it using
+         *   bcrypt, and stores the result in password_hash field.
      */
     newPassword: string & tags.MinLength<8> & tags.Format<"password">;
   };
@@ -548,7 +627,10 @@ export namespace IEcommerceMallAdmin {
      *
      * This message indicates that the administrator's current password was verified, the new password was validated against platform security requirements, and the password_hash field was successfully updated in the database. The administrator remains logged in with the updated credentials.
      *
-     * @x-autobe-specification Computed string value. Returns a static confirmation message hardcoded in the service layer upon successful password change completion. No database column mapping - value is constructed by the authentication service.
+         * @x-autobe-specification Computed string value. Returns a static
+         *   confirmation message hardcoded in the service layer upon successful
+         *   password change completion. No database column mapping - value is
+         *   constructed by the authentication service.
      */
     message: string;
   };
@@ -576,7 +658,9 @@ export namespace IEcommerceMallAdmin {
      *
      * Use this metric to assess platform seller activity and growth. Compare against total sellersCount to understand approval funnel conversion.
      *
-     * @x-autobe-specification SQL: SELECT COUNT(*) FROM ecommerce_mall_sellers WHERE approval_status = 'approved' AND deleted_at IS NULL. Computed aggregate, not a direct column.
+         * @x-autobe-specification SQL: SELECT COUNT(*) FROM
+         *   ecommerce_mall_sellers WHERE approval_status = 'approved' AND
+         *   deleted_at IS NULL. Computed aggregate, not a direct column.
      */
     approvedSellersCount: number & tags.Type<"int32"> & tags.Minimum<0>;
 
@@ -589,7 +673,9 @@ export namespace IEcommerceMallAdmin {
      *
      * Use this metric for platform growth tracking. Combine with ordersCount to calculate average orders per customer.
      *
-     * @x-autobe-specification SQL: SELECT COUNT(*) FROM ecommerce_mall_customers WHERE deleted_at IS NULL. Computed aggregate, not a direct column.
+         * @x-autobe-specification SQL: SELECT COUNT(*) FROM
+         *   ecommerce_mall_customers WHERE deleted_at IS NULL. Computed
+         *   aggregate, not a direct column.
      */
     customersCount: number & tags.Type<"int32"> & tags.Minimum<0>;
 
@@ -602,7 +688,9 @@ export namespace IEcommerceMallAdmin {
      *
      * Use this metric for transaction volume analysis. Compare with customersCount for average basket statistics.
      *
-     * @x-autobe-specification SQL: SELECT COUNT(*) FROM ecommerce_mall_orders WHERE deleted_at IS NULL. Computed aggregate, not a direct column.
+         * @x-autobe-specification SQL: SELECT COUNT(*) FROM
+         *   ecommerce_mall_orders WHERE deleted_at IS NULL. Computed aggregate,
+         *   not a direct column.
      */
     ordersCount: number & tags.Type<"int32"> & tags.Minimum<0>;
 
@@ -615,7 +703,9 @@ export namespace IEcommerceMallAdmin {
      *
      * Use this metric to monitor administrative staffing demand. A high count may indicate platform growth requiring more administrative support.
      *
-     * @x-autobe-specification SQL: SELECT COUNT(*) FROM ecommerce_mall_admin_requests WHERE status = 'pending'. Computed aggregate, not a direct column.
+         * @x-autobe-specification SQL: SELECT COUNT(*) FROM
+         *   ecommerce_mall_admin_requests WHERE status = 'pending'. Computed
+         *   aggregate, not a direct column.
      */
     pendingAdminRequestsCount: number & tags.Type<"int32"> & tags.Minimum<0>;
 
@@ -628,7 +718,9 @@ export namespace IEcommerceMallAdmin {
      *
      * Use this metric to monitor seller onboarding pipeline. A backlog may delay new seller entry to the marketplace.
      *
-     * @x-autobe-specification SQL: SELECT COUNT(*) FROM ecommerce_mall_seller_approvals WHERE status = 'pending'. Computed aggregate, not a direct column.
+         * @x-autobe-specification SQL: SELECT COUNT(*) FROM
+         *   ecommerce_mall_seller_approvals WHERE status = 'pending'. Computed
+         *   aggregate, not a direct column.
      */
     pendingSellerApprovalsCount: number & tags.Type<"int32"> & tags.Minimum<0>;
 
@@ -641,7 +733,9 @@ export namespace IEcommerceMallAdmin {
      *
      * Use this metric for catalog breadth assessment. Compare with sellersCount to calculate average products per seller.
      *
-     * @x-autobe-specification SQL: SELECT COUNT(*) FROM ecommerce_mall_products WHERE deleted_at IS NULL. Computed aggregate, not a direct column.
+         * @x-autobe-specification SQL: SELECT COUNT(*) FROM
+         *   ecommerce_mall_products WHERE deleted_at IS NULL. Computed
+         *   aggregate, not a direct column.
      */
     productsCount: number & tags.Type<"int32"> & tags.Minimum<0>;
 
@@ -654,7 +748,9 @@ export namespace IEcommerceMallAdmin {
      *
      * Use this metric for platform seller ecosystem size. Compare with approvedSellersCount to understand approval funnel conversion rate.
      *
-     * @x-autobe-specification SQL: SELECT COUNT(*) FROM ecommerce_mall_sellers WHERE deleted_at IS NULL. Computed aggregate, not a direct column.
+         * @x-autobe-specification SQL: SELECT COUNT(*) FROM
+         *   ecommerce_mall_sellers WHERE deleted_at IS NULL. Computed
+         *   aggregate, not a direct column.
      */
     sellersCount: number & tags.Type<"int32"> & tags.Minimum<0>;
   };

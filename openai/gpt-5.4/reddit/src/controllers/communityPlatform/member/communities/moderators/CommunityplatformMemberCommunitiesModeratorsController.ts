@@ -30,9 +30,10 @@ export class CommunityplatformMemberCommunitiesModeratorsController {
    * @param connection
    * @param communityId Target community's ID
    * @param body Search, filter, and pagination options for community moderators
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement this operation as a scoped list query over the community moderator assignment records for a single community.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implement this operation as a scoped list query
+     *   over the community moderator assignment records for a single community.
    *
    * 1. Validate the `communityId` path parameter as a UUID and load the target record from `community_platform_communities`. If no community exists for the supplied identifier, return a not-found error.
    * 2. Authorize the caller as an authenticated member and evaluate whether the caller may inspect the moderation roster for the target community according to community governance access rules. Reject guests and any authenticated actor that fails the community-scoped authorization check.
@@ -84,9 +85,11 @@ export class CommunityplatformMemberCommunitiesModeratorsController {
    * @param connection
    * @param communityId Target community's primary identifier
    * @param moderatorId Target moderator assignment's primary identifier within the community
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Load the target community from `community_platform_communities` by `id = :communityId` and reject when not found.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Load the target community from
+     *   `community_platform_communities` by `id = :communityId` and reject when
+     *   not found.
    *
    * Load the target moderation assignment from `community_platform_community_moderators` by `id = :moderatorId` and `community_platform_community_id = :communityId`. This second condition is mandatory so that a valid moderator assignment from another community cannot be exposed through the wrong parent route.
    *
@@ -134,9 +137,10 @@ export class CommunityplatformMemberCommunitiesModeratorsController {
    * @param connection
    * @param communityId Identifier of the community whose moderation team is being managed
    * @param moderatorId Identifier of the member to hold moderator standing in that community
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement this operation as an idempotent upsert-like assignment of a community-scoped moderator role.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implement this operation as an idempotent
+     *   upsert-like assignment of a community-scoped moderator role.
    *
    * 1. Authenticate the caller as a member. Reject guest access.
    * 2. Load the target community by communityId from community_platform_communities. Return not found when the community does not exist.
@@ -201,9 +205,11 @@ export class CommunityplatformMemberCommunitiesModeratorsController {
    * @param connection
    * @param communityId Target community's unique ID.
    * @param moderatorId Target moderator member's unique ID within the specified community.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Authenticate the caller as a member and resolve the acting member ID from the session context. Reject unauthenticated callers.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Authenticate the caller as a member and resolve
+     *   the acting member ID from the session context. Reject unauthenticated
+     *   callers.
    *
    * Load the target community from `community_platform_communities` by `id = {communityId}` and ensure it is available for governance actions. If the community does not exist, reject the request.
    *
@@ -259,9 +265,13 @@ export class CommunityplatformMemberCommunitiesModeratorsController {
    * @param connection
    * @param communitySlug Slug of the target community (global scope)
    * @param body Member selection for the new moderator assignment
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Resolve the target community by community_platform_communities.slug using the communitySlug path parameter and ensure the community record exists. Reject when no matching community is found or when the community is not in a state that allows governance actions.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Resolve the target community by
+     *   community_platform_communities.slug using the communitySlug path
+     *   parameter and ensure the community record exists. Reject when no
+     *   matching community is found or when the community is not in a state
+     *   that allows governance actions.
    *
    * Resolve the authenticated caller from the member session context. Require the caller to be an authenticated member. Authorize the request by verifying either of the following within the target community: (1) the caller is the owner member referenced by community_platform_communities.community_platform_member_id, or (2) the caller has an active, non-deleted community_platform_community_moderators record for the same community. When the caller lacks this authority, reject the request.
    *

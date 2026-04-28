@@ -30,8 +30,9 @@ export type IRedditLikeCommunity = {
    *
    * This is the primary key used to reference the community in all API operations including retrieval, updates, and path parameters.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from reddit_like_communities.id. UUID primary key, unique across all communities.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from reddit_like_communities.id.
+     *   UUID primary key, unique across all communities.
    */
   id: string & tags.Format<"uuid">;
 
@@ -40,8 +41,11 @@ export type IRedditLikeCommunity = {
    *
    * The owner holds the highest authority within the community and can manage moderators, configure settings, and control community governance. Only the owner can remove moderators from the community.
    *
-   * @x-autobe-database-schema-property owner
-   * @x-autobe-specification JOIN reddit_like_members ON reddit_like_communities.owner_id = reddit_like_members.id. Returns IRedditLikeMember.ISummary. The owner is the member who created the community.
+     * @x-autobe-database-schema-property owner
+     * @x-autobe-specification JOIN reddit_like_members ON
+     *   reddit_like_communities.owner_id = reddit_like_members.id. Returns
+     *   IRedditLikeMember.ISummary. The owner is the member who created the
+     *   community.
    */
   owner: IRedditLikeMember.ISummary;
 
@@ -50,8 +54,9 @@ export type IRedditLikeCommunity = {
    *
    * This field must be unique across all communities and serves as the primary human-readable identifier. It is used in community URLs, search results, and display contexts.
    *
-   * @x-autobe-database-schema-property name
-   * @x-autobe-specification Direct mapping from reddit_like_communities.name. Unique constraint enforced at database level.
+     * @x-autobe-database-schema-property name
+     * @x-autobe-specification Direct mapping from reddit_like_communities.name.
+     *   Unique constraint enforced at database level.
    */
   name: string;
 
@@ -60,8 +65,9 @@ export type IRedditLikeCommunity = {
    *
    * Provides context about what the community is about, its rules, and what type of content is appropriate. This helps potential subscribers understand the community before joining. May be null if not set by the owner.
    *
-   * @x-autobe-database-schema-property description
-   * @x-autobe-specification Direct mapping from reddit_like_communities.description. Nullable field.
+     * @x-autobe-database-schema-property description
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_communities.description. Nullable field.
    */
   description: string | null;
 
@@ -70,8 +76,9 @@ export type IRedditLikeCommunity = {
    *
    * This is optional and may be null if no icon has been uploaded. Stores the location of the icon image for display purposes in feeds, search results, and community pages.
    *
-   * @x-autobe-database-schema-property icon_url
-   * @x-autobe-specification Direct mapping from reddit_like_communities.icon_url. Nullable URI string.
+     * @x-autobe-database-schema-property icon_url
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_communities.icon_url. Nullable URI string.
    */
   icon_url: string | null;
 
@@ -80,7 +87,10 @@ export type IRedditLikeCommunity = {
    *
    * This is a real-time aggregation calculated from the reddit_like_community_subscriptions table, counting only subscriptions where deleted_at is null. The count updates as users subscribe or unsubscribe, providing insight into community size and popularity.
    *
-   * @x-autobe-specification Computed aggregation: COUNT(*) from reddit_like_community_subscriptions WHERE community_id = reddit_like_communities.id AND deleted_at IS NULL. Real-time count of active subscriptions.
+     * @x-autobe-specification Computed aggregation: COUNT(*) from
+     *   reddit_like_community_subscriptions WHERE community_id =
+     *   reddit_like_communities.id AND deleted_at IS NULL. Real-time count of
+     *   active subscriptions.
    */
   subscriber_count: number & tags.Type<"int32">;
 
@@ -89,8 +99,9 @@ export type IRedditLikeCommunity = {
    *
    * Records the exact moment when the community was initially created by the owner. Used for sorting, filtering, and audit purposes.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from reddit_like_communities.created_at. Timestamp with timezone.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_communities.created_at. Timestamp with timezone.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -99,8 +110,9 @@ export type IRedditLikeCommunity = {
    *
    * Updated whenever any mutable field (name, description, icon_url) is modified. Used for tracking modifications and sync purposes.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from reddit_like_communities.updated_at. Timestamp with timezone.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_communities.updated_at. Timestamp with timezone.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -109,8 +121,9 @@ export type IRedditLikeCommunity = {
    *
    * When present (non-null), indicates the community has been deleted but retained for potential recovery. Active queries should filter out communities with non-null deleted_at values. NULL for active communities.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from reddit_like_communities.deleted_at. Nullable timestamp with timezone.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_communities.deleted_at. Nullable timestamp with timezone.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -139,8 +152,9 @@ export namespace IRedditLikeCommunity {
      *
      * **Format**: UUID v4 string (e.g., "550e8400-e29b-41d4-a716-446655440000")
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from reddit_like_communities.id. Primary key, UUID format.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_communities.id. Primary key, UUID format.
      */
     id: string & tags.Format<"uuid">;
 
@@ -151,8 +165,10 @@ export namespace IRedditLikeCommunity {
      *
      * **Constraints**: Unique across all communities, required field, used in community URLs and search results.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from reddit_like_communities.name. Unique constraint enforced at database level.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_communities.name. Unique constraint enforced at
+         *   database level.
      */
     name: string;
 
@@ -163,8 +179,9 @@ export namespace IRedditLikeCommunity {
      *
      * **Nullable**: This field may be null if the community owner has not provided a description.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from reddit_like_communities.description. Nullable field.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_communities.description. Nullable field.
      */
     description: string | null;
 
@@ -175,8 +192,10 @@ export namespace IRedditLikeCommunity {
      *
      * **Nullable**: This field may be null if no icon has been uploaded. When present, it contains a URL or path that can be used to fetch the image.
      *
-     * @x-autobe-database-schema-property icon_url
-     * @x-autobe-specification Direct mapping from reddit_like_communities.icon_url. Nullable field storing image location.
+         * @x-autobe-database-schema-property icon_url
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_communities.icon_url. Nullable field storing image
+         *   location.
      */
     icon_url: string | null;
 
@@ -189,8 +208,9 @@ export namespace IRedditLikeCommunity {
      *
      * **Access**: The owner summary includes the member's id, username, display_name, karma_score, and created_at timestamp.
      *
-     * @x-autobe-database-schema-property owner
-     * @x-autobe-specification JOIN from reddit_like_communities.owner_id to reddit_like_members.id. Returns IRedditLikeMember.ISummary object.
+         * @x-autobe-database-schema-property owner
+         * @x-autobe-specification JOIN from reddit_like_communities.owner_id to
+         *   reddit_like_members.id. Returns IRedditLikeMember.ISummary object.
      */
     owner: IRedditLikeMember.ISummary;
 
@@ -203,7 +223,10 @@ export namespace IRedditLikeCommunity {
      *
      * **Minimum Value**: 0 (communities start with no subscribers)
      *
-     * @x-autobe-specification Computed via COUNT(reddit_like_community_subscriptions WHERE community_id = reddit_like_communities.id AND deleted_at IS NULL). Real-time aggregation of active subscriptions.
+         * @x-autobe-specification Computed via
+         *   COUNT(reddit_like_community_subscriptions WHERE community_id =
+         *   reddit_like_communities.id AND deleted_at IS NULL). Real-time
+         *   aggregation of active subscriptions.
      */
     subscriber_count: number & tags.Type<"int32"> & tags.Minimum<0>;
 
@@ -214,8 +237,10 @@ export namespace IRedditLikeCommunity {
      *
      * **Format**: ISO 8601 date-time with timezone (e.g., "2024-01-15T10:30:00Z")
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from reddit_like_communities.created_at. Timestamp with timezone (timestamptz).
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_communities.created_at. Timestamp with timezone
+         *   (timestamptz).
      */
     created_at: string & tags.Format<"date-time">;
   };
@@ -242,7 +267,7 @@ export namespace IRedditLikeCommunity {
    */
   export type ICreate = {
     /**
-     * @x-autobe-database-schema-property name
+         * @x-autobe-database-schema-property name
      */
     name: string;
 
@@ -251,8 +276,9 @@ export namespace IRedditLikeCommunity {
      *
      * Provides context about what the community is about, its rules, and what type of content is appropriate. This helps potential subscribers understand the community before joining. May be null if not set by the owner.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from reddit_like_communities.description. Nullable String.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_communities.description. Nullable String.
      */
     description?: string | null | undefined;
 
@@ -261,8 +287,9 @@ export namespace IRedditLikeCommunity {
      *
      * This is optional and may be null if no icon has been uploaded. Stores the location of the icon image for display purposes in feeds, search results, and community pages.
      *
-     * @x-autobe-database-schema-property icon_url
-     * @x-autobe-specification Direct mapping from reddit_like_communities.icon_url. Nullable URI String.
+         * @x-autobe-database-schema-property icon_url
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_communities.icon_url. Nullable URI String.
      */
     icon_url?: string | null | undefined;
   };
@@ -284,7 +311,7 @@ export namespace IRedditLikeCommunity {
    */
   export type IUpdate = {
     /**
-     * @x-autobe-database-schema-property name
+         * @x-autobe-database-schema-property name
      */
     name?: string | undefined;
 
@@ -293,8 +320,9 @@ export namespace IRedditLikeCommunity {
      *
      * Provides context about what the community is about, its rules, and what type of content is appropriate. This helps potential subscribers understand the community before joining. May be null if not set by the owner.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from reddit_like_communities.description. Nullable String field.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_communities.description. Nullable String field.
      */
     description?: string | null | undefined;
 
@@ -303,8 +331,9 @@ export namespace IRedditLikeCommunity {
      *
      * This is optional and may be null if no icon has been uploaded. Stores the location of the icon image for display purposes in feeds, search results, and community pages.
      *
-     * @x-autobe-database-schema-property icon_url
-     * @x-autobe-specification Direct mapping from reddit_like_communities.icon_url. Nullable URI string.
+         * @x-autobe-database-schema-property icon_url
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_communities.icon_url. Nullable URI string.
      */
     icon_url?: string | null | undefined;
   };
@@ -348,7 +377,10 @@ export namespace IRedditLikeCommunity {
      * - `search: "tech"` → returns communities with names containing "tech"
      * - `search: ""` → returns all communities (no name filter)
      *
-     * @x-autobe-specification Query parameter for case-insensitive partial name matching. Server applies ILIKE or LOWER + LIKE filter on the name column. Empty string or null means no name filtering. Wildcards are automatically added by the server.
+         * @x-autobe-specification Query parameter for case-insensitive partial
+         *   name matching. Server applies ILIKE or LOWER + LIKE filter on the
+         *   name column. Empty string or null means no name filtering.
+         *   Wildcards are automatically added by the server.
      */
     search?: string | undefined;
 
@@ -370,7 +402,9 @@ export namespace IRedditLikeCommunity {
      * - `offset: 10, limit: 10` → second page (records 11-20)
      * - `offset: 20, limit: 10` → third page (records 21-30)
      *
-     * @x-autobe-specification 0-based offset for pagination. Server uses this as the starting position in the result set. Combined with limit parameter to slice the result array. Minimum value is 0.
+         * @x-autobe-specification 0-based offset for pagination. Server uses
+         *   this as the starting position in the result set. Combined with
+         *   limit parameter to slice the result array. Minimum value is 0.
      */
     offset?: (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
 
@@ -392,7 +426,10 @@ export namespace IRedditLikeCommunity {
      * - `limit: 50` → returns up to 50 communities per page
      * - `limit: 100` → returns up to 100 communities per page (maximum)
      *
-     * @x-autobe-specification Maximum number of records per page. Server enforces a hard cap of 100 to prevent excessive data retrieval. Actual returned count may be less on the final page if fewer records remain.
+         * @x-autobe-specification Maximum number of records per page. Server
+         *   enforces a hard cap of 100 to prevent excessive data retrieval.
+         *   Actual returned count may be less on the final page if fewer
+         *   records remain.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -420,7 +457,11 @@ export namespace IRedditLikeCommunity {
      * - `sort_by: "name", sort_order: "asc"` → A-Z alphabetical order
      * - `sort_by: "subscriber_count", sort_order: "desc"` → largest communities first
      *
-     * @x-autobe-specification Field selector for result ordering. Server maps the value to the corresponding database column or computed field. Valid values: 'name' (maps to name column), 'created_at' (maps to created_at column), 'subscriber_count' (computed from subscription count JOIN).
+         * @x-autobe-specification Field selector for result ordering. Server
+         *   maps the value to the corresponding database column or computed
+         *   field. Valid values: 'name' (maps to name column), 'created_at'
+         *   (maps to created_at column), 'subscriber_count' (computed from
+         *   subscription count JOIN).
      */
     sort_by?: "name" | "created_at" | "subscriber_count" | undefined;
 
@@ -446,7 +487,10 @@ export namespace IRedditLikeCommunity {
      * - `sort_by: "created_at", sort_order: "desc"` → newest communities first
      * - `sort_by: "subscriber_count", sort_order: "desc"` → most subscribed first
      *
-     * @x-autobe-specification Sort direction selector. Server applies ASC or DESC ordering based on this value. 'asc' for ascending (A-Z, earliest to latest), 'desc' for descending (Z-A, latest to earliest, highest to lowest).
+         * @x-autobe-specification Sort direction selector. Server applies ASC
+         *   or DESC ordering based on this value. 'asc' for ascending (A-Z,
+         *   earliest to latest), 'desc' for descending (Z-A, latest to
+         *   earliest, highest to lowest).
      */
     sort_order?: "asc" | "desc" | undefined;
 
@@ -472,7 +516,11 @@ export namespace IRedditLikeCommunity {
      *
      * This parameter is mutually exclusive with `offset` in most implementations. When both are provided, `page` typically takes precedence.
      *
-     * @x-autobe-specification 1-indexed page number for pagination. Server converts page number to offset using formula: offset = (page - 1) * limit. Defaults to 1 if not provided, null, or undefined. Pages beyond available range return empty data array with valid pagination metadata.
+         * @x-autobe-specification 1-indexed page number for pagination. Server
+         *   converts page number to offset using formula: offset = (page - 1) *
+         *   limit. Defaults to 1 if not provided, null, or undefined. Pages
+         *   beyond available range return empty data array with valid
+         *   pagination metadata.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };

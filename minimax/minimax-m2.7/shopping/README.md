@@ -20,8 +20,8 @@ subgraph "Functional Agents"
   coder --"Requirements Analysis"--> analyze("✅ Analyze")
   coder --"ERD"--> database("✅ Database")
   coder --"API Design"--> interface("✅ Interface")
-  coder --"Test Codes" --> test("✅ Test")
   coder --"Main Program" --> realize("✅ Realize")
+  coder --"Test Codes" --> test("✅ Test")
 end
 subgraph "Compiler Feedback"
   database --"validates" --> prismaCompiler("Prisma Compiler")
@@ -42,7 +42,7 @@ Waterfall Model | AutoBe Agent | Result
 ----------------|--------------|----------------------------------------------
 Requirements    | ✅ Facade       | Conversation History
 Analysis        | ✅ Analyze      | [Requirement Analysis Report](docs/analysis)
-Design          | ✅ Prisma       | [Entity Relationship Diagram](docs/ERD.md) / [Prisma Schema](prisma/schema)
+Design          | ✅ Database     | [Entity Relationship Diagram](docs/ERD.md) / [Prisma Schema](prisma/schema)
 Design          | ✅ Interface    | [API Controllers](src/controllers) / [DTO Structures](src/api/structures)
 Development     | ✅ Realize      | [API Provider Functions](src/providers)
 Testing         | ✅ Test         | [E2E Test Functions](test/features/api)
@@ -118,8 +118,9 @@ Phase | Generated | FCSR | Token Consumption | Elapsed Time
 ✅ interface | operations: 279, schemas: 264 | 76.86 % | 241,743,397 | 4415 sec
 ✅ test | functions: 856 | 84.43 % | 120,588,252 | 5299 sec
 ✅ realize | functions: 396 | 89.48 % | 79,408,676 | 8322 sec
+⬜ multiLingual | | | | 
 
-This table shows the comprehensive metrics for each phase of the AutoBE generation pipeline. For each phase (Analyze, Database, Interface, Test, Realize), it tracks:
+This table shows the comprehensive metrics for each phase of the AutoBE generation pipeline. For each phase (Analyze, Database, Interface, Realize, Test), it tracks:
 
 - **Phase**: The pipeline phase with success (✅) or failure (❌) indicator
 - **Generated**: Count of artifacts produced (e.g., actors, documents, namespaces, models, operations, schemas, functions)

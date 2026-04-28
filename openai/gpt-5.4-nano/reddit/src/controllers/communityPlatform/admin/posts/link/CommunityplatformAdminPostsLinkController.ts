@@ -31,9 +31,9 @@ export class CommunityplatformAdminPostsLinkController {
    *
    * @param connection
    * @param postId Target post identifier whose link representation is requested.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Implementation steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Implementation steps:
    *
    * 1) Parse postId from path.
    * 2) Query community_platform_posts by id = postId, applying the normal browsing visibility rule: require deleted_at IS NULL so removed posts are not returned.
@@ -104,9 +104,9 @@ export class CommunityplatformAdminPostsLinkController {
    * @param connection
    * @param postId Target post identifier (community_platform_posts.id).
    * @param body Link metadata to attach to the target post. The canonical href is required so that link post list previews can derive the domain name and single-post view can present the full link target information.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Implementation steps (service + persistence):
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Implementation steps (service + persistence):
    *
    * 1) Parse input and validate request body fields (href required; optional display_title/display_description allowed).
    * 2) Transaction start.
@@ -177,9 +177,10 @@ export class CommunityplatformAdminPostsLinkController {
    * @param connection
    * @param postId Target post identifier to update its link content.
    * @param body Link content update payload for the target post.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Implement service logic for updating/creating link metadata for a single post.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Implement service logic for updating/creating
+     *   link metadata for a single post.
    *
    * 1) Authorization + existence
    * - Load `community_platform_posts` by `id = postId`.
@@ -264,9 +265,13 @@ export class CommunityplatformAdminPostsLinkController {
    * @param connection
    * @param postId Target post identifier whose link content should be updated.
    * @param body Link-content update payload. Includes the canonical external URL and fields required to refresh the post’s link preview metadata.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Validate update intent: load community_platform_posts by postId ensuring the row is eligible for editing and that the caller has permission to modify the post. Load (or upsert as designed) the related community_platform_post_links row for the post.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Validate update intent: load
+     *   community_platform_posts by postId ensuring the row is eligible for
+     *   editing and that the caller has permission to modify the post. Load (or
+     *   upsert as designed) the related community_platform_post_links row for
+     *   the post.
    *
    * Business validation:
    * - Ensure the target post is treated as link-type for rendering purposes (community_platform_posts.post_type). If the system’s policy requires it, update community_platform_posts.post_type to the link value or reject if mismatch.
@@ -318,18 +323,29 @@ export class CommunityplatformAdminPostsLinkController {
    *
    * @param connection
    * @param postId Target post identifier whose link metadata record will be removed.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Realize service-layer steps:
-   * 1) Parse `postId` from path.
-   * 2) Authorization: resolve requester identity and load `community_platform_posts` by `id = postId`; verify requester is the allowed actor for modifying the post (post author per requirements; otherwise reject). Use `community_platform_posts.author_id` as the author attribution.
-   * 3) Validate target: ensure the post is currently available for modification (i.e., post’s `deleted_at` is null). If `deleted_at` is set, reject.
-   * 4) Validate post type: ensure `community_platform_posts.post_type` indicates a link post. If not, reject.
-   * 5) Delete link metadata: remove the single `community_platform_post_links` row whose `community_platform_post_id = postId` (the table has `@@unique([community_platform_post_id])`, so at most one row exists). Because the DB relationship uses cascade on the post row, this operation should explicitly delete the link row.
-   * 6) Return 204-equivalent with empty body (responseBody null) or a standard success without payload.
-   * Edge cases:
-   * - If link metadata row does not exist, reject as invalid state (post claims link type but no link metadata) or treat as no-op per the implementation policy; prefer rejecting to keep state consistent.
-   * - Ensure the deletion happens in a transaction that includes the authorization read and the metadata deletion.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Realize service-layer steps: 1) Parse `postId`
+     *   from path. 2) Authorization: resolve requester identity and load
+     *   `community_platform_posts` by `id = postId`; verify requester is the
+     *   allowed actor for modifying the post (post author per requirements;
+     *   otherwise reject). Use `community_platform_posts.author_id` as the
+     *   author attribution. 3) Validate target: ensure the post is currently
+     *   available for modification (i.e., post’s `deleted_at` is null). If
+     *   `deleted_at` is set, reject. 4) Validate post type: ensure
+     *   `community_platform_posts.post_type` indicates a link post. If not,
+     *   reject. 5) Delete link metadata: remove the single
+     *   `community_platform_post_links` row whose `community_platform_post_id =
+     *   postId` (the table has `@@unique([community_platform_post_id])`, so at
+     *   most one row exists). Because the DB relationship uses cascade on the
+     *   post row, this operation should explicitly delete the link row. 6)
+     *   Return 204-equivalent with empty body (responseBody null) or a standard
+     *   success without payload. Edge cases: - If link metadata row does not
+     *   exist, reject as invalid state (post claims link type but no link
+     *   metadata) or treat as no-op per the implementation policy; prefer
+     *   rejecting to keep state consistent. - Ensure the deletion happens in a
+     *   transaction that includes the authorization read and the metadata
+     *   deletion.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Delete()

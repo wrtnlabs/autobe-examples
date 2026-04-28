@@ -18,8 +18,10 @@ export type IRedditCloneCommentSnapshot = {
    *
    * This UUID identifies the specific snapshot record in the system. Each snapshot has a unique ID that distinguishes it from other snapshots of the same comment or different comments.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from reddit_clone_comment_snapshots.id. Primary key uniquely identifying each snapshot record. Generated as UUID at snapshot creation time.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_comment_snapshots.id. Primary key uniquely identifying
+     *   each snapshot record. Generated as UUID at snapshot creation time.
    */
   id: string & tags.Format<"uuid">;
 
@@ -28,8 +30,12 @@ export type IRedditCloneCommentSnapshot = {
    *
    * This UUID links the snapshot to its original comment in the reddit_clone_comments table. Multiple snapshots can exist for a single comment, each capturing a different point in time.
    *
-   * @x-autobe-database-schema-property reddit_clone_comment_id
-   * @x-autobe-specification Direct mapping from reddit_clone_comment_snapshots.reddit_clone_comment_id. Foreign key referencing the source comment in reddit_clone_comments table. This scalar UUID reference allows lookup of the original comment while the snapshot preserves the denormalized state.
+     * @x-autobe-database-schema-property reddit_clone_comment_id
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_comment_snapshots.reddit_clone_comment_id. Foreign key
+     *   referencing the source comment in reddit_clone_comments table. This
+     *   scalar UUID reference allows lookup of the original comment while the
+     *   snapshot preserves the denormalized state.
    */
   reddit_clone_comment_id: string & tags.Format<"uuid">;
 
@@ -38,7 +44,13 @@ export type IRedditCloneCommentSnapshot = {
    *
    * This contains the author's display name, bio, avatar, karma score, and profile creation timestamp. The author information is denormalized in the snapshot to preserve it even if the user later modifies or deletes their profile.
    *
-   * @x-autobe-specification Computed property via JOIN operation. Join reddit_clone_comment_snapshots.user_profile_id with reddit_clone_user_profiles.id to fetch the author's profile summary. Returns IRedditCloneUserProfile.ISummary containing display_name, bio, avatar, karma, and created_at. The user_profile_id column value is denormalized from the source comment to preserve author information even if the user profile is later deleted or modified.
+     * @x-autobe-specification Computed property via JOIN operation. Join
+     *   reddit_clone_comment_snapshots.user_profile_id with
+     *   reddit_clone_user_profiles.id to fetch the author's profile summary.
+     *   Returns IRedditCloneUserProfile.ISummary containing display_name, bio,
+     *   avatar, karma, and created_at. The user_profile_id column value is
+     *   denormalized from the source comment to preserve author information
+     *   even if the user profile is later deleted or modified.
    */
   userProfile: IRedditCloneUserProfile.ISummary;
 
@@ -47,7 +59,14 @@ export type IRedditCloneCommentSnapshot = {
    *
    * This contains the post's title, type, author, community, vote score, comment count, creation timestamp, and content preview. The post information is denormalized to preserve the context even if the post is later modified or deleted.
    *
-   * @x-autobe-specification Computed property via JOIN operation. Join reddit_clone_comment_snapshots.reddit_clone_post_id with reddit_clone_posts.id to fetch the post summary. Returns IRedditClonePost.ISummary containing id, title, post_type, author, community, vote_score, comment_count, created_at, and preview. The reddit_clone_post_id column value is denormalized from the source comment to preserve post context even if the post is later deleted or modified.
+     * @x-autobe-specification Computed property via JOIN operation. Join
+     *   reddit_clone_comment_snapshots.reddit_clone_post_id with
+     *   reddit_clone_posts.id to fetch the post summary. Returns
+     *   IRedditClonePost.ISummary containing id, title, post_type, author,
+     *   community, vote_score, comment_count, created_at, and preview. The
+     *   reddit_clone_post_id column value is denormalized from the source
+     *   comment to preserve post context even if the post is later deleted or
+     *   modified.
    */
   post: IRedditClonePost.ISummary;
 
@@ -56,7 +75,13 @@ export type IRedditCloneCommentSnapshot = {
    *
    * This field enables threaded comment display by providing the immediate parent comment's summary information. For top-level comments (direct replies to the post), this field is null. For nested replies, it contains the parent comment's id, content, author, and timestamps as they existed at snapshot time.
    *
-   * @x-autobe-specification Computed property via LEFT JOIN operation. Join reddit_clone_comment_snapshots.parent_comment_id with reddit_clone_comments.id to fetch the parent comment summary. Returns nullable IRedditCloneComment.ISummary. Null for top-level comments (when parent_comment_id is null), or the parent comment's summary for replies. The parent_comment_id column value is denormalized from the source comment to preserve reply hierarchy at snapshot time.
+     * @x-autobe-specification Computed property via LEFT JOIN operation. Join
+     *   reddit_clone_comment_snapshots.parent_comment_id with
+     *   reddit_clone_comments.id to fetch the parent comment summary. Returns
+     *   nullable IRedditCloneComment.ISummary. Null for top-level comments
+     *   (when parent_comment_id is null), or the parent comment's summary for
+     *   replies. The parent_comment_id column value is denormalized from the
+     *   source comment to preserve reply hierarchy at snapshot time.
    */
   parentComment: IRedditCloneComment.ISummary | null;
 
@@ -65,8 +90,12 @@ export type IRedditCloneCommentSnapshot = {
    *
    * This is the exact content as it existed when the snapshot was taken, preserved for historical accuracy. The content is immutable in the snapshot, even if the original comment is later edited or deleted.
    *
-   * @x-autobe-database-schema-property content
-   * @x-autobe-specification Direct mapping from reddit_clone_comment_snapshots.content. The exact text content of the comment as it existed when the snapshot was taken. This is a denormalized copy from the source comment's content field, preserved for historical accuracy.
+     * @x-autobe-database-schema-property content
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_comment_snapshots.content. The exact text content of the
+     *   comment as it existed when the snapshot was taken. This is a
+     *   denormalized copy from the source comment's content field, preserved
+     *   for historical accuracy.
    */
   content: string;
 
@@ -75,8 +104,12 @@ export type IRedditCloneCommentSnapshot = {
    *
    * This timestamp reflects when the comment was originally posted, not when the snapshot was taken. It is denormalized from the source comment to preserve the original creation time even if the comment metadata is later modified.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from reddit_clone_comment_snapshots.created_at. Denormalized from the source comment's created_at field. Preserves the original comment creation timestamp, which is different from the snapshot creation time (snapshot_created_at).
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_comment_snapshots.created_at. Denormalized from the source
+     *   comment's created_at field. Preserves the original comment creation
+     *   timestamp, which is different from the snapshot creation time
+     *   (snapshot_created_at).
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -85,8 +118,11 @@ export type IRedditCloneCommentSnapshot = {
    *
    * This reflects the most recent edit to the comment content as it existed when the snapshot was taken. For snapshots created at comment creation time, this equals created_at. For snapshots created after edits, this shows the edit timestamp.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from reddit_clone_comment_snapshots.updated_at. Denormalized from the source comment's updated_at field. Captures the last modification time of the comment as it existed at snapshot time.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_comment_snapshots.updated_at. Denormalized from the source
+     *   comment's updated_at field. Captures the last modification time of the
+     *   comment as it existed at snapshot time.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -95,8 +131,12 @@ export type IRedditCloneCommentSnapshot = {
    *
    * This timestamp indicates when the snapshot was taken, distinguishing it from the comment's own creation and modification times. Multiple snapshots of the same comment will have different snapshot_created_at values, enabling chronological ordering of edit history.
    *
-   * @x-autobe-database-schema-property snapshot_created_at
-   * @x-autobe-specification Direct mapping from reddit_clone_comment_snapshots.snapshot_created_at. This field is set automatically when the snapshot is created, capturing the exact moment the snapshot was taken. Different from the comment's own created_at and updated_at timestamps.
+     * @x-autobe-database-schema-property snapshot_created_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_comment_snapshots.snapshot_created_at. This field is set
+     *   automatically when the snapshot is created, capturing the exact moment
+     *   the snapshot was taken. Different from the comment's own created_at and
+     *   updated_at timestamps.
    */
   snapshot_created_at: string & tags.Format<"date-time">;
 };
@@ -114,7 +154,10 @@ export namespace IRedditCloneCommentSnapshot {
      *
      * Performs a case-insensitive partial match search on the comment text stored in snapshots. Use this to find snapshots containing specific keywords or phrases from the comment content.
      *
-     * @x-autobe-specification LIKE query on content field of reddit_clone_comment_snapshots. Searches for partial matches in comment text. Case-insensitive search. Applied as WHERE content LIKE '%search_term%'.
+         * @x-autobe-specification LIKE query on content field of
+         *   reddit_clone_comment_snapshots. Searches for partial matches in
+         *   comment text. Case-insensitive search. Applied as WHERE content
+         *   LIKE '%search_term%'.
      */
     search?: string | undefined;
 
@@ -123,7 +166,10 @@ export namespace IRedditCloneCommentSnapshot {
      *
      * Only returns snapshots that were created on or after this timestamp. Use ISO 8601 datetime format (e.g., 2024-01-15T10:30:00Z). This helps narrow down the edit history to a specific time range.
      *
-     * @x-autobe-specification Lower bound filter on snapshot_created_at field. Applied as WHERE snapshot_created_at >= from_date. ISO 8601 datetime format. Filters snapshots created on or after this timestamp.
+         * @x-autobe-specification Lower bound filter on snapshot_created_at
+         *   field. Applied as WHERE snapshot_created_at >= from_date. ISO 8601
+         *   datetime format. Filters snapshots created on or after this
+         *   timestamp.
      */
     from_date?: (string & tags.Format<"date-time">) | undefined;
 
@@ -132,7 +178,10 @@ export namespace IRedditCloneCommentSnapshot {
      *
      * Only returns snapshots that were created on or before this timestamp. Use ISO 8601 datetime format (e.g., 2024-01-15T10:30:00Z). Combined with from_date, this defines a time range for the edit history query.
      *
-     * @x-autobe-specification Upper bound filter on snapshot_created_at field. Applied as WHERE snapshot_created_at <= to_date. ISO 8601 datetime format. Filters snapshots created on or before this timestamp.
+         * @x-autobe-specification Upper bound filter on snapshot_created_at
+         *   field. Applied as WHERE snapshot_created_at <= to_date. ISO 8601
+         *   datetime format. Filters snapshots created on or before this
+         *   timestamp.
      */
     to_date?: (string & tags.Format<"date-time">) | undefined;
 
@@ -141,7 +190,9 @@ export namespace IRedditCloneCommentSnapshot {
      *
      * Specifies which page of results to retrieve. Page numbering starts from 1 (not 0). Defaults to page 1 if not provided. Use this along with the limit parameter to navigate through large result sets.
      *
-     * @x-autobe-specification Page number for pagination (1-indexed). Defaults to 1 if not provided. Used with limit to calculate offset: (page - 1) * limit. Must be >= 1.
+         * @x-autobe-specification Page number for pagination (1-indexed).
+         *   Defaults to 1 if not provided. Used with limit to calculate offset:
+         *   (page - 1) * limit. Must be >= 1.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -150,7 +201,9 @@ export namespace IRedditCloneCommentSnapshot {
      *
      * Controls how many snapshot records are included in each paginated response. Valid range is 1 to 100. Defaults to 20 if not provided. Larger limits reduce the number of API calls needed but increase response size.
      *
-     * @x-autobe-specification Maximum number of snapshots per page. Range: 1-100. Defaults to 20 if not provided. Used with page to calculate offset. Controls the size of each paginated response.
+         * @x-autobe-specification Maximum number of snapshots per page. Range:
+         *   1-100. Defaults to 20 if not provided. Used with page to calculate
+         *   offset. Controls the size of each paginated response.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -161,7 +214,10 @@ export namespace IRedditCloneCommentSnapshot {
      *
      * Determines how snapshots are ordered in the response. Options include sorting by snapshot creation time (when the edit occurred) or comment creation time (when the original comment was posted). Default is most recent snapshots first (snapshot_created_at_desc).
      *
-     * @x-autobe-specification Sort order for snapshots. Allowed values: snapshot_created_at_asc, snapshot_created_at_desc, created_at_asc, created_at_desc. Default: snapshot_created_at_desc (most recent snapshots first). Applied as ORDER BY clause.
+         * @x-autobe-specification Sort order for snapshots. Allowed values:
+         *   snapshot_created_at_asc, snapshot_created_at_desc, created_at_asc,
+         *   created_at_desc. Default: snapshot_created_at_desc (most recent
+         *   snapshots first). Applied as ORDER BY clause.
      */
     sort?:
       | "snapshot_created_at_asc"

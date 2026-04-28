@@ -165,19 +165,19 @@ export namespace IHrmPlatformEmployee {
    */
   export type ISummary = {
     /**
-     * @x-autobe-database-schema-property id
+         * @x-autobe-database-schema-property id
      */
     id: string & tags.Format<"uuid">;
     /**
-     * @x-autobe-database-schema-property employee_code
+         * @x-autobe-database-schema-property employee_code
      */
     employee_code: string;
     /**
-     * @x-autobe-database-schema-property display_name
+         * @x-autobe-database-schema-property display_name
      */
     display_name: string;
     /**
-     * @x-autobe-database-schema-property email
+         * @x-autobe-database-schema-property email
      */
     email: string & tags.Format<"email">;
 
@@ -186,8 +186,10 @@ export namespace IHrmPlatformEmployee {
      *
      * Used for emergency contacts and organizational communication. This field is optional and may be null if not provided.
      *
-     * @x-autobe-database-schema-property phone_number
-     * @x-autobe-specification Direct mapping from hrm_platform_employees.phone_number. Nullable column: use oneOf with string and null for JSON Schema compliance.
+         * @x-autobe-database-schema-property phone_number
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_employees.phone_number. Nullable column: use oneOf
+         *   with string and null for JSON Schema compliance.
      */
     phone_number?: string | null | undefined;
 
@@ -196,60 +198,62 @@ export namespace IHrmPlatformEmployee {
      *
      * Describes the employee's role or position (e.g., 'Software Engineer', 'Product Manager'). This field is optional and may be null if not assigned.
      *
-     * @x-autobe-database-schema-property job_title
-     * @x-autobe-specification Direct mapping from hrm_platform_employees.job_title. Nullable column: use oneOf with string and null for JSON Schema compliance.
+         * @x-autobe-database-schema-property job_title
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_employees.job_title. Nullable column: use oneOf with
+         *   string and null for JSON Schema compliance.
      */
     job_title?: string | null | undefined;
     /**
-     * @x-autobe-database-schema-property job_level
+         * @x-autobe-database-schema-property job_level
      */
     job_level: string;
     /**
-     * @x-autobe-database-schema-property employment_type
+         * @x-autobe-database-schema-property employment_type
      */
     employment_type: string;
     /**
-     * @x-autobe-database-schema-property status
+         * @x-autobe-database-schema-property status
      */
     status: string;
     /**
-     * @x-autobe-database-schema-property start_date
+         * @x-autobe-database-schema-property start_date
      */
     start_date: string & tags.Format<"date-time">;
     /**
-     * @x-autobe-database-schema-property end_date
+         * @x-autobe-database-schema-property end_date
      */
     end_date?: (string & tags.Format<"date-time">) | null | undefined;
     /**
-     * @x-autobe-database-schema-property is_pending
+         * @x-autobe-database-schema-property is_pending
      */
     is_pending: boolean;
     /**
-     * @x-autobe-database-schema-property created_at
+         * @x-autobe-database-schema-property created_at
      */
     created_at: string & tags.Format<"date-time">;
     /**
-     * @x-autobe-database-schema-property updated_at
+         * @x-autobe-database-schema-property updated_at
      */
     updated_at: string & tags.Format<"date-time">;
     /**
-     * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-database-schema-property deleted_at
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
     /**
-     * @x-autobe-database-schema-property member
+         * @x-autobe-database-schema-property member
      */
     member: IHrmPlatformMember.ISummary;
     /**
-     * @x-autobe-database-schema-property role
+         * @x-autobe-database-schema-property role
      */
     role: IHrmPlatformRole.ISummary;
     /**
-     * @x-autobe-database-schema-property department
+         * @x-autobe-database-schema-property department
      */
     department: IHrmPlatformDepartment.ISummary | null;
     /**
-     * @x-autobe-database-schema-property organization
+         * @x-autobe-database-schema-property organization
      */
     organization: IHrmPlatformOrganization.ISummary;
   };

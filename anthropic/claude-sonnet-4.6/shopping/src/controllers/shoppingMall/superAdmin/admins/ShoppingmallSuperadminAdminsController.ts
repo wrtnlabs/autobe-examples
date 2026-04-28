@@ -31,9 +31,10 @@ export class ShoppingmallSuperadminAdminsController {
    *
    * @param connection
    * @param body Search criteria, filtering options, and pagination parameters for listing administrators
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor superAdmin
-   * @x-autobe-specification Query the shopping_mall_admins table with pagination and filtering.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor superAdmin
+     * @x-autobe-specification Query the shopping_mall_admins table with
+     *   pagination and filtering.
    *
    * 1. Authorization: Verify the requesting actor is an authenticated admin or super admin (check active session via shopping_mall_admin_sessions or shopping_mall_super_admin_sessions). Deny access for customers, sellers, and guests.
    *
@@ -88,9 +89,11 @@ export class ShoppingmallSuperadminAdminsController {
    *
    * @param connection
    * @param adminId The UUID of the target administrator record to retrieve.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor superAdmin
-   * @x-autobe-specification 1. Authenticate the caller and verify they hold at least a regular administrator or super administrator role. Reject with 403 if the caller is a customer, seller, or unauthenticated guest.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor superAdmin
+     * @x-autobe-specification 1. Authenticate the caller and verify they hold
+     *   at least a regular administrator or super administrator role. Reject
+     *   with 403 if the caller is a customer, seller, or unauthenticated guest.
    *
    * 2. Query shopping_mall_admins WHERE id = :adminId. If no record is found, return 404.
    *
@@ -141,22 +144,31 @@ export class ShoppingmallSuperadminAdminsController {
    * @param connection
    * @param adminId The unique UUID identifier of the target regular administrator account to update. Corresponds to shopping_mall_admins.id.
    * @param body Fields to update on the administrator account (email and/or password).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor superAdmin
-   * @x-autobe-specification 1. Authenticate the caller. Verify that the requester is an active administrator (either regular or super) by checking their session token against shopping_mall_admin_sessions or shopping_mall_super_admin_sessions.
-   * 2. Parse the path parameter `adminId` as a UUID and query the shopping_mall_admins table for a record with matching `id`. If no record is found or the record has a non-null `deleted_at`, return a 404 Not Found error.
-   * 3. Authorize the caller:
-   *    - If the caller is a regular admin, verify that their own admin `id` matches the target `adminId`. If not, return a 403 Forbidden error.
-   *    - If the caller is a super admin, they may update any admin's profile without ownership restriction.
-   * 4. Extract updatable fields from the request body (IShoppingMallAdmin.IUpdate): `email` and/or `password`.
-   * 5. If a new `email` is provided:
-   *    - Check that it differs from the current email (skip if unchanged).
-   *    - Query shopping_mall_admins for any existing record with the same email (excluding the current admin). If a conflict is found, return a 409 Conflict error.
-   * 6. If a new `password` is provided:
-   *    - Hash the plaintext password using bcrypt with an appropriate cost factor.
-   *    - Set `password_hash` to the resulting hash.
-   * 7. Apply all validated changes to the shopping_mall_admins record in a single atomic database update, refreshing `updated_at` to the current UTC timestamp.
-   * 8. Reload the updated admin record and return it as IShoppingMallAdmin in the response body.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor superAdmin
+     * @x-autobe-specification 1. Authenticate the caller. Verify that the
+     *   requester is an active administrator (either regular or super) by
+     *   checking their session token against shopping_mall_admin_sessions or
+     *   shopping_mall_super_admin_sessions. 2. Parse the path parameter
+     *   `adminId` as a UUID and query the shopping_mall_admins table for a
+     *   record with matching `id`. If no record is found or the record has a
+     *   non-null `deleted_at`, return a 404 Not Found error. 3. Authorize the
+     *   caller: - If the caller is a regular admin, verify that their own admin
+     *   `id` matches the target `adminId`. If not, return a 403 Forbidden
+     *   error. - If the caller is a super admin, they may update any admin's
+     *   profile without ownership restriction. 4. Extract updatable fields from
+     *   the request body (IShoppingMallAdmin.IUpdate): `email` and/or
+     *   `password`. 5. If a new `email` is provided: - Check that it differs
+     *   from the current email (skip if unchanged). - Query
+     *   shopping_mall_admins for any existing record with the same email
+     *   (excluding the current admin). If a conflict is found, return a 409
+     *   Conflict error. 6. If a new `password` is provided: - Hash the
+     *   plaintext password using bcrypt with an appropriate cost factor. - Set
+     *   `password_hash` to the resulting hash. 7. Apply all validated changes
+     *   to the shopping_mall_admins record in a single atomic database update,
+     *   refreshing `updated_at` to the current UTC timestamp. 8. Reload the
+     *   updated admin record and return it as IShoppingMallAdmin in the
+     *   response body.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Put(":adminId")
@@ -195,13 +207,21 @@ export class ShoppingmallSuperadminAdminsController {
    *
    * @param connection
    * @param adminId The UUID of the regular administrator account whose customer-origin linkage is being retrieved. Corresponds to shopping_mall_admins.id.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor superAdmin
-   * @x-autobe-specification 1. Validate that the caller is an authenticated administrator (regular or super) by checking the session token.
-   * 2. Look up the admin record in `shopping_mall_admins` by `adminId` (UUID). If no admin with that ID exists, or if the admin's `deleted_at` is non-null, return 404 Not Found.
-   * 3. Query `shopping_mall_admin_of_customers` WHERE `admin_id = adminId`. If no record is found (because the admin was promoted from a seller, not a customer), return 404 Not Found.
-   * 4. Return the found `shopping_mall_admin_of_customers` record, joined with the originating `shopping_mall_customers` record (id, email, nickname) for consumer convenience. Include: id, admin_id, customer_id, created_at, and optionally the referenced customer's summary fields.
-   * 5. No pagination, filtering, or sorting needed — this is always a single record lookup.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor superAdmin
+     * @x-autobe-specification 1. Validate that the caller is an authenticated
+     *   administrator (regular or super) by checking the session token. 2. Look
+     *   up the admin record in `shopping_mall_admins` by `adminId` (UUID). If
+     *   no admin with that ID exists, or if the admin's `deleted_at` is
+     *   non-null, return 404 Not Found. 3. Query
+     *   `shopping_mall_admin_of_customers` WHERE `admin_id = adminId`. If no
+     *   record is found (because the admin was promoted from a seller, not a
+     *   customer), return 404 Not Found. 4. Return the found
+     *   `shopping_mall_admin_of_customers` record, joined with the originating
+     *   `shopping_mall_customers` record (id, email, nickname) for consumer
+     *   convenience. Include: id, admin_id, customer_id, created_at, and
+     *   optionally the referenced customer's summary fields. 5. No pagination,
+     *   filtering, or sorting needed — this is always a single record lookup.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Get(":adminId/ofCustomer")
@@ -239,9 +259,13 @@ export class ShoppingmallSuperadminAdminsController {
    *
    * @param connection
    * @param adminId The UUID primary key of the target regular administrator account (from shopping_mall_admins.id) to be promoted to super administrator.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor superAdmin
-   * @x-autobe-specification 1. Authorization check: Verify that the authenticated actor is a super administrator (shopping_mall_super_admins record exists and account is active, i.e., deleted_at IS NULL). If the caller is a regular admin, return 403 Forbidden.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor superAdmin
+     * @x-autobe-specification 1. Authorization check: Verify that the
+     *   authenticated actor is a super administrator
+     *   (shopping_mall_super_admins record exists and account is active, i.e.,
+     *   deleted_at IS NULL). If the caller is a regular admin, return 403
+     *   Forbidden.
    *
    * 2. Resolve target admin: Look up the shopping_mall_admins record by `adminId` (UUID). If not found or deleted_at IS NOT NULL, return 404 Not Found.
    *

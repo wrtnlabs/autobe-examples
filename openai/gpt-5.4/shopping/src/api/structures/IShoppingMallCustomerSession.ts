@@ -10,56 +10,72 @@ export type IShoppingMallCustomerSession = {
   /**
    * Unique identifier of this customer session record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_customer_sessions.id. Return the UUID primary key of the session row loaded for the authenticated customer.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_customer_sessions.id. Return the UUID primary key of the
+     *   session row loaded for the authenticated customer.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Customer account that owns this session.
    *
-   * @x-autobe-database-schema-property customer
-   * @x-autobe-specification Resolve the belongs-to relation from shopping_mall_customer_sessions.customer by joining shopping_mall_customer_sessions.shopping_mall_customer_id to shopping_mall_customers.id, then serialize the joined customer as IShoppingMallCustomer.ISummary.
+     * @x-autobe-database-schema-property customer
+     * @x-autobe-specification Resolve the belongs-to relation from
+     *   shopping_mall_customer_sessions.customer by joining
+     *   shopping_mall_customer_sessions.shopping_mall_customer_id to
+     *   shopping_mall_customers.id, then serialize the joined customer as
+     *   IShoppingMallCustomer.ISummary.
    */
   customer: IShoppingMallCustomer.ISummary;
 
   /**
    * IP address recorded when this session was created.
    *
-   * @x-autobe-database-schema-property ip
-   * @x-autobe-specification Direct mapping from shopping_mall_customer_sessions.ip. Return the IP address recorded at session creation without transformation.
+     * @x-autobe-database-schema-property ip
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_customer_sessions.ip. Return the IP address recorded at
+     *   session creation without transformation.
    */
   ip: string;
 
   /**
    * Application URL from which this session was started.
    *
-   * @x-autobe-database-schema-property href
-   * @x-autobe-specification Direct mapping from shopping_mall_customer_sessions.href. Return the application href captured when the session was initiated.
+     * @x-autobe-database-schema-property href
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_customer_sessions.href. Return the application href
+     *   captured when the session was initiated.
    */
   href: string;
 
   /**
    * Referrer associated with the request that created this session.
    *
-   * @x-autobe-database-schema-property referrer
-   * @x-autobe-specification Direct mapping from shopping_mall_customer_sessions.referrer. Return the HTTP referrer value stored for the session creation request.
+     * @x-autobe-database-schema-property referrer
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_customer_sessions.referrer. Return the HTTP referrer
+     *   value stored for the session creation request.
    */
   referrer: string;
 
   /**
    * Timestamp when this session was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from shopping_mall_customer_sessions.created_at. Serialize the persisted timestamp as an OpenAPI string with date-time format.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_customer_sessions.created_at. Serialize the persisted
+     *   timestamp as an OpenAPI string with date-time format.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when this session expires and is no longer valid for authentication.
    *
-   * @x-autobe-database-schema-property expired_at
-   * @x-autobe-specification Direct mapping from shopping_mall_customer_sessions.expired_at. Serialize the persisted timestamp as an OpenAPI string with date-time format.
+     * @x-autobe-database-schema-property expired_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_customer_sessions.expired_at. Serialize the persisted
+     *   timestamp as an OpenAPI string with date-time format.
    */
   expired_at: string & tags.Format<"date-time">;
 };

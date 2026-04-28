@@ -21,9 +21,11 @@ export class CommunityplatformMemberSubscriptionsController {
    *
    * @param connection
    * @param body Search, sorting, and pagination criteria for the caller’s subscription list.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query the community_platform_community_subscriptions table for the authenticated member only.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query the
+     *   community_platform_community_subscriptions table for the authenticated
+     *   member only.
    *
    * Filter rows by the current member identity from the auth context; do not accept a user identifier in the request body or path because the endpoint is scoped to the caller. Join to community_platform_communities to load the community identity needed for list display, and optionally join to any related ownership metadata if the summary schema requires it. Return only subscription rows that represent the member’s current membership relationships.
    *

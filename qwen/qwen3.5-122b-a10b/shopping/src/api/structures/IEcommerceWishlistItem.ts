@@ -26,8 +26,9 @@ export type IEcommerceWishlistItem = {
    *
    * This UUID is automatically generated when the wishlist item is created and serves as the primary key for the record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_wishlist_items.id. UUID primary key generated on insert.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from ecommerce_wishlist_items.id.
+     *   UUID primary key generated on insert.
    */
   id: string & tags.Format<"uuid">;
 
@@ -40,8 +41,10 @@ export type IEcommerceWishlistItem = {
    *
    * Only the wishlist owner can access items in their wishlist. Administrators cannot access individual customer wishlists.
    *
-   * @x-autobe-database-schema-property ecommerceWishlist
-   * @x-autobe-specification BELONGS-TO relation via JOIN from ecommerce_wishlist_items.ecommerce_wishlist_id to ecommerce_wishlists.id. Returns IEcommerceWishlist.ISummary.
+     * @x-autobe-database-schema-property ecommerceWishlist
+     * @x-autobe-specification BELONGS-TO relation via JOIN from
+     *   ecommerce_wishlist_items.ecommerce_wishlist_id to
+     *   ecommerce_wishlists.id. Returns IEcommerceWishlist.ISummary.
    */
   ecommerceWishlist: IEcommerceWishlist.ISummary;
 
@@ -54,8 +57,10 @@ export type IEcommerceWishlistItem = {
    *
    * If the product is deleted by the seller, this wishlist item is automatically removed from all wishlists. This ensures customers only see currently available products.
    *
-   * @x-autobe-database-schema-property ecommerceProduct
-   * @x-autobe-specification BELONGS-TO relation via JOIN from ecommerce_wishlist_items.ecommerce_product_id to ecommerce_products.id. Returns IEcommerceProduct.ISummary.
+     * @x-autobe-database-schema-property ecommerceProduct
+     * @x-autobe-specification BELONGS-TO relation via JOIN from
+     *   ecommerce_wishlist_items.ecommerce_product_id to ecommerce_products.id.
+     *   Returns IEcommerceProduct.ISummary.
    */
   ecommerceProduct: IEcommerceProduct.ISummary;
 
@@ -64,8 +69,10 @@ export type IEcommerceWishlistItem = {
    *
    * This field is automatically set when the wishlist item is created and cannot be modified.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_wishlist_items.created_at. Set to current timestamp on insert.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_wishlist_items.created_at. Set to current timestamp on
+     *   insert.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -74,8 +81,10 @@ export type IEcommerceWishlistItem = {
    *
    * This field is automatically updated whenever the record changes, such as when the item is soft-deleted.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from ecommerce_wishlist_items.updated_at. Updated on any modification to the record.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_wishlist_items.updated_at. Updated on any modification to the
+     *   record.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -90,8 +99,10 @@ export type IEcommerceWishlistItem = {
    * - Automatically set when the referenced product is deleted by the seller
    * - Preserved in audit trail for historical reference
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from ecommerce_wishlist_items.deleted_at. Nullable - NULL means active, timestamp means soft-deleted.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_wishlist_items.deleted_at. Nullable - NULL means active,
+     *   timestamp means soft-deleted.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -119,8 +130,10 @@ export namespace IEcommerceWishlistItem {
      *
      * This is the primary key that uniquely identifies this specific wishlist entry. It is automatically generated when the item is created and cannot be modified.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_wishlist_items.id. Unique identifier for the wishlist item.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_wishlist_items.id. Unique identifier for the wishlist
+         *   item.
      */
     id: string & tags.Format<"uuid">;
 
@@ -133,8 +146,11 @@ export namespace IEcommerceWishlistItem {
      *
      * Only visible to the authenticated customer who owns the wishlist or administrators with platform-wide access.
      *
-     * @x-autobe-database-schema-property ecommerceProduct
-     * @x-autobe-specification JOIN from ecommerce_wishlist_items.ecommerce_product_id to ecommerce_products.id. Returns IEcommerceProduct.ISummary with current product state.
+         * @x-autobe-database-schema-property ecommerceProduct
+         * @x-autobe-specification JOIN from
+         *   ecommerce_wishlist_items.ecommerce_product_id to
+         *   ecommerce_products.id. Returns IEcommerceProduct.ISummary with
+         *   current product state.
      */
     product: IEcommerceProduct.ISummary;
 
@@ -143,8 +159,10 @@ export namespace IEcommerceWishlistItem {
      *
      * This field is automatically set by the system when the customer adds a product to their wishlist. It cannot be modified and serves as a record of when the item was saved for future purchase consideration.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from ecommerce_wishlist_items.created_at. Automatically set when item is added to wishlist.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_wishlist_items.created_at. Automatically set when item is
+         *   added to wishlist.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -153,8 +171,10 @@ export namespace IEcommerceWishlistItem {
      *
      * This field is automatically updated whenever the wishlist item record changes. In practice, this typically occurs when the item is soft-deleted (removed from the wishlist). The timestamp provides an audit trail for when the item was last changed.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from ecommerce_wishlist_items.updated_at. Automatically updated on any modification to the wishlist item record.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_wishlist_items.updated_at. Automatically updated on any
+         *   modification to the wishlist item record.
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -169,8 +189,11 @@ export namespace IEcommerceWishlistItem {
      * - Set value: Item has been removed but record is preserved
      * - Query filter: Active items require WHERE deleted_at IS NULL
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from ecommerce_wishlist_items.deleted_at. Nullable - null means active, set value means soft-deleted. Automatically set when item is removed from wishlist.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_wishlist_items.deleted_at. Nullable - null means active,
+         *   set value means soft-deleted. Automatically set when item is
+         *   removed from wishlist.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };
@@ -202,8 +225,11 @@ export namespace IEcommerceWishlistItem {
      * - Product must not be soft-deleted (deleted_at IS NULL)
      * - Product cannot already exist in the customer's wishlist (returns 409 Conflict if duplicate)
      *
-     * @x-autobe-database-schema-property ecommerce_product_id
-     * @x-autobe-specification Direct mapping from ecommerce_wishlist_items.ecommerce_product_id. The referenced product must exist and not be soft-deleted. Validated before insertion.
+         * @x-autobe-database-schema-property ecommerce_product_id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_wishlist_items.ecommerce_product_id. The referenced
+         *   product must exist and not be soft-deleted. Validated before
+         *   insertion.
      */
     ecommerce_product_id: string & tags.Format<"uuid">;
   };
@@ -235,7 +261,9 @@ export namespace IEcommerceWishlistItem {
      *
      * Performs case-insensitive partial match on product names using PostgreSQL GIN trigram index for efficient text search. Users can type partial product names to filter their wishlist items.
      *
-     * @x-autobe-specification Query parameter for case-insensitive partial match on product.name using GIN trigram index. Applied as WHERE product.name ILIKE '%search%' or equivalent GIN trigram query.
+         * @x-autobe-specification Query parameter for case-insensitive partial
+         *   match on product.name using GIN trigram index. Applied as WHERE
+         *   product.name ILIKE '%search%' or equivalent GIN trigram query.
      */
     search?: string | undefined;
 
@@ -244,7 +272,9 @@ export namespace IEcommerceWishlistItem {
      *
      * Specifies the earliest date and time when wishlist items should have been added. Items with created_at before this value are excluded from results. Use ISO 8601 format (e.g., '2024-01-15T00:00:00Z').
      *
-     * @x-autobe-specification Query parameter for filtering wishlist items by creation date. Applied as WHERE wishlist_items.created_at >= created_at_from. Uses ISO 8601 date-time format.
+         * @x-autobe-specification Query parameter for filtering wishlist items
+         *   by creation date. Applied as WHERE wishlist_items.created_at >=
+         *   created_at_from. Uses ISO 8601 date-time format.
      */
     created_at_from?: (string & tags.Format<"date-time">) | undefined;
 
@@ -253,7 +283,9 @@ export namespace IEcommerceWishlistItem {
      *
      * Specifies the latest date and time when wishlist items should have been added. Items with created_at after this value are excluded from results. Use ISO 8601 format (e.g., '2024-12-31T23:59:59Z').
      *
-     * @x-autobe-specification Query parameter for filtering wishlist items by creation date. Applied as WHERE wishlist_items.created_at <= created_at_to. Uses ISO 8601 date-time format.
+         * @x-autobe-specification Query parameter for filtering wishlist items
+         *   by creation date. Applied as WHERE wishlist_items.created_at <=
+         *   created_at_to. Uses ISO 8601 date-time format.
      */
     created_at_to?: (string & tags.Format<"date-time">) | undefined;
 
@@ -262,7 +294,10 @@ export namespace IEcommerceWishlistItem {
      *
      * Filters wishlist items based on the current stock status of the referenced product. Common values include 'in_stock', 'out_of_stock', and 'low_stock'. This allows customers to focus on items that are currently available for purchase.
      *
-     * @x-autobe-specification Query parameter for filtering products by availability status. Applied as WHERE product.stock_status = availability_status. Status values determined by inventory aggregation across product variants.
+         * @x-autobe-specification Query parameter for filtering products by
+         *   availability status. Applied as WHERE product.stock_status =
+         *   availability_status. Status values determined by inventory
+         *   aggregation across product variants.
      */
     availability_status?: string | undefined;
 
@@ -271,7 +306,10 @@ export namespace IEcommerceWishlistItem {
      *
      * Encoded value representing the position in the result set for cursor-based pagination. Contains the created_at timestamp and id from the last item of the previous page. Use the cursor value from a previous response to fetch the next page of results.
      *
-     * @x-autobe-specification Cursor-based pagination parameter. Encodes the created_at timestamp and id of the last item from the previous page. Decoded server-side to implement WHERE (created_at, id) < (cursor_created_at, cursor_id) for stable pagination.
+         * @x-autobe-specification Cursor-based pagination parameter. Encodes
+         *   the created_at timestamp and id of the last item from the previous
+         *   page. Decoded server-side to implement WHERE (created_at, id) <
+         *   (cursor_created_at, cursor_id) for stable pagination.
      */
     cursor?: string | undefined;
 
@@ -280,7 +318,9 @@ export namespace IEcommerceWishlistItem {
      *
      * Specifies how many wishlist items to return in a single response. Valid range is 1 to 100 items. Default is 20 if not specified. Use with cursor parameter for pagination through large wishlists.
      *
-     * @x-autobe-specification Query parameter for pagination page size. Applied as LIMIT limit in SQL query. Valid range: 1-100, default: 20. Prevents excessive data retrieval.
+         * @x-autobe-specification Query parameter for pagination page size.
+         *   Applied as LIMIT limit in SQL query. Valid range: 1-100, default:
+         *   20. Prevents excessive data retrieval.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -291,7 +331,10 @@ export namespace IEcommerceWishlistItem {
      *
      * Specifies which field to use for sorting the wishlist items. Common options include 'created_at' (when item was added), 'product_name' (alphabetical), or other product/wishlist item attributes. Default is 'created_at'.
      *
-     * @x-autobe-specification Query parameter for sorting results. Applied as ORDER BY sort_by sort_order. Valid values include 'created_at' (default), 'product_name', and other wishlist item or product fields.
+         * @x-autobe-specification Query parameter for sorting results. Applied
+         *   as ORDER BY sort_by sort_order. Valid values include 'created_at'
+         *   (default), 'product_name', and other wishlist item or product
+         *   fields.
      */
     sort_by?: string | undefined;
 
@@ -300,7 +343,10 @@ export namespace IEcommerceWishlistItem {
      *
      * Determines whether results are sorted in ascending ('asc') or descending ('desc') order. For 'created_at' sorting, default is 'desc' to show newest wishlist items first. Use 'asc' to see oldest items first.
      *
-     * @x-autobe-specification Query parameter for sort direction. Applied as ORDER BY sort_by sort_order. Valid values: 'asc' (ascending) or 'desc' (descending). Default is 'desc' for created_at (newest first).
+         * @x-autobe-specification Query parameter for sort direction. Applied
+         *   as ORDER BY sort_by sort_order. Valid values: 'asc' (ascending) or
+         *   'desc' (descending). Default is 'desc' for created_at (newest
+         *   first).
      */
     sort_order?: "asc" | "desc" | undefined;
 
@@ -309,7 +355,10 @@ export namespace IEcommerceWishlistItem {
      *
      * Specifies which page of results to return using 1-based indexing. Page 1 is the first page. If omitted, null, or undefined, defaults to page 1. Requesting a page beyond the available range returns an empty data array with valid pagination metadata.
      *
-     * @x-autobe-specification Page number parameter for pagination. 1-indexed, defaults to 1 if null or omitted. Used to calculate OFFSET for offset-based pagination fallback or for pagination metadata. Cursor-based pagination is preferred.
+         * @x-autobe-specification Page number parameter for pagination.
+         *   1-indexed, defaults to 1 if null or omitted. Used to calculate
+         *   OFFSET for offset-based pagination fallback or for pagination
+         *   metadata. Cursor-based pagination is preferred.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };

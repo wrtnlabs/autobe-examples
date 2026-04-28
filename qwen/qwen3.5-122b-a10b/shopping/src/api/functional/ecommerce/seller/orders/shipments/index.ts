@@ -28,25 +28,21 @@ import { IPageIEcommerceShipment } from "../../../../../structures/IPageIEcommer
  * @param props.body Shipment creation request including order item IDs to ship and carrier tracking information.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification 1. Validate authenticated user is a seller with approved status
- * 2. Verify the order exists and belongs to a customer
- * 3. Retrieve all order items from the order that belong to the authenticated seller
- * 4. Validate each order item ID in the request:
- *    - Item must exist in the order
- *    - Item must belong to the authenticated seller
- *    - Item status must be "paid" (not yet shipped)
- * 5. Validate at least one order item is provided
- * 6. Create shipment record with:
- *    - order_id from path parameter
- *    - seller_id from authenticated session
- *    - carrier_name, tracking_number from request body
- *    - tracking_url from request body (optional)
- *    - shipped_at set to current timestamp
- *    - status set to "shipped"
- * 7. Create shipment_items junction records linking the shipment to each order item
- * 8. Update all included order items status to "shipped"
- * 9. Update the parent order status based on order items statuses (may change to "shipped" or "partially_completed")
- * 10. Return the created shipment with included shipment items
+ * @x-autobe-specification 1. Validate authenticated user is a seller with
+ *   approved status 2. Verify the order exists and belongs to a customer 3.
+ *   Retrieve all order items from the order that belong to the authenticated
+ *   seller 4. Validate each order item ID in the request: - Item must exist in
+ *   the order - Item must belong to the authenticated seller - Item status must
+ *   be "paid" (not yet shipped) 5. Validate at least one order item is provided
+ *   6. Create shipment record with: - order_id from path parameter - seller_id
+ *   from authenticated session - carrier_name, tracking_number from request
+ *   body - tracking_url from request body (optional) - shipped_at set to
+ *   current timestamp - status set to "shipped" 7. Create shipment_items
+ *   junction records linking the shipment to each order item 8. Update all
+ *   included order items status to "shipped" 9. Update the parent order status
+ *   based on order items statuses (may change to "shipped" or
+ *   "partially_completed") 10. Return the created shipment with included
+ *   shipment items
  *
  * **Edge Cases**:
  * - If any order item is already shipped, return 409 Conflict
@@ -159,7 +155,9 @@ export namespace create {
  * @param props.body Search criteria and pagination parameters for filtering and paginating shipment results.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Query the ecommerce_shipments table filtered by order_id foreign key. Join with ecommerce_shipment_items to retrieve included order items for each shipment.
+ * @x-autobe-specification Query the ecommerce_shipments table filtered by
+ *   order_id foreign key. Join with ecommerce_shipment_items to retrieve
+ *   included order items for each shipment.
  *
  * **Implementation Steps**:
  *
@@ -289,7 +287,19 @@ export namespace index {
  * @param props.shipmentId Unique identifier of the shipment within the order (global scope).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Retrieve shipment record from ecommerce_shipments table by order_id and id (shipmentId). Validate the shipment belongs to the specified order by checking order_id matches. Enforce authorization: customer can only access shipments for their own orders (join with ecommerce_orders to verify ecommerce_customer_id matches authenticated customer), seller can access shipments where seller_id matches authenticated seller, admin has full access. Return 404 if shipment not found or user lacks permission. Include shipment details: id, order_id, seller_id, carrier_name, tracking_number, tracking_url, shipped_at, delivered_at, status, created_at, updated_at. Also fetch linked order items from ecommerce_shipment_items junction table to show which items are in this shipment. Do not include system-generated fields like id in request validation since they come from path parameters.
+ * @x-autobe-specification Retrieve shipment record from ecommerce_shipments
+ *   table by order_id and id (shipmentId). Validate the shipment belongs to the
+ *   specified order by checking order_id matches. Enforce authorization:
+ *   customer can only access shipments for their own orders (join with
+ *   ecommerce_orders to verify ecommerce_customer_id matches authenticated
+ *   customer), seller can access shipments where seller_id matches
+ *   authenticated seller, admin has full access. Return 404 if shipment not
+ *   found or user lacks permission. Include shipment details: id, order_id,
+ *   seller_id, carrier_name, tracking_number, tracking_url, shipped_at,
+ *   delivered_at, status, created_at, updated_at. Also fetch linked order items
+ *   from ecommerce_shipment_items junction table to show which items are in
+ *   this shipment. Do not include system-generated fields like id in request
+ *   validation since they come from path parameters.
  * @path /ecommerce/seller/orders/:orderId/shipments/:shipmentId
  * @accessor api.functional.ecommerce.seller.orders.shipments.at
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -402,17 +412,19 @@ export namespace at {
  * @param props.body Tracking information update fields including carrier name, tracking number, and optional tracking URL.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification 1. Validate orderId and shipmentId path parameters exist and are valid UUIDs
- * 2. Query ecommerce_shipments table by shipmentId
- * 3. Verify shipment exists and is not soft-deleted (deleted_at is null)
- * 4. Verify shipment belongs to the specified order (order_id matches orderId)
- * 5. Authenticate seller and verify seller_id matches authenticated user
- * 6. Check shipment status is not "delivered" (prevent updates after delivery)
- * 7. Validate request body fields: carrier_name (required, non-empty string), tracking_number (required, non-empty string), tracking_url (optional, valid URL format)
- * 8. Update carrier_name, tracking_number, tracking_url fields in database
- * 9. Set updated_at timestamp to current time
- * 10. Return updated shipment entity with all fields
- * 11. Edge cases: Handle concurrent updates with optimistic locking, validate tracking_number+carrier_name uniqueness constraint
+ * @x-autobe-specification 1. Validate orderId and shipmentId path parameters
+ *   exist and are valid UUIDs 2. Query ecommerce_shipments table by shipmentId
+ *   3. Verify shipment exists and is not soft-deleted (deleted_at is null) 4.
+ *   Verify shipment belongs to the specified order (order_id matches orderId)
+ *   5. Authenticate seller and verify seller_id matches authenticated user 6.
+ *   Check shipment status is not "delivered" (prevent updates after delivery)
+ *   7. Validate request body fields: carrier_name (required, non-empty string),
+ *   tracking_number (required, non-empty string), tracking_url (optional, valid
+ *   URL format) 8. Update carrier_name, tracking_number, tracking_url fields in
+ *   database 9. Set updated_at timestamp to current time 10. Return updated
+ *   shipment entity with all fields 11. Edge cases: Handle concurrent updates
+ *   with optimistic locking, validate tracking_number+carrier_name uniqueness
+ *   constraint
  * @path /ecommerce/seller/orders/:orderId/shipments/:shipmentId
  * @accessor api.functional.ecommerce.seller.orders.shipments.update
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe

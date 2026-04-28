@@ -11,80 +11,93 @@ export type IShoppingMallReview = {
   /**
    * Unique identifier of the review.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Return shopping_mall_reviews.id as DTO `id` (UUID string).
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Return shopping_mall_reviews.id as DTO `id` (UUID
+     *   string).
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Star rating given by the customer (1 to 5).
    *
-   * @x-autobe-database-schema-property rating
-   * @x-autobe-specification Return shopping_mall_reviews.rating as an integer (expected 1..5 per DTO contract).
+     * @x-autobe-database-schema-property rating
+     * @x-autobe-specification Return shopping_mall_reviews.rating as an integer
+     *   (expected 1..5 per DTO contract).
    */
   rating: number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<5>;
 
   /**
    * Optional textual content of the review; null when no text was provided.
    *
-   * @x-autobe-database-schema-property body
-   * @x-autobe-specification Return shopping_mall_reviews.body; if DB value is NULL, return null for DTO `body`.
+     * @x-autobe-database-schema-property body
+     * @x-autobe-specification Return shopping_mall_reviews.body; if DB value is
+     *   NULL, return null for DTO `body`.
    */
   body: string | null;
 
   /**
    * Whether the review is publicly visible to other customers.
    *
-   * @x-autobe-database-schema-property is_public
-   * @x-autobe-specification Return shopping_mall_reviews.is_public as DTO `is_public`.
+     * @x-autobe-database-schema-property is_public
+     * @x-autobe-specification Return shopping_mall_reviews.is_public as DTO
+     *   `is_public`.
    */
   is_public: boolean;
 
   /**
    * Identifier of the order item purchase context this review is tied to.
    *
-   * @x-autobe-database-schema-property orderItem
-   * @x-autobe-specification Return shopping_mall_reviews.shopping_mall_order_item_id as the DTO `orderItem` UUID string.
+     * @x-autobe-database-schema-property orderItem
+     * @x-autobe-specification Return
+     *   shopping_mall_reviews.shopping_mall_order_item_id as the DTO
+     *   `orderItem` UUID string.
    */
   orderItem: string & tags.Format<"uuid">;
 
   /**
    * Lightweight summary of the reviewed product.
    *
-   * @x-autobe-database-schema-property product
-   * @x-autobe-specification Join shopping_mall_reviews.product (shopping_mall_products) and map into IShoppingMallProduct.ISummary using its existing summary mapping.
+     * @x-autobe-database-schema-property product
+     * @x-autobe-specification Join shopping_mall_reviews.product
+     *   (shopping_mall_products) and map into IShoppingMallProduct.ISummary
+     *   using its existing summary mapping.
    */
   product: IShoppingMallProduct.ISummary;
 
   /**
    * Lightweight summary of the member who authored the review.
    *
-   * @x-autobe-database-schema-property customer
-   * @x-autobe-specification Join shopping_mall_reviews.customer (shopping_mall_members) and map into IShoppingMallMember.ISummary using its existing summary mapping.
+     * @x-autobe-database-schema-property customer
+     * @x-autobe-specification Join shopping_mall_reviews.customer
+     *   (shopping_mall_members) and map into IShoppingMallMember.ISummary using
+     *   its existing summary mapping.
    */
   author: IShoppingMallMember.ISummary;
 
   /**
    * When the review record was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Return shopping_mall_reviews.created_at as ISO-8601 date-time string.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Return shopping_mall_reviews.created_at as
+     *   ISO-8601 date-time string.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * When the review record was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Return shopping_mall_reviews.updated_at as ISO-8601 date-time string.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Return shopping_mall_reviews.updated_at as
+     *   ISO-8601 date-time string.
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * Soft-deletion timestamp; null when the review is not deleted.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Return shopping_mall_reviews.deleted_at; if DB value is NULL return null, otherwise return ISO-8601 date-time string.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Return shopping_mall_reviews.deleted_at; if DB
+     *   value is NULL return null, otherwise return ISO-8601 date-time string.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -96,14 +109,18 @@ export namespace IShoppingMallReview {
     /**
      * Page number (1-indexed) for the results list.
      *
-     * @x-autobe-specification Use page (1-indexed) to compute OFFSET=(page-1)*limit for the reviews list query. Validate page>=1 as defined by this DTO schema.
+         * @x-autobe-specification Use page (1-indexed) to compute
+         *   OFFSET=(page-1)*limit for the reviews list query. Validate page>=1
+         *   as defined by this DTO schema.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of review records to return in one page.
      *
-     * @x-autobe-specification Use limit as the page size (maximum number of review rows returned). Validate limit between 1 and 100 per this DTO schema, then apply LIMIT=limit in the query.
+         * @x-autobe-specification Use limit as the page size (maximum number of
+         *   review rows returned). Validate limit between 1 and 100 per this
+         *   DTO schema, then apply LIMIT=limit in the query.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -112,35 +129,51 @@ export namespace IShoppingMallReview {
     /**
      * Filter reviews to those written for the specified product.
      *
-     * @x-autobe-specification If provided, filter reviews where shopping_mall_reviews.shopping_mall_product_id equals shoppingMallProductId.
+         * @x-autobe-specification If provided, filter reviews where
+         *   shopping_mall_reviews.shopping_mall_product_id equals
+         *   shoppingMallProductId.
      */
     shoppingMallProductId?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Filter reviews to those written for the specified purchased order item (purchase context).
      *
-     * @x-autobe-specification If provided, filter reviews where shopping_mall_reviews.shopping_mall_order_item_id equals shoppingMallOrderItemId (purchase context).
+         * @x-autobe-specification If provided, filter reviews where
+         *   shopping_mall_reviews.shopping_mall_order_item_id equals
+         *   shoppingMallOrderItemId (purchase context).
      */
     shoppingMallOrderItemId?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Filter reviews to those authored by the specified customer (authorization-gated for non-admin callers).
      *
-     * @x-autobe-specification If provided, filter reviews where shopping_mall_reviews.shopping_mall_customer_id equals shoppingMallCustomerId. Authorization gating is mandatory: non-admin callers must only be allowed to query their own identity (i.e., the caller’s member id must match shoppingMallCustomerId).
+         * @x-autobe-specification If provided, filter reviews where
+         *   shopping_mall_reviews.shopping_mall_customer_id equals
+         *   shoppingMallCustomerId. Authorization gating is mandatory:
+         *   non-admin callers must only be allowed to query their own identity
+         *   (i.e., the caller’s member id must match shoppingMallCustomerId).
      */
     shoppingMallCustomerId?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Whether to include soft-deleted reviews in the result list.
      *
-     * @x-autobe-specification If includeDeleted is false (or omitted): apply shopping_mall_reviews.deleted_at IS NULL to include only active reviews. If includeDeleted is true: do not apply any deleted_at restriction (include both active and soft-deleted reviews).
+         * @x-autobe-specification If includeDeleted is false (or omitted):
+         *   apply shopping_mall_reviews.deleted_at IS NULL to include only
+         *   active reviews. If includeDeleted is true: do not apply any
+         *   deleted_at restriction (include both active and soft-deleted
+         *   reviews).
      */
     includeDeleted?: boolean | undefined;
 
     /**
      * Select the chronological ordering for the result list: 'newest' or 'oldest'.
      *
-     * @x-autobe-specification If sort='newest': ORDER BY shopping_mall_reviews.updated_at DESC, shopping_mall_reviews.created_at DESC. If sort='oldest': ORDER BY shopping_mall_reviews.updated_at ASC, shopping_mall_reviews.created_at ASC.
+         * @x-autobe-specification If sort='newest': ORDER BY
+         *   shopping_mall_reviews.updated_at DESC,
+         *   shopping_mall_reviews.created_at DESC. If sort='oldest': ORDER BY
+         *   shopping_mall_reviews.updated_at ASC,
+         *   shopping_mall_reviews.created_at ASC.
      */
     sort?: "newest" | "oldest" | undefined;
   };
@@ -152,24 +185,33 @@ export namespace IShoppingMallReview {
     /**
      * Star rating given for the purchased product (required). Must be an integer from 1 to 5.
      *
-     * @x-autobe-database-schema-property rating
-     * @x-autobe-specification Direct mapping: persist request.rating to shopping_mall_reviews.rating. Validate it is an integer constrained to range 1..5 before update.
+         * @x-autobe-database-schema-property rating
+         * @x-autobe-specification Direct mapping: persist request.rating to
+         *   shopping_mall_reviews.rating. Validate it is an integer constrained
+         *   to range 1..5 before update.
      */
     rating: number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<5>;
 
     /**
      * Optional written review text. May be null to clear the text.
      *
-     * @x-autobe-database-schema-property body
-     * @x-autobe-specification Direct mapping with nullability: persist request.body to shopping_mall_reviews.body. If the client omits body, keep the existing value (DTO-to-DB update should only touch provided fields); if the client provides body as null, store null in shopping_mall_reviews.body.
+         * @x-autobe-database-schema-property body
+         * @x-autobe-specification Direct mapping with nullability: persist
+         *   request.body to shopping_mall_reviews.body. If the client omits
+         *   body, keep the existing value (DTO-to-DB update should only touch
+         *   provided fields); if the client provides body as null, store null
+         *   in shopping_mall_reviews.body.
      */
     body?: string | null | undefined;
 
     /**
      * Whether the review is publicly visible to other customers.
      *
-     * @x-autobe-database-schema-property is_public
-     * @x-autobe-specification Direct mapping: persist request.is_public to shopping_mall_reviews.is_public. Service layer should still enforce any domain rules for visibility transitions if applicable, but the DTO itself maps 1:1 to the column.
+         * @x-autobe-database-schema-property is_public
+         * @x-autobe-specification Direct mapping: persist request.is_public to
+         *   shopping_mall_reviews.is_public. Service layer should still enforce
+         *   any domain rules for visibility transitions if applicable, but the
+         *   DTO itself maps 1:1 to the column.
      */
     is_public?: boolean | undefined;
   };
@@ -181,32 +223,43 @@ export namespace IShoppingMallReview {
     /**
      * Identifier of the delivered order item that this review is associated with.
      *
-     * @x-autobe-database-schema-property shopping_mall_order_item_id
-     * @x-autobe-specification Insert value: set shopping_mall_reviews.shopping_mall_order_item_id = request.shopping_mall_order_item_id. Also use this id to load shopping_mall_order_items for eligibility (delivered) and ownership checks.
+         * @x-autobe-database-schema-property shopping_mall_order_item_id
+         * @x-autobe-specification Insert value: set
+         *   shopping_mall_reviews.shopping_mall_order_item_id =
+         *   request.shopping_mall_order_item_id. Also use this id to load
+         *   shopping_mall_order_items for eligibility (delivered) and ownership
+         *   checks.
      */
     shopping_mall_order_item_id: string & tags.Format<"uuid">;
 
     /**
      * Star rating given by the customer for the purchased product (1 to 5).
      *
-     * @x-autobe-database-schema-property rating
-     * @x-autobe-specification Insert value: set shopping_mall_reviews.rating = request.rating. Validate server-side that it is an integer between 1 and 5 inclusive (as required by IShoppingMallReview.ICreate).
+         * @x-autobe-database-schema-property rating
+         * @x-autobe-specification Insert value: set
+         *   shopping_mall_reviews.rating = request.rating. Validate server-side
+         *   that it is an integer between 1 and 5 inclusive (as required by
+         *   IShoppingMallReview.ICreate).
      */
     rating: number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<5>;
 
     /**
      * Optional textual content of the review. Null means the customer did not provide text.
      *
-     * @x-autobe-database-schema-property body
-     * @x-autobe-specification Insert value: set shopping_mall_reviews.body = request.body. Allow null to represent an empty/non-text review while still creating the rating and visibility flag.
+         * @x-autobe-database-schema-property body
+         * @x-autobe-specification Insert value: set shopping_mall_reviews.body
+         *   = request.body. Allow null to represent an empty/non-text review
+         *   while still creating the rating and visibility flag.
      */
     body?: string | null | undefined;
 
     /**
      * Whether this review is publicly visible to other customers.
      *
-     * @x-autobe-database-schema-property is_public
-     * @x-autobe-specification Insert value: set shopping_mall_reviews.is_public = request.is_public to control whether the review is publicly visible to other customers.
+         * @x-autobe-database-schema-property is_public
+         * @x-autobe-specification Insert value: set
+         *   shopping_mall_reviews.is_public = request.is_public to control
+         *   whether the review is publicly visible to other customers.
      */
     is_public: boolean;
   };
@@ -218,80 +271,94 @@ export namespace IShoppingMallReview {
     /**
      * Unique identifier of the review.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Return shopping_mall_reviews.id as the review unique identifier.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Return shopping_mall_reviews.id as the review
+         *   unique identifier.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Identifier of the product that this review is for.
      *
-     * @x-autobe-database-schema-property shopping_mall_product_id
-     * @x-autobe-specification Map shopping_mall_reviews.shopping_mall_product_id to shoppingMallProductId.
+         * @x-autobe-database-schema-property shopping_mall_product_id
+         * @x-autobe-specification Map
+         *   shopping_mall_reviews.shopping_mall_product_id to
+         *   shoppingMallProductId.
      */
     shoppingMallProductId: string & tags.Format<"uuid">;
 
     /**
      * Identifier of the order line item (purchase context) that this review belongs to.
      *
-     * @x-autobe-database-schema-property shopping_mall_order_item_id
-     * @x-autobe-specification Map shopping_mall_reviews.shopping_mall_order_item_id to shoppingMallOrderItemId.
+         * @x-autobe-database-schema-property shopping_mall_order_item_id
+         * @x-autobe-specification Map
+         *   shopping_mall_reviews.shopping_mall_order_item_id to
+         *   shoppingMallOrderItemId.
      */
     shoppingMallOrderItemId: string & tags.Format<"uuid">;
 
     /**
      * Identifier of the customer who authored the review.
      *
-     * @x-autobe-database-schema-property shopping_mall_customer_id
-     * @x-autobe-specification Map shopping_mall_reviews.shopping_mall_customer_id to shoppingMallCustomerId.
+         * @x-autobe-database-schema-property shopping_mall_customer_id
+         * @x-autobe-specification Map
+         *   shopping_mall_reviews.shopping_mall_customer_id to
+         *   shoppingMallCustomerId.
      */
     shoppingMallCustomerId: string & tags.Format<"uuid">;
 
     /**
      * Star rating given by the customer.
      *
-     * @x-autobe-database-schema-property rating
-     * @x-autobe-specification Return shopping_mall_reviews.rating as the star rating value provided by the author.
+         * @x-autobe-database-schema-property rating
+         * @x-autobe-specification Return shopping_mall_reviews.rating as the
+         *   star rating value provided by the author.
      */
     rating: number & tags.Type<"int32">;
 
     /**
      * Optional textual content of the review (null when not provided).
      *
-     * @x-autobe-database-schema-property body
-     * @x-autobe-specification Map shopping_mall_reviews.body to body; preserve null when the review has no text content.
+         * @x-autobe-database-schema-property body
+         * @x-autobe-specification Map shopping_mall_reviews.body to body;
+         *   preserve null when the review has no text content.
      */
     body: string | null;
 
     /**
      * Whether the review is publicly visible to other customers.
      *
-     * @x-autobe-database-schema-property is_public
-     * @x-autobe-specification Map shopping_mall_reviews.is_public to isPublic without transformation.
+         * @x-autobe-database-schema-property is_public
+         * @x-autobe-specification Map shopping_mall_reviews.is_public to
+         *   isPublic without transformation.
      */
     isPublic: boolean;
 
     /**
      * Soft-deletion marker timestamp. Null means the review is not deleted.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Map shopping_mall_reviews.deleted_at to deletedAt; consumers can use deletedAt != null to treat the review as deleted/hidden in their UI logic.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Map shopping_mall_reviews.deleted_at to
+         *   deletedAt; consumers can use deletedAt != null to treat the review
+         *   as deleted/hidden in their UI logic.
      */
     deletedAt: (string & tags.Format<"date-time">) | null;
 
     /**
      * Timestamp when the review was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Return shopping_mall_reviews.created_at as createdAt.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Return shopping_mall_reviews.created_at as
+         *   createdAt.
      */
     createdAt: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when the review was last updated.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Return shopping_mall_reviews.updated_at as updatedAt.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Return shopping_mall_reviews.updated_at as
+         *   updatedAt.
      */
     updatedAt: string & tags.Format<"date-time">;
   };

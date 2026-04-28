@@ -24,9 +24,12 @@ export class ShoppingmallMemberProfileController {
    * Related operations: after this endpoint is used to display the current profile, customers update their display name and phone number through the corresponding profile update endpoint. That update endpoint must apply the changes so that subsequent reads from this endpoint reflect the accepted values immediately.
    *
    * @param connection
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1) Authorization: require an authenticated customer context (member session). If unauthenticated, return a login-required rejection response consistent with customer operation authentication enforcement.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification 1) Authorization: require an authenticated
+     *   customer context (member session). If unauthenticated, return a
+     *   login-required rejection response consistent with customer operation
+     *   authentication enforcement.
    *
    * 2) Resolve profile: read the member record for the authenticated member ID from shopping_mall_members.
    *
@@ -69,9 +72,10 @@ export class ShoppingmallMemberProfileController {
    *
    * @param connection
    * @param body Profile update payload containing the editable customer profile attributes (display name and phone number).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1) Authenticate request via existing auth middleware and resolve current member/customer identity.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification 1) Authenticate request via existing auth
+     *   middleware and resolve current member/customer identity.
    *
    * 2) Validate request body fields (only accept editable profile attributes: display name and phone number). If the request contains disallowed fields, reject as invalid request.
    *

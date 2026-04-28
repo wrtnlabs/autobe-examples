@@ -18,9 +18,12 @@ export class MallplatformCustomerShipmentsConfirm_deliveryController {
    *
    * @param connection
    * @param shipmentId The unique identifier of the shipment to confirm delivery for.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Fetch the shipment by shipmentId and verify that it belongs to an order owned by the authenticated customer. If the shipment does not exist or is not accessible by the caller, return the standard not found or forbidden response.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Fetch the shipment by shipmentId and verify that
+     *   it belongs to an order owned by the authenticated customer. If the
+     *   shipment does not exist or is not accessible by the caller, return the
+     *   standard not found or forbidden response.
    *
    * Perform the confirmation in a single transaction. Update every order item attached to the shipment to delivered status, and update the shipment state so the same shipment cannot be confirmed again. Do not affect other shipments or other items in the order.
    *

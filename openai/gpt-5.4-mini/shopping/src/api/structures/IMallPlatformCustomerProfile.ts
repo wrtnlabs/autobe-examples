@@ -16,8 +16,9 @@ export type IMallPlatformCustomerProfile = {
    *
    * This value identifies the stored profile record and is returned unchanged from the database primary key.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from mall_platform_customer_profiles.id.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_customer_profiles.id.
    */
   id: string & tags.Format<"uuid">;
 
@@ -26,8 +27,10 @@ export type IMallPlatformCustomerProfile = {
    *
    * This field is part of the public profile and may be updated by the authenticated account owner.
    *
-   * @x-autobe-database-schema-property display_name
-   * @x-autobe-specification Direct mapping from mall_platform_customer_profiles.display_name. This is an editable field for the authenticated customer profile.
+     * @x-autobe-database-schema-property display_name
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_customer_profiles.display_name. This is an editable field
+     *   for the authenticated customer profile.
    */
   displayName: string;
 
@@ -36,8 +39,10 @@ export type IMallPlatformCustomerProfile = {
    *
    * This field is part of the public profile and may be updated by the authenticated account owner.
    *
-   * @x-autobe-database-schema-property phone_number
-   * @x-autobe-specification Direct mapping from mall_platform_customer_profiles.phone_number. This is an editable field for the authenticated customer profile.
+     * @x-autobe-database-schema-property phone_number
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_customer_profiles.phone_number. This is an editable field
+     *   for the authenticated customer profile.
    */
   phoneNumber: string;
 
@@ -46,8 +51,12 @@ export type IMallPlatformCustomerProfile = {
    *
    * This relation returns the owning customer account as a summary object so consumers can identify the profile owner without using the raw foreign-key column.
    *
-   * @x-autobe-database-schema-property customer
-   * @x-autobe-specification Join mall_platform_customer_profiles.mall_platform_customer_id to mall_platform_customers.id and expose the related customer as IMallPlatformCustomer.ISummary. This relation is read-only in this DTO and identifies the owning account.
+     * @x-autobe-database-schema-property customer
+     * @x-autobe-specification Join
+     *   mall_platform_customer_profiles.mall_platform_customer_id to
+     *   mall_platform_customers.id and expose the related customer as
+     *   IMallPlatformCustomer.ISummary. This relation is read-only in this DTO
+     *   and identifies the owning account.
    */
   customer: IMallPlatformCustomer.ISummary;
 
@@ -56,8 +65,9 @@ export type IMallPlatformCustomerProfile = {
    *
    * This value is system-managed and included as lifecycle metadata for the stored profile record.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from mall_platform_customer_profiles.created_at.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_customer_profiles.created_at.
    */
   createdAt: string & tags.Format<"date-time">;
 
@@ -66,8 +76,9 @@ export type IMallPlatformCustomerProfile = {
    *
    * This value reflects the most recent successful change to the stored profile record.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from mall_platform_customer_profiles.updated_at.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_customer_profiles.updated_at.
    */
   updatedAt: string & tags.Format<"date-time">;
 
@@ -76,8 +87,10 @@ export type IMallPlatformCustomerProfile = {
    *
    * This field is included so consumers can distinguish active profiles from preserved deleted records.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from mall_platform_customer_profiles.deleted_at. The field is nullable and remains null while the profile is active.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_customer_profiles.deleted_at. The field is nullable and
+     *   remains null while the profile is active.
    */
   deletedAt: (string & tags.Format<"date-time">) | null;
 };
@@ -93,8 +106,11 @@ export namespace IMallPlatformCustomerProfile {
      *
      * This is the public name shown for the signed-in customer profile across the shopping experience. The account owner may edit this value through the profile update endpoint.
      *
-     * @x-autobe-database-schema-property display_name
-     * @x-autobe-specification Direct mapping from mall_platform_customer_profiles.display_name. This field updates the customer-facing display name for the authenticated profile owner.
+         * @x-autobe-database-schema-property display_name
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_customer_profiles.display_name. This field updates
+         *   the customer-facing display name for the authenticated profile
+         *   owner.
      */
     displayName?: string | undefined;
 
@@ -103,8 +119,11 @@ export namespace IMallPlatformCustomerProfile {
      *
      * This value is stored with the customer profile for contact and account-related communication in the shopping experience. The account owner may edit this value through the profile update endpoint.
      *
-     * @x-autobe-database-schema-property phone_number
-     * @x-autobe-specification Direct mapping from mall_platform_customer_profiles.phone_number. This field updates the contact phone number stored with the authenticated customer profile.
+         * @x-autobe-database-schema-property phone_number
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_customer_profiles.phone_number. This field updates
+         *   the contact phone number stored with the authenticated customer
+         *   profile.
      */
     phoneNumber?: string | undefined;
   };

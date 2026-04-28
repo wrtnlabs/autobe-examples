@@ -26,7 +26,9 @@ import { IShoppingMallCancellationRequest } from "../../../../../structures/ISho
  * @param props.body Admin search criteria and pagination settings for cancellation requests.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Implement an admin-scoped search endpoint over `shopping_mall_cancellation_requests` joined with `shopping_mall_order_items` for identifying context.
+ * @x-autobe-specification Implement an admin-scoped search endpoint over
+ *   `shopping_mall_cancellation_requests` joined with
+ *   `shopping_mall_order_items` for identifying context.
  *
  * 1) Parse `IShoppingMallCancellationRequest.IRequest` from request body.
  * 2) Build a query:
@@ -144,12 +146,21 @@ export namespace index {
  * @param props.cancellationRequestId Target cancellation request ID to retrieve (UUID).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification 1) Validate path parameter `cancellationRequestId` as UUID.
- * 2) Query `shopping_mall_cancellation_requests` by `id` with `deleted_at` consideration consistent with read rules (exclude entries where `deleted_at` is set unless the system’s admin policy allows viewing them; default to excluding from normal views, but allow admin if policy exists—implementation should follow the service read policy).
- * 3) Load the related `shopping_mall_order_items` row by `shopping_mall_cancellation_requests.shopping_mall_order_item_id`.
- * 4) For any returned dispute context, rely on existing snapshot links already present in the involved tables (e.g., `shopping_mall_order_items.seller_snapshot_id`) and snapshot visibility rules enforced at the service/repository layer (e.g., via `shopping_mall_snapshot_parties`). Do not modify or create snapshots.
- * 5) Compose and return the detailed administrator DTO.
- * 6) Error handling: if not found, return 404/not found; if authorization fails, return 401/403.
+ * @x-autobe-specification 1) Validate path parameter `cancellationRequestId` as
+ *   UUID. 2) Query `shopping_mall_cancellation_requests` by `id` with
+ *   `deleted_at` consideration consistent with read rules (exclude entries
+ *   where `deleted_at` is set unless the system’s admin policy allows viewing
+ *   them; default to excluding from normal views, but allow admin if policy
+ *   exists—implementation should follow the service read policy). 3) Load the
+ *   related `shopping_mall_order_items` row by
+ *   `shopping_mall_cancellation_requests.shopping_mall_order_item_id`. 4) For
+ *   any returned dispute context, rely on existing snapshot links already
+ *   present in the involved tables (e.g.,
+ *   `shopping_mall_order_items.seller_snapshot_id`) and snapshot visibility
+ *   rules enforced at the service/repository layer (e.g., via
+ *   `shopping_mall_snapshot_parties`). Do not modify or create snapshots. 5)
+ *   Compose and return the detailed administrator DTO. 6) Error handling: if
+ *   not found, return 404/not found; if authorization fails, return 401/403.
  *
  * No transaction is required because this endpoint is read-only.
  * @path /shoppingMall/admin/admin/cancellation-requests/:cancellationRequestId
@@ -398,19 +409,22 @@ export namespace updateCancellationRequest {
  * @param props.cancellationRequestId Target cancellation request ID to permanently remove (UUID).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Implementation steps:
- * 1) Authorization: Require admin actor. Reject guests and members.
- * 2) Parameter validation: Treat cancellationRequestId as UUID string; if it is not a valid UUID, fail fast with a 400-level validation error.
- * 3) Lookup: Query shopping_mall_cancellation_requests by id = cancellationRequestId.
- *    - If not found, return 404.
- * 4) Deletion semantics:
- *    - Remove the shopping_mall_cancellation_requests row for that id.
- *    - Do NOT modify shopping_mall_order_items or any related shipment/payment records.
- *    - Use a transaction for the delete operation.
- * 5) Integrity and audit considerations:
- *    - Ensure cascading behaviors are respected only for relations where the schema defines cascade from cancellation request to its snapshot/history tables (if any exist). Specifically, keep shopping_mall_order_items intact.
- *    - Avoid altering shopping_mall_snapshots; if snapshots exist for this cancellation request, do not delete or mutate them as part of this operation.
- * 6) Response: Return 204/empty JSON body as responseBody is null.
+ * @x-autobe-specification Implementation steps: 1) Authorization: Require admin
+ *   actor. Reject guests and members. 2) Parameter validation: Treat
+ *   cancellationRequestId as UUID string; if it is not a valid UUID, fail fast
+ *   with a 400-level validation error. 3) Lookup: Query
+ *   shopping_mall_cancellation_requests by id = cancellationRequestId. - If not
+ *   found, return 404. 4) Deletion semantics: - Remove the
+ *   shopping_mall_cancellation_requests row for that id. - Do NOT modify
+ *   shopping_mall_order_items or any related shipment/payment records. - Use a
+ *   transaction for the delete operation. 5) Integrity and audit
+ *   considerations: - Ensure cascading behaviors are respected only for
+ *   relations where the schema defines cascade from cancellation request to its
+ *   snapshot/history tables (if any exist). Specifically, keep
+ *   shopping_mall_order_items intact. - Avoid altering shopping_mall_snapshots;
+ *   if snapshots exist for this cancellation request, do not delete or mutate
+ *   them as part of this operation. 6) Response: Return 204/empty JSON body as
+ *   responseBody is null.
  *
  * Edge cases:
  * - If the cancellation request has been soft-deleted (deleted_at not null), decide behavior according to repository policy: either allow idempotent deletion (return success) or treat as not found. Prefer idempotent success for admin tooling, but keep consistent with global error-handling rules.

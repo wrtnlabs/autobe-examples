@@ -16,8 +16,9 @@ export type IECommerceMallRefundRequestSnapshot = {
    *
    * Auto-generated UUID primary key assigned when the snapshot is created at the moment the seller responds to a refund request.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from e_commerce_mall_refund_request_snapshots.id. UUID primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_refund_request_snapshots.id. UUID primary key.
    */
   id: string & tags.Format<"uuid">;
 
@@ -26,8 +27,10 @@ export type IECommerceMallRefundRequestSnapshot = {
    *
    * Provides a reference to the parent refund request, including its current status, reason, and related customer and seller information.
    *
-   * @x-autobe-database-schema-property refundRequest
-   * @x-autobe-specification Join via e_commerce_mall_refund_request_id FK to e_commerce_mall_refund_requests. Returns IECommerceMallRefundRequest.ISummary.
+     * @x-autobe-database-schema-property refundRequest
+     * @x-autobe-specification Join via e_commerce_mall_refund_request_id FK to
+     *   e_commerce_mall_refund_requests. Returns
+     *   IECommerceMallRefundRequest.ISummary.
    */
   refundRequest: IECommerceMallRefundRequest.ISummary;
 
@@ -36,8 +39,10 @@ export type IECommerceMallRefundRequestSnapshot = {
    *
    * Captures what the customer stated when requesting the refund, frozen at the moment the seller responded. This field is denormalized intentionally — it records the customer's stated reason as it existed when the seller made their decision, providing an immutable record for audit and dispute resolution purposes.
    *
-   * @x-autobe-database-schema-property reason
-   * @x-autobe-specification Direct mapping from e_commerce_mall_refund_request_snapshots.reason. Immutable string captured at snapshot creation time.
+     * @x-autobe-database-schema-property reason
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_refund_request_snapshots.reason. Immutable string
+     *   captured at snapshot creation time.
    */
   reason: string;
 
@@ -46,8 +51,10 @@ export type IECommerceMallRefundRequestSnapshot = {
    *
    * Indicates whether the seller approved ('approved') or rejected ('rejected') the refund request. This is a terminal status captured at the moment of the seller's response — once set, it cannot be changed.
    *
-   * @x-autobe-database-schema-property status
-   * @x-autobe-specification Direct mapping from e_commerce_mall_refund_request_snapshots.status. One of 'approved' or 'rejected'. Immutable string captured at snapshot creation.
+     * @x-autobe-database-schema-property status
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_refund_request_snapshots.status. One of 'approved' or
+     *   'rejected'. Immutable string captured at snapshot creation.
    */
   status: string;
 
@@ -56,8 +63,10 @@ export type IECommerceMallRefundRequestSnapshot = {
    *
    * Preserved at snapshot creation time for audit and dispute resolution, providing an exact chronological record of when the seller made their decision.
    *
-   * @x-autobe-database-schema-property response_timestamp
-   * @x-autobe-specification Direct mapping from e_commerce_mall_refund_request_snapshots.response_timestamp. Date-time string.
+     * @x-autobe-database-schema-property response_timestamp
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_refund_request_snapshots.response_timestamp. Date-time
+     *   string.
    */
   response_timestamp: string & tags.Format<"date-time">;
 
@@ -66,8 +75,9 @@ export type IECommerceMallRefundRequestSnapshot = {
    *
    * Snapshots are immutable append-only records — once created, they cannot be modified or deleted, providing a reliable audit trail for historical reference.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from e_commerce_mall_refund_request_snapshots.created_at. Date-time string.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_refund_request_snapshots.created_at. Date-time string.
    */
   created_at: string & tags.Format<"date-time">;
 };
@@ -85,8 +95,9 @@ export namespace IECommerceMallRefundRequestSnapshot {
      *
      * The snapshot ID identifies a specific historical record within a refund request's audit trail. Use this ID to retrieve the full snapshot details via the dedicated snapshot retrieval endpoint. The parent refund request is inferred from the path parameter.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from e_commerce_mall_refund_request_snapshots.id.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_refund_request_snapshots.id.
      */
     id: string & tags.Format<"uuid">;
 
@@ -95,8 +106,11 @@ export namespace IECommerceMallRefundRequestSnapshot {
      *
      * This field is intentionally denormalized to capture the customer's stated reason at the exact moment the snapshot was created. Because snapshots are immutable, this provides an authoritative historical record for audit and dispute resolution, even if the customer later changes their story or the parent refund request is updated.
      *
-     * @x-autobe-database-schema-property reason
-     * @x-autobe-specification Direct mapping from e_commerce_mall_refund_request_snapshots.reason. Denormalized from the parent refund request at the time of snapshot creation for immutable audit trail.
+         * @x-autobe-database-schema-property reason
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_refund_request_snapshots.reason. Denormalized from
+         *   the parent refund request at the time of snapshot creation for
+         *   immutable audit trail.
      */
     reason: string;
 
@@ -105,8 +119,11 @@ export namespace IECommerceMallRefundRequestSnapshot {
      *
      * Indicates whether the refund request was approved or rejected by the seller. An approved status means the refund has been processed, resulting in a financial reversal and automatic stock restoration via a positive inventory record on the associated product variant. A rejected status means the refund was denied and the item remains in its delivered state.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from e_commerce_mall_refund_request_snapshots.status. One of 'approved' or 'rejected'. This is a terminal status — once set, it cannot be changed.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_refund_request_snapshots.status. One of 'approved'
+         *   or 'rejected'. This is a terminal status — once set, it cannot be
+         *   changed.
      */
     status: string;
 
@@ -115,8 +132,10 @@ export namespace IECommerceMallRefundRequestSnapshot {
      *
      * This timestamp is captured at the moment the seller makes a decision and is preserved immutably in the snapshot. It provides an authoritative record of when the seller's decision was made, supporting audit requirements and dispute resolution workflows.
      *
-     * @x-autobe-database-schema-property response_timestamp
-     * @x-autobe-specification Direct mapping from e_commerce_mall_refund_request_snapshots.response_timestamp. Immutable timestamp preserved at snapshot time.
+         * @x-autobe-database-schema-property response_timestamp
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_refund_request_snapshots.response_timestamp.
+         *   Immutable timestamp preserved at snapshot time.
      */
     response_timestamp: string & tags.Format<"date-time">;
 
@@ -125,8 +144,9 @@ export namespace IECommerceMallRefundRequestSnapshot {
      *
      * Snapshots are append-only records that cannot be modified or deleted after creation. This timestamp establishes the creation order of snapshots within a refund request's history and helps determine the sequence of events during audits.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from e_commerce_mall_refund_request_snapshots.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_refund_request_snapshots.created_at.
      */
     created_at: string & tags.Format<"date-time">;
   };
@@ -144,7 +164,9 @@ export namespace IECommerceMallRefundRequestSnapshot {
      *
      * Specifies which page of results to retrieve. Page numbering starts from 1. When omitted, the first page is returned. The page value is combined with limit to calculate the offset for the database query.
      *
-     * @x-autobe-specification Computed pagination parameter. 1-indexed page number. Used for offset calculation: (page - 1) * limit. Defaults to 1.
+         * @x-autobe-specification Computed pagination parameter. 1-indexed page
+         *   number. Used for offset calculation: (page - 1) * limit. Defaults
+         *   to 1.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -153,7 +175,9 @@ export namespace IECommerceMallRefundRequestSnapshot {
      *
      * Controls the page size of the result set. The maximum allowed value is 100. When omitted, a system-defined default limit is applied. The actual number of records returned may be less than this value on the final page.
      *
-     * @x-autobe-specification Computed pagination parameter. Maximum number of records per page. Capped at 100. Default behavior: system-defined default limit applies when omitted.
+         * @x-autobe-specification Computed pagination parameter. Maximum number
+         *   of records per page. Capped at 100. Default behavior:
+         *   system-defined default limit applies when omitted.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -164,7 +188,10 @@ export namespace IECommerceMallRefundRequestSnapshot {
      *
      * Filters the result set to include only snapshots matching the specified status. Accepts 'approved' for snapshots where the seller approved the refund request, or 'rejected' where the seller denied it. When omitted, snapshots of both statuses are included.
      *
-     * @x-autobe-specification Computed filter parameter. Maps to e_commerce_mall_refund_request_snapshots.status column. Exact match filter accepting 'approved' or 'rejected'. When omitted, no status filtering is applied.
+         * @x-autobe-specification Computed filter parameter. Maps to
+         *   e_commerce_mall_refund_request_snapshots.status column. Exact match
+         *   filter accepting 'approved' or 'rejected'. When omitted, no status
+         *   filtering is applied.
      */
     status?: string | undefined;
 
@@ -173,7 +200,10 @@ export namespace IECommerceMallRefundRequestSnapshot {
      *
      * Filters snapshots to include only those where the seller's response occurred at or after this timestamp. Combine with response_timestamp_to to define a specific time window. When only from is specified, all snapshots from that point onward are included.
      *
-     * @x-autobe-specification Computed filter parameter. Lower bound filter against e_commerce_mall_refund_request_snapshots.response_timestamp column: response_timestamp >= response_timestamp_from. Combine with response_timestamp_to for range filtering.
+         * @x-autobe-specification Computed filter parameter. Lower bound filter
+         *   against e_commerce_mall_refund_request_snapshots.response_timestamp
+         *   column: response_timestamp >= response_timestamp_from. Combine with
+         *   response_timestamp_to for range filtering.
      */
     response_timestamp_from?: (string & tags.Format<"date-time">) | undefined;
 
@@ -182,7 +212,10 @@ export namespace IECommerceMallRefundRequestSnapshot {
      *
      * Filters snapshots to include only those where the seller's response occurred at or before this timestamp. Combine with response_timestamp_from to define a specific time window. When only to is specified, all snapshots up to that point are included.
      *
-     * @x-autobe-specification Computed filter parameter. Upper bound filter against e_commerce_mall_refund_request_snapshots.response_timestamp column: response_timestamp <= response_timestamp_to. Combine with response_timestamp_from for range filtering.
+         * @x-autobe-specification Computed filter parameter. Upper bound filter
+         *   against e_commerce_mall_refund_request_snapshots.response_timestamp
+         *   column: response_timestamp <= response_timestamp_to. Combine with
+         *   response_timestamp_from for range filtering.
      */
     response_timestamp_to?: (string & tags.Format<"date-time">) | undefined;
 
@@ -191,7 +224,10 @@ export namespace IECommerceMallRefundRequestSnapshot {
      *
      * Filters snapshots to include only those created at or after this timestamp. Combine with created_at_to to define a specific time window. When only from is specified, all snapshots created from that point onward are included.
      *
-     * @x-autobe-specification Computed filter parameter. Lower bound filter against e_commerce_mall_refund_request_snapshots.created_at column: created_at >= created_at_from. Combine with created_at_to for range filtering.
+         * @x-autobe-specification Computed filter parameter. Lower bound filter
+         *   against e_commerce_mall_refund_request_snapshots.created_at column:
+         *   created_at >= created_at_from. Combine with created_at_to for range
+         *   filtering.
      */
     created_at_from?: (string & tags.Format<"date-time">) | undefined;
 
@@ -200,7 +236,10 @@ export namespace IECommerceMallRefundRequestSnapshot {
      *
      * Filters snapshots to include only those created at or before this timestamp. Combine with created_at_from to define a specific time window. When only to is specified, all snapshots created up to that point are included.
      *
-     * @x-autobe-specification Computed filter parameter. Upper bound filter against e_commerce_mall_refund_request_snapshots.created_at column: created_at <= created_at_to. Combine with created_at_from for range filtering.
+         * @x-autobe-specification Computed filter parameter. Upper bound filter
+         *   against e_commerce_mall_refund_request_snapshots.created_at column:
+         *   created_at <= created_at_to. Combine with created_at_from for range
+         *   filtering.
      */
     created_at_to?: (string & tags.Format<"date-time">) | undefined;
   };

@@ -23,35 +23,35 @@ import { IHrmPlatformOrganization } from "./IHrmPlatformOrganization";
  */
 export type IHrmPlatformOrganizationFile = {
   /**
-   * @x-autobe-database-schema-property id
+     * @x-autobe-database-schema-property id
    */
   id: string & tags.Format<"uuid">;
   /**
-   * @x-autobe-database-schema-property organization
+     * @x-autobe-database-schema-property organization
    */
   organization: IHrmPlatformOrganization.ISummary;
   /**
-   * @x-autobe-database-schema-property member
+     * @x-autobe-database-schema-property member
    */
   member: IHrmPlatformMember.ISummary;
   /**
-   * @x-autobe-database-schema-property file_key
+     * @x-autobe-database-schema-property file_key
    */
   file_key: string;
   /**
-   * @x-autobe-database-schema-property file_name
+     * @x-autobe-database-schema-property file_name
    */
   file_name: string;
   /**
-   * @x-autobe-database-schema-property file_type
+     * @x-autobe-database-schema-property file_type
    */
   file_type: string;
   /**
-   * @x-autobe-database-schema-property file_size
+     * @x-autobe-database-schema-property file_size
    */
   file_size: number & tags.Type<"int32">;
   /**
-   * @x-autobe-database-schema-property storage_type
+     * @x-autobe-database-schema-property storage_type
    */
   storage_type: string;
 
@@ -60,24 +60,26 @@ export type IHrmPlatformOrganizationFile = {
    *
    * May be null if the file is not yet available or if access is restricted. When present, contains a valid URI format that can be used to retrieve the file content from external storage.
    *
-   * @x-autobe-specification Direct mapping from hrm_platform_organization_files.url column. String URI that may be null. Format: uri for validation.
-   * @x-autobe-database-schema-property url
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_organization_files.url column. String URI that may be
+     *   null. Format: uri for validation.
+     * @x-autobe-database-schema-property url
    */
   url: (string & tags.Format<"uri">) | null;
   /**
-   * @x-autobe-database-schema-property status
+     * @x-autobe-database-schema-property status
    */
   status: string;
   /**
-   * @x-autobe-database-schema-property created_at
+     * @x-autobe-database-schema-property created_at
    */
   created_at: string & tags.Format<"date-time">;
   /**
-   * @x-autobe-database-schema-property updated_at
+     * @x-autobe-database-schema-property updated_at
    */
   updated_at: string & tags.Format<"date-time">;
   /**
-   * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-database-schema-property deleted_at
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -139,7 +141,8 @@ export namespace IHrmPlatformOrganizationFile {
      * Requesting a page beyond the available range returns an empty data array
      * with valid pagination metadata reflecting the actual totals.
      *
-     * @x-autobe-specification 1-indexed page number. Defaults to 1 if not provided.
+         * @x-autobe-specification 1-indexed page number. Defaults to 1 if not
+         *   provided.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };
@@ -167,23 +170,23 @@ export namespace IHrmPlatformOrganizationFile {
    */
   export type ISummary = {
     /**
-     * @x-autobe-database-schema-property id
+         * @x-autobe-database-schema-property id
      */
     id: string & tags.Format<"uuid">;
     /**
-     * @x-autobe-database-schema-property file_name
+         * @x-autobe-database-schema-property file_name
      */
     file_name: string;
     /**
-     * @x-autobe-database-schema-property file_type
+         * @x-autobe-database-schema-property file_type
      */
     file_type: string;
     /**
-     * @x-autobe-database-schema-property file_size
+         * @x-autobe-database-schema-property file_size
      */
     file_size: number & tags.Type<"int32">;
     /**
-     * @x-autobe-database-schema-property status
+         * @x-autobe-database-schema-property status
      */
     status: string;
 
@@ -192,24 +195,26 @@ export namespace IHrmPlatformOrganizationFile {
      *
      * May be null for files that are not publicly accessible. URL format follows URI specification.
      *
-     * @x-autobe-database-schema-property url
-     * @x-autobe-specification Direct mapping from hrm_platform_organization_files.url column. Nullable: url may be null for files without public access URL.
+         * @x-autobe-database-schema-property url
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_organization_files.url column. Nullable: url may be
+         *   null for files without public access URL.
      */
     url: (string & tags.Format<"uri">) | null;
     /**
-     * @x-autobe-database-schema-property file_key
+         * @x-autobe-database-schema-property file_key
      */
     file_key: string;
     /**
-     * @x-autobe-database-schema-property organization
+         * @x-autobe-database-schema-property organization
      */
     organization: IHrmPlatformOrganization.ISummary;
     /**
-     * @x-autobe-database-schema-property created_at
+         * @x-autobe-database-schema-property created_at
      */
     created_at: string & tags.Format<"date-time">;
     /**
-     * @x-autobe-database-schema-property updated_at
+         * @x-autobe-database-schema-property updated_at
      */
     updated_at: string & tags.Format<"date-time">;
   };
@@ -225,50 +230,52 @@ export namespace IHrmPlatformOrganizationFile {
     /**
      * Unique storage key for the file in external object storage (e.g., S3 key).
      *
-     * @x-autobe-database-schema-property file_key
+         * @x-autobe-database-schema-property file_key
      */
     file_key: string;
 
     /**
      * Original filename as uploaded by the user.
      *
-     * @x-autobe-database-schema-property file_name
+         * @x-autobe-database-schema-property file_name
      */
     file_name: string;
 
     /**
      * MIME type or file category (e.g., 'image/png', 'application/pdf', 'logo', 'document').
      *
-     * @x-autobe-database-schema-property file_type
+         * @x-autobe-database-schema-property file_type
      */
     file_type: string;
 
     /**
      * File size in bytes.
      *
-     * @x-autobe-database-schema-property file_size
+         * @x-autobe-database-schema-property file_size
      */
     file_size: number & tags.Type<"int32">;
 
     /**
      * Storage backend type (e.g., 's3', 'local', 'gcs').
      *
-     * @x-autobe-database-schema-property storage_type
+         * @x-autobe-database-schema-property storage_type
      */
     storage_type: string;
 
     /**
      * Public or pre-signed URL for accessing the file. Optional - may be null if file is not publicly accessible.
      *
-     * @x-autobe-database-schema-property url
-     * @x-autobe-specification Direct mapping from hrm_platform_organization_files.url column. Nullable URL field (public or pre-signed URL).
+         * @x-autobe-database-schema-property url
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_organization_files.url column. Nullable URL field
+         *   (public or pre-signed URL).
      */
     url: (string & tags.Format<"uri">) | null;
 
     /**
      * File lifecycle status. Allowed values: 'active', 'deleted', 'archived'. Defaults to 'active'.
      *
-     * @x-autobe-database-schema-property status
+         * @x-autobe-database-schema-property status
      */
     status?: string | undefined;
   };

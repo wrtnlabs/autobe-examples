@@ -14,8 +14,10 @@ export type IEcommerceMallProductSnapshotImage = {
    *
    * ISO 8601 formatted datetime indicating when this specific image was captured in the snapshot.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_product_snapshot_images.created_at. ISO 8601 formatted datetime.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_product_snapshot_images.created_at. ISO 8601 formatted
+     *   datetime.
    */
   createdAt: string & tags.Format<"date-time">;
 
@@ -24,8 +26,10 @@ export type IEcommerceMallProductSnapshotImage = {
    *
    * Lower values appear first in the image gallery. Used to maintain the intended image sequence when displaying product snapshot images.
    *
-   * @x-autobe-database-schema-property display_order
-   * @x-autobe-specification Direct mapping from ecommerce_mall_product_snapshot_images.display_order. Integer value where lower numbers appear first in sorting.
+     * @x-autobe-database-schema-property display_order
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_product_snapshot_images.display_order. Integer value
+     *   where lower numbers appear first in sorting.
    */
   displayOrder: number & tags.Type<"int32">;
 
@@ -34,8 +38,10 @@ export type IEcommerceMallProductSnapshotImage = {
    *
    * Auto-generated UUID primary key that uniquely identifies this image record within the snapshot.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_product_snapshot_images.id. Auto-generated UUID primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_product_snapshot_images.id. Auto-generated UUID primary
+     *   key.
    */
   id: string & tags.Format<"uuid">;
 
@@ -44,8 +50,10 @@ export type IEcommerceMallProductSnapshotImage = {
    *
    * ISO 8601 formatted datetime indicating the last modification time of this image record.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_product_snapshot_images.updated_at. ISO 8601 formatted datetime.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_product_snapshot_images.updated_at. ISO 8601 formatted
+     *   datetime.
    */
   updatedAt: string & tags.Format<"date-time">;
 
@@ -54,8 +62,9 @@ export type IEcommerceMallProductSnapshotImage = {
    *
    * The full URL pointing to the image resource as it appeared at snapshot creation time. Used for displaying the historical product image.
    *
-   * @x-autobe-specification Direct mapping from ecommerce_mall_product_snapshot_images.url. URI format.
-   * @x-autobe-database-schema-property url
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_product_snapshot_images.url. URI format.
+     * @x-autobe-database-schema-property url
    */
   url: string & tags.Format<"uri">;
 };

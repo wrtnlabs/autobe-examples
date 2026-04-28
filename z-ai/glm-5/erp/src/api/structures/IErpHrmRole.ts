@@ -10,63 +10,82 @@ export type IErpHrmRole = {
   /**
    * Unique identifier for the role within the organization.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from erp_hrm_roles.id. UUID primary key generated automatically on role creation.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from erp_hrm_roles.id. UUID
+     *   primary key generated automatically on role creation.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * The organization that owns this role. All roles belong to a specific organization for data isolation.
    *
-   * @x-autobe-database-schema-property organization
-   * @x-autobe-specification Fetched via organization_id FK join to erp_hrm_organizations table. Returns IErpHrmOrganization.ISummary with essential organization details. Used for multi-tenant context display.
+     * @x-autobe-database-schema-property organization
+     * @x-autobe-specification Fetched via organization_id FK join to
+     *   erp_hrm_organizations table. Returns IErpHrmOrganization.ISummary with
+     *   essential organization details. Used for multi-tenant context display.
    */
   organization: IErpHrmOrganization.ISummary;
 
   /**
    * Display name of the role within the organization.
    *
-   * @x-autobe-database-schema-property name
-   * @x-autobe-specification Direct mapping from erp_hrm_roles.name. Unique within organization scope. Built-in roles have fixed names (Owner, Manager, Employee). Custom roles can have any name chosen by the organization owner.
+     * @x-autobe-database-schema-property name
+     * @x-autobe-specification Direct mapping from erp_hrm_roles.name. Unique
+     *   within organization scope. Built-in roles have fixed names (Owner,
+     *   Manager, Employee). Custom roles can have any name chosen by the
+     *   organization owner.
    */
   name: string;
 
   /**
    * Whether this role is a built-in system role protected from deletion.
    *
-   * @x-autobe-database-schema-property is_builtin
-   * @x-autobe-specification Direct mapping from erp_hrm_roles.is_builtin. Built-in roles (true) are created at organization creation and cannot be deleted. Custom roles (false) can be modified and deleted if no employees are assigned.
+     * @x-autobe-database-schema-property is_builtin
+     * @x-autobe-specification Direct mapping from erp_hrm_roles.is_builtin.
+     *   Built-in roles (true) are created at organization creation and cannot
+     *   be deleted. Custom roles (false) can be modified and deleted if no
+     *   employees are assigned.
    */
   is_builtin: boolean;
 
   /**
    * Set of permission codes granted to employees assigned this role. Each permission controls access to specific organizational features.
    *
-   * @x-autobe-specification Computed array from erp_hrm_role_permissions junction table. Query: SELECT permission FROM erp_hrm_role_permissions WHERE role_id = id. Returns array of permission code strings: org:manage, employee:manage, employee:view, project:manage, project:view, time:manage, time:approve, time:view_all, report:view.
+     * @x-autobe-specification Computed array from erp_hrm_role_permissions
+     *   junction table. Query: SELECT permission FROM erp_hrm_role_permissions
+     *   WHERE role_id = id. Returns array of permission code strings:
+     *   org:manage, employee:manage, employee:view, project:manage,
+     *   project:view, time:manage, time:approve, time:view_all, report:view.
    */
   permissions: string[];
 
   /**
    * Timestamp when the role was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from erp_hrm_roles.created_at. Timestamp with timezone, automatically set on role creation. Built-in roles are created at organization creation time.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from erp_hrm_roles.created_at.
+     *   Timestamp with timezone, automatically set on role creation. Built-in
+     *   roles are created at organization creation time.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the role was last modified.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from erp_hrm_roles.updated_at. Timestamp with timezone, automatically updated on role modifications. Custom roles can be edited by organization owners.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from erp_hrm_roles.updated_at.
+     *   Timestamp with timezone, automatically updated on role modifications.
+     *   Custom roles can be edited by organization owners.
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * Soft-deletion timestamp. Null if the role is active; indicates the role has been deleted when set.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from erp_hrm_roles.deleted_at. Nullable timestamp with timezone. Null for active roles. Set when custom role is soft-deleted. Built-in roles cannot be deleted.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from erp_hrm_roles.deleted_at.
+     *   Nullable timestamp with timezone. Null for active roles. Set when
+     *   custom role is soft-deleted. Built-in roles cannot be deleted.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -83,7 +102,11 @@ export namespace IErpHrmRole {
     /**
      * Filter by role type. Set to true to show only built-in system roles (Owner, Manager, Employee), or false to show only custom user-created roles.
      *
-     * @x-autobe-specification Maps to erp_hrm_roles.is_builtin column for filtering. When true, filters to show only built-in system roles (Owner, Manager, Employee). When false, shows only custom user-created roles. When not specified, returns both types. Server applies: WHERE is_builtin = true/false.
+         * @x-autobe-specification Maps to erp_hrm_roles.is_builtin column for
+         *   filtering. When true, filters to show only built-in system roles
+         *   (Owner, Manager, Employee). When false, shows only custom
+         *   user-created roles. When not specified, returns both types. Server
+         *   applies: WHERE is_builtin = true/false.
      */
     isBuiltin?: boolean | undefined;
 
@@ -112,15 +135,28 @@ export namespace IErpHrmRole {
     /**
      * The display name of the role within the organization. Must be unique within the same organization.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping to erp_hrm_roles.name column. Must be unique within the same organization (case-insensitive comparison). For custom roles, any valid name can be provided. For built-in roles, display name may be customized but the underlying role identity remains unchanged.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping to erp_hrm_roles.name column.
+         *   Must be unique within the same organization (case-insensitive
+         *   comparison). For custom roles, any valid name can be provided. For
+         *   built-in roles, display name may be customized but the underlying
+         *   role identity remains unchanged.
      */
     name?: string | undefined;
 
     /**
      * Set of permissions assigned to this role. Each permission defines what actions users with this role can perform. Permission assignments are completely replaced with the provided set.
      *
-     * @x-autobe-specification Manages permission assignments through the erp_hrm_role_permissions junction table. The provided array of permission codes replaces all existing permission records for this role. Implementation: DELETE existing erp_hrm_role_permissions WHERE role_id = current_role, then INSERT new record for each permission code. Each code must be one of: org:manage, employee:manage, employee:view, project:manage, project:view, time:manage, time:approve, time:view_all, report:view. For built-in roles: Owner role permissions are immutable; Manager/Employee roles allow adding permissions beyond defaults.
+         * @x-autobe-specification Manages permission assignments through the
+         *   erp_hrm_role_permissions junction table. The provided array of
+         *   permission codes replaces all existing permission records for this
+         *   role. Implementation: DELETE existing erp_hrm_role_permissions
+         *   WHERE role_id = current_role, then INSERT new record for each
+         *   permission code. Each code must be one of: org:manage,
+         *   employee:manage, employee:view, project:manage, project:view,
+         *   time:manage, time:approve, time:view_all, report:view. For built-in
+         *   roles: Owner role permissions are immutable; Manager/Employee roles
+         *   allow adding permissions beyond defaults.
      */
     permissions?:
       | (
@@ -144,15 +180,25 @@ export namespace IErpHrmRole {
     /**
      * Display name of the custom role within the organization. Must be unique within the same organization scope and should clearly indicate the role's purpose or responsibility level.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping to erp_hrm_roles.name. Must be unique within the organization scope (excluding soft-deleted roles). Validated against existing roles in same organization before insertion.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping to erp_hrm_roles.name. Must be
+         *   unique within the organization scope (excluding soft-deleted
+         *   roles). Validated against existing roles in same organization
+         *   before insertion.
      */
     name: string;
 
     /**
      * Set of permissions granted to employees assigned this role. Each permission controls access to specific organizational features. Available permissions include organization management, employee management/viewing, project management/viewing, time tracking management/approval/viewing, and report viewing.
      *
-     * @x-autobe-specification Computed property: each string in the array creates a record in erp_hrm_role_permissions junction table linking the new role_id to the permission code. Valid permission codes: ['org:manage', 'employee:manage', 'employee:view', 'project:manage', 'project:view', 'time:manage', 'time:approve', 'time:view_all', 'report:view']. Empty array is valid (creates role with no permissions). Not a direct mapping to any column or relation in erp_hrm_roles.
+         * @x-autobe-specification Computed property: each string in the array
+         *   creates a record in erp_hrm_role_permissions junction table linking
+         *   the new role_id to the permission code. Valid permission codes:
+         *   ['org:manage', 'employee:manage', 'employee:view',
+         *   'project:manage', 'project:view', 'time:manage', 'time:approve',
+         *   'time:view_all', 'report:view']. Empty array is valid (creates role
+         *   with no permissions). Not a direct mapping to any column or
+         *   relation in erp_hrm_roles.
      */
     permissions: (
       | "org:manage"
@@ -174,32 +220,40 @@ export namespace IErpHrmRole {
     /**
      * Unique identifier for the role within the organization.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from erp_hrm_roles.id. UUID primary key generated by database.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from erp_hrm_roles.id. UUID
+         *   primary key generated by database.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Display name of the role. Built-in roles have fixed names (Owner, Manager, Employee); custom roles have user-defined names.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from erp_hrm_roles.name. Unique within organization scope. Built-in roles have fixed names (Owner, Manager, Employee); custom roles have user-defined names.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from erp_hrm_roles.name.
+         *   Unique within organization scope. Built-in roles have fixed names
+         *   (Owner, Manager, Employee); custom roles have user-defined names.
      */
     name: string;
 
     /**
      * Whether this is a built-in system role that cannot be deleted. Built-in roles (Owner, Manager, Employee) are created automatically when an organization is established.
      *
-     * @x-autobe-database-schema-property is_builtin
-     * @x-autobe-specification Direct mapping from erp_hrm_roles.is_builtin. Boolean flag indicating whether this is a protected system role. Built-in roles cannot be deleted and have predefined permission sets.
+         * @x-autobe-database-schema-property is_builtin
+         * @x-autobe-specification Direct mapping from erp_hrm_roles.is_builtin.
+         *   Boolean flag indicating whether this is a protected system role.
+         *   Built-in roles cannot be deleted and have predefined permission
+         *   sets.
      */
     isBuiltin: boolean;
 
     /**
      * Timestamp when the role was created. Built-in roles are created at organization creation time.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from erp_hrm_roles.created_at. Timestamp stored in timestamptz format. Built-in roles are created at organization creation time.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from erp_hrm_roles.created_at.
+         *   Timestamp stored in timestamptz format. Built-in roles are created
+         *   at organization creation time.
      */
     createdAt: string & tags.Format<"date-time">;
   };

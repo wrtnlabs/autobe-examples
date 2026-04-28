@@ -31,7 +31,8 @@ import { IPageIEcommerceMallCustomerSession } from "../../../../../structures/IP
  * @param props.body Search criteria including optional filters for creation date range, expiration status, IP address pattern, and pagination parameters (page, limit) and sorting options.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Query ecommerce_mall_customer_sessions table filtering by ecommerce_mall_customer_id from authenticated session.
+ * @x-autobe-specification Query ecommerce_mall_customer_sessions table
+ *   filtering by ecommerce_mall_customer_id from authenticated session.
  *
  * 1. Extract customer_id from JWT authentication token in Authorization header
  * 2. Build query with customer_id filter (required): WHERE ecommerce_mall_customer_id = customer_id
@@ -143,7 +144,8 @@ export namespace index {
  * @param props.sessionId Unique identifier of the session to retrieve (UUID format).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Query the ecommerce_mall_customer_sessions table filtering by the sessionId parameter.
+ * @x-autobe-specification Query the ecommerce_mall_customer_sessions table
+ *   filtering by the sessionId parameter.
  *
  * Retrieve session record and verify that the ecommerce_mall_customer_id matches the authenticated customer's ID from the session token. If the session belongs to another customer, return 403 Forbidden.
  *

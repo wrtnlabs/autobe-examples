@@ -18,9 +18,13 @@ export class EcommercemallSellerOrder_itemsProduct_snapshotController {
    *
    * @param connection
    * @param itemId Unique identifier (UUID) of the order item whose product-variant snapshot is being retrieved. Each order item has exactly one snapshot, created at order placement time.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Query the e_commerce_mall_order_item_snapshots table filtering by e_commerce_mall_order_item_id matching the provided itemId parameter. Since the relationship is 1:1 (enforced by unique constraint on e_commerce_mall_order_item_id), the query will return at most one record.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Query the e_commerce_mall_order_item_snapshots
+     *   table filtering by e_commerce_mall_order_item_id matching the provided
+     *   itemId parameter. Since the relationship is 1:1 (enforced by unique
+     *   constraint on e_commerce_mall_order_item_id), the query will return at
+     *   most one record.
    *
    * Authorization:
    * - The requesting customer must own the parent order containing this order item.

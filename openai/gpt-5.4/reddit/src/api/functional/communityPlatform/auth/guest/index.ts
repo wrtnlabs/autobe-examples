@@ -23,7 +23,13 @@ import { ICommunityPlatformGuest } from "../../../../structures/ICommunityPlatfo
  * @param props.body Guest join payload for establishing an anonymous authorized session.
  * @x-autobe-authorization-type join
  * @x-autobe-authorization-actor guest
- * @x-autobe-specification Implement guest join as anonymous authorization issuance backed by the `community_platform_guests` actor table and the `community_platform_guest_sessions` session table. The service should validate the incoming join payload defined by `ICommunityPlatformGuest.IJoin`, derive or accept the client connection context needed for session establishment, and then create or reuse a stable guest identity anchored by `community_platform_guests.guest_key`.
+ * @x-autobe-specification Implement guest join as anonymous authorization
+ *   issuance backed by the `community_platform_guests` actor table and the
+ *   `community_platform_guest_sessions` session table. The service should
+ *   validate the incoming join payload defined by
+ *   `ICommunityPlatformGuest.IJoin`, derive or accept the client connection
+ *   context needed for session establishment, and then create or reuse a stable
+ *   guest identity anchored by `community_platform_guests.guest_key`.
  *
  * If the request represents a first-time anonymous visitor, generate a new guest `id` and unique `guest_key`, persist `created_at` and `updated_at`, and ensure `deleted_at` is null for the active record. If the request contains information allowing safe continuity with an existing non-retired guest identity, load the existing guest record by its stable key and update `updated_at`. In either case, create a new `community_platform_guest_sessions` row with a new session `id`, the resolved `community_platform_guest_id`, the incoming `ip`, `href`, and `referrer` values when available from the request or request context, plus `created_at` and a newly computed `expired_at`.
  *
@@ -124,7 +130,12 @@ export namespace join {
  * @param props.body Guest refresh payload for renewing an anonymous authorized session.
  * @x-autobe-authorization-type refresh
  * @x-autobe-authorization-actor guest
- * @x-autobe-specification Implement guest refresh as token renewal for an already established anonymous guest authorization context. The service should validate the `ICommunityPlatformGuest.IRefresh` payload, extract the guest and session identifiers from the presented refresh material, and load the corresponding `community_platform_guest_sessions` row together with its parent `community_platform_guests` record.
+ * @x-autobe-specification Implement guest refresh as token renewal for an
+ *   already established anonymous guest authorization context. The service
+ *   should validate the `ICommunityPlatformGuest.IRefresh` payload, extract the
+ *   guest and session identifiers from the presented refresh material, and load
+ *   the corresponding `community_platform_guest_sessions` row together with its
+ *   parent `community_platform_guests` record.
  *
  * The refresh flow must confirm that the parent guest identity still exists and is not retired for authorization purposes, and that the target session has not passed `expired_at`. If the session is valid, update session timing as needed according to the platform's refresh policy, which may include rotating session identifiers or extending `expired_at` while preserving the relationship to `community_platform_guest_id`. If the implementation records connection context on refresh, it should also update or append the latest `ip`, `href`, or `referrer` values only within the boundaries allowed by the existing schema.
  *

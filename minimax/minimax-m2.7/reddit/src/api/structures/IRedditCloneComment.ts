@@ -11,80 +11,93 @@ export type IRedditCloneComment = {
   /**
    * Unique identifier for the comment.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from reddit_clone_comments.id. UUID primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from reddit_clone_comments.id.
+     *   UUID primary key.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * The text content of the comment.
    *
-   * @x-autobe-database-schema-property content
-   * @x-autobe-specification Direct mapping from reddit_clone_comments.content. Text content of the comment.
+     * @x-autobe-database-schema-property content
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_comments.content. Text content of the comment.
    */
   content: string;
 
   /**
    * Denormalized vote score (upvotes minus downvotes) for efficient sorting.
    *
-   * @x-autobe-database-schema-property vote_score
-   * @x-autobe-specification Direct mapping from reddit_clone_comments.vote_score. Denormalized integer for efficient sorting.
+     * @x-autobe-database-schema-property vote_score
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_comments.vote_score. Denormalized integer for efficient
+     *   sorting.
    */
   voteScore: number & tags.Type<"int32">;
 
   /**
    * Timestamp when the comment was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from reddit_clone_comments.created_at. Timestamp when comment was created.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_comments.created_at. Timestamp when comment was created.
    */
   createdAt: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the comment was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from reddit_clone_comments.updated_at. Timestamp when comment was last updated.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_comments.updated_at. Timestamp when comment was last
+     *   updated.
    */
   updatedAt: string & tags.Format<"date-time">;
 
   /**
    * Soft-delete timestamp. Null if active, non-null if deleted.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from reddit_clone_comments.deleted_at. Nullable timestamp for soft-delete.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_comments.deleted_at. Nullable timestamp for soft-delete.
    */
   deletedAt: (string & tags.Format<"date-time">) | null;
 
   /**
    * The post this comment belongs to.
    *
-   * @x-autobe-database-schema-property post
-   * @x-autobe-specification BELONGS-TO relation: JOIN reddit_clone_posts via reddit_clone_post_id. Returns IRedditClonePost.ISummary.
+     * @x-autobe-database-schema-property post
+     * @x-autobe-specification BELONGS-TO relation: JOIN reddit_clone_posts via
+     *   reddit_clone_post_id. Returns IRedditClonePost.ISummary.
    */
   post: IRedditClonePost.ISummary;
 
   /**
    * The author of this comment.
    *
-   * @x-autobe-database-schema-property member
-   * @x-autobe-specification BELONGS-TO relation: JOIN reddit_clone_members via reddit_clone_member_id. Returns IRedditCloneMember.ISummary.
+     * @x-autobe-database-schema-property member
+     * @x-autobe-specification BELONGS-TO relation: JOIN reddit_clone_members
+     *   via reddit_clone_member_id. Returns IRedditCloneMember.ISummary.
    */
   member: IRedditCloneMember.ISummary;
 
   /**
    * Parent comment for nested replies. Null for top-level comments.
    *
-   * @x-autobe-specification BELONGS-TO relation: JOIN reddit_clone_comments via parent_comment_id. Returns IRedditCloneComment.ISummary. Null for top-level comments.
-   * @x-autobe-database-schema-property parent
+     * @x-autobe-specification BELONGS-TO relation: JOIN reddit_clone_comments
+     *   via parent_comment_id. Returns IRedditCloneComment.ISummary. Null for
+     *   top-level comments.
+     * @x-autobe-database-schema-property parent
    */
   parent?: IRedditCloneComment.ISummary | null | undefined;
 
   /**
    * Nested replies to this comment.
    *
-   * @x-autobe-database-schema-property replies
-   * @x-autobe-specification HAS-MANY relation: Recursive self-reference via parent_comment_id. Returns array of IRedditCloneComment.ISummary.
+     * @x-autobe-database-schema-property replies
+     * @x-autobe-specification HAS-MANY relation: Recursive self-reference via
+     *   parent_comment_id. Returns array of IRedditCloneComment.ISummary.
    */
   replies: IRedditCloneComment.ISummary[];
 };
@@ -96,21 +109,32 @@ export namespace IRedditCloneComment {
     /**
      * Sorting order for comment listings. Best ranks by highest vote score, New by most recent, Controversial by lowest absolute score (many votes but balanced up/down).
      *
-     * @x-autobe-specification Sort order query parameter. Determines ordering of returned comments: Best (vote_score DESC, created_at DESC for tie-breaker), New (created_at DESC), Controversial (ABS(vote_score) ASC, vote_score DESC, created_at DESC). Maps to Prisma orderBy clause using denormalized vote_score and created_at columns.
+         * @x-autobe-specification Sort order query parameter. Determines
+         *   ordering of returned comments: Best (vote_score DESC, created_at
+         *   DESC for tie-breaker), New (created_at DESC), Controversial
+         *   (ABS(vote_score) ASC, vote_score DESC, created_at DESC). Maps to
+         *   Prisma orderBy clause using denormalized vote_score and created_at
+         *   columns.
      */
     sort?: "Best" | "New" | "Controversial" | undefined;
 
     /**
      * Page number for offset-based pagination. Use with limit to calculate records to skip. Page 1 is the first page.
      *
-     * @x-autobe-specification Offset-based page number (1-indexed). Calculates skip as (page - 1) * limit. Default: 1. Requires positive integer. Used when cursor is not provided for simpler pagination.
+         * @x-autobe-specification Offset-based page number (1-indexed).
+         *   Calculates skip as (page - 1) * limit. Default: 1. Requires
+         *   positive integer. Used when cursor is not provided for simpler
+         *   pagination.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of comments to return per page. Range: 1-100, default 20.
      *
-     * @x-autobe-specification Number of records per page. Constrained to 1-100 range. Default: 20. Determines TAKE in Prisma query. Combined with page to calculate offset, or used as take with cursor pagination.
+         * @x-autobe-specification Number of records per page. Constrained to
+         *   1-100 range. Default: 20. Determines TAKE in Prisma query. Combined
+         *   with page to calculate offset, or used as take with cursor
+         *   pagination.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -119,21 +143,32 @@ export namespace IRedditCloneComment {
     /**
      * Opaque pagination cursor string from previous response. Encodes pagination position for stable cursor-based navigation.
      *
-     * @x-autobe-specification Opaque cursor string for cursor-based pagination. Typically base64-encoded combination of cursorId and cursorCreatedAt. Server decodes to extract cursorId (comment ID) and cursorCreatedAt (timestamp) for stable pagination across writes.
+         * @x-autobe-specification Opaque cursor string for cursor-based
+         *   pagination. Typically base64-encoded combination of cursorId and
+         *   cursorCreatedAt. Server decodes to extract cursorId (comment ID)
+         *   and cursorCreatedAt (timestamp) for stable pagination across
+         *   writes.
      */
     cursor?: string | undefined;
 
     /**
      * Cursor ID field containing the comment ID from the last item in the previous page. Used with cursorCreatedAt for stable cursor-based pagination.
      *
-     * @x-autobe-specification Comment ID cursor for pagination. Used with cursorCreatedAt as composite cursor. Query filters: for forward pagination, use created_at > cursorCreatedAt OR (created_at = cursorCreatedAt AND id > cursorId) for stable ordering within same timestamp.
+         * @x-autobe-specification Comment ID cursor for pagination. Used with
+         *   cursorCreatedAt as composite cursor. Query filters: for forward
+         *   pagination, use created_at > cursorCreatedAt OR (created_at =
+         *   cursorCreatedAt AND id > cursorId) for stable ordering within same
+         *   timestamp.
      */
     cursorId?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Cursor timestamp field containing the creation timestamp of the last item in the previous page. Used with cursorId for stable cursor-based pagination across same-timestamp items.
      *
-     * @x-autobe-specification Cursor timestamp from last item's created_at. Combined with cursorId for composite cursor. Ensures stable ordering when multiple items share the same timestamp. Use > comparison for forward pagination.
+         * @x-autobe-specification Cursor timestamp from last item's created_at.
+         *   Combined with cursorId for composite cursor. Ensures stable
+         *   ordering when multiple items share the same timestamp. Use >
+         *   comparison for forward pagination.
      */
     cursorCreatedAt?: (string & tags.Format<"date-time">) | undefined;
   };
@@ -143,11 +178,11 @@ export namespace IRedditCloneComment {
    */
   export type ICreate = {
     /**
-     * @x-autobe-database-schema-property content
+         * @x-autobe-database-schema-property content
      */
     content: string;
     /**
-     * @x-autobe-database-schema-property parent_comment_id
+         * @x-autobe-database-schema-property parent_comment_id
      */
     parentCommentId?: (string & tags.Format<"uuid">) | null | undefined;
   };
@@ -159,48 +194,58 @@ export namespace IRedditCloneComment {
     /**
      * Unique identifier for the comment.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from reddit_clone_comments.id. UUID primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from reddit_clone_comments.id.
+         *   UUID primary key.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * The text content of the comment.
      *
-     * @x-autobe-database-schema-property content
-     * @x-autobe-specification Direct mapping from reddit_clone_comments.content. Text content of the comment.
+         * @x-autobe-database-schema-property content
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_comments.content. Text content of the comment.
      */
     content: string;
 
     /**
      * The author of this comment.
      *
-     * @x-autobe-database-schema-property member
-     * @x-autobe-specification Join via reddit_clone_member_id to reddit_clone_members. Returns IRedditCloneMember.ISummary with display name, bio, and avatar.
+         * @x-autobe-database-schema-property member
+         * @x-autobe-specification Join via reddit_clone_member_id to
+         *   reddit_clone_members. Returns IRedditCloneMember.ISummary with
+         *   display name, bio, and avatar.
      */
     author: IRedditCloneMember.ISummary;
 
     /**
      * The vote score of the comment (upvotes minus downvotes).
      *
-     * @x-autobe-database-schema-property vote_score
-     * @x-autobe-specification Direct mapping from reddit_clone_comments.vote_score. Denormalized field: upvotes minus downvotes.
+         * @x-autobe-database-schema-property vote_score
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_comments.vote_score. Denormalized field: upvotes minus
+         *   downvotes.
      */
     voteScore: number & tags.Type<"int32">;
 
     /**
      * When the comment was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from reddit_clone_comments.created_at. Timestamp in UTC.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_comments.created_at. Timestamp in UTC.
      */
     createdAt: string & tags.Format<"date-time">;
 
     /**
      * Nested replies to this comment, forming a hierarchical thread tree.
      *
-     * @x-autobe-database-schema-property replies
-     * @x-autobe-specification Recursive HAS-MANY relation via parent_comment_id. Query all child comments where parent_comment_id equals current comment's id. Nested IRedditCloneComment.ISummary array, unlimited depth.
+         * @x-autobe-database-schema-property replies
+         * @x-autobe-specification Recursive HAS-MANY relation via
+         *   parent_comment_id. Query all child comments where parent_comment_id
+         *   equals current comment's id. Nested IRedditCloneComment.ISummary
+         *   array, unlimited depth.
      */
     replies: IRedditCloneComment.ISummary[];
   };
@@ -212,8 +257,10 @@ export namespace IRedditCloneComment {
     /**
      * The new text content for the comment.
      *
-     * @x-autobe-database-schema-property content
-     * @x-autobe-specification Direct mapping from reddit_clone_comments.content column. Updates the text content of an existing comment or reply.
+         * @x-autobe-database-schema-property content
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_comments.content column. Updates the text content of
+         *   an existing comment or reply.
      */
     content: string;
   };
@@ -225,56 +272,70 @@ export namespace IRedditCloneComment {
     /**
      * Unique comment identifier.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from reddit_clone_comments.id. Primary key UUID.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from reddit_clone_comments.id.
+         *   Primary key UUID.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * The text content of the comment, or null if the comment has been deleted.
      *
-     * @x-autobe-database-schema-property content
-     * @x-autobe-specification Direct mapping from reddit_clone_comments.content. Returns null when deleted_at is set (soft-delete).
+         * @x-autobe-database-schema-property content
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_comments.content. Returns null when deleted_at is set
+         *   (soft-delete).
      */
     content: string | null;
 
     /**
      * Timestamp when the comment was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from reddit_clone_comments.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_comments.created_at.
      */
     createdAt: string & tags.Format<"date-time">;
 
     /**
      * Denormalized vote score (upvotes minus downvotes) for efficient sorting.
      *
-     * @x-autobe-database-schema-property vote_score
-     * @x-autobe-specification Direct mapping from reddit_clone_comments.vote_score. Denormalized field storing upvotes minus downvotes.
+         * @x-autobe-database-schema-property vote_score
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_comments.vote_score. Denormalized field storing
+         *   upvotes minus downvotes.
      */
     voteScore: number & tags.Type<"int32">;
 
     /**
      * The author of the comment.
      *
-     * @x-autobe-database-schema-property member
-     * @x-autobe-specification Join from reddit_clone_comments.reddit_clone_member_id to reddit_clone_members.id. Returns IRedditCloneMember.ISummary with id and username.
+         * @x-autobe-database-schema-property member
+         * @x-autobe-specification Join from
+         *   reddit_clone_comments.reddit_clone_member_id to
+         *   reddit_clone_members.id. Returns IRedditCloneMember.ISummary with
+         *   id and username.
      */
     author: IRedditCloneMember.ISummary;
 
     /**
      * The parent post this comment belongs to.
      *
-     * @x-autobe-database-schema-property post
-     * @x-autobe-specification Join from reddit_clone_comments.reddit_clone_post_id to reddit_clone_posts.id. Returns IRedditClonePost.ISummary.
+         * @x-autobe-database-schema-property post
+         * @x-autobe-specification Join from
+         *   reddit_clone_comments.reddit_clone_post_id to
+         *   reddit_clone_posts.id. Returns IRedditClonePost.ISummary.
      */
     post: IRedditClonePost.ISummary;
 
     /**
      * Nested replies to this comment, recursively including their own replies, sorted by vote score.
      *
-     * @x-autobe-database-schema-property replies
-     * @x-autobe-specification Has-many relation: reddit_clone_comments.replies where parent_comment_id equals current comment.id. Recursive IRedditCloneComment.IInvert structure. Sorted by vote_score descending (Best sorting).
+         * @x-autobe-database-schema-property replies
+         * @x-autobe-specification Has-many relation:
+         *   reddit_clone_comments.replies where parent_comment_id equals
+         *   current comment.id. Recursive IRedditCloneComment.IInvert
+         *   structure. Sorted by vote_score descending (Best sorting).
      */
     replies: IRedditCloneComment.IInvert[];
   };

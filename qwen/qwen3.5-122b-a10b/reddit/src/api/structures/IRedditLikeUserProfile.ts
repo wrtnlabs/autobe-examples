@@ -28,8 +28,9 @@ export type IRedditLikeUserProfile = {
    *
    * This is the primary key of the profile entity, generated as a UUID when the profile is created. It uniquely identifies this profile across the system.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from reddit_like_user_profiles.id. UUID format, primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from reddit_like_user_profiles.id.
+     *   UUID format, primary key.
    */
   id: string & tags.Format<"uuid">;
 
@@ -38,8 +39,9 @@ export type IRedditLikeUserProfile = {
    *
    * This is the name that appears alongside the user's content throughout the platform. Users can change their display name at any time through profile editing.
    *
-   * @x-autobe-database-schema-property display_name
-   * @x-autobe-specification Direct mapping from reddit_like_user_profiles.display_name. Required, non-empty string.
+     * @x-autobe-database-schema-property display_name
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_user_profiles.display_name. Required, non-empty string.
    */
   display_name: string;
 
@@ -48,8 +50,10 @@ export type IRedditLikeUserProfile = {
    *
    * Users can write a short bio to introduce themselves to the community. This field is optional and can be empty or null if the user has not provided one.
    *
-   * @x-autobe-database-schema-property bio
-   * @x-autobe-specification Direct mapping from reddit_like_user_profiles.bio. Nullable string, optional biography text.
+     * @x-autobe-database-schema-property bio
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_user_profiles.bio. Nullable string, optional biography
+     *   text.
    */
   bio?: string | null | undefined;
 
@@ -58,8 +62,10 @@ export type IRedditLikeUserProfile = {
    *
    * Points to the uploaded image file stored in the file storage system. Can be null if the user has not uploaded an avatar. Image format is validated against supported types.
    *
-   * @x-autobe-specification Direct mapping from reddit_like_user_profiles.avatar. Nullable string URI, validated for supported image formats.
-   * @x-autobe-database-schema-property avatar
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_user_profiles.avatar. Nullable string URI, validated for
+     *   supported image formats.
+     * @x-autobe-database-schema-property avatar
    */
   avatar?: (string & tags.Format<"uri">) | null | undefined;
 
@@ -68,8 +74,9 @@ export type IRedditLikeUserProfile = {
    *
    * Increases by 1 for each upvote received, decreases by 1 for each downvote. Can be positive, negative, or zero. Updated automatically when votes are cast or removed on the user's content.
    *
-   * @x-autobe-database-schema-property karma_score
-   * @x-autobe-specification Direct mapping from reddit_like_user_profiles.karma_score. Integer, cumulative vote score.
+     * @x-autobe-database-schema-property karma_score
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_user_profiles.karma_score. Integer, cumulative vote score.
    */
   karma_score: number & tags.Type<"int32">;
 
@@ -78,8 +85,9 @@ export type IRedditLikeUserProfile = {
    *
    * Each profile is linked to exactly one member account in a 1:1 relationship. The profile cannot exist without its associated member account. Contains public identity information including username and authentication details.
    *
-   * @x-autobe-database-schema-property member
-   * @x-autobe-specification JOIN from profiles.reddit_like_member_id to members.id. Returns IRedditLikeMember.ISummary.
+     * @x-autobe-database-schema-property member
+     * @x-autobe-specification JOIN from profiles.reddit_like_member_id to
+     *   members.id. Returns IRedditLikeMember.ISummary.
    */
   member: IRedditLikeMember.ISummary;
 
@@ -88,8 +96,9 @@ export type IRedditLikeUserProfile = {
    *
    * Automatically set when the member account is registered. Used for tracking account age and audit purposes.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from reddit_like_user_profiles.created_at. DateTime, timestamptz format.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_user_profiles.created_at. DateTime, timestamptz format.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -98,8 +107,9 @@ export type IRedditLikeUserProfile = {
    *
    * Updated whenever any profile field is modified. Used for tracking modifications and synchronization purposes.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from reddit_like_user_profiles.updated_at. DateTime, timestamptz format.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_user_profiles.updated_at. DateTime, timestamptz format.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -108,8 +118,10 @@ export type IRedditLikeUserProfile = {
    *
    * Set when the associated member account is deleted. Allows for potential recovery within the retention period. NULL for active profiles.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from reddit_like_user_profiles.deleted_at. Nullable DateTime, soft-delete timestamp.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_user_profiles.deleted_at. Nullable DateTime, soft-delete
+     *   timestamp.
    */
   deleted_at?: (string & tags.Format<"date-time">) | null | undefined;
 };
@@ -153,7 +165,10 @@ export namespace IRedditLikeUserProfile {
      * - Recommended for large profile datasets
      * - Consider result limits for very broad searches
      *
-     * @x-autobe-specification Query parameter for GIN trigram search on reddit_like_user_profiles.display_name. Applied via WHERE clause with ILIKE or pg_trgm extension. Returns partial matches when provided.
+         * @x-autobe-specification Query parameter for GIN trigram search on
+         *   reddit_like_user_profiles.display_name. Applied via WHERE clause
+         *   with ILIKE or pg_trgm extension. Returns partial matches when
+         *   provided.
      */
     search?: string | undefined;
 
@@ -173,7 +188,9 @@ export namespace IRedditLikeUserProfile {
      * - Filtering out newly registered accounts
      * - Quality threshold for content contributor discovery
      *
-     * @x-autobe-specification Query parameter for filtering reddit_like_user_profiles by minimum karma_score. Applied via WHERE karma_score >= value. Inclusive lower bound.
+         * @x-autobe-specification Query parameter for filtering
+         *   reddit_like_user_profiles by minimum karma_score. Applied via WHERE
+         *   karma_score >= value. Inclusive lower bound.
      */
     karma_score_min?: (number & tags.Type<"int32">) | undefined;
 
@@ -193,7 +210,9 @@ export namespace IRedditLikeUserProfile {
      * - Creating tiered user lists
      * - Identifying users within specific karma brackets
      *
-     * @x-autobe-specification Query parameter for filtering reddit_like_user_profiles by maximum karma_score. Applied via WHERE karma_score <= value. Inclusive upper bound.
+         * @x-autobe-specification Query parameter for filtering
+         *   reddit_like_user_profiles by maximum karma_score. Applied via WHERE
+         *   karma_score <= value. Inclusive upper bound.
      */
     karma_score_max?: (number & tags.Type<"int32">) | undefined;
 
@@ -213,7 +232,10 @@ export namespace IRedditLikeUserProfile {
      * - Filtering recent registrations
      * - Time-based user cohort analysis
      *
-     * @x-autobe-specification Query parameter for filtering reddit_like_user_profiles by minimum created_at timestamp. Applied via WHERE created_at >= value. Inclusive lower bound in ISO 8601 date-time format.
+         * @x-autobe-specification Query parameter for filtering
+         *   reddit_like_user_profiles by minimum created_at timestamp. Applied
+         *   via WHERE created_at >= value. Inclusive lower bound in ISO 8601
+         *   date-time format.
      */
     created_at_from?: (string & tags.Format<"date-time">) | undefined;
 
@@ -234,7 +256,10 @@ export namespace IRedditLikeUserProfile {
      * - Filtering historical registrations
      * - Time-based user cohort analysis
      *
-     * @x-autobe-specification Query parameter for filtering reddit_like_user_profiles by maximum created_at timestamp. Applied via WHERE created_at <= value. Inclusive upper bound in ISO 8601 date-time format.
+         * @x-autobe-specification Query parameter for filtering
+         *   reddit_like_user_profiles by maximum created_at timestamp. Applied
+         *   via WHERE created_at <= value. Inclusive upper bound in ISO 8601
+         *   date-time format.
      */
     created_at_to?: (string & tags.Format<"date-time">) | undefined;
 
@@ -258,7 +283,9 @@ export namespace IRedditLikeUserProfile {
      * - Top contributor rankings (karma_score desc)
      * - Recent joiners list (created_at desc)
      *
-     * @x-autobe-specification Query parameter for specifying sort field. Valid values: display_name, karma_score, created_at. Applied via ORDER BY clause. Defaults to created_at when not specified.
+         * @x-autobe-specification Query parameter for specifying sort field.
+         *   Valid values: display_name, karma_score, created_at. Applied via
+         *   ORDER BY clause. Defaults to created_at when not specified.
      */
     sort?: "display_name" | "karma_score" | "created_at" | undefined;
 
@@ -281,7 +308,9 @@ export namespace IRedditLikeUserProfile {
      * - `sort=karma_score&sort_direction=desc`: Top contributors first
      * - `sort=display_name&sort_direction=asc`: Alphabetical order
      *
-     * @x-autobe-specification Query parameter for specifying sort direction. Valid values: asc, desc. Applied via ORDER BY ASC/DESC. Defaults to desc when not specified.
+         * @x-autobe-specification Query parameter for specifying sort
+         *   direction. Valid values: asc, desc. Applied via ORDER BY ASC/DESC.
+         *   Defaults to desc when not specified.
      */
     sort_direction?: "asc" | "desc" | undefined;
 
@@ -305,7 +334,9 @@ export namespace IRedditLikeUserProfile {
      * - Recommended default of 20 balances usability and performance
      * - Consider client capabilities when choosing limit values
      *
-     * @x-autobe-specification Query parameter for pagination page size. Valid range: 1-100. Applied via LIMIT clause in SQL. Defaults to 20 when not specified.
+         * @x-autobe-specification Query parameter for pagination page size.
+         *   Valid range: 1-100. Applied via LIMIT clause in SQL. Defaults to 20
+         *   when not specified.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -330,7 +361,9 @@ export namespace IRedditLikeUserProfile {
      * - Page N offset = (N - 1) × limit
      * - Use offset=0 for first page, offset=limit for second page, etc.
      *
-     * @x-autobe-specification Query parameter for pagination offset. Minimum value: 0. Applied via OFFSET clause in SQL. Defaults to 0 when not specified. Use with limit for pagination.
+         * @x-autobe-specification Query parameter for pagination offset.
+         *   Minimum value: 0. Applied via OFFSET clause in SQL. Defaults to 0
+         *   when not specified. Use with limit for pagination.
      */
     offset?: (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
 
@@ -355,7 +388,9 @@ export namespace IRedditLikeUserProfile {
      * - Page 2 with limit 20: offset 20, returns results 21-40
      * - Page 10 with limit 20: offset 180, returns results 181-200
      *
-     * @x-autobe-specification Query parameter for 1-indexed page number. Minimum value: 1 (null defaults to 1). Used to calculate offset as (page - 1) × limit. Alternative to offset parameter.
+         * @x-autobe-specification Query parameter for 1-indexed page number.
+         *   Minimum value: 1 (null defaults to 1). Used to calculate offset as
+         *   (page - 1) × limit. Alternative to offset parameter.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };

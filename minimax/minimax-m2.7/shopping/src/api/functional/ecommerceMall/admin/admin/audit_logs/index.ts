@@ -30,7 +30,8 @@ import { IPageIEcommerceMallAdminAuditLog } from "../../../../../structures/IPag
  * @param props.body Search criteria including administrator ID, action type, resource type, resource ID, date range filters, and pagination parameters.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Query ecommerce_mall_admin_audit_logs table with pagination and optional filtering.
+ * @x-autobe-specification Query ecommerce_mall_admin_audit_logs table with
+ *   pagination and optional filtering.
  *
  * 1. Apply search filters if provided:
  *    - ecommerceMallAdminId: Filter by specific administrator
@@ -141,7 +142,8 @@ export namespace index {
  * @param props.logId Unique identifier of the audit log entry to retrieve.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Query the ecommerce_mall_admin_audit_logs table using the provided logId parameter as the primary key.
+ * @x-autobe-specification Query the ecommerce_mall_admin_audit_logs table using
+ *   the provided logId parameter as the primary key.
  *
  * Join with ecommerce_mall_admins table to retrieve administrator details (email, name) for the admin who performed the action.
  *
@@ -238,7 +240,8 @@ export namespace getByLogid {
  * @param props.auditLogId Unique identifier of the admin audit log record to retrieve (UUID format).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Query the ecommerce_mall_admin_audit_logs table by the provided audit log ID.
+ * @x-autobe-specification Query the ecommerce_mall_admin_audit_logs table by
+ *   the provided audit log ID.
  *
  * 1. Validate that the auditLogId is a valid UUID format.
  * 2. Query the database for the audit log record matching the ID.

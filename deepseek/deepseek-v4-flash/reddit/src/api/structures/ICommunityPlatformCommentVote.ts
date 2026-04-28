@@ -17,8 +17,9 @@ export type ICommunityPlatformCommentVote = {
    *
    * The primary key used to reference this specific vote in API responses and downstream operations such as vote updates or deletions.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct UUID mapping from community_platform_comment_votes.id. Auto-generated primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct UUID mapping from
+     *   community_platform_comment_votes.id. Auto-generated primary key.
    */
   id: string & tags.Format<"uuid">;
 
@@ -27,8 +28,10 @@ export type ICommunityPlatformCommentVote = {
    *
    * Contains a summary of the voter's member account including their unique identifier, username, and email address. This relationship is established through the member foreign key and is always present — every vote is cast by exactly one registered member.
    *
-   * @x-autobe-database-schema-property voter
-   * @x-autobe-specification INNER JOIN community_platform_members via community_platform_member_id FK. Rendered as ICommunityPlatformMember.ISummary.
+     * @x-autobe-database-schema-property voter
+     * @x-autobe-specification INNER JOIN community_platform_members via
+     *   community_platform_member_id FK. Rendered as
+     *   ICommunityPlatformMember.ISummary.
    */
   voter: ICommunityPlatformMember.ISummary;
 
@@ -37,8 +40,10 @@ export type ICommunityPlatformCommentVote = {
    *
    * Contains a summary of the voted comment including its unique identifier, content preview, vote score, and creation timestamp. Each vote targets exactly one comment, and the unique constraint on (member, comment) ensures each member can vote only once per comment.
    *
-   * @x-autobe-database-schema-property comment
-   * @x-autobe-specification INNER JOIN community_platform_comments via community_platform_comment_id FK. Rendered as ICommunityPlatformComment.ISummary.
+     * @x-autobe-database-schema-property comment
+     * @x-autobe-specification INNER JOIN community_platform_comments via
+     *   community_platform_comment_id FK. Rendered as
+     *   ICommunityPlatformComment.ISummary.
    */
   comment: ICommunityPlatformComment.ISummary;
 
@@ -47,8 +52,10 @@ export type ICommunityPlatformCommentVote = {
    *
    * Accepts +1 for an upvote or -1 for a downvote. Upvotes increase the comment's vote score and the comment author's karma by 1, while downvotes decrease both by 1. When a vote is changed (e.g., from upvote to downvote), the net score and karma adjustments reflect the change in direction.
    *
-   * @x-autobe-database-schema-property value
-   * @x-autobe-specification Direct mapping from community_platform_comment_votes.value (Int). Valid values are +1 (upvote) or -1 (downvote).
+     * @x-autobe-database-schema-property value
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_comment_votes.value (Int). Valid values are +1
+     *   (upvote) or -1 (downvote).
    */
   value: number & tags.Type<"int32"> & tags.Minimum<-1> & tags.Maximum<1>;
 
@@ -57,8 +64,10 @@ export type ICommunityPlatformCommentVote = {
    *
    * Automatically recorded when the vote is initially placed. This value does not change when the vote is later modified — use `updated_at` to track the last modification time.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from community_platform_comment_votes.created_at (timestamptz). Auto-set on initial vote creation.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_comment_votes.created_at (timestamptz). Auto-set on
+     *   initial vote creation.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -67,8 +76,10 @@ export type ICommunityPlatformCommentVote = {
    *
    * Updated whenever a member changes their vote direction from upvote to downvote or vice versa. On initial creation, this value is set to the same time as `created_at`.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from community_platform_comment_votes.updated_at (timestamptz). Updated whenever vote value changes (e.g., upvote to downvote).
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_comment_votes.updated_at (timestamptz). Updated
+     *   whenever vote value changes (e.g., upvote to downvote).
    */
   updated_at: string & tags.Format<"date-time">;
 };
@@ -88,8 +99,12 @@ export namespace ICommunityPlatformCommentVote {
      *
      * Accepts +1 for an upvote or -1 for a downvote. Changing the value flips the vote direction — from upvote to downvote or vice versa. If the submitted value matches the current vote value, the operation is idempotent and the existing record is returned unchanged without recalculating comment scores or author karma.
      *
-     * @x-autobe-database-schema-property value
-     * @x-autobe-specification Direct mapping from community_platform_comment_votes.value. Service layer validates value is +1 (upvote) or -1 (downvote). If new value equals current stored value, treat as no-op and return existing record unchanged without recalculating scores.
+         * @x-autobe-database-schema-property value
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_comment_votes.value. Service layer validates
+         *   value is +1 (upvote) or -1 (downvote). If new value equals current
+         *   stored value, treat as no-op and return existing record unchanged
+         *   without recalculating scores.
      */
     value?: (number & tags.Type<"int32">) | undefined;
   };
@@ -105,8 +120,12 @@ export namespace ICommunityPlatformCommentVote {
      *
      * Accepts +1 for an upvote or -1 for a downvote. Upvotes increase the comment's vote score and the author's karma by 1; downvotes decrease both by 1. If the member has already voted on this comment, the existing vote is replaced with the new value — effectively changing the vote direction. When a vote is changed (e.g., from upvote to downvote), the score and karma adjustments reflect the net change of 2 in the opposite direction.
      *
-     * @x-autobe-database-schema-property value
-     * @x-autobe-specification Direct mapping from community_platform_comment_votes.value. Must be +1 (upvote) or -1 (downvote). Used in upsert logic: if existing vote found, calculate delta for score/karma adjustment; if new, create vote record with system-managed fields (id, created_at, updated_at).
+         * @x-autobe-database-schema-property value
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_comment_votes.value. Must be +1 (upvote) or -1
+         *   (downvote). Used in upsert logic: if existing vote found, calculate
+         *   delta for score/karma adjustment; if new, create vote record with
+         *   system-managed fields (id, created_at, updated_at).
      */
     value: number & tags.Type<"int32"> & tags.Minimum<-1> & tags.Maximum<1>;
   };

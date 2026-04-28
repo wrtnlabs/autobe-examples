@@ -24,7 +24,10 @@ export type IRedditCommunityReportsOverviewRequest = {
    *
    * Indicates which page of results is currently being returned. Page numbering uses 1-based indexing, meaning the first page is page 1 (not 0). The default value is typically 1 when no page parameter is provided.
    *
-   * @x-autobe-specification Query parameter: 1-indexed page number from request. Validates that value >= 1. Defaults to 1 when not provided or invalid. Used with limit to calculate OFFSET for SQL pagination: OFFSET = (page - 1) * limit
+     * @x-autobe-specification Query parameter: 1-indexed page number from
+     *   request. Validates that value >= 1. Defaults to 1 when not provided or
+     *   invalid. Used with limit to calculate OFFSET for SQL pagination: OFFSET
+     *   = (page - 1) * limit
    */
   page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -33,7 +36,10 @@ export type IRedditCommunityReportsOverviewRequest = {
    *
    * Controls the batch size of results. The value must be at least 1 and cannot exceed 100 to prevent excessive data transfer and performance degradation. When the total number of records is less than the limit, fewer records may be returned.
    *
-   * @x-autobe-specification Query parameter: records per page from request. Validates 1 <= limit <= 100. Defaults to 20 when not provided. Used with page to calculate pagination: OFFSET = (page - 1) * limit, then fetch LIMIT records
+     * @x-autobe-specification Query parameter: records per page from request.
+     *   Validates 1 <= limit <= 100. Defaults to 20 when not provided. Used
+     *   with page to calculate pagination: OFFSET = (page - 1) * limit, then
+     *   fetch LIMIT records
    */
   limit?:
     | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -44,7 +50,10 @@ export type IRedditCommunityReportsOverviewRequest = {
    *
    * Determines the ORDER BY column in the database query. Supported values are createdAt (mapped to created_at), statusId (mapped to status_id), and reporterId (mapped to reporter_id for sorting by reporter identity).
    *
-   * @x-autobe-specification Query parameter: sort field name from request. Maps to database columns: createdAt -> created_at, statusId -> status_id, reporterId -> reporter_id. Used in SQL ORDER BY clause: ORDER BY <mapped_column>
+     * @x-autobe-specification Query parameter: sort field name from request.
+     *   Maps to database columns: createdAt -> created_at, statusId ->
+     *   status_id, reporterId -> reporter_id. Used in SQL ORDER BY clause:
+     *   ORDER BY <mapped_column>
    */
   sortBy?: "createdAt" | "statusId" | "reporterId" | undefined;
 
@@ -53,7 +62,9 @@ export type IRedditCommunityReportsOverviewRequest = {
    *
    * Determines whether results are sorted in ascending or descending order. Ascending order (default) shows oldest records first. Descending order shows newest records first.
    *
-   * @x-autobe-specification Query parameter: sort direction from request. Maps to SQL: asc -> ORDER BY ... ASC, desc -> ORDER BY ... DESC. Defaults to asc when not provided
+     * @x-autobe-specification Query parameter: sort direction from request.
+     *   Maps to SQL: asc -> ORDER BY ... ASC, desc -> ORDER BY ... DESC.
+     *   Defaults to asc when not provided
    */
   sortOrder?: "asc" | "desc" | undefined;
 
@@ -62,7 +73,9 @@ export type IRedditCommunityReportsOverviewRequest = {
    *
    * Only reports with created_at >= this value are included in the results. Use ISO 8601 format with timezone information for consistent comparison.
    *
-   * @x-autobe-specification Query parameter: lower bound for created_at column filtering. Applies WHERE created_at >= <value> to the SQL query. Nullable - if not provided, no lower date bound is applied
+     * @x-autobe-specification Query parameter: lower bound for created_at
+     *   column filtering. Applies WHERE created_at >= <value> to the SQL query.
+     *   Nullable - if not provided, no lower date bound is applied
    */
   createdAfter?: (string & tags.Format<"date-time">) | undefined;
 
@@ -71,7 +84,9 @@ export type IRedditCommunityReportsOverviewRequest = {
    *
    * Only reports with created_at < this value are included in the results. Use ISO 8601 format with timezone information for consistent comparison.
    *
-   * @x-autobe-specification Query parameter: upper bound for created_at column filtering. Applies WHERE created_at < <value> to the SQL query. Nullable - if not provided, no upper date bound is applied
+     * @x-autobe-specification Query parameter: upper bound for created_at
+     *   column filtering. Applies WHERE created_at < <value> to the SQL query.
+     *   Nullable - if not provided, no upper date bound is applied
    */
   createdBefore?: (string & tags.Format<"date-time">) | undefined;
 
@@ -80,7 +95,11 @@ export type IRedditCommunityReportsOverviewRequest = {
    *
    * Determines whether to filter for reports targeting posts or reports targeting comments. When set to 'post', only reports with a non-NULL target_post_id are returned. When set to 'comment', only reports with a non-NULL target_comment_id are returned.
    *
-   * @x-autobe-specification Query parameter: content type filter. When 'post', applies WHERE target_post_id IS NOT NULL. When 'comment', applies WHERE target_comment_id IS NOT NULL. Used to filter the relationship join: post -> join reddit_community_posts, comment -> join reddit_community_comments
+     * @x-autobe-specification Query parameter: content type filter. When
+     *   'post', applies WHERE target_post_id IS NOT NULL. When 'comment',
+     *   applies WHERE target_comment_id IS NOT NULL. Used to filter the
+     *   relationship join: post -> join reddit_community_posts, comment -> join
+     *   reddit_community_comments
    */
   contentType?: "post" | "comment" | undefined;
 
@@ -89,7 +108,11 @@ export type IRedditCommunityReportsOverviewRequest = {
    *
    * Performs a case-insensitive substring search on the reporter's username field. Returns reports where the reporter's username contains the provided search term. Useful for tracking specific users or finding reports from particular reporters.
    *
-   * @x-autobe-specification Query parameter: username substring search. Joins reporter_id to reddit_community_members.id and applies WHERE LOWER(username) LIKE LOWER('%<value>%'). Nullable - if not provided, no username filtering is applied. Uses case-insensitive matching for better user experience
+     * @x-autobe-specification Query parameter: username substring search. Joins
+     *   reporter_id to reddit_community_members.id and applies WHERE
+     *   LOWER(username) LIKE LOWER('%<value>%'). Nullable - if not provided, no
+     *   username filtering is applied. Uses case-insensitive matching for
+     *   better user experience
    */
   reporterUsername?: string | undefined;
 };

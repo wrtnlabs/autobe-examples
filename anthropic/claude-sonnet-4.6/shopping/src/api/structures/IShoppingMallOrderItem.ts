@@ -40,49 +40,73 @@ export namespace IShoppingMallOrderItem {
     /**
      * Optional list of order item statuses to filter by. When provided, only items whose current status matches one of the specified values are returned. Valid values: 'pending', 'paid', 'shipped', 'delivered', 'cancelled', 'refunded'. When omitted, items of all statuses are included.
      *
-     * @x-autobe-specification Optional filter applied as WHERE shopping_mall_order_items.status IN (:statuses). Valid values are: 'pending', 'paid', 'shipped', 'delivered', 'cancelled', 'refunded'. When omitted or empty, no status filter is applied and all items regardless of status are returned. Multiple values may be provided to match any of the given statuses.
+         * @x-autobe-specification Optional filter applied as WHERE
+         *   shopping_mall_order_items.status IN (:statuses). Valid values are:
+         *   'pending', 'paid', 'shipped', 'delivered', 'cancelled', 'refunded'.
+         *   When omitted or empty, no status filter is applied and all items
+         *   regardless of status are returned. Multiple values may be provided
+         *   to match any of the given statuses.
      */
     statuses?: string[] | undefined;
 
     /**
      * Optional start of the date-time range filter for order item creation date (inclusive). Only items created on or after this timestamp are returned. Must be a valid ISO 8601 date-time string.
      *
-     * @x-autobe-specification Optional lower bound for the creation date filter. Applied as WHERE shopping_mall_order_items.created_at >= :createdAtFrom. When omitted, no lower bound on creation date is applied. Must be a valid ISO 8601 date-time string.
+         * @x-autobe-specification Optional lower bound for the creation date
+         *   filter. Applied as WHERE shopping_mall_order_items.created_at >=
+         *   :createdAtFrom. When omitted, no lower bound on creation date is
+         *   applied. Must be a valid ISO 8601 date-time string.
      */
     createdAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Optional end of the date-time range filter for order item creation date (inclusive). Only items created on or before this timestamp are returned. Must be a valid ISO 8601 date-time string.
      *
-     * @x-autobe-specification Optional upper bound for the creation date filter. Applied as WHERE shopping_mall_order_items.created_at <= :createdAtTo. When omitted, no upper bound on creation date is applied. Must be a valid ISO 8601 date-time string.
+         * @x-autobe-specification Optional upper bound for the creation date
+         *   filter. Applied as WHERE shopping_mall_order_items.created_at <=
+         *   :createdAtTo. When omitted, no upper bound on creation date is
+         *   applied. Must be a valid ISO 8601 date-time string.
      */
     createdAtTo?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Field to sort the order items by. Accepted values are 'created_at' (default) and 'unit_price'. When omitted, items are sorted by creation date.
      *
-     * @x-autobe-specification Controls which column is used in the ORDER BY clause. Accepted values: 'created_at' (orders by shopping_mall_order_items.created_at, default when omitted) or 'unit_price' (orders by shopping_mall_order_items.unit_price). Any unrecognized value should fall back to the default 'created_at'.
+         * @x-autobe-specification Controls which column is used in the ORDER BY
+         *   clause. Accepted values: 'created_at' (orders by
+         *   shopping_mall_order_items.created_at, default when omitted) or
+         *   'unit_price' (orders by shopping_mall_order_items.unit_price). Any
+         *   unrecognized value should fall back to the default 'created_at'.
      */
     sortBy?: string | undefined;
 
     /**
      * Sort direction for the result set. Accepted values are 'asc' (ascending, default) and 'desc' (descending). Applied to the field specified by sortBy.
      *
-     * @x-autobe-specification Controls the sort direction in the ORDER BY clause. Accepted values: 'asc' (ascending, default when omitted) or 'desc' (descending). Used in conjunction with sortBy. Any unrecognized value should fall back to the default 'asc'.
+         * @x-autobe-specification Controls the sort direction in the ORDER BY
+         *   clause. Accepted values: 'asc' (ascending, default when omitted) or
+         *   'desc' (descending). Used in conjunction with sortBy. Any
+         *   unrecognized value should fall back to the default 'asc'.
      */
     sortOrder?: string | undefined;
 
     /**
      * Page number to retrieve (1-indexed). Defaults to 1 when omitted. Must be a positive integer. Used with limit to paginate through the full result set.
      *
-     * @x-autobe-specification 1-indexed page number for pagination. Applied as OFFSET (:page - 1) * :limit in the query. Minimum value is 1. Defaults to 1 when omitted. Used together with limit to determine the result window.
+         * @x-autobe-specification 1-indexed page number for pagination. Applied
+         *   as OFFSET (:page - 1) * :limit in the query. Minimum value is 1.
+         *   Defaults to 1 when omitted. Used together with limit to determine
+         *   the result window.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of order items to return per page. Accepts values from 1 to 100. Defaults to 20 when omitted. Used with page to paginate through the full result set.
      *
-     * @x-autobe-specification Number of records to return per page. Applied as LIMIT :limit in the query. Minimum value is 1, maximum is 100. Defaults to 20 when omitted. Used together with page to determine the result window.
+         * @x-autobe-specification Number of records to return per page. Applied
+         *   as LIMIT :limit in the query. Minimum value is 1, maximum is 100.
+         *   Defaults to 20 when omitted. Used together with page to determine
+         *   the result window.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -96,32 +120,32 @@ export namespace IShoppingMallOrderItem {
    */
   export type ISummary = {
     /**
-     * @x-autobe-database-schema-property id
+         * @x-autobe-database-schema-property id
      */
     id: string & tags.Format<"uuid">;
     /**
-     * @x-autobe-database-schema-property quantity
+         * @x-autobe-database-schema-property quantity
      */
     quantity: number & tags.Type<"int32"> & tags.Minimum<1>;
     /**
-     * @x-autobe-database-schema-property unit_price
+         * @x-autobe-database-schema-property unit_price
      */
     unitPrice: number;
     /**
-     * @x-autobe-database-schema-property status
+         * @x-autobe-database-schema-property status
      */
     status: string;
     snapshot: IShoppingMallOrderItemSnapshot;
     /**
-     * @x-autobe-database-schema-property productVariant
+         * @x-autobe-database-schema-property productVariant
      */
     productVariant: IShoppingMallProductVariant.ISummary;
     /**
-     * @x-autobe-database-schema-property created_at
+         * @x-autobe-database-schema-property created_at
      */
     createdAt: string & tags.Format<"date-time">;
     /**
-     * @x-autobe-database-schema-property updated_at
+         * @x-autobe-database-schema-property updated_at
      */
     updatedAt: string & tags.Format<"date-time">;
   };
@@ -133,7 +157,15 @@ export namespace IShoppingMallOrderItem {
     /**
      * The mandatory reason text the administrator must provide explaining why this force-cancellation is being applied. This reason is recorded for audit and dispute-resolution purposes and should clearly describe the grounds for bypassing the standard cancellation request workflow (e.g., policy violation, confirmed fraud, platform error, dispute resolution). Must not be empty.
      *
-     * @x-autobe-specification User-supplied string, minLength:1, required. This value is provided by the administrator invoking the force-cancel endpoint. The service layer should persist this reason for audit purposes — either by writing to an audit log table or by recording it in the associated shopping_mall_cancellation_requests record (creating one if none exists, or updating the reason/status on any existing pending record). This field does not map to any single database column; it is a command input that drives downstream write logic.
+         * @x-autobe-specification User-supplied string, minLength:1, required.
+         *   This value is provided by the administrator invoking the
+         *   force-cancel endpoint. The service layer should persist this reason
+         *   for audit purposes — either by writing to an audit log table or by
+         *   recording it in the associated shopping_mall_cancellation_requests
+         *   record (creating one if none exists, or updating the reason/status
+         *   on any existing pending record). This field does not map to any
+         *   single database column; it is a command input that drives
+         *   downstream write logic.
      */
     reason: string & tags.MinLength<1>;
   };

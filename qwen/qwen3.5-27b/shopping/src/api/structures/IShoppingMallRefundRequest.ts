@@ -23,8 +23,10 @@ export type IShoppingMallRefundRequest = {
    *
    * This UUID identifies the refund request across the platform and is used in API endpoints to retrieve, approve, or reject specific refund requests. The identifier is generated automatically when the refund request is created.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_refund_requests.id. Primary key UUID generated on record creation.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_refund_requests.id. Primary key UUID generated on record
+     *   creation.
    */
   id: string & tags.Format<"uuid">;
 
@@ -33,8 +35,10 @@ export type IShoppingMallRefundRequest = {
    *
    * This text field contains the customer's reason for wanting a refund for the order item. Sellers use this information to evaluate whether to approve or reject the refund request. The reason is preserved in snapshots for audit and dispute resolution purposes.
    *
-   * @x-autobe-database-schema-property reason
-   * @x-autobe-specification Direct mapping from shopping_mall_refund_requests.reason. Text field provided by customer when creating the refund request.
+     * @x-autobe-database-schema-property reason
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_refund_requests.reason. Text field provided by customer
+     *   when creating the refund request.
    */
   reason: string;
 
@@ -48,8 +52,11 @@ export type IShoppingMallRefundRequest = {
    * - approved: Seller approved, refund processed
    * - rejected: Seller rejected, no refund processed
    *
-   * @x-autobe-database-schema-property status
-   * @x-autobe-specification Direct mapping from shopping_mall_refund_requests.status. Enum field with values: 'pending', 'approved', 'rejected'. Initially set to 'pending' on creation, updated when seller responds.
+     * @x-autobe-database-schema-property status
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_refund_requests.status. Enum field with values:
+     *   'pending', 'approved', 'rejected'. Initially set to 'pending' on
+     *   creation, updated when seller responds.
    */
   status: string;
 
@@ -58,8 +65,12 @@ export type IShoppingMallRefundRequest = {
    *
    * This object contains details about the specific product variant being refunded, including the quantity purchased, price paid, and current fulfillment status. The order item must have 'delivered' status for a refund request to be valid. The relationship is established through the shopping_mall_order_item_id foreign key.
    *
-   * @x-autobe-database-schema-property orderItem
-   * @x-autobe-specification Relation mapping via JOIN from shopping_mall_refund_requests.shopping_mall_order_item_id to shopping_mall_order_items.id. Returns IShoppingMallOrderItem.ISummary with order item details including product variant, quantity, price, and status.
+     * @x-autobe-database-schema-property orderItem
+     * @x-autobe-specification Relation mapping via JOIN from
+     *   shopping_mall_refund_requests.shopping_mall_order_item_id to
+     *   shopping_mall_order_items.id. Returns IShoppingMallOrderItem.ISummary
+     *   with order item details including product variant, quantity, price, and
+     *   status.
    */
   orderItem: IShoppingMallOrderItem.ISummary;
 
@@ -68,8 +79,11 @@ export type IShoppingMallRefundRequest = {
    *
    * This object contains the customer's identity information. The customer must be the owner of the order containing the item being refunded. The relationship is established through the shopping_mall_customer_id foreign key, which is automatically set from the authenticated customer's session when the refund request is created.
    *
-   * @x-autobe-database-schema-property customer
-   * @x-autobe-specification Relation mapping via JOIN from shopping_mall_refund_requests.shopping_mall_customer_id to shopping_mall_customers.id. Returns IShoppingMallCustomer.ISummary with customer identity information.
+     * @x-autobe-database-schema-property customer
+     * @x-autobe-specification Relation mapping via JOIN from
+     *   shopping_mall_refund_requests.shopping_mall_customer_id to
+     *   shopping_mall_customers.id. Returns IShoppingMallCustomer.ISummary with
+     *   customer identity information.
    */
   customer: IShoppingMallCustomer.ISummary;
 
@@ -78,8 +92,12 @@ export type IShoppingMallRefundRequest = {
    *
    * This object is null when the refund request is in 'pending' status. Once a seller approves or rejects the request, this field contains the seller's information. The seller is determined by the order item's product ownership - only the seller who sold the product can respond to the refund request. The relationship is established through the shopping_mall_seller_id foreign key, which is set when the seller responds.
    *
-   * @x-autobe-database-schema-property seller
-   * @x-autobe-specification Relation mapping via LEFT JOIN from shopping_mall_refund_requests.shopping_mall_seller_id to shopping_mall_sellers.id. Returns IShoppingMallSeller.ISummary or null. Null until seller responds to the request, then contains the seller who approved or rejected the refund.
+     * @x-autobe-database-schema-property seller
+     * @x-autobe-specification Relation mapping via LEFT JOIN from
+     *   shopping_mall_refund_requests.shopping_mall_seller_id to
+     *   shopping_mall_sellers.id. Returns IShoppingMallSeller.ISummary or null.
+     *   Null until seller responds to the request, then contains the seller who
+     *   approved or rejected the refund.
    */
   seller: IShoppingMallSeller.ISummary | null;
 
@@ -88,8 +106,10 @@ export type IShoppingMallRefundRequest = {
    *
    * This field records the exact date and time when the customer submitted the refund request. It is used to validate the 7-day window from item delivery - refund requests must be created within 7 days of the order item's delivery date. The timestamp is in ISO 8601 format with timezone information.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from shopping_mall_refund_requests.created_at. Timestamp in ISO 8601 format with timezone. Set automatically when refund request is created.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_refund_requests.created_at. Timestamp in ISO 8601 format
+     *   with timezone. Set automatically when refund request is created.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -98,8 +118,11 @@ export type IShoppingMallRefundRequest = {
    *
    * This field is updated whenever the refund request is modified, such as when a seller approves or rejects the request. It provides an audit trail of when changes were made to the refund request status or other fields. The timestamp is in ISO 8601 format with timezone information.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from shopping_mall_refund_requests.updated_at. Timestamp in ISO 8601 format with timezone. Updated automatically on any modification to the refund request.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_refund_requests.updated_at. Timestamp in ISO 8601 format
+     *   with timezone. Updated automatically on any modification to the refund
+     *   request.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -108,8 +131,11 @@ export type IShoppingMallRefundRequest = {
    *
    * This field is null for active refund requests. When set, it indicates the refund request has been soft-deleted and should not appear in active lists. Soft-deleted requests are preserved for audit trail and dispute resolution purposes. The timestamp is in ISO 8601 format with timezone information.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from shopping_mall_refund_requests.deleted_at. Nullable timestamp in ISO 8601 format with timezone. Null means the refund request is active. When set, the request is soft-deleted but preserved for audit purposes.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_refund_requests.deleted_at. Nullable timestamp in ISO
+     *   8601 format with timezone. Null means the refund request is active.
+     *   When set, the request is soft-deleted but preserved for audit purposes.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 
@@ -118,8 +144,11 @@ export type IShoppingMallRefundRequest = {
    *
    * This field is null when the refund request is in 'pending' status. When a seller approves or rejects the request, this timestamp is set to record when the response was made. It provides visibility into how quickly sellers are responding to customer refund requests. The timestamp is in ISO 8601 format with timezone information.
    *
-   * @x-autobe-database-schema-property responded_at
-   * @x-autobe-specification Direct mapping from shopping_mall_refund_requests.responded_at. Nullable timestamp in ISO 8601 format with timezone. Null when status is 'pending', set when seller approves or rejects the request.
+     * @x-autobe-database-schema-property responded_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_refund_requests.responded_at. Nullable timestamp in ISO
+     *   8601 format with timezone. Null when status is 'pending', set when
+     *   seller approves or rejects the request.
    */
   responded_at: (string & tags.Format<"date-time">) | null;
 };
@@ -137,7 +166,10 @@ export namespace IShoppingMallRefundRequest {
      *
      * Allowed values are 'pending' for requests awaiting seller response, 'approved' for requests that sellers have approved, and 'rejected' for requests that sellers have denied. This filter helps users view only refund requests in a specific state.
      *
-     * @x-autobe-specification Filter by refund request status. Exact match on shopping_mall_refund_requests.status column. Allowed values: 'pending' (awaiting seller response), 'approved' (seller approved), 'rejected' (seller rejected).
+         * @x-autobe-specification Filter by refund request status. Exact match
+         *   on shopping_mall_refund_requests.status column. Allowed values:
+         *   'pending' (awaiting seller response), 'approved' (seller approved),
+         *   'rejected' (seller rejected).
      */
     status?: "pending" | "approved" | "rejected" | undefined;
 
@@ -146,7 +178,11 @@ export namespace IShoppingMallRefundRequest {
      *
      * Specify the UUID of a customer to retrieve only their refund requests. This parameter is primarily used by administrators to view refund requests for specific customers. When used by customers, the system automatically filters to their own requests based on authentication context.
      *
-     * @x-autobe-specification Filter by customer UUID. Exact match on shopping_mall_refund_requests.shopping_mall_customer_id column. Used to retrieve refund requests for a specific customer. Administrators can filter by any customer; customers see only their own requests.
+         * @x-autobe-specification Filter by customer UUID. Exact match on
+         *   shopping_mall_refund_requests.shopping_mall_customer_id column.
+         *   Used to retrieve refund requests for a specific customer.
+         *   Administrators can filter by any customer; customers see only their
+         *   own requests.
      */
     customer_id?: (string & tags.Format<"uuid">) | undefined;
 
@@ -155,7 +191,10 @@ export namespace IShoppingMallRefundRequest {
      *
      * Specify the UUID of a seller to retrieve only refund requests for products they sold. This parameter is primarily used by sellers to view refund requests for their products and by administrators to filter requests by seller. The field is nullable as seller responds to requests asynchronously.
      *
-     * @x-autobe-specification Filter by seller UUID. Exact match on shopping_mall_refund_requests.shopping_mall_seller_id column (nullable). Used to retrieve refund requests for products sold by a specific seller. Sellers see only requests for their products.
+         * @x-autobe-specification Filter by seller UUID. Exact match on
+         *   shopping_mall_refund_requests.shopping_mall_seller_id column
+         *   (nullable). Used to retrieve refund requests for products sold by a
+         *   specific seller. Sellers see only requests for their products.
      */
     seller_id?: (string & tags.Format<"uuid">) | undefined;
 
@@ -164,7 +203,9 @@ export namespace IShoppingMallRefundRequest {
      *
      * Specify the UUID of an order item to retrieve only refund requests related to that specific purchased item. This is useful for viewing refund history for individual order items or for sellers to manage requests for specific items.
      *
-     * @x-autobe-specification Filter by order item UUID. Exact match on shopping_mall_refund_requests.shopping_mall_order_item_id column. Used to retrieve refund requests for a specific order item.
+         * @x-autobe-specification Filter by order item UUID. Exact match on
+         *   shopping_mall_refund_requests.shopping_mall_order_item_id column.
+         *   Used to retrieve refund requests for a specific order item.
      */
     order_item_id?: (string & tags.Format<"uuid">) | undefined;
 
@@ -173,7 +214,10 @@ export namespace IShoppingMallRefundRequest {
      *
      * Specify an ISO 8601 formatted date-time to retrieve only refund requests that were submitted at or after this moment. This parameter works in conjunction with created_at_end to define a date range for filtering refund requests by submission time.
      *
-     * @x-autobe-specification Filter refund requests created on or after this timestamp. Uses >= comparison on shopping_mall_refund_requests.created_at column. ISO 8601 date-time format.
+         * @x-autobe-specification Filter refund requests created on or after
+         *   this timestamp. Uses >= comparison on
+         *   shopping_mall_refund_requests.created_at column. ISO 8601 date-time
+         *   format.
      */
     created_at_start?: (string & tags.Format<"date-time">) | undefined;
 
@@ -182,7 +226,10 @@ export namespace IShoppingMallRefundRequest {
      *
      * Specify an ISO 8601 formatted date-time to retrieve only refund requests that were submitted at or before this moment. This parameter works in conjunction with created_at_start to define a date range for filtering refund requests by submission time.
      *
-     * @x-autobe-specification Filter refund requests created on or before this timestamp. Uses <= comparison on shopping_mall_refund_requests.created_at column. ISO 8601 date-time format.
+         * @x-autobe-specification Filter refund requests created on or before
+         *   this timestamp. Uses <= comparison on
+         *   shopping_mall_refund_requests.created_at column. ISO 8601 date-time
+         *   format.
      */
     created_at_end?: (string & tags.Format<"date-time">) | undefined;
 
@@ -191,7 +238,11 @@ export namespace IShoppingMallRefundRequest {
      *
      * Specify an ISO 8601 formatted date-time to retrieve only refund requests where the seller provided a response (approval or rejection) at or after this moment. This filter excludes requests that are still pending (null responded_at). Works with responded_at_end to define a response date range.
      *
-     * @x-autobe-specification Filter refund requests responded to on or after this timestamp. Uses >= comparison on shopping_mall_refund_requests.responded_at column (nullable). Excludes null values (unresponded requests). ISO 8601 date-time format.
+         * @x-autobe-specification Filter refund requests responded to on or
+         *   after this timestamp. Uses >= comparison on
+         *   shopping_mall_refund_requests.responded_at column (nullable).
+         *   Excludes null values (unresponded requests). ISO 8601 date-time
+         *   format.
      */
     responded_at_start?: (string & tags.Format<"date-time">) | undefined;
 
@@ -200,7 +251,11 @@ export namespace IShoppingMallRefundRequest {
      *
      * Specify an ISO 8601 formatted date-time to retrieve only refund requests where the seller provided a response (approval or rejection) at or before this moment. This filter excludes requests that are still pending (null responded_at). Works with responded_at_start to define a response date range.
      *
-     * @x-autobe-specification Filter refund requests responded to on or before this timestamp. Uses <= comparison on shopping_mall_refund_requests.responded_at column (nullable). Excludes null values (unresponded requests). ISO 8601 date-time format.
+         * @x-autobe-specification Filter refund requests responded to on or
+         *   before this timestamp. Uses <= comparison on
+         *   shopping_mall_refund_requests.responded_at column (nullable).
+         *   Excludes null values (unresponded requests). ISO 8601 date-time
+         *   format.
      */
     responded_at_end?: (string & tags.Format<"date-time">) | undefined;
 
@@ -209,7 +264,10 @@ export namespace IShoppingMallRefundRequest {
      *
      * Enter keywords to search within the reason field of refund requests. The search uses fuzzy matching to find partial matches and similar text, making it flexible for finding requests even with slight variations in wording. Useful for finding refund requests with specific issues or keywords mentioned in the reason.
      *
-     * @x-autobe-specification Text search on refund request reason field using PostgreSQL trigram similarity (GIN index). Matches partial text in shopping_mall_refund_requests.reason column. Case-insensitive fuzzy matching.
+         * @x-autobe-specification Text search on refund request reason field
+         *   using PostgreSQL trigram similarity (GIN index). Matches partial
+         *   text in shopping_mall_refund_requests.reason column.
+         *   Case-insensitive fuzzy matching.
      */
     search?: string | undefined;
 
@@ -218,7 +276,9 @@ export namespace IShoppingMallRefundRequest {
      *
      * Specify which page of results to retrieve when using offset-based pagination. Page numbering starts at 1 (not 0). This parameter works together with the limit parameter to determine which subset of results to return. Cannot be used simultaneously with cursor-based pagination.
      *
-     * @x-autobe-specification Offset-based pagination: page number (1-indexed). Used with limit parameter to calculate OFFSET = (page - 1) * limit. Mutually exclusive with cursor-based pagination.
+         * @x-autobe-specification Offset-based pagination: page number
+         *   (1-indexed). Used with limit parameter to calculate OFFSET = (page
+         *   - 1) * limit. Mutually exclusive with cursor-based pagination.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -227,7 +287,9 @@ export namespace IShoppingMallRefundRequest {
      *
      * Specify how many results to include in each page, with a minimum of 1 and maximum of 100. The default is 20 results per page. This parameter helps control response size and performance when browsing large numbers of refund requests.
      *
-     * @x-autobe-specification Maximum number of records per page. Range: 1-100. Default: 20. Used with page parameter for offset-based pagination. Controls result set size for performance.
+         * @x-autobe-specification Maximum number of records per page. Range:
+         *   1-100. Default: 20. Used with page parameter for offset-based
+         *   pagination. Controls result set size for performance.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -238,7 +300,10 @@ export namespace IShoppingMallRefundRequest {
      *
      * Provide the cursor string from the previous page's pagination metadata to retrieve the next page of results. Cursor-based pagination is more efficient for large datasets and is an alternative to offset-based pagination (page/limit). Cannot be used simultaneously with page and limit parameters.
      *
-     * @x-autobe-specification Cursor-based pagination: opaque cursor string for resuming from previous page. Mutually exclusive with page/limit. Returned in pagination metadata for next page navigation.
+         * @x-autobe-specification Cursor-based pagination: opaque cursor string
+         *   for resuming from previous page. Mutually exclusive with
+         *   page/limit. Returned in pagination metadata for next page
+         *   navigation.
      */
     cursor?: string | undefined;
 
@@ -247,7 +312,10 @@ export namespace IShoppingMallRefundRequest {
      *
      * Choose which field to use for sorting the results. Options are 'created_at' to sort by submission time (default), 'responded_at' to sort by when sellers responded, or 'status' to sort alphabetically by request status. Works with sortOrder to determine ascending or descending order.
      *
-     * @x-autobe-specification Sort field for result ordering. Allowed values: 'created_at' (default, newest first), 'responded_at' (response time), 'status' (alphabetical). Maps to ORDER BY clause on corresponding columns.
+         * @x-autobe-specification Sort field for result ordering. Allowed
+         *   values: 'created_at' (default, newest first), 'responded_at'
+         *   (response time), 'status' (alphabetical). Maps to ORDER BY clause
+         *   on corresponding columns.
      */
     sortBy?: "created_at" | "responded_at" | "status" | undefined;
 
@@ -256,7 +324,10 @@ export namespace IShoppingMallRefundRequest {
      *
      * Choose 'asc' for ascending order (oldest first, A-Z) or 'desc' for descending order (newest first, Z-A). The default is 'desc' to show the most recent refund requests first. This parameter works together with sortBy to control the complete sorting behavior.
      *
-     * @x-autobe-specification Sort direction for results. Allowed values: 'asc' (ascending, oldest first), 'desc' (descending, newest first). Default: 'desc'. Applied to the column specified by sortBy parameter.
+         * @x-autobe-specification Sort direction for results. Allowed values:
+         *   'asc' (ascending, oldest first), 'desc' (descending, newest first).
+         *   Default: 'desc'. Applied to the column specified by sortBy
+         *   parameter.
      */
     sortOrder?: "asc" | "desc" | undefined;
   };
@@ -274,8 +345,10 @@ export namespace IShoppingMallRefundRequest {
      *
      * This UUID identifies the refund request throughout the system and is used to reference it in API operations, notifications, and audit logs.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_refund_requests.id. Primary key uniquely identifying each refund request.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_refund_requests.id. Primary key uniquely identifying
+         *   each refund request.
      */
     id: string & tags.Format<"uuid">;
 
@@ -284,8 +357,10 @@ export namespace IShoppingMallRefundRequest {
      *
      * This text field contains the reason provided by the customer when submitting the refund request. It is used by sellers to evaluate the request and for dispute resolution purposes.
      *
-     * @x-autobe-database-schema-property reason
-     * @x-autobe-specification Direct mapping from shopping_mall_refund_requests.reason. Text field containing customer's explanation for the refund request.
+         * @x-autobe-database-schema-property reason
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_refund_requests.reason. Text field containing
+         *   customer's explanation for the refund request.
      */
     reason: string;
 
@@ -294,8 +369,10 @@ export namespace IShoppingMallRefundRequest {
      *
      * The status indicates the processing state: 'pending' means awaiting seller response, 'approved' means the seller has approved the refund, and 'rejected' means the seller has denied the request. Status changes trigger snapshot creation for audit trail.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from shopping_mall_refund_requests.status. Allowed values: 'pending', 'approved', 'rejected'.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_refund_requests.status. Allowed values: 'pending',
+         *   'approved', 'rejected'.
      */
     status: string;
 
@@ -304,8 +381,11 @@ export namespace IShoppingMallRefundRequest {
      *
      * This field records when the customer submitted the refund request. It is used to validate that the request was made within the 7-day window from the order item's delivery date.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_refund_requests.created_at. Timestamp when the refund request was created, used to validate 7-day window from item delivery.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_refund_requests.created_at. Timestamp when the refund
+         *   request was created, used to validate 7-day window from item
+         *   delivery.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -314,8 +394,10 @@ export namespace IShoppingMallRefundRequest {
      *
      * This field is set when a seller approves or rejects the refund request. It is null until the seller takes action, allowing customers to see how long their request has been pending.
      *
-     * @x-autobe-database-schema-property responded_at
-     * @x-autobe-specification Direct mapping from shopping_mall_refund_requests.responded_at. Nullable timestamp set when seller approves or rejects the request.
+         * @x-autobe-database-schema-property responded_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_refund_requests.responded_at. Nullable timestamp set
+         *   when seller approves or rejects the request.
      */
     responded_at: (string & tags.Format<"date-time">) | null;
 
@@ -324,8 +406,11 @@ export namespace IShoppingMallRefundRequest {
      *
      * This object contains the customer's identity information including their ID, email, and account status. Only the customer who placed the order can request refunds for their order items.
      *
-     * @x-autobe-database-schema-property customer
-     * @x-autobe-specification Relation via JOIN from shopping_mall_refund_requests.shopping_mall_customer_id to shopping_mall_customers.id. Returns IShoppingMallCustomer.ISummary with customer identity information.
+         * @x-autobe-database-schema-property customer
+         * @x-autobe-specification Relation via JOIN from
+         *   shopping_mall_refund_requests.shopping_mall_customer_id to
+         *   shopping_mall_customers.id. Returns IShoppingMallCustomer.ISummary
+         *   with customer identity information.
      */
     customer: IShoppingMallCustomer.ISummary;
 
@@ -334,8 +419,11 @@ export namespace IShoppingMallRefundRequest {
      *
      * This object contains the seller's identity and shop information. It is null until a seller approves or rejects the request, at which point it references the seller who handled the refund request.
      *
-     * @x-autobe-database-schema-property seller
-     * @x-autobe-specification Relation via LEFT JOIN from shopping_mall_refund_requests.shopping_mall_seller_id to shopping_mall_sellers.id. Returns IShoppingMallSeller.ISummary or null. Nullable until seller responds to the request.
+         * @x-autobe-database-schema-property seller
+         * @x-autobe-specification Relation via LEFT JOIN from
+         *   shopping_mall_refund_requests.shopping_mall_seller_id to
+         *   shopping_mall_sellers.id. Returns IShoppingMallSeller.ISummary or
+         *   null. Nullable until seller responds to the request.
      */
     seller: IShoppingMallSeller.ISummary | null;
 
@@ -344,8 +432,12 @@ export namespace IShoppingMallRefundRequest {
      *
      * This object contains details about the purchased product variant including quantity, price, and fulfillment status. Refund requests can only be created for order items with 'delivered' status.
      *
-     * @x-autobe-database-schema-property orderItem
-     * @x-autobe-specification Relation via JOIN from shopping_mall_refund_requests.shopping_mall_order_item_id to shopping_mall_order_items.id. Returns IShoppingMallOrderItem.ISummary with order item details including product variant, quantity, price, and status.
+         * @x-autobe-database-schema-property orderItem
+         * @x-autobe-specification Relation via JOIN from
+         *   shopping_mall_refund_requests.shopping_mall_order_item_id to
+         *   shopping_mall_order_items.id. Returns
+         *   IShoppingMallOrderItem.ISummary with order item details including
+         *   product variant, quantity, price, and status.
      */
     orderItem: IShoppingMallOrderItem.ISummary;
   };
@@ -365,8 +457,12 @@ export namespace IShoppingMallRefundRequest {
      *
      * The reason text is preserved in the refund request record and in associated snapshots for dispute resolution and order history completeness.
      *
-     * @x-autobe-database-schema-property reason
-     * @x-autobe-specification Direct mapping from shopping_mall_refund_requests.reason column. Customer provides text explanation for why they are requesting a refund. This reason is visible to the seller when they review the refund request and is preserved in snapshots for audit purposes.
+         * @x-autobe-database-schema-property reason
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_refund_requests.reason column. Customer provides text
+         *   explanation for why they are requesting a refund. This reason is
+         *   visible to the seller when they review the refund request and is
+         *   preserved in snapshots for audit purposes.
      */
     reason: string;
   };
@@ -382,7 +478,12 @@ export namespace IShoppingMallRefundRequest {
      *
      * This text explains why the seller is approving the refund and is stored in the refund request snapshot for audit trail and dispute resolution purposes. The reason should be clear and informative for the customer and for administrative review if needed.
      *
-     * @x-autobe-specification Maps to shopping_mall_refund_request_snapshots.response_text column. During the approve operation, this value is captured in the snapshot record along with status_before='pending', status_after='approved', and other audit information. The seller provides this text to explain their approval decision.
+         * @x-autobe-specification Maps to
+         *   shopping_mall_refund_request_snapshots.response_text column. During
+         *   the approve operation, this value is captured in the snapshot
+         *   record along with status_before='pending', status_after='approved',
+         *   and other audit information. The seller provides this text to
+         *   explain their approval decision.
      */
     responseText: string;
   };

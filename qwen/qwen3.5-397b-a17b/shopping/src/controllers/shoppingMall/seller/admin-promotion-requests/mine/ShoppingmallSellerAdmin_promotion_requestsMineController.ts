@@ -17,9 +17,10 @@ export class ShoppingmallSellerAdmin_promotion_requestsMineController {
    * Users can only have one pending promotion request at a time. If a previous request was rejected, they may submit a new request. Approved requests indicate the user has been promoted to regular administrator status.
    *
    * @param connection
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Query shopping_mall_admin_promotion_requests table filtered by the authenticated user's ID.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Query shopping_mall_admin_promotion_requests
+     *   table filtered by the authenticated user's ID.
    *
    * For member users: Join with shopping_mall_admin_promotion_request_of_members on shopping_mall_member_id = authenticated_user_id.
    * For seller users: Join with shopping_mall_admin_promotion_request_of_sellers on shopping_mall_seller_id = authenticated_user_id.

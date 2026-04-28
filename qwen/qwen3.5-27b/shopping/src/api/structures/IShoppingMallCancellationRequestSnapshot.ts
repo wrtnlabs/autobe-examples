@@ -17,8 +17,10 @@ export type IShoppingMallCancellationRequestSnapshot = {
    *
    * This UUID serves as the primary key for the snapshot record and is used to retrieve specific snapshots by their identifier. Each snapshot has a globally unique ID that can be referenced across the system for audit trail purposes.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_cancellation_request_snapshots.id. Primary key UUID uniquely identifying each snapshot record.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_cancellation_request_snapshots.id. Primary key UUID
+     *   uniquely identifying each snapshot record.
    */
   id: string & tags.Format<"uuid">;
 
@@ -27,8 +29,10 @@ export type IShoppingMallCancellationRequestSnapshot = {
    *
    * This field records the status of the cancellation request prior to the seller's action, typically 'pending' when awaiting seller response. It provides context for the status transition and is essential for understanding the request's lifecycle.
    *
-   * @x-autobe-database-schema-property status_before
-   * @x-autobe-specification Direct mapping from shopping_mall_cancellation_request_snapshots.status_before. Captures the previous status value before the transition.
+     * @x-autobe-database-schema-property status_before
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_cancellation_request_snapshots.status_before. Captures
+     *   the previous status value before the transition.
    */
   status_before: string;
 
@@ -37,8 +41,10 @@ export type IShoppingMallCancellationRequestSnapshot = {
    *
    * This field records the resulting status after the seller approves or rejects the cancellation request. Valid values are 'approved' (seller approved, item will be cancelled) or 'rejected' (seller rejected the request).
    *
-   * @x-autobe-database-schema-property status_after
-   * @x-autobe-specification Direct mapping from shopping_mall_cancellation_request_snapshots.status_after. Captures the new status value after the transition.
+     * @x-autobe-database-schema-property status_after
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_cancellation_request_snapshots.status_after. Captures the
+     *   new status value after the transition.
    */
   status_after: string;
 
@@ -47,8 +53,10 @@ export type IShoppingMallCancellationRequestSnapshot = {
    *
    * This optional field contains the seller's explanation or reason for their decision. It is populated when the seller responds to the request and provides context for the approval or rejection.
    *
-   * @x-autobe-database-schema-property seller_response
-   * @x-autobe-specification Direct mapping from shopping_mall_cancellation_request_snapshots.seller_response. Nullable field containing the seller's explanation text.
+     * @x-autobe-database-schema-property seller_response
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_cancellation_request_snapshots.seller_response. Nullable
+     *   field containing the seller's explanation text.
    */
   seller_response: string | null;
 
@@ -57,8 +65,10 @@ export type IShoppingMallCancellationRequestSnapshot = {
    *
    * This field records the exact moment when the cancellation request status changed and this snapshot was generated. Used for chronological ordering of snapshots and audit trail purposes.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from shopping_mall_cancellation_request_snapshots.created_at. Timestamp when the snapshot was created.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_cancellation_request_snapshots.created_at. Timestamp when
+     *   the snapshot was created.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -67,8 +77,12 @@ export type IShoppingMallCancellationRequestSnapshot = {
    *
    * This object contains the complete cancellation request information including the customer who submitted it, the order item being cancelled, the request reason, and the current status. Provides context for understanding what was being cancelled.
    *
-   * @x-autobe-database-schema-property cancellationRequest
-   * @x-autobe-specification Relation mapping from shopping_mall_cancellation_request_id FK to shopping_mall_cancellation_requests table. Returns IShoppingMallCancellationRequest.ISummary with full cancellation request details.
+     * @x-autobe-database-schema-property cancellationRequest
+     * @x-autobe-specification Relation mapping from
+     *   shopping_mall_cancellation_request_id FK to
+     *   shopping_mall_cancellation_requests table. Returns
+     *   IShoppingMallCancellationRequest.ISummary with full cancellation
+     *   request details.
    */
   cancellationRequest: IShoppingMallCancellationRequest.ISummary;
 
@@ -77,8 +91,10 @@ export type IShoppingMallCancellationRequestSnapshot = {
    *
    * This object contains the seller's account information including email, approval status, and shop profile details. Identifies which seller approved or rejected the cancellation request.
    *
-   * @x-autobe-database-schema-property seller
-   * @x-autobe-specification Relation mapping from shopping_mall_seller_id FK to shopping_mall_sellers table. Returns IShoppingMallSeller.ISummary with seller account details.
+     * @x-autobe-database-schema-property seller
+     * @x-autobe-specification Relation mapping from shopping_mall_seller_id FK
+     *   to shopping_mall_sellers table. Returns IShoppingMallSeller.ISummary
+     *   with seller account details.
    */
   seller: IShoppingMallSeller.ISummary;
 };
@@ -96,8 +112,10 @@ export namespace IShoppingMallCancellationRequestSnapshot {
      *
      * This UUID serves as the primary key for the snapshot record, allowing precise referencing of individual status transitions in the audit trail.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_cancellation_request_snapshots.id. Primary key uniquely identifying each snapshot record.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_cancellation_request_snapshots.id. Primary key
+         *   uniquely identifying each snapshot record.
      */
     id: string & tags.Format<"uuid">;
 
@@ -106,8 +124,11 @@ export namespace IShoppingMallCancellationRequestSnapshot {
      *
      * This field preserves the previous state (typically 'pending') to provide a complete audit trail of the status transition. It enables reconstruction of the workflow sequence and verification that the transition followed valid business rules.
      *
-     * @x-autobe-database-schema-property status_before
-     * @x-autobe-specification Direct mapping from shopping_mall_cancellation_request_snapshots.status_before. Captures the cancellation request status before the seller's response.
+         * @x-autobe-database-schema-property status_before
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_cancellation_request_snapshots.status_before.
+         *   Captures the cancellation request status before the seller's
+         *   response.
      */
     status_before: string;
 
@@ -116,8 +137,10 @@ export namespace IShoppingMallCancellationRequestSnapshot {
      *
      * This field contains the new state resulting from the seller's decision: 'approved' if the seller accepted the cancellation request, or 'rejected' if the seller denied it. Combined with status_before, it provides a complete picture of the status transition.
      *
-     * @x-autobe-database-schema-property status_after
-     * @x-autobe-specification Direct mapping from shopping_mall_cancellation_request_snapshots.status_after. Captures the new cancellation request status after the seller's response.
+         * @x-autobe-database-schema-property status_after
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_cancellation_request_snapshots.status_after. Captures
+         *   the new cancellation request status after the seller's response.
      */
     status_after: string;
 
@@ -126,8 +149,11 @@ export namespace IShoppingMallCancellationRequestSnapshot {
      *
      * This optional field contains the seller's written explanation or reason for their decision. It provides context for the customer and administrators when reviewing the cancellation request history. The field is nullable as some implementations may not require a response text.
      *
-     * @x-autobe-database-schema-property seller_response
-     * @x-autobe-specification Direct mapping from shopping_mall_cancellation_request_snapshots.seller_response. Nullable field containing the seller's explanation text for their approval or rejection decision.
+         * @x-autobe-database-schema-property seller_response
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_cancellation_request_snapshots.seller_response.
+         *   Nullable field containing the seller's explanation text for their
+         *   approval or rejection decision.
      */
     seller_response: string | null;
 
@@ -136,8 +162,11 @@ export namespace IShoppingMallCancellationRequestSnapshot {
      *
      * This DateTime field records the exact moment when the seller responded to the cancellation request and the status transition occurred. It is used for chronological ordering of snapshots and for auditing purposes to establish when decisions were made.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_cancellation_request_snapshots.created_at. Timestamp when the snapshot was created, representing the exact moment of status transition.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_cancellation_request_snapshots.created_at. Timestamp
+         *   when the snapshot was created, representing the exact moment of
+         *   status transition.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -146,8 +175,11 @@ export namespace IShoppingMallCancellationRequestSnapshot {
      *
      * This object contains the seller's account information and shop profile details, including their email, approval status, and shop name. It identifies which seller made the approval or rejection decision for this cancellation request.
      *
-     * @x-autobe-database-schema-property seller
-     * @x-autobe-specification Relation mapping via JOIN on shopping_mall_seller_id to shopping_mall_sellers table. Returns IShoppingMallSeller.ISummary object containing seller identity and shop profile information.
+         * @x-autobe-database-schema-property seller
+         * @x-autobe-specification Relation mapping via JOIN on
+         *   shopping_mall_seller_id to shopping_mall_sellers table. Returns
+         *   IShoppingMallSeller.ISummary object containing seller identity and
+         *   shop profile information.
      */
     seller: IShoppingMallSeller.ISummary;
 
@@ -156,8 +188,12 @@ export namespace IShoppingMallCancellationRequestSnapshot {
      *
      * This object contains the complete cancellation request information including the request ID, customer details, order item being cancelled, customer's reason for cancellation, and current status. It provides full context for the status transition captured in this snapshot.
      *
-     * @x-autobe-database-schema-property cancellationRequest
-     * @x-autobe-specification Relation mapping via JOIN on shopping_mall_cancellation_request_id to shopping_mall_cancellation_requests table. Returns IShoppingMallCancellationRequest.ISummary object containing the full cancellation request details.
+         * @x-autobe-database-schema-property cancellationRequest
+         * @x-autobe-specification Relation mapping via JOIN on
+         *   shopping_mall_cancellation_request_id to
+         *   shopping_mall_cancellation_requests table. Returns
+         *   IShoppingMallCancellationRequest.ISummary object containing the
+         *   full cancellation request details.
      */
     cancellationRequest: IShoppingMallCancellationRequest.ISummary;
   };
@@ -173,7 +209,9 @@ export namespace IShoppingMallCancellationRequestSnapshot {
      *
      * When specified, returns only snapshots related to this specific cancellation request. This is useful for viewing the complete audit trail of a single cancellation request's status changes over time.
      *
-     * @x-autobe-specification Filter parameter for exact match on shopping_mall_cancellation_request_id column. When provided, only snapshots for the specified cancellation request are returned.
+         * @x-autobe-specification Filter parameter for exact match on
+         *   shopping_mall_cancellation_request_id column. When provided, only
+         *   snapshots for the specified cancellation request are returned.
      */
     cancellationRequestId?: (string & tags.Format<"uuid">) | undefined;
 
@@ -182,7 +220,9 @@ export namespace IShoppingMallCancellationRequestSnapshot {
      *
      * When specified, returns only snapshots where this seller approved or rejected a cancellation request. Useful for sellers to view their own response history or for administrators to audit a specific seller's cancellation handling.
      *
-     * @x-autobe-specification Filter parameter for exact match on shopping_mall_seller_id column. When provided, only snapshots where the specified seller responded are returned.
+         * @x-autobe-specification Filter parameter for exact match on
+         *   shopping_mall_seller_id column. When provided, only snapshots where
+         *   the specified seller responded are returned.
      */
     sellerId?: (string & tags.Format<"uuid">) | undefined;
 
@@ -191,7 +231,9 @@ export namespace IShoppingMallCancellationRequestSnapshot {
      *
      * When specified, returns only snapshots where the cancellation request had this status before the seller's response. Useful for filtering specific state transitions.
      *
-     * @x-autobe-specification Filter parameter for exact match on status_before column. When provided, only snapshots with this status as the previous state are returned.
+         * @x-autobe-specification Filter parameter for exact match on
+         *   status_before column. When provided, only snapshots with this
+         *   status as the previous state are returned.
      */
     statusBefore?: string | undefined;
 
@@ -200,7 +242,9 @@ export namespace IShoppingMallCancellationRequestSnapshot {
      *
      * When specified, returns only snapshots where the cancellation request transitioned to this status. Useful for finding all approved or rejected requests.
      *
-     * @x-autobe-specification Filter parameter for exact match on status_after column. When provided, only snapshots with this status as the new state are returned.
+         * @x-autobe-specification Filter parameter for exact match on
+         *   status_after column. When provided, only snapshots with this status
+         *   as the new state are returned.
      */
     statusAfter?: string | undefined;
 
@@ -209,7 +253,9 @@ export namespace IShoppingMallCancellationRequestSnapshot {
      *
      * When specified, returns only snapshots created on or after this timestamp. Use with createdAtTo to define a complete time range.
      *
-     * @x-autobe-specification Filter parameter for range comparison on created_at column (lower bound, inclusive). When provided, only snapshots created at or after this timestamp are returned.
+         * @x-autobe-specification Filter parameter for range comparison on
+         *   created_at column (lower bound, inclusive). When provided, only
+         *   snapshots created at or after this timestamp are returned.
      */
     createdAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
@@ -218,7 +264,9 @@ export namespace IShoppingMallCancellationRequestSnapshot {
      *
      * When specified, returns only snapshots created on or before this timestamp. Use with createdAtFrom to define a complete time range.
      *
-     * @x-autobe-specification Filter parameter for range comparison on created_at column (upper bound, inclusive). When provided, only snapshots created at or before this timestamp are returned.
+         * @x-autobe-specification Filter parameter for range comparison on
+         *   created_at column (upper bound, inclusive). When provided, only
+         *   snapshots created at or before this timestamp are returned.
      */
     createdAtTo?: (string & tags.Format<"date-time">) | undefined;
 
@@ -227,7 +275,9 @@ export namespace IShoppingMallCancellationRequestSnapshot {
      *
      * Specifies which page of results to retrieve. Page numbering starts from 1. Default is 1 if not provided.
      *
-     * @x-autobe-specification Pagination parameter for 1-indexed page number. Defaults to 1 if not provided. Used with limit to control which page of results is returned.
+         * @x-autobe-specification Pagination parameter for 1-indexed page
+         *   number. Defaults to 1 if not provided. Used with limit to control
+         *   which page of results is returned.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -236,7 +286,9 @@ export namespace IShoppingMallCancellationRequestSnapshot {
      *
      * Controls the page size for pagination. Accepts values from 1 to 100. Default is 20 if not provided.
      *
-     * @x-autobe-specification Pagination parameter for maximum records per page. Range: 1-100. Defaults to 20 if not provided. Controls how many snapshots are returned per page.
+         * @x-autobe-specification Pagination parameter for maximum records per
+         *   page. Range: 1-100. Defaults to 20 if not provided. Controls how
+         *   many snapshots are returned per page.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)

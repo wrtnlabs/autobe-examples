@@ -24,9 +24,9 @@ export class RedditlikeAuthMemberController {
    *
    * @param connection
    * @param body Member registration information including email, username, and password
-   * @x-autobe-authorization-type join
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation details:
+     * @x-autobe-authorization-type join
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation details:
    *
    * 1. Validate that email is unique (not already in reddit_like_members)
    * 2. Validate that username is unique (not already in reddit_like_members)
@@ -75,9 +75,9 @@ export class RedditlikeAuthMemberController {
    *
    * @param connection
    * @param body Member login credentials with email and password
-   * @x-autobe-authorization-type login
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation details:
+     * @x-autobe-authorization-type login
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation details:
    *
    * 1. Look up member by email in reddit_like_members table
    * 2. If member not found, return generic authentication failure (don't reveal email doesn't exist)
@@ -127,9 +127,9 @@ export class RedditlikeAuthMemberController {
    *
    * @param connection
    * @param body Refresh token for obtaining new access token
-   * @x-autobe-authorization-type refresh
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation details:
+     * @x-autobe-authorization-type refresh
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation details:
    *
    * 1. Extract refresh token from request
    * 2. Hash the refresh token and look up in reddit_like_member_sessions by refresh_token_hash

@@ -10,72 +10,94 @@ export type IEcommerceMallAdminAuditLog = {
   /**
    * Unique identifier of the audit log entry.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_admin_audit_logs.id. Primary key UUID.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_admin_audit_logs.id. Primary key UUID.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * The specific administrative action performed (e.g., 'approve_seller', 'suspend_user', 'delete_product').
    *
-   * @x-autobe-database-schema-property action
-   * @x-autobe-specification Direct mapping from ecommerce_mall_admin_audit_logs.action. String describing the specific action performed (e.g., 'approve_seller', 'suspend_user', 'delete_product').
+     * @x-autobe-database-schema-property action
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_admin_audit_logs.action. String describing the specific
+     *   action performed (e.g., 'approve_seller', 'suspend_user',
+     *   'delete_product').
    */
   action: string;
 
   /**
    * The type of resource affected by the action (e.g., 'seller', 'product', 'order', 'user'), or null if not applicable.
    *
-   * @x-autobe-database-schema-property resource_type
-   * @x-autobe-specification Direct mapping from ecommerce_mall_admin_audit_logs.resource_type. Nullable string indicating the type of resource affected (e.g., 'seller', 'product', 'order', 'user').
+     * @x-autobe-database-schema-property resource_type
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_admin_audit_logs.resource_type. Nullable string
+     *   indicating the type of resource affected (e.g., 'seller', 'product',
+     *   'order', 'user').
    */
   resourceType: string | null;
 
   /**
    * The unique identifier of the affected resource, or null if not applicable.
    *
-   * @x-autobe-database-schema-property resource_id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_admin_audit_logs.resource_id. Nullable string containing the unique identifier of the affected resource.
+     * @x-autobe-database-schema-property resource_id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_admin_audit_logs.resource_id. Nullable string containing
+     *   the unique identifier of the affected resource.
    */
   resourceId: string | null;
 
   /**
    * Additional details about the action in text or JSON format, or null if not provided.
    *
-   * @x-autobe-database-schema-property details
-   * @x-autobe-specification Direct mapping from ecommerce_mall_admin_audit_logs.details. Nullable string or JSON containing additional context about the action, such as before/after values or reason.
+     * @x-autobe-database-schema-property details
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_admin_audit_logs.details. Nullable string or JSON
+     *   containing additional context about the action, such as before/after
+     *   values or reason.
    */
   details: string | null;
 
   /**
    * IP address from which the administrative action was performed, or null if not captured.
    *
-   * @x-autobe-database-schema-property ip
-   * @x-autobe-specification Direct mapping from ecommerce_mall_admin_audit_logs.ip. Nullable string capturing the IP address from which the action was performed.
+     * @x-autobe-database-schema-property ip
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_admin_audit_logs.ip. Nullable string capturing the IP
+     *   address from which the action was performed.
    */
   ip: string | null;
 
   /**
    * User agent string of the browser or client used when performing the action, or null if not captured.
    *
-   * @x-autobe-database-schema-property user_agent
-   * @x-autobe-specification Direct mapping from ecommerce_mall_admin_audit_logs.user_agent. Nullable string containing the browser/client user agent string.
+     * @x-autobe-database-schema-property user_agent
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_admin_audit_logs.user_agent. Nullable string containing
+     *   the browser/client user agent string.
    */
   userAgent: string | null;
 
   /**
    * Timestamp when the audit log entry was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_admin_audit_logs.created_at. Timestamp in ISO 8601 format when the audit log entry was created.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_admin_audit_logs.created_at. Timestamp in ISO 8601
+     *   format when the audit log entry was created.
    */
   createdAt: string & tags.Format<"date-time">;
 
   /**
    * The administrator who performed the action, including their profile summary.
    *
-   * @x-autobe-database-schema-property admin
-   * @x-autobe-specification Join from ecommerce_mall_admin_audit_logs.ecommerce_mall_admin_id to ecommerce_mall_admins.id. Returns IEcommerceMallAdmin.ISummary containing admin's public profile information (id, email, grade, status, nickname, createdAt).
+     * @x-autobe-database-schema-property admin
+     * @x-autobe-specification Join from
+     *   ecommerce_mall_admin_audit_logs.ecommerce_mall_admin_id to
+     *   ecommerce_mall_admins.id. Returns IEcommerceMallAdmin.ISummary
+     *   containing admin's public profile information (id, email, grade,
+     *   status, nickname, createdAt).
    */
   admin: IEcommerceMallAdmin.ISummary;
 };
@@ -87,48 +109,64 @@ export namespace IEcommerceMallAdminAuditLog {
     /**
      * Unique identifier for the audit log entry.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_mall_admin_audit_logs.id. UUID primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_admin_audit_logs.id. UUID primary key.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * The specific action performed by the administrator.
      *
-     * @x-autobe-database-schema-property action
-     * @x-autobe-specification Direct mapping from ecommerce_mall_admin_audit_logs.action. Stores the specific action performed by the administrator (e.g., 'approve_seller', 'suspend_user').
+         * @x-autobe-database-schema-property action
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_admin_audit_logs.action. Stores the specific action
+         *   performed by the administrator (e.g., 'approve_seller',
+         *   'suspend_user').
      */
     action: string;
 
     /**
      * The type of resource affected by this action.
      *
-     * @x-autobe-database-schema-property resource_type
-     * @x-autobe-specification Mapping from ecommerce_mall_admin_audit_logs.resource_type. Nullable field indicating the type of resource affected (e.g., 'seller', 'product', 'order'). Uses oneOf with null for optional nature.
+         * @x-autobe-database-schema-property resource_type
+         * @x-autobe-specification Mapping from
+         *   ecommerce_mall_admin_audit_logs.resource_type. Nullable field
+         *   indicating the type of resource affected (e.g., 'seller',
+         *   'product', 'order'). Uses oneOf with null for optional nature.
      */
     resourceType: string | null;
 
     /**
      * The unique identifier of the affected resource.
      *
-     * @x-autobe-database-schema-property resource_id
-     * @x-autobe-specification Mapping from ecommerce_mall_admin_audit_logs.resource_id. Nullable field containing the unique identifier of the affected resource. Uses oneOf with null for optional nature.
+         * @x-autobe-database-schema-property resource_id
+         * @x-autobe-specification Mapping from
+         *   ecommerce_mall_admin_audit_logs.resource_id. Nullable field
+         *   containing the unique identifier of the affected resource. Uses
+         *   oneOf with null for optional nature.
      */
     resourceId: string | null;
 
     /**
      * The administrator who performed this action.
      *
-     * @x-autobe-database-schema-property admin
-     * @x-autobe-specification JOIN via ecommerce_mall_admin_id FK to ecommerce_mall_admins table. Returns IEcommerceMallAdmin.ISummary containing administrator's id, email, grade, status, nickname, and createdAt. Relation name 'admin' maps to the administrator who performed the action.
+         * @x-autobe-database-schema-property admin
+         * @x-autobe-specification JOIN via ecommerce_mall_admin_id FK to
+         *   ecommerce_mall_admins table. Returns IEcommerceMallAdmin.ISummary
+         *   containing administrator's id, email, grade, status, nickname, and
+         *   createdAt. Relation name 'admin' maps to the administrator who
+         *   performed the action.
      */
     admin: IEcommerceMallAdmin.ISummary;
 
     /**
      * Timestamp when the audit log entry was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_admin_audit_logs.created_at. Timestamp when the audit log entry was created. Format: date-time per OpenAPI spec.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_admin_audit_logs.created_at. Timestamp when the
+         *   audit log entry was created. Format: date-time per OpenAPI spec.
      */
     createdAt: string & tags.Format<"date-time">;
   };
@@ -140,77 +178,113 @@ export namespace IEcommerceMallAdminAuditLog {
     /**
      * Filter audit logs by the administrator who performed the action.
      *
-     * @x-autobe-specification Filter by the administrator who performed the action. Maps to ecommerce_mall_admin_id column in ecommerce_mall_admin_audit_logs table. Supports filtering logs by specific administrator UUID. Nullable to allow querying all administrators.
+         * @x-autobe-specification Filter by the administrator who performed the
+         *   action. Maps to ecommerce_mall_admin_id column in
+         *   ecommerce_mall_admin_audit_logs table. Supports filtering logs by
+         *   specific administrator UUID. Nullable to allow querying all
+         *   administrators.
      */
     adminId: (string & tags.Format<"uuid">) | null;
 
     /**
      * Filter audit logs by specific action types performed by administrators.
      *
-     * @x-autobe-specification Filter by action types performed (e.g., 'approve_seller', 'suspend_user'). Maps to action column in audit log tables. Supports array of action strings for OR matching. Partial string matching supported. Nullable to query all action types.
+         * @x-autobe-specification Filter by action types performed (e.g.,
+         *   'approve_seller', 'suspend_user'). Maps to action column in audit
+         *   log tables. Supports array of action strings for OR matching.
+         *   Partial string matching supported. Nullable to query all action
+         *   types.
      */
     actionTypes: string[] | null;
 
     /**
      * Filter audit logs by the type of resource that was affected.
      *
-     * @x-autobe-specification Filter by the type of affected resource (e.g., 'seller', 'product', 'order'). Maps to resource_type column in audit log tables. Supports array of resource type strings for OR matching. Nullable to query all resource types.
+         * @x-autobe-specification Filter by the type of affected resource
+         *   (e.g., 'seller', 'product', 'order'). Maps to resource_type column
+         *   in audit log tables. Supports array of resource type strings for OR
+         *   matching. Nullable to query all resource types.
      */
     resourceTypes: string[] | null;
 
     /**
      * Filter audit logs by the unique identifier of the affected resource.
      *
-     * @x-autobe-specification Filter by the unique identifier of the affected resource. Maps to resource_id column in audit log tables. Exact UUID match. Nullable to query all resources.
+         * @x-autobe-specification Filter by the unique identifier of the
+         *   affected resource. Maps to resource_id column in audit log tables.
+         *   Exact UUID match. Nullable to query all resources.
      */
     resourceId: (string & tags.Format<"uuid">) | null;
 
     /**
      * Filter audit logs by the IP address from which the action originated.
      *
-     * @x-autobe-specification Filter by the IP address from which the action was performed. Maps to ip column in audit log tables. Supports IPv4 format. Partial matching supported for subnet filtering. Nullable to query all IP addresses.
+         * @x-autobe-specification Filter by the IP address from which the
+         *   action was performed. Maps to ip column in audit log tables.
+         *   Supports IPv4 format. Partial matching supported for subnet
+         *   filtering. Nullable to query all IP addresses.
      */
     ipAddress: (string & tags.Format<"ipv4">) | null;
 
     /**
      * Filter audit logs from this timestamp onwards (inclusive).
      *
-     * @x-autobe-specification Start of the date range filter for audit log entries. Used in combination with dateTo to filter created_at timestamps. Must be before dateTo. Applied as created_at >= dateFrom condition in query.
+         * @x-autobe-specification Start of the date range filter for audit log
+         *   entries. Used in combination with dateTo to filter created_at
+         *   timestamps. Must be before dateTo. Applied as created_at >=
+         *   dateFrom condition in query.
      */
     dateFrom: (string & tags.Format<"date-time">) | null;
 
     /**
      * Filter audit logs up to this timestamp (inclusive).
      *
-     * @x-autobe-specification End of the date range filter for audit log entries. Used in combination with dateFrom to filter created_at timestamps. Must be after dateFrom. Applied as created_at <= dateTo condition in query.
+         * @x-autobe-specification End of the date range filter for audit log
+         *   entries. Used in combination with dateFrom to filter created_at
+         *   timestamps. Must be after dateFrom. Applied as created_at <= dateTo
+         *   condition in query.
      */
     dateTo: (string & tags.Format<"date-time">) | null;
 
     /**
      * Cursor timestamp for pagination. Used with id to fetch the next page of results.
      *
-     * @x-autobe-specification Timestamp for cursor-based pagination. Maps to created_at column in audit log tables. Used with id field for stable pagination ordering. Records are sorted by created_at DESC, then by id. This field captures the created_at value of the last seen record for fetching the next page.
+         * @x-autobe-specification Timestamp for cursor-based pagination. Maps
+         *   to created_at column in audit log tables. Used with id field for
+         *   stable pagination ordering. Records are sorted by created_at DESC,
+         *   then by id. This field captures the created_at value of the last
+         *   seen record for fetching the next page.
      */
     createdAt: (string & tags.Format<"date-time">) | null;
 
     /**
      * Cursor ID for pagination. Used with createdAt to fetch the next page of results.
      *
-     * @x-autobe-specification Primary key for cursor-based pagination. Maps to id column in audit log tables. Used with createdAt field for stable pagination ordering. When paginating, this field captures the id value of the last seen record to ensure consistent results when timestamps are identical.
+         * @x-autobe-specification Primary key for cursor-based pagination. Maps
+         *   to id column in audit log tables. Used with createdAt field for
+         *   stable pagination ordering. When paginating, this field captures
+         *   the id value of the last seen record to ensure consistent results
+         *   when timestamps are identical.
      */
     id: (string & tags.Format<"uuid">) | null;
 
     /**
      * Target page number to retrieve (1-indexed).
      *
-     * @x-autobe-specification The page number to retrieve (1-indexed). Computed pagination parameter - not stored in database. Defaults to 1 if not provided. Used to calculate offset for traditional offset-based pagination as fallback.
+         * @x-autobe-specification The page number to retrieve (1-indexed).
+         *   Computed pagination parameter - not stored in database. Defaults to
+         *   1 if not provided. Used to calculate offset for traditional
+         *   offset-based pagination as fallback.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
 
     /**
      * Maximum number of records to return per page.
      *
-     * @x-autobe-specification Maximum number of records to return per page. Computed pagination parameter - not stored in database. Defaults to 100 if not provided. Server may enforce upper bounds to prevent excessive resource consumption.
+         * @x-autobe-specification Maximum number of records to return per page.
+         *   Computed pagination parameter - not stored in database. Defaults to
+         *   100 if not provided. Server may enforce upper bounds to prevent
+         *   excessive resource consumption.
      */
     limit?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };

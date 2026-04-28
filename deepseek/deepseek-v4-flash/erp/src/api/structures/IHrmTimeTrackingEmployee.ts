@@ -23,8 +23,9 @@ export type IHrmTimeTrackingEmployee = {
    *
    * This is the primary key used to reference the employee across all related entities including contracts, project memberships, timelogs, timesheets, and timers.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_employees.id. UUID format.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_employees.id. UUID format.
    */
   id: string & tags.Format<"uuid">;
 
@@ -33,8 +34,10 @@ export type IHrmTimeTrackingEmployee = {
    *
    * This optional field provides organizational context about the employee's function and seniority level. May be null if no position has been assigned.
    *
-   * @x-autobe-database-schema-property position
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_employees.position. Nullable string field in the database.
+     * @x-autobe-database-schema-property position
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_employees.position. Nullable string field in the
+     *   database.
    */
   position: string | null;
 
@@ -43,8 +46,10 @@ export type IHrmTimeTrackingEmployee = {
    *
    * Determines the compensation model and work schedule expectations. One of: `full-time`, `part-time`, `contractor`, or `intern`.
    *
-   * @x-autobe-database-schema-property employment_type
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_employees.employment_type. Validated at the application layer to one of: full-time, part-time, contractor, intern.
+     * @x-autobe-database-schema-property employment_type
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_employees.employment_type. Validated at the
+     *   application layer to one of: full-time, part-time, contractor, intern.
    */
   employment_type: string;
 
@@ -53,8 +58,9 @@ export type IHrmTimeTrackingEmployee = {
    *
    * Active employees can log time, submit timesheets, and access organization features. Deactivated employees are blocked from time tracking operations but their historical data (timelogs, timesheets, contracts) is preserved.
    *
-   * @x-autobe-database-schema-property status
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_employees.status. Valid values: active, deactivated.
+     * @x-autobe-database-schema-property status
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_employees.status. Valid values: active, deactivated.
    */
   status: string;
 
@@ -63,8 +69,12 @@ export type IHrmTimeTrackingEmployee = {
    *
    * Provides the employee's identity information — display name, email, avatar, and phone number — shared across all organizations the user belongs to. A single user may be an employee in multiple organizations, with one employee record per organization.
    *
-   * @x-autobe-database-schema-property member
-   * @x-autobe-specification Belongs-to relation: JOIN hrm_time_tracking_members ON hrm_time_tracking_employees.hrm_time_tracking_member_id = hrm_time_tracking_members.id. Returns IHrmTimeTrackingMember.ISummary containing display_name, email, avatar, and phone_number.
+     * @x-autobe-database-schema-property member
+     * @x-autobe-specification Belongs-to relation: JOIN
+     *   hrm_time_tracking_members ON
+     *   hrm_time_tracking_employees.hrm_time_tracking_member_id =
+     *   hrm_time_tracking_members.id. Returns IHrmTimeTrackingMember.ISummary
+     *   containing display_name, email, avatar, and phone_number.
    */
   member: IHrmTimeTrackingMember.ISummary;
 
@@ -73,8 +83,12 @@ export type IHrmTimeTrackingEmployee = {
    *
    * Each employee has exactly one role defining their permissions within the organization. The role may be a built-in role (Owner, Manager, Employee) or a custom role with configurable permissions.
    *
-   * @x-autobe-database-schema-property role
-   * @x-autobe-specification Belongs-to relation: JOIN hrm_time_tracking_roles ON hrm_time_tracking_employees.hrm_time_tracking_role_id = hrm_time_tracking_roles.id. Returns IHrmTimeTrackingRole.ISummary containing the role name, type (built_in or custom), and employee count.
+     * @x-autobe-database-schema-property role
+     * @x-autobe-specification Belongs-to relation: JOIN hrm_time_tracking_roles
+     *   ON hrm_time_tracking_employees.hrm_time_tracking_role_id =
+     *   hrm_time_tracking_roles.id. Returns IHrmTimeTrackingRole.ISummary
+     *   containing the role name, type (built_in or custom), and employee
+     *   count.
    */
   role: IHrmTimeTrackingRole.ISummary;
 
@@ -83,8 +97,13 @@ export type IHrmTimeTrackingEmployee = {
    *
    * Provides organizational grouping context. When the employee is not assigned to a department, or when the department has been soft-deleted (which sets the employee's department reference to null), this field will be null.
    *
-   * @x-autobe-database-schema-property department
-   * @x-autobe-specification Belongs-to relation: LEFT JOIN hrm_time_tracking_departments ON hrm_time_tracking_employees.hrm_time_tracking_department_id = hrm_time_tracking_departments.id. Returns IHrmTimeTrackingDepartment.ISummary or null when the employee is not assigned to any department.
+     * @x-autobe-database-schema-property department
+     * @x-autobe-specification Belongs-to relation: LEFT JOIN
+     *   hrm_time_tracking_departments ON
+     *   hrm_time_tracking_employees.hrm_time_tracking_department_id =
+     *   hrm_time_tracking_departments.id. Returns
+     *   IHrmTimeTrackingDepartment.ISummary or null when the employee is not
+     *   assigned to any department.
    */
   department: IHrmTimeTrackingDepartment.ISummary | null;
 
@@ -93,8 +112,13 @@ export type IHrmTimeTrackingEmployee = {
    *
    * Establishes the multi-tenant data boundary. All employee operations are scoped within this organization context. Includes key organization configuration like name, currency, timezone, and fiscal settings.
    *
-   * @x-autobe-database-schema-property organization
-   * @x-autobe-specification Belongs-to relation: JOIN hrm_time_tracking_organizations ON hrm_time_tracking_employees.hrm_time_tracking_organization_id = hrm_time_tracking_organizations.id. Returns IHrmTimeTrackingOrganization.ISummary containing name, currency, timezone, and status.
+     * @x-autobe-database-schema-property organization
+     * @x-autobe-specification Belongs-to relation: JOIN
+     *   hrm_time_tracking_organizations ON
+     *   hrm_time_tracking_employees.hrm_time_tracking_organization_id =
+     *   hrm_time_tracking_organizations.id. Returns
+     *   IHrmTimeTrackingOrganization.ISummary containing name, currency,
+     *   timezone, and status.
    */
   organization: IHrmTimeTrackingOrganization.ISummary;
 
@@ -103,7 +127,10 @@ export type IHrmTimeTrackingEmployee = {
    *
    * Provides the employee's complete compensation history including pay rate, pay period type, working hours per week, and contract duration. An employee may have multiple contracts over time forming a gapless timeline. Only one contract can be active (end_date IS NULL) at any given time.
    *
-   * @x-autobe-specification Composition: JOIN hrm_time_tracking_employee_contracts ON hrm_time_tracking_employee_id = hrm_time_tracking_employees.id WHERE deleted_at IS NULL. Returns array of IHrmTimeTrackingEmployeeContract.
+     * @x-autobe-specification Composition: JOIN
+     *   hrm_time_tracking_employee_contracts ON hrm_time_tracking_employee_id =
+     *   hrm_time_tracking_employees.id WHERE deleted_at IS NULL. Returns array
+     *   of IHrmTimeTrackingEmployeeContract.
    */
   employeeContracts: IHrmTimeTrackingEmployeeContract[];
 
@@ -112,7 +139,10 @@ export type IHrmTimeTrackingEmployee = {
    *
    * Lists all projects the employee is assigned to, along with their project-level role (member or project-lead). Each membership establishes the employee's right to log time against that project and be assigned tasks within it.
    *
-   * @x-autobe-specification Association: JOIN hrm_time_tracking_project_members ON hrm_time_tracking_employee_id = hrm_time_tracking_employees.id WHERE deleted_at IS NULL. Returns array of IHrmTimeTrackingProjectMember.ISummary.
+     * @x-autobe-specification Association: JOIN
+     *   hrm_time_tracking_project_members ON hrm_time_tracking_employee_id =
+     *   hrm_time_tracking_employees.id WHERE deleted_at IS NULL. Returns array
+     *   of IHrmTimeTrackingProjectMember.ISummary.
    */
   projectMembers: IHrmTimeTrackingProjectMember.ISummary[];
 
@@ -121,7 +151,10 @@ export type IHrmTimeTrackingEmployee = {
    *
    * This is an aggregated count computed from the tasks table, not a direct database column. Provides a quick overview of the employee's current workload across all projects they are assigned to.
    *
-   * @x-autobe-specification Computed via COUNT query on hrm_time_tracking_tasks WHERE assignee_id = hrm_time_tracking_employees.id AND deleted_at IS NULL. Excludes soft-deleted tasks.
+     * @x-autobe-specification Computed via COUNT query on
+     *   hrm_time_tracking_tasks WHERE assignee_id =
+     *   hrm_time_tracking_employees.id AND deleted_at IS NULL. Excludes
+     *   soft-deleted tasks.
    */
   assignedTasksCount: number & tags.Type<"int32">;
 
@@ -130,7 +163,9 @@ export type IHrmTimeTrackingEmployee = {
    *
    * This is an aggregated count providing a quick overview of the employee's time tracking activity.
    *
-   * @x-autobe-specification Computed via COUNT query on hrm_time_tracking_timelogs WHERE hrm_time_tracking_employee_id = hrm_time_tracking_employees.id.
+     * @x-autobe-specification Computed via COUNT query on
+     *   hrm_time_tracking_timelogs WHERE hrm_time_tracking_employee_id =
+     *   hrm_time_tracking_employees.id.
    */
   timelogsCount: number & tags.Type<"int32">;
 
@@ -139,7 +174,9 @@ export type IHrmTimeTrackingEmployee = {
    *
    * This is an aggregated count providing visibility into the employee's timesheet submission history across all statuses (draft, submitted, approved, rejected).
    *
-   * @x-autobe-specification Computed via COUNT query on hrm_time_tracking_timesheets WHERE hrm_time_tracking_employee_id = hrm_time_tracking_employees.id.
+     * @x-autobe-specification Computed via COUNT query on
+     *   hrm_time_tracking_timesheets WHERE hrm_time_tracking_employee_id =
+     *   hrm_time_tracking_employees.id.
    */
   timesheetsCount: number & tags.Type<"int32">;
 
@@ -148,7 +185,9 @@ export type IHrmTimeTrackingEmployee = {
    *
    * This is an aggregated count providing visibility into the employee's timer-based time tracking activity, including both completed and discarded timer sessions.
    *
-   * @x-autobe-specification Computed via COUNT query on hrm_time_tracking_timers WHERE hrm_time_tracking_employee_id = hrm_time_tracking_employees.id.
+     * @x-autobe-specification Computed via COUNT query on
+     *   hrm_time_tracking_timers WHERE hrm_time_tracking_employee_id =
+     *   hrm_time_tracking_employees.id.
    */
   timersCount: number & tags.Type<"int32">;
 
@@ -157,8 +196,9 @@ export type IHrmTimeTrackingEmployee = {
    *
    * Set automatically upon creation and never modified after.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_employees.created_at. ISO 8601 date-time format.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_employees.created_at. ISO 8601 date-time format.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -167,8 +207,9 @@ export type IHrmTimeTrackingEmployee = {
    *
    * Updated automatically whenever any employee field changes, including role changes, department reassignments, position updates, employment type changes, or status transitions.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_employees.updated_at. ISO 8601 date-time format.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_employees.updated_at. ISO 8601 date-time format.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -177,8 +218,10 @@ export type IHrmTimeTrackingEmployee = {
    *
    * When set, the employee is deactivated and cannot perform time tracking operations, but all historical data (timelogs, timesheets, contracts) is preserved. Null indicates the employee record is active and operational.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_employees.deleted_at. Nullable ISO 8601 date-time format. Null indicates the employee is not deactivated.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_employees.deleted_at. Nullable ISO 8601 date-time
+     *   format. Null indicates the employee is not deactivated.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -196,7 +239,10 @@ export namespace IHrmTimeTrackingEmployee {
      *
      * Performs a case-insensitive search across employee display names from their linked user accounts. Only employees whose display name contains the search text are returned. This search is combined with any other active filters.
      *
-     * @x-autobe-specification Case-insensitive ILIKE/ILIKE search against hrm_time_tracking_members.display_name using a JOIN on hrm_time_tracking_member_id. Returns employees whose display name matches the search text.
+         * @x-autobe-specification Case-insensitive ILIKE/ILIKE search against
+         *   hrm_time_tracking_members.display_name using a JOIN on
+         *   hrm_time_tracking_member_id. Returns employees whose display name
+         *   matches the search text.
      */
     search?: string | undefined;
 
@@ -205,7 +251,11 @@ export namespace IHrmTimeTrackingEmployee {
      *
      * When provided, only employees belonging to the specified department are returned. This filter can be combined with employment type, status, and text search filters to narrow down results. Expects a valid UUID format.
      *
-     * @x-autobe-specification Filter by hrm_time_tracking_employees.hrm_time_tracking_department_id. Expects a valid UUID string. When provided, only employees assigned to that department are returned. Combined with other filters via AND.
+         * @x-autobe-specification Filter by
+         *   hrm_time_tracking_employees.hrm_time_tracking_department_id.
+         *   Expects a valid UUID string. When provided, only employees assigned
+         *   to that department are returned. Combined with other filters via
+         *   AND.
      */
     departmentId?: (string & tags.Format<"uuid">) | undefined;
 
@@ -214,7 +264,10 @@ export namespace IHrmTimeTrackingEmployee {
      *
      * Restricts results to employees with the specified employment type. Allowed values are: full-time, part-time, contractor, intern. Can be combined with other filters for refined results.
      *
-     * @x-autobe-specification Filter by hrm_time_tracking_employees.employment_type. Allowed values: full-time, part-time, contractor, intern. Combined with other filters via AND.
+         * @x-autobe-specification Filter by
+         *   hrm_time_tracking_employees.employment_type. Allowed values:
+         *   full-time, part-time, contractor, intern. Combined with other
+         *   filters via AND.
      */
     employmentType?: string | undefined;
 
@@ -223,7 +276,9 @@ export namespace IHrmTimeTrackingEmployee {
      *
      * Restricts results to employees with the specified status. Allowed values are: active (currently employed and able to log time) and deactivated (blocked from time tracking but data preserved). Can be combined with other filters.
      *
-     * @x-autobe-specification Filter by hrm_time_tracking_employees.status. Allowed values: active, deactivated. Combined with other filters via AND.
+         * @x-autobe-specification Filter by hrm_time_tracking_employees.status.
+         *   Allowed values: active, deactivated. Combined with other filters
+         *   via AND.
      */
     status?: string | undefined;
 
@@ -232,7 +287,9 @@ export namespace IHrmTimeTrackingEmployee {
      *
      * Specifies which page of results to retrieve. Page numbering starts at 1, so the first page is page 1. The page size is controlled by the limit parameter. Defaults to 1 if not provided.
      *
-     * @x-autobe-specification Pagination page number (1-indexed). Used to calculate offset: (page - 1) * limit. Minimum value is 1. Combined with limit parameter.
+         * @x-autobe-specification Pagination page number (1-indexed). Used to
+         *   calculate offset: (page - 1) * limit. Minimum value is 1. Combined
+         *   with limit parameter.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -241,7 +298,9 @@ export namespace IHrmTimeTrackingEmployee {
      *
      * Controls how many employee records are returned in a single page. The maximum allowed value is 100 to prevent excessive data transfer. The actual number of returned records may be less than this value on the last page.
      *
-     * @x-autobe-specification Number of records per page. Determines the maximum number of employee records returned in a single response. Maximum allowed value is 100. Combined with page parameter.
+         * @x-autobe-specification Number of records per page. Determines the
+         *   maximum number of employee records returned in a single response.
+         *   Maximum allowed value is 100. Combined with page parameter.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -261,8 +320,9 @@ export namespace IHrmTimeTrackingEmployee {
      *
      * The primary key used to reference this employee across all related data including contracts, timelogs, timesheets, project memberships, and task assignments.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_employees.id. Primary key, UUID format.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_employees.id. Primary key, UUID format.
      */
     id: string & tags.Format<"uuid">;
 
@@ -271,8 +331,11 @@ export namespace IHrmTimeTrackingEmployee {
      *
      * Contains the employee's global profile information including display name, email address, avatar URL, and phone number. This profile is shared across all organizations the user belongs to — changes made here appear everywhere.
      *
-     * @x-autobe-database-schema-property member
-     * @x-autobe-specification JOIN hrm_time_tracking_members ON hrm_time_tracking_member_id. Returns IHrmTimeTrackingMember.ISummary with id, email, display_name, avatar, phone_number, and timestamps.
+         * @x-autobe-database-schema-property member
+         * @x-autobe-specification JOIN hrm_time_tracking_members ON
+         *   hrm_time_tracking_member_id. Returns
+         *   IHrmTimeTrackingMember.ISummary with id, email, display_name,
+         *   avatar, phone_number, and timestamps.
      */
     member: IHrmTimeTrackingMember.ISummary;
 
@@ -281,8 +344,11 @@ export namespace IHrmTimeTrackingEmployee {
      *
      * Defines the employee's permission set and access level. Can be a built-in role (Owner, Manager, Employee) or a custom role with configurable permissions. The role determines what actions the employee can perform within the organization.
      *
-     * @x-autobe-database-schema-property role
-     * @x-autobe-specification JOIN hrm_time_tracking_roles ON hrm_time_tracking_role_id WHERE roles.deleted_at IS NULL. Returns IHrmTimeTrackingRole.ISummary with id, name, type, timestamps, employees_count, and organization summary.
+         * @x-autobe-database-schema-property role
+         * @x-autobe-specification JOIN hrm_time_tracking_roles ON
+         *   hrm_time_tracking_role_id WHERE roles.deleted_at IS NULL. Returns
+         *   IHrmTimeTrackingRole.ISummary with id, name, type, timestamps,
+         *   employees_count, and organization summary.
      */
     role: IHrmTimeTrackingRole.ISummary;
 
@@ -291,8 +357,11 @@ export namespace IHrmTimeTrackingEmployee {
      *
      * Departments provide structural grouping within the organization. Employees not assigned to any department have a null value here. The department reference is set to null when the department is soft-deleted.
      *
-     * @x-autobe-database-schema-property department
-     * @x-autobe-specification LEFT JOIN hrm_time_tracking_departments ON hrm_time_tracking_department_id WHERE departments.deleted_at IS NULL. Nullable. Returns IHrmTimeTrackingDepartment.ISummary with id, name, description, parent, children_count, and timestamps.
+         * @x-autobe-database-schema-property department
+         * @x-autobe-specification LEFT JOIN hrm_time_tracking_departments ON
+         *   hrm_time_tracking_department_id WHERE departments.deleted_at IS
+         *   NULL. Nullable. Returns IHrmTimeTrackingDepartment.ISummary with
+         *   id, name, description, parent, children_count, and timestamps.
      */
     department: IHrmTimeTrackingDepartment.ISummary | null;
 
@@ -301,8 +370,9 @@ export namespace IHrmTimeTrackingEmployee {
      *
      * Examples include "Software Engineer", "Team Lead", "Product Manager", or "HR Coordinator". This is an optional free-text field providing organizational context about the employee's function.
      *
-     * @x-autobe-database-schema-property position
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_employees.position. Nullable string.
+         * @x-autobe-database-schema-property position
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_employees.position. Nullable string.
      */
     position: string | null;
 
@@ -311,8 +381,10 @@ export namespace IHrmTimeTrackingEmployee {
      *
      * Determines the compensation model and work schedule expectations. Allowed values are: `full-time`, `part-time`, `contractor`, and `intern`. This classification affects payroll calculations and time tracking policies.
      *
-     * @x-autobe-database-schema-property employment_type
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_employees.employment_type. Allowed values: full-time, part-time, contractor, intern.
+         * @x-autobe-database-schema-property employment_type
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_employees.employment_type. Allowed values:
+         *   full-time, part-time, contractor, intern.
      */
     employment_type: string;
 
@@ -321,8 +393,10 @@ export namespace IHrmTimeTrackingEmployee {
      *
      * Active employees can log time, submit timesheets, and access organization features. Deactivated employees are blocked from time tracking operations but their historical data (timelogs, timesheets, contracts) is preserved intact.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_employees.status. Allowed values: active, deactivated.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_employees.status. Allowed values: active,
+         *   deactivated.
      */
     status: string;
 
@@ -331,8 +405,10 @@ export namespace IHrmTimeTrackingEmployee {
      *
      * Set automatically when the employee is added to the organization. This value never changes after creation.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_employees.created_at. Date-time string with timezone.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_employees.created_at. Date-time string with
+         *   timezone.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -341,8 +417,10 @@ export namespace IHrmTimeTrackingEmployee {
      *
      * Updated automatically whenever any employee field changes, including role reassignments, department moves, position updates, employment type changes, or status transitions.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_employees.updated_at. Date-time string with timezone.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_employees.updated_at. Date-time string with
+         *   timezone.
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -351,8 +429,10 @@ export namespace IHrmTimeTrackingEmployee {
      *
      * Null when the employee is active and operational. When set, indicates the employee has been deactivated. Deactivated employees retain all historical data but cannot log new time or perform organization operations.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_employees.deleted_at. Nullable date-time string with timezone. Null indicates the employee is active.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_employees.deleted_at. Nullable date-time string
+         *   with timezone. Null indicates the employee is active.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };

@@ -26,7 +26,8 @@ import { ICommunityPlatformPostSnapshot } from "../../../../../structures/ICommu
  * @param props.snapshotId Target snapshot identifier to retrieve the exact point-in-time snapshot.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification 1) Parse `postId` and `snapshotId` as UUIDs from path parameters.
+ * @x-autobe-specification 1) Parse `postId` and `snapshotId` as UUIDs from path
+ *   parameters.
  *
  * 2) Query `community_platform_post_snapshots`:
  * - Filter by `id = snapshotId`.
@@ -158,9 +159,9 @@ export namespace at {
  * @param props.body Snapshot creation input, including when the snapshot content is considered effective and the content fields to persist in the snapshot.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification 1) Input validation
- * - Parse path parameter `postId` as UUID.
- * - Validate request body snapshot input: ensure `publishedAt` is present and is a valid timestamptz-compatible ISO datetime.
+ * @x-autobe-specification 1) Input validation - Parse path parameter `postId`
+ *   as UUID. - Validate request body snapshot input: ensure `publishedAt` is
+ *   present and is a valid timestamptz-compatible ISO datetime.
  *
  * 2) Load and authorize
  * - Query `community_platform_posts` by `id = postId`.

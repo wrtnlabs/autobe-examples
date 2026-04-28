@@ -16,8 +16,10 @@ export type IEcommerceMallProductImage = {
    *
    * Auto-generated UUID that uniquely identifies this image record within the system. Used as the primary key for image lookup and reference.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_product_images.id. Auto-generated UUID for unique image identification.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_product_images.id. Auto-generated UUID for unique image
+     *   identification.
    */
   id: string & tags.Format<"uuid">;
 
@@ -26,8 +28,10 @@ export type IEcommerceMallProductImage = {
    *
    * Identifies which product this image belongs to. Used to enforce ownership boundaries—only the product's owner (seller) can upload, reorder, or delete images. The referenced product must exist and be accessible by the requesting user.
    *
-   * @x-autobe-database-schema-property product_id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_product_images.product_id. UUID reference to the parent product that owns this image.
+     * @x-autobe-database-schema-property product_id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_product_images.product_id. UUID reference to the parent
+     *   product that owns this image.
    */
   product_id: string & tags.Format<"uuid">;
 
@@ -36,8 +40,10 @@ export type IEcommerceMallProductImage = {
    *
    * Points to the storage location (local or external) where the image file has been uploaded. Supports various storage providers including local file systems, S3-compatible storage, or CDN URLs. Must be a valid URI format.
    *
-   * @x-autobe-specification Direct mapping from ecommerce_mall_product_images.image_url. VARCHAR(80000) field storing the storage URL where the image file is hosted.
-   * @x-autobe-database-schema-property image_url
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_product_images.image_url. VARCHAR(80000) field storing
+     *   the storage URL where the image file is hosted.
+     * @x-autobe-database-schema-property image_url
    */
   image_url: string & tags.Format<"uri">;
 
@@ -46,8 +52,11 @@ export type IEcommerceMallProductImage = {
    *
    * Integer value determining the sequence in which images appear. Images with lower display_order values are displayed first, with display_order = 1 serving as the main product thumbnail shown in search results and category listings. Lower values indicate higher priority in the gallery sequence.
    *
-   * @x-autobe-database-schema-property display_order
-   * @x-autobe-specification Direct mapping from ecommerce_mall_product_images.display_order. Integer field determining image sequence; lower values appear first. Unique per [product_id, display_order] combination.
+     * @x-autobe-database-schema-property display_order
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_product_images.display_order. Integer field determining
+     *   image sequence; lower values appear first. Unique per [product_id,
+     *   display_order] combination.
    */
   display_order: number & tags.Type<"int32">;
 
@@ -56,8 +65,10 @@ export type IEcommerceMallProductImage = {
    *
    * Indicates when the image was first uploaded and added to the product's image gallery. Used for auditing, display of image age, and tracking image lifecycle events.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_product_images.created_at. Auto-generated timestamp when the image record was first created.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_product_images.created_at. Auto-generated timestamp when
+     *   the image record was first created.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -66,8 +77,10 @@ export type IEcommerceMallProductImage = {
    *
    * Updated whenever the image record is modified (e.g., display_order changes during reordering). Used to track when the image was last modified and supports caching strategies.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_product_images.updated_at. Auto-updated timestamp reflecting the most recent modification to the image record.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_product_images.updated_at. Auto-updated timestamp
+     *   reflecting the most recent modification to the image record.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -76,8 +89,10 @@ export type IEcommerceMallProductImage = {
    *
    * NULL indicates the image is active and visible. When set, indicates the image has been soft-deleted (archived) but not permanently removed from the database. Soft-deleted images are excluded from active listings but retained for historical records and audit purposes.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_product_images.deleted_at. Nullable timestamp—NULL indicates active image, set value indicates soft deletion.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_product_images.deleted_at. Nullable timestamp—NULL
+     *   indicates active image, set value indicates soft deletion.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -96,7 +111,13 @@ export namespace IEcommerceMallProductImage {
      *
      * Returns all non-deleted images belonging to the product, with their updated display_order values after the reorder operation. Images are sorted by display_order in ascending order, with display_order 1 being the main image shown in product listings.
      *
-     * @x-autobe-specification Array wrapper containing product images from ecommerce_mall_product_images. Query: SELECT all columns from ecommerce_mall_product_images where product_id = productId (from URL path) AND deleted_at IS NULL, ORDER BY display_order ASC. Transform each row into IEcommerceMallProductImage.ISummary via LEFT JOIN to ecommerce_mall_products for the product relation. Returns at least 1 image (operation validates non-empty array).
+         * @x-autobe-specification Array wrapper containing product images from
+         *   ecommerce_mall_product_images. Query: SELECT all columns from
+         *   ecommerce_mall_product_images where product_id = productId (from
+         *   URL path) AND deleted_at IS NULL, ORDER BY display_order ASC.
+         *   Transform each row into IEcommerceMallProductImage.ISummary via
+         *   LEFT JOIN to ecommerce_mall_products for the product relation.
+         *   Returns at least 1 image (operation validates non-empty array).
      */
     images: IEcommerceMallProductImage.ISummary[];
   };
@@ -132,8 +153,12 @@ export namespace IEcommerceMallProductImage {
      *
      * Points to a valid storage location (local or external) where the image file has been uploaded. Supports both local storage paths and external URLs (e.g., CDN or cloud storage). The URL must be properly formatted and accessible for product image display in the storefront.
      *
-     * @x-autobe-database-schema-property image_url
-     * @x-autobe-specification Direct mapping from ecommerce_mall_product_images.image_url. VARCHAR(80000). Must be a valid URI pointing to a storage location (local or external) where the image file has already been uploaded. The URL is used to display the product image in the storefront.
+         * @x-autobe-database-schema-property image_url
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_product_images.image_url. VARCHAR(80000). Must be a
+         *   valid URI pointing to a storage location (local or external) where
+         *   the image file has already been uploaded. The URL is used to
+         *   display the product image in the storefront.
      */
     image_url: string & tags.MaxLength<80000> & tags.Format<"uri">;
 
@@ -142,8 +167,13 @@ export namespace IEcommerceMallProductImage {
      *
      * A positive integer that determines the sequence of images for this product. Images with lower values appear first in the image carousel. The image with display_order = 1 serves as the main thumbnail shown in search results and category listings. When setting display_order = 1, any existing images with display_order = 1 will be auto-incremented.
      *
-     * @x-autobe-database-schema-property display_order
-     * @x-autobe-specification Direct mapping from ecommerce_mall_product_images.display_order. INT. Positive integer (>= 1) that determines the sequence of images in the product carousel. Images with lower display_order values appear first. The image with display_order = 1 is shown as the main thumbnail in search results and category listings.
+         * @x-autobe-database-schema-property display_order
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_product_images.display_order. INT. Positive integer
+         *   (>= 1) that determines the sequence of images in the product
+         *   carousel. Images with lower display_order values appear first. The
+         *   image with display_order = 1 is shown as the main thumbnail in
+         *   search results and category listings.
      */
     display_order: number & tags.Type<"int32"> & tags.Minimum<1>;
   };
@@ -167,8 +197,15 @@ export namespace IEcommerceMallProductImage {
      *
      * Must be a positive integer (>= 1). Lower values appear first in the product's image gallery, with display_order = 1 serving as the main thumbnail shown in search results and category listings.
      *
-     * @x-autobe-database-schema-property display_order
-     * @x-autobe-specification Direct mapping from ecommerce_mall_product_images.display_order. This field accepts a positive integer (>= 1) representing the new display position. For single image reordering, the value is a standalone integer. For bulk reordering operations, the value must be part of a sequential sequence (1, 2, 3, ...) with no gaps, where each image gets a unique position. The database enforces @@unique([product_id, display_order]) constraint to prevent duplicate positions.
+         * @x-autobe-database-schema-property display_order
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_product_images.display_order. This field accepts a
+         *   positive integer (>= 1) representing the new display position. For
+         *   single image reordering, the value is a standalone integer. For
+         *   bulk reordering operations, the value must be part of a sequential
+         *   sequence (1, 2, 3, ...) with no gaps, where each image gets a
+         *   unique position. The database enforces @@unique([product_id,
+         *   display_order]) constraint to prevent duplicate positions.
      */
     display_order: number & tags.Type<"int32"> & tags.Minimum<1>;
 
@@ -181,8 +218,13 @@ export namespace IEcommerceMallProductImage {
      * - Single Image: Not required when imageId is provided in path parameter
      * - Bulk Operations: Required in each array element to identify the image
      *
-     * @x-autobe-specification UUID of the product image to reorder. For bulk reordering at /products/{productId}/images, the request body is an array where each element has id (UUID) and display_order (integer). For single image reorder at /products/{productId}/images/{imageId}/reorder, this field is not needed as imageId is provided in the path parameter.
-     * @x-autobe-database-schema-property id
+         * @x-autobe-specification UUID of the product image to reorder. For
+         *   bulk reordering at /products/{productId}/images, the request body
+         *   is an array where each element has id (UUID) and display_order
+         *   (integer). For single image reorder at
+         *   /products/{productId}/images/{imageId}/reorder, this field is not
+         *   needed as imageId is provided in the path parameter.
+         * @x-autobe-database-schema-property id
      */
     id?: (string & tags.Format<"uuid">) | undefined;
   };

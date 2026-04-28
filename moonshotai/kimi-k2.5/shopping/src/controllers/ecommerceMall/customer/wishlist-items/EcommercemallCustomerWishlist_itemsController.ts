@@ -24,9 +24,10 @@ export class EcommercemallCustomerWishlist_itemsController {
    *
    * @param connection
    * @param body Product to add to the wishlist
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Verify the customer is authenticated and retrieve their customerId from the session.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Verify the customer is authenticated and retrieve
+     *   their customerId from the session.
    *
    * Validate that the productId in the request body refers to an existing, non-deleted product in the ecommerce_mall_products table. If the product does not exist or has a non-null deleted_at timestamp, reject with 404 error.
    *
@@ -71,9 +72,13 @@ export class EcommercemallCustomerWishlist_itemsController {
    *
    * @param connection
    * @param body Search criteria, filters, and pagination parameters for wishlist items
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Query ecommerce_mall_wishlist_items table filtering by authenticated customer's customer_id. Join with ecommerce_mall_products to get product details (name, description, base_price, images via relation). Join with ecommerce_mall_sellers for shop name.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Query ecommerce_mall_wishlist_items table
+     *   filtering by authenticated customer's customer_id. Join with
+     *   ecommerce_mall_products to get product details (name, description,
+     *   base_price, images via relation). Join with ecommerce_mall_sellers for
+     *   shop name.
    *
    * Support search filters: product name (partial match), category_id, price range (min/max base_price), seller_id.
    * Support sorting: created_at (wishlist addition date), product name, base_price.
@@ -115,9 +120,10 @@ export class EcommercemallCustomerWishlist_itemsController {
    *
    * @param connection
    * @param wishlistItemId The unique identifier of the wishlist item (UUID)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Query the ecommerce_mall_wishlist_items table by the wishlistItemId parameter.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Query the ecommerce_mall_wishlist_items table by
+     *   the wishlistItemId parameter.
    *
    * Validate that the wishlist item exists. If not found, return 404 Not Found.
    *
@@ -157,9 +163,9 @@ export class EcommercemallCustomerWishlist_itemsController {
    *
    * @param connection
    * @param wishlistItemId Wishlist item unique identifier (UUID)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Delete operation for wishlist items:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Delete operation for wishlist items:
    *
    * 1. Verify the user is authenticated as a customer
    * 2. Query the wishlist_items table by id = wishlistItemId

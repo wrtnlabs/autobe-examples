@@ -23,9 +23,10 @@ export class HrmtimetrackingOwnersController {
    *
    * @param connection
    * @param body Organization search criteria and pagination options
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Implement this operation as an owner-authorized paginated search over hrm_time_tracking_organizations.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Implement this operation as an owner-authorized
+     *   paginated search over hrm_time_tracking_organizations.
    *
    * Authenticate the caller as an owner actor and reject unauthenticated or non-owner callers. Build a query against hrm_time_tracking_organizations that excludes records whose deleted_at is not null unless the request DTO explicitly supports historical visibility and such behavior is later authorized by requirements. The baseline implementation should only return active organizations.
    *
@@ -66,9 +67,13 @@ export class HrmtimetrackingOwnersController {
    *
    * @param connection
    * @param ownerId Target owner account identifier within the current organization scope
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Implement a read-only service method that retrieves one owner account from `hrm_time_tracking_owners` by primary key `id` and validates that the target owner is linked to the caller's currently selected organization through the ownership association modeled by the already loaded ownership relationship schema.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Implement a read-only service method that
+     *   retrieves one owner account from `hrm_time_tracking_owners` by primary
+     *   key `id` and validates that the target owner is linked to the caller's
+     *   currently selected organization through the ownership association
+     *   modeled by the already loaded ownership relationship schema.
    *
    * Processing steps:
    * 1. Resolve the caller's current organization context from the authenticated session and authorization layer.

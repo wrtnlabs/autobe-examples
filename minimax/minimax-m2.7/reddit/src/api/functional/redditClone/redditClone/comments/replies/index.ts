@@ -23,7 +23,8 @@ import { IRedditCloneComment } from "../../../../../structures/IRedditCloneComme
  * @param props.body Sorting preference and pagination parameters for fetching replies
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query reddit_clone_comments table filtering by parent_comment_id matching the path parameter.
+ * @x-autobe-specification Query reddit_clone_comments table filtering by
+ *   parent_comment_id matching the path parameter.
  *
  * Join with reddit_clone_members to fetch author username for each reply. Use denormalized vote_score for sorting.
  *
@@ -130,7 +131,8 @@ export namespace index {
  * @param props.replyId Unique identifier of the reply comment (UUID format)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query reddit_clone_comments table filtering by id equal to replyId and parent_comment_id equal to commentId.
+ * @x-autobe-specification Query reddit_clone_comments table filtering by id
+ *   equal to replyId and parent_comment_id equal to commentId.
  *
  * Join with reddit_clone_members table to retrieve author information (username).
  *

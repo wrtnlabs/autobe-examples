@@ -13,96 +13,116 @@ export type IErpHrmTimeTrackingTimerSession = {
   /**
    * Timer session identifier (UUID).
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Map erp_hrm_time_tracking_timer_sessions.id to this DTO field.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Map erp_hrm_time_tracking_timer_sessions.id to
+     *   this DTO field.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Organization (tenant) identifier owning this timer session.
    *
-   * @x-autobe-database-schema-property organization_id
-   * @x-autobe-specification Map erp_hrm_time_tracking_timer_sessions.organization_id to this DTO field. Must be used for tenant isolation checks in the operation layer.
+     * @x-autobe-database-schema-property organization_id
+     * @x-autobe-specification Map
+     *   erp_hrm_time_tracking_timer_sessions.organization_id to this DTO field.
+     *   Must be used for tenant isolation checks in the operation layer.
    */
   organization_id: string & tags.Format<"uuid">;
 
   /**
    * Employee (member) identifier that owns this timer session.
    *
-   * @x-autobe-database-schema-property employee_id
-   * @x-autobe-specification Map erp_hrm_time_tracking_timer_sessions.employee_id to this DTO field. Used for authorization checks for member reads.
+     * @x-autobe-database-schema-property employee_id
+     * @x-autobe-specification Map
+     *   erp_hrm_time_tracking_timer_sessions.employee_id to this DTO field.
+     *   Used for authorization checks for member reads.
    */
   employee_id: string & tags.Format<"uuid">;
 
   /**
    * Selected project identifier for the active/in-progress timer session.
    *
-   * @x-autobe-database-schema-property project_id
-   * @x-autobe-specification Map erp_hrm_time_tracking_timer_sessions.project_id to this DTO field.
+     * @x-autobe-database-schema-property project_id
+     * @x-autobe-specification Map
+     *   erp_hrm_time_tracking_timer_sessions.project_id to this DTO field.
    */
   project_id: string & tags.Format<"uuid">;
 
   /**
    * Optional selected task identifier for the timer session (null if no task is selected).
    *
-   * @x-autobe-database-schema-property task_id
-   * @x-autobe-specification Map erp_hrm_time_tracking_timer_sessions.task_id to this DTO field. If the DB column is null, return null here.
+     * @x-autobe-database-schema-property task_id
+     * @x-autobe-specification Map erp_hrm_time_tracking_timer_sessions.task_id
+     *   to this DTO field. If the DB column is null, return null here.
    */
   task_id?: (string & tags.Format<"uuid">) | null | undefined;
 
   /**
    * Running description text attached to the timer session.
    *
-   * @x-autobe-database-schema-property description
-   * @x-autobe-specification Map erp_hrm_time_tracking_timer_sessions.description to this DTO field.
+     * @x-autobe-database-schema-property description
+     * @x-autobe-specification Map
+     *   erp_hrm_time_tracking_timer_sessions.description to this DTO field.
    */
   description: string;
 
   /**
    * Timestamp when the timer session started.
    *
-   * @x-autobe-database-schema-property started_at
-   * @x-autobe-specification Map erp_hrm_time_tracking_timer_sessions.started_at to this DTO field, serialized as an RFC3339/ISO-8601 string.
+     * @x-autobe-database-schema-property started_at
+     * @x-autobe-specification Map
+     *   erp_hrm_time_tracking_timer_sessions.started_at to this DTO field,
+     *   serialized as an RFC3339/ISO-8601 string.
    */
   started_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the timer session ended (null if the session is not finished).
    *
-   * @x-autobe-database-schema-property ended_at
-   * @x-autobe-specification Map erp_hrm_time_tracking_timer_sessions.ended_at to this DTO field. If the DB column is null, return null here. Serialize as an RFC3339/ISO-8601 string when not null.
+     * @x-autobe-database-schema-property ended_at
+     * @x-autobe-specification Map erp_hrm_time_tracking_timer_sessions.ended_at
+     *   to this DTO field. If the DB column is null, return null here.
+     *   Serialize as an RFC3339/ISO-8601 string when not null.
    */
   ended_at: (string & tags.Format<"date-time">) | null;
 
   /**
    * Whether this timer session is currently marked as active for the employee.
    *
-   * @x-autobe-database-schema-property is_active
-   * @x-autobe-specification Map erp_hrm_time_tracking_timer_sessions.is_active to this DTO field.
+     * @x-autobe-database-schema-property is_active
+     * @x-autobe-specification Map
+     *   erp_hrm_time_tracking_timer_sessions.is_active to this DTO field.
    */
   is_active: boolean;
 
   /**
    * Timestamp when the timer session record was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Map erp_hrm_time_tracking_timer_sessions.created_at to this DTO field, serialized as an RFC3339/ISO-8601 string.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Map
+     *   erp_hrm_time_tracking_timer_sessions.created_at to this DTO field,
+     *   serialized as an RFC3339/ISO-8601 string.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the timer session record was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Map erp_hrm_time_tracking_timer_sessions.updated_at to this DTO field, serialized as an RFC3339/ISO-8601 string.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Map
+     *   erp_hrm_time_tracking_timer_sessions.updated_at to this DTO field,
+     *   serialized as an RFC3339/ISO-8601 string.
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * Soft-delete timestamp (null if the record is not soft-deleted).
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Map erp_hrm_time_tracking_timer_sessions.deleted_at to this DTO field. If the DB column is null, return null here. Serialize as an RFC3339/ISO-8601 string when not null.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Map
+     *   erp_hrm_time_tracking_timer_sessions.deleted_at to this DTO field. If
+     *   the DB column is null, return null here. Serialize as an
+     *   RFC3339/ISO-8601 string when not null.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -114,96 +134,121 @@ export namespace IErpHrmTimeTrackingTimerSession {
     /**
      * Unique identifier of the timer session.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Map erp_hrm_time_tracking_timer_sessions.id directly to this DTO field.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Map erp_hrm_time_tracking_timer_sessions.id
+         *   directly to this DTO field.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Running description text attached to the timer session.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Map erp_hrm_time_tracking_timer_sessions.description directly to this DTO field.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Map
+         *   erp_hrm_time_tracking_timer_sessions.description directly to this
+         *   DTO field.
      */
     description: string;
 
     /**
      * Timestamp when the timer session started.
      *
-     * @x-autobe-database-schema-property started_at
-     * @x-autobe-specification Map erp_hrm_time_tracking_timer_sessions.started_at directly to this DTO field.
+         * @x-autobe-database-schema-property started_at
+         * @x-autobe-specification Map
+         *   erp_hrm_time_tracking_timer_sessions.started_at directly to this
+         *   DTO field.
      */
     started_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when the timer session ended; null if the session is still running.
      *
-     * @x-autobe-database-schema-property ended_at
-     * @x-autobe-specification Map erp_hrm_time_tracking_timer_sessions.ended_at directly; it is null when the session has not ended.
+         * @x-autobe-database-schema-property ended_at
+         * @x-autobe-specification Map
+         *   erp_hrm_time_tracking_timer_sessions.ended_at directly; it is null
+         *   when the session has not ended.
      */
     ended_at: (string & tags.Format<"date-time">) | null;
 
     /**
      * Whether this timer session is currently active for the employee.
      *
-     * @x-autobe-database-schema-property is_active
-     * @x-autobe-specification Map erp_hrm_time_tracking_timer_sessions.is_active directly to this DTO field.
+         * @x-autobe-database-schema-property is_active
+         * @x-autobe-specification Map
+         *   erp_hrm_time_tracking_timer_sessions.is_active directly to this DTO
+         *   field.
      */
     is_active: boolean;
 
     /**
      * Timestamp when the timer session record was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Map erp_hrm_time_tracking_timer_sessions.created_at directly to this DTO field.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Map
+         *   erp_hrm_time_tracking_timer_sessions.created_at directly to this
+         *   DTO field.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when the timer session record was last updated.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Map erp_hrm_time_tracking_timer_sessions.updated_at directly to this DTO field.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Map
+         *   erp_hrm_time_tracking_timer_sessions.updated_at directly to this
+         *   DTO field.
      */
     updated_at: string & tags.Format<"date-time">;
 
     /**
      * Soft-deletion timestamp. Null means the session is not soft-deleted.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Map erp_hrm_time_tracking_timer_sessions.deleted_at directly; null means not soft-deleted.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Map
+         *   erp_hrm_time_tracking_timer_sessions.deleted_at directly; null
+         *   means not soft-deleted.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
 
     /**
      * The organization (tenant) context in which this timer session belongs.
      *
-     * @x-autobe-database-schema-property organization
-     * @x-autobe-specification Resolve erp_hrm_time_tracking_timer_sessions.organization_id via the organizations table and shape as IErpHrmTimeTrackingOrganization.ISummary.
+         * @x-autobe-database-schema-property organization
+         * @x-autobe-specification Resolve
+         *   erp_hrm_time_tracking_timer_sessions.organization_id via the
+         *   organizations table and shape as
+         *   IErpHrmTimeTrackingOrganization.ISummary.
      */
     organization: IErpHrmTimeTrackingOrganization.ISummary;
 
     /**
      * The member/employee who owns this timer session.
      *
-     * @x-autobe-database-schema-property employee
-     * @x-autobe-specification Resolve erp_hrm_time_tracking_timer_sessions.employee_id via the members table and shape as IErpHrmTimeTrackingMember.ISummary.
+         * @x-autobe-database-schema-property employee
+         * @x-autobe-specification Resolve
+         *   erp_hrm_time_tracking_timer_sessions.employee_id via the members
+         *   table and shape as IErpHrmTimeTrackingMember.ISummary.
      */
     member: IErpHrmTimeTrackingMember.ISummary;
 
     /**
      * The project selected in this timer session.
      *
-     * @x-autobe-database-schema-property project
-     * @x-autobe-specification Resolve erp_hrm_time_tracking_timer_sessions.project_id via the projects table and shape as IErpHrmTimeTrackingProject.ISummary.
+         * @x-autobe-database-schema-property project
+         * @x-autobe-specification Resolve
+         *   erp_hrm_time_tracking_timer_sessions.project_id via the projects
+         *   table and shape as IErpHrmTimeTrackingProject.ISummary.
      */
     project: IErpHrmTimeTrackingProject.ISummary;
 
     /**
      * The optional task selected in this timer session; null if no task is selected.
      *
-     * @x-autobe-database-schema-property task
-     * @x-autobe-specification If erp_hrm_time_tracking_timer_sessions.task_id is null, set task to null. Otherwise resolve task_id via erp_hrm_time_tracking_tasks and shape as IErpHrmTimeTrackingTask.ISummary.
+         * @x-autobe-database-schema-property task
+         * @x-autobe-specification If
+         *   erp_hrm_time_tracking_timer_sessions.task_id is null, set task to
+         *   null. Otherwise resolve task_id via erp_hrm_time_tracking_tasks and
+         *   shape as IErpHrmTimeTrackingTask.ISummary.
      */
     task: IErpHrmTimeTrackingTask.ISummary | null;
   };
@@ -215,70 +260,86 @@ export namespace IErpHrmTimeTrackingTimerSession {
     /**
      * Filter timer sessions to those for a specific employee (within the selected organization tenant).
      *
-     * @x-autobe-database-schema-property employee_id
-     * @x-autobe-specification If `employeeId` is provided, add predicate `employee_id = :employeeId`. Implement any caller-specific authorization restriction (e.g., restrict to own employee identity) before/alongside applying this predicate.
+         * @x-autobe-database-schema-property employee_id
+         * @x-autobe-specification If `employeeId` is provided, add predicate
+         *   `employee_id = :employeeId`. Implement any caller-specific
+         *   authorization restriction (e.g., restrict to own employee identity)
+         *   before/alongside applying this predicate.
      */
     employeeId?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Filter timer sessions by active state.
      *
-     * @x-autobe-database-schema-property is_active
-     * @x-autobe-specification If `isActive` is provided, add predicate `is_active = :isActive`.
+         * @x-autobe-database-schema-property is_active
+         * @x-autobe-specification If `isActive` is provided, add predicate
+         *   `is_active = :isActive`.
      */
     isActive?: boolean | undefined;
 
     /**
      * Filter timer sessions by the selected project.
      *
-     * @x-autobe-database-schema-property project_id
-     * @x-autobe-specification If `projectId` is provided, add predicate `project_id = :projectId`.
+         * @x-autobe-database-schema-property project_id
+         * @x-autobe-specification If `projectId` is provided, add predicate
+         *   `project_id = :projectId`.
      */
     projectId?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Filter timer sessions by optional task selection. Provide null to retrieve sessions that have no task selected.
      *
-     * @x-autobe-database-schema-property task_id
-     * @x-autobe-specification If `taskId` is a UUID string, add predicate `task_id = :taskId`. If `taskId` is explicitly null, add predicate `task_id IS NULL`. If omitted, do not add any predicate for `task_id`.
+         * @x-autobe-database-schema-property task_id
+         * @x-autobe-specification If `taskId` is a UUID string, add predicate
+         *   `task_id = :taskId`. If `taskId` is explicitly null, add predicate
+         *   `task_id IS NULL`. If omitted, do not add any predicate for
+         *   `task_id`.
      */
     taskId?: (string & tags.Format<"uuid">) | null | undefined;
 
     /**
      * Include sessions started at or after this timestamp.
      *
-     * @x-autobe-database-schema-property started_at
-     * @x-autobe-specification If `startedAtFrom` is provided, add predicate `started_at >= :startedAtFrom`.
+         * @x-autobe-database-schema-property started_at
+         * @x-autobe-specification If `startedAtFrom` is provided, add predicate
+         *   `started_at >= :startedAtFrom`.
      */
     startedAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Include sessions started at or before this timestamp.
      *
-     * @x-autobe-database-schema-property started_at
-     * @x-autobe-specification If `startedAtTo` is provided, add predicate `started_at <= :startedAtTo`.
+         * @x-autobe-database-schema-property started_at
+         * @x-autobe-specification If `startedAtTo` is provided, add predicate
+         *   `started_at <= :startedAtTo`.
      */
     startedAtTo?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Search within the session description using a case-insensitive substring match.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification If `descriptionSearch` is provided and not empty/whitespace, apply a case-insensitive substring match on `description` (e.g., `description ILIKE '%' || :descriptionSearch || '%'`).
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification If `descriptionSearch` is provided and not
+         *   empty/whitespace, apply a case-insensitive substring match on
+         *   `description` (e.g., `description ILIKE '%' || :descriptionSearch
+         *   || '%'`).
      */
     descriptionSearch?: string | undefined;
 
     /**
      * 1-indexed page number to retrieve.
      *
-     * @x-autobe-specification Use `page` as a 1-indexed page selector and translate to offset via `(page - 1) * limit` (or equivalent paging strategy).
+         * @x-autobe-specification Use `page` as a 1-indexed page selector and
+         *   translate to offset via `(page - 1) * limit` (or equivalent paging
+         *   strategy).
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of records per page.
      *
-     * @x-autobe-specification Use `limit` as the maximum number of records returned for the selected page.
+         * @x-autobe-specification Use `limit` as the maximum number of records
+         *   returned for the selected page.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -287,14 +348,17 @@ export namespace IErpHrmTimeTrackingTimerSession {
     /**
      * Field to sort timer sessions by.
      *
-     * @x-autobe-specification When `sortBy` is provided, build `ORDER BY` using the allowed columns only: `started_at`, `ended_at`, `created_at`, `is_active` (mapped directly to the DB column names).
+         * @x-autobe-specification When `sortBy` is provided, build `ORDER BY`
+         *   using the allowed columns only: `started_at`, `ended_at`,
+         *   `created_at`, `is_active` (mapped directly to the DB column names).
      */
     sortBy?: "started_at" | "ended_at" | "created_at" | "is_active" | undefined;
 
     /**
      * Sort direction (`asc` or `desc`) for the chosen sortBy field.
      *
-     * @x-autobe-specification When `sortOrder` is provided, apply it as the ORDER BY direction: `asc` or `desc`. Use together with `sortBy`.
+         * @x-autobe-specification When `sortOrder` is provided, apply it as the
+         *   ORDER BY direction: `asc` or `desc`. Use together with `sortBy`.
      */
     sortOrder?: "asc" | "desc" | undefined;
   };

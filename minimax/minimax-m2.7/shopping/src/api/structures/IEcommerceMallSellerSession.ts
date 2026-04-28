@@ -20,8 +20,9 @@ export type IEcommerceMallSellerSession = {
    *
    * UUID v4 format used as the primary key. This identifier is used to reference the session in subsequent API calls for session management operations.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_seller_sessions.id. Primary key UUID.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_seller_sessions.id. Primary key UUID.
    */
   id: string & tags.Format<"uuid">;
 
@@ -30,8 +31,9 @@ export type IEcommerceMallSellerSession = {
    *
    * The timestamp is recorded in UTC and indicates when the seller established this authentication session. This value is set by the server at login time and cannot be modified by clients.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_seller_sessions.created_at. DateTime stored in UTC.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_seller_sessions.created_at. DateTime stored in UTC.
    */
   createdAt: string & tags.Format<"date-time">;
 
@@ -40,8 +42,9 @@ export type IEcommerceMallSellerSession = {
    *
    * After expiration, the access_token and refresh_token are no longer valid for API authentication. Clients should use the refresh endpoint before this timestamp to obtain new tokens without requiring re-authentication.
    *
-   * @x-autobe-database-schema-property expired_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_seller_sessions.expired_at. DateTime stored in UTC.
+     * @x-autobe-database-schema-property expired_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_seller_sessions.expired_at. DateTime stored in UTC.
    */
   expiredAt: string & tags.Format<"date-time">;
 
@@ -50,8 +53,9 @@ export type IEcommerceMallSellerSession = {
    *
    * IPv4 address of the client device that initiated the login request. Used for security monitoring, fraud detection, and audit trail purposes. May be null if the IP could not be determined.
    *
-   * @x-autobe-database-schema-property ip
-   * @x-autobe-specification Direct mapping from ecommerce_mall_seller_sessions.ip. Client IP address captured at login.
+     * @x-autobe-database-schema-property ip
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_seller_sessions.ip. Client IP address captured at login.
    */
   ip: string;
 
@@ -60,8 +64,9 @@ export type IEcommerceMallSellerSession = {
    *
    * Records the HTTP request URL path from the original login request. This field aids in security auditing by tracking which endpoint was used to create the session.
    *
-   * @x-autobe-database-schema-property href
-   * @x-autobe-specification Direct mapping from ecommerce_mall_seller_sessions.href. Stores the HTTP request URL path.
+     * @x-autobe-database-schema-property href
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_seller_sessions.href. Stores the HTTP request URL path.
    */
   href: string;
 
@@ -70,8 +75,9 @@ export type IEcommerceMallSellerSession = {
    *
    * Captures the HTTP Referer header from the login request, indicating the page or application that referred the user to the login endpoint. May be empty or null for direct navigation.
    *
-   * @x-autobe-database-schema-property referrer
-   * @x-autobe-specification Direct mapping from ecommerce_mall_seller_sessions.referrer. HTTP Referer header value.
+     * @x-autobe-database-schema-property referrer
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_seller_sessions.referrer. HTTP Referer header value.
    */
   referrer: string;
 
@@ -80,7 +86,9 @@ export type IEcommerceMallSellerSession = {
    *
    * This flag allows clients to determine token availability without exposing sensitive token data. A false value indicates the access token has been revoked or has not been issued yet.
    *
-   * @x-autobe-specification Computed boolean: TRUE when ecommerce_mall_seller_sessions.access_token IS NOT NULL. FALSE when access_token IS NULL. Does not expose the actual token value.
+     * @x-autobe-specification Computed boolean: TRUE when
+     *   ecommerce_mall_seller_sessions.access_token IS NOT NULL. FALSE when
+     *   access_token IS NULL. Does not expose the actual token value.
    */
   hasAccessToken: boolean;
 
@@ -89,7 +97,9 @@ export type IEcommerceMallSellerSession = {
    *
    * This flag allows clients to determine if token refresh is possible. A false value means the session cannot be refreshed and the seller will need to re-authenticate after the access token expires.
    *
-   * @x-autobe-specification Computed boolean: TRUE when ecommerce_mall_seller_sessions.refresh_token IS NOT NULL. FALSE when refresh_token IS NULL. Does not expose the actual token value.
+     * @x-autobe-specification Computed boolean: TRUE when
+     *   ecommerce_mall_seller_sessions.refresh_token IS NOT NULL. FALSE when
+     *   refresh_token IS NULL. Does not expose the actual token value.
    */
   hasRefreshToken: boolean;
 
@@ -98,8 +108,11 @@ export type IEcommerceMallSellerSession = {
    *
    * Contains essential seller information including the seller's unique identifier, email, approval status, and shop name. Useful for verifying session ownership and displaying seller context in session management interfaces.
    *
-   * @x-autobe-database-schema-property seller
-   * @x-autobe-specification Join via ecommerce_mall_seller_sessions.ecommerce_mall_seller_id to ecommerce_mall_sellers.id. Returns IEcommerceMallSeller.ISummary containing id, email, approval_status, shop_name, suspension_status.
+     * @x-autobe-database-schema-property seller
+     * @x-autobe-specification Join via
+     *   ecommerce_mall_seller_sessions.ecommerce_mall_seller_id to
+     *   ecommerce_mall_sellers.id. Returns IEcommerceMallSeller.ISummary
+     *   containing id, email, approval_status, shop_name, suspension_status.
    */
   seller: IEcommerceMallSeller.ISummary;
 };
@@ -120,8 +133,9 @@ export namespace IEcommerceMallSellerSession {
      *
      * Assigned automatically upon session creation. Use this ID to reference specific sessions for operations such as termination.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_mall_seller_sessions.id. UUID primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_seller_sessions.id. UUID primary key.
      */
     id: string & tags.Format<"uuid">;
 
@@ -130,8 +144,10 @@ export namespace IEcommerceMallSellerSession {
      *
      * Records the IP address used when the seller logged in. Useful for identifying suspicious login patterns or verifying user location across sessions.
      *
-     * @x-autobe-database-schema-property ip
-     * @x-autobe-specification Direct mapping from ecommerce_mall_seller_sessions.ip. Client IP address from the HTTP request.
+         * @x-autobe-database-schema-property ip
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_seller_sessions.ip. Client IP address from the HTTP
+         *   request.
      */
     ip: string;
 
@@ -140,8 +156,10 @@ export namespace IEcommerceMallSellerSession {
      *
      * Stores the URL path from the login request for audit and security monitoring purposes.
      *
-     * @x-autobe-database-schema-property href
-     * @x-autobe-specification Direct mapping from ecommerce_mall_seller_sessions.href. Request URL path at session creation.
+         * @x-autobe-database-schema-property href
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_seller_sessions.href. Request URL path at session
+         *   creation.
      */
     href: string;
 
@@ -150,8 +168,10 @@ export namespace IEcommerceMallSellerSession {
      *
      * Records the referring URL from the login request for tracking session origin and marketing attribution.
      *
-     * @x-autobe-database-schema-property referrer
-     * @x-autobe-specification Direct mapping from ecommerce_mall_seller_sessions.referrer. HTTP Referrer header value.
+         * @x-autobe-database-schema-property referrer
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_seller_sessions.referrer. HTTP Referrer header
+         *   value.
      */
     referrer: string;
 
@@ -160,8 +180,10 @@ export namespace IEcommerceMallSellerSession {
      *
      * Indicates the exact date and time when this session was established. Use for displaying login history and auditing purposes.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_seller_sessions.created_at. Converted to ISO 8601 date-time string.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_seller_sessions.created_at. Converted to ISO 8601
+         *   date-time string.
      */
     createdAt: string & tags.Format<"date-time">;
 
@@ -170,8 +192,10 @@ export namespace IEcommerceMallSellerSession {
      *
      * The JWT tokens associated with this session will no longer be accepted for authentication after this timestamp.
      *
-     * @x-autobe-database-schema-property expired_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_seller_sessions.expired_at. Converted to ISO 8601 date-time string.
+         * @x-autobe-database-schema-property expired_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_seller_sessions.expired_at. Converted to ISO 8601
+         *   date-time string.
      */
     expiredAt: string & tags.Format<"date-time">;
 
@@ -180,7 +204,10 @@ export namespace IEcommerceMallSellerSession {
      *
      * Returns 'active' if the session has not yet expired, or 'expired' if the expiration timestamp has passed. Use this field to filter and identify usable sessions.
      *
-     * @x-autobe-specification Computed property: status = 'active' if ecommerce_mall_seller_sessions.expired_at > NOW() else 'expired'. No direct database column; derived from expired_at timestamp comparison at query time.
+         * @x-autobe-specification Computed property: status = 'active' if
+         *   ecommerce_mall_seller_sessions.expired_at > NOW() else 'expired'.
+         *   No direct database column; derived from expired_at timestamp
+         *   comparison at query time.
      */
     status: "active" | "expired";
   };
@@ -196,7 +223,8 @@ export namespace IEcommerceMallSellerSession {
      *
      * Specifies which page of results to retrieve. Page numbering starts at 1. Use with limit to navigate through large result sets.
      *
-     * @x-autobe-specification Pagination page number. Defaults to 1. Not stored in database.
+         * @x-autobe-specification Pagination page number. Defaults to 1. Not
+         *   stored in database.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -205,7 +233,8 @@ export namespace IEcommerceMallSellerSession {
      *
      * Controls the number of session records returned in each page. Higher values reduce the number of API calls needed but increase response size.
      *
-     * @x-autobe-specification Pagination page size. Defaults to 20, maximum 100. Not stored in database.
+         * @x-autobe-specification Pagination page size. Defaults to 20, maximum
+         *   100. Not stored in database.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -216,7 +245,9 @@ export namespace IEcommerceMallSellerSession {
      *
      * Filters the results to only include sessions originating from the specified IP address. Useful for identifying login activity from specific locations or detecting suspicious access patterns.
      *
-     * @x-autobe-specification Exact IP address match for filtering. Server compares the provided IP string against the session's stored client IP address.
+         * @x-autobe-specification Exact IP address match for filtering. Server
+         *   compares the provided IP string against the session's stored client
+         *   IP address.
      */
     ip?: string | undefined;
 
@@ -225,7 +256,9 @@ export namespace IEcommerceMallSellerSession {
      *
      * Filters sessions based on the HTTP request path. Supports partial matching to find sessions with similar URL patterns for activity tracking and analysis.
      *
-     * @x-autobe-specification Partial URL path match for filtering. Server uses pattern matching to find sessions with similar request URL paths.
+         * @x-autobe-specification Partial URL path match for filtering. Server
+         *   uses pattern matching to find sessions with similar request URL
+         *   paths.
      */
     href?: string | undefined;
 
@@ -234,7 +267,9 @@ export namespace IEcommerceMallSellerSession {
      *
      * Filters results based on the HTTP Referer header indicating the previous page URL. Useful for analyzing session origin and traffic sources.
      *
-     * @x-autobe-specification Exact referrer URL match for filtering. Server compares the provided referrer string against the session's stored referrer.
+         * @x-autobe-specification Exact referrer URL match for filtering.
+         *   Server compares the provided referrer string against the session's
+         *   stored referrer.
      */
     referrer?: string | undefined;
 
@@ -243,7 +278,9 @@ export namespace IEcommerceMallSellerSession {
      *
      * Specifies the start of a date range for filtering session creation times. Use with createdAtTo to define a date range window.
      *
-     * @x-autobe-specification Lower bound (inclusive) for session creation date range filtering. Server filters sessions with creation timestamp greater than or equal to this value.
+         * @x-autobe-specification Lower bound (inclusive) for session creation
+         *   date range filtering. Server filters sessions with creation
+         *   timestamp greater than or equal to this value.
      */
     createdAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
@@ -252,7 +289,9 @@ export namespace IEcommerceMallSellerSession {
      *
      * Specifies the end of a date range for filtering session creation times. Use with createdAtFrom to define a date range window.
      *
-     * @x-autobe-specification Upper bound (inclusive) for session creation date range filtering. Server filters sessions with creation timestamp less than or equal to this value.
+         * @x-autobe-specification Upper bound (inclusive) for session creation
+         *   date range filtering. Server filters sessions with creation
+         *   timestamp less than or equal to this value.
      */
     createdAtTo?: (string & tags.Format<"date-time">) | undefined;
 
@@ -261,7 +300,11 @@ export namespace IEcommerceMallSellerSession {
      *
      * Filters sessions based on their expiration status. Active sessions have not yet reached their expiration time; expired sessions have passed their expiration timestamp.
      *
-     * @x-autobe-specification Computed filter based on session expiration time. 'active' means the session has not yet reached its expiration time. 'expired' means the session has passed its expiration time. Server compares the stored expiration timestamp against the current server time.
+         * @x-autobe-specification Computed filter based on session expiration
+         *   time. 'active' means the session has not yet reached its expiration
+         *   time. 'expired' means the session has passed its expiration time.
+         *   Server compares the stored expiration timestamp against the current
+         *   server time.
      */
     status?: "active" | "expired" | undefined;
   };

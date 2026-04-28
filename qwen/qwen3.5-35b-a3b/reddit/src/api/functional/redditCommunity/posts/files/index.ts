@@ -31,7 +31,8 @@ import { IRedditCommunityPostFile } from "../../../../structures/IRedditCommunit
  * @param props.body Search criteria for filtering post files including soft-delete status, file type, date ranges, pagination parameters, and sorting options.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query reddit_community_post_files table with filters restricted to files belonging to the specified post.
+ * @x-autobe-specification Query reddit_community_post_files table with filters
+ *   restricted to files belonging to the specified post.
  *
  * 1. Validate that the post exists and the requesting user has access
  * 2. Apply soft-delete filter: exclude records where deleted_at is not null unless explicitly requested
@@ -138,7 +139,8 @@ export namespace index {
  * @param props.fileId Unique identifier of the file attachment to retrieve
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Retrieve a single file attachment from reddit_community_post_files table by fileId.
+ * @x-autobe-specification Retrieve a single file attachment from
+ *   reddit_community_post_files table by fileId.
  *
  * Implementation steps:
  * 1. Validate that both postId and fileId are valid UUID format

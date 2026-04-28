@@ -11,14 +11,15 @@ export namespace IPageIMallPlatformWishlistItem {
     /**
      * Page information.
      *
-     * @x-autobe-specification Pagination information for the page.
+         * @x-autobe-specification Pagination information for the page.
      */
     pagination: IPage.IPagination;
 
     /**
      * List of records.
      *
-     * @x-autobe-specification List of records of type IMallPlatformWishlistItem.ISummary.
+         * @x-autobe-specification List of records of type
+         *   IMallPlatformWishlistItem.ISummary.
      */
     data: IMallPlatformWishlistItem.ISummary[];
   };

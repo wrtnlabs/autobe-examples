@@ -14,7 +14,14 @@ export namespace ITodoAppGuest {
     /**
      * The JWT refresh token previously issued to this guest actor during the join or a prior refresh operation. Submit this token to obtain a new pair of access and refresh tokens. If this token is expired, invalid, or has been tampered with, the request will be rejected with 401 Unauthorized and the guest must perform a new join.
      *
-     * @x-autobe-specification Client-provided JWT refresh token string. The backend validates the token's signature and expiry, then extracts guest_id and session_id from its claims. It looks up todo_app_guests by guest_id and verifies the corresponding todo_app_guest_sessions row has expired_at > now(). On success, a new access/refresh token pair is issued. This field has no direct mapping to any database column — it is a credential input processed entirely server-side.
+         * @x-autobe-specification Client-provided JWT refresh token string. The
+         *   backend validates the token's signature and expiry, then extracts
+         *   guest_id and session_id from its claims. It looks up
+         *   todo_app_guests by guest_id and verifies the corresponding
+         *   todo_app_guest_sessions row has expired_at > now(). On success, a
+         *   new access/refresh token pair is issued. This field has no direct
+         *   mapping to any database column — it is a credential input processed
+         *   entirely server-side.
      */
     refreshToken: string;
   };
@@ -28,29 +35,44 @@ export namespace ITodoAppGuest {
     /**
      * A unique anonymous identifier string that identifies the visitor's client device. Used to recognise returning guests and associate the session with a persistent guest identity. Must not be empty.
      *
-     * @x-autobe-database-schema-property device_fingerprint
-     * @x-autobe-specification Direct mapping to todo_app_guests.device_fingerprint. Used to look up or create a guest record via upsert on the @@unique([device_fingerprint]) constraint. Must be a non-empty string; reject with HTTP 400 if blank or null.
+         * @x-autobe-database-schema-property device_fingerprint
+         * @x-autobe-specification Direct mapping to
+         *   todo_app_guests.device_fingerprint. Used to look up or create a
+         *   guest record via upsert on the @@unique([device_fingerprint])
+         *   constraint. Must be a non-empty string; reject with HTTP 400 if
+         *   blank or null.
      */
     device_fingerprint: string & tags.MinLength<1>;
 
     /**
      * The full URL of the page from which the guest join request originated. Captured for session tracking and stored in the guest session record.
      *
-     * @x-autobe-specification Written to todo_app_guest_sessions.href when creating the new session record. Captures the full URL of the page where the guest join was initiated. Not stored on todo_app_guests itself.
+         * @x-autobe-specification Written to todo_app_guest_sessions.href when
+         *   creating the new session record. Captures the full URL of the page
+         *   where the guest join was initiated. Not stored on todo_app_guests
+         *   itself.
      */
     href: string & tags.Format<"uri">;
 
     /**
      * The referrer URL indicating the page that directed the visitor to the current page, or null if no referrer is available. Captured for session analytics and stored in the guest session record.
      *
-     * @x-autobe-specification Written to todo_app_guest_sessions.referrer when creating the new session record. Nullable — the client should send null when the HTTP Referer header is absent. Not stored on todo_app_guests itself.
+         * @x-autobe-specification Written to todo_app_guest_sessions.referrer
+         *   when creating the new session record. Nullable — the client should
+         *   send null when the HTTP Referer header is absent. Not stored on
+         *   todo_app_guests itself.
      */
     referrer: (string & tags.Format<"uri">) | null;
 
     /**
      * The IPv4 address of the client initiating the guest join, if known by the client. Optional — when absent, the server automatically captures the remote IP address from the network connection.
      *
-     * @x-autobe-specification Written to todo_app_guest_sessions.ip when creating the new session record. Optional in the request body because in SSR scenarios the client-side code cannot reliably determine the public IP; the server captures the remote IP as a fallback when this field is omitted or null. Not stored on todo_app_guests itself.
+         * @x-autobe-specification Written to todo_app_guest_sessions.ip when
+         *   creating the new session record. Optional in the request body
+         *   because in SSR scenarios the client-side code cannot reliably
+         *   determine the public IP; the server captures the remote IP as a
+         *   fallback when this field is omitted or null. Not stored on
+         *   todo_app_guests itself.
      */
     ip?: (string & tags.Format<"ipv4">) | undefined;
   };
@@ -66,39 +88,47 @@ export namespace ITodoAppGuest {
     /**
      * Unique identifier of the guest account. A UUID assigned when the guest record is first created.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from todo_app_guests.id. UUID primary key auto-generated on guest record creation.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from todo_app_guests.id. UUID
+         *   primary key auto-generated on guest record creation.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * The device fingerprint string that uniquely identifies the anonymous visitor's client device. This value was provided during the guest join request and is stored with a unique constraint.
      *
-     * @x-autobe-database-schema-property device_fingerprint
-     * @x-autobe-specification Direct mapping from todo_app_guests.device_fingerprint. Unique string identifying the anonymous client device. Subject to @@unique constraint.
+         * @x-autobe-database-schema-property device_fingerprint
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_guests.device_fingerprint. Unique string identifying the
+         *   anonymous client device. Subject to @@unique constraint.
      */
     device_fingerprint: string;
 
     /**
      * Authorization token.
      *
-     * @x-autobe-specification Authorization token comes from the session table.
+         * @x-autobe-specification Authorization token comes from the session
+         *   table.
      */
     token: IAuthorizationToken;
 
     /**
      * ISO 8601 timestamp of when the guest account was first created, corresponding to the visitor's first anonymous access to the system.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from todo_app_guests.created_at. Timestamptz set when the guest record was first created (i.e., first anonymous visit).
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_guests.created_at. Timestamptz set when the guest record
+         *   was first created (i.e., first anonymous visit).
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * ISO 8601 timestamp of the most recent update to the guest record, refreshed each time the same device fingerprint performs a join or the record is otherwise modified.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from todo_app_guests.updated_at. Timestamptz updated on every upsert (i.e., each time the same device fingerprint joins again).
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_guests.updated_at. Timestamptz updated on every upsert
+         *   (i.e., each time the same device fingerprint joins again).
      */
     updated_at: string & tags.Format<"date-time">;
   };

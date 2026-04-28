@@ -22,7 +22,8 @@ import { IShoppingMallOrderItemSnapshot } from "../../../../structures/IShopping
  * @param props.body Search criteria for order item snapshots including filters for order ID, product ID, variant ID, seller ID, customer ID, date ranges, and pagination parameters.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Query the shopping_mall_order_item_snapshots table with pagination and filtering support.
+ * @x-autobe-specification Query the shopping_mall_order_item_snapshots table
+ *   with pagination and filtering support.
  *
  * 1. Parse request body for search criteria: order_id, product_id, variant_id, seller_id, customer_id, date range filters, and pagination parameters.
  *
@@ -139,7 +140,8 @@ export namespace index {
  * @param props.snapshotId Unique identifier of the order item snapshot to retrieve.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Query the shopping_mall_order_item_snapshots table for a record matching the provided snapshotId UUID.
+ * @x-autobe-specification Query the shopping_mall_order_item_snapshots table
+ *   for a record matching the provided snapshotId UUID.
  *
  * Authorization checks:
  * - For customers: Verify the snapshot's shopping_mall_order_item_id belongs to an order item in an order placed by the authenticated customer

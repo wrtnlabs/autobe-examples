@@ -27,23 +27,25 @@ import { IPageICommunityPlatformCommunityBanSnapshot } from "../../../../../stru
  * @param props.body Snapshot creation payload capturing the ban’s state at a specific moment, including status, reason, and the effective time window.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Implementation steps:
- * 1) Extract `banId` from path.
- * 2) Authorize caller as community owner or an assigned moderator for the community that owns the ban.
- *    - Resolve `community_platform_community_bans` by `id = banId`.
- *    - Join to `community_platform_communities` (community_id) to validate moderation scope.
- *    - Validate caller’s moderator assignment via `community_platform_community_moderators` and/or ownership via `community_platform_communities.community_owner_id`.
- * 3) Validate request body fields for the snapshot record:
- *    - `ban_status`: must be a non-empty string as required by the snapshot model.
- *    - `reason`: must be a non-empty string.
- *    - `effective_from`: must be provided; it defines when this snapshot becomes effective.
- *    - `effective_until`: may be null; if provided, it must not be earlier than `effective_from` (time window sanity).
- * 4) Insert into `community_platform_community_ban_snapshots` with:
- *    - `community_ban_id = banId`
- *    - `community_id`, `banned_user_id`, `applied_by_moderator_id` derived from the target ban row and authenticated moderator identity.
- *    - store `ban_status`, `reason`, `effective_from`, `effective_until`.
- *    - let `created_at`/`updated_at` be set by the application or database defaults.
- * 5) Return the created snapshot row mapped to the `ICommunityPlatformCommunityBanSnapshot` response DTO.
+ * @x-autobe-specification Implementation steps: 1) Extract `banId` from path.
+ *   2) Authorize caller as community owner or an assigned moderator for the
+ *   community that owns the ban. - Resolve `community_platform_community_bans`
+ *   by `id = banId`. - Join to `community_platform_communities` (community_id)
+ *   to validate moderation scope. - Validate caller’s moderator assignment via
+ *   `community_platform_community_moderators` and/or ownership via
+ *   `community_platform_communities.community_owner_id`. 3) Validate request
+ *   body fields for the snapshot record: - `ban_status`: must be a non-empty
+ *   string as required by the snapshot model. - `reason`: must be a non-empty
+ *   string. - `effective_from`: must be provided; it defines when this snapshot
+ *   becomes effective. - `effective_until`: may be null; if provided, it must
+ *   not be earlier than `effective_from` (time window sanity). 4) Insert into
+ *   `community_platform_community_ban_snapshots` with: - `community_ban_id =
+ *   banId` - `community_id`, `banned_user_id`, `applied_by_moderator_id`
+ *   derived from the target ban row and authenticated moderator identity. -
+ *   store `ban_status`, `reason`, `effective_from`, `effective_until`. - let
+ *   `created_at`/`updated_at` be set by the application or database defaults.
+ *   5) Return the created snapshot row mapped to the
+ *   `ICommunityPlatformCommunityBanSnapshot` response DTO.
  *
  * Edge cases:
  * - If the banId does not exist -> return 404.
@@ -152,17 +154,23 @@ export namespace createBanSnapshot {
  * @param props.body Filtering and pagination criteria for snapshot timeline browsing scoped to the given ban.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification 1) Validate `banId` as UUID.
- * 2) Authorize caller to view moderation history for the community ban referenced by `community_platform_community_bans.id`.
- * 3) Parse request body criteria (pagination/sorting; optionally effectiveFrom/effectiveUntil if present in request DTO) from `ICommunityPlatformCommunityBanSnapshot.IRequest`.
- * 4) Query `community_platform_community_ban_snapshots` where `community_ban_id = banId`.
- * 5) Apply filters if provided (e.g., restrict by `effective_from`/`effective_until`).
- * 6) Apply ordering: default by `created_at` desc; if criteria indicates chronological, order by `effective_from` asc.
- * 7) Apply pagination (limit/offset or cursor per DTO contract).
- * 8) Project each row into `ICommunityPlatformCommunityBanSnapshot.ISummary` fields.
- * 9) Return `IPageICommunityPlatformCommunityBanSnapshot.ISummary` including pagination metadata.
- * 10) Edge cases: if no snapshots exist, return an empty page; do not error.
- * 11) Error handling: on invalid input, return 4xx; on authorization failure, return 403/appropriate; on ban id not found, return 404/appropriate.
+ * @x-autobe-specification 1) Validate `banId` as UUID. 2) Authorize caller to
+ *   view moderation history for the community ban referenced by
+ *   `community_platform_community_bans.id`. 3) Parse request body criteria
+ *   (pagination/sorting; optionally effectiveFrom/effectiveUntil if present in
+ *   request DTO) from `ICommunityPlatformCommunityBanSnapshot.IRequest`. 4)
+ *   Query `community_platform_community_ban_snapshots` where `community_ban_id
+ *   = banId`. 5) Apply filters if provided (e.g., restrict by
+ *   `effective_from`/`effective_until`). 6) Apply ordering: default by
+ *   `created_at` desc; if criteria indicates chronological, order by
+ *   `effective_from` asc. 7) Apply pagination (limit/offset or cursor per DTO
+ *   contract). 8) Project each row into
+ *   `ICommunityPlatformCommunityBanSnapshot.ISummary` fields. 9) Return
+ *   `IPageICommunityPlatformCommunityBanSnapshot.ISummary` including pagination
+ *   metadata. 10) Edge cases: if no snapshots exist, return an empty page; do
+ *   not error. 11) Error handling: on invalid input, return 4xx; on
+ *   authorization failure, return 403/appropriate; on ban id not found, return
+ *   404/appropriate.
  * @path /communityPlatform/admin/bans/:banId/snapshots
  * @accessor api.functional.communityPlatform.admin.bans.snapshots.updateSnapshots
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe

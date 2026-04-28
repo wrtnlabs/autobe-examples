@@ -17,8 +17,9 @@ export type ICommunityPlatformCommunity = {
    *
    * Auto-generated UUID primary key assigned when the community is created. Used as the canonical reference for API operations such as update, delete, and retrieval.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from community_platform_communities.id. UUID format.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_communities.id. UUID format.
    */
   id: string & tags.Format<"uuid">;
 
@@ -27,8 +28,10 @@ export type ICommunityPlatformCommunity = {
    *
    * Must be unique across all communities on the platform. Community names appear in URLs and search results, serving as the primary human-readable identifier. The name is chosen at creation time and can be updated by the community owner, but cannot conflict with any existing community name (including soft-deleted ones).
    *
-   * @x-autobe-database-schema-property name
-   * @x-autobe-specification Direct mapping from community_platform_communities.name. Has a UNIQUE constraint — must be unique across all communities on the platform.
+     * @x-autobe-database-schema-property name
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_communities.name. Has a UNIQUE constraint — must be
+     *   unique across all communities on the platform.
    */
   name: string;
 
@@ -37,8 +40,9 @@ export type ICommunityPlatformCommunity = {
    *
    * Displayed on the community's main page and in directory listings to inform potential subscribers about the community's focus, rules, and moderation policies. Subject to a maximum character limit enforced during creation and update.
    *
-   * @x-autobe-database-schema-property description
-   * @x-autobe-specification Direct mapping from community_platform_communities.description.
+     * @x-autobe-database-schema-property description
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_communities.description.
    */
   description: string;
 
@@ -47,8 +51,10 @@ export type ICommunityPlatformCommunity = {
    *
    * Updated in real-time whenever a member subscribes or unsubscribes from the community. Maintained as a denormalized integer column to avoid expensive COUNT queries on the subscription junction table during listing and browsing operations.
    *
-   * @x-autobe-database-schema-property subscriber_count
-   * @x-autobe-specification Direct mapping from community_platform_communities.subscriber_count. Denormalized counter updated atomically on subscribe/unsubscribe events.
+     * @x-autobe-database-schema-property subscriber_count
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_communities.subscriber_count. Denormalized counter
+     *   updated atomically on subscribe/unsubscribe events.
    */
   subscriberCount: number & tags.Type<"int32">;
 
@@ -57,8 +63,11 @@ export type ICommunityPlatformCommunity = {
    *
    * Has the highest moderation authority, including the ability to appoint or remove moderators, manage bans, update community attributes, and delete the community. This relationship is mandatory — every community has exactly one owner. Returned as a summary object containing the owner's identifier, username, and email.
    *
-   * @x-autobe-database-schema-property owner
-   * @x-autobe-specification Join community_platform_members on community_platform_communities.owner_id. Return as ICommunityPlatformMember.ISummary. Owner has the highest moderation authority.
+     * @x-autobe-database-schema-property owner
+     * @x-autobe-specification Join community_platform_members on
+     *   community_platform_communities.owner_id. Return as
+     *   ICommunityPlatformMember.ISummary. Owner has the highest moderation
+     *   authority.
    */
   owner: ICommunityPlatformMember.ISummary;
 
@@ -67,7 +76,12 @@ export type ICommunityPlatformCommunity = {
    *
    * Represents the most recently uploaded icon image, determined by the highest created_at value among image records for this community. Communities may update their icon over time, and the latest image becomes the active one. Returns null if the community has never uploaded an icon image.
    *
-   * @x-autobe-specification Computed via LEFT JOIN community_platform_community_images on community_platform_community_id, ordered by created_at DESC, LIMIT 1. Returns the full ICommunityPlatformCommunityImage object if an image exists, or null if the community has no icon. This is NOT a HAS-MANY array — only the single most recent icon is returned.
+     * @x-autobe-specification Computed via LEFT JOIN
+     *   community_platform_community_images on community_platform_community_id,
+     *   ordered by created_at DESC, LIMIT 1. Returns the full
+     *   ICommunityPlatformCommunityImage object if an image exists, or null if
+     *   the community has no icon. This is NOT a HAS-MANY array — only the
+     *   single most recent icon is returned.
    */
   icon?: ICommunityPlatformCommunityImage | null | undefined;
 
@@ -76,8 +90,9 @@ export type ICommunityPlatformCommunity = {
    *
    * Set automatically upon successful community creation. Used for chronological sorting in community listings and feeds.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from community_platform_communities.created_at.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_communities.created_at.
    */
   createdAt: string & tags.Format<"date-time">;
 
@@ -86,8 +101,9 @@ export type ICommunityPlatformCommunity = {
    *
    * Updated automatically whenever the community's name, description, or icon is changed. Used for change tracking and conflict detection.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from community_platform_communities.updated_at.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_communities.updated_at.
    */
   updatedAt: string & tags.Format<"date-time">;
 };
@@ -103,8 +119,9 @@ export namespace ICommunityPlatformCommunity {
      *
      * This UUID is the primary key of the community record, used for API routing and reference in other entities.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from community_platform_communities.id. UUID primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_communities.id. UUID primary key.
      */
     id: string & tags.Format<"uuid">;
 
@@ -113,8 +130,10 @@ export namespace ICommunityPlatformCommunity {
      *
      * Used for URL routing and as the primary human-readable identifier. Must be unique across all communities on the platform. Community names are used in search queries and feed URLs.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from community_platform_communities.name. Unique constraint enforced at database level.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_communities.name. Unique constraint enforced at
+         *   database level.
      */
     name: string;
 
@@ -123,8 +142,9 @@ export namespace ICommunityPlatformCommunity {
      *
      * Displayed on the community's listing card to help users understand the community's focus before subscribing.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from community_platform_communities.description.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_communities.description.
      */
     description: string;
 
@@ -133,7 +153,10 @@ export namespace ICommunityPlatformCommunity {
      *
      * Only the most recently uploaded icon image is displayed. Null if the community has not set an icon.
      *
-     * @x-autobe-specification Computed: LEFT JOIN community_platform_community_images ordered by created_at DESC, limit 1 per community, url field. Returns null if no images exist for the community.
+         * @x-autobe-specification Computed: LEFT JOIN
+         *   community_platform_community_images ordered by created_at DESC,
+         *   limit 1 per community, url field. Returns null if no images exist
+         *   for the community.
      */
     icon_uri: (string & tags.Format<"uri">) | null;
 
@@ -142,8 +165,10 @@ export namespace ICommunityPlatformCommunity {
      *
      * This is a denormalized count maintained for efficient display in directory listings and feeds, avoiding expensive COUNT queries on the subscriptions table.
      *
-     * @x-autobe-database-schema-property subscriber_count
-     * @x-autobe-specification Direct mapping from community_platform_communities.subscriber_count. Denormalized counter updated on subscribe/unsubscribe.
+         * @x-autobe-database-schema-property subscriber_count
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_communities.subscriber_count. Denormalized
+         *   counter updated on subscribe/unsubscribe.
      */
     subscriber_count: number & tags.Type<"int32">;
 
@@ -152,8 +177,11 @@ export namespace ICommunityPlatformCommunity {
      *
      * The owner has the highest moderation authority, including the ability to appoint or remove moderators, manage bans, and delete the community.
      *
-     * @x-autobe-database-schema-property owner
-     * @x-autobe-specification Join from community_platform_communities.owner_id to community_platform_members.id. Returned as ICommunityPlatformMember.ISummary.
+         * @x-autobe-database-schema-property owner
+         * @x-autobe-specification Join from
+         *   community_platform_communities.owner_id to
+         *   community_platform_members.id. Returned as
+         *   ICommunityPlatformMember.ISummary.
      */
     owner: ICommunityPlatformMember.ISummary;
 
@@ -162,8 +190,9 @@ export namespace ICommunityPlatformCommunity {
      *
      * Used for chronological sorting in community listings and feeds. Displayed as a relative time (e.g., "3 months ago") in the user interface.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from community_platform_communities.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_communities.created_at.
      */
     created_at: string & tags.Format<"date-time">;
   };
@@ -181,7 +210,10 @@ export namespace ICommunityPlatformCommunity {
      *
      * Provide a partial community name to find matching spaces. Matching is case-insensitive and supports substring matching — any community whose name contains the query string as a substring will be included in the results. When omitted, all non-deleted communities are returned sorted by the operation's default ordering.
      *
-     * @x-autobe-specification User-provided search query string. When present, filters community_platform_communities.name using case-insensitive substring matching (ILIKE '%search%'). Applied only as WHERE filter, never returned as a field value.
+         * @x-autobe-specification User-provided search query string. When
+         *   present, filters community_platform_communities.name using
+         *   case-insensitive substring matching (ILIKE '%search%'). Applied
+         *   only as WHERE filter, never returned as a field value.
      */
     search?: string | undefined;
 
@@ -190,7 +222,9 @@ export namespace ICommunityPlatformCommunity {
      *
      * Determines which page of results to return. Page numbering starts from 1, with page 1 returning the first set of results. Bounds-checked against total available pages.
      *
-     * @x-autobe-specification Pagination page number (1-indexed). Defaults to 1 if not provided. Offset calculation: (page - 1) * limit. Bounds-checked against total page count.
+         * @x-autobe-specification Pagination page number (1-indexed). Defaults
+         *   to 1 if not provided. Offset calculation: (page - 1) * limit.
+         *   Bounds-checked against total page count.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -199,7 +233,9 @@ export namespace ICommunityPlatformCommunity {
      *
      * Controls how many community records are returned in a single page. The actual number of records on the final page may be fewer than this value. Values exceeding 100 are clamped to the maximum.
      *
-     * @x-autobe-specification Maximum number of records per page. Maximum value clamped at 100. When not provided, server uses a sensible default (typically 20).
+         * @x-autobe-specification Maximum number of records per page. Maximum
+         *   value clamped at 100. When not provided, server uses a sensible
+         *   default (typically 20).
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -221,8 +257,12 @@ export namespace ICommunityPlatformCommunity {
      *
      * The name must be unique across the entire platform — if the requested name is already in use by another active community (including soft-deleted communities within their retention window), the request is rejected with a conflict error. Community names serve as the primary human-readable identifier and are used in URLs and search queries.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from community_platform_communities.name. Unique constraint — validate no existing active community with this name (WHERE name = input.name AND deleted_at IS NULL). Reject with 409 Conflict if duplicate.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_communities.name. Unique constraint — validate
+         *   no existing active community with this name (WHERE name =
+         *   input.name AND deleted_at IS NULL). Reject with 409 Conflict if
+         *   duplicate.
      */
     name: string;
 
@@ -231,8 +271,11 @@ export namespace ICommunityPlatformCommunity {
      *
      * This description is displayed on the community's main page to inform potential subscribers about the community's focus and moderation policies. The description is subject to the platform's maximum character limit — requests exceeding this limit are rejected with a validation error.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from community_platform_communities.description. Subject to maximum character limit as defined in platform requirements — reject with 422 Unprocessable Entity if exceeded.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_communities.description. Subject to maximum
+         *   character limit as defined in platform requirements — reject with
+         *   422 Unprocessable Entity if exceeded.
      */
     description: string;
 
@@ -241,7 +284,13 @@ export namespace ICommunityPlatformCommunity {
      *
      * At least one icon image is required during community creation. Each image entry includes the original filename, MIME type (e.g., image/png, image/jpeg, image/webp), file size in bytes, and a URI referencing the client-side file content for upload. The backend reads the file from the provided URI, uploads it to external storage, and creates a persistent image record linked to the community.
      *
-     * @x-autobe-specification Composition: creates community_platform_community_images records for the new community. Each item provides name (original filename), mime_type (e.g., image/png), size (bytes), and url (client-side file content URI). The backend reads the file from the provided URI, uploads to external storage, and inserts the image record linked to the new community's ID. At least one image is required (minItems: 1).
+         * @x-autobe-specification Composition: creates
+         *   community_platform_community_images records for the new community.
+         *   Each item provides name (original filename), mime_type (e.g.,
+         *   image/png), size (bytes), and url (client-side file content URI).
+         *   The backend reads the file from the provided URI, uploads to
+         *   external storage, and inserts the image record linked to the new
+         *   community's ID. At least one image is required (minItems: 1).
      */
     images: ICommunityPlatformCommunityImage.ICreate[] & tags.MinItems<1>;
   };
@@ -259,8 +308,11 @@ export namespace ICommunityPlatformCommunity {
      *
      * Must be unique across the entire platform — community names cannot be reused, even after soft-deletion. If the provided name is already taken by another community, the update is rejected with a 409 Conflict error.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct column from community_platform_communities.name. Must verify uniqueness across all communities (including soft-deleted ones) if the value differs from the current name. If a conflict exists, return 409 Conflict.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct column from
+         *   community_platform_communities.name. Must verify uniqueness across
+         *   all communities (including soft-deleted ones) if the value differs
+         *   from the current name. If a conflict exists, return 409 Conflict.
      */
     name?: string | undefined;
 
@@ -269,8 +321,9 @@ export namespace ICommunityPlatformCommunity {
      *
      * Displayed on the community's main page to inform potential subscribers about the community's focus and moderation policies.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct column from community_platform_communities.description.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct column from
+         *   community_platform_communities.description.
      */
     description?: string | undefined;
 
@@ -281,7 +334,16 @@ export namespace ICommunityPlatformCommunity {
      *
      * Omit this field to keep the current icon unchanged.
      *
-     * @x-autobe-specification When provided, creates a new record in the community_platform_community_images table with community_platform_community_id set to the communityId path parameter. The url field of ICommunityPlatformCommunityImage.ICreate holds a client-side file content URI; the backend reads from this URI, uploads to external storage, and stores the resulting storage URL. The most recent created_at record per community_id determines the current active icon — this effectively replaces the previous icon. Omit this field to keep the current icon unchanged.
+         * @x-autobe-specification When provided, creates a new record in the
+         *   community_platform_community_images table with
+         *   community_platform_community_id set to the communityId path
+         *   parameter. The url field of
+         *   ICommunityPlatformCommunityImage.ICreate holds a client-side file
+         *   content URI; the backend reads from this URI, uploads to external
+         *   storage, and stores the resulting storage URL. The most recent
+         *   created_at record per community_id determines the current active
+         *   icon — this effectively replaces the previous icon. Omit this field
+         *   to keep the current icon unchanged.
      */
     icon?: ICommunityPlatformCommunityImage.ICreate | undefined;
   };

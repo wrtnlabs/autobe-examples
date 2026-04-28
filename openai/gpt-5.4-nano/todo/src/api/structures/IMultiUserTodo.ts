@@ -12,7 +12,8 @@ export namespace IMultiUserTodo {
      *
      * Provide a non-empty array of UUID strings. The server will permanently delete only todos owned by the authenticated member, and will not perform partial deletion if any provided ID is missing or not owned by that member.
      *
-     * @x-autobe-specification Interpret todoIds[] as the candidate set of multi_user_todos primary keys to permanently delete.
+         * @x-autobe-specification Interpret todoIds[] as the candidate set of
+         *   multi_user_todos primary keys to permanently delete.
      *
      * The service must:
      * - Require a non-empty list (validated by the DTO).
@@ -34,7 +35,8 @@ export namespace IMultiUserTodo {
      *
      * This list contains the exact UUIDs that passed the endpoint’s ownership/consistency checks and were then permanently removed. Due to anti-partial behavior, the server only returns this DTO when all requested IDs are eligible for deletion and no partial success is produced.
      *
-     * @x-autobe-specification Return the array of UUIDs for todos that were permanently deleted for the authenticated member.
+         * @x-autobe-specification Return the array of UUIDs for todos that were
+         *   permanently deleted for the authenticated member.
      *
      * The array must contain exactly those todo IDs that:
      * - were successfully matched in the ownership/consistency check against the authenticated member, and
@@ -49,7 +51,8 @@ export namespace IMultiUserTodo {
      *
      * This is an aggregate derived from deletedTodoIds and must always match the length of the returned deletedTodoIds array in successful responses.
      *
-     * @x-autobe-specification Return the number of permanently deleted todos for this request.
+         * @x-autobe-specification Return the number of permanently deleted
+         *   todos for this request.
      *
      * deletedCount must always equal deletedTodoIds.length in successful responses returned by the endpoint.
      */
@@ -71,11 +74,12 @@ export namespace IMultiUserTodo {
      *
      * This filter is applied to the normal (non-trash) browsing set.
      *
-     * @x-autobe-specification Interpret completionFilter as follows when browsing the normal (non-trash) visibility set:
-     * - all: omit any multi_user_todo_todos.is_complete predicate
-     * - complete: apply multi_user_todo_todos.is_complete = true
-     * - incomplete: apply multi_user_todo_todos.is_complete = false
-     * If completionFilter is omitted, treat it as all (no is_complete restriction).
+         * @x-autobe-specification Interpret completionFilter as follows when
+         *   browsing the normal (non-trash) visibility set: - all: omit any
+         *   multi_user_todo_todos.is_complete predicate - complete: apply
+         *   multi_user_todo_todos.is_complete = true - incomplete: apply
+         *   multi_user_todo_todos.is_complete = false If completionFilter is
+         *   omitted, treat it as all (no is_complete restriction).
      */
     completionFilter?: "all" | "complete" | "incomplete" | undefined;
 
@@ -87,10 +91,11 @@ export namespace IMultiUserTodo {
      *
      * Permanently deleted todos are never returned.
      *
-     * @x-autobe-specification Interpret trashState to select which todo visibility set to browse:
-     * - normal: return active todos (not deleted per service semantics)
-     * - trash: return trashed todos (soft-deleted) but do not include permanently deleted records
-     * If trashState is omitted, default to normal (active) browsing.
+         * @x-autobe-specification Interpret trashState to select which todo
+         *   visibility set to browse: - normal: return active todos (not
+         *   deleted per service semantics) - trash: return trashed todos
+         *   (soft-deleted) but do not include permanently deleted records If
+         *   trashState is omitted, default to normal (active) browsing.
      */
     trashState?: "normal" | "trash" | undefined;
 
@@ -101,11 +106,13 @@ export namespace IMultiUserTodo {
      *
      * When omitted, no title/description search restriction is applied.
      *
-     * @x-autobe-specification If searchText is provided and is a non-empty string:
-     * - apply a text/trigram search predicate on multi_user_todo_todos.title
-     * - apply a text/trigram search predicate on multi_user_todo_todos.description
-     * - return todos that match either field (OR semantics), while still applying ownership scope and trashState visibility constraints.
-     * If omitted or empty, do not add any title/description search predicate.
+         * @x-autobe-specification If searchText is provided and is a non-empty
+         *   string: - apply a text/trigram search predicate on
+         *   multi_user_todo_todos.title - apply a text/trigram search predicate
+         *   on multi_user_todo_todos.description - return todos that match
+         *   either field (OR semantics), while still applying ownership scope
+         *   and trashState visibility constraints. If omitted or empty, do not
+         *   add any title/description search predicate.
      */
     searchText?: string | undefined;
 
@@ -119,11 +126,11 @@ export namespace IMultiUserTodo {
      * - startDate: sort by the todo’s start date (NULLs last)
      * - dueDate: sort by the todo’s due date (NULLs last)
      *
-     * @x-autobe-specification Use sortBy to select the primary ordering field:
-     * - createdAt => multi_user_todo_todos.created_at
-     * - startDate => multi_user_todo_todos.start_date (NULLs last)
-     * - dueDate => multi_user_todo_todos.due_date (NULLs last)
-     * If sortBy is omitted, default to createdAt ordering.
+         * @x-autobe-specification Use sortBy to select the primary ordering
+         *   field: - createdAt => multi_user_todo_todos.created_at - startDate
+         *   => multi_user_todo_todos.start_date (NULLs last) - dueDate =>
+         *   multi_user_todo_todos.due_date (NULLs last) If sortBy is omitted,
+         *   default to createdAt ordering.
      */
     sortBy?: "createdAt" | "startDate" | "dueDate" | undefined;
 
@@ -135,17 +142,17 @@ export namespace IMultiUserTodo {
      *
      * For start_date/due_date, NULL values are placed after non-NULL values (NULLs last).
      *
-     * @x-autobe-specification Interpret sortDirection relative to sortBy:
-     * - If sortBy = createdAt:
-     *   - newestFirst => multi_user_todo_todos.created_at DESC
-     *   - oldestFirst => multi_user_todo_todos.created_at ASC
-     * - If sortBy = startDate:
-     *   - earliestFirst => multi_user_todo_todos.start_date ASC (NULLs last)
-     *   - latestFirst => multi_user_todo_todos.start_date DESC (NULLs last)
-     * - If sortBy = dueDate:
-     *   - earliestFirst => multi_user_todo_todos.due_date ASC (NULLs last)
-     *   - latestFirst => multi_user_todo_todos.due_date DESC (NULLs last)
-     * If sortDirection is omitted, default to newestFirst (for createdAt) or latestFirst (for startDate/dueDate) per implementation-default UI expectation.
+         * @x-autobe-specification Interpret sortDirection relative to sortBy: -
+         *   If sortBy = createdAt: - newestFirst =>
+         *   multi_user_todo_todos.created_at DESC - oldestFirst =>
+         *   multi_user_todo_todos.created_at ASC - If sortBy = startDate: -
+         *   earliestFirst => multi_user_todo_todos.start_date ASC (NULLs last)
+         *   - latestFirst => multi_user_todo_todos.start_date DESC (NULLs last)
+         *   - If sortBy = dueDate: - earliestFirst =>
+         *   multi_user_todo_todos.due_date ASC (NULLs last) - latestFirst =>
+         *   multi_user_todo_todos.due_date DESC (NULLs last) If sortDirection
+         *   is omitted, default to newestFirst (for createdAt) or latestFirst
+         *   (for startDate/dueDate) per implementation-default UI expectation.
      */
     sortDirection?:
       | "newestFirst"
@@ -159,10 +166,9 @@ export namespace IMultiUserTodo {
      *
      * Indicates which page of results the client requests. The first page is page 1.
      *
-     * @x-autobe-specification Treat page as a 1-based page number.
-     * Compute offset as:
-     * - offset = (page - 1) * limit
-     * Apply offset and limit after filtering and sorting.
+         * @x-autobe-specification Treat page as a 1-based page number. Compute
+         *   offset as: - offset = (page - 1) * limit Apply offset and limit
+         *   after filtering and sorting.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -171,8 +177,9 @@ export namespace IMultiUserTodo {
      *
      * Controls how many todo items are returned in a single response page. The last page may contain fewer items if there are not enough matches.
      *
-     * @x-autobe-specification Treat limit as the maximum number of items to return for a single page.
-     * Apply limit after filtering and sorting, using the offset derived from page.
+         * @x-autobe-specification Treat limit as the maximum number of items to
+         *   return for a single page. Apply limit after filtering and sorting,
+         *   using the offset derived from page.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)

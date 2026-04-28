@@ -20,15 +20,16 @@ export class ErphrmMemberOrganization_contextController {
    *
    * @param connection
    * @param body The organization identifier to switch to
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Validate the user making the request is authenticated.
-   * Extract the user ID from the current session.
-   * Verify the user has an active employee record in the target organization.
-   * Retrieve the employee record for the user within the target organization, including their role.
-   * Retrieve all permissions assigned to the employee's role.
-   * Update the session to set the new organization context.
-   * Return the organization details, employee information, and role permissions.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Validate the user making the request is
+     *   authenticated. Extract the user ID from the current session. Verify the
+     *   user has an active employee record in the target organization. Retrieve
+     *   the employee record for the user within the target organization,
+     *   including their role. Retrieve all permissions assigned to the
+     *   employee's role. Update the session to set the new organization
+     *   context. Return the organization details, employee information, and
+     *   role permissions.
    *
    * Edge cases:
    * - If the user is not a member of the target organization, return 403 Forbidden.

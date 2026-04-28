@@ -38,16 +38,30 @@ export namespace IErpHrmTimesheet {
     /**
      * The Monday that begins the calendar week this timesheet covers. Must be a valid ISO 8601 date-time string representing a Monday. Together with `weekEndDate`, this uniquely identifies the covered week for the authenticated member. Submitting a date that is not a Monday will result in a validation error.
      *
-     * @x-autobe-database-schema-property week_start_date
-     * @x-autobe-specification Direct mapping to erp_hrm_timesheets.week_start_date (DateTime Timestamptz). Must be a Monday (ISO weekday === 1); validated at the service layer and returns 422 Unprocessable Entity if the provided date is not a Monday. Stored as a date-time timestamp representing the start of the calendar week covered by this timesheet. Together with week_end_date, this value participates in the unique composite constraint [organization_member_id, week_start_date] to prevent duplicate timesheets for the same member/week.
+         * @x-autobe-database-schema-property week_start_date
+         * @x-autobe-specification Direct mapping to
+         *   erp_hrm_timesheets.week_start_date (DateTime Timestamptz). Must be
+         *   a Monday (ISO weekday === 1); validated at the service layer and
+         *   returns 422 Unprocessable Entity if the provided date is not a
+         *   Monday. Stored as a date-time timestamp representing the start of
+         *   the calendar week covered by this timesheet. Together with
+         *   week_end_date, this value participates in the unique composite
+         *   constraint [organization_member_id, week_start_date] to prevent
+         *   duplicate timesheets for the same member/week.
      */
     weekStartDate: string & tags.Format<"date-time">;
 
     /**
      * The Sunday that ends the calendar week this timesheet covers. Must be exactly 6 days after `weekStartDate` (i.e., the Sunday of the same week). Submitting a date that does not match the expected Sunday will result in a validation error.
      *
-     * @x-autobe-database-schema-property week_end_date
-     * @x-autobe-specification Direct mapping to erp_hrm_timesheets.week_end_date (DateTime Timestamptz). Must be exactly 6 days after weekStartDate (i.e., the Sunday of the same calendar week). Validated at the service layer and returns 422 Unprocessable Entity if the value does not equal weekStartDate + 6 days. Stored as a date-time timestamp representing the end of the calendar week.
+         * @x-autobe-database-schema-property week_end_date
+         * @x-autobe-specification Direct mapping to
+         *   erp_hrm_timesheets.week_end_date (DateTime Timestamptz). Must be
+         *   exactly 6 days after weekStartDate (i.e., the Sunday of the same
+         *   calendar week). Validated at the service layer and returns 422
+         *   Unprocessable Entity if the value does not equal weekStartDate + 6
+         *   days. Stored as a date-time timestamp representing the end of the
+         *   calendar week.
      */
     weekEndDate: string & tags.Format<"date-time">;
   };
@@ -59,16 +73,29 @@ export namespace IErpHrmTimesheet {
     /**
      * The target status to transition the timesheet into. Valid values are: `submitted` (the owning employee submits or resubmits the timesheet for review), `approved` (an authorized reviewer accepts the submitted timesheet), or `rejected` (an authorized reviewer declines the submitted timesheet). The server enforces valid transition rules based on the caller's identity and role permissions.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping to erp_hrm_timesheets.status column. Allowed values for this request: 'submitted' (employee submitting or resubmitting), 'approved' (reviewer accepting), 'rejected' (reviewer declining). The server validates the transition from the current status: draft→submitted (owner only), submitted→approved (time approval permission required), submitted→rejected (time approval permission required). Any other transition returns 422.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping to erp_hrm_timesheets.status
+         *   column. Allowed values for this request: 'submitted' (employee
+         *   submitting or resubmitting), 'approved' (reviewer accepting),
+         *   'rejected' (reviewer declining). The server validates the
+         *   transition from the current status: draft→submitted (owner only),
+         *   submitted→approved (time approval permission required),
+         *   submitted→rejected (time approval permission required). Any other
+         *   transition returns 422.
      */
     status: string;
 
     /**
      * The reviewer's explanation of why the timesheet was rejected. Required and must be non-empty when `status` is `rejected`; ignored for all other status transitions. Provides the owning employee with actionable feedback on what to correct before resubmitting.
      *
-     * @x-autobe-database-schema-property rejection_reason
-     * @x-autobe-specification Direct mapping to erp_hrm_timesheets.rejection_reason column. This field is conditionally required by business logic: it MUST be provided and non-empty when status='rejected'. For any other status value it is ignored and the column is set to null. The server returns 422 Unprocessable Entity if status='rejected' but this field is absent or empty.
+         * @x-autobe-database-schema-property rejection_reason
+         * @x-autobe-specification Direct mapping to
+         *   erp_hrm_timesheets.rejection_reason column. This field is
+         *   conditionally required by business logic: it MUST be provided and
+         *   non-empty when status='rejected'. For any other status value it is
+         *   ignored and the column is set to null. The server returns 422
+         *   Unprocessable Entity if status='rejected' but this field is absent
+         *   or empty.
      */
     rejection_reason?: string | null | undefined;
   };
@@ -80,8 +107,14 @@ export namespace IErpHrmTimesheet {
     /**
      * Mandatory written explanation provided by the reviewer when declining a timesheet. Must be a non-empty string. This reason is stored on the timesheet record and displayed to the employee so they understand what needs to be corrected before they can resubmit.
      *
-     * @x-autobe-specification Direct mapping to erp_hrm_timesheets.rejection_reason (nullable String?). Although the DB column allows null, the rejection action requires a non-empty value — validate that the trimmed value is non-null and non-empty; return 422 if blank or null. Persisted via UPDATE erp_hrm_timesheets SET rejection_reason = (this value) WHERE id = {timesheetId}.
-     * @x-autobe-database-schema-property rejection_reason
+         * @x-autobe-specification Direct mapping to
+         *   erp_hrm_timesheets.rejection_reason (nullable String?). Although
+         *   the DB column allows null, the rejection action requires a
+         *   non-empty value — validate that the trimmed value is non-null and
+         *   non-empty; return 422 if blank or null. Persisted via UPDATE
+         *   erp_hrm_timesheets SET rejection_reason = (this value) WHERE id =
+         *   {timesheetId}.
+         * @x-autobe-database-schema-property rejection_reason
      */
     rejection_reason: (string & tags.MinLength<1>) | null;
   };
@@ -97,95 +130,132 @@ export namespace IErpHrmTimesheet {
     /**
      * Unique identifier for this timesheet record.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from erp_hrm_timesheets.id. UUID primary key, auto-generated on creation.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from erp_hrm_timesheets.id.
+         *   UUID primary key, auto-generated on creation.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Current status of the timesheet in the review lifecycle. One of: 'draft' (created but not yet submitted), 'submitted' (awaiting managerial review), 'approved' (reviewer accepted), or 'rejected' (reviewer declined; the timesheet returns to draft for correction and resubmission).
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from erp_hrm_timesheets.status. Allowed values: 'draft', 'submitted', 'approved', 'rejected'. Lifecycle: draft → submitted → approved | rejected. A rejected timesheet returns to draft for revision and resubmission.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_timesheets.status. Allowed values: 'draft', 'submitted',
+         *   'approved', 'rejected'. Lifecycle: draft → submitted → approved |
+         *   rejected. A rejected timesheet returns to draft for revision and
+         *   resubmission.
      */
     status: string;
 
     /**
      * The start date (Monday) of the calendar week this timesheet covers. ISO 8601 date-time format.
      *
-     * @x-autobe-database-schema-property week_start_date
-     * @x-autobe-specification Direct mapping from erp_hrm_timesheets.week_start_date (Timestamptz). Always a Monday. Together with week_end_date uniquely identifies the calendar week covered by this timesheet per owner.
+         * @x-autobe-database-schema-property week_start_date
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_timesheets.week_start_date (Timestamptz). Always a Monday.
+         *   Together with week_end_date uniquely identifies the calendar week
+         *   covered by this timesheet per owner.
      */
     week_start_date: string & tags.Format<"date-time">;
 
     /**
      * The end date (Sunday) of the calendar week this timesheet covers. ISO 8601 date-time format.
      *
-     * @x-autobe-database-schema-property week_end_date
-     * @x-autobe-specification Direct mapping from erp_hrm_timesheets.week_end_date (Timestamptz). Always the Sunday following week_start_date. Together with week_start_date uniquely identifies the calendar week covered by this timesheet per owner.
+         * @x-autobe-database-schema-property week_end_date
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_timesheets.week_end_date (Timestamptz). Always the Sunday
+         *   following week_start_date. Together with week_start_date uniquely
+         *   identifies the calendar week covered by this timesheet per owner.
      */
     week_end_date: string & tags.Format<"date-time">;
 
     /**
      * Timestamp recording when the employee formally submitted this timesheet for review. Null if the timesheet has not yet been submitted (status is 'draft').
      *
-     * @x-autobe-database-schema-property submitted_at
-     * @x-autobe-specification Direct mapping from erp_hrm_timesheets.submitted_at (nullable Timestamptz). Set to the current timestamp when the employee formally submits the timesheet. Null while the timesheet remains in draft status.
+         * @x-autobe-database-schema-property submitted_at
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_timesheets.submitted_at (nullable Timestamptz). Set to the
+         *   current timestamp when the employee formally submits the timesheet.
+         *   Null while the timesheet remains in draft status.
      */
     submitted_at: (string & tags.Format<"date-time">) | null;
 
     /**
      * Timestamp recording when the reviewer approved or rejected this timesheet. Null if no review action has been taken yet (status is 'draft' or 'submitted').
      *
-     * @x-autobe-database-schema-property reviewed_at
-     * @x-autobe-specification Direct mapping from erp_hrm_timesheets.reviewed_at (nullable Timestamptz). Set to the current timestamp when a reviewer approves or rejects the timesheet. Null until a review action has been taken.
+         * @x-autobe-database-schema-property reviewed_at
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_timesheets.reviewed_at (nullable Timestamptz). Set to the
+         *   current timestamp when a reviewer approves or rejects the
+         *   timesheet. Null until a review action has been taken.
      */
     reviewed_at: (string & tags.Format<"date-time">) | null;
 
     /**
      * Written explanation provided by the reviewer when rejecting the timesheet. Non-null only when status is 'rejected'; null in all other statuses. Helps the employee understand what must be corrected before resubmission.
      *
-     * @x-autobe-database-schema-property rejection_reason
-     * @x-autobe-specification Direct mapping from erp_hrm_timesheets.rejection_reason (nullable String). Required when status is 'rejected'; null otherwise. Provided by the reviewer to explain what the employee must correct before resubmission.
+         * @x-autobe-database-schema-property rejection_reason
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_timesheets.rejection_reason (nullable String). Required
+         *   when status is 'rejected'; null otherwise. Provided by the reviewer
+         *   to explain what the employee must correct before resubmission.
      */
     rejection_reason: string | null;
 
     /**
      * Total number of hours logged under this timesheet, computed as the sum of all associated timelog durations. Returns 0 when no timelogs have been recorded for the week.
      *
-     * @x-autobe-specification Computed field: SELECT COALESCE(SUM(duration), 0) FROM erp_hrm_timelogs WHERE timesheet_id = erp_hrm_timesheets.id. The duration column in erp_hrm_timelogs stores the work session length in hours (number). Returns 0.0 when no timelogs are associated with this timesheet.
+         * @x-autobe-specification Computed field: SELECT
+         *   COALESCE(SUM(duration), 0) FROM erp_hrm_timelogs WHERE timesheet_id
+         *   = erp_hrm_timesheets.id. The duration column in erp_hrm_timelogs
+         *   stores the work session length in hours (number). Returns 0.0 when
+         *   no timelogs are associated with this timesheet.
      */
     total_hours: number & tags.Minimum<0>;
 
     /**
      * The organization member who owns and submitted this timesheet. Represents the employee's per-organization identity within the platform.
      *
-     * @x-autobe-database-schema-property owner
-     * @x-autobe-specification Belongs-to relation: JOIN erp_hrm_organization_members ON erp_hrm_timesheets.organization_member_id = erp_hrm_organization_members.id. Returned as IErpHrmOrganizationMember.ISummary. Always non-null.
+         * @x-autobe-database-schema-property owner
+         * @x-autobe-specification Belongs-to relation: JOIN
+         *   erp_hrm_organization_members ON
+         *   erp_hrm_timesheets.organization_member_id =
+         *   erp_hrm_organization_members.id. Returned as
+         *   IErpHrmOrganizationMember.ISummary. Always non-null.
      */
     owner: IErpHrmOrganizationMember.ISummary;
 
     /**
      * The organization member (manager or authorized reviewer) who approved or rejected this timesheet. Null if the timesheet has not yet been reviewed.
      *
-     * @x-autobe-database-schema-property reviewer
-     * @x-autobe-specification Belongs-to relation (nullable): LEFT JOIN erp_hrm_organization_members ON erp_hrm_timesheets.reviewer_id = erp_hrm_organization_members.id. Returned as IErpHrmOrganizationMember.ISummary when reviewer_id is not null, otherwise null.
+         * @x-autobe-database-schema-property reviewer
+         * @x-autobe-specification Belongs-to relation (nullable): LEFT JOIN
+         *   erp_hrm_organization_members ON erp_hrm_timesheets.reviewer_id =
+         *   erp_hrm_organization_members.id. Returned as
+         *   IErpHrmOrganizationMember.ISummary when reviewer_id is not null,
+         *   otherwise null.
      */
     reviewer: IErpHrmOrganizationMember.ISummary | null;
 
     /**
      * Timestamp when this timesheet record was first created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from erp_hrm_timesheets.created_at (Timestamptz). Set automatically when the timesheet record is first created.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_timesheets.created_at (Timestamptz). Set automatically when
+         *   the timesheet record is first created.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when this timesheet record was last updated, reflecting the most recent status change or review action.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from erp_hrm_timesheets.updated_at (Timestamptz). Updated automatically whenever the timesheet record is modified (e.g., status change, reviewer assignment).
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_timesheets.updated_at (Timestamptz). Updated automatically
+         *   whenever the timesheet record is modified (e.g., status change,
+         *   reviewer assignment).
      */
     updated_at: string & tags.Format<"date-time">;
   };
@@ -197,42 +267,71 @@ export namespace IErpHrmTimesheet {
     /**
      * Optional list of timesheet statuses to filter by. When provided, only timesheets whose current status matches one of the specified values are returned. Allowed values: 'draft', 'submitted', 'approved', 'rejected'. When omitted, timesheets of all statuses are included subject to the caller's permission level.
      *
-     * @x-autobe-specification Filter parameter mapping to erp_hrm_timesheets.status column. Applied as: WHERE status IN (...statuses). Allowed values: 'draft', 'submitted', 'approved', 'rejected'. When omitted or empty, no status restriction is applied and timesheets of all statuses are returned (subject to the caller's access level). Multiple values may be combined.
+         * @x-autobe-specification Filter parameter mapping to
+         *   erp_hrm_timesheets.status column. Applied as: WHERE status IN
+         *   (...statuses). Allowed values: 'draft', 'submitted', 'approved',
+         *   'rejected'. When omitted or empty, no status restriction is applied
+         *   and timesheets of all statuses are returned (subject to the
+         *   caller's access level). Multiple values may be combined.
      */
     statuses?: string[] | undefined;
 
     /**
      * Optional inclusive lower bound for the timesheet week start date filter. When provided, only timesheets whose calendar week begins on or after this date are returned. Should be an ISO 8601 date-time value, ideally aligned to a Monday. When omitted, no lower date boundary is applied.
      *
-     * @x-autobe-specification Filter parameter mapping to erp_hrm_timesheets.week_start_date column. Applied as: WHERE week_start_date >= startDate. ISO 8601 date-time value representing the inclusive lower bound of the calendar week start date range. When omitted, no lower bound is applied on week_start_date.
+         * @x-autobe-specification Filter parameter mapping to
+         *   erp_hrm_timesheets.week_start_date column. Applied as: WHERE
+         *   week_start_date >= startDate. ISO 8601 date-time value representing
+         *   the inclusive lower bound of the calendar week start date range.
+         *   When omitted, no lower bound is applied on week_start_date.
      */
     startDate?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Optional inclusive upper bound for the timesheet week end date filter. When provided, only timesheets whose calendar week ends on or before this date are returned. Should be an ISO 8601 date-time value, ideally aligned to a Sunday. When omitted, no upper date boundary is applied.
      *
-     * @x-autobe-specification Filter parameter mapping to erp_hrm_timesheets.week_end_date column. Applied as: WHERE week_end_date <= endDate. ISO 8601 date-time value representing the inclusive upper bound of the calendar week end date range. When omitted, no upper bound is applied on week_end_date.
+         * @x-autobe-specification Filter parameter mapping to
+         *   erp_hrm_timesheets.week_end_date column. Applied as: WHERE
+         *   week_end_date <= endDate. ISO 8601 date-time value representing the
+         *   inclusive upper bound of the calendar week end date range. When
+         *   omitted, no upper bound is applied on week_end_date.
      */
     endDate?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Optional UUID of a specific organization member whose timesheets to retrieve. Only honored for callers with 'time_approve' or 'time_view_all' permission. When provided by a privileged caller, only timesheets owned by that member are returned. Regular members without elevated permissions are always scoped to their own timesheets regardless of this field. When omitted by a privileged caller, timesheets from all accessible members are returned.
      *
-     * @x-autobe-specification Filter parameter mapping to erp_hrm_timesheets.organization_member_id column. Applied as: WHERE organization_member_id = organizationMemberId. This filter is ONLY honored when the authenticated caller holds 'time_approve' or 'time_view_all' permission. If the caller lacks these permissions, this field is silently ignored and the query is automatically scoped to the caller's own organization_member_id. When omitted by a privileged caller, all organization members' timesheets are included within their permission scope.
+         * @x-autobe-specification Filter parameter mapping to
+         *   erp_hrm_timesheets.organization_member_id column. Applied as: WHERE
+         *   organization_member_id = organizationMemberId. This filter is ONLY
+         *   honored when the authenticated caller holds 'time_approve' or
+         *   'time_view_all' permission. If the caller lacks these permissions,
+         *   this field is silently ignored and the query is automatically
+         *   scoped to the caller's own organization_member_id. When omitted by
+         *   a privileged caller, all organization members' timesheets are
+         *   included within their permission scope.
      */
     organizationMemberId?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Optional 1-based page number for paginated results. Determines which page of the result set to return. Defaults to 1 (the first page) when omitted. Must be a positive integer of at least 1.
      *
-     * @x-autobe-specification Pagination query parameter with no direct DB column. Used to compute SQL OFFSET: OFFSET = (page - 1) * limit. 1-based page number; default is 1 when omitted. Minimum value is 1. Combined with the limit parameter to produce bounded, paginated result sets.
+         * @x-autobe-specification Pagination query parameter with no direct DB
+         *   column. Used to compute SQL OFFSET: OFFSET = (page - 1) * limit.
+         *   1-based page number; default is 1 when omitted. Minimum value is 1.
+         *   Combined with the limit parameter to produce bounded, paginated
+         *   result sets.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Optional maximum number of timesheet records to return per page. Controls the page size of the paginated result. Defaults to 20 when omitted. Must be between 1 and 100 inclusive.
      *
-     * @x-autobe-specification Pagination query parameter with no direct DB column. Applied as the SQL LIMIT clause. Controls how many timesheet records are returned per page. Default is 20 when omitted. Minimum is 1, maximum is 100. Combined with the page parameter to produce bounded, paginated result sets.
+         * @x-autobe-specification Pagination query parameter with no direct DB
+         *   column. Applied as the SQL LIMIT clause. Controls how many
+         *   timesheet records are returned per page. Default is 20 when
+         *   omitted. Minimum is 1, maximum is 100. Combined with the page
+         *   parameter to produce bounded, paginated result sets.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)

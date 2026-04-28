@@ -20,7 +20,10 @@ import { IErpHrmTimeOrganizationMembership } from "../../../../structures/IErpHr
  * @param props.body Role assignment payload for changing an employee’s organization-scoped role.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Validate that the authenticated member has employee management permission in the active organization context. Resolve the target employee within the selected organization and ensure the employee exists and is not outside scope.
+ * @x-autobe-specification Validate that the authenticated member has employee
+ *   management permission in the active organization context. Resolve the
+ *   target employee within the selected organization and ensure the employee
+ *   exists and is not outside scope.
  *
  * Resolve the target role within the same organization and reject the request if the role does not belong to the employee’s organization. Enforce the business rule that each employee has exactly one role at a time, so the operation should update the existing employee.role foreign key rather than creating a secondary assignment record.
  *

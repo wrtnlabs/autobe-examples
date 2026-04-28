@@ -12,84 +12,111 @@ export type ICommunityPlatformProfile = {
   /**
    * Unique identifier of the public profile record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from community_platform_profiles.id.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_profiles.id.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Public name shown on the member's profile and alongside authored content.
    *
-   * @x-autobe-database-schema-property display_name
-   * @x-autobe-specification Direct mapping from community_platform_profiles.display_name.
+     * @x-autobe-database-schema-property display_name
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_profiles.display_name.
    */
   display_name: string;
 
   /**
    * Optional biography text that describes the member on the public profile page.
    *
-   * @x-autobe-database-schema-property bio
-   * @x-autobe-specification Direct mapping from community_platform_profiles.bio. Preserve null when the member has not provided a biography.
+     * @x-autobe-database-schema-property bio
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_profiles.bio. Preserve null when the member has not
+     *   provided a biography.
    */
   bio: string | null;
 
   /**
    * Public summary information about the member who owns this profile.
    *
-   * @x-autobe-specification Resolve the owning member through community_platform_profiles.community_platform_member_id and serialize it as a public-safe member summary type that contains only identity fields permitted in profile views. Do not expose private account fields such as email, email_verified, last_signed_in_at, or other account-security or account-management attributes.
-   * @x-autobe-database-schema-property member
+     * @x-autobe-specification Resolve the owning member through
+     *   community_platform_profiles.community_platform_member_id and serialize
+     *   it as a public-safe member summary type that contains only identity
+     *   fields permitted in profile views. Do not expose private account fields
+     *   such as email, email_verified, last_signed_in_at, or other
+     *   account-security or account-management attributes.
+     * @x-autobe-database-schema-property member
    */
   member: ICommunityPlatformProfile.ISummary;
 
   /**
    * Profile media files attached to this profile, such as avatar-style assets.
    *
-   * @x-autobe-specification Query community_platform_profile_files where community_platform_profile_id equals this profile id and serialize the resulting rows as ICommunityPlatformProfileFile records according to public visibility rules.
+     * @x-autobe-specification Query community_platform_profile_files where
+     *   community_platform_profile_id equals this profile id and serialize the
+     *   resulting rows as ICommunityPlatformProfileFile records according to
+     *   public visibility rules.
    */
   files: ICommunityPlatformProfileFile[];
 
   /**
    * The member's current total karma score shown on the profile page.
    *
-   * @x-autobe-specification Compute the member's total karma as an integer aggregate from the current vote state on the owning member's authored posts and comments. Resolve the owner through the profile's member relation and return 0 when no vote data exists.
+     * @x-autobe-specification Compute the member's total karma as an integer
+     *   aggregate from the current vote state on the owning member's authored
+     *   posts and comments. Resolve the owner through the profile's member
+     *   relation and return 0 when no vote data exists.
    */
   karma: number & tags.Type<"int32">;
 
   /**
    * Public posts authored by the member who owns this profile.
    *
-   * @x-autobe-specification Query community_platform_posts for rows authored by the member that owns this profile and serialize publicly visible results as ICommunityPlatformPost.ISummary. Exclude posts that are deleted, removed, or otherwise unavailable for public presentation.
+     * @x-autobe-specification Query community_platform_posts for rows authored
+     *   by the member that owns this profile and serialize publicly visible
+     *   results as ICommunityPlatformPost.ISummary. Exclude posts that are
+     *   deleted, removed, or otherwise unavailable for public presentation.
    */
   posts: ICommunityPlatformPost.ISummary[];
 
   /**
    * Public comments written by the member who owns this profile.
    *
-   * @x-autobe-specification Query community_platform_comments for rows authored by the member that owns this profile and serialize publicly visible results as a lightweight comment activity type suitable for profile-page browsing rather than the full recursive comment detail graph. Exclude comments that are deleted, removed, or otherwise unavailable for public presentation.
+     * @x-autobe-specification Query community_platform_comments for rows
+     *   authored by the member that owns this profile and serialize publicly
+     *   visible results as a lightweight comment activity type suitable for
+     *   profile-page browsing rather than the full recursive comment detail
+     *   graph. Exclude comments that are deleted, removed, or otherwise
+     *   unavailable for public presentation.
    */
   comments: ICommunityPlatformComment;
 
   /**
    * Timestamp when the profile was first created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from community_platform_profiles.created_at.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_profiles.created_at.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the profile was most recently updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from community_platform_profiles.updated_at.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_profiles.updated_at.
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the profile was soft deleted, or null if it is still active.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from community_platform_profiles.deleted_at. Preserve null when the profile has not been soft deleted.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_profiles.deleted_at. Preserve null when the profile
+     *   has not been soft deleted.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -101,22 +128,34 @@ export namespace ICommunityPlatformProfile {
    */
   export type IUpdate = {
     /**
-     * @x-autobe-database-schema-property display_name
+         * @x-autobe-database-schema-property display_name
      */
     display_name?: string | undefined;
 
     /**
      * Optional public biography text for the profile. Provide a string to update it, null to clear it, or omit it to leave it unchanged.
      *
-     * @x-autobe-database-schema-property bio
-     * @x-autobe-specification Maps to community_platform_profiles.bio for owner-scoped profile updates. Accept either a string to set biography text or null to clear the stored biography; omission leaves the current value unchanged.
+         * @x-autobe-database-schema-property bio
+         * @x-autobe-specification Maps to community_platform_profiles.bio for
+         *   owner-scoped profile updates. Accept either a string to set
+         *   biography text or null to clear the stored biography; omission
+         *   leaves the current value unchanged.
      */
     bio?: string | null | undefined;
 
     /**
      * Optional avatar-related file update data applied as part of the authenticated member's profile update flow.
      *
-     * @x-autobe-specification Owner-scoped nested update input for the avatar-related profile file associated with the authenticated member's profile. Use the referenced ICommunityPlatformProfileFile.IUpdate contract to create, replace, or revise the active avatar-style file metadata in community_platform_profile_files linked to the resolved profile; omission leaves avatar state unchanged. This field is valid in the profile update flow even though it does not map to a single community_platform_profiles column because requirements allow avatar changes as part of profile editing.
+         * @x-autobe-specification Owner-scoped nested update input for the
+         *   avatar-related profile file associated with the authenticated
+         *   member's profile. Use the referenced
+         *   ICommunityPlatformProfileFile.IUpdate contract to create, replace,
+         *   or revise the active avatar-style file metadata in
+         *   community_platform_profile_files linked to the resolved profile;
+         *   omission leaves avatar state unchanged. This field is valid in the
+         *   profile update flow even though it does not map to a single
+         *   community_platform_profiles column because requirements allow
+         *   avatar changes as part of profile editing.
      */
     avatar?: ICommunityPlatformProfileFile.IUpdate | undefined;
   };
@@ -135,42 +174,72 @@ export namespace ICommunityPlatformProfile {
     /**
      * Free-text search term used to find matching public profiles.
      *
-     * @x-autobe-specification Service-level text search input for PATCH /communityPlatform/profiles. When provided, perform text matching against public-facing searchable profile fields in community_platform_profiles, primarily display_name and optionally bio, according to the service's search strategy. This property is not stored as a column on any single row.
+         * @x-autobe-specification Service-level text search input for PATCH
+         *   /communityPlatform/profiles. When provided, perform text matching
+         *   against public-facing searchable profile fields in
+         *   community_platform_profiles, primarily display_name and optionally
+         *   bio, according to the service's search strategy. This property is
+         *   not stored as a column on any single row.
      */
     search?: string | undefined;
 
     /**
      * Filter profiles by public display name.
      *
-     * @x-autobe-specification Optional request filter that constrains the query by public profile display name in community_platform_profiles. Implement as exact match, partial match, or normalized text match according to the endpoint's filtering policy for public profile browsing. Although it filters the display_name column, this property is part of query input metadata, not a direct row projection field in this DTO.
+         * @x-autobe-specification Optional request filter that constrains the
+         *   query by public profile display name in
+         *   community_platform_profiles. Implement as exact match, partial
+         *   match, or normalized text match according to the endpoint's
+         *   filtering policy for public profile browsing. Although it filters
+         *   the display_name column, this property is part of query input
+         *   metadata, not a direct row projection field in this DTO.
      */
     display_name?: string | undefined;
 
     /**
      * Filter profiles by biography text.
      *
-     * @x-autobe-specification Optional request filter that constrains the query by biography text in community_platform_profiles.bio. Apply matching only when this field is supplied, using the service's supported text-filter behavior for biography content. Although it filters the bio column, this property is query input metadata rather than a direct row projection field in this DTO.
+         * @x-autobe-specification Optional request filter that constrains the
+         *   query by biography text in community_platform_profiles.bio. Apply
+         *   matching only when this field is supplied, using the service's
+         *   supported text-filter behavior for biography content. Although it
+         *   filters the bio column, this property is query input metadata
+         *   rather than a direct row projection field in this DTO.
      */
     bio?: string | undefined;
 
     /**
      * Sort option that controls the order of returned profile results.
      *
-     * @x-autobe-specification Service-level sort instruction for PATCH /communityPlatform/profiles. Validate against the supported sortable public profile fields, such as display_name or timestamp-backed fields if enabled by the service, and convert it into deterministic ORDER BY logic for the community_platform_profiles query. This property is not a database column itself.
+         * @x-autobe-specification Service-level sort instruction for PATCH
+         *   /communityPlatform/profiles. Validate against the supported
+         *   sortable public profile fields, such as display_name or
+         *   timestamp-backed fields if enabled by the service, and convert it
+         *   into deterministic ORDER BY logic for the
+         *   community_platform_profiles query. This property is not a database
+         *   column itself.
      */
     sort?: string | undefined;
 
     /**
      * Page number of the profile results to retrieve.
      *
-     * @x-autobe-specification 1-indexed pagination page number for the profile browse query. Use it with limit to calculate offset or skip for the underlying community_platform_profiles search. Enforce minimum value 1 as defined by the schema. This property is computed request metadata, not a stored database field.
+         * @x-autobe-specification 1-indexed pagination page number for the
+         *   profile browse query. Use it with limit to calculate offset or skip
+         *   for the underlying community_platform_profiles search. Enforce
+         *   minimum value 1 as defined by the schema. This property is computed
+         *   request metadata, not a stored database field.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of profile results to return per page.
      *
-     * @x-autobe-specification Maximum number of profile records to return for the current page of the community_platform_profiles browse query. Enforce the schema bounds of minimum 1 and maximum 100 before executing the query. This property is request metadata, not a stored database field.
+         * @x-autobe-specification Maximum number of profile records to return
+         *   for the current page of the community_platform_profiles browse
+         *   query. Enforce the schema bounds of minimum 1 and maximum 100
+         *   before executing the query. This property is request metadata, not
+         *   a stored database field.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)

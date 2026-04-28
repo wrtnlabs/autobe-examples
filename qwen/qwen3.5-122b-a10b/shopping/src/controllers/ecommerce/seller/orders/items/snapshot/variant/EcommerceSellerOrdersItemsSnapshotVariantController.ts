@@ -31,9 +31,10 @@ export class EcommerceSellerOrdersItemsSnapshotVariantController {
    * @param connection
    * @param orderId UUID of the parent order containing the order item (global scope)
    * @param itemId UUID of the order item within the specified order (global scope)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Implement GET operation to retrieve order item variant snapshot:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Implement GET operation to retrieve order item
+     *   variant snapshot:
    *
    * 1. **Path Parameter Validation**
    *    - Validate orderId is valid UUID format

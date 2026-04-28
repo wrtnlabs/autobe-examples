@@ -23,9 +23,10 @@ export class HrmtimetrackMemberTasksController {
    *
    * @param connection
    * @param body Task creation data including project assignment, optional employee assignee, parent task reference, title, description, priority, status, and effort estimates.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query and validate the following before task creation:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query and validate the following before task
+     *   creation:
    *
    * 1. Verify the requesting user has permission to create tasks in the specified project (project-lead role or project:manage permission).
    * 2. Validate hrm_time_track_project_id references an existing project in the user's organization.
@@ -83,9 +84,10 @@ export class HrmtimetrackMemberTasksController {
    *
    * @param connection
    * @param body Search criteria including status, priority, employee, and project filters, along with pagination and sorting parameters.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query hrm_time_track_tasks table with pagination and filtering support.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query hrm_time_track_tasks table with pagination
+     *   and filtering support.
    *
    * Filtering:
    * - Apply status filter using valid values: open, in-progress, completed, closed
@@ -143,9 +145,10 @@ export class HrmtimetrackMemberTasksController {
    *
    * @param connection
    * @param taskId Unique identifier of the task to retrieve (global scope).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query hrm_time_track_tasks table for a single task by id (UUID).
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query hrm_time_track_tasks table for a single
+     *   task by id (UUID).
    *
    * 1. Verify the task exists and is not soft-deleted (deleted_at IS NULL).
    * 2. Join with hrm_time_track_projects to include project details (name, description, color_code, status).
@@ -186,23 +189,23 @@ export class HrmtimetrackMemberTasksController {
    * @param connection
    * @param taskId Unique identifier of the task to update (global scope)
    * @param body Task update request containing modifiable fields: title, description, status, priority, effort estimates, employee assignment, and parent task reference.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1. Validate taskId exists and task is not soft-deleted (deleted_at is null)
-   * 2. Verify caller has permission: either project-lead role on task's project OR project:manage permission
-   * 3. Validate request body fields:
-   *    - title: required, non-empty string
-   *    - description: optional string
-   *    - status: optional, must be one of [open, in-progress, completed, closed]
-   *    - priority: optional, must be one of [low, medium, high, urgent]
-   *    - effort_estimate: optional, non-negative float
-   *    - effort_actual: optional, non-negative float
-   *    - hrm_time_track_employee_id: optional, if provided must exist and be member of task's project
-   *    - parent_task_id: optional, if provided must exist, belong to same project, and not already have subtasks (one-level nesting only)
-   * 4. If status changes, record task history entry with old status, new status, timestamp, and actor
-   * 5. Update task fields with validated values
-   * 6. Set updated_at to current timestamp
-   * 7. Return updated task entity with all fields including relationships
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification 1. Validate taskId exists and task is not
+     *   soft-deleted (deleted_at is null) 2. Verify caller has permission:
+     *   either project-lead role on task's project OR project:manage permission
+     *   3. Validate request body fields: - title: required, non-empty string -
+     *   description: optional string - status: optional, must be one of [open,
+     *   in-progress, completed, closed] - priority: optional, must be one of
+     *   [low, medium, high, urgent] - effort_estimate: optional, non-negative
+     *   float - effort_actual: optional, non-negative float -
+     *   hrm_time_track_employee_id: optional, if provided must exist and be
+     *   member of task's project - parent_task_id: optional, if provided must
+     *   exist, belong to same project, and not already have subtasks (one-level
+     *   nesting only) 4. If status changes, record task history entry with old
+     *   status, new status, timestamp, and actor 5. Update task fields with
+     *   validated values 6. Set updated_at to current timestamp 7. Return
+     *   updated task entity with all fields including relationships
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Put(":taskId")
@@ -237,20 +240,23 @@ export class HrmtimetrackMemberTasksController {
    *
    * @param connection
    * @param taskId UUID identifier of the task to delete (global scope)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1. Validate taskId is a valid UUID format
-   * 2. Fetch the task by id from hrm_time_track_tasks table
-   * 3. Verify the task exists and is not already soft deleted (deleted_at is null)
-   * 4. Load the associated project via hrm_time_track_project_id foreign key
-   * 5. Verify the authenticated user has access to the project (member or has project:manage permission)
-   * 6. Verify the user has task deletion permissions (project:manage permission or project-lead role in this project)
-   * 7. Check if the project is archived or completed - if so, reject the deletion
-   * 8. Set deleted_at to current timestamp on the task record
-   * 9. Cascade soft delete to all subtasks (tasks with parent_task_id = this task's id)
-   * 10. Record the deletion action in hrm_time_track_activity_logs with actor, target task, and timestamp
-   * 11. Return the deleted task entity with updated deleted_at timestamp
-   * 12. Handle errors: task not found, insufficient permissions, project status prevents deletion
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification 1. Validate taskId is a valid UUID format 2.
+     *   Fetch the task by id from hrm_time_track_tasks table 3. Verify the task
+     *   exists and is not already soft deleted (deleted_at is null) 4. Load the
+     *   associated project via hrm_time_track_project_id foreign key 5. Verify
+     *   the authenticated user has access to the project (member or has
+     *   project:manage permission) 6. Verify the user has task deletion
+     *   permissions (project:manage permission or project-lead role in this
+     *   project) 7. Check if the project is archived or completed - if so,
+     *   reject the deletion 8. Set deleted_at to current timestamp on the task
+     *   record 9. Cascade soft delete to all subtasks (tasks with
+     *   parent_task_id = this task's id) 10. Record the deletion action in
+     *   hrm_time_track_activity_logs with actor, target task, and timestamp 11.
+     *   Return the deleted task entity with updated deleted_at timestamp 12.
+     *   Handle errors: task not found, insufficient permissions, project status
+     *   prevents deletion
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Delete(":taskId")

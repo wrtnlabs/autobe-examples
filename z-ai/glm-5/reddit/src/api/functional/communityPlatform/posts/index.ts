@@ -28,7 +28,9 @@ export * as comments from "./comments/index";
  * @param props.body Sorting options, time range filter for top sorting, and pagination parameters for the post feed
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query community_platform_posts table with LEFT JOIN to community_platform_communities and community_platform_members for community and author details.
+ * @x-autobe-specification Query community_platform_posts table with LEFT JOIN
+ *   to community_platform_communities and community_platform_members for
+ *   community and author details.
  *
  * Sort Algorithms:
  * - hot: ORDER BY (vote_score / POWER(EXTRACT(EPOCH FROM (NOW() - created_at)) / 3600 + 2, 1.8)) DESC (recent posts with high votes prioritized)
@@ -140,7 +142,8 @@ export namespace index {
  * @param props.postId Unique UUID identifier of the post to retrieve
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Retrieve a single post by its UUID identifier from the community_platform_posts table.
+ * @x-autobe-specification Retrieve a single post by its UUID identifier from
+ *   the community_platform_posts table.
  *
  * Implementation steps:
  * 1. Query community_platform_posts table by id WHERE deleted_at IS NULL

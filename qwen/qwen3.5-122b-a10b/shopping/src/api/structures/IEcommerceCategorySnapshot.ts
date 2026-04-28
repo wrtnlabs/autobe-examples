@@ -20,8 +20,10 @@ export type IEcommerceCategorySnapshot = {
    *
    * This UUID serves as the primary key for the snapshot table, allowing precise retrieval of historical category states. Each snapshot record has a distinct id that never changes.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_category_snapshots.id. UUID primary key uniquely identifying each snapshot record.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_category_snapshots.id. UUID primary key uniquely identifying
+     *   each snapshot record.
    */
   id: string & tags.Format<"uuid">;
 
@@ -34,8 +36,10 @@ export type IEcommerceCategorySnapshot = {
    * - Must reference an existing category record
    * - Used to verify snapshot belongs to requested category in API queries
    *
-   * @x-autobe-database-schema-property ecommerce_category_id
-   * @x-autobe-specification Direct mapping from ecommerce_category_snapshots.ecommerce_category_id. UUID foreign key referencing the parent category this snapshot represents.
+     * @x-autobe-database-schema-property ecommerce_category_id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_category_snapshots.ecommerce_category_id. UUID foreign key
+     *   referencing the parent category this snapshot represents.
    */
   ecommerce_category_id: string & tags.Format<"uuid">;
 
@@ -48,8 +52,11 @@ export type IEcommerceCategorySnapshot = {
    * - Null value indicates the category was a root category (no parent) at the time of snapshot
    * - Non-null value indicates the category had a parent at the time of snapshot
    *
-   * @x-autobe-database-schema-property parent_category_id
-   * @x-autobe-specification Direct mapping from ecommerce_category_snapshots.parent_category_id. Nullable UUID storing parent category reference at snapshot time. Null indicates root-level category with no parent.
+     * @x-autobe-database-schema-property parent_category_id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_category_snapshots.parent_category_id. Nullable UUID storing
+     *   parent category reference at snapshot time. Null indicates root-level
+     *   category with no parent.
    */
   parent_category_id: (string & tags.Format<"uuid">) | null;
 
@@ -62,8 +69,10 @@ export type IEcommerceCategorySnapshot = {
    * - Display historical category name in audit trails
    * - Compare with current category name to detect changes
    *
-   * @x-autobe-database-schema-property name
-   * @x-autobe-specification Direct mapping from ecommerce_category_snapshots.name. Non-nullable string containing category name at snapshot time.
+     * @x-autobe-database-schema-property name
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_category_snapshots.name. Non-nullable string containing
+     *   category name at snapshot time.
    */
   name: string;
 
@@ -76,8 +85,10 @@ export type IEcommerceCategorySnapshot = {
    * - Null value indicates the category had no description at the time of snapshot
    * - Non-null value contains the full description text
    *
-   * @x-autobe-database-schema-property description
-   * @x-autobe-specification Direct mapping from ecommerce_category_snapshots.description. Nullable string containing category description at snapshot time. Null if no description was set.
+     * @x-autobe-database-schema-property description
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_category_snapshots.description. Nullable string containing
+     *   category description at snapshot time. Null if no description was set.
    */
   description: string | null;
 
@@ -90,8 +101,10 @@ export type IEcommerceCategorySnapshot = {
    * - Order snapshots chronologically to view category evolution
    * - Determine when specific category changes occurred
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_category_snapshots.created_at. DateTime with timestamptz format recording when snapshot was automatically created.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_category_snapshots.created_at. DateTime with timestamptz
+     *   format recording when snapshot was automatically created.
    */
   created_at: string & tags.Format<"date-time">;
 };
@@ -116,8 +129,10 @@ export namespace IEcommerceCategorySnapshot {
      *
      * This UUID serves as the primary key for the snapshot table, uniquely identifying each historical record of category state changes.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_category_snapshots.id. UUID primary key uniquely identifying each snapshot record.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_category_snapshots.id. UUID primary key uniquely
+         *   identifying each snapshot record.
      */
     id: string & tags.Format<"uuid">;
 
@@ -126,8 +141,10 @@ export namespace IEcommerceCategorySnapshot {
      *
      * This field stores the exact name of the category at the moment the snapshot was created, preserving the pre-change state for audit purposes. The name is required and cannot be null.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from ecommerce_category_snapshots.name. Category display name at the time of snapshot.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_category_snapshots.name. Category display name at the
+         *   time of snapshot.
      */
     name: string;
 
@@ -136,8 +153,10 @@ export namespace IEcommerceCategorySnapshot {
      *
      * This field stores the exact description of the category at the time the snapshot was created. May be null if no description was set for the category at that point in time.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from ecommerce_category_snapshots.description. Nullable category description at the time of snapshot.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_category_snapshots.description. Nullable category
+         *   description at the time of snapshot.
      */
     description?: string | null | undefined;
 
@@ -146,8 +165,10 @@ export namespace IEcommerceCategorySnapshot {
      *
      * This field stores the UUID of the parent category at the time the snapshot was created, preserving the hierarchical relationship for audit purposes. May be null if this was a root-level category with no parent at that time.
      *
-     * @x-autobe-database-schema-property parent_category_id
-     * @x-autobe-specification Direct mapping from ecommerce_category_snapshots.parent_category_id. Nullable UUID referencing parent category at snapshot time.
+         * @x-autobe-database-schema-property parent_category_id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_category_snapshots.parent_category_id. Nullable UUID
+         *   referencing parent category at snapshot time.
      */
     parent_category_id?: (string & tags.Format<"uuid">) | null | undefined;
 
@@ -156,8 +177,10 @@ export namespace IEcommerceCategorySnapshot {
      *
      * This records the exact moment when the category was modified and this snapshot was automatically generated, capturing the pre-modification state. The timestamp uses RFC 3339 date-time format with timezone information.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from ecommerce_category_snapshots.created_at. Timestamp when snapshot was automatically generated.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_category_snapshots.created_at. Timestamp when snapshot
+         *   was automatically generated.
      */
     created_at: string & tags.Format<"date-time">;
   };
@@ -184,7 +207,9 @@ export namespace IEcommerceCategorySnapshot {
      *
      * **Example**: `page=2` with `limit=20` returns records 21-40.
      *
-     * @x-autobe-specification Pagination page number (1-indexed). Controls which page of results to return. Defaults to 1 if not specified. Applied to OFFSET calculation in SQL query.
+         * @x-autobe-specification Pagination page number (1-indexed). Controls
+         *   which page of results to return. Defaults to 1 if not specified.
+         *   Applied to OFFSET calculation in SQL query.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -195,7 +220,9 @@ export namespace IEcommerceCategorySnapshot {
      *
      * **Example**: `limit=50` returns up to 50 snapshot records per page.
      *
-     * @x-autobe-specification Maximum number of records per page (1-100). Controls the LIMIT clause in SQL query. Defaults to 20 if not specified. Enforced maximum of 100 records per page.
+         * @x-autobe-specification Maximum number of records per page (1-100).
+         *   Controls the LIMIT clause in SQL query. Defaults to 20 if not
+         *   specified. Enforced maximum of 100 records per page.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -208,7 +235,9 @@ export namespace IEcommerceCategorySnapshot {
      *
      * **Use Case**: Find all category modifications made since a specific date.
      *
-     * @x-autobe-specification Filter snapshots created on or after this timestamp. Applied as WHERE created_at >= created_at_from in SQL query. ISO 8601 date-time format required. Optional parameter.
+         * @x-autobe-specification Filter snapshots created on or after this
+         *   timestamp. Applied as WHERE created_at >= created_at_from in SQL
+         *   query. ISO 8601 date-time format required. Optional parameter.
      */
     created_at_from?: (string & tags.Format<"date-time">) | undefined;
 
@@ -219,7 +248,9 @@ export namespace IEcommerceCategorySnapshot {
      *
      * **Use Case**: Find all category modifications made before a specific date.
      *
-     * @x-autobe-specification Filter snapshots created on or before this timestamp. Applied as WHERE created_at <= created_at_to in SQL query. ISO 8601 date-time format required. Optional parameter.
+         * @x-autobe-specification Filter snapshots created on or before this
+         *   timestamp. Applied as WHERE created_at <= created_at_to in SQL
+         *   query. ISO 8601 date-time format required. Optional parameter.
      */
     created_at_to?: (string & tags.Format<"date-time">) | undefined;
 
@@ -230,7 +261,9 @@ export namespace IEcommerceCategorySnapshot {
      *
      * **Example**: `sort_by=created_at` sorts snapshots by their creation timestamp.
      *
-     * @x-autobe-specification Field name to sort results by. Typically 'created_at' for snapshot listings. Applied as ORDER BY clause in SQL query. Optional parameter.
+         * @x-autobe-specification Field name to sort results by. Typically
+         *   'created_at' for snapshot listings. Applied as ORDER BY clause in
+         *   SQL query. Optional parameter.
      */
     sort_by?: string | undefined;
 
@@ -243,7 +276,9 @@ export namespace IEcommerceCategorySnapshot {
      * - `asc`: Oldest to newest (for created_at)
      * - `desc`: Newest to oldest (for created_at)
      *
-     * @x-autobe-specification Sort direction: 'asc' for ascending, 'desc' for descending. Applied as ASC or DESC in ORDER BY clause. Defaults to 'desc' for snapshot listings (newest first). Optional parameter.
+         * @x-autobe-specification Sort direction: 'asc' for ascending, 'desc'
+         *   for descending. Applied as ASC or DESC in ORDER BY clause. Defaults
+         *   to 'desc' for snapshot listings (newest first). Optional parameter.
      */
     sort_order?: "asc" | "desc" | undefined;
   };

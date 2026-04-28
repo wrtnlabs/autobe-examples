@@ -23,12 +23,12 @@ import { IShoppingMallReview } from "../../../../structures/IShoppingMallReview"
  * @param props.body Search criteria including pagination parameters for retrieving product reviews.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query the shopping_mall_reviews table for all reviews where:
- * 1. shopping_mall_product_id matches the provided productId parameter
- * 2. deleted_at is null (exclude soft-deleted reviews per business rules)
- * 3. Sort by created_at in descending order (newest first)
- * 4. Apply server-side pagination using cursor or offset-based pagination from request body
- * 5. Return paginated results with metadata (total count, page info)
+ * @x-autobe-specification Query the shopping_mall_reviews table for all reviews
+ *   where: 1. shopping_mall_product_id matches the provided productId parameter
+ *   2. deleted_at is null (exclude soft-deleted reviews per business rules) 3.
+ *   Sort by created_at in descending order (newest first) 4. Apply server-side
+ *   pagination using cursor or offset-based pagination from request body 5.
+ *   Return paginated results with metadata (total count, page info)
  *
  * Do not include reviews where deleted_at is set. Ensure only non-deleted reviews are returned for display on product detail pages.
  * @path /shoppingMall/products/:productId/reviews

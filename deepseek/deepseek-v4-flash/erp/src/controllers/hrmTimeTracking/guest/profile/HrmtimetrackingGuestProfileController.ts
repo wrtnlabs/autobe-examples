@@ -20,9 +20,10 @@ export class HrmtimetrackingGuestProfileController {
    *
    * @param connection
    * @param body Updated global profile fields for the authenticated member. Only the fields to be changed need to be provided. display_name is required.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor guest
-   * @x-autobe-specification Update the authenticated member's global profile in the hrm_time_tracking_members table.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor guest
+     * @x-autobe-specification Update the authenticated member's global profile
+     *   in the hrm_time_tracking_members table.
    *
    * 1. Retrieve the authenticated member's ID from the JWT session token.
    * 2. Validate the request body:

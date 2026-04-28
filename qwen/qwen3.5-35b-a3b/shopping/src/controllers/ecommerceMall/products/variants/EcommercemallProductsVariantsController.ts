@@ -19,9 +19,10 @@ export class EcommercemallProductsVariantsController {
    *
    * @param connection
    * @param productId Product identifier (UUID format). The product must exist and be active (not soft-deleted).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query ecommerce_mall_product_variants table filtering by product_id matching the path parameter.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query ecommerce_mall_product_variants table
+     *   filtering by product_id matching the path parameter.
    *
    * Filter conditions:
    * - product_id = {productId} from path parameter
@@ -80,9 +81,10 @@ export class EcommercemallProductsVariantsController {
    * @param connection
    * @param productId Unique identifier of the product. Must be a valid UUID.
    * @param body Search and filter criteria for product variants. Supports filtering by SKU code prefix, price range, stock status, and pagination parameters.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query ecommerce_mall_product_variants table with filtering by product_id and pagination.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query ecommerce_mall_product_variants table with
+     *   filtering by product_id and pagination.
    *
    * Apply search criteria:
    * - sku_code_prefix: Filter variants by SKU code prefix (partial match, case-insensitive)
@@ -142,9 +144,11 @@ export class EcommercemallProductsVariantsController {
    * @param connection
    * @param productId UUID identifier of the parent product that owns this variant
    * @param variantId UUID identifier of the variant to retrieve
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query ecommerce_mall_product_variants table filtered by id = {variantId} AND product_id = {productId} to ensure variant belongs to specified product.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query ecommerce_mall_product_variants table
+     *   filtered by id = {variantId} AND product_id = {productId} to ensure
+     *   variant belongs to specified product.
    *
    * Join with ecommerce_mall_products to validate product exists and is not soft-deleted (deleted_at IS NULL).
    *

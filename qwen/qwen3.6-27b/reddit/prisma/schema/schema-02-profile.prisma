@@ -1,0 +1,184 @@
+/// Public-facing identity profiles store display names, bios, and aggregated
+/// karma scores visible to all platform users including guests.
+///
+/// Each profile is permanently bound to exactly one member account via a
+/// one-to-one relationship, created when a member registers and persisting
+/// for the member's entire account lifecycle.
+///
+/// Karma is an aggregated integer score reflecting community reception
+/// across all posts and comments: incremented by one per upvote received,
+/// decremented by one per downvote received. Karma has no lower or upper
+/// bound and can become negative.
+///
+/// Profiles are viewable by all platform participants, supporting user
+/// discovery, credibility signals, and community engagement tracking. Avatar
+/// images are stored separately in {@link
+/// reddit_like_community_profile_images}.
+///
+/// @namespace profile
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_community_profiles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key uniquely identifying this profile record.
+  id String @id
+  
+  /// Foreign key linking this profile to its owning member account, enforcing
+  /// a strict one-to-one relationship where each member has exactly one
+  /// profile.
+  ///
+  /// Profile creation is tied to member registration. This FK never changes
+  /// after initial assignment, and the profile is soft-deleted when the member
+  /// account is removed.
+  reddit_like_community_member_id String
+  
+  /// The profile owner's chosen public display name for identification on the
+  /// platform, separate from the authentication username. Users can customize
+  /// this freely and it may remain unset if the user prefers not to display a
+  /// custom name.
+  display_name String?
+  
+  /// A short biographical text description written by the profile owner. Fully
+  /// editable by the user and may remain empty if the user chooses not to
+  /// provide personal information.
+  bio String?
+  
+  /// Aggregated karma score computed from all votes received on the user's
+  /// posts and comments across all communities. Incremented by one per upvote,
+  /// decremented by one per downvote. Has no minimum or maximum bound and can
+  /// be negative. Updated by the vote subsystem when votes are cast, changed,
+  /// or removed.
+  karma Int
+  
+  /// Automatically set to the current timestamp when the profile is created
+  /// during member registration. Never modified after initial creation.
+  created_at DateTime
+  
+  /// Updated to the current timestamp whenever any profile field
+  /// (display_name, bio, karma) is modified. Initialized to match created_at
+  /// and updated on every profile edit or karma recalculation event.
+  updated_at DateTime
+  
+  /// Set to the current timestamp when the owner's member account is
+  /// soft-deleted, marking this profile as inactive. Preserves historical
+  /// integrity of associated posts and comments that may still exist in the
+  /// system.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member reddit_like_community_members @relation(fields: [reddit_like_community_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  profileImages reddit_like_community_profile_images[]
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([reddit_like_community_member_id], map: "reddit_like_community_profiles_reddit_like_community_m_a1ff46ea")
+  @@index([karma])
+}
+
+/// Avatar image files for user profiles, with one designated active image
+/// per profile.
+///
+/// Stores uploaded avatar images with metadata including file location,
+/// content type, dimensions, and activation status. When a user uploads a
+/// new avatar, the previous active image is deactivated (is_active=false)
+/// and the new image is set as active (is_active=true).
+///
+/// This table maintains avatar history for each profile while ensuring only
+/// one image is displayed as the current avatar. Inactive images remain in
+/// storage for potential restoration or audit purposes.
+///
+/// @namespace profile
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_community_profile_images {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the profile image record.
+  id String @id
+  
+  /// References the parent user profile that owns this avatar image.
+  ///
+  /// Each profile may have multiple images stored over time, but only one is
+  /// active at any given moment. The FK enforces ownership and enables cleanup
+  /// of orphaned images when profiles are deleted.
+  reddit_like_community_profile_id String
+  
+  /// Unique identifier for the image file in cloud storage (e.g., S3 object
+  /// key).
+  ///
+  /// Points to the actual image file stored in external storage
+  /// infrastructure. Combined with the base URL, this forms the complete
+  /// access path to the avatar image.
+  file_key String
+  
+  /// MIME type of the image file (e.g., 'image/jpeg', 'image/png',
+  /// 'image/webp').
+  ///
+  /// Used for proper content negotiation when serving the image and for
+  /// validating uploaded files against allowed image formats.
+  content_type String
+  
+  /// Size of the image file in bytes.
+  ///
+  /// Tracks storage consumption and helps enforce upload size limits at the
+  /// application level. Also useful for analytics on storage usage across the
+  /// platform.
+  file_size Int
+  
+  /// Width of the image in pixels.
+  ///
+  /// Captured at upload time for optimization and preview purposes. Enables
+  /// client-side dimension hints without requiring the full image decode.
+  width Int
+  
+  /// Height of the image in pixels.
+  ///
+  /// Captured at upload time for optimization and preview purposes. Used
+  /// alongside width to maintain aspect ratio information without loading the
+  /// full image.
+  height Int
+  
+  /// Status flag indicating whether this is the currently displayed avatar for
+  /// the profile.
+  ///
+  /// When true, this image is shown as the user's avatar across the platform.
+  /// When false, the image is retained in storage but not displayed. Only one
+  /// image per profile may have is_active=true at any time.
+  is_active Boolean
+  
+  /// Timestamp when this profile image record was created.
+  ///
+  /// Tracks the creation time of each uploaded avatar, maintaining a
+  /// chronological history of all avatars associated with a profile.
+  created_at DateTime
+  
+  /// Timestamp when this profile image record was last modified.
+  ///
+  /// Updated whenever record attributes change, such as switching its active
+  /// status or updating metadata.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  profile reddit_like_community_profiles @relation(fields: [reddit_like_community_profile_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([reddit_like_community_profile_id, is_active], map: "reddit_like_community_profile_images_reddit_like_commu_4f55cbf8")
+  @@index([is_active])
+}

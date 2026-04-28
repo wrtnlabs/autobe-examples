@@ -8,48 +8,69 @@ export type IShoppingMallProductVariantOption = {
   /**
    * The unique identifier of this product variant option record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_product_variant_options.id. UUID primary key uniquely identifying this option record on the platform.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_product_variant_options.id. UUID primary key uniquely
+     *   identifying this option record on the platform.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * The unique identifier of the product variant that owns this option. Together with `key`, it forms a unique constraint ensuring no variant has duplicate option dimensions.
    *
-   * @x-autobe-database-schema-property product_variant_id
-   * @x-autobe-specification Direct mapping from shopping_mall_product_variant_options.product_variant_id. UUID foreign key referencing shopping_mall_product_variants.id. Used in ownership validation at the service layer.
+     * @x-autobe-database-schema-property product_variant_id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_product_variant_options.product_variant_id. UUID foreign
+     *   key referencing shopping_mall_product_variants.id. Used in ownership
+     *   validation at the service layer.
    */
   product_variant_id: string & tags.Format<"uuid">;
 
   /**
    * The name of the option dimension (e.g., 'color', 'size', 'material'). Combined with `value`, it describes one attribute of the variant's purchasable configuration. No two option records for the same variant may share the same key.
    *
-   * @x-autobe-database-schema-property key
-   * @x-autobe-specification Direct mapping from shopping_mall_product_variant_options.key. String representing the option dimension name (e.g., 'color', 'size', 'material'). Combined with value, it defines one attribute of the variant's configuration. A unique constraint on (product_variant_id, key) prevents duplicate dimensions per variant.
+     * @x-autobe-database-schema-property key
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_product_variant_options.key. String representing the
+     *   option dimension name (e.g., 'color', 'size', 'material'). Combined
+     *   with value, it defines one attribute of the variant's configuration. A
+     *   unique constraint on (product_variant_id, key) prevents duplicate
+     *   dimensions per variant.
    */
   key: string;
 
   /**
    * The value of the option dimension (e.g., 'Red', 'Large', 'Cotton'). Combined with `key`, it specifies the exact attribute value that distinguishes this variant's configuration.
    *
-   * @x-autobe-database-schema-property value
-   * @x-autobe-specification Direct mapping from shopping_mall_product_variant_options.value. String representing the specific value for the option dimension (e.g., 'Red', 'Large', 'Cotton'). Combined with key, it forms one aspect of the variant's unique configuration identity.
+     * @x-autobe-database-schema-property value
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_product_variant_options.value. String representing the
+     *   specific value for the option dimension (e.g., 'Red', 'Large',
+     *   'Cotton'). Combined with key, it forms one aspect of the variant's
+     *   unique configuration identity.
    */
   value: string;
 
   /**
    * The display ordering position of this option dimension within the variant's full configuration. Lower values appear first when the variant's options are listed to customers.
    *
-   * @x-autobe-database-schema-property sequence
-   * @x-autobe-specification Direct mapping from shopping_mall_product_variant_options.sequence. Integer controlling the display order of option dimensions within a variant. Lower values appear first when presenting the variant's options to customers on the product detail page.
+     * @x-autobe-database-schema-property sequence
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_product_variant_options.sequence. Integer controlling the
+     *   display order of option dimensions within a variant. Lower values
+     *   appear first when presenting the variant's options to customers on the
+     *   product detail page.
    */
   sequence: number & tags.Type<"int32">;
 
   /**
    * The timestamp when this product variant option record was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from shopping_mall_product_variant_options.created_at. Timestamptz recording when this option record was created. ISO 8601 date-time string in the API response.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_product_variant_options.created_at. Timestamptz recording
+     *   when this option record was created. ISO 8601 date-time string in the
+     *   API response.
    */
   created_at: string & tags.Format<"date-time">;
 };
@@ -61,28 +82,45 @@ export namespace IShoppingMallProductVariantOption {
     /**
      * Optional partial-match filter for the option dimension name (e.g., 'color', 'size'). When provided, only options whose key contains this value are included in the results.
      *
-     * @x-autobe-specification Optional partial-match search filter applied against the `key` column of shopping_mall_product_variant_options using GIN trigram ILIKE. When provided, only option records whose `key` column value contains the given substring are returned. Example: providing 'col' matches options with key 'color'. Case-insensitive. This field is a query filter, not stored as-is.
+         * @x-autobe-specification Optional partial-match search filter applied
+         *   against the `key` column of shopping_mall_product_variant_options
+         *   using GIN trigram ILIKE. When provided, only option records whose
+         *   `key` column value contains the given substring are returned.
+         *   Example: providing 'col' matches options with key 'color'.
+         *   Case-insensitive. This field is a query filter, not stored as-is.
      */
     key?: string | undefined;
 
     /**
      * Optional partial-match filter for the option dimension value (e.g., 'Red', 'Large'). When provided, only options whose value contains this string are included in the results.
      *
-     * @x-autobe-specification Optional partial-match search filter applied against the `value` column of shopping_mall_product_variant_options using GIN trigram ILIKE. When provided, only option records whose `value` column value contains the given substring are returned. Example: providing 'Red' matches options with value 'Red' or 'Dark Red'. Case-insensitive. This field is a query filter, not stored as-is.
+         * @x-autobe-specification Optional partial-match search filter applied
+         *   against the `value` column of shopping_mall_product_variant_options
+         *   using GIN trigram ILIKE. When provided, only option records whose
+         *   `value` column value contains the given substring are returned.
+         *   Example: providing 'Red' matches options with value 'Red' or 'Dark
+         *   Red'. Case-insensitive. This field is a query filter, not stored
+         *   as-is.
      */
     value?: string | undefined;
 
     /**
      * The page number to retrieve, starting from 1. Defaults to 1 when not specified.
      *
-     * @x-autobe-specification 1-based page number for pagination of query results from shopping_mall_product_variant_options. Defaults to 1 when omitted. Used together with `limit` to compute the SQL OFFSET: OFFSET = (page - 1) * limit. Must be >= 1.
+         * @x-autobe-specification 1-based page number for pagination of query
+         *   results from shopping_mall_product_variant_options. Defaults to 1
+         *   when omitted. Used together with `limit` to compute the SQL OFFSET:
+         *   OFFSET = (page - 1) * limit. Must be >= 1.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of option records to return per page. Accepts values between 1 and 100. Defaults to 20 when not specified.
      *
-     * @x-autobe-specification Maximum number of option records to return per page from shopping_mall_product_variant_options. Defaults to 20 when omitted. Must be between 1 and 100 inclusive. Used with `page` to compute the SQL LIMIT clause.
+         * @x-autobe-specification Maximum number of option records to return
+         *   per page from shopping_mall_product_variant_options. Defaults to 20
+         *   when omitted. Must be between 1 and 100 inclusive. Used with `page`
+         *   to compute the SQL LIMIT clause.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -96,40 +134,56 @@ export namespace IShoppingMallProductVariantOption {
     /**
      * The unique identifier of this product variant option record.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_product_variant_options.id. UUID primary key. Always present and non-null.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_variant_options.id. UUID primary key. Always
+         *   present and non-null.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * The option dimension name that identifies one aspect of the variant's configuration, such as 'color', 'size', or 'material'.
      *
-     * @x-autobe-database-schema-property key
-     * @x-autobe-specification Direct mapping from shopping_mall_product_variant_options.key. Represents the option dimension name (e.g., 'color', 'size', 'material'). A unique constraint on (product_variant_id, key) ensures no duplicate dimensions per variant.
+         * @x-autobe-database-schema-property key
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_variant_options.key. Represents the option
+         *   dimension name (e.g., 'color', 'size', 'material'). A unique
+         *   constraint on (product_variant_id, key) ensures no duplicate
+         *   dimensions per variant.
      */
     key: string;
 
     /**
      * The option dimension value corresponding to the key, such as 'Red' for a 'color' dimension or 'Large' for a 'size' dimension.
      *
-     * @x-autobe-database-schema-property value
-     * @x-autobe-specification Direct mapping from shopping_mall_product_variant_options.value. Represents the option dimension value (e.g., 'Red', 'Large', 'Cotton'). Combined with key, it forms one attribute of the variant's unique configuration.
+         * @x-autobe-database-schema-property value
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_variant_options.value. Represents the option
+         *   dimension value (e.g., 'Red', 'Large', 'Cotton'). Combined with
+         *   key, it forms one attribute of the variant's unique configuration.
      */
     value: string;
 
     /**
      * The display ordering position of this option dimension within the variant's set of options. Lower values appear first.
      *
-     * @x-autobe-database-schema-property sequence
-     * @x-autobe-specification Direct mapping from shopping_mall_product_variant_options.sequence. Integer controlling the display order of option dimensions within a variant. Lower values appear first. Records in list responses are ordered by this field ascending.
+         * @x-autobe-database-schema-property sequence
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_variant_options.sequence. Integer controlling
+         *   the display order of option dimensions within a variant. Lower
+         *   values appear first. Records in list responses are ordered by this
+         *   field ascending.
      */
     sequence: number & tags.Type<"int32"> & tags.Minimum<0>;
 
     /**
      * The timestamp indicating when this option record was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_product_variant_options.created_at. Timestamptz column recording when this option record was created. Always non-null.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_variant_options.created_at. Timestamptz
+         *   column recording when this option record was created. Always
+         *   non-null.
      */
     created_at: string & tags.Format<"date-time">;
   };
@@ -141,16 +195,25 @@ export namespace IShoppingMallProductVariantOption {
     /**
      * The option dimension name identifying one aspect of the variant's configuration (e.g., 'color', 'size', 'material'). Must be non-empty and unique within the submitted options array — no variant may have two option dimensions with the same key.
      *
-     * @x-autobe-database-schema-property key
-     * @x-autobe-specification Direct mapping to shopping_mall_product_variant_options.key. Represents the option dimension name (e.g., 'color', 'size', 'material'). Must be a non-empty string and must be unique within the submitted options array for the same variant, enforced by a DB unique constraint on (product_variant_id, key).
+         * @x-autobe-database-schema-property key
+         * @x-autobe-specification Direct mapping to
+         *   shopping_mall_product_variant_options.key. Represents the option
+         *   dimension name (e.g., 'color', 'size', 'material'). Must be a
+         *   non-empty string and must be unique within the submitted options
+         *   array for the same variant, enforced by a DB unique constraint on
+         *   (product_variant_id, key).
      */
     key: string & tags.MinLength<1>;
 
     /**
      * The option dimension value corresponding to the given key (e.g., 'Red' for key 'color', 'Large' for key 'size'). Must be non-empty. Combined with the key, it defines one specific attribute of the variant's purchasable configuration.
      *
-     * @x-autobe-database-schema-property value
-     * @x-autobe-specification Direct mapping to shopping_mall_product_variant_options.value. Represents the option dimension value (e.g., 'Red', 'Large', 'Cotton'). Must be a non-empty string. Together with key, it forms one attribute of the variant's unique configuration.
+         * @x-autobe-database-schema-property value
+         * @x-autobe-specification Direct mapping to
+         *   shopping_mall_product_variant_options.value. Represents the option
+         *   dimension value (e.g., 'Red', 'Large', 'Cotton'). Must be a
+         *   non-empty string. Together with key, it forms one attribute of the
+         *   variant's unique configuration.
      */
     value: string & tags.MinLength<1>;
   };

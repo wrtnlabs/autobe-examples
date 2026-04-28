@@ -20,12 +20,14 @@ import { IPageIEcommerceMallSellerApprovalRequest } from "../../../../../structu
  * @param props.body Search criteria for filtering pending seller approval requests. Includes pagination parameters (page, limit, sort), optional seller email or display name filters, and date range filters for request submission.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor administrator
- * @x-autobe-specification Query ecommerce_mall_seller_approval_requests table with status='pending' filter.
- * Apply pagination parameters: page, limit, sort by created_at (descending default).
- * Support optional filters: email (contains), display_name (contains), created_at range.
- * Join with ecommerce_mall_sellers for seller display_name and email.
- * Join with ecommerce_mall_administrators for reviewer information if status changed.
- * Return cursor-based or offset-based pagination for efficient large result sets.
+ * @x-autobe-specification Query ecommerce_mall_seller_approval_requests table
+ *   with status='pending' filter. Apply pagination parameters: page, limit,
+ *   sort by created_at (descending default). Support optional filters: email
+ *   (contains), display_name (contains), created_at range. Join with
+ *   ecommerce_mall_sellers for seller display_name and email. Join with
+ *   ecommerce_mall_administrators for reviewer information if status changed.
+ *   Return cursor-based or offset-based pagination for efficient large result
+ *   sets.
  *
  * Validation rules:
  * - Only administrators can access this endpoint (authorization check required)

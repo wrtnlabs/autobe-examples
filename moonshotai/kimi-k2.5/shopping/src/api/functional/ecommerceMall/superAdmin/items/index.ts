@@ -25,7 +25,8 @@ import { IPageIEcommerceMallOrderItem } from "../../../../structures/IPageIEcomm
  * @param props.itemId Unique identifier of the order item to retrieve (UUID format)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor superAdmin
- * @x-autobe-specification Query the ecommerce_mall_order_items table by primary key (id).
+ * @x-autobe-specification Query the ecommerce_mall_order_items table by primary
+ *   key (id).
  *
  * 1. Validate that the itemId parameter is a valid UUID format
  * 2. Retrieve the order item record from the database
@@ -133,7 +134,8 @@ export namespace at {
  * @param props.body Fields to update on the order item, including status for administrative actions
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor superAdmin
- * @x-autobe-specification Validate the order item exists and belongs to the requesting user/admin based on authorization rules.
+ * @x-autobe-specification Validate the order item exists and belongs to the
+ *   requesting user/admin based on authorization rules.
  *
  * If status is being updated, validate the transition is valid:
  * - To 'cancelled': current status must be 'paid', decrement stock quantity for the variant
@@ -244,7 +246,8 @@ export namespace update {
  * @param props.body Search criteria and pagination parameters for filtering order items
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor superAdmin
- * @x-autobe-specification Query ecommerce_mall_order_items table with pagination and filtering support.
+ * @x-autobe-specification Query ecommerce_mall_order_items table with
+ *   pagination and filtering support.
  *
  * Join with related tables to provide complete information:
  * - Join ecommerce_mall_products to get product names

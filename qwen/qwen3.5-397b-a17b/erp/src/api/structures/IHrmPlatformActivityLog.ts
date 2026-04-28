@@ -17,8 +17,9 @@ export type IHrmPlatformActivityLog = {
    *
    * Auto-generated UUID assigned when the activity log is created. Used to retrieve individual log entries via the GET /hrmPlatform/member/activity-logs/{activityLogId} endpoint.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from hrm_platform_activity_logs.id. UUID format primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_activity_logs.id. UUID format primary key.
    */
   id: string & tags.Format<"uuid">;
 
@@ -27,8 +28,10 @@ export type IHrmPlatformActivityLog = {
    *
    * Examples include 'employee.invited', 'employee.deactivated', 'contract.created', 'project.archived', 'task.status_changed', 'timesheet.approved', 'role.assigned'. Used for filtering and grouping audit events by action category.
    *
-   * @x-autobe-database-schema-property action_type
-   * @x-autobe-specification Direct mapping from hrm_platform_activity_logs.action_type. Dot-notation string format (domain.action).
+     * @x-autobe-database-schema-property action_type
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_activity_logs.action_type. Dot-notation string format
+     *   (domain.action).
    */
   actionType: string;
 
@@ -37,8 +40,10 @@ export type IHrmPlatformActivityLog = {
    *
    * Common values include 'employee', 'contract', 'project', 'task', 'timesheet', 'role'. Enables filtering logs by entity type to find all actions related to a specific kind of record.
    *
-   * @x-autobe-database-schema-property target_entity_type
-   * @x-autobe-specification Direct mapping from hrm_platform_activity_logs.target_entity_type. String identifying the affected entity type.
+     * @x-autobe-database-schema-property target_entity_type
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_activity_logs.target_entity_type. String identifying the
+     *   affected entity type.
    */
   targetEntityType: string;
 
@@ -47,8 +52,10 @@ export type IHrmPlatformActivityLog = {
    *
    * The ID format depends on the targetEntityType. Allows navigating to the affected record when it still exists. For example, if targetEntityType is 'employee', this field contains the employee's UUID.
    *
-   * @x-autobe-database-schema-property target_entity_id
-   * @x-autobe-specification Direct mapping from hrm_platform_activity_logs.target_entity_id. UUID format referencing the affected entity instance.
+     * @x-autobe-database-schema-property target_entity_id
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_activity_logs.target_entity_id. UUID format referencing
+     *   the affected entity instance.
    */
   targetEntityId: string & tags.Format<"uuid">;
 
@@ -57,8 +64,10 @@ export type IHrmPlatformActivityLog = {
    *
    * Contains contextual information such as old/new values, reasons, or additional attributes. Examples: '{"old_status":"draft","new_status":"submitted"}' for status changes, or '{"email":"user@example.com"}' for invitations. Parse as JSON to access individual fields.
    *
-   * @x-autobe-database-schema-property details
-   * @x-autobe-specification Direct mapping from hrm_platform_activity_logs.details. JSON-like string containing structured metadata about the action.
+     * @x-autobe-database-schema-property details
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_activity_logs.details. JSON-like string containing
+     *   structured metadata about the action.
    */
   details: string;
 
@@ -67,8 +76,10 @@ export type IHrmPlatformActivityLog = {
    *
    * Automatically set when the activity log entry is created. Used for chronological ordering and date range filtering in audit log queries. Format: ISO 8601 date-time string (e.g., '2024-01-15T10:30:00Z').
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from hrm_platform_activity_logs.created_at. ISO 8601 date-time format with timezone.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_activity_logs.created_at. ISO 8601 date-time format with
+     *   timezone.
    */
   createdAt: string & tags.Format<"date-time">;
 
@@ -77,8 +88,10 @@ export type IHrmPlatformActivityLog = {
    *
    * All activity logs are scoped to a specific organization for multi-tenancy data isolation. Contains essential organization identification fields: id, name, currency, timezone. Used to verify the log belongs to the user's current organization context.
    *
-   * @x-autobe-database-schema-property organization
-   * @x-autobe-specification Relation mapping via hrm_platform_organization_id FK. JOIN to hrm_platform_organizations table, returning IHrmPlatformOrganization.ISummary DTO.
+     * @x-autobe-database-schema-property organization
+     * @x-autobe-specification Relation mapping via hrm_platform_organization_id
+     *   FK. JOIN to hrm_platform_organizations table, returning
+     *   IHrmPlatformOrganization.ISummary DTO.
    */
   organization: IHrmPlatformOrganization.ISummary;
 
@@ -87,8 +100,10 @@ export type IHrmPlatformActivityLog = {
    *
    * Captures the actor identity for audit trail purposes. Contains member identification fields such as id and email. Allows tracking which user executed each action recorded in the audit log.
    *
-   * @x-autobe-database-schema-property member
-   * @x-autobe-specification Relation mapping via hrm_platform_member_id FK. JOIN to hrm_platform_members table, returning IHrmPlatformMember.ISummary DTO.
+     * @x-autobe-database-schema-property member
+     * @x-autobe-specification Relation mapping via hrm_platform_member_id FK.
+     *   JOIN to hrm_platform_members table, returning
+     *   IHrmPlatformMember.ISummary DTO.
    */
   member: IHrmPlatformMember.ISummary;
 };
@@ -106,7 +121,9 @@ export namespace IHrmPlatformActivityLog {
      *
      * Performs a case-insensitive search across multiple columns to find relevant activity log entries. Useful for finding specific actions or entities without knowing the exact action type or filtering criteria.
      *
-     * @x-autobe-specification Text search across action_type, target_entity_type, and details columns using LIKE query. Not a direct DB column mapping - implements multi-field search logic.
+         * @x-autobe-specification Text search across action_type,
+         *   target_entity_type, and details columns using LIKE query. Not a
+         *   direct DB column mapping - implements multi-field search logic.
      */
     search?: string | undefined;
 
@@ -115,8 +132,11 @@ export namespace IHrmPlatformActivityLog {
      *
      * Narrows results to a specific category of logged actions. Common values include employee:invite, employee:deactivate, employee:reactivate, contract:create, contract:edit, timesheet:submit, timesheet:approve, timesheet:reject, task:status-change, project:create, project:archive, project:complete, project:delete, role:assign, role:change.
      *
-     * @x-autobe-database-schema-property action_type
-     * @x-autobe-specification Direct mapping from hrm_platform_activity_logs.action_type. Filters by exact match on action type (e.g., employee:invite, contract:create, timesheet:approve).
+         * @x-autobe-database-schema-property action_type
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_activity_logs.action_type. Filters by exact match on
+         *   action type (e.g., employee:invite, contract:create,
+         *   timesheet:approve).
      */
     actionType?: string | undefined;
 
@@ -125,8 +145,10 @@ export namespace IHrmPlatformActivityLog {
      *
      * Restricts results to activity log entries where the specified user was the actor. Useful for auditing actions by a specific individual. Must be a valid member UUID.
      *
-     * @x-autobe-database-schema-property hrm_platform_member_id
-     * @x-autobe-specification Maps to hrm_platform_activity_logs.hrm_platform_member_id. Filters activity logs by the member who performed the action. Expects UUID format.
+         * @x-autobe-database-schema-property hrm_platform_member_id
+         * @x-autobe-specification Maps to
+         *   hrm_platform_activity_logs.hrm_platform_member_id. Filters activity
+         *   logs by the member who performed the action. Expects UUID format.
      */
     userId?: (string & tags.Format<"uuid">) | undefined;
 
@@ -135,7 +157,9 @@ export namespace IHrmPlatformActivityLog {
      *
      * Sets the start of the date range for filtering activity logs. All entries with created_at on or after this date will be included. Use ISO date format (YYYY-MM-DD).
      *
-     * @x-autobe-specification Computed filter parameter. Applies >= filter on hrm_platform_activity_logs.created_at. Expects date format (YYYY-MM-DD), inclusive of the specified date.
+         * @x-autobe-specification Computed filter parameter. Applies >= filter
+         *   on hrm_platform_activity_logs.created_at. Expects date format
+         *   (YYYY-MM-DD), inclusive of the specified date.
      */
     dateFrom?: (string & tags.Format<"date">) | undefined;
 
@@ -144,7 +168,9 @@ export namespace IHrmPlatformActivityLog {
      *
      * Sets the end of the date range for filtering activity logs. All entries with created_at on or before this date will be included. Use ISO date format (YYYY-MM-DD).
      *
-     * @x-autobe-specification Computed filter parameter. Applies <= filter on hrm_platform_activity_logs.created_at. Expects date format (YYYY-MM-DD), inclusive of the specified date.
+         * @x-autobe-specification Computed filter parameter. Applies <= filter
+         *   on hrm_platform_activity_logs.created_at. Expects date format
+         *   (YYYY-MM-DD), inclusive of the specified date.
      */
     dateTo?: (string & tags.Format<"date">) | undefined;
 
@@ -153,7 +179,9 @@ export namespace IHrmPlatformActivityLog {
      *
      * Specifies which page of results to retrieve. Page numbering starts from 1, so the first page is page 1. Used in combination with the limit parameter to control result set size.
      *
-     * @x-autobe-specification Pagination control parameter. 1-indexed page number. Defaults to 1 if not provided. Used with limit to calculate OFFSET for SQL query.
+         * @x-autobe-specification Pagination control parameter. 1-indexed page
+         *   number. Defaults to 1 if not provided. Used with limit to calculate
+         *   OFFSET for SQL query.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -162,7 +190,9 @@ export namespace IHrmPlatformActivityLog {
      *
      * Controls how many activity log entries are returned in a single response. Higher values reduce the number of API calls needed but increase response size. Capped at 100 for performance.
      *
-     * @x-autobe-specification Pagination control parameter. Number of items per page. Defaults to 20, maximum 100. Used with page to calculate LIMIT for SQL query.
+         * @x-autobe-specification Pagination control parameter. Number of items
+         *   per page. Defaults to 20, maximum 100. Used with page to calculate
+         *   LIMIT for SQL query.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -182,8 +212,9 @@ export namespace IHrmPlatformActivityLog {
      *
      * Auto-generated UUID assigned when the log entry is created. Used for referencing specific audit trail records.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from hrm_platform_activity_logs.id. UUID format.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_activity_logs.id. UUID format.
      */
     id: string & tags.Format<"uuid">;
 
@@ -192,8 +223,10 @@ export namespace IHrmPlatformActivityLog {
      *
      * Examples include employee.invited, employee.deactivated, contract.created, project.archived, task.status_changed, timesheet.approved, timesheet.rejected, role.assigned. Used for filtering and grouping audit events by action category.
      *
-     * @x-autobe-database-schema-property action_type
-     * @x-autobe-specification Direct mapping from hrm_platform_activity_logs.action_type. Dot-notation format (domain.action).
+         * @x-autobe-database-schema-property action_type
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_activity_logs.action_type. Dot-notation format
+         *   (domain.action).
      */
     actionType: string;
 
@@ -202,8 +235,10 @@ export namespace IHrmPlatformActivityLog {
      *
      * Common values include employee, contract, project, task, timesheet, role. Enables filtering logs by the type of entity that was modified or acted upon.
      *
-     * @x-autobe-database-schema-property target_entity_type
-     * @x-autobe-specification Direct mapping from hrm_platform_activity_logs.target_entity_type. Identifies the entity type affected by the action.
+         * @x-autobe-database-schema-property target_entity_type
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_activity_logs.target_entity_type. Identifies the
+         *   entity type affected by the action.
      */
     targetEntityType: string;
 
@@ -212,8 +247,10 @@ export namespace IHrmPlatformActivityLog {
      *
      * The ID format depends on the target_entity_type. Allows navigating to the affected record when it still exists. Useful for audit trail navigation and debugging.
      *
-     * @x-autobe-database-schema-property target_entity_id
-     * @x-autobe-specification Direct mapping from hrm_platform_activity_logs.target_entity_id. UUID format referencing the affected entity instance.
+         * @x-autobe-database-schema-property target_entity_id
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_activity_logs.target_entity_id. UUID format
+         *   referencing the affected entity instance.
      */
     targetEntityId: string & tags.Format<"uuid">;
 
@@ -222,8 +259,10 @@ export namespace IHrmPlatformActivityLog {
      *
      * Contains contextual information such as old/new values, reasons, or additional attributes. Examples: {"old_status":"draft","new_status":"submitted"} for status changes, or {"email":"user@example.com"} for invitation events. Parsing required to extract individual fields.
      *
-     * @x-autobe-database-schema-property details
-     * @x-autobe-specification Direct mapping from hrm_platform_activity_logs.details. JSON-like string containing contextual information about the action.
+         * @x-autobe-database-schema-property details
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_activity_logs.details. JSON-like string containing
+         *   contextual information about the action.
      */
     details: string;
 
@@ -232,8 +271,10 @@ export namespace IHrmPlatformActivityLog {
      *
      * Automatically set when the activity log entry is created. Used for chronological ordering and date range filtering in audit log queries. Format follows ISO 8601 standard with timezone information.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from hrm_platform_activity_logs.created_at. ISO 8601 date-time format with timezone.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_activity_logs.created_at. ISO 8601 date-time format
+         *   with timezone.
      */
     createdAt: string & tags.Format<"date-time">;
 
@@ -242,8 +283,11 @@ export namespace IHrmPlatformActivityLog {
      *
      * References the authenticated user account that triggered the audit event. Contains member identification information including email and account status. Essential for accountability and audit trail purposes.
      *
-     * @x-autobe-database-schema-property member
-     * @x-autobe-specification Relation mapping via JOIN from hrm_platform_activity_logs.hrm_platform_member_id to hrm_platform_members.id. Returns IHrmPlatformMember.ISummary with member identification fields.
+         * @x-autobe-database-schema-property member
+         * @x-autobe-specification Relation mapping via JOIN from
+         *   hrm_platform_activity_logs.hrm_platform_member_id to
+         *   hrm_platform_members.id. Returns IHrmPlatformMember.ISummary with
+         *   member identification fields.
      */
     member: IHrmPlatformMember.ISummary;
 
@@ -252,8 +296,12 @@ export namespace IHrmPlatformActivityLog {
      *
      * All activity logs are scoped to a specific organization for multi-tenancy data isolation. Contains organization identification information including name and settings. Ensures users only see audit events from their current organization context.
      *
-     * @x-autobe-database-schema-property organization
-     * @x-autobe-specification Relation mapping via JOIN from hrm_platform_activity_logs.hrm_platform_organization_id to hrm_platform_organizations.id. Returns IHrmPlatformOrganization.ISummary with organization identification fields.
+         * @x-autobe-database-schema-property organization
+         * @x-autobe-specification Relation mapping via JOIN from
+         *   hrm_platform_activity_logs.hrm_platform_organization_id to
+         *   hrm_platform_organizations.id. Returns
+         *   IHrmPlatformOrganization.ISummary with organization identification
+         *   fields.
      */
     organization: IHrmPlatformOrganization.ISummary;
   };

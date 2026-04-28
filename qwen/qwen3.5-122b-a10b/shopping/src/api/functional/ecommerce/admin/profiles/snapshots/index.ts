@@ -29,7 +29,8 @@ import { IPageIEcommerceSellerSnapshot } from "../../../../../structures/IPageIE
  * @param props.profileId UUID of the seller profile whose snapshot history to retrieve. Must belong to an existing seller account.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Query ecommerce_seller_snapshots table by seller profile ID with pagination support.
+ * @x-autobe-specification Query ecommerce_seller_snapshots table by seller
+ *   profile ID with pagination support.
  *
  * Authorization checks:
  * - Verify authenticated user is either the profile owner (seller) or has admin privileges

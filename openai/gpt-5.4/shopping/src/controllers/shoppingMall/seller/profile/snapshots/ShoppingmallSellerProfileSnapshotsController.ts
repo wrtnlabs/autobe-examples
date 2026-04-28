@@ -26,9 +26,14 @@ export class ShoppingmallSellerProfileSnapshotsController {
    *
    * @param connection
    * @param body Seller profile snapshot history query options
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Resolve the authenticated seller from the session context and load that seller's single active seller profile from `shopping_mall_seller_profiles` using the unique foreign key `shopping_mall_seller_id`. Reject the request if there is no authenticated seller context or if no seller profile exists for the authenticated seller.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Resolve the authenticated seller from the session
+     *   context and load that seller's single active seller profile from
+     *   `shopping_mall_seller_profiles` using the unique foreign key
+     *   `shopping_mall_seller_id`. Reject the request if there is no
+     *   authenticated seller context or if no seller profile exists for the
+     *   authenticated seller.
    *
    * Query `shopping_mall_seller_profile_snapshots` for rows whose `shopping_mall_seller_profile_id` matches the resolved seller profile. Build the query from `IShoppingMallSellerProfileSnapshot.IRequest`, supporting pagination, deterministic sorting, and optional filters that are grounded in actual schema fields only. Valid searchable fields include `shop_name`, `shop_description`, `changed_summary`, `changed_at`, and `created_at`. Prefer default ordering by `changed_at` descending and secondarily by `id` descending to keep stable pagination when timestamps are identical.
    *
@@ -70,9 +75,11 @@ export class ShoppingmallSellerProfileSnapshotsController {
    *
    * @param connection
    * @param snapshotId Target seller profile snapshot identifier
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Implement this operation as a read-only detail query against `shopping_mall_seller_profile_snapshots` filtered by the primary key `id = :snapshotId`.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Implement this operation as a read-only detail
+     *   query against `shopping_mall_seller_profile_snapshots` filtered by the
+     *   primary key `id = :snapshotId`.
    *
    * After loading the snapshot row, join or separately load the related `shopping_mall_seller_profiles` row through `shopping_mall_seller_profile_id` to perform authorization checks. Allow access only when the authenticated actor is the seller who owns the related seller profile or when the authenticated actor is an administrator with oversight authority. Do not allow unrelated sellers, customers, or anonymous users to read the record.
    *

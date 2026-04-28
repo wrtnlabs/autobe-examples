@@ -8,24 +8,31 @@ export type IShoppingMallMemberSessionSwitchToMemberRequest = {
   /**
    * The URL (attempted destination) associated with the session switch request. Stored on the member session for auditing and security context.
    *
-   * @x-autobe-database-schema-property href
-   * @x-autobe-specification Persist requestBody.href as-is into shopping_mall_member_sessions.href when creating/updating the member session during the switch-to-member flow.
+     * @x-autobe-database-schema-property href
+     * @x-autobe-specification Persist requestBody.href as-is into
+     *   shopping_mall_member_sessions.href when creating/updating the member
+     *   session during the switch-to-member flow.
    */
   href: string & tags.Format<"uri">;
 
   /**
    * The HTTP referrer URL associated with the session switch request. Stored on the member session for auditing and security context.
    *
-   * @x-autobe-database-schema-property referrer
-   * @x-autobe-specification Persist requestBody.referrer as-is into shopping_mall_member_sessions.referrer when creating/updating the member session during the switch-to-member flow.
+     * @x-autobe-database-schema-property referrer
+     * @x-autobe-specification Persist requestBody.referrer as-is into
+     *   shopping_mall_member_sessions.referrer when creating/updating the
+     *   member session during the switch-to-member flow.
    */
   referrer: string & tags.Format<"uri">;
 
   /**
    * Client IP address to associate with the new member session for auditing/security.
    *
-   * @x-autobe-database-schema-property ip
-   * @x-autobe-specification If requestBody.ip is provided, persist it as-is into shopping_mall_member_sessions.ip. If omitted by the client at runtime, the server must determine a best-effort client IP and persist the resolved value into shopping_mall_member_sessions.ip.
+     * @x-autobe-database-schema-property ip
+     * @x-autobe-specification If requestBody.ip is provided, persist it as-is
+     *   into shopping_mall_member_sessions.ip. If omitted by the client at
+     *   runtime, the server must determine a best-effort client IP and persist
+     *   the resolved value into shopping_mall_member_sessions.ip.
    */
   ip?: (string & tags.Format<"ipv4">) | undefined;
 };

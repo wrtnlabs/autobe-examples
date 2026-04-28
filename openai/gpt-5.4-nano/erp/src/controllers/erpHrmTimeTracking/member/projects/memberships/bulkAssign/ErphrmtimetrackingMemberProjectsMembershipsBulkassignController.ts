@@ -31,9 +31,9 @@ export class ErphrmtimetrackingMemberProjectsMembershipsBulkassignController {
    * @param connection
    * @param projectId Target project identifier to which employees will be assigned.
    * @param body Bulk assignment payload specifying the employees to add to the project and their `membership_role` for each assignment.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Realize implementation steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Realize implementation steps:
    *
    * 1) Authentication & authorization
    * - Resolve the caller’s selected organization context from the session.

@@ -25,7 +25,13 @@ import { ITodoAppMember } from "../../../../structures/ITodoAppMember";
  * @param props.body Registration credentials for creating a member account.
  * @x-autobe-authorization-type join
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implement member registration as a public authentication endpoint. Validate that the request body includes the email identity and password required by the registration requirements. Normalize the email consistently for uniqueness checks, query `todo_app_members` by email, and reject the request when an active account with the same email already exists. Also reject requests with missing required credential values.
+ * @x-autobe-specification Implement member registration as a public
+ *   authentication endpoint. Validate that the request body includes the email
+ *   identity and password required by the registration requirements. Normalize
+ *   the email consistently for uniqueness checks, query `todo_app_members` by
+ *   email, and reject the request when an active account with the same email
+ *   already exists. Also reject requests with missing required credential
+ *   values.
  *
  * Within a transaction, create a new `todo_app_members` row with a generated UUID, the submitted email, a securely hashed password stored in `password_hash`, `email_verified` initialized according to the product policy, and current timestamps for `created_at` and `updated_at`. Immediately create an authenticated session record in `todo_app_member_sessions` using connection context such as client IP, href, referrer, and an expiration timestamp so the authorized response can be issued without a separate login round-trip.
  *
@@ -128,7 +134,14 @@ export namespace join {
  * @param props.body Login credentials for authenticating an existing member account.
  * @x-autobe-authorization-type login
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implement member login as an authentication endpoint for the member actor. Validate presence of the login credentials defined by `ITodoAppMember.ILogin`, load the target row from `todo_app_members` by email, and reject the request when no active member exists or when `deleted_at` indicates the account is deleted. Compare the submitted password against `password_hash` using the configured password hashing algorithm and reject invalid credentials without disclosing whether email or password was incorrect.
+ * @x-autobe-specification Implement member login as an authentication endpoint
+ *   for the member actor. Validate presence of the login credentials defined by
+ *   `ITodoAppMember.ILogin`, load the target row from `todo_app_members` by
+ *   email, and reject the request when no active member exists or when
+ *   `deleted_at` indicates the account is deleted. Compare the submitted
+ *   password against `password_hash` using the configured password hashing
+ *   algorithm and reject invalid credentials without disclosing whether email
+ *   or password was incorrect.
  *
  * On successful credential validation, create a fresh row in `todo_app_member_sessions` with a generated UUID, the authenticated member ID, request-context IP, href, referrer, creation time, and expiration time. Generate access and refresh tokens bound to the member and the newly created session so refresh flows can later validate session state and expiration. Update any relevant audit timestamps only where appropriate.
  *
@@ -231,7 +244,12 @@ export namespace login {
  * @param props.body Refresh token payload for renewing member authorization.
  * @x-autobe-authorization-type refresh
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implement token refresh as an authorization endpoint for the member actor that accepts `ITodoAppMember.IRefresh`. Validate the refresh credential, extract or resolve the associated session identity, and load the corresponding row from `todo_app_member_sessions`. Reject the request if the session does not exist, belongs to a deleted member, or has `expired_at` in the past.
+ * @x-autobe-specification Implement token refresh as an authorization endpoint
+ *   for the member actor that accepts `ITodoAppMember.IRefresh`. Validate the
+ *   refresh credential, extract or resolve the associated session identity, and
+ *   load the corresponding row from `todo_app_member_sessions`. Reject the
+ *   request if the session does not exist, belongs to a deleted member, or has
+ *   `expired_at` in the past.
  *
  * Join from `todo_app_member_sessions.todo_app_member_id` to `todo_app_members.id` to confirm the member still exists and is not deleted via `deleted_at`. Rotate or renew session-linked credentials according to the token strategy. If rotating refresh tokens, update session-related state indirectly through token issuance policy or create a replacement session if that is the implementation standard; in either case keep behavior aligned with the stored session expiration lifecycle.
  *

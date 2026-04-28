@@ -21,9 +21,13 @@ export class MallplatformAdministratorApprovalrequestsController {
    * @param connection
    * @param approvalRequestId The administrator approval request identifier in UUID format.
    * @param body The mutable review fields used to record the approval or rejection decision for an administrator approval request.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Load the administrator approval request by approvalRequestId and verify that it exists. Enforce a pending-only update rule; completed requests must not be overwritten. Apply only the mutable review fields that exist in the actual schema, and keep the applicant's original reason intact.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor administrator
+     * @x-autobe-specification Load the administrator approval request by
+     *   approvalRequestId and verify that it exists. Enforce a pending-only
+     *   update rule; completed requests must not be overwritten. Apply only the
+     *   mutable review fields that exist in the actual schema, and keep the
+     *   applicant's original reason intact.
    *
    * Perform the update transactionally. If the decision is approved, persist the approval outcome and ensure the applicant receives regular administrator access. If the decision is rejected, persist the rejection outcome and reason so the request remains available as immutable governance history. Do not delete the record or create a replacement record.
    *

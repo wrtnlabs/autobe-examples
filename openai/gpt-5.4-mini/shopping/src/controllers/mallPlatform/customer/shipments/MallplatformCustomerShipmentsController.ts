@@ -22,9 +22,13 @@ export class MallplatformCustomerShipmentsController {
    *
    * @param connection
    * @param body Shipment search criteria including pagination, sorting, and shipment-related filters.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Query mall_platform_shipments as the primary table and join mall_platform_shipment_items plus mall_platform_order_items when filtering by order scope, seller scope, or item membership. Apply pagination, keyword search, and sorting from the request body, then return shipment summary rows only.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Query mall_platform_shipments as the primary
+     *   table and join mall_platform_shipment_items plus
+     *   mall_platform_order_items when filtering by order scope, seller scope,
+     *   or item membership. Apply pagination, keyword search, and sorting from
+     *   the request body, then return shipment summary rows only.
    *
    * Enforce actor-based visibility in the query layer: customers may only read shipments related to their own orders, sellers may only read shipments containing their own items, and administrators may read all shipments. Reject unsupported criteria, invalid page values, and impossible sort requests with validation errors rather than silently ignoring them.
    *
@@ -58,9 +62,12 @@ export class MallplatformCustomerShipmentsController {
    *
    * @param connection
    * @param shipmentId The shipment UUID identifier (global scope).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Load the shipment by primary key and include its shipmentItems relation, with each linked orderItem and the minimal nested order-item references needed for display. Use a single transaction-free read query because this is a pure retrieval operation.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Load the shipment by primary key and include its
+     *   shipmentItems relation, with each linked orderItem and the minimal
+     *   nested order-item references needed for display. Use a single
+     *   transaction-free read query because this is a pure retrieval operation.
    *
    * Validate that shipmentId is a UUID and return 404 when no shipment exists for the given id. Do not infer or compute shipment membership from orders; use the persisted shipment-item junction records. The response must expose current carrier_name, tracking_number, tracking_url, status, shipped_at, delivered_at, created_at, and updated_at values from mall_platform_shipments.
    *

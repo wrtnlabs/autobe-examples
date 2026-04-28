@@ -12,11 +12,11 @@ import { IEcommerceMallProductVariant } from "./IEcommerceMallProductVariant";
  */
 export type IEcommerceMallInventoryRecord = {
   /**
-   * @x-autobe-database-schema-property id
+     * @x-autobe-database-schema-property id
    */
   id: string & tags.Format<"uuid">;
   /**
-   * @x-autobe-database-schema-property quantity_change
+     * @x-autobe-database-schema-property quantity_change
    */
   quantity_change: number &
     tags.Type<"int32"> &
@@ -26,36 +26,39 @@ export type IEcommerceMallInventoryRecord = {
   /**
    * Category of stock movement operation.
    *
-   * @x-autobe-specification Direct mapping from ecommerce_mall_inventory_records.operation_type. String column storing operation type value. Enum constraints handled by application validation.
-   * @x-autobe-database-schema-property operation_type
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_inventory_records.operation_type. String column storing
+     *   operation type value. Enum constraints handled by application
+     *   validation.
+     * @x-autobe-database-schema-property operation_type
    */
   operation_type: string;
   /**
-   * @x-autobe-database-schema-property reference_id
+     * @x-autobe-database-schema-property reference_id
    */
   reference_id: (string & tags.Format<"uuid">) | null;
   /**
-   * @x-autobe-database-schema-property notes
+     * @x-autobe-database-schema-property notes
    */
   notes: string | null;
   /**
-   * @x-autobe-database-schema-property created_at
+     * @x-autobe-database-schema-property created_at
    */
   created_at: string & tags.Format<"date-time">;
   /**
-   * @x-autobe-database-schema-property updated_at
+     * @x-autobe-database-schema-property updated_at
    */
   updated_at: string & tags.Format<"date-time">;
   /**
-   * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-database-schema-property deleted_at
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
   /**
-   * @x-autobe-database-schema-property ecommerce_mall_product_variant_id
+     * @x-autobe-database-schema-property ecommerce_mall_product_variant_id
    */
   ecommerce_mall_product_variant_id: string & tags.Format<"uuid">;
   /**
-   * @x-autobe-database-schema-property productVariant
+     * @x-autobe-database-schema-property productVariant
    */
   productVariant: IEcommerceMallProductVariant.ISummary;
 };
@@ -77,31 +80,31 @@ export namespace IEcommerceMallInventoryRecord {
    */
   export type ISummary = {
     /**
-     * @x-autobe-database-schema-property id
+         * @x-autobe-database-schema-property id
      */
     id: string & tags.Format<"uuid">;
     /**
-     * @x-autobe-database-schema-property quantity_change
+         * @x-autobe-database-schema-property quantity_change
      */
     quantity_change: number & tags.Type<"int32">;
     /**
-     * @x-autobe-database-schema-property operation_type
+         * @x-autobe-database-schema-property operation_type
      */
     operation_type: string;
     /**
-     * @x-autobe-database-schema-property created_at
+         * @x-autobe-database-schema-property created_at
      */
     created_at: string & tags.Format<"date-time">;
     /**
-     * @x-autobe-database-schema-property reference_id
+         * @x-autobe-database-schema-property reference_id
      */
     reference_id: (string & tags.Format<"uuid">) | null;
     /**
-     * @x-autobe-database-schema-property notes
+         * @x-autobe-database-schema-property notes
      */
     notes: string | null;
     /**
-     * @x-autobe-database-schema-property productVariant
+         * @x-autobe-database-schema-property productVariant
      */
     productVariant: IEcommerceMallProductVariant.ISummary;
   };
@@ -128,27 +131,27 @@ export namespace IEcommerceMallInventoryRecord {
    */
   export type IRequest = {
     /**
-     * @x-autobe-database-schema-property operation_type
+         * @x-autobe-database-schema-property operation_type
      */
     operationType?: string | undefined;
     /**
-     * @x-autobe-database-schema-property created_at
+         * @x-autobe-database-schema-property created_at
      */
     fromDate?: (string & tags.Format<"date-time">) | undefined;
     /**
-     * @x-autobe-database-schema-property created_at
+         * @x-autobe-database-schema-property created_at
      */
     toDate?: (string & tags.Format<"date-time">) | undefined;
     /**
-     * @x-autobe-database-schema-property quantity_change
+         * @x-autobe-database-schema-property quantity_change
      */
     minQuantity?: (number & tags.Type<"int32">) | undefined;
     /**
-     * @x-autobe-database-schema-property quantity_change
+         * @x-autobe-database-schema-property quantity_change
      */
     maxQuantity?: (number & tags.Type<"int32">) | undefined;
     /**
-     * @x-autobe-database-schema-property notes
+         * @x-autobe-database-schema-property notes
      */
     search: string | null;
     from?: string | undefined;
@@ -165,7 +168,8 @@ export namespace IEcommerceMallInventoryRecord {
      * Requesting a page beyond the available range returns an empty data array
      * with valid pagination metadata reflecting the actual totals.
      *
-     * @x-autobe-specification 1-indexed page number. Defaults to 1 if not provided.
+         * @x-autobe-specification 1-indexed page number. Defaults to 1 if not
+         *   provided.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };

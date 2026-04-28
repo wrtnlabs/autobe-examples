@@ -21,9 +21,10 @@ export class ShoppingmallMemberAdmin_promotion_requestsController {
    *
    * @param connection
    * @param body Promotion request creation data containing the applicant's reason for requesting administrator privileges.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Create a new admin promotion request record in shopping_mall_admin_promotion_requests table.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Create a new admin promotion request record in
+     *   shopping_mall_admin_promotion_requests table.
    *
    * 1. Validate authenticated user is member or seller (not already admin/superAdmin)
    * 2. Check for existing pending promotion request for this user - reject if found
@@ -64,9 +65,10 @@ export class ShoppingmallMemberAdmin_promotion_requestsController {
    *
    * @param connection
    * @param requestId Unique identifier of the promotion request (UUID format).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query the shopping_mall_admin_promotion_requests table by primary key ID.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query the shopping_mall_admin_promotion_requests
+     *   table by primary key ID.
    *
    * Retrieve the full record including: id, reviewed_by_super_admin_id, actor_type, reason, status, rejection_note, created_at, updated_at.
    *

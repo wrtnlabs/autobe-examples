@@ -15,16 +15,16 @@ import { IShoppingMallGuestSession } from "./IShoppingMallGuestSession";
  */
 export type IShoppingMallGuest = {
   /**
-   * @x-autobe-database-schema-property id
+     * @x-autobe-database-schema-property id
    */
   id: string & tags.Format<"uuid">;
   /**
-   * @x-autobe-database-schema-property token
+     * @x-autobe-database-schema-property token
    */
   token: string;
   sessions: IShoppingMallGuestSession[];
   /**
-   * @x-autobe-database-schema-property created_at
+     * @x-autobe-database-schema-property created_at
    */
   created_at: string & tags.Format<"date-time">;
 };
@@ -42,7 +42,13 @@ export namespace IShoppingMallGuest {
      *
      * Exchange this token to obtain a new JWT access token and refresh token pair without re-joining. The token is invalidated after successful use (rotation). If the underlying guest session has expired, this token is no longer valid and the guest must call `POST /shoppingMall/auth/guest/join` again.
      *
-     * @x-autobe-specification The refreshToken is a server-generated opaque or signed JWT string issued at join or previous refresh time. It encodes (or references) a shopping_mall_guest_sessions.id. During refresh: validate signature → extract session id → verify session exists and expired_at > now → use it to look up shopping_mall_guests via shopping_mall_guest_id. Not stored as a plain column; the session table tracks validity via expired_at.
+         * @x-autobe-specification The refreshToken is a server-generated opaque
+         *   or signed JWT string issued at join or previous refresh time. It
+         *   encodes (or references) a shopping_mall_guest_sessions.id. During
+         *   refresh: validate signature → extract session id → verify session
+         *   exists and expired_at > now → use it to look up
+         *   shopping_mall_guests via shopping_mall_guest_id. Not stored as a
+         *   plain column; the session table tracks validity via expired_at.
      */
     refreshToken: string;
   };
@@ -56,15 +62,17 @@ export namespace IShoppingMallGuest {
     /**
      * Unique identifier of the guest record on the shopping mall platform.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_guests.id. UUID primary key of the guest record.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from shopping_mall_guests.id.
+         *   UUID primary key of the guest record.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Authorization token.
      *
-     * @x-autobe-specification Authorization token comes from the session table.
+         * @x-autobe-specification Authorization token comes from the session
+         *   table.
      */
     token: IAuthorizationToken;
     sessions: IShoppingMallGuestSession[];
@@ -72,15 +80,21 @@ export namespace IShoppingMallGuest {
     /**
      * Timestamp of when the guest record was first created on the platform.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_guests.created_at. ISO 8601 datetime of when the guest record was first created on the platform.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_guests.created_at. ISO 8601 datetime of when the
+         *   guest record was first created on the platform.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * The guest's full identity record, including their device fingerprint token, account creation timestamp, and all associated session records.
      *
-     * @x-autobe-specification Computed by loading the full IShoppingMallGuest record: SELECT * FROM shopping_mall_guests WHERE id = <guest_id>, then JOIN shopping_mall_guest_sessions on shopping_mall_guest_id = id to populate the sessions array. Returned as IShoppingMallGuest including all associated sessions.
+         * @x-autobe-specification Computed by loading the full
+         *   IShoppingMallGuest record: SELECT * FROM shopping_mall_guests WHERE
+         *   id = <guest_id>, then JOIN shopping_mall_guest_sessions on
+         *   shopping_mall_guest_id = id to populate the sessions array.
+         *   Returned as IShoppingMallGuest including all associated sessions.
      */
     guest: IShoppingMallGuest;
   };
@@ -92,31 +106,41 @@ export namespace IShoppingMallGuest {
     /**
      * The unique identifier of this guest visitor record.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_guests.id. UUID primary key, auto-generated at record creation.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from shopping_mall_guests.id.
+         *   UUID primary key, auto-generated at record creation.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * The unique device or browser fingerprint token that identifies this guest visitor. Used to associate anonymous sessions with a stable guest identity before registration or login.
      *
-     * @x-autobe-database-schema-property token
-     * @x-autobe-specification Direct mapping from shopping_mall_guests.token. A unique device or browser fingerprint string that stably identifies the anonymous visitor across requests. Has a UNIQUE constraint in the database.
+         * @x-autobe-database-schema-property token
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_guests.token. A unique device or browser fingerprint
+         *   string that stably identifies the anonymous visitor across
+         *   requests. Has a UNIQUE constraint in the database.
      */
     token: string;
 
     /**
      * The total number of JWT sessions associated with this guest visitor record. Provides a quick overview of the guest's activity level without loading full session details.
      *
-     * @x-autobe-specification Computed field: SELECT COUNT(*) FROM shopping_mall_guest_sessions WHERE shopping_mall_guest_id = shopping_mall_guests.id. Implemented via LEFT JOIN on the sessions relation. Returns 0 if the guest has no associated session records.
+         * @x-autobe-specification Computed field: SELECT COUNT(*) FROM
+         *   shopping_mall_guest_sessions WHERE shopping_mall_guest_id =
+         *   shopping_mall_guests.id. Implemented via LEFT JOIN on the sessions
+         *   relation. Returns 0 if the guest has no associated session records.
      */
     sessions_count: number & tags.Type<"int32"> & tags.Minimum<0>;
 
     /**
      * The timestamp when this guest visitor record was first created, marking the beginning of the guest's transient session lifecycle on the platform.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_guests.created_at. Stored as TIMESTAMPTZ. Marks the exact moment the guest record was first created when the anonymous visitor accessed the platform.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_guests.created_at. Stored as TIMESTAMPTZ. Marks the
+         *   exact moment the guest record was first created when the anonymous
+         *   visitor accessed the platform.
      */
     created_at: string & tags.Format<"date-time">;
   };
@@ -128,42 +152,66 @@ export namespace IShoppingMallGuest {
     /**
      * Optional filter by the guest's device or browser fingerprint token. When provided, returns only guest records whose token contains this value (partial, case-insensitive match). Leave null to retrieve guests regardless of their token value.
      *
-     * @x-autobe-specification Filter on shopping_mall_guests.token column. When non-null, applies WHERE shopping_mall_guests.token ILIKE '%:token%' (case-insensitive partial match) to narrow results to guests whose fingerprint token contains the given value. Null means no token filter is applied.
+         * @x-autobe-specification Filter on shopping_mall_guests.token column.
+         *   When non-null, applies WHERE shopping_mall_guests.token ILIKE
+         *   '%:token%' (case-insensitive partial match) to narrow results to
+         *   guests whose fingerprint token contains the given value. Null means
+         *   no token filter is applied.
      */
     token?: string | null | undefined;
 
     /**
      * Optional filter by IPv4 address. When provided, returns only guest records that have at least one associated session originating from this IP address. Useful for security auditing and identifying suspicious access patterns. Leave null to retrieve guests from any IP address.
      *
-     * @x-autobe-specification Cross-table filter against shopping_mall_guest_sessions.ip. When non-null, performs LEFT JOIN shopping_mall_guest_sessions ON shopping_mall_guest_sessions.shopping_mall_guest_id = shopping_mall_guests.id WHERE shopping_mall_guest_sessions.ip = :ip to return only guests who have at least one session from the specified IPv4 address. Null means no IP filter is applied.
+         * @x-autobe-specification Cross-table filter against
+         *   shopping_mall_guest_sessions.ip. When non-null, performs LEFT JOIN
+         *   shopping_mall_guest_sessions ON
+         *   shopping_mall_guest_sessions.shopping_mall_guest_id =
+         *   shopping_mall_guests.id WHERE shopping_mall_guest_sessions.ip = :ip
+         *   to return only guests who have at least one session from the
+         *   specified IPv4 address. Null means no IP filter is applied.
      */
     ip?: (string & tags.Format<"ipv4">) | null | undefined;
 
     /**
      * Optional lower bound for filtering guest records by their creation timestamp (inclusive). When provided, only guests created on or after this date-time are returned. Leave null to include guests created at any point in the past.
      *
-     * @x-autobe-specification Lower-bound date filter on shopping_mall_guests.created_at. When non-null, adds WHERE shopping_mall_guests.created_at >= :createdAtFrom to the query. Null means no lower-bound restriction. Combine with createdAtTo to define a closed date range window.
+         * @x-autobe-specification Lower-bound date filter on
+         *   shopping_mall_guests.created_at. When non-null, adds WHERE
+         *   shopping_mall_guests.created_at >= :createdAtFrom to the query.
+         *   Null means no lower-bound restriction. Combine with createdAtTo to
+         *   define a closed date range window.
      */
     createdAtFrom?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * Optional upper bound for filtering guest records by their creation timestamp (inclusive). When provided, only guests created on or before this date-time are returned. Leave null to include guests created at any time up to the present.
      *
-     * @x-autobe-specification Upper-bound date filter on shopping_mall_guests.created_at. When non-null, adds WHERE shopping_mall_guests.created_at <= :createdAtTo to the query. Null means no upper-bound restriction. Combine with createdAtFrom to define a closed date range window.
+         * @x-autobe-specification Upper-bound date filter on
+         *   shopping_mall_guests.created_at. When non-null, adds WHERE
+         *   shopping_mall_guests.created_at <= :createdAtTo to the query. Null
+         *   means no upper-bound restriction. Combine with createdAtFrom to
+         *   define a closed date range window.
      */
     createdAtTo?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * Page number for pagination (1-indexed). Determines which page of results to return. Defaults to page 1 when not specified. Must be a positive integer.
      *
-     * @x-autobe-specification Pagination offset control. Computes OFFSET = (page - 1) * limit in the SQL query on shopping_mall_guests. Defaults to 1 when null. Must be >= 1; values less than 1 result in a 400 Bad Request response.
+         * @x-autobe-specification Pagination offset control. Computes OFFSET =
+         *   (page - 1) * limit in the SQL query on shopping_mall_guests.
+         *   Defaults to 1 when null. Must be >= 1; values less than 1 result in
+         *   a 400 Bad Request response.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | null | undefined;
 
     /**
      * Maximum number of guest records to return per page. Defaults to 20 when not specified. Accepted range is 1 to 100.
      *
-     * @x-autobe-specification Pagination size control. Applies as LIMIT in the SQL query on shopping_mall_guests. Defaults to 20 when null. Maximum allowed value is 100; values exceeding 100 should be clamped to 100 or rejected with 400 Bad Request.
+         * @x-autobe-specification Pagination size control. Applies as LIMIT in
+         *   the SQL query on shopping_mall_guests. Defaults to 20 when null.
+         *   Maximum allowed value is 100; values exceeding 100 should be
+         *   clamped to 100 or rejected with 400 Bad Request.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -173,7 +221,11 @@ export namespace IShoppingMallGuest {
     /**
      * Sort order for the result list by creation timestamp. Use 'asc' for oldest-first ordering or 'desc' for newest-first. Defaults to descending order (most recently created guests first) when not specified.
      *
-     * @x-autobe-specification Controls the ORDER BY direction applied to shopping_mall_guests.created_at. When value is 'asc', ORDER BY created_at ASC is applied. For any other value or null, ORDER BY created_at DESC (default) is applied. Accepted string values: 'asc', 'desc'.
+         * @x-autobe-specification Controls the ORDER BY direction applied to
+         *   shopping_mall_guests.created_at. When value is 'asc', ORDER BY
+         *   created_at ASC is applied. For any other value or null, ORDER BY
+         *   created_at DESC (default) is applied. Accepted string values:
+         *   'asc', 'desc'.
      */
     sortOrder?: string | null | undefined;
   };
@@ -189,29 +241,44 @@ export namespace IShoppingMallGuest {
     /**
      * Unique device or browser fingerprint token that identifies this anonymous visitor. Used to create or reuse a stable guest identity across sessions before the visitor registers or logs in. Must be non-empty.
      *
-     * @x-autobe-database-schema-property token
-     * @x-autobe-specification Maps to shopping_mall_guests.token. Check the unique index: if a row with this token already exists, reuse that guest record's id; otherwise insert a new shopping_mall_guests row with this value. Must be non-empty (minLength: 1).
+         * @x-autobe-database-schema-property token
+         * @x-autobe-specification Maps to shopping_mall_guests.token. Check the
+         *   unique index: if a row with this token already exists, reuse that
+         *   guest record's id; otherwise insert a new shopping_mall_guests row
+         *   with this value. Must be non-empty (minLength: 1).
      */
     token: string & tags.MinLength<1>;
 
     /**
      * Full URL of the page the guest was visiting when the session was initiated. Captured as connection context and stored in the guest session record.
      *
-     * @x-autobe-specification Maps to shopping_mall_guest_sessions.href. Store the full URL of the page the guest was accessing when initiating this session. Written to the newly created shopping_mall_guest_sessions row. Required; must be a valid URI.
+         * @x-autobe-specification Maps to shopping_mall_guest_sessions.href.
+         *   Store the full URL of the page the guest was accessing when
+         *   initiating this session. Written to the newly created
+         *   shopping_mall_guest_sessions row. Required; must be a valid URI.
      */
     href: string & tags.Format<"uri">;
 
     /**
      * HTTP referrer URL indicating the source from which the guest navigated to the platform. May be an empty string if no referrer header was present. Stored in the guest session record for analytics and audit purposes.
      *
-     * @x-autobe-specification Maps to shopping_mall_guest_sessions.referrer. Store the HTTP Referer header value indicating the source page from which the guest navigated. May be an empty string if no referrer was provided. Written to the newly created shopping_mall_guest_sessions row.
+         * @x-autobe-specification Maps to
+         *   shopping_mall_guest_sessions.referrer. Store the HTTP Referer
+         *   header value indicating the source page from which the guest
+         *   navigated. May be an empty string if no referrer was provided.
+         *   Written to the newly created shopping_mall_guest_sessions row.
      */
     referrer: string;
 
     /**
      * IPv4 address of the guest visitor at the time of session creation. Optional in server-side rendering (SSR) scenarios where the client cannot directly determine its own IP; the server will detect and use the request's remote address as a fallback.
      *
-     * @x-autobe-specification Maps to shopping_mall_guest_sessions.ip. The client-provided IPv4 address of the guest visitor. Optional: if omitted or null, the server should fall back to the IP detected from the HTTP request (e.g., X-Forwarded-For or socket remote address). Written to the newly created shopping_mall_guest_sessions row.
+         * @x-autobe-specification Maps to shopping_mall_guest_sessions.ip. The
+         *   client-provided IPv4 address of the guest visitor. Optional: if
+         *   omitted or null, the server should fall back to the IP detected
+         *   from the HTTP request (e.g., X-Forwarded-For or socket remote
+         *   address). Written to the newly created shopping_mall_guest_sessions
+         *   row.
      */
     ip?: (string & tags.Format<"ipv4">) | undefined;
   };

@@ -9,47 +9,57 @@ import { ICommunityPlatformMember } from "./ICommunityPlatformMember";
  */
 export type ICommunityPlatformCommunity = {
   /**
-   * @x-autobe-database-schema-property id
+     * @x-autobe-database-schema-property id
    */
   id: string & tags.Format<"uuid">;
   /**
-   * @x-autobe-database-schema-property name
+     * @x-autobe-database-schema-property name
    */
   name: string;
   /**
-   * @x-autobe-database-schema-property description
+     * @x-autobe-database-schema-property description
    */
   description: string;
 
   /**
    * Number of members subscribed to this community.
    *
-   * @x-autobe-database-schema-property subscriber_count
-   * @x-autobe-specification Direct mapping from community_platform_communities.subscriber_count column. Integer count cached in the database and updated when subscriptions are added or removed. Used for efficient display in community lists and search results without requiring COUNT queries on subscription tables.
+     * @x-autobe-database-schema-property subscriber_count
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_communities.subscriber_count column. Integer count
+     *   cached in the database and updated when subscriptions are added or
+     *   removed. Used for efficient display in community lists and search
+     *   results without requiring COUNT queries on subscription tables.
    */
   subscriberCount: number & tags.Type<"int32">;
   /**
-   * @x-autobe-database-schema-property owner
+     * @x-autobe-database-schema-property owner
    */
   owner: ICommunityPlatformMember.ISummary;
   /**
-   * @x-autobe-database-schema-property icon
+     * @x-autobe-database-schema-property icon
    */
   icon: ICommunityPlatformFile | null;
   /**
-   * @x-autobe-database-schema-property created_at
+     * @x-autobe-database-schema-property created_at
    */
   createdAt: string & tags.Format<"date-time">;
   /**
-   * @x-autobe-database-schema-property updated_at
+     * @x-autobe-database-schema-property updated_at
    */
   updatedAt: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the community was soft-deleted, or null if active.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from community_platform_communities.deleted_at column (nullable timestamptz). Returned in response to inform API consumers of community's deletion status. When null, the community is active. When set, the community has been soft-deleted. Note: Query filters exclude soft-deleted records (deleted_at IS NULL) for normal operations, but this field remains in the response for transparency.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_communities.deleted_at column (nullable
+     *   timestamptz). Returned in response to inform API consumers of
+     *   community's deletion status. When null, the community is active. When
+     *   set, the community has been soft-deleted. Note: Query filters exclude
+     *   soft-deleted records (deleted_at IS NULL) for normal operations, but
+     *   this field remains in the response for transparency.
    */
   deletedAt: (string & tags.Format<"date-time">) | null;
 };
@@ -61,24 +71,37 @@ export namespace ICommunityPlatformCommunity {
     /**
      * Unique name of the community used for discovery and search. Must be unique across all communities in the platform.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping to community_platform_communities.name column. Must pass @@unique([name]) constraint validation - checks uniqueness across all non-deleted communities (deleted_at IS NULL) before insert. String type with no explicit length constraint in DB.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping to
+         *   community_platform_communities.name column. Must pass
+         *   @@unique([name]) constraint validation - checks uniqueness across
+         *   all non-deleted communities (deleted_at IS NULL) before insert.
+         *   String type with no explicit length constraint in DB.
      */
     name: string;
 
     /**
      * Text description of the community's purpose and content themes for potential subscribers.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping to community_platform_communities.description column. Required string field with no explicit length constraint. Stores text describing the community's purpose and content themes.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping to
+         *   community_platform_communities.description column. Required string
+         *   field with no explicit length constraint. Stores text describing
+         *   the community's purpose and content themes.
      */
     description: string;
 
     /**
      * Optional icon image file for the community's visual representation. References an uploaded file by its unique identifier.
      *
-     * @x-autobe-database-schema-property icon_file_id
-     * @x-autobe-specification Maps to community_platform_communities.icon_file_id column (nullable UUID FK). If provided, validates that file exists in community_platform_files table with owner_type='community_icon'. The icon relation joins to community_platform_files but user provides the FK scalar, not the object. Null allowed - icon is optional.
+         * @x-autobe-database-schema-property icon_file_id
+         * @x-autobe-specification Maps to
+         *   community_platform_communities.icon_file_id column (nullable UUID
+         *   FK). If provided, validates that file exists in
+         *   community_platform_files table with owner_type='community_icon'.
+         *   The icon relation joins to community_platform_files but user
+         *   provides the FK scalar, not the object. Null allowed - icon is
+         *   optional.
      */
     iconFileId?: (string & tags.Format<"uuid">) | null | undefined;
   };
@@ -90,24 +113,37 @@ export namespace ICommunityPlatformCommunity {
     /**
      * Unique name of the community used for discovery and search. Must be unique across all communities on the platform.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping to community_platform_communities.name. Must validate uniqueness across all communities excluding current community ID. Required field with minimum length of 1 character. Update operation should check @@unique([name]) constraint while filtering out the current community being updated.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping to
+         *   community_platform_communities.name. Must validate uniqueness
+         *   across all communities excluding current community ID. Required
+         *   field with minimum length of 1 character. Update operation should
+         *   check @@unique([name]) constraint while filtering out the current
+         *   community being updated.
      */
     name: string & tags.MinLength<1>;
 
     /**
      * Text description of the community's purpose and content themes. Explains to potential subscribers what kind of content they can expect.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping to community_platform_communities.description. Required field with minimum length of 1 character. No uniqueness constraint. Plain text describing the community's purpose and content themes.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping to
+         *   community_platform_communities.description. Required field with
+         *   minimum length of 1 character. No uniqueness constraint. Plain text
+         *   describing the community's purpose and content themes.
      */
     description: string & tags.MinLength<1>;
 
     /**
      * Optional reference to the community's icon image file. Provide a UUID of an uploaded file to set or change the community's visual icon. Set to null to remove the current icon.
      *
-     * @x-autobe-database-schema-property icon_file_id
-     * @x-autobe-specification Direct mapping to community_platform_communities.icon_file_id (nullable UUID foreign key). If provided, must verify the file exists in community_platform_files table with owner_type='community_icon'. Null value removes existing icon without replacement. The referenced file's path will be used for community visual branding.
+         * @x-autobe-database-schema-property icon_file_id
+         * @x-autobe-specification Direct mapping to
+         *   community_platform_communities.icon_file_id (nullable UUID foreign
+         *   key). If provided, must verify the file exists in
+         *   community_platform_files table with owner_type='community_icon'.
+         *   Null value removes existing icon without replacement. The
+         *   referenced file's path will be used for community visual branding.
      */
     icon_file_id?: (string & tags.Format<"uuid">) | null | undefined;
   };
@@ -121,28 +157,38 @@ export namespace ICommunityPlatformCommunity {
     /**
      * Search term for finding communities by name. Uses case-insensitive partial matching - returns communities whose names contain the search term.
      *
-     * @x-autobe-specification Used in WHERE clause: name ILIKE '%search%' for case-insensitive partial matching on community names. Transforms user input into SQL ILIKE pattern. When null or empty, no name filter is applied.
+         * @x-autobe-specification Used in WHERE clause: name ILIKE '%search%'
+         *   for case-insensitive partial matching on community names.
+         *   Transforms user input into SQL ILIKE pattern. When null or empty,
+         *   no name filter is applied.
      */
     search?: string | undefined;
 
     /**
      * Sort order for community results. 'popular' sorts by subscriber count (highest first), 'newest' sorts by creation date (most recent first).
      *
-     * @x-autobe-specification Controls ORDER BY clause: 'popular' → subscriber_count DESC (most subscribers first), 'newest' → created_at DESC (most recently created first). Default is 'popular' if not specified.
+         * @x-autobe-specification Controls ORDER BY clause: 'popular' →
+         *   subscriber_count DESC (most subscribers first), 'newest' →
+         *   created_at DESC (most recently created first). Default is 'popular'
+         *   if not specified.
      */
     sort?: "popular" | "newest" | undefined;
 
     /**
      * Page number for paginated results. Starts at 1 for the first page. Use with limit to navigate through large result sets.
      *
-     * @x-autobe-specification Controls pagination OFFSET: OFFSET = (page - 1) * limit. 1-indexed page number. Default is 1 if not specified. Used with limit for cursor-based pagination.
+         * @x-autobe-specification Controls pagination OFFSET: OFFSET = (page -
+         *   1) * limit. 1-indexed page number. Default is 1 if not specified.
+         *   Used with limit for cursor-based pagination.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of communities to return per page. Cannot exceed 100. Higher values return more results but may impact performance.
      *
-     * @x-autobe-specification Controls LIMIT clause in SQL query. Maximum 100 records per page. Default applies if not specified. Used with page for pagination: OFFSET = (page - 1) * limit.
+         * @x-autobe-specification Controls LIMIT clause in SQL query. Maximum
+         *   100 records per page. Default applies if not specified. Used with
+         *   page for pagination: OFFSET = (page - 1) * limit.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -154,31 +200,31 @@ export namespace ICommunityPlatformCommunity {
    */
   export type ISummary = {
     /**
-     * @x-autobe-database-schema-property id
+         * @x-autobe-database-schema-property id
      */
     id: string & tags.Format<"uuid">;
     /**
-     * @x-autobe-database-schema-property name
+         * @x-autobe-database-schema-property name
      */
     name: string;
     /**
-     * @x-autobe-database-schema-property description
+         * @x-autobe-database-schema-property description
      */
     description: string;
     /**
-     * @x-autobe-database-schema-property icon
+         * @x-autobe-database-schema-property icon
      */
     icon: ICommunityPlatformFile | null;
     /**
-     * @x-autobe-database-schema-property subscriber_count
+         * @x-autobe-database-schema-property subscriber_count
      */
     subscriber_count: number & tags.Type<"int32">;
     /**
-     * @x-autobe-database-schema-property owner
+         * @x-autobe-database-schema-property owner
      */
     owner: ICommunityPlatformMember.ISummary;
     /**
-     * @x-autobe-database-schema-property created_at
+         * @x-autobe-database-schema-property created_at
      */
     created_at: string & tags.Format<"date-time">;
   };

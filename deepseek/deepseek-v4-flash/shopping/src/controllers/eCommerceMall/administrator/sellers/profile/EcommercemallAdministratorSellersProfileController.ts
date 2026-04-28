@@ -20,9 +20,11 @@ export class EcommercemallAdministratorSellersProfileController {
    *
    * @param connection
    * @param sellerId Unique identifier (UUID) of the seller whose public profile is to be retrieved.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Query the e_commerce_mall_seller_profiles table joined with e_commerce_mall_sellers to find the profile for the given sellerId.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor administrator
+     * @x-autobe-specification Query the e_commerce_mall_seller_profiles table
+     *   joined with e_commerce_mall_sellers to find the profile for the given
+     *   sellerId.
    *
    * 1. Resolve the seller: Look up e_commerce_mall_sellers by id = sellerId. If not found, return 404.
    * 2. Check seller deleted_at: If the seller has a non-null deleted_at, return 404 (account deleted).

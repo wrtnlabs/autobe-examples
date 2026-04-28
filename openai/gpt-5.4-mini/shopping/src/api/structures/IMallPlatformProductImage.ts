@@ -32,8 +32,11 @@ export namespace IMallPlatformProductImage {
      *
      * This value identifies the image resource displayed for the existing product image row. It should point to a valid, reachable image file.
      *
-     * @x-autobe-database-schema-property image_url
-     * @x-autobe-specification Direct mapping from mall_platform_product_images.image_url. Update only the URL for the existing image row; do not change product ownership or create a new image record.
+         * @x-autobe-database-schema-property image_url
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_product_images.image_url. Update only the URL for the
+         *   existing image row; do not change product ownership or create a new
+         *   image record.
      */
     imageUrl?: (string & tags.Format<"url">) | undefined;
 
@@ -42,8 +45,11 @@ export namespace IMallPlatformProductImage {
      *
      * Lower ordering positions appear earlier in the product's image set and influence which image is treated as the leading thumbnail.
      *
-     * @x-autobe-database-schema-property sort_order
-     * @x-autobe-specification Direct mapping from mall_platform_product_images.sort_order. Use this to reorder the existing image within the product gallery while keeping the image attached to the same product.
+         * @x-autobe-database-schema-property sort_order
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_product_images.sort_order. Use this to reorder the
+         *   existing image within the product gallery while keeping the image
+         *   attached to the same product.
      */
     sortOrder?: (number & tags.Type<"int32">) | undefined;
 
@@ -52,8 +58,11 @@ export namespace IMallPlatformProductImage {
      *
      * When true, the image is treated as the main presentation image for the product in listings and other compact views. Only one image should act as the primary thumbnail at a time for a given product.
      *
-     * @x-autobe-database-schema-property is_main
-     * @x-autobe-specification Direct mapping from mall_platform_product_images.is_main. Update this flag to mark whether the existing image is the product's primary thumbnail, while keeping the product association unchanged.
+         * @x-autobe-database-schema-property is_main
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_product_images.is_main. Update this flag to mark
+         *   whether the existing image is the product's primary thumbnail,
+         *   while keeping the product association unchanged.
      */
     isMain?: boolean | undefined;
   };
@@ -87,8 +96,10 @@ export namespace IMallPlatformProductImage {
      *
      * This URL identifies the image file that will be displayed in product gallery and listing views.
      *
-     * @x-autobe-database-schema-property image_url
-     * @x-autobe-specification Direct mapping from mall_platform_product_images.image_url. Store the submitted URL as the public or storage URL for the product image.
+         * @x-autobe-database-schema-property image_url
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_product_images.image_url. Store the submitted URL as
+         *   the public or storage URL for the product image.
      */
     imageUrl: string & tags.Format<"url">;
 
@@ -97,8 +108,11 @@ export namespace IMallPlatformProductImage {
      *
      * Images are rendered in ascending order, and the earliest image is used as the thumbnail unless a different main image is selected.
      *
-     * @x-autobe-database-schema-property sort_order
-     * @x-autobe-specification Direct mapping from mall_platform_product_images.sort_order. Use this value to position the image within the product gallery, with lower values shown earlier.
+         * @x-autobe-database-schema-property sort_order
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_product_images.sort_order. Use this value to position
+         *   the image within the product gallery, with lower values shown
+         *   earlier.
      */
     sortOrder: number & tags.Type<"int32"> & tags.Minimum<0>;
 
@@ -107,8 +121,10 @@ export namespace IMallPlatformProductImage {
      *
      * When true, the image is treated as the primary visual for product cards and detail pages.
      *
-     * @x-autobe-database-schema-property is_main
-     * @x-autobe-specification Direct mapping from mall_platform_product_images.is_main. Persist whether this image should be treated as the product's main thumbnail image.
+         * @x-autobe-database-schema-property is_main
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_product_images.is_main. Persist whether this image
+         *   should be treated as the product's main thumbnail image.
      */
     isMain: boolean;
   };
@@ -126,7 +142,11 @@ export namespace IMallPlatformProductImage {
      *
      * Provide the gallery exactly as it should appear after the update. The server uses this order to assign positions and determine the main thumbnail.
      *
-     * @x-autobe-specification This field contains the desired final ordered list of product image create payloads for the product identified by the route parameter. The service must persist the gallery atomically, derive `sort_order` and `is_main` from the array order, and validate that each image belongs to the target product.
+         * @x-autobe-specification This field contains the desired final ordered
+         *   list of product image create payloads for the product identified by
+         *   the route parameter. The service must persist the gallery
+         *   atomically, derive `sort_order` and `is_main` from the array order,
+         *   and validate that each image belongs to the target product.
      */
     images: IMallPlatformProductImage.ICreate[];
 
@@ -135,7 +155,11 @@ export namespace IMallPlatformProductImage {
      *
      * Only existing images that belong to the target product should be listed here. Unknown or unrelated image IDs must be rejected.
      *
-     * @x-autobe-specification This field lists UUIDs of existing product images to remove from the target product's gallery. The service must verify that each UUID belongs to the product before deleting it and must apply the deletions atomically with any additions or reordering in the same request.
+         * @x-autobe-specification This field lists UUIDs of existing product
+         *   images to remove from the target product's gallery. The service
+         *   must verify that each UUID belongs to the product before deleting
+         *   it and must apply the deletions atomically with any additions or
+         *   reordering in the same request.
      */
     deleteImageIds: (string & tags.Format<"uuid">)[];
 
@@ -147,7 +171,8 @@ export namespace IMallPlatformProductImage {
      * Requesting a page beyond the available range returns an empty data array
      * with valid pagination metadata reflecting the actual totals.
      *
-     * @x-autobe-specification 1-indexed page number. Defaults to 1 if not provided.
+         * @x-autobe-specification 1-indexed page number. Defaults to 1 if not
+         *   provided.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
 
@@ -159,7 +184,8 @@ export namespace IMallPlatformProductImage {
      * enforce upper bounds to prevent excessive resource consumption on large
      * requests.
      *
-     * @x-autobe-specification Maximum records per page. Defaults to 100 if not provided.
+         * @x-autobe-specification Maximum records per page. Defaults to 100 if
+         *   not provided.
      */
     limit?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };

@@ -10,48 +10,52 @@ export type ITodoAppProfile = {
   /**
    * Unique identifier of the private profile record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from todo_app_profiles.id.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from todo_app_profiles.id.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Private display name used for the signed-in member inside their personal workspace.
    *
-   * @x-autobe-database-schema-property display_name
-   * @x-autobe-specification Direct mapping from todo_app_profiles.display_name.
+     * @x-autobe-database-schema-property display_name
+     * @x-autobe-specification Direct mapping from
+     *   todo_app_profiles.display_name.
    */
   displayName: string;
 
   /**
    * Summary information for the member account that owns this profile.
    *
-   * @x-autobe-database-schema-property member
-   * @x-autobe-specification Resolve through the todo_app_profiles.member belongs-to relation using todo_app_member_id, and join todo_app_members to return ITodoAppMember.ISummary.
+     * @x-autobe-database-schema-property member
+     * @x-autobe-specification Resolve through the todo_app_profiles.member
+     *   belongs-to relation using todo_app_member_id, and join todo_app_members
+     *   to return ITodoAppMember.ISummary.
    */
   member: ITodoAppMember.ISummary;
 
   /**
    * Timestamp when the profile record was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from todo_app_profiles.created_at.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from todo_app_profiles.created_at.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the profile record was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from todo_app_profiles.updated_at.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from todo_app_profiles.updated_at.
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * Soft-deletion timestamp for the profile, or null when the profile is still active.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from todo_app_profiles.deleted_at. Return null when the profile has not been soft-deleted.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from todo_app_profiles.deleted_at.
+     *   Return null when the profile has not been soft-deleted.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -63,8 +67,12 @@ export namespace ITodoAppProfile {
     /**
      * Private display name that the signed-in member wants to use in their personal todo workspace.
      *
-     * @x-autobe-database-schema-property display_name
-     * @x-autobe-specification Map displayName directly to todo_app_profiles.display_name for the profile row resolved by todo_app_member_id from the authenticated member session. Require a non-empty string and use it as the only client-editable field in this DTO.
+         * @x-autobe-database-schema-property display_name
+         * @x-autobe-specification Map displayName directly to
+         *   todo_app_profiles.display_name for the profile row resolved by
+         *   todo_app_member_id from the authenticated member session. Require a
+         *   non-empty string and use it as the only client-editable field in
+         *   this DTO.
      */
     displayName: string & tags.MinLength<1>;
   };

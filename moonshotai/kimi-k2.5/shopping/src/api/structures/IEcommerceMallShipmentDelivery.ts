@@ -11,64 +11,86 @@ export type IEcommerceMallShipmentDelivery = {
   /**
    * Unique identifier for the delivery confirmation record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_shipment_deliveries.id. UUID primary key generated on record creation.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_shipment_deliveries.id. UUID primary key generated on
+     *   record creation.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Timestamp when the shipment was marked as delivered.
    *
-   * @x-autobe-database-schema-property delivered_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_shipment_deliveries.delivered_at. Timestamp when delivery was confirmed either manually by customer or automatically by system after 14-day window.
+     * @x-autobe-database-schema-property delivered_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_shipment_deliveries.delivered_at. Timestamp when
+     *   delivery was confirmed either manually by customer or automatically by
+     *   system after 14-day window.
    */
   deliveredAt: string & tags.Format<"date-time">;
 
   /**
    * Whether delivery was automatically confirmed by the system after the 14-day window (true) or manually confirmed by the customer (false).
    *
-   * @x-autobe-database-schema-property is_auto_delivered
-   * @x-autobe-specification Direct mapping from ecommerce_mall_shipment_deliveries.is_auto_delivered. Boolean flag indicating if delivery was auto-confirmed by system (true) after 14-day window or manually by customer (false).
+     * @x-autobe-database-schema-property is_auto_delivered
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_shipment_deliveries.is_auto_delivered. Boolean flag
+     *   indicating if delivery was auto-confirmed by system (true) after 14-day
+     *   window or manually by customer (false).
    */
   isAutoDelivered: boolean;
 
   /**
    * The shipment that was delivered, including tracking information, carrier details, and related order information.
    *
-   * @x-autobe-database-schema-property shipment
-   * @x-autobe-specification Join via ecommerce_mall_shipment_deliveries.shipment_id → ecommerce_mall_shipments.id. Returns IEcommerceMallShipment.ISummary containing summary info about the delivered shipment.
+     * @x-autobe-database-schema-property shipment
+     * @x-autobe-specification Join via
+     *   ecommerce_mall_shipment_deliveries.shipment_id →
+     *   ecommerce_mall_shipments.id. Returns IEcommerceMallShipment.ISummary
+     *   containing summary info about the delivered shipment.
    */
   shipment: IEcommerceMallShipment.ISummary;
 
   /**
    * The customer who manually confirmed delivery. Null when delivery was automatically confirmed by the system.
    *
-   * @x-autobe-database-schema-property customer
-   * @x-autobe-specification Left join via ecommerce_mall_shipment_deliveries.customer_id → ecommerce_mall_customers.id. Nullable because customer_id is null for auto-delivered shipments. Returns IEcommerceMallCustomer.ISummary when manually confirmed, null when auto-delivered.
+     * @x-autobe-database-schema-property customer
+     * @x-autobe-specification Left join via
+     *   ecommerce_mall_shipment_deliveries.customer_id →
+     *   ecommerce_mall_customers.id. Nullable because customer_id is null for
+     *   auto-delivered shipments. Returns IEcommerceMallCustomer.ISummary when
+     *   manually confirmed, null when auto-delivered.
    */
   customer: IEcommerceMallCustomer.ISummary | null;
 
   /**
    * Timestamp when the delivery confirmation record was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_shipment_deliveries.created_at. Timestamp when this delivery record was created in the database.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_shipment_deliveries.created_at. Timestamp when this
+     *   delivery record was created in the database.
    */
   createdAt: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the delivery confirmation record was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_shipment_deliveries.updated_at. Timestamp when this delivery record was last modified.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_shipment_deliveries.updated_at. Timestamp when this
+     *   delivery record was last modified.
    */
   updatedAt: string & tags.Format<"date-time">;
 
   /**
    * Soft-deletion timestamp. Null if the record is active, otherwise contains the deletion timestamp for audit purposes.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_shipment_deliveries.deleted_at. Nullable field for soft delete pattern. Null if record is active, contains timestamp if soft-deleted.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_shipment_deliveries.deleted_at. Nullable field for soft
+     *   delete pattern. Null if record is active, contains timestamp if
+     *   soft-deleted.
    */
   deletedAt: (string & tags.Format<"date-time">) | null;
 };

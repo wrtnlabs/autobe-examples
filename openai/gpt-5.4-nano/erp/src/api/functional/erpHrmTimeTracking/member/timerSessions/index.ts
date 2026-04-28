@@ -33,7 +33,8 @@ export * as current from "./current/index";
  * @param props.body Timer session browsing criteria including organization-scoped filters, pagination, and sorting.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implement a read-only filtered search over `erp_hrm_time_tracking_timer_sessions`.
+ * @x-autobe-specification Implement a read-only filtered search over
+ *   `erp_hrm_time_tracking_timer_sessions`.
  *
  * Algorithm / Steps:
  * 1. Parse requestBody as `IErpHrmTimeTrackingTimerSession.IRequest`.

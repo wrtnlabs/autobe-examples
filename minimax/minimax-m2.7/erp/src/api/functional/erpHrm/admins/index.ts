@@ -20,7 +20,8 @@ import { IPageIErpHrmAdmin } from "../../../structures/IPageIErpHrmAdmin";
  * @param props.body Search criteria and pagination parameters for filtering admin accounts
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query the erp_hrm_admins table with pagination and filtering.
+ * @x-autobe-specification Query the erp_hrm_admins table with pagination and
+ *   filtering.
  *
  * Apply search filters on email (partial match), display_name (partial match), and phone if provided.
  *
@@ -117,7 +118,8 @@ export namespace index {
  * @param props.adminId Unique identifier of the administrator account to retrieve (UUID format)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query the erp_hrm_admins table using the provided adminId as the primary key lookup.
+ * @x-autobe-specification Query the erp_hrm_admins table using the provided
+ *   adminId as the primary key lookup.
  *
  * Return the matching admin record with all fields EXCEPT password_hash.
  *

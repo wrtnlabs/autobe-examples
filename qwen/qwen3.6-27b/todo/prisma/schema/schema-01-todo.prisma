@@ -1,0 +1,135 @@
+/// All active and soft-deleted tasks owned by a member.
+///
+/// Users can create, view, complete, edit, and soft-delete or permanently
+/// delete. Todos are strictly private to their owner, appearing in
+/// personalized lists, trash views, and filtered by completion status or
+/// date sorting.
+///
+/// @namespace todo
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_todos {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for uniquely identifying a todo.
+  id String @id
+  
+  /// The specific registered account that owns this todo.
+  ///
+  /// Establishes strict privacy boundaries so that only the owning member can
+  /// access their todos. Deletion of a member cascades to permanently remove
+  /// all associated tasks and their edit histories.
+  todo_app_member_id String
+  
+  /// The short text summary of the task.
+  title String
+  
+  /// Expanded details or notes for the task.
+  ///
+  /// Optional and can be left empty.
+  description String?
+  
+  /// The scheduled date and time when the task should begin.
+  ///
+  /// Optional and positioned at the end when sorting by start date.
+  start_date DateTime?
+  
+  /// The deadline date and time by which the task should be finished.
+  ///
+  /// Optional and positioned at the end when sorting by due date.
+  due_date DateTime?
+  
+  /// Represents the toggle state of task completion.
+  ///
+  /// Defaults to false when initially created.
+  is_completed Boolean
+  
+  /// Absolute timestamp recording when the task was first created.
+  created_at DateTime
+  
+  /// Absolute timestamp recording the last modification made to the task.
+  updated_at DateTime
+  
+  /// Records the exact moment the task was soft-deleted.
+  ///
+  /// Remains null for active tasks.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member todo_app_members @relation(fields: [todo_app_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  editHistories todo_app_edit_histories[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([todo_app_member_id, created_at])
+  @@index([todo_app_member_id, start_date])
+  @@index([todo_app_member_id, due_date])
+}
+
+/// Field-level change audit trail for every edit made to a todo. Records
+/// timestamps and new values for all editable fields during a modification
+/// event.
+///
+/// Only fields that were actually modified during an edit are recorded;
+/// unchanged fields remain null in that history entry. Entries are
+/// append-only and permanently deleted when the parent todo is permanently
+/// removed from the trash.
+///
+/// @namespace todo
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_edit_histories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key uniquely identifying each edit history entry.
+  id String @id
+  
+  /// Links the history entry to the todo that was edited.
+  ///
+  /// Every edit history record belongs to exactly one todo. This foreign key
+  /// ensures historical changes are associated with their source task,
+  /// allowing retrieval of a complete chronological audit trail for any
+  /// specific todo via {@link todo_app_todos}.
+  todo_app_todo_id String
+  
+  /// Timestamp of when the edit was made and this history entry was
+  /// automatically created. Used for reverse-chronological sorting of history
+  /// entries.
+  created_at DateTime
+  
+  /// The new title value if the todo's title was changed during an edit. Null
+  /// if the title was not modified.
+  title String?
+  
+  /// The new description value if the todo's description was changed during an
+  /// edit. Null if the description was not modified.
+  description String?
+  
+  /// The new start date value if the todo's start date was changed during an
+  /// edit. Null if the start date was not modified.
+  start_date DateTime?
+  
+  /// The new due date value if the todo's due date was changed during an edit.
+  /// Null if the due date was not modified.
+  due_date DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  todo todo_app_todos @relation(fields: [todo_app_todo_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([todo_app_todo_id, created_at])
+}

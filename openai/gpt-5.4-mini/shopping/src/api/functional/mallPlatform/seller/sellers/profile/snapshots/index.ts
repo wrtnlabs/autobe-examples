@@ -21,7 +21,13 @@ import { IPageIMallPlatformSellerProfileSnapshot } from "../../../../../../struc
  * @param props.body Pagination, sorting, and optional snapshot-history filters for browsing seller profile snapshots.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Query the seller profile snapshot history for the seller identified by sellerId. Join the seller profile snapshot records to the owning seller profile through the seller ownership relationship, then return only snapshots belonging to that seller. Support pagination, ordering by snapshot timestamp descending by default, and optional filters such as changed field name and created-at range if those fields are available in the snapshot schema.
+ * @x-autobe-specification Query the seller profile snapshot history for the
+ *   seller identified by sellerId. Join the seller profile snapshot records to
+ *   the owning seller profile through the seller ownership relationship, then
+ *   return only snapshots belonging to that seller. Support pagination,
+ *   ordering by snapshot timestamp descending by default, and optional filters
+ *   such as changed field name and created-at range if those fields are
+ *   available in the snapshot schema.
  *
  * Because snapshots are immutable history records, do not allow mutation operations here. Return 404 when the seller does not exist or does not own a profile, and return an empty page when the seller exists but has no snapshots. Ensure authorization allows the owning seller and administrators to read the history, while preventing access to other sellers' snapshots.
  * @path /mallPlatform/seller/sellers/:sellerId/profile/snapshots
@@ -120,7 +126,11 @@ export namespace index {
  * @param props.snapshotId The snapshot identifier in UUID format.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Load the seller profile snapshot by joining seller_profile_snapshots to seller_profiles through seller_profile_id and confirming the snapshot belongs to the seller profile identified by sellerId. Verify the authenticated actor is either the owning seller account or an administrator before returning the record.
+ * @x-autobe-specification Load the seller profile snapshot by joining
+ *   seller_profile_snapshots to seller_profiles through seller_profile_id and
+ *   confirming the snapshot belongs to the seller profile identified by
+ *   sellerId. Verify the authenticated actor is either the owning seller
+ *   account or an administrator before returning the record.
  *
  * Return the snapshot row as stored, including id, seller_profile_id, shop_name, shop_description, logo_image_uri, and created_at. Do not attempt to reconstruct or merge with the live seller profile because this endpoint is specifically for preserved history.
  *

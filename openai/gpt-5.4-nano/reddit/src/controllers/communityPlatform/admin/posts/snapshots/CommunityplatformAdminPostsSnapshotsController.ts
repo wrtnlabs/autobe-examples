@@ -27,9 +27,10 @@ export class CommunityplatformAdminPostsSnapshotsController {
    * @param connection
    * @param postId Target post identifier that the snapshot belongs to.
    * @param snapshotId Target snapshot identifier to retrieve the exact point-in-time snapshot.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification 1) Parse `postId` and `snapshotId` as UUIDs from path parameters.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification 1) Parse `postId` and `snapshotId` as UUIDs from
+     *   path parameters.
    *
    * 2) Query `community_platform_post_snapshots`:
    * - Filter by `id = snapshotId`.
@@ -103,11 +104,12 @@ export class CommunityplatformAdminPostsSnapshotsController {
    * @param connection
    * @param postId Target post identifier to create a snapshot for.
    * @param body Snapshot creation input, including when the snapshot content is considered effective and the content fields to persist in the snapshot.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification 1) Input validation
-   * - Parse path parameter `postId` as UUID.
-   * - Validate request body snapshot input: ensure `publishedAt` is present and is a valid timestamptz-compatible ISO datetime.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification 1) Input validation - Parse path parameter
+     *   `postId` as UUID. - Validate request body snapshot input: ensure
+     *   `publishedAt` is present and is a valid timestamptz-compatible ISO
+     *   datetime.
    *
    * 2) Load and authorize
    * - Query `community_platform_posts` by `id = postId`.
@@ -184,9 +186,9 @@ export class CommunityplatformAdminPostsSnapshotsController {
    * @param connection
    * @param postId Target post identifier whose snapshots are being processed.
    * @param body Snapshot selection criteria for the targeted post. Criteria can specify a specific snapshot point in time or a range to identify which snapshot record(s) should be returned/processed.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Implementation steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Implementation steps:
    *
    * 1. Parse `postId` from path and load the post from `community_platform_posts` where `id = postId`.
    * 2. If the post does not exist: reject with a not-found error.

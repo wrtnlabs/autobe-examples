@@ -22,7 +22,8 @@ import { IShoppingMallShipment } from "../../../../../structures/IShoppingMallSh
  * @param props.body Shipment creation data including order item IDs to include in this shipment and tracking information.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Create a new shipment record in shopping_mall_shipments table.
+ * @x-autobe-specification Create a new shipment record in
+ *   shopping_mall_shipments table.
  *
  * 1. Validate the order exists and belongs to a customer (member_id reference).
  * 2. Verify the authenticated seller has order items in this order with paid status.

@@ -21,7 +21,13 @@ import { IPageIMallPlatformAdministratorApprovalRequestSnapshot } from "../../..
  * @param props.body Search, filtering, pagination, and sorting criteria for administrator approval request snapshots.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor administrator
- * @x-autobe-specification Query mall_platform_administrator_approval_request_snapshots for records belonging to the given administrator approval request ID. Enforce that the requester has permission to view this request history, allowing relevant administrators and other entitled parties only. Apply pagination, optional search/filter criteria, and deterministic sorting by snapshot creation time or snapshot ID so history is stable across pages.
+ * @x-autobe-specification Query
+ *   mall_platform_administrator_approval_request_snapshots for records
+ *   belonging to the given administrator approval request ID. Enforce that the
+ *   requester has permission to view this request history, allowing relevant
+ *   administrators and other entitled parties only. Apply pagination, optional
+ *   search/filter criteria, and deterministic sorting by snapshot creation time
+ *   or snapshot ID so history is stable across pages.
  *
  * Do not allow any mutation of snapshot records. Return only snapshot history rows tied to the parent request. If the parent request does not exist or the caller lacks access, respond with the appropriate not-found or forbidden error. If there are no snapshots, return an empty page rather than an error.
  * @path /mallPlatform/administrator/administratorApprovalRequests/:administratorApprovalRequestId/snapshots
@@ -124,7 +130,11 @@ export namespace index {
  * @param props.snapshotId The snapshot identifier within the administrator approval request history.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor administrator
- * @x-autobe-specification Fetch the snapshot by snapshotId while enforcing that it is associated with administratorApprovalRequestId. Query the administrator approval request snapshot table with a parent-scoped condition so a snapshot from another request cannot be accessed through this endpoint.
+ * @x-autobe-specification Fetch the snapshot by snapshotId while enforcing that
+ *   it is associated with administratorApprovalRequestId. Query the
+ *   administrator approval request snapshot table with a parent-scoped
+ *   condition so a snapshot from another request cannot be accessed through
+ *   this endpoint.
  *
  * Apply the snapshot visibility rules for historical records: administrators may view snapshots for oversight, and other relevant authorized parties may view them for dispute resolution. If the parent request does not exist, the snapshot is not attached to that parent, or the caller lacks permission, return the service's standard not-found or forbidden error.
  *
@@ -225,11 +235,18 @@ export namespace getByAdministratorapprovalrequestidAndSnapshotid {
  * @param props.administratorApprovalRequestSnapshotId The snapshot identifier of the administrator approval request snapshot to retrieve.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor administrator
- * @x-autobe-specification Load the administrator approval request snapshot by matching administrator_approval_request_id and snapshot identifier within the same parent scope.
- * Use a direct lookup against the administrator approval request snapshots table, and validate that the snapshot belongs to the requested parent approval request before returning it.
- * Do not join against mutable approval request state to reconstruct the snapshot; return the preserved snapshot row and its embedded preserved fields as stored.
- * Enforce access control so only the request owner/relevant reviewer context and administrators can read the snapshot. If the parent approval request is unavailable, or the snapshot is missing for that parent, respond with not found. If the caller lacks permission, respond with forbidden.
- * Because the record is immutable, no update or delete behavior is permitted here.
+ * @x-autobe-specification Load the administrator approval request snapshot by
+ *   matching administrator_approval_request_id and snapshot identifier within
+ *   the same parent scope. Use a direct lookup against the administrator
+ *   approval request snapshots table, and validate that the snapshot belongs to
+ *   the requested parent approval request before returning it. Do not join
+ *   against mutable approval request state to reconstruct the snapshot; return
+ *   the preserved snapshot row and its embedded preserved fields as stored.
+ *   Enforce access control so only the request owner/relevant reviewer context
+ *   and administrators can read the snapshot. If the parent approval request is
+ *   unavailable, or the snapshot is missing for that parent, respond with not
+ *   found. If the caller lacks permission, respond with forbidden. Because the
+ *   record is immutable, no update or delete behavior is permitted here.
  * @path /mallPlatform/administrator/administratorApprovalRequests/:administratorApprovalRequestId/snapshots/:administratorApprovalRequestSnapshotId
  * @accessor api.functional.mallPlatform.administrator.administratorApprovalRequests.snapshots.getByAdministratorapprovalrequestidAndAdministratorapprovalrequestsnapshotid
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe

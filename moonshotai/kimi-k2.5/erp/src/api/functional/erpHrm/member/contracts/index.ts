@@ -162,7 +162,8 @@ export namespace create {
  * @param props.body Contract search criteria and pagination parameters
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query erp_hrm_contracts table with organization-scoped filtering and pagination.
+ * @x-autobe-specification Query erp_hrm_contracts table with
+ *   organization-scoped filtering and pagination.
  *
  * Implementation requirements:
  *
@@ -286,7 +287,8 @@ export namespace index {
  * @param props.contractId The unique identifier of the employment contract to retrieve
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query the erp_hrm_contracts table using the provided contractId UUID.
+ * @x-autobe-specification Query the erp_hrm_contracts table using the provided
+ *   contractId UUID.
  *
  * 1. Validate that the authenticated user has appropriate permissions:
  *    - Members can access contracts where the contract's organizationMember's userId matches the current user
@@ -404,7 +406,8 @@ export namespace at {
  * @param props.body Updated contract information
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Validate that the requesting user has employee management permission.
+ * @x-autobe-specification Validate that the requesting user has employee
+ *   management permission.
  *
  * Retrieve the target contract by contractId UUID. Verify the contract exists and is not soft-deleted (deleted_at is null). Verify the contract is currently active (is_active = true). If the contract has ended (end_date is not null), reject the update with an error indicating that historical contracts are immutable.
  *
@@ -536,7 +539,8 @@ export namespace update {
  * @param props.contractId Unique identifier of the employment contract to delete (global scope)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implement permanent deletion of an employment contract record.
+ * @x-autobe-specification Implement permanent deletion of an employment
+ *   contract record.
  *
  * Database Operations:
  * 1. Execute DELETE query on erp_hrm_contracts table WHERE id = {contractId} AND organization_id = {currentOrganizationId}

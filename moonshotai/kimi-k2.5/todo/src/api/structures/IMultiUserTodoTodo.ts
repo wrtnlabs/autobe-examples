@@ -8,80 +8,99 @@ export type IMultiUserTodoTodo = {
   /**
    * Unique identifier for the todo task (UUID format).
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from multi_user_todo_todos.id UUID column. Auto-generated on record creation.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from multi_user_todo_todos.id UUID
+     *   column. Auto-generated on record creation.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Task title or name. Brief identifier shown in todo lists.
    *
-   * @x-autobe-database-schema-property title
-   * @x-autobe-specification Direct mapping from multi_user_todo_todos.title string column. Required field, non-null in database.
+     * @x-autobe-database-schema-property title
+     * @x-autobe-specification Direct mapping from multi_user_todo_todos.title
+     *   string column. Required field, non-null in database.
    */
   title: string;
 
   /**
    * Detailed task description providing additional context and notes.
    *
-   * @x-autobe-database-schema-property description
-   * @x-autobe-specification Direct mapping from multi_user_todo_todos.description column. Nullable string in database - represented as oneOf<string | null>.
+     * @x-autobe-database-schema-property description
+     * @x-autobe-specification Direct mapping from
+     *   multi_user_todo_todos.description column. Nullable string in database -
+     *   represented as oneOf<string | null>.
    */
   description: string | null;
 
   /**
    * Optional planned start date for the task, used for sorting and filtering.
    *
-   * @x-autobe-database-schema-property start_date
-   * @x-autobe-specification Direct mapping from multi_user_todo_todos.start_date DateTime column. Uses camelCase startDate in API. Nullable - use oneOf<date-time | null>.
+     * @x-autobe-database-schema-property start_date
+     * @x-autobe-specification Direct mapping from
+     *   multi_user_todo_todos.start_date DateTime column. Uses camelCase
+     *   startDate in API. Nullable - use oneOf<date-time | null>.
    */
   startDate: (string & tags.Format<"date-time">) | null;
 
   /**
    * Optional deadline date for task completion, used for sorting and filtering.
    *
-   * @x-autobe-database-schema-property due_date
-   * @x-autobe-specification Direct mapping from multi_user_todo_todos.due_date DateTime column. Uses camelCase dueDate in API. Nullable - use oneOf<date-time | null>.
+     * @x-autobe-database-schema-property due_date
+     * @x-autobe-specification Direct mapping from
+     *   multi_user_todo_todos.due_date DateTime column. Uses camelCase dueDate
+     *   in API. Nullable - use oneOf<date-time | null>.
    */
   dueDate: (string & tags.Format<"date-time">) | null;
 
   /**
    * Boolean flag indicating task completion status.
    *
-   * @x-autobe-database-schema-property is_complete
-   * @x-autobe-specification Direct mapping from multi_user_todo_todos.is_complete boolean column. Tracks completion state.
+     * @x-autobe-database-schema-property is_complete
+     * @x-autobe-specification Direct mapping from
+     *   multi_user_todo_todos.is_complete boolean column. Tracks completion
+     *   state.
    */
   isComplete: boolean;
 
   /**
    * Timestamp when task was marked complete, null when incomplete.
    *
-   * @x-autobe-database-schema-property completed_at
-   * @x-autobe-specification Direct mapping from multi_user_todo_todos.completed_at DateTime column. Automatically set when is_complete transitions to true. Nullable - use oneOf<date-time | null>.
+     * @x-autobe-database-schema-property completed_at
+     * @x-autobe-specification Direct mapping from
+     *   multi_user_todo_todos.completed_at DateTime column. Automatically set
+     *   when is_complete transitions to true. Nullable - use oneOf<date-time |
+     *   null>.
    */
   completedAt: (string & tags.Format<"date-time">) | null;
 
   /**
    * Timestamp when the todo was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from multi_user_todo_todos.created_at DateTime column. Set on record creation.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   multi_user_todo_todos.created_at DateTime column. Set on record
+     *   creation.
    */
   createdAt: string & tags.Format<"date-time">;
 
   /**
    * Timestamp of the most recent update to the todo.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from multi_user_todo_todos.updated_at DateTime column. Auto-updated on any modification.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   multi_user_todo_todos.updated_at DateTime column. Auto-updated on any
+     *   modification.
    */
   updatedAt: string & tags.Format<"date-time">;
 
   /**
    * Soft deletion timestamp. Null for active todos, set when moved to trash.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from multi_user_todo_todos.deleted_at DateTime column. Soft delete timestamp - null when active. Nullable - use oneOf<date-time | null>.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   multi_user_todo_todos.deleted_at DateTime column. Soft delete timestamp
+     *   - null when active. Nullable - use oneOf<date-time | null>.
    */
   deletedAt: (string & tags.Format<"date-time">) | null;
 };
@@ -93,40 +112,54 @@ export namespace IMultiUserTodoTodo {
     /**
      * Task title or name. Optional - only provided fields are updated.
      *
-     * @x-autobe-database-schema-property title
-     * @x-autobe-specification Direct mapping from multi_user_todo_todos.title. Optional in DTO, only updates if provided. Validated minLength:1, maxLength:255.
+         * @x-autobe-database-schema-property title
+         * @x-autobe-specification Direct mapping from
+         *   multi_user_todo_todos.title. Optional in DTO, only updates if
+         *   provided. Validated minLength:1, maxLength:255.
      */
     title?: (string & tags.MinLength<1> & tags.MaxLength<255>) | undefined;
 
     /**
      * Detailed task description. Optional extended text. Pass null to clear existing value.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from multi_user_todo_todos.description (nullable). Optional in DTO. Provide to update, or provide null to clear existing value. Validated maxLength:1000.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   multi_user_todo_todos.description (nullable). Optional in DTO.
+         *   Provide to update, or provide null to clear existing value.
+         *   Validated maxLength:1000.
      */
     description?: (string & tags.MaxLength<1000>) | null | undefined;
 
     /**
      * Planned start date for the task. Optional scheduling timestamp. Pass null to clear existing value.
      *
-     * @x-autobe-database-schema-property start_date
-     * @x-autobe-specification Direct mapping from multi_user_todo_todos.start_date (nullable DateTime). Optional in DTO. ISO 8601 datetime format (date-time). Provide to update, or provide null to clear.
+         * @x-autobe-database-schema-property start_date
+         * @x-autobe-specification Direct mapping from
+         *   multi_user_todo_todos.start_date (nullable DateTime). Optional in
+         *   DTO. ISO 8601 datetime format (date-time). Provide to update, or
+         *   provide null to clear.
      */
     start_date?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * Deadline date for the task. Optional scheduling timestamp. Pass null to clear existing value.
      *
-     * @x-autobe-database-schema-property due_date
-     * @x-autobe-specification Direct mapping from multi_user_todo_todos.due_date (nullable DateTime). Optional in DTO. ISO 8601 datetime format (date-time). Provide to update, or provide null to clear.
+         * @x-autobe-database-schema-property due_date
+         * @x-autobe-specification Direct mapping from
+         *   multi_user_todo_todos.due_date (nullable DateTime). Optional in
+         *   DTO. ISO 8601 datetime format (date-time). Provide to update, or
+         *   provide null to clear.
      */
     due_date?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * Completion status flag. True when done/finished, false when pending. Completed timestamp auto-managed by backend.
      *
-     * @x-autobe-database-schema-property is_complete
-     * @x-autobe-specification Direct mapping from multi_user_todo_todos.is_complete. Optional in DTO. Boolean toggle for completion status. Backend auto-manages completed_at timestamp when this value changes.
+         * @x-autobe-database-schema-property is_complete
+         * @x-autobe-specification Direct mapping from
+         *   multi_user_todo_todos.is_complete. Optional in DTO. Boolean toggle
+         *   for completion status. Backend auto-manages completed_at timestamp
+         *   when this value changes.
      */
     is_complete?: boolean | undefined;
   };
@@ -138,32 +171,42 @@ export namespace IMultiUserTodoTodo {
     /**
      * The task title or name. Brief identifier shown in todo lists and used as primary display text.
      *
-     * @x-autobe-database-schema-property title
-     * @x-autobe-specification Direct mapping from multi_user_todo_todos.title. Required, non-empty string with minLength: 1 constraint. Used as the primary task identifier in UI lists.
+         * @x-autobe-database-schema-property title
+         * @x-autobe-specification Direct mapping from
+         *   multi_user_todo_todos.title. Required, non-empty string with
+         *   minLength: 1 constraint. Used as the primary task identifier in UI
+         *   lists.
      */
     title: string & tags.MinLength<1>;
 
     /**
      * Optional detailed task description. Extended text for additional context, instructions, or notes about the todo.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from multi_user_todo_todos.description. Optional nullable string providing extended task context, instructions, or notes.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   multi_user_todo_todos.description. Optional nullable string
+         *   providing extended task context, instructions, or notes.
      */
     description?: string | null | undefined;
 
     /**
      * Optional planned start date for the task. Indicates when work on this todo is scheduled to begin.
      *
-     * @x-autobe-database-schema-property start_date
-     * @x-autobe-specification Mapping from multi_user_todo_todos.start_date. Optional ISO 8601 date-time string indicating when work should begin. Used for sorting and filtering lists.
+         * @x-autobe-database-schema-property start_date
+         * @x-autobe-specification Mapping from
+         *   multi_user_todo_todos.start_date. Optional ISO 8601 date-time
+         *   string indicating when work should begin. Used for sorting and
+         *   filtering lists.
      */
     startDate?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * Optional deadline date for the task. Indicates by when the todo should be completed.
      *
-     * @x-autobe-database-schema-property due_date
-     * @x-autobe-specification Mapping from multi_user_todo_todos.due_date. Optional ISO 8601 date-time string indicating deadline. Used for sorting overdue items first and for filtering.
+         * @x-autobe-database-schema-property due_date
+         * @x-autobe-specification Mapping from multi_user_todo_todos.due_date.
+         *   Optional ISO 8601 date-time string indicating deadline. Used for
+         *   sorting overdue items first and for filtering.
      */
     dueDate?: (string & tags.Format<"date-time">) | null | undefined;
   };
@@ -175,72 +218,82 @@ export namespace IMultiUserTodoTodo {
     /**
      * Unique identifier for the todo task.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from multi_user_todo_todos.id. String UUID format.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from multi_user_todo_todos.id.
+         *   String UUID format.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Brief task title shown in todo lists.
      *
-     * @x-autobe-database-schema-property title
-     * @x-autobe-specification Direct mapping from multi_user_todo_todos.title. Non-nullable string.
+         * @x-autobe-database-schema-property title
+         * @x-autobe-specification Direct mapping from
+         *   multi_user_todo_todos.title. Non-nullable string.
      */
     title: string;
 
     /**
      * Optional detailed description or notes for the task.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from multi_user_todo_todos.description. Nullable text field.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   multi_user_todo_todos.description. Nullable text field.
      */
     description?: string | null | undefined;
 
     /**
      * Optional scheduled start date for the task.
      *
-     * @x-autobe-database-schema-property start_date
-     * @x-autobe-specification Direct mapping from multi_user_todo_todos.start_date. Nullable timestamp.
+         * @x-autobe-database-schema-property start_date
+         * @x-autobe-specification Direct mapping from
+         *   multi_user_todo_todos.start_date. Nullable timestamp.
      */
     startDate?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * Optional deadline date for the task.
      *
-     * @x-autobe-database-schema-property due_date
-     * @x-autobe-specification Direct mapping from multi_user_todo_todos.due_date. Nullable timestamp.
+         * @x-autobe-database-schema-property due_date
+         * @x-autobe-specification Direct mapping from
+         *   multi_user_todo_todos.due_date. Nullable timestamp.
      */
     dueDate?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * Whether the task has been marked as completed.
      *
-     * @x-autobe-database-schema-property is_complete
-     * @x-autobe-specification Direct mapping from multi_user_todo_todos.is_complete. Boolean flag.
+         * @x-autobe-database-schema-property is_complete
+         * @x-autobe-specification Direct mapping from
+         *   multi_user_todo_todos.is_complete. Boolean flag.
      */
     isComplete: boolean;
 
     /**
      * Timestamp when the task was marked complete, null if pending.
      *
-     * @x-autobe-database-schema-property completed_at
-     * @x-autobe-specification Direct mapping from multi_user_todo_todos.completed_at. Nullable timestamp set when is_complete transitions to true.
+         * @x-autobe-database-schema-property completed_at
+         * @x-autobe-specification Direct mapping from
+         *   multi_user_todo_todos.completed_at. Nullable timestamp set when
+         *   is_complete transitions to true.
      */
     completedAt?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * When the todo was originally created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from multi_user_todo_todos.created_at. Non-nullable timestamp.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   multi_user_todo_todos.created_at. Non-nullable timestamp.
      */
     createdAt: string & tags.Format<"date-time">;
 
     /**
      * When the todo was last modified.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from multi_user_todo_todos.updated_at. Non-nullable timestamp.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   multi_user_todo_todos.updated_at. Non-nullable timestamp.
      */
     updatedAt: string & tags.Format<"date-time">;
   };
@@ -252,63 +305,97 @@ export namespace IMultiUserTodoTodo {
     /**
      * Text search query to filter todos by title or description content. Case-insensitive partial matching.
      *
-     * @x-autobe-specification Full-text search across todo title and description columns. Performs case-insensitive LIKE matching on multi_user_todo_todos.title and multi_user_todo_todos.description. When provided, filters results to records where title or description contains the search string.
+         * @x-autobe-specification Full-text search across todo title and
+         *   description columns. Performs case-insensitive LIKE matching on
+         *   multi_user_todo_todos.title and multi_user_todo_todos.description.
+         *   When provided, filters results to records where title or
+         *   description contains the search string.
      */
     search?: string | undefined;
 
     /**
      * Filter todos by completion status. True for completed tasks, false for pending tasks, null to include both.
      *
-     * @x-autobe-specification Filter by completion status matching multi_user_todo_todos.is_complete boolean column. When set to true, returns only completed todos (is_complete = true). When set to false, returns only incomplete todos (is_complete = false). When null or omitted, includes todos regardless of completion status.
+         * @x-autobe-specification Filter by completion status matching
+         *   multi_user_todo_todos.is_complete boolean column. When set to true,
+         *   returns only completed todos (is_complete = true). When set to
+         *   false, returns only incomplete todos (is_complete = false). When
+         *   null or omitted, includes todos regardless of completion status.
      */
     isComplete?: boolean | null | undefined;
 
     /**
      * Start of date range filter for task start date. Todos with start_date greater than or equal to this value are included.
      *
-     * @x-autobe-specification Start date range filter lower bound applied to multi_user_todo_todos.start_date column. When provided, filters results to todos where start_date >= this timestamp. Used in conjunction with startTo to define a date range. Supports timezone-aware comparison.
+         * @x-autobe-specification Start date range filter lower bound applied
+         *   to multi_user_todo_todos.start_date column. When provided, filters
+         *   results to todos where start_date >= this timestamp. Used in
+         *   conjunction with startTo to define a date range. Supports
+         *   timezone-aware comparison.
      */
     startFrom?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * End of date range filter for task start date. Todos with start_date less than or equal to this value are included.
      *
-     * @x-autobe-specification Start date range filter upper bound applied to multi_user_todo_todos.start_date column. When provided, filters results to todos where start_date <= this timestamp. Used in conjunction with startFrom to define a date range. Supports timezone-aware comparison.
+         * @x-autobe-specification Start date range filter upper bound applied
+         *   to multi_user_todo_todos.start_date column. When provided, filters
+         *   results to todos where start_date <= this timestamp. Used in
+         *   conjunction with startFrom to define a date range. Supports
+         *   timezone-aware comparison.
      */
     startTo?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * Start of date range filter for task deadline. Todos with due_date greater than or equal to this value are included.
      *
-     * @x-autobe-specification Due date range filter lower bound applied to multi_user_todo_todos.due_date column. When provided, filters results to todos where due_date >= this timestamp. Used in conjunction with dueTo to define a deadline date range. Supports timezone-aware comparison.
+         * @x-autobe-specification Due date range filter lower bound applied to
+         *   multi_user_todo_todos.due_date column. When provided, filters
+         *   results to todos where due_date >= this timestamp. Used in
+         *   conjunction with dueTo to define a deadline date range. Supports
+         *   timezone-aware comparison.
      */
     dueFrom?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * End of date range filter for task deadline. Todos with due_date less than or equal to this value are included.
      *
-     * @x-autobe-specification Due date range filter upper bound applied to multi_user_todo_todos.due_date column. When provided, filters results to todos where due_date <= this timestamp. Used in conjunction with dueFrom to define a deadline date range. Supports timezone-aware comparison.
+         * @x-autobe-specification Due date range filter upper bound applied to
+         *   multi_user_todo_todos.due_date column. When provided, filters
+         *   results to todos where due_date <= this timestamp. Used in
+         *   conjunction with dueFrom to define a deadline date range. Supports
+         *   timezone-aware comparison.
      */
     dueTo?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * Include deleted todos in trash. True to show only trashed items, false/null to show only active todos.
      *
-     * @x-autobe-specification Control filter for soft-deleted (trashed) todos based on multi_user_todo_todos.deleted_at column. When set to true, returns only deleted todos (deleted_at IS NOT NULL). When set to false or null/omitted, returns only active todos (deleted_at IS NULL). Defaults to showing active todos only.
+         * @x-autobe-specification Control filter for soft-deleted (trashed)
+         *   todos based on multi_user_todo_todos.deleted_at column. When set to
+         *   true, returns only deleted todos (deleted_at IS NOT NULL). When set
+         *   to false or null/omitted, returns only active todos (deleted_at IS
+         *   NULL). Defaults to showing active todos only.
      */
     showDeleted?: boolean | null | undefined;
 
     /**
      * Page number for pagination (1-indexed). Defaults to 1.
      *
-     * @x-autobe-specification Pagination page number (1-indexed). Determines which page of results to return. Default value is 1 when omitted. Used with limit to calculate OFFSET for database query: OFFSET = (page - 1) * limit. Minimum value is 1.
+         * @x-autobe-specification Pagination page number (1-indexed).
+         *   Determines which page of results to return. Default value is 1 when
+         *   omitted. Used with limit to calculate OFFSET for database query:
+         *   OFFSET = (page - 1) * limit. Minimum value is 1.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | null | undefined;
 
     /**
      * Maximum number of records to return per page. Defaults to 20, maximum 100.
      *
-     * @x-autobe-specification Pagination page size limit determining maximum records per response. Default is 20 items per page, maximum allowed is 100. Used with page to calculate LIMIT for database query. Constraints: minimum 1, maximum 100.
+         * @x-autobe-specification Pagination page size limit determining
+         *   maximum records per response. Default is 20 items per page, maximum
+         *   allowed is 100. Used with page to calculate LIMIT for database
+         *   query. Constraints: minimum 1, maximum 100.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -318,7 +405,11 @@ export namespace IMultiUserTodoTodo {
     /**
      * Field to sort results by. Options: createdAt, updatedAt, startDate, dueDate, completedAt, title.
      *
-     * @x-autobe-specification Sort field name mapping to database columns for ORDER BY clause. Maps to: 'createdAt' -> created_at, 'updatedAt' -> updated_at, 'startDate' -> start_date, 'dueDate' -> due_date, 'completedAt' -> completed_at, 'title' -> title. When null or omitted, defaults to sorting by created_at.
+         * @x-autobe-specification Sort field name mapping to database columns
+         *   for ORDER BY clause. Maps to: 'createdAt' -> created_at,
+         *   'updatedAt' -> updated_at, 'startDate' -> start_date, 'dueDate' ->
+         *   due_date, 'completedAt' -> completed_at, 'title' -> title. When
+         *   null or omitted, defaults to sorting by created_at.
      */
     sortField?:
       | "createdAt"
@@ -333,7 +424,10 @@ export namespace IMultiUserTodoTodo {
     /**
      * Sort direction: 'asc' for ascending, 'desc' for descending.
      *
-     * @x-autobe-specification Sort direction for ORDER BY clause. 'asc' for ascending (ASC), 'desc' for descending (DESC). When null or omitted, defaults to 'desc' (newest first per requirement Section 71/72). Applied to the column specified by sortField.
+         * @x-autobe-specification Sort direction for ORDER BY clause. 'asc' for
+         *   ascending (ASC), 'desc' for descending (DESC). When null or
+         *   omitted, defaults to 'desc' (newest first per requirement Section
+         *   71/72). Applied to the column specified by sortField.
      */
     sortOrder?: "asc" | "desc" | null | undefined;
   };

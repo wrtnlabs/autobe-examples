@@ -28,7 +28,8 @@ export * as reviews from "./reviews/index";
  * @param props.body Product search filters, sorting, and pagination parameters
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Implement this operation as a paginated catalog search over shopping_mall_products.
+ * @x-autobe-specification Implement this operation as a paginated catalog
+ *   search over shopping_mall_products.
  *
  * Accept a request body of type IShoppingMallProduct.IRequest containing search term, category filter, optional price range, pagination controls, and sorting preferences. Build the base query from shopping_mall_products and always constrain it to customer-visible records only. At minimum, exclude rows where shopping_mall_products.deleted_at is not null. Also exclude rows whose status represents a non-visible or deleted listing state. Join or correlate with shopping_mall_sellers and exclude products whose owning seller is suspended or otherwise not eligible for customer-visible discovery under marketplace visibility rules.
  *
@@ -129,7 +130,8 @@ export namespace index {
  * @param props.productId Target product's unique ID
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Implement a read-only product detail service that loads one row from shopping_mall_products by id.
+ * @x-autobe-specification Implement a read-only product detail service that
+ *   loads one row from shopping_mall_products by id.
  *
  * First, validate that the productId path parameter is a UUID-formatted identifier. Query shopping_mall_products filtered by id. Join or separately load the related shopping_mall_sellers row through shopping_mall_seller_id so the service can evaluate seller restriction state relevant to caller visibility. Also load child shopping_mall_product_images rows for the product where deleted_at is null, ordered by sequence ascending, and load child shopping_mall_product_variants rows for the product where deleted_at is null. Preserve the product's nullable shopping_mall_category_id in the DTO if present, but do not assume category metadata unless it is separately included by the DTO schema.
  *

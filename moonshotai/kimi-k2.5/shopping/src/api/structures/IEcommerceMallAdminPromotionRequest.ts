@@ -12,71 +12,89 @@ export type IEcommerceMallAdminPromotionRequest = {
   /**
    * Unique identifier for the administrator promotion request.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_admin_promotion_requests.id. UUID primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_admin_promotion_requests.id. UUID primary key.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Current review status of the promotion request.
    *
-   * @x-autobe-specification Direct mapping from ecommerce_mall_admin_promotion_requests.status. String values: 'pending', 'approved', 'rejected'.
-   * @x-autobe-database-schema-property status
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_admin_promotion_requests.status. String values:
+     *   'pending', 'approved', 'rejected'.
+     * @x-autobe-database-schema-property status
    */
   status: string;
 
   /**
    * Requester's explanation for seeking administrative privileges.
    *
-   * @x-autobe-database-schema-property reason
-   * @x-autobe-specification Direct mapping from ecommerce_mall_admin_promotion_requests.reason. Text explaining requester's motivation.
+     * @x-autobe-database-schema-property reason
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_admin_promotion_requests.reason. Text explaining
+     *   requester's motivation.
    */
   reason: string;
 
   /**
    * Explanation provided by reviewer when rejecting the request. Null if pending or approved.
    *
-   * @x-autobe-database-schema-property rejection_reason
-   * @x-autobe-specification Direct mapping from ecommerce_mall_admin_promotion_requests.rejection_reason. Nullable. Populated when status is 'rejected'.
+     * @x-autobe-database-schema-property rejection_reason
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_admin_promotion_requests.rejection_reason. Nullable.
+     *   Populated when status is 'rejected'.
    */
   rejectionReason: string | null;
 
   /**
    * Administrator who reviewed the promotion request. Null if pending.
    *
-   * @x-autobe-database-schema-property reviewer
-   * @x-autobe-specification Belongs-to relation via reviewer_id JOIN to ecommerce_mall_admins. Returns ISummary view. Null if not yet reviewed.
+     * @x-autobe-database-schema-property reviewer
+     * @x-autobe-specification Belongs-to relation via reviewer_id JOIN to
+     *   ecommerce_mall_admins. Returns ISummary view. Null if not yet reviewed.
    */
   reviewer: IEcommerceMallAdmin.ISummary | null;
 
   /**
    * The user (customer or seller) who submitted the promotion request.
    *
-   * @x-autobe-specification Computed polymorphic relation. Query ecommerce_mall_admin_promotion_request_customers to get customer, or ecommerce_mall_admin_promotion_request_sellers to get seller. Returns either IEcommerceMallCustomer or IEcommerceMallSeller based on which subtype record exists.
+     * @x-autobe-specification Computed polymorphic relation. Query
+     *   ecommerce_mall_admin_promotion_request_customers to get customer, or
+     *   ecommerce_mall_admin_promotion_request_sellers to get seller. Returns
+     *   either IEcommerceMallCustomer or IEcommerceMallSeller based on which
+     *   subtype record exists.
    */
   requester: IEcommerceMallCustomer | IEcommerceMallSeller;
 
   /**
    * Timestamp when the promotion request was submitted.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_admin_promotion_requests.created_at. ISO 8601 date-time format.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_admin_promotion_requests.created_at. ISO 8601 date-time
+     *   format.
    */
   createdAt: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the promotion request was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_admin_promotion_requests.updated_at. ISO 8601 date-time format. Updated on status change.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_admin_promotion_requests.updated_at. ISO 8601 date-time
+     *   format. Updated on status change.
    */
   updatedAt: string & tags.Format<"date-time">;
 
   /**
    * Soft deletion timestamp. Null if the request is active.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_admin_promotion_requests.deleted_at. ISO 8601 date-time format. Nullable. Soft delete timestamp.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_admin_promotion_requests.deleted_at. ISO 8601 date-time
+     *   format. Nullable. Soft delete timestamp.
    */
   deletedAt: (string & tags.Format<"date-time">) | null;
 };
@@ -116,8 +134,12 @@ export namespace IEcommerceMallAdminPromotionRequest {
     /**
      * Requester's explanation for wanting to become an administrator, including relevant experience and motivation.
      *
-     * @x-autobe-database-schema-property reason
-     * @x-autobe-specification Direct mapping to ecommerce_mall_admin_promotion_requests.reason. Validation: min 10 characters, max 1000 characters. Must be non-empty string explaining user's qualifications and motivation for seeking administrative privileges.
+         * @x-autobe-database-schema-property reason
+         * @x-autobe-specification Direct mapping to
+         *   ecommerce_mall_admin_promotion_requests.reason. Validation: min 10
+         *   characters, max 1000 characters. Must be non-empty string
+         *   explaining user's qualifications and motivation for seeking
+         *   administrative privileges.
      */
     reason: string & tags.MinLength<10> & tags.MaxLength<1000>;
   };
@@ -144,7 +166,8 @@ export namespace IEcommerceMallAdminPromotionRequest {
      * Requesting a page beyond the available range returns an empty data array
      * with valid pagination metadata reflecting the actual totals.
      *
-     * @x-autobe-specification 1-indexed page number. Defaults to 1 if not provided.
+         * @x-autobe-specification 1-indexed page number. Defaults to 1 if not
+         *   provided.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };

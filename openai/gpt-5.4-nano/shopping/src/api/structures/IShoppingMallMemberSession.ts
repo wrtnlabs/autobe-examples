@@ -10,64 +10,78 @@ export type IShoppingMallMemberSession = {
   /**
    * Unique identifier of the newly created/active member session.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_member_sessions.id (UUID).
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_member_sessions.id (UUID).
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * IP address that was used when establishing the member session.
    *
-   * @x-autobe-database-schema-property ip
-   * @x-autobe-specification Direct mapping from shopping_mall_member_sessions.ip. Store the client IP observed by the server during session establishment/scope switch; always a concrete string value in the persisted session record.
+     * @x-autobe-database-schema-property ip
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_member_sessions.ip. Store the client IP observed by the
+     *   server during session establishment/scope switch; always a concrete
+     *   string value in the persisted session record.
    */
   ip: string;
 
   /**
    * The URL (attempted URL) the client tried to access when the session was established.
    *
-   * @x-autobe-database-schema-property href
-   * @x-autobe-specification Direct mapping from shopping_mall_member_sessions.href. Persist the client-requested URL (attempted URL) associated with this session creation/scope switch.
+     * @x-autobe-database-schema-property href
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_member_sessions.href. Persist the client-requested URL
+     *   (attempted URL) associated with this session creation/scope switch.
    */
   href: string & tags.Format<"uri">;
 
   /**
    * HTTP referrer URL associated with this session establishment request.
    *
-   * @x-autobe-database-schema-property referrer
-   * @x-autobe-specification Direct mapping from shopping_mall_member_sessions.referrer. Persist the HTTP referrer URL (if any) associated with this session creation/scope switch.
+     * @x-autobe-database-schema-property referrer
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_member_sessions.referrer. Persist the HTTP referrer URL
+     *   (if any) associated with this session creation/scope switch.
    */
   referrer: string & tags.Format<"uri">;
 
   /**
    * Timestamp when this member session record was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from shopping_mall_member_sessions.created_at (timestamp with time zone).
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_member_sessions.created_at (timestamp with time zone).
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when this member session becomes invalid due to expiration.
    *
-   * @x-autobe-database-schema-property expired_at
-   * @x-autobe-specification Direct mapping from shopping_mall_member_sessions.expired_at (timestamp with time zone).
+     * @x-autobe-database-schema-property expired_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_member_sessions.expired_at (timestamp with time zone).
    */
   expired_at: string & tags.Format<"date-time">;
 
   /**
    * Identifier of the member account that owns this session.
    *
-   * @x-autobe-database-schema-property shopping_mall_member_id
-   * @x-autobe-specification Direct mapping from shopping_mall_member_sessions.shopping_mall_member_id (member UUID).
+     * @x-autobe-database-schema-property shopping_mall_member_id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_member_sessions.shopping_mall_member_id (member UUID).
    */
   shoppingMallMemberId: string & tags.Format<"uuid">;
 
   /**
    * Member identity summary associated with this session.
    *
-   * @x-autobe-database-schema-property member
-   * @x-autobe-specification Join shopping_mall_member_sessions.shopping_mall_member_id → shopping_mall_members.id and project the joined shopping_mall_members record into IShoppingMallMember.ISummary as member summary.
+     * @x-autobe-database-schema-property member
+     * @x-autobe-specification Join
+     *   shopping_mall_member_sessions.shopping_mall_member_id →
+     *   shopping_mall_members.id and project the joined shopping_mall_members
+     *   record into IShoppingMallMember.ISummary as member summary.
    */
   member: IShoppingMallMember.ISummary;
 };

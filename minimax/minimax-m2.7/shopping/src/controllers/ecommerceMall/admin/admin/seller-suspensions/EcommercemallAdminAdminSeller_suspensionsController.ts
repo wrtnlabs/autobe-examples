@@ -28,9 +28,10 @@ export class EcommercemallAdminAdminSeller_suspensionsController {
    *
    * @param connection
    * @param body Search criteria including seller ID, suspension status, date ranges, and pagination parameters.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query the ecommerce_mall_seller_suspensions table with pagination and filtering.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Query the ecommerce_mall_seller_suspensions table
+     *   with pagination and filtering.
    *
    * Apply search filters:
    * - sellerId filter: match ecommerce_mall_seller_id exactly
@@ -78,9 +79,10 @@ export class EcommercemallAdminAdminSeller_suspensionsController {
    *
    * @param connection
    * @param suspensionId Unique identifier (UUID) of the seller suspension record to retrieve.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query the ecommerce_mall_seller_suspensions table by the provided suspensionId UUID.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Query the ecommerce_mall_seller_suspensions table
+     *   by the provided suspensionId UUID.
    *
    * Join with ecommerce_mall_sellers table to include seller details (email, approval_status, suspension_status).
    * Join with ecommerce_mall_admins table twice: once for suspended_by_id and once for restored_by_id to include administrator names.

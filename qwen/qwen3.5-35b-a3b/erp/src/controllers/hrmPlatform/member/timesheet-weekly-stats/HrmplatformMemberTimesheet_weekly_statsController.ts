@@ -37,9 +37,10 @@ export class HrmplatformMemberTimesheet_weekly_statsController {
    *
    * @param connection
    * @param body Search criteria for timesheet weekly statistics including organization scope, employee filter, week date ranges, status count filters, pagination parameters, and sorting options.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query the hrm_platform_timesheet_weekly_stats materialized view with pagination and filtering.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query the hrm_platform_timesheet_weekly_stats
+     *   materialized view with pagination and filtering.
    *
    * Implementation steps:
    * 1. Apply search filters from requestBody: organization_id (if provided), employee_id (if provided), week_start range (gte/lte), week_end range (gte/lte), and status count filters (draft_timesheet_count, submitted_timesheet_count, approved_timesheet_count, rejected_timesheet_count with range operators)
@@ -93,9 +94,10 @@ export class HrmplatformMemberTimesheet_weekly_statsController {
    *
    * @param connection
    * @param statsId The unique identifier of the weekly stats record to retrieve.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query hrm_platform_timesheet_weekly_stats table for the record matching the statsId UUID parameter.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query hrm_platform_timesheet_weekly_stats table
+     *   for the record matching the statsId UUID parameter.
    *
    * 1. Execute: SELECT * FROM hrm_platform_timesheet_weekly_stats WHERE id = :statsId
    * 2. Apply organization context: Ensure the retrieved record belongs to the requesting user's organization (enforced by data isolation layer or query filter)

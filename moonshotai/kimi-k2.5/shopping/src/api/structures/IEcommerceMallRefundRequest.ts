@@ -31,16 +31,22 @@ export namespace IEcommerceMallRefundRequest {
     /**
      * ID of the order item to request a refund for. The order item must have status 'delivered' and belong to the authenticated customer.
      *
-     * @x-autobe-database-schema-property order_item_id
-     * @x-autobe-specification Direct mapping from request body to ecommerce_mall_refund_requests.order_item_id column. Must reference an order item with status='delivered' and owned by the authenticated customer.
+         * @x-autobe-database-schema-property order_item_id
+         * @x-autobe-specification Direct mapping from request body to
+         *   ecommerce_mall_refund_requests.order_item_id column. Must reference
+         *   an order item with status='delivered' and owned by the
+         *   authenticated customer.
      */
     orderItemId: string & tags.Format<"uuid">;
 
     /**
      * Customer's explanation for requesting the refund. This reason is visible to the seller who will review and respond to the request.
      *
-     * @x-autobe-database-schema-property reason
-     * @x-autobe-specification Direct mapping from request body to ecommerce_mall_refund_requests.reason column. Required field capturing customer's explanation for the refund request. Used by seller to evaluate the request.
+         * @x-autobe-database-schema-property reason
+         * @x-autobe-specification Direct mapping from request body to
+         *   ecommerce_mall_refund_requests.reason column. Required field
+         *   capturing customer's explanation for the refund request. Used by
+         *   seller to evaluate the request.
      */
     reason: string & tags.MinLength<1>;
   };
@@ -67,35 +73,50 @@ export namespace IEcommerceMallRefundRequest {
     /**
      * Filter refund requests by their current approval status.
      *
-     * @x-autobe-specification Filter by ecommerce_mall_refund_requests.status column. Valid enum values: 'pending', 'approved', 'rejected'. Applied with exact match equality operator in SQL WHERE clause.
+         * @x-autobe-specification Filter by
+         *   ecommerce_mall_refund_requests.status column. Valid enum values:
+         *   'pending', 'approved', 'rejected'. Applied with exact match
+         *   equality operator in SQL WHERE clause.
      */
     status?: "pending" | "approved" | "rejected" | undefined;
 
     /**
      * Filter refund requests by the specific order item identifier.
      *
-     * @x-autobe-specification Filter by ecommerce_mall_refund_requests.order_item_id column (UUID format). References ecommerce_mall_order_items.id. Applied with exact match equality operator in SQL WHERE clause.
+         * @x-autobe-specification Filter by
+         *   ecommerce_mall_refund_requests.order_item_id column (UUID format).
+         *   References ecommerce_mall_order_items.id. Applied with exact match
+         *   equality operator in SQL WHERE clause.
      */
     orderItemId?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Start of date range filter for refund request submission time (inclusive).
      *
-     * @x-autobe-specification Filter by ecommerce_mall_refund_requests.requested_at column with >= operator. Date-time in ISO 8601 format. Defines the inclusive start of the request date range filter.
+         * @x-autobe-specification Filter by
+         *   ecommerce_mall_refund_requests.requested_at column with >=
+         *   operator. Date-time in ISO 8601 format. Defines the inclusive start
+         *   of the request date range filter.
      */
     requestedAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * End of date range filter for refund request submission time (inclusive).
      *
-     * @x-autobe-specification Filter by ecommerce_mall_refund_requests.requested_at column with <= operator. Date-time in ISO 8601 format. Defines the inclusive end of the request date range filter.
+         * @x-autobe-specification Filter by
+         *   ecommerce_mall_refund_requests.requested_at column with <=
+         *   operator. Date-time in ISO 8601 format. Defines the inclusive end
+         *   of the request date range filter.
      */
     requestedAtTo?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Page number for paginated results, 1-indexed (starts at 1).
      *
-     * @x-autobe-specification Computed pagination parameter. Not a database column. Used to calculate SQL OFFSET as (page - 1) * limit. Minimum value 1, default 1. 1-indexed page number for human-friendly pagination.
+         * @x-autobe-specification Computed pagination parameter. Not a database
+         *   column. Used to calculate SQL OFFSET as (page - 1) * limit. Minimum
+         *   value 1, default 1. 1-indexed page number for human-friendly
+         *   pagination.
      */
     page?:
       | (number & tags.Type<"int32"> & tags.Default<1> & tags.Minimum<1>)
@@ -104,7 +125,10 @@ export namespace IEcommerceMallRefundRequest {
     /**
      * Maximum number of refund requests to return per page (1-100).
      *
-     * @x-autobe-specification Computed pagination parameter. Not a database column. Maps directly to SQL LIMIT clause. Minimum 1, maximum 100, default 20. Controls the maximum number of records returned per page.
+         * @x-autobe-specification Computed pagination parameter. Not a database
+         *   column. Maps directly to SQL LIMIT clause. Minimum 1, maximum 100,
+         *   default 20. Controls the maximum number of records returned per
+         *   page.
      */
     limit?:
       | (number &

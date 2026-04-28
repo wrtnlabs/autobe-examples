@@ -11,55 +11,66 @@ export type IEcommerceMallSeller = {
   /**
    * Unique identifier for the seller account.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_sellers.id (Primary Key, UUID).
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from ecommerce_mall_sellers.id
+     *   (Primary Key, UUID).
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Seller's registered email address for login and account identification.
    *
-   * @x-autobe-database-schema-property email
-   * @x-autobe-specification Direct mapping from ecommerce_mall_sellers.email. Unique constraint enforced.
+     * @x-autobe-database-schema-property email
+     * @x-autobe-specification Direct mapping from ecommerce_mall_sellers.email.
+     *   Unique constraint enforced.
    */
   email: string & tags.Format<"email">;
 
   /**
    * Current approval state controlling seller's ability to list products.
    *
-   * @x-autobe-specification Direct mapping from ecommerce_mall_sellers.approval_status. Valid values: pending, approved, rejected, suspended.
-   * @x-autobe-database-schema-property approval_status
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_sellers.approval_status. Valid values: pending,
+     *   approved, rejected, suspended.
+     * @x-autobe-database-schema-property approval_status
    */
   approvalStatus: string;
 
   /**
    * Timestamp when the seller account was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_sellers.created_at (timestamptz).
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_sellers.created_at (timestamptz).
    */
   createdAt: string & tags.Format<"date-time">;
 
   /**
    * Timestamp of the most recent account update.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_sellers.updated_at. Auto-updated on modification.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_sellers.updated_at. Auto-updated on modification.
    */
   updatedAt: string & tags.Format<"date-time">;
 
   /**
    * Soft deletion timestamp. Null if active, otherwise shows deletion time.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_sellers.deleted_at. Nullable field for soft deletion.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_sellers.deleted_at. Nullable field for soft deletion.
    */
   deletedAt: (string & tags.Format<"date-time">) | null;
 
   /**
    * Current shop profile with seller's public brand identity including shop name, description, and logo.
    *
-   * @x-autobe-specification Computed by querying ecommerce_mall_seller_profile_snapshots for the most recent snapshot (max created_at) where seller_id matches the current seller. Returns IEcommerceMallSellerProfileSnapshot.ISummary or null if no profile snapshot exists.
+     * @x-autobe-specification Computed by querying
+     *   ecommerce_mall_seller_profile_snapshots for the most recent snapshot
+     *   (max created_at) where seller_id matches the current seller. Returns
+     *   IEcommerceMallSellerProfileSnapshot.ISummary or null if no profile
+     *   snapshot exists.
    */
   profile: IEcommerceMallSellerProfileSnapshot.ISummary | null;
 };
@@ -71,7 +82,12 @@ export namespace IEcommerceMallSeller {
     /**
      * Valid refresh token previously obtained from login or registration. Used to obtain new access token without re-entering credentials.
      *
-     * @x-autobe-specification JWT refresh token provided by the client, previously issued during login or registration. Server validates this token against ecommerce_mall_seller_sessions.refresh_token column to confirm it belongs to the authenticated seller and has not expired. Upon successful validation, a new access token is issued.
+         * @x-autobe-specification JWT refresh token provided by the client,
+         *   previously issued during login or registration. Server validates
+         *   this token against ecommerce_mall_seller_sessions.refresh_token
+         *   column to confirm it belongs to the authenticated seller and has
+         *   not expired. Upon successful validation, a new access token is
+         *   issued.
      */
     refreshToken: string;
   };
@@ -83,37 +99,54 @@ export namespace IEcommerceMallSeller {
     /**
      * Seller's unique email address used for authentication and account identification. Must be a valid email format and unique across the platform.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping to ecommerce_mall_sellers.email column. Must be unique valid email address. Backend validates uniqueness and returns 409 Conflict if duplicate.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping to
+         *   ecommerce_mall_sellers.email column. Must be unique valid email
+         *   address. Backend validates uniqueness and returns 409 Conflict if
+         *   duplicate.
      */
     email: string & tags.Format<"email">;
 
     /**
      * Seller's password for account authentication. Must meet platform password strength requirements. Will be securely hashed before storage.
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification User provides plain text password in request. Backend validates password strength (min length, complexity), then hashes using bcrypt with 10 rounds before storing in ecommerce_mall_sellers.password_hash column. Never stores or returns plain text password.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification User provides plain text password in request.
+         *   Backend validates password strength (min length, complexity), then
+         *   hashes using bcrypt with 10 rounds before storing in
+         *   ecommerce_mall_sellers.password_hash column. Never stores or
+         *   returns plain text password.
      */
     password: string & tags.Format<"password">;
 
     /**
      * URL of the page where the registration request originated. Captured for security tracking and audit purposes.
      *
-     * @x-autobe-specification Session context field captured from request headers (Referer/Origin). Stored in ecommerce_mall_seller_sessions table when creating the initial authentication session. Used for security auditing and tracking registration source.
+         * @x-autobe-specification Session context field captured from request
+         *   headers (Referer/Origin). Stored in ecommerce_mall_seller_sessions
+         *   table when creating the initial authentication session. Used for
+         *   security auditing and tracking registration source.
      */
     href: string & tags.Format<"uri">;
 
     /**
      * Referrer URL from the HTTP request headers. Captured for security tracking and to understand registration traffic sources.
      *
-     * @x-autobe-specification Session context field captured from HTTP Referer header. Stored in ecommerce_mall_seller_sessions table when creating the initial authentication session. Used for security auditing and tracking traffic sources.
+         * @x-autobe-specification Session context field captured from HTTP
+         *   Referer header. Stored in ecommerce_mall_seller_sessions table when
+         *   creating the initial authentication session. Used for security
+         *   auditing and tracking traffic sources.
      */
     referrer: string & tags.Format<"uri">;
 
     /**
      * Client IP address for security tracking. Optional in request as server can capture from connection. Used for session security and fraud detection.
      *
-     * @x-autobe-specification Session context field capturing client IP address. Optional because in SSR the client may not know its own IP. Server falls back to connection IP if not provided. Stored in ecommerce_mall_seller_sessions table. Used for security auditing and fraud detection.
+         * @x-autobe-specification Session context field capturing client IP
+         *   address. Optional because in SSR the client may not know its own
+         *   IP. Server falls back to connection IP if not provided. Stored in
+         *   ecommerce_mall_seller_sessions table. Used for security auditing
+         *   and fraud detection.
      */
     ip?: (string & tags.Format<"ipv4">) | null | undefined;
   };
@@ -125,16 +158,23 @@ export namespace IEcommerceMallSeller {
     /**
      * Seller's registered email address used for account identification and login.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping to ecommerce_mall_sellers.email column. Used as the lookup key to find the seller account. Must match the unique email constraint on the table.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping to
+         *   ecommerce_mall_sellers.email column. Used as the lookup key to find
+         *   the seller account. Must match the unique email constraint on the
+         *   table.
      */
     email: string & tags.Format<"email">;
 
     /**
      * Seller's account password. Provided as plain text and verified securely server-side against the stored password hash.
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification Maps to ecommerce_mall_sellers.password_hash column with transformation. User provides plain-text password in request body. Backend performs bcrypt comparison between provided password and stored password_hash. Never stores or returns the plain password.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification Maps to ecommerce_mall_sellers.password_hash
+         *   column with transformation. User provides plain-text password in
+         *   request body. Backend performs bcrypt comparison between provided
+         *   password and stored password_hash. Never stores or returns the
+         *   plain password.
      */
     password: string & tags.Format<"password">;
   };
@@ -146,62 +186,75 @@ export namespace IEcommerceMallSeller {
     /**
      * Unique seller account identifier.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_mall_sellers.id. UUID primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_sellers.id. UUID primary key.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Seller's email address used for authentication.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from ecommerce_mall_sellers.email. Unique email address used for login.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_sellers.email. Unique email address used for login.
      */
     email: string & tags.Format<"email">;
 
     /**
      * Account approval status indicating whether the seller can list products.
      *
-     * @x-autobe-database-schema-property approval_status
-     * @x-autobe-specification Direct mapping from ecommerce_mall_sellers.approval_status. Possible values: pending, approved, rejected, suspended.
+         * @x-autobe-database-schema-property approval_status
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_sellers.approval_status. Possible values: pending,
+         *   approved, rejected, suspended.
      */
     approvalStatus: string;
 
     /**
      * Timestamp when the seller account was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_sellers.created_at. Timestamp with timezone.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_sellers.created_at. Timestamp with timezone.
      */
     createdAt: string & tags.Format<"date-time">;
 
     /**
      * Timestamp of the most recent account update.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_sellers.updated_at. Timestamp with timezone.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_sellers.updated_at. Timestamp with timezone.
      */
     updatedAt: string & tags.Format<"date-time">;
 
     /**
      * Soft deletion timestamp. Null if account is active.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_sellers.deleted_at. Nullable timestamp with timezone. Null if account is active.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_sellers.deleted_at. Nullable timestamp with
+         *   timezone. Null if account is active.
      */
     deletedAt: (string & tags.Format<"date-time">) | null;
 
     /**
      * Seller's shop profile information including shop name, description, and logo.
      *
-     * @x-autobe-specification Computed property. Join ecommerce_mall_seller_profile_snapshots on seller_id, select the most recent snapshot (max created_at), or null if no snapshots exist. Returns the seller's shop profile with name, description, and logo.
+         * @x-autobe-specification Computed property. Join
+         *   ecommerce_mall_seller_profile_snapshots on seller_id, select the
+         *   most recent snapshot (max created_at), or null if no snapshots
+         *   exist. Returns the seller's shop profile with name, description,
+         *   and logo.
      */
     profile: IEcommerceMallSeller | null;
 
     /**
      * Authorization token.
      *
-     * @x-autobe-specification Authorization token comes from the session table.
+         * @x-autobe-specification Authorization token comes from the session
+         *   table.
      */
     token: IAuthorizationToken;
   };
@@ -226,7 +279,10 @@ export namespace IEcommerceMallSeller {
     /**
      * Filter sellers by their account approval status. Returns sellers with the exact specified status.
      *
-     * @x-autobe-specification Filter by seller account approval status. Maps to ecommerce_mall_sellers.approval_status with exact string match. Valid values: 'pending', 'approved', 'rejected', 'suspended'. When null, no status filter applied.
+         * @x-autobe-specification Filter by seller account approval status.
+         *   Maps to ecommerce_mall_sellers.approval_status with exact string
+         *   match. Valid values: 'pending', 'approved', 'rejected',
+         *   'suspended'. When null, no status filter applied.
      */
     approvalStatus?:
       | "pending"
@@ -239,56 +295,85 @@ export namespace IEcommerceMallSeller {
     /**
      * Filter sellers by email address. Supports partial matching for search functionality.
      *
-     * @x-autobe-specification Filter by seller email address. Maps to ecommerce_mall_sellers.email with partial case-insensitive LIKE match. Supports partial string matching for search functionality. When null, no email filter applied.
+         * @x-autobe-specification Filter by seller email address. Maps to
+         *   ecommerce_mall_sellers.email with partial case-insensitive LIKE
+         *   match. Supports partial string matching for search functionality.
+         *   When null, no email filter applied.
      */
     email?: string | null | undefined;
 
     /**
      * Filter sellers registered on or after this date and time.
      *
-     * @x-autobe-specification Filter by seller registration date range start (inclusive). Maps to ecommerce_mall_sellers.created_at with >= operator. ISO 8601 datetime format. When combined with createdAtTo, forms a date range filter. When null, no lower bound applied.
+         * @x-autobe-specification Filter by seller registration date range
+         *   start (inclusive). Maps to ecommerce_mall_sellers.created_at with
+         *   >= operator. ISO 8601 datetime format. When combined with
+         *   createdAtTo, forms a date range filter. When null, no lower bound
+         *   applied.
      */
     createdAtFrom?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * Filter sellers registered on or before this date and time.
      *
-     * @x-autobe-specification Filter by seller registration date range end (inclusive). Maps to ecommerce_mall_sellers.created_at with <= operator. ISO 8601 datetime format. When combined with createdAtFrom, forms a date range filter. When null, no upper bound applied.
+         * @x-autobe-specification Filter by seller registration date range end
+         *   (inclusive). Maps to ecommerce_mall_sellers.created_at with <=
+         *   operator. ISO 8601 datetime format. When combined with
+         *   createdAtFrom, forms a date range filter. When null, no upper bound
+         *   applied.
      */
     createdAtTo?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * Include soft-deleted seller accounts in the search results.
      *
-     * @x-autobe-specification Include soft-deleted seller accounts in results when true. Maps to ecommerce_mall_sellers.deleted_at filter. When true, includes records where deleted_at is not null. When false or null, only returns active sellers (deleted_at is null).
+         * @x-autobe-specification Include soft-deleted seller accounts in
+         *   results when true. Maps to ecommerce_mall_sellers.deleted_at
+         *   filter. When true, includes records where deleted_at is not null.
+         *   When false or null, only returns active sellers (deleted_at is
+         *   null).
      */
     includeDeleted?: boolean | null | undefined;
 
     /**
      * Field to sort the results by.
      *
-     * @x-autobe-specification Sort field selector for ordering results. Maps to ORDER BY clause column selection. 'createdAt' sorts by ecommerce_mall_sellers.created_at, 'approvalStatus' sorts by ecommerce_mall_sellers.approval_status, 'email' sorts by ecommerce_mall_sellers.email. When null, defaults to created_at.
+         * @x-autobe-specification Sort field selector for ordering results.
+         *   Maps to ORDER BY clause column selection. 'createdAt' sorts by
+         *   ecommerce_mall_sellers.created_at, 'approvalStatus' sorts by
+         *   ecommerce_mall_sellers.approval_status, 'email' sorts by
+         *   ecommerce_mall_sellers.email. When null, defaults to created_at.
      */
     sortBy?: "createdAt" | "approvalStatus" | "email" | null | undefined;
 
     /**
      * Sort direction for the results.
      *
-     * @x-autobe-specification Sort direction for ordering results. Maps to ORDER BY clause direction. 'asc' for ascending order, 'desc' for descending order. When null, defaults based on sortBy: createdAt defaults to desc (newest first), others default to asc (alphabetical).
+         * @x-autobe-specification Sort direction for ordering results. Maps to
+         *   ORDER BY clause direction. 'asc' for ascending order, 'desc' for
+         *   descending order. When null, defaults based on sortBy: createdAt
+         *   defaults to desc (newest first), others default to asc
+         *   (alphabetical).
      */
     sortOrder?: "asc" | "desc" | null | undefined;
 
     /**
      * Pagination cursor for fetching the next page of results.
      *
-     * @x-autobe-specification Cursor for pagination continuation. Encoded string representing the position in the result set for efficient pagination with large datasets. Pass the cursor from previous page's pagination response to fetch the next page. When null, starts from the beginning.
+         * @x-autobe-specification Cursor for pagination continuation. Encoded
+         *   string representing the position in the result set for efficient
+         *   pagination with large datasets. Pass the cursor from previous
+         *   page's pagination response to fetch the next page. When null,
+         *   starts from the beginning.
      */
     cursor?: string | null | undefined;
 
     /**
      * Number of records to return per page (1-100).
      *
-     * @x-autobe-specification Number of records to return per page. Maps to LIMIT clause. Integer between 1 and 100. Defaults to 20 if not specified. Used for both cursor-based and offset-based pagination.
+         * @x-autobe-specification Number of records to return per page. Maps to
+         *   LIMIT clause. Integer between 1 and 100. Defaults to 20 if not
+         *   specified. Used for both cursor-based and offset-based pagination.
      */
     pageSize?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -298,14 +383,20 @@ export namespace IEcommerceMallSeller {
     /**
      * Target page number to retrieve (1-indexed).
      *
-     * @x-autobe-specification 1-indexed page number for offset-based pagination. Maps to OFFSET clause calculation: OFFSET = (page - 1) * pageSize. First page is 1. Used when cursor is not provided. If page exceeds available pages, returns empty data array.
+         * @x-autobe-specification 1-indexed page number for offset-based
+         *   pagination. Maps to OFFSET clause calculation: OFFSET = (page - 1)
+         *   * pageSize. First page is 1. Used when cursor is not provided. If
+         *   page exceeds available pages, returns empty data array.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
 
     /**
      * Maximum number of records to return per page.
      *
-     * @x-autobe-specification Maximum records per page for offset-based pagination. Maps to LIMIT clause when page is specified. Defaults to 100 if not specified. Upper bound enforced by server to prevent excessive resource consumption.
+         * @x-autobe-specification Maximum records per page for offset-based
+         *   pagination. Maps to LIMIT clause when page is specified. Defaults
+         *   to 100 if not specified. Upper bound enforced by server to prevent
+         *   excessive resource consumption.
      */
     limit?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };
@@ -317,14 +408,17 @@ export namespace IEcommerceMallSeller {
     /**
      * Page number for pagination (1-indexed).
      *
-     * @x-autobe-specification Page number for cursor-based pagination. 1-indexed. Defaults to 1 if omitted. Used to calculate OFFSET for database query.
+         * @x-autobe-specification Page number for cursor-based pagination.
+         *   1-indexed. Defaults to 1 if omitted. Used to calculate OFFSET for
+         *   database query.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of records per page.
      *
-     * @x-autobe-specification Maximum number of records to return per page. Used to calculate LIMIT for database query. Range 1-100.
+         * @x-autobe-specification Maximum number of records to return per page.
+         *   Used to calculate LIMIT for database query. Range 1-100.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -333,21 +427,27 @@ export namespace IEcommerceMallSeller {
     /**
      * Start of deletion date range filter (inclusive).
      *
-     * @x-autobe-specification Filter for deleted_at >= deletedAtFrom. Inclusive lower bound for deletion date range query on ecommerce_mall_sellers.deleted_at column.
+         * @x-autobe-specification Filter for deleted_at >= deletedAtFrom.
+         *   Inclusive lower bound for deletion date range query on
+         *   ecommerce_mall_sellers.deleted_at column.
      */
     deletedAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * End of deletion date range filter (inclusive).
      *
-     * @x-autobe-specification Filter for deleted_at <= deletedAtTo. Inclusive upper bound for deletion date range query on ecommerce_mall_sellers.deleted_at column.
+         * @x-autobe-specification Filter for deleted_at <= deletedAtTo.
+         *   Inclusive upper bound for deletion date range query on
+         *   ecommerce_mall_sellers.deleted_at column.
      */
     deletedAtTo?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Filter by account approval status.
      *
-     * @x-autobe-specification Exact match filter on ecommerce_mall_sellers.approval_status column. Valid values: pending, approved, rejected, suspended.
+         * @x-autobe-specification Exact match filter on
+         *   ecommerce_mall_sellers.approval_status column. Valid values:
+         *   pending, approved, rejected, suspended.
      */
     approvalStatus?:
       | "pending"
@@ -359,21 +459,27 @@ export namespace IEcommerceMallSeller {
     /**
      * Filter by email address (partial match).
      *
-     * @x-autobe-specification Partial string match filter on ecommerce_mall_sellers.email column using LIKE %email% pattern matching.
+         * @x-autobe-specification Partial string match filter on
+         *   ecommerce_mall_sellers.email column using LIKE %email% pattern
+         *   matching.
      */
     email?: string | undefined;
 
     /**
      * Start of account creation date range filter (inclusive).
      *
-     * @x-autobe-specification Filter for created_at >= createdAtFrom. Inclusive lower bound for account creation date range query on ecommerce_mall_sellers.created_at column.
+         * @x-autobe-specification Filter for created_at >= createdAtFrom.
+         *   Inclusive lower bound for account creation date range query on
+         *   ecommerce_mall_sellers.created_at column.
      */
     createdAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * End of account creation date range filter (inclusive).
      *
-     * @x-autobe-specification Filter for created_at <= createdAtTo. Inclusive upper bound for account creation date range query on ecommerce_mall_sellers.created_at column.
+         * @x-autobe-specification Filter for created_at <= createdAtTo.
+         *   Inclusive upper bound for account creation date range query on
+         *   ecommerce_mall_sellers.created_at column.
      */
     createdAtTo?: (string & tags.Format<"date-time">) | undefined;
   };

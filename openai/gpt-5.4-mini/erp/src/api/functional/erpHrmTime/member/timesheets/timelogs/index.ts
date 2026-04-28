@@ -24,7 +24,10 @@ import { IPageIErpHrmTimeTimesheet } from "../../../../../structures/IPageIErpHr
  * @param props.body Identifies the existing timelog to attach to the timesheet.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Load the target timesheet by id within the active organization context and confirm it belongs to the authenticated employee unless the caller has elevated time management privileges. Reject if the timesheet does not exist or is outside the organization scope.
+ * @x-autobe-specification Load the target timesheet by id within the active
+ *   organization context and confirm it belongs to the authenticated employee
+ *   unless the caller has elevated time management privileges. Reject if the
+ *   timesheet does not exist or is outside the organization scope.
  *
  * Validate that the target timesheet is in draft status. Do not allow adding timelogs to submitted or approved timesheets. If the business flow allows rejected timesheets to be returned to draft, treat them as draft for this operation only after they are reopened into draft state.
  *
@@ -131,8 +134,13 @@ export namespace create {
  * @param props.body Timelog add/remove instructions for updating the contents of a weekly timesheet.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Load the target timesheet by timesheetId within the authenticated member's selected organization context.
- * Verify that the timesheet exists and that the caller is allowed to edit its composition: the timesheet must belong to the caller's own employee record for self-service, or the caller must possess elevated organization permission that explicitly allows timesheet management. Reject access if the timesheet belongs to another organization.
+ * @x-autobe-specification Load the target timesheet by timesheetId within the
+ *   authenticated member's selected organization context. Verify that the
+ *   timesheet exists and that the caller is allowed to edit its composition:
+ *   the timesheet must belong to the caller's own employee record for
+ *   self-service, or the caller must possess elevated organization permission
+ *   that explicitly allows timesheet management. Reject access if the timesheet
+ *   belongs to another organization.
  *
  * Allow modifications only when the timesheet status is draft or rejected. If the timesheet is submitted or approved, return a business rule violation. If the timesheet is rejected, keep it editable and update its composition in place.
  *
@@ -237,7 +245,8 @@ export namespace index {
  * @param props.timesheetTimelogId Identifier of the timesheet-timelog association row.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Load the timesheet_timelogs row by its primary key and verify that it belongs to the provided timesheetId path parameter.
+ * @x-autobe-specification Load the timesheet_timelogs row by its primary key
+ *   and verify that it belongs to the provided timesheetId path parameter.
  *
  * Validate organization scope through the parent timesheet and ensure the requester has permission to view the owning employee's timesheet or has approval access for submitted timesheets. Because the association row is normalized data, do not fetch unrelated timelog collections or attempt to infer the join through the timelog table alone.
  *
@@ -337,7 +346,11 @@ export namespace at {
  * @param props.timesheetTimelogId The timelog association identifier within the specified timesheet.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Load the join row from erp_hrm_time_timesheet_timelogs using the parent timesheet ID and the child timelog association ID from the path. Verify that the join row belongs to the target timesheet and that the timesheet belongs to the caller's current organization scope.
+ * @x-autobe-specification Load the join row from
+ *   erp_hrm_time_timesheet_timelogs using the parent timesheet ID and the child
+ *   timelog association ID from the path. Verify that the join row belongs to
+ *   the target timesheet and that the timesheet belongs to the caller's current
+ *   organization scope.
  *
  * Before deletion, check the parent timesheet status. Reject the request when the timesheet is approved, because approved timesheets lock included timelogs. Also reject when the association is missing, when the association belongs to a different timesheet, or when the caller lacks permission to edit the timesheet owner’s data.
  *

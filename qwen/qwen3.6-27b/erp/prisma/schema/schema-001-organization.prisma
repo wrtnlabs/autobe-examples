@@ -1,0 +1,191 @@
+/// Multi-tenancy root entity storing organization identity attributes,
+/// operational settings, and lifecycle state.
+///
+/// Organizations serve as the root of data isolation, containing all scoped
+/// entities including employees, projects, tasks, and time tracking records.
+/// Organization owners manage configuration settings such as currency,
+/// timezone, and fiscal month parameters.
+///
+/// Organization deletion requires all pending timesheets to be resolved
+/// (approved or rejected) and no active employee contracts. Upon deletion,
+/// all child records are permanently removed while the owner's user account
+/// remains but becomes unassociated with any organization.
+///
+/// @namespace hrm_platform.organization
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_platform_organizations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Organization name.
+  ///
+  /// Unique identifier for the organization displayed in user interfaces and
+  /// context selection menus when users switch between organizational
+  /// contexts.
+  name String
+  
+  /// Organization description.
+  ///
+  /// Optional text field describing the organization's purpose, industry, or
+  /// additional details visible to members.
+  description String?
+  
+  /// Logo image URI.
+  ///
+  /// Optional URL pointing to the organization's logo image displayed in the
+  /// user interface.
+  logo_uri String?
+  
+  /// Currency code.
+  ///
+  /// Standard currency code (e.g., USD, EUR, KRW) used for financial
+  /// calculations, pay rates, and budget tracking within the organization.
+  currency String
+  
+  /// Organization timezone.
+  ///
+  /// Timezone identifier (e.g., America/New_York, Asia/Seoul) for scheduling,
+  /// time tracking operations, and report generation.
+  timezone String
+  
+  /// Fiscal year start month.
+  ///
+  /// Integer value from 1 (January) to 12 (December) defining the
+  /// organization's fiscal year start date for financial reporting and budget
+  /// cycles.
+  fiscal_start_month Int
+  
+  /// Timestamp when the organization was created.
+  created_at DateTime
+  
+  /// Timestamp when the organization was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the organization was soft deleted.
+  ///
+  /// NULL indicates the organization is active. Deletion requires all pending
+  /// timesheets resolved and no active employee contracts.
+  deleted_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  organizationSnapshots hrm_platform_organization_snapshots[]
+  employees hrm_platform_employees[]
+  departments hrm_platform_departments[]
+  roles hrm_platform_roles[]
+  projects hrm_platform_projects[]
+  activityLogs hrm_platform_activity_logs[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([name])
+}
+
+/// Point-in-time snapshot capturing organization configuration state for
+/// audit trail and recovery purposes.
+///
+/// This table records the complete configuration of an organization at
+/// specific moments in time, preserving the previous state whenever
+/// organization settings are modified. Each snapshot denormalizes all
+/// organization attributes including name, description, logo reference,
+/// currency, timezone, and fiscal start month.
+///
+/// Snapshots are append-only and immutable once created, providing a
+/// reliable historical record for audit, governance, and potential rollback
+/// scenarios. The acting member field traces accountability by recording
+/// which user triggered the captured change.
+///
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_platform_organization_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the organization snapshot.
+  id String @id
+  
+  /// Foreign key referencing the organization whose configuration state is
+  /// captured in this snapshot.
+  ///
+  /// This establishes the relationship between the snapshot and its source
+  /// organization, enabling retrieval of the complete configuration history
+  /// for any given organization. Multiple snapshots share this foreign key
+  /// value for the same organization over time.
+  hrm_platform_organization_id String
+  
+  /// Foreign key referencing the member who triggered the configuration change
+  /// captured by this snapshot.
+  ///
+  /// This enables audit trail and accountability by linking each configuration
+  /// state change to the specific user who initiated it. The acting member
+  /// serves as the reference point for governance and change history tracking.
+  hrm_platform_member_id String
+  
+  /// Organization name captured at the point in time when this snapshot was
+  /// created.
+  ///
+  /// This stores the exact name value of the organization at the moment of
+  /// snapshot creation, preserving historical naming for audit trail purposes.
+  name String
+  
+  /// Organization description text captured at the point in time when this
+  /// snapshot was created.
+  ///
+  /// This stores the description content as it existed when the snapshot was
+  /// taken.
+  description String?
+  
+  /// Organization logo image URI captured at the point in time when this
+  /// snapshot was created.
+  ///
+  /// This preserves the logo reference as it existed when the snapshot was
+  /// taken.
+  logo_href String?
+  
+  /// Organization's primary currency code (e.g., USD, EUR, KRW) captured at
+  /// the point in time when this snapshot was created.
+  ///
+  /// This determines the monetary unit used for contracts and financial
+  /// calculations within the organization at that time.
+  currency String
+  
+  /// Organization's configured timezone (e.g., Asia/Seoul, America/New_York)
+  /// captured at the point in time when this snapshot was created.
+  ///
+  /// This timezone setting determines the temporal context for scheduling and
+  /// time tracking within the organization.
+  timezone String
+  
+  /// Organization's fiscal year start month (1-12, where 1=January) captured
+  /// at the point in time when this snapshot was created.
+  ///
+  /// This determines the beginning of the organization's fiscal calendar for
+  /// reporting and financial period calculations.
+  fiscal_start_month Int
+  
+  /// Timestamp indicating when this snapshot record was created and persisted.
+  ///
+  /// This marks the exact point in time when the organization configuration
+  /// state was captured for preservation.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  organization hrm_platform_organizations @relation(fields: [hrm_platform_organization_id], references: [id], onDelete: Cascade)
+  actingMember hrm_platform_members @relation(fields: [hrm_platform_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([hrm_platform_organization_id, created_at], map: "hrm_platform_organization_snapshots_hrm_platform_organ_e02c3cdf")
+  // spellchecker: ignore-next-line
+  @@index([hrm_platform_member_id, created_at], map: "hrm_platform_organization_snapshots_hrm_platform_membe_410d2d11")
+}

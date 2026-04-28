@@ -31,9 +31,10 @@ export class EcommerceCustomerWishlistsController {
    *
    * @param connection
    * @param body Search criteria for filtering wishlist items including product name search, date range filters, availability status, and pagination parameters.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Query the ecommerce_wishlist_items table for the authenticated customer's wishlist.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Query the ecommerce_wishlist_items table for the
+     *   authenticated customer's wishlist.
    *
    * **Implementation Steps**
    *
@@ -95,9 +96,11 @@ export class EcommerceCustomerWishlistsController {
    *
    * @param connection
    * @param wishlistId Unique identifier of the wishlist to retrieve (UUID format, global scope)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Query the ecommerce_wishlists table by id UUID. Validate that the authenticated customer's id matches the ecommerce_customer_id foreign key. If mismatch, return 403 Forbidden.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Query the ecommerce_wishlists table by id UUID.
+     *   Validate that the authenticated customer's id matches the
+     *   ecommerce_customer_id foreign key. If mismatch, return 403 Forbidden.
    *
    * Join with ecommerce_wishlist_items to fetch all active items (where deleted_at IS NULL). For each item, join with ecommerce_products to include product details.
    *

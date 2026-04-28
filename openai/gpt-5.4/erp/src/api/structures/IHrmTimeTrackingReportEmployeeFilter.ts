@@ -11,24 +11,31 @@ export type IHrmTimeTrackingReportEmployeeFilter = {
   /**
    * Unique identifier of this saved report employee filter entry.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from `hrm_time_tracking_report_employee_filters.id`.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   `hrm_time_tracking_report_employee_filters.id`.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * The saved report definition that owns this employee filter entry.
    *
-   * @x-autobe-database-schema-property report
-   * @x-autobe-specification Resolve the belongs-to relation `report` from `hrm_time_tracking_report_employee_filters.hrm_time_tracking_report_id` to `hrm_time_tracking_reports.id`, then map the related record as `IHrmTimeTrackingReport.ISummary`.
+     * @x-autobe-database-schema-property report
+     * @x-autobe-specification Resolve the belongs-to relation `report` from
+     *   `hrm_time_tracking_report_employee_filters.hrm_time_tracking_report_id`
+     *   to `hrm_time_tracking_reports.id`, then map the related record as
+     *   `IHrmTimeTrackingReport.ISummary`.
    */
   report: IHrmTimeTrackingReport.ISummary;
 
   /**
    * The employee selected by this saved report filter entry.
    *
-   * @x-autobe-database-schema-property employee
-   * @x-autobe-specification Resolve the belongs-to relation `employee` from `hrm_time_tracking_report_employee_filters.hrm_time_tracking_employee_id` to `hrm_time_tracking_employees.id`, then map the related record as `IHrmTimeTrackingEmployee.ISummary`.
+     * @x-autobe-database-schema-property employee
+     * @x-autobe-specification Resolve the belongs-to relation `employee` from
+     *   `hrm_time_tracking_report_employee_filters.hrm_time_tracking_employee_id`
+     *   to `hrm_time_tracking_employees.id`, then map the related record as
+     *   `IHrmTimeTrackingEmployee.ISummary`.
    */
   employee: IHrmTimeTrackingEmployee.ISummary;
 };
@@ -40,8 +47,13 @@ export namespace IHrmTimeTrackingReportEmployeeFilter {
     /**
      * Identifier of the employee to add as a selected filter entry for the target saved report.
      *
-     * @x-autobe-database-schema-property hrm_time_tracking_employee_id
-     * @x-autobe-specification Direct mapping from request body.hrm_time_tracking_employee_id to hrm_time_tracking_report_employee_filters.hrm_time_tracking_employee_id. Validate that the referenced employee exists and is eligible within the same organization scope as the parent report resolved from path parameter reportId before inserting the child filter row.
+         * @x-autobe-database-schema-property hrm_time_tracking_employee_id
+         * @x-autobe-specification Direct mapping from request
+         *   body.hrm_time_tracking_employee_id to
+         *   hrm_time_tracking_report_employee_filters.hrm_time_tracking_employee_id.
+         *   Validate that the referenced employee exists and is eligible within
+         *   the same organization scope as the parent report resolved from path
+         *   parameter reportId before inserting the child filter row.
      */
     hrm_time_tracking_employee_id: string & tags.Format<"uuid">;
   };
@@ -53,8 +65,16 @@ export namespace IHrmTimeTrackingReportEmployeeFilter {
     /**
      * Identifier of the employee that should replace the current employee selection in this saved report filter.
      *
-     * @x-autobe-database-schema-property hrm_time_tracking_employee_id
-     * @x-autobe-specification Direct mapping to `hrm_time_tracking_report_employee_filters.hrm_time_tracking_employee_id`. Accept a UUID identifying the replacement employee for the addressed filter row. Before persisting, resolve the employee within the same organization as the parent report identified by `reportId`, reject cross-organization or nonexistent references, and enforce uniqueness of `(hrm_time_tracking_report_id, hrm_time_tracking_employee_id)` against other filter rows on the same report.
+         * @x-autobe-database-schema-property hrm_time_tracking_employee_id
+         * @x-autobe-specification Direct mapping to
+         *   `hrm_time_tracking_report_employee_filters.hrm_time_tracking_employee_id`.
+         *   Accept a UUID identifying the replacement employee for the
+         *   addressed filter row. Before persisting, resolve the employee
+         *   within the same organization as the parent report identified by
+         *   `reportId`, reject cross-organization or nonexistent references,
+         *   and enforce uniqueness of `(hrm_time_tracking_report_id,
+         *   hrm_time_tracking_employee_id)` against other filter rows on the
+         *   same report.
      */
     hrm_time_tracking_employee_id: string & tags.Format<"uuid">;
   };

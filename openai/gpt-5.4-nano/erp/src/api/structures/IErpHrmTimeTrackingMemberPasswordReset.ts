@@ -8,40 +8,51 @@ export type IErpHrmTimeTrackingMemberPasswordReset = {
   /**
    * Identifier of the password reset request row to be verified.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_member_password_resets.id. Stored as UUID in DB; exposed as a UUID-formatted string.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_tracking_member_password_resets.id. Stored as UUID in DB;
+     *   exposed as a UUID-formatted string.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * When the reset request expires and must no longer be accepted. Used by server-side verification logic.
    *
-   * @x-autobe-database-schema-property expired_at
-   * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_member_password_resets.expired_at. Expose as an RFC3339/ISO-8601 date-time string.
+     * @x-autobe-database-schema-property expired_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_tracking_member_password_resets.expired_at. Expose as an
+     *   RFC3339/ISO-8601 date-time string.
    */
   expired_at: string & tags.Format<"date-time">;
 
   /**
    * Soft-delete timestamp indicating the reset request has been invalidated. Null means the reset request has not been invalidated.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_member_password_resets.deleted_at. If the DB column is NULL, return deleted_at as null; otherwise return as an RFC3339/ISO-8601 date-time string.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_tracking_member_password_resets.deleted_at. If the DB
+     *   column is NULL, return deleted_at as null; otherwise return as an
+     *   RFC3339/ISO-8601 date-time string.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 
   /**
    * When this password reset request was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_member_password_resets.created_at. Expose as an RFC3339/ISO-8601 date-time string.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_tracking_member_password_resets.created_at. Expose as an
+     *   RFC3339/ISO-8601 date-time string.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * When this password reset request row was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_member_password_resets.updated_at. Expose as an RFC3339/ISO-8601 date-time string.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_tracking_member_password_resets.updated_at. Expose as an
+     *   RFC3339/ISO-8601 date-time string.
    */
   updated_at: string & tags.Format<"date-time">;
 };
@@ -53,29 +64,43 @@ export namespace IErpHrmTimeTrackingMemberPasswordReset {
     /**
      * Opaque reset token identifier used to locate the password reset request record.
      *
-     * @x-autobe-database-schema-property token_identifier
-     * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_member_password_resets.token_identifier. Used as the lookup key to find the reset request row for validation (existence, deleted_at null, expired_at not in the past).
+         * @x-autobe-database-schema-property token_identifier
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_tracking_member_password_resets.token_identifier. Used
+         *   as the lookup key to find the reset request row for validation
+         *   (existence, deleted_at null, expired_at not in the past).
      */
     tokenIdentifier: string;
 
     /**
      * The new plain-text password to set after the reset token is verified. The server validates it and stores only a hashed credential.
      *
-     * @x-autobe-specification Use as the plain-text candidate password to validate with the service-layer member password credential rules. If validation succeeds and the reset token is valid, update erp_hrm_time_tracking_members.password_hash for the resolved member in a transaction. Never store or expose the plain-text password; only store the hashed value.
+         * @x-autobe-specification Use as the plain-text candidate password to
+         *   validate with the service-layer member password credential rules.
+         *   If validation succeeds and the reset token is valid, update
+         *   erp_hrm_time_tracking_members.password_hash for the resolved member
+         *   in a transaction. Never store or expose the plain-text password;
+         *   only store the hashed value.
      */
     newPassword: string & tags.Format<"password">;
 
     /**
      * Target page number (1-indexed) for any pagination-related response behavior associated with this request.
      *
-     * @x-autobe-specification Request-side pagination control. The token verification/update logic must not depend on page; treat this purely as request metadata for any pagination-related response shaping supported by the API contract.
+         * @x-autobe-specification Request-side pagination control. The token
+         *   verification/update logic must not depend on page; treat this
+         *   purely as request metadata for any pagination-related response
+         *   shaping supported by the API contract.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
 
     /**
      * Maximum number of records per page for any pagination-related response behavior associated with this request.
      *
-     * @x-autobe-specification Request-side pagination control. The token verification/update logic must not depend on limit; treat this purely as request metadata for any pagination-related response behavior supported by the API contract.
+         * @x-autobe-specification Request-side pagination control. The token
+         *   verification/update logic must not depend on limit; treat this
+         *   purely as request metadata for any pagination-related response
+         *   behavior supported by the API contract.
      */
     limit?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };

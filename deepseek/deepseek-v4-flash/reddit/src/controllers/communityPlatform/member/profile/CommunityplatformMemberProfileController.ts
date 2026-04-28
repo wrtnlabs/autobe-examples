@@ -18,9 +18,11 @@ export class CommunityplatformMemberProfileController {
    * The karma score is a denormalized aggregate of all votes received on the member's posts and comments, starting at 0 and updated in real-time as votes are cast, changed, or retracted. Karma can be positive, zero, or negative.
    *
    * @param connection
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query the community_platform_profiles table joined with community_platform_members to get the profile for the currently authenticated member (identified from JWT token).
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query the community_platform_profiles table
+     *   joined with community_platform_members to get the profile for the
+     *   currently authenticated member (identified from JWT token).
    *
    * Return the full profile record including: display_name, biography, avatar_uri, karma, created_at, updated_at.
    *
@@ -55,9 +57,9 @@ export class CommunityplatformMemberProfileController {
    *
    * @param connection
    * @param body Fields to update on the member's profile. At least one field must be provided. display_name must be a non-blank string when provided. biography and avatar_uri are optional and can be set to null or omitted to leave unchanged.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Update the authenticated member's own profile.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Update the authenticated member's own profile.
    *
    * 1. Resolve the member ID from the authentication context (JWT session).
    * 2. Query community_platform_profiles where member_id matches the authenticated member and deleted_at IS NULL.

@@ -18,8 +18,9 @@ export type ITodoAppProfile = {
    *
    * The profile ID is a UUID generated at account registration. It serves as the internal database identifier for the profile record and is read-only after creation.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from todo_app_profiles.id. UUID primary key, set automatically at account creation via the Prisma ORM.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from todo_app_profiles.id. UUID
+     *   primary key, set automatically at account creation via the Prisma ORM.
    */
   id: string & tags.Format<"uuid">;
 
@@ -28,8 +29,10 @@ export type ITodoAppProfile = {
    *
    * Each profile belongs to exactly one member through the `todo_app_member_id` foreign key. The member is resolved via a database join and returns the member's summary information. A member can only access their own profile.
    *
-   * @x-autobe-database-schema-property member
-   * @x-autobe-specification Join from todo_app_profiles.todo_app_member_id to todo_app_members.id. Returns ITodoAppMember.ISummary containing the owning member's identifier and display name.
+     * @x-autobe-database-schema-property member
+     * @x-autobe-specification Join from todo_app_profiles.todo_app_member_id to
+     *   todo_app_members.id. Returns ITodoAppMember.ISummary containing the
+     *   owning member's identifier and display name.
    */
   member: ITodoAppMember.ISummary;
 
@@ -38,8 +41,11 @@ export type ITodoAppProfile = {
    *
    * Optional at account creation and can be set, changed, or cleared through the profile update endpoint. When `null`, no display name has been set or it has been explicitly cleared by the member.
    *
-   * @x-autobe-database-schema-property display_name
-   * @x-autobe-specification Direct mapping from todo_app_profiles.display_name. Nullable string in database — null when never set or after being explicitly cleared via the profile update endpoint.
+     * @x-autobe-database-schema-property display_name
+     * @x-autobe-specification Direct mapping from
+     *   todo_app_profiles.display_name. Nullable string in database — null when
+     *   never set or after being explicitly cleared via the profile update
+     *   endpoint.
    */
   displayName: string | null;
 
@@ -48,8 +54,10 @@ export type ITodoAppProfile = {
    *
    * Set automatically at account registration alongside the member record. This value is system-managed and not user-modifiable.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from todo_app_profiles.created_at. Set automatically at profile creation alongside the member record. Read-only — never modified after creation.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from todo_app_profiles.created_at.
+     *   Set automatically at profile creation alongside the member record.
+     *   Read-only — never modified after creation.
    */
   createdAt: string & tags.Format<"date-time">;
 
@@ -58,8 +66,10 @@ export type ITodoAppProfile = {
    *
    * Updated automatically when the display name is changed. System-managed and not directly modifiable by the API consumer.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from todo_app_profiles.updated_at. Updated automatically by Prisma on profile changes (display name updates). Read-only from the API consumer's perspective.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from todo_app_profiles.updated_at.
+     *   Updated automatically by Prisma on profile changes (display name
+     *   updates). Read-only from the API consumer's perspective.
    */
   updatedAt: string & tags.Format<"date-time">;
 };
@@ -79,8 +89,11 @@ export namespace ITodoAppProfile {
      *
      * The update takes effect immediately and is reflected in subsequent profile retrievals.
      *
-     * @x-autobe-database-schema-property display_name
-     * @x-autobe-specification Direct mapping from todo_app_profiles.display_name. Null or absent value clears the existing display_name. Maximum length constrained by DB column type (unbounded string).
+         * @x-autobe-database-schema-property display_name
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_profiles.display_name. Null or absent value clears the
+         *   existing display_name. Maximum length constrained by DB column type
+         *   (unbounded string).
      */
     display_name?: string | null | undefined;
   };

@@ -31,23 +31,18 @@ import { IEcommerceMallReview } from "../../../../structures/IEcommerceMallRevie
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
  * @x-autobe-specification 1. Validate path parameter reviewId is a valid UUID.
- * 2. Query ecommerce_mall_reviews by id.
- * 3. Verify review exists.
- * 4. Verify review.deleted_at is null (not soft-deleted).
- * 5. Verify the authenticated customer's id matches review.ecommerce_mall_member_id (ownership check).
- * 6. Validate request body:
- *    - rating: integer between 1 and 5 (if provided)
- *    - review_text: string, optional, null or string (if provided)
- * 7. Update the review record:
- *    - Set rating to new value if provided in request
- *    - Set review_text to new value if provided in request
- *    - Update updated_at to current timestamp
- * 8. Create a snapshot record in ecommerce_mall_review_snapshots:
- *    - Copy old rating and review_text values
- *    - Record snapshot timestamp
- *    - Mark snapshot type as 'update'
- *    - Include which fields were modified
- * 9. Return the updated review object with new updated_at timestamp.
+ *   2. Query ecommerce_mall_reviews by id. 3. Verify review exists. 4. Verify
+ *   review.deleted_at is null (not soft-deleted). 5. Verify the authenticated
+ *   customer's id matches review.ecommerce_mall_member_id (ownership check). 6.
+ *   Validate request body: - rating: integer between 1 and 5 (if provided) -
+ *   review_text: string, optional, null or string (if provided) 7. Update the
+ *   review record: - Set rating to new value if provided in request - Set
+ *   review_text to new value if provided in request - Update updated_at to
+ *   current timestamp 8. Create a snapshot record in
+ *   ecommerce_mall_review_snapshots: - Copy old rating and review_text values -
+ *   Record snapshot timestamp - Mark snapshot type as 'update' - Include which
+ *   fields were modified 9. Return the updated review object with new
+ *   updated_at timestamp.
  *
  * **Error Cases:**
  * - 404 Not Found: Review does not exist

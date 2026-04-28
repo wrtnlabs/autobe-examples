@@ -17,7 +17,8 @@ import { IHrmTimeTrackingOrganizationDashboard } from "../../../../../structures
  * @param props.connection
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query across multiple tables within the current organization context:
+ * @x-autobe-specification Query across multiple tables within the current
+ *   organization context:
  *
  * 1. Active employees count: COUNT of hrm_time_tracking_employees WHERE organization_id = current AND status = 'active' AND deleted_at IS NULL.
  *

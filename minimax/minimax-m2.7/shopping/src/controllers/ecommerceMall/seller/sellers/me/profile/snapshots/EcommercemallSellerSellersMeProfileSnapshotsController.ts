@@ -23,9 +23,9 @@ export class EcommercemallSellerSellersMeProfileSnapshotsController {
    * **Error Handling**: If the seller account has been deleted but the seller record remains for historical purposes, the system rejects the request.
    *
    * @param connection
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Implement the following steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Implement the following steps:
    *
    * 1. **Authentication**: Extract authenticated seller from JWT token in Authorization header. Verify seller exists and is not deleted.
    *

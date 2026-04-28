@@ -42,9 +42,10 @@ export class RedditlikeCommunitiesFeedsController {
    * @param connection
    * @param communityId Unique identifier of the community whose feed to retrieve (UUID format).
    * @param body Feed filtering criteria including sorting option, time period filter for top sorting, and pagination parameters (cursor and limit).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query the reddit_like_posts table filtered by reddit_like_community_id matching the path parameter.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query the reddit_like_posts table filtered by
+     *   reddit_like_community_id matching the path parameter.
    *
    * Implement sorting logic:
    * - 'hot': Calculate hot score using vote score and created_at timestamp

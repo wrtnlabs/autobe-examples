@@ -8,7 +8,12 @@ export type IRedditCloneFileThumbnail = {
   /**
    * Array of thumbnail variant objects for the file.
    *
-   * @x-autobe-specification Array elements are IRedditCloneFileThumbnail.ISummary objects. Each thumbnail contains: id (UUID), width (int, pixels), height (int, pixels), variant (string identifier like 'small', 'medium', 'large', '100x100'), thumbnailPath (storage path), createdAt (generation timestamp). Elements ordered by variant name.
+     * @x-autobe-specification Array elements are
+     *   IRedditCloneFileThumbnail.ISummary objects. Each thumbnail contains: id
+     *   (UUID), width (int, pixels), height (int, pixels), variant (string
+     *   identifier like 'small', 'medium', 'large', '100x100'), thumbnailPath
+     *   (storage path), createdAt (generation timestamp). Elements ordered by
+     *   variant name.
    */
   items: IRedditCloneFileThumbnail.ISummary;
 };
@@ -20,48 +25,58 @@ export namespace IRedditCloneFileThumbnail {
     /**
      * Unique identifier of the thumbnail.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from reddit_clone_file_thumbnails.id (UUID primary key). No transformation.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_file_thumbnails.id (UUID primary key). No
+         *   transformation.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Thumbnail width in pixels.
      *
-     * @x-autobe-database-schema-property width
-     * @x-autobe-specification Direct mapping from reddit_clone_file_thumbnails.width (Int). Pixel width value.
+         * @x-autobe-database-schema-property width
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_file_thumbnails.width (Int). Pixel width value.
      */
     width: number & tags.Type<"int32">;
 
     /**
      * Thumbnail height in pixels.
      *
-     * @x-autobe-database-schema-property height
-     * @x-autobe-specification Direct mapping from reddit_clone_file_thumbnails.height (Int). Pixel height value.
+         * @x-autobe-database-schema-property height
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_file_thumbnails.height (Int). Pixel height value.
      */
     height: number & tags.Type<"int32">;
 
     /**
      * Thumbnail variant identifier such as 'small', 'medium', 'large', or dimension labels like '100x100'.
      *
-     * @x-autobe-database-schema-property variant
-     * @x-autobe-specification Direct mapping from reddit_clone_file_thumbnails.variant (String). Enum values: 'small', 'medium', 'large', or dimension labels like '100x100'.
+         * @x-autobe-database-schema-property variant
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_file_thumbnails.variant (String). Enum values:
+         *   'small', 'medium', 'large', or dimension labels like '100x100'.
      */
     variant: string;
 
     /**
      * Storage path where the thumbnail image file is located.
      *
-     * @x-autobe-database-schema-property thumbnail_path
-     * @x-autobe-specification Direct mapping from reddit_clone_file_thumbnails.thumbnail_path (String). Storage path reference for thumbnail image file.
+         * @x-autobe-database-schema-property thumbnail_path
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_file_thumbnails.thumbnail_path (String). Storage path
+         *   reference for thumbnail image file.
      */
     thumbnailPath: string;
 
     /**
      * Timestamp when the thumbnail was generated.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from reddit_clone_file_thumbnails.created_at (DateTime). Timestamp when thumbnail was generated.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_file_thumbnails.created_at (DateTime). Timestamp when
+         *   thumbnail was generated.
      */
     createdAt: string & tags.Format<"date-time">;
   };

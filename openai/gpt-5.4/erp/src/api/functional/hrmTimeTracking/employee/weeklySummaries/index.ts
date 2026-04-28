@@ -28,7 +28,8 @@ import { IPageIHrmTimeTrackingEmployeeWeeklySummary } from "../../../../structur
  * @param props.body Weekly summary report filters and pagination options
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor employee
- * @x-autobe-specification Implement this operation as an organization-scoped analytical query over time-tracking data.
+ * @x-autobe-specification Implement this operation as an organization-scoped
+ *   analytical query over time-tracking data.
  *
  * 1. Resolve the caller's current organization context from authenticated session state and evaluate whether the caller has report-viewing permission in that organization. Reject the request if permission is absent.
  *
@@ -140,7 +141,8 @@ export namespace index {
  * @param props.employeeWeeklySummaryId Target employee weekly summary record ID
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor employee
- * @x-autobe-specification Load a single row from hrm_time_tracking_employee_weekly_summaries by id.
+ * @x-autobe-specification Load a single row from
+ *   hrm_time_tracking_employee_weekly_summaries by id.
  *
  * Validate that employeeWeeklySummaryId is a UUID-form identifier and query the summary table for a non-deleted record whose id matches the supplied value. Join or follow the employee relation through hrm_time_tracking_employee_id to validate that the summary belongs to an employee accessible within the caller's current organization context. Do not permit cross-organization access based on roles from another organization.
  *

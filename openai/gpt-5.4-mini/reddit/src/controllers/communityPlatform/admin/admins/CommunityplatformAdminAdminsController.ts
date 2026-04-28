@@ -22,9 +22,10 @@ export class CommunityplatformAdminAdminsController {
    *
    * @param connection
    * @param body Search and pagination criteria for browsing administrator records.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Implement a paginated admin listing query with optional search and filter criteria.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Implement a paginated admin listing query with
+     *   optional search and filter criteria.
    *
    * Use the request body as the query envelope because this is a collection retrieval endpoint requiring pagination and search parameters. Query the community_platform_admins table as the primary source for administrator identity data, and join or correlate to community_platform_moderation_roles when role-based context is needed for summary output or filtering. Preserve the role-scoped meaning of admin authority from the requirements: an administrator record should be interpreted as an account holding active moderation authority, not as an unrestricted global permission.
    *
@@ -62,9 +63,10 @@ export class CommunityplatformAdminAdminsController {
    *
    * @param connection
    * @param adminId Administrator identifier.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Resolve the administrator by primary identifier from the `community_platform_admins` table using a single read query.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Resolve the administrator by primary identifier
+     *   from the `community_platform_admins` table using a single read query.
    *
    * Implement a direct lookup by `adminId` with strict existence checking. If the record is absent, return a standard not-found error. Do not perform any collection joins, pagination, or mutation logic. The endpoint must remain read-only and must not expose any credential-changing behavior.
    *

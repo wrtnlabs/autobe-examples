@@ -24,9 +24,11 @@ export class ShoppingmallAdministratorCancellation_request_snapshotsController {
    *
    * @param connection
    * @param body Search criteria and pagination parameters for filtering cancellation request snapshots
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Query shopping_mall_cancellation_request_snapshots table with pagination and filtering.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor administrator
+     * @x-autobe-specification Query
+     *   shopping_mall_cancellation_request_snapshots table with pagination and
+     *   filtering.
    *
    * Apply search filters:
    * - Filter by shopping_mall_cancellation_request_id (UUID) to see all snapshots for a specific cancellation request
@@ -84,9 +86,9 @@ export class ShoppingmallAdministratorCancellation_request_snapshotsController {
    *
    * @param connection
    * @param snapshotId Unique identifier of the cancellation request snapshot to retrieve
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Implementation steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor administrator
+     * @x-autobe-specification Implementation steps:
    *
    * 1. Validate path parameter snapshotId is a valid UUID format
    *

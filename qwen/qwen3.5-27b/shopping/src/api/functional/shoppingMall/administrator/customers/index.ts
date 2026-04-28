@@ -22,7 +22,8 @@ import { IShoppingMallCustomer } from "../../../../structures/IShoppingMallCusto
  * @param props.body Ban status to set for the customer account. Set to true to ban the customer (prevent login), set to false to unban the customer (restore login access).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor administrator
- * @x-autobe-specification Update the banned boolean field in shopping_mall_customers table based on the request body.
+ * @x-autobe-specification Update the banned boolean field in
+ *   shopping_mall_customers table based on the request body.
  *
  * 1. Validate that the customerId exists in shopping_mall_customers table
  * 2. Verify the customer is not soft-deleted (deleted_at is null)

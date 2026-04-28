@@ -16,8 +16,9 @@ export type IMallPlatformAdministrator = {
    *
    * This value identifies the account in administrator detail and governance workflows.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from mall_platform_administrators.id as the administrator UUID identifier.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_administrators.id as the administrator UUID identifier.
    */
   id: string & tags.Format<"uuid">;
 
@@ -26,8 +27,10 @@ export type IMallPlatformAdministrator = {
    *
    * This value is used to identify the account and support sign-in workflows.
    *
-   * @x-autobe-database-schema-property email
-   * @x-autobe-specification Direct mapping from mall_platform_administrators.email. This is the unique sign-in email address.
+     * @x-autobe-database-schema-property email
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_administrators.email. This is the unique sign-in email
+     *   address.
    */
   email: string & tags.Format<"email">;
 
@@ -36,8 +39,10 @@ export type IMallPlatformAdministrator = {
    *
    * This value indicates the account's privilege level within platform governance.
    *
-   * @x-autobe-database-schema-property grade
-   * @x-autobe-specification Direct mapping from mall_platform_administrators.grade. Represents the administrator authorization grade such as regular or super administrator.
+     * @x-autobe-database-schema-property grade
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_administrators.grade. Represents the administrator
+     *   authorization grade such as regular or super administrator.
    */
   grade: string;
 
@@ -46,8 +51,10 @@ export type IMallPlatformAdministrator = {
    *
    * This value indicates whether the account may sign in and participate in platform administration.
    *
-   * @x-autobe-database-schema-property status
-   * @x-autobe-specification Direct mapping from mall_platform_administrators.status. Represents the current account state such as active, suspended, or banned.
+     * @x-autobe-database-schema-property status
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_administrators.status. Represents the current account
+     *   state such as active, suspended, or banned.
    */
   status: string;
 
@@ -56,8 +63,9 @@ export type IMallPlatformAdministrator = {
    *
    * This timestamp is preserved for lifecycle tracking and audit purposes.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from mall_platform_administrators.created_at.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_administrators.created_at.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -66,8 +74,9 @@ export type IMallPlatformAdministrator = {
    *
    * This timestamp reflects the most recent persisted change to the record.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from mall_platform_administrators.updated_at.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_administrators.updated_at.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -76,8 +85,10 @@ export type IMallPlatformAdministrator = {
    *
    * A null value means the account has not been deleted.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from mall_platform_administrators.deleted_at. Nullable lifecycle marker for soft-deleted accounts.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_administrators.deleted_at. Nullable lifecycle marker for
+     *   soft-deleted accounts.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -95,8 +106,10 @@ export namespace IMallPlatformAdministrator {
      *
      * This value is used as the sign-in identifier for the new account. It must be a valid and unique email address.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping to mall_platform_administrators.email. Validate as an email address and enforce uniqueness before account creation.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping to
+         *   mall_platform_administrators.email. Validate as an email address
+         *   and enforce uniqueness before account creation.
      */
     email: string & tags.Format<"email">;
 
@@ -105,8 +118,11 @@ export namespace IMallPlatformAdministrator {
      *
      * This secret is submitted in plain text so the server can create a secure password hash. The raw password is never persisted or returned.
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification Accept plain-text password input, validate it against the password policy, hash it server-side, and persist the hash to mall_platform_administrators.password_hash. Never store or return the raw password.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification Accept plain-text password input, validate it
+         *   against the password policy, hash it server-side, and persist the
+         *   hash to mall_platform_administrators.password_hash. Never store or
+         *   return the raw password.
      */
     password: string & tags.Format<"password">;
   };
@@ -122,8 +138,10 @@ export namespace IMallPlatformAdministrator {
      *
      * This value is used to locate the administrator account during sign-in and must be a valid email address.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from mall_platform_administrators.email. Use as the unique administrator identifier when locating the account for password verification.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_administrators.email. Use as the unique administrator
+         *   identifier when locating the account for password verification.
      */
     email: string & tags.Format<"email">;
 
@@ -132,8 +150,12 @@ export namespace IMallPlatformAdministrator {
      *
      * This value is submitted only for authentication and is verified against the stored password hash on the server.
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification Maps to mall_platform_administrators.password_hash for verification only. The client submits the plain-text password, and the server compares it against the stored hash during authentication. The hashed password itself is never exposed in the response.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification Maps to
+         *   mall_platform_administrators.password_hash for verification only.
+         *   The client submits the plain-text password, and the server compares
+         *   it against the stored hash during authentication. The hashed
+         *   password itself is never exposed in the response.
      */
     password: string & tags.Format<"password">;
   };
@@ -151,7 +173,10 @@ export namespace IMallPlatformAdministrator {
      *
      * This value identifies the authenticated administrator account returned by the authorization flow and is used as the stable account UUID in API responses.
      *
-     * @x-autobe-specification Populate from the authenticated administrator identity returned by the auth subsystem after join, login, or refresh. This is the administrator UUID exposed in the authorized response.
+         * @x-autobe-specification Populate from the authenticated administrator
+         *   identity returned by the auth subsystem after join, login, or
+         *   refresh. This is the administrator UUID exposed in the authorized
+         *   response.
      */
     id: string & tags.Format<"uuid">;
 
@@ -160,7 +185,10 @@ export namespace IMallPlatformAdministrator {
      *
      * This is the unique sign-in email associated with the authenticated administrator account and returned as part of the authorization payload.
      *
-     * @x-autobe-specification Populate from the authenticated administrator identity returned by the auth subsystem after join, login, or refresh. This is the administrator sign-in email echoed in the authorized response.
+         * @x-autobe-specification Populate from the authenticated administrator
+         *   identity returned by the auth subsystem after join, login, or
+         *   refresh. This is the administrator sign-in email echoed in the
+         *   authorized response.
      */
     email: string & tags.Format<"email">;
 
@@ -169,7 +197,10 @@ export namespace IMallPlatformAdministrator {
      *
      * This field indicates the privilege level granted to the authenticated administrator account, such as regular administrator or super administrator.
      *
-     * @x-autobe-specification Populate from the authenticated administrator account state returned by the auth subsystem. This reflects the administrator privilege level, such as regular or super administrator.
+         * @x-autobe-specification Populate from the authenticated administrator
+         *   account state returned by the auth subsystem. This reflects the
+         *   administrator privilege level, such as regular or super
+         *   administrator.
      */
     grade: string;
 
@@ -178,7 +209,10 @@ export namespace IMallPlatformAdministrator {
      *
      * This field describes the current account state used by the platform to determine whether the administrator can sign in and remain active.
      *
-     * @x-autobe-specification Populate from the authenticated administrator account state returned by the auth subsystem. This reflects whether the account is active, suspended, banned, or otherwise restricted from sign-in.
+         * @x-autobe-specification Populate from the authenticated administrator
+         *   account state returned by the auth subsystem. This reflects whether
+         *   the account is active, suspended, banned, or otherwise restricted
+         *   from sign-in.
      */
     status: string;
 
@@ -187,7 +221,9 @@ export namespace IMallPlatformAdministrator {
      *
      * This value is returned in ISO 8601 date-time format and reflects when the authenticated administrator account was first created.
      *
-     * @x-autobe-specification Populate from the authenticated administrator record returned by the auth subsystem. Emit the account creation time as an ISO 8601 date-time value.
+         * @x-autobe-specification Populate from the authenticated administrator
+         *   record returned by the auth subsystem. Emit the account creation
+         *   time as an ISO 8601 date-time value.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -196,7 +232,9 @@ export namespace IMallPlatformAdministrator {
      *
      * This value is returned in ISO 8601 date-time format and reflects the most recent change made to the administrator account.
      *
-     * @x-autobe-specification Populate from the authenticated administrator record returned by the auth subsystem. Emit the last update time as an ISO 8601 date-time value.
+         * @x-autobe-specification Populate from the authenticated administrator
+         *   record returned by the auth subsystem. Emit the last update time as
+         *   an ISO 8601 date-time value.
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -205,14 +243,18 @@ export namespace IMallPlatformAdministrator {
      *
      * A null value means the account is currently active. When present, the timestamp is returned in ISO 8601 date-time format.
      *
-     * @x-autobe-specification Populate from the authenticated administrator record returned by the auth subsystem. Emit null when the account has not been soft-deleted; otherwise emit the ISO 8601 date-time value representing the soft-delete time.
+         * @x-autobe-specification Populate from the authenticated administrator
+         *   record returned by the auth subsystem. Emit null when the account
+         *   has not been soft-deleted; otherwise emit the ISO 8601 date-time
+         *   value representing the soft-delete time.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
 
     /**
      * Authorization token.
      *
-     * @x-autobe-specification Authorization token comes from the session table.
+         * @x-autobe-specification Authorization token comes from the session
+         *   table.
      */
     token: IAuthorizationToken;
   };
@@ -228,7 +270,11 @@ export namespace IMallPlatformAdministrator {
      *
      * Submit the long-lived secret token used to renew an administrator session without re-entering credentials. This value should be treated as sensitive and sent only to the refresh endpoint.
      *
-     * @x-autobe-specification Provide the administrator refresh token that the server will validate against the administrator session store and authentication records. This value is used to renew the session and obtain a new authorization payload; it is not stored on the administrator account record itself.
+         * @x-autobe-specification Provide the administrator refresh token that
+         *   the server will validate against the administrator session store
+         *   and authentication records. This value is used to renew the session
+         *   and obtain a new authorization payload; it is not stored on the
+         *   administrator account record itself.
      */
     refreshToken: string & tags.Format<"password">;
   };
@@ -244,8 +290,10 @@ export namespace IMallPlatformAdministrator {
      *
      * This UUID identifies the administrator account in administrative browsing and detail views.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from mall_platform_administrators.id. UUID primary key for the administrator account summary record.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_administrators.id. UUID primary key for the
+         *   administrator account summary record.
      */
     id: string & tags.Format<"uuid">;
 
@@ -254,8 +302,10 @@ export namespace IMallPlatformAdministrator {
      *
      * This is the unique public login identifier shown in administrative lists and used to recognize the account.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from mall_platform_administrators.email. Unique email address used to identify the administrator account.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_administrators.email. Unique email address used to
+         *   identify the administrator account.
      */
     email: string & tags.Format<"email">;
 
@@ -264,8 +314,10 @@ export namespace IMallPlatformAdministrator {
      *
      * This indicates the account's authorization level within the platform.
      *
-     * @x-autobe-database-schema-property grade
-     * @x-autobe-specification Direct mapping from mall_platform_administrators.grade. Represents the administrator privilege level, such as regular or super administrator.
+         * @x-autobe-database-schema-property grade
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_administrators.grade. Represents the administrator
+         *   privilege level, such as regular or super administrator.
      */
     grade: string;
 
@@ -274,8 +326,11 @@ export namespace IMallPlatformAdministrator {
      *
      * This reflects whether the account is active, suspended, banned, or otherwise controlled for access management.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from mall_platform_administrators.status. Represents whether the administrator account is active, suspended, banned, or otherwise controlled for access.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_administrators.status. Represents whether the
+         *   administrator account is active, suspended, banned, or otherwise
+         *   controlled for access.
      */
     status: string;
 
@@ -284,8 +339,10 @@ export namespace IMallPlatformAdministrator {
      *
      * This timestamp helps with auditing and browsing account history.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from mall_platform_administrators.created_at. Timestamp recorded when the administrator account was created.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_administrators.created_at. Timestamp recorded when
+         *   the administrator account was created.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -294,8 +351,10 @@ export namespace IMallPlatformAdministrator {
      *
      * This timestamp reflects the most recent change to the administrator account record.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from mall_platform_administrators.updated_at. Timestamp recorded when the administrator account was last updated.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_administrators.updated_at. Timestamp recorded when
+         *   the administrator account was last updated.
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -304,8 +363,10 @@ export namespace IMallPlatformAdministrator {
      *
      * A null value means the account is still active and has not been soft-deleted.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from mall_platform_administrators.deleted_at. Nullable soft-delete timestamp; null means the account is active.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_administrators.deleted_at. Nullable soft-delete
+         *   timestamp; null means the account is active.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };
@@ -321,7 +382,9 @@ export namespace IMallPlatformAdministrator {
      *
      * Use this field to narrow the list by matching administrator browse text. When omitted, the collection is returned without keyword filtering.
      *
-     * @x-autobe-specification Use as a free-text search term in the administrator collection query. It is evaluated by the service/query layer and is not persisted on the database record.
+         * @x-autobe-specification Use as a free-text search term in the
+         *   administrator collection query. It is evaluated by the
+         *   service/query layer and is not persisted on the database record.
      */
     search?: string | undefined;
 
@@ -330,8 +393,11 @@ export namespace IMallPlatformAdministrator {
      *
      * Provide this field to limit results to administrators with a specific grade. When omitted, results are not restricted by grade.
      *
-     * @x-autobe-database-schema-property grade
-     * @x-autobe-specification Direct filter against mall_platform_administrators.grade in the browse query. Accept the platform's administrator grade values to narrow results by privilege level.
+         * @x-autobe-database-schema-property grade
+         * @x-autobe-specification Direct filter against
+         *   mall_platform_administrators.grade in the browse query. Accept the
+         *   platform's administrator grade values to narrow results by
+         *   privilege level.
      */
     grade?: string | undefined;
 
@@ -340,8 +406,11 @@ export namespace IMallPlatformAdministrator {
      *
      * Provide this field to narrow results to administrators in a specific state. When omitted, results are not restricted by status.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct filter against mall_platform_administrators.status in the browse query. Use the supplied status value to narrow administrator accounts by account state.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct filter against
+         *   mall_platform_administrators.status in the browse query. Use the
+         *   supplied status value to narrow administrator accounts by account
+         *   state.
      */
     status?: string | undefined;
 
@@ -350,7 +419,10 @@ export namespace IMallPlatformAdministrator {
      *
      * This controls which slice of the paginated result set is returned. It is 1-indexed and used together with limit to page through the collection.
      *
-     * @x-autobe-specification Pagination control for the browse query. Interpret this as the 1-indexed page number requested by the client, with validation and bounds handling performed before querying.
+         * @x-autobe-specification Pagination control for the browse query.
+         *   Interpret this as the 1-indexed page number requested by the
+         *   client, with validation and bounds handling performed before
+         *   querying.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -359,7 +431,10 @@ export namespace IMallPlatformAdministrator {
      *
      * This controls the page size for the paginated result set. It is used together with page to determine how many items are returned in one response.
      *
-     * @x-autobe-specification Pagination control for the browse query. Interpret this as the maximum number of records to return on a single page, subject to server-side validation and any enforced upper bounds.
+         * @x-autobe-specification Pagination control for the browse query.
+         *   Interpret this as the maximum number of records to return on a
+         *   single page, subject to server-side validation and any enforced
+         *   upper bounds.
      */
     limit?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -368,7 +443,10 @@ export namespace IMallPlatformAdministrator {
      *
      * Use this field to choose the order of the returned list. When omitted, the server applies a stable default ordering so pages remain deterministic.
      *
-     * @x-autobe-specification Ordering control for the browse query. Interpret this as the client-selected sort instruction for administrator listings, and apply a deterministic default ordering when omitted.
+         * @x-autobe-specification Ordering control for the browse query.
+         *   Interpret this as the client-selected sort instruction for
+         *   administrator listings, and apply a deterministic default ordering
+         *   when omitted.
      */
     sort?: string | undefined;
   };

@@ -11,40 +11,57 @@ export type ICommunitySubscription = {
   /**
    * Unique identifier of this subscription record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from community_subscriptions.id. UUID v4, server-generated primary key. Used to retrieve or reference this specific subscription record.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from community_subscriptions.id.
+     *   UUID v4, server-generated primary key. Used to retrieve or reference
+     *   this specific subscription record.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Summary of the member who holds this subscription.
    *
-   * @x-autobe-database-schema-property member
-   * @x-autobe-specification Join community_subscriptions.community_member_id → community_members.id, then join community_user_profiles to compose ICommunityMember.ISummary. Returns id, username, display_name, avatar_url, karma_score, and created_at of the subscribing member.
+     * @x-autobe-database-schema-property member
+     * @x-autobe-specification Join community_subscriptions.community_member_id
+     *   → community_members.id, then join community_user_profiles to compose
+     *   ICommunityMember.ISummary. Returns id, username, display_name,
+     *   avatar_url, karma_score, and created_at of the subscribing member.
    */
   member: ICommunityMember.ISummary;
 
   /**
    * Summary of the community this subscription belongs to.
    *
-   * @x-autobe-database-schema-property community
-   * @x-autobe-specification Join community_subscriptions.community_community_id → community_communities.id to compose ICommunityCommunity.ISummary. Includes id, name, description, icon_url, subscriber count (COUNT of active subscriptions), and created_at of the subscribed community.
+     * @x-autobe-database-schema-property community
+     * @x-autobe-specification Join
+     *   community_subscriptions.community_community_id →
+     *   community_communities.id to compose ICommunityCommunity.ISummary.
+     *   Includes id, name, description, icon_url, subscriber count (COUNT of
+     *   active subscriptions), and created_at of the subscribed community.
    */
   community: ICommunityCommunity.ISummary;
 
   /**
    * Timestamp when this subscription was created (or most recently reactivated).
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from community_subscriptions.created_at (Timestamptz). Records the exact moment the subscription was established, or re-established if a previously cancelled subscription was reactivated.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   community_subscriptions.created_at (Timestamptz). Records the exact
+     *   moment the subscription was established, or re-established if a
+     *   previously cancelled subscription was reactivated.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when this subscription was cancelled, or null if the subscription is currently active.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from community_subscriptions.deleted_at (Timestamptz, nullable). Null means the subscription is currently active. A non-null value records the exact moment the member unsubscribed from the community (soft-delete). Both active and cancelled subscriptions are returned when accessed by id.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   community_subscriptions.deleted_at (Timestamptz, nullable). Null means
+     *   the subscription is currently active. A non-null value records the
+     *   exact moment the member unsubscribed from the community (soft-delete).
+     *   Both active and cancelled subscriptions are returned when accessed by
+     *   id.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -60,35 +77,48 @@ export namespace ICommunitySubscription {
     /**
      * Optional keyword to filter subscribed communities by name. When provided, only communities whose name contains this string (case-insensitive) are included in the results.
      *
-     * @x-autobe-specification Optional keyword filter. When provided, applies a case-insensitive ILIKE filter on community_communities.name: WHERE community_communities.name ILIKE '%{search}%'. When omitted, no name filter is applied.
+         * @x-autobe-specification Optional keyword filter. When provided,
+         *   applies a case-insensitive ILIKE filter on
+         *   community_communities.name: WHERE community_communities.name ILIKE
+         *   '%{search}%'. When omitted, no name filter is applied.
      */
     search?: string | undefined;
 
     /**
      * Field by which to sort the subscription list. Use `created_at` to order by when the member subscribed, or `community_name` to order alphabetically by community name. Defaults to `created_at` when omitted.
      *
-     * @x-autobe-specification Controls the sort column for the result set. Allowed values: 'created_at' (sort by community_subscriptions.created_at) or 'community_name' (sort by community_communities.name). Default is 'created_at' when omitted.
+         * @x-autobe-specification Controls the sort column for the result set.
+         *   Allowed values: 'created_at' (sort by
+         *   community_subscriptions.created_at) or 'community_name' (sort by
+         *   community_communities.name). Default is 'created_at' when omitted.
      */
     sortBy?: "created_at" | "community_name" | undefined;
 
     /**
      * Direction of the sort order applied to the `sortBy` field. Use `asc` for ascending or `desc` for descending order. Defaults to `desc` (most recent subscriptions first) when omitted.
      *
-     * @x-autobe-specification Determines sort direction: 'asc' for ascending, 'desc' for descending. Applied together with sortBy. Default is 'desc' when omitted.
+         * @x-autobe-specification Determines sort direction: 'asc' for
+         *   ascending, 'desc' for descending. Applied together with sortBy.
+         *   Default is 'desc' when omitted.
      */
     sortOrder?: "asc" | "desc" | undefined;
 
     /**
      * Page number of the results to retrieve. Must be 1 or greater. Defaults to page 1 when omitted.
      *
-     * @x-autobe-specification 1-indexed page number for the paginated result set. Minimum value is 1. Default is 1 when omitted. Combine with limit to calculate the SQL OFFSET: OFFSET = (page - 1) * limit.
+         * @x-autobe-specification 1-indexed page number for the paginated
+         *   result set. Minimum value is 1. Default is 1 when omitted. Combine
+         *   with limit to calculate the SQL OFFSET: OFFSET = (page - 1) *
+         *   limit.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of subscription records to return per page. Must be between 1 and 100 inclusive. Defaults to 20 when omitted.
      *
-     * @x-autobe-specification Maximum number of records to return per page. Minimum 1, maximum 100. Default is 20 when omitted. Used in SQL as LIMIT {limit} with OFFSET = (page - 1) * limit.
+         * @x-autobe-specification Maximum number of records to return per page.
+         *   Minimum 1, maximum 100. Default is 20 when omitted. Used in SQL as
+         *   LIMIT {limit} with OFFSET = (page - 1) * limit.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -102,24 +132,32 @@ export namespace ICommunitySubscription {
     /**
      * Unique identifier of this subscription record.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from community_subscriptions.id (UUID primary key). Returned as-is.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   community_subscriptions.id (UUID primary key). Returned as-is.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Summary information about the community this subscription belongs to, including its name, description, icon, and current subscriber count.
      *
-     * @x-autobe-database-schema-property community
-     * @x-autobe-specification JOIN from community_subscriptions.community_community_id to community_communities.id. The result is shaped as an ICommunityCommunity.ISummary object including id, name, description, iconUrl, subscriberCount, and createdAt. Only communities where deleted_at IS NULL are joined.
+         * @x-autobe-database-schema-property community
+         * @x-autobe-specification JOIN from
+         *   community_subscriptions.community_community_id to
+         *   community_communities.id. The result is shaped as an
+         *   ICommunityCommunity.ISummary object including id, name,
+         *   description, iconUrl, subscriberCount, and createdAt. Only
+         *   communities where deleted_at IS NULL are joined.
      */
     community: ICommunityCommunity.ISummary;
 
     /**
      * The timestamp when the member subscribed to this community.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from community_subscriptions.created_at (Timestamptz). Represents the moment the authenticated member subscribed to the community.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   community_subscriptions.created_at (Timestamptz). Represents the
+         *   moment the authenticated member subscribed to the community.
      */
     created_at: string & tags.Format<"date-time">;
   };

@@ -22,7 +22,8 @@ import { IRedditCommunityReport } from "../../../../../structures/IRedditCommuni
  * @param props.body Search criteria including optional status filter, date range filters, reporter filter, and pagination parameters.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Query reddit_community_reports table for reports targeting the specified postId.
+ * @x-autobe-specification Query reddit_community_reports table for reports
+ *   targeting the specified postId.
  *
  * 1. Verify the user has moderator privileges for the community containing this post
  * 2. Filter reports where target_post_id matches the path parameter
@@ -130,7 +131,9 @@ export namespace index {
  * @param props.reportId UUID of the specific report record to retrieve.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Retrieve a single report record from reddit_community_reports table where target_post_id matches the postId parameter.
+ * @x-autobe-specification Retrieve a single report record from
+ *   reddit_community_reports table where target_post_id matches the postId
+ *   parameter.
  *
  * Implementation steps:
  * 1. Validate that postId and reportId are valid UUIDs

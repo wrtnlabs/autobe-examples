@@ -33,9 +33,9 @@ export class ErphrmtimetrackingMemberTimersessionsCurrentStopController {
    * This operation is the terminal step of the live tracking workflow. It complements operations that start a timer, update the timer session’s selected project/task/description while it is running, and discard the timer session without producing a finalized timelog.
    *
    * @param connection
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation steps for Realize Agent:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation steps for Realize Agent:
    *
    * 1) Resolve current active timer session:
    * - Using the authenticated member’s identity and the selected organization context, query {@link erp_hrm_time_tracking_timer_sessions} where:

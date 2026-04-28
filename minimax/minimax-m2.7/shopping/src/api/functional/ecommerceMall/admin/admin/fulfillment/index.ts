@@ -33,7 +33,9 @@ import { IEcommerceMallShipmentMetric } from "../../../../../structures/IEcommer
  * @param props.connection
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Query ecommerce_mall_orders, ecommerce_mall_order_items, and ecommerce_mall_shipments tables to compute fulfillment metrics.
+ * @x-autobe-specification Query ecommerce_mall_orders,
+ *   ecommerce_mall_order_items, and ecommerce_mall_shipments tables to compute
+ *   fulfillment metrics.
  *
  * Implementation steps:
  *

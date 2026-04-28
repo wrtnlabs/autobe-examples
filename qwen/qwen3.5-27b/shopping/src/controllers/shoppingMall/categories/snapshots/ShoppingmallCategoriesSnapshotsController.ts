@@ -19,9 +19,10 @@ export class ShoppingmallCategoriesSnapshotsController {
    * @param connection
    * @param categoryId UUID of the category to retrieve snapshots for (global scope)
    * @param body Search criteria including date range filters, change type filters, and pagination parameters for browsing category modification history.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query shopping_mall_category_snapshots table where shopping_mall_category_id matches the path parameter categoryId.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query shopping_mall_category_snapshots table
+     *   where shopping_mall_category_id matches the path parameter categoryId.
    *
    * Apply filtering from request body:
    * - Filter by created_at date range if specified
@@ -72,9 +73,10 @@ export class ShoppingmallCategoriesSnapshotsController {
    * @param connection
    * @param categoryId Category ID (global scope)
    * @param snapshotId Category snapshot ID (global scope)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query the shopping_mall_category_snapshots table to retrieve a single snapshot record.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query the shopping_mall_category_snapshots table
+     *   to retrieve a single snapshot record.
    *
    * 1. Validate both categoryId and snapshotId as UUIDs
    * 2. Query shopping_mall_category_snapshots where id = snapshotId AND shopping_mall_category_id = categoryId

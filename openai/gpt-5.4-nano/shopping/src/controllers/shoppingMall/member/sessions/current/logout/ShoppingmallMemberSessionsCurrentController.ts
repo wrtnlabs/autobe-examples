@@ -26,9 +26,9 @@ export class ShoppingmallMemberSessionsCurrentController {
    * - After logout completes, any cart/order/review operations that require authentication must be rejected until the caller logs in again.
    *
    * @param connection
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation guidance for session termination:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation guidance for session termination:
    *
    * 1. Identify caller authentication context
    * - Read the authenticated session identity from the request context (e.g., middleware-injected session/account identifiers).

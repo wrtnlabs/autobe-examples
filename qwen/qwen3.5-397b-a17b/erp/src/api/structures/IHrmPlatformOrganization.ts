@@ -16,8 +16,10 @@ export type IHrmPlatformOrganization = {
    *
    * This identifier is globally unique across the platform and serves as the organization's permanent reference in the multi-tenancy system.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from hrm_platform_organizations.id. UUID format generated on creation. Immutable after creation.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_organizations.id. UUID format generated on creation.
+     *   Immutable after creation.
    */
   id: string & tags.Format<"uuid">;
 
@@ -28,8 +30,10 @@ export type IHrmPlatformOrganization = {
    *
    * Displayed prominently in the application UI and used in email communications and report headers.
    *
-   * @x-autobe-database-schema-property name
-   * @x-autobe-specification Direct mapping from hrm_platform_organizations.name. Required field. Must be unique across all organizations. Validated for non-empty value.
+     * @x-autobe-database-schema-property name
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_organizations.name. Required field. Must be unique across
+     *   all organizations. Validated for non-empty value.
    */
   name: string;
 
@@ -40,8 +44,10 @@ export type IHrmPlatformOrganization = {
    *
    * Supports plain text. Used to help users understand the organization's mission, industry, or operational focus.
    *
-   * @x-autobe-database-schema-property description
-   * @x-autobe-specification Direct mapping from hrm_platform_organizations.description. Nullable field. Optional text providing context about the organization's purpose or business.
+     * @x-autobe-database-schema-property description
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_organizations.description. Nullable field. Optional text
+     *   providing context about the organization's purpose or business.
    */
   description: string | null;
 
@@ -52,8 +58,11 @@ export type IHrmPlatformOrganization = {
    *
    * Can be null if no logo has been uploaded. When null, the platform displays a default organization icon or initials-based placeholder.
    *
-   * @x-autobe-database-schema-property logo_url
-   * @x-autobe-specification Direct mapping from hrm_platform_organizations.logo_url. Nullable field. Stores publicly accessible URL to organization logo image. Supports standard image formats (PNG, JPG, SVG). Maximum length 80000 characters.
+     * @x-autobe-database-schema-property logo_url
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_organizations.logo_url. Nullable field. Stores publicly
+     *   accessible URL to organization logo image. Supports standard image
+     *   formats (PNG, JPG, SVG). Maximum length 80000 characters.
    */
   logoUrl: (string & tags.Format<"uri">) | null;
 
@@ -64,8 +73,10 @@ export type IHrmPlatformOrganization = {
    *
    * This setting affects all monetary values displayed within the organization context. Cannot be changed frequently as it impacts historical financial data interpretation.
    *
-   * @x-autobe-database-schema-property currency
-   * @x-autobe-specification Direct mapping from hrm_platform_organizations.currency. Required field. Must be a valid ISO 4217 3-letter currency code (e.g., USD, EUR, KRW, JPY, GBP).
+     * @x-autobe-database-schema-property currency
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_organizations.currency. Required field. Must be a valid
+     *   ISO 4217 3-letter currency code (e.g., USD, EUR, KRW, JPY, GBP).
    */
   currency: string;
 
@@ -76,8 +87,11 @@ export type IHrmPlatformOrganization = {
    *
    * All organization-level scheduling, weekly timesheet boundaries (Monday-Sunday), and deadline calculations use this timezone as the reference.
    *
-   * @x-autobe-database-schema-property timezone
-   * @x-autobe-specification Direct mapping from hrm_platform_organizations.timezone. Required field. Must be a valid IANA timezone identifier (e.g., Asia/Seoul, America/New_York, Europe/London).
+     * @x-autobe-database-schema-property timezone
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_organizations.timezone. Required field. Must be a valid
+     *   IANA timezone identifier (e.g., Asia/Seoul, America/New_York,
+     *   Europe/London).
    */
   timezone: string;
 
@@ -88,8 +102,11 @@ export type IHrmPlatformOrganization = {
    *
    * This setting determines how fiscal periods are calculated in budget reports, financial summaries, and accounting exports. Affects year-end reporting and budget cycle tracking.
    *
-   * @x-autobe-database-schema-property fiscal_start_month
-   * @x-autobe-specification Direct mapping from hrm_platform_organizations.fiscal_start_month. Required field. Integer value between 1 (January) and 12 (December). Used for fiscal period calculations in financial reports.
+     * @x-autobe-database-schema-property fiscal_start_month
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_organizations.fiscal_start_month. Required field. Integer
+     *   value between 1 (January) and 12 (December). Used for fiscal period
+     *   calculations in financial reports.
    */
   fiscalStartMonth: number &
     tags.Type<"int32"> &
@@ -103,8 +120,11 @@ export type IHrmPlatformOrganization = {
    *
    * Displayed in organization settings and used in administrative interfaces to show when the organization was established.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from hrm_platform_organizations.created_at. Automatically set to current timestamp on organization creation. Immutable after creation. ISO 8601 date-time format.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_organizations.created_at. Automatically set to current
+     *   timestamp on organization creation. Immutable after creation. ISO 8601
+     *   date-time format.
    */
   createdAt: string & tags.Format<"date-time">;
 
@@ -115,8 +135,11 @@ export type IHrmPlatformOrganization = {
    *
    * This timestamp helps administrators understand when organization settings were last changed and is useful for audit purposes and synchronization logic.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from hrm_platform_organizations.updated_at. Automatically updated to current timestamp on any organization modification. ISO 8601 date-time format. Used for change tracking and cache invalidation.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_organizations.updated_at. Automatically updated to current
+     *   timestamp on any organization modification. ISO 8601 date-time format.
+     *   Used for change tracking and cache invalidation.
    */
   updatedAt: string & tags.Format<"date-time">;
 };
@@ -151,8 +174,11 @@ export namespace IHrmPlatformOrganization {
      *
      * This is the primary identifier for the organization visible to users in navigation, reports, and organization switching interfaces. Must be unique within the platform to avoid confusion when users belong to multiple organizations.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from hrm_platform_organizations.name. Validates non-empty string. Used as primary organization identifier throughout the platform interface.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_organizations.name. Validates non-empty string. Used
+         *   as primary organization identifier throughout the platform
+         *   interface.
      */
     name?: string | undefined;
 
@@ -161,8 +187,11 @@ export namespace IHrmPlatformOrganization {
      *
      * Provides context about what the organization does. Displayed in organization settings and onboarding flows. Can be null for organizations that prefer not to include a description.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from hrm_platform_organizations.description. Nullable string field. Optional field providing context about the organization's purpose or business.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_organizations.description. Nullable string field.
+         *   Optional field providing context about the organization's purpose
+         *   or business.
      */
     description?: string | null | undefined;
 
@@ -171,8 +200,11 @@ export namespace IHrmPlatformOrganization {
      *
      * Displayed in the application header, emails, and reports. Supports standard image formats (PNG, JPG, SVG). Can be null if no logo has been uploaded.
      *
-     * @x-autobe-database-schema-property logo_url
-     * @x-autobe-specification Direct mapping from hrm_platform_organizations.logo_url. Nullable string with URI format and max length 80000. Accepts standard image formats (PNG, JPG, SVG) as publicly accessible URL.
+         * @x-autobe-database-schema-property logo_url
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_organizations.logo_url. Nullable string with URI
+         *   format and max length 80000. Accepts standard image formats (PNG,
+         *   JPG, SVG) as publicly accessible URL.
      */
     logo_url?:
       | (string & tags.MaxLength<80000> & tags.Format<"uri">)
@@ -184,8 +216,11 @@ export namespace IHrmPlatformOrganization {
      *
      * Examples: USD, EUR, KRW, JPY, GBP. Used for displaying pay rates, project budgets, and financial reports. Must be a valid 3-letter currency code.
      *
-     * @x-autobe-database-schema-property currency
-     * @x-autobe-specification Direct mapping from hrm_platform_organizations.currency. Validates ISO 4217 currency code (3 uppercase letters like USD, EUR, KRW). Used for financial reporting and pay rate displays.
+         * @x-autobe-database-schema-property currency
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_organizations.currency. Validates ISO 4217 currency
+         *   code (3 uppercase letters like USD, EUR, KRW). Used for financial
+         *   reporting and pay rate displays.
      */
     currency?: string | undefined;
 
@@ -194,8 +229,12 @@ export namespace IHrmPlatformOrganization {
      *
      * Examples: Asia/Seoul, America/New_York, Europe/London. Used to interpret dates and times for timesheets, timelogs, and deadlines. Ensures consistent time handling across all organization data.
      *
-     * @x-autobe-database-schema-property timezone
-     * @x-autobe-specification Direct mapping from hrm_platform_organizations.timezone. Validates IANA timezone identifier format (e.g., Asia/Seoul, America/New_York, Europe/London). Used to interpret dates and times for timesheets, timelogs, and deadlines.
+         * @x-autobe-database-schema-property timezone
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_organizations.timezone. Validates IANA timezone
+         *   identifier format (e.g., Asia/Seoul, America/New_York,
+         *   Europe/London). Used to interpret dates and times for timesheets,
+         *   timelogs, and deadlines.
      */
     timezone?: string | undefined;
 
@@ -204,8 +243,11 @@ export namespace IHrmPlatformOrganization {
      *
      * Used for financial reporting and accounting periods. January=1, December=12. Common values: 1 (calendar year), 4 (Q1 start), 7 (mid-year). Required for proper fiscal period calculations.
      *
-     * @x-autobe-database-schema-property fiscal_start_month
-     * @x-autobe-specification Direct mapping from hrm_platform_organizations.fiscal_start_month. Validates integer between 1-12 (January=1, December=12). Used for financial reporting and accounting period calculations.
+         * @x-autobe-database-schema-property fiscal_start_month
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_organizations.fiscal_start_month. Validates integer
+         *   between 1-12 (January=1, December=12). Used for financial reporting
+         *   and accounting period calculations.
      */
     fiscal_start_month?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<12>)
@@ -227,7 +269,10 @@ export namespace IHrmPlatformOrganization {
      *
      * If omitted, null, or an empty string, no name filtering is applied and all organizations the user is a member of are returned.
      *
-     * @x-autobe-specification Query parameter for filtering organizations by name. Backend applies case-insensitive partial match using LIKE '%search%' on hrm_platform_organizations.name column. Null or empty string means no name filter applied.
+         * @x-autobe-specification Query parameter for filtering organizations
+         *   by name. Backend applies case-insensitive partial match using LIKE
+         *   '%search%' on hrm_platform_organizations.name column. Null or empty
+         *   string means no name filter applied.
      */
     search?: string | null | undefined;
 
@@ -238,7 +283,10 @@ export namespace IHrmPlatformOrganization {
      *
      * When both take and limit are provided, take takes precedence. Use take/skip together for cursor-based pagination, or page/limit together for page-number-based pagination.
      *
-     * @x-autobe-specification Query parameter for number of records per page. Maps to SQL LIMIT clause. Valid range: 1-100. Defaults to 100 if not provided. Takes precedence over limit parameter when both are specified.
+         * @x-autobe-specification Query parameter for number of records per
+         *   page. Maps to SQL LIMIT clause. Valid range: 1-100. Defaults to 100
+         *   if not provided. Takes precedence over limit parameter when both
+         *   are specified.
      */
     take?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -252,7 +300,10 @@ export namespace IHrmPlatformOrganization {
      *
      * If omitted, null, or undefined, defaults to 0 (starts from the first record). Use together with take for cursor-based pagination, or use page/limit for page-number-based pagination.
      *
-     * @x-autobe-specification Query parameter for pagination offset. Maps to SQL OFFSET clause. Valid range: 0 and above. Defaults to 0 if not provided. Used with take for cursor-based pagination. When page is provided, skip is calculated as (page - 1) * limit.
+         * @x-autobe-specification Query parameter for pagination offset. Maps
+         *   to SQL OFFSET clause. Valid range: 0 and above. Defaults to 0 if
+         *   not provided. Used with take for cursor-based pagination. When page
+         *   is provided, skip is calculated as (page - 1) * limit.
      */
     skip?: (number & tags.Type<"int32"> & tags.Minimum<0>) | null | undefined;
 
@@ -266,7 +317,10 @@ export namespace IHrmPlatformOrganization {
      *
      * If omitted, null, or undefined, defaults to created_at. Combine with the order parameter to control ascending or descending sort direction.
      *
-     * @x-autobe-specification Query parameter for selecting the sort field. Maps to SQL ORDER BY clause. Valid values: name, created_at, updated_at. Defaults to created_at if not provided. Must be one of the allowed enum values.
+         * @x-autobe-specification Query parameter for selecting the sort field.
+         *   Maps to SQL ORDER BY clause. Valid values: name, created_at,
+         *   updated_at. Defaults to created_at if not provided. Must be one of
+         *   the allowed enum values.
      */
     sort?: "name" | "created_at" | "updated_at" | null | undefined;
 
@@ -279,7 +333,10 @@ export namespace IHrmPlatformOrganization {
      *
      * If omitted, null, or undefined, defaults to desc. This parameter has no effect without a corresponding sort parameter.
      *
-     * @x-autobe-specification Query parameter for sort direction. Maps to SQL ASC/DESC clause. Valid values: asc (ascending), desc (descending). Defaults to desc if not provided. Works in conjunction with the sort parameter.
+         * @x-autobe-specification Query parameter for sort direction. Maps to
+         *   SQL ASC/DESC clause. Valid values: asc (ascending), desc
+         *   (descending). Defaults to desc if not provided. Works in
+         *   conjunction with the sort parameter.
      */
     order?: "asc" | "desc" | null | undefined;
 
@@ -290,7 +347,11 @@ export namespace IHrmPlatformOrganization {
      *
      * If omitted, null, or undefined, defaults to page 1. The backend converts this to a skip offset using the formula: skip = (page - 1) * limit. Requesting a page beyond the available range returns an empty data array with valid pagination metadata.
      *
-     * @x-autobe-specification Query parameter for page number (1-indexed). Alternative to skip. Backend converts to skip using formula: skip = (page - 1) * limit. Valid range: 1 and above. Defaults to 1 if not provided. When both page and skip are provided, skip takes precedence.
+         * @x-autobe-specification Query parameter for page number (1-indexed).
+         *   Alternative to skip. Backend converts to skip using formula: skip =
+         *   (page - 1) * limit. Valid range: 1 and above. Defaults to 1 if not
+         *   provided. When both page and skip are provided, skip takes
+         *   precedence.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
 
@@ -301,7 +362,11 @@ export namespace IHrmPlatformOrganization {
      *
      * Use together with page for page-number-based pagination (page 1, limit 20), or use take/skip for cursor-based pagination. When both limit and take are provided, take takes precedence.
      *
-     * @x-autobe-specification Query parameter for maximum records per page. Alternative to take. Maps to SQL LIMIT clause. Valid range: 0-100. Defaults to 100 if not provided. When both limit and take are provided, take takes precedence. Used with page for page-number-based pagination.
+         * @x-autobe-specification Query parameter for maximum records per page.
+         *   Alternative to take. Maps to SQL LIMIT clause. Valid range: 0-100.
+         *   Defaults to 100 if not provided. When both limit and take are
+         *   provided, take takes precedence. Used with page for
+         *   page-number-based pagination.
      */
     limit?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };
@@ -319,8 +384,11 @@ export namespace IHrmPlatformOrganization {
      *
      * This is the primary identifier for the organization visible to users. Used in navigation, reports, and organization switching interfaces. Must be unique within the platform to avoid confusion when users belong to multiple organizations.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from hrm_platform_organizations.name. Required field. Must be unique across all organizations. Validated for uniqueness before insertion.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_organizations.name. Required field. Must be unique
+         *   across all organizations. Validated for uniqueness before
+         *   insertion.
      */
     name: string;
 
@@ -329,8 +397,11 @@ export namespace IHrmPlatformOrganization {
      *
      * Provides context about what the organization does. Displayed in organization settings and onboarding flows. Can be null for organizations that prefer not to include a description.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from hrm_platform_organizations.description. Optional nullable field. Can be null for organizations that prefer not to include a description.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_organizations.description. Optional nullable field.
+         *   Can be null for organizations that prefer not to include a
+         *   description.
      */
     description?: string | null | undefined;
 
@@ -339,8 +410,11 @@ export namespace IHrmPlatformOrganization {
      *
      * Displayed in the application header, emails, and reports. Supports standard image formats (PNG, JPG, SVG). Can be null if no logo has been uploaded.
      *
-     * @x-autobe-database-schema-property logo_url
-     * @x-autobe-specification Direct mapping from hrm_platform_organizations.logo_url. Optional nullable field with URI format. Maximum length 80000 characters. Supports standard image formats (PNG, JPG, SVG).
+         * @x-autobe-database-schema-property logo_url
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_organizations.logo_url. Optional nullable field with
+         *   URI format. Maximum length 80000 characters. Supports standard
+         *   image formats (PNG, JPG, SVG).
      */
     logo_url?:
       | (string & tags.MaxLength<80000> & tags.Format<"uri">)
@@ -352,8 +426,11 @@ export namespace IHrmPlatformOrganization {
      *
      * Examples: USD, EUR, KRW, JPY, GBP. Used for displaying pay rates, project budgets, and financial reports. Must be a valid 3-letter currency code.
      *
-     * @x-autobe-database-schema-property currency
-     * @x-autobe-specification Direct mapping from hrm_platform_organizations.currency. Required field. Must be a valid ISO 4217 3-letter currency code (e.g., USD, EUR, KRW, JPY, GBP). Validated against ISO 4217 standard.
+         * @x-autobe-database-schema-property currency
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_organizations.currency. Required field. Must be a
+         *   valid ISO 4217 3-letter currency code (e.g., USD, EUR, KRW, JPY,
+         *   GBP). Validated against ISO 4217 standard.
      */
     currency: string;
 
@@ -362,8 +439,11 @@ export namespace IHrmPlatformOrganization {
      *
      * Examples: Asia/Seoul, America/New_York, Europe/London. Used to interpret dates and times for timesheets, timelogs, and deadlines. Ensures consistent time handling across all organization data.
      *
-     * @x-autobe-database-schema-property timezone
-     * @x-autobe-specification Direct mapping from hrm_platform_organizations.timezone. Required field. Must be a valid IANA timezone identifier (e.g., Asia/Seoul, America/New_York, Europe/London). Validated against IANA timezone database.
+         * @x-autobe-database-schema-property timezone
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_organizations.timezone. Required field. Must be a
+         *   valid IANA timezone identifier (e.g., Asia/Seoul, America/New_York,
+         *   Europe/London). Validated against IANA timezone database.
      */
     timezone: string;
 
@@ -372,8 +452,11 @@ export namespace IHrmPlatformOrganization {
      *
      * Used for financial reporting and accounting periods. January=1, December=12. Common values: 1 (calendar year), 4 (Q1 start), 7 (mid-year). Required for proper fiscal period calculations.
      *
-     * @x-autobe-database-schema-property fiscal_start_month
-     * @x-autobe-specification Direct mapping from hrm_platform_organizations.fiscal_start_month. Required field. Integer between 1 (January) and 12 (December). Common values: 1 (calendar year), 4 (Q1 start), 7 (mid-year).
+         * @x-autobe-database-schema-property fiscal_start_month
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_organizations.fiscal_start_month. Required field.
+         *   Integer between 1 (January) and 12 (December). Common values: 1
+         *   (calendar year), 4 (Q1 start), 7 (mid-year).
      */
     fiscal_start_month: number &
       tags.Type<"int32"> &

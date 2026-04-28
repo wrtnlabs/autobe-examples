@@ -23,10 +23,14 @@ export class ErphrmtimeMemberTimersController {
    * Access is always scoped to the authenticated member and the selected organization context. The timer record itself is backed by the timer table, which stores the employee relation, project relation, optional task relation, start time, description, and lifecycle timestamps used by stop and discard flows.
    *
    * @param connection
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Resolve the authenticated member from the request context and then resolve the current selected organization context.
-   * Query erp_hrm_time_timers for the active timer belonging to the current employee/member scope. Use the unique employee_id constraint to fetch at most one record, and ensure the record is not discarded if the implementation treats discarded timers as removed via deleted_at.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Resolve the authenticated member from the request
+     *   context and then resolve the current selected organization context.
+     *   Query erp_hrm_time_timers for the active timer belonging to the current
+     *   employee/member scope. Use the unique employee_id constraint to fetch
+     *   at most one record, and ensure the record is not discarded if the
+     *   implementation treats discarded timers as removed via deleted_at.
    *
    * Return the timer only when it belongs to the current authenticated employee and selected organization context. Populate the related project and optional task references through the timer relations as needed by the response DTO. If no active timer exists, return the service's standard empty-detail behavior for this endpoint.
    *
@@ -59,9 +63,13 @@ export class ErphrmtimeMemberTimersController {
    *
    * @param connection
    * @param body Timer start details including the selected project, optional task, and optional running description.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Resolve the authenticated member’s current organization and employee record before creating the timer. Verify the employee belongs to the selected organization and is active. Enforce the one-active-timer rule by checking the unique employee_id constraint / existing timer row for the employee.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Resolve the authenticated member’s current
+     *   organization and employee record before creating the timer. Verify the
+     *   employee belongs to the selected organization and is active. Enforce
+     *   the one-active-timer rule by checking the unique employee_id constraint
+     *   / existing timer row for the employee.
    *
    * Validate that project_id belongs to the current organization. If task_id is provided, validate that the task belongs to the same project and organization. Persist member_id, employee_id, project_id, task_id, started_at, and optional description. started_at should be set by the server to the current time; do not accept it from the client.
    *
@@ -97,9 +105,11 @@ export class ErphrmtimeMemberTimersController {
    *
    * @param connection
    * @param body Timer search, pagination, and sorting criteria for the selected organization context.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement a PATCH collection endpoint for timers that reads from erp_hrm_time_timers under the authenticated member's selected organization context.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implement a PATCH collection endpoint for timers
+     *   that reads from erp_hrm_time_timers under the authenticated member's
+     *   selected organization context.
    *
    * Resolve the current organization from the member session/context and reject the request if no organization is selected. Restrict visibility to timers owned by employees in that organization. If the caller is an employee, default the result set to their own timer records unless the request explicitly targets organization-wide browsing and the caller has sufficient permissions.
    *
@@ -139,10 +149,15 @@ export class ErphrmtimeMemberTimersController {
    *
    * @param connection
    * @param timerId The timer identifier in UUID form.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Load the timer by primary key and join its related member, employee, project, and optional task records so the full live-session context can be returned.
-   * Verify that the timer belongs to the authenticated user's current organization context through the linked employee and organization membership. Reject access if the timer is not scoped to the current organization or if the caller is not authorized to view it.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Load the timer by primary key and join its
+     *   related member, employee, project, and optional task records so the
+     *   full live-session context can be returned. Verify that the timer
+     *   belongs to the authenticated user's current organization context
+     *   through the linked employee and organization membership. Reject access
+     *   if the timer is not scoped to the current organization or if the caller
+     *   is not authorized to view it.
    *
    * Return the full timer entity using the timer DTO, preserving the live fields startedAt and description together with the selected project and optional task references. Do not mutate any state in this operation.
    *

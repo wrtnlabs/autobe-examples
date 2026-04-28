@@ -24,9 +24,11 @@ export class RedditcloneMemberCommunitiesModerationController {
    * @param connection
    * @param communityId Unique identifier of the community (UUID)
    * @param body Pagination parameters for controlling the moderation queue results
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query reddit_clone_community_reports table filtering by community_id matching {communityId} and status equals 'pending'.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query reddit_clone_community_reports table
+     *   filtering by community_id matching {communityId} and status equals
+     *   'pending'.
    *
    * Join with reddit_clone_members table to retrieve reporter information (reporter_id, display name from user_profile).
    *
@@ -73,9 +75,11 @@ export class RedditcloneMemberCommunitiesModerationController {
    *
    * @param connection
    * @param communityId Unique identifier of the community (UUID format)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query the reddit_clone_communities table to verify the community exists and the requesting user has moderator privileges.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query the reddit_clone_communities table to
+     *   verify the community exists and the requesting user has moderator
+     *   privileges.
    *
    * Fetch summary statistics: total pending reports count, total approved reports count, total dismissed reports count, and total active bans count.
    *

@@ -18,9 +18,13 @@ export class MallplatformSellerOrderitemsForce_refundController {
    *
    * @param connection
    * @param orderItemId The identifier of the order item to force-refund.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Load the target order item by its ID and lock it for update. Verify the current administrator has oversight permission to intervene in orders. Confirm the item is not already refunded and that the business rules permit refund intervention for the current item state.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Load the target order item by its ID and lock it
+     *   for update. Verify the current administrator has oversight permission
+     *   to intervene in orders. Confirm the item is not already refunded and
+     *   that the business rules permit refund intervention for the current item
+     *   state.
    *
    * Apply the forced refund as a transactional operation: update the order item status to refunded, create any required immutable snapshot records for the intervention history, and insert the corresponding positive inventory record for the variant if refund stock restoration is required by the platform rules. Recalculate derived order status only if the order summary depends on item states, but do not alter unrelated items.
    *

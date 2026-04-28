@@ -31,9 +31,9 @@ export class ShoppingmallMemberOrdersController {
    *
    * @param connection
    * @param body Order creation payload constructed from the customer’s successful checkout/payment placement context, including the payment reference, captured shipping destination fields, and purchased line item requests.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Service-layer implementation steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Service-layer implementation steps:
    *
    * 1) Authenticate and authorize caller as `member` (customer). Reject unauthenticated requests.
    *
@@ -113,9 +113,9 @@ export class ShoppingmallMemberOrdersController {
    *
    * @param connection
    * @param body Order history search criteria including pagination, sorting, and optional filters such as an order-date range and/or an overall status filter.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement a PATCH-based order history search.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implement a PATCH-based order history search.
    *
    * Algorithm:
    * 1) Authenticate request actor.
@@ -184,9 +184,9 @@ export class ShoppingmallMemberOrdersController {
    *
    * @param connection
    * @param orderId Target order identifier to retrieve. Must match an existing shopping_mall_orders.id (UUID).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1) Parse `orderId` from path.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification 1) Parse `orderId` from path.
    *
    * 2) Authorization/visibility checks:
    * - Require an authenticated actor.
@@ -254,9 +254,10 @@ export class ShoppingmallMemberOrdersController {
    * @param connection
    * @param orderId Target order identifier (UUID).
    * @param body Order header update payload. Only fields that are mutable by this endpoint should be provided/overwritten.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement PUT /orders/{orderId} as an order-header update with strict ownership and state validation.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implement PUT /orders/{orderId} as an
+     *   order-header update with strict ownership and state validation.
    *
    * 1) Authenticate caller and identify actor/member.
    * 2) Load shopping_mall_orders where id = orderId and deleted_at is null.
@@ -324,22 +325,29 @@ export class ShoppingmallMemberOrdersController {
    *
    * @param connection
    * @param orderId Target order identifier to remove. The caller must own this order.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation steps:
-   * 1) Authenticate the caller as a member (customer). Extract the caller member/account id.
-   * 2) Validate `orderId` as a UUID.
-   * 3) Fetch `shopping_mall_orders` by `id` and verify `shopping_customer_id` equals the caller id.
-   *    - If not found or ownership mismatch: return 404 or 403 per system error conventions.
-   * 4) Perform deletion/hiding of the order:
-   *    - Use `deleted_at` on `shopping_mall_orders` if the codebase treats orders as hidden rather than physically deleted.
-   *    - Ensure the deletion does not delete immutable snapshot records referenced by `shopping_mall_order_items.seller_snapshot_id` (and any other snapshot-linked entities).
-   * 5) Dealing with dependent rows:
-   *    - `shopping_mall_order_items` have `deleted_at`; mark them as deleted as needed so they disappear from active views, but do not delete/alter referenced `shopping_mall_snapshots`.
-   *    - Any dependent workflow entities reachable from order items (e.g., `shopping_mall_cancellation_requests`, `shopping_mall_refund_requests`) must be handled consistently with their invariants and privacy rules. Prefer marking them deleted via their own `deleted_at` rather than hard deletion.
-   * 6) Ensure transactional consistency:
-   *    - Execute the order/item deletion/hiding in a single database transaction.
-   * 7) Return success with no body.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation steps: 1) Authenticate the caller
+     *   as a member (customer). Extract the caller member/account id. 2)
+     *   Validate `orderId` as a UUID. 3) Fetch `shopping_mall_orders` by `id`
+     *   and verify `shopping_customer_id` equals the caller id. - If not found
+     *   or ownership mismatch: return 404 or 403 per system error conventions.
+     *   4) Perform deletion/hiding of the order: - Use `deleted_at` on
+     *   `shopping_mall_orders` if the codebase treats orders as hidden rather
+     *   than physically deleted. - Ensure the deletion does not delete
+     *   immutable snapshot records referenced by
+     *   `shopping_mall_order_items.seller_snapshot_id` (and any other
+     *   snapshot-linked entities). 5) Dealing with dependent rows: -
+     *   `shopping_mall_order_items` have `deleted_at`; mark them as deleted as
+     *   needed so they disappear from active views, but do not delete/alter
+     *   referenced `shopping_mall_snapshots`. - Any dependent workflow entities
+     *   reachable from order items (e.g.,
+     *   `shopping_mall_cancellation_requests`, `shopping_mall_refund_requests`)
+     *   must be handled consistently with their invariants and privacy rules.
+     *   Prefer marking them deleted via their own `deleted_at` rather than hard
+     *   deletion. 6) Ensure transactional consistency: - Execute the order/item
+     *   deletion/hiding in a single database transaction. 7) Return success
+     *   with no body.
    *
    * Edge cases:
    * - Orders with existing shipments, confirmations, cancellation/refund requests: ensure the operation does not attempt to modify or delete shipment-confirmation records in a way that violates dispute resolution needs.

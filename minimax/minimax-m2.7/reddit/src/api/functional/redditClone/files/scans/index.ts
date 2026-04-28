@@ -24,7 +24,9 @@ import { IPageIRedditCloneFileScan } from "../../../../structures/IPageIRedditCl
  * @param props.fileId Unique identifier of the file (UUID format)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query reddit_clone_file_scans table filtering by the provided fileId parameter. Join with reddit_clone_files to verify file exists. Order results by scanned_at DESC (most recent first).
+ * @x-autobe-specification Query reddit_clone_file_scans table filtering by the
+ *   provided fileId parameter. Join with reddit_clone_files to verify file
+ *   exists. Order results by scanned_at DESC (most recent first).
  *
  * If fileId does not exist or file is deleted (deleted_at IS NOT NULL), return 404 error.
  *

@@ -26,8 +26,9 @@ export type IHrmDepartment = {
    *
    * This is the primary key that uniquely identifies each department record within the system. Generated as a UUID upon department creation and never modified.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from hrm_departments.id. UUID format, primary key, auto-generated on insert.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from hrm_departments.id. UUID
+     *   format, primary key, auto-generated on insert.
    */
   id: string & tags.Format<"uuid">;
 
@@ -40,8 +41,10 @@ export type IHrmDepartment = {
    *
    * The organization_id ensures data isolation within the multi-tenancy architecture. All departments are scoped to their parent organization.
    *
-   * @x-autobe-database-schema-property organization
-   * @x-autobe-specification JOIN from hrm_departments.organization_id to hrm_organizations.id. Returns IHrmOrganization.ISummary with organization context.
+     * @x-autobe-database-schema-property organization
+     * @x-autobe-specification JOIN from hrm_departments.organization_id to
+     *   hrm_organizations.id. Returns IHrmOrganization.ISummary with
+     *   organization context.
    */
   organization: IHrmOrganization.ISummary;
 
@@ -57,8 +60,10 @@ export type IHrmDepartment = {
    * - The parent department cannot itself have a parent (one-level nesting enforced)
    * - Self-reference is prohibited (department cannot be its own parent)
    *
-   * @x-autobe-database-schema-property parentDepartment
-   * @x-autobe-specification SELF-JOIN from hrm_departments.parent_department_id to hrm_departments.id. Returns IHrmDepartment.ISummary or null for root-level departments.
+     * @x-autobe-database-schema-property parentDepartment
+     * @x-autobe-specification SELF-JOIN from
+     *   hrm_departments.parent_department_id to hrm_departments.id. Returns
+     *   IHrmDepartment.ISummary or null for root-level departments.
    */
   parent?: IHrmDepartment.ISummary | null | undefined;
 
@@ -73,8 +78,10 @@ export type IHrmDepartment = {
    * - Unique within the organization (combined with organization_id)
    * - Common examples: "Engineering", "Human Resources", "Sales", "Marketing"
    *
-   * @x-autobe-database-schema-property name
-   * @x-autobe-specification Direct mapping from hrm_departments.name. Required field, unique within organization via @@unique constraint on (organization_id, name).
+     * @x-autobe-database-schema-property name
+     * @x-autobe-specification Direct mapping from hrm_departments.name.
+     *   Required field, unique within organization via @@unique constraint on
+     *   (organization_id, name).
    */
   name: string;
 
@@ -83,8 +90,9 @@ export type IHrmDepartment = {
    *
    * This field provides additional context about what the department does, its scope, and its role within the organization. Can be null if not specified.
    *
-   * @x-autobe-database-schema-property description
-   * @x-autobe-specification Direct mapping from hrm_departments.description. Optional field, nullable.
+     * @x-autobe-database-schema-property description
+     * @x-autobe-specification Direct mapping from hrm_departments.description.
+     *   Optional field, nullable.
    */
   description?: string | null | undefined;
 
@@ -93,8 +101,9 @@ export type IHrmDepartment = {
    *
    * Automatically set by the system when the department record is first inserted. Uses ISO 8601 format with timezone information.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from hrm_departments.created_at. DateTime with timezone (timestamptz), auto-generated on insert.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from hrm_departments.created_at.
+     *   DateTime with timezone (timestamptz), auto-generated on insert.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -103,8 +112,10 @@ export type IHrmDepartment = {
    *
    * Automatically updated by the system whenever any department field is modified. Uses ISO 8601 format with timezone information.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from hrm_departments.updated_at. DateTime with timezone (timestamptz), auto-updated on any field modification.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from hrm_departments.updated_at.
+     *   DateTime with timezone (timestamptz), auto-updated on any field
+     *   modification.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -120,8 +131,10 @@ export type IHrmDepartment = {
    * - The department record is retained for historical tracking
    * - Can be permanently deleted via hard delete operation
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from hrm_departments.deleted_at. DateTime with timezone (timestamptz), nullable. Null indicates active department, set value indicates soft-deleted.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from hrm_departments.deleted_at.
+     *   DateTime with timezone (timestamptz), nullable. Null indicates active
+     *   department, set value indicates soft-deleted.
    */
   deleted_at?: (string & tags.Format<"date-time">) | null | undefined;
 };
@@ -159,8 +172,10 @@ export namespace IHrmDepartment {
      * - Must be unique within the organization (validated against existing departments)
      * - Changing the name does not affect department hierarchy or employee assignments
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from hrm_departments.name. Required if included in request. Must be unique within organization. Cannot be empty string.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from hrm_departments.name.
+         *   Required if included in request. Must be unique within
+         *   organization. Cannot be empty string.
      */
     name?: string | undefined;
 
@@ -175,8 +190,10 @@ export namespace IHrmDepartment {
      * - Can be set to null to remove the description
      * - No length restrictions, but should be concise and informative
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from hrm_departments.description. Nullable field. Optional in update request.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   hrm_departments.description. Nullable field. Optional in update
+         *   request.
      */
     description?: string | null | undefined;
 
@@ -197,8 +214,12 @@ export namespace IHrmDepartment {
      *
      * When updating this field, the system validates that the parent department exists, is in the same organization, is not the department itself, and has no parent of its own.
      *
-     * @x-autobe-database-schema-property parent_department_id
-     * @x-autobe-specification Direct mapping from hrm_departments.parent_department_id. Nullable UUID foreign key. Validated: must exist in same organization, cannot be self-reference, parent must be root-level (one-level nesting constraint).
+         * @x-autobe-database-schema-property parent_department_id
+         * @x-autobe-specification Direct mapping from
+         *   hrm_departments.parent_department_id. Nullable UUID foreign key.
+         *   Validated: must exist in same organization, cannot be
+         *   self-reference, parent must be root-level (one-level nesting
+         *   constraint).
      */
     parent_department_id?: (string & tags.Format<"uuid">) | null | undefined;
   };
@@ -212,15 +233,15 @@ export namespace IHrmDepartment {
    */
   export type ISummary = {
     /**
-     * @x-autobe-database-schema-property id
+         * @x-autobe-database-schema-property id
      */
     id: string & tags.Format<"uuid">;
     /**
-     * @x-autobe-database-schema-property name
+         * @x-autobe-database-schema-property name
      */
     name: string;
     /**
-     * @x-autobe-database-schema-property description
+         * @x-autobe-database-schema-property description
      */
     description?: string | null | undefined;
 
@@ -229,12 +250,14 @@ export namespace IHrmDepartment {
      *
      * This self-referencing relation enables one-level nesting representation in organizational structure displays. The parent department is returned as a summary object containing id, name, and created_at.
      *
-     * @x-autobe-database-schema-property parentDepartment
-     * @x-autobe-specification Maps to parentDepartment relation via LEFT JOIN on parent_department_id. Returns IHrmDepartment.ISummary when parent exists, null when top-level department.
+         * @x-autobe-database-schema-property parentDepartment
+         * @x-autobe-specification Maps to parentDepartment relation via LEFT
+         *   JOIN on parent_department_id. Returns IHrmDepartment.ISummary when
+         *   parent exists, null when top-level department.
      */
     parent_department: IHrmDepartment.ISummary | null;
     /**
-     * @x-autobe-database-schema-property created_at
+         * @x-autobe-database-schema-property created_at
      */
     created_at: string & tags.Format<"date-time">;
   };
@@ -265,8 +288,10 @@ export namespace IHrmDepartment {
     /**
      * Filter to show only child departments of the specified parent department
      *
-     * @x-autobe-database-schema-property parent_department_id
-     * @x-autobe-specification Filter departments by parent_department_id to show only child departments of specified parent. Nullable since top-level departments have no parent.
+         * @x-autobe-database-schema-property parent_department_id
+         * @x-autobe-specification Filter departments by parent_department_id to
+         *   show only child departments of specified parent. Nullable since
+         *   top-level departments have no parent.
      */
     parent_department_id?: (string & tags.Format<"uuid">) | null | undefined;
 
@@ -317,23 +342,26 @@ export namespace IHrmDepartment {
    */
   export type ICreate = {
     /**
-     * @x-autobe-database-schema-property name
+         * @x-autobe-database-schema-property name
      */
     name: string;
 
     /**
      * Optional detailed description of the department's purpose and responsibilities.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from hrm_departments.description. Optional field, nullable in DB.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   hrm_departments.description. Optional field, nullable in DB.
      */
     description?: string | null | undefined;
 
     /**
      * Reference to a parent department for one-level nesting. If provided, the parent must exist in the same organization and cannot itself have a parent.
      *
-     * @x-autobe-database-schema-property parent_department_id
-     * @x-autobe-specification Direct mapping from hrm_departments.parent_department_id. Optional FK for one-level hierarchy nesting.
+         * @x-autobe-database-schema-property parent_department_id
+         * @x-autobe-specification Direct mapping from
+         *   hrm_departments.parent_department_id. Optional FK for one-level
+         *   hierarchy nesting.
      */
     parent_department_id?: (string & tags.Format<"uuid">) | null | undefined;
   };

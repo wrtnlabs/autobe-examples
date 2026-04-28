@@ -28,9 +28,13 @@ export class ShoppingmallMemberPaymentsController {
    *
    * @param connection
    * @param body Request payload to create a new payment attempt for the current checkout/order placement flow. Contains payment amount, currency, and provider reference details required to charge the customer, and any identifiers needed to associate the attempt with the customer’s order placement context.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1) Validate request body for required fields (amount, currency, provider, provider_reference, and a customer/order placement context identifier as defined by IShoppingMallPayment.ICreate). Ensure the caller is authorized as the owning customer for the referenced checkout/cart context.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification 1) Validate request body for required fields
+     *   (amount, currency, provider, provider_reference, and a customer/order
+     *   placement context identifier as defined by
+     *   IShoppingMallPayment.ICreate). Ensure the caller is authorized as the
+     *   owning customer for the referenced checkout/cart context.
    *
    * 2) Start a database transaction.
    *    - Insert a shopping_mall_payments row with status set to a pending-like value (as defined by payment domain in DTO/enum in the schema mapping) and set amount/currency/provider/provider_reference.
@@ -100,19 +104,28 @@ export class ShoppingmallMemberPaymentsController {
    *
    * @param connection
    * @param body Payment processing input used to update a payment attempt and, on success, create the linked order outcome.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Service-layer algorithm:
-   * 1) Parse request payload to identify the targeted payment attempt context (at minimum: provider + provider_reference; and/or a payment attempt identifier if provided by the request DTO).
-   * 2) Load the target `shopping_mall_payments` row (by primary id or by a uniqueness-relevant lookup such as provider_reference), ensuring the caller is authorized for the payment attempt.
-   * 3) Start a DB transaction.
-   * 4) Apply provider outcome mapping:
-   *    - On success: set `shopping_mall_payments.status` to the configured succeeded value, set `paid_at` to the provider confirmed timestamp (from request), clear error fields if appropriate (keep `error_code`/`error_message` null).
-   *    - On failure: set `shopping_mall_payments.status` to the configured failed value, set `error_code`/`error_message` from request, and keep `paid_at` null.
-   * 5) If success:
-   *    - Ensure no order exists for this payment attempt (enforced by `@@unique([shopping_payment_id])` on `shopping_mall_orders`). Query `shopping_mall_orders` by `shopping_payment_id` and create exactly one order if absent.
-   *    - Populate `shopping_mall_orders` fields from the checkout payload context available to the service (ship_to_* fields, placed_at). Persist the locked snapshot address fields as plain captured address columns per schema.
-   * 6) Commit transaction.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Service-layer algorithm: 1) Parse request payload
+     *   to identify the targeted payment attempt context (at minimum: provider
+     *   + provider_reference; and/or a payment attempt identifier if provided
+     *   by the request DTO). 2) Load the target `shopping_mall_payments` row
+     *   (by primary id or by a uniqueness-relevant lookup such as
+     *   provider_reference), ensuring the caller is authorized for the payment
+     *   attempt. 3) Start a DB transaction. 4) Apply provider outcome mapping:
+     *   - On success: set `shopping_mall_payments.status` to the configured
+     *   succeeded value, set `paid_at` to the provider confirmed timestamp
+     *   (from request), clear error fields if appropriate (keep
+     *   `error_code`/`error_message` null). - On failure: set
+     *   `shopping_mall_payments.status` to the configured failed value, set
+     *   `error_code`/`error_message` from request, and keep `paid_at` null. 5)
+     *   If success: - Ensure no order exists for this payment attempt (enforced
+     *   by `@@unique([shopping_payment_id])` on `shopping_mall_orders`). Query
+     *   `shopping_mall_orders` by `shopping_payment_id` and create exactly one
+     *   order if absent. - Populate `shopping_mall_orders` fields from the
+     *   checkout payload context available to the service (ship_to_* fields,
+     *   placed_at). Persist the locked snapshot address fields as plain
+     *   captured address columns per schema. 6) Commit transaction.
    *
    * Edge cases:
    * - If an order already exists for the payment attempt, do not create a new one; return consistent data.
@@ -157,14 +170,18 @@ export class ShoppingmallMemberPaymentsController {
    *
    * @param connection
    * @param paymentId Target payment attempt identifier (UUID).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation steps:
-   * 1) Parse `paymentId` from path.
-   * 2) Query `shopping_mall_payments` by primary key `id` (UUID) inside the repository/service layer.
-   * 3) If no record exists, return a not-found error.
-   * 4) Return the full payment DTO mapped from the database columns: id, amount, currency, provider, provider_reference, status, paid_at, error_code, error_message, created_at, updated_at.
-   * 5) Authorization: enforce that the authenticated actor is permitted to view this payment record (ownership/admin check must be handled by shared middleware/service policy). Do not leak existence information across authorization boundaries.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation steps: 1) Parse `paymentId` from
+     *   path. 2) Query `shopping_mall_payments` by primary key `id` (UUID)
+     *   inside the repository/service layer. 3) If no record exists, return a
+     *   not-found error. 4) Return the full payment DTO mapped from the
+     *   database columns: id, amount, currency, provider, provider_reference,
+     *   status, paid_at, error_code, error_message, created_at, updated_at. 5)
+     *   Authorization: enforce that the authenticated actor is permitted to
+     *   view this payment record (ownership/admin check must be handled by
+     *   shared middleware/service policy). Do not leak existence information
+     *   across authorization boundaries.
    *
    * Edge cases:
    * - `paid_at`, `error_code`, and `error_message` are nullable; return null when the columns are null.
@@ -209,22 +226,33 @@ export class ShoppingmallMemberPaymentsController {
    * @param connection
    * @param paymentId The target payment attempt ID to update.
    * @param body Payment update request including the new payment status and outcome details (e.g., paid_at on success or error_code/error_message on failure).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation steps:
-   * 1) Validate path parameter `paymentId` is a UUID.
-   * 2) Load `shopping_mall_payments` by id where `id == paymentId` and ensure it is not marked as deleted if the system excludes deleted rows from updates.
-   * 3) Validate request body:
-   *    - Ensure `status` is provided and is compatible with the payment workflow.
-   *    - If setting `status` to a succeeded value, require `paid_at` to be non-null; otherwise require `paid_at` to be null.
-   *    - If setting to a failed value, ensure `error_code` and/or `error_message` are set (when provided by the client).
-   *    - Do not allow updating `deleted_at` from the API request.
-   * 4) Within a transaction:
-   *    - Update `shopping_mall_payments` columns: status, paid_at, provider_reference, error_code, error_message, and other non-sensitive fields if included by the request DTO (amount/currency/provider) but ensure consistency.
-   *    - If the payment becomes successful and no corresponding `shopping_mall_orders` exists for `shopping_payment_id` yet, trigger the existing order creation flow (create order + order items in paid state, decrease inventory for purchased variants, and remove purchased items from the customer cart) as required by the domain rules.
-   *    - If payment is updated from failed to succeeded after an order already exists, ensure the system does not duplicate order creation; enforce idempotency using the one-to-one relation (orderForPayment / unique shopping_payment_id).
-   *    - If payment is updated from succeeded to failed (if allowed by workflow), ensure status transitions do not break ordering/history rules; otherwise reject such transitions.
-   * 5) Return the updated payment record using the appropriate response DTO (entity detail).
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation steps: 1) Validate path parameter
+     *   `paymentId` is a UUID. 2) Load `shopping_mall_payments` by id where `id
+     *   == paymentId` and ensure it is not marked as deleted if the system
+     *   excludes deleted rows from updates. 3) Validate request body: - Ensure
+     *   `status` is provided and is compatible with the payment workflow. - If
+     *   setting `status` to a succeeded value, require `paid_at` to be
+     *   non-null; otherwise require `paid_at` to be null. - If setting to a
+     *   failed value, ensure `error_code` and/or `error_message` are set (when
+     *   provided by the client). - Do not allow updating `deleted_at` from the
+     *   API request. 4) Within a transaction: - Update `shopping_mall_payments`
+     *   columns: status, paid_at, provider_reference, error_code,
+     *   error_message, and other non-sensitive fields if included by the
+     *   request DTO (amount/currency/provider) but ensure consistency. - If the
+     *   payment becomes successful and no corresponding `shopping_mall_orders`
+     *   exists for `shopping_payment_id` yet, trigger the existing order
+     *   creation flow (create order + order items in paid state, decrease
+     *   inventory for purchased variants, and remove purchased items from the
+     *   customer cart) as required by the domain rules. - If payment is updated
+     *   from failed to succeeded after an order already exists, ensure the
+     *   system does not duplicate order creation; enforce idempotency using the
+     *   one-to-one relation (orderForPayment / unique shopping_payment_id). -
+     *   If payment is updated from succeeded to failed (if allowed by
+     *   workflow), ensure status transitions do not break ordering/history
+     *   rules; otherwise reject such transitions. 5) Return the updated payment
+     *   record using the appropriate response DTO (entity detail).
    *
    * Edge cases:
    * - Payment not found: return 404.
@@ -271,11 +299,11 @@ export class ShoppingmallMemberPaymentsController {
    *
    * @param connection
    * @param paymentId Target payment attempt record identifier to erase.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1) Authorization
-   * - Require authentication.
-   * - Enforce authorization for erasing payment records (e.g., admin/back-office). If the caller lacks permission, return 403.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification 1) Authorization - Require authentication. -
+     *   Enforce authorization for erasing payment records (e.g.,
+     *   admin/back-office). If the caller lacks permission, return 403.
    *
    * 2) Input validation
    * - Parse `paymentId` from path as UUID.

@@ -28,9 +28,13 @@ export class CommunityplatformMemberCommunitiesModerationactionsBansController {
    * @param communityId Target community's ID
    * @param moderationActionId Target moderation action's ID within the community
    * @param body Search criteria, filtering, and pagination options for moderation action ban targets
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Validate that the authenticated actor is a member who currently holds moderation authority in the target community, including owner-equivalent authority if modeled through community moderator ownership records. Reject guests and members without moderation authority.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Validate that the authenticated actor is a member
+     *   who currently holds moderation authority in the target community,
+     *   including owner-equivalent authority if modeled through community
+     *   moderator ownership records. Reject guests and members without
+     *   moderation authority.
    *
    * Load the `community_platform_moderation_actions` record by `moderationActionId` and verify that its `community_platform_community_id` matches the `communityId` path parameter. If the community does not exist or the moderation action is outside the provided community scope, return a not-found or forbidden result according to the service's standard boundary-handling policy, without leaking cross-community moderation data.
    *
@@ -86,9 +90,11 @@ export class CommunityplatformMemberCommunitiesModerationactionsBansController {
    * @param communityId Target community identifier that defines the moderation scope
    * @param moderationActionId Target moderation action identifier within the specified community
    * @param moderationActionBanId Target moderation action ban linkage identifier under the specified moderation action
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement a read-only service method that fetches one `community_platform_moderation_action_bans` record by its primary key and validates the full nested scope.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implement a read-only service method that fetches
+     *   one `community_platform_moderation_action_bans` record by its primary
+     *   key and validates the full nested scope.
    *
    * First, verify that the caller is an authenticated member with current moderation authority in the community identified by `communityId`. Reject guests and members who do not hold moderation authority in that community.
    *

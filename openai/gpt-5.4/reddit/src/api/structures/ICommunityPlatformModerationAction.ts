@@ -11,64 +11,88 @@ export type ICommunityPlatformModerationAction = {
   /**
    * Unique identifier of this moderation action record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from community_platform_moderation_actions.id. Use the moderation action row's UUID primary key without transformation.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_moderation_actions.id. Use the moderation action
+     *   row's UUID primary key without transformation.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Community moderator assignment that performed this moderation action.
    *
-   * @x-autobe-database-schema-property communityModerator
-   * @x-autobe-specification Resolve the belongs-to relation from community_platform_moderation_actions.community_platform_community_moderator_id to community_platform_community_moderators.id and materialize the related assignment as ICommunityPlatformCommunityModerator.ISummary. This identifies the community-local moderator or owner assignment that performed the action.
+     * @x-autobe-database-schema-property communityModerator
+     * @x-autobe-specification Resolve the belongs-to relation from
+     *   community_platform_moderation_actions.community_platform_community_moderator_id
+     *   to community_platform_community_moderators.id and materialize the
+     *   related assignment as ICommunityPlatformCommunityModerator.ISummary.
+     *   This identifies the community-local moderator or owner assignment that
+     *   performed the action.
    */
   communityModerator: ICommunityPlatformCommunityModerator.ISummary;
 
   /**
    * Community in which this moderation action was recorded.
    *
-   * @x-autobe-database-schema-property community
-   * @x-autobe-specification Resolve the belongs-to relation from community_platform_moderation_actions.community_platform_community_id to community_platform_communities.id and materialize the related community as ICommunityPlatformCommunity.ISummary.
+     * @x-autobe-database-schema-property community
+     * @x-autobe-specification Resolve the belongs-to relation from
+     *   community_platform_moderation_actions.community_platform_community_id
+     *   to community_platform_communities.id and materialize the related
+     *   community as ICommunityPlatformCommunity.ISummary.
    */
   community: ICommunityPlatformCommunity.ISummary;
 
   /**
    * Category of moderation action that was performed.
    *
-   * @x-autobe-database-schema-property action_type
-   * @x-autobe-specification Direct mapping from community_platform_moderation_actions.action_type. Preserve the stored moderation action category string such as review or enforcement event classification.
+     * @x-autobe-database-schema-property action_type
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_moderation_actions.action_type. Preserve the stored
+     *   moderation action category string such as review or enforcement event
+     *   classification.
    */
   action_type: string;
 
   /**
    * Optional moderator-entered note explaining why the action was taken.
    *
-   * @x-autobe-database-schema-property note
-   * @x-autobe-specification Direct mapping from community_platform_moderation_actions.note. Keep the property nullable because the database column is optional and may be null when no moderator explanation was recorded.
+     * @x-autobe-database-schema-property note
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_moderation_actions.note. Keep the property nullable
+     *   because the database column is optional and may be null when no
+     *   moderator explanation was recorded.
    */
   note: string | null;
 
   /**
    * Timestamp when this moderation action record was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from community_platform_moderation_actions.created_at as an RFC 3339 date-time string.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_moderation_actions.created_at as an RFC 3339
+     *   date-time string.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when this moderation action record was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from community_platform_moderation_actions.updated_at as an RFC 3339 date-time string.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_moderation_actions.updated_at as an RFC 3339
+     *   date-time string.
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * Soft-deletion timestamp for this moderation action record, or null when the record is still active.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from community_platform_moderation_actions.deleted_at. Keep the property nullable because the database column is nullable and only contains a timestamp when the audit record has been soft-deleted or retired under service policy.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_moderation_actions.deleted_at. Keep the property
+     *   nullable because the database column is nullable and only contains a
+     *   timestamp when the audit record has been soft-deleted or retired under
+     *   service policy.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -80,14 +104,20 @@ export namespace ICommunityPlatformModerationAction {
     /**
      * Filter by moderation action category.
      *
-     * @x-autobe-specification Optional exact-match filter applied to community_platform_moderation_actions.action_type within the community already scoped by the path parameter. Use the supplied string to restrict results to moderation actions of that category.
+         * @x-autobe-specification Optional exact-match filter applied to
+         *   community_platform_moderation_actions.action_type within the
+         *   community already scoped by the path parameter. Use the supplied
+         *   string to restrict results to moderation actions of that category.
      */
     action_type?: string | undefined;
 
     /**
      * Filter by the acting community moderator assignment ID.
      *
-     * @x-autobe-specification Optional exact-match UUID filter applied to community_platform_moderation_actions.community_platform_community_moderator_id. Use this value to return only moderation actions performed through the specified community moderator assignment.
+         * @x-autobe-specification Optional exact-match UUID filter applied to
+         *   community_platform_moderation_actions.community_platform_community_moderator_id.
+         *   Use this value to return only moderation actions performed through
+         *   the specified community moderator assignment.
      */
     community_platform_community_moderator_id?:
       | (string & tags.Format<"uuid">)
@@ -96,49 +126,75 @@ export namespace ICommunityPlatformModerationAction {
     /**
      * Filter by the type of moderation target, such as post, comment, report, or ban.
      *
-     * @x-autobe-specification Optional computed filter for moderation target category. Determine the category by checking which one-to-one subtype row exists for each moderation action: post from community_platform_moderation_action_posts, comment from community_platform_moderation_action_comments, report from community_platform_moderation_action_reports, and ban from community_platform_moderation_action_bans. Match the requested string against those derived category values.
+         * @x-autobe-specification Optional computed filter for moderation
+         *   target category. Determine the category by checking which
+         *   one-to-one subtype row exists for each moderation action: post from
+         *   community_platform_moderation_action_posts, comment from
+         *   community_platform_moderation_action_comments, report from
+         *   community_platform_moderation_action_reports, and ban from
+         *   community_platform_moderation_action_bans. Match the requested
+         *   string against those derived category values.
      */
     target_type?: string | undefined;
 
     /**
      * Filter by text contained in the moderator's audit note.
      *
-     * @x-autobe-specification Optional text-search filter applied to community_platform_moderation_actions.note. Implement as a free-text search or pattern match over the optional moderator-entered audit note while keeping the search restricted to the scoped community.
+         * @x-autobe-specification Optional text-search filter applied to
+         *   community_platform_moderation_actions.note. Implement as a
+         *   free-text search or pattern match over the optional
+         *   moderator-entered audit note while keeping the search restricted to
+         *   the scoped community.
      */
     note?: string | undefined;
 
     /**
      * Return only moderation actions created at or after this timestamp.
      *
-     * @x-autobe-specification Optional inclusive lower-bound filter applied to community_platform_moderation_actions.created_at. Return only moderation actions whose creation timestamp is greater than or equal to this date-time value.
+         * @x-autobe-specification Optional inclusive lower-bound filter applied
+         *   to community_platform_moderation_actions.created_at. Return only
+         *   moderation actions whose creation timestamp is greater than or
+         *   equal to this date-time value.
      */
     created_from?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Return only moderation actions created at or before this timestamp.
      *
-     * @x-autobe-specification Optional inclusive upper-bound filter applied to community_platform_moderation_actions.created_at. Return only moderation actions whose creation timestamp is less than or equal to this date-time value.
+         * @x-autobe-specification Optional inclusive upper-bound filter applied
+         *   to community_platform_moderation_actions.created_at. Return only
+         *   moderation actions whose creation timestamp is less than or equal
+         *   to this date-time value.
      */
     created_to?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Controls the order in which matching moderation actions are returned.
      *
-     * @x-autobe-specification Optional sort directive for the moderation-action query. Support ordering by created_at direction, default to newest first when omitted, and apply id as a deterministic secondary sort key so pagination remains stable.
+         * @x-autobe-specification Optional sort directive for the
+         *   moderation-action query. Support ordering by created_at direction,
+         *   default to newest first when omitted, and apply id as a
+         *   deterministic secondary sort key so pagination remains stable.
      */
     sort?: string | undefined;
 
     /**
      * 1-based page number of the results to return.
      *
-     * @x-autobe-specification Pagination control for the result page number. Interpret this integer as a 1-based page index with a minimum value of 1, and combine it with limit to calculate the query offset.
+         * @x-autobe-specification Pagination control for the result page
+         *   number. Interpret this integer as a 1-based page index with a
+         *   minimum value of 1, and combine it with limit to calculate the
+         *   query offset.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of moderation action records to include in one page.
      *
-     * @x-autobe-specification Pagination control for the maximum number of records returned per page. Enforce the schema bounds of minimum 1 and maximum 100, and combine it with page to calculate the query window.
+         * @x-autobe-specification Pagination control for the maximum number of
+         *   records returned per page. Enforce the schema bounds of minimum 1
+         *   and maximum 100, and combine it with page to calculate the query
+         *   window.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -152,70 +208,105 @@ export namespace ICommunityPlatformModerationAction {
     /**
      * Unique identifier of the moderation action record.
      *
-     * @x-autobe-specification Read the UUID value from community_platform_moderation_actions.id on the base moderation action row selected for this summary item.
+         * @x-autobe-specification Read the UUID value from
+         *   community_platform_moderation_actions.id on the base moderation
+         *   action row selected for this summary item.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Moderator assignment that performed the recorded action.
      *
-     * @x-autobe-specification Resolve this property by joining community_platform_moderation_actions.community_platform_community_moderator_id to community_platform_community_moderators.id and materializing the joined record as ICommunityPlatformCommunityModerator.ISummary.
+         * @x-autobe-specification Resolve this property by joining
+         *   community_platform_moderation_actions.community_platform_community_moderator_id
+         *   to community_platform_community_moderators.id and materializing the
+         *   joined record as ICommunityPlatformCommunityModerator.ISummary.
      */
     communityModerator: ICommunityPlatformCommunityModerator.ISummary;
 
     /**
      * Community in which the moderation action was recorded.
      *
-     * @x-autobe-specification Resolve this property by joining community_platform_moderation_actions.community_platform_community_id to community_platform_communities.id and materializing the joined record as ICommunityPlatformCommunity.ISummary.
+         * @x-autobe-specification Resolve this property by joining
+         *   community_platform_moderation_actions.community_platform_community_id
+         *   to community_platform_communities.id and materializing the joined
+         *   record as ICommunityPlatformCommunity.ISummary.
      */
     community: ICommunityPlatformCommunity.ISummary;
 
     /**
      * Recorded category of moderation action.
      *
-     * @x-autobe-specification Read the stored moderation action category from community_platform_moderation_actions.action_type and return it unchanged, using values such as report_review, post_delete, comment_delete, ban_create, ban_lift, or moderator_assignment_change.
+         * @x-autobe-specification Read the stored moderation action category
+         *   from community_platform_moderation_actions.action_type and return
+         *   it unchanged, using values such as report_review, post_delete,
+         *   comment_delete, ban_create, ban_lift, or
+         *   moderator_assignment_change.
      */
     action_type: string;
 
     /**
      * Category of resource targeted by this moderation action, such as post, comment, report, or ban.
      *
-     * @x-autobe-specification Determine this value by probing the one-to-one subtype tables for the current moderation action id: community_platform_moderation_action_posts, community_platform_moderation_action_comments, community_platform_moderation_action_reports, and community_platform_moderation_action_bans. Map the detected subtype to one of the category strings post, comment, report, or ban. When anomalies exist, choose the detectable category according to implementation safeguards.
+         * @x-autobe-specification Determine this value by probing the
+         *   one-to-one subtype tables for the current moderation action id:
+         *   community_platform_moderation_action_posts,
+         *   community_platform_moderation_action_comments,
+         *   community_platform_moderation_action_reports, and
+         *   community_platform_moderation_action_bans. Map the detected subtype
+         *   to one of the category strings post, comment, report, or ban. When
+         *   anomalies exist, choose the detectable category according to
+         *   implementation safeguards.
      */
     targetType: string;
 
     /**
      * Identifier of the specific resource targeted by the moderation action when it can be resolved.
      *
-     * @x-autobe-specification Resolve the identifier from the linked subtype record found for the moderation action in community_platform_moderation_action_posts, community_platform_moderation_action_comments, community_platform_moderation_action_reports, or community_platform_moderation_action_bans. Return the linked target record UUID when exactly one target can be resolved; otherwise return null when no subtype exists or the target is ambiguous.
+         * @x-autobe-specification Resolve the identifier from the linked
+         *   subtype record found for the moderation action in
+         *   community_platform_moderation_action_posts,
+         *   community_platform_moderation_action_comments,
+         *   community_platform_moderation_action_reports, or
+         *   community_platform_moderation_action_bans. Return the linked target
+         *   record UUID when exactly one target can be resolved; otherwise
+         *   return null when no subtype exists or the target is ambiguous.
      */
     targetId: (string & tags.Format<"uuid">) | null;
 
     /**
      * Optional moderator note explaining why the action was taken.
      *
-     * @x-autobe-specification Read the optional explanation from community_platform_moderation_actions.note and preserve null when no moderator-entered note was recorded.
+         * @x-autobe-specification Read the optional explanation from
+         *   community_platform_moderation_actions.note and preserve null when
+         *   no moderator-entered note was recorded.
      */
     note: string | null;
 
     /**
      * Timestamp when the moderation action record was created.
      *
-     * @x-autobe-specification Read the timestamp from community_platform_moderation_actions.created_at on the base moderation action row.
+         * @x-autobe-specification Read the timestamp from
+         *   community_platform_moderation_actions.created_at on the base
+         *   moderation action row.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when the moderation action record was last updated.
      *
-     * @x-autobe-specification Read the timestamp from community_platform_moderation_actions.updated_at on the base moderation action row.
+         * @x-autobe-specification Read the timestamp from
+         *   community_platform_moderation_actions.updated_at on the base
+         *   moderation action row.
      */
     updated_at: string & tags.Format<"date-time">;
 
     /**
      * Soft-deletion timestamp of the moderation action record, or null when the record remains active.
      *
-     * @x-autobe-specification Read the nullable timestamp from community_platform_moderation_actions.deleted_at and preserve null when the moderation action record has not been soft-deleted.
+         * @x-autobe-specification Read the nullable timestamp from
+         *   community_platform_moderation_actions.deleted_at and preserve null
+         *   when the moderation action record has not been soft-deleted.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };

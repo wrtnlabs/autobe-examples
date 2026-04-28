@@ -21,9 +21,9 @@ export class ErphrmAdminTimesheetsController {
    *
    * @param connection
    * @param timesheetId Unique identifier of the timesheet to approve
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Implement the timesheet approval workflow:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Implement the timesheet approval workflow:
    *
    * 1. **Authorization Check**: Verify the current user has time:approve permission in the organization context.
    *
@@ -77,9 +77,9 @@ export class ErphrmAdminTimesheetsController {
    * @param connection
    * @param timesheetId Unique identifier of the timesheet to reject (UUID format, scoped to current organization).
    * @param body Rejection reason explaining why the timesheet was rejected (required).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Reject a submitted timesheet by timesheetId.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Reject a submitted timesheet by timesheetId.
    *
    * 1. Validate the timesheetId path parameter is a valid UUID format.
    *

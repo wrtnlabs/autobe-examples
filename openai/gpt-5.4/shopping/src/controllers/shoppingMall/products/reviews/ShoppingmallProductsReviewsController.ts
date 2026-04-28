@@ -23,9 +23,14 @@ export class ShoppingmallProductsReviewsController {
    * @param connection
    * @param productId Target product identifier
    * @param body Review list filters, sorting, and pagination criteria
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Validate that the `productId` path parameter is a well-formed UUID and load the target product record before querying reviews. If the product does not exist, return a not-found error. After confirming the product context, query current review records scoped to that product only; do not read from review snapshot history for this operation.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Validate that the `productId` path parameter is a
+     *   well-formed UUID and load the target product record before querying
+     *   reviews. If the product does not exist, return a not-found error. After
+     *   confirming the product context, query current review records scoped to
+     *   that product only; do not read from review snapshot history for this
+     *   operation.
    *
    * Interpret the request body `IShoppingMallReview.IRequest` as the source of pagination, filtering, and sorting instructions. Apply product scoping from the path parameter first, then apply any request filters such as rating, current visibility-related state, creation-time ranges, or search criteria that are actually defined by the DTO. Do not duplicate `productId` in the request DTO because the path already supplies the product context.
    *
@@ -68,9 +73,11 @@ export class ShoppingmallProductsReviewsController {
    * @param connection
    * @param productId Target product's ID
    * @param reviewId Target review's ID
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Implement a read-only service method that selects one row from shopping_mall_reviews by id = :reviewId and shopping_mall_product_id = :productId.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Implement a read-only service method that selects
+     *   one row from shopping_mall_reviews by id = :reviewId and
+     *   shopping_mall_product_id = :productId.
    *
    * Validate both path parameters as UUID values before querying. Execute a single-record lookup constrained by both identifiers so a review cannot be fetched through an unrelated product path. If no matching row exists, return a not-found error. If a matching row exists but deleted_at is not null, treat the review as not available for normal active retrieval and return a not-found error rather than exposing it as an active product review.
    *

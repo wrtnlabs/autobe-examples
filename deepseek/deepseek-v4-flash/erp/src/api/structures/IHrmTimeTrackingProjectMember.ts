@@ -19,8 +19,10 @@ export type IHrmTimeTrackingProjectMember = {
    *
    * Auto-generated UUID assigned when the membership is created. This identifier is used to reference the specific membership in update (PUT) and delete operations via the `{memberId}` path parameter.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_project_members.id. UUID primary key, auto-generated on creation.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_project_members.id. UUID primary key, auto-generated
+     *   on creation.
    */
   id: string & tags.Format<"uuid">;
 
@@ -29,8 +31,12 @@ export type IHrmTimeTrackingProjectMember = {
    *
    * Summary representation of the project including its unique identifier, display name, color code for visual UI differentiation, lifecycle status (active, archived, completed), optional planning metadata (budget hours, start and end dates), timestamps, and a reference to the owning organization.
    *
-   * @x-autobe-database-schema-property project
-   * @x-autobe-specification Join from hrm_time_tracking_project_members.hrm_time_tracking_project_id to hrm_time_tracking_projects.id. Returns IHrmTimeTrackingProject.ISummary (id, name, colorCode, status, budgetHours, startedAt, endedAt, createdAt, updatedAt, organization).
+     * @x-autobe-database-schema-property project
+     * @x-autobe-specification Join from
+     *   hrm_time_tracking_project_members.hrm_time_tracking_project_id to
+     *   hrm_time_tracking_projects.id. Returns IHrmTimeTrackingProject.ISummary
+     *   (id, name, colorCode, status, budgetHours, startedAt, endedAt,
+     *   createdAt, updatedAt, organization).
    */
   project: IHrmTimeTrackingProject.ISummary;
 
@@ -39,8 +45,12 @@ export type IHrmTimeTrackingProjectMember = {
    *
    * Summary representation of the employee including the associated user account (display name, email, avatar), assigned organizational role, department (if any), job position, employment type classification (full-time, part-time, contractor, intern), and current employment status (active, deactivated).
    *
-   * @x-autobe-database-schema-property employee
-   * @x-autobe-specification Join from hrm_time_tracking_project_members.hrm_time_tracking_employee_id to hrm_time_tracking_employees.id. Returns IHrmTimeTrackingEmployee.ISummary (id, member, role, department, position, employment_type, status, created_at, updated_at, deleted_at).
+     * @x-autobe-database-schema-property employee
+     * @x-autobe-specification Join from
+     *   hrm_time_tracking_project_members.hrm_time_tracking_employee_id to
+     *   hrm_time_tracking_employees.id. Returns
+     *   IHrmTimeTrackingEmployee.ISummary (id, member, role, department,
+     *   position, employment_type, status, created_at, updated_at, deleted_at).
    */
   employee: IHrmTimeTrackingEmployee.ISummary;
 
@@ -51,8 +61,10 @@ export type IHrmTimeTrackingProjectMember = {
    * - `member` — Standard project participant who can log time against the project and view project tasks.
    * - `project-lead` — Elevated role with additional task management capabilities including creating, editing, updating status, and assigning tasks within the project.
    *
-   * @x-autobe-database-schema-property role
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_project_members.role. Valid values are 'member' and 'project-lead' (case-sensitive enum).
+     * @x-autobe-database-schema-property role
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_project_members.role. Valid values are 'member' and
+     *   'project-lead' (case-sensitive enum).
    */
   role: string;
 
@@ -61,8 +73,10 @@ export type IHrmTimeTrackingProjectMember = {
    *
    * Set automatically by the system when the membership record is first created. Indicates when the employee was initially added to the project. This value never changes after creation.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_project_members.created_at. DateTime with timezone. Set automatically on record creation and never modified.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_project_members.created_at. DateTime with timezone.
+     *   Set automatically on record creation and never modified.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -71,8 +85,11 @@ export type IHrmTimeTrackingProjectMember = {
    *
    * Updated automatically by the system whenever the membership record changes, such as when the employee's role within the project is updated. The value reflects the most recent modification time.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_project_members.updated_at. DateTime with timezone. Updated automatically whenever any field on the record changes (e.g., role update).
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_project_members.updated_at. DateTime with timezone.
+     *   Updated automatically whenever any field on the record changes (e.g.,
+     *   role update).
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -81,8 +98,11 @@ export type IHrmTimeTrackingProjectMember = {
    *
    * Null when the membership is active and the employee has access to the project. When set to a timestamp, indicates the employee was removed from the project. Soft deletion preserves historical assignee data on tasks for audit trail integrity. If the same employee is re-added to the project, the soft-deleted record is restored (deleted_at set to null) and updated rather than creating a duplicate entry.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_project_members.deleted_at. DateTime with timezone, nullable. Null when active. When non-null, indicates the membership has been soft-deleted (employee removed from project).
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_project_members.deleted_at. DateTime with timezone,
+     *   nullable. Null when active. When non-null, indicates the membership has
+     *   been soft-deleted (employee removed from project).
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -119,8 +139,9 @@ export namespace IHrmTimeTrackingProjectMember {
      *
      * This UUID serves as the primary key for the project membership record and is used to reference this specific membership in task assignment and member management workflows.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_project_members.id. UUID primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_project_members.id. UUID primary key.
      */
     id: string & tags.Format<"uuid">;
 
@@ -129,8 +150,10 @@ export namespace IHrmTimeTrackingProjectMember {
      *
      * The role determines the scope of actions the employee can perform in the project context. Valid values are `member` (standard project participant with time logging and task viewing permissions) and `project-lead` (elevated permissions including task management within the project).
      *
-     * @x-autobe-database-schema-property role
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_project_members.role. Valid values are 'member' and 'project-lead'.
+         * @x-autobe-database-schema-property role
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_project_members.role. Valid values are 'member'
+         *   and 'project-lead'.
      */
     role: string;
 
@@ -139,8 +162,12 @@ export namespace IHrmTimeTrackingProjectMember {
      *
      * Contains the employee's core identity details including their user account information, assigned organizational role, department membership, position title, employment type classification, and current status within the organization.
      *
-     * @x-autobe-database-schema-property employee
-     * @x-autobe-specification Join via hrm_time_tracking_employee_id FK to hrm_time_tracking_employees. Returns IHrmTimeTrackingEmployee.ISummary containing the employee's id, member reference, role, department, position, employment_type, status, and timestamps.
+         * @x-autobe-database-schema-property employee
+         * @x-autobe-specification Join via hrm_time_tracking_employee_id FK to
+         *   hrm_time_tracking_employees. Returns
+         *   IHrmTimeTrackingEmployee.ISummary containing the employee's id,
+         *   member reference, role, department, position, employment_type,
+         *   status, and timestamps.
      */
     employee: IHrmTimeTrackingEmployee.ISummary;
 
@@ -149,8 +176,9 @@ export namespace IHrmTimeTrackingProjectMember {
      *
      * Set automatically when the employee is first added to the project. This timestamp is never modified after creation.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_project_members.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_project_members.created_at.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -159,8 +187,9 @@ export namespace IHrmTimeTrackingProjectMember {
      *
      * Updated automatically whenever the membership record is modified, such as when the employee's project role is changed.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_project_members.updated_at.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_project_members.updated_at.
      */
     updated_at: string & tags.Format<"date-time">;
   };
@@ -178,7 +207,12 @@ export namespace IHrmTimeTrackingProjectMember {
      *
      * Filters the project member list to only include employees whose display name (from their global user profile) contains the specified text. The match is case-insensitive and applies to any part of the name, not just the beginning. This field is optional — when omitted, no name-based filtering is applied.
      *
-     * @x-autobe-specification Partial match filter applied via JOIN: hrm_time_tracking_project_members → hrm_time_tracking_employees (on hrm_time_tracking_employee_id) → hrm_time_tracking_members (on hrm_time_tracking_member_id). Perform LIKE/ILIKE on hrm_time_tracking_members.display_name using the provided value wrapped in wildcards.
+         * @x-autobe-specification Partial match filter applied via JOIN:
+         *   hrm_time_tracking_project_members → hrm_time_tracking_employees (on
+         *   hrm_time_tracking_employee_id) → hrm_time_tracking_members (on
+         *   hrm_time_tracking_member_id). Perform LIKE/ILIKE on
+         *   hrm_time_tracking_members.display_name using the provided value
+         *   wrapped in wildcards.
      */
     employeeName?: string | undefined;
 
@@ -191,8 +225,10 @@ export namespace IHrmTimeTrackingProjectMember {
      *
      * When omitted, members with both roles are returned.
      *
-     * @x-autobe-database-schema-property role
-     * @x-autobe-specification Direct column mapping to hrm_time_tracking_project_members.role. Exact match WHERE clause. Valid values: 'member' or 'project-lead'.
+         * @x-autobe-database-schema-property role
+         * @x-autobe-specification Direct column mapping to
+         *   hrm_time_tracking_project_members.role. Exact match WHERE clause.
+         *   Valid values: 'member' or 'project-lead'.
      */
     role?: string | undefined;
 
@@ -201,7 +237,10 @@ export namespace IHrmTimeTrackingProjectMember {
      *
      * By default, only active project memberships are returned. Set this to true to also include memberships that have been removed from the project (soft-deleted records). Useful for audit purposes or when restoring former project members.
      *
-     * @x-autobe-specification When true, skip the deleted_at IS NULL WHERE clause condition so soft-deleted records are also returned. When false or omitted, filter WHERE deleted_at IS NULL to only return active memberships.
+         * @x-autobe-specification When true, skip the deleted_at IS NULL WHERE
+         *   clause condition so soft-deleted records are also returned. When
+         *   false or omitted, filter WHERE deleted_at IS NULL to only return
+         *   active memberships.
      */
     includeDeleted?: boolean | undefined;
 
@@ -210,7 +249,8 @@ export namespace IHrmTimeTrackingProjectMember {
      *
      * Controls which page of results to return. Page 1 returns the first set of records. Each subsequent page returns the next batch. The page size is determined by the limit parameter.
      *
-     * @x-autobe-specification 1-indexed page number for cursor-based pagination. Calculates SKIP as (page - 1) * limit. Must be >= 1.
+         * @x-autobe-specification 1-indexed page number for cursor-based
+         *   pagination. Calculates SKIP as (page - 1) * limit. Must be >= 1.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -219,7 +259,8 @@ export namespace IHrmTimeTrackingProjectMember {
      *
      * Controls the page size for paginated results. Must be between 1 and 100. The actual number of records returned may be less than this value when the last page is reached or when total matching records are fewer than the requested limit.
      *
-     * @x-autobe-specification Maximum number of records per page. Applied as TAKE in the database query. Must be between 1 and 100 inclusive.
+         * @x-autobe-specification Maximum number of records per page. Applied
+         *   as TAKE in the database query. Must be between 1 and 100 inclusive.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -234,7 +275,12 @@ export namespace IHrmTimeTrackingProjectMember {
      *
      * Supported sort fields: **created_at** (membership creation time), **employee_name** (employee display name), **role** (project role). When omitted, results are sorted by creation date in ascending order.
      *
-     * @x-autobe-specification Sort specification string. Prefix with '+' for ascending order (default) or '-' for descending. Field names: 'created_at' (sort by created_at timestamp), 'employee_name' (sort by member display name via JOIN to hrm_time_tracking_members), 'role' (sort by role column). Default sort is +created_at when omitted.
+         * @x-autobe-specification Sort specification string. Prefix with '+'
+         *   for ascending order (default) or '-' for descending. Field names:
+         *   'created_at' (sort by created_at timestamp), 'employee_name' (sort
+         *   by member display name via JOIN to hrm_time_tracking_members),
+         *   'role' (sort by role column). Default sort is +created_at when
+         *   omitted.
      */
     sort?: string | undefined;
   };

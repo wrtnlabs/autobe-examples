@@ -15,7 +15,9 @@ import { IErpHrmPersonalDashboard } from "../../../../../structures/IErpHrmPerso
  * @param props.connection
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query the erp_hrm_employees table to find the employee record for the authenticated member in the current organization context. Then aggregate data from multiple sources:
+ * @x-autobe-specification Query the erp_hrm_employees table to find the
+ *   employee record for the authenticated member in the current organization
+ *   context. Then aggregate data from multiple sources:
  *
  * 1. Hours Today: Query erp_hrm_timelogs where employee_id matches and date equals today's date, sum the duration field (convert minutes to hours).
  *

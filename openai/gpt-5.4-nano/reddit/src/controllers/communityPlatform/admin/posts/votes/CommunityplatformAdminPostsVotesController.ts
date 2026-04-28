@@ -34,9 +34,9 @@ export class CommunityplatformAdminPostsVotesController {
    * @param connection
    * @param postId Target post identifier that scopes the vote retrieval.
    * @param voteId Vote record identifier for the post vote to retrieve.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Implementation steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Implementation steps:
    *
    * 1) Parse path parameters:
    * - postId (UUID)
@@ -103,30 +103,40 @@ export class CommunityplatformAdminPostsVotesController {
    * @param postId Target post identifier whose vote record is being updated.
    * @param voteId Vote record identifier to update (scoped to the provided post).
    * @param body Update payload describing the desired vote state for the member on the target post.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification 1) Parse path params: postId (UUID), voteId (UUID).
-   * 2) Authorization: require authenticated member actor. Resolve actingMemberId from auth/session.
-   * 3) Load target vote row by voteId from community_platform_post_votes.
-   *    - If not found, return 404.
-   * 4) Validate vote row belongs to the provided postId:
-   *    - Compare community_platform_post_id to postId; if mismatch, return 404 or 400 (implementation decision, but keep as not-found to avoid leaking).
-   * 5) Validate post target validity (business rule):
-   *    - Load community_platform_posts by id=postId.
-   *    - If post is missing or ineligible due to its deleted_at state, reject with an error (400/404 as per platform error mapping).
-   * 6) Ensure voter ownership:
-   *    - Compare community_platform_post_votes.voter_id to actingMemberId; if mismatch, reject with 403.
-   * 7) Apply update semantics using request body ICommunityPlatformPostVote.IUpdate (implementation detail):
-   *    - Derive desired vote_value (and/or desired direction) from request.
-   *    - If the desired vote_value equals the existing vote_value and the vote is active, perform a no-op persistence strategy (or still update updated_at) but DO NOT apply additional net score/karma effects.
-   *    - If direction/value changes, update community_platform_post_votes.vote_value and updated_at.
-   *    - If the request represents removal (if supported by IUpdate design), set deleted_at to current timestamp or deactivate according to the system’s representation; however, only do this if the IUpdate DTO indicates removal. (Do not invent fields; use the DTO contract.)
-   * 8) Database transaction:
-   *    - Use a single transaction for vote row update and any dependent score/karma updates required by the service layer.
-   * 9) Post score/author karma effects:
-   *    - Compute net delta based on transition from old vote_value to new vote_value (including removal case).
-   *    - Apply delta to the post’s displayed vote score and author karma using the platform’s existing service-layer logic.
-   * 10) Return response mapping from the updated community_platform_post_votes row (and possibly joined post author/community fields if required by the DTO response type).
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification 1) Parse path params: postId (UUID), voteId
+     *   (UUID). 2) Authorization: require authenticated member actor. Resolve
+     *   actingMemberId from auth/session. 3) Load target vote row by voteId
+     *   from community_platform_post_votes. - If not found, return 404. 4)
+     *   Validate vote row belongs to the provided postId: - Compare
+     *   community_platform_post_id to postId; if mismatch, return 404 or 400
+     *   (implementation decision, but keep as not-found to avoid leaking). 5)
+     *   Validate post target validity (business rule): - Load
+     *   community_platform_posts by id=postId. - If post is missing or
+     *   ineligible due to its deleted_at state, reject with an error (400/404
+     *   as per platform error mapping). 6) Ensure voter ownership: - Compare
+     *   community_platform_post_votes.voter_id to actingMemberId; if mismatch,
+     *   reject with 403. 7) Apply update semantics using request body
+     *   ICommunityPlatformPostVote.IUpdate (implementation detail): - Derive
+     *   desired vote_value (and/or desired direction) from request. - If the
+     *   desired vote_value equals the existing vote_value and the vote is
+     *   active, perform a no-op persistence strategy (or still update
+     *   updated_at) but DO NOT apply additional net score/karma effects. - If
+     *   direction/value changes, update
+     *   community_platform_post_votes.vote_value and updated_at. - If the
+     *   request represents removal (if supported by IUpdate design), set
+     *   deleted_at to current timestamp or deactivate according to the system’s
+     *   representation; however, only do this if the IUpdate DTO indicates
+     *   removal. (Do not invent fields; use the DTO contract.) 8) Database
+     *   transaction: - Use a single transaction for vote row update and any
+     *   dependent score/karma updates required by the service layer. 9) Post
+     *   score/author karma effects: - Compute net delta based on transition
+     *   from old vote_value to new vote_value (including removal case). - Apply
+     *   delta to the post’s displayed vote score and author karma using the
+     *   platform’s existing service-layer logic. 10) Return response mapping
+     *   from the updated community_platform_post_votes row (and possibly joined
+     *   post author/community fields if required by the DTO response type).
    *
    * Edge cases:
    * - Attempting to update with an already-applied vote should not duplicate score delta.
@@ -180,22 +190,24 @@ export class CommunityplatformAdminPostsVotesController {
    * @param connection
    * @param postId Target post identifier whose vote record is being removed.
    * @param voteId Target vote record identifier within the specified post.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification 1) Parse `postId` and `voteId` from path.
-   * 2) Resolve the authenticated actor’s member id (voter id).
-   * 3) Start a database transaction.
-   * 4) Load the targeted vote row from `community_platform_post_votes` where `id = voteId` AND `community_platform_post_id = postId`.
-   *    - If not found, rollback and return 404/authorization-safe error.
-   *    - If `deleted_at` is not null, rollback and return 409 (or rejected) because it is already inactive.
-   * 5) Confirm ownership: ensure `voter_id` on the loaded vote equals the authenticated member id.
-   *    - If not, rollback and reject.
-   * 6) Validate post target: load `community_platform_posts` by `id = postId`.
-   *    - If not found or `deleted_at` is not null, rollback and reject (invalid vote target in normal viewing contexts).
-   * 7) Remove the vote from active context.
-   *    - Because `community_platform_post_votes` includes `deleted_at`, set `deleted_at = now()` and update `updated_at`.
-   * 8) Commit transaction.
-   * 9) Return 204/empty JSON per response contract (responseBody is null).
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification 1) Parse `postId` and `voteId` from path. 2)
+     *   Resolve the authenticated actor’s member id (voter id). 3) Start a
+     *   database transaction. 4) Load the targeted vote row from
+     *   `community_platform_post_votes` where `id = voteId` AND
+     *   `community_platform_post_id = postId`. - If not found, rollback and
+     *   return 404/authorization-safe error. - If `deleted_at` is not null,
+     *   rollback and return 409 (or rejected) because it is already inactive.
+     *   5) Confirm ownership: ensure `voter_id` on the loaded vote equals the
+     *   authenticated member id. - If not, rollback and reject. 6) Validate
+     *   post target: load `community_platform_posts` by `id = postId`. - If not
+     *   found or `deleted_at` is not null, rollback and reject (invalid vote
+     *   target in normal viewing contexts). 7) Remove the vote from active
+     *   context. - Because `community_platform_post_votes` includes
+     *   `deleted_at`, set `deleted_at = now()` and update `updated_at`. 8)
+     *   Commit transaction. 9) Return 204/empty JSON per response contract
+     *   (responseBody is null).
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Delete(":voteId")
@@ -235,9 +247,9 @@ export class CommunityplatformAdminPostsVotesController {
    * @param connection
    * @param postId Target post identifier to vote on.
    * @param body Vote request specifying the member’s desired vote direction for the target post.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Implementation steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Implementation steps:
    *
    * 1) Authorization & identity
    * - Require authenticated member.
@@ -313,9 +325,10 @@ export class CommunityplatformAdminPostsVotesController {
    * @param connection
    * @param postId Target post identifier whose vote the authenticated member wants to update.
    * @param body Requested vote direction for the target post for the authenticated member.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification 1. Authenticate the caller as a member; if unauthenticated, reject.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification 1. Authenticate the caller as a member; if
+     *   unauthenticated, reject.
    *
    * 2. Validate target post existence for normal viewing contexts using `community_platform_posts.id`.
    *    - Query `community_platform_posts` by `id = :postId`.

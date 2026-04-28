@@ -10,64 +10,73 @@ export type IRedditLikeOwner = {
   /**
    * Owner's unique identifier (UUID).
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from reddit_like_owners.id. UUID primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from reddit_like_owners.id. UUID
+     *   primary key.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Owner's unique email address used for authentication and account recovery.
    *
-   * @x-autobe-database-schema-property email
-   * @x-autobe-specification Direct mapping from reddit_like_owners.email. Unique constraint enforced.
+     * @x-autobe-database-schema-property email
+     * @x-autobe-specification Direct mapping from reddit_like_owners.email.
+     *   Unique constraint enforced.
    */
   email: string & tags.Format<"email">;
 
   /**
    * Owner's unique public username for identification and profile display.
    *
-   * @x-autobe-database-schema-property username
-   * @x-autobe-specification Direct mapping from reddit_like_owners.username. Unique constraint enforced for public identification.
+     * @x-autobe-database-schema-property username
+     * @x-autobe-specification Direct mapping from reddit_like_owners.username.
+     *   Unique constraint enforced for public identification.
    */
   username: string;
 
   /**
    * Human-readable display name shown in community ownership and moderation contexts.
    *
-   * @x-autobe-database-schema-property display_name
-   * @x-autobe-specification Direct mapping from reddit_like_owners.display_name.
+     * @x-autobe-database-schema-property display_name
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_owners.display_name.
    */
   display_name: string;
 
   /**
    * Whether the owner account is currently active and can authenticate.
    *
-   * @x-autobe-database-schema-property is_active
-   * @x-autobe-specification Direct mapping from reddit_like_owners.is_active. Boolean flag for account status.
+     * @x-autobe-database-schema-property is_active
+     * @x-autobe-specification Direct mapping from reddit_like_owners.is_active.
+     *   Boolean flag for account status.
    */
   is_active: boolean;
 
   /**
    * Timestamp when the owner account was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from reddit_like_owners.created_at. Timestamp with timezone.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_owners.created_at. Timestamp with timezone.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the owner account was last modified.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from reddit_like_owners.updated_at. Auto-updated timestamp with timezone.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_owners.updated_at. Auto-updated timestamp with timezone.
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * Soft deletion timestamp. Null if account is active, otherwise indicates when account was deactivated.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from reddit_like_owners.deleted_at. Nullable timestamp for soft deletion. Null if account is active.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_owners.deleted_at. Nullable timestamp for soft deletion.
+     *   Null if account is active.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -79,7 +88,10 @@ export namespace IRedditLikeOwner {
     /**
      * Long-lived refresh token for obtaining new access tokens
      *
-     * @x-autobe-specification JWT refresh token previously issued during authentication. Extract owner_id from token claims to verify owner exists with is_active=true and deleted_at=null in reddit_like_owners table.
+         * @x-autobe-specification JWT refresh token previously issued during
+         *   authentication. Extract owner_id from token claims to verify owner
+         *   exists with is_active=true and deleted_at=null in
+         *   reddit_like_owners table.
      */
     refresh: string;
   };
@@ -91,49 +103,70 @@ export namespace IRedditLikeOwner {
     /**
      * Search term for partial matching on username, email, or display name across owner accounts.
      *
-     * @x-autobe-specification Query parameter for partial text search. When provided, searches across reddit_like_owners.username, reddit_like_owners.email, and reddit_like_owners.display_name using case-insensitive ILIKE pattern matching. Combines with other filters using AND logic.
+         * @x-autobe-specification Query parameter for partial text search. When
+         *   provided, searches across reddit_like_owners.username,
+         *   reddit_like_owners.email, and reddit_like_owners.display_name using
+         *   case-insensitive ILIKE pattern matching. Combines with other
+         *   filters using AND logic.
      */
     search?: string | undefined;
 
     /**
      * Filter by active status of the owner account.
      *
-     * @x-autobe-specification Filter by reddit_like_owners.is_active column. When true, returns only active accounts; when false, returns only inactive accounts. When null/undefined, no filtering applied.
+         * @x-autobe-specification Filter by reddit_like_owners.is_active
+         *   column. When true, returns only active accounts; when false,
+         *   returns only inactive accounts. When null/undefined, no filtering
+         *   applied.
      */
     isActive?: boolean | undefined;
 
     /**
      * Filter owner accounts created on or after this timestamp.
      *
-     * @x-autobe-specification Filter by minimum reddit_like_owners.created_at timestamp (inclusive). Format: ISO 8601 date-time. Combined with createdAtTo to form date range filter when both provided.
+         * @x-autobe-specification Filter by minimum
+         *   reddit_like_owners.created_at timestamp (inclusive). Format: ISO
+         *   8601 date-time. Combined with createdAtTo to form date range filter
+         *   when both provided.
      */
     createdAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Filter owner accounts created on or before this timestamp.
      *
-     * @x-autobe-specification Filter by maximum reddit_like_owners.created_at timestamp (inclusive). Format: ISO 8601 date-time. Combined with createdAtFrom to form date range filter when both provided.
+         * @x-autobe-specification Filter by maximum
+         *   reddit_like_owners.created_at timestamp (inclusive). Format: ISO
+         *   8601 date-time. Combined with createdAtFrom to form date range
+         *   filter when both provided.
      */
     createdAtTo?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Sort field and direction for ordering results (e.g., 'created_at:desc', 'username:asc').
      *
-     * @x-autobe-specification Sort specification for ordering results. Format: 'field:direction' where field is one of 'created_at', 'username', 'email' and direction is 'asc' or 'desc'. Maps to ORDER BY clause. Multiple sort fields can be comma-separated.
+         * @x-autobe-specification Sort specification for ordering results.
+         *   Format: 'field:direction' where field is one of 'created_at',
+         *   'username', 'email' and direction is 'asc' or 'desc'. Maps to ORDER
+         *   BY clause. Multiple sort fields can be comma-separated.
      */
     sort?: string | undefined;
 
     /**
      * Pagination cursor for fetching the next page of results efficiently.
      *
-     * @x-autobe-specification Cursor-based pagination token. Contains encoded information about the last record from previous page for efficient keyset pagination. Use instead of page parameter for large datasets. When cursor is provided, page parameter is ignored.
+         * @x-autobe-specification Cursor-based pagination token. Contains
+         *   encoded information about the last record from previous page for
+         *   efficient keyset pagination. Use instead of page parameter for
+         *   large datasets. When cursor is provided, page parameter is ignored.
      */
     cursor?: string | undefined;
 
     /**
      * Maximum number of results to return per page (1-100).
      *
-     * @x-autobe-specification Maximum number of owner records to return per page. Bounded between 1 and 100. Used with page parameter for traditional offset pagination or with cursor for cursor pagination.
+         * @x-autobe-specification Maximum number of owner records to return per
+         *   page. Bounded between 1 and 100. Used with page parameter for
+         *   traditional offset pagination or with cursor for cursor pagination.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -142,7 +175,10 @@ export namespace IRedditLikeOwner {
     /**
      * Target page number to retrieve (1-indexed). Defaults to page 1.
      *
-     * @x-autobe-specification Page number for traditional offset pagination (1-indexed). Defaults to 1 if not provided. Ignored when cursor is specified. Use cursor pagination for better performance on large datasets.
+         * @x-autobe-specification Page number for traditional offset pagination
+         *   (1-indexed). Defaults to 1 if not provided. Ignored when cursor is
+         *   specified. Use cursor pagination for better performance on large
+         *   datasets.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };
@@ -154,23 +190,29 @@ export namespace IRedditLikeOwner {
     /**
      * Unique email address used for authentication and account recovery. Must not already exist in the system.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from reddit_like_owners.email. Must be unique across owners. Validated as email format.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from reddit_like_owners.email.
+         *   Must be unique across owners. Validated as email format.
      */
     email: string & tags.Format<"email">;
 
     /**
      * Password for authentication. Will be securely hashed server-side. Must meet complexity requirements.
      *
-     * @x-autobe-specification User provides plain password. Server validates (min length, complexity) then hashes using bcrypt (cost factor 12) storing as password_hash. NEVER store plain password. Computed/transformed field.
+         * @x-autobe-specification User provides plain password. Server
+         *   validates (min length, complexity) then hashes using bcrypt (cost
+         *   factor 12) storing as password_hash. NEVER store plain password.
+         *   Computed/transformed field.
      */
     password: string & tags.Format<"password">;
 
     /**
      * Human-readable display name for the owner shown in community contexts and moderation interfaces.
      *
-     * @x-autobe-database-schema-property display_name
-     * @x-autobe-specification Maps to reddit_like_owners.display_name. Human-readable name shown in moderation contexts and UI. May differ from unique username.
+         * @x-autobe-database-schema-property display_name
+         * @x-autobe-specification Maps to reddit_like_owners.display_name.
+         *   Human-readable name shown in moderation contexts and UI. May differ
+         *   from unique username.
      */
     nickname: string;
   };
@@ -182,37 +224,49 @@ export namespace IRedditLikeOwner {
     /**
      * Owner's registered email address used as login identifier.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from reddit_like_owners.email. Used as unique identifier for owner lookup during authentication. Must exist with UNIQUE constraint for successful login.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from reddit_like_owners.email.
+         *   Used as unique identifier for owner lookup during authentication.
+         *   Must exist with UNIQUE constraint for successful login.
      */
     email: string & tags.Format<"email">;
 
     /**
      * Owner's password for authentication. Minimum 8 characters.
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification User-provided plaintext password validated against reddit_like_owners.password_hash using bcrypt compare. Never store plaintext; only used for hash comparison during authentication. Minimum 8 characters required.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification User-provided plaintext password validated
+         *   against reddit_like_owners.password_hash using bcrypt compare.
+         *   Never store plaintext; only used for hash comparison during
+         *   authentication. Minimum 8 characters required.
      */
     password: string & tags.MinLength<8> & tags.Format<"password">;
 
     /**
      * Current page URL for session context and security auditing.
      *
-     * @x-autobe-specification Current page URL captured from request context. Stored in reddit_like_owner_sessions.href for security auditing. Represents the page where login occurred.
+         * @x-autobe-specification Current page URL captured from request
+         *   context. Stored in reddit_like_owner_sessions.href for security
+         *   auditing. Represents the page where login occurred.
      */
     href: string & tags.Format<"uri">;
 
     /**
      * Referrer URL indicating the page that referred to the login.
      *
-     * @x-autobe-specification Referrer URL captured from request headers. Stored in reddit_like_owner_sessions.referrer for security auditing and tracking login origin.
+         * @x-autobe-specification Referrer URL captured from request headers.
+         *   Stored in reddit_like_owner_sessions.referrer for security auditing
+         *   and tracking login origin.
      */
     referrer: string & tags.Format<"uri">;
 
     /**
      * Client IP address for security auditing. Optional for SSR.
      *
-     * @x-autobe-specification Client IP address captured from request. Stored in reddit_like_owner_sessions.ip for security auditing. Optional (nullable) for SSR scenarios where client cannot determine its own IP.
+         * @x-autobe-specification Client IP address captured from request.
+         *   Stored in reddit_like_owner_sessions.ip for security auditing.
+         *   Optional (nullable) for SSR scenarios where client cannot determine
+         *   its own IP.
      */
     ip: (string & tags.Format<"ipv4">) | null;
   };
@@ -224,40 +278,49 @@ export namespace IRedditLikeOwner {
     /**
      * Unique identifier for the owner account.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from reddit_like_owners.id. Primary key as UUID.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from reddit_like_owners.id.
+         *   Primary key as UUID.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Unique username for public identification and profile display.
      *
-     * @x-autobe-database-schema-property username
-     * @x-autobe-specification Direct mapping from reddit_like_owners.username. Unique constraint enforced at database level.
+         * @x-autobe-database-schema-property username
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_owners.username. Unique constraint enforced at database
+         *   level.
      */
     username: string;
 
     /**
      * Human-readable display name shown in community ownership and moderation contexts.
      *
-     * @x-autobe-database-schema-property display_name
-     * @x-autobe-specification Direct mapping from reddit_like_owners.display_name. Human-readable name shown in community ownership and moderation contexts.
+         * @x-autobe-database-schema-property display_name
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_owners.display_name. Human-readable name shown in
+         *   community ownership and moderation contexts.
      */
     displayName: string;
 
     /**
      * Unique email address used for owner authentication and account recovery.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from reddit_like_owners.email. Unique constraint enforced at database level. Used for authentication and account recovery.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from reddit_like_owners.email.
+         *   Unique constraint enforced at database level. Used for
+         *   authentication and account recovery.
      */
     email: string & tags.Format<"email">;
 
     /**
      * Whether the owner account is currently active and can authenticate.
      *
-     * @x-autobe-database-schema-property is_active
-     * @x-autobe-specification Direct mapping from reddit_like_owners.is_active. Boolean flag indicating whether the owner account can authenticate and perform actions.
+         * @x-autobe-database-schema-property is_active
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_owners.is_active. Boolean flag indicating whether the
+         *   owner account can authenticate and perform actions.
      */
     isActive: boolean;
   };
@@ -269,63 +332,77 @@ export namespace IRedditLikeOwner {
     /**
      * Unique identifier for the owner account.
      *
-     * @x-autobe-specification Retrieved from reddit_like_owners.id. Primary key UUID assigned at registration. Retrieved from authenticated owner record during login/registration/refresh.
+         * @x-autobe-specification Retrieved from reddit_like_owners.id. Primary
+         *   key UUID assigned at registration. Retrieved from authenticated
+         *   owner record during login/registration/refresh.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Owner's registered email address used for authentication and notifications.
      *
-     * @x-autobe-specification Retrieved from reddit_like_owners.email. Unique constraint enforced. Retrieved from authenticated owner record.
+         * @x-autobe-specification Retrieved from reddit_like_owners.email.
+         *   Unique constraint enforced. Retrieved from authenticated owner
+         *   record.
      */
     email: string & tags.Format<"email">;
 
     /**
      * Unique public username for the owner account.
      *
-     * @x-autobe-specification Retrieved from reddit_like_owners.username. Unique constraint enforced for public identification.
+         * @x-autobe-specification Retrieved from reddit_like_owners.username.
+         *   Unique constraint enforced for public identification.
      */
     username: string;
 
     /**
      * Human-readable display name shown in community ownership and moderation contexts.
      *
-     * @x-autobe-specification Retrieved from reddit_like_owners.display_name. Human-readable name shown in community ownership and moderation contexts.
+         * @x-autobe-specification Retrieved from
+         *   reddit_like_owners.display_name. Human-readable name shown in
+         *   community ownership and moderation contexts.
      */
     display_name: string;
 
     /**
      * Whether the owner account is currently active and can perform community operations.
      *
-     * @x-autobe-specification Retrieved from reddit_like_owners.is_active. Boolean indicating if account can authenticate and perform operations.
+         * @x-autobe-specification Retrieved from reddit_like_owners.is_active.
+         *   Boolean indicating if account can authenticate and perform
+         *   operations.
      */
     is_active: boolean;
 
     /**
      * Timestamp when the owner account was registered.
      *
-     * @x-autobe-specification Retrieved from reddit_like_owners.created_at. Timestamp with timezone set at registration.
+         * @x-autobe-specification Retrieved from reddit_like_owners.created_at.
+         *   Timestamp with timezone set at registration.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when the owner account was last modified.
      *
-     * @x-autobe-specification Retrieved from reddit_like_owners.updated_at. Updated automatically on any profile modification.
+         * @x-autobe-specification Retrieved from reddit_like_owners.updated_at.
+         *   Updated automatically on any profile modification.
      */
     updated_at: string & tags.Format<"date-time">;
 
     /**
      * Soft deletion timestamp. Null if the account is active, set when owner account is deactivated.
      *
-     * @x-autobe-specification Retrieved from reddit_like_owners.deleted_at. Nullable timestamp - null if account is active, set when deactivated.
+         * @x-autobe-specification Retrieved from reddit_like_owners.deleted_at.
+         *   Nullable timestamp - null if account is active, set when
+         *   deactivated.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
 
     /**
      * Authorization token.
      *
-     * @x-autobe-specification Authorization token comes from the session table.
+         * @x-autobe-specification Authorization token comes from the session
+         *   table.
      */
     token: IAuthorizationToken;
   };

@@ -27,9 +27,10 @@ export class HrmplatformMemberActivity_logsController {
    *
    * @param connection
    * @param body Search criteria for activity logs including entity filters, time ranges, pagination, and sorting options.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Execute a paginated search query on hrm_platform_activity_logs table.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Execute a paginated search query on
+     *   hrm_platform_activity_logs table.
    *
    * 1. Permission Check:
    *    - Validate user has 'org:manage' permission before executing query
@@ -107,9 +108,10 @@ export class HrmplatformMemberActivity_logsController {
    *
    * @param connection
    * @param activityLogId The unique identifier of the activity log entry to retrieve.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query hrm_platform_activity_logs table by UUID id.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query hrm_platform_activity_logs table by UUID
+     *   id.
    *
    * 1. Validate that activityLogId is a valid UUID format.
    * 2. Look up the activity log entry by id.

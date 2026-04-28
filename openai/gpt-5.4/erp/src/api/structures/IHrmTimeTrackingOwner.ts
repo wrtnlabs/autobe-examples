@@ -10,56 +10,73 @@ export type IHrmTimeTrackingOwner = {
   /**
    * Unique identifier of the owner account.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from `hrm_time_tracking_owners.id`. Return the persisted owner UUID after organization-scope authorization succeeds.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   `hrm_time_tracking_owners.id`. Return the persisted owner UUID after
+     *   organization-scope authorization succeeds.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Email address used as the owner account's login identifier.
    *
-   * @x-autobe-database-schema-property email
-   * @x-autobe-specification Direct mapping from `hrm_time_tracking_owners.email`. Return the stored unique email address used to sign in to the owner account.
+     * @x-autobe-database-schema-property email
+     * @x-autobe-specification Direct mapping from
+     *   `hrm_time_tracking_owners.email`. Return the stored unique email
+     *   address used to sign in to the owner account.
    */
   email: string;
 
   /**
    * Timestamp of the most recent successful login, or null if the owner has not logged in yet.
    *
-   * @x-autobe-database-schema-property last_login_at
-   * @x-autobe-specification Direct mapping from `hrm_time_tracking_owners.last_login_at`. Preserve null when the owner has never completed a successful login; otherwise return the timestamp as a date-time string.
+     * @x-autobe-database-schema-property last_login_at
+     * @x-autobe-specification Direct mapping from
+     *   `hrm_time_tracking_owners.last_login_at`. Preserve null when the owner
+     *   has never completed a successful login; otherwise return the timestamp
+     *   as a date-time string.
    */
   last_login_at: (string & tags.Format<"date-time">) | null;
 
   /**
    * Timestamp when the owner account was deactivated, or null when the account is still active.
    *
-   * @x-autobe-database-schema-property deactivated_at
-   * @x-autobe-specification Direct mapping from `hrm_time_tracking_owners.deactivated_at`. Preserve null for active accounts; otherwise return the timestamp when the owner account was deactivated.
+     * @x-autobe-database-schema-property deactivated_at
+     * @x-autobe-specification Direct mapping from
+     *   `hrm_time_tracking_owners.deactivated_at`. Preserve null for active
+     *   accounts; otherwise return the timestamp when the owner account was
+     *   deactivated.
    */
   deactivated_at: (string & tags.Format<"date-time">) | null;
 
   /**
    * Timestamp when the owner account was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from `hrm_time_tracking_owners.created_at` as an RFC 3339 date-time string.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   `hrm_time_tracking_owners.created_at` as an RFC 3339 date-time string.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the owner account was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from `hrm_time_tracking_owners.updated_at` as an RFC 3339 date-time string.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   `hrm_time_tracking_owners.updated_at` as an RFC 3339 date-time string.
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * Soft-deletion timestamp for the owner account when available in the read model; typically null for accessible active records.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from `hrm_time_tracking_owners.deleted_at`. Preserve null for accessible non-deleted accounts. This column remains part of the owner read model, but for the loaded detail operation, records marked deleted are normally filtered out during access and scope validation before DTO mapping.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   `hrm_time_tracking_owners.deleted_at`. Preserve null for accessible
+     *   non-deleted accounts. This column remains part of the owner read model,
+     *   but for the loaded detail operation, records marked deleted are
+     *   normally filtered out during access and scope validation before DTO
+     *   mapping.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -71,37 +88,55 @@ export namespace IHrmTimeTrackingOwner {
     /**
      * Owner account email address used to register and sign in to the platform.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping to hrm_time_tracking_owners.email. Normalize the submitted email address before uniqueness validation and persistence, then use it as the owner's sign-in identifier.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping to
+         *   hrm_time_tracking_owners.email. Normalize the submitted email
+         *   address before uniqueness validation and persistence, then use it
+         *   as the owner's sign-in identifier.
      */
     email: string & tags.Format<"email">;
 
     /**
      * Plain-text password used to create the owner account credential.
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification Accept a plain-text password from the client, validate it according to the platform password policy, hash it with the platform password hashing strategy, and persist the result into hrm_time_tracking_owners.password_hash. Never store or echo the plain-text value.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification Accept a plain-text password from the client,
+         *   validate it according to the platform password policy, hash it with
+         *   the platform password hashing strategy, and persist the result into
+         *   hrm_time_tracking_owners.password_hash. Never store or echo the
+         *   plain-text value.
      */
     password: string & tags.Format<"password">;
 
     /**
      * Absolute or application URI of the page from which the owner registration request was initiated.
      *
-     * @x-autobe-specification Use the client-provided current page URI as registration context for authentication/session initialization, security review, or audit metadata associated with the join flow. This value is request-derived and is not stored in hrm_time_tracking_owners.
+         * @x-autobe-specification Use the client-provided current page URI as
+         *   registration context for authentication/session initialization,
+         *   security review, or audit metadata associated with the join flow.
+         *   This value is request-derived and is not stored in
+         *   hrm_time_tracking_owners.
      */
     href: string & tags.Format<"uri">;
 
     /**
      * Referring URI that led the client to the owner registration flow.
      *
-     * @x-autobe-specification Use the client-provided referrer URI as join-flow context for authentication/session logic, request-origin analysis, or security metadata. This value is not persisted as a column on hrm_time_tracking_owners.
+         * @x-autobe-specification Use the client-provided referrer URI as
+         *   join-flow context for authentication/session logic, request-origin
+         *   analysis, or security metadata. This value is not persisted as a
+         *   column on hrm_time_tracking_owners.
      */
     referrer: string & tags.Format<"uri">;
 
     /**
      * Optional client IPv4 address associated with the owner registration request.
      *
-     * @x-autobe-specification Use the optional client IPv4 address as security/session context during owner registration. If the client does not provide it, such as in SSR environments, downstream logic may substitute the server-observed request IP. This value does not map to a column on hrm_time_tracking_owners.
+         * @x-autobe-specification Use the optional client IPv4 address as
+         *   security/session context during owner registration. If the client
+         *   does not provide it, such as in SSR environments, downstream logic
+         *   may substitute the server-observed request IP. This value does not
+         *   map to a column on hrm_time_tracking_owners.
      */
     ip?: (string & tags.Format<"ipv4">) | undefined;
   };
@@ -113,7 +148,12 @@ export namespace IHrmTimeTrackingOwner {
     /**
      * Refresh token used to renew an owner authorization session.
      *
-     * @x-autobe-specification Accept the raw refresh token string issued by a prior owner join, login, or refresh flow. Pass this value to the token verification layer to validate signature, owner actor scope, expiration, and renewal eligibility. Do not interpret it as an owner ID or database column value, and do not require any additional body fields to identify the owner.
+         * @x-autobe-specification Accept the raw refresh token string issued by
+         *   a prior owner join, login, or refresh flow. Pass this value to the
+         *   token verification layer to validate signature, owner actor scope,
+         *   expiration, and renewal eligibility. Do not interpret it as an
+         *   owner ID or database column value, and do not require any
+         *   additional body fields to identify the owner.
      */
     refresh: string;
   };
@@ -125,63 +165,74 @@ export namespace IHrmTimeTrackingOwner {
     /**
      * Unique identifier of the authenticated owner account.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_owners.id for the authenticated owner account.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_owners.id for the authenticated owner account.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Email address of the authenticated owner account.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_owners.email after authentication succeeds.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_owners.email after authentication succeeds.
      */
     email: string;
 
     /**
      * Timestamp of the owner's most recent successful login, or null when none has been recorded yet.
      *
-     * @x-autobe-database-schema-property last_login_at
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_owners.last_login_at. Return null when the owner has no recorded successful login timestamp yet.
+         * @x-autobe-database-schema-property last_login_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_owners.last_login_at. Return null when the owner
+         *   has no recorded successful login timestamp yet.
      */
     last_login_at: (string & tags.Format<"date-time">) | null;
 
     /**
      * Timestamp when the owner account was deactivated, or null while the account remains active.
      *
-     * @x-autobe-database-schema-property deactivated_at
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_owners.deactivated_at. Return null when the owner account is active.
+         * @x-autobe-database-schema-property deactivated_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_owners.deactivated_at. Return null when the owner
+         *   account is active.
      */
     deactivated_at: (string & tags.Format<"date-time">) | null;
 
     /**
      * Timestamp when the owner account was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_owners.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_owners.created_at.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when the owner account was last updated.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_owners.updated_at.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_owners.updated_at.
      */
     updated_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when the owner account was soft-deleted, or null when it has not been deleted.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_owners.deleted_at. Return null when the owner account has not been soft-deleted.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_owners.deleted_at. Return null when the owner
+         *   account has not been soft-deleted.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
 
     /**
      * Authorization token.
      *
-     * @x-autobe-specification Authorization token comes from the session table.
+         * @x-autobe-specification Authorization token comes from the session
+         *   table.
      */
     token: IAuthorizationToken;
   };
@@ -193,16 +244,24 @@ export namespace IHrmTimeTrackingOwner {
     /**
      * Owner account email address used as the login identifier.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_owners.email. Use the submitted value to locate the owner account record for authentication. The field must contain the owner's unique login email address.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_owners.email. Use the submitted value to locate
+         *   the owner account record for authentication. The field must contain
+         *   the owner's unique login email address.
      */
     email: string & tags.Format<"email">;
 
     /**
      * Plain-text password used to authenticate the owner account.
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification Maps to hrm_time_tracking_owners.password_hash through password verification logic. Accept the submitted plain-text password input and compare it against the stored hash using a secure constant-time password verification routine; never persist or return the plain-text value.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification Maps to
+         *   hrm_time_tracking_owners.password_hash through password
+         *   verification logic. Accept the submitted plain-text password input
+         *   and compare it against the stored hash using a secure constant-time
+         *   password verification routine; never persist or return the
+         *   plain-text value.
      */
     password: string & tags.Format<"password">;
   };

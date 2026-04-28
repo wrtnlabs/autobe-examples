@@ -10,56 +10,67 @@ export type IErpHrmRolePermission = {
   /**
    * Unique identifier for the permission assignment record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from erp_hrm_role_permissions.id. UUID primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from erp_hrm_role_permissions.id.
+     *   UUID primary key.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * The role ID that this permission is assigned to.
    *
-   * @x-autobe-database-schema-property role_id
-   * @x-autobe-specification Direct mapping from erp_hrm_role_permissions.role_id. Foreign key referencing erp_hrm_roles.id.
+     * @x-autobe-database-schema-property role_id
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_role_permissions.role_id. Foreign key referencing
+     *   erp_hrm_roles.id.
    */
   roleId: string & tags.Format<"uuid">;
 
   /**
    * The permission identifier representing a specific functional capability (e.g., 'organization.manage', 'employee.view').
    *
-   * @x-autobe-database-schema-property permission
-   * @x-autobe-specification Direct mapping from erp_hrm_role_permissions.permission. String identifier in format 'resource.action' (e.g., 'organization.manage', 'project.view').
+     * @x-autobe-database-schema-property permission
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_role_permissions.permission. String identifier in format
+     *   'resource.action' (e.g., 'organization.manage', 'project.view').
    */
   permission: string;
 
   /**
    * Summary information about the role this permission is assigned to.
    *
-   * @x-autobe-database-schema-property role
-   * @x-autobe-specification Join via role_id to erp_hrm_roles table. Returns IErpHrmRole.ISummary with role details.
+     * @x-autobe-database-schema-property role
+     * @x-autobe-specification Join via role_id to erp_hrm_roles table. Returns
+     *   IErpHrmRole.ISummary with role details.
    */
   role: IErpHrmRole.ISummary;
 
   /**
    * Timestamp when this permission assignment was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from erp_hrm_role_permissions.created_at. Timestamp when permission was assigned.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_role_permissions.created_at. Timestamp when permission was
+     *   assigned.
    */
   createdAt: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when this permission assignment was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from erp_hrm_role_permissions.updated_at. Timestamp of last modification.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_role_permissions.updated_at. Timestamp of last modification.
    */
   updatedAt: string & tags.Format<"date-time">;
 
   /**
    * Soft-deletion timestamp. Null if the permission assignment is active, otherwise indicates when it was removed.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from erp_hrm_role_permissions.deleted_at. Nullable timestamp for soft-delete. Null if permission is active.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_role_permissions.deleted_at. Nullable timestamp for
+     *   soft-delete. Null if permission is active.
    */
   deletedAt: (string & tags.Format<"date-time">) | null;
 };
@@ -71,8 +82,11 @@ export namespace IErpHrmRolePermission {
     /**
      * The permission identifier in format 'resource.action' (e.g., 'organization.manage', 'employee.view', 'project.manage').
      *
-     * @x-autobe-database-schema-property permission
-     * @x-autobe-specification Direct mapping from erp_hrm_role_permissions.permission column. The permission identifier string that grants a specific functional capability to the role.
+         * @x-autobe-database-schema-property permission
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_role_permissions.permission column. The permission
+         *   identifier string that grants a specific functional capability to
+         *   the role.
      */
     permission: string;
   };
@@ -84,8 +98,13 @@ export namespace IErpHrmRolePermission {
     /**
      * The permission identifier representing a specific functional capability granted to the role (e.g., 'organization.manage', 'employee.view').
      *
-     * @x-autobe-database-schema-property permission
-     * @x-autobe-specification Direct mapping from erp_hrm_role_permissions.permission. String identifier representing a functional capability in 'resource.action' format (e.g., 'organization.manage', 'employee.view', 'project.create'). Must be unique per role as enforced by @@unique([role_id, permission]) constraint.
+         * @x-autobe-database-schema-property permission
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_role_permissions.permission. String identifier representing
+         *   a functional capability in 'resource.action' format (e.g.,
+         *   'organization.manage', 'employee.view', 'project.create'). Must be
+         *   unique per role as enforced by @@unique([role_id, permission])
+         *   constraint.
      */
     permission?: string | undefined;
   };

@@ -13,7 +13,11 @@ import { IErpHrmTimeTimer } from "../../../../../structures/IErpHrmTimeTimer";
  * @param props.connection
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Resolve the authenticated member's current employee record within the selected organization context, then load the employee's active timer. Verify that exactly one active timer exists and that it belongs to the current organization and employee. Confirm the employee is active; deactivated employees cannot discard timers.
+ * @x-autobe-specification Resolve the authenticated member's current employee
+ *   record within the selected organization context, then load the employee's
+ *   active timer. Verify that exactly one active timer exists and that it
+ *   belongs to the current organization and employee. Confirm the employee is
+ *   active; deactivated employees cannot discard timers.
  *
  * Within a transaction, mark the timer as discarded according to the timer persistence model, ensuring it is no longer treated as active and cannot be edited, stopped, or resumed afterward. Do not create any timelog record. Do not modify other organization data.
  *

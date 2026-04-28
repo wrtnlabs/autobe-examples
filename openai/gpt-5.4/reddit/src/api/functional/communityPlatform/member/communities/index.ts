@@ -31,7 +31,8 @@ export * as moderationActions from "./moderationActions/index";
  * @param props.body Information required to create a community
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implement this operation as a transactional community creation workflow for authenticated members.
+ * @x-autobe-specification Implement this operation as a transactional community
+ *   creation workflow for authenticated members.
  *
  * 1. Authenticate the caller as a member and obtain the member primary key from session context. Reject guests and any non-member principal before touching persistence.
  * 2. Validate the request body against the community creation DTO. The client may supply the community slug, title, and description. Do not accept owner identifiers, subscriber counts, timestamps, or system lifecycle metadata from the client.
@@ -136,7 +137,9 @@ export namespace create {
  * @param props.body Community update information
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implement a service-layer update for the `community_platform_communities` primary table using the unique `slug` column as the lookup key.
+ * @x-autobe-specification Implement a service-layer update for the
+ *   `community_platform_communities` primary table using the unique `slug`
+ *   column as the lookup key.
  *
  * 1. Authenticate the caller as a member.
  * 2. Resolve the target community by `community_platform_communities.slug = :communitySlug` and reject when no matching record exists.
@@ -247,7 +250,8 @@ export namespace update {
  * @param props.communitySlug Unique slug of the target community (global scope).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implement a service-layer deleteCommunityBySlug workflow.
+ * @x-autobe-specification Implement a service-layer deleteCommunityBySlug
+ *   workflow.
  *
  * 1. Authenticate the requester as a member. Reject unauthenticated callers.
  * 2. Resolve the target record from the community aggregate using the slug provided in communitySlug. If no matching community exists, return a not-found error.

@@ -25,7 +25,8 @@ export * as snapshots from "./snapshots/index";
  * @param props.body Moderator assignment details containing the member ID to be assigned as moderator and optional role (defaults to 'moderator')
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Create a new moderator assignment in the reddit_clone_community_moderators table.
+ * @x-autobe-specification Create a new moderator assignment in the
+ *   reddit_clone_community_moderators table.
  *
  * 1. Authorization check: Verify the requesting user is either:
  *    - The community owner (reddit_clone_members.id matches community's reddit_clone_member_id), OR
@@ -153,7 +154,8 @@ export namespace create {
  * @param props.body Search criteria and pagination parameters for filtering moderator listings.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query the reddit_clone_community_moderators table filtered by communityId.
+ * @x-autobe-specification Query the reddit_clone_community_moderators table
+ *   filtered by communityId.
  *
  * Implement the following:
  * 1. Filter moderators by reddit_clone_community_id matching the path parameter
@@ -266,7 +268,8 @@ export namespace index {
  * @param props.moderatorId Unique identifier of the moderator assignment (UUID)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query reddit_clone_moderators table filtering by id equal to moderatorId and reddit_clone_community_id equal to communityId.
+ * @x-autobe-specification Query reddit_clone_moderators table filtering by id
+ *   equal to moderatorId and reddit_clone_community_id equal to communityId.
  *
  * Verify that the moderator exists and deleted_at is null (only active moderators).
  *
@@ -371,7 +374,8 @@ export namespace at {
  * @param props.body New role value for the moderator
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Update moderator role in reddit_clone_moderators table.
+ * @x-autobe-specification Update moderator role in reddit_clone_moderators
+ *   table.
  *
  * 1. Validate moderatorId exists in reddit_clone_moderators for the specified communityId.
  * 2. Verify requesting user is either the community owner (role='owner') or an existing moderator with authority to manage roles.
@@ -487,7 +491,8 @@ export namespace update {
  * @param props.moderatorId Unique identifier of the member to remove as moderator (UUID)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Remove a moderator assignment from the reddit_clone_community_moderators table.
+ * @x-autobe-specification Remove a moderator assignment from the
+ *   reddit_clone_community_moderators table.
  *
  * 1. Authorization Check: Verify the authenticated user is the owner of the community (reddit_clone_community_moderators where community_id = {communityId} AND member_id = current_user_id AND role = 'owner'). If not owner, reject with 403 Forbidden.
  *

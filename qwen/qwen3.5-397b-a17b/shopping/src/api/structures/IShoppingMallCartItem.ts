@@ -16,8 +16,9 @@ export type IShoppingMallCartItem = {
    *
    * System-generated UUID that uniquely identifies this specific cart item record. Used for updating or removing the item from the cart.
    *
-   * @x-autobe-specification Direct mapping from shopping_mall_cart_items.id. Auto-generated UUID upon cart item creation.
-   * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from shopping_mall_cart_items.id.
+     *   Auto-generated UUID upon cart item creation.
+     * @x-autobe-database-schema-property id
    */
   id: string & tags.Format<"uuid">;
 
@@ -26,8 +27,10 @@ export type IShoppingMallCartItem = {
    *
    * References the specific product variant (SKU combination) that the customer wants to purchase. This determines the exact product configuration such as color, size, or other option combinations. Includes variant details like SKU code, option values text, and optional price override.
    *
-   * @x-autobe-specification Join via shopping_mall_product_variants using shopping_mall_cart_items.shopping_mall_product_variant_id. Returns ISummary with SKU code, option values, and price.
-   * @x-autobe-database-schema-property productVariant
+     * @x-autobe-specification Join via shopping_mall_product_variants using
+     *   shopping_mall_cart_items.shopping_mall_product_variant_id. Returns
+     *   ISummary with SKU code, option values, and price.
+     * @x-autobe-database-schema-property productVariant
    */
   productVariant: IShoppingMallProductVariant.ISummary;
 
@@ -36,8 +39,11 @@ export type IShoppingMallCartItem = {
    *
    * Represents how many items the customer intends to purchase. When the same variant is added multiple times, the quantity is incremented rather than creating duplicate cart item records. Must be at least 1.
    *
-   * @x-autobe-database-schema-property quantity
-   * @x-autobe-specification Direct mapping from shopping_mall_cart_items.quantity. Integer value, minimum 1. When adding duplicate variants, quantities are combined via UPDATE rather than creating new rows.
+     * @x-autobe-database-schema-property quantity
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_cart_items.quantity. Integer value, minimum 1. When
+     *   adding duplicate variants, quantities are combined via UPDATE rather
+     *   than creating new rows.
    */
   quantity: number & tags.Type<"int32"> & tags.Minimum<1>;
 
@@ -46,8 +52,10 @@ export type IShoppingMallCartItem = {
    *
    * Automatically set by the system when the cart item is created. Useful for tracking when items were added and for sorting cart items by recency.
    *
-   * @x-autobe-specification Direct mapping from shopping_mall_cart_items.created_at. System-managed timestamp set on INSERT.
-   * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_cart_items.created_at. System-managed timestamp set on
+     *   INSERT.
+     * @x-autobe-database-schema-property created_at
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -56,8 +64,10 @@ export type IShoppingMallCartItem = {
    *
    * Automatically updated by the system whenever the cart item's quantity is changed. Reflects the most recent modification to this cart item.
    *
-   * @x-autobe-specification Direct mapping from shopping_mall_cart_items.updated_at. System-managed timestamp updated on every UPDATE operation.
-   * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_cart_items.updated_at. System-managed timestamp updated
+     *   on every UPDATE operation.
+     * @x-autobe-database-schema-property updated_at
    */
   updated_at: string & tags.Format<"date-time">;
 };
@@ -77,8 +87,13 @@ export namespace IShoppingMallCartItem {
      *
      * If you want to remove the item from the cart entirely, use the DELETE endpoint instead of setting quantity to zero.
      *
-     * @x-autobe-database-schema-property quantity
-     * @x-autobe-specification Direct mapping to shopping_mall_cart_items.quantity column. Backend validates value is positive integer (minimum 1) and does not exceed available stock for the product variant. If quantity exceeds stock, return validation error. The updated_at timestamp is automatically updated by the system.
+         * @x-autobe-database-schema-property quantity
+         * @x-autobe-specification Direct mapping to
+         *   shopping_mall_cart_items.quantity column. Backend validates value
+         *   is positive integer (minimum 1) and does not exceed available stock
+         *   for the product variant. If quantity exceeds stock, return
+         *   validation error. The updated_at timestamp is automatically updated
+         *   by the system.
      */
     quantity?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
   };
@@ -96,8 +111,11 @@ export namespace IShoppingMallCartItem {
      *
      * This must reference a valid product variant that exists in the system. The variant determines the specific SKU combination (such as color, size, or other options) being added to the cart. If the variant belongs to a product that is out of stock or unavailable, the item may still be added but will be marked as unavailable during checkout.
      *
-     * @x-autobe-database-schema-property shopping_mall_product_variant_id
-     * @x-autobe-specification Direct mapping from shopping_mall_cart_items.shopping_mall_product_variant_id. Foreign key referencing shopping_mall_product_variants.id. Must be a valid UUID of an existing, active product variant.
+         * @x-autobe-database-schema-property shopping_mall_product_variant_id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_cart_items.shopping_mall_product_variant_id. Foreign
+         *   key referencing shopping_mall_product_variants.id. Must be a valid
+         *   UUID of an existing, active product variant.
      */
     product_variant_id: string & tags.Format<"uuid">;
 
@@ -108,8 +126,11 @@ export namespace IShoppingMallCartItem {
      *
      * There is no maximum limit enforced at the API level, but quantities exceeding available stock will be flagged during checkout. Customers can adjust quantities before completing their purchase.
      *
-     * @x-autobe-database-schema-property quantity
-     * @x-autobe-specification Direct mapping from shopping_mall_cart_items.quantity. Must be a positive integer with minimum value of 1. When adding to an existing cart item, this quantity is added to the current quantity.
+         * @x-autobe-database-schema-property quantity
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_cart_items.quantity. Must be a positive integer with
+         *   minimum value of 1. When adding to an existing cart item, this
+         *   quantity is added to the current quantity.
      */
     quantity: number & tags.Type<"int32"> & tags.Minimum<1>;
   };

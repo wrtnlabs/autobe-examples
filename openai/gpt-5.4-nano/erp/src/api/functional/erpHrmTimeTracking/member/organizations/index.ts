@@ -35,7 +35,8 @@ export * as timezone from "./timezone/index";
  * @param props.body Organization creation payload mapped to `erp_hrm_time_tracking_organizations` core profile columns.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implement POST /organizations to create a new tenant organization.
+ * @x-autobe-specification Implement POST /organizations to create a new tenant
+ *   organization.
  *
  * Algorithm / Service-layer steps:
  * 1. Authenticate the caller via existing auth middleware and authorize them to perform tenant creation.
@@ -160,10 +161,10 @@ export namespace create {
  * @param props.body Organization profile update payload for the currently selected organization context.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification 1) Authorization & context
- * - Require authenticated member.
- * - Resolve the selected organization context from session/middleware.
- * - Ensure the target organization for update is exactly the selected organization. Reject if no context or mismatch.
+ * @x-autobe-specification 1) Authorization & context - Require authenticated
+ *   member. - Resolve the selected organization context from
+ *   session/middleware. - Ensure the target organization for update is exactly
+ *   the selected organization. Reject if no context or mismatch.
  *
  * 2) Input validation
  * - Accept update payload matching `IErpHrmTimeTrackingOrganization.IUpdate`.
@@ -531,9 +532,11 @@ export namespace update {
  * @param props.organizationId Target organization identifier to permanently remove (maps to `erp_hrm_time_tracking_organizations.id`).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification 1) Authorization & scope
- * - Verify the caller is authenticated as a `member` (and/or admin as defined by your permission model) and has the right to delete the targeted organization.
- * - Ensure the permission decision is made for the specific organization referenced by `organizationId`.
+ * @x-autobe-specification 1) Authorization & scope - Verify the caller is
+ *   authenticated as a `member` (and/or admin as defined by your permission
+ *   model) and has the right to delete the targeted organization. - Ensure the
+ *   permission decision is made for the specific organization referenced by
+ *   `organizationId`.
  *
  * 2) Input handling
  * - Parse `organizationId` from the path parameter as UUID.

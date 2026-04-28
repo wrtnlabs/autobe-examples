@@ -20,9 +20,10 @@ export class CommunityplatformCommunitiesController {
    *
    * @param connection
    * @param body Search, sorting, and pagination criteria for browsing communities.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Implement this as a paginated community search/list query against community_platform_communities.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Implement this as a paginated community
+     *   search/list query against community_platform_communities.
    *
    * Load communities that are available for discovery and exclude records that are no longer available. Apply a case-insensitive name search when the request provides a query term, matching communities whose names contain or otherwise satisfy the configured search pattern. Sort results according to the requested sort option, with a stable secondary ordering to keep pagination deterministic.
    *
@@ -57,10 +58,13 @@ export class CommunityplatformCommunitiesController {
    *
    * @param connection
    * @param communityId Target community's ID
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Load the community record by its primary identifier from community_platform_communities.
-   * Validate that the provided communityId maps to an existing community that is available for public presentation. If the record does not exist or is not eligible to be shown, return a not-found style error.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Load the community record by its primary
+     *   identifier from community_platform_communities. Validate that the
+     *   provided communityId maps to an existing community that is available
+     *   for public presentation. If the record does not exist or is not
+     *   eligible to be shown, return a not-found style error.
    *
    * Return the detailed community DTO using only fields that exist in the schema. Include the community's identifying metadata required by the product requirements, and include ownership or lifecycle fields only if they are present in the actual schema. Do not join subscription, post, report, or moderation collections in this endpoint; those belong to separate operations and would increase payload size unnecessarily.
    *

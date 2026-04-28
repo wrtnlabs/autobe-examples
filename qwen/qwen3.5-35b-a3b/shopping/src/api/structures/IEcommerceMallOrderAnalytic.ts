@@ -27,7 +27,9 @@ export namespace IEcommerceMallOrderAnalytic {
      *
      * ISO 8601 datetime format. Used to filter orders by their creation timestamp. Must be within 1 year of end_date to prevent performance issues from large date ranges. Optional for flexible queries.
      *
-     * @x-autobe-specification ISO 8601 datetime filter for order creation date. Query: created_at >= start_date. Must be within 1 year of end_date. Optional for flexible querying.
+         * @x-autobe-specification ISO 8601 datetime filter for order creation
+         *   date. Query: created_at >= start_date. Must be within 1 year of
+         *   end_date. Optional for flexible querying.
      */
     start_date?: (string & tags.Format<"date-time">) | undefined;
 
@@ -36,7 +38,9 @@ export namespace IEcommerceMallOrderAnalytic {
      *
      * ISO 8601 datetime format. Used to filter orders by their creation timestamp. Must be within 1 year of start_date to prevent performance issues from large date ranges. Optional for flexible queries.
      *
-     * @x-autobe-specification ISO 8601 datetime filter for order creation date. Query: created_at <= end_date. Must be within 1 year of start_date. Optional for flexible querying.
+         * @x-autobe-specification ISO 8601 datetime filter for order creation
+         *   date. Query: created_at <= end_date. Must be within 1 year of
+         *   start_date. Optional for flexible querying.
      */
     end_date?: (string & tags.Format<"date-time">) | undefined;
 
@@ -45,7 +49,11 @@ export namespace IEcommerceMallOrderAnalytic {
      *
      * Array of status values to filter orders. Valid statuses: paid, shipped, delivered, cancelled, refunded, partially_completed. Multiple statuses can be specified to include orders in multiple states simultaneously.
      *
-     * @x-autobe-specification Array of order status enum values for filtering. Query: status IN (statuses). Valid values: paid, shipped, delivered, cancelled, refunded, partially_completed. Multiple values can be specified to aggregate across multiple statuses.
+         * @x-autobe-specification Array of order status enum values for
+         *   filtering. Query: status IN (statuses). Valid values: paid,
+         *   shipped, delivered, cancelled, refunded, partially_completed.
+         *   Multiple values can be specified to aggregate across multiple
+         *   statuses.
      */
     statuses?:
       | (
@@ -63,7 +71,10 @@ export namespace IEcommerceMallOrderAnalytic {
      *
      * Array of UUID strings identifying sellers. Only orders containing products from these sellers will be included. Useful for analyzing specific seller performance metrics. All values must be valid UUID format.
      *
-     * @x-autobe-specification Array of UUIDs for filtering by seller. Query: JOIN with order_items and products, then WHERE seller_id IN (seller_ids). Returns analytics for orders from these specific sellers. Optional for seller-specific analysis.
+         * @x-autobe-specification Array of UUIDs for filtering by seller.
+         *   Query: JOIN with order_items and products, then WHERE seller_id IN
+         *   (seller_ids). Returns analytics for orders from these specific
+         *   sellers. Optional for seller-specific analysis.
      */
     seller_ids?: (string & tags.Format<"uuid">)[] | undefined;
 
@@ -72,7 +83,11 @@ export namespace IEcommerceMallOrderAnalytic {
      *
      * Array of UUID strings identifying product categories. Only orders containing products from these categories will be included. Useful for analyzing specific product category performance. All values must be valid UUID format.
      *
-     * @x-autobe-specification Array of UUIDs for filtering by product categories. Query: JOIN with order_items and products, then WHERE category_id IN (category_ids). Returns analytics for orders containing products from these categories. Optional for category-specific analysis.
+         * @x-autobe-specification Array of UUIDs for filtering by product
+         *   categories. Query: JOIN with order_items and products, then WHERE
+         *   category_id IN (category_ids). Returns analytics for orders
+         *   containing products from these categories. Optional for
+         *   category-specific analysis.
      */
     category_ids?: (string & tags.Format<"uuid">)[] | undefined;
 
@@ -81,7 +96,10 @@ export namespace IEcommerceMallOrderAnalytic {
      *
      * Array of UUID strings identifying customer accounts. Only orders from these customers will be included. Useful for analyzing specific customer segments or VIP order patterns. All values must be valid UUID format.
      *
-     * @x-autobe-specification Array of UUIDs for filtering by customer. Query: member_id IN (customer_ids). Returns analytics for orders from these specific customers. Optional for customer segment analysis.
+         * @x-autobe-specification Array of UUIDs for filtering by customer.
+         *   Query: member_id IN (customer_ids). Returns analytics for orders
+         *   from these specific customers. Optional for customer segment
+         *   analysis.
      */
     customer_ids?: (string & tags.Format<"uuid">)[] | undefined;
 
@@ -90,7 +108,10 @@ export namespace IEcommerceMallOrderAnalytic {
      *
      * 1-indexed page number. Default value is 1. Used together with limit to control the number of records returned per page. Ignored when cursor-based pagination is provided via cursor token.
      *
-     * @x-autobe-specification Page number for offset-based pagination. 1-indexed (first page is 1). Default value: 1. Used together with limit for pagination. Ignored when cursor-based pagination is provided.
+         * @x-autobe-specification Page number for offset-based pagination.
+         *   1-indexed (first page is 1). Default value: 1. Used together with
+         *   limit for pagination. Ignored when cursor-based pagination is
+         *   provided.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -99,7 +120,10 @@ export namespace IEcommerceMallOrderAnalytic {
      *
      * Maximum number of records to return in a single page. Range: 1-100. Default value is 20. Higher limits return more records per page but may impact query performance for large result sets.
      *
-     * @x-autobe-specification Number of records per page. Minimum: 1, Maximum: 100. Default value: 20. Used together with page for offset-based pagination. Higher limits return more records per page but may impact performance.
+         * @x-autobe-specification Number of records per page. Minimum: 1,
+         *   Maximum: 100. Default value: 20. Used together with page for
+         *   offset-based pagination. Higher limits return more records per page
+         *   but may impact performance.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -110,7 +134,10 @@ export namespace IEcommerceMallOrderAnalytic {
      *
      * Sorting field for query results. Options: created_at (order creation timestamp) or total_price (order value). Default is created_at. Used together with sort_order to control result ordering.
      *
-     * @x-autobe-specification Field to sort results by. Valid values: created_at (default), total_price. Default: created_at. Used together with sort_order to determine result ordering. Analytics typically sorted by creation date descending.
+         * @x-autobe-specification Field to sort results by. Valid values:
+         *   created_at (default), total_price. Default: created_at. Used
+         *   together with sort_order to determine result ordering. Analytics
+         *   typically sorted by creation date descending.
      */
     sort_by?: "created_at" | "total_price" | undefined;
 
@@ -119,7 +146,9 @@ export namespace IEcommerceMallOrderAnalytic {
      *
      * Direction for sorting results. Options: asc (ascending) or desc (descending). Default is desc. Used together with sort_by to control the order of returned analytics records.
      *
-     * @x-autobe-specification Sort order direction. Valid values: asc, desc. Default: desc. Used together with sort_by to determine result ordering. Default descending order for most analytics queries.
+         * @x-autobe-specification Sort order direction. Valid values: asc,
+         *   desc. Default: desc. Used together with sort_by to determine result
+         *   ordering. Default descending order for most analytics queries.
      */
     sort_order?: "asc" | "desc" | undefined;
 
@@ -128,7 +157,10 @@ export namespace IEcommerceMallOrderAnalytic {
      *
      * Pagination cursor token received from previous response. Used to retrieve the next page of results instead of page/limit parameters. Only one of cursor or page/limit should be used in a single request.
      *
-     * @x-autobe-specification Cursor token for cursor-based pagination. Used as alternative to page/limit parameters. Provided in previous response pagination metadata. For pagination continuation after first page request.
+         * @x-autobe-specification Cursor token for cursor-based pagination.
+         *   Used as alternative to page/limit parameters. Provided in previous
+         *   response pagination metadata. For pagination continuation after
+         *   first page request.
      */
     cursor?: string | undefined;
   };
@@ -144,7 +176,8 @@ export namespace IEcommerceMallOrderAnalytic {
      *
      * This field represents the complete count of orders after applying any date range, fulfillment status, or other filtering parameters specified in the query. Used for pagination context and summary displays.
      *
-     * @x-autobe-specification Computed: COUNT(*) from ecommerce_mall_orders with optional status filters.
+         * @x-autobe-specification Computed: COUNT(*) from ecommerce_mall_orders
+         *   with optional status filters.
      */
     totalOrderCount: number & tags.Type<"int32">;
 
@@ -153,7 +186,10 @@ export namespace IEcommerceMallOrderAnalytic {
      *
      * Represents the sum of all order total_price values (gross merchandise value) for the selected time period and filters. Does not account for refunds or cancellations - use statusBreakdown to analyze order states.
      *
-     * @x-autobe-specification Computed: SUM(total_price) from ecommerce_mall_orders. Sum of all order total_price values after applying filters. Represents the gross merchandise value (GMV) for the selected period.
+         * @x-autobe-specification Computed: SUM(total_price) from
+         *   ecommerce_mall_orders. Sum of all order total_price values after
+         *   applying filters. Represents the gross merchandise value (GMV) for
+         *   the selected period.
      */
     totalRevenue: number;
 
@@ -162,7 +198,9 @@ export namespace IEcommerceMallOrderAnalytic {
      *
      * Calculated by dividing totalRevenue by totalOrderCount. Returns 0 when no orders exist (avoids division by zero). Key metric for understanding customer spending behavior and order value trends.
      *
-     * @x-autobe-specification Computed: totalRevenue / totalOrderCount when totalOrderCount > 0, otherwise 0. Average value per order for the selected period.
+         * @x-autobe-specification Computed: totalRevenue / totalOrderCount when
+         *   totalOrderCount > 0, otherwise 0. Average value per order for the
+         *   selected period.
      */
     averageOrderValue: number;
 
@@ -171,7 +209,10 @@ export namespace IEcommerceMallOrderAnalytic {
      *
      * Object containing counts of orders in each fulfillment state: `paid`, `shipped`, `delivered`, `cancelled`, and `refunded`. Helps analyze order lifecycle distribution.
      *
-     * @x-autobe-specification Computed: OBJECT with fulfillment_status keys (paid, shipped, delivered, cancelled, refunded) and COUNT(*) values. Groups orders by fulfillment_status and returns count per status.
+         * @x-autobe-specification Computed: OBJECT with fulfillment_status keys
+         *   (paid, shipped, delivered, cancelled, refunded) and COUNT(*)
+         *   values. Groups orders by fulfillment_status and returns count per
+         *   status.
      */
     statusBreakdown: {
       [key: string]: number & tags.Type<"int32">;
@@ -182,7 +223,11 @@ export namespace IEcommerceMallOrderAnalytic {
      *
      * Array of seller summary objects representing top performers by revenue generated from orders. Each seller includes identifying information and revenue metrics. Limited to top N results for efficient dashboard display.
      *
-     * @x-autobe-specification Computed: ARRAY of IEcommerceMallSeller.ISummary objects joined from ecommerce_mall_orders, ecommerce_mall_order_items, and ecommerce_mall_sellers. Aggregates total_revenue per seller, orders them by revenue DESC, limits to top results.
+         * @x-autobe-specification Computed: ARRAY of
+         *   IEcommerceMallSeller.ISummary objects joined from
+         *   ecommerce_mall_orders, ecommerce_mall_order_items, and
+         *   ecommerce_mall_sellers. Aggregates total_revenue per seller, orders
+         *   them by revenue DESC, limits to top results.
      */
     topSellers: IEcommerceMallSeller.ISummary[];
 
@@ -191,7 +236,11 @@ export namespace IEcommerceMallOrderAnalytic {
      *
      * Array of product summary objects representing top performers by units sold. Each product includes identifying information and sales metrics. Limited to top N results for efficient dashboard display.
      *
-     * @x-autobe-specification Computed: ARRAY of IEcommerceMallProduct.ISummary objects joined from ecommerce_mall_orders, ecommerce_mall_order_items, and ecommerce_mall_products. Aggregates units_sold and total_revenue per product, orders by units_sold DESC, limits to top results.
+         * @x-autobe-specification Computed: ARRAY of
+         *   IEcommerceMallProduct.ISummary objects joined from
+         *   ecommerce_mall_orders, ecommerce_mall_order_items, and
+         *   ecommerce_mall_products. Aggregates units_sold and total_revenue
+         *   per product, orders by units_sold DESC, limits to top results.
      */
     topProducts: IEcommerceMallProduct.ISummary[];
   };

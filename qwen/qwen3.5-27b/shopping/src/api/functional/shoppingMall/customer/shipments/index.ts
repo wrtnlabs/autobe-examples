@@ -22,7 +22,8 @@ import { IShoppingMallShipment } from "../../../../structures/IShoppingMallShipm
  * @param props.body Search criteria for shipments including order ID, seller ID, delivery status, date ranges, carrier name, tracking number, and pagination parameters.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Query the shopping_mall_shipments table with pagination and filtering support.
+ * @x-autobe-specification Query the shopping_mall_shipments table with
+ *   pagination and filtering support.
  *
  * **Filtering Logic:**
  * - Filter by shopping_mall_order_id if provided in request
@@ -142,7 +143,8 @@ export namespace index {
  * @param props.shipmentId Unique identifier of the shipment to retrieve (global scope).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Query shopping_mall_shipments table by primary key (id) with soft-delete filter (deleted_at IS NULL).
+ * @x-autobe-specification Query shopping_mall_shipments table by primary key
+ *   (id) with soft-delete filter (deleted_at IS NULL).
  *
  * Join with shopping_mall_orders to verify order relationship and enable authorization checks.
  * Join with shopping_mall_sellers to verify seller relationship and enable authorization checks.

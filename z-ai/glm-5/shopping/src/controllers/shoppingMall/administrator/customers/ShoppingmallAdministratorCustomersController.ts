@@ -32,9 +32,10 @@ export class ShoppingmallAdministratorCustomersController {
    *
    * @param connection
    * @param body Search criteria and pagination parameters for customer listing
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Query shopping_mall_customers table with pagination and filtering.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor administrator
+     * @x-autobe-specification Query shopping_mall_customers table with
+     *   pagination and filtering.
    *
    * **Implementation Steps:**
    * 1. Verify administrator authentication from JWT token
@@ -106,9 +107,10 @@ export class ShoppingmallAdministratorCustomersController {
    *
    * @param connection
    * @param customerId Unique identifier of the customer to retrieve (UUID format)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Implementation should query the shopping_mall_customers table by primary key id.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor administrator
+     * @x-autobe-specification Implementation should query the
+     *   shopping_mall_customers table by primary key id.
    *
    * 1. Validate the customerId path parameter is a valid UUID format
    * 2. Query shopping_mall_customers table WHERE id = customerId

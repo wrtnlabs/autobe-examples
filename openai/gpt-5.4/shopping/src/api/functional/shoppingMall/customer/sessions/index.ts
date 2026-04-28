@@ -27,7 +27,8 @@ import { IShoppingMallSellerSession } from "../../../../structures/IShoppingMall
  * @param props.body Session search criteria and pagination parameters
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Implement a unified session search service for administrator and superAdministrator actors only.
+ * @x-autobe-specification Implement a unified session search service for
+ *   administrator and superAdministrator actors only.
  *
  * Accept an IShoppingMallSession.IRequest body containing pagination, filtering, and sorting inputs. Supported filters should include actorType (customer, seller, administrator, superAdministrator), ownerId, sessionId, ip, createdAt range, expiredAt range, and a validity selector derived from current time versus expired_at. Do not require every filter; treat omitted filters as broad search conditions.
  *
@@ -132,7 +133,9 @@ export namespace index {
  * @param props.sessionId Target customer session record identifier
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Load the customer session record from shopping_mall_customer_sessions by primary key id using the provided sessionId.
+ * @x-autobe-specification Load the customer session record from
+ *   shopping_mall_customer_sessions by primary key id using the provided
+ *   sessionId.
  *
  * Before returning data, require an authenticated customer session context. Resolve the current customer account identity from authentication middleware, then compare it against shopping_mall_customer_sessions.shopping_mall_customer_id on the loaded record. If there is no authenticated customer context, reject the request as unauthorized. If the record does not exist, return a not-found error. If the record exists but belongs to a different customer account, reject the request as forbidden or not found according to the platform’s security policy to avoid cross-account disclosure.
  *

@@ -19,7 +19,9 @@ import { ITodoAppTodo } from "../../../../../structures/ITodoAppTodo";
  * @param props.todoId The identifier of the todo to restore within the authenticated member's own todo collection.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Load the todo by id and verify that it belongs to the current authenticated member. Reject the request if the todo does not exist, belongs to another member, or is not currently soft-deleted.
+ * @x-autobe-specification Load the todo by id and verify that it belongs to the
+ *   current authenticated member. Reject the request if the todo does not
+ *   exist, belongs to another member, or is not currently soft-deleted.
  *
  * On success, clear the deleted_at value so the todo returns to the active list. Preserve all other todo fields, especially is_completed, title, description, start_date, due_date, created_at, and updated_at semantics. Update the modified timestamp as part of the restore workflow if the service convention requires it.
  *

@@ -24,7 +24,8 @@ export * as snapshots from "./snapshots/index";
  * @param props.body Search and filter criteria for posts. Includes pagination parameters, sorting options, and filter fields for post type, title, date range, vote score, and community/author filters.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query the reddit_community_posts table with soft-delete filtering (deleted_at IS NULL by default).
+ * @x-autobe-specification Query the reddit_community_posts table with
+ *   soft-delete filtering (deleted_at IS NULL by default).
  *
  * Apply search filters from request body:
  * - Title search: LIKE clause on title field
@@ -136,7 +137,8 @@ export namespace index {
  * @param props.postId The unique identifier of the post to retrieve (UUID format).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query the reddit_community_posts table by the provided postId (UUID).
+ * @x-autobe-specification Query the reddit_community_posts table by the
+ *   provided postId (UUID).
  *
  * 1. Validate that the postId parameter is a valid UUID format
  * 2. Perform a database query to fetch the post by ID

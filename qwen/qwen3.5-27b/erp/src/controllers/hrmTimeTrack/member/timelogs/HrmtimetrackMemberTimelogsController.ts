@@ -27,9 +27,10 @@ export class HrmtimetrackMemberTimelogsController {
    *
    * @param connection
    * @param body Timelog creation data including work date, duration, project assignment, optional task, billable status, and notes.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Insert a new record into hrm_time_track_timelogs table.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Insert a new record into hrm_time_track_timelogs
+     *   table.
    *
    * Authentication Context:
    * - Extract employee_id from authenticated user's current organization membership
@@ -88,9 +89,10 @@ export class HrmtimetrackMemberTimelogsController {
    *
    * @param connection
    * @param body Search criteria including date range filters, project, task, employee, billable status filters, pagination parameters, and sorting options.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query hrm_time_track_timelogs table with pagination and filtering based on request body criteria.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query hrm_time_track_timelogs table with
+     *   pagination and filtering based on request body criteria.
    *
    * Filtering rules:
    * - Apply date range filter on date field (from_date and to_date)
@@ -155,9 +157,10 @@ export class HrmtimetrackMemberTimelogsController {
    *
    * @param connection
    * @param timelogId Unique identifier of the timelog to retrieve (global scope)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query hrm_time_track_timelogs table for the record matching the provided timelogId.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query hrm_time_track_timelogs table for the
+     *   record matching the provided timelogId.
    *
    * Verify the timelog exists and is not soft deleted (deleted_at IS NULL).
    *
@@ -213,9 +216,10 @@ export class HrmtimetrackMemberTimelogsController {
    * @param connection
    * @param timelogId Unique identifier of the timelog to update (global scope)
    * @param body Timelog update data including date, duration, project, task, billable status, and optional notes. Employee and organization fields cannot be modified.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query hrm_time_track_timelogs table for the timelog by id, including joins to verify organization context.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query hrm_time_track_timelogs table for the
+     *   timelog by id, including joins to verify organization context.
    *
    * 1. Verify timelog exists and belongs to the current organization context
    * 2. Check if timelog is associated with any timesheet via hrm_time_track_timesheet_timelogs junction table
@@ -267,22 +271,24 @@ export class HrmtimetrackMemberTimelogsController {
    *
    * @param connection
    * @param timelogId Unique identifier of the timelog to delete (UUID format).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1. Extract timelogId from path parameter and validate UUID format.
-   * 2. Fetch the timelog record by ID, including employee, project, and task relationships.
-   * 3. Verify the timelog exists and belongs to the current organization context.
-   * 4. Check if the timelog is associated with any timesheet by querying hrm_time_track_timesheet_timelogs junction table.
-   * 5. If associated with a timesheet, check the timesheet status:
-   *    - If status is 'submitted' or 'approved', block deletion and return 403 Forbidden.
-   *    - If status is 'draft' or 'rejected', allow deletion to proceed.
-   * 6. Verify user authorization:
-   *    - If user is the timelog owner (employee match), allow deletion if timesheet check passes.
-   *    - If user has 'time management' permission, allow deletion regardless of ownership.
-   *    - Otherwise, return 403 Forbidden.
-   * 7. Delete the timelog record from hrm_time_track_timelogs table.
-   * 8. Record the deletion action in hrm_time_track_activity_logs with action type, user, timestamp, and affected resource.
-   * 9. Return 204 No Content on successful deletion.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification 1. Extract timelogId from path parameter and
+     *   validate UUID format. 2. Fetch the timelog record by ID, including
+     *   employee, project, and task relationships. 3. Verify the timelog exists
+     *   and belongs to the current organization context. 4. Check if the
+     *   timelog is associated with any timesheet by querying
+     *   hrm_time_track_timesheet_timelogs junction table. 5. If associated with
+     *   a timesheet, check the timesheet status: - If status is 'submitted' or
+     *   'approved', block deletion and return 403 Forbidden. - If status is
+     *   'draft' or 'rejected', allow deletion to proceed. 6. Verify user
+     *   authorization: - If user is the timelog owner (employee match), allow
+     *   deletion if timesheet check passes. - If user has 'time management'
+     *   permission, allow deletion regardless of ownership. - Otherwise, return
+     *   403 Forbidden. 7. Delete the timelog record from
+     *   hrm_time_track_timelogs table. 8. Record the deletion action in
+     *   hrm_time_track_activity_logs with action type, user, timestamp, and
+     *   affected resource. 9. Return 204 No Content on successful deletion.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Delete(":timelogId")

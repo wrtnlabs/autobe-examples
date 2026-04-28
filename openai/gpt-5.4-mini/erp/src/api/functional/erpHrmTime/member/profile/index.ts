@@ -19,8 +19,11 @@ import { IErpHrmTimeMember } from "../../../../structures/IErpHrmTimeMember";
  * @param props.body Profile fields to update for the authenticated member’s shared global profile.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Resolve the authenticated member from the current security context and load the single shared profile record from erp_hrm_time_members.
- * Update only the profile columns supported by the schema: display_name, avatar_image_url, and phone_number. Do not update email, password_hash, or any organization-related records.
+ * @x-autobe-specification Resolve the authenticated member from the current
+ *   security context and load the single shared profile record from
+ *   erp_hrm_time_members. Update only the profile columns supported by the
+ *   schema: display_name, avatar_image_url, and phone_number. Do not update
+ *   email, password_hash, or any organization-related records.
  *
  * Apply a transaction-safe row update with optimistic concurrency if supported by the service layer. Persist updated_at with the current timestamp. If the avatar URL is provided, validate it as a URI/URL string; if phone number is provided, validate it as a plain optional string; display name must be present and non-empty according to profile rules.
  *

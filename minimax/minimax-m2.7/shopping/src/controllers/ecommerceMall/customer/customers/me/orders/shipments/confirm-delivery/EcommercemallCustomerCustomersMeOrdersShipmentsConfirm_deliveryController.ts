@@ -27,9 +27,10 @@ export class EcommercemallCustomerCustomersMeOrdersShipmentsConfirm_deliveryCont
    * @param connection
    * @param orderId Unique identifier of the order containing the shipment (global scope).
    * @param shipmentId Unique identifier of the shipment to confirm delivery for.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Implement the shipment delivery confirmation logic:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Implement the shipment delivery confirmation
+     *   logic:
    *
    * 1. **Authentication**: Extract authenticated customer ID from JWT token in Authorization header.
    *

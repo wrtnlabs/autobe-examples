@@ -18,9 +18,10 @@ export class ShoppingmallAdministratorsController {
    *
    * @param connection
    * @param body Search criteria including email search, grade filter, status filter, pagination parameters, and sorting options.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query shopping_mall_administrators table with pagination and filtering support.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query shopping_mall_administrators table with
+     *   pagination and filtering support.
    *
    * Filtering:
    * - Filter by grade: 'regular administrator' or 'super administrator' from grade column
@@ -75,9 +76,10 @@ export class ShoppingmallAdministratorsController {
    *
    * @param connection
    * @param administratorId Unique identifier of the administrator to retrieve (UUID format, global scope)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query the shopping_mall_administrators table for a single administrator record by UUID primary key.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query the shopping_mall_administrators table for
+     *   a single administrator record by UUID primary key.
    *
    * 1. Validate the administratorId parameter is a valid UUID format
    * 2. Execute SELECT query on shopping_mall_administrators WHERE id = administratorId

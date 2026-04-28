@@ -13,51 +13,51 @@ import { IMallPlatformSeller } from "./IMallPlatformSeller";
  */
 export type IMallPlatformShipment = {
   /**
-   * @x-autobe-database-schema-property id
+     * @x-autobe-database-schema-property id
    */
   id: string & tags.Format<"uuid">;
   /**
-   * @x-autobe-database-schema-property seller
+     * @x-autobe-database-schema-property seller
    */
   seller: IMallPlatformSeller.ISummary;
   /**
-   * @x-autobe-database-schema-property order
+     * @x-autobe-database-schema-property order
    */
   order: IMallPlatformOrder.ISummary;
   /**
-   * @x-autobe-database-schema-property carrier_name
+     * @x-autobe-database-schema-property carrier_name
    */
   carrierName: string;
   /**
-   * @x-autobe-database-schema-property tracking_number
+     * @x-autobe-database-schema-property tracking_number
    */
   trackingNumber: string;
   /**
-   * @x-autobe-database-schema-property tracking_url
+     * @x-autobe-database-schema-property tracking_url
    */
   trackingUrl: (string & tags.Format<"url">) | null;
   /**
-   * @x-autobe-database-schema-property status
+     * @x-autobe-database-schema-property status
    */
   status: string;
   /**
-   * @x-autobe-database-schema-property shipped_at
+     * @x-autobe-database-schema-property shipped_at
    */
   shippedAt: (string & tags.Format<"date-time">) | null;
   /**
-   * @x-autobe-database-schema-property delivered_at
+     * @x-autobe-database-schema-property delivered_at
    */
   deliveredAt: (string & tags.Format<"date-time">) | null;
   /**
-   * @x-autobe-database-schema-property created_at
+     * @x-autobe-database-schema-property created_at
    */
   createdAt: string & tags.Format<"date-time">;
   /**
-   * @x-autobe-database-schema-property updated_at
+     * @x-autobe-database-schema-property updated_at
    */
   updatedAt: string & tags.Format<"date-time">;
   /**
-   * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-database-schema-property deleted_at
    */
   deletedAt: (string & tags.Format<"date-time">) | null;
 };
@@ -75,8 +75,10 @@ export namespace IMallPlatformShipment {
      *
      * This identifies the shipping provider responsible for delivering the package.
      *
-     * @x-autobe-database-schema-property carrier_name
-     * @x-autobe-specification Direct mapping to mall_platform_shipments.carrier_name. This field stores the human-readable carrier name used for the shipment header.
+         * @x-autobe-database-schema-property carrier_name
+         * @x-autobe-specification Direct mapping to
+         *   mall_platform_shipments.carrier_name. This field stores the
+         *   human-readable carrier name used for the shipment header.
      */
     carrierName?: string | undefined;
 
@@ -85,8 +87,11 @@ export namespace IMallPlatformShipment {
      *
      * This is the carrier-issued identifier used to follow the package through delivery.
      *
-     * @x-autobe-database-schema-property tracking_number
-     * @x-autobe-specification Direct mapping to mall_platform_shipments.tracking_number. This field stores the carrier-issued tracking identifier for the shipment and is validated together with the seller scope's uniqueness rule.
+         * @x-autobe-database-schema-property tracking_number
+         * @x-autobe-specification Direct mapping to
+         *   mall_platform_shipments.tracking_number. This field stores the
+         *   carrier-issued tracking identifier for the shipment and is
+         *   validated together with the seller scope's uniqueness rule.
      */
     trackingNumber?: string | undefined;
 
@@ -95,8 +100,11 @@ export namespace IMallPlatformShipment {
      *
      * This optional field links to the carrier's tracking page. It may be omitted by setting the value to null.
      *
-     * @x-autobe-database-schema-property tracking_url
-     * @x-autobe-specification Direct mapping to mall_platform_shipments.tracking_url. This optional field stores a customer-facing carrier tracking URL when available; null means no URL is provided.
+         * @x-autobe-database-schema-property tracking_url
+         * @x-autobe-specification Direct mapping to
+         *   mall_platform_shipments.tracking_url. This optional field stores a
+         *   customer-facing carrier tracking URL when available; null means no
+         *   URL is provided.
      */
     trackingUrl?: (string & tags.Format<"url">) | null | undefined;
 
@@ -105,8 +113,11 @@ export namespace IMallPlatformShipment {
      *
      * This represents the shipment's lifecycle state, such as preparing, shipped, delivered, or cancelled. It is editable, while related timestamps are managed by the service.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping to mall_platform_shipments.status. This field stores the shipment lifecycle state. The service may use changes here to populate shipped_at or delivered_at when those timestamps are still empty.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping to
+         *   mall_platform_shipments.status. This field stores the shipment
+         *   lifecycle state. The service may use changes here to populate
+         *   shipped_at or delivered_at when those timestamps are still empty.
      */
     status?: string | undefined;
   };
@@ -124,7 +135,9 @@ export namespace IMallPlatformShipment {
      *
      * This is a 1-indexed pagination control used to choose which page of shipment results is returned. It does not correspond to stored shipment data.
      *
-     * @x-autobe-specification Use this as the 1-indexed page number for shipment list pagination. Apply it only in the query layer when slicing the result set; do not persist it to the database.
+         * @x-autobe-specification Use this as the 1-indexed page number for
+         *   shipment list pagination. Apply it only in the query layer when
+         *   slicing the result set; do not persist it to the database.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -133,7 +146,9 @@ export namespace IMallPlatformShipment {
      *
      * This pagination control limits the size of the returned shipment list and does not correspond to stored shipment data.
      *
-     * @x-autobe-specification Use this as the maximum number of shipment records returned per page. Apply it only in the query layer as a page-size limit; do not persist it to the database.
+         * @x-autobe-specification Use this as the maximum number of shipment
+         *   records returned per page. Apply it only in the query layer as a
+         *   page-size limit; do not persist it to the database.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -144,7 +159,10 @@ export namespace IMallPlatformShipment {
      *
      * This value is applied by the list query to match shipment-related fields and related order information. It is not a stored shipment attribute.
      *
-     * @x-autobe-specification Use this as a free-text keyword search term across shipment browsing criteria. Apply it in the query layer against shipment-facing fields and related order information supported by the endpoint, not as a single database column mapping.
+         * @x-autobe-specification Use this as a free-text keyword search term
+         *   across shipment browsing criteria. Apply it in the query layer
+         *   against shipment-facing fields and related order information
+         *   supported by the endpoint, not as a single database column mapping.
      */
     search?: string | undefined;
 
@@ -153,7 +171,10 @@ export namespace IMallPlatformShipment {
      *
      * This controls how shipment records are ordered in the response. It is a browsing control, not stored shipment data.
      *
-     * @x-autobe-specification Use this as the shipment list sort directive. Support newest, oldest, status_asc, and status_desc by translating them into query ordering rules over shipment timestamps or shipment status.
+         * @x-autobe-specification Use this as the shipment list sort directive.
+         *   Support newest, oldest, status_asc, and status_desc by translating
+         *   them into query ordering rules over shipment timestamps or shipment
+         *   status.
      */
     sort?: "newest" | "oldest" | "status_asc" | "status_desc" | undefined;
 
@@ -162,7 +183,10 @@ export namespace IMallPlatformShipment {
      *
      * Use this to narrow results to shipments in a specific lifecycle state such as preparing, shipped, delivered, or cancelled.
      *
-     * @x-autobe-specification Use this as a shipment status filter in the list query. Accept preparing, shipped, delivered, and cancelled, and apply the filter against shipment status values in the query layer.
+         * @x-autobe-specification Use this as a shipment status filter in the
+         *   list query. Accept preparing, shipped, delivered, and cancelled,
+         *   and apply the filter against shipment status values in the query
+         *   layer.
      */
     status?: "preparing" | "shipped" | "delivered" | "cancelled" | undefined;
 
@@ -171,7 +195,9 @@ export namespace IMallPlatformShipment {
      *
      * Use this to locate shipments belonging to a specific order without requiring an internal identifier.
      *
-     * @x-autobe-specification Use this to filter shipments by the related order number. Resolve the order relation in the query layer and match this value against the order's human-readable order number.
+         * @x-autobe-specification Use this to filter shipments by the related
+         *   order number. Resolve the order relation in the query layer and
+         *   match this value against the order's human-readable order number.
      */
     orderNumber?: string | undefined;
 
@@ -180,7 +206,9 @@ export namespace IMallPlatformShipment {
      *
      * Use this to narrow shipment results to packages handled by a particular delivery carrier.
      *
-     * @x-autobe-specification Use this to filter shipment results by carrier name in the query layer. Match the provided value against the shipment carrier field when browsing records.
+         * @x-autobe-specification Use this to filter shipment results by
+         *   carrier name in the query layer. Match the provided value against
+         *   the shipment carrier field when browsing records.
      */
     carrierName?: string | undefined;
 
@@ -189,7 +217,9 @@ export namespace IMallPlatformShipment {
      *
      * Use this to locate a shipment using the carrier-issued tracking identifier.
      *
-     * @x-autobe-specification Use this to filter shipment results by tracking number in the query layer. Match the provided value against the shipment tracking number when browsing records.
+         * @x-autobe-specification Use this to filter shipment results by
+         *   tracking number in the query layer. Match the provided value
+         *   against the shipment tracking number when browsing records.
      */
     trackingNumber?: string | undefined;
 
@@ -198,7 +228,9 @@ export namespace IMallPlatformShipment {
      *
      * Use this to find shipments using the carrier tracking link when it is available.
      *
-     * @x-autobe-specification Use this to filter shipment results by tracking URL in the query layer. Match the provided value against the stored carrier tracking URL when one exists.
+         * @x-autobe-specification Use this to filter shipment results by
+         *   tracking URL in the query layer. Match the provided value against
+         *   the stored carrier tracking URL when one exists.
      */
     trackingUrl?: (string & tags.Format<"url">) | undefined;
 
@@ -207,7 +239,10 @@ export namespace IMallPlatformShipment {
      *
      * Use this to narrow results to shipments based on when they were handed to the carrier.
      *
-     * @x-autobe-specification Use this to filter shipment results by shipped timestamp in the query layer. Accept either null or a date-time value and compare it against shipment shipped-at data when present.
+         * @x-autobe-specification Use this to filter shipment results by
+         *   shipped timestamp in the query layer. Accept either null or a
+         *   date-time value and compare it against shipment shipped-at data
+         *   when present.
      */
     shippedAt?: (string & tags.Format<"date-time">) | null | undefined;
 
@@ -216,7 +251,10 @@ export namespace IMallPlatformShipment {
      *
      * Use this to narrow results to shipments based on when they were confirmed delivered.
      *
-     * @x-autobe-specification Use this to filter shipment results by delivered timestamp in the query layer. Accept either null or a date-time value and compare it against shipment delivered-at data when present.
+         * @x-autobe-specification Use this to filter shipment results by
+         *   delivered timestamp in the query layer. Accept either null or a
+         *   date-time value and compare it against shipment delivered-at data
+         *   when present.
      */
     deliveredAt?: (string & tags.Format<"date-time">) | null | undefined;
   };
@@ -234,8 +272,10 @@ export namespace IMallPlatformShipment {
      *
      * This identifies the delivery company responsible for transporting the package and is stored on the shipment header for tracking and customer support.
      *
-     * @x-autobe-database-schema-property carrier_name
-     * @x-autobe-specification Direct mapping to mall_platform_shipments.carrier_name. Persist the carrier name exactly as provided after validation.
+         * @x-autobe-database-schema-property carrier_name
+         * @x-autobe-specification Direct mapping to
+         *   mall_platform_shipments.carrier_name. Persist the carrier name
+         *   exactly as provided after validation.
      */
     carrierName: string;
 
@@ -244,8 +284,10 @@ export namespace IMallPlatformShipment {
      *
      * This value is stored on the shipment header and is used by customers and administrators to follow the delivery progress of the package.
      *
-     * @x-autobe-database-schema-property tracking_number
-     * @x-autobe-specification Direct mapping to mall_platform_shipments.tracking_number. Persist the carrier-issued tracking number exactly as provided after validation.
+         * @x-autobe-database-schema-property tracking_number
+         * @x-autobe-specification Direct mapping to
+         *   mall_platform_shipments.tracking_number. Persist the carrier-issued
+         *   tracking number exactly as provided after validation.
      */
     trackingNumber: string;
 
@@ -254,8 +296,11 @@ export namespace IMallPlatformShipment {
      *
      * When present, this link points to the carrier's public tracking page for the package. It may be omitted or null when the carrier does not provide a customer-facing URL.
      *
-     * @x-autobe-database-schema-property tracking_url
-     * @x-autobe-specification Direct mapping to mall_platform_shipments.tracking_url. Accept an optional carrier tracking URL and persist null when the request omits it or explicitly sets it to null.
+         * @x-autobe-database-schema-property tracking_url
+         * @x-autobe-specification Direct mapping to
+         *   mall_platform_shipments.tracking_url. Accept an optional carrier
+         *   tracking URL and persist null when the request omits it or
+         *   explicitly sets it to null.
      */
     trackingUrl?: (string & tags.Format<"url">) | null | undefined;
 
@@ -264,7 +309,16 @@ export namespace IMallPlatformShipment {
      *
      * Each identifier must reference an existing order item that belongs to the authenticated seller and is eligible to be shipped. The service uses this list to create the shipment-item associations for the new package.
      *
-     * @x-autobe-specification Use this array as the list of existing order item UUIDs to attach to the new shipment in the same transaction. Validate that every order item belongs to the authenticated seller, is eligible for shipping, and is not duplicated or already assigned to another active shipment. This field is not persisted directly on mall_platform_shipments; it is consumed to create shipment-item association rows and to update the related order items to shipped status. Because this is a computed request-control field rather than a database column, the specification is the only source of truth for downstream agents.
+         * @x-autobe-specification Use this array as the list of existing order
+         *   item UUIDs to attach to the new shipment in the same transaction.
+         *   Validate that every order item belongs to the authenticated seller,
+         *   is eligible for shipping, and is not duplicated or already assigned
+         *   to another active shipment. This field is not persisted directly on
+         *   mall_platform_shipments; it is consumed to create shipment-item
+         *   association rows and to update the related order items to shipped
+         *   status. Because this is a computed request-control field rather
+         *   than a database column, the specification is the only source of
+         *   truth for downstream agents.
      */
     orderItemIds: (string & tags.Format<"uuid">)[] & tags.MinItems<1>;
   };
@@ -282,8 +336,9 @@ export namespace IMallPlatformShipment {
      *
      * This UUID identifies the shipment record and is used to reference the shipment across related API operations.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from mall_platform_shipments.id.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_shipments.id.
      */
     id: string & tags.Format<"uuid">;
 
@@ -292,8 +347,10 @@ export namespace IMallPlatformShipment {
      *
      * This value is returned as a seller summary so clients can display the merchant associated with the package and navigate to seller-related views.
      *
-     * @x-autobe-database-schema-property seller
-     * @x-autobe-specification Map from the belongs-to relation mall_platform_shipments.seller, resolving mall_platform_seller_id to an IMallPlatformSeller.ISummary reference.
+         * @x-autobe-database-schema-property seller
+         * @x-autobe-specification Map from the belongs-to relation
+         *   mall_platform_shipments.seller, resolving mall_platform_seller_id
+         *   to an IMallPlatformSeller.ISummary reference.
      */
     seller: IMallPlatformSeller.ISummary;
 
@@ -302,8 +359,10 @@ export namespace IMallPlatformShipment {
      *
      * This value is returned as an order summary so clients can connect the shipment to the parent purchase and show order context alongside tracking information.
      *
-     * @x-autobe-database-schema-property order
-     * @x-autobe-specification Map from the belongs-to relation mall_platform_shipments.order, resolving mall_platform_order_id to an IMallPlatformOrder.ISummary reference.
+         * @x-autobe-database-schema-property order
+         * @x-autobe-specification Map from the belongs-to relation
+         *   mall_platform_shipments.order, resolving mall_platform_order_id to
+         *   an IMallPlatformOrder.ISummary reference.
      */
     order: IMallPlatformOrder.ISummary;
 
@@ -312,8 +371,9 @@ export namespace IMallPlatformShipment {
      *
      * This is the human-readable carrier label shown to customers and staff, such as a logistics or postal service provider.
      *
-     * @x-autobe-database-schema-property carrier_name
-     * @x-autobe-specification Direct mapping from mall_platform_shipments.carrier_name.
+         * @x-autobe-database-schema-property carrier_name
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_shipments.carrier_name.
      */
     carrierName: string;
 
@@ -322,8 +382,9 @@ export namespace IMallPlatformShipment {
      *
      * This value is the shipment's tracking identifier used to look up delivery progress with the carrier or support tools.
      *
-     * @x-autobe-database-schema-property tracking_number
-     * @x-autobe-specification Direct mapping from mall_platform_shipments.tracking_number.
+         * @x-autobe-database-schema-property tracking_number
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_shipments.tracking_number.
      */
     trackingNumber: string;
 
@@ -332,8 +393,10 @@ export namespace IMallPlatformShipment {
      *
      * When present, this link can open the carrier's tracking page. A null value means no tracking URL has been recorded.
      *
-     * @x-autobe-database-schema-property tracking_url
-     * @x-autobe-specification Direct mapping from mall_platform_shipments.tracking_url. Preserve null when no tracking URL is provided.
+         * @x-autobe-database-schema-property tracking_url
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_shipments.tracking_url. Preserve null when no
+         *   tracking URL is provided.
      */
     trackingUrl: (string & tags.Format<"url">) | null;
 
@@ -342,8 +405,9 @@ export namespace IMallPlatformShipment {
      *
      * This value describes the shipment's delivery state, such as preparing, shipped, delivered, or cancelled, and is used to render progress in summary views.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from mall_platform_shipments.status.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_shipments.status.
      */
     status: string;
 
@@ -352,8 +416,10 @@ export namespace IMallPlatformShipment {
      *
      * A null value means the shipment has not been shipped yet. When present, the timestamp reflects the shipment handoff time.
      *
-     * @x-autobe-database-schema-property shipped_at
-     * @x-autobe-specification Direct mapping from mall_platform_shipments.shipped_at. Preserve null until the shipment is handed to the carrier.
+         * @x-autobe-database-schema-property shipped_at
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_shipments.shipped_at. Preserve null until the
+         *   shipment is handed to the carrier.
      */
     shippedAt: (string & tags.Format<"date-time">) | null;
 
@@ -362,8 +428,10 @@ export namespace IMallPlatformShipment {
      *
      * A null value means the shipment has not been delivered yet. When present, the timestamp reflects the delivery completion time recorded for the shipment.
      *
-     * @x-autobe-database-schema-property delivered_at
-     * @x-autobe-specification Direct mapping from mall_platform_shipments.delivered_at. Preserve null until delivery is confirmed.
+         * @x-autobe-database-schema-property delivered_at
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_shipments.delivered_at. Preserve null until delivery
+         *   is confirmed.
      */
     deliveredAt: (string & tags.Format<"date-time">) | null;
 
@@ -372,8 +440,9 @@ export namespace IMallPlatformShipment {
      *
      * This field is used for audit, sorting, and historical display of when the shipment entered the system.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from mall_platform_shipments.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_shipments.created_at.
      */
     createdAt: string & tags.Format<"date-time">;
 
@@ -382,8 +451,9 @@ export namespace IMallPlatformShipment {
      *
      * This field reflects the most recent change to the shipment record and is useful for synchronization and audit purposes.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from mall_platform_shipments.updated_at.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_shipments.updated_at.
      */
     updatedAt: string & tags.Format<"date-time">;
 
@@ -392,8 +462,10 @@ export namespace IMallPlatformShipment {
      *
      * A null value means the shipment is active. When present, the timestamp indicates the shipment is retained only for historical visibility and audit purposes.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from mall_platform_shipments.deleted_at. Preserve null for active records and use the timestamp for soft-deleted historical records.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_shipments.deleted_at. Preserve null for active
+         *   records and use the timestamp for soft-deleted historical records.
      */
     deletedAt: (string & tags.Format<"date-time">) | null;
   };
@@ -409,7 +481,11 @@ export namespace IMallPlatformShipment {
      *
      * Provide the final shipment membership as UUIDs. The server validates that each item belongs to the same seller and order, is shippable, and is not already attached to another shipment before applying the update.
      *
-     * @x-autobe-specification Authoritative final set of order item UUIDs that should belong to the shipment identified in the path. The service must reconcile the shipment-item junction table to match this list exactly, adding missing rows and removing absent rows atomically.
+         * @x-autobe-specification Authoritative final set of order item UUIDs
+         *   that should belong to the shipment identified in the path. The
+         *   service must reconcile the shipment-item junction table to match
+         *   this list exactly, adding missing rows and removing absent rows
+         *   atomically.
      */
     orderItemIds: (string & tags.Format<"uuid">)[] & tags.MinItems<1>;
   };
@@ -427,8 +503,10 @@ export namespace IMallPlatformShipment {
      *
      * This value identifies the shipment record referenced by tracking and detail endpoints.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from mall_platform_shipments.id. Expose the UUID primary key as the shipment identifier.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_shipments.id. Expose the UUID primary key as the
+         *   shipment identifier.
      */
     id: string & tags.Format<"uuid">;
 
@@ -437,8 +515,10 @@ export namespace IMallPlatformShipment {
      *
      * This identifies the carrier responsible for transporting the package.
      *
-     * @x-autobe-database-schema-property carrier_name
-     * @x-autobe-specification Direct mapping from mall_platform_shipments.carrier_name. Expose the shipment carrier name exactly as stored.
+         * @x-autobe-database-schema-property carrier_name
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_shipments.carrier_name. Expose the shipment carrier
+         *   name exactly as stored.
      */
     carrierName: string;
 
@@ -447,8 +527,10 @@ export namespace IMallPlatformShipment {
      *
      * This number is used to follow the package with the carrier.
      *
-     * @x-autobe-database-schema-property tracking_number
-     * @x-autobe-specification Direct mapping from mall_platform_shipments.tracking_number. Expose the carrier-issued tracking number for the shipment.
+         * @x-autobe-database-schema-property tracking_number
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_shipments.tracking_number. Expose the carrier-issued
+         *   tracking number for the shipment.
      */
     trackingNumber: string;
 
@@ -457,8 +539,10 @@ export namespace IMallPlatformShipment {
      *
      * When present, this opens the carrier's tracking page for the shipment.
      *
-     * @x-autobe-database-schema-property tracking_url
-     * @x-autobe-specification Direct mapping from mall_platform_shipments.tracking_url. Preserve null when no tracking URL is stored; otherwise expose the stored URL string.
+         * @x-autobe-database-schema-property tracking_url
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_shipments.tracking_url. Preserve null when no
+         *   tracking URL is stored; otherwise expose the stored URL string.
      */
     trackingUrl: (string & tags.Format<"url">) | null;
 
@@ -467,8 +551,10 @@ export namespace IMallPlatformShipment {
      *
      * This indicates the package's delivery progress, such as preparing, shipped, delivered, or cancelled.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from mall_platform_shipments.status. Expose the shipment status exactly as stored in the database.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_shipments.status. Expose the shipment status exactly
+         *   as stored in the database.
      */
     status: string;
 
@@ -477,8 +563,11 @@ export namespace IMallPlatformShipment {
      *
      * This value is null until the package has been dispatched.
      *
-     * @x-autobe-database-schema-property shipped_at
-     * @x-autobe-specification Direct mapping from mall_platform_shipments.shipped_at. Preserve null until the shipment is handed to the carrier; otherwise expose the stored timestamp.
+         * @x-autobe-database-schema-property shipped_at
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_shipments.shipped_at. Preserve null until the
+         *   shipment is handed to the carrier; otherwise expose the stored
+         *   timestamp.
      */
     shippedAt: (string & tags.Format<"date-time">) | null;
 
@@ -487,8 +576,10 @@ export namespace IMallPlatformShipment {
      *
      * This value is null until the package reaches delivered status.
      *
-     * @x-autobe-database-schema-property delivered_at
-     * @x-autobe-specification Direct mapping from mall_platform_shipments.delivered_at. Preserve null until delivery is confirmed; otherwise expose the stored timestamp.
+         * @x-autobe-database-schema-property delivered_at
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_shipments.delivered_at. Preserve null until delivery
+         *   is confirmed; otherwise expose the stored timestamp.
      */
     deliveredAt: (string & tags.Format<"date-time">) | null;
 
@@ -497,8 +588,12 @@ export namespace IMallPlatformShipment {
      *
      * This is shown as a seller summary so clients can display the merchant context for the package.
      *
-     * @x-autobe-database-schema-property seller
-     * @x-autobe-specification Join mall_platform_shipments.mall_platform_seller_id to mall_platform_sellers.id and return IMallPlatformSeller.ISummary as the seller summary relation. This is a read-side relation mapping, not the raw foreign key column.
+         * @x-autobe-database-schema-property seller
+         * @x-autobe-specification Join
+         *   mall_platform_shipments.mall_platform_seller_id to
+         *   mall_platform_sellers.id and return IMallPlatformSeller.ISummary as
+         *   the seller summary relation. This is a read-side relation mapping,
+         *   not the raw foreign key column.
      */
     seller: IMallPlatformSeller.ISummary;
 
@@ -507,8 +602,12 @@ export namespace IMallPlatformShipment {
      *
      * This is shown as an order summary so clients can display which purchase the package belongs to.
      *
-     * @x-autobe-database-schema-property order
-     * @x-autobe-specification Join mall_platform_shipments.mall_platform_order_id to mall_platform_orders.id and return IMallPlatformOrder.ISummary as the order summary relation. This is a read-side relation mapping, not the raw foreign key column.
+         * @x-autobe-database-schema-property order
+         * @x-autobe-specification Join
+         *   mall_platform_shipments.mall_platform_order_id to
+         *   mall_platform_orders.id and return IMallPlatformOrder.ISummary as
+         *   the order summary relation. This is a read-side relation mapping,
+         *   not the raw foreign key column.
      */
     order: IMallPlatformOrder.ISummary;
 
@@ -517,8 +616,10 @@ export namespace IMallPlatformShipment {
      *
      * This timestamp helps consumers identify when the shipment entry was first recorded.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from mall_platform_shipments.created_at. Expose the creation timestamp in ISO date-time format.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_shipments.created_at. Expose the creation timestamp
+         *   in ISO date-time format.
      */
     createdAt: string & tags.Format<"date-time">;
 
@@ -527,8 +628,10 @@ export namespace IMallPlatformShipment {
      *
      * This timestamp reflects the most recent change to the shipment record.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from mall_platform_shipments.updated_at. Expose the last update timestamp in ISO date-time format.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_shipments.updated_at. Expose the last update
+         *   timestamp in ISO date-time format.
      */
     updatedAt: string & tags.Format<"date-time">;
 
@@ -537,8 +640,11 @@ export namespace IMallPlatformShipment {
      *
      * This value is null for active shipments and populated only for logically removed records.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from mall_platform_shipments.deleted_at. Preserve null for active shipments and expose the stored soft-delete timestamp when logically removed.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_shipments.deleted_at. Preserve null for active
+         *   shipments and expose the stored soft-delete timestamp when
+         *   logically removed.
      */
     deletedAt: (string & tags.Format<"date-time">) | null;
   };

@@ -17,9 +17,10 @@ export class HrmplatformMemberDashboardController {
    * All data is scoped to the currently selected organization context. The response aggregates information from timelogs, timers, timesheets, and tasks tables to provide a unified dashboard view.
    *
    * @param connection
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query the database to assemble personal dashboard data for the current authenticated employee.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query the database to assemble personal dashboard
+     *   data for the current authenticated employee.
    *
    * 1. Hours logged today: Sum duration_minutes from hrm_platform_timelogs where hrm_platform_employee_id equals current employee and date equals today (midnight UTC to midnight UTC). Convert to hours (divide by 60).
    *

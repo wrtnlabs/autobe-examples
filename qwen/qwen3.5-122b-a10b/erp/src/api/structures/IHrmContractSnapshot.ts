@@ -22,8 +22,9 @@ export type IHrmContractSnapshot = {
    *
    * This UUID serves as the primary key for the snapshot table and is used to retrieve specific historical contract states.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from hrm_contract_snapshots.id. Primary key uniquely identifying each snapshot record.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from hrm_contract_snapshots.id.
+     *   Primary key uniquely identifying each snapshot record.
    */
   id: string & tags.Format<"uuid">;
 
@@ -32,8 +33,10 @@ export type IHrmContractSnapshot = {
    *
    * This foreign key links the snapshot to its source contract record. The value is denormalized at snapshot creation time to preserve historical accuracy even if the contract is later modified or deleted.
    *
-   * @x-autobe-database-schema-property hrm_contract_id
-   * @x-autobe-specification Direct mapping from hrm_contract_snapshots.hrm_contract_id. Foreign key referencing parent contract. Denormalized from contract for historical accuracy.
+     * @x-autobe-database-schema-property hrm_contract_id
+     * @x-autobe-specification Direct mapping from
+     *   hrm_contract_snapshots.hrm_contract_id. Foreign key referencing parent
+     *   contract. Denormalized from contract for historical accuracy.
    */
   contractId: string & tags.Format<"uuid">;
 
@@ -42,8 +45,10 @@ export type IHrmContractSnapshot = {
    *
    * This value is denormalized from the parent contract to ensure historical accuracy. Even if the employee record is modified or deleted, the snapshot preserves the employee identity as it existed when the contract was active.
    *
-   * @x-autobe-database-schema-property employee_id
-   * @x-autobe-specification Direct mapping from hrm_contract_snapshots.employee_id. Denormalized employee identifier captured at snapshot creation time for historical accuracy.
+     * @x-autobe-database-schema-property employee_id
+     * @x-autobe-specification Direct mapping from
+     *   hrm_contract_snapshots.employee_id. Denormalized employee identifier
+     *   captured at snapshot creation time for historical accuracy.
    */
   employeeId: string & tags.Format<"uuid">;
 
@@ -52,8 +57,10 @@ export type IHrmContractSnapshot = {
    *
    * This timestamp marks when the contractual terms captured in this snapshot became active. It is stored in ISO 8601 format with timezone information.
    *
-   * @x-autobe-database-schema-property start_date
-   * @x-autobe-specification Direct mapping from hrm_contract_snapshots.start_date. Contract effective start date captured at snapshot creation time.
+     * @x-autobe-database-schema-property start_date
+     * @x-autobe-specification Direct mapping from
+     *   hrm_contract_snapshots.start_date. Contract effective start date
+     *   captured at snapshot creation time.
    */
   startDate: string & tags.Format<"date-time">;
 
@@ -62,8 +69,11 @@ export type IHrmContractSnapshot = {
    *
    * A null value indicates the contract was still active (ongoing) at the time this snapshot was captured. When populated, this timestamp marks when the contractual terms expired or were terminated.
    *
-   * @x-autobe-database-schema-property end_date
-   * @x-autobe-specification Direct mapping from hrm_contract_snapshots.end_date. Contract effective end date captured at snapshot creation time. Null indicates an ongoing active contract at snapshot time.
+     * @x-autobe-database-schema-property end_date
+     * @x-autobe-specification Direct mapping from
+     *   hrm_contract_snapshots.end_date. Contract effective end date captured
+     *   at snapshot creation time. Null indicates an ongoing active contract at
+     *   snapshot time.
    */
   endDate?: (string & tags.Format<"date-time">) | null | undefined;
 
@@ -72,8 +82,10 @@ export type IHrmContractSnapshot = {
    *
    * This numeric value represents the pay amount, with the unit determined by the payPeriod field (hourly, daily, weekly, or monthly). The value is stored in the organization's base currency and captured at snapshot creation time for historical accuracy.
    *
-   * @x-autobe-database-schema-property pay_rate
-   * @x-autobe-specification Direct mapping from hrm_contract_snapshots.pay_rate. Compensation rate amount captured at snapshot creation time. Stored in organization's base currency.
+     * @x-autobe-database-schema-property pay_rate
+     * @x-autobe-specification Direct mapping from
+     *   hrm_contract_snapshots.pay_rate. Compensation rate amount captured at
+     *   snapshot creation time. Stored in organization's base currency.
    */
   payRate: number;
 
@@ -88,8 +100,10 @@ export type IHrmContractSnapshot = {
    *
    * This field determines how the payRate value should be interpreted for payroll calculations and employment verification.
    *
-   * @x-autobe-database-schema-property pay_period
-   * @x-autobe-specification Direct mapping from hrm_contract_snapshots.pay_period. Pay frequency type captured at snapshot creation time. Valid values: hourly, daily, weekly, monthly.
+     * @x-autobe-database-schema-property pay_period
+     * @x-autobe-specification Direct mapping from
+     *   hrm_contract_snapshots.pay_period. Pay frequency type captured at
+     *   snapshot creation time. Valid values: hourly, daily, weekly, monthly.
    */
   payPeriod: string;
 
@@ -98,8 +112,11 @@ export type IHrmContractSnapshot = {
    *
    * This optional field is used for full-time vs part-time classification, overtime calculations, and compliance with labor regulations. May be null for contractor, freelance, or irregular work arrangements where weekly hours are not standardized.
    *
-   * @x-autobe-database-schema-property working_hours_per_week
-   * @x-autobe-specification Direct mapping from hrm_contract_snapshots.working_hours_per_week. Expected weekly working hours captured at snapshot creation time. Nullable for contractor or irregular work arrangements.
+     * @x-autobe-database-schema-property working_hours_per_week
+     * @x-autobe-specification Direct mapping from
+     *   hrm_contract_snapshots.working_hours_per_week. Expected weekly working
+     *   hours captured at snapshot creation time. Nullable for contractor or
+     *   irregular work arrangements.
    */
   workingHoursPerWeek?: number | null | undefined;
 
@@ -108,8 +125,10 @@ export type IHrmContractSnapshot = {
    *
    * This optional text field stores free-form information about the contract that doesn't fit into structured fields. Examples include remote work agreements, bonus structures, special benefits, or other custom arrangements. Captured at snapshot creation time for historical accuracy.
    *
-   * @x-autobe-database-schema-property notes
-   * @x-autobe-specification Direct mapping from hrm_contract_snapshots.notes. Additional contract terms or administrative notes captured at snapshot creation time. Nullable.
+     * @x-autobe-database-schema-property notes
+     * @x-autobe-specification Direct mapping from hrm_contract_snapshots.notes.
+     *   Additional contract terms or administrative notes captured at snapshot
+     *   creation time. Nullable.
    */
   notes?: string | null | undefined;
 
@@ -118,8 +137,10 @@ export type IHrmContractSnapshot = {
    *
    * This timestamp marks the exact point in time when the snapshot was captured, preserving the contract state as it existed at that moment. Used for audit trail purposes and to establish the chronological order of contract modifications.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from hrm_contract_snapshots.created_at. Timestamp when this snapshot was created, marking the point-in-time of the captured contract state.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_contract_snapshots.created_at. Timestamp when this snapshot was
+     *   created, marking the point-in-time of the captured contract state.
    */
   createdAt: string & tags.Format<"date-time">;
 };
@@ -152,8 +173,10 @@ export namespace IHrmContractSnapshot {
      *
      * **Behavior**: Optional filter. When omitted, snapshots from all contracts are included in results.
      *
-     * @x-autobe-database-schema-property hrm_contract_id
-     * @x-autobe-specification Direct mapping from hrm_contract_snapshots.hrm_contract_id. Filters snapshots by specific contract UUID. Optional field, combined with AND logic.
+         * @x-autobe-database-schema-property hrm_contract_id
+         * @x-autobe-specification Direct mapping from
+         *   hrm_contract_snapshots.hrm_contract_id. Filters snapshots by
+         *   specific contract UUID. Optional field, combined with AND logic.
      */
     hrm_contract_id?: (string & tags.Format<"uuid">) | undefined;
 
@@ -166,8 +189,10 @@ export namespace IHrmContractSnapshot {
      *
      * **Behavior**: Optional filter. The employee_id is denormalized in the snapshot table for query performance, avoiding joins to the hrm_employees table.
      *
-     * @x-autobe-database-schema-property employee_id
-     * @x-autobe-specification Direct mapping from hrm_contract_snapshots.employee_id. Filters snapshots by employee UUID. Optional field, combined with AND logic.
+         * @x-autobe-database-schema-property employee_id
+         * @x-autobe-specification Direct mapping from
+         *   hrm_contract_snapshots.employee_id. Filters snapshots by employee
+         *   UUID. Optional field, combined with AND logic.
      */
     employee_id?: (string & tags.Format<"uuid">) | undefined;
 
@@ -180,8 +205,10 @@ export namespace IHrmContractSnapshot {
      *
      * **Behavior**: Optional. When used alone (without start_date_to), returns snapshots with start_date >= this value. Combined with start_date_to, applies range filter: start_date_from <= start_date <= start_date_to.
      *
-     * @x-autobe-database-schema-property start_date
-     * @x-autobe-specification Maps to hrm_contract_snapshots.start_date. Lower bound for contract start date range filter. Combined with start_date_to for range query. Optional field.
+         * @x-autobe-database-schema-property start_date
+         * @x-autobe-specification Maps to hrm_contract_snapshots.start_date.
+         *   Lower bound for contract start date range filter. Combined with
+         *   start_date_to for range query. Optional field.
      */
     start_date_from?: (string & tags.Format<"date-time">) | undefined;
 
@@ -194,8 +221,10 @@ export namespace IHrmContractSnapshot {
      *
      * **Behavior**: Optional. When used alone (without start_date_from), returns snapshots with start_date <= this value. Combined with start_date_from, applies range filter.
      *
-     * @x-autobe-database-schema-property start_date
-     * @x-autobe-specification Maps to hrm_contract_snapshots.start_date. Upper bound for contract start date range filter. Combined with start_date_from for range query. Optional field.
+         * @x-autobe-database-schema-property start_date
+         * @x-autobe-specification Maps to hrm_contract_snapshots.start_date.
+         *   Upper bound for contract start date range filter. Combined with
+         *   start_date_from for range query. Optional field.
      */
     start_date_to?: (string & tags.Format<"date-time">) | undefined;
 
@@ -208,8 +237,10 @@ export namespace IHrmContractSnapshot {
      *
      * **Behavior**: Optional exact-match filter. When omitted, snapshots with all pay period types are included in results.
      *
-     * @x-autobe-database-schema-property pay_period
-     * @x-autobe-specification Direct mapping from hrm_contract_snapshots.pay_period. Filters snapshots by pay period type. Optional field. Valid values: hourly, daily, weekly, monthly.
+         * @x-autobe-database-schema-property pay_period
+         * @x-autobe-specification Direct mapping from
+         *   hrm_contract_snapshots.pay_period. Filters snapshots by pay period
+         *   type. Optional field. Valid values: hourly, daily, weekly, monthly.
      */
     pay_period?: string | undefined;
 
@@ -222,8 +253,10 @@ export namespace IHrmContractSnapshot {
      *
      * **Behavior**: Optional. When used alone (without pay_rate_max), returns snapshots with pay_rate >= this value. Combined with pay_rate_max, applies range filter: pay_rate_min <= pay_rate <= pay_rate_max.
      *
-     * @x-autobe-database-schema-property pay_rate
-     * @x-autobe-specification Maps to hrm_contract_snapshots.pay_rate. Lower bound for compensation rate range filter. Combined with pay_rate_max for range query. Optional field.
+         * @x-autobe-database-schema-property pay_rate
+         * @x-autobe-specification Maps to hrm_contract_snapshots.pay_rate.
+         *   Lower bound for compensation rate range filter. Combined with
+         *   pay_rate_max for range query. Optional field.
      */
     pay_rate_min?: number | undefined;
 
@@ -236,8 +269,10 @@ export namespace IHrmContractSnapshot {
      *
      * **Behavior**: Optional. When used alone (without pay_rate_min), returns snapshots with pay_rate <= this value. Combined with pay_rate_min, applies range filter.
      *
-     * @x-autobe-database-schema-property pay_rate
-     * @x-autobe-specification Maps to hrm_contract_snapshots.pay_rate. Upper bound for compensation rate range filter. Combined with pay_rate_min for range query. Optional field.
+         * @x-autobe-database-schema-property pay_rate
+         * @x-autobe-specification Maps to hrm_contract_snapshots.pay_rate.
+         *   Upper bound for compensation rate range filter. Combined with
+         *   pay_rate_min for range query. Optional field.
      */
     pay_rate_max?: number | undefined;
 
@@ -250,8 +285,10 @@ export namespace IHrmContractSnapshot {
      *
      * **Behavior**: Optional. When used alone (without created_at_to), returns snapshots with created_at >= this value. Combined with created_at_to, applies range filter: created_at_from <= created_at <= created_at_to.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Maps to hrm_contract_snapshots.created_at. Lower bound for snapshot creation timestamp range filter. Combined with created_at_to for range query. Optional field.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Maps to hrm_contract_snapshots.created_at.
+         *   Lower bound for snapshot creation timestamp range filter. Combined
+         *   with created_at_to for range query. Optional field.
      */
     created_at_from?: (string & tags.Format<"date-time">) | undefined;
 
@@ -264,8 +301,10 @@ export namespace IHrmContractSnapshot {
      *
      * **Behavior**: Optional. When used alone (without created_at_from), returns snapshots with created_at <= this value. Combined with created_at_from, applies range filter.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Maps to hrm_contract_snapshots.created_at. Upper bound for snapshot creation timestamp range filter. Combined with created_at_from for range query. Optional field.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Maps to hrm_contract_snapshots.created_at.
+         *   Upper bound for snapshot creation timestamp range filter. Combined
+         *   with created_at_from for range query. Optional field.
      */
     created_at_to?: (string & tags.Format<"date-time">) | undefined;
 
@@ -278,7 +317,10 @@ export namespace IHrmContractSnapshot {
      *
      * **Behavior**: Controls which subset of results to return. Combined with limit, determines the result window. Example: page=2, limit=10 returns items 11-20 (assuming at least 20 total items).
      *
-     * @x-autobe-specification Computed pagination parameter. 1-indexed page number for result set navigation. Minimum value is 1. Used with limit to control result set size. Implementation: OFFSET = (page - 1) * LIMIT.
+         * @x-autobe-specification Computed pagination parameter. 1-indexed page
+         *   number for result set navigation. Minimum value is 1. Used with
+         *   limit to control result set size. Implementation: OFFSET = (page -
+         *   1) * LIMIT.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -291,7 +333,10 @@ export namespace IHrmContractSnapshot {
      *
      * **Behavior**: Controls response payload size. Higher limits return more data per request but increase response time. Recommended value: 20-50 for typical use cases. Maximum 100 enforced for system performance.
      *
-     * @x-autobe-specification Computed pagination parameter. Maximum number of items per page. Range: 1-100. Used with page to control result set size. Implementation: LIMIT clause with value, capped at 100 for performance.
+         * @x-autobe-specification Computed pagination parameter. Maximum number
+         *   of items per page. Range: 1-100. Used with page to control result
+         *   set size. Implementation: LIMIT clause with value, capped at 100
+         *   for performance.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)

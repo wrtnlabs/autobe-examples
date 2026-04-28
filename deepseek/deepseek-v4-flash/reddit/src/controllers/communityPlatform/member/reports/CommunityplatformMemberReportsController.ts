@@ -27,9 +27,10 @@ export class CommunityplatformMemberReportsController {
    *
    * @param connection
    * @param body The report submission payload containing the target content type discriminator, the target content UUID, and a free-text reason explaining the violation. targetType must be either 'post' or 'comment'. targetId must be a valid UUID of an existing post or comment. reason is a required non-empty text field.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Create a new report record in the community_platform_reports table.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Create a new report record in the
+     *   community_platform_reports table.
    *
    * 1. Validate the authenticated member exists. Resolve member ID from authentication context.
    * 2. Resolve the target content:
@@ -85,9 +86,11 @@ export class CommunityplatformMemberReportsController {
    *
    * @param connection
    * @param body Search criteria for filtering the report list. Allows filtering by specific community, report status, and creation date range. If no status filter is provided, defaults to 'pending' in accordance with business rules. Providing pagination parameters controls the number of results returned and the page offset.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query community_platform_community_reports table joined with community_platform_communities for community context and community_platform_members for reporter identity.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query community_platform_community_reports table
+     *   joined with community_platform_communities for community context and
+     *   community_platform_members for reporter identity.
    *
    * Authorization: Extract the current member's ID from JWT auth context. Join with community_platform_community_moderators to find which communities this member moderates. Only return reports whose community_id is in the set of communities the member moderates.
    *
@@ -145,9 +148,14 @@ export class CommunityplatformMemberReportsController {
    *
    * @param connection
    * @param reportId (global scope) The unique UUID identifier of the report to retrieve.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query the community_platform_reports table by id parameter. Join with community_platform_members (reporter) to get the reporter's username. Join with community_platform_communities to get community name and verify the requesting user is a moderator of that community via community_platform_community_moderators or ownership check.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query the community_platform_reports table by id
+     *   parameter. Join with community_platform_members (reporter) to get the
+     *   reporter's username. Join with community_platform_communities to get
+     *   community name and verify the requesting user is a moderator of that
+     *   community via community_platform_community_moderators or ownership
+     *   check.
    *
    * Authorization: Verify the requesting member is a moderator (community_platform_community_moderators) or owner of the report's community. Throw 403 Forbidden if not authorized. Return 404 Not Found if the report does not exist.
    *
@@ -188,9 +196,11 @@ export class CommunityplatformMemberReportsController {
    * @param connection
    * @param reportId The unique identifier of the report to resolve (UUID). The report must be in 'pending' status.
    * @param body The resolution decision containing the new status value. Must be either 'approved' (deletes reported content) or 'dismissed' (keeps content, removes report from pending list).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query community_platform_reports by reportId. Verify the report exists and its status is 'pending' (reject if already resolved).
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query community_platform_reports by reportId.
+     *   Verify the report exists and its status is 'pending' (reject if already
+     *   resolved).
    *
    * Load the report's community_id and verify the requesting member is a moderator of that community (join with community_platform_moderators). Reject with 403 if not authorized.
    *
@@ -235,24 +245,28 @@ export class CommunityplatformMemberReportsController {
    *
    * @param connection
    * @param reportId The unique identifier (UUID) of the pending report to approve. The report must be in 'pending' status and belong to a community the caller moderates.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation steps:
-   * 1. Authenticate the caller — must be a registered member.
-   * 2. Load the report by reportId (UUID). Return 404 if not found.
-   * 3. Verify the caller is a moderator or owner of the community linked via report.community_id (query community_platform_moderators where member_id = caller.id AND community_id = report.community_id AND role IN ('owner','moderator')). Return 403 if not authorized.
-   * 4. Verify report.status === 'pending'. If already 'approved' or 'dismissed', return 400 with an error indicating the report is no longer actionable.
-   * 5. Begin transaction:
-   *    a. Update report.status = 'approved', report.updated_at = now().
-   *    b. Determine target type from report.target_type.
-   *    c. If target_type === 'post':
-   *       - Find the post via community_platform_report_post_targets where community_platform_report_id = report.id.
-   *       - Soft-delete the post: SET deleted_at = now() on community_platform_posts.
-   *    d. If target_type === 'comment':
-   *       - Find the comment via community_platform_report_comment_targets where community_platform_report_id = report.id.
-   *       - Soft-delete the comment: SET deleted_at = now() on community_platform_comments.
-   * 6. Commit transaction.
-   * 7. Return the updated report record with status='approved'.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation steps: 1. Authenticate the caller
+     *   — must be a registered member. 2. Load the report by reportId (UUID).
+     *   Return 404 if not found. 3. Verify the caller is a moderator or owner
+     *   of the community linked via report.community_id (query
+     *   community_platform_moderators where member_id = caller.id AND
+     *   community_id = report.community_id AND role IN ('owner','moderator')).
+     *   Return 403 if not authorized. 4. Verify report.status === 'pending'. If
+     *   already 'approved' or 'dismissed', return 400 with an error indicating
+     *   the report is no longer actionable. 5. Begin transaction: a. Update
+     *   report.status = 'approved', report.updated_at = now(). b. Determine
+     *   target type from report.target_type. c. If target_type === 'post': -
+     *   Find the post via community_platform_report_post_targets where
+     *   community_platform_report_id = report.id. - Soft-delete the post: SET
+     *   deleted_at = now() on community_platform_posts. d. If target_type ===
+     *   'comment': - Find the comment via
+     *   community_platform_report_comment_targets where
+     *   community_platform_report_id = report.id. - Soft-delete the comment:
+     *   SET deleted_at = now() on community_platform_comments. 6. Commit
+     *   transaction. 7. Return the updated report record with
+     *   status='approved'.
    *
    * Edge cases:
    * - Report already approved/dismissed → reject with 400.
@@ -290,14 +304,20 @@ export class CommunityplatformMemberReportsController {
    *
    * @param connection
    * @param reportId UUID of the report to dismiss. The report must be in "pending" status and belong to a community where the caller holds moderation authority.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1. Authenticate the requesting member and verify they hold a moderator or owner role in the community linked to the report.
-   * 2. Look up the report by reportId (UUID). Join with community_platform_reports to get the community_id.
-   * 3. Query community_platform_moderators where member_id = authenticated member and community_id = report.community_id and role in ('owner', 'moderator'). If no matching row, return 403 Forbidden.
-   * 4. Verify the report's status is 'pending'. If status is 'approved' or 'dismissed', reject with a validation error indicating the report has already been resolved.
-   * 5. Update the report's status to 'dismissed' and updated_at to the current timestamp.
-   * 6. Return the updated report entity with all fields including the new status.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification 1. Authenticate the requesting member and verify
+     *   they hold a moderator or owner role in the community linked to the
+     *   report. 2. Look up the report by reportId (UUID). Join with
+     *   community_platform_reports to get the community_id. 3. Query
+     *   community_platform_moderators where member_id = authenticated member
+     *   and community_id = report.community_id and role in ('owner',
+     *   'moderator'). If no matching row, return 403 Forbidden. 4. Verify the
+     *   report's status is 'pending'. If status is 'approved' or 'dismissed',
+     *   reject with a validation error indicating the report has already been
+     *   resolved. 5. Update the report's status to 'dismissed' and updated_at
+     *   to the current timestamp. 6. Return the updated report entity with all
+     *   fields including the new status.
    *
    * Edge cases:
    * - Report not found: return 404 Not Found.

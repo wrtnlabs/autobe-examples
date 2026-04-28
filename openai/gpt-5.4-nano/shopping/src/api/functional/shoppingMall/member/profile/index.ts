@@ -24,7 +24,10 @@ import { IShoppingMallMember } from "../../../../structures/IShoppingMallMember"
  * @param props.connection
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification 1) Authorization: require an authenticated customer context (member session). If unauthenticated, return a login-required rejection response consistent with customer operation authentication enforcement.
+ * @x-autobe-specification 1) Authorization: require an authenticated customer
+ *   context (member session). If unauthenticated, return a login-required
+ *   rejection response consistent with customer operation authentication
+ *   enforcement.
  *
  * 2) Resolve profile: read the member record for the authenticated member ID from shopping_mall_members.
  *
@@ -95,7 +98,8 @@ export namespace at {
  * @param props.body Profile update payload containing the editable customer profile attributes (display name and phone number).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification 1) Authenticate request via existing auth middleware and resolve current member/customer identity.
+ * @x-autobe-specification 1) Authenticate request via existing auth middleware
+ *   and resolve current member/customer identity.
  *
  * 2) Validate request body fields (only accept editable profile attributes: display name and phone number). If the request contains disallowed fields, reject as invalid request.
  *

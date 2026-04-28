@@ -20,9 +20,10 @@ export class HrmtimetrackMemberEmail_verificationsController {
    *
    * @param connection
    * @param body Search criteria including member ID, email address, verification status filters, date ranges, and pagination parameters for email verification records.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query hrm_time_track_member_email_verifications table with pagination and filtering support.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query hrm_time_track_member_email_verifications
+     *   table with pagination and filtering support.
    *
    * Filtering criteria:
    * - member_id: Filter by specific member account (hrm_time_track_member_id)
@@ -74,9 +75,11 @@ export class HrmtimetrackMemberEmail_verificationsController {
    *
    * @param connection
    * @param verificationId Unique identifier of the email verification record (UUID format).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query the hrm_time_track_member_email_verifications table for a record with the matching id field.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query the
+     *   hrm_time_track_member_email_verifications table for a record with the
+     *   matching id field.
    *
    * 1. Validate that verificationId is a valid UUID format
    * 2. Perform a SELECT query on hrm_time_track_member_email_verifications WHERE id = verificationId AND deleted_at IS NULL

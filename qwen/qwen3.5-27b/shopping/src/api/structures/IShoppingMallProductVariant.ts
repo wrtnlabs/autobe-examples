@@ -17,8 +17,10 @@ export type IShoppingMallProductVariant = {
    *
    * This UUID is automatically generated when the variant is created and serves as the primary key for the variant record. It is used to reference the variant in cart items, order items, and inventory records.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_product_variants.id. Primary key, UUID format, auto-generated on variant creation.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_product_variants.id. Primary key, UUID format,
+     *   auto-generated on variant creation.
    */
   id: string & tags.Format<"uuid">;
 
@@ -27,8 +29,11 @@ export type IShoppingMallProductVariant = {
    *
    * SKU codes must be unique within a product (enforced by the database). This code is used for inventory tracking, order processing, and identifying specific variant combinations. Common format includes product code, variant attributes, and suffixes (e.g., PROD-001-RED-L).
    *
-   * @x-autobe-database-schema-property sku_code
-   * @x-autobe-specification Direct mapping from shopping_mall_product_variants.sku_code. String field, unique per product (enforced by composite unique index with shopping_mall_product_id).
+     * @x-autobe-database-schema-property sku_code
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_product_variants.sku_code. String field, unique per
+     *   product (enforced by composite unique index with
+     *   shopping_mall_product_id).
    */
   sku_code: string;
 
@@ -37,8 +42,10 @@ export type IShoppingMallProductVariant = {
    *
    * When this field is null, the product's base price is used for cart calculations and order items. When set, this price takes precedence and allows different variants to have different prices (e.g., premium colors or sizes may cost more).
    *
-   * @x-autobe-database-schema-property price
-   * @x-autobe-specification Direct mapping from shopping_mall_product_variants.price. Nullable Float (DoublePrecision). When null, the product's base_price is used for pricing calculations.
+     * @x-autobe-database-schema-property price
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_product_variants.price. Nullable Float (DoublePrecision).
+     *   When null, the product's base_price is used for pricing calculations.
    */
   price: number | null;
 
@@ -47,7 +54,11 @@ export type IShoppingMallProductVariant = {
    *
    * Each option represents an attribute of the variant, such as color, size, material, or other product-specific characteristics. The combination of all option values uniquely identifies this variant within its parent product. Example: [{key: 'color', value: 'Red'}, {key: 'size', value: 'Large'}].
    *
-   * @x-autobe-specification Composition relation: load from shopping_mall_product_variant_options where shopping_mall_product_variant_id equals variant id. Return as array of IShoppingMallProductVariantOption objects with key-value pairs (e.g., {key: 'color', value: 'Red'}).
+     * @x-autobe-specification Composition relation: load from
+     *   shopping_mall_product_variant_options where
+     *   shopping_mall_product_variant_id equals variant id. Return as array of
+     *   IShoppingMallProductVariantOption objects with key-value pairs (e.g.,
+     *   {key: 'color', value: 'Red'}).
    */
   options: IShoppingMallProductVariantOption[];
 
@@ -56,7 +67,10 @@ export type IShoppingMallProductVariant = {
    *
    * This value is computed by summing all inventory records (stock additions and subtractions) for this variant. It represents the current available quantity that customers can purchase. A value of 0 indicates the variant is out of stock and cannot be added to cart.
    *
-   * @x-autobe-specification Computed aggregation: SUM(quantity_change) from shopping_mall_inventory_records where shopping_mall_product_variant_id equals variant id. Result is always non-negative integer representing current available stock.
+     * @x-autobe-specification Computed aggregation: SUM(quantity_change) from
+     *   shopping_mall_inventory_records where shopping_mall_product_variant_id
+     *   equals variant id. Result is always non-negative integer representing
+     *   current available stock.
    */
   inventory_count: number & tags.Type<"int32"> & tags.Minimum<0>;
 
@@ -65,8 +79,10 @@ export type IShoppingMallProductVariant = {
    *
    * This field is automatically set when the variant is first created and never modified. It is used for sorting variants by creation order and for audit trail purposes. Format follows ISO 8601 with timezone information.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from shopping_mall_product_variants.created_at. DateTime (Timestamptz) field, auto-generated on variant creation, never modified.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_product_variants.created_at. DateTime (Timestamptz)
+     *   field, auto-generated on variant creation, never modified.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -75,8 +91,11 @@ export type IShoppingMallProductVariant = {
    *
    * This field is automatically updated whenever any variant property is changed, including SKU code, price, or option values. It is used to track the most recent modification and for cache invalidation purposes. Format follows ISO 8601 with timezone information.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from shopping_mall_product_variants.updated_at. DateTime (Timestamptz) field, automatically updated on every variant modification (SKU code, price, or options).
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_product_variants.updated_at. DateTime (Timestamptz)
+     *   field, automatically updated on every variant modification (SKU code,
+     *   price, or options).
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -85,8 +104,11 @@ export type IShoppingMallProductVariant = {
    *
    * Variants are soft-deleted rather than permanently removed to preserve order history and snapshots. When this field is null, the variant is active and available for purchase. When set, the variant is marked as deleted and hidden from product listings but remains accessible in historical order items and snapshots.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from shopping_mall_product_variants.deleted_at. Nullable DateTime (Timestamptz) field for soft delete. Null for active variants, set to current timestamp when variant is deleted.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_product_variants.deleted_at. Nullable DateTime
+     *   (Timestamptz) field for soft delete. Null for active variants, set to
+     *   current timestamp when variant is deleted.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -104,7 +126,10 @@ export namespace IShoppingMallProductVariant {
      *
      * Filters variants by their Stock Keeping Unit code. Supports both exact matches and partial pattern matching for flexible SKU searches. Useful for finding specific variant configurations within a product.
      *
-     * @x-autobe-specification Filters variants by SKU code using LIKE or exact match on shopping_mall_product_variants.sku_code column. Partial matches are supported for searching variants with specific SKU patterns.
+         * @x-autobe-specification Filters variants by SKU code using LIKE or
+         *   exact match on shopping_mall_product_variants.sku_code column.
+         *   Partial matches are supported for searching variants with specific
+         *   SKU patterns.
      */
     sku_code?: string | undefined;
 
@@ -113,7 +138,10 @@ export namespace IShoppingMallProductVariant {
      *
      * Filters variants to include only those with a price greater than or equal to this value. When a variant has no specific price (null), the parent product's base price is used for comparison. Useful for setting a price floor in variant searches.
      *
-     * @x-autobe-specification Filters variants by minimum price threshold on shopping_mall_product_variants.price column. If variant price is null, uses parent product.base_price for comparison. Variants with price >= price_min are included in results.
+         * @x-autobe-specification Filters variants by minimum price threshold
+         *   on shopping_mall_product_variants.price column. If variant price is
+         *   null, uses parent product.base_price for comparison. Variants with
+         *   price >= price_min are included in results.
      */
     price_min?: number | undefined;
 
@@ -122,7 +150,10 @@ export namespace IShoppingMallProductVariant {
      *
      * Filters variants to include only those with a price less than or equal to this value. When a variant has no specific price (null), the parent product's base price is used for comparison. Useful for setting a price ceiling in variant searches.
      *
-     * @x-autobe-specification Filters variants by maximum price threshold on shopping_mall_product_variants.price column. If variant price is null, uses parent product.base_price for comparison. Variants with price <= price_max are included in results.
+         * @x-autobe-specification Filters variants by maximum price threshold
+         *   on shopping_mall_product_variants.price column. If variant price is
+         *   null, uses parent product.base_price for comparison. Variants with
+         *   price <= price_max are included in results.
      */
     price_max?: number | undefined;
 
@@ -131,7 +162,12 @@ export namespace IShoppingMallProductVariant {
      *
      * Filters variants based on their current inventory status. When set to true, returns only variants that have available stock (quantity > 0). When set to false, returns only variants that are out of stock. This filter joins with the inventory records table to calculate current stock levels.
      *
-     * @x-autobe-specification Computed filter that performs JOIN with shopping_mall_inventory_records table. Filters variants where the sum of quantity_change for the variant is greater than 0, indicating available stock. When true, only variants with positive inventory are returned. When false, only out-of-stock variants are returned.
+         * @x-autobe-specification Computed filter that performs JOIN with
+         *   shopping_mall_inventory_records table. Filters variants where the
+         *   sum of quantity_change for the variant is greater than 0,
+         *   indicating available stock. When true, only variants with positive
+         *   inventory are returned. When false, only out-of-stock variants are
+         *   returned.
      */
     in_stock?: boolean | undefined;
 
@@ -140,7 +176,11 @@ export namespace IShoppingMallProductVariant {
      *
      * Specifies which field to use for sorting the variant list. Accepts sku_code, price, created_at, or updated_at. When not provided, results are sorted by created_at in descending order (newest first).
      *
-     * @x-autobe-specification Query parameter specifying which field to sort results by. Valid values are: sku_code, price, created_at, updated_at. Default is created_at when not provided. The sort field must be a valid column name from shopping_mall_product_variants table.
+         * @x-autobe-specification Query parameter specifying which field to
+         *   sort results by. Valid values are: sku_code, price, created_at,
+         *   updated_at. Default is created_at when not provided. The sort field
+         *   must be a valid column name from shopping_mall_product_variants
+         *   table.
      */
     sort?: string | undefined;
 
@@ -149,7 +189,10 @@ export namespace IShoppingMallProductVariant {
      *
      * Specifies the direction of sorting: 'asc' for ascending (A-Z, oldest first, lowest price first) or 'desc' for descending (Z-A, newest first, highest price first). Defaults to 'desc' when not provided.
      *
-     * @x-autobe-specification Query parameter specifying sort direction. Accepts 'asc' for ascending order or 'desc' for descending order. Default is 'desc' when not provided. Applied in combination with the sort field parameter.
+         * @x-autobe-specification Query parameter specifying sort direction.
+         *   Accepts 'asc' for ascending order or 'desc' for descending order.
+         *   Default is 'desc' when not provided. Applied in combination with
+         *   the sort field parameter.
      */
     order?: string | undefined;
 
@@ -158,7 +201,10 @@ export namespace IShoppingMallProductVariant {
      *
      * Controls how many product variants are included in each page of results. Accepts values from 1 to 100. Defaults to 20 variants per page. Useful for controlling response size and optimizing performance for large variant collections.
      *
-     * @x-autobe-specification Query parameter controlling the maximum number of variant results to return per page. Valid range is 1 to 100. Default is 20 when not provided. Used for pagination to limit result set size.
+         * @x-autobe-specification Query parameter controlling the maximum
+         *   number of variant results to return per page. Valid range is 1 to
+         *   100. Default is 20 when not provided. Used for pagination to limit
+         *   result set size.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -169,7 +215,11 @@ export namespace IShoppingMallProductVariant {
      *
      * Enables efficient pagination through large variant collections using cursor-based navigation. Accepts a pagination token from a previous response to retrieve the next page of results. This method is preferred for large datasets as it provides consistent results even when data changes between requests.
      *
-     * @x-autobe-specification Query parameter for cursor-based pagination. Accepts a pagination token string from a previous response's next_cursor field. When provided, returns the next page of results after the cursor position. Mutually exclusive with page-based pagination.
+         * @x-autobe-specification Query parameter for cursor-based pagination.
+         *   Accepts a pagination token string from a previous response's
+         *   next_cursor field. When provided, returns the next page of results
+         *   after the cursor position. Mutually exclusive with page-based
+         *   pagination.
      */
     cursor?: string | undefined;
 
@@ -178,7 +228,11 @@ export namespace IShoppingMallProductVariant {
      *
      * Specifies which page of results to return. Page numbering starts from 1. If omitted, null, or undefined, defaults to page 1 (first page). Requesting a page beyond the available range returns an empty data array with valid pagination metadata reflecting the actual totals.
      *
-     * @x-autobe-specification 1-indexed page number for page-based pagination. Defaults to 1 when not provided or null. Specifies which page of results to return. When requesting a page beyond the available range, returns an empty data array with valid pagination metadata reflecting actual totals.
+         * @x-autobe-specification 1-indexed page number for page-based
+         *   pagination. Defaults to 1 when not provided or null. Specifies
+         *   which page of results to return. When requesting a page beyond the
+         *   available range, returns an empty data array with valid pagination
+         *   metadata reflecting actual totals.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };
@@ -196,8 +250,10 @@ export namespace IShoppingMallProductVariant {
      *
      * This UUID identifies a specific variant of a product (e.g., Red/Large vs Blue/Small). Each variant has a distinct ID that is used throughout the system for cart items, order items, and inventory tracking.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_product_variants.id. Primary key uniquely identifying each product variant.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_variants.id. Primary key uniquely identifying
+         *   each product variant.
      */
     id: string & tags.Format<"uuid">;
 
@@ -206,8 +262,10 @@ export namespace IShoppingMallProductVariant {
      *
      * SKU codes are unique within a product and used for inventory tracking and order processing. This code helps sellers manage stock levels and identify specific variant combinations in their inventory systems.
      *
-     * @x-autobe-database-schema-property sku_code
-     * @x-autobe-specification Direct mapping from shopping_mall_product_variants.sku_code. Unique per product (composite unique index with shopping_mall_product_id).
+         * @x-autobe-database-schema-property sku_code
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_variants.sku_code. Unique per product
+         *   (composite unique index with shopping_mall_product_id).
      */
     sku_code: string;
 
@@ -216,8 +274,11 @@ export namespace IShoppingMallProductVariant {
      *
      * When null, the product's base price is used for this variant. When set, this price takes precedence in cart calculations and order items. This allows sellers to price different variants differently (e.g., premium colors or sizes at higher prices).
      *
-     * @x-autobe-database-schema-property price
-     * @x-autobe-specification Direct mapping from shopping_mall_product_variants.price. Nullable - when null, product base_price is used. When set, this price takes precedence for cart and order calculations.
+         * @x-autobe-database-schema-property price
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_variants.price. Nullable - when null, product
+         *   base_price is used. When set, this price takes precedence for cart
+         *   and order calculations.
      */
     price: number | null;
 
@@ -226,7 +287,12 @@ export namespace IShoppingMallProductVariant {
      *
      * Each option represents a dimension of variation such as color, size, material, or style. Variants can have zero or more options. An empty array indicates a simple product without variations. Example: [{key: 'color', value: 'Red'}, {key: 'size', value: 'Large'}].
      *
-     * @x-autobe-specification Computed by JOIN from shopping_mall_product_variants to shopping_mall_product_variant_options on variant_id. Returns array of key-value objects (e.g., [{key: 'color', value: 'Red'}, {key: 'size', value: 'Large'}]). Empty array for variants without options.
+         * @x-autobe-specification Computed by JOIN from
+         *   shopping_mall_product_variants to
+         *   shopping_mall_product_variant_options on variant_id. Returns array
+         *   of key-value objects (e.g., [{key: 'color', value: 'Red'}, {key:
+         *   'size', value: 'Large'}]). Empty array for variants without
+         *   options.
      */
     options: IShoppingMallProductVariantOption[];
 
@@ -235,7 +301,11 @@ export namespace IShoppingMallProductVariant {
      *
      * This value is computed from inventory records and reflects the real-time stock level. A quantity of zero indicates the variant is out of stock and cannot be added to cart. Stock is updated when inventory records are created (adding or subtracting stock).
      *
-     * @x-autobe-specification Computed by summing quantity_change from shopping_mall_inventory_records where shopping_mall_product_variant_id matches and record is not soft-deleted. Returns current available stock quantity. Zero or positive integer.
+         * @x-autobe-specification Computed by summing quantity_change from
+         *   shopping_mall_inventory_records where
+         *   shopping_mall_product_variant_id matches and record is not
+         *   soft-deleted. Returns current available stock quantity. Zero or
+         *   positive integer.
      */
     stock_quantity: number & tags.Type<"int32"> & tags.Minimum<0>;
 
@@ -244,8 +314,10 @@ export namespace IShoppingMallProductVariant {
      *
      * Records the exact date and time when the seller created this product variant. Used for sorting variants by creation order and for audit trail purposes. This field is never modified after creation.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_product_variants.created_at. Timestamp when variant was first created by seller.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_variants.created_at. Timestamp when variant
+         *   was first created by seller.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -254,8 +326,10 @@ export namespace IShoppingMallProductVariant {
      *
      * Updated automatically whenever any variant field is changed, including SKU code, price, or option values. Each modification also creates a snapshot in shopping_mall_variant_snapshots for audit trail purposes.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from shopping_mall_product_variants.updated_at. Automatically updated on any change to sku_code, price, or option values.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_variants.updated_at. Automatically updated on
+         *   any change to sku_code, price, or option values.
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -264,8 +338,11 @@ export namespace IShoppingMallProductVariant {
      *
      * Each variant is owned by exactly one product. This relation provides access to the product's summary information including name, base price, seller details, and category. Variants cannot exist independently - they are always associated with a parent product.
      *
-     * @x-autobe-database-schema-property product
-     * @x-autobe-specification JOIN from shopping_mall_product_variants to shopping_mall_products on shopping_mall_product_id. Returns IShoppingMallProduct.ISummary object with product id, name, base_price, seller, category, and other summary fields.
+         * @x-autobe-database-schema-property product
+         * @x-autobe-specification JOIN from shopping_mall_product_variants to
+         *   shopping_mall_products on shopping_mall_product_id. Returns
+         *   IShoppingMallProduct.ISummary object with product id, name,
+         *   base_price, seller, category, and other summary fields.
      */
     product: IShoppingMallProduct.ISummary;
   };
@@ -288,11 +365,11 @@ export namespace IShoppingMallProductVariant {
    */
   export type ICreate = {
     /**
-     * @x-autobe-database-schema-property sku_code
+         * @x-autobe-database-schema-property sku_code
      */
     sku_code: string;
     /**
-     * @x-autobe-database-schema-property price
+         * @x-autobe-database-schema-property price
      */
     price?: number | null | undefined;
     variantOptions: IShoppingMallProductVariantOption[];

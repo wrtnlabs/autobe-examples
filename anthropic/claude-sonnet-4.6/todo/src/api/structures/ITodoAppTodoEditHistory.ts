@@ -8,56 +8,82 @@ export type ITodoAppTodoEditHistory = {
   /**
    * The unique identifier of this edit history entry. A UUID that unambiguously identifies a single audit log record within the system.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from todo_app_todo_edit_histories.id (UUID primary key). Used as the unique identifier when looking up a specific history entry via GET /todos/{todoId}/editHistories/{historyId}.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   todo_app_todo_edit_histories.id (UUID primary key). Used as the unique
+     *   identifier when looking up a specific history entry via GET
+     *   /todos/{todoId}/editHistories/{historyId}.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * The UUID of the parent todo item that this edit history entry belongs to. Identifies which todo was edited when this audit log record was created.
    *
-   * @x-autobe-database-schema-property todo_app_todo_id
-   * @x-autobe-specification Direct mapping from todo_app_todo_edit_histories.todo_app_todo_id (FK referencing todo_app_todos.id). Used together with the history id to scope the lookup: WHERE id = historyId AND todo_app_todo_id = todoId.
+     * @x-autobe-database-schema-property todo_app_todo_id
+     * @x-autobe-specification Direct mapping from
+     *   todo_app_todo_edit_histories.todo_app_todo_id (FK referencing
+     *   todo_app_todos.id). Used together with the history id to scope the
+     *   lookup: WHERE id = historyId AND todo_app_todo_id = todoId.
    */
   todo_app_todo_id: string & tags.Format<"uuid">;
 
   /**
    * The new title value recorded at the time of this edit. Non-null only if the title was changed during this particular edit session. A null value means the title was not modified in this edit — it does not reflect the todo's current title.
    *
-   * @x-autobe-database-schema-property title
-   * @x-autobe-specification Direct mapping from todo_app_todo_edit_histories.title (nullable String). Non-null when the todo's title was changed during this edit session, containing the new title value that was set. Null when the title was not modified in this edit.
+     * @x-autobe-database-schema-property title
+     * @x-autobe-specification Direct mapping from
+     *   todo_app_todo_edit_histories.title (nullable String). Non-null when the
+     *   todo's title was changed during this edit session, containing the new
+     *   title value that was set. Null when the title was not modified in this
+     *   edit.
    */
   title: string | null;
 
   /**
    * The new description value recorded at the time of this edit. Non-null only if the description was changed during this particular edit session. A null value means the description was not modified in this edit — it does not reflect the todo's current description.
    *
-   * @x-autobe-database-schema-property description
-   * @x-autobe-specification Direct mapping from todo_app_todo_edit_histories.description (nullable String). Non-null when the todo's description was changed during this edit session, containing the new description value that was set. Null when the description was not modified in this edit.
+     * @x-autobe-database-schema-property description
+     * @x-autobe-specification Direct mapping from
+     *   todo_app_todo_edit_histories.description (nullable String). Non-null
+     *   when the todo's description was changed during this edit session,
+     *   containing the new description value that was set. Null when the
+     *   description was not modified in this edit.
    */
   description: string | null;
 
   /**
    * The new start date/time value recorded at the time of this edit. Non-null only if the start date was changed during this particular edit session. A null value means the start date was not modified in this edit — it does not reflect the todo's current start date.
    *
-   * @x-autobe-database-schema-property started_at
-   * @x-autobe-specification Direct mapping from todo_app_todo_edit_histories.started_at (nullable Timestamptz). Non-null when the todo's start date was changed during this edit session, containing the new start date value that was set. Null when the start date was not modified in this edit.
+     * @x-autobe-database-schema-property started_at
+     * @x-autobe-specification Direct mapping from
+     *   todo_app_todo_edit_histories.started_at (nullable Timestamptz).
+     *   Non-null when the todo's start date was changed during this edit
+     *   session, containing the new start date value that was set. Null when
+     *   the start date was not modified in this edit.
    */
   started_at: (string & tags.Format<"date-time">) | null;
 
   /**
    * The new due date/time value recorded at the time of this edit. Non-null only if the due date was changed during this particular edit session. A null value means the due date was not modified in this edit — it does not reflect the todo's current due date.
    *
-   * @x-autobe-database-schema-property due_at
-   * @x-autobe-specification Direct mapping from todo_app_todo_edit_histories.due_at (nullable Timestamptz). Non-null when the todo's due date was changed during this edit session, containing the new due date value that was set. Null when the due date was not modified in this edit.
+     * @x-autobe-database-schema-property due_at
+     * @x-autobe-specification Direct mapping from
+     *   todo_app_todo_edit_histories.due_at (nullable Timestamptz). Non-null
+     *   when the todo's due date was changed during this edit session,
+     *   containing the new due date value that was set. Null when the due date
+     *   was not modified in this edit.
    */
   due_at: (string & tags.Format<"date-time">) | null;
 
   /**
    * The exact timestamp at which this edit was applied to the todo. Automatically recorded by the system and immutable. Used as the primary chronological ordering field when browsing the edit history of a todo.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from todo_app_todo_edit_histories.created_at (Timestamptz, non-null). Set automatically by the system at the moment the edit history record is inserted. Serves as the primary chronological marker for ordering the audit trail. Cannot be altered after creation.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   todo_app_todo_edit_histories.created_at (Timestamptz, non-null). Set
+     *   automatically by the system at the moment the edit history record is
+     *   inserted. Serves as the primary chronological marker for ordering the
+     *   audit trail. Cannot be altered after creation.
    */
   created_at: string & tags.Format<"date-time">;
 };
@@ -73,56 +99,82 @@ export namespace ITodoAppTodoEditHistory {
     /**
      * The unique identifier of this edit history entry. A UUID assigned automatically when the entry is created. Immutable and globally unique.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from todo_app_todo_edit_histories.id. UUID primary key automatically assigned by the system when the history entry is created. Immutable.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_todo_edit_histories.id. UUID primary key automatically
+         *   assigned by the system when the history entry is created.
+         *   Immutable.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * The unique identifier of the todo item that this history entry belongs to. References the parent todo and is set at creation time; it never changes.
      *
-     * @x-autobe-database-schema-property todo_app_todo_id
-     * @x-autobe-specification Direct mapping from todo_app_todo_edit_histories.todo_app_todo_id. UUID foreign key referencing todo_app_todos.id. Cascade-deleted when the parent todo is permanently removed.
+         * @x-autobe-database-schema-property todo_app_todo_id
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_todo_edit_histories.todo_app_todo_id. UUID foreign key
+         *   referencing todo_app_todos.id. Cascade-deleted when the parent todo
+         *   is permanently removed.
      */
     todo_app_todo_id: string & tags.Format<"uuid">;
 
     /**
      * The new title value recorded at the time of this edit. Present (non-null) only when the title was actually changed during this edit session. A `null` value means the title was not modified — not that it was cleared.
      *
-     * @x-autobe-database-schema-property title
-     * @x-autobe-specification Direct mapping from todo_app_todo_edit_histories.title (String?, nullable). Non-null only when the todo's title was changed during the edit session that produced this entry. Null means the title was not modified in this particular edit — it does NOT mean the title was cleared.
+         * @x-autobe-database-schema-property title
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_todo_edit_histories.title (String?, nullable). Non-null
+         *   only when the todo's title was changed during the edit session that
+         *   produced this entry. Null means the title was not modified in this
+         *   particular edit — it does NOT mean the title was cleared.
      */
     title: string | null;
 
     /**
      * The new description value recorded at the time of this edit. Present (non-null) only when the description was actually changed during this edit session. A `null` value means the description was not modified — not that it was cleared.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from todo_app_todo_edit_histories.description (String?, nullable). Non-null only when the todo's description was changed during the edit session that produced this entry. Null means the description was not modified in this particular edit.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_todo_edit_histories.description (String?, nullable).
+         *   Non-null only when the todo's description was changed during the
+         *   edit session that produced this entry. Null means the description
+         *   was not modified in this particular edit.
      */
     description: string | null;
 
     /**
      * The new start date/time value recorded at the time of this edit. Present (non-null) only when the start date was actually changed during this edit session. A `null` value means the start date was not modified — not that it was removed.
      *
-     * @x-autobe-database-schema-property started_at
-     * @x-autobe-specification Direct mapping from todo_app_todo_edit_histories.started_at (DateTime? @db.Timestamptz, nullable). Non-null only when the todo's start date was changed during the edit session that produced this entry. Null means the start date was not modified in this particular edit.
+         * @x-autobe-database-schema-property started_at
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_todo_edit_histories.started_at (DateTime? @db.Timestamptz,
+         *   nullable). Non-null only when the todo's start date was changed
+         *   during the edit session that produced this entry. Null means the
+         *   start date was not modified in this particular edit.
      */
     started_at: (string & tags.Format<"date-time">) | null;
 
     /**
      * The new due date/time value recorded at the time of this edit. Present (non-null) only when the due date was actually changed during this edit session. A `null` value means the due date was not modified — not that it was removed.
      *
-     * @x-autobe-database-schema-property due_at
-     * @x-autobe-specification Direct mapping from todo_app_todo_edit_histories.due_at (DateTime? @db.Timestamptz, nullable). Non-null only when the todo's due date was changed during the edit session that produced this entry. Null means the due date was not modified in this particular edit.
+         * @x-autobe-database-schema-property due_at
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_todo_edit_histories.due_at (DateTime? @db.Timestamptz,
+         *   nullable). Non-null only when the todo's due date was changed
+         *   during the edit session that produced this entry. Null means the
+         *   due date was not modified in this particular edit.
      */
     due_at: (string & tags.Format<"date-time">) | null;
 
     /**
      * The exact timestamp at which this history entry was created, corresponding to when the edit was applied to the todo. Set automatically by the system and cannot be altered. Used as the primary sort key when browsing the audit trail in chronological order.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from todo_app_todo_edit_histories.created_at (DateTime @db.Timestamptz, non-nullable). Set automatically by the system at the moment the edit event is applied to the todo. Serves as the primary chronological marker for ordering the audit trail. Immutable.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_todo_edit_histories.created_at (DateTime @db.Timestamptz,
+         *   non-nullable). Set automatically by the system at the moment the
+         *   edit event is applied to the todo. Serves as the primary
+         *   chronological marker for ordering the audit trail. Immutable.
      */
     created_at: string & tags.Format<"date-time">;
   };
@@ -138,14 +190,20 @@ export namespace ITodoAppTodoEditHistory {
     /**
      * The page number to retrieve (1-indexed). Defaults to 1 when not specified.
      *
-     * @x-autobe-specification Offset-based pagination page number. Used to compute the query OFFSET as (page - 1) * limit against todo_app_todo_edit_histories. Defaults to 1 when omitted. Minimum value is 1.
+         * @x-autobe-specification Offset-based pagination page number. Used to
+         *   compute the query OFFSET as (page - 1) * limit against
+         *   todo_app_todo_edit_histories. Defaults to 1 when omitted. Minimum
+         *   value is 1.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * The maximum number of edit history entries to return per page. Must be between 1 and 100. Defaults to 20 when not specified.
      *
-     * @x-autobe-specification Maximum number of edit history entries to return per page. Used in the SQL LIMIT clause. Defaults to 20 when omitted. Minimum is 1, maximum is 100. Works together with `page` to implement offset-based pagination: OFFSET = (page - 1) * limit.
+         * @x-autobe-specification Maximum number of edit history entries to
+         *   return per page. Used in the SQL LIMIT clause. Defaults to 20 when
+         *   omitted. Minimum is 1, maximum is 100. Works together with `page`
+         *   to implement offset-based pagination: OFFSET = (page - 1) * limit.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -154,7 +212,10 @@ export namespace ITodoAppTodoEditHistory {
     /**
      * The sort direction for edit history entries, ordered by edit timestamp (`created_at`). Use `"asc"` (default) to see the oldest edits first, or `"desc"` to see the most recent edits first.
      *
-     * @x-autobe-specification Controls the ORDER BY direction applied to the `created_at` column in todo_app_todo_edit_histories. 'asc' sorts oldest edits first (chronological audit trail order); 'desc' sorts newest edits first. Defaults to 'asc' when omitted.
+         * @x-autobe-specification Controls the ORDER BY direction applied to
+         *   the `created_at` column in todo_app_todo_edit_histories. 'asc'
+         *   sorts oldest edits first (chronological audit trail order); 'desc'
+         *   sorts newest edits first. Defaults to 'asc' when omitted.
      */
     sortOrder?: "asc" | "desc" | undefined;
   };

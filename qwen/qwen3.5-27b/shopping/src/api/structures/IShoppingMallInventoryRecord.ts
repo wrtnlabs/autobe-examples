@@ -16,8 +16,10 @@ export type IShoppingMallInventoryRecord = {
    *
    * This UUID is automatically generated when the inventory record is created and serves as the primary key for identifying this specific stock movement event in the audit trail.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_inventory_records.id. Primary key UUID generated automatically on record creation.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_inventory_records.id. Primary key UUID generated
+     *   automatically on record creation.
    */
   id: string & tags.Format<"uuid">;
 
@@ -26,8 +28,11 @@ export type IShoppingMallInventoryRecord = {
    *
    * This nested object provides complete information about the product variant whose stock was modified, including the SKU code, variant-specific price, option values (e.g., color, size), and current stock quantity calculated from all inventory records.
    *
-   * @x-autobe-database-schema-property productVariant
-   * @x-autobe-specification Relation via JOIN from shopping_mall_inventory_records.shopping_mall_product_variant_id to shopping_mall_product_variants.ISummary. Returns product variant details including SKU code, price, options, and current stock quantity.
+     * @x-autobe-database-schema-property productVariant
+     * @x-autobe-specification Relation via JOIN from
+     *   shopping_mall_inventory_records.shopping_mall_product_variant_id to
+     *   shopping_mall_product_variants.ISummary. Returns product variant
+     *   details including SKU code, price, options, and current stock quantity.
    */
   productVariant: IShoppingMallProductVariant.ISummary;
 
@@ -36,8 +41,12 @@ export type IShoppingMallInventoryRecord = {
    *
    * Positive values indicate stock increases (restocking, order cancellations, refunds). Negative values indicate stock decreases (order placements, inventory adjustments, damaged goods). The current stock quantity for a variant is calculated by summing all quantity_change values for that variant.
    *
-   * @x-autobe-database-schema-property quantity_change
-   * @x-autobe-specification Direct mapping from shopping_mall_inventory_records.quantity_change (Int). Positive values indicate stock increases (restocking, cancellations, refunds). Negative values indicate stock decreases (order placements, adjustments, losses).
+     * @x-autobe-database-schema-property quantity_change
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_inventory_records.quantity_change (Int). Positive values
+     *   indicate stock increases (restocking, cancellations, refunds). Negative
+     *   values indicate stock decreases (order placements, adjustments,
+     *   losses).
    */
   quantity_change: number & tags.Type<"int32">;
 
@@ -46,8 +55,10 @@ export type IShoppingMallInventoryRecord = {
    *
    * This text field documents why the stock quantity was modified. Examples include: 'Restock', 'Order #12345', 'Cancelled order #12345', 'Refund for order #12345', 'Inventory adjustment', 'Damaged goods'.
    *
-   * @x-autobe-database-schema-property reason
-   * @x-autobe-specification Direct mapping from shopping_mall_inventory_records.reason (String). Required text field describing the purpose of the inventory change.
+     * @x-autobe-database-schema-property reason
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_inventory_records.reason (String). Required text field
+     *   describing the purpose of the inventory change.
    */
   reason: string;
 
@@ -56,8 +67,10 @@ export type IShoppingMallInventoryRecord = {
    *
    * This field records the exact date and time when the stock movement event was recorded. Used to calculate current stock by summing all inventory records chronologically for a variant.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from shopping_mall_inventory_records.created_at (DateTime). Timestamp when the inventory record was created, set automatically on insert.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_inventory_records.created_at (DateTime). Timestamp when
+     *   the inventory record was created, set automatically on insert.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -66,8 +79,11 @@ export type IShoppingMallInventoryRecord = {
    *
    * While inventory records are append-only (immutable after creation), this field is maintained for consistency with standard temporal field conventions across the platform.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from shopping_mall_inventory_records.updated_at (DateTime). Maintained for consistency with standard temporal fields, though records are append-only.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_inventory_records.updated_at (DateTime). Maintained for
+     *   consistency with standard temporal fields, though records are
+     *   append-only.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -76,8 +92,11 @@ export type IShoppingMallInventoryRecord = {
    *
    * When null, the record is active and included in stock calculations. When set, the record is marked as deleted but preserved in the database for data retention compliance. Soft-deleted records are excluded from current stock quantity calculations.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from shopping_mall_inventory_records.deleted_at (DateTime?). Nullable field for soft delete support. Null means active record; non-null means soft-deleted.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_inventory_records.deleted_at (DateTime?). Nullable field
+     *   for soft delete support. Null means active record; non-null means
+     *   soft-deleted.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -95,8 +114,12 @@ export namespace IShoppingMallInventoryRecord {
      *
      * Positive values indicate stock increases such as restocking, order cancellations, or refunds. Negative values indicate stock decreases such as inventory adjustments, damaged goods, or losses. This field must be non-zero as zero changes serve no purpose in the audit trail.
      *
-     * @x-autobe-database-schema-property quantity_change
-     * @x-autobe-specification Direct mapping from shopping_mall_inventory_records.quantity_change column. Integer value representing the stock adjustment amount. Positive values for stock increases (restocking, cancellations, refunds), negative values for stock decreases (adjustments, losses). Must be non-zero.
+         * @x-autobe-database-schema-property quantity_change
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_inventory_records.quantity_change column. Integer
+         *   value representing the stock adjustment amount. Positive values for
+         *   stock increases (restocking, cancellations, refunds), negative
+         *   values for stock decreases (adjustments, losses). Must be non-zero.
      */
     quantity_change: number & tags.Type<"int32">;
 
@@ -105,8 +128,11 @@ export namespace IShoppingMallInventoryRecord {
      *
      * This text explains the business context for the stock movement. Examples include: 'Restock', 'Cancelled order #12345', 'Refund for order #12345', 'Inventory adjustment', 'Damaged goods'. This field serves as the human-readable audit trail for inventory management and compliance purposes.
      *
-     * @x-autobe-database-schema-property reason
-     * @x-autobe-specification Direct mapping from shopping_mall_inventory_records.reason column. String field describing the business reason for this inventory change. Required field with no maximum length constraint in the database schema.
+         * @x-autobe-database-schema-property reason
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_inventory_records.reason column. String field
+         *   describing the business reason for this inventory change. Required
+         *   field with no maximum length constraint in the database schema.
      */
     reason: string;
   };

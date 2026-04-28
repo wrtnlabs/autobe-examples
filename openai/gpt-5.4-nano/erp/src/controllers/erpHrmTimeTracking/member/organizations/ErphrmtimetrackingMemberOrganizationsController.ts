@@ -36,9 +36,10 @@ export class ErphrmtimetrackingMemberOrganizationsController {
    *
    * @param connection
    * @param body Organization creation payload mapped to `erp_hrm_time_tracking_organizations` core profile columns.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement POST /organizations to create a new tenant organization.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implement POST /organizations to create a new
+     *   tenant organization.
    *
    * Algorithm / Service-layer steps:
    * 1. Authenticate the caller via existing auth middleware and authorize them to perform tenant creation.
@@ -104,12 +105,12 @@ export class ErphrmtimetrackingMemberOrganizationsController {
    *
    * @param connection
    * @param body Organization profile update payload for the currently selected organization context.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1) Authorization & context
-   * - Require authenticated member.
-   * - Resolve the selected organization context from session/middleware.
-   * - Ensure the target organization for update is exactly the selected organization. Reject if no context or mismatch.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification 1) Authorization & context - Require
+     *   authenticated member. - Resolve the selected organization context from
+     *   session/middleware. - Ensure the target organization for update is
+     *   exactly the selected organization. Reject if no context or mismatch.
    *
    * 2) Input validation
    * - Accept update payload matching `IErpHrmTimeTrackingOrganization.IUpdate`.
@@ -174,9 +175,9 @@ export class ErphrmtimetrackingMemberOrganizationsController {
    *
    * @param connection
    * @param organizationId Target organization identifier (UUID).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation steps:
    *
    * 1. Authorization & isolation
    *    - Require an authenticated member/admin (guest must be denied for organization-scoped reads).
@@ -233,9 +234,9 @@ export class ErphrmtimetrackingMemberOrganizationsController {
    * @param connection
    * @param organizationId Target organization (tenant) identifier.
    * @param body Organization profile update payload.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement PUT /organizations/{organizationId}.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implement PUT /organizations/{organizationId}.
    *
    * 1) Authorization and scope
    * - Verify the caller has permission to manage the target organization identified by `organizationId`.
@@ -304,11 +305,13 @@ export class ErphrmtimetrackingMemberOrganizationsController {
    *
    * @param connection
    * @param organizationId Target organization identifier to permanently remove (maps to `erp_hrm_time_tracking_organizations.id`).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1) Authorization & scope
-   * - Verify the caller is authenticated as a `member` (and/or admin as defined by your permission model) and has the right to delete the targeted organization.
-   * - Ensure the permission decision is made for the specific organization referenced by `organizationId`.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification 1) Authorization & scope - Verify the caller is
+     *   authenticated as a `member` (and/or admin as defined by your permission
+     *   model) and has the right to delete the targeted organization. - Ensure
+     *   the permission decision is made for the specific organization
+     *   referenced by `organizationId`.
    *
    * 2) Input handling
    * - Parse `organizationId` from the path parameter as UUID.

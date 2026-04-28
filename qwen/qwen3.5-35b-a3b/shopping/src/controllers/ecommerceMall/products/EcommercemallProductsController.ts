@@ -29,9 +29,10 @@ export class EcommercemallProductsController {
    *
    * @param connection
    * @param body Search criteria including name search, category filters, price range, availability filters, date range filters, sort options, and pagination parameters.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query ecommerce_mall_products table with pagination, filtering, and sorting.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query ecommerce_mall_products table with
+     *   pagination, filtering, and sorting.
    *
    * Filters applied:
    * - Name search: Full-text search on product name using gin_trgm_ops index
@@ -83,9 +84,10 @@ export class EcommercemallProductsController {
    *
    * @param connection
    * @param productId Unique identifier of the product to retrieve
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Retrieve the product record from ecommerce_mall_products by ID where deleted_at is NULL.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Retrieve the product record from
+     *   ecommerce_mall_products by ID where deleted_at is NULL.
    *
    * Join with related tables:
    * - ecommerce_mall_categories: category assignment

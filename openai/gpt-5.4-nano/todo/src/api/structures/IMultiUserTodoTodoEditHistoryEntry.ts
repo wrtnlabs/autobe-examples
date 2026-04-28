@@ -16,8 +16,9 @@ export type IMultiUserTodoTodoEditHistoryEntry = {
    *
    * Used to reference the specific immutable audit record stored for a single change event.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from multi_user_todo_todo_edit_history_entries.id to DTO.id (UUID string).
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   multi_user_todo_todo_edit_history_entries.id to DTO.id (UUID string).
    */
   id: string & tags.Format<"uuid">;
 
@@ -26,8 +27,10 @@ export type IMultiUserTodoTodoEditHistoryEntry = {
    *
    * Provides the linkage between the audit row and the todo that was changed.
    *
-   * @x-autobe-database-schema-property multi_user_todo_todo_id
-   * @x-autobe-specification Direct mapping from multi_user_todo_todo_edit_history_entries.multi_user_todo_todo_id to DTO.todoId (UUID string).
+     * @x-autobe-database-schema-property multi_user_todo_todo_id
+     * @x-autobe-specification Direct mapping from
+     *   multi_user_todo_todo_edit_history_entries.multi_user_todo_todo_id to
+     *   DTO.todoId (UUID string).
    */
   todoId: string & tags.Format<"uuid">;
 
@@ -36,8 +39,10 @@ export type IMultiUserTodoTodoEditHistoryEntry = {
    *
    * Included for ownership context aligned with the endpoint’s authorization scoping.
    *
-   * @x-autobe-database-schema-property multi_user_todo_owner_id
-   * @x-autobe-specification Direct mapping from multi_user_todo_todo_edit_history_entries.multi_user_todo_owner_id to DTO.ownerId (UUID string).
+     * @x-autobe-database-schema-property multi_user_todo_owner_id
+     * @x-autobe-specification Direct mapping from
+     *   multi_user_todo_todo_edit_history_entries.multi_user_todo_owner_id to
+     *   DTO.ownerId (UUID string).
    */
   ownerId: string & tags.Format<"uuid">;
 
@@ -46,8 +51,10 @@ export type IMultiUserTodoTodoEditHistoryEntry = {
    *
    * Represents the business/event time of the audit record (distinct from createdAt/updatedAt).
    *
-   * @x-autobe-database-schema-property edit_made_at
-   * @x-autobe-specification Direct mapping from multi_user_todo_todo_edit_history_entries.edit_made_at to DTO.editMadeAt as a date-time string.
+     * @x-autobe-database-schema-property edit_made_at
+     * @x-autobe-specification Direct mapping from
+     *   multi_user_todo_todo_edit_history_entries.edit_made_at to
+     *   DTO.editMadeAt as a date-time string.
    */
   editMadeAt: string & tags.Format<"date-time">;
 
@@ -56,8 +63,10 @@ export type IMultiUserTodoTodoEditHistoryEntry = {
    *
    * This is the exact title stored prior to the change event.
    *
-   * @x-autobe-database-schema-property previous_title
-   * @x-autobe-specification Direct mapping from multi_user_todo_todo_edit_history_entries.previous_title to DTO.previousTitle (string).
+     * @x-autobe-database-schema-property previous_title
+     * @x-autobe-specification Direct mapping from
+     *   multi_user_todo_todo_edit_history_entries.previous_title to
+     *   DTO.previousTitle (string).
    */
   previousTitle: string;
 
@@ -66,8 +75,10 @@ export type IMultiUserTodoTodoEditHistoryEntry = {
    *
    * This is the exact title stored following the change event.
    *
-   * @x-autobe-database-schema-property new_title
-   * @x-autobe-specification Direct mapping from multi_user_todo_todo_edit_history_entries.new_title to DTO.newTitle (string).
+     * @x-autobe-database-schema-property new_title
+     * @x-autobe-specification Direct mapping from
+     *   multi_user_todo_todo_edit_history_entries.new_title to DTO.newTitle
+     *   (string).
    */
   newTitle: string;
 
@@ -76,8 +87,10 @@ export type IMultiUserTodoTodoEditHistoryEntry = {
    *
    * If the description was empty/unset prior to the edit, this value is null.
    *
-   * @x-autobe-database-schema-property previous_description
-   * @x-autobe-specification Direct mapping from multi_user_todo_todo_edit_history_entries.previous_description to DTO.previousDescription.
+     * @x-autobe-database-schema-property previous_description
+     * @x-autobe-specification Direct mapping from
+     *   multi_user_todo_todo_edit_history_entries.previous_description to
+     *   DTO.previousDescription.
    *
    * Return null when previous_description is NULL; otherwise return its string value.
    */
@@ -88,8 +101,10 @@ export type IMultiUserTodoTodoEditHistoryEntry = {
    *
    * If the description is empty/unset after the edit, this value is null.
    *
-   * @x-autobe-database-schema-property new_description
-   * @x-autobe-specification Direct mapping from multi_user_todo_todo_edit_history_entries.new_description to DTO.newDescription.
+     * @x-autobe-database-schema-property new_description
+     * @x-autobe-specification Direct mapping from
+     *   multi_user_todo_todo_edit_history_entries.new_description to
+     *   DTO.newDescription.
    *
    * Return null when new_description is NULL; otherwise return its string value.
    */
@@ -100,8 +115,10 @@ export type IMultiUserTodoTodoEditHistoryEntry = {
    *
    * If no start date was set prior to the edit, this value is null.
    *
-   * @x-autobe-database-schema-property previous_start_date
-   * @x-autobe-specification Direct mapping from multi_user_todo_todo_edit_history_entries.previous_start_date to DTO.previousStartDate.
+     * @x-autobe-database-schema-property previous_start_date
+     * @x-autobe-specification Direct mapping from
+     *   multi_user_todo_todo_edit_history_entries.previous_start_date to
+     *   DTO.previousStartDate.
    *
    * Return null when previous_start_date is NULL; otherwise return its date-time string.
    */
@@ -112,8 +129,10 @@ export type IMultiUserTodoTodoEditHistoryEntry = {
    *
    * If no start date is set after the edit, this value is null.
    *
-   * @x-autobe-database-schema-property new_start_date
-   * @x-autobe-specification Direct mapping from multi_user_todo_todo_edit_history_entries.new_start_date to DTO.newStartDate.
+     * @x-autobe-database-schema-property new_start_date
+     * @x-autobe-specification Direct mapping from
+     *   multi_user_todo_todo_edit_history_entries.new_start_date to
+     *   DTO.newStartDate.
    *
    * Return null when new_start_date is NULL; otherwise return its date-time string.
    */
@@ -124,8 +143,10 @@ export type IMultiUserTodoTodoEditHistoryEntry = {
    *
    * If no due date was set prior to the edit, this value is null.
    *
-   * @x-autobe-database-schema-property previous_due_date
-   * @x-autobe-specification Direct mapping from multi_user_todo_todo_edit_history_entries.previous_due_date to DTO.previousDueDate.
+     * @x-autobe-database-schema-property previous_due_date
+     * @x-autobe-specification Direct mapping from
+     *   multi_user_todo_todo_edit_history_entries.previous_due_date to
+     *   DTO.previousDueDate.
    *
    * Return null when previous_due_date is NULL; otherwise return its date-time string.
    */
@@ -136,8 +157,10 @@ export type IMultiUserTodoTodoEditHistoryEntry = {
    *
    * If no due date is set after the edit, this value is null.
    *
-   * @x-autobe-database-schema-property new_due_date
-   * @x-autobe-specification Direct mapping from multi_user_todo_todo_edit_history_entries.new_due_date to DTO.newDueDate.
+     * @x-autobe-database-schema-property new_due_date
+     * @x-autobe-specification Direct mapping from
+     *   multi_user_todo_todo_edit_history_entries.new_due_date to
+     *   DTO.newDueDate.
    *
    * Return null when new_due_date is NULL; otherwise return its date-time string.
    */
@@ -148,8 +171,10 @@ export type IMultiUserTodoTodoEditHistoryEntry = {
    *
    * Represents the completion state immediately prior to this audit event.
    *
-   * @x-autobe-database-schema-property previous_is_complete
-   * @x-autobe-specification Direct mapping from multi_user_todo_todo_edit_history_entries.previous_is_complete to DTO.previousIsComplete (boolean).
+     * @x-autobe-database-schema-property previous_is_complete
+     * @x-autobe-specification Direct mapping from
+     *   multi_user_todo_todo_edit_history_entries.previous_is_complete to
+     *   DTO.previousIsComplete (boolean).
    */
   previousIsComplete: boolean;
 
@@ -158,8 +183,10 @@ export type IMultiUserTodoTodoEditHistoryEntry = {
    *
    * Represents the completion state immediately following this audit event.
    *
-   * @x-autobe-database-schema-property new_is_complete
-   * @x-autobe-specification Direct mapping from multi_user_todo_todo_edit_history_entries.new_is_complete to DTO.newIsComplete (boolean).
+     * @x-autobe-database-schema-property new_is_complete
+     * @x-autobe-specification Direct mapping from
+     *   multi_user_todo_todo_edit_history_entries.new_is_complete to
+     *   DTO.newIsComplete (boolean).
    */
   newIsComplete: boolean;
 
@@ -168,8 +195,10 @@ export type IMultiUserTodoTodoEditHistoryEntry = {
    *
    * Indicates when the audit row was inserted into the system.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from multi_user_todo_todo_edit_history_entries.created_at to DTO.createdAt as a date-time string.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   multi_user_todo_todo_edit_history_entries.created_at to DTO.createdAt
+     *   as a date-time string.
    */
   createdAt: string & tags.Format<"date-time">;
 
@@ -178,8 +207,10 @@ export type IMultiUserTodoTodoEditHistoryEntry = {
    *
    * May change due to operational updates such as soft-delete state transitions.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from multi_user_todo_todo_edit_history_entries.updated_at to DTO.updatedAt as a date-time string.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   multi_user_todo_todo_edit_history_entries.updated_at to DTO.updatedAt
+     *   as a date-time string.
    */
   updatedAt: string & tags.Format<"date-time">;
 
@@ -188,8 +219,9 @@ export type IMultiUserTodoTodoEditHistoryEntry = {
    *
    * If the entry is not soft-deleted, this value is null. If it is soft-deleted, it contains the deletion timestamp.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from multi_user_todo_todo_edit_history_entries.deleted_at to DTO.deletedAt.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   multi_user_todo_todo_edit_history_entries.deleted_at to DTO.deletedAt.
    *
    * Return null when deleted_at is NULL; otherwise return its date-time string.
    */
@@ -209,8 +241,9 @@ export namespace IMultiUserTodoTodoEditHistoryEntry {
      *
      * Unique UUID for the todo record owned by the authenticated member.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Return multi_user_todo_todos.id as a UUID string (OpenAPI format: uuid).
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Return multi_user_todo_todos.id as a UUID
+         *   string (OpenAPI format: uuid).
      */
     id: string & tags.Format<"uuid">;
 
@@ -219,8 +252,9 @@ export namespace IMultiUserTodoTodoEditHistoryEntry {
      *
      * The required, human-readable main label for the task.
      *
-     * @x-autobe-database-schema-property title
-     * @x-autobe-specification Return multi_user_todo_todos.title as a string.
+         * @x-autobe-database-schema-property title
+         * @x-autobe-specification Return multi_user_todo_todos.title as a
+         *   string.
      */
     title: string;
 
@@ -231,8 +265,8 @@ export namespace IMultiUserTodoTodoEditHistoryEntry {
      *
      * If the todo has no description stored, this value is null.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Return multi_user_todo_todos.description.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Return multi_user_todo_todos.description.
      *
      * If the DB value is NULL, respond with null; otherwise respond with the string value.
      */
@@ -245,8 +279,8 @@ export namespace IMultiUserTodoTodoEditHistoryEntry {
      *
      * If no start date is stored, this value is null.
      *
-     * @x-autobe-database-schema-property start_date
-     * @x-autobe-specification Return multi_user_todo_todos.start_date.
+         * @x-autobe-database-schema-property start_date
+         * @x-autobe-specification Return multi_user_todo_todos.start_date.
      *
      * If the DB value is NULL, respond with null; otherwise respond with an ISO-8601 date-time string (format: date-time).
      */
@@ -259,8 +293,8 @@ export namespace IMultiUserTodoTodoEditHistoryEntry {
      *
      * If no due date is stored, this value is null.
      *
-     * @x-autobe-database-schema-property due_date
-     * @x-autobe-specification Return multi_user_todo_todos.due_date.
+         * @x-autobe-database-schema-property due_date
+         * @x-autobe-specification Return multi_user_todo_todos.due_date.
      *
      * If the DB value is NULL, respond with null; otherwise respond with an ISO-8601 date-time string (format: date-time).
      */
@@ -271,8 +305,9 @@ export namespace IMultiUserTodoTodoEditHistoryEntry {
      *
      * Indicates whether the todo is currently marked complete (true) or incomplete (false).
      *
-     * @x-autobe-database-schema-property is_complete
-     * @x-autobe-specification Return multi_user_todo_todos.is_complete as a boolean indicating whether the todo is currently marked complete.
+         * @x-autobe-database-schema-property is_complete
+         * @x-autobe-specification Return multi_user_todo_todos.is_complete as a
+         *   boolean indicating whether the todo is currently marked complete.
      */
     isComplete: boolean;
 
@@ -281,8 +316,9 @@ export namespace IMultiUserTodoTodoEditHistoryEntry {
      *
      * System-managed classification used to determine how the todo is treated in the deletion workflow and which list(s) it belongs to.
      *
-     * @x-autobe-database-schema-property lifecycle_state
-     * @x-autobe-specification Return multi_user_todo_todos.lifecycle_state as a string.
+         * @x-autobe-database-schema-property lifecycle_state
+         * @x-autobe-specification Return multi_user_todo_todos.lifecycle_state
+         *   as a string.
      *
      * Treat this value as the system lifecycle classification that drives list visibility (e.g., normal vs trash semantics).
      */
@@ -293,8 +329,9 @@ export namespace IMultiUserTodoTodoEditHistoryEntry {
      *
      * The datetime when the todo record was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Return multi_user_todo_todos.created_at as an ISO-8601 date-time string (format: date-time).
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Return multi_user_todo_todos.created_at as an
+         *   ISO-8601 date-time string (format: date-time).
      */
     createdAt: string & tags.Format<"date-time">;
 
@@ -303,8 +340,9 @@ export namespace IMultiUserTodoTodoEditHistoryEntry {
      *
      * The datetime when the todo record was last modified (for example, when completion status is toggled).
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Return multi_user_todo_todos.updated_at as an ISO-8601 date-time string (format: date-time).
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Return multi_user_todo_todos.updated_at as an
+         *   ISO-8601 date-time string (format: date-time).
      */
     updatedAt: string & tags.Format<"date-time">;
 
@@ -315,8 +353,8 @@ export namespace IMultiUserTodoTodoEditHistoryEntry {
      *
      * When null, the todo is not soft-deleted.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Return multi_user_todo_todos.deleted_at.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Return multi_user_todo_todos.deleted_at.
      *
      * If the DB value is NULL, respond with null; otherwise respond with an ISO-8601 date-time string (format: date-time).
      */
@@ -334,7 +372,8 @@ export namespace IMultiUserTodoTodoEditHistoryEntry {
      *
      * This list must be non-empty. The server verifies that each provided todo id is accessible to the authenticated member, and if any id is not eligible, the operation is rejected without applying any changes.
      *
-     * @x-autobe-specification Implementation: treat todoIds as the authoritative set of multi_user_todo_todos.id values to resolve.
+         * @x-autobe-specification Implementation: treat todoIds as the
+         *   authoritative set of multi_user_todo_todos.id values to resolve.
      *
      * Validation:
      * - Must be present and non-empty (minItems >= 1).
@@ -351,7 +390,8 @@ export namespace IMultiUserTodoTodoEditHistoryEntry {
      *
      * If omitted, null, or undefined, the server defaults to the first page. Page numbering starts from 1 at the API level (and the service must translate this into the underlying pagination mechanics).
      *
-     * @x-autobe-specification Implementation: apply page when paginating the ordered set of updated todo summaries produced by the service.
+         * @x-autobe-specification Implementation: apply page when paginating
+         *   the ordered set of updated todo summaries produced by the service.
      *
      * Defaults/handling:
      * - If page is null/omitted, treat it as the first page.
@@ -366,7 +406,8 @@ export namespace IMultiUserTodoTodoEditHistoryEntry {
      *
      * If omitted, null, or undefined, the server defaults to 100 records per page. The actual number of returned records may be lower on the last page.
      *
-     * @x-autobe-specification Implementation: apply limit to cap how many updated todo summaries are included in the returned page.
+         * @x-autobe-specification Implementation: apply limit to cap how many
+         *   updated todo summaries are included in the returned page.
      *
      * Defaults/handling:
      * - If limit is null/omitted, treat it as the default maximum (100).

@@ -8,88 +8,110 @@ export type IShoppingMallShipmentConfirmation = {
   /**
    * Unique identifier of this shipment confirmation record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_shipment_confirmations.id. Return as UUID string.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_shipment_confirmations.id. Return as UUID string.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Identifier of the shipment that this confirmation belongs to.
    *
-   * @x-autobe-database-schema-property shopping_mall_shipment_id
-   * @x-autobe-specification Direct mapping from shopping_mall_shipment_confirmations.shopping_mall_shipment_id. Return as UUID string identifying the associated shipment.
+     * @x-autobe-database-schema-property shopping_mall_shipment_id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_shipment_confirmations.shopping_mall_shipment_id. Return
+     *   as UUID string identifying the associated shipment.
    */
   shopping_mall_shipment_id: string & tags.Format<"uuid">;
 
   /**
    * Seller-submitted confirmation type (e.g., shipped vs delivered) used by the fulfillment workflow to drive state transitions.
    *
-   * @x-autobe-database-schema-property confirmation_type
-   * @x-autobe-specification Direct mapping from shopping_mall_shipment_confirmations.confirmation_type. Return exactly as stored.
+     * @x-autobe-database-schema-property confirmation_type
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_shipment_confirmations.confirmation_type. Return exactly
+     *   as stored.
    */
   confirmation_type: string;
 
   /**
    * Timestamp when the shipment confirmation is considered valid for fulfillment status transitions.
    *
-   * @x-autobe-database-schema-property confirmed_at
-   * @x-autobe-specification Direct mapping from shopping_mall_shipment_confirmations.confirmed_at. Return as ISO 8601 date-time string.
+     * @x-autobe-database-schema-property confirmed_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_shipment_confirmations.confirmed_at. Return as ISO 8601
+     *   date-time string.
    */
   confirmed_at: string & tags.Format<"date-time">;
 
   /**
    * Optional tracking page URL provided by the seller for shipment tracking.
    *
-   * @x-autobe-database-schema-property tracking_url
-   * @x-autobe-specification Direct mapping from shopping_mall_shipment_confirmations.tracking_url. If DB value is NULL, return null; otherwise return the URL string.
+     * @x-autobe-database-schema-property tracking_url
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_shipment_confirmations.tracking_url. If DB value is NULL,
+     *   return null; otherwise return the URL string.
    */
   tracking_url: (string & tags.Format<"url">) | null;
 
   /**
    * Optional carrier tracking number provided by the seller.
    *
-   * @x-autobe-database-schema-property tracking_number
-   * @x-autobe-specification Direct mapping from shopping_mall_shipment_confirmations.tracking_number. If DB value is NULL, return null; otherwise return the tracking number string.
+     * @x-autobe-database-schema-property tracking_number
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_shipment_confirmations.tracking_number. If DB value is
+     *   NULL, return null; otherwise return the tracking number string.
    */
   tracking_number: string | null;
 
   /**
    * Optional carrier or service name associated with the shipment tracking details.
    *
-   * @x-autobe-database-schema-property carrier_name
-   * @x-autobe-specification Direct mapping from shopping_mall_shipment_confirmations.carrier_name. If DB value is NULL, return null; otherwise return the carrier/service name string.
+     * @x-autobe-database-schema-property carrier_name
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_shipment_confirmations.carrier_name. If DB value is NULL,
+     *   return null; otherwise return the carrier/service name string.
    */
   carrier_name: string | null;
 
   /**
    * Optional seller note included with the shipment confirmation for dispute resolution.
    *
-   * @x-autobe-database-schema-property note
-   * @x-autobe-specification Direct mapping from shopping_mall_shipment_confirmations.note. If DB value is NULL, return null; otherwise return the note string.
+     * @x-autobe-database-schema-property note
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_shipment_confirmations.note. If DB value is NULL, return
+     *   null; otherwise return the note string.
    */
   note: string | null;
 
   /**
    * Record creation timestamp for this shipment confirmation.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from shopping_mall_shipment_confirmations.created_at. Return as ISO 8601 date-time string.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_shipment_confirmations.created_at. Return as ISO 8601
+     *   date-time string.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Record last update timestamp for this shipment confirmation.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from shopping_mall_shipment_confirmations.updated_at. Return as ISO 8601 date-time string.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_shipment_confirmations.updated_at. Return as ISO 8601
+     *   date-time string.
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * Soft-delete timestamp. When not null, the confirmation record is treated as removed.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from shopping_mall_shipment_confirmations.deleted_at. If DB value is NULL, return null; otherwise return the timestamp as ISO 8601 date-time string.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_shipment_confirmations.deleted_at. If DB value is NULL,
+     *   return null; otherwise return the timestamp as ISO 8601 date-time
+     *   string.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -101,70 +123,97 @@ export namespace IShoppingMallShipmentConfirmation {
     /**
      * The identifier of the shipment whose fulfillment confirmation is being submitted (UUID).
      *
-     * @x-autobe-database-schema-property shopping_mall_shipment_id
-     * @x-autobe-specification Store shoppingMallShipmentId as shopping_mall_shipment_confirmations.shopping_mall_shipment_id to identify which shipment this confirmation applies to (unique constraint enforced on this column).
+         * @x-autobe-database-schema-property shopping_mall_shipment_id
+         * @x-autobe-specification Store shoppingMallShipmentId as
+         *   shopping_mall_shipment_confirmations.shopping_mall_shipment_id to
+         *   identify which shipment this confirmation applies to (unique
+         *   constraint enforced on this column).
      */
     shoppingMallShipmentId: string & tags.Format<"uuid">;
 
     /**
      * The seller-submitted confirmation type indicating the fulfillment stage (for example, shipped vs delivered).
      *
-     * @x-autobe-database-schema-property confirmation_type
-     * @x-autobe-specification Persist confirmationType into shopping_mall_shipment_confirmations.confirmation_type. Backend uses this value to derive the corresponding shopping_mall_shipments.status and to transition shopping_mall_order_items.line_item_status consistently.
+         * @x-autobe-database-schema-property confirmation_type
+         * @x-autobe-specification Persist confirmationType into
+         *   shopping_mall_shipment_confirmations.confirmation_type. Backend
+         *   uses this value to derive the corresponding
+         *   shopping_mall_shipments.status and to transition
+         *   shopping_mall_order_items.line_item_status consistently.
      */
     confirmationType: string;
 
     /**
      * Timestamp (ISO 8601) when the seller confirmation is considered valid for fulfillment transitions.
      *
-     * @x-autobe-database-schema-property confirmed_at
-     * @x-autobe-specification Persist confirmedAt into shopping_mall_shipment_confirmations.confirmed_at. Backend uses confirmed_at as the effective timestamp when applying/validating transitions.
+         * @x-autobe-database-schema-property confirmed_at
+         * @x-autobe-specification Persist confirmedAt into
+         *   shopping_mall_shipment_confirmations.confirmed_at. Backend uses
+         *   confirmed_at as the effective timestamp when applying/validating
+         *   transitions.
      */
     confirmedAt: string & tags.Format<"date-time">;
 
     /**
      * Optional tracking page URL for the shipment carrier.
      *
-     * @x-autobe-database-schema-property tracking_url
-     * @x-autobe-specification If provided, persist trackingUrl into shopping_mall_shipment_confirmations.tracking_url; allow null when omitted per backend upsert policy (DB column is nullable).
+         * @x-autobe-database-schema-property tracking_url
+         * @x-autobe-specification If provided, persist trackingUrl into
+         *   shopping_mall_shipment_confirmations.tracking_url; allow null when
+         *   omitted per backend upsert policy (DB column is nullable).
      */
     trackingUrl?: (string & tags.Format<"url">) | null | undefined;
 
     /**
      * Optional carrier tracking number for the shipment.
      *
-     * @x-autobe-database-schema-property tracking_number
-     * @x-autobe-specification If provided, persist trackingNumber into shopping_mall_shipment_confirmations.tracking_number; allow null when omitted per backend upsert policy (DB column is nullable).
+         * @x-autobe-database-schema-property tracking_number
+         * @x-autobe-specification If provided, persist trackingNumber into
+         *   shopping_mall_shipment_confirmations.tracking_number; allow null
+         *   when omitted per backend upsert policy (DB column is nullable).
      */
     trackingNumber?: string | null | undefined;
 
     /**
      * Optional carrier/service name used for this shipment.
      *
-     * @x-autobe-database-schema-property carrier_name
-     * @x-autobe-specification If provided, persist carrierName into shopping_mall_shipment_confirmations.carrier_name; allow null when omitted per backend upsert policy (DB column is nullable).
+         * @x-autobe-database-schema-property carrier_name
+         * @x-autobe-specification If provided, persist carrierName into
+         *   shopping_mall_shipment_confirmations.carrier_name; allow null when
+         *   omitted per backend upsert policy (DB column is nullable).
      */
     carrierName?: string | null | undefined;
 
     /**
      * Optional seller note included with the confirmation for dispute resolution.
      *
-     * @x-autobe-database-schema-property note
-     * @x-autobe-specification If provided, persist note into shopping_mall_shipment_confirmations.note; allow null when omitted per backend upsert policy (DB column is nullable).
+         * @x-autobe-database-schema-property note
+         * @x-autobe-specification If provided, persist note into
+         *   shopping_mall_shipment_confirmations.note; allow null when omitted
+         *   per backend upsert policy (DB column is nullable).
      */
     note?: string | null | undefined;
 
     /**
      * Target page number (1-indexed) for paginated retrieval. Defaults to page 1 when omitted.
      *
-     * @x-autobe-specification Pagination parameter for list-style retrieval use; if the backend implementation accepts it for this DTO, it must be treated purely as a query/pagination control (not persisted into shopping_mall_shipment_confirmations). Use 1-indexed semantics; default to 1 when null/omitted; return appropriate paginated results when used by an endpoint that expects pagination.
+         * @x-autobe-specification Pagination parameter for list-style retrieval
+         *   use; if the backend implementation accepts it for this DTO, it must
+         *   be treated purely as a query/pagination control (not persisted into
+         *   shopping_mall_shipment_confirmations). Use 1-indexed semantics;
+         *   default to 1 when null/omitted; return appropriate paginated
+         *   results when used by an endpoint that expects pagination.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
 
     /**
      * Maximum number of records to return per page. Defaults to 100 when omitted.
      *
-     * @x-autobe-specification Pagination parameter for list-style retrieval use; if the backend implementation accepts it for this DTO, it must be treated purely as a query/pagination control (not persisted into shopping_mall_shipment_confirmations). Default to 100 when null/omitted; server may cap maximum page size.
+         * @x-autobe-specification Pagination parameter for list-style retrieval
+         *   use; if the backend implementation accepts it for this DTO, it must
+         *   be treated purely as a query/pagination control (not persisted into
+         *   shopping_mall_shipment_confirmations). Default to 100 when
+         *   null/omitted; server may cap maximum page size.
      */
     limit?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };
@@ -176,48 +225,65 @@ export namespace IShoppingMallShipmentConfirmation {
     /**
      * The seller-submitted confirmation type that indicates what fulfillment state the shipment confirmation represents.
      *
-     * @x-autobe-database-schema-property confirmation_type
-     * @x-autobe-specification Map directly to shopping_mall_shipment_confirmations.confirmation_type. Validate it against the allowed shipment confirmation workflow values before persisting.
+         * @x-autobe-database-schema-property confirmation_type
+         * @x-autobe-specification Map directly to
+         *   shopping_mall_shipment_confirmations.confirmation_type. Validate it
+         *   against the allowed shipment confirmation workflow values before
+         *   persisting.
      */
     confirmation_type: string;
 
     /**
      * Timestamp when the seller confirmation is considered valid for shipment status transitions.
      *
-     * @x-autobe-database-schema-property confirmed_at
-     * @x-autobe-specification Map directly to shopping_mall_shipment_confirmations.confirmed_at (required). Validate it as a timestamp and persist as provided.
+         * @x-autobe-database-schema-property confirmed_at
+         * @x-autobe-specification Map directly to
+         *   shopping_mall_shipment_confirmations.confirmed_at (required).
+         *   Validate it as a timestamp and persist as provided.
      */
     confirmed_at: string & tags.Format<"date-time">;
 
     /**
      * Optional tracking page URL provided by the seller for shipment delivery tracking.
      *
-     * @x-autobe-database-schema-property tracking_url
-     * @x-autobe-specification Map directly to shopping_mall_shipment_confirmations.tracking_url. Accept null to remove/clear the value per server update semantics. Validate as a URL when non-null and persist.
+         * @x-autobe-database-schema-property tracking_url
+         * @x-autobe-specification Map directly to
+         *   shopping_mall_shipment_confirmations.tracking_url. Accept null to
+         *   remove/clear the value per server update semantics. Validate as a
+         *   URL when non-null and persist.
      */
     tracking_url?: (string & tags.Format<"url">) | null | undefined;
 
     /**
      * Optional carrier tracking number provided by the seller for shipment delivery tracking.
      *
-     * @x-autobe-database-schema-property tracking_number
-     * @x-autobe-specification Map directly to shopping_mall_shipment_confirmations.tracking_number. Accept null to clear. Validate according to schema constraints (nullable) and persist.
+         * @x-autobe-database-schema-property tracking_number
+         * @x-autobe-specification Map directly to
+         *   shopping_mall_shipment_confirmations.tracking_number. Accept null
+         *   to clear. Validate according to schema constraints (nullable) and
+         *   persist.
      */
     tracking_number?: string | null | undefined;
 
     /**
      * Optional carrier/service name associated with the provided tracking details.
      *
-     * @x-autobe-database-schema-property carrier_name
-     * @x-autobe-specification Map directly to shopping_mall_shipment_confirmations.carrier_name. Accept null to clear. Validate according to schema constraints (nullable) and persist.
+         * @x-autobe-database-schema-property carrier_name
+         * @x-autobe-specification Map directly to
+         *   shopping_mall_shipment_confirmations.carrier_name. Accept null to
+         *   clear. Validate according to schema constraints (nullable) and
+         *   persist.
      */
     carrier_name?: string | null | undefined;
 
     /**
      * Optional seller note included with the confirmation (visible for dispute resolution).
      *
-     * @x-autobe-database-schema-property note
-     * @x-autobe-specification Map directly to shopping_mall_shipment_confirmations.note. Accept null to clear. Validate according to schema constraints (nullable) and persist for dispute resolution visibility.
+         * @x-autobe-database-schema-property note
+         * @x-autobe-specification Map directly to
+         *   shopping_mall_shipment_confirmations.note. Accept null to clear.
+         *   Validate according to schema constraints (nullable) and persist for
+         *   dispute resolution visibility.
      */
     note?: string | null | undefined;
   };
@@ -229,56 +295,71 @@ export namespace IShoppingMallShipmentConfirmation {
     /**
      * Identifier of the shipment that the seller is confirming.
      *
-     * @x-autobe-database-schema-property shopping_mall_shipment_id
-     * @x-autobe-specification Direct mapping from request.shoppingMallShipmentId to shopping_mall_shipment_confirmations.shopping_mall_shipment_id. Persist as UUID string.
+         * @x-autobe-database-schema-property shopping_mall_shipment_id
+         * @x-autobe-specification Direct mapping from
+         *   request.shoppingMallShipmentId to
+         *   shopping_mall_shipment_confirmations.shopping_mall_shipment_id.
+         *   Persist as UUID string.
      */
     shoppingMallShipmentId: string & tags.Format<"uuid">;
 
     /**
      * The seller-submitted confirmation type representing the fulfillment transition for the shipment.
      *
-     * @x-autobe-database-schema-property confirmation_type
-     * @x-autobe-specification Direct mapping from request.confirmationType to shopping_mall_shipment_confirmations.confirmation_type. Persist as provided string.
+         * @x-autobe-database-schema-property confirmation_type
+         * @x-autobe-specification Direct mapping from request.confirmationType
+         *   to shopping_mall_shipment_confirmations.confirmation_type. Persist
+         *   as provided string.
      */
     confirmationType: string;
 
     /**
      * Timestamp indicating when the seller confirmation is considered effective for the shipment fulfillment workflow.
      *
-     * @x-autobe-database-schema-property confirmed_at
-     * @x-autobe-specification Direct mapping from request.confirmedAt to shopping_mall_shipment_confirmations.confirmed_at as a date-time value.
+         * @x-autobe-database-schema-property confirmed_at
+         * @x-autobe-specification Direct mapping from request.confirmedAt to
+         *   shopping_mall_shipment_confirmations.confirmed_at as a date-time
+         *   value.
      */
     confirmedAt: string & tags.Format<"date-time">;
 
     /**
      * Optional tracking page URL provided by the seller for customer shipment tracking.
      *
-     * @x-autobe-database-schema-property tracking_url
-     * @x-autobe-specification Map request.trackingUrl to shopping_mall_shipment_confirmations.tracking_url. If omitted or null, persist null.
+         * @x-autobe-database-schema-property tracking_url
+         * @x-autobe-specification Map request.trackingUrl to
+         *   shopping_mall_shipment_confirmations.tracking_url. If omitted or
+         *   null, persist null.
      */
     trackingUrl?: (string & tags.Format<"url">) | null | undefined;
 
     /**
      * Optional carrier tracking number provided by the seller.
      *
-     * @x-autobe-database-schema-property tracking_number
-     * @x-autobe-specification Map request.trackingNumber to shopping_mall_shipment_confirmations.tracking_number. If omitted or null, persist null.
+         * @x-autobe-database-schema-property tracking_number
+         * @x-autobe-specification Map request.trackingNumber to
+         *   shopping_mall_shipment_confirmations.tracking_number. If omitted or
+         *   null, persist null.
      */
     trackingNumber?: string | null | undefined;
 
     /**
      * Optional carrier/service name associated with the shipment tracking.
      *
-     * @x-autobe-database-schema-property carrier_name
-     * @x-autobe-specification Map request.carrierName to shopping_mall_shipment_confirmations.carrier_name. If omitted or null, persist null.
+         * @x-autobe-database-schema-property carrier_name
+         * @x-autobe-specification Map request.carrierName to
+         *   shopping_mall_shipment_confirmations.carrier_name. If omitted or
+         *   null, persist null.
      */
     carrierName?: string | null | undefined;
 
     /**
      * Optional seller note included with the confirmation for dispute resolution.
      *
-     * @x-autobe-database-schema-property note
-     * @x-autobe-specification Map request.note to shopping_mall_shipment_confirmations.note. If omitted or null, persist null.
+         * @x-autobe-database-schema-property note
+         * @x-autobe-specification Map request.note to
+         *   shopping_mall_shipment_confirmations.note. If omitted or null,
+         *   persist null.
      */
     note?: string | null | undefined;
   };

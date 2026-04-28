@@ -29,9 +29,11 @@ export class EcommerceSellerOrdersItemsSnapshotController {
    * @param connection
    * @param orderId UUID of the parent order containing this item (global scope)
    * @param itemId UUID of the order item whose snapshot to retrieve (global scope)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Query the ecommerce_order_item_snapshots table by joining with ecommerce_order_items to validate ownership and authorization.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Query the ecommerce_order_item_snapshots table by
+     *   joining with ecommerce_order_items to validate ownership and
+     *   authorization.
    *
    * **Implementation Steps**
    *

@@ -25,7 +25,8 @@ import { IPageICommunityPlatformPostSnapshot } from "../../../../structures/IPag
  * @param props.body Pagination, ordering, and optional history filter criteria
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Implement a post-scoped snapshot history query over community_platform_post_snapshots joined to community_platform_posts.
+ * @x-autobe-specification Implement a post-scoped snapshot history query over
+ *   community_platform_post_snapshots joined to community_platform_posts.
  *
  * 1. Resolve the parent post by community_platform_posts.id = postId. If no record exists, return a not-found error. Before reading snapshots, verify that the post is viewable according to the post's current lifecycle and business visibility rules. Do not allow snapshot history to bypass direct post unavailability rules.
  *
@@ -142,7 +143,9 @@ export namespace index {
  * @param props.snapshotId Target snapshot identifier within the specified post history
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Implement a read-only service method that loads a single row from `community_platform_post_snapshots` by `id = snapshotId` and `community_platform_post_id = postId`.
+ * @x-autobe-specification Implement a read-only service method that loads a
+ *   single row from `community_platform_post_snapshots` by `id = snapshotId`
+ *   and `community_platform_post_id = postId`.
  *
  * Before returning data, verify that the parent post exists in `community_platform_posts` using `postId`. If the post does not exist, return a not-found error. If the snapshot does not exist for that parent post, return a not-found error as well. Do not return a snapshot whose `community_platform_post_id` differs from the provided `postId`, even if `snapshotId` exists globally.
  *

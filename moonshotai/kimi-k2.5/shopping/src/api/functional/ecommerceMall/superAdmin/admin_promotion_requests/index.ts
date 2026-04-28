@@ -24,7 +24,8 @@ export * as snapshots from "./snapshots/index";
  * @param props.body Search criteria and pagination parameters for filtering promotion requests by status, requester type, and review state
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor superAdmin
- * @x-autobe-specification Query ecommerce_mall_admin_promotion_requests table with pagination and filtering.
+ * @x-autobe-specification Query ecommerce_mall_admin_promotion_requests table
+ *   with pagination and filtering.
  *
  * Apply search filters on:
  * - Status: pending, approved, or rejected
@@ -132,7 +133,9 @@ export namespace index {
  * @param props.requestId Unique identifier (UUID) of the administrator promotion request to retrieve
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor superAdmin
- * @x-autobe-specification Retrieve the admin promotion request from ecommerce_mall_admin_promotion_requests table using the provided UUID requestId.
+ * @x-autobe-specification Retrieve the admin promotion request from
+ *   ecommerce_mall_admin_promotion_requests table using the provided UUID
+ *   requestId.
  *
  * Query must include:
  * 1. Fetch the main request record by primary key
@@ -234,7 +237,9 @@ export namespace at {
  * @param props.body Review decision and optional rejection reason for the promotion request
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor superAdmin
- * @x-autobe-specification Validate that the requesting user is a super administrator. Verify the promotion request exists and has pending status - reject if already approved or rejected.
+ * @x-autobe-specification Validate that the requesting user is a super
+ *   administrator. Verify the promotion request exists and has pending status -
+ *   reject if already approved or rejected.
  *
  * If status is being changed to 'approved':
  * - Validate no rejection_reason is provided (cannot reject and approve simultaneously)
@@ -349,7 +354,9 @@ export namespace update {
  * @param props.requestId UUID identifier of the admin promotion request to delete
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor superAdmin
- * @x-autobe-specification Validate the request exists and is in 'pending' status. Reject with appropriate error if the request is already approved or rejected.
+ * @x-autobe-specification Validate the request exists and is in 'pending'
+ *   status. Reject with appropriate error if the request is already approved or
+ *   rejected.
  *
  * Perform soft delete by setting deleted_at to current timestamp. Do not hard delete the record to preserve data integrity and allow potential audit queries.
  *

@@ -24,8 +24,9 @@ export type IEcommerceMallProductVariant = {
    *
    * A UUID that uniquely identifies this variant across the system. Used as the primary key for all variant-related operations including retrieval, update, and deletion.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_product_variants.id. UUID primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_product_variants.id. UUID primary key.
    */
   id: string & tags.Format<"uuid">;
 
@@ -34,8 +35,10 @@ export type IEcommerceMallProductVariant = {
    *
    * Links this variant to its parent product. Deleting a product automatically cascades to delete all its variants. This field is immutable after variant creation.
    *
-   * @x-autobe-database-schema-property product_id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_product_variants.product_id. Foreign key reference to parent product.
+     * @x-autobe-database-schema-property product_id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_product_variants.product_id. Foreign key reference to
+     *   parent product.
    */
   product_id: string & tags.Format<"uuid">;
 
@@ -44,8 +47,9 @@ export type IEcommerceMallProductVariant = {
    *
    * Must be unique within the parent product. Used for inventory management, order tracking, and supply chain operations. Cannot be duplicated across variants of the same product.
    *
-   * @x-autobe-database-schema-property sku_code
-   * @x-autobe-specification Direct mapping from ecommerce_mall_product_variants.sku_code. Unique within parent product.
+     * @x-autobe-database-schema-property sku_code
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_product_variants.sku_code. Unique within parent product.
    */
   sku_code: string;
 
@@ -54,8 +58,10 @@ export type IEcommerceMallProductVariant = {
    *
    * Stores the specific option combination that defines this variant (colors, sizes, materials, etc.) as a JSON string. Used to display variant options to customers and filter search results. Example: `{"color": "red", "size": "L"}`.
    *
-   * @x-autobe-specification Direct mapping from ecommerce_mall_product_variants.option_values. Stored as JSON string in database, parsed for API display.
-   * @x-autobe-database-schema-property option_values
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_product_variants.option_values. Stored as JSON string in
+     *   database, parsed for API display.
+     * @x-autobe-database-schema-property option_values
    */
   option_values: string;
 
@@ -64,8 +70,10 @@ export type IEcommerceMallProductVariant = {
    *
    * When present, this price overrides the base product price. If null, the variant uses the parent product's base price. Prices are stored as decimal values representing currency amounts.
    *
-   * @x-autobe-database-schema-property price
-   * @x-autobe-specification Direct mapping from ecommerce_mall_product_variants.price. Nullable float that overrides base product price when present.
+     * @x-autobe-database-schema-property price
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_product_variants.price. Nullable float that overrides
+     *   base product price when present.
    */
   price?: number | null | undefined;
 
@@ -74,8 +82,10 @@ export type IEcommerceMallProductVariant = {
    *
    * Represents the number of units available for purchase. Stock is automatically decreased on order placement and restored on cancellations or refunds. Variants with zero stock cannot be added to cart.
    *
-   * @x-autobe-database-schema-property stock_quantity
-   * @x-autobe-specification Direct mapping from ecommerce_mall_product_variants.stock_quantity. Non-negative integer representing available units.
+     * @x-autobe-database-schema-property stock_quantity
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_product_variants.stock_quantity. Non-negative integer
+     *   representing available units.
    */
   stock_quantity: number & tags.Type<"int32"> & tags.Minimum<0>;
 
@@ -84,8 +94,10 @@ export type IEcommerceMallProductVariant = {
    *
    * Immutable creation timestamp used for audit trail and chronological browsing. Always present and set once at variant creation.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_product_variants.created_at. Immutable timestamp set at creation.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_product_variants.created_at. Immutable timestamp set at
+     *   creation.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -94,8 +106,10 @@ export type IEcommerceMallProductVariant = {
    *
    * Automatically updated whenever the variant record is modified. Tracks when the variant was last changed for audit and freshness purposes.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_product_variants.updated_at. Updated on any field modification.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_product_variants.updated_at. Updated on any field
+     *   modification.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -104,8 +118,10 @@ export type IEcommerceMallProductVariant = {
    *
    * When NULL, the variant is active and visible in listings. When populated, the variant is soft-deleted and hidden from customer-facing catalogs but preserved for order history and audit purposes.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_product_variants.deleted_at. NULL = active, non-NULL = soft-deleted.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_product_variants.deleted_at. NULL = active, non-NULL =
+     *   soft-deleted.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 
@@ -114,8 +130,11 @@ export type IEcommerceMallProductVariant = {
    *
    * References the IEcommerceMallProduct.ISummary containing the product's essential information. Each variant belongs to exactly one product, and deleting a product automatically cascades to delete all its variants.
    *
-   * @x-autobe-database-schema-property product
-   * @x-autobe-specification Join from ecommerce_mall_product_variants.product_id to ecommerce_mall_products.id. Returns IEcommerceMallProduct.ISummary with essential product details.
+     * @x-autobe-database-schema-property product
+     * @x-autobe-specification Join from
+     *   ecommerce_mall_product_variants.product_id to
+     *   ecommerce_mall_products.id. Returns IEcommerceMallProduct.ISummary with
+     *   essential product details.
    */
   product: IEcommerceMallProduct.ISummary;
 };
@@ -144,72 +163,92 @@ export namespace IEcommerceMallProductVariant {
     /**
      * Unique identifier for the product variant in UUID format.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_mall_product_variants.id. UUID primary key generated by database.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_product_variants.id. UUID primary key generated by
+         *   database.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Stock Keeping Unit code that uniquely identifies this variant within its parent product.
      *
-     * @x-autobe-database-schema-property sku_code
-     * @x-autobe-specification Direct mapping from ecommerce_mall_product_variants.sku_code. Unique within parent product.
+         * @x-autobe-database-schema-property sku_code
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_product_variants.sku_code. Unique within parent
+         *   product.
      */
     sku_code: string;
 
     /**
      * JSON string containing the specific option combination for this variant (colors, sizes, materials, etc.). Used to display variant options to customers.
      *
-     * @x-autobe-database-schema-property option_values
-     * @x-autobe-specification Direct mapping from ecommerce_mall_product_variants.option_values. JSON string containing option combinations (e.g., {"color": "red", "size": "L"}).
+         * @x-autobe-database-schema-property option_values
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_product_variants.option_values. JSON string
+         *   containing option combinations (e.g., {"color": "red", "size":
+         *   "L"}).
      */
     option_values: string;
 
     /**
      * Variant-specific price override. When null, the variant uses the parent product's base price.
      *
-     * @x-autobe-database-schema-property price
-     * @x-autobe-specification Direct mapping from ecommerce_mall_product_variants.price (Float?). Nullable when variant uses parent product's base price.
+         * @x-autobe-database-schema-property price
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_product_variants.price (Float?). Nullable when
+         *   variant uses parent product's base price.
      */
     price: number | null;
 
     /**
      * Current available inventory units for this variant. Variants with zero stock cannot be added to cart.
      *
-     * @x-autobe-database-schema-property stock_quantity
-     * @x-autobe-specification Direct mapping from ecommerce_mall_product_variants.stock_quantity (Integer >= 0). Current available units.
+         * @x-autobe-database-schema-property stock_quantity
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_product_variants.stock_quantity (Integer >= 0).
+         *   Current available units.
      */
     stock_quantity: number & tags.Type<"int32"> & tags.Minimum<0>;
 
     /**
      * Timestamp when this variant was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_product_variants.created_at (DateTime @db.Timestamptz). Immutable at creation.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_product_variants.created_at (DateTime
+         *   @db.Timestamptz). Immutable at creation.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp of the last modification to this variant.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_product_variants.updated_at (DateTime @db.Timestamptz). Updated on any field change.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_product_variants.updated_at (DateTime
+         *   @db.Timestamptz). Updated on any field change.
      */
     updated_at: string & tags.Format<"date-time">;
 
     /**
      * Soft-delete timestamp. When null, the variant is active. When populated, the variant has been soft-deleted and is excluded from customer-facing listings.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_product_variants.deleted_at (DateTime?). Null when active, populated when soft-deleted.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_product_variants.deleted_at (DateTime?). Null when
+         *   active, populated when soft-deleted.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
 
     /**
      * Reference to the parent product that this variant belongs to. Deleting a product also deletes all its variants.
      *
-     * @x-autobe-database-schema-property product
-     * @x-autobe-specification Join from ecommerce_mall_product_variants.product_id to ecommerce_mall_products.id. Returns IEcommerceMallProduct.ISummary with product details.
+         * @x-autobe-database-schema-property product
+         * @x-autobe-specification Join from
+         *   ecommerce_mall_product_variants.product_id to
+         *   ecommerce_mall_products.id. Returns IEcommerceMallProduct.ISummary
+         *   with product details.
      */
     product: IEcommerceMallProduct.ISummary;
   };
@@ -229,19 +268,19 @@ export namespace IEcommerceMallProductVariant {
    */
   export type ICreate = {
     /**
-     * @x-autobe-database-schema-property sku_code
+         * @x-autobe-database-schema-property sku_code
      */
     sku_code: string & tags.MinLength<1>;
     /**
-     * @x-autobe-database-schema-property option_values
+         * @x-autobe-database-schema-property option_values
      */
     option_values: string;
     /**
-     * @x-autobe-database-schema-property stock_quantity
+         * @x-autobe-database-schema-property stock_quantity
      */
     stock_quantity: number & tags.Type<"int32"> & tags.Minimum<0>;
     /**
-     * @x-autobe-database-schema-property price
+         * @x-autobe-database-schema-property price
      */
     price?: number | null | undefined;
   };
@@ -326,7 +365,8 @@ export namespace IEcommerceMallProductVariant {
      * enforce upper bounds to prevent excessive resource consumption on large
      * requests.
      *
-     * @x-autobe-specification Maximum records per page. Defaults to 100 if not provided.
+         * @x-autobe-specification Maximum records per page. Defaults to 100 if
+         *   not provided.
      */
     limit?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };

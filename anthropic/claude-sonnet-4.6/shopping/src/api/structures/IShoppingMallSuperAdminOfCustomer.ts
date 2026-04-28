@@ -16,40 +16,57 @@ export type IShoppingMallSuperAdminOfCustomer = {
   /**
    * Unique identifier of this customer-origin linkage record. Each record establishes exactly one 1:1 association between a super administrator and their originating customer account.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_super_admin_of_customers.id. UUID primary key uniquely identifying this customer-origin linkage record.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_super_admin_of_customers.id. UUID primary key uniquely
+     *   identifying this customer-origin linkage record.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * The UUID of the super administrator account that was promoted from a customer origin. This corresponds to the superAdminId path parameter used to look up this record.
    *
-   * @x-autobe-database-schema-property super_admin_id
-   * @x-autobe-specification Direct mapping from shopping_mall_super_admin_of_customers.super_admin_id. UUID foreign key referencing shopping_mall_super_admins.id. Has a UNIQUE constraint ensuring at most one customer-origin record per super admin.
+     * @x-autobe-database-schema-property super_admin_id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_super_admin_of_customers.super_admin_id. UUID foreign key
+     *   referencing shopping_mall_super_admins.id. Has a UNIQUE constraint
+     *   ensuring at most one customer-origin record per super admin.
    */
   superAdminId: string & tags.Format<"uuid">;
 
   /**
    * The UUID of the originating customer account from which the super administrator was promoted. Serves as the foreign key linking this provenance record to the customer identity.
    *
-   * @x-autobe-database-schema-property customer_id
-   * @x-autobe-specification Direct mapping from shopping_mall_super_admin_of_customers.customer_id. UUID foreign key referencing shopping_mall_customers.id. Identifies the specific customer account from which the super admin was promoted.
+     * @x-autobe-database-schema-property customer_id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_super_admin_of_customers.customer_id. UUID foreign key
+     *   referencing shopping_mall_customers.id. Identifies the specific
+     *   customer account from which the super admin was promoted.
    */
   customerId: string & tags.Format<"uuid">;
 
   /**
    * A summary of the originating customer account from which this super administrator was promoted. Provides immediate access to the customer's identity details — including email, display nickname, contact phone, and ban status — without requiring a separate customer lookup.
    *
-   * @x-autobe-database-schema-property customer
-   * @x-autobe-specification Resolved via JOIN from shopping_mall_super_admin_of_customers.customer_id to shopping_mall_customers.id. Returns an IShoppingMallCustomer.ISummary containing the originating customer's id, email, nickname, phone, is_banned, created_at, and updated_at fields. This embedded object allows callers to inspect the original customer identity without an additional request.
+     * @x-autobe-database-schema-property customer
+     * @x-autobe-specification Resolved via JOIN from
+     *   shopping_mall_super_admin_of_customers.customer_id to
+     *   shopping_mall_customers.id. Returns an IShoppingMallCustomer.ISummary
+     *   containing the originating customer's id, email, nickname, phone,
+     *   is_banned, created_at, and updated_at fields. This embedded object
+     *   allows callers to inspect the original customer identity without an
+     *   additional request.
    */
   customer: IShoppingMallCustomer.ISummary;
 
   /**
    * The timestamp at which the super administrator promotion from the originating customer account was established. Indicates when this linkage record was created, which corresponds to the moment the promotion took effect.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from shopping_mall_super_admin_of_customers.created_at. ISO 8601 date-time string (Timestamptz) recording when the super admin promotion linkage from this customer account was created.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_super_admin_of_customers.created_at. ISO 8601 date-time
+     *   string (Timestamptz) recording when the super admin promotion linkage
+     *   from this customer account was created.
    */
   createdAt: string & tags.Format<"date-time">;
 };

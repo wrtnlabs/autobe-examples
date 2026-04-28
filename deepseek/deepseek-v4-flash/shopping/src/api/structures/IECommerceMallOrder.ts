@@ -19,8 +19,9 @@ export type IECommerceMallOrder = {
    *
    * Auto-generated UUID assigned at order creation. Used as the primary reference for internal system operations.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from e_commerce_mall_orders.id. UUID primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from e_commerce_mall_orders.id.
+     *   UUID primary key.
    */
   id: string & tags.Format<"uuid">;
 
@@ -29,8 +30,9 @@ export type IECommerceMallOrder = {
    *
    * Serves as the primary customer-facing identifier used in order confirmation emails, shipment notifications, and customer support interactions. Unique across the entire platform and used as the lookup key in order detail endpoints.
    *
-   * @x-autobe-database-schema-property code
-   * @x-autobe-specification Direct mapping from e_commerce_mall_orders.code. Unique across all orders via unique constraint.
+     * @x-autobe-database-schema-property code
+     * @x-autobe-specification Direct mapping from e_commerce_mall_orders.code.
+     *   Unique across all orders via unique constraint.
    */
   code: string;
 
@@ -39,8 +41,11 @@ export type IECommerceMallOrder = {
    *
    * This value is immutable after creation and does not change even if individual items are later cancelled or refunded. It represents the original transaction amount and serves as the authoritative financial record of the purchase.
    *
-   * @x-autobe-database-schema-property total_price
-   * @x-autobe-specification Direct mapping from e_commerce_mall_orders.total_price (DoublePrecision). Calculated at order creation as SUM(orderItem.quantity * orderItem.unit_price) across all items. Immutable after creation.
+     * @x-autobe-database-schema-property total_price
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_orders.total_price (DoublePrecision). Calculated at
+     *   order creation as SUM(orderItem.quantity * orderItem.unit_price) across
+     *   all items. Immutable after creation.
    */
   totalPrice: number;
 
@@ -49,8 +54,11 @@ export type IECommerceMallOrder = {
    *
    * This value is a one-time copy made at order creation and is not linked to the customer's current address records. It remains unchanged even if the customer later modifies or deletes their saved addresses, ensuring historical delivery address accuracy.
    *
-   * @x-autobe-database-schema-property shipping_recipient_name
-   * @x-autobe-specification Direct mapping from e_commerce_mall_orders.shipping_recipient_name. Snapshot-copied from the customer's selected address at checkout — independent of the customer's current address records.
+     * @x-autobe-database-schema-property shipping_recipient_name
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_orders.shipping_recipient_name. Snapshot-copied from
+     *   the customer's selected address at checkout — independent of the
+     *   customer's current address records.
    */
   shippingRecipientName: string;
 
@@ -59,8 +67,10 @@ export type IECommerceMallOrder = {
    *
    * Used by shipping carriers for delivery coordination. This value is a one-time copy made at order creation and does not change if the customer later updates their saved addresses.
    *
-   * @x-autobe-database-schema-property shipping_phone
-   * @x-autobe-specification Direct mapping from e_commerce_mall_orders.shipping_phone. Snapshot-copied from the customer's selected address at checkout.
+     * @x-autobe-database-schema-property shipping_phone
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_orders.shipping_phone. Snapshot-copied from the
+     *   customer's selected address at checkout.
    */
   shippingPhone: string;
 
@@ -69,8 +79,10 @@ export type IECommerceMallOrder = {
    *
    * This value is a one-time copy made at order creation and is preserved for historical accuracy even if the customer later modifies or deletes their saved addresses.
    *
-   * @x-autobe-database-schema-property shipping_street_address
-   * @x-autobe-specification Direct mapping from e_commerce_mall_orders.shipping_street_address. Snapshot-copied from the customer's selected address at checkout.
+     * @x-autobe-database-schema-property shipping_street_address
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_orders.shipping_street_address. Snapshot-copied from
+     *   the customer's selected address at checkout.
    */
   shippingStreetAddress: string;
 
@@ -79,8 +91,10 @@ export type IECommerceMallOrder = {
    *
    * This value is a one-time copy made at order creation and remains unchanged for historical record-keeping.
    *
-   * @x-autobe-database-schema-property shipping_city
-   * @x-autobe-specification Direct mapping from e_commerce_mall_orders.shipping_city. Snapshot-copied from the customer's selected address at checkout.
+     * @x-autobe-database-schema-property shipping_city
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_orders.shipping_city. Snapshot-copied from the
+     *   customer's selected address at checkout.
    */
   shippingCity: string;
 
@@ -89,8 +103,10 @@ export type IECommerceMallOrder = {
    *
    * This value is a one-time copy made at order creation and remains unchanged for historical record-keeping.
    *
-   * @x-autobe-database-schema-property shipping_state_province
-   * @x-autobe-specification Direct mapping from e_commerce_mall_orders.shipping_state_province. Snapshot-copied from the customer's selected address at checkout.
+     * @x-autobe-database-schema-property shipping_state_province
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_orders.shipping_state_province. Snapshot-copied from
+     *   the customer's selected address at checkout.
    */
   shippingStateProvince: string;
 
@@ -99,8 +115,10 @@ export type IECommerceMallOrder = {
    *
    * This value is a one-time copy made at order creation and remains unchanged for historical record-keeping.
    *
-   * @x-autobe-database-schema-property shipping_postal_code
-   * @x-autobe-specification Direct mapping from e_commerce_mall_orders.shipping_postal_code. Snapshot-copied from the customer's selected address at checkout.
+     * @x-autobe-database-schema-property shipping_postal_code
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_orders.shipping_postal_code. Snapshot-copied from the
+     *   customer's selected address at checkout.
    */
   shippingPostalCode: string;
 
@@ -109,8 +127,10 @@ export type IECommerceMallOrder = {
    *
    * This value is a one-time copy made at order creation and remains unchanged for historical record-keeping.
    *
-   * @x-autobe-database-schema-property shipping_country
-   * @x-autobe-specification Direct mapping from e_commerce_mall_orders.shipping_country. Snapshot-copied from the customer's selected address at checkout.
+     * @x-autobe-database-schema-property shipping_country
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_orders.shipping_country. Snapshot-copied from the
+     *   customer's selected address at checkout.
    */
   shippingCountry: string;
 
@@ -119,8 +139,13 @@ export type IECommerceMallOrder = {
    *
    * Each order belongs to exactly one customer. This association is preserved even after the customer deletes their account, ensuring order history remains intact for seller record-keeping and legal purposes. Includes the customer's email, profile information (display name, phone number), account creation date, and current status indicators (ban and soft-deletion status).
    *
-   * @x-autobe-database-schema-property customer
-   * @x-autobe-specification JOIN from e_commerce_mall_orders.e_commerce_mall_customer_id to e_commerce_mall_customers.id. Rendered as IECommerceMallCustomer.ISummary (id, email, profile, timestamps, ban and deletion status). Preserved even after customer account deletion for historical order integrity.
+     * @x-autobe-database-schema-property customer
+     * @x-autobe-specification JOIN from
+     *   e_commerce_mall_orders.e_commerce_mall_customer_id to
+     *   e_commerce_mall_customers.id. Rendered as
+     *   IECommerceMallCustomer.ISummary (id, email, profile, timestamps, ban
+     *   and deletion status). Preserved even after customer account deletion
+     *   for historical order integrity.
    */
   customer: IECommerceMallCustomer.ISummary;
 
@@ -129,7 +154,12 @@ export type IECommerceMallOrder = {
    *
    * Each order item represents a specific product variant purchased with a given quantity. Items are tracked with independent fulfillment statuses (paid, shipped, delivered, cancelled, or refunded) because items from different sellers within the same order may be fulfilled separately. Each item includes historical snapshots preserving the product, variant, and seller profile state as they existed at the moment of purchase, ensuring a permanent audit trail for order histories and dispute resolution.
    *
-   * @x-autobe-specification Composition JOIN from e_commerce_mall_order_items where e_commerce_mall_order_id = e_commerce_mall_orders.id. Rendered as IECommerceMallOrderItem[] (full detail with quantity, unit_price, status, timestamps, product-variant snapshot, seller snapshot, status logs, optional shipment, and optional cancellation/refund/review references).
+     * @x-autobe-specification Composition JOIN from e_commerce_mall_order_items
+     *   where e_commerce_mall_order_id = e_commerce_mall_orders.id. Rendered as
+     *   IECommerceMallOrderItem[] (full detail with quantity, unit_price,
+     *   status, timestamps, product-variant snapshot, seller snapshot, status
+     *   logs, optional shipment, and optional cancellation/refund/review
+     *   references).
    */
   orderItems: IECommerceMallOrderItem[];
 
@@ -138,8 +168,10 @@ export type IECommerceMallOrder = {
    *
    * Used for chronological sorting of order history with newest-first ordering.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from e_commerce_mall_orders.created_at (Timestamptz). Set at order creation upon successful payment.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_orders.created_at (Timestamptz). Set at order creation
+     *   upon successful payment.
    */
   createdAt: string & tags.Format<"date-time">;
 
@@ -148,8 +180,11 @@ export type IECommerceMallOrder = {
    *
    * Updated whenever any constituent order item transitions status (e.g., when items are shipped, delivered, cancelled, or refunded), which may change the derived overall order status.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from e_commerce_mall_orders.updated_at (Timestamptz). Updated when any constituent order item transitions status (e.g., shipped, delivered, cancelled, refunded).
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_orders.updated_at (Timestamptz). Updated when any
+     *   constituent order item transitions status (e.g., shipped, delivered,
+     *   cancelled, refunded).
    */
   updatedAt: string & tags.Format<"date-time">;
 };
@@ -167,7 +202,12 @@ export namespace IECommerceMallOrder {
      *
      * The customer selects one of their previously saved addresses. The address details are snapshot-copied to the order at creation time, ensuring the historical shipping information remains accurate even if the customer later modifies or deletes the address.
      *
-     * @x-autobe-specification References e_commerce_mall_customer_addresses.id. At order creation, the system fetches the address by this ID (verified to belong to the authenticated customer and not soft-deleted), then snapshot-copies recipient_name, phone, street_address, city, state_province, postal_code, and country into the order's shipping_* fields.
+         * @x-autobe-specification References
+         *   e_commerce_mall_customer_addresses.id. At order creation, the
+         *   system fetches the address by this ID (verified to belong to the
+         *   authenticated customer and not soft-deleted), then snapshot-copies
+         *   recipient_name, phone, street_address, city, state_province,
+         *   postal_code, and country into the order's shipping_* fields.
      */
     addressId: string & tags.Format<"uuid">;
   };
@@ -185,7 +225,9 @@ export namespace IECommerceMallOrder {
      *
      * When provided, only orders whose code contains the specified keyword are included in the results. Omit or leave empty to return all orders without text-based filtering.
      *
-     * @x-autobe-specification Optional LIKE pattern match applied to e_commerce_mall_orders.code field. The search keyword is matched case-insensitively against the order code to find matching orders.
+         * @x-autobe-specification Optional LIKE pattern match applied to
+         *   e_commerce_mall_orders.code field. The search keyword is matched
+         *   case-insensitively against the order code to find matching orders.
      */
     search?: string | undefined;
 
@@ -194,7 +236,14 @@ export namespace IECommerceMallOrder {
      *
      * The status is computed from the statuses of all order items within the order. Allowed filter values are: paid, shipped, delivered, cancelled, refunded, or partially_completed. Omit to return orders of all statuses.
      *
-     * @x-autobe-specification Filter by computed derived order status. Join e_commerce_mall_orders with e_commerce_mall_order_items, group by order ID, and aggregate item statuses. The derived status is: 'paid' (all items paid), 'shipped' (at least one shipped, none delivered), 'delivered' (all delivered), 'cancelled' (all cancelled), 'refunded' (all refunded), or 'partially_completed' (mixed terminal states). Return only orders whose derived status matches the filter value.
+         * @x-autobe-specification Filter by computed derived order status. Join
+         *   e_commerce_mall_orders with e_commerce_mall_order_items, group by
+         *   order ID, and aggregate item statuses. The derived status is:
+         *   'paid' (all items paid), 'shipped' (at least one shipped, none
+         *   delivered), 'delivered' (all delivered), 'cancelled' (all
+         *   cancelled), 'refunded' (all refunded), or 'partially_completed'
+         *   (mixed terminal states). Return only orders whose derived status
+         *   matches the filter value.
      */
     status?: string | undefined;
 
@@ -203,7 +252,9 @@ export namespace IECommerceMallOrder {
      *
      * Orders created at or after this timestamp (inclusive) are included in the results. Combine with end_date to define a date range. Must be provided in ISO 8601 date-time format. Omit to apply no lower bound on the creation date filter.
      *
-     * @x-autobe-specification Start of date range filter applied to e_commerce_mall_orders.created_at. Orders with created_at >= this timestamp are included. Must be ISO 8601 format (date-time).
+         * @x-autobe-specification Start of date range filter applied to
+         *   e_commerce_mall_orders.created_at. Orders with created_at >= this
+         *   timestamp are included. Must be ISO 8601 format (date-time).
      */
     start_date?: (string & tags.Format<"date-time">) | undefined;
 
@@ -212,7 +263,9 @@ export namespace IECommerceMallOrder {
      *
      * Orders created at or before this timestamp (inclusive) are included in the results. Combine with start_date to define a date range. Must be provided in ISO 8601 date-time format. Omit to apply no upper bound on the creation date filter.
      *
-     * @x-autobe-specification End of date range filter applied to e_commerce_mall_orders.created_at. Orders with created_at <= this timestamp are included. Must be ISO 8601 format (date-time).
+         * @x-autobe-specification End of date range filter applied to
+         *   e_commerce_mall_orders.created_at. Orders with created_at <= this
+         *   timestamp are included. Must be ISO 8601 format (date-time).
      */
     end_date?: (string & tags.Format<"date-time">) | undefined;
 
@@ -221,7 +274,9 @@ export namespace IECommerceMallOrder {
      *
      * Controls which page of the result set to return. Each page contains up to limit records. Page 1 returns the first set of results. Must be 1 or greater.
      *
-     * @x-autobe-specification 1-indexed page number for offset-based pagination. Offset = (page - 1) * limit. Defaults to 1 when omitted. Must be >= 1.
+         * @x-autobe-specification 1-indexed page number for offset-based
+         *   pagination. Offset = (page - 1) * limit. Defaults to 1 when
+         *   omitted. Must be >= 1.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -230,7 +285,8 @@ export namespace IECommerceMallOrder {
      *
      * Defines the page size for paginated results. The actual number of records returned may be less than this value on the last page or when total matching records are fewer than the limit. Maximum allowed value is 100. Omit to use the system-configured default page size.
      *
-     * @x-autobe-specification Maximum number of records per page. Default is system-configured value. Maximum allowed value is 100.
+         * @x-autobe-specification Maximum number of records per page. Default
+         *   is system-configured value. Maximum allowed value is 100.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -248,8 +304,9 @@ export namespace IECommerceMallOrder {
      *
      * This is a system-generated UUID assigned at order creation time, used as the primary key for internal reference and API operations.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from e_commerce_mall_orders.id. Primary key, UUID format.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_orders.id. Primary key, UUID format.
      */
     id: string & tags.Format<"uuid">;
 
@@ -258,8 +315,10 @@ export namespace IECommerceMallOrder {
      *
      * This identifier is used in order confirmation emails, shipment notifications, and customer support interactions, serving as the primary reference for customers to identify their order.
      *
-     * @x-autobe-database-schema-property code
-     * @x-autobe-specification Direct mapping from e_commerce_mall_orders.code. Unique order number assigned at creation.
+         * @x-autobe-database-schema-property code
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_orders.code. Unique order number assigned at
+         *   creation.
      */
     code: string;
 
@@ -268,8 +327,10 @@ export namespace IECommerceMallOrder {
      *
      * This value is immutable after creation and does not change even if individual items are later cancelled or refunded. It represents the original transaction amount and serves as the authoritative financial record of the purchase.
      *
-     * @x-autobe-database-schema-property total_price
-     * @x-autobe-specification Direct mapping from e_commerce_mall_orders.total_price. Immutable after creation. Float (DoublePrecision).
+         * @x-autobe-database-schema-property total_price
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_orders.total_price. Immutable after creation. Float
+         *   (DoublePrecision).
      */
     total_price: number;
 
@@ -278,7 +339,12 @@ export namespace IECommerceMallOrder {
      *
      * The status is not stored as a separate column but computed dynamically: 'paid' when all items are paid, 'shipped' when at least one item is shipped and none delivered, 'delivered' when all items are delivered, 'cancelled' when all items are cancelled, 'refunded' when all items are refunded, or 'partially_completed' when items are in mixed terminal states.
      *
-     * @x-autobe-specification Computed at query time by aggregating e_commerce_mall_order_items.status values per order. Status computation: 'paid' (all items paid), 'shipped' (at least one shipped, none delivered), 'delivered' (all delivered), 'cancelled' (all cancelled), 'refunded' (all refunded), 'partially_completed' (mixed terminal states).
+         * @x-autobe-specification Computed at query time by aggregating
+         *   e_commerce_mall_order_items.status values per order. Status
+         *   computation: 'paid' (all items paid), 'shipped' (at least one
+         *   shipped, none delivered), 'delivered' (all delivered), 'cancelled'
+         *   (all cancelled), 'refunded' (all refunded), 'partially_completed'
+         *   (mixed terminal states).
      */
     status: string;
 
@@ -287,8 +353,11 @@ export namespace IECommerceMallOrder {
      *
      * Each order belongs to exactly one customer who is the purchaser. This relationship is preserved even after the customer deletes their account — the order record remains for historical and legal purposes per the data preservation policy.
      *
-     * @x-autobe-database-schema-property customer
-     * @x-autobe-specification Join from e_commerce_mall_orders.e_commerce_mall_customer_id to e_commerce_mall_customers.id. Mapped as IECommerceMallCustomer.ISummary.
+         * @x-autobe-database-schema-property customer
+         * @x-autobe-specification Join from
+         *   e_commerce_mall_orders.e_commerce_mall_customer_id to
+         *   e_commerce_mall_customers.id. Mapped as
+         *   IECommerceMallCustomer.ISummary.
      */
     customer: IECommerceMallCustomer.ISummary;
 
@@ -297,8 +366,10 @@ export namespace IECommerceMallOrder {
      *
      * This value is set once at order creation and does not change afterward, providing a definitive record of when the transaction occurred.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from e_commerce_mall_orders.created_at. Timestamp set upon successful payment completion.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_orders.created_at. Timestamp set upon successful
+         *   payment completion.
      */
     created_at: string & tags.Format<"date-time">;
   };
@@ -316,7 +387,15 @@ export namespace IECommerceMallOrder {
      *
      * If omitted or empty, all eligible items in the order are force refunded. If specific item IDs are provided, only those items are force refunded. Items already in `cancelled` or `refunded` status are automatically skipped regardless of being listed.
      *
-     * @x-autobe-specification User-provided array of order item UUIDs for selective force-refund. When provided as a non-empty array, the backend loads only those specific e_commerce_mall_order_items that belong to the target order and processes them. When omitted or empty, all eligible order items belonging to the target order are loaded and processed. Each ID is validated for existence and order membership. Matches from the order's `code` path parameter and validates against e_commerce_mall_order_items where e_commerce_mall_order_id matches the resolved order's ID.
+         * @x-autobe-specification User-provided array of order item UUIDs for
+         *   selective force-refund. When provided as a non-empty array, the
+         *   backend loads only those specific e_commerce_mall_order_items that
+         *   belong to the target order and processes them. When omitted or
+         *   empty, all eligible order items belonging to the target order are
+         *   loaded and processed. Each ID is validated for existence and order
+         *   membership. Matches from the order's `code` path parameter and
+         *   validates against e_commerce_mall_order_items where
+         *   e_commerce_mall_order_id matches the resolved order's ID.
      */
     orderItemIds?: (string & tags.Format<"uuid">)[] | undefined;
   };
@@ -334,7 +413,10 @@ export namespace IECommerceMallOrder {
      *
      * This ID is used internally to reference the specific order item when creating a cancellation request. Customers should include this ID when submitting cancellation requests for the item they wish to cancel.
      *
-     * @x-autobe-specification Direct mapping from e_commerce_mall_order_items.id (UUID). This is the primary key of the order items table. Used as reference when creating cancellation requests.
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_order_items.id (UUID). This is the primary key of
+         *   the order items table. Used as reference when creating cancellation
+         *   requests.
      */
     id: string & tags.Format<"uuid">;
 
@@ -343,7 +425,10 @@ export namespace IECommerceMallOrder {
      *
      * This name is preserved from the order-time snapshot and reflects the product name as it was when the customer placed the order, regardless of any subsequent edits by the seller.
      *
-     * @x-autobe-specification Sources from e_commerce_mall_order_item_snapshots.product_name. Preserved at purchase time from the product's current name. Snapshot is joined via e_commerce_mall_order_item_id.
+         * @x-autobe-specification Sources from
+         *   e_commerce_mall_order_item_snapshots.product_name. Preserved at
+         *   purchase time from the product's current name. Snapshot is joined
+         *   via e_commerce_mall_order_item_id.
      */
     product_name: string;
 
@@ -352,7 +437,10 @@ export namespace IECommerceMallOrder {
      *
      * This SKU is preserved from the order-time snapshot and serves as the inventory tracking identifier for the specific variant configuration purchased.
      *
-     * @x-autobe-specification Sources from e_commerce_mall_order_item_snapshots.variant_sku. Preserved from the variant's SKU at purchase time. Snapshot is joined via e_commerce_mall_order_item_id.
+         * @x-autobe-specification Sources from
+         *   e_commerce_mall_order_item_snapshots.variant_sku. Preserved from
+         *   the variant's SKU at purchase time. Snapshot is joined via
+         *   e_commerce_mall_order_item_id.
      */
     variant_sku: string;
 
@@ -361,7 +449,11 @@ export namespace IECommerceMallOrder {
      *
      * Displays the specific configuration choices made by the customer, such as color, size, or other product attributes, formatted as a single string (e.g., "Color: Red, Size: Large").
      *
-     * @x-autobe-specification Sources from e_commerce_mall_order_item_snapshots.variant_options. Human-readable formatted string of option values (e.g., 'Color: Red, Size: Large') preserved at purchase time. Snapshot is joined via e_commerce_mall_order_item_id.
+         * @x-autobe-specification Sources from
+         *   e_commerce_mall_order_item_snapshots.variant_options.
+         *   Human-readable formatted string of option values (e.g., 'Color:
+         *   Red, Size: Large') preserved at purchase time. Snapshot is joined
+         *   via e_commerce_mall_order_item_id.
      */
     variant_options: string;
 
@@ -370,7 +462,9 @@ export namespace IECommerceMallOrder {
      *
      * Multiple units of the same variant are consolidated into a single order item with a combined quantity, not separate line items.
      *
-     * @x-autobe-specification Direct mapping from e_commerce_mall_order_items.quantity. Integer representing the number of units of this variant purchased.
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_order_items.quantity. Integer representing the
+         *   number of units of this variant purchased.
      */
     quantity: number & tags.Type<"int32"> & tags.Minimum<1>;
 
@@ -379,7 +473,9 @@ export namespace IECommerceMallOrder {
      *
      * This price is a historical record captured at order placement and does not change even if the seller later updates the variant's current price. The subtotal is calculated as quantity multiplied by this unit price.
      *
-     * @x-autobe-specification Direct mapping from e_commerce_mall_order_items.unit_price. Float representing the price per unit, captured at order placement.
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_order_items.unit_price. Float representing the
+         *   price per unit, captured at order placement.
      */
     unit_price: number;
 
@@ -388,7 +484,9 @@ export namespace IECommerceMallOrder {
      *
      * Calculated as the quantity multiplied by the unit price at the time of purchase. This represents the customer's total cost for this specific order item before any order-level adjustments.
      *
-     * @x-autobe-specification Computed at application layer: subtotal = quantity * unit_price. Not stored in the database — derived from two fields on e_commerce_mall_order_items.
+         * @x-autobe-specification Computed at application layer: subtotal =
+         *   quantity * unit_price. Not stored in the database — derived from
+         *   two fields on e_commerce_mall_order_items.
      */
     subtotal: number;
   };
@@ -408,7 +506,13 @@ export namespace IECommerceMallOrder {
      *
      * Empty array when no eligible items were found to refund.
      *
-     * @x-autobe-specification Order items whose status was successfully changed to 'refunded' during the force-refund operation. Collected by iterating over the target order items, changing status to 'refunded', and appending to this array. Each item is rendered as IECommerceMallOrderItem.ISummary via re-query from e_commerce_mall_order_items after the transaction completes. Never null — empty array when no items were refunded.
+         * @x-autobe-specification Order items whose status was successfully
+         *   changed to 'refunded' during the force-refund operation. Collected
+         *   by iterating over the target order items, changing status to
+         *   'refunded', and appending to this array. Each item is rendered as
+         *   IECommerceMallOrderItem.ISummary via re-query from
+         *   e_commerce_mall_order_items after the transaction completes. Never
+         *   null — empty array when no items were refunded.
      */
     refundedItems: IECommerceMallOrderItem.ISummary[];
 
@@ -419,7 +523,15 @@ export namespace IECommerceMallOrder {
      *
      * Empty array when no items were skipped.
      *
-     * @x-autobe-specification Order items that were skipped during the force-refund operation and the reasons they could not be refunded. Collected by iterating over target order items and appending items that are already in 'cancelled' or 'refunded' terminal state (skip reason: 'already in terminal state'), or items from the request's orderItemIds that don't belong to the specified order (skip reason: 'item does not belong to this order'). Each entry includes the IECommerceMallOrderItem.ISummary and a reason string. Never null — empty array when no items were skipped.
+         * @x-autobe-specification Order items that were skipped during the
+         *   force-refund operation and the reasons they could not be refunded.
+         *   Collected by iterating over target order items and appending items
+         *   that are already in 'cancelled' or 'refunded' terminal state (skip
+         *   reason: 'already in terminal state'), or items from the request's
+         *   orderItemIds that don't belong to the specified order (skip reason:
+         *   'item does not belong to this order'). Each entry includes the
+         *   IECommerceMallOrderItem.ISummary and a reason string. Never null —
+         *   empty array when no items were skipped.
      */
     skippedItems: IECommerceMallOrder.IForceRefundSkippedItem[];
   };
@@ -441,7 +553,20 @@ export namespace IECommerceMallOrder {
      *
      * When the order item with the specified ID does not belong to the target order, the skip reason takes precedence and the item summary is not populated.
      *
-     * @x-autobe-specification Fetched from e_commerce_mall_order_items via the orderItemId provided in the force-refund request body. Rendered as IECommerceMallOrderItem.ISummary which includes: flattened snapshot data (product_name, variant_sku, variant_options via 1:1 JOIN on order_item_snapshots table; shop_name via 1:1 JOIN on order_item_seller_snapshots table), direct columns (id, quantity, unit_price, status, created_at), computed subtotal (quantity * unit_price at application layer), and BELONGS-TO relations (order via e_commerce_mall_order_id as IECommerceMallOrder.ISummary, productVariant via e_commerce_mall_product_variant_id as IECommerceMallProductVariant.ISummary). If the orderItemId from the request body does not correspond to any order item belonging to the target order (identified by the orderCode path parameter), the skip reason takes precedence and the item summary is not computed.
+         * @x-autobe-specification Fetched from e_commerce_mall_order_items via
+         *   the orderItemId provided in the force-refund request body. Rendered
+         *   as IECommerceMallOrderItem.ISummary which includes: flattened
+         *   snapshot data (product_name, variant_sku, variant_options via 1:1
+         *   JOIN on order_item_snapshots table; shop_name via 1:1 JOIN on
+         *   order_item_seller_snapshots table), direct columns (id, quantity,
+         *   unit_price, status, created_at), computed subtotal (quantity *
+         *   unit_price at application layer), and BELONGS-TO relations (order
+         *   via e_commerce_mall_order_id as IECommerceMallOrder.ISummary,
+         *   productVariant via e_commerce_mall_product_variant_id as
+         *   IECommerceMallProductVariant.ISummary). If the orderItemId from the
+         *   request body does not correspond to any order item belonging to the
+         *   target order (identified by the orderCode path parameter), the skip
+         *   reason takes precedence and the item summary is not computed.
      */
     item: IECommerceMallOrderItem.ISummary;
 
@@ -454,10 +579,17 @@ export namespace IECommerceMallOrder {
      *
      * Only items that could not be refunded appear in this skipped items list — items that were successfully force-refunded are not included here.
      *
-     * @x-autobe-specification Determined by the force-refund operation logic at runtime. Evaluated in priority order:
-     * 1. First, check if the requested orderItemId (from the force-refund request body's `orderItemIds` array) belongs to the target order (identified by orderCode path parameter). If not, reason = 'item does not belong to this order'.
-     * 2. If it does belong to the order, check if e_commerce_mall_order_items.status is 'cancelled' or 'refunded' (terminal states that cannot be further transitioned). If yes, reason = 'already in terminal state'.
-     * Only items that could not be refunded appear in this skipped items list — items that were successfully force-refunded are not included here.
+         * @x-autobe-specification Determined by the force-refund operation
+         *   logic at runtime. Evaluated in priority order: 1. First, check if
+         *   the requested orderItemId (from the force-refund request body's
+         *   `orderItemIds` array) belongs to the target order (identified by
+         *   orderCode path parameter). If not, reason = 'item does not belong
+         *   to this order'. 2. If it does belong to the order, check if
+         *   e_commerce_mall_order_items.status is 'cancelled' or 'refunded'
+         *   (terminal states that cannot be further transitioned). If yes,
+         *   reason = 'already in terminal state'. Only items that could not be
+         *   refunded appear in this skipped items list — items that were
+         *   successfully force-refunded are not included here.
      */
     reason: string;
   };

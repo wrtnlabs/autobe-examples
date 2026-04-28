@@ -27,14 +27,21 @@ import { IPageICommunityPlatformMember } from "../../../../structures/IPageIComm
  * @param props.body Search, filter, and pagination criteria for the member list.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification 1) Parse search/pagination/sort criteria from requestBody (ICommunityPlatformMember.IRequest).
- * 2) Build base query from community_platform_members.
- * 3) Apply availability constraint: community_platform_members.deleted_at IS NULL.
- * 4) Left join community_platform_user_profiles on community_platform_user_profiles.community_platform_member_id = community_platform_members.id.
- * 5) If request ordering references profile fields, ensure deterministic ordering by falling back to community_platform_members.created_at when profile is null.
- * 6) Project into ICommunityPlatformMember.ISummary (only public persona fields from the profile, plus any summary-safe member fields included by that DTO contract).
- * 7) Apply pagination (limit/offset or cursor semantics as defined by ICommunityPlatformMember.IRequest) and compute total/hasNext according to IPageICommunityPlatformMember.ISummary contract.
- * 8) Return 200 with a paginated summary result.
+ * @x-autobe-specification 1) Parse search/pagination/sort criteria from
+ *   requestBody (ICommunityPlatformMember.IRequest). 2) Build base query from
+ *   community_platform_members. 3) Apply availability constraint:
+ *   community_platform_members.deleted_at IS NULL. 4) Left join
+ *   community_platform_user_profiles on
+ *   community_platform_user_profiles.community_platform_member_id =
+ *   community_platform_members.id. 5) If request ordering references profile
+ *   fields, ensure deterministic ordering by falling back to
+ *   community_platform_members.created_at when profile is null. 6) Project into
+ *   ICommunityPlatformMember.ISummary (only public persona fields from the
+ *   profile, plus any summary-safe member fields included by that DTO
+ *   contract). 7) Apply pagination (limit/offset or cursor semantics as defined
+ *   by ICommunityPlatformMember.IRequest) and compute total/hasNext according
+ *   to IPageICommunityPlatformMember.ISummary contract. 8) Return 200 with a
+ *   paginated summary result.
  *
  * Edge cases:
  * - Missing profile row: still include the member; persona fields become null/omitted per DTO.

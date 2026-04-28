@@ -22,8 +22,9 @@ export type ITodoAppMember = {
    *
    * This is the primary key generated when the account is created. It follows UUID format and is used to reference this member in all related operations and foreign key relationships.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from todo_app_members.id. Primary key, UUID format, non-null.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from todo_app_members.id. Primary
+     *   key, UUID format, non-null.
    */
   id: string & tags.Format<"uuid">;
 
@@ -32,8 +33,9 @@ export type ITodoAppMember = {
    *
    * This is the unique email address associated with the account. It serves as the primary credential for login and must be unique across all member accounts. The email is validated during registration and cannot be changed through the profile update endpoint.
    *
-   * @x-autobe-database-schema-property email
-   * @x-autobe-specification Direct mapping from todo_app_members.email. Unique constraint enforced at database level. Used for authentication.
+     * @x-autobe-database-schema-property email
+     * @x-autobe-specification Direct mapping from todo_app_members.email.
+     *   Unique constraint enforced at database level. Used for authentication.
    */
   email: string & tags.Format<"email">;
 
@@ -42,8 +44,10 @@ export type ITodoAppMember = {
    *
    * This is the user's chosen name that appears throughout the application. Members can update their display name independently through the profile management endpoints. The display name must be between 1 and 100 characters and cannot be empty.
    *
-   * @x-autobe-database-schema-property display_name
-   * @x-autobe-specification Direct mapping from todo_app_members.display_name. User-provided, 1-100 characters, non-empty.
+     * @x-autobe-database-schema-property display_name
+     * @x-autobe-specification Direct mapping from
+     *   todo_app_members.display_name. User-provided, 1-100 characters,
+     *   non-empty.
    */
   display_name: string;
 
@@ -52,8 +56,9 @@ export type ITodoAppMember = {
    *
    * This field records the initial account creation time in UTC. It is automatically set by the system when the account is first created and is used for audit and compliance purposes.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from todo_app_members.created_at. System-generated timestamp, date-time format.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from todo_app_members.created_at.
+     *   System-generated timestamp, date-time format.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -62,8 +67,9 @@ export type ITodoAppMember = {
    *
    * This field is automatically updated whenever any account field changes (email, display_name). It is used for conflict detection, audit trails, and determining the most recent account state.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from todo_app_members.updated_at. System-generated timestamp, updated on any field change.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from todo_app_members.updated_at.
+     *   System-generated timestamp, updated on any field change.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -72,8 +78,9 @@ export type ITodoAppMember = {
    *
    * This field is null for active accounts. When set, it indicates the account has been logically deleted but retained for recovery purposes. All associated data (todos, sessions, password resets, email verifications) cascades to permanent deletion when this is set.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from todo_app_members.deleted_at. Nullable timestamp, null for active accounts, set on soft delete.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from todo_app_members.deleted_at.
+     *   Nullable timestamp, null for active accounts, set on soft delete.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -104,8 +111,10 @@ export namespace ITodoAppMember {
      * - Length constraint: minimum 1 character, maximum 100 characters
      * - Cannot be empty or whitespace-only
      *
-     * @x-autobe-database-schema-property display_name
-     * @x-autobe-specification Direct mapping from todo_app_members.display_name. Validated: 1-100 characters, non-empty string required.
+         * @x-autobe-database-schema-property display_name
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_members.display_name. Validated: 1-100 characters,
+         *   non-empty string required.
      */
     displayName: string & tags.MinLength<1> & tags.MaxLength<100>;
   };
@@ -141,8 +150,10 @@ export namespace ITodoAppMember {
      *
      * The email format is validated against RFC 5322 standards. Invalid email formats will result in a 400 Bad Request error.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from todo_app_members.email. Unique constraint enforced at database level. Validated for email format and uniqueness during registration.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from todo_app_members.email.
+         *   Unique constraint enforced at database level. Validated for email
+         *   format and uniqueness during registration.
      */
     email: string & tags.Format<"email">;
 
@@ -159,8 +170,10 @@ export namespace ITodoAppMember {
      *
      * The server transforms this plain text password into a secure hash (stored as password_hash in the database) using a one-way cryptographic function with salt. This ensures that even if the database is compromised, the actual passwords cannot be recovered.
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification Maps to todo_app_members.password_hash. Password is provided in plain text and hashed server-side using bcrypt or Argon2 before storage. Never store plaintext passwords.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification Maps to todo_app_members.password_hash.
+         *   Password is provided in plain text and hashed server-side using
+         *   bcrypt or Argon2 before storage. Never store plaintext passwords.
      */
     password: string & tags.Format<"password">;
 
@@ -177,8 +190,10 @@ export namespace ITodoAppMember {
      *
      * The display name can be updated independently of authentication credentials through the profile management endpoint.
      *
-     * @x-autobe-database-schema-property display_name
-     * @x-autobe-specification Direct mapping from todo_app_members.display_name. Optional field; defaults to email prefix if not provided.
+         * @x-autobe-database-schema-property display_name
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_members.display_name. Optional field; defaults to email
+         *   prefix if not provided.
      */
     display_name?: string | undefined;
 
@@ -195,7 +210,9 @@ export namespace ITodoAppMember {
      *
      * This field is required for all registration requests to ensure complete security context tracking.
      *
-     * @x-autobe-specification Session context field computed from request headers. Not stored in todo_app_members table. Captures the current page URI where registration was initiated for security tracking.
+         * @x-autobe-specification Session context field computed from request
+         *   headers. Not stored in todo_app_members table. Captures the current
+         *   page URI where registration was initiated for security tracking.
      */
     href: string & tags.Format<"uri">;
 
@@ -212,7 +229,9 @@ export namespace ITodoAppMember {
      *
      * This field is required for all registration requests to ensure complete security context tracking.
      *
-     * @x-autobe-specification Session context field computed from request headers. Not stored in todo_app_members table. Captures the referrer URI for tracking the registration flow origin.
+         * @x-autobe-specification Session context field computed from request
+         *   headers. Not stored in todo_app_members table. Captures the
+         *   referrer URI for tracking the registration flow origin.
      */
     referrer: string & tags.Format<"uri">;
 
@@ -233,7 +252,10 @@ export namespace ITodoAppMember {
      *
      * IP addresses are stored for security purposes and may be used to detect suspicious registration patterns or unauthorized access attempts.
      *
-     * @x-autobe-specification Session context field computed from request headers or server-side capture. Not stored in todo_app_members table. Captures the client IP address in IPv4 format for security tracking. Optional for SSR scenarios.
+         * @x-autobe-specification Session context field computed from request
+         *   headers or server-side capture. Not stored in todo_app_members
+         *   table. Captures the client IP address in IPv4 format for security
+         *   tracking. Optional for SSR scenarios.
      */
     ip?: (string & tags.Format<"ipv4">) | undefined;
   };
@@ -261,8 +283,10 @@ export namespace ITodoAppMember {
      *
      * Must be a valid email address format. The email is case-insensitive for authentication purposes.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from todo_app_members.email. Unique constraint enforced at database level. Used as primary identifier for authentication lookup.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from todo_app_members.email.
+         *   Unique constraint enforced at database level. Used as primary
+         *   identifier for authentication lookup.
      */
     email: string & tags.Format<"email">;
 
@@ -277,8 +301,11 @@ export namespace ITodoAppMember {
      * - Password is never logged or stored in plaintext
      * - Failed authentication attempts are rate-limited to prevent brute-force attacks
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification Plaintext password provided by user. Validated against todo_app_members.password_hash using bcrypt or Argon2 comparison. The password is never stored in plaintext; only the hashed value is persisted.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification Plaintext password provided by user.
+         *   Validated against todo_app_members.password_hash using bcrypt or
+         *   Argon2 comparison. The password is never stored in plaintext; only
+         *   the hashed value is persisted.
      */
     password: string & tags.MinLength<1>;
 
@@ -291,7 +318,10 @@ export namespace ITodoAppMember {
      *
      * This field is optional to support server-side rendering (SSR) scenarios where the client may not have access to the full href. If not provided by the client, the server may capture it from the request context.
      *
-     * @x-autobe-specification Session context field stored in todo_app_member_sessions.href. Captures the URI of the page where login was initiated. Used for security auditing and session tracking. Optional to support SSR scenarios.
+         * @x-autobe-specification Session context field stored in
+         *   todo_app_member_sessions.href. Captures the URI of the page where
+         *   login was initiated. Used for security auditing and session
+         *   tracking. Optional to support SSR scenarios.
      */
     href?: (string & tags.Format<"uri">) | undefined;
 
@@ -304,7 +334,10 @@ export namespace ITodoAppMember {
      *
      * This field is optional to support SSR scenarios where the referrer may not be available. If not provided, the server may attempt to capture it from HTTP request headers.
      *
-     * @x-autobe-specification Session context field stored in todo_app_member_sessions.referrer. Captures the referrer URI from the client request. Used for security auditing and fraud detection. Optional to support SSR scenarios.
+         * @x-autobe-specification Session context field stored in
+         *   todo_app_member_sessions.referrer. Captures the referrer URI from
+         *   the client request. Used for security auditing and fraud detection.
+         *   Optional to support SSR scenarios.
      */
     referrer?: (string & tags.Format<"uri">) | undefined;
 
@@ -321,7 +354,11 @@ export namespace ITodoAppMember {
      *
      * Must be a valid IPv4 address format (e.g., 192.168.1.1).
      *
-     * @x-autobe-specification Session context field stored in todo_app_member_sessions.ip. Captures the client's IPv4 address. Used for security auditing, fraud detection, and session tracking. Optional to support SSR scenarios where IP may not be available from client.
+         * @x-autobe-specification Session context field stored in
+         *   todo_app_member_sessions.ip. Captures the client's IPv4 address.
+         *   Used for security auditing, fraud detection, and session tracking.
+         *   Optional to support SSR scenarios where IP may not be available
+         *   from client.
      */
     ip?: (string & tags.Format<"ipv4">) | undefined;
   };
@@ -353,7 +390,12 @@ export namespace ITodoAppMember {
      *
      * Refresh tokens should be stored securely by the client and transmitted only to the token refresh endpoint. Token rotation is implemented to invalidate the old token and issue a new one with each refresh.
      *
-     * @x-autobe-specification Validates against todo_app_member_sessions.refresh_token column. Server checks the token exists in the sessions table, has not been used, and the session's expired_at timestamp is in the future. Returns 400 if missing, 401 if invalid/expired/used. Implements token rotation by invalidating old token and issuing new one.
+         * @x-autobe-specification Validates against
+         *   todo_app_member_sessions.refresh_token column. Server checks the
+         *   token exists in the sessions table, has not been used, and the
+         *   session's expired_at timestamp is in the future. Returns 400 if
+         *   missing, 401 if invalid/expired/used. Implements token rotation by
+         *   invalidating old token and issuing new one.
      */
     refresh_token: string;
   };
@@ -377,8 +419,9 @@ export namespace ITodoAppMember {
      *
      * This is the primary key that uniquely identifies the member account in the system. It is a UUID generated when the account is created and never changes throughout the member's lifecycle. Used as the reference key for all member-related operations including todo management, session tracking, and profile updates.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from todo_app_members.id. UUID format, primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from todo_app_members.id. UUID
+         *   format, primary key.
      */
     id: string & tags.Format<"uuid">;
 
@@ -387,8 +430,9 @@ export namespace ITodoAppMember {
      *
      * This is the unique email address associated with the member account. It serves as the primary identifier for login authentication and must be unique across all accounts in the system. The email is validated for proper format during registration and cannot be changed without verification through the email verification workflow.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from todo_app_members.email. Unique constraint enforced at database level.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from todo_app_members.email.
+         *   Unique constraint enforced at database level.
      */
     email: string & tags.Format<"email">;
 
@@ -397,8 +441,9 @@ export namespace ITodoAppMember {
      *
      * This is the user-chosen name that appears in the user interface when the member's content is displayed to others. Members can update their display name independently through the profile management endpoint. If not provided during registration, it defaults to the email address prefix.
      *
-     * @x-autobe-database-schema-property display_name
-     * @x-autobe-specification Direct mapping from todo_app_members.display_name. Public profile name.
+         * @x-autobe-database-schema-property display_name
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_members.display_name. Public profile name.
      */
     display_name: string;
 
@@ -407,8 +452,9 @@ export namespace ITodoAppMember {
      *
      * Records the exact date and time when the member account was initially registered in the system. This timestamp is automatically set by the database when the account is created and never changes. Used for audit purposes, account age calculations, and compliance tracking.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from todo_app_members.created_at. ISO 8601 datetime with timezone.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_members.created_at. ISO 8601 datetime with timezone.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -417,8 +463,9 @@ export namespace ITodoAppMember {
      *
      * Records the most recent time any member account field was updated (email, password, display name, etc.). This timestamp is automatically updated by the database whenever the account record is modified. Used for conflict detection, audit trails, and synchronization purposes.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from todo_app_members.updated_at. ISO 8601 datetime with timezone.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_members.updated_at. ISO 8601 datetime with timezone.
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -427,15 +474,18 @@ export namespace ITodoAppMember {
      *
      * When this field contains a timestamp, the member account has been logically deleted but retained in the system for potential recovery. A null value indicates the account is active. Soft deletion allows members to recover their accounts within a retention period before permanent deletion. All associated data (todos, sessions, verifications) cascades to permanent deletion when the account is soft-deleted.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from todo_app_members.deleted_at. Nullable ISO 8601 datetime with timezone. Null means active account.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_members.deleted_at. Nullable ISO 8601 datetime with
+         *   timezone. Null means active account.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
 
     /**
      * Authorization token.
      *
-     * @x-autobe-specification Authorization token comes from the session table.
+         * @x-autobe-specification Authorization token comes from the session
+         *   table.
      */
     token: IAuthorizationToken;
   };
@@ -461,8 +511,9 @@ export namespace ITodoAppMember {
      *
      * This UUID uniquely identifies the member account in the system. It is generated by the server at account creation time and used to reference this member in API operations and relation references.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from todo_app_members.id. UUID primary key generated by the server at account creation.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from todo_app_members.id. UUID
+         *   primary key generated by the server at account creation.
      */
     id: string & tags.Format<"uuid">;
 
@@ -471,8 +522,10 @@ export namespace ITodoAppMember {
      *
      * This is the name associated with the member's account that is shown in the application interface. Members can update their display name independently through profile management operations.
      *
-     * @x-autobe-database-schema-property display_name
-     * @x-autobe-specification Direct mapping from todo_app_members.display_name. User's chosen public name shown in the application.
+         * @x-autobe-database-schema-property display_name
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_members.display_name. User's chosen public name shown in
+         *   the application.
      */
     display_name: string;
 
@@ -483,8 +536,10 @@ export namespace ITodoAppMember {
      *
      * **Format**: ISO 8601 date-time string with timezone
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from todo_app_members.created_at. Timestamp set by the server at registration time, automatically managed and cannot be modified.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_members.created_at. Timestamp set by the server at
+         *   registration time, automatically managed and cannot be modified.
      */
     created_at: string & tags.Format<"date-time">;
   };

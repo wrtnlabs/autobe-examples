@@ -20,9 +20,10 @@ export class ShoppingmallSellersController {
    *
    * @param connection
    * @param body Search criteria including email filter, approval status, suspension status, ban status, shop name search, pagination parameters (limit, cursor), and sorting options (field, direction).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query shopping_mall_sellers table with optional joins to shopping_mall_seller_profiles for shop information.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query shopping_mall_sellers table with optional
+     *   joins to shopping_mall_seller_profiles for shop information.
    *
    * Apply search filters:
    * - Email partial match (case-insensitive)
@@ -66,9 +67,11 @@ export class ShoppingmallSellersController {
    *
    * @param connection
    * @param sellerId Unique identifier of the seller account (UUID format, global scope).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query shopping_mall_sellers table by id (UUID) with LEFT JOIN to shopping_mall_seller_profiles on shopping_mall_seller_id.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query shopping_mall_sellers table by id (UUID)
+     *   with LEFT JOIN to shopping_mall_seller_profiles on
+     *   shopping_mall_seller_id.
    *
    * Validation:
    * - Verify sellerId is a valid UUID format

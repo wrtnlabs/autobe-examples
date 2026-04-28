@@ -26,7 +26,8 @@ export * as snapshots from "./snapshots/index";
  * @param props.body Search criteria and pagination parameters for refund requests
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Query ecommerce_mall_refund_requests table with join to ecommerce_mall_order_items for order context.
+ * @x-autobe-specification Query ecommerce_mall_refund_requests table with join
+ *   to ecommerce_mall_order_items for order context.
  *
  * **Authentication & Authorization:**
  * - Customer: Filter by customer's order items via order_items → orders relationship
@@ -146,7 +147,8 @@ export namespace index {
  * @param props.refundRequestId Unique identifier of the refund request (global scope, UUID format)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Query the ecommerce_mall_refund_requests table by primary key (id).
+ * @x-autobe-specification Query the ecommerce_mall_refund_requests table by
+ *   primary key (id).
  *
  * Use parameterized query to fetch the refund request record matching the provided refundRequestId.
  *
@@ -255,7 +257,8 @@ export namespace at {
  * @param props.body Seller's response to the refund request including the decision and optional reason
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Validate that the refund request exists and belongs to the authenticated seller.
+ * @x-autobe-specification Validate that the refund request exists and belongs
+ *   to the authenticated seller.
  *
  * Check that the refund request status is "pending" - only pending requests can be responded to. If already approved or rejected, return an error indicating the request has already been processed.
  *

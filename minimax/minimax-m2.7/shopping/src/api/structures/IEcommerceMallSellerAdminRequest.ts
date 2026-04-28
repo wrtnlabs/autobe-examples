@@ -17,8 +17,9 @@ export type IEcommerceMallSellerAdminRequest = {
    *
    * Auto-generated UUID that uniquely identifies this administrative privilege request on the platform.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_seller_admin_requests.id. UUID primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_seller_admin_requests.id. UUID primary key.
    */
   id: string & tags.Format<"uuid">;
 
@@ -27,8 +28,9 @@ export type IEcommerceMallSellerAdminRequest = {
    *
    * This field contains the seller's detailed justification for requesting elevated administrative access on the platform.
    *
-   * @x-autobe-database-schema-property reason
-   * @x-autobe-specification Direct mapping from ecommerce_mall_seller_admin_requests.reason. Text field.
+     * @x-autobe-database-schema-property reason
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_seller_admin_requests.reason. Text field.
    */
   reason: string;
 
@@ -37,8 +39,10 @@ export type IEcommerceMallSellerAdminRequest = {
    *
    * Indicates where the request is in its lifecycle. Values: pending (awaiting super administrator review), approved (seller granted admin privileges), rejected (request denied with reason).
    *
-   * @x-autobe-database-schema-property status
-   * @x-autobe-specification Direct mapping from ecommerce_mall_seller_admin_requests.status. Enum values: 'pending', 'approved', 'rejected'.
+     * @x-autobe-database-schema-property status
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_seller_admin_requests.status. Enum values: 'pending',
+     *   'approved', 'rejected'.
    */
   status: string;
 
@@ -47,8 +51,10 @@ export type IEcommerceMallSellerAdminRequest = {
    *
    * This field is null unless the request was rejected. When populated, it contains the super administrator's explanation for denying the admin privilege request.
    *
-   * @x-autobe-database-schema-property rejection_reason
-   * @x-autobe-specification Direct mapping from ecommerce_mall_seller_admin_requests.rejection_reason. Nullable - only populated when status is 'rejected'.
+     * @x-autobe-database-schema-property rejection_reason
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_seller_admin_requests.rejection_reason. Nullable - only
+     *   populated when status is 'rejected'.
    */
   rejection_reason?: string | null | undefined;
 
@@ -57,8 +63,10 @@ export type IEcommerceMallSellerAdminRequest = {
    *
    * Contains essential seller information including email, approval status, and shop details for the super administrator to review the request context.
    *
-   * @x-autobe-database-schema-property seller
-   * @x-autobe-specification Belongs-to relation: join ecommerce_mall_seller_admin_requests.ecommerce_mall_seller_id to ecommerce_mall_sellers.id. Returns IEcommerceMallSeller.ISummary.
+     * @x-autobe-database-schema-property seller
+     * @x-autobe-specification Belongs-to relation: join
+     *   ecommerce_mall_seller_admin_requests.ecommerce_mall_seller_id to
+     *   ecommerce_mall_sellers.id. Returns IEcommerceMallSeller.ISummary.
    */
   seller: IEcommerceMallSeller.ISummary;
 
@@ -67,8 +75,11 @@ export type IEcommerceMallSellerAdminRequest = {
    *
    * This field is null until a super administrator reviews the request. When populated, it contains the reviewing super administrator's summary information.
    *
-   * @x-autobe-database-schema-property reviewedBySuperAdmin
-   * @x-autobe-specification Belongs-to relation: join ecommerce_mall_seller_admin_requests.reviewed_by_super_admin_id to ecommerce_mall_super_admins.id. Nullable. Returns IEcommerceMallSuperAdmin.ISummary.
+     * @x-autobe-database-schema-property reviewedBySuperAdmin
+     * @x-autobe-specification Belongs-to relation: join
+     *   ecommerce_mall_seller_admin_requests.reviewed_by_super_admin_id to
+     *   ecommerce_mall_super_admins.id. Nullable. Returns
+     *   IEcommerceMallSuperAdmin.ISummary.
    */
   reviewedBySuperAdmin?: IEcommerceMallSuperAdmin.ISummary | null | undefined;
 
@@ -77,8 +88,9 @@ export type IEcommerceMallSellerAdminRequest = {
    *
    * Records the exact date and time when the seller submitted the administrative privilege request.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_seller_admin_requests.created_at. Timestamp.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_seller_admin_requests.created_at. Timestamp.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -87,8 +99,9 @@ export type IEcommerceMallSellerAdminRequest = {
    *
    * Records the last date and time the admin request was updated, including status changes and review actions.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_seller_admin_requests.updated_at. Timestamp.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_seller_admin_requests.updated_at. Timestamp.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -97,8 +110,10 @@ export type IEcommerceMallSellerAdminRequest = {
    *
    * Null if the request is active. Populated with the deletion timestamp if the request was soft-deleted for audit trail preservation.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_seller_admin_requests.deleted_at. Nullable timestamp for soft deletion.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_seller_admin_requests.deleted_at. Nullable timestamp for
+     *   soft deletion.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -120,8 +135,11 @@ export namespace IEcommerceMallSellerAdminRequest {
      * **Content Guidelines**
      * The reason should be substantive and specific, explaining why the seller believes they are suitable for administrative responsibilities on the platform.
      *
-     * @x-autobe-database-schema-property reason
-     * @x-autobe-specification Direct mapping to ecommerce_mall_seller_admin_requests.reason column. The reason text is stored as-is and reviewed by super administrators during the approval workflow.
+         * @x-autobe-database-schema-property reason
+         * @x-autobe-specification Direct mapping to
+         *   ecommerce_mall_seller_admin_requests.reason column. The reason text
+         *   is stored as-is and reviewed by super administrators during the
+         *   approval workflow.
      */
     reason: string;
   };
@@ -142,7 +160,9 @@ export namespace IEcommerceMallSellerAdminRequest {
      *
      * Date range filter for narrowing results to requests submitted after a specific timestamp. Used in combination with createdAtTo for date range queries. Format must be ISO 8601 date-time.
      *
-     * @x-autobe-specification Query parameter for created_at >= comparison. Transforms ISO 8601 string to DateTime for SQL query. When combined with createdAtTo, creates date range filter.
+         * @x-autobe-specification Query parameter for created_at >= comparison.
+         *   Transforms ISO 8601 string to DateTime for SQL query. When combined
+         *   with createdAtTo, creates date range filter.
      */
     createdAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
@@ -151,7 +171,9 @@ export namespace IEcommerceMallSellerAdminRequest {
      *
      * Date range filter for narrowing results to requests submitted before a specific timestamp. Used in combination with createdAtFrom for date range queries. Format must be ISO 8601 date-time.
      *
-     * @x-autobe-specification Query parameter for created_at <= comparison. Transforms ISO 8601 string to DateTime for SQL query. When combined with createdAtFrom, creates date range filter.
+         * @x-autobe-specification Query parameter for created_at <= comparison.
+         *   Transforms ISO 8601 string to DateTime for SQL query. When combined
+         *   with createdAtFrom, creates date range filter.
      */
     createdAtTo?: (string & tags.Format<"date-time">) | undefined;
 
@@ -160,7 +182,9 @@ export namespace IEcommerceMallSellerAdminRequest {
      *
      * Controls pagination page size for result sets. Default is 20 if not specified. Maximum allowed value is 100 to prevent excessive data retrieval.
      *
-     * @x-autobe-specification Pagination control parameter. Maps to LIMIT clause in SQL query. Default: 20. Maximum: 100. Passed as query parameter, not stored in database.
+         * @x-autobe-specification Pagination control parameter. Maps to LIMIT
+         *   clause in SQL query. Default: 20. Maximum: 100. Passed as query
+         *   parameter, not stored in database.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -171,7 +195,9 @@ export namespace IEcommerceMallSellerAdminRequest {
      *
      * Selects which page of results to retrieve. Defaults to 1 if not specified. Page numbering starts at 1 (not 0).
      *
-     * @x-autobe-specification Pagination control parameter. Calculates OFFSET as (page - 1) * limit. Default: 1. Passed as query parameter, not stored in database.
+         * @x-autobe-specification Pagination control parameter. Calculates
+         *   OFFSET as (page - 1) * limit. Default: 1. Passed as query
+         *   parameter, not stored in database.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -180,7 +206,10 @@ export namespace IEcommerceMallSellerAdminRequest {
      *
      * Filters results to only include requests with the specified status. Allowed values: pending, approved, rejected. When omitted, returns requests of all statuses.
      *
-     * @x-autobe-specification Query parameter for exact match on status column. Allowed values: 'pending', 'approved', 'rejected'. Pattern validation ensures only valid statuses are accepted. Maps to WHERE status = 'value' in SQL.
+         * @x-autobe-specification Query parameter for exact match on status
+         *   column. Allowed values: 'pending', 'approved', 'rejected'. Pattern
+         *   validation ensures only valid statuses are accepted. Maps to WHERE
+         *   status = 'value' in SQL.
      */
     status?:
       | (string & tags.Pattern<"^(pending|approved|rejected)$">)
@@ -196,27 +225,27 @@ export namespace IEcommerceMallSellerAdminRequest {
    */
   export type ISummary = {
     /**
-     * @x-autobe-database-schema-property id
+         * @x-autobe-database-schema-property id
      */
     id: string & tags.Format<"uuid">;
     /**
-     * @x-autobe-database-schema-property status
+         * @x-autobe-database-schema-property status
      */
     status: string;
     /**
-     * @x-autobe-database-schema-property reason
+         * @x-autobe-database-schema-property reason
      */
     reason: string;
     /**
-     * @x-autobe-database-schema-property rejection_reason
+         * @x-autobe-database-schema-property rejection_reason
      */
     rejection_reason?: string | null | undefined;
     /**
-     * @x-autobe-database-schema-property created_at
+         * @x-autobe-database-schema-property created_at
      */
     created_at: string & tags.Format<"date-time">;
     /**
-     * @x-autobe-database-schema-property reviewedBySuperAdmin
+         * @x-autobe-database-schema-property reviewedBySuperAdmin
      */
     reviewedBySuperAdmin?: IEcommerceMallSuperAdmin.ISummary | null | undefined;
   };

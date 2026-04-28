@@ -13,7 +13,8 @@ import { IShoppingMallAdminPromotionRequest } from "../../../../../structures/IS
  * @param props.connection
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Query shopping_mall_admin_promotion_requests table filtered by the authenticated user's ID.
+ * @x-autobe-specification Query shopping_mall_admin_promotion_requests table
+ *   filtered by the authenticated user's ID.
  *
  * For member users: Join with shopping_mall_admin_promotion_request_of_members on shopping_mall_member_id = authenticated_user_id.
  * For seller users: Join with shopping_mall_admin_promotion_request_of_sellers on shopping_mall_seller_id = authenticated_user_id.

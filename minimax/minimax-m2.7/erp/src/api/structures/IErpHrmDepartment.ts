@@ -10,64 +10,75 @@ export type IErpHrmDepartment = {
   /**
    * Unique department identifier.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from erp_hrm_departments.id. UUID primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from erp_hrm_departments.id. UUID
+     *   primary key.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Department name used for identification within the organization.
    *
-   * @x-autobe-database-schema-property name
-   * @x-autobe-specification Direct mapping from erp_hrm_departments.name. Unique within organization.
+     * @x-autobe-database-schema-property name
+     * @x-autobe-specification Direct mapping from erp_hrm_departments.name.
+     *   Unique within organization.
    */
   name: string;
 
   /**
    * Optional description providing details about the department's purpose or responsibilities.
    *
-   * @x-autobe-database-schema-property description
-   * @x-autobe-specification Direct mapping from erp_hrm_departments.description. Nullable field.
+     * @x-autobe-database-schema-property description
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_departments.description. Nullable field.
    */
   description?: string | null | undefined;
 
   /**
    * Parent department reference for hierarchical categorization, null if root-level department.
    *
-   * @x-autobe-specification Join via erp_hrm_departments.parent_id to erp_hrm_departments.id. Returns IErpHrmDepartment.ISummary object without children array to prevent circular references.
-   * @x-autobe-database-schema-property parent
+     * @x-autobe-specification Join via erp_hrm_departments.parent_id to
+     *   erp_hrm_departments.id. Returns IErpHrmDepartment.ISummary object
+     *   without children array to prevent circular references.
+     * @x-autobe-database-schema-property parent
    */
   parent: IErpHrmDepartment.ISummary | null;
 
   /**
    * The organization this department belongs to for multi-tenant isolation.
    *
-   * @x-autobe-database-schema-property organization
-   * @x-autobe-specification Join via erp_hrm_departments.erp_hrm_organization_id to erp_hrm_organizations.id. Returns IErpHrmOrganization.ISummary object.
+     * @x-autobe-database-schema-property organization
+     * @x-autobe-specification Join via
+     *   erp_hrm_departments.erp_hrm_organization_id to
+     *   erp_hrm_organizations.id. Returns IErpHrmOrganization.ISummary object.
    */
   organization: IErpHrmOrganization.ISummary;
 
   /**
    * Timestamp when the department was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from erp_hrm_departments.created_at. DateTime timestamp.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_departments.created_at. DateTime timestamp.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the department was last modified.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from erp_hrm_departments.updated_at. DateTime timestamp.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_departments.updated_at. DateTime timestamp.
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * Soft-deletion timestamp, null if department is active.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from erp_hrm_departments.deleted_at. Nullable DateTime - null means active, non-null means soft-deleted.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_departments.deleted_at. Nullable DateTime - null means active,
+     *   non-null means soft-deleted.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -77,23 +88,28 @@ export namespace IErpHrmDepartment {
    */
   export type ICreate = {
     /**
-     * @x-autobe-database-schema-property name
+         * @x-autobe-database-schema-property name
      */
     name: string;
 
     /**
      * Optional description of the department's purpose or responsibilities.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from erp_hrm_departments.description column. Nullable - departments may not have a description.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_departments.description column. Nullable - departments may
+         *   not have a description.
      */
     description?: string | null | undefined;
 
     /**
      * Optional parent department ID for establishing hierarchical categorization.
      *
-     * @x-autobe-database-schema-property parent_id
-     * @x-autobe-specification Direct mapping from erp_hrm_departments.parent_id column. Optional UUID reference to parent department for one-level hierarchy. Null indicates a root-level department.
+         * @x-autobe-database-schema-property parent_id
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_departments.parent_id column. Optional UUID reference to
+         *   parent department for one-level hierarchy. Null indicates a
+         *   root-level department.
      */
     parentId?: (string & tags.Format<"uuid">) | null | undefined;
   };
@@ -105,28 +121,38 @@ export namespace IErpHrmDepartment {
     /**
      * Substring match filter for department name (case-insensitive search).
      *
-     * @x-autobe-specification Case-insensitive substring match on erp_hrm_departments.name. Applied as WHERE clause with ILIKE or LIKE pattern matching. Null or empty string returns all departments (no filter applied).
+         * @x-autobe-specification Case-insensitive substring match on
+         *   erp_hrm_departments.name. Applied as WHERE clause with ILIKE or
+         *   LIKE pattern matching. Null or empty string returns all departments
+         *   (no filter applied).
      */
     search?: string | undefined;
 
     /**
      * Filter departments by parent department ID for hierarchical views.
      *
-     * @x-autobe-specification Filter by erp_hrm_departments.parent_id. When specified with a valid UUID, returns only departments under that parent. Null or omitted returns all departments regardless of parent hierarchy.
+         * @x-autobe-specification Filter by erp_hrm_departments.parent_id. When
+         *   specified with a valid UUID, returns only departments under that
+         *   parent. Null or omitted returns all departments regardless of
+         *   parent hierarchy.
      */
     parentId?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Page number for pagination (1-based index).
      *
-     * @x-autobe-specification 1-indexed page number for pagination offset calculation. Used as: OFFSET (page - 1) * limit. Defaults to 1 when not provided or less than 1.
+         * @x-autobe-specification 1-indexed page number for pagination offset
+         *   calculation. Used as: OFFSET (page - 1) * limit. Defaults to 1 when
+         *   not provided or less than 1.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Number of items per page (default 20, max 100).
      *
-     * @x-autobe-specification Maximum number of records per page. Used as: LIMIT limit. Default 20, maximum 100. Combined with page for offset pagination.
+         * @x-autobe-specification Maximum number of records per page. Used as:
+         *   LIMIT limit. Default 20, maximum 100. Combined with page for offset
+         *   pagination.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -138,23 +164,27 @@ export namespace IErpHrmDepartment {
    */
   export type IUpdate = {
     /**
-     * @x-autobe-database-schema-property name
+         * @x-autobe-database-schema-property name
      */
     name?: (string & tags.MaxLength<255>) | undefined;
 
     /**
      * Optional description of the department's purpose. Set to null to clear.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from erp_hrm_departments.description. Nullable field: accepts string or null.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_departments.description. Nullable field: accepts string or
+         *   null.
      */
     description?: (string & tags.MaxLength<1000>) | null | undefined;
 
     /**
      * Parent department ID for hierarchy. Set to null to make this a root-level department.
      *
-     * @x-autobe-database-schema-property parent_id
-     * @x-autobe-specification Direct mapping from erp_hrm_departments.parent_id. Nullable FK: accepts UUID or null to set as root-level department.
+         * @x-autobe-database-schema-property parent_id
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_departments.parent_id. Nullable FK: accepts UUID or null to
+         *   set as root-level department.
      */
     parentId?: (string & tags.Format<"uuid">) | null | undefined;
   };
@@ -164,27 +194,27 @@ export namespace IErpHrmDepartment {
    */
   export type ISummary = {
     /**
-     * @x-autobe-database-schema-property id
+         * @x-autobe-database-schema-property id
      */
     id: string & tags.Format<"uuid">;
     /**
-     * @x-autobe-database-schema-property name
+         * @x-autobe-database-schema-property name
      */
     name: string;
     /**
-     * @x-autobe-database-schema-property description
+         * @x-autobe-database-schema-property description
      */
     description?: string | null | undefined;
     /**
-     * @x-autobe-database-schema-property created_at
+         * @x-autobe-database-schema-property created_at
      */
     created_at: string & tags.Format<"date-time">;
     /**
-     * @x-autobe-database-schema-property updated_at
+         * @x-autobe-database-schema-property updated_at
      */
     updated_at: string & tags.Format<"date-time">;
     /**
-     * @x-autobe-database-schema-property parent
+         * @x-autobe-database-schema-property parent
      */
     parent?: IErpHrmDepartment.ISummary | null | undefined;
   };
@@ -196,40 +226,48 @@ export namespace IErpHrmDepartment {
     /**
      * Unique department identifier.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from erp_hrm_departments.id (UUID primary key).
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from erp_hrm_departments.id
+         *   (UUID primary key).
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Department display name used for identification within the organization.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from erp_hrm_departments.name.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from erp_hrm_departments.name.
      */
     name: string;
 
     /**
      * Optional description of the department's purpose or responsibilities.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from erp_hrm_departments.description. Nullable - departments may not have a description.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_departments.description. Nullable - departments may not
+         *   have a description.
      */
     description?: string | null | undefined;
 
     /**
      * Parent department reference for hierarchical context. Null indicates a root-level department.
      *
-     * @x-autobe-specification Join via erp_hrm_departments.parent_id → erp_hrm_departments.id. Returns IErpHrmDepartment.ISummary for parent context. Null if this is a root-level department.
-     * @x-autobe-database-schema-property parent
+         * @x-autobe-specification Join via erp_hrm_departments.parent_id →
+         *   erp_hrm_departments.id. Returns IErpHrmDepartment.ISummary for
+         *   parent context. Null if this is a root-level department.
+         * @x-autobe-database-schema-property parent
      */
     parent: IErpHrmDepartment.ISummary | null;
 
     /**
      * Array of child departments nested under this department for tree rendering.
      *
-     * @x-autobe-database-schema-property children
-     * @x-autobe-specification Recursive relation from erp_hrm_departments.children. Each child is IErpHrmDepartment.IHierarchy with same structure. Array may be empty for leaf nodes.
+         * @x-autobe-database-schema-property children
+         * @x-autobe-specification Recursive relation from
+         *   erp_hrm_departments.children. Each child is
+         *   IErpHrmDepartment.IHierarchy with same structure. Array may be
+         *   empty for leaf nodes.
      */
     children: IErpHrmDepartment.IHierarchy[];
   };

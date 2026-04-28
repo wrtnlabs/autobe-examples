@@ -32,7 +32,8 @@ import { IPageIEcommerceRefundRequestSnapshot } from "../../../../../../../struc
  * @param props.body Search criteria for filtering refund request snapshots including status filter, date range, and pagination parameters.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Query ecommerce_refund_request_snapshots table with the following constraints:
+ * @x-autobe-specification Query ecommerce_refund_request_snapshots table with
+ *   the following constraints:
  *
  * 1. **Path Parameter Validation**
  *    - Validate orderId exists in ecommerce_orders
@@ -191,7 +192,8 @@ export namespace index {
  * @param props.snapshotId Unique identifier of the snapshot to retrieve (UUID scope).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Retrieve a specific refund request snapshot with full authorization and relationship validation.
+ * @x-autobe-specification Retrieve a specific refund request snapshot with full
+ *   authorization and relationship validation.
  *
  * **Authorization Flow**:
  * 1. Validate the authenticated user's actor type (customer, seller, or admin)

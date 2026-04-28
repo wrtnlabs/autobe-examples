@@ -21,9 +21,13 @@ export class RedditcommunityPostsController {
    *
    * @param connection
    * @param body Post creation data including title, post type discriminator, community ID, and type-specific content (text body, link URL, or image URL).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Validate the requesting user is authenticated and retrieve their member ID. Verify the user has an active subscription to the target community by checking reddit_community_subscriptions table where member_id and community_id match and deleted_at is null. If no active subscription exists, reject with 403 Forbidden.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Validate the requesting user is authenticated and
+     *   retrieve their member ID. Verify the user has an active subscription to
+     *   the target community by checking reddit_community_subscriptions table
+     *   where member_id and community_id match and deleted_at is null. If no
+     *   active subscription exists, reject with 403 Forbidden.
    *
    * Validate the title is provided and not empty. Validate post_type is one of: 'text', 'link', 'image'. Based on post_type, validate the corresponding content field is provided (body for text, url for link, image_url for image).
    *
@@ -58,9 +62,15 @@ export class RedditcommunityPostsController {
    *
    * @param connection
    * @param body Search criteria including community filter, author filter, post type filter, date range, sorting options, and pagination parameters.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query reddit_community_posts table with pagination and filtering. Join with reddit_community_members for author information including username and karma. Join with reddit_community_communities for community name and icon. Left join with reddit_community_post_texts, reddit_community_post_links, and reddit_community_post_images based on post_type to retrieve type-specific content.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query reddit_community_posts table with
+     *   pagination and filtering. Join with reddit_community_members for author
+     *   information including username and karma. Join with
+     *   reddit_community_communities for community name and icon. Left join
+     *   with reddit_community_post_texts, reddit_community_post_links, and
+     *   reddit_community_post_images based on post_type to retrieve
+     *   type-specific content.
    *
    * Apply filters from request body: community_id for community-specific posts, author_id for user's posts, post_type for filtering by content type, date range for time-based filtering. Implement sorting algorithms: 'hot' calculates engagement score from vote count and recency, 'new' sorts by created_at DESC, 'top' sorts by calculated vote score from reddit_community_post_votes, 'controversial' identifies posts with high vote variance but near-zero net score.
    *
@@ -95,9 +105,19 @@ export class RedditcommunityPostsController {
    *
    * @param connection
    * @param postId Unique identifier of the post (UUID format).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query the reddit_community_posts table by id (UUID). Join with reddit_community_members to get author information (username, display name). Join with reddit_community_communities to get community information (name, icon). Calculate vote score by summing vote values from reddit_community_post_votes where post_id matches. Calculate comment count by counting records in reddit_community_comments where post_id matches and deleted_at is null. Based on post_type field, join with the appropriate type-specific table: reddit_community_post_texts for 'text', reddit_community_post_links for 'link', or reddit_community_post_images for 'image'. Return 404 if post not found or deleted_at is not null.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query the reddit_community_posts table by id
+     *   (UUID). Join with reddit_community_members to get author information
+     *   (username, display name). Join with reddit_community_communities to get
+     *   community information (name, icon). Calculate vote score by summing
+     *   vote values from reddit_community_post_votes where post_id matches.
+     *   Calculate comment count by counting records in
+     *   reddit_community_comments where post_id matches and deleted_at is null.
+     *   Based on post_type field, join with the appropriate type-specific
+     *   table: reddit_community_post_texts for 'text',
+     *   reddit_community_post_links for 'link', or reddit_community_post_images
+     *   for 'image'. Return 404 if post not found or deleted_at is not null.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Get(":postId")
@@ -127,19 +147,24 @@ export class RedditcommunityPostsController {
    * @param connection
    * @param postId The unique identifier of the post to update. Must be a valid UUID corresponding to an existing post.
    * @param body Update data for the post. Includes optional title field and type-specific content fields. Only provide fields matching the post's existing type - text posts accept body, link posts accept url, image posts accept imageUrl and thumbnailUrl. The post_type field cannot be changed.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query reddit_community_posts table to find the post by postId.
-   * Verify the post exists and deleted_at is NULL. Return 404 if not found or deleted.
-   * Verify the authenticated user's member ID matches reddit_community_member_id. Return 403 if not the author.
-   * Update the title field in reddit_community_posts if provided in request.
-   * Based on the post's post_type value, update the corresponding type-specific table:
-   * - If post_type is 'text': Update body field in reddit_community_post_texts where reddit_community_post_id matches
-   * - If post_type is 'link': Update url and domain fields in reddit_community_post_links where reddit_community_post_id matches
-   * - If post_type is 'image': Update image_url and thumbnail_url fields in reddit_community_post_images where reddit_community_post_id matches
-   * Update the updated_at timestamp to current time.
-   * Query and return the complete updated post entity including joined data from member, community, and the appropriate type-specific table.
-   * Handle edge case: If type-specific content update fails, rollback the entire transaction.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query reddit_community_posts table to find the
+     *   post by postId. Verify the post exists and deleted_at is NULL. Return
+     *   404 if not found or deleted. Verify the authenticated user's member ID
+     *   matches reddit_community_member_id. Return 403 if not the author.
+     *   Update the title field in reddit_community_posts if provided in
+     *   request. Based on the post's post_type value, update the corresponding
+     *   type-specific table: - If post_type is 'text': Update body field in
+     *   reddit_community_post_texts where reddit_community_post_id matches - If
+     *   post_type is 'link': Update url and domain fields in
+     *   reddit_community_post_links where reddit_community_post_id matches - If
+     *   post_type is 'image': Update image_url and thumbnail_url fields in
+     *   reddit_community_post_images where reddit_community_post_id matches
+     *   Update the updated_at timestamp to current time. Query and return the
+     *   complete updated post entity including joined data from member,
+     *   community, and the appropriate type-specific table. Handle edge case:
+     *   If type-specific content update fails, rollback the entire transaction.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Put(":postId")
@@ -169,19 +194,20 @@ export class RedditcommunityPostsController {
    *
    * @param connection
    * @param postId The unique identifier of the post to delete (UUID format).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification 1. Retrieve the post from reddit_community_posts table by postId
-   * 2. Verify the post exists and is not already deleted (deleted_at is NULL)
-   * 3. Check authorization:
-   *    - If requester is the post author (reddit_community_member_id matches), allow
-   *    - If requester is a moderator of the post's community (check reddit_community_moderators table for reddit_community_community_id), allow
-   *    - Otherwise, reject with 403 Forbidden
-   * 4. Delete the post record - the database cascade will automatically remove:
-   *    - All comments (reddit_community_comments)
-   *    - All votes (reddit_community_post_votes)
-   *    - Type-specific content (reddit_community_post_texts, reddit_community_post_links, or reddit_community_post_images)
-   * 5. Return 204 No Content or null response body
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification 1. Retrieve the post from reddit_community_posts
+     *   table by postId 2. Verify the post exists and is not already deleted
+     *   (deleted_at is NULL) 3. Check authorization: - If requester is the post
+     *   author (reddit_community_member_id matches), allow - If requester is a
+     *   moderator of the post's community (check reddit_community_moderators
+     *   table for reddit_community_community_id), allow - Otherwise, reject
+     *   with 403 Forbidden 4. Delete the post record - the database cascade
+     *   will automatically remove: - All comments (reddit_community_comments) -
+     *   All votes (reddit_community_post_votes) - Type-specific content
+     *   (reddit_community_post_texts, reddit_community_post_links, or
+     *   reddit_community_post_images) 5. Return 204 No Content or null response
+     *   body
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Delete(":postId")

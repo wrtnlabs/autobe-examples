@@ -29,9 +29,11 @@ export class ShoppingmallCustomerOrdersItemsProductpurchasesnapshotsController {
    * @param connection
    * @param orderId Target order identifier
    * @param itemId Target order item identifier within the order
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Implement a read-only detail operation that resolves a product purchase snapshot strictly within order ownership context.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Implement a read-only detail operation that
+     *   resolves a product purchase snapshot strictly within order ownership
+     *   context.
    *
    * 1. Validate `orderId` as a UUID and load `shopping_mall_orders` by `id`. Reject when the order does not exist or is not visible to the requesting actor.
    * 2. Load `shopping_mall_order_items` by `id = itemId` and `shopping_mall_order_id = orderId` in the same query or with an equivalent guarded lookup. This must prove the item belongs to the specified order before proceeding.
@@ -89,9 +91,10 @@ export class ShoppingmallCustomerOrdersItemsProductpurchasesnapshotsController {
    * @param orderId Target order's UUID
    * @param itemId Target order item's UUID within the specified order
    * @param body Purchase-time product snapshot creation data
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Implement a creation service that preserves purchase-time merchandise history for one specific order item.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Implement a creation service that preserves
+     *   purchase-time merchandise history for one specific order item.
    *
    * 1. Authorize only trusted internal order-finalization workflows or privileged administrative recovery tools. Ordinary customer and seller clients must not be allowed to create arbitrary purchase snapshots because this data is system-preserved historical evidence.
    *
@@ -153,9 +156,11 @@ export class ShoppingmallCustomerOrdersItemsProductpurchasesnapshotsController {
    * @param orderId Target order's ID
    * @param itemId Target order item's ID
    * @param productPurchaseSnapshotId Target product purchase snapshot's ID
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Implement a read-only detail lookup for one shopping_mall_product_purchase_snapshots record under a validated parent chain.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Implement a read-only detail lookup for one
+     *   shopping_mall_product_purchase_snapshots record under a validated
+     *   parent chain.
    *
    * 1. Authenticate the caller and resolve actor type.
    * 2. Load the target order from shopping_mall_orders by id = orderId and deleted_at IS NULL unless historical policy explicitly allows reading administratively removed orders. If not found, return not found.

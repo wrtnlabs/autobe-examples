@@ -24,24 +24,22 @@ import { IEcommerceMallAdministratorGrade } from "../../../../structures/IEcomme
  * @param props.body Grade change request containing target administrator ID, new grade value, and optional reason.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor superAdministrator
- * @x-autobe-specification 1. Validate requesting super administrator is authenticated with super administrator grade
- * 2. Verify the super administrator is not attempting to demote themselves (administrator_id != changed_by from session)
- * 3. Validate target administrator exists and is active (not banned, not deleted)
- * 4. Validate the grade change is valid:
- *    - Cannot promote to 'regular' if target is already 'regular'
- *    - Cannot demote to 'super' if target is already 'super'
- * 5. Create new ecommerce_mall_administrator_grade record with:
- *    - administrator_id: the target administrator
- *    - changed_by: the super administrator performing the change (from session)
- *    - grade: the new grade value ('regular' or 'super')
- *    - previous_grade: current grade before change
- *    - reason: optional reason for grade change
- * 6. Create corresponding snapshot record for audit trail with:
- *    - old_grade: previous_grade value
- *    - new_grade: new grade value
- *    - created_at: timestamp
- * 7. Update the administrator's grade in ecommerce_mall_administrators table
- * 8. Return the newly created grade change record
+ * @x-autobe-specification 1. Validate requesting super administrator is
+ *   authenticated with super administrator grade 2. Verify the super
+ *   administrator is not attempting to demote themselves (administrator_id !=
+ *   changed_by from session) 3. Validate target administrator exists and is
+ *   active (not banned, not deleted) 4. Validate the grade change is valid: -
+ *   Cannot promote to 'regular' if target is already 'regular' - Cannot demote
+ *   to 'super' if target is already 'super' 5. Create new
+ *   ecommerce_mall_administrator_grade record with: - administrator_id: the
+ *   target administrator - changed_by: the super administrator performing the
+ *   change (from session) - grade: the new grade value ('regular' or 'super') -
+ *   previous_grade: current grade before change - reason: optional reason for
+ *   grade change 6. Create corresponding snapshot record for audit trail with:
+ *   - old_grade: previous_grade value - new_grade: new grade value -
+ *   created_at: timestamp 7. Update the administrator's grade in
+ *   ecommerce_mall_administrators table 8. Return the newly created grade
+ *   change record
  *
  * Error handling:
  * - Return 403 if requesting user is not super administrator
@@ -140,24 +138,24 @@ export namespace create {
  * @param props.body Grade change criteria including target administrator identifier, new grade value, and optional reason for the change.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor superAdministrator
- * @x-autobe-specification 1. Validate that the requesting administrator is a super administrator (grade === 'super')
- * 2. Validate that the target administrator_id exists and is not null
- * 3. Validate that the target administrator is not the same as the requesting administrator (prevent self-grading)
- * 4. Validate that the new_grade is either 'regular' or 'super'
- * 5. Validate that demotion from 'super' to 'regular' is only for other super administrators (not self)
- * 6. Update the ecommerce_mall_administrators table: set grade to new_grade
- * 7. Create a new record in ecommerce_mall_administrator_grades:
- *    - administrator_id: target administrator id
- *    - changed_by: requesting administrator id
- *    - grade: new_grade value
- *    - previous_grade: old grade value (from step 5)
- *    - reason: optional reason provided in request
- *    - created_at: current timestamp
- * 8. Create a snapshot record in ecommerce_mall_administrator_grades_snapshots capturing the old_grade and new_grade values
- * 9. Return the updated administrator full object with all fields
- * 10. Throw 403 Forbidden if requesting administrator is not super
- * 11. Throw 404 Not Found if target administrator does not exist
- * 12. Throw 400 Bad Request if attempting self-demotion or invalid grade transition
+ * @x-autobe-specification 1. Validate that the requesting administrator is a
+ *   super administrator (grade === 'super') 2. Validate that the target
+ *   administrator_id exists and is not null 3. Validate that the target
+ *   administrator is not the same as the requesting administrator (prevent
+ *   self-grading) 4. Validate that the new_grade is either 'regular' or 'super'
+ *   5. Validate that demotion from 'super' to 'regular' is only for other super
+ *   administrators (not self) 6. Update the ecommerce_mall_administrators
+ *   table: set grade to new_grade 7. Create a new record in
+ *   ecommerce_mall_administrator_grades: - administrator_id: target
+ *   administrator id - changed_by: requesting administrator id - grade:
+ *   new_grade value - previous_grade: old grade value (from step 5) - reason:
+ *   optional reason provided in request - created_at: current timestamp 8.
+ *   Create a snapshot record in ecommerce_mall_administrator_grades_snapshots
+ *   capturing the old_grade and new_grade values 9. Return the updated
+ *   administrator full object with all fields 10. Throw 403 Forbidden if
+ *   requesting administrator is not super 11. Throw 404 Not Found if target
+ *   administrator does not exist 12. Throw 400 Bad Request if attempting
+ *   self-demotion or invalid grade transition
  * @path /ecommerceMall/superAdministrator/administrator-grades
  * @accessor api.functional.ecommerceMall.superAdministrator.administrator_grades.update
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -245,7 +243,8 @@ export namespace update {
  * @param props.gradeChangeId Unique identifier of the grade change record to retrieve
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor superAdministrator
- * @x-autobe-specification Query ecommerce_mall_administrator_grades table for the specific record matching the gradeChangeId UUID parameter.
+ * @x-autobe-specification Query ecommerce_mall_administrator_grades table for
+ *   the specific record matching the gradeChangeId UUID parameter.
  *
  * Include JOIN operations to fetch related administrator records:
  * - The administrator whose grade was changed (administrator_id foreign key)

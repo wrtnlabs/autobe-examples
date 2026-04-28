@@ -25,9 +25,11 @@ export class HrmtimetrackingReportsController {
    *
    * @param connection
    * @param body New saved report definition data
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Implement a create-report service that writes a new saved report definition into `hrm_time_tracking_reports` within a single transaction.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Implement a create-report service that writes a
+     *   new saved report definition into `hrm_time_tracking_reports` within a
+     *   single transaction.
    *
    * 1. Resolve the authenticated user and active organization context from the session.
    * 2. Evaluate report-viewing permission only in that active organization context. Reject the request if the caller lacks permission.
@@ -79,9 +81,15 @@ export class HrmtimetrackingReportsController {
    *
    * @param connection
    * @param body Report search criteria and pagination options
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Implement an organization-scoped search query over `hrm_time_tracking_reports` filtered by the authenticated user's currently selected organization identifier. Before constructing filters or returning data, validate that the caller has report viewing permission in the active organization context; if not, reject the request immediately without exposing available report names, types, or filter metadata.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Implement an organization-scoped search query
+     *   over `hrm_time_tracking_reports` filtered by the authenticated user's
+     *   currently selected organization identifier. Before constructing filters
+     *   or returning data, validate that the caller has report viewing
+     *   permission in the active organization context; if not, reject the
+     *   request immediately without exposing available report names, types, or
+     *   filter metadata.
    *
    * Build the base query with `hrm_time_tracking_organization_id = currentOrganizationId` and exclude deleted records by requiring `deleted_at IS NULL`. Support request-driven filtering through `IHrmTimeTrackingReport.IRequest`, including pagination, sorting, free-text or exact-name matching on `name`, filtering by `report_type`, optional filtering by `group_by`, and date-scope filters using `range_start_date` and `range_end_date` where the DTO defines them. Restrict report_type filtering to the supported business report families: time report, project budget report, and weekly summary report. Sorting should default to a stable business-friendly order such as `updated_at DESC`, with secondary ordering by `id` to keep pagination deterministic.
    *
@@ -120,9 +128,11 @@ export class HrmtimetrackingReportsController {
    *
    * @param connection
    * @param reportId Target report's ID in the current organization scope
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Implement a report detail retrieval service for the primary report entity scoped to the caller's currently selected organization.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Implement a report detail retrieval service for
+     *   the primary report entity scoped to the caller's currently selected
+     *   organization.
    *
    * 1. Resolve the authenticated actor and current organization context.
    * 2. Evaluate whether the caller has report viewing permission in that organization context before loading report-specific details. Permission evaluation must use only the role and permissions effective in the current organization.
@@ -171,9 +181,11 @@ export class HrmtimetrackingReportsController {
    * @param connection
    * @param reportId Identifier of the saved report definition in the current organization
    * @param body Replacement data for the saved report definition
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Implement a service method that updates one hrm_time_tracking_reports row identified by reportId within the caller's currently selected organization.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Implement a service method that updates one
+     *   hrm_time_tracking_reports row identified by reportId within the
+     *   caller's currently selected organization.
    *
    * 1. Resolve the caller's active organization context and verify that the caller has report viewing permission in that organization before loading any report configuration fields.
    * 2. Query hrm_time_tracking_reports by id = :reportId and deleted_at IS NULL, and additionally constrain hrm_time_tracking_organization_id to the current organization. If no matching row exists in the active organization, return a not-found or forbidden result according to platform conventions without disclosing data from other organizations.
@@ -223,9 +235,11 @@ export class HrmtimetrackingReportsController {
    *
    * @param connection
    * @param reportId Target saved report definition identifier in the current organization scope
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Implement a report-definition deletion service for the hrm_time_tracking_reports model scoped to the authenticated user's currently selected organization.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Implement a report-definition deletion service
+     *   for the hrm_time_tracking_reports model scoped to the authenticated
+     *   user's currently selected organization.
    *
    * 1. Resolve the authenticated actor and active organization context from the session layer. Do not accept organization identity from the request body or query string.
    * 2. Authorize the actor for report-management capability in the active organization. Allow organization owners by default. Allow managers only when their organization-scoped permission set includes report administration or equivalent report management authority. Reject unauthorized callers before performing lookup side effects that could reveal cross-organization existence.

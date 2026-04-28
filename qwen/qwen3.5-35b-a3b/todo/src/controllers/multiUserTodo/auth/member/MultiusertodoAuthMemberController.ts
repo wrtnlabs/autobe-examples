@@ -20,9 +20,10 @@ export class MultiusertodoAuthMemberController {
    *
    * @param connection
    * @param body Registration request containing email and password
-   * @x-autobe-authorization-type join
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Create a new member account with email and password.
+     * @x-autobe-authorization-type join
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Create a new member account with email and
+     *   password.
    *
    * 1. Validate email format (valid email pattern)
    * 2. Validate password length (minimum 8 characters)
@@ -70,9 +71,9 @@ export class MultiusertodoAuthMemberController {
    *
    * @param connection
    * @param body Login request containing email and password
-   * @x-autobe-authorization-type login
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Authenticate member with email and password.
+     * @x-autobe-authorization-type login
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Authenticate member with email and password.
    *
    * 1. Validate email format
    * 2. Find member in multi_user_todo_members by email
@@ -118,9 +119,9 @@ export class MultiusertodoAuthMemberController {
    *
    * @param connection
    * @param body Refresh token request
-   * @x-autobe-authorization-type refresh
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Refresh access token using refresh token.
+     * @x-autobe-authorization-type refresh
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Refresh access token using refresh token.
    *
    * 1. Validate refresh token format
    * 2. Find session in multi_user_todo_member_sessions by token

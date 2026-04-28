@@ -19,7 +19,11 @@ export namespace IHrmPlatformDashboard {
      *
      * This value updates in real-time as new timelogs are created or existing ones are modified. If the employee has not logged any time today, this field returns 0.
      *
-     * @x-autobe-specification SUM(hrm_platform_timelogs.duration_minutes) WHERE hrm_platform_employee_id equals current employee AND DATE(date) equals current date (midnight UTC to midnight UTC). Result divided by 60 to convert minutes to hours. Returns 0 if no timelogs exist for today.
+         * @x-autobe-specification SUM(hrm_platform_timelogs.duration_minutes)
+         *   WHERE hrm_platform_employee_id equals current employee AND
+         *   DATE(date) equals current date (midnight UTC to midnight UTC).
+         *   Result divided by 60 to convert minutes to hours. Returns 0 if no
+         *   timelogs exist for today.
      */
     hoursToday: number;
 
@@ -30,7 +34,11 @@ export namespace IHrmPlatformDashboard {
      *
      * This value provides employees with visibility into their weekly time accumulation, useful for tracking against expected working hours or timesheet submission requirements. Returns 0 if no timelogs exist for the current week.
      *
-     * @x-autobe-specification SUM(hrm_platform_timelogs.duration_minutes) WHERE hrm_platform_employee_id equals current employee AND date falls within current week (Monday 00:00 to Sunday 23:59 in organization timezone). Result divided by 60 to convert minutes to hours. Week boundaries determined by organization timezone setting.
+         * @x-autobe-specification SUM(hrm_platform_timelogs.duration_minutes)
+         *   WHERE hrm_platform_employee_id equals current employee AND date
+         *   falls within current week (Monday 00:00 to Sunday 23:59 in
+         *   organization timezone). Result divided by 60 to convert minutes to
+         *   hours. Week boundaries determined by organization timezone setting.
      */
     hoursThisWeek: number;
 
@@ -41,7 +49,13 @@ export namespace IHrmPlatformDashboard {
      *
      * Employees can have at most one active timer at a time. If no timer is currently running, this field returns null. The elapsed time is calculated dynamically from the started_at timestamp to the current moment.
      *
-     * @x-autobe-specification SELECT from hrm_platform_timers WHERE hrm_platform_employee_id equals current employee AND stopped_at IS NULL. Returns IHrmPlatformTimer.ISummary with id, started_at, stopped_at, description, project, task, status ('active'), duration (null for active), and elapsedTime (seconds since started_at). Returns null if no active timer exists. Each employee can have at most one active timer.
+         * @x-autobe-specification SELECT from hrm_platform_timers WHERE
+         *   hrm_platform_employee_id equals current employee AND stopped_at IS
+         *   NULL. Returns IHrmPlatformTimer.ISummary with id, started_at,
+         *   stopped_at, description, project, task, status ('active'), duration
+         *   (null for active), and elapsedTime (seconds since started_at).
+         *   Returns null if no active timer exists. Each employee can have at
+         *   most one active timer.
      */
     activeTimer: IHrmPlatformTimer.ISummary | null;
 
@@ -52,7 +66,12 @@ export namespace IHrmPlatformDashboard {
      *
      * This list provides quick access to recent time entries for review or reference. The array is ordered with the most recently created timelog first. If the employee has no timelog entries, an empty array is returned.
      *
-     * @x-autobe-specification SELECT id, date, duration_minutes, description, billable, employee (ISummary), project (ISummary), task (ISummary, nullable) FROM hrm_platform_timelogs WHERE hrm_platform_employee_id equals current employee. ORDER BY created_at DESC. LIMIT 5. Returns array of IHrmPlatformTimelog.ISummary. Empty array if no timelogs exist.
+         * @x-autobe-specification SELECT id, date, duration_minutes,
+         *   description, billable, employee (ISummary), project (ISummary),
+         *   task (ISummary, nullable) FROM hrm_platform_timelogs WHERE
+         *   hrm_platform_employee_id equals current employee. ORDER BY
+         *   created_at DESC. LIMIT 5. Returns array of
+         *   IHrmPlatformTimelog.ISummary. Empty array if no timelogs exist.
      */
     recentTimelogs: IHrmPlatformTimelog.ISummary[];
 
@@ -63,7 +82,13 @@ export namespace IHrmPlatformDashboard {
      *
      * This field helps employees track their timesheet submission status. A null value indicates no timesheet exists for the current week, meaning the employee may need to create one. Timesheets with approved or rejected status are not included in this field.
      *
-     * @x-autobe-specification SELECT id, week_start_date, week_end_date, status, employee (ISummary), reviewer (ISummary, nullable), submitted_at, reviewed_at FROM hrm_platform_timesheets WHERE employee_id equals current employee AND week_start_date equals current week's Monday AND status IN ('draft', 'submitted'). Returns IHrmPlatformTimesheet.ISummary or null if no timesheet exists for current week. Total hours computed from included timelogs.
+         * @x-autobe-specification SELECT id, week_start_date, week_end_date,
+         *   status, employee (ISummary), reviewer (ISummary, nullable),
+         *   submitted_at, reviewed_at FROM hrm_platform_timesheets WHERE
+         *   employee_id equals current employee AND week_start_date equals
+         *   current week's Monday AND status IN ('draft', 'submitted'). Returns
+         *   IHrmPlatformTimesheet.ISummary or null if no timesheet exists for
+         *   current week. Total hours computed from included timelogs.
      */
     pendingTimesheet: IHrmPlatformTimesheet.ISummary | null;
 
@@ -74,7 +99,13 @@ export namespace IHrmPlatformDashboard {
      *
      * Tasks are sorted to surface the most urgent and time-sensitive items first. Urgent priority tasks appear before high, medium, and low priority tasks. Within the same priority level, tasks with earlier due dates appear first. Tasks without due dates appear after dated tasks at the same priority level.
      *
-     * @x-autobe-specification SELECT id, title, status, priority, due_date, estimated_hours, assignedEmployee (ISummary, nullable), parentTask (ISummary, nullable), created_at FROM hrm_platform_tasks WHERE assigned_employee_id equals current employee AND status IN ('open', 'in-progress'). ORDER BY priority DESC (urgent first), then due_date ASC. Returns array of IHrmPlatformTask.ISummary. Empty array if no tasks match criteria.
+         * @x-autobe-specification SELECT id, title, status, priority, due_date,
+         *   estimated_hours, assignedEmployee (ISummary, nullable), parentTask
+         *   (ISummary, nullable), created_at FROM hrm_platform_tasks WHERE
+         *   assigned_employee_id equals current employee AND status IN ('open',
+         *   'in-progress'). ORDER BY priority DESC (urgent first), then
+         *   due_date ASC. Returns array of IHrmPlatformTask.ISummary. Empty
+         *   array if no tasks match criteria.
      */
     assignedTasks: IHrmPlatformTask.ISummary[];
   };

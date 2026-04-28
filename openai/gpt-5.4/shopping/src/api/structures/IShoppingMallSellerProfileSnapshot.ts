@@ -10,72 +10,98 @@ export type IShoppingMallSellerProfileSnapshot = {
   /**
    * Unique identifier of this preserved seller profile snapshot.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from `shopping_mall_seller_profile_snapshots.id`. Return the immutable snapshot record identifier as a UUID string.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   `shopping_mall_seller_profile_snapshots.id`. Return the immutable
+     *   snapshot record identifier as a UUID string.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Seller profile that owns this historical snapshot record.
    *
-   * @x-autobe-database-schema-property sellerProfile
-   * @x-autobe-specification Join `shopping_mall_seller_profiles` using `shopping_mall_seller_profile_snapshots.shopping_mall_seller_profile_id = shopping_mall_seller_profiles.id` and map the joined parent record to `IShoppingMallSellerProfile.ISummary`. This relation provides the current parent seller profile context for the snapshot.
+     * @x-autobe-database-schema-property sellerProfile
+     * @x-autobe-specification Join `shopping_mall_seller_profiles` using
+     *   `shopping_mall_seller_profile_snapshots.shopping_mall_seller_profile_id
+     *   = shopping_mall_seller_profiles.id` and map the joined parent record to
+     *   `IShoppingMallSellerProfile.ISummary`. This relation provides the
+     *   current parent seller profile context for the snapshot.
    */
   sellerProfile: IShoppingMallSellerProfile.ISummary;
 
   /**
    * Shop name that was preserved in this snapshot version.
    *
-   * @x-autobe-database-schema-property shop_name
-   * @x-autobe-specification Direct mapping from `shopping_mall_seller_profile_snapshots.shop_name`. Return the seller shop name exactly as preserved in the historical snapshot state.
+     * @x-autobe-database-schema-property shop_name
+     * @x-autobe-specification Direct mapping from
+     *   `shopping_mall_seller_profile_snapshots.shop_name`. Return the seller
+     *   shop name exactly as preserved in the historical snapshot state.
    */
   shopName: string;
 
   /**
    * Shop description preserved in this snapshot version, or null when no description was stored for that historical state.
    *
-   * @x-autobe-database-schema-property shop_description
-   * @x-autobe-specification Direct mapping from `shopping_mall_seller_profile_snapshots.shop_description`. Preserve nullability exactly as stored in the snapshot row.
+     * @x-autobe-database-schema-property shop_description
+     * @x-autobe-specification Direct mapping from
+     *   `shopping_mall_seller_profile_snapshots.shop_description`. Preserve
+     *   nullability exactly as stored in the snapshot row.
    */
   shopDescription: string | null;
 
   /**
    * Logo URI preserved in this snapshot version, or null when no logo URI was stored for that historical state.
    *
-   * @x-autobe-database-schema-property logo_uri
-   * @x-autobe-specification Direct mapping from `shopping_mall_seller_profile_snapshots.logo_uri`. Preserve nullability exactly as stored in the snapshot row and return the historical logo URI for that snapshot state.
+     * @x-autobe-database-schema-property logo_uri
+     * @x-autobe-specification Direct mapping from
+     *   `shopping_mall_seller_profile_snapshots.logo_uri`. Preserve nullability
+     *   exactly as stored in the snapshot row and return the historical logo
+     *   URI for that snapshot state.
    */
   logoUri: string | null;
 
   /**
    * Short summary describing what changed in the seller profile edit captured by this snapshot.
    *
-   * @x-autobe-database-schema-property changed_summary
-   * @x-autobe-specification Direct mapping from `shopping_mall_seller_profile_snapshots.changed_summary`. Return the concise human-readable summary recorded for the seller profile edit event that produced this snapshot.
+     * @x-autobe-database-schema-property changed_summary
+     * @x-autobe-specification Direct mapping from
+     *   `shopping_mall_seller_profile_snapshots.changed_summary`. Return the
+     *   concise human-readable summary recorded for the seller profile edit
+     *   event that produced this snapshot.
    */
   changedSummary: string;
 
   /**
    * Business timestamp when the seller profile change represented by this snapshot occurred.
    *
-   * @x-autobe-database-schema-property changed_at
-   * @x-autobe-specification Direct mapping from `shopping_mall_seller_profile_snapshots.changed_at` to an ISO 8601 date-time string. This is the business time when the seller profile change occurred, not merely the row insertion time.
+     * @x-autobe-database-schema-property changed_at
+     * @x-autobe-specification Direct mapping from
+     *   `shopping_mall_seller_profile_snapshots.changed_at` to an ISO 8601
+     *   date-time string. This is the business time when the seller profile
+     *   change occurred, not merely the row insertion time.
    */
   changedAt: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when this snapshot record was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from `shopping_mall_seller_profile_snapshots.created_at` to an ISO 8601 date-time string. This is the timestamp when the snapshot row was inserted.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   `shopping_mall_seller_profile_snapshots.created_at` to an ISO 8601
+     *   date-time string. This is the timestamp when the snapshot row was
+     *   inserted.
    */
   createdAt: string & tags.Format<"date-time">;
 
   /**
    * Timestamp maintained on the snapshot row; for immutable snapshots it remains equal to the creation-time value.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from `shopping_mall_seller_profile_snapshots.updated_at` to an ISO 8601 date-time string. Because snapshot rows are immutable after insertion, this value is initialized equal to the creation time and should not change later.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   `shopping_mall_seller_profile_snapshots.updated_at` to an ISO 8601
+     *   date-time string. Because snapshot rows are immutable after insertion,
+     *   this value is initialized equal to the creation time and should not
+     *   change later.
    */
   updatedAt: string & tags.Format<"date-time">;
 };
@@ -87,72 +113,90 @@ export namespace IShoppingMallSellerProfileSnapshot {
     /**
      * Unique identifier of this preserved seller profile snapshot record.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_seller_profile_snapshots.id.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_seller_profile_snapshots.id.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Seller profile whose public shop state is preserved by this snapshot.
      *
-     * @x-autobe-database-schema-property sellerProfile
-     * @x-autobe-specification Resolve the belongs-to relation from shopping_mall_seller_profile_snapshots.sellerProfile using shopping_mall_seller_profile_id -> shopping_mall_seller_profiles.id, and serialize it as IShoppingMallSellerProfile.ISummary.
+         * @x-autobe-database-schema-property sellerProfile
+         * @x-autobe-specification Resolve the belongs-to relation from
+         *   shopping_mall_seller_profile_snapshots.sellerProfile using
+         *   shopping_mall_seller_profile_id ->
+         *   shopping_mall_seller_profiles.id, and serialize it as
+         *   IShoppingMallSellerProfile.ISummary.
      */
     sellerProfile: IShoppingMallSellerProfile.ISummary;
 
     /**
      * Shop name preserved in this historical snapshot.
      *
-     * @x-autobe-database-schema-property shop_name
-     * @x-autobe-specification Direct mapping from shopping_mall_seller_profile_snapshots.shop_name.
+         * @x-autobe-database-schema-property shop_name
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_seller_profile_snapshots.shop_name.
      */
     shop_name: string;
 
     /**
      * Shop description preserved in this historical snapshot, or null when no description was stored.
      *
-     * @x-autobe-database-schema-property shop_description
-     * @x-autobe-specification Direct mapping from shopping_mall_seller_profile_snapshots.shop_description. Return null when the snapshot preserved no shop description.
+         * @x-autobe-database-schema-property shop_description
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_seller_profile_snapshots.shop_description. Return
+         *   null when the snapshot preserved no shop description.
      */
     shop_description: string | null;
 
     /**
      * Logo image URI preserved in this historical snapshot, or null when no logo was stored.
      *
-     * @x-autobe-database-schema-property logo_uri
-     * @x-autobe-specification Direct mapping from shopping_mall_seller_profile_snapshots.logo_uri. Return null when the snapshot preserved no logo URI.
+         * @x-autobe-database-schema-property logo_uri
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_seller_profile_snapshots.logo_uri. Return null when
+         *   the snapshot preserved no logo URI.
      */
     logo_uri: (string & tags.Format<"uri">) | null;
 
     /**
      * Concise summary describing what changed in the seller profile edit captured by this snapshot.
      *
-     * @x-autobe-database-schema-property changed_summary
-     * @x-autobe-specification Direct mapping from shopping_mall_seller_profile_snapshots.changed_summary.
+         * @x-autobe-database-schema-property changed_summary
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_seller_profile_snapshots.changed_summary.
      */
     changed_summary: string;
 
     /**
      * Business timestamp when the seller profile change represented by this snapshot occurred.
      *
-     * @x-autobe-database-schema-property changed_at
-     * @x-autobe-specification Direct mapping from shopping_mall_seller_profile_snapshots.changed_at as an ISO 8601 date-time string.
+         * @x-autobe-database-schema-property changed_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_seller_profile_snapshots.changed_at as an ISO 8601
+         *   date-time string.
      */
     changed_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when this snapshot record was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_seller_profile_snapshots.created_at as an ISO 8601 date-time string.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_seller_profile_snapshots.created_at as an ISO 8601
+         *   date-time string.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp recorded as the snapshot's last update time; for this immutable record it remains equal to the creation time.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from shopping_mall_seller_profile_snapshots.updated_at as an ISO 8601 date-time string. For this immutable snapshot table, this value is maintained equal to creation time after insertion.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_seller_profile_snapshots.updated_at as an ISO 8601
+         *   date-time string. For this immutable snapshot table, this value is
+         *   maintained equal to creation time after insertion.
      */
     updated_at: string & tags.Format<"date-time">;
   };
@@ -164,28 +208,41 @@ export namespace IShoppingMallSellerProfileSnapshot {
     /**
      * Keyword used to search preserved shop name, preserved shop description, and change-summary text within seller profile snapshot history.
      *
-     * @x-autobe-specification Interpret as a case-insensitive partial-match query term applied across shopping_mall_seller_profile_snapshots.shop_name, shopping_mall_seller_profile_snapshots.shop_description, and shopping_mall_seller_profile_snapshots.changed_summary only. Ignore this filter when omitted.
+         * @x-autobe-specification Interpret as a case-insensitive partial-match
+         *   query term applied across
+         *   shopping_mall_seller_profile_snapshots.shop_name,
+         *   shopping_mall_seller_profile_snapshots.shop_description, and
+         *   shopping_mall_seller_profile_snapshots.changed_summary only. Ignore
+         *   this filter when omitted.
      */
     search?: string | undefined;
 
     /**
      * Start of the change-time range for snapshot history results, inclusive.
      *
-     * @x-autobe-specification Interpret as the inclusive lower bound for shopping_mall_seller_profile_snapshots.changed_at when filtering snapshot history. Apply `changed_at >= changedAtFrom` if provided.
+         * @x-autobe-specification Interpret as the inclusive lower bound for
+         *   shopping_mall_seller_profile_snapshots.changed_at when filtering
+         *   snapshot history. Apply `changed_at >= changedAtFrom` if provided.
      */
     changedAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * End of the change-time range for snapshot history results, inclusive.
      *
-     * @x-autobe-specification Interpret as the inclusive upper bound for shopping_mall_seller_profile_snapshots.changed_at when filtering snapshot history. Apply `changed_at <= changedAtTo` if provided.
+         * @x-autobe-specification Interpret as the inclusive upper bound for
+         *   shopping_mall_seller_profile_snapshots.changed_at when filtering
+         *   snapshot history. Apply `changed_at <= changedAtTo` if provided.
      */
     changedAtTo?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Field used to order seller profile snapshot history results.
      *
-     * @x-autobe-specification Interpret as a selector for the primary sort column in the snapshot-history query. Supported values map to actual columns in shopping_mall_seller_profile_snapshots: `changed_at`, `created_at`, `shop_name`, or `changed_summary`. If omitted, default to `changed_at`.
+         * @x-autobe-specification Interpret as a selector for the primary sort
+         *   column in the snapshot-history query. Supported values map to
+         *   actual columns in shopping_mall_seller_profile_snapshots:
+         *   `changed_at`, `created_at`, `shop_name`, or `changed_summary`. If
+         *   omitted, default to `changed_at`.
      */
     sortBy?:
       | "changed_at"
@@ -197,21 +254,29 @@ export namespace IShoppingMallSellerProfileSnapshot {
     /**
      * Direction used to sort snapshot history results in ascending or descending order.
      *
-     * @x-autobe-specification Interpret as the requested sort direction for the column selected by `sortBy`. Supported values are `asc` and `desc`. If omitted, default to `desc` for snapshot-history browsing.
+         * @x-autobe-specification Interpret as the requested sort direction for
+         *   the column selected by `sortBy`. Supported values are `asc` and
+         *   `desc`. If omitted, default to `desc` for snapshot-history
+         *   browsing.
      */
     sortOrder?: "asc" | "desc" | undefined;
 
     /**
      * Page number of the snapshot history result set to retrieve.
      *
-     * @x-autobe-specification Interpret as a 1-indexed page number for paginated retrieval of snapshot history. Convert to query offset using `(page - 1) * limit` after applying defaults and validation.
+         * @x-autobe-specification Interpret as a 1-indexed page number for
+         *   paginated retrieval of snapshot history. Convert to query offset
+         *   using `(page - 1) * limit` after applying defaults and validation.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of snapshot history records to return in a single page.
      *
-     * @x-autobe-specification Interpret as the maximum number of snapshot-history records to return in one page. Enforce the declared validation bounds, especially the maximum of 100, before constructing the database query.
+         * @x-autobe-specification Interpret as the maximum number of
+         *   snapshot-history records to return in one page. Enforce the
+         *   declared validation bounds, especially the maximum of 100, before
+         *   constructing the database query.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -225,23 +290,23 @@ export namespace IShoppingMallSellerProfileSnapshot {
    */
   export type ICreate = {
     /**
-     * @x-autobe-database-schema-property shop_name
+         * @x-autobe-database-schema-property shop_name
      */
     shopName: string;
     /**
-     * @x-autobe-database-schema-property shop_description
+         * @x-autobe-database-schema-property shop_description
      */
     shopDescription?: string | null | undefined;
     /**
-     * @x-autobe-database-schema-property logo_uri
+         * @x-autobe-database-schema-property logo_uri
      */
     logoUri?: (string & tags.Format<"uri">) | null | undefined;
     /**
-     * @x-autobe-database-schema-property changed_summary
+         * @x-autobe-database-schema-property changed_summary
      */
     changedSummary: string;
     /**
-     * @x-autobe-database-schema-property changed_at
+         * @x-autobe-database-schema-property changed_at
      */
     changedAt: string & tags.Format<"date-time">;
   };

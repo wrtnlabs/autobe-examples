@@ -21,9 +21,10 @@ export class EcommercemallAdminDeleted_productsController {
    *
    * @param connection
    * @param body Search criteria and pagination parameters for filtering deleted products
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query ecommerce_mall_products table where deleted_at IS NOT NULL.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Query ecommerce_mall_products table where
+     *   deleted_at IS NOT NULL.
    *
    * Join with ecommerce_mall_sellers to get seller shop name information.
    * Join with ecommerce_mall_categories to get category names.

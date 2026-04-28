@@ -10,32 +10,48 @@ export type IErpHrmRolePermission = {
   /**
    * The unique identifier of this permission grant record. A UUID auto-generated at the time the permission code was added to the role.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from `erp_hrm_role_permissions.id`. Auto-generated UUID primary key assigned at insert time. Used to identify this specific permission grant record, e.g., for deletion via DELETE /permissions/{permissionId}.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   `erp_hrm_role_permissions.id`. Auto-generated UUID primary key assigned
+     *   at insert time. Used to identify this specific permission grant record,
+     *   e.g., for deletion via DELETE /permissions/{permissionId}.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * The role to which this permission code is assigned. Provides the full summary of the parent role, including its name, built-in status, and current permission set.
    *
-   * @x-autobe-database-schema-property role
-   * @x-autobe-specification Resolved via JOIN from `erp_hrm_role_permissions.role_id` to `erp_hrm_roles.id`. Returns the parent role as `IErpHrmRole.ISummary`, including the role's id, name, is_builtin flag, permissions array, and timestamps. The raw `role_id` FK column is not exposed separately.
+     * @x-autobe-database-schema-property role
+     * @x-autobe-specification Resolved via JOIN from
+     *   `erp_hrm_role_permissions.role_id` to `erp_hrm_roles.id`. Returns the
+     *   parent role as `IErpHrmRole.ISummary`, including the role's id, name,
+     *   is_builtin flag, permissions array, and timestamps. The raw `role_id`
+     *   FK column is not exposed separately.
    */
   role: IErpHrmRole.ISummary;
 
   /**
    * The discrete permission code granted to the role by this record. One of: `org:manage`, `employee:manage`, `employee:view`, `project:manage`, `project:view`, `time:manage`, `time:approve`, `time:view_all`, `report:view`. Each code unlocks a specific category of actions within the organization.
    *
-   * @x-autobe-database-schema-property permission_code
-   * @x-autobe-specification Direct mapping from `erp_hrm_role_permissions.permission_code`. One of the predefined permission codes: `org:manage`, `employee:manage`, `employee:view`, `project:manage`, `project:view`, `time:manage`, `time:approve`, `time:view_all`, `report:view`. The `(role_id, permission_code)` pair is unique — duplicate codes per role are prevented by a unique constraint.
+     * @x-autobe-database-schema-property permission_code
+     * @x-autobe-specification Direct mapping from
+     *   `erp_hrm_role_permissions.permission_code`. One of the predefined
+     *   permission codes: `org:manage`, `employee:manage`, `employee:view`,
+     *   `project:manage`, `project:view`, `time:manage`, `time:approve`,
+     *   `time:view_all`, `report:view`. The `(role_id, permission_code)` pair
+     *   is unique — duplicate codes per role are prevented by a unique
+     *   constraint.
    */
   permission_code: string;
 
   /**
    * The timestamp recording when this permission code was granted to the role. Set automatically by the server at creation time and never changed thereafter.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from `erp_hrm_role_permissions.created_at`. Set server-side to the current UTC timestamp at the time of INSERT. Never updated after creation, as permission records are immutable once created.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   `erp_hrm_role_permissions.created_at`. Set server-side to the current
+     *   UTC timestamp at the time of INSERT. Never updated after creation, as
+     *   permission records are immutable once created.
    */
   created_at: string & tags.Format<"date-time">;
 };
@@ -62,8 +78,16 @@ export namespace IErpHrmRolePermission {
     /**
      * The permission code to grant to the target custom role. Must be one of the predefined permission codes that control access to specific categories of actions within the organization. Each code represents a distinct capability area and can be combined freely on a custom role.
      *
-     * @x-autobe-database-schema-property permission_code
-     * @x-autobe-specification Direct mapping to erp_hrm_role_permissions.permission_code. Must be exactly one of the 9 allowed constant values: 'org:manage', 'employee:manage', 'employee:view', 'project:manage', 'project:view', 'time:manage', 'time:approve', 'time:view_all', 'report:view'. Validate against this set before inserting. Return 400 Bad Request for any value not in the allowed set. The (role_id, permission_code) combination must be unique; return 409 Conflict if the role already holds this permission code.
+         * @x-autobe-database-schema-property permission_code
+         * @x-autobe-specification Direct mapping to
+         *   erp_hrm_role_permissions.permission_code. Must be exactly one of
+         *   the 9 allowed constant values: 'org:manage', 'employee:manage',
+         *   'employee:view', 'project:manage', 'project:view', 'time:manage',
+         *   'time:approve', 'time:view_all', 'report:view'. Validate against
+         *   this set before inserting. Return 400 Bad Request for any value not
+         *   in the allowed set. The (role_id, permission_code) combination must
+         *   be unique; return 409 Conflict if the role already holds this
+         *   permission code.
      */
     permission_code:
       | "org:manage"
@@ -84,8 +108,14 @@ export namespace IErpHrmRolePermission {
     /**
      * The complete set of permission codes to assign to the role, replacing the existing permissions entirely. Must contain only recognized permission codes: `org:manage`, `employee:manage`, `employee:view`, `project:manage`, `project:view`, `time:manage`, `time:approve`, `time:view_all`, and `report:view`. Duplicate codes are not allowed. An empty array clears all permissions from the role.
      *
-     * @x-autobe-database-schema-property permission_code
-     * @x-autobe-specification Each element in this array corresponds to one erp_hrm_role_permissions.permission_code value to be written. On update, all existing rows for the role are deleted and one new row is inserted per element. Allowed values: org:manage, employee:manage, employee:view, project:manage, project:view, time:manage, time:approve, time:view_all, report:view. Reject duplicates and any unrecognized codes with 400 Bad Request.
+         * @x-autobe-database-schema-property permission_code
+         * @x-autobe-specification Each element in this array corresponds to one
+         *   erp_hrm_role_permissions.permission_code value to be written. On
+         *   update, all existing rows for the role are deleted and one new row
+         *   is inserted per element. Allowed values: org:manage,
+         *   employee:manage, employee:view, project:manage, project:view,
+         *   time:manage, time:approve, time:view_all, report:view. Reject
+         *   duplicates and any unrecognized codes with 400 Bad Request.
      */
     permissionCodes: string[] & tags.UniqueItems;
   };

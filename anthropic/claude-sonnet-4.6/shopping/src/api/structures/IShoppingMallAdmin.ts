@@ -12,62 +12,92 @@ export type IShoppingMallAdmin = {
   /**
    * Unique identifier (UUID) of the administrator account.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_admins.id. UUID primary key, auto-generated on record creation.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from shopping_mall_admins.id. UUID
+     *   primary key, auto-generated on record creation.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * The administrator's unique email address, inherited from the originating customer or seller account. This is used as the login identifier for platform authentication.
    *
-   * @x-autobe-database-schema-property email
-   * @x-autobe-specification Direct mapping from shopping_mall_admins.email. Unique across all admin accounts. Inherited from the originating customer or seller account at promotion time. Used as the login identifier.
+     * @x-autobe-database-schema-property email
+     * @x-autobe-specification Direct mapping from shopping_mall_admins.email.
+     *   Unique across all admin accounts. Inherited from the originating
+     *   customer or seller account at promotion time. Used as the login
+     *   identifier.
    */
   email: string & tags.Format<"email">;
 
   /**
    * Discriminator indicating the type of account from which this administrator was promoted. 'customer' means the admin originated from a customer account; 'seller' means the admin originated from a seller account.
    *
-   * @x-autobe-specification Direct mapping from shopping_mall_admins.actor_type. Constrained to exactly two values: 'customer' (admin promoted from a customer account) or 'seller' (admin promoted from a seller account). Used as a discriminator to resolve the polymorphic origin linkage to the appropriate subtype table.
-   * @x-autobe-database-schema-property actor_type
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_admins.actor_type. Constrained to exactly two values:
+     *   'customer' (admin promoted from a customer account) or 'seller' (admin
+     *   promoted from a seller account). Used as a discriminator to resolve the
+     *   polymorphic origin linkage to the appropriate subtype table.
+     * @x-autobe-database-schema-property actor_type
    */
   actor_type: "customer" | "seller";
 
   /**
    * The privilege grade of this administrator. 'regular' indicates standard platform governance capabilities. 'super' indicates elevated privileges including administrator promotion/demotion and approval of admin promotion requests.
    *
-   * @x-autobe-specification Computed field. Query shopping_mall_super_admins WHERE the record corresponds to this admin (matching by admin id). If a valid (non-soft-deleted) super admin record exists, grade='super'; otherwise grade='regular'. This field is not a column in shopping_mall_admins but is derived at query time.
+     * @x-autobe-specification Computed field. Query shopping_mall_super_admins
+     *   WHERE the record corresponds to this admin (matching by admin id). If a
+     *   valid (non-soft-deleted) super admin record exists, grade='super';
+     *   otherwise grade='regular'. This field is not a column in
+     *   shopping_mall_admins but is derived at query time.
    */
   grade: "regular" | "super";
 
   /**
    * The provenance linkage record tracing which pre-existing account was promoted to this administrator role. It is either an IShoppingMallAdminOfCustomer (when the admin originated from a customer account) or an IShoppingMallAdminOfSeller (when the admin originated from a seller account).
    *
-   * @x-autobe-specification Computed polymorphic field. Resolve based on shopping_mall_admins.actor_type: if actor_type='customer', JOIN shopping_mall_admin_of_customers ON admin_id = shopping_mall_admins.id and return as IShoppingMallAdminOfCustomer (including customer summary). If actor_type='seller', JOIN shopping_mall_admin_of_sellers ON admin_id = shopping_mall_admins.id and return as IShoppingMallAdminOfSeller (including seller summary). Always exactly one record will exist due to the unique constraint on admin_id in both subtype tables.
+     * @x-autobe-specification Computed polymorphic field. Resolve based on
+     *   shopping_mall_admins.actor_type: if actor_type='customer', JOIN
+     *   shopping_mall_admin_of_customers ON admin_id = shopping_mall_admins.id
+     *   and return as IShoppingMallAdminOfCustomer (including customer
+     *   summary). If actor_type='seller', JOIN shopping_mall_admin_of_sellers
+     *   ON admin_id = shopping_mall_admins.id and return as
+     *   IShoppingMallAdminOfSeller (including seller summary). Always exactly
+     *   one record will exist due to the unique constraint on admin_id in both
+     *   subtype tables.
    */
   origin: IShoppingMallAdminOfCustomer | IShoppingMallAdminOfSeller;
 
   /**
    * Timestamp indicating when this administrator account was created, i.e., when the admin promotion was first granted.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from shopping_mall_admins.created_at. Timestamptz set at record creation (i.e., when the admin promotion was granted). Never modified after initial insert.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_admins.created_at. Timestamptz set at record creation
+     *   (i.e., when the admin promotion was granted). Never modified after
+     *   initial insert.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp of the most recent update to this administrator account record, such as an email or password change.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from shopping_mall_admins.updated_at. Timestamptz updated automatically whenever any mutable field (email, password_hash) on the admin record is changed.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_admins.updated_at. Timestamptz updated automatically
+     *   whenever any mutable field (email, password_hash) on the admin record
+     *   is changed.
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * Soft-deletion timestamp. When non-null, this administrator account has been deactivated and can no longer be used for authentication. A null value indicates the account is currently active.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from shopping_mall_admins.deleted_at. Nullable timestamptz. When non-null, the admin account is considered soft-deleted (deactivated) and login is denied. The record is preserved for audit purposes and remains accessible to authorized reviewers.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_admins.deleted_at. Nullable timestamptz. When non-null,
+     *   the admin account is considered soft-deleted (deactivated) and login is
+     *   denied. The record is preserved for audit purposes and remains
+     *   accessible to authorized reviewers.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -85,7 +115,16 @@ export namespace IShoppingMallAdmin {
      *
      * This opaque token is submitted to the refresh endpoint to obtain a new JWT access token and refresh token pair without requiring the administrator to re-enter their credentials. Each refresh token is single-use: after a successful refresh, the submitted token is invalidated and can no longer be used.
      *
-     * @x-autobe-specification The client supplies the refresh_token string that was issued during a previous admin login or refresh operation. The service layer looks up this value in shopping_mall_admin_sessions via the unique index on the refresh_token column (SELECT * FROM shopping_mall_admin_sessions WHERE refresh_token = $1). If a matching active record is found (expired_at > now()), the associated admin account is verified (deleted_at IS NULL on shopping_mall_admins), and new tokens are generated. The old refresh_token is immediately invalidated by overwriting the session row.
+         * @x-autobe-specification The client supplies the refresh_token string
+         *   that was issued during a previous admin login or refresh operation.
+         *   The service layer looks up this value in
+         *   shopping_mall_admin_sessions via the unique index on the
+         *   refresh_token column (SELECT * FROM shopping_mall_admin_sessions
+         *   WHERE refresh_token = $1). If a matching active record is found
+         *   (expired_at > now()), the associated admin account is verified
+         *   (deleted_at IS NULL on shopping_mall_admins), and new tokens are
+         *   generated. The old refresh_token is immediately invalidated by
+         *   overwriting the session row.
      */
     refresh_token: string;
   };
@@ -103,8 +142,12 @@ export namespace IShoppingMallAdmin {
      *
      * This must exactly match the email stored in the administrator account. Admin email addresses are inherited from the originating customer or seller account at the time of admin promotion and cannot be changed through the login flow.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping to shopping_mall_admins.email. This value is used to look up the administrator record during authentication. The email is unique across all admin accounts (@@unique([email]) constraint). If no matching record is found, the server returns 401 without revealing whether the account exists.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping to shopping_mall_admins.email.
+         *   This value is used to look up the administrator record during
+         *   authentication. The email is unique across all admin accounts
+         *   (@@unique([email]) constraint). If no matching record is found, the
+         *   server returns 401 without revealing whether the account exists.
      */
     email: string & tags.Format<"email">;
 
@@ -113,8 +156,13 @@ export namespace IShoppingMallAdmin {
      *
      * This value is verified server-side against the stored bcrypt password hash. The plaintext password is never persisted — only used transiently during the authentication check. If the password does not match, the request is rejected with a 401 response.
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification Maps to shopping_mall_admins.password_hash via bcrypt.compare(plaintext, hash). The client submits the plaintext password; the server hashes and compares internally. The plaintext value is never stored. On mismatch, 401 is returned. Error messages must not distinguish between 'account not found' and 'wrong password' to prevent user enumeration.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification Maps to shopping_mall_admins.password_hash
+         *   via bcrypt.compare(plaintext, hash). The client submits the
+         *   plaintext password; the server hashes and compares internally. The
+         *   plaintext value is never stored. On mismatch, 401 is returned.
+         *   Error messages must not distinguish between 'account not found' and
+         *   'wrong password' to prevent user enumeration.
      */
     password: string & tags.Format<"password">;
   };
@@ -130,16 +178,25 @@ export namespace IShoppingMallAdmin {
     /**
      * The email address of the administrator account to be activated. This must be the email address inherited from the originating customer or seller account and will serve as the login identifier for the administrator. Must be a valid email address and must not already be registered in the administrator accounts table.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping to shopping_mall_admins.email. This value is written as-is to the email column, which has a unique constraint. The server must verify uniqueness before inserting; if the email is already registered in shopping_mall_admins, respond with 409 Conflict.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping to shopping_mall_admins.email.
+         *   This value is written as-is to the email column, which has a unique
+         *   constraint. The server must verify uniqueness before inserting; if
+         *   the email is already registered in shopping_mall_admins, respond
+         *   with 409 Conflict.
      */
     email: string & tags.Format<"email">;
 
     /**
      * The plaintext password for the administrator account. This password will be securely hashed using bcrypt before being stored. The plaintext value is never persisted. Must meet the platform's password strength requirements.
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification Submitted as plaintext by the caller. The server bcrypt-hashes this value using an appropriate cost factor and stores the result in shopping_mall_admins.password_hash. The plaintext password is never logged or persisted. The mapping is: DTO password (plaintext) → shopping_mall_admins.password_hash (bcrypt hash).
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification Submitted as plaintext by the caller. The
+         *   server bcrypt-hashes this value using an appropriate cost factor
+         *   and stores the result in shopping_mall_admins.password_hash. The
+         *   plaintext password is never logged or persisted. The mapping is:
+         *   DTO password (plaintext) → shopping_mall_admins.password_hash
+         *   (bcrypt hash).
      */
     password: string & tags.Format<"password">;
   };
@@ -155,76 +212,105 @@ export namespace IShoppingMallAdmin {
     /**
      * Unique identifier of the administrator account. UUID format.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_admins.id. UUID primary key, auto-generated at account creation time.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from shopping_mall_admins.id.
+         *   UUID primary key, auto-generated at account creation time.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Email address of the administrator account, inherited from the originating customer or seller account at the time of promotion. Used as the login identifier and is unique across all administrator accounts.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from shopping_mall_admins.email. Unique constraint enforced. Inherited from the originating customer or seller account during promotion. Used as the admin's login identifier.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_admins.email. Unique constraint enforced. Inherited
+         *   from the originating customer or seller account during promotion.
+         *   Used as the admin's login identifier.
      */
     email: string & tags.Format<"email">;
 
     /**
      * Discriminator indicating the type of account from which this administrator was promoted. Either 'customer' (promoted from a registered customer account) or 'seller' (promoted from a registered seller account).
      *
-     * @x-autobe-database-schema-property actor_type
-     * @x-autobe-specification Direct mapping from shopping_mall_admins.actor_type. Allowed values: 'customer' or 'seller'. Indicates whether this admin was promoted from a shopping_mall_customers record or a shopping_mall_sellers record. Does not affect authentication flow.
+         * @x-autobe-database-schema-property actor_type
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_admins.actor_type. Allowed values: 'customer' or
+         *   'seller'. Indicates whether this admin was promoted from a
+         *   shopping_mall_customers record or a shopping_mall_sellers record.
+         *   Does not affect authentication flow.
      */
     actor_type: string;
 
     /**
      * Privilege grade of the administrator. 'regular' indicates a standard admin with platform management access. 'super' indicates a super administrator with elevated privileges including promoting or demoting other admins and approving admin promotion requests.
      *
-     * @x-autobe-specification Computed field. Check shopping_mall_super_admins for a record where admin_id matches this admin's id. If found, grade='super'; otherwise grade='regular'. This field is never stored as a column in shopping_mall_admins.
+         * @x-autobe-specification Computed field. Check
+         *   shopping_mall_super_admins for a record where admin_id matches this
+         *   admin's id. If found, grade='super'; otherwise grade='regular'.
+         *   This field is never stored as a column in shopping_mall_admins.
      */
     grade: string;
 
     /**
      * The origin linkage record tracing this administrator back to their originating account. If the admin was promoted from a customer account, this is an IShoppingMallAdminOfCustomer record. If promoted from a seller account, this is an IShoppingMallAdminOfSeller record.
      *
-     * @x-autobe-specification Computed field. If actor_type='customer', join shopping_mall_admin_of_customers on admin_id and return IShoppingMallAdminOfCustomer. If actor_type='seller', join shopping_mall_admin_of_sellers on admin_id and return IShoppingMallAdminOfSeller. Exactly one record will exist.
+         * @x-autobe-specification Computed field. If actor_type='customer',
+         *   join shopping_mall_admin_of_customers on admin_id and return
+         *   IShoppingMallAdminOfCustomer. If actor_type='seller', join
+         *   shopping_mall_admin_of_sellers on admin_id and return
+         *   IShoppingMallAdminOfSeller. Exactly one record will exist.
      */
     origin: IShoppingMallAdminOfCustomer | IShoppingMallAdminOfSeller;
 
     /**
      * Timestamp indicating when this administrator account was created, i.e., when the promotion from the originating account was finalized.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_admins.created_at. Timestamptz column. Set to now() at the time the admin account was created (promotion was finalized).
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_admins.created_at. Timestamptz column. Set to now()
+         *   at the time the admin account was created (promotion was
+         *   finalized).
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp of the most recent update to this administrator account record, such as a password change or profile edit.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from shopping_mall_admins.updated_at. Timestamptz column. Updated to now() on any profile modification such as a password change.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_admins.updated_at. Timestamptz column. Updated to
+         *   now() on any profile modification such as a password change.
      */
     updated_at: string & tags.Format<"date-time">;
 
     /**
      * Soft-deletion timestamp of the administrator account. When null, the account is active and the administrator can log in. When non-null, the account has been deactivated and access is denied, though the record is preserved for audit purposes.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from shopping_mall_admins.deleted_at. Nullable Timestamptz column. Null means the account is active; a non-null value indicates the account has been soft-deleted and login is denied.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_admins.deleted_at. Nullable Timestamptz column. Null
+         *   means the account is active; a non-null value indicates the account
+         *   has been soft-deleted and login is denied.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
 
     /**
      * Authorization token.
      *
-     * @x-autobe-specification Authorization token comes from the session table.
+         * @x-autobe-specification Authorization token comes from the session
+         *   table.
      */
     token: IAuthorizationToken;
 
     /**
      * Full profile of the authenticated administrator. Contains all public administrator fields including their unique identifier, email, origin account type, privilege grade, and account lifecycle timestamps. This is the complete administrator entity returned alongside the session tokens for client-side profile storage.
      *
-     * @x-autobe-specification Constructed from the shopping_mall_admins record for this admin, composed with the computed grade (from shopping_mall_super_admins) and origin (from shopping_mall_admin_of_customers or shopping_mall_admin_of_sellers). Returns the full IShoppingMallAdmin object. Exclude password_hash.
+         * @x-autobe-specification Constructed from the shopping_mall_admins
+         *   record for this admin, composed with the computed grade (from
+         *   shopping_mall_super_admins) and origin (from
+         *   shopping_mall_admin_of_customers or
+         *   shopping_mall_admin_of_sellers). Returns the full
+         *   IShoppingMallAdmin object. Exclude password_hash.
      */
     admin: IShoppingMallAdmin;
   };
@@ -236,55 +322,72 @@ export namespace IShoppingMallAdmin {
     /**
      * Unique identifier of the administrator account.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_admins.id. UUID primary key, auto-generated.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from shopping_mall_admins.id.
+         *   UUID primary key, auto-generated.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Email address of the administrator. Inherited from the originating customer or seller account and used as the login identifier. Unique across the platform.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from shopping_mall_admins.email. Unique per platform. Inherited from the originating customer or seller account and used as the login identifier.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_admins.email. Unique per platform. Inherited from the
+         *   originating customer or seller account and used as the login
+         *   identifier.
      */
     email: string & tags.Format<"email">;
 
     /**
      * Discriminator indicating the origin of the administrator account. 'customer' means the admin was promoted from a customer account; 'seller' means the admin was promoted from a seller account.
      *
-     * @x-autobe-database-schema-property actor_type
-     * @x-autobe-specification Direct mapping from shopping_mall_admins.actor_type. Allowed values: 'customer' or 'seller'. Indicates whether the admin was promoted from a customer account or a seller account.
+         * @x-autobe-database-schema-property actor_type
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_admins.actor_type. Allowed values: 'customer' or
+         *   'seller'. Indicates whether the admin was promoted from a customer
+         *   account or a seller account.
      */
     actor_type: "customer" | "seller";
 
     /**
      * Grade of the administrator. 'regular' indicates a standard administrator; 'super' indicates a super administrator with elevated privileges such as managing other administrators.
      *
-     * @x-autobe-specification Computed field: query the shopping_mall_super_admins table for a record matching this admin's id. If a matching record exists, grade='super'; otherwise grade='regular'.
+         * @x-autobe-specification Computed field: query the
+         *   shopping_mall_super_admins table for a record matching this admin's
+         *   id. If a matching record exists, grade='super'; otherwise
+         *   grade='regular'.
      */
     grade: "regular" | "super";
 
     /**
      * Timestamp indicating when the administrator account was created (i.e., when the admin promotion was approved and the account was activated).
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_admins.created_at. Timestamptz. Records when the admin promotion was granted.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_admins.created_at. Timestamptz. Records when the
+         *   admin promotion was granted.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp of the most recent update to the administrator account record, such as a password change or profile edit.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from shopping_mall_admins.updated_at. Timestamptz. Updated on any change to the admin record such as a password change or profile edit.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_admins.updated_at. Timestamptz. Updated on any change
+         *   to the admin record such as a password change or profile edit.
      */
     updated_at: string & tags.Format<"date-time">;
 
     /**
      * Soft-deletion timestamp. When non-null, the administrator account has been deactivated and the account owner can no longer log in. Null means the account is currently active.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from shopping_mall_admins.deleted_at. Nullable Timestamptz. When non-null, the account is soft-deleted and login is denied. The historical record is preserved for audit purposes.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_admins.deleted_at. Nullable Timestamptz. When
+         *   non-null, the account is soft-deleted and login is denied. The
+         *   historical record is preserved for audit purposes.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };
@@ -296,16 +399,26 @@ export namespace IShoppingMallAdmin {
     /**
      * The new email address for the administrator account. Must be unique across all administrator accounts. This serves as the login identifier for the administrator. Omit this field to leave the current email unchanged.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Optional field. Direct mapping to shopping_mall_admins.email. If provided, the service layer must first check that no other admin account holds this email address (unique constraint). If a conflict is found, return 409 Conflict. If the value is identical to the current email, the check may be skipped. On success, update shopping_mall_admins.email to the new value.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Optional field. Direct mapping to
+         *   shopping_mall_admins.email. If provided, the service layer must
+         *   first check that no other admin account holds this email address
+         *   (unique constraint). If a conflict is found, return 409 Conflict.
+         *   If the value is identical to the current email, the check may be
+         *   skipped. On success, update shopping_mall_admins.email to the new
+         *   value.
      */
     email?: (string & tags.Format<"email">) | undefined;
 
     /**
      * The new plaintext password for the administrator account. Submit the desired password in plain text; the system will securely hash it before storage. Omit this field to leave the current password unchanged.
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification Optional field. The caller submits the new password as plaintext. The service layer bcrypt-hashes the value using an appropriate cost factor and stores the result in shopping_mall_admins.password_hash. The plaintext password is never persisted. Omit this field to leave the current password unchanged.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification Optional field. The caller submits the new
+         *   password as plaintext. The service layer bcrypt-hashes the value
+         *   using an appropriate cost factor and stores the result in
+         *   shopping_mall_admins.password_hash. The plaintext password is never
+         *   persisted. Omit this field to leave the current password unchanged.
      */
     password?: (string & tags.Format<"password">) | undefined;
   };
@@ -319,70 +432,101 @@ export namespace IShoppingMallAdmin {
     /**
      * Optional partial email filter. When provided, returns only administrators whose email address contains this value (case-insensitive match).
      *
-     * @x-autobe-specification Applied as ILIKE '%{email}%' on the shopping_mall_admins.email column when provided. If omitted, no email filter is applied. The match is case-insensitive.
+         * @x-autobe-specification Applied as ILIKE '%{email}%' on the
+         *   shopping_mall_admins.email column when provided. If omitted, no
+         *   email filter is applied. The match is case-insensitive.
      */
     email?: string | undefined;
 
     /**
      * Optional filter by the administrator's origin account type. Use 'customer' to return only administrators promoted from customer accounts, or 'seller' for those promoted from seller accounts. Omit to return all origin types.
      *
-     * @x-autobe-specification Applied as WHERE shopping_mall_admins.actor_type = {actorType} when provided. Allowed values: 'customer' (admin promoted from customer account) or 'seller' (admin promoted from seller account). When null or omitted, no actor_type filter is applied.
+         * @x-autobe-specification Applied as WHERE
+         *   shopping_mall_admins.actor_type = {actorType} when provided.
+         *   Allowed values: 'customer' (admin promoted from customer account)
+         *   or 'seller' (admin promoted from seller account). When null or
+         *   omitted, no actor_type filter is applied.
      */
     actorType?: string | null | undefined;
 
     /**
      * Optional filter by administrator grade. Use 'super' to return only super administrators, or 'regular' to return only regular administrators. Omit to return all grades.
      *
-     * @x-autobe-specification Derived by checking whether shopping_mall_admins.id exists in shopping_mall_super_admins. If grade='super', restrict query to admin IDs appearing in shopping_mall_super_admins. If grade='regular', exclude admin IDs appearing in shopping_mall_super_admins. When null or omitted, no grade filter is applied.
+         * @x-autobe-specification Derived by checking whether
+         *   shopping_mall_admins.id exists in shopping_mall_super_admins. If
+         *   grade='super', restrict query to admin IDs appearing in
+         *   shopping_mall_super_admins. If grade='regular', exclude admin IDs
+         *   appearing in shopping_mall_super_admins. When null or omitted, no
+         *   grade filter is applied.
      */
     grade?: string | null | undefined;
 
     /**
      * Controls whether soft-deleted administrator accounts are included in the results. When false (default), only active accounts are returned. When true, both active and deactivated accounts are included.
      *
-     * @x-autobe-specification When false or omitted, applies WHERE shopping_mall_admins.deleted_at IS NULL to exclude soft-deleted accounts. When true, removes this constraint and returns all records regardless of deleted_at value.
+         * @x-autobe-specification When false or omitted, applies WHERE
+         *   shopping_mall_admins.deleted_at IS NULL to exclude soft-deleted
+         *   accounts. When true, removes this constraint and returns all
+         *   records regardless of deleted_at value.
      */
     includeDeleted?: boolean | undefined;
 
     /**
      * Optional start of the creation date range filter (inclusive). When provided, only administrators created at or after this timestamp are returned.
      *
-     * @x-autobe-specification Applied as WHERE shopping_mall_admins.created_at >= {createdAtFrom} when provided. Value must be an ISO 8601 date-time string. When null or omitted, no lower creation date bound is applied.
+         * @x-autobe-specification Applied as WHERE
+         *   shopping_mall_admins.created_at >= {createdAtFrom} when provided.
+         *   Value must be an ISO 8601 date-time string. When null or omitted,
+         *   no lower creation date bound is applied.
      */
     createdAtFrom?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * Optional end of the creation date range filter (inclusive). When provided, only administrators created at or before this timestamp are returned.
      *
-     * @x-autobe-specification Applied as WHERE shopping_mall_admins.created_at <= {createdAtTo} when provided. Value must be an ISO 8601 date-time string. When null or omitted, no upper creation date bound is applied. Can be combined with createdAtFrom for a date range.
+         * @x-autobe-specification Applied as WHERE
+         *   shopping_mall_admins.created_at <= {createdAtTo} when provided.
+         *   Value must be an ISO 8601 date-time string. When null or omitted,
+         *   no upper creation date bound is applied. Can be combined with
+         *   createdAtFrom for a date range.
      */
     createdAtTo?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * Optional field to sort results by. Supported values: 'createdAt' (default), 'email', 'updatedAt'. When omitted, results are sorted by creation date descending.
      *
-     * @x-autobe-specification Maps to a database column for ORDER BY: 'createdAt' maps to shopping_mall_admins.created_at (default when null/omitted), 'email' maps to shopping_mall_admins.email, 'updatedAt' maps to shopping_mall_admins.updated_at. When null or omitted, defaults to created_at.
+         * @x-autobe-specification Maps to a database column for ORDER BY:
+         *   'createdAt' maps to shopping_mall_admins.created_at (default when
+         *   null/omitted), 'email' maps to shopping_mall_admins.email,
+         *   'updatedAt' maps to shopping_mall_admins.updated_at. When null or
+         *   omitted, defaults to created_at.
      */
     sortBy?: string | null | undefined;
 
     /**
      * Optional sort direction. Use 'asc' for ascending order or 'desc' for descending order (default). Applied to the column specified by sortBy.
      *
-     * @x-autobe-specification Applied as ASC or DESC in the ORDER BY clause. Allowed values: 'asc' (ascending) or 'desc' (descending). Defaults to 'desc' when null or omitted.
+         * @x-autobe-specification Applied as ASC or DESC in the ORDER BY
+         *   clause. Allowed values: 'asc' (ascending) or 'desc' (descending).
+         *   Defaults to 'desc' when null or omitted.
      */
     sortOrder?: string | null | undefined;
 
     /**
      * Page number for pagination (1-indexed). Specifies which page of results to return. Minimum is 1. Defaults to 1 (first page) when omitted.
      *
-     * @x-autobe-specification 1-based page number for offset pagination. Computes SQL OFFSET as (page - 1) * limit. Minimum value is 1. Defaults to 1 when omitted.
+         * @x-autobe-specification 1-based page number for offset pagination.
+         *   Computes SQL OFFSET as (page - 1) * limit. Minimum value is 1.
+         *   Defaults to 1 when omitted.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of administrator records to return per page. Must be between 1 and 100. Defaults to 20 when omitted.
      *
-     * @x-autobe-specification Number of records per page applied as SQL LIMIT. Minimum value is 1, maximum is 100. Defaults to 20 when omitted.
+         * @x-autobe-specification Number of records per page applied as SQL
+         *   LIMIT. Minimum value is 1, maximum is 100. Defaults to 20 when
+         *   omitted.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)

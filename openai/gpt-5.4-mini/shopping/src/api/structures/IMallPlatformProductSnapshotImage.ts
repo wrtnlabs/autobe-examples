@@ -31,7 +31,10 @@ export namespace IMallPlatformProductSnapshotImage {
      *
      * This value narrows the read-only history list. It is not stored in the database and affects only the query result.
      *
-     * @x-autobe-specification Apply as an optional text filter when selecting immutable rows from mall_platform_product_snapshot_images within the snapshot scope supplied by the path. Do not persist this value or derive any stored image data from it.
+         * @x-autobe-specification Apply as an optional text filter when
+         *   selecting immutable rows from mall_platform_product_snapshot_images
+         *   within the snapshot scope supplied by the path. Do not persist this
+         *   value or derive any stored image data from it.
      */
     search?: string | undefined;
 
@@ -40,7 +43,10 @@ export namespace IMallPlatformProductSnapshotImage {
      *
      * This value selects which page of immutable image rows is returned. It is a request-only control and is not persisted.
      *
-     * @x-autobe-specification Use as the current page number when paginating snapshot image rows from mall_platform_product_snapshot_images within the scoped snapshot. This value is consumed only by the API layer and is not stored.
+         * @x-autobe-specification Use as the current page number when
+         *   paginating snapshot image rows from
+         *   mall_platform_product_snapshot_images within the scoped snapshot.
+         *   This value is consumed only by the API layer and is not stored.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -49,7 +55,10 @@ export namespace IMallPlatformProductSnapshotImage {
      *
      * This value sets the page size for the history response. It is request-only and is not stored.
      *
-     * @x-autobe-specification Use as the maximum number of snapshot image rows returned per page when querying mall_platform_product_snapshot_images for the scoped snapshot. This value limits the response size only and is not persisted.
+         * @x-autobe-specification Use as the maximum number of snapshot image
+         *   rows returned per page when querying
+         *   mall_platform_product_snapshot_images for the scoped snapshot. This
+         *   value limits the response size only and is not persisted.
      */
     limit?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -58,7 +67,10 @@ export namespace IMallPlatformProductSnapshotImage {
      *
      * This value determines which field or presentation rule is used to order the returned history rows. It controls the query only.
      *
-     * @x-autobe-specification Use as the query sort key when ordering snapshot image rows within the selected product snapshot. It affects only the read query and must not alter stored image ordering or be saved to the database.
+         * @x-autobe-specification Use as the query sort key when ordering
+         *   snapshot image rows within the selected product snapshot. It
+         *   affects only the read query and must not alter stored image
+         *   ordering or be saved to the database.
      */
     sort?: string | undefined;
 
@@ -67,7 +79,10 @@ export namespace IMallPlatformProductSnapshotImage {
      *
      * This value selects ascending or descending order for the returned rows. It is a request-only control and is not stored.
      *
-     * @x-autobe-specification Use as the sort direction for the snapshot image query, selecting ascending or descending order when supported by the list endpoint. This value applies only to the response ordering and must not be persisted.
+         * @x-autobe-specification Use as the sort direction for the snapshot
+         *   image query, selecting ascending or descending order when supported
+         *   by the list endpoint. This value applies only to the response
+         *   ordering and must not be persisted.
      */
     order?: "asc" | "desc" | undefined;
   };

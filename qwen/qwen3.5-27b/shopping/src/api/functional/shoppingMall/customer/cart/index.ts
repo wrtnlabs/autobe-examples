@@ -15,7 +15,8 @@ export * as items from "./items/index";
  * @param props.connection
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Query shopping_mall_customer_carts table for the cart belonging to the authenticated customer's ID.
+ * @x-autobe-specification Query shopping_mall_customer_carts table for the cart
+ *   belonging to the authenticated customer's ID.
  *
  * Join with shopping_mall_customer_cart_items to retrieve all active cart items (deleted_at IS NULL).
  *

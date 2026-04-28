@@ -17,8 +17,10 @@ export type IShoppingMallCustomerCart = {
    *
    * This UUID identifies the customer's shopping cart container. Each customer has exactly one cart that persists throughout their account lifetime. The cart is created automatically when a customer registers or on first add-to-cart action.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_customer_carts.id. Primary key uniquely identifying the shopping cart.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_customer_carts.id. Primary key uniquely identifying the
+     *   shopping cart.
    */
   id: string & tags.Format<"uuid">;
 
@@ -27,8 +29,10 @@ export type IShoppingMallCustomerCart = {
    *
    * Set when the customer's first cart is created, typically during customer registration or on first add-to-cart action. This timestamp never changes and marks the beginning of the cart's lifecycle.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from shopping_mall_customer_carts.created_at. Timestamp when the cart was first created.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_customer_carts.created_at. Timestamp when the cart was
+     *   first created.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -37,8 +41,10 @@ export type IShoppingMallCustomerCart = {
    *
    * Updated whenever cart items are added, quantities are changed, or items are removed from the cart. Tracks the last modification activity on the cart container.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from shopping_mall_customer_carts.updated_at. Timestamp updated on any cart modification.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_customer_carts.updated_at. Timestamp updated on any cart
+     *   modification.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -47,7 +53,13 @@ export type IShoppingMallCustomerCart = {
    *
    * Each cart item contains the product variant details (SKU code, options like color/size), selected quantity, unit price, and calculated subtotal. Cart items that reference unavailable or deleted product variants are marked as unavailable and cannot be included in checkout. The array is empty if the cart has no items.
    *
-   * @x-autobe-specification Computed composition: JOIN with shopping_mall_customer_cart_items (deleted_at IS NULL) to retrieve all active cart items. Each item includes nested product variant details via JOIN with shopping_mall_product_variants, shopping_mall_products, shopping_mall_product_variant_options, and availability check via JOIN with shopping_mall_inventory_records. Returns array of IShoppingMallCustomerCartItem objects.
+     * @x-autobe-specification Computed composition: JOIN with
+     *   shopping_mall_customer_cart_items (deleted_at IS NULL) to retrieve all
+     *   active cart items. Each item includes nested product variant details
+     *   via JOIN with shopping_mall_product_variants, shopping_mall_products,
+     *   shopping_mall_product_variant_options, and availability check via JOIN
+     *   with shopping_mall_inventory_records. Returns array of
+     *   IShoppingMallCustomerCartItem objects.
    */
   cart_items: IShoppingMallCustomerCartItem[];
 
@@ -56,7 +68,9 @@ export type IShoppingMallCustomerCart = {
    *
    * Calculated dynamically by summing the subtotals of all cart items (unit price × quantity for each item). This value is always up-to-date with the current cart contents and reflects the total amount the customer would pay at checkout.
    *
-   * @x-autobe-specification Computed field: total = SUM(cart_items.subtotal) where each subtotal = unit_price * quantity. If cart_items array is empty, total is 0. Calculated by summing all cart item subtotals.
+     * @x-autobe-specification Computed field: total = SUM(cart_items.subtotal)
+     *   where each subtotal = unit_price * quantity. If cart_items array is
+     *   empty, total is 0. Calculated by summing all cart item subtotals.
    */
   total: number;
 };
@@ -74,8 +88,10 @@ export namespace IShoppingMallCustomerCart {
      *
      * This UUID serves as the primary key for the shopping cart entity and is used to reference the cart in API operations. Each customer has exactly one cart throughout their account lifetime.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_customer_carts.id. Primary key UUID that uniquely identifies each shopping cart.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_customer_carts.id. Primary key UUID that uniquely
+         *   identifies each shopping cart.
      */
     id: string & tags.Format<"uuid">;
 
@@ -84,8 +100,11 @@ export namespace IShoppingMallCustomerCart {
      *
      * This relation provides the customer's essential identification information including their unique ID, email address, display name, ban status, and account creation timestamp. The cart maintains a 1:1 relationship with the customer and persists even when empty.
      *
-     * @x-autobe-database-schema-property customer
-     * @x-autobe-specification Relation mapping via JOIN from shopping_mall_customer_carts.shopping_mall_customer_id to shopping_mall_customers.id. Returns IShoppingMallCustomer.ISummary with customer identity information.
+         * @x-autobe-database-schema-property customer
+         * @x-autobe-specification Relation mapping via JOIN from
+         *   shopping_mall_customer_carts.shopping_mall_customer_id to
+         *   shopping_mall_customers.id. Returns IShoppingMallCustomer.ISummary
+         *   with customer identity information.
      */
     customer: IShoppingMallCustomer.ISummary;
 
@@ -94,8 +113,11 @@ export namespace IShoppingMallCustomerCart {
      *
      * This timestamp is set when the customer's shopping cart is first created, which typically occurs during customer registration or when they add their first item to cart. The value never changes after initial creation.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_customer_carts.created_at. DateTime Timestamptz field set when the customer's first cart is created, typically during customer registration or on first add-to-cart action.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_customer_carts.created_at. DateTime Timestamptz field
+         *   set when the customer's first cart is created, typically during
+         *   customer registration or on first add-to-cart action.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -104,8 +126,11 @@ export namespace IShoppingMallCustomerCart {
      *
      * This timestamp tracks the most recent modification activity on the cart, including when items are added, quantities are updated, or items are removed. It provides visibility into cart activity for the customer.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from shopping_mall_customer_carts.updated_at. DateTime Timestamptz field updated whenever cart items are added, quantities are changed, or items are removed from the cart.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_customer_carts.updated_at. DateTime Timestamptz field
+         *   updated whenever cart items are added, quantities are changed, or
+         *   items are removed from the cart.
      */
     updated_at: string & tags.Format<"date-time">;
   };

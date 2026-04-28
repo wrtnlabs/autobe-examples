@@ -24,7 +24,8 @@ import { IShoppingMallOrderItem } from "../../../../../structures/IShoppingMallO
  * @param props.body Oversight search criteria for order items, including status filtering and pagination/sorting options.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implement as a list/search endpoint over shopping_mall_order_items.
+ * @x-autobe-specification Implement as a list/search endpoint over
+ *   shopping_mall_order_items.
  *
  * 1) Authorization + scoping
  * - Resolve actor from request context.

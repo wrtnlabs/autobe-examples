@@ -30,7 +30,8 @@ import { IShoppingMallOrderItem } from "../../../../../structures/IShoppingMallO
  * @param props.body Admin-side search criteria for filtering and paginating order items across the platform.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification 1) Authorization: verify caller is an authenticated admin actor. Reject non-admin access.
+ * @x-autobe-specification 1) Authorization: verify caller is an authenticated
+ *   admin actor. Reject non-admin access.
  *
  * 2) Parse request body (IShoppingMallOrderItem.IRequest):
  *    - pagination
@@ -282,29 +283,41 @@ export namespace at {
  * @param props.body Administrative update payload specifying the forced outcome to apply to the targeted order item.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Implementation steps:
- * 1) Validate authorization: allow only administrators (admin actor) to access this route.
- * 2) Parse path parameter orderItemId (uuid) and load {@link shopping_mall_order_items} by id.
- * 3) Validate request body (IShoppingMallOrderItem.IUpdate) for the requested administrative outcome/action. Map the request to a target {@link shopping_mall_order_items.line_item_status}.
- * 4) Eligibility and transition checks:
- *    - Determine current line_item_status and current related workflow context (e.g., presence/status of cancellation/refund request records linked to this order item) as needed by the domain rules.
- *    - Enforce rule that forced update must not create rule-breaking status transitions (reject if transition would contradict item workflow ordering).
- *    - Enforce rule that forced cancel/refund at item level changes only the targeted order item, not other items.
- * 5) Transactional update:
- *    - Start a DB transaction.
- *    - Update {@link shopping_mall_order_items.line_item_status} to the new forced outcome.
- *    - Apply inventory restoration consistent with forced cancellation/refund:
- *      * Use {@link shopping_mall_order_items.shopping_mall_product_variant_id} to locate relevant {@link shopping_mall_inventory_records} history.
- *      * Append/update inventory quantities in a consistent manner (do not fabricate derived fields; preserve audit semantics with inventory history records).
- *    - Reconcile shipment-linked outcomes if {@link shopping_mall_order_items.shopping_mall_shipment_id} is not null:
- *      * Ensure any shipment status/outcome and any seller confirmation-linked displays remain consistent with the new item outcome.
- *      * Do not leave the shipment tracking display inconsistent.
- *    - Snapshot trail integrity:
- *      * Do not remove or retroactively alter existing snapshots.
- *      * If the forced outcome requires a new snapshot for dispute resolution, create a new snapshot record in {@link shopping_mall_snapshots} with the proper source linkage fields (source_type/source_entity_id/source_order_item_id/source_order_id/source_seller_id as applicable) and create its payload record in {@link shopping_mall_snapshot_payloads}.
- *      * Ensure retry safety: detect if a conflicting snapshot for the same final outcome already exists for this item, and avoid creating multiple conflicting final-decision snapshots.
- * 6) Commit transaction.
- * 7) Return the updated order item representation as IShoppingMallOrderItem.
+ * @x-autobe-specification Implementation steps: 1) Validate authorization:
+ *   allow only administrators (admin actor) to access this route. 2) Parse path
+ *   parameter orderItemId (uuid) and load {@link shopping_mall_order_items} by
+ *   id. 3) Validate request body (IShoppingMallOrderItem.IUpdate) for the
+ *   requested administrative outcome/action. Map the request to a target {@link
+ *   shopping_mall_order_items.line_item_status}. 4) Eligibility and transition
+ *   checks: - Determine current line_item_status and current related workflow
+ *   context (e.g., presence/status of cancellation/refund request records
+ *   linked to this order item) as needed by the domain rules. - Enforce rule
+ *   that forced update must not create rule-breaking status transitions (reject
+ *   if transition would contradict item workflow ordering). - Enforce rule that
+ *   forced cancel/refund at item level changes only the targeted order item,
+ *   not other items. 5) Transactional update: - Start a DB transaction. -
+ *   Update {@link shopping_mall_order_items.line_item_status} to the new forced
+ *   outcome. - Apply inventory restoration consistent with forced
+ *   cancellation/refund: * Use {@link
+ *   shopping_mall_order_items.shopping_mall_product_variant_id} to locate
+ *   relevant {@link shopping_mall_inventory_records} history. * Append/update
+ *   inventory quantities in a consistent manner (do not fabricate derived
+ *   fields; preserve audit semantics with inventory history records). -
+ *   Reconcile shipment-linked outcomes if {@link
+ *   shopping_mall_order_items.shopping_mall_shipment_id} is not null: * Ensure
+ *   any shipment status/outcome and any seller confirmation-linked displays
+ *   remain consistent with the new item outcome. * Do not leave the shipment
+ *   tracking display inconsistent. - Snapshot trail integrity: * Do not remove
+ *   or retroactively alter existing snapshots. * If the forced outcome requires
+ *   a new snapshot for dispute resolution, create a new snapshot record in
+ *   {@link shopping_mall_snapshots} with the proper source linkage fields
+ *   (source_type/source_entity_id/source_order_item_id/source_order_id/source_seller_id
+ *   as applicable) and create its payload record in {@link
+ *   shopping_mall_snapshot_payloads}. * Ensure retry safety: detect if a
+ *   conflicting snapshot for the same final outcome already exists for this
+ *   item, and avoid creating multiple conflicting final-decision snapshots. 6)
+ *   Commit transaction. 7) Return the updated order item representation as
+ *   IShoppingMallOrderItem.
  *
  * Edge cases:
  * - If orderItemId does not exist or is deleted/hidden in active views, return an error.

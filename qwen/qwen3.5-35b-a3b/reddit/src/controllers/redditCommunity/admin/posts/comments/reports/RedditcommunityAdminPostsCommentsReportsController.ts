@@ -20,9 +20,10 @@ export class RedditcommunityAdminPostsCommentsReportsController {
    * @param postId UUID of the parent post for path context. Must match the post that the comment belongs to.
    * @param commentId UUID of the comment being reported. This is the primary filter for the report list.
    * @param body Search criteria including status filter, reporter filter, date range filters, pagination parameters, and sort order options.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query reddit_community_reports table where target_comment_id equals the commentId path parameter.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Query reddit_community_reports table where
+     *   target_comment_id equals the commentId path parameter.
    *
    * Apply optional filters:
    * - status_id: filter by report status (0=pending, 1=approved, 2=dismissed)
@@ -87,9 +88,10 @@ export class RedditcommunityAdminPostsCommentsReportsController {
    * @param postId The unique identifier of the post where the reported comment exists.
    * @param commentId The unique identifier of the reported comment.
    * @param reportId The unique identifier of the report to retrieve.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Fetch a single report by ID from the reddit_community_reports table with soft-delete filtering.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Fetch a single report by ID from the
+     *   reddit_community_reports table with soft-delete filtering.
    *
    * Implementation steps:
    * 1. Validate path parameters: postId, commentId, reportId (UUID format)

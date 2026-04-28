@@ -10,48 +10,59 @@ export type IEcommerceMallSuperAdmin = {
   /**
    * Unique identifier of the super administrator account.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_super_admins.id. UUID primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_super_admins.id. UUID primary key.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Login email address for super administrator authentication.
    *
-   * @x-autobe-database-schema-property email
-   * @x-autobe-specification Direct mapping from ecommerce_mall_super_admins.email. Unique constraint enforced at database level.
+     * @x-autobe-database-schema-property email
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_super_admins.email. Unique constraint enforced at
+     *   database level.
    */
   email: string & tags.Format<"email">;
 
   /**
    * Administrator grade level indicating the privilege tier of this account.
    *
-   * @x-autobe-database-schema-property grade
-   * @x-autobe-specification Direct mapping from ecommerce_mall_super_admins.grade. Fixed value indicating super administrator privilege tier.
+     * @x-autobe-database-schema-property grade
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_super_admins.grade. Fixed value indicating super
+     *   administrator privilege tier.
    */
   grade: string;
 
   /**
    * Timestamp when the super administrator account was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_super_admins.created_at. Timestamp with timezone.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_super_admins.created_at. Timestamp with timezone.
    */
   createdAt: string & tags.Format<"date-time">;
 
   /**
    * Timestamp of the last update to the super administrator account.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_super_admins.updated_at. Automatically updated on record modification.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_super_admins.updated_at. Automatically updated on record
+     *   modification.
    */
   updatedAt: string & tags.Format<"date-time">;
 
   /**
    * Soft delete timestamp. Null indicates active account; non-null indicates account has been soft-deleted for audit trail preservation.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_super_admins.deleted_at. Nullable field for soft delete support. Non-null indicates account is soft-deleted while preserving audit history.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_super_admins.deleted_at. Nullable field for soft delete
+     *   support. Non-null indicates account is soft-deleted while preserving
+     *   audit history.
    */
   deletedAt: (string & tags.Format<"date-time">) | null;
 };
@@ -63,7 +74,11 @@ export namespace IEcommerceMallSuperAdmin {
     /**
      * The refresh token used to obtain a new access token without re-authenticating with credentials.
      *
-     * @x-autobe-specification Refresh token provided in request body. The token is validated by looking up the session in ecommerce_mall_super_admin_sessions. Must be a valid, non-expired refresh token associated with an active super administrator account.
+         * @x-autobe-specification Refresh token provided in request body. The
+         *   token is validated by looking up the session in
+         *   ecommerce_mall_super_admin_sessions. Must be a valid, non-expired
+         *   refresh token associated with an active super administrator
+         *   account.
      */
     refreshToken: string;
   };
@@ -75,49 +90,59 @@ export namespace IEcommerceMallSuperAdmin {
     /**
      * Unique identifier of the super administrator account.
      *
-     * @x-autobe-specification Source: ecommerce_mall_super_admins.id (UUID primary key).
+         * @x-autobe-specification Source: ecommerce_mall_super_admins.id (UUID
+         *   primary key).
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Email address of the super administrator, used as the login identifier.
      *
-     * @x-autobe-specification Source: ecommerce_mall_super_admins.email. Unique constraint enforced at database level.
+         * @x-autobe-specification Source: ecommerce_mall_super_admins.email.
+         *   Unique constraint enforced at database level.
      */
     email: string & tags.Format<"email">;
 
     /**
      * Administrator grade level indicating super administrator status.
      *
-     * @x-autobe-specification Source: ecommerce_mall_super_admins.grade. Value is 'super_admin' indicating highest privilege level.
+         * @x-autobe-specification Source: ecommerce_mall_super_admins.grade.
+         *   Value is 'super_admin' indicating highest privilege level.
      */
     grade: string;
 
     /**
      * Timestamp when the super administrator account was created.
      *
-     * @x-autobe-specification Source: ecommerce_mall_super_admins.created_at. Converted from snake_case DB column to camelCase for API consistency.
+         * @x-autobe-specification Source:
+         *   ecommerce_mall_super_admins.created_at. Converted from snake_case
+         *   DB column to camelCase for API consistency.
      */
     createdAt: string & tags.Format<"date-time">;
 
     /**
      * Timestamp of the most recent update to the super administrator account.
      *
-     * @x-autobe-specification Source: ecommerce_mall_super_admins.updated_at. Converted from snake_case DB column to camelCase for API consistency.
+         * @x-autobe-specification Source:
+         *   ecommerce_mall_super_admins.updated_at. Converted from snake_case
+         *   DB column to camelCase for API consistency.
      */
     updatedAt: string & tags.Format<"date-time">;
 
     /**
      * Soft-deletion timestamp. Null if account is active, contains deletion time if account was deleted.
      *
-     * @x-autobe-specification Source: ecommerce_mall_super_admins.deleted_at. Nullable field - null indicates active account, non-null indicates soft-deleted account.
+         * @x-autobe-specification Source:
+         *   ecommerce_mall_super_admins.deleted_at. Nullable field - null
+         *   indicates active account, non-null indicates soft-deleted account.
      */
     deletedAt: (string & tags.Format<"date-time">) | null;
 
     /**
      * Authorization token.
      *
-     * @x-autobe-specification Authorization token comes from the session table.
+         * @x-autobe-specification Authorization token comes from the session
+         *   table.
      */
     token: IAuthorizationToken;
   };
@@ -129,16 +154,21 @@ export namespace IEcommerceMallSuperAdmin {
     /**
      * Super administrator's email address. Used for login authentication and must be unique across the platform.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping to ecommerce_mall_super_admins.email. Must be unique across all super admin accounts.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping to
+         *   ecommerce_mall_super_admins.email. Must be unique across all super
+         *   admin accounts.
      */
     email: string & tags.Format<"email">;
 
     /**
      * Super administrator's password for authentication. Plaintext password provided by user; securely hashed by backend before storage.
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification Maps to ecommerce_mall_super_admins.password_hash after transformation. User provides plaintext password; backend applies secure hashing (bcrypt/Argon2) before storage. Never store plaintext passwords.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification Maps to
+         *   ecommerce_mall_super_admins.password_hash after transformation.
+         *   User provides plaintext password; backend applies secure hashing
+         *   (bcrypt/Argon2) before storage. Never store plaintext passwords.
      */
     password: string & tags.Format<"password">;
   };
@@ -150,40 +180,49 @@ export namespace IEcommerceMallSuperAdmin {
     /**
      * Unique identifier of the super administrator account.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_mall_super_admins.id. Primary key UUID.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_super_admins.id. Primary key UUID.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Email address of the super administrator.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from ecommerce_mall_super_admins.email. Unique email address used for authentication.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_super_admins.email. Unique email address used for
+         *   authentication.
      */
     email: string & tags.Format<"email">;
 
     /**
      * Grade level indicating super administrator status in the platform hierarchy.
      *
-     * @x-autobe-database-schema-property grade
-     * @x-autobe-specification Direct mapping from ecommerce_mall_super_admins.grade. Indicates super administrator privilege tier.
+         * @x-autobe-database-schema-property grade
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_super_admins.grade. Indicates super administrator
+         *   privilege tier.
      */
     grade: string;
 
     /**
      * Timestamp when the super administrator account was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_super_admins.created_at. Timestamp when account was created.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_super_admins.created_at. Timestamp when account was
+         *   created.
      */
     createdAt: string & tags.Format<"date-time">;
 
     /**
      * Soft-deletion timestamp. Null if account is active, non-null if account has been deleted.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_super_admins.deleted_at. Nullable DateTime indicating soft-delete status for audit history preservation.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_super_admins.deleted_at. Nullable DateTime
+         *   indicating soft-delete status for audit history preservation.
      */
     deletedAt: (string & tags.Format<"date-time">) | null;
   };
@@ -195,35 +234,50 @@ export namespace IEcommerceMallSuperAdmin {
     /**
      * Email address to search for (partial match, case-insensitive, minimum 3 characters).
      *
-     * @x-autobe-specification Filter parameter for partial email matching. Performs case-insensitive partial search against ecommerce_mall_super_admins.email column. Minimum 3 characters required. Maps to DB column: email.
+         * @x-autobe-specification Filter parameter for partial email matching.
+         *   Performs case-insensitive partial search against
+         *   ecommerce_mall_super_admins.email column. Minimum 3 characters
+         *   required. Maps to DB column: email.
      */
     email?: (string & tags.MinLength<3>) | undefined;
 
     /**
      * Start of the creation date range filter (inclusive). Filters super admin accounts created on or after this timestamp.
      *
-     * @x-autobe-specification Filter parameter for created_at range start. Queries ecommerce_mall_super_admins.created_at with >= comparison. Inclusive of the specified date/time. Maps to DB column: created_at.
+         * @x-autobe-specification Filter parameter for created_at range start.
+         *   Queries ecommerce_mall_super_admins.created_at with >= comparison.
+         *   Inclusive of the specified date/time. Maps to DB column:
+         *   created_at.
      */
     createdAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * End of the creation date range filter (inclusive). Filters super admin accounts created on or before this timestamp.
      *
-     * @x-autobe-specification Filter parameter for created_at range end. Queries ecommerce_mall_super_admins.created_at with <= comparison. Inclusive of the specified date/time. Must be >= createdAtFrom. Maps to DB column: created_at.
+         * @x-autobe-specification Filter parameter for created_at range end.
+         *   Queries ecommerce_mall_super_admins.created_at with <= comparison.
+         *   Inclusive of the specified date/time. Must be >= createdAtFrom.
+         *   Maps to DB column: created_at.
      */
     createdAtTo?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Page number for pagination (1-indexed, default: 1).
      *
-     * @x-autobe-specification Pagination parameter - 1-indexed page number. Default value is 1. Used to calculate OFFSET for database query (offset = (page - 1) * limit). No direct DB column mapping - computed parameter for LIMIT/OFFSET clause.
+         * @x-autobe-specification Pagination parameter - 1-indexed page number.
+         *   Default value is 1. Used to calculate OFFSET for database query
+         *   (offset = (page - 1) * limit). No direct DB column mapping -
+         *   computed parameter for LIMIT/OFFSET clause.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of records per page (default: 20, maximum: 100).
      *
-     * @x-autobe-specification Pagination parameter - maximum records per page. Default is 20, maximum is 100. Used for LIMIT clause in database query. Validates against maximum of 100. No direct DB column mapping - computed parameter for LIMIT clause.
+         * @x-autobe-specification Pagination parameter - maximum records per
+         *   page. Default is 20, maximum is 100. Used for LIMIT clause in
+         *   database query. Validates against maximum of 100. No direct DB
+         *   column mapping - computed parameter for LIMIT clause.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -237,37 +291,53 @@ export namespace IEcommerceMallSuperAdmin {
     /**
      * Login email address for super administrator authentication. Must match a registered, non-deleted super administrator account.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from ecommerce_mall_super_admins.email. Must be unique across all super admin accounts. Used as the login identifier for authentication.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_super_admins.email. Must be unique across all super
+         *   admin accounts. Used as the login identifier for authentication.
      */
     email: string & tags.Format<"email">;
 
     /**
      * Login password for super administrator authentication. Provided as plain text and securely hashed server-side before credential verification.
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification User provides plain text password. Backend performs secure hashing and compares against ecommerce_mall_super_admins.password_hash. Never stored or logged in plain text.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification User provides plain text password. Backend
+         *   performs secure hashing and compares against
+         *   ecommerce_mall_super_admins.password_hash. Never stored or logged
+         *   in plain text.
      */
     password: string & tags.Format<"password">;
 
     /**
      * The URL of the page where the login request originated. Captured for session tracking and security auditing purposes.
      *
-     * @x-autobe-specification Session context field capturing the page URL where login occurred. Stored in ecommerce_mall_super_admin_sessions.href after successful authentication for security audit and monitoring. Required session metadata.
+         * @x-autobe-specification Session context field capturing the page URL
+         *   where login occurred. Stored in
+         *   ecommerce_mall_super_admin_sessions.href after successful
+         *   authentication for security audit and monitoring. Required session
+         *   metadata.
      */
     href: string & tags.Format<"uri">;
 
     /**
      * The URL of the referring page that led to the login request. Captured for session tracking and security auditing purposes.
      *
-     * @x-autobe-specification Session context field capturing the referring page URL. Stored in ecommerce_mall_super_admin_sessions.referrer after successful authentication for security audit and monitoring. Required session metadata.
+         * @x-autobe-specification Session context field capturing the referring
+         *   page URL. Stored in ecommerce_mall_super_admin_sessions.referrer
+         *   after successful authentication for security audit and monitoring.
+         *   Required session metadata.
      */
     referrer: string & tags.Format<"uri">;
 
     /**
      * The IP address of the client attempting to log in. Captured for session tracking and security auditing purposes. May be null in server-side rendering contexts where the client cannot determine its own IP.
      *
-     * @x-autobe-specification Session context field capturing the client IP address. Stored in ecommerce_mall_super_admin_sessions.ip after successful authentication for security audit and monitoring. Optional - in SSR scenarios client may not know its IP, server captures as fallback.
+         * @x-autobe-specification Session context field capturing the client IP
+         *   address. Stored in ecommerce_mall_super_admin_sessions.ip after
+         *   successful authentication for security audit and monitoring.
+         *   Optional - in SSR scenarios client may not know its IP, server
+         *   captures as fallback.
      */
     ip: (string & tags.Format<"ipv4">) | null;
   };

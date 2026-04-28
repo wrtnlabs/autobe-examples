@@ -32,8 +32,10 @@ export type IEcommerceInventoryRecord = {
    *
    * This UUID serves as the primary key for the inventory record, enabling precise retrieval of individual stock movement entries from the audit trail.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_inventory_records.id. Unique identifier for the inventory record.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_inventory_records.id. Unique identifier for the inventory
+     *   record.
    */
   id: string & tags.Format<"uuid">;
 
@@ -48,8 +50,10 @@ export type IEcommerceInventoryRecord = {
    * - Typically ranges from -9999 to +9999 per transaction
    * - Order-related changes match the order item quantity
    *
-   * @x-autobe-database-schema-property quantity_change
-   * @x-autobe-specification Direct mapping from ecommerce_inventory_records.quantity_change. Integer value, non-zero constraint enforced at business logic level.
+     * @x-autobe-database-schema-property quantity_change
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_inventory_records.quantity_change. Integer value, non-zero
+     *   constraint enforced at business logic level.
    */
   quantity_change: number & tags.Type<"int32">;
 
@@ -64,8 +68,10 @@ export type IEcommerceInventoryRecord = {
    * - System automatically populates this for order-related changes
    * - Administrators can review this for dispute resolution
    *
-   * @x-autobe-database-schema-property reason
-   * @x-autobe-specification Direct mapping from ecommerce_inventory_records.reason. String value documenting business context.
+     * @x-autobe-database-schema-property reason
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_inventory_records.reason. String value documenting business
+     *   context.
    */
   reason: string;
 
@@ -80,8 +86,11 @@ export type IEcommerceInventoryRecord = {
    * - Each inventory record belongs to exactly one variant
    * - The variant reference enables ownership validation and product context display
    *
-   * @x-autobe-database-schema-property productVariant
-   * @x-autobe-specification Join from ecommerce_inventory_records.ecommerce_product_variant_id to ecommerce_product_variants.id. Returns IEcommerceProductVariant.ISummary via FK-to-object transformation.
+     * @x-autobe-database-schema-property productVariant
+     * @x-autobe-specification Join from
+     *   ecommerce_inventory_records.ecommerce_product_variant_id to
+     *   ecommerce_product_variants.id. Returns
+     *   IEcommerceProductVariant.ISummary via FK-to-object transformation.
    */
   product_variant: IEcommerceProductVariant.ISummary;
 
@@ -90,8 +99,10 @@ export type IEcommerceInventoryRecord = {
    *
    * Used for chronological ordering of inventory history and for calculating time-based metrics (e.g., restock frequency, inventory turnover). Always set to the current time when the record is created and cannot be modified.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_inventory_records.created_at. DateTime with timestamptz format, auto-set on record creation.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_inventory_records.created_at. DateTime with timestamptz
+     *   format, auto-set on record creation.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -100,8 +111,10 @@ export type IEcommerceInventoryRecord = {
    *
    * Included for consistency with other tables in the schema. In practice, inventory records are immutable after creation, so this typically matches created_at.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from ecommerce_inventory_records.updated_at. DateTime with timestamptz format, auto-set on creation and updates.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_inventory_records.updated_at. DateTime with timestamptz
+     *   format, auto-set on creation and updates.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -110,8 +123,10 @@ export type IEcommerceInventoryRecord = {
    *
    * Inventory records are typically never deleted, as they form an immutable audit trail. This field is included for schema consistency but should remain null in normal operation.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from ecommerce_inventory_records.deleted_at. Nullable DateTime with timestamptz format, remains null in normal operation.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_inventory_records.deleted_at. Nullable DateTime with
+     *   timestamptz format, remains null in normal operation.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -145,8 +160,11 @@ export namespace IEcommerceInventoryRecord {
      * - Typically ranges from -9999 to +9999 per transaction
      * - Used for both manual seller adjustments and automatic system updates
      *
-     * @x-autobe-database-schema-property quantity_change
-     * @x-autobe-specification Direct mapping from ecommerce_inventory_records.quantity_change. Integer value representing stock adjustment. Positive values increase stock, negative values decrease stock. Must not be zero.
+         * @x-autobe-database-schema-property quantity_change
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_inventory_records.quantity_change. Integer value
+         *   representing stock adjustment. Positive values increase stock,
+         *   negative values decrease stock. Must not be zero.
      */
     quantity_change: number & tags.Type<"int32">;
 
@@ -170,8 +188,11 @@ export namespace IEcommerceInventoryRecord {
      * - System automatically populates this for order-related changes
      * - Administrators can review this for dispute resolution and auditing
      *
-     * @x-autobe-database-schema-property reason
-     * @x-autobe-specification Direct mapping from ecommerce_inventory_records.reason. String field documenting the business context for the inventory change. Required field, must not be empty.
+         * @x-autobe-database-schema-property reason
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_inventory_records.reason. String field documenting the
+         *   business context for the inventory change. Required field, must not
+         *   be empty.
      */
     reason: string;
   };
@@ -200,8 +221,11 @@ export namespace IEcommerceInventoryRecord {
      * - Adjustments: Use negative values (e.g., -3 to remove 3 units)
      * - The system validates that quantity_change is not zero before processing
      *
-     * @x-autobe-database-schema-property quantity_change
-     * @x-autobe-specification Direct mapping from ecommerce_inventory_records.quantity_change. Integer value that must not be zero. Positive values increase stock (restocking, returns), negative values decrease stock (adjustments, losses).
+         * @x-autobe-database-schema-property quantity_change
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_inventory_records.quantity_change. Integer value that
+         *   must not be zero. Positive values increase stock (restocking,
+         *   returns), negative values decrease stock (adjustments, losses).
      */
     quantity_change: number & tags.Type<"int32">;
 
@@ -217,8 +241,10 @@ export namespace IEcommerceInventoryRecord {
      * - "adjustment": Manual correction for inventory discrepancies
      * - "loss": Inventory write-off due to damage or theft
      *
-     * @x-autobe-database-schema-property reason
-     * @x-autobe-specification Direct mapping from ecommerce_inventory_records.reason. String field documenting the business context for the inventory change.
+         * @x-autobe-database-schema-property reason
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_inventory_records.reason. String field documenting the
+         *   business context for the inventory change.
      */
     reason: string;
   };
@@ -247,8 +273,10 @@ export namespace IEcommerceInventoryRecord {
      *
      * Generated as a UUID when the record is created. Used to reference this specific inventory movement in API requests and responses.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_inventory_records.id. Unique identifier for the inventory change record.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_inventory_records.id. Unique identifier for the inventory
+         *   change record.
      */
     id: string & tags.Format<"uuid">;
 
@@ -263,8 +291,10 @@ export namespace IEcommerceInventoryRecord {
      * - Typically ranges from -9999 to +9999 per transaction
      * - Order-related changes match the order item quantity
      *
-     * @x-autobe-database-schema-property quantity_change
-     * @x-autobe-specification Direct mapping from ecommerce_inventory_records.quantity_change. Integer value representing stock difference.
+         * @x-autobe-database-schema-property quantity_change
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_inventory_records.quantity_change. Integer value
+         *   representing stock difference.
      */
     quantity_change: number & tags.Type<"int32">;
 
@@ -279,8 +309,10 @@ export namespace IEcommerceInventoryRecord {
      * - System automatically populates this for order-related changes
      * - Administrators can review this for dispute resolution
      *
-     * @x-autobe-database-schema-property reason
-     * @x-autobe-specification Direct mapping from ecommerce_inventory_records.reason. String documenting the business context.
+         * @x-autobe-database-schema-property reason
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_inventory_records.reason. String documenting the business
+         *   context.
      */
     reason: string;
 
@@ -289,8 +321,9 @@ export namespace IEcommerceInventoryRecord {
      *
      * Used for chronological ordering of inventory history and for calculating time-based metrics such as restock frequency and inventory turnover. Always set to the current time when the record is created and cannot be modified.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from ecommerce_inventory_records.created_at. DateTime with timezone.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_inventory_records.created_at. DateTime with timezone.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -305,8 +338,11 @@ export namespace IEcommerceInventoryRecord {
      * - Each inventory record belongs to exactly one variant
      * - Cascade delete: when a variant is deleted, its inventory history is also removed
      *
-     * @x-autobe-database-schema-property productVariant
-     * @x-autobe-specification Join from ecommerce_inventory_records.ecommerce_product_variant_id to ecommerce_product_variants.id. Returns IEcommerceProductVariant.ISummary via INNER JOIN.
+         * @x-autobe-database-schema-property productVariant
+         * @x-autobe-specification Join from
+         *   ecommerce_inventory_records.ecommerce_product_variant_id to
+         *   ecommerce_product_variants.id. Returns
+         *   IEcommerceProductVariant.ISummary via INNER JOIN.
      */
     productVariant: IEcommerceProductVariant.ISummary;
   };
@@ -345,8 +381,10 @@ export namespace IEcommerceInventoryRecord {
      * - Combine with other filters for targeted queries
      * - Optional: omit to retrieve all variants' inventory records
      *
-     * @x-autobe-database-schema-property ecommerce_product_variant_id
-     * @x-autobe-specification Direct mapping from ecommerce_inventory_records.ecommerce_product_variant_id. Filters inventory records by specific product variant UUID.
+         * @x-autobe-database-schema-property ecommerce_product_variant_id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_inventory_records.ecommerce_product_variant_id. Filters
+         *   inventory records by specific product variant UUID.
      */
     ecommerce_product_variant_id?: (string & tags.Format<"uuid">) | undefined;
 
@@ -361,7 +399,9 @@ export namespace IEcommerceInventoryRecord {
      * - Filter deductions: set to negative values (e.g., -10)
      * - Optional: omit for no lower bound
      *
-     * @x-autobe-specification Computed query parameter for filtering inventory records by minimum quantity change value. Applied as WHERE quantity_change >= quantity_change_min in SQL query.
+         * @x-autobe-specification Computed query parameter for filtering
+         *   inventory records by minimum quantity change value. Applied as
+         *   WHERE quantity_change >= quantity_change_min in SQL query.
      */
     quantity_change_min?: (number & tags.Type<"int32">) | undefined;
 
@@ -376,7 +416,9 @@ export namespace IEcommerceInventoryRecord {
      * - Filter large restocks: set to high positive values
      * - Optional: omit for no upper bound
      *
-     * @x-autobe-specification Computed query parameter for filtering inventory records by maximum quantity change value. Applied as WHERE quantity_change <= quantity_change_max in SQL query.
+         * @x-autobe-specification Computed query parameter for filtering
+         *   inventory records by maximum quantity change value. Applied as
+         *   WHERE quantity_change <= quantity_change_max in SQL query.
      */
     quantity_change_max?: (number & tags.Type<"int32">) | undefined;
 
@@ -400,8 +442,10 @@ export namespace IEcommerceInventoryRecord {
      * - adjustment: Manual correction for inventory discrepancies
      * - loss: Inventory write-off due to damage or theft
      *
-     * @x-autobe-database-schema-property reason
-     * @x-autobe-specification Direct mapping from ecommerce_inventory_records.reason. Filters inventory records by single reason type.
+         * @x-autobe-database-schema-property reason
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_inventory_records.reason. Filters inventory records by
+         *   single reason type.
      */
     reason?: string | undefined;
 
@@ -416,7 +460,9 @@ export namespace IEcommerceInventoryRecord {
      * - Use reason for single reason filter
      * - Optional: omit to include all reason types
      *
-     * @x-autobe-specification Computed query parameter for filtering inventory records by multiple reason types. Applied as WHERE reason IN (...) in SQL query.
+         * @x-autobe-specification Computed query parameter for filtering
+         *   inventory records by multiple reason types. Applied as WHERE reason
+         *   IN (...) in SQL query.
      */
     reasons?: string[] | undefined;
 
@@ -435,8 +481,10 @@ export namespace IEcommerceInventoryRecord {
      *
      * ISO 8601 date-time string (e.g., "2024-01-15T00:00:00Z")
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Date range filter on ecommerce_inventory_records.created_at. Applied as WHERE created_at >= created_at_from in SQL query.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Date range filter on
+         *   ecommerce_inventory_records.created_at. Applied as WHERE created_at
+         *   >= created_at_from in SQL query.
      */
     created_at_from?: (string & tags.Format<"date-time">) | undefined;
 
@@ -455,8 +503,10 @@ export namespace IEcommerceInventoryRecord {
      *
      * ISO 8601 date-time string (e.g., "2024-12-31T23:59:59Z")
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Date range filter on ecommerce_inventory_records.created_at. Applied as WHERE created_at <= created_at_to in SQL query.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Date range filter on
+         *   ecommerce_inventory_records.created_at. Applied as WHERE created_at
+         *   <= created_at_to in SQL query.
      */
     created_at_to?: (string & tags.Format<"date-time">) | undefined;
 
@@ -475,7 +525,9 @@ export namespace IEcommerceInventoryRecord {
      *
      * Combined with limit to determine result offset: OFFSET = (page - 1) * limit
      *
-     * @x-autobe-specification Computed pagination parameter. Applied as OFFSET (page - 1) * limit LIMIT limit in SQL query. Minimum value: 1.
+         * @x-autobe-specification Computed pagination parameter. Applied as
+         *   OFFSET (page - 1) * limit LIMIT limit in SQL query. Minimum value:
+         *   1.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -495,7 +547,8 @@ export namespace IEcommerceInventoryRecord {
      *
      * Higher limits increase response size and processing time. Use appropriate limits based on client needs.
      *
-     * @x-autobe-specification Computed pagination parameter. Applied as LIMIT limit in SQL query. Minimum: 1, Maximum: 100.
+         * @x-autobe-specification Computed pagination parameter. Applied as
+         *   LIMIT limit in SQL query. Minimum: 1, Maximum: 100.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -518,7 +571,8 @@ export namespace IEcommerceInventoryRecord {
      * - quantity_change: Sort by quantity change value
      * - reason: Sort by reason type
      *
-     * @x-autobe-specification Computed sorting parameter. Applied as ORDER BY sort_by sort_order in SQL query. Default: "created_at".
+         * @x-autobe-specification Computed sorting parameter. Applied as ORDER
+         *   BY sort_by sort_order in SQL query. Default: "created_at".
      */
     sort_by?: string | undefined;
 
@@ -538,7 +592,9 @@ export namespace IEcommerceInventoryRecord {
      * - Default: "desc" (newest inventory records first)
      * - Combine with sort_by for complete sort specification
      *
-     * @x-autobe-specification Computed sorting parameter. Applied as ORDER BY sort_by sort_order in SQL query. Allowed values: "asc" or "desc". Default: "desc".
+         * @x-autobe-specification Computed sorting parameter. Applied as ORDER
+         *   BY sort_by sort_order in SQL query. Allowed values: "asc" or
+         *   "desc". Default: "desc".
      */
     sort_order?: "asc" | "desc" | undefined;
   };

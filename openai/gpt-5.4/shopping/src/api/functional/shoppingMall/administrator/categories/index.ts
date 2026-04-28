@@ -28,7 +28,8 @@ export * as snapshots from "./snapshots/index";
  * @param props.body Creation data for a top-level category or subcategory
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor administrator
- * @x-autobe-specification Implement an administrator-only create service for shopping_mall_categories.
+ * @x-autobe-specification Implement an administrator-only create service for
+ *   shopping_mall_categories.
  *
  * Authorize the caller as an administrator or superAdministrator before any write logic. If the caller is a customer or seller, reject the request and do not create any partial record.
  *
@@ -137,7 +138,8 @@ export namespace create {
  * @param props.body Category search filters and pagination options
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor administrator
- * @x-autobe-specification Implement this operation as a paginated category search over the shopping mall category aggregate.
+ * @x-autobe-specification Implement this operation as a paginated category
+ *   search over the shopping mall category aggregate.
  *
  * Load category records from the category source representing the active catalog structure. Build a query that supports common list-browsing inputs from IShoppingMallCategory.IRequest, including pagination, free-text search against category name and description, optional filtering by hierarchy role such as top-level category versus subcategory, optional filtering by parent category presence or specific parent category identifier, and explicit sorting for stable list presentation. Return the result as IPageIShoppingMallCategory.ISummary.
  *
@@ -242,7 +244,8 @@ export namespace index {
  * @param props.categoryId Unique identifier of the target category
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor administrator
- * @x-autobe-specification Implement a read-only service that selects one record from shopping_mall_categories by id where deleted_at is null.
+ * @x-autobe-specification Implement a read-only service that selects one record
+ *   from shopping_mall_categories by id where deleted_at is null.
  *
  * Validate that the categoryId path parameter is a syntactically valid UUID before querying. Execute a single-category lookup against the current category table. The base query should load the category's id, parent_id, name, description, created_at, and updated_at. Include parent relationship data only if the IShoppingMallCategory DTO requires it, but do not attempt to recursively materialize unlimited descendants because the business rule allows only one level of nesting.
  *
@@ -344,24 +347,41 @@ export namespace at {
  * @param props.body Replacement values for the target category
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor administrator
- * @x-autobe-specification 1. Authorize the caller and allow only administrator-grade actors to execute the update. Reject customer and seller actors before any write logic begins.
- * 2. Load the target row from `shopping_mall_categories` by `id = categoryId`. Treat the identifier as a UUID. If no active record exists, return a not-found error. The implementation should normally exclude rows whose `deleted_at` is not null from editable category maintenance.
- * 3. Validate the request body against the update DTO. Require the mutable business fields needed for a full update, specifically category `name`, category `description`, and hierarchy placement if `parentId` is part of the DTO design.
- * 4. If the request assigns or changes a parent category:
- *    - Load the proposed parent category.
- *    - Reject the update if the proposed parent does not exist or is inactive.
- *    - Reject the update if the proposed parent itself has a non-null `parent_id`, because category nesting is limited to one level only.
- *    - Reject self-parenting and any equivalent invalid self-reference.
- * 5. Enforce uniqueness of the category name within the same parent scope according to the schema constraint `@@unique([parent_id, name])`. For top-level categories, uniqueness is within the null-parent scope. For subcategories, uniqueness is within the same parent category.
- * 6. Persist the updated values to `shopping_mall_categories`, updating `name`, `description`, `parent_id` as allowed by the DTO, and refreshing `updated_at` to the current timestamp. Do not alter immutable identity fields such as `id` or creation metadata such as `created_at`.
- * 7. Perform the write in a transaction if parent validation and uniqueness checks are separated from the final update, so invalid concurrent updates cannot create an inconsistent hierarchy state.
- * 8. Return the updated category entity as the response payload.
- * 9. Error handling:
- *    - Not found when the target category does not exist as an active record.
- *    - Forbidden when the caller is not an administrator-authorized actor.
- *    - Conflict or validation failure when the requested name duplicates another category within the same parent scope.
- *    - Validation failure when the requested hierarchy would create more than one parent-child level or otherwise violate one-level nesting rules.
- * 10. Side effects: after successful commit, downstream readers of category browsing and product classification should observe the updated category name, description, and valid hierarchy placement.
+ * @x-autobe-specification 1. Authorize the caller and allow only
+ *   administrator-grade actors to execute the update. Reject customer and
+ *   seller actors before any write logic begins. 2. Load the target row from
+ *   `shopping_mall_categories` by `id = categoryId`. Treat the identifier as a
+ *   UUID. If no active record exists, return a not-found error. The
+ *   implementation should normally exclude rows whose `deleted_at` is not null
+ *   from editable category maintenance. 3. Validate the request body against
+ *   the update DTO. Require the mutable business fields needed for a full
+ *   update, specifically category `name`, category `description`, and hierarchy
+ *   placement if `parentId` is part of the DTO design. 4. If the request
+ *   assigns or changes a parent category: - Load the proposed parent category.
+ *   - Reject the update if the proposed parent does not exist or is inactive. -
+ *   Reject the update if the proposed parent itself has a non-null `parent_id`,
+ *   because category nesting is limited to one level only. - Reject
+ *   self-parenting and any equivalent invalid self-reference. 5. Enforce
+ *   uniqueness of the category name within the same parent scope according to
+ *   the schema constraint `@@unique([parent_id, name])`. For top-level
+ *   categories, uniqueness is within the null-parent scope. For subcategories,
+ *   uniqueness is within the same parent category. 6. Persist the updated
+ *   values to `shopping_mall_categories`, updating `name`, `description`,
+ *   `parent_id` as allowed by the DTO, and refreshing `updated_at` to the
+ *   current timestamp. Do not alter immutable identity fields such as `id` or
+ *   creation metadata such as `created_at`. 7. Perform the write in a
+ *   transaction if parent validation and uniqueness checks are separated from
+ *   the final update, so invalid concurrent updates cannot create an
+ *   inconsistent hierarchy state. 8. Return the updated category entity as the
+ *   response payload. 9. Error handling: - Not found when the target category
+ *   does not exist as an active record. - Forbidden when the caller is not an
+ *   administrator-authorized actor. - Conflict or validation failure when the
+ *   requested name duplicates another category within the same parent scope. -
+ *   Validation failure when the requested hierarchy would create more than one
+ *   parent-child level or otherwise violate one-level nesting rules. 10. Side
+ *   effects: after successful commit, downstream readers of category browsing
+ *   and product classification should observe the updated category name,
+ *   description, and valid hierarchy placement.
  * @path /shoppingMall/administrator/categories/:categoryId
  * @accessor api.functional.shoppingMall.administrator.categories.update
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -461,7 +481,8 @@ export namespace update {
  * @param props.categoryId Identifier of the category to remove from the catalog structure
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor administrator
- * @x-autobe-specification Implement this operation as an administrator-governed category removal workflow for the shopping_mall_categories entity.
+ * @x-autobe-specification Implement this operation as an administrator-governed
+ *   category removal workflow for the shopping_mall_categories entity.
  *
  * 1. Authorize the caller and allow only administrator and superAdministrator actors. If the actor is a customer or seller, reject the request before any database mutation and ensure no partial category or product changes occur.
  *

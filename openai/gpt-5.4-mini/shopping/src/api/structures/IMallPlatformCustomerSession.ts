@@ -16,8 +16,9 @@ export type IMallPlatformCustomerSession = {
    *
    * This value uniquely identifies one persisted authentication session record and is used to retrieve the session detail response.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from mall_platform_customer_sessions.id. This is the session primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_customer_sessions.id. This is the session primary key.
    */
   id: string & tags.Format<"uuid">;
 
@@ -26,8 +27,11 @@ export type IMallPlatformCustomerSession = {
    *
    * This is returned as a customer summary object rather than the raw foreign-key value so clients can identify the session owner without exposing internal linkage columns.
    *
-   * @x-autobe-database-schema-property customer
-   * @x-autobe-specification Resolve the owning customer through the mall_platform_customer_sessions.customer relation, which joins mall_platform_customer_id to mall_platform_customers.id. Return the related customer summary object in the DTO.
+     * @x-autobe-database-schema-property customer
+     * @x-autobe-specification Resolve the owning customer through the
+     *   mall_platform_customer_sessions.customer relation, which joins
+     *   mall_platform_customer_id to mall_platform_customers.id. Return the
+     *   related customer summary object in the DTO.
    */
   customer: IMallPlatformCustomer.ISummary;
 
@@ -36,8 +40,10 @@ export type IMallPlatformCustomerSession = {
    *
    * This reflects the client network context associated with the authentication session and is part of the session audit data.
    *
-   * @x-autobe-database-schema-property ip
-   * @x-autobe-specification Direct mapping from mall_platform_customer_sessions.ip. Preserve the observed IP address captured when the session was created.
+     * @x-autobe-database-schema-property ip
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_customer_sessions.ip. Preserve the observed IP address
+     *   captured when the session was created.
    */
   ip: string;
 
@@ -46,8 +52,10 @@ export type IMallPlatformCustomerSession = {
    *
    * This captures the browsing context present when the session was established and helps describe where the sign-in flow began.
    *
-   * @x-autobe-database-schema-property href
-   * @x-autobe-specification Direct mapping from mall_platform_customer_sessions.href. Preserve the request URL or entry page recorded at session creation.
+     * @x-autobe-database-schema-property href
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_customer_sessions.href. Preserve the request URL or entry
+     *   page recorded at session creation.
    */
   href: string;
 
@@ -56,8 +64,10 @@ export type IMallPlatformCustomerSession = {
    *
    * This captures where the user arrived from when the session was created and is part of the session audit trail.
    *
-   * @x-autobe-database-schema-property referrer
-   * @x-autobe-specification Direct mapping from mall_platform_customer_sessions.referrer. Preserve the referrer URL recorded at session creation.
+     * @x-autobe-database-schema-property referrer
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_customer_sessions.referrer. Preserve the referrer URL
+     *   recorded at session creation.
    */
   referrer: string;
 
@@ -66,8 +76,10 @@ export type IMallPlatformCustomerSession = {
    *
    * This timestamp marks when the authentication session was first established and can be used for audit and session lifecycle display.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from mall_platform_customer_sessions.created_at. This is the timestamp when the session row was created.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_customer_sessions.created_at. This is the timestamp when
+     *   the session row was created.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -76,8 +88,10 @@ export type IMallPlatformCustomerSession = {
    *
    * After this timestamp, the session should be treated as invalid and no longer accepted for authenticated access.
    *
-   * @x-autobe-database-schema-property expired_at
-   * @x-autobe-specification Direct mapping from mall_platform_customer_sessions.expired_at. This is the timestamp when the session becomes invalid.
+     * @x-autobe-database-schema-property expired_at
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_customer_sessions.expired_at. This is the timestamp when
+     *   the session becomes invalid.
    */
   expired_at: string & tags.Format<"date-time">;
 };
@@ -95,8 +109,9 @@ export namespace IMallPlatformCustomerSession {
      *
      * This value identifies one persisted session record and can be used to distinguish the session in list and detail views.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from mall_platform_customer_sessions.id.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_customer_sessions.id.
      */
     id: string & tags.Format<"uuid">;
 
@@ -105,8 +120,10 @@ export namespace IMallPlatformCustomerSession {
      *
      * This is returned as a customer summary object so consumers can inspect the session owner without exposing the underlying foreign key.
      *
-     * @x-autobe-database-schema-property customer
-     * @x-autobe-specification Join mall_platform_customer_sessions.customer via mall_platform_customer_id and serialize the related customer as IMallPlatformCustomer.ISummary.
+         * @x-autobe-database-schema-property customer
+         * @x-autobe-specification Join mall_platform_customer_sessions.customer
+         *   via mall_platform_customer_id and serialize the related customer as
+         *   IMallPlatformCustomer.ISummary.
      */
     customer: IMallPlatformCustomer.ISummary;
 
@@ -115,8 +132,9 @@ export namespace IMallPlatformCustomerSession {
      *
      * This value reflects the client network address observed at session creation time.
      *
-     * @x-autobe-database-schema-property ip
-     * @x-autobe-specification Direct mapping from mall_platform_customer_sessions.ip.
+         * @x-autobe-database-schema-property ip
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_customer_sessions.ip.
      */
     ip: string;
 
@@ -125,8 +143,9 @@ export namespace IMallPlatformCustomerSession {
      *
      * This value captures the page or URL context that was recorded when the session was created.
      *
-     * @x-autobe-database-schema-property href
-     * @x-autobe-specification Direct mapping from mall_platform_customer_sessions.href.
+         * @x-autobe-database-schema-property href
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_customer_sessions.href.
      */
     href: string;
 
@@ -135,8 +154,9 @@ export namespace IMallPlatformCustomerSession {
      *
      * This value represents the page or source that referred the user into the session creation flow.
      *
-     * @x-autobe-database-schema-property referrer
-     * @x-autobe-specification Direct mapping from mall_platform_customer_sessions.referrer.
+         * @x-autobe-database-schema-property referrer
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_customer_sessions.referrer.
      */
     referrer: string;
 
@@ -145,8 +165,9 @@ export namespace IMallPlatformCustomerSession {
      *
      * This timestamp marks the moment the customer authentication session was issued and stored.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from mall_platform_customer_sessions.created_at to createdAt.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_customer_sessions.created_at to createdAt.
      */
     createdAt: string & tags.Format<"date-time">;
 
@@ -155,8 +176,9 @@ export namespace IMallPlatformCustomerSession {
      *
      * After this timestamp, the session should no longer be treated as authenticated.
      *
-     * @x-autobe-database-schema-property expired_at
-     * @x-autobe-specification Direct mapping from mall_platform_customer_sessions.expired_at to expiredAt.
+         * @x-autobe-database-schema-property expired_at
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_customer_sessions.expired_at to expiredAt.
      */
     expiredAt: string & tags.Format<"date-time">;
   };
@@ -172,7 +194,9 @@ export namespace IMallPlatformCustomerSession {
      *
      * This is a 1-indexed pagination control used to choose which page of session results to fetch. It does not correspond to stored session data.
      *
-     * @x-autobe-specification Use as the 1-indexed page number for the session list query. Apply it only to pagination windowing and never persist it.
+         * @x-autobe-specification Use as the 1-indexed page number for the
+         *   session list query. Apply it only to pagination windowing and never
+         *   persist it.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -181,7 +205,9 @@ export namespace IMallPlatformCustomerSession {
      *
      * This controls the size of the paginated session list response and is not stored as session data.
      *
-     * @x-autobe-specification Use as the maximum number of session records returned per page. Apply server-side bounds checks and never persist it.
+         * @x-autobe-specification Use as the maximum number of session records
+         *   returned per page. Apply server-side bounds checks and never
+         *   persist it.
      */
     limit?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -190,7 +216,10 @@ export namespace IMallPlatformCustomerSession {
      *
      * This is a query instruction that determines how matching sessions are ordered in the response.
      *
-     * @x-autobe-specification Interpret as the ordering instruction for the session listing query. Support the endpoint's allowed sort expressions over session fields such as created_at and expired_at; do not persist this value.
+         * @x-autobe-specification Interpret as the ordering instruction for the
+         *   session listing query. Support the endpoint's allowed sort
+         *   expressions over session fields such as created_at and expired_at;
+         *   do not persist this value.
      */
     sort?: string | undefined;
 
@@ -199,7 +228,10 @@ export namespace IMallPlatformCustomerSession {
      *
      * Use this to find sessions by matching session context fields such as the client IP, entry URL, or referrer.
      *
-     * @x-autobe-specification Apply as a text search over session listing criteria supported by the endpoint, typically matching session context fields such as ip, href, and referrer. This value is transient and must not be stored.
+         * @x-autobe-specification Apply as a text search over session listing
+         *   criteria supported by the endpoint, typically matching session
+         *   context fields such as ip, href, and referrer. This value is
+         *   transient and must not be stored.
      */
     search?: string | undefined;
 
@@ -208,8 +240,9 @@ export namespace IMallPlatformCustomerSession {
      *
      * Use this to find sessions created from a specific client IP address.
      *
-     * @x-autobe-database-schema-property ip
-     * @x-autobe-specification Filter mall_platform_customer_sessions.ip using the provided IPv4 value.
+         * @x-autobe-database-schema-property ip
+         * @x-autobe-specification Filter mall_platform_customer_sessions.ip
+         *   using the provided IPv4 value.
      */
     ip?: (string & tags.Format<"ipv4">) | undefined;
 
@@ -218,8 +251,9 @@ export namespace IMallPlatformCustomerSession {
      *
      * Use this to find sessions created from a specific page or request URL.
      *
-     * @x-autobe-database-schema-property href
-     * @x-autobe-specification Filter mall_platform_customer_sessions.href using the provided URI-reference value.
+         * @x-autobe-database-schema-property href
+         * @x-autobe-specification Filter mall_platform_customer_sessions.href
+         *   using the provided URI-reference value.
      */
     href?: (string & tags.Format<"uri-reference">) | undefined;
 
@@ -228,8 +262,10 @@ export namespace IMallPlatformCustomerSession {
      *
      * Use this to find sessions created from a specific referring page or site.
      *
-     * @x-autobe-database-schema-property referrer
-     * @x-autobe-specification Filter mall_platform_customer_sessions.referrer using the provided URI-reference value.
+         * @x-autobe-database-schema-property referrer
+         * @x-autobe-specification Filter
+         *   mall_platform_customer_sessions.referrer using the provided
+         *   URI-reference value.
      */
     referrer?: (string & tags.Format<"uri-reference">) | undefined;
 
@@ -238,7 +274,9 @@ export namespace IMallPlatformCustomerSession {
      *
      * Use this to narrow results to sessions created on or after a specific moment.
      *
-     * @x-autobe-specification Apply as the inclusive lower bound for mall_platform_customer_sessions.created_at when listing sessions. Use it only as a query filter and do not persist it.
+         * @x-autobe-specification Apply as the inclusive lower bound for
+         *   mall_platform_customer_sessions.created_at when listing sessions.
+         *   Use it only as a query filter and do not persist it.
      */
     createdAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
@@ -247,7 +285,9 @@ export namespace IMallPlatformCustomerSession {
      *
      * Use this to narrow results to sessions created on or before a specific moment.
      *
-     * @x-autobe-specification Apply as the inclusive upper bound for mall_platform_customer_sessions.created_at when listing sessions. Use it only as a query filter and do not persist it.
+         * @x-autobe-specification Apply as the inclusive upper bound for
+         *   mall_platform_customer_sessions.created_at when listing sessions.
+         *   Use it only as a query filter and do not persist it.
      */
     createdAtTo?: (string & tags.Format<"date-time">) | undefined;
 
@@ -256,7 +296,9 @@ export namespace IMallPlatformCustomerSession {
      *
      * Use this to narrow results to sessions that expire on or after a specific moment.
      *
-     * @x-autobe-specification Apply as the inclusive lower bound for mall_platform_customer_sessions.expired_at when listing sessions. Use it only as a query filter and do not persist it.
+         * @x-autobe-specification Apply as the inclusive lower bound for
+         *   mall_platform_customer_sessions.expired_at when listing sessions.
+         *   Use it only as a query filter and do not persist it.
      */
     expiredAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
@@ -265,7 +307,9 @@ export namespace IMallPlatformCustomerSession {
      *
      * Use this to narrow results to sessions that expire on or before a specific moment.
      *
-     * @x-autobe-specification Apply as the inclusive upper bound for mall_platform_customer_sessions.expired_at when listing sessions. Use it only as a query filter and do not persist it.
+         * @x-autobe-specification Apply as the inclusive upper bound for
+         *   mall_platform_customer_sessions.expired_at when listing sessions.
+         *   Use it only as a query filter and do not persist it.
      */
     expiredAtTo?: (string & tags.Format<"date-time">) | undefined;
   };
@@ -283,7 +327,10 @@ export namespace IMallPlatformCustomerSession {
      *
      * This identifies the customer account that is attempting to start a session.
      *
-     * @x-autobe-specification Submit the customer's email address for authentication. The server uses this value to find the matching customer account before verifying the password and creating the session.
+         * @x-autobe-specification Submit the customer's email address for
+         *   authentication. The server uses this value to find the matching
+         *   customer account before verifying the password and creating the
+         *   session.
      */
     email: string & tags.Format<"email">;
 
@@ -292,7 +339,11 @@ export namespace IMallPlatformCustomerSession {
      *
      * This is the plain-text credential sent for authentication and is never returned or stored as-is.
      *
-     * @x-autobe-specification Submit the customer's plain-text password for credential verification. The server compares it against mall_platform_customers.password_hash and, on success, creates the session. The submitted password is never stored in mall_platform_customer_sessions.
+         * @x-autobe-specification Submit the customer's plain-text password for
+         *   credential verification. The server compares it against
+         *   mall_platform_customers.password_hash and, on success, creates the
+         *   session. The submitted password is never stored in
+         *   mall_platform_customer_sessions.
      */
     password: string & tags.Format<"password">;
 
@@ -301,8 +352,10 @@ export namespace IMallPlatformCustomerSession {
      *
      * This records where the customer was when the session started.
      *
-     * @x-autobe-database-schema-property href
-     * @x-autobe-specification Direct mapping to mall_platform_customer_sessions.href. Store the request page or entry URL as the session's creation context.
+         * @x-autobe-database-schema-property href
+         * @x-autobe-specification Direct mapping to
+         *   mall_platform_customer_sessions.href. Store the request page or
+         *   entry URL as the session's creation context.
      */
     href: string & tags.Format<"uri">;
 
@@ -311,8 +364,10 @@ export namespace IMallPlatformCustomerSession {
      *
      * This captures the page or site that led to the sign-in attempt.
      *
-     * @x-autobe-database-schema-property referrer
-     * @x-autobe-specification Direct mapping to mall_platform_customer_sessions.referrer. Store the referrer URL as the session's origin context.
+         * @x-autobe-database-schema-property referrer
+         * @x-autobe-specification Direct mapping to
+         *   mall_platform_customer_sessions.referrer. Store the referrer URL as
+         *   the session's origin context.
      */
     referrer: string & tags.Format<"uri">;
   };

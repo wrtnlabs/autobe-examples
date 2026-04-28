@@ -21,9 +21,10 @@ export class ShoppingmallSellerCustomersProfileController {
    * **Database Reference**: This operation queries the shopping_mall_customers table, specifically the display_name and phone_number columns which are nullable text fields that can be edited by customers at any time without approval.
    *
    * @param connection
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Retrieve the authenticated customer's profile from the shopping_mall_customers table.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Retrieve the authenticated customer's profile
+     *   from the shopping_mall_customers table.
    *
    * 1. Extract customer ID from JWT token in Authorization header
    * 2. Query shopping_mall_customers table by ID

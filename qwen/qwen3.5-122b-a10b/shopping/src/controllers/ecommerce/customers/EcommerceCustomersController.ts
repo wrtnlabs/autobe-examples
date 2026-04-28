@@ -36,9 +36,10 @@ export class EcommerceCustomersController {
    *
    * @param connection
    * @param body Search criteria for filtering customer accounts including display name, email, registration date range, account status, sorting preferences, and pagination parameters.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query the ecommerce_customers table with the following implementation logic:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query the ecommerce_customers table with the
+     *   following implementation logic:
    *
    * **Query Building**
    *
@@ -115,9 +116,10 @@ export class EcommerceCustomersController {
    *
    * @param connection
    * @param customerId Unique identifier of the customer to retrieve (UUID format).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query the ecommerce_customers table by id UUID parameter.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query the ecommerce_customers table by id UUID
+     *   parameter.
    *
    * **Authorization Check**
    *

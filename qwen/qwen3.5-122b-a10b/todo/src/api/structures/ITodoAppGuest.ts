@@ -22,8 +22,9 @@ export type ITodoAppGuest = {
    *
    * This is a UUID-formatted primary key that uniquely identifies each guest record in the system. It is automatically generated upon guest account creation and cannot be modified.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from todo_app_guests.id. UUID format primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from todo_app_guests.id. UUID
+     *   format primary key.
    */
   id: string & tags.Format<"uuid">;
 
@@ -32,8 +33,10 @@ export type ITodoAppGuest = {
    *
    * This field serves as the primary identifier for anonymous guests. It enables the system to associate multiple sessions and requests with the same guest user without requiring authentication credentials. The value is unique across all guest accounts.
    *
-   * @x-autobe-database-schema-property device_fingerprint
-   * @x-autobe-specification Direct mapping from todo_app_guests.device_fingerprint. Unique constraint enforced at database level.
+     * @x-autobe-database-schema-property device_fingerprint
+     * @x-autobe-specification Direct mapping from
+     *   todo_app_guests.device_fingerprint. Unique constraint enforced at
+     *   database level.
    */
   device_fingerprint: string;
 
@@ -42,8 +45,9 @@ export type ITodoAppGuest = {
    *
    * This field is automatically set upon guest account creation and cannot be modified. It is used for tracking account age and for temporal queries. The timestamp is stored in UTC format with timezone information.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from todo_app_guests.created_at. Automatically set on record creation, immutable.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from todo_app_guests.created_at.
+     *   Automatically set on record creation, immutable.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -52,8 +56,9 @@ export type ITodoAppGuest = {
    *
    * This field is automatically updated whenever the guest account record is modified. It is used for tracking recent activity and for synchronization purposes. The timestamp is stored in UTC format with timezone information.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from todo_app_guests.updated_at. Automatically updated on record modification.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from todo_app_guests.updated_at.
+     *   Automatically updated on record modification.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -62,8 +67,9 @@ export type ITodoAppGuest = {
    *
    * When this field is null, the account is active. When populated, the account is marked as deleted but retained in the database for audit purposes. Soft deletion allows for potential recovery and maintains referential integrity with related records.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from todo_app_guests.deleted_at. Nullable - null when active, populated when soft-deleted.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from todo_app_guests.deleted_at.
+     *   Nullable - null when active, populated when soft-deleted.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -91,8 +97,9 @@ export namespace ITodoAppGuest {
      *
      * This UUID serves as the primary key for the guest account record in the database.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from todo_app_guests.id. Primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from todo_app_guests.id.
+         *   Primary key.
      */
     id: string & tags.Format<"uuid">;
 
@@ -101,8 +108,9 @@ export namespace ITodoAppGuest {
      *
      * This field serves as the primary identifier for anonymous guests, enabling the system to associate multiple sessions and requests with the same guest user without requiring authentication credentials. The value is unique across all guest accounts.
      *
-     * @x-autobe-database-schema-property device_fingerprint
-     * @x-autobe-specification Direct mapping from todo_app_guests.device_fingerprint. Unique constraint.
+         * @x-autobe-database-schema-property device_fingerprint
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_guests.device_fingerprint. Unique constraint.
      */
     device_fingerprint: string;
 
@@ -111,8 +119,9 @@ export namespace ITodoAppGuest {
      *
      * This field is automatically set upon guest account creation and cannot be modified. It is used for tracking account age and for temporal queries.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from todo_app_guests.created_at. Auto-generated on insert.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_guests.created_at. Auto-generated on insert.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -121,8 +130,9 @@ export namespace ITodoAppGuest {
      *
      * When this field is null, the account is active. When populated, the account is marked as deleted but retained in the database for audit purposes. Soft deletion allows for potential recovery and maintains referential integrity with related records.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from todo_app_guests.deleted_at. Nullable soft delete marker.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_guests.deleted_at. Nullable soft delete marker.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
 
@@ -131,7 +141,10 @@ export namespace ITodoAppGuest {
      *
      * This computed field represents the count of active session records associated with this guest account from the todo_app_guest_sessions table. It provides an overview of concurrent or historical session activity for the guest.
      *
-     * @x-autobe-specification Computed aggregation: COUNT(todo_app_guest_sessions) WHERE todo_app_guest_sessions.todo_app_guest_id = todo_app_guests.id. Counts active sessions for this guest.
+         * @x-autobe-specification Computed aggregation:
+         *   COUNT(todo_app_guest_sessions) WHERE
+         *   todo_app_guest_sessions.todo_app_guest_id = todo_app_guests.id.
+         *   Counts active sessions for this guest.
      */
     session_count: number & tags.Type<"int32">;
   };
@@ -167,8 +180,10 @@ export namespace ITodoAppGuest {
      *
      * Provide a substring or pattern to match against registered device fingerprints. The system performs case-insensitive comparison to find matching guest accounts.
      *
-     * @x-autobe-database-schema-property device_fingerprint
-     * @x-autobe-specification Direct mapping from todo_app_guests.device_fingerprint. Case-insensitive LIKE pattern matching for filtering guest accounts by device identifier.
+         * @x-autobe-database-schema-property device_fingerprint
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_guests.device_fingerprint. Case-insensitive LIKE pattern
+         *   matching for filtering guest accounts by device identifier.
      */
     device_fingerprint?: string | undefined;
 
@@ -185,8 +200,10 @@ export namespace ITodoAppGuest {
      *
      * Combine with `created_at_lte` to define a specific time window for guest account creation.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Date range filter on todo_app_guests.created_at (greater than or equal). ISO 8601 date-time format required.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Date range filter on
+         *   todo_app_guests.created_at (greater than or equal). ISO 8601
+         *   date-time format required.
      */
     created_at_gte?: (string & tags.Format<"date-time">) | undefined;
 
@@ -203,8 +220,10 @@ export namespace ITodoAppGuest {
      *
      * Combine with `created_at_gte` to define a specific time window for guest account creation.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Date range filter on todo_app_guests.created_at (less than or equal). ISO 8601 date-time format required.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Date range filter on
+         *   todo_app_guests.created_at (less than or equal). ISO 8601 date-time
+         *   format required.
      */
     created_at_lte?: (string & tags.Format<"date-time">) | undefined;
 
@@ -222,8 +241,10 @@ export namespace ITodoAppGuest {
      *
      * Use this filter to audit deleted guest accounts or to exclude them from active listings.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from todo_app_guests.deleted_at. Null value filters active guests, non-null filters deleted guests.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_guests.deleted_at. Null value filters active guests,
+         *   non-null filters deleted guests.
      */
     deleted_at?: (string & tags.Format<"date-time">) | null | undefined;
 
@@ -242,7 +263,9 @@ export namespace ITodoAppGuest {
      *
      * Increment this value to navigate through subsequent pages of results. Combine with the `limit` parameter to control result set size.
      *
-     * @x-autobe-specification Computed pagination parameter. 1-indexed page number for cursor-based pagination. Defaults to 1. Used to calculate offset for database queries.
+         * @x-autobe-specification Computed pagination parameter. 1-indexed page
+         *   number for cursor-based pagination. Defaults to 1. Used to
+         *   calculate offset for database queries.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -261,7 +284,9 @@ export namespace ITodoAppGuest {
      *
      * Adjust this value to balance between fewer API calls (higher limit) and faster response times (lower limit). Values above 100 are rejected with a validation error.
      *
-     * @x-autobe-specification Computed pagination parameter. Maximum records per page (1-100). Defaults to 20. Used to restrict query result size.
+         * @x-autobe-specification Computed pagination parameter. Maximum
+         *   records per page (1-100). Defaults to 20. Used to restrict query
+         *   result size.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -286,7 +311,9 @@ export namespace ITodoAppGuest {
      *
      * Combine with the `sortOrder` parameter to control both the field and direction of sorting.
      *
-     * @x-autobe-specification Computed sorting parameter. Field name to sort results by. Default: created_at. Used to construct ORDER BY clause in database queries.
+         * @x-autobe-specification Computed sorting parameter. Field name to
+         *   sort results by. Default: created_at. Used to construct ORDER BY
+         *   clause in database queries.
      */
     sortBy?: string | undefined;
 
@@ -308,7 +335,9 @@ export namespace ITodoAppGuest {
      *
      * Combine with the `sortBy` parameter to control both the field and direction of sorting. For example, `sortBy=created_at&sortOrder=desc` returns the most recently created guest accounts first.
      *
-     * @x-autobe-specification Computed sorting parameter. Sort direction (asc/desc). Default: desc. Used to construct ORDER BY clause direction in database queries.
+         * @x-autobe-specification Computed sorting parameter. Sort direction
+         *   (asc/desc). Default: desc. Used to construct ORDER BY clause
+         *   direction in database queries.
      */
     sortOrder?: "asc" | "desc" | undefined;
   };
@@ -335,8 +364,9 @@ export namespace ITodoAppGuest {
      *
      * This UUID is automatically generated when the guest account is created and serves as the primary key for the guest record in the database. It is used to reference the guest in related operations and session management.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from todo_app_guests.id. Primary key UUID for guest account.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from todo_app_guests.id.
+         *   Primary key UUID for guest account.
      */
     id: string & tags.Format<"uuid">;
 
@@ -350,8 +380,10 @@ export namespace ITodoAppGuest {
      * - Enables session continuity for anonymous users
      * - Required for guest join/refresh operations
      *
-     * @x-autobe-database-schema-property device_fingerprint
-     * @x-autobe-specification Direct mapping from todo_app_guests.device_fingerprint. Unique device identifier for guest tracking.
+         * @x-autobe-database-schema-property device_fingerprint
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_guests.device_fingerprint. Unique device identifier for
+         *   guest tracking.
      */
     device_fingerprint: string;
 
@@ -360,8 +392,10 @@ export namespace ITodoAppGuest {
      *
      * This field is automatically set by the database when the guest account record is first inserted. It cannot be modified and is used for tracking account age and temporal queries.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from todo_app_guests.created_at. Auto-generated on guest account creation.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_guests.created_at. Auto-generated on guest account
+         *   creation.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -370,8 +404,10 @@ export namespace ITodoAppGuest {
      *
      * This field is automatically updated by the database whenever the guest account record is modified. It is used for tracking recent activity and for synchronization purposes.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from todo_app_guests.updated_at. Auto-updated on guest account modification.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_guests.updated_at. Auto-updated on guest account
+         *   modification.
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -384,15 +420,18 @@ export namespace ITodoAppGuest {
      * - Null: Guest account is active
      * - Populated: Guest account is soft-deleted
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from todo_app_guests.deleted_at. Null for active guests, populated when soft-deleted.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_guests.deleted_at. Null for active guests, populated when
+         *   soft-deleted.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
 
     /**
      * Authorization token.
      *
-     * @x-autobe-specification Authorization token comes from the session table.
+         * @x-autobe-specification Authorization token comes from the session
+         *   table.
      */
     token: IAuthorizationToken;
   };
@@ -423,8 +462,10 @@ export namespace ITodoAppGuest {
      * - Must be provided and non-empty
      * - Must be unique across all guest accounts
      *
-     * @x-autobe-database-schema-property device_fingerprint
-     * @x-autobe-specification Direct mapping from todo_app_guests.device_fingerprint. Unique constraint enforced at database level.
+         * @x-autobe-database-schema-property device_fingerprint
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_guests.device_fingerprint. Unique constraint enforced at
+         *   database level.
      */
     device_fingerprint: string;
 
@@ -438,7 +479,10 @@ export namespace ITodoAppGuest {
      * - Must be a valid URI string
      * - Required field
      *
-     * @x-autobe-specification Session context field extracted from HTTP request. Represents the current page URL where the guest initiated registration. Not stored in database table, captured for analytics and session tracking.
+         * @x-autobe-specification Session context field extracted from HTTP
+         *   request. Represents the current page URL where the guest initiated
+         *   registration. Not stored in database table, captured for analytics
+         *   and session tracking.
      */
     href: string & tags.Format<"uri">;
 
@@ -452,7 +496,10 @@ export namespace ITodoAppGuest {
      * - Must be a valid URI string
      * - Required field
      *
-     * @x-autobe-specification Session context field extracted from HTTP request. Represents the referring page URL that led to registration. Not stored in database table, captured for analytics and session tracking.
+         * @x-autobe-specification Session context field extracted from HTTP
+         *   request. Represents the referring page URL that led to
+         *   registration. Not stored in database table, captured for analytics
+         *   and session tracking.
      */
     referrer: string & tags.Format<"uri">;
 
@@ -466,7 +513,11 @@ export namespace ITodoAppGuest {
      * - Must be a valid IPv4 address string
      * - Optional field (server may populate if not provided by client)
      *
-     * @x-autobe-specification Session context field extracted from HTTP request. Represents the client IP address. Optional in join request because in SSR scenarios the client cannot determine its own IP - the server captures it as fallback (body.ip ?? serverIp). Not stored in database table, captured for security auditing.
+         * @x-autobe-specification Session context field extracted from HTTP
+         *   request. Represents the client IP address. Optional in join request
+         *   because in SSR scenarios the client cannot determine its own IP -
+         *   the server captures it as fallback (body.ip ?? serverIp). Not
+         *   stored in database table, captured for security auditing.
      */
     ip?: (string & tags.Format<"ipv4">) | undefined;
   };
@@ -502,7 +553,10 @@ export namespace ITodoAppGuest {
      *
      * Include this token in the request body when calling the refresh endpoint. Upon successful validation, the server returns a new authorization response with refreshed tokens and extended expiration timestamps.
      *
-     * @x-autobe-specification Session token from todo_app_guest_sessions table. The server validates this token signature, extracts the session ID, verifies expiration (expired_at > now), and extends the session lifetime.
+         * @x-autobe-specification Session token from todo_app_guest_sessions
+         *   table. The server validates this token signature, extracts the
+         *   session ID, verifies expiration (expired_at > now), and extends the
+         *   session lifetime.
      */
     token: string;
   };

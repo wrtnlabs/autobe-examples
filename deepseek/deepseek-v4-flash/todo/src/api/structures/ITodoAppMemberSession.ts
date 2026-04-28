@@ -16,8 +16,9 @@ export type ITodoAppMemberSession = {
    *
    * Each session is assigned a unique UUID primary key at creation time. This identifier is used to reference the session in API operations such as retrieval.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from todo_app_member_sessions.id. UUID primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from todo_app_member_sessions.id.
+     *   UUID primary key.
    */
   id: string & tags.Format<"uuid">;
 
@@ -26,8 +27,11 @@ export type ITodoAppMemberSession = {
    *
    * Each session belongs to exactly one member. A member may have multiple concurrent sessions, each tracked independently. The member object provides basic identity information for the session owner.
    *
-   * @x-autobe-database-schema-property member
-   * @x-autobe-specification Join from todo_app_member_sessions.todo_app_member_id to todo_app_members.id. Returns ITodoAppMember.ISummary containing the member's identity information (id, email, profile).
+     * @x-autobe-database-schema-property member
+     * @x-autobe-specification Join from
+     *   todo_app_member_sessions.todo_app_member_id to todo_app_members.id.
+     *   Returns ITodoAppMember.ISummary containing the member's identity
+     *   information (id, email, profile).
    */
   member: ITodoAppMember.ISummary;
 
@@ -36,8 +40,8 @@ export type ITodoAppMemberSession = {
    *
    * Used for audit logging and identifying the geographical or network origin of the session request.
    *
-   * @x-autobe-database-schema-property ip
-   * @x-autobe-specification Direct mapping from todo_app_member_sessions.ip.
+     * @x-autobe-database-schema-property ip
+     * @x-autobe-specification Direct mapping from todo_app_member_sessions.ip.
    */
   ip: string;
 
@@ -46,8 +50,9 @@ export type ITodoAppMemberSession = {
    *
    * Captures the member's entry point URL for audit and analytics purposes.
    *
-   * @x-autobe-database-schema-property href
-   * @x-autobe-specification Direct mapping from todo_app_member_sessions.href.
+     * @x-autobe-database-schema-property href
+     * @x-autobe-specification Direct mapping from
+     *   todo_app_member_sessions.href.
    */
   href: string & tags.Format<"uri">;
 
@@ -56,8 +61,9 @@ export type ITodoAppMemberSession = {
    *
    * Indicates the previous page the member visited before starting this session, useful for navigation flow analysis.
    *
-   * @x-autobe-database-schema-property referrer
-   * @x-autobe-specification Direct mapping from todo_app_member_sessions.referrer.
+     * @x-autobe-database-schema-property referrer
+     * @x-autobe-specification Direct mapping from
+     *   todo_app_member_sessions.referrer.
    */
   referrer: string & tags.Format<"uri">;
 
@@ -66,8 +72,9 @@ export type ITodoAppMemberSession = {
    *
    * Set at session initiation and never modified.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from todo_app_member_sessions.created_at.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   todo_app_member_sessions.created_at.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -76,8 +83,9 @@ export type ITodoAppMemberSession = {
    *
    * Members must re-authenticate after expiration. This field is always present, ensuring all sessions have a finite lifetime.
    *
-   * @x-autobe-database-schema-property expired_at
-   * @x-autobe-specification Direct mapping from todo_app_member_sessions.expired_at.
+     * @x-autobe-database-schema-property expired_at
+     * @x-autobe-specification Direct mapping from
+     *   todo_app_member_sessions.expired_at.
    */
   expired_at: string & tags.Format<"date-time">;
 };
@@ -100,7 +108,10 @@ export namespace ITodoAppMemberSession {
      *
      * When omitted, all sessions are returned regardless of status.
      *
-     * @x-autobe-specification Enum filter: 'active' means expired_at > current timestamp, 'expired' means expired_at <= current timestamp, 'all' means no filter (return all sessions). Default behavior when omitted is to show all sessions (equivalent to 'all').
+         * @x-autobe-specification Enum filter: 'active' means expired_at >
+         *   current timestamp, 'expired' means expired_at <= current timestamp,
+         *   'all' means no filter (return all sessions). Default behavior when
+         *   omitted is to show all sessions (equivalent to 'all').
      */
     status?: "active" | "expired" | "all" | undefined;
 
@@ -109,7 +120,9 @@ export namespace ITodoAppMemberSession {
      *
      * Use together with `created_at_to` to define a time range for filtering sessions by their creation time. Only sessions created at or after this date-time are included in the results.
      *
-     * @x-autobe-specification Lower bound for created_at range filter. Sessions with created_at >= this value are included. Used together with created_at_to for range queries.
+         * @x-autobe-specification Lower bound for created_at range filter.
+         *   Sessions with created_at >= this value are included. Used together
+         *   with created_at_to for range queries.
      */
     created_at_from?: (string & tags.Format<"date-time">) | undefined;
 
@@ -118,7 +131,9 @@ export namespace ITodoAppMemberSession {
      *
      * Use together with `created_at_from` to define a time range for filtering sessions by their creation time. Only sessions created at or before this date-time are included in the results.
      *
-     * @x-autobe-specification Upper bound for created_at range filter. Sessions with created_at <= this value are included. Used together with created_at_from for range queries.
+         * @x-autobe-specification Upper bound for created_at range filter.
+         *   Sessions with created_at <= this value are included. Used together
+         *   with created_at_from for range queries.
      */
     created_at_to?: (string & tags.Format<"date-time">) | undefined;
 
@@ -127,7 +142,10 @@ export namespace ITodoAppMemberSession {
      *
      * Controls how sessions are ordered in the results. Use `created_at` for ascending order (oldest first) or `-created_at` for descending order (newest first). Defaults to newest first when omitted.
      *
-     * @x-autobe-specification Sort direction string. Prefix with '-' for descending order (e.g., '-created_at'). Defaults to '-created_at' (most recent first) when omitted. Only created_at sorting is supported.
+         * @x-autobe-specification Sort direction string. Prefix with '-' for
+         *   descending order (e.g., '-created_at'). Defaults to '-created_at'
+         *   (most recent first) when omitted. Only created_at sorting is
+         *   supported.
      */
     sort?: string | undefined;
 
@@ -136,7 +154,8 @@ export namespace ITodoAppMemberSession {
      *
      * Specifies which page of results to return. The first page is page 1. Use together with `limit` to control pagination. Defaults to page 1 when omitted.
      *
-     * @x-autobe-specification 1-indexed page number for pagination. Minimum value is 1. Defaults to 1 when omitted.
+         * @x-autobe-specification 1-indexed page number for pagination. Minimum
+         *   value is 1. Defaults to 1 when omitted.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -145,7 +164,8 @@ export namespace ITodoAppMemberSession {
      *
      * Controls the page size. The actual number of records returned may be less than this value on the last page or when total records are fewer than the limit. Maximum allowed value is 100.
      *
-     * @x-autobe-specification Maximum number of records per page. Minimum 1, maximum 100. Defaults to a system-defined value when omitted.
+         * @x-autobe-specification Maximum number of records per page. Minimum
+         *   1, maximum 100. Defaults to a system-defined value when omitted.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -165,8 +185,9 @@ export namespace ITodoAppMemberSession {
      *
      * The session ID is generated upon session creation and serves as the primary key for identifying and referencing this specific session throughout its lifecycle, such as when viewing session details in the list.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from todo_app_member_sessions.id.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_member_sessions.id.
      */
     id: string & tags.Format<"uuid">;
 
@@ -175,8 +196,9 @@ export namespace ITodoAppMemberSession {
      *
      * This value captures the geographical and network origin of the session request, providing traceability for security reviews and access pattern analysis.
      *
-     * @x-autobe-database-schema-property ip
-     * @x-autobe-specification Direct mapping from todo_app_member_sessions.ip.
+         * @x-autobe-database-schema-property ip
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_member_sessions.ip.
      */
     ip: string;
 
@@ -185,8 +207,9 @@ export namespace ITodoAppMemberSession {
      *
      * This entry-point URL is used for audit analytics to understand member navigation flows and identify which pages trigger authentication events.
      *
-     * @x-autobe-database-schema-property href
-     * @x-autobe-specification Direct mapping from todo_app_member_sessions.href.
+         * @x-autobe-database-schema-property href
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_member_sessions.href.
      */
     href: string & tags.Format<"uri">;
 
@@ -195,8 +218,9 @@ export namespace ITodoAppMemberSession {
      *
      * This navigational context helps analyze the member's journey and provides insight into how members reach the authentication flow.
      *
-     * @x-autobe-database-schema-property referrer
-     * @x-autobe-specification Direct mapping from todo_app_member_sessions.referrer.
+         * @x-autobe-database-schema-property referrer
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_member_sessions.referrer.
      */
     referrer: string & tags.Format<"uri">;
 
@@ -205,8 +229,9 @@ export namespace ITodoAppMemberSession {
      *
      * The creation timestamp is immutable and serves as the starting point for session validity calculations when combined with `expired_at`.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from todo_app_member_sessions.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_member_sessions.created_at.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -215,8 +240,9 @@ export namespace ITodoAppMemberSession {
      *
      * This mandatory expiration ensures all sessions have a finite lifetime for security purposes. The `isActive` field is derived by comparing this value against the current time.
      *
-     * @x-autobe-database-schema-property expired_at
-     * @x-autobe-specification Direct mapping from todo_app_member_sessions.expired_at.
+         * @x-autobe-database-schema-property expired_at
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_member_sessions.expired_at.
      */
     expired_at: string & tags.Format<"date-time">;
 
@@ -225,7 +251,9 @@ export namespace ITodoAppMemberSession {
      *
      * This is a computed field derived from the `expired_at` timestamp. A value of `true` means the session is still active and can be used for authenticated requests; `false` means the session has expired and the member must re-authenticate.
      *
-     * @x-autobe-specification Computed: expired_at > current timestamp. A session is active if its expiration timestamp is in the future relative to the current time at the moment of the request.
+         * @x-autobe-specification Computed: expired_at > current timestamp. A
+         *   session is active if its expiration timestamp is in the future
+         *   relative to the current time at the moment of the request.
      */
     isActive: boolean;
   };

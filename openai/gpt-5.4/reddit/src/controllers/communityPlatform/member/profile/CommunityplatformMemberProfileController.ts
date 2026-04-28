@@ -22,9 +22,12 @@ export class CommunityplatformMemberProfileController {
    *
    * @param connection
    * @param body New display name, bio text, and avatar-related profile values for the authenticated member
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Resolve the authenticated member from session context and load the one-to-one community_platform_profiles record by community_platform_member_id inside a transaction boundary if avatar file references may also change.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Resolve the authenticated member from session
+     *   context and load the one-to-one community_platform_profiles record by
+     *   community_platform_member_id inside a transaction boundary if avatar
+     *   file references may also change.
    *
    * Validate that the caller is an authenticated member. Reject the request if the member does not exist, if the member has no profile record, or if the payload includes fields outside the allowed profile update scope. Apply only profile presentation changes supported by the domain: update community_platform_profiles.display_name and community_platform_profiles.bio, and coordinate any avatar-related file linkage or replacement against community_platform_profile_files according to the incoming DTO contract.
    *

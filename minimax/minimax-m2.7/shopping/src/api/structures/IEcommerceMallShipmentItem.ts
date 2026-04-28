@@ -24,8 +24,9 @@ export type IEcommerceMallShipmentItem = {
    *
    * **Usage Context**: The shipment item ID (shipmentItemId) identifies the shipment entry, while this ID identifies the underlying order item for operational requests.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_order_items.id.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_order_items.id.
    */
   id: string & tags.Format<"uuid">;
 
@@ -34,8 +35,9 @@ export type IEcommerceMallShipmentItem = {
    *
    * This value represents how many units of this specific product variant were ordered. The quantity is frozen at the time of purchase for dispute resolution.
    *
-   * @x-autobe-database-schema-property quantity
-   * @x-autobe-specification Direct mapping from ecommerce_mall_order_items.quantity.
+     * @x-autobe-database-schema-property quantity
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_order_items.quantity.
    */
   quantity: number & tags.Type<"int32">;
 
@@ -44,8 +46,9 @@ export type IEcommerceMallShipmentItem = {
    *
    * This price is frozen at transaction time and remains fixed even if the seller later changes their product pricing. Used for dispute resolution and refund calculations.
    *
-   * @x-autobe-database-schema-property unit_price
-   * @x-autobe-specification Direct mapping from ecommerce_mall_order_items.unit_price. Float to number type.
+     * @x-autobe-database-schema-property unit_price
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_order_items.unit_price. Float to number type.
    */
   unitPrice: number;
 
@@ -54,8 +57,9 @@ export type IEcommerceMallShipmentItem = {
    *
    * Valid values: paid (payment completed, waiting to ship), shipped (item has been shipped), delivered (item delivered to customer), cancelled (item cancelled by seller), refunded (item refunded to customer).
    *
-   * @x-autobe-database-schema-property status
-   * @x-autobe-specification Direct mapping from ecommerce_mall_order_items.status.
+     * @x-autobe-database-schema-property status
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_order_items.status.
    */
   status: string;
 
@@ -64,8 +68,12 @@ export type IEcommerceMallShipmentItem = {
    *
    * This snapshot preserves the product name, description, price, and category as they appeared when the customer placed the order. It also includes the seller profile snapshot with shop information. Used for dispute resolution when product details may have changed since purchase.
    *
-   * @x-autobe-specification Join from ecommerce_mall_order_items.productSnapshot to ecommerce_mall_product_snapshots. Returns frozen product state including name, description, base_price, category_name, and seller profile snapshot.
-   * @x-autobe-database-schema-property productSnapshot
+     * @x-autobe-specification Join from
+     *   ecommerce_mall_order_items.productSnapshot to
+     *   ecommerce_mall_product_snapshots. Returns frozen product state
+     *   including name, description, base_price, category_name, and seller
+     *   profile snapshot.
+     * @x-autobe-database-schema-property productSnapshot
    */
   productSnapshot: IEcommerceMallProductSnapshot.ISummary;
 
@@ -74,7 +82,12 @@ export type IEcommerceMallShipmentItem = {
    *
    * This array contains the specific options chosen by the customer for this variant, such as color, size, or other product-specific attributes. Each option shows the option name and the selected value.
    *
-   * @x-autobe-specification Join from ecommerce_mall_order_items.productVariant to ecommerce_mall_product_variants, then join to ecommerce_mall_product_variant_option_values. Returns array of option key-value pairs (e.g., Color: Blue, Size: Large). This is a computed array, not a direct DB column.
+     * @x-autobe-specification Join from
+     *   ecommerce_mall_order_items.productVariant to
+     *   ecommerce_mall_product_variants, then join to
+     *   ecommerce_mall_product_variant_option_values. Returns array of option
+     *   key-value pairs (e.g., Color: Blue, Size: Large). This is a computed
+     *   array, not a direct DB column.
    */
   variantOptions: IEcommerceMallProductSnapshotVariant;
 
@@ -83,7 +96,9 @@ export type IEcommerceMallShipmentItem = {
    *
    * This UUID identifies the specific shipment item entry linking the shipment to the order item. Use this ID for reference when viewing shipment item details.
    *
-   * @x-autobe-specification Direct mapping from ecommerce_mall_shipment_items.id - the shipment item junction record ID.
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_shipment_items.id - the shipment item junction record
+     *   ID.
    */
   shipmentItemId: string & tags.Format<"uuid">;
 
@@ -92,7 +107,9 @@ export type IEcommerceMallShipmentItem = {
    *
    * This timestamp indicates when the shipment item entry was created, linking the order item to the shipment.
    *
-   * @x-autobe-specification Direct mapping from ecommerce_mall_shipment_items.created_at - timestamp when shipment item was created.
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_shipment_items.created_at - timestamp when shipment item
+     *   was created.
    */
   createdAt: string & tags.Format<"date-time">;
 };
@@ -119,8 +136,9 @@ export namespace IEcommerceMallShipmentItem {
      *
      * This is the primary key of the shipment_items junction table. Each shipment item represents a single order item that has been bundled into a shipment package for delivery.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_mall_shipment_items.id. UUID primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_shipment_items.id. UUID primary key.
      */
     id: string & tags.Format<"uuid">;
 
@@ -129,8 +147,9 @@ export namespace IEcommerceMallShipmentItem {
      *
      * This timestamp records when the seller bundled this specific order item into the shipment package. Useful for audit trails and tracking fulfillment timeline.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_shipment_items.created_at. Timestamptz format.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_shipment_items.created_at. Timestamptz format.
      */
     createdAt: string & tags.Format<"date-time">;
 
@@ -139,8 +158,12 @@ export namespace IEcommerceMallShipmentItem {
      *
      * Contains the complete order item record that was shipped, including the frozen product snapshot and seller profile snapshot captured at purchase time for dispute resolution.
      *
-     * @x-autobe-database-schema-property orderItem
-     * @x-autobe-specification Join from ecommerce_mall_shipment_items.ecommerce_mall_order_item_id to ecommerce_mall_order_items.id. Returns IEcommerceMallOrderItem.ISummary with product name, description, quantity, unit_price, status, and frozen snapshots.
+         * @x-autobe-database-schema-property orderItem
+         * @x-autobe-specification Join from
+         *   ecommerce_mall_shipment_items.ecommerce_mall_order_item_id to
+         *   ecommerce_mall_order_items.id. Returns
+         *   IEcommerceMallOrderItem.ISummary with product name, description,
+         *   quantity, unit_price, status, and frozen snapshots.
      */
     orderItem: IEcommerceMallOrderItem.ISummary;
 
@@ -149,7 +172,13 @@ export namespace IEcommerceMallShipmentItem {
      *
      * This snapshot preserves the exact product state (name, description, price, category) as it existed when the customer placed the order. Used when customers claim product mismatches or discrepancies.
      *
-     * @x-autobe-specification Derived through join chain: ecommerce_mall_shipment_items.orderItem (ecommerce_mall_order_items) -> productSnapshot (ecommerce_mall_product_snapshots). The productSnapshot is a belongs-to relation on the orderItem. Returns IEcommerceMallProductSnapshot.ISummary with product name, description, base_price, category_name at purchase time.
+         * @x-autobe-specification Derived through join chain:
+         *   ecommerce_mall_shipment_items.orderItem
+         *   (ecommerce_mall_order_items) -> productSnapshot
+         *   (ecommerce_mall_product_snapshots). The productSnapshot is a
+         *   belongs-to relation on the orderItem. Returns
+         *   IEcommerceMallProductSnapshot.ISummary with product name,
+         *   description, base_price, category_name at purchase time.
      */
     productSnapshot: IEcommerceMallProductSnapshot.ISummary;
 
@@ -158,7 +187,13 @@ export namespace IEcommerceMallShipmentItem {
      *
      * Represents the specific product variant (SKU) that was purchased, including all selectable options like color and size. The priceOverride field shows any variant-specific pricing difference from the base price.
      *
-     * @x-autobe-specification Derived through join chain: ecommerce_mall_shipment_items.orderItem (ecommerce_mall_order_items) -> productSnapshot (ecommerce_mall_product_snapshots) -> productSnapshotVariant (ecommerce_mall_product_snapshot_variants). Inline object with id, sku, priceOverride, and optionValues from ecommerce_mall_product_snapshot_variant_option_values.
+         * @x-autobe-specification Derived through join chain:
+         *   ecommerce_mall_shipment_items.orderItem
+         *   (ecommerce_mall_order_items) -> productSnapshot
+         *   (ecommerce_mall_product_snapshots) -> productSnapshotVariant
+         *   (ecommerce_mall_product_snapshot_variants). Inline object with id,
+         *   sku, priceOverride, and optionValues from
+         *   ecommerce_mall_product_snapshot_variant_option_values.
      */
     productSnapshotVariant: {
       /**
@@ -187,8 +222,13 @@ export namespace IEcommerceMallShipmentItem {
      *
      * References the parent shipment that contains this order item, including the shipping carrier name and tracking number for customer delivery tracking.
      *
-     * @x-autobe-database-schema-property shipment
-     * @x-autobe-specification Join from ecommerce_mall_shipment_items.ecommerce_mall_shipment_id to ecommerce_mall_shipments.id. Returns IEcommerceMallShipment.ISummary with carrier, tracking_number, and parent order reference. Note: shipment.items array is excluded to prevent circular references.
+         * @x-autobe-database-schema-property shipment
+         * @x-autobe-specification Join from
+         *   ecommerce_mall_shipment_items.ecommerce_mall_shipment_id to
+         *   ecommerce_mall_shipments.id. Returns
+         *   IEcommerceMallShipment.ISummary with carrier, tracking_number, and
+         *   parent order reference. Note: shipment.items array is excluded to
+         *   prevent circular references.
      */
     shipment: IEcommerceMallShipment.ISummary;
   };

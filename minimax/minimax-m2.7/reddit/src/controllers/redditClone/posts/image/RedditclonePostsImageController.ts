@@ -18,9 +18,12 @@ export class RedditclonePostsImageController {
    *
    * @param connection
    * @param postId Unique identifier of the post (UUID format)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query reddit_clone_post_images table by reddit_clone_post_id to find the associated image record. Join with reddit_clone_files table using reddit_clone_file_id to retrieve file metadata including storage_path.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query reddit_clone_post_images table by
+     *   reddit_clone_post_id to find the associated image record. Join with
+     *   reddit_clone_files table using reddit_clone_file_id to retrieve file
+     *   metadata including storage_path.
    *
    * Verify the post exists in reddit_clone_posts table. Return the storage_path from the linked file record as the response URI.
    *

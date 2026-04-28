@@ -32,9 +32,10 @@ export class EcommercemallSellerSellersMeCancellation_requestsController {
    *
    * @param connection
    * @param body Search criteria including optional status filter and pagination parameters (page, limit).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Query the ecommerce_mall_cancellation_requests table filtering by seller_id matching the authenticated seller.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Query the ecommerce_mall_cancellation_requests
+     *   table filtering by seller_id matching the authenticated seller.
    *
    * Apply the following query logic:
    * 1. Filter by ecommerce_mall_seller_id = authenticated seller ID from session
@@ -88,9 +89,10 @@ export class EcommercemallSellerSellersMeCancellation_requestsController {
    *
    * @param connection
    * @param requestId Unique identifier of the cancellation request to retrieve.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Query ecommerce_mall_cancellation_requests table by the provided requestId.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Query ecommerce_mall_cancellation_requests table
+     *   by the provided requestId.
    *
    * Verify that the cancellation request's ecommerce_mall_seller_id matches the authenticated seller's ID. If not matching, return 404 Not Found.
    *
@@ -132,9 +134,10 @@ export class EcommercemallSellerSellersMeCancellation_requestsController {
    *
    * @param connection
    * @param requestId Unique identifier of the cancellation request to approve.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Implement the seller cancellation request approval flow:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Implement the seller cancellation request
+     *   approval flow:
    *
    * 1. Extract `requestId` from path parameter
    * 2. Query `ecommerce_mall_cancellation_requests` table to find the cancellation request by id
@@ -189,9 +192,14 @@ export class EcommercemallSellerSellersMeCancellation_requestsController {
    *
    * @param connection
    * @param requestId Unique identifier of the cancellation request to reject.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Retrieve the cancellation request by requestId from ecommerce_mall_cancellation_requests table. Validate that the authenticated seller owns this request (ecommerce_mall_seller_id matches authenticated seller). Validate that status is 'pending'. Validate that the associated order item (via ecommerce_mall_order_item_id) has status 'paid'.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Retrieve the cancellation request by requestId
+     *   from ecommerce_mall_cancellation_requests table. Validate that the
+     *   authenticated seller owns this request (ecommerce_mall_seller_id
+     *   matches authenticated seller). Validate that status is 'pending'.
+     *   Validate that the associated order item (via
+     *   ecommerce_mall_order_item_id) has status 'paid'.
    *
    * If all validations pass:
    * 1. Update status to 'rejected' and update updated_at timestamp

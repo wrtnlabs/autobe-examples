@@ -23,8 +23,9 @@ export type IEcommerceCustomer = {
    *
    * This is the primary key for the customer entity, generated as a UUID when the account is created. It is used to reference the customer in all related operations including profile updates, order history retrieval, and session management.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_customers.id. Primary key, UUID format, auto-generated on account creation.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from ecommerce_customers.id.
+     *   Primary key, UUID format, auto-generated on account creation.
    */
   id: string & tags.Format<"uuid">;
 
@@ -33,8 +34,10 @@ export type IEcommerceCustomer = {
    *
    * This name is shown to other users in reviews, order histories, and other customer-facing contexts. Customers can update their display name at any time through their profile settings. The display name must be non-empty (minimum 1 character) and is used for social identification within the platform.
    *
-   * @x-autobe-database-schema-property display_name
-   * @x-autobe-specification Direct mapping from ecommerce_customers.display_name. Public-facing name visible to other users.
+     * @x-autobe-database-schema-property display_name
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_customers.display_name. Public-facing name visible to other
+     *   users.
    */
   display_name: string;
 
@@ -43,8 +46,10 @@ export type IEcommerceCustomer = {
    *
    * This optional field stores the customer's phone number for shipping notifications and customer service contact. It can be updated or cleared by the customer through their profile settings. The phone number is not visible to other users and is used solely for operational communication purposes.
    *
-   * @x-autobe-database-schema-property phone_number
-   * @x-autobe-specification Direct mapping from ecommerce_customers.phone_number. Nullable string for optional contact information.
+     * @x-autobe-database-schema-property phone_number
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_customers.phone_number. Nullable string for optional contact
+     *   information.
    */
   phone_number: string | null;
 
@@ -53,8 +58,10 @@ export type IEcommerceCustomer = {
    *
    * This field is automatically set during account registration and cannot be modified. It is used for auditing purposes and to display account age. The timestamp is stored in UTC timezone.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_customers.created_at. Auto-set on account creation, immutable.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_customers.created_at. Auto-set on account creation,
+     *   immutable.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -63,8 +70,10 @@ export type IEcommerceCustomer = {
    *
    * This field is automatically updated whenever any customer profile field is modified (display_name or phone_number). It is used for auditing, conflict detection, and caching validation. The timestamp is stored in UTC timezone.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from ecommerce_customers.updated_at. Auto-updated on any profile modification.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_customers.updated_at. Auto-updated on any profile
+     *   modification.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -73,8 +82,10 @@ export type IEcommerceCustomer = {
    *
    * When a customer deletes their account, this field is set to the deletion time. The account is logically removed but preserved for data integrity (orders, reviews remain associated with the deleted account). NULL indicates an active account. This field is included in the response to allow clients to detect deleted accounts.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from ecommerce_customers.deleted_at. Nullable timestamp, null for active accounts, set on soft-delete.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_customers.deleted_at. Nullable timestamp, null for active
+     *   accounts, set on soft-delete.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -103,8 +114,9 @@ export namespace IEcommerceCustomer {
      *
      * This is the primary key for the customer account, stored as a UUID. It is auto-generated during registration and never changes throughout the account's lifetime.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_customers.id. Primary key, UUID format, non-null.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from ecommerce_customers.id.
+         *   Primary key, UUID format, non-null.
      */
     id: string & tags.Format<"uuid">;
 
@@ -113,8 +125,10 @@ export namespace IEcommerceCustomer {
      *
      * This serves as the unique login identifier for the customer account. It must be unique across all customer accounts and is used during registration and login flows. The email is validated for format and uniqueness.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from ecommerce_customers.email. Unique constraint, used for authentication.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_customers.email. Unique constraint, used for
+         *   authentication.
      */
     email: string & tags.Format<"email">;
 
@@ -123,8 +137,10 @@ export namespace IEcommerceCustomer {
      *
      * This name is shown to other users in reviews, order histories, and other customer-facing contexts. Customers can update their display name at any time through their profile settings. It is required and cannot be empty.
      *
-     * @x-autobe-database-schema-property display_name
-     * @x-autobe-specification Direct mapping from ecommerce_customers.display_name. Customer-provided, visible to other users.
+         * @x-autobe-database-schema-property display_name
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_customers.display_name. Customer-provided, visible to
+         *   other users.
      */
     display_name: string;
 
@@ -133,8 +149,10 @@ export namespace IEcommerceCustomer {
      *
      * This optional field stores the customer's phone number for shipping notifications and customer service contact. It can be updated or cleared by the customer through their profile settings. Returns null if not provided.
      *
-     * @x-autobe-database-schema-property phone_number
-     * @x-autobe-specification Direct mapping from ecommerce_customers.phone_number. Nullable, optional contact information.
+         * @x-autobe-database-schema-property phone_number
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_customers.phone_number. Nullable, optional contact
+         *   information.
      */
     phone_number: string | null;
 
@@ -143,8 +161,10 @@ export namespace IEcommerceCustomer {
      *
      * This field is automatically set during account registration and cannot be modified. It records when the customer account was created and is used for auditing and displaying account age. Stored with timezone information.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from ecommerce_customers.created_at. Auto-set on registration, timestamp with timezone.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_customers.created_at. Auto-set on registration, timestamp
+         *   with timezone.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -153,8 +173,10 @@ export namespace IEcommerceCustomer {
      *
      * When a customer deletes their account, this field is set to the deletion time. The account is logically removed but preserved for data integrity (orders, reviews remain). Returns null for active accounts, or the deletion timestamp for soft-deleted accounts.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from ecommerce_customers.deleted_at. Nullable, soft-delete timestamp. Null means active account.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_customers.deleted_at. Nullable, soft-delete timestamp.
+         *   Null means active account.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };
@@ -197,7 +219,9 @@ export namespace IEcommerceCustomer {
      * - Optional parameter - omit to skip this filter
      * - Multiple filters combine with AND logic
      *
-     * @x-autobe-specification Filters customers by display_name column using ILIKE '%{value}%' for case-insensitive partial match. Optional parameter - when omitted, no filtering applied.
+         * @x-autobe-specification Filters customers by display_name column
+         *   using ILIKE '%{value}%' for case-insensitive partial match.
+         *   Optional parameter - when omitted, no filtering applied.
      */
     display_name?: string | undefined;
 
@@ -213,7 +237,9 @@ export namespace IEcommerceCustomer {
      * - Optional parameter - omit to skip this filter
      * - Multiple filters combine with AND logic
      *
-     * @x-autobe-specification Filters customers by email column using ILIKE '%{value}%' for case-insensitive partial match. Optional parameter - when omitted, no filtering applied.
+         * @x-autobe-specification Filters customers by email column using ILIKE
+         *   '%{value}%' for case-insensitive partial match. Optional parameter
+         *   - when omitted, no filtering applied.
      */
     email?: string | undefined;
 
@@ -233,7 +259,9 @@ export namespace IEcommerceCustomer {
      * - Combine with created_at_lte for date range filtering
      * - Use alone for "registered since" queries
      *
-     * @x-autobe-specification Filters customers by created_at column >= value. ISO 8601 datetime format required. Optional parameter - when omitted, no lower bound filtering applied.
+         * @x-autobe-specification Filters customers by created_at column >=
+         *   value. ISO 8601 datetime format required. Optional parameter - when
+         *   omitted, no lower bound filtering applied.
      */
     created_at_gte?: (string & tags.Format<"date-time">) | undefined;
 
@@ -253,7 +281,9 @@ export namespace IEcommerceCustomer {
      * - Combine with created_at_gte for date range filtering
      * - Use alone for "registered before" queries
      *
-     * @x-autobe-specification Filters customers by created_at column <= value. ISO 8601 datetime format required. Optional parameter - when omitted, no upper bound filtering applied.
+         * @x-autobe-specification Filters customers by created_at column <=
+         *   value. ISO 8601 datetime format required. Optional parameter - when
+         *   omitted, no upper bound filtering applied.
      */
     created_at_lte?: (string & tags.Format<"date-time">) | undefined;
 
@@ -274,7 +304,10 @@ export namespace IEcommerceCustomer {
      * - Use 'deleted' to audit deleted accounts (admin only)
      * - Omit for default active-only filtering
      *
-     * @x-autobe-specification Filters customers by account status computed from deleted_at column. 'active' WHERE deleted_at IS NULL, 'deleted' WHERE deleted_at IS NOT NULL. Optional parameter - when omitted, only active customers returned by default.
+         * @x-autobe-specification Filters customers by account status computed
+         *   from deleted_at column. 'active' WHERE deleted_at IS NULL,
+         *   'deleted' WHERE deleted_at IS NOT NULL. Optional parameter - when
+         *   omitted, only active customers returned by default.
      */
     status?: "active" | "deleted" | undefined;
 
@@ -295,7 +328,9 @@ export namespace IEcommerceCustomer {
      * - Combine with sort_order to control direction
      * - Default is created_at (newest first with desc order)
      *
-     * @x-autobe-specification Specifies which column to sort by. Allowed values: display_name, email, created_at, updated_at. Maps to SQL ORDER BY clause. Default: created_at.
+         * @x-autobe-specification Specifies which column to sort by. Allowed
+         *   values: display_name, email, created_at, updated_at. Maps to SQL
+         *   ORDER BY clause. Default: created_at.
      */
     sort_by?:
       | "display_name"
@@ -319,7 +354,8 @@ export namespace IEcommerceCustomer {
      * - Combine with sort_by to control full sort behavior
      * - Default is desc (newest registrations first)
      *
-     * @x-autobe-specification Sort direction: 'asc' for ascending, 'desc' for descending. Maps to SQL ORDER BY direction. Default: desc.
+         * @x-autobe-specification Sort direction: 'asc' for ascending, 'desc'
+         *   for descending. Maps to SQL ORDER BY direction. Default: desc.
      */
     sort_order?: "asc" | "desc" | undefined;
 
@@ -340,7 +376,8 @@ export namespace IEcommerceCustomer {
      * - Higher values return more data per request but increase response size
      * - Respect server limits to prevent performance issues
      *
-     * @x-autobe-specification Maximum number of records per page. Range: 1-100. Default: 20. Maps to SQL LIMIT clause.
+         * @x-autobe-specification Maximum number of records per page. Range:
+         *   1-100. Default: 20. Maps to SQL LIMIT clause.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -363,7 +400,8 @@ export namespace IEcommerceCustomer {
      * - Alternative to page parameter for pagination
      * - First page always has offset 0
      *
-     * @x-autobe-specification Number of records to skip before returning results. Minimum: 0. Default: 0. Maps to SQL OFFSET clause.
+         * @x-autobe-specification Number of records to skip before returning
+         *   results. Minimum: 0. Default: 0. Maps to SQL OFFSET clause.
      */
     offset?: (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
 
@@ -385,7 +423,9 @@ export namespace IEcommerceCustomer {
      * - Requesting a page beyond available range returns empty data array
      * - Pagination metadata includes total pages for navigation
      *
-     * @x-autobe-specification Target page number (1-indexed). Minimum: 0. Default: 1 (if null/omitted). Converts to offset internally: offset = (page - 1) * limit.
+         * @x-autobe-specification Target page number (1-indexed). Minimum: 0.
+         *   Default: 1 (if null/omitted). Converts to offset internally: offset
+         *   = (page - 1) * limit.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };
@@ -429,8 +469,11 @@ export namespace IEcommerceCustomer {
      * - Should be transmitted over HTTPS only
      * - Failed lookup attempts should not reveal whether email exists (constant-time response)
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from ecommerce_customers.email column. This is the unique login identifier for customer authentication. Must be in valid email format and match a registered customer account.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from ecommerce_customers.email
+         *   column. This is the unique login identifier for customer
+         *   authentication. Must be in valid email format and match a
+         *   registered customer account.
      */
     email: string & tags.Format<"email">;
 
@@ -453,8 +496,11 @@ export namespace IEcommerceCustomer {
      * - No maximum length (bcrypt handles arbitrary length)
      * - No character restrictions (supports Unicode)
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification Plain text password input that gets hashed using bcrypt algorithm server-side. The hashed value is compared against ecommerce_customers.password_hash column. Password is never stored or transmitted in plain text after initial submission.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification Plain text password input that gets hashed
+         *   using bcrypt algorithm server-side. The hashed value is compared
+         *   against ecommerce_customers.password_hash column. Password is never
+         *   stored or transmitted in plain text after initial submission.
      */
     password: string;
   };
@@ -471,7 +517,7 @@ export namespace IEcommerceCustomer {
    */
   export type IUpdate = {
     /**
-     * @x-autobe-database-schema-property display_name
+         * @x-autobe-database-schema-property display_name
      */
     display_name?:
       | (string & tags.MinLength<1> & tags.MaxLength<100>)
@@ -484,8 +530,10 @@ export namespace IEcommerceCustomer {
      *
      * **Format**: Valid phone number string or null to clear the value.
      *
-     * @x-autobe-database-schema-property phone_number
-     * @x-autobe-specification Direct mapping from ecommerce_customers.phone_number. Nullable string that can be set or cleared. When null, clears the customer's contact phone number.
+         * @x-autobe-database-schema-property phone_number
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_customers.phone_number. Nullable string that can be set
+         *   or cleared. When null, clears the customer's contact phone number.
      */
     phone_number?: string | null | undefined;
   };
@@ -522,7 +570,12 @@ export namespace IEcommerceCustomer {
      * - Longer lifetime than access tokens
      * - Revoked on password change or account deletion
      *
-     * @x-autobe-specification JWT refresh token string. Server validates this token against ecommerce_customer_sessions.refresh_token to find the session, checks session expiration (expired_at > now), verifies customer account exists and is not deleted, then performs token rotation by generating new access/refresh token pair and updating the session record.
+         * @x-autobe-specification JWT refresh token string. Server validates
+         *   this token against ecommerce_customer_sessions.refresh_token to
+         *   find the session, checks session expiration (expired_at > now),
+         *   verifies customer account exists and is not deleted, then performs
+         *   token rotation by generating new access/refresh token pair and
+         *   updating the session record.
      */
     refresh_token: string;
   };
@@ -551,23 +604,25 @@ export namespace IEcommerceCustomer {
    */
   export type IJoin = {
     /**
-     * @x-autobe-database-schema-property email
+         * @x-autobe-database-schema-property email
      */
     email: string & tags.Format<"email">;
     /**
-     * @x-autobe-database-schema-property password_hash
+         * @x-autobe-database-schema-property password_hash
      */
     password: string & tags.MinLength<8>;
     /**
-     * @x-autobe-database-schema-property display_name
+         * @x-autobe-database-schema-property display_name
      */
     display_name: string;
 
     /**
      * Customer's contact phone number for shipping notifications and customer service. Optional field.
      *
-     * @x-autobe-database-schema-property phone_number
-     * @x-autobe-specification Direct mapping from ecommerce_customers.phone_number. Nullable contact field for shipping notifications.
+         * @x-autobe-database-schema-property phone_number
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_customers.phone_number. Nullable contact field for
+         *   shipping notifications.
      */
     phone_number?: string | null | undefined;
     href: string & tags.Format<"uri">;
@@ -619,7 +674,10 @@ export namespace IEcommerceCustomer {
      * - Manage customer addresses and wishlists
      * - Submit and view customer reviews
      *
-     * @x-autobe-specification Direct mapping from ecommerce_customers.id. UUID primary key from customer record. Server extracts this value from the authenticated customer's database record and includes it in the response.
+         * @x-autobe-specification Direct mapping from ecommerce_customers.id.
+         *   UUID primary key from customer record. Server extracts this value
+         *   from the authenticated customer's database record and includes it
+         *   in the response.
      */
     id: string & tags.Format<"uuid">;
 
@@ -646,7 +704,10 @@ export namespace IEcommerceCustomer {
      *
      * Unlike the email address (which is private and used only for authentication), the display name is intentionally public to enable customer recognition and community engagement.
      *
-     * @x-autobe-specification Direct mapping from ecommerce_customers.display_name. Public profile name from customer record. Server extracts this value from the authenticated customer's database record.
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_customers.display_name. Public profile name from customer
+         *   record. Server extracts this value from the authenticated
+         *   customer's database record.
      */
     display_name: string;
 
@@ -673,7 +734,10 @@ export namespace IEcommerceCustomer {
      *
      * This field is optional and stored securely. It is not displayed publicly and is only used for customer service and shipping purposes. Customers can update or remove this information at any time.
      *
-     * @x-autobe-specification Direct mapping from ecommerce_customers.phone_number. Nullable contact field from customer record. Server extracts this value from the authenticated customer's database record.
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_customers.phone_number. Nullable contact field from
+         *   customer record. Server extracts this value from the authenticated
+         *   customer's database record.
      */
     phone_number: string | null;
 
@@ -704,7 +768,10 @@ export namespace IEcommerceCustomer {
      * - Compliance with data retention policies
      * - Analytics on customer acquisition trends
      *
-     * @x-autobe-specification Direct mapping from ecommerce_customers.created_at. System-managed timestamp from customer record. Server extracts this value from the authenticated customer's database record.
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_customers.created_at. System-managed timestamp from
+         *   customer record. Server extracts this value from the authenticated
+         *   customer's database record.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -735,7 +802,10 @@ export namespace IEcommerceCustomer {
      * - Displaying "last updated" information
      * - Synchronization between systems
      *
-     * @x-autobe-specification Direct mapping from ecommerce_customers.updated_at. System-managed timestamp from customer record. Server extracts this value from the authenticated customer's database record.
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_customers.updated_at. System-managed timestamp from
+         *   customer record. Server extracts this value from the authenticated
+         *   customer's database record.
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -771,14 +841,18 @@ export namespace IEcommerceCustomer {
      *
      * Soft delete ensures data integrity while respecting customer privacy requests. Related business data (orders, reviews) is preserved for legal and operational requirements.
      *
-     * @x-autobe-specification Direct mapping from ecommerce_customers.deleted_at. Nullable soft delete indicator from customer record. Server extracts this value from the authenticated customer's database record.
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_customers.deleted_at. Nullable soft delete indicator from
+         *   customer record. Server extracts this value from the authenticated
+         *   customer's database record.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
 
     /**
      * Authorization token.
      *
-     * @x-autobe-specification Authorization token comes from the session table.
+         * @x-autobe-specification Authorization token comes from the session
+         *   table.
      */
     token: IAuthorizationToken;
   };

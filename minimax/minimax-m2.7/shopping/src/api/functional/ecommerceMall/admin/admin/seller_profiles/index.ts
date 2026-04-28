@@ -24,7 +24,8 @@ import { IPageIEcommerceMallSellerProfile } from "../../../../../structures/IPag
  * @param props.body Search criteria including shop name search query, approval status filter, date range filters, and pagination parameters.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Query ecommerce_mall_seller_profiles table with pagination and filtering.
+ * @x-autobe-specification Query ecommerce_mall_seller_profiles table with
+ *   pagination and filtering.
  *
  * 1. Apply text search filter on shop name field (case-insensitive partial match) if provided.
  * 2. Filter by seller approval status if specified (pending, approved, rejected).
@@ -125,7 +126,8 @@ export namespace index {
  * @param props.sellerProfileId Unique identifier of the seller profile to retrieve. This is the UUID primary key from the seller profile record.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Query the ecommerce_mall_seller_profiles table using the provided sellerProfileId as the primary key lookup.
+ * @x-autobe-specification Query the ecommerce_mall_seller_profiles table using
+ *   the provided sellerProfileId as the primary key lookup.
  *
  * Join with ecommerce_mall_sellers to retrieve seller information including email, approval_status, and suspension status.
  *

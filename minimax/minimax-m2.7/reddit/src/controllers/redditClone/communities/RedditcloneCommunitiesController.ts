@@ -20,9 +20,10 @@ export class RedditcloneCommunitiesController {
    *
    * @param connection
    * @param body Search criteria, sorting, and pagination parameters
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query reddit_clone_communities table with the following logic:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query reddit_clone_communities table with the
+     *   following logic:
    *
    * 1. Filtering: If name filter is provided in request, apply case-insensitive partial match on the name field using ILIKE or equivalent.
    *
@@ -64,9 +65,10 @@ export class RedditcloneCommunitiesController {
    *
    * @param connection
    * @param communityId Unique identifier (UUID) of the community to retrieve
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query the reddit_clone_communities table by the provided communityId (UUID).
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query the reddit_clone_communities table by the
+     *   provided communityId (UUID).
    *
    * Include the icon relationship (reddit_clone_community_icons) using a LEFT JOIN to fetch associated icon data when available.
    *

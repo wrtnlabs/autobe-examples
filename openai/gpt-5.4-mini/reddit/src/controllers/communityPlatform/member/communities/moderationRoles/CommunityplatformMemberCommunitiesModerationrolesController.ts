@@ -30,9 +30,14 @@ export class CommunityplatformMemberCommunitiesModerationrolesController {
    * @param connection
    * @param communityId Target community identifier.
    * @param body Target member and moderation role to create.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Resolve the target community by communityId and verify it exists and is active enough to accept moderation assignments. Load the authenticated member from the request context and confirm they have authority to assign moderation roles in this community, typically by checking whether they are the community owner or otherwise hold the required moderation privilege.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Resolve the target community by communityId and
+     *   verify it exists and is active enough to accept moderation assignments.
+     *   Load the authenticated member from the request context and confirm they
+     *   have authority to assign moderation roles in this community, typically
+     *   by checking whether they are the community owner or otherwise hold the
+     *   required moderation privilege.
    *
    * Validate the request body against the member identifier and role type expected by the moderation-role create contract. Confirm that the target member exists. Enforce the community_platform_moderation_roles uniqueness rule across community_platform_community_id, community_platform_member_id, and role_type so the same member cannot be assigned the same role twice in the same community. Reject attempts to assign invalid role types or to create an assignment that violates the owner hierarchy.
    *
@@ -78,9 +83,12 @@ export class CommunityplatformMemberCommunitiesModerationrolesController {
    * @param connection
    * @param communityId Target community ID.
    * @param body Desired moderation-role assignments for the community.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Load the target community by communityId and verify the caller has community moderation authority. Enforce the owner/moderator hierarchy from the business rules before any write is attempted.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Load the target community by communityId and
+     *   verify the caller has community moderation authority. Enforce the
+     *   owner/moderator hierarchy from the business rules before any write is
+     *   attempted.
    *
    * Treat the request body as the desired moderation-role state for the community. Compare the submitted assignments with existing community_platform_moderation_roles rows for the same community. Insert new rows for new member-role assignments, update existing rows when the role set changes, and mark removed assignments according to the moderation-role lifecycle supported by the schema. Do not create duplicate rows for the same community_platform_community_id, community_platform_member_id, and role_type combination because the schema enforces uniqueness.
    *
@@ -124,9 +132,10 @@ export class CommunityplatformMemberCommunitiesModerationrolesController {
    * @param connection
    * @param communityId Target community identifier.
    * @param moderationRoleId Target moderation role assignment identifier.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Load a single community_platform_moderation_roles row by id and community scope.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Load a single community_platform_moderation_roles
+     *   row by id and community scope.
    *
    * Implementation steps:
    * 1. Validate both path parameters as UUIDs.
@@ -178,9 +187,11 @@ export class CommunityplatformMemberCommunitiesModerationrolesController {
    * @param communityId Target community ID.
    * @param moderationRoleId Target moderation role ID.
    * @param body Moderation role fields to update.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Load the existing community moderation role by moderationRole.id and ensure its community_platform_community_id matches the communityId path parameter before applying any change.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Load the existing community moderation role by
+     *   moderationRole.id and ensure its community_platform_community_id
+     *   matches the communityId path parameter before applying any change.
    *
    * Accept only mutable role fields in the update payload; do not permit changing the persisted community_platform_community_id, community_platform_member_id, id, created_at, or deleted_at values through this endpoint. The role_type field is the primary business-updatable attribute and must be validated against the platform's permitted moderation authority values.
    *
@@ -231,9 +242,13 @@ export class CommunityplatformMemberCommunitiesModerationrolesController {
    * @param connection
    * @param communityId Target community's ID.
    * @param moderationRoleId Target moderation role's ID.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation should verify that the authenticated actor has community moderation authority before attempting deletion. Load the target moderation role by id and community id together, ensuring it is not already removed and that its community_platform_community_id matches the path communityId.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation should verify that the
+     *   authenticated actor has community moderation authority before
+     *   attempting deletion. Load the target moderation role by id and
+     *   community id together, ensuring it is not already removed and that its
+     *   community_platform_community_id matches the path communityId.
    *
    * Perform a conditional delete against community_platform_moderation_roles using both ids to prevent cross-community deletion. Because the schema includes deleted_at, prefer a historical removal workflow that marks the record as deleted and preserves auditability if that is the service's standard behavior for this table. If the platform's delete contract requires a hard delete, then remove the row only after verifying authorization and ownership constraints; otherwise set deleted_at and update updated_at in a transaction.
    *

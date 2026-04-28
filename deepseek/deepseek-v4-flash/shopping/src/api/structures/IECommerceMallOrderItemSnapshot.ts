@@ -12,8 +12,9 @@ export type IECommerceMallOrderItemSnapshot = {
    *
    * Primary key used to reference the snapshot in internal database operations.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from e_commerce_mall_order_item_snapshots.id.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_order_item_snapshots.id.
    */
   id: string & tags.Format<"uuid">;
 
@@ -22,8 +23,9 @@ export type IECommerceMallOrderItemSnapshot = {
    *
    * Preserved from the product snapshot to ensure the historical product name is available even if the seller later renames the product.
    *
-   * @x-autobe-database-schema-property product_name
-   * @x-autobe-specification Direct mapping from e_commerce_mall_order_item_snapshots.product_name.
+     * @x-autobe-database-schema-property product_name
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_order_item_snapshots.product_name.
    */
   productName: string;
 
@@ -32,8 +34,9 @@ export type IECommerceMallOrderItemSnapshot = {
    *
    * Captured for historical reference and dispute resolution, preserving the exact product description the customer saw at checkout.
    *
-   * @x-autobe-database-schema-property product_description
-   * @x-autobe-specification Direct mapping from e_commerce_mall_order_item_snapshots.product_description.
+     * @x-autobe-database-schema-property product_description
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_order_item_snapshots.product_description.
    */
   productDescription: string;
 
@@ -42,8 +45,9 @@ export type IECommerceMallOrderItemSnapshot = {
    *
    * Records the listed price before any variant-specific price override. Together with variantPrice (if set), this captures what the customer actually paid per unit.
    *
-   * @x-autobe-database-schema-property product_base_price
-   * @x-autobe-specification Direct mapping from e_commerce_mall_order_item_snapshots.product_base_price.
+     * @x-autobe-database-schema-property product_base_price
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_order_item_snapshots.product_base_price.
    */
   productBasePrice: number;
 
@@ -52,8 +56,9 @@ export type IECommerceMallOrderItemSnapshot = {
    *
    * Preserved from the variant snapshot for inventory tracking and product identification purposes.
    *
-   * @x-autobe-database-schema-property variant_sku
-   * @x-autobe-specification Direct mapping from e_commerce_mall_order_item_snapshots.variant_sku.
+     * @x-autobe-database-schema-property variant_sku
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_order_item_snapshots.variant_sku.
    */
   variantSku: string;
 
@@ -62,8 +67,9 @@ export type IECommerceMallOrderItemSnapshot = {
    *
    * Stored as a formatted string (e.g., 'Color: Red, Size: Large') to capture the exact option combination the customer selected during checkout.
    *
-   * @x-autobe-database-schema-property variant_options
-   * @x-autobe-specification Direct mapping from e_commerce_mall_order_item_snapshots.variant_options.
+     * @x-autobe-database-schema-property variant_options
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_order_item_snapshots.variant_options.
    */
   variantOptions: string;
 
@@ -72,8 +78,11 @@ export type IECommerceMallOrderItemSnapshot = {
    *
    * Null if the variant did not override the product's base price. Together with productBasePrice, this captures what the customer actually paid per unit.
    *
-   * @x-autobe-database-schema-property variant_price
-   * @x-autobe-specification Direct mapping from e_commerce_mall_order_item_snapshots.variant_price. Null when the variant did not override the product's base price at the time of purchase.
+     * @x-autobe-database-schema-property variant_price
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_order_item_snapshots.variant_price. Null when the
+     *   variant did not override the product's base price at the time of
+     *   purchase.
    */
   variantPrice: number | null;
 
@@ -82,8 +91,9 @@ export type IECommerceMallOrderItemSnapshot = {
    *
    * Used for chronological audit and dispute timing, establishing exactly when the order was placed.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from e_commerce_mall_order_item_snapshots.created_at.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_order_item_snapshots.created_at.
    */
   createdAt: string & tags.Format<"date-time">;
 };

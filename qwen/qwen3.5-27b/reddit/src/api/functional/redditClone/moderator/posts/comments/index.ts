@@ -32,7 +32,8 @@ import typia, { tags } from "typia";
  * @param props.commentId UUID of the comment to delete (global scope)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor moderator
- * @x-autobe-specification Query the reddit_clone_comments table for the comment with the given commentId.
+ * @x-autobe-specification Query the reddit_clone_comments table for the comment
+ *   with the given commentId.
  *
  * 1. **Validate comment existence**: Query by id = commentId. If not found, return 404 Not Found.
  *

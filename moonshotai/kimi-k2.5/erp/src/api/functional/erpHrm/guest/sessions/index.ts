@@ -24,7 +24,10 @@ import { IPageIErpHrmMemberSession } from "../../../../structures/IPageIErpHrmMe
  * @param props.body Search criteria and pagination parameters for filtering sessions
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor guest
- * @x-autobe-specification Query erp_hrm_member_sessions table filtered by the authenticated member's ID. Apply search filters on created_at date range (createdAfter, createdBefore), expired_at status (expired, active, or both), IP address pattern matching, and referrer URL pattern matching.
+ * @x-autobe-specification Query erp_hrm_member_sessions table filtered by the
+ *   authenticated member's ID. Apply search filters on created_at date range
+ *   (createdAfter, createdBefore), expired_at status (expired, active, or
+ *   both), IP address pattern matching, and referrer URL pattern matching.
  *
  * Return paginated results using cursor-based pagination for optimal performance with large session histories. Each session summary should include id, ip, href, referrer, created_at, expired_at, and a flag indicating if the session is currently active (expired_at > now()).
  *
@@ -119,7 +122,8 @@ export namespace index {
  * @param props.sessionId The unique identifier of the member session to retrieve. Must be a valid UUID representing an existing session record.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor guest
- * @x-autobe-specification Query the erp_hrm_member_sessions table by primary key using the provided sessionId parameter from the URL path.
+ * @x-autobe-specification Query the erp_hrm_member_sessions table by primary
+ *   key using the provided sessionId parameter from the URL path.
  *
  * Implementation steps:
  * 1. Validate sessionId is a valid UUID format

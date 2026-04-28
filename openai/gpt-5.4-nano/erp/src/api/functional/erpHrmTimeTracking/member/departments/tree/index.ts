@@ -28,16 +28,23 @@ import { IErpHrmTimeTrackingDepartment } from "../../../../../structures/IErpHrm
  * @param props.connection
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implementation steps:
- * 1. Read the selected organization context from the request scope established by authentication/context middleware.
- * 2. Query `erp_hrm_time_tracking_departments` filtered by `erp_hrm_time_tracking_organization_id` equal to the selected organization.
- *    - Apply ordering suitable for stable tree rendering (e.g., by `name`, and then by creation timestamp as a tie-breaker), if required by existing project conventions.
- * 3. Load all candidate departments for that organization in a single query.
- * 4. Build an in-memory tree structure keyed by department `id`.
- *    - For each department, place it as a root node when `parent_department_id` is null.
- *    - Otherwise, attach it as a child node to its parent department node using `parent_department_id`.
- *    - The schema supports one-level nesting; the tree builder should still be generic, but service-layer validation rules are expected to have prevented deeper nesting scenarios during create/edit.
- * 5. Return an empty `data` array (or empty root list, depending on the DTO contract) when no departments exist for the organization.
+ * @x-autobe-specification Implementation steps: 1. Read the selected
+ *   organization context from the request scope established by
+ *   authentication/context middleware. 2. Query
+ *   `erp_hrm_time_tracking_departments` filtered by
+ *   `erp_hrm_time_tracking_organization_id` equal to the selected organization.
+ *   - Apply ordering suitable for stable tree rendering (e.g., by `name`, and
+ *   then by creation timestamp as a tie-breaker), if required by existing
+ *   project conventions. 3. Load all candidate departments for that
+ *   organization in a single query. 4. Build an in-memory tree structure keyed
+ *   by department `id`. - For each department, place it as a root node when
+ *   `parent_department_id` is null. - Otherwise, attach it as a child node to
+ *   its parent department node using `parent_department_id`. - The schema
+ *   supports one-level nesting; the tree builder should still be generic, but
+ *   service-layer validation rules are expected to have prevented deeper
+ *   nesting scenarios during create/edit. 5. Return an empty `data` array (or
+ *   empty root list, depending on the DTO contract) when no departments exist
+ *   for the organization.
  *
  * Edge cases:
  * - Missing/invalid organization context: rely on middleware to reject.

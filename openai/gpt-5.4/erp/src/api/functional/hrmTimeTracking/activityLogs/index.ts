@@ -28,7 +28,9 @@ import { IPageIHrmTimeTrackingActivityLog } from "../../../structures/IPageIHrmT
  * @param props.body Activity log search filters and pagination options
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Implement a search/list service over hrm_time_tracking_activity_logs scoped strictly to the caller's currently selected organization.
+ * @x-autobe-specification Implement a search/list service over
+ *   hrm_time_tracking_activity_logs scoped strictly to the caller's currently
+ *   selected organization.
  *
  * 1. Resolve the authenticated principal and current organization context before executing any query. Authorize only users allowed to review organization activity in that organization. Apply organization-scoped permission evaluation exactly as required so permissions from another organization are ignored.
  *
@@ -137,7 +139,9 @@ export namespace index {
  * @param props.activityLogId Unique identifier of the activity log entry in the current organization
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Load one record from `hrm_time_tracking_activity_logs` by primary key `id` and enforce organization scoping before returning any data.
+ * @x-autobe-specification Load one record from
+ *   `hrm_time_tracking_activity_logs` by primary key `id` and enforce
+ *   organization scoping before returning any data.
  *
  * Implementation steps:
  * 1. Resolve the caller's current organization context and effective permissions for that organization.

@@ -26,7 +26,10 @@ import { IHrmProjectMemberMetric } from "../../../../../../structures/IHrmProjec
  * @param props.projectId Unique identifier of the project within the organization (scoped to organization).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query hrm_project_members table filtered by project_id where deleted_at IS NULL. Join with hrm_employees to verify employee status is active. Join with hrm_timelogs to calculate time-based metrics.
+ * @x-autobe-specification Query hrm_project_members table filtered by
+ *   project_id where deleted_at IS NULL. Join with hrm_employees to verify
+ *   employee status is active. Join with hrm_timelogs to calculate time-based
+ *   metrics.
  *
  * **Query Logic**
  *

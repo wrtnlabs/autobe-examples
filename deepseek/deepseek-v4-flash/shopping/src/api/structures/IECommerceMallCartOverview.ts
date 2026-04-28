@@ -15,7 +15,8 @@ export type IECommerceMallCartOverview = {
    *
    * This ID is used to reference the cart item when updating its quantity or removing it from the cart via the dedicated cart item endpoints.
    *
-   * @x-autobe-specification Maps from e_commerce_mall_cart_items.id. Primary key from the cart items table, included in this computed join result.
+     * @x-autobe-specification Maps from e_commerce_mall_cart_items.id. Primary
+     *   key from the cart items table, included in this computed join result.
    */
   id: string & tags.Format<"uuid">;
 
@@ -24,7 +25,10 @@ export type IECommerceMallCartOverview = {
    *
    * Includes the product's name, base price, thumbnail image, seller shop name, category, average rating, and review count. The product name is displayed as the item's title in the cart view.
    *
-   * @x-autobe-specification Traverse from cart_item.productVariant → variant.product to retrieve IECommerceMallProduct.ISummary. Joins e_commerce_mall_products via e_commerce_mall_product_variants.e_commerce_mall_product_id.
+     * @x-autobe-specification Traverse from cart_item.productVariant →
+     *   variant.product to retrieve IECommerceMallProduct.ISummary. Joins
+     *   e_commerce_mall_products via
+     *   e_commerce_mall_product_variants.e_commerce_mall_product_id.
    */
   product: IECommerceMallProduct.ISummary;
 
@@ -33,7 +37,12 @@ export type IECommerceMallCartOverview = {
    *
    * Each cart item targets a specific variant configuration (e.g., color: Red, size: Large). The variant's effective price is used for the unit price calculation. If the variant has been deleted or is out of stock, the cart item is marked as unavailable for checkout.
    *
-   * @x-autobe-specification Maps from e_commerce_mall_cart_items.productVariant relation. Returns IECommerceMallProductVariant.ISummary containing SKU code, options as key-value pairs, current stock quantity (SUM of inventory_records.quantity_change), and effective price (COALESCE variant.price, product.base_price).
+     * @x-autobe-specification Maps from
+     *   e_commerce_mall_cart_items.productVariant relation. Returns
+     *   IECommerceMallProductVariant.ISummary containing SKU code, options as
+     *   key-value pairs, current stock quantity (SUM of
+     *   inventory_records.quantity_change), and effective price (COALESCE
+     *   variant.price, product.base_price).
    */
   variant: IECommerceMallProductVariant.ISummary;
 
@@ -42,7 +51,11 @@ export type IECommerceMallCartOverview = {
    *
    * Each option represents a single attribute dimension of the selected variant. The available option keys depend on how the seller configured the product's variants during setup.
    *
-   * @x-autobe-specification Traverse from cart_item.productVariant → variant.options. Collect rows from e_commerce_mall_product_variant_options where deleted_at IS NULL, grouped by variant_id, transformed into a key-value dictionary mapping option key to option value.
+     * @x-autobe-specification Traverse from cart_item.productVariant →
+     *   variant.options. Collect rows from
+     *   e_commerce_mall_product_variant_options where deleted_at IS NULL,
+     *   grouped by variant_id, transformed into a key-value dictionary mapping
+     *   option key to option value.
    */
   options: {
     [key: string]: string;
@@ -53,7 +66,8 @@ export type IECommerceMallCartOverview = {
    *
    * Must be a positive integer. When the same variant is added to the cart again, quantities are combined into this single cart item rather than creating a duplicate entry.
    *
-   * @x-autobe-specification Maps from e_commerce_mall_cart_items.quantity. Must be a positive integer. Part of this computed join result.
+     * @x-autobe-specification Maps from e_commerce_mall_cart_items.quantity.
+     *   Must be a positive integer. Part of this computed join result.
    */
   quantity: number & tags.Type<"int32"> & tags.Minimum<1>;
 
@@ -62,7 +76,10 @@ export type IECommerceMallCartOverview = {
    *
    * If the selected variant has a price override, that price is used. Otherwise, the product's base price is applied. This value is multiplied by the quantity to calculate the line subtotal.
    *
-   * @x-autobe-specification Calculated as COALESCE(e_commerce_mall_product_variants.price, e_commerce_mall_products.base_price). Variant price override takes precedence; if null, the product's base price is used.
+     * @x-autobe-specification Calculated as
+     *   COALESCE(e_commerce_mall_product_variants.price,
+     *   e_commerce_mall_products.base_price). Variant price override takes
+     *   precedence; if null, the product's base price is used.
    */
   unit_price: number & tags.Minimum<0>;
 
@@ -71,7 +88,9 @@ export type IECommerceMallCartOverview = {
    *
    * Computed as the effective unit price multiplied by the quantity. Unavailable items are excluded from the overall cart total price calculation.
    *
-   * @x-autobe-specification Calculated as unit_price × e_commerce_mall_cart_items.quantity. Line-level total for this cart item.
+     * @x-autobe-specification Calculated as unit_price ×
+     *   e_commerce_mall_cart_items.quantity. Line-level total for this cart
+     *   item.
    */
   subtotal: number & tags.Minimum<0>;
 
@@ -80,7 +99,11 @@ export type IECommerceMallCartOverview = {
    *
    * An item is marked as unavailable if the product variant has been deleted by the seller or if the current stock quantity is zero or less. Unavailable items remain visible in the cart for the customer to review but are excluded from checkout and the total price calculation.
    *
-   * @x-autobe-specification Computed as: variant.deleted_at IS NULL AND current_stock > 0. current_stock = SUM(e_commerce_mall_inventory_records.quantity_change) for that variant. An item is unavailable if the variant has been deleted (deleted_at IS NOT NULL) or the sum of inventory changes is 0 or less.
+     * @x-autobe-specification Computed as: variant.deleted_at IS NULL AND
+     *   current_stock > 0. current_stock =
+     *   SUM(e_commerce_mall_inventory_records.quantity_change) for that
+     *   variant. An item is unavailable if the variant has been deleted
+     *   (deleted_at IS NOT NULL) or the sum of inventory changes is 0 or less.
    */
   available: boolean;
 
@@ -89,7 +112,9 @@ export type IECommerceMallCartOverview = {
    *
    * Cart items are displayed in the order they were added, with the earliest-added item appearing first and the most recently added item appearing last.
    *
-   * @x-autobe-specification Maps from e_commerce_mall_cart_items.created_at. Items sorted by this field in ascending order (oldest first, most recent last). Part of this computed join result.
+     * @x-autobe-specification Maps from e_commerce_mall_cart_items.created_at.
+     *   Items sorted by this field in ascending order (oldest first, most
+     *   recent last). Part of this computed join result.
    */
   created_at: string & tags.Format<"date-time">;
 };

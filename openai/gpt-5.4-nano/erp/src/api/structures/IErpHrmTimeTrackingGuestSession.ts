@@ -8,56 +8,71 @@ export type IErpHrmTimeTrackingGuestSession = {
   /**
    * Unique identifier of the issued guest session.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Return erp_hrm_time_tracking_guest_sessions.id as a UUID string for the selected session row.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Return erp_hrm_time_tracking_guest_sessions.id as
+     *   a UUID string for the selected session row.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Identifier of the guest identity that owns this session.
    *
-   * @x-autobe-database-schema-property erp_hrm_time_tracking_guest_id
-   * @x-autobe-specification Map erp_hrm_time_tracking_guest_sessions.erp_hrm_time_tracking_guest_id to guestId in the DTO.
+     * @x-autobe-database-schema-property erp_hrm_time_tracking_guest_id
+     * @x-autobe-specification Map
+     *   erp_hrm_time_tracking_guest_sessions.erp_hrm_time_tracking_guest_id to
+     *   guestId in the DTO.
    */
   guestId: string & tags.Format<"uuid">;
 
   /**
    * Client IP address recorded when the guest session was issued.
    *
-   * @x-autobe-database-schema-property ip
-   * @x-autobe-specification Persist and return erp_hrm_time_tracking_guest_sessions.ip from the request connection metadata; for responses, read it from the selected session row.
+     * @x-autobe-database-schema-property ip
+     * @x-autobe-specification Persist and return
+     *   erp_hrm_time_tracking_guest_sessions.ip from the request connection
+     *   metadata; for responses, read it from the selected session row.
    */
   ip: string;
 
   /**
    * Requested URL (or token issuance href) recorded for correlation/audit purposes.
    *
-   * @x-autobe-database-schema-property href
-   * @x-autobe-specification Persist and return erp_hrm_time_tracking_guest_sessions.href as provided by the request; for responses, read it from the selected session row.
+     * @x-autobe-database-schema-property href
+     * @x-autobe-specification Persist and return
+     *   erp_hrm_time_tracking_guest_sessions.href as provided by the request;
+     *   for responses, read it from the selected session row.
    */
   href: string & tags.Format<"url">;
 
   /**
    * HTTP referrer value recorded when the guest session was issued.
    *
-   * @x-autobe-database-schema-property referrer
-   * @x-autobe-specification Persist and return erp_hrm_time_tracking_guest_sessions.referrer as provided by the request; for responses, read it from the selected session row.
+     * @x-autobe-database-schema-property referrer
+     * @x-autobe-specification Persist and return
+     *   erp_hrm_time_tracking_guest_sessions.referrer as provided by the
+     *   request; for responses, read it from the selected session row.
    */
   referrer: string & tags.Format<"url">;
 
   /**
    * Timestamp when this guest session record was created by the server.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification For responses, return erp_hrm_time_tracking_guest_sessions.created_at as createdAt. For PATCH /guest/guests upsert, set created_at to the server insertion time (do not accept client input).
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification For responses, return
+     *   erp_hrm_time_tracking_guest_sessions.created_at as createdAt. For PATCH
+     *   /guest/guests upsert, set created_at to the server insertion time (do
+     *   not accept client input).
    */
   createdAt: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when this guest session expires and is no longer valid for gating.
    *
-   * @x-autobe-database-schema-property expired_at
-   * @x-autobe-specification For responses, return erp_hrm_time_tracking_guest_sessions.expired_at as expiredAt. For PATCH /guest/guests upsert, compute expired_at = created_at + configured guest-session TTL and persist it server-side.
+     * @x-autobe-database-schema-property expired_at
+     * @x-autobe-specification For responses, return
+     *   erp_hrm_time_tracking_guest_sessions.expired_at as expiredAt. For PATCH
+     *   /guest/guests upsert, compute expired_at = created_at + configured
+     *   guest-session TTL and persist it server-side.
    */
   expiredAt: string & tags.Format<"date-time">;
 };
@@ -69,45 +84,58 @@ export namespace IErpHrmTimeTrackingGuestSession {
     /**
      * Guest identity email address used to identify (or create) the guest account for issuing a guest session.
      *
-     * @x-autobe-specification Use request.email to look up/create the guest identity row in erp_hrm_time_tracking_guests (by erp_hrm_time_tracking_guests.email). Validate that the guest identity is active (deleted_at is NULL) before inserting a guest session. Then resolve the guest FK (erp_hrm_time_tracking_guest_id) from the matched guest identity for the guest_sessions insert.
+         * @x-autobe-specification Use request.email to look up/create the guest
+         *   identity row in erp_hrm_time_tracking_guests (by
+         *   erp_hrm_time_tracking_guests.email). Validate that the guest
+         *   identity is active (deleted_at is NULL) before inserting a guest
+         *   session. Then resolve the guest FK (erp_hrm_time_tracking_guest_id)
+         *   from the matched guest identity for the guest_sessions insert.
      */
     email: string & tags.Format<"email">;
 
     /**
      * Client IP address recorded when the guest session is issued.
      *
-     * @x-autobe-database-schema-property ip
-     * @x-autobe-specification Direct mapping: persist request.ip -> erp_hrm_time_tracking_guest_sessions.ip.
+         * @x-autobe-database-schema-property ip
+         * @x-autobe-specification Direct mapping: persist request.ip ->
+         *   erp_hrm_time_tracking_guest_sessions.ip.
      */
     ip: string;
 
     /**
      * Requested URL (href) associated with this guest session issuance.
      *
-     * @x-autobe-database-schema-property href
-     * @x-autobe-specification Direct mapping: persist request.href -> erp_hrm_time_tracking_guest_sessions.href.
+         * @x-autobe-database-schema-property href
+         * @x-autobe-specification Direct mapping: persist request.href ->
+         *   erp_hrm_time_tracking_guest_sessions.href.
      */
     href: string & tags.Format<"uri">;
 
     /**
      * HTTP referrer value recorded at guest session creation time.
      *
-     * @x-autobe-database-schema-property referrer
-     * @x-autobe-specification Direct mapping: persist request.referrer -> erp_hrm_time_tracking_guest_sessions.referrer.
+         * @x-autobe-database-schema-property referrer
+         * @x-autobe-specification Direct mapping: persist request.referrer ->
+         *   erp_hrm_time_tracking_guest_sessions.referrer.
      */
     referrer: string;
 
     /**
      * Target page number (1-indexed) for paginated results, if the endpoint returns pagination.
      *
-     * @x-autobe-specification Pagination control for paginated responses returned by the endpoint. The value is treated as 1-indexed; if omitted/undefined/null, the service defaults to page 1.
+         * @x-autobe-specification Pagination control for paginated responses
+         *   returned by the endpoint. The value is treated as 1-indexed; if
+         *   omitted/undefined/null, the service defaults to page 1.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
 
     /**
      * Maximum number of records per page for paginated results, if the endpoint returns pagination.
      *
-     * @x-autobe-specification Pagination control for paginated responses returned by the endpoint. If omitted/undefined/null, the service defaults to 100 records per page; the service may enforce an upper bound.
+         * @x-autobe-specification Pagination control for paginated responses
+         *   returned by the endpoint. If omitted/undefined/null, the service
+         *   defaults to 100 records per page; the service may enforce an upper
+         *   bound.
      */
     limit?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };

@@ -10,48 +10,64 @@ export type IShoppingMallRefundRequestSnapshot = {
   /**
    * Unique identifier for the refund request snapshot.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_refund_request_snapshots.id. UUID primary key generated automatically when snapshot is created.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_refund_request_snapshots.id. UUID primary key generated
+     *   automatically when snapshot is created.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Reference to the parent refund request this snapshot belongs to.
    *
-   * @x-autobe-database-schema-property shopping_mall_refund_request_id
-   * @x-autobe-specification Direct mapping from shopping_mall_refund_request_snapshots.shopping_mall_refund_request_id. Foreign key reference to the parent refund request for traceability.
+     * @x-autobe-database-schema-property shopping_mall_refund_request_id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_refund_request_snapshots.shopping_mall_refund_request_id.
+     *   Foreign key reference to the parent refund request for traceability.
    */
   shoppingMallRefundRequestId: string & tags.Format<"uuid">;
 
   /**
    * The customer's reason text for requesting the refund, preserved exactly as submitted.
    *
-   * @x-autobe-database-schema-property reason
-   * @x-autobe-specification Direct mapping from shopping_mall_refund_request_snapshots.reason. Preserves the customer's explanation text for requesting a refund at the moment of snapshot creation.
+     * @x-autobe-database-schema-property reason
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_refund_request_snapshots.reason. Preserves the customer's
+     *   explanation text for requesting a refund at the moment of snapshot
+     *   creation.
    */
   reason: string;
 
   /**
    * The status of the refund request at the time of this snapshot.
    *
-   * @x-autobe-database-schema-property status
-   * @x-autobe-specification Direct mapping from shopping_mall_refund_request_snapshots.status. Enum values: 'pending', 'approved', 'rejected'. Captures the status at the moment seller responded.
+     * @x-autobe-database-schema-property status
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_refund_request_snapshots.status. Enum values: 'pending',
+     *   'approved', 'rejected'. Captures the status at the moment seller
+     *   responded.
    */
   status: "pending" | "approved" | "rejected";
 
   /**
    * Timestamp when this snapshot was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from shopping_mall_refund_request_snapshots.created_at. Timestamp when the snapshot was created, typically when seller approved or rejected the refund request.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_refund_request_snapshots.created_at. Timestamp when the
+     *   snapshot was created, typically when seller approved or rejected the
+     *   refund request.
    */
   createdAt: string & tags.Format<"date-time">;
 
   /**
    * The parent refund request this snapshot belongs to.
    *
-   * @x-autobe-database-schema-property refundRequest
-   * @x-autobe-specification Belongs-to relation via shopping_mall_refund_request_id foreign key. JOIN with shopping_mall_refund_requests table to populate the full refund request object for navigation context.
+     * @x-autobe-database-schema-property refundRequest
+     * @x-autobe-specification Belongs-to relation via
+     *   shopping_mall_refund_request_id foreign key. JOIN with
+     *   shopping_mall_refund_requests table to populate the full refund request
+     *   object for navigation context.
    */
   refundRequest: IShoppingMallRefundRequest;
 };
@@ -63,8 +79,13 @@ export namespace IShoppingMallRefundRequestSnapshot {
     /**
      * Filter snapshots by specific refund request ID. Returns all snapshots belonging to the specified refund request. Only applicable for administrator endpoint; customer endpoint uses path parameter instead.
      *
-     * @x-autobe-database-schema-property shopping_mall_refund_request_id
-     * @x-autobe-specification Direct mapping from shopping_mall_refund_request_snapshots.shopping_mall_refund_request_id. Used as WHERE clause equality filter: WHERE shopping_mall_refund_request_id = $1. Administrator endpoint uses this for cross-request snapshot queries; customer endpoint ignores this (uses path parameter instead).
+         * @x-autobe-database-schema-property shopping_mall_refund_request_id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_refund_request_snapshots.shopping_mall_refund_request_id.
+         *   Used as WHERE clause equality filter: WHERE
+         *   shopping_mall_refund_request_id = $1. Administrator endpoint uses
+         *   this for cross-request snapshot queries; customer endpoint ignores
+         *   this (uses path parameter instead).
      */
     shopping_mall_refund_request_id?:
       | (string & tags.Format<"uuid">)
@@ -73,36 +94,51 @@ export namespace IShoppingMallRefundRequestSnapshot {
     /**
      * Filter by refund request snapshot status. Valid values: 'pending', 'approved', 'rejected'. Optional - when not specified, returns snapshots of all statuses.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from shopping_mall_refund_request_snapshots.status. Used as WHERE clause equality filter on enum values: WHERE status = 'pending' | 'approved' | 'rejected'. Optional filter - when omitted, returns all statuses.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_refund_request_snapshots.status. Used as WHERE clause
+         *   equality filter on enum values: WHERE status = 'pending' |
+         *   'approved' | 'rejected'. Optional filter - when omitted, returns
+         *   all statuses.
      */
     status?: "pending" | "approved" | "rejected" | undefined;
 
     /**
      * Filter snapshots created on or after this timestamp. Use with created_at_to to define a date range. ISO 8601 format (e.g., '2024-01-01T00:00:00Z').
      *
-     * @x-autobe-specification Computed filter parameter. Generates WHERE clause condition: WHERE created_at >= created_at_from. Used with created_at_to to define date range. Must be valid ISO 8601 timestamp. Applied before pagination.
+         * @x-autobe-specification Computed filter parameter. Generates WHERE
+         *   clause condition: WHERE created_at >= created_at_from. Used with
+         *   created_at_to to define date range. Must be valid ISO 8601
+         *   timestamp. Applied before pagination.
      */
     created_at_from?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Filter snapshots created on or before this timestamp. Use with created_at_from to define a date range. ISO 8601 format (e.g., '2024-12-31T23:59:59Z').
      *
-     * @x-autobe-specification Computed filter parameter. Generates WHERE clause condition: WHERE created_at <= created_at_to. Used with created_at_from to define date range. Must be valid ISO 8601 timestamp. Applied before pagination.
+         * @x-autobe-specification Computed filter parameter. Generates WHERE
+         *   clause condition: WHERE created_at <= created_at_to. Used with
+         *   created_at_from to define date range. Must be valid ISO 8601
+         *   timestamp. Applied before pagination.
      */
     created_at_to?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Page number for pagination. Starts from 1. Use with limit to control result pagination.
      *
-     * @x-autobe-specification Computed pagination parameter. Converts to OFFSET clause: OFFSET = (page - 1) * limit. Default value 1 when not provided. Must be >= 1. Used with LIMIT for pagination.
+         * @x-autobe-specification Computed pagination parameter. Converts to
+         *   OFFSET clause: OFFSET = (page - 1) * limit. Default value 1 when
+         *   not provided. Must be >= 1. Used with LIMIT for pagination.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Number of items per page. Maximum 100. Use with page to control result pagination.
      *
-     * @x-autobe-specification Computed pagination parameter. Converts to LIMIT clause in SQL query. Default value 20 when not provided. Maximum value 100 to prevent excessive result sets. Used with OFFSET for pagination.
+         * @x-autobe-specification Computed pagination parameter. Converts to
+         *   LIMIT clause in SQL query. Default value 20 when not provided.
+         *   Maximum value 100 to prevent excessive result sets. Used with
+         *   OFFSET for pagination.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -118,23 +154,23 @@ export namespace IShoppingMallRefundRequestSnapshot {
    */
   export type ISummary = {
     /**
-     * @x-autobe-database-schema-property id
+         * @x-autobe-database-schema-property id
      */
     id: string & tags.Format<"uuid">;
     /**
-     * @x-autobe-database-schema-property reason
+         * @x-autobe-database-schema-property reason
      */
     reason: string;
     /**
-     * @x-autobe-database-schema-property status
+         * @x-autobe-database-schema-property status
      */
     status: string;
     /**
-     * @x-autobe-database-schema-property created_at
+         * @x-autobe-database-schema-property created_at
      */
     created_at: string & tags.Format<"date-time">;
     /**
-     * @x-autobe-database-schema-property refundRequest
+         * @x-autobe-database-schema-property refundRequest
      */
     refundRequest: IShoppingMallRefundRequest.ISummary;
   };

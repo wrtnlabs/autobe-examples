@@ -17,8 +17,10 @@ export type IRedditCommunitySubscription = {
    *
    * Auto-generated UUID that uniquely identifies this subscription relationship between a member and a community. Used for subscription management operations such as cancellation.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from reddit_community_subscriptions.id. Auto-generated UUID upon subscription creation.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_subscriptions.id. Auto-generated UUID upon
+     *   subscription creation.
    */
   id: string & tags.Format<"uuid">;
 
@@ -27,8 +29,11 @@ export type IRedditCommunitySubscription = {
    *
    * References the user account that subscribed to the community. Contains the member's public profile information including username, display name, and karma score. Resolved from the member_id foreign key via database JOIN.
    *
-   * @x-autobe-database-schema-property member
-   * @x-autobe-specification Relation mapping via member_id FK. JOIN reddit_community_subscriptions.member_id to reddit_community_members.id. Returns IRedditCommunityMember.ISummary with public profile fields.
+     * @x-autobe-database-schema-property member
+     * @x-autobe-specification Relation mapping via member_id FK. JOIN
+     *   reddit_community_subscriptions.member_id to
+     *   reddit_community_members.id. Returns IRedditCommunityMember.ISummary
+     *   with public profile fields.
    */
   member: IRedditCommunityMember.ISummary;
 
@@ -37,8 +42,11 @@ export type IRedditCommunitySubscription = {
    *
    * References the target community of this subscription. Contains the community's public information including name, description, icon, and subscriber count. Resolved from the community_id foreign key via database JOIN.
    *
-   * @x-autobe-database-schema-property community
-   * @x-autobe-specification Relation mapping via community_id FK. JOIN reddit_community_subscriptions.community_id to reddit_community_communities.id. Returns IRedditCommunityCommunity.ISummary with community metadata.
+     * @x-autobe-database-schema-property community
+     * @x-autobe-specification Relation mapping via community_id FK. JOIN
+     *   reddit_community_subscriptions.community_id to
+     *   reddit_community_communities.id. Returns
+     *   IRedditCommunityCommunity.ISummary with community metadata.
    */
   community: IRedditCommunityCommunity.ISummary;
 
@@ -47,8 +55,10 @@ export type IRedditCommunitySubscription = {
    *
    * Records the exact moment when the member subscribed to the community. Used for sorting subscription lists and tracking user engagement history. Format is ISO 8601 date-time with timezone information.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from reddit_community_subscriptions.created_at. Server-generated timestamp in ISO 8601 format with timezone.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_subscriptions.created_at. Server-generated timestamp
+     *   in ISO 8601 format with timezone.
    */
   createdAt: string & tags.Format<"date-time">;
 
@@ -57,8 +67,11 @@ export type IRedditCommunitySubscription = {
    *
    * Null value indicates the subscription is currently active. When set to a timestamp, marks the subscription as unsubscribed while preserving the historical record. Enables features like previously subscribed communities tracking and audit trails. Format is ISO 8601 date-time with timezone information.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from reddit_community_subscriptions.deleted_at. Nullable field: null indicates active subscription, timestamp indicates cancelled subscription. ISO 8601 date-time format.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_subscriptions.deleted_at. Nullable field: null
+     *   indicates active subscription, timestamp indicates cancelled
+     *   subscription. ISO 8601 date-time format.
    */
   deletedAt: (string & tags.Format<"date-time">) | null;
 };
@@ -76,8 +89,9 @@ export namespace IRedditCommunitySubscription {
      *
      * Auto-generated UUID assigned when the subscription is created. Used internally for subscription management operations.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from reddit_community_subscriptions.id. UUID format.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   reddit_community_subscriptions.id. UUID format.
      */
     id: string & tags.Format<"uuid">;
 
@@ -86,8 +100,10 @@ export namespace IRedditCommunitySubscription {
      *
      * Recorded at the moment of subscription creation. Used for sorting subscription lists by most recent first.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from reddit_community_subscriptions.created_at. ISO 8601 date-time format.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_community_subscriptions.created_at. ISO 8601 date-time
+         *   format.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -96,8 +112,11 @@ export namespace IRedditCommunitySubscription {
      *
      * Contains essential community information including name, description, icon, and subscriber count. Embedded as a summary object for list display efficiency.
      *
-     * @x-autobe-database-schema-property community
-     * @x-autobe-specification JOIN from reddit_community_subscriptions.community_id to reddit_community_communities.id. Returns IRedditCommunityCommunity.ISummary with community details.
+         * @x-autobe-database-schema-property community
+         * @x-autobe-specification JOIN from
+         *   reddit_community_subscriptions.community_id to
+         *   reddit_community_communities.id. Returns
+         *   IRedditCommunityCommunity.ISummary with community details.
      */
     community: IRedditCommunityCommunity.ISummary;
   };
@@ -117,8 +136,12 @@ export namespace IRedditCommunitySubscription {
      *
      * Upon successful subscription, the member gains posting privileges in this community and the community appears in their home feed. Duplicate subscriptions to the same community are prevented by a unique constraint.
      *
-     * @x-autobe-database-schema-property community_id
-     * @x-autobe-specification Direct mapping from reddit_community_subscriptions.community_id column. User-provided foreign key referencing the target community. Validated against reddit_community_communities table (must exist and not be soft-deleted).
+         * @x-autobe-database-schema-property community_id
+         * @x-autobe-specification Direct mapping from
+         *   reddit_community_subscriptions.community_id column. User-provided
+         *   foreign key referencing the target community. Validated against
+         *   reddit_community_communities table (must exist and not be
+         *   soft-deleted).
      */
     community_id: string & tags.Format<"uuid">;
   };
@@ -138,7 +161,9 @@ export namespace IRedditCommunitySubscription {
      *
      * Used with limit to control result set size. Backend calculates offset as (page - 1) * limit.
      *
-     * @x-autobe-specification Pagination control: 1-indexed page number. Default 1 if omitted. Used to calculate OFFSET: (page - 1) * limit. No DB column mapping - query parameter only.
+         * @x-autobe-specification Pagination control: 1-indexed page number.
+         *   Default 1 if omitted. Used to calculate OFFSET: (page - 1) * limit.
+         *   No DB column mapping - query parameter only.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -149,7 +174,9 @@ export namespace IRedditCommunitySubscription {
      *
      * The actual number of records returned may be less than the limit on the final page when total records are fewer than the limit value.
      *
-     * @x-autobe-specification Pagination control: items per page. Default 20, maximum 100. Validates 1 <= limit <= 100. No DB column mapping - query parameter only.
+         * @x-autobe-specification Pagination control: items per page. Default
+         *   20, maximum 100. Validates 1 <= limit <= 100. No DB column mapping
+         *   - query parameter only.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -162,7 +189,10 @@ export namespace IRedditCommunitySubscription {
      *
      * If omitted, returns all active subscriptions without filtering. Empty string is treated as no filter.
      *
-     * @x-autobe-specification Search filter: optional text matched against community.name using SQL LIKE '%search%'. Case-insensitive. No DB column mapping - transforms to WHERE community.name LIKE '%search%'.
+         * @x-autobe-specification Search filter: optional text matched against
+         *   community.name using SQL LIKE '%search%'. Case-insensitive. No DB
+         *   column mapping - transforms to WHERE community.name LIKE
+         *   '%search%'.
      */
     search?: string | undefined;
   };

@@ -20,7 +20,10 @@ import { IPageIMallPlatformCustomerSession } from "../../../../structures/IPageI
  * @param props.body Search criteria, pagination settings, and sorting options for listing authenticated sessions.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor administrator
- * @x-autobe-specification Query the session persistence tables for the current actor type and apply the request-body filters, pagination, and sorting. Return summary rows only; do not expose session tokens, password reset credentials, or other secret material.
+ * @x-autobe-specification Query the session persistence tables for the current
+ *   actor type and apply the request-body filters, pagination, and sorting.
+ *   Return summary rows only; do not expose session tokens, password reset
+ *   credentials, or other secret material.
  *
  * Enforce strict authorization by actor scope. A customer must only receive their own customer sessions, a seller must only receive their own seller sessions, and an administrator must only receive sessions allowed by platform policy. If the request targets an unauthorized scope, return an authorization error rather than leaking session existence. Keep the implementation read-only and avoid any side effects on session state.
  * @path /mallPlatform/administrator/sessions
@@ -111,7 +114,10 @@ export namespace index {
  * @param props.sessionId The session identifier (global UUID).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor administrator
- * @x-autobe-specification Look up the session by its UUID primary key and return the record only when the requester is authorized to inspect it. Use the current authenticated actor context to verify ownership or administrator-level access before exposing any data.
+ * @x-autobe-specification Look up the session by its UUID primary key and
+ *   return the record only when the requester is authorized to inspect it. Use
+ *   the current authenticated actor context to verify ownership or
+ *   administrator-level access before exposing any data.
  *
  * Return the session fields defined by the underlying session schema: id, owner foreign key, ip, href, referrer, created_at, and expired_at. Do not modify the session. If the row is missing, return not found. If access is denied, return forbidden. If the runtime session belongs to a different actor type than the current context and policy does not allow cross-actor inspection, treat it as inaccessible.
  * @path /mallPlatform/administrator/sessions/:sessionId

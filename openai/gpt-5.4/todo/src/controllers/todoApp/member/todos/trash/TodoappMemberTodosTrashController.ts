@@ -25,9 +25,10 @@ export class TodoappMemberTodosTrashController {
    *
    * @param connection
    * @param body Trash list search, filter, sort, and pagination options
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement a member-scoped trash browsing query over todo_app_todos.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implement a member-scoped trash browsing query
+     *   over todo_app_todos.
    *
    * Authenticate the caller as a member and obtain the member identifier from the authenticated session context. Build the base query with a mandatory WHERE clause requiring todo_app_member_id to equal the authenticated member ID and deleted_at to be non-null. Do not allow the client request body to override either ownership scope or trash-state scope.
    *

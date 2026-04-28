@@ -33,7 +33,8 @@ import { ITodoAppMemberEmailVerification } from "../../../../structures/ITodoApp
  * @param props.body Email verification token to be validated and confirmed.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implement email verification token validation and confirmation.
+ * @x-autobe-specification Implement email verification token validation and
+ *   confirmation.
  *
  * ## Implementation Steps
  *
@@ -168,7 +169,8 @@ export namespace verify {
  * @param props.verificationId Unique identifier of the email verification record (UUID format).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query the todo_app_member_email_verifications table by the verificationId UUID parameter.
+ * @x-autobe-specification Query the todo_app_member_email_verifications table
+ *   by the verificationId UUID parameter.
  *
  * Validate that the authenticated member owns this verification record by checking the todo_app_member_id foreign key matches the current user's ID. Return 404 if the verification record does not exist or does not belong to the authenticated member.
  *

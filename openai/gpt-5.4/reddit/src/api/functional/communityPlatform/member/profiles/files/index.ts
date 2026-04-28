@@ -24,7 +24,8 @@ import { IPageICommunityPlatformProfileFile } from "../../../../../structures/IP
  * @param props.body Profile file creation information
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implement this operation in the member-authenticated profile media service layer.
+ * @x-autobe-specification Implement this operation in the member-authenticated
+ *   profile media service layer.
  *
  * 1. Authenticate the requester as a member. Reject guests and unauthenticated callers.
  * 2. Resolve the caller's profile by querying community_platform_profiles where community_platform_member_id equals the authenticated member ID and deleted_at is null. Because the schema enforces @@unique([community_platform_member_id]), expect at most one active profile. If no profile exists, reject the request.
@@ -138,7 +139,8 @@ export namespace create {
  * @param props.body Profile file search criteria and pagination options
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implement this operation as a paginated search over community_platform_profile_files joined to community_platform_profiles.
+ * @x-autobe-specification Implement this operation as a paginated search over
+ *   community_platform_profile_files joined to community_platform_profiles.
  *
  * For member requests, resolve the authenticated member identity first, then load the single owned community_platform_profiles row through community_platform_member_id. If no profile exists for the authenticated member, reject the request. Constrain the file query to records whose community_platform_profile_id matches that owned profile. For admin requests, allow broader search over profile file records subject to administrative authorization policy.
  *
@@ -241,7 +243,8 @@ export namespace index {
  * @param props.fileId Target profile file's ID
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implement a read-only service method that fetches one record from community_platform_profile_files by primary key id.
+ * @x-autobe-specification Implement a read-only service method that fetches one
+ *   record from community_platform_profile_files by primary key id.
  *
  * Validate that fileId is a UUID-shaped identifier before querying. Query community_platform_profile_files where id equals the provided fileId and deleted_at is null. Join or subsequently verify the owning community_platform_profiles record through community_platform_profile_id, and ensure the owning profile is active enough for public presentation by rejecting records whose profile has deleted_at set. Also verify that the profile remains attached to a valid community_platform_members record through community_platform_member_id, because profile existence is defined as exactly one profile per existing user and requests for a non-existent user must be rejected.
  *
@@ -339,7 +342,8 @@ export namespace at {
  * @param props.body Replacement information for the profile file
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implement this operation as a profile-file update on the `community_platform_profile_files` table.
+ * @x-autobe-specification Implement this operation as a profile-file update on
+ *   the `community_platform_profile_files` table.
  *
  * 1. Authenticate the caller and require a signed-in member session for normal self-service usage. If administrator override is supported by the service policy, apply equivalent audit handling, but do not bypass existence checks.
  * 2. Load the target `community_platform_profile_files` row by `id = fileId` and ensure `deleted_at IS NULL` for standard update behavior.
@@ -455,7 +459,8 @@ export namespace update {
  * @param props.fileId Unique identifier of the target profile file record.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implement a member-authenticated deletion flow for a single `community_platform_profile_files` record.
+ * @x-autobe-specification Implement a member-authenticated deletion flow for a
+ *   single `community_platform_profile_files` record.
  *
  * 1. Authenticate the caller as a member. Guests must be rejected before any resource lookup that would imply edit capability.
  * 2. Load the target file by `community_platform_profile_files.id = :fileId`, and join or follow relations to `community_platform_profiles` and `community_platform_members` so ownership can be verified through `community_platform_profile_files.community_platform_profile_id -> community_platform_profiles.id -> community_platform_profiles.community_platform_member_id`.

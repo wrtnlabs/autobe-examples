@@ -22,16 +22,19 @@ export class RedditcloneAuthMemberController {
    *
    * @param connection
    * @param body Registration data including email, password, and username for new member account.
-   * @x-autobe-authorization-type join
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1. Validate request body (email, password, username) for required fields and formats.
-   * 2. Check if email already exists in reddit_clone_members (unique constraint).
-   * 3. Check if username already exists in reddit_clone_members (unique constraint).
-   * 4. Hash password using bcrypt.
-   * 5. Insert new member record into reddit_clone_members with email, password_hash, username, created_at, updated_at.
-   * 6. Generate JWT access token (short-lived, ~15min) and refresh token (long-lived, ~7-30 days).
-   * 7. Insert session record into reddit_clone_member_sessions with member id, tokens, ip, href, referrer, created_at, expired_at.
-   * 8. Return tokens in IAuthorized response.
+     * @x-autobe-authorization-type join
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification 1. Validate request body (email, password,
+     *   username) for required fields and formats. 2. Check if email already
+     *   exists in reddit_clone_members (unique constraint). 3. Check if
+     *   username already exists in reddit_clone_members (unique constraint). 4.
+     *   Hash password using bcrypt. 5. Insert new member record into
+     *   reddit_clone_members with email, password_hash, username, created_at,
+     *   updated_at. 6. Generate JWT access token (short-lived, ~15min) and
+     *   refresh token (long-lived, ~7-30 days). 7. Insert session record into
+     *   reddit_clone_member_sessions with member id, tokens, ip, href,
+     *   referrer, created_at, expired_at. 8. Return tokens in IAuthorized
+     *   response.
    *
    * Error handling:
    * - 400: Invalid email format, password too weak, username invalid
@@ -69,15 +72,16 @@ export class RedditcloneAuthMemberController {
    *
    * @param connection
    * @param body Login credentials including email and password for member authentication.
-   * @x-autobe-authorization-type login
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1. Validate request body (email, password) for required fields.
-   * 2. Query reddit_clone_members by email, ensuring deleted_at is null.
-   * 3. Verify password using bcrypt.compare against stored password_hash.
-   * 4. If credentials invalid, return 401 immediately.
-   * 5. Generate new JWT access token and refresh token.
-   * 6. Insert new session record into reddit_clone_member_sessions with member id, tokens, ip, href, referrer, created_at, expired_at.
-   * 7. Return tokens in IAuthorized response.
+     * @x-autobe-authorization-type login
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification 1. Validate request body (email, password) for
+     *   required fields. 2. Query reddit_clone_members by email, ensuring
+     *   deleted_at is null. 3. Verify password using bcrypt.compare against
+     *   stored password_hash. 4. If credentials invalid, return 401
+     *   immediately. 5. Generate new JWT access token and refresh token. 6.
+     *   Insert new session record into reddit_clone_member_sessions with member
+     *   id, tokens, ip, href, referrer, created_at, expired_at. 7. Return
+     *   tokens in IAuthorized response.
    *
    * Error handling:
    * - 401: Invalid email or password, account deleted
@@ -115,14 +119,15 @@ export class RedditcloneAuthMemberController {
    *
    * @param connection
    * @param body Refresh token for obtaining new access and refresh tokens.
-   * @x-autobe-authorization-type refresh
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1. Validate refresh token from request body.
-   * 2. Query reddit_clone_member_sessions by refresh_token, ensuring deleted_at is null and expired_at is in future.
-   * 3. If token invalid/expired/used, return 401.
-   * 4. Generate new JWT access token and refresh token.
-   * 5. Update existing session record in reddit_clone_member_sessions with new tokens and updated expired_at.
-   * 6. Return new tokens in IAuthorized response.
+     * @x-autobe-authorization-type refresh
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification 1. Validate refresh token from request body. 2.
+     *   Query reddit_clone_member_sessions by refresh_token, ensuring
+     *   deleted_at is null and expired_at is in future. 3. If token
+     *   invalid/expired/used, return 401. 4. Generate new JWT access token and
+     *   refresh token. 5. Update existing session record in
+     *   reddit_clone_member_sessions with new tokens and updated expired_at. 6.
+     *   Return new tokens in IAuthorized response.
    *
    * Error handling:
    * - 401: Invalid, expired, or already-used refresh token

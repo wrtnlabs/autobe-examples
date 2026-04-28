@@ -10,96 +10,121 @@ export type ICommunityPlatformPostImage = {
   /**
    * Unique identifier of the post image attachment record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from community_platform_post_images.id (UUID). Returned as a string in UUID format.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_post_images.id (UUID). Returned as a string in UUID
+     *   format.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Identifier of the post that owns this image attachment.
    *
-   * @x-autobe-database-schema-property community_platform_post_id
-   * @x-autobe-specification Direct mapping from community_platform_post_images.community_platform_post_id. This is the parent post reference used to scope attachment lookups and ordering.
+     * @x-autobe-database-schema-property community_platform_post_id
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_post_images.community_platform_post_id. This is the
+     *   parent post reference used to scope attachment lookups and ordering.
    */
   communityPlatformPostId: string & tags.Format<"uuid">;
 
   /**
    * Canonical URL/URI of the stored image file for rendering.
    *
-   * @x-autobe-database-schema-property file_url
-   * @x-autobe-specification Direct mapping from community_platform_post_images.file_url. Returned as a string URI that the client can use to load the image file.
+     * @x-autobe-database-schema-property file_url
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_post_images.file_url. Returned as a string URI that
+     *   the client can use to load the image file.
    */
   fileUrl: string;
 
   /**
    * MIME content type of the image file.
    *
-   * @x-autobe-database-schema-property content_type
-   * @x-autobe-specification Direct mapping from community_platform_post_images.content_type (e.g., image/png). Used by clients to interpret the media type.
+     * @x-autobe-database-schema-property content_type
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_post_images.content_type (e.g., image/png). Used by
+     *   clients to interpret the media type.
    */
   contentType: string;
 
   /**
    * Size of the image file in bytes at upload time.
    *
-   * @x-autobe-database-schema-property file_size_bytes
-   * @x-autobe-specification Direct mapping from community_platform_post_images.file_size_bytes as an integer byte count.
+     * @x-autobe-database-schema-property file_size_bytes
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_post_images.file_size_bytes as an integer byte
+     *   count.
    */
   fileSizeBytes: number & tags.Type<"int32">;
 
   /**
    * Original image width in pixels.
    *
-   * @x-autobe-database-schema-property image_width_px
-   * @x-autobe-specification Direct mapping from community_platform_post_images.image_width_px (original width in pixels).
+     * @x-autobe-database-schema-property image_width_px
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_post_images.image_width_px (original width in
+     *   pixels).
    */
   imageWidthPx: number & tags.Type<"int32">;
 
   /**
    * Original image height in pixels.
    *
-   * @x-autobe-database-schema-property image_height_px
-   * @x-autobe-specification Direct mapping from community_platform_post_images.image_height_px (original height in pixels).
+     * @x-autobe-database-schema-property image_height_px
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_post_images.image_height_px (original height in
+     *   pixels).
    */
   imageHeightPx: number & tags.Type<"int32">;
 
   /**
    * Alternative text/description for accessibility and fallback rendering.
    *
-   * @x-autobe-database-schema-property alt_text
-   * @x-autobe-specification Direct mapping from community_platform_post_images.alt_text. Returned as the accessibility/fallback description.
+     * @x-autobe-database-schema-property alt_text
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_post_images.alt_text. Returned as the
+     *   accessibility/fallback description.
    */
   altText: string;
 
   /**
    * Display order of this image attachment within its owning post.
    *
-   * @x-autobe-database-schema-property sort_order
-   * @x-autobe-specification Direct mapping from community_platform_post_images.sort_order. Together with community_platform_post_id, it determines ordering within a post and participates in a composite uniqueness constraint.
+     * @x-autobe-database-schema-property sort_order
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_post_images.sort_order. Together with
+     *   community_platform_post_id, it determines ordering within a post and
+     *   participates in a composite uniqueness constraint.
    */
   sortOrder: number & tags.Type<"int32">;
 
   /**
    * Timestamp when this attachment record was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from community_platform_post_images.created_at. Returned as an ISO 8601 date-time string.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_post_images.created_at. Returned as an ISO 8601
+     *   date-time string.
    */
   createdAt: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when this attachment record was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from community_platform_post_images.updated_at. Updated when attachment metadata/content changes.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_post_images.updated_at. Updated when attachment
+     *   metadata/content changes.
    */
   updatedAt: string & tags.Format<"date-time">;
 
   /**
    * Soft-deletion timestamp for the attachment. Null means the attachment is active.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from community_platform_post_images.deleted_at. If the record is soft-deleted, deletedAt contains the timestamp; otherwise it is null.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_post_images.deleted_at. If the record is
+     *   soft-deleted, deletedAt contains the timestamp; otherwise it is null.
    */
   deletedAt: (string & tags.Format<"date-time">) | null;
 };
@@ -111,88 +136,107 @@ export namespace ICommunityPlatformPostImage {
     /**
      * Unique identifier of the image attachment record.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from community_platform_post_images.id (UUID).
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_post_images.id (UUID).
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Canonical URL/URI for the stored image file used for rendering.
      *
-     * @x-autobe-database-schema-property file_url
-     * @x-autobe-specification Direct mapping from community_platform_post_images.file_url (stored URL/URI string).
+         * @x-autobe-database-schema-property file_url
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_post_images.file_url (stored URL/URI string).
      */
     file_url: string & tags.Format<"url">;
 
     /**
      * MIME content type of the image (e.g., image/png).
      *
-     * @x-autobe-database-schema-property content_type
-     * @x-autobe-specification Direct mapping from community_platform_post_images.content_type (MIME type).
+         * @x-autobe-database-schema-property content_type
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_post_images.content_type (MIME type).
      */
     content_type: string;
 
     /**
      * Image file size in bytes at upload time.
      *
-     * @x-autobe-database-schema-property file_size_bytes
-     * @x-autobe-specification Direct mapping from community_platform_post_images.file_size_bytes (non-negative integer).
+         * @x-autobe-database-schema-property file_size_bytes
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_post_images.file_size_bytes (non-negative
+         *   integer).
      */
     file_size_bytes: number & tags.Type<"int32"> & tags.Minimum<0>;
 
     /**
      * Original image width in pixels.
      *
-     * @x-autobe-database-schema-property image_width_px
-     * @x-autobe-specification Direct mapping from community_platform_post_images.image_width_px (original pixel width).
+         * @x-autobe-database-schema-property image_width_px
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_post_images.image_width_px (original pixel
+         *   width).
      */
     image_width_px: number & tags.Type<"int32"> & tags.Minimum<0>;
 
     /**
      * Original image height in pixels.
      *
-     * @x-autobe-database-schema-property image_height_px
-     * @x-autobe-specification Direct mapping from community_platform_post_images.image_height_px (original pixel height).
+         * @x-autobe-database-schema-property image_height_px
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_post_images.image_height_px (original pixel
+         *   height).
      */
     image_height_px: number & tags.Type<"int32"> & tags.Minimum<0>;
 
     /**
      * Alternative text describing the image for accessibility and fallback rendering.
      *
-     * @x-autobe-database-schema-property alt_text
-     * @x-autobe-specification Direct mapping from community_platform_post_images.alt_text (accessibility/fallback text).
+         * @x-autobe-database-schema-property alt_text
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_post_images.alt_text (accessibility/fallback
+         *   text).
      */
     alt_text: string;
 
     /**
      * Ordering index for this attachment within its parent post.
      *
-     * @x-autobe-database-schema-property sort_order
-     * @x-autobe-specification Direct mapping from community_platform_post_images.sort_order used by clients to order attachments deterministically.
+         * @x-autobe-database-schema-property sort_order
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_post_images.sort_order used by clients to order
+         *   attachments deterministically.
      */
     sort_order: number & tags.Type<"int32">;
 
     /**
      * Timestamp when this image attachment record was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from community_platform_post_images.created_at (record creation timestamp).
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_post_images.created_at (record creation
+         *   timestamp).
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when this image attachment record was last updated.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from community_platform_post_images.updated_at (last update timestamp).
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_post_images.updated_at (last update timestamp).
      */
     updated_at: string & tags.Format<"date-time">;
 
     /**
      * Soft-deletion timestamp. Null means the attachment is active; non-null means it was soft-deleted.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from community_platform_post_images.deleted_at. Return null when active; otherwise return the stored date-time string representing soft deletion time.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_post_images.deleted_at. Return null when active;
+         *   otherwise return the stored date-time string representing soft
+         *   deletion time.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };
@@ -204,56 +248,72 @@ export namespace ICommunityPlatformPostImage {
     /**
      * Canonical URL/URI of the stored image file.
      *
-     * @x-autobe-database-schema-property file_url
-     * @x-autobe-specification Direct mapping from community_platform_post_images.file_url. Store the provided URI string as-is.
+         * @x-autobe-database-schema-property file_url
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_post_images.file_url. Store the provided URI
+         *   string as-is.
      */
     file_url: string & tags.Format<"uri">;
 
     /**
      * MIME content type of the image file (e.g., image/png).
      *
-     * @x-autobe-database-schema-property content_type
-     * @x-autobe-specification Direct mapping from community_platform_post_images.content_type. Persist the provided MIME type string.
+         * @x-autobe-database-schema-property content_type
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_post_images.content_type. Persist the provided
+         *   MIME type string.
      */
     content_type: string;
 
     /**
      * Image file size in bytes at upload time.
      *
-     * @x-autobe-database-schema-property file_size_bytes
-     * @x-autobe-specification Direct mapping from community_platform_post_images.file_size_bytes. Persist the provided byte size integer.
+         * @x-autobe-database-schema-property file_size_bytes
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_post_images.file_size_bytes. Persist the
+         *   provided byte size integer.
      */
     file_size_bytes: number & tags.Type<"int32">;
 
     /**
      * Original image width in pixels.
      *
-     * @x-autobe-database-schema-property image_width_px
-     * @x-autobe-specification Direct mapping from community_platform_post_images.image_width_px. Persist the provided width in pixels.
+         * @x-autobe-database-schema-property image_width_px
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_post_images.image_width_px. Persist the provided
+         *   width in pixels.
      */
     image_width_px: number & tags.Type<"int32">;
 
     /**
      * Original image height in pixels.
      *
-     * @x-autobe-database-schema-property image_height_px
-     * @x-autobe-specification Direct mapping from community_platform_post_images.image_height_px. Persist the provided height in pixels.
+         * @x-autobe-database-schema-property image_height_px
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_post_images.image_height_px. Persist the
+         *   provided height in pixels.
      */
     image_height_px: number & tags.Type<"int32">;
 
     /**
      * Alternative text/description for accessibility and fallback rendering.
      *
-     * @x-autobe-database-schema-property alt_text
-     * @x-autobe-specification Direct mapping from community_platform_post_images.alt_text. Persist the provided alt text string.
+         * @x-autobe-database-schema-property alt_text
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_post_images.alt_text. Persist the provided alt
+         *   text string.
      */
     alt_text: string;
 
     /**
      * Display order of this image within the owning post.
      *
-     * @x-autobe-database-schema-property sort_order
-     * @x-autobe-specification Direct mapping from community_platform_post_images.sort_order. Persist the provided sort_order integer. Enforce uniqueness of (community_platform_post_id, sort_order) when inserting; reject on conflict.
+         * @x-autobe-database-schema-property sort_order
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_post_images.sort_order. Persist the provided
+         *   sort_order integer. Enforce uniqueness of
+         *   (community_platform_post_id, sort_order) when inserting; reject on
+         *   conflict.
      */
     sort_order: number & tags.Type<"int32">;
   };
@@ -265,24 +325,32 @@ export namespace ICommunityPlatformPostImage {
     /**
      * Canonical URL/URI of the stored image file for rendering.
      *
-     * @x-autobe-database-schema-property file_url
-     * @x-autobe-specification Direct mapping from community_platform_post_images.file_url. When provided, persist the new value; when omitted, do not overwrite the existing column.
+         * @x-autobe-database-schema-property file_url
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_post_images.file_url. When provided, persist the
+         *   new value; when omitted, do not overwrite the existing column.
      */
     file_url?: (string & tags.Format<"uri">) | undefined;
 
     /**
      * MIME content type of the image file (e.g., image/png).
      *
-     * @x-autobe-database-schema-property content_type
-     * @x-autobe-specification Direct mapping from community_platform_post_images.content_type (MIME type). When provided, persist the new value; when omitted, do not overwrite the existing column.
+         * @x-autobe-database-schema-property content_type
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_post_images.content_type (MIME type). When
+         *   provided, persist the new value; when omitted, do not overwrite the
+         *   existing column.
      */
     content_type?: string | undefined;
 
     /**
      * Image file size in bytes at the time of upload.
      *
-     * @x-autobe-database-schema-property file_size_bytes
-     * @x-autobe-specification Direct mapping from community_platform_post_images.file_size_bytes. Accept only non-negative integer values. When provided, persist the new value; when omitted, do not overwrite the existing column.
+         * @x-autobe-database-schema-property file_size_bytes
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_post_images.file_size_bytes. Accept only
+         *   non-negative integer values. When provided, persist the new value;
+         *   when omitted, do not overwrite the existing column.
      */
     file_size_bytes?:
       | (number & tags.Type<"int32"> & tags.Minimum<0>)
@@ -291,8 +359,11 @@ export namespace ICommunityPlatformPostImage {
     /**
      * Original image width in pixels.
      *
-     * @x-autobe-database-schema-property image_width_px
-     * @x-autobe-specification Direct mapping from community_platform_post_images.image_width_px. Accept only non-negative integer values. When provided, persist the new value; when omitted, do not overwrite the existing column.
+         * @x-autobe-database-schema-property image_width_px
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_post_images.image_width_px. Accept only
+         *   non-negative integer values. When provided, persist the new value;
+         *   when omitted, do not overwrite the existing column.
      */
     image_width_px?:
       | (number & tags.Type<"int32"> & tags.Minimum<0>)
@@ -301,8 +372,11 @@ export namespace ICommunityPlatformPostImage {
     /**
      * Original image height in pixels.
      *
-     * @x-autobe-database-schema-property image_height_px
-     * @x-autobe-specification Direct mapping from community_platform_post_images.image_height_px. Accept only non-negative integer values. When provided, persist the new value; when omitted, do not overwrite the existing column.
+         * @x-autobe-database-schema-property image_height_px
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_post_images.image_height_px. Accept only
+         *   non-negative integer values. When provided, persist the new value;
+         *   when omitted, do not overwrite the existing column.
      */
     image_height_px?:
       | (number & tags.Type<"int32"> & tags.Minimum<0>)
@@ -311,16 +385,21 @@ export namespace ICommunityPlatformPostImage {
     /**
      * Alternative text/description for accessibility and fallback rendering.
      *
-     * @x-autobe-database-schema-property alt_text
-     * @x-autobe-specification Direct mapping from community_platform_post_images.alt_text. When provided, persist the new value; when omitted, do not overwrite the existing column.
+         * @x-autobe-database-schema-property alt_text
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_post_images.alt_text. When provided, persist the
+         *   new value; when omitted, do not overwrite the existing column.
      */
     alt_text?: string | undefined;
 
     /**
      * Display order of this image within the owning post.
      *
-     * @x-autobe-database-schema-property sort_order
-     * @x-autobe-specification Direct mapping from community_platform_post_images.sort_order. Accept only non-negative integer values. When provided, persist the new value; when omitted, do not overwrite the existing column.
+         * @x-autobe-database-schema-property sort_order
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_post_images.sort_order. Accept only non-negative
+         *   integer values. When provided, persist the new value; when omitted,
+         *   do not overwrite the existing column.
      */
     sort_order?: (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };
@@ -332,21 +411,40 @@ export namespace ICommunityPlatformPostImage {
     /**
      * Mutation instructions describing how to add new image attachments, update existing ones, reorder them, or remove (soft-delete) attachments for the specified post.
      *
-     * @x-autobe-specification `mutations` is an array of attachment mutation instructions for the target {postId}. Each mutation item (ICommunityPlatformPostImageMutation) drives server-side mapping to community_platform_post_images columns: for additions, insert with deleted_at=null and set file_url/content_type/file_size_bytes/image_width_px/image_height_px/alt_text/sort_order; for updates, update only mutable rendering/order fields of the active row; for removals, soft-delete by setting deleted_at=now(). Before applying, the server loads active attachments for the post (deleted_at is null) and validates that update/remove ids belong to that set. After applying, enforce ordering by sort_order and any business invariants (e.g., final non-empty set when required by post_type), using a single transaction.
+         * @x-autobe-specification `mutations` is an array of attachment
+         *   mutation instructions for the target {postId}. Each mutation item
+         *   (ICommunityPlatformPostImageMutation) drives server-side mapping to
+         *   community_platform_post_images columns: for additions, insert with
+         *   deleted_at=null and set
+         *   file_url/content_type/file_size_bytes/image_width_px/image_height_px/alt_text/sort_order;
+         *   for updates, update only mutable rendering/order fields of the
+         *   active row; for removals, soft-delete by setting deleted_at=now().
+         *   Before applying, the server loads active attachments for the post
+         *   (deleted_at is null) and validates that update/remove ids belong to
+         *   that set. After applying, enforce ordering by sort_order and any
+         *   business invariants (e.g., final non-empty set when required by
+         *   post_type), using a single transaction.
      */
     mutations: ICommunityPlatformPostImageMutation[] & tags.MinItems<1>;
 
     /**
      * Target page number (1-indexed) for the attachment summaries returned by the server.
      *
-     * @x-autobe-specification Optional pagination parameter for how the server should paginate the returned attachment summaries. It is 1-indexed: if omitted or null, default to page 1 (first page). Requesting beyond the available range yields an empty result set with valid pagination metadata in the response.
+         * @x-autobe-specification Optional pagination parameter for how the
+         *   server should paginate the returned attachment summaries. It is
+         *   1-indexed: if omitted or null, default to page 1 (first page).
+         *   Requesting beyond the available range yields an empty result set
+         *   with valid pagination metadata in the response.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
 
     /**
      * Maximum number of attachment summaries to return per page.
      *
-     * @x-autobe-specification Optional pagination parameter specifying the maximum number of attachment summaries to return per page. If omitted, null, or undefined, default to 100. The server may enforce an upper bound to protect resources.
+         * @x-autobe-specification Optional pagination parameter specifying the
+         *   maximum number of attachment summaries to return per page. If
+         *   omitted, null, or undefined, default to 100. The server may enforce
+         *   an upper bound to protect resources.
      */
     limit?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };

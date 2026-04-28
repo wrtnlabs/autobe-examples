@@ -27,8 +27,9 @@ export type IRedditLikeCommunityBan = {
    *
    * Generated automatically when the ban is created. Used to reference this specific ban in unban operations and moderation audit logs.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from reddit_like_community_bans.id. UUID primary key generated on insert.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_community_bans.id. UUID primary key generated on insert.
    */
   id: string & tags.Format<"uuid">;
 
@@ -39,8 +40,10 @@ export type IRedditLikeCommunityBan = {
    *
    * **Access Control**: Only visible to authenticated members. Community must exist and not be soft-deleted.
    *
-   * @x-autobe-database-schema-property community
-   * @x-autobe-specification JOIN from reddit_like_community_bans.community_id to reddit_like_communities.id. Returns IRedditLikeCommunity.ISummary via belongs-to relation.
+     * @x-autobe-database-schema-property community
+     * @x-autobe-specification JOIN from reddit_like_community_bans.community_id
+     *   to reddit_like_communities.id. Returns IRedditLikeCommunity.ISummary
+     *   via belongs-to relation.
    */
   community: IRedditLikeCommunity.ISummary;
 
@@ -51,8 +54,10 @@ export type IRedditLikeCommunityBan = {
    *
    * **Access Control**: Member must exist and not be soft-deleted. Visible to community moderators and the banned member themselves.
    *
-   * @x-autobe-database-schema-property bannedMember
-   * @x-autobe-specification JOIN from reddit_like_community_bans.member_id to reddit_like_members.id. Returns IRedditLikeMember.ISummary via belongs-to relation.
+     * @x-autobe-database-schema-property bannedMember
+     * @x-autobe-specification JOIN from reddit_like_community_bans.member_id to
+     *   reddit_like_members.id. Returns IRedditLikeMember.ISummary via
+     *   belongs-to relation.
    */
   bannedMember: IRedditLikeMember.ISummary;
 
@@ -63,8 +68,10 @@ export type IRedditLikeCommunityBan = {
    *
    * **Access Control**: Must be a member with moderator or owner role in the target community. Visible to all authenticated users viewing ban records.
    *
-   * @x-autobe-database-schema-property bannedBy
-   * @x-autobe-specification JOIN from reddit_like_community_bans.banned_by_id to reddit_like_members.id. Returns IRedditLikeMember.ISummary via belongs-to relation.
+     * @x-autobe-database-schema-property bannedBy
+     * @x-autobe-specification JOIN from reddit_like_community_bans.banned_by_id
+     *   to reddit_like_members.id. Returns IRedditLikeMember.ISummary via
+     *   belongs-to relation.
    */
   bannedBy: IRedditLikeMember.ISummary;
 
@@ -75,8 +82,9 @@ export type IRedditLikeCommunityBan = {
    *
    * **Format**: ISO 8601 date-time string with timezone (timestamptz).
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from reddit_like_community_bans.created_at. Set automatically on insert.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_community_bans.created_at. Set automatically on insert.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -87,8 +95,10 @@ export type IRedditLikeCommunityBan = {
    *
    * **Format**: ISO 8601 date-time string with timezone (timestamptz).
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from reddit_like_community_bans.updated_at. Updated on any record modification.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_community_bans.updated_at. Updated on any record
+     *   modification.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -101,8 +111,10 @@ export type IRedditLikeCommunityBan = {
    *
    * **Format**: ISO 8601 date-time string with timezone, or null for active bans.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from reddit_like_community_bans.deleted_at. Nullable - null means active ban, non-null means ban was lifted.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_community_bans.deleted_at. Nullable - null means active
+     *   ban, non-null means ban was lifted.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -140,8 +152,10 @@ export namespace IRedditLikeCommunityBan {
      * - Referenced member must not be soft-deleted
      * - Member cannot already be actively banned from this community
      *
-     * @x-autobe-database-schema-property member_id
-     * @x-autobe-specification Direct mapping from reddit_like_community_bans.member_id. UUID format. References the member to ban from the community.
+         * @x-autobe-database-schema-property member_id
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_community_bans.member_id. UUID format. References the
+         *   member to ban from the community.
      */
     member_id: string & tags.Format<"uuid">;
   };
@@ -172,8 +186,11 @@ export namespace IRedditLikeCommunityBan {
      *
      * **Optional**: If omitted, returns bans for all members in the community.
      *
-     * @x-autobe-database-schema-property member_id
-     * @x-autobe-specification Filter parameter that maps to reddit_like_community_bans.member_id column. Used in WHERE clause to filter bans for a specific member. Optional - if omitted, returns all banned members.
+         * @x-autobe-database-schema-property member_id
+         * @x-autobe-specification Filter parameter that maps to
+         *   reddit_like_community_bans.member_id column. Used in WHERE clause
+         *   to filter bans for a specific member. Optional - if omitted,
+         *   returns all banned members.
      */
     member_id?: (string & tags.Format<"uuid">) | undefined;
 
@@ -186,7 +203,10 @@ export namespace IRedditLikeCommunityBan {
      *
      * **Optional**: If omitted, no lower bound is applied to the date filter.
      *
-     * @x-autobe-specification Query parameter for filtering bans by creation date range start. Maps to WHERE created_at >= created_at_start in the query. Not a direct DB column - this is a filter boundary parameter.
+         * @x-autobe-specification Query parameter for filtering bans by
+         *   creation date range start. Maps to WHERE created_at >=
+         *   created_at_start in the query. Not a direct DB column - this is a
+         *   filter boundary parameter.
      */
     created_at_start?: (string & tags.Format<"date-time">) | undefined;
 
@@ -199,7 +219,10 @@ export namespace IRedditLikeCommunityBan {
      *
      * **Optional**: If omitted, no upper bound is applied to the date filter.
      *
-     * @x-autobe-specification Query parameter for filtering bans by creation date range end. Maps to WHERE created_at <= created_at_end in the query. Not a direct DB column - this is a filter boundary parameter.
+         * @x-autobe-specification Query parameter for filtering bans by
+         *   creation date range end. Maps to WHERE created_at <= created_at_end
+         *   in the query. Not a direct DB column - this is a filter boundary
+         *   parameter.
      */
     created_at_end?: (string & tags.Format<"date-time">) | undefined;
 
@@ -212,7 +235,10 @@ export namespace IRedditLikeCommunityBan {
      *
      * **Optional**: Omit for the first page or when using `page` parameter instead.
      *
-     * @x-autobe-specification Cursor-based pagination parameter. Contains an opaque cursor string from a previous response's pagination metadata. Used to fetch the next page of results. Not stored in database - computed by the pagination system.
+         * @x-autobe-specification Cursor-based pagination parameter. Contains
+         *   an opaque cursor string from a previous response's pagination
+         *   metadata. Used to fetch the next page of results. Not stored in
+         *   database - computed by the pagination system.
      */
     cursor?: string | undefined;
 
@@ -227,7 +253,9 @@ export namespace IRedditLikeCommunityBan {
      *
      * **Note**: Requesting more than 100 records will be capped at 100.
      *
-     * @x-autobe-specification Pagination limit parameter. Controls maximum number of records returned per page. Not stored in database - used by query LIMIT clause. Valid range: 1-100.
+         * @x-autobe-specification Pagination limit parameter. Controls maximum
+         *   number of records returned per page. Not stored in database - used
+         *   by query LIMIT clause. Valid range: 1-100.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -244,7 +272,9 @@ export namespace IRedditLikeCommunityBan {
      *
      * **Note**: Use either `page` OR `cursor` for pagination, not both simultaneously.
      *
-     * @x-autobe-specification Pagination page number parameter (1-indexed). Not stored in database - used for offset-based pagination alternative to cursor. Defaults to 1 if null or omitted.
+         * @x-autobe-specification Pagination page number parameter (1-indexed).
+         *   Not stored in database - used for offset-based pagination
+         *   alternative to cursor. Defaults to 1 if null or omitted.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };
@@ -268,8 +298,9 @@ export namespace IRedditLikeCommunityBan {
      *
      * This UUID serves as the primary key for the ban record and is used to reference specific bans when lifting them or performing audit operations.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from reddit_like_community_bans.id. UUID primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_community_bans.id. UUID primary key.
      */
     id: string & tags.Format<"uuid">;
 
@@ -280,8 +311,10 @@ export namespace IRedditLikeCommunityBan {
      *
      * **Access Control**: Only visible to community moderators and owners.
      *
-     * @x-autobe-database-schema-property bannedMember
-     * @x-autobe-specification JOIN from reddit_like_community_bans.member_id to reddit_like_members.id. Returns IRedditLikeMember.ISummary with member profile data.
+         * @x-autobe-database-schema-property bannedMember
+         * @x-autobe-specification JOIN from
+         *   reddit_like_community_bans.member_id to reddit_like_members.id.
+         *   Returns IRedditLikeMember.ISummary with member profile data.
      */
     bannedMember: IRedditLikeMember.ISummary;
 
@@ -292,8 +325,10 @@ export namespace IRedditLikeCommunityBan {
      *
      * **Access Control**: Visible to all moderators viewing the ban list.
      *
-     * @x-autobe-database-schema-property bannedBy
-     * @x-autobe-specification JOIN from reddit_like_community_bans.banned_by_id to reddit_like_members.id. Returns IRedditLikeMember.ISummary with moderator profile data.
+         * @x-autobe-database-schema-property bannedBy
+         * @x-autobe-specification JOIN from
+         *   reddit_like_community_bans.banned_by_id to reddit_like_members.id.
+         *   Returns IRedditLikeMember.ISummary with moderator profile data.
      */
     bannedBy: IRedditLikeMember.ISummary;
 
@@ -302,8 +337,9 @@ export namespace IRedditLikeCommunityBan {
      *
      * Records the exact moment when the moderator issued the ban against the member. This timestamp is used for audit trails and determining ban duration.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from reddit_like_community_bans.created_at. UTC timestamp with timezone.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_community_bans.created_at. UTC timestamp with timezone.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -312,8 +348,9 @@ export namespace IRedditLikeCommunityBan {
      *
      * This field is updated whenever the ban record is modified, such as when the ban is lifted (deleted_at is set). It provides a complete audit trail of ban lifecycle changes.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from reddit_like_community_bans.updated_at. UTC timestamp with timezone.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_community_bans.updated_at. UTC timestamp with timezone.
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -324,8 +361,10 @@ export namespace IRedditLikeCommunityBan {
      *
      * **Nullable**: Active bans have NULL; lifted bans have a timestamp value.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from reddit_like_community_bans.deleted_at. Nullable UTC timestamp with timezone. NULL indicates active ban.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_community_bans.deleted_at. Nullable UTC timestamp with
+         *   timezone. NULL indicates active ban.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };

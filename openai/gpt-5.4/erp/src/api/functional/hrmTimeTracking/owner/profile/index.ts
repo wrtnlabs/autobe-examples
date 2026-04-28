@@ -27,7 +27,9 @@ import { IHrmTimeTrackingManagerSession } from "../../../../structures/IHrmTimeT
  * @param props.body Updated values for the authenticated user's global profile
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor owner
- * @x-autobe-specification Resolve the caller from the authenticated session and map that identity to the single global user profile for the signed-in account.
+ * @x-autobe-specification Resolve the caller from the authenticated session and
+ *   map that identity to the single global user profile for the signed-in
+ *   account.
  *
  * Load the existing shared profile record for the authenticated user inside a transaction or equivalent atomic update boundary. Validate that the operation is targeting the caller's own profile context only. Do not accept or infer any organization-scoped override record, and do not route the write through employee-specific data structures.
  *

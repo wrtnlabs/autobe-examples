@@ -23,9 +23,10 @@ export class ShoppingmallMemberPost_purchaseCancellation_requestsController {
    *
    * @param connection
    * @param body Cancellation request creation data including the target order item ID and customer's reason for cancellation.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Create a new cancellation request for the specified order item.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Create a new cancellation request for the
+     *   specified order item.
    *
    * 1. Validate the order item exists and belongs to the authenticated customer
    * 2. Verify order item status is 'paid' (not shipped, delivered, cancelled, or refunded)
@@ -73,9 +74,11 @@ export class ShoppingmallMemberPost_purchaseCancellation_requestsController {
    *
    * @param connection
    * @param body Search criteria for filtering cancellation requests including status filter, creation date range, order ID filter, and pagination parameters (take, skip, orderBy).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query the shopping_mall_post_purchase_cancellation_requests table with role-based data isolation.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query the
+     *   shopping_mall_post_purchase_cancellation_requests table with role-based
+     *   data isolation.
    *
    * For member (customer) actors: Filter by shopping_mall_member_id matching the authenticated user's ID.
    * For seller actors: Filter by shopping_mall_seller_id matching the authenticated seller's ID.
@@ -126,9 +129,11 @@ export class ShoppingmallMemberPost_purchaseCancellation_requestsController {
    *
    * @param connection
    * @param id Unique identifier of the cancellation request (UUID format).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query the shopping_mall_post_purchase_cancellation_requests table by the provided UUID.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query the
+     *   shopping_mall_post_purchase_cancellation_requests table by the provided
+     *   UUID.
    *
    * 1. Validate the ID parameter is a valid UUID format.
    * 2. Retrieve the cancellation request record including all fields: id, shopping_mall_member_id, shopping_mall_order_item_id, shopping_mall_seller_id, reason, status, seller_response_reason, created_at, updated_at, deleted_at.

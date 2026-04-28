@@ -21,7 +21,8 @@ import { IRedditClonePostSnapshot } from "../../../../structures/IRedditClonePos
  * @param props.body Optional metadata for the snapshot creation. The post state is automatically captured from the current post data.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Create a point-in-time snapshot of the specified post's current state.
+ * @x-autobe-specification Create a point-in-time snapshot of the specified
+ *   post's current state.
  *
  * 1. Validate the postId parameter is a valid UUID
  * 2. Query the reddit_clone_posts table for the post with the given id
@@ -131,7 +132,8 @@ export namespace create {
  * @param props.body Search criteria including pagination parameters (page, pageSize), sorting options (sortBy, sortOrder), and optional date range filters for snapshot creation time.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query reddit_clone_post_snapshots table filtered by reddit_clone_post_id matching the postId parameter.
+ * @x-autobe-specification Query reddit_clone_post_snapshots table filtered by
+ *   reddit_clone_post_id matching the postId parameter.
  *
  * Apply pagination from request body (page, pageSize) with cursor-based pagination for large result sets.
  *
@@ -247,7 +249,8 @@ export namespace index {
  * @param props.snapshotId UUID of the specific snapshot to retrieve. This uniquely identifies the point-in-time capture within the post's snapshot history.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query the reddit_clone_post_snapshots table for a record matching both the postId (reddit_clone_post_id) and snapshotId (id).
+ * @x-autobe-specification Query the reddit_clone_post_snapshots table for a
+ *   record matching both the postId (reddit_clone_post_id) and snapshotId (id).
  *
  * 1. Validate that both postId and snapshotId are valid UUIDs
  * 2. Query reddit_clone_post_snapshots WHERE id = snapshotId AND reddit_clone_post_id = postId

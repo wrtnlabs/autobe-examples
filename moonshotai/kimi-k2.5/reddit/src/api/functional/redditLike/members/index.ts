@@ -26,7 +26,8 @@ import { IRedditLikeMember } from "../../../structures/IRedditLikeMember";
  * @param props.body Search criteria and pagination parameters for filtering members
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query reddit_like_members table with pagination and filtering capabilities.
+ * @x-autobe-specification Query reddit_like_members table with pagination and
+ *   filtering capabilities.
  *
  * Apply search filters:
  * - Partial email matching (LIKE %email%)
@@ -136,7 +137,8 @@ export namespace index {
  * @param props.memberId Target member's unique identifier (UUID)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query the reddit_like_members table by primary key id matching the memberId path parameter.
+ * @x-autobe-specification Query the reddit_like_members table by primary key id
+ *   matching the memberId path parameter.
  *
  * Return the member record with public fields: id, username, email_verified, created_at, updated_at.
  *

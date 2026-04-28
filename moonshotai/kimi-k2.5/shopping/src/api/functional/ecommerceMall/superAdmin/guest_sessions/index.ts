@@ -24,7 +24,8 @@ import { IPageIEcommerceMallGuestSession } from "../../../../structures/IPageIEc
  * @param props.body Search criteria and pagination parameters for filtering guest sessions by IP, referrer, date ranges, and expiration status
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor superAdmin
- * @x-autobe-specification Query ecommerce_mall_guest_sessions table with pagination and filtering support.
+ * @x-autobe-specification Query ecommerce_mall_guest_sessions table with
+ *   pagination and filtering support.
  *
  * Apply search filters on:
  * - IP address (partial match or exact)
@@ -136,7 +137,8 @@ export namespace index {
  * @param props.sessionId Unique identifier of the guest session (UUID format)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor superAdmin
- * @x-autobe-specification Query the ecommerce_mall_guest_sessions table by the provided sessionId parameter.
+ * @x-autobe-specification Query the ecommerce_mall_guest_sessions table by the
+ *   provided sessionId parameter.
  *
  * Implementation steps:
  * 1. Validate the sessionId parameter as a valid UUID format

@@ -133,7 +133,8 @@ export namespace create {
  * @param props.body Search criteria including status filter, date range, sorting options, and pagination parameters.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query ecommerce_mall_orders table with pagination and filtering.
+ * @x-autobe-specification Query ecommerce_mall_orders table with pagination and
+ *   filtering.
  *
  * Authorization:
  * - For member actors: filter by ecommerce_mall_member_id = current_user.id
@@ -262,7 +263,8 @@ export namespace index {
  * @param props.id Unique identifier of the order to retrieve.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Retrieve order by UUID and return full details with all related data.
+ * @x-autobe-specification Retrieve order by UUID and return full details with
+ *   all related data.
  *
  * 1. Query ecommerce_mall_orders by id
  * 2. Join with ecommerce_mall_members to get customer information
@@ -363,7 +365,8 @@ export namespace at {
  * @param props.orderId The unique identifier of the order to retrieve shipments for.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query ecommerce_mall_shipments table filtering by order_id matching the path parameter.
+ * @x-autobe-specification Query ecommerce_mall_shipments table filtering by
+ *   order_id matching the path parameter.
  *
  * Join with ecommerce_mall_shipment_items to retrieve order items included in each shipment, including item quantity_shipped, status, and timestamps.
  *

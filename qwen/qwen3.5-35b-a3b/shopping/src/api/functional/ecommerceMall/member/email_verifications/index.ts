@@ -20,7 +20,8 @@ import { IPageIEcommerceMallMemberEmailVerification } from "../../../../structur
  * @param props.body Search criteria for email verification records including status filters, date ranges, email patterns, member ID filters, and pagination parameters.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query the ecommerce_mall_member_email_verifications table with the following logic:
+ * @x-autobe-specification Query the ecommerce_mall_member_email_verifications
+ *   table with the following logic:
  *
  * 1. Apply search filters from request body:
  *    - status: filter by exact status value (pending, used, expired, archived)
@@ -151,7 +152,8 @@ export namespace index {
  * @param props.verificationId The unique identifier of the email verification record to retrieve.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query the ecommerce_mall_member_email_verifications table for the record matching the verificationId.
+ * @x-autobe-specification Query the ecommerce_mall_member_email_verifications
+ *   table for the record matching the verificationId.
  *
  * Return the complete email verification entity if found, including:
  * - id: the verification record UUID

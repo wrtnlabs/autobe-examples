@@ -24,7 +24,10 @@ export type IHrmWeeklySummaryReportHoursBreakdown = {
    *
    * Sum of hrm_timelogs.duration_minutes for all timelogs belonging to this project within the week range, converted from minutes to hours.
    *
-   * @x-autobe-specification Computed as SUM(hrm_timelogs.duration_minutes)/60 where hrm_timelogs.hrm_project_id matches the project and hrm_timelogs.date falls within the reporting week. Includes both billable and non-billable time entries.
+     * @x-autobe-specification Computed as SUM(hrm_timelogs.duration_minutes)/60
+     *   where hrm_timelogs.hrm_project_id matches the project and
+     *   hrm_timelogs.date falls within the reporting week. Includes both
+     *   billable and non-billable time entries.
    */
   total_hours: number;
 
@@ -37,7 +40,11 @@ export type IHrmWeeklySummaryReportHoursBreakdown = {
    *
    * Sum of hrm_timelogs.duration_minutes for all billable timelogs (hrm_timelogs.billable = true) belonging to this project within the week range, converted from minutes to hours.
    *
-   * @x-autobe-specification Computed as SUM(CASE WHEN hrm_timelogs.billable = true THEN hrm_timelogs.duration_minutes ELSE 0 END)/60 where hrm_timelogs.hrm_project_id matches the project and hrm_timelogs.date falls within the reporting week. Only includes timelogs marked as billable.
+     * @x-autobe-specification Computed as SUM(CASE WHEN hrm_timelogs.billable =
+     *   true THEN hrm_timelogs.duration_minutes ELSE 0 END)/60 where
+     *   hrm_timelogs.hrm_project_id matches the project and hrm_timelogs.date
+     *   falls within the reporting week. Only includes timelogs marked as
+     *   billable.
    */
   billable_hours: number;
 
@@ -50,7 +57,8 @@ export type IHrmWeeklySummaryReportHoursBreakdown = {
    *
    * Derived by subtracting billable_hours from total_hours. This captures all time entries marked as non-billable (hrm_timelogs.billable = false) for this project within the week range.
    *
-   * @x-autobe-specification Computed as total_hours minus billable_hours. Represents the portion of time that is not chargeable to clients.
+     * @x-autobe-specification Computed as total_hours minus billable_hours.
+     *   Represents the portion of time that is not chargeable to clients.
    */
   non_billable_hours: number;
 };

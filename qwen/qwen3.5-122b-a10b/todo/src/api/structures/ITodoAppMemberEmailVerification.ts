@@ -28,8 +28,10 @@ export type ITodoAppMemberEmailVerification = {
    *
    * This is the primary key of the verification record, generated as a UUID when the record is created. It is used to retrieve the specific verification record via API endpoints.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from todo_app_member_email_verifications.id. UUID primary key, unique constraint.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   todo_app_member_email_verifications.id. UUID primary key, unique
+     *   constraint.
    */
   id: string & tags.Format<"uuid">;
 
@@ -40,8 +42,10 @@ export type ITodoAppMemberEmailVerification = {
    *
    * The email must be in valid email format and is used to send the verification token to the member.
    *
-   * @x-autobe-database-schema-property email
-   * @x-autobe-specification Direct mapping from todo_app_member_email_verifications.email. String, email format validation.
+     * @x-autobe-database-schema-property email
+     * @x-autobe-specification Direct mapping from
+     *   todo_app_member_email_verifications.email. String, email format
+     *   validation.
    */
   email: string & tags.Format<"email">;
 
@@ -52,8 +56,9 @@ export type ITodoAppMemberEmailVerification = {
    *
    * The token has a unique constraint at the database level, ensuring no two verification records share the same token.
    *
-   * @x-autobe-database-schema-property token
-   * @x-autobe-specification Direct mapping from todo_app_member_email_verifications.token. String, unique constraint.
+     * @x-autobe-database-schema-property token
+     * @x-autobe-specification Direct mapping from
+     *   todo_app_member_email_verifications.token. String, unique constraint.
    */
   token: string;
 
@@ -62,8 +67,10 @@ export type ITodoAppMemberEmailVerification = {
    *
    * Records the exact time when the verification token was generated and the record was inserted into the database. This is used to track when the verification process was initiated.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from todo_app_member_email_verifications.created_at. DateTime with timestamptz format.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   todo_app_member_email_verifications.created_at. DateTime with
+     *   timestamptz format.
    */
   createdAt: string & tags.Format<"date-time">;
 
@@ -72,8 +79,10 @@ export type ITodoAppMemberEmailVerification = {
    *
    * Tokens are invalidated after this time to prevent replay attacks and ensure time-limited verification windows. If the current time exceeds expiredAt, the token is considered invalid and verification will fail.
    *
-   * @x-autobe-database-schema-property expired_at
-   * @x-autobe-specification Direct mapping from todo_app_member_email_verifications.expired_at. DateTime with timestamptz format.
+     * @x-autobe-database-schema-property expired_at
+     * @x-autobe-specification Direct mapping from
+     *   todo_app_member_email_verifications.expired_at. DateTime with
+     *   timestamptz format.
    */
   expiredAt: string & tags.Format<"date-time">;
 
@@ -82,16 +91,20 @@ export type ITodoAppMemberEmailVerification = {
    *
    * This field is null until the token is successfully verified. Once set, the token is considered used and cannot be reused. A non-null value indicates the email address has been confirmed as owned by the member.
    *
-   * @x-autobe-database-schema-property verified_at
-   * @x-autobe-specification Direct mapping from todo_app_member_email_verifications.verified_at. Nullable DateTime with timestamptz format. Null if pending, timestamp if verified.
+     * @x-autobe-database-schema-property verified_at
+     * @x-autobe-specification Direct mapping from
+     *   todo_app_member_email_verifications.verified_at. Nullable DateTime with
+     *   timestamptz format. Null if pending, timestamp if verified.
    */
   verifiedAt: (string & tags.Format<"date-time">) | null;
 
   /**
    * Member account associated with this email verification record.
    *
-   * @x-autobe-specification Join from todo_app_member_email_verifications.todo_app_member_id to todo_app_members.id. Returns ITodoAppMember.ISummary.
-   * @x-autobe-database-schema-property member
+     * @x-autobe-specification Join from
+     *   todo_app_member_email_verifications.todo_app_member_id to
+     *   todo_app_members.id. Returns ITodoAppMember.ISummary.
+     * @x-autobe-database-schema-property member
    */
   member: ITodoAppMember.ISummary;
 };
@@ -131,8 +144,10 @@ export namespace ITodoAppMemberEmailVerification {
      *
      * Tokens are single-use and expire automatically. Do not share this token with others.
      *
-     * @x-autobe-database-schema-property token
-     * @x-autobe-specification Direct mapping from todo_app_member_email_verifications.token. Cryptographically secure random string used to validate the verification request.
+         * @x-autobe-database-schema-property token
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_member_email_verifications.token. Cryptographically secure
+         *   random string used to validate the verification request.
      */
     token: string;
   };
@@ -170,8 +185,11 @@ export namespace ITodoAppMemberEmailVerification {
      * - Set to current timestamp when token is successfully validated
      * - Once set, the verification token becomes invalid and cannot be reused
      *
-     * @x-autobe-specification Direct mapping from todo_app_member_email_verifications.verified_at column. Set to current timestamp when verification token is successfully validated. This field is null until verification is completed.
-     * @x-autobe-database-schema-property verified_at
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_member_email_verifications.verified_at column. Set to
+         *   current timestamp when verification token is successfully
+         *   validated. This field is null until verification is completed.
+         * @x-autobe-database-schema-property verified_at
      */
     verified_at?: (string & tags.Format<"date-time">) | null | undefined;
   };

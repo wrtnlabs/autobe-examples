@@ -11,14 +11,15 @@ export namespace IPageIEcommerceMallUserBanOfCustomer {
     /**
      * Page information.
      *
-     * @x-autobe-specification Pagination information for the page.
+         * @x-autobe-specification Pagination information for the page.
      */
     pagination: IPage.IPagination;
 
     /**
      * List of records.
      *
-     * @x-autobe-specification List of records of type IEcommerceMallUserBanOfCustomer.ISummary.
+         * @x-autobe-specification List of records of type
+         *   IEcommerceMallUserBanOfCustomer.ISummary.
      */
     data: IEcommerceMallUserBanOfCustomer.ISummary[];
   };

@@ -24,9 +24,10 @@ export class PrivatetodoappMemberSessionsController {
    *
    * @param connection
    * @param body Search criteria including IP filter, date ranges, and pagination parameters for session listing
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query private_todo_app_member_sessions table filtered by the authenticated member's ID.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query private_todo_app_member_sessions table
+     *   filtered by the authenticated member's ID.
    *
    * Implementation steps:
    * 1. Extract member_id from JWT authentication context
@@ -74,9 +75,10 @@ export class PrivatetodoappMemberSessionsController {
    *
    * @param connection
    * @param sessionId Unique identifier of the session to retrieve
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Retrieve a specific session record from private_todo_app_member_sessions table by sessionId UUID.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Retrieve a specific session record from
+     *   private_todo_app_member_sessions table by sessionId UUID.
    *
    * Implementation steps:
    * 1. Validate sessionId parameter is a valid UUID format

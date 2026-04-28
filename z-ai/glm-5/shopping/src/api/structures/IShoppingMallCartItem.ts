@@ -10,48 +10,63 @@ export type IShoppingMallCartItem = {
   /**
    * Unique identifier for this cart item.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_cart_items.id. UUID primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from shopping_mall_cart_items.id.
+     *   UUID primary key.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Number of units of the variant selected for purchase.
    *
-   * @x-autobe-database-schema-property quantity
-   * @x-autobe-specification Direct mapping from shopping_mall_cart_items.quantity. Positive integer >= 1. When same variant added again, quantities merged by addition.
+     * @x-autobe-database-schema-property quantity
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_cart_items.quantity. Positive integer >= 1. When same
+     *   variant added again, quantities merged by addition.
    */
   quantity: number & tags.Type<"int32"> & tags.Minimum<1>;
 
   /**
    * Flag indicating whether this item's variant is unavailable (deleted by seller, out of stock, or seller suspended). Unavailable items remain in cart but cannot be checked out.
    *
-   * @x-autobe-database-schema-property unavailable
-   * @x-autobe-specification Direct mapping from shopping_mall_cart_items.unavailable. System-managed boolean set when variant deleted_at IS NOT NULL or seller suspended/banned. Cleared when stock restocked.
+     * @x-autobe-database-schema-property unavailable
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_cart_items.unavailable. System-managed boolean set when
+     *   variant deleted_at IS NOT NULL or seller suspended/banned. Cleared when
+     *   stock restocked.
    */
   unavailable: boolean;
 
   /**
    * The selected product variant (SKU) with its configuration options, pricing, and stock availability.
    *
-   * @x-autobe-database-schema-property variant
-   * @x-autobe-specification Belongs-to relation mapped via shopping_mall_product_variant_id foreign key. JOIN shopping_mall_product_variants on id = shopping_mall_product_variant_id, then JOIN shopping_mall_products for context. Returns IShoppingMallProductVariant.ISummary with sku_code, option_values, price, stock_quantity, and product details.
+     * @x-autobe-database-schema-property variant
+     * @x-autobe-specification Belongs-to relation mapped via
+     *   shopping_mall_product_variant_id foreign key. JOIN
+     *   shopping_mall_product_variants on id =
+     *   shopping_mall_product_variant_id, then JOIN shopping_mall_products for
+     *   context. Returns IShoppingMallProductVariant.ISummary with sku_code,
+     *   option_values, price, stock_quantity, and product details.
    */
   variant: IShoppingMallProductVariant.ISummary;
 
   /**
    * Timestamp when the item was first added to the cart.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from shopping_mall_cart_items.created_at. ISO 8601 timestamp with timezone. Set when item first added to cart.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_cart_items.created_at. ISO 8601 timestamp with timezone.
+     *   Set when item first added to cart.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the cart item was last modified.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from shopping_mall_cart_items.updated_at. ISO 8601 timestamp with timezone. Updated when quantities merged or modified.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_cart_items.updated_at. ISO 8601 timestamp with timezone.
+     *   Updated when quantities merged or modified.
    */
   updated_at: string & tags.Format<"date-time">;
 };
@@ -63,8 +78,14 @@ export namespace IShoppingMallCartItem {
     /**
      * Number of units of the product variant the customer intends to purchase. Must be at least 1. Updating quantity does not affect variant selection.
      *
-     * @x-autobe-database-schema-property quantity
-     * @x-autobe-specification Direct mapping to shopping_mall_cart_items.quantity. Must be a positive integer >= 1. When updating quantity, the cart's updated_at timestamp is also updated. If stock is insufficient for requested quantity, update succeeds but unavailable flag may be set by system. Quantity changes do not affect the variant selection - that remains immutable.
+         * @x-autobe-database-schema-property quantity
+         * @x-autobe-specification Direct mapping to
+         *   shopping_mall_cart_items.quantity. Must be a positive integer >= 1.
+         *   When updating quantity, the cart's updated_at timestamp is also
+         *   updated. If stock is insufficient for requested quantity, update
+         *   succeeds but unavailable flag may be set by system. Quantity
+         *   changes do not affect the variant selection - that remains
+         *   immutable.
      */
     quantity?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
   };
@@ -76,16 +97,25 @@ export namespace IShoppingMallCartItem {
     /**
      * Unique identifier of the product variant (SKU) to add to the cart.
      *
-     * @x-autobe-database-schema-property shopping_mall_product_variant_id
-     * @x-autobe-specification Foreign key to shopping_mall_product_variants.id. The variant must exist (deleted_at IS NULL) and reference an active product from an approved, non-suspended seller. Validated against shopping_mall_product_variants joined with shopping_mall_products and shopping_mall_sellers.
+         * @x-autobe-database-schema-property shopping_mall_product_variant_id
+         * @x-autobe-specification Foreign key to
+         *   shopping_mall_product_variants.id. The variant must exist
+         *   (deleted_at IS NULL) and reference an active product from an
+         *   approved, non-suspended seller. Validated against
+         *   shopping_mall_product_variants joined with shopping_mall_products
+         *   and shopping_mall_sellers.
      */
     variantId: string & tags.Format<"uuid">;
 
     /**
      * Number of units of the variant to add to the cart. Must be at least 1.
      *
-     * @x-autobe-database-schema-property quantity
-     * @x-autobe-specification Direct mapping to shopping_mall_cart_items.quantity. Must be a positive integer >= 1. If the same variant already exists in the cart, this quantity is added to the existing quantity (merge behavior enforced by unique constraint on cart_id + variant_id).
+         * @x-autobe-database-schema-property quantity
+         * @x-autobe-specification Direct mapping to
+         *   shopping_mall_cart_items.quantity. Must be a positive integer >= 1.
+         *   If the same variant already exists in the cart, this quantity is
+         *   added to the existing quantity (merge behavior enforced by unique
+         *   constraint on cart_id + variant_id).
      */
     quantity: number & tags.Type<"int32"> & tags.Minimum<1>;
   };

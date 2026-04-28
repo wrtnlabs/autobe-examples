@@ -23,7 +23,8 @@ import { IEcommerceMallUserBanRequest } from "../../../../../structures/IEcommer
  * @param props.body Ban or unban action parameters including action type, user type, and ban reason.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor administrator
- * @x-autobe-specification Implement ban/unban operation for administrator accounts.
+ * @x-autobe-specification Implement ban/unban operation for administrator
+ *   accounts.
  *
  * Parameters:
  * - userId: UUID of user to ban/unban (customer or seller)

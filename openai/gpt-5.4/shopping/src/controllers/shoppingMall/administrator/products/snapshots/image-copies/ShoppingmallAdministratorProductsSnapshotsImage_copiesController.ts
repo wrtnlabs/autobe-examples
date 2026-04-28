@@ -30,9 +30,11 @@ export class ShoppingmallAdministratorProductsSnapshotsImage_copiesController {
    * @param productId Target product's ID
    * @param productSnapshotId Target product snapshot's ID
    * @param body Pagination and ordering options for preserved snapshot image copies
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Implement a paginated historical-gallery retrieval for `shopping_mall_product_snapshot_image_copies` scoped to one product snapshot.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor administrator
+     * @x-autobe-specification Implement a paginated historical-gallery
+     *   retrieval for `shopping_mall_product_snapshot_image_copies` scoped to
+     *   one product snapshot.
    *
    * 1. Authenticate the session and determine actor role.
    * 2. Load the target product from `shopping_mall_products` by `productId`. The product may have `deleted_at` populated; this must not block historical snapshot access by an authorized actor.
@@ -105,9 +107,10 @@ export class ShoppingmallAdministratorProductsSnapshotsImage_copiesController {
    * @param productId Target product's ID
    * @param productSnapshotId Target product snapshot's ID
    * @param imageCopyId Target preserved image copy's ID
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Implement a read-only detail query for shopping_mall_product_snapshot_image_copies.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor administrator
+     * @x-autobe-specification Implement a read-only detail query for
+     *   shopping_mall_product_snapshot_image_copies.
    *
    * 1. Resolve the authenticated actor from session context and allow only seller, administrator, or superAdministrator roles. Reject unauthenticated access and reject customer access.
    * 2. Load the target product from shopping_mall_products by id = productId. If not found, return a not-found error.

@@ -23,16 +23,16 @@ export class HrmplatformMemberOrganizationsController {
    *
    * @param connection
    * @param body Organization creation data including owner reference, name, optional description, and configuration settings for currency, timezone, and fiscal year.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1. Verify authenticated member is making the request
-   * 2. Validate organization_name is provided and unique within owner's context
-   * 3. Validate fiscal_start_month is between 1 and 12
-   * 4. Validate currency and timezone values (use predefined lists or allow free-form)
-   * 5. Generate UUID for organization id
-   * 6. Set created_at and updated_at to current timestamp
-   * 7. Insert organization record with owner_id = authenticated user's id
-   * 8. Return full organization record including system-generated fields
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification 1. Verify authenticated member is making the
+     *   request 2. Validate organization_name is provided and unique within
+     *   owner's context 3. Validate fiscal_start_month is between 1 and 12 4.
+     *   Validate currency and timezone values (use predefined lists or allow
+     *   free-form) 5. Generate UUID for organization id 6. Set created_at and
+     *   updated_at to current timestamp 7. Insert organization record with
+     *   owner_id = authenticated user's id 8. Return full organization record
+     *   including system-generated fields
    *
    * Error handling:
    * - 400 if name already exists for this owner
@@ -76,9 +76,10 @@ export class HrmplatformMemberOrganizationsController {
    *
    * @param connection
    * @param body Search criteria including optional filters and pagination parameters. All fields are optional; omitting all fields returns all organizations for the owner.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query hrm_platform_organizations table with pagination and filtering.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query hrm_platform_organizations table with
+     *   pagination and filtering.
    *
    * Search filters:
    * - name: partial match (case-insensitive)
@@ -128,9 +129,10 @@ export class HrmplatformMemberOrganizationsController {
    *
    * @param connection
    * @param organizationId Unique identifier of the organization to retrieve.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Fetch the organization record from hrm_platform_organizations table where id matches the path parameter.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Fetch the organization record from
+     *   hrm_platform_organizations table where id matches the path parameter.
    *
    * 1. Query hrm_platform_organizations by id (UUID)
    * 2. Verify the organization exists and is not soft-deleted (deleted_at is null)
@@ -174,9 +176,10 @@ export class HrmplatformMemberOrganizationsController {
    * @param connection
    * @param organizationId The unique identifier of the organization to update (UUID format).
    * @param body Organization update data with any combination of fields to modify.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Update hrm_platform_organizations table by organization ID.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Update hrm_platform_organizations table by
+     *   organization ID.
    *
    * Steps:
    * 1. Verify the organization exists and is not soft-deleted (deleted_at is NULL)
@@ -242,27 +245,25 @@ export class HrmplatformMemberOrganizationsController {
    *
    * @param connection
    * @param organizationId The UUID of the organization to be hard deleted.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1. Verify current user is the owner of the organization (check owner_id matches authenticated user id)
-   * 2. Validate no blocking conditions exist:
-   *    - Query hrm_platform_timesheets for any with status NOT IN ('approved', 'rejected') where employee_id belongs to this organization
-   *    - Query hrm_platform_contracts for any with end_date NULL or end_date > current_date where employee_id belongs to this organization
-   * 3. If blocking conditions exist, return 409 Conflict with details of what is blocking deletion
-   * 4. Begin transaction:
-   *    - Delete all timelogs for employees in this organization
-   *    - Delete all timers for employees in this organization
-   *    - Delete all task_histories for tasks in this organization
-   *    - Delete all tasks for this organization
-   *    - Delete all project_memberships for this organization
-   *    - Delete all projects for this organization
-   *    - Delete all contracts for employees in this organization
-   *    - Delete all employees in this organization
-   *    - Delete all departments for this organization
-   *    - Delete organization_files for this organization
-   *    - Delete the organization record itself
-   * 5. Return the deleted organization details before removal
-   * 6. Commit transaction
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification 1. Verify current user is the owner of the
+     *   organization (check owner_id matches authenticated user id) 2. Validate
+     *   no blocking conditions exist: - Query hrm_platform_timesheets for any
+     *   with status NOT IN ('approved', 'rejected') where employee_id belongs
+     *   to this organization - Query hrm_platform_contracts for any with
+     *   end_date NULL or end_date > current_date where employee_id belongs to
+     *   this organization 3. If blocking conditions exist, return 409 Conflict
+     *   with details of what is blocking deletion 4. Begin transaction: -
+     *   Delete all timelogs for employees in this organization - Delete all
+     *   timers for employees in this organization - Delete all task_histories
+     *   for tasks in this organization - Delete all tasks for this organization
+     *   - Delete all project_memberships for this organization - Delete all
+     *   projects for this organization - Delete all contracts for employees in
+     *   this organization - Delete all employees in this organization - Delete
+     *   all departments for this organization - Delete organization_files for
+     *   this organization - Delete the organization record itself 5. Return the
+     *   deleted organization details before removal 6. Commit transaction
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Delete(":organizationId")

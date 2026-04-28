@@ -24,15 +24,16 @@ export * as options from "./options/index";
  * @param props.body Variant creation data including SKU code, optional price override, and option values
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification 1. Validate that the requesting seller owns the product identified by productId.
- * 2. Validate that the SKU code is unique within the product (check against existing non-deleted variants).
- * 3. Validate that all option names and values are non-empty strings.
- * 4. Generate a new UUID for the variant id.
- * 5. Set created_at and updated_at to current timestamp (UTC).
- * 6. Set deleted_at to null (active variant).
- * 7. Insert the variant record into ecommerce_mall_product_variants table.
- * 8. For each option in the request, insert a record into ecommerce_mall_product_variant_options table with the variant id.
- * 9. Return the complete variant entity including the nested options.
+ * @x-autobe-specification 1. Validate that the requesting seller owns the
+ *   product identified by productId. 2. Validate that the SKU code is unique
+ *   within the product (check against existing non-deleted variants). 3.
+ *   Validate that all option names and values are non-empty strings. 4.
+ *   Generate a new UUID for the variant id. 5. Set created_at and updated_at to
+ *   current timestamp (UTC). 6. Set deleted_at to null (active variant). 7.
+ *   Insert the variant record into ecommerce_mall_product_variants table. 8.
+ *   For each option in the request, insert a record into
+ *   ecommerce_mall_product_variant_options table with the variant id. 9. Return
+ *   the complete variant entity including the nested options.
  *
  * Edge cases:
  * - Duplicate SKU code within the same product: Return 409 Conflict.
@@ -306,7 +307,8 @@ export namespace update {
  * @param props.productVariantId The unique identifier of the product variant to delete
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Implement the variant deletion with the following logic:
+ * @x-autobe-specification Implement the variant deletion with the following
+ *   logic:
  *
  * 1. **Authorization**: Verify the requesting user is an authenticated seller and owns the product referenced by productId.
  *

@@ -18,8 +18,10 @@ export type IHrmTimeTrackingInvitation = {
    *
    * The primary key used to reference this invitation in API operations such as retrieval, update, and cancellation endpoints.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_invitations.id. UUID primary key, auto-generated on insert.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_invitations.id. UUID primary key, auto-generated on
+     *   insert.
    */
   id: string & tags.Format<"uuid">;
 
@@ -28,8 +30,10 @@ export type IHrmTimeTrackingInvitation = {
    *
    * Used to match pending invitations when a user signs up with this email address. Comparison is performed case-insensitively. The email must belong to a person who does not yet have an active employee record in this organization.
    *
-   * @x-autobe-database-schema-property email
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_invitations.email. Case-insensitive comparison when matching invitations during sign-up.
+     * @x-autobe-database-schema-property email
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_invitations.email. Case-insensitive comparison when
+     *   matching invitations during sign-up.
    */
   email: string & tags.Format<"email">;
 
@@ -38,8 +42,12 @@ export type IHrmTimeTrackingInvitation = {
    *
    * One of: `pending` (initial state, awaiting recipient sign-up), `accepted` (recipient signed up and was added to the organization), `expired` (validity period elapsed without acceptance), or `cancelled` (manually revoked by an administrator before acceptance).
    *
-   * @x-autobe-database-schema-property status
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_invitations.status. One of: 'pending', 'accepted', 'expired', 'cancelled'. Set to 'pending' on creation. System transitions to 'accepted' on recipient sign-up, 'expired' when validity period elapses. Administrators set to 'cancelled' via update endpoint.
+     * @x-autobe-database-schema-property status
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_invitations.status. One of: 'pending', 'accepted',
+     *   'expired', 'cancelled'. Set to 'pending' on creation. System
+     *   transitions to 'accepted' on recipient sign-up, 'expired' when validity
+     *   period elapses. Administrators set to 'cancelled' via update endpoint.
    */
   status: string;
 
@@ -48,8 +56,11 @@ export type IHrmTimeTrackingInvitation = {
    *
    * Set when the invitation transitions to `expired` status after the configured validity period elapses without the recipient signing up. Null if the invitation has not yet expired.
    *
-   * @x-autobe-database-schema-property expired_at
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_invitations.expired_at. Nullable datetime. Set by the system when the invitation transitions to 'expired' status after the configured validity period elapses without recipient sign-up.
+     * @x-autobe-database-schema-property expired_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_invitations.expired_at. Nullable datetime. Set by the
+     *   system when the invitation transitions to 'expired' status after the
+     *   configured validity period elapses without recipient sign-up.
    */
   expired_at?: (string & tags.Format<"date-time">) | null | undefined;
 
@@ -58,8 +69,11 @@ export type IHrmTimeTrackingInvitation = {
    *
    * Set when the invitation transitions to `accepted` status upon the recipient signing up with the invited email address. Null until acceptance occurs.
    *
-   * @x-autobe-database-schema-property accepted_at
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_invitations.accepted_at. Nullable datetime. Set by the system when the invitation transitions to 'accepted' status upon the recipient signing up with the invited email address.
+     * @x-autobe-database-schema-property accepted_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_invitations.accepted_at. Nullable datetime. Set by
+     *   the system when the invitation transitions to 'accepted' status upon
+     *   the recipient signing up with the invited email address.
    */
   accepted_at?: (string & tags.Format<"date-time">) | null | undefined;
 
@@ -68,8 +82,12 @@ export type IHrmTimeTrackingInvitation = {
    *
    * Each invitation belongs to exactly one organization. The organization is the tenancy boundary within which the invitation is created and its lifecycle managed.
    *
-   * @x-autobe-database-schema-property organization
-   * @x-autobe-specification Join from hrm_time_tracking_invitations.hrm_time_tracking_organization_id to hrm_time_tracking_organizations.id. Returns IHrmTimeTrackingOrganization.ISummary containing id, name, description, currency, timezone, fiscal_start_month, status, and owner.
+     * @x-autobe-database-schema-property organization
+     * @x-autobe-specification Join from
+     *   hrm_time_tracking_invitations.hrm_time_tracking_organization_id to
+     *   hrm_time_tracking_organizations.id. Returns
+     *   IHrmTimeTrackingOrganization.ISummary containing id, name, description,
+     *   currency, timezone, fiscal_start_month, status, and owner.
    */
   organization: IHrmTimeTrackingOrganization.ISummary;
 
@@ -78,8 +96,12 @@ export type IHrmTimeTrackingInvitation = {
    *
    * The authenticated user who performed the invite action. This member must have the `employee:manage` permission within the target organization to create invitations.
    *
-   * @x-autobe-database-schema-property inviter
-   * @x-autobe-specification Join from hrm_time_tracking_invitations.hrm_time_tracking_member_inviter_id to hrm_time_tracking_members.id. Returns IHrmTimeTrackingMember.ISummary containing id, email, display_name, avatar, phone_number, and timestamps.
+     * @x-autobe-database-schema-property inviter
+     * @x-autobe-specification Join from
+     *   hrm_time_tracking_invitations.hrm_time_tracking_member_inviter_id to
+     *   hrm_time_tracking_members.id. Returns IHrmTimeTrackingMember.ISummary
+     *   containing id, email, display_name, avatar, phone_number, and
+     *   timestamps.
    */
   inviter: IHrmTimeTrackingMember.ISummary;
 
@@ -88,8 +110,12 @@ export type IHrmTimeTrackingInvitation = {
    *
    * Set when the invitation transitions to `accepted` status. Null until acceptance occurs, as the invited person does not yet have a member account at the time of invitation creation.
    *
-   * @x-autobe-database-schema-property acceptor
-   * @x-autobe-specification Left join from hrm_time_tracking_invitations.hrm_time_tracking_member_acceptor_id to hrm_time_tracking_members.id. Nullable — only set when invitation transitions to 'accepted'. Returns IHrmTimeTrackingMember.ISummary or null.
+     * @x-autobe-database-schema-property acceptor
+     * @x-autobe-specification Left join from
+     *   hrm_time_tracking_invitations.hrm_time_tracking_member_acceptor_id to
+     *   hrm_time_tracking_members.id. Nullable — only set when invitation
+     *   transitions to 'accepted'. Returns IHrmTimeTrackingMember.ISummary or
+     *   null.
    */
   acceptor?: IHrmTimeTrackingMember.ISummary | null | undefined;
 
@@ -98,8 +124,12 @@ export type IHrmTimeTrackingInvitation = {
    *
    * This role is specified at the time the invitation is sent and determines the new employee's permissions within the target organization upon joining.
    *
-   * @x-autobe-database-schema-property role
-   * @x-autobe-specification Join from hrm_time_tracking_invitations.hrm_time_tracking_role_id to hrm_time_tracking_roles.id. Returns IHrmTimeTrackingRole.ISummary containing id, name, type, timestamps, employees_count, and organization. Excludes soft-deleted roles.
+     * @x-autobe-database-schema-property role
+     * @x-autobe-specification Join from
+     *   hrm_time_tracking_invitations.hrm_time_tracking_role_id to
+     *   hrm_time_tracking_roles.id. Returns IHrmTimeTrackingRole.ISummary
+     *   containing id, name, type, timestamps, employees_count, and
+     *   organization. Excludes soft-deleted roles.
    */
   role: IHrmTimeTrackingRole.ISummary;
 
@@ -108,8 +138,9 @@ export type IHrmTimeTrackingInvitation = {
    *
    * Indicates when the invitation was sent to the external email address. Used for tracking invitation age and ordering in list views.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_invitations.created_at. Set automatically on insert.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_invitations.created_at. Set automatically on insert.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -118,8 +149,10 @@ export type IHrmTimeTrackingInvitation = {
    *
    * Tracks the most recent modification to the invitation, such as role changes, status transitions, or cancellation.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_invitations.updated_at. Updated automatically on record modification.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_invitations.updated_at. Updated automatically on
+     *   record modification.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -128,8 +161,11 @@ export type IHrmTimeTrackingInvitation = {
    *
    * Set when the invitation is cancelled, marking it as deleted while retaining the record for audit purposes. Null if the invitation is active. Soft-deleted invitations are excluded from standard queries.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_invitations.deleted_at. Nullable datetime. Set when invitation is cancelled (status='cancelled'). Records with non-null deleted_at are excluded from standard queries.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_invitations.deleted_at. Nullable datetime. Set when
+     *   invitation is cancelled (status='cancelled'). Records with non-null
+     *   deleted_at are excluded from standard queries.
    */
   deleted_at?: (string & tags.Format<"date-time">) | null | undefined;
 };
@@ -151,8 +187,11 @@ export namespace IHrmTimeTrackingInvitation {
      *
      * The same email can be invited to different organizations. A pending invitation for the same email within the same organization causes a conflict error.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_invitations.email. Validated as email format. No uniqueness conflict — multiple invitations to the same email across different organizations are allowed.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_invitations.email. Validated as email format. No
+         *   uniqueness conflict — multiple invitations to the same email across
+         *   different organizations are allowed.
      */
     email: string & tags.Format<"email">;
 
@@ -161,8 +200,12 @@ export namespace IHrmTimeTrackingInvitation {
      *
      * The role identifier must reference a valid role within the current organization. For existing registered members, the role takes effect immediately when the employee record is auto-created. For new users signing up via invitation, the role is stored and assigned when the recipient completes registration with the invited email address.
      *
-     * @x-autobe-database-schema-property hrm_time_tracking_role_id
-     * @x-autobe-specification Direct mapping to hrm_time_tracking_role_id (the FK column, not the role relation object). Validated to belong to the current organization — cross-organization role assignment is rejected. The role determines permissions for the employee record created upon invitation acceptance.
+         * @x-autobe-database-schema-property hrm_time_tracking_role_id
+         * @x-autobe-specification Direct mapping to hrm_time_tracking_role_id
+         *   (the FK column, not the role relation object). Validated to belong
+         *   to the current organization — cross-organization role assignment is
+         *   rejected. The role determines permissions for the employee record
+         *   created upon invitation acceptance.
      */
     role_id: string & tags.Format<"uuid">;
   };
@@ -201,7 +244,8 @@ export namespace IHrmTimeTrackingInvitation {
      *
      * Searches the email address and status fields for partial matches. Useful for quickly finding a specific invitation without applying individual filters. Case-insensitive comparison.
      *
-     * @x-autobe-specification LIKE search across email and status columns for partial matching. Case-insensitive.
+         * @x-autobe-specification LIKE search across email and status columns
+         *   for partial matching. Case-insensitive.
      */
     search?: string | undefined;
 
@@ -210,8 +254,10 @@ export namespace IHrmTimeTrackingInvitation {
      *
      * Accepts either a single status value or an array of status values to include multiple states in the results. Possible values include `pending` (awaiting recipient sign-up), `accepted` (recipient joined the organization), `expired` (validity period elapsed), and `cancelled` (manually revoked).
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct filter on status column. Supports single string or array of strings for multi-value filtering. Valid values: pending, accepted, expired, cancelled.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct filter on status column. Supports
+         *   single string or array of strings for multi-value filtering. Valid
+         *   values: pending, accepted, expired, cancelled.
      */
     status?: string | (string[] & tags.UniqueItems) | undefined;
 
@@ -220,8 +266,9 @@ export namespace IHrmTimeTrackingInvitation {
      *
      * Performs a partial or exact case-insensitive match against the invited email address. Useful for locating a specific invitation sent to a particular email.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct filter on email column. Partial or exact match, case-insensitive comparison.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct filter on email column. Partial or
+         *   exact match, case-insensitive comparison.
      */
     email?: string | undefined;
 
@@ -230,8 +277,9 @@ export namespace IHrmTimeTrackingInvitation {
      *
      * Takes a UUID identifying the inviter member. Returns only invitations sent by that specific organization member.
      *
-     * @x-autobe-database-schema-property hrm_time_tracking_member_inviter_id
-     * @x-autobe-specification Direct filter on hrm_time_tracking_member_inviter_id FK column. UUID format.
+         * @x-autobe-database-schema-property hrm_time_tracking_member_inviter_id
+         * @x-autobe-specification Direct filter on
+         *   hrm_time_tracking_member_inviter_id FK column. UUID format.
      */
     inviterId?: (string & tags.Format<"uuid">) | undefined;
 
@@ -240,8 +288,9 @@ export namespace IHrmTimeTrackingInvitation {
      *
      * Takes a UUID identifying the role. Returns only invitations that will grant (or have granted) the specified role upon acceptance.
      *
-     * @x-autobe-database-schema-property hrm_time_tracking_role_id
-     * @x-autobe-specification Direct filter on hrm_time_tracking_role_id FK column. UUID format.
+         * @x-autobe-database-schema-property hrm_time_tracking_role_id
+         * @x-autobe-specification Direct filter on hrm_time_tracking_role_id FK
+         *   column. UUID format.
      */
     roleId?: (string & tags.Format<"uuid">) | undefined;
 
@@ -250,7 +299,11 @@ export namespace IHrmTimeTrackingInvitation {
      *
      * Provides three date range sub-filters — `createdAt`, `expiredAt`, and `acceptedAt` — each accepting optional `start` and `end` ISO 8601 datetime values. Combine multiple date ranges to narrow results by creation, expiration, and acceptance time windows simultaneously.
      *
-     * @x-autobe-specification Composite filter object with three sub-filters: createdAt (maps to created_at column), expiredAt (maps to expired_at column), acceptedAt (maps to accepted_at column). Each sub-filter has start and end ISO 8601 timestamps. All sub-filters are optional.
+         * @x-autobe-specification Composite filter object with three
+         *   sub-filters: createdAt (maps to created_at column), expiredAt (maps
+         *   to expired_at column), acceptedAt (maps to accepted_at column).
+         *   Each sub-filter has start and end ISO 8601 timestamps. All
+         *   sub-filters are optional.
      */
     dateRange?:
       | {
@@ -291,7 +344,9 @@ export namespace IHrmTimeTrackingInvitation {
      *
      * Supported sort columns are `email`, `status`, and `created_at`. Results default to descending order by creation date if not specified.
      *
-     * @x-autobe-specification Query sort parameter. Supported values: email, status, created_at. Default sort is created_at descending. Passed as ORDER BY clause.
+         * @x-autobe-specification Query sort parameter. Supported values:
+         *   email, status, created_at. Default sort is created_at descending.
+         *   Passed as ORDER BY clause.
      */
     sort?: string | undefined;
 
@@ -300,7 +355,8 @@ export namespace IHrmTimeTrackingInvitation {
      *
      * Specifies which page of results to retrieve. Combined with `limit` to control result window. Page numbering starts from 1.
      *
-     * @x-autobe-specification Pagination page number (1-indexed). Used in LIMIT/OFFSET calculation: OFFSET = (page - 1) * limit. Minimum 1.
+         * @x-autobe-specification Pagination page number (1-indexed). Used in
+         *   LIMIT/OFFSET calculation: OFFSET = (page - 1) * limit. Minimum 1.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -309,7 +365,8 @@ export namespace IHrmTimeTrackingInvitation {
      *
      * Controls how many invitation records are returned in a single response. The last page may contain fewer records than the requested limit.
      *
-     * @x-autobe-specification Pagination page size. Used as LIMIT in SQL query. Minimum 1, maximum 100.
+         * @x-autobe-specification Pagination page size. Used as LIMIT in SQL
+         *   query. Minimum 1, maximum 100.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -325,8 +382,9 @@ export namespace IHrmTimeTrackingInvitation {
     /**
      * Primary key — unique identifier for the invitation record.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_invitations.id.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_invitations.id.
      */
     id: string & tags.Format<"uuid">;
 
@@ -335,8 +393,9 @@ export namespace IHrmTimeTrackingInvitation {
      *
      * Used to match pending invitations when a user signs up with this email address. Comparison should be case-insensitive.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_invitations.email.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_invitations.email.
      */
     email: string;
 
@@ -345,8 +404,9 @@ export namespace IHrmTimeTrackingInvitation {
      *
      * One of: `pending` (initial state, awaiting recipient sign-up), `accepted` (recipient signed up and was added to the organization), `expired` (validity period elapsed without acceptance), or `cancelled` (manually revoked by an administrator before acceptance).
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_invitations.status.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_invitations.status.
      */
     status: string;
 
@@ -355,8 +415,9 @@ export namespace IHrmTimeTrackingInvitation {
      *
      * Set when the invitation transitions to `expired` status. Null if the invitation has not yet expired.
      *
-     * @x-autobe-database-schema-property expired_at
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_invitations.expired_at. Nullable.
+         * @x-autobe-database-schema-property expired_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_invitations.expired_at. Nullable.
      */
     expired_at: (string & tags.Format<"date-time">) | null;
 
@@ -365,8 +426,9 @@ export namespace IHrmTimeTrackingInvitation {
      *
      * Set when the invitation transitions to `accepted` status. Null until acceptance occurs.
      *
-     * @x-autobe-database-schema-property accepted_at
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_invitations.accepted_at. Nullable.
+         * @x-autobe-database-schema-property accepted_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_invitations.accepted_at. Nullable.
      */
     accepted_at: (string & tags.Format<"date-time">) | null;
 
@@ -375,8 +437,9 @@ export namespace IHrmTimeTrackingInvitation {
      *
      * Set at the time the invitation is sent by the inviter.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_invitations.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_invitations.created_at.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -385,8 +448,11 @@ export namespace IHrmTimeTrackingInvitation {
      *
      * References the authenticated user who performed the invite action. This member must have the `employee:manage` permission within the target organization to create invitations.
      *
-     * @x-autobe-database-schema-property inviter
-     * @x-autobe-specification Join from hrm_time_tracking_invitations.hrm_time_tracking_member_inviter_id to hrm_time_tracking_members.id. Returns IHrmTimeTrackingMember.ISummary.
+         * @x-autobe-database-schema-property inviter
+         * @x-autobe-specification Join from
+         *   hrm_time_tracking_invitations.hrm_time_tracking_member_inviter_id
+         *   to hrm_time_tracking_members.id. Returns
+         *   IHrmTimeTrackingMember.ISummary.
      */
     inviter: IHrmTimeTrackingMember.ISummary;
 
@@ -395,8 +461,10 @@ export namespace IHrmTimeTrackingInvitation {
      *
      * This role is specified at the time the invitation is sent and determines the new employee's permissions within the target organization upon joining.
      *
-     * @x-autobe-database-schema-property role
-     * @x-autobe-specification Join from hrm_time_tracking_invitations.hrm_time_tracking_role_id to hrm_time_tracking_roles.id. Returns IHrmTimeTrackingRole.ISummary.
+         * @x-autobe-database-schema-property role
+         * @x-autobe-specification Join from
+         *   hrm_time_tracking_invitations.hrm_time_tracking_role_id to
+         *   hrm_time_tracking_roles.id. Returns IHrmTimeTrackingRole.ISummary.
      */
     role: IHrmTimeTrackingRole.ISummary;
 
@@ -405,8 +473,11 @@ export namespace IHrmTimeTrackingInvitation {
      *
      * Set when the invitation transitions to `accepted` status. Null until acceptance occurs, as the invited person does not yet have a member account at the time of invitation creation.
      *
-     * @x-autobe-database-schema-property acceptor
-     * @x-autobe-specification Join from hrm_time_tracking_invitations.hrm_time_tracking_member_acceptor_id to hrm_time_tracking_members.id. Nullable. Returns IHrmTimeTrackingMember.ISummary.
+         * @x-autobe-database-schema-property acceptor
+         * @x-autobe-specification Join from
+         *   hrm_time_tracking_invitations.hrm_time_tracking_member_acceptor_id
+         *   to hrm_time_tracking_members.id. Nullable. Returns
+         *   IHrmTimeTrackingMember.ISummary.
      */
     acceptor: IHrmTimeTrackingMember.ISummary | null;
   };

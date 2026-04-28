@@ -18,9 +18,10 @@ export class RedditcommunityGuestsController {
    *
    * @param connection
    * @param body Search criteria for filtering guest accounts. Includes email pattern, device identifiers, date range filters for account creation, soft deletion status filter, pagination parameters, and sorting options.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query the reddit_community_guests table with pagination and filtering.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query the reddit_community_guests table with
+     *   pagination and filtering.
    *
    * 1. Apply search filters:
    *    - email: partial match filter (LIKE with wildcards)
@@ -64,9 +65,10 @@ export class RedditcommunityGuestsController {
    *
    * @param connection
    * @param guestId Unique identifier of the guest account (UUID format)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query the reddit_community_guests table to retrieve a single guest account by UUID.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query the reddit_community_guests table to
+     *   retrieve a single guest account by UUID.
    *
    * 1. Find guest where id = {guestId} AND deleted_at IS NULL (soft delete filter)
    * 2. Return guest data excluding password_hash field (security)

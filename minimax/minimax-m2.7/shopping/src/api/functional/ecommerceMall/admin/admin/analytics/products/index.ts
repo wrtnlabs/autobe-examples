@@ -26,7 +26,8 @@ import { IPageIEcommerceMallProduct } from "../../../../../../structures/IPageIE
  * @param props.body Analytics query filters including status filters, category and seller filters, price and date ranges, search query, and pagination parameters.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Implement product analytics aggregation for administrators.
+ * @x-autobe-specification Implement product analytics aggregation for
+ *   administrators.
  *
  * 1. Query the ecommerce_mall_products table with optional filters:
  *    - Filter by product status (active products with null deleted_at, deleted products with non-null deleted_at)

@@ -16,8 +16,9 @@ export type IRedditCommunityAdmin = {
    *
    * This is a UUID-generated primary key that uniquely identifies the administrator in the system. It is auto-generated during account creation and serves as the immutable identifier for the admin account.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from reddit_community_admins.id. UUID format, auto-generated on account creation.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from reddit_community_admins.id.
+     *   UUID format, auto-generated on account creation.
    */
   id: string & tags.Format<"uuid">;
 
@@ -26,8 +27,9 @@ export type IRedditCommunityAdmin = {
    *
    * This email address serves as the primary identifier for administrator login and communication. The system enforces uniqueness at the database level, ensuring each administrator account has a distinct email address.
    *
-   * @x-autobe-database-schema-property email
-   * @x-autobe-specification Direct mapping from reddit_community_admins.email. Unique constraint enforced by database.
+     * @x-autobe-database-schema-property email
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_admins.email. Unique constraint enforced by database.
    */
   email: string;
 
@@ -36,8 +38,10 @@ export type IRedditCommunityAdmin = {
    *
    * This optional field provides a friendly name that appears in audit logs, public-facing administrator actions, and user interfaces. Unlike the email, this is not used for authentication and may be null or updated independently of the core account credentials.
    *
-   * @x-autobe-specification Direct mapping from reddit_community_admins.display_name. Nullable field allowing optional human-readable name.
-   * @x-autobe-database-schema-property display_name
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_admins.display_name. Nullable field allowing optional
+     *   human-readable name.
+     * @x-autobe-database-schema-property display_name
    */
   display_name?: string | null | undefined;
 
@@ -46,8 +50,10 @@ export type IRedditCommunityAdmin = {
    *
    * When set to false, the administrator cannot authenticate or perform administrative actions. This allows temporary deactivation without deleting the account, preserving historical data and audit trail integrity while preventing access.
    *
-   * @x-autobe-database-schema-property is_active
-   * @x-autobe-specification Direct mapping from reddit_community_admins.is_active. Boolean flag controlling authentication capability.
+     * @x-autobe-database-schema-property is_active
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_admins.is_active. Boolean flag controlling
+     *   authentication capability.
    */
   is_active: boolean;
 
@@ -56,8 +62,10 @@ export type IRedditCommunityAdmin = {
    *
    * This immutable timestamp records when the admin account was first provisioned in the system, using the `timestamptz` database type for timezone-aware datetime storage. It is used for audit trails, account age calculations, and security investigations.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from reddit_community_admins.created_at. ISO 8601 datetime with timezone (timestamptz).
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_admins.created_at. ISO 8601 datetime with timezone
+     *   (timestamptz).
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -66,8 +74,10 @@ export type IRedditCommunityAdmin = {
    *
    * This timestamp is automatically maintained by the database and updated on every modification to the administrator record. It helps track account activity patterns, identify stale accounts, and verify data freshness during administrative operations.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from reddit_community_admins.updated_at. ISO 8601 datetime with timezone (timestamptz), auto-updated on row changes.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_admins.updated_at. ISO 8601 datetime with timezone
+     *   (timestamptz), auto-updated on row changes.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -76,8 +86,10 @@ export type IRedditCommunityAdmin = {
    *
    * This nullable field implements soft delete functionality — instead of permanently removing the account, the system marks it as deleted by setting this timestamp. The account's identity and historical data are preserved for audit purposes while preventing authentication. When deleted_at is null, the account is considered active.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from reddit_community_admins.deleted_at. Nullable ISO 8601 datetime with timezone, null if account is active.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_admins.deleted_at. Nullable ISO 8601 datetime with
+     *   timezone, null if account is active.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -97,35 +109,37 @@ export namespace IRedditCommunityAdmin {
    */
   export type ISummary = {
     /**
-     * @x-autobe-database-schema-property id
+         * @x-autobe-database-schema-property id
      */
     id: string & tags.Format<"uuid">;
     /**
-     * @x-autobe-database-schema-property email
+         * @x-autobe-database-schema-property email
      */
     email: string;
 
     /**
      * Human-readable display name for the administrator. Used in audit logs and public-facing administrator actions.
      *
-     * @x-autobe-database-schema-property display_name
-     * @x-autobe-specification Nullable display name from reddit_community_admins.display_name. Returns null when no display name set.
+         * @x-autobe-database-schema-property display_name
+         * @x-autobe-specification Nullable display name from
+         *   reddit_community_admins.display_name. Returns null when no display
+         *   name set.
      */
     display_name: string | null;
     /**
-     * @x-autobe-database-schema-property is_active
+         * @x-autobe-database-schema-property is_active
      */
     is_active: boolean;
     /**
-     * @x-autobe-database-schema-property created_at
+         * @x-autobe-database-schema-property created_at
      */
     created_at: string & tags.Format<"date-time">;
     /**
-     * @x-autobe-database-schema-property updated_at
+         * @x-autobe-database-schema-property updated_at
      */
     updated_at: string & tags.Format<"date-time">;
     /**
-     * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-database-schema-property deleted_at
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };
@@ -145,8 +159,11 @@ export namespace IRedditCommunityAdmin {
      *
      * Must match an existing admin account in the database. The account must be active and not soft-deleted for authentication to succeed.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from reddit_community_admins.email. This email must exist in the database and be associated with an active admin account (is_active=true, deleted_at=null) for authentication to succeed.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   reddit_community_admins.email. This email must exist in the
+         *   database and be associated with an active admin account
+         *   (is_active=true, deleted_at=null) for authentication to succeed.
      */
     email: string & tags.Format<"email">;
 
@@ -155,8 +172,11 @@ export namespace IRedditCommunityAdmin {
      *
      * This password is hashed using industry-standard algorithms before being compared against the stored password_hash value. The plain text password is never stored in the API logs or response bodies.
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification Maps to reddit_community_admins.password_hash column via transformation. User provides plain text password which is hashed and compared against the stored password_hash value. Security: password should never be stored or logged in plain text.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification Maps to reddit_community_admins.password_hash
+         *   column via transformation. User provides plain text password which
+         *   is hashed and compared against the stored password_hash value.
+         *   Security: password should never be stored or logged in plain text.
      */
     password: string & tags.Format<"password">;
   };
@@ -181,7 +201,12 @@ export namespace IRedditCommunityAdmin {
      *
      * This identifier is extracted from the JWT payload after successful authentication and corresponds to the primary key (id column) in the reddit_community_admins table. It uniquely identifies the admin across all system operations and audit logs.
      *
-     * @x-autobe-specification Extracted from JWT payload 'admin_id' claim after successful authentication. The claim value corresponds to the id column (UUID primary key) in the reddit_community_admins table. This is the unique identifier that authorizes this admin to access the system. databaseSchemaProperty=null because this is a composed JWT response DTO.
+         * @x-autobe-specification Extracted from JWT payload 'admin_id' claim
+         *   after successful authentication. The claim value corresponds to the
+         *   id column (UUID primary key) in the reddit_community_admins table.
+         *   This is the unique identifier that authorizes this admin to access
+         *   the system. databaseSchemaProperty=null because this is a composed
+         *   JWT response DTO.
      */
     id: string & tags.Format<"uuid">;
 
@@ -190,7 +215,12 @@ export namespace IRedditCommunityAdmin {
      *
      * This is the unique email address used for admin authentication and corresponds to the email column in the reddit_community_admins table. It is validated for uniqueness during account creation and is used as a primary identifier for the admin.
      *
-     * @x-autobe-specification Extracted from JWT payload 'email' claim after successful authentication. The claim value corresponds to the email column (unique string constraint) in the reddit_community_admins table. This is the email address used for admin authentication. databaseSchemaProperty=null because this is a composed JWT response DTO.
+         * @x-autobe-specification Extracted from JWT payload 'email' claim
+         *   after successful authentication. The claim value corresponds to the
+         *   email column (unique string constraint) in the
+         *   reddit_community_admins table. This is the email address used for
+         *   admin authentication. databaseSchemaProperty=null because this is a
+         *   composed JWT response DTO.
      */
     email: string;
 
@@ -199,7 +229,10 @@ export namespace IRedditCommunityAdmin {
      *
      * This optional field corresponds to the display_name column in the reddit_community_admins table and is used for identification in audit logs and public-facing admin actions. May be null if not set during account registration.
      *
-     * @x-autobe-specification Extracted from JWT payload 'display_name' claim. Corresponds to display_name column (nullable string) in reddit_community_admins. May be null if not set during account creation.
+         * @x-autobe-specification Extracted from JWT payload 'display_name'
+         *   claim. Corresponds to display_name column (nullable string) in
+         *   reddit_community_admins. May be null if not set during account
+         *   creation.
      */
     display_name?: string | null | undefined;
 
@@ -208,7 +241,12 @@ export namespace IRedditCommunityAdmin {
      *
      * This boolean value is extracted from the JWT payload and corresponds to the is_active column in the reddit_community_admins table. Only accounts with is_active=true can successfully authenticate; inactive or suspended accounts are rejected.
      *
-     * @x-autobe-specification Extracted from JWT payload 'is_active' claim after successful authentication. The claim value corresponds to the is_active column (boolean) in the reddit_community_admins table. This boolean indicates whether the admin account is currently active and can authenticate. databaseSchemaProperty=null because this is a composed JWT response DTO.
+         * @x-autobe-specification Extracted from JWT payload 'is_active' claim
+         *   after successful authentication. The claim value corresponds to the
+         *   is_active column (boolean) in the reddit_community_admins table.
+         *   This boolean indicates whether the admin account is currently
+         *   active and can authenticate. databaseSchemaProperty=null because
+         *   this is a composed JWT response DTO.
      */
     is_active: boolean;
 
@@ -217,7 +255,12 @@ export namespace IRedditCommunityAdmin {
      *
      * This timestamp corresponds to the created_at column in the reddit_community_admins table and indicates when the admin account was originally provisioned in the system. It is used for audit trails and tracking account creation date.
      *
-     * @x-autobe-specification Extracted from JWT payload 'created_at' claim after successful authentication. The claim value corresponds to the created_at column (timestamp with timezone) in the reddit_community_admins table. This timestamp indicates when the admin account was originally created. databaseSchemaProperty=null because this is a composed JWT response DTO.
+         * @x-autobe-specification Extracted from JWT payload 'created_at' claim
+         *   after successful authentication. The claim value corresponds to the
+         *   created_at column (timestamp with timezone) in the
+         *   reddit_community_admins table. This timestamp indicates when the
+         *   admin account was originally created. databaseSchemaProperty=null
+         *   because this is a composed JWT response DTO.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -226,7 +269,12 @@ export namespace IRedditCommunityAdmin {
      *
      * This timestamp corresponds to the updated_at column in the reddit_community_admins table and tracks the most recent modifications to the admin account. It is used for audit trails and monitoring account changes.
      *
-     * @x-autobe-specification Extracted from JWT payload 'updated_at' claim after successful authentication. The claim value corresponds to the updated_at column (timestamp with timezone) in the reddit_community_admins table. This timestamp indicates when the admin record was last modified. databaseSchemaProperty=null because this is a composed JWT response DTO.
+         * @x-autobe-specification Extracted from JWT payload 'updated_at' claim
+         *   after successful authentication. The claim value corresponds to the
+         *   updated_at column (timestamp with timezone) in the
+         *   reddit_community_admins table. This timestamp indicates when the
+         *   admin record was last modified. databaseSchemaProperty=null because
+         *   this is a composed JWT response DTO.
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -235,14 +283,20 @@ export namespace IRedditCommunityAdmin {
      *
      * This nullable timestamp corresponds to the deleted_at column in the reddit_community_admins table. If null, the account is active; if present, it contains the timestamp indicating when the admin account was soft-deleted from the system.
      *
-     * @x-autobe-specification Extracted from JWT payload 'deleted_at' claim after successful authentication. The claim value corresponds to the deleted_at column (nullable timestamp with timezone) in the reddit_community_admins table. Null if account is active, contains deletion timestamp if soft-deleted. databaseSchemaProperty=null because this is a composed JWT response DTO.
+         * @x-autobe-specification Extracted from JWT payload 'deleted_at' claim
+         *   after successful authentication. The claim value corresponds to the
+         *   deleted_at column (nullable timestamp with timezone) in the
+         *   reddit_community_admins table. Null if account is active, contains
+         *   deletion timestamp if soft-deleted. databaseSchemaProperty=null
+         *   because this is a composed JWT response DTO.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
 
     /**
      * Authorization token.
      *
-     * @x-autobe-specification Authorization token comes from the session table.
+         * @x-autobe-specification Authorization token comes from the session
+         *   table.
      */
     token: IAuthorizationToken;
   };
@@ -270,7 +324,10 @@ export namespace IRedditCommunityAdmin {
      *
      * Searches the email column using a SQL LIKE query with wildcards. The filter performs a case-insensitive partial match, returning all administrators whose email contains the search string anywhere in the value. Use this to find administrators by a fragment of their email address.
      *
-     * @x-autobe-specification LIKE query on email column with % wildcards. Case-insensitive search. Example: if value is 'john', query becomes email LIKE '%john%'. Returns all administrators whose email contains the search string anywhere.
+         * @x-autobe-specification LIKE query on email column with % wildcards.
+         *   Case-insensitive search. Example: if value is 'john', query becomes
+         *   email LIKE '%john%'. Returns all administrators whose email
+         *   contains the search string anywhere.
      */
     email_filter?: string | undefined;
 
@@ -279,7 +336,10 @@ export namespace IRedditCommunityAdmin {
      *
      * Searches the display_name column using a SQL LIKE query with wildcards. The filter performs a case-insensitive partial match, returning all administrators whose display name contains the search string anywhere in the value. Use this to find administrators by a fragment of their display name.
      *
-     * @x-autobe-specification LIKE query on display_name column with % wildcards. Case-insensitive search. Example: if value is 'admin', query becomes display_name LIKE '%admin%'. Returns all administrators whose display_name contains the search string.
+         * @x-autobe-specification LIKE query on display_name column with %
+         *   wildcards. Case-insensitive search. Example: if value is 'admin',
+         *   query becomes display_name LIKE '%admin%'. Returns all
+         *   administrators whose display_name contains the search string.
      */
     display_name_filter?: string | undefined;
 
@@ -288,7 +348,9 @@ export namespace IRedditCommunityAdmin {
      *
      * Controls which accounts are included based on their active status. Use 'active' to show only currently active administrators, 'inactive' to show only deactivated accounts, or 'all' to include both. Default is 'all', which returns all non-deleted administrators regardless of active status.
      *
-     * @x-autobe-specification Filter by is_active boolean field value. Values: 'active' filters is_active = true, 'inactive' filters is_active = false, 'all' includes both. Default is 'all'.
+         * @x-autobe-specification Filter by is_active boolean field value.
+         *   Values: 'active' filters is_active = true, 'inactive' filters
+         *   is_active = false, 'all' includes both. Default is 'all'.
      */
     active_status?: "active" | "inactive" | "all" | undefined;
 
@@ -297,7 +359,10 @@ export namespace IRedditCommunityAdmin {
      *
      * By default (false), the query filters out soft-deleted accounts by checking deleted_at IS NULL. Set to true to include deleted accounts in the results, which is useful for administrative review or audit purposes.
      *
-     * @x-autobe-specification Boolean flag to control inclusion of soft-deleted records. When false (default), only returns records where deleted_at IS NULL. When true, includes all records regardless of deleted_at value.
+         * @x-autobe-specification Boolean flag to control inclusion of
+         *   soft-deleted records. When false (default), only returns records
+         *   where deleted_at IS NULL. When true, includes all records
+         *   regardless of deleted_at value.
      */
     include_deleted?: boolean | undefined;
 
@@ -306,7 +371,11 @@ export namespace IRedditCommunityAdmin {
      *
      * Specifies which column to use for ordering results. Valid values are 'email', 'display_name', 'created_at', and 'updated_at'. Default is 'created_at' (creation timestamp). This determines the column used in the ORDER BY clause of the database query.
      *
-     * @x-autobe-specification Sort field for query ordering. Allowed values: 'email', 'display_name', 'created_at', 'updated_at'. Default is 'created_at'. The database query applies ORDER BY <field>. If an unsupported field is provided, the backend should return a 400 error.
+         * @x-autobe-specification Sort field for query ordering. Allowed
+         *   values: 'email', 'display_name', 'created_at', 'updated_at'.
+         *   Default is 'created_at'. The database query applies ORDER BY
+         *   <field>. If an unsupported field is provided, the backend should
+         *   return a 400 error.
      */
     sort?: "email" | "display_name" | "created_at" | "updated_at" | undefined;
 
@@ -315,7 +384,10 @@ export namespace IRedditCommunityAdmin {
      *
      * Controls the ordering of results when combined with the sort field. Use 'asc' for ascending order (A-Z for strings, oldest-first for timestamps) or 'desc' for descending order (Z-A for strings, newest-first for timestamps). Default is 'desc'.
      *
-     * @x-autobe-specification Sort direction for query ordering. Values: 'asc' for ascending (A-Z, oldest first), 'desc' for descending (Z-A, newest first). Default is 'desc'. Combined with sort field to control result ordering.
+         * @x-autobe-specification Sort direction for query ordering. Values:
+         *   'asc' for ascending (A-Z, oldest first), 'desc' for descending
+         *   (Z-A, newest first). Default is 'desc'. Combined with sort field to
+         *   control result ordering.
      */
     sortDirection?: "asc" | "desc" | undefined;
 
@@ -324,7 +396,10 @@ export namespace IRedditCommunityAdmin {
      *
      * Controls pagination page size by limiting the number of administrator records returned in a single response. Valid range is 1 to 100, with a default of 20. Larger limits increase memory usage and response payload size. The backend enforces a hard maximum of 100 records per page.
      *
-     * @x-autobe-specification Maximum number of records to return per page (1-100). Default is 20. Used in the database query as LIMIT clause value. Higher values increase memory usage and response size. Backend must enforce maximum of 100.
+         * @x-autobe-specification Maximum number of records to return per page
+         *   (1-100). Default is 20. Used in the database query as LIMIT clause
+         *   value. Higher values increase memory usage and response size.
+         *   Backend must enforce maximum of 100.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -335,7 +410,11 @@ export namespace IRedditCommunityAdmin {
      *
      * Used in cursor-based pagination to retrieve subsequent pages. Include the cursor token returned in the previous page response to fetch the next set of results. Omit this parameter for the first page. Cursor-based pagination is preferred over offset-based pagination for large datasets as it avoids performance issues with deep pagination.
      *
-     * @x-autobe-specification Cursor token for cursor-based pagination. A string token returned in the previous page response that points to the next set of results. Omit to fetch the first page. Required for subsequent pages in cursor-based pagination. Ignored if page parameter is used instead.
+         * @x-autobe-specification Cursor token for cursor-based pagination. A
+         *   string token returned in the previous page response that points to
+         *   the next set of results. Omit to fetch the first page. Required for
+         *   subsequent pages in cursor-based pagination. Ignored if page
+         *   parameter is used instead.
      */
     cursor?: string | undefined;
 
@@ -344,7 +423,10 @@ export namespace IRedditCommunityAdmin {
      *
      * Specifies which page of results to return. Page numbering starts from 1, so the first page is page 1. If omitted, null, or undefined, defaults to page 1. Requesting a page beyond the available range returns an empty data array with valid pagination metadata reflecting the actual totals. This is an alternative to cursor-based pagination for simple use cases.
      *
-     * @x-autobe-specification 1-indexed page number. Valid range: 1 to total pages. Default is 1. When provided, cursor parameter is ignored. Backend validates that page number is within valid range and returns empty data if page exceeds total pages.
+         * @x-autobe-specification 1-indexed page number. Valid range: 1 to
+         *   total pages. Default is 1. When provided, cursor parameter is
+         *   ignored. Backend validates that page number is within valid range
+         *   and returns empty data if page exceeds total pages.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };
@@ -356,19 +438,20 @@ export namespace IRedditCommunityAdmin {
    */
   export type IJoin = {
     /**
-     * @x-autobe-database-schema-property email
+         * @x-autobe-database-schema-property email
      */
     email: string & tags.Format<"email">;
     /**
-     * @x-autobe-database-schema-property password_hash
+         * @x-autobe-database-schema-property password_hash
      */
     password: string & tags.MinLength<8> & tags.Format<"password">;
 
     /**
      * Human-readable display name for the administrator. Used in audit logs and public-facing administrator actions. Can be null if not set during registration.
      *
-     * @x-autobe-database-schema-property display_name
-     * @x-autobe-specification Maps to nullable display_name column in reddit_community_admins table.
+         * @x-autobe-database-schema-property display_name
+         * @x-autobe-specification Maps to nullable display_name column in
+         *   reddit_community_admins table.
      */
     display_name?: string | null | undefined;
   };
@@ -389,7 +472,10 @@ export namespace IRedditCommunityAdmin {
      *
      * The refresh token must reference an active session in the database. It will be validated for expiration and deletion status before issuing new tokens.
      *
-     * @x-autobe-specification Refresh token string from client. Validates against reddit_community_admin_sessions table: token must exist, not expired (expired_at > now), not deleted (deleted_at=null). If invalid, returns 401 error.
+         * @x-autobe-specification Refresh token string from client. Validates
+         *   against reddit_community_admin_sessions table: token must exist,
+         *   not expired (expired_at > now), not deleted (deleted_at=null). If
+         *   invalid, returns 401 error.
      */
     refresh_token: string;
   };

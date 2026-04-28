@@ -32,7 +32,9 @@ import { IShoppingMallCustomerAddress } from "../../../../structures/IShoppingMa
  * @param props.body Details of the new shipping address to create, including recipient information, full address fields, and default designation flag.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification 1. Authenticate the requesting user and verify they hold the customer role. Extract the customer's UUID from the session context.
+ * @x-autobe-specification 1. Authenticate the requesting user and verify they
+ *   hold the customer role. Extract the customer's UUID from the session
+ *   context.
  *
  * 2. Validate all required fields in the request body: recipient_name, phone, address_line1, city, state, postal_code, country must all be present and non-empty strings. address_line2 is optional (nullable). is_default must be a boolean.
  *
@@ -143,7 +145,9 @@ export namespace create {
  * @param props.body Search criteria and pagination parameters for filtering the customer's saved addresses
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification 1. Authenticate the request: extract the customer identity from the active JWT session. Reject unauthenticated requests with 401.
+ * @x-autobe-specification 1. Authenticate the request: extract the customer
+ *   identity from the active JWT session. Reject unauthenticated requests with
+ *   401.
  *
  * 2. Query the `shopping_mall_customer_addresses` table filtering by:
  *    - `shopping_mall_customer_id` = authenticated customer's ID
@@ -259,14 +263,17 @@ export namespace index {
  * @param props.addressId The UUID of the target shipping address to retrieve. Must belong to the authenticated customer and must not have been removed.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification 1. Authenticate the request as a 'customer' actor. Extract the customer's ID from the session/JWT.
- * 2. Query the shopping_mall_customer_addresses table for a record where:
- *    - id = addressId (UUID path parameter)
- *    - shopping_mall_customer_id = authenticated customer's ID (ownership check)
- *    - deleted_at IS NULL (exclude soft-deleted records)
- * 3. If no matching record is found (either non-existent, owned by another customer, or soft-deleted), return a 404 Not Found error.
- * 4. Map the database record to the IShoppingMallCustomerAddress response DTO, including all fields: id, recipient_name, phone, address_line1, address_line2 (nullable), city, state, postal_code, country, is_default, created_at, updated_at.
- * 5. Return the mapped DTO with HTTP 200 OK.
+ * @x-autobe-specification 1. Authenticate the request as a 'customer' actor.
+ *   Extract the customer's ID from the session/JWT. 2. Query the
+ *   shopping_mall_customer_addresses table for a record where: - id = addressId
+ *   (UUID path parameter) - shopping_mall_customer_id = authenticated
+ *   customer's ID (ownership check) - deleted_at IS NULL (exclude soft-deleted
+ *   records) 3. If no matching record is found (either non-existent, owned by
+ *   another customer, or soft-deleted), return a 404 Not Found error. 4. Map
+ *   the database record to the IShoppingMallCustomerAddress response DTO,
+ *   including all fields: id, recipient_name, phone, address_line1,
+ *   address_line2 (nullable), city, state, postal_code, country, is_default,
+ *   created_at, updated_at. 5. Return the mapped DTO with HTTP 200 OK.
  *
  * Edge cases:
  * - addressId is a valid UUID format but does not exist → 404
@@ -367,21 +374,25 @@ export namespace at {
  * @param props.body Updated field values for the target shipping address.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification 1. Authenticate the requesting customer from the session token.
- * 2. Look up the `shopping_mall_customer_addresses` record where `id = addressId` AND `deleted_at IS NULL`.
- *    - If not found, respond with 404 Not Found.
- *    - If found but `shopping_mall_customer_id` does not match the authenticated customer's ID, respond with 403 Forbidden.
- * 3. Validate the request body:
- *    - `recipient_name`, `phone`, `address_line1`, `city`, `state`, `postal_code`, `country` must all be present and non-empty strings.
- *    - `address_line2` is optional (may be null or omitted).
- *    - `country` should be a valid ISO 3166-1 alpha-2 code (validation recommended but not strictly enforced at DB level).
- *    - `is_default` must be a boolean.
- *    - Reject with 422 Unprocessable Entity if any required field is missing or empty.
- * 4. If `is_default` is `true` in the request body:
- *    - Within a database transaction, set `is_default = false` on all other `shopping_mall_customer_addresses` records belonging to the same customer (where `id != addressId` AND `deleted_at IS NULL` AND `is_default = true`).
- * 5. Update the target address record with all provided field values and set `updated_at = NOW()`.
- * 6. Commit the transaction.
- * 7. Return the full updated `shopping_mall_customer_addresses` record as `IShoppingMallCustomerAddress`.
+ * @x-autobe-specification 1. Authenticate the requesting customer from the
+ *   session token. 2. Look up the `shopping_mall_customer_addresses` record
+ *   where `id = addressId` AND `deleted_at IS NULL`. - If not found, respond
+ *   with 404 Not Found. - If found but `shopping_mall_customer_id` does not
+ *   match the authenticated customer's ID, respond with 403 Forbidden. 3.
+ *   Validate the request body: - `recipient_name`, `phone`, `address_line1`,
+ *   `city`, `state`, `postal_code`, `country` must all be present and non-empty
+ *   strings. - `address_line2` is optional (may be null or omitted). -
+ *   `country` should be a valid ISO 3166-1 alpha-2 code (validation recommended
+ *   but not strictly enforced at DB level). - `is_default` must be a boolean. -
+ *   Reject with 422 Unprocessable Entity if any required field is missing or
+ *   empty. 4. If `is_default` is `true` in the request body: - Within a
+ *   database transaction, set `is_default = false` on all other
+ *   `shopping_mall_customer_addresses` records belonging to the same customer
+ *   (where `id != addressId` AND `deleted_at IS NULL` AND `is_default = true`).
+ *   5. Update the target address record with all provided field values and set
+ *   `updated_at = NOW()`. 6. Commit the transaction. 7. Return the full updated
+ *   `shopping_mall_customer_addresses` record as
+ *   `IShoppingMallCustomerAddress`.
  * @path /shoppingMall/customer/addresses/:addressId
  * @accessor api.functional.shoppingMall.customer.addresses.update
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -483,14 +494,19 @@ export namespace update {
  * @param props.addressId The UUID of the shipping address to be deleted. Must belong to the authenticated customer.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification 1. Authenticate the requesting customer via JWT session token.
- * 2. Look up the `shopping_mall_customer_addresses` record by `addressId` (UUID) where `deleted_at IS NULL`.
- * 3. Verify that the `shopping_mall_customer_id` on the record matches the authenticated customer's ID. If not, reject with a 403 Forbidden error.
- * 4. If the record does not exist or is already soft-deleted, return a 404 Not Found error.
- * 5. Set `deleted_at` to the current timestamp to mark the address as soft-deleted (the physical row is preserved for historical order reference integrity).
- * 6. If `is_default` was `true` on the deleted address, clear the default designation — no other address automatically inherits the default. After deletion, the customer has no default address until they manually designate one.
- * 7. Update `updated_at` to the current timestamp.
- * 8. Return HTTP 200 with no body (or 204 No Content).
+ * @x-autobe-specification 1. Authenticate the requesting customer via JWT
+ *   session token. 2. Look up the `shopping_mall_customer_addresses` record by
+ *   `addressId` (UUID) where `deleted_at IS NULL`. 3. Verify that the
+ *   `shopping_mall_customer_id` on the record matches the authenticated
+ *   customer's ID. If not, reject with a 403 Forbidden error. 4. If the record
+ *   does not exist or is already soft-deleted, return a 404 Not Found error. 5.
+ *   Set `deleted_at` to the current timestamp to mark the address as
+ *   soft-deleted (the physical row is preserved for historical order reference
+ *   integrity). 6. If `is_default` was `true` on the deleted address, clear the
+ *   default designation — no other address automatically inherits the default.
+ *   After deletion, the customer has no default address until they manually
+ *   designate one. 7. Update `updated_at` to the current timestamp. 8. Return
+ *   HTTP 200 with no body (or 204 No Content).
  * @path /shoppingMall/customer/addresses/:addressId
  * @accessor api.functional.shoppingMall.customer.addresses.erase
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe

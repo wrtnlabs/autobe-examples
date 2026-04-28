@@ -38,7 +38,8 @@ import { IPageIEcommerceSellerSnapshot } from "../../../../structures/IPageIEcom
  * @param props.body Search criteria for filtering snapshots including entity type, date ranges, entity references, and pagination parameters.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Query snapshot tables based on search criteria with authorization filtering.
+ * @x-autobe-specification Query snapshot tables based on search criteria with
+ *   authorization filtering.
  *
  * **Implementation Steps**
  *
@@ -182,7 +183,13 @@ export namespace index {
  * @param props.snapshotId Unique identifier of the snapshot record (UUID format).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Query the appropriate snapshot table based on the snapshotId. Since snapshot IDs are unique across all snapshot types, implement a polymorphic query that checks each snapshot table (ecommerce_product_snapshots, ecommerce_order_item_snapshots, ecommerce_review_snapshots, ecommerce_cancellation_request_snapshots, ecommerce_refund_request_snapshots, ecommerce_seller_snapshots, ecommerce_category_snapshots) until a match is found.
+ * @x-autobe-specification Query the appropriate snapshot table based on the
+ *   snapshotId. Since snapshot IDs are unique across all snapshot types,
+ *   implement a polymorphic query that checks each snapshot table
+ *   (ecommerce_product_snapshots, ecommerce_order_item_snapshots,
+ *   ecommerce_review_snapshots, ecommerce_cancellation_request_snapshots,
+ *   ecommerce_refund_request_snapshots, ecommerce_seller_snapshots,
+ *   ecommerce_category_snapshots) until a match is found.
  *
  * **Authorization**
  * 1. Extract the authenticated user from the request context

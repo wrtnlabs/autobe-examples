@@ -8,96 +8,114 @@ export type IShoppingMallProductSnapshot = {
   /**
    * Unique identifier of the immutable product snapshot record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Return shopping_mall_product_snapshots.id as a UUID string.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Return shopping_mall_product_snapshots.id as a
+     *   UUID string.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Stable, human-readable code for this snapshot (denormalized for dispute resolution).
    *
-   * @x-autobe-database-schema-property snapshot_code
-   * @x-autobe-specification Return shopping_mall_product_snapshots.snapshot_code exactly as stored (unique code for referencing this snapshot).
+     * @x-autobe-database-schema-property snapshot_code
+     * @x-autobe-specification Return
+     *   shopping_mall_product_snapshots.snapshot_code exactly as stored (unique
+     *   code for referencing this snapshot).
    */
   snapshot_code: string;
 
   /**
    * Product display name at the moment the snapshot was created.
    *
-   * @x-autobe-database-schema-property snapshot_name
-   * @x-autobe-specification Return shopping_mall_product_snapshots.snapshot_name exactly as stored.
+     * @x-autobe-database-schema-property snapshot_name
+     * @x-autobe-specification Return
+     *   shopping_mall_product_snapshots.snapshot_name exactly as stored.
    */
   snapshot_name: string;
 
   /**
    * Optional product description text at the snapshot moment.
    *
-   * @x-autobe-database-schema-property snapshot_description
-   * @x-autobe-specification Return shopping_mall_product_snapshots.snapshot_description; if the column is NULL, represent it as null in the DTO.
+     * @x-autobe-database-schema-property snapshot_description
+     * @x-autobe-specification Return
+     *   shopping_mall_product_snapshots.snapshot_description; if the column is
+     *   NULL, represent it as null in the DTO.
    */
   snapshot_description: string | null;
 
   /**
    * Optional category reference id captured at the time of the snapshot.
    *
-   * @x-autobe-database-schema-property snapshot_category_id
-   * @x-autobe-specification Return shopping_mall_product_snapshots.snapshot_category_id; if NULL, represent it as null in the DTO.
+     * @x-autobe-database-schema-property snapshot_category_id
+     * @x-autobe-specification Return
+     *   shopping_mall_product_snapshots.snapshot_category_id; if NULL,
+     *   represent it as null in the DTO.
    */
   snapshot_category_id: (string & tags.Format<"uuid">) | null;
 
   /**
    * Seller reference id captured for this snapshot at creation time.
    *
-   * @x-autobe-database-schema-property snapshot_seller_id
-   * @x-autobe-specification Return shopping_mall_product_snapshots.snapshot_seller_id as a UUID string.
+     * @x-autobe-database-schema-property snapshot_seller_id
+     * @x-autobe-specification Return
+     *   shopping_mall_product_snapshots.snapshot_seller_id as a UUID string.
    */
   snapshot_seller_id: string & tags.Format<"uuid">;
 
   /**
    * Optional denormalized display price shown for the product at the snapshot moment.
    *
-   * @x-autobe-database-schema-property display_price
-   * @x-autobe-specification Return shopping_mall_product_snapshots.display_price; if NULL, represent it as null in the DTO.
+     * @x-autobe-database-schema-property display_price
+     * @x-autobe-specification Return
+     *   shopping_mall_product_snapshots.display_price; if NULL, represent it as
+     *   null in the DTO.
    */
   display_price: number | null;
 
   /**
    * Whether the product was considered listed/visible at the snapshot moment.
    *
-   * @x-autobe-database-schema-property is_listed
-   * @x-autobe-specification Return shopping_mall_product_snapshots.is_listed as a boolean.
+     * @x-autobe-database-schema-property is_listed
+     * @x-autobe-specification Return shopping_mall_product_snapshots.is_listed
+     *   as a boolean.
    */
   is_listed: boolean;
 
   /**
    * Timestamp when the snapshot record was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Return shopping_mall_product_snapshots.created_at as an ISO date-time string.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Return shopping_mall_product_snapshots.created_at
+     *   as an ISO date-time string.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the snapshot record metadata was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Return shopping_mall_product_snapshots.updated_at as an ISO date-time string.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Return shopping_mall_product_snapshots.updated_at
+     *   as an ISO date-time string.
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * Soft-delete timestamp for the snapshot record, or null when not deleted.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Return shopping_mall_product_snapshots.deleted_at; if NULL, represent it as null in the DTO.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Return
+     *   shopping_mall_product_snapshots.deleted_at; if NULL, represent it as
+     *   null in the DTO.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 
   /**
    * Identifier of the product whose state was captured by this snapshot.
    *
-   * @x-autobe-database-schema-property shopping_mall_product_id
-   * @x-autobe-specification Return shopping_mall_product_snapshots.shopping_mall_product_id as a UUID string.
+     * @x-autobe-database-schema-property shopping_mall_product_id
+     * @x-autobe-specification Return
+     *   shopping_mall_product_snapshots.shopping_mall_product_id as a UUID
+     *   string.
    */
   shopping_mall_product_id: string & tags.Format<"uuid">;
 };
@@ -109,53 +127,69 @@ export namespace IShoppingMallProductSnapshot {
     /**
      * Snapshot source discriminator to indicate which type/kind of snapshots should be returned.
      *
-     * @x-autobe-specification Use sourceType as the snapshot source discriminator handled by the service layer (it constrains which snapshot records are considered “product snapshots” for this endpoint). Since the discriminator is not stored on shopping_mall_product_snapshots itself, translate/validate it in the query construction logic rather than as a direct column predicate on this table.
+         * @x-autobe-specification Use sourceType as the snapshot source
+         *   discriminator handled by the service layer (it constrains which
+         *   snapshot records are considered “product snapshots” for this
+         *   endpoint). Since the discriminator is not stored on
+         *   shopping_mall_product_snapshots itself, translate/validate it in
+         *   the query construction logic rather than as a direct column
+         *   predicate on this table.
      */
     sourceType?: string | undefined;
 
     /**
      * Product id to filter snapshots by their originating product.
      *
-     * @x-autobe-database-schema-property shopping_mall_product_id
-     * @x-autobe-specification If productId is provided, filter rows where shopping_mall_product_snapshots.shopping_mall_product_id = productId.
+         * @x-autobe-database-schema-property shopping_mall_product_id
+         * @x-autobe-specification If productId is provided, filter rows where
+         *   shopping_mall_product_snapshots.shopping_mall_product_id =
+         *   productId.
      */
     productId?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Optional seller scope to filter snapshots by the seller that owned the product at snapshot time.
      *
-     * @x-autobe-database-schema-property snapshot_seller_id
-     * @x-autobe-specification If sellerId is provided, filter rows where shopping_mall_product_snapshots.snapshot_seller_id = sellerId.
+         * @x-autobe-database-schema-property snapshot_seller_id
+         * @x-autobe-specification If sellerId is provided, filter rows where
+         *   shopping_mall_product_snapshots.snapshot_seller_id = sellerId.
      */
     sellerId?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Start of the created-at time window (inclusive) in ISO 8601 format.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification If provided, apply filter shopping_mall_product_snapshots.created_at >= createdAtFrom.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification If provided, apply filter
+         *   shopping_mall_product_snapshots.created_at >= createdAtFrom.
      */
     createdAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * End of the created-at time window (inclusive) in ISO 8601 format.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification If provided, apply filter shopping_mall_product_snapshots.created_at <= createdAtTo.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification If provided, apply filter
+         *   shopping_mall_product_snapshots.created_at <= createdAtTo.
      */
     createdAtTo?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * 1-based page index for pagination.
      *
-     * @x-autobe-specification Use page as the 1-based page index. Internally convert to offset pagination as (page - 1) * limit when offset pagination is used, and validate/clamp within the paging semantics defined for IRequest.
+         * @x-autobe-specification Use page as the 1-based page index.
+         *   Internally convert to offset pagination as (page - 1) * limit when
+         *   offset pagination is used, and validate/clamp within the paging
+         *   semantics defined for IRequest.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of snapshot records to return per page.
      *
-     * @x-autobe-specification Use limit as the page size (maximum number of records per page). Enforce the DTO constraint maximum (100) and minimum (1).
+         * @x-autobe-specification Use limit as the page size (maximum number of
+         *   records per page). Enforce the DTO constraint maximum (100) and
+         *   minimum (1).
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -164,7 +198,12 @@ export namespace IShoppingMallProductSnapshot {
     /**
      * Optional sort key/direction. When omitted, the server defaults to created_at DESC.
      *
-     * @x-autobe-specification If sort is omitted, default to ORDER BY shopping_mall_product_snapshots.created_at DESC. If provided, parse the directive as an allowed sort key/direction and map it to the corresponding ORDER BY clause (at minimum ensure created_at is usable for deterministic ordering). Reject unsupported sort directives during validation.
+         * @x-autobe-specification If sort is omitted, default to ORDER BY
+         *   shopping_mall_product_snapshots.created_at DESC. If provided, parse
+         *   the directive as an allowed sort key/direction and map it to the
+         *   corresponding ORDER BY clause (at minimum ensure created_at is
+         *   usable for deterministic ordering). Reject unsupported sort
+         *   directives during validation.
      */
     sort?: string | undefined;
   };
@@ -176,96 +215,114 @@ export namespace IShoppingMallProductSnapshot {
     /**
      * Unique identifier of the product snapshot record.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_product_snapshots.id (UUID).
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_snapshots.id (UUID).
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Stable product code value captured at the time the snapshot was created.
      *
-     * @x-autobe-database-schema-property snapshot_code
-     * @x-autobe-specification Direct mapping from shopping_mall_product_snapshots.snapshot_code.
+         * @x-autobe-database-schema-property snapshot_code
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_snapshots.snapshot_code.
      */
     snapshot_code: string;
 
     /**
      * Product name captured at the time the snapshot was created.
      *
-     * @x-autobe-database-schema-property snapshot_name
-     * @x-autobe-specification Direct mapping from shopping_mall_product_snapshots.snapshot_name.
+         * @x-autobe-database-schema-property snapshot_name
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_snapshots.snapshot_name.
      */
     snapshot_name: string;
 
     /**
      * Product description captured at the time the snapshot was created (null when the snapshot description was not available).
      *
-     * @x-autobe-database-schema-property snapshot_description
-     * @x-autobe-specification Direct mapping from shopping_mall_product_snapshots.snapshot_description where NULL becomes null (DTO: string | null).
+         * @x-autobe-database-schema-property snapshot_description
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_snapshots.snapshot_description where NULL
+         *   becomes null (DTO: string | null).
      */
     snapshot_description: string | null;
 
     /**
      * Category identifier captured at the time the snapshot was created (null when the product had no category then).
      *
-     * @x-autobe-database-schema-property snapshot_category_id
-     * @x-autobe-specification Direct mapping from shopping_mall_product_snapshots.snapshot_category_id where NULL becomes null (DTO: uuid | null).
+         * @x-autobe-database-schema-property snapshot_category_id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_snapshots.snapshot_category_id where NULL
+         *   becomes null (DTO: uuid | null).
      */
     snapshot_category_id: (string & tags.Format<"uuid">) | null;
 
     /**
      * Seller identifier captured at the time the snapshot was created.
      *
-     * @x-autobe-database-schema-property snapshot_seller_id
-     * @x-autobe-specification Direct mapping from shopping_mall_product_snapshots.snapshot_seller_id (UUID).
+         * @x-autobe-database-schema-property snapshot_seller_id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_snapshots.snapshot_seller_id (UUID).
      */
     snapshot_seller_id: string & tags.Format<"uuid">;
 
     /**
      * Denormalized display price captured at the snapshot moment (null when not applicable for the snapshot).
      *
-     * @x-autobe-database-schema-property display_price
-     * @x-autobe-specification Direct mapping from shopping_mall_product_snapshots.display_price where NULL becomes null (DTO: number | null).
+         * @x-autobe-database-schema-property display_price
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_snapshots.display_price where NULL becomes
+         *   null (DTO: number | null).
      */
     display_price: number | null;
 
     /**
      * Whether the product was considered listed/visible at the snapshot moment.
      *
-     * @x-autobe-database-schema-property is_listed
-     * @x-autobe-specification Direct mapping from shopping_mall_product_snapshots.is_listed (boolean).
+         * @x-autobe-database-schema-property is_listed
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_snapshots.is_listed (boolean).
      */
     is_listed: boolean;
 
     /**
      * Timestamp when the snapshot record was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_product_snapshots.created_at (DateTime → RFC3339 date-time string).
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_snapshots.created_at (DateTime → RFC3339
+         *   date-time string).
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when the snapshot record was last updated (typically soft-delete metadata related).
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from shopping_mall_product_snapshots.updated_at (DateTime → RFC3339 date-time string).
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_snapshots.updated_at (DateTime → RFC3339
+         *   date-time string).
      */
     updated_at: string & tags.Format<"date-time">;
 
     /**
      * Soft-delete timestamp for the snapshot record (null when the snapshot is not soft-deleted).
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from shopping_mall_product_snapshots.deleted_at where NULL becomes null (DTO: date-time | null).
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_snapshots.deleted_at where NULL becomes null
+         *   (DTO: date-time | null).
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
 
     /**
      * Identifier of the product whose state was captured in this snapshot.
      *
-     * @x-autobe-database-schema-property shopping_mall_product_id
-     * @x-autobe-specification Direct mapping from shopping_mall_product_snapshots.shopping_mall_product_id (UUID).
+         * @x-autobe-database-schema-property shopping_mall_product_id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_snapshots.shopping_mall_product_id (UUID).
      */
     shopping_mall_product_id: string & tags.Format<"uuid">;
   };
@@ -277,49 +334,49 @@ export namespace IShoppingMallProductSnapshot {
    */
   export type ICreate = {
     /**
-     * @x-autobe-database-schema-property snapshot_code
+         * @x-autobe-database-schema-property snapshot_code
      */
     snapshot_code: string;
     /**
-     * @x-autobe-database-schema-property source_type
+         * @x-autobe-database-schema-property source_type
      */
     source_type: string;
     /**
-     * @x-autobe-database-schema-property source_entity_id
+         * @x-autobe-database-schema-property source_entity_id
      */
     source_entity_id: string & tags.Format<"uuid">;
     /**
-     * @x-autobe-database-schema-property source_seller_id
+         * @x-autobe-database-schema-property source_seller_id
      */
     source_seller_id?: (string & tags.Format<"uuid">) | null | undefined;
     /**
-     * @x-autobe-database-schema-property source_order_id
+         * @x-autobe-database-schema-property source_order_id
      */
     source_order_id?: (string & tags.Format<"uuid">) | null | undefined;
     /**
-     * @x-autobe-database-schema-property source_order_item_id
+         * @x-autobe-database-schema-property source_order_item_id
      */
     source_order_item_id?: (string & tags.Format<"uuid">) | null | undefined;
     /**
-     * @x-autobe-database-schema-property source_review_id
+         * @x-autobe-database-schema-property source_review_id
      */
     source_review_id?: (string & tags.Format<"uuid">) | null | undefined;
     /**
-     * @x-autobe-database-schema-property source_cancellation_request_id
+         * @x-autobe-database-schema-property source_cancellation_request_id
      */
     source_cancellation_request_id?:
       | (string & tags.Format<"uuid">)
       | null
       | undefined;
     /**
-     * @x-autobe-database-schema-property source_refund_request_id
+         * @x-autobe-database-schema-property source_refund_request_id
      */
     source_refund_request_id?:
       | (string & tags.Format<"uuid">)
       | null
       | undefined;
     /**
-     * @x-autobe-database-schema-property reason
+         * @x-autobe-database-schema-property reason
      */
     reason: string;
   };

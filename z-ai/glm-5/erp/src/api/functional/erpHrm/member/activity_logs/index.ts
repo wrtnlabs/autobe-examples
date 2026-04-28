@@ -22,7 +22,8 @@ import { IPageIErpHrmActivityLog } from "../../../../structures/IPageIErpHrmActi
  * @param props.body Search criteria and pagination parameters for filtering activity log entries
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query erp_hrm_activity_logs table with pagination and filtering capabilities.
+ * @x-autobe-specification Query erp_hrm_activity_logs table with pagination and
+ *   filtering capabilities.
  *
  * Implementation steps:
  * 1. Extract organization context from authenticated member's session
@@ -134,7 +135,8 @@ export namespace index {
  * @param props.activityLogId Unique identifier of the activity log entry to retrieve (UUID format)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Retrieve a single activity log entry by UUID primary key.
+ * @x-autobe-specification Retrieve a single activity log entry by UUID primary
+ *   key.
  *
  * Implementation Steps:
  * 1. Validate the activityLogId parameter format (UUID)

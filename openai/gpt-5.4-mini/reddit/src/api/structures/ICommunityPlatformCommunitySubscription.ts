@@ -11,56 +11,73 @@ export type ICommunityPlatformCommunitySubscription = {
   /**
    * Unique identifier for this subscription record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from community_platform_community_subscriptions.id. Read the persisted subscription row identifier without transformation.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_community_subscriptions.id. Read the persisted
+     *   subscription row identifier without transformation.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Current subscription state for the member-community relationship.
    *
-   * @x-autobe-database-schema-property subscription_status
-   * @x-autobe-specification Direct mapping from community_platform_community_subscriptions.subscription_status. Represents the current membership state stored on the subscription row.
+     * @x-autobe-database-schema-property subscription_status
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_community_subscriptions.subscription_status.
+     *   Represents the current membership state stored on the subscription row.
    */
   subscription_status: string;
 
   /**
    * Member associated with this subscription.
    *
-   * @x-autobe-database-schema-property member
-   * @x-autobe-specification Join community_platform_community_subscriptions.community_platform_member_id to community_platform_members.id and expose the related member as ICommunityPlatformMember.ISummary.
+     * @x-autobe-database-schema-property member
+     * @x-autobe-specification Join
+     *   community_platform_community_subscriptions.community_platform_member_id
+     *   to community_platform_members.id and expose the related member as
+     *   ICommunityPlatformMember.ISummary.
    */
   member: ICommunityPlatformMember.ISummary;
 
   /**
    * Community associated with this subscription.
    *
-   * @x-autobe-database-schema-property community
-   * @x-autobe-specification Join community_platform_community_subscriptions.community_platform_community_id to community_platform_communities.id and expose the related community as ICommunityPlatformCommunity.ISummary.
+     * @x-autobe-database-schema-property community
+     * @x-autobe-specification Join
+     *   community_platform_community_subscriptions.community_platform_community_id
+     *   to community_platform_communities.id and expose the related community
+     *   as ICommunityPlatformCommunity.ISummary.
    */
   community: ICommunityPlatformCommunity.ISummary;
 
   /**
    * Time when the subscription record was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from community_platform_community_subscriptions.created_at. Preserve the stored creation timestamp as returned by the database.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_community_subscriptions.created_at. Preserve the
+     *   stored creation timestamp as returned by the database.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Time when the subscription record was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from community_platform_community_subscriptions.updated_at. Preserve the stored last-modified timestamp as returned by the database.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_community_subscriptions.updated_at. Preserve the
+     *   stored last-modified timestamp as returned by the database.
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * Soft-deletion timestamp, or null when the subscription is active.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from community_platform_community_subscriptions.deleted_at. This value is nullable and indicates soft deletion; null means the subscription is active.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_community_subscriptions.deleted_at. This value is
+     *   nullable and indicates soft deletion; null means the subscription is
+     *   active.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -72,8 +89,12 @@ export namespace ICommunityPlatformCommunitySubscription {
     /**
      * Desired subscription state for the current member's community membership.
      *
-     * @x-autobe-database-schema-property subscription_status
-     * @x-autobe-specification Direct mapping to community_platform_community_subscriptions.subscription_status. The value represents the subscription state requested for the authenticated member's community membership and is persisted when creating or reactivating the row.
+         * @x-autobe-database-schema-property subscription_status
+         * @x-autobe-specification Direct mapping to
+         *   community_platform_community_subscriptions.subscription_status. The
+         *   value represents the subscription state requested for the
+         *   authenticated member's community membership and is persisted when
+         *   creating or reactivating the row.
      */
     subscriptionStatus: string;
   };
@@ -85,28 +106,46 @@ export namespace ICommunityPlatformCommunitySubscription {
     /**
      * Text used to search within the current member’s subscribed communities or subscription records.
      *
-     * @x-autobe-specification Apply this as an optional search term against the member-scoped subscription query. Filter joined community data using fields such as community name, and optionally subscription status if supported by the service layer. The value is not stored in the database; it only influences the SELECT query for community_platform_community_subscriptions joined with community_platform_communities.
+         * @x-autobe-specification Apply this as an optional search term against
+         *   the member-scoped subscription query. Filter joined community data
+         *   using fields such as community name, and optionally subscription
+         *   status if supported by the service layer. The value is not stored
+         *   in the database; it only influences the SELECT query for
+         *   community_platform_community_subscriptions joined with
+         *   community_platform_communities.
      */
     search?: string | undefined;
 
     /**
      * Sorting rule for the subscription list, such as recent-first or another supported order.
      *
-     * @x-autobe-specification Use this as an optional sort directive for the member-scoped subscription query. If omitted, default to a recent-first ordering based on subscription timing. Interpret the value only in query execution; do not map it to a database column or relation.
+         * @x-autobe-specification Use this as an optional sort directive for
+         *   the member-scoped subscription query. If omitted, default to a
+         *   recent-first ordering based on subscription timing. Interpret the
+         *   value only in query execution; do not map it to a database column
+         *   or relation.
      */
     sort?: string | undefined;
 
     /**
      * Page number to retrieve from the paginated subscription list.
      *
-     * @x-autobe-specification Use this as the 1-indexed page number for the paginated member subscription query. It controls which slice of results is returned after filtering and sorting. This value is consumed by pagination logic only and is never persisted to the database.
+         * @x-autobe-specification Use this as the 1-indexed page number for the
+         *   paginated member subscription query. It controls which slice of
+         *   results is returned after filtering and sorting. This value is
+         *   consumed by pagination logic only and is never persisted to the
+         *   database.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of subscription records to return in one page.
      *
-     * @x-autobe-specification Use this as the maximum number of records to return per page for the member subscription query. It limits the size of the returned slice after filtering and sorting. This value is consumed by pagination logic only and is never persisted to the database.
+         * @x-autobe-specification Use this as the maximum number of records to
+         *   return per page for the member subscription query. It limits the
+         *   size of the returned slice after filtering and sorting. This value
+         *   is consumed by pagination logic only and is never persisted to the
+         *   database.
      */
     limit?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
   };
@@ -118,56 +157,74 @@ export namespace ICommunityPlatformCommunitySubscription {
     /**
      * Unique identifier of the subscription record.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from community_platform_community_subscriptions.id. This is the primary key of the subscription row and identifies the record itself.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_community_subscriptions.id. This is the primary
+         *   key of the subscription row and identifies the record itself.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * The member who is subscribed to the community.
      *
-     * @x-autobe-database-schema-property member
-     * @x-autobe-specification Resolve the member relation from community_platform_member_id and expose it as ICommunityPlatformMember.ISummary. This is a read-side relation expansion, not a raw foreign key.
+         * @x-autobe-database-schema-property member
+         * @x-autobe-specification Resolve the member relation from
+         *   community_platform_member_id and expose it as
+         *   ICommunityPlatformMember.ISummary. This is a read-side relation
+         *   expansion, not a raw foreign key.
      */
     member: ICommunityPlatformMember.ISummary;
 
     /**
      * The community that the member is subscribed to.
      *
-     * @x-autobe-database-schema-property community
-     * @x-autobe-specification Resolve the community relation from community_platform_community_id and expose it as ICommunityPlatformCommunity.ISummary. This is a read-side relation expansion, not a raw foreign key.
+         * @x-autobe-database-schema-property community
+         * @x-autobe-specification Resolve the community relation from
+         *   community_platform_community_id and expose it as
+         *   ICommunityPlatformCommunity.ISummary. This is a read-side relation
+         *   expansion, not a raw foreign key.
      */
     community: ICommunityPlatformCommunity.ISummary;
 
     /**
      * Current subscription state for the member-community relationship.
      *
-     * @x-autobe-database-schema-property subscription_status
-     * @x-autobe-specification Direct mapping from community_platform_community_subscriptions.subscription_status. Preserve the stored membership state value used to determine whether the subscription is active or inactive.
+         * @x-autobe-database-schema-property subscription_status
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_community_subscriptions.subscription_status.
+         *   Preserve the stored membership state value used to determine
+         *   whether the subscription is active or inactive.
      */
     subscriptionStatus: string;
 
     /**
      * When the subscription record was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from community_platform_community_subscriptions.created_at. This is the timestamp when the subscription record was created.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_community_subscriptions.created_at. This is the
+         *   timestamp when the subscription record was created.
      */
     createdAt: string & tags.Format<"date-time">;
 
     /**
      * When the subscription record was last updated.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from community_platform_community_subscriptions.updated_at. This is the timestamp when the subscription record was last updated.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_community_subscriptions.updated_at. This is the
+         *   timestamp when the subscription record was last updated.
      */
     updatedAt: string & tags.Format<"date-time">;
 
     /**
      * When the subscription record was soft-deleted, or null if it is still active.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from community_platform_community_subscriptions.deleted_at. Return null when the record is active and a date-time value when the record has been soft-deleted.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_community_subscriptions.deleted_at. Return null
+         *   when the record is active and a date-time value when the record has
+         *   been soft-deleted.
      */
     deletedAt: (string & tags.Format<"date-time">) | null;
   };

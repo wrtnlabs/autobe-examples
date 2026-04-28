@@ -16,8 +16,10 @@ export type ITodoAppMemberPasswordReset = {
    *
    * This UUID serves as the primary key for the password reset token record and is used to reference this specific reset request in API operations.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from todo_app_member_password_resets.id. Primary key UUID identifying the password reset record.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   todo_app_member_password_resets.id. Primary key UUID identifying the
+     *   password reset record.
    */
   id: string & tags.Format<"uuid">;
 
@@ -26,8 +28,11 @@ export type ITodoAppMemberPasswordReset = {
    *
    * This object contains the member's profile information including email address and display name. The member relation is included to provide context about which account the password reset token belongs to.
    *
-   * @x-autobe-database-schema-property member
-   * @x-autobe-specification Join from todo_app_member_password_resets.todo_app_member_id to todo_app_members.id. Returns ITodoAppMember.ISummary with id, email, display_name, created_at, updated_at, deleted_at fields.
+     * @x-autobe-database-schema-property member
+     * @x-autobe-specification Join from
+     *   todo_app_member_password_resets.todo_app_member_id to
+     *   todo_app_members.id. Returns ITodoAppMember.ISummary with id, email,
+     *   display_name, created_at, updated_at, deleted_at fields.
    */
   member: ITodoAppMember.ISummary;
 
@@ -36,8 +41,10 @@ export type ITodoAppMemberPasswordReset = {
    *
    * The token becomes invalid after this time. Password reset tokens typically have a short expiration duration (e.g., 1 hour) for security purposes. After expiration, the token cannot be used to reset the password.
    *
-   * @x-autobe-database-schema-property expired_at
-   * @x-autobe-specification Direct mapping from todo_app_member_password_resets.expired_at. DateTime field indicating when the password reset token becomes invalid.
+     * @x-autobe-database-schema-property expired_at
+     * @x-autobe-specification Direct mapping from
+     *   todo_app_member_password_resets.expired_at. DateTime field indicating
+     *   when the password reset token becomes invalid.
    */
   expired_at: string & tags.Format<"date-time">;
 
@@ -46,8 +53,10 @@ export type ITodoAppMemberPasswordReset = {
    *
    * This field is set automatically when a member requests a password reset and cannot be modified. It represents when the reset request was initiated and is used for sorting and filtering password reset records.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from todo_app_member_password_resets.created_at. DateTime field set automatically when the password reset record is created.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   todo_app_member_password_resets.created_at. DateTime field set
+     *   automatically when the password reset record is created.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -56,8 +65,10 @@ export type ITodoAppMemberPasswordReset = {
    *
    * This field is updated automatically whenever any information about the password reset record is modified. It tracks the most recent change to the record.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from todo_app_member_password_resets.updated_at. DateTime field updated automatically whenever the password reset record is modified.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   todo_app_member_password_resets.updated_at. DateTime field updated
+     *   automatically whenever the password reset record is modified.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -66,8 +77,10 @@ export type ITodoAppMemberPasswordReset = {
    *
    * A null value indicates the password reset token is active and can be used. When set to a timestamp, the token has been soft deleted and is no longer valid for password resets. Soft deletion allows for audit trail retention while preventing token reuse.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from todo_app_member_password_resets.deleted_at. Nullable DateTime field for soft delete support. Null means active, timestamp means soft deleted.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   todo_app_member_password_resets.deleted_at. Nullable DateTime field for
+     *   soft delete support. Null means active, timestamp means soft deleted.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -85,8 +98,10 @@ export namespace ITodoAppMemberPasswordReset {
      *
      * This UUID identifies a specific password reset request. Used to reference and manage individual reset tokens in the system. Each password reset request generates a unique token with this identifier.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from todo_app_member_password_resets.id. Primary key UUID identifying the password reset token record.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_member_password_resets.id. Primary key UUID identifying
+         *   the password reset token record.
      */
     id: string & tags.Format<"uuid">;
 
@@ -95,8 +110,10 @@ export namespace ITodoAppMemberPasswordReset {
      *
      * This field indicates when the member requested a password reset and the token was generated. Used to show when the reset request was made and to calculate how long the token has been active.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from todo_app_member_password_resets.created_at. Timestamp when the password reset token was generated.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_member_password_resets.created_at. Timestamp when the
+         *   password reset token was generated.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -105,8 +122,10 @@ export namespace ITodoAppMemberPasswordReset {
      *
      * This field indicates when the token will no longer be valid for password reset. Tokens typically expire after a short duration (e.g., 1 hour) for security purposes. Members must complete the password reset before this time.
      *
-     * @x-autobe-database-schema-property expired_at
-     * @x-autobe-specification Direct mapping from todo_app_member_password_resets.expired_at. Timestamp when the password reset token expires and becomes invalid.
+         * @x-autobe-database-schema-property expired_at
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_member_password_resets.expired_at. Timestamp when the
+         *   password reset token expires and becomes invalid.
      */
     expired_at: string & tags.Format<"date-time">;
 
@@ -115,8 +134,11 @@ export namespace ITodoAppMemberPasswordReset {
      *
      * This field indicates whether the password reset token has been soft deleted. A null value means the token is still valid (if not expired). A non-null value indicates the token has been deleted and is no longer usable for password reset.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from todo_app_member_password_resets.deleted_at. Nullable timestamp indicating soft deletion. Null means active, non-null means deleted.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_member_password_resets.deleted_at. Nullable timestamp
+         *   indicating soft deletion. Null means active, non-null means
+         *   deleted.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };
@@ -132,7 +154,9 @@ export namespace ITodoAppMemberPasswordReset {
      *
      * Specifies which page of results to retrieve when viewing password reset token history. Page numbering starts from 1, so the first page is page 1. If not provided, the server defaults to returning the first page of results.
      *
-     * @x-autobe-specification Pagination page number (1-indexed). Defaults to 1 if not provided. Used to retrieve specific page of password reset tokens. Server validates minimum value of 1.
+         * @x-autobe-specification Pagination page number (1-indexed). Defaults
+         *   to 1 if not provided. Used to retrieve specific page of password
+         *   reset tokens. Server validates minimum value of 1.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -141,7 +165,9 @@ export namespace ITodoAppMemberPasswordReset {
      *
      * Controls how many password reset tokens are returned in each page of results. The default is 10 items per page, with a maximum of 100 items allowed. This helps manage response size and client-side rendering performance.
      *
-     * @x-autobe-specification Number of items per page. Defaults to 10 if not provided. Must be between 1 and 100. Used to control how many password reset tokens are returned per page.
+         * @x-autobe-specification Number of items per page. Defaults to 10 if
+         *   not provided. Must be between 1 and 100. Used to control how many
+         *   password reset tokens are returned per page.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -152,7 +178,10 @@ export namespace ITodoAppMemberPasswordReset {
      *
      * Specifies which field to use when sorting password reset tokens in the list. Can be set to 'created_at' to sort by when the reset request was made, or 'expired_at' to sort by when the token expires. Defaults to sorting by creation date.
      *
-     * @x-autobe-specification Field to sort results by. Allowed values: 'created_at' or 'expired_at'. Defaults to 'created_at' if not provided. Determines which timestamp column is used for sorting password reset tokens.
+         * @x-autobe-specification Field to sort results by. Allowed values:
+         *   'created_at' or 'expired_at'. Defaults to 'created_at' if not
+         *   provided. Determines which timestamp column is used for sorting
+         *   password reset tokens.
      */
     sort?: "created_at" | "expired_at" | undefined;
 
@@ -161,7 +190,10 @@ export namespace ITodoAppMemberPasswordReset {
      *
      * Determines whether results are sorted in ascending or descending order. When set to 'desc' (descending), the most recent password reset tokens appear first. When set to 'asc' (ascending), older tokens appear first. Defaults to descending order to show the newest reset requests first.
      *
-     * @x-autobe-specification Sort order direction. Allowed values: 'asc' (ascending) or 'desc' (descending). Defaults to 'desc' if not provided. When sorting by created_at, descending shows newest first.
+         * @x-autobe-specification Sort order direction. Allowed values: 'asc'
+         *   (ascending) or 'desc' (descending). Defaults to 'desc' if not
+         *   provided. When sorting by created_at, descending shows newest
+         *   first.
      */
     order?: "asc" | "desc" | undefined;
 
@@ -170,7 +202,10 @@ export namespace ITodoAppMemberPasswordReset {
      *
      * Filters the password reset token list to only show tokens that expired before the specified date and time. This is useful for viewing expired reset tokens. The timestamp must be in ISO 8601 date-time format. If not provided, no expiration date filtering is applied.
      *
-     * @x-autobe-specification Filter password reset tokens that expired before the specified timestamp. Maps to expired_at column with 'less than' comparison. Optional parameter for filtering by expiration date. Uses ISO 8601 date-time format.
+         * @x-autobe-specification Filter password reset tokens that expired
+         *   before the specified timestamp. Maps to expired_at column with
+         *   'less than' comparison. Optional parameter for filtering by
+         *   expiration date. Uses ISO 8601 date-time format.
      */
     expired_before?: (string & tags.Format<"date-time">) | undefined;
 
@@ -179,7 +214,10 @@ export namespace ITodoAppMemberPasswordReset {
      *
      * Filters the password reset token list to only show tokens that expired after the specified date and time. This is useful for viewing tokens that are still valid or recently expired. The timestamp must be in ISO 8601 date-time format. If not provided, no expiration date filtering is applied.
      *
-     * @x-autobe-specification Filter password reset tokens that expired after the specified timestamp. Maps to expired_at column with 'greater than' comparison. Optional parameter for filtering by expiration date. Uses ISO 8601 date-time format.
+         * @x-autobe-specification Filter password reset tokens that expired
+         *   after the specified timestamp. Maps to expired_at column with
+         *   'greater than' comparison. Optional parameter for filtering by
+         *   expiration date. Uses ISO 8601 date-time format.
      */
     expired_after?: (string & tags.Format<"date-time">) | undefined;
   };

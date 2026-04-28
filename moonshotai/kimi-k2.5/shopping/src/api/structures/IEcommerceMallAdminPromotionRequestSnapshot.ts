@@ -12,72 +12,98 @@ export type IEcommerceMallAdminPromotionRequestSnapshot = {
   /**
    * Unique identifier of the snapshot record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_admin_promotion_request_snapshots.id. UUID primary key identifying this snapshot record.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_admin_promotion_request_snapshots.id. UUID primary key
+     *   identifying this snapshot record.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Identifier of the parent administrator promotion request that this snapshot belongs to.
    *
-   * @x-autobe-database-schema-property admin_promotion_request_id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_admin_promotion_request_snapshots.admin_promotion_request_id. Foreign key to the parent promotion request.
+     * @x-autobe-database-schema-property admin_promotion_request_id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_admin_promotion_request_snapshots.admin_promotion_request_id.
+     *   Foreign key to the parent promotion request.
    */
   adminPromotionRequestId: string & tags.Format<"uuid">;
 
   /**
    * Status of the promotion request before this state change occurred.
    *
-   * @x-autobe-database-schema-property previous_status
-   * @x-autobe-specification Direct mapping from ecommerce_mall_admin_promotion_request_snapshots.previous_status. String value: 'pending', 'approved', or 'rejected'. Represents state before this transition.
+     * @x-autobe-database-schema-property previous_status
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_admin_promotion_request_snapshots.previous_status.
+     *   String value: 'pending', 'approved', or 'rejected'. Represents state
+     *   before this transition.
    */
   previousStatus: string;
 
   /**
    * Status of the promotion request after this state change (the new/current state captured by this snapshot).
    *
-   * @x-autobe-database-schema-property new_status
-   * @x-autobe-specification Direct mapping from ecommerce_mall_admin_promotion_request_snapshots.new_status. Exposed as 'currentStatus' to represent the state after transition. Values: 'approved' or 'rejected'.
+     * @x-autobe-database-schema-property new_status
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_admin_promotion_request_snapshots.new_status. Exposed as
+     *   'currentStatus' to represent the state after transition. Values:
+     *   'approved' or 'rejected'.
    */
   currentStatus: string;
 
   /**
    * Identifier of the super administrator who reviewed and processed this promotion request state change.
    *
-   * @x-autobe-database-schema-property new_reviewer_id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_admin_promotion_request_snapshots.new_reviewer_id. Nullable foreign key to ecommerce_mall_super_admins.id. Exposed as reviewedBySuperAdminId to indicate who processed this state change.
+     * @x-autobe-database-schema-property new_reviewer_id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_admin_promotion_request_snapshots.new_reviewer_id.
+     *   Nullable foreign key to ecommerce_mall_super_admins.id. Exposed as
+     *   reviewedBySuperAdminId to indicate who processed this state change.
    */
   reviewedBySuperAdminId?: (string & tags.Format<"uuid">) | null | undefined;
 
   /**
    * Explanation or reason provided by the reviewing super administrator for the state change decision.
    *
-   * @x-autobe-database-schema-property new_reason
-   * @x-autobe-specification Direct mapping from ecommerce_mall_admin_promotion_request_snapshots.new_reason. Exposed as 'reason' to provide the explanation for the new state. Contains approval notes or rejection explanation.
+     * @x-autobe-database-schema-property new_reason
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_admin_promotion_request_snapshots.new_reason. Exposed as
+     *   'reason' to provide the explanation for the new state. Contains
+     *   approval notes or rejection explanation.
    */
   reason?: string | null | undefined;
 
   /**
    * Date and time when this snapshot was created, marking when the state transition occurred.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_admin_promotion_request_snapshots.created_at. Timestamp when this snapshot was captured (when the state change occurred).
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_admin_promotion_request_snapshots.created_at. Timestamp
+     *   when this snapshot was captured (when the state change occurred).
    */
   createdAt: string & tags.Format<"date-time">;
 
   /**
    * Summary of the parent administrator promotion request associated with this snapshot.
    *
-   * @x-autobe-database-schema-property adminPromotionRequest
-   * @x-autobe-specification Join via ecommerce_mall_admin_promotion_request_snapshots.admin_promotion_request_id to ecommerce_mall_admin_promotion_requests.id. Returns IEcommerceMallAdminPromotionRequest.ISummary with request details.
+     * @x-autobe-database-schema-property adminPromotionRequest
+     * @x-autobe-specification Join via
+     *   ecommerce_mall_admin_promotion_request_snapshots.admin_promotion_request_id
+     *   to ecommerce_mall_admin_promotion_requests.id. Returns
+     *   IEcommerceMallAdminPromotionRequest.ISummary with request details.
    */
   adminPromotionRequest: IEcommerceMallAdminPromotionRequest.ISummary;
 
   /**
    * Summary of the super administrator who processed this state change, or null if not yet reviewed.
    *
-   * @x-autobe-database-schema-property newReviewer
-   * @x-autobe-specification Join via ecommerce_mall_admin_promotion_request_snapshots.new_reviewer_id to ecommerce_mall_super_admins.id. Returns IEcommerceMallSuperAdmin.ISummary or null if not reviewed yet. Maps to 'newReviewer' relation in DB schema, exposed as reviewedBySuperAdmin for semantic clarity.
+     * @x-autobe-database-schema-property newReviewer
+     * @x-autobe-specification Join via
+     *   ecommerce_mall_admin_promotion_request_snapshots.new_reviewer_id to
+     *   ecommerce_mall_super_admins.id. Returns
+     *   IEcommerceMallSuperAdmin.ISummary or null if not reviewed yet. Maps to
+     *   'newReviewer' relation in DB schema, exposed as reviewedBySuperAdmin
+     *   for semantic clarity.
    */
   reviewedBySuperAdmin: IEcommerceMallSuperAdmin.ISummary | null;
 };
@@ -89,64 +115,84 @@ export namespace IEcommerceMallAdminPromotionRequestSnapshot {
     /**
      * Unique identifier for the snapshot record.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_mall_admin_promotion_request_snapshots.id (UUID primary key).
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_admin_promotion_request_snapshots.id (UUID primary
+         *   key).
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Timestamp when this snapshot was created, representing when the promotion request status changed.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_admin_promotion_request_snapshots.created_at. Timestamp is set automatically when the snapshot is created during a status change event.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_admin_promotion_request_snapshots.created_at.
+         *   Timestamp is set automatically when the snapshot is created during
+         *   a status change event.
      */
     createdAt: string & tags.Format<"date-time">;
 
     /**
      * The status of the promotion request before this state change occurred.
      *
-     * @x-autobe-database-schema-property previous_status
-     * @x-autobe-specification Direct mapping from ecommerce_mall_admin_promotion_request_snapshots.previous_status. Valid values: 'pending', 'approved', 'rejected'.
+         * @x-autobe-database-schema-property previous_status
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_admin_promotion_request_snapshots.previous_status.
+         *   Valid values: 'pending', 'approved', 'rejected'.
      */
     previousStatus: string;
 
     /**
      * The status of the promotion request after this state change was applied.
      *
-     * @x-autobe-database-schema-property new_status
-     * @x-autobe-specification Direct mapping from ecommerce_mall_admin_promotion_request_snapshots.new_status. Valid values: 'approved', 'rejected' (snapshots record transitions to final states).
+         * @x-autobe-database-schema-property new_status
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_admin_promotion_request_snapshots.new_status. Valid
+         *   values: 'approved', 'rejected' (snapshots record transitions to
+         *   final states).
      */
     newStatus: string;
 
     /**
      * The administrator who reviewed this request before this change, if any.
      *
-     * @x-autobe-database-schema-property previousReviewer
-     * @x-autobe-specification Join via previous_reviewer_id to ecommerce_mall_admins.id. Returns IEcommerceMallAdmin.ISummary or null if no previous reviewer existed.
+         * @x-autobe-database-schema-property previousReviewer
+         * @x-autobe-specification Join via previous_reviewer_id to
+         *   ecommerce_mall_admins.id. Returns IEcommerceMallAdmin.ISummary or
+         *   null if no previous reviewer existed.
      */
     previousReviewer: IEcommerceMallAdmin.ISummary | null;
 
     /**
      * The administrator who processed this state change (approver or rejecter), if recorded.
      *
-     * @x-autobe-database-schema-property newReviewer
-     * @x-autobe-specification Join via new_reviewer_id to ecommerce_mall_admins.id. Returns IEcommerceMallAdmin.ISummary or null if the status change was automatic or reviewer not recorded.
+         * @x-autobe-database-schema-property newReviewer
+         * @x-autobe-specification Join via new_reviewer_id to
+         *   ecommerce_mall_admins.id. Returns IEcommerceMallAdmin.ISummary or
+         *   null if the status change was automatic or reviewer not recorded.
      */
     newReviewer: IEcommerceMallAdmin.ISummary | null;
 
     /**
      * The rejection or approval reason associated with the previous reviewer action, if any.
      *
-     * @x-autobe-database-schema-property previous_reason
-     * @x-autobe-specification Direct mapping from ecommerce_mall_admin_promotion_request_snapshots.previous_reason. Nullable text field preserving the reason from the previous review action.
+         * @x-autobe-database-schema-property previous_reason
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_admin_promotion_request_snapshots.previous_reason.
+         *   Nullable text field preserving the reason from the previous review
+         *   action.
      */
     previousReason: string | null;
 
     /**
      * The rejection reason provided when rejecting, or promotion notes when approving this state change.
      *
-     * @x-autobe-database-schema-property new_reason
-     * @x-autobe-specification Direct mapping from ecommerce_mall_admin_promotion_request_snapshots.new_reason. Captures the reviewer's explanation when approving or rejecting the promotion request.
+         * @x-autobe-database-schema-property new_reason
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_admin_promotion_request_snapshots.new_reason.
+         *   Captures the reviewer's explanation when approving or rejecting the
+         *   promotion request.
      */
     newReason: string | null;
   };
@@ -170,30 +216,32 @@ export namespace IEcommerceMallAdminPromotionRequestSnapshot {
     /**
      * Filter by status before the transition. Values: pending, approved, rejected
      *
-     * @x-autobe-database-schema-property previous_status
+         * @x-autobe-database-schema-property previous_status
      */
     previous_status?: string | undefined;
 
     /**
      * Filter by status after the transition. Values: approved, rejected
      *
-     * @x-autobe-database-schema-property new_status
+         * @x-autobe-database-schema-property new_status
      */
     new_status?: string | undefined;
 
     /**
      * Filter by previous reviewer's admin ID
      *
-     * @x-autobe-database-schema-property previous_reviewer_id
-     * @x-autobe-specification Filter parameter maps to nullable DB FK column previous_reviewer_id. When null, filter is not applied.
+         * @x-autobe-database-schema-property previous_reviewer_id
+         * @x-autobe-specification Filter parameter maps to nullable DB FK
+         *   column previous_reviewer_id. When null, filter is not applied.
      */
     previous_reviewer_id?: (string & tags.Format<"uuid">) | null | undefined;
 
     /**
      * Filter by new reviewer's admin ID
      *
-     * @x-autobe-database-schema-property new_reviewer_id
-     * @x-autobe-specification Filter parameter maps to nullable DB FK column new_reviewer_id. When null, filter is not applied.
+         * @x-autobe-database-schema-property new_reviewer_id
+         * @x-autobe-specification Filter parameter maps to nullable DB FK
+         *   column new_reviewer_id. When null, filter is not applied.
      */
     new_reviewer_id?: (string & tags.Format<"uuid">) | null | undefined;
 

@@ -28,7 +28,8 @@ import { ICommunityPlatformPostImage } from "../../../../../structures/ICommunit
  * @param props.body Image attachment creation payload for the target post, including the image URI and required rendering metadata.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implement POST /posts/{postId}/images to create an attachment row in community_platform_post_images.
+ * @x-autobe-specification Implement POST /posts/{postId}/images to create an
+ *   attachment row in community_platform_post_images.
  *
  * Algorithm (service layer):
  * 1. Validate postId parameter is a UUID format.
@@ -174,7 +175,9 @@ export namespace create {
  * @param props.body Attachment update request describing which images to add, update, reorder, and remove for the target post.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implement service-layer logic for updating community_platform_post_images rows for a single community_platform_posts record.
+ * @x-autobe-specification Implement service-layer logic for updating
+ *   community_platform_post_images rows for a single community_platform_posts
+ *   record.
  *
  * Algorithm:
  * 1) Parse {postId} and verify the target post exists in community_platform_posts (by community_platform_posts.id) and is eligible for modification (permission checks + any post-type constraints such as requiring at least one image when post_type is an image post).
@@ -315,17 +318,18 @@ export namespace updateImages {
  * @param props.imageId The target image attachment identifier within the specified post.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification 1) Parse path parameters: postId, imageId.
- * 2) Query `community_platform_post_images` with a condition:
- *    - id == imageId
- *    - community_platform_post_id == postId
- * 3) Apply retrieval filter for end-user viewing:
- *    - Exclude rows where deleted_at is not null.
- *    (Administrative/audit contexts, if supported elsewhere, should be implemented via separate authorization or separate endpoints.)
- * 4) If no row matches, return 404/Not Found.
- * 5) Map the row fields to `ICommunityPlatformPostImage` response DTO:
- *    - id, communityPlatformPostId (from community_platform_post_id), fileUrl, contentType, fileSizeBytes, imageWidthPx, imageHeightPx, altText, sortOrder, createdAt, updatedAt, deletedAt (include only if DTO supports it; otherwise omit via DTO mapping logic).
- * 6) Do not mutate data; no transactions are required.
+ * @x-autobe-specification 1) Parse path parameters: postId, imageId. 2) Query
+ *   `community_platform_post_images` with a condition: - id == imageId -
+ *   community_platform_post_id == postId 3) Apply retrieval filter for end-user
+ *   viewing: - Exclude rows where deleted_at is not null. (Administrative/audit
+ *   contexts, if supported elsewhere, should be implemented via separate
+ *   authorization or separate endpoints.) 4) If no row matches, return 404/Not
+ *   Found. 5) Map the row fields to `ICommunityPlatformPostImage` response DTO:
+ *   - id, communityPlatformPostId (from community_platform_post_id), fileUrl,
+ *   contentType, fileSizeBytes, imageWidthPx, imageHeightPx, altText,
+ *   sortOrder, createdAt, updatedAt, deletedAt (include only if DTO supports
+ *   it; otherwise omit via DTO mapping logic). 6) Do not mutate data; no
+ *   transactions are required.
  *
  * Edge cases:
  * - If postId exists but the attachment does not belong to it, treat as not found.

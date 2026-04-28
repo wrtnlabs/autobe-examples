@@ -27,9 +27,9 @@ export class ErphrmMemberProfileController {
    *
    * @param connection
    * @param body Updated profile information including display name, optional avatar URI, and optional phone number
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation steps for PUT /profile:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation steps for PUT /profile:
    *
    * 1. **Authentication**: Extract the authenticated member identity from the session/JWT token. Reject the request with 401 Unauthorized if no valid session exists.
    *

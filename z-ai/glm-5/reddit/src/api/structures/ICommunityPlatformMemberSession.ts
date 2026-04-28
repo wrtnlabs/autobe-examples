@@ -10,56 +10,72 @@ export type ICommunityPlatformMemberSession = {
   /**
    * Unique identifier for the authentication session.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from community_platform_member_sessions.id. UUID primary key generated at session creation.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_member_sessions.id. UUID primary key generated at
+     *   session creation.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * IP address of the client that initiated the login session.
    *
-   * @x-autobe-database-schema-property ip
-   * @x-autobe-specification Direct mapping from community_platform_member_sessions.ip. Captured from client connection at login time for security auditing.
+     * @x-autobe-database-schema-property ip
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_member_sessions.ip. Captured from client connection
+     *   at login time for security auditing.
    */
   ip: string;
 
   /**
    * The initial URL path accessed during session creation, recording navigation context.
    *
-   * @x-autobe-database-schema-property href
-   * @x-autobe-specification Direct mapping from community_platform_member_sessions.href. The URL path or endpoint accessed during session creation.
+     * @x-autobe-database-schema-property href
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_member_sessions.href. The URL path or endpoint
+     *   accessed during session creation.
    */
   href: string;
 
   /**
    * The HTTP Referer header value from the login request, capturing the source that directed the user to authenticate.
    *
-   * @x-autobe-database-schema-property referrer
-   * @x-autobe-specification Direct mapping from community_platform_member_sessions.referrer. HTTP Referer header value from login request.
+     * @x-autobe-database-schema-property referrer
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_member_sessions.referrer. HTTP Referer header value
+     *   from login request.
    */
   referrer: string;
 
   /**
    * Timestamp when the session was created, marking the login event.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from community_platform_member_sessions.created_at. Timestamp when session was created during login.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_member_sessions.created_at. Timestamp when session
+     *   was created during login.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the session expires. Sessions past this time cannot be used for authentication.
    *
-   * @x-autobe-database-schema-property expired_at
-   * @x-autobe-specification Direct mapping from community_platform_member_sessions.expired_at. Timestamp when session expires; used to validate session validity against current timestamp.
+     * @x-autobe-database-schema-property expired_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_member_sessions.expired_at. Timestamp when session
+     *   expires; used to validate session validity against current timestamp.
    */
   expired_at: string & tags.Format<"date-time">;
 
   /**
    * The member who owns this authentication session.
    *
-   * @x-autobe-database-schema-property member
-   * @x-autobe-specification JOIN from community_platform_member_sessions.community_platform_member_id to community_platform_members.id. Returns ICommunityPlatformMember.ISummary with member profile information excluding sensitive data.
+     * @x-autobe-database-schema-property member
+     * @x-autobe-specification JOIN from
+     *   community_platform_member_sessions.community_platform_member_id to
+     *   community_platform_members.id. Returns
+     *   ICommunityPlatformMember.ISummary with member profile information
+     *   excluding sensitive data.
    */
   member: ICommunityPlatformMember.ISummary;
 };
@@ -71,21 +87,28 @@ export namespace ICommunityPlatformMemberSession {
     /**
      * Filter sessions by active status. When true, returns only sessions that have not expired. When omitted or false, returns all sessions including expired ones.
      *
-     * @x-autobe-specification Computed filter parameter: when true, add WHERE clause 'expired_at > NOW()' to return only non-expired sessions; when false or omitted, return all sessions regardless of expiration status. Comparison evaluated at query execution time.
+         * @x-autobe-specification Computed filter parameter: when true, add
+         *   WHERE clause 'expired_at > NOW()' to return only non-expired
+         *   sessions; when false or omitted, return all sessions regardless of
+         *   expiration status. Comparison evaluated at query execution time.
      */
     active?: boolean | undefined;
 
     /**
      * Page number for pagination, starting from 1. Use with limit to navigate through session history.
      *
-     * @x-autobe-specification Standard pagination offset parameter. Calculate OFFSET as (page - 1) * limit. Default value 1 if omitted. Combined with limit to navigate through result set.
+         * @x-autobe-specification Standard pagination offset parameter.
+         *   Calculate OFFSET as (page - 1) * limit. Default value 1 if omitted.
+         *   Combined with limit to navigate through result set.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of sessions to return per page. Defaults to 20, maximum 100.
      *
-     * @x-autobe-specification Standard pagination limit parameter. Maps directly to SQL LIMIT clause. Default value 20 if omitted, maximum 100. Controls number of session records returned per page.
+         * @x-autobe-specification Standard pagination limit parameter. Maps
+         *   directly to SQL LIMIT clause. Default value 20 if omitted, maximum
+         *   100. Controls number of session records returned per page.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -99,48 +122,60 @@ export namespace ICommunityPlatformMemberSession {
     /**
      * Unique identifier for this login session.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from community_platform_member_sessions.id. UUID primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_member_sessions.id. UUID primary key.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * IP address from which the login session was initiated.
      *
-     * @x-autobe-database-schema-property ip
-     * @x-autobe-specification Direct mapping from community_platform_member_sessions.ip. IP address captured at login for security auditing.
+         * @x-autobe-database-schema-property ip
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_member_sessions.ip. IP address captured at login
+         *   for security auditing.
      */
     ip: string;
 
     /**
      * The initial URL path accessed during this login session.
      *
-     * @x-autobe-database-schema-property href
-     * @x-autobe-specification Direct mapping from community_platform_member_sessions.href. The URL path or endpoint accessed during session creation.
+         * @x-autobe-database-schema-property href
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_member_sessions.href. The URL path or endpoint
+         *   accessed during session creation.
      */
     href: string;
 
     /**
      * The referrer URL that directed the user to authenticate.
      *
-     * @x-autobe-database-schema-property referrer
-     * @x-autobe-specification Direct mapping from community_platform_member_sessions.referrer. The HTTP Referer header value from the login request.
+         * @x-autobe-database-schema-property referrer
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_member_sessions.referrer. The HTTP Referer
+         *   header value from the login request.
      */
     referrer: string;
 
     /**
      * Timestamp when this login session was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from community_platform_member_sessions.created_at. Timestamp when the session was created, marking the login event.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_member_sessions.created_at. Timestamp when the
+         *   session was created, marking the login event.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when this session will expire.
      *
-     * @x-autobe-database-schema-property expired_at
-     * @x-autobe-specification Direct mapping from community_platform_member_sessions.expired_at. Timestamp when the session expires. NOT NULL - all sessions must have an expiration for security.
+         * @x-autobe-database-schema-property expired_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_member_sessions.expired_at. Timestamp when the
+         *   session expires. NOT NULL - all sessions must have an expiration
+         *   for security.
      */
     expired_at: string & tags.Format<"date-time">;
   };

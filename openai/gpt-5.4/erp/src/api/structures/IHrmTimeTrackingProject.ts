@@ -10,96 +10,120 @@ export type IHrmTimeTrackingProject = {
   /**
    * Unique identifier of the project.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_projects.id.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_projects.id.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Organization workspace that owns this project.
    *
-   * @x-autobe-database-schema-property organization
-   * @x-autobe-specification Join hrm_time_tracking_projects.hrm_time_tracking_organization_id to hrm_time_tracking_organizations.id and serialize the related row as IHrmTimeTrackingOrganization.ISummary.
+     * @x-autobe-database-schema-property organization
+     * @x-autobe-specification Join
+     *   hrm_time_tracking_projects.hrm_time_tracking_organization_id to
+     *   hrm_time_tracking_organizations.id and serialize the related row as
+     *   IHrmTimeTrackingOrganization.ISummary.
    */
   organization: IHrmTimeTrackingOrganization.ISummary;
 
   /**
    * Project name used to identify the work initiative in the organization.
    *
-   * @x-autobe-database-schema-property name
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_projects.name.
+     * @x-autobe-database-schema-property name
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_projects.name.
    */
   name: string;
 
   /**
    * Optional longer explanation of the project's scope, goals, or internal context.
    *
-   * @x-autobe-database-schema-property description
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_projects.description. Preserve null when no descriptive text has been set.
+     * @x-autobe-database-schema-property description
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_projects.description. Preserve null when no
+     *   descriptive text has been set.
    */
   description: string | null;
 
   /**
    * Display color code used to visually distinguish the project in the interface.
    *
-   * @x-autobe-database-schema-property color_code
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_projects.color_code.
+     * @x-autobe-database-schema-property color_code
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_projects.color_code.
    */
   colorCode: string;
 
   /**
    * Current lifecycle status of the project.
    *
-   * @x-autobe-database-schema-property status
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_projects.status. Business values are constrained by service rules to supported lifecycle states such as active, archived, and completed.
+     * @x-autobe-database-schema-property status
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_projects.status. Business values are constrained by
+     *   service rules to supported lifecycle states such as active, archived,
+     *   and completed.
    */
   status: string;
 
   /**
    * Optional estimated total budgeted hours planned for the project.
    *
-   * @x-autobe-database-schema-property budget_hours
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_projects.budget_hours. Preserve null when no planned hour budget has been set.
+     * @x-autobe-database-schema-property budget_hours
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_projects.budget_hours. Preserve null when no planned
+     *   hour budget has been set.
    */
   budgetHours: number | null;
 
   /**
    * Optional planned or actual start date of the project.
    *
-   * @x-autobe-database-schema-property start_date
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_projects.start_date. Serialize as an ISO 8601 date-time string and preserve null when unset.
+     * @x-autobe-database-schema-property start_date
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_projects.start_date. Serialize as an ISO 8601
+     *   date-time string and preserve null when unset.
    */
   startDate: (string & tags.Format<"date-time">) | null;
 
   /**
    * Optional planned or actual end date of the project.
    *
-   * @x-autobe-database-schema-property end_date
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_projects.end_date. Serialize as an ISO 8601 date-time string and preserve null when unset.
+     * @x-autobe-database-schema-property end_date
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_projects.end_date. Serialize as an ISO 8601 date-time
+     *   string and preserve null when unset.
    */
   endDate: (string & tags.Format<"date-time">) | null;
 
   /**
    * Timestamp when the project record was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_projects.created_at. Serialize as an ISO 8601 date-time string.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_projects.created_at. Serialize as an ISO 8601
+     *   date-time string.
    */
   createdAt: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the project record was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_projects.updated_at. Serialize as an ISO 8601 date-time string.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_projects.updated_at. Serialize as an ISO 8601
+     *   date-time string.
    */
   updatedAt: string & tags.Format<"date-time">;
 
   /**
    * Soft-deletion timestamp, or null when the project is still active.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_projects.deleted_at. Serialize as an ISO 8601 date-time string when present and preserve null when the project has not been soft deleted.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_projects.deleted_at. Serialize as an ISO 8601
+     *   date-time string when present and preserve null when the project has
+     *   not been soft deleted.
    */
   deletedAt: (string & tags.Format<"date-time">) | null;
 };
@@ -111,28 +135,51 @@ export namespace IHrmTimeTrackingProject {
     /**
      * Project lifecycle status used to filter the list.
      *
-     * @x-autobe-specification Optional lifecycle-status filter for project list retrieval. This property is not treated as a direct database-schema mapping in this DTO because the object represents request criteria rather than a persisted row. The service must interpret the provided value as an equality predicate against the project's lifecycle status in hrm_time_tracking_projects within the caller's active organization. Accept only the supported values active, archived, or completed. When omitted, include projects from all supported statuses that satisfy the remaining predicates.
+         * @x-autobe-specification Optional lifecycle-status filter for project
+         *   list retrieval. This property is not treated as a direct
+         *   database-schema mapping in this DTO because the object represents
+         *   request criteria rather than a persisted row. The service must
+         *   interpret the provided value as an equality predicate against the
+         *   project's lifecycle status in hrm_time_tracking_projects within the
+         *   caller's active organization. Accept only the supported values
+         *   active, archived, or completed. When omitted, include projects from
+         *   all supported statuses that satisfy the remaining predicates.
      */
     status?: "active" | "archived" | "completed" | undefined;
 
     /**
      * Free-text keyword used to search matching projects in the current organization.
      *
-     * @x-autobe-specification Optional free-text search input for project list retrieval. This field is not a database column; the service must translate it into supported text-matching predicates against searchable project fields in hrm_time_tracking_projects, such as name and description, while still enforcing the active organization boundary and any other filters.
+         * @x-autobe-specification Optional free-text search input for project
+         *   list retrieval. This field is not a database column; the service
+         *   must translate it into supported text-matching predicates against
+         *   searchable project fields in hrm_time_tracking_projects, such as
+         *   name and description, while still enforcing the active organization
+         *   boundary and any other filters.
      */
     search?: string | undefined;
 
     /**
      * Page number of the project list to return.
      *
-     * @x-autobe-specification Optional 1-indexed page number for paginated project list retrieval. This field is not stored in the database; the service must use it with limit to calculate offset or skip after applying organization and filter predicates. When omitted, downstream pagination logic should default to the first page according to endpoint behavior.
+         * @x-autobe-specification Optional 1-indexed page number for paginated
+         *   project list retrieval. This field is not stored in the database;
+         *   the service must use it with limit to calculate offset or skip
+         *   after applying organization and filter predicates. When omitted,
+         *   downstream pagination logic should default to the first page
+         *   according to endpoint behavior.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of projects to include in one paginated response page.
      *
-     * @x-autobe-specification Optional maximum number of project summary records to return in one page. This field is not a database column; the service must apply it as the pagination page size after filtering and before response construction. Enforce the schema-defined bounds and reject out-of-range values instead of silently coercing unsupported sizes.
+         * @x-autobe-specification Optional maximum number of project summary
+         *   records to return in one page. This field is not a database column;
+         *   the service must apply it as the pagination page size after
+         *   filtering and before response construction. Enforce the
+         *   schema-defined bounds and reject out-of-range values instead of
+         *   silently coercing unsupported sizes.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -141,7 +188,15 @@ export namespace IHrmTimeTrackingProject {
     /**
      * Field name that determines how matching projects are ordered in the paginated list.
      *
-     * @x-autobe-specification Optional sort selector for project list retrieval. This field is not a standalone database property because it encodes one of several allowed ordering targets. The service must map the supplied enum value to the corresponding supported ordering key in hrm_time_tracking_projects, specifically one of created_at, updated_at, name, start_date, end_date, or budget_hours, and apply deterministic ordering within the active organization query. Reject unsupported sort values rather than changing semantics.
+         * @x-autobe-specification Optional sort selector for project list
+         *   retrieval. This field is not a standalone database property because
+         *   it encodes one of several allowed ordering targets. The service
+         *   must map the supplied enum value to the corresponding supported
+         *   ordering key in hrm_time_tracking_projects, specifically one of
+         *   created_at, updated_at, name, start_date, end_date, or
+         *   budget_hours, and apply deterministic ordering within the active
+         *   organization query. Reject unsupported sort values rather than
+         *   changing semantics.
      */
     sort?:
       | "created_at"
@@ -160,31 +215,31 @@ export namespace IHrmTimeTrackingProject {
    */
   export type ICreate = {
     /**
-     * @x-autobe-database-schema-property name
+         * @x-autobe-database-schema-property name
      */
     name: string;
     /**
-     * @x-autobe-database-schema-property description
+         * @x-autobe-database-schema-property description
      */
     description?: string | null | undefined;
     /**
-     * @x-autobe-database-schema-property color_code
+         * @x-autobe-database-schema-property color_code
      */
     color_code: string;
     /**
-     * @x-autobe-database-schema-property status
+         * @x-autobe-database-schema-property status
      */
     status: string;
     /**
-     * @x-autobe-database-schema-property budget_hours
+         * @x-autobe-database-schema-property budget_hours
      */
     budget_hours?: number | null | undefined;
     /**
-     * @x-autobe-database-schema-property start_date
+         * @x-autobe-database-schema-property start_date
      */
     start_date?: (string & tags.Format<"date-time">) | null | undefined;
     /**
-     * @x-autobe-database-schema-property end_date
+         * @x-autobe-database-schema-property end_date
      */
     end_date?: (string & tags.Format<"date-time">) | null | undefined;
   };
@@ -196,47 +251,55 @@ export namespace IHrmTimeTrackingProject {
    */
   export type IUpdate = {
     /**
-     * @x-autobe-database-schema-property name
+         * @x-autobe-database-schema-property name
      */
     name?: string | undefined;
 
     /**
      * Optional longer explanation of the project's scope, goals, or internal context. Can be null to clear the current description.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Optional update field mapped to hrm_time_tracking_projects.description. Accept string to replace the current description or null to clear it.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Optional update field mapped to
+         *   hrm_time_tracking_projects.description. Accept string to replace
+         *   the current description or null to clear it.
      */
     description?: string | null | undefined;
     /**
-     * @x-autobe-database-schema-property color_code
+         * @x-autobe-database-schema-property color_code
      */
     colorCode?: string | undefined;
     /**
-     * @x-autobe-database-schema-property status
+         * @x-autobe-database-schema-property status
      */
     status?: string | undefined;
 
     /**
      * Optional estimated total budgeted hours planned for the project. Can be null to clear the current budget.
      *
-     * @x-autobe-database-schema-property budget_hours
-     * @x-autobe-specification Optional update field mapped to hrm_time_tracking_projects.budget_hours. Accept number to set planned budget hours or null to clear it.
+         * @x-autobe-database-schema-property budget_hours
+         * @x-autobe-specification Optional update field mapped to
+         *   hrm_time_tracking_projects.budget_hours. Accept number to set
+         *   planned budget hours or null to clear it.
      */
     budgetHours?: number | null | undefined;
 
     /**
      * Optional planned or actual start date of the project. Can be null to clear the current start date.
      *
-     * @x-autobe-database-schema-property start_date
-     * @x-autobe-specification Optional update field mapped to hrm_time_tracking_projects.start_date. Accept an ISO 8601 date-time string to set the start date or null to clear it.
+         * @x-autobe-database-schema-property start_date
+         * @x-autobe-specification Optional update field mapped to
+         *   hrm_time_tracking_projects.start_date. Accept an ISO 8601 date-time
+         *   string to set the start date or null to clear it.
      */
     startDate?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * Optional planned or actual end date of the project. Can be null to clear the current end date.
      *
-     * @x-autobe-database-schema-property end_date
-     * @x-autobe-specification Optional update field mapped to hrm_time_tracking_projects.end_date. Accept an ISO 8601 date-time string to set the end date or null to clear it.
+         * @x-autobe-database-schema-property end_date
+         * @x-autobe-specification Optional update field mapped to
+         *   hrm_time_tracking_projects.end_date. Accept an ISO 8601 date-time
+         *   string to set the end date or null to clear it.
      */
     endDate?: (string & tags.Format<"date-time">) | null | undefined;
   };
@@ -248,88 +311,106 @@ export namespace IHrmTimeTrackingProject {
     /**
      * Unique identifier of the project.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_projects.id.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_projects.id.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Organization workspace that owns this project.
      *
-     * @x-autobe-database-schema-property organization
-     * @x-autobe-specification Resolve the belongs-to relation from hrm_time_tracking_projects.hrm_time_tracking_organization_id to hrm_time_tracking_organizations.id and serialize the joined record as IHrmTimeTrackingOrganization.ISummary.
+         * @x-autobe-database-schema-property organization
+         * @x-autobe-specification Resolve the belongs-to relation from
+         *   hrm_time_tracking_projects.hrm_time_tracking_organization_id to
+         *   hrm_time_tracking_organizations.id and serialize the joined record
+         *   as IHrmTimeTrackingOrganization.ISummary.
      */
     organization: IHrmTimeTrackingOrganization.ISummary;
 
     /**
      * Display name of the project.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_projects.name.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_projects.name.
      */
     name: string;
 
     /**
      * Optional longer description of the project's scope, goals, or notes.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_projects.description. Return null when the project has no longer-form summary or notes.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_projects.description. Return null when the
+         *   project has no longer-form summary or notes.
      */
     description: string | null;
 
     /**
      * UI color code used to visually identify the project.
      *
-     * @x-autobe-database-schema-property color_code
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_projects.color_code.
+         * @x-autobe-database-schema-property color_code
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_projects.color_code.
      */
     color_code: string;
 
     /**
      * Current lifecycle status of the project.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_projects.status. Business values include active, archived, and completed.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_projects.status. Business values include active,
+         *   archived, and completed.
      */
     status: string;
 
     /**
      * Optional estimated total budgeted hours planned for the project.
      *
-     * @x-autobe-database-schema-property budget_hours
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_projects.budget_hours. Return null when no estimated total budgeted hours have been planned for the project.
+         * @x-autobe-database-schema-property budget_hours
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_projects.budget_hours. Return null when no
+         *   estimated total budgeted hours have been planned for the project.
      */
     budget_hours: number | null;
 
     /**
      * Optional planned or actual start date of the project.
      *
-     * @x-autobe-database-schema-property start_date
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_projects.start_date. Return null when the project start date has not been set.
+         * @x-autobe-database-schema-property start_date
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_projects.start_date. Return null when the project
+         *   start date has not been set.
      */
     start_date: (string & tags.Format<"date-time">) | null;
 
     /**
      * Optional planned or actual end date of the project.
      *
-     * @x-autobe-database-schema-property end_date
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_projects.end_date. Return null when the project end date has not been set.
+         * @x-autobe-database-schema-property end_date
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_projects.end_date. Return null when the project
+         *   end date has not been set.
      */
     end_date: (string & tags.Format<"date-time">) | null;
 
     /**
      * Timestamp when the project record was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_projects.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_projects.created_at.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when the project record was last updated.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_projects.updated_at.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_projects.updated_at.
      */
     updated_at: string & tags.Format<"date-time">;
   };

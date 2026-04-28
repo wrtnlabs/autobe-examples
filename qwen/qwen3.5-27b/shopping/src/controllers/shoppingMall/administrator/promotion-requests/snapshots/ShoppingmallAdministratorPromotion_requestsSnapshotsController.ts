@@ -25,9 +25,12 @@ export class ShoppingmallAdministratorPromotion_requestsSnapshotsController {
    * @param connection
    * @param requestId UUID of the administrator promotion request whose snapshots to retrieve.
    * @param body Search criteria for filtering promotion request snapshots including pagination parameters and optional filters for status and date range.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Query shopping_mall_administrator_promotion_request_snapshots table filtered by shopping_mall_administrator_promotion_request_id from path parameter.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor administrator
+     * @x-autobe-specification Query
+     *   shopping_mall_administrator_promotion_request_snapshots table filtered
+     *   by shopping_mall_administrator_promotion_request_id from path
+     *   parameter.
    *
    * Apply pagination from request body: page size (default 20), cursor for cursor-based pagination.
    *
@@ -89,9 +92,12 @@ export class ShoppingmallAdministratorPromotion_requestsSnapshotsController {
    * @param connection
    * @param requestId UUID of the administrator promotion request (global scope)
    * @param snapshotId UUID of the specific snapshot to retrieve (global scope)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Query shopping_mall_administrator_promotion_request_snapshots table for the snapshot with matching id and shopping_mall_administrator_promotion_request_id.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor administrator
+     * @x-autobe-specification Query
+     *   shopping_mall_administrator_promotion_request_snapshots table for the
+     *   snapshot with matching id and
+     *   shopping_mall_administrator_promotion_request_id.
    *
    * Validation:
    * 1. Verify both requestId and snapshotId are valid UUIDs

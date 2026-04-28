@@ -27,9 +27,10 @@ export class CommunityplatformMemberPostsImagesController {
    * @param connection
    * @param postId Target post identifier
    * @param body Stored image metadata for the target post
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement a service that creates the current image-content record for a post in `community_platform_post_images`.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implement a service that creates the current
+     *   image-content record for a post in `community_platform_post_images`.
    *
    * 1. Resolve the authenticated actor and require a member identity.
    * 2. Load the parent row from `community_platform_posts` by `id = :postId` and `deleted_at IS NULL`. If it does not exist, return a not-found error.
@@ -81,9 +82,10 @@ export class CommunityplatformMemberPostsImagesController {
    * @param postId Target post's ID
    * @param imageId Target image attachment's ID
    * @param body Replacement image data for the post image attachment
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement this operation as an authenticated member-only update of the one-to-one image attachment under a post.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implement this operation as an authenticated
+     *   member-only update of the one-to-one image attachment under a post.
    *
    * 1. Resolve the caller as a member session and reject unauthenticated or guest access.
    * 2. Load the target `community_platform_posts` row by `postId` where `deleted_at` is null. If not found, reject as unavailable.
@@ -137,9 +139,17 @@ export class CommunityplatformMemberPostsImagesController {
    * @param connection
    * @param postId Target post's ID
    * @param imageId Target image attachment's ID
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Look up the parent row in `community_platform_posts` by `postId` and the subsidiary row in `community_platform_post_images` by `imageId`. Validate that both records exist, that `community_platform_post_images.community_platform_post_id` equals `community_platform_posts.id`, and that neither record is already deleted for the purpose of this operation. If the identifiers do not correspond to the same logical resource chain, return a not-found or forbidden error according to service conventions.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Look up the parent row in
+     *   `community_platform_posts` by `postId` and the subsidiary row in
+     *   `community_platform_post_images` by `imageId`. Validate that both
+     *   records exist, that
+     *   `community_platform_post_images.community_platform_post_id` equals
+     *   `community_platform_posts.id`, and that neither record is already
+     *   deleted for the purpose of this operation. If the identifiers do not
+     *   correspond to the same logical resource chain, return a not-found or
+     *   forbidden error according to service conventions.
    *
    * Authorize the caller using post ownership and community moderation scope. Permit the operation when the authenticated member is the post author referenced by `community_platform_posts.community_platform_member_id`. Also permit it when the authenticated member holds owner or moderator authority for the post’s `community_platform_community_id` and that authority is still active at completion time. Reject guests. Reject members who are neither the author nor an authorized moderator or owner in the target community.
    *

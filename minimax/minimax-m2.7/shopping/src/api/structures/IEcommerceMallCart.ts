@@ -17,8 +17,9 @@ export type IEcommerceMallCart = {
    *
    * Auto-generated UUID assigned when the cart is created. Used for cart operations and item references.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_carts.id. UUID primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from ecommerce_mall_carts.id. UUID
+     *   primary key.
    */
   id: string & tags.Format<"uuid">;
 
@@ -27,8 +28,10 @@ export type IEcommerceMallCart = {
    *
    * Contains essential customer information including email and profile data. Derived from the authenticated session.
    *
-   * @x-autobe-database-schema-property customer
-   * @x-autobe-specification BELONGS-TO relation mapping. JOIN ecommerce_mall_customers ON carts.ecommerce_mall_customer_id = customers.id. Returns IEcommerceMallCustomer.ISummary.
+     * @x-autobe-database-schema-property customer
+     * @x-autobe-specification BELONGS-TO relation mapping. JOIN
+     *   ecommerce_mall_customers ON carts.ecommerce_mall_customer_id =
+     *   customers.id. Returns IEcommerceMallCustomer.ISummary.
    */
   customer: IEcommerceMallCustomer.ISummary;
 
@@ -37,7 +40,11 @@ export type IEcommerceMallCart = {
    *
    * Each item contains the product name, variant options, unit price, quantity, and line subtotal. Empty array indicates an empty cart.
    *
-   * @x-autobe-specification HAS-MANY relation exposed as array. JOIN ecommerce_mall_cart_items ON cart_items.ecommerce_mall_cart_id = carts.id. Each item enriched with variant details and computed subtotal from ecommerce_mall_product_variants and ecommerce_mall_products tables.
+     * @x-autobe-specification HAS-MANY relation exposed as array. JOIN
+     *   ecommerce_mall_cart_items ON cart_items.ecommerce_mall_cart_id =
+     *   carts.id. Each item enriched with variant details and computed subtotal
+     *   from ecommerce_mall_product_variants and ecommerce_mall_products
+     *   tables.
    */
   items: IEcommerceMallCartItem[];
 
@@ -46,7 +53,11 @@ export type IEcommerceMallCart = {
    *
    * Sum of (quantity × unit price) for each cart item. Returns 0 for empty carts.
    *
-   * @x-autobe-specification Computed field: SUM(quantity * COALESCE(variant.price, product.base_price)) from ecommerce_mall_cart_items JOIN ecommerce_mall_product_variants ON variant_id JOIN ecommerce_mall_products ON product_id. Calculated at query time from all cart item subtotals.
+     * @x-autobe-specification Computed field: SUM(quantity *
+     *   COALESCE(variant.price, product.base_price)) from
+     *   ecommerce_mall_cart_items JOIN ecommerce_mall_product_variants ON
+     *   variant_id JOIN ecommerce_mall_products ON product_id. Calculated at
+     *   query time from all cart item subtotals.
    */
   total: number;
 
@@ -55,8 +66,9 @@ export type IEcommerceMallCart = {
    *
    * Set automatically when the first item is added to the cart. Used for cart age tracking and ordering.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_carts.created_at. DateTime timestamp.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_carts.created_at. DateTime timestamp.
    */
   createdAt: string & tags.Format<"date-time">;
 
@@ -65,8 +77,10 @@ export type IEcommerceMallCart = {
    *
    * Updated automatically whenever cart items are added, updated, or removed. Used for cache invalidation and sync operations.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_carts.updated_at. DateTime timestamp. Updated automatically on any cart modification.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_carts.updated_at. DateTime timestamp. Updated
+     *   automatically on any cart modification.
    */
   updatedAt: string & tags.Format<"date-time">;
 };
@@ -86,7 +100,11 @@ export namespace IEcommerceMallCart {
      *
      * **Behavior**: Empty array removes all items. Duplicate variants are handled by the backend (may update quantity or reject based on business rules).
      *
-     * @x-autobe-specification Array of cart items to replace. Each item element maps to a record in ecommerce_mall_cart_items: productVariantId → ecommerce_mall_product_variant_id, quantity → quantity. Multiple items result in multiple INSERT operations. Empty array clears all items via DELETE-only transaction.
+         * @x-autobe-specification Array of cart items to replace. Each item
+         *   element maps to a record in ecommerce_mall_cart_items:
+         *   productVariantId → ecommerce_mall_product_variant_id, quantity →
+         *   quantity. Multiple items result in multiple INSERT operations.
+         *   Empty array clears all items via DELETE-only transaction.
      */
     items?: IEcommerceMallCartItem.ICreate[] | undefined;
   };
@@ -113,7 +131,10 @@ export namespace IEcommerceMallCart {
      * - Combination: Quantities are combined, not replaced
      * - Stock: Validated as positive integer only; stock availability warnings appear at cart retrieval time
      *
-     * @x-autobe-specification Maps to ecommerce_mall_cart_items.quantity column. When the same variant already exists in cart, the new quantity is ADDED to existing quantity rather than replacing. Minimum value: 1.
+         * @x-autobe-specification Maps to ecommerce_mall_cart_items.quantity
+         *   column. When the same variant already exists in cart, the new
+         *   quantity is ADDED to existing quantity rather than replacing.
+         *   Minimum value: 1.
      */
     quantity: number & tags.Type<"int32"> & tags.Minimum<1>;
 
@@ -130,7 +151,11 @@ export namespace IEcommerceMallCart {
      * - Must not be soft-deleted: variant.deleted_at must be NULL
      * - Idempotency: If the variant already exists in the cart, quantities are combined
      *
-     * @x-autobe-specification Maps to ecommerce_mall_cart_items.ecommerce_mall_product_variant_id FK column. References ecommerce_mall_product_variants.id. The variant must exist and not be soft-deleted (deleted_at IS NULL). In request DTOs, FKs are presented as scalar UUID, not as $ref objects.
+         * @x-autobe-specification Maps to
+         *   ecommerce_mall_cart_items.ecommerce_mall_product_variant_id FK
+         *   column. References ecommerce_mall_product_variants.id. The variant
+         *   must exist and not be soft-deleted (deleted_at IS NULL). In request
+         *   DTOs, FKs are presented as scalar UUID, not as $ref objects.
      */
     variantId: string & tags.Format<"uuid">;
   };
@@ -159,7 +184,12 @@ export namespace IEcommerceMallCart {
      * **Business Logic**:
      * When empty, the endpoint fetches all cart items for the current customer and validates each one against current product variant stock levels.
      *
-     * @x-autobe-specification Array of cart item UUIDs to validate. Source: ecommerce_mall_cart_items.id field. If empty or not provided, the system queries all cart items where ecommerce_mall_carts.customer_id matches the authenticated customer from JWT session. Maximum 50 items per request to prevent excessive processing.
+         * @x-autobe-specification Array of cart item UUIDs to validate. Source:
+         *   ecommerce_mall_cart_items.id field. If empty or not provided, the
+         *   system queries all cart items where
+         *   ecommerce_mall_carts.customer_id matches the authenticated customer
+         *   from JWT session. Maximum 50 items per request to prevent excessive
+         *   processing.
      */
     cartItemIds?:
       | ((string & tags.Format<"uuid">)[] & tags.MaxItems<50>)
@@ -170,7 +200,9 @@ export namespace IEcommerceMallCart {
      *
      * Specifies which page of validation results to return. Page numbering starts from 1. If omitted, null, or undefined, defaults to page 1 (first page). Requesting a page beyond the available range returns an empty data array with valid pagination metadata reflecting the actual totals.
      *
-     * @x-autobe-specification Pagination control - 1-indexed page number for result set. Defaults to 1 if not provided. Used to paginate validation results when validating all cart items.
+         * @x-autobe-specification Pagination control - 1-indexed page number
+         *   for result set. Defaults to 1 if not provided. Used to paginate
+         *   validation results when validating all cart items.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
 
@@ -179,7 +211,10 @@ export namespace IEcommerceMallCart {
      *
      * Controls how many stock validation results are included in each page response. If omitted, null, or undefined, defaults to 100 records per page. The server may enforce upper bounds to prevent excessive resource consumption on large requests.
      *
-     * @x-autobe-specification Pagination control - maximum number of validation results per page. Defaults to 100 if not provided. Controls how many stock validation results are returned per page response.
+         * @x-autobe-specification Pagination control - maximum number of
+         *   validation results per page. Defaults to 100 if not provided.
+         *   Controls how many stock validation results are returned per page
+         *   response.
      */
     limit?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };
@@ -195,7 +230,8 @@ export namespace IEcommerceMallCart {
      *
      * This UUID identifies a specific line item in the customer's shopping cart. Used to match the validation result back to the original cart item.
      *
-     * @x-autobe-specification Sourced from ecommerce_mall_cart_items.id column. Primary key of the cart item being validated.
+         * @x-autobe-specification Sourced from ecommerce_mall_cart_items.id
+         *   column. Primary key of the cart item being validated.
      */
     cartItemId: string & tags.Format<"uuid">;
 
@@ -204,7 +240,9 @@ export namespace IEcommerceMallCart {
      *
      * References the specific product variant (SKU) associated with this cart item. Used to identify the product option combination being purchased.
      *
-     * @x-autobe-specification Sourced from ecommerce_mall_product_variants.id column. Primary key of the product variant.
+         * @x-autobe-specification Sourced from
+         *   ecommerce_mall_product_variants.id column. Primary key of the
+         *   product variant.
      */
     variantId: string & tags.Format<"uuid">;
 
@@ -213,7 +251,8 @@ export namespace IEcommerceMallCart {
      *
      * Provides human-readable SKU identifier for customer recognition. Useful for customer support and order verification.
      *
-     * @x-autobe-specification Sourced from ecommerce_mall_product_variants.sku_code column.
+         * @x-autobe-specification Sourced from
+         *   ecommerce_mall_product_variants.sku_code column.
      */
     skuCode: string;
 
@@ -222,7 +261,8 @@ export namespace IEcommerceMallCart {
      *
      * The number of units the customer intends to purchase. Compared against availableStock to determine stock warnings.
      *
-     * @x-autobe-specification Sourced from ecommerce_mall_cart_items.quantity column.
+         * @x-autobe-specification Sourced from
+         *   ecommerce_mall_cart_items.quantity column.
      */
     cartQuantity: number & tags.Type<"int32">;
 
@@ -231,7 +271,8 @@ export namespace IEcommerceMallCart {
      *
      * Real-time stock reflecting all inventory changes including restocking, order deductions, adjustments, cancellations, and refunds.
      *
-     * @x-autobe-specification Sourced from ecommerce_mall_product_variants.quantity column.
+         * @x-autobe-specification Sourced from
+         *   ecommerce_mall_product_variants.quantity column.
      */
     availableStock: number & tags.Type<"int32">;
 
@@ -240,7 +281,9 @@ export namespace IEcommerceMallCart {
      *
      * True when cartQuantity > availableStock AND availableStock > 0. Indicates the customer requested more items than currently in stock but the item can still be partially fulfilled.
      *
-     * @x-autobe-specification Computed boolean: cartQuantity > availableStock && availableStock > 0. Returns true when cart quantity exceeds available stock but stock is not zero.
+         * @x-autobe-specification Computed boolean: cartQuantity >
+         *   availableStock && availableStock > 0. Returns true when cart
+         *   quantity exceeds available stock but stock is not zero.
      */
     hasWarning: boolean;
 
@@ -249,7 +292,9 @@ export namespace IEcommerceMallCart {
      *
      * True when availableStock > 0. False when the variant is deleted or has zero stock. Items marked unavailable cannot be included in a successful checkout.
      *
-     * @x-autobe-specification Computed boolean: availableStock > 0. Returns true when the variant has any stock available. False when variant is deleted or stock equals zero.
+         * @x-autobe-specification Computed boolean: availableStock > 0. Returns
+         *   true when the variant has any stock available. False when variant
+         *   is deleted or stock equals zero.
      */
     isAvailable: boolean;
 
@@ -258,7 +303,9 @@ export namespace IEcommerceMallCart {
      *
      * Null when no warning. Contains stock shortage details when the cart quantity exceeds available inventory.
      *
-     * @x-autobe-specification Computed string: Generated when hasWarning is true. Message format: 'Requested {cartQuantity} units but only {availableStock} available.' Null when hasWarning is false.
+         * @x-autobe-specification Computed string: Generated when hasWarning is
+         *   true. Message format: 'Requested {cartQuantity} units but only
+         *   {availableStock} available.' Null when hasWarning is false.
      */
     warningMessage?: string | null | undefined;
   };

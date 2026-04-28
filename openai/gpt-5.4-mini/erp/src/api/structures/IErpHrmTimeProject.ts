@@ -10,96 +10,119 @@ export type IErpHrmTimeProject = {
   /**
    * Unique identifier of the project.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from erp_hrm_time_projects.id. Stable UUID primary key for the project record.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from erp_hrm_time_projects.id.
+     *   Stable UUID primary key for the project record.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Organization that owns this project.
    *
-   * @x-autobe-database-schema-property organization
-   * @x-autobe-specification Join erp_hrm_time_projects.erp_hrm_time_organization_id to erp_hrm_time_organizations.id and return the organization summary object. This is a relation projection, not a raw foreign-key field.
+     * @x-autobe-database-schema-property organization
+     * @x-autobe-specification Join
+     *   erp_hrm_time_projects.erp_hrm_time_organization_id to
+     *   erp_hrm_time_organizations.id and return the organization summary
+     *   object. This is a relation projection, not a raw foreign-key field.
    */
   organization: IErpHrmTimeOrganizationDashboardSummary.ISummary;
 
   /**
    * Project name.
    *
-   * @x-autobe-database-schema-property name
-   * @x-autobe-specification Direct mapping from erp_hrm_time_projects.name. Must remain unique within the owning organization.
+     * @x-autobe-database-schema-property name
+     * @x-autobe-specification Direct mapping from erp_hrm_time_projects.name.
+     *   Must remain unique within the owning organization.
    */
   name: string;
 
   /**
    * Optional project description.
    *
-   * @x-autobe-database-schema-property description
-   * @x-autobe-specification Direct mapping from erp_hrm_time_projects.description. Nullable text used for project context and notes.
+     * @x-autobe-database-schema-property description
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_projects.description. Nullable text used for project
+     *   context and notes.
    */
   description: string | null;
 
   /**
    * Color code used to identify the project in the UI.
    *
-   * @x-autobe-database-schema-property color_code
-   * @x-autobe-specification Direct mapping from erp_hrm_time_projects.color_code. Required display color used by list and planning UIs.
+     * @x-autobe-database-schema-property color_code
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_projects.color_code. Required display color used by list
+     *   and planning UIs.
    */
   colorCode: string;
 
   /**
    * Current lifecycle status of the project.
    *
-   * @x-autobe-database-schema-property status
-   * @x-autobe-specification Direct mapping from erp_hrm_time_projects.status. Represents the project lifecycle state such as active, archived, or completed.
+     * @x-autobe-database-schema-property status
+     * @x-autobe-specification Direct mapping from erp_hrm_time_projects.status.
+     *   Represents the project lifecycle state such as active, archived, or
+     *   completed.
    */
   status: string;
 
   /**
    * Optional estimated budget hours for the project.
    *
-   * @x-autobe-database-schema-property budget_hours
-   * @x-autobe-specification Direct mapping from erp_hrm_time_projects.budget_hours. Nullable numeric estimate of planned project hours.
+     * @x-autobe-database-schema-property budget_hours
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_projects.budget_hours. Nullable numeric estimate of
+     *   planned project hours.
    */
   budgetHours: number | null;
 
   /**
    * Optional project start date.
    *
-   * @x-autobe-database-schema-property start_date
-   * @x-autobe-specification Direct mapping from erp_hrm_time_projects.start_date. Nullable timestamp representing when the project starts.
+     * @x-autobe-database-schema-property start_date
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_projects.start_date. Nullable timestamp representing when
+     *   the project starts.
    */
   startDate: (string & tags.Format<"date-time">) | null;
 
   /**
    * Optional project end date.
    *
-   * @x-autobe-database-schema-property end_date
-   * @x-autobe-specification Direct mapping from erp_hrm_time_projects.end_date. Nullable timestamp representing when the project ends.
+     * @x-autobe-database-schema-property end_date
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_projects.end_date. Nullable timestamp representing when
+     *   the project ends.
    */
   endDate: (string & tags.Format<"date-time">) | null;
 
   /**
    * Timestamp when the project was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from erp_hrm_time_projects.created_at. Set by persistence layer when the row is created.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_projects.created_at. Set by persistence layer when the row
+     *   is created.
    */
   createdAt: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the project was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from erp_hrm_time_projects.updated_at. Set by persistence layer whenever the row is updated.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_projects.updated_at. Set by persistence layer whenever the
+     *   row is updated.
    */
   updatedAt: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the project was soft-deleted, if applicable.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from erp_hrm_time_projects.deleted_at. Null while the project is active; populated when the project is soft-deleted.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_projects.deleted_at. Null while the project is active;
+     *   populated when the project is soft-deleted.
    */
   deletedAt: (string & tags.Format<"date-time">) | null;
 };
@@ -111,35 +134,43 @@ export namespace IErpHrmTimeProject {
     /**
      * Search projects by name or description.
      *
-     * @x-autobe-specification Free-text search term applied to project name and description within the current organization scope.
+         * @x-autobe-specification Free-text search term applied to project name
+         *   and description within the current organization scope.
      */
     search?: string | undefined;
 
     /**
      * Filter projects by status.
      *
-     * @x-autobe-specification Filters projects by lifecycle status within the active organization context. Accepted values are the project status values supported by the service.
+         * @x-autobe-specification Filters projects by lifecycle status within
+         *   the active organization context. Accepted values are the project
+         *   status values supported by the service.
      */
     status?: string | undefined;
 
     /**
      * Sort the project list.
      *
-     * @x-autobe-specification Controls the ordering of the paginated project list. The service should support stable deterministic sorting, with sensible secondary ordering when needed.
+         * @x-autobe-specification Controls the ordering of the paginated
+         *   project list. The service should support stable deterministic
+         *   sorting, with sensible secondary ordering when needed.
      */
     sort?: string | undefined;
 
     /**
      * Page number to retrieve.
      *
-     * @x-autobe-specification 1-indexed page number for paginated project browsing. The service uses this value to select the current result page.
+         * @x-autobe-specification 1-indexed page number for paginated project
+         *   browsing. The service uses this value to select the current result
+         *   page.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of projects per page.
      *
-     * @x-autobe-specification Maximum number of project records to return per page for paginated browsing.
+         * @x-autobe-specification Maximum number of project records to return
+         *   per page for paginated browsing.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -153,56 +184,75 @@ export namespace IErpHrmTimeProject {
     /**
      * Project name shown in lists and detail views.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping to erp_hrm_time_projects.name. This is the project name supplied by the client and persisted as the unique project identifier within the current organization scope.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping to erp_hrm_time_projects.name.
+         *   This is the project name supplied by the client and persisted as
+         *   the unique project identifier within the current organization
+         *   scope.
      */
     name: string;
 
     /**
      * Optional project description or planning notes.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping to erp_hrm_time_projects.description. Persist the provided text as nullable project context; when omitted or null, store null.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping to
+         *   erp_hrm_time_projects.description. Persist the provided text as
+         *   nullable project context; when omitted or null, store null.
      */
     description?: string | null | undefined;
 
     /**
      * Required color used to visually distinguish the project in the UI.
      *
-     * @x-autobe-database-schema-property color_code
-     * @x-autobe-specification Direct mapping to erp_hrm_time_projects.color_code. Persist the UI display color code exactly as provided and validate it before saving so the project can be consistently colorized in project lists and planning screens.
+         * @x-autobe-database-schema-property color_code
+         * @x-autobe-specification Direct mapping to
+         *   erp_hrm_time_projects.color_code. Persist the UI display color code
+         *   exactly as provided and validate it before saving so the project
+         *   can be consistently colorized in project lists and planning
+         *   screens.
      */
     colorCode: string;
 
     /**
      * Project lifecycle status.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping to erp_hrm_time_projects.status. Accept only the project creation status values allowed by business rules, then persist the chosen lifecycle state without deriving it from other fields.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping to
+         *   erp_hrm_time_projects.status. Accept only the project creation
+         *   status values allowed by business rules, then persist the chosen
+         *   lifecycle state without deriving it from other fields.
      */
     status: string;
 
     /**
      * Optional estimated total hours for the project.
      *
-     * @x-autobe-database-schema-property budget_hours
-     * @x-autobe-specification Direct mapping to erp_hrm_time_projects.budget_hours. Persist the optional estimated budget hours as a numeric value; store null when the client omits the field or explicitly sends null.
+         * @x-autobe-database-schema-property budget_hours
+         * @x-autobe-specification Direct mapping to
+         *   erp_hrm_time_projects.budget_hours. Persist the optional estimated
+         *   budget hours as a numeric value; store null when the client omits
+         *   the field or explicitly sends null.
      */
     budgetHours?: number | null | undefined;
 
     /**
      * Optional project start date.
      *
-     * @x-autobe-database-schema-property start_date
-     * @x-autobe-specification Direct mapping to erp_hrm_time_projects.start_date. Persist the optional project start timestamp as a date-time value; store null when not provided.
+         * @x-autobe-database-schema-property start_date
+         * @x-autobe-specification Direct mapping to
+         *   erp_hrm_time_projects.start_date. Persist the optional project
+         *   start timestamp as a date-time value; store null when not provided.
      */
     startDate?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * Optional project end date.
      *
-     * @x-autobe-database-schema-property end_date
-     * @x-autobe-specification Direct mapping to erp_hrm_time_projects.end_date. Persist the optional project end timestamp as a date-time value; store null when not provided.
+         * @x-autobe-database-schema-property end_date
+         * @x-autobe-specification Direct mapping to
+         *   erp_hrm_time_projects.end_date. Persist the optional project end
+         *   timestamp as a date-time value; store null when not provided.
      */
     endDate?: (string & tags.Format<"date-time">) | null | undefined;
   };
@@ -214,56 +264,70 @@ export namespace IErpHrmTimeProject {
     /**
      * Project name within the current organization.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from erp_hrm_time_projects.name. Update the project's display name and preserve the organization-scoped uniqueness constraint.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_projects.name. Update the project's display name and
+         *   preserve the organization-scoped uniqueness constraint.
      */
     name?: string | undefined;
 
     /**
      * Optional project description or planning notes.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from erp_hrm_time_projects.description. Apply the provided text or null to the project description field.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_projects.description. Apply the provided text or null
+         *   to the project description field.
      */
     description?: string | null | undefined;
 
     /**
      * Project display color used in the UI.
      *
-     * @x-autobe-database-schema-property color_code
-     * @x-autobe-specification Direct mapping from erp_hrm_time_projects.color_code. Replace the project's UI color value with the provided string.
+         * @x-autobe-database-schema-property color_code
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_projects.color_code. Replace the project's UI color
+         *   value with the provided string.
      */
     color_code?: string | undefined;
 
     /**
      * Project lifecycle status.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from erp_hrm_time_projects.status. Update the lifecycle state while keeping the project record and its related history intact.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_projects.status. Update the lifecycle state while
+         *   keeping the project record and its related history intact.
      */
     status?: string | undefined;
 
     /**
      * Optional planned budgeted hours for the project.
      *
-     * @x-autobe-database-schema-property budget_hours
-     * @x-autobe-specification Direct mapping from erp_hrm_time_projects.budget_hours. Store the provided numeric budget or null when no budget is set.
+         * @x-autobe-database-schema-property budget_hours
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_projects.budget_hours. Store the provided numeric
+         *   budget or null when no budget is set.
      */
     budget_hours?: number | null | undefined;
 
     /**
      * Optional project start date and time.
      *
-     * @x-autobe-database-schema-property start_date
-     * @x-autobe-specification Direct mapping from erp_hrm_time_projects.start_date. Store the provided start timestamp or null.
+         * @x-autobe-database-schema-property start_date
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_projects.start_date. Store the provided start
+         *   timestamp or null.
      */
     start_date?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * Optional project end date and time.
      *
-     * @x-autobe-database-schema-property end_date
-     * @x-autobe-specification Direct mapping from erp_hrm_time_projects.end_date. Store the provided end timestamp or null.
+         * @x-autobe-database-schema-property end_date
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_projects.end_date. Store the provided end timestamp or
+         *   null.
      */
     end_date?: (string & tags.Format<"date-time">) | null | undefined;
   };
@@ -275,96 +339,116 @@ export namespace IErpHrmTimeProject {
     /**
      * Unique identifier of the project.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from erp_hrm_time_projects.id. Stable UUID primary key for the project summary.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from erp_hrm_time_projects.id.
+         *   Stable UUID primary key for the project summary.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Organization that owns this project.
      *
-     * @x-autobe-database-schema-property organization
-     * @x-autobe-specification Join erp_hrm_time_projects.erp_hrm_time_organization_id to erp_hrm_time_organizations.id and serialize the related organization as IErpHrmTimeOrganizationDashboardSummary.ISummary.
+         * @x-autobe-database-schema-property organization
+         * @x-autobe-specification Join
+         *   erp_hrm_time_projects.erp_hrm_time_organization_id to
+         *   erp_hrm_time_organizations.id and serialize the related
+         *   organization as IErpHrmTimeOrganizationDashboardSummary.ISummary.
      */
     organization: IErpHrmTimeOrganizationDashboardSummary.ISummary;
 
     /**
      * Project name.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from erp_hrm_time_projects.name.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_projects.name.
      */
     name: string;
 
     /**
      * Optional project description.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from erp_hrm_time_projects.description. Nullable column; represent null explicitly when absent.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_projects.description. Nullable column; represent null
+         *   explicitly when absent.
      */
     description: string | null;
 
     /**
      * UI display color code for the project.
      *
-     * @x-autobe-database-schema-property color_code
-     * @x-autobe-specification Direct mapping from erp_hrm_time_projects.color_code using API property name colorCode.
+         * @x-autobe-database-schema-property color_code
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_projects.color_code using API property name colorCode.
      */
     colorCode: string;
 
     /**
      * Current project status.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from erp_hrm_time_projects.status. Represents the persisted project lifecycle state.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_projects.status. Represents the persisted project
+         *   lifecycle state.
      */
     status: string;
 
     /**
      * Estimated budgeted hours for the project.
      *
-     * @x-autobe-database-schema-property budget_hours
-     * @x-autobe-specification Direct mapping from erp_hrm_time_projects.budget_hours using API property name budgetHours. Nullable numeric estimate of planned project hours.
+         * @x-autobe-database-schema-property budget_hours
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_projects.budget_hours using API property name
+         *   budgetHours. Nullable numeric estimate of planned project hours.
      */
     budgetHours: number | null;
 
     /**
      * Optional project start date.
      *
-     * @x-autobe-database-schema-property start_date
-     * @x-autobe-specification Direct mapping from erp_hrm_time_projects.start_date using API property name startDate. Nullable timestamp.
+         * @x-autobe-database-schema-property start_date
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_projects.start_date using API property name startDate.
+         *   Nullable timestamp.
      */
     startDate: (string & tags.Format<"date-time">) | null;
 
     /**
      * Optional project end date.
      *
-     * @x-autobe-database-schema-property end_date
-     * @x-autobe-specification Direct mapping from erp_hrm_time_projects.end_date using API property name endDate. Nullable timestamp.
+         * @x-autobe-database-schema-property end_date
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_projects.end_date using API property name endDate.
+         *   Nullable timestamp.
      */
     endDate: (string & tags.Format<"date-time">) | null;
 
     /**
      * Timestamp when the project was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from erp_hrm_time_projects.created_at using API property name createdAt.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_projects.created_at using API property name createdAt.
      */
     createdAt: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when the project was last updated.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from erp_hrm_time_projects.updated_at using API property name updatedAt.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_projects.updated_at using API property name updatedAt.
      */
     updatedAt: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when the project was soft-deleted, or null if active.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from erp_hrm_time_projects.deleted_at using API property name deletedAt. Null means the project is active.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_projects.deleted_at using API property name deletedAt.
+         *   Null means the project is active.
      */
     deletedAt: (string & tags.Format<"date-time">) | null;
   };

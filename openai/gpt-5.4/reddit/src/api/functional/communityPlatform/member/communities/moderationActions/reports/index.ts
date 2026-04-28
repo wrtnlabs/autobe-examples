@@ -27,7 +27,14 @@ import { IPageICommunityPlatformReport } from "../../../../../../structures/IPag
  * @param props.body Pagination, filtering, and sorting options for linked reports
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Authorize the caller as a member holding active community-local governance authority for the target community. Resolve communityId against community_platform_communities.id and reject the request when the community does not exist or is not accessible in moderation context. Verify that the caller has an active community_platform_community_moderators assignment for the same community, treating owner-level standing as sufficient because owner is the highest authority in the community-specific moderation hierarchy.
+ * @x-autobe-specification Authorize the caller as a member holding active
+ *   community-local governance authority for the target community. Resolve
+ *   communityId against community_platform_communities.id and reject the
+ *   request when the community does not exist or is not accessible in
+ *   moderation context. Verify that the caller has an active
+ *   community_platform_community_moderators assignment for the same community,
+ *   treating owner-level standing as sufficient because owner is the highest
+ *   authority in the community-specific moderation hierarchy.
  *
  * Resolve moderationActionId against community_platform_moderation_actions.id and enforce that the matched record belongs to the same community_platform_community_id as communityId. If the moderation action does not exist, is retired from active business use, or belongs to another community, return a not-found style failure to avoid cross-community disclosure.
  *
@@ -145,7 +152,10 @@ export namespace index {
  * @param props.moderationActionReportId Target moderation action report link UUID under the specified moderation action
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implement a read-only service that resolves one `community_platform_moderation_action_reports` record by `moderationActionReportId` under the nested community and moderation action context.
+ * @x-autobe-specification Implement a read-only service that resolves one
+ *   `community_platform_moderation_action_reports` record by
+ *   `moderationActionReportId` under the nested community and moderation action
+ *   context.
  *
  * First, authenticate the caller as a member and verify that the caller has community-local moderation authority for `communityId`, either through an owner-equivalent moderation assignment or a moderator assignment in the target community. Do not allow access for guests, ordinary members without moderation standing in that community, or platform admins acting without community-local authority.
  *

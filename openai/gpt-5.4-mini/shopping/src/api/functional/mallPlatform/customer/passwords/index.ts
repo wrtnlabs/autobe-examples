@@ -19,7 +19,12 @@ import { IMallPlatformCustomerPasswordReset } from "../../../../structures/IMall
  * @param props.body Password change payload containing the current password and the new password for the authenticated account owner.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Resolve the authenticated principal from the security context and determine whether the caller is a customer or seller account. Validate the supplied current password against the stored hash, then validate the new password against the platform password policy. Reject the request if the caller is not authenticated, does not own the account, or provides an incorrect current password.
+ * @x-autobe-specification Resolve the authenticated principal from the security
+ *   context and determine whether the caller is a customer or seller account.
+ *   Validate the supplied current password against the stored hash, then
+ *   validate the new password against the platform password policy. Reject the
+ *   request if the caller is not authenticated, does not own the account, or
+ *   provides an incorrect current password.
  *
  * Perform the update in a single transaction and modify only the credential fields for the owning account. Do not touch profile records, orders, addresses, wishlists, carts, snapshots, or session tables. If the update fails, return an error and leave the existing password unchanged. Apply the update to the correct account table based on the authenticated principal.
  * @path /mallPlatform/customer/passwords

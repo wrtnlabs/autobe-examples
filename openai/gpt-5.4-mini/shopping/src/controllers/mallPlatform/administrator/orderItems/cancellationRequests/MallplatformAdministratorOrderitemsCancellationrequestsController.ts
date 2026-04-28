@@ -23,9 +23,13 @@ export class MallplatformAdministratorOrderitemsCancellationrequestsController {
    * @param connection
    * @param orderItemId The identifier of the order item to which this cancellation request applies.
    * @param body Cancellation request submission data containing the customer's reason for cancelling the specified order item.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Load the target order item by orderItemId and verify ownership against the authenticated customer. Reject the request if the order item does not exist, is not owned by the caller, is already shipped, or is in any terminal state that makes cancellation invalid.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor administrator
+     * @x-autobe-specification Load the target order item by orderItemId and
+     *   verify ownership against the authenticated customer. Reject the request
+     *   if the order item does not exist, is not owned by the caller, is
+     *   already shipped, or is in any terminal state that makes cancellation
+     *   invalid.
    *
    * Check whether the domain allows only one active cancellation request per order item. If a request already exists and duplicate requests are not permitted, reject the operation without creating another record.
    *
@@ -67,9 +71,13 @@ export class MallplatformAdministratorOrderitemsCancellationrequestsController {
    * @param connection
    * @param orderItemId The order item identifier that scopes the cancellation request.
    * @param cancellationRequestId The cancellation request identifier within the order item scope.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Fetch the cancellation request by identifier and verify that it belongs to the provided order item. Query mall_platform_cancellation_requests using the path scope, and validate the relationship so an unrelated request cannot be exposed through this route.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor administrator
+     * @x-autobe-specification Fetch the cancellation request by identifier and
+     *   verify that it belongs to the provided order item. Query
+     *   mall_platform_cancellation_requests using the path scope, and validate
+     *   the relationship so an unrelated request cannot be exposed through this
+     *   route.
    *
    * Return the full cancellation request entity as stored in the database, including its current review state and reviewer outcome details. Do not update any status, do not create a snapshot, and do not perform inventory or refund logic in this endpoint.
    *
@@ -112,9 +120,13 @@ export class MallplatformAdministratorOrderitemsCancellationrequestsController {
    * @param orderItemId The identifier of the order item that owns the cancellation request.
    * @param cancellationRequestId The identifier of the cancellation request to review within the specified order item.
    * @param body The seller’s decision and optional review note for the cancellation request.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Load the order item and cancellation request by their identifiers, then verify that the cancellation request belongs to the specified order item. Reject the operation if either record is missing, the request is already resolved, the order item is not in paid status, or the item has been shipped.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor administrator
+     * @x-autobe-specification Load the order item and cancellation request by
+     *   their identifiers, then verify that the cancellation request belongs to
+     *   the specified order item. Reject the operation if either record is
+     *   missing, the request is already resolved, the order item is not in paid
+     *   status, or the item has been shipped.
    *
    * Validate the incoming update payload for the seller decision and any optional note fields. Execute the decision inside a single transaction. On approval, update the cancellation request state, create a cancellation-request snapshot, mark the order item as cancelled, create the inventory record that restores stock, and invoke any refund side effects required by the platform flow. On rejection, update the request state and create the snapshot without changing the order item.
    *

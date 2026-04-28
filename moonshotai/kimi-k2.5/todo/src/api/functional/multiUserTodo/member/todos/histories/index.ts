@@ -29,7 +29,8 @@ import { IPageIMultiUserTodoHistory } from "../../../../../structures/IPageIMult
  * @param props.body Pagination and sorting parameters for history list
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query multi_user_todo_histories by todo_id with pagination support.
+ * @x-autobe-specification Query multi_user_todo_histories by todo_id with
+ *   pagination support.
  *
  * 1. Validate todoId path parameter is valid UUID
  * 2. Verify requesting member owns the todo via member_id comparison
@@ -152,7 +153,8 @@ export namespace index {
  * @param props.historyId Target history entry ID - the specific edit history record to retrieve
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query the multi_user_todo_histories table joined with multi_user_todo_todos to verify ownership.
+ * @x-autobe-specification Query the multi_user_todo_histories table joined with
+ *   multi_user_todo_todos to verify ownership.
  *
  * 1. Validate that the todo exists and belongs to the authenticated user (check user_id matches current session)
  * 2. Fetch the history entry by historyId and verify it belongs to the specified todoId (matching todo_id foreign key)

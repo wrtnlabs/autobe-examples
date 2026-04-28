@@ -15,8 +15,10 @@ export type IEcommerceMallAdminPromotion = {
    *
    * This nested object contains the summary information of the promoted administrator including their name and email.
    *
-   * @x-autobe-specification Join from ecommerce_mall_admin_promotions.admin_id to ecommerce_mall_admins.id. Returns IEcommerceMallAdmin.ISummary.
-   * @x-autobe-database-schema-property admin
+     * @x-autobe-specification Join from
+     *   ecommerce_mall_admin_promotions.admin_id to ecommerce_mall_admins.id.
+     *   Returns IEcommerceMallAdmin.ISummary.
+     * @x-autobe-database-schema-property admin
    */
   admin: IEcommerceMallAdmin.ISummary;
 
@@ -25,8 +27,11 @@ export type IEcommerceMallAdminPromotion = {
    *
    * This nested object contains the summary information of the super administrator who promoted the target administrator.
    *
-   * @x-autobe-specification Join from ecommerce_mall_admin_promotions.performed_by_super_admin_id to ecommerce_mall_super_admins.id. Returns IEcommerceMallSuperAdmin.ISummary.
-   * @x-autobe-database-schema-property performedBySuperAdmin
+     * @x-autobe-specification Join from
+     *   ecommerce_mall_admin_promotions.performed_by_super_admin_id to
+     *   ecommerce_mall_super_admins.id. Returns
+     *   IEcommerceMallSuperAdmin.ISummary.
+     * @x-autobe-database-schema-property performedBySuperAdmin
    */
   performedBySuperAdmin: IEcommerceMallSuperAdmin.ISummary;
 
@@ -35,8 +40,9 @@ export type IEcommerceMallAdminPromotion = {
    *
    * This field may contain context such as performance review outcomes, trust decisions, or other rationale for elevating the administrator's privileges.
    *
-   * @x-autobe-database-schema-property reason
-   * @x-autobe-specification Direct mapping from ecommerce_mall_admin_promotions.reason. Nullable field.
+     * @x-autobe-database-schema-property reason
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_admin_promotions.reason. Nullable field.
    */
   reason?: string | null | undefined;
 
@@ -45,8 +51,10 @@ export type IEcommerceMallAdminPromotion = {
    *
    * A UUID v4 identifier that uniquely distinguishes this promotion record from others in the audit log. Used for API references.
    *
-   * @x-autobe-specification Direct mapping from ecommerce_mall_admin_promotions.id. UUID format. Auto-generated on creation.
-   * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_admin_promotions.id. UUID format. Auto-generated on
+     *   creation.
+     * @x-autobe-database-schema-property id
    */
   id: string & tags.Format<"uuid">;
 
@@ -55,8 +63,10 @@ export type IEcommerceMallAdminPromotion = {
    *
    * Indicates whether this record represents a promotion action. For this endpoint, the value is always 'promotion'.
    *
-   * @x-autobe-specification Direct mapping from ecommerce_mall_admin_promotions.action. For this endpoint response, always 'promotion'.
-   * @x-autobe-database-schema-property action
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_admin_promotions.action. For this endpoint response,
+     *   always 'promotion'.
+     * @x-autobe-database-schema-property action
    */
   action: string;
 
@@ -65,8 +75,10 @@ export type IEcommerceMallAdminPromotion = {
    *
    * Automatically set when the promotion record is created. Immutable.
    *
-   * @x-autobe-specification Direct mapping from ecommerce_mall_admin_promotions.created_at. Auto-generated timestamp when record is created.
-   * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_admin_promotions.created_at. Auto-generated timestamp
+     *   when record is created.
+     * @x-autobe-database-schema-property created_at
    */
   created_at: string & tags.Format<"date-time">;
 };
@@ -86,8 +98,10 @@ export namespace IEcommerceMallAdminPromotion {
      *
      * **Constraints**: Maximum 500 characters. Can be null if no reason is provided.
      *
-     * @x-autobe-database-schema-property reason
-     * @x-autobe-specification Direct mapping from ecommerce_mall_admin_promotions.reason. Optional string field for documenting the rationale behind the promotion decision.
+         * @x-autobe-database-schema-property reason
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_admin_promotions.reason. Optional string field for
+         *   documenting the rationale behind the promotion decision.
      */
     reason?: string | null | undefined;
   };

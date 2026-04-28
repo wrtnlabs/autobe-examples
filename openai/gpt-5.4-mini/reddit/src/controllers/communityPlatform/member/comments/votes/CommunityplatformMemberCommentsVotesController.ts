@@ -23,9 +23,12 @@ export class CommunityplatformMemberCommentsVotesController {
    * @param connection
    * @param commentId Target comment identifier.
    * @param body Vote direction or removal request for the targeted comment.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement a comment-scoped vote mutation endpoint for authenticated members. Resolve the acting member from the security context, load the target comment by commentId, and verify the comment exists.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implement a comment-scoped vote mutation endpoint
+     *   for authenticated members. Resolve the acting member from the security
+     *   context, load the target comment by commentId, and verify the comment
+     *   exists.
    *
    * Use community_platform_votes as the canonical vote record and community_platform_vote_comments as the target binding table. Look up any existing vote for the current member on the target comment through the vote-comment association. If the request submits an active direction and no existing vote exists, create both the vote row and the vote-comment assignment in one transaction. If an existing vote is found, update the direction only when it changes and compute the score/karma delta from the previous direction to the new direction. If the request indicates removal, remove the existing vote association so the comment no longer counts that member's vote.
    *
@@ -67,9 +70,14 @@ export class CommunityplatformMemberCommentsVotesController {
    * @param connection
    * @param commentId Identifier of the target comment.
    * @param voteId Identifier of the vote within the comment's vote scope.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Resolve the target comment by `commentId`, then query the comment-vote record by `voteId` only within that comment scope. The implementation should join or verify against the comment-target vote structure so the returned vote is guaranteed to belong to the specified comment, not merely any vote with the same identifier.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Resolve the target comment by `commentId`, then
+     *   query the comment-vote record by `voteId` only within that comment
+     *   scope. The implementation should join or verify against the
+     *   comment-target vote structure so the returned vote is guaranteed to
+     *   belong to the specified comment, not merely any vote with the same
+     *   identifier.
    *
    * Use a single read query with appropriate existence checks. If the system stores comment votes through a base vote table plus a comment-target table, load the vote record and confirm the target linkage in the same transaction or consistent read. Return 404 when the comment does not exist or the vote is absent from that comment's vote set.
    *

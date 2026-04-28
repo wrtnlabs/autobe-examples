@@ -10,64 +10,76 @@ export type IEcommerceMallAdmin = {
   /**
    * Unique identifier for the administrator account.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_admins.id (UUID primary key).
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from ecommerce_mall_admins.id
+     *   (UUID primary key).
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Administrator's email address used for login and identification.
    *
-   * @x-autobe-database-schema-property email
-   * @x-autobe-specification Direct mapping from ecommerce_mall_admins.email. Unique constraint enforced at database level.
+     * @x-autobe-database-schema-property email
+     * @x-autobe-specification Direct mapping from ecommerce_mall_admins.email.
+     *   Unique constraint enforced at database level.
    */
   email: string & tags.Format<"email">;
 
   /**
    * Administrator privilege level indicating their authority within the platform.
    *
-   * @x-autobe-specification Direct mapping from ecommerce_mall_admins.grade. Valid values: 'regular' or 'super_admin'.
-   * @x-autobe-database-schema-property grade
+     * @x-autobe-specification Direct mapping from ecommerce_mall_admins.grade.
+     *   Valid values: 'regular' or 'super_admin'.
+     * @x-autobe-database-schema-property grade
    */
   grade: string;
 
   /**
    * Account status controlling login access and administrative capabilities.
    *
-   * @x-autobe-specification Direct mapping from ecommerce_mall_admins.status. Valid values: 'active', 'suspended', or 'banned'.
-   * @x-autobe-database-schema-property status
+     * @x-autobe-specification Direct mapping from ecommerce_mall_admins.status.
+     *   Valid values: 'active', 'suspended', or 'banned'.
+     * @x-autobe-database-schema-property status
    */
   status: string;
 
   /**
    * Display name or alias for the administrator shown in system interfaces.
    *
-   * @x-autobe-database-schema-property nickname
-   * @x-autobe-specification Direct mapping from ecommerce_mall_admins.nickname. Nullable field for display name shown in audit logs and interfaces.
+     * @x-autobe-database-schema-property nickname
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_admins.nickname. Nullable field for display name shown
+     *   in audit logs and interfaces.
    */
   nickname: string | null;
 
   /**
    * Timestamp when the administrator account was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_admins.created_at. Database column name converted to camelCase for API.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_admins.created_at. Database column name converted to
+     *   camelCase for API.
    */
   createdAt: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the administrator account was last modified.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_admins.updated_at. Database column name converted to camelCase for API.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_admins.updated_at. Database column name converted to
+     *   camelCase for API.
    */
   updatedAt: string & tags.Format<"date-time">;
 
   /**
    * Soft deletion timestamp. Null if account is active; set when account is soft-deleted.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_admins.deleted_at. Nullable soft deletion timestamp. Database column name converted to camelCase for API.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_admins.deleted_at. Nullable soft deletion timestamp.
+     *   Database column name converted to camelCase for API.
    */
   deletedAt: (string & tags.Format<"date-time">) | null;
 };
@@ -103,7 +115,8 @@ export namespace IEcommerceMallAdmin {
     /**
      * Authorization token.
      *
-     * @x-autobe-specification Authorization token comes from the session table.
+         * @x-autobe-specification Authorization token comes from the session
+         *   table.
      */
     token: IAuthorizationToken;
   };
@@ -115,7 +128,11 @@ export namespace IEcommerceMallAdmin {
     /**
      * The refresh token used to obtain a new access token without re-entering credentials.
      *
-     * @x-autobe-specification User-provided refresh token extracted from client storage (localStorage/cookies) from previous IEcommerceMallAdmin.IAuthorized response. Validated against ecommerce_mall_admin_sessions table by matching the token value and checking expiration (expired_at > current timestamp).
+         * @x-autobe-specification User-provided refresh token extracted from
+         *   client storage (localStorage/cookies) from previous
+         *   IEcommerceMallAdmin.IAuthorized response. Validated against
+         *   ecommerce_mall_admin_sessions table by matching the token value and
+         *   checking expiration (expired_at > current timestamp).
      */
     refresh: string;
   };
@@ -127,37 +144,57 @@ export namespace IEcommerceMallAdmin {
     /**
      * Administrator's email address used for login identification.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from ecommerce_mall_admins.email. Used as the primary lookup key for administrator authentication. Must be unique across all admin accounts.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_admins.email. Used as the primary lookup key for
+         *   administrator authentication. Must be unique across all admin
+         *   accounts.
      */
     email: string & tags.Format<"email">;
 
     /**
      * Administrator's password for authentication. Sent as plaintext and hashed server-side before verification.
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification Maps to ecommerce_mall_admins.password_hash with BCrypt transformation. Client sends plaintext password in request body. Server hashes the provided password using BCrypt and compares against the stored password_hash for authentication verification.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification Maps to ecommerce_mall_admins.password_hash
+         *   with BCrypt transformation. Client sends plaintext password in
+         *   request body. Server hashes the provided password using BCrypt and
+         *   compares against the stored password_hash for authentication
+         *   verification.
      */
     password: string & tags.Format<"password">;
 
     /**
      * The page URL where the login request originated, captured for security audit purposes.
      *
-     * @x-autobe-specification Computed session context property capturing the page URL where the login was initiated. Not stored in ecommerce_mall_admins table. Recorded in ecommerce_mall_admin_sessions upon successful authentication for security audit trail.
+         * @x-autobe-specification Computed session context property capturing
+         *   the page URL where the login was initiated. Not stored in
+         *   ecommerce_mall_admins table. Recorded in
+         *   ecommerce_mall_admin_sessions upon successful authentication for
+         *   security audit trail.
      */
     href: string & tags.Format<"uri">;
 
     /**
      * The referring URL that led to the login page, captured for security audit and fraud detection.
      *
-     * @x-autobe-specification Computed session context property capturing the referrer URL that led to the login page. Not stored in ecommerce_mall_admins table. Recorded in ecommerce_mall_admin_sessions upon successful authentication for security audit trail and anomaly detection.
+         * @x-autobe-specification Computed session context property capturing
+         *   the referrer URL that led to the login page. Not stored in
+         *   ecommerce_mall_admins table. Recorded in
+         *   ecommerce_mall_admin_sessions upon successful authentication for
+         *   security audit trail and anomaly detection.
      */
     referrer: string & tags.Format<"uri">;
 
     /**
      * Client's IP address in IPv4 format, captured for security audit and session tracking. Optional as server can auto-detect when not provided.
      *
-     * @x-autobe-specification Computed session context property capturing the client's IP address. Not stored in ecommerce_mall_admins table. Optional in request body as server can detect IP from connection in SSR/server-side contexts. Recorded in ecommerce_mall_admin_sessions for security auditing and geographic tracking. Must be valid IPv4 format when provided.
+         * @x-autobe-specification Computed session context property capturing
+         *   the client's IP address. Not stored in ecommerce_mall_admins table.
+         *   Optional in request body as server can detect IP from connection in
+         *   SSR/server-side contexts. Recorded in ecommerce_mall_admin_sessions
+         *   for security auditing and geographic tracking. Must be valid IPv4
+         *   format when provided.
      */
     ip: (string & tags.Format<"ipv4">) | null;
   };
@@ -169,16 +206,20 @@ export namespace IEcommerceMallAdmin {
     /**
      * Administrator's email address used for login.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from ecommerce_mall_admins.email. Must match email format and exist in the unique email index.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_admins.email. Must match email format and exist in
+         *   the unique email index.
      */
     email: string & tags.Format<"email">;
 
     /**
      * Administrator's password for authentication.
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification Accepts plain text password, verified against ecommerce_mall_admins.password_hash using BCrypt comparison. Never store or log the plain text password.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification Accepts plain text password, verified against
+         *   ecommerce_mall_admins.password_hash using BCrypt comparison. Never
+         *   store or log the plain text password.
      */
     password: string & tags.Format<"password">;
   };

@@ -19,9 +19,11 @@ export class EcommercemallSellerSellerRefund_requestsController {
    * The seller can use this list to review pending requests and decide whether to approve or reject each one. Only order items belonging to the authenticated seller's products are included.
    *
    * @param connection
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Query ecommerce_mall_refund_requests table filtered by status = 'pending' and where the associated order_item's seller_id matches the authenticated seller's ID.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Query ecommerce_mall_refund_requests table
+     *   filtered by status = 'pending' and where the associated order_item's
+     *   seller_id matches the authenticated seller's ID.
    *
    * Join with ecommerce_mall_order_items to verify seller ownership and include order item details (quantity, unit_price, subtotal).
    *
@@ -81,12 +83,13 @@ export class EcommercemallSellerSellerRefund_requestsController {
    * @param connection
    * @param requestId The UUID of the refund request to update.
    * @param body The approval decision and optional rejection reason for the refund request.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification 1. Authorization: Verify the authenticated seller is the owner of the order item in this refund request.
-   *    - Query ecommerce_mall_refund_requests by requestId
-   *    - Join with ecommerce_mall_order_items to get seller_id
-   *    - Compare with authenticated seller's ID
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification 1. Authorization: Verify the authenticated seller
+     *   is the owner of the order item in this refund request. - Query
+     *   ecommerce_mall_refund_requests by requestId - Join with
+     *   ecommerce_mall_order_items to get seller_id - Compare with
+     *   authenticated seller's ID
    *
    * 2. Validation:
    *    - 404 if refund request not found

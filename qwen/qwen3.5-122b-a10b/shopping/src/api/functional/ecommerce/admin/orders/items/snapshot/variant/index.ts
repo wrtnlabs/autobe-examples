@@ -34,7 +34,8 @@ export * as options from "./options/index";
  * @param props.itemId UUID of the order item within the specified order (global scope)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Implement GET operation to retrieve order item variant snapshot:
+ * @x-autobe-specification Implement GET operation to retrieve order item
+ *   variant snapshot:
  *
  * 1. **Path Parameter Validation**
  *    - Validate orderId is valid UUID format

@@ -22,7 +22,8 @@ import { IPageIHrmPlatformTimesheet } from "../../../../structures/IPageIHrmPlat
  * @param props.body Timesheet creation parameters including the week start date (Monday) for the timesheet period. The employee_id is automatically derived from the authenticated user's context.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Create a new timesheet record in hrm_platform_timesheets table.
+ * @x-autobe-specification Create a new timesheet record in
+ *   hrm_platform_timesheets table.
  *
  * 1. Validate the requesting employee has an active employee record in the current organization context.
  * 2. Validate week_start_date is provided and is a valid Monday date.
@@ -129,7 +130,12 @@ export namespace create {
  * @param props.body Search criteria including status filter, week date range, employee filter, and pagination parameters (take, skip, sort).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query hrm_platform_timesheets table with pagination and filtering. Apply organization context filtering to ensure data isolation. For regular employees, filter by employee_id matching the authenticated user's employee record. For users with time:approve permission, include all timesheets in submitted status across the organization.
+ * @x-autobe-specification Query hrm_platform_timesheets table with pagination
+ *   and filtering. Apply organization context filtering to ensure data
+ *   isolation. For regular employees, filter by employee_id matching the
+ *   authenticated user's employee record. For users with time:approve
+ *   permission, include all timesheets in submitted status across the
+ *   organization.
  *
  * Apply search filters: status (enum match), week_start_date range (gte/lte), employee_id (if filtering specific employee). Join with hrm_platform_timelogs to calculate total_hours SUM(duration_minutes)/60. Join with hrm_platform_employees for employee name. Join with hrm_platform_members for reviewer name.
  *
@@ -224,7 +230,8 @@ export namespace index {
  * @param props.timesheetId Unique identifier of the timesheet to retrieve (UUID format).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query hrm_platform_timesheets table by primary key id (UUID).
+ * @x-autobe-specification Query hrm_platform_timesheets table by primary key id
+ *   (UUID).
  *
  * Include related employee information via employee_id foreign key join.
  * Include related reviewer information via reviewer_id foreign key join (nullable).
@@ -325,7 +332,8 @@ export namespace at {
  * @param props.body Timesheet update fields including status for workflow transitions, rejection_reason for rejected status, and other modifiable properties. System-generated fields (id, created_at, updated_at) are excluded.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query hrm_platform_timesheets by timesheetId UUID. Verify record exists and deleted_at is null.
+ * @x-autobe-specification Query hrm_platform_timesheets by timesheetId UUID.
+ *   Verify record exists and deleted_at is null.
  *
  * Check user permissions:
  * - If status is 'draft': only the owner (employee.user_id) can update
@@ -439,7 +447,9 @@ export namespace update {
  * @param props.timesheetId Unique identifier of the timesheet to delete (UUID format).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query hrm_platform_timesheets table by timesheetId (UUID). Verify the timesheet exists and is not already deleted (deleted_at is null).
+ * @x-autobe-specification Query hrm_platform_timesheets table by timesheetId
+ *   (UUID). Verify the timesheet exists and is not already deleted (deleted_at
+ *   is null).
  *
  * Check authorization: If the requesting user is not the owner (employee_id) AND does not have time:manage permission, reject with 403 Forbidden.
  *
@@ -544,7 +554,16 @@ export namespace erase {
  * @param props.timesheetId UUID of the timesheet to submit (must be owned by current employee and in draft status).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Submit a draft timesheet for approval. Query hrm_platform_timesheets table by timesheetId. Validate: timesheet exists, status is 'draft', employee_id matches current authenticated employee, timesheet has at least one timelog (join hrm_platform_timelogs where hrm_platform_timesheet_id = timesheetId), no other timesheet for same employee and week_start_date is in 'submitted' or 'approved' status. If validation passes, update status to 'submitted', set submitted_at to current timestamp, return updated timesheet. If validation fails, return appropriate error: 404 if not found, 400 if not in draft status or has no timelogs, 409 if duplicate week timesheet exists, 403 if not owner.
+ * @x-autobe-specification Submit a draft timesheet for approval. Query
+ *   hrm_platform_timesheets table by timesheetId. Validate: timesheet exists,
+ *   status is 'draft', employee_id matches current authenticated employee,
+ *   timesheet has at least one timelog (join hrm_platform_timelogs where
+ *   hrm_platform_timesheet_id = timesheetId), no other timesheet for same
+ *   employee and week_start_date is in 'submitted' or 'approved' status. If
+ *   validation passes, update status to 'submitted', set submitted_at to
+ *   current timestamp, return updated timesheet. If validation fails, return
+ *   appropriate error: 404 if not found, 400 if not in draft status or has no
+ *   timelogs, 409 if duplicate week timesheet exists, 403 if not owner.
  * @path /hrmPlatform/member/timesheets/:timesheetId/submit
  * @accessor api.functional.hrmPlatform.member.timesheets.submit
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -631,7 +650,8 @@ export namespace submit {
  * @param props.timesheetId The UUID identifier of the timesheet to approve.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Validate that the authenticated user has time:approve permission within the current organization context.
+ * @x-autobe-specification Validate that the authenticated user has time:approve
+ *   permission within the current organization context.
  *
  * Query the hrm_platform_timesheets table by timesheetId (UUID).
  *
@@ -745,7 +765,19 @@ export namespace approve {
  * @param props.body Rejection details including the mandatory reason explaining why the timesheet was rejected.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query hrm_platform_timesheets table by timesheetId (UUID). Validate that the timesheet exists and is in submitted status. Verify the requesting user has time:approve permission within the organization context. Update the timesheet record: set status to rejected, set reviewer_id to current user's member ID, set reviewed_at to current timestamp, set rejection_reason to the provided value. The timesheet effectively returns to draft status allowing the employee to modify and resubmit. Return the complete updated timesheet entity including all fields (id, employee_id, reviewer_id, week_start_date, week_end_date, status, submitted_at, reviewed_at, rejection_reason, created_at, updated_at). Handle edge cases: timesheet not found (404), timesheet not in submitted status (400), missing rejection reason (400), insufficient permissions (403).
+ * @x-autobe-specification Query hrm_platform_timesheets table by timesheetId
+ *   (UUID). Validate that the timesheet exists and is in submitted status.
+ *   Verify the requesting user has time:approve permission within the
+ *   organization context. Update the timesheet record: set status to rejected,
+ *   set reviewer_id to current user's member ID, set reviewed_at to current
+ *   timestamp, set rejection_reason to the provided value. The timesheet
+ *   effectively returns to draft status allowing the employee to modify and
+ *   resubmit. Return the complete updated timesheet entity including all fields
+ *   (id, employee_id, reviewer_id, week_start_date, week_end_date, status,
+ *   submitted_at, reviewed_at, rejection_reason, created_at, updated_at).
+ *   Handle edge cases: timesheet not found (404), timesheet not in submitted
+ *   status (400), missing rejection reason (400), insufficient permissions
+ *   (403).
  * @path /hrmPlatform/member/timesheets/:timesheetId/reject
  * @accessor api.functional.hrmPlatform.member.timesheets.reject
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe

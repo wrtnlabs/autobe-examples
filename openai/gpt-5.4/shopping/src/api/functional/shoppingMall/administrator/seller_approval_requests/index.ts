@@ -26,7 +26,8 @@ import { IShoppingMallSellerApprovalRequest } from "../../../../structures/IShop
  * @param props.body Updated review decision for the seller approval request
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor administrator
- * @x-autobe-specification Load the target seller approval request by sellerApprovalRequestId.
+ * @x-autobe-specification Load the target seller approval request by
+ *   sellerApprovalRequestId.
  *
  * Authorize only administrator or superAdministrator actors. Reject requests from sellers, customers, guests, or other unauthenticated callers. For regular administrators, allow the action because seller approval oversight is explicitly within administrator authority boundaries.
  *

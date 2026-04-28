@@ -9,27 +9,27 @@ import { IErpHrmTask } from "./IErpHrmTask";
  */
 export type IErpHrmTaskHistory = {
   /**
-   * @x-autobe-database-schema-property id
+     * @x-autobe-database-schema-property id
    */
   id: string & tags.Format<"uuid">;
   /**
-   * @x-autobe-database-schema-property task
+     * @x-autobe-database-schema-property task
    */
   task: IErpHrmTask.ISummary;
   /**
-   * @x-autobe-database-schema-property member
+     * @x-autobe-database-schema-property member
    */
   member: IErpHrmMember.ISummary;
   /**
-   * @x-autobe-database-schema-property previous_status
+     * @x-autobe-database-schema-property previous_status
    */
   previousStatus: string;
   /**
-   * @x-autobe-database-schema-property new_status
+     * @x-autobe-database-schema-property new_status
    */
   newStatus: string;
   /**
-   * @x-autobe-database-schema-property created_at
+     * @x-autobe-database-schema-property created_at
    */
   createdAt: string & tags.Format<"date-time">;
 };
@@ -41,14 +41,14 @@ export namespace IErpHrmTaskHistory {
     /**
      * Filter by the status before the transition. Possible values: 'open', 'in-progress', 'completed', 'closed'
      *
-     * @x-autobe-database-schema-property previous_status
+         * @x-autobe-database-schema-property previous_status
      */
     previous_status?: string | undefined;
 
     /**
      * Filter by the status after the transition. Possible values: 'open', 'in-progress', 'completed', 'closed'
      *
-     * @x-autobe-database-schema-property new_status
+         * @x-autobe-database-schema-property new_status
      */
     new_status?: string | undefined;
 
@@ -80,29 +80,29 @@ export namespace IErpHrmTaskHistory {
    */
   export type ISummary = {
     /**
-     * @x-autobe-database-schema-property id
+         * @x-autobe-database-schema-property id
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * The task status before this change. Possible values: 'open', 'in-progress', 'completed', 'closed'.
      *
-     * @x-autobe-database-schema-property previous_status
+         * @x-autobe-database-schema-property previous_status
      */
     previousStatus: string;
 
     /**
      * The task status after this change. Possible values: 'open', 'in-progress', 'completed', 'closed'.
      *
-     * @x-autobe-database-schema-property new_status
+         * @x-autobe-database-schema-property new_status
      */
     newStatus: string;
     /**
-     * @x-autobe-database-schema-property member
+         * @x-autobe-database-schema-property member
      */
     member: IErpHrmMember.ISummary;
     /**
-     * @x-autobe-database-schema-property created_at
+         * @x-autobe-database-schema-property created_at
      */
     createdAt: string & tags.Format<"date-time">;
   };

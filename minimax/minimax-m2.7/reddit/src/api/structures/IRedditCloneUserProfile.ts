@@ -14,56 +14,66 @@ export type IRedditCloneUserProfile = {
   /**
    * Unique identifier of the user profile.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from reddit_clone_user_profiles.id. UUID primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_user_profiles.id. UUID primary key.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * User's display name shown on posts, comments, and profile page.
    *
-   * @x-autobe-database-schema-property display_name
-   * @x-autobe-specification Direct mapping from reddit_clone_user_profiles.display_name. Max 100 characters.
+     * @x-autobe-database-schema-property display_name
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_user_profiles.display_name. Max 100 characters.
    */
   displayName: string;
 
   /**
    * User's biography or description text on their profile page.
    *
-   * @x-autobe-database-schema-property bio
-   * @x-autobe-specification Direct mapping from reddit_clone_user_profiles.bio. Nullable string, max 500 characters.
+     * @x-autobe-database-schema-property bio
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_user_profiles.bio. Nullable string, max 500 characters.
    */
   bio?: string | null | undefined;
 
   /**
    * User's avatar image association with file details. Null if no avatar uploaded.
    *
-   * @x-autobe-specification Join via reddit_clone_file_association_id to reddit_clone_file_associations. Returns IRedditCloneFileAssociation.ISummary with nested file details. Nullable - user may not have avatar set.
-   * @x-autobe-database-schema-property avatarFileAssociation
+     * @x-autobe-specification Join via reddit_clone_file_association_id to
+     *   reddit_clone_file_associations. Returns
+     *   IRedditCloneFileAssociation.ISummary with nested file details. Nullable
+     *   - user may not have avatar set.
+     * @x-autobe-database-schema-property avatarFileAssociation
    */
   avatar?: IRedditCloneFileAssociation.ISummary | null | undefined;
 
   /**
    * Reference to the member account that owns this profile.
    *
-   * @x-autobe-database-schema-property member
-   * @x-autobe-specification Join via reddit_clone_member_id to reddit_clone_members. Returns IRedditCloneMember.ISummary with username and basic info.
+     * @x-autobe-database-schema-property member
+     * @x-autobe-specification Join via reddit_clone_member_id to
+     *   reddit_clone_members. Returns IRedditCloneMember.ISummary with username
+     *   and basic info.
    */
   member: IRedditCloneMember.ISummary;
 
   /**
    * Timestamp when the profile was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from reddit_clone_user_profiles.created_at. Timestamptz.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_user_profiles.created_at. Timestamptz.
    */
   createdAt: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the profile was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from reddit_clone_user_profiles.updated_at. Timestamptz.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_user_profiles.updated_at. Timestamptz.
    */
   updatedAt: string & tags.Format<"date-time">;
 };
@@ -75,24 +85,34 @@ export namespace IRedditCloneUserProfile {
     /**
      * Required display name shown on posts, comments, and profile page. Maximum 100 characters.
      *
-     * @x-autobe-database-schema-property display_name
-     * @x-autobe-specification Direct mapping from reddit_clone_user_profiles.display_name. Required field shown on posts, comments, and profile page. Max 100 characters - truncate if exceeded.
+         * @x-autobe-database-schema-property display_name
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_user_profiles.display_name. Required field shown on
+         *   posts, comments, and profile page. Max 100 characters - truncate if
+         *   exceeded.
      */
     displayName: string & tags.MaxLength<100>;
 
     /**
      * Optional biography or description text for the user's profile. Maximum 500 characters.
      *
-     * @x-autobe-database-schema-property bio
-     * @x-autobe-specification Direct mapping from reddit_clone_user_profiles.bio. Optional text field for user biography. Set to null if empty string provided. Max 500 characters - truncate if exceeded.
+         * @x-autobe-database-schema-property bio
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_user_profiles.bio. Optional text field for user
+         *   biography. Set to null if empty string provided. Max 500 characters
+         *   - truncate if exceeded.
      */
     bio?: (string & tags.MaxLength<500>) | null | undefined;
 
     /**
      * Optional UUID of the avatar file association. Must reference an existing file belonging to the authenticated member.
      *
-     * @x-autobe-database-schema-property reddit_clone_file_association_id
-     * @x-autobe-specification Direct mapping to reddit_clone_user_profiles.reddit_clone_file_association_id. References reddit_clone_file_associations.id for avatar image. Optional - user may not have an avatar set. Validation: UUID must exist and belong to authenticated member.
+         * @x-autobe-database-schema-property reddit_clone_file_association_id
+         * @x-autobe-specification Direct mapping to
+         *   reddit_clone_user_profiles.reddit_clone_file_association_id.
+         *   References reddit_clone_file_associations.id for avatar image.
+         *   Optional - user may not have an avatar set. Validation: UUID must
+         *   exist and belong to authenticated member.
      */
     avatarFileId?: (string & tags.Format<"uuid">) | null | undefined;
   };
@@ -104,21 +124,30 @@ export namespace IRedditCloneUserProfile {
     /**
      * Partial search term for filtering profiles by display name.
      *
-     * @x-autobe-specification Query parameter for filtering profiles by display name. Uses partial text matching (ILIKE in PostgreSQL, contains in Prisma). The client sends a search string, server applies WHERE display_name ILIKE '%{search}%'. Case-insensitive. Optional - when omitted, returns all profiles.
+         * @x-autobe-specification Query parameter for filtering profiles by
+         *   display name. Uses partial text matching (ILIKE in PostgreSQL,
+         *   contains in Prisma). The client sends a search string, server
+         *   applies WHERE display_name ILIKE '%{search}%'. Case-insensitive.
+         *   Optional - when omitted, returns all profiles.
      */
     search?: (string & tags.MinLength<1>) | undefined;
 
     /**
      * Page number for pagination (1-based index).
      *
-     * @x-autobe-specification Pagination offset calculation. Page number (1-indexed) converted to skip offset: skip = (page - 1) * limit. Default page is 1. Used together with limit for offset-based pagination.
+         * @x-autobe-specification Pagination offset calculation. Page number
+         *   (1-indexed) converted to skip offset: skip = (page - 1) * limit.
+         *   Default page is 1. Used together with limit for offset-based
+         *   pagination.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Number of profiles per page.
      *
-     * @x-autobe-specification Pagination page size. Determines how many records per page. Applied as Prisma take value. Must be between 1 and 100. Used with page to calculate skip offset.
+         * @x-autobe-specification Pagination page size. Determines how many
+         *   records per page. Applied as Prisma take value. Must be between 1
+         *   and 100. Used with page to calculate skip offset.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -127,28 +156,40 @@ export namespace IRedditCloneUserProfile {
     /**
      * Field to sort results by: display_name or created_at.
      *
-     * @x-autobe-specification Field to sort results by. Maps to Prisma orderBy: 'display_name' → orderBy: { display_name: order }, 'created_at' → orderBy: { created_at: order }. Default sort field is 'created_at' descending if not specified.
+         * @x-autobe-specification Field to sort results by. Maps to Prisma
+         *   orderBy: 'display_name' → orderBy: { display_name: order },
+         *   'created_at' → orderBy: { created_at: order }. Default sort field
+         *   is 'created_at' descending if not specified.
      */
     sort?: "display_name" | "created_at" | undefined;
 
     /**
      * Sort direction: ascending or descending.
      *
-     * @x-autobe-specification Sort direction for ordering. Maps directly to Prisma orderBy direction: 'asc' → 'asc', 'desc' → 'desc'. Applied to the field specified in sort parameter. Default order is 'desc' if not specified.
+         * @x-autobe-specification Sort direction for ordering. Maps directly to
+         *   Prisma orderBy direction: 'asc' → 'asc', 'desc' → 'desc'. Applied
+         *   to the field specified in sort parameter. Default order is 'desc'
+         *   if not specified.
      */
     order?: "asc" | "desc" | undefined;
 
     /**
      * Filter profiles created after this timestamp.
      *
-     * @x-autobe-specification Date range filter for profile creation timestamp. Uses Prisma where clause: created_at: { gte: created_after }. Filters to profiles created on or after the specified timestamp. ISO 8601 format required.
+         * @x-autobe-specification Date range filter for profile creation
+         *   timestamp. Uses Prisma where clause: created_at: { gte:
+         *   created_after }. Filters to profiles created on or after the
+         *   specified timestamp. ISO 8601 format required.
      */
     created_after?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Filter profiles created before this timestamp.
      *
-     * @x-autobe-specification Date range filter for profile creation timestamp. Uses Prisma where clause: created_at: { lte: created_before }. Filters to profiles created on or before the specified timestamp. ISO 8601 format required.
+         * @x-autobe-specification Date range filter for profile creation
+         *   timestamp. Uses Prisma where clause: created_at: { lte:
+         *   created_before }. Filters to profiles created on or before the
+         *   specified timestamp. ISO 8601 format required.
      */
     created_before?: (string & tags.Format<"date-time">) | undefined;
   };
@@ -158,23 +199,25 @@ export namespace IRedditCloneUserProfile {
    */
   export type IInvert = {
     /**
-     * @x-autobe-database-schema-property display_name
+         * @x-autobe-database-schema-property display_name
      */
     displayName: string;
     /**
-     * @x-autobe-database-schema-property bio
+         * @x-autobe-database-schema-property bio
      */
     bio?: string | null | undefined;
 
     /**
      * User's avatar image file summary, null if not set.
      *
-     * @x-autobe-database-schema-property avatarFileAssociation
-     * @x-autobe-specification Join via reddit_clone_file_association_id to reddit_clone_file_associations and reddit_clone_files. Returns IRedditCloneFile.ISummary or null if no avatar set.
+         * @x-autobe-database-schema-property avatarFileAssociation
+         * @x-autobe-specification Join via reddit_clone_file_association_id to
+         *   reddit_clone_file_associations and reddit_clone_files. Returns
+         *   IRedditCloneFile.ISummary or null if no avatar set.
      */
     avatar: IRedditCloneFile.ISummary | null;
     /**
-     * @x-autobe-database-schema-property member
+         * @x-autobe-database-schema-property member
      */
     member: IRedditCloneMember.ISummary;
     karmaScore: number & tags.Type<"int32">;
@@ -187,35 +230,39 @@ export namespace IRedditCloneUserProfile {
    */
   export type ISummary = {
     /**
-     * @x-autobe-database-schema-property id
+         * @x-autobe-database-schema-property id
      */
     id: string & tags.Format<"uuid">;
     /**
-     * @x-autobe-database-schema-property display_name
+         * @x-autobe-database-schema-property display_name
      */
     displayName: string;
 
     /**
      * User's biography or description text. Can be null if not provided.
      *
-     * @x-autobe-database-schema-property bio
-     * @x-autobe-specification Direct mapping from reddit_clone_user_profiles.bio column. Nullable field that can be null if user has not provided a bio.
+         * @x-autobe-database-schema-property bio
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_user_profiles.bio column. Nullable field that can be
+         *   null if user has not provided a bio.
      */
     bio?: (string & tags.MaxLength<300>) | null | undefined;
     /**
-     * @x-autobe-database-schema-property created_at
+         * @x-autobe-database-schema-property created_at
      */
     createdAt: string & tags.Format<"date-time">;
 
     /**
      * Avatar image file summary for the user's profile picture. Can be null if no avatar is set.
      *
-     * @x-autobe-database-schema-property avatarFileAssociation
-     * @x-autobe-specification BELONGS-TO relation to reddit_clone_file_associations table for avatar image. Can be null if user has not set an avatar.
+         * @x-autobe-database-schema-property avatarFileAssociation
+         * @x-autobe-specification BELONGS-TO relation to
+         *   reddit_clone_file_associations table for avatar image. Can be null
+         *   if user has not set an avatar.
      */
     avatar?: IRedditCloneFile.ISummary | null | undefined;
     /**
-     * @x-autobe-database-schema-property member
+         * @x-autobe-database-schema-property member
      */
     member: IRedditCloneMember.ISummary;
     karmaScore: number & tags.Type<"int32">;

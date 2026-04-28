@@ -24,7 +24,8 @@ export * as snapshots from "./snapshots/index";
  * @param props.body The order item to cancel and the reason for cancellation. The customer's identity and session are determined from the authentication context.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Create a new e_commerce_mall_cancellation_requests record.
+ * @x-autobe-specification Create a new e_commerce_mall_cancellation_requests
+ *   record.
  *
  * 1. Validate the target order item exists via e_commerce_mall_order_item_id.
  * 2. Verify the order item belongs to the authenticated customer (check e_commerce_mall_orders → e_commerce_mall_customer_id matches the authenticated customer).
@@ -132,7 +133,8 @@ export namespace create {
  * @param props.body Search and filter criteria for cancellation requests including status filters, date range, pagination parameters, and sorting options. The available filters may be scoped by the caller's role automatically.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Query the e_commerce_mall_cancellation_requests table with pagination and filtering.
+ * @x-autobe-specification Query the e_commerce_mall_cancellation_requests table
+ *   with pagination and filtering.
  *
  * Apply search filters from request body:
  * - status filter (single or multiple): pending, approved, rejected
@@ -243,7 +245,9 @@ export namespace index {
  * @param props.cancellationRequestId Unique identifier of the cancellation request to retrieve (UUID).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Query the e_commerce_mall_cancellation_requests table by primary key (id) using the provided cancellationRequestId path parameter.
+ * @x-autobe-specification Query the e_commerce_mall_cancellation_requests table
+ *   by primary key (id) using the provided cancellationRequestId path
+ *   parameter.
  *
  * Return the full cancellation request entity. Do not include soft-deleted records (deleted_at IS NULL) to respect data retention policies.
  *

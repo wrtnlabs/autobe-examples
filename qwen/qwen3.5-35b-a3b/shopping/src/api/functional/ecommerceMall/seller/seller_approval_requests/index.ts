@@ -21,7 +21,8 @@ import { IEcommerceMallSellerApprovalRequest } from "../../../../structures/IEco
  * @param props.body The seller's reason for wanting to join the platform as a seller.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Create a new seller approval request record in ecommerce_mall_seller_approval_requests table.
+ * @x-autobe-specification Create a new seller approval request record in
+ *   ecommerce_mall_seller_approval_requests table.
  *
  * 1. Validate that the authenticated seller has no active approval request (check @@unique([seller_id]) constraint - query for existing record where seller_id = {authenticated_user_id} AND status = 'pending' AND deleted_at IS NULL).
  *

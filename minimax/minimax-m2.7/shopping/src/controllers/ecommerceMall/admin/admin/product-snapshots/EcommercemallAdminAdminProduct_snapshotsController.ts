@@ -35,9 +35,10 @@ export class EcommercemallAdminAdminProduct_snapshotsController {
    *
    * @param connection
    * @param body Search and filter criteria including pagination parameters (page, limit) and optional filters for productId, sellerId, date range, categoryName, and name search.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query the ecommerce_mall_product_snapshots table with the following implementation:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Query the ecommerce_mall_product_snapshots table
+     *   with the following implementation:
    *
    * 1. **Base Query**: SELECT * FROM ecommerce_mall_product_snapshots
    * 2. **Filtering Logic**:
@@ -88,9 +89,10 @@ export class EcommercemallAdminAdminProduct_snapshotsController {
    *
    * @param connection
    * @param snapshotId Unique identifier of the product snapshot to retrieve (UUID format)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query the ecommerce_mall_product_snapshots table using the provided snapshotId as the primary key.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Query the ecommerce_mall_product_snapshots table
+     *   using the provided snapshotId as the primary key.
    *
    * Validate that the snapshotId is a valid UUID format. If not, return a 400 validation error.
    *

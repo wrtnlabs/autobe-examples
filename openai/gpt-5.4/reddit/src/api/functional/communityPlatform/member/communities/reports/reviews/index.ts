@@ -27,7 +27,9 @@ import { ICommunityPlatformReportReview } from "../../../../../../structures/ICo
  * @param props.body Review decision data for the target report
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Authenticate the caller as a signed-in member and resolve the member's active session identity. Reject the request when there is no valid member session.
+ * @x-autobe-specification Authenticate the caller as a signed-in member and
+ *   resolve the member's active session identity. Reject the request when there
+ *   is no valid member session.
  *
  * Load the community by communityId from community_platform_communities. Reject if the community does not exist or is not available for normal moderation context.
  *

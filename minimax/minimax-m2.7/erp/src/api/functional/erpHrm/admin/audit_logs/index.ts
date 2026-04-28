@@ -22,7 +22,8 @@ import { IPageIErpHrmAdminAuditLog } from "../../../../structures/IPageIErpHrmAd
  * @param props.body Search criteria and pagination parameters for filtering audit logs
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Query erp_hrm_admin_audit_logs table with organization-scoped filtering from session context.
+ * @x-autobe-specification Query erp_hrm_admin_audit_logs table with
+ *   organization-scoped filtering from session context.
  *
  * Supported filters (all optional, combinable):
  * - action_type: exact match on action type string
@@ -129,7 +130,8 @@ export namespace index {
  * @param props.auditLogId Unique identifier (UUID) of the administrative audit log entry to retrieve.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Retrieve a single audit log entry by its UUID identifier.
+ * @x-autobe-specification Retrieve a single audit log entry by its UUID
+ *   identifier.
  *
  * Implementation steps:
  * 1. Validate the auditLogId parameter is a valid UUID format

@@ -21,9 +21,10 @@ export class RedditcloneRedditcloneCommentsRepliesController {
    * @param connection
    * @param commentId Unique identifier of the parent comment to fetch replies for
    * @param body Sorting preference and pagination parameters for fetching replies
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query reddit_clone_comments table filtering by parent_comment_id matching the path parameter.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query reddit_clone_comments table filtering by
+     *   parent_comment_id matching the path parameter.
    *
    * Join with reddit_clone_members to fetch author username for each reply. Use denormalized vote_score for sorting.
    *
@@ -64,9 +65,10 @@ export class RedditcloneRedditcloneCommentsRepliesController {
    * @param connection
    * @param commentId Unique identifier of the parent comment (UUID format)
    * @param replyId Unique identifier of the reply comment (UUID format)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query reddit_clone_comments table filtering by id equal to replyId and parent_comment_id equal to commentId.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query reddit_clone_comments table filtering by id
+     *   equal to replyId and parent_comment_id equal to commentId.
    *
    * Join with reddit_clone_members table to retrieve author information (username).
    *

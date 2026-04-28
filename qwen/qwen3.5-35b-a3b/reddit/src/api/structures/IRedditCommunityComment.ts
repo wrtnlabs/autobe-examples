@@ -15,8 +15,9 @@ export type IRedditCommunityComment = {
    *
    * A UUID that uniquely identifies this comment within the system. Used as the primary key for database operations and API references.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from reddit_community_comments.id. Primary key UUID.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from reddit_community_comments.id.
+     *   Primary key UUID.
    */
   id: string & tags.Format<"uuid">;
 
@@ -25,8 +26,9 @@ export type IRedditCommunityComment = {
    *
    * Contains the user's written message or reply text. Must be non-empty when creating a comment and cannot contain only whitespace. Supports markdown formatting in the displayed content.
    *
-   * @x-autobe-database-schema-property content
-   * @x-autobe-specification Direct mapping from reddit_community_comments.content. Required text content.
+     * @x-autobe-database-schema-property content
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_comments.content. Required text content.
    */
   content: string;
 
@@ -35,8 +37,9 @@ export type IRedditCommunityComment = {
    *
    * Provides the author's identifier and username through the member summary. The author reference is resolved via the reddit_community_member_id foreign key relationship to the members table.
    *
-   * @x-autobe-database-schema-property author
-   * @x-autobe-specification Join from comments.author (reddit_community_member_id) to members.id. Returns ISummary.
+     * @x-autobe-database-schema-property author
+     * @x-autobe-specification Join from comments.author
+     *   (reddit_community_member_id) to members.id. Returns ISummary.
    */
   author: IRedditCommunityMember.ISummary;
 
@@ -45,8 +48,9 @@ export type IRedditCommunityComment = {
    *
    * Identifies the parent post that this comment is attached to. The post reference is resolved via the reddit_community_post_id foreign key relationship to the posts table.
    *
-   * @x-autobe-database-schema-property post
-   * @x-autobe-specification Join from comments.post (reddit_community_post_id) to posts.id. Returns ISummary.
+     * @x-autobe-database-schema-property post
+     * @x-autobe-specification Join from comments.post
+     *   (reddit_community_post_id) to posts.id. Returns ISummary.
    */
   post: IRedditCommunityPost.ISummary;
 
@@ -55,8 +59,10 @@ export type IRedditCommunityComment = {
    *
    * When null, this is a top-level comment directly on the post. When present, this reference points to the comment being replied to, enabling threaded discussion hierarchies. Returns the parent comment's summary.
    *
-   * @x-autobe-specification Self-join via comments.reddit_community_comment_id (FK) to comments.id. Returns ISummary. Null for top-level comments.
-   * @x-autobe-database-schema-property parent
+     * @x-autobe-specification Self-join via
+     *   comments.reddit_community_comment_id (FK) to comments.id. Returns
+     *   ISummary. Null for top-level comments.
+     * @x-autobe-database-schema-property parent
    */
   parent?: IRedditCommunityComment.ISummary | null | undefined;
 
@@ -65,7 +71,10 @@ export type IRedditCommunityComment = {
    *
    * Calculated by summing all upvotes (+1 each) and downvotes (-1 each) from active vote records (deleted_at is NULL). This score represents community judgment of the comment quality.
    *
-   * @x-autobe-specification Computed aggregation: SUM(CASE WHEN vote_type = 'upvote' THEN 1 WHEN vote_type = 'downvote' THEN -1 END) FROM reddit_community_comment_votes WHERE reddit_community_comment_id = id AND deleted_at IS NULL. Represents net vote score.
+     * @x-autobe-specification Computed aggregation: SUM(CASE WHEN vote_type =
+     *   'upvote' THEN 1 WHEN vote_type = 'downvote' THEN -1 END) FROM
+     *   reddit_community_comment_votes WHERE reddit_community_comment_id = id
+     *   AND deleted_at IS NULL. Represents net vote score.
    */
   votes_count: number & tags.Type<"int32">;
 
@@ -74,8 +83,10 @@ export type IRedditCommunityComment = {
    *
    * Immutable after creation, used for sorting and audit purposes. Displayed as relative time (e.g., '3 hours ago') in listings to provide temporal context for the content.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from reddit_community_comments.created_at. Timestamp when comment was first created.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_comments.created_at. Timestamp when comment was first
+     *   created.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -84,8 +95,10 @@ export type IRedditCommunityComment = {
    *
    * Updated whenever the comment content is edited. Tracks comment modification history and provides visibility into when the comment was last changed.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from reddit_community_comments.updated_at. Timestamp when comment was last modified.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_comments.updated_at. Timestamp when comment was last
+     *   modified.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -94,8 +107,9 @@ export type IRedditCommunityComment = {
    *
    * NULL indicates an active comment. When set, the comment is marked as deleted but retained for audit purposes. This enables soft deletion to preserve referential integrity with related records.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from reddit_community_comments.deleted_at. Nullable soft delete timestamp.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_comments.deleted_at. Nullable soft delete timestamp.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -119,8 +133,10 @@ export namespace IRedditCommunityComment {
      *
      * Required field containing the user's written message. Must not be empty or contain only whitespace characters. This content is what will be displayed to all users viewing the post and represents the core of the comment.
      *
-     * @x-autobe-database-schema-property content
-     * @x-autobe-specification Direct mapping from reddit_community_comments.content. Must be non-empty string (minLength: 1). Validates comment text before insert.
+         * @x-autobe-database-schema-property content
+         * @x-autobe-specification Direct mapping from
+         *   reddit_community_comments.content. Must be non-empty string
+         *   (minLength: 1). Validates comment text before insert.
      */
     content: string & tags.MinLength<1>;
 
@@ -129,8 +145,11 @@ export namespace IRedditCommunityComment {
      *
      * Optional UUID field that references an existing comment when replying to it. When provided, creates a nested reply under the specified parent comment. When omitted or null, creates a top-level comment directly on the post.
      *
-     * @x-autobe-database-schema-property reddit_community_comment_id
-     * @x-autobe-specification Direct mapping from reddit_community_comments.reddit_community_comment_id. Optional UUID that references the parent comment when replying. When null or omitted, creates a top-level comment.
+         * @x-autobe-database-schema-property reddit_community_comment_id
+         * @x-autobe-specification Direct mapping from
+         *   reddit_community_comments.reddit_community_comment_id. Optional
+         *   UUID that references the parent comment when replying. When null or
+         *   omitted, creates a top-level comment.
      */
     redditCommunityCommentId?:
       | (string & tags.Format<"uuid">)
@@ -153,8 +172,9 @@ export namespace IRedditCommunityComment {
      *
      * A universally unique identifier (UUID) that uniquely identifies this comment across the entire system. Used as the primary key for CRUD operations and as a reference in related entities.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from reddit_community_comments.id. UUID primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   reddit_community_comments.id. UUID primary key.
      */
     id: string & tags.Format<"uuid">;
 
@@ -163,8 +183,9 @@ export namespace IRedditCommunityComment {
      *
      * The actual message or reply written by the user. This field contains the full comment text that appears in the discussion thread. Empty or whitespace-only content is rejected at creation time.
      *
-     * @x-autobe-database-schema-property content
-     * @x-autobe-specification Direct mapping from reddit_community_comments.content. Text field from database.
+         * @x-autobe-database-schema-property content
+         * @x-autobe-specification Direct mapping from
+         *   reddit_community_comments.content. Text field from database.
      */
     content: string;
 
@@ -173,8 +194,12 @@ export namespace IRedditCommunityComment {
      *
      * Contains the author's basic profile information including their username and account timestamps. The full member summary is referenced to maintain data consistency across the system while avoiding circular reference issues.
      *
-     * @x-autobe-database-schema-property author
-     * @x-autobe-specification Relation mapping from reddit_community_comments.author via JOIN to reddit_community_members.id. Returns IRedditCommunityMember.ISummary object with username and profile information. FK column: reddit_community_member_id.
+         * @x-autobe-database-schema-property author
+         * @x-autobe-specification Relation mapping from
+         *   reddit_community_comments.author via JOIN to
+         *   reddit_community_members.id. Returns
+         *   IRedditCommunityMember.ISummary object with username and profile
+         *   information. FK column: reddit_community_member_id.
      */
     author: IRedditCommunityMember.ISummary;
 
@@ -183,7 +208,11 @@ export namespace IRedditCommunityComment {
      *
      * Represents the aggregate vote score from all users who have voted on this comment. Calculated by counting upvotes and subtracting downvotes from the reddit_community_comment_votes table. This value is updated incrementally as users cast or change their votes.
      *
-     * @x-autobe-specification Aggregation: COUNT of all votes in reddit_community_comment_votes table where comment_id matches this comment's id. Returns net score (upvotes minus downvotes) or total vote count depending on business rule implementation. Computed at query time.
+         * @x-autobe-specification Aggregation: COUNT of all votes in
+         *   reddit_community_comment_votes table where comment_id matches this
+         *   comment's id. Returns net score (upvotes minus downvotes) or total
+         *   vote count depending on business rule implementation. Computed at
+         *   query time.
      */
     vote_count: number & tags.Type<"int32">;
 
@@ -192,8 +221,10 @@ export namespace IRedditCommunityComment {
      *
      * The exact date and time when this comment was first submitted to the system. Used for sorting comments chronologically and displaying relative time (e.g., "3 hours ago") to users.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from reddit_community_comments.created_at. Timestamp when the comment was originally created.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_community_comments.created_at. Timestamp when the comment
+         *   was originally created.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -202,8 +233,10 @@ export namespace IRedditCommunityComment {
      *
      * The exact date and time when this comment's content was most recently edited. Updated whenever the author modifies the comment text. Allows users to identify when content was last changed.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from reddit_community_comments.updated_at. Timestamp when the comment was last modified.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_community_comments.updated_at. Timestamp when the comment
+         *   was last modified.
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -212,8 +245,10 @@ export namespace IRedditCommunityComment {
      *
      * When set, indicates the comment has been deleted by its author or a moderator. NULL values represent active comments that are visible in the discussion. Soft deletion preserves the comment record for audit purposes while hiding it from normal list queries.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from reddit_community_comments.deleted_at. Soft delete timestamp, NULL if comment is active.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_community_comments.deleted_at. Soft delete timestamp, NULL
+         *   if comment is active.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
 
@@ -222,7 +257,10 @@ export namespace IRedditCommunityComment {
      *
      * When true, this is a direct comment attached to the post itself. When false, this is a reply to another comment in the thread. Determined by whether the reddit_community_comment_id parent reference is NULL or populated.
      *
-     * @x-autobe-specification Computed: is_top_level = (reddit_community_comment_id IS NULL). When the parent comment FK column is NULL, this is a direct post comment (true). When the FK has a value, this is a reply to another comment (false).
+         * @x-autobe-specification Computed: is_top_level =
+         *   (reddit_community_comment_id IS NULL). When the parent comment FK
+         *   column is NULL, this is a direct post comment (true). When the FK
+         *   has a value, this is a reply to another comment (false).
      */
     is_top_level: boolean;
 
@@ -231,7 +269,10 @@ export namespace IRedditCommunityComment {
      *
      * Counts all nested replies directly and indirectly under this comment, forming the complete thread hierarchy. This allows efficient display of reply counts without fetching full reply objects in the list view.
      *
-     * @x-autobe-specification Aggregation: COUNT of all comments in reddit_community_comments table where parent comment (reddit_community_comment_id) equals this comment's id. Recursively counts all nested replies in the thread under this comment.
+         * @x-autobe-specification Aggregation: COUNT of all comments in
+         *   reddit_community_comments table where parent comment
+         *   (reddit_community_comment_id) equals this comment's id. Recursively
+         *   counts all nested replies in the thread under this comment.
      */
     reply_count: number & tags.Type<"int32">;
   };
@@ -247,8 +288,10 @@ export namespace IRedditCommunityComment {
      *
      * This is the only mutable field in the Update DTO. The string must be non-empty and cannot be whitespace-only. When submitted, the system validates the authenticated user owns the comment and updates both the content and the updated_at timestamp.
      *
-     * @x-autobe-database-schema-property content
-     * @x-autobe-specification Direct mapping from reddit_community_comments.content. Non-empty string validation applied. Whitespace-only content rejected.
+         * @x-autobe-database-schema-property content
+         * @x-autobe-specification Direct mapping from
+         *   reddit_community_comments.content. Non-empty string validation
+         *   applied. Whitespace-only content rejected.
      */
     content?: string | undefined;
   };
@@ -262,21 +305,27 @@ export namespace IRedditCommunityComment {
     /**
      * Cursor for pagination. Encoded token from the last record of the previous page, enabling consistent retrieval of paginated results across multiple requests.
      *
-     * @x-autobe-specification Cursor-based pagination token from last page. Encoded with last record's id. Used for consistent pagination across requests. Generated from last comment's id field.
+         * @x-autobe-specification Cursor-based pagination token from last page.
+         *   Encoded with last record's id. Used for consistent pagination
+         *   across requests. Generated from last comment's id field.
      */
     cursor?: string | undefined;
 
     /**
      * Controls whether nested replies are included in the response. When true, the query joins with the self-referential parent relationship to fetch all levels of replies.
      *
-     * @x-autobe-specification Boolean flag to control whether nested replies are included in results. When true, joins with self-referential parent relationship to fetch replies.
+         * @x-autobe-specification Boolean flag to control whether nested
+         *   replies are included in results. When true, joins with
+         *   self-referential parent relationship to fetch replies.
      */
     include_replies?: boolean | undefined;
 
     /**
      * Maximum number of records to return per page. Defaults to a system default value. Maximum limit of 100 enforced for performance optimization.
      *
-     * @x-autobe-specification Maximum number of records per page. Enforced maximum of 100 for performance. Defaults to system default (e.g., 20). Used with cursor-based pagination.
+         * @x-autobe-specification Maximum number of records per page. Enforced
+         *   maximum of 100 for performance. Defaults to system default (e.g.,
+         *   20). Used with cursor-based pagination.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -285,35 +334,46 @@ export namespace IRedditCommunityComment {
     /**
      * Filter comments by the author's unique identifier. Only returns comments where the author matches this UUID.
      *
-     * @x-autobe-specification UUID to filter comments by author. Joins comments table with members table on reddit_community_member_id to filter by author ID. Optional for flexible filtering.
+         * @x-autobe-specification UUID to filter comments by author. Joins
+         *   comments table with members table on reddit_community_member_id to
+         *   filter by author ID. Optional for flexible filtering.
      */
     member_id?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Filter comments by their parent comment's unique identifier. When provided, only returns comments that are replies to this specific parent comment.
      *
-     * @x-autobe-specification UUID to filter comments by parent comment. Filters comments where reddit_community_comment_id matches this parent UUID. Optional for flexible filtering.
+         * @x-autobe-specification UUID to filter comments by parent comment.
+         *   Filters comments where reddit_community_comment_id matches this
+         *   parent UUID. Optional for flexible filtering.
      */
     parent_id?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Field to sort results by. Options: created_at (comment creation time), updated_at (last modification time), or vote_count (aggregate of upvotes minus downvotes).
      *
-     * @x-autobe-specification Sort field: created_at (comment creation time), updated_at (last modification time), or vote_count (aggregated from comment_votes). vote_count computed via COUNT aggregation.
+         * @x-autobe-specification Sort field: created_at (comment creation
+         *   time), updated_at (last modification time), or vote_count
+         *   (aggregated from comment_votes). vote_count computed via COUNT
+         *   aggregation.
      */
     sort_by?: "created_at" | "updated_at" | "vote_count" | undefined;
 
     /**
      * Sort direction for the specified sort field. Options: asc for ascending order, desc for descending order.
      *
-     * @x-autobe-specification Sort direction: asc (ascending) or desc (descending). Combined with sort_by to determine result ordering. Default: desc for chronological order.
+         * @x-autobe-specification Sort direction: asc (ascending) or desc
+         *   (descending). Combined with sort_by to determine result ordering.
+         *   Default: desc for chronological order.
      */
     sort_order?: "asc" | "desc" | undefined;
 
     /**
      * Target page number to retrieve (1-indexed). Specifies which page of results to return. Page numbering starts from 1. If omitted, null, or undefined, defaults to page 1 (first page).
      *
-     * @x-autobe-specification 1-indexed page number for simple offset-based pagination. Used as fallback when cursor is not provided. Defaults to 1 if not provided. Computed from cursor when both are provided.
+         * @x-autobe-specification 1-indexed page number for simple offset-based
+         *   pagination. Used as fallback when cursor is not provided. Defaults
+         *   to 1 if not provided. Computed from cursor when both are provided.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };

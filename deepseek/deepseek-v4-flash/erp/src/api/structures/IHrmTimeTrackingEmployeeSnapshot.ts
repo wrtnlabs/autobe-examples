@@ -19,8 +19,9 @@ export type IHrmTimeTrackingEmployeeSnapshot = {
    *
    * Automatically generated as a UUID when the snapshot is created.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_employee_snapshots.id. UUID primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_employee_snapshots.id. UUID primary key.
    */
   id: string & tags.Format<"uuid">;
 
@@ -31,8 +32,9 @@ export type IHrmTimeTrackingEmployeeSnapshot = {
    *
    * This is a summary representation — not a full employee record.
    *
-   * @x-autobe-database-schema-property employee
-   * @x-autobe-specification Join from hrm_time_tracking_employee_id to hrm_time_tracking_employees. Returns IHrmTimeTrackingEmployee.ISummary.
+     * @x-autobe-database-schema-property employee
+     * @x-autobe-specification Join from hrm_time_tracking_employee_id to
+     *   hrm_time_tracking_employees. Returns IHrmTimeTrackingEmployee.ISummary.
    */
   employee: IHrmTimeTrackingEmployee.ISummary;
 
@@ -41,8 +43,9 @@ export type IHrmTimeTrackingEmployeeSnapshot = {
    *
    * Identifies which user made the modification to the employee record, whether it was an automatic system-triggered change or a manual snapshot created by an authorized user.
    *
-   * @x-autobe-database-schema-property actor
-   * @x-autobe-specification Join from hrm_time_tracking_member_id to hrm_time_tracking_members. Returns IHrmTimeTrackingMember.ISummary.
+     * @x-autobe-database-schema-property actor
+     * @x-autobe-specification Join from hrm_time_tracking_member_id to
+     *   hrm_time_tracking_members. Returns IHrmTimeTrackingMember.ISummary.
    */
   actor: IHrmTimeTrackingMember.ISummary;
 
@@ -51,8 +54,9 @@ export type IHrmTimeTrackingEmployeeSnapshot = {
    *
    * Captures the role state as it was when the change occurred, preserving the historical role assignment for audit purposes.
    *
-   * @x-autobe-database-schema-property role
-   * @x-autobe-specification Join from hrm_time_tracking_role_id to hrm_time_tracking_roles. Returns IHrmTimeTrackingRole.ISummary.
+     * @x-autobe-database-schema-property role
+     * @x-autobe-specification Join from hrm_time_tracking_role_id to
+     *   hrm_time_tracking_roles. Returns IHrmTimeTrackingRole.ISummary.
    */
   role: IHrmTimeTrackingRole.ISummary;
 
@@ -61,8 +65,11 @@ export type IHrmTimeTrackingEmployeeSnapshot = {
    *
    * May be null when the employee was not assigned to any department at the moment of the change.
    *
-   * @x-autobe-database-schema-property department
-   * @x-autobe-specification Left join from hrm_time_tracking_department_id (nullable) to hrm_time_tracking_departments. Returns IHrmTimeTrackingDepartment.ISummary. Null when employee had no department assignment.
+     * @x-autobe-database-schema-property department
+     * @x-autobe-specification Left join from hrm_time_tracking_department_id
+     *   (nullable) to hrm_time_tracking_departments. Returns
+     *   IHrmTimeTrackingDepartment.ISummary. Null when employee had no
+     *   department assignment.
    */
   department: IHrmTimeTrackingDepartment.ISummary | null;
 
@@ -71,8 +78,10 @@ export type IHrmTimeTrackingEmployeeSnapshot = {
    *
    * Indicates whether the employee was active or deactivated when the snapshot was recorded.
    *
-   * @x-autobe-database-schema-property status
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_employee_snapshots.status. Values: active, deactivated.
+     * @x-autobe-database-schema-property status
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_employee_snapshots.status. Values: active,
+     *   deactivated.
    */
   status: string;
 
@@ -81,8 +90,11 @@ export type IHrmTimeTrackingEmployeeSnapshot = {
    *
    * Classifies the work arrangement as full-time, part-time, contractor, or intern, reflecting the employee's compensation model and work schedule expectations at that point in time.
    *
-   * @x-autobe-database-schema-property employment_type
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_employee_snapshots.employment_type (camelCase transformation: employmentType). Values: full-time, part-time, contractor, intern.
+     * @x-autobe-database-schema-property employment_type
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_employee_snapshots.employment_type (camelCase
+     *   transformation: employmentType). Values: full-time, part-time,
+     *   contractor, intern.
    */
   employmentType: string;
 
@@ -91,8 +103,9 @@ export type IHrmTimeTrackingEmployeeSnapshot = {
    *
    * May be null when the employee did not have a position set at the time of the change.
    *
-   * @x-autobe-database-schema-property position
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_employee_snapshots.position (nullable).
+     * @x-autobe-database-schema-property position
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_employee_snapshots.position (nullable).
    */
   position: string | null;
 
@@ -101,8 +114,11 @@ export type IHrmTimeTrackingEmployeeSnapshot = {
    *
    * Possible values include status, role_id, employment_type, department_id, and position, indicating which aspect of the employee record changed.
    *
-   * @x-autobe-database-schema-property changed_field
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_employee_snapshots.changed_field (camelCase transformation: changedField). Values: status, role_id, employment_type, department_id, position.
+     * @x-autobe-database-schema-property changed_field
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_employee_snapshots.changed_field (camelCase
+     *   transformation: changedField). Values: status, role_id,
+     *   employment_type, department_id, position.
    */
   changedField: string;
 
@@ -111,8 +127,11 @@ export type IHrmTimeTrackingEmployeeSnapshot = {
    *
    * May be null when recording an initial snapshot with no prior state to reference.
    *
-   * @x-autobe-database-schema-property old_value
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_employee_snapshots.old_value (camelCase transformation: oldValue). Nullable — null for initial snapshots with no prior state.
+     * @x-autobe-database-schema-property old_value
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_employee_snapshots.old_value (camelCase
+     *   transformation: oldValue). Nullable — null for initial snapshots with
+     *   no prior state.
    */
   oldValue: string | null;
 
@@ -121,8 +140,11 @@ export type IHrmTimeTrackingEmployeeSnapshot = {
    *
    * May be null when the change clears a previously set value, such as removing a department assignment.
    *
-   * @x-autobe-database-schema-property new_value
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_employee_snapshots.new_value (camelCase transformation: newValue). Nullable when the change clears a previously set value.
+     * @x-autobe-database-schema-property new_value
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_employee_snapshots.new_value (camelCase
+     *   transformation: newValue). Nullable when the change clears a previously
+     *   set value.
    */
   newValue: string | null;
 
@@ -131,8 +153,10 @@ export type IHrmTimeTrackingEmployeeSnapshot = {
    *
    * Records the exact moment of the employee record change that triggered this snapshot.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_employee_snapshots.created_at (camelCase transformation: createdAt).
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_employee_snapshots.created_at (camelCase
+     *   transformation: createdAt).
    */
   createdAt: string & tags.Format<"date-time">;
 };
@@ -200,8 +224,10 @@ export namespace IHrmTimeTrackingEmployeeSnapshot {
      *
      * Provide the field name that changed (e.g., "status", "role_id", "employment_type", "department_id", "position"). This metadata documents what aspect of the employee record was modified at this checkpoint.
      *
-     * @x-autobe-database-schema-property changed_field
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_employee_snapshots.changed_field. String value identifying the employee field that was modified.
+         * @x-autobe-database-schema-property changed_field
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_employee_snapshots.changed_field. String value
+         *   identifying the employee field that was modified.
      */
     changed_field: string;
 
@@ -210,8 +236,11 @@ export namespace IHrmTimeTrackingEmployeeSnapshot {
      *
      * Provide the value that was in place before the change occurred. When recording an initial snapshot that has no prior state to reference, set this to null.
      *
-     * @x-autobe-database-schema-property old_value
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_employee_snapshots.old_value. Nullable string; provide null when recording an initial snapshot with no prior state.
+         * @x-autobe-database-schema-property old_value
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_employee_snapshots.old_value. Nullable string;
+         *   provide null when recording an initial snapshot with no prior
+         *   state.
      */
     old_value?: string | null | undefined;
 
@@ -220,8 +249,10 @@ export namespace IHrmTimeTrackingEmployeeSnapshot {
      *
      * Provide the value that replaced the previous one. When the change involves clearing a previously set value (e.g., removing a department assignment), set this to null.
      *
-     * @x-autobe-database-schema-property new_value
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_employee_snapshots.new_value. Nullable string; provide null when clearing a previously set value.
+         * @x-autobe-database-schema-property new_value
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_employee_snapshots.new_value. Nullable string;
+         *   provide null when clearing a previously set value.
      */
     new_value?: string | null | undefined;
   };
@@ -239,8 +270,9 @@ export namespace IHrmTimeTrackingEmployeeSnapshot {
      *
      * Acts as the primary key for the snapshot entry in the immutable audit trail. Used to reference individual snapshot records in detail views and API operations.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_employee_snapshots.id.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_employee_snapshots.id.
      */
     id: string & tags.Format<"uuid">;
 
@@ -249,8 +281,9 @@ export namespace IHrmTimeTrackingEmployeeSnapshot {
      *
      * Possible values include `status`, `role_id`, `employment_type`, `department_id`, and `position`. This field identifies which aspect of the employee's record changed, providing context for interpreting the `old_value` and `new_value` fields.
      *
-     * @x-autobe-database-schema-property changed_field
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_employee_snapshots.changed_field.
+         * @x-autobe-database-schema-property changed_field
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_employee_snapshots.changed_field.
      */
     changed_field: string;
 
@@ -259,8 +292,10 @@ export namespace IHrmTimeTrackingEmployeeSnapshot {
      *
      * When the employee is first created, the initial snapshot has no prior state to record, so this field is `null`. Otherwise, it contains the string representation of the field's value before the change took effect.
      *
-     * @x-autobe-database-schema-property old_value
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_employee_snapshots.old_value. Nullable — initial snapshots have no prior state to record.
+         * @x-autobe-database-schema-property old_value
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_employee_snapshots.old_value. Nullable — initial
+         *   snapshots have no prior state to record.
      */
     old_value: string | null;
 
@@ -269,8 +304,11 @@ export namespace IHrmTimeTrackingEmployeeSnapshot {
      *
      * Contains the string representation of the field's updated value. When the change clears a value (e.g., removing a department assignment or clearing a position field), this field is `null`.
      *
-     * @x-autobe-database-schema-property new_value
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_employee_snapshots.new_value. Nullable — the change may clear a previously set value such as a department assignment.
+         * @x-autobe-database-schema-property new_value
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_employee_snapshots.new_value. Nullable — the
+         *   change may clear a previously set value such as a department
+         *   assignment.
      */
     new_value: string | null;
 
@@ -279,8 +317,9 @@ export namespace IHrmTimeTrackingEmployeeSnapshot {
      *
      * Captures the exact moment of the employee record change, enabling chronological ordering of snapshot history. Results default to descending order (most recent first) for efficient audit trail review.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_employee_snapshots.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_employee_snapshots.created_at.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -289,8 +328,10 @@ export namespace IHrmTimeTrackingEmployeeSnapshot {
      *
      * Identifies the authenticated user who modified the employee record at the time of the change. The actor information includes the user's display name, email address, and optional avatar URL for visual identification in audit trail views.
      *
-     * @x-autobe-database-schema-property actor
-     * @x-autobe-specification Join hrm_time_tracking_members on hrm_time_tracking_member_id to return as IHrmTimeTrackingMember.ISummary.
+         * @x-autobe-database-schema-property actor
+         * @x-autobe-specification Join hrm_time_tracking_members on
+         *   hrm_time_tracking_member_id to return as
+         *   IHrmTimeTrackingMember.ISummary.
      */
     actor: IHrmTimeTrackingMember.ISummary;
 
@@ -299,8 +340,10 @@ export namespace IHrmTimeTrackingEmployeeSnapshot {
      *
      * Preserves the historical role state for audit purposes, capturing which role the employee held at the moment of the change. Since roles can be reassigned over time, this snapshot-level reference ensures the audit trail reflects the actual role in effect when the change occurred.
      *
-     * @x-autobe-database-schema-property role
-     * @x-autobe-specification Join hrm_time_tracking_roles on hrm_time_tracking_role_id (snapshot's FK capturing role at time of change) to return as IHrmTimeTrackingRole.ISummary.
+         * @x-autobe-database-schema-property role
+         * @x-autobe-specification Join hrm_time_tracking_roles on
+         *   hrm_time_tracking_role_id (snapshot's FK capturing role at time of
+         *   change) to return as IHrmTimeTrackingRole.ISummary.
      */
     role: IHrmTimeTrackingRole.ISummary;
 
@@ -309,8 +352,12 @@ export namespace IHrmTimeTrackingEmployeeSnapshot {
      *
      * Preserves the historical department state for audit purposes. May be `null` when the employee was not assigned to any department at the time of the change, or when the department has been subsequently deleted. This snapshot-level reference ensures the audit trail reflects the actual department in effect when the change occurred.
      *
-     * @x-autobe-database-schema-property department
-     * @x-autobe-specification Left join hrm_time_tracking_departments on hrm_time_tracking_department_id (snapshot's FK capturing department at time of change) to return as IHrmTimeTrackingDepartment.ISummary. Nullable — employee may not be assigned to any department at the time of the change.
+         * @x-autobe-database-schema-property department
+         * @x-autobe-specification Left join hrm_time_tracking_departments on
+         *   hrm_time_tracking_department_id (snapshot's FK capturing department
+         *   at time of change) to return as
+         *   IHrmTimeTrackingDepartment.ISummary. Nullable — employee may not be
+         *   assigned to any department at the time of the change.
      */
     department: IHrmTimeTrackingDepartment.ISummary | null;
   };

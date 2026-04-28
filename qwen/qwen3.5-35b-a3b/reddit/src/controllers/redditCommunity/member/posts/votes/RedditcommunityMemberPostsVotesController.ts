@@ -19,16 +19,17 @@ export class RedditcommunityMemberPostsVotesController {
    * @param connection
    * @param postId Unique identifier of the post to vote on.
    * @param body Vote direction indicating whether this is an upvote or downvote.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1. Validate that the authenticated user (member) is not a guest
-   * 2. Validate that the post_id exists in reddit_community_posts
-   * 3. Check if the authenticated member already has a vote on this post
-   *    - If yes, update the existing vote: change vote_type, update updated_at timestamp
-   *    - If no, create a new vote record with the specified vote_type
-   * 4. Recalculate the post's vote_score: count active upvotes minus active downvotes from all members
-   * 5. Update the post's vote_score field with the newly calculated value
-   * 6. Return the created or updated vote record with full details
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification 1. Validate that the authenticated user (member)
+     *   is not a guest 2. Validate that the post_id exists in
+     *   reddit_community_posts 3. Check if the authenticated member already has
+     *   a vote on this post - If yes, update the existing vote: change
+     *   vote_type, update updated_at timestamp - If no, create a new vote
+     *   record with the specified vote_type 4. Recalculate the post's
+     *   vote_score: count active upvotes minus active downvotes from all
+     *   members 5. Update the post's vote_score field with the newly calculated
+     *   value 6. Return the created or updated vote record with full details
    *
    * Business Rules:
    * - Only authenticated members can vote (guests are excluded)
@@ -79,27 +80,26 @@ export class RedditcommunityMemberPostsVotesController {
    * @param connection
    * @param postId The unique identifier of the post to vote on.
    * @param body Vote submission data containing the vote direction or null to remove vote. Must be one of: 'upvote', 'downvote', or null.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1. Validate that the post exists by querying reddit_community_posts table
-   * 2. Retrieve current authenticated member_id from session context (do NOT accept member_id from request body)
-   * 3. Query reddit_community_post_votes for existing vote with matching post_id and member_id where deleted_at IS NULL
-   * 4. If no existing vote found:
-   *    - Create new record with vote_type from request, created_at = NOW(), updated_at = NOW(), deleted_at = NULL
-   *    - Return newly created vote record with full details
-   * 5. If existing vote found:
-   *    - If vote_type in request is null:
-   *      - Soft delete: UPDATE deleted_at = NOW(), updated_at = NOW() where id = existing_vote.id
-   *      - Return deleted vote record with null vote_type
-   *    - If vote_type is 'upvote' or 'downvote':
-   *      - Update: UPDATE vote_type = request.vote_type, updated_at = NOW() where id = existing_vote.id
-   *      - Return updated vote record
-   * 6. Return the final vote record (created/updated/soft-deleted) with all fields
-   * 7. Error handling:
-   *    - 404 if post does not exist
-   *    - 401 if member is not authenticated
-   *    - 400 if vote_type is not 'upvote', 'downvote', or null
-   *    - 404 if member_id derived from auth does not match any record (member deleted)
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification 1. Validate that the post exists by querying
+     *   reddit_community_posts table 2. Retrieve current authenticated
+     *   member_id from session context (do NOT accept member_id from request
+     *   body) 3. Query reddit_community_post_votes for existing vote with
+     *   matching post_id and member_id where deleted_at IS NULL 4. If no
+     *   existing vote found: - Create new record with vote_type from request,
+     *   created_at = NOW(), updated_at = NOW(), deleted_at = NULL - Return
+     *   newly created vote record with full details 5. If existing vote found:
+     *   - If vote_type in request is null: - Soft delete: UPDATE deleted_at =
+     *   NOW(), updated_at = NOW() where id = existing_vote.id - Return deleted
+     *   vote record with null vote_type - If vote_type is 'upvote' or
+     *   'downvote': - Update: UPDATE vote_type = request.vote_type, updated_at
+     *   = NOW() where id = existing_vote.id - Return updated vote record 6.
+     *   Return the final vote record (created/updated/soft-deleted) with all
+     *   fields 7. Error handling: - 404 if post does not exist - 401 if member
+     *   is not authenticated - 400 if vote_type is not 'upvote', 'downvote', or
+     *   null - 404 if member_id derived from auth does not match any record
+     *   (member deleted)
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
@@ -131,13 +131,13 @@ export class RedditcommunityMemberPostsVotesController {
    * @param connection
    * @param postId The unique identifier of the post this vote belongs to.
    * @param voteId The unique identifier of the vote record to retrieve.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query the reddit_community_post_votes table by voteId (id field).
-   * Join with reddit_community_posts to verify the vote belongs to the specified postId.
-   * Join with reddit_community_members to include member reference data.
-   * Filter by deleted_at IS NULL to return only active votes.
-   * Return the full vote entity with all fields.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query the reddit_community_post_votes table by
+     *   voteId (id field). Join with reddit_community_posts to verify the vote
+     *   belongs to the specified postId. Join with reddit_community_members to
+     *   include member reference data. Filter by deleted_at IS NULL to return
+     *   only active votes. Return the full vote entity with all fields.
    *
    * Validation:
    * - Verify postId matches the vote's post_id foreign key

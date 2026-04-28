@@ -23,9 +23,11 @@ export class RedditcloneGuestCommunitiesController {
    *
    * @param connection
    * @param communityId Unique identifier of the community (UUID format)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor guest
-   * @x-autobe-specification Query reddit_clone_communities to verify the community exists and is not soft-deleted (deleted_at IS NULL). Return 404 if community not found.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor guest
+     * @x-autobe-specification Query reddit_clone_communities to verify the
+     *   community exists and is not soft-deleted (deleted_at IS NULL). Return
+     *   404 if community not found.
    *
    * Query reddit_clone_posts filtered by reddit_clone_community_id matching the path parameter. Apply soft-delete filter (deleted_at IS NULL).
    *

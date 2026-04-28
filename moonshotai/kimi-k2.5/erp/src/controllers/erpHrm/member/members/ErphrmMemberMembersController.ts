@@ -25,9 +25,10 @@ export class ErphrmMemberMembersController {
    *
    * @param connection
    * @param body Search criteria and pagination parameters for filtering organization members
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query the erp_hrm_organization_members table with the following implementation details:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query the erp_hrm_organization_members table with
+     *   the following implementation details:
    *
    * 1. Organization Scope: Filter by the organization_id from the current session context (erp_hrm_member_sessions.organization_id).
    *

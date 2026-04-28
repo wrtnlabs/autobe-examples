@@ -14,9 +14,10 @@ export class EcommercemallProductsStatsController {
    *
    * @param connection
    * @param productId UUID identifier of the product whose statistics are being requested.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query ecommerce_mall_product_review_stats table by product_id to retrieve the stats record.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query ecommerce_mall_product_review_stats table
+     *   by product_id to retrieve the stats record.
    *
    * 1. Validate productId is a valid UUID format
    * 2. Query for stats record where ecommerce_mall_product_id = productId

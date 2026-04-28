@@ -33,9 +33,10 @@ export class ShoppingmallAdminSnapshotsLookup_by_codeController {
    * @param body Lookup criteria for retrieving a snapshot by its snapshot_code.
    *
    *             This operation expects the client to provide the snapshot’s human-readable code that uniquely identifies a row in `shopping_mall_snapshots` via `snapshot_code`.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Implement PATCH /snapshots/lookup-by-code as follows:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Implement PATCH /snapshots/lookup-by-code as
+     *   follows:
    *
    * 1) Validate request body contains `snapshotCode` (non-empty string).
    * 2) Query `shopping_mall_snapshots` by `snapshot_code = :snapshotCode` and `deleted_at IS NULL`.

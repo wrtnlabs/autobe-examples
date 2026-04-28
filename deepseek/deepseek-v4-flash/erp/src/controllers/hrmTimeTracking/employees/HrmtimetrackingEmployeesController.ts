@@ -18,9 +18,10 @@ export class HrmtimetrackingEmployeesController {
    *
    * @param connection
    * @param body Search and filter criteria for the employee list. Supports optional filtering by department ID, employment type, and employee status, as well as text search by employee display name. Includes pagination parameters (page number and page size) for controlling the result set.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query the hrm_time_tracking_employees table scoped to the current organization (from auth context).
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query the hrm_time_tracking_employees table
+     *   scoped to the current organization (from auth context).
    *
    * Join with:
    * - hrm_time_tracking_members for the employee's display name (via hrm_time_tracking_member_id)
@@ -65,9 +66,10 @@ export class HrmtimetrackingEmployeesController {
    *
    * @param connection
    * @param employeeId The unique identifier (UUID) of the employee record to retrieve. This is the employee's primary key, scoped to the requesting user's organization.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query hrm_time_tracking_employees table by id (UUID).
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query hrm_time_tracking_employees table by id
+     *   (UUID).
    *
    * Authorization: Verify the requesting user has 'employee:view' permission within their active organization context. Reject with 403 Forbidden if permission is missing.
    *

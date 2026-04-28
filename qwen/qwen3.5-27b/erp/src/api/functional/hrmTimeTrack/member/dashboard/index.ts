@@ -15,7 +15,8 @@ import { IHrmTimeTrackPersonalDashboard } from "../../../../structures/IHrmTimeT
  * @param props.connection
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query multiple data sources to assemble the personal dashboard for the authenticated employee:
+ * @x-autobe-specification Query multiple data sources to assemble the personal
+ *   dashboard for the authenticated employee:
  *
  * 1. Retrieve the authenticated employee record from the current organization context
  * 2. Fetch active tasks (status: open or in-progress) assigned to the employee, ordered by due date and priority

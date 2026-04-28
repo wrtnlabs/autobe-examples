@@ -23,7 +23,8 @@ import { IPageIECommerceMallReviewSnapshot } from "../../../../../structures/IPa
  * @param props.body Search criteria for filtering review snapshots. Supports optional filtering by changed_fields type (created, rating, text, rating_and_text) and creation date range, along with pagination parameters for cursor or page-based navigation.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor superAdministrator
- * @x-autobe-specification Query e_commerce_mall_review_snapshots table filtered by e_commerce_mall_review_id matching the {reviewId} path parameter.
+ * @x-autobe-specification Query e_commerce_mall_review_snapshots table filtered
+ *   by e_commerce_mall_review_id matching the {reviewId} path parameter.
  *
  * Implement pagination (page or cursor-based) with configurable page size. Default sort order is created_at DESC (newest first).
  *
@@ -132,7 +133,10 @@ export namespace index {
  * @param props.snapshotId UUID of the immutable review snapshot to retrieve. Must reference an existing snapshot that belongs to the specified review.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor superAdministrator
- * @x-autobe-specification Query e_commerce_mall_review_snapshots table by id, filtering by the given snapshotId. Join with e_commerce_mall_reviews to verify the snapshot belongs to the specified review (e_commerce_mall_review_id matches reviewId).
+ * @x-autobe-specification Query e_commerce_mall_review_snapshots table by id,
+ *   filtering by the given snapshotId. Join with e_commerce_mall_reviews to
+ *   verify the snapshot belongs to the specified review
+ *   (e_commerce_mall_review_id matches reviewId).
  *
  * Authorization:
  * - The customer who authored the review (e_commerce_mall_reviews.e_commerce_mall_customer_id matches the authenticated customer) can view their own review's snapshots.

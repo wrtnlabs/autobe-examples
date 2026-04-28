@@ -34,7 +34,9 @@ export type IHrmEmployeeDashboard = {
    * - Aggregation: SUM(duration_minutes) / 60.0
    * - Returns: number (always present, never null)
    *
-   * @x-autobe-specification Query hrm_timelogs WHERE hrm_employee_id = current user AND DATE(date) = CURRENT_DATE. SUM(duration_minutes) / 60.0 to convert minutes to hours.
+     * @x-autobe-specification Query hrm_timelogs WHERE hrm_employee_id =
+     *   current user AND DATE(date) = CURRENT_DATE. SUM(duration_minutes) /
+     *   60.0 to convert minutes to hours.
    */
   hoursToday: number;
 
@@ -50,7 +52,9 @@ export type IHrmEmployeeDashboard = {
    * - Aggregation: SUM(duration_minutes) / 60.0
    * - Returns: number (always present, never null)
    *
-   * @x-autobe-specification Query hrm_timelogs WHERE hrm_employee_id = current user AND date >= date_trunc('week', CURRENT_DATE). SUM(duration_minutes) / 60.0 to convert minutes to hours.
+     * @x-autobe-specification Query hrm_timelogs WHERE hrm_employee_id =
+     *   current user AND date >= date_trunc('week', CURRENT_DATE).
+     *   SUM(duration_minutes) / 60.0 to convert minutes to hours.
    */
   hoursThisWeek: number;
 
@@ -70,7 +74,9 @@ export type IHrmEmployeeDashboard = {
    * - No active timer: Returns null
    * - Multiple timers: Should not occur due to unique constraint on employee_id in hrm_active_timers
    *
-   * @x-autobe-specification Query hrm_active_timers WHERE employee_id = current user. Return single record as IHrmActiveTimer.ISummary or null if no active timer exists.
+     * @x-autobe-specification Query hrm_active_timers WHERE employee_id =
+     *   current user. Return single record as IHrmActiveTimer.ISummary or null
+     *   if no active timer exists.
    */
   activeTimer: IHrmActiveTimer.ISummary | null;
 
@@ -92,7 +98,9 @@ export type IHrmEmployeeDashboard = {
    * - No timelogs: Returns empty array []
    * - Fewer than 5 timelogs: Returns all available entries
    *
-   * @x-autobe-specification Query hrm_timelogs WHERE hrm_employee_id = current user ORDER BY date DESC LIMIT 5. Include project and task context via JOINs. Return array of IHrmTimelog.ISummary.
+     * @x-autobe-specification Query hrm_timelogs WHERE hrm_employee_id =
+     *   current user ORDER BY date DESC LIMIT 5. Include project and task
+     *   context via JOINs. Return array of IHrmTimelog.ISummary.
    */
   recentTimelogs: IHrmTimelog.ISummary[];
 
@@ -114,7 +122,9 @@ export type IHrmEmployeeDashboard = {
    * - No submitted timesheet: Returns null
    * - Multiple submitted timesheets: Returns the most recent one (should not occur in normal workflow)
    *
-   * @x-autobe-specification Query hrm_timesheets WHERE hrm_employee_id = current user AND status = 'submitted' ORDER BY created_at DESC LIMIT 1. Return IHrmTimesheet.ISummary or null.
+     * @x-autobe-specification Query hrm_timesheets WHERE hrm_employee_id =
+     *   current user AND status = 'submitted' ORDER BY created_at DESC LIMIT 1.
+     *   Return IHrmTimesheet.ISummary or null.
    */
   pendingTimesheet: IHrmTimesheetTimelog.ISummary | null;
 
@@ -134,7 +144,9 @@ export type IHrmEmployeeDashboard = {
    * - No assigned tasks: Returns empty array []
    * - Includes project context for each task via JOIN
    *
-   * @x-autobe-specification Query hrm_tasks WHERE assigned_employee_id = current user AND status IN ('open', 'in-progress'). Include project context via JOIN. Return array of IHrmTask.ISummary.
+     * @x-autobe-specification Query hrm_tasks WHERE assigned_employee_id =
+     *   current user AND status IN ('open', 'in-progress'). Include project
+     *   context via JOIN. Return array of IHrmTask.ISummary.
    */
   assignedTasks: IHrmTask.ISummary[];
 };

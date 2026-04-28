@@ -29,8 +29,9 @@ export type IRedditLikeVote = {
    *
    * This is the primary key of the vote, generated as a UUID when the vote is created. It uniquely identifies this specific vote across the entire system.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from reddit_like_votes.id. UUID primary key uniquely identifying each vote record.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from reddit_like_votes.id. UUID
+     *   primary key uniquely identifying each vote record.
    */
   id: string & tags.Format<"uuid">;
 
@@ -43,8 +44,9 @@ export type IRedditLikeVote = {
    *
    * Members can change their vote type, which updates this field and the updated_at timestamp.
    *
-   * @x-autobe-specification Direct mapping from reddit_like_votes.vote_type. Constrained to 'upvote' or 'downvote' enum values at application layer.
-   * @x-autobe-database-schema-property vote_type
+     * @x-autobe-specification Direct mapping from reddit_like_votes.vote_type.
+     *   Constrained to 'upvote' or 'downvote' enum values at application layer.
+     * @x-autobe-database-schema-property vote_type
    */
   vote_type: string;
 
@@ -53,8 +55,10 @@ export type IRedditLikeVote = {
    *
    * This is a reference to the authenticated member who created the vote. The relation is established through the reddit_like_member_id foreign key, which is resolved via JOIN to the reddit_like_members table. Returns a member summary containing public profile information.
    *
-   * @x-autobe-database-schema-property member
-   * @x-autobe-specification Join from reddit_like_votes.reddit_like_member_id to reddit_like_members.id. Returns IRedditLikeMember.ISummary via BELONGS-TO relation.
+     * @x-autobe-database-schema-property member
+     * @x-autobe-specification Join from reddit_like_votes.reddit_like_member_id
+     *   to reddit_like_members.id. Returns IRedditLikeMember.ISummary via
+     *   BELONGS-TO relation.
    */
   author: IRedditLikeMember.ISummary;
 
@@ -63,8 +67,11 @@ export type IRedditLikeVote = {
    *
    * This reference is non-null when the vote is cast on a post, and null when the vote targets a comment. The polymorphic target is enforced by the database composite unique constraint ensuring exactly one of post or comment is non-null per vote record.
    *
-   * @x-autobe-database-schema-property post
-   * @x-autobe-specification Join from reddit_like_votes.reddit_like_post_id to reddit_like_posts.id. Returns IRedditLikePost.ISummary via BELONGS-TO relation. Nullable when vote targets a comment instead of a post.
+     * @x-autobe-database-schema-property post
+     * @x-autobe-specification Join from reddit_like_votes.reddit_like_post_id
+     *   to reddit_like_posts.id. Returns IRedditLikePost.ISummary via
+     *   BELONGS-TO relation. Nullable when vote targets a comment instead of a
+     *   post.
    */
   post: IRedditLikePost.ISummary | null;
 
@@ -73,8 +80,11 @@ export type IRedditLikeVote = {
    *
    * This reference is non-null when the vote is cast on a comment, and null when the vote targets a post. The polymorphic target is enforced by the database composite unique constraint ensuring exactly one of post or comment is non-null per vote record.
    *
-   * @x-autobe-database-schema-property comment
-   * @x-autobe-specification Join from reddit_like_votes.reddit_like_comment_id to reddit_like_comments.id. Returns IRedditLikeComment.ISummary via BELONGS-TO relation. Nullable when vote targets a post instead of a comment.
+     * @x-autobe-database-schema-property comment
+     * @x-autobe-specification Join from
+     *   reddit_like_votes.reddit_like_comment_id to reddit_like_comments.id.
+     *   Returns IRedditLikeComment.ISummary via BELONGS-TO relation. Nullable
+     *   when vote targets a post instead of a comment.
    */
   comment: IRedditLikeComment.ISummary | null;
 
@@ -83,8 +93,9 @@ export type IRedditLikeVote = {
    *
    * Records the exact moment the member first voted on the target content. Used for vote history tracking and chronological sorting of votes. Stored as ISO 8601 datetime with timezone information.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from reddit_like_votes.created_at. ISO 8601 datetime with timezone (timestamptz).
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from reddit_like_votes.created_at.
+     *   ISO 8601 datetime with timezone (timestamptz).
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -93,8 +104,9 @@ export type IRedditLikeVote = {
    *
    * Updated whenever the vote_type changes (e.g., switching from upvote to downvote or vice versa). Used for tracking vote modification history and synchronization purposes. Stored as ISO 8601 datetime with timezone information.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from reddit_like_votes.updated_at. ISO 8601 datetime with timezone (timestamptz).
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from reddit_like_votes.updated_at.
+     *   ISO 8601 datetime with timezone (timestamptz).
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -103,8 +115,10 @@ export type IRedditLikeVote = {
    *
    * When null, the vote is active and contributes to content scores and karma calculations. When set, the vote has been removed by the member and no longer affects scores, but the record is retained for audit purposes. Members can remove their votes by setting this field instead of permanently deleting the record.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from reddit_like_votes.deleted_at. Nullable ISO 8601 datetime with timezone. Null for active votes, non-null for soft-deleted votes.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from reddit_like_votes.deleted_at.
+     *   Nullable ISO 8601 datetime with timezone. Null for active votes,
+     *   non-null for soft-deleted votes.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -150,8 +164,11 @@ export namespace IRedditLikeVote {
      *
      * If omitted, both upvotes and downvotes are included in the results.
      *
-     * @x-autobe-database-schema-property vote_type
-     * @x-autobe-specification Direct filter mapping to reddit_like_votes.vote_type column. Valid values: 'upvote' or 'downvote'. Filters the vote history to show only matching vote types.
+         * @x-autobe-database-schema-property vote_type
+         * @x-autobe-specification Direct filter mapping to
+         *   reddit_like_votes.vote_type column. Valid values: 'upvote' or
+         *   'downvote'. Filters the vote history to show only matching vote
+         *   types.
      */
     vote_type?: string | undefined;
 
@@ -169,7 +186,10 @@ export namespace IRedditLikeVote {
      *
      * If omitted, votes on both posts and comments are included. The server determines content_type by checking which foreign key (reddit_like_post_id or reddit_like_comment_id) is populated on each vote record.
      *
-     * @x-autobe-specification Computed filter based on which vote target FK is set. When reddit_like_post_id is set, content_type is 'post'. When reddit_like_comment_id is set, content_type is 'comment'. Filters votes by their target content type.
+         * @x-autobe-specification Computed filter based on which vote target FK
+         *   is set. When reddit_like_post_id is set, content_type is 'post'.
+         *   When reddit_like_comment_id is set, content_type is 'comment'.
+         *   Filters votes by their target content type.
      */
     content_type?: string | undefined;
 
@@ -186,8 +206,10 @@ export namespace IRedditLikeVote {
      *
      * If omitted, no lower bound is applied to the creation time filter.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Filter mapping to reddit_like_votes.created_at column. Returns votes where created_at >= this timestamp. ISO 8601 date-time format required.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Filter mapping to
+         *   reddit_like_votes.created_at column. Returns votes where created_at
+         *   >= this timestamp. ISO 8601 date-time format required.
      */
     created_at_from?: (string & tags.Format<"date-time">) | undefined;
 
@@ -204,8 +226,10 @@ export namespace IRedditLikeVote {
      *
      * If omitted, no upper bound is applied to the creation time filter.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Filter mapping to reddit_like_votes.created_at column. Returns votes where created_at <= this timestamp. ISO 8601 date-time format required.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Filter mapping to
+         *   reddit_like_votes.created_at column. Returns votes where created_at
+         *   <= this timestamp. ISO 8601 date-time format required.
      */
     created_at_to?: (string & tags.Format<"date-time">) | undefined;
 
@@ -222,7 +246,10 @@ export namespace IRedditLikeVote {
      *
      * If omitted or null, pagination starts from the beginning. Use this parameter for sequential navigation through vote history.
      *
-     * @x-autobe-specification Cursor-based pagination parameter. Encodes the last record's (created_at, id) tuple from the previous page. Server decodes to fetch next page starting after this position. Format: base64-encoded JSON string.
+         * @x-autobe-specification Cursor-based pagination parameter. Encodes
+         *   the last record's (created_at, id) tuple from the previous page.
+         *   Server decodes to fetch next page starting after this position.
+         *   Format: base64-encoded JSON string.
      */
     cursor?: string | undefined;
 
@@ -244,7 +271,9 @@ export namespace IRedditLikeVote {
      *
      * Larger values reduce the number of API calls needed but increase response payload size. Choose based on your client's display requirements.
      *
-     * @x-autobe-specification Pagination parameter controlling maximum records per page. Valid range: 1-100. Server enforces this limit when fetching vote records. Default: 20 if not specified.
+         * @x-autobe-specification Pagination parameter controlling maximum
+         *   records per page. Valid range: 1-100. Server enforces this limit
+         *   when fetching vote records. Default: 20 if not specified.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -264,7 +293,10 @@ export namespace IRedditLikeVote {
      *
      * Requesting a page beyond the available range returns an empty data array with valid pagination metadata. For sequential navigation through large datasets, prefer cursor-based pagination using the `cursor` parameter instead.
      *
-     * @x-autobe-specification 1-indexed page number for direct navigation. Defaults to 1 if null or omitted. Server calculates offset based on page * limit. Use cursor for sequential navigation instead of page for large datasets.
+         * @x-autobe-specification 1-indexed page number for direct navigation.
+         *   Defaults to 1 if null or omitted. Server calculates offset based on
+         *   page * limit. Use cursor for sequential navigation instead of page
+         *   for large datasets.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };
@@ -300,8 +332,9 @@ export namespace IRedditLikeVote {
      *
      * UUID primary key that uniquely identifies this specific vote in the database. Used as the main reference for vote operations and history tracking.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from reddit_like_votes.id. Primary key uniquely identifying each vote record.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from reddit_like_votes.id.
+         *   Primary key uniquely identifying each vote record.
      */
     id: string & tags.Format<"uuid">;
 
@@ -315,8 +348,9 @@ export namespace IRedditLikeVote {
      * - "upvote" - Increases content score by 1 and author karma by 1
      * - "downvote" - Decreases content score by 1 and author karma by 1
      *
-     * @x-autobe-database-schema-property vote_type
-     * @x-autobe-specification Direct mapping from reddit_like_votes.vote_type. Valid values: "upvote" or "downvote".
+         * @x-autobe-database-schema-property vote_type
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_votes.vote_type. Valid values: "upvote" or "downvote".
      */
     vote_type: string;
 
@@ -336,8 +370,10 @@ export namespace IRedditLikeVote {
      * - Authentication credentials (email, password hash)
      * - Internal timestamps (deleted_at, updated_at)
      *
-     * @x-autobe-database-schema-property member
-     * @x-autobe-specification Join from reddit_like_votes.reddit_like_member_id to reddit_like_members.id. Returns IRedditLikeMember.ISummary. BELONGS-TO relation.
+         * @x-autobe-database-schema-property member
+         * @x-autobe-specification Join from
+         *   reddit_like_votes.reddit_like_member_id to reddit_like_members.id.
+         *   Returns IRedditLikeMember.ISummary. BELONGS-TO relation.
      */
     voter: IRedditLikeMember.ISummary;
 
@@ -351,7 +387,10 @@ export namespace IRedditLikeVote {
      * - "post" - The vote targets a post (target is IRedditLikePost.ISummary)
      * - "comment" - The vote targets a comment (target is IRedditLikeComment.ISummary)
      *
-     * @x-autobe-specification Computed from target union type. Returns "post" when target is IRedditLikePost.ISummary, "comment" when target is IRedditLikeComment.ISummary. Used as discriminator for polymorphic target field.
+         * @x-autobe-specification Computed from target union type. Returns
+         *   "post" when target is IRedditLikePost.ISummary, "comment" when
+         *   target is IRedditLikeComment.ISummary. Used as discriminator for
+         *   polymorphic target field.
      */
     content_type: string;
 
@@ -368,7 +407,11 @@ export namespace IRedditLikeVote {
      *
      * Target contains IRedditLikeComment.ISummary with comment metadata including author, content, vote score, and timestamps.
      *
-     * @x-autobe-specification Polymorphic relation from reddit_like_votes. When reddit_like_post_id is set, returns IRedditLikePost.ISummary. When reddit_like_comment_id is set, returns IRedditLikeComment.ISummary. Only one foreign key is non-null per vote record. Discriminated by content_type.
+         * @x-autobe-specification Polymorphic relation from reddit_like_votes.
+         *   When reddit_like_post_id is set, returns IRedditLikePost.ISummary.
+         *   When reddit_like_comment_id is set, returns
+         *   IRedditLikeComment.ISummary. Only one foreign key is non-null per
+         *   vote record. Discriminated by content_type.
      */
     target: IRedditLikePost.ISummary | IRedditLikeComment.ISummary;
 
@@ -377,8 +420,9 @@ export namespace IRedditLikeVote {
      *
      * Records the exact moment the member first voted on the content. Used for vote history tracking and chronological sorting of votes in lists.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from reddit_like_votes.created_at. ISO 8601 datetime with timezone.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_votes.created_at. ISO 8601 datetime with timezone.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -387,8 +431,9 @@ export namespace IRedditLikeVote {
      *
      * Updated whenever the vote_type changes (e.g., switching from upvote to downvote or vice versa). Tracks vote modification history and enables sync operations.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from reddit_like_votes.updated_at. ISO 8601 datetime with timezone.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_votes.updated_at. ISO 8601 datetime with timezone.
      */
     updated_at: string & tags.Format<"date-time">;
   };

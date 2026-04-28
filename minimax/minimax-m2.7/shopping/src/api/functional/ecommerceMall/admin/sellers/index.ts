@@ -27,7 +27,9 @@ import { IPageIEcommerceMallSeller } from "../../../../structures/IPageIEcommerc
  * @param props.body Search criteria including email pattern, approval status filter, date range filters, suspension state, and pagination parameters.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Query ecommerce_mall_sellers table with filtering conditions applied to email, approval_status, created_at, and deleted_at fields.
+ * @x-autobe-specification Query ecommerce_mall_sellers table with filtering
+ *   conditions applied to email, approval_status, created_at, and deleted_at
+ *   fields.
  *
  * Join with ecommerce_mall_seller_profiles table using LEFT JOIN to fetch shop names for sellers who have profiles.
  *
@@ -134,7 +136,8 @@ export namespace index {
  * @param props.sellerId Unique identifier of the seller (UUID format)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Retrieve seller by sellerId from ecommerce_mall_sellers table using UUID primary key.
+ * @x-autobe-specification Retrieve seller by sellerId from
+ *   ecommerce_mall_sellers table using UUID primary key.
  *
  * Join with ecommerce_mall_seller_profiles to fetch shop profile data (name, description, logo_uri).
  *

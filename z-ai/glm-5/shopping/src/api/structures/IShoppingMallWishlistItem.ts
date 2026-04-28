@@ -10,24 +10,29 @@ export type IShoppingMallWishlistItem = {
   /**
    * Unique identifier for this wishlist item entry.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_wishlist_items.id. UUID primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_wishlist_items.id. UUID primary key.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * The product saved in this wishlist entry. Contains summary information including name, base price, category, seller, and primary image.
    *
-   * @x-autobe-database-schema-property product
-   * @x-autobe-specification Join via shopping_mall_product_id to shopping_mall_products.id. Returns IShoppingMallProduct.ISummary with essential product info for display.
+     * @x-autobe-database-schema-property product
+     * @x-autobe-specification Join via shopping_mall_product_id to
+     *   shopping_mall_products.id. Returns IShoppingMallProduct.ISummary with
+     *   essential product info for display.
    */
   product: IShoppingMallProduct.ISummary;
 
   /**
    * Timestamp when this product was added to the wishlist. Used for sorting by most recently added.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from shopping_mall_wishlist_items.created_at. Timestamp when the product was added to the wishlist.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_wishlist_items.created_at. Timestamp when the product was
+     *   added to the wishlist.
    */
   created_at: string & tags.Format<"date-time">;
 };
@@ -39,8 +44,13 @@ export namespace IShoppingMallWishlistItem {
     /**
      * Unique identifier of the product to add to the customer's wishlist. The product must exist and not be deleted. Each product can only appear once per customer's wishlist.
      *
-     * @x-autobe-database-schema-property shopping_mall_product_id
-     * @x-autobe-specification Direct mapping from shopping_mall_wishlist_items.shopping_mall_product_id. Must reference existing product in shopping_mall_products table. Implementation validates product exists (deleted_at IS NULL) before insertion. Unique constraint (wishlist_id, product_id) prevents duplicate entries.
+         * @x-autobe-database-schema-property shopping_mall_product_id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_wishlist_items.shopping_mall_product_id. Must
+         *   reference existing product in shopping_mall_products table.
+         *   Implementation validates product exists (deleted_at IS NULL) before
+         *   insertion. Unique constraint (wishlist_id, product_id) prevents
+         *   duplicate entries.
      */
     productId: string & tags.Format<"uuid">;
   };
@@ -52,14 +62,18 @@ export namespace IShoppingMallWishlistItem {
     /**
      * Page number for pagination, starting from 1. Defaults to 1 if not specified.
      *
-     * @x-autobe-specification 1-indexed page number for pagination. Used to calculate OFFSET = (page - 1) * limit for database query. Defaults to 1 if not specified. Minimum value 1 enforced by schema.
+         * @x-autobe-specification 1-indexed page number for pagination. Used to
+         *   calculate OFFSET = (page - 1) * limit for database query. Defaults
+         *   to 1 if not specified. Minimum value 1 enforced by schema.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Number of items per page. Maximum 100. Defaults to 100 if not specified.
      *
-     * @x-autobe-specification Maximum number of records per page. Used as LIMIT clause in database query. Defaults to 100 if not specified. Maximum 100 to prevent excessive data retrieval.
+         * @x-autobe-specification Maximum number of records per page. Used as
+         *   LIMIT clause in database query. Defaults to 100 if not specified.
+         *   Maximum 100 to prevent excessive data retrieval.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -73,24 +87,30 @@ export namespace IShoppingMallWishlistItem {
     /**
      * Unique identifier for this wishlist item entry.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_wishlist_items.id. UUID primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_wishlist_items.id. UUID primary key.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Timestamp when this product was added to the wishlist.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_wishlist_items.created_at. Records when the product was added to the wishlist.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_wishlist_items.created_at. Records when the product
+         *   was added to the wishlist.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * The product saved in this wishlist item, containing essential display information.
      *
-     * @x-autobe-database-schema-property product
-     * @x-autobe-specification JOIN via shopping_mall_product_id to shopping_mall_products table. Returns IShoppingMallProduct.ISummary containing product name, base price, primary image, category, and seller details.
+         * @x-autobe-database-schema-property product
+         * @x-autobe-specification JOIN via shopping_mall_product_id to
+         *   shopping_mall_products table. Returns IShoppingMallProduct.ISummary
+         *   containing product name, base price, primary image, category, and
+         *   seller details.
      */
     product: IShoppingMallProduct.ISummary;
   };

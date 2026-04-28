@@ -27,9 +27,11 @@ export class ErphrmtimeMemberRolesPermissionsController {
    * @param connection
    * @param roleId The role identifier within the current organization context.
    * @param body Permission keys to assign to the selected role. Each key must exist in the approved permission catalog.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Load the target role by id and verify it belongs to the active organization context. Reject the request if the role is missing, deleted, or not organization-scoped to the current tenant.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Load the target role by id and verify it belongs
+     *   to the active organization context. Reject the request if the role is
+     *   missing, deleted, or not organization-scoped to the current tenant.
    *
    * Validate that the role is editable: built-in roles must not be modified. If the role is protected, return a forbidden or conflict-level domain error according to the service convention.
    *
@@ -73,9 +75,12 @@ export class ErphrmtimeMemberRolesPermissionsController {
    * @param connection
    * @param roleId Identifier of the role to update within the current organization context.
    * @param body The new approved permission set to assign to the role.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Load the role by roleId within the current organization context. Verify the caller has organization management permission or equivalent owner access. Reject the request if the role does not belong to the active organization.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Load the role by roleId within the current
+     *   organization context. Verify the caller has organization management
+     *   permission or equivalent owner access. Reject the request if the role
+     *   does not belong to the active organization.
    *
    * Validate the submitted permission list against the approved organization permission catalog. Ensure every permission is unique and belongs to the allowed set. If the role is a built-in role, enforce the business rules that prevent unauthorized customization of its fixed permission model; if the platform allows any limited update for built-ins, apply those constraints here, otherwise reject the update.
    *
@@ -115,9 +120,12 @@ export class ErphrmtimeMemberRolesPermissionsController {
    * @param connection
    * @param roleId Role identifier in UUID format within the selected organization.
    * @param rolePermissionId Role-permission assignment identifier in UUID format.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Load the role-permission row by its UUID primary key and verify that erp_hrm_time_role_id matches the supplied roleId path parameter. Join the related erp_hrm_time_permissions row so the response can include the assigned permission details.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Load the role-permission row by its UUID primary
+     *   key and verify that erp_hrm_time_role_id matches the supplied roleId
+     *   path parameter. Join the related erp_hrm_time_permissions row so the
+     *   response can include the assigned permission details.
    *
    * Enforce organization context by resolving the role through the current selected organization and rejecting cross-organization access. If the role-permission record does not exist, is soft-deleted, or does not belong to the requested role, return not found.
    *
@@ -155,13 +163,24 @@ export class ErphrmtimeMemberRolesPermissionsController {
    * @param connection
    * @param roleId The role identifier within the current organization context.
    * @param rolePermissionId The role-permission assignment identifier scoped to the specified role.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Load the target role by roleId within the current organization context, then load the role-permission assignment by rolePermissionId constrained to that role.
-   * Verify that the assignment exists and belongs to the role; otherwise return a not-found error.
-   * Apply business-rule validation before deletion: do not allow deletion when the role is protected by system rules that forbid modification, and preserve organization scoping so one organization cannot affect another organization's role data.
-   * Delete the role-permission row from erp_hrm_time_role_permissions using the junction row id. Because the schema includes a deleted_at column, follow the service's established deletion behavior for this entity: if the application uses physical deletion for this endpoint, remove the row; if it uses repository-level deletion semantics, ensure the row is no longer returned in active permission queries.
-   * Do not return a body. If the role or assignment is missing, or the role is outside the selected organization context, respond with the appropriate not-found or forbidden error.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Load the target role by roleId within the current
+     *   organization context, then load the role-permission assignment by
+     *   rolePermissionId constrained to that role. Verify that the assignment
+     *   exists and belongs to the role; otherwise return a not-found error.
+     *   Apply business-rule validation before deletion: do not allow deletion
+     *   when the role is protected by system rules that forbid modification,
+     *   and preserve organization scoping so one organization cannot affect
+     *   another organization's role data. Delete the role-permission row from
+     *   erp_hrm_time_role_permissions using the junction row id. Because the
+     *   schema includes a deleted_at column, follow the service's established
+     *   deletion behavior for this entity: if the application uses physical
+     *   deletion for this endpoint, remove the row; if it uses repository-level
+     *   deletion semantics, ensure the row is no longer returned in active
+     *   permission queries. Do not return a body. If the role or assignment is
+     *   missing, or the role is outside the selected organization context,
+     *   respond with the appropriate not-found or forbidden error.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Delete(":roleId/permissions/:rolePermissionId")
@@ -195,14 +214,16 @@ export class ErphrmtimeMemberRolesPermissionsController {
    * The returned permissions correspond to the approved authorization vocabulary stored in the permission catalog table. Clients should use this endpoint to populate role configuration screens and validate permission selections before submitting custom role changes. Invalid or unsupported permission keys should not be accepted by role management endpoints.
    *
    * @param connection
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Read the approved permission catalog from erp_hrm_time_permissions.
-   * Query non-deleted permission rows only, ordered by a stable field such as key or created_at if deterministic ordering is required.
-   * Do not apply organization scoping because this is a global reference catalog, not tenant-owned data.
-   * Return all approved permission definitions needed by role creation and editing flows.
-   * If the catalog is empty, return an empty collection rather than an error.
-   * This endpoint is read-only and must not mutate any permission records.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Read the approved permission catalog from
+     *   erp_hrm_time_permissions. Query non-deleted permission rows only,
+     *   ordered by a stable field such as key or created_at if deterministic
+     *   ordering is required. Do not apply organization scoping because this is
+     *   a global reference catalog, not tenant-owned data. Return all approved
+     *   permission definitions needed by role creation and editing flows. If
+     *   the catalog is empty, return an empty collection rather than an error.
+     *   This endpoint is read-only and must not mutate any permission records.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Get("permissions/catalog")

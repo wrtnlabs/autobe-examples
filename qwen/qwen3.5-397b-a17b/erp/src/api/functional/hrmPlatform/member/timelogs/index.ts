@@ -30,7 +30,8 @@ import { IPageIHrmPlatformTimelog } from "../../../../structures/IPageIHrmPlatfo
  * @param props.body Timelog creation data including date, duration, project reference, optional task, description, and billable flag.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Create a new timelog record in hrm_platform_timelogs table.
+ * @x-autobe-specification Create a new timelog record in hrm_platform_timelogs
+ *   table.
  *
  * 1. Validate authenticated user has an active employee record in the current organization context.
  * 2. Verify the employee is assigned to the specified project (check hrm_platform_project_members).
@@ -148,7 +149,8 @@ export namespace create {
  * @param props.body Search criteria including date range, project, task, billable status filters, and pagination parameters.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query hrm_platform_timelogs table with pagination and filtering.
+ * @x-autobe-specification Query hrm_platform_timelogs table with pagination and
+ *   filtering.
  *
  * 1. Apply organization scope filter: join with hrm_platform_employees to filter by organization_id from authenticated user's context
  * 2. Apply actor-based access control:
@@ -265,7 +267,8 @@ export namespace index {
  * @param props.timelogId Unique identifier of the timelog entry (UUID format).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query hrm_platform_timelogs table by primary key id (UUID).
+ * @x-autobe-specification Query hrm_platform_timelogs table by primary key id
+ *   (UUID).
  *
  * Include related entities via joins:
  * - Join hrm_platform_employees on hrm_platform_employee_id
@@ -367,7 +370,8 @@ export namespace at {
  * @param props.body Update payload containing modifiable timelog fields. All fields are optional - only provided fields will be updated. Project and task must respect employee membership constraints.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query hrm_platform_timelogs by timelogId UUID. Verify the timelog exists and is not soft-deleted.
+ * @x-autobe-specification Query hrm_platform_timelogs by timelogId UUID. Verify
+ *   the timelog exists and is not soft-deleted.
  *
  * Check authorization: allow if requester is the timelog owner OR has time:manage permission.
  *

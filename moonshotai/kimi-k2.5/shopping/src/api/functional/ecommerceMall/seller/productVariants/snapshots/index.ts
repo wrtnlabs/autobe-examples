@@ -132,7 +132,9 @@ export namespace at {
  * @param props.variantId Unique identifier of the product variant (UUID format)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Validate that the variant exists and is accessible to the requesting user (sellers can only access their own variants, administrators can access any).
+ * @x-autobe-specification Validate that the variant exists and is accessible to
+ *   the requesting user (sellers can only access their own variants,
+ *   administrators can access any).
  *
  * Validate that both snapshot IDs reference snapshots belonging to the specified variant.
  *

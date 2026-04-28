@@ -22,9 +22,10 @@ export class EcommercemallAdminAdminShipmentsController {
    *
    * @param connection
    * @param body Search criteria including carrier name, tracking number, order ID, seller ID, date range filters, and pagination parameters.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query the ecommerce_mall_shipments table with the following implementation steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Query the ecommerce_mall_shipments table with the
+     *   following implementation steps:
    *
    * 1. Base Query: Start with ecommerce_mall_shipments LEFT JOIN ecommerce_mall_orders and ecommerce_mall_sellers
    *
@@ -85,9 +86,11 @@ export class EcommercemallAdminAdminShipmentsController {
    *
    * @param connection
    * @param shipmentId Unique identifier of the shipment to retrieve.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query the ecommerce_mall_shipments table using the provided shipmentId as the primary key. Validate the shipment exists and is not soft-deleted (deleted_at is null).
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Query the ecommerce_mall_shipments table using
+     *   the provided shipmentId as the primary key. Validate the shipment
+     *   exists and is not soft-deleted (deleted_at is null).
    *
    * If shipment exists, retrieve the associated:
    * 1. Order details via the ecommerce_mall_order_id foreign key

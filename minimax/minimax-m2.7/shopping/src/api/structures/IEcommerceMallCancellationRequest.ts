@@ -20,8 +20,10 @@ export type IEcommerceMallCancellationRequest = {
    * - May include specific details about the order or circumstances
    * - The seller uses this information as part of their approval/rejection decision
    *
-   * @x-autobe-database-schema-property reason
-   * @x-autobe-specification Direct mapping from ecommerce_mall_cancellation_requests.reason column. Text field storing the customer's textual explanation for requesting cancellation.
+     * @x-autobe-database-schema-property reason
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_cancellation_requests.reason column. Text field storing
+     *   the customer's textual explanation for requesting cancellation.
    */
   reason: string;
 };
@@ -46,8 +48,10 @@ export namespace IEcommerceMallCancellationRequest {
      * - Be specific about the reason (e.g., 'Changed my mind', 'Found better price elsewhere', 'Ordered by mistake')
      * - Empty or whitespace-only reasons will be rejected by validation
      *
-     * @x-autobe-database-schema-property reason
-     * @x-autobe-specification Direct mapping from ecommerce_mall_cancellation_requests.reason. User-provided text explaining why the customer wants to cancel.
+         * @x-autobe-database-schema-property reason
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_cancellation_requests.reason. User-provided text
+         *   explaining why the customer wants to cancel.
      */
     reason: string;
   };
@@ -73,7 +77,11 @@ export namespace IEcommerceMallCancellationRequest {
      * - approved: Requests the seller has approved
      * - rejected: Requests the seller has rejected
      *
-     * @x-autobe-specification Optional filter parameter that controls WHERE clause filtering on ecommerce_mall_cancellation_requests.status column. Accepts: 'pending', 'approved', 'rejected'. When provided, filters results to matching status values. When omitted, all cancellation requests are returned regardless of status.
+         * @x-autobe-specification Optional filter parameter that controls WHERE
+         *   clause filtering on ecommerce_mall_cancellation_requests.status
+         *   column. Accepts: 'pending', 'approved', 'rejected'. When provided,
+         *   filters results to matching status values. When omitted, all
+         *   cancellation requests are returned regardless of status.
      */
     status?: "pending" | "approved" | "rejected" | undefined;
 
@@ -85,7 +93,9 @@ export namespace IEcommerceMallCancellationRequest {
      * Requesting a page beyond the available range returns an empty data array
      * with valid pagination metadata reflecting the actual totals.
      *
-     * @x-autobe-specification Pagination control parameter. 1-indexed page number. Defaults to 1. Determines which page of results to return. Controls OFFSET in SQL pagination (OFFSET = (page - 1) * limit).
+         * @x-autobe-specification Pagination control parameter. 1-indexed page
+         *   number. Defaults to 1. Determines which page of results to return.
+         *   Controls OFFSET in SQL pagination (OFFSET = (page - 1) * limit).
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
 
@@ -97,7 +107,9 @@ export namespace IEcommerceMallCancellationRequest {
      * enforce upper bounds to prevent excessive resource consumption on large
      * requests.
      *
-     * @x-autobe-specification Pagination control parameter. Maximum records per page. Defaults to 100. Server may enforce upper bounds. Controls LIMIT in SQL pagination.
+         * @x-autobe-specification Pagination control parameter. Maximum records
+         *   per page. Defaults to 100. Server may enforce upper bounds.
+         *   Controls LIMIT in SQL pagination.
      */
     limit?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };
@@ -115,8 +127,10 @@ export namespace IEcommerceMallCancellationRequest {
      *
      * Auto-generated UUID used to reference this specific cancellation request.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_mall_cancellation_requests.id. UUID primary key auto-generated on creation.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_cancellation_requests.id. UUID primary key
+         *   auto-generated on creation.
      */
     id: string & tags.Format<"uuid">;
 
@@ -125,8 +139,10 @@ export namespace IEcommerceMallCancellationRequest {
      *
      * Represents when the customer submitted the cancellation request.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_cancellation_requests.created_at. Timestamptz stored in UTC.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_cancellation_requests.created_at. Timestamptz stored
+         *   in UTC.
      */
     createdAt: string & tags.Format<"date-time">;
 
@@ -135,8 +151,10 @@ export namespace IEcommerceMallCancellationRequest {
      *
      * Changes when the seller approves or rejects the request.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_cancellation_requests.updated_at. Timestamptz stored in UTC.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_cancellation_requests.updated_at. Timestamptz stored
+         *   in UTC.
      */
     updatedAt: string & tags.Format<"date-time">;
 
@@ -145,8 +163,10 @@ export namespace IEcommerceMallCancellationRequest {
      *
      * Explains why the customer wants to cancel the order item.
      *
-     * @x-autobe-database-schema-property reason
-     * @x-autobe-specification Direct mapping from ecommerce_mall_cancellation_requests.reason. Free-text field for customer-provided cancellation justification.
+         * @x-autobe-database-schema-property reason
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_cancellation_requests.reason. Free-text field for
+         *   customer-provided cancellation justification.
      */
     reason: string;
 
@@ -155,8 +175,10 @@ export namespace IEcommerceMallCancellationRequest {
      *
      * Values: 'pending' (waiting for seller response), 'approved' (seller accepted cancellation), 'rejected' (seller denied request).
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from ecommerce_mall_cancellation_requests.status. Enum values: 'pending', 'approved', 'rejected'.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_cancellation_requests.status. Enum values:
+         *   'pending', 'approved', 'rejected'.
      */
     status: string;
 
@@ -165,8 +187,12 @@ export namespace IEcommerceMallCancellationRequest {
      *
      * Links to the customer who requested cancellation of the order item.
      *
-     * @x-autobe-database-schema-property customer
-     * @x-autobe-specification Join from ecommerce_mall_cancellation_requests.ecommerce_mall_customer_id to ecommerce_mall_customers.id. Returns IEcommerceMallCustomer.ISummary as nested object. BELONGS-TO relation exposed as nested composition.
+         * @x-autobe-database-schema-property customer
+         * @x-autobe-specification Join from
+         *   ecommerce_mall_cancellation_requests.ecommerce_mall_customer_id to
+         *   ecommerce_mall_customers.id. Returns
+         *   IEcommerceMallCustomer.ISummary as nested object. BELONGS-TO
+         *   relation exposed as nested composition.
      */
     customer: IEcommerceMallCustomer.ISummary;
 
@@ -175,8 +201,11 @@ export namespace IEcommerceMallCancellationRequest {
      *
      * Links to the seller responsible for approving or rejecting this request.
      *
-     * @x-autobe-database-schema-property seller
-     * @x-autobe-specification Join from ecommerce_mall_cancellation_requests.ecommerce_mall_seller_id to ecommerce_mall_sellers.id. Returns IEcommerceMallSeller.ISummary as nested object. BELONGS-TO relation exposed as nested composition.
+         * @x-autobe-database-schema-property seller
+         * @x-autobe-specification Join from
+         *   ecommerce_mall_cancellation_requests.ecommerce_mall_seller_id to
+         *   ecommerce_mall_sellers.id. Returns IEcommerceMallSeller.ISummary as
+         *   nested object. BELONGS-TO relation exposed as nested composition.
      */
     seller: IEcommerceMallSeller.ISummary;
   };

@@ -21,9 +21,12 @@ export class TodoappMemberTodosEdithistoriesController {
    * @param connection
    * @param todoId The identifier of the todo whose edit history will be listed.
    * @param body Pagination and search criteria for browsing a todo's edit history entries.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Verify that the authenticated member owns the todo identified by todoId before querying history. If the todo does not exist or is not owned by the current member, return a not-found style response to avoid leaking cross-user existence.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Verify that the authenticated member owns the
+     *   todo identified by todoId before querying history. If the todo does not
+     *   exist or is not owned by the current member, return a not-found style
+     *   response to avoid leaking cross-user existence.
    *
    * Query todo_app_todo_edit_histories by the todo foreign key, and sort the records by the edit timestamp descending so the newest change appears first. Apply pagination from the request body. If the request includes additional filtering or search criteria supported by the IRequest contract, apply them after scoping to the todo.
    *
@@ -63,9 +66,11 @@ export class TodoappMemberTodosEdithistoriesController {
    * @param connection
    * @param todoId The identifier of the todo that owns the edit history entry (UUID).
    * @param editHistoryId The identifier of the edit history entry within the specified todo (UUID).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Load the todo by id and confirm it belongs to the current member. Then load the edit history row by id with an additional predicate that it belongs to the same todo id.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Load the todo by id and confirm it belongs to the
+     *   current member. Then load the edit history row by id with an additional
+     *   predicate that it belongs to the same todo id.
    *
    * Return the full row directly from todo_app_todo_edit_histories. Use UUID path parameters for both todoId and editHistoryId. Do not accept a request body.
    *

@@ -20,9 +20,9 @@ export class HrmtimetrackingMember_switchOrganizationsController {
    *
    * @param connection
    * @param organizationId UUID of the target organization to switch the active context to. The authenticated user must have an active employee record in this organization.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Validate and execute organization context switch:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Validate and execute organization context switch:
    *
    * 1. Look up the target organization by organizationId (UUID). If not found, return 404 Not Found.
    * 2. Verify the authenticated member has an employee record in the target organization with status = 'active' (not 'deactivated'). Query hrm_time_tracking_employees where hrm_time_tracking_member_id = session member and hrm_time_tracking_organization_id = organizationId.

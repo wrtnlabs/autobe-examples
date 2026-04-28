@@ -36,9 +36,10 @@ export class EcommerceAdminGradesController {
    *
    * @param connection
    * @param body Grade assignment creation request containing the target administrator ID and the grade level to assign.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Create administrator grade assignment with the following implementation logic:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Create administrator grade assignment with the
+     *   following implementation logic:
    *
    * 1. **Authorization Check**: Verify the requesting administrator has super grade level. Return 403 Forbidden if regular administrator.
    *
@@ -104,9 +105,10 @@ export class EcommerceAdminGradesController {
    *
    * @param connection
    * @param body Search criteria for filtering administrator grade assignments including grade level, administrator email, date ranges, and pagination parameters.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query ecommerce_administrator_grades table with optional filtering and pagination.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Query ecommerce_administrator_grades table with
+     *   optional filtering and pagination.
    *
    * **Implementation Steps**
    *
@@ -174,9 +176,10 @@ export class EcommerceAdminGradesController {
    *
    * @param connection
    * @param adminId Unique identifier of the administrator account (UUID format).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query the ecommerce_administrator_grades table by ecommerce_admin_id to retrieve the current grade assignment.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Query the ecommerce_administrator_grades table by
+     *   ecommerce_admin_id to retrieve the current grade assignment.
    *
    * Implementation steps:
    * 1. Validate adminId parameter is a valid UUID format
@@ -232,9 +235,9 @@ export class EcommerceAdminGradesController {
    * @param connection
    * @param adminId UUID identifier of the administrator whose grade is being updated (scoped to administrator account)
    * @param body New grade assignment for the administrator. Must be either 'regular' or 'super'. Super administrators can promote regular admins to super or demote other super admins to regular, but cannot demote themselves.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Implement grade update with the following logic:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Implement grade update with the following logic:
    *
    * 1. **Authentication & Authorization**
    *    - Verify the requesting administrator is authenticated via session token

@@ -14,8 +14,10 @@ export type IECommerceMallOrderItemSellerSnapshot = {
    *
    * This UUID serves as the primary key for the seller snapshot and is automatically generated when the snapshot is created at order placement time.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from e_commerce_mall_order_item_seller_snapshots.id. UUID primary key, auto-generated at snapshot creation time.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_order_item_seller_snapshots.id. UUID primary key,
+     *   auto-generated at snapshot creation time.
    */
   id: string & tags.Format<"uuid">;
 
@@ -24,8 +26,11 @@ export type IECommerceMallOrderItemSellerSnapshot = {
    *
    * This value is captured from the seller's profile at the moment the order was placed and does not change even if the seller later updates their shop name. It ensures that historical order records accurately reflect the seller's identity as seen by the customer during checkout.
    *
-   * @x-autobe-database-schema-property shop_name
-   * @x-autobe-specification Direct mapping from e_commerce_mall_order_item_seller_snapshots.shop_name. Preserved from the seller's profile at the moment of order placement. Always present (non-nullable).
+     * @x-autobe-database-schema-property shop_name
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_order_item_seller_snapshots.shop_name. Preserved from
+     *   the seller's profile at the moment of order placement. Always present
+     *   (non-nullable).
    */
   shop_name: string;
 
@@ -34,8 +39,11 @@ export type IECommerceMallOrderItemSellerSnapshot = {
    *
    * This value is captured from the seller's profile at the moment the order was placed. It may be null if the seller had not set a logo image at the time of the transaction, indicating no logo was available.
    *
-   * @x-autobe-database-schema-property shop_logo
-   * @x-autobe-specification Direct mapping from e_commerce_mall_order_item_seller_snapshots.shop_logo. May be null if the seller had not configured a logo image at the time of order placement. Nullability is represented via oneOf with null.
+     * @x-autobe-database-schema-property shop_logo
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_order_item_seller_snapshots.shop_logo. May be null if
+     *   the seller had not configured a logo image at the time of order
+     *   placement. Nullability is represented via oneOf with null.
    */
   shop_logo: (string & tags.Format<"uri">) | null;
 
@@ -44,8 +52,11 @@ export type IECommerceMallOrderItemSellerSnapshot = {
    *
    * Records when the seller profile state was captured at order placement time. Immutable after creation, providing a chronological reference point for the snapshot.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from e_commerce_mall_order_item_seller_snapshots.created_at. DateTime with timezone. Set automatically at snapshot creation when the order is placed. Immutable.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_order_item_seller_snapshots.created_at. DateTime with
+     *   timezone. Set automatically at snapshot creation when the order is
+     *   placed. Immutable.
    */
   created_at: string & tags.Format<"date-time">;
 };

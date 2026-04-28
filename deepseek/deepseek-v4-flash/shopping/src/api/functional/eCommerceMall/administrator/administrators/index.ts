@@ -21,7 +21,8 @@ import { IECommerceMallAdministrator } from "../../../../structures/IECommerceMa
  * @param props.administratorId Unique identifier (UUID) of the administrator account to retrieve.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor administrator
- * @x-autobe-specification Query the e_commerce_mall_administrators table by the primary key `id` matching the provided administratorId parameter.
+ * @x-autobe-specification Query the e_commerce_mall_administrators table by the
+ *   primary key `id` matching the provided administratorId parameter.
  *
  * - Use `findFirst` or `findUnique` with the UUID id field.
  * - Exclude the `password_hash` field from the response to prevent credential exposure.

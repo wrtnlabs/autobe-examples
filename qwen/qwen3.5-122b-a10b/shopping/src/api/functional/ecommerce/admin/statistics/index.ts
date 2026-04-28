@@ -27,7 +27,9 @@ import { IEcommerceStatistic } from "../../../../structures/IEcommerceStatistic"
  * @param props.connection
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Query aggregated statistics from ecommerce_orders, ecommerce_products, ecommerce_cancellation_requests, and ecommerce_refund_requests tables.
+ * @x-autobe-specification Query aggregated statistics from ecommerce_orders,
+ *   ecommerce_products, ecommerce_cancellation_requests, and
+ *   ecommerce_refund_requests tables.
  *
  * **Implementation Steps**
  *

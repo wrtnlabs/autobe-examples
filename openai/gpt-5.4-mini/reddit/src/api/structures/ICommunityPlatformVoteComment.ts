@@ -8,47 +8,64 @@ export type ICommunityPlatformVoteComment = {
   /**
    * Unique identifier for this comment vote record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from community_platform_vote_comments.id. This is the identifier of the comment-vote binding record returned by the detail endpoint.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_vote_comments.id. This is the identifier of the
+     *   comment-vote binding record returned by the detail endpoint.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Identifier of the comment associated with this vote.
    *
-   * @x-autobe-database-schema-property community_platform_comment_id
-   * @x-autobe-specification Direct mapping from community_platform_vote_comments.community_platform_comment_id. The server must verify that this value matches the comment identified in the request path before returning the record.
+     * @x-autobe-database-schema-property community_platform_comment_id
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_vote_comments.community_platform_comment_id. The
+     *   server must verify that this value matches the comment identified in
+     *   the request path before returning the record.
    */
   community_platform_comment_id: string & tags.Format<"uuid">;
 
   /**
    * The vote direction for this comment vote record.
    *
-   * @x-autobe-specification Resolve direction by joining community_platform_vote_comments.community_platform_vote_id to community_platform_votes and mapping the stored vote direction into a boolean-like upvote/downvote value for the read DTO. Keep it required because the detail endpoint always returns the current vote direction when a record exists.
+     * @x-autobe-specification Resolve direction by joining
+     *   community_platform_vote_comments.community_platform_vote_id to
+     *   community_platform_votes and mapping the stored vote direction into a
+     *   boolean-like upvote/downvote value for the read DTO. Keep it required
+     *   because the detail endpoint always returns the current vote direction
+     *   when a record exists.
    */
   direction: boolean;
 
   /**
    * Timestamp when this comment vote record was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from community_platform_vote_comments.created_at. This timestamp marks when the comment-vote binding was first created.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_vote_comments.created_at. This timestamp marks when
+     *   the comment-vote binding was first created.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when this comment vote record was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from community_platform_vote_comments.updated_at. This timestamp reflects the last update applied to the comment-vote binding record.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_vote_comments.updated_at. This timestamp reflects
+     *   the last update applied to the comment-vote binding record.
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when this comment vote record was removed, or null if it is still active.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from community_platform_vote_comments.deleted_at. Keep the field nullable because active records have null and soft-deleted records carry the deletion time.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_vote_comments.deleted_at. Keep the field nullable
+     *   because active records have null and soft-deleted records carry the
+     *   deletion time.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -60,7 +77,12 @@ export namespace ICommunityPlatformVoteComment {
     /**
      * Vote action to apply to the targeted comment: upvote, downvote, or remove.
      *
-     * @x-autobe-specification Accept one of three commands: `upvote`, `downvote`, or `remove`. The service layer maps the action to create/update/delete behavior against community_platform_votes and community_platform_vote_comments for the authenticated member and target comment. This value is the only meaningful client input for the vote mutation.
+         * @x-autobe-specification Accept one of three commands: `upvote`,
+         *   `downvote`, or `remove`. The service layer maps the action to
+         *   create/update/delete behavior against community_platform_votes and
+         *   community_platform_vote_comments for the authenticated member and
+         *   target comment. This value is the only meaningful client input for
+         *   the vote mutation.
      */
     action: "upvote" | "downvote" | "remove";
 
@@ -72,7 +94,8 @@ export namespace ICommunityPlatformVoteComment {
      * Requesting a page beyond the available range returns an empty data array
      * with valid pagination metadata reflecting the actual totals.
      *
-     * @x-autobe-specification 1-indexed page number. Defaults to 1 if not provided.
+         * @x-autobe-specification 1-indexed page number. Defaults to 1 if not
+         *   provided.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
 
@@ -84,7 +107,8 @@ export namespace ICommunityPlatformVoteComment {
      * enforce upper bounds to prevent excessive resource consumption on large
      * requests.
      *
-     * @x-autobe-specification Maximum records per page. Defaults to 100 if not provided.
+         * @x-autobe-specification Maximum records per page. Defaults to 100 if
+         *   not provided.
      */
     limit?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };

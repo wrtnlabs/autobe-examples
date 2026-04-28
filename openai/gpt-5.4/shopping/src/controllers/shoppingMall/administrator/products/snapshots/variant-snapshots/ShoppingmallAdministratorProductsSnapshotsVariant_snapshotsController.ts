@@ -30,9 +30,10 @@ export class ShoppingmallAdministratorProductsSnapshotsVariant_snapshotsControll
    * @param productId Target product's ID
    * @param productSnapshotId Target product snapshot's ID under the specified product
    * @param body Filtering, sorting, and pagination criteria for product variant snapshots
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Validate that `productId` identifies an existing `shopping_mall_products` row.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor administrator
+     * @x-autobe-specification Validate that `productId` identifies an existing
+     *   `shopping_mall_products` row.
    *
    * Validate that `productSnapshotId` identifies an existing `shopping_mall_product_snapshots` row whose `shopping_mall_product_id` matches the requested product. Reject the request when the snapshot does not exist or belongs to a different product.
    *
@@ -90,9 +91,11 @@ export class ShoppingmallAdministratorProductsSnapshotsVariant_snapshotsControll
    * @param productId Target product's ID
    * @param productSnapshotId Target product snapshot's ID
    * @param productVariantSnapshotId Target product variant snapshot's ID
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Implement a read-only detail query for one historical variant snapshot scoped by product and product snapshot context.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor administrator
+     * @x-autobe-specification Implement a read-only detail query for one
+     *   historical variant snapshot scoped by product and product snapshot
+     *   context.
    *
    * 1. Resolve the target `shopping_mall_product_snapshots` row by `productSnapshotId` and ensure its `shopping_mall_product_id` matches `productId`. If no such row exists, return a not-found error for the scoped historical product snapshot.
    *

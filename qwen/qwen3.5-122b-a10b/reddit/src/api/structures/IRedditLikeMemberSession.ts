@@ -22,8 +22,9 @@ export type IRedditLikeMemberSession = {
    *
    * This is the primary key of the session, generated as a UUID when the session is created during member authentication. Used to retrieve, reference, or terminate this specific session.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from reddit_like_member_sessions.id. Primary key, UUID format.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_member_sessions.id. Primary key, UUID format.
    */
   id: string & tags.Format<"uuid">;
 
@@ -36,8 +37,11 @@ export type IRedditLikeMemberSession = {
    *
    * This field is only populated when the authenticated member owns this session. API requests that attempt to access another member's session are rejected with 403 Forbidden.
    *
-   * @x-autobe-database-schema-property redditLikeMember
-   * @x-autobe-specification Join from reddit_like_member_sessions.reddit_like_member_id to reddit_like_members.id. Returns IRedditLikeMember.ISummary object with member identity information.
+     * @x-autobe-database-schema-property redditLikeMember
+     * @x-autobe-specification Join from
+     *   reddit_like_member_sessions.reddit_like_member_id to
+     *   reddit_like_members.id. Returns IRedditLikeMember.ISummary object with
+     *   member identity information.
    */
   member: IRedditLikeMember.ISummary;
 
@@ -50,8 +54,10 @@ export type IRedditLikeMemberSession = {
    *
    * Members can review this field to identify sessions from unfamiliar devices or locations, helping detect unauthorized account access.
    *
-   * @x-autobe-database-schema-property ip
-   * @x-autobe-specification Direct mapping from reddit_like_member_sessions.ip. Client IP address captured at login time.
+     * @x-autobe-database-schema-property ip
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_member_sessions.ip. Client IP address captured at login
+     *   time.
    */
   ip: string;
 
@@ -64,8 +70,10 @@ export type IRedditLikeMemberSession = {
    *
    * This field is stored as a valid URI string.
    *
-   * @x-autobe-database-schema-property href
-   * @x-autobe-specification Direct mapping from reddit_like_member_sessions.href. Full URL of the page where login was initiated.
+     * @x-autobe-database-schema-property href
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_member_sessions.href. Full URL of the page where login was
+     *   initiated.
    */
   href: string & tags.Format<"uri">;
 
@@ -78,8 +86,10 @@ export type IRedditLikeMemberSession = {
    *
    * This field may be null if the client did not provide referrer information or if the browser blocked referrer transmission.
    *
-   * @x-autobe-database-schema-property referrer
-   * @x-autobe-specification Direct mapping from reddit_like_member_sessions.referrer. Nullable HTTP referrer header from login request.
+     * @x-autobe-database-schema-property referrer
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_member_sessions.referrer. Nullable HTTP referrer header
+     *   from login request.
    */
   referrer?: (string & tags.Format<"uri">) | null | undefined;
 
@@ -92,8 +102,10 @@ export type IRedditLikeMemberSession = {
    *
    * This field uses ISO 8601 date-time format with timezone (timestamptz in PostgreSQL).
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from reddit_like_member_sessions.created_at. Timestamp when session was established.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_member_sessions.created_at. Timestamp when session was
+     *   established.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -110,8 +122,10 @@ export type IRedditLikeMemberSession = {
    *
    * After expiration, the session cannot be used for authentication. Members must log in again or use a refresh token to obtain a new session.
    *
-   * @x-autobe-database-schema-property expired_at
-   * @x-autobe-specification Direct mapping from reddit_like_member_sessions.expired_at. Absolute expiration time for this session.
+     * @x-autobe-database-schema-property expired_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_member_sessions.expired_at. Absolute expiration time for
+     *   this session.
    */
   expired_at: string & tags.Format<"date-time">;
 };

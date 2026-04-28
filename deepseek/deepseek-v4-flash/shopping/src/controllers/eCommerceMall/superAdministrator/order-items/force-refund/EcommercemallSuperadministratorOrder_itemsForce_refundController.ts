@@ -20,9 +20,10 @@ export class EcommercemallSuperadministratorOrder_itemsForce_refundController {
    *
    * @param connection
    * @param itemId The unique identifier (UUID) of the order item to force-refund.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor superAdministrator
-   * @x-autobe-specification Validate that an order item with the given `itemId` exists. If not found, reject with a not-found error.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor superAdministrator
+     * @x-autobe-specification Validate that an order item with the given
+     *   `itemId` exists. If not found, reject with a not-found error.
    *
    * If the order item's status is already 'cancelled' or 'refunded' (terminal states), reject the operation with an appropriate message indicating the item cannot be force-refunded in its current state.
    *

@@ -14,8 +14,10 @@ export type ICommunityPlatformMemberEmailVerification = {
    *
    * Auto-generated UUID that uniquely identifies this email verification token within the system.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from community_platform_member_email_verifications.id. UUID primary key, auto-generated.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_member_email_verifications.id. UUID primary key,
+     *   auto-generated.
    */
   id: string & tags.Format<"uuid">;
 
@@ -24,8 +26,9 @@ export type ICommunityPlatformMemberEmailVerification = {
    *
    * Each verification token belongs to exactly one member. A member may have multiple verification tokens over their lifetime if they request re-verification or change their email address.
    *
-   * @x-autobe-database-schema-property member
-   * @x-autobe-specification Join via community_platform_member_id to community_platform_members. Returns ICommunityPlatformMember.ISummary.
+     * @x-autobe-database-schema-property member
+     * @x-autobe-specification Join via community_platform_member_id to
+     *   community_platform_members. Returns ICommunityPlatformMember.ISummary.
    */
   member: ICommunityPlatformMember.ISummary;
 
@@ -34,8 +37,9 @@ export type ICommunityPlatformMemberEmailVerification = {
    *
    * Set when the verification email is sent to the member. Used to determine which token is the most recent active verification request.
    *
-   * @x-autobe-database-schema-property issued_at
-   * @x-autobe-specification Direct mapping from community_platform_member_email_verifications.issued_at.
+     * @x-autobe-database-schema-property issued_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_member_email_verifications.issued_at.
    */
   issued_at: string & tags.Format<"date-time">;
 
@@ -44,8 +48,9 @@ export type ICommunityPlatformMemberEmailVerification = {
    *
    * Tokens have a limited validity window (e.g., 24 hours) for security purposes. Expired tokens are ignored during verification and may be cleaned up.
    *
-   * @x-autobe-database-schema-property expired_at
-   * @x-autobe-specification Direct mapping from community_platform_member_email_verifications.expired_at.
+     * @x-autobe-database-schema-property expired_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_member_email_verifications.expired_at.
    */
   expired_at: string & tags.Format<"date-time">;
 
@@ -54,8 +59,10 @@ export type ICommunityPlatformMemberEmailVerification = {
    *
    * Null until the token is used for successful verification. Once set, the token is considered consumed and cannot be reused.
    *
-   * @x-autobe-database-schema-property verified_at
-   * @x-autobe-specification Direct mapping from community_platform_member_email_verifications.verified_at. Nullable — null until the member successfully verifies their email.
+     * @x-autobe-database-schema-property verified_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_member_email_verifications.verified_at. Nullable —
+     *   null until the member successfully verifies their email.
    */
   verified_at: (string & tags.Format<"date-time">) | null;
 
@@ -64,8 +71,9 @@ export type ICommunityPlatformMemberEmailVerification = {
    *
    * Set automatically upon record creation.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from community_platform_member_email_verifications.created_at.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_member_email_verifications.created_at.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -74,8 +82,10 @@ export type ICommunityPlatformMemberEmailVerification = {
    *
    * Updated automatically when the verification status changes or any field is modified.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from community_platform_member_email_verifications.updated_at. Updated on successful verification.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_member_email_verifications.updated_at. Updated on
+     *   successful verification.
    */
   updated_at: string & tags.Format<"date-time">;
 };
@@ -91,8 +101,11 @@ export namespace ICommunityPlatformMemberEmailVerification {
      *
      * The token value submitted here is securely hashed by the backend and matched against the stored hashed verification token. The system validates that a matching token exists, has not expired, and has not already been consumed before marking the email as verified.
      *
-     * @x-autobe-database-schema-property token
-     * @x-autobe-specification Direct mapping from community_platform_member_email_verifications.token. The raw token value is hashed server-side (SHA-256 or configured algorithm) before comparison with the stored hashed token.
+         * @x-autobe-database-schema-property token
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_member_email_verifications.token. The raw token
+         *   value is hashed server-side (SHA-256 or configured algorithm)
+         *   before comparison with the stored hashed token.
      */
     token: string;
   };

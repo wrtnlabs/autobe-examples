@@ -17,8 +17,9 @@ export type IHrmPlatformTaskHistory = {
    *
    * Auto-generated UUID that uniquely identifies this specific status change event in the audit trail.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from hrm_platform_task_histories.id. UUID format.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_task_histories.id. UUID format.
    */
   id: string & tags.Format<"uuid">;
 
@@ -27,8 +28,11 @@ export type IHrmPlatformTaskHistory = {
    *
    * Captures the previous workflow state such as 'open', 'in-progress', 'completed', or 'closed'. This field enables tracking the complete transition path of a task through its lifecycle.
    *
-   * @x-autobe-database-schema-property old_status
-   * @x-autobe-specification Direct mapping from hrm_platform_task_histories.old_status. String value representing the task status before the change (e.g., 'open', 'in-progress', 'completed', 'closed').
+     * @x-autobe-database-schema-property old_status
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_task_histories.old_status. String value representing the
+     *   task status before the change (e.g., 'open', 'in-progress',
+     *   'completed', 'closed').
    */
   oldStatus: string;
 
@@ -37,8 +41,11 @@ export type IHrmPlatformTaskHistory = {
    *
    * Captures the new workflow state such as 'open', 'in-progress', 'completed', or 'closed'. This field represents the task's state at this point in the audit trail.
    *
-   * @x-autobe-database-schema-property new_status
-   * @x-autobe-specification Direct mapping from hrm_platform_task_histories.new_status. String value representing the task status after the change (e.g., 'open', 'in-progress', 'completed', 'closed').
+     * @x-autobe-database-schema-property new_status
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_task_histories.new_status. String value representing the
+     *   task status after the change (e.g., 'open', 'in-progress', 'completed',
+     *   'closed').
    */
   newStatus: string;
 
@@ -47,8 +54,11 @@ export type IHrmPlatformTaskHistory = {
    *
    * Captures the exact date and time when the task status transition occurred. Used for ordering history entries chronologically and displaying the audit trail timeline.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from hrm_platform_task_histories.created_at. ISO 8601 date-time format with timezone. Records the exact timestamp when the status transition was made.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_task_histories.created_at. ISO 8601 date-time format with
+     *   timezone. Records the exact timestamp when the status transition was
+     *   made.
    */
   createdAt: string & tags.Format<"date-time">;
 
@@ -57,8 +67,11 @@ export type IHrmPlatformTaskHistory = {
    *
    * References the parent task whose status was changed. Includes essential task identification fields for context. This relation enables understanding which task the audit trail entry pertains to.
    *
-   * @x-autobe-database-schema-property task
-   * @x-autobe-specification Relation mapping via hrm_platform_task_histories.task. JOIN to hrm_platform_tasks table. Returns IHrmPlatformTask.ISummary with essential task information (id, title, status, priority).
+     * @x-autobe-database-schema-property task
+     * @x-autobe-specification Relation mapping via
+     *   hrm_platform_task_histories.task. JOIN to hrm_platform_tasks table.
+     *   Returns IHrmPlatformTask.ISummary with essential task information (id,
+     *   title, status, priority).
    */
   task: IHrmPlatformTask.ISummary;
 
@@ -67,8 +80,11 @@ export type IHrmPlatformTaskHistory = {
    *
    * References the user account that made the status transition. Enables audit tracking of accountability by showing who changed the task status and when.
    *
-   * @x-autobe-database-schema-property member
-   * @x-autobe-specification Relation mapping via hrm_platform_task_histories.member. JOIN to hrm_platform_members table. Returns IHrmPlatformMember.ISummary with member information (id, email).
+     * @x-autobe-database-schema-property member
+     * @x-autobe-specification Relation mapping via
+     *   hrm_platform_task_histories.member. JOIN to hrm_platform_members table.
+     *   Returns IHrmPlatformMember.ISummary with member information (id,
+     *   email).
    */
   member: IHrmPlatformMember.ISummary;
 };
@@ -86,8 +102,9 @@ export namespace IHrmPlatformTaskHistory {
      *
      * This is the primary key of the task history record, automatically generated as a UUID when the history entry is created.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from hrm_platform_task_histories.id. UUID format.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_task_histories.id. UUID format.
      */
     id: string & tags.Format<"uuid">;
 
@@ -96,8 +113,11 @@ export namespace IHrmPlatformTaskHistory {
      *
      * This field captures the previous state of the task prior to the transition. Common values include 'open' for new tasks, 'in-progress' for actively worked items, 'completed' for finished work, and 'closed' for finalized tasks.
      *
-     * @x-autobe-database-schema-property old_status
-     * @x-autobe-specification Direct mapping from hrm_platform_task_histories.old_status. String value representing the task status before the change (e.g., 'open', 'in-progress', 'completed', 'closed').
+         * @x-autobe-database-schema-property old_status
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_task_histories.old_status. String value representing
+         *   the task status before the change (e.g., 'open', 'in-progress',
+         *   'completed', 'closed').
      */
     oldStatus: string;
 
@@ -106,8 +126,11 @@ export namespace IHrmPlatformTaskHistory {
      *
      * This field represents the new state of the task following the transition. The value indicates the current workflow stage at the point this history entry was recorded.
      *
-     * @x-autobe-database-schema-property new_status
-     * @x-autobe-specification Direct mapping from hrm_platform_task_histories.new_status. String value representing the task status after the change (e.g., 'open', 'in-progress', 'completed', 'closed').
+         * @x-autobe-database-schema-property new_status
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_task_histories.new_status. String value representing
+         *   the task status after the change (e.g., 'open', 'in-progress',
+         *   'completed', 'closed').
      */
     newStatus: string;
 
@@ -116,8 +139,10 @@ export namespace IHrmPlatformTaskHistory {
      *
      * This field indicates the exact moment when the task status transition occurred. The timestamp is stored with timezone information and formatted as ISO 8601 date-time, enabling precise chronological ordering of history entries.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from hrm_platform_task_histories.created_at. ISO 8601 date-time format with timezone (timestamptz).
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_task_histories.created_at. ISO 8601 date-time format
+         *   with timezone (timestamptz).
      */
     createdAt: string & tags.Format<"date-time">;
 
@@ -126,8 +151,12 @@ export namespace IHrmPlatformTaskHistory {
      *
      * This property references the user account that executed the task status transition. It provides audit trail context by identifying who made the change. The member object includes essential identification information in summary format.
      *
-     * @x-autobe-database-schema-property member
-     * @x-autobe-specification Relation mapping via hrm_platform_member_id FK to hrm_platform_members.id. Returns IHrmPlatformMember.ISummary with member details. JOIN performed on hrm_platform_task_histories.hrm_platform_member_id = hrm_platform_members.id.
+         * @x-autobe-database-schema-property member
+         * @x-autobe-specification Relation mapping via hrm_platform_member_id
+         *   FK to hrm_platform_members.id. Returns IHrmPlatformMember.ISummary
+         *   with member details. JOIN performed on
+         *   hrm_platform_task_histories.hrm_platform_member_id =
+         *   hrm_platform_members.id.
      */
     member: IHrmPlatformMember.ISummary;
   };

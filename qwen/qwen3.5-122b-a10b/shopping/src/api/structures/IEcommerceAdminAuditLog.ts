@@ -22,8 +22,9 @@ export type IEcommerceAdminAuditLog = {
    *
    * This is the primary key of the audit log record, stored in UUID format. Used to retrieve specific audit entries by their identifier.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_admin_audit_logs.id. UUID format primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_admin_audit_logs.id. UUID format primary key.
    */
   id: string & tags.Format<"uuid">;
 
@@ -41,8 +42,10 @@ export type IEcommerceAdminAuditLog = {
    * - User management: user_banned, user_unbanned
    * - Administrator management: admin_promoted, admin_demoted
    *
-   * @x-autobe-database-schema-property action_type
-   * @x-autobe-specification Direct mapping from ecommerce_admin_audit_logs.action_type. String value indicating the type of administrative action performed.
+     * @x-autobe-database-schema-property action_type
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_admin_audit_logs.action_type. String value indicating the
+     *   type of administrative action performed.
    */
   action_type: string;
 
@@ -51,8 +54,10 @@ export type IEcommerceAdminAuditLog = {
    *
    * Examples include "seller", "category", "product", "order", "order_item", "customer", "admin". This field indicates which domain entity was the target of the administrative action and is used for filtering audit logs by entity type.
    *
-   * @x-autobe-database-schema-property target_entity
-   * @x-autobe-specification Direct mapping from ecommerce_admin_audit_logs.target_entity. String value indicating which domain entity was the target of the administrative action.
+     * @x-autobe-database-schema-property target_entity
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_admin_audit_logs.target_entity. String value indicating which
+     *   domain entity was the target of the administrative action.
    */
   target_entity: string;
 
@@ -61,8 +66,11 @@ export type IEcommerceAdminAuditLog = {
    *
    * This field stores the ID of the affected entity as a UUID string to accommodate different ID formats across domain entities. May be null for actions that do not target a specific entity, such as system-level operations or administrative actions without a specific entity target.
    *
-   * @x-autobe-database-schema-property target_id
-   * @x-autobe-specification Direct mapping from ecommerce_admin_audit_logs.target_id. Nullable UUID string storing the identifier of the affected entity. May be null for actions that do not target a specific entity.
+     * @x-autobe-database-schema-property target_id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_admin_audit_logs.target_id. Nullable UUID string storing the
+     *   identifier of the affected entity. May be null for actions that do not
+     *   target a specific entity.
    */
   target_id?: (string & tags.Format<"uuid">) | null | undefined;
 
@@ -75,8 +83,12 @@ export type IEcommerceAdminAuditLog = {
    *
    * This field is returned as a raw JSON string and should not be parsed by the client. It provides the complete state of the entity before the administrative action was applied, enabling comparison with the new_state to understand the exact changes made.
    *
-   * @x-autobe-database-schema-property previous_state
-   * @x-autobe-specification Direct mapping from ecommerce_admin_audit_logs.previous_state. Nullable JSON string containing the entity's properties before modification. Null for create actions or actions that do not modify entity state. Returned as-is without parsing.
+     * @x-autobe-database-schema-property previous_state
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_admin_audit_logs.previous_state. Nullable JSON string
+     *   containing the entity's properties before modification. Null for create
+     *   actions or actions that do not modify entity state. Returned as-is
+     *   without parsing.
    */
   previous_state?: string | null | undefined;
 
@@ -89,8 +101,12 @@ export type IEcommerceAdminAuditLog = {
    *
    * This field is returned as a raw JSON string and should not be parsed by the client. It provides the complete state of the entity after the administrative action was applied, enabling comparison with the previous_state to understand the exact changes made.
    *
-   * @x-autobe-database-schema-property new_state
-   * @x-autobe-specification Direct mapping from ecommerce_admin_audit_logs.new_state. Nullable JSON string containing the entity's properties after modification. Null for delete actions or actions that do not result in a new state. Returned as-is without parsing.
+     * @x-autobe-database-schema-property new_state
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_admin_audit_logs.new_state. Nullable JSON string containing
+     *   the entity's properties after modification. Null for delete actions or
+     *   actions that do not result in a new state. Returned as-is without
+     *   parsing.
    */
   new_state?: string | null | undefined;
 
@@ -103,8 +119,11 @@ export type IEcommerceAdminAuditLog = {
    *
    * The administrator's password hash and other sensitive credentials are never exposed in this summary. Only public identification information is included for audit trail purposes.
    *
-   * @x-autobe-database-schema-property ecommerceAdmin
-   * @x-autobe-specification Join from ecommerce_admin_audit_logs.ecommerce_admin_id to ecommerce_admins.id. Returns IEcommerceAdmin.ISummary with grade retrieved via additional JOIN with ecommerce_administrator_grades table.
+     * @x-autobe-database-schema-property ecommerceAdmin
+     * @x-autobe-specification Join from
+     *   ecommerce_admin_audit_logs.ecommerce_admin_id to ecommerce_admins.id.
+     *   Returns IEcommerceAdmin.ISummary with grade retrieved via additional
+     *   JOIN with ecommerce_administrator_grades table.
    */
   admin: IEcommerceAdmin.ISummary;
 
@@ -113,8 +132,10 @@ export type IEcommerceAdminAuditLog = {
    *
    * This field records the exact moment when the administrative action was logged. Used for chronological ordering of audit events and compliance reporting. Stored in UTC timezone with timestamp precision.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_admin_audit_logs.created_at. DateTime with timestamptz format.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_admin_audit_logs.created_at. DateTime with timestamptz
+     *   format.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -123,8 +144,11 @@ export type IEcommerceAdminAuditLog = {
    *
    * For audit logs, this typically remains the same as created_at since entries are append-only and cannot be modified. Included for schema consistency with other tables in the system.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from ecommerce_admin_audit_logs.updated_at. DateTime with timestamptz format. For audit logs, this typically remains the same as created_at since entries are append-only.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_admin_audit_logs.updated_at. DateTime with timestamptz
+     *   format. For audit logs, this typically remains the same as created_at
+     *   since entries are append-only.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -133,8 +157,11 @@ export type IEcommerceAdminAuditLog = {
    *
    * Audit logs should rarely be deleted. This field is included for schema consistency but should typically remain null to maintain audit trail integrity. When set, the entry is logically removed from active queries but preserved for historical record.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from ecommerce_admin_audit_logs.deleted_at. Nullable DateTime with timestamptz format. Audit logs should rarely be deleted; this field is included for schema consistency but should typically remain null.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_admin_audit_logs.deleted_at. Nullable DateTime with
+     *   timestamptz format. Audit logs should rarely be deleted; this field is
+     *   included for schema consistency but should typically remain null.
    */
   deleted_at?: (string & tags.Format<"date-time">) | null | undefined;
 };
@@ -154,23 +181,24 @@ export namespace IEcommerceAdminAuditLog {
    */
   export type IRequest = {
     /**
-     * @x-autobe-database-schema-property action_type
+         * @x-autobe-database-schema-property action_type
      */
     action_type?: string | undefined;
     /**
-     * @x-autobe-database-schema-property target_entity
+         * @x-autobe-database-schema-property target_entity
      */
     target_entity?: string | undefined;
 
     /**
      * The identifier of the target entity that was affected by the action. May be null for actions that do not target a specific entity.
      *
-     * @x-autobe-database-schema-property target_id
-     * @x-autobe-specification Query filter: target_id exact match (UUID or null). Used for filtering audit logs by specific target entity ID.
+         * @x-autobe-database-schema-property target_id
+         * @x-autobe-specification Query filter: target_id exact match (UUID or
+         *   null). Used for filtering audit logs by specific target entity ID.
      */
     target_id?: (string & tags.Format<"uuid">) | null | undefined;
     /**
-     * @x-autobe-database-schema-property ecommerce_admin_id
+         * @x-autobe-database-schema-property ecommerce_admin_id
      */
     ecommerce_admin_id?: (string & tags.Format<"uuid">) | undefined;
     created_at_gte?: (string & tags.Format<"date-time">) | undefined;
@@ -206,8 +234,9 @@ export namespace IEcommerceAdminAuditLog {
      *
      * This is a UUID that uniquely identifies this specific audit log record in the system.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_admin_audit_logs.id. UUID format.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_admin_audit_logs.id. UUID format.
      */
     id: string & tags.Format<"uuid">;
 
@@ -216,8 +245,10 @@ export namespace IEcommerceAdminAuditLog {
      *
      * Examples include "seller_approved", "seller_rejected", "category_created", "category_updated", "category_deleted", "product_deleted", "order_cancelled", "order_refunded", "user_banned", "user_unbanned", "admin_promoted", "admin_demoted". This field categorizes the action for filtering and reporting purposes.
      *
-     * @x-autobe-database-schema-property action_type
-     * @x-autobe-specification Direct mapping from ecommerce_admin_audit_logs.action_type. String enumeration of action categories.
+         * @x-autobe-database-schema-property action_type
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_admin_audit_logs.action_type. String enumeration of
+         *   action categories.
      */
     action_type: string;
 
@@ -226,8 +257,10 @@ export namespace IEcommerceAdminAuditLog {
      *
      * Examples include "seller", "category", "product", "order", "order_item", "customer", "admin". This field indicates which domain entity was the target of the administrative action.
      *
-     * @x-autobe-database-schema-property target_entity
-     * @x-autobe-specification Direct mapping from ecommerce_admin_audit_logs.target_entity. String enumeration of domain entity types.
+         * @x-autobe-database-schema-property target_entity
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_admin_audit_logs.target_entity. String enumeration of
+         *   domain entity types.
      */
     target_entity: string;
 
@@ -236,8 +269,10 @@ export namespace IEcommerceAdminAuditLog {
      *
      * This field stores the ID of the affected entity as a UUID string to accommodate different ID formats across domain entities. May be null for actions that do not target a specific entity.
      *
-     * @x-autobe-database-schema-property target_id
-     * @x-autobe-specification Direct mapping from ecommerce_admin_audit_logs.target_id. UUID format or null for actions without specific entity target.
+         * @x-autobe-database-schema-property target_id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_admin_audit_logs.target_id. UUID format or null for
+         *   actions without specific entity target.
      */
     target_id?: (string & tags.Format<"uuid">) | null | undefined;
 
@@ -246,8 +281,10 @@ export namespace IEcommerceAdminAuditLog {
      *
      * This reference links the audit log entry to the administrator account, identifying which administrator took the recorded action. All administrative actions must be attributable to a specific administrator account for accountability and security auditing purposes.
      *
-     * @x-autobe-database-schema-property ecommerceAdmin
-     * @x-autobe-specification Join from ecommerce_admin_audit_logs.ecommerce_admin_id to ecommerce_admins.id. Returns IEcommerceAdmin.ISummary.
+         * @x-autobe-database-schema-property ecommerceAdmin
+         * @x-autobe-specification Join from
+         *   ecommerce_admin_audit_logs.ecommerce_admin_id to
+         *   ecommerce_admins.id. Returns IEcommerceAdmin.ISummary.
      */
     admin: IEcommerceAdmin.ISummary;
 
@@ -256,8 +293,9 @@ export namespace IEcommerceAdminAuditLog {
      *
      * This field records the exact moment when the administrative action was logged. Used for chronological ordering of audit events and compliance reporting.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from ecommerce_admin_audit_logs.created_at. Timestamp with timezone.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_admin_audit_logs.created_at. Timestamp with timezone.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -266,8 +304,9 @@ export namespace IEcommerceAdminAuditLog {
      *
      * For audit logs, this typically remains the same as created_at since entries are append-only. Included for schema consistency with other tables.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from ecommerce_admin_audit_logs.updated_at. Timestamp with timezone.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_admin_audit_logs.updated_at. Timestamp with timezone.
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -276,8 +315,10 @@ export namespace IEcommerceAdminAuditLog {
      *
      * Audit logs should rarely be deleted. This field is included for schema consistency but should typically remain null to maintain audit trail integrity. Null for active entries.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from ecommerce_admin_audit_logs.deleted_at. Timestamp with timezone or null. Nullable.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_admin_audit_logs.deleted_at. Timestamp with timezone or
+         *   null. Nullable.
      */
     deleted_at?: (string & tags.Format<"date-time">) | null | undefined;
   };

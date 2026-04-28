@@ -26,9 +26,10 @@ export class CommunityplatformGuestPostsSnapshotsController {
    * @param connection
    * @param postId Target post identifier that the snapshot belongs to.
    * @param snapshotId Target snapshot identifier to retrieve the exact point-in-time snapshot.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor guest
-   * @x-autobe-specification 1) Parse `postId` and `snapshotId` as UUIDs from path parameters.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor guest
+     * @x-autobe-specification 1) Parse `postId` and `snapshotId` as UUIDs from
+     *   path parameters.
    *
    * 2) Query `community_platform_post_snapshots`:
    * - Filter by `id = snapshotId`.
@@ -90,9 +91,9 @@ export class CommunityplatformGuestPostsSnapshotsController {
    * @param connection
    * @param postId Target post identifier whose snapshots are being processed.
    * @param body Snapshot selection criteria for the targeted post. Criteria can specify a specific snapshot point in time or a range to identify which snapshot record(s) should be returned/processed.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor guest
-   * @x-autobe-specification Implementation steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor guest
+     * @x-autobe-specification Implementation steps:
    *
    * 1. Parse `postId` from path and load the post from `community_platform_posts` where `id = postId`.
    * 2. If the post does not exist: reject with a not-found error.

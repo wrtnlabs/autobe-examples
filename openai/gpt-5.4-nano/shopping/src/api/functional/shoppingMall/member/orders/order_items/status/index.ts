@@ -25,14 +25,20 @@ import { IShoppingMallOrderItem } from "../../../../../../structures/IShoppingMa
  * @param props.orderId Target order identifier whose item statuses will be retrieved.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implementation steps:
- * 1) Parse `orderId` (UUID) from path.
- * 2) Authorization: verify the caller is allowed to view this order. Use `shopping_mall_orders.shopping_customer_id` as the ownership anchor.
- * 3) Validate the order exists and is visible to the caller (otherwise return not found/forbidden per global error mapping).
- * 4) Query `shopping_mall_order_items` where `shopping_mall_order_item_id` set is not applicable; instead filter `shopping_mall_order_items.shopping_mall_order_id = orderId`.
- * 5) Select only fields needed for the status response: `shopping_mall_order_items.id` and `shopping_mall_order_items.line_item_status`.
- * 6) Apply any additional ordering for stable UI rendering (e.g., by `shopping_mall_order_items.created_at` ascending/descending or by `id`; prefer `created_at`).
- * 7) Return response DTO containing the order id and the list of status entries.
+ * @x-autobe-specification Implementation steps: 1) Parse `orderId` (UUID) from
+ *   path. 2) Authorization: verify the caller is allowed to view this order.
+ *   Use `shopping_mall_orders.shopping_customer_id` as the ownership anchor. 3)
+ *   Validate the order exists and is visible to the caller (otherwise return
+ *   not found/forbidden per global error mapping). 4) Query
+ *   `shopping_mall_order_items` where `shopping_mall_order_item_id` set is not
+ *   applicable; instead filter
+ *   `shopping_mall_order_items.shopping_mall_order_id = orderId`. 5) Select
+ *   only fields needed for the status response: `shopping_mall_order_items.id`
+ *   and `shopping_mall_order_items.line_item_status`. 6) Apply any additional
+ *   ordering for stable UI rendering (e.g., by
+ *   `shopping_mall_order_items.created_at` ascending/descending or by `id`;
+ *   prefer `created_at`). 7) Return response DTO containing the order id and
+ *   the list of status entries.
  *
  * Edge cases:
  * - If the order exists but has zero items, return an empty `items` array.

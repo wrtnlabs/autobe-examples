@@ -11,112 +11,142 @@ export type IHrmTimeTrackingTask = {
   /**
    * Unique identifier of the task.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_tasks.id.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from hrm_time_tracking_tasks.id.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Project that contains this task.
    *
-   * @x-autobe-database-schema-property project
-   * @x-autobe-specification Resolve the belongs-to relation from hrm_time_tracking_tasks.hrm_time_tracking_project_id to hrm_time_tracking_projects.id and serialize the joined project as IHrmTimeTrackingProject.ISummary.
+     * @x-autobe-database-schema-property project
+     * @x-autobe-specification Resolve the belongs-to relation from
+     *   hrm_time_tracking_tasks.hrm_time_tracking_project_id to
+     *   hrm_time_tracking_projects.id and serialize the joined project as
+     *   IHrmTimeTrackingProject.ISummary.
    */
   project: IHrmTimeTrackingProject.ISummary;
 
   /**
    * Employee currently assigned to the task, or null when no assignee has been selected.
    *
-   * @x-autobe-database-schema-property assignee
-   * @x-autobe-specification Resolve the nullable belongs-to relation from hrm_time_tracking_tasks.hrm_time_tracking_employee_id to hrm_time_tracking_employees.id and serialize the joined employee as IHrmTimeTrackingEmployee.ISummary; return null when the task is unassigned.
+     * @x-autobe-database-schema-property assignee
+     * @x-autobe-specification Resolve the nullable belongs-to relation from
+     *   hrm_time_tracking_tasks.hrm_time_tracking_employee_id to
+     *   hrm_time_tracking_employees.id and serialize the joined employee as
+     *   IHrmTimeTrackingEmployee.ISummary; return null when the task is
+     *   unassigned.
    */
   assignee: IHrmTimeTrackingEmployee.ISummary | null;
 
   /**
    * Immediate parent task of this task, or null when this task is a top-level task.
    *
-   * @x-autobe-database-schema-property parent
-   * @x-autobe-specification Resolve the nullable belongs-to self relation from hrm_time_tracking_tasks.parent_id to hrm_time_tracking_tasks.id and serialize the joined parent task as IHrmTimeTrackingTask.ISummary; return null when the task has no parent task.
+     * @x-autobe-database-schema-property parent
+     * @x-autobe-specification Resolve the nullable belongs-to self relation
+     *   from hrm_time_tracking_tasks.parent_id to hrm_time_tracking_tasks.id
+     *   and serialize the joined parent task as IHrmTimeTrackingTask.ISummary;
+     *   return null when the task has no parent task.
    */
   parent: IHrmTimeTrackingTask.ISummary | null;
 
   /**
    * Short title used to identify the task in boards and task lists.
    *
-   * @x-autobe-database-schema-property title
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_tasks.title.
+     * @x-autobe-database-schema-property title
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_tasks.title.
    */
   title: string;
 
   /**
    * Detailed explanation of the work to be completed, or null when no description was provided.
    *
-   * @x-autobe-database-schema-property description
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_tasks.description; return null when no detailed explanation was stored.
+     * @x-autobe-database-schema-property description
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_tasks.description; return null when no detailed
+     *   explanation was stored.
    */
   description: string | null;
 
   /**
    * Current workflow status of the task.
    *
-   * @x-autobe-database-schema-property status
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_tasks.status. Business values are constrained by task rules and task operations to open, in-progress, completed, or closed.
+     * @x-autobe-database-schema-property status
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_tasks.status. Business values are constrained by task
+     *   rules and task operations to open, in-progress, completed, or closed.
    */
   status: string;
 
   /**
    * Priority level used to plan and sort the task.
    *
-   * @x-autobe-database-schema-property priority
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_tasks.priority. Business values are constrained by task rules and task operations to low, medium, high, or urgent.
+     * @x-autobe-database-schema-property priority
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_tasks.priority. Business values are constrained by
+     *   task rules and task operations to low, medium, high, or urgent.
    */
   priority: string;
 
   /**
    * Estimated effort for the task in hours, or null when no estimate has been set.
    *
-   * @x-autobe-database-schema-property estimated_hours
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_tasks.estimated_hours; return null when no effort estimate has been recorded.
+     * @x-autobe-database-schema-property estimated_hours
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_tasks.estimated_hours; return null when no effort
+     *   estimate has been recorded.
    */
   estimated_hours: number | null;
 
   /**
    * Deadline for completing the task, or null when no due date is assigned.
    *
-   * @x-autobe-database-schema-property due_date
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_tasks.due_date as a date-time value; return null when the task has no deadline.
+     * @x-autobe-database-schema-property due_date
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_tasks.due_date as a date-time value; return null when
+     *   the task has no deadline.
    */
   due_date: (string & tags.Format<"date-time">) | null;
 
   /**
    * Timestamp when the task was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_tasks.created_at as a date-time value.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_tasks.created_at as a date-time value.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the task was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_tasks.updated_at as a date-time value.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_tasks.updated_at as a date-time value.
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * Soft-deletion timestamp for the task, or null when the task is active.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_tasks.deleted_at as a nullable date-time value; null means the task is not soft-deleted.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_tasks.deleted_at as a nullable date-time value; null
+     *   means the task is not soft-deleted.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 
   /**
    * Immediate child tasks nested under this task.
    *
-   * @x-autobe-specification Resolve the reverse self-relation from hrm_time_tracking_tasks.id to hrm_time_tracking_tasks.parent_id and serialize the immediate child tasks as IHrmTimeTrackingTask[] within the same authorized project and organization scope. Include only one-level child task records consistent with the domain's single-level subtask nesting rule.
-   * @x-autobe-database-schema-property children
+     * @x-autobe-specification Resolve the reverse self-relation from
+     *   hrm_time_tracking_tasks.id to hrm_time_tracking_tasks.parent_id and
+     *   serialize the immediate child tasks as IHrmTimeTrackingTask[] within
+     *   the same authorized project and organization scope. Include only
+     *   one-level child task records consistent with the domain's single-level
+     *   subtask nesting rule.
+     * @x-autobe-database-schema-property children
    */
   children: boolean;
 };
@@ -128,28 +158,54 @@ export namespace IHrmTimeTrackingTask {
     /**
      * Filter tasks by their current workflow status within the selected project.
      *
-     * @x-autobe-specification Optional request filter that, when provided, applies an equality condition to hrm_time_tracking_tasks.status after project scoping and authorization. Accept only task workflow values allowed by business rules, and when omitted do not constrain the query by status. This field is null-mapped because the parent DTO is request-control input rather than a persisted row projection.
+         * @x-autobe-specification Optional request filter that, when provided,
+         *   applies an equality condition to hrm_time_tracking_tasks.status
+         *   after project scoping and authorization. Accept only task workflow
+         *   values allowed by business rules, and when omitted do not constrain
+         *   the query by status. This field is null-mapped because the parent
+         *   DTO is request-control input rather than a persisted row
+         *   projection.
      */
     status?: string | undefined;
 
     /**
      * Filter tasks by their priority level within the selected project.
      *
-     * @x-autobe-specification Optional request filter that, when provided, applies an equality condition to hrm_time_tracking_tasks.priority after project scoping and authorization. Accept only task priority values allowed by business rules, and when omitted do not constrain the query by priority. This field is null-mapped because the parent DTO is request-control input rather than a persisted row projection.
+         * @x-autobe-specification Optional request filter that, when provided,
+         *   applies an equality condition to hrm_time_tracking_tasks.priority
+         *   after project scoping and authorization. Accept only task priority
+         *   values allowed by business rules, and when omitted do not constrain
+         *   the query by priority. This field is null-mapped because the parent
+         *   DTO is request-control input rather than a persisted row
+         *   projection.
      */
     priority?: string | undefined;
 
     /**
      * Filter tasks by the employee currently assigned to them.
      *
-     * @x-autobe-specification Optional request filter that, when provided, applies an equality condition to hrm_time_tracking_tasks.hrm_time_tracking_employee_id within the already authorized project scope. Use the supplied UUID to return only tasks assigned to that employee; when omitted, include tasks regardless of assignee. This field is null-mapped because the parent DTO is request-control input rather than a persisted row projection.
+         * @x-autobe-specification Optional request filter that, when provided,
+         *   applies an equality condition to
+         *   hrm_time_tracking_tasks.hrm_time_tracking_employee_id within the
+         *   already authorized project scope. Use the supplied UUID to return
+         *   only tasks assigned to that employee; when omitted, include tasks
+         *   regardless of assignee. This field is null-mapped because the
+         *   parent DTO is request-control input rather than a persisted row
+         *   projection.
      */
     hrm_time_tracking_employee_id?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Sort order for the task list, using due date, priority, or creation time in ascending or descending order.
      *
-     * @x-autobe-specification Request parameter controlling ORDER BY for the hrm_time_tracking_tasks query. Accept only due_date, priority, or created_at, with an optional leading '-' to indicate descending order; values without '-' sort ascending. Translate this token into the corresponding query ordering plus a deterministic secondary sort such as id for stable pagination. Because this is query-control metadata rather than a stored field, databaseSchemaProperty is null.
+         * @x-autobe-specification Request parameter controlling ORDER BY for
+         *   the hrm_time_tracking_tasks query. Accept only due_date, priority,
+         *   or created_at, with an optional leading '-' to indicate descending
+         *   order; values without '-' sort ascending. Translate this token into
+         *   the corresponding query ordering plus a deterministic secondary
+         *   sort such as id for stable pagination. Because this is
+         *   query-control metadata rather than a stored field,
+         *   databaseSchemaProperty is null.
      */
     sort?:
       | (string & tags.Pattern<"^-?(due_date|priority|created_at)$">)
@@ -158,14 +214,26 @@ export namespace IHrmTimeTrackingTask {
     /**
      * Page number of the filtered task results to return.
      *
-     * @x-autobe-specification 1-based pagination input applied after authorization and filtering. Use this value together with limit to compute the query offset for the hrm_time_tracking_tasks result set. If omitted, downstream implementation may default to the first page according to shared pagination rules. Because page is request pagination metadata rather than a persisted task field, databaseSchemaProperty is null.
+         * @x-autobe-specification 1-based pagination input applied after
+         *   authorization and filtering. Use this value together with limit to
+         *   compute the query offset for the hrm_time_tracking_tasks result
+         *   set. If omitted, downstream implementation may default to the first
+         *   page according to shared pagination rules. Because page is request
+         *   pagination metadata rather than a persisted task field,
+         *   databaseSchemaProperty is null.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of filtered task results to include in one response page.
      *
-     * @x-autobe-specification Maximum number of task records to return per page after authorization, filtering, and sorting. Enforce the schema bounds and shared pagination policy before querying hrm_time_tracking_tasks. If omitted, downstream implementation may apply the endpoint's default page size. Because limit is request pagination metadata rather than a persisted task field, databaseSchemaProperty is null.
+         * @x-autobe-specification Maximum number of task records to return per
+         *   page after authorization, filtering, and sorting. Enforce the
+         *   schema bounds and shared pagination policy before querying
+         *   hrm_time_tracking_tasks. If omitted, downstream implementation may
+         *   apply the endpoint's default page size. Because limit is request
+         *   pagination metadata rather than a persisted task field,
+         *   databaseSchemaProperty is null.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -179,47 +247,64 @@ export namespace IHrmTimeTrackingTask {
    */
   export type ICreate = {
     /**
-     * @x-autobe-database-schema-property title
+         * @x-autobe-database-schema-property title
      */
     title: string;
 
     /**
      * Optional detailed explanation of the work to be completed for the new task.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Maps directly to hrm_time_tracking_tasks.description for task creation. This field is optional in the create request because the database column is nullable. When provided, store the supplied detailed explanation of the work to be completed; when omitted or null, persist null.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Maps directly to
+         *   hrm_time_tracking_tasks.description for task creation. This field
+         *   is optional in the create request because the database column is
+         *   nullable. When provided, store the supplied detailed explanation of
+         *   the work to be completed; when omitted or null, persist null.
      */
     description?: string | null | undefined;
     /**
-     * @x-autobe-database-schema-property status
+         * @x-autobe-database-schema-property status
      */
     status: "open" | "in-progress" | "completed" | "closed";
     /**
-     * @x-autobe-database-schema-property priority
+         * @x-autobe-database-schema-property priority
      */
     priority: "low" | "medium" | "high" | "urgent";
 
     /**
      * Optional estimated effort for the new task measured in hours.
      *
-     * @x-autobe-database-schema-property estimated_hours
-     * @x-autobe-specification Maps directly to hrm_time_tracking_tasks.estimated_hours for task creation. This field is optional in the create request because the database column is nullable. When provided, store the estimated effort in hours; when omitted or null, persist null.
+         * @x-autobe-database-schema-property estimated_hours
+         * @x-autobe-specification Maps directly to
+         *   hrm_time_tracking_tasks.estimated_hours for task creation. This
+         *   field is optional in the create request because the database column
+         *   is nullable. When provided, store the estimated effort in hours;
+         *   when omitted or null, persist null.
      */
     estimated_hours?: number | null | undefined;
 
     /**
      * Optional deadline for completing the new task.
      *
-     * @x-autobe-database-schema-property due_date
-     * @x-autobe-specification Maps directly to hrm_time_tracking_tasks.due_date for task creation. This field is optional in the create request because the database column is nullable. When provided, store the task deadline as a date-time value; when omitted or null, persist null.
+         * @x-autobe-database-schema-property due_date
+         * @x-autobe-specification Maps directly to
+         *   hrm_time_tracking_tasks.due_date for task creation. This field is
+         *   optional in the create request because the database column is
+         *   nullable. When provided, store the task deadline as a date-time
+         *   value; when omitted or null, persist null.
      */
     due_date?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * Optional identifier of the employee to assign to the new task.
      *
-     * @x-autobe-database-schema-property hrm_time_tracking_employee_id
-     * @x-autobe-specification Maps directly to hrm_time_tracking_tasks.hrm_time_tracking_employee_id for task creation. This field is optional in the create request. When provided, it must be the UUID of an employee who is already an active member of the target project; when omitted or null, the task is created unassigned.
+         * @x-autobe-database-schema-property hrm_time_tracking_employee_id
+         * @x-autobe-specification Maps directly to
+         *   hrm_time_tracking_tasks.hrm_time_tracking_employee_id for task
+         *   creation. This field is optional in the create request. When
+         *   provided, it must be the UUID of an employee who is already an
+         *   active member of the target project; when omitted or null, the task
+         *   is created unassigned.
      */
     hrm_time_tracking_employee_id?:
       | (string & tags.Format<"uuid">)
@@ -229,8 +314,14 @@ export namespace IHrmTimeTrackingTask {
     /**
      * Optional identifier of the parent task when creating the new task as a subtask.
      *
-     * @x-autobe-database-schema-property parent_id
-     * @x-autobe-specification Maps directly to hrm_time_tracking_tasks.parent_id for task creation. This field is optional in the create request. When provided, it must reference an existing task in the same project, and the referenced parent task must not itself already be a subtask when enforcing the one-level nesting rule; when omitted or null, the task is created as a top-level task.
+         * @x-autobe-database-schema-property parent_id
+         * @x-autobe-specification Maps directly to
+         *   hrm_time_tracking_tasks.parent_id for task creation. This field is
+         *   optional in the create request. When provided, it must reference an
+         *   existing task in the same project, and the referenced parent task
+         *   must not itself already be a subtask when enforcing the one-level
+         *   nesting rule; when omitted or null, the task is created as a
+         *   top-level task.
      */
     parent_id?: (string & tags.Format<"uuid">) | null | undefined;
   };
@@ -242,8 +333,13 @@ export namespace IHrmTimeTrackingTask {
     /**
      * Employee ID to assign to the task, or null to remove the current assignee.
      *
-     * @x-autobe-database-schema-property hrm_time_tracking_employee_id
-     * @x-autobe-specification Maps directly to hrm_time_tracking_tasks.hrm_time_tracking_employee_id. Accept a UUID to assign the task to an employee, or null to clear the current assignee. Before persisting a non-null value, validate that the referenced employee exists and has an active membership in the same project as the task.
+         * @x-autobe-database-schema-property hrm_time_tracking_employee_id
+         * @x-autobe-specification Maps directly to
+         *   hrm_time_tracking_tasks.hrm_time_tracking_employee_id. Accept a
+         *   UUID to assign the task to an employee, or null to clear the
+         *   current assignee. Before persisting a non-null value, validate that
+         *   the referenced employee exists and has an active membership in the
+         *   same project as the task.
      */
     hrm_time_tracking_employee_id?:
       | (string & tags.Format<"uuid">)
@@ -253,56 +349,82 @@ export namespace IHrmTimeTrackingTask {
     /**
      * Parent task ID for placing this task under another task, or null to remove the parent relationship.
      *
-     * @x-autobe-database-schema-property parent_id
-     * @x-autobe-specification Maps directly to hrm_time_tracking_tasks.parent_id. Accept a UUID to set the task's parent task, or null to make the task a top-level task. Before persisting a non-null value, validate that the referenced parent task belongs to the same project, is not the task itself, does not create a circular reference, and does not violate the one-level nesting rule.
+         * @x-autobe-database-schema-property parent_id
+         * @x-autobe-specification Maps directly to
+         *   hrm_time_tracking_tasks.parent_id. Accept a UUID to set the task's
+         *   parent task, or null to make the task a top-level task. Before
+         *   persisting a non-null value, validate that the referenced parent
+         *   task belongs to the same project, is not the task itself, does not
+         *   create a circular reference, and does not violate the one-level
+         *   nesting rule.
      */
     parent_id?: (string & tags.Format<"uuid">) | null | undefined;
 
     /**
      * Short title of the task.
      *
-     * @x-autobe-database-schema-property title
-     * @x-autobe-specification Maps directly to hrm_time_tracking_tasks.title. When provided, update the short task title used in task lists and boards. The value is subject to task-domain validation and uniqueness expectations within the project and parent scope enforced by the backend.
+         * @x-autobe-database-schema-property title
+         * @x-autobe-specification Maps directly to
+         *   hrm_time_tracking_tasks.title. When provided, update the short task
+         *   title used in task lists and boards. The value is subject to
+         *   task-domain validation and uniqueness expectations within the
+         *   project and parent scope enforced by the backend.
      */
     title?: string | undefined;
 
     /**
      * Detailed description of the task, or null when no description is set.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Maps directly to hrm_time_tracking_tasks.description. Accept a string to store or replace the detailed task explanation, or null to clear the existing description.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Maps directly to
+         *   hrm_time_tracking_tasks.description. Accept a string to store or
+         *   replace the detailed task explanation, or null to clear the
+         *   existing description.
      */
     description?: string | null | undefined;
 
     /**
      * Current workflow status of the task.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Maps directly to hrm_time_tracking_tasks.status. When provided, update the task's current workflow state. The backend must validate the value against the allowed task status business values defined for the system.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Maps directly to
+         *   hrm_time_tracking_tasks.status. When provided, update the task's
+         *   current workflow state. The backend must validate the value against
+         *   the allowed task status business values defined for the system.
      */
     status?: string | undefined;
 
     /**
      * Priority level of the task.
      *
-     * @x-autobe-database-schema-property priority
-     * @x-autobe-specification Maps directly to hrm_time_tracking_tasks.priority. When provided, update the task's planning and sorting priority. The backend must validate the value against the allowed task priority business values defined for the system.
+         * @x-autobe-database-schema-property priority
+         * @x-autobe-specification Maps directly to
+         *   hrm_time_tracking_tasks.priority. When provided, update the task's
+         *   planning and sorting priority. The backend must validate the value
+         *   against the allowed task priority business values defined for the
+         *   system.
      */
     priority?: string | undefined;
 
     /**
      * Estimated effort for the task in hours, or null when no estimate is set.
      *
-     * @x-autobe-database-schema-property estimated_hours
-     * @x-autobe-specification Maps directly to hrm_time_tracking_tasks.estimated_hours. Accept a numeric value to set or revise the estimated effort in hours, or null to clear the estimate.
+         * @x-autobe-database-schema-property estimated_hours
+         * @x-autobe-specification Maps directly to
+         *   hrm_time_tracking_tasks.estimated_hours. Accept a numeric value to
+         *   set or revise the estimated effort in hours, or null to clear the
+         *   estimate.
      */
     estimated_hours?: number | null | undefined;
 
     /**
      * Due date and time for the task, or null when no deadline is set.
      *
-     * @x-autobe-database-schema-property due_date
-     * @x-autobe-specification Maps directly to hrm_time_tracking_tasks.due_date. Accept an ISO 8601 date-time value to set or revise the task deadline, or null to clear the due date.
+         * @x-autobe-database-schema-property due_date
+         * @x-autobe-specification Maps directly to
+         *   hrm_time_tracking_tasks.due_date. Accept an ISO 8601 date-time
+         *   value to set or revise the task deadline, or null to clear the due
+         *   date.
      */
     due_date?: (string & tags.Format<"date-time">) | null | undefined;
   };
@@ -314,96 +436,121 @@ export namespace IHrmTimeTrackingTask {
     /**
      * Unique identifier of the task.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_tasks.id.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_tasks.id.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Short name of the task shown in task lists and boards.
      *
-     * @x-autobe-database-schema-property title
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_tasks.title.
+         * @x-autobe-database-schema-property title
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_tasks.title.
      */
     title: string;
 
     /**
      * Detailed explanation of the task, or null when no description has been provided.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_tasks.description. Return null when the task has no detailed description.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_tasks.description. Return null when the task has
+         *   no detailed description.
      */
     description: string | null;
 
     /**
      * Current workflow status of the task.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_tasks.status. Business values come from the task workflow classification defined for tasks.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_tasks.status. Business values come from the task
+         *   workflow classification defined for tasks.
      */
     status: string;
 
     /**
      * Priority level used to plan and sort the task.
      *
-     * @x-autobe-database-schema-property priority
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_tasks.priority. Business values come from the task priority classification defined for tasks.
+         * @x-autobe-database-schema-property priority
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_tasks.priority. Business values come from the
+         *   task priority classification defined for tasks.
      */
     priority: string;
 
     /**
      * Estimated effort for the task in hours, or null when no estimate is set.
      *
-     * @x-autobe-database-schema-property estimated_hours
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_tasks.estimated_hours. Return null when no effort estimate has been set.
+         * @x-autobe-database-schema-property estimated_hours
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_tasks.estimated_hours. Return null when no effort
+         *   estimate has been set.
      */
     estimated_hours: number | null;
 
     /**
      * Deadline for completing the task, or null when no due date is assigned.
      *
-     * @x-autobe-database-schema-property due_date
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_tasks.due_date. Return null when the task has no deadline.
+         * @x-autobe-database-schema-property due_date
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_tasks.due_date. Return null when the task has no
+         *   deadline.
      */
     due_date: (string & tags.Format<"date-time">) | null;
 
     /**
      * Employee currently assigned to the task, or null when the task is unassigned.
      *
-     * @x-autobe-database-schema-property assignee
-     * @x-autobe-specification Resolve from the hrm_time_tracking_tasks.assignee relation using hrm_time_tracking_tasks.hrm_time_tracking_employee_id joined to hrm_time_tracking_employees.id, then project the joined employee as IHrmTimeTrackingEmployee.ISummary. Return null when hrm_time_tracking_employee_id is null.
+         * @x-autobe-database-schema-property assignee
+         * @x-autobe-specification Resolve from the
+         *   hrm_time_tracking_tasks.assignee relation using
+         *   hrm_time_tracking_tasks.hrm_time_tracking_employee_id joined to
+         *   hrm_time_tracking_employees.id, then project the joined employee as
+         *   IHrmTimeTrackingEmployee.ISummary. Return null when
+         *   hrm_time_tracking_employee_id is null.
      */
     assignee: IHrmTimeTrackingEmployee.ISummary | null;
 
     /**
      * Immediate parent task when this task is a subtask, or null when it has no parent.
      *
-     * @x-autobe-database-schema-property parent
-     * @x-autobe-specification Resolve from the hrm_time_tracking_tasks.parent relation using hrm_time_tracking_tasks.parent_id joined to hrm_time_tracking_tasks.id, then project the joined parent task as IHrmTimeTrackingTask.ISummary. Return null when parent_id is null.
+         * @x-autobe-database-schema-property parent
+         * @x-autobe-specification Resolve from the
+         *   hrm_time_tracking_tasks.parent relation using
+         *   hrm_time_tracking_tasks.parent_id joined to
+         *   hrm_time_tracking_tasks.id, then project the joined parent task as
+         *   IHrmTimeTrackingTask.ISummary. Return null when parent_id is null.
      */
     parent: IHrmTimeTrackingTask.ISummary | null;
 
     /**
      * Timestamp when the task was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_tasks.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_tasks.created_at.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when the task was last updated.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_tasks.updated_at.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_tasks.updated_at.
      */
     updated_at: string & tags.Format<"date-time">;
 
     /**
      * Soft-deletion timestamp for the task, or null when the task is still active.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_tasks.deleted_at. Return null when the task has not been soft deleted.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_tasks.deleted_at. Return null when the task has
+         *   not been soft deleted.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };

@@ -23,8 +23,9 @@ export type IHrmOrganizationOwner = {
    *
    * This is the primary key of the ownership record, not the organization or user identifier. Each ownership history entry has its own unique ID.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from hrm_organization_owners.id. UUID format primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from hrm_organization_owners.id.
+     *   UUID format primary key.
    */
   id: string & tags.Format<"uuid">;
 
@@ -37,8 +38,10 @@ export type IHrmOrganizationOwner = {
    *
    * **Historical ownership**: `is_current=false`, `ended_at=transfer date`
    *
-   * @x-autobe-database-schema-property is_current
-   * @x-autobe-specification Direct mapping from hrm_organization_owners.is_current. Boolean flag indicating active ownership.
+     * @x-autobe-database-schema-property is_current
+     * @x-autobe-specification Direct mapping from
+     *   hrm_organization_owners.is_current. Boolean flag indicating active
+     *   ownership.
    */
   is_current: boolean;
 
@@ -47,8 +50,10 @@ export type IHrmOrganizationOwner = {
    *
    * For initial ownership, this is the organization creation time. For transferred ownership, this is the transfer date. This field is never null and establishes the ownership period start.
    *
-   * @x-autobe-database-schema-property started_at
-   * @x-autobe-specification Direct mapping from hrm_organization_owners.started_at. DateTime with timezone (timestamptz).
+     * @x-autobe-database-schema-property started_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_organization_owners.started_at. DateTime with timezone
+     *   (timestamptz).
    */
   started_at: string & tags.Format<"date-time">;
 
@@ -57,8 +62,10 @@ export type IHrmOrganizationOwner = {
    *
    * When null, indicates this is the current ownership record. When set, indicates the ownership ended due to transfer or organization deletion. This field enables historical ownership queries and audit trails.
    *
-   * @x-autobe-database-schema-property ended_at
-   * @x-autobe-specification Direct mapping from hrm_organization_owners.ended_at. Nullable DateTime with timezone (timestamptz). Null indicates current ownership.
+     * @x-autobe-database-schema-property ended_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_organization_owners.ended_at. Nullable DateTime with timezone
+     *   (timestamptz). Null indicates current ownership.
    */
   ended_at: (string & tags.Format<"date-time">) | null;
 
@@ -67,8 +74,10 @@ export type IHrmOrganizationOwner = {
    *
    * Contains the member's identification and profile information including email address. For current owners, this represents the active owner. For historical records, this represents the previous owner at the time of ownership.
    *
-   * @x-autobe-database-schema-property user
-   * @x-autobe-specification JOIN from hrm_organization_owners.user_id to hrm_members.id. Returns IHrmMember.ISummary with user email and profile data.
+     * @x-autobe-database-schema-property user
+     * @x-autobe-specification JOIN from hrm_organization_owners.user_id to
+     *   hrm_members.id. Returns IHrmMember.ISummary with user email and profile
+     *   data.
    */
   user: IHrmMember.ISummary;
 
@@ -77,8 +86,10 @@ export type IHrmOrganizationOwner = {
    *
    * Set automatically when the ownership record is first created. Used for audit trails and tracking when ownership was initially established or transferred.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from hrm_organization_owners.created_at. DateTime with timezone (timestamptz).
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_organization_owners.created_at. DateTime with timezone
+     *   (timestamptz).
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -87,8 +98,10 @@ export type IHrmOrganizationOwner = {
    *
    * Automatically updated on any modification to the ownership record, particularly when `ended_at` is set during ownership transfers. Used for tracking ownership changes and synchronization.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from hrm_organization_owners.updated_at. DateTime with timezone (timestamptz). Updated during ownership transfers when ended_at is set.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_organization_owners.updated_at. DateTime with timezone
+     *   (timestamptz). Updated during ownership transfers when ended_at is set.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -97,8 +110,10 @@ export type IHrmOrganizationOwner = {
    *
    * Used for audit trail preservation before cascade deletion. When null, the ownership record is active. When set, the record is marked for deletion but retained for audit purposes.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from hrm_organization_owners.deleted_at. Nullable DateTime with timezone (timestamptz). Null indicates active record.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_organization_owners.deleted_at. Nullable DateTime with timezone
+     *   (timestamptz). Null indicates active record.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -129,7 +144,10 @@ export namespace IHrmOrganizationOwner {
      * - Minimum value: 1
      * - Used to calculate OFFSET in SQL queries against hrm_organization_owners table
      *
-     * @x-autobe-specification Pagination parameter controlling which page of results to return. 1-indexed, defaults to 1 if not provided. Maps to SQL OFFSET calculation: OFFSET (page - 1) * limit. Used in queries against hrm_organization_owners table.
+         * @x-autobe-specification Pagination parameter controlling which page
+         *   of results to return. 1-indexed, defaults to 1 if not provided.
+         *   Maps to SQL OFFSET calculation: OFFSET (page - 1) * limit. Used in
+         *   queries against hrm_organization_owners table.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -144,7 +162,10 @@ export namespace IHrmOrganizationOwner {
      * - Maximum value: 100
      * - Used in SQL LIMIT clause for hrm_organization_owners queries
      *
-     * @x-autobe-specification Pagination parameter controlling maximum number of records per page. Maps to SQL LIMIT clause. Maximum enforced at 100 records per request. Used in queries against hrm_organization_owners table.
+         * @x-autobe-specification Pagination parameter controlling maximum
+         *   number of records per page. Maps to SQL LIMIT clause. Maximum
+         *   enforced at 100 records per request. Used in queries against
+         *   hrm_organization_owners table.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -163,7 +184,12 @@ export namespace IHrmOrganizationOwner {
      * **Usage**
      * Use this filter to distinguish between active ownership and ownership history when auditing organization ownership changes. Maps to hrm_organization_owners.is_current column in the WHERE clause.
      *
-     * @x-autobe-specification Filter parameter that maps to hrm_organization_owners.is_current column. When true, WHERE clause filters for is_current = true. When false, filters for is_current = false. When null or omitted, no filter applied (returns all records). This is a query parameter, not a direct property of the DTO.
+         * @x-autobe-specification Filter parameter that maps to
+         *   hrm_organization_owners.is_current column. When true, WHERE clause
+         *   filters for is_current = true. When false, filters for is_current =
+         *   false. When null or omitted, no filter applied (returns all
+         *   records). This is a query parameter, not a direct property of the
+         *   DTO.
      */
     is_current?: boolean | null | undefined;
 
@@ -179,7 +205,11 @@ export namespace IHrmOrganizationOwner {
      * **Usage**
      * Combine with started_at_to to define a date range for filtering ownership records by when they became effective. Maps to hrm_organization_owners.started_at column.
      *
-     * @x-autobe-specification Filter parameter that maps to hrm_organization_owners.started_at column. WHERE clause: started_at >= started_at_from. Used to find ownership records that became effective on or after the specified timestamp. This is a query parameter, not a direct property of the DTO.
+         * @x-autobe-specification Filter parameter that maps to
+         *   hrm_organization_owners.started_at column. WHERE clause: started_at
+         *   >= started_at_from. Used to find ownership records that became
+         *   effective on or after the specified timestamp. This is a query
+         *   parameter, not a direct property of the DTO.
      */
     started_at_from?: (string & tags.Format<"date-time">) | undefined;
 
@@ -195,7 +225,11 @@ export namespace IHrmOrganizationOwner {
      * **Usage**
      * Combine with started_at_from to define a date range for filtering ownership records by when they became effective. Maps to hrm_organization_owners.started_at column.
      *
-     * @x-autobe-specification Filter parameter that maps to hrm_organization_owners.started_at column. WHERE clause: started_at <= started_at_to. Used to find ownership records that became effective on or before the specified timestamp. This is a query parameter, not a direct property of the DTO.
+         * @x-autobe-specification Filter parameter that maps to
+         *   hrm_organization_owners.started_at column. WHERE clause: started_at
+         *   <= started_at_to. Used to find ownership records that became
+         *   effective on or before the specified timestamp. This is a query
+         *   parameter, not a direct property of the DTO.
      */
     started_at_to?: (string & tags.Format<"date-time">) | undefined;
 
@@ -212,7 +246,13 @@ export namespace IHrmOrganizationOwner {
      * **Usage**
      * Use to filter ownership records by when ownership ended. Set to null to include current active owners in results. Maps to hrm_organization_owners.ended_at column.
      *
-     * @x-autobe-specification Filter parameter that maps to hrm_organization_owners.ended_at column. When provided, WHERE clause: ended_at >= ended_at_from OR (ended_at IS NULL and filtering for current owners). When null in request, matches current owners (ended_at IS NULL). Used to find ownership records that ended on or after the specified timestamp. This is a query parameter, not a direct property of the DTO.
+         * @x-autobe-specification Filter parameter that maps to
+         *   hrm_organization_owners.ended_at column. When provided, WHERE
+         *   clause: ended_at >= ended_at_from OR (ended_at IS NULL and
+         *   filtering for current owners). When null in request, matches
+         *   current owners (ended_at IS NULL). Used to find ownership records
+         *   that ended on or after the specified timestamp. This is a query
+         *   parameter, not a direct property of the DTO.
      */
     ended_at_from?: (string & tags.Format<"date-time">) | null | undefined;
 
@@ -229,7 +269,13 @@ export namespace IHrmOrganizationOwner {
      * **Usage**
      * Use to filter ownership records by when ownership ended. Combine with ended_at_from for date range filtering. Set to null to include current active owners. Maps to hrm_organization_owners.ended_at column.
      *
-     * @x-autobe-specification Filter parameter that maps to hrm_organization_owners.ended_at column. When provided, WHERE clause: ended_at <= ended_at_to OR (ended_at IS NULL and filtering for current owners). When null in request, matches current owners (ended_at IS NULL). Used to find ownership records that ended on or before the specified timestamp. This is a query parameter, not a direct property of the DTO.
+         * @x-autobe-specification Filter parameter that maps to
+         *   hrm_organization_owners.ended_at column. When provided, WHERE
+         *   clause: ended_at <= ended_at_to OR (ended_at IS NULL and filtering
+         *   for current owners). When null in request, matches current owners
+         *   (ended_at IS NULL). Used to find ownership records that ended on or
+         *   before the specified timestamp. This is a query parameter, not a
+         *   direct property of the DTO.
      */
     ended_at_to?: (string & tags.Format<"date-time">) | null | undefined;
   };
@@ -258,8 +304,9 @@ export namespace IHrmOrganizationOwner {
      *
      * This is the primary key of the ownership record, stored as a UUID. It uniquely identifies each ownership entry in the audit trail.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from hrm_organization_owners.id. Primary key, UUID format.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   hrm_organization_owners.id. Primary key, UUID format.
      */
     id: string & tags.Format<"uuid">;
 
@@ -268,8 +315,9 @@ export namespace IHrmOrganizationOwner {
      *
      * When `true`, this record represents the active owner of the organization. Only one record per organization should have `is_current=true` at any time. Current owners have `is_current=true` and `ended_at=null`. Historical owners have `is_current=false` and `ended_at` set to the transfer date.
      *
-     * @x-autobe-database-schema-property is_current
-     * @x-autobe-specification Direct mapping from hrm_organization_owners.is_current. Boolean flag.
+         * @x-autobe-database-schema-property is_current
+         * @x-autobe-specification Direct mapping from
+         *   hrm_organization_owners.is_current. Boolean flag.
      */
     is_current: boolean;
 
@@ -278,8 +326,9 @@ export namespace IHrmOrganizationOwner {
      *
      * For initial ownership, this is the organization creation time. For transferred ownership, this is the transfer date. This field is never null and establishes the ownership period start.
      *
-     * @x-autobe-database-schema-property started_at
-     * @x-autobe-specification Direct mapping from hrm_organization_owners.started_at. DateTime format.
+         * @x-autobe-database-schema-property started_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_organization_owners.started_at. DateTime format.
      */
     started_at: string & tags.Format<"date-time">;
 
@@ -288,8 +337,10 @@ export namespace IHrmOrganizationOwner {
      *
      * When `null`, indicates this is the current ownership record. When set, indicates the ownership ended due to transfer or organization deletion. This field enables historical ownership queries and audit trails.
      *
-     * @x-autobe-database-schema-property ended_at
-     * @x-autobe-specification Direct mapping from hrm_organization_owners.ended_at. Nullable DateTime (oneOf with null).
+         * @x-autobe-database-schema-property ended_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_organization_owners.ended_at. Nullable DateTime (oneOf with
+         *   null).
      */
     ended_at: (string & tags.Format<"date-time">) | null;
 
@@ -298,8 +349,9 @@ export namespace IHrmOrganizationOwner {
      *
      * This is a belongs-to relation that provides summary information about the organization owner. The relation is established via the user_id foreign key. For current owners, this represents the active owner; for historical records, this represents the previous owner.
      *
-     * @x-autobe-database-schema-property user
-     * @x-autobe-specification JOIN from hrm_organization_owners.user_id to hrm_members.id. Returns IHrmMember.ISummary.
+         * @x-autobe-database-schema-property user
+         * @x-autobe-specification JOIN from hrm_organization_owners.user_id to
+         *   hrm_members.id. Returns IHrmMember.ISummary.
      */
     user: IHrmMember.ISummary;
 
@@ -308,8 +360,10 @@ export namespace IHrmOrganizationOwner {
      *
      * This is a belongs-to relation that provides summary information about the organization. The relation is established via the organization_id foreign key. Each ownership record is tied to exactly one organization.
      *
-     * @x-autobe-database-schema-property organization
-     * @x-autobe-specification JOIN from hrm_organization_owners.organization_id to hrm_organizations.id. Returns IHrmOrganization.ISummary.
+         * @x-autobe-database-schema-property organization
+         * @x-autobe-specification JOIN from
+         *   hrm_organization_owners.organization_id to hrm_organizations.id.
+         *   Returns IHrmOrganization.ISummary.
      */
     organization: IHrmOrganization.ISummary;
 
@@ -318,8 +372,9 @@ export namespace IHrmOrganizationOwner {
      *
      * Set automatically when the ownership record is first created. Used for audit trails and tracking when ownership was initially established or transferred.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from hrm_organization_owners.created_at. DateTime format.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_organization_owners.created_at. DateTime format.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -328,8 +383,9 @@ export namespace IHrmOrganizationOwner {
      *
      * Automatically updated on any modification to the record, such as during ownership transfers when ended_at is set. Used for tracking changes and synchronization.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from hrm_organization_owners.updated_at. DateTime format.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_organization_owners.updated_at. DateTime format.
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -338,8 +394,10 @@ export namespace IHrmOrganizationOwner {
      *
      * When `null`, the record is active. When set, the record is marked for deletion but retained for audit purposes. Soft deletion enables audit trail preservation before cascade deletion.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from hrm_organization_owners.deleted_at. Nullable DateTime (oneOf with null).
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_organization_owners.deleted_at. Nullable DateTime (oneOf with
+         *   null).
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };

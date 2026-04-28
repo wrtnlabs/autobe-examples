@@ -25,47 +25,55 @@ export namespace IErpHrmRole {
     /**
      * Unique role identifier.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from erp_hrm_roles.id. UUID primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from erp_hrm_roles.id. UUID
+         *   primary key.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Role display name.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from erp_hrm_roles.name. Unique within organization scope.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from erp_hrm_roles.name.
+         *   Unique within organization scope.
      */
     name: string;
 
     /**
      * Whether this is a built-in role that cannot be deleted.
      *
-     * @x-autobe-database-schema-property is_builtin
-     * @x-autobe-specification Direct mapping from erp_hrm_roles.is_builtin. Boolean flag: true for Owner, Manager, Employee roles.
+         * @x-autobe-database-schema-property is_builtin
+         * @x-autobe-specification Direct mapping from erp_hrm_roles.is_builtin.
+         *   Boolean flag: true for Owner, Manager, Employee roles.
      */
     isBuiltin: boolean;
 
     /**
      * Timestamp when the role was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from erp_hrm_roles.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from erp_hrm_roles.created_at.
      */
     createdAt: string & tags.Format<"date-time">;
 
     /**
      * Organization this role belongs to.
      *
-     * @x-autobe-database-schema-property organization
-     * @x-autobe-specification JOIN from erp_hrm_roles.erp_hrm_organization_id to erp_hrm_organizations.id. Returns IErpHrmOrganization.ISummary object.
+         * @x-autobe-database-schema-property organization
+         * @x-autobe-specification JOIN from
+         *   erp_hrm_roles.erp_hrm_organization_id to erp_hrm_organizations.id.
+         *   Returns IErpHrmOrganization.ISummary object.
      */
     organization: IErpHrmOrganization.ISummary;
 
     /**
      * Number of permissions assigned to this role.
      *
-     * @x-autobe-specification Computed aggregation: COUNT(erp_hrm_role_permissions.id) WHERE erp_hrm_role_permissions.erp_hrm_role_id = erp_hrm_roles.id. LEFT JOIN to rolePermissions relation.
+         * @x-autobe-specification Computed aggregation:
+         *   COUNT(erp_hrm_role_permissions.id) WHERE
+         *   erp_hrm_role_permissions.erp_hrm_role_id = erp_hrm_roles.id. LEFT
+         *   JOIN to rolePermissions relation.
      */
     permissionsCount: number & tags.Type<"int32">;
   };
@@ -77,15 +85,23 @@ export namespace IErpHrmRole {
     /**
      * Unique role name within the organization.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping to erp_hrm_roles.name column. Must be unique within organization scope (validated by service layer).
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping to erp_hrm_roles.name column.
+         *   Must be unique within organization scope (validated by service
+         *   layer).
      */
     name: string & tags.MinLength<1> & tags.MaxLength<100>;
 
     /**
      * Array of permission codes to assign to this role.
      *
-     * @x-autobe-specification Transforms permissions array into erp_hrm_role_permissions junction table records. For each permission code in the array, create a new erp_hrm_role_permissions entry with role_id (newly created role) and permission string. Valid permission codes: org:manage, employee:manage, employee:view, project:manage, project:view, time:manage, time:approve, time:view_all, report:view.
+         * @x-autobe-specification Transforms permissions array into
+         *   erp_hrm_role_permissions junction table records. For each
+         *   permission code in the array, create a new erp_hrm_role_permissions
+         *   entry with role_id (newly created role) and permission string.
+         *   Valid permission codes: org:manage, employee:manage, employee:view,
+         *   project:manage, project:view, time:manage, time:approve,
+         *   time:view_all, report:view.
      */
     permissions: (
       | "org:manage"
@@ -109,15 +125,23 @@ export namespace IErpHrmRole {
     /**
      * New role name unique within the organization. If provided, updates the role's display name.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping to erp_hrm_roles.name column. Unique constraint within organization scope. Validates uniqueness against existing role names in the same organization.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping to erp_hrm_roles.name column.
+         *   Unique constraint within organization scope. Validates uniqueness
+         *   against existing role names in the same organization.
      */
     name?: string | undefined;
 
     /**
      * Complete set of permission codes to assign to this role. Replaces all existing permissions when provided.
      *
-     * @x-autobe-specification Permission codes stored via erp_hrm_role_permissions junction table. The complete set must be provided - existing role_permissions are deleted and replaced with new entries. Each code must be validated against available permission codes (org:manage, employee:manage, employee:view, project:manage, project:view, time:manage, time:approve, time:view_all, report:view).
+         * @x-autobe-specification Permission codes stored via
+         *   erp_hrm_role_permissions junction table. The complete set must be
+         *   provided - existing role_permissions are deleted and replaced with
+         *   new entries. Each code must be validated against available
+         *   permission codes (org:manage, employee:manage, employee:view,
+         *   project:manage, project:view, time:manage, time:approve,
+         *   time:view_all, report:view).
      */
     permissionCodes: string[];
   };
@@ -129,14 +153,19 @@ export namespace IErpHrmRole {
     /**
      * Filter to separate built-in roles from custom roles. True returns only built-in roles. False returns only custom roles created by organization owners.
      *
-     * @x-autobe-specification Filter mapping to erp_hrm_roles.is_builtin column. Optional: when true returns only built-in roles (Owner, Manager, Employee); when false returns only custom roles. Case-sensitive boolean match.
+         * @x-autobe-specification Filter mapping to erp_hrm_roles.is_builtin
+         *   column. Optional: when true returns only built-in roles (Owner,
+         *   Manager, Employee); when false returns only custom roles.
+         *   Case-sensitive boolean match.
      */
     isBuiltin?: boolean | undefined;
 
     /**
      * Maximum number of roles to return per page. Defaults to 20 if not specified, maximum allowed is 100.
      *
-     * @x-autobe-specification Pagination page size parameter (computed, not DB column). Controls maximum roles per page. Default: 20, Maximum: 100. Must be positive integer between 1 and 100.
+         * @x-autobe-specification Pagination page size parameter (computed, not
+         *   DB column). Controls maximum roles per page. Default: 20, Maximum:
+         *   100. Must be positive integer between 1 and 100.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -145,14 +174,19 @@ export namespace IErpHrmRole {
     /**
      * Partial name filter for searching roles. Matching is case-insensitive and uses partial matching.
      *
-     * @x-autobe-specification Filter mapping to erp_hrm_roles.name column. Optional: case-insensitive partial matching using SQL LIKE with % wildcards (e.g., 'man' matches 'Manager'). When omitted, no name filtering applied.
+         * @x-autobe-specification Filter mapping to erp_hrm_roles.name column.
+         *   Optional: case-insensitive partial matching using SQL LIKE with %
+         *   wildcards (e.g., 'man' matches 'Manager'). When omitted, no name
+         *   filtering applied.
      */
     name?: string | undefined;
 
     /**
      * Page number to retrieve, starting from 1. Used for pagination along with the limit parameter.
      *
-     * @x-autobe-specification Pagination page number parameter (computed, not DB column). 1-indexed (first page is 1). Default: 1. Used with limit to calculate offset: offset = (page - 1) * limit.
+         * @x-autobe-specification Pagination page number parameter (computed,
+         *   not DB column). 1-indexed (first page is 1). Default: 1. Used with
+         *   limit to calculate offset: offset = (page - 1) * limit.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
   };
@@ -164,63 +198,76 @@ export namespace IErpHrmRole {
     /**
      * Unique role identifier (UUID).
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from erp_hrm_roles.id. UUID primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from erp_hrm_roles.id. UUID
+         *   primary key.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Role display name (e.g., Owner, Manager, Employee, or custom role names).
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from erp_hrm_roles.name. Role name unique within organization.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from erp_hrm_roles.name. Role
+         *   name unique within organization.
      */
     name: string;
 
     /**
      * Whether this is a built-in role (Owner, Manager, Employee) that cannot be deleted.
      *
-     * @x-autobe-database-schema-property is_builtin
-     * @x-autobe-specification Direct mapping from erp_hrm_roles.is_builtin. Boolean flag indicating built-in role.
+         * @x-autobe-database-schema-property is_builtin
+         * @x-autobe-specification Direct mapping from erp_hrm_roles.is_builtin.
+         *   Boolean flag indicating built-in role.
      */
     isBuiltin: boolean;
 
     /**
      * Timestamp when the role was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from erp_hrm_roles.created_at. Timestamp when role was created.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from erp_hrm_roles.created_at.
+         *   Timestamp when role was created.
      */
     createdAt: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when the role was last updated.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from erp_hrm_roles.updated_at. Timestamp when role was last updated.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from erp_hrm_roles.updated_at.
+         *   Timestamp when role was last updated.
      */
     updatedAt: string & tags.Format<"date-time">;
 
     /**
      * Soft deletion timestamp. Null if the role is active.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from erp_hrm_roles.deleted_at. Nullable - null if not deleted.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from erp_hrm_roles.deleted_at.
+         *   Nullable - null if not deleted.
      */
     deletedAt: (string & tags.Format<"date-time">) | null;
 
     /**
      * The organization this role belongs to.
      *
-     * @x-autobe-database-schema-property organization
-     * @x-autobe-specification BELONGS-TO relation via erp_hrm_organization_id FK. Join to erp_hrm_organizations. Returns IErpHrmOrganization.ISummary.
+         * @x-autobe-database-schema-property organization
+         * @x-autobe-specification BELONGS-TO relation via
+         *   erp_hrm_organization_id FK. Join to erp_hrm_organizations. Returns
+         *   IErpHrmOrganization.ISummary.
      */
     organization: IErpHrmOrganization.ISummary;
 
     /**
      * Array of permissions assigned to this role.
      *
-     * @x-autobe-specification HAS-MANY aggregation via erp_hrm_role_permissions junction table. Join where erp_hrm_role_permissions.erp_hrm_role_id = erp_hrm_roles.id. Returns array of IErpHrmRolePermission objects with permission code strings. Each object contains: id, permission (string code like 'org:manage'), created_at, updated_at, and nested role summary.
+         * @x-autobe-specification HAS-MANY aggregation via
+         *   erp_hrm_role_permissions junction table. Join where
+         *   erp_hrm_role_permissions.erp_hrm_role_id = erp_hrm_roles.id.
+         *   Returns array of IErpHrmRolePermission objects with permission code
+         *   strings. Each object contains: id, permission (string code like
+         *   'org:manage'), created_at, updated_at, and nested role summary.
      */
     permissions: IErpHrmRolePermission[];
   };
@@ -232,7 +279,18 @@ export namespace IErpHrmRole {
     /**
      * Array of permission codes to assign to the role. Valid codes: org:manage, employee:manage, employee:view, project:manage, project:view, time:manage, time:approve, time:view_all, report:view. Duplicates are removed server-side. Empty array creates a role with no permissions.
      *
-     * @x-autobe-specification Permission codes are stored in erp_hrm_role_permissions junction table, not as a column in erp_hrm_roles. Write operation: BEGIN TRANSACTION -> DELETE FROM erp_hrm_role_permissions WHERE erp_hrm_role_id = :roleId -> INSERT INTO erp_hrm_role_permissions (id, erp_hrm_role_id, permission, created_at, updated_at) VALUES (:newId, :roleId, :code, NOW(), NOW()) for each permission code -> UPDATE erp_hrm_roles SET updated_at = NOW() WHERE id = :roleId -> COMMIT. Valid permission codes: org:manage, employee:manage, employee:view, project:manage, project:view, time:manage, time:approve, time:view_all, report:view. Duplicates de-duplicated server-side. Empty array removes all permissions (role will have no access rights).
+         * @x-autobe-specification Permission codes are stored in
+         *   erp_hrm_role_permissions junction table, not as a column in
+         *   erp_hrm_roles. Write operation: BEGIN TRANSACTION -> DELETE FROM
+         *   erp_hrm_role_permissions WHERE erp_hrm_role_id = :roleId -> INSERT
+         *   INTO erp_hrm_role_permissions (id, erp_hrm_role_id, permission,
+         *   created_at, updated_at) VALUES (:newId, :roleId, :code, NOW(),
+         *   NOW()) for each permission code -> UPDATE erp_hrm_roles SET
+         *   updated_at = NOW() WHERE id = :roleId -> COMMIT. Valid permission
+         *   codes: org:manage, employee:manage, employee:view, project:manage,
+         *   project:view, time:manage, time:approve, time:view_all,
+         *   report:view. Duplicates de-duplicated server-side. Empty array
+         *   removes all permissions (role will have no access rights).
      */
     permissions?:
       | (
@@ -256,7 +314,11 @@ export namespace IErpHrmRole {
     /**
      * The role name to validate for availability in the current organization. Must be unique (case-insensitive) within the organization scope and cannot match any built-in role name.
      *
-     * @x-autobe-specification Validation input for server-side uniqueness check against erp_hrm_roles.name (case-insensitive) and built-in role name conflict check ('owner', 'manager', 'employee'). This DTO does not persist data; it queries the database to validate the proposed name.
+         * @x-autobe-specification Validation input for server-side uniqueness
+         *   check against erp_hrm_roles.name (case-insensitive) and built-in
+         *   role name conflict check ('owner', 'manager', 'employee'). This DTO
+         *   does not persist data; it queries the database to validate the
+         *   proposed name.
      */
     name: string & tags.MinLength<1> & tags.MaxLength<100>;
   };
@@ -268,14 +330,20 @@ export namespace IErpHrmRole {
     /**
      * Indicates whether the role name is valid and available for use.
      *
-     * @x-autobe-specification Computed boolean: true if no validation errors found (no built-in name conflict AND no duplicate name in current organization). False if any validation failure exists.
+         * @x-autobe-specification Computed boolean: true if no validation
+         *   errors found (no built-in name conflict AND no duplicate name in
+         *   current organization). False if any validation failure exists.
      */
     isValid: boolean;
 
     /**
      * Array of error messages describing validation failures. Empty array when isValid is true.
      *
-     * @x-autobe-specification Computed array of human-readable error messages. Each element describes a validation failure: 'Role name is reserved' for built-in name conflicts, or 'Role name already exists in organization' for duplicates. Empty array when isValid is true.
+         * @x-autobe-specification Computed array of human-readable error
+         *   messages. Each element describes a validation failure: 'Role name
+         *   is reserved' for built-in name conflicts, or 'Role name already
+         *   exists in organization' for duplicates. Empty array when isValid is
+         *   true.
      */
     errors: string[];
   };

@@ -23,9 +23,10 @@ export class ShoppingmallAdminReviewsSnapshotsController {
    * @param connection
    * @param reviewId UUID of the parent review to retrieve snapshots for (scoped to specific review).
    * @param body Search criteria including pagination parameters (page, limit) and optional sorting options for review snapshot history.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query shopping_mall_review_snapshots table filtered by shopping_mall_review_id matching the path parameter.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Query shopping_mall_review_snapshots table
+     *   filtered by shopping_mall_review_id matching the path parameter.
    *
    * Apply pagination using cursor-based or offset-based approach with limit and offset from request body.
    *
@@ -73,9 +74,10 @@ export class ShoppingmallAdminReviewsSnapshotsController {
    * @param connection
    * @param reviewId UUID of the parent review that owns this snapshot. Used to establish ownership context for access control validation.
    * @param snapshotId UUID of the specific review snapshot to retrieve. Must correspond to a snapshot belonging to the specified review.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query shopping_mall_review_snapshots table by snapshot ID with review ID validation.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Query shopping_mall_review_snapshots table by
+     *   snapshot ID with review ID validation.
    *
    * Implementation steps:
    * 1. Validate snapshotId exists in shopping_mall_review_snapshots table

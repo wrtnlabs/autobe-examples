@@ -21,8 +21,10 @@ export type IHrmPlatformEmployeeInvitation = {
    *
    * This UUID serves as the primary key for the invitation table. It is automatically generated when the invitation is created and remains immutable throughout the invitation lifecycle.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from hrm_platform_employee_invitations.id. UUID format generated on creation.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_employee_invitations.id. UUID format generated on
+     *   creation.
    */
   id: string & tags.Format<"uuid">;
 
@@ -31,8 +33,10 @@ export type IHrmPlatformEmployeeInvitation = {
    *
    * This email is used to match against existing user accounts during sign-up. If a user registers with this email, the invitation is automatically accepted and the user is added to the organization with the specified role and department.
    *
-   * @x-autobe-database-schema-property email
-   * @x-autobe-specification Direct mapping from hrm_platform_employee_invitations.email. Valid email format required. Used to match against user accounts during sign-up.
+     * @x-autobe-database-schema-property email
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_employee_invitations.email. Valid email format required.
+     *   Used to match against user accounts during sign-up.
    */
   email: string & tags.Format<"email">;
 
@@ -41,8 +45,10 @@ export type IHrmPlatformEmployeeInvitation = {
    *
    * This optional field captures the intended role title (e.g., 'Software Engineer', 'Project Manager'). It is stored for reference and displayed in the employee list upon invitation acceptance. Can be null if no position was specified.
    *
-   * @x-autobe-database-schema-property position
-   * @x-autobe-specification Direct mapping from hrm_platform_employee_invitations.position. Nullable string for optional job title.
+     * @x-autobe-database-schema-property position
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_employee_invitations.position. Nullable string for
+     *   optional job title.
    */
   position?: string | null | undefined;
 
@@ -51,8 +57,10 @@ export type IHrmPlatformEmployeeInvitation = {
    *
    * Determines the employee's classification in the organization's HR records. Valid values are: 'full-time' (standard full-time employment), 'part-time' (reduced hours), 'contractor' (independent contractor), or 'intern' (temporary trainee position).
    *
-   * @x-autobe-specification Direct mapping from hrm_platform_employee_invitations.employment_type. String type with enum values: full-time, part-time, contractor, intern.
-   * @x-autobe-database-schema-property employment_type
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_employee_invitations.employment_type. String type with
+     *   enum values: full-time, part-time, contractor, intern.
+     * @x-autobe-database-schema-property employment_type
    */
   employment_type: string;
 
@@ -61,8 +69,10 @@ export type IHrmPlatformEmployeeInvitation = {
    *
    * Tracks the invitation through its lifecycle: 'pending' (awaiting acceptance by the invitee), 'accepted' (user signed up and joined the organization), 'expired' (past the expiration date without acceptance), or 'cancelled' (manually cancelled by the inviter).
    *
-   * @x-autobe-specification Direct mapping from hrm_platform_employee_invitations.status. String type with enum values: pending, accepted, expired, cancelled.
-   * @x-autobe-database-schema-property status
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_employee_invitations.status. String type with enum values:
+     *   pending, accepted, expired, cancelled.
+     * @x-autobe-database-schema-property status
    */
   status: string;
 
@@ -71,8 +81,10 @@ export type IHrmPlatformEmployeeInvitation = {
    *
    * Records when the invitation was created and sent to the email address. Used for tracking invitation age and expiration calculations. Automatically set to the current timestamp when the invitation is created.
    *
-   * @x-autobe-database-schema-property invited_at
-   * @x-autobe-specification Direct mapping from hrm_platform_employee_invitations.invited_at. ISO 8601 date-time format. Set when invitation is created.
+     * @x-autobe-database-schema-property invited_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_employee_invitations.invited_at. ISO 8601 date-time
+     *   format. Set when invitation is created.
    */
   invited_at: string & tags.Format<"date-time">;
 
@@ -81,8 +93,10 @@ export type IHrmPlatformEmployeeInvitation = {
    *
    * Invitations have a limited validity period. After this timestamp, the invitation status automatically becomes 'expired' and cannot be accepted. Must be set to a future date when creating the invitation.
    *
-   * @x-autobe-database-schema-property expires_at
-   * @x-autobe-specification Direct mapping from hrm_platform_employee_invitations.expires_at. ISO 8601 date-time format. Must be in the future when created.
+     * @x-autobe-database-schema-property expires_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_employee_invitations.expires_at. ISO 8601 date-time
+     *   format. Must be in the future when created.
    */
   expires_at: string & tags.Format<"date-time">;
 
@@ -91,8 +105,10 @@ export type IHrmPlatformEmployeeInvitation = {
    *
    * Set when the user signs up with the invited email address and is automatically added to the organization. Null for pending, expired, or cancelled invitations. This field is read-only and managed by the system.
    *
-   * @x-autobe-database-schema-property accepted_at
-   * @x-autobe-specification Direct mapping from hrm_platform_employee_invitations.accepted_at. ISO 8601 date-time format, nullable. Set when user signs up with invited email.
+     * @x-autobe-database-schema-property accepted_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_employee_invitations.accepted_at. ISO 8601 date-time
+     *   format, nullable. Set when user signs up with invited email.
    */
   accepted_at: (string & tags.Format<"date-time">) | null;
 
@@ -101,8 +117,10 @@ export type IHrmPlatformEmployeeInvitation = {
    *
    * Automatically set by the system when the invitation record is first created. Used for audit trails and sorting. This field is read-only and cannot be modified.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from hrm_platform_employee_invitations.created_at. ISO 8601 date-time format. System-managed timestamp.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_employee_invitations.created_at. ISO 8601 date-time
+     *   format. System-managed timestamp.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -111,8 +129,10 @@ export type IHrmPlatformEmployeeInvitation = {
    *
    * Automatically updated by the system whenever the invitation record is modified. Used for change tracking and cache invalidation. This field is read-only and managed by the system.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from hrm_platform_employee_invitations.updated_at. ISO 8601 date-time format. System-managed, updated on each modification.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_employee_invitations.updated_at. ISO 8601 date-time
+     *   format. System-managed, updated on each modification.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -121,8 +141,10 @@ export type IHrmPlatformEmployeeInvitation = {
    *
    * Null for active invitations. When set, marks the invitation as deleted while preserving the record for audit purposes. Soft-deleted invitations are excluded from normal queries. This field is managed by the system.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from hrm_platform_employee_invitations.deleted_at. ISO 8601 date-time format, nullable. Null means active record.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_employee_invitations.deleted_at. ISO 8601 date-time
+     *   format, nullable. Null means active record.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 
@@ -131,8 +153,10 @@ export type IHrmPlatformEmployeeInvitation = {
    *
    * References the organization where the invited employee will join upon acceptance. All invitations are scoped to a specific organization for multi-tenancy isolation. Contains the organization's ID, name, and basic display information.
    *
-   * @x-autobe-database-schema-property organization
-   * @x-autobe-specification Relation mapping via JOIN to hrm_platform_organizations on organization_id. Returns IHrmPlatformOrganization.ISummary.
+     * @x-autobe-database-schema-property organization
+     * @x-autobe-specification Relation mapping via JOIN to
+     *   hrm_platform_organizations on organization_id. Returns
+     *   IHrmPlatformOrganization.ISummary.
    */
   organization: IHrmPlatformOrganization.ISummary;
 
@@ -141,8 +165,10 @@ export type IHrmPlatformEmployeeInvitation = {
    *
    * Identifies the user with employee:manage permission who initiated the invitation. Used for audit purposes and activity logging. Contains the member's ID, email, and basic account information.
    *
-   * @x-autobe-database-schema-property invitedBy
-   * @x-autobe-specification Relation mapping via JOIN to hrm_platform_members on invited_by. Returns IHrmPlatformMember.ISummary. Tracks which member initiated the invitation.
+     * @x-autobe-database-schema-property invitedBy
+     * @x-autobe-specification Relation mapping via JOIN to hrm_platform_members
+     *   on invited_by. Returns IHrmPlatformMember.ISummary. Tracks which member
+     *   initiated the invitation.
    */
   invitedBy: IHrmPlatformMember.ISummary;
 
@@ -151,8 +177,10 @@ export type IHrmPlatformEmployeeInvitation = {
    *
    * Specifies the permissions and access level the invited employee will receive in the organization. Must reference a valid role within the same organization. Contains the role's ID, name, and built-in status.
    *
-   * @x-autobe-database-schema-property role
-   * @x-autobe-specification Relation mapping via JOIN to hrm_platform_roles on role_id. Returns IHrmPlatformRole.ISummary. Determines permissions the invited employee will have.
+     * @x-autobe-database-schema-property role
+     * @x-autobe-specification Relation mapping via JOIN to hrm_platform_roles
+     *   on role_id. Returns IHrmPlatformRole.ISummary. Determines permissions
+     *   the invited employee will have.
    */
   role: IHrmPlatformRole.ISummary;
 
@@ -161,8 +189,11 @@ export type IHrmPlatformEmployeeInvitation = {
    *
    * Optional field specifying which department the invited employee will join. Null if no department was specified during invitation. Contains the department's ID, name, and optional parent department reference.
    *
-   * @x-autobe-database-schema-property department
-   * @x-autobe-specification Relation mapping via LEFT JOIN to hrm_platform_departments on department_id. Returns IHrmPlatformDepartment.ISummary or null. Optional department assignment.
+     * @x-autobe-database-schema-property department
+     * @x-autobe-specification Relation mapping via LEFT JOIN to
+     *   hrm_platform_departments on department_id. Returns
+     *   IHrmPlatformDepartment.ISummary or null. Optional department
+     *   assignment.
    */
   department?: IHrmPlatformDepartment.ISummary | null | undefined;
 };
@@ -306,8 +337,9 @@ export namespace IHrmPlatformEmployeeInvitation {
      *
      * Auto-generated UUID that uniquely identifies this invitation record in the system. Used for reference in API operations such as retrieving, updating, or canceling specific invitations.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from hrm_platform_employee_invitations.id. UUID format.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_employee_invitations.id. UUID format.
      */
     id: string & tags.Format<"uuid">;
 
@@ -316,8 +348,9 @@ export namespace IHrmPlatformEmployeeInvitation {
      *
      * The email address to which the invitation was sent. When a user registers with this email address, the invitation is automatically accepted and the user is added to the organization. Must be unique within the organization.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from hrm_platform_employee_invitations.email. Email format validation.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_employee_invitations.email. Email format validation.
      */
     email: string & tags.Format<"email">;
 
@@ -326,8 +359,10 @@ export namespace IHrmPlatformEmployeeInvitation {
      *
      * Optional field capturing the intended role title such as 'Software Engineer' or 'Project Manager'. Stored for reference and displayed in the employee list upon acceptance. Can be null if no position was specified during invitation.
      *
-     * @x-autobe-database-schema-property position
-     * @x-autobe-specification Direct mapping from hrm_platform_employee_invitations.position. Nullable string for job title.
+         * @x-autobe-database-schema-property position
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_employee_invitations.position. Nullable string for job
+         *   title.
      */
     position: string | null;
 
@@ -336,8 +371,10 @@ export namespace IHrmPlatformEmployeeInvitation {
      *
      * Captures the intended employment type: full-time, part-time, contractor, or intern. This determines the employee's classification in the organization's HR records and may affect benefits eligibility and reporting.
      *
-     * @x-autobe-database-schema-property employment_type
-     * @x-autobe-specification Direct mapping from hrm_platform_employee_invitations.employment_type. Enum values: full-time, part-time, contractor, intern.
+         * @x-autobe-database-schema-property employment_type
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_employee_invitations.employment_type. Enum values:
+         *   full-time, part-time, contractor, intern.
      */
     employment_type: string;
 
@@ -346,8 +383,10 @@ export namespace IHrmPlatformEmployeeInvitation {
      *
      * Tracks the invitation lifecycle through four states: 'pending' (awaiting acceptance), 'accepted' (user signed up and joined), 'expired' (past expiration date without acceptance), or 'cancelled' (manually cancelled by the inviter). Used for filtering and workflow management.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from hrm_platform_employee_invitations.status. Enum values: pending, accepted, expired, cancelled.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_employee_invitations.status. Enum values: pending,
+         *   accepted, expired, cancelled.
      */
     status: string;
 
@@ -356,8 +395,10 @@ export namespace IHrmPlatformEmployeeInvitation {
      *
      * Records when the invitation was created and sent to the email address. Used for tracking invitation age, calculating expiration, and audit purposes. Immutable after creation.
      *
-     * @x-autobe-database-schema-property invited_at
-     * @x-autobe-specification Direct mapping from hrm_platform_employee_invitations.invited_at. ISO 8601 date-time format.
+         * @x-autobe-database-schema-property invited_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_employee_invitations.invited_at. ISO 8601 date-time
+         *   format.
      */
     invited_at: string & tags.Format<"date-time">;
 
@@ -366,8 +407,10 @@ export namespace IHrmPlatformEmployeeInvitation {
      *
      * Invitations have a limited validity period. After this timestamp, the invitation status automatically becomes 'expired' and cannot be accepted. The expiration period is configured by the organization's invitation settings.
      *
-     * @x-autobe-database-schema-property expires_at
-     * @x-autobe-specification Direct mapping from hrm_platform_employee_invitations.expires_at. ISO 8601 date-time format.
+         * @x-autobe-database-schema-property expires_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_employee_invitations.expires_at. ISO 8601 date-time
+         *   format.
      */
     expires_at: string & tags.Format<"date-time">;
 
@@ -376,8 +419,10 @@ export namespace IHrmPlatformEmployeeInvitation {
      *
      * Set when the user signs up with the invited email address and is automatically added to the organization. Null for pending, expired, or cancelled invitations. Used to track conversion rate and onboarding timelines.
      *
-     * @x-autobe-database-schema-property accepted_at
-     * @x-autobe-specification Direct mapping from hrm_platform_employee_invitations.accepted_at. Nullable ISO 8601 date-time format. Set when status becomes 'accepted'.
+         * @x-autobe-database-schema-property accepted_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_employee_invitations.accepted_at. Nullable ISO 8601
+         *   date-time format. Set when status becomes 'accepted'.
      */
     accepted_at: (string & tags.Format<"date-time">) | null;
 
@@ -386,8 +431,10 @@ export namespace IHrmPlatformEmployeeInvitation {
      *
      * Automatically set when the invitation record is created in the database. Used for audit trails, sorting invitations by creation date, and determining record age. Immutable after creation.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from hrm_platform_employee_invitations.created_at. ISO 8601 date-time format.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_employee_invitations.created_at. ISO 8601 date-time
+         *   format.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -396,8 +443,10 @@ export namespace IHrmPlatformEmployeeInvitation {
      *
      * Automatically updated whenever the invitation record is modified, such as when status changes or expiration date is extended. Used for change tracking and cache invalidation.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from hrm_platform_employee_invitations.updated_at. ISO 8601 date-time format.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_employee_invitations.updated_at. ISO 8601 date-time
+         *   format.
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -406,8 +455,10 @@ export namespace IHrmPlatformEmployeeInvitation {
      *
      * Null for active invitations. When set, marks the invitation as deleted while preserving the record for audit purposes. Soft-deleted invitations are excluded from normal list queries unless explicitly requested.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from hrm_platform_employee_invitations.deleted_at. Nullable ISO 8601 date-time format. Null for active records.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_employee_invitations.deleted_at. Nullable ISO 8601
+         *   date-time format. Null for active records.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
 
@@ -416,8 +467,10 @@ export namespace IHrmPlatformEmployeeInvitation {
      *
      * References the user account with employee:manage permission who initiated the invitation. Used for audit purposes and to identify the point of contact for the invited employee. Returns summary information including the member's email and profile details.
      *
-     * @x-autobe-database-schema-property invitedBy
-     * @x-autobe-specification JOIN from hrm_platform_employee_invitations.invited_by to hrm_platform_members.id. Returns IHrmPlatformMember.ISummary.
+         * @x-autobe-database-schema-property invitedBy
+         * @x-autobe-specification JOIN from
+         *   hrm_platform_employee_invitations.invited_by to
+         *   hrm_platform_members.id. Returns IHrmPlatformMember.ISummary.
      */
     invitedBy: IHrmPlatformMember.ISummary;
 
@@ -426,8 +479,10 @@ export namespace IHrmPlatformEmployeeInvitation {
      *
      * Determines the permissions the invited employee will have in the organization. Must reference a valid role within the same organization. Returns summary information including the role name and built-in status.
      *
-     * @x-autobe-database-schema-property role
-     * @x-autobe-specification JOIN from hrm_platform_employee_invitations.role_id to hrm_platform_roles.id. Returns IHrmPlatformRole.ISummary.
+         * @x-autobe-database-schema-property role
+         * @x-autobe-specification JOIN from
+         *   hrm_platform_employee_invitations.role_id to hrm_platform_roles.id.
+         *   Returns IHrmPlatformRole.ISummary.
      */
     role: IHrmPlatformRole.ISummary;
 
@@ -436,8 +491,11 @@ export namespace IHrmPlatformEmployeeInvitation {
      *
      * If set, the employee will be assigned to this department upon accepting the invitation. Can be null if no department assignment was specified during invitation. Returns summary information including the department name and parent department relationship.
      *
-     * @x-autobe-database-schema-property department
-     * @x-autobe-specification Optional JOIN from hrm_platform_employee_invitations.department_id to hrm_platform_departments.id. Returns IHrmPlatformDepartment.ISummary or null.
+         * @x-autobe-database-schema-property department
+         * @x-autobe-specification Optional JOIN from
+         *   hrm_platform_employee_invitations.department_id to
+         *   hrm_platform_departments.id. Returns
+         *   IHrmPlatformDepartment.ISummary or null.
      */
     department: IHrmPlatformDepartment.ISummary | null;
   };

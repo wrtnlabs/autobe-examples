@@ -290,7 +290,8 @@ export namespace cast {
  * @param props.commentId The unique identifier of the comment from which to remove the vote
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implementation steps for removing a member's vote from a comment:
+ * @x-autobe-specification Implementation steps for removing a member's vote
+ *   from a comment:
  *
  * 1. Authenticate the member from the session token (401 if unauthenticated)
  *

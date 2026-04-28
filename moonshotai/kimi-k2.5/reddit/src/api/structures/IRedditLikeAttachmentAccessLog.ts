@@ -10,88 +10,116 @@ export type IRedditLikeAttachmentAccessLog = {
   /**
    * Unique identifier for the access log entry.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from reddit_like_attachment_access_logs.id. Primary key as auto-generated UUID.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_attachment_access_logs.id. Primary key as auto-generated
+     *   UUID.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Reference to the attachment file that was accessed.
    *
-   * @x-autobe-database-schema-property reddit_like_attachment_id
-   * @x-autobe-specification Direct mapping from reddit_like_attachment_access_logs.reddit_like_attachment_id. Foreign key referencing reddit_like_attachments.id indicating which attachment file was accessed.
+     * @x-autobe-database-schema-property reddit_like_attachment_id
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_attachment_access_logs.reddit_like_attachment_id. Foreign
+     *   key referencing reddit_like_attachments.id indicating which attachment
+     *   file was accessed.
    */
   redditLikeAttachmentId: string & tags.Format<"uuid">;
 
   /**
    * Identifier of the user who accessed the file, null for unauthenticated access.
    *
-   * @x-autobe-database-schema-property actor_id
-   * @x-autobe-specification Direct mapping from reddit_like_attachment_access_logs.actor_id. Foreign key referencing reddit_like_members.id. Nullable for unauthenticated/guest access or system-generated access events.
+     * @x-autobe-database-schema-property actor_id
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_attachment_access_logs.actor_id. Foreign key referencing
+     *   reddit_like_members.id. Nullable for unauthenticated/guest access or
+     *   system-generated access events.
    */
   actorId: (string & tags.Format<"uuid">) | null;
 
   /**
    * Type of actor who performed the access: guest, member, moderator, owner, or null.
    *
-   * @x-autobe-database-schema-property actor_type
-   * @x-autobe-specification Direct mapping from reddit_like_attachment_access_logs.actor_type. String values: 'guest', 'member', 'moderator', 'owner', or null. Classifies the type of actor for analytics and permission analysis.
+     * @x-autobe-database-schema-property actor_type
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_attachment_access_logs.actor_type. String values: 'guest',
+     *   'member', 'moderator', 'owner', or null. Classifies the type of actor
+     *   for analytics and permission analysis.
    */
   actorType: string | null;
 
   /**
    * Classification of the access event type (view, download, thumbnail_view, metadata_read).
    *
-   * @x-autobe-database-schema-property access_type
-   * @x-autobe-specification Direct mapping from reddit_like_attachment_access_logs.access_type. String values: 'view', 'download', 'thumbnail_view', 'metadata_read'. Categorizes the nature of the access event.
+     * @x-autobe-database-schema-property access_type
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_attachment_access_logs.access_type. String values: 'view',
+     *   'download', 'thumbnail_view', 'metadata_read'. Categorizes the nature
+     *   of the access event.
    */
   accessType: string;
 
   /**
    * IP address from which the file access originated, null if not recorded.
    *
-   * @x-autobe-database-schema-property ip_address
-   * @x-autobe-specification Direct mapping from reddit_like_attachment_access_logs.ip_address. Nullable for privacy-compliant logging. Captured from request connection for security analysis and audit trails.
+     * @x-autobe-database-schema-property ip_address
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_attachment_access_logs.ip_address. Nullable for
+     *   privacy-compliant logging. Captured from request connection for
+     *   security analysis and audit trails.
    */
   ipAddress: string | null;
 
   /**
    * Browser or application user agent string from the access request, null if not captured.
    *
-   * @x-autobe-database-schema-property user_agent
-   * @x-autobe-specification Direct mapping from reddit_like_attachment_access_logs.user_agent. Nullable for privacy-compliant logging. Captured from HTTP User-Agent header for client identification.
+     * @x-autobe-database-schema-property user_agent
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_attachment_access_logs.user_agent. Nullable for
+     *   privacy-compliant logging. Captured from HTTP User-Agent header for
+     *   client identification.
    */
   userAgent: string | null;
 
   /**
    * HTTP referer header indicating the source page that initiated the file access.
    *
-   * @x-autobe-database-schema-property referer
-   * @x-autobe-specification Direct mapping from reddit_like_attachment_access_logs.referer. Nullable. Captured from HTTP Referer header indicating source page of the access request.
+     * @x-autobe-database-schema-property referer
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_attachment_access_logs.referer. Nullable. Captured from
+     *   HTTP Referer header indicating source page of the access request.
    */
   referer: string | null;
 
   /**
    * Timestamp when the access event was created and recorded in the audit log.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from reddit_like_attachment_access_logs.created_at. Timestamp with timezone when the access event was recorded.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_attachment_access_logs.created_at. Timestamp with timezone
+     *   when the access event was recorded.
    */
   createdAt: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the access log record was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from reddit_like_attachment_access_logs.updated_at. Timestamp with timezone of last modification to the log record.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_attachment_access_logs.updated_at. Timestamp with timezone
+     *   of last modification to the log record.
    */
   updatedAt: string & tags.Format<"date-time">;
 
   /**
    * Soft deletion timestamp for audit record retention, null if the record is active.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from reddit_like_attachment_access_logs.deleted_at. Nullable soft delete timestamp for audit retention policies. Null if the record is active.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_attachment_access_logs.deleted_at. Nullable soft delete
+     *   timestamp for audit retention policies. Null if the record is active.
    */
   deletedAt: (string & tags.Format<"date-time">) | null;
 };
@@ -103,39 +131,45 @@ export namespace IRedditLikeAttachmentAccessLog {
     /**
      * Filter by actor type: guest, member, moderator, or owner
      *
-     * @x-autobe-database-schema-property actor_type
-     * @x-autobe-specification Filter by actor_type column. Nullable column, so filter parameter must accept string | null.
+         * @x-autobe-database-schema-property actor_type
+         * @x-autobe-specification Filter by actor_type column. Nullable column,
+         *   so filter parameter must accept string | null.
      */
     actorType?: string | null | undefined;
 
     /**
      * Filter by specific actor ID
      *
-     * @x-autobe-database-schema-property actor_id
-     * @x-autobe-specification Filter by actor_id column. Nullable UUID column, so filter parameter must accept string | null.
+         * @x-autobe-database-schema-property actor_id
+         * @x-autobe-specification Filter by actor_id column. Nullable UUID
+         *   column, so filter parameter must accept string | null.
      */
     actorId?: (string & tags.Format<"uuid">) | null | undefined;
 
     /**
      * Filter by access type: view, download, thumbnail_view, metadata_read
      *
-     * @x-autobe-database-schema-property access_type
+         * @x-autobe-database-schema-property access_type
      */
     accessType?: string | undefined;
 
     /**
      * Filter by IP address (partial match supported)
      *
-     * @x-autobe-database-schema-property ip_address
-     * @x-autobe-specification Filter by ip_address column. Nullable column for privacy compliance, so filter parameter must accept string | null.
+         * @x-autobe-database-schema-property ip_address
+         * @x-autobe-specification Filter by ip_address column. Nullable column
+         *   for privacy compliance, so filter parameter must accept string |
+         *   null.
      */
     ipAddress?: string | null | undefined;
 
     /**
      * Filter by user agent string (partial match supported)
      *
-     * @x-autobe-database-schema-property user_agent
-     * @x-autobe-specification Filter by user_agent column. Nullable column for privacy compliance, so filter parameter must accept string | null.
+         * @x-autobe-database-schema-property user_agent
+         * @x-autobe-specification Filter by user_agent column. Nullable column
+         *   for privacy compliance, so filter parameter must accept string |
+         *   null.
      */
     userAgent?: string | null | undefined;
 
@@ -169,7 +203,8 @@ export namespace IRedditLikeAttachmentAccessLog {
      * Requesting a page beyond the available range returns an empty data array
      * with valid pagination metadata reflecting the actual totals.
      *
-     * @x-autobe-specification 1-indexed page number. Defaults to 1 if not provided.
+         * @x-autobe-specification 1-indexed page number. Defaults to 1 if not
+         *   provided.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };
@@ -181,64 +216,83 @@ export namespace IRedditLikeAttachmentAccessLog {
     /**
      * Unique identifier for the attachment access log entry.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from reddit_like_attachment_access_logs.id. UUID primary key identifying the access log record.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_attachment_access_logs.id. UUID primary key identifying
+         *   the access log record.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * The type of actor who performed the access: guest, member, moderator, owner, or null for anonymous/system access.
      *
-     * @x-autobe-database-schema-property actor_type
-     * @x-autobe-specification Direct mapping from reddit_like_attachment_access_logs.actor_type. String enumeration: 'guest', 'member', 'moderator', 'owner', or null for system/anonymous access.
+         * @x-autobe-database-schema-property actor_type
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_attachment_access_logs.actor_type. String enumeration:
+         *   'guest', 'member', 'moderator', 'owner', or null for
+         *   system/anonymous access.
      */
     actorType: string | null;
 
     /**
      * The type of access performed on the file, such as view, download, thumbnail view, or metadata read.
      *
-     * @x-autobe-database-schema-property access_type
-     * @x-autobe-specification Direct mapping from reddit_like_attachment_access_logs.access_type. String values include: 'view', 'download', 'thumbnail_view', 'metadata_read', etc.
+         * @x-autobe-database-schema-property access_type
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_attachment_access_logs.access_type. String values
+         *   include: 'view', 'download', 'thumbnail_view', 'metadata_read',
+         *   etc.
      */
     accessType: string;
 
     /**
      * IP address from which the access originated. May be null for privacy-compliant logging.
      *
-     * @x-autobe-database-schema-property ip_address
-     * @x-autobe-specification Direct mapping from reddit_like_attachment_access_logs.ip_address. Nullable for privacy-compliant logging scenarios.
+         * @x-autobe-database-schema-property ip_address
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_attachment_access_logs.ip_address. Nullable for
+         *   privacy-compliant logging scenarios.
      */
     ipAddress: string | null;
 
     /**
      * User agent string of the client browser or application that accessed the file.
      *
-     * @x-autobe-database-schema-property user_agent
-     * @x-autobe-specification Direct mapping from reddit_like_attachment_access_logs.user_agent. Client browser/application identifier string. Nullable for privacy compliance.
+         * @x-autobe-database-schema-property user_agent
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_attachment_access_logs.user_agent. Client
+         *   browser/application identifier string. Nullable for privacy
+         *   compliance.
      */
     userAgent: string | null;
 
     /**
      * HTTP referer header indicating the source page that requested the file access.
      *
-     * @x-autobe-database-schema-property referer
-     * @x-autobe-specification Direct mapping from reddit_like_attachment_access_logs.referer. HTTP referer header indicating the source page. Nullable.
+         * @x-autobe-database-schema-property referer
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_attachment_access_logs.referer. HTTP referer header
+         *   indicating the source page. Nullable.
      */
     referer: string | null;
 
     /**
      * Timestamp when the file access event was recorded.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from reddit_like_attachment_access_logs.created_at. ISO 8601 timestamp when the access event occurred.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_attachment_access_logs.created_at. ISO 8601 timestamp
+         *   when the access event occurred.
      */
     createdAt: string & tags.Format<"date-time">;
 
     /**
      * Summary of the member who accessed the file, or null if accessed by guest, anonymous, or non-member actor.
      *
-     * @x-autobe-database-schema-property actor
-     * @x-autobe-specification LEFT JOIN to reddit_like_members on actor_id. Returns IRedditLikeMember.ISummary when actor_id exists and points to a member record, otherwise null.
+         * @x-autobe-database-schema-property actor
+         * @x-autobe-specification LEFT JOIN to reddit_like_members on actor_id.
+         *   Returns IRedditLikeMember.ISummary when actor_id exists and points
+         *   to a member record, otherwise null.
      */
     actor: IRedditLikeMember.ISummary | null;
   };
@@ -250,32 +304,44 @@ export namespace IRedditLikeAttachmentAccessLog {
     /**
      * Type of access performed on the attachment. Valid values: 'view' (file opened), 'download' (file downloaded), 'thumbnail_view' (preview image viewed), 'metadata_read' (metadata only access).
      *
-     * @x-autobe-database-schema-property access_type
-     * @x-autobe-specification Direct mapping from reddit_like_attachment_access_logs.access_type. Required field. Accepts values: 'view', 'download', 'thumbnail_view', 'metadata_read'.
+         * @x-autobe-database-schema-property access_type
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_attachment_access_logs.access_type. Required field.
+         *   Accepts values: 'view', 'download', 'thumbnail_view',
+         *   'metadata_read'.
      */
     access_type: string;
 
     /**
      * IP address from which the access originated. Optional - if not provided, the server automatically extracts this from the HTTP connection.
      *
-     * @x-autobe-database-schema-property ip_address
-     * @x-autobe-specification Direct mapping from reddit_like_attachment_access_logs.ip_address. Nullable optional field. If not provided in request body, server auto-extracts from HTTP connection remote address.
+         * @x-autobe-database-schema-property ip_address
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_attachment_access_logs.ip_address. Nullable optional
+         *   field. If not provided in request body, server auto-extracts from
+         *   HTTP connection remote address.
      */
     ip_address?: string | null | undefined;
 
     /**
      * User agent string of the client browser or application making the request. Optional - if not provided, the server automatically extracts this from the HTTP headers.
      *
-     * @x-autobe-database-schema-property user_agent
-     * @x-autobe-specification Direct mapping from reddit_like_attachment_access_logs.user_agent. Nullable optional field. If not provided in request body, server auto-extracts from HTTP User-Agent header.
+         * @x-autobe-database-schema-property user_agent
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_attachment_access_logs.user_agent. Nullable optional
+         *   field. If not provided in request body, server auto-extracts from
+         *   HTTP User-Agent header.
      */
     user_agent?: string | null | undefined;
 
     /**
      * HTTP referer header indicating the source page that initiated the access request. Optional - if not provided, the server automatically extracts this from the HTTP headers.
      *
-     * @x-autobe-database-schema-property referer
-     * @x-autobe-specification Direct mapping from reddit_like_attachment_access_logs.referer. Nullable optional field. If not provided in request body, server auto-extracts from HTTP Referer header.
+         * @x-autobe-database-schema-property referer
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_attachment_access_logs.referer. Nullable optional
+         *   field. If not provided in request body, server auto-extracts from
+         *   HTTP Referer header.
      */
     referer?: string | null | undefined;
   };

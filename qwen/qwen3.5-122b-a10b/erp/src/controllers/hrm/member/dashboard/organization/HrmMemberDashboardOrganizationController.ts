@@ -32,9 +32,11 @@ export class HrmMemberDashboardOrganizationController {
    *
    * @param connection
    * @param organizationId Unique identifier of the organization (global scope).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement GET /dashboard/organization/{organizationId} as an aggregated statistics endpoint:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implement GET
+     *   /dashboard/organization/{organizationId} as an aggregated statistics
+     *   endpoint:
    *
    * **Query Logic**
    *

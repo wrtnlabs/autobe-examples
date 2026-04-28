@@ -23,7 +23,8 @@ import { IRedditCloneComment } from "../../../../../structures/IRedditCloneComme
  * @param props.body Search criteria including sort order, pagination parameters, and optional filters
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query reddit_clone_comments table filtered by postId for top-level comments (parent_comment_id IS NULL).
+ * @x-autobe-specification Query reddit_clone_comments table filtered by postId
+ *   for top-level comments (parent_comment_id IS NULL).
  *
  * Apply sorting based on sort parameter:
  * - Best: ORDER BY vote_score DESC, created_at DESC
@@ -137,7 +138,8 @@ export namespace index {
  * @param props.commentId Unique identifier of the comment (global scope)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query reddit_clone_comments table by comment_id, verifying it belongs to the specified post_id.
+ * @x-autobe-specification Query reddit_clone_comments table by comment_id,
+ *   verifying it belongs to the specified post_id.
  *
  * Join with reddit_clone_members to retrieve author information: member id and username.
  *

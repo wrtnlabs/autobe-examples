@@ -23,9 +23,9 @@ export class ErphrmAuthGuestController {
    *
    * @param connection
    * @param body Guest registration credentials and initial organization name. Email must be unique across the platform. Password must meet security requirements. Organization name is required as users create their first organization during sign-up.
-   * @x-autobe-authorization-type join
-   * @x-autobe-authorization-actor guest
-   * @x-autobe-specification Implementation Steps:
+     * @x-autobe-authorization-type join
+     * @x-autobe-authorization-actor guest
+     * @x-autobe-specification Implementation Steps:
    *
    * 1. **Validate Request**: Ensure email format is valid, password meets security requirements (minimum 8 characters, contains uppercase, lowercase, number, and special character), and organization name is not empty.
    *
@@ -93,9 +93,9 @@ export class ErphrmAuthGuestController {
    *
    * @param connection
    * @param body Refresh token issued during previous authentication. Must be a valid, non-expired token from the original join or previous refresh operation.
-   * @x-autobe-authorization-type refresh
-   * @x-autobe-authorization-actor guest
-   * @x-autobe-specification Implementation Steps:
+     * @x-autobe-authorization-type refresh
+     * @x-autobe-authorization-actor guest
+     * @x-autobe-specification Implementation Steps:
    *
    * 1. **Extract Refresh Token**: Read the refresh token from the request body.
    *

@@ -22,8 +22,10 @@ export type IEcommerceCustomerPasswordReset = {
    *
    * This is a UUID that uniquely identifies this specific password reset token in the system. It is used to retrieve the token record when a customer clicks the password reset link in their email.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_customer_password_resets.id. UUID primary key identifying the password reset token record.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_customer_password_resets.id. UUID primary key identifying the
+     *   password reset token record.
    */
   id: string & tags.Format<"uuid">;
 
@@ -32,8 +34,10 @@ export type IEcommerceCustomerPasswordReset = {
    *
    * This UUID links the password reset token to the specific customer whose password is being reset. The customer must exist and be able to authenticate via email to complete the reset process.
    *
-   * @x-autobe-database-schema-property ecommerce_customer_id
-   * @x-autobe-specification Direct mapping from ecommerce_customer_password_resets.ecommerce_customer_id. UUID foreign key referencing ecommerce_customers.id.
+     * @x-autobe-database-schema-property ecommerce_customer_id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_customer_password_resets.ecommerce_customer_id. UUID foreign
+     *   key referencing ecommerce_customers.id.
    */
   ecommerce_customer_id: string & tags.Format<"uuid">;
 
@@ -44,8 +48,10 @@ export type IEcommerceCustomerPasswordReset = {
    *
    * **Security Note**: This field contains sensitive cryptographic information and should only be exposed to administrators with elevated privileges.
    *
-   * @x-autobe-database-schema-property token
-   * @x-autobe-specification Direct mapping from ecommerce_customer_password_resets.token. Cryptographically secure random string used for password reset verification.
+     * @x-autobe-database-schema-property token
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_customer_password_resets.token. Cryptographically secure
+     *   random string used for password reset verification.
    */
   token: string;
 
@@ -54,8 +60,10 @@ export type IEcommerceCustomerPasswordReset = {
    *
    * The date and time after which this token is no longer valid. Tokens are automatically rejected if the current time is past this value. Typical expiration is 1 hour from creation.
    *
-   * @x-autobe-database-schema-property expires_at
-   * @x-autobe-specification Direct mapping from ecommerce_customer_password_resets.expires_at. DateTime with timezone indicating when the token becomes invalid.
+     * @x-autobe-database-schema-property expires_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_customer_password_resets.expires_at. DateTime with timezone
+     *   indicating when the token becomes invalid.
    */
   expires_at: string & tags.Format<"date-time">;
 
@@ -64,8 +72,10 @@ export type IEcommerceCustomerPasswordReset = {
    *
    * Populated when the customer completes the password reset process. A non-null value indicates the token has been consumed and cannot be reused, preventing replay attacks by ensuring one-time use.
    *
-   * @x-autobe-database-schema-property used_at
-   * @x-autobe-specification Direct mapping from ecommerce_customer_password_resets.used_at. Nullable DateTime - populated when token is successfully used, null otherwise.
+     * @x-autobe-database-schema-property used_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_customer_password_resets.used_at. Nullable DateTime -
+     *   populated when token is successfully used, null otherwise.
    */
   used_at?: (string & tags.Format<"date-time">) | null | undefined;
 
@@ -74,8 +84,10 @@ export type IEcommerceCustomerPasswordReset = {
    *
    * The date and time when this password reset token record was created in the system. This is automatically set when the customer requests a password reset.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_customer_password_resets.created_at. DateTime with timezone indicating when the token record was created.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_customer_password_resets.created_at. DateTime with timezone
+     *   indicating when the token record was created.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -84,8 +96,10 @@ export type IEcommerceCustomerPasswordReset = {
    *
    * The date and time when this password reset token record was last modified. This is automatically updated whenever the token state changes, such as when it is used.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from ecommerce_customer_password_resets.updated_at. DateTime with timezone indicating when the token record was last updated.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_customer_password_resets.updated_at. DateTime with timezone
+     *   indicating when the token record was last updated.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -94,8 +108,10 @@ export type IEcommerceCustomerPasswordReset = {
    *
    * When a password reset token record is soft-deleted, this field is set to the deletion time. NULL indicates an active record. Soft deletion allows for cleanup while maintaining audit history for compliance purposes.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from ecommerce_customer_password_resets.deleted_at. Nullable DateTime with timezone - null for active records, populated when soft-deleted.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_customer_password_resets.deleted_at. Nullable DateTime with
+     *   timezone - null for active records, populated when soft-deleted.
    */
   deleted_at?: (string & tags.Format<"date-time">) | null | undefined;
 };
@@ -124,7 +140,11 @@ export namespace IEcommerceCustomerPasswordReset {
      *
      * Specifies which actor type's password reset tokens to include in the search results. Valid values are 'customer', 'seller', or 'admin'. When omitted, the query searches across all actor types and returns results from all password reset tables.
      *
-     * @x-autobe-specification Filter to select which password reset table to query: 'customer' queries ecommerce_customer_password_resets, 'seller' queries ecommerce_seller_password_resets, 'admin' queries ecommerce_admin_password_resets. Omitting this field queries all three tables via UNION.
+         * @x-autobe-specification Filter to select which password reset table
+         *   to query: 'customer' queries ecommerce_customer_password_resets,
+         *   'seller' queries ecommerce_seller_password_resets, 'admin' queries
+         *   ecommerce_admin_password_resets. Omitting this field queries all
+         *   three tables via UNION.
      */
     actor_type?: "customer" | "seller" | "admin" | undefined;
 
@@ -133,7 +153,9 @@ export namespace IEcommerceCustomerPasswordReset {
      *
      * Only password reset tokens created on or after this date will be included in the results. Use ISO 8601 format (YYYY-MM-DDTHH:mm:ss.sssZ). When combined with created_at_to, creates a date range filter.
      *
-     * @x-autobe-specification Filter parameter for created_at column. Records with created_at >= this value are included. Used in WHERE clause: created_at >= :created_at_from.
+         * @x-autobe-specification Filter parameter for created_at column.
+         *   Records with created_at >= this value are included. Used in WHERE
+         *   clause: created_at >= :created_at_from.
      */
     created_at_from?: (string & tags.Format<"date-time">) | undefined;
 
@@ -142,7 +164,9 @@ export namespace IEcommerceCustomerPasswordReset {
      *
      * Only password reset tokens created on or before this date will be included in the results. Use ISO 8601 format (YYYY-MM-DDTHH:mm:ss.sssZ). When combined with created_at_from, creates a date range filter.
      *
-     * @x-autobe-specification Filter parameter for created_at column. Records with created_at <= this value are included. Used in WHERE clause: created_at <= :created_at_to.
+         * @x-autobe-specification Filter parameter for created_at column.
+         *   Records with created_at <= this value are included. Used in WHERE
+         *   clause: created_at <= :created_at_to.
      */
     created_at_to?: (string & tags.Format<"date-time">) | undefined;
 
@@ -151,7 +175,9 @@ export namespace IEcommerceCustomerPasswordReset {
      *
      * Only password reset tokens expiring on or after this date will be included in the results. Use ISO 8601 format (YYYY-MM-DDTHH:mm:ss.sssZ). When combined with expires_at_to, creates a date range filter for expiration times.
      *
-     * @x-autobe-specification Filter parameter for expires_at column. Records with expires_at >= this value are included. Used in WHERE clause: expires_at >= :expires_at_from.
+         * @x-autobe-specification Filter parameter for expires_at column.
+         *   Records with expires_at >= this value are included. Used in WHERE
+         *   clause: expires_at >= :expires_at_from.
      */
     expires_at_from?: (string & tags.Format<"date-time">) | undefined;
 
@@ -160,7 +186,9 @@ export namespace IEcommerceCustomerPasswordReset {
      *
      * Only password reset tokens expiring on or before this date will be included in the results. Use ISO 8601 format (YYYY-MM-DDTHH:mm:ss.sssZ). When combined with expires_at_from, creates a date range filter for expiration times.
      *
-     * @x-autobe-specification Filter parameter for expires_at column. Records with expires_at <= this value are included. Used in WHERE clause: expires_at <= :expires_at_to.
+         * @x-autobe-specification Filter parameter for expires_at column.
+         *   Records with expires_at <= this value are included. Used in WHERE
+         *   clause: expires_at <= :expires_at_to.
      */
     expires_at_to?: (string & tags.Format<"date-time">) | undefined;
 
@@ -173,7 +201,10 @@ export namespace IEcommerceCustomerPasswordReset {
      *
      * This helps administrators identify active vs consumed password reset tokens.
      *
-     * @x-autobe-specification Computed filter based on used_at column. true = used_at IS NOT NULL (token consumed), false = used_at IS NULL (token unused), null = no filter applied. For admin password resets, uses deleted_at instead of used_at.
+         * @x-autobe-specification Computed filter based on used_at column. true
+         *   = used_at IS NOT NULL (token consumed), false = used_at IS NULL
+         *   (token unused), null = no filter applied. For admin password
+         *   resets, uses deleted_at instead of used_at.
      */
     is_used?: boolean | null | undefined;
 
@@ -186,7 +217,10 @@ export namespace IEcommerceCustomerPasswordReset {
      *
      * This status is computed at query time by comparing expires_at with the current timestamp.
      *
-     * @x-autobe-specification Computed filter based on expires_at vs current time. true = expires_at < NOW() (token expired), false = expires_at >= NOW() (token active), null = no filter applied. Computed at query time, not stored in database.
+         * @x-autobe-specification Computed filter based on expires_at vs
+         *   current time. true = expires_at < NOW() (token expired), false =
+         *   expires_at >= NOW() (token active), null = no filter applied.
+         *   Computed at query time, not stored in database.
      */
     is_expired?: boolean | null | undefined;
 
@@ -195,7 +229,9 @@ export namespace IEcommerceCustomerPasswordReset {
      *
      * Specifies which page of results to return. Page numbering is 1-indexed (first page is 1). Combined with `limit` to control the number of records returned per page. Minimum value is 1.
      *
-     * @x-autobe-specification Pagination parameter. 1-indexed page number. Used with LIMIT/OFFSET or cursor-based pagination. Default is 1 if not specified.
+         * @x-autobe-specification Pagination parameter. 1-indexed page number.
+         *   Used with LIMIT/OFFSET or cursor-based pagination. Default is 1 if
+         *   not specified.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -204,7 +240,9 @@ export namespace IEcommerceCustomerPasswordReset {
      *
      * Controls how many password reset records are returned in a single page of results. Valid range is 1 to 1000. Larger values improve efficiency for bulk operations but increase response size. Combined with `page` for pagination.
      *
-     * @x-autobe-specification Pagination parameter. Maximum number of records per page. Range: 1-1000. Used in SQL LIMIT clause. Default is typically 20-50 if not specified.
+         * @x-autobe-specification Pagination parameter. Maximum number of
+         *   records per page. Range: 1-1000. Used in SQL LIMIT clause. Default
+         *   is typically 20-50 if not specified.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<1000>)
@@ -240,8 +278,10 @@ export namespace IEcommerceCustomerPasswordReset {
      *
      * This UUID serves as the primary key for the password reset token entry in the database. It is used to reference this specific token record in administrative queries and audit logs.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_customer_password_resets.id. Unique identifier for the password reset token record.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_customer_password_resets.id. Unique identifier for the
+         *   password reset token record.
      */
     id: string & tags.Format<"uuid">;
 
@@ -254,8 +294,11 @@ export namespace IEcommerceCustomerPasswordReset {
      *
      * Populated via JOIN on ecommerce_customer_password_resets.ecommerce_customer_id = ecommerce_customers.id, returning the customer summary object.
      *
-     * @x-autobe-database-schema-property customer
-     * @x-autobe-specification Join from ecommerce_customer_password_resets.ecommerce_customer_id to ecommerce_customers.id. Returns IEcommerceCustomer.ISummary via relation.
+         * @x-autobe-database-schema-property customer
+         * @x-autobe-specification Join from
+         *   ecommerce_customer_password_resets.ecommerce_customer_id to
+         *   ecommerce_customers.id. Returns IEcommerceCustomer.ISummary via
+         *   relation.
      */
     customer: IEcommerceCustomer.ISummary;
 
@@ -268,8 +311,10 @@ export namespace IEcommerceCustomerPasswordReset {
      *
      * ISO 8601 datetime string in UTC timezone.
      *
-     * @x-autobe-database-schema-property expires_at
-     * @x-autobe-specification Direct mapping from ecommerce_customer_password_resets.expires_at. Token expiration timestamp in UTC.
+         * @x-autobe-database-schema-property expires_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_customer_password_resets.expires_at. Token expiration
+         *   timestamp in UTC.
      */
     expires_at: string & tags.Format<"date-time">;
 
@@ -282,8 +327,10 @@ export namespace IEcommerceCustomerPasswordReset {
      *
      * This field is null when the token has been created but not yet used. Once used, it contains the timestamp of the successful password reset completion.
      *
-     * @x-autobe-database-schema-property used_at
-     * @x-autobe-specification Direct mapping from ecommerce_customer_password_resets.used_at. Nullable - null if token has not been consumed yet.
+         * @x-autobe-database-schema-property used_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_customer_password_resets.used_at. Nullable - null if
+         *   token has not been consumed yet.
      */
     used_at: (string & tags.Format<"date-time">) | null;
 
@@ -296,8 +343,10 @@ export namespace IEcommerceCustomerPasswordReset {
      *
      * ISO 8601 datetime string in UTC timezone.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from ecommerce_customer_password_resets.created_at. Auto-set on record creation.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_customer_password_resets.created_at. Auto-set on record
+         *   creation.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -310,8 +359,10 @@ export namespace IEcommerceCustomerPasswordReset {
      *
      * ISO 8601 datetime string in UTC timezone.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from ecommerce_customer_password_resets.updated_at. Auto-updated on any record modification.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_customer_password_resets.updated_at. Auto-updated on any
+         *   record modification.
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -324,8 +375,10 @@ export namespace IEcommerceCustomerPasswordReset {
      *
      * This field is null for active records and contains the deletion timestamp for soft-deleted records.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from ecommerce_customer_password_resets.deleted_at. Nullable - null for active records, set timestamp for soft-deleted records.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_customer_password_resets.deleted_at. Nullable - null for
+         *   active records, set timestamp for soft-deleted records.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };

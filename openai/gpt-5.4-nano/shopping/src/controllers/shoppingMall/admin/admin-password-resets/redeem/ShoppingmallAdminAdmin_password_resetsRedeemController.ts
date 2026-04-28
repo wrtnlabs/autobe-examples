@@ -25,22 +25,26 @@ export class ShoppingmallAdminAdmin_password_resetsRedeemController {
    *
    * @param connection
    * @param body Payload required to redeem an administrator password reset token and set a new password.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification 1. Parse request body for reset token and new password.
-   * 2. Look up `shopping_mall_admin_password_resets` by `token` (token is unique).
-   *    - If no row exists: return generic failure (do not indicate existence).
-   *    - If `deleted_at` is not null: treat as revoked and return generic failure.
-   *    - If `expires_at` < now (use server current time): return generic failure.
-   * 3. Resolve administrator id from `shopping_mall_admin_password_resets.shopping_mall_admins_id`.
-   * 4. Validate new password with the system’s password rules (length/complexity) as implemented in the Admin password policy layer.
-   *    - If validation fails: do not update admin password; do not modify reset token record.
-   * 5. In a transaction:
-   *    - Update the administrator’s stored password hash.
-   *    - Update the reset token record so it can’t be reused (implementation choice must follow existing conventions: either set `deleted_at` or mark it revoked via the same field).
-   *    - Update timestamps as needed (`updated_at` on the reset record).
-   * 6. Commit transaction.
-   * 7. Return a success response containing the redeemed administrator identity information as defined by `IShoppingMallAdmin.I` contract.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification 1. Parse request body for reset token and new
+     *   password. 2. Look up `shopping_mall_admin_password_resets` by `token`
+     *   (token is unique). - If no row exists: return generic failure (do not
+     *   indicate existence). - If `deleted_at` is not null: treat as revoked
+     *   and return generic failure. - If `expires_at` < now (use server current
+     *   time): return generic failure. 3. Resolve administrator id from
+     *   `shopping_mall_admin_password_resets.shopping_mall_admins_id`. 4.
+     *   Validate new password with the system’s password rules
+     *   (length/complexity) as implemented in the Admin password policy layer.
+     *   - If validation fails: do not update admin password; do not modify
+     *   reset token record. 5. In a transaction: - Update the administrator’s
+     *   stored password hash. - Update the reset token record so it can’t be
+     *   reused (implementation choice must follow existing conventions: either
+     *   set `deleted_at` or mark it revoked via the same field). - Update
+     *   timestamps as needed (`updated_at` on the reset record). 6. Commit
+     *   transaction. 7. Return a success response containing the redeemed
+     *   administrator identity information as defined by `IShoppingMallAdmin.I`
+     *   contract.
    *
    * Edge cases:
    * - Concurrent redemption attempts: ensure that only the first successful transaction updates the password; subsequent attempts will find token revoked/`deleted_at` set or invalid after transaction commit.

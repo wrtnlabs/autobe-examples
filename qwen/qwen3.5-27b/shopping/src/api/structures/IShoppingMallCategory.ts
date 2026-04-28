@@ -14,8 +14,9 @@ export type IShoppingMallCategory = {
    *
    * This UUID identifies the category globally across the shopping mall platform. Used in API paths and references to this category from products and other entities.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_categories.id. UUID primary key generated on insert.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from shopping_mall_categories.id.
+     *   UUID primary key generated on insert.
    */
   id: string & tags.Format<"uuid">;
 
@@ -24,8 +25,11 @@ export type IShoppingMallCategory = {
    *
    * The category name appears in navigation menus, product filters, and category listings. Must be unique within its parent category (or unique among top-level categories if no parent). Maximum 255 characters.
    *
-   * @x-autobe-database-schema-property name
-   * @x-autobe-specification Direct mapping from shopping_mall_categories.name. String field with 1-255 character length constraint. Unique within parent scope (unique among top-level categories or among siblings).
+     * @x-autobe-database-schema-property name
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_categories.name. String field with 1-255 character length
+     *   constraint. Unique within parent scope (unique among top-level
+     *   categories or among siblings).
    */
   name: string;
 
@@ -34,8 +38,11 @@ export type IShoppingMallCategory = {
    *
    * This field provides context about what types of products belong in this category. It helps customers understand the category's purpose and aids in proper product categorization by sellers. Maximum 2000 characters.
    *
-   * @x-autobe-database-schema-property description
-   * @x-autobe-specification Direct mapping from shopping_mall_categories.description. String field with 1-2000 character length constraint. Provides context about the category's purpose.
+     * @x-autobe-database-schema-property description
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_categories.description. String field with 1-2000
+     *   character length constraint. Provides context about the category's
+     *   purpose.
    */
   description: string;
 
@@ -44,8 +51,10 @@ export type IShoppingMallCategory = {
    *
    * Records the exact time when an administrator created this category. Used for audit trails and sorting categories by creation date. Format: ISO 8601 date-time.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from shopping_mall_categories.created_at. DateTime field set automatically on record insert. Never modified after creation.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_categories.created_at. DateTime field set automatically
+     *   on record insert. Never modified after creation.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -54,8 +63,10 @@ export type IShoppingMallCategory = {
    *
    * Updated automatically whenever the category name or description is changed by an administrator. Used to track modification history. Format: ISO 8601 date-time.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from shopping_mall_categories.updated_at. DateTime field automatically updated on each record modification.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_categories.updated_at. DateTime field automatically
+     *   updated on each record modification.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -64,8 +75,10 @@ export type IShoppingMallCategory = {
    *
    * When set, the category is marked as deleted but preserved in the database. Products in deleted categories become uncategorized. Only administrators can delete categories. NULL indicates the category is active. Format: ISO 8601 date-time or null.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from shopping_mall_categories.deleted_at. Nullable DateTime field. NULL indicates active category; set value indicates soft-deleted state.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_categories.deleted_at. Nullable DateTime field. NULL
+     *   indicates active category; set value indicates soft-deleted state.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 
@@ -74,8 +87,11 @@ export type IShoppingMallCategory = {
    *
    * An array of summary objects representing subcategories that have this category as their parent. The system enforces a one-level nesting structure, so subcategories cannot have their own subcategories. Only active (non-deleted) subcategories are included.
    *
-   * @x-autobe-database-schema-property subcategories
-   * @x-autobe-specification Join from shopping_mall_categories.subcategories relation (self-referential on parent_category_id). Filter to deleted_at IS NULL. Return as array of IShoppingMallCategory.ISummary objects. Only direct subcategories included (one level deep).
+     * @x-autobe-database-schema-property subcategories
+     * @x-autobe-specification Join from shopping_mall_categories.subcategories
+     *   relation (self-referential on parent_category_id). Filter to deleted_at
+     *   IS NULL. Return as array of IShoppingMallCategory.ISummary objects.
+     *   Only direct subcategories included (one level deep).
    */
   subcategories: IShoppingMallCategory.ISummary[];
 };
@@ -89,15 +105,15 @@ export namespace IShoppingMallCategory {
    */
   export type ICreate = {
     /**
-     * @x-autobe-database-schema-property name
+         * @x-autobe-database-schema-property name
      */
     name: string & tags.MinLength<1> & tags.MaxLength<255>;
     /**
-     * @x-autobe-database-schema-property description
+         * @x-autobe-database-schema-property description
      */
     description: string & tags.MinLength<1> & tags.MaxLength<2000>;
     /**
-     * @x-autobe-database-schema-property parent_category_id
+         * @x-autobe-database-schema-property parent_category_id
      */
     parent_category_id?: (string & tags.Format<"uuid">) | null | undefined;
   };
@@ -113,8 +129,11 @@ export namespace IShoppingMallCategory {
      *
      * The category name must be unique within its parent category (or unique among top-level categories if parent is NULL). This name appears in navigation menus, product filters, and category listings.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from shopping_mall_categories.name. Updates the display name of the category. Must be unique within the same parent category (respects @@unique([parent_category_id, name]) constraint).
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_categories.name. Updates the display name of the
+         *   category. Must be unique within the same parent category (respects
+         *   @@unique([parent_category_id, name]) constraint).
      */
     name?: string | undefined;
 
@@ -123,8 +142,10 @@ export namespace IShoppingMallCategory {
      *
      * This field provides context about what types of products belong in this category. It helps customers understand the category's purpose and aids in proper product categorization by sellers.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from shopping_mall_categories.description. Updates the detailed description of the category.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_categories.description. Updates the detailed
+         *   description of the category.
      */
     description?: string | undefined;
   };
@@ -142,8 +163,9 @@ export namespace IShoppingMallCategory {
      *
      * This UUID identifies the category across the platform and is used in API paths to reference specific categories.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_categories.id. Primary key UUID.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_categories.id. Primary key UUID.
      */
     id: string & tags.Format<"uuid">;
 
@@ -152,8 +174,10 @@ export namespace IShoppingMallCategory {
      *
      * The category name must be unique within its parent category (or unique among top-level categories if parent is NULL). This name appears in navigation menus, product filters, and category listings.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from shopping_mall_categories.name. NOT NULL, unique within parent category.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_categories.name. NOT NULL, unique within parent
+         *   category.
      */
     name: string;
 
@@ -162,8 +186,9 @@ export namespace IShoppingMallCategory {
      *
      * This field provides context about what types of products belong in this category. It helps customers understand the category's purpose and aids in proper product categorization by sellers.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from shopping_mall_categories.description. NOT NULL.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_categories.description. NOT NULL.
      */
     description: string;
 
@@ -172,8 +197,11 @@ export namespace IShoppingMallCategory {
      *
      * Top-level categories have null for this field, while subcategories reference their parent category. This enables hierarchical browsing where products can be organized by category and subcategory.
      *
-     * @x-autobe-database-schema-property parentCategory
-     * @x-autobe-specification Relation mapping from shopping_mall_categories.parentCategory. LEFT JOIN to same table on parent_category_id FK. Returns ISummary or null for top-level categories.
+         * @x-autobe-database-schema-property parentCategory
+         * @x-autobe-specification Relation mapping from
+         *   shopping_mall_categories.parentCategory. LEFT JOIN to same table on
+         *   parent_category_id FK. Returns ISummary or null for top-level
+         *   categories.
      */
     parentCategory: IShoppingMallCategory.ISummary | null;
 
@@ -182,8 +210,10 @@ export namespace IShoppingMallCategory {
      *
      * Records the exact time when an administrator created this category. Used for audit trails and sorting categories by creation date.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_categories.created_at. NOT NULL, DateTime with timezone.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_categories.created_at. NOT NULL, DateTime with
+         *   timezone.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -192,8 +222,10 @@ export namespace IShoppingMallCategory {
      *
      * Updated automatically whenever the category name or description is changed by an administrator. Used to track modification history.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from shopping_mall_categories.updated_at. NOT NULL, DateTime with timezone.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_categories.updated_at. NOT NULL, DateTime with
+         *   timezone.
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -202,8 +234,10 @@ export namespace IShoppingMallCategory {
      *
      * When set, the category is marked as deleted but preserved in the database. Products in deleted categories become uncategorized. Only administrators can delete categories. When null, the category is active.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from shopping_mall_categories.deleted_at. Nullable DateTime with timezone. Use oneOf pattern for nullable type.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_categories.deleted_at. Nullable DateTime with
+         *   timezone. Use oneOf pattern for nullable type.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };
@@ -217,16 +251,16 @@ export namespace IShoppingMallCategory {
    */
   export type IRequest = {
     /**
-     * @x-autobe-database-schema-property name
+         * @x-autobe-database-schema-property name
      */
     name?: string | undefined;
     /**
-     * @x-autobe-database-schema-property description
+         * @x-autobe-database-schema-property description
      */
     description?: string | undefined;
     hasParent?: boolean | undefined;
     /**
-     * @x-autobe-database-schema-property parent_category_id
+         * @x-autobe-database-schema-property parent_category_id
      */
     parentId?: (string & tags.Format<"uuid">) | null | undefined;
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;

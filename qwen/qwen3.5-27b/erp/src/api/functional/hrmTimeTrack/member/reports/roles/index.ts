@@ -13,7 +13,9 @@ import { IHrmTimeTrackRoleReport } from "../../../../../structures/IHrmTimeTrack
  * @param props.connection
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query hrm_time_track_roles table filtered by the current organization's ID and excluding soft-deleted roles (deleted_at IS NULL).
+ * @x-autobe-specification Query hrm_time_track_roles table filtered by the
+ *   current organization's ID and excluding soft-deleted roles (deleted_at IS
+ *   NULL).
  *
  * For each active role, compute:
  * 1. Role count: total number of active roles in the organization

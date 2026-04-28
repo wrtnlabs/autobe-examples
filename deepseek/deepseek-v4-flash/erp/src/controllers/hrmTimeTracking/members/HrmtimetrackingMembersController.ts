@@ -20,9 +20,10 @@ export class HrmtimetrackingMembersController {
    *
    * @param connection
    * @param body Search criteria for filtering user accounts. Supports partial text matching on email and display name, date range filtering on creation date, account status filtering, and pagination parameters.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query hrm_time_tracking_members table with pagination and filtering.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query hrm_time_tracking_members table with
+     *   pagination and filtering.
    *
    * Implementation:
    * - Apply search filters on email (partial match), display_name (partial match), phone_number (partial match)
@@ -64,9 +65,10 @@ export class HrmtimetrackingMembersController {
    *
    * @param connection
    * @param memberId The unique identifier (UUID) of the member to retrieve.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query the hrm_time_tracking_members table by primary key id matching the provided memberId parameter.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query the hrm_time_tracking_members table by
+     *   primary key id matching the provided memberId parameter.
    *
    * Exclude the password_hash field from the response DTO for security — it must not be exposed through the API.
    *

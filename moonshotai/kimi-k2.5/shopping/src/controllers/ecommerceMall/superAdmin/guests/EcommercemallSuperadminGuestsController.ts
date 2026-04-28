@@ -22,9 +22,10 @@ export class EcommercemallSuperadminGuestsController {
    *
    * @param connection
    * @param body Search criteria and pagination parameters for guest session queries
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor superAdmin
-   * @x-autobe-specification Query ecommerce_mall_guests and ecommerce_mall_guest_sessions tables with pagination and filtering.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor superAdmin
+     * @x-autobe-specification Query ecommerce_mall_guests and
+     *   ecommerce_mall_guest_sessions tables with pagination and filtering.
    *
    * Filter by: createdAt time range (start/end), lastActivityAt time range, IP address patterns, user agent patterns.
    *
@@ -62,9 +63,11 @@ export class EcommercemallSuperadminGuestsController {
    *
    * @param connection
    * @param guestId Unique identifier of the guest account (UUID)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor superAdmin
-   * @x-autobe-specification Query ecommerce_mall_guests table by the provided guestId UUID parameter. Return the matching guest record with all fields: id, created_at, updated_at, deleted_at.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor superAdmin
+     * @x-autobe-specification Query ecommerce_mall_guests table by the provided
+     *   guestId UUID parameter. Return the matching guest record with all
+     *   fields: id, created_at, updated_at, deleted_at.
    *
    * Implementation details:
    * - Use exact UUID match on the id column

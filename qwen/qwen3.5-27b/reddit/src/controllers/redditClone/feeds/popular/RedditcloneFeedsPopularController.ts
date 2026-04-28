@@ -17,9 +17,10 @@ export class RedditcloneFeedsPopularController {
    *
    * @param connection
    * @param body Search and pagination criteria for the popular feed including sort type, time filter for top posts, and pagination parameters.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query reddit_clone_posts table with the following logic:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query reddit_clone_posts table with the following
+     *   logic:
    *
    * 1. Base query: SELECT posts with deleted_at IS NULL
    * 2. Join with reddit_clone_communities on community_id, filter communities with deleted_at IS NULL

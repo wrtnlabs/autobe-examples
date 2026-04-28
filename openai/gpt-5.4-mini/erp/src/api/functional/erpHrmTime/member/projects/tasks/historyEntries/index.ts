@@ -21,7 +21,10 @@ import { IPageIErpHrmTimeTaskHistoryEntry } from "../../../../../../structures/I
  * @param props.taskId The task identifier within the specified project scope.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Resolve the project by projectId within the current organization context, then resolve the task by taskId under that project. Verify that the task belongs to the project before querying history entries.
+ * @x-autobe-specification Resolve the project by projectId within the current
+ *   organization context, then resolve the task by taskId under that project.
+ *   Verify that the task belongs to the project before querying history
+ *   entries.
  *
  * Query erp_hrm_time_task_history_entries by erp_hrm_time_task_id and order by changed_at ascending for timeline views by default; if the surrounding API standards support reverse chronological sorting, allow it through the shared list contract, but preserve stable pagination ordering. Join the member relation only if the response DTO requires actor summary information; otherwise return the history rows with their linked references loaded as needed by the serializer.
  *
@@ -118,7 +121,13 @@ export namespace search {
  * @param props.body Pagination, filtering, and sorting criteria for listing task history entries.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Resolve the current organization context, then validate that the target project exists in that organization and that the target task belongs to that project. Query erp_hrm_time_task_history_entries by erp_hrm_time_task_id, join the related member record for display fields as needed, and order results by changed_at ascending unless the request explicitly asks for a supported descending sort.
+ * @x-autobe-specification Resolve the current organization context, then
+ *   validate that the target project exists in that organization and that the
+ *   target task belongs to that project. Query
+ *   erp_hrm_time_task_history_entries by erp_hrm_time_task_id, join the related
+ *   member record for display fields as needed, and order results by changed_at
+ *   ascending unless the request explicitly asks for a supported descending
+ *   sort.
  *
  * Support pagination and optional search/sort fields in the request body if the shared list DTO includes them. The result set must never include history rows from other tasks, projects, or organizations. Since history entries are immutable audit data, do not provide any create, update, or delete behavior here. If the project-task relationship is invalid, return a not-found style error rather than exposing whether one of the identifiers exists outside the scoped path.
  * @path /erpHrmTime/member/projects/:projectId/tasks/:taskId/historyEntries
@@ -224,7 +233,9 @@ export namespace index {
  * @param props.historyEntryId The task history entry identifier within the specified task.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Load the project by id and ensure it belongs to the current organization context. Load the task by id under that project. Load the task history entry by id under that task.
+ * @x-autobe-specification Load the project by id and ensure it belongs to the
+ *   current organization context. Load the task by id under that project. Load
+ *   the task history entry by id under that task.
  *
  * Enforce hierarchical ownership checks so the history entry cannot be accessed across tasks, projects, or organizations. Return a single immutable history record containing the entry id, task reference, member reference, old status, new status, and changed-at timestamp. If the project, task, or history entry does not exist in the scoped hierarchy, return not found.
  *

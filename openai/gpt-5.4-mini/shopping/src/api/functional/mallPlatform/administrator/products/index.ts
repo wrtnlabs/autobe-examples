@@ -23,7 +23,8 @@ export * as snapshots from "./snapshots/index";
  * @param props.productId The identifier of the product to delete.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor administrator
- * @x-autobe-specification Load the product by productId and authorize the caller as either the owning seller or an administrator.
+ * @x-autobe-specification Load the product by productId and authorize the
+ *   caller as either the owning seller or an administrator.
  *
  * Reject the request with not found when the product does not exist. Reject with forbidden when the caller is neither the owner nor an administrator with product oversight authority.
  *

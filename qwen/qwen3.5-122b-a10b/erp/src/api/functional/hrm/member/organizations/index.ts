@@ -35,7 +35,9 @@ export * as analytics from "./analytics/index";
  * @param props.body Search and filter criteria including name search string, pagination parameters (cursor, limit), and optional filters for active status.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query hrm_organizations table filtered by user's organization memberships from hrm_employees or hrm_organization_owners tables.
+ * @x-autobe-specification Query hrm_organizations table filtered by user's
+ *   organization memberships from hrm_employees or hrm_organization_owners
+ *   tables.
  *
  * Apply search filters on name (case-insensitive partial match) and description fields. Support status filtering based on deleted_at null check (active vs soft-deleted).
  *
@@ -139,7 +141,8 @@ export namespace index {
  * @param props.organizationId Unique identifier of the organization (UUID format).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implement organization detail retrieval with the following logic:
+ * @x-autobe-specification Implement organization detail retrieval with the
+ *   following logic:
  *
  * 1. **Authorization Check**: Verify the authenticated user belongs to the requested organization by querying hrm_employees table with user_id and organization_id. Return 403 Forbidden if no membership exists.
  *
@@ -250,7 +253,8 @@ export namespace at {
  * @param props.body Organization update payload containing fields to modify. All fields are optional except organization name.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Update organization settings in hrm_organizations table.
+ * @x-autobe-specification Update organization settings in hrm_organizations
+ *   table.
  *
  * Validate user is organization owner before allowing updates.
  * Accept partial updates for name, description, logo_image_url, currency, timezone, fiscal_start_month.
@@ -366,7 +370,9 @@ export namespace update {
  * @param props.organizationId UUID identifier of the organization to delete (global scope).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification 1. Verify authenticated user is the organization owner by checking hrm_organization_owners table for current owner relationship.
+ * @x-autobe-specification 1. Verify authenticated user is the organization
+ *   owner by checking hrm_organization_owners table for current owner
+ *   relationship.
  *
  * 2. Validate no pending timesheets exist: Query hrm_timesheets where hrm_employee_id IN (SELECT id FROM hrm_employees WHERE organization_id = {organizationId}) AND status = 'submitted'. If any records found, return 409 Conflict with error code 'ORGANIZATION_HAS_PENDING_TIMESHEETS'.
  *

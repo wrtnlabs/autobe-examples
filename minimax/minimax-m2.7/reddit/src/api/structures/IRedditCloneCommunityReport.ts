@@ -11,72 +11,89 @@ export type IRedditCloneCommunityReport = {
   /**
    * Unique identifier of the report within the community.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from reddit_clone_community_reports.id. UUID primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_community_reports.id. UUID primary key.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Type of reported content: 'post' or 'comment'.
    *
-   * @x-autobe-database-schema-property target_type
-   * @x-autobe-specification Direct mapping from reddit_clone_community_reports.target_type. Discriminator field: 'post' or 'comment'. Determines polymorphic relationship.
+     * @x-autobe-database-schema-property target_type
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_community_reports.target_type. Discriminator field: 'post'
+     *   or 'comment'. Determines polymorphic relationship.
    */
   target_type: string;
 
   /**
    * Unique identifier of the reported post or comment.
    *
-   * @x-autobe-database-schema-property target_id
-   * @x-autobe-specification Direct mapping from reddit_clone_community_reports.target_id. UUID of the reported post or comment, determined by target_type.
+     * @x-autobe-database-schema-property target_id
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_community_reports.target_id. UUID of the reported post or
+     *   comment, determined by target_type.
    */
   target_id: string & tags.Format<"uuid">;
 
   /**
    * User-provided reason for filing the report.
    *
-   * @x-autobe-database-schema-property reason
-   * @x-autobe-specification Direct mapping from reddit_clone_community_reports.reason. User-provided text explaining why the content was reported.
+     * @x-autobe-database-schema-property reason
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_community_reports.reason. User-provided text explaining
+     *   why the content was reported.
    */
   reason: string;
 
   /**
    * Current status of the report: 'pending', 'approved', or 'dismissed'.
    *
-   * @x-autobe-database-schema-property status
-   * @x-autobe-specification Direct mapping from reddit_clone_community_reports.status. Enum: 'pending', 'approved', 'dismissed'. Reflects current moderation workflow state.
+     * @x-autobe-database-schema-property status
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_community_reports.status. Enum: 'pending', 'approved',
+     *   'dismissed'. Reflects current moderation workflow state.
    */
   status: string;
 
   /**
    * Member who filed this report.
    *
-   * @x-autobe-database-schema-property reporter
-   * @x-autobe-specification Join via reddit_clone_member_id to reddit_clone_members table. Returns ISummary with username and display name.
+     * @x-autobe-database-schema-property reporter
+     * @x-autobe-specification Join via reddit_clone_member_id to
+     *   reddit_clone_members table. Returns ISummary with username and display
+     *   name.
    */
   reporter: IRedditCloneMember.ISummary;
 
   /**
    * Community where the reported content exists.
    *
-   * @x-autobe-database-schema-property community
-   * @x-autobe-specification Join via reddit_clone_community_id to reddit_clone_communities table. Returns ISummary with name, description, and subscriber count.
+     * @x-autobe-database-schema-property community
+     * @x-autobe-specification Join via reddit_clone_community_id to
+     *   reddit_clone_communities table. Returns ISummary with name,
+     *   description, and subscriber count.
    */
   community: IRedditCloneCommunity.ISummary;
 
   /**
    * Timestamp when the report was filed.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from reddit_clone_community_reports.created_at. Timestamp when the report was submitted.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_community_reports.created_at. Timestamp when the report
+     *   was submitted.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the report was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from reddit_clone_community_reports.updated_at. Timestamp when the report was last modified (status change, resolution note added).
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_community_reports.updated_at. Timestamp when the report
+     *   was last modified (status change, resolution note added).
    */
   updated_at: string & tags.Format<"date-time">;
 };
@@ -88,42 +105,54 @@ export namespace IRedditCloneCommunityReport {
     /**
      * Filter reports by their current status: pending (awaiting review), approved (action taken), or dismissed (rejected).
      *
-     * @x-autobe-specification Filter reports by status field from reddit_clone_community_reports. Valid values: pending, approved, dismissed. When omitted, all statuses are returned.
+         * @x-autobe-specification Filter reports by status field from
+         *   reddit_clone_community_reports. Valid values: pending, approved,
+         *   dismissed. When omitted, all statuses are returned.
      */
     status?: "pending" | "approved" | "dismissed" | undefined;
 
     /**
      * Filter reports by the type of content being reported: post or comment.
      *
-     * @x-autobe-specification Filter reports by target_type field from reddit_clone_community_reports. Valid values: post, comment. When omitted, both content types are returned.
+         * @x-autobe-specification Filter reports by target_type field from
+         *   reddit_clone_community_reports. Valid values: post, comment. When
+         *   omitted, both content types are returned.
      */
     targetType?: "post" | "comment" | undefined;
 
     /**
      * Search term to filter reports by their reason text content using partial matching.
      *
-     * @x-autobe-specification Partial text match on reason column from reddit_clone_community_reports. Implement using ILIKE or LIKE pattern matching. When omitted, no text filtering is applied.
+         * @x-autobe-specification Partial text match on reason column from
+         *   reddit_clone_community_reports. Implement using ILIKE or LIKE
+         *   pattern matching. When omitted, no text filtering is applied.
      */
     search?: string | undefined;
 
     /**
      * Field name to sort results by, defaults to created_at.
      *
-     * @x-autobe-specification Sort field for ordering results. Default: created_at descending. Valid sort fields: created_at, status. Supports ASC/DESC direction suffix.
+         * @x-autobe-specification Sort field for ordering results. Default:
+         *   created_at descending. Valid sort fields: created_at, status.
+         *   Supports ASC/DESC direction suffix.
      */
     sort?: string | undefined;
 
     /**
      * Page number for pagination, starting from 1.
      *
-     * @x-autobe-specification Page number for offset-based pagination. Minimum: 1. Defaults to 1 if omitted. Used with limit to calculate offset: (page - 1) * limit.
+         * @x-autobe-specification Page number for offset-based pagination.
+         *   Minimum: 1. Defaults to 1 if omitted. Used with limit to calculate
+         *   offset: (page - 1) * limit.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Number of items to return per page, between 1 and 100.
      *
-     * @x-autobe-specification Maximum number of records to return per page. Minimum: 1. Maximum: 100. Defaults to 20 if omitted. Used with page to calculate offset.
+         * @x-autobe-specification Maximum number of records to return per page.
+         *   Minimum: 1. Maximum: 100. Defaults to 20 if omitted. Used with page
+         *   to calculate offset.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -152,8 +181,12 @@ export namespace IRedditCloneCommunityReport {
     /**
      * Optional note from the moderator explaining why the report was dismissed.
      *
-     * @x-autobe-specification Maps to reddit_clone_community_reports.resolution_note. Optional moderator note explaining why the report was dismissed. Max length 1000 characters. Stored as plain text. Nullable per database column definition.
-     * @x-autobe-database-schema-property resolution_note
+         * @x-autobe-specification Maps to
+         *   reddit_clone_community_reports.resolution_note. Optional moderator
+         *   note explaining why the report was dismissed. Max length 1000
+         *   characters. Stored as plain text. Nullable per database column
+         *   definition.
+         * @x-autobe-database-schema-property resolution_note
      */
     resolutionNote?: (string & tags.MaxLength<1000>) | null | undefined;
   };

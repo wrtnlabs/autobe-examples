@@ -8,40 +8,48 @@ export type IRedditLikeCommentSnapshot = {
   /**
    * Unique identifier for this comment snapshot.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from reddit_like_comment_snapshots.id. UUID primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_comment_snapshots.id. UUID primary key.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Reference to the parent comment this snapshot belongs to.
    *
-   * @x-autobe-database-schema-property comment_id
-   * @x-autobe-specification Direct mapping from reddit_like_comment_snapshots.comment_id. Foreign key to reddit_like_comments table for validation context.
+     * @x-autobe-database-schema-property comment_id
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_comment_snapshots.comment_id. Foreign key to
+     *   reddit_like_comments table for validation context.
    */
   commentId: string & tags.Format<"uuid">;
 
   /**
    * The comment content as it existed at the time this snapshot was captured.
    *
-   * @x-autobe-database-schema-property body
-   * @x-autobe-specification Direct mapping from reddit_like_comment_snapshots.body. Historical content at snapshot time.
+     * @x-autobe-database-schema-property body
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_comment_snapshots.body. Historical content at snapshot
+     *   time.
    */
   body: string;
 
   /**
    * Optional reason provided by the author when editing the comment.
    *
-   * @x-autobe-database-schema-property edit_reason
-   * @x-autobe-specification Direct mapping from reddit_like_comment_snapshots.edit_reason. Nullable string (String? in DB). Null when no reason provided.
+     * @x-autobe-database-schema-property edit_reason
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_comment_snapshots.edit_reason. Nullable string (String? in
+     *   DB). Null when no reason provided.
    */
   editReason: string | null;
 
   /**
    * Timestamp when this snapshot was created, marking the moment of the edit.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from reddit_like_comment_snapshots.created_at. Timestamp with time zone.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_comment_snapshots.created_at. Timestamp with time zone.
    */
   createdAt: string & tags.Format<"date-time">;
 };
@@ -53,14 +61,20 @@ export namespace IRedditLikeCommentSnapshot {
     /**
      * Page number for pagination (1-based). Controls which set of comment snapshot results to retrieve.
      *
-     * @x-autobe-specification Query parameter for pagination. 1-based page number indicating which set of results to retrieve. Must be >= 1. Default value is 1 if not specified. Used to calculate OFFSET in SQL queries as (page - 1) * limit.
+         * @x-autobe-specification Query parameter for pagination. 1-based page
+         *   number indicating which set of results to retrieve. Must be >= 1.
+         *   Default value is 1 if not specified. Used to calculate OFFSET in
+         *   SQL queries as (page - 1) * limit.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Number of snapshots per page. Controls how many comment snapshot records to return in a single page (1-100).
      *
-     * @x-autobe-specification Query parameter for pagination. Maximum number of comment snapshot records to return per page. Must be between 1 and 100. Default value is 20. Used to calculate OFFSET and LIMIT in SQL queries.
+         * @x-autobe-specification Query parameter for pagination. Maximum
+         *   number of comment snapshot records to return per page. Must be
+         *   between 1 and 100. Default value is 20. Used to calculate OFFSET
+         *   and LIMIT in SQL queries.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -69,14 +83,21 @@ export namespace IRedditLikeCommentSnapshot {
     /**
      * Field to sort by (default: created_at). Specifies which database column to use for ordering the snapshot results.
      *
-     * @x-autobe-specification Query parameter specifying which database field to sort by. Must be one of the allowed sortable fields on reddit_like_comment_snapshots table: 'id', 'created_at'. Default is 'created_at'. Maps to SQL ORDER BY clause. Validate against allowed fields to prevent injection.
+         * @x-autobe-specification Query parameter specifying which database
+         *   field to sort by. Must be one of the allowed sortable fields on
+         *   reddit_like_comment_snapshots table: 'id', 'created_at'. Default is
+         *   'created_at'. Maps to SQL ORDER BY clause. Validate against allowed
+         *   fields to prevent injection.
      */
     sort?: string | undefined;
 
     /**
      * Sort order direction (default: desc for newest first). Controls whether results are returned in ascending or descending order.
      *
-     * @x-autobe-specification Query parameter specifying sort direction. Must be either 'asc' (ascending) or 'desc' (descending). Default is 'desc' to show newest snapshots first (ordered by created_at descending). Maps to SQL ASC/DESC in ORDER BY clause.
+         * @x-autobe-specification Query parameter specifying sort direction.
+         *   Must be either 'asc' (ascending) or 'desc' (descending). Default is
+         *   'desc' to show newest snapshots first (ordered by created_at
+         *   descending). Maps to SQL ASC/DESC in ORDER BY clause.
      */
     order?: "asc" | "desc" | undefined;
   };

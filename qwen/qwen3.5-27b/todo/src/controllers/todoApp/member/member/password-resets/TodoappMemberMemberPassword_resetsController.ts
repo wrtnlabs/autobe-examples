@@ -20,9 +20,10 @@ export class TodoappMemberMemberPassword_resetsController {
    *
    * @param connection
    * @param body Search criteria for password reset tokens including date range filters, expiration status, and pagination parameters.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query todo_app_member_password_resets table filtering by the authenticated member's ID (todo_app_member_id).
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query todo_app_member_password_resets table
+     *   filtering by the authenticated member's ID (todo_app_member_id).
    *
    * Apply search filters from request body:
    * - Filter by created_at date range if specified
@@ -68,9 +69,10 @@ export class TodoappMemberMemberPassword_resetsController {
    *
    * @param connection
    * @param resetId Unique identifier of the password reset record (global scope)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query the todo_app_member_password_resets table for a record matching the provided resetId (UUID).
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query the todo_app_member_password_resets table
+     *   for a record matching the provided resetId (UUID).
    *
    * 1. Validate that resetId is a valid UUID format
    * 2. Execute SELECT query on todo_app_member_password_resets WHERE id = ? AND deleted_at IS NULL

@@ -14,8 +14,9 @@ export type IMallPlatformCancellationRequestSnapshot = {
    *
    * This value uniquely identifies one cancellation request snapshot row and is used when retrieving the preserved historical record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from mall_platform_cancellation_request_snapshots.id.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_cancellation_request_snapshots.id.
    */
   id: string & tags.Format<"uuid">;
 
@@ -24,8 +25,15 @@ export type IMallPlatformCancellationRequestSnapshot = {
    *
    * This field points to the cancellation request whose state was captured. It is exposed as a nested object rather than a raw foreign-key value.
    *
-   * @x-autobe-specification Join mall_platform_cancellation_request_snapshots.mall_platform_cancellation_request_id to mall_platform_cancellation_requests.id and expose the related cancellation request as IMallPlatformCancellationRequest.ISummary in the read DTO. Keep this property required because every snapshot belongs to exactly one cancellation request. Do not expose the raw foreign-key scalar because the relation object is the consumer-facing representation.
-   * @x-autobe-database-schema-property cancellationRequest
+     * @x-autobe-specification Join
+     *   mall_platform_cancellation_request_snapshots.mall_platform_cancellation_request_id
+     *   to mall_platform_cancellation_requests.id and expose the related
+     *   cancellation request as IMallPlatformCancellationRequest.ISummary in
+     *   the read DTO. Keep this property required because every snapshot
+     *   belongs to exactly one cancellation request. Do not expose the raw
+     *   foreign-key scalar because the relation object is the consumer-facing
+     *   representation.
+     * @x-autobe-database-schema-property cancellationRequest
    */
   cancellationRequest: IMallPlatformCancellationRequest.ISummary;
 
@@ -34,8 +42,9 @@ export type IMallPlatformCancellationRequestSnapshot = {
    *
    * This value records the request state at the time the snapshot was created and is retained for immutable history and dispute review.
    *
-   * @x-autobe-database-schema-property snapshot_status
-   * @x-autobe-specification Direct mapping from mall_platform_cancellation_request_snapshots.snapshot_status.
+     * @x-autobe-database-schema-property snapshot_status
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_cancellation_request_snapshots.snapshot_status.
    */
   snapshotStatus: string;
 
@@ -44,8 +53,10 @@ export type IMallPlatformCancellationRequestSnapshot = {
    *
    * This field stores the decision or result associated with the cancellation request at snapshot time. It may be null when no reviewer outcome had been recorded yet.
    *
-   * @x-autobe-database-schema-property review_result
-   * @x-autobe-specification Direct mapping from mall_platform_cancellation_request_snapshots.review_result. This column is nullable in the database, so the DTO must allow null.
+     * @x-autobe-database-schema-property review_result
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_cancellation_request_snapshots.review_result. This column
+     *   is nullable in the database, so the DTO must allow null.
    */
   reviewResult: string | null;
 
@@ -54,8 +65,10 @@ export type IMallPlatformCancellationRequestSnapshot = {
    *
    * This value stores the cancellation reason or reviewer note captured in the snapshot so the historical context remains visible even after later edits.
    *
-   * @x-autobe-database-schema-property reason
-   * @x-autobe-specification Direct mapping from mall_platform_cancellation_request_snapshots.reason. This column is nullable in the database, so the DTO must allow null.
+     * @x-autobe-database-schema-property reason
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_cancellation_request_snapshots.reason. This column is
+     *   nullable in the database, so the DTO must allow null.
    */
   reason: string | null;
 
@@ -64,8 +77,9 @@ export type IMallPlatformCancellationRequestSnapshot = {
    *
    * This timestamp represents when the captured cancellation-request state changed in business terms, separate from when the snapshot row was stored.
    *
-   * @x-autobe-database-schema-property changed_at
-   * @x-autobe-specification Direct mapping from mall_platform_cancellation_request_snapshots.changed_at.
+     * @x-autobe-database-schema-property changed_at
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_cancellation_request_snapshots.changed_at.
    */
   changedAt: string & tags.Format<"date-time">;
 
@@ -74,8 +88,9 @@ export type IMallPlatformCancellationRequestSnapshot = {
    *
    * This timestamp records when the immutable snapshot entry was inserted into storage.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from mall_platform_cancellation_request_snapshots.created_at.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_cancellation_request_snapshots.created_at.
    */
   createdAt: string & tags.Format<"date-time">;
 
@@ -84,8 +99,9 @@ export type IMallPlatformCancellationRequestSnapshot = {
    *
    * This timestamp reflects the storage-level update time for the immutable snapshot record, if one was ever applied.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from mall_platform_cancellation_request_snapshots.updated_at.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_cancellation_request_snapshots.updated_at.
    */
   updatedAt: string & tags.Format<"date-time">;
 
@@ -94,8 +110,10 @@ export type IMallPlatformCancellationRequestSnapshot = {
    *
    * This value is normally null because snapshot rows are intended to be retained permanently, but it remains available for storage-level lifecycle tracking.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from mall_platform_cancellation_request_snapshots.deleted_at. This column is nullable in the database, so the DTO must allow null.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_cancellation_request_snapshots.deleted_at. This column is
+     *   nullable in the database, so the DTO must allow null.
    */
   deletedAt: (string & tags.Format<"date-time">) | null;
 };
@@ -111,8 +129,9 @@ export namespace IMallPlatformCancellationRequestSnapshot {
      *
      * This value identifies one immutable historical record and is used to reference the snapshot in API responses and related lookups.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from mall_platform_cancellation_request_snapshots.id.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_cancellation_request_snapshots.id.
      */
     id: string & tags.Format<"uuid">;
 
@@ -121,8 +140,9 @@ export namespace IMallPlatformCancellationRequestSnapshot {
      *
      * This reflects the request state at the historical moment captured by the snapshot, not the current live request state.
      *
-     * @x-autobe-database-schema-property snapshot_status
-     * @x-autobe-specification Direct mapping from mall_platform_cancellation_request_snapshots.snapshot_status.
+         * @x-autobe-database-schema-property snapshot_status
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_cancellation_request_snapshots.snapshot_status.
      */
     snapshotStatus: string;
 
@@ -131,8 +151,10 @@ export namespace IMallPlatformCancellationRequestSnapshot {
      *
      * This field shows the decision or result associated with the request at the time of capture and may be absent when the request had not yet been reviewed.
      *
-     * @x-autobe-database-schema-property review_result
-     * @x-autobe-specification Direct mapping from mall_platform_cancellation_request_snapshots.review_result. Nullable in the database, so the DTO allows null.
+         * @x-autobe-database-schema-property review_result
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_cancellation_request_snapshots.review_result.
+         *   Nullable in the database, so the DTO allows null.
      */
     reviewResult: string | null;
 
@@ -141,8 +163,10 @@ export namespace IMallPlatformCancellationRequestSnapshot {
      *
      * This text captures the reason that was recorded when the snapshot was created and is retained for audit and dispute review.
      *
-     * @x-autobe-database-schema-property reason
-     * @x-autobe-specification Direct mapping from mall_platform_cancellation_request_snapshots.reason. Nullable in the database, so the DTO allows null.
+         * @x-autobe-database-schema-property reason
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_cancellation_request_snapshots.reason. Nullable in
+         *   the database, so the DTO allows null.
      */
     reason: string | null;
 
@@ -151,8 +175,9 @@ export namespace IMallPlatformCancellationRequestSnapshot {
      *
      * This timestamp marks when the preserved state represented by the snapshot should be considered active in the business timeline.
      *
-     * @x-autobe-database-schema-property changed_at
-     * @x-autobe-specification Direct mapping from mall_platform_cancellation_request_snapshots.changed_at.
+         * @x-autobe-database-schema-property changed_at
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_cancellation_request_snapshots.changed_at.
      */
     changedAt: string & tags.Format<"date-time">;
 
@@ -161,8 +186,9 @@ export namespace IMallPlatformCancellationRequestSnapshot {
      *
      * This is the storage creation timestamp for the immutable history entry.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from mall_platform_cancellation_request_snapshots.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_cancellation_request_snapshots.created_at.
      */
     createdAt: string & tags.Format<"date-time">;
 
@@ -171,8 +197,9 @@ export namespace IMallPlatformCancellationRequestSnapshot {
      *
      * This is an audit timestamp for the immutable record and indicates the most recent persistence update, if any.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from mall_platform_cancellation_request_snapshots.updated_at.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_cancellation_request_snapshots.updated_at.
      */
     updatedAt: string & tags.Format<"date-time">;
 
@@ -181,8 +208,10 @@ export namespace IMallPlatformCancellationRequestSnapshot {
      *
      * Snapshot rows are normally retained permanently, so this field is expected to remain null in standard operation.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from mall_platform_cancellation_request_snapshots.deleted_at. Nullable in the database, so the DTO allows null.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_cancellation_request_snapshots.deleted_at. Nullable
+         *   in the database, so the DTO allows null.
      */
     deletedAt: (string & tags.Format<"date-time">) | null;
 
@@ -191,8 +220,11 @@ export namespace IMallPlatformCancellationRequestSnapshot {
      *
      * This nested summary reference lets consumers inspect the live cancellation request associated with the preserved historical snapshot.
      *
-     * @x-autobe-database-schema-property cancellationRequest
-     * @x-autobe-specification Resolve the belonged relation from mall_platform_cancellation_request_snapshots.cancellationRequest to mall_platform_cancellation_requests and expose it as IMallPlatformCancellationRequest.ISummary.
+         * @x-autobe-database-schema-property cancellationRequest
+         * @x-autobe-specification Resolve the belonged relation from
+         *   mall_platform_cancellation_request_snapshots.cancellationRequest to
+         *   mall_platform_cancellation_requests and expose it as
+         *   IMallPlatformCancellationRequest.ISummary.
      */
     cancellationRequest: IMallPlatformCancellationRequest.ISummary;
   };

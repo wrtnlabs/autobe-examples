@@ -23,9 +23,10 @@ export class RedditclonePostsCommentsController {
    * @param connection
    * @param postId Unique identifier of the parent post (scoped to post).
    * @param body Search and filter criteria for comments including sort order, pagination cursor, and optional filters for author, date range, and minimum score.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query the reddit_clone_comments table for comments where reddit_clone_post_id matches the provided postId.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query the reddit_clone_comments table for
+     *   comments where reddit_clone_post_id matches the provided postId.
    *
    * Apply filters from the request body: author filter by reddit_clone_user_profile_id, date range on created_at, minimum score threshold.
    *
@@ -64,9 +65,10 @@ export class RedditclonePostsCommentsController {
    * @param connection
    * @param postId UUID of the post that contains this comment. Used to scope the comment retrieval and verify the comment belongs to this post.
    * @param commentId UUID of the specific comment to retrieve. Identifies the root comment of the thread to be returned with all its nested replies.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query the reddit_clone_comments table for the comment with the specified commentId.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query the reddit_clone_comments table for the
+     *   comment with the specified commentId.
    *
    * 1. Verify the comment exists and belongs to the specified postId by checking reddit_clone_post_id.
    * 2. Ensure the comment is not soft-deleted (deleted_at is null).

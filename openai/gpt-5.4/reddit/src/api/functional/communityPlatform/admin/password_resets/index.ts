@@ -25,7 +25,9 @@ import { IPageICommunityPlatformMemberPasswordReset } from "../../../../structur
  * @param props.body Password reset request creation data
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Accept a JSON request body typed as ICommunityPlatformMemberPasswordReset.ICreate containing the account recovery input needed to create a password reset request.
+ * @x-autobe-specification Accept a JSON request body typed as
+ *   ICommunityPlatformMemberPasswordReset.ICreate containing the account
+ *   recovery input needed to create a password reset request.
  *
  * Resolve the target member from community_platform_members using the submitted unique email address. If no active member exists for the email, do not reveal that fact through a distinct success payload or error shape; instead, return a generic success result or a response structurally equivalent to the normal creation response according to service policy. Do not require authentication for this operation because it serves pre-authentication account recovery.
  *
@@ -126,7 +128,11 @@ export namespace create {
  * @param props.body Search criteria and pagination options for password reset requests
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Implement an administrative search operation over the community_platform_member_password_resets table with an inner join to community_platform_members through community_platform_member_password_resets.community_platform_member_id = community_platform_members.id.
+ * @x-autobe-specification Implement an administrative search operation over the
+ *   community_platform_member_password_resets table with an inner join to
+ *   community_platform_members through
+ *   community_platform_member_password_resets.community_platform_member_id =
+ *   community_platform_members.id.
  *
  * Accept a JSON request body typed as ICommunityPlatformMemberPasswordReset.IRequest. The request DTO should support pagination, sortable fields, and optional filters based only on verified schema columns and the verified member relation. Valid filter categories include reset record identifiers, member-facing account identifiers such as member code and email, member security state such as email_verified and status, and reset lifecycle timestamps such as created_at, expired_at, used_at, revoked_at, updated_at, and deleted_at. Implement partial matching only for string fields that make sense operationally, such as email, ip, href, and referrer, and exact matching for identifiers and booleans unless the DTO explicitly defines broader semantics.
  *
@@ -230,7 +236,9 @@ export namespace index {
  * @param props.passwordResetId Target password reset request identifier
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Implement a detail-read service for one record in `community_platform_member_password_resets` identified by the `passwordResetId` path parameter.
+ * @x-autobe-specification Implement a detail-read service for one record in
+ *   `community_platform_member_password_resets` identified by the
+ *   `passwordResetId` path parameter.
  *
  * 1. Parse `passwordResetId` as a UUID and query the password reset table by primary identifier.
  * 2. If no matching record exists, return a not-found error.
@@ -336,7 +344,10 @@ export namespace at {
  * @param props.body Password reset completion data
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Implement a service method that loads community_platform_member_password_resets by id using the passwordResetId path parameter and joins the owning community_platform_members row through community_platform_member_id.
+ * @x-autobe-specification Implement a service method that loads
+ *   community_platform_member_password_resets by id using the passwordResetId
+ *   path parameter and joins the owning community_platform_members row through
+ *   community_platform_member_id.
  *
  * Validate that the reset request exists, is not deleted, and references an existing member record. Validate the client-provided recovery credential in the request body against the stored reset request state according to the request DTO contract. Reject the operation if the reset request has expired_at earlier than the current timestamp, if used_at is already set, or if revoked_at is already set. Reject the operation if the target member account does not exist.
  *
@@ -448,7 +459,8 @@ export namespace updatePassword {
  * @param props.passwordResetId Target password reset request identifier.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Authenticate the caller as a member before any data access.
+ * @x-autobe-specification Authenticate the caller as a member before any data
+ *   access.
  *
  * Load the community_platform_member_password_resets row by id using passwordResetId. If no row exists, return a not-found style failure. Verify that the row belongs to the authenticated member by comparing community_platform_member_id with the caller's member id. If ownership does not match, reject the request as forbidden.
  *

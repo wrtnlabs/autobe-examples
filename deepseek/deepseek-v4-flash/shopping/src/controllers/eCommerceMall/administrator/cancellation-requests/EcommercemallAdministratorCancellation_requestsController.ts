@@ -22,9 +22,10 @@ export class EcommercemallAdministratorCancellation_requestsController {
    *
    * @param connection
    * @param body Search and filter criteria for cancellation requests including status filters, date range, pagination parameters, and sorting options. The available filters may be scoped by the caller's role automatically.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Query the e_commerce_mall_cancellation_requests table with pagination and filtering.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor administrator
+     * @x-autobe-specification Query the e_commerce_mall_cancellation_requests
+     *   table with pagination and filtering.
    *
    * Apply search filters from request body:
    * - status filter (single or multiple): pending, approved, rejected
@@ -76,9 +77,11 @@ export class EcommercemallAdministratorCancellation_requestsController {
    *
    * @param connection
    * @param cancellationRequestId Unique identifier of the cancellation request to retrieve (UUID).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Query the e_commerce_mall_cancellation_requests table by primary key (id) using the provided cancellationRequestId path parameter.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor administrator
+     * @x-autobe-specification Query the e_commerce_mall_cancellation_requests
+     *   table by primary key (id) using the provided cancellationRequestId path
+     *   parameter.
    *
    * Return the full cancellation request entity. Do not include soft-deleted records (deleted_at IS NULL) to respect data retention policies.
    *

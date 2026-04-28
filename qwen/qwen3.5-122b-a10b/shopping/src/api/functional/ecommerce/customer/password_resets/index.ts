@@ -29,7 +29,8 @@ import { IPageIEcommerceCustomerPasswordReset } from "../../../../structures/IPa
  * @param props.body Search criteria for filtering password reset records including actor type, date ranges, token status, and pagination parameters.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Implement administrative search for password reset records across all actor types.
+ * @x-autobe-specification Implement administrative search for password reset
+ *   records across all actor types.
  *
  * **Query Logic**
  *
@@ -173,7 +174,8 @@ export namespace index {
  * @param props.resetId Unique identifier of the password reset record (UUID format).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Retrieve password reset record by UUID from ecommerce_customer_password_resets table.
+ * @x-autobe-specification Retrieve password reset record by UUID from
+ *   ecommerce_customer_password_resets table.
  *
  * Implementation steps:
  * 1. Validate resetId is a valid UUID format

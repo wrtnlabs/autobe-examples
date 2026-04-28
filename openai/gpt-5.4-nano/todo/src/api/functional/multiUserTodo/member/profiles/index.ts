@@ -137,20 +137,18 @@ export namespace updateProfile {
  * @param props.profileId Profile identifier (UUID). The system must return the profile only if it belongs to the authenticated user (privacy boundary).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implementation steps:
- * 1) Require an authenticated member context (authenticated account id).
- * 2) Validate profileId format (UUID) and return an error for invalid input.
- * 3) Query multi_user_todo_user_profiles by id = profileId and deleted_at IS NULL.
- * 4) If no row matches, return a not-found/unavailable response (treated as unavailable).
- * 5) Ownership enforcement: verify the row’s multi_user_todo_user_id equals the authenticated user id.
- *    - If it does not match, deny access (do not reveal whether the profile exists for another user).
- * 6) Map fields to response:
- *    - id
- *    - multi_user_todo_user_id (if present in the DTO; otherwise omit in mapping layer)
- *    - display_name
- *    - created_at
- *    - updated_at
- * 7) Do not join or return any todo or edit history data; profile operations are independent of todo ownership visibility.
+ * @x-autobe-specification Implementation steps: 1) Require an authenticated
+ *   member context (authenticated account id). 2) Validate profileId format
+ *   (UUID) and return an error for invalid input. 3) Query
+ *   multi_user_todo_user_profiles by id = profileId and deleted_at IS NULL. 4)
+ *   If no row matches, return a not-found/unavailable response (treated as
+ *   unavailable). 5) Ownership enforcement: verify the row’s
+ *   multi_user_todo_user_id equals the authenticated user id. - If it does not
+ *   match, deny access (do not reveal whether the profile exists for another
+ *   user). 6) Map fields to response: - id - multi_user_todo_user_id (if
+ *   present in the DTO; otherwise omit in mapping layer) - display_name -
+ *   created_at - updated_at 7) Do not join or return any todo or edit history
+ *   data; profile operations are independent of todo ownership visibility.
  *
  * Error handling:
  * - Invalid UUID => 400-like validation error.

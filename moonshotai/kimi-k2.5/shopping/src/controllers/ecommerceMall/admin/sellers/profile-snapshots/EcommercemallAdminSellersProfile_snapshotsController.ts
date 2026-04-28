@@ -25,9 +25,10 @@ export class EcommercemallAdminSellersProfile_snapshotsController {
    * @param connection
    * @param sellerId Unique identifier of the seller whose profile snapshots are being retrieved (UUID format)
    * @param body Search criteria and pagination parameters for filtering profile snapshots
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query the ecommerce_mall_seller_profile_snapshots table filtered by the provided sellerId path parameter.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Query the ecommerce_mall_seller_profile_snapshots
+     *   table filtered by the provided sellerId path parameter.
    *
    * Implement pagination using cursor-based or offset-based pagination depending on the request parameters. Support search criteria in the request body including:
    * - Date range filtering (createdAfter, createdBefore)
@@ -78,9 +79,10 @@ export class EcommercemallAdminSellersProfile_snapshotsController {
    * @param connection
    * @param sellerId The unique identifier of the seller (UUID format)
    * @param snapshotId The unique identifier of the specific profile snapshot to retrieve (UUID format)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query the ecommerce_mall_seller_profile_snapshots table for the snapshot matching both sellerId and snapshotId.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Query the ecommerce_mall_seller_profile_snapshots
+     *   table for the snapshot matching both sellerId and snapshotId.
    *
    * Join with ecommerce_mall_sellers to ensure the snapshot belongs to the specified seller.
    *

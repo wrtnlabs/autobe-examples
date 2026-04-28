@@ -12,49 +12,69 @@ export type ICommunityPlatformPostVote = {
   /**
    * Unique identifier for the vote record.
    *
-   * @x-autobe-specification Maps to community_platform_post_votes.id for post votes or community_platform_comment_votes.id for comment votes. UUID primary key uniquely identifying the vote record.
+     * @x-autobe-specification Maps to community_platform_post_votes.id for post
+     *   votes or community_platform_comment_votes.id for comment votes. UUID
+     *   primary key uniquely identifying the vote record.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Type of content being voted on - either 'post' or 'comment'.
    *
-   * @x-autobe-specification Computed discriminator: 'post' when vote found in community_platform_post_votes table, 'comment' when found in community_platform_comment_votes table. Determines which table to query and how to interpret targetId.
+     * @x-autobe-specification Computed discriminator: 'post' when vote found in
+     *   community_platform_post_votes table, 'comment' when found in
+     *   community_platform_comment_votes table. Determines which table to query
+     *   and how to interpret targetId.
    */
   targetType: string;
 
   /**
    * ID of the post or comment being voted on.
    *
-   * @x-autobe-specification Polymorphic foreign key reference. For post votes: maps to community_platform_post_votes.post_id referencing community_platform_posts.id. For comment votes: maps to community_platform_comment_votes.community_platform_comment_id referencing community_platform_comments.id.
+     * @x-autobe-specification Polymorphic foreign key reference. For post
+     *   votes: maps to community_platform_post_votes.post_id referencing
+     *   community_platform_posts.id. For comment votes: maps to
+     *   community_platform_comment_votes.community_platform_comment_id
+     *   referencing community_platform_comments.id.
    */
   targetId: string & tags.Format<"uuid">;
 
   /**
    * The member who cast this vote.
    *
-   * @x-autobe-specification Member relation via JOIN. For post votes: community_platform_post_votes.member_id → community_platform_members.id. For comment votes: community_platform_comment_votes.community_platform_member_id → community_platform_members.id. Returns ICommunityPlatformMember.ISummary.
+     * @x-autobe-specification Member relation via JOIN. For post votes:
+     *   community_platform_post_votes.member_id →
+     *   community_platform_members.id. For comment votes:
+     *   community_platform_comment_votes.community_platform_member_id →
+     *   community_platform_members.id. Returns
+     *   ICommunityPlatformMember.ISummary.
    */
   member: ICommunityPlatformMember.ISummary;
 
   /**
    * The type of vote cast - 'upvote' or 'downvote'.
    *
-   * @x-autobe-specification Maps to community_platform_post_votes.vote_type or community_platform_comment_votes.vote_type. Values: 'upvote' adds +1 to score and author karma, 'downvote' subtracts -1 from both.
+     * @x-autobe-specification Maps to community_platform_post_votes.vote_type
+     *   or community_platform_comment_votes.vote_type. Values: 'upvote' adds +1
+     *   to score and author karma, 'downvote' subtracts -1 from both.
    */
   voteType: string;
 
   /**
    * Timestamp when the vote was cast.
    *
-   * @x-autobe-specification Maps to community_platform_post_votes.created_at or community_platform_comment_votes.created_at. ISO 8601 timestamp recording when the vote was originally cast.
+     * @x-autobe-specification Maps to community_platform_post_votes.created_at
+     *   or community_platform_comment_votes.created_at. ISO 8601 timestamp
+     *   recording when the vote was originally cast.
    */
   createdAt: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the vote was last modified.
    *
-   * @x-autobe-specification Maps to community_platform_post_votes.updated_at or community_platform_comment_votes.updated_at. ISO 8601 timestamp recording when the vote type was last changed.
+     * @x-autobe-specification Maps to community_platform_post_votes.updated_at
+     *   or community_platform_comment_votes.updated_at. ISO 8601 timestamp
+     *   recording when the vote type was last changed.
    */
   updatedAt: string & tags.Format<"date-time">;
 };
@@ -66,7 +86,10 @@ export namespace ICommunityPlatformPostVote {
     /**
      * The new vote type to set.
      *
-     * @x-autobe-specification Updates the vote_type column in either community_platform_post_votes or community_platform_comment_votes table (determined by target_type). Accepts 'upvote' (+1 score/karma) or 'downvote' (-1 score/karma).
+         * @x-autobe-specification Updates the vote_type column in either
+         *   community_platform_post_votes or community_platform_comment_votes
+         *   table (determined by target_type). Accepts 'upvote' (+1
+         *   score/karma) or 'downvote' (-1 score/karma).
      */
     vote_type: "upvote" | "downvote";
 
@@ -125,7 +148,8 @@ export namespace ICommunityPlatformPostVote {
      * Requesting a page beyond the available range returns an empty data array
      * with valid pagination metadata reflecting the actual totals.
      *
-     * @x-autobe-specification 1-indexed page number. Defaults to 1 if not provided.
+         * @x-autobe-specification 1-indexed page number. Defaults to 1 if not
+         *   provided.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
 
@@ -137,7 +161,8 @@ export namespace ICommunityPlatformPostVote {
      * enforce upper bounds to prevent excessive resource consumption on large
      * requests.
      *
-     * @x-autobe-specification Maximum records per page. Defaults to 100 if not provided.
+         * @x-autobe-specification Maximum records per page. Defaults to 100 if
+         *   not provided.
      */
     limit?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };

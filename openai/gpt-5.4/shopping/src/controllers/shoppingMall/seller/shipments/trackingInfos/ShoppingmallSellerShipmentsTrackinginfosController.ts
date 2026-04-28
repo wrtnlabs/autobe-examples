@@ -28,9 +28,11 @@ export class ShoppingmallSellerShipmentsTrackinginfosController {
    * @param connection
    * @param shipmentId Target shipment's ID
    * @param body Tracking details to attach to the shipment
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Implement this operation as creation of the dependent `shopping_mall_tracking_infos` record for an existing `shopping_mall_shipments` parent.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Implement this operation as creation of the
+     *   dependent `shopping_mall_tracking_infos` record for an existing
+     *   `shopping_mall_shipments` parent.
    *
    * 1. Authorize the caller. Allow the responsible seller when the shipment's `shopping_mall_seller_id` matches the authenticated seller account. Allow administrators according to platform oversight permissions. Reject customers and unrelated sellers.
    *
@@ -88,9 +90,11 @@ export class ShoppingmallSellerShipmentsTrackinginfosController {
    * @param connection
    * @param shipmentId Target shipment's ID
    * @param trackingInfoId Target tracking information record's ID
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Implement a read-only service that fetches one `shopping_mall_tracking_infos` record by `id` and verifies that its `shopping_mall_shipment_id` matches the `shipmentId` path parameter.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Implement a read-only service that fetches one
+     *   `shopping_mall_tracking_infos` record by `id` and verifies that its
+     *   `shopping_mall_shipment_id` matches the `shipmentId` path parameter.
    *
    * Load the parent `shopping_mall_shipments` record as part of authorization and consistency checks. Reject the request if either the shipment does not exist, the tracking information does not exist, the tracking information is soft deleted, the shipment is soft deleted when active visibility rules treat it as inaccessible, or the tracking information belongs to a different shipment than the one identified in the route.
    *
@@ -141,9 +145,10 @@ export class ShoppingmallSellerShipmentsTrackinginfosController {
    * @param shipmentId Target shipment's ID
    * @param trackingInfoId Target tracking information record's ID
    * @param body Replacement values for the shipment tracking information
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Implement this operation as a shipment-scoped update of the dependent `shopping_mall_tracking_infos` record.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Implement this operation as a shipment-scoped
+     *   update of the dependent `shopping_mall_tracking_infos` record.
    *
    * 1. Authorize the caller. Allow the seller who owns `shopping_mall_shipments.shopping_mall_seller_id` for the target shipment, and allow administrator or superAdministrator actors according to platform oversight permissions. Reject customers and any seller who does not own the shipment.
    * 2. Load the shipment by `shipmentId` from `shopping_mall_shipments` using `deleted_at IS NULL` for active access unless administrative policy explicitly allows historical access. If not found, return a not-found error.
@@ -200,9 +205,10 @@ export class ShoppingmallSellerShipmentsTrackinginfosController {
    * @param connection
    * @param shipmentId Identifier of the shipment that owns the tracking information record.
    * @param trackingInfoId Identifier of the tracking information record to remove from the shipment.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Implement a shipment-tracking removal service for the dependent `shopping_mall_tracking_infos` entity.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Implement a shipment-tracking removal service for
+     *   the dependent `shopping_mall_tracking_infos` entity.
    *
    * 1. Authenticate the caller and authorize only the responsible seller for the shipment or an administrator-level actor. Customers must be rejected because they have view-only tracking access.
    * 2. Load the target shipment by `shopping_mall_shipments.id = shipmentId` and ensure it is still a valid shipment record for mutation according to platform deletion policy. If not found, return a not-found error.

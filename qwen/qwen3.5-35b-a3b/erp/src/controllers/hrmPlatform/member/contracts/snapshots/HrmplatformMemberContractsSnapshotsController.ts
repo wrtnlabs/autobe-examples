@@ -42,9 +42,10 @@ export class HrmplatformMemberContractsSnapshotsController {
    * @param connection
    * @param contractId The unique identifier of the contract to snapshot.
    * @param body Optional confirmation to trigger snapshot creation. Most snapshot data is derived from the source contract.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Create a contract snapshot record in hrm_platform_contracts_snapshots table.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Create a contract snapshot record in
+     *   hrm_platform_contracts_snapshots table.
    *
    * 1. Validate that contractId refers to an existing hrm_platform_contracts record
    * 2. Verify user has employee:manage permission or is the contract owner
@@ -98,9 +99,11 @@ export class HrmplatformMemberContractsSnapshotsController {
    * @param connection
    * @param contractId Unique identifier of the contract whose snapshots should be retrieved.
    * @param body Pagination and filtering criteria for contract snapshots. Supports sorting by snapshot date and filtering by snapshot creation date range.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query hrm_platform_contracts_snapshots table filtered by hrm_platform_contract_id matching the contractId path parameter.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query hrm_platform_contracts_snapshots table
+     *   filtered by hrm_platform_contract_id matching the contractId path
+     *   parameter.
    *
    * Apply pagination parameters from request body including page size, cursor/offset, and sort order (default: snapshotted_at descending).
    *
@@ -152,9 +155,10 @@ export class HrmplatformMemberContractsSnapshotsController {
    * @param connection
    * @param contractId The unique identifier of the parent contract that this snapshot belongs to. This provides organizational context and access control scope.
    * @param snapshotId The unique identifier of the contract snapshot record to retrieve.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query the hrm_platform_contracts_snapshots table to retrieve a single snapshot record by its ID.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query the hrm_platform_contracts_snapshots table
+     *   to retrieve a single snapshot record by its ID.
    *
    * Preconditions:
    * - Verify the snapshot exists in the database

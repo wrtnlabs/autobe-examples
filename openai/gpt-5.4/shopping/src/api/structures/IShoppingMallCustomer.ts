@@ -10,48 +10,60 @@ export type IShoppingMallCustomer = {
   /**
    * Unique identifier of the customer account.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_customers.id. Return the UUID primary key of the customer account exactly as stored.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from shopping_mall_customers.id.
+     *   Return the UUID primary key of the customer account exactly as stored.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Unique email address used to sign in to the customer account.
    *
-   * @x-autobe-specification Direct mapping from shopping_mall_customers.email. Return the unique login email address used by the customer account.
-   * @x-autobe-database-schema-property email
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_customers.email. Return the unique login email address
+     *   used by the customer account.
+     * @x-autobe-database-schema-property email
    */
   email: boolean;
 
   /**
    * Timestamp when the customer account was banned, or null if the account is not banned.
    *
-   * @x-autobe-database-schema-property banned_at
-   * @x-autobe-specification Direct mapping from shopping_mall_customers.banned_at. Return the stored timestamp when the account was banned, or null when the account is not currently banned.
+     * @x-autobe-database-schema-property banned_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_customers.banned_at. Return the stored timestamp when the
+     *   account was banned, or null when the account is not currently banned.
    */
   banned_at: (string & tags.Format<"date-time">) | null;
 
   /**
    * Timestamp when the customer account was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from shopping_mall_customers.created_at. Return the timestamp when the customer account was originally registered.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_customers.created_at. Return the timestamp when the
+     *   customer account was originally registered.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the customer account was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from shopping_mall_customers.updated_at. Return the timestamp of the most recent update to the customer account record.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_customers.updated_at. Return the timestamp of the most
+     *   recent update to the customer account record.
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the customer account was soft-deleted, or null if the account is still active.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from shopping_mall_customers.deleted_at. Return the stored soft-deletion timestamp, or null when the account remains active and not customer-deleted.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_customers.deleted_at. Return the stored soft-deletion
+     *   timestamp, or null when the account remains active and not
+     *   customer-deleted.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -63,7 +75,13 @@ export namespace IShoppingMallCustomer {
     /**
      * Refresh credential used to renew the authenticated customer's authorization session.
      *
-     * @x-autobe-specification Accept the client-issued refresh credential string and validate it against the customer session subsystem. Use this value to resolve the corresponding shopping_mall_customer_sessions record, confirm the session is authentic and unexpired, and then continue the refresh flow to issue a new IShoppingMallCustomer.IAuthorized response if the linked customer account remains active and eligible.
+         * @x-autobe-specification Accept the client-issued refresh credential
+         *   string and validate it against the customer session subsystem. Use
+         *   this value to resolve the corresponding
+         *   shopping_mall_customer_sessions record, confirm the session is
+         *   authentic and unexpired, and then continue the refresh flow to
+         *   issue a new IShoppingMallCustomer.IAuthorized response if the
+         *   linked customer account remains active and eligible.
      */
     refresh: string;
   };
@@ -75,37 +93,54 @@ export namespace IShoppingMallCustomer {
     /**
      * Customer email address used as the login identifier.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from shopping_mall_customers.email. Use this unique email address to find the customer account that is attempting to log in.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_customers.email. Use this unique email address to
+         *   find the customer account that is attempting to log in.
      */
     email: string & tags.Format<"email">;
 
     /**
      * Customer password submitted for authentication.
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification Accept the customer's plain-text password input and verify it against shopping_mall_customers.password_hash using the service's password-hashing algorithm. Never persist or echo the plain-text value.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification Accept the customer's plain-text password
+         *   input and verify it against shopping_mall_customers.password_hash
+         *   using the service's password-hashing algorithm. Never persist or
+         *   echo the plain-text value.
      */
     password: string & tags.Format<"password">;
 
     /**
      * Current client page URI from which the customer is signing in.
      *
-     * @x-autobe-specification Use this client page URI as session-establishment context when creating the shopping_mall_customer_sessions row after successful authentication. Persist it into the session record's href field, not the customer account table.
+         * @x-autobe-specification Use this client page URI as
+         *   session-establishment context when creating the
+         *   shopping_mall_customer_sessions row after successful
+         *   authentication. Persist it into the session record's href field,
+         *   not the customer account table.
      */
     href: string & tags.Format<"uri">;
 
     /**
      * Referring client URI associated with the login attempt.
      *
-     * @x-autobe-specification Use this referring URI as session-establishment context when creating the shopping_mall_customer_sessions row after successful authentication. Persist it into the session record's referrer field, not the customer account table.
+         * @x-autobe-specification Use this referring URI as
+         *   session-establishment context when creating the
+         *   shopping_mall_customer_sessions row after successful
+         *   authentication. Persist it into the session record's referrer
+         *   field, not the customer account table.
      */
     referrer: string & tags.Format<"uri">;
 
     /**
      * Optional client IPv4 address associated with the login attempt.
      *
-     * @x-autobe-specification Optional client IPv4 address supplied by the caller for session creation. When present, store it in the created shopping_mall_customer_sessions row; when absent, the server may substitute the detected requester IP. Do not map this field to shopping_mall_customers.
+         * @x-autobe-specification Optional client IPv4 address supplied by the
+         *   caller for session creation. When present, store it in the created
+         *   shopping_mall_customer_sessions row; when absent, the server may
+         *   substitute the detected requester IP. Do not map this field to
+         *   shopping_mall_customers.
      */
     ip?: (string & tags.Format<"ipv4">) | undefined;
   };
@@ -117,48 +152,62 @@ export namespace IShoppingMallCustomer {
     /**
      * Unique identifier of the registered customer account.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_customers.id. Expose the persisted UUID primary key of the customer account without transformation.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_customers.id. Expose the persisted UUID primary key
+         *   of the customer account without transformation.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Unique email address used to identify and sign in the customer account.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from shopping_mall_customers.email. Expose the unique login email address used as the customer's account identifier.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_customers.email. Expose the unique login email
+         *   address used as the customer's account identifier.
      */
     email: string;
 
     /**
      * Timestamp when the customer account was banned from authentication, or null if the account is not banned.
      *
-     * @x-autobe-database-schema-property banned_at
-     * @x-autobe-specification Direct mapping from shopping_mall_customers.banned_at. Return the timestamp when the account was banned, or null when the customer is not currently banned.
+         * @x-autobe-database-schema-property banned_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_customers.banned_at. Return the timestamp when the
+         *   account was banned, or null when the customer is not currently
+         *   banned.
      */
     banned_at: (string & tags.Format<"date-time">) | null;
 
     /**
      * Timestamp when the customer account was originally registered.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_customers.created_at. Expose the account registration timestamp.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_customers.created_at. Expose the account registration
+         *   timestamp.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when the customer account was last updated.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from shopping_mall_customers.updated_at. Expose the timestamp of the most recent account-level update.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_customers.updated_at. Expose the timestamp of the
+         *   most recent account-level update.
      */
     updated_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when the customer account was soft-deleted, or null if the account is still active.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from shopping_mall_customers.deleted_at. Return the soft-deletion timestamp when the customer account has been deleted, or null when the account remains undeleted.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_customers.deleted_at. Return the soft-deletion
+         *   timestamp when the customer account has been deleted, or null when
+         *   the account remains undeleted.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };
@@ -170,55 +219,66 @@ export namespace IShoppingMallCustomer {
     /**
      * Unique identifier of the authenticated customer account.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_customers.id after successful join, login, or refresh validation.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_customers.id after successful join, login, or refresh
+         *   validation.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Email address of the authenticated customer account.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from shopping_mall_customers.email using the canonical stored customer login email.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_customers.email using the canonical stored customer
+         *   login email.
      */
     email: string & tags.Format<"email">;
 
     /**
      * Timestamp when the customer account was banned from authentication, or null when the account is not banned.
      *
-     * @x-autobe-database-schema-property banned_at
-     * @x-autobe-specification Direct mapping from shopping_mall_customers.banned_at. Returns a timestamp when the customer account has been banned from login, otherwise null.
+         * @x-autobe-database-schema-property banned_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_customers.banned_at. Returns a timestamp when the
+         *   customer account has been banned from login, otherwise null.
      */
     banned_at: (string & tags.Format<"date-time">) | null;
 
     /**
      * Timestamp when the customer account was originally registered.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_customers.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_customers.created_at.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when the customer account record was last updated.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from shopping_mall_customers.updated_at.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_customers.updated_at.
      */
     updated_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when the customer account was soft-deleted, or null when the account is still active.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from shopping_mall_customers.deleted_at. Returns a timestamp when the customer account has been soft-deleted, otherwise null.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_customers.deleted_at. Returns a timestamp when the
+         *   customer account has been soft-deleted, otherwise null.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
 
     /**
      * Authorization token.
      *
-     * @x-autobe-specification Authorization token comes from the session table.
+         * @x-autobe-specification Authorization token comes from the session
+         *   table.
      */
     token: IAuthorizationToken;
   };
@@ -230,37 +290,55 @@ export namespace IShoppingMallCustomer {
     /**
      * Customer email address used as the account's unique login identifier.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from request body to shopping_mall_customers.email after canonical normalization and uniqueness validation. This value becomes the customer's login identifier for future authentication.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from request body to
+         *   shopping_mall_customers.email after canonical normalization and
+         *   uniqueness validation. This value becomes the customer's login
+         *   identifier for future authentication.
      */
     email: string & tags.Format<"email">;
 
     /**
      * Plain-text password submitted at registration and transformed into the stored password hash.
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification Accept the raw password from the request body, validate credential policy, then hash it server-side before persisting the result into shopping_mall_customers.password_hash. Never store or expose the raw password value.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification Accept the raw password from the request
+         *   body, validate credential policy, then hash it server-side before
+         *   persisting the result into shopping_mall_customers.password_hash.
+         *   Never store or expose the raw password value.
      */
     password: string & tags.Format<"password">;
 
     /**
      * Client page URI from which the customer started registration.
      *
-     * @x-autobe-specification Use this URI as session creation context when inserting the initial shopping_mall_customer_sessions row during registration. It records the page or application location from which the customer initiated account creation and does not map to a column on shopping_mall_customers.
+         * @x-autobe-specification Use this URI as session creation context when
+         *   inserting the initial shopping_mall_customer_sessions row during
+         *   registration. It records the page or application location from
+         *   which the customer initiated account creation and does not map to a
+         *   column on shopping_mall_customers.
      */
     href: string & tags.Format<"uri">;
 
     /**
      * Referring URI that led the customer to the registration request.
      *
-     * @x-autobe-specification Use this URI as referrer context when creating the initial shopping_mall_customer_sessions row during registration. It provides navigation-origin metadata for the new authenticated session and does not map to a column on shopping_mall_customers.
+         * @x-autobe-specification Use this URI as referrer context when
+         *   creating the initial shopping_mall_customer_sessions row during
+         *   registration. It provides navigation-origin metadata for the new
+         *   authenticated session and does not map to a column on
+         *   shopping_mall_customers.
      */
     referrer: string & tags.Format<"uri">;
 
     /**
      * Optional client IPv4 address used to initialize the first authenticated session record.
      *
-     * @x-autobe-specification Use this optional IPv4 address as the client network address for the initial shopping_mall_customer_sessions row when supplied by the client; otherwise allow the server to capture the observed request IP. This field does not map to a column on shopping_mall_customers.
+         * @x-autobe-specification Use this optional IPv4 address as the client
+         *   network address for the initial shopping_mall_customer_sessions row
+         *   when supplied by the client; otherwise allow the server to capture
+         *   the observed request IP. This field does not map to a column on
+         *   shopping_mall_customers.
      */
     ip?: (string & tags.Format<"ipv4">) | undefined;
   };
@@ -272,63 +350,92 @@ export namespace IShoppingMallCustomer {
     /**
      * Customer account email to filter the customer list.
      *
-     * @x-autobe-specification Query filter for the /shoppingMall/customers administrative listing. Apply this value to the base shopping_mall_customers.email column to narrow results by customer login email address.
+         * @x-autobe-specification Query filter for the /shoppingMall/customers
+         *   administrative listing. Apply this value to the base
+         *   shopping_mall_customers.email column to narrow results by customer
+         *   login email address.
      */
     email?: (string & tags.Format<"email">) | undefined;
 
     /**
      * Customer ban timestamp filter for narrowing results by ban status or ban time.
      *
-     * @x-autobe-specification Query filter for the /shoppingMall/customers administrative listing. Apply this value to the base shopping_mall_customers.banned_at column to constrain results by ban timestamp, including null-aware matching when implementation supports filtering for unbanned accounts.
+         * @x-autobe-specification Query filter for the /shoppingMall/customers
+         *   administrative listing. Apply this value to the base
+         *   shopping_mall_customers.banned_at column to constrain results by
+         *   ban timestamp, including null-aware matching when implementation
+         *   supports filtering for unbanned accounts.
      */
     banned_at?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * Customer account creation timestamp filter.
      *
-     * @x-autobe-specification Query filter for the /shoppingMall/customers administrative listing. Apply this value to the base shopping_mall_customers.created_at column to constrain results by account registration time.
+         * @x-autobe-specification Query filter for the /shoppingMall/customers
+         *   administrative listing. Apply this value to the base
+         *   shopping_mall_customers.created_at column to constrain results by
+         *   account registration time.
      */
     created_at?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * Customer account last-updated timestamp filter.
      *
-     * @x-autobe-specification Query filter for the /shoppingMall/customers administrative listing. Apply this value to the base shopping_mall_customers.updated_at column to constrain results by the customer's last recorded account update time.
+         * @x-autobe-specification Query filter for the /shoppingMall/customers
+         *   administrative listing. Apply this value to the base
+         *   shopping_mall_customers.updated_at column to constrain results by
+         *   the customer's last recorded account update time.
      */
     updated_at?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * Customer soft-deletion timestamp filter.
      *
-     * @x-autobe-specification Query filter for the /shoppingMall/customers administrative listing. Apply this value to the base shopping_mall_customers.deleted_at column to distinguish deleted and non-deleted customer accounts in the listing query.
+         * @x-autobe-specification Query filter for the /shoppingMall/customers
+         *   administrative listing. Apply this value to the base
+         *   shopping_mall_customers.deleted_at column to distinguish deleted
+         *   and non-deleted customer accounts in the listing query.
      */
     deleted_at?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * Free-text keyword used to search across supported customer list fields.
      *
-     * @x-autobe-specification Non-persistent query helper for the /shoppingMall/customers administrative list operation. Apply it as free-text search only across supported searchable customer-list fields that are actually implemented for this endpoint, without inventing unsupported columns.
+         * @x-autobe-specification Non-persistent query helper for the
+         *   /shoppingMall/customers administrative list operation. Apply it as
+         *   free-text search only across supported searchable customer-list
+         *   fields that are actually implemented for this endpoint, without
+         *   inventing unsupported columns.
      */
     search?: string | undefined;
 
     /**
      * Sort option controlling the order of customer list results.
      *
-     * @x-autobe-specification Non-persistent ordering selector for the /shoppingMall/customers administrative list operation. Accept only supported sort keys for the customer roster query and default to created_at descending when omitted.
+         * @x-autobe-specification Non-persistent ordering selector for the
+         *   /shoppingMall/customers administrative list operation. Accept only
+         *   supported sort keys for the customer roster query and default to
+         *   created_at descending when omitted.
      */
     sort?: string | undefined;
 
     /**
      * Page number of the customer list to retrieve.
      *
-     * @x-autobe-specification Non-persistent pagination control for the /shoppingMall/customers administrative list operation. Represents the 1-indexed page number to return when constructing the paginated IPageIShoppingMallCustomer.ISummary response.
+         * @x-autobe-specification Non-persistent pagination control for the
+         *   /shoppingMall/customers administrative list operation. Represents
+         *   the 1-indexed page number to return when constructing the paginated
+         *   IPageIShoppingMallCustomer.ISummary response.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of customer records to return in one page.
      *
-     * @x-autobe-specification Non-persistent pagination control for the /shoppingMall/customers administrative list operation. Limits how many customer summary records are returned in a single page, subject to the schema bounds of minimum 1 and maximum 100.
+         * @x-autobe-specification Non-persistent pagination control for the
+         *   /shoppingMall/customers administrative list operation. Limits how
+         *   many customer summary records are returned in a single page,
+         *   subject to the schema bounds of minimum 1 and maximum 100.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)

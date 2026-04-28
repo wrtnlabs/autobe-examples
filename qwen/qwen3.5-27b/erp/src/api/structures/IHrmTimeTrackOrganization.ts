@@ -12,8 +12,10 @@ export type IHrmTimeTrackOrganization = {
    *
    * This identifier is globally unique across the platform and serves as the primary key for the organization entity. It is auto-generated when the organization is created and remains immutable throughout the organization's lifecycle. Use this ID to reference the organization in API operations and when establishing relationships with child entities.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from hrm_time_track_organizations.id. UUID primary key, auto-generated on insert. Globally unique identifier for the organization entity.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_organizations.id. UUID primary key, auto-generated on
+     *   insert. Globally unique identifier for the organization entity.
    */
   id: string & tags.Format<"uuid">;
 
@@ -22,8 +24,11 @@ export type IHrmTimeTrackOrganization = {
    *
    * The organization name must be unique across the entire system to avoid confusion when users belong to multiple organizations. This name appears in user interfaces, reports, communications, and organization selection dropdowns. Maximum length and character restrictions apply as defined by the database schema.
    *
-   * @x-autobe-database-schema-property name
-   * @x-autobe-specification Direct mapping from hrm_time_track_organizations.name. Unique constraint enforced at database level via @@unique([name]). Required field for organization creation and updates.
+     * @x-autobe-database-schema-property name
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_organizations.name. Unique constraint enforced at
+     *   database level via @@unique([name]). Required field for organization
+     *   creation and updates.
    */
   name: string;
 
@@ -32,8 +37,11 @@ export type IHrmTimeTrackOrganization = {
    *
    * Provides context for organization members and appears in organizational documentation and profiles. This field is optional and can be left empty. Use this field to document the organization's mission, business focus, or any other relevant information that helps members understand the organization's context.
    *
-   * @x-autobe-database-schema-property description
-   * @x-autobe-specification Direct mapping from hrm_time_track_organizations.description. Nullable field (VARCHAR). Optional detailed description of the organization's purpose and scope. Can be null or empty string.
+     * @x-autobe-database-schema-property description
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_organizations.description. Nullable field (VARCHAR).
+     *   Optional detailed description of the organization's purpose and scope.
+     *   Can be null or empty string.
    */
   description: string | null;
 
@@ -42,8 +50,11 @@ export type IHrmTimeTrackOrganization = {
    *
    * Displayed in the user interface to provide visual identification of the organization context. This field accepts a URI pointing to an image resource hosted externally or on a CDN. The logo appears in organization headers, selection menus, and reports to help users quickly identify their current organization context.
    *
-   * @x-autobe-database-schema-property logo
-   * @x-autobe-specification Direct mapping from hrm_time_track_organizations.logo. Nullable field (VARCHAR(80000)). Stores URI to organization's logo image. Optional field for branding purposes.
+     * @x-autobe-database-schema-property logo
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_organizations.logo. Nullable field (VARCHAR(80000)).
+     *   Stores URI to organization's logo image. Optional field for branding
+     *   purposes.
    */
   logo: (string & tags.Format<"uri">) | null;
 
@@ -52,8 +63,11 @@ export type IHrmTimeTrackOrganization = {
    *
    * All monetary values including employee pay rates, billable rates, and project budgets use this currency. This setting applies globally to all financial operations within the organization. Changing the currency affects all existing and future financial data, so it should be set carefully during organization creation and changed only when necessary.
    *
-   * @x-autobe-database-schema-property currency
-   * @x-autobe-specification Direct mapping from hrm_time_track_organizations.currency. Required field storing ISO 4217 currency code (e.g., USD, EUR, KRW). All monetary values within the organization use this currency.
+     * @x-autobe-database-schema-property currency
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_organizations.currency. Required field storing ISO 4217
+     *   currency code (e.g., USD, EUR, KRW). All monetary values within the
+     *   organization use this currency.
    */
   currency: string;
 
@@ -62,8 +76,12 @@ export type IHrmTimeTrackOrganization = {
    *
    * All timestamps, work schedules, and time tracking are interpreted relative to this timezone. This setting affects timesheet week boundaries, timer operations, reporting periods, and any time-sensitive calculations. The timezone should reflect the primary operating location of the organization or the preferred time reference for business operations.
    *
-   * @x-autobe-database-schema-property timezone
-   * @x-autobe-specification Direct mapping from hrm_time_track_organizations.timezone. Required field storing IANA timezone identifier (e.g., Asia/Seoul, America/New_York). All timestamps and time-based operations are interpreted relative to this timezone.
+     * @x-autobe-database-schema-property timezone
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_organizations.timezone. Required field storing IANA
+     *   timezone identifier (e.g., Asia/Seoul, America/New_York). All
+     *   timestamps and time-based operations are interpreted relative to this
+     *   timezone.
    */
   timezone: string;
 
@@ -72,8 +90,11 @@ export type IHrmTimeTrackOrganization = {
    *
    * January = 1, February = 2, ..., December = 12. This setting is used for financial reporting, pay period calculations, and timesheet approval cycles aligned with fiscal periods. The fiscal year may differ from the calendar year depending on the organization's accounting practices and regulatory requirements.
    *
-   * @x-autobe-database-schema-property fiscal_start_month
-   * @x-autobe-specification Direct mapping from hrm_time_track_organizations.fiscal_start_month. Required integer field with range 1-12. January = 1, February = 2, ..., December = 12. Defines the beginning of the organization's fiscal year.
+     * @x-autobe-database-schema-property fiscal_start_month
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_organizations.fiscal_start_month. Required integer field
+     *   with range 1-12. January = 1, February = 2, ..., December = 12. Defines
+     *   the beginning of the organization's fiscal year.
    */
   fiscal_start_month: number &
     tags.Type<"int32"> &
@@ -85,8 +106,11 @@ export type IHrmTimeTrackOrganization = {
    *
    * This field is automatically set by the system when the organization is created and cannot be modified. It provides an audit trail of when the organization entity was first established in the system. The timestamp includes timezone information for accurate time tracking across different regions.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from hrm_time_track_organizations.created_at. Auto-generated timestamp (Timestamptz) set on insert. Immutable after creation. Records when the organization was created.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_organizations.created_at. Auto-generated timestamp
+     *   (Timestamptz) set on insert. Immutable after creation. Records when the
+     *   organization was created.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -95,8 +119,11 @@ export type IHrmTimeTrackOrganization = {
    *
    * This field is automatically updated by the system whenever any organization attribute is changed. It provides visibility into when the most recent configuration changes occurred, which is useful for audit purposes and tracking organizational changes over time.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from hrm_time_track_organizations.updated_at. Auto-updated timestamp (Timestamptz) on each record modification. Tracks when organization settings were last changed.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_organizations.updated_at. Auto-updated timestamp
+     *   (Timestamptz) on each record modification. Tracks when organization
+     *   settings were last changed.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -105,8 +132,12 @@ export type IHrmTimeTrackOrganization = {
    *
    * Soft deletion preserves all organization data for audit and compliance purposes while removing the organization from active operations. When this field is not null, the organization is considered deleted and should not appear in normal query results. All child entities become inaccessible when the parent organization is soft-deleted.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from hrm_time_track_organizations.deleted_at. Nullable timestamp (Timestamptz). Null indicates active organization. Non-null indicates soft-deleted state. Soft deletion preserves data for audit while removing from active operations.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_organizations.deleted_at. Nullable timestamp
+     *   (Timestamptz). Null indicates active organization. Non-null indicates
+     *   soft-deleted state. Soft deletion preserves data for audit while
+     *   removing from active operations.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -159,7 +190,10 @@ export namespace IHrmTimeTrackOrganization {
      *
      * Provides text-based filtering for finding organizations by name or description. Uses case-insensitive partial matching to return organizations containing the search term in either field.
      *
-     * @x-autobe-specification Search term applied as LIKE query on organization name and description columns. Case-insensitive partial matching. Empty or null search returns all organizations (subject to other filters and multi-tenancy scoping).
+         * @x-autobe-specification Search term applied as LIKE query on
+         *   organization name and description columns. Case-insensitive partial
+         *   matching. Empty or null search returns all organizations (subject
+         *   to other filters and multi-tenancy scoping).
      */
     search?: string | undefined;
 
@@ -168,7 +202,10 @@ export namespace IHrmTimeTrackOrganization {
      *
      * Indicates which page of results to retrieve. Page numbering starts from 1 (not 0). Use this parameter along with limit to navigate through large result sets efficiently.
      *
-     * @x-autobe-specification Page number for pagination (1-indexed). Minimum value is 1. Defaults to 1 if not provided. Used to navigate through paginated result sets. Combined with limit to calculate offset for database query.
+         * @x-autobe-specification Page number for pagination (1-indexed).
+         *   Minimum value is 1. Defaults to 1 if not provided. Used to navigate
+         *   through paginated result sets. Combined with limit to calculate
+         *   offset for database query.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -177,7 +214,10 @@ export namespace IHrmTimeTrackOrganization {
      *
      * Controls how many results are included in each page of the paginated response. Larger values reduce the number of requests needed to browse all results but increase response size.
      *
-     * @x-autobe-specification Number of records to return per page. Minimum 1, maximum 100. Defaults to 20 if not provided. Controls the size of each paginated response. Used with page to calculate database query offset and limit clauses.
+         * @x-autobe-specification Number of records to return per page. Minimum
+         *   1, maximum 100. Defaults to 20 if not provided. Controls the size
+         *   of each paginated response. Used with page to calculate database
+         *   query offset and limit clauses.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -197,8 +237,9 @@ export namespace IHrmTimeTrackOrganization {
      *
      * This UUID serves as the primary key for the organization entity and is used to reference the organization across all API operations and relationships.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from hrm_time_track_organizations.id. Primary key UUID.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_organizations.id. Primary key UUID.
      */
     id: string & tags.Format<"uuid">;
 
@@ -207,8 +248,10 @@ export namespace IHrmTimeTrackOrganization {
      *
      * The name appears in user interfaces, reports, and communications. It must be unique within the system to avoid confusion when users belong to multiple organizations.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from hrm_time_track_organizations.name. Unique constraint enforced at database level.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_organizations.name. Unique constraint enforced at
+         *   database level.
      */
     name: string;
 
@@ -217,8 +260,10 @@ export namespace IHrmTimeTrackOrganization {
      *
      * Provides context for organization members and appears in organizational documentation and profiles. Null when no description is provided.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from hrm_time_track_organizations.description. Nullable field in database, exposed as oneOf with null in DTO.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_organizations.description. Nullable field in
+         *   database, exposed as oneOf with null in DTO.
      */
     description: string | null;
 
@@ -227,8 +272,9 @@ export namespace IHrmTimeTrackOrganization {
      *
      * All monetary values including employee pay rates, billable rates, and project budgets use this currency. Changing currency affects all financial data in the organization.
      *
-     * @x-autobe-database-schema-property currency
-     * @x-autobe-specification Direct mapping from hrm_time_track_organizations.currency. ISO currency code string.
+         * @x-autobe-database-schema-property currency
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_organizations.currency. ISO currency code string.
      */
     currency: string;
 
@@ -237,8 +283,10 @@ export namespace IHrmTimeTrackOrganization {
      *
      * All timestamps, work schedules, and time tracking are interpreted relative to this timezone. Affects timesheet week boundaries, timer operations, and reporting.
      *
-     * @x-autobe-database-schema-property timezone
-     * @x-autobe-specification Direct mapping from hrm_time_track_organizations.timezone. IANA timezone identifier string.
+         * @x-autobe-database-schema-property timezone
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_organizations.timezone. IANA timezone identifier
+         *   string.
      */
     timezone: string;
 
@@ -247,8 +295,10 @@ export namespace IHrmTimeTrackOrganization {
      *
      * January = 1, February = 2, ..., December = 12. Used for financial reporting, pay period calculations, and timesheet approval cycles aligned with fiscal periods.
      *
-     * @x-autobe-database-schema-property fiscal_start_month
-     * @x-autobe-specification Direct mapping from hrm_time_track_organizations.fiscal_start_month. Integer 1-12 representing month number.
+         * @x-autobe-database-schema-property fiscal_start_month
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_organizations.fiscal_start_month. Integer 1-12
+         *   representing month number.
      */
     fiscal_start_month: number & tags.Type<"int32">;
 
@@ -257,8 +307,10 @@ export namespace IHrmTimeTrackOrganization {
      *
      * This field records when the organization was first established in the system and is used for sorting, filtering, and audit purposes.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from hrm_time_track_organizations.created_at. DateTime field with timestamptz database type.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_organizations.created_at. DateTime field with
+         *   timestamptz database type.
      */
     created_at: string & tags.Format<"date-time">;
   };

@@ -11,14 +11,15 @@ export namespace IPageIShoppingMallProductVariant {
     /**
      * Page information.
      *
-     * @x-autobe-specification Pagination information for the page.
+         * @x-autobe-specification Pagination information for the page.
      */
     pagination: IPage.IPagination;
 
     /**
      * List of records.
      *
-     * @x-autobe-specification List of records of type IShoppingMallProductVariant.ISummary.
+         * @x-autobe-specification List of records of type
+         *   IShoppingMallProductVariant.ISummary.
      */
     data: IShoppingMallProductVariant.ISummary[];
   };

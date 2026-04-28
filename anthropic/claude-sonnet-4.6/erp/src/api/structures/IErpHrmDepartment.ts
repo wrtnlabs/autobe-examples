@@ -16,72 +16,97 @@ export type IErpHrmDepartment = {
   /**
    * The unique identifier of this department. A UUID that uniquely identifies the department record within the platform.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from erp_hrm_departments.id. UUID v4 primary key generated on insert.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from erp_hrm_departments.id. UUID
+     *   v4 primary key generated on insert.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * The organization this department belongs to. Every department is strictly scoped to a single organization and cannot be shared across organizations.
    *
-   * @x-autobe-database-schema-property organization
-   * @x-autobe-specification Resolved via JOIN on erp_hrm_departments.organization_id → erp_hrm_organizations.id. Returns IErpHrmOrganization.ISummary shape. Always present — every department belongs to exactly one organization.
+     * @x-autobe-database-schema-property organization
+     * @x-autobe-specification Resolved via JOIN on
+     *   erp_hrm_departments.organization_id → erp_hrm_organizations.id. Returns
+     *   IErpHrmOrganization.ISummary shape. Always present — every department
+     *   belongs to exactly one organization.
    */
   organization: IErpHrmOrganization.ISummary;
 
   /**
    * The parent department of this department in the two-tier organizational hierarchy, or `null` if this is a top-level department. When present, identifies the direct parent that this department is nested under.
    *
-   * @x-autobe-database-schema-property parent
-   * @x-autobe-specification Resolved via LEFT JOIN on erp_hrm_departments.parent_id → erp_hrm_departments.id. Returns IErpHrmDepartment.ISummary if parent_id IS NOT NULL, otherwise null. Only one level of nesting is supported — the parent itself is always a top-level department.
+     * @x-autobe-database-schema-property parent
+     * @x-autobe-specification Resolved via LEFT JOIN on
+     *   erp_hrm_departments.parent_id → erp_hrm_departments.id. Returns
+     *   IErpHrmDepartment.ISummary if parent_id IS NOT NULL, otherwise null.
+     *   Only one level of nesting is supported — the parent itself is always a
+     *   top-level department.
    */
   parent: IErpHrmDepartment.ISummary | null;
 
   /**
    * The list of immediate child departments nested under this department. Returns an empty array for leaf-level or top-level departments with no children. The hierarchy is limited to one level of nesting.
    *
-   * @x-autobe-database-schema-property children
-   * @x-autobe-specification Resolved via SELECT * FROM erp_hrm_departments WHERE parent_id = this.id AND deleted_at IS NULL. Returns an array of IErpHrmDepartment.ISummary. Returns an empty array when no child departments exist. Hierarchy is limited to one level — children cannot themselves have children.
+     * @x-autobe-database-schema-property children
+     * @x-autobe-specification Resolved via SELECT * FROM erp_hrm_departments
+     *   WHERE parent_id = this.id AND deleted_at IS NULL. Returns an array of
+     *   IErpHrmDepartment.ISummary. Returns an empty array when no child
+     *   departments exist. Hierarchy is limited to one level — children cannot
+     *   themselves have children.
    */
   children: IErpHrmDepartment.ISummary[];
 
   /**
    * The display name of the department. Unique within its organization and used to identify and reference the department in the UI and reports.
    *
-   * @x-autobe-database-schema-property name
-   * @x-autobe-specification Direct mapping from erp_hrm_departments.name. Must be unique within the organization (@@unique([organization_id, name])). Non-nullable string.
+     * @x-autobe-database-schema-property name
+     * @x-autobe-specification Direct mapping from erp_hrm_departments.name.
+     *   Must be unique within the organization (@@unique([organization_id,
+     *   name])). Non-nullable string.
    */
   name: string;
 
   /**
    * An optional human-readable description of the department, providing additional context about its purpose, scope, or responsibilities. `null` when no description has been set.
    *
-   * @x-autobe-database-schema-property description
-   * @x-autobe-specification Direct mapping from erp_hrm_departments.description. Nullable String? column. Returns null when no description has been provided.
+     * @x-autobe-database-schema-property description
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_departments.description. Nullable String? column. Returns null
+     *   when no description has been provided.
    */
   description: string | null;
 
   /**
    * The timestamp when this department was created. Recorded in UTC and never changes after the department is first created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from erp_hrm_departments.created_at. Timestamptz column set at INSERT time. Never changes after creation.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_departments.created_at. Timestamptz column set at INSERT time.
+     *   Never changes after creation.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * The timestamp when this department record was last modified. Updated whenever the department's name, description, or parent assignment is changed.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from erp_hrm_departments.updated_at. Timestamptz column updated on every UPDATE operation (name, description, parent_id changes). Also equals created_at immediately after creation.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_departments.updated_at. Timestamptz column updated on every
+     *   UPDATE operation (name, description, parent_id changes). Also equals
+     *   created_at immediately after creation.
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * The timestamp when this department was soft-deleted, or `null` if the department is still active. Soft-deleted departments are typically excluded from standard list and lookup operations. When set, members previously assigned to this department lose their department association.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from erp_hrm_departments.deleted_at. Nullable Timestamptz column. NULL indicates the department is active. When set, the department is considered soft-deleted — standard read operations filter out records with deleted_at IS NOT NULL.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_departments.deleted_at. Nullable Timestamptz column. NULL
+     *   indicates the department is active. When set, the department is
+     *   considered soft-deleted — standard read operations filter out records
+     *   with deleted_at IS NOT NULL.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -99,35 +124,57 @@ export namespace IErpHrmDepartment {
     /**
      * Optional keyword for partial name filtering. When provided, only departments whose name contains the given text (case-insensitive) are returned. Omit or pass null to skip name filtering.
      *
-     * @x-autobe-specification Optional partial-name search filter. When provided (non-null), apply a case-insensitive trigram similarity or ilike match against the erp_hrm_departments.name column using the GIN trigram index (name gin_trgm_ops). When null or omitted, no name filter is applied. Example SQL: WHERE name ILIKE '%:keyword%' or using similarity().
+         * @x-autobe-specification Optional partial-name search filter. When
+         *   provided (non-null), apply a case-insensitive trigram similarity or
+         *   ilike match against the erp_hrm_departments.name column using the
+         *   GIN trigram index (name gin_trgm_ops). When null or omitted, no
+         *   name filter is applied. Example SQL: WHERE name ILIKE '%:keyword%'
+         *   or using similarity().
      */
     keyword?: string | null | undefined;
 
     /**
      * Optional filter by parent department. Provide a department UUID to retrieve only its direct children, provide `null` to retrieve only top-level (root) departments with no parent, or omit this field entirely to retrieve departments at all hierarchy levels.
      *
-     * @x-autobe-specification Optional parent department filter that controls the WHERE clause on the erp_hrm_departments.parent_id column. Three distinct behaviors: (1) UUID string → WHERE parent_id = :parentId (returns direct children of that department); (2) explicit null → WHERE parent_id IS NULL (returns only top-level/root departments); (3) field absent from request body → no parent_id filter is applied (returns departments at all levels). Validate that the provided UUID, if given, references an existing non-deleted department within the same organization.
+         * @x-autobe-specification Optional parent department filter that
+         *   controls the WHERE clause on the erp_hrm_departments.parent_id
+         *   column. Three distinct behaviors: (1) UUID string → WHERE parent_id
+         *   = :parentId (returns direct children of that department); (2)
+         *   explicit null → WHERE parent_id IS NULL (returns only
+         *   top-level/root departments); (3) field absent from request body →
+         *   no parent_id filter is applied (returns departments at all levels).
+         *   Validate that the provided UUID, if given, references an existing
+         *   non-deleted department within the same organization.
      */
     parentId?: (string & tags.Format<"uuid">) | null | undefined;
 
     /**
      * Optional sort order for the department list. Use `'createdAt'` to sort by creation date (oldest first) or `'name'` to sort alphabetically by department name. Defaults to creation date order when omitted or null.
      *
-     * @x-autobe-specification Optional sort column selector. Maps to ORDER BY clause: 'createdAt' → ORDER BY created_at ASC; 'name' → ORDER BY name ASC. When null or omitted, defaults to ORDER BY created_at ASC. Only ascending order is supported for both options.
+         * @x-autobe-specification Optional sort column selector. Maps to ORDER
+         *   BY clause: 'createdAt' → ORDER BY created_at ASC; 'name' → ORDER BY
+         *   name ASC. When null or omitted, defaults to ORDER BY created_at
+         *   ASC. Only ascending order is supported for both options.
      */
     sortBy?: "createdAt" | "name" | null | undefined;
 
     /**
      * The page number to retrieve (1-indexed). The first page is page 1. Defaults to 1 when not specified.
      *
-     * @x-autobe-specification 1-indexed page number for pagination. Computes SQL OFFSET as (page - 1) * limit. Minimum value is 1. Defaults to 1 when omitted. Used together with 'limit' to slice the result set.
+         * @x-autobe-specification 1-indexed page number for pagination.
+         *   Computes SQL OFFSET as (page - 1) * limit. Minimum value is 1.
+         *   Defaults to 1 when omitted. Used together with 'limit' to slice the
+         *   result set.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * The maximum number of departments to return per page. Must be between 1 and 100. Defaults to 20 when not specified.
      *
-     * @x-autobe-specification Number of department records to return per page. Used as the SQL LIMIT value. Minimum is 1, maximum is 100. Defaults to 20 when omitted. Used together with 'page' to paginate results.
+         * @x-autobe-specification Number of department records to return per
+         *   page. Used as the SQL LIMIT value. Minimum is 1, maximum is 100.
+         *   Defaults to 20 when omitted. Used together with 'page' to paginate
+         *   results.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -141,48 +188,63 @@ export namespace IErpHrmDepartment {
     /**
      * The unique identifier of the department (UUID).
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from erp_hrm_departments.id. UUID primary key, auto-generated on record creation.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from erp_hrm_departments.id.
+         *   UUID primary key, auto-generated on record creation.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * The display name of the department. Unique within the organization.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from erp_hrm_departments.name. Must be unique within the organization (unique index on [organization_id, name]). Non-nullable string.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from erp_hrm_departments.name.
+         *   Must be unique within the organization (unique index on
+         *   [organization_id, name]). Non-nullable string.
      */
     name: string;
 
     /**
      * An optional description providing additional context about the department's purpose, scope, or responsibilities. Null if not provided.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from erp_hrm_departments.description. Nullable String? — returns null when no description has been set.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_departments.description. Nullable String? — returns null
+         *   when no description has been set.
      */
     description: string | null;
 
     /**
      * The parent department of this department, or null if this is a top-level department. Supports a one-level hierarchy — the parent itself has no further parent in this representation.
      *
-     * @x-autobe-database-schema-property parent
-     * @x-autobe-specification Mapped from the belongs-to relation erp_hrm_departments.parent via LEFT JOIN on parent_id → erp_hrm_departments.id. Returns a nested IErpHrmDepartment.ISummary object for the parent department, or null if this is a top-level department. The hierarchy is limited to one level: the nested parent's own parent field must always be null in the response.
+         * @x-autobe-database-schema-property parent
+         * @x-autobe-specification Mapped from the belongs-to relation
+         *   erp_hrm_departments.parent via LEFT JOIN on parent_id →
+         *   erp_hrm_departments.id. Returns a nested IErpHrmDepartment.ISummary
+         *   object for the parent department, or null if this is a top-level
+         *   department. The hierarchy is limited to one level: the nested
+         *   parent's own parent field must always be null in the response.
      */
     parent: IErpHrmDepartment.ISummary | null;
 
     /**
      * The timestamp when the department was created, in ISO 8601 format.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from erp_hrm_departments.created_at. Timestamptz stored in the database, returned as ISO 8601 date-time string.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_departments.created_at. Timestamptz stored in the database,
+         *   returned as ISO 8601 date-time string.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * The timestamp when the department record was last updated, in ISO 8601 format.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from erp_hrm_departments.updated_at. Timestamptz stored in the database, updated on every modification. Returned as ISO 8601 date-time string.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_departments.updated_at. Timestamptz stored in the database,
+         *   updated on every modification. Returned as ISO 8601 date-time
+         *   string.
      */
     updated_at: string & tags.Format<"date-time">;
   };
@@ -200,24 +262,39 @@ export namespace IErpHrmDepartment {
     /**
      * The display name of the new department. Must be unique within the organization. Used to identify and reference the department in the UI and reports.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping to erp_hrm_departments.name. Must be a non-empty string. Must be unique within the organization: validate that no existing non-deleted department in the same organization has the same name (SELECT from erp_hrm_departments WHERE organization_id = :organizationId AND name = :name AND deleted_at IS NULL). Return 409 Conflict if a duplicate is found.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping to erp_hrm_departments.name.
+         *   Must be a non-empty string. Must be unique within the organization:
+         *   validate that no existing non-deleted department in the same
+         *   organization has the same name (SELECT from erp_hrm_departments
+         *   WHERE organization_id = :organizationId AND name = :name AND
+         *   deleted_at IS NULL). Return 409 Conflict if a duplicate is found.
      */
     name: string;
 
     /**
      * An optional description providing additional context about the department's purpose, scope, or responsibilities. May be null if not provided.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping to erp_hrm_departments.description (nullable String?). If omitted or null, the column is stored as NULL. No length constraints specified beyond database defaults.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping to
+         *   erp_hrm_departments.description (nullable String?). If omitted or
+         *   null, the column is stored as NULL. No length constraints specified
+         *   beyond database defaults.
      */
     description?: string | null | undefined;
 
     /**
      * The UUID of an existing top-level department within the same organization to set as this department's parent. If provided, the new department becomes a child in a two-tier hierarchy. If null or omitted, the new department is created as a top-level department. Only one level of nesting is supported.
      *
-     * @x-autobe-database-schema-property parent_id
-     * @x-autobe-specification Maps to erp_hrm_departments.parent_id (nullable UUID). If provided, must reference an existing non-deleted department in the same organization (organization_id = :organizationId AND deleted_at IS NULL) that is itself a top-level department (parent_id IS NULL). If the referenced department is already a child department, return 422 Unprocessable Entity. If null or omitted, the new department is created as a top-level department (parent_id = NULL).
+         * @x-autobe-database-schema-property parent_id
+         * @x-autobe-specification Maps to erp_hrm_departments.parent_id
+         *   (nullable UUID). If provided, must reference an existing
+         *   non-deleted department in the same organization (organization_id =
+         *   :organizationId AND deleted_at IS NULL) that is itself a top-level
+         *   department (parent_id IS NULL). If the referenced department is
+         *   already a child department, return 422 Unprocessable Entity. If
+         *   null or omitted, the new department is created as a top-level
+         *   department (parent_id = NULL).
      */
     parentId?: (string & tags.Format<"uuid">) | null | undefined;
   };
@@ -233,24 +310,43 @@ export namespace IErpHrmDepartment {
     /**
      * The new display name for the department. Must be unique within the organization. Used to identify and reference the department in the UI and reports.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping to erp_hrm_departments.name. Required string. Must be unique within the organization — validated against @@unique([organization_id, name]), excluding the current department's own id. Reject with 422 if another active department in the same organization already holds the same name.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping to erp_hrm_departments.name.
+         *   Required string. Must be unique within the organization — validated
+         *   against @@unique([organization_id, name]), excluding the current
+         *   department's own id. Reject with 422 if another active department
+         *   in the same organization already holds the same name.
      */
     name: string;
 
     /**
      * An optional human-readable description providing additional context about the department's purpose, scope, or responsibilities. Set to `null` to clear an existing description.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping to erp_hrm_departments.description (nullable String?). Optional field — may be omitted or explicitly set to null. Accepts any string value or null. No length constraint enforced at DB level, but reasonable UI limits apply. When null, any existing description is cleared.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping to
+         *   erp_hrm_departments.description (nullable String?). Optional field
+         *   — may be omitted or explicitly set to null. Accepts any string
+         *   value or null. No length constraint enforced at DB level, but
+         *   reasonable UI limits apply. When null, any existing description is
+         *   cleared.
      */
     description?: string | null | undefined;
 
     /**
      * The UUID of the parent department to assign, or `null` to make this a top-level department. If specified, the referenced department must be a top-level department within the same organization. A department with existing child departments cannot be given a parent, as the hierarchy is limited to one level of nesting.
      *
-     * @x-autobe-database-schema-property parent_id
-     * @x-autobe-specification Maps to erp_hrm_departments.parent_id (nullable UUID FK). Optional field — may be omitted or set to null to designate the department as top-level. If a non-null UUID is supplied, validate: (1) the referenced department exists within the same organization and is not deleted; (2) the referenced parent itself has parent_id IS NULL (must be top-level — only one level of nesting allowed); (3) the value must not equal the current departmentId (no self-reference); (4) the current department must have no active children (no other departments with parent_id = departmentId), otherwise assigning a parent would create 2-level nesting, which is rejected with 422.
+         * @x-autobe-database-schema-property parent_id
+         * @x-autobe-specification Maps to erp_hrm_departments.parent_id
+         *   (nullable UUID FK). Optional field — may be omitted or set to null
+         *   to designate the department as top-level. If a non-null UUID is
+         *   supplied, validate: (1) the referenced department exists within the
+         *   same organization and is not deleted; (2) the referenced parent
+         *   itself has parent_id IS NULL (must be top-level — only one level of
+         *   nesting allowed); (3) the value must not equal the current
+         *   departmentId (no self-reference); (4) the current department must
+         *   have no active children (no other departments with parent_id =
+         *   departmentId), otherwise assigning a parent would create 2-level
+         *   nesting, which is rejected with 422.
      */
     parentId?: (string & tags.Format<"uuid">) | null | undefined;
   };

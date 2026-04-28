@@ -24,8 +24,10 @@ export type IEcommerceCancellationRequest = {
    *
    * This UUID is automatically generated when the cancellation request is created and serves as the primary key for the record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_cancellation_requests.id. UUID format, auto-generated on creation.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_cancellation_requests.id. UUID format, auto-generated on
+     *   creation.
    */
   id: string & tags.Format<"uuid">;
 
@@ -38,8 +40,10 @@ export type IEcommerceCancellationRequest = {
    *
    * The reason helps sellers understand the customer's motivation and make informed decisions about approval or rejection.
    *
-   * @x-autobe-database-schema-property reason
-   * @x-autobe-specification Direct mapping from ecommerce_cancellation_requests.reason. Required string field provided by customer during request creation.
+     * @x-autobe-database-schema-property reason
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_cancellation_requests.reason. Required string field provided
+     *   by customer during request creation.
    */
   reason: string;
 
@@ -59,8 +63,10 @@ export type IEcommerceCancellationRequest = {
    *
    * Once the status changes from `pending`, it cannot be modified.
    *
-   * @x-autobe-database-schema-property status
-   * @x-autobe-specification Direct mapping from ecommerce_cancellation_requests.status. String enum: 'pending', 'approved', 'rejected'. Updated by seller response.
+     * @x-autobe-database-schema-property status
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_cancellation_requests.status. String enum: 'pending',
+     *   'approved', 'rejected'. Updated by seller response.
    */
   status: string;
 
@@ -73,8 +79,10 @@ export type IEcommerceCancellationRequest = {
    *
    * The response provides transparency to the customer about why their cancellation request was approved or rejected.
    *
-   * @x-autobe-database-schema-property seller_response
-   * @x-autobe-specification Direct mapping from ecommerce_cancellation_requests.seller_response. Nullable string, set when seller approves or rejects the request.
+     * @x-autobe-database-schema-property seller_response
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_cancellation_requests.seller_response. Nullable string, set
+     *   when seller approves or rejects the request.
    */
   sellerResponse: string | null;
 
@@ -83,8 +91,10 @@ export type IEcommerceCancellationRequest = {
    *
    * This field is automatically set when the customer submits the cancellation request and cannot be modified.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_cancellation_requests.created_at. DateTime with timezone, auto-set on record creation.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_cancellation_requests.created_at. DateTime with timezone,
+     *   auto-set on record creation.
    */
   createdAt: string & tags.Format<"date-time">;
 
@@ -93,8 +103,10 @@ export type IEcommerceCancellationRequest = {
    *
    * This field is automatically updated whenever the cancellation request is modified, such as when the seller responds to the request.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from ecommerce_cancellation_requests.updated_at. DateTime with timezone, auto-updated on any modification.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_cancellation_requests.updated_at. DateTime with timezone,
+     *   auto-updated on any modification.
    */
   updatedAt: string & tags.Format<"date-time">;
 
@@ -103,8 +115,10 @@ export type IEcommerceCancellationRequest = {
    *
    * This field is null for active requests and populated when the request is soft-deleted. Soft deletion preserves the record for audit purposes while removing it from active listings.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from ecommerce_cancellation_requests.deleted_at. Nullable DateTime, set when request is soft-deleted.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_cancellation_requests.deleted_at. Nullable DateTime, set when
+     *   request is soft-deleted.
    */
   deletedAt: (string & tags.Format<"date-time">) | null;
 
@@ -117,8 +131,11 @@ export type IEcommerceCancellationRequest = {
    *
    * Each cancellation request references exactly one order item. The order item must have `paid` status to be eligible for cancellation.
    *
-   * @x-autobe-database-schema-property orderItem
-   * @x-autobe-specification JOIN from ecommerce_cancellation_requests.ecommerce_order_item_id to ecommerce_order_items.id. Returns IEcommerceOrderItem.ISummary with product variant and seller details.
+     * @x-autobe-database-schema-property orderItem
+     * @x-autobe-specification JOIN from
+     *   ecommerce_cancellation_requests.ecommerce_order_item_id to
+     *   ecommerce_order_items.id. Returns IEcommerceOrderItem.ISummary with
+     *   product variant and seller details.
    */
   orderItem: IEcommerceOrderItem.ISummary;
 };
@@ -142,8 +159,9 @@ export namespace IEcommerceCancellationRequest {
      *
      * This UUID serves as the primary key for the cancellation request entity. It is generated when the cancellation request is created and remains immutable throughout the request's lifecycle.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_cancellation_requests.id. UUID primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_cancellation_requests.id. UUID primary key.
      */
     id: string & tags.Format<"uuid">;
 
@@ -158,8 +176,9 @@ export namespace IEcommerceCancellationRequest {
      * - `approved`: Seller approved the cancellation, item will be cancelled and refunded
      * - `rejected`: Seller rejected the cancellation request, item continues processing
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from ecommerce_cancellation_requests.status. String enum.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_cancellation_requests.status. String enum.
      */
     status: string;
 
@@ -168,8 +187,9 @@ export namespace IEcommerceCancellationRequest {
      *
      * This text field contains the customer's explanation for why they want to cancel the order item. The reason is provided at the time of cancellation request submission and helps the seller understand the customer's concern when making approval decisions.
      *
-     * @x-autobe-database-schema-property reason
-     * @x-autobe-specification Direct mapping from ecommerce_cancellation_requests.reason. Required string.
+         * @x-autobe-database-schema-property reason
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_cancellation_requests.reason. Required string.
      */
     reason: string;
 
@@ -183,8 +203,10 @@ export namespace IEcommerceCancellationRequest {
      * - `approved`: Seller's explanation for approving the cancellation
      * - `rejected`: Seller's explanation for rejecting the cancellation request
      *
-     * @x-autobe-database-schema-property seller_response
-     * @x-autobe-specification Direct mapping from ecommerce_cancellation_requests.seller_response. Nullable string (String?).
+         * @x-autobe-database-schema-property seller_response
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_cancellation_requests.seller_response. Nullable string
+         *   (String?).
      */
     seller_response?: string | null | undefined;
 
@@ -197,8 +219,10 @@ export namespace IEcommerceCancellationRequest {
      *
      * BELONGS-TO: The cancellation request belongs to exactly one order item. The order item reference is resolved via JOIN on the foreign key ecommerce_order_item_id.
      *
-     * @x-autobe-database-schema-property orderItem
-     * @x-autobe-specification JOIN from ecommerce_cancellation_requests.ecommerce_order_item_id to ecommerce_order_items.id. Returns IEcommerceOrderItem.ISummary.
+         * @x-autobe-database-schema-property orderItem
+         * @x-autobe-specification JOIN from
+         *   ecommerce_cancellation_requests.ecommerce_order_item_id to
+         *   ecommerce_order_items.id. Returns IEcommerceOrderItem.ISummary.
      */
     order_item: IEcommerceOrderItem.ISummary;
 
@@ -207,8 +231,10 @@ export namespace IEcommerceCancellationRequest {
      *
      * This field is automatically set when the customer submits the cancellation request. It uses the database's timestamptz type to store the creation time with timezone information.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from ecommerce_cancellation_requests.created_at. DateTime with timestamptz format.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_cancellation_requests.created_at. DateTime with
+         *   timestamptz format.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -217,8 +243,10 @@ export namespace IEcommerceCancellationRequest {
      *
      * This field is automatically updated whenever the cancellation request status changes (e.g., when the seller approves or rejects the request). It reflects the most recent modification time with timezone information.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from ecommerce_cancellation_requests.updated_at. DateTime with timestamptz format.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_cancellation_requests.updated_at. DateTime with
+         *   timestamptz format.
      */
     updated_at: string & tags.Format<"date-time">;
   };
@@ -255,8 +283,10 @@ export namespace IEcommerceCancellationRequest {
      *
      * The reason helps sellers understand customer concerns and may influence their approval decision. Common reasons include "changed my mind", "found better price", "ordered by mistake", or "product description inaccurate".
      *
-     * @x-autobe-database-schema-property reason
-     * @x-autobe-specification Direct mapping from ecommerce_cancellation_requests.reason. Customer-provided text explaining why they want to cancel the order item. Required field.
+         * @x-autobe-database-schema-property reason
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_cancellation_requests.reason. Customer-provided text
+         *   explaining why they want to cancel the order item. Required field.
      */
     reason: string;
   };
@@ -291,8 +321,11 @@ export namespace IEcommerceCancellationRequest {
      *
      * If this parameter is omitted, cancellation requests of all statuses are returned. This is useful when you want to see the complete history of cancellation requests for an order item.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Filter parameter for cancellation request status. Allowed values: pending, approved, rejected. Maps to WHERE clause on ecommerce_cancellation_requests.status column. Optional - if omitted, all statuses are returned.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Filter parameter for cancellation request
+         *   status. Allowed values: pending, approved, rejected. Maps to WHERE
+         *   clause on ecommerce_cancellation_requests.status column. Optional -
+         *   if omitted, all statuses are returned.
      */
     status?: string | undefined;
 
@@ -313,7 +346,10 @@ export namespace IEcommerceCancellationRequest {
      * - page=2, limit=10: Returns records 11-20
      * - page=3, limit=10: Returns records 21-30
      *
-     * @x-autobe-specification Pagination parameter for offset-based pagination. 1-indexed page number. Used to calculate OFFSET in SQL query: OFFSET (page - 1) * limit. Defaults to 1 if not provided. Valid range: 1 to maximum supported page.
+         * @x-autobe-specification Pagination parameter for offset-based
+         *   pagination. 1-indexed page number. Used to calculate OFFSET in SQL
+         *   query: OFFSET (page - 1) * limit. Defaults to 1 if not provided.
+         *   Valid range: 1 to maximum supported page.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -332,7 +368,9 @@ export namespace IEcommerceCancellationRequest {
      *
      * The actual number of records returned may be less than the limit on the final page if there are fewer remaining records. The response includes pagination metadata (IPage.IPagination) with the actual count, total records, and total pages.
      *
-     * @x-autobe-specification Pagination parameter for maximum records per page. Used in SQL query LIMIT clause. Valid range: 1-100. Defaults to platform-defined value (typically 20 or 50) if not provided.
+         * @x-autobe-specification Pagination parameter for maximum records per
+         *   page. Used in SQL query LIMIT clause. Valid range: 1-100. Defaults
+         *   to platform-defined value (typically 20 or 50) if not provided.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)

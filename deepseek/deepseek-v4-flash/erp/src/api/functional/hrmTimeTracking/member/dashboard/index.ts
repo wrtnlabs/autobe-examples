@@ -15,7 +15,10 @@ export * as organization from "./organization/index";
  * @param props.connection
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Authenticate the member and identify the current organization context. Find the employee record for this member in the organization (join hrm_time_tracking_employees by member_id and organization_id). If not found, return 404.
+ * @x-autobe-specification Authenticate the member and identify the current
+ *   organization context. Find the employee record for this member in the
+ *   organization (join hrm_time_tracking_employees by member_id and
+ *   organization_id). If not found, return 404.
  *
  * Personal Dashboard:
  * 1. Hours logged today: SUM(duration_minutes) FROM hrm_time_tracking_timelogs WHERE employee_id = {employeeId} AND date = TODAY (org timezone) AND deleted_at IS NULL. Convert to hours (divide by 60).

@@ -23,8 +23,9 @@ export type IEcommerceRefundRequest = {
    *
    * This is the primary key of the refund request record, generated as a UUID when the request is created.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_refund_requests.id. UUID format.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from ecommerce_refund_requests.id.
+     *   UUID format.
    */
   id: string & tags.Format<"uuid">;
 
@@ -33,8 +34,9 @@ export type IEcommerceRefundRequest = {
    *
    * This field contains the explanation given by the customer when requesting a refund. It helps the seller understand why the customer wants to return the item.
    *
-   * @x-autobe-database-schema-property reason
-   * @x-autobe-specification Direct mapping from ecommerce_refund_requests.reason. Customer-provided text.
+     * @x-autobe-database-schema-property reason
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_refund_requests.reason. Customer-provided text.
    */
   reason: string;
 
@@ -48,8 +50,10 @@ export type IEcommerceRefundRequest = {
    *
    * Once the status changes from pending, it cannot be modified.
    *
-   * @x-autobe-database-schema-property status
-   * @x-autobe-specification Direct mapping from ecommerce_refund_requests.status. Enum: 'pending', 'approved', 'rejected'.
+     * @x-autobe-database-schema-property status
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_refund_requests.status. Enum: 'pending', 'approved',
+     *   'rejected'.
    */
   status: string;
 
@@ -58,8 +62,10 @@ export type IEcommerceRefundRequest = {
    *
    * This field is set when the seller approves or rejects the refund request. It is null while the request is pending.
    *
-   * @x-autobe-database-schema-property responded_at
-   * @x-autobe-specification Direct mapping from ecommerce_refund_requests.responded_at. Nullable timestamp set when seller responds.
+     * @x-autobe-database-schema-property responded_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_refund_requests.responded_at. Nullable timestamp set when
+     *   seller responds.
    */
   responded_at: (string & tags.Format<"date-time">) | null;
 
@@ -68,8 +74,10 @@ export type IEcommerceRefundRequest = {
    *
    * This field contains the seller's explanation for rejecting the refund request. It is only populated when status is 'rejected'.
    *
-   * @x-autobe-database-schema-property rejection_reason
-   * @x-autobe-specification Direct mapping from ecommerce_refund_requests.rejection_reason. Nullable text field populated when status is 'rejected'.
+     * @x-autobe-database-schema-property rejection_reason
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_refund_requests.rejection_reason. Nullable text field
+     *   populated when status is 'rejected'.
    */
   rejection_reason: string | null;
 
@@ -78,8 +86,9 @@ export type IEcommerceRefundRequest = {
    *
    * This is set automatically when the customer submits the refund request.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_refund_requests.created_at. ISO 8601 timestamp.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_refund_requests.created_at. ISO 8601 timestamp.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -88,8 +97,9 @@ export type IEcommerceRefundRequest = {
    *
    * This field is updated whenever any refund request field changes.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from ecommerce_refund_requests.updated_at. ISO 8601 timestamp.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_refund_requests.updated_at. ISO 8601 timestamp.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -98,8 +108,10 @@ export type IEcommerceRefundRequest = {
    *
    * Null indicates the refund request is active. Soft-delete preserves audit trail while removing from active listings.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from ecommerce_refund_requests.deleted_at. Nullable timestamp for soft delete.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_refund_requests.deleted_at. Nullable timestamp for soft
+     *   delete.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 
@@ -108,8 +120,10 @@ export type IEcommerceRefundRequest = {
    *
    * This is a BELONGS-TO relation to the order item that the customer wants to refund. The order item must have status 'delivered' to be eligible for refund.
    *
-   * @x-autobe-database-schema-property orderItem
-   * @x-autobe-specification Relation mapping via JOIN on ecommerce_order_item_id → orderItem. Returns IEcommerceOrderItem.ISummary.
+     * @x-autobe-database-schema-property orderItem
+     * @x-autobe-specification Relation mapping via JOIN on
+     *   ecommerce_order_item_id → orderItem. Returns
+     *   IEcommerceOrderItem.ISummary.
    */
   orderItem: IEcommerceOrderItem.ISummary;
 };
@@ -139,8 +153,10 @@ export namespace IEcommerceRefundRequest {
      * - Seller can reference this reason when responding to the request
      * - Maximum length typically constrained by database column definition
      *
-     * @x-autobe-database-schema-property reason
-     * @x-autobe-specification Direct mapping from ecommerce_refund_requests.reason. Required string field explaining the customer's reason for requesting the refund.
+         * @x-autobe-database-schema-property reason
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_refund_requests.reason. Required string field explaining
+         *   the customer's reason for requesting the refund.
      */
     reason: string;
   };
@@ -187,8 +203,9 @@ export namespace IEcommerceRefundRequest {
      *
      * This UUID uniquely identifies the refund request record in the system.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_refund_requests.id. UUID primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_refund_requests.id. UUID primary key.
      */
     id: string & tags.Format<"uuid">;
 
@@ -197,8 +214,9 @@ export namespace IEcommerceRefundRequest {
      *
      * This text field contains the customer's reason for requesting a refund, such as product defects, wrong item shipped, or change of mind.
      *
-     * @x-autobe-database-schema-property reason
-     * @x-autobe-specification Direct mapping from ecommerce_refund_requests.reason. Required text field.
+         * @x-autobe-database-schema-property reason
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_refund_requests.reason. Required text field.
      */
     reason: string;
 
@@ -211,8 +229,10 @@ export namespace IEcommerceRefundRequest {
      * - `approved`: Seller approved the request, refund being processed
      * - `rejected`: Seller rejected the request with a reason
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from ecommerce_refund_requests.status. Allowed values: pending, approved, rejected.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_refund_requests.status. Allowed values: pending,
+         *   approved, rejected.
      */
     status: string;
 
@@ -221,8 +241,10 @@ export namespace IEcommerceRefundRequest {
      *
      * This field is null when the status is `pending`. It contains the datetime when the seller approved or rejected the request.
      *
-     * @x-autobe-database-schema-property responded_at
-     * @x-autobe-specification Direct mapping from ecommerce_refund_requests.responded_at. Nullable: null if status is pending.
+         * @x-autobe-database-schema-property responded_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_refund_requests.responded_at. Nullable: null if status is
+         *   pending.
      */
     responded_at?: (string & tags.Format<"date-time">) | null | undefined;
 
@@ -231,8 +253,10 @@ export namespace IEcommerceRefundRequest {
      *
      * This field is populated only when status is `rejected`. It explains why the seller declined the refund request.
      *
-     * @x-autobe-database-schema-property rejection_reason
-     * @x-autobe-specification Direct mapping from ecommerce_refund_requests.rejection_reason. Nullable: null if status is not rejected.
+         * @x-autobe-database-schema-property rejection_reason
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_refund_requests.rejection_reason. Nullable: null if
+         *   status is not rejected.
      */
     rejection_reason?: string | null | undefined;
 
@@ -241,8 +265,10 @@ export namespace IEcommerceRefundRequest {
      *
      * This is automatically set when the customer submits the refund request.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from ecommerce_refund_requests.created_at. Automatically set on record creation.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_refund_requests.created_at. Automatically set on record
+         *   creation.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -251,8 +277,10 @@ export namespace IEcommerceRefundRequest {
      *
      * This is automatically updated when the status changes or any mutable field is modified.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from ecommerce_refund_requests.updated_at. Automatically updated on any modification.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_refund_requests.updated_at. Automatically updated on any
+         *   modification.
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -261,8 +289,9 @@ export namespace IEcommerceRefundRequest {
      *
      * This field is null when the refund request is active. When set, the refund request is logically deleted but preserved for audit purposes.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from ecommerce_refund_requests.deleted_at. Nullable: null if active.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_refund_requests.deleted_at. Nullable: null if active.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
 
@@ -271,8 +300,10 @@ export namespace IEcommerceRefundRequest {
      *
      * This is a BELONGS-TO relation to the order item that the customer is requesting a refund for. The order item must have status `delivered` to be eligible for refund.
      *
-     * @x-autobe-database-schema-property orderItem
-     * @x-autobe-specification JOIN from ecommerce_refund_requests.ecommerce_order_item_id to ecommerce_order_items.id. Returns IEcommerceOrderItem.ISummary.
+         * @x-autobe-database-schema-property orderItem
+         * @x-autobe-specification JOIN from
+         *   ecommerce_refund_requests.ecommerce_order_item_id to
+         *   ecommerce_order_items.id. Returns IEcommerceOrderItem.ISummary.
      */
     order_item: IEcommerceOrderItem.ISummary;
   };

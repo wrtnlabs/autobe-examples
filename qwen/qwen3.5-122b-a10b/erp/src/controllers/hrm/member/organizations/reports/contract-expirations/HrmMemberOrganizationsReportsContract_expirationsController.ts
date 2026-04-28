@@ -30,9 +30,11 @@ export class HrmMemberOrganizationsReportsContract_expirationsController {
    *
    * @param connection
    * @param organizationId Unique identifier of the organization for which to retrieve contract expiration reports. (organization scope)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query hrm_contracts table joined with hrm_employees for active contracts (end_date IS NULL) expiring within the specified date range.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query hrm_contracts table joined with
+     *   hrm_employees for active contracts (end_date IS NULL) expiring within
+     *   the specified date range.
    *
    * **Implementation Steps**
    *

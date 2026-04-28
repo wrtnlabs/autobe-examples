@@ -11,56 +11,77 @@ export type IHrmTimeTrackingProjectMembership = {
   /**
    * Unique identifier of this project membership assignment.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_project_memberships.id. Preserve the UUID generated for the membership row as the stable identifier for retrieval and update responses.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_project_memberships.id. Preserve the UUID generated
+     *   for the membership row as the stable identifier for retrieval and
+     *   update responses.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Project-specific responsibility assigned to the employee within this membership.
    *
-   * @x-autobe-database-schema-property membership_role
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_project_memberships.membership_role. The persisted business values are membership classifications such as member or project-lead and should be returned exactly as stored after validation by write operations.
+     * @x-autobe-database-schema-property membership_role
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_project_memberships.membership_role. The persisted
+     *   business values are membership classifications such as member or
+     *   project-lead and should be returned exactly as stored after validation
+     *   by write operations.
    */
   membership_role: string;
 
   /**
    * Summary information about the project that this membership belongs to.
    *
-   * @x-autobe-database-schema-property project
-   * @x-autobe-specification Resolve the belongs-to relation hrm_time_tracking_project_memberships.project through hrm_time_tracking_project_id to hrm_time_tracking_projects.id and serialize the joined row as IHrmTimeTrackingProject.ISummary.
+     * @x-autobe-database-schema-property project
+     * @x-autobe-specification Resolve the belongs-to relation
+     *   hrm_time_tracking_project_memberships.project through
+     *   hrm_time_tracking_project_id to hrm_time_tracking_projects.id and
+     *   serialize the joined row as IHrmTimeTrackingProject.ISummary.
    */
   project: IHrmTimeTrackingProject.ISummary;
 
   /**
    * Summary information about the employee assigned through this membership.
    *
-   * @x-autobe-database-schema-property employee
-   * @x-autobe-specification Resolve the belongs-to relation hrm_time_tracking_project_memberships.employee through hrm_time_tracking_employee_id to hrm_time_tracking_employees.id and serialize the joined row as IHrmTimeTrackingEmployee.ISummary.
+     * @x-autobe-database-schema-property employee
+     * @x-autobe-specification Resolve the belongs-to relation
+     *   hrm_time_tracking_project_memberships.employee through
+     *   hrm_time_tracking_employee_id to hrm_time_tracking_employees.id and
+     *   serialize the joined row as IHrmTimeTrackingEmployee.ISummary.
    */
   employee: IHrmTimeTrackingEmployee.ISummary;
 
   /**
    * Timestamp when this project membership was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_project_memberships.created_at as an ISO 8601 date-time string.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_project_memberships.created_at as an ISO 8601
+     *   date-time string.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when this project membership was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_project_memberships.updated_at as an ISO 8601 date-time string reflecting the most recent persisted change to the membership.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_project_memberships.updated_at as an ISO 8601
+     *   date-time string reflecting the most recent persisted change to the
+     *   membership.
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * Soft-deletion timestamp for this membership, or null when the assignment is still active.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_project_memberships.deleted_at. Serialize as string date-time when the membership has been logically removed, otherwise null.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_project_memberships.deleted_at. Serialize as string
+     *   date-time when the membership has been logically removed, otherwise
+     *   null.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -72,16 +93,29 @@ export namespace IHrmTimeTrackingProjectMembership {
     /**
      * Project-specific responsibility assigned to the employee within this project membership.
      *
-     * @x-autobe-database-schema-property membership_role
-     * @x-autobe-specification Direct mapping to hrm_time_tracking_project_memberships.membership_role. When this optional field is present, update the persisted membership role after validating that the submitted value is one of the allowed business classifications for project assignments: member or project-lead. Omit the field to leave the existing role unchanged.
+         * @x-autobe-database-schema-property membership_role
+         * @x-autobe-specification Direct mapping to
+         *   hrm_time_tracking_project_memberships.membership_role. When this
+         *   optional field is present, update the persisted membership role
+         *   after validating that the submitted value is one of the allowed
+         *   business classifications for project assignments: member or
+         *   project-lead. Omit the field to leave the existing role unchanged.
      */
     membership_role?: "member" | "project-lead" | undefined;
 
     /**
      * Identifier of the employee who should hold this project membership after the update.
      *
-     * @x-autobe-database-schema-property hrm_time_tracking_employee_id
-     * @x-autobe-specification Direct mapping to hrm_time_tracking_project_memberships.hrm_time_tracking_employee_id. When this optional field is present, treat it as a request to reassign the membership to another employee. Validate that the referenced hrm_time_tracking_employees row exists, is eligible for assignment under business rules, belongs to the same organization scope as the parent project, and would not duplicate another active membership for the same project. Omit the field to keep the currently assigned employee unchanged.
+         * @x-autobe-database-schema-property hrm_time_tracking_employee_id
+         * @x-autobe-specification Direct mapping to
+         *   hrm_time_tracking_project_memberships.hrm_time_tracking_employee_id.
+         *   When this optional field is present, treat it as a request to
+         *   reassign the membership to another employee. Validate that the
+         *   referenced hrm_time_tracking_employees row exists, is eligible for
+         *   assignment under business rules, belongs to the same organization
+         *   scope as the parent project, and would not duplicate another active
+         *   membership for the same project. Omit the field to keep the
+         *   currently assigned employee unchanged.
      */
     hrm_time_tracking_employee_id?: (string & tags.Format<"uuid">) | undefined;
   };
@@ -93,48 +127,61 @@ export namespace IHrmTimeTrackingProjectMembership {
     /**
      * Unique identifier of the project membership record.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_project_memberships.id.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_project_memberships.id.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Role of the employee within this specific project membership.
      *
-     * @x-autobe-database-schema-property membership_role
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_project_memberships.membership_role. Stores the project-specific responsibility classification for this assignment, such as member or project-lead.
+         * @x-autobe-database-schema-property membership_role
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_project_memberships.membership_role. Stores the
+         *   project-specific responsibility classification for this assignment,
+         *   such as member or project-lead.
      */
     membership_role: string;
 
     /**
      * Employee assigned by this membership.
      *
-     * @x-autobe-database-schema-property employee
-     * @x-autobe-specification Resolve the belongs-to relation hrm_time_tracking_project_memberships.employee using hrm_time_tracking_project_memberships.hrm_time_tracking_employee_id -> hrm_time_tracking_employees.id and serialize the joined row as IHrmTimeTrackingEmployee.ISummary.
+         * @x-autobe-database-schema-property employee
+         * @x-autobe-specification Resolve the belongs-to relation
+         *   hrm_time_tracking_project_memberships.employee using
+         *   hrm_time_tracking_project_memberships.hrm_time_tracking_employee_id
+         *   -> hrm_time_tracking_employees.id and serialize the joined row as
+         *   IHrmTimeTrackingEmployee.ISummary.
      */
     employee: IHrmTimeTrackingEmployee.ISummary;
 
     /**
      * Timestamp when this project membership was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_project_memberships.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_project_memberships.created_at.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when this project membership was last updated.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_project_memberships.updated_at.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_project_memberships.updated_at.
      */
     updated_at: string & tags.Format<"date-time">;
 
     /**
      * Soft-deletion timestamp of this membership, or null when the assignment is still active.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_project_memberships.deleted_at. Serialize as date-time when the membership has been soft deleted, otherwise null for an active membership.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_project_memberships.deleted_at. Serialize as
+         *   date-time when the membership has been soft deleted, otherwise null
+         *   for an active membership.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };
@@ -146,35 +193,65 @@ export namespace IHrmTimeTrackingProjectMembership {
     /**
      * Free-text search term used to narrow the project membership list by supported employee-related fields.
      *
-     * @x-autobe-specification Optional free-text search input for the project membership list query. Implement by applying case-insensitive search against the supported joined employee summary fields from `hrm_time_tracking_employees` that are exposed for membership browsing, while keeping the root query constrained to active `hrm_time_tracking_project_memberships` rows for the path-scoped project. This field is not stored on `hrm_time_tracking_project_memberships` itself.
+         * @x-autobe-specification Optional free-text search input for the
+         *   project membership list query. Implement by applying
+         *   case-insensitive search against the supported joined employee
+         *   summary fields from `hrm_time_tracking_employees` that are exposed
+         *   for membership browsing, while keeping the root query constrained
+         *   to active `hrm_time_tracking_project_memberships` rows for the
+         *   path-scoped project. This field is not stored on
+         *   `hrm_time_tracking_project_memberships` itself.
      */
     search?: string | undefined;
 
     /**
      * Optional project membership role filter used to narrow the membership results to a specific assignment role, such as member or project-lead.
      *
-     * @x-autobe-specification Optional equality filter instruction for the project membership list query. Apply the provided value to active `hrm_time_tracking_project_memberships` rows after enforcing the path-scoped filter `hrm_time_tracking_project_id = :projectId` and the active-membership condition `deleted_at IS NULL`. Supported business values are `member` and `project-lead`. This property is a request-body query control, not a persisted DTO field.
+         * @x-autobe-specification Optional equality filter instruction for the
+         *   project membership list query. Apply the provided value to active
+         *   `hrm_time_tracking_project_memberships` rows after enforcing the
+         *   path-scoped filter `hrm_time_tracking_project_id = :projectId` and
+         *   the active-membership condition `deleted_at IS NULL`. Supported
+         *   business values are `member` and `project-lead`. This property is a
+         *   request-body query control, not a persisted DTO field.
      */
     membership_role?: string | undefined;
 
     /**
      * Sorting rule for the membership results, using one of the supported sort options for this endpoint.
      *
-     * @x-autobe-specification Optional sort directive for the membership list query. Interpret this value only against an allowlist of supported sortable fields, preferring `hrm_time_tracking_project_memberships` columns such as `created_at`, `updated_at`, and `membership_role`, and optionally supported joined employee summary fields when implemented. Reject or normalize unsupported sort values rather than passing them through directly. This field is a query instruction, not a persisted database property.
+         * @x-autobe-specification Optional sort directive for the membership
+         *   list query. Interpret this value only against an allowlist of
+         *   supported sortable fields, preferring
+         *   `hrm_time_tracking_project_memberships` columns such as
+         *   `created_at`, `updated_at`, and `membership_role`, and optionally
+         *   supported joined employee summary fields when implemented. Reject
+         *   or normalize unsupported sort values rather than passing them
+         *   through directly. This field is a query instruction, not a
+         *   persisted database property.
      */
     sort?: string | undefined;
 
     /**
      * Page number of the membership results to return, starting from 1.
      *
-     * @x-autobe-specification Optional 1-indexed page number for paginating the filtered project membership list. Use this value with `limit` to compute offset or skip in the read query after all project-scope and filter conditions are applied. When omitted, default according to endpoint pagination policy. This field is not stored in any database table.
+         * @x-autobe-specification Optional 1-indexed page number for paginating
+         *   the filtered project membership list. Use this value with `limit`
+         *   to compute offset or skip in the read query after all project-scope
+         *   and filter conditions are applied. When omitted, default according
+         *   to endpoint pagination policy. This field is not stored in any
+         *   database table.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of membership results to include in one page.
      *
-     * @x-autobe-specification Optional maximum number of membership records to return per page. Enforce the schema bounds of 1 through 100 and use the value together with `page` to paginate the filtered list query. When omitted, apply the endpoint's default page size. This field is not stored in any database table.
+         * @x-autobe-specification Optional maximum number of membership records
+         *   to return per page. Enforce the schema bounds of 1 through 100 and
+         *   use the value together with `page` to paginate the filtered list
+         *   query. When omitted, apply the endpoint's default page size. This
+         *   field is not stored in any database table.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -188,16 +265,25 @@ export namespace IHrmTimeTrackingProjectMembership {
     /**
      * Unique identifier of the employee to assign to the target project.
      *
-     * @x-autobe-database-schema-property hrm_time_tracking_employee_id
-     * @x-autobe-specification Map this property directly to hrm_time_tracking_project_memberships.hrm_time_tracking_employee_id. The value must be the UUID of an existing employee record that is valid for assignment and belongs to the same active organization context as the parent project identified by the path parameter. The server uses this scalar foreign key in the create request instead of an embedded employee relation object.
+         * @x-autobe-database-schema-property hrm_time_tracking_employee_id
+         * @x-autobe-specification Map this property directly to
+         *   hrm_time_tracking_project_memberships.hrm_time_tracking_employee_id.
+         *   The value must be the UUID of an existing employee record that is
+         *   valid for assignment and belongs to the same active organization
+         *   context as the parent project identified by the path parameter. The
+         *   server uses this scalar foreign key in the create request instead
+         *   of an embedded employee relation object.
      */
     employee_id: string & tags.Format<"uuid">;
 
     /**
      * Project-specific responsibility granted to the employee within this membership, such as a standard member role or the project lead role.
      *
-     * @x-autobe-database-schema-property membership_role
-     * @x-autobe-specification Map this property directly to hrm_time_tracking_project_memberships.membership_role. Accept only the business-defined values member or project-lead and reject any other value before inserting the membership row.
+         * @x-autobe-database-schema-property membership_role
+         * @x-autobe-specification Map this property directly to
+         *   hrm_time_tracking_project_memberships.membership_role. Accept only
+         *   the business-defined values member or project-lead and reject any
+         *   other value before inserting the membership row.
      */
     membership_role: "member" | "project-lead";
   };

@@ -22,9 +22,13 @@ export class ShoppingmallCustomerProfileController {
    * This endpoint is commonly used before profile editing flows so the client can display the latest stored display name and phone number to the customer. It should be paired with the corresponding profile update operation for self-service maintenance, but viewing the profile does not modify preserved order information or any historical commerce records. Error handling must reject unauthenticated access, missing customer context, or attempts to resolve a profile that is no longer available due to account deletion.
    *
    * @param connection
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Resolve the authenticated customer identity from the request session or authorization context before any database access. If no authenticated customer session exists, reject the request as unauthorized. If the authenticated principal is not a customer actor or there is no active customer account context, reject the request.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Resolve the authenticated customer identity from
+     *   the request session or authorization context before any database
+     *   access. If no authenticated customer session exists, reject the request
+     *   as unauthorized. If the authenticated principal is not a customer actor
+     *   or there is no active customer account context, reject the request.
    *
    * Query `shopping_mall_customer_profiles` for the single profile row whose `shopping_mall_customer_id` matches the authenticated customer's `shopping_mall_customers.id`. Because the schema defines `@@unique([shopping_mall_customer_id])`, at most one active profile record should exist per customer account. The implementation should return the matching profile as the current self-profile resource.
    *
@@ -63,9 +67,12 @@ export class ShoppingmallCustomerProfileController {
    *
    * @param connection
    * @param body Customer profile fields to update
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Implement a service method that resolves the acting customer from the authenticated session context and updates that customer's single owned profile record in shopping_mall_customer_profiles.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Implement a service method that resolves the
+     *   acting customer from the authenticated session context and updates that
+     *   customer's single owned profile record in
+     *   shopping_mall_customer_profiles.
    *
    * 1. Require an authenticated customer principal. If the requester is unauthenticated or is not a customer actor, reject the operation before any database write.
    * 2. Load the shopping_mall_customers row for the authenticated customer ID and verify the account is still active for profile maintenance. If deleted_at is not null, reject the request. If business middleware also treats banned customers as ineligible for this operation, reject consistently with the platform's actor access policy.

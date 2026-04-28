@@ -12,56 +12,72 @@ export type IRedditLikeModerator = {
   /**
    * Unique identifier for the moderator role (UUID)
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from reddit_like_moderators.id. Auto-generated UUID primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from reddit_like_moderators.id.
+     *   Auto-generated UUID primary key.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Whether this moderator has permission to add additional moderators to the community
    *
-   * @x-autobe-database-schema-property can_add_moderators
-   * @x-autobe-specification Direct mapping from reddit_like_moderators.can_add_moderators. Boolean flag default false. When true, this moderator can add other moderators to the community.
+     * @x-autobe-database-schema-property can_add_moderators
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_moderators.can_add_moderators. Boolean flag default false.
+     *   When true, this moderator can add other moderators to the community.
    */
   can_add_moderators: boolean;
 
   /**
    * The member who holds this moderator role, including profile summary information
    *
-   * @x-autobe-database-schema-property member
-   * @x-autobe-specification JOIN via member_id FK to reddit_like_members. Returns nested IRedditLikeMember.ISummary with id, email, username, emailVerified, createdAt. Filter: deleted_at IS NULL on members table.
+     * @x-autobe-database-schema-property member
+     * @x-autobe-specification JOIN via member_id FK to reddit_like_members.
+     *   Returns nested IRedditLikeMember.ISummary with id, email, username,
+     *   emailVerified, createdAt. Filter: deleted_at IS NULL on members table.
    */
   member: IRedditLikeMember.ISummary;
 
   /**
    * The community where this moderator holds governance privileges
    *
-   * @x-autobe-database-schema-property community
-   * @x-autobe-specification JOIN via community_id FK to reddit_like_communities. Returns nested IRedditLikeCommunity.ISummary with id, name, description, owner, icon (with attachment summary), subscriberCount, createdAt. Filter: deleted_at IS NULL on communities table.
+     * @x-autobe-database-schema-property community
+     * @x-autobe-specification JOIN via community_id FK to
+     *   reddit_like_communities. Returns nested IRedditLikeCommunity.ISummary
+     *   with id, name, description, owner, icon (with attachment summary),
+     *   subscriberCount, createdAt. Filter: deleted_at IS NULL on communities
+     *   table.
    */
   community: IRedditLikeCommunity.ISummary;
 
   /**
    * Timestamp when this moderator role was assigned
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from reddit_like_moderators.created_at. Set automatically by Prisma @default(now()). UTC timestamp.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_moderators.created_at. Set automatically by Prisma
+     *   @default(now()). UTC timestamp.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when this moderator role was last modified
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from reddit_like_moderators.updated_at. Auto-updated by Prisma @updatedAt. UTC timestamp refreshed on every modification.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_moderators.updated_at. Auto-updated by Prisma @updatedAt.
+     *   UTC timestamp refreshed on every modification.
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * Soft-deletion timestamp; null if the moderator role is active, set when the role is revoked
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from reddit_like_moderators.deleted_at. Nullable timestamp for soft deletion. NULL = active moderator role. Set when moderator is removed from community. Filtered in storage layer queries.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_moderators.deleted_at. Nullable timestamp for soft
+     *   deletion. NULL = active moderator role. Set when moderator is removed
+     *   from community. Filtered in storage layer queries.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -73,16 +89,23 @@ export namespace IRedditLikeModerator {
     /**
      * The member's registered email address used for authentication.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping to reddit_like_members.email column. Used to identify the member account for authentication lookup.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping to reddit_like_members.email
+         *   column. Used to identify the member account for authentication
+         *   lookup.
      */
     email: string & tags.Format<"email">;
 
     /**
      * The member's password for authentication.
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification Client sends plaintext password in request body which maps to the database password_hash column. Backend verifies by comparing the plaintext password against reddit_like_members.password_hash using BCrypt. The password_hash column stores the BCrypt hashed value and is never exposed to clients.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification Client sends plaintext password in request
+         *   body which maps to the database password_hash column. Backend
+         *   verifies by comparing the plaintext password against
+         *   reddit_like_members.password_hash using BCrypt. The password_hash
+         *   column stores the BCrypt hashed value and is never exposed to
+         *   clients.
      */
     password: string & tags.Format<"password">;
   };
@@ -94,7 +117,15 @@ export namespace IRedditLikeModerator {
     /**
      * Valid refresh token JWT previously issued during authentication. This token represents the moderator's session and is used to obtain new access tokens without requiring re-authentication. Must be included in the request body as a plain string token value. The token is validated cryptographically; invalid or expired tokens result in authentication failure requiring fresh login.
      *
-     * @x-autobe-specification Stateless JWT refresh token string. Implementation: Receive token from client request body → Validate JWT signature using HMAC256 with secret key → Check exp claim for expiration → Extract sub claim for member_id → Verify member exists and is not soft-deleted in reddit_like_members → Verify moderator role exists in reddit_like_moderators (not soft-deleted) → Extract community_id from token claims → Proceed to generate new access/refresh token pair. No database storage mapping - entirely computed through JWT validation.
+         * @x-autobe-specification Stateless JWT refresh token string.
+         *   Implementation: Receive token from client request body → Validate
+         *   JWT signature using HMAC256 with secret key → Check exp claim for
+         *   expiration → Extract sub claim for member_id → Verify member exists
+         *   and is not soft-deleted in reddit_like_members → Verify moderator
+         *   role exists in reddit_like_moderators (not soft-deleted) → Extract
+         *   community_id from token claims → Proceed to generate new
+         *   access/refresh token pair. No database storage mapping - entirely
+         *   computed through JWT validation.
      */
     refreshToken: string;
   };
@@ -106,45 +137,63 @@ export namespace IRedditLikeModerator {
     /**
      * Unique email address for authentication and account recovery.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping to reddit_like_members.email. Validated for email format uniqueness before creation.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping to reddit_like_members.email.
+         *   Validated for email format uniqueness before creation.
      */
     email: string & tags.Format<"email">;
 
     /**
      * Public display name uniquely identifying the member across the platform.
      *
-     * @x-autobe-database-schema-property username
-     * @x-autobe-specification Direct mapping to reddit_like_members.username. Validated for uniqueness before creation. Public display name.
+         * @x-autobe-database-schema-property username
+         * @x-autobe-specification Direct mapping to
+         *   reddit_like_members.username. Validated for uniqueness before
+         *   creation. Public display name.
      */
     username: string & tags.MinLength<1>;
 
     /**
      * Plaintext password for authentication. Will be hashed with BCrypt before storage.
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification User provides plaintext password which backend hashes using BCrypt algorithm before storing as password_hash in reddit_like_members. Not a direct DB column mapping - transformation occurs server-side. Minimum 8 characters enforced during creation.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification User provides plaintext password which
+         *   backend hashes using BCrypt algorithm before storing as
+         *   password_hash in reddit_like_members. Not a direct DB column
+         *   mapping - transformation occurs server-side. Minimum 8 characters
+         *   enforced during creation.
      */
     password: string & tags.MinLength<1>;
 
     /**
      * URL of the page from which the registration request was initiated. Captured for analytics and security tracking.
      *
-     * @x-autobe-specification Captured from HTTP headers or client-side tracking during registration. Used for analytics and security monitoring to understand entry points. Not persisted to database, only used for logging/tracking during the registration operation itself.
+         * @x-autobe-specification Captured from HTTP headers or client-side
+         *   tracking during registration. Used for analytics and security
+         *   monitoring to understand entry points. Not persisted to database,
+         *   only used for logging/tracking during the registration operation
+         *   itself.
      */
     href: string & tags.Format<"uri">;
 
     /**
      * HTTP Referer value indicating the source page that led to registration. Used for security auditing and analytics.
      *
-     * @x-autobe-specification Captured from HTTP Referer header during registration request. Used for security auditing and traffic source analytics. Not persisted to database members table, only used for operation-level tracking.
+         * @x-autobe-specification Captured from HTTP Referer header during
+         *   registration request. Used for security auditing and traffic source
+         *   analytics. Not persisted to database members table, only used for
+         *   operation-level tracking.
      */
     referrer: string & tags.Format<"uri">;
 
     /**
      * IP address of the client initiating the registration request. Used for security monitoring and rate limiting.
      *
-     * @x-autobe-specification Captured from HTTP connection remote address (X-Forwarded-For or direct connection). Used for rate limiting, fraud detection, and security logging during registration. Not persisted to members table; may be stored in separate session/access log tables.
+         * @x-autobe-specification Captured from HTTP connection remote address
+         *   (X-Forwarded-For or direct connection). Used for rate limiting,
+         *   fraud detection, and security logging during registration. Not
+         *   persisted to members table; may be stored in separate
+         *   session/access log tables.
      */
     ip: (string & tags.Format<"ipv4">) | null;
   };
@@ -156,38 +205,45 @@ export namespace IRedditLikeModerator {
     /**
      * Filter moderators by specific community UUID.
      *
-     * @x-autobe-database-schema-property community_id
-     * @x-autobe-specification Maps to reddit_like_moderators.community_id. Used in WHERE clause to filter moderators by specific community.
+         * @x-autobe-database-schema-property community_id
+         * @x-autobe-specification Maps to reddit_like_moderators.community_id.
+         *   Used in WHERE clause to filter moderators by specific community.
      */
     communityId?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Filter moderators by specific member UUID.
      *
-     * @x-autobe-database-schema-property member_id
-     * @x-autobe-specification Maps to reddit_like_moderators.member_id. Used in WHERE clause to filter by specific member.
+         * @x-autobe-database-schema-property member_id
+         * @x-autobe-specification Maps to reddit_like_moderators.member_id.
+         *   Used in WHERE clause to filter by specific member.
      */
     memberId?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Filter by permission level - whether moderator can add other moderators.
      *
-     * @x-autobe-database-schema-property can_add_moderators
-     * @x-autobe-specification Maps to reddit_like_moderators.can_add_moderators. Boolean filter for permission level - whether moderator can recruit additional moderators.
+         * @x-autobe-database-schema-property can_add_moderators
+         * @x-autobe-specification Maps to
+         *   reddit_like_moderators.can_add_moderators. Boolean filter for
+         *   permission level - whether moderator can recruit additional
+         *   moderators.
      */
     canAddModerators?: boolean | undefined;
 
     /**
      * Page number for pagination (1-indexed).
      *
-     * @x-autobe-specification Computed pagination parameter. Page number for OFFSET calculation: OFFSET = (page - 1) * limit. Defaults to 1.
+         * @x-autobe-specification Computed pagination parameter. Page number
+         *   for OFFSET calculation: OFFSET = (page - 1) * limit. Defaults to 1.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Number of results per page (max 100).
      *
-     * @x-autobe-specification Computed pagination parameter. Limits the number of records returned. Default 20, maximum 100.
+         * @x-autobe-specification Computed pagination parameter. Limits the
+         *   number of records returned. Default 20, maximum 100.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -201,24 +257,31 @@ export namespace IRedditLikeModerator {
     /**
      * The unique identifier of the community where the member will be assigned moderator privileges.
      *
-     * @x-autobe-database-schema-property community_id
-     * @x-autobe-specification Direct mapping to reddit_like_moderators.community_id column. References the community where the member will be granted moderator privileges.
+         * @x-autobe-database-schema-property community_id
+         * @x-autobe-specification Direct mapping to
+         *   reddit_like_moderators.community_id column. References the
+         *   community where the member will be granted moderator privileges.
      */
     communityId: string & tags.Format<"uuid">;
 
     /**
      * The unique identifier of the member who will be granted moderator privileges in the community.
      *
-     * @x-autobe-database-schema-property member_id
-     * @x-autobe-specification Direct mapping to reddit_like_moderators.member_id column. References the member who will receive moderator privileges in the specified community.
+         * @x-autobe-database-schema-property member_id
+         * @x-autobe-specification Direct mapping to
+         *   reddit_like_moderators.member_id column. References the member who
+         *   will receive moderator privileges in the specified community.
      */
     memberId: string & tags.Format<"uuid">;
 
     /**
      * Whether the newly created moderator can themselves recruit additional moderators. Defaults to false if not specified.
      *
-     * @x-autobe-database-schema-property can_add_moderators
-     * @x-autobe-specification Direct mapping to reddit_like_moderators.can_add_moderators column. Boolean flag defaults to false if not provided in request. When true, allows the moderator to add other moderators to the community.
+         * @x-autobe-database-schema-property can_add_moderators
+         * @x-autobe-specification Direct mapping to
+         *   reddit_like_moderators.can_add_moderators column. Boolean flag
+         *   defaults to false if not provided in request. When true, allows the
+         *   moderator to add other moderators to the community.
      */
     canAddModerators?: boolean | undefined;
   };
@@ -230,40 +293,55 @@ export namespace IRedditLikeModerator {
     /**
      * Unique identifier for the moderator role assignment.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from reddit_like_moderators.id. UUID v4 primary key uniquely identifying this moderator assignment.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_moderators.id. UUID v4 primary key uniquely identifying
+         *   this moderator assignment.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Whether this moderator has permission to add other moderators to the community. When true, the moderator can recruit additional moderation team members.
      *
-     * @x-autobe-database-schema-property can_add_moderators
-     * @x-autobe-specification Direct mapping from reddit_like_moderators.can_add_moderators. Boolean flag indicating whether this moderator has permission to add other moderators to the community. Owners always have this permission; this flag allows delegation to trusted moderators.
+         * @x-autobe-database-schema-property can_add_moderators
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_moderators.can_add_moderators. Boolean flag indicating
+         *   whether this moderator has permission to add other moderators to
+         *   the community. Owners always have this permission; this flag allows
+         *   delegation to trusted moderators.
      */
     canAddModerators: boolean;
 
     /**
      * The member who holds moderator privileges in this community. Contains the member's public profile information including username, email, and account status.
      *
-     * @x-autobe-database-schema-property member
-     * @x-autobe-specification Join via reddit_like_moderators.member_id to reddit_like_members. Returns IRedditLikeMember.ISummary with member's public information (id, email, username, emailVerified, createdAt). Only active member accounts are returned.
+         * @x-autobe-database-schema-property member
+         * @x-autobe-specification Join via reddit_like_moderators.member_id to
+         *   reddit_like_members. Returns IRedditLikeMember.ISummary with
+         *   member's public information (id, email, username, emailVerified,
+         *   createdAt). Only active member accounts are returned.
      */
     member: IRedditLikeMember.ISummary;
 
     /**
      * The community where the member holds moderation authority. Contains the community's identifying information, owner details, and subscriber count.
      *
-     * @x-autobe-database-schema-property community
-     * @x-autobe-specification Join via reddit_like_moderators.community_id to reddit_like_communities. Returns IRedditLikeCommunity.ISummary with community's essential details (id, name, description, owner, icon, subscriberCount, createdAt). Only active communities are returned.
+         * @x-autobe-database-schema-property community
+         * @x-autobe-specification Join via reddit_like_moderators.community_id
+         *   to reddit_like_communities. Returns IRedditLikeCommunity.ISummary
+         *   with community's essential details (id, name, description, owner,
+         *   icon, subscriberCount, createdAt). Only active communities are
+         *   returned.
      */
     community: IRedditLikeCommunity.ISummary;
 
     /**
      * Timestamp when this moderator role was assigned, indicating when the member received moderation privileges in this community.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from reddit_like_moderators.created_at. UTC timestamp when the moderator role was assigned to the member.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_moderators.created_at. UTC timestamp when the moderator
+         *   role was assigned to the member.
      */
     createdAt: string & tags.Format<"date-time">;
   };
@@ -275,63 +353,80 @@ export namespace IRedditLikeModerator {
     /**
      * Unique identifier for the moderator role assignment.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from reddit_like_moderators.id. Primary key UUID identifying the moderator role assignment.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_moderators.id. Primary key UUID identifying the
+         *   moderator role assignment.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Whether this moderator has permission to add other moderators to the community.
      *
-     * @x-autobe-database-schema-property can_add_moderators
-     * @x-autobe-specification Direct mapping from reddit_like_moderators.can_add_moderators. Boolean flag indicating whether this moderator can add other moderators to the community.
+         * @x-autobe-database-schema-property can_add_moderators
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_moderators.can_add_moderators. Boolean flag indicating
+         *   whether this moderator can add other moderators to the community.
      */
     can_add_moderators: boolean;
 
     /**
      * The member who holds this moderator role.
      *
-     * @x-autobe-database-schema-property member
-     * @x-autobe-specification JOIN via reddit_like_moderators.member_id to reddit_like_members.id. Returns IRedditLikeMember.ISummary containing public member profile information.
+         * @x-autobe-database-schema-property member
+         * @x-autobe-specification JOIN via reddit_like_moderators.member_id to
+         *   reddit_like_members.id. Returns IRedditLikeMember.ISummary
+         *   containing public member profile information.
      */
     member: IRedditLikeMember.ISummary;
 
     /**
      * The community where this member has moderation authority.
      *
-     * @x-autobe-database-schema-property community
-     * @x-autobe-specification JOIN via reddit_like_moderators.community_id to reddit_like_communities.id. Returns IRedditLikeCommunity.ISummary containing community summary information.
+         * @x-autobe-database-schema-property community
+         * @x-autobe-specification JOIN via reddit_like_moderators.community_id
+         *   to reddit_like_communities.id. Returns
+         *   IRedditLikeCommunity.ISummary containing community summary
+         *   information.
      */
     community: IRedditLikeCommunity.ISummary;
 
     /**
      * Timestamp when the moderator role was assigned.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from reddit_like_moderators.created_at. Timestamp when the moderator role was assigned.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_moderators.created_at. Timestamp when the moderator
+         *   role was assigned.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when the moderator role was last modified.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from reddit_like_moderators.updated_at. Timestamp of the most recent update to the moderator role.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_moderators.updated_at. Timestamp of the most recent
+         *   update to the moderator role.
      */
     updated_at: string & tags.Format<"date-time">;
 
     /**
      * Soft-deletion timestamp. Null if moderator role is active.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from reddit_like_moderators.deleted_at. Nullable timestamp for soft-deletion. Null if moderator role is active, set when the role is revoked.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_moderators.deleted_at. Nullable timestamp for
+         *   soft-deletion. Null if moderator role is active, set when the role
+         *   is revoked.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
 
     /**
      * Authorization token.
      *
-     * @x-autobe-specification Authorization token comes from the session table.
+         * @x-autobe-specification Authorization token comes from the session
+         *   table.
      */
     token: IAuthorizationToken;
   };

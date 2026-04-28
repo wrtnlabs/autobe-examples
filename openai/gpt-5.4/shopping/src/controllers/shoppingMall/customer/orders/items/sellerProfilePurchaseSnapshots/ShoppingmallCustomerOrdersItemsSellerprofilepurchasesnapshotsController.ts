@@ -31,9 +31,11 @@ export class ShoppingmallCustomerOrdersItemsSellerprofilepurchasesnapshotsContro
    * @param orderId Target order identifier.
    * @param itemId Target order item identifier within the specified order.
    * @param body Purchase-time seller identity to preserve for the order item
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Implement a create-seller-profile-purchase-snapshot use case for a specific order item.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Implement a
+     *   create-seller-profile-purchase-snapshot use case for a specific order
+     *   item.
    *
    * 1. Authorize the caller as an internal trusted workflow or an administrator-level actor. Do not expose this as a normal customer or seller self-service write operation.
    * 2. Load the target `shopping_mall_orders` row by `orderId`. If not found, return a not-found error.
@@ -92,9 +94,10 @@ export class ShoppingmallCustomerOrdersItemsSellerprofilepurchasesnapshotsContro
    * @param orderId Target order code (global scope)
    * @param itemId Target order item's ID within the specified order
    * @param body Search criteria and pagination options for historical seller profile purchase snapshots
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Validate the parent order and order item scope before querying snapshot data.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Validate the parent order and order item scope
+     *   before querying snapshot data.
    *
    * 1. Resolve the parent order by `shopping_mall_orders.code` using the `orderId` path parameter as a code-based identifier, not as a UUID. Reject when no order exists for the supplied code.
    * 2. Resolve the parent order item by `shopping_mall_order_items.id` using the `itemId` path parameter, and verify that the item belongs to the resolved order through `shopping_mall_order_items.shopping_mall_order_id = shopping_mall_orders.id`. Reject when the item does not exist or is not part of the specified order.
@@ -158,9 +161,11 @@ export class ShoppingmallCustomerOrdersItemsSellerprofilepurchasesnapshotsContro
    * @param orderId Target order's UUID identifier
    * @param itemId Target order item's UUID identifier within the order
    * @param sellerProfilePurchaseSnapshotId Target seller profile purchase snapshot's UUID identifier for the order item
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Implement a read-only detail query for `shopping_mall_seller_profile_purchase_snapshots` scoped by parent order and order item.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Implement a read-only detail query for
+     *   `shopping_mall_seller_profile_purchase_snapshots` scoped by parent
+     *   order and order item.
    *
    * 1. Authenticate the caller and authorize by actor type.
    *    - Customer: allow only if `shopping_mall_orders.id = {orderId}` belongs to the authenticated customer.

@@ -27,9 +27,11 @@ export class HrmtimetrackingEmployeeTimelogsController {
    *
    * @param connection
    * @param body Information required to create a timelog entry
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor employee
-   * @x-autobe-specification Implement a create-timelog service that inserts a new hrm_time_tracking_timelogs row within the currently selected organization context.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor employee
+     * @x-autobe-specification Implement a create-timelog service that inserts a
+     *   new hrm_time_tracking_timelogs row within the currently selected
+     *   organization context.
    *
    * 1. Resolve the authenticated actor, current organization context, and whether the actor is creating a timelog for self or for another employee. Enforce organization-scoped authorization only. Employees may create their own timelogs. Managers and owners may create timelogs for other employees only when their current-organization permission set allows employee timelog management.
    *
@@ -81,9 +83,10 @@ export class HrmtimetrackingEmployeeTimelogsController {
    *
    * @param connection
    * @param body Search criteria, filters, sorting, and pagination options for timelog browsing
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor employee
-   * @x-autobe-specification Implement this operation as an organization-scoped search over hrm_time_tracking_timelogs.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor employee
+     * @x-autobe-specification Implement this operation as an
+     *   organization-scoped search over hrm_time_tracking_timelogs.
    *
    * Resolve the authenticated actor and current organization context first. Enforce organization isolation by constraining every query to hrm_time_tracking_timelogs.hrm_time_tracking_organization_id for the active organization. If the actor is an employee without permission to view all employee timelogs, additionally constrain the query to hrm_time_tracking_timelogs.hrm_time_tracking_employee_id equal to the actor's employee identity in the current organization. If the actor is an owner or manager with the relevant permission, allow broader organization-wide browsing.
    *
@@ -129,9 +132,12 @@ export class HrmtimetrackingEmployeeTimelogsController {
    *
    * @param connection
    * @param timelogId Unique identifier of the target timelog
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor employee
-   * @x-autobe-specification Load one record from `hrm_time_tracking_timelogs` by `id = {timelogId}` and `deleted_at IS NULL`, scoped to the caller's currently selected organization via `hrm_time_tracking_organization_id`.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor employee
+     * @x-autobe-specification Load one record from `hrm_time_tracking_timelogs`
+     *   by `id = {timelogId}` and `deleted_at IS NULL`, scoped to the caller's
+     *   currently selected organization via
+     *   `hrm_time_tracking_organization_id`.
    *
    * Before returning the record, evaluate authorization in the current organization context only. If the caller is an employee actor, allow access only when the timelog's `hrm_time_tracking_employee_id` belongs to that caller's own employee identity in the selected organization. If the caller is an owner or manager, allow access when the current organization role grants timelog viewing permission; otherwise reject. Never use permissions from another organization context.
    *
@@ -174,9 +180,10 @@ export class HrmtimetrackingEmployeeTimelogsController {
    * @param connection
    * @param timelogId Target timelog identifier
    * @param body Updated timelog information
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor employee
-   * @x-autobe-specification Implement an organization-scoped timelog update flow for one hrm_time_tracking_timelogs record identified by timelogId.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor employee
+     * @x-autobe-specification Implement an organization-scoped timelog update
+     *   flow for one hrm_time_tracking_timelogs record identified by timelogId.
    *
    * 1. Authenticate the caller and resolve the current organization context from the active session.
    * 2. Load the target timelog by id where deleted_at is null and hrm_time_tracking_organization_id matches the current organization. If not found, return a not-found error.
@@ -226,9 +233,12 @@ export class HrmtimetrackingEmployeeTimelogsController {
    *
    * @param connection
    * @param timelogId Unique identifier of the timelog to remove
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor employee
-   * @x-autobe-specification Load the target timelog by `timelogId` and resolve its organization, employee owner, related project, optional task, and current timesheet inclusion state within the active organization context.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor employee
+     * @x-autobe-specification Load the target timelog by `timelogId` and
+     *   resolve its organization, employee owner, related project, optional
+     *   task, and current timesheet inclusion state within the active
+     *   organization context.
    *
    * Authorize by actor type and organization scope. If the caller is an employee without time-management authority, verify that the timelog belongs to that employee's own workforce record in the current organization. If the caller has time-management authority, allow deletion of any employee timelog in the same organization. Reject cross-organization access regardless of actor role.
    *

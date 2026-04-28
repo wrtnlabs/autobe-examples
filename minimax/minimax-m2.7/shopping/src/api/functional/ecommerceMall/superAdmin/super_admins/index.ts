@@ -31,7 +31,8 @@ export * as me from "./me/index";
  * @param props.superAdminId Unique identifier of the super administrator account (UUID format).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor superAdmin
- * @x-autobe-specification Query the ecommerce_mall_super_admins table using the provided superAdminId as the primary key.
+ * @x-autobe-specification Query the ecommerce_mall_super_admins table using the
+ *   provided superAdminId as the primary key.
  *
  * 1. Validate the superAdminId is a valid UUID format.
  * 2. Query the database for a record where id equals the provided superAdminId.

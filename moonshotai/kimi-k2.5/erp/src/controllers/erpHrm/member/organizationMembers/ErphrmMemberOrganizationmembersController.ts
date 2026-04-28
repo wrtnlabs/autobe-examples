@@ -56,9 +56,9 @@ export class ErphrmMemberOrganizationmembersController {
    *
    * @param connection
    * @param body Organization member creation data linking a user to organization with role and optional department assignment
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Service Layer Implementation:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Service Layer Implementation:
    *
    * 1. **Authorization Check**
    *    - Verify caller has "org:manage" permission in the target organization
@@ -143,9 +143,10 @@ export class ErphrmMemberOrganizationmembersController {
    *
    * @param connection
    * @param body Search criteria and pagination parameters for filtering organization members
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query erp_hrm_organization_members table with organization scoping from session context.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query erp_hrm_organization_members table with
+     *   organization scoping from session context.
    *
    * Join with erp_hrm_members for user profile data (first_name, last_name, email, avatar_url).
    * Join with erp_hrm_roles for role name and description.
@@ -220,9 +221,9 @@ export class ErphrmMemberOrganizationmembersController {
    *
    * @param connection
    * @param organizationMemberId Target organization member's ID (scoped to organization)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation details:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation details:
    *
    * 1. Query the erp_hrm_organization_members table by id (path parameter)
    * 2. Join with erp_hrm_roles to get role details
@@ -291,9 +292,9 @@ export class ErphrmMemberOrganizationmembersController {
    * @param connection
    * @param organizationMemberId Target OrganizationMember's unique identifier (UUID)
    * @param body Updated values for OrganizationMember attributes
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation requires the following steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation requires the following steps:
    *
    * 1. **Authentication & Authorization**: Verify caller has valid authentication token with active organization context. Confirm caller possesses 'employee:manage' permission (or equivalent employee management capability).
    *
@@ -362,9 +363,10 @@ export class ErphrmMemberOrganizationmembersController {
    *
    * @param connection
    * @param organizationMemberId Unique identifier of the organization member (employee) to remove (UUID format)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement DELETE operation for OrganizationMember removal.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implement DELETE operation for OrganizationMember
+     *   removal.
    *
    * 1. Validate the requesting user has org:manage permission for the organization.
    *

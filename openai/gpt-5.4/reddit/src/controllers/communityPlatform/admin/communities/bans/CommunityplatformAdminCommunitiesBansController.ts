@@ -31,9 +31,12 @@ export class CommunityplatformAdminCommunitiesBansController {
    * @param connection
    * @param communityId Target community identifier
    * @param body Information required to create a community ban
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Validate that the caller is an authenticated member. Resolve the path parameter `communityId` against `community_platform_communities.id` and fail if no such community exists.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Validate that the caller is an authenticated
+     *   member. Resolve the path parameter `communityId` against
+     *   `community_platform_communities.id` and fail if no such community
+     *   exists.
    *
    * Load the caller's active moderation assignment from `community_platform_community_moderators` where `community_platform_community_id = communityId`, `community_platform_member_id = callerMemberId`, `status` indicates active standing, and `deleted_at IS NULL`. If no active assignment exists, reject the request as unauthorized for community-local ban management.
    *
@@ -83,9 +86,12 @@ export class CommunityplatformAdminCommunitiesBansController {
    * @param connection
    * @param communityId Target community's unique identifier
    * @param body Pagination, filtering, and sorting options for the community ban list
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Validate that `communityId` is a valid UUID-shaped identifier and load the target row from `community_platform_communities` by `id`. If no community exists for that identifier, reject the request.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Validate that `communityId` is a valid
+     *   UUID-shaped identifier and load the target row from
+     *   `community_platform_communities` by `id`. If no community exists for
+     *   that identifier, reject the request.
    *
    * Authorize the caller as an authenticated member with moderation authority in the selected community. Implementation must verify that the acting member is either the community owner or otherwise holds an active community-specific moderation role for that same community. Deny access for guests and for members who do not hold moderation authority in the selected community.
    *
@@ -133,9 +139,10 @@ export class CommunityplatformAdminCommunitiesBansController {
    * @param connection
    * @param communityId Target community's UUID identifier that scopes the ban lookup.
    * @param banId Target community ban's UUID identifier within the specified community scope.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Implement this operation as a scoped read against the community_platform_community_bans table.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Implement this operation as a scoped read against
+     *   the community_platform_community_bans table.
    *
    * 1. Authenticate the caller as a member and verify that the caller currently holds moderation authority in the community identified by communityId. This authorization check must be community-local, because the requirements state that ban actions and visibility are limited to the selected community.
    * 2. Validate that a community_platform_communities record exists for communityId and is not outside the intended readable lifecycle boundary for moderation tooling.
@@ -193,9 +200,12 @@ export class CommunityplatformAdminCommunitiesBansController {
    * @param communitySlug Target community's unique slug used for community-scoped moderation lookup (global scope).
    * @param banId Target community ban record ID within the specified community.
    * @param body Updated lifecycle and moderation details for the community ban
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Resolve the target community by `communitySlug` using `community_platform_communities.slug`, and reject the request if no matching community exists or if the community is not in an updatable business state.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Resolve the target community by `communitySlug`
+     *   using `community_platform_communities.slug`, and reject the request if
+     *   no matching community exists or if the community is not in an updatable
+     *   business state.
    *
    * Authorize the caller as an authenticated member with active moderation authority in that same community. Check `community_platform_community_moderators` for a record matching the resolved community and the caller's member ID, requiring an active assignment that has not been revoked or logically removed. Treat owner-linked standing through `community_platform_community_moderator_owners` as valid moderation authority as well. Reject callers who are guests, non-members, or members without current moderation standing in the specified community.
    *

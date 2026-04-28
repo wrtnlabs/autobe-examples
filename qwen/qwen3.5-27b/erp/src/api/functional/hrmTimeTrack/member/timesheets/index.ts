@@ -23,7 +23,8 @@ export * as snapshots from "./snapshots/index";
  * @param props.body Timesheet creation request containing the week start date (Monday) for the new timesheet. The week end date will be automatically calculated as Sunday (6 days after the start date).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Create a new timesheet record in hrm_time_track_timesheets table with the following logic:
+ * @x-autobe-specification Create a new timesheet record in
+ *   hrm_time_track_timesheets table with the following logic:
  *
  * 1. Validate that the authenticated user has an employee record in the organization context.
  * 2. Extract week_start_date from request body and calculate week_end_date (Sunday, 6 days after Monday).
@@ -135,7 +136,8 @@ export namespace create {
  * @param props.body Search criteria for timesheets including status filter, date range, employee filter, pagination parameters, and sorting options.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query hrm_time_track_timesheets table with pagination and filtering based on request body criteria.
+ * @x-autobe-specification Query hrm_time_track_timesheets table with pagination
+ *   and filtering based on request body criteria.
  *
  * Authorization: Verify the requesting user's access level. Employees can only query timesheets where hrm_time_track_employee_id matches their employee record. Users with time:approve permission can query all timesheets within their organization context.
  *
@@ -242,7 +244,8 @@ export namespace index {
  * @param props.timesheetId Unique identifier of the timesheet to retrieve (UUID format).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query the hrm_time_track_timesheets table for a single record matching the provided timesheetId UUID.
+ * @x-autobe-specification Query the hrm_time_track_timesheets table for a
+ *   single record matching the provided timesheetId UUID.
  *
  * Authorization: Verify the requesting user has permission to view this timesheet. Employees can only view their own timesheets (where hrm_time_track_employee_id matches their employee record). Users with time:approve permission can view any timesheet in their organization.
  *
@@ -336,7 +339,8 @@ export namespace at {
  * @param props.body Timesheet update data including status transition and optional rejection reason when rejecting a submitted timesheet.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification 1. Validate timesheet exists and retrieve current record from hrm_time_track_timesheets table by id.
+ * @x-autobe-specification 1. Validate timesheet exists and retrieve current
+ *   record from hrm_time_track_timesheets table by id.
  *
  * 2. Check authorization: verify requesting user has permission to modify this timesheet (employee owner or time management permission).
  *
@@ -464,7 +468,8 @@ export namespace update {
  * @param props.timesheetId Unique identifier of the timesheet to delete (global scope).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Delete a timesheet by ID with authorization validation.
+ * @x-autobe-specification Delete a timesheet by ID with authorization
+ *   validation.
  *
  * Authorization checks:
  * 1. Verify the authenticated user is either:

@@ -21,9 +21,9 @@ export class ErphrmMemberDashboardController {
    * The response structure adapts dynamically based on the authenticated user's permissions. The personal section is always populated for any employee, while the organization section is included only when the user's role includes the report viewing permission.
    *
    * @param connection
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation logic for the dashboard endpoint:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation logic for the dashboard endpoint:
    *
    * 1. **Authentication & Context**: Extract authenticated member and current organization context from session. Load employee record for the member within the organization.
    *

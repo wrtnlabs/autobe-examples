@@ -11,14 +11,15 @@ export namespace IPageICommunityPlatformCommunityBan {
     /**
      * Page information.
      *
-     * @x-autobe-specification Pagination information for the page.
+         * @x-autobe-specification Pagination information for the page.
      */
     pagination: IPage.IPagination;
 
     /**
      * List of records.
      *
-     * @x-autobe-specification List of records of type ICommunityPlatformCommunityBan.ISummary.
+         * @x-autobe-specification List of records of type
+         *   ICommunityPlatformCommunityBan.ISummary.
      */
     data: ICommunityPlatformCommunityBan.ISummary[];
   };

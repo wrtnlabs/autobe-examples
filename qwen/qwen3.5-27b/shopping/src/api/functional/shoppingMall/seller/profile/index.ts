@@ -15,7 +15,8 @@ export * as snapshots from "./snapshots/index";
  * @param props.connection
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Retrieve the authenticated customer's profile from shopping_mall_customer_profiles table.
+ * @x-autobe-specification Retrieve the authenticated customer's profile from
+ *   shopping_mall_customer_profiles table.
  *
  * 1. Extract customer ID from the authentication session/token in the request context.
  * 2. Query shopping_mall_customer_profiles table where shopping_mall_customer_id matches the authenticated customer's ID.

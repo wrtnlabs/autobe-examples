@@ -13,28 +13,28 @@ import { IECommerceMallCustomerProfile } from "./IECommerceMallCustomerProfile";
  */
 export type IECommerceMallCustomer = {
   /**
-   * @x-autobe-database-schema-property id
+     * @x-autobe-database-schema-property id
    */
   id: string & tags.Format<"uuid">;
   /**
-   * @x-autobe-database-schema-property email
+     * @x-autobe-database-schema-property email
    */
   email: string;
   profile: IECommerceMallCustomerProfile;
   /**
-   * @x-autobe-database-schema-property banned_at
+     * @x-autobe-database-schema-property banned_at
    */
   banned_at: (string & tags.Format<"date-time">) | null;
   /**
-   * @x-autobe-database-schema-property created_at
+     * @x-autobe-database-schema-property created_at
    */
   created_at: string & tags.Format<"date-time">;
   /**
-   * @x-autobe-database-schema-property updated_at
+     * @x-autobe-database-schema-property updated_at
    */
   updated_at: string & tags.Format<"date-time">;
   /**
-   * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-database-schema-property deleted_at
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -50,7 +50,9 @@ export namespace IECommerceMallCustomer {
      *
      * Filters customer accounts by performing a case-insensitive partial match against their email address. Use this for free-text search across all customers. Returns all customers matching the search term when combined with other filter criteria.
      *
-     * @x-autobe-specification ILIKE/partial match filter applied to e_commerce_mall_customers.email. Returns all customers whose email contains the search term (case-insensitive).
+         * @x-autobe-specification ILIKE/partial match filter applied to
+         *   e_commerce_mall_customers.email. Returns all customers whose email
+         *   contains the search term (case-insensitive).
      */
     search?: string | undefined;
 
@@ -59,7 +61,9 @@ export namespace IECommerceMallCustomer {
      *
      * Returns only the customer account with the specified email address. This is an exact match filter, not a partial search. Useful when looking up a specific customer by their known email address.
      *
-     * @x-autobe-specification Direct exact-match filter on e_commerce_mall_customers.email column. This is an equality filter, not a partial search.
+         * @x-autobe-specification Direct exact-match filter on
+         *   e_commerce_mall_customers.email column. This is an equality filter,
+         *   not a partial search.
      */
     email?: string | undefined;
 
@@ -68,7 +72,9 @@ export namespace IECommerceMallCustomer {
      *
      * Filters customers registered at or after this timestamp. Combine with {@link created_at_to} to define a date range. When used alone, returns all customers registered from this date onward.
      *
-     * @x-autobe-specification Boundary filter applied to e_commerce_mall_customers.created_at. Constructs condition: created_at >= created_at_from.
+         * @x-autobe-specification Boundary filter applied to
+         *   e_commerce_mall_customers.created_at. Constructs condition:
+         *   created_at >= created_at_from.
      */
     created_at_from?: (string & tags.Format<"date-time">) | undefined;
 
@@ -77,7 +83,9 @@ export namespace IECommerceMallCustomer {
      *
      * Filters customers registered at or before this timestamp. Combine with {@link created_at_from} to define a date range. When used alone, returns all customers registered up to this date.
      *
-     * @x-autobe-specification Boundary filter applied to e_commerce_mall_customers.created_at. Constructs condition: created_at <= created_at_to.
+         * @x-autobe-specification Boundary filter applied to
+         *   e_commerce_mall_customers.created_at. Constructs condition:
+         *   created_at <= created_at_to.
      */
     created_at_to?: (string & tags.Format<"date-time">) | undefined;
 
@@ -86,7 +94,9 @@ export namespace IECommerceMallCustomer {
      *
      * When `true`, returns only banned accounts (those with a ban timestamp set). When `false`, returns only unbanned accounts (those without a ban). When omitted, returns both banned and unbanned accounts.
      *
-     * @x-autobe-specification Computed boolean filter on e_commerce_mall_customers.banned_at. If true: banned_at IS NOT NULL. If false: banned_at IS NULL.
+         * @x-autobe-specification Computed boolean filter on
+         *   e_commerce_mall_customers.banned_at. If true: banned_at IS NOT
+         *   NULL. If false: banned_at IS NULL.
      */
     banned?: boolean | undefined;
 
@@ -95,7 +105,9 @@ export namespace IECommerceMallCustomer {
      *
      * When `true`, returns only deleted accounts (those with a deletion timestamp set). When `false`, returns only active accounts (those without a deletion). When omitted, returns both active and deleted accounts.
      *
-     * @x-autobe-specification Computed boolean filter on e_commerce_mall_customers.deleted_at. If true: deleted_at IS NOT NULL. If false: deleted_at IS NULL.
+         * @x-autobe-specification Computed boolean filter on
+         *   e_commerce_mall_customers.deleted_at. If true: deleted_at IS NOT
+         *   NULL. If false: deleted_at IS NULL.
      */
     deleted?: boolean | undefined;
 
@@ -104,7 +116,9 @@ export namespace IECommerceMallCustomer {
      *
      * Starts at 1. Defaults to 1 if omitted. Use with {@link limit} to control which page of results is returned.
      *
-     * @x-autobe-specification Offset-based pagination. Page number (1-indexed). Calculates offset as (page - 1) * limit. Defaults to 1.
+         * @x-autobe-specification Offset-based pagination. Page number
+         *   (1-indexed). Calculates offset as (page - 1) * limit. Defaults to
+         *   1.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -113,7 +127,8 @@ export namespace IECommerceMallCustomer {
      *
      * Defaults to a system-defined value (typically 20) if omitted. Maximum allowed value is 100. Use with {@link page} to control pagination.
      *
-     * @x-autobe-specification Maximum records per page. Defaults to system value (typically 20). Maximum capped at 100.
+         * @x-autobe-specification Maximum records per page. Defaults to system
+         *   value (typically 20). Maximum capped at 100.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -124,7 +139,8 @@ export namespace IECommerceMallCustomer {
      *
      * Defaults to `created_at` if omitted. Supported sort fields: `created_at` (registration date), `email` (email address), `banned_at` (ban timestamp).
      *
-     * @x-autobe-specification Field name for ORDER BY clause. Valid values: created_at, email, banned_at. Defaults to created_at.
+         * @x-autobe-specification Field name for ORDER BY clause. Valid values:
+         *   created_at, email, banned_at. Defaults to created_at.
      */
     sort?: "created_at" | "email" | "banned_at" | undefined;
 
@@ -133,7 +149,8 @@ export namespace IECommerceMallCustomer {
      *
      * Defaults to `desc` if omitted. Use `asc` for ascending order or `desc` for descending order.
      *
-     * @x-autobe-specification Sort direction for ORDER BY. Valid values: asc, desc. Defaults to desc.
+         * @x-autobe-specification Sort direction for ORDER BY. Valid values:
+         *   asc, desc. Defaults to desc.
      */
     direction?: "asc" | "desc" | undefined;
   };
@@ -153,7 +170,13 @@ export namespace IECommerceMallCustomer {
      *
      * Submitting this token allows the server to issue a new access and refresh token pair without requiring the customer to re-enter their email and password credentials, providing a seamless authentication experience across page loads and browser sessions.
      *
-     * @x-autobe-specification The refresh token JWT string previously issued to the client during authentication (join or login). The backend decodes this JWT to extract the session identifier, queries e_commerce_mall_customer_sessions to validate the session exists and is not expired (expired_at > now), then issues new access and refresh tokens. The previous refresh token is invalidated upon successful refresh to prevent replay attacks.
+         * @x-autobe-specification The refresh token JWT string previously
+         *   issued to the client during authentication (join or login). The
+         *   backend decodes this JWT to extract the session identifier, queries
+         *   e_commerce_mall_customer_sessions to validate the session exists
+         *   and is not expired (expired_at > now), then issues new access and
+         *   refresh tokens. The previous refresh token is invalidated upon
+         *   successful refresh to prevent replay attacks.
      */
     token: string;
   };
@@ -171,7 +194,9 @@ export namespace IECommerceMallCustomer {
      *
      * The system looks up the customer account in e_commerce_mall_customers by this email address. If no matching account is found, the login request is rejected with a 401 Unauthorized error — this prevents disclosing whether a particular email is registered on the platform. The email is stored as a unique indexed column in the database.
      *
-     * @x-autobe-specification Login lookup key. Backend queries e_commerce_mall_customers by this email address to find the matching account. Indexed with @@unique constraint in the database.
+         * @x-autobe-specification Login lookup key. Backend queries
+         *   e_commerce_mall_customers by this email address to find the
+         *   matching account. Indexed with @@unique constraint in the database.
      */
     email: string;
 
@@ -180,7 +205,11 @@ export namespace IECommerceMallCustomer {
      *
      * Transmitted in plain text over HTTPS and compared against the stored bcrypt hash server-side. The password_hash column in e_commerce_mall_customers stores the bcrypt hash of the password at registration time. If the password does not match, the login request is rejected with an unauthorized error. The password itself is never stored, logged, or exposed in any response.
      *
-     * @x-autobe-specification Plain text password transmitted in the request body. Backend compares against e_commerce_mall_customers.password_hash using bcrypt.compare(). Never stored or logged in plain text. Maps to the password_hash DB column via bcrypt hashing transformation.
+         * @x-autobe-specification Plain text password transmitted in the
+         *   request body. Backend compares against
+         *   e_commerce_mall_customers.password_hash using bcrypt.compare().
+         *   Never stored or logged in plain text. Maps to the password_hash DB
+         *   column via bcrypt hashing transformation.
      */
     password: string;
 
@@ -189,7 +218,10 @@ export namespace IECommerceMallCustomer {
      *
      * Captured in the session record for audit and traffic source analysis. This must be a valid URI provided by the client application. This field is stored in e_commerce_mall_customer_sessions and helps track customer navigation patterns and authentication entry points.
      *
-     * @x-autobe-specification Maps to e_commerce_mall_customer_sessions.href. Captures the full page URL where the customer initiated the login. Stored in the session record upon successful authentication for audit and analytics.
+         * @x-autobe-specification Maps to
+         *   e_commerce_mall_customer_sessions.href. Captures the full page URL
+         *   where the customer initiated the login. Stored in the session
+         *   record upon successful authentication for audit and analytics.
      */
     href: string & tags.Format<"uri">;
 
@@ -198,7 +230,10 @@ export namespace IECommerceMallCustomer {
      *
      * Captured in the session record for traffic source analysis and security auditing. This must be a valid URI provided by the client application. This field is stored in e_commerce_mall_customer_sessions upon successful authentication.
      *
-     * @x-autobe-specification Maps to e_commerce_mall_customer_sessions.referrer. Captures the HTTP Referrer header value indicating the previous page the customer visited before the login page. Stored in the session record.
+         * @x-autobe-specification Maps to
+         *   e_commerce_mall_customer_sessions.referrer. Captures the HTTP
+         *   Referrer header value indicating the previous page the customer
+         *   visited before the login page. Stored in the session record.
      */
     referrer: string & tags.Format<"uri">;
 
@@ -207,7 +242,10 @@ export namespace IECommerceMallCustomer {
      *
      * Optional field — in server-side rendering (SSR) scenarios the client may not know its own public IP address, so the server captures it as a fallback. The server logic uses the provided value if present, otherwise falls back to the detected client IP. Used for security auditing and suspicious activity detection when stored in the session record.
      *
-     * @x-autobe-specification Maps to e_commerce_mall_customer_sessions.ip. Optional in login request — in server-side rendering scenarios the client cannot determine its own public IP, so the server captures it as a fallback (body.ip ?? serverIp). Format is ipv4.
+         * @x-autobe-specification Maps to e_commerce_mall_customer_sessions.ip.
+         *   Optional in login request — in server-side rendering scenarios the
+         *   client cannot determine its own public IP, so the server captures
+         *   it as a fallback (body.ip ?? serverIp). Format is ipv4.
      */
     ip?: (string & tags.Format<"ipv4">) | null | undefined;
   };
@@ -225,7 +263,9 @@ export namespace IECommerceMallCustomer {
      *
      * This UUID serves as the permanent identifier for the customer account across the platform. It is generated automatically during customer registration and cannot be changed. Returned after every authentication operation to identify the authenticated customer.
      *
-     * @x-autobe-specification Comes from e_commerce_mall_customers.id. UUID primary key retrieved from the customer record after successful authentication (join, login, or refresh).
+         * @x-autobe-specification Comes from e_commerce_mall_customers.id. UUID
+         *   primary key retrieved from the customer record after successful
+         *   authentication (join, login, or refresh).
      */
     id: string & tags.Format<"uuid">;
 
@@ -234,7 +274,9 @@ export namespace IECommerceMallCustomer {
      *
      * This email serves as the customer's login identifier for authentication. It is guaranteed to be unique across all customer accounts on the platform. Returned in the auth response to confirm which account is authenticated.
      *
-     * @x-autobe-specification Comes from e_commerce_mall_customers.email. Retrieved from the customer record after successful authentication. Guaranteed unique by database constraint.
+         * @x-autobe-specification Comes from e_commerce_mall_customers.email.
+         *   Retrieved from the customer record after successful authentication.
+         *   Guaranteed unique by database constraint.
      */
     email: string;
 
@@ -243,7 +285,12 @@ export namespace IECommerceMallCustomer {
      *
      * Contains the customer's publicly visible display name shown on product reviews, their optional contact phone number for order-related communication, and a reference back to the customer record. Each customer has exactly one profile, created automatically during registration with empty display_name and phone_number defaults.
      *
-     * @x-autobe-specification Retrieved via LEFT JOIN from e_commerce_mall_customers to e_commerce_mall_customer_profiles using the profile HAS-ONE relation (e_commerce_mall_customer_id FK). Returns IECommerceMallCustomerProfile containing id, display_name, phone_number, customer reference, created_at, updated_at, deleted_at.
+         * @x-autobe-specification Retrieved via LEFT JOIN from
+         *   e_commerce_mall_customers to e_commerce_mall_customer_profiles
+         *   using the profile HAS-ONE relation (e_commerce_mall_customer_id
+         *   FK). Returns IECommerceMallCustomerProfile containing id,
+         *   display_name, phone_number, customer reference, created_at,
+         *   updated_at, deleted_at.
      */
     profile: IECommerceMallCustomerProfile;
 
@@ -252,7 +299,10 @@ export namespace IECommerceMallCustomer {
      *
      * When set, the customer cannot log into the platform and their access is revoked. A null value indicates the account is not banned. An administrator can lift the ban by clearing this field, and the customer can then log in normally.
      *
-     * @x-autobe-specification Comes from e_commerce_mall_customers.banned_at. Nullable timestamp retrieved from the customer record. Included in the auth response so the client can reflect ban status and block functionality accordingly.
+         * @x-autobe-specification Comes from
+         *   e_commerce_mall_customers.banned_at. Nullable timestamp retrieved
+         *   from the customer record. Included in the auth response so the
+         *   client can reflect ban status and block functionality accordingly.
      */
     banned_at: (string & tags.Format<"date-time">) | null;
 
@@ -261,7 +311,9 @@ export namespace IECommerceMallCustomer {
      *
      * Automatically set during customer registration. Used for account age tracking and sort ordering. Returned in the auth response for client-side account information display.
      *
-     * @x-autobe-specification Comes from e_commerce_mall_customers.created_at. Automatically set on record creation. Retrieved from the customer record after authentication.
+         * @x-autobe-specification Comes from
+         *   e_commerce_mall_customers.created_at. Automatically set on record
+         *   creation. Retrieved from the customer record after authentication.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -270,7 +322,10 @@ export namespace IECommerceMallCustomer {
      *
      * Updated automatically on any field change such as password updates. Enables change tracking and concurrency awareness.
      *
-     * @x-autobe-specification Comes from e_commerce_mall_customers.updated_at. Automatically updated on record modification. Retrieved from the customer record after authentication.
+         * @x-autobe-specification Comes from
+         *   e_commerce_mall_customers.updated_at. Automatically updated on
+         *   record modification. Retrieved from the customer record after
+         *   authentication.
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -279,14 +334,17 @@ export namespace IECommerceMallCustomer {
      *
      * When set, the customer cannot log in. Associated orders, reviews, and snapshots are preserved for historical integrity per business policy, but the customer's profile data is deleted. A null value indicates an active account.
      *
-     * @x-autobe-specification Comes from e_commerce_mall_customers.deleted_at. Nullable timestamp for soft deletion. Retrieved from the customer record after authentication.
+         * @x-autobe-specification Comes from
+         *   e_commerce_mall_customers.deleted_at. Nullable timestamp for soft
+         *   deletion. Retrieved from the customer record after authentication.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
 
     /**
      * Authorization token.
      *
-     * @x-autobe-specification Authorization token comes from the session table.
+         * @x-autobe-specification Authorization token comes from the session
+         *   table.
      */
     token: IAuthorizationToken;
   };
@@ -304,8 +362,10 @@ export namespace IECommerceMallCustomer {
      *
      * Must be a valid email format. Serves as the primary identifier for the customer account and is enforced as unique by a database constraint. If the email is already associated with an existing customer account, registration is rejected with a conflict error.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from e_commerce_mall_customers.email. Unique constraint enforced by database index.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_customers.email. Unique constraint enforced by
+         *   database index.
      */
     email: string & tags.Format<"email">;
 
@@ -314,8 +374,11 @@ export namespace IECommerceMallCustomer {
      *
      * The password is securely hashed using bcrypt before storage — never stored in plain text. Used to authenticate the customer during login by comparing the provided password against the stored hash.
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification Bcrypt hash of the provided password, stored in e_commerce_mall_customers.password_hash. Never stored in plain text. The password field in this DTO is the raw user input; the service layer hashes it before storage.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification Bcrypt hash of the provided password, stored
+         *   in e_commerce_mall_customers.password_hash. Never stored in plain
+         *   text. The password field in this DTO is the raw user input; the
+         *   service layer hashes it before storage.
      */
     password: string & tags.Format<"password">;
 
@@ -324,7 +387,10 @@ export namespace IECommerceMallCustomer {
      *
      * Captured at registration time for audit trail purposes and stored in the session record. Provides context about the customer's entry point to the registration flow.
      *
-     * @x-autobe-specification Session context captured at registration time. Maps to e_commerce_mall_customer_sessions.href. Records the page URL from which the registration was submitted for audit trail purposes.
+         * @x-autobe-specification Session context captured at registration
+         *   time. Maps to e_commerce_mall_customer_sessions.href. Records the
+         *   page URL from which the registration was submitted for audit trail
+         *   purposes.
      */
     href: string & tags.Format<"uri">;
 
@@ -333,7 +399,10 @@ export namespace IECommerceMallCustomer {
      *
      * Captured at registration time for audit trail purposes. Helps track the customer's referral source and browsing path.
      *
-     * @x-autobe-specification Session context captured at registration time. Maps to e_commerce_mall_customer_sessions.referrer. Records the HTTP referrer header from the registration request for audit trail purposes.
+         * @x-autobe-specification Session context captured at registration
+         *   time. Maps to e_commerce_mall_customer_sessions.referrer. Records
+         *   the HTTP referrer header from the registration request for audit
+         *   trail purposes.
      */
     referrer: string & tags.Format<"uri">;
 
@@ -342,7 +411,10 @@ export namespace IECommerceMallCustomer {
      *
      * An optional IPv4 address captured for audit trail purposes. In server-side rendered (SSR) contexts, the client may not know its own public IP address, so the server captures the connecting IP as a fallback when this field is omitted.
      *
-     * @x-autobe-specification Session context captured at registration time. Maps to e_commerce_mall_customer_sessions.ip. Optional IPv4 address field — if not provided, the server may capture the connecting IP address as a fallback.
+         * @x-autobe-specification Session context captured at registration
+         *   time. Maps to e_commerce_mall_customer_sessions.ip. Optional IPv4
+         *   address field — if not provided, the server may capture the
+         *   connecting IP address as a fallback.
      */
     ip?: (string & tags.Format<"ipv4">) | null | undefined;
   };
@@ -358,8 +430,10 @@ export namespace IECommerceMallCustomer {
      *
      * Assigned at account creation and used to reference the customer across all related entities such as orders, reviews, and addresses. This ID is immutable and remains stable for the lifetime of the account.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from e_commerce_mall_customers.id. UUID primary key, immutable, assigned at account creation.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_customers.id. UUID primary key, immutable, assigned
+         *   at account creation.
      */
     id: string & tags.Format<"uuid">;
 
@@ -368,8 +442,10 @@ export namespace IECommerceMallCustomer {
      *
      * Must be a valid email format. Used for authentication and order-related communications. The email address is unique across all customer accounts and cannot be changed once set.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from e_commerce_mall_customers.email. Unique constraint enforced at the database level via @@unique([email]).
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_customers.email. Unique constraint enforced at the
+         *   database level via @@unique([email]).
      */
     email: string & tags.Format<"email">;
 
@@ -378,7 +454,13 @@ export namespace IECommerceMallCustomer {
      *
      * Contains the customer's publicly visible display name and optional contact phone number. Each customer has exactly one profile, created automatically during registration. May be null if the customer has deleted their account, as the profile is soft-deleted along with the account per the data retention policy.
      *
-     * @x-autobe-specification LEFT JOIN from e_commerce_mall_customers to e_commerce_mall_customer_profiles via the 1:1 HAS-ONE relation (FK: e_commerce_mall_customer_id on the profile table). Returns IECommerceMallCustomerProfile or null when no profile exists — for example, after account deletion when the profile is soft-deleted alongside the account. The profile table stores the customer's publicly visible display name and optional phone number.
+         * @x-autobe-specification LEFT JOIN from e_commerce_mall_customers to
+         *   e_commerce_mall_customer_profiles via the 1:1 HAS-ONE relation (FK:
+         *   e_commerce_mall_customer_id on the profile table). Returns
+         *   IECommerceMallCustomerProfile or null when no profile exists — for
+         *   example, after account deletion when the profile is soft-deleted
+         *   alongside the account. The profile table stores the customer's
+         *   publicly visible display name and optional phone number.
      */
     profile: IECommerceMallCustomerProfile | null;
 
@@ -387,8 +469,10 @@ export namespace IECommerceMallCustomer {
      *
      * Automatically set at the time of registration. Used for account age tracking and sort ordering in administrative listings.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from e_commerce_mall_customers.created_at. DateTime with timezone (Timestamptz). Indexed at database level via @@index([created_at]).
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_customers.created_at. DateTime with timezone
+         *   (Timestamptz). Indexed at database level via @@index([created_at]).
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -397,8 +481,10 @@ export namespace IECommerceMallCustomer {
      *
      * Updated automatically on any field change such as password updates. Enables change tracking and concurrency awareness for the account record.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from e_commerce_mall_customers.updated_at. DateTime with timezone (Timestamptz). Updated automatically on any field change.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_customers.updated_at. DateTime with timezone
+         *   (Timestamptz). Updated automatically on any field change.
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -407,8 +493,11 @@ export namespace IECommerceMallCustomer {
      *
      * When set, the customer's login access is revoked. The account record remains in the system with all associated data preserved. Null indicates the customer is not currently banned and can log in normally.
      *
-     * @x-autobe-database-schema-property banned_at
-     * @x-autobe-specification Direct mapping from e_commerce_mall_customers.banned_at. Nullable DateTime with timezone (Timestamptz). Null when the customer is not banned. Set by administrator ban action; cleared by unban action.
+         * @x-autobe-database-schema-property banned_at
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_customers.banned_at. Nullable DateTime with
+         *   timezone (Timestamptz). Null when the customer is not banned. Set
+         *   by administrator ban action; cleared by unban action.
      */
     banned_at: (string & tags.Format<"date-time">) | null;
 
@@ -417,8 +506,11 @@ export namespace IECommerceMallCustomer {
      *
      * When set, the customer cannot log in. Associated orders, reviews, and snapshots are preserved for historical integrity per business data retention requirements. Null indicates the account is active and the customer can log in.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from e_commerce_mall_customers.deleted_at. Nullable DateTime with timezone (Timestamptz). Null when the account is active. Set when the customer performs account self-deletion.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_customers.deleted_at. Nullable DateTime with
+         *   timezone (Timestamptz). Null when the account is active. Set when
+         *   the customer performs account self-deletion.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };

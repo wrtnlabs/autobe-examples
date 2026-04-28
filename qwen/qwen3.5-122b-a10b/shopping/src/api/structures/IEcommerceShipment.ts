@@ -94,22 +94,24 @@ export namespace IEcommerceShipment {
     /**
      * Name of the shipping carrier (e.g., "UPS", "FedEx", "USPS"). Required field for shipment tracking.
      *
-     * @x-autobe-database-schema-property carrier_name
+         * @x-autobe-database-schema-property carrier_name
      */
     carrier_name: string;
 
     /**
      * Tracking number assigned by the carrier for this shipment. Required field used to track the package through the carrier's system.
      *
-     * @x-autobe-database-schema-property tracking_number
+         * @x-autobe-database-schema-property tracking_number
      */
     tracking_number: string;
 
     /**
      * Direct URL to track this shipment on the carrier's website. Optional field that can be auto-generated from carrier and tracking number, or manually entered by the seller.
      *
-     * @x-autobe-database-schema-property tracking_url
-     * @x-autobe-specification Direct mapping from ecommerce_shipments.tracking_url. Nullable string, can be auto-generated from carrier+tracking_number or manually entered.
+         * @x-autobe-database-schema-property tracking_url
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_shipments.tracking_url. Nullable string, can be
+         *   auto-generated from carrier+tracking_number or manually entered.
      */
     tracking_url?: (string & tags.Format<"uri">) | null | undefined;
   };
@@ -148,8 +150,11 @@ export namespace IEcommerceShipment {
      *
      * Omit this parameter to retrieve shipments regardless of status. Include a single status value to filter results.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Filter shipments by tracking status. Maps to ecommerce_shipments.status column with WHERE clause. Allowed values: pending, shipped, in_transit, delivered, exception. Optional parameter - when omitted, no status filtering is applied.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Filter shipments by tracking status. Maps to
+         *   ecommerce_shipments.status column with WHERE clause. Allowed
+         *   values: pending, shipped, in_transit, delivered, exception.
+         *   Optional parameter - when omitted, no status filtering is applied.
      */
     status?: string | undefined;
 
@@ -169,8 +174,10 @@ export namespace IEcommerceShipment {
      *
      * Omit this parameter to retrieve shipments from all carriers. Include the exact carrier name to filter results.
      *
-     * @x-autobe-database-schema-property carrier_name
-     * @x-autobe-specification Filter shipments by carrier name. Maps to ecommerce_shipments.carrier_name column with LIKE search. Optional parameter - when omitted, no carrier filtering is applied.
+         * @x-autobe-database-schema-property carrier_name
+         * @x-autobe-specification Filter shipments by carrier name. Maps to
+         *   ecommerce_shipments.carrier_name column with LIKE search. Optional
+         *   parameter - when omitted, no carrier filtering is applied.
      */
     carrier_name?: string | undefined;
 
@@ -191,7 +198,9 @@ export namespace IEcommerceShipment {
      * - page=2, limit=10: Returns records 11-20
      * - page=3, limit=10: Returns records 21-30
      *
-     * @x-autobe-specification Pagination page number (1-indexed). Applied as OFFSET in SQL query: OFFSET (page - 1) * limit. Defaults to 1 if not provided. Minimum value is 1.
+         * @x-autobe-specification Pagination page number (1-indexed). Applied
+         *   as OFFSET in SQL query: OFFSET (page - 1) * limit. Defaults to 1 if
+         *   not provided. Minimum value is 1.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -212,7 +221,8 @@ export namespace IEcommerceShipment {
      * - Actual records returned may be less than limit on the final page
      * - Combined with {@link page} to determine OFFSET for pagination
      *
-     * @x-autobe-specification Pagination limit (items per page). Applied as LIMIT in SQL query. Range: 1-100. Defaults to 10 if not provided.
+         * @x-autobe-specification Pagination limit (items per page). Applied as
+         *   LIMIT in SQL query. Range: 1-100. Defaults to 10 if not provided.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -242,22 +252,23 @@ export namespace IEcommerceShipment {
     /**
      * Name of the shipping carrier (e.g., "UPS", "FedEx", "USPS")
      *
-     * @x-autobe-database-schema-property carrier_name
+         * @x-autobe-database-schema-property carrier_name
      */
     carrier_name: string;
 
     /**
      * Tracking number assigned by the carrier for this shipment
      *
-     * @x-autobe-database-schema-property tracking_number
+         * @x-autobe-database-schema-property tracking_number
      */
     tracking_number: string;
 
     /**
      * Direct URL to track this shipment on the carrier's website. Optional field that can be auto-generated from carrier and tracking number, or manually entered by the seller.
      *
-     * @x-autobe-database-schema-property tracking_url
-     * @x-autobe-specification Direct mapping from ecommerce_shipments.tracking_url. Nullable URI format.
+         * @x-autobe-database-schema-property tracking_url
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_shipments.tracking_url. Nullable URI format.
      */
     tracking_url?: (string & tags.Format<"uri">) | null | undefined;
 

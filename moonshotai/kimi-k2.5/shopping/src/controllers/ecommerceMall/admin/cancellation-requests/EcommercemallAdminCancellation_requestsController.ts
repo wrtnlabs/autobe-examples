@@ -22,9 +22,10 @@ export class EcommercemallAdminCancellation_requestsController {
    *
    * @param connection
    * @param body Search criteria and pagination parameters for filtering cancellation requests
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query ecommerce_mall_cancellation_requests table with pagination and filtering.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Query ecommerce_mall_cancellation_requests table
+     *   with pagination and filtering.
    *
    * Authorization and Access Control:
    * - Customers: Only see cancellation requests where customerId matches their authenticated customer ID
@@ -91,9 +92,10 @@ export class EcommercemallAdminCancellation_requestsController {
    *
    * @param connection
    * @param cancellationRequestId Unique identifier of the cancellation request (UUID format)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query the ecommerce_mall_cancellation_requests table by the provided cancellationRequestId UUID.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Query the ecommerce_mall_cancellation_requests
+     *   table by the provided cancellationRequestId UUID.
    *
    * Join with ecommerce_mall_order_items to include order item details (product name, variant options, quantity).
    * Join with ecommerce_mall_customers to include customer information.

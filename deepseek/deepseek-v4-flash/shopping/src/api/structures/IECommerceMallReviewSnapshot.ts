@@ -18,8 +18,9 @@ export type IECommerceMallReviewSnapshot = {
    *
    * Auto-generated UUID primary key assigned when the snapshot is created.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from e_commerce_mall_review_snapshots.id (UUID primary key).
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_review_snapshots.id (UUID primary key).
    */
   id: string & tags.Format<"uuid">;
 
@@ -28,8 +29,9 @@ export type IECommerceMallReviewSnapshot = {
    *
    * Each snapshot preserves the state of a single review at a specific point in time. This reference links back to the original review, including its rating, text content, customer author, and the associated product.
    *
-   * @x-autobe-database-schema-property review
-   * @x-autobe-specification Join via e_commerce_mall_review_id FK to e_commerce_mall_reviews. Returns IECommerceMallReview.ISummary.
+     * @x-autobe-database-schema-property review
+     * @x-autobe-specification Join via e_commerce_mall_review_id FK to
+     *   e_commerce_mall_reviews. Returns IECommerceMallReview.ISummary.
    */
   review: IECommerceMallReview.ISummary;
 
@@ -38,8 +40,9 @@ export type IECommerceMallReviewSnapshot = {
    *
    * Represents the review's rating at the moment the snapshot was captured. This is the previous rating value before an edit was applied, or the initial rating for the 'created' snapshot.
    *
-   * @x-autobe-database-schema-property rating
-   * @x-autobe-specification Direct mapping from e_commerce_mall_review_snapshots.rating. Integer, range 1-5.
+     * @x-autobe-database-schema-property rating
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_review_snapshots.rating. Integer, range 1-5.
    */
   rating: number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<5>;
 
@@ -48,8 +51,10 @@ export type IECommerceMallReviewSnapshot = {
    *
    * Represents the review's free-text description at the moment the snapshot was captured. Nullable because text is optional in reviews — a review may have a rating without any accompanying text.
    *
-   * @x-autobe-database-schema-property text
-   * @x-autobe-specification Direct mapping from e_commerce_mall_review_snapshots.text. Nullable — may be null when review had no text content at snapshot time.
+     * @x-autobe-database-schema-property text
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_review_snapshots.text. Nullable — may be null when
+     *   review had no text content at snapshot time.
    */
   text: string | null;
 
@@ -58,8 +63,10 @@ export type IECommerceMallReviewSnapshot = {
    *
    * Valid values include 'rating', 'text', 'rating_and_text', and 'created'. The 'created' value is used for the initial snapshot taken when a review is first written, while the other values describe which attribute(s) were modified in subsequent edits.
    *
-   * @x-autobe-database-schema-property changed_fields
-   * @x-autobe-specification Direct mapping from e_commerce_mall_review_snapshots.changed_fields. String enum: 'created', 'rating', 'text', 'rating_and_text'.
+     * @x-autobe-database-schema-property changed_fields
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_review_snapshots.changed_fields. String enum:
+     *   'created', 'rating', 'text', 'rating_and_text'.
    */
   changed_fields: string;
 
@@ -68,8 +75,9 @@ export type IECommerceMallReviewSnapshot = {
    *
    * Records the precise moment when the snapshot was captured, establishing a chronological reference point for the preserved review state. Snapshots are ordered by this timestamp to reconstruct the full edit history of a review.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from e_commerce_mall_review_snapshots.created_at. DateTime with timezone.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_review_snapshots.created_at. DateTime with timezone.
    */
   created_at: string & tags.Format<"date-time">;
 };
@@ -108,8 +116,9 @@ export namespace IECommerceMallReviewSnapshot {
      *
      * This UUID serves as the primary key for the snapshot record and is used to reference individual snapshots when retrieving specific historical states of a review.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from e_commerce_mall_review_snapshots.id.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_review_snapshots.id.
      */
     id: string & tags.Format<"uuid">;
 
@@ -118,8 +127,10 @@ export namespace IECommerceMallReviewSnapshot {
      *
      * Possible values include: 'created' for the initial snapshot taken when a review is first written, 'rating' when only the star rating was modified, 'text' when only the text content was modified, and 'rating_and_text' when both rating and text were modified in the same edit.
      *
-     * @x-autobe-database-schema-property changed_fields
-     * @x-autobe-specification Direct mapping from e_commerce_mall_review_snapshots.changed_fields. Valid values: 'created', 'rating', 'text', 'rating_and_text'.
+         * @x-autobe-database-schema-property changed_fields
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_review_snapshots.changed_fields. Valid values:
+         *   'created', 'rating', 'text', 'rating_and_text'.
      */
     changed_fields: string;
 
@@ -128,8 +139,10 @@ export namespace IECommerceMallReviewSnapshot {
      *
      * Represents the review's star rating (1-5) at the moment the snapshot was captured. This is the previous rating value before an edit was applied, or the initial rating for the 'created' snapshot.
      *
-     * @x-autobe-database-schema-property rating
-     * @x-autobe-specification Direct mapping from e_commerce_mall_review_snapshots.rating. Integer value between 1 and 5.
+         * @x-autobe-database-schema-property rating
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_review_snapshots.rating. Integer value between 1
+         *   and 5.
      */
     rating: number & tags.Type<"int32">;
 
@@ -138,8 +151,10 @@ export namespace IECommerceMallReviewSnapshot {
      *
      * Represents the review's free-text description at the moment the snapshot was captured. This value is nullable because text is optional in reviews — a review may have a rating without any accompanying text.
      *
-     * @x-autobe-database-schema-property text
-     * @x-autobe-specification Direct mapping from e_commerce_mall_review_snapshots.text. Nullable because reviews may have a rating without accompanying text content.
+         * @x-autobe-database-schema-property text
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_review_snapshots.text. Nullable because reviews may
+         *   have a rating without accompanying text content.
      */
     text: string | null;
 
@@ -148,8 +163,9 @@ export namespace IECommerceMallReviewSnapshot {
      *
      * Records the precise moment when the snapshot was captured. Snapshots are ordered by this timestamp (newest first) to provide a chronological edit history for the parent review.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from e_commerce_mall_review_snapshots.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_review_snapshots.created_at.
      */
     created_at: string & tags.Format<"date-time">;
   };

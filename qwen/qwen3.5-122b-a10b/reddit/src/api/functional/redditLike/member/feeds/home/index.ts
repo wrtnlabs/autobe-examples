@@ -37,7 +37,9 @@ import { IRedditLikePost } from "../../../../../structures/IRedditLikePost";
  * @param props.body Search criteria for home feed including sorting option, time filter for top sorting, and pagination cursor.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query reddit_like_posts joined with reddit_like_community_subscriptions to filter posts from subscribed communities only.
+ * @x-autobe-specification Query reddit_like_posts joined with
+ *   reddit_like_community_subscriptions to filter posts from subscribed
+ *   communities only.
  *
  * 1. Verify member authentication - reject unauthenticated requests with 401
  * 2. Query subscriptions where reddit_like_member_id = current user and deleted_at is null

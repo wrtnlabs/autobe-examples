@@ -22,7 +22,8 @@ import { IShoppingMallOrderItemSnapshotOption } from "../../../../../../../struc
  * @param props.orderItemId Order item ID (UUID format, scoped to order)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query shopping_mall_order_item_snapshot_options table filtered by the order item snapshot ID.
+ * @x-autobe-specification Query shopping_mall_order_item_snapshot_options table
+ *   filtered by the order item snapshot ID.
  *
  * First, verify the order item exists and belongs to the specified order by joining shopping_mall_order_items with shopping_mall_orders.
  *

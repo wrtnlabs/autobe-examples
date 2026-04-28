@@ -17,7 +17,8 @@ import { IShoppingMallCustomer } from "../../../../../structures/IShoppingMallCu
  * @param props.connection
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Retrieve the authenticated customer's profile from the shopping_mall_customers table.
+ * @x-autobe-specification Retrieve the authenticated customer's profile from
+ *   the shopping_mall_customers table.
  *
  * 1. Extract customer ID from JWT token in Authorization header
  * 2. Query shopping_mall_customers table by ID

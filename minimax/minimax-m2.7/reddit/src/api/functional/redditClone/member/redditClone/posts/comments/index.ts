@@ -145,7 +145,9 @@ export namespace create {
  * @param props.body Update request containing the new content text for the comment.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Validate that the authenticated user is the author of the comment by comparing the comment's reddit_clone_member_id with the current user's id. Return 403 Forbidden if not authorized.
+ * @x-autobe-specification Validate that the authenticated user is the author of
+ *   the comment by comparing the comment's reddit_clone_member_id with the
+ *   current user's id. Return 403 Forbidden if not authorized.
  *
  * Verify the comment exists and belongs to the specified postId. Return 404 Not Found if the comment does not exist or is not associated with the given post.
  *

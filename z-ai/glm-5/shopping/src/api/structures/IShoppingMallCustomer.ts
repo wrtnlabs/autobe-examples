@@ -10,64 +10,83 @@ export type IShoppingMallCustomer = {
   /**
    * Unique identifier for the customer account in UUID format.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_customers.id. UUID format, primary key, auto-generated on account creation.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from shopping_mall_customers.id.
+     *   UUID format, primary key, auto-generated on account creation.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Customer's email address used for authentication. Must be unique across all customer accounts.
    *
-   * @x-autobe-database-schema-property email
-   * @x-autobe-specification Direct mapping from shopping_mall_customers.email. Unique constraint, case-insensitive comparison. Used for authentication.
+     * @x-autobe-database-schema-property email
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_customers.email. Unique constraint, case-insensitive
+     *   comparison. Used for authentication.
    */
   email: string & tags.Format<"email">;
 
   /**
    * Customer's display name shown in reviews and public interactions. Optional, maximum 50 characters.
    *
-   * @x-autobe-database-schema-property display_name
-   * @x-autobe-specification Direct mapping from shopping_mall_customers.display_name. Nullable string, max 50 characters. Field name transformed from snake_case to camelCase.
+     * @x-autobe-database-schema-property display_name
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_customers.display_name. Nullable string, max 50
+     *   characters. Field name transformed from snake_case to camelCase.
    */
   displayName: (string & tags.MaxLength<50>) | null;
 
   /**
    * Customer's phone number for contact purposes. Optional.
    *
-   * @x-autobe-database-schema-property phone_number
-   * @x-autobe-specification Direct mapping from shopping_mall_customers.phone_number. Nullable string. Field name transformed from snake_case to camelCase.
+     * @x-autobe-database-schema-property phone_number
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_customers.phone_number. Nullable string. Field name
+     *   transformed from snake_case to camelCase.
    */
   phoneNumber: string | null;
 
   /**
    * Flag indicating whether the customer account is banned. Banned customers cannot log in to the platform.
    *
-   * @x-autobe-database-schema-property banned
-   * @x-autobe-specification Direct mapping from shopping_mall_customers.banned. Boolean flag, default false. Banned customers cannot log in.
+     * @x-autobe-database-schema-property banned
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_customers.banned. Boolean flag, default false. Banned
+     *   customers cannot log in.
    */
   banned: boolean;
 
   /**
    * Timestamp when the customer account was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from shopping_mall_customers.created_at. Timestamp with timezone, auto-generated on account creation. Field name transformed from snake_case to camelCase.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_customers.created_at. Timestamp with timezone,
+     *   auto-generated on account creation. Field name transformed from
+     *   snake_case to camelCase.
    */
   createdAt: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the customer account was last modified.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from shopping_mall_customers.updated_at. Timestamp with timezone, auto-updated on profile modification. Field name transformed from snake_case to camelCase.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_customers.updated_at. Timestamp with timezone,
+     *   auto-updated on profile modification. Field name transformed from
+     *   snake_case to camelCase.
    */
   updatedAt: string & tags.Format<"date-time">;
 
   /**
    * Timestamp for soft deletion. Null if account is active. When deleted, orders and reviews are preserved with 'deleted user' attribution.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from shopping_mall_customers.deleted_at. Nullable timestamp with timezone. When set, indicates soft deletion; orders and reviews preserved with 'deleted user' attribution. Field name transformed from snake_case to camelCase.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_customers.deleted_at. Nullable timestamp with timezone.
+     *   When set, indicates soft deletion; orders and reviews preserved with
+     *   'deleted user' attribution. Field name transformed from snake_case to
+     *   camelCase.
    */
   deletedAt: (string & tags.Format<"date-time">) | null;
 };
@@ -79,71 +98,90 @@ export namespace IShoppingMallCustomer {
     /**
      * Unique customer account identifier in UUID format.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_customers.id. UUID format, primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_customers.id. UUID format, primary key.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Customer's registered email address used for authentication and communication.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from shopping_mall_customers.email. Unique constraint, case-insensitive comparison for uniqueness.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_customers.email. Unique constraint, case-insensitive
+         *   comparison for uniqueness.
      */
     email: string & tags.Format<"email">;
 
     /**
      * Customer's display name shown in reviews and public interactions. May be null if not set.
      *
-     * @x-autobe-database-schema-property display_name
-     * @x-autobe-specification Direct mapping from shopping_mall_customers.display_name. Nullable string, max 50 characters.
+         * @x-autobe-database-schema-property display_name
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_customers.display_name. Nullable string, max 50
+         *   characters.
      */
     displayName: (string & tags.MaxLength<50>) | null;
 
     /**
      * Customer's phone number for contact purposes. May be null if not provided.
      *
-     * @x-autobe-database-schema-property phone_number
-     * @x-autobe-specification Direct mapping from shopping_mall_customers.phone_number. Nullable string for customer contact.
+         * @x-autobe-database-schema-property phone_number
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_customers.phone_number. Nullable string for customer
+         *   contact.
      */
     phoneNumber: string | null;
 
     /**
      * Flag indicating whether the customer account has been banned by an administrator. Banned accounts cannot authenticate.
      *
-     * @x-autobe-database-schema-property banned
-     * @x-autobe-specification Direct mapping from shopping_mall_customers.banned. Boolean flag, default false. Banned customers cannot log in.
+         * @x-autobe-database-schema-property banned
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_customers.banned. Boolean flag, default false. Banned
+         *   customers cannot log in.
      */
     banned: boolean;
 
     /**
      * Total number of orders placed by this customer. Computed via aggregation on the orders relationship.
      *
-     * @x-autobe-specification Computed field: COUNT(*) FROM shopping_mall_orders WHERE customer_id = shopping_mall_customers.id. Aggregation query performed at read time. Non-negative integer.
+         * @x-autobe-specification Computed field: COUNT(*) FROM
+         *   shopping_mall_orders WHERE customer_id =
+         *   shopping_mall_customers.id. Aggregation query performed at read
+         *   time. Non-negative integer.
      */
     orderCount: number & tags.Type<"int32"> & tags.Minimum<0>;
 
     /**
      * Timestamp when the customer account was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_customers.created_at. ISO 8601 timestamp with timezone (timestamptz).
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_customers.created_at. ISO 8601 timestamp with
+         *   timezone (timestamptz).
      */
     createdAt: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when the customer account was last updated.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from shopping_mall_customers.updated_at. ISO 8601 timestamp with timezone (timestamptz). Updated on profile changes.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_customers.updated_at. ISO 8601 timestamp with
+         *   timezone (timestamptz). Updated on profile changes.
      */
     updatedAt: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when the customer account was soft-deleted. Null if the account is active. Deleted accounts retain order and review history with 'deleted user' attribution.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from shopping_mall_customers.deleted_at. Nullable ISO 8601 timestamp with timezone (timestamptz). Soft delete marker - null if account is active.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_customers.deleted_at. Nullable ISO 8601 timestamp
+         *   with timezone (timestamptz). Soft delete marker - null if account
+         *   is active.
      */
     deletedAt: (string & tags.Format<"date-time">) | null;
   };
@@ -159,28 +197,28 @@ export namespace IShoppingMallCustomer {
     /**
      * Customer's email address for authentication. Must be unique across all customer accounts. Case-insensitive comparison for uniqueness validation.
      *
-     * @x-autobe-database-schema-property email
+         * @x-autobe-database-schema-property email
      */
     email: string & tags.Format<"email">;
 
     /**
      * Customer's password in plain text. Must meet minimum security requirements. Server stores only the secure hash, never the plaintext value.
      *
-     * @x-autobe-database-schema-property password_hash
+         * @x-autobe-database-schema-property password_hash
      */
     password: string & tags.Format<"password">;
 
     /**
      * Customer's display name shown in reviews and public interactions. Maximum 50 characters. Can be edited later.
      *
-     * @x-autobe-database-schema-property display_name
+         * @x-autobe-database-schema-property display_name
      */
     displayName?: (string & tags.MaxLength<50>) | null | undefined;
 
     /**
      * Customer's phone number for contact purposes. Can be edited later.
      *
-     * @x-autobe-database-schema-property phone_number
+         * @x-autobe-database-schema-property phone_number
      */
     phoneNumber?: string | null | undefined;
 
@@ -207,7 +245,17 @@ export namespace IShoppingMallCustomer {
     /**
      * The refresh token for obtaining new authentication tokens without re-entering credentials. This token was issued during login or a previous refresh operation and must be valid (not expired, not previously used) and associated with an active session.
      *
-     * @x-autobe-specification JWT refresh token issued during login or previous refresh. Valid for 7 days from creation. One-time use - invalidated after successful refresh. Backend validates: 1) token signature using JWT secret, 2) not expired (exp claim > current time), 3) not previously used (check refresh_token_hash in shopping_mall_customer_sessions), 4) session is active (expired_at > now, within 24-hour limit), 5) customer exists and not banned/deleted. The token hash is stored in shopping_mall_customer_sessions.refresh_token_hash for validation. Upon successful validation, the old refresh token is invalidated and a new access/refresh token pair is issued.
+         * @x-autobe-specification JWT refresh token issued during login or
+         *   previous refresh. Valid for 7 days from creation. One-time use -
+         *   invalidated after successful refresh. Backend validates: 1) token
+         *   signature using JWT secret, 2) not expired (exp claim > current
+         *   time), 3) not previously used (check refresh_token_hash in
+         *   shopping_mall_customer_sessions), 4) session is active (expired_at
+         *   > now, within 24-hour limit), 5) customer exists and not
+         *   banned/deleted. The token hash is stored in
+         *   shopping_mall_customer_sessions.refresh_token_hash for validation.
+         *   Upon successful validation, the old refresh token is invalidated
+         *   and a new access/refresh token pair is issued.
      */
     refreshToken: string;
   };
@@ -260,14 +308,14 @@ export namespace IShoppingMallCustomer {
     /**
      * Customer email address for exact match filtering. Case-insensitive comparison.
      *
-     * @x-autobe-database-schema-property email
+         * @x-autobe-database-schema-property email
      */
     email?: (string & tags.Format<"email">) | undefined;
 
     /**
      * Customer display name for fuzzy search. Supports partial matching using trigram-based similarity.
      *
-     * @x-autobe-database-schema-property display_name
+         * @x-autobe-database-schema-property display_name
      */
     displayName?:
       | (string & tags.MinLength<1> & tags.MaxLength<50>)
@@ -277,30 +325,34 @@ export namespace IShoppingMallCustomer {
     /**
      * Customer phone number for partial match filtering. Matches any phone number containing this value.
      *
-     * @x-autobe-database-schema-property phone_number
+         * @x-autobe-database-schema-property phone_number
      */
     phoneNumber?: string | null | undefined;
 
     /**
      * Filter by account banned status. true returns only banned customers, false returns only active customers. Omit to include all customers.
      *
-     * @x-autobe-database-schema-property banned
+         * @x-autobe-database-schema-property banned
      */
     banned?: boolean | undefined;
 
     /**
      * Filter customers registered on or after this datetime.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Date range filter start. Filters shopping_mall_customers.created_at >= createdFrom. Combined with createdTo for range filtering. ISO 8601 format.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Date range filter start. Filters
+         *   shopping_mall_customers.created_at >= createdFrom. Combined with
+         *   createdTo for range filtering. ISO 8601 format.
      */
     createdFrom?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Filter customers registered on or before this datetime.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Date range filter end. Filters shopping_mall_customers.created_at <= createdTo. Combined with createdFrom for range filtering. ISO 8601 format.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Date range filter end. Filters
+         *   shopping_mall_customers.created_at <= createdTo. Combined with
+         *   createdFrom for range filtering. ISO 8601 format.
      */
     createdTo?: (string & tags.Format<"date-time">) | undefined;
 
@@ -330,71 +382,89 @@ export namespace IShoppingMallCustomer {
     /**
      * Unique customer identifier. Used as the primary key for all customer-related operations and included in JWT token claims.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_customers.id. UUID primary key, retrieved by JWT sub claim.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_customers.id. UUID primary key, retrieved by JWT sub
+         *   claim.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Customer's email address used for authentication. Guaranteed unique across all customer accounts.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from shopping_mall_customers.email. Unique, case-insensitive for uniqueness validation, stored lowercase.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_customers.email. Unique, case-insensitive for
+         *   uniqueness validation, stored lowercase.
      */
     email: string & tags.Format<"email">;
 
     /**
      * Customer's display name shown in reviews and public interactions. May be null if not set.
      *
-     * @x-autobe-database-schema-property display_name
-     * @x-autobe-specification Direct mapping from shopping_mall_customers.display_name. Nullable, max 50 characters. Shown in reviews and public interactions.
+         * @x-autobe-database-schema-property display_name
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_customers.display_name. Nullable, max 50 characters.
+         *   Shown in reviews and public interactions.
      */
     displayName: string | null;
 
     /**
      * Customer's phone number for contact purposes. May be null if not set.
      *
-     * @x-autobe-database-schema-property phone_number
-     * @x-autobe-specification Direct mapping from shopping_mall_customers.phone_number. Nullable, for contact purposes.
+         * @x-autobe-database-schema-property phone_number
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_customers.phone_number. Nullable, for contact
+         *   purposes.
      */
     phoneNumber: string | null;
 
     /**
      * Flag indicating whether the customer account has been banned by an administrator. Banned customers cannot log in or access protected endpoints.
      *
-     * @x-autobe-database-schema-property banned
-     * @x-autobe-specification Direct mapping from shopping_mall_customers.banned. Boolean flag, default false. If true, customer cannot authenticate.
+         * @x-autobe-database-schema-property banned
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_customers.banned. Boolean flag, default false. If
+         *   true, customer cannot authenticate.
      */
     banned: boolean;
 
     /**
      * Timestamp when the customer account was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_customers.created_at. ISO 8601 timestamp with timezone, set automatically on account creation.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_customers.created_at. ISO 8601 timestamp with
+         *   timezone, set automatically on account creation.
      */
     createdAt: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when the customer account was last updated.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from shopping_mall_customers.updated_at. ISO 8601 timestamp with timezone, updated automatically on profile changes.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_customers.updated_at. ISO 8601 timestamp with
+         *   timezone, updated automatically on profile changes.
      */
     updatedAt: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when the customer account was deleted (soft delete). Null for active accounts. Note: only active accounts can authenticate successfully.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from shopping_mall_customers.deleted_at. Nullable ISO 8601 timestamp. If set, account is soft-deleted. Note: authenticated customers always have null deleted_at.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_customers.deleted_at. Nullable ISO 8601 timestamp. If
+         *   set, account is soft-deleted. Note: authenticated customers always
+         *   have null deleted_at.
      */
     deletedAt: (string & tags.Format<"date-time">) | null;
 
     /**
      * Authorization token.
      *
-     * @x-autobe-specification Authorization token comes from the session table.
+         * @x-autobe-specification Authorization token comes from the session
+         *   table.
      */
     token: IAuthorizationToken;
   };

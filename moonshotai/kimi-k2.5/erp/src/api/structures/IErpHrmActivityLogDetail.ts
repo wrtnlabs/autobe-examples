@@ -10,40 +10,49 @@ export type IErpHrmActivityLogDetail = {
   /**
    * Unique identifier for the activity log detail record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from erp_hrm_activity_log_details.id. UUID.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_activity_log_details.id. UUID.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * The parent activity log entry that this detail record belongs to.
    *
-   * @x-autobe-database-schema-property activityLog
-   * @x-autobe-specification Join via erp_hrm_activity_log_details.activity_log_id to erp_hrm_activity_logs.id. Returns summary object via $ref to IErpHrmActivityLog.ISummary.
+     * @x-autobe-database-schema-property activityLog
+     * @x-autobe-specification Join via
+     *   erp_hrm_activity_log_details.activity_log_id to
+     *   erp_hrm_activity_logs.id. Returns summary object via $ref to
+     *   IErpHrmActivityLog.ISummary.
    */
   activityLog: IErpHrmActivityLog.ISummary;
 
   /**
    * The key identifying the type of metadata detail (e.g., previous_status, new_status, rejection_reason).
    *
-   * @x-autobe-database-schema-property key
-   * @x-autobe-specification Direct mapping from erp_hrm_activity_log_details.key. String identifying metadata type.
+     * @x-autobe-database-schema-property key
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_activity_log_details.key. String identifying metadata type.
    */
   key: string;
 
   /**
    * The value associated with the key, containing the actual metadata content. Null when no value exists.
    *
-   * @x-autobe-database-schema-property value
-   * @x-autobe-specification Direct mapping from erp_hrm_activity_log_details.value. Nullable string per database schema.
+     * @x-autobe-database-schema-property value
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_activity_log_details.value. Nullable string per database
+     *   schema.
    */
   value: string | null;
 
   /**
    * Timestamp when this detail record was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from erp_hrm_activity_log_details.created_at. Timestamptz formatted as ISO 8601 date-time.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_activity_log_details.created_at. Timestamptz formatted as ISO
+     *   8601 date-time.
    */
   createdAt: string & tags.Format<"date-time">;
 };
@@ -55,21 +64,27 @@ export namespace IErpHrmActivityLogDetail {
     /**
      * Filter by exact match on the detail key name (e.g., 'previous_status', 'rejection_reason').
      *
-     * @x-autobe-specification Filter by exact match on erp_hrm_activity_log_details.key column. Used in WHERE clause with equality operator.
+         * @x-autobe-specification Filter by exact match on
+         *   erp_hrm_activity_log_details.key column. Used in WHERE clause with
+         *   equality operator.
      */
     key?: string | undefined;
 
     /**
      * Filter by partial match on the detail value content (LIKE search).
      *
-     * @x-autobe-specification Filter by partial match on erp_hrm_activity_log_details.value column using SQL LIKE operator with % wildcards. Supports case-insensitive search.
+         * @x-autobe-specification Filter by partial match on
+         *   erp_hrm_activity_log_details.value column using SQL LIKE operator
+         *   with % wildcards. Supports case-insensitive search.
      */
     value?: string | undefined;
 
     /**
      * Page number for pagination (1-based).
      *
-     * @x-autobe-specification Pagination page parameter. 1-indexed page number used to calculate SQL OFFSET as (page - 1) * limit. Computed at runtime, not stored in database.
+         * @x-autobe-specification Pagination page parameter. 1-indexed page
+         *   number used to calculate SQL OFFSET as (page - 1) * limit. Computed
+         *   at runtime, not stored in database.
      */
     page?:
       | (number & tags.Type<"int32"> & tags.Default<1> & tags.Minimum<1>)
@@ -78,7 +93,9 @@ export namespace IErpHrmActivityLogDetail {
     /**
      * Number of results per page.
      *
-     * @x-autobe-specification Pagination limit parameter. Controls the number of records returned per page. Used as SQL LIMIT clause value. Computed at runtime, not stored in database.
+         * @x-autobe-specification Pagination limit parameter. Controls the
+         *   number of records returned per page. Used as SQL LIMIT clause
+         *   value. Computed at runtime, not stored in database.
      */
     limit?:
       | (number &
@@ -96,32 +113,40 @@ export namespace IErpHrmActivityLogDetail {
     /**
      * Unique identifier for the activity log detail record.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from erp_hrm_activity_log_details.id. UUID primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_activity_log_details.id. UUID primary key.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Metadata key identifying the type of contextual detail being captured about the activity log entry.
      *
-     * @x-autobe-database-schema-property key
-     * @x-autobe-specification Direct mapping from erp_hrm_activity_log_details.key. String identifier for the type of detail being stored (e.g., 'previous_status', 'new_status', 'rejection_reason').
+         * @x-autobe-database-schema-property key
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_activity_log_details.key. String identifier for the type of
+         *   detail being stored (e.g., 'previous_status', 'new_status',
+         *   'rejection_reason').
      */
     key: string;
 
     /**
      * Metadata value associated with the key, containing the actual contextual data captured for this activity log detail.
      *
-     * @x-autobe-database-schema-property value
-     * @x-autobe-specification Direct mapping from erp_hrm_activity_log_details.value. Nullable string storing the actual contextual data such as status values or rejection reasons.
+         * @x-autobe-database-schema-property value
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_activity_log_details.value. Nullable string storing the
+         *   actual contextual data such as status values or rejection reasons.
      */
     value: string | null;
 
     /**
      * Timestamp when the activity log detail record was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from erp_hrm_activity_log_details.created_at. Timestamp when this detail record was created.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_activity_log_details.created_at. Timestamp when this detail
+         *   record was created.
      */
     created_at: string & tags.Format<"date-time">;
   };

@@ -24,9 +24,10 @@ export class ShoppingmallCustomerCustomersMeOrdersItemsRefundController {
    * @param orderId UUID of the order containing the item to be refunded.
    * @param itemId UUID of the order item for which the refund is requested.
    * @param body Refund request details including the reason for requesting a refund.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Create a refund request record in shopping_mall_refund_requests table.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Create a refund request record in
+     *   shopping_mall_refund_requests table.
    *
    * Validation rules:
    * 1. Verify the authenticated customer owns the order (order -> customer relationship)

@@ -23,9 +23,13 @@ export class MallplatformCustomerOrderitemsCancellationrequestsController {
    * @param connection
    * @param orderItemId The identifier of the order item to which this cancellation request belongs.
    * @param body Cancellation request details submitted by the customer for the specified order item.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Look up the target order item by orderItemId and verify it exists, belongs to the authenticated customer, is in paid status, and has not been shipped. Reject the request if the item is missing, inaccessible, already cancelled/refunded, or otherwise ineligible for cancellation.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Look up the target order item by orderItemId and
+     *   verify it exists, belongs to the authenticated customer, is in paid
+     *   status, and has not been shipped. Reject the request if the item is
+     *   missing, inaccessible, already cancelled/refunded, or otherwise
+     *   ineligible for cancellation.
    *
    * Create a mall_platform_cancellation_requests row tied to the order item with the submitted reason and an initial pending review state. Do not create duplicate active requests for the same order item if the business rules prohibit multiple open requests; return a business error in that case.
    *
@@ -65,9 +69,13 @@ export class MallplatformCustomerOrderitemsCancellationrequestsController {
    * @param connection
    * @param orderItemId The identifier of the order item to which this cancellation request applies.
    * @param body Cancellation request submission data containing the customer's reason for cancelling the specified order item.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Load the target order item by orderItemId and verify ownership against the authenticated customer. Reject the request if the order item does not exist, is not owned by the caller, is already shipped, or is in any terminal state that makes cancellation invalid.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Load the target order item by orderItemId and
+     *   verify ownership against the authenticated customer. Reject the request
+     *   if the order item does not exist, is not owned by the caller, is
+     *   already shipped, or is in any terminal state that makes cancellation
+     *   invalid.
    *
    * Check whether the domain allows only one active cancellation request per order item. If a request already exists and duplicate requests are not permitted, reject the operation without creating another record.
    *
@@ -109,9 +117,13 @@ export class MallplatformCustomerOrderitemsCancellationrequestsController {
    * @param connection
    * @param orderItemId The order item identifier that scopes the cancellation request.
    * @param cancellationRequestId The cancellation request identifier within the order item scope.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Fetch the cancellation request by identifier and verify that it belongs to the provided order item. Query mall_platform_cancellation_requests using the path scope, and validate the relationship so an unrelated request cannot be exposed through this route.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Fetch the cancellation request by identifier and
+     *   verify that it belongs to the provided order item. Query
+     *   mall_platform_cancellation_requests using the path scope, and validate
+     *   the relationship so an unrelated request cannot be exposed through this
+     *   route.
    *
    * Return the full cancellation request entity as stored in the database, including its current review state and reviewer outcome details. Do not update any status, do not create a snapshot, and do not perform inventory or refund logic in this endpoint.
    *

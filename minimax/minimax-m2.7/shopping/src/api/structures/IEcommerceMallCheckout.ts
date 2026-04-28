@@ -23,7 +23,15 @@ export namespace IEcommerceMallCheckout {
      *
      * Status values: AVAILABLE indicates the item can be purchased, OUT_OF_STOCK indicates requested quantity exceeds available stock, UNAVAILABLE indicates the variant has been soft-deleted.
      *
-     * @x-autobe-specification Fetched from ecommerce_mall_cart_items with JOIN to ecommerce_mall_product_variants and ecommerce_mall_products. Each item is validated: variant must exist with deleted_at IS NULL, product must exist with deleted_at IS NULL. Item status determined by variant availability and stock: AVAILABLE (in stock and variant exists), OUT_OF_STOCK (quantity exceeds available stock), UNAVAILABLE (variant soft-deleted). Subtotal computed as quantity multiplied by variant price (price_override if not null, else product base_price).
+         * @x-autobe-specification Fetched from ecommerce_mall_cart_items with
+         *   JOIN to ecommerce_mall_product_variants and
+         *   ecommerce_mall_products. Each item is validated: variant must exist
+         *   with deleted_at IS NULL, product must exist with deleted_at IS
+         *   NULL. Item status determined by variant availability and stock:
+         *   AVAILABLE (in stock and variant exists), OUT_OF_STOCK (quantity
+         *   exceeds available stock), UNAVAILABLE (variant soft-deleted).
+         *   Subtotal computed as quantity multiplied by variant price
+         *   (price_override if not null, else product base_price).
      */
     items: IEcommerceMallCheckout.ISummary.IItem[];
 
@@ -34,7 +42,13 @@ export namespace IEcommerceMallCheckout {
      *
      * Each address includes the recipient name, city, state, country, and default status indicator for pre-selection in the checkout UI.
      *
-     * @x-autobe-specification Cross-table mapping to ecommerce_mall_shipping_addresses. Fetches via IEcommerceMallShippingAddress.ISummary: SELECT id, recipient_name, city, state, country, is_default FROM ecommerce_mall_shipping_addresses WHERE deleted_at IS NULL AND ecommerce_mall_customer_id = authenticated_customer_id. Items reference ecommerce_mall_shipping_addresses.id.
+         * @x-autobe-specification Cross-table mapping to
+         *   ecommerce_mall_shipping_addresses. Fetches via
+         *   IEcommerceMallShippingAddress.ISummary: SELECT id, recipient_name,
+         *   city, state, country, is_default FROM
+         *   ecommerce_mall_shipping_addresses WHERE deleted_at IS NULL AND
+         *   ecommerce_mall_customer_id = authenticated_customer_id. Items
+         *   reference ecommerce_mall_shipping_addresses.id.
      */
     addresses: IEcommerceMallShippingAddress.ISummary[];
 
@@ -45,7 +59,12 @@ export namespace IEcommerceMallCheckout {
      *
      * This data is used by the client to display checkout totals and inform the customer of any cart issues that need resolution before proceeding with payment.
      *
-     * @x-autobe-specification Computed aggregations from validated cart items: grandTotal = SUM(quantity * unit_price) for valid (non-unavailable) items only, totalItems = COUNT(all items), validItemsCount = COUNT(items with AVAILABLE status), unavailableItemsCount = COUNT(items with OUT_OF_STOCK or UNAVAILABLE status).
+         * @x-autobe-specification Computed aggregations from validated cart
+         *   items: grandTotal = SUM(quantity * unit_price) for valid
+         *   (non-unavailable) items only, totalItems = COUNT(all items),
+         *   validItemsCount = COUNT(items with AVAILABLE status),
+         *   unavailableItemsCount = COUNT(items with OUT_OF_STOCK or
+         *   UNAVAILABLE status).
      */
     summary: {
       /**
@@ -88,7 +107,9 @@ export namespace IEcommerceMallCheckout {
        *
        * UUID assigned when the item was added to the cart. Used for cart item update and removal operations.
        *
-       * @x-autobe-specification Direct mapping from ecommerce_mall_cart_items.id. UUID assigned when item was added to cart. Used for cart item update and removal operations.
+             * @x-autobe-specification Direct mapping from
+             *   ecommerce_mall_cart_items.id. UUID assigned when item was added
+             *   to cart. Used for cart item update and removal operations.
        */
       id: string & tags.Format<"uuid">;
 
@@ -97,7 +118,10 @@ export namespace IEcommerceMallCheckout {
        *
        * The number of units the customer has added to their cart. This value is compared against availableQuantity to determine the validation status.
        *
-       * @x-autobe-specification Direct mapping from ecommerce_mall_cart_items.quantity. The number of units requested by the customer. Compared against availableQuantity to determine validation status.
+             * @x-autobe-specification Direct mapping from
+             *   ecommerce_mall_cart_items.quantity. The number of units
+             *   requested by the customer. Compared against availableQuantity
+             *   to determine validation status.
        */
       quantity: number & tags.Type<"int32">;
 
@@ -106,7 +130,12 @@ export namespace IEcommerceMallCheckout {
        *
        * Indicates whether the item can be purchased in the requested quantity. AVAILABLE means the item is ready for checkout. OUT_OF_STOCK means insufficient inventory exists. UNAVAILABLE means the variant has been deleted and cannot be purchased.
        *
-       * @x-autobe-specification Computed from ecommerce_mall_cart_items JOIN ecommerce_mall_product_variants: IF product_variants.deleted_at IS NOT NULL THEN 'UNAVAILABLE' ELSE IF product_variants.quantity < cart_items.quantity THEN 'OUT_OF_STOCK' ELSE 'AVAILABLE'. Checks variant existence and stock availability.
+             * @x-autobe-specification Computed from ecommerce_mall_cart_items
+             *   JOIN ecommerce_mall_product_variants: IF
+             *   product_variants.deleted_at IS NOT NULL THEN 'UNAVAILABLE' ELSE
+             *   IF product_variants.quantity < cart_items.quantity THEN
+             *   'OUT_OF_STOCK' ELSE 'AVAILABLE'. Checks variant existence and
+             *   stock availability.
        */
       status: "AVAILABLE" | "OUT_OF_STOCK" | "UNAVAILABLE";
 
@@ -115,7 +144,10 @@ export namespace IEcommerceMallCheckout {
        *
        * The number of units in stock at the time of checkout validation. Items with requested quantity exceeding this value are flagged as OUT_OF_STOCK.
        *
-       * @x-autobe-specification Direct mapping from ecommerce_mall_cart_items JOIN ecommerce_mall_product_variants: product_variants.quantity. Current available stock at time of checkout validation.
+             * @x-autobe-specification Direct mapping from
+             *   ecommerce_mall_cart_items JOIN ecommerce_mall_product_variants:
+             *   product_variants.quantity. Current available stock at time of
+             *   checkout validation.
        */
       availableQuantity: number & tags.Type<"int32">;
 
@@ -124,7 +156,11 @@ export namespace IEcommerceMallCheckout {
        *
        * The price per unit used for subtotal calculation. Derived from the variant's price override if set, otherwise from the product's base price.
        *
-       * @x-autobe-specification Computed from ecommerce_mall_cart_items JOIN ecommerce_mall_product_variants JOIN ecommerce_mall_products: COALESCE(product_variants.price, products.base_price). Uses variant price override if set, otherwise falls back to product base price.
+             * @x-autobe-specification Computed from ecommerce_mall_cart_items
+             *   JOIN ecommerce_mall_product_variants JOIN
+             *   ecommerce_mall_products: COALESCE(product_variants.price,
+             *   products.base_price). Uses variant price override if set,
+             *   otherwise falls back to product base price.
        */
       unitPrice: number;
 
@@ -133,7 +169,11 @@ export namespace IEcommerceMallCheckout {
        *
        * The total price for this line item, calculated as quantity multiplied by unitPrice. Only valid (non-unavailable) items are included in the grand total.
        *
-       * @x-autobe-specification Computed as ecommerce_mall_cart_items.quantity * COALESCE(ecommerce_mall_product_variants.price, ecommerce_mall_products.base_price). Only valid for non-unavailable items.
+             * @x-autobe-specification Computed as
+             *   ecommerce_mall_cart_items.quantity *
+             *   COALESCE(ecommerce_mall_product_variants.price,
+             *   ecommerce_mall_products.base_price). Only valid for
+             *   non-unavailable items.
        */
       subtotal: number;
 
@@ -142,7 +182,11 @@ export namespace IEcommerceMallCheckout {
        *
        * Contains the essential variant information for display during checkout. Includes the SKU code for inventory reference, variant display name, option key-value pairs (such as size or color), thumbnail image, and base price.
        *
-       * @x-autobe-specification Composition relation from ecommerce_mall_cart_items to ecommerce_mall_product_variants via productVariant relation. Returns embedded object with essential display fields including sku_code, option_values, thumbnail, and price.
+             * @x-autobe-specification Composition relation from
+             *   ecommerce_mall_cart_items to ecommerce_mall_product_variants
+             *   via productVariant relation. Returns embedded object with
+             *   essential display fields including sku_code, option_values,
+             *   thumbnail, and price.
        */
       variant: IEcommerceMallCheckoutItem.IVariant;
 
@@ -151,7 +195,11 @@ export namespace IEcommerceMallCheckout {
        *
        * Contains essential product information for display during checkout. Includes the product identifier and display name.
        *
-       * @x-autobe-specification Composition relation via ecommerce_mall_cart_items → ecommerce_mall_product_variants → ecommerce_mall_products via product relation chain. Returns embedded object with essential display fields including id and name.
+             * @x-autobe-specification Composition relation via
+             *   ecommerce_mall_cart_items → ecommerce_mall_product_variants →
+             *   ecommerce_mall_products via product relation chain. Returns
+             *   embedded object with essential display fields including id and
+             *   name.
        */
       product: IEcommerceMallCheckoutItem.IProduct;
     };
@@ -184,7 +232,11 @@ export namespace IEcommerceMallCheckout {
      * - ADDRESS_MISSING: No valid shipping address exists for this customer
      * - CART_EMPTY: Customer has no items in their shopping cart
      *
-     * @x-autobe-specification Enum values generated by checkout validation logic. Possible values: PRODUCT_UNAVAILABLE (product/variant deleted or unavailable), STOCK_INSUFFICIENT (quantity exceeds available stock), ADDRESS_MISSING (no valid shipping address), CART_EMPTY (no items in cart).
+         * @x-autobe-specification Enum values generated by checkout validation
+         *   logic. Possible values: PRODUCT_UNAVAILABLE (product/variant
+         *   deleted or unavailable), STOCK_INSUFFICIENT (quantity exceeds
+         *   available stock), ADDRESS_MISSING (no valid shipping address),
+         *   CART_EMPTY (no items in cart).
      */
     code: string;
 
@@ -204,7 +256,11 @@ export namespace IEcommerceMallCheckout {
      *
      * Messages are localized and formatted with appropriate details such as product names, quantities, and specific requirements.
      *
-     * @x-autobe-specification Computed human-readable error message generated during checkout validation. Message is dynamically formatted based on error context including product names, quantities, and specific requirements. Examples: 'This product is no longer available', 'Only 3 items available but you requested 5'.
+         * @x-autobe-specification Computed human-readable error message
+         *   generated during checkout validation. Message is dynamically
+         *   formatted based on error context including product names,
+         *   quantities, and specific requirements. Examples: 'This product is
+         *   no longer available', 'Only 3 items available but you requested 5'.
      */
     message?: string | undefined;
 
@@ -220,7 +276,10 @@ export namespace IEcommerceMallCheckout {
      * - ADDRESS_MISSING: Always null (not tied to specific item)
      * - CART_EMPTY: Always null (not tied to specific item)
      *
-     * @x-autobe-specification Optional UUID reference to ecommerce_mall_cart_items table. Set when error relates to a specific cart item (PRODUCT_UNAVAILABLE, STOCK_INSUFFICIENT). Null for general errors (ADDRESS_MISSING, CART_EMPTY).
+         * @x-autobe-specification Optional UUID reference to
+         *   ecommerce_mall_cart_items table. Set when error relates to a
+         *   specific cart item (PRODUCT_UNAVAILABLE, STOCK_INSUFFICIENT). Null
+         *   for general errors (ADDRESS_MISSING, CART_EMPTY).
      */
     cartItemId?: (string & tags.Format<"uuid">) | undefined;
   };

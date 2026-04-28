@@ -14,8 +14,9 @@ export type IEcommerceMallAdministrator = {
   /**
    * Unique identifier for the administrator account.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_administrators.id. UUID primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_administrators.id. UUID primary key.
    */
   id: string & tags.Format<"uuid">;
 
@@ -24,8 +25,10 @@ export type IEcommerceMallAdministrator = {
    *
    * This email is used for login, password resets, and system notifications. The value is unique across all administrator accounts and cannot be duplicated.
    *
-   * @x-autobe-database-schema-property email
-   * @x-autobe-specification Direct mapping from ecommerce_mall_administrators.email. Unique constraint enforced at database level.
+     * @x-autobe-database-schema-property email
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_administrators.email. Unique constraint enforced at
+     *   database level.
    */
   email: string & tags.Format<"email">;
 
@@ -34,8 +37,10 @@ export type IEcommerceMallAdministrator = {
    *
    * Used to identify administrators in user-facing contexts without exposing sensitive information like email addresses.
    *
-   * @x-autobe-database-schema-property display_name
-   * @x-autobe-specification Direct mapping from ecommerce_mall_administrators.display_name. Public-facing name for admin dashboards and audit trails.
+     * @x-autobe-database-schema-property display_name
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_administrators.display_name. Public-facing name for
+     *   admin dashboards and audit trails.
    */
   display_name: string;
 
@@ -48,8 +53,10 @@ export type IEcommerceMallAdministrator = {
    *
    * Super administrators cannot demote themselves (enforced at the operation level).
    *
-   * @x-autobe-specification Direct mapping from ecommerce_mall_administrators.grade. Validated as enum: 'regular' or 'super'.
-   * @x-autobe-database-schema-property grade
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_administrators.grade. Validated as enum: 'regular' or
+     *   'super'.
+     * @x-autobe-database-schema-property grade
    */
   grade: string;
 
@@ -58,8 +65,10 @@ export type IEcommerceMallAdministrator = {
    *
    * When true, the administrator cannot authenticate or perform any administrative actions. Bans can be issued by super administrators for policy violations or account security concerns.
    *
-   * @x-autobe-database-schema-property is_banned
-   * @x-autobe-specification Direct mapping from ecommerce_mall_administrators.is_banned. Boolean flag indicating suspension status.
+     * @x-autobe-database-schema-property is_banned
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_administrators.is_banned. Boolean flag indicating
+     *   suspension status.
    */
   is_banned: boolean;
 
@@ -68,8 +77,10 @@ export type IEcommerceMallAdministrator = {
    *
    * Used for audit trails and lifecycle tracking. Immutable after account creation.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_administrators.created_at. Timestamp when the administrator account was created.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_administrators.created_at. Timestamp when the
+     *   administrator account was created.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -78,8 +89,10 @@ export type IEcommerceMallAdministrator = {
    *
    * Updated on every profile change including display_name, email, grade, or is_banned updates. Used for tracking account activity and detecting stale data.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_administrators.updated_at. Timestamp of the last administrator account modification.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_administrators.updated_at. Timestamp of the last
+     *   administrator account modification.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -88,8 +101,10 @@ export type IEcommerceMallAdministrator = {
    *
    * Null when account is active, set when account is deleted to preserve audit trail without permanent removal. Soft-deleted accounts are excluded from normal queries but retained for compliance purposes.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_administrators.deleted_at. Nullable timestamp for soft delete.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_administrators.deleted_at. Nullable timestamp for soft
+     *   delete.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -116,7 +131,8 @@ export namespace IEcommerceMallAdministrator {
     /**
      * Authorization token.
      *
-     * @x-autobe-specification Authorization token comes from the session table.
+         * @x-autobe-specification Authorization token comes from the session
+         *   table.
      */
     token: IAuthorizationToken;
   };
@@ -134,8 +150,10 @@ export namespace IEcommerceMallAdministrator {
      *
      * This is the long-lived token issued during login or token refresh that allows administrators to obtain new access tokens without re-entering credentials. The token must be valid, belong to an active session, and reference a non-banned administrator account.
      *
-     * @x-autobe-database-schema-property refresh_token
-     * @x-autobe-specification Direct mapping from ecommerce_mall_administrator_sessions.refresh_token. Validated against stored token in session record.
+         * @x-autobe-database-schema-property refresh_token
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_administrator_sessions.refresh_token. Validated
+         *   against stored token in session record.
      */
     refresh_token: string;
   };
@@ -155,8 +173,10 @@ export namespace IEcommerceMallAdministrator {
      *
      * Must correspond to an existing registered administrator account in the system. The email is case-sensitive and must match the stored value exactly.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from ecommerce_mall_administrators.email. Unique email address used for administrator authentication and system communication.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_administrators.email. Unique email address used for
+         *   administrator authentication and system communication.
      */
     email: string & tags.Format<"email">;
 
@@ -165,8 +185,12 @@ export namespace IEcommerceMallAdministrator {
      *
      * Must match the stored password hash for the administrator account. The password is sent as plain text for backend validation against the hashed password stored in the database. The system uses bcrypt hashing algorithm for secure password storage.
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification Plain text password input that validates against ecommerce_mall_administrators.password_hash column. Backend transforms plain text input to bcrypt hash for comparison. The password_hash in database is the hashed version, but login receives plain text for authentication.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification Plain text password input that validates
+         *   against ecommerce_mall_administrators.password_hash column. Backend
+         *   transforms plain text input to bcrypt hash for comparison. The
+         *   password_hash in database is the hashed version, but login receives
+         *   plain text for authentication.
      */
     password: string & tags.Format<"password">;
 
@@ -175,7 +199,12 @@ export namespace IEcommerceMallAdministrator {
      *
      * Used for security auditing and session tracking. Captured from the HTTP request to monitor access patterns and detect suspicious login activity. For server-side rendering (SSR), this may be optional as the server can capture and provide the IP address if not supplied by the client.
      *
-     * @x-autobe-specification Session context IP address captured from the HTTP request at login time. Stored in ecommerce_mall_administrator_sessions table (not administrators table) for audit trail. In SSR environments, client cannot know own IP so server may provide fallback. Optional to allow server-side IP injection when client doesn't supply it.
+         * @x-autobe-specification Session context IP address captured from the
+         *   HTTP request at login time. Stored in
+         *   ecommerce_mall_administrator_sessions table (not administrators
+         *   table) for audit trail. In SSR environments, client cannot know own
+         *   IP so server may provide fallback. Optional to allow server-side IP
+         *   injection when client doesn't supply it.
      */
     ip: string & tags.Format<"ipv4">;
 
@@ -184,7 +213,11 @@ export namespace IEcommerceMallAdministrator {
      *
      * Used for security auditing to understand login context and detect unusual access patterns. Captured from the HTTP Referer header to track which page or external source initiated the login attempt.
      *
-     * @x-autobe-specification Session context referrer URI captured from the HTTP request at login time. Stored in ecommerce_mall_administrator_sessions table (not administrators table) for audit trail and security analysis. Helps track which page or source the administrator accessed the login from.
+         * @x-autobe-specification Session context referrer URI captured from
+         *   the HTTP request at login time. Stored in
+         *   ecommerce_mall_administrator_sessions table (not administrators
+         *   table) for audit trail and security analysis. Helps track which
+         *   page or source the administrator accessed the login from.
      */
     referrer: string & tags.Format<"uri">;
   };

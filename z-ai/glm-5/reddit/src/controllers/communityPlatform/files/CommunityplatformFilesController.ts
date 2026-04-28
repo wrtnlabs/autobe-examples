@@ -18,9 +18,10 @@ export class CommunityplatformFilesController {
    *
    * @param connection
    * @param fileId Unique identifier of the file to retrieve
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query community_platform_files table by primary key id to retrieve file metadata.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query community_platform_files table by primary
+     *   key id to retrieve file metadata.
    *
    * Validate that the file exists. Return file metadata including the storage path/URL, MIME type, and size.
    *

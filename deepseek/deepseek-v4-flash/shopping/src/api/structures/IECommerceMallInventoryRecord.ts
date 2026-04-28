@@ -16,8 +16,9 @@ export type IECommerceMallInventoryRecord = {
    *
    * Automatically generated UUID primary key assigned at creation time. Used to reference this specific stock movement in audit trails and system operations.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from e_commerce_mall_inventory_records.id. Auto-generated UUID primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_inventory_records.id. Auto-generated UUID primary key.
    */
   id: string & tags.Format<"uuid">;
 
@@ -26,8 +27,12 @@ export type IECommerceMallInventoryRecord = {
    *
    * Each inventory record belongs to exactly one product variant. The variant's current stock quantity is dynamically calculated by summing all quantity_change values across all its inventory records. Includes the variant's SKU code, option values (e.g., color, size), current stock level, effective price, and parent product summary information.
    *
-   * @x-autobe-database-schema-property productVariant
-   * @x-autobe-specification JOIN from e_commerce_mall_inventory_records.e_commerce_mall_product_variant_id to e_commerce_mall_product_variants.id. Returns IECommerceMallProductVariant.ISummary containing SKU code, option values, current stock, effective price, and parent product summary.
+     * @x-autobe-database-schema-property productVariant
+     * @x-autobe-specification JOIN from
+     *   e_commerce_mall_inventory_records.e_commerce_mall_product_variant_id to
+     *   e_commerce_mall_product_variants.id. Returns
+     *   IECommerceMallProductVariant.ISummary containing SKU code, option
+     *   values, current stock, effective price, and parent product summary.
    */
   variant: IECommerceMallProductVariant.ISummary;
 
@@ -36,8 +41,11 @@ export type IECommerceMallInventoryRecord = {
    *
    * Positive values represent stock increases (e.g., restocking, cancellation restoration, refund restoration). Negative values represent stock decreases (e.g., customer order placement, manual adjustment for loss or damage). The current stock quantity of the parent variant is derived by summing all quantity_change values across all its inventory records. Must be a non-zero integer.
    *
-   * @x-autobe-database-schema-property quantity_change
-   * @x-autobe-specification Direct mapping from e_commerce_mall_inventory_records.quantity_change. Integer type. Positive values increase stock; negative values decrease stock. Must be a non-zero integer.
+     * @x-autobe-database-schema-property quantity_change
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_inventory_records.quantity_change. Integer type.
+     *   Positive values increase stock; negative values decrease stock. Must be
+     *   a non-zero integer.
    */
   quantity_change: number & tags.Type<"int32">;
 
@@ -46,8 +54,10 @@ export type IECommerceMallInventoryRecord = {
    *
    * Provides business context for each inventory movement, such as "seller restock", "order placed - Order #12345", "cancellation approved - Cancellation #67890", "refund approved - Refund #11121", "damaged item removed from inventory", or "inventory count correction". Required and must provide meaningful context about the reason for the adjustment.
    *
-   * @x-autobe-database-schema-property reason
-   * @x-autobe-specification Direct mapping from e_commerce_mall_inventory_records.reason. String type. Must be a non-empty string providing business context.
+     * @x-autobe-database-schema-property reason
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_inventory_records.reason. String type. Must be a
+     *   non-empty string providing business context.
    */
   reason: string;
 
@@ -56,8 +66,11 @@ export type IECommerceMallInventoryRecord = {
    *
    * Establishes the chronological ordering of stock movements for audit trail purposes. Records are immutable once created — their timestamps cannot be modified, preserving the integrity of the stock history timeline.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from e_commerce_mall_inventory_records.created_at. DateTime type with timezone (Timestamptz). Set to current timestamp at creation — immutable after record creation.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_inventory_records.created_at. DateTime type with
+     *   timezone (Timestamptz). Set to current timestamp at creation —
+     *   immutable after record creation.
    */
   created_at: string & tags.Format<"date-time">;
 };
@@ -73,8 +86,13 @@ export namespace IECommerceMallInventoryRecord {
      *
      * Positive values represent stock increases such as restocking, cancellation restoration, or refund restoration. Negative values represent stock decreases such as customer purchases or manual adjustments for loss or damage. Must be a non-zero integer.
      *
-     * @x-autobe-database-schema-property quantity_change
-     * @x-autobe-specification Direct mapping from e_commerce_mall_inventory_records.quantity_change. Must be a non-zero integer. Positive values represent stock increases (restocking, cancellation restoration, refund restoration). Negative values represent stock decreases (customer purchase, manual adjustment for loss/damage).
+         * @x-autobe-database-schema-property quantity_change
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_inventory_records.quantity_change. Must be a
+         *   non-zero integer. Positive values represent stock increases
+         *   (restocking, cancellation restoration, refund restoration).
+         *   Negative values represent stock decreases (customer purchase,
+         *   manual adjustment for loss/damage).
      */
     quantity_change: number & tags.Type<"int32">;
 
@@ -83,8 +101,11 @@ export namespace IECommerceMallInventoryRecord {
      *
      * Provides business context for each inventory movement, such as 'seller restock', 'order placed - Order #12345', or 'damaged item removed from inventory'. Must be a non-empty string.
      *
-     * @x-autobe-database-schema-property reason
-     * @x-autobe-specification Direct mapping from e_commerce_mall_inventory_records.reason. Must be a non-empty string providing meaningful business context about why the adjustment was made.
+         * @x-autobe-database-schema-property reason
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_inventory_records.reason. Must be a non-empty
+         *   string providing meaningful business context about why the
+         *   adjustment was made.
      */
     reason: string;
   };

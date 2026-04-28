@@ -38,9 +38,9 @@ export class ErphrmtimetrackingMemberProjectsTasksController {
    * @param connection
    * @param projectId Target project identifier that scopes the task to the project container.
    * @param body Creation request for a task inside the specified project. Required fields define the task identity and workflow placement; optional fields configure assignment and planning metadata.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement task creation for a given project.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implement task creation for a given project.
    *
    * Algorithm / service steps:
    * 1. Validate caller authentication and resolve the selected organization context.
@@ -122,9 +122,10 @@ export class ErphrmtimetrackingMemberProjectsTasksController {
    * @param connection
    * @param projectId Target project's unique identifier used to scope task results to a single project.
    * @param body Task search criteria and pagination/sorting options scoped to the project identified by `{projectId}`.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement a paginated task search scoped by project.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implement a paginated task search scoped by
+     *   project.
    *
    * 1) Authentication/authorization gate
    * - Resolve the calling member identity and the currently selected organization context (per system-wide session/organization rules).
@@ -200,9 +201,10 @@ export class ErphrmtimetrackingMemberProjectsTasksController {
    * @param connection
    * @param projectId Target project identifier that scopes the task lookup within the selected organization.
    * @param taskId Target task identifier within the specified project.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement a GET detail lookup that is strictly scoped by the provided `projectId` and `taskId`.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implement a GET detail lookup that is strictly
+     *   scoped by the provided `projectId` and `taskId`.
    *
    * 1) Parse `projectId` and `taskId` from path parameters.
    * 2) Determine the caller’s selected organization context from the authenticated session/middleware (do not accept organizationId from the client).
@@ -268,9 +270,9 @@ export class ErphrmtimetrackingMemberProjectsTasksController {
    * @param projectId Target project identifier that scopes the task update. The server must ensure the task belongs to this project.
    * @param taskId Target task identifier to update. The server must ensure this task is owned by the given project.
    * @param body Update payload for the task. Fields are applied to the existing `erp_hrm_time_tracking_tasks` row; the identifiers are taken from the route parameters.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation steps for updating a task:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation steps for updating a task:
    *
    * 1) Authentication & context
    * - Resolve the caller’s selected organization context (tenant scope) from session/auth middleware.
@@ -364,9 +366,9 @@ export class ErphrmtimetrackingMemberProjectsTasksController {
    * @param connection
    * @param projectId Target project ID. Used to scope validation and ensure the task belongs to this specific project.
    * @param taskId Target task ID to be removed. The task must belong to the referenced project.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement erase task within project.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implement erase task within project.
    *
    * Steps:
    * 1) Parse path parameters `projectId` and `taskId` as UUID strings.

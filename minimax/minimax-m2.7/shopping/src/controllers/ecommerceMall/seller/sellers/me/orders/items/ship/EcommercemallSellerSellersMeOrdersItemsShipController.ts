@@ -23,9 +23,9 @@ export class EcommercemallSellerSellersMeOrdersItemsShipController {
    * @param connection
    * @param itemId Primary order item ID being shipped. The seller must own this item's product and the item must have paid status.
    * @param body Shipping details including carrier name, tracking number, and array of order item IDs to include in the shipment. Multiple items can be bundled into a single shipment.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Implement seller shipment creation logic:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Implement seller shipment creation logic:
    *
    * 1. **Authentication**: Extract sellerId from authenticated JWT token (middleware handles this).
    *

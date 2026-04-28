@@ -19,8 +19,9 @@ export type IEcommerceMallOrderItem = {
    *
    * This identifier is used to reference the specific order item across all operations including force-cancel, force-refund, cancellation requests, and refund requests.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_order_items.id. UUID primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_order_items.id. UUID primary key.
    */
   id: string & tags.Format<"uuid">;
 
@@ -29,8 +30,9 @@ export type IEcommerceMallOrderItem = {
    *
    * Set at order creation time when the customer completes checkout and payment is processed. Used for ordering and temporal queries.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_order_items.created_at. DateTime.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_order_items.created_at. DateTime.
    */
   createdAt: string & tags.Format<"date-time">;
 
@@ -39,8 +41,9 @@ export type IEcommerceMallOrderItem = {
    *
    * Frozen at purchase time - this value cannot be changed after order creation. If customer wants different quantity, they must cancel and reorder.
    *
-   * @x-autobe-database-schema-property quantity
-   * @x-autobe-specification Direct mapping from ecommerce_mall_order_items.quantity. Integer.
+     * @x-autobe-database-schema-property quantity
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_order_items.quantity. Integer.
    */
   quantity: number & tags.Type<"int32">;
 
@@ -49,8 +52,9 @@ export type IEcommerceMallOrderItem = {
    *
    * This price is frozen at transaction time and may differ from current product price if the seller has updated pricing. Critical for dispute resolution and refund calculations.
    *
-   * @x-autobe-database-schema-property unit_price
-   * @x-autobe-specification Direct mapping from ecommerce_mall_order_items.unit_price. Float (DoublePrecision).
+     * @x-autobe-database-schema-property unit_price
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_order_items.unit_price. Float (DoublePrecision).
    */
   unitPrice: number;
 
@@ -64,8 +68,10 @@ export type IEcommerceMallOrderItem = {
    * - cancelled: Item cancelled (by seller or admin force-cancel)
    * - refunded: Item refunded to customer (by seller or admin force-refund)
    *
-   * @x-autobe-specification Direct mapping from ecommerce_mall_order_items.status. String values: paid, shipped, delivered, cancelled, refunded.
-   * @x-autobe-database-schema-property status
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_order_items.status. String values: paid, shipped,
+     *   delivered, cancelled, refunded.
+     * @x-autobe-database-schema-property status
    */
   status: string;
 
@@ -74,8 +80,10 @@ export type IEcommerceMallOrderItem = {
    *
    * Contains order-level information including order number for customer reference, total amount, and order status derived from all item statuses.
    *
-   * @x-autobe-specification Join from ecommerce_mall_order_items.ecommerce_mall_order_id to ecommerce_mall_orders.id. Returns IEcommerceMallOrder.ISummary.
-   * @x-autobe-database-schema-property order
+     * @x-autobe-specification Join from
+     *   ecommerce_mall_order_items.ecommerce_mall_order_id to
+     *   ecommerce_mall_orders.id. Returns IEcommerceMallOrder.ISummary.
+     * @x-autobe-database-schema-property order
    */
   order: IEcommerceMallOrder.ISummary;
 
@@ -84,8 +92,11 @@ export type IEcommerceMallOrderItem = {
    *
    * Contains the exact product name, description, base price, and category as they appeared when the customer placed the order. This historical data remains accurate even if the seller later edits the product, essential for dispute resolution.
    *
-   * @x-autobe-specification Join from ecommerce_mall_order_items.ecommerce_mall_product_snapshot_id to ecommerce_mall_product_snapshots.id. Returns IEcommerceMallProductSnapshot.ISummary.
-   * @x-autobe-database-schema-property productSnapshot
+     * @x-autobe-specification Join from
+     *   ecommerce_mall_order_items.ecommerce_mall_product_snapshot_id to
+     *   ecommerce_mall_product_snapshots.id. Returns
+     *   IEcommerceMallProductSnapshot.ISummary.
+     * @x-autobe-database-schema-property productSnapshot
    */
   productSnapshot: IEcommerceMallProductSnapshot.ISummary;
 
@@ -94,8 +105,11 @@ export type IEcommerceMallOrderItem = {
    *
    * Contains the shop name, business description, and logo that were displayed to the customer when they placed the order. Essential for dispute resolution when customers need to reference what seller information was shown at purchase time.
    *
-   * @x-autobe-specification Join from ecommerce_mall_order_items.ecommerce_mall_seller_profile_snapshot_id to ecommerce_mall_seller_profile_snapshots.id. Returns ISummary containing shop_name, shop_description, logo_url at purchase time.
-   * @x-autobe-database-schema-property sellerProfileSnapshot
+     * @x-autobe-specification Join from
+     *   ecommerce_mall_order_items.ecommerce_mall_seller_profile_snapshot_id to
+     *   ecommerce_mall_seller_profile_snapshots.id. Returns ISummary containing
+     *   shop_name, shop_description, logo_url at purchase time.
+     * @x-autobe-database-schema-property sellerProfileSnapshot
    */
   sellerProfileSnapshot: IEcommerceMallSellerProfileSnapshot.ISummary;
 
@@ -104,8 +118,11 @@ export type IEcommerceMallOrderItem = {
    *
    * Contains the specific SKU code, price override if applicable, and option values that represent the exact variant selected by the customer at purchase time.
    *
-   * @x-autobe-specification Join from ecommerce_mall_order_items.ecommerce_mall_product_variant_id to ecommerce_mall_product_variants.id. Returns ISummary with sku_code, price override, and current option values.
-   * @x-autobe-database-schema-property productVariant
+     * @x-autobe-specification Join from
+     *   ecommerce_mall_order_items.ecommerce_mall_product_variant_id to
+     *   ecommerce_mall_product_variants.id. Returns ISummary with sku_code,
+     *   price override, and current option values.
+     * @x-autobe-database-schema-property productVariant
    */
   productVariant: IEcommerceMallProductVariant.ISummary;
 
@@ -114,8 +131,11 @@ export type IEcommerceMallOrderItem = {
    *
    * Provides the product context beyond the frozen snapshot state, useful for navigation links and product reference in order item displays.
    *
-   * @x-autobe-specification Join from ecommerce_mall_order_items.ecommerce_mall_product_id to ecommerce_mall_products.id. Returns ISummary containing product ID and name for reference.
-   * @x-autobe-database-schema-property product
+     * @x-autobe-specification Join from
+     *   ecommerce_mall_order_items.ecommerce_mall_product_id to
+     *   ecommerce_mall_products.id. Returns ISummary containing product ID and
+     *   name for reference.
+     * @x-autobe-database-schema-property product
    */
   product: IEcommerceMallProduct.ISummary;
 
@@ -124,7 +144,10 @@ export type IEcommerceMallOrderItem = {
    *
    * Indicates how many shipments this item has been split into for fulfillment. Useful for tracking partial shipments.
    *
-   * @x-autobe-specification COUNT of related ecommerce_mall_shipments via ecommerce_mall_shipment_items relation where ecommerce_mall_order_item_id matches this order item. Returns integer count of shipments containing this item.
+     * @x-autobe-specification COUNT of related ecommerce_mall_shipments via
+     *   ecommerce_mall_shipment_items relation where
+     *   ecommerce_mall_order_item_id matches this order item. Returns integer
+     *   count of shipments containing this item.
    */
   shipments_count: number & tags.Type<"int32">;
 
@@ -133,7 +156,10 @@ export type IEcommerceMallOrderItem = {
    *
    * Indicates if there are any pending or historical cancellation requests associated with this order item.
    *
-   * @x-autobe-specification COUNT of related ecommerce_mall_cancellation_requests via ecommerce_mall_order_items.cancellationRequests relation. Returns integer count of cancellation requests for this order item.
+     * @x-autobe-specification COUNT of related
+     *   ecommerce_mall_cancellation_requests via
+     *   ecommerce_mall_order_items.cancellationRequests relation. Returns
+     *   integer count of cancellation requests for this order item.
    */
   cancellationRequests_count: number & tags.Type<"int32">;
 
@@ -142,7 +168,9 @@ export type IEcommerceMallOrderItem = {
    *
    * Indicates if there are any pending or historical refund requests associated with this order item.
    *
-   * @x-autobe-specification COUNT of related ecommerce_mall_refund_requests via ecommerce_mall_order_items.refundRequests relation. Returns integer count of refund requests for this order item.
+     * @x-autobe-specification COUNT of related ecommerce_mall_refund_requests
+     *   via ecommerce_mall_order_items.refundRequests relation. Returns integer
+     *   count of refund requests for this order item.
    */
   refundRequests_count: number & tags.Type<"int32">;
 
@@ -151,7 +179,9 @@ export type IEcommerceMallOrderItem = {
    *
    * Typically 0 or 1, as customers can write at most one review per order item after delivery.
    *
-   * @x-autobe-specification COUNT of related ecommerce_mall_reviews via ecommerce_mall_order_items.reviews relation. Returns integer count of reviews written for this order item.
+     * @x-autobe-specification COUNT of related ecommerce_mall_reviews via
+     *   ecommerce_mall_order_items.reviews relation. Returns integer count of
+     *   reviews written for this order item.
    */
   reviews_count: number & tags.Type<"int32">;
 };
@@ -175,7 +205,12 @@ export namespace IEcommerceMallOrderItem {
      *
      * **Example**: "Customer complaint escalation - product quality issues confirmed".
      *
-     * @x-autobe-specification Optional audit metadata field. When provided, the reason string is recorded in ecommerce_mall_admin_audit_logs by the server for audit trail and dispute resolution purposes. Does not map to any database column in the order_items table. The server captures body.reason and associates it with the admin action in the audit log.
+         * @x-autobe-specification Optional audit metadata field. When provided,
+         *   the reason string is recorded in ecommerce_mall_admin_audit_logs by
+         *   the server for audit trail and dispute resolution purposes. Does
+         *   not map to any database column in the order_items table. The server
+         *   captures body.reason and associates it with the admin action in the
+         *   audit log.
      */
     reason?: string | undefined;
   };
@@ -191,8 +226,9 @@ export namespace IEcommerceMallOrderItem {
      *
      * Primary key in UUID format for global uniqueness across all order items in the system.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_mall_order_items.id (UUID primary key).
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_order_items.id (UUID primary key).
      */
     id: string & tags.Format<"uuid">;
 
@@ -201,8 +237,10 @@ export namespace IEcommerceMallOrderItem {
      *
      * Represents how many units of this specific product variant were included in the order. Frozen at purchase time for dispute resolution.
      *
-     * @x-autobe-database-schema-property quantity
-     * @x-autobe-specification Direct mapping from ecommerce_mall_order_items.quantity. Integer representing the number of units purchased.
+         * @x-autobe-database-schema-property quantity
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_order_items.quantity. Integer representing the
+         *   number of units purchased.
      */
     quantity: number & tags.Type<"int32">;
 
@@ -211,8 +249,10 @@ export namespace IEcommerceMallOrderItem {
      *
      * Frozen at transaction time to ensure pricing disputes can be resolved accurately. This is the price the customer paid per unit, not the total.
      *
-     * @x-autobe-database-schema-property unit_price
-     * @x-autobe-specification Direct mapping from ecommerce_mall_order_items.unit_price. Float/Double representing the price per unit.
+         * @x-autobe-database-schema-property unit_price
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_order_items.unit_price. Float/Double representing
+         *   the price per unit.
      */
     unit_price: number;
 
@@ -228,8 +268,10 @@ export namespace IEcommerceMallOrderItem {
      * - cancelled: Item cancelled before shipment
      * - refunded: Item refunded to customer after delivery
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from ecommerce_mall_order_items.status. String enum values: paid, shipped, delivered, cancelled, refunded.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_order_items.status. String enum values: paid,
+         *   shipped, delivered, cancelled, refunded.
      */
     status: string;
 
@@ -238,8 +280,10 @@ export namespace IEcommerceMallOrderItem {
      *
      * Represents the exact moment the order was placed and payment was confirmed. Stored in ISO 8601 format with timezone.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_order_items.created_at. Timestamp when the order item was created at purchase time.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_order_items.created_at. Timestamp when the order
+         *   item was created at purchase time.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -248,8 +292,10 @@ export namespace IEcommerceMallOrderItem {
      *
      * Reference to the parent order containing key information like order_number for customer support and tracking purposes.
      *
-     * @x-autobe-database-schema-property order
-     * @x-autobe-specification Belongs-to relation: JOIN ecommerce_mall_orders on ecommerce_mall_order_id. Returns IEcommerceMallOrder.ISummary with order_number for reference.
+         * @x-autobe-database-schema-property order
+         * @x-autobe-specification Belongs-to relation: JOIN
+         *   ecommerce_mall_orders on ecommerce_mall_order_id. Returns
+         *   IEcommerceMallOrder.ISummary with order_number for reference.
      */
     order: IEcommerceMallOrder.ISummary;
 
@@ -258,8 +304,12 @@ export namespace IEcommerceMallOrderItem {
      *
      * Contains the SKU code, price override (if any), and all option values (e.g., color: Red, size: Large) that define this specific product variant purchased.
      *
-     * @x-autobe-database-schema-property productVariant
-     * @x-autobe-specification Belongs-to relation: JOIN ecommerce_mall_product_variants on ecommerce_mall_product_variant_id. Returns IEcommerceMallProductVariant with sku_code, price, quantity, and optionValues.
+         * @x-autobe-database-schema-property productVariant
+         * @x-autobe-specification Belongs-to relation: JOIN
+         *   ecommerce_mall_product_variants on
+         *   ecommerce_mall_product_variant_id. Returns
+         *   IEcommerceMallProductVariant with sku_code, price, quantity, and
+         *   optionValues.
      */
     productVariant: IEcommerceMallProductVariant;
 
@@ -268,8 +318,12 @@ export namespace IEcommerceMallOrderItem {
      *
      * Preserves the product name, description, base price, and category as they existed when the customer placed the order. Used for dispute resolution if product information changes after purchase.
      *
-     * @x-autobe-database-schema-property productSnapshot
-     * @x-autobe-specification Belongs-to relation: JOIN ecommerce_mall_product_snapshots on ecommerce_mall_product_snapshot_id. Returns IEcommerceMallProductSnapshot.ISummary with frozen product name, description, base_price, and category_name.
+         * @x-autobe-database-schema-property productSnapshot
+         * @x-autobe-specification Belongs-to relation: JOIN
+         *   ecommerce_mall_product_snapshots on
+         *   ecommerce_mall_product_snapshot_id. Returns
+         *   IEcommerceMallProductSnapshot.ISummary with frozen product name,
+         *   description, base_price, and category_name.
      */
     productSnapshot: IEcommerceMallProductSnapshot.ISummary;
 
@@ -278,8 +332,12 @@ export namespace IEcommerceMallOrderItem {
      *
      * Preserves the seller's shop name, description, and logo URL as they appeared when the customer made the purchase. Used for dispute resolution and historical accuracy.
      *
-     * @x-autobe-database-schema-property sellerProfileSnapshot
-     * @x-autobe-specification Belongs-to relation: JOIN ecommerce_mall_seller_profile_snapshots on ecommerce_mall_seller_profile_snapshot_id. Returns IEcommerceMallSellerProfileSnapshot.ISummary with frozen shop_name, shop_description, and logo_url.
+         * @x-autobe-database-schema-property sellerProfileSnapshot
+         * @x-autobe-specification Belongs-to relation: JOIN
+         *   ecommerce_mall_seller_profile_snapshots on
+         *   ecommerce_mall_seller_profile_snapshot_id. Returns
+         *   IEcommerceMallSellerProfileSnapshot.ISummary with frozen shop_name,
+         *   shop_description, and logo_url.
      */
     sellerProfileSnapshot: IEcommerceMallSellerProfileSnapshot.ISummary;
   };
@@ -299,8 +357,9 @@ export namespace IEcommerceMallOrderItem {
      *
      * Primary key in UUID format for individual line item identification within an order.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_mall_order_items.id. UUID primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_order_items.id. UUID primary key.
      */
     id: string & tags.Format<"uuid">;
 
@@ -309,8 +368,10 @@ export namespace IEcommerceMallOrderItem {
      *
      * Minimum value is 1, representing at least one unit must be purchased.
      *
-     * @x-autobe-database-schema-property quantity
-     * @x-autobe-specification Direct mapping from ecommerce_mall_order_items.quantity. Integer representing number of units purchased.
+         * @x-autobe-database-schema-property quantity
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_order_items.quantity. Integer representing number of
+         *   units purchased.
      */
     quantity: number & tags.Type<"int32"> & tags.Minimum<1>;
 
@@ -319,8 +380,10 @@ export namespace IEcommerceMallOrderItem {
      *
      * This price is locked at checkout and will not reflect any subsequent price changes to the product.
      *
-     * @x-autobe-database-schema-property unit_price
-     * @x-autobe-specification Direct mapping from ecommerce_mall_order_items.unit_price. Float/Double precision decimal.
+         * @x-autobe-database-schema-property unit_price
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_order_items.unit_price. Float/Double precision
+         *   decimal.
      */
     unitPrice: number;
 
@@ -329,7 +392,10 @@ export namespace IEcommerceMallOrderItem {
      *
      * Represents the subtotal for this specific order item before any order-level discounts or shipping costs.
      *
-     * @x-autobe-specification Computation: ecommerce_mall_order_items.quantity * ecommerce_mall_order_items.unit_price. Calculated at query time for display.
+         * @x-autobe-specification Computation:
+         *   ecommerce_mall_order_items.quantity *
+         *   ecommerce_mall_order_items.unit_price. Calculated at query time for
+         *   display.
      */
     lineTotal: number;
 
@@ -340,8 +406,10 @@ export namespace IEcommerceMallOrderItem {
      *
      * Status is tracked independently per item, allowing partial order fulfillment.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from ecommerce_mall_order_items.status. Valid values: paid, shipped, delivered, cancelled, refunded.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_order_items.status. Valid values: paid, shipped,
+         *   delivered, cancelled, refunded.
      */
     status: string;
 
@@ -350,8 +418,9 @@ export namespace IEcommerceMallOrderItem {
      *
      * Indicates when the item was added to the order during the checkout process.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_order_items.created_at. ISO 8601 timestamp.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_order_items.created_at. ISO 8601 timestamp.
      */
     createdAt: string & tags.Format<"date-time">;
 
@@ -360,8 +429,10 @@ export namespace IEcommerceMallOrderItem {
      *
      * Provides navigation context to the order containing this item, including order number, status, and totals.
      *
-     * @x-autobe-database-schema-property order
-     * @x-autobe-specification Join via ecommerce_mall_order_items.ecommerce_mall_order_id to ecommerce_mall_orders.id. Returns IEcommerceMallOrder.ISummary.
+         * @x-autobe-database-schema-property order
+         * @x-autobe-specification Join via
+         *   ecommerce_mall_order_items.ecommerce_mall_order_id to
+         *   ecommerce_mall_orders.id. Returns IEcommerceMallOrder.ISummary.
      */
     order: IEcommerceMallOrder.ISummary;
 
@@ -370,8 +441,12 @@ export namespace IEcommerceMallOrderItem {
      *
      * Contains the product name, description, base price, and category as they appeared when the order was placed. This snapshot ensures customers see exactly what they purchased for dispute resolution.
      *
-     * @x-autobe-database-schema-property productSnapshot
-     * @x-autobe-specification Join via ecommerce_mall_order_items.ecommerce_mall_product_snapshot_id to ecommerce_mall_product_snapshots.id. Returns IEcommerceMallProductSnapshot.ISummary with frozen product name, description, base_price, category_name.
+         * @x-autobe-database-schema-property productSnapshot
+         * @x-autobe-specification Join via
+         *   ecommerce_mall_order_items.ecommerce_mall_product_snapshot_id to
+         *   ecommerce_mall_product_snapshots.id. Returns
+         *   IEcommerceMallProductSnapshot.ISummary with frozen product name,
+         *   description, base_price, category_name.
      */
     productSnapshot: IEcommerceMallProductSnapshot.ISummary;
 
@@ -380,8 +455,12 @@ export namespace IEcommerceMallOrderItem {
      *
      * Contains the seller's shop name and logo URL as they appeared when the order was placed. This preserves the seller information for dispute resolution.
      *
-     * @x-autobe-database-schema-property sellerProfileSnapshot
-     * @x-autobe-specification Join via ecommerce_mall_order_items.ecommerce_mall_seller_profile_snapshot_id to ecommerce_mall_seller_profile_snapshots.id. Returns IEcommerceMallSellerProfileSnapshot.ISummary with frozen shop_name, logo_url.
+         * @x-autobe-database-schema-property sellerProfileSnapshot
+         * @x-autobe-specification Join via
+         *   ecommerce_mall_order_items.ecommerce_mall_seller_profile_snapshot_id
+         *   to ecommerce_mall_seller_profile_snapshots.id. Returns
+         *   IEcommerceMallSellerProfileSnapshot.ISummary with frozen shop_name,
+         *   logo_url.
      */
     sellerProfileSnapshot: IEcommerceMallSellerProfileSnapshot.ISummary;
 
@@ -390,8 +469,13 @@ export namespace IEcommerceMallOrderItem {
      *
      * Contains the SKU code and option key-value pairs (e.g., color=Red, size=Large) that were selected at purchase time, preserved for accurate order records.
      *
-     * @x-autobe-database-schema-property productVariant
-     * @x-autobe-specification Join via ecommerce_mall_order_items.ecommerce_mall_product_variant_id to ecommerce_mall_product_variants.id. Join to ecommerce_mall_product_snapshot_variants for option key-value pairs. Returns sku_code and options as IEcommerceMallProductSnapshotVariant array.
+         * @x-autobe-database-schema-property productVariant
+         * @x-autobe-specification Join via
+         *   ecommerce_mall_order_items.ecommerce_mall_product_variant_id to
+         *   ecommerce_mall_product_variants.id. Join to
+         *   ecommerce_mall_product_snapshot_variants for option key-value
+         *   pairs. Returns sku_code and options as
+         *   IEcommerceMallProductSnapshotVariant array.
      */
     variant: IEcommerceMallProductSnapshotVariant;
   };
@@ -415,7 +499,10 @@ export namespace IEcommerceMallOrderItem {
      *
      * **Range**: 1 to 100 items.
      *
-     * @x-autobe-specification Controls the maximum number of order items returned per page. Valid range: 1-100. Default: 20. When not provided, defaults to 20. Applied as LIMIT clause in database query.
+         * @x-autobe-specification Controls the maximum number of order items
+         *   returned per page. Valid range: 1-100. Default: 20. When not
+         *   provided, defaults to 20. Applied as LIMIT clause in database
+         *   query.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -430,7 +517,9 @@ export namespace IEcommerceMallOrderItem {
      *
      * **Minimum**: 1.
      *
-     * @x-autobe-specification Controls which page of results to return. Valid minimum: 1. Default: 1. Applied as OFFSET clause in database query: OFFSET = (page - 1) * limit.
+         * @x-autobe-specification Controls which page of results to return.
+         *   Valid minimum: 1. Default: 1. Applied as OFFSET clause in database
+         *   query: OFFSET = (page - 1) * limit.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -448,7 +537,11 @@ export namespace IEcommerceMallOrderItem {
      *
      * **Default**: When omitted, all statuses are included in results.
      *
-     * @x-autobe-specification Optional filter to narrow results to order items with a specific status. Valid values: 'paid', 'shipped', 'delivered', 'cancelled', 'refunded'. When omitted, all statuses are included. Applied as WHERE clause filter on ecommerce_mall_order_items.status.
+         * @x-autobe-specification Optional filter to narrow results to order
+         *   items with a specific status. Valid values: 'paid', 'shipped',
+         *   'delivered', 'cancelled', 'refunded'. When omitted, all statuses
+         *   are included. Applied as WHERE clause filter on
+         *   ecommerce_mall_order_items.status.
      */
     status?:
       | "paid"

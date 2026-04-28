@@ -21,9 +21,9 @@ export class EcommercemallAdminPassword_resetsController {
    *
    * @param connection
    * @param body Password reset token and new password credentials
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Implement password reset using token validation:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Implement password reset using token validation:
    *
    * 1. Search for the provided token in all three password reset tables:
    *    - ecommerce_mall_customer_password_resets (token unique constraint)
@@ -86,9 +86,10 @@ export class EcommercemallAdminPassword_resetsController {
    *
    * @param connection
    * @param resetId Unique identifier of the password reset record (UUID format)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query the password reset table by the provided resetId UUID.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Query the password reset table by the provided
+     *   resetId UUID.
    *
    * For customer tokens: query ecommerce_mall_customer_password_resets
    * For seller tokens: query ecommerce_mall_seller_password_resets

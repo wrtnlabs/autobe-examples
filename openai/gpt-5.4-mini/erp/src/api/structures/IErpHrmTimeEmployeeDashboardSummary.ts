@@ -13,120 +13,151 @@ export type IErpHrmTimeEmployeeDashboardSummary = {
   /**
    * Unique employee record identifier.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from erp_hrm_time_employees.id. Use the UUID primary key as the stable employee identifier in the current organization context.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from erp_hrm_time_employees.id.
+     *   Use the UUID primary key as the stable employee identifier in the
+     *   current organization context.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Identifier of the organization that owns this employee record.
    *
-   * @x-autobe-database-schema-property erp_hrm_time_organization_id
-   * @x-autobe-specification Direct mapping from erp_hrm_time_employees.erp_hrm_time_organization_id. Preserve the UUID organization foreign key as the organization-scoped linkage for the employee record.
+     * @x-autobe-database-schema-property erp_hrm_time_organization_id
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_employees.erp_hrm_time_organization_id. Preserve the UUID
+     *   organization foreign key as the organization-scoped linkage for the
+     *   employee record.
    */
   erpHrmTimeOrganizationId: string & tags.Format<"uuid">;
 
   /**
    * Identifier of the linked member account.
    *
-   * @x-autobe-database-schema-property erp_hrm_time_member_id
-   * @x-autobe-specification Direct mapping from erp_hrm_time_employees.erp_hrm_time_member_id. Preserve the UUID member foreign key that links this employee to the shared user account.
+     * @x-autobe-database-schema-property erp_hrm_time_member_id
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_employees.erp_hrm_time_member_id. Preserve the UUID member
+     *   foreign key that links this employee to the shared user account.
    */
   erpHrmTimeMemberId: string & tags.Format<"uuid">;
 
   /**
    * Identifier of the role assigned to this employee.
    *
-   * @x-autobe-database-schema-property erp_hrm_time_role_id
-   * @x-autobe-specification Direct mapping from erp_hrm_time_employees.erp_hrm_time_role_id. Preserve the UUID role foreign key for the employee’s organization-scoped role assignment.
+     * @x-autobe-database-schema-property erp_hrm_time_role_id
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_employees.erp_hrm_time_role_id. Preserve the UUID role
+     *   foreign key for the employee’s organization-scoped role assignment.
    */
   erpHrmTimeRoleId: string & tags.Format<"uuid">;
 
   /**
    * Identifier of the employee’s department, or null when unassigned.
    *
-   * @x-autobe-database-schema-property erp_hrm_time_department_id
-   * @x-autobe-specification Direct mapping from erp_hrm_time_employees.erp_hrm_time_department_id. This field is nullable and should remain null when the employee is not assigned to a department or when the assignment is cleared.
+     * @x-autobe-database-schema-property erp_hrm_time_department_id
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_employees.erp_hrm_time_department_id. This field is
+     *   nullable and should remain null when the employee is not assigned to a
+     *   department or when the assignment is cleared.
    */
   erpHrmTimeDepartmentId: (string & tags.Format<"uuid">) | null;
 
   /**
    * Organization that owns this employee record.
    *
-   * @x-autobe-database-schema-property organization
-   * @x-autobe-specification Resolve erp_hrm_time_employees.organization as a summary reference to the owning organization, using the organization foreign key and returning the organization summary DTO rather than the raw UUID.
+     * @x-autobe-database-schema-property organization
+     * @x-autobe-specification Resolve erp_hrm_time_employees.organization as a
+     *   summary reference to the owning organization, using the organization
+     *   foreign key and returning the organization summary DTO rather than the
+     *   raw UUID.
    */
   organization: IErpHrmTimeOrganizationDashboardSummary.ISummary;
 
   /**
    * Linked member account for this employee.
    *
-   * @x-autobe-database-schema-property member
-   * @x-autobe-specification Resolve erp_hrm_time_employees.member as a summary reference to the linked member account, using the member foreign key and returning the member summary DTO rather than exposing user credentials.
+     * @x-autobe-database-schema-property member
+     * @x-autobe-specification Resolve erp_hrm_time_employees.member as a
+     *   summary reference to the linked member account, using the member
+     *   foreign key and returning the member summary DTO rather than exposing
+     *   user credentials.
    */
   member: IErpHrmTimeMember.ISummary;
 
   /**
    * Role assigned to this employee within the organization.
    *
-   * @x-autobe-database-schema-property role
-   * @x-autobe-specification Resolve erp_hrm_time_employees.role as a summary reference to the assigned role within the same organization.
+     * @x-autobe-database-schema-property role
+     * @x-autobe-specification Resolve erp_hrm_time_employees.role as a summary
+     *   reference to the assigned role within the same organization.
    */
   role: IErpHrmTimeRole.ISummary;
 
   /**
    * Department assigned to this employee, or null when none is assigned.
    *
-   * @x-autobe-database-schema-property department
-   * @x-autobe-specification Resolve erp_hrm_time_employees.department as an optional summary reference. Return null when erp_hrm_time_department_id is null or the employee is not assigned to a department.
+     * @x-autobe-database-schema-property department
+     * @x-autobe-specification Resolve erp_hrm_time_employees.department as an
+     *   optional summary reference. Return null when erp_hrm_time_department_id
+     *   is null or the employee is not assigned to a department.
    */
   department: IErpHrmTimeDepartment.ISummary | null;
 
   /**
    * Optional job title or position for this employee.
    *
-   * @x-autobe-database-schema-property position_title
-   * @x-autobe-specification Direct mapping from erp_hrm_time_employees.position_title. Preserve null when no position or title is set.
+     * @x-autobe-database-schema-property position_title
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_employees.position_title. Preserve null when no position
+     *   or title is set.
    */
   positionTitle: string | null;
 
   /**
    * Employment classification for this employee.
    *
-   * @x-autobe-database-schema-property employment_type
-   * @x-autobe-specification Direct mapping from erp_hrm_time_employees.employment_type. Use the stored employment classification value without transformation.
+     * @x-autobe-database-schema-property employment_type
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_employees.employment_type. Use the stored employment
+     *   classification value without transformation.
    */
   employmentType: string;
 
   /**
    * Current status of this employee record.
    *
-   * @x-autobe-database-schema-property status
-   * @x-autobe-specification Direct mapping from erp_hrm_time_employees.status. This field represents the employee’s current active or deactivated state in the organization.
+     * @x-autobe-database-schema-property status
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_employees.status. This field represents the employee’s
+     *   current active or deactivated state in the organization.
    */
   status: string;
 
   /**
    * Timestamp when this employee record was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from erp_hrm_time_employees.created_at as the record creation timestamp.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_employees.created_at as the record creation timestamp.
    */
   createdAt: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when this employee record was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from erp_hrm_time_employees.updated_at as the record update timestamp.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_employees.updated_at as the record update timestamp.
    */
   updatedAt: string & tags.Format<"date-time">;
 
   /**
    * Soft-deletion timestamp, or null if the employee is active.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from erp_hrm_time_employees.deleted_at. Preserve null for active records and a timestamp for soft-deleted records.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_employees.deleted_at. Preserve null for active records and
+     *   a timestamp for soft-deleted records.
    */
   deletedAt: (string & tags.Format<"date-time">) | null;
 };
@@ -138,49 +169,66 @@ export namespace IErpHrmTimeEmployeeDashboardSummary {
     /**
      * Text to search employees by name.
      *
-     * @x-autobe-specification Use as a case-insensitive text filter against the related member display name in the active organization context.
+         * @x-autobe-specification Use as a case-insensitive text filter against
+         *   the related member display name in the active organization context.
      */
     search?: string | undefined;
 
     /**
      * Department ID used to filter employees.
      *
-     * @x-autobe-specification Use as a filter for employees whose department foreign key matches the provided department id. A null value means no department filter is applied. The endpoint must translate this to the employee department foreign key in the database query and still enforce organization scope server-side.
+         * @x-autobe-specification Use as a filter for employees whose
+         *   department foreign key matches the provided department id. A null
+         *   value means no department filter is applied. The endpoint must
+         *   translate this to the employee department foreign key in the
+         *   database query and still enforce organization scope server-side.
      */
     departmentId?: (string & tags.Format<"uuid">) | null | undefined;
 
     /**
      * Employment type used to filter employees.
      *
-     * @x-autobe-specification Use as a direct filter on the employee employment type value in the employee list query. The endpoint should compare the supplied value against the employee employment type column within the current organization context.
+         * @x-autobe-specification Use as a direct filter on the employee
+         *   employment type value in the employee list query. The endpoint
+         *   should compare the supplied value against the employee employment
+         *   type column within the current organization context.
      */
     employmentType?: string | null | undefined;
 
     /**
      * Employment status used to filter employees.
      *
-     * @x-autobe-specification Use as a direct filter on the employee status value in the employee list query. The endpoint should compare the supplied value against the employee status column within the current organization context.
+         * @x-autobe-specification Use as a direct filter on the employee status
+         *   value in the employee list query. The endpoint should compare the
+         *   supplied value against the employee status column within the
+         *   current organization context.
      */
     status?: string | null | undefined;
 
     /**
      * Sort order for the employee list.
      *
-     * @x-autobe-specification Validate this value against the supported employee-list sort fields at the API layer. If omitted, default to created_at descending.
+         * @x-autobe-specification Validate this value against the supported
+         *   employee-list sort fields at the API layer. If omitted, default to
+         *   created_at descending.
      */
     sort?: string | null | undefined;
 
     /**
      * Page number for paginated results.
      *
-     * @x-autobe-specification Use as the 1-indexed page number for paginated employee browsing. The endpoint should default or validate this value at the API layer.
+         * @x-autobe-specification Use as the 1-indexed page number for
+         *   paginated employee browsing. The endpoint should default or
+         *   validate this value at the API layer.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | null | undefined;
 
     /**
      * Maximum number of results per page.
      *
-     * @x-autobe-specification Use as the maximum number of records per page for employee browsing. Validate it as a bounded page size and apply the endpoint default when omitted.
+         * @x-autobe-specification Use as the maximum number of records per page
+         *   for employee browsing. Validate it as a bounded page size and apply
+         *   the endpoint default when omitted.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -195,88 +243,109 @@ export namespace IErpHrmTimeEmployeeDashboardSummary {
     /**
      * Unique employee record identifier.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct projection from erp_hrm_time_employees.id as the employee summary identifier.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct projection from
+         *   erp_hrm_time_employees.id as the employee summary identifier.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Organization that owns this employee record.
      *
-     * @x-autobe-database-schema-property organization
-     * @x-autobe-specification Resolve from erp_hrm_time_employees.erp_hrm_time_organization_id via the organization belongs-to relation and return the organization summary object.
+         * @x-autobe-database-schema-property organization
+         * @x-autobe-specification Resolve from
+         *   erp_hrm_time_employees.erp_hrm_time_organization_id via the
+         *   organization belongs-to relation and return the organization
+         *   summary object.
      */
     organization: IErpHrmTimeOrganizationDashboardSummary.ISummary;
 
     /**
      * User account linked to this employee record.
      *
-     * @x-autobe-database-schema-property member
-     * @x-autobe-specification Resolve from erp_hrm_time_employees.erp_hrm_time_member_id via the member belongs-to relation and return the member summary object.
+         * @x-autobe-database-schema-property member
+         * @x-autobe-specification Resolve from
+         *   erp_hrm_time_employees.erp_hrm_time_member_id via the member
+         *   belongs-to relation and return the member summary object.
      */
     member: IErpHrmTimeMember.ISummary;
 
     /**
      * Role assigned to this employee within the organization.
      *
-     * @x-autobe-database-schema-property role
-     * @x-autobe-specification Resolve from erp_hrm_time_employees.erp_hrm_time_role_id via the role belongs-to relation and return the role summary object.
+         * @x-autobe-database-schema-property role
+         * @x-autobe-specification Resolve from
+         *   erp_hrm_time_employees.erp_hrm_time_role_id via the role belongs-to
+         *   relation and return the role summary object.
      */
     role: IErpHrmTimeRole.ISummary;
 
     /**
      * Department assigned to this employee, if any.
      *
-     * @x-autobe-database-schema-property department
-     * @x-autobe-specification Resolve from erp_hrm_time_employees.erp_hrm_time_department_id via the optional department belongs-to relation and return the department summary object when present; otherwise null.
+         * @x-autobe-database-schema-property department
+         * @x-autobe-specification Resolve from
+         *   erp_hrm_time_employees.erp_hrm_time_department_id via the optional
+         *   department belongs-to relation and return the department summary
+         *   object when present; otherwise null.
      */
     department: IErpHrmTimeDepartment.ISummary | null;
 
     /**
      * Optional job title or position name.
      *
-     * @x-autobe-database-schema-property position_title
-     * @x-autobe-specification Direct projection from erp_hrm_time_employees.position_title. Preserve null when the employee has no position title.
+         * @x-autobe-database-schema-property position_title
+         * @x-autobe-specification Direct projection from
+         *   erp_hrm_time_employees.position_title. Preserve null when the
+         *   employee has no position title.
      */
     positionTitle: string | null;
 
     /**
      * Employment classification such as full-time, part-time, contractor, or intern.
      *
-     * @x-autobe-database-schema-property employment_type
-     * @x-autobe-specification Direct projection from erp_hrm_time_employees.employment_type. Expected values follow the organization's employment classification vocabulary.
+         * @x-autobe-database-schema-property employment_type
+         * @x-autobe-specification Direct projection from
+         *   erp_hrm_time_employees.employment_type. Expected values follow the
+         *   organization's employment classification vocabulary.
      */
     employmentType: string;
 
     /**
      * Current employment status.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct projection from erp_hrm_time_employees.status. Represents the current active or deactivated employment state.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct projection from
+         *   erp_hrm_time_employees.status. Represents the current active or
+         *   deactivated employment state.
      */
     status: string;
 
     /**
      * Timestamp when the employee record was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct projection from erp_hrm_time_employees.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct projection from
+         *   erp_hrm_time_employees.created_at.
      */
     createdAt: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when the employee record was last updated.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct projection from erp_hrm_time_employees.updated_at.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct projection from
+         *   erp_hrm_time_employees.updated_at.
      */
     updatedAt: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when the employee record was soft deleted, or null if active.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct projection from erp_hrm_time_employees.deleted_at. Return null when the employee record is not soft deleted.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct projection from
+         *   erp_hrm_time_employees.deleted_at. Return null when the employee
+         *   record is not soft deleted.
      */
     deletedAt: (string & tags.Format<"date-time">) | null;
   };
@@ -288,8 +357,12 @@ export namespace IErpHrmTimeEmployeeDashboardSummary {
     /**
      * Department assigned to the employee, or null to clear the assignment.
      *
-     * @x-autobe-database-schema-property erp_hrm_time_department_id
-     * @x-autobe-specification Direct mapping to erp_hrm_time_employees.erp_hrm_time_department_id. Nullable to allow clearing the department assignment. The referenced department must belong to the current organization; validation is enforced by the service layer.
+         * @x-autobe-database-schema-property erp_hrm_time_department_id
+         * @x-autobe-specification Direct mapping to
+         *   erp_hrm_time_employees.erp_hrm_time_department_id. Nullable to
+         *   allow clearing the department assignment. The referenced department
+         *   must belong to the current organization; validation is enforced by
+         *   the service layer.
      */
     erp_hrm_time_department_id?:
       | (string & tags.Format<"uuid">)
@@ -299,32 +372,44 @@ export namespace IErpHrmTimeEmployeeDashboardSummary {
     /**
      * Optional job title or position name for the employee.
      *
-     * @x-autobe-database-schema-property position_title
-     * @x-autobe-specification Direct mapping to erp_hrm_time_employees.position_title. Nullable text field for the employee's display title or job position.
+         * @x-autobe-database-schema-property position_title
+         * @x-autobe-specification Direct mapping to
+         *   erp_hrm_time_employees.position_title. Nullable text field for the
+         *   employee's display title or job position.
      */
     position_title?: string | null | undefined;
 
     /**
      * Employment classification for the employee.
      *
-     * @x-autobe-database-schema-property employment_type
-     * @x-autobe-specification Direct mapping to erp_hrm_time_employees.employment_type. Must be one of the system's allowed employment types: full-time, part-time, contractor, or intern. Validation is enforced by the service layer.
+         * @x-autobe-database-schema-property employment_type
+         * @x-autobe-specification Direct mapping to
+         *   erp_hrm_time_employees.employment_type. Must be one of the system's
+         *   allowed employment types: full-time, part-time, contractor, or
+         *   intern. Validation is enforced by the service layer.
      */
     employment_type?: string | undefined;
 
     /**
      * Role assigned to the employee within the current organization.
      *
-     * @x-autobe-database-schema-property erp_hrm_time_role_id
-     * @x-autobe-specification Direct mapping to erp_hrm_time_employees.erp_hrm_time_role_id. The referenced role must exist in the current organization, and the employee must continue to have exactly one role after the update. Validation is enforced by the service layer.
+         * @x-autobe-database-schema-property erp_hrm_time_role_id
+         * @x-autobe-specification Direct mapping to
+         *   erp_hrm_time_employees.erp_hrm_time_role_id. The referenced role
+         *   must exist in the current organization, and the employee must
+         *   continue to have exactly one role after the update. Validation is
+         *   enforced by the service layer.
      */
     erp_hrm_time_role_id?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Current status of the employee record.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping to erp_hrm_time_employees.status. Represents the employee's current state in the organization (for example active or deactivated). Status transition rules are enforced by the service layer.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping to
+         *   erp_hrm_time_employees.status. Represents the employee's current
+         *   state in the organization (for example active or deactivated).
+         *   Status transition rules are enforced by the service layer.
      */
     status?: string | undefined;
   };

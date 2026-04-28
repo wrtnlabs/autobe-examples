@@ -22,8 +22,10 @@ export type IEcommerceOrderItemSnapshotVariant = {
    *
    * This UUID serves as the primary key for the variant snapshot table, uniquely identifying each captured variant state at purchase time.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_order_item_snapshot_variants.id. UUID primary key for the variant snapshot record.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_order_item_snapshot_variants.id. UUID primary key for the
+     *   variant snapshot record.
    */
   id: string & tags.Format<"uuid">;
 
@@ -32,8 +34,10 @@ export type IEcommerceOrderItemSnapshotVariant = {
    *
    * This field preserves the exact SKU identifier as it existed when the customer purchased the item, enabling accurate historical reference even if the product variant's SKU was later modified by the seller. The SKU code uniquely identifies the specific product configuration within the seller's inventory system.
    *
-   * @x-autobe-database-schema-property sku_code
-   * @x-autobe-specification Direct mapping from ecommerce_order_item_snapshot_variants.sku_code. String field storing the SKU identifier as it existed at purchase time.
+     * @x-autobe-database-schema-property sku_code
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_order_item_snapshot_variants.sku_code. String field storing
+     *   the SKU identifier as it existed at purchase time.
    */
   sku_code: string;
 
@@ -42,8 +46,11 @@ export type IEcommerceOrderItemSnapshotVariant = {
    *
    * This captures the exact price charged for this specific variant configuration, which may differ from the product's base price or current pricing. Essential for refund calculations, price dispute resolution, and accurate order history records. Stored as a double-precision decimal to maintain pricing accuracy.
    *
-   * @x-autobe-database-schema-property variant_price
-   * @x-autobe-specification Direct mapping from ecommerce_order_item_snapshot_variants.variant_price. Float/Double precision decimal storing the price charged for this specific variant configuration.
+     * @x-autobe-database-schema-property variant_price
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_order_item_snapshot_variants.variant_price. Float/Double
+     *   precision decimal storing the price charged for this specific variant
+     *   configuration.
    */
   variant_price: number;
 
@@ -58,7 +65,13 @@ export type IEcommerceOrderItemSnapshotVariant = {
    * - Size: "Large"
    * - Material: "Cotton"
    *
-   * @x-autobe-specification Composition relation - JOIN with ecommerce_order_item_snapshot_variant_options table on ecommerce_order_item_snapshot_variant_id column. Returns array of IEcommerceOrderItemSnapshotVariantOption objects containing normalized key-value pairs for variant options like color, size, material, etc. The child table stores the option data in a normalized structure with separate key and value fields.
+     * @x-autobe-specification Composition relation - JOIN with
+     *   ecommerce_order_item_snapshot_variant_options table on
+     *   ecommerce_order_item_snapshot_variant_id column. Returns array of
+     *   IEcommerceOrderItemSnapshotVariantOption objects containing normalized
+     *   key-value pairs for variant options like color, size, material, etc.
+     *   The child table stores the option data in a normalized structure with
+     *   separate key and value fields.
    */
   options: IEcommerceOrderItemSnapshotVariantOption[];
 
@@ -67,8 +80,11 @@ export type IEcommerceOrderItemSnapshotVariant = {
    *
    * This timestamp represents the exact moment the order was placed and the variant state was captured for audit purposes. It is synchronized with the parent order item snapshot creation time, ensuring consistency across the complete order item snapshot record. Stored in UTC timezone with millisecond precision.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_order_item_snapshot_variants.created_at. DateTime field with timestamptz format, synchronized with the parent order item snapshot creation time.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_order_item_snapshot_variants.created_at. DateTime field with
+     *   timestamptz format, synchronized with the parent order item snapshot
+     *   creation time.
    */
   created_at: string & tags.Format<"date-time">;
 };

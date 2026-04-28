@@ -8,112 +8,144 @@ export type ICommunityPlatformPostSnapshot = {
   /**
    * Unique identifier of this post snapshot record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Directly map community_platform_post_snapshots.id to DTO.id. UUID string representation.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Directly map community_platform_post_snapshots.id
+     *   to DTO.id. UUID string representation.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Identifier of the post this snapshot belongs to.
    *
-   * @x-autobe-database-schema-property post_id
-   * @x-autobe-specification Directly map community_platform_post_snapshots.post_id to DTO.postId. Used by operations to scope snapshot retrieval; stored for self-contained historical context.
+     * @x-autobe-database-schema-property post_id
+     * @x-autobe-specification Directly map
+     *   community_platform_post_snapshots.post_id to DTO.postId. Used by
+     *   operations to scope snapshot retrieval; stored for self-contained
+     *   historical context.
    */
   postId: string & tags.Format<"uuid">;
 
   /**
    * Identifier of the community where the post was hosted at snapshot creation time.
    *
-   * @x-autobe-database-schema-property community_id
-   * @x-autobe-specification Directly map community_platform_post_snapshots.community_id to DTO.communityId as a UUID string.
+     * @x-autobe-database-schema-property community_id
+     * @x-autobe-specification Directly map
+     *   community_platform_post_snapshots.community_id to DTO.communityId as a
+     *   UUID string.
    */
   communityId: string & tags.Format<"uuid">;
 
   /**
    * User identifier of the post author as captured in this snapshot.
    *
-   * @x-autobe-database-schema-property author_user_id
-   * @x-autobe-specification Directly map community_platform_post_snapshots.author_user_id to DTO.authorUserId as a UUID string.
+     * @x-autobe-database-schema-property author_user_id
+     * @x-autobe-specification Directly map
+     *   community_platform_post_snapshots.author_user_id to DTO.authorUserId as
+     *   a UUID string.
    */
   authorUserId: string & tags.Format<"uuid">;
 
   /**
    * Content type classification for the post snapshot (drives which content fields are meaningful, such as linkUrl for link posts).
    *
-   * @x-autobe-database-schema-property post_type
-   * @x-autobe-specification Directly map community_platform_post_snapshots.post_type to DTO.postType. This value indicates how clients interpret content fields for this snapshot (e.g., whether linkUrl is applicable).
+     * @x-autobe-database-schema-property post_type
+     * @x-autobe-specification Directly map
+     *   community_platform_post_snapshots.post_type to DTO.postType. This value
+     *   indicates how clients interpret content fields for this snapshot (e.g.,
+     *   whether linkUrl is applicable).
    */
   postType: string;
 
   /**
    * Post title as it existed when this snapshot was created.
    *
-   * @x-autobe-database-schema-property title
-   * @x-autobe-specification Directly map community_platform_post_snapshots.title to DTO.title as a string.
+     * @x-autobe-database-schema-property title
+     * @x-autobe-specification Directly map
+     *   community_platform_post_snapshots.title to DTO.title as a string.
    */
   title: string;
 
   /**
    * Post body/content as stored for this snapshot (snapshot-time representation).
    *
-   * @x-autobe-database-schema-property body
-   * @x-autobe-specification Directly map community_platform_post_snapshots.body to DTO.body as a string. For non-text posts, the stored body represents the snapshot-time representation/fallback used by the UI at that time.
+     * @x-autobe-database-schema-property body
+     * @x-autobe-specification Directly map
+     *   community_platform_post_snapshots.body to DTO.body as a string. For
+     *   non-text posts, the stored body represents the snapshot-time
+     *   representation/fallback used by the UI at that time.
    */
   body: string;
 
   /**
    * Canonical link URL for link-type posts as captured in this snapshot, or null when not applicable.
    *
-   * @x-autobe-database-schema-property link_url
-   * @x-autobe-specification Directly map community_platform_post_snapshots.link_url to DTO.linkUrl. Preserve null when the snapshot does not have a link URL (e.g., non-link post types).
+     * @x-autobe-database-schema-property link_url
+     * @x-autobe-specification Directly map
+     *   community_platform_post_snapshots.link_url to DTO.linkUrl. Preserve
+     *   null when the snapshot does not have a link URL (e.g., non-link post
+     *   types).
    */
   linkUrl: (string & tags.Format<"uri">) | null;
 
   /**
    * User identifier who performed the edit that produced this snapshot, or null if this snapshot was not produced by an edit.
    *
-   * @x-autobe-database-schema-property edited_by_user_id
-   * @x-autobe-specification Directly map community_platform_post_snapshots.edited_by_user_id to DTO.editedByUserId. Preserve null when no edit attribution applies.
+     * @x-autobe-database-schema-property edited_by_user_id
+     * @x-autobe-specification Directly map
+     *   community_platform_post_snapshots.edited_by_user_id to
+     *   DTO.editedByUserId. Preserve null when no edit attribution applies.
    */
   editedByUserId: (string & tags.Format<"uuid">) | null;
 
   /**
    * User identifier who performed the deletion that produced this snapshot, or null if this snapshot was not produced by a deletion.
    *
-   * @x-autobe-database-schema-property deleted_by_user_id
-   * @x-autobe-specification Directly map community_platform_post_snapshots.deleted_by_user_id to DTO.deletedByUserId. Preserve null when no deletion attribution applies.
+     * @x-autobe-database-schema-property deleted_by_user_id
+     * @x-autobe-specification Directly map
+     *   community_platform_post_snapshots.deleted_by_user_id to
+     *   DTO.deletedByUserId. Preserve null when no deletion attribution
+     *   applies.
    */
   deletedByUserId: (string & tags.Format<"uuid">) | null;
 
   /**
    * Timestamp indicating when the snapshot content is considered effective/published.
    *
-   * @x-autobe-database-schema-property published_at
-   * @x-autobe-specification Directly map community_platform_post_snapshots.published_at to DTO.publishedAt as an ISO-8601 date-time string.
+     * @x-autobe-database-schema-property published_at
+     * @x-autobe-specification Directly map
+     *   community_platform_post_snapshots.published_at to DTO.publishedAt as an
+     *   ISO-8601 date-time string.
    */
   publishedAt: string & tags.Format<"date-time">;
 
   /**
    * Snapshot record creation timestamp.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Directly map community_platform_post_snapshots.created_at to DTO.createdAt as an ISO-8601 date-time string.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Directly map
+     *   community_platform_post_snapshots.created_at to DTO.createdAt as an
+     *   ISO-8601 date-time string.
    */
   createdAt: string & tags.Format<"date-time">;
 
   /**
    * Snapshot record last update timestamp (typically unchanged for append-only snapshot records).
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Directly map community_platform_post_snapshots.updated_at to DTO.updatedAt as an ISO-8601 date-time string.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Directly map
+     *   community_platform_post_snapshots.updated_at to DTO.updatedAt as an
+     *   ISO-8601 date-time string.
    */
   updatedAt: string & tags.Format<"date-time">;
 
   /**
    * Soft-deletion timestamp for administrative retention/audit. Null when the snapshot record is not soft-deleted.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Directly map community_platform_post_snapshots.deleted_at to DTO.deletedAt as an ISO-8601 date-time string, preserving null when the snapshot record is not soft-deleted.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Directly map
+     *   community_platform_post_snapshots.deleted_at to DTO.deletedAt as an
+     *   ISO-8601 date-time string, preserving null when the snapshot record is
+     *   not soft-deleted.
    */
   deletedAt: (string & tags.Format<"date-time">) | null;
 };
@@ -125,32 +157,41 @@ export namespace ICommunityPlatformPostSnapshot {
     /**
      * When the snapshot content is considered effective/published.
      *
-     * @x-autobe-database-schema-property published_at
-     * @x-autobe-specification Map publishedAt (ISO 8601 date-time) to community_platform_post_snapshots.published_at (timestamptz). Validate at API boundary and store exactly as provided after parsing.
+         * @x-autobe-database-schema-property published_at
+         * @x-autobe-specification Map publishedAt (ISO 8601 date-time) to
+         *   community_platform_post_snapshots.published_at (timestamptz).
+         *   Validate at API boundary and store exactly as provided after
+         *   parsing.
      */
     publishedAt: string & tags.Format<"date-time">;
 
     /**
      * Snapshot title as it should be rendered for the effective publishedAt moment.
      *
-     * @x-autobe-database-schema-property title
-     * @x-autobe-specification Persist title verbatim to community_platform_post_snapshots.title for this snapshot record.
+         * @x-autobe-database-schema-property title
+         * @x-autobe-specification Persist title verbatim to
+         *   community_platform_post_snapshots.title for this snapshot record.
      */
     title: string;
 
     /**
      * Snapshot body text as it should be rendered for the effective publishedAt moment.
      *
-     * @x-autobe-database-schema-property body
-     * @x-autobe-specification Persist body verbatim to community_platform_post_snapshots.body for this snapshot record.
+         * @x-autobe-database-schema-property body
+         * @x-autobe-specification Persist body verbatim to
+         *   community_platform_post_snapshots.body for this snapshot record.
      */
     body: string;
 
     /**
      * Canonical link URL for link-type posts at the effective publishedAt moment; null for non-link posts.
      *
-     * @x-autobe-database-schema-property link_url
-     * @x-autobe-specification If the resolved post_type is 'link', persist linkUrl (string URI or null as DTO allows) to community_platform_post_snapshots.link_url. If the resolved post_type is not 'link', persist null regardless of the provided value (ignore/validate per DTO contract).
+         * @x-autobe-database-schema-property link_url
+         * @x-autobe-specification If the resolved post_type is 'link', persist
+         *   linkUrl (string URI or null as DTO allows) to
+         *   community_platform_post_snapshots.link_url. If the resolved
+         *   post_type is not 'link', persist null regardless of the provided
+         *   value (ignore/validate per DTO contract).
      */
     linkUrl: (string & tags.Format<"uri">) | null;
   };
@@ -162,14 +203,18 @@ export namespace ICommunityPlatformPostSnapshot {
     /**
      * Target snapshot effective timestamp. When set, the server selects snapshot(s) with published_at exactly equal to this value.
      *
-     * @x-autobe-specification If provided, filter snapshot rows where community_platform_post_snapshots.published_at equals the given value.
+         * @x-autobe-specification If provided, filter snapshot rows where
+         *   community_platform_post_snapshots.published_at equals the given
+         *   value.
      */
     publishedAt?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Inclusive published_at time window used to select snapshot(s). Selects all snapshots whose published_at falls between from and to (inclusive).
      *
-     * @x-autobe-specification If provided, filter snapshot rows where community_platform_post_snapshots.published_at is within the inclusive range from.from to to.to.
+         * @x-autobe-specification If provided, filter snapshot rows where
+         *   community_platform_post_snapshots.published_at is within the
+         *   inclusive range from.from to to.to.
      */
     publishedAtRange?:
       | {
@@ -181,28 +226,38 @@ export namespace ICommunityPlatformPostSnapshot {
     /**
      * Sort direction for returned snapshots based on published_at (with created_at as tie-breaker). Allowed values: 'asc' or 'desc'.
      *
-     * @x-autobe-specification Apply ordering to the selected snapshot set. For 'desc', sort by published_at desc then created_at desc (tie-breaker). For 'asc', sort by published_at asc then created_at asc (tie-breaker).
+         * @x-autobe-specification Apply ordering to the selected snapshot set.
+         *   For 'desc', sort by published_at desc then created_at desc
+         *   (tie-breaker). For 'asc', sort by published_at asc then created_at
+         *   asc (tie-breaker).
      */
     orderDirection?: "asc" | "desc" | undefined;
 
     /**
      * Whether to include snapshots that are soft-deleted at the snapshot level (community_platform_post_snapshots.deleted_at not null). If null or false, deleted snapshots are excluded.
      *
-     * @x-autobe-specification When includeDeleted is true, include snapshots whose community_platform_post_snapshots.deleted_at is not null. When includeDeleted is false or omitted, exclude those deleted snapshots. If includeDeleted is true, the server must still enforce the caller’s visibility boundary for the underlying post.
+         * @x-autobe-specification When includeDeleted is true, include
+         *   snapshots whose community_platform_post_snapshots.deleted_at is not
+         *   null. When includeDeleted is false or omitted, exclude those
+         *   deleted snapshots. If includeDeleted is true, the server must still
+         *   enforce the caller’s visibility boundary for the underlying post.
      */
     includeDeleted?: boolean | null | undefined;
 
     /**
      * 1-indexed page number of the ordered snapshot results to return. Defaults to 1 if not provided.
      *
-     * @x-autobe-specification Pagination page number (1-indexed) applied after filtering and ordering. If omitted/null, default to page 1.
+         * @x-autobe-specification Pagination page number (1-indexed) applied
+         *   after filtering and ordering. If omitted/null, default to page 1.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
 
     /**
      * Maximum number of snapshot records to return per page. Defaults to 100 if not provided.
      *
-     * @x-autobe-specification Maximum number of snapshot records to return per page. If omitted/null, default to 100. The server may enforce maximum bounds.
+         * @x-autobe-specification Maximum number of snapshot records to return
+         *   per page. If omitted/null, default to 100. The server may enforce
+         *   maximum bounds.
      */
     limit?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };

@@ -153,7 +153,9 @@ export namespace create {
  * @param props.body Search criteria including role filter, employee name search, pagination and sorting options
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query erp_hrm_project_members table filtered by erp_hrm_project_id matching the projectId path parameter and deleted_at IS NULL.
+ * @x-autobe-specification Query erp_hrm_project_members table filtered by
+ *   erp_hrm_project_id matching the projectId path parameter and deleted_at IS
+ *   NULL.
  *
  * Join with erp_hrm_employees to include employee details (name, position, employment_type).
  * Join with erp_hrm_members to get user profile information (display_name, avatar).
@@ -273,7 +275,8 @@ export namespace index {
  * @param props.projectMemberId Unique identifier of the project membership record to retrieve. Must reference a membership belonging to the specified project.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Retrieve a single project membership record from the erp_hrm_project_members table.
+ * @x-autobe-specification Retrieve a single project membership record from the
+ *   erp_hrm_project_members table.
  *
  * Implementation steps:
  * 1. Authenticate the user and resolve organization context from session
@@ -391,7 +394,8 @@ export namespace at {
  * @param props.body The updated project member role
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Update a project member record's role within the specified project.
+ * @x-autobe-specification Update a project member record's role within the
+ *   specified project.
  *
  * 1. Verify the authenticated user has 'project:manage' permission in the organization
  * 2. Validate projectId exists and belongs to the user's current organization context

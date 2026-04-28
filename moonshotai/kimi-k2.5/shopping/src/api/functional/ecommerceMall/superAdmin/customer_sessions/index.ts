@@ -22,7 +22,8 @@ import { IPageIEcommerceMallCustomerSession } from "../../../../structures/IPage
  * @param props.body Search criteria and pagination parameters for filtering customer sessions
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor superAdmin
- * @x-autobe-specification Query ecommerce_mall_customer_sessions table with pagination and filtering.
+ * @x-autobe-specification Query ecommerce_mall_customer_sessions table with
+ *   pagination and filtering.
  *
  * Authorization: Verify authenticated customer can only access sessions where ecommerce_mall_customer_id matches their own customer ID. Administrators may bypass this restriction based on role.
  *
@@ -129,7 +130,8 @@ export namespace index {
  * @param props.sessionId Unique identifier of the customer session to retrieve (UUID format)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor superAdmin
- * @x-autobe-specification Query the ecommerce_mall_customer_sessions table by primary key id matching the provided sessionId path parameter.
+ * @x-autobe-specification Query the ecommerce_mall_customer_sessions table by
+ *   primary key id matching the provided sessionId path parameter.
  *
  * Validate that the session's ecommerce_mall_customer_id matches the authenticated customer's ID. If ownership verification fails, return 404 Not Found (do not reveal the session belongs to another user).
  *

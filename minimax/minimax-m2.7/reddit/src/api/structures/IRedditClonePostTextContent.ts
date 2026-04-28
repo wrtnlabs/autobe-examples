@@ -10,24 +10,29 @@ export type IRedditClonePostTextContent = {
   /**
    * Unique identifier for the text content entity.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from reddit_clone_post_text_contents.id. UUID primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_post_text_contents.id. UUID primary key.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * The full textual body content of the text post.
    *
-   * @x-autobe-database-schema-property body
-   * @x-autobe-specification Direct mapping from reddit_clone_post_text_contents.body. Contains the full textual content of the text post.
+     * @x-autobe-database-schema-property body
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_post_text_contents.body. Contains the full textual content
+     *   of the text post.
    */
   body: string;
 
   /**
    * Reference to the parent post this text content belongs to.
    *
-   * @x-autobe-database-schema-property post
-   * @x-autobe-specification Join via reddit_clone_post_id FK to reddit_clone_posts.id. Returns IRedditClonePost.ISummary for parent post context.
+     * @x-autobe-database-schema-property post
+     * @x-autobe-specification Join via reddit_clone_post_id FK to
+     *   reddit_clone_posts.id. Returns IRedditClonePost.ISummary for parent
+     *   post context.
    */
   post: IRedditClonePost.ISummary;
 };
@@ -39,8 +44,11 @@ export namespace IRedditClonePostTextContent {
     /**
      * The new text content for the post body.
      *
-     * @x-autobe-database-schema-property body
-     * @x-autobe-specification Direct mapping to reddit_clone_post_text_contents.body column. The body field contains the full textual content of a text post. Must be validated for empty string and maximum length (e.g., 100,000 characters).
+         * @x-autobe-database-schema-property body
+         * @x-autobe-specification Direct mapping to
+         *   reddit_clone_post_text_contents.body column. The body field
+         *   contains the full textual content of a text post. Must be validated
+         *   for empty string and maximum length (e.g., 100,000 characters).
      */
     body?: string | undefined;
   };

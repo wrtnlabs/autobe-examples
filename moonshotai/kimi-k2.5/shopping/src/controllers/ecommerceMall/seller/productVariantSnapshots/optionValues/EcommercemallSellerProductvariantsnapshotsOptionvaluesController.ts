@@ -25,9 +25,10 @@ export class EcommercemallSellerProductvariantsnapshotsOptionvaluesController {
    * @param connection
    * @param snapshotId The UUID of the product variant snapshot containing the option values
    * @param body Search criteria and pagination parameters for filtering option values within the snapshot
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Validate the snapshotId path parameter exists and corresponds to a valid product variant snapshot in the database.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Validate the snapshotId path parameter exists and
+     *   corresponds to a valid product variant snapshot in the database.
    *
    * Query the ecommerce_mall_product_variant_snapshot_option_values table filtering by the variant_snapshot_id matching the provided snapshotId.
    *
@@ -75,9 +76,10 @@ export class EcommercemallSellerProductvariantsnapshotsOptionvaluesController {
    * @param connection
    * @param snapshotId The unique identifier of the product variant snapshot (UUID format). The snapshot represents a point-in-time capture of a variant's state including its option values.
    * @param optionValueId The unique identifier of the specific option value record within the snapshot (UUID format). This identifies a single option key-value pair.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Retrieve a single option value record from ecommerce_mall_product_variant_snapshot_option_values table.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Retrieve a single option value record from
+     *   ecommerce_mall_product_variant_snapshot_option_values table.
    *
    * Query Conditions:
    * - Verify the option value exists with the given optionValueId

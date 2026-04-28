@@ -17,8 +17,9 @@ export type IMallPlatformWishlistItem = {
    *
    * This value identifies one saved product entry and is used to reference or retrieve the record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from mall_platform_wishlist_items.id.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_wishlist_items.id.
    */
   id: string & tags.Format<"uuid">;
 
@@ -27,8 +28,11 @@ export type IMallPlatformWishlistItem = {
    *
    * This relation identifies the customer-owned wishlist container that contains the item and is returned as a summary object rather than a raw foreign key.
    *
-   * @x-autobe-database-schema-property wishlist
-   * @x-autobe-specification Join mall_platform_wishlist_items.mall_platform_wishlist_id to mall_platform_wishlists.id and serialize the related wishlist as IMallPlatformWishlist.ISummary.
+     * @x-autobe-database-schema-property wishlist
+     * @x-autobe-specification Join
+     *   mall_platform_wishlist_items.mall_platform_wishlist_id to
+     *   mall_platform_wishlists.id and serialize the related wishlist as
+     *   IMallPlatformWishlist.ISummary.
    */
   wishlist: IMallPlatformWishlist.ISummary;
 
@@ -37,8 +41,11 @@ export type IMallPlatformWishlistItem = {
    *
    * This relation identifies the catalog product the customer saved and is returned as a summary object rather than a raw foreign key.
    *
-   * @x-autobe-database-schema-property product
-   * @x-autobe-specification Join mall_platform_wishlist_items.mall_platform_product_id to mall_platform_products.id and serialize the related product as IMallPlatformProduct.ISummary.
+     * @x-autobe-database-schema-property product
+     * @x-autobe-specification Join
+     *   mall_platform_wishlist_items.mall_platform_product_id to
+     *   mall_platform_products.id and serialize the related product as
+     *   IMallPlatformProduct.ISummary.
    */
   product: IMallPlatformProduct.ISummary;
 
@@ -47,8 +54,9 @@ export type IMallPlatformWishlistItem = {
    *
    * This timestamp records when the saved product entry was added to the customer's wishlist.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from mall_platform_wishlist_items.created_at.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_wishlist_items.created_at.
    */
   createdAt: string & tags.Format<"date-time">;
 
@@ -57,8 +65,9 @@ export type IMallPlatformWishlistItem = {
    *
    * This timestamp reflects the most recent change to the saved product entry.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from mall_platform_wishlist_items.updated_at.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_wishlist_items.updated_at.
    */
   updatedAt: string & tags.Format<"date-time">;
 
@@ -67,8 +76,11 @@ export type IMallPlatformWishlistItem = {
    *
    * A null value means the record is still active. When present, the timestamp indicates when the item was marked as deleted.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from mall_platform_wishlist_items.deleted_at. Keep null while the row is active and populate the timestamp only when the row has been soft deleted.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_wishlist_items.deleted_at. Keep null while the row is
+     *   active and populate the timestamp only when the row has been soft
+     *   deleted.
    */
   deletedAt: (string & tags.Format<"date-time">) | null;
 };
@@ -84,8 +96,12 @@ export namespace IMallPlatformWishlistItem {
      *
      * Provide the UUID of an existing product. The server attaches it to the customer's resolved wishlist and prevents saving the same product twice.
      *
-     * @x-autobe-database-schema-property mall_platform_product_id
-     * @x-autobe-specification Direct mapping from request product_id to mall_platform_wishlist_items.mall_platform_product_id. The server resolves the customer's wishlist, validates the product exists, and inserts the row while enforcing uniqueness per wishlist-product pair.
+         * @x-autobe-database-schema-property mall_platform_product_id
+         * @x-autobe-specification Direct mapping from request product_id to
+         *   mall_platform_wishlist_items.mall_platform_product_id. The server
+         *   resolves the customer's wishlist, validates the product exists, and
+         *   inserts the row while enforcing uniqueness per wishlist-product
+         *   pair.
      */
     product_id: string & tags.Format<"uuid">;
   };
@@ -101,7 +117,11 @@ export namespace IMallPlatformWishlistItem {
      *
      * The server applies this value at query time against product-level fields for the authenticated customer's wishlist items. If omitted, the full saved-product list is returned subject to the other filters and pagination controls.
      *
-     * @x-autobe-specification Use the search term to filter the authenticated customer's wishlist items through joined mall_platform_products fields. This value is applied only at query time and is not stored in the database. If omitted, do not restrict results by keyword.
+         * @x-autobe-specification Use the search term to filter the
+         *   authenticated customer's wishlist items through joined
+         *   mall_platform_products fields. This value is applied only at query
+         *   time and is not stored in the database. If omitted, do not restrict
+         *   results by keyword.
      */
     search?: string | undefined;
 
@@ -110,7 +130,10 @@ export namespace IMallPlatformWishlistItem {
      *
      * This value is 1-indexed and is used only for API pagination. If omitted, the first page is returned by default.
      *
-     * @x-autobe-specification Use this 1-indexed page number to select which slice of the customer's wishlist results is returned. This is a request-time pagination control only and is not persisted in the database. If omitted, default to page 1.
+         * @x-autobe-specification Use this 1-indexed page number to select
+         *   which slice of the customer's wishlist results is returned. This is
+         *   a request-time pagination control only and is not persisted in the
+         *   database. If omitted, default to page 1.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -119,7 +142,11 @@ export namespace IMallPlatformWishlistItem {
      *
      * This value controls the page size for the authenticated customer's wishlist browse response. If omitted, the server applies its default page size.
      *
-     * @x-autobe-specification Use this value as the maximum number of wishlist items returned per page for the authenticated customer's browse result. This is a request-time control only and is not stored in the database. If omitted, use the server default page size.
+         * @x-autobe-specification Use this value as the maximum number of
+         *   wishlist items returned per page for the authenticated customer's
+         *   browse result. This is a request-time control only and is not
+         *   stored in the database. If omitted, use the server default page
+         *   size.
      */
     limit?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -128,7 +155,12 @@ export namespace IMallPlatformWishlistItem {
      *
      * This request-only value controls how the authenticated customer's saved products are ordered before pagination is applied. If omitted, the server uses its default wishlist sorting.
      *
-     * @x-autobe-specification Use this value to determine the ordering of the authenticated customer's wishlist browse results. Apply it against joined product and wishlist-item fields as supported by the endpoint implementation. This is a request-only control and is not stored in the database. If omitted, use the server default sorting for wishlist browsing.
+         * @x-autobe-specification Use this value to determine the ordering of
+         *   the authenticated customer's wishlist browse results. Apply it
+         *   against joined product and wishlist-item fields as supported by the
+         *   endpoint implementation. This is a request-only control and is not
+         *   stored in the database. If omitted, use the server default sorting
+         *   for wishlist browsing.
      */
     sort?: string | undefined;
   };
@@ -146,8 +178,9 @@ export namespace IMallPlatformWishlistItem {
      *
      * This value identifies a single saved product entry inside the customer's wishlist and is used for item-level retrieval and lifecycle tracking.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from mall_platform_wishlist_items.id.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_wishlist_items.id.
      */
     id: string & tags.Format<"uuid">;
 
@@ -156,8 +189,11 @@ export namespace IMallPlatformWishlistItem {
      *
      * This is returned as a summary reference so clients can navigate from the item back to its container without exposing scalar foreign key fields.
      *
-     * @x-autobe-database-schema-property wishlist
-     * @x-autobe-specification Join mall_platform_wishlist_items.mall_platform_wishlist_id to mall_platform_wishlists.id and expose the parent wishlist as IMallPlatformWishlist.ISummary.
+         * @x-autobe-database-schema-property wishlist
+         * @x-autobe-specification Join
+         *   mall_platform_wishlist_items.mall_platform_wishlist_id to
+         *   mall_platform_wishlists.id and expose the parent wishlist as
+         *   IMallPlatformWishlist.ISummary.
      */
     wishlist: IMallPlatformWishlist.ISummary;
 
@@ -166,8 +202,11 @@ export namespace IMallPlatformWishlistItem {
      *
      * This is returned as a summary reference so clients can display the saved product without exposing the underlying foreign key column.
      *
-     * @x-autobe-database-schema-property product
-     * @x-autobe-specification Join mall_platform_wishlist_items.mall_platform_product_id to mall_platform_products.id and expose the saved product as IMallPlatformProduct.ISummary.
+         * @x-autobe-database-schema-property product
+         * @x-autobe-specification Join
+         *   mall_platform_wishlist_items.mall_platform_product_id to
+         *   mall_platform_products.id and expose the saved product as
+         *   IMallPlatformProduct.ISummary.
      */
     product: IMallPlatformProduct.ISummary;
 
@@ -176,8 +215,9 @@ export namespace IMallPlatformWishlistItem {
      *
      * This timestamp shows when the product was added to the wishlist and supports chronological browsing.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from mall_platform_wishlist_items.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_wishlist_items.created_at.
      */
     createdAt: string & tags.Format<"date-time">;
 
@@ -186,8 +226,9 @@ export namespace IMallPlatformWishlistItem {
      *
      * This timestamp reflects the most recent modification to the saved item record, including lifecycle or relationship updates.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from mall_platform_wishlist_items.updated_at.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_wishlist_items.updated_at.
      */
     updatedAt: string & tags.Format<"date-time">;
 
@@ -196,8 +237,10 @@ export namespace IMallPlatformWishlistItem {
      *
      * A null value means the saved item is active. When present, the timestamp indicates the entry was removed while historical record data was retained.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from mall_platform_wishlist_items.deleted_at. Return null when the entry is active and a date-time when it has been soft-deleted.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_wishlist_items.deleted_at. Return null when the entry
+         *   is active and a date-time when it has been soft-deleted.
      */
     deletedAt: (string & tags.Format<"date-time">) | null;
   };

@@ -11,48 +11,48 @@ import { ICommunityPlatformPost } from "./ICommunityPlatformPost";
  */
 export type ICommunityPlatformReport = {
   /**
-   * @x-autobe-database-schema-property id
+     * @x-autobe-database-schema-property id
    */
   id: string & tags.Format<"uuid">;
   /**
-   * @x-autobe-database-schema-property target_type
+     * @x-autobe-database-schema-property target_type
    */
   targetType: string;
   /**
-   * @x-autobe-database-schema-property reason
+     * @x-autobe-database-schema-property reason
    */
   reason: string;
   /**
-   * @x-autobe-database-schema-property status
+     * @x-autobe-database-schema-property status
    */
   status: string;
   /**
-   * @x-autobe-database-schema-property member
+     * @x-autobe-database-schema-property member
    */
   member: ICommunityPlatformMember.ISummary;
   /**
-   * @x-autobe-database-schema-property community
+     * @x-autobe-database-schema-property community
    */
   community: ICommunityPlatformCommunity.ISummary;
   target: ICommunityPlatformPost | ICommunityPlatformComment;
   /**
-   * @x-autobe-database-schema-property resolvedBy
+     * @x-autobe-database-schema-property resolvedBy
    */
   resolvedBy: ICommunityPlatformMember.ISummary | null;
   /**
-   * @x-autobe-database-schema-property resolved_at
+     * @x-autobe-database-schema-property resolved_at
    */
   resolvedAt: (string & tags.Format<"date-time">) | null;
   /**
-   * @x-autobe-database-schema-property created_at
+     * @x-autobe-database-schema-property created_at
    */
   createdAt: string & tags.Format<"date-time">;
   /**
-   * @x-autobe-database-schema-property updated_at
+     * @x-autobe-database-schema-property updated_at
    */
   updatedAt: string & tags.Format<"date-time">;
   /**
-   * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-database-schema-property deleted_at
    */
   deletedAt: (string & tags.Format<"date-time">) | null;
 };
@@ -64,14 +64,14 @@ export namespace ICommunityPlatformReport {
     /**
      * The community where the reported content was posted.
      *
-     * @x-autobe-database-schema-property community_id
+         * @x-autobe-database-schema-property community_id
      */
     community_id: string & tags.Format<"uuid">;
 
     /**
      * Discriminator indicating whether the target is a post ('post') or a comment ('comment').
      *
-     * @x-autobe-database-schema-property target_type
+         * @x-autobe-database-schema-property target_type
      */
     target_type: "post" | "comment";
 
@@ -83,7 +83,7 @@ export namespace ICommunityPlatformReport {
     /**
      * Required explanation describing why the content violates community rules or platform policies.
      *
-     * @x-autobe-database-schema-property reason
+         * @x-autobe-database-schema-property reason
      */
     reason: string & tags.MinLength<1>;
   };
@@ -95,7 +95,7 @@ export namespace ICommunityPlatformReport {
     /**
      * Resolution action for the report. 'approve' soft-deletes the reported content, 'dismiss' keeps the content visible.
      *
-     * @x-autobe-database-schema-property status
+         * @x-autobe-database-schema-property status
      */
     action: "approve" | "dismiss";
   };
@@ -105,37 +105,37 @@ export namespace ICommunityPlatformReport {
    */
   export type ISummary = {
     /**
-     * @x-autobe-database-schema-property id
+         * @x-autobe-database-schema-property id
      */
     id: string & tags.Format<"uuid">;
     /**
-     * @x-autobe-database-schema-property target_type
+         * @x-autobe-database-schema-property target_type
      */
     target_type: string;
     /**
-     * @x-autobe-database-schema-property reason
+         * @x-autobe-database-schema-property reason
      */
     reason: string;
     /**
-     * @x-autobe-database-schema-property status
+         * @x-autobe-database-schema-property status
      */
     status: string;
     /**
-     * @x-autobe-database-schema-property member
+         * @x-autobe-database-schema-property member
      */
     member: ICommunityPlatformMember.ISummary;
     /**
-     * @x-autobe-database-schema-property community
+         * @x-autobe-database-schema-property community
      */
     community: ICommunityPlatformCommunity.ISummary;
     post: ICommunityPlatformPost.ISummary | null;
     comment: ICommunityPlatformComment.ISummary | null;
     /**
-     * @x-autobe-database-schema-property resolved_at
+         * @x-autobe-database-schema-property resolved_at
      */
     resolved_at: (string & tags.Format<"date-time">) | null;
     /**
-     * @x-autobe-database-schema-property created_at
+         * @x-autobe-database-schema-property created_at
      */
     created_at: string & tags.Format<"date-time">;
   };
@@ -145,15 +145,15 @@ export namespace ICommunityPlatformReport {
    */
   export type IRequest = {
     /**
-     * @x-autobe-database-schema-property community_id
+         * @x-autobe-database-schema-property community_id
      */
     community_id?: (string & tags.Format<"uuid">) | undefined;
     /**
-     * @x-autobe-database-schema-property status
+         * @x-autobe-database-schema-property status
      */
     status?: "pending" | "approved" | "dismissed" | null | undefined;
     /**
-     * @x-autobe-database-schema-property target_type
+         * @x-autobe-database-schema-property target_type
      */
     target_type?: "post" | "comment" | null | undefined;
     search?: string | null | undefined;

@@ -11,64 +11,73 @@ export type IErpHrmRole = {
   /**
    * Unique role identifier within the organization.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from erp_hrm_roles.id. Primary key UUID auto-generated on creation.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from erp_hrm_roles.id. Primary key
+     *   UUID auto-generated on creation.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * The organization this role belongs to.
    *
-   * @x-autobe-database-schema-property organization
-   * @x-autobe-specification Join via erp_hrm_roles.organization_id to erp_hrm_organizations. Returns IErpHrmOrganization.ISummary summary object.
+     * @x-autobe-database-schema-property organization
+     * @x-autobe-specification Join via erp_hrm_roles.organization_id to
+     *   erp_hrm_organizations. Returns IErpHrmOrganization.ISummary summary
+     *   object.
    */
   organization: IErpHrmOrganization.ISummary;
 
   /**
    * Display name of the role (e.g., 'Admin', 'Manager', 'Employee').
    *
-   * @x-autobe-database-schema-property name
-   * @x-autobe-specification Direct mapping from erp_hrm_roles.name. Required unique name per organization.
+     * @x-autobe-database-schema-property name
+     * @x-autobe-specification Direct mapping from erp_hrm_roles.name. Required
+     *   unique name per organization.
    */
   name: string;
 
   /**
    * Optional detailed description of the role's purpose and responsibilities.
    *
-   * @x-autobe-database-schema-property description
-   * @x-autobe-specification Direct mapping from erp_hrm_roles.description. Nullable text field.
+     * @x-autobe-database-schema-property description
+     * @x-autobe-specification Direct mapping from erp_hrm_roles.description.
+     *   Nullable text field.
    */
   description: string | null;
 
   /**
    * Indicates if this is a system-built-in role that cannot be deleted.
    *
-   * @x-autobe-database-schema-property is_builtin
-   * @x-autobe-specification Direct mapping from erp_hrm_roles.is_builtin. System-protected roles cannot be deleted.
+     * @x-autobe-database-schema-property is_builtin
+     * @x-autobe-specification Direct mapping from erp_hrm_roles.is_builtin.
+     *   System-protected roles cannot be deleted.
    */
   isBuiltin: boolean;
 
   /**
    * Timestamp when the role was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from erp_hrm_roles.created_at. Auto-set on creation.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from erp_hrm_roles.created_at.
+     *   Auto-set on creation.
    */
   createdAt: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the role was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from erp_hrm_roles.updated_at. Auto-updated on modification.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from erp_hrm_roles.updated_at.
+     *   Auto-updated on modification.
    */
   updatedAt: string & tags.Format<"date-time">;
 
   /**
    * Soft-deletion timestamp. Null if the role is active, otherwise indicates when it was deleted.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from erp_hrm_roles.deleted_at. Null if active, set to timestamp when soft-deleted.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from erp_hrm_roles.deleted_at.
+     *   Null if active, set to timestamp when soft-deleted.
    */
   deletedAt: (string & tags.Format<"date-time">) | null;
 };
@@ -80,49 +89,76 @@ export namespace IErpHrmRole {
     /**
      * Filter by role name (partial match, case-insensitive). Null to include all roles.
      *
-     * @x-autobe-specification Filter by role name using case-insensitive partial match (ILIKE) against erp_hrm_roles.name column. When provided, the query appends 'AND name ILIKE %value%' condition. Null means no name filter applied - matches all roles.
+         * @x-autobe-specification Filter by role name using case-insensitive
+         *   partial match (ILIKE) against erp_hrm_roles.name column. When
+         *   provided, the query appends 'AND name ILIKE %value%' condition.
+         *   Null means no name filter applied - matches all roles.
      */
     name: string | null;
 
     /**
      * Filter by built-in role status. True for system roles, false for custom roles, null for all.
      *
-     * @x-autobe-specification Filter by built-in role status against erp_hrm_roles.is_builtin column. When true, returns only system roles (Owner, Manager, Employee). When false, returns only custom user-defined roles. When null, no filter applied - returns both built-in and custom roles.
+         * @x-autobe-specification Filter by built-in role status against
+         *   erp_hrm_roles.is_builtin column. When true, returns only system
+         *   roles (Owner, Manager, Employee). When false, returns only custom
+         *   user-defined roles. When null, no filter applied - returns both
+         *   built-in and custom roles.
      */
     is_builtin: boolean | null;
 
     /**
      * Start of creation date range filter. Roles created at or after this timestamp.
      *
-     * @x-autobe-specification Filter start boundary for role creation date range against erp_hrm_roles.created_at column. When provided with created_at_to, generates 'AND created_at >= created_at_from' clause. Must be ISO 8601 date-time format. Null means no lower bound.
+         * @x-autobe-specification Filter start boundary for role creation date
+         *   range against erp_hrm_roles.created_at column. When provided with
+         *   created_at_to, generates 'AND created_at >= created_at_from'
+         *   clause. Must be ISO 8601 date-time format. Null means no lower
+         *   bound.
      */
     created_at_from: (string & tags.Format<"date-time">) | null;
 
     /**
      * End of creation date range filter. Roles created at or before this timestamp.
      *
-     * @x-autobe-specification Filter end boundary for role creation date range against erp_hrm_roles.created_at column. When provided with created_at_from, generates 'AND created_at <= created_at_to' clause. Must be ISO 8601 date-time format. Null means no upper bound.
+         * @x-autobe-specification Filter end boundary for role creation date
+         *   range against erp_hrm_roles.created_at column. When provided with
+         *   created_at_from, generates 'AND created_at <= created_at_to'
+         *   clause. Must be ISO 8601 date-time format. Null means no upper
+         *   bound.
      */
     created_at_to: (string & tags.Format<"date-time">) | null;
 
     /**
      * Sort order specification (e.g., 'created_at:desc', 'name:asc'). Null for default sorting.
      *
-     * @x-autobe-specification Specify result ordering as 'field:direction' string (e.g., 'created_at:desc', 'name:asc'). Supported fields map to erp_hrm_roles columns: name, is_builtin, created_at, updated_at. Default direction is asc if not specified. Parsed by backend to generate ORDER BY clause. Null uses default sort (created_at:desc).
+         * @x-autobe-specification Specify result ordering as 'field:direction'
+         *   string (e.g., 'created_at:desc', 'name:asc'). Supported fields map
+         *   to erp_hrm_roles columns: name, is_builtin, created_at, updated_at.
+         *   Default direction is asc if not specified. Parsed by backend to
+         *   generate ORDER BY clause. Null uses default sort (created_at:desc).
      */
     sort: string | null;
 
     /**
      * Page number for pagination (1-indexed). Null defaults to first page.
      *
-     * @x-autobe-specification Page number for cursor-based pagination (1-indexed). Used with limit to calculate SQL OFFSET = (page - 1) * limit for querying erp_hrm_roles table. Minimum value is 1. If null, defaults to 1 (first page). Higher values retrieve subsequent result pages.
+         * @x-autobe-specification Page number for cursor-based pagination
+         *   (1-indexed). Used with limit to calculate SQL OFFSET = (page - 1) *
+         *   limit for querying erp_hrm_roles table. Minimum value is 1. If
+         *   null, defaults to 1 (first page). Higher values retrieve subsequent
+         *   result pages.
      */
     page: (number & tags.Type<"int32"> & tags.Minimum<1>) | null;
 
     /**
      * Maximum records per page (1-100). Null uses default page size.
      *
-     * @x-autobe-specification Maximum number of records to return per page. Used with page for SQL LIMIT clause when querying erp_hrm_roles table. Range 1-100. If null, uses default page size (typically 20). Higher values allow more records per request but increase response size.
+         * @x-autobe-specification Maximum number of records to return per page.
+         *   Used with page for SQL LIMIT clause when querying erp_hrm_roles
+         *   table. Range 1-100. If null, uses default page size (typically 20).
+         *   Higher values allow more records per request but increase response
+         *   size.
      */
     limit:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -136,23 +172,30 @@ export namespace IErpHrmRole {
     /**
      * Role display name. Must be unique within the organization.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping to erp_hrm_roles.name column. If provided, validate uniqueness within organization (case-insensitive).
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping to erp_hrm_roles.name column.
+         *   If provided, validate uniqueness within organization
+         *   (case-insensitive).
      */
     name?: (string & tags.MinLength<1> & tags.MaxLength<100>) | undefined;
 
     /**
      * Optional description of the role's purpose and responsibilities.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping to erp_hrm_roles.description column. Nullable in database.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping to erp_hrm_roles.description
+         *   column. Nullable in database.
      */
     description?: (string & tags.MaxLength<2000>) | null | undefined;
 
     /**
      * Array of permission identifiers to assign to this role. When provided, replaces all existing permissions.
      *
-     * @x-autobe-specification Computed field managing erp_hrm_role_permissions table. When provided, triggers DELETE of existing permission records for this role followed by INSERT of new permission records. Cannot be modified for built-in roles (is_builtin=true).
+         * @x-autobe-specification Computed field managing
+         *   erp_hrm_role_permissions table. When provided, triggers DELETE of
+         *   existing permission records for this role followed by INSERT of new
+         *   permission records. Cannot be modified for built-in roles
+         *   (is_builtin=true).
      */
     permissions?: string[] | undefined;
   };
@@ -164,23 +207,30 @@ export namespace IErpHrmRole {
     /**
      * Role name (e.g., 'Senior Developer', 'Project Lead', 'HR Manager'). Must be unique within the organization.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from erp_hrm_roles.name. Required non-empty string. Must be unique within the organization.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from erp_hrm_roles.name.
+         *   Required non-empty string. Must be unique within the organization.
      */
     name: string & tags.MinLength<1>;
 
     /**
      * Optional description of the role's purpose, responsibilities, and scope within the organization.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from erp_hrm_roles.description. Nullable string. Optional field in Create DTO since DB column is nullable.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_roles.description. Nullable string. Optional field in
+         *   Create DTO since DB column is nullable.
      */
     description?: string | null | undefined;
 
     /**
      * Array of permission assignments defining what functional capabilities members assigned this role will have (e.g., organization.manage, employee.view, project.manage).
      *
-     * @x-autobe-specification Business logic property. Each item in the permissions array creates a record in erp_hrm_role_permissions table with role_id referencing the newly created role. This is a cross-table association operation handled during role creation transaction.
+         * @x-autobe-specification Business logic property. Each item in the
+         *   permissions array creates a record in erp_hrm_role_permissions
+         *   table with role_id referencing the newly created role. This is a
+         *   cross-table association operation handled during role creation
+         *   transaction.
      */
     permissions: IErpHrmRolePermission.ICreate[];
   };
@@ -192,55 +242,64 @@ export namespace IErpHrmRole {
     /**
      * Unique identifier of the role.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from erp_hrm_roles.id. Primary key UUID.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from erp_hrm_roles.id. Primary
+         *   key UUID.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Name of the role (e.g., Owner, Manager, Employee, or custom role name).
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from erp_hrm_roles.name. Role name within the organization.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from erp_hrm_roles.name. Role
+         *   name within the organization.
      */
     name: string;
 
     /**
      * Optional description of the role's purpose and responsibilities.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from erp_hrm_roles.description. Nullable in database.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_roles.description. Nullable in database.
      */
     description: string | null;
 
     /**
      * Whether this is a system-defined built-in role (true) or a custom user-defined role (false).
      *
-     * @x-autobe-database-schema-property is_builtin
-     * @x-autobe-specification Direct mapping from erp_hrm_roles.is_builtin. System-defined built-in roles (Owner, Manager, Employee) are true; custom user-defined roles are false.
+         * @x-autobe-database-schema-property is_builtin
+         * @x-autobe-specification Direct mapping from erp_hrm_roles.is_builtin.
+         *   System-defined built-in roles (Owner, Manager, Employee) are true;
+         *   custom user-defined roles are false.
      */
     is_builtin: boolean;
 
     /**
      * Number of permissions assigned to this role, computed from the role_permissions association.
      *
-     * @x-autobe-specification Computed via LEFT JOIN with erp_hrm_role_permissions table and COUNT aggregation grouped by role_id. Returns the number of permissions assigned to this role.
+         * @x-autobe-specification Computed via LEFT JOIN with
+         *   erp_hrm_role_permissions table and COUNT aggregation grouped by
+         *   role_id. Returns the number of permissions assigned to this role.
      */
     permissions_count: number & tags.Type<"int32">;
 
     /**
      * Timestamp when the role was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from erp_hrm_roles.created_at. UTC timestamp when role was created.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from erp_hrm_roles.created_at.
+         *   UTC timestamp when role was created.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when the role was last updated.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from erp_hrm_roles.updated_at. UTC timestamp when role was last modified.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from erp_hrm_roles.updated_at.
+         *   UTC timestamp when role was last modified.
      */
     updated_at: string & tags.Format<"date-time">;
   };

@@ -10,64 +10,74 @@ export type IErpHrmMemberSession = {
   /**
    * Unique identifier for the session.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from erp_hrm_member_sessions.id. UUID primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from erp_hrm_member_sessions.id.
+     *   UUID primary key.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Client IP address from the login request.
    *
-   * @x-autobe-database-schema-property ip
-   * @x-autobe-specification Direct mapping from erp_hrm_member_sessions.ip. Client IP address captured at login.
+     * @x-autobe-database-schema-property ip
+     * @x-autobe-specification Direct mapping from erp_hrm_member_sessions.ip.
+     *   Client IP address captured at login.
    */
   ip: string;
 
   /**
    * Request URL when the session was created.
    *
-   * @x-autobe-database-schema-property href
-   * @x-autobe-specification Direct mapping from erp_hrm_member_sessions.href. Request URL when session was created.
+     * @x-autobe-database-schema-property href
+     * @x-autobe-specification Direct mapping from erp_hrm_member_sessions.href.
+     *   Request URL when session was created.
    */
   href: string;
 
   /**
    * HTTP referrer header from the login request.
    *
-   * @x-autobe-database-schema-property referrer
-   * @x-autobe-specification Direct mapping from erp_hrm_member_sessions.referrer. HTTP referrer header.
+     * @x-autobe-database-schema-property referrer
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_member_sessions.referrer. HTTP referrer header.
    */
   referrer: string;
 
   /**
    * Expiration timestamp of the JWT access token.
    *
-   * @x-autobe-database-schema-property token_expired_at
-   * @x-autobe-specification Direct mapping from erp_hrm_member_sessions.token_expired_at. Timestamp when JWT access token expires.
+     * @x-autobe-database-schema-property token_expired_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_member_sessions.token_expired_at. Timestamp when JWT access
+     *   token expires.
    */
   tokenExpiredAt: string & tags.Format<"date-time">;
 
   /**
    * Session creation timestamp.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from erp_hrm_member_sessions.created_at. Server-managed timestamp.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_member_sessions.created_at. Server-managed timestamp.
    */
   createdAt: string & tags.Format<"date-time">;
 
   /**
    * Session expiration timestamp.
    *
-   * @x-autobe-database-schema-property expired_at
-   * @x-autobe-specification Direct mapping from erp_hrm_member_sessions.expired_at. Session expiration timestamp.
+     * @x-autobe-database-schema-property expired_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_member_sessions.expired_at. Session expiration timestamp.
    */
   expiredAt: string & tags.Format<"date-time">;
 
   /**
    * The member account associated with this session.
    *
-   * @x-autobe-database-schema-property member
-   * @x-autobe-specification Join from erp_hrm_member_sessions.erp_hrm_member_id to erp_hrm_members.id. Returns IErpHrmMember.ISummary embedded object.
+     * @x-autobe-database-schema-property member
+     * @x-autobe-specification Join from
+     *   erp_hrm_member_sessions.erp_hrm_member_id to erp_hrm_members.id.
+     *   Returns IErpHrmMember.ISummary embedded object.
    */
   member: IErpHrmMember.ISummary;
 };

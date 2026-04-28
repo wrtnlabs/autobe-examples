@@ -22,8 +22,9 @@ export namespace IRedditLikeGuestSession {
      *
      * This is the primary key that uniquely identifies each session in the system. Generated as a UUID when the session is created.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from reddit_like_guest_sessions.id. UUID primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_guest_sessions.id. UUID primary key.
      */
     id: string & tags.Format<"uuid">;
 
@@ -32,8 +33,10 @@ export namespace IRedditLikeGuestSession {
      *
      * This is a belongs-to relation that links the session to its parent guest account. Each session belongs to exactly one guest, while a guest may have multiple sessions over time.
      *
-     * @x-autobe-database-schema-property redditLikeGuest
-     * @x-autobe-specification JOIN from reddit_like_guest_sessions.reddit_like_guest_id to reddit_like_guests.id. Returns IRedditLikeGuest.ISummary.
+         * @x-autobe-database-schema-property redditLikeGuest
+         * @x-autobe-specification JOIN from
+         *   reddit_like_guest_sessions.reddit_like_guest_id to
+         *   reddit_like_guests.id. Returns IRedditLikeGuest.ISummary.
      */
     reddit_like_guest: IRedditLikeGuest.ISummary;
 
@@ -42,8 +45,9 @@ export namespace IRedditLikeGuestSession {
      *
      * Used for security monitoring and session validation. This field stores the IPv4 address of the client device that initiated the session, enabling detection of suspicious login activity from unusual locations.
      *
-     * @x-autobe-database-schema-property ip
-     * @x-autobe-specification Direct mapping from reddit_like_guest_sessions.ip. IPv4 address string.
+         * @x-autobe-database-schema-property ip
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_guest_sessions.ip. IPv4 address string.
      */
     ip: string;
 
@@ -52,8 +56,9 @@ export namespace IRedditLikeGuestSession {
      *
      * Tracks the landing page for analytics purposes. This field is optional and may be null if the page URL was not captured during session creation.
      *
-     * @x-autobe-database-schema-property href
-     * @x-autobe-specification Direct mapping from reddit_like_guest_sessions.href. Nullable URI string.
+         * @x-autobe-database-schema-property href
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_guest_sessions.href. Nullable URI string.
      */
     href?: (string & tags.Format<"uri">) | null | undefined;
 
@@ -62,8 +67,9 @@ export namespace IRedditLikeGuestSession {
      *
      * Captures the source page that led to session creation. This field is optional and may be null if the referrer information was not available or captured during session creation.
      *
-     * @x-autobe-database-schema-property referrer
-     * @x-autobe-specification Direct mapping from reddit_like_guest_sessions.referrer. Nullable URI string.
+         * @x-autobe-database-schema-property referrer
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_guest_sessions.referrer. Nullable URI string.
      */
     referrer?: (string & tags.Format<"uri">) | null | undefined;
 
@@ -72,8 +78,9 @@ export namespace IRedditLikeGuestSession {
      *
      * Records when the session was initially established. This timestamp uses UTC timezone and is used for sorting sessions by recency and auditing session lifecycle.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from reddit_like_guest_sessions.created_at. Timestamp with timezone.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_guest_sessions.created_at. Timestamp with timezone.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -82,8 +89,9 @@ export namespace IRedditLikeGuestSession {
      *
      * Updated on session activity or refresh. This timestamp tracks the most recent modification to the session record and is used for session activity monitoring.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from reddit_like_guest_sessions.updated_at. Timestamp with timezone.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_guest_sessions.updated_at. Timestamp with timezone.
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -92,8 +100,9 @@ export namespace IRedditLikeGuestSession {
      *
      * Sessions are automatically invalidated after this time for security. This field defines when the session should expire and be considered invalid for authentication purposes.
      *
-     * @x-autobe-database-schema-property expired_at
-     * @x-autobe-specification Direct mapping from reddit_like_guest_sessions.expired_at. Timestamp with timezone.
+         * @x-autobe-database-schema-property expired_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_guest_sessions.expired_at. Timestamp with timezone.
      */
     expired_at: string & tags.Format<"date-time">;
   };
@@ -129,7 +138,9 @@ export namespace IRedditLikeGuestSession {
      *
      * IPv4 or IPv6 address string (e.g., "192.168.1.1" or "2001:0db8::1").
      *
-     * @x-autobe-specification Maps to reddit_like_guest_sessions.ip column. Used for exact match filtering by client IP address in WHERE clause.
+         * @x-autobe-specification Maps to reddit_like_guest_sessions.ip column.
+         *   Used for exact match filtering by client IP address in WHERE
+         *   clause.
      */
     ip?: string | undefined;
 
@@ -146,7 +157,9 @@ export namespace IRedditLikeGuestSession {
      *
      * Combine with `created_at_to` to query sessions created within a specific date range. If only `created_at_from` is provided, returns all sessions created after that time.
      *
-     * @x-autobe-specification Maps to reddit_like_guest_sessions.created_at column. Lower bound for creation timestamp range filtering (>= comparison).
+         * @x-autobe-specification Maps to reddit_like_guest_sessions.created_at
+         *   column. Lower bound for creation timestamp range filtering (>=
+         *   comparison).
      */
     created_at_from?: (string & tags.Format<"date-time">) | undefined;
 
@@ -163,7 +176,9 @@ export namespace IRedditLikeGuestSession {
      *
      * Combine with `created_at_from` to query sessions created within a specific date range. If only `created_at_to` is provided, returns all sessions created before that time.
      *
-     * @x-autobe-specification Maps to reddit_like_guest_sessions.created_at column. Upper bound for creation timestamp range filtering (<= comparison).
+         * @x-autobe-specification Maps to reddit_like_guest_sessions.created_at
+         *   column. Upper bound for creation timestamp range filtering (<=
+         *   comparison).
      */
     created_at_to?: (string & tags.Format<"date-time">) | undefined;
 
@@ -180,7 +195,9 @@ export namespace IRedditLikeGuestSession {
      *
      * Combine with `expired_at_to` to query sessions expiring within a specific date range. Helpful for identifying sessions that need renewal soon.
      *
-     * @x-autobe-specification Maps to reddit_like_guest_sessions.expired_at column. Lower bound for expiration timestamp range filtering (>= comparison).
+         * @x-autobe-specification Maps to reddit_like_guest_sessions.expired_at
+         *   column. Lower bound for expiration timestamp range filtering (>=
+         *   comparison).
      */
     expired_at_from?: (string & tags.Format<"date-time">) | undefined;
 
@@ -197,7 +214,9 @@ export namespace IRedditLikeGuestSession {
      *
      * Combine with `expired_at_from` to query sessions expiring within a specific date range. Can be used to find sessions requiring immediate attention.
      *
-     * @x-autobe-specification Maps to reddit_like_guest_sessions.expired_at column. Upper bound for expiration timestamp range filtering (<= comparison).
+         * @x-autobe-specification Maps to reddit_like_guest_sessions.expired_at
+         *   column. Upper bound for expiration timestamp range filtering (<=
+         *   comparison).
      */
     expired_at_to?: (string & tags.Format<"date-time">) | undefined;
 
@@ -215,7 +234,10 @@ export namespace IRedditLikeGuestSession {
      *
      * Combine with `limit` to control result set size. For example, page=2 with limit=10 returns items 11-20. Increment page value to navigate through subsequent pages of results.
      *
-     * @x-autobe-specification Computed pagination parameter. 1-indexed page number for result set navigation. Defaults to 1 when not provided. Used with 'limit' to calculate OFFSET for database queries: OFFSET = (page - 1) * limit.
+         * @x-autobe-specification Computed pagination parameter. 1-indexed page
+         *   number for result set navigation. Defaults to 1 when not provided.
+         *   Used with 'limit' to calculate OFFSET for database queries: OFFSET
+         *   = (page - 1) * limit.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -234,7 +256,10 @@ export namespace IRedditLikeGuestSession {
      *
      * Higher limits reduce the number of API calls needed but increase response size. Use the maximum acceptable value for your use case. The system enforces a maximum of 100 records per page.
      *
-     * @x-autobe-specification Computed pagination parameter. Maximum number of records per page. Clamped to range 1-100. Used with 'page' to calculate OFFSET for database queries: LIMIT = limit, OFFSET = (page - 1) * limit.
+         * @x-autobe-specification Computed pagination parameter. Maximum number
+         *   of records per page. Clamped to range 1-100. Used with 'page' to
+         *   calculate OFFSET for database queries: LIMIT = limit, OFFSET =
+         *   (page - 1) * limit.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -256,7 +281,10 @@ export namespace IRedditLikeGuestSession {
      *
      * Combine with `order` to control sort direction. Common pattern: sort by `created_at` descending to show most recent sessions first, which is the typical user expectation for activity logs.
      *
-     * @x-autobe-specification Computed sorting parameter. Column name to sort results by. Valid values: 'created_at', 'updated_at', 'expired_at', 'ip'. Defaults to 'created_at' when not provided. Maps directly to ORDER BY clause.
+         * @x-autobe-specification Computed sorting parameter. Column name to
+         *   sort results by. Valid values: 'created_at', 'updated_at',
+         *   'expired_at', 'ip'. Defaults to 'created_at' when not provided.
+         *   Maps directly to ORDER BY clause.
      */
     sort?: string | undefined;
 
@@ -274,7 +302,9 @@ export namespace IRedditLikeGuestSession {
      *
      * For session lists, `created_at` with `desc` order shows the most recent sessions first, which is the typical user expectation. Use `asc` order when you need chronological ordering from oldest to newest.
      *
-     * @x-autobe-specification Computed sorting parameter. Sort direction: 'asc' for ascending, 'desc' for descending. Defaults to 'desc' when not provided. Maps directly to ORDER BY direction.
+         * @x-autobe-specification Computed sorting parameter. Sort direction:
+         *   'asc' for ascending, 'desc' for descending. Defaults to 'desc' when
+         *   not provided. Maps directly to ORDER BY direction.
      */
     order?: "asc" | "desc" | undefined;
   };

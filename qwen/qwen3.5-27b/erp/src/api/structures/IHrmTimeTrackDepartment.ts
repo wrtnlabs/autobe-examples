@@ -16,8 +16,10 @@ export type IHrmTimeTrackDepartment = {
    *
    * This UUID serves as the primary key for the department and is used to reference the department in other entities such as employee assignments. The identifier is generated automatically when the department is created and remains immutable throughout the department's lifecycle.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from hrm_time_track_departments.id. Primary key UUID generated on department creation. Immutable after creation.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_departments.id. Primary key UUID generated on department
+     *   creation. Immutable after creation.
    */
   id: string & tags.Format<"uuid">;
 
@@ -26,8 +28,11 @@ export type IHrmTimeTrackDepartment = {
    *
    * Department names must be unique within the same organization to avoid confusion. This field is used in user interfaces for department selection, employee assignments, and organizational reporting. The name is the primary identifier visible to users when browsing or selecting departments.
    *
-   * @x-autobe-database-schema-property name
-   * @x-autobe-specification Direct mapping from hrm_time_track_departments.name. Required field. Must be unique within the same organization. Validated for uniqueness before insert/update operations.
+     * @x-autobe-database-schema-property name
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_departments.name. Required field. Must be unique within
+     *   the same organization. Validated for uniqueness before insert/update
+     *   operations.
    */
   name: string;
 
@@ -36,8 +41,11 @@ export type IHrmTimeTrackDepartment = {
    *
    * This field provides additional context about the department for organizational documentation and user understanding. It can be null or empty if no description is provided. The description is displayed in department details views and organizational charts.
    *
-   * @x-autobe-database-schema-property description
-   * @x-autobe-specification Direct mapping from hrm_time_track_departments.description. Optional nullable field. Can be empty string or null. No length constraints beyond database VARCHAR limit.
+     * @x-autobe-database-schema-property description
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_departments.description. Optional nullable field. Can be
+     *   empty string or null. No length constraints beyond database VARCHAR
+     *   limit.
    */
   description: string | null;
 
@@ -46,8 +54,12 @@ export type IHrmTimeTrackDepartment = {
    *
    * Every department belongs to exactly one organization, which establishes the organizational boundary and data isolation scope. This reference allows users to identify which organization the department belongs to, especially important when users have access to multiple organizations.
    *
-   * @x-autobe-database-schema-property organization
-   * @x-autobe-specification Relation mapping from hrm_time_track_departments.organization via JOIN on hrm_time_track_organization_id to hrm_time_track_organizations.id. Returns IHrmTimeTrackOrganization.ISummary. Always present - departments cannot exist without an organization.
+     * @x-autobe-database-schema-property organization
+     * @x-autobe-specification Relation mapping from
+     *   hrm_time_track_departments.organization via JOIN on
+     *   hrm_time_track_organization_id to hrm_time_track_organizations.id.
+     *   Returns IHrmTimeTrackOrganization.ISummary. Always present -
+     *   departments cannot exist without an organization.
    */
   organization: IHrmTimeTrackOrganization.ISummary;
 
@@ -56,8 +68,12 @@ export type IHrmTimeTrackDepartment = {
    *
    * Departments can be organized in a multi-level hierarchy where each department may have a parent department. Top-level departments have no parent (null value), while child departments reference their parent for organizational tree navigation. This enables organizational charts and department hierarchy displays in user interfaces.
    *
-   * @x-autobe-database-schema-property parentDepartment
-   * @x-autobe-specification Self-referencing relation from hrm_time_track_departments.parentDepartment via JOIN on parent_department_id to hrm_time_track_departments.id. Returns IHrmTimeTrackDepartment.ISummary or null. Null indicates a top-level department with no parent.
+     * @x-autobe-database-schema-property parentDepartment
+     * @x-autobe-specification Self-referencing relation from
+     *   hrm_time_track_departments.parentDepartment via JOIN on
+     *   parent_department_id to hrm_time_track_departments.id. Returns
+     *   IHrmTimeTrackDepartment.ISummary or null. Null indicates a top-level
+     *   department with no parent.
    */
   parentDepartment: IHrmTimeTrackDepartment.ISummary | null;
 
@@ -66,8 +82,11 @@ export type IHrmTimeTrackDepartment = {
    *
    * This immutable timestamp records when the department was first created in the system. It is automatically set by the server during department creation and cannot be modified. The timestamp is stored in UTC and displayed according to the user's timezone settings.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from hrm_time_track_departments.created_at. DateTime with timezone. Set automatically on department creation. Immutable after creation. Server generates timestamp in UTC.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_departments.created_at. DateTime with timezone. Set
+     *   automatically on department creation. Immutable after creation. Server
+     *   generates timestamp in UTC.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -76,8 +95,11 @@ export type IHrmTimeTrackDepartment = {
    *
    * This timestamp is automatically updated by the server whenever any department attribute is changed (name, description, or parent department). It helps track when the department information was last modified and supports audit and change tracking requirements.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from hrm_time_track_departments.updated_at. DateTime with timezone. Updated automatically on every department modification. Server generates timestamp in UTC. Reflects last change to any department field.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_departments.updated_at. DateTime with timezone. Updated
+     *   automatically on every department modification. Server generates
+     *   timestamp in UTC. Reflects last change to any department field.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -86,8 +108,12 @@ export type IHrmTimeTrackDepartment = {
    *
    * When a department is deleted, it is soft deleted by setting this timestamp rather than permanently removing the record. This preserves historical data and allows for potential restoration. Active departments have a null value. Soft-deleted departments are excluded from most list and detail operations.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from hrm_time_track_departments.deleted_at. Nullable DateTime with timezone. Null indicates active department. Non-null value indicates soft-deleted department with deletion timestamp. Soft-deleted departments are excluded from most queries.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_departments.deleted_at. Nullable DateTime with timezone.
+     *   Null indicates active department. Non-null value indicates soft-deleted
+     *   department with deletion timestamp. Soft-deleted departments are
+     *   excluded from most queries.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -99,11 +125,11 @@ export namespace IHrmTimeTrackDepartment {
    */
   export type IUpdate = {
     /**
-     * @x-autobe-database-schema-property name
+         * @x-autobe-database-schema-property name
      */
     name?: string | undefined;
     /**
-     * @x-autobe-database-schema-property description
+         * @x-autobe-database-schema-property description
      */
     description?: string | null | undefined;
   };
@@ -117,15 +143,15 @@ export namespace IHrmTimeTrackDepartment {
    */
   export type ICreate = {
     /**
-     * @x-autobe-database-schema-property name
+         * @x-autobe-database-schema-property name
      */
     name: string;
     /**
-     * @x-autobe-database-schema-property description
+         * @x-autobe-database-schema-property description
      */
     description?: string | null | undefined;
     /**
-     * @x-autobe-database-schema-property parent_department_id
+         * @x-autobe-database-schema-property parent_department_id
      */
     parent_department_id?: (string & tags.Format<"uuid">) | null | undefined;
   };
@@ -141,7 +167,10 @@ export namespace IHrmTimeTrackDepartment {
      *
      * Performs a case-insensitive partial match on department names. Enter any portion of a department name to find matching results. Leave empty to retrieve all departments without name filtering.
      *
-     * @x-autobe-specification Computed search parameter that performs case-insensitive partial match on department name field. Implementation: LIKE '%{search}%' on name column. Empty or null value means no search filter applied.
+         * @x-autobe-specification Computed search parameter that performs
+         *   case-insensitive partial match on department name field.
+         *   Implementation: LIKE '%{search}%' on name column. Empty or null
+         *   value means no search filter applied.
      */
     search?: string | undefined;
 
@@ -150,8 +179,11 @@ export namespace IHrmTimeTrackDepartment {
      *
      * Set to null to retrieve only top-level departments with no parent. Provide a department UUID to retrieve only child departments of that parent. This enables hierarchical browsing of the department structure.
      *
-     * @x-autobe-database-schema-property parent_department_id
-     * @x-autobe-specification Direct mapping to parent_department_id column for filtering departments by hierarchy level. Null value returns only top-level departments (those with no parent). UUID value returns only child departments of the specified parent.
+         * @x-autobe-database-schema-property parent_department_id
+         * @x-autobe-specification Direct mapping to parent_department_id column
+         *   for filtering departments by hierarchy level. Null value returns
+         *   only top-level departments (those with no parent). UUID value
+         *   returns only child departments of the specified parent.
      */
     parent_department_id?: (string & tags.Format<"uuid">) | null | undefined;
 
@@ -160,7 +192,9 @@ export namespace IHrmTimeTrackDepartment {
      *
      * Specifies which page of results to retrieve when using page/limit pagination. Page numbering starts at 1. Use with the 'limit' parameter to control results per page. Default is page 1.
      *
-     * @x-autobe-specification Offset-based pagination: current page number (1-indexed). Used with 'limit' to calculate offset: (page - 1) * limit. Default value is 1. Must be >= 1.
+         * @x-autobe-specification Offset-based pagination: current page number
+         *   (1-indexed). Used with 'limit' to calculate offset: (page - 1) *
+         *   limit. Default value is 1. Must be >= 1.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -169,7 +203,9 @@ export namespace IHrmTimeTrackDepartment {
      *
      * Controls how many results are included in each page when using offset-based pagination. Accepts values from 1 to 100. Default is 20 departments per page.
      *
-     * @x-autobe-specification Offset-based pagination: maximum number of records per page. Range: 1-100. Default is 20. Used with 'page' to calculate total offset. Controls result set size for each request.
+         * @x-autobe-specification Offset-based pagination: maximum number of
+         *   records per page. Range: 1-100. Default is 20. Used with 'page' to
+         *   calculate total offset. Controls result set size for each request.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -180,7 +216,10 @@ export namespace IHrmTimeTrackDepartment {
      *
      * Use the cursor value from the previous page's response to retrieve the next set of results. This provides efficient pagination for large datasets. Do not combine cursor-based pagination with page/limit parameters.
      *
-     * @x-autobe-specification Cursor-based pagination: opaque cursor string from previous page response. Use 'cursor' from pagination metadata in response to retrieve the next page. Mutually exclusive with page/limit pagination. Do not use cursor and page/limit together.
+         * @x-autobe-specification Cursor-based pagination: opaque cursor string
+         *   from previous page response. Use 'cursor' from pagination metadata
+         *   in response to retrieve the next page. Mutually exclusive with
+         *   page/limit pagination. Do not use cursor and page/limit together.
      */
     cursor?: string | undefined;
 
@@ -189,7 +228,10 @@ export namespace IHrmTimeTrackDepartment {
      *
      * Specifies how to sort the department list results. Format is 'field:direction' where field can be 'name' or 'created_at', and direction is 'asc' for ascending or 'desc' for descending. Default sorting is by created_at in descending order (newest first).
      *
-     * @x-autobe-specification Sort field specification for result ordering. Format: 'field:direction' where direction is 'asc' or 'desc'. Supported fields: name, created_at. Default sort: created_at desc. Example: 'name:asc' or 'created_at:desc'.
+         * @x-autobe-specification Sort field specification for result ordering.
+         *   Format: 'field:direction' where direction is 'asc' or 'desc'.
+         *   Supported fields: name, created_at. Default sort: created_at desc.
+         *   Example: 'name:asc' or 'created_at:desc'.
      */
     sort?: string | undefined;
   };
@@ -207,8 +249,10 @@ export namespace IHrmTimeTrackDepartment {
      *
      * This UUID serves as the primary key for department records and is used to reference the department in API operations, employee assignments, and hierarchical relationships.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from hrm_time_track_departments.id. Primary key UUID identifying the department uniquely within the organization.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_departments.id. Primary key UUID identifying the
+         *   department uniquely within the organization.
      */
     id: string & tags.Format<"uuid">;
 
@@ -217,8 +261,10 @@ export namespace IHrmTimeTrackDepartment {
      *
      * Department names must be unique within an organization to avoid confusion. This field is used for department selection in employee assignments, organizational reporting, and navigation.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from hrm_time_track_departments.name. Department display name that must be unique within the organization.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_departments.name. Department display name that must
+         *   be unique within the organization.
      */
     name: string;
 
@@ -227,8 +273,11 @@ export namespace IHrmTimeTrackDepartment {
      *
      * This field helps clarify the department's role within the organization and can include information about team structure, key functions, or reporting relationships. Null when no description is provided.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from hrm_time_track_departments.description. Optional text field providing additional context about the department's purpose and responsibilities. Nullable in database, exposed as nullable in DTO.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_departments.description. Optional text field
+         *   providing additional context about the department's purpose and
+         *   responsibilities. Nullable in database, exposed as nullable in DTO.
      */
     description: string | null;
 
@@ -237,8 +286,12 @@ export namespace IHrmTimeTrackDepartment {
      *
      * Departments can be organized in a multi-level hierarchy. This field references the immediate parent department, enabling organizational charts and tree navigation. Top-level departments (with no parent) have this field set to null.
      *
-     * @x-autobe-database-schema-property parentDepartment
-     * @x-autobe-specification Relation mapping from hrm_time_track_departments.parentDepartment via self-join on parent_department_id FK. Returns ISummary of parent department for hierarchical display. Nullable - top-level departments have no parent.
+         * @x-autobe-database-schema-property parentDepartment
+         * @x-autobe-specification Relation mapping from
+         *   hrm_time_track_departments.parentDepartment via self-join on
+         *   parent_department_id FK. Returns ISummary of parent department for
+         *   hierarchical display. Nullable - top-level departments have no
+         *   parent.
      */
     parent: IHrmTimeTrackDepartment.ISummary | null;
 
@@ -247,8 +300,11 @@ export namespace IHrmTimeTrackDepartment {
      *
      * This immutable timestamp records when the department was first established and is used for sorting, filtering, and audit purposes. Format follows ISO 8601 date-time standard.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from hrm_time_track_departments.created_at. Timestamp when the department was created, immutable after creation. Format: ISO 8601 date-time.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_departments.created_at. Timestamp when the
+         *   department was created, immutable after creation. Format: ISO 8601
+         *   date-time.
      */
     created_at: string & tags.Format<"date-time">;
   };

@@ -8,32 +8,38 @@ export type IEcommerceMallCustomerPasswordReset = {
   /**
    * Unique identifier of the password reset record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_customer_password_resets.id (UUID primary key).
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_customer_password_resets.id (UUID primary key).
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Password reset token string used to verify the password recovery request.
    *
-   * @x-autobe-database-schema-property token
-   * @x-autobe-specification Direct mapping from ecommerce_mall_customer_password_resets.token. Unique token string sent to customer email for verification.
+     * @x-autobe-database-schema-property token
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_customer_password_resets.token. Unique token string sent
+     *   to customer email for verification.
    */
   token: string;
 
   /**
    * Token expiration timestamp. Tokens are invalid after this time and cannot be used for password reset.
    *
-   * @x-autobe-database-schema-property expires_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_customer_password_resets.expires_at (timestamptz). Tokens become invalid after this time.
+     * @x-autobe-database-schema-property expires_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_customer_password_resets.expires_at (timestamptz).
+     *   Tokens become invalid after this time.
    */
   expiresAt: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the password reset token was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_customer_password_resets.created_at (timestamptz).
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_customer_password_resets.created_at (timestamptz).
    */
   createdAt: string & tags.Format<"date-time">;
 };
@@ -45,14 +51,24 @@ export namespace IEcommerceMallCustomerPasswordReset {
     /**
      * The unique password reset token received via email for verifying the password reset request.
      *
-     * @x-autobe-specification The unique password reset token sent to the user's email. Searched across ecommerce_mall_customer_password_resets, ecommerce_mall_seller_password_resets, and ecommerce_mall_admin_password_resets tables. Must match an existing non-expired token. Upon successful password reset, the token record is permanently deleted to prevent replay attacks.
+         * @x-autobe-specification The unique password reset token sent to the
+         *   user's email. Searched across
+         *   ecommerce_mall_customer_password_resets,
+         *   ecommerce_mall_seller_password_resets, and
+         *   ecommerce_mall_admin_password_resets tables. Must match an existing
+         *   non-expired token. Upon successful password reset, the token record
+         *   is permanently deleted to prevent replay attacks.
      */
     token: string;
 
     /**
      * The new password to set for the account. Must meet platform security requirements.
      *
-     * @x-autobe-specification The new plain-text password provided by the user. Validated against platform security requirements (minimum length, complexity rules). Hashed using the platform's password hashing algorithm before being stored in the respective actor table's password_hash column.
+         * @x-autobe-specification The new plain-text password provided by the
+         *   user. Validated against platform security requirements (minimum
+         *   length, complexity rules). Hashed using the platform's password
+         *   hashing algorithm before being stored in the respective actor
+         *   table's password_hash column.
      */
     password: string & tags.Format<"password">;
   };

@@ -20,9 +20,10 @@ export class MultiusertodoMemberTodosBulk_toggle_completionController {
    *
    * @param connection
    * @param body Bulk toggle request specifying which todo ids the authenticated member wants to toggle between complete and incomplete.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement a single atomic transaction that toggles completion status for all provided todo ids.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implement a single atomic transaction that
+     *   toggles completion status for all provided todo ids.
    *
    * 1) Authentication/ownership scope
    * - Require an authenticated member.

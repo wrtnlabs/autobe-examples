@@ -19,7 +19,9 @@ import { IEcommerceMallProductImage } from "../../../../structures/IEcommerceMal
  * @param props.productId The unique identifier of the product to retrieve images for.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query ecommerce_mall_product_images table where product_id matches the path parameter and deleted_at IS NULL (active images only).
+ * @x-autobe-specification Query ecommerce_mall_product_images table where
+ *   product_id matches the path parameter and deleted_at IS NULL (active images
+ *   only).
  *
  * Sort results by display_order ascending, then by id ascending for consistent ordering.
  *

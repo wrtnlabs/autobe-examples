@@ -38,8 +38,9 @@ export type IEcommerceReview = {
    *
    * Auto-generated UUID assigned when the review is first created. Serves as the primary key for the review entity.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_reviews.id. Auto-generated UUID upon review creation.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from ecommerce_reviews.id.
+     *   Auto-generated UUID upon review creation.
    */
   id: string & tags.Format<"uuid">;
 
@@ -52,8 +53,9 @@ export type IEcommerceReview = {
    *
    * Customer identity is verified through JWT session authentication. The customer_id foreign key establishes ownership and enables permission checks for update and delete operations.
    *
-   * @x-autobe-database-schema-property customer
-   * @x-autobe-specification JOIN from ecommerce_reviews.customer_id to ecommerce_customers.id. Returns IEcommerceCustomer.ISummary.
+     * @x-autobe-database-schema-property customer
+     * @x-autobe-specification JOIN from ecommerce_reviews.customer_id to
+     *   ecommerce_customers.id. Returns IEcommerceCustomer.ISummary.
    */
   customer: IEcommerceCustomer.ISummary;
 
@@ -70,8 +72,10 @@ export type IEcommerceReview = {
    *
    * The system validates that the order item status equals "delivered" before allowing review creation. This prevents customers from reviewing products they have not yet received.
    *
-   * @x-autobe-database-schema-property orderItem
-   * @x-autobe-specification JOIN from ecommerce_reviews.order_item_id to ecommerce_order_items.id. Returns IEcommerceOrderItem.ISummary. Unique constraint enforces one review per order item.
+     * @x-autobe-database-schema-property orderItem
+     * @x-autobe-specification JOIN from ecommerce_reviews.order_item_id to
+     *   ecommerce_order_items.id. Returns IEcommerceOrderItem.ISummary. Unique
+     *   constraint enforces one review per order item.
    */
   orderItem: IEcommerceOrderItem.ISummary;
 
@@ -84,8 +88,10 @@ export type IEcommerceReview = {
    *
    * Storing product_id directly in the reviews table optimizes queries for product detail pages that display review lists. Even if the product is later deleted, the review preserves the product_id for historical accuracy.
    *
-   * @x-autobe-database-schema-property product
-   * @x-autobe-specification JOIN from ecommerce_reviews.product_id to ecommerce_products.id. Returns IEcommerceProduct.ISummary. Product ID is denormalized from order item for query efficiency.
+     * @x-autobe-database-schema-property product
+     * @x-autobe-specification JOIN from ecommerce_reviews.product_id to
+     *   ecommerce_products.id. Returns IEcommerceProduct.ISummary. Product ID
+     *   is denormalized from order item for query efficiency.
    */
   product: IEcommerceProduct.ISummary;
 
@@ -104,8 +110,9 @@ export type IEcommerceReview = {
    *
    * This rating contributes to the product's average rating calculation. Soft-deleted reviews (where deleted_at is not null) are excluded from the average.
    *
-   * @x-autobe-database-schema-property rating
-   * @x-autobe-specification Direct mapping from ecommerce_reviews.rating. Integer value validated between 1 and 5 inclusive.
+     * @x-autobe-database-schema-property rating
+     * @x-autobe-specification Direct mapping from ecommerce_reviews.rating.
+     *   Integer value validated between 1 and 5 inclusive.
    */
   rating: number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<5>;
 
@@ -120,8 +127,9 @@ export type IEcommerceReview = {
    * - Included in review snapshots when edited
    * - Not required for review submission
    *
-   * @x-autobe-database-schema-property content
-   * @x-autobe-specification Direct mapping from ecommerce_reviews.content. Nullable text field for optional review feedback.
+     * @x-autobe-database-schema-property content
+     * @x-autobe-specification Direct mapping from ecommerce_reviews.content.
+     *   Nullable text field for optional review feedback.
    */
   content: string | null;
 
@@ -130,8 +138,9 @@ export type IEcommerceReview = {
    *
    * This field records the exact date and time when the customer first submitted the review. It is used for sorting reviews (newest first) and for audit purposes.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_reviews.created_at. Auto-set to current timestamp on review creation.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from ecommerce_reviews.created_at.
+     *   Auto-set to current timestamp on review creation.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -140,8 +149,9 @@ export type IEcommerceReview = {
    *
    * This field is updated whenever the customer edits their review content or rating. It tracks the most recent modification time for the review record.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from ecommerce_reviews.updated_at. Auto-updated to current timestamp on review modification.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from ecommerce_reviews.updated_at.
+     *   Auto-updated to current timestamp on review modification.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -156,8 +166,10 @@ export type IEcommerceReview = {
    * - Not null: Review is deleted and hidden from display
    * - Average rating calculations exclude reviews where deleted_at is not null
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from ecommerce_reviews.deleted_at. Nullable timestamp set when review is soft-deleted. Null indicates active review.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from ecommerce_reviews.deleted_at.
+     *   Nullable timestamp set when review is soft-deleted. Null indicates
+     *   active review.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -198,8 +210,12 @@ export namespace IEcommerceReview {
      * - No existing review can exist for this order item (enforced by unique constraint)
      * - Order item must belong to the authenticated customer
      *
-     * @x-autobe-database-schema-property order_item_id
-     * @x-autobe-specification Direct mapping from ecommerce_reviews.order_item_id column. References the specific order item being reviewed. Server validates: order item exists, status equals "delivered", no existing review for this order_item_id (unique constraint).
+         * @x-autobe-database-schema-property order_item_id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_reviews.order_item_id column. References the specific
+         *   order item being reviewed. Server validates: order item exists,
+         *   status equals "delivered", no existing review for this
+         *   order_item_id (unique constraint).
      */
     orderItemId: string & tags.Format<"uuid">;
 
@@ -219,8 +235,10 @@ export namespace IEcommerceReview {
      *
      * The rating contributes to the product's average rating calculation and is displayed on the product detail page alongside other customer reviews.
      *
-     * @x-autobe-database-schema-property rating
-     * @x-autobe-specification Direct mapping from ecommerce_reviews.rating column. Integer value representing star rating. Server validates: value must be between 1 and 5 inclusive.
+         * @x-autobe-database-schema-property rating
+         * @x-autobe-specification Direct mapping from ecommerce_reviews.rating
+         *   column. Integer value representing star rating. Server validates:
+         *   value must be between 1 and 5 inclusive.
      */
     rating: number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<5>;
 
@@ -240,8 +258,10 @@ export namespace IEcommerceReview {
      *
      * Content is displayed on the product detail page along with the star rating. Reviews with content provide more context and are often more helpful to other customers than ratings alone.
      *
-     * @x-autobe-database-schema-property content
-     * @x-autobe-specification Direct mapping from ecommerce_reviews.content column. Optional text field for detailed feedback. Can be null if customer only wants to provide a star rating.
+         * @x-autobe-database-schema-property content
+         * @x-autobe-specification Direct mapping from ecommerce_reviews.content
+         *   column. Optional text field for detailed feedback. Can be null if
+         *   customer only wants to provide a star rating.
      */
     content?: string | null | undefined;
   };
@@ -281,8 +301,10 @@ export namespace IEcommerceReview {
      * - Maximum value: 5
      * - Required field: cannot be omitted from update request
      *
-     * @x-autobe-database-schema-property rating
-     * @x-autobe-specification Direct mapping from ecommerce_reviews.rating. Integer value from 1 to 5 stars representing customer satisfaction level. Required field for review updates.
+         * @x-autobe-database-schema-property rating
+         * @x-autobe-specification Direct mapping from ecommerce_reviews.rating.
+         *   Integer value from 1 to 5 stars representing customer satisfaction
+         *   level. Required field for review updates.
      */
     rating: number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<5>;
 
@@ -298,8 +320,10 @@ export namespace IEcommerceReview {
      * - Optional: customers can submit reviews with rating only
      * - Can be null or empty string to indicate no written feedback
      *
-     * @x-autobe-database-schema-property content
-     * @x-autobe-specification Direct mapping from ecommerce_reviews.content. Nullable string field for optional text feedback. Can be null or empty string.
+         * @x-autobe-database-schema-property content
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_reviews.content. Nullable string field for optional text
+         *   feedback. Can be null or empty string.
      */
     content?: string | null | undefined;
   };
@@ -331,8 +355,10 @@ export namespace IEcommerceReview {
      *
      * Only reviews for this product will be included in results. This is an exact match filter on the product_id foreign key column.
      *
-     * @x-autobe-database-schema-property product_id
-     * @x-autobe-specification Exact match filter on ecommerce_reviews.product_id column. When provided, WHERE product_id = :product_id is applied.
+         * @x-autobe-database-schema-property product_id
+         * @x-autobe-specification Exact match filter on
+         *   ecommerce_reviews.product_id column. When provided, WHERE
+         *   product_id = :product_id is applied.
      */
     product_id?: (string & tags.Format<"uuid">) | undefined;
 
@@ -341,8 +367,10 @@ export namespace IEcommerceReview {
      *
      * Only reviews written by this customer will be included. This is an exact match filter on the customer_id foreign key column.
      *
-     * @x-autobe-database-schema-property customer_id
-     * @x-autobe-specification Exact match filter on ecommerce_reviews.customer_id column. When provided, WHERE customer_id = :customer_id is applied.
+         * @x-autobe-database-schema-property customer_id
+         * @x-autobe-specification Exact match filter on
+         *   ecommerce_reviews.customer_id column. When provided, WHERE
+         *   customer_id = :customer_id is applied.
      */
     customer_id?: (string & tags.Format<"uuid">) | undefined;
 
@@ -351,8 +379,10 @@ export namespace IEcommerceReview {
      *
      * Reviews with rating below this value will be excluded. Valid range is 1 to 5 stars. Used in combination with ratingMax to create a range filter.
      *
-     * @x-autobe-database-schema-property rating
-     * @x-autobe-specification Lower bound of BETWEEN filter on ecommerce_reviews.rating column. Combined with ratingMax to filter WHERE rating BETWEEN :ratingMin AND :ratingMax. Valid range 1-5.
+         * @x-autobe-database-schema-property rating
+         * @x-autobe-specification Lower bound of BETWEEN filter on
+         *   ecommerce_reviews.rating column. Combined with ratingMax to filter
+         *   WHERE rating BETWEEN :ratingMin AND :ratingMax. Valid range 1-5.
      */
     ratingMin?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<5>)
@@ -363,8 +393,10 @@ export namespace IEcommerceReview {
      *
      * Reviews with rating above this value will be excluded. Valid range is 1 to 5 stars. Used in combination with ratingMin to create a range filter.
      *
-     * @x-autobe-database-schema-property rating
-     * @x-autobe-specification Upper bound of BETWEEN filter on ecommerce_reviews.rating column. Combined with ratingMin to filter WHERE rating BETWEEN :ratingMin AND :ratingMax. Valid range 1-5.
+         * @x-autobe-database-schema-property rating
+         * @x-autobe-specification Upper bound of BETWEEN filter on
+         *   ecommerce_reviews.rating column. Combined with ratingMin to filter
+         *   WHERE rating BETWEEN :ratingMin AND :ratingMax. Valid range 1-5.
      */
     ratingMax?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<5>)
@@ -375,8 +407,10 @@ export namespace IEcommerceReview {
      *
      * Uses inclusive comparison (>=). Format must be ISO 8601 date-time string. Combined with createdAtTo to filter by creation date range.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Lower bound of BETWEEN filter on ecommerce_reviews.created_at column. When provided, WHERE created_at >= :createdAtFrom is applied.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Lower bound of BETWEEN filter on
+         *   ecommerce_reviews.created_at column. When provided, WHERE
+         *   created_at >= :createdAtFrom is applied.
      */
     createdAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
@@ -385,8 +419,10 @@ export namespace IEcommerceReview {
      *
      * Uses inclusive comparison (<=). Format must be ISO 8601 date-time string. Combined with createdAtFrom to filter by creation date range.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Upper bound of BETWEEN filter on ecommerce_reviews.created_at column. When provided, WHERE created_at <= :createdAtTo is applied.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Upper bound of BETWEEN filter on
+         *   ecommerce_reviews.created_at column. When provided, WHERE
+         *   created_at <= :createdAtTo is applied.
      */
     createdAtTo?: (string & tags.Format<"date-time">) | undefined;
 
@@ -395,7 +431,11 @@ export namespace IEcommerceReview {
      *
      * Defaults to false, which excludes reviews where deleted_at is not null. Set to true to include deleted reviews for administrative oversight or audit purposes.
      *
-     * @x-autobe-specification Computed filter parameter controlling deleted_at IS NULL filter. When false (default), WHERE deleted_at IS NULL is applied to exclude soft-deleted reviews. When true, deleted reviews are included in results. This is a boolean control flag, not a direct column mapping.
+         * @x-autobe-specification Computed filter parameter controlling
+         *   deleted_at IS NULL filter. When false (default), WHERE deleted_at
+         *   IS NULL is applied to exclude soft-deleted reviews. When true,
+         *   deleted reviews are included in results. This is a boolean control
+         *   flag, not a direct column mapping.
      */
     includeDeleted?: boolean | undefined;
 
@@ -404,7 +444,9 @@ export namespace IEcommerceReview {
      *
      * Combined with limit to calculate the offset: offset = (page - 1) * limit. Use this for traditional page-based navigation. Minimum value is 1.
      *
-     * @x-autobe-specification Offset-based pagination parameter. Calculated offset = (page - 1) * limit. Used when cursor is not provided. Minimum value is 1.
+         * @x-autobe-specification Offset-based pagination parameter. Calculated
+         *   offset = (page - 1) * limit. Used when cursor is not provided.
+         *   Minimum value is 1.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -413,7 +455,9 @@ export namespace IEcommerceReview {
      *
      * Defaults to 20, maximum allowed is 100. Controls the size of each page in offset-based pagination. Smaller values improve response time for large datasets.
      *
-     * @x-autobe-specification Maximum number of records per page. Defaults to 20, maximum allowed is 100. Used with page for offset-based pagination or standalone for result size control.
+         * @x-autobe-specification Maximum number of records per page. Defaults
+         *   to 20, maximum allowed is 100. Used with page for offset-based
+         *   pagination or standalone for result size control.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -424,7 +468,10 @@ export namespace IEcommerceReview {
      *
      * Encodes the last seen created_at timestamp and review id for efficient traversal of large result sets. Use this instead of page/limit for consistent paging through large datasets. The cursor is returned in the pagination metadata of list responses.
      *
-     * @x-autobe-specification Cursor-based pagination token encoding the last seen created_at timestamp and review id. Used for efficient traversal of large result sets. When provided, overrides page/limit pagination.
+         * @x-autobe-specification Cursor-based pagination token encoding the
+         *   last seen created_at timestamp and review id. Used for efficient
+         *   traversal of large result sets. When provided, overrides page/limit
+         *   pagination.
      */
     cursor?: string | undefined;
 
@@ -433,7 +480,10 @@ export namespace IEcommerceReview {
      *
      * Default is "created_at DESC" (newest first). Supported values include "created_at DESC", "created_at ASC", "rating DESC", "rating ASC", and "updated_at DESC". Controls the ORDER BY clause in the database query.
      *
-     * @x-autobe-specification Sorting specification string. Default is "created_at DESC". Supported values: "created_at DESC", "created_at ASC", "rating DESC", "rating ASC", "updated_at DESC". Controls ORDER BY clause in query.
+         * @x-autobe-specification Sorting specification string. Default is
+         *   "created_at DESC". Supported values: "created_at DESC", "created_at
+         *   ASC", "rating DESC", "rating ASC", "updated_at DESC". Controls
+         *   ORDER BY clause in query.
      */
     sort?: string | undefined;
   };
@@ -474,8 +524,9 @@ export namespace IEcommerceReview {
      *
      * This is a UUID that uniquely identifies this specific review within the system. It is used as the primary key for the review entity and serves as the reference for update and delete operations.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_reviews.id. Unique identifier for the review record.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from ecommerce_reviews.id.
+         *   Unique identifier for the review record.
      */
     id: string & tags.Format<"uuid">;
 
@@ -489,8 +540,10 @@ export namespace IEcommerceReview {
      * - Customer ID and display name for attribution
      * - Excludes sensitive data (email, password) for privacy
      *
-     * @x-autobe-database-schema-property customer
-     * @x-autobe-specification JOIN from ecommerce_reviews.customer_id to ecommerce_customers.id. Returns IEcommerceCustomer.ISummary with display_name and id.
+         * @x-autobe-database-schema-property customer
+         * @x-autobe-specification JOIN from ecommerce_reviews.customer_id to
+         *   ecommerce_customers.id. Returns IEcommerceCustomer.ISummary with
+         *   display_name and id.
      */
     customer: IEcommerceCustomer.ISummary;
 
@@ -508,8 +561,10 @@ export namespace IEcommerceReview {
      *
      * Excludes detailed description, variants, and images (available via product detail endpoint).
      *
-     * @x-autobe-database-schema-property product
-     * @x-autobe-specification JOIN from ecommerce_reviews.product_id to ecommerce_products.id. Returns IEcommerceProduct.ISummary with name, seller, category, and base_price.
+         * @x-autobe-database-schema-property product
+         * @x-autobe-specification JOIN from ecommerce_reviews.product_id to
+         *   ecommerce_products.id. Returns IEcommerceProduct.ISummary with
+         *   name, seller, category, and base_price.
      */
     product: IEcommerceProduct.ISummary;
 
@@ -525,8 +580,9 @@ export namespace IEcommerceReview {
      * - Must be an integer (no decimal values)
      * - This field is mandatory and cannot be null
      *
-     * @x-autobe-database-schema-property rating
-     * @x-autobe-specification Direct mapping from ecommerce_reviews.rating. Integer constrained to 1-5 range via minimum/maximum validation.
+         * @x-autobe-database-schema-property rating
+         * @x-autobe-specification Direct mapping from ecommerce_reviews.rating.
+         *   Integer constrained to 1-5 range via minimum/maximum validation.
      */
     rating: number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<5>;
 
@@ -541,8 +597,10 @@ export namespace IEcommerceReview {
      * - Provides detailed context beyond the star rating
      * - Supports rich text formatting in some contexts
      *
-     * @x-autobe-database-schema-property content
-     * @x-autobe-specification Direct mapping from ecommerce_reviews.content. Nullable text field, null when customer provides only rating without written feedback.
+         * @x-autobe-database-schema-property content
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_reviews.content. Nullable text field, null when customer
+         *   provides only rating without written feedback.
      */
     content?: string | null | undefined;
 
@@ -555,8 +613,10 @@ export namespace IEcommerceReview {
      *
      * ISO 8601 date-time string with timezone (e.g., "2024-01-15T10:30:00Z")
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from ecommerce_reviews.created_at. DateTime with timestamptz format, represents review submission time.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_reviews.created_at. DateTime with timestamptz format,
+         *   represents review submission time.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -573,8 +633,10 @@ export namespace IEcommerceReview {
      *
      * If the review has never been edited after creation, this value will be identical to {@link created_at}.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from ecommerce_reviews.updated_at. DateTime with timestamptz format, represents last modification time.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_reviews.updated_at. DateTime with timestamptz format,
+         *   represents last modification time.
      */
     updated_at: string & tags.Format<"date-time">;
   };

@@ -23,9 +23,9 @@ export class ShoppingmallMemberAddressesLock_for_checkoutController {
    *
    * @param connection
    * @param addressId The UUID of the customer’s shipping address to lock for checkout. The address must belong to the authenticated customer.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation guidance:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation guidance:
    *
    * 1) Authorization and ownership
    * - Require an authenticated member.

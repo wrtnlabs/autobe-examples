@@ -19,9 +19,11 @@ export class RedditcloneMemberFeedController {
    * Pagination is cursor-based for efficient navigation through large result sets. Each page returns a fixed number of posts with navigation cursors.
    *
    * @param connection
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query the reddit_clone_posts table filtered by communities the authenticated user has subscribed to (via reddit_clone_subscriptions).
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query the reddit_clone_posts table filtered by
+     *   communities the authenticated user has subscribed to (via
+     *   reddit_clone_subscriptions).
    *
    * Filter out deleted posts where deleted_at is not null.
    *

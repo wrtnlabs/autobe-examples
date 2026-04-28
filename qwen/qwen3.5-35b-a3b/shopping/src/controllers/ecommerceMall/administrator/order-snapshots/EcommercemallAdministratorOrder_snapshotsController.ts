@@ -25,9 +25,10 @@ export class EcommercemallAdministratorOrder_snapshotsController {
    *
    * @param connection
    * @param body Search criteria for order snapshots including pagination parameters, filters for entity type, date ranges, order number patterns, status filters, and sorting options.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Query ecommerce_mall_order_snapshots table with pagination and filtering.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor administrator
+     * @x-autobe-specification Query ecommerce_mall_order_snapshots table with
+     *   pagination and filtering.
    *
    * **Query Implementation:**
    * 1. Apply pagination parameters: limit, offset or cursor-based pagination
@@ -93,9 +94,10 @@ export class EcommercemallAdministratorOrder_snapshotsController {
    *
    * @param connection
    * @param id Unique identifier of the order item snapshot to retrieve.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Retrieve a single order item snapshot from ecommerce_mall_order_item_snapshots table by UUID id.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor administrator
+     * @x-autobe-specification Retrieve a single order item snapshot from
+     *   ecommerce_mall_order_item_snapshots table by UUID id.
    *
    * Implementation steps:
    * 1. Validate snapshot id exists and is valid UUID format

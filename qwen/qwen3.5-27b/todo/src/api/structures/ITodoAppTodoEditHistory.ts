@@ -16,8 +16,10 @@ export type ITodoAppTodoEditHistory = {
    *
    * This UUID uniquely identifies each edit operation recorded in the system. It is used as a path parameter when retrieving a specific history entry via the GET /todoApp/member/todos/{todoId}/edit-histories/{historyId} endpoint.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from todo_app_todo_edit_histories.id. Primary key UUID identifying this edit history entry.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   todo_app_todo_edit_histories.id. Primary key UUID identifying this edit
+     *   history entry.
    */
   id: string & tags.Format<"uuid">;
 
@@ -26,8 +28,10 @@ export type ITodoAppTodoEditHistory = {
    *
    * This field records the exact moment the todo modification occurred, in ISO 8601 date-time format. It is used for sorting history entries from most recent to oldest when displaying the edit history to users.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from todo_app_todo_edit_histories.created_at. DateTime timestamp when the edit was made.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   todo_app_todo_edit_histories.created_at. DateTime timestamp when the
+     *   edit was made.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -36,8 +40,11 @@ export type ITodoAppTodoEditHistory = {
    *
    * This field contains the title value after the edit operation. If the title was not modified in this particular edit, the value is null. This allows users to see exactly what the title was changed to at each point in the todo's history.
    *
-   * @x-autobe-database-schema-property title_changed_to
-   * @x-autobe-specification Direct mapping from todo_app_todo_edit_histories.title_changed_to. Nullable string containing the new title value after the edit, or null if title was not modified in this edit.
+     * @x-autobe-database-schema-property title_changed_to
+     * @x-autobe-specification Direct mapping from
+     *   todo_app_todo_edit_histories.title_changed_to. Nullable string
+     *   containing the new title value after the edit, or null if title was not
+     *   modified in this edit.
    */
   title_changed_to: string | null;
 
@@ -46,8 +53,11 @@ export type ITodoAppTodoEditHistory = {
    *
    * This field contains the description value after the edit operation. If the description was not modified in this particular edit, the value is null. This allows users to see exactly what the description was changed to at each point in the todo's history.
    *
-   * @x-autobe-database-schema-property description_changed_to
-   * @x-autobe-specification Direct mapping from todo_app_todo_edit_histories.description_changed_to. Nullable string containing the new description value after the edit, or null if description was not modified in this edit.
+     * @x-autobe-database-schema-property description_changed_to
+     * @x-autobe-specification Direct mapping from
+     *   todo_app_todo_edit_histories.description_changed_to. Nullable string
+     *   containing the new description value after the edit, or null if
+     *   description was not modified in this edit.
    */
   description_changed_to: string | null;
 
@@ -56,8 +66,11 @@ export type ITodoAppTodoEditHistory = {
    *
    * This field contains the start date value after the edit operation, in ISO 8601 date-time format. If the start date was not modified in this particular edit, the value is null. This allows users to see exactly what the start date was changed to at each point in the todo's history.
    *
-   * @x-autobe-database-schema-property start_date_changed_to
-   * @x-autobe-specification Direct mapping from todo_app_todo_edit_histories.start_date_changed_to. Nullable date-time containing the new start date value after the edit, or null if start date was not modified in this edit.
+     * @x-autobe-database-schema-property start_date_changed_to
+     * @x-autobe-specification Direct mapping from
+     *   todo_app_todo_edit_histories.start_date_changed_to. Nullable date-time
+     *   containing the new start date value after the edit, or null if start
+     *   date was not modified in this edit.
    */
   start_date_changed_to: (string & tags.Format<"date-time">) | null;
 
@@ -66,8 +79,11 @@ export type ITodoAppTodoEditHistory = {
    *
    * This field contains the due date value after the edit operation, in ISO 8601 date-time format. If the due date was not modified in this particular edit, the value is null. This allows users to see exactly what the due date was changed to at each point in the todo's history.
    *
-   * @x-autobe-database-schema-property due_date_changed_to
-   * @x-autobe-specification Direct mapping from todo_app_todo_edit_histories.due_date_changed_to. Nullable date-time containing the new due date value after the edit, or null if due date was not modified in this edit.
+     * @x-autobe-database-schema-property due_date_changed_to
+     * @x-autobe-specification Direct mapping from
+     *   todo_app_todo_edit_histories.due_date_changed_to. Nullable date-time
+     *   containing the new due date value after the edit, or null if due date
+     *   was not modified in this edit.
    */
   due_date_changed_to: (string & tags.Format<"date-time">) | null;
 
@@ -76,8 +92,11 @@ export type ITodoAppTodoEditHistory = {
    *
    * This property provides a summary of the todo item associated with this edit history entry. It includes the todo's id, title, completion status, optional dates, creation timestamp, and the member who owns the todo. This allows users to quickly identify which todo was modified without needing to make additional API calls.
    *
-   * @x-autobe-database-schema-property todo
-   * @x-autobe-specification Relation mapping from todo_app_todo_edit_histories.todo via JOIN on todo_app_todos_id to todo_app_todos.id. Returns ITodoAppTodo.ISummary object with id, title, completed, start_date, due_date, created_at, and member fields.
+     * @x-autobe-database-schema-property todo
+     * @x-autobe-specification Relation mapping from
+     *   todo_app_todo_edit_histories.todo via JOIN on todo_app_todos_id to
+     *   todo_app_todos.id. Returns ITodoAppTodo.ISummary object with id, title,
+     *   completed, start_date, due_date, created_at, and member fields.
    */
   todo: ITodoAppTodo.ISummary;
 };
@@ -93,7 +112,9 @@ export namespace ITodoAppTodoEditHistory {
      *
      * Specifies which page of edit history entries to return. Page numbering starts from 1, so the first page is page 1. If omitted, defaults to page 1. Combined with pageSize or limit to control pagination.
      *
-     * @x-autobe-specification 1-indexed page number for pagination. Defaults to 1 if not provided. Used to retrieve specific page of edit history entries from the todo_app_todo_edit_histories table.
+         * @x-autobe-specification 1-indexed page number for pagination.
+         *   Defaults to 1 if not provided. Used to retrieve specific page of
+         *   edit history entries from the todo_app_todo_edit_histories table.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -102,7 +123,9 @@ export namespace ITodoAppTodoEditHistory {
      *
      * Controls how many history records are included in each page response. Minimum value is 1, maximum is 100. If omitted, the server uses a default page size. Works with the page parameter to navigate through results.
      *
-     * @x-autobe-specification Number of records per page. Minimum 1, maximum 100. Controls how many edit history entries are returned per page. Used together with page parameter for pagination.
+         * @x-autobe-specification Number of records per page. Minimum 1,
+         *   maximum 100. Controls how many edit history entries are returned
+         *   per page. Used together with page parameter for pagination.
      */
     pageSize?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -113,7 +136,9 @@ export namespace ITodoAppTodoEditHistory {
      *
      * Controls how many records are included in each page response. If omitted, null, or undefined, defaults to 100 records per page. The server may enforce upper bounds to prevent excessive resource consumption on large requests.
      *
-     * @x-autobe-specification Maximum number of records to return. Nullable integer with minimum 0. If provided, overrides pageSize. If null or omitted, defaults to 100. Used as alternative pagination control.
+         * @x-autobe-specification Maximum number of records to return. Nullable
+         *   integer with minimum 0. If provided, overrides pageSize. If null or
+         *   omitted, defaults to 100. Used as alternative pagination control.
      */
     limit?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };
@@ -129,8 +154,10 @@ export namespace ITodoAppTodoEditHistory {
      *
      * This UUID distinguishes this specific edit operation from all other modifications made to the todo item.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from todo_app_todo_edit_histories.id. Primary key uniquely identifying this edit history entry.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_todo_edit_histories.id. Primary key uniquely identifying
+         *   this edit history entry.
      */
     id: string & tags.Format<"uuid">;
 
@@ -139,8 +166,10 @@ export namespace ITodoAppTodoEditHistory {
      *
      * Records the precise date and time when the modification occurred. Used for sorting edit history entries chronologically from most recent to oldest.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from todo_app_todo_edit_histories.created_at. Records the exact moment the edit operation was performed.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_todo_edit_histories.created_at. Records the exact moment
+         *   the edit operation was performed.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -149,8 +178,11 @@ export namespace ITodoAppTodoEditHistory {
      *
      * When this field contains a value, it represents the title that the todo was changed to during this edit operation. When null, the title field was not part of this particular modification.
      *
-     * @x-autobe-database-schema-property title_changed_to
-     * @x-autobe-specification Direct mapping from todo_app_todo_edit_histories.title_changed_to. Nullable - contains the new title value if title was modified in this edit, null otherwise.
+         * @x-autobe-database-schema-property title_changed_to
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_todo_edit_histories.title_changed_to. Nullable - contains
+         *   the new title value if title was modified in this edit, null
+         *   otherwise.
      */
     title_changed_to: string | null;
 
@@ -159,8 +191,11 @@ export namespace ITodoAppTodoEditHistory {
      *
      * When this field contains a value, it represents the description that the todo was changed to during this edit operation. When null, the description field was not part of this particular modification.
      *
-     * @x-autobe-database-schema-property description_changed_to
-     * @x-autobe-specification Direct mapping from todo_app_todo_edit_histories.description_changed_to. Nullable - contains the new description value if description was modified in this edit, null otherwise.
+         * @x-autobe-database-schema-property description_changed_to
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_todo_edit_histories.description_changed_to. Nullable -
+         *   contains the new description value if description was modified in
+         *   this edit, null otherwise.
      */
     description_changed_to: string | null;
 
@@ -169,8 +204,11 @@ export namespace ITodoAppTodoEditHistory {
      *
      * When this field contains a value, it represents the start date that the todo was changed to during this edit operation. When null, the start date field was not part of this particular modification.
      *
-     * @x-autobe-database-schema-property start_date_changed_to
-     * @x-autobe-specification Direct mapping from todo_app_todo_edit_histories.start_date_changed_to. Nullable - contains the new start date value if start date was modified in this edit, null otherwise.
+         * @x-autobe-database-schema-property start_date_changed_to
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_todo_edit_histories.start_date_changed_to. Nullable -
+         *   contains the new start date value if start date was modified in
+         *   this edit, null otherwise.
      */
     start_date_changed_to: (string & tags.Format<"date-time">) | null;
 
@@ -179,8 +217,11 @@ export namespace ITodoAppTodoEditHistory {
      *
      * When this field contains a value, it represents the due date that the todo was changed to during this edit operation. When null, the due date field was not part of this particular modification.
      *
-     * @x-autobe-database-schema-property due_date_changed_to
-     * @x-autobe-specification Direct mapping from todo_app_todo_edit_histories.due_date_changed_to. Nullable - contains the new due date value if due date was modified in this edit, null otherwise.
+         * @x-autobe-database-schema-property due_date_changed_to
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_todo_edit_histories.due_date_changed_to. Nullable -
+         *   contains the new due date value if due date was modified in this
+         *   edit, null otherwise.
      */
     due_date_changed_to: (string & tags.Format<"date-time">) | null;
   };

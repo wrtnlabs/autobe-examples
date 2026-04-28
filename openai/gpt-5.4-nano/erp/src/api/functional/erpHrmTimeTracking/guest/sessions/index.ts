@@ -24,17 +24,19 @@ import { IErpHrmTimeTrackingTimerSession } from "../../../../structures/IErpHrmT
  * @param props.body Session context update payload. Includes the desired updates that the server should apply to the currently active authenticated session.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor guest
- * @x-autobe-specification 1. Authenticate the caller and resolve the current session identity.
- * 2. Parse PATCH request body for session update instructions (e.g., organization context selection).
- * 3. Validate that the requested organization context is selectable for the user.
- *    - If the user does not belong to the requested organization, reject the operation.
- * 4. Apply authorization checks under the selected organization context.
- *    - If the user lacks required permissions for the requested session context, reject.
- * 5. Persist the session context update atomically in a single transaction.
- * 6. Return the updated session view model.
- * 7. Error handling:
- *    - For any business-rule rejection, return a rejection outcome with a clear explanation and do not apply partial changes.
- *    - Unexpected internal failures must not modify session state and must avoid inconsistent activity logging.
+ * @x-autobe-specification 1. Authenticate the caller and resolve the current
+ *   session identity. 2. Parse PATCH request body for session update
+ *   instructions (e.g., organization context selection). 3. Validate that the
+ *   requested organization context is selectable for the user. - If the user
+ *   does not belong to the requested organization, reject the operation. 4.
+ *   Apply authorization checks under the selected organization context. - If
+ *   the user lacks required permissions for the requested session context,
+ *   reject. 5. Persist the session context update atomically in a single
+ *   transaction. 6. Return the updated session view model. 7. Error handling: -
+ *   For any business-rule rejection, return a rejection outcome with a clear
+ *   explanation and do not apply partial changes. - Unexpected internal
+ *   failures must not modify session state and must avoid inconsistent activity
+ *   logging.
  *
  * Note: If the system represents guest and member sessions in different tables, ensure this operation only targets the authenticated member session model relevant to the authenticated actor.
  * @path /erpHrmTimeTracking/guest/sessions

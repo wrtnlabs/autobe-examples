@@ -27,9 +27,15 @@ export class CommunityplatformAdminPostsCommentsController {
    * @param postId Target post's ID
    * @param commentId Target comment's ID
    * @param body Updated comment content
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Load the target post from `community_platform_posts` by `postId` and ensure it is available for interaction. Load the target comment from `community_platform_comments` by `commentId` and verify `community_platform_post_id` matches the requested post. Reject the request when either record is not found in active scope or when the post-comment relationship does not match the nested route.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Load the target post from
+     *   `community_platform_posts` by `postId` and ensure it is available for
+     *   interaction. Load the target comment from `community_platform_comments`
+     *   by `commentId` and verify `community_platform_post_id` matches the
+     *   requested post. Reject the request when either record is not found in
+     *   active scope or when the post-comment relationship does not match the
+     *   nested route.
    *
    * Authorize the caller as an authenticated member. Permit update when the caller is the comment author identified by `community_platform_member_id`. Also permit update when the caller holds community owner or moderator authority for the community that owns the post, because moderation workflows allow privileged community roles to manage comments in their own community. For ordinary self-editing, check `community_platform_community_bans` for an active ban on the acting member in the post's community and reject if participation is restricted.
    *
@@ -78,9 +84,10 @@ export class CommunityplatformAdminPostsCommentsController {
    * @param connection
    * @param postId Target post ID that contains the comment.
    * @param commentId Target comment ID to remove from the post.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Implement a service-layer deletion routine for a single comment under a specific post.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Implement a service-layer deletion routine for a
+     *   single comment under a specific post.
    *
    * 1. Authenticate the actor and require a member session for self-removal or a member session with community moderation standing for moderation removal.
    * 2. Load the target post from community_platform_posts by id = postId. If not found, reject the request.

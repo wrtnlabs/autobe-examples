@@ -24,7 +24,8 @@ import { IPageIHrmMember } from "../../../structures/IPageIHrmMember";
  * @param props.body Search criteria including email partial match, account creation date range, soft-deleted account visibility flag, and pagination parameters.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query hrm_members table with organization-scoped filtering and pagination.
+ * @x-autobe-specification Query hrm_members table with organization-scoped
+ *   filtering and pagination.
  *
  * Implementation steps:
  * 1. Validate authenticated user has permission to view member data (employee:view or higher)
@@ -133,7 +134,9 @@ export namespace index {
  * @param props.memberId Unique identifier of the member account (global scope)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query the hrm_members table by primary key (id) using the memberId path parameter. Validate that the member exists and return the full member record excluding the password_hash field.
+ * @x-autobe-specification Query the hrm_members table by primary key (id) using
+ *   the memberId path parameter. Validate that the member exists and return the
+ *   full member record excluding the password_hash field.
  *
  * **Implementation Steps**:
  * 1. Extract memberId from path parameters (UUID format)

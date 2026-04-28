@@ -34,7 +34,8 @@ import { IPageIRedditLikeReport } from "../../../../../structures/IPageIRedditLi
  * @param props.communityCode Unique community identifier (global scope) for filtering reports to this specific community.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query reddit_like_reports table filtered by community membership.
+ * @x-autobe-specification Query reddit_like_reports table filtered by community
+ *   membership.
  *
  * **Implementation Steps**
  *

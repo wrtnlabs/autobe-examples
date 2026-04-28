@@ -30,7 +30,8 @@ import { IRedditCloneMemberSession } from "../../../../../structures/IRedditClon
  * @param props.body Search criteria for filtering member sessions including member ID, session status, date ranges, and pagination parameters.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query the reddit_clone_member_sessions table with pagination and filtering support.
+ * @x-autobe-specification Query the reddit_clone_member_sessions table with
+ *   pagination and filtering support.
  *
  * **Query Logic**:
  * 1. Apply filters from request body: member_id, status (active/expired/terminated), created_at range, expired_at range
@@ -139,7 +140,8 @@ export namespace index {
  * @param props.sessionId Unique identifier of the member session to retrieve (global scope).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query the reddit_clone_member_sessions table for a single session record where id equals the provided sessionId parameter.
+ * @x-autobe-specification Query the reddit_clone_member_sessions table for a
+ *   single session record where id equals the provided sessionId parameter.
  *
  * Implementation steps:
  * 1. Validate that sessionId is a valid UUID format

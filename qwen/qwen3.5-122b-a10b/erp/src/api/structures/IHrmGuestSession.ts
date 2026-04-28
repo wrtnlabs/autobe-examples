@@ -22,8 +22,9 @@ export type IHrmGuestSession = {
    *
    * This UUID serves as the primary key for the session and is used as the access token for unauthenticated guest users. The session ID is returned during guest registration and must be included in subsequent requests to access protected resources.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from hrm_guest_sessions.id. UUID primary key for the session record.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from hrm_guest_sessions.id. UUID
+     *   primary key for the session record.
    */
   id: string & tags.Format<"uuid">;
 
@@ -32,8 +33,9 @@ export type IHrmGuestSession = {
    *
    * Used for security auditing and detecting suspicious access patterns from different locations. The IP address is captured when the session is initially created and remains constant throughout the session lifecycle.
    *
-   * @x-autobe-database-schema-property ip
-   * @x-autobe-specification Direct mapping from hrm_guest_sessions.ip. Client IP address captured at session creation.
+     * @x-autobe-database-schema-property ip
+     * @x-autobe-specification Direct mapping from hrm_guest_sessions.ip. Client
+     *   IP address captured at session creation.
    */
   ip: string;
 
@@ -42,8 +44,9 @@ export type IHrmGuestSession = {
    *
    * Tracks the entry point of the guest session for analytics and security purposes. This field captures the full URI of the page or endpoint where the user first accessed the system as a guest.
    *
-   * @x-autobe-database-schema-property href
-   * @x-autobe-specification Direct mapping from hrm_guest_sessions.href. Entry point URL where session was initiated.
+     * @x-autobe-database-schema-property href
+     * @x-autobe-specification Direct mapping from hrm_guest_sessions.href.
+     *   Entry point URL where session was initiated.
    */
   href: string & tags.Format<"uri">;
 
@@ -52,8 +55,9 @@ export type IHrmGuestSession = {
    *
    * Captures the source page or external link that directed the guest user to the system. This field helps understand user acquisition channels and navigation patterns.
    *
-   * @x-autobe-database-schema-property referrer
-   * @x-autobe-specification Direct mapping from hrm_guest_sessions.referrer. Source URL that led to session creation.
+     * @x-autobe-database-schema-property referrer
+     * @x-autobe-specification Direct mapping from hrm_guest_sessions.referrer.
+     *   Source URL that led to session creation.
    */
   referrer: string & tags.Format<"uri">;
 
@@ -62,8 +66,10 @@ export type IHrmGuestSession = {
    *
    * Marks the beginning of the session lifecycle. This timestamp is recorded in UTC with timezone information and is used to track session age and enforce expiration policies.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from hrm_guest_sessions.created_at. Session creation timestamp with timezone.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_guest_sessions.created_at. Session creation timestamp with
+     *   timezone.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -72,8 +78,10 @@ export type IHrmGuestSession = {
    *
    * This field is NOT NULL to enforce explicit session timeout policies. Sessions beyond this timestamp are automatically considered invalid and the API returns 410 Gone status. The expiration time is set at session creation based on configured session duration policies.
    *
-   * @x-autobe-database-schema-property expired_at
-   * @x-autobe-specification Direct mapping from hrm_guest_sessions.expired_at. Session expiration timestamp with timezone, NOT NULL constraint enforced.
+     * @x-autobe-database-schema-property expired_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_guest_sessions.expired_at. Session expiration timestamp with
+     *   timezone, NOT NULL constraint enforced.
    */
   expired_at: string & tags.Format<"date-time">;
 
@@ -82,8 +90,9 @@ export type IHrmGuestSession = {
    *
    * This relation provides access to the guest device record identified by the device fingerprint. The guest object includes the device fingerprint, creation timestamp, and active session count, enabling identification of the specific device that owns this session.
    *
-   * @x-autobe-database-schema-property guest
-   * @x-autobe-specification Join from hrm_guest_sessions.hrm_guest_id to hrm_guests.id. Returns IHrmGuest.ISummary via foreign key relation.
+     * @x-autobe-database-schema-property guest
+     * @x-autobe-specification Join from hrm_guest_sessions.hrm_guest_id to
+     *   hrm_guests.id. Returns IHrmGuest.ISummary via foreign key relation.
    */
   guest: IHrmGuest.ISummary;
 };
@@ -107,8 +116,9 @@ export namespace IHrmGuestSession {
      *
      * This UUID serves as the primary key for the session entity, enabling precise identification and retrieval of individual session records.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from hrm_guest_sessions.id. Primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from hrm_guest_sessions.id.
+         *   Primary key.
      */
     id: string & tags.Format<"uuid">;
 
@@ -117,8 +127,9 @@ export namespace IHrmGuestSession {
      *
      * Used for security auditing and detecting suspicious access patterns from different locations. This value is captured at session creation time and remains immutable throughout the session lifecycle.
      *
-     * @x-autobe-database-schema-property ip
-     * @x-autobe-specification Direct mapping from hrm_guest_sessions.ip. IPv4 or IPv6 address string.
+         * @x-autobe-database-schema-property ip
+         * @x-autobe-specification Direct mapping from hrm_guest_sessions.ip.
+         *   IPv4 or IPv6 address string.
      */
     ip: string;
 
@@ -127,8 +138,9 @@ export namespace IHrmGuestSession {
      *
      * Tracks the entry point of the guest session for analytics and security purposes. This represents the complete URL of the page or endpoint where the guest first accessed the system.
      *
-     * @x-autobe-database-schema-property href
-     * @x-autobe-specification Direct mapping from hrm_guest_sessions.href. Full URL string.
+         * @x-autobe-database-schema-property href
+         * @x-autobe-specification Direct mapping from hrm_guest_sessions.href.
+         *   Full URL string.
      */
     href: string;
 
@@ -137,8 +149,10 @@ export namespace IHrmGuestSession {
      *
      * Captures the source page or external link that directed the guest to the system. This value may be null if the browser did not send a referrer header or if the referrer was stripped for privacy reasons.
      *
-     * @x-autobe-database-schema-property referrer
-     * @x-autobe-specification Direct mapping from hrm_guest_sessions.referrer. Full URL string or null if not provided.
+         * @x-autobe-database-schema-property referrer
+         * @x-autobe-specification Direct mapping from
+         *   hrm_guest_sessions.referrer. Full URL string or null if not
+         *   provided.
      */
     referrer: string;
 
@@ -147,8 +161,9 @@ export namespace IHrmGuestSession {
      *
      * Marks the beginning of the session lifecycle. This value is automatically set by the server at session creation time and cannot be modified afterward.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from hrm_guest_sessions.created_at. ISO 8601 datetime with timezone.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_guest_sessions.created_at. ISO 8601 datetime with timezone.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -157,8 +172,10 @@ export namespace IHrmGuestSession {
      *
      * This field is NOT NULL to enforce explicit session timeout policies. Sessions beyond this timestamp are automatically considered invalid and will be rejected during authentication. The expiration is determined at session creation based on configured session duration policies.
      *
-     * @x-autobe-database-schema-property expired_at
-     * @x-autobe-specification Direct mapping from hrm_guest_sessions.expired_at. ISO 8601 datetime with timezone. NOT NULL.
+         * @x-autobe-database-schema-property expired_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_guest_sessions.expired_at. ISO 8601 datetime with timezone. NOT
+         *   NULL.
      */
     expired_at: string & tags.Format<"date-time">;
 
@@ -167,8 +184,9 @@ export namespace IHrmGuestSession {
      *
      * This relation exposes the guest device record that owns this session, providing access to device fingerprint and account metadata without exposing the foreign key column. The guest object is returned as a summary representation (IHrmGuest.ISummary) containing essential identification fields.
      *
-     * @x-autobe-database-schema-property guest
-     * @x-autobe-specification Join from hrm_guest_sessions.hrm_guest_id to hrm_guests.id. Returns IHrmGuest.ISummary via LEFT JOIN.
+         * @x-autobe-database-schema-property guest
+         * @x-autobe-specification Join from hrm_guest_sessions.hrm_guest_id to
+         *   hrm_guests.id. Returns IHrmGuest.ISummary via LEFT JOIN.
      */
     guest: IHrmGuest.ISummary;
   };
@@ -203,7 +221,9 @@ export namespace IHrmGuestSession {
      *
      * Provide the exact device fingerprint string to match. Sessions will be returned only if the associated guest record has a matching device_fingerprint value.
      *
-     * @x-autobe-specification Filter parameter that joins hrm_guest_sessions.hrm_guest_id to hrm_guests.id, then filters on hrm_guests.device_fingerprint. Exact match comparison.
+         * @x-autobe-specification Filter parameter that joins
+         *   hrm_guest_sessions.hrm_guest_id to hrm_guests.id, then filters on
+         *   hrm_guests.device_fingerprint. Exact match comparison.
      */
     device_fingerprint?: string | undefined;
 
@@ -216,8 +236,10 @@ export namespace IHrmGuestSession {
      *
      * Provide an IP address string for exact matching, or use prefix matching to filter by subnet.
      *
-     * @x-autobe-database-schema-property ip
-     * @x-autobe-specification Direct mapping from hrm_guest_sessions.ip column. Supports exact match or prefix matching for IP address filtering.
+         * @x-autobe-database-schema-property ip
+         * @x-autobe-specification Direct mapping from hrm_guest_sessions.ip
+         *   column. Supports exact match or prefix matching for IP address
+         *   filtering.
      */
     ip?: string | undefined;
 
@@ -230,7 +252,9 @@ export namespace IHrmGuestSession {
      *
      * ISO 8601 datetime string (e.g., "2024-01-15T10:30:00Z")
      *
-     * @x-autobe-specification Filter parameter for created_at timestamp range. Sessions with created_at >= this value are included. Combined with created_at_to for range queries.
+         * @x-autobe-specification Filter parameter for created_at timestamp
+         *   range. Sessions with created_at >= this value are included.
+         *   Combined with created_at_to for range queries.
      */
     created_at_from?: (string & tags.Format<"date-time">) | undefined;
 
@@ -243,7 +267,9 @@ export namespace IHrmGuestSession {
      *
      * ISO 8601 datetime string (e.g., "2024-01-20T18:45:00Z")
      *
-     * @x-autobe-specification Filter parameter for created_at timestamp range. Sessions with created_at <= this value are included. Combined with created_at_from for range queries.
+         * @x-autobe-specification Filter parameter for created_at timestamp
+         *   range. Sessions with created_at <= this value are included.
+         *   Combined with created_at_from for range queries.
      */
     created_at_to?: (string & tags.Format<"date-time">) | undefined;
 
@@ -256,7 +282,9 @@ export namespace IHrmGuestSession {
      *
      * ISO 8601 datetime string (e.g., "2024-02-01T00:00:00Z")
      *
-     * @x-autobe-specification Filter parameter for expired_at timestamp range. Sessions with expired_at >= this value are included. Combined with expired_at_to for range queries.
+         * @x-autobe-specification Filter parameter for expired_at timestamp
+         *   range. Sessions with expired_at >= this value are included.
+         *   Combined with expired_at_to for range queries.
      */
     expired_at_from?: (string & tags.Format<"date-time">) | undefined;
 
@@ -269,7 +297,9 @@ export namespace IHrmGuestSession {
      *
      * ISO 8601 datetime string (e.g., "2024-01-31T23:59:59Z")
      *
-     * @x-autobe-specification Filter parameter for expired_at timestamp range. Sessions with expired_at <= this value are included. Combined with expired_at_from for range queries.
+         * @x-autobe-specification Filter parameter for expired_at timestamp
+         *   range. Sessions with expired_at <= this value are included.
+         *   Combined with expired_at_from for range queries.
      */
     expired_at_to?: (string & tags.Format<"date-time">) | undefined;
 
@@ -283,7 +313,9 @@ export namespace IHrmGuestSession {
      * - true: Include only expired sessions (expired_at < current time)
      * - false: Include only active sessions (expired_at >= current time)
      *
-     * @x-autobe-specification Computed boolean filter: true returns sessions where expired_at < NOW(), false returns sessions where expired_at >= NOW(). Determines session validity status.
+         * @x-autobe-specification Computed boolean filter: true returns
+         *   sessions where expired_at < NOW(), false returns sessions where
+         *   expired_at >= NOW(). Determines session validity status.
      */
     is_expired?: boolean | undefined;
 
@@ -301,7 +333,9 @@ export namespace IHrmGuestSession {
      *
      * Use in combination with the limit parameter to control the number of results returned per page.
      *
-     * @x-autobe-specification Pagination parameter: 1-indexed page number. Defaults to 1 if not provided. Used with limit parameter for cursor-based pagination.
+         * @x-autobe-specification Pagination parameter: 1-indexed page number.
+         *   Defaults to 1 if not provided. Used with limit parameter for
+         *   cursor-based pagination.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -320,7 +354,9 @@ export namespace IHrmGuestSession {
      *
      * Use in combination with the page parameter to control pagination. Server will enforce bounds even if values outside the valid range are provided.
      *
-     * @x-autobe-specification Pagination parameter: maximum records per page. Range 10-100, defaults to 20. Enforced server-side with bounds checking.
+         * @x-autobe-specification Pagination parameter: maximum records per
+         *   page. Range 10-100, defaults to 20. Enforced server-side with
+         *   bounds checking.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<10> & tags.Maximum<100>)

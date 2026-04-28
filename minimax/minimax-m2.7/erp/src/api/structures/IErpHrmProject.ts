@@ -10,14 +10,20 @@ export type IErpHrmProject = {
   /**
    * Array of project budget report items sorted by utilization percentage descending.
    *
-   * @x-autobe-specification Array of computed budget utilization entries derived from erp_hrm_projects and erp_hrm_timelogs aggregation. Each entry contains: project id, project name, budget_hours, actual_hours_logged, budget_utilization_percentage, and budget_status. Sorted by budget_utilization_percentage in descending order.
+     * @x-autobe-specification Array of computed budget utilization entries
+     *   derived from erp_hrm_projects and erp_hrm_timelogs aggregation. Each
+     *   entry contains: project id, project name, budget_hours,
+     *   actual_hours_logged, budget_utilization_percentage, and budget_status.
+     *   Sorted by budget_utilization_percentage in descending order.
    */
   items: IErpHrmProject.IEntry[];
 
   /**
    * Total number of projects with budget hours configured.
    *
-   * @x-autobe-specification COUNT of projects from erp_hrm_projects where budget_hours IS NOT NULL AND budget_hours > 0. Represents the count of projects included in this budget utilization report.
+     * @x-autobe-specification COUNT of projects from erp_hrm_projects where
+     *   budget_hours IS NOT NULL AND budget_hours > 0. Represents the count of
+     *   projects included in this budget utilization report.
    */
   total: number & tags.Type<"int32">;
 };
@@ -29,63 +35,71 @@ export namespace IErpHrmProject {
     /**
      * Unique project identifier.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from erp_hrm_projects.id.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from erp_hrm_projects.id.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Project name displayed in the UI.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from erp_hrm_projects.name.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from erp_hrm_projects.name.
      */
     name: string;
 
     /**
      * Hex color code for visual differentiation in UI displays.
      *
-     * @x-autobe-database-schema-property color
-     * @x-autobe-specification Direct mapping from erp_hrm_projects.color. Hex color code for UI visual differentiation.
+         * @x-autobe-database-schema-property color
+         * @x-autobe-specification Direct mapping from erp_hrm_projects.color.
+         *   Hex color code for UI visual differentiation.
      */
     color: string;
 
     /**
      * Project lifecycle status indicating if project is active, archived, or completed.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from erp_hrm_projects.status. Values: active, archived, completed.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from erp_hrm_projects.status.
+         *   Values: active, archived, completed.
      */
     status: string;
 
     /**
      * Total estimated hours for budget tracking.
      *
-     * @x-autobe-database-schema-property budget_hours
-     * @x-autobe-specification Direct mapping from erp_hrm_projects.budget_hours. Nullable.
+         * @x-autobe-database-schema-property budget_hours
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_projects.budget_hours. Nullable.
      */
     budgetHours: number | null;
 
     /**
      * Timestamp when the project was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from erp_hrm_projects.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_projects.created_at.
      */
     createdAt: string & tags.Format<"date-time">;
 
     /**
      * The organization that owns this project.
      *
-     * @x-autobe-database-schema-property organization
-     * @x-autobe-specification Belongs-to relation via erp_hrm_organization_id. JOIN to erp_hrm_organizations returning IErpHrmOrganization.ISummary.
+         * @x-autobe-database-schema-property organization
+         * @x-autobe-specification Belongs-to relation via
+         *   erp_hrm_organization_id. JOIN to erp_hrm_organizations returning
+         *   IErpHrmOrganization.ISummary.
      */
     organization: IErpHrmOrganization.ISummary;
 
     /**
      * Total number of timelog entries associated with this project.
      *
-     * @x-autobe-specification Computed field: COUNT(erp_hrm_timelogs) WHERE erp_hrm_timelogs.erp_hrm_project_id = erp_hrm_projects.id. Aggregation query, not a direct DB column.
+         * @x-autobe-specification Computed field: COUNT(erp_hrm_timelogs) WHERE
+         *   erp_hrm_timelogs.erp_hrm_project_id = erp_hrm_projects.id.
+         *   Aggregation query, not a direct DB column.
      */
     totalTimelogsCount: number & tags.Type<"int32"> & tags.Minimum<0>;
   };
@@ -137,42 +151,56 @@ export namespace IErpHrmProject {
     /**
      * Project name filter for partial matching. When provided, returns projects whose names contain this value (case-insensitive).
      *
-     * @x-autobe-specification Partial match filter on erp_hrm_projects.name. Implemented as case-insensitive LIKE query (e.g., '%search%'). Optional; when provided, filters projects whose name contains the search string.
+         * @x-autobe-specification Partial match filter on
+         *   erp_hrm_projects.name. Implemented as case-insensitive LIKE query
+         *   (e.g., '%search%'). Optional; when provided, filters projects whose
+         *   name contains the search string.
      */
     name?: (string & tags.MinLength<1> & tags.Format<"regex">) | undefined;
 
     /**
      * Project status filter. Exact match on status values: active, archived, or completed. Defaults to active if not specified.
      *
-     * @x-autobe-specification Exact match filter on erp_hrm_projects.status. Supported values: 'active', 'archived', 'completed'. Optional; when not provided, service layer defaults to 'active' filter.
+         * @x-autobe-specification Exact match filter on
+         *   erp_hrm_projects.status. Supported values: 'active', 'archived',
+         *   'completed'. Optional; when not provided, service layer defaults to
+         *   'active' filter.
      */
     status?: "active" | "archived" | "completed" | undefined;
 
     /**
      * Maximum number of project records to return per page. Minimum value is 1.
      *
-     * @x-autobe-specification Cursor-based pagination page size. Determines number of records per page. Must be >= 1 if provided. Used together with pageCursor for stable pagination.
+         * @x-autobe-specification Cursor-based pagination page size. Determines
+         *   number of records per page. Must be >= 1 if provided. Used together
+         *   with pageCursor for stable pagination.
      */
     pageSize?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Pagination cursor for fetching the next page of results. Opaque string value from previous response.
      *
-     * @x-autobe-specification Cursor-based pagination cursor. Opaque string value returned in previous response pagination metadata. Use to fetch the next page of results. Null or empty for first page.
+         * @x-autobe-specification Cursor-based pagination cursor. Opaque string
+         *   value returned in previous response pagination metadata. Use to
+         *   fetch the next page of results. Null or empty for first page.
      */
     pageCursor?: string | undefined;
 
     /**
      * Target page number to retrieve (1-indexed). Page numbering starts from 1, defaults to first page.
      *
-     * @x-autobe-specification 1-indexed page number for page-based pagination. Defaults to 1 if not provided. Requesting page beyond available range returns empty data with valid pagination metadata.
+         * @x-autobe-specification 1-indexed page number for page-based
+         *   pagination. Defaults to 1 if not provided. Requesting page beyond
+         *   available range returns empty data with valid pagination metadata.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
 
     /**
      * Maximum number of records to return per page. Defaults to 100 if not specified.
      *
-     * @x-autobe-specification Maximum records per page for page-based pagination. Defaults to 100 if not provided. Server may enforce upper bounds to prevent excessive resource consumption.
+         * @x-autobe-specification Maximum records per page for page-based
+         *   pagination. Defaults to 100 if not provided. Server may enforce
+         *   upper bounds to prevent excessive resource consumption.
      */
     limit?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };
@@ -224,42 +252,56 @@ export namespace IErpHrmProject {
     /**
      * Unique identifier of the project.
      *
-     * @x-autobe-specification Project identifier projected from erp_hrm_projects.id via JOIN on erp_hrm_projects.id. Direct projection of the primary key for budget utilization entry identification.
+         * @x-autobe-specification Project identifier projected from
+         *   erp_hrm_projects.id via JOIN on erp_hrm_projects.id. Direct
+         *   projection of the primary key for budget utilization entry
+         *   identification.
      */
     projectId: string & tags.Format<"uuid">;
 
     /**
      * Display name of the project.
      *
-     * @x-autobe-specification Project display name projected from erp_hrm_projects.name via JOIN on erp_hrm_projects.id. Direct projection for budget entry identification.
+         * @x-autobe-specification Project display name projected from
+         *   erp_hrm_projects.name via JOIN on erp_hrm_projects.id. Direct
+         *   projection for budget entry identification.
      */
     projectName: string;
 
     /**
      * Total estimated hours budgeted for this project.
      *
-     * @x-autobe-specification Total estimated budget hours projected from erp_hrm_projects.budget_hours via JOIN on erp_hrm_projects.id. Used as denominator in utilization percentage calculation.
+         * @x-autobe-specification Total estimated budget hours projected from
+         *   erp_hrm_projects.budget_hours via JOIN on erp_hrm_projects.id. Used
+         *   as denominator in utilization percentage calculation.
      */
     budgetHours: number;
 
     /**
      * Total hours actually logged against this project, calculated from all timelog entries. Rounded to one decimal place.
      *
-     * @x-autobe-specification Computed aggregation: JOIN erp_hrm_projects.id with erp_hrm_timelogs.project_id, then SUM(duration_minutes)/60, rounded to 1 decimal place.
+         * @x-autobe-specification Computed aggregation: JOIN
+         *   erp_hrm_projects.id with erp_hrm_timelogs.project_id, then
+         *   SUM(duration_minutes)/60, rounded to 1 decimal place.
      */
     actualHoursLogged: number;
 
     /**
      * Percentage of budget consumed, calculated as (actual_hours_logged / budget_hours) * 100. Can exceed 100% when over budget.
      *
-     * @x-autobe-specification Computed percentage: (actualHoursLogged / budget_hours) * 100, rounded to 1 decimal place. Can exceed 100% when actual hours exceed budget.
+         * @x-autobe-specification Computed percentage: (actualHoursLogged /
+         *   budget_hours) * 100, rounded to 1 decimal place. Can exceed 100%
+         *   when actual hours exceed budget.
      */
     budgetUtilizationPercentage: number;
 
     /**
      * Budget consumption status derived from utilization percentage and actual vs budget comparison.
      *
-     * @x-autobe-specification Computed enum derivation: if actualHoursLogged > budget_hours then 'over_budget', else if budgetUtilizationPercentage >= 80 then 'approaching_budget', else 'within_budget'. String type with const enum values.
+         * @x-autobe-specification Computed enum derivation: if
+         *   actualHoursLogged > budget_hours then 'over_budget', else if
+         *   budgetUtilizationPercentage >= 80 then 'approaching_budget', else
+         *   'within_budget'. String type with const enum values.
      */
     budgetStatus: "within_budget" | "approaching_budget" | "over_budget";
   };

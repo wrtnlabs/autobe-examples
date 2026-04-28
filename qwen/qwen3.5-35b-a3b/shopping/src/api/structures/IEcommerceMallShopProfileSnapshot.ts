@@ -12,24 +12,27 @@ export type IEcommerceMallShopProfileSnapshot = {
   /**
    * The unique identifier of the shop profile snapshot.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_shop_profile_snapshots.id (UUID primary key).
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_shop_profile_snapshots.id (UUID primary key).
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * The shop name as it existed when this snapshot was created.
    *
-   * @x-autobe-database-schema-property shop_name
-   * @x-autobe-specification Direct mapping from ecommerce_mall_shop_profile_snapshots.shop_name (String).
+     * @x-autobe-database-schema-property shop_name
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_shop_profile_snapshots.shop_name (String).
    */
   shop_name: string;
 
   /**
    * The shop description as it existed when this snapshot was created.
    *
-   * @x-autobe-database-schema-property shop_description
-   * @x-autobe-specification Direct mapping from ecommerce_mall_shop_profile_snapshots.shop_description (String).
+     * @x-autobe-database-schema-property shop_description
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_shop_profile_snapshots.shop_description (String).
    */
   shop_description: string;
 
@@ -38,24 +41,30 @@ export type IEcommerceMallShopProfileSnapshot = {
    *
    * Can be null if no logo was set at the time of snapshot.
    *
-   * @x-autobe-database-schema-property logo_url
-   * @x-autobe-specification Direct mapping from ecommerce_mall_shop_profile_snapshots.logo_url (String? nullable, max 80000 chars).
+     * @x-autobe-database-schema-property logo_url
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_shop_profile_snapshots.logo_url (String? nullable, max
+     *   80000 chars).
    */
   logo_url: (string & tags.Format<"uri">) | null;
 
   /**
    * The timestamp when this snapshot was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_shop_profile_snapshots.created_at (DateTime timestamp).
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_shop_profile_snapshots.created_at (DateTime timestamp).
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * The shop profile that this snapshot belongs to.
    *
-   * @x-autobe-database-schema-property shopProfile
-   * @x-autobe-specification Relation join via ecommerce_mall_shop_profile_snapshots.ecommerce_mall_shop_profile_id to ecommerce_mall_shop_profiles.id. Returns IEcommerceMallShopProfile.ISummary.
+     * @x-autobe-database-schema-property shopProfile
+     * @x-autobe-specification Relation join via
+     *   ecommerce_mall_shop_profile_snapshots.ecommerce_mall_shop_profile_id to
+     *   ecommerce_mall_shop_profiles.id. Returns
+     *   IEcommerceMallShopProfile.ISummary.
    */
   shopProfile: IEcommerceMallShopProfile.ISummary;
 };
@@ -80,8 +89,11 @@ export namespace IEcommerceMallShopProfileSnapshot {
      *
      * A UUID that identifies the shop profile whose snapshots should be retrieved. When provided, the query returns only snapshots associated with this shop profile. Useful for retrieving the modification history of a specific seller's shop profile.
      *
-     * @x-autobe-database-schema-property ecommerce_mall_shop_profile_id
-     * @x-autobe-specification Exact match filter on ecommerce_mall_shop_profile_id column. Value must be a valid UUID format. When provided, only snapshots belonging to the specified shop profile are returned.
+         * @x-autobe-database-schema-property ecommerce_mall_shop_profile_id
+         * @x-autobe-specification Exact match filter on
+         *   ecommerce_mall_shop_profile_id column. Value must be a valid UUID
+         *   format. When provided, only snapshots belonging to the specified
+         *   shop profile are returned.
      */
     ecommerceMallShopProfileId?: (string & tags.Format<"uuid">) | undefined;
 
@@ -90,8 +102,11 @@ export namespace IEcommerceMallShopProfileSnapshot {
      *
      * An ISO 8601 formatted datetime string. When provided, only snapshots with created_at >= this value are returned. Often used with createdBefore to define a time window for snapshot retrieval.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Date range filter on created_at column. Value must be an ISO 8601 datetime string. Filters snapshots created at or after this timestamp (inclusive). Used together with createdBefore to define date ranges.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Date range filter on created_at column. Value
+         *   must be an ISO 8601 datetime string. Filters snapshots created at
+         *   or after this timestamp (inclusive). Used together with
+         *   createdBefore to define date ranges.
      */
     createdAfter?: (string & tags.Format<"date-time">) | null | undefined;
 
@@ -100,8 +115,11 @@ export namespace IEcommerceMallShopProfileSnapshot {
      *
      * An ISO 8601 formatted datetime string. When provided, only snapshots with created_at <= this value are returned. Often used with createdAfter to define a time window for snapshot retrieval.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Date range filter on created_at column. Value must be an ISO 8601 datetime string. Filters snapshots created at or before this timestamp (inclusive). Used together with createdAfter to define date ranges.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Date range filter on created_at column. Value
+         *   must be an ISO 8601 datetime string. Filters snapshots created at
+         *   or before this timestamp (inclusive). Used together with
+         *   createdAfter to define date ranges.
      */
     createdBefore?: (string & tags.Format<"date-time">) | null | undefined;
 
@@ -110,8 +128,11 @@ export namespace IEcommerceMallShopProfileSnapshot {
      *
      * Search term used to filter snapshots by shop name. Performs a case-insensitive contains match, finding all snapshots where the shop_name field includes the search text. Useful for finding snapshots of shops with names matching certain keywords. Maximum 255 characters.
      *
-     * @x-autobe-database-schema-property shop_name
-     * @x-autobe-specification Text search on shop_name column. Value must be a string with maximum length of 255 characters. Performs case-insensitive contains search to find snapshots where shop_name contains the search term.
+         * @x-autobe-database-schema-property shop_name
+         * @x-autobe-specification Text search on shop_name column. Value must
+         *   be a string with maximum length of 255 characters. Performs
+         *   case-insensitive contains search to find snapshots where shop_name
+         *   contains the search term.
      */
     shopNameSearch?: (string & tags.MaxLength<255>) | undefined;
 
@@ -120,7 +141,11 @@ export namespace IEcommerceMallShopProfileSnapshot {
      *
      * A cursor value that indicates where to start retrieving the next page of results. For the first page, omit this parameter or pass null. For subsequent pages, use the cursor value returned in the previous response's pagination metadata. Supports efficient navigation through large result sets without offset-based pagination.
      *
-     * @x-autobe-specification Cursor-based pagination parameter. Value can be a UUID or timestamp string that indicates the starting point for the next page of results. The first page uses null or omits the parameter. Backend maintains cursor state for efficient large result set navigation.
+         * @x-autobe-specification Cursor-based pagination parameter. Value can
+         *   be a UUID or timestamp string that indicates the starting point for
+         *   the next page of results. The first page uses null or omits the
+         *   parameter. Backend maintains cursor state for efficient large
+         *   result set navigation.
      */
     page?: (string & tags.MaxLength<36>) | undefined;
 
@@ -129,7 +154,10 @@ export namespace IEcommerceMallShopProfileSnapshot {
      *
      * Defines the maximum number of snapshot records to return in a single page. Value must be between 1 and 100. The actual number of records in the response may be less than this value on the final page or when the total matching records are fewer than the limit.
      *
-     * @x-autobe-specification Number of results to return per page. Must be an integer between 1 and 100 inclusive. The backend may return fewer results on the final page if fewer matching records exist than the requested limit.
+         * @x-autobe-specification Number of results to return per page. Must be
+         *   an integer between 1 and 100 inclusive. The backend may return
+         *   fewer results on the final page if fewer matching records exist
+         *   than the requested limit.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -140,7 +168,9 @@ export namespace IEcommerceMallShopProfileSnapshot {
      *
      * Specifies which field to use for sorting the result set. Valid values are 'created_at' (timestamp), 'id' (primary key), or 'shop_name' (shop name text). Combined with sortDir to control ascending or descending order.
      *
-     * @x-autobe-specification Field to sort results by. Must be one of: 'created_at', 'id', or 'shop_name'. Combined with sortDir parameter to control sort order. Default is 'created_at' if not specified.
+         * @x-autobe-specification Field to sort results by. Must be one of:
+         *   'created_at', 'id', or 'shop_name'. Combined with sortDir parameter
+         *   to control sort order. Default is 'created_at' if not specified.
      */
     sortBy?: "created_at" | "id" | "shop_name" | undefined;
 
@@ -149,7 +179,10 @@ export namespace IEcommerceMallShopProfileSnapshot {
      *
      * Controls the sort order of results. Valid values are 'ASC' for ascending order (oldest first) or 'DESC' for descending order (newest first). Combined with sortBy to define complete sort behavior.
      *
-     * @x-autobe-specification Sort direction. Must be one of: 'ASC' for ascending order or 'DESC' for descending order. Combined with sortBy parameter to control sort order. Default is 'DESC' (newest first) for created_at sorting.
+         * @x-autobe-specification Sort direction. Must be one of: 'ASC' for
+         *   ascending order or 'DESC' for descending order. Combined with
+         *   sortBy parameter to control sort order. Default is 'DESC' (newest
+         *   first) for created_at sorting.
      */
     sortDir?: "ASC" | "DESC" | undefined;
   };

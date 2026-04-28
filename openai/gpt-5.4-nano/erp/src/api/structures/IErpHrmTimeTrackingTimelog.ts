@@ -14,112 +14,145 @@ export type IErpHrmTimeTrackingTimelog = {
   /**
    * Unique identifier of the timelog record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Map IErpHrmTimeTrackingTimelog.id from erp_hrm_time_tracking_timelogs.id (UUID string).
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Map IErpHrmTimeTrackingTimelog.id from
+     *   erp_hrm_time_tracking_timelogs.id (UUID string).
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Organization (tenant) that owns this timelog.
    *
-   * @x-autobe-database-schema-property organization
-   * @x-autobe-specification Join erp_hrm_time_tracking_timelogs.erp_hrm_time_tracking_organization_id to erp_hrm_time_tracking_organizations.id and project the resulting row as IErpHrmTimeTrackingOrganization.ISummary.
+     * @x-autobe-database-schema-property organization
+     * @x-autobe-specification Join
+     *   erp_hrm_time_tracking_timelogs.erp_hrm_time_tracking_organization_id to
+     *   erp_hrm_time_tracking_organizations.id and project the resulting row as
+     *   IErpHrmTimeTrackingOrganization.ISummary.
    */
   organization: IErpHrmTimeTrackingOrganization.ISummary;
 
   /**
    * Employee/member who performed the recorded work.
    *
-   * @x-autobe-database-schema-property employee
-   * @x-autobe-specification Join erp_hrm_time_tracking_timelogs.erp_hrm_time_tracking_employee_id to erp_hrm_time_tracking_members.id and project the resulting row as IErpHrmTimeTrackingMember.ISummary.
+     * @x-autobe-database-schema-property employee
+     * @x-autobe-specification Join
+     *   erp_hrm_time_tracking_timelogs.erp_hrm_time_tracking_employee_id to
+     *   erp_hrm_time_tracking_members.id and project the resulting row as
+     *   IErpHrmTimeTrackingMember.ISummary.
    */
   employee: IErpHrmTimeTrackingMember.ISummary;
 
   /**
    * Project the work is attributed to.
    *
-   * @x-autobe-database-schema-property project
-   * @x-autobe-specification Join erp_hrm_time_tracking_timelogs.erp_hrm_time_tracking_project_id to erp_hrm_time_tracking_projects.id and project the row as IErpHrmTimeTrackingProject.ISummary.
+     * @x-autobe-database-schema-property project
+     * @x-autobe-specification Join
+     *   erp_hrm_time_tracking_timelogs.erp_hrm_time_tracking_project_id to
+     *   erp_hrm_time_tracking_projects.id and project the row as
+     *   IErpHrmTimeTrackingProject.ISummary.
    */
   project: IErpHrmTimeTrackingProject.ISummary;
 
   /**
    * Optional task attribution within the project.
    *
-   * @x-autobe-database-schema-property task
-   * @x-autobe-specification Left join erp_hrm_time_tracking_timelogs.erp_hrm_time_tracking_task_id to erp_hrm_time_tracking_tasks.id. If erp_hrm_time_tracking_task_id is NULL, return task = null; otherwise project the joined task as IErpHrmTimeTrackingTask.ISummary.
+     * @x-autobe-database-schema-property task
+     * @x-autobe-specification Left join
+     *   erp_hrm_time_tracking_timelogs.erp_hrm_time_tracking_task_id to
+     *   erp_hrm_time_tracking_tasks.id. If erp_hrm_time_tracking_task_id is
+     *   NULL, return task = null; otherwise project the joined task as
+     *   IErpHrmTimeTrackingTask.ISummary.
    */
   task: IErpHrmTimeTrackingTask.ISummary | null;
 
   /**
    * Optional timesheet week container this timelog is linked to.
    *
-   * @x-autobe-database-schema-property timesheet
-   * @x-autobe-specification Left join erp_hrm_time_tracking_timelogs.erp_hrm_time_tracking_timesheet_id to erp_hrm_time_tracking_timesheets.id. If erp_hrm_time_tracking_timesheet_id is NULL, return timesheet = null; otherwise project the joined timesheet as IErpHrmTimeTrackingTimesheet.ISummary.
+     * @x-autobe-database-schema-property timesheet
+     * @x-autobe-specification Left join
+     *   erp_hrm_time_tracking_timelogs.erp_hrm_time_tracking_timesheet_id to
+     *   erp_hrm_time_tracking_timesheets.id. If
+     *   erp_hrm_time_tracking_timesheet_id is NULL, return timesheet = null;
+     *   otherwise project the joined timesheet as
+     *   IErpHrmTimeTrackingTimesheet.ISummary.
    */
   timesheet: IErpHrmTimeTrackingTimesheet.ISummary | null;
 
   /**
    * Date/time used to group this timelog into a timesheet week.
    *
-   * @x-autobe-database-schema-property work_date
-   * @x-autobe-specification Map IErpHrmTimeTrackingTimelog.work_date from erp_hrm_time_tracking_timelogs.work_date as date-time string (RFC3339).
+     * @x-autobe-database-schema-property work_date
+     * @x-autobe-specification Map IErpHrmTimeTrackingTimelog.work_date from
+     *   erp_hrm_time_tracking_timelogs.work_date as date-time string (RFC3339).
    */
   work_date: string & tags.Format<"date-time">;
 
   /**
    * Optional start timestamp of the recorded work interval.
    *
-   * @x-autobe-database-schema-property start_time
-   * @x-autobe-specification Map IErpHrmTimeTrackingTimelog.start_time from erp_hrm_time_tracking_timelogs.start_time. If DB value is NULL, return start_time = null.
+     * @x-autobe-database-schema-property start_time
+     * @x-autobe-specification Map IErpHrmTimeTrackingTimelog.start_time from
+     *   erp_hrm_time_tracking_timelogs.start_time. If DB value is NULL, return
+     *   start_time = null.
    */
   start_time: (string & tags.Format<"date-time">) | null;
 
   /**
    * Optional end timestamp of the recorded work interval.
    *
-   * @x-autobe-database-schema-property end_time
-   * @x-autobe-specification Map IErpHrmTimeTrackingTimelog.end_time from erp_hrm_time_tracking_timelogs.end_time. If DB value is NULL, return end_time = null.
+     * @x-autobe-database-schema-property end_time
+     * @x-autobe-specification Map IErpHrmTimeTrackingTimelog.end_time from
+     *   erp_hrm_time_tracking_timelogs.end_time. If DB value is NULL, return
+     *   end_time = null.
    */
   end_time: (string & tags.Format<"date-time">) | null;
 
   /**
    * Total duration of this work entry, expressed in minutes.
    *
-   * @x-autobe-database-schema-property duration_minutes
-   * @x-autobe-specification Map IErpHrmTimeTrackingTimelog.duration_minutes from erp_hrm_time_tracking_timelogs.duration_minutes (integer minutes).
+     * @x-autobe-database-schema-property duration_minutes
+     * @x-autobe-specification Map IErpHrmTimeTrackingTimelog.duration_minutes
+     *   from erp_hrm_time_tracking_timelogs.duration_minutes (integer minutes).
    */
   duration_minutes: number & tags.Type<"int32">;
 
   /**
    * Optional free-form description of the work performed.
    *
-   * @x-autobe-database-schema-property note
-   * @x-autobe-specification Map IErpHrmTimeTrackingTimelog.note from erp_hrm_time_tracking_timelogs.note. If DB value is NULL, return note = null.
+     * @x-autobe-database-schema-property note
+     * @x-autobe-specification Map IErpHrmTimeTrackingTimelog.note from
+     *   erp_hrm_time_tracking_timelogs.note. If DB value is NULL, return note =
+     *   null.
    */
   note: string | null;
 
   /**
    * Timestamp when this timelog record was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Map IErpHrmTimeTrackingTimelog.created_at from erp_hrm_time_tracking_timelogs.created_at as date-time string (RFC3339).
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Map IErpHrmTimeTrackingTimelog.created_at from
+     *   erp_hrm_time_tracking_timelogs.created_at as date-time string
+     *   (RFC3339).
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when this timelog record was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Map IErpHrmTimeTrackingTimelog.updated_at from erp_hrm_time_tracking_timelogs.updated_at as date-time string (RFC3339).
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Map IErpHrmTimeTrackingTimelog.updated_at from
+     *   erp_hrm_time_tracking_timelogs.updated_at as date-time string
+     *   (RFC3339).
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * Soft-deletion timestamp. Null means the timelog is active; non-null means it has been soft-deleted.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Map IErpHrmTimeTrackingTimelog.deleted_at from erp_hrm_time_tracking_timelogs.deleted_at. If DB value is NULL, return deleted_at = null; otherwise return the stored timestamp.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Map IErpHrmTimeTrackingTimelog.deleted_at from
+     *   erp_hrm_time_tracking_timelogs.deleted_at. If DB value is NULL, return
+     *   deleted_at = null; otherwise return the stored timestamp.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -131,32 +164,45 @@ export namespace IErpHrmTimeTrackingTimelog {
     /**
      * The date the work was performed for timesheet grouping (timezone interpreted within the organization).
      *
-     * @x-autobe-database-schema-property work_date
-     * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_timelogs.work_date when provided. If work_date changes affect timesheet week boundaries, the service layer must recompute/adjust the timesheet linkage only when allowed by the submitted/approved immutability rule.
+         * @x-autobe-database-schema-property work_date
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_tracking_timelogs.work_date when provided. If
+         *   work_date changes affect timesheet week boundaries, the service
+         *   layer must recompute/adjust the timesheet linkage only when allowed
+         *   by the submitted/approved immutability rule.
      */
     work_date?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Optional start timestamp of the work interval.
      *
-     * @x-autobe-database-schema-property start_time
-     * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_timelogs.start_time when provided. If both start_time and end_time are provided, validate that the time window is consistent (end >= start, according to service rules).
+         * @x-autobe-database-schema-property start_time
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_tracking_timelogs.start_time when provided. If both
+         *   start_time and end_time are provided, validate that the time window
+         *   is consistent (end >= start, according to service rules).
      */
     start_time?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * Optional end timestamp of the work interval.
      *
-     * @x-autobe-database-schema-property end_time
-     * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_timelogs.end_time when provided. If both start_time and end_time are provided, validate that the time window is consistent (end >= start, according to service rules).
+         * @x-autobe-database-schema-property end_time
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_tracking_timelogs.end_time when provided. If both
+         *   start_time and end_time are provided, validate that the time window
+         *   is consistent (end >= start, according to service rules).
      */
     end_time?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * Total worked duration in minutes.
      *
-     * @x-autobe-database-schema-property duration_minutes
-     * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_timelogs.duration_minutes when provided. Validate that duration_minutes is coherent with start_time/end_time when both are supplied (implementation layer).
+         * @x-autobe-database-schema-property duration_minutes
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_tracking_timelogs.duration_minutes when provided.
+         *   Validate that duration_minutes is coherent with start_time/end_time
+         *   when both are supplied (implementation layer).
      */
     duration_minutes?:
       | (number & tags.Type<"int32"> & tags.Minimum<0>)
@@ -165,16 +211,22 @@ export namespace IErpHrmTimeTrackingTimelog {
     /**
      * Optional free-form note describing the work performed.
      *
-     * @x-autobe-database-schema-property note
-     * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_timelogs.note when provided. Persist the note exactly as provided (nullable allowed).
+         * @x-autobe-database-schema-property note
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_tracking_timelogs.note when provided. Persist the note
+         *   exactly as provided (nullable allowed).
      */
     note?: string | null | undefined;
 
     /**
      * Optional task id within the timelog's project that the work is attributed to.
      *
-     * @x-autobe-database-schema-property erp_hrm_time_tracking_task_id
-     * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_timelogs.erp_hrm_time_tracking_task_id when provided (including null to clear). Implementation must validate task existence within the relevant project context and enforce membership/eligibility rules as applicable.
+         * @x-autobe-database-schema-property erp_hrm_time_tracking_task_id
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_tracking_timelogs.erp_hrm_time_tracking_task_id when
+         *   provided (including null to clear). Implementation must validate
+         *   task existence within the relevant project context and enforce
+         *   membership/eligibility rules as applicable.
      */
     erp_hrm_time_tracking_task_id?:
       | (string & tags.Format<"uuid">)
@@ -189,56 +241,79 @@ export namespace IErpHrmTimeTrackingTimelog {
     /**
      * The date/time representing when the work was performed; used to group timelog entries into a timesheet week.
      *
-     * @x-autobe-database-schema-property work_date
-     * @x-autobe-specification Direct mapping from IErpHrmTimeTrackingTimelog.ICreate.work_date to erp_hrm_time_tracking_timelogs.work_date. Persist as DateTime (timestamptz).
+         * @x-autobe-database-schema-property work_date
+         * @x-autobe-specification Direct mapping from
+         *   IErpHrmTimeTrackingTimelog.ICreate.work_date to
+         *   erp_hrm_time_tracking_timelogs.work_date. Persist as DateTime
+         *   (timestamptz).
      */
     work_date: string & tags.Format<"date-time">;
 
     /**
      * Optional start timestamp of the work interval. Null means no specific start time was provided.
      *
-     * @x-autobe-database-schema-property start_time
-     * @x-autobe-specification Direct mapping from IErpHrmTimeTrackingTimelog.ICreate.start_time to erp_hrm_time_tracking_timelogs.start_time. If null is provided, store null; otherwise store the DateTime value.
+         * @x-autobe-database-schema-property start_time
+         * @x-autobe-specification Direct mapping from
+         *   IErpHrmTimeTrackingTimelog.ICreate.start_time to
+         *   erp_hrm_time_tracking_timelogs.start_time. If null is provided,
+         *   store null; otherwise store the DateTime value.
      */
     start_time?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * Optional end timestamp of the work interval. Null means no specific end time was provided.
      *
-     * @x-autobe-database-schema-property end_time
-     * @x-autobe-specification Direct mapping from IErpHrmTimeTrackingTimelog.ICreate.end_time to erp_hrm_time_tracking_timelogs.end_time. If null is provided, store null; otherwise store the DateTime value. If both start_time and end_time are non-null, validate start_time <= end_time.
+         * @x-autobe-database-schema-property end_time
+         * @x-autobe-specification Direct mapping from
+         *   IErpHrmTimeTrackingTimelog.ICreate.end_time to
+         *   erp_hrm_time_tracking_timelogs.end_time. If null is provided, store
+         *   null; otherwise store the DateTime value. If both start_time and
+         *   end_time are non-null, validate start_time <= end_time.
      */
     end_time?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * Total worked duration in minutes for this timelog entry.
      *
-     * @x-autobe-database-schema-property duration_minutes
-     * @x-autobe-specification Direct mapping from IErpHrmTimeTrackingTimelog.ICreate.duration_minutes to erp_hrm_time_tracking_timelogs.duration_minutes. Persist as integer minutes. Enforce minimum 0.
+         * @x-autobe-database-schema-property duration_minutes
+         * @x-autobe-specification Direct mapping from
+         *   IErpHrmTimeTrackingTimelog.ICreate.duration_minutes to
+         *   erp_hrm_time_tracking_timelogs.duration_minutes. Persist as integer
+         *   minutes. Enforce minimum 0.
      */
     duration_minutes: number & tags.Type<"int32"> & tags.Minimum<0>;
 
     /**
      * Optional free-form note describing the work performed.
      *
-     * @x-autobe-database-schema-property note
-     * @x-autobe-specification Direct mapping from IErpHrmTimeTrackingTimelog.ICreate.note to erp_hrm_time_tracking_timelogs.note. If null is provided, store null; otherwise store the provided string.
+         * @x-autobe-database-schema-property note
+         * @x-autobe-specification Direct mapping from
+         *   IErpHrmTimeTrackingTimelog.ICreate.note to
+         *   erp_hrm_time_tracking_timelogs.note. If null is provided, store
+         *   null; otherwise store the provided string.
      */
     note?: string | null | undefined;
 
     /**
      * The project id within the selected organization to which this timelog entry belongs.
      *
-     * @x-autobe-database-schema-property erp_hrm_time_tracking_project_id
-     * @x-autobe-specification Map IErpHrmTimeTrackingTimelog.ICreate.erpHrmTimeTrackingProjectId to erp_hrm_time_tracking_timelogs.erp_hrm_time_tracking_project_id. Validate the project exists, belongs to the selected organization, and is in an active-allowed status for timelog association.
+         * @x-autobe-database-schema-property erp_hrm_time_tracking_project_id
+         * @x-autobe-specification Map
+         *   IErpHrmTimeTrackingTimelog.ICreate.erpHrmTimeTrackingProjectId to
+         *   erp_hrm_time_tracking_timelogs.erp_hrm_time_tracking_project_id.
+         *   Validate the project exists, belongs to the selected organization,
+         *   and is in an active-allowed status for timelog association.
      */
     erpHrmTimeTrackingProjectId: string & tags.Format<"uuid">;
 
     /**
      * Optional task id within the referenced project to attribute this timelog to. Null means the timelog is not tied to a task.
      *
-     * @x-autobe-database-schema-property erp_hrm_time_tracking_task_id
-     * @x-autobe-specification If erpHrmTimeTrackingTaskId is provided, map it to erp_hrm_time_tracking_timelogs.erp_hrm_time_tracking_task_id; if null, store null. When non-null, validate the task exists and belongs to the referenced project.
+         * @x-autobe-database-schema-property erp_hrm_time_tracking_task_id
+         * @x-autobe-specification If erpHrmTimeTrackingTaskId is provided, map
+         *   it to erp_hrm_time_tracking_timelogs.erp_hrm_time_tracking_task_id;
+         *   if null, store null. When non-null, validate the task exists and
+         *   belongs to the referenced project.
      */
     erpHrmTimeTrackingTaskId?:
       | (string & tags.Format<"uuid">)
@@ -248,8 +323,13 @@ export namespace IErpHrmTimeTrackingTimelog {
     /**
      * Optional timesheet id to associate this timelog with a specific weekly timesheet workflow container. Null means no timesheet linkage.
      *
-     * @x-autobe-database-schema-property erp_hrm_time_tracking_timesheet_id
-     * @x-autobe-specification If erpHrmTimeTrackingTimesheetId is provided, map it to erp_hrm_time_tracking_timelogs.erp_hrm_time_tracking_timesheet_id; if null, store null. When non-null, validate the timesheet exists, belongs to the selected organization and the same employee, and is in a workflow state that allows linking/adding timelogs.
+         * @x-autobe-database-schema-property erp_hrm_time_tracking_timesheet_id
+         * @x-autobe-specification If erpHrmTimeTrackingTimesheetId is provided,
+         *   map it to
+         *   erp_hrm_time_tracking_timelogs.erp_hrm_time_tracking_timesheet_id;
+         *   if null, store null. When non-null, validate the timesheet exists,
+         *   belongs to the selected organization and the same employee, and is
+         *   in a workflow state that allows linking/adding timelogs.
      */
     erpHrmTimeTrackingTimesheetId?:
       | (string & tags.Format<"uuid">)
@@ -264,35 +344,44 @@ export namespace IErpHrmTimeTrackingTimelog {
     /**
      * 1-based page number for pagination. The first page is page 1.
      *
-     * @x-autobe-specification Used to compute OFFSET with a 1-based page index: offset = (page - 1) * limit, after validating bounds (page >= 1).
+         * @x-autobe-specification Used to compute OFFSET with a 1-based page
+         *   index: offset = (page - 1) * limit, after validating bounds (page
+         *   >= 1).
      */
     page: number & tags.Type<"int32"> & tags.Minimum<1>;
 
     /**
      * Maximum number of timelog records to return per page.
      *
-     * @x-autobe-specification Used as LIMIT in the query (max 100 per DTO constraint).
+         * @x-autobe-specification Used as LIMIT in the query (max 100 per DTO
+         *   constraint).
      */
     limit: number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>;
 
     /**
      * Field to sort timelogs by.
      *
-     * @x-autobe-specification If sortBy is 'workDate', sort by erp_hrm_time_tracking_timelogs.work_date. If sortBy is 'createdAt', sort by erp_hrm_time_tracking_timelogs.created_at.
+         * @x-autobe-specification If sortBy is 'workDate', sort by
+         *   erp_hrm_time_tracking_timelogs.work_date. If sortBy is 'createdAt',
+         *   sort by erp_hrm_time_tracking_timelogs.created_at.
      */
     sortBy: "workDate" | "createdAt";
 
     /**
      * Sort direction (ascending or descending).
      *
-     * @x-autobe-specification If sortOrder is 'asc', apply ascending order; if 'desc', apply descending order, to the column selected by sortBy.
+         * @x-autobe-specification If sortOrder is 'asc', apply ascending order;
+         *   if 'desc', apply descending order, to the column selected by
+         *   sortBy.
      */
     sortOrder: "asc" | "desc";
 
     /**
      * Inclusive lower bound for timelog work_date filter. Use null to omit the lower bound.
      *
-     * @x-autobe-specification When non-null, apply condition erp_hrm_time_tracking_timelogs.work_date >= workDateFrom (inclusive). When null, omit the lower-bound predicate.
+         * @x-autobe-specification When non-null, apply condition
+         *   erp_hrm_time_tracking_timelogs.work_date >= workDateFrom
+         *   (inclusive). When null, omit the lower-bound predicate.
      */
     workDateFrom:
       | (string & tags.Format<"date-time">)
@@ -302,7 +391,9 @@ export namespace IErpHrmTimeTrackingTimelog {
     /**
      * Inclusive upper bound for work_date filter. Use null to omit the upper bound.
      *
-     * @x-autobe-specification When non-null, apply condition erp_hrm_time_tracking_timelogs.work_date <= workDateTo (inclusive). When null, omit the upper-bound predicate.
+         * @x-autobe-specification When non-null, apply condition
+         *   erp_hrm_time_tracking_timelogs.work_date <= workDateTo (inclusive).
+         *   When null, omit the upper-bound predicate.
      */
     workDateTo:
       | (string & tags.Format<"date-time">)
@@ -312,28 +403,36 @@ export namespace IErpHrmTimeTrackingTimelog {
     /**
      * Optional project filter (UUID). When null, timelogs from all projects are included.
      *
-     * @x-autobe-specification If projectId is non-null, add predicate erp_hrm_time_tracking_timelogs.erp_hrm_time_tracking_project_id = projectId. If null, do not apply project filtering.
+         * @x-autobe-specification If projectId is non-null, add predicate
+         *   erp_hrm_time_tracking_timelogs.erp_hrm_time_tracking_project_id =
+         *   projectId. If null, do not apply project filtering.
      */
     projectId: (string & tags.Format<"uuid">) | null;
 
     /**
      * Optional task filter within the project context (UUID). When null, tasks are not filtered.
      *
-     * @x-autobe-specification If taskId is non-null, add predicate erp_hrm_time_tracking_timelogs.erp_hrm_time_tracking_task_id = taskId. If null, do not apply task filtering.
+         * @x-autobe-specification If taskId is non-null, add predicate
+         *   erp_hrm_time_tracking_timelogs.erp_hrm_time_tracking_task_id =
+         *   taskId. If null, do not apply task filtering.
      */
     taskId: (string & tags.Format<"uuid">) | null;
 
     /**
      * Optional employee/member filter (UUID). When null, timelogs for all employees are included.
      *
-     * @x-autobe-specification If employeeId is non-null, add predicate erp_hrm_time_tracking_timelogs.erp_hrm_time_tracking_employee_id = employeeId. If null, do not apply employee filtering.
+         * @x-autobe-specification If employeeId is non-null, add predicate
+         *   erp_hrm_time_tracking_timelogs.erp_hrm_time_tracking_employee_id =
+         *   employeeId. If null, do not apply employee filtering.
      */
     employeeId: (string & tags.Format<"uuid">) | null;
 
     /**
      * Optional timesheet-week container filter (UUID). When null, timelogs are not restricted to a timesheet.
      *
-     * @x-autobe-specification If timesheetId is non-null, add predicate erp_hrm_time_tracking_timelogs.erp_hrm_time_tracking_timesheet_id = timesheetId. If null, do not apply timesheet filtering.
+         * @x-autobe-specification If timesheetId is non-null, add predicate
+         *   erp_hrm_time_tracking_timelogs.erp_hrm_time_tracking_timesheet_id =
+         *   timesheetId. If null, do not apply timesheet filtering.
      */
     timesheetId: (string & tags.Format<"uuid">) | null;
   };
@@ -345,104 +444,134 @@ export namespace IErpHrmTimeTrackingTimelog {
     /**
      * Timelog identifier.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_timelogs.id. UUID string.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_tracking_timelogs.id. UUID string.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Date/time representing when the work was performed (used for week grouping).
      *
-     * @x-autobe-database-schema-property work_date
-     * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_timelogs.work_date (timestamptz). Serialize as ISO-8601 string.
+         * @x-autobe-database-schema-property work_date
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_tracking_timelogs.work_date (timestamptz). Serialize
+         *   as ISO-8601 string.
      */
     work_date: string & tags.Format<"date-time">;
 
     /**
      * Optional start timestamp of the recorded work interval.
      *
-     * @x-autobe-database-schema-property start_time
-     * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_timelogs.start_time (nullable timestamptz). Return ISO-8601 string when non-null, otherwise null.
+         * @x-autobe-database-schema-property start_time
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_tracking_timelogs.start_time (nullable timestamptz).
+         *   Return ISO-8601 string when non-null, otherwise null.
      */
     start_time: (string & tags.Format<"date-time">) | null;
 
     /**
      * Optional end timestamp of the recorded work interval.
      *
-     * @x-autobe-database-schema-property end_time
-     * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_timelogs.end_time (nullable timestamptz). Return ISO-8601 string when non-null, otherwise null.
+         * @x-autobe-database-schema-property end_time
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_tracking_timelogs.end_time (nullable timestamptz).
+         *   Return ISO-8601 string when non-null, otherwise null.
      */
     end_time: (string & tags.Format<"date-time">) | null;
 
     /**
      * Total worked duration in minutes.
      *
-     * @x-autobe-database-schema-property duration_minutes
-     * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_timelogs.duration_minutes (Int). Non-negative integer as per schema constraints.
+         * @x-autobe-database-schema-property duration_minutes
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_tracking_timelogs.duration_minutes (Int). Non-negative
+         *   integer as per schema constraints.
      */
     duration_minutes: number & tags.Type<"int32"> & tags.Minimum<0>;
 
     /**
      * Optional note describing the work performed.
      *
-     * @x-autobe-database-schema-property note
-     * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_timelogs.note (nullable string). Return string when non-null, otherwise null.
+         * @x-autobe-database-schema-property note
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_tracking_timelogs.note (nullable string). Return
+         *   string when non-null, otherwise null.
      */
     note: string | null;
 
     /**
      * Record creation timestamp.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_timelogs.created_at (timestamptz). Serialize as ISO-8601 string.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_tracking_timelogs.created_at (timestamptz). Serialize
+         *   as ISO-8601 string.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * Record last update timestamp.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_timelogs.updated_at (timestamptz). Serialize as ISO-8601 string.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_tracking_timelogs.updated_at (timestamptz). Serialize
+         *   as ISO-8601 string.
      */
     updated_at: string & tags.Format<"date-time">;
 
     /**
      * Soft-delete timestamp. Null means the timelog is active; non-null means it was deleted.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_timelogs.deleted_at (nullable timestamptz). Return ISO-8601 string when non-null, otherwise null.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_tracking_timelogs.deleted_at (nullable timestamptz).
+         *   Return ISO-8601 string when non-null, otherwise null.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
 
     /**
      * The organization (tenant) this timelog belongs to.
      *
-     * @x-autobe-database-schema-property organization
-     * @x-autobe-specification Join via erp_hrm_time_tracking_timelogs.erp_hrm_time_tracking_organization_id -> erp_hrm_time_tracking_organizations.id and project the joined row as IErpHrmTimeTrackingOrganization.ISummary.
+         * @x-autobe-database-schema-property organization
+         * @x-autobe-specification Join via
+         *   erp_hrm_time_tracking_timelogs.erp_hrm_time_tracking_organization_id
+         *   -> erp_hrm_time_tracking_organizations.id and project the joined
+         *   row as IErpHrmTimeTrackingOrganization.ISummary.
      */
     organization: IErpHrmTimeTrackingOrganization.ISummary;
 
     /**
      * The employee/member who performed the work.
      *
-     * @x-autobe-database-schema-property employee
-     * @x-autobe-specification Join via erp_hrm_time_tracking_timelogs.erp_hrm_time_tracking_employee_id -> erp_hrm_time_tracking_members.id and project the joined row as IErpHrmTimeTrackingMember.ISummary.
+         * @x-autobe-database-schema-property employee
+         * @x-autobe-specification Join via
+         *   erp_hrm_time_tracking_timelogs.erp_hrm_time_tracking_employee_id ->
+         *   erp_hrm_time_tracking_members.id and project the joined row as
+         *   IErpHrmTimeTrackingMember.ISummary.
      */
     employee: IErpHrmTimeTrackingMember.ISummary;
 
     /**
      * The project this timelog was recorded under.
      *
-     * @x-autobe-database-schema-property project
-     * @x-autobe-specification Join via erp_hrm_time_tracking_timelogs.erp_hrm_time_tracking_project_id -> erp_hrm_time_tracking_projects.id and project the joined row as IErpHrmTimeTrackingProject.ISummary.
+         * @x-autobe-database-schema-property project
+         * @x-autobe-specification Join via
+         *   erp_hrm_time_tracking_timelogs.erp_hrm_time_tracking_project_id ->
+         *   erp_hrm_time_tracking_projects.id and project the joined row as
+         *   IErpHrmTimeTrackingProject.ISummary.
      */
     project: IErpHrmTimeTrackingProject.ISummary;
 
     /**
      * Optional task within the project that this timelog is attributed to.
      *
-     * @x-autobe-database-schema-property task
-     * @x-autobe-specification LEFT JOIN via erp_hrm_time_tracking_timelogs.erp_hrm_time_tracking_task_id -> erp_hrm_time_tracking_tasks.id. If erp_hrm_time_tracking_task_id is null or join yields no row, return null; otherwise project the joined row as IErpHrmTimeTrackingTask.ISummary.
+         * @x-autobe-database-schema-property task
+         * @x-autobe-specification LEFT JOIN via
+         *   erp_hrm_time_tracking_timelogs.erp_hrm_time_tracking_task_id ->
+         *   erp_hrm_time_tracking_tasks.id. If erp_hrm_time_tracking_task_id is
+         *   null or join yields no row, return null; otherwise project the
+         *   joined row as IErpHrmTimeTrackingTask.ISummary.
      */
     task: IErpHrmTimeTrackingTask.ISummary | null;
   };

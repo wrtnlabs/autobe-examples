@@ -18,8 +18,9 @@ export type IHrmTimeTrackingDepartmentSnapshot = {
    *
    * This UUID serves as the primary key for the snapshot record and is used when referencing a specific snapshot in API endpoints.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_department_snapshots.id.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_department_snapshots.id.
    */
   id: string & tags.Format<"uuid">;
 
@@ -28,8 +29,10 @@ export type IHrmTimeTrackingDepartmentSnapshot = {
    *
    * Provides the summary representation of the department including its id, name, description, parent hierarchy, children count, and timestamps as they existed at the time of the snapshot. Multiple snapshots may exist for the same department, forming a chronological history of changes.
    *
-   * @x-autobe-database-schema-property department
-   * @x-autobe-specification Join via hrm_time_tracking_department_id to hrm_time_tracking_departments.id. Returns IHrmTimeTrackingDepartment.ISummary.
+     * @x-autobe-database-schema-property department
+     * @x-autobe-specification Join via hrm_time_tracking_department_id to
+     *   hrm_time_tracking_departments.id. Returns
+     *   IHrmTimeTrackingDepartment.ISummary.
    */
   department: IHrmTimeTrackingDepartment.ISummary;
 
@@ -38,8 +41,11 @@ export type IHrmTimeTrackingDepartmentSnapshot = {
    *
    * Denormalized from the department record onto each snapshot to enable efficient organization-scoped queries without requiring a join through the department table. Provides the summary representation of the organization including its id, name, currency, timezone, fiscal settings, and status.
    *
-   * @x-autobe-database-schema-property organization
-   * @x-autobe-specification Join via hrm_time_tracking_organization_id to hrm_time_tracking_organizations.id. Returns IHrmTimeTrackingOrganization.ISummary. Denormalized for direct organization-scoped queries.
+     * @x-autobe-database-schema-property organization
+     * @x-autobe-specification Join via hrm_time_tracking_organization_id to
+     *   hrm_time_tracking_organizations.id. Returns
+     *   IHrmTimeTrackingOrganization.ISummary. Denormalized for direct
+     *   organization-scoped queries.
    */
   organization: IHrmTimeTrackingOrganization.ISummary;
 
@@ -48,8 +54,10 @@ export type IHrmTimeTrackingDepartmentSnapshot = {
    *
    * Identifies the authenticated user who created, updated, or deleted the department. This field is null for system-generated actions where no specific user was the actor. Provides the summary representation of the member including id, email, display name, avatar, and phone number.
    *
-   * @x-autobe-database-schema-property actorMember
-   * @x-autobe-specification LEFT JOIN via actor_member_id to hrm_time_tracking_members.id. Returns IHrmTimeTrackingMember.ISummary. Nullable for system-generated actions.
+     * @x-autobe-database-schema-property actorMember
+     * @x-autobe-specification LEFT JOIN via actor_member_id to
+     *   hrm_time_tracking_members.id. Returns IHrmTimeTrackingMember.ISummary.
+     *   Nullable for system-generated actions.
    */
   actor: IHrmTimeTrackingMember.ISummary | null;
 
@@ -58,8 +66,9 @@ export type IHrmTimeTrackingDepartmentSnapshot = {
    *
    * Captures the human-readable name of the department (e.g., "Engineering", "Marketing", "Human Resources") as it existed when the snapshot was recorded, preserving the historical value even if the department is later renamed.
    *
-   * @x-autobe-database-schema-property name
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_department_snapshots.name.
+     * @x-autobe-database-schema-property name
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_department_snapshots.name.
    */
   name: string;
 
@@ -68,8 +77,9 @@ export type IHrmTimeTrackingDepartmentSnapshot = {
    *
    * Captures the optional explanatory text describing the department's function, responsibilities, or purpose as it existed when the snapshot was recorded.
    *
-   * @x-autobe-database-schema-property description
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_department_snapshots.description. Nullable.
+     * @x-autobe-database-schema-property description
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_department_snapshots.description. Nullable.
    */
   description: string | null;
 
@@ -78,8 +88,11 @@ export type IHrmTimeTrackingDepartmentSnapshot = {
    *
    * Denormalized from the department hierarchy — not a foreign key constraint, as the parent department may be deleted after this snapshot is taken. Captures the one-level nesting hierarchy as it existed at snapshot time. Null for top-level departments.
    *
-   * @x-autobe-database-schema-property parent_department_id
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_department_snapshots.parent_department_id. Denormalized stored value captured as it existed at snapshot time — not an FK constraint. Nullable.
+     * @x-autobe-database-schema-property parent_department_id
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_department_snapshots.parent_department_id.
+     *   Denormalized stored value captured as it existed at snapshot time — not
+     *   an FK constraint. Nullable.
    */
   parent_department_id: (string & tags.Format<"uuid">) | null;
 
@@ -88,8 +101,10 @@ export type IHrmTimeTrackingDepartmentSnapshot = {
    *
    * Distinguishes the lifecycle event that caused the snapshot to be recorded. One of: "created" — the department was newly created; "updated" — an existing department's properties were modified; "deleted" — the department was soft-deleted.
    *
-   * @x-autobe-database-schema-property change_type
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_department_snapshots.change_type. One of: "created", "updated", "deleted".
+     * @x-autobe-database-schema-property change_type
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_department_snapshots.change_type. One of: "created",
+     *   "updated", "deleted".
    */
   change_type: string;
 
@@ -98,8 +113,9 @@ export type IHrmTimeTrackingDepartmentSnapshot = {
    *
    * Indicates when the snapshot was captured, corresponding to the moment the department creation, update, or deletion event occurred. Formatted as an ISO 8601 date-time string.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_department_snapshots.created_at.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_department_snapshots.created_at.
    */
   created_at: string & tags.Format<"date-time">;
 };
@@ -117,8 +133,9 @@ export namespace IHrmTimeTrackingDepartmentSnapshot {
      *
      * Automatically generated UUID assigned when the snapshot is created. Used for retrieving the specific snapshot detail via the snapshot detail endpoint.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_department_snapshots.id. UUID primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_department_snapshots.id. UUID primary key.
      */
     id: string & tags.Format<"uuid">;
 
@@ -127,8 +144,10 @@ export namespace IHrmTimeTrackingDepartmentSnapshot {
      *
      * Captures the department's display name as it existed when the create, update, or delete event occurred, preserving historical naming.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_department_snapshots.name. The department name as it existed when the snapshot was taken.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_department_snapshots.name. The department name as
+         *   it existed when the snapshot was taken.
      */
     name: string;
 
@@ -137,8 +156,11 @@ export namespace IHrmTimeTrackingDepartmentSnapshot {
      *
      * Captures the optional explanatory text describing the department's function or purpose as it existed when the change occurred. Null if no description was set.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_department_snapshots.description. Nullable string, null when the department had no description at snapshot time.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_department_snapshots.description. Nullable
+         *   string, null when the department had no description at snapshot
+         *   time.
      */
     description: string | null;
 
@@ -147,8 +169,11 @@ export namespace IHrmTimeTrackingDepartmentSnapshot {
      *
      * Denormalized from the department record to preserve historical parent-child hierarchy as it existed when the change occurred. Null for top-level departments. This is a scalar UUID stored directly on the snapshot, not a foreign key reference, so it persists even if the parent department is later deleted.
      *
-     * @x-autobe-database-schema-property parent_department_id
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_department_snapshots.parent_department_id. Denormalized nullable UUID scalar — not a FK constraint as parent may be deleted after snapshot.
+         * @x-autobe-database-schema-property parent_department_id
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_department_snapshots.parent_department_id.
+         *   Denormalized nullable UUID scalar — not a FK constraint as parent
+         *   may be deleted after snapshot.
      */
     parentDepartmentId: (string & tags.Format<"uuid">) | null;
 
@@ -157,8 +182,10 @@ export namespace IHrmTimeTrackingDepartmentSnapshot {
      *
      * One of: "created" (department was created), "updated" (department properties were modified), or "deleted" (department was soft-deleted). Distinguishes the nature of the change for audit trail navigation.
      *
-     * @x-autobe-database-schema-property change_type
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_department_snapshots.change_type. One of: "created", "updated", "deleted".
+         * @x-autobe-database-schema-property change_type
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_department_snapshots.change_type. One of:
+         *   "created", "updated", "deleted".
      */
     changeType: string;
 
@@ -167,8 +194,12 @@ export namespace IHrmTimeTrackingDepartmentSnapshot {
      *
      * Provides the summary representation of the department at the time of the snapshot, including its current identity information. Always present since every snapshot is associated with exactly one department.
      *
-     * @x-autobe-database-schema-property department
-     * @x-autobe-specification LEFT JOIN from hrm_time_tracking_department_snapshots.hrm_time_tracking_department_id to hrm_time_tracking_departments.id. Returns IHrmTimeTrackingDepartment.ISummary. Always present as every snapshot belongs to a department.
+         * @x-autobe-database-schema-property department
+         * @x-autobe-specification LEFT JOIN from
+         *   hrm_time_tracking_department_snapshots.hrm_time_tracking_department_id
+         *   to hrm_time_tracking_departments.id. Returns
+         *   IHrmTimeTrackingDepartment.ISummary. Always present as every
+         *   snapshot belongs to a department.
      */
     department: IHrmTimeTrackingDepartment.ISummary;
 
@@ -177,8 +208,12 @@ export namespace IHrmTimeTrackingDepartmentSnapshot {
      *
      * Provides the summary representation of the actor including their display name, email, and avatar. Null for system-generated actions (e.g., cascading updates from parent department deletion) where no specific user performed the change.
      *
-     * @x-autobe-database-schema-property actorMember
-     * @x-autobe-specification LEFT JOIN from hrm_time_tracking_department_snapshots.actor_member_id to hrm_time_tracking_members.id. Returns IHrmTimeTrackingMember.ISummary. Nullable — null for system-generated actions where no specific user was the actor.
+         * @x-autobe-database-schema-property actorMember
+         * @x-autobe-specification LEFT JOIN from
+         *   hrm_time_tracking_department_snapshots.actor_member_id to
+         *   hrm_time_tracking_members.id. Returns
+         *   IHrmTimeTrackingMember.ISummary. Nullable — null for
+         *   system-generated actions where no specific user was the actor.
      */
     actorMember: IHrmTimeTrackingMember.ISummary | null;
 
@@ -187,8 +222,10 @@ export namespace IHrmTimeTrackingDepartmentSnapshot {
      *
      * Indicates when the snapshot was created, establishing the point in time at which the department state was captured. Useful for chronological sorting and audit trail navigation.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_department_snapshots.created_at. DateTime with timezone. Automatically set when the snapshot is recorded.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_department_snapshots.created_at. DateTime with
+         *   timezone. Automatically set when the snapshot is recorded.
      */
     createdAt: string & tags.Format<"date-time">;
   };
@@ -202,7 +239,7 @@ export namespace IHrmTimeTrackingDepartmentSnapshot {
     /**
      * Filter by the type of change that triggered the snapshot. One of "created", "updated", or "deleted".
      *
-     * @x-autobe-database-schema-property change_type
+         * @x-autobe-database-schema-property change_type
      */
     change_type?: string | undefined;
 
@@ -219,7 +256,7 @@ export namespace IHrmTimeTrackingDepartmentSnapshot {
     /**
      * Filter by the member who performed the action that triggered the snapshot.
      *
-     * @x-autobe-database-schema-property actor_member_id
+         * @x-autobe-database-schema-property actor_member_id
      */
     actor_member_id?: (string & tags.Format<"uuid">) | null | undefined;
 

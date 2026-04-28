@@ -10,56 +10,69 @@ export type IErpHrmGuestSession = {
   /**
    * Unique identifier for the guest session record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from erp_hrm_guest_sessions.id. UUID primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from erp_hrm_guest_sessions.id.
+     *   UUID primary key.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * IP address of the client connection for this guest session.
    *
-   * @x-autobe-database-schema-property ip
-   * @x-autobe-specification Direct mapping from erp_hrm_guest_sessions.ip. Client connection IP address used for security audit and fraud detection.
+     * @x-autobe-database-schema-property ip
+     * @x-autobe-specification Direct mapping from erp_hrm_guest_sessions.ip.
+     *   Client connection IP address used for security audit and fraud
+     *   detection.
    */
   ip: string;
 
   /**
    * URL path the guest accessed during this session.
    *
-   * @x-autobe-database-schema-property href
-   * @x-autobe-specification Direct mapping from erp_hrm_guest_sessions.href. URL path the guest accessed, recording entry point or current location.
+     * @x-autobe-database-schema-property href
+     * @x-autobe-specification Direct mapping from erp_hrm_guest_sessions.href.
+     *   URL path the guest accessed, recording entry point or current location.
    */
   href: string;
 
   /**
    * HTTP referrer header indicating the source of the guest's visit, if available.
    *
-   * @x-autobe-database-schema-property referrer
-   * @x-autobe-specification Direct mapping from erp_hrm_guest_sessions.referrer. HTTP referrer header indicating where the guest came from. Nullable as referrer may not be present.
+     * @x-autobe-database-schema-property referrer
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_guest_sessions.referrer. HTTP referrer header indicating where
+     *   the guest came from. Nullable as referrer may not be present.
    */
   referrer: string | null;
 
   /**
    * Timestamp when this guest session was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from erp_hrm_guest_sessions.created_at. Timestamp when the session was created, marking the beginning of the guest's visit.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_guest_sessions.created_at. Timestamp when the session was
+     *   created, marking the beginning of the guest's visit.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when this guest session expires.
    *
-   * @x-autobe-database-schema-property expired_at
-   * @x-autobe-specification Direct mapping from erp_hrm_guest_sessions.expired_at. Timestamp when the session expires. Required for security - sessions must have a defined lifetime.
+     * @x-autobe-database-schema-property expired_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_guest_sessions.expired_at. Timestamp when the session expires.
+     *   Required for security - sessions must have a defined lifetime.
    */
   expired_at: string & tags.Format<"date-time">;
 
   /**
    * The guest who owns this session, identified by device fingerprint.
    *
-   * @x-autobe-database-schema-property guest
-   * @x-autobe-specification JOIN via erp_hrm_guest_id foreign key to erp_hrm_guests.id. Returns IErpHrmGuest.ISummary containing id, fingerprint, created_at, and sessions_count for the guest who owns this session.
+     * @x-autobe-database-schema-property guest
+     * @x-autobe-specification JOIN via erp_hrm_guest_id foreign key to
+     *   erp_hrm_guests.id. Returns IErpHrmGuest.ISummary containing id,
+     *   fingerprint, created_at, and sessions_count for the guest who owns this
+     *   session.
    */
   guest: IErpHrmGuest.ISummary;
 };
@@ -69,32 +82,32 @@ export namespace IErpHrmGuestSession {
    */
   export type ISummary = {
     /**
-     * @x-autobe-database-schema-property id
+         * @x-autobe-database-schema-property id
      */
     id: string & tags.Format<"uuid">;
     /**
-     * @x-autobe-database-schema-property ip
+         * @x-autobe-database-schema-property ip
      */
     ip: string & tags.Format<"ipv4">;
     /**
-     * @x-autobe-database-schema-property href
+         * @x-autobe-database-schema-property href
      */
     href: string & tags.Format<"uri">;
     /**
-     * @x-autobe-database-schema-property referrer
+         * @x-autobe-database-schema-property referrer
      */
     referrer: (string & tags.Format<"uri">) | null;
     duration: number & tags.Type<"int32"> & tags.Minimum<0>;
     /**
-     * @x-autobe-database-schema-property created_at
+         * @x-autobe-database-schema-property created_at
      */
     created_at: string & tags.Format<"date-time">;
     /**
-     * @x-autobe-database-schema-property expired_at
+         * @x-autobe-database-schema-property expired_at
      */
     expired_at: string & tags.Format<"date-time">;
     /**
-     * @x-autobe-database-schema-property guest
+         * @x-autobe-database-schema-property guest
      */
     guest: IErpHrmGuest.ISummary;
   };
@@ -106,63 +119,95 @@ export namespace IErpHrmGuestSession {
     /**
      * General text search across IP address, URL path, and referrer fields for quick security investigations.
      *
-     * @x-autobe-specification Multi-column LIKE search across erp_hrm_guest_sessions.ip, erp_hrm_guest_sessions.href, and erp_hrm_guest_sessions.referrer columns. Implementation: WHERE ip LIKE '%search%' OR href LIKE '%search%' OR referrer LIKE '%search%'. Provides convenient single-field search for administrative users without requiring knowledge of specific column names.
+         * @x-autobe-specification Multi-column LIKE search across
+         *   erp_hrm_guest_sessions.ip, erp_hrm_guest_sessions.href, and
+         *   erp_hrm_guest_sessions.referrer columns. Implementation: WHERE ip
+         *   LIKE '%search%' OR href LIKE '%search%' OR referrer LIKE
+         *   '%search%'. Provides convenient single-field search for
+         *   administrative users without requiring knowledge of specific column
+         *   names.
      */
     search?: string | undefined;
 
     /**
      * Filter by IP address with partial match support for security investigations.
      *
-     * @x-autobe-specification Filter on erp_hrm_guest_sessions.ip column using LIKE partial match (WHERE ip LIKE '%ip%'). Enables security administrators to search for sessions from specific IP addresses or IP ranges for security investigations and fraud detection.
+         * @x-autobe-specification Filter on erp_hrm_guest_sessions.ip column
+         *   using LIKE partial match (WHERE ip LIKE '%ip%'). Enables security
+         *   administrators to search for sessions from specific IP addresses or
+         *   IP ranges for security investigations and fraud detection.
      */
     ip?: string | undefined;
 
     /**
      * Filter by URL path with partial match support for entry point tracking.
      *
-     * @x-autobe-specification Filter on erp_hrm_guest_sessions.href column using LIKE partial match (WHERE href LIKE '%href%'). Enables tracking visitor entry points and navigation patterns within the application.
+         * @x-autobe-specification Filter on erp_hrm_guest_sessions.href column
+         *   using LIKE partial match (WHERE href LIKE '%href%'). Enables
+         *   tracking visitor entry points and navigation patterns within the
+         *   application.
      */
     href?: string | undefined;
 
     /**
      * Filter by referrer domain with partial match support for source analysis.
      *
-     * @x-autobe-specification Filter on erp_hrm_guest_sessions.referrer column using LIKE partial match (WHERE referrer LIKE '%referrer%'). Enables analysis of traffic sources and referral patterns. Handles nullable referrer column appropriately.
+         * @x-autobe-specification Filter on erp_hrm_guest_sessions.referrer
+         *   column using LIKE partial match (WHERE referrer LIKE '%referrer%').
+         *   Enables analysis of traffic sources and referral patterns. Handles
+         *   nullable referrer column appropriately.
      */
     referrer?: string | undefined;
 
     /**
      * Start of date range for filtering sessions by creation time.
      *
-     * @x-autobe-specification Start of date range filter on erp_hrm_guest_sessions.created_at column (WHERE created_at >= from). Combined with 'to' parameter for temporal analysis. When only 'from' is provided, returns all sessions from that timestamp forward.
+         * @x-autobe-specification Start of date range filter on
+         *   erp_hrm_guest_sessions.created_at column (WHERE created_at >=
+         *   from). Combined with 'to' parameter for temporal analysis. When
+         *   only 'from' is provided, returns all sessions from that timestamp
+         *   forward.
      */
     from?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * End of date range for filtering sessions by creation time.
      *
-     * @x-autobe-specification End of date range filter on erp_hrm_guest_sessions.created_at column (WHERE created_at <= to). Combined with 'from' parameter for temporal analysis. When only 'to' is provided, returns all sessions up to that timestamp.
+         * @x-autobe-specification End of date range filter on
+         *   erp_hrm_guest_sessions.created_at column (WHERE created_at <= to).
+         *   Combined with 'from' parameter for temporal analysis. When only
+         *   'to' is provided, returns all sessions up to that timestamp.
      */
     to?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Filter by expiration status - true for expired sessions, false for active sessions.
      *
-     * @x-autobe-specification Computed boolean filter based on erp_hrm_guest_sessions.expired_at column comparison to NOW(). When true: WHERE expired_at < NOW() (returns expired sessions). When false: WHERE expired_at >= NOW() (returns active sessions). Enables quick filtering by session validity status.
+         * @x-autobe-specification Computed boolean filter based on
+         *   erp_hrm_guest_sessions.expired_at column comparison to NOW(). When
+         *   true: WHERE expired_at < NOW() (returns expired sessions). When
+         *   false: WHERE expired_at >= NOW() (returns active sessions). Enables
+         *   quick filtering by session validity status.
      */
     expired?: boolean | undefined;
 
     /**
      * Page number for pagination, starting from 1.
      *
-     * @x-autobe-specification Pagination parameter for OFFSET calculation. Implementation: OFFSET = (page - 1) * limit. Default value: 1. Used with LIMIT for efficient pagination of large result sets. Must be >= 1.
+         * @x-autobe-specification Pagination parameter for OFFSET calculation.
+         *   Implementation: OFFSET = (page - 1) * limit. Default value: 1. Used
+         *   with LIMIT for efficient pagination of large result sets. Must be
+         *   >= 1.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Number of records per page, maximum 100.
      *
-     * @x-autobe-specification Pagination parameter for LIMIT clause. Implementation: LIMIT = limit. Default value determined by system (typically 20). Maximum: 100 to prevent performance issues. Controls number of records returned per page.
+         * @x-autobe-specification Pagination parameter for LIMIT clause.
+         *   Implementation: LIMIT = limit. Default value determined by system
+         *   (typically 20). Maximum: 100 to prevent performance issues.
+         *   Controls number of records returned per page.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)

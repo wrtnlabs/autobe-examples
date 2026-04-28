@@ -8,48 +8,62 @@ export type IEcommerceMallRefundRequestSnapshot = {
   /**
    * Unique identifier of the snapshot record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_refund_request_snapshots.id. Primary key as UUID.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_refund_request_snapshots.id. Primary key as UUID.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Reference to the parent refund request that this snapshot belongs to.
    *
-   * @x-autobe-database-schema-property refund_request_id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_refund_request_snapshots.refund_request_id. Foreign key to parent refund request as UUID string.
+     * @x-autobe-database-schema-property refund_request_id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_refund_request_snapshots.refund_request_id. Foreign key
+     *   to parent refund request as UUID string.
    */
   refundRequestId: string & tags.Format<"uuid">;
 
   /**
    * Customer's original reason for requesting the refund, preserved at the time of snapshot.
    *
-   * @x-autobe-database-schema-property reason
-   * @x-autobe-specification Direct mapping from ecommerce_mall_refund_request_snapshots.reason. Nullable text field preserving customer's original refund request reason at snapshot time.
+     * @x-autobe-database-schema-property reason
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_refund_request_snapshots.reason. Nullable text field
+     *   preserving customer's original refund request reason at snapshot time.
    */
   reason: string | null;
 
   /**
    * Status of the refund request after seller response (approved, rejected, or pending if snapshot taken at creation).
    *
-   * @x-autobe-specification Direct mapping from ecommerce_mall_refund_request_snapshots.status. Nullable enum field with allowed values: 'pending' (request submitted awaiting response), 'approved' (seller approved refund), 'rejected' (seller rejected refund request).
-   * @x-autobe-database-schema-property status
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_refund_request_snapshots.status. Nullable enum field
+     *   with allowed values: 'pending' (request submitted awaiting response),
+     *   'approved' (seller approved refund), 'rejected' (seller rejected refund
+     *   request).
+     * @x-autobe-database-schema-property status
    */
   status: string | null;
 
   /**
    * Seller's explanation provided when responding to the refund request.
    *
-   * @x-autobe-database-schema-property response_reason
-   * @x-autobe-specification Direct mapping from ecommerce_mall_refund_request_snapshots.response_reason. Nullable text field containing the seller's explanation for their approval or rejection decision.
+     * @x-autobe-database-schema-property response_reason
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_refund_request_snapshots.response_reason. Nullable text
+     *   field containing the seller's explanation for their approval or
+     *   rejection decision.
    */
   responseReason: string | null;
 
   /**
    * Timestamp when this snapshot was created, marking the exact moment of seller response.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_refund_request_snapshots.created_at. Timestamp when the snapshot was created, recorded automatically by the system.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_refund_request_snapshots.created_at. Timestamp when the
+     *   snapshot was created, recorded automatically by the system.
    */
   createdAt: string & tags.Format<"date-time">;
 };

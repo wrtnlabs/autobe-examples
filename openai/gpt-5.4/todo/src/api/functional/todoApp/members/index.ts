@@ -26,7 +26,10 @@ import { ITodoAppMember } from "../../../structures/ITodoAppMember";
  * @param props.body Search criteria and pagination options for the authenticated member account
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Authenticate the caller as a member before executing any query logic. Resolve the authenticated member account identifier from the session or authentication context, and do not accept any alternate member identifier from the client for scoping.
+ * @x-autobe-specification Authenticate the caller as a member before executing
+ *   any query logic. Resolve the authenticated member account identifier from
+ *   the session or authentication context, and do not accept any alternate
+ *   member identifier from the client for scoping.
  *
  * Build a query against `todo_app_members` constrained first by `id = authenticatedMemberId`. After ownership scoping is applied, process optional request-body filters from `ITodoAppMember.IRequest` only against fields that actually exist on the model. Supported filtering may include exact or partial matching on `email`, exact matching on `email_verified`, timestamp range conditions on `created_at` and `updated_at`, and inclusion or exclusion based on whether `deleted_at` is null. Do not reference non-existent fields, and never expose or filter by `password_hash` in a way that returns credential data.
  *
@@ -127,7 +130,8 @@ export namespace index {
  * @param props.memberId Target member account identifier for the authenticated owner's private account
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Implement a read-only service method that retrieves one member account from `todo_app_members` by primary key `id`.
+ * @x-autobe-specification Implement a read-only service method that retrieves
+ *   one member account from `todo_app_members` by primary key `id`.
  *
  * Authenticate the caller as a member before any database access that would reveal account existence. Compare the authenticated member's account identifier with the `memberId` path parameter and reject the request if they do not match. This endpoint is self-only; do not permit privileged override behavior, cross-account reads, list-style access, or lookups by arbitrary email through this route.
  *

@@ -40,9 +40,9 @@ export class ShoppingmallSellerPasswordController {
    *
    * @param connection
    * @param body Password change request with current password verification and new password
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification ## Implementation Steps
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification ## Implementation Steps
    *
    * 1. **Authentication Verification**
    *    - Extract actor information from the JWT session token

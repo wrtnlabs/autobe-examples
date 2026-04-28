@@ -26,8 +26,9 @@ export type IEcommerceProductImage = {
    *
    * This UUID uniquely identifies each image record in the system. It is auto-generated upon image creation and cannot be modified.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_product_images.id. Unique UUID identifier for each product image.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from ecommerce_product_images.id.
+     *   Unique UUID identifier for each product image.
    */
   id: string & tags.Format<"uuid">;
 
@@ -38,8 +39,9 @@ export type IEcommerceProductImage = {
    *
    * The image URL is required for all product images and is used to display the image in product galleries and listings.
    *
-   * @x-autobe-specification Direct mapping from ecommerce_product_images.image_url. URI format, max 80000 characters.
-   * @x-autobe-database-schema-property image_url
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_product_images.image_url. URI format, max 80000 characters.
+     * @x-autobe-database-schema-property image_url
    */
   imageUrl: string & tags.Format<"uri">;
 
@@ -52,8 +54,10 @@ export type IEcommerceProductImage = {
    *
    * Each image within a product must have a unique display_order value. This is enforced by a database unique constraint on (ecommerce_product_id, display_order). Sellers can reorder images by updating this field.
    *
-   * @x-autobe-database-schema-property display_order
-   * @x-autobe-specification Direct mapping from ecommerce_product_images.display_order. Integer value, unique constraint with ecommerce_product_id.
+     * @x-autobe-database-schema-property display_order
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_product_images.display_order. Integer value, unique
+     *   constraint with ecommerce_product_id.
    */
   displayOrder: number & tags.Type<"int32">;
 
@@ -64,8 +68,10 @@ export type IEcommerceProductImage = {
    *
    * The relation is implemented as a JOIN query on the ecommerce_product_id foreign key, returning a product summary object with essential product information.
    *
-   * @x-autobe-database-schema-property product
-   * @x-autobe-specification Join from ecommerce_product_images.ecommerce_product_id to ecommerce_products.id. Returns IEcommerceProduct.ISummary via BELONGS-TO relation.
+     * @x-autobe-database-schema-property product
+     * @x-autobe-specification Join from
+     *   ecommerce_product_images.ecommerce_product_id to ecommerce_products.id.
+     *   Returns IEcommerceProduct.ISummary via BELONGS-TO relation.
    */
   product: IEcommerceProduct.ISummary;
 
@@ -74,8 +80,9 @@ export type IEcommerceProductImage = {
    *
    * This field is automatically set by the system when the image record is first inserted. It records the exact date and time (with timezone) of image creation.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_product_images.created_at. DateTime with timestamptz format.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_product_images.created_at. DateTime with timestamptz format.
    */
   createdAt: string & tags.Format<"date-time">;
 
@@ -84,8 +91,9 @@ export type IEcommerceProductImage = {
    *
    * This field is automatically updated by the system whenever any image field is modified (image_url, display_order). It records the exact date and time (with timezone) of the most recent update.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from ecommerce_product_images.updated_at. DateTime with timestamptz format.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_product_images.updated_at. DateTime with timestamptz format.
    */
   updatedAt: string & tags.Format<"date-time">;
 
@@ -96,8 +104,10 @@ export type IEcommerceProductImage = {
    *
    * Soft deletion allows images to be removed from view while preserving the record for audit and historical purposes.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from ecommerce_product_images.deleted_at. Nullable DateTime with timestamptz format. Null means the image is active.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_product_images.deleted_at. Nullable DateTime with timestamptz
+     *   format. Null means the image is active.
    */
   deletedAt: (string & tags.Format<"date-time">) | null;
 };
@@ -124,7 +134,11 @@ export namespace IEcommerceProductImage {
      * - Image count must match the number of active images for the product
      * - Product must not be soft-deleted
      *
-     * @x-autobe-specification Array of image UUIDs where array index determines new display_order value (0, 1, 2, ...). System validates: all IDs exist, all IDs belong to the product, no duplicates, count matches active image count. Snapshot created before/after reorder.
+         * @x-autobe-specification Array of image UUIDs where array index
+         *   determines new display_order value (0, 1, 2, ...). System
+         *   validates: all IDs exist, all IDs belong to the product, no
+         *   duplicates, count matches active image count. Snapshot created
+         *   before/after reorder.
      */
     imageIds: (string & tags.Format<"uuid">)[] &
       tags.MinItems<1> &
@@ -184,8 +198,11 @@ export namespace IEcommerceProductImage {
      * - Typically HTTPS URL for secure content delivery
      * - Maximum length: 80,000 characters (database constraint)
      *
-     * @x-autobe-database-schema-property image_url
-     * @x-autobe-specification Direct mapping from ecommerce_product_images.image_url. Stores URI pointing to image file in external storage (e.g., S3, CDN). URI format required. Replaces previous URL immediately upon update.
+         * @x-autobe-database-schema-property image_url
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_product_images.image_url. Stores URI pointing to image
+         *   file in external storage (e.g., S3, CDN). URI format required.
+         *   Replaces previous URL immediately upon update.
      */
     image_url?: (string & tags.Format<"uri">) | undefined;
 
@@ -206,8 +223,12 @@ export namespace IEcommerceProductImage {
      *
      * Sellers can reorder images by updating display_order values. When changing the order, ensure all images in the product have unique position values to avoid constraint violations.
      *
-     * @x-autobe-database-schema-property display_order
-     * @x-autobe-specification Direct mapping from ecommerce_product_images.display_order. Integer value representing position in product's image gallery. Lower values appear first. Unique constraint enforces no duplicate ordering within same product (ecommerce_product_id, display_order).
+         * @x-autobe-database-schema-property display_order
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_product_images.display_order. Integer value representing
+         *   position in product's image gallery. Lower values appear first.
+         *   Unique constraint enforces no duplicate ordering within same
+         *   product (ecommerce_product_id, display_order).
      */
     display_order?: (number & tags.Type<"int32">) | undefined;
   };
@@ -241,8 +262,12 @@ export namespace IEcommerceProductImage {
      *
      * When the image is created, the system automatically assigns a display order position starting from the next available value. The first image (display_order = 0) becomes the main thumbnail shown in product listings and search results.
      *
-     * @x-autobe-database-schema-property image_url
-     * @x-autobe-specification Direct mapping from ecommerce_product_images.image_url column. Valid URI format required (format: uri). Maximum length 80,000 characters. Seller-provided image URL pointing to external storage (e.g., S3, CDN).
+         * @x-autobe-database-schema-property image_url
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_product_images.image_url column. Valid URI format
+         *   required (format: uri). Maximum length 80,000 characters.
+         *   Seller-provided image URL pointing to external storage (e.g., S3,
+         *   CDN).
      */
     image_url: string & tags.MaxLength<80000> & tags.Format<"uri">;
   };

@@ -22,7 +22,8 @@ export * as votes from "./votes/index";
  * @param props.body Comment creation data including the comment content and optional parent comment reference for replies.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Insert a new record into reddit_clone_comments table with the following logic:
+ * @x-autobe-specification Insert a new record into reddit_clone_comments table
+ *   with the following logic:
  *
  * 1. Validate that the postId exists in reddit_clone_posts table. Return 404 if not found.
  * 2. Validate that the creating user is not banned from the community containing the post (check reddit_clone_community_bans).
@@ -273,7 +274,8 @@ export namespace update {
  * @param props.commentId UUID of the comment to delete (global scope)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query the reddit_clone_comments table for the comment with the given commentId.
+ * @x-autobe-specification Query the reddit_clone_comments table for the comment
+ *   with the given commentId.
  *
  * 1. **Validate comment existence**: Query by id = commentId. If not found, return 404 Not Found.
  *

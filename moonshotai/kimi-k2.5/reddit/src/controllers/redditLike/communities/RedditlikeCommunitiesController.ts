@@ -22,9 +22,10 @@ export class RedditlikeCommunitiesController {
    *
    * @param connection
    * @param body Search criteria and pagination parameters for filtering communities
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query reddit_like_communities table with pagination and optional name search filtering.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query reddit_like_communities table with
+     *   pagination and optional name search filtering.
    *
    * Apply search filter on name field using case-insensitive partial matching (ILIKE or similar). Filter out soft-deleted communities (deleted_at is null).
    *
@@ -65,9 +66,10 @@ export class RedditlikeCommunitiesController {
    *
    * @param connection
    * @param communityId Target community's unique identifier (UUID)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Retrieve a single community by its UUID identifier.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Retrieve a single community by its UUID
+     *   identifier.
    *
    * Query the reddit_like_communities table filtering by the provided communityId.
    * Join with reddit_like_members to include owner information.

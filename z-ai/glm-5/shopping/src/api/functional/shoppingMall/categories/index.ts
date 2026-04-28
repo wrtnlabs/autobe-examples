@@ -26,7 +26,8 @@ export * as subcategories from "./subcategories/index";
  * @param props.body Search criteria and pagination parameters for category filtering
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query shopping_mall_categories table with pagination, filtering, and sorting support.
+ * @x-autobe-specification Query shopping_mall_categories table with pagination,
+ *   filtering, and sorting support.
  *
  * Filtering logic:
  * - name: Case-insensitive partial match using ILIKE '%searchTerm%'
@@ -147,7 +148,8 @@ export namespace index {
  * @param props.categoryId Unique identifier of the category to retrieve
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query the shopping_mall_categories table for a single category record matching the provided categoryId UUID.
+ * @x-autobe-specification Query the shopping_mall_categories table for a single
+ *   category record matching the provided categoryId UUID.
  *
  * Database query:
  * 1. Find category by id WHERE deleted_at IS NULL (exclude soft-deleted categories)

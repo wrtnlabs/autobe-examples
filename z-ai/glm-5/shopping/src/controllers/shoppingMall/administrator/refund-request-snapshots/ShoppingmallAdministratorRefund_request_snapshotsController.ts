@@ -22,9 +22,10 @@ export class ShoppingmallAdministratorRefund_request_snapshotsController {
    *
    * @param connection
    * @param body Search criteria and pagination parameters for filtering refund request snapshots
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Query the shopping_mall_refund_request_snapshots table with pagination and filtering.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor administrator
+     * @x-autobe-specification Query the shopping_mall_refund_request_snapshots
+     *   table with pagination and filtering.
    *
    * Implementation steps:
    * 1. Validate administrator authentication - reject if not an administrator
@@ -74,9 +75,10 @@ export class ShoppingmallAdministratorRefund_request_snapshotsController {
    *
    * @param connection
    * @param snapshotId Unique identifier of the refund request snapshot to retrieve
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Query shopping_mall_refund_request_snapshots table by primary key (id) to retrieve a single snapshot record.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor administrator
+     * @x-autobe-specification Query shopping_mall_refund_request_snapshots
+     *   table by primary key (id) to retrieve a single snapshot record.
    *
    * Join with shopping_mall_refund_requests to get the parent refund request reference.
    *

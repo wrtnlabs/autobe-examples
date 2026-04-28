@@ -8,64 +8,86 @@ export type IShoppingMallInventoryRecord = {
   /**
    * Unique identifier of the inventory history record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_inventory_records.id. Treat as an immutable UUID identifier for the inventory history row.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_inventory_records.id. Treat as an immutable UUID
+     *   identifier for the inventory history row.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * ID of the product variant whose inventory quantities are recorded in this history entry.
    *
-   * @x-autobe-database-schema-property shopping_mall_product_variant_id
-   * @x-autobe-specification Direct mapping from shopping_mall_inventory_records.shopping_mall_product_variant_id. Represents which shopping_mall_product_variants row this inventory record belongs to. Do not replace/change this value during update; it is record identity context.
+     * @x-autobe-database-schema-property shopping_mall_product_variant_id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_inventory_records.shopping_mall_product_variant_id.
+     *   Represents which shopping_mall_product_variants row this inventory
+     *   record belongs to. Do not replace/change this value during update; it
+     *   is record identity context.
    */
   shopping_mall_product_variant_id: string & tags.Format<"uuid">;
 
   /**
    * Total stock quantity for the variant at the time this inventory record was created.
    *
-   * @x-autobe-database-schema-property stock_quantity
-   * @x-autobe-specification Direct mapping from shopping_mall_inventory_records.stock_quantity (Int). Must be a non-negative integer (minimum 0). Represents total stock quantity at the time this history entry was recorded.
+     * @x-autobe-database-schema-property stock_quantity
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_inventory_records.stock_quantity (Int). Must be a
+     *   non-negative integer (minimum 0). Represents total stock quantity at
+     *   the time this history entry was recorded.
    */
   stock_quantity: number & tags.Type<"int32"> & tags.Minimum<0>;
 
   /**
    * Reserved/locked stock quantity for pending orders at the time this record was created.
    *
-   * @x-autobe-database-schema-property reserved_quantity
-   * @x-autobe-specification Direct mapping from shopping_mall_inventory_records.reserved_quantity (Int). Must be a non-negative integer (minimum 0). Represents stock quantity reserved/locked for pending orders at the time this entry was recorded.
+     * @x-autobe-database-schema-property reserved_quantity
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_inventory_records.reserved_quantity (Int). Must be a
+     *   non-negative integer (minimum 0). Represents stock quantity
+     *   reserved/locked for pending orders at the time this entry was recorded.
    */
   reserved_quantity: number & tags.Type<"int32"> & tags.Minimum<0>;
 
   /**
    * Available stock quantity immediately purchasable at the time this record was created.
    *
-   * @x-autobe-database-schema-property available_quantity
-   * @x-autobe-specification Direct mapping from shopping_mall_inventory_records.available_quantity (Int). Must be a non-negative integer (minimum 0). Represents stock quantity immediately available for purchase at the time this entry was recorded.
+     * @x-autobe-database-schema-property available_quantity
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_inventory_records.available_quantity (Int). Must be a
+     *   non-negative integer (minimum 0). Represents stock quantity immediately
+     *   available for purchase at the time this entry was recorded.
    */
   available_quantity: number & tags.Type<"int32"> & tags.Minimum<0>;
 
   /**
    * Timestamp when this inventory history record was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from shopping_mall_inventory_records.created_at (DateTime). Returned as an RFC3339 date-time string.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_inventory_records.created_at (DateTime). Returned as an
+     *   RFC3339 date-time string.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when this inventory history record was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from shopping_mall_inventory_records.updated_at (DateTime). Returned as an RFC3339 date-time string.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_inventory_records.updated_at (DateTime). Returned as an
+     *   RFC3339 date-time string.
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * Soft-delete timestamp for administrative corrections; null when the record is active.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from shopping_mall_inventory_records.deleted_at (nullable DateTime). Return as null when not soft-deleted; otherwise return an RFC3339 date-time string.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_inventory_records.deleted_at (nullable DateTime). Return
+     *   as null when not soft-deleted; otherwise return an RFC3339 date-time
+     *   string.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -77,56 +99,74 @@ export namespace IShoppingMallInventoryRecord {
     /**
      * Unique identifier of this immutable inventory history record.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Read shopping_mall_inventory_records.id directly and return it as a UUID string.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Read shopping_mall_inventory_records.id
+         *   directly and return it as a UUID string.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Product variant identifier that this inventory record updates historically.
      *
-     * @x-autobe-database-schema-property shopping_mall_product_variant_id
-     * @x-autobe-specification Read shopping_mall_inventory_records.shopping_mall_product_variant_id directly; use it to indicate which product variant this inventory snapshot belongs to.
+         * @x-autobe-database-schema-property shopping_mall_product_variant_id
+         * @x-autobe-specification Read
+         *   shopping_mall_inventory_records.shopping_mall_product_variant_id
+         *   directly; use it to indicate which product variant this inventory
+         *   snapshot belongs to.
      */
     shopping_mall_product_variant_id: string & tags.Format<"uuid">;
 
     /**
      * Total stock quantity recorded for the variant at the time of this inventory history entry.
      *
-     * @x-autobe-database-schema-property stock_quantity
-     * @x-autobe-specification Read shopping_mall_inventory_records.stock_quantity directly; it represents total stock at the time this inventory record was created.
+         * @x-autobe-database-schema-property stock_quantity
+         * @x-autobe-specification Read
+         *   shopping_mall_inventory_records.stock_quantity directly; it
+         *   represents total stock at the time this inventory record was
+         *   created.
      */
     stock_quantity: number & tags.Type<"int32">;
 
     /**
      * Quantity reserved for pending orders recorded at the time this inventory entry was created.
      *
-     * @x-autobe-database-schema-property reserved_quantity
-     * @x-autobe-specification Read shopping_mall_inventory_records.reserved_quantity directly; it represents quantity reserved/locked for pending orders at the time of this record.
+         * @x-autobe-database-schema-property reserved_quantity
+         * @x-autobe-specification Read
+         *   shopping_mall_inventory_records.reserved_quantity directly; it
+         *   represents quantity reserved/locked for pending orders at the time
+         *   of this record.
      */
     reserved_quantity: number & tags.Type<"int32">;
 
     /**
      * Quantity available for purchase recorded at the time this inventory entry was created.
      *
-     * @x-autobe-database-schema-property available_quantity
-     * @x-autobe-specification Read shopping_mall_inventory_records.available_quantity directly; it represents immediately available quantity for purchase at the time of this record.
+         * @x-autobe-database-schema-property available_quantity
+         * @x-autobe-specification Read
+         *   shopping_mall_inventory_records.available_quantity directly; it
+         *   represents immediately available quantity for purchase at the time
+         *   of this record.
      */
     available_quantity: number & tags.Type<"int32">;
 
     /**
      * Timestamp when this inventory history record was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Read shopping_mall_inventory_records.created_at directly and return as an ISO date-time string.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Read
+         *   shopping_mall_inventory_records.created_at directly and return as
+         *   an ISO date-time string.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * Soft-deletion timestamp for this inventory record; null means the record is not soft-deleted.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Read shopping_mall_inventory_records.deleted_at directly. If null, the record is not soft-deleted; if non-null, it indicates the soft-delete time.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Read
+         *   shopping_mall_inventory_records.deleted_at directly. If null, the
+         *   record is not soft-deleted; if non-null, it indicates the
+         *   soft-delete time.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };
@@ -138,40 +178,58 @@ export namespace IShoppingMallInventoryRecord {
     /**
      * Total stock quantity recorded at the time this inventory history entry was created/updated.
      *
-     * @x-autobe-database-schema-property stock_quantity
-     * @x-autobe-specification Direct mapping from shopping_mall_inventory_records.stock_quantity. Must be stored as integer and should respect non-negative quantity semantics (DB model invariant)..
+         * @x-autobe-database-schema-property stock_quantity
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_inventory_records.stock_quantity. Must be stored as
+         *   integer and should respect non-negative quantity semantics (DB
+         *   model invariant)..
      */
     stock_quantity?: (number & tags.Type<"int32">) | undefined;
 
     /**
      * Quantity reserved/locked at the time of this inventory history entry update.
      *
-     * @x-autobe-database-schema-property reserved_quantity
-     * @x-autobe-specification Direct mapping from shopping_mall_inventory_records.reserved_quantity. Represents quantity reserved/locked for pending orders at the time of this entry. Must be stored as integer and respect non-negative quantity semantics (DB model invariant).
+         * @x-autobe-database-schema-property reserved_quantity
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_inventory_records.reserved_quantity. Represents
+         *   quantity reserved/locked for pending orders at the time of this
+         *   entry. Must be stored as integer and respect non-negative quantity
+         *   semantics (DB model invariant).
      */
     reserved_quantity?: (number & tags.Type<"int32">) | undefined;
 
     /**
      * Quantity immediately available for purchase at the time of this inventory history entry update.
      *
-     * @x-autobe-database-schema-property available_quantity
-     * @x-autobe-specification Direct mapping from shopping_mall_inventory_records.available_quantity. Represents immediately available quantity at the time of this entry update. Must be stored as integer and respect non-negative quantity semantics (DB model invariant).
+         * @x-autobe-database-schema-property available_quantity
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_inventory_records.available_quantity. Represents
+         *   immediately available quantity at the time of this entry update.
+         *   Must be stored as integer and respect non-negative quantity
+         *   semantics (DB model invariant).
      */
     available_quantity?: (number & tags.Type<"int32">) | undefined;
 
     /**
      * Last update timestamp for this inventory history record.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from shopping_mall_inventory_records.updated_at. Use as the inventory record’s audit update timestamp. The server should treat this as the persisted updated_at value for the row being corrected.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_inventory_records.updated_at. Use as the inventory
+         *   record’s audit update timestamp. The server should treat this as
+         *   the persisted updated_at value for the row being corrected.
      */
     updated_at?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Soft-delete timestamp for administrative correction; null means the inventory record is active.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from shopping_mall_inventory_records.deleted_at. If set to a date-time, the inventory record should be treated as soft-deleted according to system semantics; if null, the record is considered active. Derived current availability computation must respect deleted_at.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_inventory_records.deleted_at. If set to a date-time,
+         *   the inventory record should be treated as soft-deleted according to
+         *   system semantics; if null, the record is considered active. Derived
+         *   current availability computation must respect deleted_at.
      */
     deleted_at?: (string & tags.Format<"date-time">) | null | undefined;
   };
@@ -183,32 +241,49 @@ export namespace IShoppingMallInventoryRecord {
     /**
      * The id (UUID) of the product variant whose inventory history record is being appended.
      *
-     * @x-autobe-database-schema-property shopping_mall_product_variant_id
-     * @x-autobe-specification Direct mapping from IShoppingMallInventoryRecord.ICreate.shopping_mall_product_variant_id to shopping_mall_inventory_records.shopping_mall_product_variant_id. Validate referenced shopping_mall_product_variants.id exists, is_active=true, and shopping_mall_product_variants.deleted_at is null.
+         * @x-autobe-database-schema-property shopping_mall_product_variant_id
+         * @x-autobe-specification Direct mapping from
+         *   IShoppingMallInventoryRecord.ICreate.shopping_mall_product_variant_id
+         *   to
+         *   shopping_mall_inventory_records.shopping_mall_product_variant_id.
+         *   Validate referenced shopping_mall_product_variants.id exists,
+         *   is_active=true, and shopping_mall_product_variants.deleted_at is
+         *   null.
      */
     shopping_mall_product_variant_id: string & tags.Format<"uuid">;
 
     /**
      * Total stock quantity for the variant at the time this inventory record is created.
      *
-     * @x-autobe-database-schema-property stock_quantity
-     * @x-autobe-specification Direct mapping from request.stock_quantity to shopping_mall_inventory_records.stock_quantity. Must be an integer >= 0. Used as the total stock snapshot at record creation time for later derived current stock calculations.
+         * @x-autobe-database-schema-property stock_quantity
+         * @x-autobe-specification Direct mapping from request.stock_quantity to
+         *   shopping_mall_inventory_records.stock_quantity. Must be an integer
+         *   >= 0. Used as the total stock snapshot at record creation time for
+         *   later derived current stock calculations.
      */
     stock_quantity: number & tags.Type<"int32"> & tags.Minimum<0>;
 
     /**
      * Quantity reserved/locked for pending orders at the time this inventory record is created.
      *
-     * @x-autobe-database-schema-property reserved_quantity
-     * @x-autobe-specification Direct mapping from request.reserved_quantity to shopping_mall_inventory_records.reserved_quantity. Must be an integer >= 0. Represents quantity reserved/locked for pending orders for this variant at the time the record is created.
+         * @x-autobe-database-schema-property reserved_quantity
+         * @x-autobe-specification Direct mapping from request.reserved_quantity
+         *   to shopping_mall_inventory_records.reserved_quantity. Must be an
+         *   integer >= 0. Represents quantity reserved/locked for pending
+         *   orders for this variant at the time the record is created.
      */
     reserved_quantity: number & tags.Type<"int32"> & tags.Minimum<0>;
 
     /**
      * Quantity immediately available for purchase at the time this inventory record is created.
      *
-     * @x-autobe-database-schema-property available_quantity
-     * @x-autobe-specification Direct mapping from request.available_quantity to shopping_mall_inventory_records.available_quantity. Must be an integer >= 0, and must satisfy the platform’s inventory consistency rule relative to stock_quantity and reserved_quantity (available must be coherent/derived as defined by inventory domain rules).
+         * @x-autobe-database-schema-property available_quantity
+         * @x-autobe-specification Direct mapping from
+         *   request.available_quantity to
+         *   shopping_mall_inventory_records.available_quantity. Must be an
+         *   integer >= 0, and must satisfy the platform’s inventory consistency
+         *   rule relative to stock_quantity and reserved_quantity (available
+         *   must be coherent/derived as defined by inventory domain rules).
      */
     available_quantity: number & tags.Type<"int32"> & tags.Minimum<0>;
   };
@@ -220,35 +295,50 @@ export namespace IShoppingMallInventoryRecord {
     /**
      * Optional filter to return only inventory history records for a specific product variant.
      *
-     * @x-autobe-specification If productVariantId is provided, filter inventory history rows by shopping_mall_inventory_records.shopping_mall_product_variant_id = productVariantId. Additionally apply authorization scoping so the caller only sees variants they are allowed to access (seller: their own product variants; admin: platform-wide).
+         * @x-autobe-specification If productVariantId is provided, filter
+         *   inventory history rows by
+         *   shopping_mall_inventory_records.shopping_mall_product_variant_id =
+         *   productVariantId. Additionally apply authorization scoping so the
+         *   caller only sees variants they are allowed to access (seller: their
+         *   own product variants; admin: platform-wide).
      */
     productVariantId?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Optional inclusive lower bound for inventory history record creation time.
      *
-     * @x-autobe-specification If createdAtFrom is provided, filter rows with shopping_mall_inventory_records.created_at >= createdAtFrom (inclusive).
+         * @x-autobe-specification If createdAtFrom is provided, filter rows
+         *   with shopping_mall_inventory_records.created_at >= createdAtFrom
+         *   (inclusive).
      */
     createdAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Optional inclusive upper bound for inventory history record creation time.
      *
-     * @x-autobe-specification If createdAtTo is provided, filter rows with shopping_mall_inventory_records.created_at <= createdAtTo (inclusive). When both createdAtFrom and createdAtTo are provided, validate createdAtFrom <= createdAtTo; otherwise reject with a 400 validation error.
+         * @x-autobe-specification If createdAtTo is provided, filter rows with
+         *   shopping_mall_inventory_records.created_at <= createdAtTo
+         *   (inclusive). When both createdAtFrom and createdAtTo are provided,
+         *   validate createdAtFrom <= createdAtTo; otherwise reject with a 400
+         *   validation error.
      */
     createdAtTo?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Pagination page number (1-based).
      *
-     * @x-autobe-specification Use page as a 1-based pagination index when executing the listing query. Enforce constraint page >= 1 (as defined by the DTO).
+         * @x-autobe-specification Use page as a 1-based pagination index when
+         *   executing the listing query. Enforce constraint page >= 1 (as
+         *   defined by the DTO).
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Page size (max 100).
      *
-     * @x-autobe-specification Use limit as the maximum number of inventory history records to return per page. Enforce constraint limit >= 1 and limit <= 100 (as defined by the DTO).
+         * @x-autobe-specification Use limit as the maximum number of inventory
+         *   history records to return per page. Enforce constraint limit >= 1
+         *   and limit <= 100 (as defined by the DTO).
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)

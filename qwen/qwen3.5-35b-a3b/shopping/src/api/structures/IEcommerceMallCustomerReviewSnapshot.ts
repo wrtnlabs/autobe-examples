@@ -12,8 +12,9 @@ export namespace IEcommerceMallCustomerReviewSnapshot {
      *
      * A UUID v4 value that uniquely identifies this snapshot version. Used for API lookups and version tracking in the audit trail.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_mall_customer_review_snapshots.id. Primary key UUID.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_customer_review_snapshots.id. Primary key UUID.
      */
     id: string & tags.Format<"uuid">;
 
@@ -22,8 +23,10 @@ export namespace IEcommerceMallCustomerReviewSnapshot {
      *
      * The customer's rating as it existed during this version of the review. Changes to the rating over time are preserved as separate snapshot records.
      *
-     * @x-autobe-database-schema-property rating
-     * @x-autobe-specification Direct mapping from ecommerce_mall_customer_review_snapshots.rating. Integer value 1-5 from DB.
+         * @x-autobe-database-schema-property rating
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_customer_review_snapshots.rating. Integer value 1-5
+         *   from DB.
      */
     rating: number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<5>;
 
@@ -32,8 +35,10 @@ export namespace IEcommerceMallCustomerReviewSnapshot {
      *
      * The customer's written feedback as it existed when this snapshot was captured. Multiple snapshots may have different body text reflecting review edits. Nullable: reviews can exist with only ratings and no text content.
      *
-     * @x-autobe-database-schema-property body
-     * @x-autobe-specification Direct mapping from ecommerce_mall_customer_review_snapshots.body. Nullable string from DB.
+         * @x-autobe-database-schema-property body
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_customer_review_snapshots.body. Nullable string from
+         *   DB.
      */
     body: string | null;
 
@@ -42,8 +47,10 @@ export namespace IEcommerceMallCustomerReviewSnapshot {
      *
      * Records whether the review was active or deleted when this snapshot was generated. Essential for audit compliance as it preserves the state even if the main review is later modified or the status changes again.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from ecommerce_mall_customer_review_snapshots.status. String value indicating review status at snapshot time.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_customer_review_snapshots.status. String value
+         *   indicating review status at snapshot time.
      */
     status: string;
 
@@ -52,8 +59,10 @@ export namespace IEcommerceMallCustomerReviewSnapshot {
      *
      * The exact date and time when the review version existed. Used for sorting snapshots chronologically in the audit trail.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_customer_review_snapshots.created_at. Timestamp from DB.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_customer_review_snapshots.created_at. Timestamp from
+         *   DB.
      */
     created_at: string & tags.Format<"date-time">;
   };

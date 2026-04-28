@@ -24,7 +24,8 @@ import { IRedditCloneFileThumbnail } from "../../../../structures/IRedditCloneFi
  * @param props.fileId Unique identifier of the file (UUID) for which to retrieve thumbnails
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query the reddit_clone_file_thumbnails table filtering by the provided fileId matching reddit_clone_file_id column.
+ * @x-autobe-specification Query the reddit_clone_file_thumbnails table
+ *   filtering by the provided fileId matching reddit_clone_file_id column.
  *
  * Join with reddit_clone_files to verify the file exists and is not soft-deleted (deleted_at IS NULL).
  *

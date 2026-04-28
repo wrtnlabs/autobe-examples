@@ -17,8 +17,9 @@ export type IRedditClonePostVote = {
    *
    * This UUID uniquely identifies each vote in the system. It is auto-generated when a vote is created and remains immutable throughout the vote's lifecycle. Used to reference specific votes in API operations and for audit trail purposes.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from reddit_clone_post_votes.id. Primary key, UUID format, auto-generated on insert.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from reddit_clone_post_votes.id.
+     *   Primary key, UUID format, auto-generated on insert.
    */
   id: string & tags.Format<"uuid">;
 
@@ -27,8 +28,11 @@ export type IRedditClonePostVote = {
    *
    * Valid values are 'upvote' (adds +1 to the post's vote score) or 'downvote' (subtracts -1 from the post's vote score). This field determines how the vote affects the post's overall score calculation and the author's karma.
    *
-   * @x-autobe-database-schema-property vote_type
-   * @x-autobe-specification Direct mapping from reddit_clone_post_votes.vote_type. String enum with values 'upvote' or 'downvote'. Determines score impact: upvote adds +1, downvote subtracts -1 from post score.
+     * @x-autobe-database-schema-property vote_type
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_post_votes.vote_type. String enum with values 'upvote' or
+     *   'downvote'. Determines score impact: upvote adds +1, downvote subtracts
+     *   -1 from post score.
    */
   vote_type: string;
 
@@ -37,8 +41,11 @@ export type IRedditClonePostVote = {
    *
    * Contains summary information about the target post including its title, type (text/link/image), author profile, community context, current vote score, comment count, and a content preview. This provides context for understanding what content was voted on.
    *
-   * @x-autobe-database-schema-property post
-   * @x-autobe-specification Relation mapping via JOIN on reddit_clone_post_id to reddit_clone_posts table. Returns IRedditClonePost.ISummary with post details including id, title, post_type, author, community, vote_score, comment_count, created_at, and preview.
+     * @x-autobe-database-schema-property post
+     * @x-autobe-specification Relation mapping via JOIN on reddit_clone_post_id
+     *   to reddit_clone_posts table. Returns IRedditClonePost.ISummary with
+     *   post details including id, title, post_type, author, community,
+     *   vote_score, comment_count, created_at, and preview.
    */
   post: IRedditClonePost.ISummary;
 
@@ -47,8 +54,11 @@ export type IRedditClonePostVote = {
    *
    * Contains information about the authenticated user who voted on the post, including their unique identifier, username, and profile details. This establishes the ownership of the vote and enables vote modification by the original voter.
    *
-   * @x-autobe-database-schema-property member
-   * @x-autobe-specification Relation mapping via JOIN on reddit_clone_member_id to reddit_clone_members table. Returns IRedditCloneMember.ISummary with member details including id, email, username, created_at, and associated profile information.
+     * @x-autobe-database-schema-property member
+     * @x-autobe-specification Relation mapping via JOIN on
+     *   reddit_clone_member_id to reddit_clone_members table. Returns
+     *   IRedditCloneMember.ISummary with member details including id, email,
+     *   username, created_at, and associated profile information.
    */
   member: IRedditCloneMember.ISummary;
 
@@ -57,8 +67,10 @@ export type IRedditClonePostVote = {
    *
    * Records the exact date and time when the member first cast this vote on the post. This timestamp is set automatically by the system and is used for tracking vote history and audit purposes.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from reddit_clone_post_votes.created_at. DateTime in UTC, auto-set on record insert. Tracks when the vote was first cast.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_post_votes.created_at. DateTime in UTC, auto-set on record
+     *   insert. Tracks when the vote was first cast.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -67,8 +79,11 @@ export type IRedditClonePostVote = {
    *
    * Records the date and time of the most recent change to this vote, including when it was first created or when the vote type was changed (e.g., from upvote to downvote). This is automatically maintained by the system.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from reddit_clone_post_votes.updated_at. DateTime in UTC, auto-updated on record insert and update. Tracks the most recent modification to the vote.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_post_votes.updated_at. DateTime in UTC, auto-updated on
+     *   record insert and update. Tracks the most recent modification to the
+     *   vote.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -77,8 +92,11 @@ export type IRedditClonePostVote = {
    *
    * When this field is null, the vote is active and contributes to the post's vote score. When a member removes their vote, this field is set to the current timestamp, soft-deleting the vote. Soft-deleted votes are excluded from score calculations but retained in the database for audit trail and potential recovery purposes.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from reddit_clone_post_votes.deleted_at. Nullable DateTime in UTC. When null, vote is active. When set, vote is soft-deleted and excluded from score calculations but retained for audit.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_post_votes.deleted_at. Nullable DateTime in UTC. When
+     *   null, vote is active. When set, vote is soft-deleted and excluded from
+     *   score calculations but retained for audit.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -101,7 +119,8 @@ export namespace IRedditClonePostVote {
      * Requesting a page beyond the available range returns an empty data array
      * with valid pagination metadata reflecting the actual totals.
      *
-     * @x-autobe-specification 1-indexed page number. Defaults to 1 if not provided.
+         * @x-autobe-specification 1-indexed page number. Defaults to 1 if not
+         *   provided.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
 
@@ -113,7 +132,8 @@ export namespace IRedditClonePostVote {
      * enforce upper bounds to prevent excessive resource consumption on large
      * requests.
      *
-     * @x-autobe-specification Maximum records per page. Defaults to 100 if not provided.
+         * @x-autobe-specification Maximum records per page. Defaults to 100 if
+         *   not provided.
      */
     limit?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };
@@ -133,8 +153,12 @@ export namespace IRedditClonePostVote {
      *
      * If the authenticated member has already voted on this post, providing a new vote_type will update their existing vote. Each member can only have one active vote per post.
      *
-     * @x-autobe-database-schema-property vote_type
-     * @x-autobe-specification Direct mapping to reddit_clone_post_votes.vote_type column. Backend validates that vote_type must be either 'upvote' or 'downvote'. Invalid values return 400 Bad Request error. This field determines the vote's impact on post score: upvote adds +1, downvote subtracts -1.
+         * @x-autobe-database-schema-property vote_type
+         * @x-autobe-specification Direct mapping to
+         *   reddit_clone_post_votes.vote_type column. Backend validates that
+         *   vote_type must be either 'upvote' or 'downvote'. Invalid values
+         *   return 400 Bad Request error. This field determines the vote's
+         *   impact on post score: upvote adds +1, downvote subtracts -1.
      */
     vote_type: string;
   };

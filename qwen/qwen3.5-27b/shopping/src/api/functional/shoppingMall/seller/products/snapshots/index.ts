@@ -21,7 +21,8 @@ import { IShoppingMallProductSnapshot } from "../../../../../structures/IShoppin
  * @param props.body Search criteria for filtering product snapshots including date range, changed fields, and pagination parameters.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Query shopping_mall_product_snapshots table filtered by shopping_mall_product_id = productId.
+ * @x-autobe-specification Query shopping_mall_product_snapshots table filtered
+ *   by shopping_mall_product_id = productId.
  *
  * Apply filtering from request body:
  * - Date range filter on created_at field
@@ -134,7 +135,13 @@ export namespace index {
  * @param props.snapshotId UUID of the specific product snapshot to retrieve (global scope)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Query shopping_mall_product_snapshots table by snapshotId (primary key). Verify that the snapshot's shopping_mall_product_id matches the productId path parameter for security. Join with shopping_mall_product_snapshot_variants to retrieve all variant snapshots for this product snapshot. For each variant snapshot, join with shopping_mall_product_snapshot_variant_options to retrieve all option key-value pairs.
+ * @x-autobe-specification Query shopping_mall_product_snapshots table by
+ *   snapshotId (primary key). Verify that the snapshot's
+ *   shopping_mall_product_id matches the productId path parameter for security.
+ *   Join with shopping_mall_product_snapshot_variants to retrieve all variant
+ *   snapshots for this product snapshot. For each variant snapshot, join with
+ *   shopping_mall_product_snapshot_variant_options to retrieve all option
+ *   key-value pairs.
  *
  * Authorization: If the requester is a seller, verify that the snapshot's shopping_mall_seller_id matches the authenticated seller's ID. If the requester is an administrator, allow access to any snapshot. Return 404 if snapshot not found or productId mismatch. Return 403 if unauthorized seller attempts to access another seller's snapshot.
  *

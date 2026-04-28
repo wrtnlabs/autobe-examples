@@ -26,7 +26,9 @@ export type IHrmPlatformDashboardIOrgMetric = {
    *
    * The count is calculated in real-time by querying the hrm_platform_employees table for all records where the employee status is 'active' and the organization_id matches the current organization context.
    *
-   * @x-autobe-specification COUNT aggregation from hrm_platform_employees: SELECT COUNT(*) WHERE status='active' AND organization_id = current_context. Computed in real-time at query time.
+     * @x-autobe-specification COUNT aggregation from hrm_platform_employees:
+     *   SELECT COUNT(*) WHERE status='active' AND organization_id =
+     *   current_context. Computed in real-time at query time.
    */
   total_active_employees: number & tags.Type<"int32">;
 
@@ -39,7 +41,9 @@ export type IHrmPlatformDashboardIOrgMetric = {
    *
    * The count is calculated in real-time by querying the hrm_platform_timesheets table for all records where the timesheet status is 'submitted' and the organization_id matches the current organization context.
    *
-   * @x-autobe-specification COUNT aggregation from hrm_platform_timesheets: SELECT COUNT(*) WHERE status='submitted' AND organization_id = current_context. Computed in real-time at query time.
+     * @x-autobe-specification COUNT aggregation from hrm_platform_timesheets:
+     *   SELECT COUNT(*) WHERE status='submitted' AND organization_id =
+     *   current_context. Computed in real-time at query time.
    */
   pending_timesheets_count: number & tags.Type<"int32">;
 };

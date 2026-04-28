@@ -17,8 +17,9 @@ export type IHrmTimeTrackingTaskHistory = {
    *
    * This UUID serves as the primary key for the history record and is used to reference the specific status change event in API operations. Generated automatically when the history entry is created at the time of a task status transition.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_task_histories.id. UUID primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_task_histories.id. UUID primary key.
    */
   id: string & tags.Format<"uuid">;
 
@@ -27,8 +28,9 @@ export type IHrmTimeTrackingTaskHistory = {
    *
    * Provides a summary of the task including its title, current status, priority level, and estimated effort. This is the parent task that this history entry belongs to, representing the task lifecycle context for the recorded status transition.
    *
-   * @x-autobe-database-schema-property task
-   * @x-autobe-specification Join via hrm_time_tracking_task_id FK to hrm_time_tracking_tasks. Returns IHrmTimeTrackingTask.ISummary.
+     * @x-autobe-database-schema-property task
+     * @x-autobe-specification Join via hrm_time_tracking_task_id FK to
+     *   hrm_time_tracking_tasks. Returns IHrmTimeTrackingTask.ISummary.
    */
   task: IHrmTimeTrackingTask.ISummary;
 
@@ -37,8 +39,9 @@ export type IHrmTimeTrackingTaskHistory = {
    *
    * Identifies the individual who initiated the status transition, providing accountability for the change. Includes the employee's display name (from their user account), assigned role, department, and current status through the referenced summary representation.
    *
-   * @x-autobe-database-schema-property employee
-   * @x-autobe-specification Join via hrm_time_tracking_employee_id FK to hrm_time_tracking_employees. Returns IHrmTimeTrackingEmployee.ISummary.
+     * @x-autobe-database-schema-property employee
+     * @x-autobe-specification Join via hrm_time_tracking_employee_id FK to
+     *   hrm_time_tracking_employees. Returns IHrmTimeTrackingEmployee.ISummary.
    */
   employee: IHrmTimeTrackingEmployee.ISummary;
 
@@ -47,8 +50,10 @@ export type IHrmTimeTrackingTaskHistory = {
    *
    * Captures the source state of the transition, allowing reconstruction of the complete task status history. Valid values include: open (work not yet started), in-progress (work actively being performed), completed (work finished), closed (fully resolved). This value together with new_status forms the before-and-after record for each status change.
    *
-   * @x-autobe-database-schema-property previous_status
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_task_histories.previous_status. String value representing the task status before the change.
+     * @x-autobe-database-schema-property previous_status
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_task_histories.previous_status. String value
+     *   representing the task status before the change.
    */
   previous_status: string;
 
@@ -57,8 +62,10 @@ export type IHrmTimeTrackingTaskHistory = {
    *
    * Captures the destination state of the transition, completing the before-and-after record for each status change. Valid values include: open (work not yet started), in-progress (work actively being performed), completed (work finished), closed (fully resolved). Tasks progress forward through this sequence and cannot skip statuses.
    *
-   * @x-autobe-database-schema-property new_status
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_task_histories.new_status. String value representing the task status after the change.
+     * @x-autobe-database-schema-property new_status
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_task_histories.new_status. String value representing
+     *   the task status after the change.
    */
   new_status: string;
 
@@ -67,8 +74,9 @@ export type IHrmTimeTrackingTaskHistory = {
    *
    * Indicates exactly when the task status change occurred, providing chronological ordering for the audit trail. This timestamp is set automatically by the system at the moment the status transition is recorded and is never modified thereafter, ensuring accurate sequencing of all task lifecycle events.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_task_histories.created_at. DateTime with timezone.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_task_histories.created_at. DateTime with timezone.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -77,8 +85,10 @@ export type IHrmTimeTrackingTaskHistory = {
    *
    * For immutable task history records, this value is set equal to created_at at creation time and does not change thereafter. Maintained for consistency with the standard temporal field pattern across all entities in the system. This field can be safely ignored for audit trail purposes in favor of created_at.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_task_histories.updated_at. For immutable audit records, this equals created_at.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_task_histories.updated_at. For immutable audit
+     *   records, this equals created_at.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -87,8 +97,10 @@ export type IHrmTimeTrackingTaskHistory = {
    *
    * For immutable audit records, this field remains permanently null as task history entries are never deleted. Maintained for consistency with the standard temporal field pattern across all entities. A null value indicates the record is active and valid. This field can be safely ignored for audit trail purposes.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_task_histories.deleted_at. Nullable DateTime. For immutable audit records, this remains permanently null.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_task_histories.deleted_at. Nullable DateTime. For
+     *   immutable audit records, this remains permanently null.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -106,8 +118,9 @@ export namespace IHrmTimeTrackingTaskHistory {
      *
      * This is the primary key used to reference a specific status transition record within the audit trail.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_task_histories.id. UUID format.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_task_histories.id. UUID format.
      */
     id: string & tags.Format<"uuid">;
 
@@ -116,8 +129,9 @@ export namespace IHrmTimeTrackingTaskHistory {
      *
      * Captures the source state of the transition. Valid values include: open, in-progress, completed, closed.
      *
-     * @x-autobe-database-schema-property previous_status
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_task_histories.previous_status.
+         * @x-autobe-database-schema-property previous_status
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_task_histories.previous_status.
      */
     previous_status: string;
 
@@ -126,8 +140,9 @@ export namespace IHrmTimeTrackingTaskHistory {
      *
      * Captures the destination state of the transition. Valid values include: open, in-progress, completed, closed.
      *
-     * @x-autobe-database-schema-property new_status
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_task_histories.new_status.
+         * @x-autobe-database-schema-property new_status
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_task_histories.new_status.
      */
     new_status: string;
 
@@ -136,8 +151,9 @@ export namespace IHrmTimeTrackingTaskHistory {
      *
      * Indicates exactly when the task status change occurred. Entries are sorted by this field in descending order to show the most recent changes first.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_task_histories.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_task_histories.created_at.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -146,8 +162,11 @@ export namespace IHrmTimeTrackingTaskHistory {
      *
      * Identifies which employee initiated the status transition, providing accountability for the change. The employee summary includes their display name, role, department, position, and employment type.
      *
-     * @x-autobe-database-schema-property employee
-     * @x-autobe-specification JOIN hrm_time_tracking_employees ON hrm_time_tracking_employee_id to populate IHrmTimeTrackingEmployee.ISummary. Provides employee identity information including display name, role, and department.
+         * @x-autobe-database-schema-property employee
+         * @x-autobe-specification JOIN hrm_time_tracking_employees ON
+         *   hrm_time_tracking_employee_id to populate
+         *   IHrmTimeTrackingEmployee.ISummary. Provides employee identity
+         *   information including display name, role, and department.
      */
     employee: IHrmTimeTrackingEmployee.ISummary;
   };
@@ -165,7 +184,11 @@ export namespace IHrmTimeTrackingTaskHistory {
      *
      * Searches against both employee display names and status values (previous and new) to find matching history entries. Returns entries where any of these fields contain the search term.
      *
-     * @x-autobe-specification Full-text search across employee display names (JOIN hrm_time_tracking_employees on hrm_time_tracking_employee_id) and status values (previous_status, new_status). Use ILIKE or similar pattern matching on name and status fields.
+         * @x-autobe-specification Full-text search across employee display
+         *   names (JOIN hrm_time_tracking_employees on
+         *   hrm_time_tracking_employee_id) and status values (previous_status,
+         *   new_status). Use ILIKE or similar pattern matching on name and
+         *   status fields.
      */
     search?: string | undefined;
 
@@ -174,8 +197,10 @@ export namespace IHrmTimeTrackingTaskHistory {
      *
      * When provided, only returns task history entries where the specified employee was the actor who initiated the status transition. Accepts a valid employee UUID.
      *
-     * @x-autobe-database-schema-property hrm_time_tracking_employee_id
-     * @x-autobe-specification Direct filter on hrm_time_tracking_employee_id column. Must be a valid UUID referencing an employee in hrm_time_tracking_employees.
+         * @x-autobe-database-schema-property hrm_time_tracking_employee_id
+         * @x-autobe-specification Direct filter on
+         *   hrm_time_tracking_employee_id column. Must be a valid UUID
+         *   referencing an employee in hrm_time_tracking_employees.
      */
     employee_id?: (string & tags.Format<"uuid">) | undefined;
 
@@ -184,8 +209,9 @@ export namespace IHrmTimeTrackingTaskHistory {
      *
      * Returns only entries where the task transitioned FROM this specific status value. Valid status values include: open, in-progress, completed, closed.
      *
-     * @x-autobe-database-schema-property previous_status
-     * @x-autobe-specification Direct filter on previous_status column. Valid values: open, in-progress, completed, closed.
+         * @x-autobe-database-schema-property previous_status
+         * @x-autobe-specification Direct filter on previous_status column.
+         *   Valid values: open, in-progress, completed, closed.
      */
     previous_status?: string | undefined;
 
@@ -194,8 +220,9 @@ export namespace IHrmTimeTrackingTaskHistory {
      *
      * Returns only entries where the task transitioned TO this specific status value. Valid status values include: open, in-progress, completed, closed.
      *
-     * @x-autobe-database-schema-property new_status
-     * @x-autobe-specification Direct filter on new_status column. Valid values: open, in-progress, completed, closed.
+         * @x-autobe-database-schema-property new_status
+         * @x-autobe-specification Direct filter on new_status column. Valid
+         *   values: open, in-progress, completed, closed.
      */
     new_status?: string | undefined;
 
@@ -204,7 +231,9 @@ export namespace IHrmTimeTrackingTaskHistory {
      *
      * Filters task history entries created at or after this timestamp (inclusive). Combine with created_at_to to define a time window. Uses ISO 8601 datetime format.
      *
-     * @x-autobe-specification Lower bound filter on created_at column: WHERE created_at >= created_at_from. Combine with created_at_to for range query. Uses ISO 8601 datetime format.
+         * @x-autobe-specification Lower bound filter on created_at column:
+         *   WHERE created_at >= created_at_from. Combine with created_at_to for
+         *   range query. Uses ISO 8601 datetime format.
      */
     created_at_from?: (string & tags.Format<"date-time">) | undefined;
 
@@ -213,7 +242,9 @@ export namespace IHrmTimeTrackingTaskHistory {
      *
      * Filters task history entries created at or before this timestamp (inclusive). Combine with created_at_from to define a time window. Uses ISO 8601 datetime format.
      *
-     * @x-autobe-specification Upper bound filter on created_at column: WHERE created_at <= created_at_to. Combine with created_at_from for range query. Uses ISO 8601 datetime format.
+         * @x-autobe-specification Upper bound filter on created_at column:
+         *   WHERE created_at <= created_at_to. Combine with created_at_from for
+         *   range query. Uses ISO 8601 datetime format.
      */
     created_at_to?: (string & tags.Format<"date-time">) | undefined;
 
@@ -222,7 +253,9 @@ export namespace IHrmTimeTrackingTaskHistory {
      *
      * 1-based page index indicating which page of results to retrieve. Defaults to 1 when not specified. Use with limit to control pagination.
      *
-     * @x-autobe-specification Pagination parameter — 1-indexed page number. Used with limit for offset-based pagination. Default to 1 when not provided.
+         * @x-autobe-specification Pagination parameter — 1-indexed page number.
+         *   Used with limit for offset-based pagination. Default to 1 when not
+         *   provided.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -231,7 +264,9 @@ export namespace IHrmTimeTrackingTaskHistory {
      *
      * Defines the upper bound on how many task history entries can be returned in a single page. Maximum allowed value is 100.
      *
-     * @x-autobe-specification Pagination parameter — maximum records per page. Maximum allowed: 100. Used with page for offset-based pagination.
+         * @x-autobe-specification Pagination parameter — maximum records per
+         *   page. Maximum allowed: 100. Used with page for offset-based
+         *   pagination.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -242,7 +277,8 @@ export namespace IHrmTimeTrackingTaskHistory {
      *
      * Controls the ordering of results. Supports sorting by `created_at` in ascending (`created_at.asc`) or descending (`created_at.desc`) order. Defaults to `created_at.desc` (most recent first) when not specified.
      *
-     * @x-autobe-specification Sort parameter in {field}.{direction} format. Supports: created_at.desc (default), created_at.asc.
+         * @x-autobe-specification Sort parameter in {field}.{direction} format.
+         *   Supports: created_at.desc (default), created_at.asc.
      */
     sort?: string | undefined;
   };

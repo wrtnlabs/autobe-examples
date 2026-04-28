@@ -8,64 +8,82 @@ export type IShoppingMallSnapshotParty = {
   /**
    * Unique identifier of this snapshot-party visibility relationship row.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_snapshot_parties.id. Stored as UUID string in API.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_snapshot_parties.id. Stored as UUID string in API.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Identifier of the immutable snapshot whose visibility is being controlled.
    *
-   * @x-autobe-database-schema-property shopping_mall_snapshot_id
-   * @x-autobe-specification Direct mapping from shopping_mall_snapshot_parties.shopping_mall_snapshot_id. Returned as UUID string; for reads it is constrained by the snapshotId path parameter.
+     * @x-autobe-database-schema-property shopping_mall_snapshot_id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_snapshot_parties.shopping_mall_snapshot_id. Returned as
+     *   UUID string; for reads it is constrained by the snapshotId path
+     *   parameter.
    */
   shopping_mall_snapshot_id: string & tags.Format<"uuid">;
 
   /**
    * Discriminator for the referenced party identity type used in dispute-resolution visibility checks.
    *
-   * @x-autobe-database-schema-property party_type
-   * @x-autobe-specification Direct mapping from shopping_mall_snapshot_parties.party_type. Discriminator describing what the party_id refers to (e.g., owner/admin) as defined by the platform’s snapshot visibility rules.
+     * @x-autobe-database-schema-property party_type
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_snapshot_parties.party_type. Discriminator describing
+     *   what the party_id refers to (e.g., owner/admin) as defined by the
+     *   platform’s snapshot visibility rules.
    */
   party_type: string;
 
   /**
    * Identifier of the referenced party identity allowed (or denied) to view the snapshot.
    *
-   * @x-autobe-database-schema-property party_id
-   * @x-autobe-specification Direct mapping from shopping_mall_snapshot_parties.party_id. Stored as UUID string; together with party_type forms the party identity tuple.
+     * @x-autobe-database-schema-property party_id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_snapshot_parties.party_id. Stored as UUID string;
+     *   together with party_type forms the party identity tuple.
    */
   party_id: string & tags.Format<"uuid">;
 
   /**
    * Whether the specified party is permitted to view the snapshot for dispute resolution.
    *
-   * @x-autobe-database-schema-property can_view
-   * @x-autobe-specification Direct mapping from shopping_mall_snapshot_parties.can_view. When false, the party is treated as not allowed to view the snapshot for dispute resolution.
+     * @x-autobe-database-schema-property can_view
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_snapshot_parties.can_view. When false, the party is
+     *   treated as not allowed to view the snapshot for dispute resolution.
    */
   can_view: boolean;
 
   /**
    * Timestamp when this snapshot-party visibility relationship was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from shopping_mall_snapshot_parties.created_at. Represented as an ISO-8601 date-time string.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_snapshot_parties.created_at. Represented as an ISO-8601
+     *   date-time string.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when this snapshot-party visibility relationship was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from shopping_mall_snapshot_parties.updated_at. Represented as an ISO-8601 date-time string; updated when the relationship entry changes.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_snapshot_parties.updated_at. Represented as an ISO-8601
+     *   date-time string; updated when the relationship entry changes.
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * Soft-delete timestamp for this visibility relationship. Null means the entry is active; non-null means it is unavailable.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from shopping_mall_snapshot_parties.deleted_at. If null, the relationship is active; if a timestamp, the relationship is treated as removed/unavailable.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_snapshot_parties.deleted_at. If null, the relationship is
+     *   active; if a timestamp, the relationship is treated as
+     *   removed/unavailable.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -77,24 +95,31 @@ export namespace IShoppingMallSnapshotParty {
     /**
      * Snapshot party type discriminator for the referenced party identity (e.g., owner vs admin), used to interpret partyId.
      *
-     * @x-autobe-database-schema-property party_type
-     * @x-autobe-specification Direct mapping from request.partyType to shopping_mall_snapshot_parties.party_type. Validate as a non-empty discriminator value consistent with supported snapshot party types.
+         * @x-autobe-database-schema-property party_type
+         * @x-autobe-specification Direct mapping from request.partyType to
+         *   shopping_mall_snapshot_parties.party_type. Validate as a non-empty
+         *   discriminator value consistent with supported snapshot party types.
      */
     partyType: string & tags.MinLength<1>;
 
     /**
      * UUID identifier of the referenced party instance for the provided partyType.
      *
-     * @x-autobe-database-schema-property party_id
-     * @x-autobe-specification Direct mapping from request.partyId to shopping_mall_snapshot_parties.party_id. Must be a UUID string identifying the party instance for the given partyType.
+         * @x-autobe-database-schema-property party_id
+         * @x-autobe-specification Direct mapping from request.partyId to
+         *   shopping_mall_snapshot_parties.party_id. Must be a UUID string
+         *   identifying the party instance for the given partyType.
      */
     partyId: string & tags.Format<"uuid">;
 
     /**
      * Whether the specified party is allowed to view the snapshot content for dispute resolution.
      *
-     * @x-autobe-database-schema-property can_view
-     * @x-autobe-specification Direct mapping from request.canView to shopping_mall_snapshot_parties.can_view. Persist as a boolean flag controlling whether the party is allowed to view the snapshot content.
+         * @x-autobe-database-schema-property can_view
+         * @x-autobe-specification Direct mapping from request.canView to
+         *   shopping_mall_snapshot_parties.can_view. Persist as a boolean flag
+         *   controlling whether the party is allowed to view the snapshot
+         *   content.
      */
     canView: boolean;
   };
@@ -106,24 +131,34 @@ export namespace IShoppingMallSnapshotParty {
     /**
      * Discriminator indicating what kind of party the partyId refers to for snapshot visibility control.
      *
-     * @x-autobe-database-schema-property party_type
-     * @x-autobe-specification Direct mapping from shopping_mall_snapshot_parties.party_type. Validate the provided partyType matches one of the supported party discriminator values enforced by business rules/service layer.
+         * @x-autobe-database-schema-property party_type
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_snapshot_parties.party_type. Validate the provided
+         *   partyType matches one of the supported party discriminator values
+         *   enforced by business rules/service layer.
      */
     partyType: string;
 
     /**
      * UUID of the party whose snapshot visibility is being granted or revoked.
      *
-     * @x-autobe-database-schema-property party_id
-     * @x-autobe-specification Direct mapping from shopping_mall_snapshot_parties.party_id. Validate partyId is a UUID string.
+         * @x-autobe-database-schema-property party_id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_snapshot_parties.party_id. Validate partyId is a UUID
+         *   string.
      */
     partyId: string & tags.Format<"uuid">;
 
     /**
      * Whether the specified party is allowed to view the immutable snapshot.
      *
-     * @x-autobe-database-schema-property can_view
-     * @x-autobe-specification Direct mapping from shopping_mall_snapshot_parties.can_view. During the upsert for (shopping_mall_snapshot_id, partyType, partyId), set can_view to the incoming boolean. If an existing row is soft-deleted (deleted_at not null), revive/update it server-side consistently while applying the new can_view value.
+         * @x-autobe-database-schema-property can_view
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_snapshot_parties.can_view. During the upsert for
+         *   (shopping_mall_snapshot_id, partyType, partyId), set can_view to
+         *   the incoming boolean. If an existing row is soft-deleted
+         *   (deleted_at not null), revive/update it server-side consistently
+         *   while applying the new can_view value.
      */
     canView: boolean;
   };
@@ -135,64 +170,78 @@ export namespace IShoppingMallSnapshotParty {
     /**
      * Unique identifier of this snapshot visibility relationship record.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Read shopping_mall_snapshot_parties.id and serialize as UUID string.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Read shopping_mall_snapshot_parties.id and
+         *   serialize as UUID string.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Identifier of the immutable snapshot this visibility relationship grants access to.
      *
-     * @x-autobe-database-schema-property shopping_mall_snapshot_id
-     * @x-autobe-specification Read shopping_mall_snapshot_parties.shopping_mall_snapshot_id and serialize as UUID string.
+         * @x-autobe-database-schema-property shopping_mall_snapshot_id
+         * @x-autobe-specification Read
+         *   shopping_mall_snapshot_parties.shopping_mall_snapshot_id and
+         *   serialize as UUID string.
      */
     shopping_mall_snapshot_id: string & tags.Format<"uuid">;
 
     /**
      * Discriminator describing what kind of party party_id refers to (e.g., owner vs admin visibility context).
      *
-     * @x-autobe-database-schema-property party_type
-     * @x-autobe-specification Read shopping_mall_snapshot_parties.party_type as the stored discriminator value used to interpret party_id.
+         * @x-autobe-database-schema-property party_type
+         * @x-autobe-specification Read
+         *   shopping_mall_snapshot_parties.party_type as the stored
+         *   discriminator value used to interpret party_id.
      */
     party_type: string;
 
     /**
      * Identifier of the party granted or denied access, as interpreted together with party_type.
      *
-     * @x-autobe-database-schema-property party_id
-     * @x-autobe-specification Read shopping_mall_snapshot_parties.party_id and serialize as UUID string.
+         * @x-autobe-database-schema-property party_id
+         * @x-autobe-specification Read shopping_mall_snapshot_parties.party_id
+         *   and serialize as UUID string.
      */
     party_id: string & tags.Format<"uuid">;
 
     /**
      * Whether the referenced party is allowed to view the immutable snapshot content.
      *
-     * @x-autobe-database-schema-property can_view
-     * @x-autobe-specification Read shopping_mall_snapshot_parties.can_view (boolean) and serialize as boolean.
+         * @x-autobe-database-schema-property can_view
+         * @x-autobe-specification Read shopping_mall_snapshot_parties.can_view
+         *   (boolean) and serialize as boolean.
      */
     can_view: boolean;
 
     /**
      * Timestamp when this visibility relationship record was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Read shopping_mall_snapshot_parties.created_at and serialize as ISO-8601 date-time string.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Read
+         *   shopping_mall_snapshot_parties.created_at and serialize as ISO-8601
+         *   date-time string.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when this visibility relationship record was last updated.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Read shopping_mall_snapshot_parties.updated_at and serialize as ISO-8601 date-time string.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Read
+         *   shopping_mall_snapshot_parties.updated_at and serialize as ISO-8601
+         *   date-time string.
      */
     updated_at: string & tags.Format<"date-time">;
 
     /**
      * Soft-delete timestamp for this visibility relationship. Null means the relationship is currently active.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Read shopping_mall_snapshot_parties.deleted_at; if the column is NULL, serialize deleted_at as null; otherwise serialize as ISO-8601 date-time string.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Read
+         *   shopping_mall_snapshot_parties.deleted_at; if the column is NULL,
+         *   serialize deleted_at as null; otherwise serialize as ISO-8601
+         *   date-time string.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };

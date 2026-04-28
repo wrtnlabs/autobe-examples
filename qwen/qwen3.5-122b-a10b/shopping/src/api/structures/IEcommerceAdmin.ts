@@ -31,8 +31,9 @@ export type IEcommerceAdmin = {
    *
    * UUID v4 string (e.g., "550e8400-e29b-41d4-a716-446655440000")
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_admins.id. UUID format, primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from ecommerce_admins.id. UUID
+     *   format, primary key.
    */
   id: string & tags.Format<"uuid">;
 
@@ -50,8 +51,9 @@ export type IEcommerceAdmin = {
    * - Must be unique across all administrator accounts
    * - Used as the login username
    *
-   * @x-autobe-database-schema-property email
-   * @x-autobe-specification Direct mapping from ecommerce_admins.email. Unique constraint enforced at database level.
+     * @x-autobe-database-schema-property email
+     * @x-autobe-specification Direct mapping from ecommerce_admins.email.
+     *   Unique constraint enforced at database level.
    */
   email: string & tags.Format<"email">;
 
@@ -69,7 +71,10 @@ export type IEcommerceAdmin = {
    *
    * This is a has-one relation to the administrator grade table. The grade assignment is created when the administrator is approved and updated when promotions or demotions occur. May be null if no grade assignment exists.
    *
-   * @x-autobe-specification Computed via LEFT JOIN from ecommerce_admins to ecommerce_administrator_grades on ecommerce_admin_id. Returns IEcommerceAdministratorGrade.ISummary containing current grade level (regular or super). Can be null if no grade assignment exists.
+     * @x-autobe-specification Computed via LEFT JOIN from ecommerce_admins to
+     *   ecommerce_administrator_grades on ecommerce_admin_id. Returns
+     *   IEcommerceAdministratorGrade.ISummary containing current grade level
+     *   (regular or super). Can be null if no grade assignment exists.
    */
   grade: IEcommerceAdministratorGrade.ISummary | null;
 
@@ -82,8 +87,9 @@ export type IEcommerceAdmin = {
    *
    * ISO 8601 timestamp with timezone (e.g., "2024-01-15T09:30:00.000Z")
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_admins.created_at. Auto-set on record creation, immutable.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from ecommerce_admins.created_at.
+     *   Auto-set on record creation, immutable.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -96,8 +102,9 @@ export type IEcommerceAdmin = {
    *
    * ISO 8601 timestamp with timezone (e.g., "2024-01-15T09:30:00.000Z")
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from ecommerce_admins.updated_at. Auto-updated on any field modification except deleted_at.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from ecommerce_admins.updated_at.
+     *   Auto-updated on any field modification except deleted_at.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -115,8 +122,9 @@ export type IEcommerceAdmin = {
    * - `null` — Account is active and can authenticate
    * - Not null — Account is soft-deleted and cannot authenticate
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from ecommerce_admins.deleted_at. Nullable timestamp, null for active accounts, set when soft-deleted.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from ecommerce_admins.deleted_at.
+     *   Nullable timestamp, null for active accounts, set when soft-deleted.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -145,8 +153,10 @@ export namespace IEcommerceAdmin {
      * - Unique constraint: no duplicate emails allowed
      * - Format: valid RFC 5322 email address
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from ecommerce_admins.email. Unique constraint enforced at database level. RFC 5322 email format validation required.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from ecommerce_admins.email.
+         *   Unique constraint enforced at database level. RFC 5322 email format
+         *   validation required.
      */
     email: string & tags.Format<"email">;
 
@@ -165,8 +175,11 @@ export namespace IEcommerceAdmin {
      * - Backend hashes password using bcrypt or Argon2
      * - Hash stored in password_hash column, never exposed in responses
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification Plain text password input, backend transforms to bcrypt/argon2 hash stored in ecommerce_admins.password_hash. Minimum 8 characters with uppercase, lowercase, and number required.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification Plain text password input, backend transforms
+         *   to bcrypt/argon2 hash stored in ecommerce_admins.password_hash.
+         *   Minimum 8 characters with uppercase, lowercase, and number
+         *   required.
      */
     password: string & tags.MinLength<8> & tags.Format<"password">;
 
@@ -180,7 +193,10 @@ export namespace IEcommerceAdmin {
      * - Stored in ecommerce_admin_requests table
      * - Reviewed by super administrators during approval process
      *
-     * @x-autobe-specification Justification for administrator access request. Creates record in ecommerce_admin_requests table with this reason field. Not stored in ecommerce_admins. Required, non-empty string.
+         * @x-autobe-specification Justification for administrator access
+         *   request. Creates record in ecommerce_admin_requests table with this
+         *   reason field. Not stored in ecommerce_admins. Required, non-empty
+         *   string.
      */
     reason: string & tags.MinLength<1>;
 
@@ -194,7 +210,9 @@ export namespace IEcommerceAdmin {
      * - Used for session audit trail
      * - Required for complete registration context
      *
-     * @x-autobe-specification Current page URI where registration was initiated. Captured from HTTP request for session audit trail. Stored in session tables, not ecommerce_admins. Required field.
+         * @x-autobe-specification Current page URI where registration was
+         *   initiated. Captured from HTTP request for session audit trail.
+         *   Stored in session tables, not ecommerce_admins. Required field.
      */
     href: string & tags.Format<"uri">;
 
@@ -208,7 +226,9 @@ export namespace IEcommerceAdmin {
      * - Security monitoring for suspicious referral patterns
      * - Required for complete session context
      *
-     * @x-autobe-specification Referrer URI for tracking registration source. Captured from HTTP request headers for session audit trail. Stored in session tables, not ecommerce_admins. Required field.
+         * @x-autobe-specification Referrer URI for tracking registration
+         *   source. Captured from HTTP request headers for session audit trail.
+         *   Stored in session tables, not ecommerce_admins. Required field.
      */
     referrer: string & tags.Format<"uri">;
 
@@ -223,7 +243,10 @@ export namespace IEcommerceAdmin {
      * - Stored in session tables for audit trail
      * - Used for security monitoring and fraud detection
      *
-     * @x-autobe-specification Client IP address captured from HTTP request. Optional field (server captures as fallback in SSR scenarios). Stored in session tables, not ecommerce_admins. IPv4 format required when provided.
+         * @x-autobe-specification Client IP address captured from HTTP request.
+         *   Optional field (server captures as fallback in SSR scenarios).
+         *   Stored in session tables, not ecommerce_admins. IPv4 format
+         *   required when provided.
      */
     ip?: (string & tags.Format<"ipv4">) | undefined;
   };
@@ -258,8 +281,10 @@ export namespace IEcommerceAdmin {
      * - Email is used to identify the account before password verification
      * - Failed attempts with non-existent emails may be logged differently than failed password attempts
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from ecommerce_admins.email. Unique constraint enforced at database level. Used as primary credential for authentication alongside password.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from ecommerce_admins.email.
+         *   Unique constraint enforced at database level. Used as primary
+         *   credential for authentication alongside password.
      */
     email: string & tags.Format<"email">;
 
@@ -278,8 +303,11 @@ export namespace IEcommerceAdmin {
      * - Must match the stored hash for the given email
      * - Minimum length and complexity requirements enforced at registration
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification Plain text password input that is hashed by backend and compared with password_hash column in ecommerce_admins. Uses bcrypt or Argon2 hashing algorithm. Password is never stored or logged in plain text.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification Plain text password input that is hashed by
+         *   backend and compared with password_hash column in ecommerce_admins.
+         *   Uses bcrypt or Argon2 hashing algorithm. Password is never stored
+         *   or logged in plain text.
      */
     password: string & tags.Format<"password">;
   };
@@ -313,8 +341,9 @@ export namespace IEcommerceAdmin {
      *
      * **Format**: UUID v4 (e.g., "550e8400-e29b-41d4-a716-446655440000")
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_admins.id. Primary key, UUID format.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from ecommerce_admins.id.
+         *   Primary key, UUID format.
      */
     id: string & tags.Format<"uuid">;
 
@@ -330,8 +359,9 @@ export namespace IEcommerceAdmin {
      * - Used as the primary login credential
      * - Cannot be changed after account creation
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from ecommerce_admins.email. Unique constraint enforced at database level.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from ecommerce_admins.email.
+         *   Unique constraint enforced at database level.
      */
     email: string & tags.Format<"email">;
 
@@ -347,7 +377,10 @@ export namespace IEcommerceAdmin {
      * **Implementation**
      * This is a computed field that requires a JOIN to the ecommerce_administrator_grades table to retrieve the current grade assignment. The grade level is not stored directly in the ecommerce_admins table.
      *
-     * @x-autobe-specification Computed via JOIN from ecommerce_admins.id to ecommerce_administrator_grades.ecommerce_admin_id. Returns IEcommerceAdministratorGrade.ISummary with current grade level (regular or super). Not stored directly in ecommerce_admins table.
+         * @x-autobe-specification Computed via JOIN from ecommerce_admins.id to
+         *   ecommerce_administrator_grades.ecommerce_admin_id. Returns
+         *   IEcommerceAdministratorGrade.ISummary with current grade level
+         *   (regular or super). Not stored directly in ecommerce_admins table.
      */
     grade: IEcommerceAdministratorGrade.ISummary;
 
@@ -363,8 +396,10 @@ export namespace IEcommerceAdmin {
      * - Cannot be modified after creation
      * - Used for audit trail and account age calculations
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from ecommerce_admins.created_at. Automatically set on record creation, cannot be modified.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_admins.created_at. Automatically set on record creation,
+         *   cannot be modified.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -380,8 +415,10 @@ export namespace IEcommerceAdmin {
      * - Not updated on soft-delete (deleted_at changes instead)
      * - Used for change tracking and synchronization
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from ecommerce_admins.updated_at. Automatically updated on any field modification except deleted_at.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_admins.updated_at. Automatically updated on any field
+         *   modification except deleted_at.
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -398,15 +435,18 @@ export namespace IEcommerceAdmin {
      * - Historical audit records in ecommerce_admin_audit_logs remain intact
      * - Used for account recovery and data retention policies
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from ecommerce_admins.deleted_at. Nullable - null for active accounts, ISO datetime for soft-deleted accounts.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_admins.deleted_at. Nullable - null for active accounts,
+         *   ISO datetime for soft-deleted accounts.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
 
     /**
      * Authorization token.
      *
-     * @x-autobe-specification Authorization token comes from the session table.
+         * @x-autobe-specification Authorization token comes from the session
+         *   table.
      */
     token: IAuthorizationToken;
   };
@@ -428,7 +468,9 @@ export namespace IEcommerceAdmin {
      * **Token Lifetime**
      * Refresh tokens have a 7-day lifespan and are rotated on each successful refresh operation. The old token becomes invalid immediately after use to prevent replay attacks.
      *
-     * @x-autobe-specification JWT refresh token validated against ecommerce_admin_sessions table. Token rotation policy: old token invalidates after successful use.
+         * @x-autobe-specification JWT refresh token validated against
+         *   ecommerce_admin_sessions table. Token rotation policy: old token
+         *   invalidates after successful use.
      */
     refresh: string;
   };
@@ -458,8 +500,10 @@ export namespace IEcommerceAdmin {
      *
      * **Format**: ISO 8601 date-time string (e.g., "2024-01-01T00:00:00Z")
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Filters administrators created on or after this timestamp. Used with created_at_to for date range queries. Implements >= comparison on created_at column.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Filters administrators created on or after
+         *   this timestamp. Used with created_at_to for date range queries.
+         *   Implements >= comparison on created_at column.
      */
     created_at_from?: (string & tags.Format<"date-time">) | undefined;
 
@@ -470,8 +514,10 @@ export namespace IEcommerceAdmin {
      *
      * **Format**: ISO 8601 date-time string (e.g., "2024-12-31T23:59:59Z")
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Filters administrators created on or before this timestamp. Used with created_at_from for date range queries. Implements <= comparison on created_at column.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Filters administrators created on or before
+         *   this timestamp. Used with created_at_from for date range queries.
+         *   Implements <= comparison on created_at column.
      */
     created_at_to?: (string & tags.Format<"date-time">) | undefined;
 
@@ -482,8 +528,10 @@ export namespace IEcommerceAdmin {
      *
      * **Example**: "admin@example.com" will match emails containing this substring
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Filters administrators by partial email match. Implements ILIKE (case-insensitive) search on email column. Supports substring matching.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Filters administrators by partial email
+         *   match. Implements ILIKE (case-insensitive) search on email column.
+         *   Supports substring matching.
      */
     email?: string | undefined;
 
@@ -494,7 +542,10 @@ export namespace IEcommerceAdmin {
      *
      * **Allowed values**: "regular", "super"
      *
-     * @x-autobe-specification Filters administrators by grade level (regular or super). Requires JOIN with ecommerce_administrator_grades table to retrieve current grade assignment. Implements exact match on grade column.
+         * @x-autobe-specification Filters administrators by grade level
+         *   (regular or super). Requires JOIN with
+         *   ecommerce_administrator_grades table to retrieve current grade
+         *   assignment. Implements exact match on grade column.
      */
     grade?: string | undefined;
 
@@ -505,7 +556,9 @@ export namespace IEcommerceAdmin {
      *
      * **Range**: 1 to 100 (default: 20)
      *
-     * @x-autobe-specification Specifies maximum number of records per page. Valid range: 1-100. Defaults to 20 if not specified. Used for cursor-based pagination.
+         * @x-autobe-specification Specifies maximum number of records per page.
+         *   Valid range: 1-100. Defaults to 20 if not specified. Used for
+         *   cursor-based pagination.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -518,7 +571,9 @@ export namespace IEcommerceAdmin {
      *
      * **Minimum**: 1 (default: 1)
      *
-     * @x-autobe-specification Specifies which page of results to retrieve. 1-indexed page number. Defaults to 1 if not specified. Used with limit for cursor-based pagination.
+         * @x-autobe-specification Specifies which page of results to retrieve.
+         *   1-indexed page number. Defaults to 1 if not specified. Used with
+         *   limit for cursor-based pagination.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -529,7 +584,9 @@ export namespace IEcommerceAdmin {
      *
      * **Allowed values**: "email", "created_at", "updated_at" (default: "created_at")
      *
-     * @x-autobe-specification Specifies the field to sort results by. Allowed values: "email", "created_at", "updated_at". Defaults to "created_at" if not specified.
+         * @x-autobe-specification Specifies the field to sort results by.
+         *   Allowed values: "email", "created_at", "updated_at". Defaults to
+         *   "created_at" if not specified.
      */
     sort_by?: string | undefined;
 
@@ -540,7 +597,9 @@ export namespace IEcommerceAdmin {
      *
      * **Allowed values**: "asc" (ascending), "desc" (descending) (default: "desc")
      *
-     * @x-autobe-specification Specifies sort direction. Allowed values: "asc" for ascending, "desc" for descending. Defaults to "desc" if not specified.
+         * @x-autobe-specification Specifies sort direction. Allowed values:
+         *   "asc" for ascending, "desc" for descending. Defaults to "desc" if
+         *   not specified.
      */
     sort_order?: string | undefined;
 
@@ -551,7 +610,11 @@ export namespace IEcommerceAdmin {
      *
      * **Allowed values**: "active" (deleted_at IS NULL), "deleted" (deleted_at IS NOT NULL)
      *
-     * @x-autobe-specification Computed field: filters administrators by account status based on deleted_at column. "active" means deleted_at IS NULL, "deleted" means deleted_at IS NOT NULL. The DTO property is a string (active/deleted) that transforms the nullable DateTime column into a status enum.
+         * @x-autobe-specification Computed field: filters administrators by
+         *   account status based on deleted_at column. "active" means
+         *   deleted_at IS NULL, "deleted" means deleted_at IS NOT NULL. The DTO
+         *   property is a string (active/deleted) that transforms the nullable
+         *   DateTime column into a status enum.
      */
     status?: string | undefined;
 
@@ -562,8 +625,10 @@ export namespace IEcommerceAdmin {
      *
      * **Format**: ISO 8601 date-time string (e.g., "2024-01-01T00:00:00Z")
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Filters administrators updated on or after this timestamp. Used with updated_at_to for date range queries. Implements >= comparison on updated_at column.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Filters administrators updated on or after
+         *   this timestamp. Used with updated_at_to for date range queries.
+         *   Implements >= comparison on updated_at column.
      */
     updated_at_from?: (string & tags.Format<"date-time">) | undefined;
 
@@ -574,8 +639,10 @@ export namespace IEcommerceAdmin {
      *
      * **Format**: ISO 8601 date-time string (e.g., "2024-12-31T23:59:59Z")
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Filters administrators updated on or before this timestamp. Used with updated_at_from for date range queries. Implements <= comparison on updated_at column.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Filters administrators updated on or before
+         *   this timestamp. Used with updated_at_from for date range queries.
+         *   Implements <= comparison on updated_at column.
      */
     updated_at_to?: (string & tags.Format<"date-time">) | undefined;
   };
@@ -600,8 +667,9 @@ export namespace IEcommerceAdmin {
      *
      * This is a UUID that uniquely identifies each administrator in the system. Used as the primary key for all administrator-related operations and references.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_admins.id. UUID format, primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from ecommerce_admins.id. UUID
+         *   format, primary key.
      */
     id: string & tags.Format<"uuid">;
 
@@ -610,8 +678,9 @@ export namespace IEcommerceAdmin {
      *
      * This email serves as the primary credential for login alongside the password. Must be unique across all administrator accounts and is used for account identification and password reset flows.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from ecommerce_admins.email. Email format, unique constraint.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from ecommerce_admins.email.
+         *   Email format, unique constraint.
      */
     email: string & tags.Format<"email">;
 
@@ -620,7 +689,9 @@ export namespace IEcommerceAdmin {
      *
      * Indicates whether the administrator has regular or super administrator privileges. Super administrators have elevated permissions for managing seller approvals, grade transitions, and system-wide oversight. This value is derived from the ecommerce_administrator_grades table via JOIN.
      *
-     * @x-autobe-specification Computed via JOIN with ecommerce_administrator_grades table. Returns 'regular' or 'super' based on current grade assignment. Single-grade lookup by admin_id.
+         * @x-autobe-specification Computed via JOIN with
+         *   ecommerce_administrator_grades table. Returns 'regular' or 'super'
+         *   based on current grade assignment. Single-grade lookup by admin_id.
      */
     grade: "regular" | "super";
 
@@ -629,8 +700,9 @@ export namespace IEcommerceAdmin {
      *
      * Automatically set upon account creation and cannot be modified. Used for auditing purposes and to track account age.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from ecommerce_admins.created_at. Timestamp with timezone (timestamptz).
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_admins.created_at. Timestamp with timezone (timestamptz).
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -639,8 +711,9 @@ export namespace IEcommerceAdmin {
      *
      * Automatically updated on any field changes except deleted_at. Used to track when the account was last updated.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from ecommerce_admins.updated_at. Timestamp with timezone (timestamptz).
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_admins.updated_at. Timestamp with timezone (timestamptz).
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -649,8 +722,10 @@ export namespace IEcommerceAdmin {
      *
      * Null for active accounts. When set, indicates the account has been soft-deleted and the administrator cannot authenticate. Historical audit records remain intact. Used to filter out deleted administrators from active queries while preserving data for audit purposes.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from ecommerce_admins.deleted_at. Nullable timestamp with timezone (timestamptz). Null for active accounts.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_admins.deleted_at. Nullable timestamp with timezone
+         *   (timestamptz). Null for active accounts.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };

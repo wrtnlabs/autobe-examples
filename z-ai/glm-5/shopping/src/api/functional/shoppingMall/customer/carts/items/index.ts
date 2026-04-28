@@ -31,7 +31,8 @@ import { IShoppingMallCartItem } from "../../../../../structures/IShoppingMallCa
  * @param props.body New quantity for the cart item
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Update the quantity of an existing cart item belonging to the authenticated customer.
+ * @x-autobe-specification Update the quantity of an existing cart item
+ *   belonging to the authenticated customer.
  *
  * Implementation Steps:
  * 1. Validate the cartItemId path parameter exists and is a valid UUID

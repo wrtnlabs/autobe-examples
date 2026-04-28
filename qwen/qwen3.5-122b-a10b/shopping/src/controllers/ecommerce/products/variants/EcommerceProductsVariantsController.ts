@@ -28,9 +28,10 @@ export class EcommerceProductsVariantsController {
    * @param connection
    * @param productId Unique identifier of the parent product (UUID format, global scope).
    * @param body Search criteria for filtering and sorting product variants, including SKU code search, stock availability filter, option value filters, and pagination parameters.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query ecommerce_product_variants table filtered by product_id UUID parameter.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query ecommerce_product_variants table filtered
+     *   by product_id UUID parameter.
    *
    * **Implementation Steps**:
    * 1. Validate product_id is a valid UUID format
@@ -99,9 +100,11 @@ export class EcommerceProductsVariantsController {
    * @param connection
    * @param productId The unique identifier of the parent product (UUID format, global scope).
    * @param variantId The unique identifier of the product variant (UUID format, global scope).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query the ecommerce_product_variants table by variantId and verify the product_id matches the productId path parameter.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query the ecommerce_product_variants table by
+     *   variantId and verify the product_id matches the productId path
+     *   parameter.
    *
    * **Validation Steps**
    * 1. Verify the variant exists with the given variantId

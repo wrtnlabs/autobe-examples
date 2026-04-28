@@ -11,48 +11,57 @@ export type IErpHrmTimeTimesheetTimelog = {
   /**
    * Unique identifier of the timesheet-to-timelog association.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from erp_hrm_time_timesheet_timelogs.id.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_timesheet_timelogs.id.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * The weekly timesheet that includes this timelog.
    *
-   * @x-autobe-database-schema-property timesheet
-   * @x-autobe-specification Resolve from erp_hrm_time_timesheet_timelogs.erp_hrm_time_timesheet_id via the timesheet belongs-to relation and expose IErpHrmTimeTimesheet.ISummary.
+     * @x-autobe-database-schema-property timesheet
+     * @x-autobe-specification Resolve from
+     *   erp_hrm_time_timesheet_timelogs.erp_hrm_time_timesheet_id via the
+     *   timesheet belongs-to relation and expose IErpHrmTimeTimesheet.ISummary.
    */
   timesheet: IErpHrmTimeTimesheet.ISummary;
 
   /**
    * The timelog included in the weekly timesheet.
    *
-   * @x-autobe-database-schema-property timelog
-   * @x-autobe-specification Resolve from erp_hrm_time_timesheet_timelogs.erp_hrm_time_timelog_id via the timelog belongs-to relation and expose IErpHrmTimeTimelog.ISummary.
+     * @x-autobe-database-schema-property timelog
+     * @x-autobe-specification Resolve from
+     *   erp_hrm_time_timesheet_timelogs.erp_hrm_time_timelog_id via the timelog
+     *   belongs-to relation and expose IErpHrmTimeTimelog.ISummary.
    */
   timelog: IErpHrmTimeTimelog.ISummary;
 
   /**
    * Timestamp when this association was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from erp_hrm_time_timesheet_timelogs.created_at.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_timesheet_timelogs.created_at.
    */
   createdAt: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when this association was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from erp_hrm_time_timesheet_timelogs.updated_at.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_timesheet_timelogs.updated_at.
    */
   updatedAt: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when this association was soft deleted, or null if it is active.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from erp_hrm_time_timesheet_timelogs.deleted_at. This is nullable and indicates a soft-deleted association when present.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_timesheet_timelogs.deleted_at. This is nullable and
+     *   indicates a soft-deleted association when present.
    */
   deletedAt: (string & tags.Format<"date-time">) | null;
 };
@@ -64,8 +73,13 @@ export namespace IErpHrmTimeTimesheetTimelog {
     /**
      * Identifier of the existing timelog to attach to the timesheet.
      *
-     * @x-autobe-database-schema-property erp_hrm_time_timelog_id
-     * @x-autobe-specification Direct mapping to erp_hrm_time_timesheet_timelogs.erp_hrm_time_timelog_id. The service uses this UUID to look up an existing timelog, validate that it belongs to the same organization and employee context, and then create the join row with the timesheet from the route parameter.
+         * @x-autobe-database-schema-property erp_hrm_time_timelog_id
+         * @x-autobe-specification Direct mapping to
+         *   erp_hrm_time_timesheet_timelogs.erp_hrm_time_timelog_id. The
+         *   service uses this UUID to look up an existing timelog, validate
+         *   that it belongs to the same organization and employee context, and
+         *   then create the join row with the timesheet from the route
+         *   parameter.
      */
     timelogId: string & tags.Format<"uuid">;
   };

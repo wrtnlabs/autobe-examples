@@ -8,64 +8,79 @@ export type IShoppingMallCategory = {
   /**
    * Unique identifier of the category.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_categories.id.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from shopping_mall_categories.id.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Display name of the category.
    *
-   * @x-autobe-database-schema-property name
-   * @x-autobe-specification Direct mapping from shopping_mall_categories.name. This is the current display name used in catalog browsing and administrative management.
+     * @x-autobe-database-schema-property name
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_categories.name. This is the current display name used in
+     *   catalog browsing and administrative management.
    */
   name: string;
 
   /**
    * Human-readable explanation of the category and its intended product grouping.
    *
-   * @x-autobe-database-schema-property description
-   * @x-autobe-specification Direct mapping from shopping_mall_categories.description. This text explains the category's purpose and what kinds of products belong in it.
+     * @x-autobe-database-schema-property description
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_categories.description. This text explains the category's
+     *   purpose and what kinds of products belong in it.
    */
   description: string;
 
   /**
    * Immediate parent category of this category, or null when this category is top-level.
    *
-   * @x-autobe-database-schema-property parent
-   * @x-autobe-specification Resolve from the shopping_mall_categories.parent relation using parent_id. Return IShoppingMallCategory.ISummary when the category belongs to a top-level parent category; return null when the category itself is top-level.
+     * @x-autobe-database-schema-property parent
+     * @x-autobe-specification Resolve from the shopping_mall_categories.parent
+     *   relation using parent_id. Return IShoppingMallCategory.ISummary when
+     *   the category belongs to a top-level parent category; return null when
+     *   the category itself is top-level.
    */
   parent: IShoppingMallCategory.ISummary | null;
 
   /**
    * Immediate child categories that belong directly under this category.
    *
-   * @x-autobe-database-schema-property children
-   * @x-autobe-specification Resolve from the shopping_mall_categories.children relation by selecting immediate child categories whose parent_id equals the current category id. Map each child row to IShoppingMallCategory.ISummary and do not recursively expand deeper descendants.
+     * @x-autobe-database-schema-property children
+     * @x-autobe-specification Resolve from the
+     *   shopping_mall_categories.children relation by selecting immediate child
+     *   categories whose parent_id equals the current category id. Map each
+     *   child row to IShoppingMallCategory.ISummary and do not recursively
+     *   expand deeper descendants.
    */
   children: IShoppingMallCategory.ISummary[];
 
   /**
    * Timestamp when the category was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from shopping_mall_categories.created_at.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_categories.created_at.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the category was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from shopping_mall_categories.updated_at.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_categories.updated_at.
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the category was soft deleted, or null if the category is still active.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from shopping_mall_categories.deleted_at. Return null when the category is active and a date-time value when the category has been soft deleted.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_categories.deleted_at. Return null when the category is
+     *   active and a date-time value when the category has been soft deleted.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -79,19 +94,23 @@ export namespace IShoppingMallCategory {
    */
   export type ICreate = {
     /**
-     * @x-autobe-database-schema-property name
+         * @x-autobe-database-schema-property name
      */
     name: string;
     /**
-     * @x-autobe-database-schema-property description
+         * @x-autobe-database-schema-property description
      */
     description: string;
 
     /**
      * Optional parent category identifier for creating a direct subcategory. Use null or omit this field to create a top-level category.
      *
-     * @x-autobe-database-schema-property parent_id
-     * @x-autobe-specification Maps parentId to shopping_mall_categories.parent_id. Allow null or omission for top-level category creation. When a non-null UUID is provided, downstream logic must validate that the referenced active parent exists and is itself top-level before insert.
+         * @x-autobe-database-schema-property parent_id
+         * @x-autobe-specification Maps parentId to
+         *   shopping_mall_categories.parent_id. Allow null or omission for
+         *   top-level category creation. When a non-null UUID is provided,
+         *   downstream logic must validate that the referenced active parent
+         *   exists and is itself top-level before insert.
      */
     parentId?: (string & tags.Format<"uuid">) | null | undefined;
   };
@@ -103,24 +122,39 @@ export namespace IShoppingMallCategory {
     /**
      * Display name of the category to save as the updated classification label.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping to `shopping_mall_categories.name` for the target category identified by the `categoryId` path parameter. This value replaces the current display name and must remain unique within the resulting `parent_id` scope under the table constraint `@@unique([parent_id, name])`.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping to
+         *   `shopping_mall_categories.name` for the target category identified
+         *   by the `categoryId` path parameter. This value replaces the current
+         *   display name and must remain unique within the resulting
+         *   `parent_id` scope under the table constraint `@@unique([parent_id,
+         *   name])`.
      */
     name: string;
 
     /**
      * Explanation of what kinds of products belong in the category.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping to `shopping_mall_categories.description` for the target category identified by the `categoryId` path parameter. This value replaces the current human-readable explanation of the category's purpose and expected product grouping.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping to
+         *   `shopping_mall_categories.description` for the target category
+         *   identified by the `categoryId` path parameter. This value replaces
+         *   the current human-readable explanation of the category's purpose
+         *   and expected product grouping.
      */
     description: string;
 
     /**
      * Identifier of the parent category, or null when the category should be top-level.
      *
-     * @x-autobe-database-schema-property parent_id
-     * @x-autobe-specification Direct mapping to `shopping_mall_categories.parent_id`. Accept a UUID to place the category under another category, or `null` to make it top-level. Before persisting, load the referenced parent when non-null, reject missing or inactive parents, reject self-reference to the target category, and reject any parent whose own `parent_id` is non-null so the hierarchy never exceeds one level.
+         * @x-autobe-database-schema-property parent_id
+         * @x-autobe-specification Direct mapping to
+         *   `shopping_mall_categories.parent_id`. Accept a UUID to place the
+         *   category under another category, or `null` to make it top-level.
+         *   Before persisting, load the referenced parent when non-null, reject
+         *   missing or inactive parents, reject self-reference to the target
+         *   category, and reject any parent whose own `parent_id` is non-null
+         *   so the hierarchy never exceeds one level.
      */
     parent_id: (string & tags.Format<"uuid">) | null;
   };
@@ -132,49 +166,69 @@ export namespace IShoppingMallCategory {
     /**
      * Free-text keyword used to search category names and descriptions.
      *
-     * @x-autobe-specification Use this value as a case-insensitive free-text filter over shopping_mall_categories.name and shopping_mall_categories.description for active category browsing. Ignore it when absent or blank according to service policy.
+         * @x-autobe-specification Use this value as a case-insensitive
+         *   free-text filter over shopping_mall_categories.name and
+         *   shopping_mall_categories.description for active category browsing.
+         *   Ignore it when absent or blank according to service policy.
      */
     search?: string | undefined;
 
     /**
      * Parent category identifier used to retrieve categories under a specific top-level category.
      *
-     * @x-autobe-specification When provided, use this UUID as a filter condition equivalent to shopping_mall_categories.parent_id = input.parent_id. It limits results to categories that directly belong to the specified parent category.
+         * @x-autobe-specification When provided, use this UUID as a filter
+         *   condition equivalent to shopping_mall_categories.parent_id =
+         *   input.parent_id. It limits results to categories that directly
+         *   belong to the specified parent category.
      */
     parent_id?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Whether to restrict results to top-level categories that do not have a parent category.
      *
-     * @x-autobe-specification When true, constrain the result set to categories where shopping_mall_categories.parent_id IS NULL. When false or absent, do not apply this filter unless combined query-validation rules say otherwise.
+         * @x-autobe-specification When true, constrain the result set to
+         *   categories where shopping_mall_categories.parent_id IS NULL. When
+         *   false or absent, do not apply this filter unless combined
+         *   query-validation rules say otherwise.
      */
     isTopLevel?: boolean | undefined;
 
     /**
      * Whether to restrict results to direct subcategories that belong to a parent category.
      *
-     * @x-autobe-specification When true, constrain the result set to categories where shopping_mall_categories.parent_id IS NOT NULL. Because the domain supports only one nesting level, this means direct subcategories only.
+         * @x-autobe-specification When true, constrain the result set to
+         *   categories where shopping_mall_categories.parent_id IS NOT NULL.
+         *   Because the domain supports only one nesting level, this means
+         *   direct subcategories only.
      */
     isSubcategory?: boolean | undefined;
 
     /**
      * Sorting rule that controls the order of categories in the paginated result.
      *
-     * @x-autobe-specification Interpret this value as the requested ordering rule for category list results. Support only service-approved sort keys, typically mapped to shopping_mall_categories.name, created_at, or updated_at, with any descending syntax handled consistently by the endpoint.
+         * @x-autobe-specification Interpret this value as the requested
+         *   ordering rule for category list results. Support only
+         *   service-approved sort keys, typically mapped to
+         *   shopping_mall_categories.name, created_at, or updated_at, with any
+         *   descending syntax handled consistently by the endpoint.
      */
     sort?: string | undefined;
 
     /**
      * Page number of the category list to retrieve, starting from 1.
      *
-     * @x-autobe-specification Use as the 1-based page number for paginated category retrieval. Combine with limit to compute offset or skip behavior in the list query.
+         * @x-autobe-specification Use as the 1-based page number for paginated
+         *   category retrieval. Combine with limit to compute offset or skip
+         *   behavior in the list query.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of category records to include in a single page of results.
      *
-     * @x-autobe-specification Use as the maximum number of category summaries returned in one page. Enforce the schema cap of 100 and combine with page to implement paginated retrieval.
+         * @x-autobe-specification Use as the maximum number of category
+         *   summaries returned in one page. Enforce the schema cap of 100 and
+         *   combine with page to implement paginated retrieval.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -188,56 +242,74 @@ export namespace IShoppingMallCategory {
     /**
      * Unique identifier of the category.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_categories.id. This is the stable UUID primary key of the category record.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_categories.id. This is the stable UUID primary key of
+         *   the category record.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Display name of the category.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from shopping_mall_categories.name. Preserve the current category display name used in browsing and management views.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_categories.name. Preserve the current category
+         *   display name used in browsing and management views.
      */
     name: string;
 
     /**
      * Explanation of what kinds of products belong in this category.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from shopping_mall_categories.description. Return the current human-readable explanation of the category's purpose.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_categories.description. Return the current
+         *   human-readable explanation of the category's purpose.
      */
     description: string;
 
     /**
      * Immediate parent category of this category, or null when this is a top-level category.
      *
-     * @x-autobe-database-schema-property parent
-     * @x-autobe-specification Resolve the self-referential belongs-to relation from shopping_mall_categories.parent to IShoppingMallCategory.ISummary. When shopping_mall_categories.parent_id is null, serialize this property as null; otherwise return the immediate parent category summary only.
+         * @x-autobe-database-schema-property parent
+         * @x-autobe-specification Resolve the self-referential belongs-to
+         *   relation from shopping_mall_categories.parent to
+         *   IShoppingMallCategory.ISummary. When
+         *   shopping_mall_categories.parent_id is null, serialize this property
+         *   as null; otherwise return the immediate parent category summary
+         *   only.
      */
     parent: IShoppingMallCategory.ISummary | null;
 
     /**
      * Timestamp when the category was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_categories.created_at as an ISO 8601 date-time string.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_categories.created_at as an ISO 8601 date-time
+         *   string.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when the category was last updated.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from shopping_mall_categories.updated_at as an ISO 8601 date-time string.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_categories.updated_at as an ISO 8601 date-time
+         *   string.
      */
     updated_at: string & tags.Format<"date-time">;
 
     /**
      * Soft-deletion timestamp, or null when the category is currently active.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from shopping_mall_categories.deleted_at as an ISO 8601 date-time string or null. Null means the category is still active; a timestamp means it has been soft deleted.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_categories.deleted_at as an ISO 8601 date-time string
+         *   or null. Null means the category is still active; a timestamp means
+         *   it has been soft deleted.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };

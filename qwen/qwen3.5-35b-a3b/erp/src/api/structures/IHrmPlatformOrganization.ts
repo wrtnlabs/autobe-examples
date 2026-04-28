@@ -12,43 +12,43 @@ import { IHrmPlatformMember } from "./IHrmPlatformMember";
  */
 export type IHrmPlatformOrganization = {
   /**
-   * @x-autobe-database-schema-property id
+     * @x-autobe-database-schema-property id
    */
   id: string & tags.Format<"uuid">;
   /**
-   * @x-autobe-database-schema-property name
+     * @x-autobe-database-schema-property name
    */
   name: string;
   /**
-   * @x-autobe-database-schema-property description
+     * @x-autobe-database-schema-property description
    */
   description: string | null;
   /**
-   * @x-autobe-database-schema-property currency
+     * @x-autobe-database-schema-property currency
    */
   currency: string;
   /**
-   * @x-autobe-database-schema-property timezone
+     * @x-autobe-database-schema-property timezone
    */
   timezone: string;
   /**
-   * @x-autobe-database-schema-property fiscal_start_month
+     * @x-autobe-database-schema-property fiscal_start_month
    */
   fiscal_start_month: number & tags.Type<"int32">;
   /**
-   * @x-autobe-database-schema-property owner
+     * @x-autobe-database-schema-property owner
    */
   owner: IHrmPlatformMember.ISummary;
   /**
-   * @x-autobe-database-schema-property created_at
+     * @x-autobe-database-schema-property created_at
    */
   created_at: string & tags.Format<"date-time">;
   /**
-   * @x-autobe-database-schema-property updated_at
+     * @x-autobe-database-schema-property updated_at
    */
   updated_at: string & tags.Format<"date-time">;
   /**
-   * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-database-schema-property deleted_at
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -62,23 +62,23 @@ export namespace IHrmPlatformOrganization {
    */
   export type ICreate = {
     /**
-     * @x-autobe-database-schema-property name
+         * @x-autobe-database-schema-property name
      */
     name: string;
     /**
-     * @x-autobe-database-schema-property description
+         * @x-autobe-database-schema-property description
      */
     description?: string | null | undefined;
     /**
-     * @x-autobe-database-schema-property currency
+         * @x-autobe-database-schema-property currency
      */
     currency: string;
     /**
-     * @x-autobe-database-schema-property timezone
+         * @x-autobe-database-schema-property timezone
      */
     timezone: string;
     /**
-     * @x-autobe-database-schema-property fiscal_start_month
+         * @x-autobe-database-schema-property fiscal_start_month
      */
     fiscal_start_month: number &
       tags.Type<"int32"> &
@@ -115,14 +115,14 @@ export namespace IHrmPlatformOrganization {
     /**
      * Optional exact match filter on organization currency code
      *
-     * @x-autobe-database-schema-property currency
+         * @x-autobe-database-schema-property currency
      */
     currency?: string | undefined;
 
     /**
      * Optional exact match filter on fiscal year start month (1-12)
      *
-     * @x-autobe-database-schema-property fiscal_start_month
+         * @x-autobe-database-schema-property fiscal_start_month
      */
     fiscal_start_month?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<12>)
@@ -160,23 +160,23 @@ export namespace IHrmPlatformOrganization {
    */
   export type IUpdate = {
     /**
-     * @x-autobe-database-schema-property name
+         * @x-autobe-database-schema-property name
      */
     name?: string | undefined;
     /**
-     * @x-autobe-database-schema-property description
+         * @x-autobe-database-schema-property description
      */
     description?: string | null | undefined;
     /**
-     * @x-autobe-database-schema-property currency
+         * @x-autobe-database-schema-property currency
      */
     currency?: string | undefined;
     /**
-     * @x-autobe-database-schema-property timezone
+         * @x-autobe-database-schema-property timezone
      */
     timezone?: string | undefined;
     /**
-     * @x-autobe-database-schema-property fiscal_start_month
+         * @x-autobe-database-schema-property fiscal_start_month
      */
     fiscal_start_month?: (number & tags.Type<"int32">) | undefined;
   };
@@ -212,43 +212,43 @@ export namespace IHrmPlatformOrganization {
    */
   export type ISummary = {
     /**
-     * @x-autobe-database-schema-property id
+         * @x-autobe-database-schema-property id
      */
     id: string & tags.Format<"uuid">;
     /**
-     * @x-autobe-database-schema-property name
+         * @x-autobe-database-schema-property name
      */
     name: string;
     /**
-     * @x-autobe-database-schema-property description
+         * @x-autobe-database-schema-property description
      */
     description?: string | null | undefined;
     /**
-     * @x-autobe-database-schema-property currency
+         * @x-autobe-database-schema-property currency
      */
     currency?: string | undefined;
     /**
-     * @x-autobe-database-schema-property timezone
+         * @x-autobe-database-schema-property timezone
      */
     timezone?: string | undefined;
     /**
-     * @x-autobe-database-schema-property fiscal_start_month
+         * @x-autobe-database-schema-property fiscal_start_month
      */
     fiscal_start_month?: (number & tags.Type<"int32">) | undefined;
     /**
-     * @x-autobe-database-schema-property created_at
+         * @x-autobe-database-schema-property created_at
      */
     created_at: string & tags.Format<"date-time">;
     /**
-     * @x-autobe-database-schema-property updated_at
+         * @x-autobe-database-schema-property updated_at
      */
     updated_at: string & tags.Format<"date-time">;
     /**
-     * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-database-schema-property deleted_at
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
     /**
-     * @x-autobe-database-schema-property owner
+         * @x-autobe-database-schema-property owner
      */
     owner: IHrmPlatformMember.ISummary;
   };

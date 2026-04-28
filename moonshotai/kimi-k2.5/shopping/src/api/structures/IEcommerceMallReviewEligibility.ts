@@ -6,14 +6,23 @@ export type IEcommerceMallReviewEligibility = {
   /**
    * Whether the customer is eligible to write a review for this order item. True when all business rules are satisfied (item delivered, no existing review, order not cancelled/refunded).
    *
-   * @x-autobe-specification Computed boolean based on business rule validation: (1) order_item.status === 'delivered' AND (2) no existing review exists for order_item_id AND (3) order is not cancelled/refunded. Query ecommerce_mall_order_items for status check, query ecommerce_mall_reviews for existence check.
+     * @x-autobe-specification Computed boolean based on business rule
+     *   validation: (1) order_item.status === 'delivered' AND (2) no existing
+     *   review exists for order_item_id AND (3) order is not
+     *   cancelled/refunded. Query ecommerce_mall_order_items for status check,
+     *   query ecommerce_mall_reviews for existence check.
    */
   eligible: boolean;
 
   /**
    * Reason code explaining why the customer cannot write a review. Null when eligible is true. One of: ITEM_NOT_DELIVERED (item not yet delivered), REVIEW_ALREADY_EXISTS (customer already wrote a review for this item), ORDER_CANCELLED_OR_REFUNDED (order was cancelled or refunded) when eligible is false.
    *
-   * @x-autobe-specification Computed string enum or null. Returns null when eligible is true. When eligible is false, returns one of: 'ITEM_NOT_DELIVERED' (order_item.status !== 'delivered'), 'REVIEW_ALREADY_EXISTS' (review record found in ecommerce_mall_reviews with matching order_item_id), or 'ORDER_CANCELLED_OR_REFUNDED' (related order status is cancelled or all items refunded).
+     * @x-autobe-specification Computed string enum or null. Returns null when
+     *   eligible is true. When eligible is false, returns one of:
+     *   'ITEM_NOT_DELIVERED' (order_item.status !== 'delivered'),
+     *   'REVIEW_ALREADY_EXISTS' (review record found in ecommerce_mall_reviews
+     *   with matching order_item_id), or 'ORDER_CANCELLED_OR_REFUNDED' (related
+     *   order status is cancelled or all items refunded).
    */
   reason:
     | "ITEM_NOT_DELIVERED"

@@ -166,7 +166,8 @@ export namespace create {
  * @param props.variantId The unique identifier of the product variant to delete (UUID format)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Implement seller-initiated product variant deletion with constraint validation:
+ * @x-autobe-specification Implement seller-initiated product variant deletion
+ *   with constraint validation:
  *
  * 1. **Authorization**: Verify authenticated user is a seller and owns the product containing the variant.
  *

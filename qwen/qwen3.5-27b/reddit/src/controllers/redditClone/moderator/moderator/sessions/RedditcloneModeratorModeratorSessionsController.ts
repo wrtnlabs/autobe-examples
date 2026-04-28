@@ -22,9 +22,10 @@ export class RedditcloneModeratorModeratorSessionsController {
    *
    * @param connection
    * @param body Search criteria for moderator sessions including pagination parameters, date range filters, IP address filters, and expiration status filters.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor moderator
-   * @x-autobe-specification Query reddit_clone_moderator_sessions table with pagination and filtering.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor moderator
+     * @x-autobe-specification Query reddit_clone_moderator_sessions table with
+     *   pagination and filtering.
    *
    * Filtering logic:
    * - Filter by date range on created_at field
@@ -81,9 +82,10 @@ export class RedditcloneModeratorModeratorSessionsController {
    *
    * @param connection
    * @param sessionId Unique identifier of the moderator session to retrieve (UUID format).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor moderator
-   * @x-autobe-specification Query the reddit_clone_moderator_sessions table for a single session record matching the provided sessionId UUID.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor moderator
+     * @x-autobe-specification Query the reddit_clone_moderator_sessions table
+     *   for a single session record matching the provided sessionId UUID.
    *
    * 1. Validate that sessionId is a valid UUID format
    * 2. Execute SELECT query on reddit_clone_moderator_sessions WHERE id = sessionId

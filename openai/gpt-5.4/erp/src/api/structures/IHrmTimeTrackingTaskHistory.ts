@@ -10,72 +10,94 @@ export type IHrmTimeTrackingTaskHistory = {
   /**
    * Unique identifier of this task history entry.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_task_histories.id.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_task_histories.id.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * The task whose workflow status change is recorded by this history entry.
    *
-   * @x-autobe-database-schema-property task
-   * @x-autobe-specification Resolve from the belongs-to relation hrm_time_tracking_task_histories.task by joining hrm_time_tracking_task_histories.hrm_time_tracking_task_id to hrm_time_tracking_tasks.id and projecting the related task as IHrmTimeTrackingTask.ISummary.
+     * @x-autobe-database-schema-property task
+     * @x-autobe-specification Resolve from the belongs-to relation
+     *   hrm_time_tracking_task_histories.task by joining
+     *   hrm_time_tracking_task_histories.hrm_time_tracking_task_id to
+     *   hrm_time_tracking_tasks.id and projecting the related task as
+     *   IHrmTimeTrackingTask.ISummary.
    */
   task: IHrmTimeTrackingTask.ISummary;
 
   /**
    * Category of actor that performed the task status change.
    *
-   * @x-autobe-database-schema-property actor_type
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_task_histories.actor_type. Persisted business values identify the authenticated actor category that performed the status transition, such as owner, manager, or employee.
+     * @x-autobe-database-schema-property actor_type
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_task_histories.actor_type. Persisted business values
+     *   identify the authenticated actor category that performed the status
+     *   transition, such as owner, manager, or employee.
    */
   actor_type: string;
 
   /**
    * Task status before this transition occurred.
    *
-   * @x-autobe-database-schema-property old_status
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_task_histories.old_status. Stores the task status value immediately before the transition was applied.
+     * @x-autobe-database-schema-property old_status
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_task_histories.old_status. Stores the task status
+     *   value immediately before the transition was applied.
    */
   old_status: string;
 
   /**
    * Task status after this transition occurred.
    *
-   * @x-autobe-database-schema-property new_status
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_task_histories.new_status. Stores the task status value that was applied by this transition.
+     * @x-autobe-database-schema-property new_status
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_task_histories.new_status. Stores the task status
+     *   value that was applied by this transition.
    */
   new_status: string;
 
   /**
    * Timestamp when the task status transition was made.
    *
-   * @x-autobe-database-schema-property changed_at
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_task_histories.changed_at as an RFC 3339 date-time string. This is the business timestamp representing when the status transition happened.
+     * @x-autobe-database-schema-property changed_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_task_histories.changed_at as an RFC 3339 date-time
+     *   string. This is the business timestamp representing when the status
+     *   transition happened.
    */
   changed_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when this task history record was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_task_histories.created_at as an RFC 3339 date-time string.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_task_histories.created_at as an RFC 3339 date-time
+     *   string.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when this task history record was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_task_histories.updated_at as an RFC 3339 date-time string.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_task_histories.updated_at as an RFC 3339 date-time
+     *   string.
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * Soft-deletion timestamp for this history entry, or null when the record is active.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_task_histories.deleted_at. Return the stored timestamp as an RFC 3339 date-time string when the record has been logically removed, otherwise return null.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_task_histories.deleted_at. Return the stored
+     *   timestamp as an RFC 3339 date-time string when the record has been
+     *   logically removed, otherwise return null.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -87,8 +109,15 @@ export namespace IHrmTimeTrackingTaskHistory {
     /**
      * The workflow status that the client wants to apply to the addressed task as the next state in its history.
      *
-     * @x-autobe-database-schema-property new_status
-     * @x-autobe-specification Direct mapping to hrm_time_tracking_task_histories.new_status for the row being created. Accept the requested target task workflow status from the client, validate it against the supported task status values and allowed transition rules relative to the current hrm_time_tracking_tasks.status, then persist it as the history record's new_status and synchronize the task's current status in the same transaction.
+         * @x-autobe-database-schema-property new_status
+         * @x-autobe-specification Direct mapping to
+         *   hrm_time_tracking_task_histories.new_status for the row being
+         *   created. Accept the requested target task workflow status from the
+         *   client, validate it against the supported task status values and
+         *   allowed transition rules relative to the current
+         *   hrm_time_tracking_tasks.status, then persist it as the history
+         *   record's new_status and synchronize the task's current status in
+         *   the same transaction.
      */
     new_status: string;
   };
@@ -100,40 +129,53 @@ export namespace IHrmTimeTrackingTaskHistory {
     /**
      * Unique identifier of this task history entry.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_task_histories.id. Preserve the UUID value of the task history record as stored.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_task_histories.id. Preserve the UUID value of the
+         *   task history record as stored.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Actor category that performed the task status change.
      *
-     * @x-autobe-database-schema-property actor_type
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_task_histories.actor_type. Return the stored actor category value indicating which actor kind performed the task status change, such as owner, manager, or employee.
+         * @x-autobe-database-schema-property actor_type
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_task_histories.actor_type. Return the stored
+         *   actor category value indicating which actor kind performed the task
+         *   status change, such as owner, manager, or employee.
      */
     actor_type: string;
 
     /**
      * Task status before the recorded transition.
      *
-     * @x-autobe-database-schema-property old_status
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_task_histories.old_status. Return the task status value that was in effect immediately before the transition was applied.
+         * @x-autobe-database-schema-property old_status
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_task_histories.old_status. Return the task status
+         *   value that was in effect immediately before the transition was
+         *   applied.
      */
     old_status: string;
 
     /**
      * Task status after the recorded transition.
      *
-     * @x-autobe-database-schema-property new_status
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_task_histories.new_status. Return the task status value that became effective after the transition was applied.
+         * @x-autobe-database-schema-property new_status
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_task_histories.new_status. Return the task status
+         *   value that became effective after the transition was applied.
      */
     new_status: string;
 
     /**
      * Date and time when the task status change occurred.
      *
-     * @x-autobe-database-schema-property changed_at
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_task_histories.changed_at. Return the business timestamp when the task status transition occurred in ISO 8601 date-time format.
+         * @x-autobe-database-schema-property changed_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_task_histories.changed_at. Return the business
+         *   timestamp when the task status transition occurred in ISO 8601
+         *   date-time format.
      */
     changed_at: string & tags.Format<"date-time">;
   };
@@ -145,61 +187,87 @@ export namespace IHrmTimeTrackingTaskHistory {
     /**
      * Filter results to task history entries created by a specific actor category.
      *
-     * @x-autobe-database-schema-property actor_type
-     * @x-autobe-specification Optional equality filter on hrm_time_tracking_task_histories.actor_type after the task has been scoped by path parameters. Accept business actor categories recorded in history rows, such as owner, manager, or employee.
+         * @x-autobe-database-schema-property actor_type
+         * @x-autobe-specification Optional equality filter on
+         *   hrm_time_tracking_task_histories.actor_type after the task has been
+         *   scoped by path parameters. Accept business actor categories
+         *   recorded in history rows, such as owner, manager, or employee.
      */
     actorType?: string | undefined;
 
     /**
      * Filter results to transitions whose previous task status matches the specified value.
      *
-     * @x-autobe-database-schema-property old_status
-     * @x-autobe-specification Optional equality filter on hrm_time_tracking_task_histories.old_status. When provided, return only history entries whose recorded status before the transition matches this value.
+         * @x-autobe-database-schema-property old_status
+         * @x-autobe-specification Optional equality filter on
+         *   hrm_time_tracking_task_histories.old_status. When provided, return
+         *   only history entries whose recorded status before the transition
+         *   matches this value.
      */
     oldStatus?: string | undefined;
 
     /**
      * Filter results to transitions whose resulting task status matches the specified value.
      *
-     * @x-autobe-database-schema-property new_status
-     * @x-autobe-specification Optional equality filter on hrm_time_tracking_task_histories.new_status. When provided, return only history entries whose recorded status after the transition matches this value.
+         * @x-autobe-database-schema-property new_status
+         * @x-autobe-specification Optional equality filter on
+         *   hrm_time_tracking_task_histories.new_status. When provided, return
+         *   only history entries whose recorded status after the transition
+         *   matches this value.
      */
     newStatus?: string | undefined;
 
     /**
      * Earliest change timestamp to include in the task history results.
      *
-     * @x-autobe-database-schema-property changed_at
-     * @x-autobe-specification Optional inclusive lower-bound filter on hrm_time_tracking_task_histories.changed_at. When provided, only rows with changed_at greater than or equal to this timestamp are eligible for the result set.
+         * @x-autobe-database-schema-property changed_at
+         * @x-autobe-specification Optional inclusive lower-bound filter on
+         *   hrm_time_tracking_task_histories.changed_at. When provided, only
+         *   rows with changed_at greater than or equal to this timestamp are
+         *   eligible for the result set.
      */
     changedAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Latest change timestamp to include in the task history results.
      *
-     * @x-autobe-database-schema-property changed_at
-     * @x-autobe-specification Optional inclusive upper-bound filter on hrm_time_tracking_task_histories.changed_at. When provided, only rows with changed_at less than or equal to this timestamp are eligible for the result set.
+         * @x-autobe-database-schema-property changed_at
+         * @x-autobe-specification Optional inclusive upper-bound filter on
+         *   hrm_time_tracking_task_histories.changed_at. When provided, only
+         *   rows with changed_at less than or equal to this timestamp are
+         *   eligible for the result set.
      */
     changedAtTo?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Sort option that controls the order in which task history entries are returned.
      *
-     * @x-autobe-specification Optional server-interpreted ordering directive for the task history list query. Implement sorting primarily over changed_at and support deterministic fallback ordering by created_at or id to keep pagination stable. This property does not map to a single database column value; it controls ORDER BY behavior for the scoped query.
+         * @x-autobe-specification Optional server-interpreted ordering
+         *   directive for the task history list query. Implement sorting
+         *   primarily over changed_at and support deterministic fallback
+         *   ordering by created_at or id to keep pagination stable. This
+         *   property does not map to a single database column value; it
+         *   controls ORDER BY behavior for the scoped query.
      */
     sort?: string | undefined;
 
     /**
      * Page number of the task history results to return.
      *
-     * @x-autobe-specification Optional 1-indexed page number for paginated retrieval of the filtered task history query. If omitted, default to the first page. Use with limit to calculate offset/skip for the scoped result set.
+         * @x-autobe-specification Optional 1-indexed page number for paginated
+         *   retrieval of the filtered task history query. If omitted, default
+         *   to the first page. Use with limit to calculate offset/skip for the
+         *   scoped result set.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of task history entries to include in one page of results.
      *
-     * @x-autobe-specification Optional maximum number of task history records to return per page. Enforce the schema bounds already defined on the property and use this value with page to paginate the filtered query safely.
+         * @x-autobe-specification Optional maximum number of task history
+         *   records to return per page. Enforce the schema bounds already
+         *   defined on the property and use this value with page to paginate
+         *   the filtered query safely.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)

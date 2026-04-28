@@ -25,20 +25,50 @@ export class HrmtimetrackingManagerReportsExecutionsController {
    * @param connection
    * @param reportId Target saved report ID
    * @param body Execution options for generating a report snapshot
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor manager
-   * @x-autobe-specification 1. Authenticate the caller and resolve the currently selected organization context.
-   * 2. Authorize the operation by verifying that the caller has report viewing permission in the current organization. Do not evaluate permissions from any other organization membership.
-   * 3. Load the parent hrm_time_tracking_reports record by id = reportId and deleted_at IS NULL. Reject the request if the report does not exist.
-   * 4. Verify that hrm_time_tracking_reports.hrm_time_tracking_organization_id matches the caller's current organization context. If it does not match, reject the request as an organization-scope access violation.
-   * 5. Validate that the report_type corresponds to one of the supported organization reporting functions: time_report, project_budget_report, or weekly_summary_report. If the stored type is unsupported for execution, reject the request.
-   * 6. Resolve execution inputs by combining the saved report definition with the request body. Determine output_format and the effective period_start and period_end. If the request body omits optional execution overrides, use range_start_date and range_end_date from the saved report definition when present. Validate that the effective period is coherent and that start is not after end.
-   * 7. Load the saved filter configuration associated with the report from hrm_time_tracking_report_employee_filters, hrm_time_tracking_report_project_filters, and hrm_time_tracking_report_task_filters as needed by the report type. Exclude child filter rows marked deleted when applicable.
-   * 8. Build the report query strictly against records that belong to the same organization as the parent report. Use the saved grouping mode and billable flags from hrm_time_tracking_reports. Never mix data from another organization.
-   * 9. Generate the export artifact in the requested output_format. If an external export or storage dependency is required, call it within the execution flow and treat any failure as a full operation failure.
-   * 10. Persist a new hrm_time_tracking_report_snapshots record with a new UUID id, hrm_time_tracking_report_id, output_uri, output_format, period_start, period_end, row_count when available, generated_at, created_at, and updated_at. Do not modify existing snapshots because the snapshot store is append-oriented.
-   * 11. Return the created snapshot record as the successful response.
-   * 12. Error handling: return not found when the report does not exist in the current organization scope; forbidden when the caller lacks report viewing permission; validation failure for invalid period or unsupported execution options; failure when export or storage integration does not complete successfully. On dependency failure, do not create a misleading snapshot row and do not partially succeed.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor manager
+     * @x-autobe-specification 1. Authenticate the caller and resolve the
+     *   currently selected organization context. 2. Authorize the operation by
+     *   verifying that the caller has report viewing permission in the current
+     *   organization. Do not evaluate permissions from any other organization
+     *   membership. 3. Load the parent hrm_time_tracking_reports record by id =
+     *   reportId and deleted_at IS NULL. Reject the request if the report does
+     *   not exist. 4. Verify that
+     *   hrm_time_tracking_reports.hrm_time_tracking_organization_id matches the
+     *   caller's current organization context. If it does not match, reject the
+     *   request as an organization-scope access violation. 5. Validate that the
+     *   report_type corresponds to one of the supported organization reporting
+     *   functions: time_report, project_budget_report, or
+     *   weekly_summary_report. If the stored type is unsupported for execution,
+     *   reject the request. 6. Resolve execution inputs by combining the saved
+     *   report definition with the request body. Determine output_format and
+     *   the effective period_start and period_end. If the request body omits
+     *   optional execution overrides, use range_start_date and range_end_date
+     *   from the saved report definition when present. Validate that the
+     *   effective period is coherent and that start is not after end. 7. Load
+     *   the saved filter configuration associated with the report from
+     *   hrm_time_tracking_report_employee_filters,
+     *   hrm_time_tracking_report_project_filters, and
+     *   hrm_time_tracking_report_task_filters as needed by the report type.
+     *   Exclude child filter rows marked deleted when applicable. 8. Build the
+     *   report query strictly against records that belong to the same
+     *   organization as the parent report. Use the saved grouping mode and
+     *   billable flags from hrm_time_tracking_reports. Never mix data from
+     *   another organization. 9. Generate the export artifact in the requested
+     *   output_format. If an external export or storage dependency is required,
+     *   call it within the execution flow and treat any failure as a full
+     *   operation failure. 10. Persist a new hrm_time_tracking_report_snapshots
+     *   record with a new UUID id, hrm_time_tracking_report_id, output_uri,
+     *   output_format, period_start, period_end, row_count when available,
+     *   generated_at, created_at, and updated_at. Do not modify existing
+     *   snapshots because the snapshot store is append-oriented. 11. Return the
+     *   created snapshot record as the successful response. 12. Error handling:
+     *   return not found when the report does not exist in the current
+     *   organization scope; forbidden when the caller lacks report viewing
+     *   permission; validation failure for invalid period or unsupported
+     *   execution options; failure when export or storage integration does not
+     *   complete successfully. On dependency failure, do not create a
+     *   misleading snapshot row and do not partially succeed.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post()

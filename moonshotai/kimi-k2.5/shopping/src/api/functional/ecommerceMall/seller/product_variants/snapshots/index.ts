@@ -23,7 +23,8 @@ import { IPageIEcommerceMallProductVariantSnapshot } from "../../../../../struct
  * @param props.body Search criteria and pagination parameters for filtering variant snapshots
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Query the ecommerce_mall_product_variant_snapshots table filtered by product_variant_id matching the path parameter.
+ * @x-autobe-specification Query the ecommerce_mall_product_variant_snapshots
+ *   table filtered by product_variant_id matching the path parameter.
  *
  * Validation rules:
  * 1. Verify the variant exists via product_variant_id reference before querying snapshots

@@ -20,9 +20,16 @@ export class CommunityplatformCommunitiesPostsFeedsController {
    * @param connection
    * @param communityName The unique name of the community whose post feed to retrieve. Community names are canonical identifiers unique across the platform.
    * @param body Sorting, filtering, and pagination criteria for the community feed. Accepts sort mode selection (hot, new, top, controversial), optional timeframe for Top sorting, and cursor-based pagination parameters for navigating through the result set.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query the community_platform_posts table by joining with community_platform_communities on community_id = communities.id WHERE communities.name = {communityName} AND posts.deleted_at IS NULL. Join with community_platform_members for author username, and conditionally join with community_platform_post_texts, community_platform_post_links, or community_platform_post_images based on the post's type field to extract the preview content.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query the community_platform_posts table by
+     *   joining with community_platform_communities on community_id =
+     *   communities.id WHERE communities.name = {communityName} AND
+     *   posts.deleted_at IS NULL. Join with community_platform_members for
+     *   author username, and conditionally join with
+     *   community_platform_post_texts, community_platform_post_links, or
+     *   community_platform_post_images based on the post's type field to
+     *   extract the preview content.
    *
    * For sort modes:
    * - Hot: Order by a computed hotness score (function of vote_score and created_at recency). Recent posts with high upvote velocity rank higher.

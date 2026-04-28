@@ -19,7 +19,10 @@ export namespace ICommunityPlatformCommunitySubscription {
      *
      * Combined with the limit parameter to compute the database offset: offset = (page - 1) × limit.
      *
-     * @x-autobe-specification Page number for pagination (1-indexed). Defaults to 1 server-side when omitted. Applied as SQL OFFSET = (page - 1) * limit in the database query. The backend validates that page >= 1.
+         * @x-autobe-specification Page number for pagination (1-indexed).
+         *   Defaults to 1 server-side when omitted. Applied as SQL OFFSET =
+         *   (page - 1) * limit in the database query. The backend validates
+         *   that page >= 1.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -30,7 +33,9 @@ export namespace ICommunityPlatformCommunitySubscription {
      *
      * When omitted, a server-side default limit is applied.
      *
-     * @x-autobe-specification Maximum items per page. Applied as SQL LIMIT in the database query. Server enforces maximum value of 100 per business rules. Default server-side limit applied when omitted.
+         * @x-autobe-specification Maximum items per page. Applied as SQL LIMIT
+         *   in the database query. Server enforces maximum value of 100 per
+         *   business rules. Default server-side limit applied when omitted.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -46,7 +51,12 @@ export namespace ICommunityPlatformCommunitySubscription {
      *
      * When omitted, a server-side default sorting order is applied, typically newest-first.
      *
-     * @x-autobe-specification Sorting direction for the subscription creation date (created_at column). Accepted string values: 'asc' for ascending order (oldest subscriptions first), 'desc' for descending order (newest subscriptions first, applied as default when omitted). Applied as SQL ORDER BY created_at [ASC|DESC] in the database query.
+         * @x-autobe-specification Sorting direction for the subscription
+         *   creation date (created_at column). Accepted string values: 'asc'
+         *   for ascending order (oldest subscriptions first), 'desc' for
+         *   descending order (newest subscriptions first, applied as default
+         *   when omitted). Applied as SQL ORDER BY created_at [ASC|DESC] in the
+         *   database query.
      */
     sort?: string | undefined;
   };
@@ -62,8 +72,10 @@ export namespace ICommunityPlatformCommunitySubscription {
      *
      * This UUID serves as the primary key for the subscription, uniquely identifying the relationship between a member and a community within the platform.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from community_platform_community_subscriptions.id. Primary key, UUID format.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_community_subscriptions.id. Primary key, UUID
+         *   format.
      */
     id: string & tags.Format<"uuid">;
 
@@ -72,8 +84,10 @@ export namespace ICommunityPlatformCommunitySubscription {
      *
      * Indicates the exact date and time when the member subscribed to the community. Used for chronological sorting of subscribers by recency in subscriber listing views.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from community_platform_community_subscriptions.created_at. Timestamp with timezone.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_community_subscriptions.created_at. Timestamp
+         *   with timezone.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -82,8 +96,12 @@ export namespace ICommunityPlatformCommunitySubscription {
      *
      * Contains the subscriber's summary information including their unique identifier, email address, chosen username, registration timestamp, and soft-deletion status.
      *
-     * @x-autobe-database-schema-property member
-     * @x-autobe-specification Join from community_platform_community_subscriptions.member_id to community_platform_members.id. Returns ICommunityPlatformMember.ISummary providing id, email, username, created_at, and deleted_at.
+         * @x-autobe-database-schema-property member
+         * @x-autobe-specification Join from
+         *   community_platform_community_subscriptions.member_id to
+         *   community_platform_members.id. Returns
+         *   ICommunityPlatformMember.ISummary providing id, email, username,
+         *   created_at, and deleted_at.
      */
     member: ICommunityPlatformMember.ISummary;
 
@@ -92,8 +110,13 @@ export namespace ICommunityPlatformCommunitySubscription {
      *
      * Contains the community's summary information including its unique identifier, name, description, icon URI, subscriber count, owner details, and creation timestamp. Only active (non-deleted) communities are returned.
      *
-     * @x-autobe-database-schema-property community
-     * @x-autobe-specification Join from community_platform_community_subscriptions.community_id to community_platform_communities.id. Returns ICommunityPlatformCommunity.ISummary providing id, name, description, icon_uri, subscriber_count, owner, and created_at. Filter: deleted_at IS NULL.
+         * @x-autobe-database-schema-property community
+         * @x-autobe-specification Join from
+         *   community_platform_community_subscriptions.community_id to
+         *   community_platform_communities.id. Returns
+         *   ICommunityPlatformCommunity.ISummary providing id, name,
+         *   description, icon_uri, subscriber_count, owner, and created_at.
+         *   Filter: deleted_at IS NULL.
      */
     community: ICommunityPlatformCommunity.ISummary;
   };

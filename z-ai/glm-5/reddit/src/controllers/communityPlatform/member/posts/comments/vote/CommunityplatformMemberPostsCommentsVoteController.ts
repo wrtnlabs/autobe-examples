@@ -26,9 +26,9 @@ export class CommunityplatformMemberPostsCommentsVoteController {
    * @param postId The unique identifier of the post containing the comment. Used to validate that the comment belongs to this post.
    * @param commentId The unique identifier of the comment to vote on. The comment must exist and belong to the specified post.
    * @param body The vote type indicating whether this is an upvote or downvote on the comment.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation steps:
    *
    * 1. Authenticate the member from the session token
    * 2. Validate postId exists in community_platform_posts table
@@ -94,9 +94,9 @@ export class CommunityplatformMemberPostsCommentsVoteController {
    * @param postId The UUID of the post containing the comment. Used for verification that the comment belongs to this post.
    * @param commentId The UUID of the comment to vote on.
    * @param body Vote type indicating upvote or downvote evaluation of the comment.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Cast or change a vote on a comment.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Cast or change a vote on a comment.
    *
    * 1. Authenticate the member from session token
    * 2. Verify the comment exists and belongs to the specified post (404 if not found)
@@ -163,9 +163,10 @@ export class CommunityplatformMemberPostsCommentsVoteController {
    * @param connection
    * @param postId The unique identifier of the post containing the comment
    * @param commentId The unique identifier of the comment from which to remove the vote
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation steps for removing a member's vote from a comment:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation steps for removing a member's vote
+     *   from a comment:
    *
    * 1. Authenticate the member from the session token (401 if unauthenticated)
    *

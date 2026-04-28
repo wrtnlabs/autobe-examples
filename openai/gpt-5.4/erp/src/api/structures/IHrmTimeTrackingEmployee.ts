@@ -12,70 +12,93 @@ export type IHrmTimeTrackingEmployee = {
   /**
    * Unique identifier of the employee account record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_employees.id.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_employees.id.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Employee email address used for sign-in and account identification.
    *
-   * @x-autobe-database-schema-property email
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_employees.email. This is the employee account's unique authentication email address.
+     * @x-autobe-database-schema-property email
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_employees.email. This is the employee account's
+     *   unique authentication email address.
    */
   email: string & tags.Format<"email">;
 
   /**
    * Timestamp when the employee's email address was verified, or null if it has not been verified.
    *
-   * @x-autobe-database-schema-property email_verified_at
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_employees.email_verified_at. Return the timestamp when the employee email was verified, or null when verification has not occurred.
+     * @x-autobe-database-schema-property email_verified_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_employees.email_verified_at. Return the timestamp
+     *   when the employee email was verified, or null when verification has not
+     *   occurred.
    */
   email_verified_at: (string & tags.Format<"date-time">) | null;
 
   /**
    * Timestamp of the employee's most recent successful sign-in, or null if the employee has never logged in.
    *
-   * @x-autobe-database-schema-property last_logged_in_at
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_employees.last_logged_in_at. Return the most recent successful sign-in time, or null when the employee has never logged in.
+     * @x-autobe-database-schema-property last_logged_in_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_employees.last_logged_in_at. Return the most recent
+     *   successful sign-in time, or null when the employee has never logged in.
    */
   last_logged_in_at: (string & tags.Format<"date-time">) | null;
 
   /**
    * Organization-scoped role currently assigned to this employee in the active organization context.
    *
-   * @x-autobe-specification Resolve the employee's assigned organization-scoped role within the active organization context and serialize it as IHrmTimeTrackingRole.ISummary. This value is derived from the employee's organization membership/workforce context used by the employee detail operation, not from a direct column or relation on hrm_time_tracking_employees.
+     * @x-autobe-specification Resolve the employee's assigned
+     *   organization-scoped role within the active organization context and
+     *   serialize it as IHrmTimeTrackingRole.ISummary. This value is derived
+     *   from the employee's organization membership/workforce context used by
+     *   the employee detail operation, not from a direct column or relation on
+     *   hrm_time_tracking_employees.
    */
   role: IHrmTimeTrackingRole.ISummary;
 
   /**
    * Department currently assigned to this employee in the active organization context, or null when no department is assigned.
    *
-   * @x-autobe-specification Resolve the employee's current department assignment within the active organization context and serialize it as IHrmTimeTrackingDepartment.ISummary. Return null when the employee has no department assignment or when the assignment was cleared after department deletion. This value is derived from the organization workforce context joined by the employee detail operation, not from a direct column or relation on hrm_time_tracking_employees.
+     * @x-autobe-specification Resolve the employee's current department
+     *   assignment within the active organization context and serialize it as
+     *   IHrmTimeTrackingDepartment.ISummary. Return null when the employee has
+     *   no department assignment or when the assignment was cleared after
+     *   department deletion. This value is derived from the organization
+     *   workforce context joined by the employee detail operation, not from a
+     *   direct column or relation on hrm_time_tracking_employees.
    */
   department: IHrmTimeTrackingDepartment.ISummary | null;
 
   /**
    * Timestamp when the employee account record was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_employees.created_at.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_employees.created_at.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the employee account record was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_employees.updated_at.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_employees.updated_at.
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * Soft-deletion timestamp for the employee account, or null when the account is active.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_employees.deleted_at. Return null when the employee account is active and a timestamp when it has been soft deleted.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_employees.deleted_at. Return null when the employee
+     *   account is active and a timestamp when it has been soft deleted.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -87,49 +110,80 @@ export namespace IHrmTimeTrackingEmployee {
     /**
      * Optional text search used to find employees by name in the current organization's directory.
      *
-     * @x-autobe-specification Apply this optional free-text criterion to the organization-scoped employee directory query after resolving the current organization from session context. Use it to match employee display/name fields from the organization workforce record or joined directory projection rather than any single column on hrm_time_tracking_employees.
+         * @x-autobe-specification Apply this optional free-text criterion to
+         *   the organization-scoped employee directory query after resolving
+         *   the current organization from session context. Use it to match
+         *   employee display/name fields from the organization workforce record
+         *   or joined directory projection rather than any single column on
+         *   hrm_time_tracking_employees.
      */
     search?: string | undefined;
 
     /**
      * Optional department identifier used to limit directory results to employees assigned to one department in the current organization.
      *
-     * @x-autobe-specification Treat this optional UUID as a department filter for the employee directory query. Before applying it, validate that the referenced department belongs to the caller's currently selected organization. Then constrain results to employees assigned to that department without allowing cross-organization references.
+         * @x-autobe-specification Treat this optional UUID as a department
+         *   filter for the employee directory query. Before applying it,
+         *   validate that the referenced department belongs to the caller's
+         *   currently selected organization. Then constrain results to
+         *   employees assigned to that department without allowing
+         *   cross-organization references.
      */
     departmentId?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Optional employment type filter used to narrow directory results by workforce classification.
      *
-     * @x-autobe-specification Apply this optional filter to the employee workforce membership data for the current organization using the employment type classification defined by the HR domain model. This criterion is evaluated against organization-scoped employee records, not directly against hrm_time_tracking_employees.
+         * @x-autobe-specification Apply this optional filter to the employee
+         *   workforce membership data for the current organization using the
+         *   employment type classification defined by the HR domain model. This
+         *   criterion is evaluated against organization-scoped employee
+         *   records, not directly against hrm_time_tracking_employees.
      */
     employmentType?: string | undefined;
 
     /**
      * Optional employee status filter used to narrow directory results by workforce status in the current organization.
      *
-     * @x-autobe-specification Apply this optional filter to the organization-scoped employee status classification used by the workforce record in the active organization. Use it to restrict directory results by employee lifecycle or availability status, not by any direct column on hrm_time_tracking_employees.
+         * @x-autobe-specification Apply this optional filter to the
+         *   organization-scoped employee status classification used by the
+         *   workforce record in the active organization. Use it to restrict
+         *   directory results by employee lifecycle or availability status, not
+         *   by any direct column on hrm_time_tracking_employees.
      */
     employeeStatus?: string | undefined;
 
     /**
      * Optional sort instruction that controls the ordering of employee directory results.
      *
-     * @x-autobe-specification Interpret this optional value as the requested stable ordering for the employee directory query after authorization and filter validation. Map supported sort options to approved order-by clauses for the organization-scoped directory projection and reject unsupported sort expressions rather than passing raw client input through to the database.
+         * @x-autobe-specification Interpret this optional value as the
+         *   requested stable ordering for the employee directory query after
+         *   authorization and filter validation. Map supported sort options to
+         *   approved order-by clauses for the organization-scoped directory
+         *   projection and reject unsupported sort expressions rather than
+         *   passing raw client input through to the database.
      */
     sort?: string | undefined;
 
     /**
      * Optional 1-indexed page number indicating which directory results page to return.
      *
-     * @x-autobe-specification Use this optional integer as the 1-indexed page number for paginated employee directory retrieval after all authorization and filters are resolved. When omitted, default according to service pagination policy, then convert the effective page into the appropriate offset for the final query.
+         * @x-autobe-specification Use this optional integer as the 1-indexed
+         *   page number for paginated employee directory retrieval after all
+         *   authorization and filters are resolved. When omitted, default
+         *   according to service pagination policy, then convert the effective
+         *   page into the appropriate offset for the final query.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Optional maximum number of employee records to return in a single page.
      *
-     * @x-autobe-specification Use this optional integer as the maximum number of employee directory records to return in one page after authorization and filter validation. Enforce the declared minimum and maximum bounds and apply the effective value as the page size for the final paginated query.
+         * @x-autobe-specification Use this optional integer as the maximum
+         *   number of employee directory records to return in one page after
+         *   authorization and filter validation. Enforce the declared minimum
+         *   and maximum bounds and apply the effective value as the page size
+         *   for the final paginated query.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -143,7 +197,14 @@ export namespace IHrmTimeTrackingEmployee {
     /**
      * Refresh token presented by the client to renew an employee authorization session.
      *
-     * @x-autobe-specification Accept the refresh token string issued for a previously authenticated employee session. Use this token to resolve the underlying session in the server-side token/session layer, then validate session expiration, logout state, and linked employee deletion state before minting a new authorization payload. This value is not persisted as a direct column on hrm_time_tracking_employees; its meaning is defined entirely by the refresh-token and session validation flow.
+         * @x-autobe-specification Accept the refresh token string issued for a
+         *   previously authenticated employee session. Use this token to
+         *   resolve the underlying session in the server-side token/session
+         *   layer, then validate session expiration, logout state, and linked
+         *   employee deletion state before minting a new authorization payload.
+         *   This value is not persisted as a direct column on
+         *   hrm_time_tracking_employees; its meaning is defined entirely by the
+         *   refresh-token and session validation flow.
      */
     refresh: string;
   };
@@ -155,37 +216,55 @@ export namespace IHrmTimeTrackingEmployee {
     /**
      * Employee email address used as the unique sign-in identifier for the new account.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping to hrm_time_tracking_employees.email. Normalize the submitted address before uniqueness validation and persistence. Must identify the employee account for future login and cannot be returned as a duplicate active account.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping to
+         *   hrm_time_tracking_employees.email. Normalize the submitted address
+         *   before uniqueness validation and persistence. Must identify the
+         *   employee account for future login and cannot be returned as a
+         *   duplicate active account.
      */
     email: string & tags.Format<"email">;
 
     /**
      * Plain-text password chosen for the new employee account.
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification Accept plain text input and transform it into a secure hash before storing it in hrm_time_tracking_employees.password_hash. Never persist, log, or return the raw password value.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification Accept plain text input and transform it into
+         *   a secure hash before storing it in
+         *   hrm_time_tracking_employees.password_hash. Never persist, log, or
+         *   return the raw password value.
      */
     password: string & tags.Format<"password">;
 
     /**
      * Client URL or application location where the registration request originated.
      *
-     * @x-autobe-specification Use the submitted page or application URI as session-context metadata when creating the initial hrm_time_tracking_employee_sessions record after successful registration. This value is not stored on hrm_time_tracking_employees.
+         * @x-autobe-specification Use the submitted page or application URI as
+         *   session-context metadata when creating the initial
+         *   hrm_time_tracking_employee_sessions record after successful
+         *   registration. This value is not stored on
+         *   hrm_time_tracking_employees.
      */
     href: string & tags.Format<"uri">;
 
     /**
      * Referring URL that led the user to the registration flow.
      *
-     * @x-autobe-specification Use the submitted referrer URI as session-context metadata for the initial hrm_time_tracking_employee_sessions row created after registration. This value is not persisted on hrm_time_tracking_employees.
+         * @x-autobe-specification Use the submitted referrer URI as
+         *   session-context metadata for the initial
+         *   hrm_time_tracking_employee_sessions row created after registration.
+         *   This value is not persisted on hrm_time_tracking_employees.
      */
     referrer: string & tags.Format<"uri">;
 
     /**
      * Optional client IPv4 address associated with the registration request.
      *
-     * @x-autobe-specification Optional client IPv4 address used when creating the initial hrm_time_tracking_employee_sessions record. In SSR or proxy scenarios, the server may substitute its observed client IP when this field is omitted. This value is not stored on hrm_time_tracking_employees.
+         * @x-autobe-specification Optional client IPv4 address used when
+         *   creating the initial hrm_time_tracking_employee_sessions record. In
+         *   SSR or proxy scenarios, the server may substitute its observed
+         *   client IP when this field is omitted. This value is not stored on
+         *   hrm_time_tracking_employees.
      */
     ip?: (string & tags.Format<"ipv4">) | undefined;
   };
@@ -197,37 +276,56 @@ export namespace IHrmTimeTrackingEmployee {
     /**
      * Employee account email address used to sign in.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping to hrm_time_tracking_employees.email. Use this unique email address to find the employee account before password verification. The value is an authentication identifier and is not transformed beyond normal email validation.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping to
+         *   hrm_time_tracking_employees.email. Use this unique email address to
+         *   find the employee account before password verification. The value
+         *   is an authentication identifier and is not transformed beyond
+         *   normal email validation.
      */
     email: string & tags.Format<"email">;
 
     /**
      * Employee account password submitted for authentication.
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification Accept the user's plain-text password input and verify it against hrm_time_tracking_employees.password_hash using the platform password hashing strategy. Never persist or echo the plain-text value; it exists only for credential verification during login.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification Accept the user's plain-text password input
+         *   and verify it against hrm_time_tracking_employees.password_hash
+         *   using the platform password hashing strategy. Never persist or echo
+         *   the plain-text value; it exists only for credential verification
+         *   during login.
      */
     password: string & tags.Format<"password">;
 
     /**
      * Current application or page URI where the login request originated.
      *
-     * @x-autobe-specification Request-context value captured from the client and written to the related hrm_time_tracking_employee_sessions record created after successful login. Use it to record the page or application location from which the login was initiated.
+         * @x-autobe-specification Request-context value captured from the
+         *   client and written to the related
+         *   hrm_time_tracking_employee_sessions record created after successful
+         *   login. Use it to record the page or application location from which
+         *   the login was initiated.
      */
     href: string & tags.Format<"uri">;
 
     /**
      * Referring URI associated with the login attempt.
      *
-     * @x-autobe-specification Request-context value captured from the client and written to the related hrm_time_tracking_employee_sessions record created after successful login. Use it to record the referring URI that led the user to the login action.
+         * @x-autobe-specification Request-context value captured from the
+         *   client and written to the related
+         *   hrm_time_tracking_employee_sessions record created after successful
+         *   login. Use it to record the referring URI that led the user to the
+         *   login action.
      */
     referrer: string & tags.Format<"uri">;
 
     /**
      * Optional client IPv4 address associated with the login request.
      *
-     * @x-autobe-specification Optional client IP address captured for session creation in hrm_time_tracking_employee_sessions. If omitted, the server may substitute the detected request IP. This value is not stored on hrm_time_tracking_employees itself.
+         * @x-autobe-specification Optional client IP address captured for
+         *   session creation in hrm_time_tracking_employee_sessions. If
+         *   omitted, the server may substitute the detected request IP. This
+         *   value is not stored on hrm_time_tracking_employees itself.
      */
     ip?: (string & tags.Format<"ipv4">) | undefined;
   };
@@ -239,56 +337,70 @@ export namespace IHrmTimeTrackingEmployee {
     /**
      * Unique identifier of the employee authentication account.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_employees.id.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_employees.id.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Employee account email address used for sign-in.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_employees.email. Return the unique sign-in email address as stored.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_employees.email. Return the unique sign-in email
+         *   address as stored.
      */
     email: string;
 
     /**
      * Timestamp when the employee's email address was verified, or null if it has not been verified.
      *
-     * @x-autobe-database-schema-property email_verified_at
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_employees.email_verified_at. Serialize as a date-time string when the email has been verified, otherwise null.
+         * @x-autobe-database-schema-property email_verified_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_employees.email_verified_at. Serialize as a
+         *   date-time string when the email has been verified, otherwise null.
      */
     email_verified_at: (string & tags.Format<"date-time">) | null;
 
     /**
      * Timestamp of the employee's most recent successful sign-in, or null if the account has never logged in.
      *
-     * @x-autobe-database-schema-property last_logged_in_at
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_employees.last_logged_in_at. Serialize as a date-time string when a successful sign-in has been recorded, otherwise null.
+         * @x-autobe-database-schema-property last_logged_in_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_employees.last_logged_in_at. Serialize as a
+         *   date-time string when a successful sign-in has been recorded,
+         *   otherwise null.
      */
     last_logged_in_at: (string & tags.Format<"date-time">) | null;
 
     /**
      * Timestamp when the employee account was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_employees.created_at. Serialize as an ISO 8601 date-time string.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_employees.created_at. Serialize as an ISO 8601
+         *   date-time string.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when the employee account was last updated.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_employees.updated_at. Serialize as an ISO 8601 date-time string.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_employees.updated_at. Serialize as an ISO 8601
+         *   date-time string.
      */
     updated_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when the employee account was soft-deleted, or null if the account is active.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_employees.deleted_at. Serialize as a date-time string when the account has been soft-deleted, otherwise null.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_employees.deleted_at. Serialize as a date-time
+         *   string when the account has been soft-deleted, otherwise null.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };
@@ -300,77 +412,101 @@ export namespace IHrmTimeTrackingEmployee {
     /**
      * Unique identifier of the authenticated employee account.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_employees.id for the authenticated employee account.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_employees.id for the authenticated employee
+         *   account.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Unique email address of the authenticated employee account.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_employees.email. Return the normalized unique sign-in email for the authenticated employee.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_employees.email. Return the normalized unique
+         *   sign-in email for the authenticated employee.
      */
     email: string & tags.Format<"email">;
 
     /**
      * Timestamp when the employee's email address was verified, or null if it has not been verified.
      *
-     * @x-autobe-database-schema-property email_verified_at
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_employees.email_verified_at. Return null when the employee email has not been verified.
+         * @x-autobe-database-schema-property email_verified_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_employees.email_verified_at. Return null when the
+         *   employee email has not been verified.
      */
     email_verified_at: (string & tags.Format<"date-time">) | null;
 
     /**
      * Timestamp of the employee's most recent successful sign-in, or null if none has been recorded yet.
      *
-     * @x-autobe-database-schema-property last_logged_in_at
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_employees.last_logged_in_at. Return null if the employee has not completed a prior successful login before this authorization flow.
+         * @x-autobe-database-schema-property last_logged_in_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_employees.last_logged_in_at. Return null if the
+         *   employee has not completed a prior successful login before this
+         *   authorization flow.
      */
     last_logged_in_at: (string & tags.Format<"date-time">) | null;
 
     /**
      * Role summary for the authenticated employee in the current organization workspace.
      *
-     * @x-autobe-specification Resolve the authenticated employee's current organization-scoped role from the active workspace membership/workforce context and serialize it as IHrmTimeTrackingRole.ISummary. This field is authorization-context data, not a direct column or relation on hrm_time_tracking_employees.
+         * @x-autobe-specification Resolve the authenticated employee's current
+         *   organization-scoped role from the active workspace
+         *   membership/workforce context and serialize it as
+         *   IHrmTimeTrackingRole.ISummary. This field is authorization-context
+         *   data, not a direct column or relation on
+         *   hrm_time_tracking_employees.
      */
     role: IHrmTimeTrackingRole.ISummary;
 
     /**
      * Department summary for the authenticated employee in the current organization workspace, or null if no department is assigned.
      *
-     * @x-autobe-specification Resolve the authenticated employee's current department from the active organization workspace membership/workforce context and serialize it as nullable IHrmTimeTrackingDepartment.ISummary. Return null when no department is assigned. This field is not a direct column or relation on hrm_time_tracking_employees.
+         * @x-autobe-specification Resolve the authenticated employee's current
+         *   department from the active organization workspace
+         *   membership/workforce context and serialize it as nullable
+         *   IHrmTimeTrackingDepartment.ISummary. Return null when no department
+         *   is assigned. This field is not a direct column or relation on
+         *   hrm_time_tracking_employees.
      */
     department: IHrmTimeTrackingDepartment.ISummary | null;
 
     /**
      * Timestamp when the employee authentication account was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_employees.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_employees.created_at.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when the employee authentication account was last updated.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_employees.updated_at.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_employees.updated_at.
      */
     updated_at: string & tags.Format<"date-time">;
 
     /**
      * Soft-deletion timestamp of the employee account, or null when the account is active.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_employees.deleted_at. Return null when the employee account is active and not soft deleted.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_employees.deleted_at. Return null when the
+         *   employee account is active and not soft deleted.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
 
     /**
      * Authorization token.
      *
-     * @x-autobe-specification Authorization token comes from the session table.
+         * @x-autobe-specification Authorization token comes from the session
+         *   table.
      */
     token: IAuthorizationToken;
   };

@@ -27,18 +27,19 @@ export class EcommercemallCustomerCart_itemsController {
    *
    * @param connection
    * @param body Cart item creation parameters including product variant ID and quantity
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification 1. Verify customer authentication from session/jwt token
-   * 2. Validate the product_variant_id exists in ecommerce_mall_product_variants table
-   * 3. Check that the variant's deleted_at is NULL (variant is active)
-   * 4. Validate quantity > 0
-   * 5. Check for existing cart item with same customer_id and product_variant_id
-   *    - If exists: UPDATE existing record, add new quantity to existing quantity
-   *    - If not exists: INSERT new cart item record
-   * 6. Create cart item with customer_id (from auth), product_variant_id, and quantity
-   * 7. Set created_at and updated_at to current timestamp
-   * 8. Return the created/updated cart item with joined product and variant details
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification 1. Verify customer authentication from
+     *   session/jwt token 2. Validate the product_variant_id exists in
+     *   ecommerce_mall_product_variants table 3. Check that the variant's
+     *   deleted_at is NULL (variant is active) 4. Validate quantity > 0 5.
+     *   Check for existing cart item with same customer_id and
+     *   product_variant_id - If exists: UPDATE existing record, add new
+     *   quantity to existing quantity - If not exists: INSERT new cart item
+     *   record 6. Create cart item with customer_id (from auth),
+     *   product_variant_id, and quantity 7. Set created_at and updated_at to
+     *   current timestamp 8. Return the created/updated cart item with joined
+     *   product and variant details
    *
    * Edge cases:
    * - If variant doesn't exist: Return 404
@@ -76,9 +77,16 @@ export class EcommercemallCustomerCart_itemsController {
    *
    * @param connection
    * @param body Search criteria, filtering options, and pagination parameters for cart items
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Query ecommerce_mall_cart_items table filtering by authenticated customer's customer_id. Exclude records where deleted_at is not null (soft deleted items). Join with ecommerce_mall_product_variants to get variant details (SKU code, price, stock status). Join with ecommerce_mall_products to get product details (name, main image). Join with ecommerce_mall_product_variant_options to get option values (color, size, etc.).
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Query ecommerce_mall_cart_items table filtering
+     *   by authenticated customer's customer_id. Exclude records where
+     *   deleted_at is not null (soft deleted items). Join with
+     *   ecommerce_mall_product_variants to get variant details (SKU code,
+     *   price, stock status). Join with ecommerce_mall_products to get product
+     *   details (name, main image). Join with
+     *   ecommerce_mall_product_variant_options to get option values (color,
+     *   size, etc.).
    *
    * Apply search filters from request body: variant SKU code partial match, product name partial match. Support sorting by created_at (default: newest first), product name, or price. Implement cursor-based pagination for large carts.
    *
@@ -118,9 +126,10 @@ export class EcommercemallCustomerCart_itemsController {
    *
    * @param connection
    * @param cartItemId The unique identifier of the cart item to retrieve (UUID format)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Implement cart item retrieval by ID with strict ownership verification:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Implement cart item retrieval by ID with strict
+     *   ownership verification:
    *
    * 1. **Authentication Check**: Verify the requesting customer is authenticated via JWT session.
    *
@@ -187,9 +196,17 @@ export class EcommercemallCustomerCart_itemsController {
    * @param connection
    * @param cartItemId Unique identifier of the cart item to update. Must be a valid UUID.
    * @param body Cart item update criteria containing the new quantity
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Validate that the authenticated customer owns the cart item with the given cartItemId. If not owned by the customer, reject with forbidden error. Validate the request body contains a valid quantity (positive integer greater than zero). Update the cart item record in ecommerce_mall_cart_items table, setting the new quantity and updating the updated_at timestamp. Return the complete cart item entity with its associated product variant information for display purposes. Handle edge case where cart item has been soft-deleted (deleted_at is set) by treating it as not found.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Validate that the authenticated customer owns the
+     *   cart item with the given cartItemId. If not owned by the customer,
+     *   reject with forbidden error. Validate the request body contains a valid
+     *   quantity (positive integer greater than zero). Update the cart item
+     *   record in ecommerce_mall_cart_items table, setting the new quantity and
+     *   updating the updated_at timestamp. Return the complete cart item entity
+     *   with its associated product variant information for display purposes.
+     *   Handle edge case where cart item has been soft-deleted (deleted_at is
+     *   set) by treating it as not found.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Put(":cartItemId")
@@ -224,9 +241,10 @@ export class EcommercemallCustomerCart_itemsController {
    *
    * @param connection
    * @param cartItemId The unique identifier of the cart item to delete (UUID format)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Soft delete the cart item by setting the deleted_at timestamp to current time.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Soft delete the cart item by setting the
+     *   deleted_at timestamp to current time.
    *
    * Validation steps:
    * 1. Verify the cart item exists by id (cartItemId parameter)

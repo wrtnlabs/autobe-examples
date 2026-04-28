@@ -23,7 +23,16 @@ import { IShoppingMallSuperAdministrator } from "../../../../structures/IShoppin
  * @param props.body Super administrator registration credentials and initial authorization request data.
  * @x-autobe-authorization-type join
  * @x-autobe-authorization-actor superAdministrator
- * @x-autobe-specification Implement super administrator registration by validating the incoming join payload against the unique email requirement of shopping_mall_super_administrators and the credential creation policy expected for password_hash generation. Before insertion, query the super administrator actor table by email to ensure no active or retained conflicting account already exists under the unique constraint. Hash the submitted password using the platform's secure password hasher and create a new shopping_mall_super_administrators row with a new UUID, normalized email, hashed password, active=true, current timestamps, and deleted_at=null.
+ * @x-autobe-specification Implement super administrator registration by
+ *   validating the incoming join payload against the unique email requirement
+ *   of shopping_mall_super_administrators and the credential creation policy
+ *   expected for password_hash generation. Before insertion, query the super
+ *   administrator actor table by email to ensure no active or retained
+ *   conflicting account already exists under the unique constraint. Hash the
+ *   submitted password using the platform's secure password hasher and create a
+ *   new shopping_mall_super_administrators row with a new UUID, normalized
+ *   email, hashed password, active=true, current timestamps, and
+ *   deleted_at=null.
  *
  * Within the same transaction, create an initial shopping_mall_super_administrator_sessions row for the newly created actor. Persist the super administrator ID together with client context values such as ip, href, referrer, created_at, and expired_at so the first authorization result corresponds to a durable privileged session lifecycle. Generate JWT access and refresh tokens whose subject references the new super administrator identity and whose refresh claims are compatible with later lookup of the persisted session.
  *
@@ -124,7 +133,14 @@ export namespace join {
  * @param props.body Super administrator login credentials.
  * @x-autobe-authorization-type login
  * @x-autobe-authorization-actor superAdministrator
- * @x-autobe-specification Implement super administrator login by locating the actor row in shopping_mall_super_administrators using the submitted email, then verifying the submitted password against password_hash with the platform password hasher. Deny authentication if no matching identity exists, if deleted_at is set, or if active is false. On success, create a new shopping_mall_super_administrator_sessions row capturing the authenticated actor ID and client context such as ip, href, referrer, created_at, and expired_at.
+ * @x-autobe-specification Implement super administrator login by locating the
+ *   actor row in shopping_mall_super_administrators using the submitted email,
+ *   then verifying the submitted password against password_hash with the
+ *   platform password hasher. Deny authentication if no matching identity
+ *   exists, if deleted_at is set, or if active is false. On success, create a
+ *   new shopping_mall_super_administrator_sessions row capturing the
+ *   authenticated actor ID and client context such as ip, href, referrer,
+ *   created_at, and expired_at.
  *
  * Issue JWT access and refresh tokens bound to the authenticated super administrator and the newly created persisted session. The refresh token or its claims should allow later correlation to the server-side session row so refresh logic can enforce expiration and actor availability checks. The service should avoid leaking whether the email or password was incorrect beyond an authentication failure outcome suitable for a privileged login surface.
  *
@@ -225,7 +241,13 @@ export namespace login {
  * @param props.body Super administrator refresh token payload.
  * @x-autobe-authorization-type refresh
  * @x-autobe-authorization-actor superAdministrator
- * @x-autobe-specification Implement token refresh by validating the submitted refresh payload, decoding or verifying the refresh credential, and resolving the associated persisted session in shopping_mall_super_administrator_sessions. Confirm that the session exists, is not expired according to expired_at, and belongs to a currently valid shopping_mall_super_administrators actor row. Also verify that the actor remains active and not deleted before issuing renewed tokens.
+ * @x-autobe-specification Implement token refresh by validating the submitted
+ *   refresh payload, decoding or verifying the refresh credential, and
+ *   resolving the associated persisted session in
+ *   shopping_mall_super_administrator_sessions. Confirm that the session
+ *   exists, is not expired according to expired_at, and belongs to a currently
+ *   valid shopping_mall_super_administrators actor row. Also verify that the
+ *   actor remains active and not deleted before issuing renewed tokens.
  *
  * If the refresh model uses rotation, generate a replacement access token and replacement refresh token while extending or renewing the relevant session expiry according to platform policy. If rotation is not used, still persist any session lifecycle updates needed to keep expired_at accurate. The service should return the exact authorized response DTO and ensure refresh cannot revive a removed, inactive, or expired privileged session.
  *

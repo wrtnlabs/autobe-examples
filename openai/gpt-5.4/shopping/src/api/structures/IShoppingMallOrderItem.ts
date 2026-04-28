@@ -45,21 +45,35 @@ export namespace IShoppingMallOrderItem {
     /**
      * Filter order items by their current lifecycle status within the selected order.
      *
-     * @x-autobe-specification Query filter control, not a direct DTO-to-table property mapping. When provided, use this string to filter the already order-scoped shopping_mall_order_items dataset by lifecycle status, such as paid, shipped, delivered, cancelled, or refunded, according to service validation and business rules.
+         * @x-autobe-specification Query filter control, not a direct
+         *   DTO-to-table property mapping. When provided, use this string to
+         *   filter the already order-scoped shopping_mall_order_items dataset
+         *   by lifecycle status, such as paid, shipped, delivered, cancelled,
+         *   or refunded, according to service validation and business rules.
      */
     status?: string | undefined;
 
     /**
      * Filter order items to only those handled by the specified seller account.
      *
-     * @x-autobe-specification Query filter control for the already order-scoped shopping_mall_order_items dataset. When provided, use this UUID to restrict results to items whose responsible seller foreign key matches the specified seller account. This request property is not a row projection; it is a filter input applied before pagination.
+         * @x-autobe-specification Query filter control for the already
+         *   order-scoped shopping_mall_order_items dataset. When provided, use
+         *   this UUID to restrict results to items whose responsible seller
+         *   foreign key matches the specified seller account. This request
+         *   property is not a row projection; it is a filter input applied
+         *   before pagination.
      */
     shopping_mall_seller_id?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Filter order items to only those for the specified purchased product variant.
      *
-     * @x-autobe-specification Query filter control for the already order-scoped shopping_mall_order_items dataset. When provided, use this UUID to restrict results to items whose purchased product variant foreign key matches the specified variant. This request property is not a row projection; it is a filter input applied before pagination.
+         * @x-autobe-specification Query filter control for the already
+         *   order-scoped shopping_mall_order_items dataset. When provided, use
+         *   this UUID to restrict results to items whose purchased product
+         *   variant foreign key matches the specified variant. This request
+         *   property is not a row projection; it is a filter input applied
+         *   before pagination.
      */
     shopping_mall_product_variant_id?:
       | (string & tags.Format<"uuid">)
@@ -68,7 +82,13 @@ export namespace IShoppingMallOrderItem {
     /**
      * Filter order items by shipment assignment, or request only unassigned items by sending null.
      *
-     * @x-autobe-specification Query filter control for the already order-scoped shopping_mall_order_items dataset. When this value is a UUID, restrict results to items assigned to that shipment. When this value is null, restrict results to items without shipment assignment. When omitted, do not apply shipment-based filtering. This request property is not a row projection; it is a filter input applied before pagination.
+         * @x-autobe-specification Query filter control for the already
+         *   order-scoped shopping_mall_order_items dataset. When this value is
+         *   a UUID, restrict results to items assigned to that shipment. When
+         *   this value is null, restrict results to items without shipment
+         *   assignment. When omitted, do not apply shipment-based filtering.
+         *   This request property is not a row projection; it is a filter input
+         *   applied before pagination.
      */
     shopping_mall_shipment_id?:
       | (string & tags.Format<"uuid">)
@@ -78,28 +98,43 @@ export namespace IShoppingMallOrderItem {
     /**
      * Filter order items by delivery completion state or by a specific delivery timestamp.
      *
-     * @x-autobe-specification Query filter control, not a direct DTO-to-table property mapping. When null is provided, filter for order items that have not been delivered yet. When a date-time value is provided, apply the service's supported delivered-at filtering logic to the already order-scoped dataset. When omitted, do not apply delivery-time filtering.
+         * @x-autobe-specification Query filter control, not a direct
+         *   DTO-to-table property mapping. When null is provided, filter for
+         *   order items that have not been delivered yet. When a date-time
+         *   value is provided, apply the service's supported delivered-at
+         *   filtering logic to the already order-scoped dataset. When omitted,
+         *   do not apply delivery-time filtering.
      */
     delivered_at?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * Sorting instruction that controls the order in which matching order items are returned.
      *
-     * @x-autobe-specification Query-behavior control, not a persisted field. Parse this string into an allowed ordering instruction and apply sorting only on stable supported order-item columns, such as created_at, updated_at, delivered_at, or status, after authorization and order scoping but before pagination.
+         * @x-autobe-specification Query-behavior control, not a persisted
+         *   field. Parse this string into an allowed ordering instruction and
+         *   apply sorting only on stable supported order-item columns, such as
+         *   created_at, updated_at, delivered_at, or status, after
+         *   authorization and order scoping but before pagination.
      */
     sort?: string | undefined;
 
     /**
      * Page number of the filtered order-item results to return.
      *
-     * @x-autobe-specification Query pagination control, not a persisted field. Treat this as the 1-indexed page number for the filtered and sorted order-item results after authorization and order scoping have been applied.
+         * @x-autobe-specification Query pagination control, not a persisted
+         *   field. Treat this as the 1-indexed page number for the filtered and
+         *   sorted order-item results after authorization and order scoping
+         *   have been applied.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of order items to include in a single response page.
      *
-     * @x-autobe-specification Query pagination control, not a persisted field. Treat this as the maximum number of matching order items to include in one response page, honoring the declared minimum and maximum constraints before executing the paginated query.
+         * @x-autobe-specification Query pagination control, not a persisted
+         *   field. Treat this as the maximum number of matching order items to
+         *   include in one response page, honoring the declared minimum and
+         *   maximum constraints before executing the paginated query.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -113,88 +148,117 @@ export namespace IShoppingMallOrderItem {
     /**
      * Unique identifier of the purchased order item.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_order_items.id.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_order_items.id.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Number of units purchased for this order item.
      *
-     * @x-autobe-database-schema-property quantity
-     * @x-autobe-specification Direct mapping from shopping_mall_order_items.quantity.
+         * @x-autobe-database-schema-property quantity
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_order_items.quantity.
      */
     quantity: number & tags.Type<"int32">;
 
     /**
      * Per-unit price recorded for the item when the order was placed.
      *
-     * @x-autobe-database-schema-property unit_price
-     * @x-autobe-specification Direct mapping from shopping_mall_order_items.unit_price. This is the captured per-unit sale price at the time of purchase.
+         * @x-autobe-database-schema-property unit_price
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_order_items.unit_price. This is the captured per-unit
+         *   sale price at the time of purchase.
      */
     unit_price: number;
 
     /**
      * Current lifecycle status of the purchased order item.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from shopping_mall_order_items.status. The value represents the current lifecycle state maintained for this purchased item.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_order_items.status. The value represents the current
+         *   lifecycle state maintained for this purchased item.
      */
     status: string;
 
     /**
      * Timestamp when the item became delivered, or null if delivery has not been completed.
      *
-     * @x-autobe-database-schema-property delivered_at
-     * @x-autobe-specification Direct mapping from shopping_mall_order_items.delivered_at. Return null when the item has not yet reached delivered state.
+         * @x-autobe-database-schema-property delivered_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_order_items.delivered_at. Return null when the item
+         *   has not yet reached delivered state.
      */
     delivered_at: (string & tags.Format<"date-time">) | null;
 
     /**
      * Seller account responsible for fulfilling this purchased item. Historical shop identity for customer-facing order history is preserved separately in the seller profile purchase snapshot.
      *
-     * @x-autobe-database-schema-property seller
-     * @x-autobe-specification Join shopping_mall_order_items.shopping_mall_seller_id to shopping_mall_sellers.id and serialize the related seller as a lightweight responsible-seller relation for fulfillment context only. This relation identifies the operational seller account responsible for the purchased item. Historical shop identity shown to customers in order-history presentation must come from the dedicated sellerProfilePurchaseSnapshot resource rather than current seller account governance fields.
+         * @x-autobe-database-schema-property seller
+         * @x-autobe-specification Join
+         *   shopping_mall_order_items.shopping_mall_seller_id to
+         *   shopping_mall_sellers.id and serialize the related seller as a
+         *   lightweight responsible-seller relation for fulfillment context
+         *   only. This relation identifies the operational seller account
+         *   responsible for the purchased item. Historical shop identity shown
+         *   to customers in order-history presentation must come from the
+         *   dedicated sellerProfilePurchaseSnapshot resource rather than
+         *   current seller account governance fields.
      */
     seller: IShoppingMallSeller.ISummary;
 
     /**
      * Product variant that was purchased for this order item.
      *
-     * @x-autobe-database-schema-property productVariant
-     * @x-autobe-specification Join shopping_mall_order_items.shopping_mall_product_variant_id to shopping_mall_product_variants.id and serialize the related row as IShoppingMallProductVariant.ISummary.
+         * @x-autobe-database-schema-property productVariant
+         * @x-autobe-specification Join
+         *   shopping_mall_order_items.shopping_mall_product_variant_id to
+         *   shopping_mall_product_variants.id and serialize the related row as
+         *   IShoppingMallProductVariant.ISummary.
      */
     productVariant: IShoppingMallProductVariant.ISummary;
 
     /**
      * Shipment package that currently contains this order item, or null if the item has not yet been assigned to a shipment.
      *
-     * @x-autobe-database-schema-property shipment
-     * @x-autobe-specification Join shopping_mall_order_items.shopping_mall_shipment_id to shopping_mall_shipments.id and serialize the related row as IShoppingMallShipment.ISummary when the foreign key is present; otherwise return null. This relation identifies the shipment package grouping for the purchased item so order-detail views can show which package contains the item.
+         * @x-autobe-database-schema-property shipment
+         * @x-autobe-specification Join
+         *   shopping_mall_order_items.shopping_mall_shipment_id to
+         *   shopping_mall_shipments.id and serialize the related row as
+         *   IShoppingMallShipment.ISummary when the foreign key is present;
+         *   otherwise return null. This relation identifies the shipment
+         *   package grouping for the purchased item so order-detail views can
+         *   show which package contains the item.
      */
     shipment: IShoppingMallShipment.ISummary | null;
 
     /**
      * Timestamp when this order item record was created after successful payment.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_order_items.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_order_items.created_at.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when this order item was last updated.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from shopping_mall_order_items.updated_at.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_order_items.updated_at.
      */
     updated_at: string & tags.Format<"date-time">;
 
     /**
      * Soft-deletion timestamp for the order item, or null when the record remains active.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from shopping_mall_order_items.deleted_at. Return null when the order item has not been soft deleted.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_order_items.deleted_at. Return null when the order
+         *   item has not been soft deleted.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };

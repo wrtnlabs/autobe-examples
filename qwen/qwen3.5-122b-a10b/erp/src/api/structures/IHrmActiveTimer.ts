@@ -33,8 +33,9 @@ export type IHrmActiveTimer = {
    *
    * This UUID uniquely identifies each timer record in the system. Generated automatically upon timer creation.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from hrm_active_timers.id. UUID format, primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from hrm_active_timers.id. UUID
+     *   format, primary key.
    */
   id: string & tags.Format<"uuid">;
 
@@ -45,8 +46,9 @@ export type IHrmActiveTimer = {
    *
    * Nullable - may be omitted if no description is provided.
    *
-   * @x-autobe-database-schema-property description
-   * @x-autobe-specification Direct mapping from hrm_active_timers.description. Nullable string field.
+     * @x-autobe-database-schema-property description
+     * @x-autobe-specification Direct mapping from
+     *   hrm_active_timers.description. Nullable string field.
    */
   description?: string | null | undefined;
 
@@ -57,8 +59,10 @@ export type IHrmActiveTimer = {
    *
    * Each employee can have at most one active timer at a time, enforced by a unique constraint on employee_id in the database.
    *
-   * @x-autobe-database-schema-property employee
-   * @x-autobe-specification JOIN from hrm_active_timers.employee_id to hrm_employees.id. Returns IHrmEmployee.ISummary. Required relation - each timer must belong to an employee.
+     * @x-autobe-database-schema-property employee
+     * @x-autobe-specification JOIN from hrm_active_timers.employee_id to
+     *   hrm_employees.id. Returns IHrmEmployee.ISummary. Required relation -
+     *   each timer must belong to an employee.
    */
   employee: IHrmEmployee.ISummary;
 
@@ -69,8 +73,10 @@ export type IHrmActiveTimer = {
    *
    * The project must belong to the same organization as the employee. If the employee needs to switch projects while tracking time, they can update the timer via the update endpoint.
    *
-   * @x-autobe-database-schema-property project
-   * @x-autobe-specification JOIN from hrm_active_timers.project_id to hrm_projects.id. Returns IHrmProject.ISummary. Required relation - each timer must be associated with a project.
+     * @x-autobe-database-schema-property project
+     * @x-autobe-specification JOIN from hrm_active_timers.project_id to
+     *   hrm_projects.id. Returns IHrmProject.ISummary. Required relation - each
+     *   timer must be associated with a project.
    */
   project: IHrmProject.ISummary;
 
@@ -81,8 +87,10 @@ export type IHrmActiveTimer = {
    *
    * Once set, this value cannot be modified - only the timer stop operation can end the session.
    *
-   * @x-autobe-database-schema-property start_timestamp
-   * @x-autobe-specification Direct mapping from hrm_active_timers.start_timestamp. DateTime with timestamptz format. Set to current timestamp when timer is created.
+     * @x-autobe-database-schema-property start_timestamp
+     * @x-autobe-specification Direct mapping from
+     *   hrm_active_timers.start_timestamp. DateTime with timestamptz format.
+     *   Set to current timestamp when timer is created.
    */
   start_timestamp: string & tags.Format<"date-time">;
 
@@ -93,8 +101,10 @@ export type IHrmActiveTimer = {
    *
    * If provided, the task must belong to the selected project. The task can be updated while the timer is running via the update endpoint.
    *
-   * @x-autobe-database-schema-property task
-   * @x-autobe-specification LEFT JOIN from hrm_active_timers.task_id to hrm_tasks.id. Returns IHrmTask.ISummary or null. Optional relation - task may be omitted.
+     * @x-autobe-database-schema-property task
+     * @x-autobe-specification LEFT JOIN from hrm_active_timers.task_id to
+     *   hrm_tasks.id. Returns IHrmTask.ISummary or null. Optional relation -
+     *   task may be omitted.
    */
   task?: IHrmTask.ISummary | null | undefined;
 
@@ -103,8 +113,10 @@ export type IHrmActiveTimer = {
    *
    * Typically matches start_timestamp, recorded automatically by the database when the timer session is initiated. Used for audit trail purposes.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from hrm_active_timers.created_at. DateTime with timestamptz format. Set automatically upon timer creation.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from hrm_active_timers.created_at.
+     *   DateTime with timestamptz format. Set automatically upon timer
+     *   creation.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -113,8 +125,10 @@ export type IHrmActiveTimer = {
    *
    * Updated automatically whenever the timer's editable properties (description, project, task) are modified via the update endpoint. Used for concurrency control and audit purposes.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from hrm_active_timers.updated_at. DateTime with timestamptz format. Updated automatically on any modification to the timer record.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from hrm_active_timers.updated_at.
+     *   DateTime with timestamptz format. Updated automatically on any
+     *   modification to the timer record.
    */
   updated_at: string & tags.Format<"date-time">;
 };
@@ -137,15 +151,15 @@ export namespace IHrmActiveTimer {
    */
   export type IRequest = {
     /**
-     * @x-autobe-database-schema-property employee_id
+         * @x-autobe-database-schema-property employee_id
      */
     employee_id?: (string & tags.Format<"uuid">) | undefined;
     /**
-     * @x-autobe-database-schema-property project_id
+         * @x-autobe-database-schema-property project_id
      */
     project_id?: (string & tags.Format<"uuid">) | undefined;
     /**
-     * @x-autobe-database-schema-property task_id
+         * @x-autobe-database-schema-property task_id
      */
     task_id?: (string & tags.Format<"uuid">) | null | undefined;
     start_timestamp_from?: (string & tags.Format<"date-time">) | undefined;
@@ -180,8 +194,10 @@ export namespace IHrmActiveTimer {
      *
      * This UUID serves as the primary key for the timer record and is used for all timer-specific operations including stopping, updating, or discarding the timer.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from hrm_active_timers.id. Primary key uniquely identifying each active timer session. UUID format.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from hrm_active_timers.id.
+         *   Primary key uniquely identifying each active timer session. UUID
+         *   format.
      */
     id: string & tags.Format<"uuid">;
 
@@ -192,8 +208,10 @@ export namespace IHrmActiveTimer {
      *
      * **Format**: ISO 8601 date-time string with timezone (timestamptz)
      *
-     * @x-autobe-database-schema-property start_timestamp
-     * @x-autobe-specification Direct mapping from hrm_active_timers.start_timestamp. DateTime with timestamptz format. Used to calculate elapsed duration when timer is stopped.
+         * @x-autobe-database-schema-property start_timestamp
+         * @x-autobe-specification Direct mapping from
+         *   hrm_active_timers.start_timestamp. DateTime with timestamptz
+         *   format. Used to calculate elapsed duration when timer is stopped.
      */
     start_timestamp: string & tags.Format<"date-time">;
 
@@ -206,8 +224,11 @@ export namespace IHrmActiveTimer {
      *
      * **Format**: Free-form text string, nullable if not provided
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from hrm_active_timers.description. Nullable string field. Provides context for current work activity. Copied to timelog when timer is stopped.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   hrm_active_timers.description. Nullable string field. Provides
+         *   context for current work activity. Copied to timelog when timer is
+         *   stopped.
      */
     description: string | null;
 
@@ -220,8 +241,10 @@ export namespace IHrmActiveTimer {
      *
      * **Data Source**: Joined from hrm_employees table via employee_id foreign key
      *
-     * @x-autobe-database-schema-property employee
-     * @x-autobe-specification Join from hrm_active_timers.employee_id to hrm_employees.id. Returns IHrmEmployee.ISummary via BELONGS-TO relation.
+         * @x-autobe-database-schema-property employee
+         * @x-autobe-specification Join from hrm_active_timers.employee_id to
+         *   hrm_employees.id. Returns IHrmEmployee.ISummary via BELONGS-TO
+         *   relation.
      */
     employee: IHrmEmployee.ISummary;
 
@@ -234,8 +257,10 @@ export namespace IHrmActiveTimer {
      *
      * **Data Source**: Joined from hrm_projects table via project_id foreign key
      *
-     * @x-autobe-database-schema-property project
-     * @x-autobe-specification Join from hrm_active_timers.project_id to hrm_projects.id. Returns IHrmProject.ISummary via BELONGS-TO relation.
+         * @x-autobe-database-schema-property project
+         * @x-autobe-specification Join from hrm_active_timers.project_id to
+         *   hrm_projects.id. Returns IHrmProject.ISummary via BELONGS-TO
+         *   relation.
      */
     project: IHrmProject.ISummary;
 
@@ -248,8 +273,10 @@ export namespace IHrmActiveTimer {
      *
      * **Data Source**: Joined from hrm_tasks table via task_id foreign key. Nullable if no specific task is selected.
      *
-     * @x-autobe-database-schema-property task
-     * @x-autobe-specification Join from hrm_active_timers.task_id to hrm_tasks.id. Returns IHrmTask.ISummary via BELONGS-TO relation. Nullable - task is optional.
+         * @x-autobe-database-schema-property task
+         * @x-autobe-specification Join from hrm_active_timers.task_id to
+         *   hrm_tasks.id. Returns IHrmTask.ISummary via BELONGS-TO relation.
+         *   Nullable - task is optional.
      */
     task: IHrmTask.ISummary | null;
   };
@@ -278,16 +305,18 @@ export namespace IHrmActiveTimer {
      *
      * Nullable - may be omitted or set to null if no description is provided.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from hrm_active_timers.description. Nullable string field for optional work activity context.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   hrm_active_timers.description. Nullable string field for optional
+         *   work activity context.
      */
     description?: string | null | undefined;
     /**
-     * @x-autobe-database-schema-property project_id
+         * @x-autobe-database-schema-property project_id
      */
     project_id: string & tags.Format<"uuid">;
     /**
-     * @x-autobe-database-schema-property task_id
+         * @x-autobe-database-schema-property task_id
      */
     task_id?: (string & tags.Format<"uuid">) | null | undefined;
   };
@@ -313,23 +342,25 @@ export namespace IHrmActiveTimer {
    */
   export type ICreate = {
     /**
-     * @x-autobe-database-schema-property project_id
+         * @x-autobe-database-schema-property project_id
      */
     projectId: string & tags.Format<"uuid">;
 
     /**
      * Optional task within the project. Must belong to the selected project if provided.
      *
-     * @x-autobe-database-schema-property task_id
-     * @x-autobe-specification Direct mapping from hrm_active_timers.task_id. Optional foreign key to task.
+         * @x-autobe-database-schema-property task_id
+         * @x-autobe-specification Direct mapping from
+         *   hrm_active_timers.task_id. Optional foreign key to task.
      */
     taskId?: (string & tags.Format<"uuid">) | null | undefined;
 
     /**
      * Optional description of the current work activity.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from hrm_active_timers.description. Optional work activity description.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   hrm_active_timers.description. Optional work activity description.
      */
     description?: string | null | undefined;
   };

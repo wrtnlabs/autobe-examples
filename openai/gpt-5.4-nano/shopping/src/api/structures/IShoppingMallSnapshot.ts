@@ -11,134 +11,164 @@ export type IShoppingMallSnapshot = {
   /**
    * Unique identifier of the snapshot record (UUID).
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Select shopping_mall_snapshots.id for the snapshot record being returned. Do not derive or transform.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Select shopping_mall_snapshots.id for the
+     *   snapshot record being returned. Do not derive or transform.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Human-readable, unique snapshot code used for dispute-resolution lookups.
    *
-   * @x-autobe-database-schema-property snapshot_code
-   * @x-autobe-specification Select shopping_mall_snapshots.snapshot_code. Snapshot lookup operations should ignore rows where deleted_at is not null (operation layer).
+     * @x-autobe-database-schema-property snapshot_code
+     * @x-autobe-specification Select shopping_mall_snapshots.snapshot_code.
+     *   Snapshot lookup operations should ignore rows where deleted_at is not
+     *   null (operation layer).
    */
   snapshotCode: string;
 
   /**
    * Discriminator indicating what domain concept this snapshot captures.
    *
-   * @x-autobe-database-schema-property source_type
-   * @x-autobe-specification Select shopping_mall_snapshots.source_type to indicate which domain concept this snapshot captures.
+     * @x-autobe-database-schema-property source_type
+     * @x-autobe-specification Select shopping_mall_snapshots.source_type to
+     *   indicate which domain concept this snapshot captures.
    */
   sourceType: string;
 
   /**
    * UUID of the primary source entity instance captured by this snapshot.
    *
-   * @x-autobe-database-schema-property source_entity_id
-   * @x-autobe-specification Select shopping_mall_snapshots.source_entity_id as the primary linkage UUID to the snapshotted entity instance.
+     * @x-autobe-database-schema-property source_entity_id
+     * @x-autobe-specification Select shopping_mall_snapshots.source_entity_id
+     *   as the primary linkage UUID to the snapshotted entity instance.
    */
   sourceEntityId: string & tags.Format<"uuid">;
 
   /**
    * Optional UUID linkage to a seller context relevant to this snapshot (null if not applicable).
    *
-   * @x-autobe-database-schema-property source_seller_id
-   * @x-autobe-specification Select shopping_mall_snapshots.source_seller_id. Must be null when the snapshot source is not seller-contextual.
+     * @x-autobe-database-schema-property source_seller_id
+     * @x-autobe-specification Select shopping_mall_snapshots.source_seller_id.
+     *   Must be null when the snapshot source is not seller-contextual.
    */
   sourceSellerId: (string & tags.Format<"uuid">) | null;
 
   /**
    * Optional UUID linkage to an order context relevant to this snapshot (null if not applicable).
    *
-   * @x-autobe-database-schema-property source_order_id
-   * @x-autobe-specification Select shopping_mall_snapshots.source_order_id. Must be null when the snapshot source is not order-contextual.
+     * @x-autobe-database-schema-property source_order_id
+     * @x-autobe-specification Select shopping_mall_snapshots.source_order_id.
+     *   Must be null when the snapshot source is not order-contextual.
    */
   sourceOrderId: (string & tags.Format<"uuid">) | null;
 
   /**
    * Optional UUID linkage to an order-item context relevant to this snapshot (null if not applicable).
    *
-   * @x-autobe-database-schema-property source_order_item_id
-   * @x-autobe-specification Select shopping_mall_snapshots.source_order_item_id. Must be null when the snapshot source is not order-item contextual.
+     * @x-autobe-database-schema-property source_order_item_id
+     * @x-autobe-specification Select
+     *   shopping_mall_snapshots.source_order_item_id. Must be null when the
+     *   snapshot source is not order-item contextual.
    */
   sourceOrderItemId: (string & tags.Format<"uuid">) | null;
 
   /**
    * Optional UUID linkage to a review context relevant to this snapshot (null if not applicable).
    *
-   * @x-autobe-database-schema-property source_review_id
-   * @x-autobe-specification Select shopping_mall_snapshots.source_review_id. Must be null when the snapshot source is not review-contextual.
+     * @x-autobe-database-schema-property source_review_id
+     * @x-autobe-specification Select shopping_mall_snapshots.source_review_id.
+     *   Must be null when the snapshot source is not review-contextual.
    */
   sourceReviewId: (string & tags.Format<"uuid">) | null;
 
   /**
    * Optional UUID linkage to a cancellation request context relevant to this snapshot (null if not applicable).
    *
-   * @x-autobe-database-schema-property source_cancellation_request_id
-   * @x-autobe-specification Select shopping_mall_snapshots.source_cancellation_request_id. Must be null when not applicable.
+     * @x-autobe-database-schema-property source_cancellation_request_id
+     * @x-autobe-specification Select
+     *   shopping_mall_snapshots.source_cancellation_request_id. Must be null
+     *   when not applicable.
    */
   sourceCancellationRequestId: (string & tags.Format<"uuid">) | null;
 
   /**
    * Optional UUID linkage to a refund request context relevant to this snapshot (null if not applicable).
    *
-   * @x-autobe-database-schema-property source_refund_request_id
-   * @x-autobe-specification Select shopping_mall_snapshots.source_refund_request_id. Must be null when not applicable.
+     * @x-autobe-database-schema-property source_refund_request_id
+     * @x-autobe-specification Select
+     *   shopping_mall_snapshots.source_refund_request_id. Must be null when not
+     *   applicable.
    */
   sourceRefundRequestId: (string & tags.Format<"uuid">) | null;
 
   /**
    * Optional UUID of the member who initiated the change captured by this snapshot (null if not available).
    *
-   * @x-autobe-database-schema-property created_by_member_id
-   * @x-autobe-specification Select shopping_mall_snapshots.created_by_member_id. Must be null when the snapshot was not attributed to a member.
+     * @x-autobe-database-schema-property created_by_member_id
+     * @x-autobe-specification Select
+     *   shopping_mall_snapshots.created_by_member_id. Must be null when the
+     *   snapshot was not attributed to a member.
    */
   createdByMemberId: (string & tags.Format<"uuid">) | null;
 
   /**
    * Business reason describing why the snapshot was created.
    *
-   * @x-autobe-database-schema-property reason
-   * @x-autobe-specification Select shopping_mall_snapshots.reason exactly as persisted; it describes why this snapshot was created.
+     * @x-autobe-database-schema-property reason
+     * @x-autobe-specification Select shopping_mall_snapshots.reason exactly as
+     *   persisted; it describes why this snapshot was created.
    */
   reason: string;
 
   /**
    * Timestamp when the snapshot record was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Select shopping_mall_snapshots.created_at and return as date-time string.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Select shopping_mall_snapshots.created_at and
+     *   return as date-time string.
    */
   createdAt: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the snapshot record metadata was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Select shopping_mall_snapshots.updated_at and return as date-time string.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Select shopping_mall_snapshots.updated_at and
+     *   return as date-time string.
    */
   updatedAt: string & tags.Format<"date-time">;
 
   /**
    * Soft-delete timestamp for the snapshot record; null if the snapshot is active.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Select shopping_mall_snapshots.deleted_at. Return null when not soft-deleted.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Select shopping_mall_snapshots.deleted_at. Return
+     *   null when not soft-deleted.
    */
   deletedAt: (string & tags.Format<"date-time">) | null;
 
   /**
    * Optional serialized snapshot payload content associated with this snapshot (null if no active payload exists).
    *
-   * @x-autobe-specification Fetch shopping_mall_snapshot_payloads where shopping_mall_snapshot_payloads.shopping_mall_snapshot_id = shopping_mall_snapshots.id and shopping_mall_snapshot_payloads.deleted_at IS NULL. If found, map that row to IShoppingMallSnapshotPayload; otherwise set payload = null.
+     * @x-autobe-specification Fetch shopping_mall_snapshot_payloads where
+     *   shopping_mall_snapshot_payloads.shopping_mall_snapshot_id =
+     *   shopping_mall_snapshots.id and
+     *   shopping_mall_snapshot_payloads.deleted_at IS NULL. If found, map that
+     *   row to IShoppingMallSnapshotPayload; otherwise set payload = null.
    */
   payload: IShoppingMallSnapshotPayload | null;
 
   /**
    * Visibility entries indicating which parties are allowed to view this snapshot for dispute resolution.
    *
-   * @x-autobe-specification Fetch shopping_mall_snapshot_parties where shopping_mall_snapshot_parties.shopping_mall_snapshot_id = shopping_mall_snapshots.id and shopping_mall_snapshot_parties.deleted_at IS NULL. Return an array of IShoppingMallSnapshotParty.ISummary. Authorization filtering (can_view=true and caller party matching) is enforced by operation/service layer before constructing/returning this DTO.
+     * @x-autobe-specification Fetch shopping_mall_snapshot_parties where
+     *   shopping_mall_snapshot_parties.shopping_mall_snapshot_id =
+     *   shopping_mall_snapshots.id and
+     *   shopping_mall_snapshot_parties.deleted_at IS NULL. Return an array of
+     *   IShoppingMallSnapshotParty.ISummary. Authorization filtering
+     *   (can_view=true and caller party matching) is enforced by
+     *   operation/service layer before constructing/returning this DTO.
    */
   parties: IShoppingMallSnapshotParty.ISummary[];
 };
@@ -150,64 +180,90 @@ export namespace IShoppingMallSnapshot {
     /**
      * A human-readable, unique code for the snapshot record used for referencing in logs, UIs, and dispute resolution.
      *
-     * @x-autobe-database-schema-property snapshot_code
-     * @x-autobe-specification Store request.snapshot_code into shopping_mall_snapshots.snapshot_code. Validate uniqueness using shopping_mall_snapshots @@unique([snapshot_code]); on conflict, reject the request.
+         * @x-autobe-database-schema-property snapshot_code
+         * @x-autobe-specification Store request.snapshot_code into
+         *   shopping_mall_snapshots.snapshot_code. Validate uniqueness using
+         *   shopping_mall_snapshots @@unique([snapshot_code]); on conflict,
+         *   reject the request.
      */
     snapshot_code: string;
 
     /**
      * Discriminator indicating which domain concept the snapshot represents (i.e., what kind of entity state was snapshotted).
      *
-     * @x-autobe-database-schema-property source_type
-     * @x-autobe-specification Store request.source_type into shopping_mall_snapshots.source_type. This discriminator must match the business workflow that created the snapshot (e.g., product, product_variant, order_item, review, cancellation_request, refund_request). The service layer must ensure that provided linkage fields are consistent with this value.
+         * @x-autobe-database-schema-property source_type
+         * @x-autobe-specification Store request.source_type into
+         *   shopping_mall_snapshots.source_type. This discriminator must match
+         *   the business workflow that created the snapshot (e.g., product,
+         *   product_variant, order_item, review, cancellation_request,
+         *   refund_request). The service layer must ensure that provided
+         *   linkage fields are consistent with this value.
      */
     source_type: string;
 
     /**
      * UUID of the primary source entity instance whose point-in-time state is being captured.
      *
-     * @x-autobe-database-schema-property source_entity_id
-     * @x-autobe-specification Store request.source_entity_id into shopping_mall_snapshots.source_entity_id. Validate it as a UUID string. This is the primary entity instance captured by the snapshot.
+         * @x-autobe-database-schema-property source_entity_id
+         * @x-autobe-specification Store request.source_entity_id into
+         *   shopping_mall_snapshots.source_entity_id. Validate it as a UUID
+         *   string. This is the primary entity instance captured by the
+         *   snapshot.
      */
     source_entity_id: string & tags.Format<"uuid">;
 
     /**
      * Optional UUID linking the snapshot to a seller context when the snapshotted state is seller-related (nullable).
      *
-     * @x-autobe-database-schema-property source_seller_id
-     * @x-autobe-specification Store request.source_seller_id into shopping_mall_snapshots.source_seller_id. Accept null and persist null. Validate as UUID when not null. Ensure consistency with source_type in the calling workflow/service layer.
+         * @x-autobe-database-schema-property source_seller_id
+         * @x-autobe-specification Store request.source_seller_id into
+         *   shopping_mall_snapshots.source_seller_id. Accept null and persist
+         *   null. Validate as UUID when not null. Ensure consistency with
+         *   source_type in the calling workflow/service layer.
      */
     source_seller_id?: (string & tags.Format<"uuid">) | null | undefined;
 
     /**
      * Optional UUID linking the snapshot to an order context (nullable).
      *
-     * @x-autobe-database-schema-property source_order_id
-     * @x-autobe-specification Store request.source_order_id into shopping_mall_snapshots.source_order_id. Accept null and persist null. Validate as UUID when not null. Ensure consistency with source_type in the calling workflow/service layer.
+         * @x-autobe-database-schema-property source_order_id
+         * @x-autobe-specification Store request.source_order_id into
+         *   shopping_mall_snapshots.source_order_id. Accept null and persist
+         *   null. Validate as UUID when not null. Ensure consistency with
+         *   source_type in the calling workflow/service layer.
      */
     source_order_id?: (string & tags.Format<"uuid">) | null | undefined;
 
     /**
      * Optional UUID linking the snapshot to a specific purchased order item (nullable).
      *
-     * @x-autobe-database-schema-property source_order_item_id
-     * @x-autobe-specification Store request.source_order_item_id into shopping_mall_snapshots.source_order_item_id. Accept null and persist null. Validate as UUID when not null. Ensure consistency with source_type in the calling workflow/service layer.
+         * @x-autobe-database-schema-property source_order_item_id
+         * @x-autobe-specification Store request.source_order_item_id into
+         *   shopping_mall_snapshots.source_order_item_id. Accept null and
+         *   persist null. Validate as UUID when not null. Ensure consistency
+         *   with source_type in the calling workflow/service layer.
      */
     source_order_item_id?: (string & tags.Format<"uuid">) | null | undefined;
 
     /**
      * Optional UUID linking the snapshot to a specific review (e.g., for review edit/dispute history) (nullable).
      *
-     * @x-autobe-database-schema-property source_review_id
-     * @x-autobe-specification Store request.source_review_id into shopping_mall_snapshots.source_review_id. Accept null and persist null. Validate as UUID when not null. Ensure consistency with source_type in the calling workflow/service layer.
+         * @x-autobe-database-schema-property source_review_id
+         * @x-autobe-specification Store request.source_review_id into
+         *   shopping_mall_snapshots.source_review_id. Accept null and persist
+         *   null. Validate as UUID when not null. Ensure consistency with
+         *   source_type in the calling workflow/service layer.
      */
     source_review_id?: (string & tags.Format<"uuid">) | null | undefined;
 
     /**
      * Optional UUID linking the snapshot to a specific cancellation request workflow (nullable).
      *
-     * @x-autobe-database-schema-property source_cancellation_request_id
-     * @x-autobe-specification Store request.source_cancellation_request_id into shopping_mall_snapshots.source_cancellation_request_id. Accept null and persist null. Validate as UUID when not null. Ensure consistency with source_type in the calling workflow/service layer.
+         * @x-autobe-database-schema-property source_cancellation_request_id
+         * @x-autobe-specification Store request.source_cancellation_request_id
+         *   into shopping_mall_snapshots.source_cancellation_request_id. Accept
+         *   null and persist null. Validate as UUID when not null. Ensure
+         *   consistency with source_type in the calling workflow/service layer.
      */
     source_cancellation_request_id?:
       | (string & tags.Format<"uuid">)
@@ -217,8 +273,11 @@ export namespace IShoppingMallSnapshot {
     /**
      * Optional UUID linking the snapshot to a specific refund request workflow (nullable).
      *
-     * @x-autobe-database-schema-property source_refund_request_id
-     * @x-autobe-specification Store request.source_refund_request_id into shopping_mall_snapshots.source_refund_request_id. Accept null and persist null. Validate as UUID when not null. Ensure consistency with source_type in the calling workflow/service layer.
+         * @x-autobe-database-schema-property source_refund_request_id
+         * @x-autobe-specification Store request.source_refund_request_id into
+         *   shopping_mall_snapshots.source_refund_request_id. Accept null and
+         *   persist null. Validate as UUID when not null. Ensure consistency
+         *   with source_type in the calling workflow/service layer.
      */
     source_refund_request_id?:
       | (string & tags.Format<"uuid">)
@@ -228,16 +287,23 @@ export namespace IShoppingMallSnapshot {
     /**
      * Optional UUID of the member who initiated the change captured by this snapshot (nullable).
      *
-     * @x-autobe-database-schema-property created_by_member_id
-     * @x-autobe-specification Store request.created_by_member_id into shopping_mall_snapshots.created_by_member_id. Accept null and persist null. Validate as UUID when not null. This represents the member who initiated the change that resulted in the snapshot being created.
+         * @x-autobe-database-schema-property created_by_member_id
+         * @x-autobe-specification Store request.created_by_member_id into
+         *   shopping_mall_snapshots.created_by_member_id. Accept null and
+         *   persist null. Validate as UUID when not null. This represents the
+         *   member who initiated the change that resulted in the snapshot being
+         *   created.
      */
     created_by_member_id?: (string & tags.Format<"uuid">) | null | undefined;
 
     /**
      * Business reason/category describing why this snapshot was created (used for dispute resolution and audit context).
      *
-     * @x-autobe-database-schema-property reason
-     * @x-autobe-specification Store request.reason into shopping_mall_snapshots.reason. Validate presence (required). This is the business reason for creating the snapshot and must be suitable for dispute resolution timelines.
+         * @x-autobe-database-schema-property reason
+         * @x-autobe-specification Store request.reason into
+         *   shopping_mall_snapshots.reason. Validate presence (required). This
+         *   is the business reason for creating the snapshot and must be
+         *   suitable for dispute resolution timelines.
      */
     reason: string;
   };
@@ -249,120 +315,163 @@ export namespace IShoppingMallSnapshot {
     /**
      * Unique identifier of the snapshot record.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Directly map shopping_mall_snapshots.id to IShoppingMallSnapshot.ISummary.id. Use UUID string format as provided by the database layer.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Directly map shopping_mall_snapshots.id to
+         *   IShoppingMallSnapshot.ISummary.id. Use UUID string format as
+         *   provided by the database layer.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Human-readable code for referencing the snapshot in UIs and dispute-resolution workflows.
      *
-     * @x-autobe-database-schema-property snapshot_code
-     * @x-autobe-specification Directly map shopping_mall_snapshots.snapshot_code to IShoppingMallSnapshot.ISummary.snapshot_code. Preserve exact string value (human-readable code).
+         * @x-autobe-database-schema-property snapshot_code
+         * @x-autobe-specification Directly map
+         *   shopping_mall_snapshots.snapshot_code to
+         *   IShoppingMallSnapshot.ISummary.snapshot_code. Preserve exact string
+         *   value (human-readable code).
      */
     snapshot_code: string;
 
     /**
      * Discriminator describing what domain concept the snapshot captures (e.g., product, order_item, review, cancellation_request, refund_request).
      *
-     * @x-autobe-database-schema-property source_type
-     * @x-autobe-specification Directly map shopping_mall_snapshots.source_type to IShoppingMallSnapshot.ISummary.source_type. This discriminator indicates which domain concept this snapshot represents.
+         * @x-autobe-database-schema-property source_type
+         * @x-autobe-specification Directly map
+         *   shopping_mall_snapshots.source_type to
+         *   IShoppingMallSnapshot.ISummary.source_type. This discriminator
+         *   indicates which domain concept this snapshot represents.
      */
     source_type: string;
 
     /**
      * Primary key of the source entity instance that this snapshot captured at creation time.
      *
-     * @x-autobe-database-schema-property source_entity_id
-     * @x-autobe-specification Directly map shopping_mall_snapshots.source_entity_id to IShoppingMallSnapshot.ISummary.source_entity_id as UUID string.
+         * @x-autobe-database-schema-property source_entity_id
+         * @x-autobe-specification Directly map
+         *   shopping_mall_snapshots.source_entity_id to
+         *   IShoppingMallSnapshot.ISummary.source_entity_id as UUID string.
      */
     source_entity_id: string & tags.Format<"uuid">;
 
     /**
      * Optional seller linkage for snapshots created in seller context (null when not applicable).
      *
-     * @x-autobe-database-schema-property source_seller_id
-     * @x-autobe-specification Directly map shopping_mall_snapshots.source_seller_id to IShoppingMallSnapshot.ISummary.source_seller_id, preserving null when the snapshot is not seller-scoped.
+         * @x-autobe-database-schema-property source_seller_id
+         * @x-autobe-specification Directly map
+         *   shopping_mall_snapshots.source_seller_id to
+         *   IShoppingMallSnapshot.ISummary.source_seller_id, preserving null
+         *   when the snapshot is not seller-scoped.
      */
     source_seller_id: (string & tags.Format<"uuid">) | null;
 
     /**
      * Optional order linkage associated with this snapshot (null when not applicable).
      *
-     * @x-autobe-database-schema-property source_order_id
-     * @x-autobe-specification Directly map shopping_mall_snapshots.source_order_id to IShoppingMallSnapshot.ISummary.source_order_id, preserving null when not applicable.
+         * @x-autobe-database-schema-property source_order_id
+         * @x-autobe-specification Directly map
+         *   shopping_mall_snapshots.source_order_id to
+         *   IShoppingMallSnapshot.ISummary.source_order_id, preserving null
+         *   when not applicable.
      */
     source_order_id: (string & tags.Format<"uuid">) | null;
 
     /**
      * Optional order-item linkage associated with this snapshot (null when not applicable).
      *
-     * @x-autobe-database-schema-property source_order_item_id
-     * @x-autobe-specification Directly map shopping_mall_snapshots.source_order_item_id to IShoppingMallSnapshot.ISummary.source_order_item_id, preserving null when not applicable.
+         * @x-autobe-database-schema-property source_order_item_id
+         * @x-autobe-specification Directly map
+         *   shopping_mall_snapshots.source_order_item_id to
+         *   IShoppingMallSnapshot.ISummary.source_order_item_id, preserving
+         *   null when not applicable.
      */
     source_order_item_id: (string & tags.Format<"uuid">) | null;
 
     /**
      * Optional review linkage associated with this snapshot (null when not applicable).
      *
-     * @x-autobe-database-schema-property source_review_id
-     * @x-autobe-specification Directly map shopping_mall_snapshots.source_review_id to IShoppingMallSnapshot.ISummary.source_review_id, preserving null when not applicable.
+         * @x-autobe-database-schema-property source_review_id
+         * @x-autobe-specification Directly map
+         *   shopping_mall_snapshots.source_review_id to
+         *   IShoppingMallSnapshot.ISummary.source_review_id, preserving null
+         *   when not applicable.
      */
     source_review_id: (string & tags.Format<"uuid">) | null;
 
     /**
      * Optional cancellation-request linkage associated with this snapshot (null when not applicable).
      *
-     * @x-autobe-database-schema-property source_cancellation_request_id
-     * @x-autobe-specification Directly map shopping_mall_snapshots.source_cancellation_request_id to IShoppingMallSnapshot.ISummary.source_cancellation_request_id, preserving null when not applicable.
+         * @x-autobe-database-schema-property source_cancellation_request_id
+         * @x-autobe-specification Directly map
+         *   shopping_mall_snapshots.source_cancellation_request_id to
+         *   IShoppingMallSnapshot.ISummary.source_cancellation_request_id,
+         *   preserving null when not applicable.
      */
     source_cancellation_request_id: (string & tags.Format<"uuid">) | null;
 
     /**
      * Optional refund-request linkage associated with this snapshot (null when not applicable).
      *
-     * @x-autobe-database-schema-property source_refund_request_id
-     * @x-autobe-specification Directly map shopping_mall_snapshots.source_refund_request_id to IShoppingMallSnapshot.ISummary.source_refund_request_id, preserving null when not applicable.
+         * @x-autobe-database-schema-property source_refund_request_id
+         * @x-autobe-specification Directly map
+         *   shopping_mall_snapshots.source_refund_request_id to
+         *   IShoppingMallSnapshot.ISummary.source_refund_request_id, preserving
+         *   null when not applicable.
      */
     source_refund_request_id: (string & tags.Format<"uuid">) | null;
 
     /**
      * Optional member ID indicating who initiated the change captured by this snapshot (null when not available).
      *
-     * @x-autobe-database-schema-property created_by_member_id
-     * @x-autobe-specification Directly map shopping_mall_snapshots.created_by_member_id to IShoppingMallSnapshot.ISummary.created_by_member_id, preserving null when the creator is not recorded for the snapshot.
+         * @x-autobe-database-schema-property created_by_member_id
+         * @x-autobe-specification Directly map
+         *   shopping_mall_snapshots.created_by_member_id to
+         *   IShoppingMallSnapshot.ISummary.created_by_member_id, preserving
+         *   null when the creator is not recorded for the snapshot.
      */
     created_by_member_id: (string & tags.Format<"uuid">) | null;
 
     /**
      * Business reason or category describing why this snapshot was created.
      *
-     * @x-autobe-database-schema-property reason
-     * @x-autobe-specification Directly map shopping_mall_snapshots.reason to IShoppingMallSnapshot.ISummary.reason. Preserve exact string value.
+         * @x-autobe-database-schema-property reason
+         * @x-autobe-specification Directly map shopping_mall_snapshots.reason
+         *   to IShoppingMallSnapshot.ISummary.reason. Preserve exact string
+         *   value.
      */
     reason: string;
 
     /**
      * Timestamp when the snapshot record was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Directly map shopping_mall_snapshots.created_at to IShoppingMallSnapshot.ISummary.created_at as an ISO 8601 date-time string.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Directly map
+         *   shopping_mall_snapshots.created_at to
+         *   IShoppingMallSnapshot.ISummary.created_at as an ISO 8601 date-time
+         *   string.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when the snapshot record metadata was last updated.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Directly map shopping_mall_snapshots.updated_at to IShoppingMallSnapshot.ISummary.updated_at as an ISO 8601 date-time string.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Directly map
+         *   shopping_mall_snapshots.updated_at to
+         *   IShoppingMallSnapshot.ISummary.updated_at as an ISO 8601 date-time
+         *   string.
      */
     updated_at: string & tags.Format<"date-time">;
 
     /**
      * Soft-deletion timestamp for the snapshot record (null when the snapshot is active).
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Directly map shopping_mall_snapshots.deleted_at to IShoppingMallSnapshot.ISummary.deleted_at, preserving null when the snapshot is not soft-deleted and the ISO 8601 timestamp when it is soft-deleted.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Directly map
+         *   shopping_mall_snapshots.deleted_at to
+         *   IShoppingMallSnapshot.ISummary.deleted_at, preserving null when the
+         *   snapshot is not soft-deleted and the ISO 8601 timestamp when it is
+         *   soft-deleted.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };
@@ -374,91 +483,107 @@ export namespace IShoppingMallSnapshot {
     /**
      * Filter by the snapshot source discriminator (which domain concept the snapshot represents).
      *
-     * @x-autobe-specification If provided (optional in request), add equality filter: shopping_mall_snapshots.source_type = :sourceType.
+         * @x-autobe-specification If provided (optional in request), add
+         *   equality filter: shopping_mall_snapshots.source_type = :sourceType.
      */
     sourceType?: string | undefined;
 
     /**
      * Filter by the primary source entity instance id (shopping_mall_snapshots.source_entity_id).
      *
-     * @x-autobe-specification If provided, add equality filter: shopping_mall_snapshots.source_entity_id = :sourceEntityId.
+         * @x-autobe-specification If provided, add equality filter:
+         *   shopping_mall_snapshots.source_entity_id = :sourceEntityId.
      */
     sourceEntityId?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Optional filter by seller linkage id (shopping_mall_snapshots.source_seller_id).
      *
-     * @x-autobe-specification If provided, add equality filter: shopping_mall_snapshots.source_seller_id = :sourceSellerId. (Only applies to snapshots whose seller linkage matches.)
+         * @x-autobe-specification If provided, add equality filter:
+         *   shopping_mall_snapshots.source_seller_id = :sourceSellerId. (Only
+         *   applies to snapshots whose seller linkage matches.)
      */
     sourceSellerId?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Optional filter by order linkage id (shopping_mall_snapshots.source_order_id).
      *
-     * @x-autobe-specification If provided, add equality filter: shopping_mall_snapshots.source_order_id = :sourceOrderId.
+         * @x-autobe-specification If provided, add equality filter:
+         *   shopping_mall_snapshots.source_order_id = :sourceOrderId.
      */
     sourceOrderId?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Optional filter by order-item linkage id (shopping_mall_snapshots.source_order_item_id).
      *
-     * @x-autobe-specification If provided, add equality filter: shopping_mall_snapshots.source_order_item_id = :sourceOrderItemId.
+         * @x-autobe-specification If provided, add equality filter:
+         *   shopping_mall_snapshots.source_order_item_id = :sourceOrderItemId.
      */
     sourceOrderItemId?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Optional filter by review linkage id (shopping_mall_snapshots.source_review_id).
      *
-     * @x-autobe-specification If provided, add equality filter: shopping_mall_snapshots.source_review_id = :sourceReviewId.
+         * @x-autobe-specification If provided, add equality filter:
+         *   shopping_mall_snapshots.source_review_id = :sourceReviewId.
      */
     sourceReviewId?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Optional filter by cancellation-request linkage id (shopping_mall_snapshots.source_cancellation_request_id).
      *
-     * @x-autobe-specification If provided, add equality filter: shopping_mall_snapshots.source_cancellation_request_id = :sourceCancellationRequestId.
+         * @x-autobe-specification If provided, add equality filter:
+         *   shopping_mall_snapshots.source_cancellation_request_id =
+         *   :sourceCancellationRequestId.
      */
     sourceCancellationRequestId?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Optional filter by refund-request linkage id (shopping_mall_snapshots.source_refund_request_id).
      *
-     * @x-autobe-specification If provided, add equality filter: shopping_mall_snapshots.source_refund_request_id = :sourceRefundRequestId.
+         * @x-autobe-specification If provided, add equality filter:
+         *   shopping_mall_snapshots.source_refund_request_id =
+         *   :sourceRefundRequestId.
      */
     sourceRefundRequestId?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Optional filter by the member who initiated the change captured by the snapshot (shopping_mall_snapshots.created_by_member_id).
      *
-     * @x-autobe-specification If provided, add equality filter: shopping_mall_snapshots.created_by_member_id = :createdByMemberId.
+         * @x-autobe-specification If provided, add equality filter:
+         *   shopping_mall_snapshots.created_by_member_id = :createdByMemberId.
      */
     createdByMemberId?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Optional lower bound (inclusive) for snapshot creation time (shopping_mall_snapshots.created_at).
      *
-     * @x-autobe-specification If provided, add inclusive lower-bound filter: shopping_mall_snapshots.created_at >= :createdAtFrom.
+         * @x-autobe-specification If provided, add inclusive lower-bound
+         *   filter: shopping_mall_snapshots.created_at >= :createdAtFrom.
      */
     createdAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Optional upper bound (inclusive) for snapshot creation time (shopping_mall_snapshots.created_at).
      *
-     * @x-autobe-specification If provided, add inclusive upper-bound filter: shopping_mall_snapshots.created_at <= :createdAtTo.
+         * @x-autobe-specification If provided, add inclusive upper-bound
+         *   filter: shopping_mall_snapshots.created_at <= :createdAtTo.
      */
     createdAtTo?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Page number for pagination (1-indexed).
      *
-     * @x-autobe-specification Use as 1-indexed pagination page number. Compute SQL offset as: offset = (page - 1) * limit.
+         * @x-autobe-specification Use as 1-indexed pagination page number.
+         *   Compute SQL offset as: offset = (page - 1) * limit.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of items to return per page (page size).
      *
-     * @x-autobe-specification Use as SQL LIMIT value (max 100). Returned data array length may be <= limit on the last page.
+         * @x-autobe-specification Use as SQL LIMIT value (max 100). Returned
+         *   data array length may be <= limit on the last page.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -467,7 +592,10 @@ export namespace IShoppingMallSnapshot {
     /**
      * Optional deterministic sort key. If omitted, results are ordered by created_at descending.
      *
-     * @x-autobe-specification If sort is provided, translate it into a deterministic ORDER BY over shopping_mall_snapshots for stable pagination. If omitted, order by shopping_mall_snapshots.created_at DESC by default.
+         * @x-autobe-specification If sort is provided, translate it into a
+         *   deterministic ORDER BY over shopping_mall_snapshots for stable
+         *   pagination. If omitted, order by shopping_mall_snapshots.created_at
+         *   DESC by default.
      */
     sort?: string | undefined;
   };

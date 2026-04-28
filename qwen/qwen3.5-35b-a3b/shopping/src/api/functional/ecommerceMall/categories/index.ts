@@ -22,7 +22,8 @@ export * as products from "./products/index";
  * @param props.body Search and pagination criteria for listing categories. Includes name filter (partial match), parent_id filter for subcategories only, sort order, and pagination parameters.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query ecommerce_mall_categories table with the following logic:
+ * @x-autobe-specification Query ecommerce_mall_categories table with the
+ *   following logic:
  *
  * 1. **Base Query**:
  *    - Default filter: deleted_at IS NULL (active categories only)
@@ -150,13 +151,14 @@ export namespace index {
  * @param props.categoryId Unique identifier of the category to retrieve.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification 1. Validate categoryId is a valid UUID format.
- * 2. Query ecommerce_mall_categories table for record where id = {categoryId} AND deleted_at IS NULL.
- * 3. If not found, return 404 Not Found.
- * 4. Join with parent category (self-reference) if parent_id is present to include parent category summary.
- * 5. Join with creator administrator if creator_id is present to include creator information.
- * 6. Return full category entity with all fields.
- * 7. Do NOT include soft-deleted categories in responses unless admin flag is provided.
+ * @x-autobe-specification 1. Validate categoryId is a valid UUID format. 2.
+ *   Query ecommerce_mall_categories table for record where id = {categoryId}
+ *   AND deleted_at IS NULL. 3. If not found, return 404 Not Found. 4. Join with
+ *   parent category (self-reference) if parent_id is present to include parent
+ *   category summary. 5. Join with creator administrator if creator_id is
+ *   present to include creator information. 6. Return full category entity with
+ *   all fields. 7. Do NOT include soft-deleted categories in responses unless
+ *   admin flag is provided.
  *
  * Edge cases:
  * - Category with no parent (top-level): parent_id is NULL, omit parent reference.

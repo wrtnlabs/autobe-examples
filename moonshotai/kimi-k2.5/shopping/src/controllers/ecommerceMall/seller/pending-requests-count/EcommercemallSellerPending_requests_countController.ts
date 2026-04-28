@@ -17,9 +17,10 @@ export class EcommercemallSellerPending_requests_countController {
    * The count includes all AdminPromotionRequest entities with 'pending' status, representing user requests to become administrators that have not yet been approved or rejected.
    *
    * @param connection
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Query the ecommerce_mall_admin_promotion_requests table and count records where status equals 'pending'.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Query the ecommerce_mall_admin_promotion_requests
+     *   table and count records where status equals 'pending'.
    *
    * This is a read-only aggregation operation that performs a simple COUNT query with a WHERE clause filtering for pending status. The operation should be extremely lightweight, executing a single database aggregate query.
    *

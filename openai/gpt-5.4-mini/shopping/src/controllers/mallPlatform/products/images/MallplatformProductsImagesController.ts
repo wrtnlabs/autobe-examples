@@ -19,9 +19,13 @@ export class MallplatformProductsImagesController {
    * @param connection
    * @param productId The unique identifier of the product whose image set is being maintained.
    * @param body The desired product image maintenance change, including new images, the final order, or image removals to apply to the product's gallery.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Load the product by productId and confirm the authenticated seller owns it. Treat this as a product-image maintenance command over the product's ordered image set. Apply the requested image changes atomically so partial reorder/delete/add operations do not leave the gallery in a mixed state.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Load the product by productId and confirm the
+     *   authenticated seller owns it. Treat this as a product-image maintenance
+     *   command over the product's ordered image set. Apply the requested image
+     *   changes atomically so partial reorder/delete/add operations do not
+     *   leave the gallery in a mixed state.
    *
    * Validate that every referenced image belongs to the target product, that any reorder request covers only existing images, and that unavailable targets are rejected as business errors. If the request adds images, create new product image rows tied to the product and insert them in the requested order. If it reorders images, persist the new ordering and make the first item the main image. If it removes images, delete only the specified product image rows after confirming they still exist and belong to the product.
    *
@@ -56,9 +60,11 @@ export class MallplatformProductsImagesController {
    * @param connection
    * @param productId The product identifier in UUID form.
    * @param imageId The product image identifier in UUID form.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Load the product by `productId`, then load the image by `imageId` constrained to `mall_platform_product_images.mall_platform_product_id = productId`.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Load the product by `productId`, then load the
+     *   image by `imageId` constrained to
+     *   `mall_platform_product_images.mall_platform_product_id = productId`.
    *
    * Return the single product image record with its id, product id, image URL, sort order, main-image flag, created timestamp, updated timestamp, and deleted timestamp if applicable. Do not return images from other products.
    *

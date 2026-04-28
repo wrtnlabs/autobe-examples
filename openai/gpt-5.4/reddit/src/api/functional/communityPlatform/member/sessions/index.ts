@@ -24,7 +24,8 @@ import { IPageICommunityPlatformMemberSession } from "../../../../structures/IPa
  * @param props.body Session search filters and pagination options
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implement this operation as an authenticated member-only session history query over community_platform_member_sessions.
+ * @x-autobe-specification Implement this operation as an authenticated
+ *   member-only session history query over community_platform_member_sessions.
  *
  * Resolve the caller's member identity from the active authentication context, not from client-supplied identifiers. If no valid member session is present, reject the request as unauthorized. Do not allow the client to query sessions for another member account.
  *
@@ -125,7 +126,8 @@ export namespace index {
  * @param props.sessionId Target member session identifier
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implement this operation as a single-record lookup on `community_platform_member_sessions` filtered by `id = sessionId`.
+ * @x-autobe-specification Implement this operation as a single-record lookup on
+ *   `community_platform_member_sessions` filtered by `id = sessionId`.
  *
  * The service must first authenticate the caller. Reject unauthenticated callers because a guest must not be treated as having a member session. For member callers, constrain the query by both `id` and `community_platform_member_id = authenticatedMember.id` so a member can only inspect their own session records. If the service supports administrative inspection, allow an admin-specific branch that can query by `id` alone or under platform policy, but keep that authorization decision outside ordinary member flow.
  *

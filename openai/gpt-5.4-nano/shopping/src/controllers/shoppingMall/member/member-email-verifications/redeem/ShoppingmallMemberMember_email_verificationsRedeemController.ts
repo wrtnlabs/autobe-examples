@@ -28,9 +28,9 @@ export class ShoppingmallMemberMember_email_verificationsRedeemController {
    *
    * @param connection
    * @param body Redemption request containing the opaque member email verification token to redeem.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation steps:
    *
    * 1. Parse request body to obtain the submitted token.
    * 2. Start a database transaction.

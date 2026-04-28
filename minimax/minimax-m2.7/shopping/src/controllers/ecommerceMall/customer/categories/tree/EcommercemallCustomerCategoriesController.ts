@@ -23,9 +23,10 @@ export class EcommercemallCustomerCategoriesController {
    * This endpoint is typically called on initial page load or when customers access the category navigation menu. It provides the complete taxonomy in a single request, enabling efficient client-side category browsing without multiple API calls.
    *
    * @param connection
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Query the ecommerce_mall_categories table to retrieve all categories.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Query the ecommerce_mall_categories table to
+     *   retrieve all categories.
    *
    * Group categories by their parent_id field. Categories with NULL parent_id are root/parent categories.
    *

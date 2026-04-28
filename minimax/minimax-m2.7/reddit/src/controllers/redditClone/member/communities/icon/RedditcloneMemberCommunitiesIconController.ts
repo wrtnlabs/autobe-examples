@@ -23,9 +23,9 @@ export class RedditcloneMemberCommunitiesIconController {
    * @param connection
    * @param communityId Unique identifier of the community (UUID).
    * @param body The new icon file identifier to associate with the community.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Update the icon for the specified community.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Update the icon for the specified community.
    *
    * 1. Extract `communityId` from the request path.
    * 2. Verify the community exists and is not soft-deleted (reddit_clone_communities.deleted_at IS NULL). If not found or deleted, return 404 error.
@@ -73,9 +73,12 @@ export class RedditcloneMemberCommunitiesIconController {
    *
    * @param connection
    * @param communityId Unique identifier of the community whose icon will be deleted
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Verify the authenticated user is the owner of the specified community by checking reddit_clone_communities.reddit_clone_member_id against the current session.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Verify the authenticated user is the owner of the
+     *   specified community by checking
+     *   reddit_clone_communities.reddit_clone_member_id against the current
+     *   session.
    *
    * If the user is not the owner, return 403 Forbidden.
    *

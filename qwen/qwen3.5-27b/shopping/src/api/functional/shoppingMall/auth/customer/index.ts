@@ -23,14 +23,15 @@ import { IShoppingMallCustomer } from "../../../../structures/IShoppingMallCusto
  * @param props.body Customer registration credentials including email address and password.
  * @x-autobe-authorization-type join
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Implement customer registration by:
- * 1. Validate email format and check for existing customer with same email in shopping_mall_customers table
- * 2. Hash password using bcrypt with salt rounds >= 10
- * 3. Insert new record into shopping_mall_customers with email, password_hash, and default status 'active'
- * 4. Create associated customer_profile record in shopping_mall_customer_profiles
- * 5. Generate JWT access token (expires in 15 minutes) and refresh token (expires in 7 days)
- * 6. Insert session record into shopping_mall_customer_sessions with both tokens and customer_id
- * 7. Return tokens in IAuthorized response
+ * @x-autobe-specification Implement customer registration by: 1. Validate email
+ *   format and check for existing customer with same email in
+ *   shopping_mall_customers table 2. Hash password using bcrypt with salt
+ *   rounds >= 10 3. Insert new record into shopping_mall_customers with email,
+ *   password_hash, and default status 'active' 4. Create associated
+ *   customer_profile record in shopping_mall_customer_profiles 5. Generate JWT
+ *   access token (expires in 15 minutes) and refresh token (expires in 7 days)
+ *   6. Insert session record into shopping_mall_customer_sessions with both
+ *   tokens and customer_id 7. Return tokens in IAuthorized response
  *
  * Error handling:
  * - Return 400 if email format invalid
@@ -132,13 +133,13 @@ export namespace join {
  * @param props.body Customer login credentials including email address and password.
  * @x-autobe-authorization-type login
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Implement customer login by:
- * 1. Find customer record in shopping_mall_customers table by email
- * 2. Verify customer status is 'active' (not banned or deleted)
- * 3. Compare provided password hash with stored password_hash using bcrypt
- * 4. If valid, generate new JWT access token (expires in 15 minutes) and refresh token (expires in 7 days)
- * 5. Insert new session record into shopping_mall_customer_sessions with both tokens and customer_id
- * 6. Return tokens in IAuthorized response
+ * @x-autobe-specification Implement customer login by: 1. Find customer record
+ *   in shopping_mall_customers table by email 2. Verify customer status is
+ *   'active' (not banned or deleted) 3. Compare provided password hash with
+ *   stored password_hash using bcrypt 4. If valid, generate new JWT access
+ *   token (expires in 15 minutes) and refresh token (expires in 7 days) 5.
+ *   Insert new session record into shopping_mall_customer_sessions with both
+ *   tokens and customer_id 6. Return tokens in IAuthorized response
  *
  * Error handling:
  * - Return 401 if customer not found or password incorrect
@@ -240,13 +241,13 @@ export namespace login {
  * @param props.body Refresh token for extending customer authentication session.
  * @x-autobe-authorization-type refresh
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Implement customer token refresh by:
- * 1. Validate the provided refresh token signature and expiration
- * 2. Find the corresponding session record in shopping_mall_customer_sessions table
- * 3. Verify the associated customer record exists and has 'active' status
- * 4. Generate new JWT access token (expires in 15 minutes) and new refresh token (expires in 7 days)
- * 5. Update the shopping_mall_customer_sessions record with new tokens
- * 6. Return new tokens in IAuthorized response
+ * @x-autobe-specification Implement customer token refresh by: 1. Validate the
+ *   provided refresh token signature and expiration 2. Find the corresponding
+ *   session record in shopping_mall_customer_sessions table 3. Verify the
+ *   associated customer record exists and has 'active' status 4. Generate new
+ *   JWT access token (expires in 15 minutes) and new refresh token (expires in
+ *   7 days) 5. Update the shopping_mall_customer_sessions record with new
+ *   tokens 6. Return new tokens in IAuthorized response
  *
  * Error handling:
  * - Return 401 if refresh token is invalid, expired, or not found

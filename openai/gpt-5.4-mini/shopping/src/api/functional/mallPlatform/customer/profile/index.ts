@@ -18,7 +18,10 @@ import { IMallPlatformCustomerProfile } from "../../../../structures/IMallPlatfo
  * @param props.connection
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Resolve the authenticated customer from the current session, then load the associated mall_platform_customer_profiles record for that customer account. Return the full current customer profile for the authenticated account only.
+ * @x-autobe-specification Resolve the authenticated customer from the current
+ *   session, then load the associated mall_platform_customer_profiles record
+ *   for that customer account. Return the full current customer profile for the
+ *   authenticated account only.
  *
  * Do not accept any identifier in the path or request body. Do not expose other customers’ profile data. If the session does not belong to an authenticated customer, return an authorization error. If no profile record exists for the account, return an appropriate not-found error. This operation must remain read-only and must not create or modify any profile data.
  * @path /mallPlatform/customer/profile
@@ -75,7 +78,10 @@ export namespace at {
  * @param props.body The profile fields to update for the authenticated customer. Only customer identity and contact information may be changed.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Load the authenticated customer from the current session, then fetch the associated row from mall_platform_customer_profiles. Enforce ownership so the caller can update only their own profile record.
+ * @x-autobe-specification Load the authenticated customer from the current
+ *   session, then fetch the associated row from
+ *   mall_platform_customer_profiles. Enforce ownership so the caller can update
+ *   only their own profile record.
  *
  * Validate both display name and phone number before saving changes. Reject requests with missing, empty, or otherwise unsuitable profile values. Do not modify customer credentials, shipping addresses, orders, or any unrelated tables.
  *

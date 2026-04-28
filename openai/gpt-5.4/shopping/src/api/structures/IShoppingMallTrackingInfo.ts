@@ -10,64 +10,84 @@ export type IShoppingMallTrackingInfo = {
   /**
    * Unique identifier of this tracking information record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from `shopping_mall_tracking_infos.id`. Return the persisted tracking-information record UUID without transformation.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   `shopping_mall_tracking_infos.id`. Return the persisted
+     *   tracking-information record UUID without transformation.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Summary of the shipment package that this tracking information belongs to.
    *
-   * @x-autobe-database-schema-property shipment
-   * @x-autobe-specification Join `shopping_mall_shipments` on `shopping_mall_tracking_infos.shopping_mall_shipment_id = shopping_mall_shipments.id` and project the parent shipment as `IShoppingMallShipment.ISummary`. This relation represents the single shipment package that owns the tracking record.
+     * @x-autobe-database-schema-property shipment
+     * @x-autobe-specification Join `shopping_mall_shipments` on
+     *   `shopping_mall_tracking_infos.shopping_mall_shipment_id =
+     *   shopping_mall_shipments.id` and project the parent shipment as
+     *   `IShoppingMallShipment.ISummary`. This relation represents the single
+     *   shipment package that owns the tracking record.
    */
   shipment: IShoppingMallShipment.ISummary;
 
   /**
    * Name of the shipping carrier handling the shipment.
    *
-   * @x-autobe-database-schema-property carrier_name
-   * @x-autobe-specification Direct mapping from `shopping_mall_tracking_infos.carrier_name`. Persist and return the shipping carrier name entered for the shipment-level tracking record.
+     * @x-autobe-database-schema-property carrier_name
+     * @x-autobe-specification Direct mapping from
+     *   `shopping_mall_tracking_infos.carrier_name`. Persist and return the
+     *   shipping carrier name entered for the shipment-level tracking record.
    */
   carrier_name: string;
 
   /**
    * Carrier-issued tracking number used to follow the shipment in transit.
    *
-   * @x-autobe-database-schema-property tracking_number
-   * @x-autobe-specification Direct mapping from `shopping_mall_tracking_infos.tracking_number`. Return the carrier-issued tracking identifier that applies to the entire shipment package.
+     * @x-autobe-database-schema-property tracking_number
+     * @x-autobe-specification Direct mapping from
+     *   `shopping_mall_tracking_infos.tracking_number`. Return the
+     *   carrier-issued tracking identifier that applies to the entire shipment
+     *   package.
    */
   tracking_number: string;
 
   /**
    * Direct link to the carrier's tracking page for this shipment, or null when no URL was recorded.
    *
-   * @x-autobe-database-schema-property tracking_url
-   * @x-autobe-specification Direct mapping from nullable column `shopping_mall_tracking_infos.tracking_url`. Return the stored carrier tracking page URL when present; otherwise return null.
+     * @x-autobe-database-schema-property tracking_url
+     * @x-autobe-specification Direct mapping from nullable column
+     *   `shopping_mall_tracking_infos.tracking_url`. Return the stored carrier
+     *   tracking page URL when present; otherwise return null.
    */
   tracking_url: (string & tags.Format<"uri">) | null;
 
   /**
    * Timestamp when this tracking information record was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from `shopping_mall_tracking_infos.created_at`. Return the timestamp when this tracking information record was first created.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   `shopping_mall_tracking_infos.created_at`. Return the timestamp when
+     *   this tracking information record was first created.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when this tracking information record was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from `shopping_mall_tracking_infos.updated_at`. Return the timestamp of the most recent update to this tracking information record.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   `shopping_mall_tracking_infos.updated_at`. Return the timestamp of the
+     *   most recent update to this tracking information record.
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * Soft-deletion timestamp for this tracking information record, or null when the record is still active.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from nullable column `shopping_mall_tracking_infos.deleted_at`. Return the soft-deletion timestamp if the tracking information has been logically removed; otherwise return null.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from nullable column
+     *   `shopping_mall_tracking_infos.deleted_at`. Return the soft-deletion
+     *   timestamp if the tracking information has been logically removed;
+     *   otherwise return null.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -81,15 +101,15 @@ export namespace IShoppingMallTrackingInfo {
    */
   export type ICreate = {
     /**
-     * @x-autobe-database-schema-property carrier_name
+         * @x-autobe-database-schema-property carrier_name
      */
     carrier_name: string;
     /**
-     * @x-autobe-database-schema-property tracking_number
+         * @x-autobe-database-schema-property tracking_number
      */
     tracking_number: string;
     /**
-     * @x-autobe-database-schema-property tracking_url
+         * @x-autobe-database-schema-property tracking_url
      */
     tracking_url?: (string & tags.Format<"uri">) | null | undefined;
   };
@@ -101,24 +121,37 @@ export namespace IShoppingMallTrackingInfo {
     /**
      * Name of the shipping carrier responsible for the shipment.
      *
-     * @x-autobe-database-schema-property carrier_name
-     * @x-autobe-specification Direct mapping to shopping_mall_tracking_infos.carrier_name. Accept the replacement shipping carrier name for the addressed tracking record after shipment ownership and record-to-shipment integrity are verified. This value participates in the unique (carrier_name, tracking_number) constraint together with tracking_number.
+         * @x-autobe-database-schema-property carrier_name
+         * @x-autobe-specification Direct mapping to
+         *   shopping_mall_tracking_infos.carrier_name. Accept the replacement
+         *   shipping carrier name for the addressed tracking record after
+         *   shipment ownership and record-to-shipment integrity are verified.
+         *   This value participates in the unique (carrier_name,
+         *   tracking_number) constraint together with tracking_number.
      */
     carrier_name?: string | undefined;
 
     /**
      * Carrier-issued tracking number used to trace the shipment in transit.
      *
-     * @x-autobe-database-schema-property tracking_number
-     * @x-autobe-specification Direct mapping to shopping_mall_tracking_infos.tracking_number. Accept the replacement carrier-issued tracking identifier for the addressed shipment tracking record. Validate uniqueness in combination with carrier_name against other active tracking records before saving.
+         * @x-autobe-database-schema-property tracking_number
+         * @x-autobe-specification Direct mapping to
+         *   shopping_mall_tracking_infos.tracking_number. Accept the
+         *   replacement carrier-issued tracking identifier for the addressed
+         *   shipment tracking record. Validate uniqueness in combination with
+         *   carrier_name against other active tracking records before saving.
      */
     tracking_number?: string | undefined;
 
     /**
      * Optional direct URL to the carrier's tracking page for this shipment.
      *
-     * @x-autobe-database-schema-property tracking_url
-     * @x-autobe-specification Direct mapping to shopping_mall_tracking_infos.tracking_url. Accept either a URI string or null to update or clear the optional direct carrier tracking page link for the shipment's tracking record. Preserve nullability because the database column is optional.
+         * @x-autobe-database-schema-property tracking_url
+         * @x-autobe-specification Direct mapping to
+         *   shopping_mall_tracking_infos.tracking_url. Accept either a URI
+         *   string or null to update or clear the optional direct carrier
+         *   tracking page link for the shipment's tracking record. Preserve
+         *   nullability because the database column is optional.
      */
     tracking_url?: (string & tags.Format<"uri">) | null | undefined;
   };

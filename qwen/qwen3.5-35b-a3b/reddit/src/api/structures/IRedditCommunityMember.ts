@@ -18,8 +18,9 @@ export type IRedditCommunityMember = {
    *
    * A UUID (Universally Unique Identifier) that serves as the primary key for the member entity. This ID is used to reference the member across all system operations including posts, comments, votes, subscriptions, and moderator roles. The ID is immutable and remains constant throughout the member's account lifecycle.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from reddit_community_members.id. Type: UUID. Immutable primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from reddit_community_members.id.
+     *   Type: UUID. Immutable primary key.
    */
   id: string & tags.Format<"uuid">;
 
@@ -28,8 +29,11 @@ export type IRedditCommunityMember = {
    *
    * This is the primary login credential that must be valid (proper email format) and unique across all users in the system. The email address is case-insensitive for comparison purposes. Members cannot change their email address through the API—this requires a separate email update process for security reasons.
    *
-   * @x-autobe-database-schema-property email
-   * @x-autobe-specification Direct mapping from reddit_community_members.email. Type: string, format: email. Unique constraint enforced. Case-insensitive comparison. Immutable via standard update API.
+     * @x-autobe-database-schema-property email
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_members.email. Type: string, format: email. Unique
+     *   constraint enforced. Case-insensitive comparison. Immutable via
+     *   standard update API.
    */
   email: string & tags.Format<"email">;
 
@@ -38,8 +42,10 @@ export type IRedditCommunityMember = {
    *
    * This is the username that appears in posts, comments, and profile pages. It must be unique across all users and cannot be duplicated. Users can change their username through profile updates, but each new username must still be unique and follow platform naming policies. Username is used for mentions and user identification throughout the system.
    *
-   * @x-autobe-database-schema-property username
-   * @x-autobe-specification Direct mapping from reddit_community_members.username. Type: string. Unique constraint enforced. Can be updated via profile update endpoint.
+     * @x-autobe-database-schema-property username
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_members.username. Type: string. Unique constraint
+     *   enforced. Can be updated via profile update endpoint.
    */
   username: string;
 
@@ -48,8 +54,10 @@ export type IRedditCommunityMember = {
    *
    * This is the exact date and time when the member first registered and created their account. The timestamp is stored with timezone information (UTC) and is immutable—once set, it never changes. This field is useful for auditing, displaying account age, and determining member tenure on the platform.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from reddit_community_members.created_at. Type: DateTime with timezone (timestamptz). Immutable. Stored in UTC.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_members.created_at. Type: DateTime with timezone
+     *   (timestamptz). Immutable. Stored in UTC.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -58,8 +66,11 @@ export type IRedditCommunityMember = {
    *
    * This timestamp is automatically updated by the database whenever the member record is modified, including username changes, profile updates, or other modifications. It provides a quick way to check if a member profile has been recently updated without comparing individual fields. This is distinct from account creation or deletion timestamps.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from reddit_community_members.updated_at. Type: DateTime with timezone (timestamptz). Automatically updated on record modification by database trigger.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_members.updated_at. Type: DateTime with timezone
+     *   (timestamptz). Automatically updated on record modification by database
+     *   trigger.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -68,8 +79,11 @@ export type IRedditCommunityMember = {
    *
    * This field is null for active accounts and contains a timestamp when the account has been soft-deleted. Soft deletion preserves the account data in the database while marking it as deleted, allowing for data recovery and maintaining referential integrity with posts, comments, votes, and other records. When null, the account is active.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from reddit_community_members.deleted_at. Type: DateTime with timezone (timestamptz), nullable. Null indicates active account. Populated on soft deletion.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_members.deleted_at. Type: DateTime with timezone
+     *   (timestamptz), nullable. Null indicates active account. Populated on
+     *   soft deletion.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -87,8 +101,10 @@ export namespace IRedditCommunityMember {
      *
      * Used as the primary login credential along with password. The email must correspond to an existing, active member account in the system.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from reddit_community_members.email. Email must exist in DB and be active (not soft-deleted). Used for JWT claim generation.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   reddit_community_members.email. Email must exist in DB and be
+         *   active (not soft-deleted). Used for JWT claim generation.
      */
     email: string & tags.Format<"email">;
 
@@ -97,8 +113,10 @@ export namespace IRedditCommunityMember {
      *
      * Sent in plaintext and hashed server-side using bcrypt for authentication against the stored password_hash. Never stored or exposed in responses.
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification Plain text password sent by client. Server-side bcrypt hashing converts this to password_hash for DB storage comparison. Security: password is never stored or logged.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification Plain text password sent by client.
+         *   Server-side bcrypt hashing converts this to password_hash for DB
+         *   storage comparison. Security: password is never stored or logged.
      */
     password: string;
 
@@ -107,7 +125,10 @@ export namespace IRedditCommunityMember {
      *
      * Captured for audit trail and session origin tracking. Helps identify the source of authentication requests for security monitoring.
      *
-     * @x-autobe-specification Session context field: client-provided URI of the page where login was initiated. Not DB-mapped but captured for audit trail and session origin tracking. Required for member self-authentication.
+         * @x-autobe-specification Session context field: client-provided URI of
+         *   the page where login was initiated. Not DB-mapped but captured for
+         *   audit trail and session origin tracking. Required for member
+         *   self-authentication.
      */
     href: string & tags.Format<"uri">;
 
@@ -116,7 +137,10 @@ export namespace IRedditCommunityMember {
      *
      * Captured for audit trail and session origin tracking. Helps identify the source of authentication requests for security monitoring.
      *
-     * @x-autobe-specification Session context field: client-provided Referrer HTTP header value indicating the page that linked to the login form. Not DB-mapped but captured for audit trail and session origin tracking. Required for member self-authentication.
+         * @x-autobe-specification Session context field: client-provided
+         *   Referrer HTTP header value indicating the page that linked to the
+         *   login form. Not DB-mapped but captured for audit trail and session
+         *   origin tracking. Required for member self-authentication.
      */
     referrer: string & tags.Format<"uri">;
 
@@ -125,7 +149,10 @@ export namespace IRedditCommunityMember {
      *
      * Captured for audit trail and session origin tracking. In Server-Side Rendering scenarios, client may not know its own IP so server provides fallback value.
      *
-     * @x-autobe-specification Session context field: client-provided IP address (optional). In SSR, client may not know its IP so server provides fallback. Not DB-mapped at login time but captured for audit trail. IPv4 format.
+         * @x-autobe-specification Session context field: client-provided IP
+         *   address (optional). In SSR, client may not know its IP so server
+         *   provides fallback. Not DB-mapped at login time but captured for
+         *   audit trail. IPv4 format.
      */
     ip?: (string & tags.Format<"ipv4">) | undefined;
   };
@@ -143,7 +170,8 @@ export namespace IRedditCommunityMember {
      *
      * UUID format matching the member's primary key in the database. Used to identify the user in all subsequent API requests.
      *
-     * @x-autobe-specification Extracted from JWT claims (member identity). Format: UUID.
+         * @x-autobe-specification Extracted from JWT claims (member identity).
+         *   Format: UUID.
      */
     id: string & tags.Format<"uuid">;
 
@@ -152,7 +180,8 @@ export namespace IRedditCommunityMember {
      *
      * Valid email format used for authentication. Used to identify the user's account.
      *
-     * @x-autobe-specification Extracted from JWT claims (member email). Format: email.
+         * @x-autobe-specification Extracted from JWT claims (member email).
+         *   Format: email.
      */
     email: string & tags.Format<"email">;
 
@@ -161,7 +190,7 @@ export namespace IRedditCommunityMember {
      *
      * Member's chosen display name that uniquely identifies them across the platform.
      *
-     * @x-autobe-specification Extracted from JWT claims (member username).
+         * @x-autobe-specification Extracted from JWT claims (member username).
      */
     username: string;
 
@@ -170,7 +199,8 @@ export namespace IRedditCommunityMember {
      *
      * ISO 8601 formatted datetime when the member account was created. Used for auditing and account age verification.
      *
-     * @x-autobe-specification Extracted from JWT claims (member created_at). Format: date-time.
+         * @x-autobe-specification Extracted from JWT claims (member
+         *   created_at). Format: date-time.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -179,7 +209,8 @@ export namespace IRedditCommunityMember {
      *
      * ISO 8601 formatted datetime when the member account was last updated. Used for tracking account changes.
      *
-     * @x-autobe-specification Extracted from JWT claims (member updated_at). Format: date-time.
+         * @x-autobe-specification Extracted from JWT claims (member
+         *   updated_at). Format: date-time.
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -188,14 +219,16 @@ export namespace IRedditCommunityMember {
      *
      * ISO 8601 formatted datetime when the member account was soft-deleted, or null if the account is active. Used to identify deleted accounts.
      *
-     * @x-autobe-specification Extracted from JWT claims (member deleted_at). Nullable. Format: date-time or null.
+         * @x-autobe-specification Extracted from JWT claims (member
+         *   deleted_at). Nullable. Format: date-time or null.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
 
     /**
      * Authorization token.
      *
-     * @x-autobe-specification Authorization token comes from the session table.
+         * @x-autobe-specification Authorization token comes from the session
+         *   table.
      */
     token: IAuthorizationToken;
   };
@@ -211,8 +244,9 @@ export namespace IRedditCommunityMember {
      *
      * A UUID that uniquely identifies this member within the system. This identifier is used for all API references to this member and should be included when retrieving member-specific resources.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from reddit_community_members.id. UUID format.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   reddit_community_members.id. UUID format.
      */
     id: string & tags.Format<"uuid">;
 
@@ -221,8 +255,9 @@ export namespace IRedditCommunityMember {
      *
      * This is the publicly visible name that appears in posts, comments, and other user-facing content. The username must be unique across all members in the system.
      *
-     * @x-autobe-database-schema-property username
-     * @x-autobe-specification Direct mapping from reddit_community_members.username. Unique display name.
+         * @x-autobe-database-schema-property username
+         * @x-autobe-specification Direct mapping from
+         *   reddit_community_members.username. Unique display name.
      */
     username: string;
 
@@ -231,8 +266,10 @@ export namespace IRedditCommunityMember {
      *
      * This is the account creation date and time in ISO 8601 format with timezone information. It provides context for understanding account age and member history on the platform.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from reddit_community_members.created_at. ISO 8601 datetime with timezone.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_community_members.created_at. ISO 8601 datetime with
+         *   timezone.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -241,8 +278,10 @@ export namespace IRedditCommunityMember {
      *
      * This is the last modification date and time in ISO 8601 format with timezone information. It indicates when member profile data was most recently modified.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from reddit_community_members.updated_at. ISO 8601 datetime with timezone.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_community_members.updated_at. ISO 8601 datetime with
+         *   timezone.
      */
     updated_at: string & tags.Format<"date-time">;
   };
@@ -258,7 +297,10 @@ export namespace IRedditCommunityMember {
      *
      * Optional parameter to search members by username. Uses case-insensitive partial matching (LIKE operator), allowing flexible search for usernames containing the specified text.
      *
-     * @x-autobe-specification Optional username search filter. Maps to reddit_community_members.username with LIKE operator, case-insensitive matching. Supports partial matches for flexible search.
+         * @x-autobe-specification Optional username search filter. Maps to
+         *   reddit_community_members.username with LIKE operator,
+         *   case-insensitive matching. Supports partial matches for flexible
+         *   search.
      */
     username?: string | undefined;
 
@@ -267,7 +309,9 @@ export namespace IRedditCommunityMember {
      *
      * Optional parameter to search members by email address. Uses case-insensitive partial matching (LIKE operator), allowing flexible search for emails containing the specified text.
      *
-     * @x-autobe-specification Optional email search filter. Maps to reddit_community_members.email with LIKE operator, case-insensitive matching. Supports partial matches for flexible search.
+         * @x-autobe-specification Optional email search filter. Maps to
+         *   reddit_community_members.email with LIKE operator, case-insensitive
+         *   matching. Supports partial matches for flexible search.
      */
     email?: string | undefined;
 
@@ -276,7 +320,10 @@ export namespace IRedditCommunityMember {
      *
      * Filters members by account state. Use 'active' to show only active accounts (deleted_at is NULL) or 'deleted' to show only soft-deleted accounts (deleted_at is NOT NULL). If omitted, only active accounts are returned by default.
      *
-     * @x-autobe-specification Filter by account status. Computed from deleted_at: 'active' when deleted_at IS NULL, 'deleted' when deleted_at IS NOT NULL. Used to include or exclude soft-deleted accounts from search results.
+         * @x-autobe-specification Filter by account status. Computed from
+         *   deleted_at: 'active' when deleted_at IS NULL, 'deleted' when
+         *   deleted_at IS NOT NULL. Used to include or exclude soft-deleted
+         *   accounts from search results.
      */
     status?: "active" | "deleted" | undefined;
 
@@ -285,7 +332,10 @@ export namespace IRedditCommunityMember {
      *
      * Filters members by account creation timestamp. Both start and end fields are required. Returns accounts created between these dates (inclusive). Uses ISO 8601 date-time format with timezone.
      *
-     * @x-autobe-specification Optional date range filter for account creation date. Both start and end are required. Filters members where created_at >= start AND created_at <= end. Uses ISO 8601 date-time format with timezone (timestamptz).
+         * @x-autobe-specification Optional date range filter for account
+         *   creation date. Both start and end are required. Filters members
+         *   where created_at >= start AND created_at <= end. Uses ISO 8601
+         *   date-time format with timezone (timestamptz).
      */
     created_at_range?:
       | {
@@ -299,7 +349,10 @@ export namespace IRedditCommunityMember {
      *
      * Filters members by the timestamp of their last update. Both start and end fields are required. Returns accounts that were updated between these dates (inclusive). Uses ISO 8601 date-time format with timezone.
      *
-     * @x-autobe-specification Optional date range filter for last account update. Both start and end are required. Filters members where updated_at >= start AND updated_at <= end. Uses ISO 8601 date-time format with timezone (timestamptz).
+         * @x-autobe-specification Optional date range filter for last account
+         *   update. Both start and end are required. Filters members where
+         *   updated_at >= start AND updated_at <= end. Uses ISO 8601 date-time
+         *   format with timezone (timestamptz).
      */
     updated_at_range?:
       | {
@@ -313,7 +366,9 @@ export namespace IRedditCommunityMember {
      *
      * Required parameter specifying which page of results to return. Uses 1-indexed numbering (first page is 1). Minimum value is 1. Controls cursor-based pagination for large result sets.
      *
-     * @x-autobe-specification Required pagination parameter. Page number (1-indexed) for cursor-based pagination. Minimum value is 1. Controls which page of results to return.
+         * @x-autobe-specification Required pagination parameter. Page number
+         *   (1-indexed) for cursor-based pagination. Minimum value is 1.
+         *   Controls which page of results to return.
      */
     page: number & tags.Type<"int32"> & tags.Minimum<1>;
 
@@ -322,7 +377,10 @@ export namespace IRedditCommunityMember {
      *
      * Optional parameter specifying the maximum number of records to return per page. Must be between 1 and 100. Defaults to 20 if not specified. Higher values return more records per page but may impact performance.
      *
-     * @x-autobe-specification Optional pagination parameter. Maximum number of records to return per page. Must be between 1 and 100 (inclusive). Defaults to 20 if not specified. Controls page size for paginated results.
+         * @x-autobe-specification Optional pagination parameter. Maximum number
+         *   of records to return per page. Must be between 1 and 100
+         *   (inclusive). Defaults to 20 if not specified. Controls page size
+         *   for paginated results.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -346,7 +404,12 @@ export namespace IRedditCommunityMember {
      *
      * The token is validated against the reddit_community_member_sessions table to verify the session exists and has not expired. Upon successful validation, new JWT tokens are issued and the session record is updated with the new tokens and extended expiration time.
      *
-     * @x-autobe-specification Request parameter: refresh_token extracted from request body. UUID format required. Downstream validates against reddit_community_member_sessions.refresh_token column, verifies session.expired_at > now, generates new access/refresh tokens, updates session record with new tokens and extended expired_at.
+         * @x-autobe-specification Request parameter: refresh_token extracted
+         *   from request body. UUID format required. Downstream validates
+         *   against reddit_community_member_sessions.refresh_token column,
+         *   verifies session.expired_at > now, generates new access/refresh
+         *   tokens, updates session record with new tokens and extended
+         *   expired_at.
      */
     refresh_token: string & tags.Format<"uuid">;
   };
@@ -372,8 +435,11 @@ export namespace IRedditCommunityMember {
      *
      * Must be a valid email format and unique across all users in the system. The email serves as the primary login credential along with the password. It is used for account verification, password resets, and official communications.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from reddit_community_members.email. Unique constraint enforced by database. Valid email format required. Used as primary login credential.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   reddit_community_members.email. Unique constraint enforced by
+         *   database. Valid email format required. Used as primary login
+         *   credential.
      */
     email: string & tags.Format<"email">;
 
@@ -382,8 +448,11 @@ export namespace IRedditCommunityMember {
      *
      * This field accepts the password chosen by the user during registration. The backend will hash this value using a secure algorithm (e.g., bcrypt) before storing it in the database. Passwords must meet minimum strength requirements (typically minimum 8 characters with mixed case, numbers, and special characters) as enforced by the backend validation.
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification User-provided plain text password that is hashed by backend using bcrypt (or similar algorithm) before storing as password_hash in database. Password strength validation (min length, complexity) is enforced by backend.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification User-provided plain text password that is
+         *   hashed by backend using bcrypt (or similar algorithm) before
+         *   storing as password_hash in database. Password strength validation
+         *   (min length, complexity) is enforced by backend.
      */
     password: string & tags.Format<"password">;
 
@@ -392,8 +461,11 @@ export namespace IRedditCommunityMember {
      *
      * A unique username that identifies the member across the platform. Must be unique across all users. This name will be used for profile display, mentions in posts and comments, and public identification. Cannot be duplicated by other users.
      *
-     * @x-autobe-database-schema-property username
-     * @x-autobe-specification Direct mapping from reddit_community_members.username. Unique constraint enforced by database. User's chosen display name that identifies them across the platform.
+         * @x-autobe-database-schema-property username
+         * @x-autobe-specification Direct mapping from
+         *   reddit_community_members.username. Unique constraint enforced by
+         *   database. User's chosen display name that identifies them across
+         *   the platform.
      */
     username: string;
 
@@ -402,7 +474,12 @@ export namespace IRedditCommunityMember {
      *
      * Captures the complete URL of the page from which the user initiated the registration process. This field is stored in the session metadata for analytics and tracking purposes. Required field - the client application must provide the current page URL at the time of registration submission.
      *
-     * @x-autobe-specification Session context field: captures the URL of the page from which the registration was initiated. Not stored in reddit_community_members table; instead stored in reddit_community_member_sessions table as part of session metadata. Used for analytics and tracking registration sources. Required field - client must provide the current page URL.
+         * @x-autobe-specification Session context field: captures the URL of
+         *   the page from which the registration was initiated. Not stored in
+         *   reddit_community_members table; instead stored in
+         *   reddit_community_member_sessions table as part of session metadata.
+         *   Used for analytics and tracking registration sources. Required
+         *   field - client must provide the current page URL.
      */
     href: string & tags.Format<"uri">;
 
@@ -411,7 +488,12 @@ export namespace IRedditCommunityMember {
      *
      * Captures the HTTP Referer header value, indicating which page the user was on before navigating to the registration page. This helps track the user journey and understand acquisition sources. The value is stored in session metadata for analytics. Required field - client must capture and submit the referrer header value.
      *
-     * @x-autobe-specification Session context field: captures the referring page URL (HTTP Referer header value). Not stored in reddit_community_members table; instead stored in reddit_community_member_sessions table as part of session metadata. Used to track which page directed the user to the registration page. Required field.
+         * @x-autobe-specification Session context field: captures the referring
+         *   page URL (HTTP Referer header value). Not stored in
+         *   reddit_community_members table; instead stored in
+         *   reddit_community_member_sessions table as part of session metadata.
+         *   Used to track which page directed the user to the registration
+         *   page. Required field.
      */
     referrer: string & tags.Format<"uri">;
 
@@ -420,7 +502,13 @@ export namespace IRedditCommunityMember {
      *
      * Captures the IP address of the device used for registration. This is stored in session metadata for security auditing and fraud detection. In Server Side Rendering (SSR) scenarios, the client may not have access to its own IP address, making this field optional. If not provided, the server typically captures the IP from the request headers. Format: IPv4 address string (e.g., "192.168.1.1").
      *
-     * @x-autobe-specification Session context field: client IP address captured during registration. Not stored in reddit_community_members table; instead stored in reddit_community_member_sessions table as part of session metadata. Optional field - in Server Side Rendering (SSR) scenarios, the client may not know its own IP, so the server can capture it as a fallback. Format: IPv4 address string.
+         * @x-autobe-specification Session context field: client IP address
+         *   captured during registration. Not stored in
+         *   reddit_community_members table; instead stored in
+         *   reddit_community_member_sessions table as part of session metadata.
+         *   Optional field - in Server Side Rendering (SSR) scenarios, the
+         *   client may not know its own IP, so the server can capture it as a
+         *   fallback. Format: IPv4 address string.
      */
     ip?: (string & tags.Format<"ipv4">) | undefined;
   };
@@ -436,8 +524,11 @@ export namespace IRedditCommunityMember {
      *
      * This is the username that uniquely identifies the member and is shown in posts, comments, and profile pages. It must be unique across all users and cannot be duplicated. When provided in an update request, it must be a non-empty string.
      *
-     * @x-autobe-database-schema-property username
-     * @x-autobe-specification Maps to username column in reddit_community_members. This is a transformation from internal username to user-facing display_name. Must be non-empty if provided.
+         * @x-autobe-database-schema-property username
+         * @x-autobe-specification Maps to username column in
+         *   reddit_community_members. This is a transformation from internal
+         *   username to user-facing display_name. Must be non-empty if
+         *   provided.
      */
     display_name?: string | undefined;
 
@@ -446,7 +537,10 @@ export namespace IRedditCommunityMember {
      *
      * This free-form text field allows members to add additional information about themselves that appears on their profile. It is optional and can be updated at any time. Managed through a separate Profile entity.
      *
-     * @x-autobe-specification Profile field mapped through separate Profile entity. Optional bio text that appears on member's public profile page. Updated via profile update endpoint that joins with profile table.
+         * @x-autobe-specification Profile field mapped through separate Profile
+         *   entity. Optional bio text that appears on member's public profile
+         *   page. Updated via profile update endpoint that joins with profile
+         *   table.
      */
     bio?: string | undefined;
 
@@ -455,7 +549,10 @@ export namespace IRedditCommunityMember {
      *
      * This field contains the URL where the member's profile image is hosted. It is optional and can be updated to change the member's visual representation on the platform. Managed through a separate Profile entity.
      *
-     * @x-autobe-specification Profile field mapped through separate Profile entity. Optional avatar image URL that appears on member's public profile page. Updated via profile update endpoint that joins with profile table.
+         * @x-autobe-specification Profile field mapped through separate Profile
+         *   entity. Optional avatar image URL that appears on member's public
+         *   profile page. Updated via profile update endpoint that joins with
+         *   profile table.
      */
     avatar?: string | undefined;
   };
@@ -478,8 +575,9 @@ export namespace IRedditCommunityMember {
      *
      * This UUID uniquely identifies the member account in the system and serves as the primary key for all member-related queries.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from reddit_community_members.id. UUID format.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   reddit_community_members.id. UUID format.
      */
     id: string & tags.Format<"uuid">;
 
@@ -488,8 +586,9 @@ export namespace IRedditCommunityMember {
      *
      * The username is case-sensitive and serves as the primary public identifier for the member. It appears throughout the platform on posts, comments, and profile displays.
      *
-     * @x-autobe-database-schema-property username
-     * @x-autobe-specification Direct mapping from reddit_community_members.username.
+         * @x-autobe-database-schema-property username
+         * @x-autobe-specification Direct mapping from
+         *   reddit_community_members.username.
      */
     username: string;
 
@@ -498,7 +597,13 @@ export namespace IRedditCommunityMember {
      *
      * Karma is calculated by summing all upvotes and subtracting all downvotes received on the member's posts and comments. A higher karma score indicates positive community engagement and trusted content creation.
      *
-     * @x-autobe-specification Aggregation: karmaScore = SUM(CASE WHEN vote_type = 'upvote' THEN 1 ELSE -1 END) from reddit_community_post_votes WHERE reddit_community_member_id matches, plus SUM(CASE WHEN vote_type = 'upvote' THEN 1 ELSE -1 END) from reddit_community_comment_votes WHERE reddit_community_member_id matches. This represents total reputation from all votes on member's content.
+         * @x-autobe-specification Aggregation: karmaScore = SUM(CASE WHEN
+         *   vote_type = 'upvote' THEN 1 ELSE -1 END) from
+         *   reddit_community_post_votes WHERE reddit_community_member_id
+         *   matches, plus SUM(CASE WHEN vote_type = 'upvote' THEN 1 ELSE -1
+         *   END) from reddit_community_comment_votes WHERE
+         *   reddit_community_member_id matches. This represents total
+         *   reputation from all votes on member's content.
      */
     karmaScore: number & tags.Type<"int32">;
 
@@ -507,7 +612,11 @@ export namespace IRedditCommunityMember {
      *
      * This array contains complete information about every post the member has authored, including text posts, link posts, and image posts. Each entry shows the post title, type, vote score, comment count, and when it was created. Posts are sorted by most recent first, with soft-deleted posts excluded.
      *
-     * @x-autobe-specification Composition: JOIN from reddit_community_posts WHERE reddit_community_member_id = memberId AND deleted_at IS NULL. Returns array of post summaries ordered by created_at DESC. Each post includes id, title, post_type, vote_score, comment_count, created_at, and author/community references.
+         * @x-autobe-specification Composition: JOIN from reddit_community_posts
+         *   WHERE reddit_community_member_id = memberId AND deleted_at IS NULL.
+         *   Returns array of post summaries ordered by created_at DESC. Each
+         *   post includes id, title, post_type, vote_score, comment_count,
+         *   created_at, and author/community references.
      */
     posts: IRedditCommunityPost.ISummary[];
 
@@ -516,7 +625,12 @@ export namespace IRedditCommunityMember {
      *
      * This array contains every comment the member has made, including top-level comments and nested replies. Each entry shows the comment content preview, vote score, when it was created, and which post it belongs to. Comments are sorted by most recent first, with soft-deleted comments excluded.
      *
-     * @x-autobe-specification Composition: JOIN from reddit_community_comments WHERE reddit_community_member_id = memberId AND deleted_at IS NULL. Returns array of comment summaries ordered by created_at DESC. Each comment includes id, content, vote_count, created_at, updated_at, deleted_at, is_top_level, reply_count, and author reference.
+         * @x-autobe-specification Composition: JOIN from
+         *   reddit_community_comments WHERE reddit_community_member_id =
+         *   memberId AND deleted_at IS NULL. Returns array of comment summaries
+         *   ordered by created_at DESC. Each comment includes id, content,
+         *   vote_count, created_at, updated_at, deleted_at, is_top_level,
+         *   reply_count, and author reference.
      */
     comments: IRedditCommunityComment.ISummary[];
   };

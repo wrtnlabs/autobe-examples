@@ -22,7 +22,8 @@ import { IRedditCloneCommunitySubscription } from "../../../../../structures/IRe
  * @param props.body Member identifier to create the subscription for, linking the member to the specified community.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Create a new subscription record in reddit_clone_community_subscriptions table.
+ * @x-autobe-specification Create a new subscription record in
+ *   reddit_clone_community_subscriptions table.
  *
  * 1. Validate that the communityId exists and the community is not deleted (deleted_at is null).
  * 2. Validate that the member_id from request body exists and the member account is active.
@@ -135,7 +136,8 @@ export namespace create {
  * @param props.subscriptionId UUID of the subscription to delete (global scope)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query the reddit_clone_community_subscriptions table for the subscription with the given subscriptionId.
+ * @x-autobe-specification Query the reddit_clone_community_subscriptions table
+ *   for the subscription with the given subscriptionId.
  *
  * Validate that:
  * 1. The subscription exists and is not already deleted (deleted_at is null)

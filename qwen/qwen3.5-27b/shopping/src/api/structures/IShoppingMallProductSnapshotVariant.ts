@@ -16,8 +16,10 @@ export type IShoppingMallProductSnapshotVariant = {
    *
    * This UUID identifies a specific variant snapshot within a product snapshot. Each variant snapshot is uniquely identifiable for audit trail purposes and dispute resolution.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_product_snapshot_variants.id. UUID primary key for the variant snapshot record.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_product_snapshot_variants.id. UUID primary key for the
+     *   variant snapshot record.
    */
   id: string & tags.Format<"uuid">;
 
@@ -26,8 +28,10 @@ export type IShoppingMallProductSnapshotVariant = {
    *
    * This unique identifier distinguishes different variants of the same product (e.g., different colors, sizes). The SKU code is preserved as it existed when the product was modified, ensuring accurate historical records.
    *
-   * @x-autobe-database-schema-property sku_code
-   * @x-autobe-specification Direct mapping from shopping_mall_product_snapshot_variants.sku_code. Required string field.
+     * @x-autobe-database-schema-property sku_code
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_product_snapshot_variants.sku_code. Required string
+     *   field.
    */
   sku_code: string;
 
@@ -36,8 +40,11 @@ export type IShoppingMallProductSnapshotVariant = {
    *
    * If this value is null, the variant uses the product's base price. If set, it represents a price override specific to this variant (e.g., larger sizes may cost more). This price is preserved for audit purposes and order verification.
    *
-   * @x-autobe-database-schema-property price
-   * @x-autobe-specification Direct mapping from shopping_mall_product_snapshot_variants.price. Nullable Float field representing variant-specific price override. Null indicates the variant uses the product's base price.
+     * @x-autobe-database-schema-property price
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_product_snapshot_variants.price. Nullable Float field
+     *   representing variant-specific price override. Null indicates the
+     *   variant uses the product's base price.
    */
   price: number | null;
 
@@ -46,7 +53,11 @@ export type IShoppingMallProductSnapshotVariant = {
    *
    * Each option represents a specific attribute of the variant, such as color, size, material, or other customizable features. For example, a variant might have options like Color: Red, Size: Large, Material: Cotton. These options are preserved exactly as they existed at the time of product modification.
    *
-   * @x-autobe-specification Computed array loaded via JOIN to shopping_mall_product_snapshot_variant_options table. Each option is a key-value pair with 'key' (option name like 'Color') and 'value' (option value like 'Red'). Array type is IShoppingMallProductSnapshotVariantOption[].
+     * @x-autobe-specification Computed array loaded via JOIN to
+     *   shopping_mall_product_snapshot_variant_options table. Each option is a
+     *   key-value pair with 'key' (option name like 'Color') and 'value'
+     *   (option value like 'Red'). Array type is
+     *   IShoppingMallProductSnapshotVariantOption[].
    */
   options: IShoppingMallProductSnapshotVariantOption[];
 
@@ -55,8 +66,10 @@ export type IShoppingMallProductSnapshotVariant = {
    *
    * Records the exact moment when the variant state was captured as part of a product modification. This provides temporal ordering of all product state changes and is critical for audit trail verification.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from shopping_mall_product_snapshot_variants.created_at. DateTime with timezone indicating when the variant snapshot was created.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_product_snapshot_variants.created_at. DateTime with
+     *   timezone indicating when the variant snapshot was created.
    */
   created_at: string & tags.Format<"date-time">;
 };

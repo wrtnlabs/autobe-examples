@@ -25,7 +25,8 @@ import { IPageIEcommerceMallCancellationRequest } from "../../../../../structure
  * @param props.body Search filters, pagination parameters, and sorting options for cancellation requests
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Query ecommerce_mall_cancellation_requests table filtered by order_item_id matching the path parameter orderItemId.
+ * @x-autobe-specification Query ecommerce_mall_cancellation_requests table
+ *   filtered by order_item_id matching the path parameter orderItemId.
  *
  * Apply authorization context:
  * - Customers: verify order_item_id belongs to their order through join with order_items and orders tables

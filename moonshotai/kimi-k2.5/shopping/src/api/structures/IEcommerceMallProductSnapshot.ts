@@ -11,55 +11,64 @@ export type IEcommerceMallProductSnapshot = {
   /**
    * Unique identifier for this product snapshot.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_product_snapshots.id.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_product_snapshots.id.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Product name at the time the snapshot was captured.
    *
-   * @x-autobe-database-schema-property name
-   * @x-autobe-specification Direct mapping from ecommerce_mall_product_snapshots.name.
+     * @x-autobe-database-schema-property name
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_product_snapshots.name.
    */
   name: string;
 
   /**
    * Product description at the time the snapshot was captured.
    *
-   * @x-autobe-database-schema-property description
-   * @x-autobe-specification Direct mapping from ecommerce_mall_product_snapshots.description.
+     * @x-autobe-database-schema-property description
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_product_snapshots.description.
    */
   description: string;
 
   /**
    * Base price of the product at the time the snapshot was captured.
    *
-   * @x-autobe-database-schema-property base_price
-   * @x-autobe-specification Direct mapping from ecommerce_mall_product_snapshots.base_price.
+     * @x-autobe-database-schema-property base_price
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_product_snapshots.base_price.
    */
   basePrice: number;
 
   /**
    * Timestamp when this snapshot was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_product_snapshots.created_at.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_product_snapshots.created_at.
    */
   createdAt: string & tags.Format<"date-time">;
 
   /**
    * Product category at the time the snapshot was captured.
    *
-   * @x-autobe-database-schema-property category
-   * @x-autobe-specification Join via ecommerce_mall_product_snapshots.category_id to ecommerce_mall_categories. Returns ISummary.
+     * @x-autobe-database-schema-property category
+     * @x-autobe-specification Join via
+     *   ecommerce_mall_product_snapshots.category_id to
+     *   ecommerce_mall_categories. Returns ISummary.
    */
   category: IEcommerceMallCategory.ISummary;
 
   /**
    * Product images associated with this snapshot.
    *
-   * @x-autobe-specification Load from ecommerce_mall_product_snapshot_images where product_snapshot_id matches this snapshot's id. Returns array of IEcommerceMallProductSnapshotImage.ISummary.
+     * @x-autobe-specification Load from ecommerce_mall_product_snapshot_images
+     *   where product_snapshot_id matches this snapshot's id. Returns array of
+     *   IEcommerceMallProductSnapshotImage.ISummary.
    */
   images: IEcommerceMallProductSnapshotImage.ISummary[];
 };
@@ -71,28 +80,40 @@ export namespace IEcommerceMallProductSnapshot {
     /**
      * Filter snapshots created on or after this timestamp (inclusive).
      *
-     * @x-autobe-specification Computed filter parameter. Applied to ecommerce_mall_product_snapshots.created_at as >= filter. When provided, only snapshots created at or after this timestamp are returned. Format: ISO 8601 date-time string.
+         * @x-autobe-specification Computed filter parameter. Applied to
+         *   ecommerce_mall_product_snapshots.created_at as >= filter. When
+         *   provided, only snapshots created at or after this timestamp are
+         *   returned. Format: ISO 8601 date-time string.
      */
     createdAtFrom: (string & tags.Format<"date-time">) | null;
 
     /**
      * Filter snapshots created on or before this timestamp (inclusive).
      *
-     * @x-autobe-specification Computed filter parameter. Applied to ecommerce_mall_product_snapshots.created_at as <= filter. When provided, only snapshots created at or before this timestamp are returned. Format: ISO 8601 date-time string.
+         * @x-autobe-specification Computed filter parameter. Applied to
+         *   ecommerce_mall_product_snapshots.created_at as <= filter. When
+         *   provided, only snapshots created at or before this timestamp are
+         *   returned. Format: ISO 8601 date-time string.
      */
     createdAtTo: (string & tags.Format<"date-time">) | null;
 
     /**
      * Sort order for results by creation timestamp. Use 'created_at_ASC' for oldest first or 'created_at_DESC' for newest first.
      *
-     * @x-autobe-specification Computed sort parameter. Controls ordering of results by ecommerce_mall_product_snapshots.created_at field. Valid values: 'created_at_ASC' (oldest first), 'created_at_DESC' (newest first, default). Applied as ORDER BY clause in query.
+         * @x-autobe-specification Computed sort parameter. Controls ordering of
+         *   results by ecommerce_mall_product_snapshots.created_at field. Valid
+         *   values: 'created_at_ASC' (oldest first), 'created_at_DESC' (newest
+         *   first, default). Applied as ORDER BY clause in query.
      */
     sort: "created_at_ASC" | "created_at_DESC" | null;
 
     /**
      * Maximum number of snapshots to return per page (1-100).
      *
-     * @x-autobe-specification Computed pagination parameter. Specifies maximum number of records to return per page. Applied as LIMIT in SQL query. Range: 1-100. Default value determined by server if not provided.
+         * @x-autobe-specification Computed pagination parameter. Specifies
+         *   maximum number of records to return per page. Applied as LIMIT in
+         *   SQL query. Range: 1-100. Default value determined by server if not
+         *   provided.
      */
     limit:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -101,14 +122,20 @@ export namespace IEcommerceMallProductSnapshot {
     /**
      * Pagination cursor token for fetching the next page of results. Omit or null for first page.
      *
-     * @x-autobe-specification Computed pagination parameter. Opaque cursor token for cursor-based pagination. Contains encoded position information (typically last seen record's ID or timestamp) to fetch next page. When null, returns first page.
+         * @x-autobe-specification Computed pagination parameter. Opaque cursor
+         *   token for cursor-based pagination. Contains encoded position
+         *   information (typically last seen record's ID or timestamp) to fetch
+         *   next page. When null, returns first page.
      */
     cursor: string | null;
 
     /**
      * Target page number to retrieve (1-indexed). Alternative to cursor for offset-based pagination.
      *
-     * @x-autobe-specification Computed pagination parameter. 1-indexed page number for offset-based pagination fallback. Used as alternative to cursor pagination. When provided, calculates offset as (page - 1) * limit. Returns empty data array if page exceeds available results.
+         * @x-autobe-specification Computed pagination parameter. 1-indexed page
+         *   number for offset-based pagination fallback. Used as alternative to
+         *   cursor pagination. When provided, calculates offset as (page - 1) *
+         *   limit. Returns empty data array if page exceeds available results.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };
@@ -118,23 +145,23 @@ export namespace IEcommerceMallProductSnapshot {
    */
   export type ISummary = {
     /**
-     * @x-autobe-database-schema-property id
+         * @x-autobe-database-schema-property id
      */
     id: string & tags.Format<"uuid">;
     /**
-     * @x-autobe-database-schema-property name
+         * @x-autobe-database-schema-property name
      */
     name: string;
     /**
-     * @x-autobe-database-schema-property base_price
+         * @x-autobe-database-schema-property base_price
      */
     basePrice: number;
     /**
-     * @x-autobe-database-schema-property created_at
+         * @x-autobe-database-schema-property created_at
      */
     createdAt: string & tags.Format<"date-time">;
     /**
-     * @x-autobe-database-schema-property category
+         * @x-autobe-database-schema-property category
      */
     category: IEcommerceMallCategory.ISummary;
   };

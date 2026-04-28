@@ -32,7 +32,9 @@ export type IRolesAnalyticsRequest = {
    *
    * Select between built-in system roles (Owner, Manager, Employee) or custom roles defined by the organization. Omit to include all roles regardless of kind.
    *
-   * @x-autobe-specification Optional filter parameter. Accepts 'built_in' for system roles (Owner/Manager/Employee) or 'custom' for user-defined roles. Ommit to include all roles.
+     * @x-autobe-specification Optional filter parameter. Accepts 'built_in' for
+     *   system roles (Owner/Manager/Employee) or 'custom' for user-defined
+     *   roles. Ommit to include all roles.
    */
   role_kind?: "built_in" | "custom" | undefined;
 
@@ -41,7 +43,9 @@ export type IRolesAnalyticsRequest = {
    *
    * Only roles with permission counts greater than or equal to this value will appear in the results. Use 0 to include all roles.
    *
-   * @x-autobe-specification Optional integer filter. Returns roles with permission_count >= this value. Must be >= 0. Omit for no minimum threshold.
+     * @x-autobe-specification Optional integer filter. Returns roles with
+     *   permission_count >= this value. Must be >= 0. Omit for no minimum
+     *   threshold.
    */
   min_permission_count?:
     | (number & tags.Type<"int32"> & tags.Minimum<0>)
@@ -52,7 +56,9 @@ export type IRolesAnalyticsRequest = {
    *
    * Only roles with permission counts less than or equal to this value will appear in the results. Omit to include roles with any number of permissions.
    *
-   * @x-autobe-specification Optional integer filter. Returns roles with permission_count <= this value. Must be >= 0. Omit for no maximum threshold.
+     * @x-autobe-specification Optional integer filter. Returns roles with
+     *   permission_count <= this value. Must be >= 0. Omit for no maximum
+     *   threshold.
    */
   max_permission_count?:
     | (number & tags.Type<"int32"> & tags.Minimum<0>)
@@ -65,7 +71,9 @@ export type IRolesAnalyticsRequest = {
    * - **false**: Include only roles with no employee assignments
    * - **omit**: Include all roles regardless of assignment status
    *
-   * @x-autobe-specification Optional boolean filter. true returns only roles with at least one employee assigned. false returns only unassigned roles. Omit to include all roles.
+     * @x-autobe-specification Optional boolean filter. true returns only roles
+     *   with at least one employee assigned. false returns only unassigned
+     *   roles. Omit to include all roles.
    */
   has_employees?: boolean | undefined;
 
@@ -74,7 +82,9 @@ export type IRolesAnalyticsRequest = {
    *
    * Performs a case-insensitive search and returns roles whose names contain the specified text. Use empty string or omit to search all roles.
    *
-   * @x-autobe-specification Optional string parameter. Performs case-insensitive substring search on role name. Returns roles where name contains the search string.
+     * @x-autobe-specification Optional string parameter. Performs
+     *   case-insensitive substring search on role name. Returns roles where
+     *   name contains the search string.
    */
   name?: string | undefined;
 
@@ -83,7 +93,9 @@ export type IRolesAnalyticsRequest = {
    *
    * Controls which page of results to return. Page numbers start at 1. Combined with limit to control how many results appear per page.
    *
-   * @x-autobe-specification Optional integer pagination parameter. Page number for paginated results (default: 1). Must be >= 1. Combined with limit to control result set size.
+     * @x-autobe-specification Optional integer pagination parameter. Page
+     *   number for paginated results (default: 1). Must be >= 1. Combined with
+     *   limit to control result set size.
    */
   page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -92,7 +104,8 @@ export type IRolesAnalyticsRequest = {
    *
    * Controls the size of each page of results. Valid range is 1 to 100. Default is 20 results per page.
    *
-   * @x-autobe-specification Optional integer pagination parameter. Number of results per page (default: 20, max: 100). Must be between 1 and 100.
+     * @x-autobe-specification Optional integer pagination parameter. Number of
+     *   results per page (default: 20, max: 100). Must be between 1 and 100.
    */
   limit?:
     | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -106,7 +119,8 @@ export type IRolesAnalyticsRequest = {
    *
    * Omit for default behavior (name ascending).
    *
-   * @x-autobe-specification Optional sort parameter. 'name' sorts ascending by role name (default). 'employees' sorts descending by employee count.
+     * @x-autobe-specification Optional sort parameter. 'name' sorts ascending
+     *   by role name (default). 'employees' sorts descending by employee count.
    */
   sort_by?: "name" | "employees" | undefined;
 };

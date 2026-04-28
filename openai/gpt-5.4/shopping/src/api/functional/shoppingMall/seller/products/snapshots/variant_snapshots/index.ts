@@ -28,7 +28,8 @@ import { IShoppingMallProductVariantSnapshot } from "../../../../../../structure
  * @param props.body Filtering, sorting, and pagination criteria for product variant snapshots
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Validate that `productId` identifies an existing `shopping_mall_products` row.
+ * @x-autobe-specification Validate that `productId` identifies an existing
+ *   `shopping_mall_products` row.
  *
  * Validate that `productSnapshotId` identifies an existing `shopping_mall_product_snapshots` row whose `shopping_mall_product_id` matches the requested product. Reject the request when the snapshot does not exist or belongs to a different product.
  *
@@ -152,7 +153,8 @@ export namespace index {
  * @param props.productVariantSnapshotId Target product variant snapshot's ID
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Implement a read-only detail query for one historical variant snapshot scoped by product and product snapshot context.
+ * @x-autobe-specification Implement a read-only detail query for one historical
+ *   variant snapshot scoped by product and product snapshot context.
  *
  * 1. Resolve the target `shopping_mall_product_snapshots` row by `productSnapshotId` and ensure its `shopping_mall_product_id` matches `productId`. If no such row exists, return a not-found error for the scoped historical product snapshot.
  *

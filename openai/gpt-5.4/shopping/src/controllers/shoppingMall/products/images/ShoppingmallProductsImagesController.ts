@@ -25,20 +25,45 @@ export class ShoppingmallProductsImagesController {
    * @param connection
    * @param productId Target product's UUID
    * @param body Desired product image gallery update data
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification 1. Authenticate the caller as a seller session and load the target shopping_mall_products row by id = productId and deleted_at IS NULL if product visibility rules require excluding removed products from live edits.
-   * 2. Verify that the product exists and that shopping_mall_products.shopping_mall_seller_id matches the authenticated seller account id. If not, reject the request as forbidden.
-   * 3. Validate the request body as the desired resulting gallery state. Ensure every submitted image entry includes a resolvable image URI, ensure the intended ordering is deterministic, and ensure the final state can produce exactly one effective thumbnail image. Because shopping_mall_product_images has a unique constraint on [shopping_mall_product_id, sequence], normalize the final gallery into unique ascending sequence values before persistence.
-   * 4. Start a transaction.
-   * 5. Load current active shopping_mall_product_images rows for the product ordered by sequence.
-   * 6. Reconcile the live gallery against the requested state. For images that remain, update sequence and is_thumbnail as needed. For newly introduced images, insert new shopping_mall_product_images rows with created_at and updated_at set to now and deleted_at = null. For removed images, mark deleted_at to now and update updated_at, rather than hard deleting, because the schema explicitly supports currently active or soft-deleted gallery images.
-   * 7. Guarantee that the first image in the final ordered active gallery is flagged as the thumbnail. If the request designates thumbnail inconsistently, override to the normalized first image so live data matches the business rule that the first image is the main thumbnail used in product listings.
-   * 8. Update shopping_mall_products.updated_at to now because image changes are treated as edits to the product’s current sellable catalog record.
-   * 9. Insert a shopping_mall_product_snapshots row for the product as the immutable snapshot event record.
-   * 10. Query the resulting active shopping_mall_product_images rows in final sequence order and insert corresponding shopping_mall_product_snapshot_image_copies rows for the new snapshot, copying image_uri, sequence, thumbnail state, and created_at. This preserves historical product presentation even if live images later change again.
-   * 11. Commit the transaction.
-   * 12. Return the refreshed product aggregate, including its current image collection, so downstream consumers can render the updated gallery and thumbnail.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification 1. Authenticate the caller as a seller session
+     *   and load the target shopping_mall_products row by id = productId and
+     *   deleted_at IS NULL if product visibility rules require excluding
+     *   removed products from live edits. 2. Verify that the product exists and
+     *   that shopping_mall_products.shopping_mall_seller_id matches the
+     *   authenticated seller account id. If not, reject the request as
+     *   forbidden. 3. Validate the request body as the desired resulting
+     *   gallery state. Ensure every submitted image entry includes a resolvable
+     *   image URI, ensure the intended ordering is deterministic, and ensure
+     *   the final state can produce exactly one effective thumbnail image.
+     *   Because shopping_mall_product_images has a unique constraint on
+     *   [shopping_mall_product_id, sequence], normalize the final gallery into
+     *   unique ascending sequence values before persistence. 4. Start a
+     *   transaction. 5. Load current active shopping_mall_product_images rows
+     *   for the product ordered by sequence. 6. Reconcile the live gallery
+     *   against the requested state. For images that remain, update sequence
+     *   and is_thumbnail as needed. For newly introduced images, insert new
+     *   shopping_mall_product_images rows with created_at and updated_at set to
+     *   now and deleted_at = null. For removed images, mark deleted_at to now
+     *   and update updated_at, rather than hard deleting, because the schema
+     *   explicitly supports currently active or soft-deleted gallery images. 7.
+     *   Guarantee that the first image in the final ordered active gallery is
+     *   flagged as the thumbnail. If the request designates thumbnail
+     *   inconsistently, override to the normalized first image so live data
+     *   matches the business rule that the first image is the main thumbnail
+     *   used in product listings. 8. Update shopping_mall_products.updated_at
+     *   to now because image changes are treated as edits to the product’s
+     *   current sellable catalog record. 9. Insert a
+     *   shopping_mall_product_snapshots row for the product as the immutable
+     *   snapshot event record. 10. Query the resulting active
+     *   shopping_mall_product_images rows in final sequence order and insert
+     *   corresponding shopping_mall_product_snapshot_image_copies rows for the
+     *   new snapshot, copying image_uri, sequence, thumbnail state, and
+     *   created_at. This preserves historical product presentation even if live
+     *   images later change again. 11. Commit the transaction. 12. Return the
+     *   refreshed product aggregate, including its current image collection, so
+     *   downstream consumers can render the updated gallery and thumbnail.
    *
    * Edge cases:
    * - If the product does not exist, return not found.
@@ -84,9 +109,14 @@ export class ShoppingmallProductsImagesController {
    * @param connection
    * @param productId Target product's ID
    * @param imageId Target product image's ID
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Implement this operation by loading the target shopping_mall_product_images row by id and validating that its shopping_mall_product_id matches the productId path parameter. Join or separately load the parent shopping_mall_products row because authorization and storefront visibility must be evaluated through the parent product.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Implement this operation by loading the target
+     *   shopping_mall_product_images row by id and validating that its
+     *   shopping_mall_product_id matches the productId path parameter. Join or
+     *   separately load the parent shopping_mall_products row because
+     *   authorization and storefront visibility must be evaluated through the
+     *   parent product.
    *
    * For seller-side access, confirm that the authenticated seller owns the parent product via shopping_mall_products.shopping_mall_seller_id before returning the image. For customer-facing access, allow retrieval only when the parent product is currently available for storefront viewing according to its status and deletion state. In all cases, reject retrieval when shopping_mall_product_images.deleted_at is not null, because removed gallery images should not be exposed as part of the current gallery.
    *

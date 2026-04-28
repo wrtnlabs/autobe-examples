@@ -10,24 +10,32 @@ export type IShoppingMallProductVariant = {
   /**
    * Unique identifier for the product variant.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_product_variants.id. UUID primary key generated on creation.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_product_variants.id. UUID primary key generated on
+     *   creation.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Unique SKU code for inventory tracking and order processing.
    *
-   * @x-autobe-database-schema-property sku_code
-   * @x-autobe-specification Direct mapping from shopping_mall_product_variants.sku_code. Unique constraint across platform. Format: 3-50 chars, alphanumeric and hyphens only, no leading/trailing/consecutive hyphens.
+     * @x-autobe-database-schema-property sku_code
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_product_variants.sku_code. Unique constraint across
+     *   platform. Format: 3-50 chars, alphanumeric and hyphens only, no
+     *   leading/trailing/consecutive hyphens.
    */
   sku_code: string & tags.MinLength<3> & tags.MaxLength<50>;
 
   /**
    * Variant configuration attributes as key-value pairs (e.g., color, size).
    *
-   * @x-autobe-database-schema-property option_values
-   * @x-autobe-specification Direct mapping from shopping_mall_product_variants.option_values. Stored as JSON string in DB, parsed to object for API. Contains variant attributes as key-value pairs (e.g., {"color": "Red", "size": "Large"}).
+     * @x-autobe-database-schema-property option_values
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_product_variants.option_values. Stored as JSON string in
+     *   DB, parsed to object for API. Contains variant attributes as key-value
+     *   pairs (e.g., {"color": "Red", "size": "Large"}).
    */
   option_values: {
     [key: string]: string;
@@ -36,47 +44,62 @@ export type IShoppingMallProductVariant = {
   /**
    * Optional price override for this variant. Null means product's base price applies.
    *
-   * @x-autobe-database-schema-property price
-   * @x-autobe-specification Direct mapping from shopping_mall_product_variants.price. Nullable field - when null, product's base_price is used. Range: 0.01 to 999,999.99 with max 2 decimal places.
+     * @x-autobe-database-schema-property price
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_product_variants.price. Nullable field - when null,
+     *   product's base_price is used. Range: 0.01 to 999,999.99 with max 2
+     *   decimal places.
    */
   price: (number & tags.Minimum<0.01> & tags.Maximum<999999.99>) | null;
 
   /**
    * Current stock quantity calculated from inventory records.
    *
-   * @x-autobe-specification Computed field from shopping_mall_inventory_records. Calculated as SUM(quantity_change) where variant_id matches. Positive values indicate restocks, negative indicate orders/adjustments. Defaults to 0 if no inventory records exist.
+     * @x-autobe-specification Computed field from
+     *   shopping_mall_inventory_records. Calculated as SUM(quantity_change)
+     *   where variant_id matches. Positive values indicate restocks, negative
+     *   indicate orders/adjustments. Defaults to 0 if no inventory records
+     *   exist.
    */
   stock_quantity: number & tags.Type<"int32"> & tags.Minimum<0>;
 
   /**
    * The product this variant belongs to.
    *
-   * @x-autobe-database-schema-property product
-   * @x-autobe-specification Belongs-to relation via shopping_mall_product_id foreign key. JOIN with shopping_mall_products table and transform to IShoppingMallProduct.ISummary reference object.
+     * @x-autobe-database-schema-property product
+     * @x-autobe-specification Belongs-to relation via shopping_mall_product_id
+     *   foreign key. JOIN with shopping_mall_products table and transform to
+     *   IShoppingMallProduct.ISummary reference object.
    */
   product: IShoppingMallProduct.ISummary;
 
   /**
    * Timestamp when the variant was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from shopping_mall_product_variants.created_at. Set automatically on record creation.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_product_variants.created_at. Set automatically on record
+     *   creation.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the variant was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from shopping_mall_product_variants.updated_at. Updated automatically on every modification.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_product_variants.updated_at. Updated automatically on
+     *   every modification.
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * Soft-delete timestamp. Null for active variants.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from shopping_mall_product_variants.deleted_at. Nullable - null for active variants, timestamp for soft-deleted variants.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_product_variants.deleted_at. Nullable - null for active
+     *   variants, timestamp for soft-deleted variants.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -88,7 +111,7 @@ export namespace IShoppingMallProductVariant {
     /**
      * Unique identifier for the variant across the entire platform. Must be 3-50 characters, alphanumeric and hyphens only, cannot start or end with hyphen, and no consecutive hyphens.
      *
-     * @x-autobe-database-schema-property sku_code
+         * @x-autobe-database-schema-property sku_code
      */
     sku_code: string &
       tags.MinLength<3> &
@@ -98,7 +121,7 @@ export namespace IShoppingMallProductVariant {
     /**
      * Variant option attributes as key-value pairs (e.g., {"color": "Red", "size": "Large"}). Must have 1-5 attributes. Attribute names should be 1-30 characters and values 1-50 characters. The combination must be unique within each product.
      *
-     * @x-autobe-database-schema-property option_values
+         * @x-autobe-database-schema-property option_values
      */
     option_values: {
       [key: string]: string;
@@ -107,8 +130,11 @@ export namespace IShoppingMallProductVariant {
     /**
      * Optional price that overrides the product's base price for this specific variant. Must be between 0.01 and 999,999.99 with up to 2 decimal places. If not provided or null, the product's base price is used.
      *
-     * @x-autobe-database-schema-property price
-     * @x-autobe-specification Direct mapping from shopping_mall_product_variants.price. Nullable Float column - accepts number (0.01-999,999.99) or null. When null, product's base_price is used.
+         * @x-autobe-database-schema-property price
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_variants.price. Nullable Float column -
+         *   accepts number (0.01-999,999.99) or null. When null, product's
+         *   base_price is used.
      */
     price?:
       | (number & tags.Minimum<0.01> & tags.Maximum<999999.99>)
@@ -175,8 +201,12 @@ export namespace IShoppingMallProductVariant {
     /**
      * Unique identifier for the variant across the platform. Must be 3-50 characters, alphanumeric and hyphens only, cannot start or end with hyphen, and no consecutive hyphens. Used for inventory tracking and order processing.
      *
-     * @x-autobe-database-schema-property sku_code
-     * @x-autobe-specification Direct mapping from shopping_mall_product_variants.sku_code. Unique constraint enforced across platform. Must be 3-50 chars, alphanumeric and hyphens only, cannot start/end with hyphen, no consecutive hyphens. Optional in Update DTO - if omitted, existing value retained.
+         * @x-autobe-database-schema-property sku_code
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_variants.sku_code. Unique constraint enforced
+         *   across platform. Must be 3-50 chars, alphanumeric and hyphens only,
+         *   cannot start/end with hyphen, no consecutive hyphens. Optional in
+         *   Update DTO - if omitted, existing value retained.
      */
     skuCode?:
       | (string &
@@ -188,8 +218,13 @@ export namespace IShoppingMallProductVariant {
     /**
      * Variant option attributes as key-value pairs (e.g., {"color": "Red", "size": "Large"}). Attribute names should be 1-30 characters, values 1-50 characters. Minimum 1, maximum 5 attributes. Combination must be unique within the product.
      *
-     * @x-autobe-database-schema-property option_values
-     * @x-autobe-specification Direct mapping from shopping_mall_product_variants.option_values. Stored as JSON string in DB, exposed as object in API. Contains variant attributes as key-value pairs. Optional in Update DTO - if omitted, existing value retained. Validation: 1-5 attributes, names 1-30 chars, values 1-50 chars.
+         * @x-autobe-database-schema-property option_values
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_variants.option_values. Stored as JSON string
+         *   in DB, exposed as object in API. Contains variant attributes as
+         *   key-value pairs. Optional in Update DTO - if omitted, existing
+         *   value retained. Validation: 1-5 attributes, names 1-30 chars,
+         *   values 1-50 chars.
      */
     optionValues?:
       | {
@@ -200,8 +235,12 @@ export namespace IShoppingMallProductVariant {
     /**
      * Optional price that overrides the product's base price for this specific variant. Set to null to clear override and use product's base price. Must be between 0.01 and 999,999.99 with up to 2 decimal places when provided as a number.
      *
-     * @x-autobe-database-schema-property price
-     * @x-autobe-specification Direct mapping from shopping_mall_product_variants.price. Nullable field - when null, product's base_price is used. Optional in Update DTO - if omitted, existing value retained. If provided as number, updates price override. If provided as null, clears price override.
+         * @x-autobe-database-schema-property price
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_variants.price. Nullable field - when null,
+         *   product's base_price is used. Optional in Update DTO - if omitted,
+         *   existing value retained. If provided as number, updates price
+         *   override. If provided as null, clears price override.
      */
     price?:
       | (number & tags.Minimum<0.01> & tags.Maximum<999999.99>)
@@ -216,24 +255,32 @@ export namespace IShoppingMallProductVariant {
     /**
      * Unique identifier for the product variant (SKU).
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_product_variants.id. UUID format, uniquely identifies the variant.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_variants.id. UUID format, uniquely identifies
+         *   the variant.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Stock keeping unit (SKU) code, unique identifier for this variant configuration.
      *
-     * @x-autobe-database-schema-property sku_code
-     * @x-autobe-specification Direct mapping from shopping_mall_product_variants.sku_code. Unique across the platform, used for inventory tracking and order processing.
+         * @x-autobe-database-schema-property sku_code
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_variants.sku_code. Unique across the
+         *   platform, used for inventory tracking and order processing.
      */
     skuCode: string;
 
     /**
      * Variant configuration options as key-value pairs (e.g., color and size combination).
      *
-     * @x-autobe-database-schema-property option_values
-     * @x-autobe-specification Parsed from shopping_mall_product_variants.option_values JSON string. Represents key-value pairs of variant attributes (e.g., {"color": "Red", "size": "Large"}). Each variant must have at least one option attribute.
+         * @x-autobe-database-schema-property option_values
+         * @x-autobe-specification Parsed from
+         *   shopping_mall_product_variants.option_values JSON string.
+         *   Represents key-value pairs of variant attributes (e.g., {"color":
+         *   "Red", "size": "Large"}). Each variant must have at least one
+         *   option attribute.
      */
     optionValues: {
       [key: string]: string;
@@ -242,23 +289,32 @@ export namespace IShoppingMallProductVariant {
     /**
      * Optional price override for this variant. If not set, the product's base price applies.
      *
-     * @x-autobe-database-schema-property price
-     * @x-autobe-specification Direct mapping from shopping_mall_product_variants.price. Nullable decimal value that overrides the product's base price for this specific variant. If null, the product's base_price is used.
+         * @x-autobe-database-schema-property price
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_variants.price. Nullable decimal value that
+         *   overrides the product's base price for this specific variant. If
+         *   null, the product's base_price is used.
      */
     price: number | null;
 
     /**
      * Current available stock quantity calculated from inventory records.
      *
-     * @x-autobe-specification Computed property: stockQuantity = SUM(shopping_mall_inventory_records.quantity_change) WHERE shopping_mall_product_variant_id matches. Returns 0 when no inventory records exist. Positive values indicate available stock, negative values indicate oversold condition.
+         * @x-autobe-specification Computed property: stockQuantity =
+         *   SUM(shopping_mall_inventory_records.quantity_change) WHERE
+         *   shopping_mall_product_variant_id matches. Returns 0 when no
+         *   inventory records exist. Positive values indicate available stock,
+         *   negative values indicate oversold condition.
      */
     stockQuantity: number & tags.Type<"int32">;
 
     /**
      * Timestamp when the variant was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_product_variants.created_at. ISO 8601 datetime with timezone.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_variants.created_at. ISO 8601 datetime with
+         *   timezone.
      */
     createdAt: string & tags.Format<"date-time">;
   };

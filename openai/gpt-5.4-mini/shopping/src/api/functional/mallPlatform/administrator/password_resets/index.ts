@@ -19,7 +19,11 @@ import { IMallPlatformCustomerPasswordReset } from "../../../../structures/IMall
  * @param props.body Password reset submission containing the recovery token and the new password to apply to the matching account.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor administrator
- * @x-autobe-specification Look up the password reset record by the submitted token and verify it is still valid and not expired. Determine the target account type from the token’s associated reset record, then update the corresponding account password hash in a transaction. Invalidate or consume the reset token after a successful update so it cannot be reused.
+ * @x-autobe-specification Look up the password reset record by the submitted
+ *   token and verify it is still valid and not expired. Determine the target
+ *   account type from the token’s associated reset record, then update the
+ *   corresponding account password hash in a transaction. Invalidate or consume
+ *   the reset token after a successful update so it cannot be reused.
  *
  * Validate the new password against the platform’s password policy before writing anything. If validation fails, return an appropriate client error and do not modify the account or reset record. If the token cannot be found, is expired, or is otherwise unusable, return a not-found or conflict-style error as appropriate and do not change persisted data.
  *
@@ -110,7 +114,11 @@ export namespace update {
  * @param props.resetId The password reset record identifier in UUID format.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor administrator
- * @x-autobe-specification Load the password reset record matching the provided resetId from the appropriate password reset table for the account scope in use. Perform a direct primary-key lookup and return the stored record unchanged. Do not modify token state, expiration metadata, or any related account record.
+ * @x-autobe-specification Load the password reset record matching the provided
+ *   resetId from the appropriate password reset table for the account scope in
+ *   use. Perform a direct primary-key lookup and return the stored record
+ *   unchanged. Do not modify token state, expiration metadata, or any related
+ *   account record.
  *
  * If the record is missing, return a 404-style error. If the authenticated principal is not allowed to inspect the reset record, return a 403-style error. Keep the endpoint fully read-only so it can be used safely by recovery or administrative inspection flows.
  * @path /mallPlatform/administrator/password-resets/:resetId

@@ -26,7 +26,8 @@ import { IEcommerceAnalytic } from "../../../../structures/IEcommerceAnalytic";
  * @param props.connection
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Implement GET /analytics as a read-only statistics endpoint.
+ * @x-autobe-specification Implement GET /analytics as a read-only statistics
+ *   endpoint.
  *
  * **Service Logic**
  *

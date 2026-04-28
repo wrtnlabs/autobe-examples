@@ -21,23 +21,22 @@ export class ShoppingmallAdministratorOrdersItemsForce_refundController {
    * @param connection
    * @param orderId Unique identifier of the order containing the item to be force-refunded.
    * @param itemId Unique identifier of the order item to be force-refunded.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification 1. Validate administrator authentication and authorization (admin role required).
-   * 2. Retrieve the order by orderId and verify it exists and is not soft-deleted.
-   * 3. Retrieve the order item by itemId within the order context.
-   * 4. Validate the order item exists and belongs to the specified order.
-   * 5. Check current item status - can force-refund items in any status (paid, shipped, delivered, or even cancelled).
-   * 6. Begin database transaction.
-   * 7. Update the order item status to 'refunded' and set updated_at timestamp.
-   * 8. Create an inventory record for the product variant with:
-   *    - quantity_change: positive value equal to the item's quantity
-   *    - reason: 'Force-refund for order {orderNumber}'
-   *    - created_at: current timestamp
-   * 9. Update the order's updated_at timestamp.
-   * 10. Create an administrator audit log entry recording the force-refund action.
-   * 11. Commit transaction.
-   * 12. Return the updated order item with 'refunded' status.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor administrator
+     * @x-autobe-specification 1. Validate administrator authentication and
+     *   authorization (admin role required). 2. Retrieve the order by orderId
+     *   and verify it exists and is not soft-deleted. 3. Retrieve the order
+     *   item by itemId within the order context. 4. Validate the order item
+     *   exists and belongs to the specified order. 5. Check current item status
+     *   - can force-refund items in any status (paid, shipped, delivered, or
+     *   even cancelled). 6. Begin database transaction. 7. Update the order
+     *   item status to 'refunded' and set updated_at timestamp. 8. Create an
+     *   inventory record for the product variant with: - quantity_change:
+     *   positive value equal to the item's quantity - reason: 'Force-refund for
+     *   order {orderNumber}' - created_at: current timestamp 9. Update the
+     *   order's updated_at timestamp. 10. Create an administrator audit log
+     *   entry recording the force-refund action. 11. Commit transaction. 12.
+     *   Return the updated order item with 'refunded' status.
    *
    * Error handling:
    * - Return 404 if order or order item not found

@@ -32,7 +32,10 @@ export * as reports from "./reports/index";
  * @param props.body Search filters and pagination options for community moderation actions
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Validate that the caller is an authenticated member and resolve the specified community by community_platform_communities.id using communityId. Reject the request when the community does not exist or is unavailable for moderation-context access.
+ * @x-autobe-specification Validate that the caller is an authenticated member
+ *   and resolve the specified community by community_platform_communities.id
+ *   using communityId. Reject the request when the community does not exist or
+ *   is unavailable for moderation-context access.
  *
  * Authorize the caller only when that member holds active local governance authority in the specified community. Implementation should verify either an owner-linked or active moderator assignment in community_platform_community_moderators for the same community. Do not grant access based on platform-wide admin identity because the requirements do not define global moderation authority.
  *
@@ -145,7 +148,9 @@ export namespace index {
  * @param props.moderationActionId Target moderation action's ID within the community
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implement a read-only service method that loads a single moderation action audit record by moderation action ID and scoped community ID.
+ * @x-autobe-specification Implement a read-only service method that loads a
+ *   single moderation action audit record by moderation action ID and scoped
+ *   community ID.
  *
  * 1. Validate that communityId and moderationActionId are valid UUID values.
  * 2. Query community_platform_communities by id = communityId and reject when the community does not exist or is not available for moderation-context access according to service policy.

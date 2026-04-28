@@ -20,7 +20,8 @@ import { IPageIMultiUserTodoMemberSession } from "../../../structures/IPageIMult
  * @param props.body Search criteria and pagination options for filtering member sessions. Supports filtering by date ranges, expiration status, and sorting preferences.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query multi_user_todo_member_sessions table with pagination and filtering.
+ * @x-autobe-specification Query multi_user_todo_member_sessions table with
+ *   pagination and filtering.
  *
  * **Filtering Logic**:
  * - Apply optional member_id filter if provided (member can only filter their own sessions)
@@ -147,7 +148,8 @@ export namespace index {
  * @param props.sessionId UUID identifier of the session to retrieve.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query multi_user_todo_member_sessions table for record with matching id = {sessionId}.
+ * @x-autobe-specification Query multi_user_todo_member_sessions table for
+ *   record with matching id = {sessionId}.
  *
  * Validation rules:
  * 1. Verify authentication token is valid and attached to request

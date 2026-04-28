@@ -50,8 +50,9 @@ export namespace IHrmPlatformRole {
      *
      * Each role in the system has a globally unique UUID that serves as its primary key. This identifier is used for all internal references and API operations targeting the role.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from hrm_platform_roles.id. UUID primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from hrm_platform_roles.id.
+         *   UUID primary key.
      */
     id: string & tags.Format<"uuid">;
 
@@ -60,8 +61,9 @@ export namespace IHrmPlatformRole {
      *
      * Names must be unique within the parent organization. Built-in roles have fixed names: Owner, Manager, Employee. Custom roles can have any descriptive name as long as it is unique within the organization.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from hrm_platform_roles.name. Must be unique within the organization.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from hrm_platform_roles.name.
+         *   Must be unique within the organization.
      */
     name: string;
 
@@ -70,8 +72,9 @@ export namespace IHrmPlatformRole {
      *
      * Built-in roles (Owner, Manager, Employee) are protected from deletion and have fixed system behavior. Custom roles are user-defined and can be modified or deleted when no employees are assigned.
      *
-     * @x-autobe-database-schema-property role_kind
-     * @x-autobe-specification Direct mapping from hrm_platform_roles.role_kind. Values: 'built_in' or 'custom'.
+         * @x-autobe-database-schema-property role_kind
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_roles.role_kind. Values: 'built_in' or 'custom'.
      */
     role_kind: string;
 
@@ -80,8 +83,10 @@ export namespace IHrmPlatformRole {
      *
      * Roles are organization-scoped and exist within a single tenant boundary. This reference provides access to the parent organization's details without including the full nested object, maintaining payload efficiency.
      *
-     * @x-autobe-database-schema-property organization
-     * @x-autobe-specification Join from hrm_platform_roles.organization_id to hrm_platform_organizations.id. Returns IHrmPlatformOrganization.ISummary for lightweight parent reference.
+         * @x-autobe-database-schema-property organization
+         * @x-autobe-specification Join from hrm_platform_roles.organization_id
+         *   to hrm_platform_organizations.id. Returns
+         *   IHrmPlatformOrganization.ISummary for lightweight parent reference.
      */
     organization: IHrmPlatformOrganization.ISummary;
 
@@ -90,7 +95,10 @@ export namespace IHrmPlatformRole {
      *
      * This count provides a quick overview of the role's scope without requiring a separate query to fetch individual permission records. It is useful for dashboards, role assignment forms, and administrative views where understanding role granularity is important.
      *
-     * @x-autobe-specification Computed via COUNT(*) JOIN hrm_platform_permissions ON permissions.role_id = hrm_platform_roles.id. Returns the total number of permissions assigned to this role.
+         * @x-autobe-specification Computed via COUNT(*) JOIN
+         *   hrm_platform_permissions ON permissions.role_id =
+         *   hrm_platform_roles.id. Returns the total number of permissions
+         *   assigned to this role.
      */
     permissions_count: number & tags.Type<"int32">;
   };
@@ -104,15 +112,15 @@ export namespace IHrmPlatformRole {
    */
   export type ICreate = {
     /**
-     * @x-autobe-database-schema-property name
+         * @x-autobe-database-schema-property name
      */
     name: string & tags.MinLength<1> & tags.MaxLength<100>;
     /**
-     * @x-autobe-database-schema-property description
+         * @x-autobe-database-schema-property description
      */
     description?: string | null | undefined;
     /**
-     * @x-autobe-database-schema-property role_kind
+         * @x-autobe-database-schema-property role_kind
      */
     role_kind: "custom";
   };
@@ -140,8 +148,12 @@ export namespace IHrmPlatformRole {
      *
      * When provided, the new name must be unique within the organization (case-insensitive comparison). Built-in roles (Owner, Manager, Employee) are protected from modification and will return a 403 Forbidden error if attempted.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping to hrm_platform_roles.name. String field that must be unique within the organization (case-insensitive comparison). When provided, replaces the existing role name. Built-in roles (Owner, Manager, Employee) are protected from name changes.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping to hrm_platform_roles.name.
+         *   String field that must be unique within the organization
+         *   (case-insensitive comparison). When provided, replaces the existing
+         *   role name. Built-in roles (Owner, Manager, Employee) are protected
+         *   from name changes.
      */
     name?: string | undefined;
 
@@ -150,8 +162,11 @@ export namespace IHrmPlatformRole {
      *
      * This field is optional and can be cleared by setting to null. Used to provide context about the role's intended use within the organization.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping to hrm_platform_roles.description. String field that can be set to null to clear the description. Provides optional context about the role's purpose and responsibilities.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping to
+         *   hrm_platform_roles.description. String field that can be set to
+         *   null to clear the description. Provides optional context about the
+         *   role's purpose and responsibilities.
      */
     description?: string | null | undefined;
 
@@ -160,7 +175,12 @@ export namespace IHrmPlatformRole {
      *
      * This array replaces all existing permissions for the role. Only the permission codes included in the request will be associated with the role after the update. Each code must follow the dot-notation convention (e.g., 'employee.view', 'project.manage') and must belong to the same organization as the role.
      *
-     * @x-autobe-specification Computed property: array of permission codes (strings in dot-notation like 'employee.view'). This is NOT a direct DB mapping. When provided, the system looks up each code in the organization's permission table, deletes all existing permissions for the role, and assigns the new codes. Each code must exist in the organization and follow dot-notation convention.
+         * @x-autobe-specification Computed property: array of permission codes
+         *   (strings in dot-notation like 'employee.view'). This is NOT a
+         *   direct DB mapping. When provided, the system looks up each code in
+         *   the organization's permission table, deletes all existing
+         *   permissions for the role, and assigns the new codes. Each code must
+         *   exist in the organization and follow dot-notation convention.
      */
     permissions?: string[] | undefined;
   };
@@ -185,8 +205,11 @@ export namespace IHrmPlatformRole {
      *
      * The permission code must be unique within the organization and follow dot notation for hierarchical organization (e.g., 'employee.view', 'project.manage', 'timesheet.approve'). This code is used by the authorization system to grant or deny access to specific operations.
      *
-     * @x-autobe-database-schema-property code
-     * @x-autobe-specification Direct mapping from hrm_platform_permissions.code. Must be unique within the organization and follow dot notation (e.g., 'employee.view', 'project.manage').
+         * @x-autobe-database-schema-property code
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_permissions.code. Must be unique within the
+         *   organization and follow dot notation (e.g., 'employee.view',
+         *   'project.manage').
      */
     code: string;
 
@@ -195,8 +218,10 @@ export namespace IHrmPlatformRole {
      *
      * This field provides context for what the permission code represents, making it easier for administrators to understand and assign appropriate permissions when creating or editing roles. Can be null or omitted.
      *
-     * @x-autobe-specification Direct mapping from hrm_platform_permissions.description. This field is nullable in the database and must be represented as oneOf([string, null]).
-     * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_permissions.description. This field is nullable in the
+         *   database and must be represented as oneOf([string, null]).
+         * @x-autobe-database-schema-property description
      */
     description?: string | null | undefined;
   };
@@ -212,7 +237,10 @@ export namespace IHrmPlatformRole {
      *
      * Performs case-sensitive prefix matching on role names. Returns roles where the name starts with the provided value. Useful for finding roles by partial name match.
      *
-     * @x-autobe-specification Prefix-based filter for role names. Uses SQL LIKE with prefix matching: WHERE name LIKE :name || '%'. Case-sensitive matching. Returns roles where name starts with the provided value.
+         * @x-autobe-specification Prefix-based filter for role names. Uses SQL
+         *   LIKE with prefix matching: WHERE name LIKE :name || '%'.
+         *   Case-sensitive matching. Returns roles where name starts with the
+         *   provided value.
      */
     name?: (string & tags.MinLength<1> & tags.MaxLength<255>) | undefined;
 
@@ -221,7 +249,9 @@ export namespace IHrmPlatformRole {
      *
      * Restricts results to roles of a specific kind. Use 'built_in' for system roles (Owner, Manager, Employee) or 'custom' for user-defined roles.
      *
-     * @x-autobe-specification Exact match filter for role classification. Uses SQL WHERE clause: WHERE role_kind = :role_kind. Accepts only 'built_in' or 'custom' values to filter role types.
+         * @x-autobe-specification Exact match filter for role classification.
+         *   Uses SQL WHERE clause: WHERE role_kind = :role_kind. Accepts only
+         *   'built_in' or 'custom' values to filter role types.
      */
     role_kind?: "built_in" | "custom" | undefined;
 
@@ -230,7 +260,10 @@ export namespace IHrmPlatformRole {
      *
      * Performs case-insensitive search across both role name and description fields. Returns roles where either field contains the search term. Useful for finding roles when you don't know the exact name.
      *
-     * @x-autobe-specification Full-text search across name and description fields. Uses SQL ILIKE for case-insensitive matching: WHERE name ILIKE :search OR description ILIKE :search. Supports wildcard matching for flexible text search.
+         * @x-autobe-specification Full-text search across name and description
+         *   fields. Uses SQL ILIKE for case-insensitive matching: WHERE name
+         *   ILIKE :search OR description ILIKE :search. Supports wildcard
+         *   matching for flexible text search.
      */
     search?: (string & tags.MinLength<1> & tags.MaxLength<255>) | undefined;
 
@@ -239,7 +272,9 @@ export namespace IHrmPlatformRole {
      *
      * Determines the sort column for the role list. Use 'name' for alphabetical ordering, 'created_at' for creation date, or 'updated_at' for last modification date.
      *
-     * @x-autobe-specification Field to sort results by. Accepts 'name' (text), 'created_at' (timestamp), or 'updated_at' (timestamp). Maps to SQL ORDER BY clause with corresponding field.
+         * @x-autobe-specification Field to sort results by. Accepts 'name'
+         *   (text), 'created_at' (timestamp), or 'updated_at' (timestamp). Maps
+         *   to SQL ORDER BY clause with corresponding field.
      */
     sort?: "name" | "created_at" | "updated_at" | undefined;
 
@@ -248,7 +283,9 @@ export namespace IHrmPlatformRole {
      *
      * Specifies whether results should be sorted in ascending ('asc') or descending ('desc') order based on the selected sort field.
      *
-     * @x-autobe-specification Sort direction for the results. Accepts 'asc' for ascending or 'desc' for descending. Maps to SQL ORDER BY ... ASC/DESC clause. Defaults to descending if not specified.
+         * @x-autobe-specification Sort direction for the results. Accepts 'asc'
+         *   for ascending or 'desc' for descending. Maps to SQL ORDER BY ...
+         *   ASC/DESC clause. Defaults to descending if not specified.
      */
     order?: "asc" | "desc" | undefined;
 
@@ -257,7 +294,9 @@ export namespace IHrmPlatformRole {
      *
      * Specifies which page of results to retrieve. Page numbering starts from 1. Combined with limit, determines which slice of results to return.
      *
-     * @x-autobe-specification Page number for pagination (1-indexed). Used to calculate offset: (page - 1) * limit. Must be >= 1. Returns the specified page of results from the filtered dataset.
+         * @x-autobe-specification Page number for pagination (1-indexed). Used
+         *   to calculate offset: (page - 1) * limit. Must be >= 1. Returns the
+         *   specified page of results from the filtered dataset.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -266,7 +305,9 @@ export namespace IHrmPlatformRole {
      *
      * Controls the number of results returned on each page. Higher values return more results per page but may impact performance. Must be between 1 and 100.
      *
-     * @x-autobe-specification Maximum number of records per page (1-100). Used as SQL LIMIT clause value. Determines how many results appear on each page. Defaults to 20 if not specified.
+         * @x-autobe-specification Maximum number of records per page (1-100).
+         *   Used as SQL LIMIT clause value. Determines how many results appear
+         *   on each page. Defaults to 20 if not specified.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)

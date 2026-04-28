@@ -22,8 +22,10 @@ export type IRedditCloneCommunityBan = {
    *
    * This UUID serves as the primary key for the ban entity and is used to reference the ban in API operations and database queries.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from reddit_clone_community_bans.id. Primary key UUID identifying the ban record.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_community_bans.id. Primary key UUID identifying the ban
+     *   record.
    */
   id: string & tags.Format<"uuid">;
 
@@ -32,8 +34,10 @@ export type IRedditCloneCommunityBan = {
    *
    * Moderators must provide a reason when issuing a ban. This provides transparency to the banned user and creates an audit trail for accountability. The reason should clearly state which community rules were violated.
    *
-   * @x-autobe-database-schema-property ban_reason
-   * @x-autobe-specification Direct mapping from reddit_clone_community_bans.ban_reason. Required text field explaining why the ban was issued.
+     * @x-autobe-database-schema-property ban_reason
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_community_bans.ban_reason. Required text field explaining
+     *   why the ban was issued.
    */
   banReason: string;
 
@@ -42,8 +46,10 @@ export type IRedditCloneCommunityBan = {
    *
    * When set, the ban automatically becomes inactive after this time and the user can post and comment again. When null, the ban is permanent until manually removed by a moderator.
    *
-   * @x-autobe-database-schema-property expires_at
-   * @x-autobe-specification Direct mapping from reddit_clone_community_bans.expires_at. Nullable DateTime field for temporary bans. When null, the ban is permanent.
+     * @x-autobe-database-schema-property expires_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_community_bans.expires_at. Nullable DateTime field for
+     *   temporary bans. When null, the ban is permanent.
    */
   expiresAt: (string & tags.Format<"date-time">) | null;
 
@@ -52,8 +58,10 @@ export type IRedditCloneCommunityBan = {
    *
    * Records the exact date and time when the moderator issued the ban. Used for audit trails and sorting ban records chronologically.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from reddit_clone_community_bans.created_at. Timestamp when the ban was issued.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_community_bans.created_at. Timestamp when the ban was
+     *   issued.
    */
   createdAt: string & tags.Format<"date-time">;
 
@@ -62,8 +70,10 @@ export type IRedditCloneCommunityBan = {
    *
    * Tracks the most recent change to the ban record, such as updates to the expiration date or ban reason.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from reddit_clone_community_bans.updated_at. Timestamp when the ban was last modified.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_community_bans.updated_at. Timestamp when the ban was last
+     *   modified.
    */
   updatedAt: string & tags.Format<"date-time">;
 
@@ -72,8 +82,11 @@ export type IRedditCloneCommunityBan = {
    *
    * Nullable field for soft-delete functionality. When null, the ban is currently active. When set to a timestamp, the ban has been removed and the user can participate in the community again. This enables tracking of past bans for audit purposes.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from reddit_clone_community_bans.deleted_at. Nullable DateTime field for soft delete. When null, the ban is active. When set, the ban has been removed (unbanned).
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_community_bans.deleted_at. Nullable DateTime field for
+     *   soft delete. When null, the ban is active. When set, the ban has been
+     *   removed (unbanned).
    */
   deletedAt: (string & tags.Format<"date-time">) | null;
 
@@ -82,8 +95,12 @@ export type IRedditCloneCommunityBan = {
    *
    * Contains the community information where this ban restriction applies. The ban only affects the user's ability to create content within this specific community.
    *
-   * @x-autobe-database-schema-property community
-   * @x-autobe-specification Relation mapping from reddit_clone_community_bans.community. JOIN with reddit_clone_communities on reddit_clone_community_id. Returns IRedditCloneCommunity.ISummary with community details (id, name, description, icon, owner, subscriber_count, created_at).
+     * @x-autobe-database-schema-property community
+     * @x-autobe-specification Relation mapping from
+     *   reddit_clone_community_bans.community. JOIN with
+     *   reddit_clone_communities on reddit_clone_community_id. Returns
+     *   IRedditCloneCommunity.ISummary with community details (id, name,
+     *   description, icon, owner, subscriber_count, created_at).
    */
   community: IRedditCloneCommunity.ISummary;
 
@@ -92,8 +109,12 @@ export type IRedditCloneCommunityBan = {
    *
    * Contains the profile information of the user who is restricted from creating posts and comments in this community. The banned user can still view content.
    *
-   * @x-autobe-database-schema-property bannedMember
-   * @x-autobe-specification Relation mapping from reddit_clone_community_bans.bannedMember. JOIN with reddit_clone_members on reddit_clone_member_id. Returns IRedditCloneMember.ISummary with member details (id, username, display_name, profile).
+     * @x-autobe-database-schema-property bannedMember
+     * @x-autobe-specification Relation mapping from
+     *   reddit_clone_community_bans.bannedMember. JOIN with
+     *   reddit_clone_members on reddit_clone_member_id. Returns
+     *   IRedditCloneMember.ISummary with member details (id, username,
+     *   display_name, profile).
    */
   bannedMember: IRedditCloneMember.ISummary;
 
@@ -102,8 +123,12 @@ export type IRedditCloneCommunityBan = {
    *
    * Contains the profile information of the community moderator or owner who enforced this restriction. This provides accountability and transparency for moderation actions.
    *
-   * @x-autobe-database-schema-property banningModerator
-   * @x-autobe-specification Relation mapping from reddit_clone_community_bans.banningModerator. JOIN with reddit_clone_moderators on reddit_clone_moderator_id. Returns IRedditCloneModerator.ISummary with moderator details (id, username, display_name, profile).
+     * @x-autobe-database-schema-property banningModerator
+     * @x-autobe-specification Relation mapping from
+     *   reddit_clone_community_bans.banningModerator. JOIN with
+     *   reddit_clone_moderators on reddit_clone_moderator_id. Returns
+     *   IRedditCloneModerator.ISummary with moderator details (id, username,
+     *   display_name, profile).
    */
   banningModerator: IRedditCloneModerator.ISummary;
 };
@@ -121,8 +146,10 @@ export namespace IRedditCloneCommunityBan {
      *
      * When provided, returns only ban records for the specified banned member. This allows moderators to search for all bans affecting a particular user within the community.
      *
-     * @x-autobe-database-schema-property reddit_clone_member_id
-     * @x-autobe-specification Filter by banned member ID. Maps to reddit_clone_member_id column. When provided, returns only bans for the specified member.
+         * @x-autobe-database-schema-property reddit_clone_member_id
+         * @x-autobe-specification Filter by banned member ID. Maps to
+         *   reddit_clone_member_id column. When provided, returns only bans for
+         *   the specified member.
      */
     member_id?: (string & tags.Format<"uuid">) | undefined;
 
@@ -131,7 +158,10 @@ export namespace IRedditCloneCommunityBan {
      *
      * Accepts 'active' to show only currently enforced bans (deleted_at is null), or 'removed' to show only bans that have been lifted (deleted_at is set). This enables moderators to view either current restrictions or historical ban records.
      *
-     * @x-autobe-specification Computed filter on deleted_at column. 'active' means deleted_at IS NULL (ban is currently enforced), 'removed' means deleted_at IS NOT NULL (ban has been lifted). This is a computed filter, not a direct column mapping.
+         * @x-autobe-specification Computed filter on deleted_at column.
+         *   'active' means deleted_at IS NULL (ban is currently enforced),
+         *   'removed' means deleted_at IS NOT NULL (ban has been lifted). This
+         *   is a computed filter, not a direct column mapping.
      */
     status?: "active" | "removed" | undefined;
 
@@ -140,7 +170,9 @@ export namespace IRedditCloneCommunityBan {
      *
      * ISO 8601 date-time format. When combined with created_at_lte, defines a date range for when bans were issued.
      *
-     * @x-autobe-specification Computed filter on created_at column. Returns bans where created_at >= this timestamp. This is a range filter parameter, not a direct column mapping.
+         * @x-autobe-specification Computed filter on created_at column. Returns
+         *   bans where created_at >= this timestamp. This is a range filter
+         *   parameter, not a direct column mapping.
      */
     created_at_gte?: (string & tags.Format<"date-time">) | undefined;
 
@@ -149,7 +181,9 @@ export namespace IRedditCloneCommunityBan {
      *
      * ISO 8601 date-time format. When combined with created_at_gte, defines a date range for when bans were issued.
      *
-     * @x-autobe-specification Computed filter on created_at column. Returns bans where created_at <= this timestamp. This is a range filter parameter, not a direct column mapping.
+         * @x-autobe-specification Computed filter on created_at column. Returns
+         *   bans where created_at <= this timestamp. This is a range filter
+         *   parameter, not a direct column mapping.
      */
     created_at_lte?: (string & tags.Format<"date-time">) | undefined;
 
@@ -158,7 +192,9 @@ export namespace IRedditCloneCommunityBan {
      *
      * ISO 8601 date-time format. Useful for finding recently modified ban records.
      *
-     * @x-autobe-specification Computed filter on updated_at column. Returns bans where updated_at >= this timestamp. This is a range filter parameter, not a direct column mapping.
+         * @x-autobe-specification Computed filter on updated_at column. Returns
+         *   bans where updated_at >= this timestamp. This is a range filter
+         *   parameter, not a direct column mapping.
      */
     updated_at_gte?: (string & tags.Format<"date-time">) | undefined;
 
@@ -167,7 +203,9 @@ export namespace IRedditCloneCommunityBan {
      *
      * ISO 8601 date-time format. Useful for finding ban records modified before a specific date.
      *
-     * @x-autobe-specification Computed filter on updated_at column. Returns bans where updated_at <= this timestamp. This is a range filter parameter, not a direct column mapping.
+         * @x-autobe-specification Computed filter on updated_at column. Returns
+         *   bans where updated_at <= this timestamp. This is a range filter
+         *   parameter, not a direct column mapping.
      */
     updated_at_lte?: (string & tags.Format<"date-time">) | undefined;
 
@@ -176,7 +214,10 @@ export namespace IRedditCloneCommunityBan {
      *
      * ISO 8601 date-time format. Only matches temporary bans with an expiration time set. Permanent bans (null expires_at) are not included.
      *
-     * @x-autobe-specification Computed filter on expires_at column. Returns bans where expires_at >= this timestamp. This is a range filter parameter, not a direct column mapping. Null expires_at (permanent bans) are excluded from results.
+         * @x-autobe-specification Computed filter on expires_at column. Returns
+         *   bans where expires_at >= this timestamp. This is a range filter
+         *   parameter, not a direct column mapping. Null expires_at (permanent
+         *   bans) are excluded from results.
      */
     expires_at_gte?: (string & tags.Format<"date-time">) | undefined;
 
@@ -185,7 +226,10 @@ export namespace IRedditCloneCommunityBan {
      *
      * ISO 8601 date-time format. Useful for finding temporary bans expiring within a specific timeframe. Permanent bans (null expires_at) are not included.
      *
-     * @x-autobe-specification Computed filter on expires_at column. Returns bans where expires_at <= this timestamp. This is a range filter parameter, not a direct column mapping. Null expires_at (permanent bans) are excluded from results.
+         * @x-autobe-specification Computed filter on expires_at column. Returns
+         *   bans where expires_at <= this timestamp. This is a range filter
+         *   parameter, not a direct column mapping. Null expires_at (permanent
+         *   bans) are excluded from results.
      */
     expires_at_lte?: (string & tags.Format<"date-time">) | undefined;
 
@@ -194,7 +238,9 @@ export namespace IRedditCloneCommunityBan {
      *
      * Performs a case-insensitive partial match on the ban reason field. Useful for finding bans issued for specific violations or containing particular keywords.
      *
-     * @x-autobe-specification Computed filter on ban_reason column. Performs LIKE query on ban_reason text. Case-insensitive partial match. This is a search parameter, not a direct column mapping.
+         * @x-autobe-specification Computed filter on ban_reason column.
+         *   Performs LIKE query on ban_reason text. Case-insensitive partial
+         *   match. This is a search parameter, not a direct column mapping.
      */
     search?: string | undefined;
 
@@ -203,7 +249,9 @@ export namespace IRedditCloneCommunityBan {
      *
      * Determines which field is used for ordering the ban records. Common values include 'created_at' for chronological order, or 'ban_reason' for alphabetical sorting by reason text.
      *
-     * @x-autobe-specification Sort column name for result ordering. Valid values: created_at, updated_at, expires_at, ban_reason. Default: created_at.
+         * @x-autobe-specification Sort column name for result ordering. Valid
+         *   values: created_at, updated_at, expires_at, ban_reason. Default:
+         *   created_at.
      */
     sort?: string | undefined;
 
@@ -212,7 +260,8 @@ export namespace IRedditCloneCommunityBan {
      *
      * 'asc' for ascending order, 'desc' for descending order. Default is 'desc' to show most recent bans first.
      *
-     * @x-autobe-specification Sort direction for results. 'asc' for ascending order, 'desc' for descending order. Default: desc.
+         * @x-autobe-specification Sort direction for results. 'asc' for
+         *   ascending order, 'desc' for descending order. Default: desc.
      */
     order?: "asc" | "desc" | undefined;
 
@@ -221,7 +270,8 @@ export namespace IRedditCloneCommunityBan {
      *
      * Specifies which page of results to return. Minimum value is 1. Default is 1 if not provided.
      *
-     * @x-autobe-specification Page number for pagination (1-indexed). Default: 1. Minimum: 1.
+         * @x-autobe-specification Page number for pagination (1-indexed).
+         *   Default: 1. Minimum: 1.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -230,7 +280,8 @@ export namespace IRedditCloneCommunityBan {
      *
      * Controls pagination page size. Valid range is 1 to 100. Default is 20 if not provided.
      *
-     * @x-autobe-specification Maximum number of records per page. Default: 20. Range: 1-100.
+         * @x-autobe-specification Maximum number of records per page. Default:
+         *   20. Range: 1-100.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -250,8 +301,10 @@ export namespace IRedditCloneCommunityBan {
      *
      * This UUID serves as the primary key for the ban entity, enabling precise identification and reference to specific ban records across the system.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from reddit_clone_community_bans.id. Primary key uniquely identifying each ban record.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_community_bans.id. Primary key uniquely identifying
+         *   each ban record.
      */
     id: string & tags.Format<"uuid">;
 
@@ -260,8 +313,10 @@ export namespace IRedditCloneCommunityBan {
      *
      * This field captures the reason for the ban, helping with transparency and allowing the banned user to understand the violation. Moderators are required to provide a reason when issuing a ban.
      *
-     * @x-autobe-database-schema-property ban_reason
-     * @x-autobe-specification Direct mapping from reddit_clone_community_bans.ban_reason. Required text field explaining why the user was banned.
+         * @x-autobe-database-schema-property ban_reason
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_community_bans.ban_reason. Required text field
+         *   explaining why the user was banned.
      */
     ban_reason: string;
 
@@ -270,8 +325,11 @@ export namespace IRedditCloneCommunityBan {
      *
      * When set, the ban automatically becomes inactive after this time. When null, the ban is permanent and remains active until manually removed by a moderator or community owner.
      *
-     * @x-autobe-database-schema-property expires_at
-     * @x-autobe-specification Direct mapping from reddit_clone_community_bans.expires_at. Nullable DateTime field for temporary ban expiration. When null, the ban is permanent until manually removed.
+         * @x-autobe-database-schema-property expires_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_community_bans.expires_at. Nullable DateTime field for
+         *   temporary ban expiration. When null, the ban is permanent until
+         *   manually removed.
      */
     expires_at: (string & tags.Format<"date-time">) | null;
 
@@ -280,8 +338,10 @@ export namespace IRedditCloneCommunityBan {
      *
      * Records the exact date and time when the ban was created, providing an audit trail for moderation actions and enabling sorting by ban creation date.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from reddit_clone_community_bans.created_at. Timestamp when the ban record was created.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_community_bans.created_at. Timestamp when the ban
+         *   record was created.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -290,8 +350,10 @@ export namespace IRedditCloneCommunityBan {
      *
      * Tracks the most recent modification to the ban record, such as changes to the expiration time or ban reason. Useful for tracking modification history.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from reddit_clone_community_bans.updated_at. Timestamp when the ban record was last modified.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_community_bans.updated_at. Timestamp when the ban
+         *   record was last modified.
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -300,8 +362,11 @@ export namespace IRedditCloneCommunityBan {
      *
      * Nullable field for soft-delete functionality. When null, the ban is currently active. When set, the ban has been removed but the record is retained for audit purposes, preserving the moderation history.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from reddit_clone_community_bans.deleted_at. Nullable DateTime for soft delete. When null, ban is active. When set, ban is removed (unbanned) but record preserved for audit.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_community_bans.deleted_at. Nullable DateTime for soft
+         *   delete. When null, ban is active. When set, ban is removed
+         *   (unbanned) but record preserved for audit.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
 
@@ -310,8 +375,11 @@ export namespace IRedditCloneCommunityBan {
      *
      * References the community context in which the ban restriction applies. The banned user cannot create posts or comments in this specific community but can still view content.
      *
-     * @x-autobe-database-schema-property community
-     * @x-autobe-specification Relation via JOIN from reddit_clone_community_bans.reddit_clone_community_id to reddit_clone_communities.id. Returns IRedditCloneCommunity.ISummary for list display optimization.
+         * @x-autobe-database-schema-property community
+         * @x-autobe-specification Relation via JOIN from
+         *   reddit_clone_community_bans.reddit_clone_community_id to
+         *   reddit_clone_communities.id. Returns IRedditCloneCommunity.ISummary
+         *   for list display optimization.
      */
     community: IRedditCloneCommunity.ISummary;
 
@@ -320,8 +388,11 @@ export namespace IRedditCloneCommunityBan {
      *
      * References the user who is restricted from creating posts and comments in the community. The member can still view content but cannot participate in the community.
      *
-     * @x-autobe-database-schema-property bannedMember
-     * @x-autobe-specification Relation via JOIN from reddit_clone_community_bans.reddit_clone_member_id to reddit_clone_members.id. Returns IRedditCloneMember.ISummary for list display optimization.
+         * @x-autobe-database-schema-property bannedMember
+         * @x-autobe-specification Relation via JOIN from
+         *   reddit_clone_community_bans.reddit_clone_member_id to
+         *   reddit_clone_members.id. Returns IRedditCloneMember.ISummary for
+         *   list display optimization.
      */
     bannedMember: IRedditCloneMember.ISummary;
 
@@ -330,8 +401,11 @@ export namespace IRedditCloneCommunityBan {
      *
      * References the moderator or community owner who enforced the restriction. This enables audit trails and accountability for moderation actions.
      *
-     * @x-autobe-database-schema-property banningModerator
-     * @x-autobe-specification Relation via JOIN from reddit_clone_community_bans.reddit_clone_moderator_id to reddit_clone_moderators.id. Returns IRedditCloneModerator.ISummary for list display optimization.
+         * @x-autobe-database-schema-property banningModerator
+         * @x-autobe-specification Relation via JOIN from
+         *   reddit_clone_community_bans.reddit_clone_moderator_id to
+         *   reddit_clone_moderators.id. Returns IRedditCloneModerator.ISummary
+         *   for list display optimization.
      */
     banningModerator: IRedditCloneModerator.ISummary;
   };
@@ -354,8 +428,11 @@ export namespace IRedditCloneCommunityBan {
      *
      * This field is required to provide transparency and accountability for moderation actions. The reason helps the banned user understand the violation and serves as an audit trail for moderation decisions. Moderators should provide clear, specific reasons rather than vague statements.
      *
-     * @x-autobe-database-schema-property ban_reason
-     * @x-autobe-specification Direct mapping from reddit_clone_community_bans.ban_reason column. Required non-empty string explaining why the user is being banned. Stored as-is in database.
+         * @x-autobe-database-schema-property ban_reason
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_community_bans.ban_reason column. Required non-empty
+         *   string explaining why the user is being banned. Stored as-is in
+         *   database.
      */
     ban_reason: string;
 
@@ -364,8 +441,12 @@ export namespace IRedditCloneCommunityBan {
      *
      * This identifies the user who will be restricted from creating posts and comments in the community. The banned member can still view content. Must be a valid UUID of an existing member account that is not already banned in this community.
      *
-     * @x-autobe-database-schema-property reddit_clone_member_id
-     * @x-autobe-specification Direct mapping from reddit_clone_community_bans.reddit_clone_member_id column. Required UUID referencing an existing, non-deleted member account in reddit_clone_members table. Validated to ensure member exists and is not already banned in this community.
+         * @x-autobe-database-schema-property reddit_clone_member_id
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_community_bans.reddit_clone_member_id column. Required
+         *   UUID referencing an existing, non-deleted member account in
+         *   reddit_clone_members table. Validated to ensure member exists and
+         *   is not already banned in this community.
      */
     reddit_clone_member_id: string & tags.Format<"uuid">;
 
@@ -374,8 +455,12 @@ export namespace IRedditCloneCommunityBan {
      *
      * When provided, the ban automatically becomes inactive after this time, restoring the user's ability to post and comment. If omitted or null, the ban is permanent until manually removed by a moderator. Format: ISO 8601 date-time (e.g., "2024-12-31T23:59:59Z").
      *
-     * @x-autobe-database-schema-property expires_at
-     * @x-autobe-specification Direct mapping from reddit_clone_community_bans.expires_at column. Optional nullable DateTime in ISO 8601 format. When null or omitted, the ban is permanent. When provided, must be a future timestamp. Ban automatically becomes inactive after this time.
+         * @x-autobe-database-schema-property expires_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_community_bans.expires_at column. Optional nullable
+         *   DateTime in ISO 8601 format. When null or omitted, the ban is
+         *   permanent. When provided, must be a future timestamp. Ban
+         *   automatically becomes inactive after this time.
      */
     expires_at?: (string & tags.Format<"date-time">) | null | undefined;
   };

@@ -17,9 +17,10 @@ export class ShoppingmallProductsSearchController {
    *
    * @param connection
    * @param body Search criteria including product name search term, category filter, price range, stock availability filter, sorting preference, and pagination parameters.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query shopping_mall_products table with the following logic:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query shopping_mall_products table with the
+     *   following logic:
    *
    * 1. Base query: Select active products (deleted_at IS NULL) with JOIN to shopping_mall_sellers for seller info
    *

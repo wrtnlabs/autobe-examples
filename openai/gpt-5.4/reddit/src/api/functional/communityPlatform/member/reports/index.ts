@@ -26,7 +26,9 @@ import { IPageICommunityPlatformReport } from "../../../../structures/IPageIComm
  * @param props.body The member's report submission payload identifying a reported post or comment and the complaint reason.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Authenticate the caller as a member and use the authenticated member ID as the reporter identity. Do not accept reporter identity, community identity, report status, or resolution from the client.
+ * @x-autobe-specification Authenticate the caller as a member and use the
+ *   authenticated member ID as the reporter identity. Do not accept reporter
+ *   identity, community identity, report status, or resolution from the client.
  *
  * Parse `ICommunityPlatformReport.ICreate` to determine whether the target is a post or a comment. The request DTO should carry a discriminator-like target type and a target identifier plus the required reason and optional detail. Validate that exactly one target kind is supplied.
  *
@@ -129,7 +131,8 @@ export namespace create {
  * @param props.body Community-scoped report review query and pagination criteria
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implement this operation as a moderator-scoped search over active report records.
+ * @x-autobe-specification Implement this operation as a moderator-scoped search
+ *   over active report records.
  *
  * Accept a JSON request body of type ICommunityPlatformReport.IRequest containing at minimum the community selector used to scope the review queue, plus pagination and sorting inputs appropriate for list browsing. Resolve the caller's authenticated member identity, then verify that the caller is an owner or moderator of the requested community before any report data is returned. If the caller is not a moderator for that community, reject the request with an authorization error.
  *
@@ -230,7 +233,9 @@ export namespace index {
  * @param props.reportId Unique identifier of the report to retrieve
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Authenticate the caller using the active member session and resolve the current member account identity. Reject the request when there is no valid signed-in member session.
+ * @x-autobe-specification Authenticate the caller using the active member
+ *   session and resolve the current member account identity. Reject the request
+ *   when there is no valid signed-in member session.
  *
  * Load the target community_platform_reports record by id where deleted_at is null. If no such report exists, return a not-found error.
  *

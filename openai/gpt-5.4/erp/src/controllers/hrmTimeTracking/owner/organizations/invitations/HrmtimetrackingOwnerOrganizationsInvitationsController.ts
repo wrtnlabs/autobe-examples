@@ -30,9 +30,11 @@ export class HrmtimetrackingOwnerOrganizationsInvitationsController {
    * @param connection
    * @param organizationId Target organization's ID
    * @param body Invitation creation data
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor owner
-   * @x-autobe-specification Implement this operation as an organization-scoped create flow over `hrm_time_tracking_organization_invitations`.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor owner
+     * @x-autobe-specification Implement this operation as an
+     *   organization-scoped create flow over
+     *   `hrm_time_tracking_organization_invitations`.
    *
    * 1. Authorize the caller against the target organization context identified by `organizationId`. Allow only actors with organization onboarding or membership administration authority. Treat owner as fully authorized by hierarchy. If managers are supported by permission policy, verify the relevant permission before continuing. Reject employees without invitation-management authority.
    *
@@ -92,9 +94,13 @@ export class HrmtimetrackingOwnerOrganizationsInvitationsController {
    * @param connection
    * @param organizationId Target organization's ID
    * @param body Invitation search criteria, filters, pagination, and sorting options
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor owner
-   * @x-autobe-specification Validate that organizationId is a valid UUID and resolve the target organization from hrm_time_tracking_organizations where id matches the path parameter and deleted_at is null. Enforce authorization so only owner actors and manager actors with invitation review authority in the selected organization can execute the query.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor owner
+     * @x-autobe-specification Validate that organizationId is a valid UUID and
+     *   resolve the target organization from hrm_time_tracking_organizations
+     *   where id matches the path parameter and deleted_at is null. Enforce
+     *   authorization so only owner actors and manager actors with invitation
+     *   review authority in the selected organization can execute the query.
    *
    * Build a paginated search query over hrm_time_tracking_organization_invitations scoped by hrm_time_tracking_organization_id = organizationId. Exclude records whose deleted_at is not null from normal results. Support filtering by invitation lifecycle status, invited email text search, and date/time ranges on invited_at or other lifecycle timestamps only if those filters are represented in IHrmTimeTrackingOrganizationInvitation.IRequest. Support deterministic sorting for administrative review, with a stable secondary sort such as created_at descending then id descending when primary sort keys are equal.
    *
@@ -142,9 +148,10 @@ export class HrmtimetrackingOwnerOrganizationsInvitationsController {
    * @param connection
    * @param organizationId Target organization's unique identifier
    * @param invitationId Target invitation's unique identifier within the organization
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor owner
-   * @x-autobe-specification Implement this operation as a scoped detail lookup on the hrm_time_tracking_organization_invitations table.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor owner
+     * @x-autobe-specification Implement this operation as a scoped detail
+     *   lookup on the hrm_time_tracking_organization_invitations table.
    *
    * 1. Authenticate the caller and resolve the caller's organization-scoped authority for the target organizationId.
    * 2. Authorize only organization owners and managers with permission to review or manage organization membership onboarding. Reject employees and any caller outside the target organization context.
@@ -203,9 +210,15 @@ export class HrmtimetrackingOwnerOrganizationsInvitationsController {
    * @param organizationId Target organization's ID
    * @param invitationId Target invitation's ID within the organization
    * @param body Updated organization invitation information
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor owner
-   * @x-autobe-specification Load the organization by organizationId from hrm_time_tracking_organizations where deleted_at is null. Then load the target invitation by invitationId from hrm_time_tracking_organization_invitations and verify hrm_time_tracking_organization_id equals the requested organizationId and deleted_at is null. If either scoped resource is missing, return a not-found error.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor owner
+     * @x-autobe-specification Load the organization by organizationId from
+     *   hrm_time_tracking_organizations where deleted_at is null. Then load the
+     *   target invitation by invitationId from
+     *   hrm_time_tracking_organization_invitations and verify
+     *   hrm_time_tracking_organization_id equals the requested organizationId
+     *   and deleted_at is null. If either scoped resource is missing, return a
+     *   not-found error.
    *
    * Authorize only organization actors who are allowed to manage invitation onboarding in that organization context, specifically owner and manager roles. Reject employee-level access. The authorization check must be organization-scoped and must not rely on global account identity alone.
    *
@@ -260,9 +273,10 @@ export class HrmtimetrackingOwnerOrganizationsInvitationsController {
    * @param connection
    * @param organizationId Target organization's ID.
    * @param invitationId Target invitation's ID within the specified organization.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor owner
-   * @x-autobe-specification Implement an organization-scoped delete handler for `hrm_time_tracking_organization_invitations`.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor owner
+     * @x-autobe-specification Implement an organization-scoped delete handler
+     *   for `hrm_time_tracking_organization_invitations`.
    *
    * 1. Authenticate the caller and resolve the current organization access context.
    * 2. Authorize only organization owners or managers who have invitation or membership onboarding administration permission in the specified organization.

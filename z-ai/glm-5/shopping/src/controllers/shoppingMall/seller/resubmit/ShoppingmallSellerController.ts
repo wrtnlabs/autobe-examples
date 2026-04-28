@@ -28,9 +28,10 @@ export class ShoppingmallSellerController {
    *
    * @param connection
    * @param body Updated shop profile information for rejected seller resubmission. Contains only shop_name (required), shop_description (optional), and logo_image (optional). Email and password cannot be changed through this operation.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Create a new seller registration for a rejected seller.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Create a new seller registration for a rejected
+     *   seller.
    *
    * Implementation steps:
    * 1. Verify the authenticated seller's current approval_status is 'rejected'

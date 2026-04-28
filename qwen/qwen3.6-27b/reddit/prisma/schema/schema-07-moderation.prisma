@@ -1,0 +1,358 @@
+/// Moderator role assignments linking authenticated members to communities
+/// with authority levels distinguishing OWNER (community creator with
+/// highest authority) from MODERATOR (delegated authority).
+///
+/// Moderators can delete posts and comments, ban users, review reports, and
+/// add other moderators within their assigned communities. Owners retain the
+/// unique authority to remove moderators, while moderators cannot remove
+/// other moderators or the owner of the community.
+///
+/// This table serves as a junction entity with an additional property
+/// between {@link reddit_like_community_members} and {@link
+/// reddit_like_community_communities}.
+///
+/// @namespace moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_community_moderators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Foreign key referencing the authenticated member assigned as a moderator.
+  ///
+  /// Links to {@link reddit_like_community_members} to identify which
+  /// registered member holds the moderation role. Each member can be assigned
+  /// moderation duties across multiple communities.
+  reddit_like_community_member_id String
+  
+  /// Foreign key referencing the community where this moderator role is active.
+  ///
+  /// Links to {@link reddit_like_community_communities} to identify the
+  /// community being moderated. Each community can have one owner and multiple
+  /// moderators.
+  reddit_like_community_community_id String
+  
+  /// The authority level of the moderator role, distinguishing between OWNER
+  /// (community creator with highest authority) and MODERATOR (delegated
+  /// authority).
+  ///
+  /// OWNER represents the community creator who can add and remove moderators.
+  /// MODERATOR represents users granted moderation privileges by the owner who
+  /// can manage content, ban users, and appoint other moderators but cannot
+  /// remove the owner or other moderators.
+  authority_type String
+  
+  /// Timestamp when this moderator assignment was created.
+  created_at DateTime
+  
+  /// Timestamp when this moderator assignment was last updated.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member reddit_like_community_members @relation(fields: [reddit_like_community_member_id], references: [id], onDelete: Cascade)
+  community reddit_like_community_communities @relation(fields: [reddit_like_community_community_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([reddit_like_community_member_id, reddit_like_community_community_id], map: "reddit_like_community_moderators_reddit_like_community_3334a3ad")
+  // spellchecker: ignore-next-line
+  @@index([reddit_like_community_community_id], map: "reddit_like_community_moderators_reddit_like_community_baabb877")
+}
+
+/// User bans within specific communities including ban reason and issuing
+/// moderator.
+///
+/// A ban restricts a user from creating posts or comments in a community.
+/// Bans are issued by moderators or community owners with a required reason
+/// text. Bans remain effective until explicitly removed by a moderator,
+/// restoring the user's participation rights.
+///
+/// @namespace moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_community_bans {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the ban record.
+  id String @id
+  
+  /// The community where the ban applies.
+  ///
+  /// Links to {@link reddit_like_community_communities} to specify which
+  /// community restricts the banned user.
+  reddit_like_community_community_id String
+  
+  /// The member user who is banned.
+  ///
+  /// Links to {@link reddit_like_community_members} to identify the restricted
+  /// user.
+  reddit_like_community_banned_member_id String
+  
+  /// The moderator who issued the ban.
+  ///
+  /// Links to {@link reddit_like_community_members} to attribute the ban
+  /// action to a specific moderator.
+  reddit_like_community_issuing_moderator_id String
+  
+  /// The text reason explaining why the user was banned.
+  ///
+  /// Provided by the moderator when issuing the ban and visible to moderators
+  /// reviewing the ban.
+  reason String
+  
+  /// Timestamp when the ban was applied.
+  created_at DateTime
+  
+  /// Timestamp when the ban record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the ban was removed by a moderator (soft delete).
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  community reddit_like_community_communities @relation(fields: [reddit_like_community_community_id], references: [id], onDelete: Cascade)
+  bannedMember reddit_like_community_members @relation("reddit_like_community_bans_of_reddit_like_community_ba_b1bb54b9", fields: [reddit_like_community_banned_member_id], references: [id], onDelete: Cascade)
+  issuingModerator reddit_like_community_members @relation("reddit_like_community_bans_of_reddit_like_community_is_3efaa3a4", fields: [reddit_like_community_issuing_moderator_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([reddit_like_community_banned_member_id], map: "reddit_like_community_bans_reddit_like_community_banne_efeabd00")
+  // spellchecker: ignore-next-line
+  @@index([reddit_like_community_issuing_moderator_id], map: "reddit_like_community_bans_reddit_like_community_issui_097916b8")
+  // spellchecker: ignore-next-line
+  @@unique([reddit_like_community_community_id, reddit_like_community_banned_member_id], map: "reddit_like_community_bans_reddit_like_community_commu_dc3753f6")
+}
+
+/// Content reports submitted by members to flag posts or comments for
+/// moderator review.
+///
+/// Each report captures user-submitted concerns about platform content.
+/// Reports require a text reason explaining the concern and target either a
+/// post or a comment via the polymorphic subtype pattern.
+///
+/// Moderators review reports within their assigned communities. Reports can
+/// be approved (moderator acted on the reported content) or dismissed
+/// (moderator rejected the report, content stays visible). Dismissed reports
+/// are soft-deleted to retain audit history while hiding them from moderator
+/// views.
+///
+/// @namespace moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_community_reports {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key.
+  id String @id
+  
+  /// The community where the reported content belongs.
+  ///
+  /// Reports are scoped to communities so moderators can efficiently query
+  /// reports within their assigned community using the {@link
+  /// reddit_like_community_moderators} relationship.
+  reddit_like_community_community_id String
+  
+  /// The member who submitted this report.
+  ///
+  /// Links to the {@link reddit_like_community_members} record of the
+  /// authenticated user who flagged the content for moderator review.
+  reported_by_member_id String
+  
+  /// The member who resolved this report. Nullable until a moderator takes
+  /// action.
+  ///
+  /// When a moderator approves or dismisses the report, this FK records which
+  /// member performed the resolution for audit tracking.
+  resolved_by_member_id String?
+  
+  /// Discriminator indicating whether this report targets a post or a comment.
+  ///
+  /// Allowed values are 'post' or 'comment'. Works together with subtype
+  /// junction tables {@link reddit_like_community_report_on_posts} and {@link
+  /// reddit_like_community_report_on_comments} to establish the polymorphic
+  /// relationship to the actual reported content.
+  target_type String
+  
+  /// Text reason provided by the reporter explaining why the content was
+  /// flagged.
+  ///
+  /// Required at report creation time per business rules.
+  reason String
+  
+  /// Current review status of the report.
+  ///
+  /// Allowed values are 'pending' (awaiting moderator action), 'approved'
+  /// (moderator acted on the reported content), or 'dismissed' (moderator
+  /// rejected the report, content stays visible). Dismissed reports are
+  /// soft-deleted from the visible report list.
+  status String
+  
+  /// Timestamp when the report was resolved by a moderator.
+  ///
+  /// Nullable until a moderator approves or dismisses this report.
+  resolved_at DateTime?
+  
+  /// Timestamp when the report was submitted by the member.
+  created_at DateTime
+  
+  /// Timestamp of the last modification to this report record.
+  updated_at DateTime
+  
+  /// Timestamp when the report was soft-deleted.
+  ///
+  /// Set when a moderator dismisses the report, removing it from the visible
+  /// report list while preserving audit history.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  community reddit_like_community_communities @relation(fields: [reddit_like_community_community_id], references: [id], onDelete: Cascade)
+  reportedBy reddit_like_community_members @relation("reddit_like_community_reports_of_reported_by_member_id", fields: [reported_by_member_id], references: [id], onDelete: Cascade)
+  resolvedBy reddit_like_community_members? @relation("reddit_like_community_reports_of_resolved_by_member_id", fields: [resolved_by_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  onPost reddit_like_community_report_on_posts?
+  reportOnComment reddit_like_community_report_on_comments?
+  
+  //----
+  // INDEXES
+  //----
+  @@index([reported_by_member_id])
+  @@index([resolved_by_member_id])
+  @@index([target_type])
+  // spellchecker: ignore-next-line
+  @@index([reddit_like_community_community_id, status], map: "reddit_like_community_reports_reddit_like_community_co_edb5cb3b")
+}
+
+/// Junction table for the polymorphic ownership pattern linking reports
+/// targeting posts.
+///
+/// When a user reports content, the report entity must link to exactly one
+/// target — either a post (via this junction table) or a comment (via the
+/// sibling junction table reddit_like_community_report_on_comments). This
+/// separation enforces that each report targets only a single content type.
+///
+/// {@link reddit_like_community_reports} — Report entity that targets this
+/// post.
+///
+/// {@link reddit_like_community_posts} — Post entity being reported.
+///
+/// @namespace moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_community_report_on_posts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for this junction table entry.
+  id String @id
+  
+  /// Foreign key to the report that targets this post.
+  ///
+  /// Enforces the one-to-one relationship where each report appears in exactly
+  /// one junction table (either reddit_like_community_report_on_posts or
+  /// reddit_like_community_report_on_comments), never both. This constraint
+  /// ensures a report targets only a single content item.
+  ///
+  /// {@link reddit_like_community_reports} — The report entity.
+  reddit_like_community_report_id String
+  
+  /// Foreign key to the post being reported.
+  ///
+  /// A single post can be reported multiple times by different users, each
+  /// creating separate report entries linked through their own junction
+  /// records.
+  ///
+  /// {@link reddit_like_community_posts} — The post entity.
+  reddit_like_community_post_id String
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  report reddit_like_community_reports @relation(fields: [reddit_like_community_report_id], references: [id], onDelete: Cascade)
+  post reddit_like_community_posts @relation(fields: [reddit_like_community_post_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([reddit_like_community_post_id], map: "reddit_like_community_report_on_posts_reddit_like_comm_b11241ba")
+  // spellchecker: ignore-next-line
+  @@unique([reddit_like_community_report_id], map: "reddit_like_community_report_on_posts_reddit_like_comm_025bdbfa")
+}
+
+/// Junction table linking reports to comments for polymorphic report targeting.
+///
+/// Each report targets exactly one entity — either a post or a comment.
+/// Reports targeting comments are linked through this table, establishing a
+/// 1:1 relationship between {@link reddit_like_community_reports} and {@link
+/// reddit_like_community_comments}.
+///
+/// When a moderator approves a report targeting a comment, the comment is
+/// deleted and this junction record is soft-deleted along with the report.
+/// Multiple reports can target the same comment.
+///
+/// @namespace moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_community_report_on_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for this junction record.
+  id String @id
+  
+  /// Foreign key to the report that targets this comment.
+  ///
+  /// This FK is unique, enforcing the 1:1 constraint that each report can
+  /// target only one entity. Links to {@link reddit_like_community_reports}.
+  reddit_like_community_report_id String
+  
+  /// Foreign key to the comment being reported.
+  ///
+  /// References {@link reddit_like_community_comments}. Multiple reports can
+  /// target the same comment.
+  reddit_like_community_comment_id String
+  
+  /// Timestamp when this junction record was created.
+  created_at DateTime
+  
+  /// Timestamp when this junction record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this junction record was soft-deleted.
+  ///
+  /// Set when the associated report is resolved and removed.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  report reddit_like_community_reports @relation(fields: [reddit_like_community_report_id], references: [id], onDelete: Cascade)
+  comment reddit_like_community_comments @relation(fields: [reddit_like_community_comment_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([reddit_like_community_report_id], map: "reddit_like_community_report_on_comments_reddit_like_c_41158646")
+  // spellchecker: ignore-next-line
+  @@index([reddit_like_community_comment_id], map: "reddit_like_community_report_on_comments_reddit_like_c_b22de798")
+}

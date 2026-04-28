@@ -34,9 +34,10 @@ export class ShoppingmallCustomerWishlistsItemsController {
    *
    * @param connection
    * @param body Product to add to wishlist
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Implementation steps for adding a product to the customer's wishlist:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Implementation steps for adding a product to the
+     *   customer's wishlist:
    *
    * 1. **Authentication & Authorization:**
    *    - Extract customer ID from JWT token in Authorization header
@@ -102,9 +103,9 @@ export class ShoppingmallCustomerWishlistsItemsController {
    *
    * @param connection
    * @param productId Unique identifier of the product to remove from the wishlist. The product must exist in the authenticated customer's wishlist for removal to succeed.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Implementation steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Implementation steps:
    *
    * 1. Authenticate the customer from the JWT token in the request header
    * 2. Query shopping_mall_wishlists table to find the customer's wishlist by shopping_mall_customer_id

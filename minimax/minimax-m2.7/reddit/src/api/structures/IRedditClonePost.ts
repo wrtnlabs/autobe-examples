@@ -14,101 +14,123 @@ export type IRedditClonePost = {
   /**
    * Unique identifier of the post.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from reddit_clone_posts.id. Primary key UUID.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from reddit_clone_posts.id.
+     *   Primary key UUID.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Title of the post.
    *
-   * @x-autobe-database-schema-property title
-   * @x-autobe-specification Direct mapping from reddit_clone_posts.title.
+     * @x-autobe-database-schema-property title
+     * @x-autobe-specification Direct mapping from reddit_clone_posts.title.
    */
   title: string;
 
   /**
    * Post type discriminator indicating content type: 'text' for text posts, 'link' for URL posts, 'image' for image posts.
    *
-   * @x-autobe-specification Direct mapping from reddit_clone_posts.type. String value: 'text', 'link', or 'image'. Discriminator determines which content field to populate in response.
-   * @x-autobe-database-schema-property type
+     * @x-autobe-specification Direct mapping from reddit_clone_posts.type.
+     *   String value: 'text', 'link', or 'image'. Discriminator determines
+     *   which content field to populate in response.
+     * @x-autobe-database-schema-property type
    */
   type: string;
 
   /**
    * The member who authored this post.
    *
-   * @x-autobe-database-schema-property author
-   * @x-autobe-specification Belongs-to relation: JOIN reddit_clone_posts.reddit_clone_member_id to reddit_clone_members.id. Returns IRedditCloneMember.ISummary.
+     * @x-autobe-database-schema-property author
+     * @x-autobe-specification Belongs-to relation: JOIN
+     *   reddit_clone_posts.reddit_clone_member_id to reddit_clone_members.id.
+     *   Returns IRedditCloneMember.ISummary.
    */
   author: IRedditCloneMember.ISummary;
 
   /**
    * The community where this post belongs.
    *
-   * @x-autobe-database-schema-property community
-   * @x-autobe-specification Belongs-to relation: JOIN reddit_clone_posts.reddit_clone_community_id to reddit_clone_communities.id. Returns IRedditCloneCommunity.ISummary.
+     * @x-autobe-database-schema-property community
+     * @x-autobe-specification Belongs-to relation: JOIN
+     *   reddit_clone_posts.reddit_clone_community_id to
+     *   reddit_clone_communities.id. Returns IRedditCloneCommunity.ISummary.
    */
   community: IRedditCloneCommunity.ISummary;
 
   /**
    * Text content for text-type posts, containing the full body.
    *
-   * @x-autobe-specification JOIN reddit_clone_post_text_contents ON reddit_clone_post_id = posts.id. Populated only when type equals 'text'. Returns full body text.
+     * @x-autobe-specification JOIN reddit_clone_post_text_contents ON
+     *   reddit_clone_post_id = posts.id. Populated only when type equals
+     *   'text'. Returns full body text.
    */
   textContent: IRedditClonePostTextContent;
 
   /**
    * URL link content for link-type posts.
    *
-   * @x-autobe-specification JOIN reddit_clone_post_links ON reddit_clone_post_id = posts.id. Populated only when type equals 'link'. Returns URL and metadata.
+     * @x-autobe-specification JOIN reddit_clone_post_links ON
+     *   reddit_clone_post_id = posts.id. Populated only when type equals
+     *   'link'. Returns URL and metadata.
    */
   link: IRedditClonePostLink;
 
   /**
    * Image content for image-type posts.
    *
-   * @x-autobe-specification JOIN reddit_clone_post_images ON reddit_clone_post_id = posts.id, then JOIN reddit_clone_files ON file_id. Populated only when type equals 'image'. Returns file metadata.
+     * @x-autobe-specification JOIN reddit_clone_post_images ON
+     *   reddit_clone_post_id = posts.id, then JOIN reddit_clone_files ON
+     *   file_id. Populated only when type equals 'image'. Returns file
+     *   metadata.
    */
   image: IRedditClonePostImage;
 
   /**
    * Net vote score (upvotes minus downvotes) for this post.
    *
-   * @x-autobe-database-schema-property vote_score
-   * @x-autobe-specification Direct mapping from reddit_clone_posts.vote_score. Denormalized field storing net votes (upvotes minus downvotes).
+     * @x-autobe-database-schema-property vote_score
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_posts.vote_score. Denormalized field storing net votes
+     *   (upvotes minus downvotes).
    */
   voteScore: number & tags.Type<"int32">;
 
   /**
    * Total number of comments on this post.
    *
-   * @x-autobe-database-schema-property comment_count
-   * @x-autobe-specification Direct mapping from reddit_clone_posts.comment_count. Denormalized count of all comments on this post.
+     * @x-autobe-database-schema-property comment_count
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_posts.comment_count. Denormalized count of all comments on
+     *   this post.
    */
   commentCount: number & tags.Type<"int32">;
 
   /**
    * Timestamp when the post was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from reddit_clone_posts.created_at. ISO 8601 timestamp with timezone.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_posts.created_at. ISO 8601 timestamp with timezone.
    */
   createdAt: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the post was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from reddit_clone_posts.updated_at. ISO 8601 timestamp with timezone.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_posts.updated_at. ISO 8601 timestamp with timezone.
    */
   updatedAt: string & tags.Format<"date-time">;
 
   /**
    * Soft-deletion timestamp. Null if the post is active, set when the post is deleted.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from reddit_clone_posts.deleted_at. Nullable - null means post is active, timestamp means soft-deleted.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_posts.deleted_at. Nullable - null means post is active,
+     *   timestamp means soft-deleted.
    */
   deletedAt: (string & tags.Format<"date-time">) | null;
 };
@@ -155,21 +177,30 @@ export namespace IRedditClonePost {
     /**
      * Filter posts to a specific community by its unique identifier.
      *
-     * @x-autobe-specification Query filter parameter. When present, adds WHERE reddit_clone_community_id = communityId. Maps to FK relationship with reddit_clone_communities.id. Optional - omitting returns posts from all communities.
+         * @x-autobe-specification Query filter parameter. When present, adds
+         *   WHERE reddit_clone_community_id = communityId. Maps to FK
+         *   relationship with reddit_clone_communities.id. Optional - omitting
+         *   returns posts from all communities.
      */
     communityId?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Opaque pagination cursor for navigating to the next page of results.
      *
-     * @x-autobe-specification Cursor-based pagination token. Encodes (created_at, id) tuple for efficient navigation without offset performance issues. Server generates cursor in response; client passes it back for next page. Optional - omit for first page.
+         * @x-autobe-specification Cursor-based pagination token. Encodes
+         *   (created_at, id) tuple for efficient navigation without offset
+         *   performance issues. Server generates cursor in response; client
+         *   passes it back for next page. Optional - omit for first page.
      */
     cursor?: string | undefined;
 
     /**
      * Maximum number of posts to return per page.
      *
-     * @x-autobe-specification Maximum number of records to return per page. Valid range: 1-100. Server validates and applies min(max_limit, requested_limit). Default behavior: apply default page size when omitted.
+         * @x-autobe-specification Maximum number of records to return per page.
+         *   Valid range: 1-100. Server validates and applies min(max_limit,
+         *   requested_limit). Default behavior: apply default page size when
+         *   omitted.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -178,35 +209,52 @@ export namespace IRedditClonePost {
     /**
      * Page number for offset-based pagination (1-indexed).
      *
-     * @x-autobe-specification 1-indexed page number for offset pagination. Calculates offset as (page - 1) * limit. Use with limit for offset-based navigation. Optional - omit when using cursor pagination. Minimum value: 1.
+         * @x-autobe-specification 1-indexed page number for offset pagination.
+         *   Calculates offset as (page - 1) * limit. Use with limit for
+         *   offset-based navigation. Optional - omit when using cursor
+         *   pagination. Minimum value: 1.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Sorting algorithm for post ordering: hot (engagement decay), new (chronological), top (highest score), or controversial (most balanced votes).
      *
-     * @x-autobe-specification Sorting algorithm applied to ORDER BY clause: 'hot' (vote_score decay algorithm), 'new' (created_at DESC), 'top' (vote_score DESC with timeRange filter), 'controversial' (ABS(vote_score) ASC with minimum threshold and timeRange filter). Optional - defaults to 'hot'.
+         * @x-autobe-specification Sorting algorithm applied to ORDER BY clause:
+         *   'hot' (vote_score decay algorithm), 'new' (created_at DESC), 'top'
+         *   (vote_score DESC with timeRange filter), 'controversial'
+         *   (ABS(vote_score) ASC with minimum threshold and timeRange filter).
+         *   Optional - defaults to 'hot'.
      */
     sort?: "controversial" | "hot" | "new" | "top" | undefined;
 
     /**
      * Filter to show posts only from communities the authenticated user has subscribed to.
      *
-     * @x-autobe-specification Filter to show posts only from communities the authenticated user is subscribed to. Requires valid member session. When true: JOIN reddit_clone_subscriptions to get subscribed community IDs, add WHERE reddit_clone_community_id IN (...) filter. Ignored for guests (treated as false).
+         * @x-autobe-specification Filter to show posts only from communities
+         *   the authenticated user is subscribed to. Requires valid member
+         *   session. When true: JOIN reddit_clone_subscriptions to get
+         *   subscribed community IDs, add WHERE reddit_clone_community_id IN
+         *   (...) filter. Ignored for guests (treated as false).
      */
     subscribedOnly?: boolean | undefined;
 
     /**
      * Time range filter for 'top' and 'controversial' sorting: today, this week, this month, this year, or all time.
      *
-     * @x-autobe-specification Time filter applied when sort is 'top' or 'controversial'. Filters created_at: 'day' (last 24h), 'week' (7 days), 'month' (30 days), 'year' (365 days), 'all' (no filter). Optional - defaults to 'all' when sort requires time filter.
+         * @x-autobe-specification Time filter applied when sort is 'top' or
+         *   'controversial'. Filters created_at: 'day' (last 24h), 'week' (7
+         *   days), 'month' (30 days), 'year' (365 days), 'all' (no filter).
+         *   Optional - defaults to 'all' when sort requires time filter.
      */
     timeRange?: "all" | "day" | "month" | "week" | "year" | undefined;
 
     /**
      * Filter posts by content type: text (text content), link (URL), or image (uploaded image).
      *
-     * @x-autobe-specification Filter posts by content type discriminator. Values: 'text' (has reddit_clone_post_text_contents), 'link' (has reddit_clone_post_links), 'image' (has reddit_clone_post_images). Optional - omitting returns all post types.
+         * @x-autobe-specification Filter posts by content type discriminator.
+         *   Values: 'text' (has reddit_clone_post_text_contents), 'link' (has
+         *   reddit_clone_post_links), 'image' (has reddit_clone_post_images).
+         *   Optional - omitting returns all post types.
      */
     type?: "image" | "link" | "text" | undefined;
   };
@@ -241,15 +289,24 @@ export namespace IRedditClonePost {
     /**
      * Updated title of the post. Required for all post types.
      *
-     * @x-autobe-database-schema-property title
-     * @x-autobe-specification Direct mapping to reddit_clone_posts.title column. Required field validated between 1-300 characters.
+         * @x-autobe-database-schema-property title
+         * @x-autobe-specification Direct mapping to reddit_clone_posts.title
+         *   column. Required field validated between 1-300 characters.
      */
     title: string & tags.MinLength<1> & tags.MaxLength<300>;
 
     /**
      * Type-specific content update based on post type discriminator. For text posts, provide the new body text. For link posts, provide the new URL. For image posts, provide the new file ID.
      *
-     * @x-autobe-specification Union type (oneOf) mapping to type-specific content updates: IRedditClonePostTextContent.IUpdate for text posts (maps to reddit_clone_post_text_contents.body), IRedditClonePostLink.IUpdate for link posts (maps to reddit_clone_post_links.url), IRedditClonePostImage.IUpdate for image posts (maps to reddit_clone_post_images.reddit_clone_file_id). Client must send only the content type matching the post's existing type discriminator.
+         * @x-autobe-specification Union type (oneOf) mapping to type-specific
+         *   content updates: IRedditClonePostTextContent.IUpdate for text posts
+         *   (maps to reddit_clone_post_text_contents.body),
+         *   IRedditClonePostLink.IUpdate for link posts (maps to
+         *   reddit_clone_post_links.url), IRedditClonePostImage.IUpdate for
+         *   image posts (maps to
+         *   reddit_clone_post_images.reddit_clone_file_id). Client must send
+         *   only the content type matching the post's existing type
+         *   discriminator.
      */
     content:
       | IRedditClonePostTextContent.IUpdate

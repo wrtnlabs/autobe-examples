@@ -21,7 +21,9 @@ import { IErpHrmBudgetAnalysis } from "../../../../../structures/IErpHrmBudgetAn
  * @param props.body Optional filter criteria for budget analytics including specific project IDs to include
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Query erp_hrm_projects table filtered to projects that belong to the authenticated user's organization and have budget_hours defined (not null and greater than 0).
+ * @x-autobe-specification Query erp_hrm_projects table filtered to projects
+ *   that belong to the authenticated user's organization and have budget_hours
+ *   defined (not null and greater than 0).
  *
  * For each project, calculate actual hours by:
  * 1. Joining erp_hrm_timelogs on erp_hrm_project_id

@@ -26,7 +26,8 @@ import { IShoppingMallProductImage } from "../../../../../structures/IShoppingMa
  * @param props.body Information required to create a product gallery image
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Implement this operation as a seller-scoped creation workflow for a child record of the target product.
+ * @x-autobe-specification Implement this operation as a seller-scoped creation
+ *   workflow for a child record of the target product.
  *
  * 1. Authenticate the caller as a seller. Reject non-seller actors.
  * 2. Load the target product from the product table by `productId`. If not found, return a not-found error.
@@ -150,40 +151,56 @@ export namespace create {
  * @param props.body Desired product image gallery update payload
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification 1. Authenticate the requester as a seller account.
- * 2. Load the target `shopping_mall_products` row by `productId` where `deleted_at` is null unless product-management policy explicitly allows editing deleted products; for this endpoint, deny updates when the product is not an active editable seller product.
- * 3. Join or separately load the owning `shopping_mall_sellers` row using `shopping_mall_products.shopping_mall_seller_id`.
- * 4. Validate authorization and business restrictions:
- *    - If the product does not exist, return a not-found error.
- *    - If the authenticated seller does not own the product, return a forbidden error.
- *    - If the seller is suspended, deny the request and leave the gallery unchanged.
- *    - If the seller is banned or the account is otherwise unusable for platform actions, deny the request.
- * 5. Parse `IShoppingMallProductImage.IUpdate` as the desired gallery state. Treat the request as a synchronization/update command for the product’s current images.
- * 6. Validate request-level gallery rules:
- *    - Every submitted image entry must contain a valid image URI suitable for stored media references.
- *    - Submitted sequence positions must be unique within the request.
- *    - Normalize ordering into a deterministic ascending sequence if the DTO is order-based rather than explicit-sequence-based.
- *    - Ensure exactly one thumbnail is designated, or if the contract omits explicit thumbnail flags, assign the first resulting image as thumbnail because product listings use the first image as the main thumbnail.
- *    - Reject an empty or inconsistent payload if business policy requires at least one gallery image for an image-update request; otherwise allow empty gallery synchronization only when the product is permitted to have no current images.
- * 7. Start a transaction.
- * 8. Load current active `shopping_mall_product_images` rows for the product where `deleted_at` is null.
- * 9. Apply the gallery mutation:
- *    - For retained images, update `sequence`, `is_thumbnail`, and `updated_at` as needed.
- *    - For newly added images, insert new `shopping_mall_product_images` rows with new UUIDs, `shopping_mall_product_id`, `image_uri`, normalized `sequence`, `is_thumbnail`, and timestamps.
- *    - For removed images, mark `deleted_at` and update `updated_at` rather than physically deleting rows, because the schema explicitly supports soft deletion for current image records.
- * 10. Enforce post-write invariants inside the transaction:
- *    - No duplicate active sequence for the product.
- *    - At most one active thumbnail row for the product.
- *    - The thumbnail row corresponds to the first visible image when that is the product-gallery policy.
- * 11. Create a new `shopping_mall_product_snapshots` row for the product to record this edit event.
- * 12. Read the resulting active image set after mutation, ordered by sequence ascending.
- * 13. Insert one `shopping_mall_product_snapshot_image_copies` row per resulting active image under the new snapshot, copying the final `image_uri`, `sequence`, and thumbnail state.
- * 14. Commit the transaction.
- * 15. Return the updated product image resource representing the current gallery state for the target product, ordered by ascending sequence.
- * 16. Error handling:
- *    - Unique constraint collisions on `(shopping_mall_product_id, sequence)` must be surfaced as a validation conflict rather than an internal error.
- *    - Snapshot creation failure must roll back the gallery update so current state and historical state never diverge.
- *    - Invalid media references must be rejected before any persistent changes are made.
+ * @x-autobe-specification 1. Authenticate the requester as a seller account. 2.
+ *   Load the target `shopping_mall_products` row by `productId` where
+ *   `deleted_at` is null unless product-management policy explicitly allows
+ *   editing deleted products; for this endpoint, deny updates when the product
+ *   is not an active editable seller product. 3. Join or separately load the
+ *   owning `shopping_mall_sellers` row using
+ *   `shopping_mall_products.shopping_mall_seller_id`. 4. Validate authorization
+ *   and business restrictions: - If the product does not exist, return a
+ *   not-found error. - If the authenticated seller does not own the product,
+ *   return a forbidden error. - If the seller is suspended, deny the request
+ *   and leave the gallery unchanged. - If the seller is banned or the account
+ *   is otherwise unusable for platform actions, deny the request. 5. Parse
+ *   `IShoppingMallProductImage.IUpdate` as the desired gallery state. Treat the
+ *   request as a synchronization/update command for the product’s current
+ *   images. 6. Validate request-level gallery rules: - Every submitted image
+ *   entry must contain a valid image URI suitable for stored media references.
+ *   - Submitted sequence positions must be unique within the request. -
+ *   Normalize ordering into a deterministic ascending sequence if the DTO is
+ *   order-based rather than explicit-sequence-based. - Ensure exactly one
+ *   thumbnail is designated, or if the contract omits explicit thumbnail flags,
+ *   assign the first resulting image as thumbnail because product listings use
+ *   the first image as the main thumbnail. - Reject an empty or inconsistent
+ *   payload if business policy requires at least one gallery image for an
+ *   image-update request; otherwise allow empty gallery synchronization only
+ *   when the product is permitted to have no current images. 7. Start a
+ *   transaction. 8. Load current active `shopping_mall_product_images` rows for
+ *   the product where `deleted_at` is null. 9. Apply the gallery mutation: -
+ *   For retained images, update `sequence`, `is_thumbnail`, and `updated_at` as
+ *   needed. - For newly added images, insert new `shopping_mall_product_images`
+ *   rows with new UUIDs, `shopping_mall_product_id`, `image_uri`, normalized
+ *   `sequence`, `is_thumbnail`, and timestamps. - For removed images, mark
+ *   `deleted_at` and update `updated_at` rather than physically deleting rows,
+ *   because the schema explicitly supports soft deletion for current image
+ *   records. 10. Enforce post-write invariants inside the transaction: - No
+ *   duplicate active sequence for the product. - At most one active thumbnail
+ *   row for the product. - The thumbnail row corresponds to the first visible
+ *   image when that is the product-gallery policy. 11. Create a new
+ *   `shopping_mall_product_snapshots` row for the product to record this edit
+ *   event. 12. Read the resulting active image set after mutation, ordered by
+ *   sequence ascending. 13. Insert one
+ *   `shopping_mall_product_snapshot_image_copies` row per resulting active
+ *   image under the new snapshot, copying the final `image_uri`, `sequence`,
+ *   and thumbnail state. 14. Commit the transaction. 15. Return the updated
+ *   product image resource representing the current gallery state for the
+ *   target product, ordered by ascending sequence. 16. Error handling: - Unique
+ *   constraint collisions on `(shopping_mall_product_id, sequence)` must be
+ *   surfaced as a validation conflict rather than an internal error. - Snapshot
+ *   creation failure must roll back the gallery update so current state and
+ *   historical state never diverge. - Invalid media references must be rejected
+ *   before any persistent changes are made.
  * @path /shoppingMall/seller/seller-products/:productId/images
  * @accessor api.functional.shoppingMall.seller.seller_products.images.patchByProductid
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -391,7 +408,14 @@ export namespace at {
  * @param props.body Product image update information
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Load the target shopping_mall_products row by productId and ensure it exists, is not deleted for seller-edit purposes, and is owned by the authenticated seller account. Load the target shopping_mall_product_images row by imageId together with shopping_mall_product_id, and verify that it belongs to the same productId from the path. Reject the request when the product does not exist, the image does not exist, the image does not belong to the product, or the seller does not own the product.
+ * @x-autobe-specification Load the target shopping_mall_products row by
+ *   productId and ensure it exists, is not deleted for seller-edit purposes,
+ *   and is owned by the authenticated seller account. Load the target
+ *   shopping_mall_product_images row by imageId together with
+ *   shopping_mall_product_id, and verify that it belongs to the same productId
+ *   from the path. Reject the request when the product does not exist, the
+ *   image does not exist, the image does not belong to the product, or the
+ *   seller does not own the product.
  *
  * Apply updates from IShoppingMallProductImage.IUpdate only to fields that represent editable live gallery state. At minimum, support updating image_uri and sequence. Do not allow the client to bypass parent-child integrity by changing shopping_mall_product_id or any ownership field. Maintain updated_at on the image row.
  *
@@ -508,7 +532,9 @@ export namespace putByProductidAndImageid {
  * @param props.imageId Target product image identifier within the specified product gallery
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Implement this operation as a seller-authorized transactional delete on `shopping_mall_product_images` scoped by the parent product.
+ * @x-autobe-specification Implement this operation as a seller-authorized
+ *   transactional delete on `shopping_mall_product_images` scoped by the parent
+ *   product.
  *
  * 1. Authenticate the requester as a seller.
  * 2. Load the seller account from `shopping_mall_sellers` and reject if `deleted_at` is not null, if `banned` prevents platform use according to service policy, or if `suspended` is true. At minimum, `suspended` must block this operation because suspended sellers cannot delete product images.

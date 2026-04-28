@@ -15,72 +15,97 @@ export type ICommunityBan = {
   /**
    * Unique identifier of this ban record. A UUID assigned at the time the ban was issued.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from community_bans.id. UUID v4, auto-generated at ban record creation time.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from community_bans.id. UUID v4,
+     *   auto-generated at ban record creation time.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * The community in which this ban is enforced. Contains a lightweight summary of the community entity, including its name and subscriber count.
    *
-   * @x-autobe-database-schema-property community
-   * @x-autobe-specification Join community_bans.community_id → community_communities.id. Return ICommunityCommunity.ISummary. Includes the community's id, name, description, icon URL, subscriber count, and creation timestamp.
+     * @x-autobe-database-schema-property community
+     * @x-autobe-specification Join community_bans.community_id →
+     *   community_communities.id. Return ICommunityCommunity.ISummary. Includes
+     *   the community's id, name, description, icon URL, subscriber count, and
+     *   creation timestamp.
    */
   community: ICommunityCommunity.ISummary;
 
   /**
    * The member who is subject to this ban. Contains a lightweight summary of the banned member's public identity, including their username and karma score.
    *
-   * @x-autobe-database-schema-property bannedMember
-   * @x-autobe-specification Join community_bans.banned_member_id → community_members.id. Return ICommunityMember.ISummary joined with community_user_profiles. Includes id, username, display_name, avatar_url, karma_score, and created_at.
+     * @x-autobe-database-schema-property bannedMember
+     * @x-autobe-specification Join community_bans.banned_member_id →
+     *   community_members.id. Return ICommunityMember.ISummary joined with
+     *   community_user_profiles. Includes id, username, display_name,
+     *   avatar_url, karma_score, and created_at.
    */
   bannedMember: ICommunityMember.ISummary;
 
   /**
    * The moderator or owner who issued this ban. Contains a lightweight summary of the moderator's public identity, providing an audit trail of who performed the enforcement action.
    *
-   * @x-autobe-database-schema-property issuingModerator
-   * @x-autobe-specification Join community_bans.issuing_moderator_id → community_members.id. Return ICommunityMember.ISummary joined with community_user_profiles. Includes id, username, display_name, avatar_url, karma_score, and created_at.
+     * @x-autobe-database-schema-property issuingModerator
+     * @x-autobe-specification Join community_bans.issuing_moderator_id →
+     *   community_members.id. Return ICommunityMember.ISummary joined with
+     *   community_user_profiles. Includes id, username, display_name,
+     *   avatar_url, karma_score, and created_at.
    */
   issuingModerator: ICommunityMember.ISummary;
 
   /**
    * The written reason provided by the moderator explaining why the member was banned. Required for audit and transparency purposes. This reason is preserved in the record even after the ban is lifted.
    *
-   * @x-autobe-database-schema-property reason
-   * @x-autobe-specification Direct mapping from community_bans.reason. Non-empty string required at ban creation time. Cannot be empty. May be updated after the ban is created via the update endpoint.
+     * @x-autobe-database-schema-property reason
+     * @x-autobe-specification Direct mapping from community_bans.reason.
+     *   Non-empty string required at ban creation time. Cannot be empty. May be
+     *   updated after the ban is created via the update endpoint.
    */
   reason: string;
 
   /**
    * The current lifecycle state of this ban. 'active' means the ban is in effect and the member is restricted from creating posts or comments in the community. 'lifted' means the ban has been reversed and the member's participation rights have been restored.
    *
-   * @x-autobe-database-schema-property status
-   * @x-autobe-specification Direct mapping from community_bans.status. Allowed values: 'active' (ban is currently in effect) or 'lifted' (ban has been reversed by a moderator). Defaults to 'active' at creation. Transitions to 'lifted' when a moderator updates the ban record via the PUT endpoint.
+     * @x-autobe-database-schema-property status
+     * @x-autobe-specification Direct mapping from community_bans.status.
+     *   Allowed values: 'active' (ban is currently in effect) or 'lifted' (ban
+     *   has been reversed by a moderator). Defaults to 'active' at creation.
+     *   Transitions to 'lifted' when a moderator updates the ban record via the
+     *   PUT endpoint.
    */
   status: string;
 
   /**
    * The timestamp when this ban was lifted by a moderator. Null if the ban is still active. When present, this field provides an audit record of exactly when the member's participation rights were restored.
    *
-   * @x-autobe-database-schema-property lifted_at
-   * @x-autobe-specification Direct mapping from community_bans.lifted_at (nullable DateTime, Timestamptz). Null when the ban is still active (status = 'active'). Set to the server timestamp (NOW()) when a moderator lifts the ban via the PUT endpoint and status transitions to 'lifted'.
+     * @x-autobe-database-schema-property lifted_at
+     * @x-autobe-specification Direct mapping from community_bans.lifted_at
+     *   (nullable DateTime, Timestamptz). Null when the ban is still active
+     *   (status = 'active'). Set to the server timestamp (NOW()) when a
+     *   moderator lifts the ban via the PUT endpoint and status transitions to
+     *   'lifted'.
    */
   lifted_at: (string & tags.Format<"date-time">) | null;
 
   /**
    * The timestamp when this ban was issued. Records the exact moment the enforcement action was created by the moderator.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from community_bans.created_at (DateTime, Timestamptz). Set to the server timestamp at the time the ban record was created. Immutable after creation.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from community_bans.created_at
+     *   (DateTime, Timestamptz). Set to the server timestamp at the time the
+     *   ban record was created. Immutable after creation.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * The timestamp when this ban record was last modified. Updated whenever the ban's status or reason changes, such as when the ban is lifted by a moderator.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from community_bans.updated_at (DateTime, Timestamptz). Set to the server timestamp at creation and updated to NOW() whenever the ban record is modified (e.g., when the ban is lifted via the PUT endpoint).
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from community_bans.updated_at
+     *   (DateTime, Timestamptz). Set to the server timestamp at creation and
+     *   updated to NOW() whenever the ban record is modified (e.g., when the
+     *   ban is lifted via the PUT endpoint).
    */
   updated_at: string & tags.Format<"date-time">;
 };
@@ -96,16 +121,24 @@ export namespace ICommunityBan {
     /**
      * The unique identifier (UUID) of the member to be banned from the community. Must refer to an active, non-deleted member account. The community owner and existing moderators cannot be targeted by this field.
      *
-     * @x-autobe-database-schema-property banned_member_id
-     * @x-autobe-specification Direct mapping to community_bans.banned_member_id. Must be a valid UUID of an existing, non-deleted community_members record. The service layer validates that this member exists (deleted_at IS NULL) and is not the community owner or a moderator before creating the ban record.
+         * @x-autobe-database-schema-property banned_member_id
+         * @x-autobe-specification Direct mapping to
+         *   community_bans.banned_member_id. Must be a valid UUID of an
+         *   existing, non-deleted community_members record. The service layer
+         *   validates that this member exists (deleted_at IS NULL) and is not
+         *   the community owner or a moderator before creating the ban record.
      */
     banned_member_id: string & tags.Format<"uuid">;
 
     /**
      * A written explanation provided by the moderator describing why this ban is being issued. Must not be empty. This reason is recorded for audit and transparency purposes and is visible to other moderators within the community.
      *
-     * @x-autobe-database-schema-property reason
-     * @x-autobe-specification Direct mapping to community_bans.reason. Must be a non-empty string (minLength: 1). Stored verbatim in the database. Used for audit trail and moderation transparency. No maximum length is enforced at the API level, but the value must not be blank.
+         * @x-autobe-database-schema-property reason
+         * @x-autobe-specification Direct mapping to community_bans.reason. Must
+         *   be a non-empty string (minLength: 1). Stored verbatim in the
+         *   database. Used for audit trail and moderation transparency. No
+         *   maximum length is enforced at the API level, but the value must not
+         *   be blank.
      */
     reason: string & tags.MinLength<1>;
   };
@@ -121,56 +154,89 @@ export namespace ICommunityBan {
     /**
      * Optional filter by ban status. When provided, only ban records matching the specified status are returned. Accepted values are 'active' (ban is in effect) or 'lifted' (ban has been reversed). When omitted, all bans are returned.
      *
-     * @x-autobe-specification Optional filter on community_bans.status column. When provided, apply WHERE status = {status}. Accepted values: 'active' (ban is in effect) or 'lifted' (ban has been reversed). When null or omitted, no status filter is applied and all bans are returned regardless of status.
+         * @x-autobe-specification Optional filter on community_bans.status
+         *   column. When provided, apply WHERE status = {status}. Accepted
+         *   values: 'active' (ban is in effect) or 'lifted' (ban has been
+         *   reversed). When null or omitted, no status filter is applied and
+         *   all bans are returned regardless of status.
      */
     status?: string | null | undefined;
 
     /**
      * Optional filter by the unique identifier (UUID) of the banned member. When specified, only ban records where the banned member matches this UUID are returned.
      *
-     * @x-autobe-specification Optional exact-match filter on community_bans.banned_member_id column. When provided, apply WHERE banned_member_id = {bannedMemberId}. Must be a valid UUID. When both bannedMemberId and bannedMemberUsername are provided, both filters apply simultaneously (AND logic).
+         * @x-autobe-specification Optional exact-match filter on
+         *   community_bans.banned_member_id column. When provided, apply WHERE
+         *   banned_member_id = {bannedMemberId}. Must be a valid UUID. When
+         *   both bannedMemberId and bannedMemberUsername are provided, both
+         *   filters apply simultaneously (AND logic).
      */
     bannedMemberId?: (string & tags.Format<"uuid">) | null | undefined;
 
     /**
      * Optional filter by the username of the banned member. Performs a case-insensitive partial match against the member's username. When specified, only bans where the banned member's username contains this value are returned.
      *
-     * @x-autobe-specification Optional cross-table filter. When provided, JOIN community_members ON community_bans.banned_member_id = community_members.id, then apply WHERE community_members.username ILIKE '%{bannedMemberUsername}%'. Case-insensitive partial match against the username. When both bannedMemberId and bannedMemberUsername are provided, both filters apply (AND logic).
+         * @x-autobe-specification Optional cross-table filter. When provided,
+         *   JOIN community_members ON community_bans.banned_member_id =
+         *   community_members.id, then apply WHERE community_members.username
+         *   ILIKE '%{bannedMemberUsername}%'. Case-insensitive partial match
+         *   against the username. When both bannedMemberId and
+         *   bannedMemberUsername are provided, both filters apply (AND logic).
      */
     bannedMemberUsername?: string | null | undefined;
 
     /**
      * Optional filter by the unique identifier (UUID) of the moderator who issued the ban. When specified, only ban records issued by the matching moderator are returned.
      *
-     * @x-autobe-specification Optional exact-match filter on community_bans.issuing_moderator_id column. When provided, apply WHERE issuing_moderator_id = {issuingModeratorId}. Must be a valid UUID. Allows moderators to audit bans issued by a specific team member.
+         * @x-autobe-specification Optional exact-match filter on
+         *   community_bans.issuing_moderator_id column. When provided, apply
+         *   WHERE issuing_moderator_id = {issuingModeratorId}. Must be a valid
+         *   UUID. Allows moderators to audit bans issued by a specific team
+         *   member.
      */
     issuingModeratorId?: (string & tags.Format<"uuid">) | null | undefined;
 
     /**
      * Optional lower bound for filtering ban records by their creation timestamp. When specified, only bans created on or after this date-time are returned. Must be an ISO 8601 date-time string.
      *
-     * @x-autobe-specification Optional lower bound filter on community_bans.created_at column. When provided, apply WHERE created_at >= {createdAtFrom}. Must be a valid ISO 8601 date-time string. Combine with createdAtTo to form a range. When only createdAtFrom is provided, all bans from that timestamp onward are included.
+         * @x-autobe-specification Optional lower bound filter on
+         *   community_bans.created_at column. When provided, apply WHERE
+         *   created_at >= {createdAtFrom}. Must be a valid ISO 8601 date-time
+         *   string. Combine with createdAtTo to form a range. When only
+         *   createdAtFrom is provided, all bans from that timestamp onward are
+         *   included.
      */
     createdAtFrom?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * Optional upper bound for filtering ban records by their creation timestamp. When specified, only bans created on or before this date-time are returned. Must be an ISO 8601 date-time string.
      *
-     * @x-autobe-specification Optional upper bound filter on community_bans.created_at column. When provided, apply WHERE created_at <= {createdAtTo}. Must be a valid ISO 8601 date-time string. Combine with createdAtFrom to form a range. When only createdAtTo is provided, all bans up to that timestamp are included.
+         * @x-autobe-specification Optional upper bound filter on
+         *   community_bans.created_at column. When provided, apply WHERE
+         *   created_at <= {createdAtTo}. Must be a valid ISO 8601 date-time
+         *   string. Combine with createdAtFrom to form a range. When only
+         *   createdAtTo is provided, all bans up to that timestamp are
+         *   included.
      */
     createdAtTo?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * Page number for paginated results (1-based). When omitted, defaults to page 1. Use together with limit to navigate through large result sets.
      *
-     * @x-autobe-specification 1-based page number for pagination. When null or omitted, defaults to 1 (first page). Used together with limit to compute OFFSET = (page - 1) * limit in the SQL query against community_bans. Minimum value is 1.
+         * @x-autobe-specification 1-based page number for pagination. When null
+         *   or omitted, defaults to 1 (first page). Used together with limit to
+         *   compute OFFSET = (page - 1) * limit in the SQL query against
+         *   community_bans. Minimum value is 1.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | null | undefined;
 
     /**
      * Maximum number of ban records to return per page. When omitted, defaults to 20. Allowed range is 1 to 100.
      *
-     * @x-autobe-specification Maximum number of ban records to return per page from community_bans. When null or omitted, defaults to 20. Minimum is 1, maximum is 100. Used together with page to compute LIMIT and OFFSET in the SQL query.
+         * @x-autobe-specification Maximum number of ban records to return per
+         *   page from community_bans. When null or omitted, defaults to 20.
+         *   Minimum is 1, maximum is 100. Used together with page to compute
+         *   LIMIT and OFFSET in the SQL query.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -189,16 +255,30 @@ export namespace ICommunityBan {
     /**
      * The new status to apply to the ban record. Use `'lifted'` to reverse an active ban and restore the member's participation rights in the community. Use `'active'` only if re-activating a previously lifted ban is a supported workflow. When set to `'lifted'`, the server automatically records the reversal timestamp. Omit this field if you only wish to update the ban reason.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping to community_bans.status column. Accepted values are constrained by pattern '^(active|lifted)$'. The primary intended transition is 'active' → 'lifted' to reverse an active ban. When this field is set to 'lifted', the backend must additionally set community_bans.lifted_at = NOW() and community_bans.updated_at = NOW(). If the ban is already 'lifted' and a lift request is submitted again, the server should respond with 409 Conflict. Field is optional in the request body — omit if not changing the status.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping to community_bans.status
+         *   column. Accepted values are constrained by pattern
+         *   '^(active|lifted)$'. The primary intended transition is 'active' →
+         *   'lifted' to reverse an active ban. When this field is set to
+         *   'lifted', the backend must additionally set
+         *   community_bans.lifted_at = NOW() and community_bans.updated_at =
+         *   NOW(). If the ban is already 'lifted' and a lift request is
+         *   submitted again, the server should respond with 409 Conflict. Field
+         *   is optional in the request body — omit if not changing the status.
      */
     status?: (string & tags.Pattern<"^(active|lifted)$">) | undefined;
 
     /**
      * An updated written explanation for why the ban was issued or how the enforcement situation evolved. Overrides the previously stored reason text. Useful when a moderator needs to clarify, correct, or expand the original justification. Omit this field if you only wish to change the ban status.
      *
-     * @x-autobe-database-schema-property reason
-     * @x-autobe-specification Direct mapping to community_bans.reason column (String, non-null in DB). When provided in the update request, overwrites the existing reason text stored in the ban record. This allows a moderator to amend or clarify the written justification for the enforcement action. The field is optional in the request body — omit if only changing the ban status. On update, community_bans.updated_at must be set to NOW().
+         * @x-autobe-database-schema-property reason
+         * @x-autobe-specification Direct mapping to community_bans.reason
+         *   column (String, non-null in DB). When provided in the update
+         *   request, overwrites the existing reason text stored in the ban
+         *   record. This allows a moderator to amend or clarify the written
+         *   justification for the enforcement action. The field is optional in
+         *   the request body — omit if only changing the ban status. On update,
+         *   community_bans.updated_at must be set to NOW().
      */
     reason?: string | undefined;
   };
@@ -210,64 +290,86 @@ export namespace ICommunityBan {
     /**
      * Unique identifier of this ban record.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from community_bans.id. UUID primary key, auto-generated by the system at ban creation time.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from community_bans.id. UUID
+         *   primary key, auto-generated by the system at ban creation time.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Summary of the community member who is subject to this ban enforcement action.
      *
-     * @x-autobe-database-schema-property bannedMember
-     * @x-autobe-specification Join community_members on community_bans.banned_member_id = community_members.id. Populate the result as ICommunityMember.ISummary, which includes id, username, display_name, avatar_url, karma_score, and created_at. Only members where deleted_at IS NULL are expected, though the record may reference a soft-deleted account.
+         * @x-autobe-database-schema-property bannedMember
+         * @x-autobe-specification Join community_members on
+         *   community_bans.banned_member_id = community_members.id. Populate
+         *   the result as ICommunityMember.ISummary, which includes id,
+         *   username, display_name, avatar_url, karma_score, and created_at.
+         *   Only members where deleted_at IS NULL are expected, though the
+         *   record may reference a soft-deleted account.
      */
     bannedMember: ICommunityMember.ISummary;
 
     /**
      * Summary of the moderator or community owner who issued this ban.
      *
-     * @x-autobe-database-schema-property issuingModerator
-     * @x-autobe-specification Join community_members on community_bans.issuing_moderator_id = community_members.id. Populate the result as ICommunityMember.ISummary, which includes id, username, display_name, avatar_url, karma_score, and created_at. Represents the moderator or owner who created this ban.
+         * @x-autobe-database-schema-property issuingModerator
+         * @x-autobe-specification Join community_members on
+         *   community_bans.issuing_moderator_id = community_members.id.
+         *   Populate the result as ICommunityMember.ISummary, which includes
+         *   id, username, display_name, avatar_url, karma_score, and
+         *   created_at. Represents the moderator or owner who created this ban.
      */
     issuingModerator: ICommunityMember.ISummary;
 
     /**
      * The written reason provided by the moderator explaining why the member was banned from this community.
      *
-     * @x-autobe-database-schema-property reason
-     * @x-autobe-specification Direct mapping from community_bans.reason. Non-nullable text field. The moderator must supply a reason at ban creation time for audit and transparency purposes.
+         * @x-autobe-database-schema-property reason
+         * @x-autobe-specification Direct mapping from community_bans.reason.
+         *   Non-nullable text field. The moderator must supply a reason at ban
+         *   creation time for audit and transparency purposes.
      */
     reason: string;
 
     /**
      * Current enforcement status of the ban. Either 'active' (the member is currently restricted) or 'lifted' (the ban has been reversed and the member may participate again).
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from community_bans.status. Non-nullable string. Allowed values: 'active' (ban is currently in effect) or 'lifted' (ban has been reversed by a moderator or owner).
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from community_bans.status.
+         *   Non-nullable string. Allowed values: 'active' (ban is currently in
+         *   effect) or 'lifted' (ban has been reversed by a moderator or
+         *   owner).
      */
     status: string;
 
     /**
      * Timestamp of when this ban was lifted, or null if the ban is still active.
      *
-     * @x-autobe-database-schema-property lifted_at
-     * @x-autobe-specification Direct mapping from community_bans.lifted_at (DateTime? @db.Timestamptz). Nullable. Set to the timestamp when a moderator or owner lifted the ban. Remains null while the ban status is 'active'.
+         * @x-autobe-database-schema-property lifted_at
+         * @x-autobe-specification Direct mapping from community_bans.lifted_at
+         *   (DateTime? @db.Timestamptz). Nullable. Set to the timestamp when a
+         *   moderator or owner lifted the ban. Remains null while the ban
+         *   status is 'active'.
      */
     lifted_at: (string & tags.Format<"date-time">) | null;
 
     /**
      * Timestamp of when this ban was originally issued.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from community_bans.created_at (DateTime @db.Timestamptz). Non-nullable. Set at the moment the ban was originally issued.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from community_bans.created_at
+         *   (DateTime @db.Timestamptz). Non-nullable. Set at the moment the ban
+         *   was originally issued.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp of the most recent update to this ban record, such as when the status was changed from active to lifted.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from community_bans.updated_at (DateTime @db.Timestamptz). Non-nullable. Updated whenever the ban record changes, for example when the ban is lifted.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from community_bans.updated_at
+         *   (DateTime @db.Timestamptz). Non-nullable. Updated whenever the ban
+         *   record changes, for example when the ban is lifted.
      */
     updated_at: string & tags.Format<"date-time">;
   };

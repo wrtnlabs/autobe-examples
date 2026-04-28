@@ -10,64 +10,89 @@ export type IShoppingMallSeller = {
   /**
    * The unique identifier (UUID) of the seller account.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_sellers.id. UUID primary key, auto-generated at registration time.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from shopping_mall_sellers.id.
+     *   UUID primary key, auto-generated at registration time.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * The seller's unique email address used for authentication and platform communications.
    *
-   * @x-autobe-database-schema-property email
-   * @x-autobe-specification Direct mapping from shopping_mall_sellers.email. Unique across all sellers; used as login credential. Format: RFC 5321 email address.
+     * @x-autobe-database-schema-property email
+     * @x-autobe-specification Direct mapping from shopping_mall_sellers.email.
+     *   Unique across all sellers; used as login credential. Format: RFC 5321
+     *   email address.
    */
   email: string & tags.Format<"email">;
 
   /**
    * The current display name of the seller's shop, shown to customers across the platform.
    *
-   * @x-autobe-database-schema-property shop_name
-   * @x-autobe-specification Direct mapping from shopping_mall_sellers.shop_name. Represents the seller's current active public shop display name. Historical shop names are preserved in shopping_mall_seller_profile_snapshots.
+     * @x-autobe-database-schema-property shop_name
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_sellers.shop_name. Represents the seller's current active
+     *   public shop display name. Historical shop names are preserved in
+     *   shopping_mall_seller_profile_snapshots.
    */
   shopName: string;
 
   /**
    * Indicates whether the seller account has been permanently banned by an administrator. When true, the seller cannot log in and their products are not visible to customers.
    *
-   * @x-autobe-database-schema-property is_banned
-   * @x-autobe-specification Direct mapping from shopping_mall_sellers.is_banned (Boolean). When true, the seller cannot log in and all their products are hidden. Set by administrators via the ban endpoint; reversed via the unban endpoint.
+     * @x-autobe-database-schema-property is_banned
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_sellers.is_banned (Boolean). When true, the seller cannot
+     *   log in and all their products are hidden. Set by administrators via the
+     *   ban endpoint; reversed via the unban endpoint.
    */
   isBanned: boolean;
 
   /**
    * Indicates whether the seller account is currently suspended by an administrator. When true, the seller's products are hidden from the catalog and the seller cannot create or edit listings, though they retain limited access to process existing orders.
    *
-   * @x-autobe-database-schema-property is_suspended
-   * @x-autobe-specification Direct mapping from shopping_mall_sellers.is_suspended (Boolean). When true, the seller's products are hidden from catalog searches and they cannot create or edit products, but can still log in to process existing orders and respond to cancellation/refund requests. Set by administrators via the suspend endpoint; reversed via the unsuspend endpoint. Cannot be set when is_banned is true.
+     * @x-autobe-database-schema-property is_suspended
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_sellers.is_suspended (Boolean). When true, the seller's
+     *   products are hidden from catalog searches and they cannot create or
+     *   edit products, but can still log in to process existing orders and
+     *   respond to cancellation/refund requests. Set by administrators via the
+     *   suspend endpoint; reversed via the unsuspend endpoint. Cannot be set
+     *   when is_banned is true.
    */
   isSuspended: boolean;
 
   /**
    * The timestamp when the seller account was registered on the platform.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from shopping_mall_sellers.created_at (DateTime @db.Timestamptz). Set at INSERT time when the seller account is first registered. Never updated thereafter.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_sellers.created_at (DateTime @db.Timestamptz). Set at
+     *   INSERT time when the seller account is first registered. Never updated
+     *   thereafter.
    */
   createdAt: string & tags.Format<"date-time">;
 
   /**
    * The timestamp of the most recent update to the seller account, including profile or account state changes.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from shopping_mall_sellers.updated_at (DateTime @db.Timestamptz). Updated on any change to the seller record, including profile changes (shop_name), and state changes (is_banned, is_suspended).
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_sellers.updated_at (DateTime @db.Timestamptz). Updated on
+     *   any change to the seller record, including profile changes (shop_name),
+     *   and state changes (is_banned, is_suspended).
    */
   updatedAt: string & tags.Format<"date-time">;
 
   /**
    * The timestamp when the seller account was soft-deleted, or null if the account is still active. A non-null value indicates the account is inactive and excluded from normal platform operations.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from shopping_mall_sellers.deleted_at (DateTime? @db.Timestamptz). Null when the account is active. Set to the deletion timestamp when the seller account is soft-deleted. Queries for active sellers must filter WHERE deleted_at IS NULL.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_sellers.deleted_at (DateTime? @db.Timestamptz). Null when
+     *   the account is active. Set to the deletion timestamp when the seller
+     *   account is soft-deleted. Queries for active sellers must filter WHERE
+     *   deleted_at IS NULL.
    */
   deletedAt: (string & tags.Format<"date-time">) | null;
 };
@@ -83,16 +108,24 @@ export namespace IShoppingMallSeller {
     /**
      * The seller's registered email address, used to identify their account during login. Must be a valid email format. The server performs a case-insensitive match against the stored email.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping to shopping_mall_sellers.email. The server performs a case-insensitive lookup against this column to find the seller record. If no active seller (deleted_at IS NULL) matches, the server returns 401 Unauthorized.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping to
+         *   shopping_mall_sellers.email. The server performs a case-insensitive
+         *   lookup against this column to find the seller record. If no active
+         *   seller (deleted_at IS NULL) matches, the server returns 401
+         *   Unauthorized.
      */
     email: string & tags.Format<"email">;
 
     /**
      * The seller's account password in plaintext. This value is securely verified against the stored password hash on the server and is never persisted. A mismatched password returns a 401 Unauthorized response.
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification Maps to shopping_mall_sellers.password_hash via server-side bcrypt verification. The client submits the plaintext password; the server calls bcrypt.compare(submittedPassword, storedHash). A mismatch returns 401 Unauthorized. The plaintext password is never stored.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification Maps to shopping_mall_sellers.password_hash
+         *   via server-side bcrypt verification. The client submits the
+         *   plaintext password; the server calls
+         *   bcrypt.compare(submittedPassword, storedHash). A mismatch returns
+         *   401 Unauthorized. The plaintext password is never stored.
      */
     password: string & tags.Format<"password">;
   };
@@ -104,7 +137,15 @@ export namespace IShoppingMallSeller {
     /**
      * The refresh token previously issued to the seller during login, registration, or a prior token refresh. Must be the exact token value last received. Submitting this token exchanges it for a new access token and refresh token pair (token rotation). The token is rejected if it has expired, is not found, or belongs to a banned, suspended, or deleted seller account.
      *
-     * @x-autobe-specification This value corresponds to the `refresh_token` column in `shopping_mall_seller_sessions` (unique index), used as the lookup key. The service: (1) queries `shopping_mall_seller_sessions` WHERE `refresh_token` = this value, (2) verifies `expired_at > now()`, (3) loads the associated `shopping_mall_sellers` row and checks `deleted_at IS NULL`, `is_banned = false`, `is_suspended = false`, (4) on success, invalidates the old session and inserts a new session row with a fresh `access_token`, `refresh_token`, and `expired_at`.
+         * @x-autobe-specification This value corresponds to the `refresh_token`
+         *   column in `shopping_mall_seller_sessions` (unique index), used as
+         *   the lookup key. The service: (1) queries
+         *   `shopping_mall_seller_sessions` WHERE `refresh_token` = this value,
+         *   (2) verifies `expired_at > now()`, (3) loads the associated
+         *   `shopping_mall_sellers` row and checks `deleted_at IS NULL`,
+         *   `is_banned = false`, `is_suspended = false`, (4) on success,
+         *   invalidates the old session and inserts a new session row with a
+         *   fresh `access_token`, `refresh_token`, and `expired_at`.
      */
     refresh_token: string;
   };
@@ -122,45 +163,69 @@ export namespace IShoppingMallSeller {
     /**
      * The seller's unique email address used for authentication. Must be a valid email format and globally unique across all seller accounts on the platform.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping to shopping_mall_sellers.email. Must pass email format validation and a case-insensitive uniqueness check across all existing sellers. Return 409 Conflict if already taken.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping to
+         *   shopping_mall_sellers.email. Must pass email format validation and
+         *   a case-insensitive uniqueness check across all existing sellers.
+         *   Return 409 Conflict if already taken.
      */
     email: string & tags.Format<"email">;
 
     /**
      * The seller's desired account password in plaintext. Transmitted securely over HTTPS and immediately hashed server-side before storage. The plaintext value is never persisted.
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification Plaintext password provided by the seller. Must be validated for minimum length requirements. Immediately hashed server-side using bcrypt with an appropriate work factor before being stored as shopping_mall_sellers.password_hash. Never logged, stored, or returned in plaintext.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification Plaintext password provided by the seller.
+         *   Must be validated for minimum length requirements. Immediately
+         *   hashed server-side using bcrypt with an appropriate work factor
+         *   before being stored as shopping_mall_sellers.password_hash. Never
+         *   logged, stored, or returned in plaintext.
      */
     password: string & tags.Format<"password">;
 
     /**
      * The display name of the seller's shop as shown to customers on the platform. Must be at least one character long.
      *
-     * @x-autobe-database-schema-property shop_name
-     * @x-autobe-specification Direct mapping to shopping_mall_sellers.shop_name. Must be non-empty (minLength: 1). Displayed to customers on the platform as the seller's storefront name. Historical shop name changes are captured in seller profile snapshots.
+         * @x-autobe-database-schema-property shop_name
+         * @x-autobe-specification Direct mapping to
+         *   shopping_mall_sellers.shop_name. Must be non-empty (minLength: 1).
+         *   Displayed to customers on the platform as the seller's storefront
+         *   name. Historical shop name changes are captured in seller profile
+         *   snapshots.
      */
     shop_name: string & tags.MinLength<1>;
 
     /**
      * The full URL of the page where the seller initiated the registration request. Used for session tracking and analytics.
      *
-     * @x-autobe-specification Session context field. Stored as shopping_mall_seller_sessions.href when creating the initial session record during registration. Represents the full URL of the page from which the registration request originated. Required field.
+         * @x-autobe-specification Session context field. Stored as
+         *   shopping_mall_seller_sessions.href when creating the initial
+         *   session record during registration. Represents the full URL of the
+         *   page from which the registration request originated. Required
+         *   field.
      */
     href: string & tags.Format<"uri">;
 
     /**
      * The referring URL that directed the seller to the registration page, typically from the HTTP Referer header. Used for session tracking and traffic source analytics.
      *
-     * @x-autobe-specification Session context field. Stored as shopping_mall_seller_sessions.referrer (nullable) when creating the initial session record during registration. Represents the HTTP Referer header value indicating the page that linked to the registration page. Required in the request body but may be an empty string if no referrer is available.
+         * @x-autobe-specification Session context field. Stored as
+         *   shopping_mall_seller_sessions.referrer (nullable) when creating the
+         *   initial session record during registration. Represents the HTTP
+         *   Referer header value indicating the page that linked to the
+         *   registration page. Required in the request body but may be an empty
+         *   string if no referrer is available.
      */
     referrer: string & tags.Format<"uri">;
 
     /**
      * The IPv4 address of the client making the registration request. Optional — the server will automatically detect and use the client IP if not provided.
      *
-     * @x-autobe-specification Session context field. Stored as shopping_mall_seller_sessions.ip. If body.ip is provided, use it directly; otherwise fall back to the server-detected client IP address from the request context. Must be in IPv4 format when provided. Optional in the request body.
+         * @x-autobe-specification Session context field. Stored as
+         *   shopping_mall_seller_sessions.ip. If body.ip is provided, use it
+         *   directly; otherwise fall back to the server-detected client IP
+         *   address from the request context. Must be in IPv4 format when
+         *   provided. Optional in the request body.
      */
     ip?: (string & tags.Format<"ipv4">) | undefined;
   };
@@ -176,70 +241,97 @@ export namespace IShoppingMallSeller {
     /**
      * Unique identifier of the authenticated seller account.
      *
-     * @x-autobe-specification Sourced from shopping_mall_sellers.id (UUID primary key). Included at the top-level of this authorized response for quick client-side access to the seller identity without unpacking the nested seller object.
+         * @x-autobe-specification Sourced from shopping_mall_sellers.id (UUID
+         *   primary key). Included at the top-level of this authorized response
+         *   for quick client-side access to the seller identity without
+         *   unpacking the nested seller object.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * The seller's registered email address, used for authentication and platform communications.
      *
-     * @x-autobe-specification Sourced from shopping_mall_sellers.email. Unique across all sellers (case-insensitive). Included at the top-level of this authorized response for immediate access.
+         * @x-autobe-specification Sourced from shopping_mall_sellers.email.
+         *   Unique across all sellers (case-insensitive). Included at the
+         *   top-level of this authorized response for immediate access.
      */
     email: string & tags.Format<"email">;
 
     /**
      * The display name of the seller's shop as shown to customers on the platform.
      *
-     * @x-autobe-specification Sourced from shopping_mall_sellers.shop_name. Mutable; historical snapshots are captured in shopping_mall_seller_profile_snapshots. Included at the top-level for convenient display after authentication.
+         * @x-autobe-specification Sourced from shopping_mall_sellers.shop_name.
+         *   Mutable; historical snapshots are captured in
+         *   shopping_mall_seller_profile_snapshots. Included at the top-level
+         *   for convenient display after authentication.
      */
     shopName: string;
 
     /**
      * Whether this seller account has been permanently banned by an administrator. Banned sellers cannot log in or have their products visible on the platform.
      *
-     * @x-autobe-specification Sourced from shopping_mall_sellers.is_banned. When true, the seller cannot log in and their products are hidden from the platform. Included at the top-level for immediate account state awareness.
+         * @x-autobe-specification Sourced from shopping_mall_sellers.is_banned.
+         *   When true, the seller cannot log in and their products are hidden
+         *   from the platform. Included at the top-level for immediate account
+         *   state awareness.
      */
     isBanned: boolean;
 
     /**
      * Whether this seller account is currently suspended by an administrator.
      *
-     * @x-autobe-specification Sourced from shopping_mall_sellers.is_suspended. When true, the seller has restricted access until the suspension is lifted by an administrator. Included at the top-level for immediate account state awareness.
+         * @x-autobe-specification Sourced from
+         *   shopping_mall_sellers.is_suspended. When true, the seller has
+         *   restricted access until the suspension is lifted by an
+         *   administrator. Included at the top-level for immediate account
+         *   state awareness.
      */
     isSuspended: boolean;
 
     /**
      * The UTC timestamp when the seller account was originally registered on the platform.
      *
-     * @x-autobe-specification Sourced from shopping_mall_sellers.created_at (Timestamptz). ISO 8601 datetime string in UTC.
+         * @x-autobe-specification Sourced from shopping_mall_sellers.created_at
+         *   (Timestamptz). ISO 8601 datetime string in UTC.
      */
     createdAt: string & tags.Format<"date-time">;
 
     /**
      * The UTC timestamp of the most recent modification to this seller account.
      *
-     * @x-autobe-specification Sourced from shopping_mall_sellers.updated_at (Timestamptz). Updated whenever the seller's profile or account state changes. ISO 8601 datetime string in UTC.
+         * @x-autobe-specification Sourced from shopping_mall_sellers.updated_at
+         *   (Timestamptz). Updated whenever the seller's profile or account
+         *   state changes. ISO 8601 datetime string in UTC.
      */
     updatedAt: string & tags.Format<"date-time">;
 
     /**
      * The UTC timestamp when the seller account was soft-deleted, or null if the account is still active.
      *
-     * @x-autobe-specification Sourced from shopping_mall_sellers.deleted_at (nullable Timestamptz). When non-null, the seller account is soft-deleted and treated as inactive. ISO 8601 datetime string in UTC, or null if active.
+         * @x-autobe-specification Sourced from shopping_mall_sellers.deleted_at
+         *   (nullable Timestamptz). When non-null, the seller account is
+         *   soft-deleted and treated as inactive. ISO 8601 datetime string in
+         *   UTC, or null if active.
      */
     deletedAt: (string & tags.Format<"date-time">) | null;
 
     /**
      * Authorization token.
      *
-     * @x-autobe-specification Authorization token comes from the session table.
+         * @x-autobe-specification Authorization token comes from the session
+         *   table.
      */
     token: IAuthorizationToken;
 
     /**
      * The full seller account entity as it exists at the time of this authentication event, provided for client convenience to avoid a separate profile fetch.
      *
-     * @x-autobe-specification Composed by reading all public columns of shopping_mall_sellers (id, email, shop_name, is_banned, is_suspended, created_at, updated_at, deleted_at) and mapping them into the IShoppingMallSeller DTO. password_hash is never included. This nested object mirrors the top-level seller fields but is provided as a typed object reference for convenience.
+         * @x-autobe-specification Composed by reading all public columns of
+         *   shopping_mall_sellers (id, email, shop_name, is_banned,
+         *   is_suspended, created_at, updated_at, deleted_at) and mapping them
+         *   into the IShoppingMallSeller DTO. password_hash is never included.
+         *   This nested object mirrors the top-level seller fields but is
+         *   provided as a typed object reference for convenience.
      */
     seller: IShoppingMallSeller;
   };
@@ -251,56 +343,77 @@ export namespace IShoppingMallSeller {
     /**
      * The unique identifier of the seller account. A UUID that is stable for the lifetime of the account and used as the primary reference in all related API operations.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_sellers.id. UUID primary key, auto-generated at account creation time. Used to uniquely identify a seller across all platform operations.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from shopping_mall_sellers.id.
+         *   UUID primary key, auto-generated at account creation time. Used to
+         *   uniquely identify a seller across all platform operations.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * The seller's registered email address. Unique across all seller accounts on the platform. Used for authentication and platform communications.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from shopping_mall_sellers.email. Unique constraint enforced at the database level. Used as the seller's login credential and primary contact identifier.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_sellers.email. Unique constraint enforced at the
+         *   database level. Used as the seller's login credential and primary
+         *   contact identifier.
      */
     email: string & tags.Format<"email">;
 
     /**
      * The display name of the seller's shop as shown to customers on the platform. Reflects the most recent shop name set by the seller.
      *
-     * @x-autobe-database-schema-property shop_name
-     * @x-autobe-specification Direct mapping from shopping_mall_sellers.shop_name. The current display name of the seller's shop. This value is mutable; historical values are preserved in shopping_mall_seller_profile_snapshots.
+         * @x-autobe-database-schema-property shop_name
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_sellers.shop_name. The current display name of the
+         *   seller's shop. This value is mutable; historical values are
+         *   preserved in shopping_mall_seller_profile_snapshots.
      */
     shopName: string;
 
     /**
      * Indicates whether the seller account has been permanently banned by an administrator. When true, the seller cannot log in and their products are hidden from the platform.
      *
-     * @x-autobe-database-schema-property is_banned
-     * @x-autobe-specification Direct mapping from shopping_mall_sellers.is_banned (Boolean). When true, the seller is permanently banned and cannot log in or have their products surfaced to customers. Set by an administrator via the ban endpoint.
+         * @x-autobe-database-schema-property is_banned
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_sellers.is_banned (Boolean). When true, the seller is
+         *   permanently banned and cannot log in or have their products
+         *   surfaced to customers. Set by an administrator via the ban
+         *   endpoint.
      */
     isBanned: boolean;
 
     /**
      * Indicates whether the seller account is currently suspended by an administrator. A suspended seller has restricted platform access until the suspension is lifted.
      *
-     * @x-autobe-database-schema-property is_suspended
-     * @x-autobe-specification Direct mapping from shopping_mall_sellers.is_suspended (Boolean). When true, the seller's account is temporarily suspended by an administrator. The suspension can be lifted via the unsuspend endpoint.
+         * @x-autobe-database-schema-property is_suspended
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_sellers.is_suspended (Boolean). When true, the
+         *   seller's account is temporarily suspended by an administrator. The
+         *   suspension can be lifted via the unsuspend endpoint.
      */
     isSuspended: boolean;
 
     /**
      * The ISO 8601 datetime at which the seller account was registered on the platform.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_sellers.created_at (Timestamptz). Set automatically at the moment of seller account registration. Never modified after creation.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_sellers.created_at (Timestamptz). Set automatically
+         *   at the moment of seller account registration. Never modified after
+         *   creation.
      */
     createdAt: string & tags.Format<"date-time">;
 
     /**
      * The ISO 8601 datetime of the most recent modification to the seller account record, including profile updates and status changes.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from shopping_mall_sellers.updated_at (Timestamptz). Updated automatically whenever the seller record is modified, including profile changes and account state changes (ban, suspension).
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_sellers.updated_at (Timestamptz). Updated
+         *   automatically whenever the seller record is modified, including
+         *   profile changes and account state changes (ban, suspension).
      */
     updatedAt: string & tags.Format<"date-time">;
   };
@@ -322,56 +435,82 @@ export namespace IShoppingMallSeller {
     /**
      * Optional partial text match filter on the seller's shop name. When provided, only sellers whose shop name contains the given string (case-insensitive) are returned.
      *
-     * @x-autobe-specification Optional partial text search filter targeting the shop_name column of shopping_mall_sellers. When non-null, apply: WHERE shop_name ILIKE '%{shopName}%' (trigram index supported). When null, skip this filter condition entirely.
+         * @x-autobe-specification Optional partial text search filter targeting
+         *   the shop_name column of shopping_mall_sellers. When non-null,
+         *   apply: WHERE shop_name ILIKE '%{shopName}%' (trigram index
+         *   supported). When null, skip this filter condition entirely.
      */
     shopName?: string | null | undefined;
 
     /**
      * Optional partial text match filter on the seller's email address. When provided, only sellers whose email address contains the given string (case-insensitive) are returned.
      *
-     * @x-autobe-specification Optional partial text search filter targeting the email column of shopping_mall_sellers. When non-null, apply: WHERE email ILIKE '%{email}%'. When null, skip this filter condition entirely.
+         * @x-autobe-specification Optional partial text search filter targeting
+         *   the email column of shopping_mall_sellers. When non-null, apply:
+         *   WHERE email ILIKE '%{email}%'. When null, skip this filter
+         *   condition entirely.
      */
     email?: (string & tags.Format<"email">) | null | undefined;
 
     /**
      * Optional filter on the seller's banned status. When `true`, only banned sellers are returned. When `false`, only non-banned sellers are returned. When omitted (`null`), sellers of all ban statuses are included.
      *
-     * @x-autobe-specification Optional exact boolean filter targeting the is_banned column of shopping_mall_sellers. When non-null, apply: WHERE is_banned = {isBanned}. When null, skip this filter — sellers of all ban statuses are included.
+         * @x-autobe-specification Optional exact boolean filter targeting the
+         *   is_banned column of shopping_mall_sellers. When non-null, apply:
+         *   WHERE is_banned = {isBanned}. When null, skip this filter — sellers
+         *   of all ban statuses are included.
      */
     isBanned?: boolean | null | undefined;
 
     /**
      * Optional filter on the seller's suspended status. When `true`, only suspended sellers are returned. When `false`, only non-suspended sellers are returned. When omitted (`null`), sellers of all suspension statuses are included.
      *
-     * @x-autobe-specification Optional exact boolean filter targeting the is_suspended column of shopping_mall_sellers. When non-null, apply: WHERE is_suspended = {isSuspended}. When null, skip this filter — sellers of all suspension statuses are included.
+         * @x-autobe-specification Optional exact boolean filter targeting the
+         *   is_suspended column of shopping_mall_sellers. When non-null, apply:
+         *   WHERE is_suspended = {isSuspended}. When null, skip this filter —
+         *   sellers of all suspension statuses are included.
      */
     isSuspended?: boolean | null | undefined;
 
     /**
      * Optional start date-time (inclusive) for filtering sellers by their account registration timestamp. When provided, only sellers registered at or after this date-time are returned.
      *
-     * @x-autobe-specification Optional lower bound (inclusive) date-time range filter targeting the created_at column of shopping_mall_sellers. When non-null, apply: WHERE created_at >= {createdAtFrom}. Must be a valid ISO 8601 date-time string. When null, no lower bound is applied.
+         * @x-autobe-specification Optional lower bound (inclusive) date-time
+         *   range filter targeting the created_at column of
+         *   shopping_mall_sellers. When non-null, apply: WHERE created_at >=
+         *   {createdAtFrom}. Must be a valid ISO 8601 date-time string. When
+         *   null, no lower bound is applied.
      */
     createdAtFrom?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * Optional end date-time (inclusive) for filtering sellers by their account registration timestamp. When provided, only sellers registered at or before this date-time are returned.
      *
-     * @x-autobe-specification Optional upper bound (inclusive) date-time range filter targeting the created_at column of shopping_mall_sellers. When non-null, apply: WHERE created_at <= {createdAtTo}. Must be a valid ISO 8601 date-time string. When null, no upper bound is applied.
+         * @x-autobe-specification Optional upper bound (inclusive) date-time
+         *   range filter targeting the created_at column of
+         *   shopping_mall_sellers. When non-null, apply: WHERE created_at <=
+         *   {createdAtTo}. Must be a valid ISO 8601 date-time string. When
+         *   null, no upper bound is applied.
      */
     createdAtTo?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * The 1-indexed page number to retrieve. When omitted, defaults to the first page. Must be a positive integer.
      *
-     * @x-autobe-specification Pagination control: specifies the 1-indexed page of results to return. OFFSET = (page - 1) * limit. Minimum value is 1. When null, defaults to page 1. Must be a positive integer.
+         * @x-autobe-specification Pagination control: specifies the 1-indexed
+         *   page of results to return. OFFSET = (page - 1) * limit. Minimum
+         *   value is 1. When null, defaults to page 1. Must be a positive
+         *   integer.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | null | undefined;
 
     /**
      * The maximum number of seller records to return per page. Must be between 1 and 100. When omitted, a platform default is applied.
      *
-     * @x-autobe-specification Pagination control: the maximum number of records to return per page (LIMIT clause). Minimum 1, maximum 100. When null, defaults to platform default (e.g., 20). Must be a positive integer within the allowed range.
+         * @x-autobe-specification Pagination control: the maximum number of
+         *   records to return per page (LIMIT clause). Minimum 1, maximum 100.
+         *   When null, defaults to platform default (e.g., 20). Must be a
+         *   positive integer within the allowed range.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -381,7 +520,11 @@ export namespace IShoppingMallSeller {
     /**
      * The field by which the seller list is sorted. Accepted values are `id`, `email`, `shopName`, `createdAt`, and `updatedAt`. When omitted, defaults to sorting by registration date (`createdAt`).
      *
-     * @x-autobe-specification Sorting control: the column by which results are ordered. Value mapping to DB columns: 'id' → id, 'email' → email, 'shopName' → shop_name, 'createdAt' → created_at, 'updatedAt' → updated_at. When null, defaults to 'createdAt'. Used together with sortDirection.
+         * @x-autobe-specification Sorting control: the column by which results
+         *   are ordered. Value mapping to DB columns: 'id' → id, 'email' →
+         *   email, 'shopName' → shop_name, 'createdAt' → created_at,
+         *   'updatedAt' → updated_at. When null, defaults to 'createdAt'. Used
+         *   together with sortDirection.
      */
     sortBy?:
       | "id"
@@ -395,7 +538,9 @@ export namespace IShoppingMallSeller {
     /**
      * The sort order direction for the seller list. `asc` returns results in ascending order, `desc` returns results in descending order. When omitted, defaults to descending order (most recently registered sellers first).
      *
-     * @x-autobe-specification Sorting control: the order direction for the SQL ORDER BY clause. 'asc' → ASC, 'desc' → DESC. When null, defaults to 'desc' (most recent first). Used together with sortBy.
+         * @x-autobe-specification Sorting control: the order direction for the
+         *   SQL ORDER BY clause. 'asc' → ASC, 'desc' → DESC. When null,
+         *   defaults to 'desc' (most recent first). Used together with sortBy.
      */
     sortDirection?: "asc" | "desc" | null | undefined;
   };
@@ -407,22 +552,40 @@ export namespace IShoppingMallSeller {
     /**
      * The updated display name of the seller's shop, shown to customers on the platform. Must be a non-empty string. This value is applied to the seller's active account and also captured in the immutable profile snapshot created at the time of the update.
      *
-     * @x-autobe-database-schema-property shop_name
-     * @x-autobe-specification Maps to shopping_mall_sellers.shop_name. Required, non-empty string (minLength: 1). Written via UPDATE shopping_mall_sellers SET shop_name = :shopName WHERE id = :sellerId. Also propagated into the new shopping_mall_seller_profile_snapshots record created in the same transaction.
+         * @x-autobe-database-schema-property shop_name
+         * @x-autobe-specification Maps to shopping_mall_sellers.shop_name.
+         *   Required, non-empty string (minLength: 1). Written via UPDATE
+         *   shopping_mall_sellers SET shop_name = :shopName WHERE id =
+         *   :sellerId. Also propagated into the new
+         *   shopping_mall_seller_profile_snapshots record created in the same
+         *   transaction.
      */
     shopName: string & tags.MinLength<1>;
 
     /**
      * An optional textual description of the seller's shop, providing customers with information about the shop's focus or offerings. This value is stored in the immutable profile snapshot created at the time of the update. If not provided, the description is stored as null in the snapshot.
      *
-     * @x-autobe-specification Does not map to a column in shopping_mall_sellers. Written exclusively to shopping_mall_seller_profile_snapshots.shop_description (nullable String) when a new snapshot is inserted during the profile update transaction. If omitted or null, shop_description in the snapshot is stored as NULL. This field is never written back to the shopping_mall_sellers table.
+         * @x-autobe-specification Does not map to a column in
+         *   shopping_mall_sellers. Written exclusively to
+         *   shopping_mall_seller_profile_snapshots.shop_description (nullable
+         *   String) when a new snapshot is inserted during the profile update
+         *   transaction. If omitted or null, shop_description in the snapshot
+         *   is stored as NULL. This field is never written back to the
+         *   shopping_mall_sellers table.
      */
     shopDescription?: string | null | undefined;
 
     /**
      * An optional URL pointing to the seller's shop logo image. Must be a valid URI and may not exceed 80,000 characters in length. This value is stored in the immutable profile snapshot created at the time of the update. If not provided, the logo URL is stored as null in the snapshot.
      *
-     * @x-autobe-specification Does not map to a column in shopping_mall_sellers. Written exclusively to shopping_mall_seller_profile_snapshots.logo_url (nullable String @db.VarChar(80000)) when a new snapshot is inserted during the profile update transaction. Validated as a URI format string with a maximum length of 80,000 characters. If omitted or null, logo_url in the snapshot is stored as NULL. This field is never written back to the shopping_mall_sellers table.
+         * @x-autobe-specification Does not map to a column in
+         *   shopping_mall_sellers. Written exclusively to
+         *   shopping_mall_seller_profile_snapshots.logo_url (nullable String
+         *   @db.VarChar(80000)) when a new snapshot is inserted during the
+         *   profile update transaction. Validated as a URI format string with a
+         *   maximum length of 80,000 characters. If omitted or null, logo_url
+         *   in the snapshot is stored as NULL. This field is never written back
+         *   to the shopping_mall_sellers table.
      */
     logoUrl?:
       | (string & tags.MaxLength<80000> & tags.Format<"uri">)

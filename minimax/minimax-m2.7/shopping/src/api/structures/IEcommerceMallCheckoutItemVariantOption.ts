@@ -15,7 +15,11 @@ export type IEcommerceMallCheckoutItemVariantOption = {
    *
    * Specifies the name of the option attribute (e.g., 'color', 'size', 'material'). This is the label used when displaying the option to customers in cart and checkout interfaces.
    *
-   * @x-autobe-specification Maps to ecommerce_mall_product_variant_option_values.key column. The option key name such as 'color', 'size', or any attribute identifier. Direct scalar mapping from the 'key' column in the normalized option values table.
+     * @x-autobe-specification Maps to
+     *   ecommerce_mall_product_variant_option_values.key column. The option key
+     *   name such as 'color', 'size', or any attribute identifier. Direct
+     *   scalar mapping from the 'key' column in the normalized option values
+     *   table.
    */
   key: string;
 
@@ -24,7 +28,11 @@ export type IEcommerceMallCheckoutItemVariantOption = {
    *
    * Contains the actual value chosen for this option key (e.g., 'Red' for color, 'Large' for size). Displayed alongside the key in cart and checkout to show the specific variant selection.
    *
-   * @x-autobe-specification Maps to ecommerce_mall_product_variant_option_values.value column. The option value such as 'Red', 'Large', or corresponding attribute value. Direct scalar mapping from the 'value' column in the normalized option values table.
+     * @x-autobe-specification Maps to
+     *   ecommerce_mall_product_variant_option_values.value column. The option
+     *   value such as 'Red', 'Large', or corresponding attribute value. Direct
+     *   scalar mapping from the 'value' column in the normalized option values
+     *   table.
    */
   value: string;
 };

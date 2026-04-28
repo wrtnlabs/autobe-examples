@@ -28,7 +28,9 @@ export type IEcommerceReport = {
    * - `customer`: Customer acquisition and behavior metrics
    * - `seller`: Seller performance metrics
    *
-   * @x-autobe-specification Constant enum value indicating the report category: sales, inventory, customer, or seller. Determined by the request body reportType parameter.
+     * @x-autobe-specification Constant enum value indicating the report
+     *   category: sales, inventory, customer, or seller. Determined by the
+     *   request body reportType parameter.
    */
   report_type: "sales" | "inventory" | "customer" | "seller";
 
@@ -45,7 +47,10 @@ export type IEcommerceReport = {
    * - Maximum range: 365 days
    * - Both fields optional; if omitted, all available data is included
    *
-   * @x-autobe-specification Date range filters from request body startDate and endDate parameters. Used to filter aggregation queries on created_at fields across orders, products, and other time-based entities.
+     * @x-autobe-specification Date range filters from request body startDate
+     *   and endDate parameters. Used to filter aggregation queries on
+     *   created_at fields across orders, products, and other time-based
+     *   entities.
    */
   date_range?:
     | {
@@ -66,7 +71,10 @@ export type IEcommerceReport = {
    *
    * All metrics are optional and included based on the report type requested.
    *
-   * @x-autobe-specification Aggregated metrics calculated via SQL SUM, COUNT, AVG functions across multiple tables. Metrics vary by report type: sales (revenue, orders), inventory (stock levels), customer (acquisition, retention), seller (performance, fulfillment).
+     * @x-autobe-specification Aggregated metrics calculated via SQL SUM, COUNT,
+     *   AVG functions across multiple tables. Metrics vary by report type:
+     *   sales (revenue, orders), inventory (stock levels), customer
+     *   (acquisition, retention), seller (performance, fulfillment).
    */
   metrics: {
     total_revenue?: number | undefined;
@@ -97,7 +105,10 @@ export type IEcommerceReport = {
    *
    * Empty array if no grouping dimension was specified in the request.
    *
-   * @x-autobe-specification Array of aggregated results grouped by the specified dimension (date, category, seller, or product). Generated via SQL GROUP BY clause with corresponding metric calculations for each group.
+     * @x-autobe-specification Array of aggregated results grouped by the
+     *   specified dimension (date, category, seller, or product). Generated via
+     *   SQL GROUP BY clause with corresponding metric calculations for each
+     *   group.
    */
   grouped_results?: IEcommerceReportGroupedResult[] | undefined;
 
@@ -112,7 +123,9 @@ export type IEcommerceReport = {
    *
    * Allows clients to cache reports and detect stale data. Reports may be cached for 5 minutes for frequently requested combinations.
    *
-   * @x-autobe-specification Server-generated timestamp when the report was computed. Not stored in database; calculated at request time using current server time (ISO 8601 format).
+     * @x-autobe-specification Server-generated timestamp when the report was
+     *   computed. Not stored in database; calculated at request time using
+     *   current server time (ISO 8601 format).
    */
   generated_at: string & tags.Format<"date-time">;
 };
@@ -147,7 +160,9 @@ export namespace IEcommerceReport {
      * - `customer`: Customer acquisition, order frequency, lifetime value
      * - `seller`: Seller performance, product counts, order fulfillment metrics
      *
-     * @x-autobe-specification Required enum constant selecting the report type to generate. Valid values: sales, inventory, customer, seller. Determines which metrics and data sources are queried.
+         * @x-autobe-specification Required enum constant selecting the report
+         *   type to generate. Valid values: sales, inventory, customer, seller.
+         *   Determines which metrics and data sources are queried.
      */
     reportType: "sales" | "inventory" | "customer" | "seller";
 
@@ -156,7 +171,9 @@ export namespace IEcommerceReport {
      *
      * Records with created_at before this date are excluded from the report. Must be in ISO 8601 format (e.g., `2024-01-01T00:00:00Z`). Maximum date range with endDate is 365 days for performance.
      *
-     * @x-autobe-specification Optional ISO 8601 date-time string for report data start date filter. Nullable. When provided, only records with created_at >= startDate are included.
+         * @x-autobe-specification Optional ISO 8601 date-time string for report
+         *   data start date filter. Nullable. When provided, only records with
+         *   created_at >= startDate are included.
      */
     startDate?: (string & tags.Format<"date-time">) | null | undefined;
 
@@ -165,7 +182,9 @@ export namespace IEcommerceReport {
      *
      * Records with created_at after this date are excluded from the report. Must be in ISO 8601 format (e.g., `2024-12-31T23:59:59Z`). Maximum date range with startDate is 365 days for performance.
      *
-     * @x-autobe-specification Optional ISO 8601 date-time string for report data end date filter. Nullable. When provided, only records with created_at <= endDate are included.
+         * @x-autobe-specification Optional ISO 8601 date-time string for report
+         *   data end date filter. Nullable. When provided, only records with
+         *   created_at <= endDate are included.
      */
     endDate?: (string & tags.Format<"date-time">) | null | undefined;
 
@@ -174,7 +193,9 @@ export namespace IEcommerceReport {
      *
      * When provided, the report includes only data from the specified sellers. Each ID must be a valid UUID format. Useful for generating seller-specific reports or comparing multiple sellers.
      *
-     * @x-autobe-specification Optional array of seller UUIDs to filter report data. When provided, only data from these sellers is included. Empty array or null means no seller filtering.
+         * @x-autobe-specification Optional array of seller UUIDs to filter
+         *   report data. When provided, only data from these sellers is
+         *   included. Empty array or null means no seller filtering.
      */
     sellerIds?: (string & tags.Format<"uuid">)[] | undefined;
 
@@ -183,7 +204,10 @@ export namespace IEcommerceReport {
      *
      * When provided, the report includes only data from products in the specified categories. Each ID must be a valid UUID format. Useful for analyzing performance by product category.
      *
-     * @x-autobe-specification Optional array of category UUIDs to filter report data. When provided, only data from products in these categories is included. Empty array or null means no category filtering.
+         * @x-autobe-specification Optional array of category UUIDs to filter
+         *   report data. When provided, only data from products in these
+         *   categories is included. Empty array or null means no category
+         *   filtering.
      */
     categoryIds?: (string & tags.Format<"uuid">)[] | undefined;
 
@@ -192,7 +216,9 @@ export namespace IEcommerceReport {
      *
      * When provided, the report includes only orders with the specified statuses (e.g., `pending`, `processing`, `shipped`, `delivered`, `cancelled`). Useful for analyzing specific order lifecycle stages.
      *
-     * @x-autobe-specification Optional array of order status strings to filter report data. When provided, only orders with these statuses are included. Empty array or null means no status filtering.
+         * @x-autobe-specification Optional array of order status strings to
+         *   filter report data. When provided, only orders with these statuses
+         *   are included. Empty array or null means no status filtering.
      */
     orderStatuses?: string[] | undefined;
 
@@ -207,7 +233,10 @@ export namespace IEcommerceReport {
      *
      * When not specified, results are returned as a single aggregated total.
      *
-     * @x-autobe-specification Optional enum constant specifying the dimension to group report results by. Valid values: date, category, seller, product. Determines the GROUP BY clause in aggregation queries.
+         * @x-autobe-specification Optional enum constant specifying the
+         *   dimension to group report results by. Valid values: date, category,
+         *   seller, product. Determines the GROUP BY clause in aggregation
+         *   queries.
      */
     grouping?: "date" | "category" | "seller" | "product" | undefined;
 
@@ -216,7 +245,9 @@ export namespace IEcommerceReport {
      *
      * Accepts field names corresponding to available metrics or dimensions. When grouping is specified, valid sort fields depend on the grouping dimension. Default behavior varies by report type.
      *
-     * @x-autobe-specification Optional string field name to sort results by. Determines the ORDER BY clause in queries. Common values: revenue, order_count, created_at, product_name, seller_name.
+         * @x-autobe-specification Optional string field name to sort results
+         *   by. Determines the ORDER BY clause in queries. Common values:
+         *   revenue, order_count, created_at, product_name, seller_name.
      */
     sortBy?: string | undefined;
 
@@ -229,7 +260,9 @@ export namespace IEcommerceReport {
      *
      * Default is `desc` for most metrics like revenue and order count.
      *
-     * @x-autobe-specification Optional enum constant specifying sort direction. Valid values: asc (ascending), desc (descending). Default is desc for most metrics.
+         * @x-autobe-specification Optional enum constant specifying sort
+         *   direction. Valid values: asc (ascending), desc (descending).
+         *   Default is desc for most metrics.
      */
     sortOrder?: "asc" | "desc" | undefined;
 
@@ -238,7 +271,9 @@ export namespace IEcommerceReport {
      *
      * Must be a positive integer (minimum 1). Defaults to 1 if not specified. Used together with `limit` to control the number of results returned per page.
      *
-     * @x-autobe-specification Optional integer for pagination. Minimum value is 1. Defaults to 1 when not specified. Used with limit to control result set size.
+         * @x-autobe-specification Optional integer for pagination. Minimum
+         *   value is 1. Defaults to 1 when not specified. Used with limit to
+         *   control result set size.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -247,7 +282,9 @@ export namespace IEcommerceReport {
      *
      * Must be between 1 and 100 (inclusive). Defaults to a reasonable value if not specified. Used together with `page` to control pagination of large result sets.
      *
-     * @x-autobe-specification Optional integer for pagination. Minimum value is 1, maximum is 100. Defaults to a reasonable value when not specified. Controls the number of results returned per page.
+         * @x-autobe-specification Optional integer for pagination. Minimum
+         *   value is 1, maximum is 100. Defaults to a reasonable value when not
+         *   specified. Controls the number of results returned per page.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)

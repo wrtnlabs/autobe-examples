@@ -61,8 +61,10 @@ export namespace IHrmPlatformMember {
      * **Authentication Identity**:
      * Email serves as the unique identifier for member authentication. The system queries the database to verify the email exists and matches the provided password.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from hrm_platform_members.email. This is the member's unique identifier used for authentication. Must be a valid email format.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_members.email. This is the member's unique identifier
+         *   used for authentication. Must be a valid email format.
      */
     email: string & tags.Format<"email">;
 
@@ -75,8 +77,11 @@ export namespace IHrmPlatformMember {
      * - Never stored or returned in plaintext in API responses
      * - Should be at least 8 characters with mixed case, numbers, and special characters
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification User-provided plain text password. Backend transforms this by hashing with bcrypt and comparing against hrm_platform_members.password_hash column. Never stored in plaintext.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification User-provided plain text password. Backend
+         *   transforms this by hashing with bcrypt and comparing against
+         *   hrm_platform_members.password_hash column. Never stored in
+         *   plaintext.
      */
     password: string & tags.Format<"password">;
   };
@@ -92,7 +97,11 @@ export namespace IHrmPlatformMember {
      *
      * This long-lived token (typically 7 days) enables seamless token renewal. The token is validated server-side against stored session data and, upon successful validation, exchanges for a new access token and new refresh token pair.
      *
-     * @x-autobe-specification Client-provided refresh token string in JWT format. Validated against hrm_platform_member_sessions table: must exist in sessions, not be expired, and match the authenticated member. On success, generates new access token and new refresh token pair.
+         * @x-autobe-specification Client-provided refresh token string in JWT
+         *   format. Validated against hrm_platform_member_sessions table: must
+         *   exist in sessions, not be expired, and match the authenticated
+         *   member. On success, generates new access token and new refresh
+         *   token pair.
      */
     refresh_token: string;
   };
@@ -110,8 +119,10 @@ export namespace IHrmPlatformMember {
      *
      * The display name is the primary human-readable identifier for a member account. It appears in activity logs, timesheets, project assignments, and organizational contexts. If not provided, the system may default to the email address local part.
      *
-     * @x-autobe-database-schema-property display_name
-     * @x-autobe-specification Direct mapping from hrm_platform_members.display_name column. Optional string field for user display name.
+         * @x-autobe-database-schema-property display_name
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_members.display_name column. Optional string field for
+         *   user display name.
      */
     display_name?: (string & tags.MaxLength<255>) | null | undefined;
 
@@ -120,8 +131,10 @@ export namespace IHrmPlatformMember {
      *
      * Points to an externally or internally hosted image file. Used for visual representation of the user throughout the platform in profiles, activity logs, and team directories. Supports any valid URI format including HTTP/HTTPS URLs.
      *
-     * @x-autobe-database-schema-property avatar_uri
-     * @x-autobe-specification Direct mapping from hrm_platform_members.avatar_uri column. Optional URI string for profile avatar image reference.
+         * @x-autobe-database-schema-property avatar_uri
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_members.avatar_uri column. Optional URI string for
+         *   profile avatar image reference.
      */
     avatar_uri?:
       | (string & tags.MaxLength<80000> & tags.Format<"uri">)
@@ -133,8 +146,10 @@ export namespace IHrmPlatformMember {
      *
      * Used for two-factor authentication, account recovery, and communication. Format may vary by region and country. Stored as a plain string without enforced format validation.
      *
-     * @x-autobe-database-schema-property phone_number
-     * @x-autobe-specification Direct mapping from hrm_platform_members.phone_number column. Optional string field for contact phone number.
+         * @x-autobe-database-schema-property phone_number
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_members.phone_number column. Optional string field for
+         *   contact phone number.
      */
     phone_number?: (string & tags.Format<"uri">) | null | undefined;
   };
@@ -217,7 +232,8 @@ export namespace IHrmPlatformMember {
      * Requesting a page beyond the available range returns an empty data array
      * with valid pagination metadata reflecting the actual totals.
      *
-     * @x-autobe-specification 1-indexed page number. Defaults to 1 if not provided.
+         * @x-autobe-specification 1-indexed page number. Defaults to 1 if not
+         *   provided.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };
@@ -258,7 +274,8 @@ export namespace IHrmPlatformMember {
     /**
      * Authorization token.
      *
-     * @x-autobe-specification Authorization token comes from the session table.
+         * @x-autobe-specification Authorization token comes from the session
+         *   table.
      */
     token: IAuthorizationToken;
   };
@@ -292,26 +309,31 @@ export namespace IHrmPlatformMember {
    */
   export type IJoin = {
     /**
-     * @x-autobe-database-schema-property email
+         * @x-autobe-database-schema-property email
      */
     email: string & tags.Format<"email">;
     /**
-     * @x-autobe-database-schema-property password_hash
+         * @x-autobe-database-schema-property password_hash
      */
     password: string & tags.Format<"password">;
     /**
-     * @x-autobe-database-schema-property display_name
-     * @x-autobe-specification Maps from hrm_platform_members.display_name column. Used for presentation in UI and activity logs.
+         * @x-autobe-database-schema-property display_name
+         * @x-autobe-specification Maps from hrm_platform_members.display_name
+         *   column. Used for presentation in UI and activity logs.
      */
     name?: string | null | undefined;
     /**
-     * @x-autobe-database-schema-property phone_number
-     * @x-autobe-specification Maps directly from hrm_platform_members.phone_number column. Optional contact information for 2FA and communication.
+         * @x-autobe-database-schema-property phone_number
+         * @x-autobe-specification Maps directly from
+         *   hrm_platform_members.phone_number column. Optional contact
+         *   information for 2FA and communication.
      */
     phone_number?: string | null | undefined;
     /**
-     * @x-autobe-database-schema-property avatar_uri
-     * @x-autobe-specification Maps directly from hrm_platform_members.avatar_uri column. URI to profile avatar image for display purposes.
+         * @x-autobe-database-schema-property avatar_uri
+         * @x-autobe-specification Maps directly from
+         *   hrm_platform_members.avatar_uri column. URI to profile avatar image
+         *   for display purposes.
      */
     avatar_uri?: (string & tags.Format<"uri">) | null | undefined;
     org_name: string;

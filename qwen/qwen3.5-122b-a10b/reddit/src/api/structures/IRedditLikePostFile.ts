@@ -20,8 +20,9 @@ export type IRedditLikePostFile = {
    *
    * Generated as a UUID when the file is uploaded. Serves as the primary key for file management operations and referential integrity.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from reddit_like_post_files.id. Primary key, UUID format, generated on insert.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from reddit_like_post_files.id.
+     *   Primary key, UUID format, generated on insert.
    */
   id: string & tags.Format<"uuid">;
 
@@ -30,8 +31,10 @@ export type IRedditLikePostFile = {
    *
    * Preserves the user-provided filename for display purposes and download headers. Contains the file extension (e.g., 'photo.jpg'). Used in Content-Disposition headers when downloading the file.
    *
-   * @x-autobe-database-schema-property file_name
-   * @x-autobe-specification Direct mapping from reddit_like_post_files.file_name. Original user-provided filename with extension.
+     * @x-autobe-database-schema-property file_name
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_post_files.file_name. Original user-provided filename with
+     *   extension.
    */
   file_name: string;
 
@@ -40,8 +43,10 @@ export type IRedditLikePostFile = {
    *
    * Points to the file storage location (e.g., S3, CDN) where the actual image binary is stored. Used for rendering the image in posts and feeds. Must be a valid URI accessible to authenticated or public users depending on file permissions.
    *
-   * @x-autobe-database-schema-property file_url
-   * @x-autobe-specification Direct mapping from reddit_like_post_files.file_url. Public URI to file storage (S3, CDN, etc.).
+     * @x-autobe-database-schema-property file_url
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_post_files.file_url. Public URI to file storage (S3, CDN,
+     *   etc.).
    */
   file_url: string & tags.Format<"uri">;
 
@@ -50,8 +55,10 @@ export type IRedditLikePostFile = {
    *
    * Used for validation against storage limits and displayed to users for transparency. Always non-negative. May be used to estimate download time or display file size information in the UI.
    *
-   * @x-autobe-database-schema-property file_size
-   * @x-autobe-specification Direct mapping from reddit_like_post_files.file_size. Integer representing bytes, minimum 0.
+     * @x-autobe-database-schema-property file_size
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_post_files.file_size. Integer representing bytes, minimum
+     *   0.
    */
   file_size: number & tags.Type<"int32"> & tags.Minimum<0>;
 
@@ -60,8 +67,10 @@ export type IRedditLikePostFile = {
    *
    * Content type identifier (e.g., 'image/jpeg', 'image/png', 'image/gif'). Used for setting correct Content-Type headers when serving the file and for validating that only image files are stored in this table.
    *
-   * @x-autobe-database-schema-property mime_type
-   * @x-autobe-specification Direct mapping from reddit_like_post_files.mime_type. Content type string (e.g., 'image/jpeg', 'image/png').
+     * @x-autobe-database-schema-property mime_type
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_post_files.mime_type. Content type string (e.g.,
+     *   'image/jpeg', 'image/png').
    */
   mime_type: string;
 
@@ -70,8 +79,10 @@ export type IRedditLikePostFile = {
    *
    * Set automatically during file upload. Used for audit trails, file age calculations, and sorting files chronologically. Stored with timezone information (timestamptz).
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from reddit_like_post_files.created_at. Timestamp with timezone, set on insert.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_post_files.created_at. Timestamp with timezone, set on
+     *   insert.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -80,8 +91,10 @@ export type IRedditLikePostFile = {
    *
    * Updated when file metadata is modified. Typically matches created_at unless file information is changed through an update operation. Used for tracking modification history.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from reddit_like_post_files.updated_at. Timestamp with timezone, updated on record modification.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_post_files.updated_at. Timestamp with timezone, updated on
+     *   record modification.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -90,8 +103,10 @@ export type IRedditLikePostFile = {
    *
    * When null, the file is active and accessible. When set, the file is hidden and scheduled for permanent deletion. Set when the parent post is deleted or when the file is explicitly removed. Query filters should exclude deleted files (deleted_at IS NULL) for active content.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from reddit_like_post_files.deleted_at. Nullable timestamp, null for active files, set when soft-deleted.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_post_files.deleted_at. Nullable timestamp, null for active
+     *   files, set when soft-deleted.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };

@@ -25,9 +25,10 @@ export class TodoappMemberTodosEdit_historiesController {
    * @param connection
    * @param todoId UUID of the todo whose edit history to retrieve (global scope)
    * @param body Search criteria and pagination parameters for edit history listing.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query todo_app_todo_edit_histories table filtering by todo_app_todos_id from path parameter.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query todo_app_todo_edit_histories table
+     *   filtering by todo_app_todos_id from path parameter.
    *
    * Apply pagination from request body (page, pageSize).
    *
@@ -77,9 +78,11 @@ export class TodoappMemberTodosEdit_historiesController {
    * @param connection
    * @param todoId UUID of the todo item whose edit history entry is being retrieved (global scope)
    * @param historyId UUID of the specific edit history entry to retrieve (global scope)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query the todo_app_todo_edit_histories table for a single record matching the provided historyId and todo_app_todos_id (todoId).
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query the todo_app_todo_edit_histories table for
+     *   a single record matching the provided historyId and todo_app_todos_id
+     *   (todoId).
    *
    * First, verify that the authenticated user owns the todo by checking that todo_app_todos.todo_app_member_id matches the current user's ID. If ownership verification fails, return a 403 Forbidden error.
    *

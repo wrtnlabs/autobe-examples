@@ -26,8 +26,9 @@ export type IEcommerceSellerProfile = {
    *
    * This is the primary key that uniquely identifies the shop profile in the system. It is a UUID generated when the profile is created and cannot be modified.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_seller_profiles.id. Primary key, UUID format, required field.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from ecommerce_seller_profiles.id.
+     *   Primary key, UUID format, required field.
    */
   id: string & tags.Format<"uuid">;
 
@@ -36,8 +37,9 @@ export type IEcommerceSellerProfile = {
    *
    * This is the primary identifier customers see when browsing products or viewing seller information. The shop name is required for all seller profiles and must be non-empty. It appears alongside products in search results and category listings.
    *
-   * @x-autobe-database-schema-property shop_name
-   * @x-autobe-specification Direct mapping from ecommerce_seller_profiles.shop_name. Required field, non-empty string.
+     * @x-autobe-database-schema-property shop_name
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_seller_profiles.shop_name. Required field, non-empty string.
    */
   shop_name: string;
 
@@ -46,8 +48,10 @@ export type IEcommerceSellerProfile = {
    *
    * Provides additional context for customers about the seller's business, values, or product offerings. Can be empty if not provided by the seller. Displayed on the seller's profile page.
    *
-   * @x-autobe-database-schema-property shop_description
-   * @x-autobe-specification Direct mapping from ecommerce_seller_profiles.shop_description. Optional field, nullable string.
+     * @x-autobe-database-schema-property shop_description
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_seller_profiles.shop_description. Optional field, nullable
+     *   string.
    */
   shop_description: string | null;
 
@@ -56,8 +60,10 @@ export type IEcommerceSellerProfile = {
    *
    * Displayed on seller profiles and product listings. Uses URI format for URL validation. Can be null if no logo is uploaded by the seller. Maximum length 80000 characters.
    *
-   * @x-autobe-database-schema-property logo_image_url
-   * @x-autobe-specification Direct mapping from ecommerce_seller_profiles.logo_image_url. Optional field, nullable URI string.
+     * @x-autobe-database-schema-property logo_image_url
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_seller_profiles.logo_image_url. Optional field, nullable URI
+     *   string.
    */
   logo_image_url: (string & tags.Format<"uri">) | null;
 
@@ -66,8 +72,9 @@ export type IEcommerceSellerProfile = {
    *
    * This field is automatically set during profile creation and cannot be modified. It establishes the account's creation date for audit and reporting purposes. Format: ISO 8601 date-time string.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_seller_profiles.created_at. Required field, date-time format.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_seller_profiles.created_at. Required field, date-time format.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -76,8 +83,9 @@ export type IEcommerceSellerProfile = {
    *
    * This field is automatically updated whenever shop name, description, or logo is changed. Provides a record of the most recent profile activity. Format: ISO 8601 date-time string.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from ecommerce_seller_profiles.updated_at. Required field, date-time format.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_seller_profiles.updated_at. Required field, date-time format.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -86,8 +94,10 @@ export type IEcommerceSellerProfile = {
    *
    * Set when the seller account is deleted. Preserves referential integrity for historical order records while marking the profile as inactive. Null indicates the profile is currently active. Format: ISO 8601 date-time string when present.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from ecommerce_seller_profiles.deleted_at. Nullable field, oneOf date-time string or null.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_seller_profiles.deleted_at. Nullable field, oneOf date-time
+     *   string or null.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 
@@ -96,8 +106,10 @@ export type IEcommerceSellerProfile = {
    *
    * This is a belongs-to relation that links the profile to its parent seller account. Returns a summary representation (IEcommerceSeller.ISummary) containing the seller's identity, email, approval status, and suspension/ban flags. Used for displaying seller information alongside profile data.
    *
-   * @x-autobe-database-schema-property seller
-   * @x-autobe-specification BELONGS-TO relation via JOIN to ecommerce_sellers on ecommerce_seller_id. Returns IEcommerceSeller.ISummary object containing seller account identity and status information.
+     * @x-autobe-database-schema-property seller
+     * @x-autobe-specification BELONGS-TO relation via JOIN to ecommerce_sellers
+     *   on ecommerce_seller_id. Returns IEcommerceSeller.ISummary object
+     *   containing seller account identity and status information.
    */
   seller: IEcommerceSeller.ISummary;
 };
@@ -121,8 +133,10 @@ export namespace IEcommerceSellerProfile {
      *
      * This is the primary identifier customers see when browsing products or viewing seller information. Required for all seller profiles and must be non-empty when provided in update requests.
      *
-     * @x-autobe-database-schema-property shop_name
-     * @x-autobe-specification Direct mapping from ecommerce_seller_profiles.shop_name. Required when provided, must be non-empty string. Updated on every profile modification.
+         * @x-autobe-database-schema-property shop_name
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_seller_profiles.shop_name. Required when provided, must
+         *   be non-empty string. Updated on every profile modification.
      */
     shop_name?: string | undefined;
 
@@ -131,8 +145,10 @@ export namespace IEcommerceSellerProfile {
      *
      * Provides additional context for customers about the seller. Can be empty or null if not provided. Supports markdown or plain text formatting depending on frontend rendering.
      *
-     * @x-autobe-database-schema-property shop_description
-     * @x-autobe-specification Direct mapping from ecommerce_seller_profiles.shop_description. Optional nullable string field. Can be empty or null if not provided.
+         * @x-autobe-database-schema-property shop_description
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_seller_profiles.shop_description. Optional nullable
+         *   string field. Can be empty or null if not provided.
      */
     shop_description?: string | null | undefined;
 
@@ -141,8 +157,11 @@ export namespace IEcommerceSellerProfile {
      *
      * Displayed on seller profiles and product listings. Uses URI format for URL validation. Can be null if no logo is uploaded. When provided, must be a valid URI string.
      *
-     * @x-autobe-database-schema-property logo_image_url
-     * @x-autobe-specification Direct mapping from ecommerce_seller_profiles.logo_image_url. Optional nullable string field. Must be valid URI format when provided. Maximum length 80000 characters.
+         * @x-autobe-database-schema-property logo_image_url
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_seller_profiles.logo_image_url. Optional nullable string
+         *   field. Must be valid URI format when provided. Maximum length 80000
+         *   characters.
      */
     logo_image_url?: (string & tags.Format<"uri">) | null | undefined;
   };

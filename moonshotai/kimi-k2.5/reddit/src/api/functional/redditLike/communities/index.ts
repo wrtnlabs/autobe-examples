@@ -24,7 +24,8 @@ import { IRedditLikeCommunity } from "../../../structures/IRedditLikeCommunity";
  * @param props.body Search criteria and pagination parameters for filtering communities
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query reddit_like_communities table with pagination and optional name search filtering.
+ * @x-autobe-specification Query reddit_like_communities table with pagination
+ *   and optional name search filtering.
  *
  * Apply search filter on name field using case-insensitive partial matching (ILIKE or similar). Filter out soft-deleted communities (deleted_at is null).
  *

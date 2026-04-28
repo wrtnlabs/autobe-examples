@@ -35,7 +35,10 @@ export namespace IRedditCommunityMember {
      *
      * Example: 'john' matches 'john_doe', 'JohnSmith', 'myjohnny'.
      *
-     * @x-autobe-specification Query parameter for filtering reddit_community_members.username using ILIKE partial match. Repository applies: WHERE username ILIKE '%{username}%'. Maps to username column for case-insensitive search.
+         * @x-autobe-specification Query parameter for filtering
+         *   reddit_community_members.username using ILIKE partial match.
+         *   Repository applies: WHERE username ILIKE '%{username}%'. Maps to
+         *   username column for case-insensitive search.
      */
     username?: string | undefined;
 
@@ -46,7 +49,10 @@ export namespace IRedditCommunityMember {
      *
      * Example: 'John' matches 'John Doe', 'Johnny', 'My John'.
      *
-     * @x-autobe-specification Query parameter for filtering reddit_community_members.display_name using ILIKE partial match. Repository applies: WHERE display_name ILIKE '%{displayName}%'. Maps to display_name column for case-insensitive search.
+         * @x-autobe-specification Query parameter for filtering
+         *   reddit_community_members.display_name using ILIKE partial match.
+         *   Repository applies: WHERE display_name ILIKE '%{displayName}%'.
+         *   Maps to display_name column for case-insensitive search.
      */
     displayName?: string | undefined;
 
@@ -57,7 +63,10 @@ export namespace IRedditCommunityMember {
      *
      * Karma represents the sum of upvotes minus downvotes received on a user's posts and comments.
      *
-     * @x-autobe-specification Query parameter for filtering reddit_community_members.karma with >= comparison. Repository applies: WHERE karma >= {karmaMin}. Maps to karma column for minimum reputation threshold.
+         * @x-autobe-specification Query parameter for filtering
+         *   reddit_community_members.karma with >= comparison. Repository
+         *   applies: WHERE karma >= {karmaMin}. Maps to karma column for
+         *   minimum reputation threshold.
      */
     karmaMin?: (number & tags.Type<"int32">) | undefined;
 
@@ -68,7 +77,10 @@ export namespace IRedditCommunityMember {
      *
      * Karma represents the sum of upvotes minus downvotes received on a user's posts and comments.
      *
-     * @x-autobe-specification Query parameter for filtering reddit_community_members.karma with <= comparison. Repository applies: WHERE karma <= {karmaMax}. Maps to karma column for maximum reputation threshold.
+         * @x-autobe-specification Query parameter for filtering
+         *   reddit_community_members.karma with <= comparison. Repository
+         *   applies: WHERE karma <= {karmaMax}. Maps to karma column for
+         *   maximum reputation threshold.
      */
     karmaMax?: (number & tags.Type<"int32">) | undefined;
 
@@ -79,7 +91,11 @@ export namespace IRedditCommunityMember {
      *
      * Useful for finding new users or filtering by registration period.
      *
-     * @x-autobe-specification Query parameter for filtering reddit_community_members.created_at with >= comparison. Repository applies: WHERE created_at >= {createdAfter}. ISO 8601 datetime format. Maps to created_at column for registration date lower bound.
+         * @x-autobe-specification Query parameter for filtering
+         *   reddit_community_members.created_at with >= comparison. Repository
+         *   applies: WHERE created_at >= {createdAfter}. ISO 8601 datetime
+         *   format. Maps to created_at column for registration date lower
+         *   bound.
      */
     createdAfter?: (string & tags.Format<"date-time">) | undefined;
 
@@ -90,7 +106,11 @@ export namespace IRedditCommunityMember {
      *
      * Can be combined with createdAfter for date range queries.
      *
-     * @x-autobe-specification Query parameter for filtering reddit_community_members.created_at with <= comparison. Repository applies: WHERE created_at <= {createdBefore}. ISO 8601 datetime format. Maps to created_at column for registration date upper bound.
+         * @x-autobe-specification Query parameter for filtering
+         *   reddit_community_members.created_at with <= comparison. Repository
+         *   applies: WHERE created_at <= {createdBefore}. ISO 8601 datetime
+         *   format. Maps to created_at column for registration date upper
+         *   bound.
      */
     createdBefore?: (string & tags.Format<"date-time">) | undefined;
 
@@ -101,7 +121,9 @@ export namespace IRedditCommunityMember {
      *
      * Combined with limit to control result set pagination. For example, page=2 with limit=20 returns items 21-40.
      *
-     * @x-autobe-specification Pagination parameter - no direct DB mapping. Repository calculates OFFSET as (page - 1) * limit. Minimum value is 1, defaults to 1 if not provided.
+         * @x-autobe-specification Pagination parameter - no direct DB mapping.
+         *   Repository calculates OFFSET as (page - 1) * limit. Minimum value
+         *   is 1, defaults to 1 if not provided.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -112,7 +134,9 @@ export namespace IRedditCommunityMember {
      *
      * Larger limits reduce the number of API calls needed but increase response size. Consider performance implications when setting high values.
      *
-     * @x-autobe-specification Pagination parameter - no direct DB mapping. Repository applies LIMIT clause. Value must be between 1 and 100 inclusive. Defaults to 20 if not provided.
+         * @x-autobe-specification Pagination parameter - no direct DB mapping.
+         *   Repository applies LIMIT clause. Value must be between 1 and 100
+         *   inclusive. Defaults to 20 if not provided.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -129,7 +153,10 @@ export namespace IRedditCommunityMember {
      *
      * Combined with direction to control ascending or descending order.
      *
-     * @x-autobe-specification Sorting parameter - no direct DB mapping but values reference DB columns. Repository applies ORDER BY clause using: 'username' → username, 'karma' → karma, 'created_at' → created_at. Defaults to 'created_at' if not provided.
+         * @x-autobe-specification Sorting parameter - no direct DB mapping but
+         *   values reference DB columns. Repository applies ORDER BY clause
+         *   using: 'username' → username, 'karma' → karma, 'created_at' →
+         *   created_at. Defaults to 'created_at' if not provided.
      */
     sort?: "username" | "karma" | "created_at" | undefined;
 
@@ -143,7 +170,10 @@ export namespace IRedditCommunityMember {
      *
      * Common patterns: sort='created_at' with direction='desc' shows newest members first.
      *
-     * @x-autobe-specification Sorting direction parameter - no direct DB mapping. Repository applies ASC or DESC to ORDER BY clause. Valid values: 'asc' (ascending), 'desc' (descending). Defaults to 'desc' if not provided.
+         * @x-autobe-specification Sorting direction parameter - no direct DB
+         *   mapping. Repository applies ASC or DESC to ORDER BY clause. Valid
+         *   values: 'asc' (ascending), 'desc' (descending). Defaults to 'desc'
+         *   if not provided.
      */
     direction?: "asc" | "desc" | undefined;
   };
@@ -161,8 +191,10 @@ export namespace IRedditCommunityMember {
      *
      * Used as the primary login credential along with the password. Must be unique across all member accounts. Also used for password reset requests and email verification flows. The email is stored in plain text and must follow standard email format (RFC 5322).
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from reddit_community_members.email. Unique constraint enforced. Validated for email format before storage.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   reddit_community_members.email. Unique constraint enforced.
+         *   Validated for email format before storage.
      */
     email: string & tags.Format<"email">;
 
@@ -171,8 +203,11 @@ export namespace IRedditCommunityMember {
      *
      * Provided in plain text during registration and login. The backend bcrypt hashes this password before storing it in the database. Password strength is validated to ensure minimum security requirements (length, character variety). Never exposed in any response DTO.
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification Maps to reddit_community_members.password_hash. Plain text password from request is bcrypt hashed before storage. Password strength validated (minimum length, complexity requirements) before hashing.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification Maps to
+         *   reddit_community_members.password_hash. Plain text password from
+         *   request is bcrypt hashed before storage. Password strength
+         *   validated (minimum length, complexity requirements) before hashing.
      */
     password: string & tags.Format<"password">;
 
@@ -181,8 +216,10 @@ export namespace IRedditCommunityMember {
      *
      * Chosen by the user during registration and used to display author names on posts and comments. Supports user mentions using @username syntax. Must be unique across all member accounts and cannot be changed after registration.
      *
-     * @x-autobe-database-schema-property username
-     * @x-autobe-specification Direct mapping from reddit_community_members.username. Unique constraint enforced. Used for public identification and @mentions.
+         * @x-autobe-database-schema-property username
+         * @x-autobe-specification Direct mapping from
+         *   reddit_community_members.username. Unique constraint enforced. Used
+         *   for public identification and @mentions.
      */
     username: string;
 
@@ -191,7 +228,10 @@ export namespace IRedditCommunityMember {
      *
      * Captured from the request headers for security monitoring and analytics purposes. Helps track user navigation patterns and detect suspicious registration sources. May be omitted in server-side rendering (SSR) scenarios where the client cannot determine this value.
      *
-     * @x-autobe-specification Captured from request headers (Referer or custom header). Not stored in reddit_community_members table. Used for analytics and fraud detection. Optional in SSR scenarios where client cannot determine href.
+         * @x-autobe-specification Captured from request headers (Referer or
+         *   custom header). Not stored in reddit_community_members table. Used
+         *   for analytics and fraud detection. Optional in SSR scenarios where
+         *   client cannot determine href.
      */
     href: string & tags.Format<"uri">;
 
@@ -200,7 +240,9 @@ export namespace IRedditCommunityMember {
      *
      * Captured from the HTTP Referer header for analytics and attribution tracking. Helps identify traffic sources and marketing campaign effectiveness. May be omitted if the user typed the URL directly or if the browser does not send the Referer header.
      *
-     * @x-autobe-specification Captured from request headers (Referer header). Not stored in reddit_community_members table. Used for analytics and attribution tracking. Optional in SSR scenarios.
+         * @x-autobe-specification Captured from request headers (Referer
+         *   header). Not stored in reddit_community_members table. Used for
+         *   analytics and attribution tracking. Optional in SSR scenarios.
      */
     referrer: string & tags.Format<"uri">;
 
@@ -209,7 +251,11 @@ export namespace IRedditCommunityMember {
      *
      * Captured from the request context for security monitoring, fraud detection, and rate limiting. Stored in the session record rather than the member table to track authentication context. Optional because in server-side rendering (SSR) scenarios, the client cannot know its own IP address—the server captures it as a fallback.
      *
-     * @x-autobe-specification Captured from request context (X-Forwarded-For header or direct connection IP). Not stored in reddit_community_members table. Stored in reddit_community_member_sessions for session tracking. Optional (format: ipv4) because in SSR the server captures it as fallback.
+         * @x-autobe-specification Captured from request context
+         *   (X-Forwarded-For header or direct connection IP). Not stored in
+         *   reddit_community_members table. Stored in
+         *   reddit_community_member_sessions for session tracking. Optional
+         *   (format: ipv4) because in SSR the server captures it as fallback.
      */
     ip?: (string & tags.Format<"ipv4">) | undefined;
   };
@@ -229,8 +275,11 @@ export namespace IRedditCommunityMember {
      *
      * The email format is validated according to RFC 5322 standards. The lookup uses the unique index on the email column for efficient retrieval.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from reddit_community_members.email. Used to lookup member account. Must match unique email constraint. Format validated as RFC 5322 email address.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   reddit_community_members.email. Used to lookup member account. Must
+         *   match unique email constraint. Format validated as RFC 5322 email
+         *   address.
      */
     email: string & tags.Format<"email">;
 
@@ -241,8 +290,12 @@ export namespace IRedditCommunityMember {
      *
      * The password is compared using bcrypt's secure comparison algorithm to prevent timing attacks. Minimum password requirements (length, complexity) are enforced during registration, not login.
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification Maps to reddit_community_members.password_hash. Plain text password from request is hashed using bcrypt and compared against stored hash. Never stored or logged in plain text. Comparison uses constant-time algorithm to prevent timing attacks.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification Maps to
+         *   reddit_community_members.password_hash. Plain text password from
+         *   request is hashed using bcrypt and compared against stored hash.
+         *   Never stored or logged in plain text. Comparison uses constant-time
+         *   algorithm to prevent timing attacks.
      */
     password: string & tags.Format<"password">;
 
@@ -253,7 +306,10 @@ export namespace IRedditCommunityMember {
      *
      * The href is extracted from the request's Referrer or Origin header and should be a valid URI format.
      *
-     * @x-autobe-specification Session context field captured from HTTP request. Not stored in reddit_community_members - captured from request headers and stored in reddit_community_member_sessions for audit trail. Required field for login requests.
+         * @x-autobe-specification Session context field captured from HTTP
+         *   request. Not stored in reddit_community_members - captured from
+         *   request headers and stored in reddit_community_member_sessions for
+         *   audit trail. Required field for login requests.
      */
     href: string & tags.Format<"uri">;
 
@@ -264,7 +320,10 @@ export namespace IRedditCommunityMember {
      *
      * The referrer is optional in some browsers due to privacy settings but is required for security audit completeness.
      *
-     * @x-autobe-specification Session context field captured from HTTP request. Not stored in reddit_community_members - captured from request headers and stored in reddit_community_member_sessions for audit trail. Required field for login requests.
+         * @x-autobe-specification Session context field captured from HTTP
+         *   request. Not stored in reddit_community_members - captured from
+         *   request headers and stored in reddit_community_member_sessions for
+         *   audit trail. Required field for login requests.
      */
     referrer: string & tags.Format<"uri">;
 
@@ -275,7 +334,11 @@ export namespace IRedditCommunityMember {
      *
      * This field is optional in the request body as the server can extract the IP address from the request headers if not explicitly provided. Format is IPv4 address.
      *
-     * @x-autobe-specification Session context field captured from HTTP request. Not stored in reddit_community_members - captured from request and stored in reddit_community_member_sessions for audit trail. Optional field (not in required array) as server can capture IP from request if not provided.
+         * @x-autobe-specification Session context field captured from HTTP
+         *   request. Not stored in reddit_community_members - captured from
+         *   request and stored in reddit_community_member_sessions for audit
+         *   trail. Optional field (not in required array) as server can capture
+         *   IP from request if not provided.
      */
     ip?: (string & tags.Format<"ipv4">) | undefined;
   };
@@ -299,7 +362,8 @@ export namespace IRedditCommunityMember {
     /**
      * Authorization token.
      *
-     * @x-autobe-specification Authorization token comes from the session table.
+         * @x-autobe-specification Authorization token comes from the session
+         *   table.
      */
     token: IAuthorizationToken;
   };
@@ -319,8 +383,12 @@ export namespace IRedditCommunityMember {
      *
      * Upon successful validation, the server generates a new JWT access_token and refresh_token pair, updates the session record with the new tokens and extended expiration timestamp, and returns them in the response.
      *
-     * @x-autobe-database-schema-property refresh_token
-     * @x-autobe-specification Direct mapping from reddit_community_member_sessions.refresh_token. Client provides this token to request new access/refresh token pair. Backend validates token exists, is unique, session not expired, and member account is active.
+         * @x-autobe-database-schema-property refresh_token
+         * @x-autobe-specification Direct mapping from
+         *   reddit_community_member_sessions.refresh_token. Client provides
+         *   this token to request new access/refresh token pair. Backend
+         *   validates token exists, is unique, session not expired, and member
+         *   account is active.
      */
     refresh_token: string;
   };

@@ -24,7 +24,8 @@ import { IPageIErpHrmTaskHistory } from "../../../../../../structures/IPageIErpH
  * @param props.body Search criteria and pagination parameters for task history listing
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query erp_hrm_task_histories table joining with erp_hrm_tasks and erp_hrm_projects for access control validation.
+ * @x-autobe-specification Query erp_hrm_task_histories table joining with
+ *   erp_hrm_tasks and erp_hrm_projects for access control validation.
  *
  * **Access Control:**
  * - Validate projectId exists and is accessible to current user
@@ -151,7 +152,13 @@ export namespace index {
  * @param props.historyId Target history entry's ID
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query the erp_hrm_task_histories table by primary key id matching the historyId path parameter. Validate that the retrieved history record has erp_hrm_task_id matching the taskId path parameter. Additionally, verify the task belongs to the specified projectId through join with erp_hrm_tasks table - the task's erp_hrm_project_id must match the provided projectId. This nested validation ensures users cannot access history entries outside their authorized project scope.
+ * @x-autobe-specification Query the erp_hrm_task_histories table by primary key
+ *   id matching the historyId path parameter. Validate that the retrieved
+ *   history record has erp_hrm_task_id matching the taskId path parameter.
+ *   Additionally, verify the task belongs to the specified projectId through
+ *   join with erp_hrm_tasks table - the task's erp_hrm_project_id must match
+ *   the provided projectId. This nested validation ensures users cannot access
+ *   history entries outside their authorized project scope.
  *
  * Join with erp_hrm_tasks to include task context information in the response. Join with erp_hrm_members to include the member information who performed the change (changedByMember relation). Apply authorization check: verify the requesting member has permission to view the parent task - this can be checked by confirming the member is either assigned to view tasks in this project or has explicit project view permission.
  *

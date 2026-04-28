@@ -26,8 +26,9 @@ export type IEcommerceMallSellerApprovalRequest = {
   /**
    * Unique identifier for the seller approval request.
    *
-   * @x-autobe-specification Direct mapping from ecommerce_mall_seller_approval_requests.id. UUID primary key.
-   * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_seller_approval_requests.id. UUID primary key.
+     * @x-autobe-database-schema-property id
    */
   id: string & tags.Format<"uuid">;
 
@@ -36,8 +37,10 @@ export type IEcommerceMallSellerApprovalRequest = {
    *
    * The seller object includes their email address, display name, and approval status. This relationship ensures data integrity through foreign key constraint with cascading deletion.
    *
-   * @x-autobe-specification Join via ecommerce_mall_seller_approval_requests.seller_id to ecommerce_mall_sellers.id. Returns IEcommerceMallSeller.ISummary.
-   * @x-autobe-database-schema-property seller
+     * @x-autobe-specification Join via
+     *   ecommerce_mall_seller_approval_requests.seller_id to
+     *   ecommerce_mall_sellers.id. Returns IEcommerceMallSeller.ISummary.
+     * @x-autobe-database-schema-property seller
    */
   seller: IEcommerceMallSeller.ISummary;
 
@@ -51,8 +54,11 @@ export type IEcommerceMallSellerApprovalRequest = {
    *
    * Each seller can have only one active approval request at a time. Approved or rejected requests are immutable; sellers must submit new requests for changes.
    *
-   * @x-autobe-specification Direct mapping from ecommerce_mall_seller_approval_requests.status. Enum values: 'pending' for awaiting review, 'approved' for approved, 'rejected' for denied. Single active request per seller enforced by unique constraint.
-   * @x-autobe-database-schema-property status
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_seller_approval_requests.status. Enum values: 'pending'
+     *   for awaiting review, 'approved' for approved, 'rejected' for denied.
+     *   Single active request per seller enforced by unique constraint.
+     * @x-autobe-database-schema-property status
    */
   status: string;
 
@@ -61,8 +67,11 @@ export type IEcommerceMallSellerApprovalRequest = {
    *
    * This helps administrators understand the seller's business intent and evaluate their suitability. The seller provides this information when submitting the approval request.
    *
-   * @x-autobe-specification Direct mapping from ecommerce_mall_seller_approval_requests.request_reason. String field containing the seller's business reason for wanting to join the platform.
-   * @x-autobe-database-schema-property request_reason
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_seller_approval_requests.request_reason. String field
+     *   containing the seller's business reason for wanting to join the
+     *   platform.
+     * @x-autobe-database-schema-property request_reason
    */
   requestReason: string;
 
@@ -71,8 +80,12 @@ export type IEcommerceMallSellerApprovalRequest = {
    *
    * Only populated when the request status is 'approved' or 'rejected' (not 'pending'). The reviewer is set when an administrator approves or rejects the application. Null when status is 'pending'.
    *
-   * @x-autobe-specification Join via ecommerce_mall_seller_approval_requests.reviewer_id to ecommerce_mall_administrators.id when reviewer_id is present. Returns IEcommerceMallAdministrator.ISummary. Null when status is 'pending' (not yet reviewed).
-   * @x-autobe-database-schema-property reviewer
+     * @x-autobe-specification Join via
+     *   ecommerce_mall_seller_approval_requests.reviewer_id to
+     *   ecommerce_mall_administrators.id when reviewer_id is present. Returns
+     *   IEcommerceMallAdministrator.ISummary. Null when status is 'pending'
+     *   (not yet reviewed).
+     * @x-autobe-database-schema-property reviewer
    */
   reviewer: IEcommerceMallAdministrator.ISummary | null;
 
@@ -81,24 +94,32 @@ export type IEcommerceMallSellerApprovalRequest = {
    *
    * Only populated when status is 'rejected'. Provides the seller with feedback on why their application was denied, enabling them to address issues before resubmitting.
    *
-   * @x-autobe-specification Direct mapping from ecommerce_mall_seller_approval_requests.rejection_reason. Nullable string field providing the administrator's reason for rejection. Only populated when status is 'rejected'.
-   * @x-autobe-database-schema-property rejection_reason
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_seller_approval_requests.rejection_reason. Nullable
+     *   string field providing the administrator's reason for rejection. Only
+     *   populated when status is 'rejected'.
+     * @x-autobe-database-schema-property rejection_reason
    */
   rejectionReason: string | null;
 
   /**
    * Timestamp when this approval request was created.
    *
-   * @x-autobe-specification Direct mapping from ecommerce_mall_seller_approval_requests.created_at. Timestamp when the approval request was first created.
-   * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_seller_approval_requests.created_at. Timestamp when the
+     *   approval request was first created.
+     * @x-autobe-database-schema-property created_at
    */
   createdAt: string & tags.Format<"date-time">;
 
   /**
    * Timestamp of the last update to this approval request record.
    *
-   * @x-autobe-specification Direct mapping from ecommerce_mall_seller_approval_requests.updated_at. Timestamp of the last update to this record, including when status changes or rejection_reason is set.
-   * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_seller_approval_requests.updated_at. Timestamp of the
+     *   last update to this record, including when status changes or
+     *   rejection_reason is set.
+     * @x-autobe-database-schema-property updated_at
    */
   updatedAt: string & tags.Format<"date-time">;
 
@@ -107,8 +128,11 @@ export type IEcommerceMallSellerApprovalRequest = {
    *
    * Null in all valid responses because soft-deleted records are filtered out and return 404. This field is included for completeness but is always null in API responses.
    *
-   * @x-autobe-specification Direct mapping from ecommerce_mall_seller_approval_requests.deleted_at. Nullable timestamp for soft delete. Always null in valid responses because soft-deleted records return 404 and are filtered out.
-   * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_seller_approval_requests.deleted_at. Nullable timestamp
+     *   for soft delete. Always null in valid responses because soft-deleted
+     *   records return 404 and are filtered out.
+     * @x-autobe-database-schema-property deleted_at
    */
   deletedAt?: (string & tags.Format<"date-time">) | null | undefined;
 };
@@ -226,8 +250,12 @@ export namespace IEcommerceMallSellerApprovalRequest {
      *
      * This field captures the seller's business intent, explaining why they want to sell on the platform. It helps administrators understand the seller's business model, experience, and suitability for the marketplace.
      *
-     * @x-autobe-database-schema-property request_reason
-     * @x-autobe-specification Direct mapping from ecommerce_mall_seller_approval_requests.request_reason. Required string field capturing the seller's reason for wanting to join the platform. Used by administrators to evaluate the seller's business intent and suitability.
+         * @x-autobe-database-schema-property request_reason
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_seller_approval_requests.request_reason. Required
+         *   string field capturing the seller's reason for wanting to join the
+         *   platform. Used by administrators to evaluate the seller's business
+         *   intent and suitability.
      */
     request_reason: string;
   };

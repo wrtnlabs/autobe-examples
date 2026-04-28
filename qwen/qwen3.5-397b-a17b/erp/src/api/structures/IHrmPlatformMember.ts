@@ -68,8 +68,10 @@ export namespace IHrmPlatformMember {
      *
      * This email must match an existing record in hrm_platform_members and must be verified (confirmed via email verification flow). The backend uses this value to look up the member account and retrieve the stored password_hash for comparison.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from hrm_platform_members.email. Used to query member record. Must be unique and verified (emailVerifications checked by backend).
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_members.email. Used to query member record. Must be
+         *   unique and verified (emailVerifications checked by backend).
      */
     email: string & tags.Format<"email">;
 
@@ -78,8 +80,11 @@ export namespace IHrmPlatformMember {
      *
      * This password is provided by the user during login and is immediately hashed by the backend using bcrypt or argon2 before comparison with the stored password_hash in hrm_platform_members. The plain text value is never persisted or logged for security reasons.
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification Maps to hrm_platform_members.password_hash. Plain text password provided by user is hashed using bcrypt/argon2 by backend before comparison with stored hash. Never store or log plain text password.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification Maps to hrm_platform_members.password_hash.
+         *   Plain text password provided by user is hashed using bcrypt/argon2
+         *   by backend before comparison with stored hash. Never store or log
+         *   plain text password.
      */
     password: string & tags.Format<"password">;
 
@@ -88,7 +93,10 @@ export namespace IHrmPlatformMember {
      *
      * This field captures the originating page URL for security audit and session tracking purposes. The value is stored in hrm_platform_member_sessions alongside the JWT tokens. Helps identify the context of the authentication request and detect suspicious login patterns.
      *
-     * @x-autobe-specification Session context field captured from request. Stored in hrm_platform_member_sessions.href for security audit. Not mapped to hrm_platform_members table. Represents the page URL where login was initiated.
+         * @x-autobe-specification Session context field captured from request.
+         *   Stored in hrm_platform_member_sessions.href for security audit. Not
+         *   mapped to hrm_platform_members table. Represents the page URL where
+         *   login was initiated.
      */
     href: string & tags.Format<"uri">;
 
@@ -97,7 +105,10 @@ export namespace IHrmPlatformMember {
      *
      * This field captures the referrer from the HTTP request headers for security audit and session tracking. Stored in hrm_platform_member_sessions to help trace the user's navigation path leading to authentication. Useful for detecting unauthorized redirect attempts.
      *
-     * @x-autobe-specification Session context field captured from request. Stored in hrm_platform_member_sessions.referrer for security audit. Not mapped to hrm_platform_members table. Represents the HTTP referrer header indicating the previous page.
+         * @x-autobe-specification Session context field captured from request.
+         *   Stored in hrm_platform_member_sessions.referrer for security audit.
+         *   Not mapped to hrm_platform_members table. Represents the HTTP
+         *   referrer header indicating the previous page.
      */
     referrer: string & tags.Format<"uri">;
 
@@ -106,7 +117,11 @@ export namespace IHrmPlatformMember {
      *
      * This field captures the IP address of the authentication request for security monitoring and session management. Stored in hrm_platform_member_sessions. The field is optional to support server-side rendering (SSR) scenarios where the client may not know its own IP and the server provides it as a fallback. When provided, must be a valid IPv4 address format.
      *
-     * @x-autobe-specification Session context field captured from request. Stored in hrm_platform_member_sessions.ip for security audit. Not mapped to hrm_platform_members table. Optional to support SSR scenarios where server captures IP as fallback. Format: IPv4 address.
+         * @x-autobe-specification Session context field captured from request.
+         *   Stored in hrm_platform_member_sessions.ip for security audit. Not
+         *   mapped to hrm_platform_members table. Optional to support SSR
+         *   scenarios where server captures IP as fallback. Format: IPv4
+         *   address.
      */
     ip?: (string & tags.Format<"ipv4">) | undefined;
   };
@@ -126,7 +141,14 @@ export namespace IHrmPlatformMember {
      *
      * The token is validated against the hrm_platform_member_sessions table. It must match an active session where expired_at is in the future and the associated member account has not been deleted (deleted_at is null). Typical lifetime ranges from 7 to 30 days depending on security configuration. The token may be rotated on each refresh for enhanced security.
      *
-     * @x-autobe-specification Refresh token string validated against hrm_platform_member_sessions.refresh_token column. Server queries session table by this value, validates expired_at > now and associated member deleted_at is null. Token must match an active, non-expired session. On validation success, server issues new access_token and optionally rotates refresh_token. Session updated_at is refreshed. Returns 401 if token invalid, expired, or member deactivated.
+         * @x-autobe-specification Refresh token string validated against
+         *   hrm_platform_member_sessions.refresh_token column. Server queries
+         *   session table by this value, validates expired_at > now and
+         *   associated member deleted_at is null. Token must match an active,
+         *   non-expired session. On validation success, server issues new
+         *   access_token and optionally rotates refresh_token. Session
+         *   updated_at is refreshed. Returns 401 if token invalid, expired, or
+         *   member deactivated.
      */
     refresh_token: string;
   };
@@ -148,8 +170,10 @@ export namespace IHrmPlatformMember {
      *
      * Format must follow standard email conventions (RFC 5322). Maximum length is 255 characters. The system performs case-insensitive uniqueness checks to prevent duplicate accounts with different casing.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from hrm_platform_members.email. Must be unique across all members (enforced by DB unique index). Validated for email format.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_members.email. Must be unique across all members
+         *   (enforced by DB unique index). Validated for email format.
      */
     email: string & tags.Format<"email">;
 
@@ -160,8 +184,12 @@ export namespace IHrmPlatformMember {
      *
      * Password must meet security requirements: minimum 8 characters in length, at least one uppercase letter (A-Z), at least one lowercase letter (a-z), and at least one numeric digit (0-9). Stronger passwords are encouraged but not enforced beyond these minimum requirements.
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification Maps to hrm_platform_members.password_hash. Backend hashes the plain text password using bcrypt or argon2 before storage. Never store plain text passwords. Validation: minimum 8 characters, at least one uppercase letter, one lowercase letter, and one number.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification Maps to hrm_platform_members.password_hash.
+         *   Backend hashes the plain text password using bcrypt or argon2
+         *   before storage. Never store plain text passwords. Validation:
+         *   minimum 8 characters, at least one uppercase letter, one lowercase
+         *   letter, and one number.
      */
     password: string & tags.Format<"password">;
 
@@ -172,7 +200,10 @@ export namespace IHrmPlatformMember {
      *
      * The value is stored in the session record (hrm_platform_member_sessions) rather than the member record, as it pertains to the specific registration session rather than the member account itself. Format must be a valid URI.
      *
-     * @x-autobe-specification Session context field stored in hrm_platform_member_sessions table, not in hrm_platform_members. Captures the URL where registration was initiated for audit and analytics purposes.
+         * @x-autobe-specification Session context field stored in
+         *   hrm_platform_member_sessions table, not in hrm_platform_members.
+         *   Captures the URL where registration was initiated for audit and
+         *   analytics purposes.
      */
     href: string & tags.Format<"uri">;
 
@@ -183,7 +214,10 @@ export namespace IHrmPlatformMember {
      *
      * The value is stored in the session record (hrm_platform_member_sessions) rather than the member record, as it pertains to the specific registration session. Format must be a valid URI. May be empty if the user navigated directly or if referrer information is not available.
      *
-     * @x-autobe-specification Session context field stored in hrm_platform_member_sessions table, not in hrm_platform_members. Captures the referrer URL that led the user to the registration page for attribution tracking.
+         * @x-autobe-specification Session context field stored in
+         *   hrm_platform_member_sessions table, not in hrm_platform_members.
+         *   Captures the referrer URL that led the user to the registration
+         *   page for attribution tracking.
      */
     referrer: string & tags.Format<"uri">;
 
@@ -194,7 +228,11 @@ export namespace IHrmPlatformMember {
      *
      * The value is stored in the session record (hrm_platform_member_sessions) rather than the member record, as it pertains to the specific registration session. This field is optional to support server-side rendering scenarios where the client cannot determine its own IP address - in such cases, the server captures the IP as a fallback. Format must be a valid IPv4 address when provided.
      *
-     * @x-autobe-specification Session context field stored in hrm_platform_member_sessions table, not in hrm_platform_members. Optional because in server-side rendering (SSR) the client cannot know its own IP - the server captures it as fallback (body.ip ?? serverIp). Format: IPv4 address.
+         * @x-autobe-specification Session context field stored in
+         *   hrm_platform_member_sessions table, not in hrm_platform_members.
+         *   Optional because in server-side rendering (SSR) the client cannot
+         *   know its own IP - the server captures it as fallback (body.ip ??
+         *   serverIp). Format: IPv4 address.
      */
     ip?: (string & tags.Format<"ipv4">) | undefined;
   };
@@ -208,11 +246,11 @@ export namespace IHrmPlatformMember {
    */
   export type IAuthorized = {
     /**
-     * @x-autobe-database-schema-property id
+         * @x-autobe-database-schema-property id
      */
     id: string & tags.Format<"uuid">;
     /**
-     * @x-autobe-database-schema-property email
+         * @x-autobe-database-schema-property email
      */
     email: string & tags.Format<"email">;
 
@@ -247,7 +285,8 @@ export namespace IHrmPlatformMember {
     /**
      * Authorization token.
      *
-     * @x-autobe-specification Authorization token comes from the session table.
+         * @x-autobe-specification Authorization token comes from the session
+         *   table.
      */
     token: IAuthorizationToken;
   };
@@ -265,8 +304,9 @@ export namespace IHrmPlatformMember {
      *
      * This UUID serves as the primary key for the member table and is used to reference the member in all API operations and relationships. Auto-generated when the member account is created during sign-up.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from hrm_platform_members.id. UUID format, auto-generated on member creation.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from hrm_platform_members.id.
+         *   UUID format, auto-generated on member creation.
      */
     id: string & tags.Format<"uuid">;
 
@@ -275,8 +315,10 @@ export namespace IHrmPlatformMember {
      *
      * This field serves as the primary identifier for login and password recovery processes. Must be unique across all members. Used for account notifications and password reset flows.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from hrm_platform_members.email. Unique constraint enforced at database level. Used for authentication and communication.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_members.email. Unique constraint enforced at database
+         *   level. Used for authentication and communication.
      */
     email: string & tags.Format<"email">;
 
@@ -285,8 +327,10 @@ export namespace IHrmPlatformMember {
      *
      * Automatically set when the member completes sign-up. Used for audit trails, sorting members by registration date, and determining account age. Immutable after creation.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from hrm_platform_members.created_at. ISO 8601 date-time format with timezone. Immutable after creation.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_members.created_at. ISO 8601 date-time format with
+         *   timezone. Immutable after creation.
      */
     created_at: string & tags.Format<"date-time">;
   };

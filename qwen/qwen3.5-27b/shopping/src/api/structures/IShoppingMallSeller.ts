@@ -17,8 +17,9 @@ export type IShoppingMallSeller = {
    *
    * This UUID serves as the primary key for the seller account and is used to reference the seller across all related entities including products, orders, and shipments. The identifier is auto-generated during seller registration and remains immutable throughout the account lifecycle.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_sellers.id. Primary key, UUID format, auto-generated on seller registration.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from shopping_mall_sellers.id.
+     *   Primary key, UUID format, auto-generated on seller registration.
    */
   id: string & tags.Format<"uuid">;
 
@@ -27,8 +28,10 @@ export type IShoppingMallSeller = {
    *
    * This field serves as the primary identifier for seller login and must be unique across all seller accounts. Email format validation is enforced at the application layer. The email is also used for account recovery and notifications.
    *
-   * @x-autobe-database-schema-property email
-   * @x-autobe-specification Direct mapping from shopping_mall_sellers.email. Unique constraint enforced at database level. Used for seller authentication and login.
+     * @x-autobe-database-schema-property email
+     * @x-autobe-specification Direct mapping from shopping_mall_sellers.email.
+     *   Unique constraint enforced at database level. Used for seller
+     *   authentication and login.
    */
   email: string & tags.Format<"email">;
 
@@ -37,8 +40,11 @@ export type IShoppingMallSeller = {
    *
    * Allowed values: 'pending' (awaiting administrator approval), 'approved' (seller can list products and process orders), 'rejected' (application denied, seller can resubmit). New seller accounts default to 'pending' status and require administrator approval before they can sell products.
    *
-   * @x-autobe-database-schema-property approval_status
-   * @x-autobe-specification Direct mapping from shopping_mall_sellers.approval_status. Allowed values: 'pending', 'approved', 'rejected'. New sellers default to 'pending'. Updated by administrators during approval/rejection workflow.
+     * @x-autobe-database-schema-property approval_status
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_sellers.approval_status. Allowed values: 'pending',
+     *   'approved', 'rejected'. New sellers default to 'pending'. Updated by
+     *   administrators during approval/rejection workflow.
    */
   approval_status: string;
 
@@ -47,8 +53,11 @@ export type IShoppingMallSeller = {
    *
    * This field is populated when a seller's application is approved. It may contain notes about the approval decision or any conditions placed on the seller account. This field is nullable and may be empty if no specific reason was provided during approval.
    *
-   * @x-autobe-database-schema-property approval_reason
-   * @x-autobe-specification Direct mapping from shopping_mall_sellers.approval_reason. Nullable string. Populated by administrator when approving seller application. May contain notes about approval decision or conditions.
+     * @x-autobe-database-schema-property approval_reason
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_sellers.approval_reason. Nullable string. Populated by
+     *   administrator when approving seller application. May contain notes
+     *   about approval decision or conditions.
    */
   approval_reason: string | null;
 
@@ -57,8 +66,11 @@ export type IShoppingMallSeller = {
    *
    * This field is populated when a seller's application is rejected. The reason is visible to the seller so they understand why their application was denied and what improvements are needed for resubmission. This field is nullable and only populated when approval_status is 'rejected'.
    *
-   * @x-autobe-database-schema-property rejection_reason
-   * @x-autobe-specification Direct mapping from shopping_mall_sellers.rejection_reason. Nullable string. Populated by administrator when rejecting seller application. Visible to seller for understanding rejection.
+     * @x-autobe-database-schema-property rejection_reason
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_sellers.rejection_reason. Nullable string. Populated by
+     *   administrator when rejecting seller application. Visible to seller for
+     *   understanding rejection.
    */
   rejection_reason: string | null;
 
@@ -67,8 +79,11 @@ export type IShoppingMallSeller = {
    *
    * When suspended, the seller's products are hidden from search and category listings and cannot be purchased. However, suspended sellers can still process existing orders (ship items, respond to cancellation/refund requests). They cannot create new products or edit existing products until unsuspended. This is a reversible action that administrators can toggle.
    *
-   * @x-autobe-database-schema-property suspended
-   * @x-autobe-specification Direct mapping from shopping_mall_sellers.suspended. Boolean flag. When true, seller's products are hidden from search and listings. Seller can still process existing orders but cannot create/edit products.
+     * @x-autobe-database-schema-property suspended
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_sellers.suspended. Boolean flag. When true, seller's
+     *   products are hidden from search and listings. Seller can still process
+     *   existing orders but cannot create/edit products.
    */
   suspended: boolean;
 
@@ -77,8 +92,11 @@ export type IShoppingMallSeller = {
    *
    * When banned, the seller cannot log in to the platform. All existing orders remain in the system and are preserved for record-keeping. Banned sellers cannot be unsuspended through normal means - this is a permanent action requiring administrator intervention to reverse.
    *
-   * @x-autobe-database-schema-property banned
-   * @x-autobe-specification Direct mapping from shopping_mall_sellers.banned. Boolean flag. When true, seller cannot log in. All existing orders remain preserved. This is a permanent action requiring administrator intervention to reverse.
+     * @x-autobe-database-schema-property banned
+     * @x-autobe-specification Direct mapping from shopping_mall_sellers.banned.
+     *   Boolean flag. When true, seller cannot log in. All existing orders
+     *   remain preserved. This is a permanent action requiring administrator
+     *   intervention to reverse.
    */
   banned: boolean;
 
@@ -87,7 +105,10 @@ export type IShoppingMallSeller = {
    *
    * This field represents the public-facing name of the seller's shop as displayed to customers on product listings and the seller's storefront. The shop name is stored in the seller_profiles table and linked to this seller account via LEFT JOIN.
    *
-   * @x-autobe-specification Computed property from LEFT JOIN to shopping_mall_seller_profiles on shopping_mall_seller_id. Maps to sellerProfile.shop_name column. Seller profile is created when seller registers. Field may be null if profile not yet created or updated.
+     * @x-autobe-specification Computed property from LEFT JOIN to
+     *   shopping_mall_seller_profiles on shopping_mall_seller_id. Maps to
+     *   sellerProfile.shop_name column. Seller profile is created when seller
+     *   registers. Field may be null if profile not yet created or updated.
    */
   shop_name: string;
 
@@ -96,7 +117,11 @@ export type IShoppingMallSeller = {
    *
    * This field contains a textual description of the seller's shop, including information about their products, services, or business philosophy. The description is displayed on the seller's storefront and helps customers understand what the shop offers.
    *
-   * @x-autobe-specification Computed property from LEFT JOIN to shopping_mall_seller_profiles on shopping_mall_seller_id. Maps to sellerProfile.shop_description column. Seller profile is created when seller registers. Field may be null if profile not yet created or updated.
+     * @x-autobe-specification Computed property from LEFT JOIN to
+     *   shopping_mall_seller_profiles on shopping_mall_seller_id. Maps to
+     *   sellerProfile.shop_description column. Seller profile is created when
+     *   seller registers. Field may be null if profile not yet created or
+     *   updated.
    */
   shop_description: string;
 
@@ -105,7 +130,10 @@ export type IShoppingMallSeller = {
    *
    * This field contains the URL to the seller's shop logo, which is displayed on product listings, the seller's storefront, and order confirmations. The logo is stored in external file storage and this field contains the publicly accessible URI. This field is nullable as sellers may not have uploaded a logo.
    *
-   * @x-autobe-specification Computed property from LEFT JOIN to shopping_mall_seller_profiles on shopping_mall_seller_id. Maps to sellerProfile.logo_uri column. URI format for logo image. Nullable - seller may not have uploaded a logo yet.
+     * @x-autobe-specification Computed property from LEFT JOIN to
+     *   shopping_mall_seller_profiles on shopping_mall_seller_id. Maps to
+     *   sellerProfile.logo_uri column. URI format for logo image. Nullable -
+     *   seller may not have uploaded a logo yet.
    */
   logo_uri: (string & tags.Format<"uri">) | null;
 
@@ -114,8 +142,11 @@ export type IShoppingMallSeller = {
    *
    * This field is set automatically when a new seller registers. It marks the beginning of the seller's relationship with the platform and is used for audit trail purposes. The timestamp includes timezone information for accurate record-keeping.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from shopping_mall_sellers.created_at. DateTime with timezone. Auto-set on seller registration. Marks beginning of seller's relationship with platform.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_sellers.created_at. DateTime with timezone. Auto-set on
+     *   seller registration. Marks beginning of seller's relationship with
+     *   platform.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -124,8 +155,11 @@ export type IShoppingMallSeller = {
    *
    * This field is updated automatically on any change to the seller's account information including approval status changes, suspension, or ban actions. It provides a record of when the most recent modification occurred.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from shopping_mall_sellers.updated_at. DateTime with timezone. Auto-updated on any change to seller account including approval status, suspension, or ban actions.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_sellers.updated_at. DateTime with timezone. Auto-updated
+     *   on any change to seller account including approval status, suspension,
+     *   or ban actions.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -134,8 +168,11 @@ export type IShoppingMallSeller = {
    *
    * When a seller deletes their account, this field is set to the current timestamp. The account record is preserved for order history and legal compliance. Deleted sellers cannot log in but their historical data remains accessible to administrators. In API responses, soft-deleted sellers return 404 Not Found.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from shopping_mall_sellers.deleted_at. Nullable DateTime with timezone. When set, account is soft-deleted. Seller cannot log in but historical data remains accessible to administrators. Returns 404 in API responses.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_sellers.deleted_at. Nullable DateTime with timezone. When
+     *   set, account is soft-deleted. Seller cannot log in but historical data
+     *   remains accessible to administrators. Returns 404 in API responses.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -153,7 +190,11 @@ export namespace IShoppingMallSeller {
      *
      * Enter an email fragment to find sellers whose email addresses contain the search term. The search is case-insensitive and matches any portion of the email address. For example, searching 'john' will return sellers with emails like 'john@example.com', 'john.doe@shop.com', or 'doejohn@mail.org'.
      *
-     * @x-autobe-specification Partial match filter on shopping_mall_sellers.email column using case-insensitive LIKE query. Example: 'john' matches 'john@example.com' and 'JohnDoe@test.org'. This is a computed filter, not a direct column mapping.
+         * @x-autobe-specification Partial match filter on
+         *   shopping_mall_sellers.email column using case-insensitive LIKE
+         *   query. Example: 'john' matches 'john@example.com' and
+         *   'JohnDoe@test.org'. This is a computed filter, not a direct column
+         *   mapping.
      */
     search?: string | undefined;
 
@@ -165,7 +206,11 @@ export namespace IShoppingMallSeller {
      * - 'approved': Seller has been approved and can create products and process orders
      * - 'rejected': Seller's application was denied; they can resubmit a new registration request
      *
-     * @x-autobe-specification Exact match filter on shopping_mall_sellers.approval_status column. Allowed values: 'pending' (awaiting administrator approval), 'approved' (seller can operate), 'rejected' (application denied). Use this to filter sellers by their current approval state.
+         * @x-autobe-specification Exact match filter on
+         *   shopping_mall_sellers.approval_status column. Allowed values:
+         *   'pending' (awaiting administrator approval), 'approved' (seller can
+         *   operate), 'rejected' (application denied). Use this to filter
+         *   sellers by their current approval state.
      */
     approval_status?: string | undefined;
 
@@ -174,7 +219,10 @@ export namespace IShoppingMallSeller {
      *
      * Suspension is a temporary administrative action that hides the seller's products from search and category listings while preventing new purchases. However, suspended sellers can still process existing orders including shipping items and responding to cancellation or refund requests. They cannot create new products or edit existing ones until unsuspended.
      *
-     * @x-autobe-specification Exact match filter on shopping_mall_sellers.suspended column. Boolean value: true returns only suspended sellers, false returns only non-suspended sellers. Use this to filter by suspension state.
+         * @x-autobe-specification Exact match filter on
+         *   shopping_mall_sellers.suspended column. Boolean value: true returns
+         *   only suspended sellers, false returns only non-suspended sellers.
+         *   Use this to filter by suspension state.
      */
     suspended?: boolean | undefined;
 
@@ -183,7 +231,10 @@ export namespace IShoppingMallSeller {
      *
      * Ban is a permanent administrative action that prevents the seller from logging into the platform. Unlike suspension, banned sellers cannot access their account at all. Their existing orders remain in the system and are preserved for record-keeping purposes. This is a more severe action than suspension.
      *
-     * @x-autobe-specification Exact match filter on shopping_mall_sellers.banned column. Boolean value: true returns only banned sellers, false returns only non-banned sellers. Use this to filter by ban state.
+         * @x-autobe-specification Exact match filter on
+         *   shopping_mall_sellers.banned column. Boolean value: true returns
+         *   only banned sellers, false returns only non-banned sellers. Use
+         *   this to filter by ban state.
      */
     banned?: boolean | undefined;
 
@@ -192,7 +243,11 @@ export namespace IShoppingMallSeller {
      *
      * Enter a shop name fragment to find sellers whose shop names contain the search term. The search is case-insensitive and matches any portion of the shop name. For example, searching 'coffee' will return sellers with shop names like 'Joe's Coffee Shop', 'Coffee Corner Cafe', or 'Morning Coffee House'.
      *
-     * @x-autobe-specification Partial match filter on shopping_mall_seller_profiles.shop_name column using case-insensitive LIKE query via JOIN with shopping_mall_sellers table. Example: 'coffee' matches 'Joe's Coffee Shop' and 'Coffee Corner'. This is a computed filter requiring table join.
+         * @x-autobe-specification Partial match filter on
+         *   shopping_mall_seller_profiles.shop_name column using
+         *   case-insensitive LIKE query via JOIN with shopping_mall_sellers
+         *   table. Example: 'coffee' matches 'Joe's Coffee Shop' and 'Coffee
+         *   Corner'. This is a computed filter requiring table join.
      */
     shop_name?: string | undefined;
 
@@ -201,7 +256,11 @@ export namespace IShoppingMallSeller {
      *
      * Specifies which page of results to retrieve. Page numbering starts from 1, so the first page is page 1 (not 0). Use this parameter along with 'limit' to navigate through large result sets. For example, with limit=20, page=1 returns records 1-20, page=2 returns records 21-40, and so on.
      *
-     * @x-autobe-specification Offset-based pagination page number (1-indexed). Used to navigate through paginated results. Page 1 returns the first set of results, page 2 returns the second set, etc. Combined with 'limit' parameter to determine which records to return. Default value is 1.
+         * @x-autobe-specification Offset-based pagination page number
+         *   (1-indexed). Used to navigate through paginated results. Page 1
+         *   returns the first set of results, page 2 returns the second set,
+         *   etc. Combined with 'limit' parameter to determine which records to
+         *   return. Default value is 1.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -210,7 +269,11 @@ export namespace IShoppingMallSeller {
      *
      * Controls how many seller records are returned in each page of results. The default is 20 records per page, with a maximum of 100 records allowed. Choose a larger limit to reduce the number of API calls needed to retrieve all results, or a smaller limit for more granular navigation through the data.
      *
-     * @x-autobe-specification Number of records to return per page. Minimum: 1, Maximum: 100, Default: 20. This parameter controls the page size for pagination. Larger limits reduce the number of API calls needed but increase response size. Smaller limits provide more granular navigation.
+         * @x-autobe-specification Number of records to return per page.
+         *   Minimum: 1, Maximum: 100, Default: 20. This parameter controls the
+         *   page size for pagination. Larger limits reduce the number of API
+         *   calls needed but increase response size. Smaller limits provide
+         *   more granular navigation.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -221,7 +284,12 @@ export namespace IShoppingMallSeller {
      *
      * Cursor-based pagination provides efficient navigation through large datasets. Instead of specifying a page number, you use a cursor token from the previous response to get the next or previous page. This approach is more performant for large datasets as it doesn't require counting total records. Use 'nextCursor' to get the next page, or 'prevCursor' to go back.
      *
-     * @x-autobe-specification Cursor token for cursor-based pagination. Use the 'nextCursor' or 'prevCursor' value from a previous response to retrieve the next or previous page of results. Cursor-based pagination is more efficient than offset-based pagination for large datasets as it doesn't require counting total records. Mutually exclusive with 'page' parameter.
+         * @x-autobe-specification Cursor token for cursor-based pagination. Use
+         *   the 'nextCursor' or 'prevCursor' value from a previous response to
+         *   retrieve the next or previous page of results. Cursor-based
+         *   pagination is more efficient than offset-based pagination for large
+         *   datasets as it doesn't require counting total records. Mutually
+         *   exclusive with 'page' parameter.
      */
     cursor?: string | undefined;
 
@@ -234,7 +302,13 @@ export namespace IShoppingMallSeller {
      *
      * Default sorting is by 'created_at' in descending order, showing the most recently registered sellers first.
      *
-     * @x-autobe-specification Sorting configuration object with two required fields: 'field' and 'direction'. Field options: 'created_at' (registration date), 'approval_status' (approval state), 'email' (seller email), 'shop_name' (shop name from profiles). Direction options: 'asc' (ascending), 'desc' (descending). Default sort is by 'created_at' in 'desc' order (newest first).
+         * @x-autobe-specification Sorting configuration object with two
+         *   required fields: 'field' and 'direction'. Field options:
+         *   'created_at' (registration date), 'approval_status' (approval
+         *   state), 'email' (seller email), 'shop_name' (shop name from
+         *   profiles). Direction options: 'asc' (ascending), 'desc'
+         *   (descending). Default sort is by 'created_at' in 'desc' order
+         *   (newest first).
      */
     sort?:
       | {
@@ -266,8 +340,10 @@ export namespace IShoppingMallSeller {
      *
      * This field serves as the unique identifier for the seller account. The email must be valid and not already registered in the system. It is used for login credentials and account recovery purposes.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from shopping_mall_sellers.email. Unique constraint enforced at database level. Backend validates email format before insertion.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_sellers.email. Unique constraint enforced at database
+         *   level. Backend validates email format before insertion.
      */
     email: string & tags.Format<"email">;
 
@@ -276,8 +352,10 @@ export namespace IShoppingMallSeller {
      *
      * The password will be hashed using BCrypt algorithm with salt by the backend before storage. Minimum password strength requirements are enforced. The plain text password is never stored in the database.
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification Maps to shopping_mall_sellers.password_hash. Backend hashes the plain text password using BCrypt algorithm with salt before storing. Password is never stored in plain text.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification Maps to shopping_mall_sellers.password_hash.
+         *   Backend hashes the plain text password using BCrypt algorithm with
+         *   salt before storing. Password is never stored in plain text.
      */
     password: string & tags.Format<"password">;
 
@@ -286,7 +364,10 @@ export namespace IShoppingMallSeller {
      *
      * This field captures the source page of the registration request for security and audit purposes. It helps track registration sources and detect suspicious registration patterns.
      *
-     * @x-autobe-specification Session context field stored in shopping_mall_seller_sessions.href, not in sellers table. Captured from the Referer header or current page URL during registration request.
+         * @x-autobe-specification Session context field stored in
+         *   shopping_mall_seller_sessions.href, not in sellers table. Captured
+         *   from the Referer header or current page URL during registration
+         *   request.
      */
     href: string & tags.Format<"uri">;
 
@@ -295,7 +376,9 @@ export namespace IShoppingMallSeller {
      *
      * This field captures the external source or internal page that led the user to register. It is used for analytics and security auditing purposes.
      *
-     * @x-autobe-specification Session context field stored in shopping_mall_seller_sessions.referrer, not in sellers table. Captured from the Referer HTTP header during registration request.
+         * @x-autobe-specification Session context field stored in
+         *   shopping_mall_seller_sessions.referrer, not in sellers table.
+         *   Captured from the Referer HTTP header during registration request.
      */
     referrer: string & tags.Format<"uri">;
 
@@ -304,7 +387,11 @@ export namespace IShoppingMallSeller {
      *
      * This field is optional because in Server-Side Rendering (SSR) scenarios, the client cannot know its own IP address. The server will capture the IP as a fallback if not provided. Used for security auditing and fraud detection.
      *
-     * @x-autobe-specification Session context field stored in shopping_mall_seller_sessions.ip, not in sellers table. Captured from client request IP or server fallback in SSR scenarios. Optional field because client may not know their own IP in SSR contexts.
+         * @x-autobe-specification Session context field stored in
+         *   shopping_mall_seller_sessions.ip, not in sellers table. Captured
+         *   from client request IP or server fallback in SSR scenarios.
+         *   Optional field because client may not know their own IP in SSR
+         *   contexts.
      */
     ip?: (string & tags.Format<"ipv4">) | undefined;
   };
@@ -324,8 +411,10 @@ export namespace IShoppingMallSeller {
      *
      * This UUID serves as the primary key for the seller record in the shopping_mall_sellers table. It is used to reference the seller across all related entities including shop profile, products, order items, and sessions. This identifier is included in the authorization response to allow the client to cache the seller's identity for subsequent API requests.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_sellers.id. This is the primary key of the seller account, generated as a UUID when the seller registers.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from shopping_mall_sellers.id.
+         *   This is the primary key of the seller account, generated as a UUID
+         *   when the seller registers.
      */
     id: string & tags.Format<"uuid">;
 
@@ -334,8 +423,10 @@ export namespace IShoppingMallSeller {
      *
      * This email address serves as the unique identifier for seller login and must be distinct from all other seller accounts. It is used for authentication during login operations and for sending important notifications such as approval status updates, order alerts, and security notifications. The email format is validated during registration to ensure deliverability.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from shopping_mall_sellers.email. This field is unique across all seller accounts and serves as the login credential.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_sellers.email. This field is unique across all seller
+         *   accounts and serves as the login credential.
      */
     email: string & tags.Format<"email">;
 
@@ -344,8 +435,11 @@ export namespace IShoppingMallSeller {
      *
      * This field indicates whether the seller's application to join the platform has been reviewed by an administrator. Allowed values are 'pending' (awaiting administrator approval), 'approved' (seller can list products and process orders), or 'rejected' (application denied, seller can resubmit). New seller accounts are created with 'pending' status and require administrator approval before the seller can perform seller-specific operations like creating products or fulfilling orders.
      *
-     * @x-autobe-database-schema-property approval_status
-     * @x-autobe-specification Direct mapping from shopping_mall_sellers.approval_status. Allowed values are 'pending', 'approved', or 'rejected'. New sellers default to 'pending' status.
+         * @x-autobe-database-schema-property approval_status
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_sellers.approval_status. Allowed values are
+         *   'pending', 'approved', or 'rejected'. New sellers default to
+         *   'pending' status.
      */
     approval_status: string;
 
@@ -354,8 +448,11 @@ export namespace IShoppingMallSeller {
      *
      * This field contains optional notes from the administrator who approved the seller's application. It may include conditions placed on the seller account, special permissions granted, or general approval notes. This field is null when the seller's application is still pending or has been rejected. When populated, it provides transparency to the seller about the approval decision.
      *
-     * @x-autobe-database-schema-property approval_reason
-     * @x-autobe-specification Direct mapping from shopping_mall_sellers.approval_reason. This nullable field contains administrator notes when a seller's application is approved. Null when the seller is pending or rejected.
+         * @x-autobe-database-schema-property approval_reason
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_sellers.approval_reason. This nullable field contains
+         *   administrator notes when a seller's application is approved. Null
+         *   when the seller is pending or rejected.
      */
     approval_reason: string | null;
 
@@ -364,8 +461,11 @@ export namespace IShoppingMallSeller {
      *
      * This field contains the administrator's explanation for why the seller's application was denied. The reason is visible to the seller so they understand what improvements are needed for resubmission. This field is null when the seller's application is still pending or has been approved. When populated, it provides actionable feedback to help the seller address issues and potentially resubmit their application.
      *
-     * @x-autobe-database-schema-property rejection_reason
-     * @x-autobe-specification Direct mapping from shopping_mall_sellers.rejection_reason. This nullable field contains administrator's explanation when a seller's application is rejected. Null when the seller is pending or approved.
+         * @x-autobe-database-schema-property rejection_reason
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_sellers.rejection_reason. This nullable field
+         *   contains administrator's explanation when a seller's application is
+         *   rejected. Null when the seller is pending or approved.
      */
     rejection_reason: string | null;
 
@@ -374,8 +474,11 @@ export namespace IShoppingMallSeller {
      *
      * When this flag is true, the seller's products are hidden from search results and category listings, preventing new purchases. However, suspended sellers can still log in and process existing orders including shipping items and responding to cancellation or refund requests. They cannot create new products or edit existing products until unsuspended. Suspension is typically used for temporary violations and can be reversed by administrators.
      *
-     * @x-autobe-database-schema-property suspended
-     * @x-autobe-specification Direct mapping from shopping_mall_sellers.suspended. Boolean flag indicating temporary suspension. When true, seller's products are hidden but existing orders remain processable.
+         * @x-autobe-database-schema-property suspended
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_sellers.suspended. Boolean flag indicating temporary
+         *   suspension. When true, seller's products are hidden but existing
+         *   orders remain processable.
      */
     suspended: boolean;
 
@@ -384,8 +487,11 @@ export namespace IShoppingMallSeller {
      *
      * When this flag is true, the seller cannot log in to the platform at all. All existing orders remain in the system and are preserved for record-keeping and customer service purposes. Banned sellers cannot be unsuspended through normal means - this is a permanent action that requires direct administrator intervention to reverse. Banning is typically reserved for severe or repeated policy violations.
      *
-     * @x-autobe-database-schema-property banned
-     * @x-autobe-specification Direct mapping from shopping_mall_sellers.banned. Boolean flag indicating permanent ban. When true, seller cannot log in. This is a permanent action requiring administrator intervention to reverse.
+         * @x-autobe-database-schema-property banned
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_sellers.banned. Boolean flag indicating permanent
+         *   ban. When true, seller cannot log in. This is a permanent action
+         *   requiring administrator intervention to reverse.
      */
     banned: boolean;
 
@@ -394,7 +500,11 @@ export namespace IShoppingMallSeller {
      *
      * This field displays the public-facing name of the seller's shop as seen by customers browsing products. The shop name is stored in the associated seller profile record and can be updated by the seller after approval. It appears on product listing pages, order confirmations, and the seller's public storefront. The shop name should be distinctive and representative of the seller's business identity.
      *
-     * @x-autobe-specification Retrieved from the sellerProfile relation (shopping_mall_seller_profiles.shop_name). Each seller has exactly one associated seller profile record containing their business information. The shop_name field is joined from shopping_mall_seller_profiles table via the sellerProfile relation.
+         * @x-autobe-specification Retrieved from the sellerProfile relation
+         *   (shopping_mall_seller_profiles.shop_name). Each seller has exactly
+         *   one associated seller profile record containing their business
+         *   information. The shop_name field is joined from
+         *   shopping_mall_seller_profiles table via the sellerProfile relation.
      */
     shop_name: string;
 
@@ -403,7 +513,11 @@ export namespace IShoppingMallSeller {
      *
      * This field contains a textual description of the seller's business, including information about their products, services, or value proposition. The description is stored in the associated seller profile record and is displayed on the seller's storefront page to help customers understand what the seller offers. Sellers can update this description to reflect changes in their business or product offerings.
      *
-     * @x-autobe-specification Retrieved from the sellerProfile relation (shopping_mall_seller_profiles.shop_description). This field contains the seller's business description stored in their profile record. The shop_description field is joined from shopping_mall_seller_profiles table via the sellerProfile relation.
+         * @x-autobe-specification Retrieved from the sellerProfile relation
+         *   (shopping_mall_seller_profiles.shop_description). This field
+         *   contains the seller's business description stored in their profile
+         *   record. The shop_description field is joined from
+         *   shopping_mall_seller_profiles table via the sellerProfile relation.
      */
     shop_description: string;
 
@@ -412,7 +526,11 @@ export namespace IShoppingMallSeller {
      *
      * This field contains the web-accessible URI of the seller's shop logo, which is displayed alongside the shop name on product listings and the seller's storefront. The logo is stored in the associated seller profile record and can be uploaded or updated by the seller. This field is null if the seller has not uploaded a logo. When present, the logo should be a properly formatted image URL accessible by customers.
      *
-     * @x-autobe-specification Retrieved from the sellerProfile relation (shopping_mall_seller_profiles.logo_uri). This nullable field contains the URI of the seller's shop logo image. Null if no logo has been uploaded. The logo_uri field is joined from shopping_mall_seller_profiles table via the sellerProfile relation.
+         * @x-autobe-specification Retrieved from the sellerProfile relation
+         *   (shopping_mall_seller_profiles.logo_uri). This nullable field
+         *   contains the URI of the seller's shop logo image. Null if no logo
+         *   has been uploaded. The logo_uri field is joined from
+         *   shopping_mall_seller_profiles table via the sellerProfile relation.
      */
     logo_uri: (string & tags.Format<"uri">) | null;
 
@@ -421,8 +539,10 @@ export namespace IShoppingMallSeller {
      *
      * This field records the exact date and time when the seller registered their account on the platform. It is set automatically during the registration process and is never modified. This timestamp marks the beginning of the seller's relationship with the platform and is used for audit trail purposes, account age calculations, and historical analysis.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_sellers.created_at. This timestamp is set automatically when the seller registers and is never modified.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_sellers.created_at. This timestamp is set
+         *   automatically when the seller registers and is never modified.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -431,8 +551,11 @@ export namespace IShoppingMallSeller {
      *
      * This field is automatically updated whenever any change is made to the seller's account information, including approval status changes, suspension or ban actions, or profile updates. It provides a record of when the most recent modification occurred and is useful for tracking account activity and changes over time.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from shopping_mall_sellers.updated_at. This timestamp is automatically updated on any change to the seller's account information including approval status changes, suspension, or ban actions.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_sellers.updated_at. This timestamp is automatically
+         *   updated on any change to the seller's account information including
+         *   approval status changes, suspension, or ban actions.
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -441,15 +564,19 @@ export namespace IShoppingMallSeller {
      *
      * When a seller deletes their account, this field is set to the current timestamp instead of permanently removing the record. The account record is preserved for order history and legal compliance purposes. Deleted sellers cannot log in, but their historical data remains accessible to administrators. This field is null for active (non-deleted) seller accounts.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from shopping_mall_sellers.deleted_at. This nullable field is set to the current timestamp when a seller deletes their account. Null for active accounts.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_sellers.deleted_at. This nullable field is set to the
+         *   current timestamp when a seller deletes their account. Null for
+         *   active accounts.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
 
     /**
      * Authorization token.
      *
-     * @x-autobe-specification Authorization token comes from the session table.
+         * @x-autobe-specification Authorization token comes from the session
+         *   table.
      */
     token: IAuthorizationToken;
   };
@@ -467,7 +594,10 @@ export namespace IShoppingMallSeller {
      *
      * The email address serves as the unique identifier for seller login. It must match a registered seller account in the shopping_mall_sellers table. The email is used to look up the seller record and verify the password against the stored BCrypt hash.
      *
-     * @x-autobe-specification Email field used to look up the seller record in shopping_mall_sellers.email column for authentication. Must be a valid email format and match an existing non-deleted seller record. The email serves as the unique identifier for seller login.
+         * @x-autobe-specification Email field used to look up the seller record
+         *   in shopping_mall_sellers.email column for authentication. Must be a
+         *   valid email format and match an existing non-deleted seller record.
+         *   The email serves as the unique identifier for seller login.
      */
     email: string & tags.Format<"email">;
 
@@ -476,7 +606,11 @@ export namespace IShoppingMallSeller {
      *
      * The password is verified against the BCrypt hash stored in the shopping_mall_sellers.password_hash field. The plain text password provided in this request is never stored - only used for verification during the authentication process.
      *
-     * @x-autobe-specification Password field verified against the stored password_hash column in shopping_mall_sellers using BCrypt comparison algorithm. The plain text password provided in this request is never stored - only used for verification during the authentication process.
+         * @x-autobe-specification Password field verified against the stored
+         *   password_hash column in shopping_mall_sellers using BCrypt
+         *   comparison algorithm. The plain text password provided in this
+         *   request is never stored - only used for verification during the
+         *   authentication process.
      */
     password: string & tags.Format<"password">;
 
@@ -485,7 +619,10 @@ export namespace IShoppingMallSeller {
      *
      * This field captures the page URL from which the seller attempted to log in. It is stored in the shopping_mall_seller_sessions table for security monitoring, session tracking, and audit purposes. Helps identify the entry point for authentication events.
      *
-     * @x-autobe-specification Session context field. Captures the request URL where the login was initiated. Stored in shopping_mall_seller_sessions.href after successful authentication for security monitoring and audit trail purposes.
+         * @x-autobe-specification Session context field. Captures the request
+         *   URL where the login was initiated. Stored in
+         *   shopping_mall_seller_sessions.href after successful authentication
+         *   for security monitoring and audit trail purposes.
      */
     href: string & tags.Format<"uri">;
 
@@ -494,7 +631,10 @@ export namespace IShoppingMallSeller {
      *
      * This field captures the HTTP referrer header from the login request, indicating which page the seller came from. It is stored in the shopping_mall_seller_sessions table for security monitoring and to track authentication flow patterns.
      *
-     * @x-autobe-specification Session context field. Captures the HTTP referrer header indicating the referring page. Stored in shopping_mall_seller_sessions.referrer after successful authentication for security monitoring and audit trail purposes.
+         * @x-autobe-specification Session context field. Captures the HTTP
+         *   referrer header indicating the referring page. Stored in
+         *   shopping_mall_seller_sessions.referrer after successful
+         *   authentication for security monitoring and audit trail purposes.
      */
     referrer: string & tags.Format<"uri">;
 
@@ -503,7 +643,12 @@ export namespace IShoppingMallSeller {
      *
      * This field captures the IP address of the client making the login request. It is optional because in Server-Side Rendering scenarios, the client may not know its own IP address - the server can capture it as a fallback. The IP is stored in the shopping_mall_seller_sessions table for security monitoring, fraud detection, and audit purposes.
      *
-     * @x-autobe-specification Session context field. Captures the client's IP address. Optional in login request because in Server-Side Rendering (SSR) scenarios, the client cannot know its own IP - the server captures it as fallback. Stored in shopping_mall_seller_sessions.ip after successful authentication for security monitoring.
+         * @x-autobe-specification Session context field. Captures the client's
+         *   IP address. Optional in login request because in Server-Side
+         *   Rendering (SSR) scenarios, the client cannot know its own IP - the
+         *   server captures it as fallback. Stored in
+         *   shopping_mall_seller_sessions.ip after successful authentication
+         *   for security monitoring.
      */
     ip?: (string & tags.Format<"ipv4">) | undefined;
   };
@@ -523,7 +668,13 @@ export namespace IShoppingMallSeller {
      *
      * The token should be stored securely by the client and transmitted only to the token refresh endpoint. Typical refresh token lifetime ranges from 7 to 30 days depending on security requirements. If the refresh token is invalid, expired, or the session has been terminated, the operation returns an unauthorized error requiring the seller to log in again.
      *
-     * @x-autobe-specification JWT refresh token provided by the client from a previous authentication response (IShoppingMallSeller.IAuthorized.token.refresh). This token is validated as a JWT and matched against the shopping_mall_seller_sessions table to verify the session is still active and has not expired. If valid, new access and refresh tokens are generated and returned in the IAuthorized response.
+         * @x-autobe-specification JWT refresh token provided by the client from
+         *   a previous authentication response
+         *   (IShoppingMallSeller.IAuthorized.token.refresh). This token is
+         *   validated as a JWT and matched against the
+         *   shopping_mall_seller_sessions table to verify the session is still
+         *   active and has not expired. If valid, new access and refresh tokens
+         *   are generated and returned in the IAuthorized response.
      */
     refresh_token: string;
   };
@@ -544,35 +695,35 @@ export namespace IShoppingMallSeller {
    */
   export type ISummary = {
     /**
-     * @x-autobe-database-schema-property id
+         * @x-autobe-database-schema-property id
      */
     id: string & tags.Format<"uuid">;
     /**
-     * @x-autobe-database-schema-property email
+         * @x-autobe-database-schema-property email
      */
     email: string & tags.Format<"email">;
     /**
-     * @x-autobe-database-schema-property approval_status
+         * @x-autobe-database-schema-property approval_status
      */
     approval_status: string;
     /**
-     * @x-autobe-database-schema-property approval_reason
+         * @x-autobe-database-schema-property approval_reason
      */
     approval_reason: string | null;
     /**
-     * @x-autobe-database-schema-property rejection_reason
+         * @x-autobe-database-schema-property rejection_reason
      */
     rejection_reason: string | null;
     /**
-     * @x-autobe-database-schema-property suspended
+         * @x-autobe-database-schema-property suspended
      */
     suspended: boolean;
     /**
-     * @x-autobe-database-schema-property banned
+         * @x-autobe-database-schema-property banned
      */
     banned: boolean;
     /**
-     * @x-autobe-database-schema-property created_at
+         * @x-autobe-database-schema-property created_at
      */
     created_at: string & tags.Format<"date-time">;
     seller_profile: IShoppingMallSellerProfile;
@@ -589,8 +740,13 @@ export namespace IShoppingMallSeller {
      *
      * This field documents the administrator's decision and rationale for approving the seller's application. The approval reason is stored for audit trail purposes and can be referenced later for compliance, dispute resolution, or historical review. This field is optional - administrators can approve sellers without providing a reason if the approval is straightforward.
      *
-     * @x-autobe-specification Direct mapping from shopping_mall_sellers.approval_reason column. This field is optional and stores the administrator's reason for approving the seller registration. The value is provided by the administrator in the request body and persisted to the database. If not provided, the field remains NULL in the database.
-     * @x-autobe-database-schema-property approval_reason
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_sellers.approval_reason column. This field is
+         *   optional and stores the administrator's reason for approving the
+         *   seller registration. The value is provided by the administrator in
+         *   the request body and persisted to the database. If not provided,
+         *   the field remains NULL in the database.
+         * @x-autobe-database-schema-property approval_reason
      */
     approval_reason?: string | null | undefined;
   };
@@ -608,8 +764,14 @@ export namespace IShoppingMallSeller {
      *
      * Set to false to unsuspend the seller and restore full selling capabilities. The seller's products become visible and purchasable again, and they regain the ability to manage their product catalog.
      *
-     * @x-autobe-database-schema-property suspended
-     * @x-autobe-specification Direct mapping to shopping_mall_sellers.suspended column. Boolean value true suspends the seller (products hidden, cannot create/edit products but can process orders). Boolean value false unsuspends the seller (products visible, full capabilities restored). Backend also updates shopping_mall_seller_profiles.is_suspended to maintain consistency.
+         * @x-autobe-database-schema-property suspended
+         * @x-autobe-specification Direct mapping to
+         *   shopping_mall_sellers.suspended column. Boolean value true suspends
+         *   the seller (products hidden, cannot create/edit products but can
+         *   process orders). Boolean value false unsuspends the seller
+         *   (products visible, full capabilities restored). Backend also
+         *   updates shopping_mall_seller_profiles.is_suspended to maintain
+         *   consistency.
      */
     suspended: boolean;
   };
@@ -625,8 +787,14 @@ export namespace IShoppingMallSeller {
      *
      * This reason is visible to the seller and helps them understand what needs to be corrected for resubmission. The rejection reason is stored in both the seller account table and the seller profile table for complete audit trail and transparency. This field is required when rejecting a seller registration.
      *
-     * @x-autobe-specification Direct mapping from request body rejectionReason to shopping_mall_sellers.rejection_reason column. Also stored in shopping_mall_seller_profiles.rejection_reason for record-keeping. The database column is nullable to accommodate sellers who were never rejected, but this field is required in the request body - administrators must provide a non-empty explanation when rejecting a seller.
-     * @x-autobe-database-schema-property rejection_reason
+         * @x-autobe-specification Direct mapping from request body
+         *   rejectionReason to shopping_mall_sellers.rejection_reason column.
+         *   Also stored in shopping_mall_seller_profiles.rejection_reason for
+         *   record-keeping. The database column is nullable to accommodate
+         *   sellers who were never rejected, but this field is required in the
+         *   request body - administrators must provide a non-empty explanation
+         *   when rejecting a seller.
+         * @x-autobe-database-schema-property rejection_reason
      */
     rejectionReason: string | null;
   };
@@ -642,7 +810,11 @@ export namespace IShoppingMallSeller {
      *
      * Valid values are 'ban' to prevent the seller from logging in to the platform, or 'unban' to restore login access. This action updates both the seller account's banned flag and the seller profile's is_banned field for data consistency.
      *
-     * @x-autobe-specification Command value that determines the ban state update. When 'ban', sets shopping_mall_sellers.banned=true and shopping_mall_seller_profiles.is_banned=true. When 'unban', sets both to false. The seller ID is obtained from path parameter {sellerId}.
+         * @x-autobe-specification Command value that determines the ban state
+         *   update. When 'ban', sets shopping_mall_sellers.banned=true and
+         *   shopping_mall_seller_profiles.is_banned=true. When 'unban', sets
+         *   both to false. The seller ID is obtained from path parameter
+         *   {sellerId}.
      */
     action: "ban" | "unban";
   };

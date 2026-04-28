@@ -30,9 +30,10 @@ export class EcommercemallCustomerCustomersMeWishlistController {
    * This endpoint requires a valid customer JWT token. Customers can only view their own wishlist.
    *
    * @param connection
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Query the authenticated customer's wishlist using the customer ID from the JWT token.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Query the authenticated customer's wishlist using
+     *   the customer ID from the JWT token.
    *
    * 1. Locate the customer's wishlist by shopping_customer_id matching the authenticated customer.
    * 2. Query wishlist_items joined with products table on ecommerce_mall_product_id.
@@ -75,19 +76,19 @@ export class EcommercemallCustomerCustomersMeWishlistController {
    *
    * @param connection
    * @param body Contains the product identifier to add to the customer's wishlist.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification 1. Extract authenticated customer ID from session token
-   * 2. Get or verify the customer's wishlist exists (one-to-one relationship)
-   * 3. Validate the productId in request body exists in ecommerce_mall_products table
-   * 4. Verify the product has not been soft-deleted (deleted_at IS NULL)
-   * 5. Check if wishlist item already exists for this customer + product combination
-   * 6. If exists, return 409 conflict error with appropriate message
-   * 7. Create new wishlist item with:
-   *    - ecommerce_mall_wishlist_id: customer's wishlist ID
-   *    - ecommerce_mall_product_id: provided product ID
-   *    - created_at: current timestamp
-   * 8. Return the created wishlist item with product details included
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification 1. Extract authenticated customer ID from session
+     *   token 2. Get or verify the customer's wishlist exists (one-to-one
+     *   relationship) 3. Validate the productId in request body exists in
+     *   ecommerce_mall_products table 4. Verify the product has not been
+     *   soft-deleted (deleted_at IS NULL) 5. Check if wishlist item already
+     *   exists for this customer + product combination 6. If exists, return 409
+     *   conflict error with appropriate message 7. Create new wishlist item
+     *   with: - ecommerce_mall_wishlist_id: customer's wishlist ID -
+     *   ecommerce_mall_product_id: provided product ID - created_at: current
+     *   timestamp 8. Return the created wishlist item with product details
+     *   included
    *
    * **Edge Cases**:
    * - Product deleted after validation but before creation: Handle with unique constraint or re-check
@@ -126,9 +127,10 @@ export class EcommercemallCustomerCustomersMeWishlistController {
    *
    * @param connection
    * @param productId Unique identifier of the product to remove from the wishlist (global scope)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Delete a product from the authenticated customer's wishlist.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Delete a product from the authenticated
+     *   customer's wishlist.
    *
    * **Step 1: Authentication**
    * - Extract authenticated customer ID from JWT token in Authorization header

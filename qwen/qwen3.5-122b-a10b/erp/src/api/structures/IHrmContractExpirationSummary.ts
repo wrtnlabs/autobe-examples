@@ -26,7 +26,8 @@ export type IHrmContractExpirationSummary = {
    *
    * This UUID serves as the primary key for the contract entity and is used to reference this specific contract in API operations and database queries.
    *
-   * @x-autobe-specification Retrieved from hrm_contracts.id via JOIN. Primary key uniquely identifying the contract record.
+     * @x-autobe-specification Retrieved from hrm_contracts.id via JOIN. Primary
+     *   key uniquely identifying the contract record.
    */
   id: string & tags.Format<"uuid">;
 
@@ -35,7 +36,9 @@ export type IHrmContractExpirationSummary = {
    *
    * This UUID identifies the multi-tenant organization context for the contract. All contracts are scoped to a single organization for data isolation and access control purposes.
    *
-   * @x-autobe-specification Retrieved from hrm_employees.organization_id via JOIN on hrm_employee_id. Identifies the organization to which this contract belongs.
+     * @x-autobe-specification Retrieved from hrm_employees.organization_id via
+     *   JOIN on hrm_employee_id. Identifies the organization to which this
+     *   contract belongs.
    */
   organization_id: string & tags.Format<"uuid">;
 
@@ -44,7 +47,9 @@ export type IHrmContractExpirationSummary = {
    *
    * Contains essential employee details including position, employment type, and current status within the organization. This reference allows administrators to identify which employee's contract is expiring without loading the full employee record.
    *
-   * @x-autobe-specification JOIN from hrm_contracts.hrm_employee_id to hrm_employees.id. Returns IHrmEmployee.ISummary with position, employment_type, status, and user reference.
+     * @x-autobe-specification JOIN from hrm_contracts.hrm_employee_id to
+     *   hrm_employees.id. Returns IHrmEmployee.ISummary with position,
+     *   employment_type, status, and user reference.
    */
   employee: IHrmEmployee.ISummary;
 
@@ -53,7 +58,8 @@ export type IHrmContractExpirationSummary = {
    *
    * This timestamp marks when the contractual terms (pay rate, working hours, etc.) become active. The field is required and cannot be null. When creating a new contract, the system validates that the start_date does not overlap with existing active contracts for the same employee.
    *
-   * @x-autobe-specification Retrieved from hrm_contracts.start_date via JOIN. Required field marking when contractual terms become active.
+     * @x-autobe-specification Retrieved from hrm_contracts.start_date via JOIN.
+     *   Required field marking when contractual terms become active.
    */
   start_date: string & tags.Format<"date-time">;
 
@@ -62,7 +68,9 @@ export type IHrmContractExpirationSummary = {
    *
    * A NULL value indicates the contract is currently active. When a new contract is created for an employee, the previous active contract's end_date is automatically set to one day before the new contract's start_date. Once end_date is populated, the contract becomes immutable to preserve historical accuracy. For expiration reporting, contracts with NULL end_date are treated as having a default 90-day warning period.
    *
-   * @x-autobe-specification Retrieved from hrm_contracts.end_date via JOIN. Nullable - NULL indicates active contract. Used for expiration calculation.
+     * @x-autobe-specification Retrieved from hrm_contracts.end_date via JOIN.
+     *   Nullable - NULL indicates active contract. Used for expiration
+     *   calculation.
    */
   end_date: (string & tags.Format<"date-time">) | null;
 
@@ -71,7 +79,8 @@ export type IHrmContractExpirationSummary = {
    *
    * This numeric value represents the pay amount, with the unit determined by the pay_period field (hourly, daily, weekly, or monthly). The value is stored in the organization's base currency and is used for payroll calculations, budget tracking, and employment verification.
    *
-   * @x-autobe-specification Retrieved from hrm_contracts.pay_rate via JOIN. Numeric value in organization's base currency.
+     * @x-autobe-specification Retrieved from hrm_contracts.pay_rate via JOIN.
+     *   Numeric value in organization's base currency.
    */
   pay_rate: number;
 
@@ -86,7 +95,8 @@ export type IHrmContractExpirationSummary = {
    *
    * This field determines how the pay_rate value should be interpreted for payroll calculations and budget planning.
    *
-   * @x-autobe-specification Retrieved from hrm_contracts.pay_period via JOIN. Enumeration: hourly, daily, weekly, monthly.
+     * @x-autobe-specification Retrieved from hrm_contracts.pay_period via JOIN.
+     *   Enumeration: hourly, daily, weekly, monthly.
    */
   pay_period: string;
 
@@ -95,7 +105,9 @@ export type IHrmContractExpirationSummary = {
    *
    * This optional field is used for full-time vs part-time classification, overtime calculations, and compliance with labor regulations. May be null for contractor or irregular work arrangements where hourly tracking is not applicable.
    *
-   * @x-autobe-specification Retrieved from hrm_contracts.working_hours_per_week via JOIN. Nullable - optional for contractor/irregular arrangements.
+     * @x-autobe-specification Retrieved from
+     *   hrm_contracts.working_hours_per_week via JOIN. Nullable - optional for
+     *   contractor/irregular arrangements.
    */
   working_hours_per_week: number | null;
 
@@ -104,7 +116,10 @@ export type IHrmContractExpirationSummary = {
    *
    * This field is calculated server-side based on the current date and the contract's end_date. For contracts with a set end_date, it shows the exact number of days remaining. For active contracts (end_date IS NULL), it shows the default warning period of 90 days. This value is used to sort contracts by urgency, with the most urgent renewals appearing first.
    *
-   * @x-autobe-specification Computed field: days_until_expiration = (end_date - current_date) in days for contracts with end_date. If end_date is NULL (active contract), calculate as 90 days from current date (default warning period). Used for sorting contracts by urgency (ascending).
+     * @x-autobe-specification Computed field: days_until_expiration = (end_date
+     *   - current_date) in days for contracts with end_date. If end_date is
+     *   NULL (active contract), calculate as 90 days from current date (default
+     *   warning period). Used for sorting contracts by urgency (ascending).
    */
   days_until_expiration: number & tags.Type<"int32">;
 };

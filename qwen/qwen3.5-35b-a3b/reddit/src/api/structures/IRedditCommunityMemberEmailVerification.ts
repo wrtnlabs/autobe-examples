@@ -16,8 +16,9 @@ export type IRedditCommunityMemberEmailVerification = {
    *
    * A UUID that uniquely identifies this verification record in the system. Used to retrieve, update, or reference the specific verification token during the registration process.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from reddit_community_member_email_verifications.id (UUID).
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_member_email_verifications.id (UUID).
    */
   id: string & tags.Format<"uuid">;
 
@@ -26,8 +27,10 @@ export type IRedditCommunityMemberEmailVerification = {
    *
    * A cryptographically generated string used to verify email ownership. This token is included in registration confirmation emails and is single-use — once validated, the token is invalidated. Tokens have a limited validity period controlled by the expires_at timestamp.
    *
-   * @x-autobe-database-schema-property token
-   * @x-autobe-specification Direct mapping from reddit_community_member_email_verifications.token (STRING). This is a verification token generated during registration.
+     * @x-autobe-database-schema-property token
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_member_email_verifications.token (STRING). This is a
+     *   verification token generated during registration.
    */
   token: string;
 
@@ -36,8 +39,10 @@ export type IRedditCommunityMemberEmailVerification = {
    *
    * The UTC timestamp after which the verification token is no longer valid. Verification attempts made after this time will be rejected. Tokens typically have a limited validity period (e.g., 24 hours) to balance security and user experience.
    *
-   * @x-autobe-database-schema-property expires_at
-   * @x-autobe-specification Direct mapping from reddit_community_member_email_verifications.expires_at (TIMESTAMPTZ). System validates token freshness against this timestamp.
+     * @x-autobe-database-schema-property expires_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_member_email_verifications.expires_at (TIMESTAMPTZ).
+     *   System validates token freshness against this timestamp.
    */
   expires_at: string & tags.Format<"date-time">;
 
@@ -46,8 +51,9 @@ export type IRedditCommunityMemberEmailVerification = {
    *
    * The UTC timestamp when the verification token was generated and stored in the system. This represents the start of the token's validity period and is used for auditing and tracking verification attempts.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from reddit_community_member_email_verifications.created_at (TIMESTAMPTZ).
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_member_email_verifications.created_at (TIMESTAMPTZ).
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -56,8 +62,9 @@ export type IRedditCommunityMemberEmailVerification = {
    *
    * The UTC timestamp when this verification record was last modified. For verification tokens, this is typically set when the record is created and may be updated if the token is regenerated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from reddit_community_member_email_verifications.updated_at (TIMESTAMPTZ).
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_member_email_verifications.updated_at (TIMESTAMPTZ).
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -66,8 +73,10 @@ export type IRedditCommunityMemberEmailVerification = {
    *
    * Null indicates the record is active and valid. When non-null, indicates the record has been soft-deleted (typically after successful verification or token expiration). Soft deletion preserves record history while marking it as no longer in use.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from reddit_community_member_email_verifications.deleted_at (nullable TIMESTAMPTZ). Null means active; non-null means soft-deleted.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_member_email_verifications.deleted_at (nullable
+     *   TIMESTAMPTZ). Null means active; non-null means soft-deleted.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 
@@ -76,8 +85,10 @@ export type IRedditCommunityMemberEmailVerification = {
    *
    * The UUID of the member account for whom this email verification was generated. Links the verification token to the specific member account it will activate upon successful verification.
    *
-   * @x-autobe-database-schema-property reddit_community_member_id
-   * @x-autobe-specification Direct mapping from reddit_community_member_email_verifications.reddit_community_member_id (UUID FK). Foreign key reference to the member account.
+     * @x-autobe-database-schema-property reddit_community_member_id
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_member_email_verifications.reddit_community_member_id
+     *   (UUID FK). Foreign key reference to the member account.
    */
   reddit_community_member_id: string & tags.Format<"uuid">;
 };
@@ -95,8 +106,9 @@ export namespace IRedditCommunityMemberEmailVerification {
      *
      * A UUID that uniquely identifies this email verification token in the system. Used for administrative lookups and reference in API operations.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from reddit_community_member_email_verifications.id. Primary key UUID.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   reddit_community_member_email_verifications.id. Primary key UUID.
      */
     id: string & tags.Format<"uuid">;
 
@@ -105,8 +117,10 @@ export namespace IRedditCommunityMemberEmailVerification {
      *
      * Generated during member registration, this token is validated when the member clicks the verification link. Tokens are single-use and are invalidated after successful verification to prevent reuse.
      *
-     * @x-autobe-database-schema-property token
-     * @x-autobe-specification Direct mapping from reddit_community_member_email_verifications.token. Unique verification token string generated during registration.
+         * @x-autobe-database-schema-property token
+         * @x-autobe-specification Direct mapping from
+         *   reddit_community_member_email_verifications.token. Unique
+         *   verification token string generated during registration.
      */
     token: string;
 
@@ -115,8 +129,10 @@ export namespace IRedditCommunityMemberEmailVerification {
      *
      * The date and time when this verification token becomes invalid. Tokens older than this time cannot be used for verification and require a new token to be generated.
      *
-     * @x-autobe-database-schema-property expires_at
-     * @x-autobe-specification Direct mapping from reddit_community_member_email_verifications.expires_at. Timestamp when the verification token expires.
+         * @x-autobe-database-schema-property expires_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_community_member_email_verifications.expires_at. Timestamp
+         *   when the verification token expires.
      */
     expires_at: string & tags.Format<"date-time">;
 
@@ -125,8 +141,10 @@ export namespace IRedditCommunityMemberEmailVerification {
      *
      * Indicates when the email verification token was created and sent to the member. Used for tracking token age and determining if expiration is imminent.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from reddit_community_member_email_verifications.created_at. Record creation timestamp.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_community_member_email_verifications.created_at. Record
+         *   creation timestamp.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -135,8 +153,10 @@ export namespace IRedditCommunityMemberEmailVerification {
      *
      * Tracks the most recent update to this verification record for audit purposes and to verify data freshness.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from reddit_community_member_email_verifications.updated_at. Record last update timestamp.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_community_member_email_verifications.updated_at. Record last
+         *   update timestamp.
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -145,8 +165,10 @@ export namespace IRedditCommunityMemberEmailVerification {
      *
      * Null indicates the record is active and in use. When non-null, indicates the record has been soft-deleted and is no longer valid for verification operations.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from reddit_community_member_email_verifications.deleted_at. Nullable soft delete timestamp.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_community_member_email_verifications.deleted_at. Nullable
+         *   soft delete timestamp.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
 
@@ -155,8 +177,10 @@ export namespace IRedditCommunityMemberEmailVerification {
      *
      * A UUID foreign key that establishes a one-to-one relationship with the corresponding member account in the reddit_community_members table. Used to identify which member account this verification token is for.
      *
-     * @x-autobe-database-schema-property reddit_community_member_id
-     * @x-autobe-specification Direct mapping from reddit_community_member_email_verifications.reddit_community_member_id. Foreign key UUID referencing the member account.
+         * @x-autobe-database-schema-property reddit_community_member_id
+         * @x-autobe-specification Direct mapping from
+         *   reddit_community_member_email_verifications.reddit_community_member_id.
+         *   Foreign key UUID referencing the member account.
      */
     reddit_community_member_id: string & tags.Format<"uuid">;
 
@@ -165,8 +189,11 @@ export namespace IRedditCommunityMemberEmailVerification {
      *
      * Resolved through a join to the reddit_community_members table via the reddit_community_member_id foreign key. Provides context about which member the verification token belongs to without exposing full member details.
      *
-     * @x-autobe-database-schema-property member
-     * @x-autobe-specification Join from reddit_community_member_email_verifications.member to reddit_community_members via reddit_community_member_id FK. Returns IRedditCommunityMember.ISummary reference.
+         * @x-autobe-database-schema-property member
+         * @x-autobe-specification Join from
+         *   reddit_community_member_email_verifications.member to
+         *   reddit_community_members via reddit_community_member_id FK. Returns
+         *   IRedditCommunityMember.ISummary reference.
      */
     member: IRedditCommunityMember.ISummary;
   };
@@ -184,8 +211,10 @@ export namespace IRedditCommunityMemberEmailVerification {
      *
      * Filters email verifications to only those associated with the specified member. Accepts a valid UUID format. Useful for retrieving all verification tokens for a specific user account.
      *
-     * @x-autobe-database-schema-property reddit_community_member_id
-     * @x-autobe-specification Exact match filter on reddit_community_member_email_verifications.reddit_community_member_id column. Validates UUID format.
+         * @x-autobe-database-schema-property reddit_community_member_id
+         * @x-autobe-specification Exact match filter on
+         *   reddit_community_member_email_verifications.reddit_community_member_id
+         *   column. Validates UUID format.
      */
     reddit_community_member_id?: (string & tags.Format<"uuid">) | undefined;
 
@@ -194,8 +223,9 @@ export namespace IRedditCommunityMemberEmailVerification {
      *
      * Searches for verification tokens matching this pattern. Can be used to find specific verification records by their token value.
      *
-     * @x-autobe-database-schema-property token
-     * @x-autobe-specification Pattern match on reddit_community_member_email_verifications.token column.
+         * @x-autobe-database-schema-property token
+         * @x-autobe-specification Pattern match on
+         *   reddit_community_member_email_verifications.token column.
      */
     token?: (string & tags.MinLength<1>) | undefined;
 
@@ -204,7 +234,10 @@ export namespace IRedditCommunityMemberEmailVerification {
      *
      * Filters email verifications by their current validity status. 'active' matches verifications where expires_at > now. 'expired' matches verifications where expires_at <= now. This is a computed filter derived from the expires_at timestamp.
      *
-     * @x-autobe-specification Computed filter: status='active' when expires_at > current_timestamp, status='expired' when expires_at <= current_timestamp. Applies filter after computing status from expires_at column.
+         * @x-autobe-specification Computed filter: status='active' when
+         *   expires_at > current_timestamp, status='expired' when expires_at <=
+         *   current_timestamp. Applies filter after computing status from
+         *   expires_at column.
      */
     status?: "active" | "expired" | undefined;
 
@@ -213,7 +246,9 @@ export namespace IRedditCommunityMemberEmailVerification {
      *
      * Filters verification records created on or after this datetime. Used together with created_at_end to define a creation time range.
      *
-     * @x-autobe-specification Range filter: created_at >= created_at_start. Direct mapping from request parameter to expires_at >= filter condition.
+         * @x-autobe-specification Range filter: created_at >= created_at_start.
+         *   Direct mapping from request parameter to expires_at >= filter
+         *   condition.
      */
     created_at_start?: (string & tags.Format<"date-time">) | undefined;
 
@@ -222,7 +257,9 @@ export namespace IRedditCommunityMemberEmailVerification {
      *
      * Filters verification records created on or before this datetime. Used together with created_at_start to define a creation time range.
      *
-     * @x-autobe-specification Range filter: created_at <= created_at_end. Direct mapping from request parameter to expires_at <= filter condition.
+         * @x-autobe-specification Range filter: created_at <= created_at_end.
+         *   Direct mapping from request parameter to expires_at <= filter
+         *   condition.
      */
     created_at_end?: (string & tags.Format<"date-time">) | undefined;
 
@@ -231,7 +268,9 @@ export namespace IRedditCommunityMemberEmailVerification {
      *
      * Filters verification records last updated on or after this datetime. Used together with updated_at_end to define an update time range.
      *
-     * @x-autobe-specification Range filter: updated_at >= updated_at_start. Direct mapping from request parameter to updated_at >= filter condition.
+         * @x-autobe-specification Range filter: updated_at >= updated_at_start.
+         *   Direct mapping from request parameter to updated_at >= filter
+         *   condition.
      */
     updated_at_start?: (string & tags.Format<"date-time">) | undefined;
 
@@ -240,7 +279,9 @@ export namespace IRedditCommunityMemberEmailVerification {
      *
      * Filters verification records last updated on or before this datetime. Used together with updated_at_start to define an update time range.
      *
-     * @x-autobe-specification Range filter: updated_at <= updated_at_end. Direct mapping from request parameter to updated_at <= filter condition.
+         * @x-autobe-specification Range filter: updated_at <= updated_at_end.
+         *   Direct mapping from request parameter to updated_at <= filter
+         *   condition.
      */
     updated_at_end?: (string & tags.Format<"date-time">) | undefined;
 
@@ -249,7 +290,9 @@ export namespace IRedditCommunityMemberEmailVerification {
      *
      * Filters verification records where expiration is on or after this datetime. Useful for finding verifications expiring within a specific time window.
      *
-     * @x-autobe-specification Range filter: expires_at >= expires_at_start. Direct mapping from request parameter to expires_at >= filter condition.
+         * @x-autobe-specification Range filter: expires_at >= expires_at_start.
+         *   Direct mapping from request parameter to expires_at >= filter
+         *   condition.
      */
     expires_at_start?: (string & tags.Format<"date-time">) | undefined;
 
@@ -258,7 +301,9 @@ export namespace IRedditCommunityMemberEmailVerification {
      *
      * Filters verification records where expiration is on or before this datetime. Useful for finding verifications expiring before a specific date.
      *
-     * @x-autobe-specification Range filter: expires_at <= expires_at_end. Direct mapping from request parameter to expires_at <= filter condition.
+         * @x-autobe-specification Range filter: expires_at <= expires_at_end.
+         *   Direct mapping from request parameter to expires_at <= filter
+         *   condition.
      */
     expires_at_end?: (string & tags.Format<"date-time">) | undefined;
 
@@ -267,7 +312,9 @@ export namespace IRedditCommunityMemberEmailVerification {
      *
      * Specifies which page of results to return. Page numbering starts from 1, where page 1 is the first page of results.
      *
-     * @x-autobe-specification Pagination parameter: 1-indexed page number. Not a database field. Used with limit and cursor for cursor-based pagination.
+         * @x-autobe-specification Pagination parameter: 1-indexed page number.
+         *   Not a database field. Used with limit and cursor for cursor-based
+         *   pagination.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -276,7 +323,9 @@ export namespace IRedditCommunityMemberEmailVerification {
      *
      * Controls the page size for paginated results. Range: 1-100. Default is typically 20 records per page.
      *
-     * @x-autobe-specification Pagination parameter: records per page (1-100). Not a database field. Used with page and cursor for cursor-based pagination.
+         * @x-autobe-specification Pagination parameter: records per page
+         *   (1-100). Not a database field. Used with page and cursor for
+         *   cursor-based pagination.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -287,7 +336,9 @@ export namespace IRedditCommunityMemberEmailVerification {
      *
      * Determines the sort column for the query results. Allowed values: created_at, updated_at, expires_at. Default sorting is by created_at DESC.
      *
-     * @x-autobe-specification Sorting parameter: field name for ORDER BY clause. Not a database field. Allowed values: created_at, updated_at, expires_at.
+         * @x-autobe-specification Sorting parameter: field name for ORDER BY
+         *   clause. Not a database field. Allowed values: created_at,
+         *   updated_at, expires_at.
      */
     sort_by?: "created_at" | "updated_at" | "expires_at" | undefined;
 
@@ -296,7 +347,8 @@ export namespace IRedditCommunityMemberEmailVerification {
      *
      * Determines whether results are sorted in ascending (asc) or descending (desc) order. Default is typically desc (newest first).
      *
-     * @x-autobe-specification Sorting parameter: sort direction for ORDER BY clause. Not a database field. Allowed values: asc, desc.
+         * @x-autobe-specification Sorting parameter: sort direction for ORDER
+         *   BY clause. Not a database field. Allowed values: asc, desc.
      */
     sort_order?: "asc" | "desc" | undefined;
 
@@ -305,7 +357,9 @@ export namespace IRedditCommunityMemberEmailVerification {
      *
      * Datetime value (created_at) used for cursor-based pagination. Allows fetching the next or previous page of results efficiently without offset-based pagination.
      *
-     * @x-autobe-specification Cursor-based pagination parameter: created_at datetime value. Not a database field. Used to continue pagination from a specific point in the result set.
+         * @x-autobe-specification Cursor-based pagination parameter: created_at
+         *   datetime value. Not a database field. Used to continue pagination
+         *   from a specific point in the result set.
      */
     cursor?: (string & tags.Format<"date-time">) | undefined;
   };

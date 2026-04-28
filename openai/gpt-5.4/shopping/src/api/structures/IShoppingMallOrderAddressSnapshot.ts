@@ -10,96 +10,117 @@ export type IShoppingMallOrderAddressSnapshot = {
   /**
    * Unique identifier of this preserved order address snapshot.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_order_address_snapshots.id.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_order_address_snapshots.id.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Summary of the order that owns this preserved shipping address snapshot.
    *
-   * @x-autobe-database-schema-property order
-   * @x-autobe-specification Resolve the belongs-to relation from shopping_mall_order_address_snapshots.shopping_mall_order_id to shopping_mall_orders.id and expose it as IShoppingMallOrder.ISummary.
+     * @x-autobe-database-schema-property order
+     * @x-autobe-specification Resolve the belongs-to relation from
+     *   shopping_mall_order_address_snapshots.shopping_mall_order_id to
+     *   shopping_mall_orders.id and expose it as IShoppingMallOrder.ISummary.
    */
   order: IShoppingMallOrder.ISummary;
 
   /**
    * Recipient name recorded for this delivery address at checkout.
    *
-   * @x-autobe-database-schema-property recipient_name
-   * @x-autobe-specification Direct mapping from shopping_mall_order_address_snapshots.recipient_name. Return the checkout-time recipient name exactly as preserved.
+     * @x-autobe-database-schema-property recipient_name
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_order_address_snapshots.recipient_name. Return the
+     *   checkout-time recipient name exactly as preserved.
    */
   recipient_name: string;
 
   /**
    * Phone number recorded for delivery coordination at checkout.
    *
-   * @x-autobe-database-schema-property phone_number
-   * @x-autobe-specification Direct mapping from shopping_mall_order_address_snapshots.phone_number. Return the preserved checkout-time delivery contact number without substituting later profile changes.
+     * @x-autobe-database-schema-property phone_number
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_order_address_snapshots.phone_number. Return the
+     *   preserved checkout-time delivery contact number without substituting
+     *   later profile changes.
    */
   phone_number: string;
 
   /**
    * Street address line captured for this order's delivery destination.
    *
-   * @x-autobe-database-schema-property street_address
-   * @x-autobe-specification Direct mapping from shopping_mall_order_address_snapshots.street_address. Return the preserved primary street address line from the order snapshot.
+     * @x-autobe-database-schema-property street_address
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_order_address_snapshots.street_address. Return the
+     *   preserved primary street address line from the order snapshot.
    */
   street_address: string;
 
   /**
    * City captured in the preserved checkout-time shipping address.
    *
-   * @x-autobe-database-schema-property city
-   * @x-autobe-specification Direct mapping from shopping_mall_order_address_snapshots.city.
+     * @x-autobe-database-schema-property city
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_order_address_snapshots.city.
    */
   city: string;
 
   /**
    * State or province captured in the preserved checkout-time shipping address.
    *
-   * @x-autobe-database-schema-property state_province
-   * @x-autobe-specification Direct mapping from shopping_mall_order_address_snapshots.state_province.
+     * @x-autobe-database-schema-property state_province
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_order_address_snapshots.state_province.
    */
   state_province: string;
 
   /**
    * Postal code captured in the preserved checkout-time shipping address.
    *
-   * @x-autobe-database-schema-property postal_code
-   * @x-autobe-specification Direct mapping from shopping_mall_order_address_snapshots.postal_code.
+     * @x-autobe-database-schema-property postal_code
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_order_address_snapshots.postal_code.
    */
   postal_code: string;
 
   /**
    * Country captured in the preserved checkout-time shipping address.
    *
-   * @x-autobe-database-schema-property country
-   * @x-autobe-specification Direct mapping from shopping_mall_order_address_snapshots.country.
+     * @x-autobe-database-schema-property country
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_order_address_snapshots.country.
    */
   country: string;
 
   /**
    * Timestamp when this order address snapshot was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from shopping_mall_order_address_snapshots.created_at.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_order_address_snapshots.created_at.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when this preserved address snapshot record was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from shopping_mall_order_address_snapshots.updated_at. In normal historical usage this typically matches creation because the snapshot is preserved after checkout.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_order_address_snapshots.updated_at. In normal historical
+     *   usage this typically matches creation because the snapshot is preserved
+     *   after checkout.
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * Soft-deletion timestamp for this preserved address snapshot, or null when the snapshot remains active in historical records.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from shopping_mall_order_address_snapshots.deleted_at. Keep the existing nullable schema because the database column is nullable and is normally null for preserved historical snapshots.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_order_address_snapshots.deleted_at. Keep the existing
+     *   nullable schema because the database column is nullable and is normally
+     *   null for preserved historical snapshots.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };

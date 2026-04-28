@@ -28,7 +28,8 @@ import { IEcommerceMallSellerDashboardMetric } from "../../../../structures/IEco
  * @param props.connection
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Retrieve dashboard metrics from ecommerce_mall_seller_dashboard_metrics table for the authenticated seller.
+ * @x-autobe-specification Retrieve dashboard metrics from
+ *   ecommerce_mall_seller_dashboard_metrics table for the authenticated seller.
  *
  * 1. Extract seller_id from authenticated session
  * 2. Query ecommerce_mall_seller_dashboard_metrics where seller_id matches

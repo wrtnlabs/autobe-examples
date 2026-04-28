@@ -25,7 +25,16 @@ import { ICommunityPlatformMember } from "../../../../structures/ICommunityPlatf
  * @param props.body Member registration credentials and account details.
  * @x-autobe-authorization-type join
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implement member registration as a credential-issuing authentication endpoint. The handler should validate the registration payload, create the member identity record, and establish the initial session/token response in a single transactional flow. If the member account already exists according to the uniqueness rules enforced by the member identity model, the service must reject the request with a conflict-style validation error. After successful creation, the response should include the authorized token payload defined by the shared authentication contract so the client can immediately access member-only features.
+ * @x-autobe-specification Implement member registration as a credential-issuing
+ *   authentication endpoint. The handler should validate the registration
+ *   payload, create the member identity record, and establish the initial
+ *   session/token response in a single transactional flow. If the member
+ *   account already exists according to the uniqueness rules enforced by the
+ *   member identity model, the service must reject the request with a
+ *   conflict-style validation error. After successful creation, the response
+ *   should include the authorized token payload defined by the shared
+ *   authentication contract so the client can immediately access member-only
+ *   features.
  *
  * The service layer should coordinate account creation with any session persistence required by the member session model. If session persistence is used, the handler must ensure the account and session are created consistently so that a partially created identity is not left behind. The operation must be treated as the entry point for a newly registered member and should not require any prior authenticated state.
  * @path /communityPlatform/auth/member/join
@@ -126,7 +135,14 @@ export namespace join {
  * @param props.body Member login credentials.
  * @x-autobe-authorization-type login
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implement member login by validating the submitted credentials against the member identity record, then issuing a fresh authorized token response. The service should look up the member account using the credential fields defined by the login DTO, verify that the supplied secret matches the stored authentication data, and then create or update the session state expected by the member session model. The returned authorized payload should provide the tokens needed for subsequent authenticated calls.
+ * @x-autobe-specification Implement member login by validating the submitted
+ *   credentials against the member identity record, then issuing a fresh
+ *   authorized token response. The service should look up the member account
+ *   using the credential fields defined by the login DTO, verify that the
+ *   supplied secret matches the stored authentication data, and then create or
+ *   update the session state expected by the member session model. The returned
+ *   authorized payload should provide the tokens needed for subsequent
+ *   authenticated calls.
  *
  * The login flow must fail cleanly for unknown members, invalid credentials, disabled or otherwise unusable accounts if such checks are enforced by the member model, and any session creation failure. The operation should be stateless from the client’s perspective: once the token response is returned, the client can use it to access member-only endpoints without any separate login confirmation step.
  * @path /communityPlatform/auth/member/login
@@ -227,7 +243,14 @@ export namespace login {
  * @param props.body Member refresh credential payload.
  * @x-autobe-authorization-type refresh
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implement member token refresh by validating the refresh token or refresh credential payload, checking the corresponding stored session state, and issuing a new authorized token response. The service should verify that the refresh request maps to an active member session and that the session has not been revoked, expired, or otherwise invalidated according to the member session lifecycle. If the refresh token is valid, the operation should rotate or renew token material as required by the authentication strategy.
+ * @x-autobe-specification Implement member token refresh by validating the
+ *   refresh token or refresh credential payload, checking the corresponding
+ *   stored session state, and issuing a new authorized token response. The
+ *   service should verify that the refresh request maps to an active member
+ *   session and that the session has not been revoked, expired, or otherwise
+ *   invalidated according to the member session lifecycle. If the refresh token
+ *   is valid, the operation should rotate or renew token material as required
+ *   by the authentication strategy.
  *
  * The refresh flow must reject stale, malformed, revoked, or unknown refresh credentials. If the member session record cannot be located or does not satisfy the current validity checks, the service should return an authorization failure rather than extending the session. A successful refresh should preserve the member’s authenticated continuity without requiring a full credential re-entry.
  * @path /communityPlatform/auth/member/refresh

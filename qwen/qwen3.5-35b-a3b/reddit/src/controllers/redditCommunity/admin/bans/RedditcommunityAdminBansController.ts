@@ -20,9 +20,10 @@ export class RedditcommunityAdminBansController {
    *
    * @param connection
    * @param body Search criteria for ban records including community filter, user filter, ban status filter, date range filters, and pagination parameters.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query reddit_community_ban_records table with pagination and filtering.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Query reddit_community_ban_records table with
+     *   pagination and filtering.
    *
    * Apply search filters from request body:
    * - community_id: Filter bans for specific community (UUID)
@@ -71,13 +72,16 @@ export class RedditcommunityAdminBansController {
    *
    * @param connection
    * @param banId Unique identifier of the ban record to retrieve.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query reddit_community_ban_records table by id (UUID).
-   * Return the full ban record including all fields: id, user_id, community_id, banned_by_id, reason, banned_at, unban_at, created_at, updated_at, deleted_at.
-   * Include related user and community references in the response.
-   * Return 404 Not Found if ban record does not exist or has been soft-deleted (deleted_at is not NULL).
-   * Return 403 Forbidden if the requesting user does not have moderation permissions for the associated community.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Query reddit_community_ban_records table by id
+     *   (UUID). Return the full ban record including all fields: id, user_id,
+     *   community_id, banned_by_id, reason, banned_at, unban_at, created_at,
+     *   updated_at, deleted_at. Include related user and community references
+     *   in the response. Return 404 Not Found if ban record does not exist or
+     *   has been soft-deleted (deleted_at is not NULL). Return 403 Forbidden if
+     *   the requesting user does not have moderation permissions for the
+     *   associated community.
    *
    * Implementation steps:
    * 1. Validate banId is a valid UUID

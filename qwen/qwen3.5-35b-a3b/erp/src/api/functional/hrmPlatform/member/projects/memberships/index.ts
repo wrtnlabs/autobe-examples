@@ -145,7 +145,8 @@ export namespace create {
  *             Includes optional filters for member role, employee, assignment date range, and pagination parameters for cursor-based navigation.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query hrm_platform_project_memberships table where hrm_platform_project_id matches the path parameter and deleted_at is null.
+ * @x-autobe-specification Query hrm_platform_project_memberships table where
+ *   hrm_platform_project_id matches the path parameter and deleted_at is null.
  *
  * Apply search filters from request body:
  * - role: filter by member or project_lead
@@ -258,7 +259,8 @@ export namespace index {
  * @param props.membershipId The unique identifier of the project membership to retrieve.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Retrieve a project membership by its ID from hrm_platform_project_memberships table.
+ * @x-autobe-specification Retrieve a project membership by its ID from
+ *   hrm_platform_project_memberships table.
  *
  * 1. Query the membership where id = {membershipId}
  * 2. Verify the membership's organization matches the active organization context
@@ -372,7 +374,8 @@ export namespace at {
  * @param props.body Update data for project membership. Contains the new role assignment for the employee within this project.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Perform a database UPDATE on hrm_platform_project_memberships table.
+ * @x-autobe-specification Perform a database UPDATE on
+ *   hrm_platform_project_memberships table.
  *
  * **Implementation Steps**:
  * 1. Validate membership exists and is not soft-deleted (deleted_at IS NULL)
@@ -495,7 +498,8 @@ export namespace update {
  * @param props.membershipId The unique identifier of the project membership to remove.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Delete the project membership record identified by membershipId.
+ * @x-autobe-specification Delete the project membership record identified by
+ *   membershipId.
  *
  * 1. Fetch the membership record from hrm_platform_project_memberships
  * 2. Verify the membership exists and is not already soft-deleted (deleted_at is null)

@@ -13,7 +13,8 @@ import { IHrmPlatformOrganizationDashboard } from "../../../../../structures/IHr
  * @param props.connection
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query organization-scoped data to compute dashboard metrics:
+ * @x-autobe-specification Query organization-scoped data to compute dashboard
+ *   metrics:
  *
  * 1. Count active employees: SELECT COUNT(*) FROM hrm_platform_employees WHERE organization_id = ? AND status = 'active' AND deleted_at IS NULL
  *

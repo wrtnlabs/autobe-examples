@@ -28,7 +28,8 @@ import { IEcommerceMallCategoriesStatistic } from "../../../../structures/IEcomm
  * @param props.categoryId UUID of the category to retrieve statistics for.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Query the ecommerce_mall_categories table for the specified categoryId.
+ * @x-autobe-specification Query the ecommerce_mall_categories table for the
+ *   specified categoryId.
  *
  * **Database Operations**:
  * 1. Fetch category by UUID from ecommerce_mall_categories where id = {categoryId} AND deleted_at IS NULL

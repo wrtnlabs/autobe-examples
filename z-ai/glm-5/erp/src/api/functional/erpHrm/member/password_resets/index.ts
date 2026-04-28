@@ -25,21 +25,16 @@ import { IErpHrmMemberPasswordReset } from "../../../../structures/IErpHrmMember
  * @param props.body Email address for password reset request
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implementation steps:
- * 1. Accept email address from request body
- * 2. Check if member exists in erp_hrm_members table with the provided email
- * 3. If member exists:
- *    - Generate a secure random reset token
- *    - Hash the token for secure storage
- *    - Create a new record in erp_hrm_member_password_resets with:
- *      - member_id: the found member's id
- *      - token: the hashed token
- *      - created_at: current timestamp
- *      - expired_at: current timestamp + configured expiration duration (e.g., 1 hour)
- *    - Send password reset email to the member containing the reset link with the token
- * 4. If member does not exist:
- *    - Do nothing (do not reveal that email doesn't exist)
- * 5. Return 204 No Content regardless of whether email exists
+ * @x-autobe-specification Implementation steps: 1. Accept email address from
+ *   request body 2. Check if member exists in erp_hrm_members table with the
+ *   provided email 3. If member exists: - Generate a secure random reset token
+ *   - Hash the token for secure storage - Create a new record in
+ *   erp_hrm_member_password_resets with: - member_id: the found member's id -
+ *   token: the hashed token - created_at: current timestamp - expired_at:
+ *   current timestamp + configured expiration duration (e.g., 1 hour) - Send
+ *   password reset email to the member containing the reset link with the token
+ *   4. If member does not exist: - Do nothing (do not reveal that email doesn't
+ *   exist) 5. Return 204 No Content regardless of whether email exists
  *
  * Security considerations:
  * - Never reveal whether an email exists in the system

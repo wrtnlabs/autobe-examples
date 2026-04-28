@@ -28,9 +28,10 @@ export class EcommercemallSellerShipmentsController {
    * - Customer overview: see delivery statistics for their orders
    *
    * @param connection
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Query ecommerce_mall_shipments table and calculate aggregated metrics.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Query ecommerce_mall_shipments table and
+     *   calculate aggregated metrics.
    *
    * 1. Calculate total shipment count from ecommerce_mall_shipments.
    * 2. Count shipments grouped by status field (shipped, delivered).

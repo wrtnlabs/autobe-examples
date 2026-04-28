@@ -22,23 +22,22 @@ export class EcommercemallMemberCustomerOrdersItemsRefundController {
    * @param orderId The UUID of the order containing the item. Used to verify order ownership by the requesting customer.
    * @param itemId The UUID of the order item being refunded. Must have delivered status and be owned by the order specified.
    * @param body The refund request details. The reason field is required and describes why the customer is requesting a refund. This field is mandatory and must be provided by the customer.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1. Validate customer authentication - ensure request is from authenticated customer member
-   * 2. Load order by orderId and verify order belongs to requesting customer (ecommerce_mall_member_id)
-   * 3. Load order item by itemId and verify:
-   *    - Item belongs to the specified order (ecommerce_mall_order_id matches)
-   *    - Item status is 'delivered' - refund requests only allowed for delivered items
-   *    - Item is not already refunded (status != 'refunded')
-   * 4. Check for existing refund request on this order item via unique constraint on order_item_id
-   *    - If refund request exists with any status (pending, approved, rejected), return 409 Conflict
-   * 5. Create new refund request record:
-   *    - Set order_item_id to itemId
-   *    - Set reason from request body (required, non-empty)
-   *    - Set status to 'pending'
-   *    - Set created_at to current timestamp
-   *    - approved_by_seller_id and rejected_by_seller_id remain null
-   * 6. Return the created refund request with full details
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification 1. Validate customer authentication - ensure
+     *   request is from authenticated customer member 2. Load order by orderId
+     *   and verify order belongs to requesting customer
+     *   (ecommerce_mall_member_id) 3. Load order item by itemId and verify: -
+     *   Item belongs to the specified order (ecommerce_mall_order_id matches) -
+     *   Item status is 'delivered' - refund requests only allowed for delivered
+     *   items - Item is not already refunded (status != 'refunded') 4. Check
+     *   for existing refund request on this order item via unique constraint on
+     *   order_item_id - If refund request exists with any status (pending,
+     *   approved, rejected), return 409 Conflict 5. Create new refund request
+     *   record: - Set order_item_id to itemId - Set reason from request body
+     *   (required, non-empty) - Set status to 'pending' - Set created_at to
+     *   current timestamp - approved_by_seller_id and rejected_by_seller_id
+     *   remain null 6. Return the created refund request with full details
    *
    * Error cases:
    * - 404 Not Found: Order or order item not found

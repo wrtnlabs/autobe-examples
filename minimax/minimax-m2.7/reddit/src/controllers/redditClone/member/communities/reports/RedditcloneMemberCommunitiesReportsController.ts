@@ -28,9 +28,10 @@ export class RedditcloneMemberCommunitiesReportsController {
    * @param connection
    * @param communityId Unique identifier of the community where the reported content exists (global scope).
    * @param body Report creation details including the content being reported and the reason for filing the report.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Create a new report for content within a community.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Create a new report for content within a
+     *   community.
    *
    * 1. Authentication: Verify the request comes from an authenticated member. Reject if no valid session.
    *
@@ -102,9 +103,10 @@ export class RedditcloneMemberCommunitiesReportsController {
    * @param connection
    * @param communityId Unique identifier of the community (UUID format)
    * @param body Search criteria and pagination parameters for filtering reports
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query reddit_clone_community_reports table filtered by community_id parameter.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query reddit_clone_community_reports table
+     *   filtered by community_id parameter.
    *
    * Authorization: Verify the requesting user is a moderator (owner or moderator role) of the specified community. Query reddit_clone_community_moderators to validate moderator status. Return 403 Forbidden if user lacks moderation access.
    *
@@ -156,9 +158,11 @@ export class RedditcloneMemberCommunitiesReportsController {
    * @param connection
    * @param communityId Unique identifier of the community (global scope).
    * @param reportId Unique identifier of the report within the community.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query reddit_clone_community_reports table filtering by id equal to reportId and reddit_clone_community_id equal to communityId.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query reddit_clone_community_reports table
+     *   filtering by id equal to reportId and reddit_clone_community_id equal
+     *   to communityId.
    *
    * Join with reddit_clone_members table as reporter to retrieve reporter username and display name.
    *
@@ -205,9 +209,12 @@ export class RedditcloneMemberCommunitiesReportsController {
    * @param communityId Unique identifier of the community (scoped globally)
    * @param reportId Unique identifier of the report to update
    * @param body Resolution decision with status and optional note
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Validate the authenticated user has moderator privileges for the specified community. Verify the report exists and belongs to the given community. Ensure the report status is currently 'pending' (only pending reports can be updated).
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Validate the authenticated user has moderator
+     *   privileges for the specified community. Verify the report exists and
+     *   belongs to the given community. Ensure the report status is currently
+     *   'pending' (only pending reports can be updated).
    *
    * Update the report record with the new status ('approved' or 'dismissed'), set resolved_by_id to the current moderator's ID, set resolved_at to the current timestamp, and save the optional resolution_note if provided.
    *
@@ -250,9 +257,10 @@ export class RedditcloneMemberCommunitiesReportsController {
    * @param connection
    * @param communityId Unique identifier of the community where the report was submitted
    * @param reportId Unique identifier of the report to dismiss
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Dismiss a community report by updating its status to 'dismissed'.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Dismiss a community report by updating its status
+     *   to 'dismissed'.
    *
    * 1. Validate that the community exists and is not deleted (reddit_clone_communities.id)
    * 2. Validate that the report exists and belongs to the specified community (reddit_clone_community_reports)
@@ -307,9 +315,10 @@ export class RedditcloneMemberCommunitiesReportsController {
    * @param connection
    * @param communityId Unique identifier of the community where the report was submitted (global scope)
    * @param reportId Unique identifier of the report to approve
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement the report approval workflow with the following steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implement the report approval workflow with the
+     *   following steps:
    *
    * 1. Authorization Check: Verify the authenticated user is a moderator (owner or appointed moderator) of the community identified by communityId.
    *
@@ -366,9 +375,10 @@ export class RedditcloneMemberCommunitiesReportsController {
    * @param communityId Unique identifier of the community (UUID)
    * @param reportId Unique identifier of the report to dismiss (UUID)
    * @param body Optional dismissal details including a resolution note
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement the dismiss report operation with the following steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implement the dismiss report operation with the
+     *   following steps:
    *
    * 1. Authorization Check: Verify the authenticated user is a moderator (or owner) of the community specified by communityId. Query reddit_clone_community_moderators table to confirm moderator status. If not a moderator, return 403 Forbidden.
    *

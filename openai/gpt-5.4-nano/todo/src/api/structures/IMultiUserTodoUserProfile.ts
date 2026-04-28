@@ -14,8 +14,9 @@ export type IMultiUserTodoUserProfile = {
    *
    * The UUID that uniquely identifies this private user profile row returned by profile read endpoints.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Directly map multi_user_todo_user_profiles.id (UUID) to DTO.id. Returned as a UUID string.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Directly map multi_user_todo_user_profiles.id
+     *   (UUID) to DTO.id. Returned as a UUID string.
    */
   id: string & tags.Format<"uuid">;
 
@@ -24,8 +25,11 @@ export type IMultiUserTodoUserProfile = {
    *
    * The UUID of the authenticated member account that owns this profile record. This value is the basis for self-only authorization in profile operations.
    *
-   * @x-autobe-database-schema-property multi_user_todo_user_id
-   * @x-autobe-specification Directly map multi_user_todo_user_profiles.multi_user_todo_user_id (UUID) to DTO.multi_user_todo_user_id. Returned as a UUID string and used by service-layer authorization to enforce self-only access.
+     * @x-autobe-database-schema-property multi_user_todo_user_id
+     * @x-autobe-specification Directly map
+     *   multi_user_todo_user_profiles.multi_user_todo_user_id (UUID) to
+     *   DTO.multi_user_todo_user_id. Returned as a UUID string and used by
+     *   service-layer authorization to enforce self-only access.
    */
   multi_user_todo_user_id: string & tags.Format<"uuid">;
 
@@ -34,8 +38,12 @@ export type IMultiUserTodoUserProfile = {
    *
    * This is the member-chosen name shown in the app. Profile update endpoints validate that the submitted value is not empty after trimming before saving it.
    *
-   * @x-autobe-database-schema-property display_name
-   * @x-autobe-specification Directly map multi_user_todo_user_profiles.display_name (string) to DTO.display_name. On write endpoints, validate by trimming whitespace and rejecting empty/whitespace-only values, then persist the non-empty result.
+     * @x-autobe-database-schema-property display_name
+     * @x-autobe-specification Directly map
+     *   multi_user_todo_user_profiles.display_name (string) to
+     *   DTO.display_name. On write endpoints, validate by trimming whitespace
+     *   and rejecting empty/whitespace-only values, then persist the non-empty
+     *   result.
    */
   display_name: string;
 
@@ -44,8 +52,10 @@ export type IMultiUserTodoUserProfile = {
    *
    * The time when this profile record was created. Returned for auditing and consistent UI display in profile views.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Directly map multi_user_todo_user_profiles.created_at (timestamptz) to DTO.created_at as an ISO 8601 date-time string.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Directly map
+     *   multi_user_todo_user_profiles.created_at (timestamptz) to
+     *   DTO.created_at as an ISO 8601 date-time string.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -54,8 +64,11 @@ export type IMultiUserTodoUserProfile = {
    *
    * The time when this profile record was most recently updated. Profile update endpoints refresh this value on success.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Directly map multi_user_todo_user_profiles.updated_at (timestamptz) to DTO.updated_at as an ISO 8601 date-time string. On successful profile updates, this should be refreshed to the server timestamp.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Directly map
+     *   multi_user_todo_user_profiles.updated_at (timestamptz) to
+     *   DTO.updated_at as an ISO 8601 date-time string. On successful profile
+     *   updates, this should be refreshed to the server timestamp.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -64,8 +77,12 @@ export type IMultiUserTodoUserProfile = {
    *
    * When deleted_at is null, the profile record is considered active/available. When deleted_at is non-null, the record is soft-deleted and should be treated as unavailable by profile endpoints.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Directly map multi_user_todo_user_profiles.deleted_at (timestamptz nullable) to DTO.deleted_at. If the DB value is NULL, return JSON null; otherwise return the ISO 8601 date-time string. Service-layer logic must treat deleted_at != null as unavailable for profile read/update.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Directly map
+     *   multi_user_todo_user_profiles.deleted_at (timestamptz nullable) to
+     *   DTO.deleted_at. If the DB value is NULL, return JSON null; otherwise
+     *   return the ISO 8601 date-time string. Service-layer logic must treat
+     *   deleted_at != null as unavailable for profile read/update.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -81,8 +98,9 @@ export namespace IMultiUserTodoUserProfile {
      *
      * The server trims whitespace and rejects updates where the trimmed value is empty. When the update succeeds, this display name is saved to the authenticated member’s own private profile record and will be returned by subsequent profile reads.
      *
-     * @x-autobe-database-schema-property display_name
-     * @x-autobe-specification Direct mapping from multi_user_todo_user_profiles.display_name.
+         * @x-autobe-database-schema-property display_name
+         * @x-autobe-specification Direct mapping from
+         *   multi_user_todo_user_profiles.display_name.
      *
      * Processing steps:
      * 1) Read display_name from the request body.
@@ -107,7 +125,8 @@ export namespace IMultiUserTodoUserProfile {
      *
      * The backend uses this email to look up the member account and then verifies the provided password. If the credentials are invalid, the server must return 401 without confirming whether the email exists.
      *
-     * @x-autobe-specification Use `email` as the unique identifier to find the member account.
+         * @x-autobe-specification Use `email` as the unique identifier to find
+         *   the member account.
      *
      * - Validate that `email` is a syntactically valid email string.
      * - Look up the member by this email.
@@ -120,7 +139,8 @@ export namespace IMultiUserTodoUserProfile {
      *
      * Submit the plain (raw) password to be verified by the backend. The server compares it to the member’s stored password hash and, on failure, returns 401 without disclosing which part was incorrect.
      *
-     * @x-autobe-specification Use `password` as the secret credential to verify against the stored password hash for the located account.
+         * @x-autobe-specification Use `password` as the secret credential to
+         *   verify against the stored password hash for the located account.
      *
      * - Require a non-empty password.
      * - Verify by comparing the submitted password to the stored hash using a secure, constant-time comparison where applicable.
@@ -141,8 +161,10 @@ export namespace IMultiUserTodoUserProfile {
      *
      * This UUID uniquely identifies the authenticated principal’s private user profile row in the system.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Select multi_user_todo_user_profiles.id from the profile row owned by the authenticated principal (match by multi_user_todo_user_id). Return as a UUID string.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Select multi_user_todo_user_profiles.id from
+         *   the profile row owned by the authenticated principal (match by
+         *   multi_user_todo_user_id). Return as a UUID string.
      */
     id: string & tags.Format<"uuid">;
 
@@ -151,8 +173,11 @@ export namespace IMultiUserTodoUserProfile {
      *
      * This UUID identifies which authenticated member account owns the returned private profile data.
      *
-     * @x-autobe-database-schema-property multi_user_todo_user_id
-     * @x-autobe-specification Select multi_user_todo_user_profiles.multi_user_todo_user_id from the authenticated principal’s profile row. This value is the authenticated user identifier used for isolation across accounts.
+         * @x-autobe-database-schema-property multi_user_todo_user_id
+         * @x-autobe-specification Select
+         *   multi_user_todo_user_profiles.multi_user_todo_user_id from the
+         *   authenticated principal’s profile row. This value is the
+         *   authenticated user identifier used for isolation across accounts.
      */
     multi_user_todo_user_id: string & tags.Format<"uuid">;
 
@@ -161,8 +186,10 @@ export namespace IMultiUserTodoUserProfile {
      *
      * This value is the user-facing personalization attribute shown in the app for the member who owns the profile.
      *
-     * @x-autobe-database-schema-property display_name
-     * @x-autobe-specification Select multi_user_todo_user_profiles.display_name from the authenticated principal’s profile row and return it as-is.
+         * @x-autobe-database-schema-property display_name
+         * @x-autobe-specification Select
+         *   multi_user_todo_user_profiles.display_name from the authenticated
+         *   principal’s profile row and return it as-is.
      */
     display_name: string;
 
@@ -171,8 +198,10 @@ export namespace IMultiUserTodoUserProfile {
      *
      * This indicates when the private profile record was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Select multi_user_todo_user_profiles.created_at and return as an ISO-8601 date-time string.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Select
+         *   multi_user_todo_user_profiles.created_at and return as an ISO-8601
+         *   date-time string.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -181,8 +210,10 @@ export namespace IMultiUserTodoUserProfile {
      *
      * This indicates when the private profile record was last modified (for example, after updating display name).
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Select multi_user_todo_user_profiles.updated_at and return as an ISO-8601 date-time string.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Select
+         *   multi_user_todo_user_profiles.updated_at and return as an ISO-8601
+         *   date-time string.
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -191,8 +222,9 @@ export namespace IMultiUserTodoUserProfile {
      *
      * If the profile has been soft-deleted, this contains the ISO-8601 timestamp of deletion; otherwise it is null.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Select multi_user_todo_user_profiles.deleted_at from the profile row.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Select
+         *   multi_user_todo_user_profiles.deleted_at from the profile row.
      *
      * Return null when the profile is not soft-deleted; otherwise return the stored ISO-8601 date-time string.
      */
@@ -201,7 +233,8 @@ export namespace IMultiUserTodoUserProfile {
     /**
      * Authorization token.
      *
-     * @x-autobe-specification Authorization token comes from the session table.
+         * @x-autobe-specification Authorization token comes from the session
+         *   table.
      */
     token: IAuthorizationToken;
   };
@@ -226,7 +259,7 @@ export namespace IMultiUserTodoUserProfile {
    */
   export type IJoin = {
     /**
-     * @x-autobe-database-schema-property display_name
+         * @x-autobe-database-schema-property display_name
      */
     display_name: string & tags.MinLength<1>;
     password: string & tags.MinLength<1> & tags.Format<"password">;
@@ -246,7 +279,8 @@ export namespace IMultiUserTodoUserProfile {
      *
      * Clients provide this credential to the refresh endpoint. The backend validates it (including expiry and any rotation/revocation rules) and returns a new access/refresh token pair only if the credential is valid.
      *
-     * @x-autobe-specification Use the provided refreshToken string as-is from the request body.
+         * @x-autobe-specification Use the provided refreshToken string as-is
+         *   from the request body.
      *
      * Downstream implementation responsibilities:
      * - Verify refreshToken integrity (e.g., signature/format).
@@ -270,7 +304,7 @@ export namespace IMultiUserTodoUserProfile {
      *
      * It identifies which page of the matched result set the server returned, following the DTO’s 1-indexed page-number semantics, and it is always a non-negative integer.
      *
-     * @x-autobe-specification Virtual/computed pagination counter.
+         * @x-autobe-specification Virtual/computed pagination counter.
      *
      * Set current to the 1-indexed page number represented by this response; it must be a non-negative integer.
      */
@@ -281,7 +315,7 @@ export namespace IMultiUserTodoUserProfile {
      *
      * This value is used together with records to derive the total number of pages and must be a non-negative integer.
      *
-     * @x-autobe-specification Virtual/computed pagination counter.
+         * @x-autobe-specification Virtual/computed pagination counter.
      *
      * Set limit to the effective maximum number of records per page used to produce this response; it must be a non-negative integer.
      */
@@ -292,7 +326,7 @@ export namespace IMultiUserTodoUserProfile {
      *
      * This count represents the overall result size used to compute pages, and it is always a non-negative integer.
      *
-     * @x-autobe-specification Virtual/computed pagination counter.
+         * @x-autobe-specification Virtual/computed pagination counter.
      *
      * Set records to the total number of matched items across all pages for the current query/filter; must be a non-negative integer (0 when no matches).
      */
@@ -303,7 +337,7 @@ export namespace IMultiUserTodoUserProfile {
      *
      * This indicates how many navigable pages the client can move through when using the returned limit, and it is always a non-negative integer.
      *
-     * @x-autobe-specification Virtual/computed pagination counter.
+         * @x-autobe-specification Virtual/computed pagination counter.
      *
      * Compute pages via ceiling division with the stated rules:
      * - if records = 0 => pages = 0

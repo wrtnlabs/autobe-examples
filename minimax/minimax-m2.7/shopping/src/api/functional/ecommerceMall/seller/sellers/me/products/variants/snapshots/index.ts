@@ -26,7 +26,9 @@ import { IPageIEcommerceMallProductSnapshotVariant } from "../../../../../../../
  * @param props.variantId Unique identifier of the product variant to retrieve snapshots for (global scope).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Query ecommerce_mall_product_snapshot_variants table filtered by the variantId path parameter. Join with ecommerce_mall_product_snapshots to get the snapshot creation timestamp.
+ * @x-autobe-specification Query ecommerce_mall_product_snapshot_variants table
+ *   filtered by the variantId path parameter. Join with
+ *   ecommerce_mall_product_snapshots to get the snapshot creation timestamp.
  *
  * Verify ownership by checking that the product belongs to the authenticated seller:
  * 1. Query ecommerce_mall_product_variants to get the product_id for the given variantId

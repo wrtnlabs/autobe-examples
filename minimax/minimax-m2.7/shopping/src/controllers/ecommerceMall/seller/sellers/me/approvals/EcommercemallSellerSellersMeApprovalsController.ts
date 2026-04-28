@@ -24,9 +24,10 @@ export class EcommercemallSellerSellersMeApprovalsController {
    *
    * @param connection
    * @param body Search criteria including optional status filter, date range filters, and pagination parameters.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Query ecommerce_mall_seller_approvals table filtering by the authenticated seller's ID from session context.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Query ecommerce_mall_seller_approvals table
+     *   filtering by the authenticated seller's ID from session context.
    *
    * Apply search filters from request body:
    * - Filter by status: pending, approved, or rejected
@@ -77,9 +78,10 @@ export class EcommercemallSellerSellersMeApprovalsController {
    *
    * @param connection
    * @param approvalId Unique identifier of the seller approval record (global scope)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Query the ecommerce_mall_seller_approvals table using the provided approvalId.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Query the ecommerce_mall_seller_approvals table
+     *   using the provided approvalId.
    *
    * Verify that the approval record belongs to the authenticated seller by comparing ecommerce_mall_seller_id with the seller's ID from the session.
    *

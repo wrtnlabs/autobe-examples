@@ -33,9 +33,9 @@ export class ShoppingmallSellerProductsVariantsController {
    * @param connection
    * @param productId Unique identifier of the product to which the variant will be added. The authenticated seller must own this product.
    * @param body Variant creation data including SKU code, option values, and optional price override.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Implementation steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Implementation steps:
    *
    * 1. **Authentication & Authorization**: Verify seller authentication from JWT token. Extract seller ID from token claims.
    *
@@ -105,9 +105,10 @@ export class ShoppingmallSellerProductsVariantsController {
    * @param connection
    * @param productId The unique identifier of the product containing the variant to delete (UUID format)
    * @param variantId The unique identifier of the product variant to delete (UUID format)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Implement seller-initiated product variant deletion with constraint validation:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Implement seller-initiated product variant
+     *   deletion with constraint validation:
    *
    * 1. **Authorization**: Verify authenticated user is a seller and owns the product containing the variant.
    *

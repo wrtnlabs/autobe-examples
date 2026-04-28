@@ -44,7 +44,8 @@ import { ICommunityPlatformReportResolution } from "../../../../../../structures
  * @param props.reportId Identifier of the report to approve a moderation decision for.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification 1) Load the report by `community_platform_reports.id = reportId` and fetch its `community_id`, `target_type`, and `target_id`.
+ * @x-autobe-specification 1) Load the report by `community_platform_reports.id
+ *   = reportId` and fetch its `community_id`, `target_type`, and `target_id`.
  *
  * 2) Authorization check:
  *    - Verify the caller is a moderator of the report’s `community_id` (use `community_platform_community_moderators` relationship; exact lookup to be implemented in service layer).

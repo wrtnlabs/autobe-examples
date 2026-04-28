@@ -24,9 +24,14 @@ export class RedditlikeOwnerAttachmentsBatch_cleanupController {
    *
    * @param connection
    * @param body Criteria for selecting attachments to cleanup
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor owner
-   * @x-autobe-specification Execute batch cleanup operation on attachment files based on provided criteria. Query reddit_like_attachments table filtering by deleted_at timestamp (for soft-deleted files) and/or check for orphaned records with no references in reddit_like_attachment_references table. For each attachment marked for cleanup:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor owner
+     * @x-autobe-specification Execute batch cleanup operation on attachment
+     *   files based on provided criteria. Query reddit_like_attachments table
+     *   filtering by deleted_at timestamp (for soft-deleted files) and/or check
+     *   for orphaned records with no references in
+     *   reddit_like_attachment_references table. For each attachment marked for
+     *   cleanup:
    *
    * 1. Delete associated thumbnail files from reddit_like_attachment_thumbnails
    * 2. Delete access log entries from reddit_like_attachment_access_logs

@@ -30,9 +30,9 @@ export class ShoppingmallCustomerCustomersOrdersItemsCancellation_requestControl
    * @param orderId Unique identifier of the order containing the item to cancel
    * @param itemId Unique identifier of the specific order item to request cancellation for
    * @param body Cancellation request details including reason for cancellation
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Implementation steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Implementation steps:
    *
    * 1. **Authentication Verification**: Validate that the request is from an authenticated customer.
    *

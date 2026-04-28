@@ -17,9 +17,11 @@ export class ErphrmAdminStatisticsController {
    * Additionally, the response includes the top five employees ranked by hours logged during the current week, showing each employee's name, department, and total hours. This endpoint requires the report:view permission and all statistics are scoped to the currently selected organization context.
    *
    * @param connection
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query the current organization context from the session. Verify the requesting user has report:view permission in their role.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Query the current organization context from the
+     *   session. Verify the requesting user has report:view permission in their
+     *   role.
    *
    * Calculate active employee count from erp_hrm_employees where organization_id matches and status equals active.
    *

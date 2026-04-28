@@ -150,7 +150,8 @@ export namespace index {
  * @param props.orderId The unique identifier of the order to retrieve
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Retrieve order record from ecommerce_mall_orders table by orderId parameter.
+ * @x-autobe-specification Retrieve order record from ecommerce_mall_orders
+ *   table by orderId parameter.
  *
  * Join with related tables to assemble complete response:
  * - ecommerce_mall_order_items for all items in the order, filtered by deleted_at IS NULL

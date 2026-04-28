@@ -18,7 +18,8 @@ import { IShoppingMallCustomerProfile } from "../../../../structures/IShoppingMa
  * @param props.connection
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query shopping_mall_customer_profiles table filtering by the authenticated member's ID from session token.
+ * @x-autobe-specification Query shopping_mall_customer_profiles table filtering
+ *   by the authenticated member's ID from session token.
  *
  * Join with shopping_mall_members to verify the member account exists and is active.
  *
@@ -83,7 +84,8 @@ export namespace at {
  * @param props.body Profile update data containing optional display name and phone number fields. At least one field should be provided.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Update the shopping_mall_customer_profiles record for the authenticated member.
+ * @x-autobe-specification Update the shopping_mall_customer_profiles record for
+ *   the authenticated member.
  *
  * 1. Extract member ID from authentication session context
  * 2. Query shopping_mall_customer_profiles where shopping_mall_member_id equals the authenticated member's ID

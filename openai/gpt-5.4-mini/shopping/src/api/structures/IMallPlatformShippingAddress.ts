@@ -16,8 +16,9 @@ export type IMallPlatformShippingAddress = {
    *
    * This is the unique UUID that identifies one saved shipping address record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from mall_platform_shipping_addresses.id.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_shipping_addresses.id.
    */
   id: string & tags.Format<"uuid">;
 
@@ -26,8 +27,10 @@ export type IMallPlatformShippingAddress = {
    *
    * This is the account that saved the address and is allowed to manage or use it for checkout.
    *
-   * @x-autobe-database-schema-property customer
-   * @x-autobe-specification Join mall_platform_shipping_addresses.customer to mall_platform_customers and expose the related record as IMallPlatformCustomer.ISummary.
+     * @x-autobe-database-schema-property customer
+     * @x-autobe-specification Join mall_platform_shipping_addresses.customer to
+     *   mall_platform_customers and expose the related record as
+     *   IMallPlatformCustomer.ISummary.
    */
   customer: IMallPlatformCustomer.ISummary;
 
@@ -36,8 +39,9 @@ export type IMallPlatformShippingAddress = {
    *
    * This name appears on the shipping label and identifies who should receive the package.
    *
-   * @x-autobe-database-schema-property recipient_name
-   * @x-autobe-specification Direct mapping from mall_platform_shipping_addresses.recipient_name.
+     * @x-autobe-database-schema-property recipient_name
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_shipping_addresses.recipient_name.
    */
   recipientName: string;
 
@@ -46,8 +50,9 @@ export type IMallPlatformShippingAddress = {
    *
    * Carriers can use this number when they need to contact the recipient about the shipment.
    *
-   * @x-autobe-database-schema-property phone_number
-   * @x-autobe-specification Direct mapping from mall_platform_shipping_addresses.phone_number.
+     * @x-autobe-database-schema-property phone_number
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_shipping_addresses.phone_number.
    */
   phoneNumber: string;
 
@@ -56,8 +61,9 @@ export type IMallPlatformShippingAddress = {
    *
    * This contains the detailed street-level destination information used for shipment delivery.
    *
-   * @x-autobe-database-schema-property street_address
-   * @x-autobe-specification Direct mapping from mall_platform_shipping_addresses.street_address.
+     * @x-autobe-database-schema-property street_address
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_shipping_addresses.street_address.
    */
   streetAddress: string;
 
@@ -66,8 +72,9 @@ export type IMallPlatformShippingAddress = {
    *
    * This is the city portion of the shipping destination.
    *
-   * @x-autobe-database-schema-property city
-   * @x-autobe-specification Direct mapping from mall_platform_shipping_addresses.city.
+     * @x-autobe-database-schema-property city
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_shipping_addresses.city.
    */
   city: string;
 
@@ -76,8 +83,9 @@ export type IMallPlatformShippingAddress = {
    *
    * This is the regional portion of the destination address.
    *
-   * @x-autobe-database-schema-property state_province
-   * @x-autobe-specification Direct mapping from mall_platform_shipping_addresses.state_province.
+     * @x-autobe-database-schema-property state_province
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_shipping_addresses.state_province.
    */
   stateProvince: string;
 
@@ -86,8 +94,9 @@ export type IMallPlatformShippingAddress = {
    *
    * This helps route the shipment to the correct destination area.
    *
-   * @x-autobe-database-schema-property postal_code
-   * @x-autobe-specification Direct mapping from mall_platform_shipping_addresses.postal_code.
+     * @x-autobe-database-schema-property postal_code
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_shipping_addresses.postal_code.
    */
   postalCode: string;
 
@@ -96,8 +105,9 @@ export type IMallPlatformShippingAddress = {
    *
    * This identifies the destination country for the saved shipping address.
    *
-   * @x-autobe-database-schema-property country
-   * @x-autobe-specification Direct mapping from mall_platform_shipping_addresses.country.
+     * @x-autobe-database-schema-property country
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_shipping_addresses.country.
    */
   country: string;
 
@@ -106,8 +116,9 @@ export type IMallPlatformShippingAddress = {
    *
    * When true, this address should be preferred in checkout flows unless the customer selects another address.
    *
-   * @x-autobe-database-schema-property is_default
-   * @x-autobe-specification Direct mapping from mall_platform_shipping_addresses.is_default.
+     * @x-autobe-database-schema-property is_default
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_shipping_addresses.is_default.
    */
   isDefault: boolean;
 
@@ -116,8 +127,9 @@ export type IMallPlatformShippingAddress = {
    *
    * This timestamp records when the address was first saved.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from mall_platform_shipping_addresses.created_at.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_shipping_addresses.created_at.
    */
   createdAt: string & tags.Format<"date-time">;
 
@@ -126,8 +138,9 @@ export type IMallPlatformShippingAddress = {
    *
    * This timestamp records the most recent persisted change to the address.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from mall_platform_shipping_addresses.updated_at.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_shipping_addresses.updated_at.
    */
   updatedAt: string & tags.Format<"date-time">;
 
@@ -136,8 +149,10 @@ export type IMallPlatformShippingAddress = {
    *
    * A null value means the address is active. A timestamp means the record has been soft-deleted and should be treated as deleted.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from mall_platform_shipping_addresses.deleted_at. Keep null when the address is active and a timestamp when it has been soft-deleted.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_shipping_addresses.deleted_at. Keep null when the address
+     *   is active and a timestamp when it has been soft-deleted.
    */
   deletedAt: (string & tags.Format<"date-time">) | null;
 };
@@ -153,7 +168,10 @@ export namespace IMallPlatformShippingAddress {
      *
      * This controls which slice of the authenticated customer's saved shipping-address list is returned. It is used only for pagination and does not correspond to any stored address field.
      *
-     * @x-autobe-specification Pagination page number for the authenticated customer's shipping-address list. Use this only to page through mall_platform_shipping_addresses scoped to the current customer. When omitted, the endpoint should apply its default page behavior.
+         * @x-autobe-specification Pagination page number for the authenticated
+         *   customer's shipping-address list. Use this only to page through
+         *   mall_platform_shipping_addresses scoped to the current customer.
+         *   When omitted, the endpoint should apply its default page behavior.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -162,7 +180,11 @@ export namespace IMallPlatformShippingAddress {
      *
      * This controls the page size for the authenticated customer's saved shipping-address list. It is used only for pagination and does not map to any stored address field.
      *
-     * @x-autobe-specification Maximum number of shipping-address records to return for the authenticated customer. Use this together with page to paginate mall_platform_shipping_addresses for the current customer. Enforce the API maximum limit and apply the endpoint default when omitted.
+         * @x-autobe-specification Maximum number of shipping-address records to
+         *   return for the authenticated customer. Use this together with page
+         *   to paginate mall_platform_shipping_addresses for the current
+         *   customer. Enforce the API maximum limit and apply the endpoint
+         *   default when omitted.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -182,8 +204,11 @@ export namespace IMallPlatformShippingAddress {
      *
      * Use this field to update the recipient label stored for the saved shipping address. It should reflect the actual addressee for packages sent to this address.
      *
-     * @x-autobe-database-schema-property recipient_name
-     * @x-autobe-specification Direct mapping from mall_platform_shipping_addresses.recipient_name. Update the recipient name for the authenticated customer's saved shipping address.
+         * @x-autobe-database-schema-property recipient_name
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_shipping_addresses.recipient_name. Update the
+         *   recipient name for the authenticated customer's saved shipping
+         *   address.
      */
     recipientName?: string | undefined;
 
@@ -192,8 +217,10 @@ export namespace IMallPlatformShippingAddress {
      *
      * Use this field to update the contact number used by the carrier or delivery personnel when reaching the recipient at this address.
      *
-     * @x-autobe-database-schema-property phone_number
-     * @x-autobe-specification Direct mapping from mall_platform_shipping_addresses.phone_number. Update the recipient phone number associated with the saved shipping address.
+         * @x-autobe-database-schema-property phone_number
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_shipping_addresses.phone_number. Update the recipient
+         *   phone number associated with the saved shipping address.
      */
     phoneNumber?: string | undefined;
 
@@ -202,8 +229,10 @@ export namespace IMallPlatformShippingAddress {
      *
      * Use this field to update the primary street line for the saved shipping address, including building, unit, or other location details if needed.
      *
-     * @x-autobe-database-schema-property street_address
-     * @x-autobe-specification Direct mapping from mall_platform_shipping_addresses.street_address. Update the street address line for the saved shipping address.
+         * @x-autobe-database-schema-property street_address
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_shipping_addresses.street_address. Update the street
+         *   address line for the saved shipping address.
      */
     streetAddress?: string | undefined;
 
@@ -212,8 +241,10 @@ export namespace IMallPlatformShippingAddress {
      *
      * Use this field to update the municipality or local area component of the saved shipping address.
      *
-     * @x-autobe-database-schema-property city
-     * @x-autobe-specification Direct mapping from mall_platform_shipping_addresses.city. Update the city or locality for the saved shipping address.
+         * @x-autobe-database-schema-property city
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_shipping_addresses.city. Update the city or locality
+         *   for the saved shipping address.
      */
     city?: string | undefined;
 
@@ -222,8 +253,10 @@ export namespace IMallPlatformShippingAddress {
      *
      * Use this field to update the administrative region component of the saved shipping address.
      *
-     * @x-autobe-database-schema-property state_province
-     * @x-autobe-specification Direct mapping from mall_platform_shipping_addresses.state_province. Update the state, province, or region for the saved shipping address.
+         * @x-autobe-database-schema-property state_province
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_shipping_addresses.state_province. Update the state,
+         *   province, or region for the saved shipping address.
      */
     stateProvince?: string | undefined;
 
@@ -232,8 +265,10 @@ export namespace IMallPlatformShippingAddress {
      *
      * Use this field to update the postal code component of the saved shipping address so deliveries can be routed correctly.
      *
-     * @x-autobe-database-schema-property postal_code
-     * @x-autobe-specification Direct mapping from mall_platform_shipping_addresses.postal_code. Update the postal or ZIP code for the saved shipping address.
+         * @x-autobe-database-schema-property postal_code
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_shipping_addresses.postal_code. Update the postal or
+         *   ZIP code for the saved shipping address.
      */
     postalCode?: string | undefined;
 
@@ -242,8 +277,10 @@ export namespace IMallPlatformShippingAddress {
      *
      * Use this field to update the country component of the saved shipping address.
      *
-     * @x-autobe-database-schema-property country
-     * @x-autobe-specification Direct mapping from mall_platform_shipping_addresses.country. Update the country for the saved shipping address.
+         * @x-autobe-database-schema-property country
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_shipping_addresses.country. Update the country for
+         *   the saved shipping address.
      */
     country?: string | undefined;
   };
@@ -259,8 +296,10 @@ export namespace IMallPlatformShippingAddress {
      *
      * Use the name that should appear on the delivery label and receive the shipment at this address.
      *
-     * @x-autobe-database-schema-property recipient_name
-     * @x-autobe-specification Direct scalar mapping to mall_platform_shipping_addresses.recipient_name when creating the new shipping address row.
+         * @x-autobe-database-schema-property recipient_name
+         * @x-autobe-specification Direct scalar mapping to
+         *   mall_platform_shipping_addresses.recipient_name when creating the
+         *   new shipping address row.
      */
     recipientName: string;
 
@@ -269,8 +308,10 @@ export namespace IMallPlatformShippingAddress {
      *
      * Use a reachable number for courier coordination and delivery-related contact.
      *
-     * @x-autobe-database-schema-property phone_number
-     * @x-autobe-specification Direct scalar mapping to mall_platform_shipping_addresses.phone_number when creating the new shipping address row.
+         * @x-autobe-database-schema-property phone_number
+         * @x-autobe-specification Direct scalar mapping to
+         *   mall_platform_shipping_addresses.phone_number when creating the new
+         *   shipping address row.
      */
     phoneNumber: string;
 
@@ -279,8 +320,10 @@ export namespace IMallPlatformShippingAddress {
      *
      * Include the full delivery street line, such as building, street, and unit details when needed.
      *
-     * @x-autobe-database-schema-property street_address
-     * @x-autobe-specification Direct scalar mapping to mall_platform_shipping_addresses.street_address when creating the new shipping address row.
+         * @x-autobe-database-schema-property street_address
+         * @x-autobe-specification Direct scalar mapping to
+         *   mall_platform_shipping_addresses.street_address when creating the
+         *   new shipping address row.
      */
     streetAddress: string;
 
@@ -289,8 +332,10 @@ export namespace IMallPlatformShippingAddress {
      *
      * Use the destination city or local area name associated with delivery.
      *
-     * @x-autobe-database-schema-property city
-     * @x-autobe-specification Direct scalar mapping to mall_platform_shipping_addresses.city when creating the new shipping address row.
+         * @x-autobe-database-schema-property city
+         * @x-autobe-specification Direct scalar mapping to
+         *   mall_platform_shipping_addresses.city when creating the new
+         *   shipping address row.
      */
     city: string;
 
@@ -299,8 +344,10 @@ export namespace IMallPlatformShippingAddress {
      *
      * Use the regional administrative area that belongs with the destination.
      *
-     * @x-autobe-database-schema-property state_province
-     * @x-autobe-specification Direct scalar mapping to mall_platform_shipping_addresses.state_province when creating the new shipping address row.
+         * @x-autobe-database-schema-property state_province
+         * @x-autobe-specification Direct scalar mapping to
+         *   mall_platform_shipping_addresses.state_province when creating the
+         *   new shipping address row.
      */
     stateProvince: string;
 
@@ -309,8 +356,10 @@ export namespace IMallPlatformShippingAddress {
      *
      * Use the local postal code required for routing and delivery.
      *
-     * @x-autobe-database-schema-property postal_code
-     * @x-autobe-specification Direct scalar mapping to mall_platform_shipping_addresses.postal_code when creating the new shipping address row.
+         * @x-autobe-database-schema-property postal_code
+         * @x-autobe-specification Direct scalar mapping to
+         *   mall_platform_shipping_addresses.postal_code when creating the new
+         *   shipping address row.
      */
     postalCode: string;
 
@@ -319,8 +368,10 @@ export namespace IMallPlatformShippingAddress {
      *
      * Use the destination country associated with the delivery location.
      *
-     * @x-autobe-database-schema-property country
-     * @x-autobe-specification Direct scalar mapping to mall_platform_shipping_addresses.country when creating the new shipping address row.
+         * @x-autobe-database-schema-property country
+         * @x-autobe-specification Direct scalar mapping to
+         *   mall_platform_shipping_addresses.country when creating the new
+         *   shipping address row.
      */
     country: string;
 
@@ -329,8 +380,11 @@ export namespace IMallPlatformShippingAddress {
      *
      * When true, the saved address is marked as the default destination for future checkout selection.
      *
-     * @x-autobe-database-schema-property is_default
-     * @x-autobe-specification Direct scalar mapping to mall_platform_shipping_addresses.is_default when creating the new shipping address row. When true, the address is marked as the customer's default shipping address.
+         * @x-autobe-database-schema-property is_default
+         * @x-autobe-specification Direct scalar mapping to
+         *   mall_platform_shipping_addresses.is_default when creating the new
+         *   shipping address row. When true, the address is marked as the
+         *   customer's default shipping address.
      */
     isDefault?: boolean | undefined;
   };
@@ -348,8 +402,9 @@ export namespace IMallPlatformShippingAddress {
      *
      * Use this value to reference the address record in browsing and management workflows.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from mall_platform_shipping_addresses.id.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_shipping_addresses.id.
      */
     id: string & tags.Format<"uuid">;
 
@@ -358,8 +413,9 @@ export namespace IMallPlatformShippingAddress {
      *
      * This is the name used on delivery labels and should match the intended recipient for the destination.
      *
-     * @x-autobe-database-schema-property recipient_name
-     * @x-autobe-specification Direct mapping from mall_platform_shipping_addresses.recipient_name.
+         * @x-autobe-database-schema-property recipient_name
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_shipping_addresses.recipient_name.
      */
     recipientName: string;
 
@@ -368,8 +424,9 @@ export namespace IMallPlatformShippingAddress {
      *
      * This contact detail can be used by delivery services when they need to reach the recipient.
      *
-     * @x-autobe-database-schema-property phone_number
-     * @x-autobe-specification Direct mapping from mall_platform_shipping_addresses.phone_number.
+         * @x-autobe-database-schema-property phone_number
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_shipping_addresses.phone_number.
      */
     phoneNumber: string;
 
@@ -378,8 +435,9 @@ export namespace IMallPlatformShippingAddress {
      *
      * This field contains the main street address information needed to deliver a package to the correct location.
      *
-     * @x-autobe-database-schema-property street_address
-     * @x-autobe-specification Direct mapping from mall_platform_shipping_addresses.street_address.
+         * @x-autobe-database-schema-property street_address
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_shipping_addresses.street_address.
      */
     streetAddress: string;
 
@@ -388,8 +446,9 @@ export namespace IMallPlatformShippingAddress {
      *
      * This completes part of the structured destination address used for shipping and display.
      *
-     * @x-autobe-database-schema-property city
-     * @x-autobe-specification Direct mapping from mall_platform_shipping_addresses.city.
+         * @x-autobe-database-schema-property city
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_shipping_addresses.city.
      */
     city: string;
 
@@ -398,8 +457,9 @@ export namespace IMallPlatformShippingAddress {
      *
      * This field helps specify the regional part of the delivery destination.
      *
-     * @x-autobe-database-schema-property state_province
-     * @x-autobe-specification Direct mapping from mall_platform_shipping_addresses.state_province.
+         * @x-autobe-database-schema-property state_province
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_shipping_addresses.state_province.
      */
     stateProvince: string;
 
@@ -408,8 +468,9 @@ export namespace IMallPlatformShippingAddress {
      *
      * This value supports accurate shipping and address validation.
      *
-     * @x-autobe-database-schema-property postal_code
-     * @x-autobe-specification Direct mapping from mall_platform_shipping_addresses.postal_code.
+         * @x-autobe-database-schema-property postal_code
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_shipping_addresses.postal_code.
      */
     postalCode: string;
 
@@ -418,8 +479,9 @@ export namespace IMallPlatformShippingAddress {
      *
      * This completes the destination address and supports international shipping formatting.
      *
-     * @x-autobe-database-schema-property country
-     * @x-autobe-specification Direct mapping from mall_platform_shipping_addresses.country.
+         * @x-autobe-database-schema-property country
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_shipping_addresses.country.
      */
     country: string;
 
@@ -428,8 +490,10 @@ export namespace IMallPlatformShippingAddress {
      *
      * When true, this address is treated as the primary destination during checkout and address selection.
      *
-     * @x-autobe-database-schema-property is_default
-     * @x-autobe-specification Direct mapping from mall_platform_shipping_addresses.is_default. Indicates whether this address is the customer's default shipping destination.
+         * @x-autobe-database-schema-property is_default
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_shipping_addresses.is_default. Indicates whether this
+         *   address is the customer's default shipping destination.
      */
     isDefault: boolean;
 
@@ -438,8 +502,9 @@ export namespace IMallPlatformShippingAddress {
      *
      * This timestamp records when the address was first saved in the system.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from mall_platform_shipping_addresses.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_shipping_addresses.created_at.
      */
     createdAt: string & tags.Format<"date-time">;
 
@@ -448,8 +513,9 @@ export namespace IMallPlatformShippingAddress {
      *
      * This timestamp reflects the most recent change to the address record.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from mall_platform_shipping_addresses.updated_at.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_shipping_addresses.updated_at.
      */
     updatedAt: string & tags.Format<"date-time">;
 
@@ -458,8 +524,10 @@ export namespace IMallPlatformShippingAddress {
      *
      * A null value means the address is active. A date-time value means the address has been soft-deleted and retained for historical purposes.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from mall_platform_shipping_addresses.deleted_at. Preserve nullability because the source column is nullable and indicates soft deletion.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_shipping_addresses.deleted_at. Preserve nullability
+         *   because the source column is nullable and indicates soft deletion.
      */
     deletedAt: (string & tags.Format<"date-time">) | null;
 
@@ -468,8 +536,11 @@ export namespace IMallPlatformShippingAddress {
      *
      * This is represented as a related customer summary rather than a raw foreign-key identifier so clients can display the owner consistently.
      *
-     * @x-autobe-database-schema-property customer
-     * @x-autobe-specification Join mall_platform_shipping_addresses.customer_id to mall_platform_customers.id and expose the related customer as IMallPlatformCustomer.ISummary.
+         * @x-autobe-database-schema-property customer
+         * @x-autobe-specification Join
+         *   mall_platform_shipping_addresses.customer_id to
+         *   mall_platform_customers.id and expose the related customer as
+         *   IMallPlatformCustomer.ISummary.
      */
     customer: IMallPlatformCustomer.ISummary;
   };

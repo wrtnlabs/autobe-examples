@@ -12,96 +12,118 @@ export type IRedditCloneModeratorSnapshot = {
   /**
    * Unique identifier of the moderator role snapshot record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from reddit_clone_moderator_snapshots.id. UUID primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_moderator_snapshots.id. UUID primary key.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Reference to the original moderator assignment record being snapshotted.
    *
-   * @x-autobe-database-schema-property reddit_clone_moderator_id
-   * @x-autobe-specification Direct mapping from reddit_clone_moderator_snapshots.reddit_clone_moderator_id. Denormalized reference to reddit_clone_moderators.id.
+     * @x-autobe-database-schema-property reddit_clone_moderator_id
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_moderator_snapshots.reddit_clone_moderator_id.
+     *   Denormalized reference to reddit_clone_moderators.id.
    */
   redditCloneModeratorId: string & tags.Format<"uuid">;
 
   /**
    * Denormalized reference to the community where the moderator assignment exists.
    *
-   * @x-autobe-database-schema-property reddit_clone_community_id
-   * @x-autobe-specification Direct mapping from reddit_clone_moderator_snapshots.reddit_clone_community_id. Denormalized reference to reddit_clone_communities.id.
+     * @x-autobe-database-schema-property reddit_clone_community_id
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_moderator_snapshots.reddit_clone_community_id.
+     *   Denormalized reference to reddit_clone_communities.id.
    */
   redditCloneCommunityId: string & tags.Format<"uuid">;
 
   /**
    * Denormalized reference to the user holding the moderator role in the community.
    *
-   * @x-autobe-database-schema-property reddit_clone_member_id
-   * @x-autobe-specification Direct mapping from reddit_clone_moderator_snapshots.reddit_clone_member_id. Denormalized reference to reddit_clone_members.id.
+     * @x-autobe-database-schema-property reddit_clone_member_id
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_moderator_snapshots.reddit_clone_member_id. Denormalized
+     *   reference to reddit_clone_members.id.
    */
   redditCloneMemberId: string & tags.Format<"uuid">;
 
   /**
    * Denormalized reference to the user who assigned this moderator role.
    *
-   * @x-autobe-database-schema-property assigned_by_user_id
-   * @x-autobe-specification Direct mapping from reddit_clone_moderator_snapshots.assigned_by_user_id. Denormalized reference to reddit_clone_members.id.
+     * @x-autobe-database-schema-property assigned_by_user_id
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_moderator_snapshots.assigned_by_user_id. Denormalized
+     *   reference to reddit_clone_members.id.
    */
   assignedByUserId: string & tags.Format<"uuid">;
 
   /**
    * The moderator role level at the time of snapshot. Values: 'owner' or 'moderator'.
    *
-   * @x-autobe-database-schema-property role
-   * @x-autobe-specification Direct mapping from reddit_clone_moderator_snapshots.role. Enum values: 'owner' or 'moderator'.
+     * @x-autobe-database-schema-property role
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_moderator_snapshots.role. Enum values: 'owner' or
+     *   'moderator'.
    */
   role: string;
 
   /**
    * Denormalized timestamp when the moderator role was originally assigned.
    *
-   * @x-autobe-database-schema-property assigned_at
-   * @x-autobe-specification Direct mapping from reddit_clone_moderator_snapshots.assigned_at. DateTime with timezone.
+     * @x-autobe-database-schema-property assigned_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_moderator_snapshots.assigned_at. DateTime with timezone.
    */
   assignedAt: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when this snapshot was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from reddit_clone_moderator_snapshots.created_at. DateTime with timezone.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_moderator_snapshots.created_at. DateTime with timezone.
    */
   createdAt: string & tags.Format<"date-time">;
 
   /**
    * The original moderator assignment record that was snapshotted.
    *
-   * @x-autobe-database-schema-property moderator
-   * @x-autobe-specification Belongs-to relation via reddit_clone_moderator_snapshots.reddit_clone_moderator_id to reddit_clone_moderators.id. Returns IRedditCloneCommunityModerator.ISummary.
+     * @x-autobe-database-schema-property moderator
+     * @x-autobe-specification Belongs-to relation via
+     *   reddit_clone_moderator_snapshots.reddit_clone_moderator_id to
+     *   reddit_clone_moderators.id. Returns
+     *   IRedditCloneCommunityModerator.ISummary.
    */
   moderator: IRedditCloneCommunityModerator.ISummary;
 
   /**
    * The community where the moderator role assignment exists.
    *
-   * @x-autobe-database-schema-property community
-   * @x-autobe-specification Belongs-to relation via reddit_clone_moderator_snapshots.reddit_clone_community_id to reddit_clone_communities.id. Returns IRedditCloneCommunity.ISummary.
+     * @x-autobe-database-schema-property community
+     * @x-autobe-specification Belongs-to relation via
+     *   reddit_clone_moderator_snapshots.reddit_clone_community_id to
+     *   reddit_clone_communities.id. Returns IRedditCloneCommunity.ISummary.
    */
   community: IRedditCloneCommunity.ISummary;
 
   /**
    * The user holding the moderator role in the community.
    *
-   * @x-autobe-database-schema-property member
-   * @x-autobe-specification Belongs-to relation via reddit_clone_moderator_snapshots.reddit_clone_member_id to reddit_clone_members.id. Returns IRedditCloneMember.ISummary.
+     * @x-autobe-database-schema-property member
+     * @x-autobe-specification Belongs-to relation via
+     *   reddit_clone_moderator_snapshots.reddit_clone_member_id to
+     *   reddit_clone_members.id. Returns IRedditCloneMember.ISummary.
    */
   member: IRedditCloneMember.ISummary;
 
   /**
    * The user who assigned this moderator role.
    *
-   * @x-autobe-database-schema-property assignedBy
-   * @x-autobe-specification Belongs-to relation via reddit_clone_moderator_snapshots.assigned_by_user_id to reddit_clone_members.id. Returns IRedditCloneMember.ISummary.
+     * @x-autobe-database-schema-property assignedBy
+     * @x-autobe-specification Belongs-to relation via
+     *   reddit_clone_moderator_snapshots.assigned_by_user_id to
+     *   reddit_clone_members.id. Returns IRedditCloneMember.ISummary.
    */
   assignedBy: IRedditCloneMember.ISummary;
 };
@@ -113,7 +135,14 @@ export namespace IRedditCloneModeratorSnapshot {
     /**
      * Filter snapshots that were created within a specific date range.
      *
-     * @x-autobe-specification Query parameter that filters reddit_clone_moderator_snapshots records by their created_at column. The 'from' value specifies the inclusive lower bound (snapshots created on or after this date/time), the 'to' value specifies the inclusive upper bound (snapshots created on or before this date/time). Both bounds are optional - omit 'from' to get all records up to 'to', omit 'to' to get all records from 'from', omit both to ignore this filter.
+         * @x-autobe-specification Query parameter that filters
+         *   reddit_clone_moderator_snapshots records by their created_at
+         *   column. The 'from' value specifies the inclusive lower bound
+         *   (snapshots created on or after this date/time), the 'to' value
+         *   specifies the inclusive upper bound (snapshots created on or before
+         *   this date/time). Both bounds are optional - omit 'from' to get all
+         *   records up to 'to', omit 'to' to get all records from 'from', omit
+         *   both to ignore this filter.
      */
     createdAtRange?:
       | {
@@ -132,7 +161,12 @@ export namespace IRedditCloneModeratorSnapshot {
     /**
      * Filter snapshots by the original role assignment date range.
      *
-     * @x-autobe-specification Query parameter that filters reddit_clone_moderator_snapshots records by their assigned_at column. The 'from' value specifies the inclusive lower bound, the 'to' value specifies the inclusive upper bound. Both bounds are optional - omit 'from' to get all records up to 'to', omit 'to' to get all records from 'from', omit both to ignore this filter.
+         * @x-autobe-specification Query parameter that filters
+         *   reddit_clone_moderator_snapshots records by their assigned_at
+         *   column. The 'from' value specifies the inclusive lower bound, the
+         *   'to' value specifies the inclusive upper bound. Both bounds are
+         *   optional - omit 'from' to get all records up to 'to', omit 'to' to
+         *   get all records from 'from', omit both to ignore this filter.
      */
     assignedAtRange?:
       | {
@@ -151,21 +185,30 @@ export namespace IRedditCloneModeratorSnapshot {
     /**
      * Filter snapshots by the moderator role level.
      *
-     * @x-autobe-specification Query parameter that filters reddit_clone_moderator_snapshots records by their role column. Accepts 'owner' (community creator with highest authority) or 'moderator' (appointed moderator). Optional filter - when omitted, returns snapshots of all role levels.
+         * @x-autobe-specification Query parameter that filters
+         *   reddit_clone_moderator_snapshots records by their role column.
+         *   Accepts 'owner' (community creator with highest authority) or
+         *   'moderator' (appointed moderator). Optional filter - when omitted,
+         *   returns snapshots of all role levels.
      */
     role?: "owner" | "moderator" | undefined;
 
     /**
      * Page number for pagination (1-indexed).
      *
-     * @x-autobe-specification Pagination parameter specifying which page of results to return. Minimum value is 1. If omitted, defaults to 1. Used with 'limit' to calculate offset: offset = (page - 1) * limit.
+         * @x-autobe-specification Pagination parameter specifying which page of
+         *   results to return. Minimum value is 1. If omitted, defaults to 1.
+         *   Used with 'limit' to calculate offset: offset = (page - 1) * limit.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of items to return per page.
      *
-     * @x-autobe-specification Pagination parameter specifying the maximum number of records per page. Minimum value is 1, maximum value is 100. If omitted, uses default page size. Used with 'page' to calculate offset: offset = (page - 1) * limit.
+         * @x-autobe-specification Pagination parameter specifying the maximum
+         *   number of records per page. Minimum value is 1, maximum value is
+         *   100. If omitted, uses default page size. Used with 'page' to
+         *   calculate offset: offset = (page - 1) * limit.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -179,56 +222,70 @@ export namespace IRedditCloneModeratorSnapshot {
     /**
      * Unique identifier of the moderator role snapshot.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from reddit_clone_moderator_snapshots.id. UUID primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_moderator_snapshots.id. UUID primary key.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * The moderator role level at the time of snapshot.
      *
-     * @x-autobe-database-schema-property role
-     * @x-autobe-specification Direct mapping from reddit_clone_moderator_snapshots.role. Values: 'owner' or 'moderator'.
+         * @x-autobe-database-schema-property role
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_moderator_snapshots.role. Values: 'owner' or
+         *   'moderator'.
      */
     role: string;
 
     /**
      * Timestamp when the moderator role was originally assigned.
      *
-     * @x-autobe-database-schema-property assigned_at
-     * @x-autobe-specification Direct mapping from reddit_clone_moderator_snapshots.assigned_at. Denormalized timestamp when moderator role was originally assigned.
+         * @x-autobe-database-schema-property assigned_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_moderator_snapshots.assigned_at. Denormalized
+         *   timestamp when moderator role was originally assigned.
      */
     assignedAt: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when this snapshot was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from reddit_clone_moderator_snapshots.created_at. Timestamp when this snapshot was created.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_moderator_snapshots.created_at. Timestamp when this
+         *   snapshot was created.
      */
     createdAt: string & tags.Format<"date-time">;
 
     /**
      * The community where the moderator role was assigned.
      *
-     * @x-autobe-database-schema-property community
-     * @x-autobe-specification Join via reddit_clone_moderator_snapshots.reddit_clone_community_id to reddit_clone_communities.id. Returns IRedditCloneCommunity.ISummary.
+         * @x-autobe-database-schema-property community
+         * @x-autobe-specification Join via
+         *   reddit_clone_moderator_snapshots.reddit_clone_community_id to
+         *   reddit_clone_communities.id. Returns
+         *   IRedditCloneCommunity.ISummary.
      */
     community: IRedditCloneCommunity.ISummary;
 
     /**
      * The user who holds the moderator role in this snapshot.
      *
-     * @x-autobe-database-schema-property member
-     * @x-autobe-specification Join via reddit_clone_moderator_snapshots.reddit_clone_member_id to reddit_clone_members.id. Returns IRedditCloneMember.ISummary.
+         * @x-autobe-database-schema-property member
+         * @x-autobe-specification Join via
+         *   reddit_clone_moderator_snapshots.reddit_clone_member_id to
+         *   reddit_clone_members.id. Returns IRedditCloneMember.ISummary.
      */
     member: IRedditCloneMember.ISummary;
 
     /**
      * The user who assigned this moderator role.
      *
-     * @x-autobe-database-schema-property assignedBy
-     * @x-autobe-specification Join via reddit_clone_moderator_snapshots.assigned_by_user_id to reddit_clone_members.id. Returns IRedditCloneMember.ISummary.
+         * @x-autobe-database-schema-property assignedBy
+         * @x-autobe-specification Join via
+         *   reddit_clone_moderator_snapshots.assigned_by_user_id to
+         *   reddit_clone_members.id. Returns IRedditCloneMember.ISummary.
      */
     assignedBy: IRedditCloneMember.ISummary;
   };

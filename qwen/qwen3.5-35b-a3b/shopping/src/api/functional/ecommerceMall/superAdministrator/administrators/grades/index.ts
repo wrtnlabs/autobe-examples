@@ -31,7 +31,8 @@ import { IEcommerceMallAdministrator } from "../../../../../structures/IEcommerc
  * @param props.body Grade change action payload
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor superAdministrator
- * @x-autobe-specification Process grade change action for the target administrator.
+ * @x-autobe-specification Process grade change action for the target
+ *   administrator.
  *
  * Business Rules:
  * - Only super administrators can perform grade changes

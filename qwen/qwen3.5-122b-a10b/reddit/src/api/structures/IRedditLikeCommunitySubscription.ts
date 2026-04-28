@@ -32,8 +32,10 @@ export type IRedditLikeCommunitySubscription = {
    *
    * This is the primary key for the subscription record, generated as a UUID when the subscription is created. It uniquely identifies this specific subscription relationship between a member and a community.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from reddit_like_community_subscriptions.id. Primary key identifier for the subscription record.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_community_subscriptions.id. Primary key identifier for the
+     *   subscription record.
    */
   id: string & tags.Format<"uuid">;
 
@@ -48,8 +50,10 @@ export type IRedditLikeCommunitySubscription = {
    * - Required field, cannot be null
    * - Indexed for query performance
    *
-   * @x-autobe-database-schema-property reddit_like_member_id
-   * @x-autobe-specification Direct mapping from reddit_like_community_subscriptions.reddit_like_member_id. Foreign key to reddit_like_members table.
+     * @x-autobe-database-schema-property reddit_like_member_id
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_community_subscriptions.reddit_like_member_id. Foreign key
+     *   to reddit_like_members table.
    */
   redditLikeMemberId: string & tags.Format<"uuid">;
 
@@ -64,8 +68,10 @@ export type IRedditLikeCommunitySubscription = {
    * - Required field, cannot be null
    * - Part of unique constraint with reddit_like_member_id
    *
-   * @x-autobe-database-schema-property reddit_like_community_id
-   * @x-autobe-specification Direct mapping from reddit_like_community_subscriptions.reddit_like_community_id. Foreign key to reddit_like_communities table.
+     * @x-autobe-database-schema-property reddit_like_community_id
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_community_subscriptions.reddit_like_community_id. Foreign
+     *   key to reddit_like_communities table.
    */
   redditLikeCommunityId: string & tags.Format<"uuid">;
 
@@ -78,8 +84,10 @@ export type IRedditLikeCommunitySubscription = {
    *
    * Used to display who subscribed to the community in subscription lists and audit trails. The summary format provides essential identity information without exposing sensitive authentication data like email or password hash.
    *
-   * @x-autobe-database-schema-property redditLikeMember
-   * @x-autobe-specification Join from reddit_like_member_id to reddit_like_members.id. Returns IRedditLikeMember.ISummary with member identity and profile information.
+     * @x-autobe-database-schema-property redditLikeMember
+     * @x-autobe-specification Join from reddit_like_member_id to
+     *   reddit_like_members.id. Returns IRedditLikeMember.ISummary with member
+     *   identity and profile information.
    */
   member: IRedditLikeMember.ISummary;
 
@@ -92,8 +100,10 @@ export type IRedditLikeCommunitySubscription = {
    *
    * Used to display which community was subscribed to in subscription lists and feed configurations. The summary format provides essential community context without loading full community details or compositions.
    *
-   * @x-autobe-database-schema-property redditLikeCommunity
-   * @x-autobe-specification Join from reddit_like_community_id to reddit_like_communities.id. Returns IRedditLikeCommunity.ISummary with community metadata.
+     * @x-autobe-database-schema-property redditLikeCommunity
+     * @x-autobe-specification Join from reddit_like_community_id to
+     *   reddit_like_communities.id. Returns IRedditLikeCommunity.ISummary with
+     *   community metadata.
    */
   community: IRedditLikeCommunity.ISummary;
 
@@ -108,8 +118,10 @@ export type IRedditLikeCommunitySubscription = {
    * - Includes timezone information
    * - Used for sorting subscriptions chronologically
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from reddit_like_community_subscriptions.created_at. Set automatically when subscription is created.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_community_subscriptions.created_at. Set automatically when
+     *   subscription is created.
    */
   createdAt: string & tags.Format<"date-time">;
 
@@ -124,8 +136,10 @@ export type IRedditLikeCommunitySubscription = {
    * - Includes timezone information
    * - Used for audit trails and cache invalidation
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from reddit_like_community_subscriptions.updated_at. Updated on any record modification.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_community_subscriptions.updated_at. Updated on any record
+     *   modification.
    */
   updatedAt: string & tags.Format<"date-time">;
 
@@ -145,8 +159,10 @@ export type IRedditLikeCommunitySubscription = {
    * - ISO 8601 date-time format when set
    * - Null value when subscription is active
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from reddit_like_community_subscriptions.deleted_at. Null when subscription is active, set when unsubscribed.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_community_subscriptions.deleted_at. Null when subscription
+     *   is active, set when unsubscribed.
    */
   deletedAt: (string & tags.Format<"date-time">) | null;
 };
@@ -171,8 +187,9 @@ export namespace IRedditLikeCommunitySubscription {
      *
      * This is the primary key for the subscription record, generated as a UUID when the subscription is created. It uniquely identifies this specific subscription relationship between a member and a community.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from reddit_like_community_subscriptions.id. Primary key, UUID format.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_community_subscriptions.id. Primary key, UUID format.
      */
     id: string & tags.Format<"uuid">;
 
@@ -185,8 +202,10 @@ export namespace IRedditLikeCommunitySubscription {
      *
      * Used to display which member owns this subscription in list views and to provide context about the subscriber without requiring a separate member lookup.
      *
-     * @x-autobe-database-schema-property redditLikeMember
-     * @x-autobe-specification Join from reddit_like_community_subscriptions.reddit_like_member_id to reddit_like_members.id. Returns IRedditLikeMember.ISummary.
+         * @x-autobe-database-schema-property redditLikeMember
+         * @x-autobe-specification Join from
+         *   reddit_like_community_subscriptions.reddit_like_member_id to
+         *   reddit_like_members.id. Returns IRedditLikeMember.ISummary.
      */
     member: IRedditLikeMember.ISummary;
 
@@ -199,8 +218,10 @@ export namespace IRedditLikeCommunitySubscription {
      *
      * Used to display which community this subscription is for in list views and to provide context about the subscribed community without requiring a separate community lookup.
      *
-     * @x-autobe-database-schema-property redditLikeCommunity
-     * @x-autobe-specification Join from reddit_like_community_subscriptions.reddit_like_community_id to reddit_like_communities.id. Returns IRedditLikeCommunity.ISummary.
+         * @x-autobe-database-schema-property redditLikeCommunity
+         * @x-autobe-specification Join from
+         *   reddit_like_community_subscriptions.reddit_like_community_id to
+         *   reddit_like_communities.id. Returns IRedditLikeCommunity.ISummary.
      */
     community: IRedditLikeCommunity.ISummary;
 
@@ -213,8 +234,10 @@ export namespace IRedditLikeCommunitySubscription {
      *
      * ISO 8601 date-time string with timezone information (e.g., "2024-01-15T10:30:00Z").
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from reddit_like_community_subscriptions.created_at. Timestamp with timezone.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_community_subscriptions.created_at. Timestamp with
+         *   timezone.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -227,8 +250,10 @@ export namespace IRedditLikeCommunitySubscription {
      *
      * ISO 8601 date-time string with timezone information (e.g., "2024-01-15T10:30:00Z").
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from reddit_like_community_subscriptions.updated_at. Timestamp with timezone.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_community_subscriptions.updated_at. Timestamp with
+         *   timezone.
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -246,8 +271,10 @@ export namespace IRedditLikeCommunitySubscription {
      * - `null` = subscription is active
      * - non-null = subscription has been deleted/unsubscribed
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from reddit_like_community_subscriptions.deleted_at. Nullable timestamp with timezone. Null indicates active subscription.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_community_subscriptions.deleted_at. Nullable timestamp
+         *   with timezone. Null indicates active subscription.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };
@@ -280,8 +307,11 @@ export namespace IRedditLikeCommunitySubscription {
      * - If provided: Returns only subscriptions matching this community_id
      * - If omitted: Returns all subscriptions for the authenticated member
      *
-     * @x-autobe-database-schema-property reddit_like_community_id
-     * @x-autobe-specification Optional filter to retrieve subscriptions for a specific community. Maps to reddit_like_community_id column. If provided, only subscriptions matching this community UUID are returned. If omitted, all member subscriptions are included.
+         * @x-autobe-database-schema-property reddit_like_community_id
+         * @x-autobe-specification Optional filter to retrieve subscriptions for
+         *   a specific community. Maps to reddit_like_community_id column. If
+         *   provided, only subscriptions matching this community UUID are
+         *   returned. If omitted, all member subscriptions are included.
      */
     community_id?: (string & tags.Format<"uuid">) | undefined;
 
@@ -300,7 +330,10 @@ export namespace IRedditLikeCommunitySubscription {
      *
      * Combine with {@link offset} or {@link page} for paginated results. Requesting more than 100 records returns an error.
      *
-     * @x-autobe-specification Pagination limit parameter. Controls maximum number of records returned per page. Valid range: 1-100. Server enforces maximum of 100 to prevent excessive data retrieval. Used in SQL LIMIT clause.
+         * @x-autobe-specification Pagination limit parameter. Controls maximum
+         *   number of records returned per page. Valid range: 1-100. Server
+         *   enforces maximum of 100 to prevent excessive data retrieval. Used
+         *   in SQL LIMIT clause.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -324,7 +357,10 @@ export namespace IRedditLikeCommunitySubscription {
      *
      * Alternatively, use {@link page} for 1-indexed page-based pagination.
      *
-     * @x-autobe-specification Pagination offset parameter. Number of records to skip before starting to return results. Used in SQL OFFSET clause. Must be non-negative integer. Combined with limit to implement cursor-based pagination.
+         * @x-autobe-specification Pagination offset parameter. Number of
+         *   records to skip before starting to return results. Used in SQL
+         *   OFFSET clause. Must be non-negative integer. Combined with limit to
+         *   implement cursor-based pagination.
      */
     offset?: (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
 
@@ -348,7 +384,10 @@ export namespace IRedditLikeCommunitySubscription {
      *
      * If not specified, results are sorted by `created_at:desc` (newest first).
      *
-     * @x-autobe-specification Sorting specification for query results. Format: 'field:direction' where field is 'created_at' and direction is 'asc' or 'desc'. Default: 'created_at:desc' (newest subscriptions first). Used in SQL ORDER BY clause.
+         * @x-autobe-specification Sorting specification for query results.
+         *   Format: 'field:direction' where field is 'created_at' and direction
+         *   is 'asc' or 'desc'. Default: 'created_at:desc' (newest
+         *   subscriptions first). Used in SQL ORDER BY clause.
      */
     sort?: string | undefined;
 
@@ -371,7 +410,10 @@ export namespace IRedditLikeCommunitySubscription {
      *
      * Internal offset calculation: `offset = (page - 1) * limit`
      *
-     * @x-autobe-specification 1-indexed page number for pagination. Defaults to 1 (first page) if null or omitted. Converted to offset internally: offset = (page - 1) * limit. Used for page-based pagination alternative to offset.
+         * @x-autobe-specification 1-indexed page number for pagination.
+         *   Defaults to 1 (first page) if null or omitted. Converted to offset
+         *   internally: offset = (page - 1) * limit. Used for page-based
+         *   pagination alternative to offset.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };
@@ -413,8 +455,11 @@ export namespace IRedditLikeCommunitySubscription {
      * - Create posts within this community
      * - View community-specific content and features
      *
-     * @x-autobe-database-schema-property reddit_like_community_id
-     * @x-autobe-specification Direct mapping from reddit_like_community_subscriptions.reddit_like_community_id. Required, valid UUID format. Used to identify the target community for subscription.
+         * @x-autobe-database-schema-property reddit_like_community_id
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_community_subscriptions.reddit_like_community_id.
+         *   Required, valid UUID format. Used to identify the target community
+         *   for subscription.
      */
     communityId: string & tags.Format<"uuid">;
   };

@@ -24,11 +24,11 @@ export class CommunityplatformMemberProfileController {
    * Error handling: if the member is unauthenticated or the profile linkage cannot be resolved for the current session/actor, the operation must deny the request with an appropriate authorization/resource error. If the profile is already deleted (deleted_at is set), the service should treat the request as idempotent and still return success or a consistent already-deleted result, depending on the platform error policy.
    *
    * @param connection
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1) Authorization & context
-   * - Require an authenticated member actor.
-   * - Resolve the current member identity (community_platform_members.id) from the session.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification 1) Authorization & context - Require an
+     *   authenticated member actor. - Resolve the current member identity
+     *   (community_platform_members.id) from the session.
    *
    * 2) Load and validate target
    * - Query community_platform_user_profiles where community_platform_member_id equals the current member id.

@@ -24,9 +24,9 @@ export class CommunityplatformMemberCommunitiesCommentsController {
    * @param connection
    * @param communityId Unique identifier of the community where the comment exists (UUID format). The comment must belong to a post within this community.
    * @param commentId Unique identifier of the comment to delete (UUID format). The authenticated user must be either the comment author or a moderator of the community.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation steps:
    *
    * 1. AUTHORIZATION CHECK:
    *    - Extract authenticated member ID from JWT session

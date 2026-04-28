@@ -22,7 +22,8 @@ export * as permissions from "./permissions/index";
  * @param props.body Role creation data including name, optional description, and list of permission codes to grant to this role.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Create a new custom role record in hrm_time_track_roles table.
+ * @x-autobe-specification Create a new custom role record in
+ *   hrm_time_track_roles table.
  *
  * 1. Extract organization ID from authenticated user's context (token/claims)
  * 2. Validate user has organization_management permission for the target organization
@@ -132,7 +133,8 @@ export namespace create {
  * @param props.body Search criteria for role listing including name filter, built-in status filter, sorting preferences, and pagination parameters.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query hrm_time_track_roles table with organization scoping.
+ * @x-autobe-specification Query hrm_time_track_roles table with organization
+ *   scoping.
  *
  * 1. Filter by hrm_time_track_organization_id from authenticated user's organization context
  * 2. Exclude soft-deleted roles (deleted_at IS NULL) unless explicitly requested
@@ -242,7 +244,8 @@ export namespace index {
  * @param props.roleId Unique identifier of the role to retrieve (global scope)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query hrm_time_track_roles table for a single record where id equals the provided roleId parameter.
+ * @x-autobe-specification Query hrm_time_track_roles table for a single record
+ *   where id equals the provided roleId parameter.
  *
  * 1. Validate that roleId is a valid UUID format
  * 2. Execute SELECT query on hrm_time_track_roles with WHERE id = ?
@@ -336,7 +339,8 @@ export namespace at {
  * @param props.body Update payload containing new role attributes. Name and description can be updated for custom roles. Built-in roles only allow description updates.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Update an existing role in the hrm_time_track_roles table by roleId.
+ * @x-autobe-specification Update an existing role in the hrm_time_track_roles
+ *   table by roleId.
  *
  * Validation Rules:
  * 1. Verify the role exists and belongs to the current organization context

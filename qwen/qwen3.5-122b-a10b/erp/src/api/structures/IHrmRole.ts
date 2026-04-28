@@ -22,8 +22,9 @@ export type IHrmRole = {
    *
    * Automatically generated UUID assigned when the role is created. Serves as the primary key for all role-related operations and references.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from hrm_roles.id. Auto-generated UUID on creation.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from hrm_roles.id. Auto-generated
+     *   UUID on creation.
    */
   id: string & tags.Format<"uuid">;
 
@@ -32,8 +33,9 @@ export type IHrmRole = {
    *
    * Must be unique within the organization. Built-in roles use fixed names: "Owner", "Manager", "Employee". Custom roles can have any name chosen by the organization owner, but cannot conflict with built-in role names.
    *
-   * @x-autobe-database-schema-property name
-   * @x-autobe-specification Direct mapping from hrm_roles.name. Unique within organization via (hrm_organization_id, name) constraint.
+     * @x-autobe-database-schema-property name
+     * @x-autobe-specification Direct mapping from hrm_roles.name. Unique within
+     *   organization via (hrm_organization_id, name) constraint.
    */
   name: string;
 
@@ -42,8 +44,9 @@ export type IHrmRole = {
    *
    * Built-in roles (Owner, Manager, Employee) have `is_builtin = true` and cannot be deleted or modified. Custom roles have `is_builtin = false` and can be deleted if no employees are assigned to them.
    *
-   * @x-autobe-database-schema-property is_builtin
-   * @x-autobe-specification Direct mapping from hrm_roles.is_builtin. System-set flag indicating role type.
+     * @x-autobe-database-schema-property is_builtin
+     * @x-autobe-specification Direct mapping from hrm_roles.is_builtin.
+     *   System-set flag indicating role type.
    */
   is_builtin: boolean;
 
@@ -52,8 +55,9 @@ export type IHrmRole = {
    *
    * Custom roles typically include descriptions to help organization members understand the role's scope. Built-in roles may have system-generated descriptions or null values.
    *
-   * @x-autobe-database-schema-property description
-   * @x-autobe-specification Direct mapping from hrm_roles.description. Optional field, nullable.
+     * @x-autobe-database-schema-property description
+     * @x-autobe-specification Direct mapping from hrm_roles.description.
+     *   Optional field, nullable.
    */
   description?: string | null | undefined;
 
@@ -62,8 +66,9 @@ export type IHrmRole = {
    *
    * Roles are scoped to a single organization and cannot be shared across organizations. Each role must belong to exactly one organization, enforced by the hrm_organization_id foreign key constraint.
    *
-   * @x-autobe-database-schema-property organization
-   * @x-autobe-specification Join from hrm_roles.hrm_organization_id to hrm_organizations.id. Returns IHrmOrganization.ISummary via INNER JOIN.
+     * @x-autobe-database-schema-property organization
+     * @x-autobe-specification Join from hrm_roles.hrm_organization_id to
+     *   hrm_organizations.id. Returns IHrmOrganization.ISummary via INNER JOIN.
    */
   organization: IHrmOrganization.ISummary;
 
@@ -72,7 +77,12 @@ export type IHrmRole = {
    *
    * Permissions are assigned through the hrm_role_permissions junction table. The array contains permission summaries with permission_name and description fields. Custom roles must have at least one permission assigned; built-in roles have predefined permission sets managed by the system.
    *
-   * @x-autobe-specification Computed via JOIN: hrm_roles → hrm_role_permissions (ON hrm_roles.id = hrm_role_permissions.hrm_role_id) → hrm_permissions (ON hrm_role_permissions.hrm_permission_id = hrm_permissions.id). Returns array of IHrmPermission.ISummary objects. Each role must have at least one permission assigned.
+     * @x-autobe-specification Computed via JOIN: hrm_roles →
+     *   hrm_role_permissions (ON hrm_roles.id =
+     *   hrm_role_permissions.hrm_role_id) → hrm_permissions (ON
+     *   hrm_role_permissions.hrm_permission_id = hrm_permissions.id). Returns
+     *   array of IHrmPermission.ISummary objects. Each role must have at least
+     *   one permission assigned.
    */
   permissions: IHrmPermission.ISummary[];
 
@@ -81,8 +91,9 @@ export type IHrmRole = {
    *
    * Automatically set when the role record is inserted. Built-in roles are created automatically when an organization is initialized; custom roles are created when organization owners define new role configurations.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from hrm_roles.created_at. Auto-set on role creation via database default.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from hrm_roles.created_at.
+     *   Auto-set on role creation via database default.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -91,8 +102,9 @@ export type IHrmRole = {
    *
    * Updated whenever role properties (name, description) are changed. Built-in role properties typically cannot be modified, so their updated_at remains at creation time.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from hrm_roles.updated_at. Auto-updated on any field modification via database trigger.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from hrm_roles.updated_at.
+     *   Auto-updated on any field modification via database trigger.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -101,8 +113,9 @@ export type IHrmRole = {
    *
    * Custom roles can be soft-deleted when no longer needed, preserving historical employee assignments. Built-in roles cannot be deleted. Null value indicates the role is active. When set, the role is marked for deletion but retained for audit purposes.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from hrm_roles.deleted_at. Nullable timestamp set on soft-delete operation.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from hrm_roles.deleted_at.
+     *   Nullable timestamp set on soft-delete operation.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -141,7 +154,10 @@ export namespace IHrmRole {
      * **Usage**
      * Used in role listing endpoints to filter roles by organization. The server validates the organization exists before executing the query.
      *
-     * @x-autobe-specification Required filter parameter. Maps to hrm_roles.hrm_organization_id column for JOIN filtering. Validates organization exists and user has access. Used in WHERE clause: hrm_roles.hrm_organization_id = :organization_id
+         * @x-autobe-specification Required filter parameter. Maps to
+         *   hrm_roles.hrm_organization_id column for JOIN filtering. Validates
+         *   organization exists and user has access. Used in WHERE clause:
+         *   hrm_roles.hrm_organization_id = :organization_id
      */
     organization_id: string & tags.Format<"uuid">;
 
@@ -158,7 +174,9 @@ export namespace IHrmRole {
      * **Usage**
      * Combine with other filters to narrow search results. For example, filter by is_builtin=false and name="admin" to find custom admin roles.
      *
-     * @x-autobe-specification Optional filter parameter. Maps to hrm_roles.name column. Uses ILIKE partial match (case-insensitive) for fuzzy search. Applied as: hrm_roles.name ILIKE :name%
+         * @x-autobe-specification Optional filter parameter. Maps to
+         *   hrm_roles.name column. Uses ILIKE partial match (case-insensitive)
+         *   for fuzzy search. Applied as: hrm_roles.name ILIKE :name%
      */
     name?: string | undefined;
 
@@ -178,7 +196,10 @@ export namespace IHrmRole {
      * **Custom Roles**
      * Custom roles are organization-defined and can be created, updated, and deleted (if no employees are assigned). They allow organizations to implement custom permission configurations.
      *
-     * @x-autobe-specification Optional filter parameter. Maps to hrm_roles.is_builtin column. Boolean filter: true returns only built-in roles (Owner, Manager, Employee), false returns only custom roles. Applied as: hrm_roles.is_builtin = :is_builtin
+         * @x-autobe-specification Optional filter parameter. Maps to
+         *   hrm_roles.is_builtin column. Boolean filter: true returns only
+         *   built-in roles (Owner, Manager, Employee), false returns only
+         *   custom roles. Applied as: hrm_roles.is_builtin = :is_builtin
      */
     is_builtin?: boolean | undefined;
 
@@ -198,7 +219,10 @@ export namespace IHrmRole {
      * - page=2, pageSize=10: Returns records 11-20 (offset 10)
      * - page=3, pageSize=10: Returns records 21-30 (offset 20)
      *
-     * @x-autobe-specification Pagination parameter for offset-based pagination. 1-indexed page number. Defaults to 1 if not provided. Used to calculate OFFSET: OFFSET = (page - 1) * pageSize. Minimum value is 1.
+         * @x-autobe-specification Pagination parameter for offset-based
+         *   pagination. 1-indexed page number. Defaults to 1 if not provided.
+         *   Used to calculate OFFSET: OFFSET = (page - 1) * pageSize. Minimum
+         *   value is 1.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -219,7 +243,10 @@ export namespace IHrmRole {
      * - pageSize=10: Returns 10 records per page (good for UI list views)
      * - pageSize=100: Returns 100 records per page (good for bulk exports)
      *
-     * @x-autobe-specification Pagination parameter controlling records per page. Minimum 1, maximum 100. Used in LIMIT clause: LIMIT = pageSize. Server enforces upper bound to prevent excessive resource consumption.
+         * @x-autobe-specification Pagination parameter controlling records per
+         *   page. Minimum 1, maximum 100. Used in LIMIT clause: LIMIT =
+         *   pageSize. Server enforces upper bound to prevent excessive resource
+         *   consumption.
      */
     pageSize?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -241,7 +268,10 @@ export namespace IHrmRole {
      * **Use Case**
      * Some API clients prefer the term "limit" over "pageSize" for pagination. This parameter provides compatibility with such clients.
      *
-     * @x-autobe-specification Alternative pagination parameter to pageSize. Maximum records per page. If provided, takes precedence over pageSize. Minimum 0, defaults to 100 if null or omitted. Used in LIMIT clause.
+         * @x-autobe-specification Alternative pagination parameter to pageSize.
+         *   Maximum records per page. If provided, takes precedence over
+         *   pageSize. Minimum 0, defaults to 100 if null or omitted. Used in
+         *   LIMIT clause.
      */
     limit?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };
@@ -267,8 +297,9 @@ export namespace IHrmRole {
      *
      * This is the primary key used to reference this role in API operations and database relationships.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from hrm_roles.id. UUID primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from hrm_roles.id. UUID
+         *   primary key.
      */
     id: string & tags.Format<"uuid">;
 
@@ -279,8 +310,9 @@ export namespace IHrmRole {
      *
      * Role names must be unique within each organization.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from hrm_roles.name. Unique within organization.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from hrm_roles.name. Unique
+         *   within organization.
      */
     name: string;
 
@@ -289,8 +321,9 @@ export namespace IHrmRole {
      *
      * Built-in roles (Owner, Manager, Employee) have is_builtin = true and cannot be deleted. Custom roles have is_builtin = false and can be deleted if no employees are assigned to them.
      *
-     * @x-autobe-database-schema-property is_builtin
-     * @x-autobe-specification Direct mapping from hrm_roles.is_builtin. Boolean flag.
+         * @x-autobe-database-schema-property is_builtin
+         * @x-autobe-specification Direct mapping from hrm_roles.is_builtin.
+         *   Boolean flag.
      */
     is_builtin: boolean;
 
@@ -299,8 +332,9 @@ export namespace IHrmRole {
      *
      * Custom roles typically include descriptions to help organization members understand the role's scope. Built-in roles may have system-generated descriptions or null values.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from hrm_roles.description. Nullable string.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from hrm_roles.description.
+         *   Nullable string.
      */
     description?: string | null | undefined;
 
@@ -311,8 +345,10 @@ export namespace IHrmRole {
      *
      * Retrieved via JOIN from hrm_roles.hrm_organization_id to hrm_organizations.id.
      *
-     * @x-autobe-database-schema-property organization
-     * @x-autobe-specification Belongs-to relation via JOIN on hrm_organization_id → hrm_organizations.id. Returns IHrmOrganization.ISummary.
+         * @x-autobe-database-schema-property organization
+         * @x-autobe-specification Belongs-to relation via JOIN on
+         *   hrm_organization_id → hrm_organizations.id. Returns
+         *   IHrmOrganization.ISummary.
      */
     organization: IHrmOrganization.ISummary;
 
@@ -321,8 +357,9 @@ export namespace IHrmRole {
      *
      * Built-in roles are created automatically when an organization is initialized. Custom roles are created when organization owners define new role configurations.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from hrm_roles.created_at. Timestamp with timezone.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from hrm_roles.created_at.
+         *   Timestamp with timezone.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -331,8 +368,9 @@ export namespace IHrmRole {
      *
      * Updated whenever role properties (name, description) are changed. Built-in role properties typically cannot be modified.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from hrm_roles.updated_at. Timestamp with timezone.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from hrm_roles.updated_at.
+         *   Timestamp with timezone.
      */
     updated_at: string & tags.Format<"date-time">;
   };
@@ -356,15 +394,16 @@ export namespace IHrmRole {
    */
   export type ICreate = {
     /**
-     * @x-autobe-database-schema-property name
+         * @x-autobe-database-schema-property name
      */
     name: string;
 
     /**
      * Optional description explaining the role's purpose and responsibilities.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from hrm_roles.description. Optional nullable field.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from hrm_roles.description.
+         *   Optional nullable field.
      */
     description?: string | null | undefined;
   };
@@ -388,8 +427,9 @@ export namespace IHrmRole {
      *
      * This is the role's primary key, represented as a UUID. It uniquely identifies the role within the system and is used for referencing the role in API operations.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from hrm_roles.id. Primary key, UUID format, required.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from hrm_roles.id. Primary
+         *   key, UUID format, required.
      */
     id: string & tags.Format<"uuid">;
 
@@ -400,8 +440,9 @@ export namespace IHrmRole {
      *
      * **Uniqueness**: Role names must be unique within each organization, enforced by a database unique constraint on (hrm_organization_id, name).
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from hrm_roles.name. Required, unique within organization.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from hrm_roles.name. Required,
+         *   unique within organization.
      */
     name: string;
 
@@ -417,8 +458,9 @@ export namespace IHrmRole {
      *
      * Custom roles have `is_builtin=false` and can be created, updated, or deleted by organization owners (subject to validation constraints).
      *
-     * @x-autobe-database-schema-property is_builtin
-     * @x-autobe-specification Direct mapping from hrm_roles.is_builtin. Boolean, required.
+         * @x-autobe-database-schema-property is_builtin
+         * @x-autobe-specification Direct mapping from hrm_roles.is_builtin.
+         *   Boolean, required.
      */
     is_builtin: boolean;
 
@@ -429,8 +471,9 @@ export namespace IHrmRole {
      *
      * This field is optional and can be null for roles where no additional description is needed.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from hrm_roles.description. Nullable string.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from hrm_roles.description.
+         *   Nullable string.
      */
     description: string | null;
 
@@ -441,8 +484,9 @@ export namespace IHrmRole {
      *
      * Format: ISO 8601 datetime with timezone (e.g., "2024-01-15T10:30:00Z").
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from hrm_roles.created_at. DateTime with timezone, required.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from hrm_roles.created_at.
+         *   DateTime with timezone, required.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -453,8 +497,9 @@ export namespace IHrmRole {
      *
      * Format: ISO 8601 datetime with timezone (e.g., "2024-01-15T10:30:00Z").
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from hrm_roles.updated_at. DateTime with timezone, required.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from hrm_roles.updated_at.
+         *   DateTime with timezone, required.
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -468,8 +513,9 @@ export namespace IHrmRole {
      *
      * Soft deletion allows organizations to recover accidentally deleted roles while maintaining audit trails of role assignments.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from hrm_roles.deleted_at. Nullable DateTime with timezone. Null indicates active role.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from hrm_roles.deleted_at.
+         *   Nullable DateTime with timezone. Null indicates active role.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
 
@@ -487,7 +533,11 @@ export namespace IHrmRole {
      *
      * An empty array indicates the role has no permissions assigned.
      *
-     * @x-autobe-specification Computed via JOIN hrm_role_permissions ON hrm_role_id = role.id JOIN hrm_permissions ON hrm_permission_id = role_permissions.hrm_permission_id. Returns array of IHrmPermission.ISummary objects with permission_name and description.
+         * @x-autobe-specification Computed via JOIN hrm_role_permissions ON
+         *   hrm_role_id = role.id JOIN hrm_permissions ON hrm_permission_id =
+         *   role_permissions.hrm_permission_id. Returns array of
+         *   IHrmPermission.ISummary objects with permission_name and
+         *   description.
      */
     permissions: IHrmPermission.ISummary[];
   };
@@ -522,8 +572,10 @@ export namespace IHrmRole {
      * - Cannot be empty string
      * - Built-in roles (Owner, Manager, Employee) cannot be renamed
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from hrm_roles.name. Required field for role identification. Must be unique within organization scope. Validated for empty string.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from hrm_roles.name. Required
+         *   field for role identification. Must be unique within organization
+         *   scope. Validated for empty string.
      */
     name?: string | undefined;
 
@@ -538,8 +590,9 @@ export namespace IHrmRole {
      * - Recommended for custom roles to clarify their purpose
      * - Not displayed to end users in role selection, only in administrative interfaces
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from hrm_roles.description. Nullable string field. Optional role description.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from hrm_roles.description.
+         *   Nullable string field. Optional role description.
      */
     description?: string | null | undefined;
   };
@@ -563,7 +616,11 @@ export namespace IHrmRole {
      *
      * This operation replaces all current permissions - any permission not included in this array will be removed from the role.
      *
-     * @x-autobe-specification Array of permission IDs from hrm_permissions table. Each ID must be validated to exist before the operation proceeds. The server will delete all existing hrm_role_permissions records for this role, then insert new records mapping this role to each permission ID in the array.
+         * @x-autobe-specification Array of permission IDs from hrm_permissions
+         *   table. Each ID must be validated to exist before the operation
+         *   proceeds. The server will delete all existing hrm_role_permissions
+         *   records for this role, then insert new records mapping this role to
+         *   each permission ID in the array.
      */
     permission_ids: (string & tags.Format<"uuid">)[] & tags.MinItems<1>;
   };

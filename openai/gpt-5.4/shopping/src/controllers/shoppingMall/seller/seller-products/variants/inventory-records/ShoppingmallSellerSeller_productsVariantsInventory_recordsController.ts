@@ -29,9 +29,10 @@ export class ShoppingmallSellerSeller_productsVariantsInventory_recordsControlle
    * @param productId Target seller product identifier
    * @param variantId Target product variant identifier within the product
    * @param body Inventory stock movement details to record
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Implement a seller-scoped creation flow for `shopping_mall_inventory_records`.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Implement a seller-scoped creation flow for
+     *   `shopping_mall_inventory_records`.
    *
    * 1. Authenticate the caller as a seller.
    * 2. Load the target `shopping_mall_products` row by `productId` and confirm it exists, is not deleted for seller management purposes, and is owned by the authenticated seller through `shopping_mall_seller_id`.
@@ -89,9 +90,10 @@ export class ShoppingmallSellerSeller_productsVariantsInventory_recordsControlle
    * @param productId Target seller product identifier
    * @param variantId Target product variant identifier scoped to the specified product
    * @param body Pagination, filtering, and sorting options for inventory history browsing
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Implement this operation as a seller-scoped inventory ledger query for a single product variant.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Implement this operation as a seller-scoped
+     *   inventory ledger query for a single product variant.
    *
    * 1. Authenticate the caller as a seller.
    * 2. Load the target product from `shopping_mall_products` by `id = productId` and `deleted_at IS NULL` unless the platform intentionally allows viewing deleted owned products in seller tooling. Validate that `shopping_mall_seller_id` matches the authenticated seller account. If not found or not owned, reject the request.
@@ -145,9 +147,11 @@ export class ShoppingmallSellerSeller_productsVariantsInventory_recordsControlle
    * @param productId Target seller product identifier
    * @param variantId Target product variant identifier within the product
    * @param inventoryRecordId Target inventory history record identifier within the variant
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Load the target inventory record by traversing the declared hierarchy instead of querying the inventory record in isolation.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Load the target inventory record by traversing
+     *   the declared hierarchy instead of querying the inventory record in
+     *   isolation.
    *
    * 1. Authorize the caller as a seller or administrator-level actor. For seller access, resolve the authenticated seller account and require that `shopping_mall_products.shopping_mall_seller_id` matches that actor. For administrator access, allow oversight access under platform governance rules.
    * 2. Query `shopping_mall_products` by `id = productId` and normal active-record visibility rules. Reject when not found or not accessible.

@@ -16,8 +16,9 @@ export type IEcommerceMallMember = {
    *
    * This is the primary key that uniquely identifies the customer account in the database. The UUID format ensures global uniqueness and is used as the reference when accessing customer-related endpoints.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_members.id. UUID primary key identifier.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from ecommerce_mall_members.id.
+     *   UUID primary key identifier.
    */
   id: string & tags.Format<"uuid">;
 
@@ -26,8 +27,9 @@ export type IEcommerceMallMember = {
    *
    * Customers must provide a valid email during registration that is verified via email verification token. Once verified, the email cannot be changed to prevent account hijacking. The email is used for authentication, order notifications, and platform communication.
    *
-   * @x-autobe-database-schema-property email
-   * @x-autobe-specification Direct mapping from ecommerce_mall_members.email. Verified email address with unique constraint.
+     * @x-autobe-database-schema-property email
+     * @x-autobe-specification Direct mapping from ecommerce_mall_members.email.
+     *   Verified email address with unique constraint.
    */
   email: string;
 
@@ -36,8 +38,10 @@ export type IEcommerceMallMember = {
    *
    * Customers can update their display name through profile management. Each modification creates an immutable snapshot record to preserve the name history for audit purposes. The display name appears publicly on product reviews and order information shared with other users.
    *
-   * @x-autobe-database-schema-property display_name
-   * @x-autobe-specification Direct mapping from ecommerce_mall_members.display_name. Nullable public-facing name with snapshot tracking on changes.
+     * @x-autobe-database-schema-property display_name
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_members.display_name. Nullable public-facing name with
+     *   snapshot tracking on changes.
    */
   display_name: string | null;
 
@@ -46,8 +50,10 @@ export type IEcommerceMallMember = {
    *
    * Customers can update their phone number through profile management. Each modification creates an immutable snapshot record to preserve the phone number history for audit purposes. The phone number is used for SMS notifications during delivery and for account recovery via password reset.
    *
-   * @x-autobe-database-schema-property phone_number
-   * @x-autobe-specification Direct mapping from ecommerce_mall_members.phone_number. Nullable mobile number with snapshot tracking on changes.
+     * @x-autobe-database-schema-property phone_number
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_members.phone_number. Nullable mobile number with
+     *   snapshot tracking on changes.
    */
   phone_number: string | null;
 
@@ -56,8 +62,9 @@ export type IEcommerceMallMember = {
    *
    * This timestamp is set automatically when the account is registered and is immutable. It is useful for tracking account age, identifying new users, and audit purposes.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_members.created_at. ISO 8601 timestamp with timezone.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_members.created_at. ISO 8601 timestamp with timezone.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -66,8 +73,10 @@ export type IEcommerceMallMember = {
    *
    * This timestamp is automatically updated whenever the customer's profile is modified (display_name, phone_number changes). It helps identify recently updated accounts and track profile change activity.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_members.updated_at. ISO 8601 timestamp with timezone, updated on each profile modification.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_members.updated_at. ISO 8601 timestamp with timezone,
+     *   updated on each profile modification.
    */
   updated_at: string & tags.Format<"date-time">;
 };
@@ -89,8 +98,10 @@ export namespace IEcommerceMallMember {
      *
      * Must match an existing customer account in the database. Email is case-insensitive for login purposes. After account verification via email token, the email cannot be changed to prevent account hijacking.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from ecommerce_mall_members.email. Must exist in database. Looked up via @@unique([email]) index for authentication.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_members.email. Must exist in database. Looked up via
+         *   @@unique([email]) index for authentication.
      */
     email: string & tags.Format<"email">;
 
@@ -99,8 +110,10 @@ export namespace IEcommerceMallMember {
      *
      * Must match the BCrypt hash stored in the database. Passwords are never transmitted in plain text over the network; use HTTPS to encrypt the connection. Minimum and complexity requirements are enforced at registration time.
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification Plain text password that gets hashed using BCrypt before storing to ecommerce_mall_members.password_hash. Server-side transformation from input to stored hash.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification Plain text password that gets hashed using
+         *   BCrypt before storing to ecommerce_mall_members.password_hash.
+         *   Server-side transformation from input to stored hash.
      */
     password: string & tags.Format<"password">;
 
@@ -109,7 +122,10 @@ export namespace IEcommerceMallMember {
      *
      * Captured from the request headers to track the login source. Useful for security auditing, fraud detection, and analytics. Must be a valid URI format.
      *
-     * @x-autobe-specification Computed from request headers: current page URL. Captured during login to track the login source for security auditing and analytics. Stored in ecommerce_mall_member_sessions table.
+         * @x-autobe-specification Computed from request headers: current page
+         *   URL. Captured during login to track the login source for security
+         *   auditing and analytics. Stored in ecommerce_mall_member_sessions
+         *   table.
      */
     href: string & tags.Format<"uri">;
 
@@ -118,7 +134,10 @@ export namespace IEcommerceMallMember {
      *
      * Captured from the HTTP Referrer header to track where users come from during login. Useful for analytics and security auditing. May be empty or null if the browser does not send a referrer header.
      *
-     * @x-autobe-specification Computed from request headers: referrer HTTP header. Captured during login to track the referral source for analytics and security auditing. Stored in ecommerce_mall_member_sessions table.
+         * @x-autobe-specification Computed from request headers: referrer HTTP
+         *   header. Captured during login to track the referral source for
+         *   analytics and security auditing. Stored in
+         *   ecommerce_mall_member_sessions table.
      */
     referrer: string & tags.Format<"uri">;
 
@@ -127,7 +146,11 @@ export namespace IEcommerceMallMember {
      *
      * Captured from the request to track the login source. Used for fraud detection, rate limiting, and security analysis. Optional in server-side rendering (SSR) contexts; the server will capture it as fallback if not provided by the client.
      *
-     * @x-autobe-specification Computed from request headers: client IP address. Optional for server-side rendering contexts where the client cannot know its own IP. Server captures IP as fallback. Captured during login for security auditing. Stored in ecommerce_mall_member_sessions table.
+         * @x-autobe-specification Computed from request headers: client IP
+         *   address. Optional for server-side rendering contexts where the
+         *   client cannot know its own IP. Server captures IP as fallback.
+         *   Captured during login for security auditing. Stored in
+         *   ecommerce_mall_member_sessions table.
      */
     ip?: (string & tags.Format<"ipv4">) | undefined;
   };
@@ -146,11 +169,11 @@ export namespace IEcommerceMallMember {
    */
   export type ISummary = {
     /**
-     * @x-autobe-database-schema-property id
+         * @x-autobe-database-schema-property id
      */
     id: string & tags.Format<"uuid">;
     /**
-     * @x-autobe-database-schema-property email
+         * @x-autobe-database-schema-property email
      */
     email: string;
 
@@ -159,8 +182,9 @@ export namespace IEcommerceMallMember {
      *
      * This is an optional field that customers can set during registration or update later. When null, the system may fall back to using the email address or display a default value.
      *
-     * @x-autobe-database-schema-property display_name
-     * @x-autobe-specification Nullable field from display_name? in ecommerce_mall_members. Display name is optional for customers.
+         * @x-autobe-database-schema-property display_name
+         * @x-autobe-specification Nullable field from display_name? in
+         *   ecommerce_mall_members. Display name is optional for customers.
      */
     display_name: string | null;
 
@@ -169,20 +193,21 @@ export namespace IEcommerceMallMember {
      *
      * This is an optional field used for SMS notifications during delivery and account recovery. When null, the customer will only receive email communications.
      *
-     * @x-autobe-database-schema-property phone_number
-     * @x-autobe-specification Nullable field from phone_number? in ecommerce_mall_members. Phone number is optional for customers.
+         * @x-autobe-database-schema-property phone_number
+         * @x-autobe-specification Nullable field from phone_number? in
+         *   ecommerce_mall_members. Phone number is optional for customers.
      */
     phone_number: string | null;
     /**
-     * @x-autobe-database-schema-property created_at
+         * @x-autobe-database-schema-property created_at
      */
     created_at: string & tags.Format<"date-time">;
     /**
-     * @x-autobe-database-schema-property updated_at
+         * @x-autobe-database-schema-property updated_at
      */
     updated_at: string & tags.Format<"date-time">;
     /**
-     * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-database-schema-property deleted_at
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };
@@ -204,7 +229,13 @@ export namespace IEcommerceMallMember {
      *
      * The refresh token enables seamless re-authentication without requiring the user to re-enter credentials. Store this token securely in your client application and include it in every refresh request. Each refresh operation invalidates the old refresh token to prevent replay attacks.
      *
-     * @x-autobe-specification User-provided JWT refresh token string. Validated by looking up token in ecommerce_mall_member_sessions table by access_token column (stored in refresh_token column per schema), checking expired_at > now(), and finding corresponding member record. On success: generates new access_token and refresh_token, updates session record with new tokens and new expired_at.
+         * @x-autobe-specification User-provided JWT refresh token string.
+         *   Validated by looking up token in ecommerce_mall_member_sessions
+         *   table by access_token column (stored in refresh_token column per
+         *   schema), checking expired_at > now(), and finding corresponding
+         *   member record. On success: generates new access_token and
+         *   refresh_token, updates session record with new tokens and new
+         *   expired_at.
      */
     refresh_token: string;
   };
@@ -225,8 +256,12 @@ export namespace IEcommerceMallMember {
      *
      * Customers can update their display name through profile management. Each modification creates an immutable snapshot record to preserve the name history for audit purposes. The display name appears publicly on product reviews and order information shared with other users.
      *
-     * @x-autobe-database-schema-property display_name
-     * @x-autobe-specification Direct mapping from ecommerce_mall_members.display_name. Optional partial update field - only include if updating. If provided, must not be empty and must contain only allowed characters (alphabetic, spaces, hyphens, apostrophes, and periods).
+         * @x-autobe-database-schema-property display_name
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_members.display_name. Optional partial update field
+         *   - only include if updating. If provided, must not be empty and must
+         *   contain only allowed characters (alphabetic, spaces, hyphens,
+         *   apostrophes, and periods).
      */
     display_name?: string | null | undefined;
 
@@ -235,8 +270,11 @@ export namespace IEcommerceMallMember {
      *
      * Customers can update their phone number through profile management. Each modification creates an immutable snapshot record to preserve the phone number history for audit purposes. The phone number is used for SMS notifications during delivery and for account recovery via password reset.
      *
-     * @x-autobe-database-schema-property phone_number
-     * @x-autobe-specification Direct mapping from ecommerce_mall_members.phone_number. Optional partial update field - only include if updating. If provided, must be in valid phone number format with country code prefix.
+         * @x-autobe-database-schema-property phone_number
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_members.phone_number. Optional partial update field
+         *   - only include if updating. If provided, must be in valid phone
+         *   number format with country code prefix.
      */
     phone_number?: string | null | undefined;
   };
@@ -277,7 +315,7 @@ export namespace IEcommerceMallMember {
    */
   export type IRequest = {
     /**
-     * @x-autobe-database-schema-property email
+         * @x-autobe-database-schema-property email
      */
     email?: string | undefined;
 
@@ -286,8 +324,9 @@ export namespace IEcommerceMallMember {
      *
      * Search customers by display name using LIKE operation. Set to NULL to disable this filter. Example: "John" would match "John Smith", "Johnny", etc.
      *
-     * @x-autobe-database-schema-property display_name
-     * @x-autobe-specification Filter by display name (nullable). Use NULL when not filtering.
+         * @x-autobe-database-schema-property display_name
+         * @x-autobe-specification Filter by display name (nullable). Use NULL
+         *   when not filtering.
      */
     display_name?: string | null | undefined;
 
@@ -296,8 +335,9 @@ export namespace IEcommerceMallMember {
      *
      * Search customers by phone number using LIKE operation. Set to NULL to disable this filter.
      *
-     * @x-autobe-database-schema-property phone_number
-     * @x-autobe-specification Filter by phone number (nullable). Use NULL when not filtering.
+         * @x-autobe-database-schema-property phone_number
+         * @x-autobe-specification Filter by phone number (nullable). Use NULL
+         *   when not filtering.
      */
     phone_number?: string | null | undefined;
     from_date?: (string & tags.Format<"date">) | undefined;
@@ -331,8 +371,9 @@ export namespace IEcommerceMallMember {
      *
      * This ID is used to identify the customer across all system operations. It remains constant throughout the account lifecycle, even if the customer updates their email or other profile information.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_mall_members.id. UUID primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_members.id. UUID primary key.
      */
     id: string & tags.Format<"uuid">;
 
@@ -341,8 +382,10 @@ export namespace IEcommerceMallMember {
      *
      * This email is verified during registration and cannot be changed afterwards to prevent account hijacking. It serves as the primary identifier for login and is used for sending order confirmations, promotional emails, and account recovery notifications.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from ecommerce_mall_members.email. Unique constraint enforced via @@unique([email]) index.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_members.email. Unique constraint enforced via
+         *   @@unique([email]) index.
      */
     email: string;
 
@@ -351,8 +394,10 @@ export namespace IEcommerceMallMember {
      *
      * Users can update their display name through profile management. Each modification is audited with a snapshot record to preserve the name history for compliance purposes. This field is optional and may be null until the user sets it.
      *
-     * @x-autobe-database-schema-property display_name
-     * @x-autobe-specification Direct mapping from ecommerce_mall_members.display_name. Nullable string, optional field.
+         * @x-autobe-database-schema-property display_name
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_members.display_name. Nullable string, optional
+         *   field.
      */
     display_name: string | null;
 
@@ -361,8 +406,10 @@ export namespace IEcommerceMallMember {
      *
      * Used for SMS notifications during order delivery and for account recovery via password reset. Users can update their phone number through profile management. Each modification creates an audit snapshot. This field is optional and may be null until the user sets it.
      *
-     * @x-autobe-database-schema-property phone_number
-     * @x-autobe-specification Direct mapping from ecommerce_mall_members.phone_number. Nullable string, optional field.
+         * @x-autobe-database-schema-property phone_number
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_members.phone_number. Nullable string, optional
+         *   field.
      */
     phone_number: string | null;
 
@@ -371,8 +418,10 @@ export namespace IEcommerceMallMember {
      *
      * This immutable timestamp serves as proof of account registration date and is used for analytics, compliance reporting, and determining account age for eligibility checks.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_members.created_at. ISO 8601 formatted timestamp with timezone.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_members.created_at. ISO 8601 formatted timestamp
+         *   with timezone.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -381,8 +430,10 @@ export namespace IEcommerceMallMember {
      *
      * This timestamp is automatically updated by the database whenever any field in the members table changes. It helps clients detect whether they have the latest profile data and is useful for caching strategies.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_members.updated_at. ISO 8601 formatted timestamp with timezone.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_members.updated_at. ISO 8601 formatted timestamp
+         *   with timezone.
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -391,7 +442,10 @@ export namespace IEcommerceMallMember {
      *
      * This short-lived token (typically 1 hour validity) must be included in the Authorization header using the Bearer scheme (e.g., "Authorization: Bearer {access}") for all endpoints requiring authentication. The token contains encoded claims including user identity, roles, and permissions. When expired, use the refresh token to obtain a new access token without re-authenticating.
      *
-     * @x-autobe-specification Computed JWT token generated by auth service during authentication. Contains user identity claims (member ID, email, roles). Stored hash in ecommerce_mall_member_sessions for session tracking. Valid for 1 hour from creation time.
+         * @x-autobe-specification Computed JWT token generated by auth service
+         *   during authentication. Contains user identity claims (member ID,
+         *   email, roles). Stored hash in ecommerce_mall_member_sessions for
+         *   session tracking. Valid for 1 hour from creation time.
      */
     access: string;
 
@@ -400,7 +454,11 @@ export namespace IEcommerceMallMember {
      *
      * This long-lived token (typically 7 days validity) should be stored securely on the client side. Use this token with the /auth/member/refresh endpoint to obtain fresh access tokens when the current access token expires. Each successful refresh invalidates the old refresh token, preventing replay attacks. Note: The refresh token is NOT stored in the ecommerce_mall_members table - it's stored in ecommerce_mall_member_sessions.
      *
-     * @x-autobe-specification Computed JWT token generated by auth service during authentication. Longer-lived than access token to enable seamless session renewal. Stored hash in ecommerce_mall_member_sessions table for session tracking and token rotation.
+         * @x-autobe-specification Computed JWT token generated by auth service
+         *   during authentication. Longer-lived than access token to enable
+         *   seamless session renewal. Stored hash in
+         *   ecommerce_mall_member_sessions table for session tracking and token
+         *   rotation.
      */
     refresh: string;
 
@@ -409,14 +467,18 @@ export namespace IEcommerceMallMember {
      *
      * After this timestamp, the access token will be rejected by authenticated endpoints. Clients should proactively refresh before expiration (common strategy: refresh when remaining time falls below 5 minutes) to maintain seamless user experience. This timestamp is also embedded within the JWT token itself as the "exp" claim for server-side validation.
      *
-     * @x-autobe-specification Computed expiration timestamp set at token generation time. Typically current time + 1 hour for access tokens. Stored in ecommerce_mall_member_sessions table for session management.
+         * @x-autobe-specification Computed expiration timestamp set at token
+         *   generation time. Typically current time + 1 hour for access tokens.
+         *   Stored in ecommerce_mall_member_sessions table for session
+         *   management.
      */
     expired_at: string & tags.Format<"date-time">;
 
     /**
      * Authorization token.
      *
-     * @x-autobe-specification Authorization token comes from the session table.
+         * @x-autobe-specification Authorization token comes from the session
+         *   table.
      */
     token: IAuthorizationToken;
   };
@@ -434,14 +496,14 @@ export namespace IEcommerceMallMember {
     /**
      * Unique email address used for customer login and communication
      *
-     * @x-autobe-database-schema-property email
+         * @x-autobe-database-schema-property email
      */
     email: string & tags.Format<"email">;
 
     /**
      * Plain text password to be hashed with BCrypt (min 8 chars, at least one uppercase, one lowercase, one digit)
      *
-     * @x-autobe-database-schema-property password_hash
+         * @x-autobe-database-schema-property password_hash
      */
     password: string & tags.Format<"password">;
 
@@ -450,8 +512,9 @@ export namespace IEcommerceMallMember {
      *
      * This field is optional and may be null until the customer sets it. Each modification creates a snapshot record to preserve the name history for compliance purposes. Customers can update their display name through profile management after registration.
      *
-     * @x-autobe-database-schema-property display_name
-     * @x-autobe-specification Optional profile field. Nullable in DB, so DTO accepts null. When null, user has not set a display name yet.
+         * @x-autobe-database-schema-property display_name
+         * @x-autobe-specification Optional profile field. Nullable in DB, so
+         *   DTO accepts null. When null, user has not set a display name yet.
      */
     display_name?: (string & tags.MaxLength<100>) | null | undefined;
 
@@ -460,8 +523,9 @@ export namespace IEcommerceMallMember {
      *
      * This field is optional and may be null until the customer sets it. Used for SMS notifications during order delivery and account recovery. Each modification creates an audit snapshot.
      *
-     * @x-autobe-database-schema-property phone_number
-     * @x-autobe-specification Optional profile field. Nullable in DB, so DTO accepts null. When null, user has not set a phone number yet.
+         * @x-autobe-database-schema-property phone_number
+         * @x-autobe-specification Optional profile field. Nullable in DB, so
+         *   DTO accepts null. When null, user has not set a phone number yet.
      */
     phone_number?: string | null | undefined;
 

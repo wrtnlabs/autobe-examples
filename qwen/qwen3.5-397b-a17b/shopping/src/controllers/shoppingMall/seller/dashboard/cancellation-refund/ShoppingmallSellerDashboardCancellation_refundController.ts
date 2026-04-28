@@ -19,9 +19,11 @@ export class ShoppingmallSellerDashboardCancellation_refundController {
    * This endpoint requires seller authentication. Only approved sellers can access their dashboard statistics.
    *
    * @param connection
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Query shopping_mall_cancellation_requests table filtering by seller's order items and status = 'pending'. Count the total number of pending cancellation requests.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Query shopping_mall_cancellation_requests table
+     *   filtering by seller's order items and status = 'pending'. Count the
+     *   total number of pending cancellation requests.
    *
    * Query shopping_mall_refund_requests table filtering by seller's order items and status = 'pending'. Count the total number of pending refund requests.
    *

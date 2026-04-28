@@ -15,7 +15,9 @@ import { IEcommerceCart } from "../../../../../structures/IEcommerceCart";
  * @param props.connection
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Query the ecommerce_carts table to retrieve the authenticated customer's cart by ecommerce_customer_id from session context.
+ * @x-autobe-specification Query the ecommerce_carts table to retrieve the
+ *   authenticated customer's cart by ecommerce_customer_id from session
+ *   context.
  *
  * Join with ecommerce_cart_items table to fetch all cart items (exclude soft-deleted items where deleted_at IS NOT NULL).
  *

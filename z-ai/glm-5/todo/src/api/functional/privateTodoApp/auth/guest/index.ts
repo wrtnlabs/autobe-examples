@@ -25,7 +25,8 @@ import { IPrivateTodoAppGuest } from "../../../../structures/IPrivateTodoAppGues
  * @param props.body Guest join request containing email and password for new account registration.
  * @x-autobe-authorization-type join
  * @x-autobe-authorization-actor guest
- * @x-autobe-specification Implementation of guest join operation for new user registration.
+ * @x-autobe-specification Implementation of guest join operation for new user
+ *   registration.
  *
  * **Service Layer Logic:**
  * 1. Validate the request body containing email and password
@@ -147,7 +148,8 @@ export namespace join {
  * @param props.body Guest refresh request containing the current refresh token.
  * @x-autobe-authorization-type refresh
  * @x-autobe-authorization-actor guest
- * @x-autobe-specification Implementation of guest session token refresh operation.
+ * @x-autobe-specification Implementation of guest session token refresh
+ *   operation.
  *
  * **Service Layer Logic:**
  * 1. Extract and validate the refresh token from the request body

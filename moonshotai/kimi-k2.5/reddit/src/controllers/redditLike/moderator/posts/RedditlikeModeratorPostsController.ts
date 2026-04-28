@@ -21,9 +21,10 @@ export class RedditlikeModeratorPostsController {
    *
    * @param connection
    * @param postId Target post's ID (UUID format)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor moderator
-   * @x-autobe-specification Validate the post exists by querying reddit_like_posts table with the provided postId.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor moderator
+     * @x-autobe-specification Validate the post exists by querying
+     *   reddit_like_posts table with the provided postId.
    *
    * Verify the requesting authenticated user is the author of the post by comparing the user's member ID against the post's author_id field. If the user is not the author, reject with 403 Forbidden error per section 168 (Cannot Delete Other User's Post).
    *

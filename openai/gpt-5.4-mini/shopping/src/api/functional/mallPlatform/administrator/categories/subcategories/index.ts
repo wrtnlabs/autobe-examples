@@ -20,7 +20,8 @@ import { IMallPlatformCategory } from "../../../../../structures/IMallPlatformCa
  * @param props.body Category data used to create a new direct subcategory beneath the parent category.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor administrator
- * @x-autobe-specification Authenticate the caller and require administrator privileges before any database work.
+ * @x-autobe-specification Authenticate the caller and require administrator
+ *   privileges before any database work.
  *
  * Load the parent category by categoryId. If it does not exist, return not found. Validate that the parent is a top-level category and that creating a child here does not introduce deeper nesting. Reject any request that would create a second nesting level beneath a subcategory.
  *
@@ -126,7 +127,10 @@ export namespace create {
  * @param props.body Fields used to update the subcategory's mutable category data within the current parent scope.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor administrator
- * @x-autobe-specification Load the parent category and the subcategory by UUID and verify both exist. Confirm the subcategory is actually associated with the parent category in the path; if not, return a not-found or conflict error according to service conventions.
+ * @x-autobe-specification Load the parent category and the subcategory by UUID
+ *   and verify both exist. Confirm the subcategory is actually associated with
+ *   the parent category in the path; if not, return a not-found or conflict
+ *   error according to service conventions.
  *
  * Apply only editable category fields from the request body, and preserve the one-level nesting rule by ensuring the resulting category chain does not introduce a subcategory beneath another subcategory. Reject any attempt to re-parent the subcategory in a way that would create deeper hierarchy.
  *
@@ -233,8 +237,11 @@ export namespace update {
  * @param props.subcategoryId The direct subcategory identifier to remove from the specified parent category.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor administrator
- * @x-autobe-specification Authorize administrator access before performing any deletion.
- * Confirm that `subcategoryId` is a direct child of `categoryId`; if not, return a not-found or conflict-style error consistent with the service conventions. Enforce the one-level hierarchy rule so only immediate subcategories can be removed through this route.
+ * @x-autobe-specification Authorize administrator access before performing any
+ *   deletion. Confirm that `subcategoryId` is a direct child of `categoryId`;
+ *   if not, return a not-found or conflict-style error consistent with the
+ *   service conventions. Enforce the one-level hierarchy rule so only immediate
+ *   subcategories can be removed through this route.
  *
  * Execute the removal in a transaction. After deletion, ensure category list and category detail queries no longer return the removed subcategory. If the domain layer applies category deletion behavior to products assigned to a removed category, preserve product browsing consistency by applying that reassignment/uncategorized handling in the same transaction or in a follow-up domain process. Do not delete the parent category, and do not attempt to remove deeper nested structures because they are not allowed by the model.
  * @path /mallPlatform/administrator/categories/:categoryId/subcategories/:subcategoryId

@@ -14,7 +14,9 @@ export type IPaginationMetadatum = {
    *
    * Specifies which page of results the client is currently viewing. Page numbering starts from 1, so the first page is always page 1. This value comes from the query parameter `?page=` or defaults to 1 if not specified.
    *
-   * @x-autobe-specification Computed from query parameter ?page= or default value 1. Always 1-indexed (minimum 1). Represents the current page number the client is viewing.
+     * @x-autobe-specification Computed from query parameter ?page= or default
+     *   value 1. Always 1-indexed (minimum 1). Represents the current page
+     *   number the client is viewing.
    */
   currentPage: number & tags.Type<"int32"> & tags.Minimum<1>;
 
@@ -23,7 +25,9 @@ export type IPaginationMetadatum = {
    *
    * Controls the slice size of the paginated response. This value comes from the query parameter `?pageSize=` or a system default (typically 10 or 20). Must be at least 1. Larger values return more items per request but may impact performance.
    *
-   * @x-autobe-specification Computed from query parameter ?pageSize= or default value (typically 10 or 20). Always minimum 1. Represents how many items are returned per page.
+     * @x-autobe-specification Computed from query parameter ?pageSize= or
+     *   default value (typically 10 or 20). Always minimum 1. Represents how
+     *   many items are returned per page.
    */
   pageSize: number & tags.Type<"int32"> & tags.Minimum<1>;
 
@@ -32,7 +36,9 @@ export type IPaginationMetadatum = {
    *
    * Represents the complete count of all records matching the query, regardless of pagination. This value is computed by executing a COUNT(*) query on the database and is used by clients to calculate the total number of pages and display progress indicators like "1-10 of 150".
    *
-   * @x-autobe-specification Computed as COUNT(*) result from the database query. Represents the total number of records matching the query criteria across all pages, regardless of pagination.
+     * @x-autobe-specification Computed as COUNT(*) result from the database
+     *   query. Represents the total number of records matching the query
+     *   criteria across all pages, regardless of pagination.
    */
   totalItems: number & tags.Type<"int32"> & tags.Minimum<0>;
 
@@ -41,7 +47,9 @@ export type IPaginationMetadatum = {
    *
    * Calculated as the ceiling of totalItems divided by pageSize. This represents the maximum page number a client can navigate to. For example, with 150 items and pageSize of 10, totalPages would be 15. This allows clients to know when they've reached the end of the dataset.
    *
-   * @x-autobe-specification Computed as ceil(totalItems/pageSize). Represents the maximum page number available. If totalItems is 0, totalPages is 0. Otherwise: ceil(totalItems/pageSize).
+     * @x-autobe-specification Computed as ceil(totalItems/pageSize). Represents
+     *   the maximum page number available. If totalItems is 0, totalPages is 0.
+     *   Otherwise: ceil(totalItems/pageSize).
    */
   totalPages: number & tags.Type<"int32"> & tags.Minimum<1>;
 
@@ -50,7 +58,9 @@ export type IPaginationMetadatum = {
    *
    * True when currentPage > 1, indicating the client can navigate to an earlier page. False when on the first page (currentPage = 1). This boolean flag is used to enable or disable 'Previous' navigation buttons in the UI.
    *
-   * @x-autobe-specification Computed as boolean: currentPage > 1. Returns true when the client is not on the first page, enabling a 'Previous' navigation button. False when currentPage equals 1.
+     * @x-autobe-specification Computed as boolean: currentPage > 1. Returns
+     *   true when the client is not on the first page, enabling a 'Previous'
+     *   navigation button. False when currentPage equals 1.
    */
   hasPreviousPage: boolean;
 
@@ -59,7 +69,9 @@ export type IPaginationMetadatum = {
    *
    * True when currentPage < totalPages, indicating there are more results to view. False when on the last page (currentPage = totalPages). This boolean flag is used to enable or disable 'Next' navigation buttons in the UI and helps clients know when they've reached the end of the dataset.
    *
-   * @x-autobe-specification Computed as boolean: currentPage < totalPages. Returns true when there are more pages available, enabling a 'Next' navigation button. False when currentPage equals totalPages.
+     * @x-autobe-specification Computed as boolean: currentPage < totalPages.
+     *   Returns true when there are more pages available, enabling a 'Next'
+     *   navigation button. False when currentPage equals totalPages.
    */
   hasNextPage: boolean;
 };

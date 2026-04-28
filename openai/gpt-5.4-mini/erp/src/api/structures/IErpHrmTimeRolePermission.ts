@@ -8,14 +8,19 @@ export type IErpHrmTimeRolePermission = {
   /**
    * Whether the selected role can be deleted.
    *
-   * @x-autobe-specification Compute from the current-organization role lookup: return true only if the role exists, is not built-in, and has no assigned employees. Otherwise return false.
+     * @x-autobe-specification Compute from the current-organization role
+     *   lookup: return true only if the role exists, is not built-in, and has
+     *   no assigned employees. Otherwise return false.
    */
   canDelete: boolean;
 
   /**
    * A short explanation of why the role cannot be deleted, or null when deletion is allowed.
    *
-   * @x-autobe-specification Computed UI message for role deletion eligibility. Return null when canDelete is true; otherwise return a short human-readable explanation string describing why the role cannot be deleted.
+     * @x-autobe-specification Computed UI message for role deletion
+     *   eligibility. Return null when canDelete is true; otherwise return a
+     *   short human-readable explanation string describing why the role cannot
+     *   be deleted.
    */
   reason: null | boolean;
 };
@@ -27,7 +32,12 @@ export namespace IErpHrmTimeRolePermission {
     /**
      * Approved permission keys to add to the selected role.
      *
-     * @x-autobe-specification Array of approved permission catalog keys to assign to the role identified by the {roleId} path parameter. Each string must resolve to erp_hrm_time_permissions.key, duplicates should be removed before insertion, and only missing join rows should be created in erp_hrm_time_role_permissions. No ids, timestamps, or relation objects belong in this body.
+         * @x-autobe-specification Array of approved permission catalog keys to
+         *   assign to the role identified by the {roleId} path parameter. Each
+         *   string must resolve to erp_hrm_time_permissions.key, duplicates
+         *   should be removed before insertion, and only missing join rows
+         *   should be created in erp_hrm_time_role_permissions. No ids,
+         *   timestamps, or relation objects belong in this body.
      */
     permissionKeys: (string & tags.MinLength<1>)[] & tags.MinItems<1>;
   };

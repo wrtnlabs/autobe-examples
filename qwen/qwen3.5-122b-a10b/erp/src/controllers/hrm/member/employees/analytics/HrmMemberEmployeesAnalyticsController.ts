@@ -37,9 +37,10 @@ export class HrmMemberEmployeesAnalyticsController {
    *
    * @param connection
    * @param body Filter criteria for employee analytics including date ranges, department, employment types, and status filters.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query hrm_employees table with organization context from authenticated user's session.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query hrm_employees table with organization
+     *   context from authenticated user's session.
    *
    * Apply filter criteria from request body:
    * - If date_range provided, filter employees by created_at within range

@@ -20,7 +20,8 @@ import { ICommunityPlatformCommunityBan } from "../../../../structures/ICommunit
  * @param props.banId The unique identifier (UUID) of the community ban record to retrieve.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query the community_platform_community_bans table by primary key id (UUID). If not found, return 404 Not Found.
+ * @x-autobe-specification Query the community_platform_community_bans table by
+ *   primary key id (UUID). If not found, return 404 Not Found.
  *
  * Access control (mandatory): After retrieving the ban record, look up the associated community via community_platform_community_id. Then verify the requesting authenticated member is either (a) the owner of that community (community_platform_communities.owner_id) or (b) a moderator assigned to that community (community_platform_moderators table filtered by community_id and member_id). If neither condition is met, return 403 Forbidden.
  *
@@ -117,7 +118,8 @@ export namespace at {
  * @param props.body Updated ban information containing the new reason text explaining why the user was banned from the community.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Update the reason field of an existing community ban record identified by {banId}.
+ * @x-autobe-specification Update the reason field of an existing community ban
+ *   record identified by {banId}.
  *
  * Implementation steps:
  * 1. Validate that the authenticated user is a moderator or owner of the community associated with the ban. Join community_platform_bans with community_platform_communities via community_platform_community_id, then check community_platform_moderators for the requesting member's role.
@@ -226,7 +228,9 @@ export namespace update {
  * @param props.banId UUID of the ban record to remove. Identifies a specific community ban entry in the system.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Load the ban record by `banId` from `community_platform_community_bans`. Return 404 (not found) if the ban does not exist.
+ * @x-autobe-specification Load the ban record by `banId` from
+ *   `community_platform_community_bans`. Return 404 (not found) if the ban does
+ *   not exist.
  *
  * Extract `community_platform_community_id` from the ban record. Query `community_platform_moderators` with `member_id = callingUser.id` and `community_id = ban.community_platform_community_id` to verify the caller holds a moderator or owner role in that community. If no matching moderator record is found, reject with 403 (forbidden).
  *
@@ -313,7 +317,8 @@ export namespace erase {
  * @param props.body Identifies the community and member to ban, along with the reason for the ban. The community is specified by its unique name, and the member by their unique username.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Create a new ban record in community_platform_community_bans.
+ * @x-autobe-specification Create a new ban record in
+ *   community_platform_community_bans.
  *
  * 1. Resolve communityCode to community_platform_communities.id via the unique `name` field. If not found, return 404.
  * 2. Resolve memberCode to community_platform_members.id via the unique `username` field. If not found, return 404.

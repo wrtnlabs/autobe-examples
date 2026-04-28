@@ -16,8 +16,9 @@ export type IECommerceMallSellerProfileSnapshot = {
    *
    * This primary key uniquely identifies each snapshot record in the system. It is auto-generated and immutable.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from e_commerce_mall_seller_profile_snapshots.id. Primary key, UUID format.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_seller_profile_snapshots.id. Primary key, UUID format.
    */
   id: string & tags.Format<"uuid">;
 
@@ -26,8 +27,11 @@ export type IECommerceMallSellerProfileSnapshot = {
    *
    * Provides the seller's shop name, description, and logo image as a summary object. Each snapshot belongs to exactly one seller profile, and a seller profile can have many snapshots over its lifetime as the seller makes edits.
    *
-   * @x-autobe-database-schema-property sellerProfile
-   * @x-autobe-specification Join on e_commerce_mall_seller_profile_id to e_commerce_mall_seller_profiles. Returns IECommerceMallSellerProfile.ISummary representing the seller profile that was snapshotted.
+     * @x-autobe-database-schema-property sellerProfile
+     * @x-autobe-specification Join on e_commerce_mall_seller_profile_id to
+     *   e_commerce_mall_seller_profiles. Returns
+     *   IECommerceMallSellerProfile.ISummary representing the seller profile
+     *   that was snapshotted.
    */
   sellerProfile: IECommerceMallSellerProfile.ISummary;
 
@@ -36,8 +40,10 @@ export type IECommerceMallSellerProfileSnapshot = {
    *
    * This field preserves the seller profile's shop name value as it existed before the edit, allowing historical review of how the shop name changed over time.
    *
-   * @x-autobe-database-schema-property name
-   * @x-autobe-specification Direct mapping from e_commerce_mall_seller_profile_snapshots.name. Preserved shop name value before the edit was applied.
+     * @x-autobe-database-schema-property name
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_seller_profile_snapshots.name. Preserved shop name
+     *   value before the edit was applied.
    */
   name: string;
 
@@ -46,8 +52,10 @@ export type IECommerceMallSellerProfileSnapshot = {
    *
    * This field preserves the seller profile's shop description value as it existed before the edit, allowing historical review of how the shop description changed over time.
    *
-   * @x-autobe-database-schema-property description
-   * @x-autobe-specification Direct mapping from e_commerce_mall_seller_profile_snapshots.description. Preserved shop description value before the edit was applied.
+     * @x-autobe-database-schema-property description
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_seller_profile_snapshots.description. Preserved shop
+     *   description value before the edit was applied.
    */
   description: string;
 
@@ -56,8 +64,10 @@ export type IECommerceMallSellerProfileSnapshot = {
    *
    * This field preserves the seller profile's logo image URL as it existed before the edit, allowing historical review of how the shop's visual branding changed over time.
    *
-   * @x-autobe-database-schema-property logo
-   * @x-autobe-specification Direct mapping from e_commerce_mall_seller_profile_snapshots.logo. Preserved logo image URL before the edit was applied.
+     * @x-autobe-database-schema-property logo
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_seller_profile_snapshots.logo. Preserved logo image URL
+     *   before the edit was applied.
    */
   logo: string & tags.Format<"url">;
 
@@ -66,8 +76,10 @@ export type IECommerceMallSellerProfileSnapshot = {
    *
    * Records exactly when the profile edit occurred, providing the temporal reference point for the preserved state. Snapshots are ordered by this timestamp to reconstruct the chronological sequence of profile changes.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from e_commerce_mall_seller_profile_snapshots.created_at. Records when the snapshot was created (when the profile edit occurred).
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_seller_profile_snapshots.created_at. Records when the
+     *   snapshot was created (when the profile edit occurred).
    */
   created_at: string & tags.Format<"date-time">;
 };
@@ -83,8 +95,9 @@ export namespace IECommerceMallSellerProfileSnapshot {
      *
      * This UUID serves as the primary key for referencing a specific snapshot record in the immutable audit trail of seller profile changes.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from e_commerce_mall_seller_profile_snapshots.id. UUID format.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_seller_profile_snapshots.id. UUID format.
      */
     id: string & tags.Format<"uuid">;
 
@@ -93,8 +106,9 @@ export namespace IECommerceMallSellerProfileSnapshot {
      *
      * This field preserves the seller profile's shop name value before an edit was applied, allowing historical review of how the shop name changed over time.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from e_commerce_mall_seller_profile_snapshots.name.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_seller_profile_snapshots.name.
      */
     name: string;
 
@@ -103,8 +117,9 @@ export namespace IECommerceMallSellerProfileSnapshot {
      *
      * This field preserves the seller profile's shop description value before an edit was applied, allowing historical review of how the shop description changed over time.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from e_commerce_mall_seller_profile_snapshots.description.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_seller_profile_snapshots.description.
      */
     description: string;
 
@@ -113,8 +128,9 @@ export namespace IECommerceMallSellerProfileSnapshot {
      *
      * This field preserves the seller profile's logo image URL before an edit was applied, allowing historical review of how the logo changed over time.
      *
-     * @x-autobe-database-schema-property logo
-     * @x-autobe-specification Direct mapping from e_commerce_mall_seller_profile_snapshots.logo. URI format.
+         * @x-autobe-database-schema-property logo
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_seller_profile_snapshots.logo. URI format.
      */
     logo: string & tags.Format<"uri">;
 
@@ -123,8 +139,10 @@ export namespace IECommerceMallSellerProfileSnapshot {
      *
      * Records exactly when the profile edit occurred, providing the temporal reference point for the preserved state. Snapshots are ordered by this timestamp in descending order to reconstruct the chronological sequence of profile changes.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from e_commerce_mall_seller_profile_snapshots.created_at. DateTime with timezone.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_seller_profile_snapshots.created_at. DateTime with
+         *   timezone.
      */
     created_at: string & tags.Format<"date-time">;
   };
@@ -142,7 +160,11 @@ export namespace IECommerceMallSellerProfileSnapshot {
      *
      * Specifies which page of results to retrieve. Page numbering starts from 1, meaning the first page corresponds to page 1. Combined with `limit` to control result slicing. Defaults to 1 when not provided.
      *
-     * @x-autobe-specification Offset-based pagination parameter. Maps to SQL OFFSET calculated as (page - 1) * limit. Defaults to 1 when omitted. Minimum value is 1. Combined with limit to drive standard LIMIT/OFFSET pagination on the e_commerce_mall_seller_profile_snapshots query.
+         * @x-autobe-specification Offset-based pagination parameter. Maps to
+         *   SQL OFFSET calculated as (page - 1) * limit. Defaults to 1 when
+         *   omitted. Minimum value is 1. Combined with limit to drive standard
+         *   LIMIT/OFFSET pagination on the
+         *   e_commerce_mall_seller_profile_snapshots query.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -151,7 +173,10 @@ export namespace IECommerceMallSellerProfileSnapshot {
      *
      * Controls the page size for paginated results. Must be between 1 and 100 (inclusive). The actual number of returned records may be less than this value on the last page or when fewer records exist than requested.
      *
-     * @x-autobe-specification Page size parameter. Maps to SQL LIMIT clause. Defaults to a system-configured value (e.g., 20) when omitted. Maximum value is 100 to prevent excessive data retrieval. Combined with page to drive standard offset-based pagination.
+         * @x-autobe-specification Page size parameter. Maps to SQL LIMIT
+         *   clause. Defaults to a system-configured value (e.g., 20) when
+         *   omitted. Maximum value is 100 to prevent excessive data retrieval.
+         *   Combined with page to drive standard offset-based pagination.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -164,7 +189,17 @@ export namespace IECommerceMallSellerProfileSnapshot {
      *
      * Dates should be provided in ISO 8601 format (e.g., `2026-01-01T00:00:00.000Z`).
      *
-     * @x-autobe-specification Optional date range filter on the e_commerce_mall_seller_profile_snapshots.created_at column (via parent schema null databaseSchema, the mapping targets the created_at column). The gte sub-property maps to SQL WHERE created_at >= gte. The lte sub-property maps to SQL WHERE created_at <= lte. Both sub-properties are optional — providing only gte filters for snapshots on or after that timestamp, providing only lte filters for snapshots on or before that timestamp. Uses the composite index on [e_commerce_mall_seller_profile_id, created_at] for efficient range queries.
+         * @x-autobe-specification Optional date range filter on the
+         *   e_commerce_mall_seller_profile_snapshots.created_at column (via
+         *   parent schema null databaseSchema, the mapping targets the
+         *   created_at column). The gte sub-property maps to SQL WHERE
+         *   created_at >= gte. The lte sub-property maps to SQL WHERE
+         *   created_at <= lte. Both sub-properties are optional — providing
+         *   only gte filters for snapshots on or after that timestamp,
+         *   providing only lte filters for snapshots on or before that
+         *   timestamp. Uses the composite index on
+         *   [e_commerce_mall_seller_profile_id, created_at] for efficient range
+         *   queries.
      */
     created_at?:
       | {

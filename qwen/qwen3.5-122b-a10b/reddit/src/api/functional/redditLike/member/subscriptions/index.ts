@@ -34,20 +34,20 @@ import { IRedditLikeCommunitySubscription } from "../../../../structures/IReddit
  * @param props.body Subscription request containing the community ID to subscribe to.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification 1. Authenticate the member from the request session/token.
- * 2. Validate the request body contains a valid communityId.
- * 3. Query reddit_like_communities table to verify the community exists and deleted_at is NULL.
- * 4. Check reddit_like_community_bans table to ensure the member is not banned from this community.
- * 5. Query reddit_like_community_subscriptions table with the unique constraint [reddit_like_member_id, reddit_like_community_id] to check for existing subscription.
- * 6. If duplicate subscription exists, return 400 error with appropriate message.
- * 7. If banned, return 403 error.
- * 8. If community not found, return 404 error.
- * 9. Create a new subscription record in reddit_like_community_subscriptions with:
- *    - reddit_like_member_id: authenticated member's ID
- *    - reddit_like_community_id: from request body
- *    - created_at and updated_at: current timestamp
- *    - deleted_at: NULL
- * 10. Return the created subscription entity.
+ * @x-autobe-specification 1. Authenticate the member from the request
+ *   session/token. 2. Validate the request body contains a valid communityId.
+ *   3. Query reddit_like_communities table to verify the community exists and
+ *   deleted_at is NULL. 4. Check reddit_like_community_bans table to ensure the
+ *   member is not banned from this community. 5. Query
+ *   reddit_like_community_subscriptions table with the unique constraint
+ *   [reddit_like_member_id, reddit_like_community_id] to check for existing
+ *   subscription. 6. If duplicate subscription exists, return 400 error with
+ *   appropriate message. 7. If banned, return 403 error. 8. If community not
+ *   found, return 404 error. 9. Create a new subscription record in
+ *   reddit_like_community_subscriptions with: - reddit_like_member_id:
+ *   authenticated member's ID - reddit_like_community_id: from request body -
+ *   created_at and updated_at: current timestamp - deleted_at: NULL 10. Return
+ *   the created subscription entity.
  *
  * **Validation Rules**:
  * - communityId: required, valid UUID format
@@ -157,7 +157,8 @@ export namespace create {
  * @param props.body Search criteria including optional community filter, pagination parameters (limit, offset), and sorting options.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query reddit_like_community_subscriptions table for the authenticated member.
+ * @x-autobe-specification Query reddit_like_community_subscriptions table for
+ *   the authenticated member.
  *
  * Implementation steps:
  * 1. Extract member ID from authentication context (JWT token)
@@ -274,7 +275,8 @@ export namespace index {
  * @param props.subscriptionId Unique identifier of the subscription record to unsubscribe from (UUID format).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implement soft delete for subscription unsubscription:
+ * @x-autobe-specification Implement soft delete for subscription
+ *   unsubscription:
  *
  * 1. Extract subscriptionId from path parameter (UUID format)
  * 2. Authenticate the requesting member and obtain their member ID

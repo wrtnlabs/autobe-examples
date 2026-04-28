@@ -32,7 +32,8 @@ import { IRedditCommunityPost } from "../../../../structures/IRedditCommunityPos
  * @param props.body Search criteria including sort method, time period filter, and pagination parameters. Sort method determines ranking algorithm. Time period applies only when sort is 'top'. Pagination uses cursor-based approach for efficient large dataset browsing.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query posts from reddit_community_posts table with the following logic:
+ * @x-autobe-specification Query posts from reddit_community_posts table with
+ *   the following logic:
  *
  * 1. **Filter Conditions**:
  *    - JOIN with reddit_community_subscriptions where reddit_community_member_id = current user, status = 'active'

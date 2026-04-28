@@ -28,9 +28,11 @@ export class ShoppingmallSuperadminSuperadminsController {
    *
    * @param connection
    * @param body Search criteria and pagination parameters for filtering super administrator accounts
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor superAdmin
-   * @x-autobe-specification 1. Authenticate the requesting actor and verify they hold the super administrator role. Reject with 403 Forbidden if not a super admin.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor superAdmin
+     * @x-autobe-specification 1. Authenticate the requesting actor and verify
+     *   they hold the super administrator role. Reject with 403 Forbidden if
+     *   not a super admin.
    *
    * 2. Accept an IShoppingMallSuperAdmin.IRequest body containing:
    *    - `email`: optional string for partial/fuzzy email matching (case-insensitive ILIKE)
@@ -87,15 +89,19 @@ export class ShoppingmallSuperadminSuperadminsController {
    *
    * @param connection
    * @param superAdminId The unique UUID of the target super administrator account to retrieve (global scope).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor superAdmin
-   * @x-autobe-specification 1. Authenticate the caller and verify they hold the super administrator role. Reject with 403 Forbidden if the caller is not a super administrator.
-   * 2. Validate that the `superAdminId` path parameter is a well-formed UUID.
-   * 3. Query the `shopping_mall_super_admins` table for a record matching the given UUID (`id = superAdminId`).
-   * 4. If no record is found, return 404 Not Found.
-   * 5. Map the database record to the `IShoppingMallSuperAdmin` response DTO. Explicitly exclude the `password_hash` field — never expose it in the response.
-   * 6. Include the following fields in the response: `id`, `email`, `created_at`, `updated_at`, `deleted_at` (nullable).
-   * 7. Return the DTO with HTTP 200 OK.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor superAdmin
+     * @x-autobe-specification 1. Authenticate the caller and verify they hold
+     *   the super administrator role. Reject with 403 Forbidden if the caller
+     *   is not a super administrator. 2. Validate that the `superAdminId` path
+     *   parameter is a well-formed UUID. 3. Query the
+     *   `shopping_mall_super_admins` table for a record matching the given UUID
+     *   (`id = superAdminId`). 4. If no record is found, return 404 Not Found.
+     *   5. Map the database record to the `IShoppingMallSuperAdmin` response
+     *   DTO. Explicitly exclude the `password_hash` field — never expose it in
+     *   the response. 6. Include the following fields in the response: `id`,
+     *   `email`, `created_at`, `updated_at`, `deleted_at` (nullable). 7. Return
+     *   the DTO with HTTP 200 OK.
    *
    * Edge cases:
    * - If `deleted_at` is non-null, the account is deactivated but the record is still returned; the caller can observe the deactivation status.
@@ -137,11 +143,13 @@ export class ShoppingmallSuperadminSuperadminsController {
    *
    * @param connection
    * @param superAdminId UUID of the target super administrator to be demoted to a regular administrator grade.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor superAdmin
-   * @x-autobe-specification 1. Authentication & Authorization:
-   *    - Authenticate the calling actor and confirm it is a super administrator (i.e., exists in shopping_mall_super_admins and has a non-null deleted_at = null).
-   *    - If the caller is a regular administrator (exists only in shopping_mall_admins), reject with 403 Forbidden.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor superAdmin
+     * @x-autobe-specification 1. Authentication & Authorization: - Authenticate
+     *   the calling actor and confirm it is a super administrator (i.e., exists
+     *   in shopping_mall_super_admins and has a non-null deleted_at = null). -
+     *   If the caller is a regular administrator (exists only in
+     *   shopping_mall_admins), reject with 403 Forbidden.
    *
    * 2. Self-demotion Guard:
    *    - Compare superAdminId with the authenticated super admin's own ID.

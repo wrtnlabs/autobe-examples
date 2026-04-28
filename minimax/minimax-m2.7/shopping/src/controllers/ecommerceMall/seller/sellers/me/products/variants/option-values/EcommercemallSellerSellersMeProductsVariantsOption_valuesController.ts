@@ -30,22 +30,22 @@ export class EcommercemallSellerSellersMeProductsVariantsOption_valuesController
    * @param productId Unique identifier of the parent product (UUID format).
    * @param variantId Unique identifier of the variant to add the option to (UUID format).
    * @param body The option key and value to create for the variant, such as color=Red or size=Large.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification 1. Extract productId and variantId from path parameters.
-   * 2. Verify the authenticated seller owns the product by checking ecommerce_mall_products.ecommerce_mall_seller_id matches the seller from the JWT token.
-   * 3. Verify the variant belongs to the product by checking ecommerce_mall_product_variants.ecommerce_mall_product_id matches productId.
-   * 4. Verify the variant has not been soft-deleted (deleted_at must be null).
-   * 5. Check for existing option with the same key for this variant.
-   * 6. If duplicate key exists, update the existing option value instead of creating new.
-   * 7. Insert the option value record into ecommerce_mall_product_variant_option_values with:
-   *    - id: generate UUID
-   *    - ecommerce_mall_product_variant_id: variantId from path
-   *    - key: from request body
-   *    - value: from request body
-   *    - created_at: current timestamp
-   *    - updated_at: current timestamp
-   * 8. Return the created/updated option value record.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification 1. Extract productId and variantId from path
+     *   parameters. 2. Verify the authenticated seller owns the product by
+     *   checking ecommerce_mall_products.ecommerce_mall_seller_id matches the
+     *   seller from the JWT token. 3. Verify the variant belongs to the product
+     *   by checking ecommerce_mall_product_variants.ecommerce_mall_product_id
+     *   matches productId. 4. Verify the variant has not been soft-deleted
+     *   (deleted_at must be null). 5. Check for existing option with the same
+     *   key for this variant. 6. If duplicate key exists, update the existing
+     *   option value instead of creating new. 7. Insert the option value record
+     *   into ecommerce_mall_product_variant_option_values with: - id: generate
+     *   UUID - ecommerce_mall_product_variant_id: variantId from path - key:
+     *   from request body - value: from request body - created_at: current
+     *   timestamp - updated_at: current timestamp 8. Return the created/updated
+     *   option value record.
    *
    * **Error Handling**
    * - 403 if seller does not own the product
@@ -97,9 +97,9 @@ export class EcommercemallSellerSellersMeProductsVariantsOption_valuesController
    * @param variantId Unique identifier of the parent variant (global scope).
    * @param optionValueId Unique identifier of the option value to update (global scope).
    * @param body Updated option value data containing the new key and/or value to set.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Update a product variant option value by ID.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Update a product variant option value by ID.
    *
    * 1. Extract path parameters: productId (UUID), variantId (UUID), optionValueId (UUID)
    * 2. Retrieve the authenticated seller from the request context
@@ -168,9 +168,10 @@ export class EcommercemallSellerSellersMeProductsVariantsOption_valuesController
    * @param productId Unique identifier of the product containing the variant (global scope)
    * @param variantId Unique identifier of the variant containing the option value (scoped to product)
    * @param optionValueId Unique identifier of the option value to delete (scoped to variant)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification 1. Extract path parameters: productId (UUID), variantId (UUID), optionValueId (UUID)
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification 1. Extract path parameters: productId (UUID),
+     *   variantId (UUID), optionValueId (UUID)
    *
    * 2. Verify seller authentication and extract seller ID from JWT token
    *

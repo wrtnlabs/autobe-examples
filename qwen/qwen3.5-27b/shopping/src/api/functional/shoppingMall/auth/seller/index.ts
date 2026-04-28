@@ -25,7 +25,8 @@ import { IShoppingMallSeller } from "../../../../structures/IShoppingMallSeller"
  * @param props.body Registration credentials for creating a new seller account.
  * @x-autobe-authorization-type join
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Implement seller registration with email uniqueness validation and password hashing.
+ * @x-autobe-specification Implement seller registration with email uniqueness
+ *   validation and password hashing.
  *
  * 1. Validate email format and check for existing seller with same email in shopping_mall_sellers table
  * 2. Hash password using BCrypt algorithm with salt
@@ -144,7 +145,8 @@ export namespace join {
  * @param props.body Login credentials for seller authentication.
  * @x-autobe-authorization-type login
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Implement seller login with email/password validation and session creation.
+ * @x-autobe-specification Implement seller login with email/password validation
+ *   and session creation.
  *
  * 1. Find seller by email in shopping_mall_sellers table
  * 2. Validate seller exists and is not deleted (deleted_at is null)

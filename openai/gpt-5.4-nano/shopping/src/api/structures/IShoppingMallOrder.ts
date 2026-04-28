@@ -11,67 +11,67 @@ import { IShoppingMallShipment } from "./IShoppingMallShipment";
  */
 export type IShoppingMallOrder = {
   /**
-   * @x-autobe-database-schema-property id
+     * @x-autobe-database-schema-property id
    */
   id: string & tags.Format<"uuid">;
   /**
-   * @x-autobe-database-schema-property order_code
+     * @x-autobe-database-schema-property order_code
    */
   order_code: string;
   /**
-   * @x-autobe-database-schema-property ship_to_name
+     * @x-autobe-database-schema-property ship_to_name
    */
   ship_to_name: string;
   /**
-   * @x-autobe-database-schema-property ship_to_phone
+     * @x-autobe-database-schema-property ship_to_phone
    */
   ship_to_phone: string;
   /**
-   * @x-autobe-database-schema-property ship_to_postal_code
+     * @x-autobe-database-schema-property ship_to_postal_code
    */
   ship_to_postal_code: string;
   /**
-   * @x-autobe-database-schema-property ship_to_region
+     * @x-autobe-database-schema-property ship_to_region
    */
   ship_to_region: string;
   /**
-   * @x-autobe-database-schema-property ship_to_city
+     * @x-autobe-database-schema-property ship_to_city
    */
   ship_to_city: string;
   /**
-   * @x-autobe-database-schema-property ship_to_street_address
+     * @x-autobe-database-schema-property ship_to_street_address
    */
   ship_to_street_address: string;
   /**
-   * @x-autobe-database-schema-property ship_to_detail_address
+     * @x-autobe-database-schema-property ship_to_detail_address
    */
   ship_to_detail_address: string;
   /**
-   * @x-autobe-database-schema-property shipping_instructions
+     * @x-autobe-database-schema-property shipping_instructions
    */
   shipping_instructions: string | null;
   /**
-   * @x-autobe-database-schema-property placed_at
+     * @x-autobe-database-schema-property placed_at
    */
   placed_at: string & tags.Format<"date-time">;
   /**
-   * @x-autobe-database-schema-property created_at
+     * @x-autobe-database-schema-property created_at
    */
   created_at: string & tags.Format<"date-time">;
   /**
-   * @x-autobe-database-schema-property updated_at
+     * @x-autobe-database-schema-property updated_at
    */
   updated_at: string & tags.Format<"date-time">;
   /**
-   * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-database-schema-property deleted_at
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
   /**
-   * @x-autobe-database-schema-property customer
+     * @x-autobe-database-schema-property customer
    */
   customer: IShoppingMallMember.ISummary;
   /**
-   * @x-autobe-database-schema-property payment
+     * @x-autobe-database-schema-property payment
    */
   payment: IShoppingMallPayment;
   orderItems: IShoppingMallOrderItem.ISummary[];
@@ -85,64 +85,91 @@ export namespace IShoppingMallOrder {
     /**
      * Recipient name captured at order placement time. Can be updated only while the order is still eligible for header changes.
      *
-     * @x-autobe-database-schema-property ship_to_name
-     * @x-autobe-specification Direct mapping to shopping_mall_orders.ship_to_name. Update only when the field is present in the request body; otherwise leave the existing value unchanged. Apply state validation before persisting updates (do not allow changes after fulfillment locks apply).
+         * @x-autobe-database-schema-property ship_to_name
+         * @x-autobe-specification Direct mapping to
+         *   shopping_mall_orders.ship_to_name. Update only when the field is
+         *   present in the request body; otherwise leave the existing value
+         *   unchanged. Apply state validation before persisting updates (do not
+         *   allow changes after fulfillment locks apply).
      */
     ship_to_name?: string | undefined;
 
     /**
      * Recipient phone number captured at order placement time. Can be updated only while the order is still eligible for header changes.
      *
-     * @x-autobe-database-schema-property ship_to_phone
-     * @x-autobe-specification Direct mapping to shopping_mall_orders.ship_to_phone. Update only when the field is present in the request body; otherwise leave unchanged. Enforce header-change eligibility based on order/fulfillment progression.
+         * @x-autobe-database-schema-property ship_to_phone
+         * @x-autobe-specification Direct mapping to
+         *   shopping_mall_orders.ship_to_phone. Update only when the field is
+         *   present in the request body; otherwise leave unchanged. Enforce
+         *   header-change eligibility based on order/fulfillment progression.
      */
     ship_to_phone?: string | undefined;
 
     /**
      * Destination postal code captured at order placement time. Can be updated only while the order is still eligible for header changes.
      *
-     * @x-autobe-database-schema-property ship_to_postal_code
-     * @x-autobe-specification Direct mapping to shopping_mall_orders.ship_to_postal_code. Update only when provided; otherwise keep existing. Service layer must reject updates once shipping information is locked by fulfillment state.
+         * @x-autobe-database-schema-property ship_to_postal_code
+         * @x-autobe-specification Direct mapping to
+         *   shopping_mall_orders.ship_to_postal_code. Update only when
+         *   provided; otherwise keep existing. Service layer must reject
+         *   updates once shipping information is locked by fulfillment state.
      */
     ship_to_postal_code?: string | undefined;
 
     /**
      * Destination region/state/province captured at order placement time. Can be updated only while the order is still eligible for header changes.
      *
-     * @x-autobe-database-schema-property ship_to_region
-     * @x-autobe-specification Direct mapping to shopping_mall_orders.ship_to_region. Update only when provided; otherwise keep existing. Enforce state validation before applying.
+         * @x-autobe-database-schema-property ship_to_region
+         * @x-autobe-specification Direct mapping to
+         *   shopping_mall_orders.ship_to_region. Update only when provided;
+         *   otherwise keep existing. Enforce state validation before applying.
      */
     ship_to_region?: string | undefined;
 
     /**
      * Destination city captured at order placement time. Can be updated only while the order is still eligible for header changes.
      *
-     * @x-autobe-database-schema-property ship_to_city
-     * @x-autobe-specification Direct mapping to shopping_mall_orders.ship_to_city. Update only when provided; otherwise keep existing. Service layer must not allow changes after fulfillment locks apply.
+         * @x-autobe-database-schema-property ship_to_city
+         * @x-autobe-specification Direct mapping to
+         *   shopping_mall_orders.ship_to_city. Update only when provided;
+         *   otherwise keep existing. Service layer must not allow changes after
+         *   fulfillment locks apply.
      */
     ship_to_city?: string | undefined;
 
     /**
      * Street address (including building/house number) captured at order placement time. Can be updated only while the order is still eligible for header changes.
      *
-     * @x-autobe-database-schema-property ship_to_street_address
-     * @x-autobe-specification Direct mapping to shopping_mall_orders.ship_to_street_address. Update only when provided; otherwise keep existing. Apply header-change state validation based on order progression.
+         * @x-autobe-database-schema-property ship_to_street_address
+         * @x-autobe-specification Direct mapping to
+         *   shopping_mall_orders.ship_to_street_address. Update only when
+         *   provided; otherwise keep existing. Apply header-change state
+         *   validation based on order progression.
      */
     ship_to_street_address?: string | undefined;
 
     /**
      * Additional address details (e.g., unit/apartment) captured at order placement time. Can be updated only while the order is still eligible for header changes.
      *
-     * @x-autobe-database-schema-property ship_to_detail_address
-     * @x-autobe-specification Direct mapping to shopping_mall_orders.ship_to_detail_address. Update only when provided; otherwise keep existing. Reject updates if fulfillment state locks header fields.
+         * @x-autobe-database-schema-property ship_to_detail_address
+         * @x-autobe-specification Direct mapping to
+         *   shopping_mall_orders.ship_to_detail_address. Update only when
+         *   provided; otherwise keep existing. Reject updates if fulfillment
+         *   state locks header fields.
      */
     ship_to_detail_address?: string | undefined;
 
     /**
      * Optional delivery instructions captured at order placement time. May be updated or cleared while the order is still eligible for header changes (null clears the instructions).
      *
-     * @x-autobe-database-schema-property shipping_instructions
-     * @x-autobe-specification Direct mapping to shopping_mall_orders.shipping_instructions (nullable column). If the request includes this property, set shopping_mall_orders.shipping_instructions to the provided string or null. If omitted, do not overwrite the existing value. Enforce header-change eligibility and never modify fulfillment-derived state.
+         * @x-autobe-database-schema-property shipping_instructions
+         * @x-autobe-specification Direct mapping to
+         *   shopping_mall_orders.shipping_instructions (nullable column). If
+         *   the request includes this property, set
+         *   shopping_mall_orders.shipping_instructions to the provided string
+         *   or null. If omitted, do not overwrite the existing value. Enforce
+         *   header-change eligibility and never modify fulfillment-derived
+         *   state.
      */
     shipping_instructions?: string | null | undefined;
   };
@@ -152,39 +179,39 @@ export namespace IShoppingMallOrder {
    */
   export type ICreate = {
     /**
-     * @x-autobe-database-schema-property shopping_payment_id
+         * @x-autobe-database-schema-property shopping_payment_id
      */
     shopping_mall_payment_id: string & tags.Format<"uuid">;
     /**
-     * @x-autobe-database-schema-property ship_to_name
+         * @x-autobe-database-schema-property ship_to_name
      */
     ship_to_name: string;
     /**
-     * @x-autobe-database-schema-property ship_to_phone
+         * @x-autobe-database-schema-property ship_to_phone
      */
     ship_to_phone: string;
     /**
-     * @x-autobe-database-schema-property ship_to_postal_code
+         * @x-autobe-database-schema-property ship_to_postal_code
      */
     ship_to_postal_code: string;
     /**
-     * @x-autobe-database-schema-property ship_to_region
+         * @x-autobe-database-schema-property ship_to_region
      */
     ship_to_region: string;
     /**
-     * @x-autobe-database-schema-property ship_to_city
+         * @x-autobe-database-schema-property ship_to_city
      */
     ship_to_city: string;
     /**
-     * @x-autobe-database-schema-property ship_to_street_address
+         * @x-autobe-database-schema-property ship_to_street_address
      */
     ship_to_street_address: string;
     /**
-     * @x-autobe-database-schema-property ship_to_detail_address
+         * @x-autobe-database-schema-property ship_to_detail_address
      */
     ship_to_detail_address: string;
     /**
-     * @x-autobe-database-schema-property shipping_instructions
+         * @x-autobe-database-schema-property shipping_instructions
      */
     shipping_instructions?: string | null | undefined;
   };
@@ -196,46 +223,66 @@ export namespace IShoppingMallOrder {
     /**
      * Unique identifier of the order.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_orders.id (UUID) to IShoppingMallOrder.ISummary.id.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from shopping_mall_orders.id
+         *   (UUID) to IShoppingMallOrder.ISummary.id.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Human-readable unique code for the order (for customer/support lookup).
      *
-     * @x-autobe-database-schema-property order_code
-     * @x-autobe-specification Direct mapping from shopping_mall_orders.order_code to IShoppingMallOrder.ISummary.orderCode. Preserve uniqueness semantics as stored in DB.
+         * @x-autobe-database-schema-property order_code
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_orders.order_code to
+         *   IShoppingMallOrder.ISummary.orderCode. Preserve uniqueness
+         *   semantics as stored in DB.
      */
     orderCode: string;
 
     /**
      * Timestamp when the order was placed.
      *
-     * @x-autobe-database-schema-property placed_at
-     * @x-autobe-specification Direct mapping from shopping_mall_orders.placed_at to IShoppingMallOrder.ISummary.placedAt as an ISO 8601 date-time string.
+         * @x-autobe-database-schema-property placed_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_orders.placed_at to
+         *   IShoppingMallOrder.ISummary.placedAt as an ISO 8601 date-time
+         *   string.
      */
     placedAt: string & tags.Format<"date-time">;
 
     /**
      * Computed total monetary amount for the order (sum of purchased item line totals at purchase time).
      *
-     * @x-autobe-specification Compute totalPrice for a given shopping_mall_orders.id as SUM(shopping_mall_order_items.seller_price_at_purchase * shopping_mall_order_items.quantity). If the order has no order items, return 0.
+         * @x-autobe-specification Compute totalPrice for a given
+         *   shopping_mall_orders.id as
+         *   SUM(shopping_mall_order_items.seller_price_at_purchase *
+         *   shopping_mall_order_items.quantity). If the order has no order
+         *   items, return 0.
      */
     totalPrice: number;
 
     /**
      * Derived overall lifecycle status of the order, reflecting the combined outcome of its items (and shipments when required).
      *
-     * @x-autobe-specification Derive overallStatus as a single string representing the order lifecycle outcome. Use the set of shopping_mall_order_items.line_item_status grouped by shopping_mall_orders.id, and when domain rules require it, incorporate shopping_mall_shipments.status to reflect shipped/delivered progression. The returned string must be consistent with the domain order-status derivation logic.
+         * @x-autobe-specification Derive overallStatus as a single string
+         *   representing the order lifecycle outcome. Use the set of
+         *   shopping_mall_order_items.line_item_status grouped by
+         *   shopping_mall_orders.id, and when domain rules require it,
+         *   incorporate shopping_mall_shipments.status to reflect
+         *   shipped/delivered progression. The returned string must be
+         *   consistent with the domain order-status derivation logic.
      */
     overallStatus: string;
 
     /**
      * Soft-deletion timestamp of the order; null when the order is active.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from shopping_mall_orders.deleted_at to IShoppingMallOrder.ISummary.deletedAt. Use null when the order is not soft-deleted.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_orders.deleted_at to
+         *   IShoppingMallOrder.ISummary.deletedAt. Use null when the order is
+         *   not soft-deleted.
      */
     deletedAt: (string & tags.Format<"date-time">) | null;
   };
@@ -247,16 +294,20 @@ export namespace IShoppingMallOrder {
     /**
      * 1-indexed page number of the order history results to return.
      *
-     * @x-autobe-database-schema-property placed_at
-     * @x-autobe-specification Pagination control: treat page as the 1-indexed page number when executing the filtered/sorted query over shopping_mall_orders (ordered by placed_at).
+         * @x-autobe-database-schema-property placed_at
+         * @x-autobe-specification Pagination control: treat page as the
+         *   1-indexed page number when executing the filtered/sorted query over
+         *   shopping_mall_orders (ordered by placed_at).
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of order summary records to return in a single page.
      *
-     * @x-autobe-database-schema-property placed_at
-     * @x-autobe-specification Pagination control: treat limit as the maximum number of order summaries to return in the current page of the filtered/sorted shopping_mall_orders query.
+         * @x-autobe-database-schema-property placed_at
+         * @x-autobe-specification Pagination control: treat limit as the
+         *   maximum number of order summaries to return in the current page of
+         *   the filtered/sorted shopping_mall_orders query.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -265,40 +316,54 @@ export namespace IShoppingMallOrder {
     /**
      * Field/semantic to sort by for order history. This endpoint supports sorting by order date (placed_at).
      *
-     * @x-autobe-database-schema-property placed_at
-     * @x-autobe-specification Accept only the supported sort semantic for order history: order date (shopping_mall_orders.placed_at). If sortBy is omitted, default newest-first by placed_at desc.
+         * @x-autobe-database-schema-property placed_at
+         * @x-autobe-specification Accept only the supported sort semantic for
+         *   order history: order date (shopping_mall_orders.placed_at). If
+         *   sortBy is omitted, default newest-first by placed_at desc.
      */
     sortBy?: string | undefined;
 
     /**
      * Sort direction for the requested sortBy field: "asc" or "desc".
      *
-     * @x-autobe-database-schema-property placed_at
-     * @x-autobe-specification Apply ordering direction to the chosen sortBy semantic mapped to shopping_mall_orders.placed_at. Allowed values are "asc" and "desc".
+         * @x-autobe-database-schema-property placed_at
+         * @x-autobe-specification Apply ordering direction to the chosen sortBy
+         *   semantic mapped to shopping_mall_orders.placed_at. Allowed values
+         *   are "asc" and "desc".
      */
     sortDirection?: "asc" | "desc" | undefined;
 
     /**
      * Inclusive lower bound for the order date (placed_at) range filter.
      *
-     * @x-autobe-database-schema-property placed_at
-     * @x-autobe-specification If provided, filter orders to those with shopping_mall_orders.placed_at >= placedAtFrom (inclusive). Validate that placedAtFrom <= placedAtTo when both are present.
+         * @x-autobe-database-schema-property placed_at
+         * @x-autobe-specification If provided, filter orders to those with
+         *   shopping_mall_orders.placed_at >= placedAtFrom (inclusive).
+         *   Validate that placedAtFrom <= placedAtTo when both are present.
      */
     placedAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Inclusive upper bound for the order date (placed_at) range filter.
      *
-     * @x-autobe-database-schema-property placed_at
-     * @x-autobe-specification If provided, filter orders to those with shopping_mall_orders.placed_at <= placedAtTo (inclusive). Validate that placedAtFrom <= placedAtTo when both are present.
+         * @x-autobe-database-schema-property placed_at
+         * @x-autobe-specification If provided, filter orders to those with
+         *   shopping_mall_orders.placed_at <= placedAtTo (inclusive). Validate
+         *   that placedAtFrom <= placedAtTo when both are present.
      */
     placedAtTo?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Optional filter for the derived overall order status based on the order items and shipment workflow.
      *
-     * @x-autobe-database-schema-property placed_at
-     * @x-autobe-specification If provided, derive each candidate order's overall status by aggregating order workflow state from related records (shopping_mall_order_items.line_item_status and, where required, shopping_mall_shipments.status). Filter to orders whose derived overall status equals the requested overallStatus. Treat overallStatus as a derived predicate applied alongside placed_at and other filters.
+         * @x-autobe-database-schema-property placed_at
+         * @x-autobe-specification If provided, derive each candidate order's
+         *   overall status by aggregating order workflow state from related
+         *   records (shopping_mall_order_items.line_item_status and, where
+         *   required, shopping_mall_shipments.status). Filter to orders whose
+         *   derived overall status equals the requested overallStatus. Treat
+         *   overallStatus as a derived predicate applied alongside placed_at
+         *   and other filters.
      */
     overallStatus?: string | undefined;
   };

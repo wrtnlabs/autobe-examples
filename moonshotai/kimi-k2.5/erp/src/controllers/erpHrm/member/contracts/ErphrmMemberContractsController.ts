@@ -39,9 +39,9 @@ export class ErphrmMemberContractsController {
    *
    * @param connection
    * @param body Contract creation data defining the employment agreement terms including compensation, working hours, and employment period.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation steps for contract creation:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation steps for contract creation:
    *
    * 1. Validate the request body contains all required fields:
    *    - organization_member_id (UUID, must exist)
@@ -109,9 +109,10 @@ export class ErphrmMemberContractsController {
    *
    * @param connection
    * @param body Contract search criteria and pagination parameters
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query erp_hrm_contracts table with organization-scoped filtering and pagination.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query erp_hrm_contracts table with
+     *   organization-scoped filtering and pagination.
    *
    * Implementation requirements:
    *
@@ -176,9 +177,10 @@ export class ErphrmMemberContractsController {
    *
    * @param connection
    * @param contractId The unique identifier of the employment contract to retrieve
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query the erp_hrm_contracts table using the provided contractId UUID.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query the erp_hrm_contracts table using the
+     *   provided contractId UUID.
    *
    * 1. Validate that the authenticated user has appropriate permissions:
    *    - Members can access contracts where the contract's organizationMember's userId matches the current user
@@ -242,9 +244,10 @@ export class ErphrmMemberContractsController {
    * @param connection
    * @param contractId Target contract's ID
    * @param body Updated contract information
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Validate that the requesting user has employee management permission.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Validate that the requesting user has employee
+     *   management permission.
    *
    * Retrieve the target contract by contractId UUID. Verify the contract exists and is not soft-deleted (deleted_at is null). Verify the contract is currently active (is_active = true). If the contract has ended (end_date is not null), reject the update with an error indicating that historical contracts are immutable.
    *
@@ -314,9 +317,10 @@ export class ErphrmMemberContractsController {
    *
    * @param connection
    * @param contractId Unique identifier of the employment contract to delete (global scope)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement permanent deletion of an employment contract record.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implement permanent deletion of an employment
+     *   contract record.
    *
    * Database Operations:
    * 1. Execute DELETE query on erp_hrm_contracts table WHERE id = {contractId} AND organization_id = {currentOrganizationId}

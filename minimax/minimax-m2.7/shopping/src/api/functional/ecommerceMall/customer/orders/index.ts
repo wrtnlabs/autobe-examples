@@ -39,7 +39,8 @@ export * as shipments from "./shipments/index";
  * @param props.body Search criteria including customer ID, status filter, date range, order number search, and pagination parameters.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Query ecommerce_mall_orders table with pagination and filtering.
+ * @x-autobe-specification Query ecommerce_mall_orders table with pagination and
+ *   filtering.
  *
  * **Search Criteria Validation**:
  * - Validate all filter parameters are provided in request body
@@ -175,7 +176,8 @@ export namespace index {
  * @param props.orderId Unique identifier (UUID) of the order to retrieve.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Query the ecommerce_mall_orders table by the provided orderId (UUID).
+ * @x-autobe-specification Query the ecommerce_mall_orders table by the provided
+ *   orderId (UUID).
  *
  * Verify the order exists and deleted_at is null (not soft-deleted).
  *

@@ -46,7 +46,10 @@ export namespace IMallPlatformOrderItemSnapshot {
      *
      * This is a 1-indexed pagination control used when browsing immutable snapshot history. It does not correspond to a persisted database field.
      *
-     * @x-autobe-specification Controls the 1-indexed page number for browsing mall_platform_order_item_snapshots history. This value is applied by the list endpoint's pagination logic and is not stored in the database.
+         * @x-autobe-specification Controls the 1-indexed page number for
+         *   browsing mall_platform_order_item_snapshots history. This value is
+         *   applied by the list endpoint's pagination logic and is not stored
+         *   in the database.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -55,7 +58,10 @@ export namespace IMallPlatformOrderItemSnapshot {
      *
      * This is a pagination control for snapshot browsing and is not persisted in the database.
      *
-     * @x-autobe-specification Controls the maximum number of snapshot records returned per page when browsing mall_platform_order_item_snapshots. This value is consumed only by pagination logic and is not stored in the database.
+         * @x-autobe-specification Controls the maximum number of snapshot
+         *   records returned per page when browsing
+         *   mall_platform_order_item_snapshots. This value is consumed only by
+         *   pagination logic and is not stored in the database.
      */
     limit?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -64,7 +70,10 @@ export namespace IMallPlatformOrderItemSnapshot {
      *
      * This value chooses how the immutable snapshot list is sorted and does not map to a stored database column.
      *
-     * @x-autobe-specification Selects the ordering mode for listing mall_platform_order_item_snapshots. Supported values are createdAt_desc, createdAt_asc, snapshotAt_desc, and snapshotAt_asc. When omitted, the endpoint defaults to newest-first ordering.
+         * @x-autobe-specification Selects the ordering mode for listing
+         *   mall_platform_order_item_snapshots. Supported values are
+         *   createdAt_desc, createdAt_asc, snapshotAt_desc, and snapshotAt_asc.
+         *   When omitted, the endpoint defaults to newest-first ordering.
      */
     sort?:
       | "createdAt_desc"
@@ -78,7 +87,11 @@ export namespace IMallPlatformOrderItemSnapshot {
      *
      * This helps narrow the list by matching preserved snapshot content or snapshot metadata. It is not a stored database field.
      *
-     * @x-autobe-specification Applies text filtering over mall_platform_order_item_snapshots history. Implementations may search persisted snapshot text fields such as snapshot_reason and preserved scalar snapshot values, depending on endpoint support. This value is only used for filtering results.
+         * @x-autobe-specification Applies text filtering over
+         *   mall_platform_order_item_snapshots history. Implementations may
+         *   search persisted snapshot text fields such as snapshot_reason and
+         *   preserved scalar snapshot values, depending on endpoint support.
+         *   This value is only used for filtering results.
      */
     search?: string | undefined;
 
@@ -87,7 +100,10 @@ export namespace IMallPlatformOrderItemSnapshot {
      *
      * Snapshots created before this timestamp are excluded from the result set. This is a filter boundary, not a persisted field.
      *
-     * @x-autobe-specification Filters results to snapshots whose snapshot_at timestamp is greater than or equal to the provided datetime. It operates on immutable snapshot history rows only and is not persisted as part of the DTO itself.
+         * @x-autobe-specification Filters results to snapshots whose
+         *   snapshot_at timestamp is greater than or equal to the provided
+         *   datetime. It operates on immutable snapshot history rows only and
+         *   is not persisted as part of the DTO itself.
      */
     snapshotAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
@@ -96,7 +112,10 @@ export namespace IMallPlatformOrderItemSnapshot {
      *
      * Snapshots created after this timestamp are excluded from the result set. This is a filter boundary, not a persisted field.
      *
-     * @x-autobe-specification Filters results to snapshots whose snapshot_at timestamp is less than or equal to the provided datetime. It operates on immutable snapshot history rows only and is not persisted as part of the DTO itself.
+         * @x-autobe-specification Filters results to snapshots whose
+         *   snapshot_at timestamp is less than or equal to the provided
+         *   datetime. It operates on immutable snapshot history rows only and
+         *   is not persisted as part of the DTO itself.
      */
     snapshotAtTo?: (string & tags.Format<"date-time">) | undefined;
 
@@ -105,7 +124,10 @@ export namespace IMallPlatformOrderItemSnapshot {
      *
      * This filter limits results by the database creation timestamp of the snapshot row. It is not a persisted request field.
      *
-     * @x-autobe-specification Filters results to snapshot rows whose created_at timestamp is greater than or equal to the provided datetime. Use this for browsing by database creation time, not by business snapshot time.
+         * @x-autobe-specification Filters results to snapshot rows whose
+         *   created_at timestamp is greater than or equal to the provided
+         *   datetime. Use this for browsing by database creation time, not by
+         *   business snapshot time.
      */
     createdAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
@@ -114,7 +136,10 @@ export namespace IMallPlatformOrderItemSnapshot {
      *
      * This filter limits results by the database creation timestamp of the snapshot row. It is not a persisted request field.
      *
-     * @x-autobe-specification Filters results to snapshot rows whose created_at timestamp is less than or equal to the provided datetime. Use this for browsing by database creation time, not by business snapshot time.
+         * @x-autobe-specification Filters results to snapshot rows whose
+         *   created_at timestamp is less than or equal to the provided
+         *   datetime. Use this for browsing by database creation time, not by
+         *   business snapshot time.
      */
     createdAtTo?: (string & tags.Format<"date-time">) | undefined;
   };

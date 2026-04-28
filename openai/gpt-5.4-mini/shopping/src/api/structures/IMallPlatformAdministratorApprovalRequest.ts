@@ -16,8 +16,10 @@ export type IMallPlatformAdministratorApprovalRequest = {
    *
    * This value identifies one administrator approval request record and is stable for the lifetime of the request.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from mall_platform_administrator_approval_requests.id. This is the UUID primary key of the approval request record.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_administrator_approval_requests.id. This is the UUID
+     *   primary key of the approval request record.
    */
   id: string & tags.Format<"uuid">;
 
@@ -26,8 +28,11 @@ export type IMallPlatformAdministratorApprovalRequest = {
    *
    * This is exposed as a summary reference to the administrator who submitted the approval request.
    *
-   * @x-autobe-database-schema-property administrator
-   * @x-autobe-specification Join mall_platform_administrator_approval_requests.administrator_id to mall_platform_administrators.id and expose the related administrator as IMallPlatformAdministrator.ISummary.
+     * @x-autobe-database-schema-property administrator
+     * @x-autobe-specification Join
+     *   mall_platform_administrator_approval_requests.administrator_id to
+     *   mall_platform_administrators.id and expose the related administrator as
+     *   IMallPlatformAdministrator.ISummary.
    */
   administrator: IMallPlatformAdministrator.ISummary;
 
@@ -36,8 +41,12 @@ export type IMallPlatformAdministratorApprovalRequest = {
    *
    * This field is nullable because a request may still be pending and therefore have no assigned reviewer yet.
    *
-   * @x-autobe-database-schema-property reviewerAdministrator
-   * @x-autobe-specification Join mall_platform_administrator_approval_requests.reviewer_administrator_id to mall_platform_administrators.id and expose the reviewer as IMallPlatformAdministrator.ISummary when present. Return null when no reviewer has processed the request yet.
+     * @x-autobe-database-schema-property reviewerAdministrator
+     * @x-autobe-specification Join
+     *   mall_platform_administrator_approval_requests.reviewer_administrator_id
+     *   to mall_platform_administrators.id and expose the reviewer as
+     *   IMallPlatformAdministrator.ISummary when present. Return null when no
+     *   reviewer has processed the request yet.
    */
   reviewerAdministrator: IMallPlatformAdministrator.ISummary | null;
 
@@ -46,8 +55,10 @@ export type IMallPlatformAdministratorApprovalRequest = {
    *
    * This text explains why the user submitted the approval request and is preserved for governance review.
    *
-   * @x-autobe-database-schema-property reason
-   * @x-autobe-specification Direct mapping from mall_platform_administrator_approval_requests.reason. Store and return the applicant's reason verbatim.
+     * @x-autobe-database-schema-property reason
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_administrator_approval_requests.reason. Store and return
+     *   the applicant's reason verbatim.
    */
   reason: string;
 
@@ -56,8 +67,11 @@ export type IMallPlatformAdministratorApprovalRequest = {
    *
    * This value reflects where the request is in the approval lifecycle and is used to drive governance and review screens.
    *
-   * @x-autobe-database-schema-property status
-   * @x-autobe-specification Direct mapping from mall_platform_administrator_approval_requests.status. This field stores the current lifecycle status of the request, such as pending, approved, or rejected.
+     * @x-autobe-database-schema-property status
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_administrator_approval_requests.status. This field stores
+     *   the current lifecycle status of the request, such as pending, approved,
+     *   or rejected.
    */
   status: string;
 
@@ -66,8 +80,11 @@ export type IMallPlatformAdministratorApprovalRequest = {
    *
    * This field is nullable and only contains a value when the request has been rejected.
    *
-   * @x-autobe-database-schema-property rejection_reason
-   * @x-autobe-specification Direct mapping from mall_platform_administrator_approval_requests.rejection_reason. Preserve the nullable rejection reason exactly as stored in the database.
+     * @x-autobe-database-schema-property rejection_reason
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_administrator_approval_requests.rejection_reason.
+     *   Preserve the nullable rejection reason exactly as stored in the
+     *   database.
    */
   rejectionReason: string | null;
 
@@ -76,8 +93,10 @@ export type IMallPlatformAdministratorApprovalRequest = {
    *
    * This field is nullable because pending requests have not yet been reviewed.
    *
-   * @x-autobe-database-schema-property reviewed_at
-   * @x-autobe-specification Direct mapping from mall_platform_administrator_approval_requests.reviewed_at. Preserve the nullable review timestamp exactly as stored in the database.
+     * @x-autobe-database-schema-property reviewed_at
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_administrator_approval_requests.reviewed_at. Preserve the
+     *   nullable review timestamp exactly as stored in the database.
    */
   reviewedAt: (string & tags.Format<"date-time">) | null;
 
@@ -86,8 +105,10 @@ export type IMallPlatformAdministratorApprovalRequest = {
    *
    * This timestamp marks when the administrator approval request was first submitted.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from mall_platform_administrator_approval_requests.created_at. Preserve the creation timestamp exactly as stored in the database.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_administrator_approval_requests.created_at. Preserve the
+     *   creation timestamp exactly as stored in the database.
    */
   createdAt: string & tags.Format<"date-time">;
 
@@ -96,8 +117,10 @@ export type IMallPlatformAdministratorApprovalRequest = {
    *
    * This timestamp changes when the request record is modified, including review decisions and metadata updates.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from mall_platform_administrator_approval_requests.updated_at. Preserve the last-update timestamp exactly as stored in the database.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_administrator_approval_requests.updated_at. Preserve the
+     *   last-update timestamp exactly as stored in the database.
    */
   updatedAt: string & tags.Format<"date-time">;
 
@@ -106,8 +129,10 @@ export type IMallPlatformAdministratorApprovalRequest = {
    *
    * This field is nullable because the record may remain active and undeleted.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from mall_platform_administrator_approval_requests.deleted_at. Preserve the nullable soft-delete timestamp exactly as stored in the database.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_administrator_approval_requests.deleted_at. Preserve the
+     *   nullable soft-delete timestamp exactly as stored in the database.
    */
   deletedAt: (string & tags.Format<"date-time">) | null;
 };
@@ -125,8 +150,9 @@ export namespace IMallPlatformAdministratorApprovalRequest {
      *
      * This value uniquely identifies the administrator approval request in administrative review and detail views. It is the stable primary identifier for the request record.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from mall_platform_administrator_approval_requests.id.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_administrator_approval_requests.id.
      */
     id: string & tags.Format<"uuid">;
 
@@ -135,8 +161,11 @@ export namespace IMallPlatformAdministratorApprovalRequest {
      *
      * This value identifies the administrator account that submitted the approval request. It is returned as a public administrator summary rather than as a raw foreign key.
      *
-     * @x-autobe-database-schema-property administrator
-     * @x-autobe-specification Join from mall_platform_administrator_approval_requests.administrator_id to mall_platform_administrators.id and expose it as IMallPlatformAdministrator.ISummary.
+         * @x-autobe-database-schema-property administrator
+         * @x-autobe-specification Join from
+         *   mall_platform_administrator_approval_requests.administrator_id to
+         *   mall_platform_administrators.id and expose it as
+         *   IMallPlatformAdministrator.ISummary.
      */
     administrator: IMallPlatformAdministrator.ISummary;
 
@@ -145,8 +174,12 @@ export namespace IMallPlatformAdministratorApprovalRequest {
      *
      * This value is null while the request is pending. After review, it contains the administrator summary of the reviewer who approved or rejected the request.
      *
-     * @x-autobe-database-schema-property reviewerAdministrator
-     * @x-autobe-specification Join from mall_platform_administrator_approval_requests.reviewer_administrator_id to mall_platform_administrators.id and expose it as IMallPlatformAdministrator.ISummary | null. The value remains null until a review decision exists.
+         * @x-autobe-database-schema-property reviewerAdministrator
+         * @x-autobe-specification Join from
+         *   mall_platform_administrator_approval_requests.reviewer_administrator_id
+         *   to mall_platform_administrators.id and expose it as
+         *   IMallPlatformAdministrator.ISummary | null. The value remains null
+         *   until a review decision exists.
      */
     reviewerAdministrator: IMallPlatformAdministrator.ISummary | null;
 
@@ -155,8 +188,9 @@ export namespace IMallPlatformAdministratorApprovalRequest {
      *
      * This text captures the applicant's justification for the role request and is displayed for administrative review.
      *
-     * @x-autobe-database-schema-property reason
-     * @x-autobe-specification Direct mapping from mall_platform_administrator_approval_requests.reason.
+         * @x-autobe-database-schema-property reason
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_administrator_approval_requests.reason.
      */
     reason: string;
 
@@ -165,8 +199,9 @@ export namespace IMallPlatformAdministratorApprovalRequest {
      *
      * This value indicates where the request is in the approval workflow, such as pending, approved, or rejected.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from mall_platform_administrator_approval_requests.status.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_administrator_approval_requests.status.
      */
     status: string;
 
@@ -175,8 +210,11 @@ export namespace IMallPlatformAdministratorApprovalRequest {
      *
      * This field is null unless the request has been rejected. When present, it contains the reviewer-provided rejection reason.
      *
-     * @x-autobe-database-schema-property rejection_reason
-     * @x-autobe-specification Direct mapping from mall_platform_administrator_approval_requests.rejection_reason. Keep the property nullable because only rejected requests carry an explanation.
+         * @x-autobe-database-schema-property rejection_reason
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_administrator_approval_requests.rejection_reason.
+         *   Keep the property nullable because only rejected requests carry an
+         *   explanation.
      */
     rejectionReason: string | null;
 
@@ -185,8 +223,10 @@ export namespace IMallPlatformAdministratorApprovalRequest {
      *
      * This field is null while the request is still pending. Once a decision is made, it contains the timestamp of that review action.
      *
-     * @x-autobe-database-schema-property reviewed_at
-     * @x-autobe-specification Direct mapping from mall_platform_administrator_approval_requests.reviewed_at. Keep the property nullable until a reviewer decision has been recorded.
+         * @x-autobe-database-schema-property reviewed_at
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_administrator_approval_requests.reviewed_at. Keep the
+         *   property nullable until a reviewer decision has been recorded.
      */
     reviewedAt: (string & tags.Format<"date-time">) | null;
 
@@ -195,8 +235,9 @@ export namespace IMallPlatformAdministratorApprovalRequest {
      *
      * This timestamp marks when the administrator approval request was originally submitted and is used for ordering and audit visibility.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from mall_platform_administrator_approval_requests.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_administrator_approval_requests.created_at.
      */
     createdAt: string & tags.Format<"date-time">;
 
@@ -205,8 +246,9 @@ export namespace IMallPlatformAdministratorApprovalRequest {
      *
      * This timestamp changes whenever the approval request record is modified, including review decisions and lifecycle updates.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from mall_platform_administrator_approval_requests.updated_at.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_administrator_approval_requests.updated_at.
      */
     updatedAt: string & tags.Format<"date-time">;
 
@@ -215,8 +257,11 @@ export namespace IMallPlatformAdministratorApprovalRequest {
      *
      * This field is null for active requests. When present, it indicates that the record was marked as deleted while still preserving its historical data.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from mall_platform_administrator_approval_requests.deleted_at. Preserve nullability because active requests do not have a deletion timestamp.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_administrator_approval_requests.deleted_at. Preserve
+         *   nullability because active requests do not have a deletion
+         *   timestamp.
      */
     deletedAt: (string & tags.Format<"date-time">) | null;
   };
@@ -234,7 +279,10 @@ export namespace IMallPlatformAdministratorApprovalRequest {
      *
      * Use this value to narrow the result set to requests submitted by a specific administrator account.
      *
-     * @x-autobe-specification Use this value as the applicant-administrator filter when querying approval requests. Convert it into the underlying applicant relation or foreign-key predicate in the list query.
+         * @x-autobe-specification Use this value as the applicant-administrator
+         *   filter when querying approval requests. Convert it into the
+         *   underlying applicant relation or foreign-key predicate in the list
+         *   query.
      */
     administratorId?: (string & tags.Format<"uuid">) | undefined;
 
@@ -243,7 +291,11 @@ export namespace IMallPlatformAdministratorApprovalRequest {
      *
      * Use this value to find requests reviewed by a specific administrator or, if supported by the service, requests that have not yet been reviewed.
      *
-     * @x-autobe-specification Use this value as the reviewer-administrator filter when querying approval requests. Convert it into the underlying reviewer relation or foreign-key predicate in the list query. Null-aware search may be supported by the service if implemented.
+         * @x-autobe-specification Use this value as the reviewer-administrator
+         *   filter when querying approval requests. Convert it into the
+         *   underlying reviewer relation or foreign-key predicate in the list
+         *   query. Null-aware search may be supported by the service if
+         *   implemented.
      */
     reviewerAdministratorId?: (string & tags.Format<"uuid">) | null | undefined;
 
@@ -252,7 +304,9 @@ export namespace IMallPlatformAdministratorApprovalRequest {
      *
      * Use this value to search for requests such as pending, approved, or rejected.
      *
-     * @x-autobe-specification Use this value as the workflow-status filter when querying approval requests. Convert it into a predicate against the stored status column in the list query.
+         * @x-autobe-specification Use this value as the workflow-status filter
+         *   when querying approval requests. Convert it into a predicate
+         *   against the stored status column in the list query.
      */
     status?: string | undefined;
 
@@ -261,7 +315,9 @@ export namespace IMallPlatformAdministratorApprovalRequest {
      *
      * Use this value to search for requests whose reason matches the provided text or search expression.
      *
-     * @x-autobe-specification Use this value as a text-search filter against the submitted reason when querying approval requests. Convert it into a search predicate on the reason column.
+         * @x-autobe-specification Use this value as a text-search filter
+         *   against the submitted reason when querying approval requests.
+         *   Convert it into a search predicate on the reason column.
      */
     reason?: string | undefined;
 
@@ -270,7 +326,10 @@ export namespace IMallPlatformAdministratorApprovalRequest {
      *
      * Use this value to search for requests rejected for a particular explanation or message.
      *
-     * @x-autobe-specification Use this value as a text-search filter against the stored rejection reason when querying approval requests. Convert it into a search predicate on the rejection_reason column.
+         * @x-autobe-specification Use this value as a text-search filter
+         *   against the stored rejection reason when querying approval
+         *   requests. Convert it into a search predicate on the
+         *   rejection_reason column.
      */
     rejectionReason?: string | undefined;
 
@@ -279,7 +338,8 @@ export namespace IMallPlatformAdministratorApprovalRequest {
      *
      * Use this value to restrict the search to newer approval requests.
      *
-     * @x-autobe-specification Use this value as the inclusive lower bound for the created_at timestamp range when querying approval requests.
+         * @x-autobe-specification Use this value as the inclusive lower bound
+         *   for the created_at timestamp range when querying approval requests.
      */
     createdAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
@@ -288,7 +348,8 @@ export namespace IMallPlatformAdministratorApprovalRequest {
      *
      * Use this value to restrict the search to requests created up to a specific point in time.
      *
-     * @x-autobe-specification Use this value as the inclusive upper bound for the created_at timestamp range when querying approval requests.
+         * @x-autobe-specification Use this value as the inclusive upper bound
+         *   for the created_at timestamp range when querying approval requests.
      */
     createdAtTo?: (string & tags.Format<"date-time">) | undefined;
 
@@ -297,7 +358,9 @@ export namespace IMallPlatformAdministratorApprovalRequest {
      *
      * Use this value to restrict the search to requests reviewed from a specific time onward.
      *
-     * @x-autobe-specification Use this value as the inclusive lower bound for the reviewed_at timestamp range when querying approval requests.
+         * @x-autobe-specification Use this value as the inclusive lower bound
+         *   for the reviewed_at timestamp range when querying approval
+         *   requests.
      */
     reviewedAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
@@ -306,7 +369,9 @@ export namespace IMallPlatformAdministratorApprovalRequest {
      *
      * Use this value to restrict the search to requests reviewed up to a specific point in time.
      *
-     * @x-autobe-specification Use this value as the inclusive upper bound for the reviewed_at timestamp range when querying approval requests.
+         * @x-autobe-specification Use this value as the inclusive upper bound
+         *   for the reviewed_at timestamp range when querying approval
+         *   requests.
      */
     reviewedAtTo?: (string & tags.Format<"date-time">) | undefined;
 
@@ -315,7 +380,8 @@ export namespace IMallPlatformAdministratorApprovalRequest {
      *
      * Use this value to restrict the search to records modified from a specific time onward.
      *
-     * @x-autobe-specification Use this value as the inclusive lower bound for the updated_at timestamp range when querying approval requests.
+         * @x-autobe-specification Use this value as the inclusive lower bound
+         *   for the updated_at timestamp range when querying approval requests.
      */
     updatedAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
@@ -324,7 +390,8 @@ export namespace IMallPlatformAdministratorApprovalRequest {
      *
      * Use this value to restrict the search to records modified up to a specific time.
      *
-     * @x-autobe-specification Use this value as the inclusive upper bound for the updated_at timestamp range when querying approval requests.
+         * @x-autobe-specification Use this value as the inclusive upper bound
+         *   for the updated_at timestamp range when querying approval requests.
      */
     updatedAtTo?: (string & tags.Format<"date-time">) | undefined;
 
@@ -333,7 +400,9 @@ export namespace IMallPlatformAdministratorApprovalRequest {
      *
      * This is a browsing control for administrative search results and does not map to stored request data.
      *
-     * @x-autobe-specification Use this value as the 1-indexed page number for pagination. Convert it into the offset/window used by the list query after validating the request.
+         * @x-autobe-specification Use this value as the 1-indexed page number
+         *   for pagination. Convert it into the offset/window used by the list
+         *   query after validating the request.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -342,7 +411,9 @@ export namespace IMallPlatformAdministratorApprovalRequest {
      *
      * This is a browsing control for administrative search results and does not map to stored request data.
      *
-     * @x-autobe-specification Use this value as the maximum number of records per page. Validate it against the endpoint's pagination rules before querying.
+         * @x-autobe-specification Use this value as the maximum number of
+         *   records per page. Validate it against the endpoint's pagination
+         *   rules before querying.
      */
     limit?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -351,7 +422,9 @@ export namespace IMallPlatformAdministratorApprovalRequest {
      *
      * This is a browsing control for administrative search results and does not map to stored request data.
      *
-     * @x-autobe-specification Use this value as the ordering directive for list results. Translate it into the corresponding order-by clause, defaulting to the platform standard when omitted.
+         * @x-autobe-specification Use this value as the ordering directive for
+         *   list results. Translate it into the corresponding order-by clause,
+         *   defaulting to the platform standard when omitted.
      */
     sort?: string | undefined;
   };
@@ -367,8 +440,11 @@ export namespace IMallPlatformAdministratorApprovalRequest {
      *
      * Provide the applicant's explanation for why elevated platform access is being requested. This is the only field accepted in this create payload.
      *
-     * @x-autobe-database-schema-property reason
-     * @x-autobe-specification Direct mapping to mall_platform_administrator_approval_requests.reason. Persist the applicant's explanation for requesting administrator access exactly as submitted.
+         * @x-autobe-database-schema-property reason
+         * @x-autobe-specification Direct mapping to
+         *   mall_platform_administrator_approval_requests.reason. Persist the
+         *   applicant's explanation for requesting administrator access exactly
+         *   as submitted.
      */
     reason: string;
   };

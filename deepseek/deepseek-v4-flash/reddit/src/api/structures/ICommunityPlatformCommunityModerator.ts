@@ -17,8 +17,9 @@ export type ICommunityPlatformCommunityModerator = {
    *
    * Used as the primary key in the community_platform_community_moderators table and as the appointmentId path parameter in API requests.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from community_platform_community_moderators.id. UUID primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_community_moderators.id. UUID primary key.
    */
   id: string & tags.Format<"uuid">;
 
@@ -27,8 +28,10 @@ export type ICommunityPlatformCommunityModerator = {
    *
    * Each member can hold at most one moderator appointment per community, enforced by a unique constraint on (member_id, community_id).
    *
-   * @x-autobe-database-schema-property member
-   * @x-autobe-specification Join via community_platform_member_id to community_platform_members.id. Returns as ICommunityPlatformMember.ISummary.
+     * @x-autobe-database-schema-property member
+     * @x-autobe-specification Join via community_platform_member_id to
+     *   community_platform_members.id. Returns as
+     *   ICommunityPlatformMember.ISummary.
    */
   member: ICommunityPlatformMember.ISummary;
 
@@ -37,8 +40,10 @@ export type ICommunityPlatformCommunityModerator = {
    *
    * The community may have multiple appointed moderators, and members can hold moderator roles in multiple communities simultaneously.
    *
-   * @x-autobe-database-schema-property community
-   * @x-autobe-specification Join via community_platform_community_id to community_platform_communities.id. Returns as ICommunityPlatformCommunity.ISummary.
+     * @x-autobe-database-schema-property community
+     * @x-autobe-specification Join via community_platform_community_id to
+     *   community_platform_communities.id. Returns as
+     *   ICommunityPlatformCommunity.ISummary.
    */
   community: ICommunityPlatformCommunity.ISummary;
 
@@ -47,8 +52,10 @@ export type ICommunityPlatformCommunityModerator = {
    *
    * May be the community owner or another existing moderator, since both owners and moderators can appoint additional moderators per the moderation system rules.
    *
-   * @x-autobe-database-schema-property appointedBy
-   * @x-autobe-specification Join via appointed_by_member_id to community_platform_members.id. Returns as ICommunityPlatformMember.ISummary.
+     * @x-autobe-database-schema-property appointedBy
+     * @x-autobe-specification Join via appointed_by_member_id to
+     *   community_platform_members.id. Returns as
+     *   ICommunityPlatformMember.ISummary.
    */
   appointedBy: ICommunityPlatformMember.ISummary;
 
@@ -57,8 +64,10 @@ export type ICommunityPlatformCommunityModerator = {
    *
    * Set automatically upon the member's appointment as a moderator of the community.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from community_platform_community_moderators.created_at. Auto-set on creation.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_community_moderators.created_at. Auto-set on
+     *   creation.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -67,8 +76,10 @@ export type ICommunityPlatformCommunityModerator = {
    *
    * Reflects the most recent modification to the appointment, if any.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from community_platform_community_moderators.updated_at. Updated on any change to the record.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_community_moderators.updated_at. Updated on any
+     *   change to the record.
    */
   updated_at: string & tags.Format<"date-time">;
 };
@@ -86,8 +97,9 @@ export namespace ICommunityPlatformCommunityModerator {
      *
      * This UUID serves as the primary key for the appointment and is used in API operations to reference a specific moderator assignment within a community.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from community_platform_community_moderators.id.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_community_moderators.id.
      */
     id: string & tags.Format<"uuid">;
 
@@ -96,8 +108,14 @@ export namespace ICommunityPlatformCommunityModerator {
      *
      * This field contains a summary of the appointed member's account information, including their username and email address. Each community can have multiple moderators, and a member can hold moderator roles in multiple communities.
      *
-     * @x-autobe-database-schema-property member
-     * @x-autobe-specification Join from community_platform_community_moderators.community_platform_member_id to community_platform_members.id. Returns ICommunityPlatformMember.ISummary. Each member can have at most one moderator appointment per community, enforced by a unique constraint on (community_platform_member_id, community_platform_community_id).
+         * @x-autobe-database-schema-property member
+         * @x-autobe-specification Join from
+         *   community_platform_community_moderators.community_platform_member_id
+         *   to community_platform_members.id. Returns
+         *   ICommunityPlatformMember.ISummary. Each member can have at most one
+         *   moderator appointment per community, enforced by a unique
+         *   constraint on (community_platform_member_id,
+         *   community_platform_community_id).
      */
     member: ICommunityPlatformMember.ISummary;
 
@@ -106,8 +124,14 @@ export namespace ICommunityPlatformCommunityModerator {
      *
      * This field contains a summary of the appointing member's account information. The appointer may be the community owner or another existing moderator, since both owners and moderators can appoint additional moderators. Only the community owner can remove moderators.
      *
-     * @x-autobe-database-schema-property appointedBy
-     * @x-autobe-specification Join from community_platform_community_moderators.appointed_by_member_id to community_platform_members.id. Returns ICommunityPlatformMember.ISummary. The appointing member may be the community owner or another existing moderator, since both owners and moderators can appoint additional moderators per the moderation system rules.
+         * @x-autobe-database-schema-property appointedBy
+         * @x-autobe-specification Join from
+         *   community_platform_community_moderators.appointed_by_member_id to
+         *   community_platform_members.id. Returns
+         *   ICommunityPlatformMember.ISummary. The appointing member may be the
+         *   community owner or another existing moderator, since both owners
+         *   and moderators can appoint additional moderators per the moderation
+         *   system rules.
      */
     appointedBy: ICommunityPlatformMember.ISummary;
 
@@ -116,8 +140,9 @@ export namespace ICommunityPlatformCommunityModerator {
      *
      * Indicates when the member was appointed as a moderator of the community. Used for chronological sorting in moderator listing displays, with most recent appointments appearing first.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from community_platform_community_moderators.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_community_moderators.created_at.
      */
     created_at: string & tags.Format<"date-time">;
   };
@@ -135,7 +160,9 @@ export namespace ICommunityPlatformCommunityModerator {
      *
      * Filters the results to only include moderator appointments where the appointed member's username contains the provided search term (case-insensitive partial match). Omit or leave empty to return all appointments without filtering.
      *
-     * @x-autobe-specification LIKE/ILIKE partial match on member.username via JOIN to community_platform_members. Applied as a WHERE filter before pagination. Omit or pass empty string to skip filtering.
+         * @x-autobe-specification LIKE/ILIKE partial match on member.username
+         *   via JOIN to community_platform_members. Applied as a WHERE filter
+         *   before pagination. Omit or pass empty string to skip filtering.
      */
     search?: string | undefined;
 
@@ -144,7 +171,11 @@ export namespace ICommunityPlatformCommunityModerator {
      *
      * Determines the ordering of returned appointments. Two values are supported: "created_at" sorts by appointment date (chronological order), and "member" sorts alphabetically by the appointed member's username.
      *
-     * @x-autobe-specification Sort field determining result ordering. 'created_at' sorts by the appointment date (chronological). 'member' sorts alphabetically by the appointed member's username via JOIN to community_platform_members. Default sort order is 'created_at' descending (newest first) if not specified.
+         * @x-autobe-specification Sort field determining result ordering.
+         *   'created_at' sorts by the appointment date (chronological).
+         *   'member' sorts alphabetically by the appointed member's username
+         *   via JOIN to community_platform_members. Default sort order is
+         *   'created_at' descending (newest first) if not specified.
      */
     sort?: string | undefined;
 
@@ -153,7 +184,11 @@ export namespace ICommunityPlatformCommunityModerator {
      *
      * When provided, returns results starting after the item identified by the cursor. Obtain the cursor value from the pagination metadata of a previous response. Omit to start from the beginning and retrieve the first page of results.
      *
-     * @x-autobe-specification Opaque pagination cursor token encoding the sort field value and id for cursor-based pagination. The cursor value is obtained from the 'next_cursor' field in the previous page's response. When provided, returns results starting after the identified item. Omit to start from the first page.
+         * @x-autobe-specification Opaque pagination cursor token encoding the
+         *   sort field value and id for cursor-based pagination. The cursor
+         *   value is obtained from the 'next_cursor' field in the previous
+         *   page's response. When provided, returns results starting after the
+         *   identified item. Omit to start from the first page.
      */
     cursor?: string | undefined;
 
@@ -162,7 +197,9 @@ export namespace ICommunityPlatformCommunityModerator {
      *
      * Defines the page size for paginated results. Must be between 1 and 100 inclusive. The actual number of returned records may be less than this value on the final page or when total records are fewer than the limit. Omit to use the default page size.
      *
-     * @x-autobe-specification Maximum number of records to return per page. Must be between 1 and 100. If omitted, defaults to a system-defined page size (e.g., 20). Applied as LIMIT in the SQL query.
+         * @x-autobe-specification Maximum number of records to return per page.
+         *   Must be between 1 and 100. If omitted, defaults to a system-defined
+         *   page size (e.g., 20). Applied as LIMIT in the SQL query.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -173,7 +210,10 @@ export namespace ICommunityPlatformCommunityModerator {
      *
      * Specifies which page of results to return. Page numbering starts from 1, so the first page is page 1 (not 0). If omitted, null, or undefined, defaults to page 1 (first page). Requesting a page beyond the available range returns an empty data array with valid pagination metadata reflecting the actual totals.
      *
-     * @x-autobe-specification 1-indexed page number for offset-based pagination. Calculated as OFFSET = (page - 1) * limit in the SQL query. Defaults to 1 if not provided, null, or undefined. Used as an alternative to cursor-based pagination.
+         * @x-autobe-specification 1-indexed page number for offset-based
+         *   pagination. Calculated as OFFSET = (page - 1) * limit in the SQL
+         *   query. Defaults to 1 if not provided, null, or undefined. Used as
+         *   an alternative to cursor-based pagination.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };

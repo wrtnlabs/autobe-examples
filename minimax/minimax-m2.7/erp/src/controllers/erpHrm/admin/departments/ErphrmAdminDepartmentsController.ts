@@ -22,9 +22,10 @@ export class ErphrmAdminDepartmentsController {
    *
    * @param connection
    * @param body Department creation details including name and optional description and parent department
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Create a new department in the erp_hrm_departments table.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Create a new department in the
+     *   erp_hrm_departments table.
    *
    * 1. Authorization: Verify user has org:manage permission in the current organization context.
    *
@@ -83,9 +84,12 @@ export class ErphrmAdminDepartmentsController {
    * @param connection
    * @param departmentId Unique identifier of the department to update (UUID format)
    * @param body Department update fields including name, description, and parent department assignment
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query the erp_hrm_departments table by departmentId (UUID primary key) within the current organization context. Validate that the department exists and is not soft-deleted (deleted_at IS NULL).
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Query the erp_hrm_departments table by
+     *   departmentId (UUID primary key) within the current organization
+     *   context. Validate that the department exists and is not soft-deleted
+     *   (deleted_at IS NULL).
    *
    * Validate the request body:
    * - name: required string, max 255 characters, must be unique within organization (check @@unique([erp_hrm_organization_id, name]) excluding current department)
@@ -131,9 +135,10 @@ export class ErphrmAdminDepartmentsController {
    *
    * @param connection
    * @param departmentId Unique identifier of the department to delete (UUID format)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification DELETE operation for erp_hrm_departments table with soft delete behavior.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification DELETE operation for erp_hrm_departments table
+     *   with soft delete behavior.
    *
    * Implementation steps:
    * 1. Validate user has org:manage permission in the current organization context

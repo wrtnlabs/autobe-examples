@@ -27,9 +27,11 @@ export class HrmtimetrackingProjectsController {
    *
    * @param connection
    * @param body The project creation data
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Implement a service-layer create flow for the hrm_time_tracking_projects aggregate scoped to the authenticated user's currently selected organization.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Implement a service-layer create flow for the
+     *   hrm_time_tracking_projects aggregate scoped to the authenticated user's
+     *   currently selected organization.
    *
    * 1. Resolve the authenticated actor and current organization context from the session or request context. Do not accept organization identity from the body for this endpoint.
    * 2. Authorize the operation by evaluating the actor's effective permissions in the current organization only. Allow the operation only when the actor has project management permission in that organization. Reject unauthorized requests before any write occurs.
@@ -77,9 +79,10 @@ export class HrmtimetrackingProjectsController {
    *
    * @param connection
    * @param body Project search, filter, pagination, and sorting criteria
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Implement an organization-scoped project list query over hrm_time_tracking_projects.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Implement an organization-scoped project list
+     *   query over hrm_time_tracking_projects.
    *
    * Resolve the caller's currently selected organization from the authenticated session context before executing any data access. Enforce that the caller has project view capability in that organization. Reject the request if the caller lacks permission or if no valid active organization context is available.
    *
@@ -122,9 +125,10 @@ export class HrmtimetrackingProjectsController {
    *
    * @param connection
    * @param projectId Unique ID of the target project
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Load the authenticated user's current organization context before querying project data.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Load the authenticated user's current
+     *   organization context before querying project data.
    *
    * Query hrm_time_tracking_projects by id = :projectId and hrm_time_tracking_organization_id = :currentOrganizationId. Treat deleted_at IS NOT NULL as not retrievable for ordinary project detail access unless a broader internal administrative policy explicitly overrides this behavior. Do not search across organizations, and do not fall back to name-based lookup.
    *
@@ -166,9 +170,14 @@ export class HrmtimetrackingProjectsController {
    * @param connection
    * @param projectId Target project's unique identifier
    * @param body Editable project information
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Load the target hrm_time_tracking_projects record by id and validate that it exists and is not logically removed for normal project management usage. Scope the lookup to the caller's currently selected organization context by matching both projects.id and projects.hrm_time_tracking_organization_id to the active organization identifier resolved from authentication context.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Load the target hrm_time_tracking_projects record
+     *   by id and validate that it exists and is not logically removed for
+     *   normal project management usage. Scope the lookup to the caller's
+     *   currently selected organization context by matching both projects.id
+     *   and projects.hrm_time_tracking_organization_id to the active
+     *   organization identifier resolved from authentication context.
    *
    * Before applying changes, verify that the authenticated actor has project management permission in the current organization. Do not authorize based only on actor category; enforce the organization-scoped permission rule described in requirements. If the permission check fails, reject the request before exposing whether the project is editable.
    *
@@ -212,9 +221,11 @@ export class HrmtimetrackingProjectsController {
    *
    * @param connection
    * @param projectId Unique identifier of the project to permanently remove within the current organization context.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Implement this operation as an organization-scoped hard deletion of one hrm_time_tracking_projects record.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Implement this operation as an
+     *   organization-scoped hard deletion of one hrm_time_tracking_projects
+     *   record.
    *
    * Resolve the caller's active organization context from the authenticated session and verify that the caller has project management permission in that organization. Reject the request if the user is outside an active organization context, if the target project does not belong to the selected organization, or if the caller lacks the permission required for project creation, update, archival, completion, and deletion.
    *

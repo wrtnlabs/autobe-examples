@@ -27,7 +27,9 @@ import { IPageICommunityPlatformCommunity } from "../../../../structures/IPageIC
  * @param props.body Target community information for the subscription
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Authenticate the caller as a member and resolve the member identity from the active session instead of trusting any client-supplied member identifier.
+ * @x-autobe-specification Authenticate the caller as a member and resolve the
+ *   member identity from the active session instead of trusting any
+ *   client-supplied member identifier.
  *
  * Validate the request body and resolve the target community from the provided community reference, preferring the community slug because community_platform_communities defines slug as a platform-wide unique identifier suitable for lookup operations. Load the target community and verify that it exists and is in a state that can accept subscriptions according to community lifecycle and participation rules.
  *
@@ -128,7 +130,8 @@ export namespace create {
  * @param props.body Filtering, pagination, and sorting options for followed communities
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implement this operation as an authenticated member-scoped list query.
+ * @x-autobe-specification Implement this operation as an authenticated
+ *   member-scoped list query.
  *
  * 1. Resolve the caller's member identity from the authenticated session context. Do not accept member identity from the request body, query string, or path.
  * 2. Query community_platform_subscriptions as the source of truth for followed communities. Filter rows by community_platform_member_id equal to the authenticated member, active equal to true, and deleted_at equal to null.

@@ -16,8 +16,10 @@ export type IHrmTimeTrackRolePermission = {
    *
    * This UUID identifies a specific permission granted to a role. Each permission assignment has a unique ID that can be used to reference, update, or delete the permission.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from hrm_time_track_role_permissions.id. Primary key of the permission assignment record.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_role_permissions.id. Primary key of the permission
+     *   assignment record.
    */
   id: string & tags.Format<"uuid">;
 
@@ -26,8 +28,9 @@ export type IHrmTimeTrackRolePermission = {
    *
    * Valid permission values include: organization_management, employee_management, employee_viewing, project_management, project_viewing, time_management, timesheet_approval, time_viewing_all, and report_viewing. The permission code is validated at the application layer against the allowed permission list.
    *
-   * @x-autobe-database-schema-property permission
-   * @x-autobe-specification Direct mapping from hrm_time_track_role_permissions.permission. Permission code string.
+     * @x-autobe-database-schema-property permission
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_role_permissions.permission. Permission code string.
    */
   permission: string;
 
@@ -36,8 +39,9 @@ export type IHrmTimeTrackRolePermission = {
    *
    * Records the exact time when the permission assignment was created in ISO 8601 format. Used for audit trail and tracking permission changes over time.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from hrm_time_track_role_permissions.created_at. ISO 8601 date-time format.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_role_permissions.created_at. ISO 8601 date-time format.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -46,8 +50,11 @@ export type IHrmTimeTrackRolePermission = {
    *
    * This is a BELONGS-TO relationship linking the permission to its parent role. The role object includes the role's id, name, description, is_builtin flag, and timestamps. Each permission belongs to exactly one role within an organization.
    *
-   * @x-autobe-database-schema-property role
-   * @x-autobe-specification Join from hrm_time_track_role_permissions.hrm_time_track_role_id to hrm_time_track_roles.id. Returns IHrmTimeTrackRole.ISummary. BELONGS-TO relationship.
+     * @x-autobe-database-schema-property role
+     * @x-autobe-specification Join from
+     *   hrm_time_track_role_permissions.hrm_time_track_role_id to
+     *   hrm_time_track_roles.id. Returns IHrmTimeTrackRole.ISummary. BELONGS-TO
+     *   relationship.
    */
   role: IHrmTimeTrackRole.ISummary;
 };

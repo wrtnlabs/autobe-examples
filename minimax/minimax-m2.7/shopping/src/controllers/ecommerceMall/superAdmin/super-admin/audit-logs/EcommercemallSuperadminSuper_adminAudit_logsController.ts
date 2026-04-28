@@ -34,9 +34,10 @@ export class EcommercemallSuperadminSuper_adminAudit_logsController {
    *
    * @param connection
    * @param body Search criteria including action type filter, target entity filters, date range filters, and pagination parameters for listing audit logs.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor superAdmin
-   * @x-autobe-specification Query ecommerce_mall_super_admin_audit_logs table with the following implementation:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor superAdmin
+     * @x-autobe-specification Query ecommerce_mall_super_admin_audit_logs table
+     *   with the following implementation:
    *
    * 1. **Base Query**: Select all records from the audit logs table
    *
@@ -99,9 +100,11 @@ export class EcommercemallSuperadminSuper_adminAudit_logsController {
    *
    * @param connection
    * @param logId Unique identifier of the super administrator audit log entry to retrieve (UUID format).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor superAdmin
-   * @x-autobe-specification Query the ecommerce_mall_super_admin_audit_logs table filtering by the logId parameter. Validate that logId is a valid UUID format.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor superAdmin
+     * @x-autobe-specification Query the ecommerce_mall_super_admin_audit_logs
+     *   table filtering by the logId parameter. Validate that logId is a valid
+     *   UUID format.
    *
    * If the audit log record is not found, return a 404 error with message "Audit log not found".
    *

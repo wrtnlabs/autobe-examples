@@ -10,32 +10,38 @@ export type ICommunityPlatformCommunityModeratorOwner = {
   /**
    * Unique identifier of the owner-role subtype record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from community_platform_community_moderator_owners.id.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_community_moderator_owners.id.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Community moderator assignment that this owner-role record extends.
    *
-   * @x-autobe-database-schema-property communityModerator
-   * @x-autobe-specification Join community_platform_community_moderator_owners.community_platform_community_moderator_id to community_platform_community_moderators.id and serialize the related moderator assignment as ICommunityPlatformCommunityModerator.ISummary.
+     * @x-autobe-database-schema-property communityModerator
+     * @x-autobe-specification Join
+     *   community_platform_community_moderator_owners.community_platform_community_moderator_id
+     *   to community_platform_community_moderators.id and serialize the related
+     *   moderator assignment as ICommunityPlatformCommunityModerator.ISummary.
    */
   communityModerator: ICommunityPlatformCommunityModerator.ISummary;
 
   /**
    * Timestamp when the owner-role subtype record was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from community_platform_community_moderator_owners.created_at.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_community_moderator_owners.created_at.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the owner-role subtype record was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from community_platform_community_moderator_owners.updated_at.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_community_moderator_owners.updated_at.
    */
   updated_at: string & tags.Format<"date-time">;
 };

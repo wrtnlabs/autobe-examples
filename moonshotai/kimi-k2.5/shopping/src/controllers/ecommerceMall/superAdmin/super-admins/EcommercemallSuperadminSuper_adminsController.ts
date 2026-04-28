@@ -20,9 +20,10 @@ export class EcommercemallSuperadminSuper_adminsController {
    *
    * @param connection
    * @param body Search criteria and pagination parameters for filtering super administrator accounts
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor superAdmin
-   * @x-autobe-specification Query the ecommerce_mall_super_admins table with pagination and filtering support.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor superAdmin
+     * @x-autobe-specification Query the ecommerce_mall_super_admins table with
+     *   pagination and filtering support.
    *
    * Implement search filters on:
    * - email (partial match, case-insensitive)
@@ -70,9 +71,10 @@ export class EcommercemallSuperadminSuper_adminsController {
    *
    * @param connection
    * @param superAdminId Unique identifier of the super administrator (UUID format)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor superAdmin
-   * @x-autobe-specification Query the ecommerce_mall_super_admins table by primary key (id field).
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor superAdmin
+     * @x-autobe-specification Query the ecommerce_mall_super_admins table by
+     *   primary key (id field).
    *
    * Query conditions:
    * - Match id = superAdminId parameter

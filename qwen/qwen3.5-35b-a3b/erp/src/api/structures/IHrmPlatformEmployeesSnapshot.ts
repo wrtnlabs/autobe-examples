@@ -37,112 +37,139 @@ export type IHrmPlatformEmployeesSnapshot = {
   /**
    * Unique identifier for the snapshot record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from hrm_platform_employees_snapshots.id (uuid primary key).
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_employees_snapshots.id (uuid primary key).
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Reference to the source employee record that this snapshot captures.
    *
-   * @x-autobe-database-schema-property employee_id
-   * @x-autobe-specification Direct mapping from hrm_platform_employees_snapshots.employee_id (uuid FK to employee).
+     * @x-autobe-database-schema-property employee_id
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_employees_snapshots.employee_id (uuid FK to employee).
    */
   employee_id: string & tags.Format<"uuid">;
 
   /**
    * Reference to the member account associated with the employee at snapshot time.
    *
-   * @x-autobe-database-schema-property user_id
-   * @x-autobe-specification Direct mapping from hrm_platform_employees_snapshots.user_id (uuid FK to member). Denormalized from employee.hrm_platform_member_id.
+     * @x-autobe-database-schema-property user_id
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_employees_snapshots.user_id (uuid FK to member).
+     *   Denormalized from employee.hrm_platform_member_id.
    */
   user_id: string & tags.Format<"uuid">;
 
   /**
    * Reference to the organization where the employee works at snapshot time.
    *
-   * @x-autobe-database-schema-property organization_id
-   * @x-autobe-specification Direct mapping from hrm_platform_employees_snapshots.organization_id (uuid FK to organization). Denormalized from employee.hrm_platform_organization_id.
+     * @x-autobe-database-schema-property organization_id
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_employees_snapshots.organization_id (uuid FK to
+     *   organization). Denormalized from employee.hrm_platform_organization_id.
    */
   organization_id: string & tags.Format<"uuid">;
 
   /**
    * Reference to the role assigned to the employee within the organization at snapshot time.
    *
-   * @x-autobe-database-schema-property role_id
-   * @x-autobe-specification Direct mapping from hrm_platform_employees_snapshots.role_id (uuid FK to role). Denormalized from employee.hrm_platform_role_id.
+     * @x-autobe-database-schema-property role_id
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_employees_snapshots.role_id (uuid FK to role).
+     *   Denormalized from employee.hrm_platform_role_id.
    */
   role_id: string & tags.Format<"uuid">;
 
   /**
    * Reference to the department assigned to the employee at snapshot time, if applicable. Nullable since employees may not always have a department assignment.
    *
-   * @x-autobe-database-schema-property department_id
-   * @x-autobe-specification Direct mapping from hrm_platform_employees_snapshots.department_id (uuid nullable FK to department). Denormalized from employee.hrm_platform_department_id.
+     * @x-autobe-database-schema-property department_id
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_employees_snapshots.department_id (uuid nullable FK to
+     *   department). Denormalized from employee.hrm_platform_department_id.
    */
   department_id: (string & tags.Format<"uuid">) | null;
 
   /**
    * Job title or position description of the employee captured at snapshot time. Nullable field representing the employee's role or title within the organization.
    *
-   * @x-autobe-database-schema-property position
-   * @x-autobe-specification Direct mapping from hrm_platform_employees_snapshots.position (string nullable). Denormalized from employee.job_title.
+     * @x-autobe-database-schema-property position
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_employees_snapshots.position (string nullable).
+     *   Denormalized from employee.job_title.
    */
   position: string | null;
 
   /**
    * Employment classification of the employee captured at snapshot time. One of: full-time, part-time, contractor, intern.
    *
-   * @x-autobe-database-schema-property employment_type
-   * @x-autobe-specification Direct mapping from hrm_platform_employees_snapshots.employment_type (string). Denormalized from employee.employment_type.
+     * @x-autobe-database-schema-property employment_type
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_employees_snapshots.employment_type (string). Denormalized
+     *   from employee.employment_type.
    */
   employment_type: string;
 
   /**
    * Current status of the employee captured at snapshot time. Indicates the employee's current state: active, on-leave, resigned, or invited.
    *
-   * @x-autobe-database-schema-property status
-   * @x-autobe-specification Direct mapping from hrm_platform_employees_snapshots.status (string). Denormalized from employee.status.
+     * @x-autobe-database-schema-property status
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_employees_snapshots.status (string). Denormalized from
+     *   employee.status.
    */
   status: string;
 
   /**
    * Timestamp when this snapshot was created. Immutable creation time marking when this point-in-time record was captured.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from hrm_platform_employees_snapshots.created_at (timestamptz).
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_employees_snapshots.created_at (timestamptz).
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * The member account associated with the employee at snapshot time.
    *
-   * @x-autobe-database-schema-property user
-   * @x-autobe-specification Join from hrm_platform_employees_snapshots.user_id to hrm_platform_members.id. Returns IHrmPlatformMember.ISummary.
+     * @x-autobe-database-schema-property user
+     * @x-autobe-specification Join from
+     *   hrm_platform_employees_snapshots.user_id to hrm_platform_members.id.
+     *   Returns IHrmPlatformMember.ISummary.
    */
   member: IHrmPlatformMember.ISummary;
 
   /**
    * The organization where the employee works at snapshot time.
    *
-   * @x-autobe-database-schema-property organization
-   * @x-autobe-specification Join from hrm_platform_employees_snapshots.organization_id to hrm_platform_organizations.id. Returns IHrmPlatformOrganization.ISummary.
+     * @x-autobe-database-schema-property organization
+     * @x-autobe-specification Join from
+     *   hrm_platform_employees_snapshots.organization_id to
+     *   hrm_platform_organizations.id. Returns
+     *   IHrmPlatformOrganization.ISummary.
    */
   organization: IHrmPlatformOrganization.ISummary;
 
   /**
    * The role assigned to the employee within the organization at snapshot time.
    *
-   * @x-autobe-database-schema-property role
-   * @x-autobe-specification Join from hrm_platform_employees_snapshots.role_id to hrm_platform_roles.id. Returns IHrmPlatformRole.ISummary.
+     * @x-autobe-database-schema-property role
+     * @x-autobe-specification Join from
+     *   hrm_platform_employees_snapshots.role_id to hrm_platform_roles.id.
+     *   Returns IHrmPlatformRole.ISummary.
    */
   role: IHrmPlatformRole.ISummary;
 
   /**
    * The department assigned to the employee at snapshot time, if applicable. Nullable since employees may not always have a department assignment.
    *
-   * @x-autobe-database-schema-property department
-   * @x-autobe-specification Join from hrm_platform_employees_snapshots.department_id to hrm_platform_departments.id. Returns IHrmPlatformDepartment.ISummary. Nullable.
+     * @x-autobe-database-schema-property department
+     * @x-autobe-specification Join from
+     *   hrm_platform_employees_snapshots.department_id to
+     *   hrm_platform_departments.id. Returns IHrmPlatformDepartment.ISummary.
+     *   Nullable.
    */
   department: IHrmPlatformDepartment.ISummary | null;
 };
@@ -170,7 +197,10 @@ export namespace IHrmPlatformEmployeesSnapshot {
      *
      * Limits results to snapshots with the specified status value. Accepted values are `active` for currently employed employees or `deactivated` for former employees.
      *
-     * @x-autobe-specification Optional filter: status (enum: active, deactivated). Filters employee snapshot records by their status field. Used to find snapshots for employees with specific employment states.
+         * @x-autobe-specification Optional filter: status (enum: active,
+         *   deactivated). Filters employee snapshot records by their status
+         *   field. Used to find snapshots for employees with specific
+         *   employment states.
      */
     status?: "active" | "deactivated" | undefined;
 
@@ -179,7 +209,10 @@ export namespace IHrmPlatformEmployeesSnapshot {
      *
      * Limits results to snapshots matching the specified employment type. Accepted values are `full-time`, `part-time`, `contractor`, or `intern`.
      *
-     * @x-autobe-specification Optional filter: employment_type (enum: full-time, part-time, contractor, intern). Filters employee snapshot records by their employment classification. Used to find snapshots for employees with specific work arrangements.
+         * @x-autobe-specification Optional filter: employment_type (enum:
+         *   full-time, part-time, contractor, intern). Filters employee
+         *   snapshot records by their employment classification. Used to find
+         *   snapshots for employees with specific work arrangements.
      */
     employment_type?:
       | "full-time"
@@ -193,7 +226,9 @@ export namespace IHrmPlatformEmployeesSnapshot {
      *
      * Includes snapshots where the created_at timestamp is greater than or equal to this value. Use ISO 8601 format (e.g., `2024-01-15T00:00:00Z`).
      *
-     * @x-autobe-specification Optional filter: ISO 8601 date-time string. Filters snapshots by created_at >= startDate. Used to find snapshots created after a specific date.
+         * @x-autobe-specification Optional filter: ISO 8601 date-time string.
+         *   Filters snapshots by created_at >= startDate. Used to find
+         *   snapshots created after a specific date.
      */
     startDate?: (string & tags.Format<"date-time">) | undefined;
 
@@ -202,7 +237,9 @@ export namespace IHrmPlatformEmployeesSnapshot {
      *
      * Includes snapshots where the created_at timestamp is less than or equal to this value. Use ISO 8601 format (e.g., `2024-01-15T23:59:59Z`).
      *
-     * @x-autobe-specification Optional filter: ISO 8601 date-time string. Filters snapshots by created_at <= endDate. Used to find snapshots created before a specific date.
+         * @x-autobe-specification Optional filter: ISO 8601 date-time string.
+         *   Filters snapshots by created_at <= endDate. Used to find snapshots
+         *   created before a specific date.
      */
     endDate?: (string & tags.Format<"date-time">) | undefined;
 
@@ -211,7 +248,10 @@ export namespace IHrmPlatformEmployeesSnapshot {
      *
      * Specifies which field to use for sorting. Default is `created_at`. Use with `sortOrder` to control sort direction. Supported fields are: id, position, employment_type, status, created_at, user_id, organization_id, role_id, department_id.
      *
-     * @x-autobe-specification Optional sort field name. Defaults to `created_at` if not provided. Supported fields include: id, position, employment_type, status, created_at, user_id, organization_id, role_id, department_id.
+         * @x-autobe-specification Optional sort field name. Defaults to
+         *   `created_at` if not provided. Supported fields include: id,
+         *   position, employment_type, status, created_at, user_id,
+         *   organization_id, role_id, department_id.
      */
     sortBy?: string | undefined;
 
@@ -220,7 +260,9 @@ export namespace IHrmPlatformEmployeesSnapshot {
      *
      * Specifies the sort direction: `asc` for ascending (oldest first) or `desc` for descending (newest first). Default is `desc`. Works together with the `sortBy` field.
      *
-     * @x-autobe-specification Optional sort direction: `asc` (ascending) or `desc` (descending). Default is `desc`. Used together with sortBy field.
+         * @x-autobe-specification Optional sort direction: `asc` (ascending) or
+         *   `desc` (descending). Default is `desc`. Used together with sortBy
+         *   field.
      */
     sortOrder?: "asc" | "desc" | undefined;
 
@@ -229,7 +271,9 @@ export namespace IHrmPlatformEmployeesSnapshot {
      *
      * Specifies which page of results to return. Must be a positive integer (minimum 1). Default is 1. Works together with the `limit` field.
      *
-     * @x-autobe-specification Optional offset-based pagination: 1-indexed page number. Minimum: 1. Default: 1. Used with limit to control result set.
+         * @x-autobe-specification Optional offset-based pagination: 1-indexed
+         *   page number. Minimum: 1. Default: 1. Used with limit to control
+         *   result set.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -238,7 +282,9 @@ export namespace IHrmPlatformEmployeesSnapshot {
      *
      * Specifies the number of records to return on each page. Must be between 1 and 100. Default is 20. Works together with the `page` field.
      *
-     * @x-autobe-specification Optional pagination size: 1-100 results per page. Minimum: 1. Maximum: 100. Default: 20. Controls how many records are returned per page.
+         * @x-autobe-specification Optional pagination size: 1-100 results per
+         *   page. Minimum: 1. Maximum: 100. Default: 20. Controls how many
+         *   records are returned per page.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -254,43 +300,45 @@ export namespace IHrmPlatformEmployeesSnapshot {
    */
   export type ISummary = {
     /**
-     * @x-autobe-database-schema-property id
+         * @x-autobe-database-schema-property id
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Job title or position of the employee at snapshot time.
      *
-     * @x-autobe-database-schema-property position
-     * @x-autobe-specification Direct mapping from hrm_platform_employees_snapshots.position. Nullable string since employees may not always have a position assigned.
+         * @x-autobe-database-schema-property position
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_employees_snapshots.position. Nullable string since
+         *   employees may not always have a position assigned.
      */
     position: string | null;
     /**
-     * @x-autobe-database-schema-property employment_type
+         * @x-autobe-database-schema-property employment_type
      */
     employment_type: string;
     /**
-     * @x-autobe-database-schema-property status
+         * @x-autobe-database-schema-property status
      */
     status: string;
     /**
-     * @x-autobe-database-schema-property created_at
+         * @x-autobe-database-schema-property created_at
      */
     created_at: string & tags.Format<"date-time">;
     /**
-     * @x-autobe-database-schema-property user
+         * @x-autobe-database-schema-property user
      */
     user: IHrmPlatformMember.ISummary;
     /**
-     * @x-autobe-database-schema-property organization
+         * @x-autobe-database-schema-property organization
      */
     organization: IHrmPlatformOrganization.ISummary;
     /**
-     * @x-autobe-database-schema-property role
+         * @x-autobe-database-schema-property role
      */
     role: IHrmPlatformRole.ISummary;
     /**
-     * @x-autobe-database-schema-property department
+         * @x-autobe-database-schema-property department
      */
     department: IHrmPlatformDepartment.ISummary | null;
   };

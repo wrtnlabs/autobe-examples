@@ -10,88 +10,120 @@ export type IHrmTimeTrackingOrganizationWeeklySummary = {
   /**
    * Unique identifier of this organization weekly summary record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_organization_weekly_summaries.id.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_organization_weekly_summaries.id.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Organization that owns this weekly summary record.
    *
-   * @x-autobe-database-schema-property organization
-   * @x-autobe-specification Join hrm_time_tracking_organizations on hrm_time_tracking_organization_weekly_summaries.hrm_time_tracking_organization_id = hrm_time_tracking_organizations.id and map the related row as IHrmTimeTrackingOrganization.ISummary.
+     * @x-autobe-database-schema-property organization
+     * @x-autobe-specification Join hrm_time_tracking_organizations on
+     *   hrm_time_tracking_organization_weekly_summaries.hrm_time_tracking_organization_id
+     *   = hrm_time_tracking_organizations.id and map the related row as
+     *   IHrmTimeTrackingOrganization.ISummary.
    */
   organization: IHrmTimeTrackingOrganization.ISummary;
 
   /**
    * Inclusive start timestamp of the summarized reporting week.
    *
-   * @x-autobe-database-schema-property week_start_date
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_organization_weekly_summaries.week_start_date. This is the inclusive start timestamp of the summarized Monday-aligned reporting week.
+     * @x-autobe-database-schema-property week_start_date
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_organization_weekly_summaries.week_start_date. This
+     *   is the inclusive start timestamp of the summarized Monday-aligned
+     *   reporting week.
    */
   week_start_date: string & tags.Format<"date-time">;
 
   /**
    * Inclusive end timestamp of the summarized reporting week.
    *
-   * @x-autobe-database-schema-property week_end_date
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_organization_weekly_summaries.week_end_date. This is the inclusive end timestamp of the summarized Sunday-aligned reporting week.
+     * @x-autobe-database-schema-property week_end_date
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_organization_weekly_summaries.week_end_date. This is
+     *   the inclusive end timestamp of the summarized Sunday-aligned reporting
+     *   week.
    */
   week_end_date: string & tags.Format<"date-time">;
 
   /**
    * Total number of hours logged across the organization during the summarized week.
    *
-   * @x-autobe-database-schema-property total_logged_hours
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_organization_weekly_summaries.total_logged_hours. Float value representing the total hours logged across the organization during the summarized week.
+     * @x-autobe-database-schema-property total_logged_hours
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_organization_weekly_summaries.total_logged_hours.
+     *   Float value representing the total hours logged across the organization
+     *   during the summarized week.
    */
   total_logged_hours: number;
 
   /**
    * Number of timesheets still pending approval for the summarized week.
    *
-   * @x-autobe-database-schema-property pending_timesheet_count
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_organization_weekly_summaries.pending_timesheet_count. Integer count of submitted timesheets that were still awaiting approval for the summarized week.
+     * @x-autobe-database-schema-property pending_timesheet_count
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_organization_weekly_summaries.pending_timesheet_count.
+     *   Integer count of submitted timesheets that were still awaiting approval
+     *   for the summarized week.
    */
   pending_timesheet_count: number & tags.Type<"int32">;
 
   /**
    * Number of active employees counted in the organization during the summarized week.
    *
-   * @x-autobe-database-schema-property active_employee_count
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_organization_weekly_summaries.active_employee_count. Integer count of active employees in the organization during the summarized week.
+     * @x-autobe-database-schema-property active_employee_count
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_organization_weekly_summaries.active_employee_count.
+     *   Integer count of active employees in the organization during the
+     *   summarized week.
    */
   active_employee_count: number & tags.Type<"int32">;
 
   /**
    * Number of projects in the organization that exceeded the budget alert threshold during the summarized week.
    *
-   * @x-autobe-database-schema-property budget_alert_count
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_organization_weekly_summaries.budget_alert_count. Integer count of projects in the organization whose budget utilization exceeded the configured alert threshold during the summarized week. This is a persisted organization-level dashboard insight stored on the weekly summary record, not one of the constrained measures of the Weekly Summary Report definition.
+     * @x-autobe-database-schema-property budget_alert_count
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_organization_weekly_summaries.budget_alert_count.
+     *   Integer count of projects in the organization whose budget utilization
+     *   exceeded the configured alert threshold during the summarized week.
+     *   This is a persisted organization-level dashboard insight stored on the
+     *   weekly summary record, not one of the constrained measures of the
+     *   Weekly Summary Report definition.
    */
   budget_alert_count: number & tags.Type<"int32">;
 
   /**
    * Timestamp when this weekly summary record was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_organization_weekly_summaries.created_at. Timestamp when this weekly summary record was first generated.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_organization_weekly_summaries.created_at. Timestamp
+     *   when this weekly summary record was first generated.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when this weekly summary record was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_organization_weekly_summaries.updated_at. Timestamp when this weekly summary record was last refreshed.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_organization_weekly_summaries.updated_at. Timestamp
+     *   when this weekly summary record was last refreshed.
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * Soft-deletion timestamp of this weekly summary record, or null when the record is active.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_organization_weekly_summaries.deleted_at. Nullable soft-deletion timestamp; null means the weekly summary record is active.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_organization_weekly_summaries.deleted_at. Nullable
+     *   soft-deletion timestamp; null means the weekly summary record is
+     *   active.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -103,14 +135,21 @@ export namespace IHrmTimeTrackingOrganizationWeeklySummary {
     /**
      * Page number of the paginated weekly summary results to return.
      *
-     * @x-autobe-specification Pagination control for the result set. Use this as the 1-indexed page number when querying weekly organization summaries after applying organization scope and all optional filters. When omitted, downstream logic may default to the first page.
+         * @x-autobe-specification Pagination control for the result set. Use
+         *   this as the 1-indexed page number when querying weekly organization
+         *   summaries after applying organization scope and all optional
+         *   filters. When omitted, downstream logic may default to the first
+         *   page.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of weekly summary records to include in one response page.
      *
-     * @x-autobe-specification Pagination size control for the result set. Use this as the maximum number of weekly summary items returned in one page after applying organization scope and all optional filters. Respect the declared minimum and maximum bounds.
+         * @x-autobe-specification Pagination size control for the result set.
+         *   Use this as the maximum number of weekly summary items returned in
+         *   one page after applying organization scope and all optional
+         *   filters. Respect the declared minimum and maximum bounds.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -119,28 +158,49 @@ export namespace IHrmTimeTrackingOrganizationWeeklySummary {
     /**
      * Inclusive start boundary of the reporting period used to filter returned weekly summaries.
      *
-     * @x-autobe-specification Optional inclusive lower boundary for filtering weekly summaries. Compare this value against the summarized week range in hrm_time_tracking_organization_weekly_summaries, typically ensuring returned rows fall on or after the requested reporting start boundary within the active organization context.
+         * @x-autobe-specification Optional inclusive lower boundary for
+         *   filtering weekly summaries. Compare this value against the
+         *   summarized week range in
+         *   hrm_time_tracking_organization_weekly_summaries, typically ensuring
+         *   returned rows fall on or after the requested reporting start
+         *   boundary within the active organization context.
      */
     weekStartDate?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Inclusive end boundary of the reporting period used to filter returned weekly summaries.
      *
-     * @x-autobe-specification Optional inclusive upper boundary for filtering weekly summaries. Compare this value against the summarized week range in hrm_time_tracking_organization_weekly_summaries, typically ensuring returned rows fall on or before the requested reporting end boundary within the active organization context.
+         * @x-autobe-specification Optional inclusive upper boundary for
+         *   filtering weekly summaries. Compare this value against the
+         *   summarized week range in
+         *   hrm_time_tracking_organization_weekly_summaries, typically ensuring
+         *   returned rows fall on or before the requested reporting end
+         *   boundary within the active organization context.
      */
     weekEndDate?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Identifier of a project in the current organization used to narrow weekly summary analytics to that project's activity.
      *
-     * @x-autobe-specification Optional project association filter. Validate that the supplied project identifier refers to a project belonging to the caller's active organization, then restrict the weekly summary metrics to time-tracking data associated with that project using organization-scoped joins, subqueries, or project-aware precomputed aggregates. Reject cross-organization project references.
+         * @x-autobe-specification Optional project association filter. Validate
+         *   that the supplied project identifier refers to a project belonging
+         *   to the caller's active organization, then restrict the weekly
+         *   summary metrics to time-tracking data associated with that project
+         *   using organization-scoped joins, subqueries, or project-aware
+         *   precomputed aggregates. Reject cross-organization project
+         *   references.
      */
     projectId?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Sort order for the returned weekly summaries based on the summarized week start date.
      *
-     * @x-autobe-specification Optional sort directive for ordering the paginated result set by summarized week. Interpret week_start_date_asc as ascending order by hrm_time_tracking_organization_weekly_summaries.week_start_date and week_start_date_desc as descending order. When omitted, default to descending week order.
+         * @x-autobe-specification Optional sort directive for ordering the
+         *   paginated result set by summarized week. Interpret
+         *   week_start_date_asc as ascending order by
+         *   hrm_time_tracking_organization_weekly_summaries.week_start_date and
+         *   week_start_date_desc as descending order. When omitted, default to
+         *   descending week order.
      */
     sort?: "week_start_date_asc" | "week_start_date_desc" | undefined;
   };
@@ -152,88 +212,108 @@ export namespace IHrmTimeTrackingOrganizationWeeklySummary {
     /**
      * Unique identifier of this weekly organization summary record.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_organization_weekly_summaries.id.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_organization_weekly_summaries.id.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Organization that owns this weekly summary record.
      *
-     * @x-autobe-database-schema-property organization
-     * @x-autobe-specification Resolve the belongs-to relation from hrm_time_tracking_organization_weekly_summaries.hrm_time_tracking_organization_id to hrm_time_tracking_organizations.id and serialize the related record as IHrmTimeTrackingOrganization.ISummary.
+         * @x-autobe-database-schema-property organization
+         * @x-autobe-specification Resolve the belongs-to relation from
+         *   hrm_time_tracking_organization_weekly_summaries.hrm_time_tracking_organization_id
+         *   to hrm_time_tracking_organizations.id and serialize the related
+         *   record as IHrmTimeTrackingOrganization.ISummary.
      */
     organization: IHrmTimeTrackingOrganization.ISummary;
 
     /**
      * Inclusive start date-time of the summarized reporting week.
      *
-     * @x-autobe-database-schema-property week_start_date
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_organization_weekly_summaries.week_start_date. Represents the inclusive start timestamp of the summarized reporting week.
+         * @x-autobe-database-schema-property week_start_date
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_organization_weekly_summaries.week_start_date.
+         *   Represents the inclusive start timestamp of the summarized
+         *   reporting week.
      */
     week_start_date: string & tags.Format<"date-time">;
 
     /**
      * Inclusive end date-time of the summarized reporting week.
      *
-     * @x-autobe-database-schema-property week_end_date
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_organization_weekly_summaries.week_end_date. Represents the inclusive end timestamp of the summarized reporting week.
+         * @x-autobe-database-schema-property week_end_date
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_organization_weekly_summaries.week_end_date.
+         *   Represents the inclusive end timestamp of the summarized reporting
+         *   week.
      */
     week_end_date: string & tags.Format<"date-time">;
 
     /**
      * Total number of work hours logged across the organization during the summarized week.
      *
-     * @x-autobe-database-schema-property total_logged_hours
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_organization_weekly_summaries.total_logged_hours.
+         * @x-autobe-database-schema-property total_logged_hours
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_organization_weekly_summaries.total_logged_hours.
      */
     total_logged_hours: number;
 
     /**
      * Number of timesheets still awaiting approval during the summarized week.
      *
-     * @x-autobe-database-schema-property pending_timesheet_count
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_organization_weekly_summaries.pending_timesheet_count.
+         * @x-autobe-database-schema-property pending_timesheet_count
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_organization_weekly_summaries.pending_timesheet_count.
      */
     pending_timesheet_count: number & tags.Type<"int32">;
 
     /**
      * Number of active employees counted for the summarized week.
      *
-     * @x-autobe-database-schema-property active_employee_count
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_organization_weekly_summaries.active_employee_count.
+         * @x-autobe-database-schema-property active_employee_count
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_organization_weekly_summaries.active_employee_count.
      */
     active_employee_count: number & tags.Type<"int32">;
 
     /**
      * Number of projects that exceeded the budget alert threshold during the summarized week.
      *
-     * @x-autobe-database-schema-property budget_alert_count
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_organization_weekly_summaries.budget_alert_count.
+         * @x-autobe-database-schema-property budget_alert_count
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_organization_weekly_summaries.budget_alert_count.
      */
     budget_alert_count: number & tags.Type<"int32">;
 
     /**
      * Date-time when this weekly summary record was first generated.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_organization_weekly_summaries.created_at. Timestamp recorded when this summary row was first generated.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_organization_weekly_summaries.created_at.
+         *   Timestamp recorded when this summary row was first generated.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * Date-time when this weekly summary record was last refreshed.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_organization_weekly_summaries.updated_at. Timestamp recorded when this summary row was last refreshed.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_organization_weekly_summaries.updated_at.
+         *   Timestamp recorded when this summary row was last refreshed.
      */
     updated_at: string & tags.Format<"date-time">;
 
     /**
      * Soft-deletion timestamp for this weekly summary record, or null when the record is active.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_organization_weekly_summaries.deleted_at. This field is nullable and is null when the summary record is active.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_organization_weekly_summaries.deleted_at. This
+         *   field is nullable and is null when the summary record is active.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };

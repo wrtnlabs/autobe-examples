@@ -38,9 +38,10 @@ export class ShoppingmallSellerProductsImagesController {
    * @param connection
    * @param productId The unique identifier of the product to add the image to. The authenticated seller must own this product.
    * @param body Image upload details including the image URL and optional display order position
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Implementation steps for POST /products/{productId}/images:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Implementation steps for POST
+     *   /products/{productId}/images:
    *
    * 1. **Authentication & Authorization**:
    *    - Extract seller from JWT session token
@@ -129,9 +130,10 @@ export class ShoppingmallSellerProductsImagesController {
    * @param productId The unique identifier of the product containing the image (UUID format)
    * @param imageId The unique identifier of the image to update (UUID format)
    * @param body Image properties to update including URL and display order
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Update a product image record in shopping_mall_product_images table.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Update a product image record in
+     *   shopping_mall_product_images table.
    *
    * Implementation Steps:
    * 1. Extract productId and imageId from path parameters
@@ -203,9 +205,9 @@ export class ShoppingmallSellerProductsImagesController {
    * @param connection
    * @param productId Unique identifier of the product containing the image to delete (UUID format). The authenticated seller must own this product to perform the deletion.
    * @param imageId Unique identifier of the product image to delete (UUID format). The image must belong to the specified product.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Implementation steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Implementation steps:
    *
    * 1. **Authentication & Authorization:**
    *    - Extract seller ID from JWT session token
@@ -292,9 +294,9 @@ export class ShoppingmallSellerProductsImagesController {
    * @param connection
    * @param productId UUID of the product whose images are being reordered
    * @param body Image ordering data containing image IDs and their new display positions
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Implementation steps for image reordering:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Implementation steps for image reordering:
    *
    * 1. Validate authentication - extract seller ID from JWT token
    * 2. Query shopping_mall_products table to verify ownership:

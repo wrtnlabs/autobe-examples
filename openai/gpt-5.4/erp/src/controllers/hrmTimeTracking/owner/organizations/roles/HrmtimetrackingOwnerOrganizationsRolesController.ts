@@ -30,9 +30,10 @@ export class HrmtimetrackingOwnerOrganizationsRolesController {
    * @param connection
    * @param organizationId Target organization's ID
    * @param body Creation data for a custom organization role
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor owner
-   * @x-autobe-specification Implement this operation as a transactional organization-scoped role creation flow.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor owner
+     * @x-autobe-specification Implement this operation as a transactional
+     *   organization-scoped role creation flow.
    *
    * 1. Resolve the authenticated actor and verify that the actor is operating in the same organization as the `organizationId` path parameter. Reject the request when the active organization context does not match the path target.
    * 2. Authorize the actor for role-management capability in the current organization. At minimum, owners are authorized because the requirements explicitly grant owners the ability to create and edit custom roles and control permission assignment. If the service later supports delegated role-management permissions for managers, enforce that permission within the same organization context only.
@@ -85,9 +86,10 @@ export class HrmtimetrackingOwnerOrganizationsRolesController {
    * @param connection
    * @param organizationId Target organization's ID
    * @param body Role search, filter, sort, and pagination criteria
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor owner
-   * @x-autobe-specification Implement this operation as an organization-scoped search over the role catalog.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor owner
+     * @x-autobe-specification Implement this operation as an
+     *   organization-scoped search over the role catalog.
    *
    * 1. Authenticate the caller and resolve their current organization access context.
    * 2. Validate that `organizationId` is a well-formed UUID and that the caller is authorized to read role definitions for that organization. At minimum, support organization owners based on the loaded requirements. Reject the request if the caller does not belong to the organization or lacks the required authority in that organization.
@@ -143,9 +145,10 @@ export class HrmtimetrackingOwnerOrganizationsRolesController {
    * @param connection
    * @param organizationId Target organization's ID
    * @param roleId Target role's ID within the specified organization
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor owner
-   * @x-autobe-specification Implement a service method that loads a single role detail record constrained by both organizationId and roleId.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor owner
+     * @x-autobe-specification Implement a service method that loads a single
+     *   role detail record constrained by both organizationId and roleId.
    *
    * First, authenticate the caller and resolve the current organization access context. Authorize the request for organization-scoped role viewing: owners are always allowed, while managers are allowed only if their current organization role grants the necessary permission. Employees without the required permission must receive a forbidden error.
    *
@@ -198,9 +201,11 @@ export class HrmtimetrackingOwnerOrganizationsRolesController {
    * @param organizationId Target organization's ID
    * @param roleId Target role's ID within the organization
    * @param body Replacement data for the target role
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor owner
-   * @x-autobe-specification Implement this operation as a transactional full update of one `hrm_time_tracking_roles` record and its normalized permission rows in `hrm_time_tracking_role_permissions`.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor owner
+     * @x-autobe-specification Implement this operation as a transactional full
+     *   update of one `hrm_time_tracking_roles` record and its normalized
+     *   permission rows in `hrm_time_tracking_role_permissions`.
    *
    * 1. Authorize the caller as an organization owner in the current organization context. Deny access if the caller is not allowed to manage roles for the selected organization.
    * 2. Load the organization by `organizationId` from `hrm_time_tracking_organizations` and ensure it is accessible in the current tenant context. Reject if not found or not accessible.
@@ -267,9 +272,11 @@ export class HrmtimetrackingOwnerOrganizationsRolesController {
    * @param connection
    * @param organizationId Target organization's unique identifier
    * @param roleId Target role's unique identifier within the organization
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor owner
-   * @x-autobe-specification Authorize the caller as an organization owner within the organization identified by `organizationId`. Reject the request if the caller is not an owner for that organization.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor owner
+     * @x-autobe-specification Authorize the caller as an organization owner
+     *   within the organization identified by `organizationId`. Reject the
+     *   request if the caller is not an owner for that organization.
    *
    * Load the target record from `hrm_time_tracking_roles` by `roleId` and verify that its `hrm_time_tracking_organization_id` matches `organizationId`. Exclude records that have already been removed from active role management, including records with `deleted_at` already set if logical deletion is used by the service implementation.
    *

@@ -34,7 +34,9 @@ export type IHrmEmployeeAnalytic = {
    *
    * This count represents all employees within the authenticated user's organization context that satisfy the applied filter conditions. When no filters are provided in the request, this includes all employees in the organization. The count is computed via COUNT(*) aggregation on the hrm_employees table.
    *
-   * @x-autobe-specification Computed COUNT(*) of employees matching filter criteria from hrm_employees table with organization context. Returns integer count, zero if no employees match filters.
+     * @x-autobe-specification Computed COUNT(*) of employees matching filter
+     *   criteria from hrm_employees table with organization context. Returns
+     *   integer count, zero if no employees match filters.
    */
   total_count: number & tags.Type<"int32">;
 
@@ -50,7 +52,10 @@ export type IHrmEmployeeAnalytic = {
    * - contractor: Contract-based employment
    * - intern: Internship position
    *
-   * @x-autobe-specification Computed GROUP BY employment_type aggregation from hrm_employees table. Returns array of objects with employment_type value and count. Valid employment types: full-time, part-time, contractor, intern. Empty categories omitted from array.
+     * @x-autobe-specification Computed GROUP BY employment_type aggregation
+     *   from hrm_employees table. Returns array of objects with employment_type
+     *   value and count. Valid employment types: full-time, part-time,
+     *   contractor, intern. Empty categories omitted from array.
    */
   employment_type_breakdown: IHrmEmployeeAnalyticIEmploymentTypeBreakdown[];
 
@@ -64,7 +69,10 @@ export type IHrmEmployeeAnalytic = {
    * - active: Employee currently employed and active
    * - deactivated: Employee record exists but employment has ended or is suspended
    *
-   * @x-autobe-specification Computed GROUP BY status aggregation from hrm_employees table. Returns array of objects with status value and count. Valid statuses: active, deactivated. Empty categories omitted from array.
+     * @x-autobe-specification Computed GROUP BY status aggregation from
+     *   hrm_employees table. Returns array of objects with status value and
+     *   count. Valid statuses: active, deactivated. Empty categories omitted
+     *   from array.
    */
   status_breakdown: IHrmEmployeeAnalyticIStatusBreakdown[];
 
@@ -81,7 +89,11 @@ export type IHrmEmployeeAnalytic = {
    *
    * Departments with zero employees are omitted from the array.
    *
-   * @x-autobe-specification Computed GROUP BY department_id aggregation from hrm_employees table with LEFT JOIN to hrm_departments for department names. Returns array of objects with department_id, department_name, and count. Employees with null department_id grouped as 'unassigned' category. Empty categories omitted from array.
+     * @x-autobe-specification Computed GROUP BY department_id aggregation from
+     *   hrm_employees table with LEFT JOIN to hrm_departments for department
+     *   names. Returns array of objects with department_id, department_name,
+     *   and count. Employees with null department_id grouped as 'unassigned'
+     *   category. Empty categories omitted from array.
    */
   department_breakdown: IHrmEmployeeAnalyticIDepartmentBreakdown[];
 
@@ -98,7 +110,11 @@ export type IHrmEmployeeAnalytic = {
    *
    * Roles with zero employees are omitted from the array.
    *
-   * @x-autobe-specification Computed GROUP BY role_id aggregation from hrm_employees table with LEFT JOIN to hrm_roles for role names. Returns array of objects with role_id, role_name, and count. Employees with null role_id grouped as 'unassigned' category. Empty categories omitted from array.
+     * @x-autobe-specification Computed GROUP BY role_id aggregation from
+     *   hrm_employees table with LEFT JOIN to hrm_roles for role names. Returns
+     *   array of objects with role_id, role_name, and count. Employees with
+     *   null role_id grouped as 'unassigned' category. Empty categories omitted
+     *   from array.
    */
   role_breakdown: IHrmEmployeeAnalyticIRoleBreakdown[];
 };
@@ -126,7 +142,10 @@ export namespace IHrmEmployeeAnalytic {
      *
      * When both are omitted, no date filtering is applied.
      *
-     * @x-autobe-specification Filters employees by created_at within the specified date range. Both start and end timestamps are optional - omitting start means no lower bound, omitting end means no upper bound.
+         * @x-autobe-specification Filters employees by created_at within the
+         *   specified date range. Both start and end timestamps are optional -
+         *   omitting start means no lower bound, omitting end means no upper
+         *   bound.
      */
     date_range?:
       | {
@@ -142,7 +161,9 @@ export namespace IHrmEmployeeAnalytic {
      *
      * When omitted, employees from all departments are included in the analytics.
      *
-     * @x-autobe-specification Filters hrm_employees.department_id column. Matches the department_id column in the hrm_employees table to filter employees assigned to the specified department.
+         * @x-autobe-specification Filters hrm_employees.department_id column.
+         *   Matches the department_id column in the hrm_employees table to
+         *   filter employees assigned to the specified department.
      */
     department_id?: (string & tags.Format<"uuid">) | undefined;
 
@@ -160,7 +181,9 @@ export namespace IHrmEmployeeAnalytic {
      *
      * When omitted, all employment types are included in the analytics.
      *
-     * @x-autobe-specification Filters hrm_employees.employment_type IN the provided array. Valid values: full-time, part-time, contractor, intern.
+         * @x-autobe-specification Filters hrm_employees.employment_type IN the
+         *   provided array. Valid values: full-time, part-time, contractor,
+         *   intern.
      */
     employment_types?: string[] | undefined;
 
@@ -176,7 +199,8 @@ export namespace IHrmEmployeeAnalytic {
      *
      * When omitted, all statuses are included in the analytics.
      *
-     * @x-autobe-specification Filters hrm_employees.status IN the provided array. Valid values: active, deactivated.
+         * @x-autobe-specification Filters hrm_employees.status IN the provided
+         *   array. Valid values: active, deactivated.
      */
     statuses?: string[] | undefined;
 
@@ -187,7 +211,8 @@ export namespace IHrmEmployeeAnalytic {
      *
      * If omitted, null, or undefined, defaults to page 1 (first page). Requesting a page beyond the available range returns an empty data array with valid pagination metadata reflecting the actual totals.
      *
-     * @x-autobe-specification 1-indexed page number for pagination. Defaults to 1 if not provided or null.
+         * @x-autobe-specification 1-indexed page number for pagination.
+         *   Defaults to 1 if not provided or null.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
 
@@ -198,7 +223,8 @@ export namespace IHrmEmployeeAnalytic {
      *
      * The server may enforce upper bounds to prevent excessive resource consumption on large requests.
      *
-     * @x-autobe-specification Maximum records per page. Defaults to 100 if not provided or null. Server may enforce upper bounds.
+         * @x-autobe-specification Maximum records per page. Defaults to 100 if
+         *   not provided or null. Server may enforce upper bounds.
      */
     limit?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };

@@ -10,88 +10,107 @@ export type IMultiUserTodoTodoEditHistory = {
   /**
    * Unique identifier of the edit history entry.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from multi_user_todo_todo_edit_histories.id. UUID primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   multi_user_todo_todo_edit_histories.id. UUID primary key.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Timestamp when this edit was made to the todo.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from multi_user_todo_todo_edit_histories.created_at. Timestamptz.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   multi_user_todo_todo_edit_histories.created_at. Timestamptz.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Previous title value before this edit. Null if title was not changed.
    *
-   * @x-autobe-database-schema-property old_title
-   * @x-autobe-specification Direct mapping from multi_user_todo_todo_edit_histories.old_title. Nullable - null indicates title was not modified in this edit.
+     * @x-autobe-database-schema-property old_title
+     * @x-autobe-specification Direct mapping from
+     *   multi_user_todo_todo_edit_histories.old_title. Nullable - null
+     *   indicates title was not modified in this edit.
    */
   old_title?: null | string | undefined;
 
   /**
    * New title value after this edit. Null if title was not changed.
    *
-   * @x-autobe-database-schema-property new_title
-   * @x-autobe-specification Direct mapping from multi_user_todo_todo_edit_histories.new_title. Nullable - null indicates title was not modified in this edit.
+     * @x-autobe-database-schema-property new_title
+     * @x-autobe-specification Direct mapping from
+     *   multi_user_todo_todo_edit_histories.new_title. Nullable - null
+     *   indicates title was not modified in this edit.
    */
   new_title?: null | string | undefined;
 
   /**
    * Previous description value before this edit. Null if description was not changed.
    *
-   * @x-autobe-database-schema-property old_description
-   * @x-autobe-specification Direct mapping from multi_user_todo_todo_edit_histories.old_description. Nullable - null indicates description was not modified in this edit.
+     * @x-autobe-database-schema-property old_description
+     * @x-autobe-specification Direct mapping from
+     *   multi_user_todo_todo_edit_histories.old_description. Nullable - null
+     *   indicates description was not modified in this edit.
    */
   old_description?: null | string | undefined;
 
   /**
    * New description value after this edit. Null if description was not changed.
    *
-   * @x-autobe-database-schema-property new_description
-   * @x-autobe-specification Direct mapping from multi_user_todo_todo_edit_histories.new_description. Nullable - null indicates description was not modified in this edit.
+     * @x-autobe-database-schema-property new_description
+     * @x-autobe-specification Direct mapping from
+     *   multi_user_todo_todo_edit_histories.new_description. Nullable - null
+     *   indicates description was not modified in this edit.
    */
   new_description?: null | string | undefined;
 
   /**
    * Previous start date value before this edit. Null if start date was not changed.
    *
-   * @x-autobe-database-schema-property old_start_date
-   * @x-autobe-specification Direct mapping from multi_user_todo_todo_edit_histories.old_start_date. Nullable - null indicates start date was not modified in this edit.
+     * @x-autobe-database-schema-property old_start_date
+     * @x-autobe-specification Direct mapping from
+     *   multi_user_todo_todo_edit_histories.old_start_date. Nullable - null
+     *   indicates start date was not modified in this edit.
    */
   old_start_date?: null | (string & tags.Format<"date-time">) | undefined;
 
   /**
    * New start date value after this edit. Null if start date was not changed.
    *
-   * @x-autobe-database-schema-property new_start_date
-   * @x-autobe-specification Direct mapping from multi_user_todo_todo_edit_histories.new_start_date. Nullable - null indicates start date was not modified in this edit.
+     * @x-autobe-database-schema-property new_start_date
+     * @x-autobe-specification Direct mapping from
+     *   multi_user_todo_todo_edit_histories.new_start_date. Nullable - null
+     *   indicates start date was not modified in this edit.
    */
   new_start_date?: null | (string & tags.Format<"date-time">) | undefined;
 
   /**
    * Previous due date value before this edit. Null if due date was not changed.
    *
-   * @x-autobe-database-schema-property old_due_date
-   * @x-autobe-specification Direct mapping from multi_user_todo_todo_edit_histories.old_due_date. Nullable - null indicates due date was not modified in this edit.
+     * @x-autobe-database-schema-property old_due_date
+     * @x-autobe-specification Direct mapping from
+     *   multi_user_todo_todo_edit_histories.old_due_date. Nullable - null
+     *   indicates due date was not modified in this edit.
    */
   old_due_date?: null | (string & tags.Format<"date-time">) | undefined;
 
   /**
    * New due date value after this edit. Null if due date was not changed.
    *
-   * @x-autobe-database-schema-property new_due_date
-   * @x-autobe-specification Direct mapping from multi_user_todo_todo_edit_histories.new_due_date. Nullable - null indicates due date was not modified in this edit.
+     * @x-autobe-database-schema-property new_due_date
+     * @x-autobe-specification Direct mapping from
+     *   multi_user_todo_todo_edit_histories.new_due_date. Nullable - null
+     *   indicates due date was not modified in this edit.
    */
   new_due_date?: null | (string & tags.Format<"date-time">) | undefined;
 
   /**
    * Summary of the parent todo this edit history entry belongs to.
    *
-   * @x-autobe-database-schema-property todo
-   * @x-autobe-specification Join via multi_user_todo_todo_id FK to multi_user_todo_todos.id. Returns ISummary per response DTO convention.
+     * @x-autobe-database-schema-property todo
+     * @x-autobe-specification Join via multi_user_todo_todo_id FK to
+     *   multi_user_todo_todos.id. Returns ISummary per response DTO convention.
    */
   todo: IMultiUserTodoTodo.ISummary;
 };
@@ -103,80 +122,98 @@ export namespace IMultiUserTodoTodoEditHistory {
     /**
      * Unique identifier for this edit history entry.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from multi_user_todo_todo_edit_histories.id. UUID primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   multi_user_todo_todo_edit_histories.id. UUID primary key.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Timestamp when this edit was made.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from multi_user_todo_todo_edit_histories.created_at. Timestamptz.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   multi_user_todo_todo_edit_histories.created_at. Timestamptz.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * Previous title value before this edit.
      *
-     * @x-autobe-database-schema-property old_title
-     * @x-autobe-specification Direct mapping from multi_user_todo_todo_edit_histories.old_title. Nullable - null if title was not changed.
+         * @x-autobe-database-schema-property old_title
+         * @x-autobe-specification Direct mapping from
+         *   multi_user_todo_todo_edit_histories.old_title. Nullable - null if
+         *   title was not changed.
      */
     old_title?: null | string | undefined;
 
     /**
      * New title value after this edit.
      *
-     * @x-autobe-database-schema-property new_title
-     * @x-autobe-specification Direct mapping from multi_user_todo_todo_edit_histories.new_title. Nullable - null if title was cleared.
+         * @x-autobe-database-schema-property new_title
+         * @x-autobe-specification Direct mapping from
+         *   multi_user_todo_todo_edit_histories.new_title. Nullable - null if
+         *   title was cleared.
      */
     new_title?: null | string | undefined;
 
     /**
      * Previous description value before this edit.
      *
-     * @x-autobe-database-schema-property old_description
-     * @x-autobe-specification Direct mapping from multi_user_todo_todo_edit_histories.old_description. Nullable - null if description was not changed.
+         * @x-autobe-database-schema-property old_description
+         * @x-autobe-specification Direct mapping from
+         *   multi_user_todo_todo_edit_histories.old_description. Nullable -
+         *   null if description was not changed.
      */
     old_description?: null | string | undefined;
 
     /**
      * New description value after this edit.
      *
-     * @x-autobe-database-schema-property new_description
-     * @x-autobe-specification Direct mapping from multi_user_todo_todo_edit_histories.new_description. Nullable - null if description was cleared.
+         * @x-autobe-database-schema-property new_description
+         * @x-autobe-specification Direct mapping from
+         *   multi_user_todo_todo_edit_histories.new_description. Nullable -
+         *   null if description was cleared.
      */
     new_description?: null | string | undefined;
 
     /**
      * Previous start date value before this edit.
      *
-     * @x-autobe-database-schema-property old_start_date
-     * @x-autobe-specification Direct mapping from multi_user_todo_todo_edit_histories.old_start_date. Nullable - null if start date was not changed.
+         * @x-autobe-database-schema-property old_start_date
+         * @x-autobe-specification Direct mapping from
+         *   multi_user_todo_todo_edit_histories.old_start_date. Nullable - null
+         *   if start date was not changed.
      */
     old_start_date?: null | (string & tags.Format<"date-time">) | undefined;
 
     /**
      * New start date value after this edit.
      *
-     * @x-autobe-database-schema-property new_start_date
-     * @x-autobe-specification Direct mapping from multi_user_todo_todo_edit_histories.new_start_date. Nullable - null if start date was cleared.
+         * @x-autobe-database-schema-property new_start_date
+         * @x-autobe-specification Direct mapping from
+         *   multi_user_todo_todo_edit_histories.new_start_date. Nullable - null
+         *   if start date was cleared.
      */
     new_start_date?: null | (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Previous due date value before this edit.
      *
-     * @x-autobe-database-schema-property old_due_date
-     * @x-autobe-specification Direct mapping from multi_user_todo_todo_edit_histories.old_due_date. Nullable - null if due date was not changed.
+         * @x-autobe-database-schema-property old_due_date
+         * @x-autobe-specification Direct mapping from
+         *   multi_user_todo_todo_edit_histories.old_due_date. Nullable - null
+         *   if due date was not changed.
      */
     old_due_date?: null | (string & tags.Format<"date-time">) | undefined;
 
     /**
      * New due date value after this edit.
      *
-     * @x-autobe-database-schema-property new_due_date
-     * @x-autobe-specification Direct mapping from multi_user_todo_todo_edit_histories.new_due_date. Nullable - null if due date was cleared.
+         * @x-autobe-database-schema-property new_due_date
+         * @x-autobe-specification Direct mapping from
+         *   multi_user_todo_todo_edit_histories.new_due_date. Nullable - null
+         *   if due date was cleared.
      */
     new_due_date?: null | (string & tags.Format<"date-time">) | undefined;
   };
@@ -188,14 +225,20 @@ export namespace IMultiUserTodoTodoEditHistory {
     /**
      * Page number to retrieve. Specifies which page of paginated results to fetch, where page 1 is the first page. If not provided, defaults to 1.
      *
-     * @x-autobe-specification Controls which page number to retrieve. Defaults to 1 if not provided. Used to calculate OFFSET in SQL query as (page - 1) * limit. Must be a positive integer (minimum: 1). This is a query control parameter, not a database column.
+         * @x-autobe-specification Controls which page number to retrieve.
+         *   Defaults to 1 if not provided. Used to calculate OFFSET in SQL
+         *   query as (page - 1) * limit. Must be a positive integer (minimum:
+         *   1). This is a query control parameter, not a database column.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of history entries to return per page. Controls the page size for pagination. If not provided, defaults to 20.
      *
-     * @x-autobe-specification Controls maximum number of history entries per page. Defaults to 20 if not provided. Applied as LIMIT in SQL query. Must be a positive integer (minimum: 1). This is a query control parameter, not a database column.
+         * @x-autobe-specification Controls maximum number of history entries
+         *   per page. Defaults to 20 if not provided. Applied as LIMIT in SQL
+         *   query. Must be a positive integer (minimum: 1). This is a query
+         *   control parameter, not a database column.
      */
     limit?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
   };

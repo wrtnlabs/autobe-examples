@@ -8,64 +8,84 @@ export type IShoppingMallReviewSnapshotsIndex = {
   /**
    * Unique identifier of this review snapshot index entry.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_review_snapshots_indices.id. Treat as immutable identifier for the snapshot index row.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_review_snapshots_indices.id. Treat as immutable
+     *   identifier for the snapshot index row.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Identifier of the central immutable snapshot metadata record linked to this review history event.
    *
-   * @x-autobe-database-schema-property shopping_mall_snapshot_id
-   * @x-autobe-specification Direct mapping from shopping_mall_review_snapshots_indices.shopping_mall_snapshot_id. Used to fetch the central immutable snapshot metadata/content for this review event.
+     * @x-autobe-database-schema-property shopping_mall_snapshot_id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_review_snapshots_indices.shopping_mall_snapshot_id. Used
+     *   to fetch the central immutable snapshot metadata/content for this
+     *   review event.
    */
   shoppingMallSnapshotId: string & tags.Format<"uuid">;
 
   /**
    * Identifier of the customer review whose history timeline this index entry is part of.
    *
-   * @x-autobe-database-schema-property review_id
-   * @x-autobe-specification Direct mapping from shopping_mall_review_snapshots_indices.review_id. Identifies which review this snapshot index entry belongs to.
+     * @x-autobe-database-schema-property review_id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_review_snapshots_indices.review_id. Identifies which
+     *   review this snapshot index entry belongs to.
    */
   reviewId: string & tags.Format<"uuid">;
 
   /**
    * What happened to the review for this snapshot event (e.g., created, updated, deleted).
    *
-   * @x-autobe-database-schema-property action_type
-   * @x-autobe-specification Direct mapping from shopping_mall_review_snapshots_indices.action_type. Stored value indicates the review snapshot event type (e.g., created/updated/deleted) as determined by the service workflow.
+     * @x-autobe-database-schema-property action_type
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_review_snapshots_indices.action_type. Stored value
+     *   indicates the review snapshot event type (e.g.,
+     *   created/updated/deleted) as determined by the service workflow.
    */
   actionType: string;
 
   /**
    * Monotonically increasing sequence number for this review’s snapshot events, used to order the history timeline.
    *
-   * @x-autobe-database-schema-property snapshot_sequence
-   * @x-autobe-specification Direct mapping from shopping_mall_review_snapshots_indices.snapshot_sequence. Used to reconstruct deterministic chronological ordering of review history for the same reviewId.
+     * @x-autobe-database-schema-property snapshot_sequence
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_review_snapshots_indices.snapshot_sequence. Used to
+     *   reconstruct deterministic chronological ordering of review history for
+     *   the same reviewId.
    */
   snapshotSequence: number & tags.Type<"int32">;
 
   /**
    * Timestamp when this snapshot index entry was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from shopping_mall_review_snapshots_indices.created_at. Serialize as ISO-8601 date-time string.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_review_snapshots_indices.created_at. Serialize as
+     *   ISO-8601 date-time string.
    */
   createdAt: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when this snapshot index entry was last updated (typically set at creation).
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from shopping_mall_review_snapshots_indices.updated_at. Serialize as ISO-8601 date-time string.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_review_snapshots_indices.updated_at. Serialize as
+     *   ISO-8601 date-time string.
    */
   updatedAt: string & tags.Format<"date-time">;
 
   /**
    * Soft-delete timestamp for this snapshot index entry; null when the entry is not soft-deleted.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from shopping_mall_review_snapshots_indices.deleted_at. If deleted_at is non-null, serialize as ISO-8601 date-time string; otherwise output null to indicate the row is not soft-deleted.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_review_snapshots_indices.deleted_at. If deleted_at is
+     *   non-null, serialize as ISO-8601 date-time string; otherwise output null
+     *   to indicate the row is not soft-deleted.
    */
   deletedAt: (string & tags.Format<"date-time">) | null;
 };
@@ -77,64 +97,79 @@ export namespace IShoppingMallReviewSnapshotsIndex {
     /**
      * Unique identifier of this snapshot-history index entry.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_review_snapshots_indices.id. Return as UUID string.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_review_snapshots_indices.id. Return as UUID string.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Identifier of the central immutable snapshot metadata record associated with this review history event.
      *
-     * @x-autobe-database-schema-property shopping_mall_snapshot_id
-     * @x-autobe-specification Direct mapping from shopping_mall_review_snapshots_indices.shopping_mall_snapshot_id. Return as UUID string.
+         * @x-autobe-database-schema-property shopping_mall_snapshot_id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_review_snapshots_indices.shopping_mall_snapshot_id.
+         *   Return as UUID string.
      */
     shoppingMallSnapshotId: string & tags.Format<"uuid">;
 
     /**
      * Identifier of the review business record whose history this snapshot index entry belongs to.
      *
-     * @x-autobe-database-schema-property review_id
-     * @x-autobe-specification Direct mapping from shopping_mall_review_snapshots_indices.review_id. Return as UUID string.
+         * @x-autobe-database-schema-property review_id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_review_snapshots_indices.review_id. Return as UUID
+         *   string.
      */
     reviewId: string & tags.Format<"uuid">;
 
     /**
      * What happened to the review for this snapshot-history event (e.g., created, updated, deleted).
      *
-     * @x-autobe-database-schema-property action_type
-     * @x-autobe-specification Direct mapping from shopping_mall_review_snapshots_indices.action_type (e.g., created/updated/deleted). Return as string.
+         * @x-autobe-database-schema-property action_type
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_review_snapshots_indices.action_type (e.g.,
+         *   created/updated/deleted). Return as string.
      */
     actionType: string;
 
     /**
      * Monotonically increasing sequence number of this review’s snapshot events used to reconstruct history order.
      *
-     * @x-autobe-database-schema-property snapshot_sequence
-     * @x-autobe-specification Direct mapping from shopping_mall_review_snapshots_indices.snapshot_sequence. Return as integer.
+         * @x-autobe-database-schema-property snapshot_sequence
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_review_snapshots_indices.snapshot_sequence. Return as
+         *   integer.
      */
     snapshotSequence: number & tags.Type<"int32">;
 
     /**
      * Timestamp when this snapshot-history index entry was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_review_snapshots_indices.created_at. Return as ISO 8601 date-time string.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_review_snapshots_indices.created_at. Return as ISO
+         *   8601 date-time string.
      */
     createdAt: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when this snapshot-history index entry was last updated.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from shopping_mall_review_snapshots_indices.updated_at. Return as ISO 8601 date-time string.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_review_snapshots_indices.updated_at. Return as ISO
+         *   8601 date-time string.
      */
     updatedAt: string & tags.Format<"date-time">;
 
     /**
      * Soft-deletion timestamp for this snapshot-history index entry; null when not deleted.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from shopping_mall_review_snapshots_indices.deleted_at. If the DB value is NULL, return null; otherwise return ISO 8601 date-time string.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_review_snapshots_indices.deleted_at. If the DB value
+         *   is NULL, return null; otherwise return ISO 8601 date-time string.
      */
     deletedAt: (string & tags.Format<"date-time">) | null;
   };
@@ -146,28 +181,42 @@ export namespace IShoppingMallReviewSnapshotsIndex {
     /**
      * 1-indexed page number for the returned result set.
      *
-     * @x-autobe-specification Used by the list handler to choose which page of results to return. Parse and validate as a positive integer (minimum 1). Combine with limit to compute the offset for the DB query.
+         * @x-autobe-specification Used by the list handler to choose which page
+         *   of results to return. Parse and validate as a positive integer
+         *   (minimum 1). Combine with limit to compute the offset for the DB
+         *   query.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of snapshot index events to include in one page.
      *
-     * @x-autobe-specification Used by the list handler as the maximum number of items to return in a single page. Parse and validate as a positive integer (minimum 1). Combine with page to compute the SQL offset/limit (offset = (page-1)*limit).
+         * @x-autobe-specification Used by the list handler as the maximum
+         *   number of items to return in a single page. Parse and validate as a
+         *   positive integer (minimum 1). Combine with page to compute the SQL
+         *   offset/limit (offset = (page-1)*limit).
      */
     limit?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Sort direction for the timeline derived from snapshot_sequence (asc or desc).
      *
-     * @x-autobe-specification Determines the primary ordering direction for timeline reconstruction based on snapshot_sequence. If sortDirection is 'asc', order by snapshot_sequence ascending; if 'desc', order by snapshot_sequence descending. For stable pagination, apply a secondary order by created_at (and/or id) consistently after snapshot_sequence.
+         * @x-autobe-specification Determines the primary ordering direction for
+         *   timeline reconstruction based on snapshot_sequence. If
+         *   sortDirection is 'asc', order by snapshot_sequence ascending; if
+         *   'desc', order by snapshot_sequence descending. For stable
+         *   pagination, apply a secondary order by created_at (and/or id)
+         *   consistently after snapshot_sequence.
      */
     sortDirection?: "asc" | "desc" | undefined;
 
     /**
      * Whether to include logically deleted snapshot index events (deleted_at != null) in the returned timeline.
      *
-     * @x-autobe-specification If includeDeleted is true, include shopping_mall_review_snapshots_indices rows where deleted_at is not null. If false (default behavior in the service layer), filter out logically deleted rows (deleted_at IS NULL).
+         * @x-autobe-specification If includeDeleted is true, include
+         *   shopping_mall_review_snapshots_indices rows where deleted_at is not
+         *   null. If false (default behavior in the service layer), filter out
+         *   logically deleted rows (deleted_at IS NULL).
      */
     includeDeleted?: boolean | undefined;
   };

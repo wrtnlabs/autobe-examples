@@ -22,7 +22,8 @@ import { IShoppingMallAdminPromotionRequest } from "../../../../../structures/IS
  * @param props.body Search criteria including status filter, actor type filter, creation date range, and pagination parameters for browsing administrator promotion requests.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Query shopping_mall_admin_promotion_requests table with pagination and filtering.
+ * @x-autobe-specification Query shopping_mall_admin_promotion_requests table
+ *   with pagination and filtering.
  *
  * Apply search filters on status, actor_type, created_at date range. Join with shopping_mall_admin_promotion_request_of_members or shopping_mall_admin_promotion_request_of_sellers subtype tables to get applicant information based on actor_type.
  *

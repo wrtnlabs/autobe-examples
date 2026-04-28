@@ -9,55 +9,55 @@ import { IErpHrmTimesheetTimelog } from "./IErpHrmTimesheetTimelog";
  */
 export type IErpHrmTimesheet = {
   /**
-   * @x-autobe-database-schema-property id
+     * @x-autobe-database-schema-property id
    */
   id: string & tags.Format<"uuid">;
   /**
-   * @x-autobe-database-schema-property week_start_date
+     * @x-autobe-database-schema-property week_start_date
    */
   weekStartDate: string & tags.Format<"date-time">;
   /**
-   * @x-autobe-database-schema-property week_end_date
+     * @x-autobe-database-schema-property week_end_date
    */
   weekEndDate: string & tags.Format<"date-time">;
   /**
-   * @x-autobe-database-schema-property status
+     * @x-autobe-database-schema-property status
    */
   status: string;
   /**
-   * @x-autobe-database-schema-property total_hours
+     * @x-autobe-database-schema-property total_hours
    */
   totalHours: number;
   /**
-   * @x-autobe-database-schema-property submitted_at
+     * @x-autobe-database-schema-property submitted_at
    */
   submittedAt: (string & tags.Format<"date-time">) | null;
   /**
-   * @x-autobe-database-schema-property reviewed_at
+     * @x-autobe-database-schema-property reviewed_at
    */
   reviewedAt: (string & tags.Format<"date-time">) | null;
   /**
-   * @x-autobe-database-schema-property rejection_reason
+     * @x-autobe-database-schema-property rejection_reason
    */
   rejectionReason: string | null;
   /**
-   * @x-autobe-database-schema-property created_at
+     * @x-autobe-database-schema-property created_at
    */
   createdAt: string & tags.Format<"date-time">;
   /**
-   * @x-autobe-database-schema-property updated_at
+     * @x-autobe-database-schema-property updated_at
    */
   updatedAt: string & tags.Format<"date-time">;
   /**
-   * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-database-schema-property deleted_at
    */
   deletedAt: (string & tags.Format<"date-time">) | null;
   /**
-   * @x-autobe-database-schema-property employee
+     * @x-autobe-database-schema-property employee
    */
   employee: IErpHrmEmployee.ISummary;
   /**
-   * @x-autobe-database-schema-property reviewerEmployee
+     * @x-autobe-database-schema-property reviewerEmployee
    */
   reviewerEmployee: IErpHrmEmployee.ISummary | null;
   timesheetTimelogs: IErpHrmTimesheetTimelog[];
@@ -80,8 +80,12 @@ export namespace IErpHrmTimesheet {
     /**
      * The mandatory reason explaining why the timesheet was rejected. This reason will be stored and visible to the employee to guide their corrections when resubmitting.
      *
-     * @x-autobe-specification Direct mapping from request body rejectionReason string to erp_hrm_timesheets.rejection_reason column. This is a mandatory field that must be non-empty when rejecting a submitted timesheet. The reason is stored with the timesheet and displayed to the employee for revision guidance.
-     * @x-autobe-database-schema-property rejection_reason
+         * @x-autobe-specification Direct mapping from request body
+         *   rejectionReason string to erp_hrm_timesheets.rejection_reason
+         *   column. This is a mandatory field that must be non-empty when
+         *   rejecting a submitted timesheet. The reason is stored with the
+         *   timesheet and displayed to the employee for revision guidance.
+         * @x-autobe-database-schema-property rejection_reason
      */
     rejectionReason: string | null;
   };
@@ -93,8 +97,11 @@ export namespace IErpHrmTimesheet {
     /**
      * Start date of the timesheet work week, which must always be a Monday. The system auto-calculates the Sunday end date (weekStartDate + 6 days) and includes all timelogs for the authenticated employee within that Monday-Sunday range.
      *
-     * @x-autobe-database-schema-property week_start_date
-     * @x-autobe-specification Direct mapping to erp_hrm_timesheets.week_start_date. Validation: must be a Monday (ISO weekday 1). Downstream validates this constraint and auto-calculates week_end_date as week_start_date + 6 days.
+         * @x-autobe-database-schema-property week_start_date
+         * @x-autobe-specification Direct mapping to
+         *   erp_hrm_timesheets.week_start_date. Validation: must be a Monday
+         *   (ISO weekday 1). Downstream validates this constraint and
+         *   auto-calculates week_end_date as week_start_date + 6 days.
      */
     weekStartDate: string & tags.Format<"date-time">;
   };
@@ -106,14 +113,21 @@ export namespace IErpHrmTimesheet {
     /**
      * Filter by timesheet workflow status to narrow results by approval workflow state.
      *
-     * @x-autobe-specification Enum filter for timesheet workflow status. Valid values: draft, submitted, approved, rejected. When provided, the query filters erp_hrm_timesheets.status to match the specified value. Multiple values not supported in single request.
+         * @x-autobe-specification Enum filter for timesheet workflow status.
+         *   Valid values: draft, submitted, approved, rejected. When provided,
+         *   the query filters erp_hrm_timesheets.status to match the specified
+         *   value. Multiple values not supported in single request.
      */
     status?: "draft" | "submitted" | "approved" | "rejected" | undefined;
 
     /**
      * Filter timesheets by week start date boundaries to scope results within a specific date range.
      *
-     * @x-autobe-specification Range filter for week start date using gte (lower bound) and lte (upper bound) comparison. Maps to erp_hrm_timesheets.week_start_date column. When both gte and lte are provided, returns timesheets with week_start_date between the two dates (inclusive).
+         * @x-autobe-specification Range filter for week start date using gte
+         *   (lower bound) and lte (upper bound) comparison. Maps to
+         *   erp_hrm_timesheets.week_start_date column. When both gte and lte
+         *   are provided, returns timesheets with week_start_date between the
+         *   two dates (inclusive).
      */
     weekStartDate?:
       | {
@@ -132,21 +146,31 @@ export namespace IErpHrmTimesheet {
     /**
      * Filter by specific employee ID. Only effective for users with time:approve permission; regular employees are automatically scoped to their own timesheets.
      *
-     * @x-autobe-specification UUID filter for employee ID. Maps to erp_hrm_timesheets.erp_hrm_employee_id. For users with time:approve permission: filters results to specific employee. For regular employees: ignored and automatically scoped to their own employee record (security enforcement in service layer).
+         * @x-autobe-specification UUID filter for employee ID. Maps to
+         *   erp_hrm_timesheets.erp_hrm_employee_id. For users with time:approve
+         *   permission: filters results to specific employee. For regular
+         *   employees: ignored and automatically scoped to their own employee
+         *   record (security enforcement in service layer).
      */
     employeeId?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Page number for pagination. Specifies which page of results to retrieve (1-indexed).
      *
-     * @x-autobe-specification 1-indexed page number for pagination. Used with limit to calculate offset: offset = (page - 1) * limit. Minimum value is 1. When omitted, defaults to 1. Results are ordered by created_at descending.
+         * @x-autobe-specification 1-indexed page number for pagination. Used
+         *   with limit to calculate offset: offset = (page - 1) * limit.
+         *   Minimum value is 1. When omitted, defaults to 1. Results are
+         *   ordered by created_at descending.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Number of items per page. Controls the maximum number of timesheet records returned in a single page (max 100).
      *
-     * @x-autobe-specification Maximum number of records per page. Used with page to calculate offset. Minimum value is 1. Maximum value is 100. When omitted, defaults to 20. Determines the page size for paginated results.
+         * @x-autobe-specification Maximum number of records per page. Used with
+         *   page to calculate offset. Minimum value is 1. Maximum value is 100.
+         *   When omitted, defaults to 20. Determines the page size for
+         *   paginated results.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -158,47 +182,47 @@ export namespace IErpHrmTimesheet {
    */
   export type ISummary = {
     /**
-     * @x-autobe-database-schema-property id
+         * @x-autobe-database-schema-property id
      */
     id: string & tags.Format<"uuid">;
     /**
-     * @x-autobe-database-schema-property week_start_date
+         * @x-autobe-database-schema-property week_start_date
      */
     weekStartDate: string & tags.Format<"date-time">;
     /**
-     * @x-autobe-database-schema-property week_end_date
+         * @x-autobe-database-schema-property week_end_date
      */
     weekEndDate: string & tags.Format<"date-time">;
     /**
-     * @x-autobe-database-schema-property status
+         * @x-autobe-database-schema-property status
      */
     status: string;
     /**
-     * @x-autobe-database-schema-property total_hours
+         * @x-autobe-database-schema-property total_hours
      */
     totalHours: number;
     /**
-     * @x-autobe-database-schema-property submitted_at
+         * @x-autobe-database-schema-property submitted_at
      */
     submittedAt?: (string & tags.Format<"date-time">) | null | undefined;
     /**
-     * @x-autobe-database-schema-property reviewed_at
+         * @x-autobe-database-schema-property reviewed_at
      */
     reviewedAt?: (string & tags.Format<"date-time">) | null | undefined;
     /**
-     * @x-autobe-database-schema-property rejection_reason
+         * @x-autobe-database-schema-property rejection_reason
      */
     rejectionReason?: string | null | undefined;
     /**
-     * @x-autobe-database-schema-property created_at
+         * @x-autobe-database-schema-property created_at
      */
     createdAt: string & tags.Format<"date-time">;
     /**
-     * @x-autobe-database-schema-property employee
+         * @x-autobe-database-schema-property employee
      */
     employee: IErpHrmEmployee.ISummary;
     /**
-     * @x-autobe-database-schema-property reviewerEmployee
+         * @x-autobe-database-schema-property reviewerEmployee
      */
     reviewerEmployee?: IErpHrmEmployee.ISummary | null | undefined;
   };

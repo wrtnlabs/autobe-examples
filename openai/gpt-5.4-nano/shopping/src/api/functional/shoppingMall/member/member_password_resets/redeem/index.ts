@@ -25,7 +25,8 @@ import { IShoppingMallMemberPasswordReset } from "../../../../../structures/ISho
  * @param props.body Payload to redeem a member password reset token and set a new password.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Authenticate actor is NOT required; redemption is performed solely based on provided reset token.
+ * @x-autobe-specification Authenticate actor is NOT required; redemption is
+ *   performed solely based on provided reset token.
  *
  * Implementation steps:
  * 1) Parse request body containing reset token and new password.

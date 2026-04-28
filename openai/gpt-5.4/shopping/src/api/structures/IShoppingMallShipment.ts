@@ -13,86 +13,113 @@ export type IShoppingMallShipment = {
   /**
    * Unique identifier of this shipment package.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from `shopping_mall_shipments.id`.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from `shopping_mall_shipments.id`.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Summary of the order that this shipment belongs to.
    *
-   * @x-autobe-database-schema-property order
-   * @x-autobe-specification Resolve the belongs-to relation from `shopping_mall_shipments.shopping_mall_order_id` to `shopping_mall_orders.id` and serialize the related order as `IShoppingMallOrder.ISummary`.
+     * @x-autobe-database-schema-property order
+     * @x-autobe-specification Resolve the belongs-to relation from
+     *   `shopping_mall_shipments.shopping_mall_order_id` to
+     *   `shopping_mall_orders.id` and serialize the related order as
+     *   `IShoppingMallOrder.ISummary`.
    */
   order: IShoppingMallOrder.ISummary;
 
   /**
    * Summary of the seller responsible for fulfilling this shipment.
    *
-   * @x-autobe-database-schema-property seller
-   * @x-autobe-specification Resolve the belongs-to relation from `shopping_mall_shipments.shopping_mall_seller_id` to `shopping_mall_sellers.id` and serialize the responsible seller as `IShoppingMallSeller.ISummary`.
+     * @x-autobe-database-schema-property seller
+     * @x-autobe-specification Resolve the belongs-to relation from
+     *   `shopping_mall_shipments.shopping_mall_seller_id` to
+     *   `shopping_mall_sellers.id` and serialize the responsible seller as
+     *   `IShoppingMallSeller.ISummary`.
    */
   seller: IShoppingMallSeller.ISummary;
 
   /**
    * Timestamp when the shipment was created and marked as shipped.
    *
-   * @x-autobe-database-schema-property shipped_at
-   * @x-autobe-specification Direct mapping from `shopping_mall_shipments.shipped_at`. This timestamp is set when the seller creates the shipment and the grouped order items become shipped.
+     * @x-autobe-database-schema-property shipped_at
+     * @x-autobe-specification Direct mapping from
+     *   `shopping_mall_shipments.shipped_at`. This timestamp is set when the
+     *   seller creates the shipment and the grouped order items become shipped.
    */
   shipped_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the shipment was confirmed or treated as delivered, or null if it has not been delivered yet.
    *
-   * @x-autobe-database-schema-property delivered_at
-   * @x-autobe-specification Direct mapping from `shopping_mall_shipments.delivered_at`. Return the persisted timestamp when the shipment is treated as delivered, or null when delivery has not been completed yet.
+     * @x-autobe-database-schema-property delivered_at
+     * @x-autobe-specification Direct mapping from
+     *   `shopping_mall_shipments.delivered_at`. Return the persisted timestamp
+     *   when the shipment is treated as delivered, or null when delivery has
+     *   not been completed yet.
    */
   delivered_at: (string & tags.Format<"date-time">) | null;
 
   /**
    * Timestamp when the shipment is scheduled to auto-complete as delivered if no earlier confirmation occurs.
    *
-   * @x-autobe-database-schema-property auto_deliver_at
-   * @x-autobe-specification Direct mapping from `shopping_mall_shipments.auto_deliver_at`. This value represents the scheduled automatic delivery-completion time if receipt is not confirmed earlier.
+     * @x-autobe-database-schema-property auto_deliver_at
+     * @x-autobe-specification Direct mapping from
+     *   `shopping_mall_shipments.auto_deliver_at`. This value represents the
+     *   scheduled automatic delivery-completion time if receipt is not
+     *   confirmed earlier.
    */
   auto_deliver_at: string & tags.Format<"date-time">;
 
   /**
    * Shipment-level tracking information shared by all order items in this package.
    *
-   * @x-autobe-specification Compose this property by loading the dependent tracking record from `shopping_mall_tracking_infos` where `shopping_mall_tracking_infos.shopping_mall_shipment_id` equals this shipment's `id`, and serialize it as `IShoppingMallTrackingInfo`. The shipment table itself does not store carrier or tracking fields directly.
+     * @x-autobe-specification Compose this property by loading the dependent
+     *   tracking record from `shopping_mall_tracking_infos` where
+     *   `shopping_mall_tracking_infos.shopping_mall_shipment_id` equals this
+     *   shipment's `id`, and serialize it as `IShoppingMallTrackingInfo`. The
+     *   shipment table itself does not store carrier or tracking fields
+     *   directly.
    */
   trackingInfo: IShoppingMallTrackingInfo;
 
   /**
    * Purchased order items that are grouped into this shipment package.
    *
-   * @x-autobe-specification Compose this property by loading all `shopping_mall_order_items` rows whose `shopping_mall_shipment_id` equals this shipment's `id`, and serialize them as an array of `IShoppingMallOrderItem`. These grouped items are derived from the order-item table rather than stored as columns on the shipment row.
+     * @x-autobe-specification Compose this property by loading all
+     *   `shopping_mall_order_items` rows whose `shopping_mall_shipment_id`
+     *   equals this shipment's `id`, and serialize them as an array of
+     *   `IShoppingMallOrderItem`. These grouped items are derived from the
+     *   order-item table rather than stored as columns on the shipment row.
    */
   orderItems: IShoppingMallOrderItem[];
 
   /**
    * Timestamp when this shipment record was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from `shopping_mall_shipments.created_at`.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   `shopping_mall_shipments.created_at`.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when this shipment record was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from `shopping_mall_shipments.updated_at`.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   `shopping_mall_shipments.updated_at`.
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * Soft-deletion timestamp of this shipment record, or null when the shipment is still active.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from `shopping_mall_shipments.deleted_at`. Return null when the shipment remains active, or the stored timestamp when it has been soft deleted.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   `shopping_mall_shipments.deleted_at`. Return null when the shipment
+     *   remains active, or the stored timestamp when it has been soft deleted.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -104,14 +131,32 @@ export namespace IShoppingMallShipment {
     /**
      * Identifiers of the order items to bundle into the new shipment package.
      *
-     * @x-autobe-specification Use this array to identify the existing shopping_mall_order_items rows that will be assigned to the newly created shipment. Validate that every id exists, is not soft deleted, belongs to the authenticated seller, belongs to the same shopping_mall_orders record as the rest of the selection, has no existing shopping_mall_shipment_id, and is in a shipment-eligible pre-shipment status. After the shipment row is created, update those order items so their shopping_mall_shipment_id points to the new shopping_mall_shipments record. This is request-only grouping input, not a persisted column or relation property on shopping_mall_shipments.
+         * @x-autobe-specification Use this array to identify the existing
+         *   shopping_mall_order_items rows that will be assigned to the newly
+         *   created shipment. Validate that every id exists, is not soft
+         *   deleted, belongs to the authenticated seller, belongs to the same
+         *   shopping_mall_orders record as the rest of the selection, has no
+         *   existing shopping_mall_shipment_id, and is in a shipment-eligible
+         *   pre-shipment status. After the shipment row is created, update
+         *   those order items so their shopping_mall_shipment_id points to the
+         *   new shopping_mall_shipments record. This is request-only grouping
+         *   input, not a persisted column or relation property on
+         *   shopping_mall_shipments.
      */
     orderItemIds: (string & tags.Format<"uuid">)[] & tags.MinItems<1>;
 
     /**
      * Tracking information to attach to the shipment so the package can be monitored in transit.
      *
-     * @x-autobe-specification Use this nested object to create one dependent shopping_mall_tracking_infos row for the newly created shipment. Persist carrier_name, tracking_number, and optional tracking_url from the nested IShoppingMallTrackingInfo.ICreate payload, derive shopping_mall_shipment_id from the newly inserted shipment row, and enforce one-to-one uniqueness for the shipment plus uniqueness of the carrier_name and tracking_number pair. This property is request composition input for a related table, not a direct persisted property on shopping_mall_shipments.
+         * @x-autobe-specification Use this nested object to create one
+         *   dependent shopping_mall_tracking_infos row for the newly created
+         *   shipment. Persist carrier_name, tracking_number, and optional
+         *   tracking_url from the nested IShoppingMallTrackingInfo.ICreate
+         *   payload, derive shopping_mall_shipment_id from the newly inserted
+         *   shipment row, and enforce one-to-one uniqueness for the shipment
+         *   plus uniqueness of the carrier_name and tracking_number pair. This
+         *   property is request composition input for a related table, not a
+         *   direct persisted property on shopping_mall_shipments.
      */
     trackingInfo: IShoppingMallTrackingInfo.ICreate;
   };
@@ -123,72 +168,88 @@ export namespace IShoppingMallShipment {
     /**
      * Unique identifier of the shipment package.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_shipments.id.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_shipments.id.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Summary of the order that this shipment belongs to.
      *
-     * @x-autobe-database-schema-property order
-     * @x-autobe-specification Join from shopping_mall_shipments.shopping_mall_order_id to shopping_mall_orders.id through the order relation and project the joined record as IShoppingMallOrder.ISummary.
+         * @x-autobe-database-schema-property order
+         * @x-autobe-specification Join from
+         *   shopping_mall_shipments.shopping_mall_order_id to
+         *   shopping_mall_orders.id through the order relation and project the
+         *   joined record as IShoppingMallOrder.ISummary.
      */
     order: IShoppingMallOrder.ISummary;
 
     /**
      * Summary of the seller responsible for fulfilling this shipment.
      *
-     * @x-autobe-database-schema-property seller
-     * @x-autobe-specification Join from shopping_mall_shipments.shopping_mall_seller_id to shopping_mall_sellers.id through the seller relation and project the joined record as IShoppingMallSeller.ISummary.
+         * @x-autobe-database-schema-property seller
+         * @x-autobe-specification Join from
+         *   shopping_mall_shipments.shopping_mall_seller_id to
+         *   shopping_mall_sellers.id through the seller relation and project
+         *   the joined record as IShoppingMallSeller.ISummary.
      */
     seller: IShoppingMallSeller.ISummary;
 
     /**
      * Timestamp when the seller marked the shipment as shipped.
      *
-     * @x-autobe-database-schema-property shipped_at
-     * @x-autobe-specification Direct mapping from shopping_mall_shipments.shipped_at.
+         * @x-autobe-database-schema-property shipped_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_shipments.shipped_at.
      */
     shipped_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when the shipment was treated as delivered, or null if delivery has not been completed yet.
      *
-     * @x-autobe-database-schema-property delivered_at
-     * @x-autobe-specification Direct mapping from shopping_mall_shipments.delivered_at. This value is nullable and remains null until the shipment is confirmed or auto-completed as delivered.
+         * @x-autobe-database-schema-property delivered_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_shipments.delivered_at. This value is nullable and
+         *   remains null until the shipment is confirmed or auto-completed as
+         *   delivered.
      */
     delivered_at: (string & tags.Format<"date-time">) | null;
 
     /**
      * Timestamp when the shipment is scheduled to auto-transition to delivered if the customer does not confirm receipt first.
      *
-     * @x-autobe-database-schema-property auto_deliver_at
-     * @x-autobe-specification Direct mapping from shopping_mall_shipments.auto_deliver_at.
+         * @x-autobe-database-schema-property auto_deliver_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_shipments.auto_deliver_at.
      */
     auto_deliver_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when this shipment record was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_shipments.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_shipments.created_at.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when this shipment record was last updated.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from shopping_mall_shipments.updated_at.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_shipments.updated_at.
      */
     updated_at: string & tags.Format<"date-time">;
 
     /**
      * Soft-deletion timestamp for the shipment record, or null when the shipment remains active in normal reads.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from shopping_mall_shipments.deleted_at. This value is nullable and is set only when the shipment record has been soft deleted.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_shipments.deleted_at. This value is nullable and is
+         *   set only when the shipment record has been soft deleted.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };
@@ -200,8 +261,17 @@ export namespace IShoppingMallShipment {
     /**
      * Timestamp when the shipment package is confirmed as delivered. Use this field to submit the package-level delivery completion time for the target shipment.
      *
-     * @x-autobe-database-schema-property delivered_at
-     * @x-autobe-specification Maps directly to shopping_mall_shipments.delivered_at. Accept a nullable delivery-confirmation timestamp in ISO 8601 date-time format when the caller is explicitly confirming the shipment as delivered. Downstream logic must validate that the shipment has already been shipped and that delivery confirmation is currently allowed before persisting this value. If null or omitted is accepted by service policy, it must not be interpreted as permission to edit any other shipment field; the body remains scoped only to delivery completion handling.
+         * @x-autobe-database-schema-property delivered_at
+         * @x-autobe-specification Maps directly to
+         *   shopping_mall_shipments.delivered_at. Accept a nullable
+         *   delivery-confirmation timestamp in ISO 8601 date-time format when
+         *   the caller is explicitly confirming the shipment as delivered.
+         *   Downstream logic must validate that the shipment has already been
+         *   shipped and that delivery confirmation is currently allowed before
+         *   persisting this value. If null or omitted is accepted by service
+         *   policy, it must not be interpreted as permission to edit any other
+         *   shipment field; the body remains scoped only to delivery completion
+         *   handling.
      */
     delivered_at?: (string & tags.Format<"date-time">) | null | undefined;
   };
@@ -213,63 +283,94 @@ export namespace IShoppingMallShipment {
     /**
      * Specific shipment identifier used to narrow results to one shipment.
      *
-     * @x-autobe-specification Optional equality filter for shipment identity. Apply this field to the base shopping_mall_shipments query by matching shopping_mall_shipments.id to the provided UUID before pagination. Although it filters a database column, this request DTO has no direct object-level table mapping, so the filter behavior is defined here in the specification.
+         * @x-autobe-specification Optional equality filter for shipment
+         *   identity. Apply this field to the base shopping_mall_shipments
+         *   query by matching shopping_mall_shipments.id to the provided UUID
+         *   before pagination. Although it filters a database column, this
+         *   request DTO has no direct object-level table mapping, so the filter
+         *   behavior is defined here in the specification.
      */
     id?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Order identifier used to return only shipments that belong to the specified order.
      *
-     * @x-autobe-specification Optional equality filter for parent order identity. Apply this field to the base shopping_mall_shipments query by matching shopping_mall_shipments.shopping_mall_order_id to the provided UUID before pagination. This field is request-side query logic, so its behavior is defined here rather than by direct DTO row mapping.
+         * @x-autobe-specification Optional equality filter for parent order
+         *   identity. Apply this field to the base shopping_mall_shipments
+         *   query by matching shopping_mall_shipments.shopping_mall_order_id to
+         *   the provided UUID before pagination. This field is request-side
+         *   query logic, so its behavior is defined here rather than by direct
+         *   DTO row mapping.
      */
     shopping_mall_order_id?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Business order code used to find shipments by the customer-facing order number.
      *
-     * @x-autobe-specification Optional order lookup filter that joins shopping_mall_orders on shopping_mall_shipments.shopping_mall_order_id = shopping_mall_orders.id and applies equality matching to shopping_mall_orders.code. This field is not stored on the shipment row itself, so its full behavior must be implemented according to this join logic.
+         * @x-autobe-specification Optional order lookup filter that joins
+         *   shopping_mall_orders on
+         *   shopping_mall_shipments.shopping_mall_order_id =
+         *   shopping_mall_orders.id and applies equality matching to
+         *   shopping_mall_orders.code. This field is not stored on the shipment
+         *   row itself, so its full behavior must be implemented according to
+         *   this join logic.
      */
     orderCode?: string | undefined;
 
     /**
      * Whether to return only delivered shipments or only shipments not yet marked as delivered.
      *
-     * @x-autobe-specification Optional boolean filter derived from shopping_mall_shipments.delivered_at. Interpret true as delivered_at IS NOT NULL and false as delivered_at IS NULL. This field is query logic, not a persisted boolean column.
+         * @x-autobe-specification Optional boolean filter derived from
+         *   shopping_mall_shipments.delivered_at. Interpret true as
+         *   delivered_at IS NOT NULL and false as delivered_at IS NULL. This
+         *   field is query logic, not a persisted boolean column.
      */
     delivered?: boolean | undefined;
 
     /**
      * Inclusive start of the shipment timestamp range.
      *
-     * @x-autobe-specification Optional inclusive lower-bound filter applied to shopping_mall_shipments.shipped_at using a >= comparison. Use the provided date-time as the beginning of the shipment timestamp range.
+         * @x-autobe-specification Optional inclusive lower-bound filter applied
+         *   to shopping_mall_shipments.shipped_at using a >= comparison. Use
+         *   the provided date-time as the beginning of the shipment timestamp
+         *   range.
      */
     shippedFrom?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Inclusive end of the shipment timestamp range.
      *
-     * @x-autobe-specification Optional inclusive upper-bound filter applied to shopping_mall_shipments.shipped_at using a <= comparison. Use the provided date-time as the end of the shipment timestamp range.
+         * @x-autobe-specification Optional inclusive upper-bound filter applied
+         *   to shopping_mall_shipments.shipped_at using a <= comparison. Use
+         *   the provided date-time as the end of the shipment timestamp range.
      */
     shippedTo?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Requested ordering for the shipment list results.
      *
-     * @x-autobe-specification Optional sort directive for shipment list ordering. Implement it with an allowlist of supported orderings, such as newest created_at or newest shipped_at, and always add a stable id tiebreaker. Reject unsupported sort expressions rather than passing arbitrary client input into the query.
+         * @x-autobe-specification Optional sort directive for shipment list
+         *   ordering. Implement it with an allowlist of supported orderings,
+         *   such as newest created_at or newest shipped_at, and always add a
+         *   stable id tiebreaker. Reject unsupported sort expressions rather
+         *   than passing arbitrary client input into the query.
      */
     sort?: string | undefined;
 
     /**
      * Page number of the shipment results to return.
      *
-     * @x-autobe-specification Optional 1-indexed page number used with limit to select which page of filtered shipment results to return.
+         * @x-autobe-specification Optional 1-indexed page number used with
+         *   limit to select which page of filtered shipment results to return.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of shipment results to include in one page.
      *
-     * @x-autobe-specification Optional maximum number of shipment records to return per page. Respect the declared schema bounds and use it with page to paginate the filtered query deterministically.
+         * @x-autobe-specification Optional maximum number of shipment records
+         *   to return per page. Respect the declared schema bounds and use it
+         *   with page to paginate the filtered query deterministically.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)

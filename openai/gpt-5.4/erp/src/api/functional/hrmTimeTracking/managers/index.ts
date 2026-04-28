@@ -26,7 +26,8 @@ import { IPageIHrmTimeTrackingManager } from "../../../structures/IPageIHrmTimeT
  * @param props.body Search criteria, pagination, and sorting options for manager accounts
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Implement this operation as a paginated search over the `hrm_time_tracking_managers` table.
+ * @x-autobe-specification Implement this operation as a paginated search over
+ *   the `hrm_time_tracking_managers` table.
  *
  * Accept an `IHrmTimeTrackingManager.IRequest` body containing list-browsing controls such as pagination, sorting, and filter criteria. Build a query that reads from `hrm_time_tracking_managers` and supports filtering by exact or partial `email` matches and by lifecycle ranges or flags derived from `created_at`, `updated_at`, and `deleted_at` when those filters are present in the request DTO. Apply deterministic sorting with a stable secondary order on `id` to ensure pagination consistency.
  *
@@ -127,7 +128,9 @@ export namespace index {
  * @param props.managerId Target manager account ID
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Load the manager account from `hrm_time_tracking_managers` by primary key `id` using the `managerId` path parameter.
+ * @x-autobe-specification Load the manager account from
+ *   `hrm_time_tracking_managers` by primary key `id` using the `managerId` path
+ *   parameter.
  *
  * Before returning data, resolve the caller's current organization context and evaluate authorization in that context only. Do not grant access based on permissions the caller holds in a different organization. Allow the operation only for callers with organization-scoped authority to view manager account information, such as appropriately authorized owners or managers in the selected organization. Reject unauthorized callers.
  *

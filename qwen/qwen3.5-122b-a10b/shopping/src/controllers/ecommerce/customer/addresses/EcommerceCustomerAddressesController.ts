@@ -40,9 +40,10 @@ export class EcommerceCustomerAddressesController {
    *
    * @param connection
    * @param body Required address information including recipient name, contact phone, and complete delivery location details. All fields except state and is_default are mandatory.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Implement address creation for the authenticated customer.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Implement address creation for the authenticated
+     *   customer.
    *
    * 1. Extract customer_id from authentication session (customer actor)
    * 2. Validate request body contains all required fields: recipient_name, phone_number, street_address, city, postal_code, country
@@ -114,9 +115,10 @@ export class EcommerceCustomerAddressesController {
    *
    * @param connection
    * @param body Search criteria including pagination parameters, text search filters, status filters, and sorting options for retrieving customer shipping addresses.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Query ecommerce_addresses table filtered by authenticated customer's ID (from JWT session).
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Query ecommerce_addresses table filtered by
+     *   authenticated customer's ID (from JWT session).
    *
    * ## Implementation Steps
    *
@@ -184,9 +186,10 @@ export class EcommerceCustomerAddressesController {
    *
    * @param connection
    * @param addressId Unique identifier of the shipping address to retrieve (UUID format).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Retrieve address record from ecommerce_addresses table by id parameter.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Retrieve address record from ecommerce_addresses
+     *   table by id parameter.
    *
    * 1. Validate the addressId parameter is a valid UUID format
    * 2. Query the database for the address with matching id
@@ -236,19 +239,21 @@ export class EcommerceCustomerAddressesController {
    * @param connection
    * @param addressId Unique identifier of the shipping address to update (UUID format).
    * @param body Complete address update data including recipient name, phone number, street address, city, state/province, postal code, country, and default flag. All address fields except state are mandatory.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification 1. Extract addressId from path parameter (UUID format)
-   * 2. Verify authenticated customer owns this address by joining ecommerce_addresses with ecommerce_customers
-   * 3. Validate request body contains all required fields: recipient_name, phone_number, street_address, city, postal_code, country (state is optional)
-   * 4. If is_default is set to true in request:
-   *    - Query for customer's existing default address (WHERE ecommerce_customer_id = customer_id AND is_default = true AND id != addressId)
-   *    - Update that address to set is_default = false
-   *    - Set current address is_default = true
-   * 5. If is_default is not changing, preserve existing is_default value
-   * 6. Update all provided address fields (recipient_name, phone_number, street_address, city, state, postal_code, country, is_default)
-   * 7. Set updated_at to current timestamp
-   * 8. Return the updated address entity
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification 1. Extract addressId from path parameter (UUID
+     *   format) 2. Verify authenticated customer owns this address by joining
+     *   ecommerce_addresses with ecommerce_customers 3. Validate request body
+     *   contains all required fields: recipient_name, phone_number,
+     *   street_address, city, postal_code, country (state is optional) 4. If
+     *   is_default is set to true in request: - Query for customer's existing
+     *   default address (WHERE ecommerce_customer_id = customer_id AND
+     *   is_default = true AND id != addressId) - Update that address to set
+     *   is_default = false - Set current address is_default = true 5. If
+     *   is_default is not changing, preserve existing is_default value 6.
+     *   Update all provided address fields (recipient_name, phone_number,
+     *   street_address, city, state, postal_code, country, is_default) 7. Set
+     *   updated_at to current timestamp 8. Return the updated address entity
    *
    * Error cases:
    * - 404: Address not found or does not belong to authenticated customer
@@ -288,9 +293,10 @@ export class EcommerceCustomerAddressesController {
    *
    * @param connection
    * @param addressId Unique identifier of the shipping address to delete (UUID format).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Implement DELETE operation for customer shipping addresses with soft delete semantics.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Implement DELETE operation for customer shipping
+     *   addresses with soft delete semantics.
    *
    * 1. **Authorization**: Verify the authenticated customer owns the address being deleted by checking ecommerce_customer_id matches the current session's customer ID.
    *

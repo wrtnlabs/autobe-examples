@@ -10,40 +10,55 @@ export type ICommunityPlatformCommunitySnapshot = {
   /**
    * Unique identifier of this community snapshot record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from community_platform_community_snapshots.id. Return the generated UUID that uniquely identifies this snapshot record.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_community_snapshots.id. Return the generated UUID
+     *   that uniquely identifies this snapshot record.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Summary of the parent community that this snapshot belongs to.
    *
-   * @x-autobe-database-schema-property community
-   * @x-autobe-specification Resolve the belongs-to relation from community_platform_community_snapshots.community_platform_community_id to community_platform_communities.id and map the joined parent row as ICommunityPlatformCommunity.ISummary. Do not expose the raw foreign-key scalar in this response.
+     * @x-autobe-database-schema-property community
+     * @x-autobe-specification Resolve the belongs-to relation from
+     *   community_platform_community_snapshots.community_platform_community_id
+     *   to community_platform_communities.id and map the joined parent row as
+     *   ICommunityPlatformCommunity.ISummary. Do not expose the raw foreign-key
+     *   scalar in this response.
    */
   community: ICommunityPlatformCommunity.ISummary;
 
   /**
    * Visibility classification recorded for the community at this snapshot point.
    *
-   * @x-autobe-database-schema-property visibility
-   * @x-autobe-specification Direct mapping from community_platform_community_snapshots.visibility. Return the snapshot-specific visibility classification captured when the historical record was created.
+     * @x-autobe-database-schema-property visibility
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_community_snapshots.visibility. Return the
+     *   snapshot-specific visibility classification captured when the
+     *   historical record was created.
    */
   visibility: string;
 
   /**
    * Timestamp when this snapshot record was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from community_platform_community_snapshots.created_at as an ISO 8601 date-time string. This is the timestamp when the snapshot row was created.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_community_snapshots.created_at as an ISO 8601
+     *   date-time string. This is the timestamp when the snapshot row was
+     *   created.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Soft-deletion timestamp of this snapshot, or null when the snapshot has not been logically removed.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from community_platform_community_snapshots.deleted_at. Return an ISO 8601 date-time string when the snapshot has been logically removed, or null when it remains active in historical access.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_community_snapshots.deleted_at. Return an ISO 8601
+     *   date-time string when the snapshot has been logically removed, or null
+     *   when it remains active in historical access.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -55,8 +70,14 @@ export namespace ICommunityPlatformCommunitySnapshot {
     /**
      * Visibility classification recorded for the new community snapshot.
      *
-     * @x-autobe-database-schema-property visibility
-     * @x-autobe-specification Direct mapping from community_platform_community_snapshots.visibility. Accept the visibility classification from the request body after validating it against the service's allowed community snapshot visibility domain. Persist the validated value into the new snapshot row together with the server-resolved community_platform_community_id and server-generated metadata.
+         * @x-autobe-database-schema-property visibility
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_community_snapshots.visibility. Accept the
+         *   visibility classification from the request body after validating it
+         *   against the service's allowed community snapshot visibility domain.
+         *   Persist the validated value into the new snapshot row together with
+         *   the server-resolved community_platform_community_id and
+         *   server-generated metadata.
      */
     visibility: string;
   };
@@ -68,32 +89,40 @@ export namespace ICommunityPlatformCommunitySnapshot {
     /**
      * Unique identifier of the historical community snapshot record.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from community_platform_community_snapshots.id.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_community_snapshots.id.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Visibility setting recorded in this historical snapshot.
      *
-     * @x-autobe-database-schema-property visibility
-     * @x-autobe-specification Direct mapping from community_platform_community_snapshots.visibility. Stores the visibility classification captured for the community at the time this snapshot was created.
+         * @x-autobe-database-schema-property visibility
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_community_snapshots.visibility. Stores the
+         *   visibility classification captured for the community at the time
+         *   this snapshot was created.
      */
     visibility: string;
 
     /**
      * Timestamp when this snapshot record was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from community_platform_community_snapshots.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_community_snapshots.created_at.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * Soft-deletion timestamp of the snapshot record, or null when the snapshot remains active.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from community_platform_community_snapshots.deleted_at. This field is nullable and remains exposed to represent whether the snapshot has been soft-deleted.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_community_snapshots.deleted_at. This field is
+         *   nullable and remains exposed to represent whether the snapshot has
+         *   been soft-deleted.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };
@@ -105,35 +134,59 @@ export namespace ICommunityPlatformCommunitySnapshot {
     /**
      * Visibility value used to narrow the snapshot history results.
      *
-     * @x-autobe-specification Optional visibility filter used when querying community_platform_community_snapshots for the resolved parent community. When provided, interpret this value as an exact-match condition against the snapshot visibility classification and return only rows whose visibility matches it. Because the DTO has no object-level database schema, this property is documented as a computed query control rather than a direct entity-field mapping.
+         * @x-autobe-specification Optional visibility filter used when querying
+         *   community_platform_community_snapshots for the resolved parent
+         *   community. When provided, interpret this value as an exact-match
+         *   condition against the snapshot visibility classification and return
+         *   only rows whose visibility matches it. Because the DTO has no
+         *   object-level database schema, this property is documented as a
+         *   computed query control rather than a direct entity-field mapping.
      */
     visibility?: string | undefined;
 
     /**
      * Inclusive starting timestamp for filtering snapshot history by creation time.
      *
-     * @x-autobe-specification Optional inclusive lower-bound filter applied to community_platform_community_snapshots.created_at. When provided, only snapshots whose created_at is greater than or equal to this timestamp are eligible for the result set. This property is a query control derived into a created_at >= condition, not a persisted DTO field.
+         * @x-autobe-specification Optional inclusive lower-bound filter applied
+         *   to community_platform_community_snapshots.created_at. When
+         *   provided, only snapshots whose created_at is greater than or equal
+         *   to this timestamp are eligible for the result set. This property is
+         *   a query control derived into a created_at >= condition, not a
+         *   persisted DTO field.
      */
     createdAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Inclusive ending timestamp for filtering snapshot history by creation time.
      *
-     * @x-autobe-specification Optional inclusive upper-bound filter applied to community_platform_community_snapshots.created_at. When provided, only snapshots whose created_at is less than or equal to this timestamp are eligible for the result set. This property is a query control derived into a created_at <= condition, not a persisted DTO field.
+         * @x-autobe-specification Optional inclusive upper-bound filter applied
+         *   to community_platform_community_snapshots.created_at. When
+         *   provided, only snapshots whose created_at is less than or equal to
+         *   this timestamp are eligible for the result set. This property is a
+         *   query control derived into a created_at <= condition, not a
+         *   persisted DTO field.
      */
     createdAtTo?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Page number of snapshot results to retrieve.
      *
-     * @x-autobe-specification Optional 1-indexed page selector for the paginated snapshot history query. Use this value together with limit to compute offset-based or equivalent pagination behavior. When omitted, apply the service default page, typically the first page.
+         * @x-autobe-specification Optional 1-indexed page selector for the
+         *   paginated snapshot history query. Use this value together with
+         *   limit to compute offset-based or equivalent pagination behavior.
+         *   When omitted, apply the service default page, typically the first
+         *   page.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of snapshot records to return in one page.
      *
-     * @x-autobe-specification Optional page-size limit for the paginated snapshot history query. Use this value to cap the number of snapshot rows returned in one response page while honoring the schema bounds of minimum 1 and maximum 100. When omitted, apply the service default limit.
+         * @x-autobe-specification Optional page-size limit for the paginated
+         *   snapshot history query. Use this value to cap the number of
+         *   snapshot rows returned in one response page while honoring the
+         *   schema bounds of minimum 1 and maximum 100. When omitted, apply the
+         *   service default limit.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -142,7 +195,13 @@ export namespace ICommunityPlatformCommunitySnapshot {
     /**
      * Sort directive that controls the order of snapshot history results.
      *
-     * @x-autobe-specification Optional ordering directive for the snapshot history query. Interpret this value only as a supported created_at ordering mode in the service layer, with descending created_at order as the default when the property is omitted. Reject unsupported sort tokens according to request validation rules. This property controls query ordering behavior rather than mapping to a persisted field value.
+         * @x-autobe-specification Optional ordering directive for the snapshot
+         *   history query. Interpret this value only as a supported created_at
+         *   ordering mode in the service layer, with descending created_at
+         *   order as the default when the property is omitted. Reject
+         *   unsupported sort tokens according to request validation rules. This
+         *   property controls query ordering behavior rather than mapping to a
+         *   persisted field value.
      */
     sort?: string | undefined;
   };

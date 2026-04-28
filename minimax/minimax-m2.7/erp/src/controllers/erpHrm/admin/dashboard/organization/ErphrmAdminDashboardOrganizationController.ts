@@ -19,9 +19,11 @@ export class ErphrmAdminDashboardOrganizationController {
    * Requires report:view or org:manage permission to access.
    *
    * @param connection
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query the currently selected organization context from the session. Verify the requesting user has report:view or org:manage permission.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Query the currently selected organization context
+     *   from the session. Verify the requesting user has report:view or
+     *   org:manage permission.
    *
    * 1. Count active employees: SELECT COUNT(*) FROM erp_hrm_employees WHERE erp_hrm_organization_id = :orgId AND status = 'active'
    *

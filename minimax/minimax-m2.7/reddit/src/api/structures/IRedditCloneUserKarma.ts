@@ -8,8 +8,12 @@ export namespace IRedditCloneUserKarma {
     /**
      * Computed karma score for the user. Increases by 1 for each upvote received on user's content, decreases by 1 for each downvote. Can be negative.
      *
-     * @x-autobe-database-schema-property karma_score
-     * @x-autobe-specification Direct mapping from reddit_clone_user_karmas.karma_score. Integer representing total votes received on user's content. Increases by 1 per upvote, decreases by 1 per downvote. Can be negative. Edge case: returns 0 if no karma record exists.
+         * @x-autobe-database-schema-property karma_score
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_user_karmas.karma_score. Integer representing total
+         *   votes received on user's content. Increases by 1 per upvote,
+         *   decreases by 1 per downvote. Can be negative. Edge case: returns 0
+         *   if no karma record exists.
      */
     karmaScore: number & tags.Type<"int32">;
   };

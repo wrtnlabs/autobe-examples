@@ -19,9 +19,12 @@ export class MallplatformAdministratorOrdersForce_refundController {
    * @param connection
    * @param orderId The order identifier (UUID) for the administrator intervention.
    * @param body Administrator refund command for the selected order scope.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Load the order by order_id and verify that the caller is an administrator with order intervention authority. Reject the request with a not-found error if the order does not exist and with a forbidden error if the caller lacks permission.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor administrator
+     * @x-autobe-specification Load the order by order_id and verify that the
+     *   caller is an administrator with order intervention authority. Reject
+     *   the request with a not-found error if the order does not exist and with
+     *   a forbidden error if the caller lacks permission.
    *
    * Determine the target scope from the command body: if explicit order item targets are supplied, validate that each item belongs to the order and can be force-refunded by policy; otherwise, treat the request as an order-wide forced refund over all eligible items. For every targeted item, write any required snapshot record before mutating the live row, update the item status to refunded, restore stock by creating the appropriate positive inventory record, and trigger the refund settlement workflow exactly once per item.
    *

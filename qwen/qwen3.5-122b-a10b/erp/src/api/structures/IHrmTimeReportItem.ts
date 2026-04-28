@@ -24,7 +24,9 @@ export type IHrmTimeReportItem = {
    *
    * Calculated by summing the duration_minutes from all timelog records in this group and dividing by 60 to convert to hours. Represents the complete time tracked for this specific grouping combination.
    *
-   * @x-autobe-specification Computed aggregation: SUM(hrm_timelogs.duration_minutes) / 60 grouped by the specified dimension(s). Converts minutes to hours.
+     * @x-autobe-specification Computed aggregation:
+     *   SUM(hrm_timelogs.duration_minutes) / 60 grouped by the specified
+     *   dimension(s). Converts minutes to hours.
    */
   total_hours: number;
 
@@ -33,7 +35,9 @@ export type IHrmTimeReportItem = {
    *
    * Calculated by summing only the duration_minutes from timelog records where the billable flag is true, then dividing by 60. Represents chargeable client work for this grouping.
    *
-   * @x-autobe-specification Computed aggregation: SUM(CASE WHEN hrm_timelogs.billable = true THEN hrm_timelogs.duration_minutes ELSE 0 END) / 60 grouped by the specified dimension(s).
+     * @x-autobe-specification Computed aggregation: SUM(CASE WHEN
+     *   hrm_timelogs.billable = true THEN hrm_timelogs.duration_minutes ELSE 0
+     *   END) / 60 grouped by the specified dimension(s).
    */
   total_billable_hours: number;
 
@@ -42,7 +46,9 @@ export type IHrmTimeReportItem = {
    *
    * Calculated by summing only the duration_minutes from timelog records where the billable flag is false, then dividing by 60. Represents internal work (administrative tasks, meetings, training) for this grouping.
    *
-   * @x-autobe-specification Computed aggregation: SUM(CASE WHEN hrm_timelogs.billable = false THEN hrm_timelogs.duration_minutes ELSE 0 END) / 60 grouped by the specified dimension(s).
+     * @x-autobe-specification Computed aggregation: SUM(CASE WHEN
+     *   hrm_timelogs.billable = false THEN hrm_timelogs.duration_minutes ELSE 0
+     *   END) / 60 grouped by the specified dimension(s).
    */
   total_non_billable_hours: number;
 
@@ -51,7 +57,8 @@ export type IHrmTimeReportItem = {
    *
    * Represents the number of individual time tracking records aggregated into this group. Each entry corresponds to one timelog record from the hrm_timelogs table.
    *
-   * @x-autobe-specification Computed aggregation: COUNT(*) of hrm_timelogs records grouped by the specified dimension(s).
+     * @x-autobe-specification Computed aggregation: COUNT(*) of hrm_timelogs
+     *   records grouped by the specified dimension(s).
    */
   total_entries: number & tags.Type<"int32"> & tags.Minimum<0>;
 
@@ -60,7 +67,10 @@ export type IHrmTimeReportItem = {
    *
    * Included when the request specifies "employee" in the group_by parameter. Provides contextual information about the employee associated with this time grouping. Omitted when grouping by other dimensions without employee.
    *
-   * @x-autobe-specification Computed via LEFT JOIN from hrm_timelogs.employee_id to hrm_employees.id. Returns IHrmEmployee.ISummary when grouping by employee dimension, omitted otherwise.
+     * @x-autobe-specification Computed via LEFT JOIN from
+     *   hrm_timelogs.employee_id to hrm_employees.id. Returns
+     *   IHrmEmployee.ISummary when grouping by employee dimension, omitted
+     *   otherwise.
    */
   employee?: IHrmEmployee.ISummary | undefined;
 
@@ -69,7 +79,10 @@ export type IHrmTimeReportItem = {
    *
    * Included when the request specifies "project" in the group_by parameter. Provides contextual information about the project associated with this time grouping. Omitted when grouping by other dimensions without project.
    *
-   * @x-autobe-specification Computed via LEFT JOIN from hrm_timelogs.project_id to hrm_projects.id. Returns IHrmProject.ISummary when grouping by project dimension, omitted otherwise.
+     * @x-autobe-specification Computed via LEFT JOIN from
+     *   hrm_timelogs.project_id to hrm_projects.id. Returns
+     *   IHrmProject.ISummary when grouping by project dimension, omitted
+     *   otherwise.
    */
   project?: IHrmProject.ISummary | undefined;
 
@@ -78,7 +91,9 @@ export type IHrmTimeReportItem = {
    *
    * Included when the request specifies "task" in the group_by parameter. Provides contextual information about the task associated with this time grouping. Omitted when grouping by other dimensions without task.
    *
-   * @x-autobe-specification Computed via LEFT JOIN from hrm_timelogs.task_id to hrm_tasks.id. Returns IHrmTask.ISummary when grouping by task dimension, omitted otherwise.
+     * @x-autobe-specification Computed via LEFT JOIN from hrm_timelogs.task_id
+     *   to hrm_tasks.id. Returns IHrmTask.ISummary when grouping by task
+     *   dimension, omitted otherwise.
    */
   task?: IHrmTask.ISummary | undefined;
 };

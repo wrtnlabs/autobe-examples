@@ -23,9 +23,11 @@ export class EcommercemallAdministratorSellersProfileSnapshotsController {
    * @param connection
    * @param sellerId The unique identifier of the seller whose profile snapshots are being retrieved (UUID, global scope).
    * @param body Search criteria for filtering and paginating seller profile snapshots. Supports optional date range filter on creation timestamp (`created_at`) for narrowing results to a specific time period, along with standard pagination and sorting parameters.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Query `e_commerce_mall_seller_profile_snapshots` table joined through `e_commerce_mall_seller_profiles` via the `sellerId` path parameter.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor administrator
+     * @x-autobe-specification Query `e_commerce_mall_seller_profile_snapshots`
+     *   table joined through `e_commerce_mall_seller_profiles` via the
+     *   `sellerId` path parameter.
    *
    * 1. Resolve the seller profile: find `e_commerce_mall_seller_profiles` where `e_commerce_mall_seller_id = sellerId`. If not found, return 404.
    * 2. Query `e_commerce_mall_seller_profile_snapshots` where `e_commerce_mall_seller_profile_id = profile.id`, ordered by `created_at` descending (newest first).
@@ -70,9 +72,10 @@ export class EcommercemallAdministratorSellersProfileSnapshotsController {
    * @param connection
    * @param sellerId Unique identifier (UUID) of the seller whose profile snapshot to retrieve. Used as a scope guard — the snapshot must belong to this seller's profile.
    * @param snapshotId Unique identifier (UUID) of the seller profile snapshot to retrieve.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Validate that the snapshot exists and belongs to the specified seller.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor administrator
+     * @x-autobe-specification Validate that the snapshot exists and belongs to
+     *   the specified seller.
    *
    * Query the e_commerce_mall_seller_profile_snapshots table, joined with e_commerce_mall_seller_profiles (on e_commerce_mall_seller_profile_id) to verify the snapshot belongs to the seller's profile. The join condition: e_commerce_mall_seller_profiles.e_commerce_mall_seller_id = :sellerId.
    *

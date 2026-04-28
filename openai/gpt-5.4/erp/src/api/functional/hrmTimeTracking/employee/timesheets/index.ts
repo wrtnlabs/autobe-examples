@@ -29,7 +29,8 @@ export * as snapshots from "./snapshots/index";
  * @param props.body Target week information for creating a draft timesheet
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor employee
- * @x-autobe-specification Implement a transactional create-timesheet service for the authenticated employee in the currently selected organization.
+ * @x-autobe-specification Implement a transactional create-timesheet service
+ *   for the authenticated employee in the currently selected organization.
  *
  * 1. Resolve the authenticated employee account and current organization context from the session. Verify the employee has access in the selected organization context before performing any write.
  * 2. Parse the request body as `IHrmTimeTrackingTimesheet.ICreate`. Use the supplied target week information to derive the exact Monday `week_start_date` and Sunday `week_end_date` for the reporting period in the organization's operational context. Reject invalid week inputs that cannot map to a single Monday-to-Sunday range.
@@ -132,7 +133,9 @@ export namespace create {
  * @param props.body Timesheet list filters and pagination options
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor employee
- * @x-autobe-specification Implement a paginated search query over hrm_time_tracking_timesheets constrained to the authenticated user's current organization context.
+ * @x-autobe-specification Implement a paginated search query over
+ *   hrm_time_tracking_timesheets constrained to the authenticated user's
+ *   current organization context.
  *
  * Resolve the caller's active organization context from authentication/session state before executing the query. Reject the request if the caller has no valid organization context or lacks permission in that organization. For employee actors, add a mandatory predicate hrm_time_tracking_employee_id = caller employee account id so that only self-owned timesheets are visible. For owner and manager actors with timesheet approval capability in the current organization, allow organization-scoped querying; when the request is intended as an approval worklist, default or apply filters that emphasize submitted records, but never bypass the organization boundary.
  *
@@ -235,7 +238,9 @@ export namespace index {
  * @param props.timesheetId Target timesheet identifier in the current organization context
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor employee
- * @x-autobe-specification Load the target record from hrm_time_tracking_timesheets by its primary identifier and constrain the lookup to the caller's current organization context.
+ * @x-autobe-specification Load the target record from
+ *   hrm_time_tracking_timesheets by its primary identifier and constrain the
+ *   lookup to the caller's current organization context.
  *
  * Authorize access using organization-scoped role evaluation. Allow the request when the caller is the employee owner of the timesheet in the current organization, or when the caller is an owner or manager with permission to review or approve timesheets in that same organization. Reject access if the timesheet belongs to another organization or if the caller lacks the relevant permission in the active organization.
  *
@@ -333,7 +338,12 @@ export namespace at {
  * @param props.body Updatable timesheet fields and workflow change data
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor employee
- * @x-autobe-specification Load the target `hrm_time_tracking_timesheets` row by `id = timesheetId` and ensure `deleted_at IS NULL`. Resolve the caller's active organization context and verify that the timesheet's `hrm_time_tracking_organization_id` matches that context before any modification. Reject the request if the timesheet is not found in the active organization scope.
+ * @x-autobe-specification Load the target `hrm_time_tracking_timesheets` row by
+ *   `id = timesheetId` and ensure `deleted_at IS NULL`. Resolve the caller's
+ *   active organization context and verify that the timesheet's
+ *   `hrm_time_tracking_organization_id` matches that context before any
+ *   modification. Reject the request if the timesheet is not found in the
+ *   active organization scope.
  *
  * Authorize according to organization-scoped access rules. Permit employee self-service updates only for the employee who owns the timesheet (`hrm_time_tracking_employee_id`) and only for workflow transitions that employees are allowed to perform, such as updating a draft toward submission if supported by the DTO. Permit review-oriented updates only for users with timesheet approval permission in the current organization. Do not grant access based on roles from another organization.
  *
@@ -443,16 +453,32 @@ export namespace update {
  * @param props.timesheetId Target timesheet record identifier.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor employee
- * @x-autobe-specification 1. Resolve the caller's active organization context and actor identity.
- * 2. Load the target row from `hrm_time_tracking_timesheets` by `id = :timesheetId`, and verify that `hrm_time_tracking_organization_id` matches the caller's current organization. If no matching row exists, return a not-found error.
- * 3. Determine authorization:
- *    - If the caller is an employee, allow only when the target `hrm_time_tracking_employee_id` belongs to that caller's employee identity in the current organization.
- *    - If the caller is an owner or manager, allow only when the caller has organization time-management authority.
- *    - Otherwise reject with a forbidden error.
- * 4. Enforce workflow deletion rules. Deletion is allowed only for timesheet states designated as removable by business policy, and must be rejected for locked review states. At minimum, submitted and approved states must be treated as non-deletable because organization review history must be preserved once the approval workflow has advanced.
- * 5. Perform the removal in a transaction. Delete or mark deleted the target `hrm_time_tracking_timesheets` row according to repository conventions, and ensure all linked `hrm_time_tracking_timesheet_timelogs` inclusion rows are removed consistently. The schema relation already defines cascade behavior from timesheet inclusions, so implementation should rely on that relational integrity while keeping the operation transactional.
- * 6. After commit, ensure subsequent list and detail queries in the current organization no longer expose the deleted timesheet. Return success with no response body.
- * 7. Error cases to handle explicitly: unknown timesheet ID, organization-scope mismatch, insufficient permission, and invalid workflow state for deletion.
+ * @x-autobe-specification 1. Resolve the caller's active organization context
+ *   and actor identity. 2. Load the target row from
+ *   `hrm_time_tracking_timesheets` by `id = :timesheetId`, and verify that
+ *   `hrm_time_tracking_organization_id` matches the caller's current
+ *   organization. If no matching row exists, return a not-found error. 3.
+ *   Determine authorization: - If the caller is an employee, allow only when
+ *   the target `hrm_time_tracking_employee_id` belongs to that caller's
+ *   employee identity in the current organization. - If the caller is an owner
+ *   or manager, allow only when the caller has organization time-management
+ *   authority. - Otherwise reject with a forbidden error. 4. Enforce workflow
+ *   deletion rules. Deletion is allowed only for timesheet states designated as
+ *   removable by business policy, and must be rejected for locked review
+ *   states. At minimum, submitted and approved states must be treated as
+ *   non-deletable because organization review history must be preserved once
+ *   the approval workflow has advanced. 5. Perform the removal in a
+ *   transaction. Delete or mark deleted the target
+ *   `hrm_time_tracking_timesheets` row according to repository conventions, and
+ *   ensure all linked `hrm_time_tracking_timesheet_timelogs` inclusion rows are
+ *   removed consistently. The schema relation already defines cascade behavior
+ *   from timesheet inclusions, so implementation should rely on that relational
+ *   integrity while keeping the operation transactional. 6. After commit,
+ *   ensure subsequent list and detail queries in the current organization no
+ *   longer expose the deleted timesheet. Return success with no response body.
+ *   7. Error cases to handle explicitly: unknown timesheet ID,
+ *   organization-scope mismatch, insufficient permission, and invalid workflow
+ *   state for deletion.
  * @path /hrmTimeTracking/employee/timesheets/:timesheetId
  * @accessor api.functional.hrmTimeTracking.employee.timesheets.erase
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -543,7 +569,8 @@ export namespace erase {
  * @param props.timesheetId Target timesheet ID
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor employee
- * @x-autobe-specification Load the target `hrm_time_tracking_timesheets` row by `id = :timesheetId` and `deleted_at IS NULL`.
+ * @x-autobe-specification Load the target `hrm_time_tracking_timesheets` row by
+ *   `id = :timesheetId` and `deleted_at IS NULL`.
  *
  * Resolve the authenticated actor to the organization-scoped employee context for the selected organization. Confirm that the authenticated employee owns the target timesheet by matching `hrm_time_tracking_timesheets.hrm_time_tracking_employee_id` to the authenticated employee account identity used by this service. Reject with not found or forbidden when the record is outside the caller's accessible organization boundary.
  *
@@ -654,7 +681,9 @@ export namespace submit {
  * @param props.timesheetId Unique identifier of the timesheet to resubmit
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor employee
- * @x-autobe-specification Implement this action as a workflow transition on hrm_time_tracking_timesheets inside the caller's currently selected organization context.
+ * @x-autobe-specification Implement this action as a workflow transition on
+ *   hrm_time_tracking_timesheets inside the caller's currently selected
+ *   organization context.
  *
  * 1. Resolve the authenticated caller as an employee membership in the active organization.
  * 2. Load the target hrm_time_tracking_timesheets row by id, ensuring deleted_at is null and hrm_time_tracking_organization_id matches the active organization.

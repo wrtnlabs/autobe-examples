@@ -152,7 +152,8 @@ export namespace create {
  * @param props.attachmentId The unique identifier of the attachment file to delete
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Verify the requesting user's identity from the authentication token.
+ * @x-autobe-specification Verify the requesting user's identity from the
+ *   authentication token.
  *
  * Query the reddit_like_attachments table to find the attachment by attachmentId.
  *

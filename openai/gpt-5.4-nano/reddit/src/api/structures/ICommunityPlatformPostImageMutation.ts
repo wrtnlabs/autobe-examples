@@ -6,7 +6,13 @@ export type ICommunityPlatformPostImageMutation = {
   /**
    * Per-image mutation commands to add, update, or remove (soft-delete) images attached to the target post in a single transaction.
    *
-   * @x-autobe-specification items is an array of per-image mutation commands executed atomically for POST /{postId}/images. Each element must include mutationType with one of: add, update, remove. Validation rules: add requires fields to create an active post image attachment for the target post (postId is inferred from the endpoint), update and remove require id of an existing active post image belonging to the target post.
+     * @x-autobe-specification items is an array of per-image mutation commands
+     *   executed atomically for POST /{postId}/images. Each element must
+     *   include mutationType with one of: add, update, remove. Validation
+     *   rules: add requires fields to create an active post image attachment
+     *   for the target post (postId is inferred from the endpoint), update and
+     *   remove require id of an existing active post image belonging to the
+     *   target post.
    */
   items: null;
 };

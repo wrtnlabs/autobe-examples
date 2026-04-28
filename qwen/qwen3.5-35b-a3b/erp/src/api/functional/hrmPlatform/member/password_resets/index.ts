@@ -20,7 +20,8 @@ import { IPageIHrmPlatformMemberPasswordReset } from "../../../../structures/IPa
  * @param props.body Search criteria for password reset tokens including member ID, status filters, date ranges, and pagination parameters.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query hrm_platform_member_password_resets table with pagination and filtering.
+ * @x-autobe-specification Query hrm_platform_member_password_resets table with
+ *   pagination and filtering.
  *
  * Apply filters:
  * - member_id: optional UUID filter for specific member
@@ -131,7 +132,8 @@ export namespace index {
  * @param props.resetId Unique identifier of the password reset record (UUID format)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query the hrm_platform_member_password_resets table for a record matching the {resetId} path parameter.
+ * @x-autobe-specification Query the hrm_platform_member_password_resets table
+ *   for a record matching the {resetId} path parameter.
  *
  * 1. Find the password reset record by id (UUID format).
  * 2. Join with hrm_platform_members table to include member relation data.

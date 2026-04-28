@@ -22,14 +22,15 @@ export class EcommercemallSuperadminAdminsController {
    *
    * @param connection
    * @param body Search criteria and pagination parameters for filtering administrators
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor superAdmin
-   * @x-autobe-specification Query ecommerce_mall_admins table with the following filter conditions:
-   * 1. grade filter: 'regular' or 'super_admin' if specified in request
-   * 2. status filter: 'active', 'suspended', or 'banned' if specified in request
-   * 3. nickname search: partial match using trigram index (Gin)
-   * 4. email search: partial match if specified
-   * 5. created_at range: filter by min/max timestamps if provided
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor superAdmin
+     * @x-autobe-specification Query ecommerce_mall_admins table with the
+     *   following filter conditions: 1. grade filter: 'regular' or
+     *   'super_admin' if specified in request 2. status filter: 'active',
+     *   'suspended', or 'banned' if specified in request 3. nickname search:
+     *   partial match using trigram index (Gin) 4. email search: partial match
+     *   if specified 5. created_at range: filter by min/max timestamps if
+     *   provided
    *
    * Apply soft delete handling:
    * - By default, exclude records where deleted_at is not null
@@ -78,9 +79,10 @@ export class EcommercemallSuperadminAdminsController {
    *
    * @param connection
    * @param adminId The unique identifier of the administrator account to retrieve (UUID format)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor superAdmin
-   * @x-autobe-specification Query the ecommerce_mall_admins table by the provided adminId UUID parameter.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor superAdmin
+     * @x-autobe-specification Query the ecommerce_mall_admins table by the
+     *   provided adminId UUID parameter.
    *
    * Select all columns except password_hash: id, email, grade, status, nickname, created_at, updated_at, deleted_at.
    *

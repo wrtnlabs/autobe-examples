@@ -21,9 +21,10 @@ export class EcommercemallSuperadminShipmentsDeliveryController {
    *
    * @param connection
    * @param shipmentId Unique identifier of the shipment to retrieve delivery information for
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor superAdmin
-   * @x-autobe-specification Query the ecommerce_mall_shipment_deliveries table using the provided shipmentId as the foreign key.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor superAdmin
+     * @x-autobe-specification Query the ecommerce_mall_shipment_deliveries
+     *   table using the provided shipmentId as the foreign key.
    *
    * Implementation steps:
    * 1. Validate shipmentId is a valid UUID
@@ -69,9 +70,9 @@ export class EcommercemallSuperadminShipmentsDeliveryController {
    *
    * @param connection
    * @param shipmentId Unique identifier of the shipment being confirmed as delivered
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor superAdmin
-   * @x-autobe-specification Transaction Flow:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor superAdmin
+     * @x-autobe-specification Transaction Flow:
    *
    * 1. Authorization Check
    *    - Verify the requesting actor is a customer

@@ -29,8 +29,9 @@ export type IEcommerceCategory = {
    *
    * System-generated UUID assigned when the category is created. Used as the primary key for all category operations including retrieval, updates, and deletions. This identifier is immutable and globally unique across the platform.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_categories.id. UUID primary key, globally unique.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from ecommerce_categories.id. UUID
+     *   primary key, globally unique.
    */
   id: string & tags.Format<"uuid">;
 
@@ -44,8 +45,10 @@ export type IEcommerceCategory = {
    * - Unique within the same parent_id level
    * - Maximum length enforced by database constraint
    *
-   * @x-autobe-database-schema-property name
-   * @x-autobe-specification Direct mapping from ecommerce_categories.name. Required field, unique constraint within same parent level (parent_id + name).
+     * @x-autobe-database-schema-property name
+     * @x-autobe-specification Direct mapping from ecommerce_categories.name.
+     *   Required field, unique constraint within same parent level (parent_id +
+     *   name).
    */
   name: string;
 
@@ -59,8 +62,9 @@ export type IEcommerceCategory = {
    * - Used for SEO and customer guidance
    * - Displayed on category detail pages
    *
-   * @x-autobe-database-schema-property description
-   * @x-autobe-specification Direct mapping from ecommerce_categories.description. Optional field, nullable.
+     * @x-autobe-database-schema-property description
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_categories.description. Optional field, nullable.
    */
   description: string | null;
 
@@ -79,8 +83,10 @@ export type IEcommerceCategory = {
    * - Returns `IEcommerceCategory.ISummary` when parent exists
    * - Returns `null` for root categories
    *
-   * @x-autobe-database-schema-property parentCategory
-   * @x-autobe-specification Join from categories.parent_id to categories.id. Returns IEcommerceCategory.ISummary. LEFT JOIN for nullable parent (root categories).
+     * @x-autobe-database-schema-property parentCategory
+     * @x-autobe-specification Join from categories.parent_id to categories.id.
+     *   Returns IEcommerceCategory.ISummary. LEFT JOIN for nullable parent
+     *   (root categories).
    */
   parent: IEcommerceCategory.ISummary | null;
 
@@ -100,8 +106,10 @@ export type IEcommerceCategory = {
    * - Root categories can have subcategories
    * - Subcategories are always leaf nodes in the hierarchy
    *
-   * @x-autobe-database-schema-property subcategories
-   * @x-autobe-specification Query from categories where parent_id = current category id. Returns array of IEcommerceCategory.ISummary. Ordered by created_at ascending.
+     * @x-autobe-database-schema-property subcategories
+     * @x-autobe-specification Query from categories where parent_id = current
+     *   category id. Returns array of IEcommerceCategory.ISummary. Ordered by
+     *   created_at ascending.
    */
   subcategories: IEcommerceCategory.ISummary[];
 
@@ -115,8 +123,10 @@ export type IEcommerceCategory = {
    * - Includes timezone information (UTC)
    * - Precision: milliseconds
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_categories.created_at. Database-generated timestamp on insert.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_categories.created_at. Database-generated timestamp on
+     *   insert.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -130,8 +140,10 @@ export type IEcommerceCategory = {
    * - Useful for caching invalidation
    * - Always >= created_at
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from ecommerce_categories.updated_at. Database-generated timestamp on update.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_categories.updated_at. Database-generated timestamp on
+     *   update.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -150,8 +162,9 @@ export type IEcommerceCategory = {
    * - Deleting a parent category does not delete subcategories (they become root categories)
    * - Products in deleted categories become uncategorized
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from ecommerce_categories.deleted_at. Nullable timestamp set on soft-delete.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_categories.deleted_at. Nullable timestamp set on soft-delete.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -186,8 +199,10 @@ export namespace IEcommerceCategory {
      * - Unique constraint enforced within parent level
      * - Cannot duplicate existing category name under the same parent
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from ecommerce_categories.name column. Required for rename operations. Must be unique within the same parent level.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from ecommerce_categories.name
+         *   column. Required for rename operations. Must be unique within the
+         *   same parent level.
      */
     name?: string | undefined;
 
@@ -200,8 +215,10 @@ export namespace IEcommerceCategory {
      * - Displayed on category detail pages for customer browsing
      * - Helps customers understand the scope and purpose of the category
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from ecommerce_categories.description column. Optional field, can be null.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_categories.description column. Optional field, can be
+         *   null.
      */
     description?: string | null | undefined;
 
@@ -216,8 +233,11 @@ export namespace IEcommerceCategory {
      * - Cannot create circular references (category cannot be ancestor of its new parent)
      * - Valid UUID format required when specifying a parent
      *
-     * @x-autobe-database-schema-property parent_id
-     * @x-autobe-specification Direct mapping from ecommerce_categories.parent_id column. Optional FK to parent category. Setting to null moves category to root level. Valid UUID format required when provided.
+         * @x-autobe-database-schema-property parent_id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_categories.parent_id column. Optional FK to parent
+         *   category. Setting to null moves category to root level. Valid UUID
+         *   format required when provided.
      */
     parent_id?: (string & tags.Format<"uuid">) | null | undefined;
   };
@@ -250,8 +270,9 @@ export namespace IEcommerceCategory {
      *
      * **Format**: UUID string (e.g., "550e8400-e29b-41d4-a716-446655440000")
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_categories.id. UUID primary key, non-null, auto-generated on insert.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from ecommerce_categories.id.
+         *   UUID primary key, non-null, auto-generated on insert.
      */
     id: string & tags.Format<"uuid">;
 
@@ -265,8 +286,10 @@ export namespace IEcommerceCategory {
      * - Unique within parent level
      * - Used for product browsing and filtering
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from ecommerce_categories.name. Required field, unique within parent level (enforced by unique constraint on [parent_id, name]).
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_categories.name. Required field, unique within parent
+         *   level (enforced by unique constraint on [parent_id, name]).
      */
     name: string;
 
@@ -280,8 +303,10 @@ export namespace IEcommerceCategory {
      * - Explain category scope or product types
      * - Guide customers in product discovery
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from ecommerce_categories.description. Optional field, nullable. Provides additional context about products in this category.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_categories.description. Optional field, nullable.
+         *   Provides additional context about products in this category.
      */
     description?: string | null | undefined;
 
@@ -296,8 +321,11 @@ export namespace IEcommerceCategory {
      * - One-level nesting only (parent categories cannot have parents)
      * - Deleting a parent category does not delete subcategories (they become root categories)
      *
-     * @x-autobe-database-schema-property parentCategory
-     * @x-autobe-specification Join from ecommerce_categories.parent_id to parent ecommerce_categories.id. Returns IEcommerceCategory.ISummary. Nullable for root categories. FK column parent_id excluded from DTO.
+         * @x-autobe-database-schema-property parentCategory
+         * @x-autobe-specification Join from ecommerce_categories.parent_id to
+         *   parent ecommerce_categories.id. Returns
+         *   IEcommerceCategory.ISummary. Nullable for root categories. FK
+         *   column parent_id excluded from DTO.
      */
     parent?: IEcommerceCategory.ISummary | null | undefined;
 
@@ -308,8 +336,10 @@ export namespace IEcommerceCategory {
      *
      * **Format**: ISO 8601 date-time with timezone (e.g., "2024-01-15T10:30:00Z")
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from ecommerce_categories.created_at. DateTime with timezone (timestamptz). Auto-generated on insert, never modified.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_categories.created_at. DateTime with timezone
+         *   (timestamptz). Auto-generated on insert, never modified.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -320,8 +350,10 @@ export namespace IEcommerceCategory {
      *
      * **Format**: ISO 8601 date-time with timezone (e.g., "2024-01-20T14:45:00Z")
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from ecommerce_categories.updated_at. DateTime with timezone (timestamptz). Auto-updated on every category modification.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_categories.updated_at. DateTime with timezone
+         *   (timestamptz). Auto-updated on every category modification.
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -336,8 +368,11 @@ export namespace IEcommerceCategory {
      * - Deletion does not cascade to subcategories or products
      * - Can be restored by setting deleted_at back to null
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from ecommerce_categories.deleted_at. DateTime with timezone (timestamptz), nullable. Null means active; non-null means soft-deleted. Soft delete filter applied at query level.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_categories.deleted_at. DateTime with timezone
+         *   (timestamptz), nullable. Null means active; non-null means
+         *   soft-deleted. Soft delete filter applied at query level.
      */
     deleted_at?: (string & tags.Format<"date-time">) | null | undefined;
   };
@@ -374,24 +409,26 @@ export namespace IEcommerceCategory {
      *
      * **Note**: This field is optional and can be null to include all categories regardless of parent.
      *
-     * @x-autobe-database-schema-property parent_id
-     * @x-autobe-specification Direct mapping from ecommerce_categories.parent_id. Filters categories to show only subcategories of the specified parent. Nullable and optional.
+         * @x-autobe-database-schema-property parent_id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_categories.parent_id. Filters categories to show only
+         *   subcategories of the specified parent. Nullable and optional.
      */
     parent_id?: (string & tags.Format<"uuid">) | null | undefined;
     /**
-     * @x-autobe-database-schema-property created_at
+         * @x-autobe-database-schema-property created_at
      */
     created_at_from?: (string & tags.Format<"date-time">) | undefined;
     /**
-     * @x-autobe-database-schema-property created_at
+         * @x-autobe-database-schema-property created_at
      */
     created_at_to?: (string & tags.Format<"date-time">) | undefined;
     /**
-     * @x-autobe-database-schema-property updated_at
+         * @x-autobe-database-schema-property updated_at
      */
     updated_at_from?: (string & tags.Format<"date-time">) | undefined;
     /**
-     * @x-autobe-database-schema-property updated_at
+         * @x-autobe-database-schema-property updated_at
      */
     updated_at_to?: (string & tags.Format<"date-time">) | undefined;
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
@@ -419,23 +456,26 @@ export namespace IEcommerceCategory {
    */
   export type ICreate = {
     /**
-     * @x-autobe-database-schema-property name
+         * @x-autobe-database-schema-property name
      */
     name: string & tags.MinLength<1>;
 
     /**
      * Optional category description providing additional context about products in this category.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from ecommerce_categories.description. Optional field, nullable in DB.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_categories.description. Optional field, nullable in DB.
      */
     description?: string | null | undefined;
 
     /**
      * Optional parent category UUID for creating subcategories. Null creates a root category.
      *
-     * @x-autobe-database-schema-property parent_id
-     * @x-autobe-specification Direct mapping from ecommerce_categories.parent_id. Optional UUID FK for subcategory creation. Null creates root category.
+         * @x-autobe-database-schema-property parent_id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_categories.parent_id. Optional UUID FK for subcategory
+         *   creation. Null creates root category.
      */
     parent_id?: (string & tags.Format<"uuid">) | null | undefined;
   };

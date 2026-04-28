@@ -25,9 +25,10 @@ export class EcommercemallAdminProductsSnapshotsController {
    * @param connection
    * @param productId The unique identifier of the product (UUID format)
    * @param body Search criteria and pagination parameters for filtering product snapshots
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query ecommerce_mall_product_snapshots table filtered by product_id.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Query ecommerce_mall_product_snapshots table
+     *   filtered by product_id.
    *
    * Support search criteria:
    * - createdAtFrom: Filter snapshots created on or after this timestamp
@@ -81,9 +82,10 @@ export class EcommercemallAdminProductsSnapshotsController {
    * @param connection
    * @param productId UUID of the product (global scope)
    * @param snapshotId UUID of the snapshot to retrieve (scoped to product)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query the ecommerce_mall_product_snapshots table by snapshot_id and product_id.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Query the ecommerce_mall_product_snapshots table
+     *   by snapshot_id and product_id.
    *
    * Authorization checks:
    * 1. Verify the requesting user is authenticated as either a seller or administrator
@@ -144,9 +146,11 @@ export class EcommercemallAdminProductsSnapshotsController {
    *
    * @param connection
    * @param productId The unique identifier of the product whose snapshots are being compared (global scope)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Retrieve the two specified product snapshots from ecommerce_mall_product_snapshots table by productId and snapshotId parameters.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Retrieve the two specified product snapshots from
+     *   ecommerce_mall_product_snapshots table by productId and snapshotId
+     *   parameters.
    *
    * If sourceSnapshotId is provided but targetSnapshotId is null, compare the source snapshot with the current product state from ecommerce_mall_products table.
    *

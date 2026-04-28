@@ -27,7 +27,8 @@ import { IErpHrmMember } from "../../../../structures/IErpHrmMember";
  * @param props.body Profile update information containing display name, avatar image, and phone number
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Update the authenticated member's global profile in the erp_hrm_members table.
+ * @x-autobe-specification Update the authenticated member's global profile in
+ *   the erp_hrm_members table.
  *
  * 1. Extract the authenticated member's ID from the JWT session token
  * 2. Validate request body:

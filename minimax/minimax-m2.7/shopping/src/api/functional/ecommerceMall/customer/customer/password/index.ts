@@ -25,7 +25,8 @@ import { IEcommerceMallCustomer } from "../../../../../structures/IEcommerceMall
  * @param props.body Current password for verification and the new password to set.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Verify the authenticated customer exists and is not soft-deleted (deleted_at is null).
+ * @x-autobe-specification Verify the authenticated customer exists and is not
+ *   soft-deleted (deleted_at is null).
  *
  * Validate the request body contains both currentPassword and newPassword fields.
  *

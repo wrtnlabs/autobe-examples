@@ -25,9 +25,11 @@ export class ShoppingmallMemberPost_purchaseRefund_requestsSnapshotsController {
    * @param connection
    * @param refundRequestId UUID of the parent refund request (scoped to the customer who submitted the request).
    * @param body Search criteria including optional status filter and pagination parameters for navigating through snapshot history.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query shopping_mall_post_purchase_refund_request_snapshots table filtered by shopping_mall_post_purchase_refund_request_id path parameter.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query
+     *   shopping_mall_post_purchase_refund_request_snapshots table filtered by
+     *   shopping_mall_post_purchase_refund_request_id path parameter.
    *
    * Apply pagination with cursor-based or offset-based approach. Default sort by created_at ASC to show chronological order.
    *
@@ -75,9 +77,11 @@ export class ShoppingmallMemberPost_purchaseRefund_requestsSnapshotsController {
    * @param connection
    * @param refundRequestId UUID of the parent refund request (scoped to the refund request owner).
    * @param snapshotId UUID of the snapshot record to retrieve.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query shopping_mall_post_purchase_refund_request_snapshots table by snapshot ID.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query
+     *   shopping_mall_post_purchase_refund_request_snapshots table by snapshot
+     *   ID.
    *
    * Validate that the snapshotId exists and belongs to the specified refundRequestId.
    * Verify caller has permission to access this refund request (customer owns it, seller owns the order item, or admin role).

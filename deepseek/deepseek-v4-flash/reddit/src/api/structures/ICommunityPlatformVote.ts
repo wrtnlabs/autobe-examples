@@ -14,8 +14,9 @@ export type ICommunityPlatformVote = {
    *
    * Automatically generated upon creation.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from community_platform_votes.id. UUID primary key, auto-generated on insert.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from community_platform_votes.id.
+     *   UUID primary key, auto-generated on insert.
    */
   id: string & tags.Format<"uuid">;
 
@@ -24,8 +25,11 @@ export type ICommunityPlatformVote = {
    *
    * Includes the voter's unique identifier, email address, public username, registration timestamp, and soft-deletion status.
    *
-   * @x-autobe-database-schema-property voter
-   * @x-autobe-specification Join from community_platform_votes.voter_id to community_platform_members.id. Returns ICommunityPlatformMember.ISummary with id, email, username, created_at, and deleted_at fields.
+     * @x-autobe-database-schema-property voter
+     * @x-autobe-specification Join from community_platform_votes.voter_id to
+     *   community_platform_members.id. Returns
+     *   ICommunityPlatformMember.ISummary with id, email, username, created_at,
+     *   and deleted_at fields.
    */
   voter: ICommunityPlatformMember.ISummary;
 
@@ -34,8 +38,11 @@ export type ICommunityPlatformVote = {
    *
    * Must be either 'post' (for votes on posts) or 'comment' (for votes on comments). Combined with target_id to form a polymorphic reference to the voted content.
    *
-   * @x-autobe-database-schema-property target_type
-   * @x-autobe-specification Direct mapping from community_platform_votes.target_type. String discriminator — must be exactly 'post' or 'comment'. Used with target_id for polymorphic content reference.
+     * @x-autobe-database-schema-property target_type
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_votes.target_type. String discriminator — must be
+     *   exactly 'post' or 'comment'. Used with target_id for polymorphic
+     *   content reference.
    */
   target_type: string;
 
@@ -44,8 +51,11 @@ export type ICommunityPlatformVote = {
    *
    * Combined with target_type to form a polymorphic reference to the specific piece of content being voted on.
    *
-   * @x-autobe-database-schema-property target_id
-   * @x-autobe-specification Direct mapping from community_platform_votes.target_id. UUID foreign key to either community_platform_posts.id (when target_type='post') or community_platform_comments.id (when target_type='comment').
+     * @x-autobe-database-schema-property target_id
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_votes.target_id. UUID foreign key to either
+     *   community_platform_posts.id (when target_type='post') or
+     *   community_platform_comments.id (when target_type='comment').
    */
   target_id: string & tags.Format<"uuid">;
 
@@ -54,16 +64,22 @@ export type ICommunityPlatformVote = {
    *
    * +1 represents an upvote (increases content score and author karma by 1), while -1 represents a downvote (decreases content score and author karma by 1).
    *
-   * @x-autobe-database-schema-property value
-   * @x-autobe-specification Direct mapping from community_platform_votes.value. Integer column constrained at the application layer to +1 (upvote) or -1 (downvote). Affects the target content's vote_score and the content author's karma on community_platform_profiles.
+     * @x-autobe-database-schema-property value
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_votes.value. Integer column constrained at the
+     *   application layer to +1 (upvote) or -1 (downvote). Affects the target
+     *   content's vote_score and the content author's karma on
+     *   community_platform_profiles.
    */
   value: number & tags.Type<"int32">;
 
   /**
    * The timestamp when this vote was first cast.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from community_platform_votes.created_at. Timestamp set automatically on insert.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_votes.created_at. Timestamp set automatically on
+     *   insert.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -72,8 +88,10 @@ export type ICommunityPlatformVote = {
    *
    * Updated when the vote direction is changed from upvote to downvote, or vice versa.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from community_platform_votes.updated_at. Timestamp updated on every vote change (e.g., upvote-to-downvote change).
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_votes.updated_at. Timestamp updated on every vote
+     *   change (e.g., upvote-to-downvote change).
    */
   updated_at: string & tags.Format<"date-time">;
 };
@@ -91,8 +109,9 @@ export namespace ICommunityPlatformVote {
      *
      * System-generated UUID assigned when the vote is cast. Used as the primary key for the vote record and for referencing votes in delete and update operations.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from community_platform_votes.id. UUID primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_votes.id. UUID primary key.
      */
     id: string & tags.Format<"uuid">;
 
@@ -101,8 +120,10 @@ export namespace ICommunityPlatformVote {
      *
      * References the voting member's account. Only registered members may cast votes on content. The voter's identity is resolved from the JWT session token at vote creation time.
      *
-     * @x-autobe-database-schema-property voter
-     * @x-autobe-specification Join via community_platform_votes.voter_id to community_platform_members.id. Returns the member's summary (ICommunityPlatformMember.ISummary).
+         * @x-autobe-database-schema-property voter
+         * @x-autobe-specification Join via community_platform_votes.voter_id to
+         *   community_platform_members.id. Returns the member's summary
+         *   (ICommunityPlatformMember.ISummary).
      */
     voter: ICommunityPlatformMember.ISummary;
 
@@ -111,8 +132,10 @@ export namespace ICommunityPlatformVote {
      *
      * Must be either 'post' for votes on posts or 'comment' for votes on comments. Used together with target_id to form a polymorphic reference to the voted content. This discriminator enables the single vote table to serve both post and comment voting.
      *
-     * @x-autobe-database-schema-property target_type
-     * @x-autobe-specification Direct mapping from community_platform_votes.target_type. Discriminator value: 'post' or 'comment'.
+         * @x-autobe-database-schema-property target_type
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_votes.target_type. Discriminator value: 'post'
+         *   or 'comment'.
      */
     target_type: string;
 
@@ -121,8 +144,10 @@ export namespace ICommunityPlatformVote {
      *
      * Combined with target_type to form a polymorphic reference to either a post or a comment. The referenced content must exist and be accessible at the time the vote is cast.
      *
-     * @x-autobe-database-schema-property target_id
-     * @x-autobe-specification Direct mapping from community_platform_votes.target_id. UUID reference to the target content (post or comment).
+         * @x-autobe-database-schema-property target_id
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_votes.target_id. UUID reference to the target
+         *   content (post or comment).
      */
     target_id: string & tags.Format<"uuid">;
 
@@ -131,8 +156,10 @@ export namespace ICommunityPlatformVote {
      *
      * +1 for an upvote (approval), which increases the target content's net score by 1 and the content author's karma by 1. -1 for a downvote (disapproval), which decreases the target content's net score by 1 and the content author's karma by 1.
      *
-     * @x-autobe-database-schema-property value
-     * @x-autobe-specification Direct mapping from community_platform_votes.value. Integer constrained to +1 (upvote) or -1 (downvote) at the application layer.
+         * @x-autobe-database-schema-property value
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_votes.value. Integer constrained to +1 (upvote)
+         *   or -1 (downvote) at the application layer.
      */
     value: number & tags.Type<"int32">;
 
@@ -141,8 +168,9 @@ export namespace ICommunityPlatformVote {
      *
      * Set automatically by the system upon vote creation. Used for vote history tracking and date-range filtering in vote listings.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from community_platform_votes.created_at. Set automatically on insert.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_votes.created_at. Set automatically on insert.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -151,8 +179,10 @@ export namespace ICommunityPlatformVote {
      *
      * Updated automatically when a member changes their vote direction (e.g., upvote to downvote) via the upsert mechanism. Remains unchanged for votes that have never been modified.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from community_platform_votes.updated_at. Updated automatically when vote direction changes (upsert).
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_votes.updated_at. Updated automatically when
+         *   vote direction changes (upsert).
      */
     updated_at: string & tags.Format<"date-time">;
   };
@@ -183,8 +213,12 @@ export namespace ICommunityPlatformVote {
      *
      * Must be either `"post"` for votes on posts or `"comment"` for votes on comments. When provided alongside `target_id`, forms a complete polymorphic reference that unambiguously identifies the target content.
      *
-     * @x-autobe-database-schema-property target_type
-     * @x-autobe-specification Direct filter on community_platform_votes.target_type. Must be 'post' or 'comment' as validated by the pattern constraint. When provided alongside target_id, forms a complete polymorphic reference to the target content.
+         * @x-autobe-database-schema-property target_type
+         * @x-autobe-specification Direct filter on
+         *   community_platform_votes.target_type. Must be 'post' or 'comment'
+         *   as validated by the pattern constraint. When provided alongside
+         *   target_id, forms a complete polymorphic reference to the target
+         *   content.
      */
     target_type?: (string & tags.Pattern<"^(post|comment)$">) | undefined;
 
@@ -193,8 +227,11 @@ export namespace ICommunityPlatformVote {
      *
      * When provided, `target_type` should also be specified to ensure an unambiguous polymorphic reference to either a specific post or a specific comment.
      *
-     * @x-autobe-database-schema-property target_id
-     * @x-autobe-specification Direct filter on community_platform_votes.target_id. UUID of the target post or comment. For unambiguous filtering, target_type should also be specified alongside target_id.
+         * @x-autobe-database-schema-property target_id
+         * @x-autobe-specification Direct filter on
+         *   community_platform_votes.target_id. UUID of the target post or
+         *   comment. For unambiguous filtering, target_type should also be
+         *   specified alongside target_id.
      */
     target_id?: (string & tags.Format<"uuid">) | undefined;
 
@@ -203,8 +240,11 @@ export namespace ICommunityPlatformVote {
      *
      * Use `1` to find upvotes (approval) or `-1` to find downvotes (disapproval).
      *
-     * @x-autobe-database-schema-property value
-     * @x-autobe-specification Direct filter on community_platform_votes.value. Must be +1 for upvote or -1 for downvote. Application-layer validates only these two values are accepted.
+         * @x-autobe-database-schema-property value
+         * @x-autobe-specification Direct filter on
+         *   community_platform_votes.value. Must be +1 for upvote or -1 for
+         *   downvote. Application-layer validates only these two values are
+         *   accepted.
      */
     value?: (number & tags.Type<"int32">) | undefined;
 
@@ -213,8 +253,11 @@ export namespace ICommunityPlatformVote {
      *
      * Filters vote records that were cast at or after this timestamp. Combine with `created_at_to` to define a specific time window. When specified without `created_at_to`, returns all votes cast since the given timestamp.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Range lower bound filter on community_platform_votes.created_at. Inclusive — selects votes cast at or after this timestamp. Used in SQL WHERE clause as created_at >= created_at_from.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Range lower bound filter on
+         *   community_platform_votes.created_at. Inclusive — selects votes cast
+         *   at or after this timestamp. Used in SQL WHERE clause as created_at
+         *   >= created_at_from.
      */
     created_at_from?: (string & tags.Format<"date-time">) | undefined;
 
@@ -223,8 +266,11 @@ export namespace ICommunityPlatformVote {
      *
      * Filters vote records that were cast at or before this timestamp. Combine with `created_at_from` to define a specific time window. When specified without `created_at_from`, returns all votes cast up to the given timestamp.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Range upper bound filter on community_platform_votes.created_at. Inclusive — selects votes cast at or before this timestamp. Used in SQL WHERE clause as created_at <= created_at_to.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Range upper bound filter on
+         *   community_platform_votes.created_at. Inclusive — selects votes cast
+         *   at or before this timestamp. Used in SQL WHERE clause as created_at
+         *   <= created_at_to.
      */
     created_at_to?: (string & tags.Format<"date-time">) | undefined;
 
@@ -233,8 +279,11 @@ export namespace ICommunityPlatformVote {
      *
      * Filters vote records that were last modified at or after this timestamp. Combine with `updated_at_to` to define a specific time window. When specified without `updated_at_to`, returns all votes modified since the given timestamp.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Range lower bound filter on community_platform_votes.updated_at. Inclusive — selects votes last modified at or after this timestamp. Used in SQL WHERE clause as updated_at >= updated_at_from.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Range lower bound filter on
+         *   community_platform_votes.updated_at. Inclusive — selects votes last
+         *   modified at or after this timestamp. Used in SQL WHERE clause as
+         *   updated_at >= updated_at_from.
      */
     updated_at_from?: (string & tags.Format<"date-time">) | undefined;
 
@@ -243,8 +292,11 @@ export namespace ICommunityPlatformVote {
      *
      * Filters vote records that were last modified at or before this timestamp. Combine with `updated_at_from` to define a specific time window. When specified without `updated_at_from`, returns all votes modified up to the given timestamp.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Range upper bound filter on community_platform_votes.updated_at. Inclusive — selects votes last modified at or before this timestamp. Used in SQL WHERE clause as updated_at <= updated_at_to.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Range upper bound filter on
+         *   community_platform_votes.updated_at. Inclusive — selects votes last
+         *   modified at or before this timestamp. Used in SQL WHERE clause as
+         *   updated_at <= updated_at_to.
      */
     updated_at_to?: (string & tags.Format<"date-time">) | undefined;
 
@@ -253,7 +305,9 @@ export namespace ICommunityPlatformVote {
      *
      * Defaults to `1` when not specified. Use with `limit` to control which slice of the result set is returned. For example, `page=2` with `limit=20` returns records 21-40.
      *
-     * @x-autobe-specification Page number for pagination (1-indexed). Defaults to 1 if omitted. Used in offset calculation: OFFSET = (page - 1) * limit. Must be >= 1.
+         * @x-autobe-specification Page number for pagination (1-indexed).
+         *   Defaults to 1 if omitted. Used in offset calculation: OFFSET =
+         *   (page - 1) * limit. Must be >= 1.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -262,7 +316,9 @@ export namespace ICommunityPlatformVote {
      *
      * Defaults to the system-configured page size. Must be between 1 and 100 inclusive. Use with `page` to control pagination behavior.
      *
-     * @x-autobe-specification Maximum records per page. Defaults to system-configured page size. Used in SQL LIMIT clause. Capped at 100 maximum. Must be >= 1 and <= 100.
+         * @x-autobe-specification Maximum records per page. Defaults to
+         *   system-configured page size. Used in SQL LIMIT clause. Capped at
+         *   100 maximum. Must be >= 1 and <= 100.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)

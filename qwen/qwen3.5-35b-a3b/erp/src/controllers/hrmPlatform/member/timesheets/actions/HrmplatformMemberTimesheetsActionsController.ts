@@ -21,9 +21,10 @@ export class HrmplatformMemberTimesheetsActionsController {
    * @param connection
    * @param timesheetId The unique identifier of the timesheet to retrieve actions for.
    * @param body Search criteria and pagination parameters for filtering timesheet actions.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query hrm_platform_timesheet_actions table with WHERE clause filtering by hrm_platform_timesheet_id = {timesheetId}.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query hrm_platform_timesheet_actions table with
+     *   WHERE clause filtering by hrm_platform_timesheet_id = {timesheetId}.
    *
    * Apply optional filters on:
    * - action: filter by action type (submit, approve, reject)
@@ -74,9 +75,10 @@ export class HrmplatformMemberTimesheetsActionsController {
    * @param connection
    * @param timesheetId The UUID of the timesheet this action belongs to.
    * @param actionId The UUID of the action to retrieve.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query hrm_platform_timesheet_actions table for the specific action record matching both timesheetId and actionId.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query hrm_platform_timesheet_actions table for
+     *   the specific action record matching both timesheetId and actionId.
    *
    * 1. Validate that timesheetId and actionId are valid UUID format
    * 2. Fetch the action record with the given actionId

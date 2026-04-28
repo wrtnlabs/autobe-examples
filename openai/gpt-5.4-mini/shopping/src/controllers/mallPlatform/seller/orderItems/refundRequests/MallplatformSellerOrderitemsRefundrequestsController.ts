@@ -24,9 +24,12 @@ export class MallplatformSellerOrderitemsRefundrequestsController {
    * @param connection
    * @param orderItemId The order item identifier that scopes the refund request list.
    * @param body Pagination, search, filtering, and sorting options for refund requests belonging to the specified order item.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Validate that the target order item exists and load it as the scope boundary. Query mall_platform_refund_requests by mall_platform_order_item_id and apply pagination, filtering, and sorting from the request body.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Validate that the target order item exists and
+     *   load it as the scope boundary. Query mall_platform_refund_requests by
+     *   mall_platform_order_item_id and apply pagination, filtering, and
+     *   sorting from the request body.
    *
    * Use the unique constraint on mall_platform_refund_requests.mall_platform_order_item_id to preserve the one-request-per-item rule. This endpoint must remain read-only and must not create, update, or delete refund requests or snapshots.
    *
@@ -64,9 +67,10 @@ export class MallplatformSellerOrderitemsRefundrequestsController {
    * @param connection
    * @param orderItemId The identifier of the order item that owns the refund request.
    * @param refundRequestId The identifier of the refund request within the scope of the specified order item.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Load the refund request by matching the parent order item identifier and the refund request identifier together.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Load the refund request by matching the parent
+     *   order item identifier and the refund request identifier together.
    *
    * Query mall_platform_refund_requests using both the order item reference and the refund request identifier. Do not return a refund request unless it belongs to the supplied order item. No joins are required for the core lookup unless the implementation needs to hydrate related display fields for the response schema.
    *
@@ -107,9 +111,12 @@ export class MallplatformSellerOrderitemsRefundrequestsController {
    * @param orderItemId The identifier of the order item that owns the refund request.
    * @param refundRequestId The identifier of the refund request within the specified order item scope.
    * @param body Fields used to update the refund request review state and other mutable attributes of the request.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Fetch the refund request by refundRequestId and verify that its orderItemId matches the path parameter. Reject the request if the association does not match or if the target request is missing.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Fetch the refund request by refundRequestId and
+     *   verify that its orderItemId matches the path parameter. Reject the
+     *   request if the association does not match or if the target request is
+     *   missing.
    *
    * Before applying the update, confirm that the order item is still eligible for refund processing based on the business rules: the item must be delivered, the request must not be a duplicate active refund request, and the requested state transition must be allowed. If the update changes the review state or other mutable fields, create an immutable snapshot of the previous request state in the same transaction before saving the new state.
    *

@@ -22,7 +22,8 @@ import { ITodoAppMember } from "../../../structures/ITodoAppMember";
  * @param props.body Search criteria including email and display name filters, account status filter, date range filters, sorting options, and pagination parameters.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query todo_app_members table with pagination and filtering support.
+ * @x-autobe-specification Query todo_app_members table with pagination and
+ *   filtering support.
  *
  * Apply search filters on email and display_name fields using case-insensitive partial matching.
  *
@@ -127,7 +128,8 @@ export namespace index {
  * @param props.memberId Unique identifier of the member account to retrieve (global scope).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query the todo_app_members table for a single member record by UUID primary key.
+ * @x-autobe-specification Query the todo_app_members table for a single member
+ *   record by UUID primary key.
  *
  * 1. Extract memberId from path parameter and validate UUID format
  * 2. Query todo_app_members WHERE id = memberId AND deleted_at IS NULL

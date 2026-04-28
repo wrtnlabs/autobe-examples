@@ -95,7 +95,10 @@ export namespace IEcommerceMallShipment {
      *
      * **Authorization**: Customers can only filter their own orders. Admins can filter any order.
      *
-     * @x-autobe-specification Filter shipments by parent order. Maps to ecommerce_mall_shipments.ecommerce_mall_order_id via JOIN with ecommerce_mall_orders. For customers: filters to their own orders. For admins: no restriction.
+         * @x-autobe-specification Filter shipments by parent order. Maps to
+         *   ecommerce_mall_shipments.ecommerce_mall_order_id via JOIN with
+         *   ecommerce_mall_orders. For customers: filters to their own orders.
+         *   For admins: no restriction.
      */
     orderId?: (string & tags.Format<"uuid">) | undefined;
 
@@ -106,7 +109,10 @@ export namespace IEcommerceMallShipment {
      *
      * **Authorization**: Admin only. Sellers are restricted to their own shipments via JWT.
      *
-     * @x-autobe-specification Filter shipments by seller. Maps to ecommerce_mall_shipments.ecommerce_mall_seller_id via JOIN with ecommerce_mall_sellers. This is an admin-only filter - sellers are automatically filtered to their own seller_id from JWT.
+         * @x-autobe-specification Filter shipments by seller. Maps to
+         *   ecommerce_mall_shipments.ecommerce_mall_seller_id via JOIN with
+         *   ecommerce_mall_sellers. This is an admin-only filter - sellers are
+         *   automatically filtered to their own seller_id from JWT.
      */
     sellerId?: (string & tags.Format<"uuid">) | undefined;
 
@@ -115,7 +121,9 @@ export namespace IEcommerceMallShipment {
      *
      * Case-insensitive search for flexible carrier filtering (e.g., "dhl", "fedex", "ups").
      *
-     * @x-autobe-specification Search by carrier name using partial match (ILIKE). Maps to ecommerce_mall_shipments.carrier column. Case-insensitive search for flexible filtering.
+         * @x-autobe-specification Search by carrier name using partial match
+         *   (ILIKE). Maps to ecommerce_mall_shipments.carrier column.
+         *   Case-insensitive search for flexible filtering.
      */
     carrier?: string | undefined;
 
@@ -124,7 +132,8 @@ export namespace IEcommerceMallShipment {
      *
      * Allows customers and admins to find shipments by tracking identifier.
      *
-     * @x-autobe-specification Search by tracking number using partial match (ILIKE). Maps to ecommerce_mall_shipments.tracking_number column.
+         * @x-autobe-specification Search by tracking number using partial match
+         *   (ILIKE). Maps to ecommerce_mall_shipments.tracking_number column.
      */
     trackingNumber?: string | undefined;
 
@@ -133,7 +142,9 @@ export namespace IEcommerceMallShipment {
      *
      * Inclusive boundary for date range queries. Use ISO 8601 format (e.g., 2024-01-01T00:00:00Z).
      *
-     * @x-autobe-specification Date range filter lower bound. Maps to ecommerce_mall_shipments.created_at >= value (inclusive). Use with createdTo for range queries.
+         * @x-autobe-specification Date range filter lower bound. Maps to
+         *   ecommerce_mall_shipments.created_at >= value (inclusive). Use with
+         *   createdTo for range queries.
      */
     createdFrom?: (string & tags.Format<"date-time">) | undefined;
 
@@ -142,7 +153,9 @@ export namespace IEcommerceMallShipment {
      *
      * Inclusive boundary for date range queries. Use ISO 8601 format (e.g., 2024-12-31T23:59:59Z).
      *
-     * @x-autobe-specification Date range filter upper bound. Maps to ecommerce_mall_shipments.created_at <= value (inclusive). Use with createdFrom for range queries.
+         * @x-autobe-specification Date range filter upper bound. Maps to
+         *   ecommerce_mall_shipments.created_at <= value (inclusive). Use with
+         *   createdFrom for range queries.
      */
     createdTo?: (string & tags.Format<"date-time">) | undefined;
 
@@ -151,7 +164,9 @@ export namespace IEcommerceMallShipment {
      *
      * When true, returns shipments that have been soft-deleted. Default behavior excludes deleted records.
      *
-     * @x-autobe-specification Control inclusion of soft-deleted records. When false (default), filter WHERE deleted_at IS NULL. When true, include all records regardless of deleted_at status.
+         * @x-autobe-specification Control inclusion of soft-deleted records.
+         *   When false (default), filter WHERE deleted_at IS NULL. When true,
+         *   include all records regardless of deleted_at status.
      */
     includeDeleted?: boolean | undefined;
 
@@ -160,7 +175,9 @@ export namespace IEcommerceMallShipment {
      *
      * Must be greater than or equal to 1. Default is 1.
      *
-     * @x-autobe-specification Pagination page number. Computed value used to calculate OFFSET: OFFSET = (page - 1) * limit. Not a database column. Default: 1.
+         * @x-autobe-specification Pagination page number. Computed value used
+         *   to calculate OFFSET: OFFSET = (page - 1) * limit. Not a database
+         *   column. Default: 1.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -169,7 +186,9 @@ export namespace IEcommerceMallShipment {
      *
      * Must be between 1 and 100. Default is 20.
      *
-     * @x-autobe-specification Records per page limit. Computed value used to calculate LIMIT and OFFSET. Not a database column. Default: 20, Max: 100.
+         * @x-autobe-specification Records per page limit. Computed value used
+         *   to calculate LIMIT and OFFSET. Not a database column. Default: 20,
+         *   Max: 100.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -180,7 +199,10 @@ export namespace IEcommerceMallShipment {
      *
      * Format: field_name:asc or field_name:desc. Default: created_at:desc (newest first). Supported fields: created_at, carrier, tracking_number.
      *
-     * @x-autobe-specification Sort field and direction. Parsed to determine ORDER BY clause. Supported fields: created_at, carrier, tracking_number (all from ecommerce_mall_shipments). Direction: asc or desc. Default: created_at:desc.
+         * @x-autobe-specification Sort field and direction. Parsed to determine
+         *   ORDER BY clause. Supported fields: created_at, carrier,
+         *   tracking_number (all from ecommerce_mall_shipments). Direction: asc
+         *   or desc. Default: created_at:desc.
      */
     sort?: string | undefined;
   };
@@ -204,8 +226,11 @@ export namespace IEcommerceMallShipment {
      *
      * **Example**: DHL Express, FedEx Ground, UPS Worldwide
      *
-     * @x-autobe-database-schema-property carrier
-     * @x-autobe-specification Direct mapping from ecommerce_mall_shipments.carrier column. String field containing the shipping carrier name (e.g., DHL, FedEx, UPS, USPS). Required in Update DTO.
+         * @x-autobe-database-schema-property carrier
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_shipments.carrier column. String field containing
+         *   the shipping carrier name (e.g., DHL, FedEx, UPS, USPS). Required
+         *   in Update DTO.
      */
     carrier: string & tags.MinLength<1> & tags.MaxLength<100>;
 
@@ -218,8 +243,11 @@ export namespace IEcommerceMallShipment {
      *
      * **Usage**: Customers can enter this number on the carrier's tracking page to see delivery status, estimated arrival, and delivery confirmation.
      *
-     * @x-autobe-database-schema-property tracking_number
-     * @x-autobe-specification Direct mapping from ecommerce_mall_shipments.tracking_number column. String field containing the carrier-provided tracking identifier. Required in Update DTO.
+         * @x-autobe-database-schema-property tracking_number
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_shipments.tracking_number column. String field
+         *   containing the carrier-provided tracking identifier. Required in
+         *   Update DTO.
      */
     trackingNumber: string & tags.MinLength<1> & tags.MaxLength<100>;
   };
@@ -248,8 +276,9 @@ export namespace IEcommerceMallShipment {
      *
      * This UUID uniquely identifies the shipment record in the system. Use this identifier when retrieving detailed shipment information or when referencing a specific shipment in API calls.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_mall_shipments.id.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_shipments.id.
      */
     id: string & tags.Format<"uuid">;
 
@@ -258,8 +287,9 @@ export namespace IEcommerceMallShipment {
      *
      * Common carrier names include DHL, FedEx, UPS, USPS, and regional carriers. The carrier name is provided by the seller when creating the shipment and is used by customers to track their packages through the carrier's tracking system.
      *
-     * @x-autobe-database-schema-property carrier
-     * @x-autobe-specification Direct mapping from ecommerce_mall_shipments.carrier.
+         * @x-autobe-database-schema-property carrier
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_shipments.carrier.
      */
     carrier: string;
 
@@ -268,8 +298,9 @@ export namespace IEcommerceMallShipment {
      *
      * This alphanumeric code allows customers to monitor their shipment's journey from the seller to the delivery address. Customers can use this tracking number on the carrier's website or in the platform's tracking interface to view delivery status and estimated arrival times.
      *
-     * @x-autobe-database-schema-property tracking_number
-     * @x-autobe-specification Direct mapping from ecommerce_mall_shipments.tracking_number.
+         * @x-autobe-database-schema-property tracking_number
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_shipments.tracking_number.
      */
     tracking_number: string;
 
@@ -278,8 +309,9 @@ export namespace IEcommerceMallShipment {
      *
      * This timestamp indicates when the seller created and dispatched the shipment. It is used for sorting shipments by creation date and for calculating delivery performance metrics.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_shipments.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_shipments.created_at.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -288,8 +320,9 @@ export namespace IEcommerceMallShipment {
      *
      * This timestamp is updated whenever the shipment's tracking information changes, such as when the carrier updates the delivery status or the seller modifies the tracking details. Use this to determine if shipment information has recently changed.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_shipments.updated_at.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_shipments.updated_at.
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -298,8 +331,11 @@ export namespace IEcommerceMallShipment {
      *
      * This relation links the shipment to its parent order, allowing customers and administrators to view the complete order context including the order number, total amount, and customer information. The order summary provides essential context for understanding the shipment's origin.
      *
-     * @x-autobe-database-schema-property order
-     * @x-autobe-specification Join from ecommerce_mall_shipments.ecommerce_mall_order_id to ecommerce_mall_orders.id. Returns IEcommerceMallOrder.ISummary with order_number for reference.
+         * @x-autobe-database-schema-property order
+         * @x-autobe-specification Join from
+         *   ecommerce_mall_shipments.ecommerce_mall_order_id to
+         *   ecommerce_mall_orders.id. Returns IEcommerceMallOrder.ISummary with
+         *   order_number for reference.
      */
     order: IEcommerceMallOrder.ISummary;
 
@@ -308,8 +344,12 @@ export namespace IEcommerceMallShipment {
      *
      * This relation provides information about the seller who shipped the items, including their shop name for brand recognition. Customers can use this to identify which seller fulfilled their order, especially when ordering from multiple sellers in a single transaction.
      *
-     * @x-autobe-database-schema-property seller
-     * @x-autobe-specification Join from ecommerce_mall_shipments.ecommerce_mall_seller_id to ecommerce_mall_sellers.id, then LEFT JOIN ecommerce_mall_seller_profiles for shop_name. Returns IEcommerceMallSeller.ISummary with shop name.
+         * @x-autobe-database-schema-property seller
+         * @x-autobe-specification Join from
+         *   ecommerce_mall_shipments.ecommerce_mall_seller_id to
+         *   ecommerce_mall_sellers.id, then LEFT JOIN
+         *   ecommerce_mall_seller_profiles for shop_name. Returns
+         *   IEcommerceMallSeller.ISummary with shop name.
      */
     seller: IEcommerceMallSeller.ISummary;
 
@@ -318,7 +358,9 @@ export namespace IEcommerceMallShipment {
      *
      * This count represents how many distinct order items have been bundled into this shipment. When a customer orders multiple items from the same seller, those items may be shipped together in a single shipment or split across multiple shipments depending on the seller's fulfillment strategy.
      *
-     * @x-autobe-specification COUNT(ecommerce_mall_shipment_items) WHERE ecommerce_mall_shipment_id = shipment.id. Aggregation of the shipment_items junction table.
+         * @x-autobe-specification COUNT(ecommerce_mall_shipment_items) WHERE
+         *   ecommerce_mall_shipment_id = shipment.id. Aggregation of the
+         *   shipment_items junction table.
      */
     item_count: number & tags.Type<"int32">;
   };
@@ -340,8 +382,12 @@ export namespace IEcommerceMallShipment {
      *
      * **Validation**: The order must contain all specified order items, and all items must have "paid" status for shipment creation to succeed.
      *
-     * @x-autobe-database-schema-property ecommerce_mall_order_id
-     * @x-autobe-specification Maps to ecommerce_mall_shipments.ecommerce_mall_order_id column. Optional: required when creating via /seller/shipments endpoint, derived from the itemId path parameter for /sellers/me/orders/items/{itemId}/ship.
+         * @x-autobe-database-schema-property ecommerce_mall_order_id
+         * @x-autobe-specification Maps to
+         *   ecommerce_mall_shipments.ecommerce_mall_order_id column. Optional:
+         *   required when creating via /seller/shipments endpoint, derived from
+         *   the itemId path parameter for
+         *   /sellers/me/orders/items/{itemId}/ship.
      */
     orderId?: (string & tags.Format<"uuid">) | undefined;
 
@@ -352,8 +398,10 @@ export namespace IEcommerceMallShipment {
      *
      * **Format**: Free-form string with a maximum of 100 characters. Sellers should use the exact carrier name as provided by the carrier or a commonly recognized abbreviation.
      *
-     * @x-autobe-database-schema-property carrier
-     * @x-autobe-specification Direct mapping to ecommerce_mall_shipments.carrier column. Non-nullable string storing the shipping carrier name.
+         * @x-autobe-database-schema-property carrier
+         * @x-autobe-specification Direct mapping to
+         *   ecommerce_mall_shipments.carrier column. Non-nullable string
+         *   storing the shipping carrier name.
      */
     carrier: string;
 
@@ -364,8 +412,10 @@ export namespace IEcommerceMallShipment {
      *
      * **Format**: Free-form string with a maximum of 100 characters. The format varies by carrier (numeric, alphanumeric, barcodes). Sellers should enter the tracking number exactly as provided by the carrier.
      *
-     * @x-autobe-database-schema-property tracking_number
-     * @x-autobe-specification Direct mapping to ecommerce_mall_shipments.tracking_number column. Non-nullable string storing the carrier-provided tracking identifier.
+         * @x-autobe-database-schema-property tracking_number
+         * @x-autobe-specification Direct mapping to
+         *   ecommerce_mall_shipments.tracking_number column. Non-nullable
+         *   string storing the carrier-provided tracking identifier.
      */
     trackingNumber: string;
 
@@ -378,7 +428,12 @@ export namespace IEcommerceMallShipment {
      *
      * **Constraints**: Minimum 1 item per shipment. All items must have "paid" status. All items must belong to the same seller. All items must belong to the same order.
      *
-     * @x-autobe-specification Computed composition: itemIds is an array of order item UUIDs that creates junction records in ecommerce_mall_shipment_items table. Each order item ID in the array generates a shipment_item record linking the order item to the created shipment. All items must have "paid" status, belong to the same seller, and belong to the same order.
+         * @x-autobe-specification Computed composition: itemIds is an array of
+         *   order item UUIDs that creates junction records in
+         *   ecommerce_mall_shipment_items table. Each order item ID in the
+         *   array generates a shipment_item record linking the order item to
+         *   the created shipment. All items must have "paid" status, belong to
+         *   the same seller, and belong to the same order.
      */
     itemIds: (string & tags.Format<"uuid">)[] &
       tags.MinItems<1> &
@@ -400,7 +455,9 @@ export namespace IEcommerceMallShipment {
        *
        * This UUID uniquely identifies the order item within the system and is used for tracking, API references, and linking to related resources like cancellation requests, refund requests, and reviews.
        *
-       * @x-autobe-specification Direct mapping from ecommerce_mall_order_items.id. UUID primary key of the order item.
+             * @x-autobe-specification Direct mapping from
+             *   ecommerce_mall_order_items.id. UUID primary key of the order
+             *   item.
        */
       id: string & tags.Format<"uuid">;
 
@@ -409,7 +466,9 @@ export namespace IEcommerceMallShipment {
        *
        * Represents how many units of this specific product variant were included in the order. The quantity is frozen at purchase time for accurate billing and fulfillment.
        *
-       * @x-autobe-specification Direct mapping from ecommerce_mall_order_items.quantity. Integer quantity of the product variant purchased.
+             * @x-autobe-specification Direct mapping from
+             *   ecommerce_mall_order_items.quantity. Integer quantity of the
+             *   product variant purchased.
        */
       quantity: number & tags.Type<"int32">;
 
@@ -418,7 +477,9 @@ export namespace IEcommerceMallShipment {
        *
        * This price is locked in when the customer completes the purchase, ensuring accurate billing even if the seller later changes the product price. Multiply by quantity for line item subtotal.
        *
-       * @x-autobe-specification Direct mapping from ecommerce_mall_order_items.unit_price. Float price per unit at time of purchase.
+             * @x-autobe-specification Direct mapping from
+             *   ecommerce_mall_order_items.unit_price. Float price per unit at
+             *   time of purchase.
        */
       unitPrice: number;
 
@@ -427,7 +488,10 @@ export namespace IEcommerceMallShipment {
        *
        * This name is captured from the product snapshot created at order time, ensuring accurate display of what was actually purchased. If the seller later renames the product, this frozen name preserves the original order record.
        *
-       * @x-autobe-specification Direct mapping from ecommerce_mall_product_snapshots.name via ecommerce_mall_order_items.productSnapshot relation. Frozen at purchase time for dispute resolution.
+             * @x-autobe-specification Direct mapping from
+             *   ecommerce_mall_product_snapshots.name via
+             *   ecommerce_mall_order_items.productSnapshot relation. Frozen at
+             *   purchase time for dispute resolution.
        */
       productName: string;
 
@@ -436,7 +500,10 @@ export namespace IEcommerceMallShipment {
        *
        * Displays the first product image that was active when the order was placed. This frozen image ensures the customer sees what they actually ordered, even if the seller later changes or removes product images.
        *
-       * @x-autobe-specification Computed from ecommerce_mall_product_snapshot_images.url via nested productSnapshot.productSnapshotImages relation. Selects first image (display_order = 0). Frozen at purchase time.
+             * @x-autobe-specification Computed from
+             *   ecommerce_mall_product_snapshot_images.url via nested
+             *   productSnapshot.productSnapshotImages relation. Selects first
+             *   image (display_order = 0). Frozen at purchase time.
        */
       productImage: string;
     };

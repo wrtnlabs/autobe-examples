@@ -10,7 +10,10 @@ export type IEcommerceMallUserBanRequest = {
    *
    * Must be one of: `ban` (to restrict user access) or `unban` (to restore access).
    *
-   * @x-autobe-specification Request parameter specifying the action to perform. Value must be 'ban' to ban the user account, or 'unban' to restore access. This is a required field that determines the entire operation.
+     * @x-autobe-specification Request parameter specifying the action to
+     *   perform. Value must be 'ban' to ban the user account, or 'unban' to
+     *   restore access. This is a required field that determines the entire
+     *   operation.
    */
   action: "ban" | "unban";
 
@@ -19,7 +22,11 @@ export type IEcommerceMallUserBanRequest = {
    *
    * When banning a user, this is a required field documenting the justification. Must be a non-empty string with 1-500 characters. When unbanning, this field is optional and may be null.
    *
-   * @x-autobe-specification Request parameter containing the written explanation for the ban action. When action='ban', this field is required by API validation and must be a non-empty string with 1-500 characters. When action='unban', this field is optional and can be null.
+     * @x-autobe-specification Request parameter containing the written
+     *   explanation for the ban action. When action='ban', this field is
+     *   required by API validation and must be a non-empty string with 1-500
+     *   characters. When action='unban', this field is optional and can be
+     *   null.
    */
   reason?: string | null | undefined;
 
@@ -28,7 +35,10 @@ export type IEcommerceMallUserBanRequest = {
    *
    * Must be one of: `customer` (for member accounts) or `seller` (for seller accounts). This discriminator determines which subtype table the ban record references.
    *
-   * @x-autobe-specification Request parameter specifying the type of user account to ban/unban. Value must be 'customer' for member accounts or 'seller' for seller accounts. Determines which subtype table (customerBan or sellerBan) the ban record references.
+     * @x-autobe-specification Request parameter specifying the type of user
+     *   account to ban/unban. Value must be 'customer' for member accounts or
+     *   'seller' for seller accounts. Determines which subtype table
+     *   (customerBan or sellerBan) the ban record references.
    */
   user_type: "customer" | "seller";
 };

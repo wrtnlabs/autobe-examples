@@ -25,7 +25,15 @@ import { IErpHrmTimeTrackingGuest } from "../../../../../structures/IErpHrmTimeT
  * @param props.body Guest refresh payload containing the refresh token (and any required context) used for token renewal.
  * @x-autobe-authorization-type refresh
  * @x-autobe-authorization-actor guest
- * @x-autobe-specification Implement POST /auth/guest/refresh as token renewal for guest actor. Parse JSON body according to IErpHrmTimeTrackingGuest.IRefresh. Validate the refresh token signature and expiry. Look up the guest session record in erp_hrm_time_tracking_guest_sessions and ensure it is associated with the correct guest identity in erp_hrm_time_tracking_guests. If schema supports rotation, revoke/replace the old refresh token mapping atomically in a transaction. Issue a new access token and (if required by DTO) a new refresh token, returning IErpHrmTimeTrackingGuest.IAuthorized.
+ * @x-autobe-specification Implement POST /auth/guest/refresh as token renewal
+ *   for guest actor. Parse JSON body according to
+ *   IErpHrmTimeTrackingGuest.IRefresh. Validate the refresh token signature and
+ *   expiry. Look up the guest session record in
+ *   erp_hrm_time_tracking_guest_sessions and ensure it is associated with the
+ *   correct guest identity in erp_hrm_time_tracking_guests. If schema supports
+ *   rotation, revoke/replace the old refresh token mapping atomically in a
+ *   transaction. Issue a new access token and (if required by DTO) a new
+ *   refresh token, returning IErpHrmTimeTrackingGuest.IAuthorized.
  *
  * On invalid/expired refresh tokens, return 401 Unauthorized. On mismatched session/guest identity, return 403 Forbidden. Ensure idempotency where possible (e.g., if the same refresh token is submitted twice during rotation, second call should fail after revocation).
  *

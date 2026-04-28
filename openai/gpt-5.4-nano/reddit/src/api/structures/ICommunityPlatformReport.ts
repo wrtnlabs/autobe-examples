@@ -14,86 +14,106 @@ export type ICommunityPlatformReport = {
   /**
    * Unique identifier of the moderation report.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from community_platform_reports.id.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_reports.id.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Summary of the member who submitted the report (reporter).
    *
-   * @x-autobe-database-schema-property reporter
-   * @x-autobe-specification Join community_platform_reports.reporter_id to community_platform_members.id and map to ICommunityPlatformMember.ISummary (public persona fields).
+     * @x-autobe-database-schema-property reporter
+     * @x-autobe-specification Join community_platform_reports.reporter_id to
+     *   community_platform_members.id and map to
+     *   ICommunityPlatformMember.ISummary (public persona fields).
    */
   reporter: ICommunityPlatformMember.ISummary;
 
   /**
    * Summary of the community where the reported content belongs.
    *
-   * @x-autobe-database-schema-property community
-   * @x-autobe-specification Join community_platform_reports.community_id to community_platform_communities.id and map to ICommunityPlatformCommunity.ISummary.
+     * @x-autobe-database-schema-property community
+     * @x-autobe-specification Join community_platform_reports.community_id to
+     *   community_platform_communities.id and map to
+     *   ICommunityPlatformCommunity.ISummary.
    */
   community: ICommunityPlatformCommunity.ISummary;
 
   /**
    * Discriminator describing the kind of content target that was reported (e.g., post vs comment).
    *
-   * @x-autobe-database-schema-property target_type
-   * @x-autobe-specification Direct mapping from community_platform_reports.target_type.
+     * @x-autobe-database-schema-property target_type
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_reports.target_type.
    */
   targetType: string;
 
   /**
    * Identifier of the reported content target (UUID).
    *
-   * @x-autobe-database-schema-property target_id
-   * @x-autobe-specification Direct mapping from community_platform_reports.target_id.
+     * @x-autobe-database-schema-property target_id
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_reports.target_id.
    */
   targetId: string & tags.Format<"uuid">;
 
   /**
    * Reporter-provided explanation for why the target content should be reviewed.
    *
-   * @x-autobe-database-schema-property reason
-   * @x-autobe-specification Direct mapping from community_platform_reports.reason.
+     * @x-autobe-database-schema-property reason
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_reports.reason.
    */
   reason: string;
 
   /**
    * Snapshot history for this report representing point-in-time moderation states.
    *
-   * @x-autobe-specification Fetch snapshots from community_platform_report_snapshots where community_platform_report_snapshots.community_platform_report_id = community_platform_reports.id. Map each row to ICommunityPlatformReportSnapshot. Return an array ordered by captured_at (typically chronological for UI). If none exist, return [].
+     * @x-autobe-specification Fetch snapshots from
+     *   community_platform_report_snapshots where
+     *   community_platform_report_snapshots.community_platform_report_id =
+     *   community_platform_reports.id. Map each row to
+     *   ICommunityPlatformReportSnapshot. Return an array ordered by
+     *   captured_at (typically chronological for UI). If none exist, return [].
    */
   snapshots: ICommunityPlatformReportSnapshot[];
 
   /**
    * Moderation decision applied to this report, if available.
    *
-   * @x-autobe-specification Fetch resolution from community_platform_report_resolutions where community_platform_report_resolutions.community_platform_report_id = community_platform_reports.id. If a row exists, map it to ICommunityPlatformReportResolution; otherwise return null.
+     * @x-autobe-specification Fetch resolution from
+     *   community_platform_report_resolutions where
+     *   community_platform_report_resolutions.community_platform_report_id =
+     *   community_platform_reports.id. If a row exists, map it to
+     *   ICommunityPlatformReportResolution; otherwise return null.
    */
   resolution: ICommunityPlatformReportResolution | null;
 
   /**
    * Timestamp when the report was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from community_platform_reports.created_at to ISO 8601 date-time string.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_reports.created_at to ISO 8601 date-time string.
    */
   createdAt: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the report record was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from community_platform_reports.updated_at to ISO 8601 date-time string.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_reports.updated_at to ISO 8601 date-time string.
    */
   updatedAt: string & tags.Format<"date-time">;
 
   /**
    * Soft-deletion timestamp for the report, or null if the report is active.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Map community_platform_reports.deleted_at: if NULL return null; otherwise return ISO 8601 date-time string.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Map community_platform_reports.deleted_at: if
+     *   NULL return null; otherwise return ISO 8601 date-time string.
    */
   deletedAt: (string & tags.Format<"date-time">) | null;
 };
@@ -105,63 +125,85 @@ export namespace ICommunityPlatformReport {
     /**
      * Unique identifier of the moderation report.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from community_platform_reports.id to DTO.id. UUID string format.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_reports.id to DTO.id. UUID string format.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * The member who submitted this moderation report.
      *
-     * @x-autobe-database-schema-property reporter
-     * @x-autobe-specification Join community_platform_reports.reporter_id -> community_platform_members.id and project the joined member into ICommunityPlatformMember.ISummary; return as DTO.reporter.
+         * @x-autobe-database-schema-property reporter
+         * @x-autobe-specification Join community_platform_reports.reporter_id
+         *   -> community_platform_members.id and project the joined member into
+         *   ICommunityPlatformMember.ISummary; return as DTO.reporter.
      */
     reporter: ICommunityPlatformMember.ISummary;
 
     /**
      * The community where the reported content belongs.
      *
-     * @x-autobe-database-schema-property community
-     * @x-autobe-specification Join community_platform_reports.community_id -> community_platform_communities.id and project the joined community into ICommunityPlatformCommunity.ISummary; return as DTO.community.
+         * @x-autobe-database-schema-property community
+         * @x-autobe-specification Join community_platform_reports.community_id
+         *   -> community_platform_communities.id and project the joined
+         *   community into ICommunityPlatformCommunity.ISummary; return as
+         *   DTO.community.
      */
     community: ICommunityPlatformCommunity.ISummary;
 
     /**
      * The concrete content identity that was reported (e.g., a post or comment), expressed as a target context.
      *
-     * @x-autobe-specification Compute DTO.target from community_platform_reports.target_type and community_platform_reports.target_id. Use those values to populate ICommunityPlatformReportTarget (id, createdAt/updatedAt/deletedAt when available per endpoint context). If the endpoint already joins/filters target context from community_platform_report_targets, project that joined row; otherwise construct the target context purely from discriminator+identifier consistently with the target DTO contract.
+         * @x-autobe-specification Compute DTO.target from
+         *   community_platform_reports.target_type and
+         *   community_platform_reports.target_id. Use those values to populate
+         *   ICommunityPlatformReportTarget (id, createdAt/updatedAt/deletedAt
+         *   when available per endpoint context). If the endpoint already
+         *   joins/filters target context from
+         *   community_platform_report_targets, project that joined row;
+         *   otherwise construct the target context purely from
+         *   discriminator+identifier consistently with the target DTO contract.
      */
     target: ICommunityPlatformReportTarget;
 
     /**
      * The reporter-provided textual reason explaining why the content should be reviewed.
      *
-     * @x-autobe-database-schema-property reason
-     * @x-autobe-specification Direct mapping from community_platform_reports.reason to DTO.reason.
+         * @x-autobe-database-schema-property reason
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_reports.reason to DTO.reason.
      */
     reason: string;
 
     /**
      * Timestamp when the moderation report was submitted.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from community_platform_reports.created_at to DTO.createdAt (date-time string).
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_reports.created_at to DTO.createdAt (date-time
+         *   string).
      */
     createdAt: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when the moderation report was last updated.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from community_platform_reports.updated_at to DTO.updatedAt (date-time string).
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_reports.updated_at to DTO.updatedAt (date-time
+         *   string).
      */
     updatedAt: string & tags.Format<"date-time">;
 
     /**
      * Soft-delete timestamp for the report; null when the report is active.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from community_platform_reports.deleted_at to DTO.deletedAt. If community_platform_reports.deleted_at is NULL, set DTO.deletedAt to null; otherwise set the date-time string.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_reports.deleted_at to DTO.deletedAt. If
+         *   community_platform_reports.deleted_at is NULL, set DTO.deletedAt to
+         *   null; otherwise set the date-time string.
      */
     deletedAt: (string & tags.Format<"date-time">) | null;
   };
@@ -173,77 +215,98 @@ export namespace ICommunityPlatformReport {
     /**
      * The community identifier whose moderation reports the caller wants to search.
      *
-     * @x-autobe-specification Always apply community_id equality filter to the base community_platform_reports query (community_platform_reports.community_id = community_id).
+         * @x-autobe-specification Always apply community_id equality filter to
+         *   the base community_platform_reports query
+         *   (community_platform_reports.community_id = community_id).
      */
     community_id: string & tags.Format<"uuid">;
 
     /**
      * Optional discriminator of what the reported target is (e.g., a post vs comment). When null, reports of all target types are included.
      *
-     * @x-autobe-specification If target_type is not null, filter community_platform_reports.target_type = target_type; if target_type is null, do not restrict by target type.
+         * @x-autobe-specification If target_type is not null, filter
+         *   community_platform_reports.target_type = target_type; if
+         *   target_type is null, do not restrict by target type.
      */
     target_type: string | null;
 
     /**
      * Optional keyword to search within the report reason text.
      *
-     * @x-autobe-specification If reason_keyword is not null, apply a keyword match against community_platform_reports.reason (ILIKE-based and/or trigram similarity depending on DB capability).
+         * @x-autobe-specification If reason_keyword is not null, apply a
+         *   keyword match against community_platform_reports.reason
+         *   (ILIKE-based and/or trigram similarity depending on DB capability).
      */
     reason_keyword: string | null;
 
     /**
      * Optional lower bound (inclusive) for when the report was created.
      *
-     * @x-autobe-specification If created_at_from is not null, filter community_platform_reports.created_at >= created_at_from (inclusive).
+         * @x-autobe-specification If created_at_from is not null, filter
+         *   community_platform_reports.created_at >= created_at_from
+         *   (inclusive).
      */
     created_at_from: (string & tags.Format<"date-time">) | null;
 
     /**
      * Optional upper bound (inclusive) for when the report was created.
      *
-     * @x-autobe-specification If created_at_to is not null, filter community_platform_reports.created_at <= created_at_to (inclusive).
+         * @x-autobe-specification If created_at_to is not null, filter
+         *   community_platform_reports.created_at <= created_at_to (inclusive).
      */
     created_at_to: (string & tags.Format<"date-time">) | null;
 
     /**
      * Optional lower bound (inclusive) for when the report was last updated.
      *
-     * @x-autobe-specification If updated_at_from is not null, filter community_platform_reports.updated_at >= updated_at_from (inclusive).
+         * @x-autobe-specification If updated_at_from is not null, filter
+         *   community_platform_reports.updated_at >= updated_at_from
+         *   (inclusive).
      */
     updated_at_from: (string & tags.Format<"date-time">) | null;
 
     /**
      * Optional upper bound (inclusive) for when the report was last updated.
      *
-     * @x-autobe-specification If updated_at_to is not null, filter community_platform_reports.updated_at <= updated_at_to (inclusive).
+         * @x-autobe-specification If updated_at_to is not null, filter
+         *   community_platform_reports.updated_at <= updated_at_to (inclusive).
      */
     updated_at_to: (string & tags.Format<"date-time">) | null;
 
     /**
      * Optional resolution state filter for the report. When null, reports of any resolution state are included.
      *
-     * @x-autobe-specification If resolution_state is null, do not apply resolution filtering. Otherwise, left-join the report resolution table and restrict the result set according to the requested resolution_state (service-layer mapping of string values to resolved/dismissed/unresolved or decision states).
+         * @x-autobe-specification If resolution_state is null, do not apply
+         *   resolution filtering. Otherwise, left-join the report resolution
+         *   table and restrict the result set according to the requested
+         *   resolution_state (service-layer mapping of string values to
+         *   resolved/dismissed/unresolved or decision states).
      */
     resolution_state: string | null;
 
     /**
      * Whether to include soft-deleted moderation reports.
      *
-     * @x-autobe-specification If include_deleted is false, add filter community_platform_reports.deleted_at IS NULL. If include_deleted is true, do not add any deleted_at predicate (include both deleted and non-deleted reports).
+         * @x-autobe-specification If include_deleted is false, add filter
+         *   community_platform_reports.deleted_at IS NULL. If include_deleted
+         *   is true, do not add any deleted_at predicate (include both deleted
+         *   and non-deleted reports).
      */
     include_deleted: boolean;
 
     /**
      * The 1-indexed page number of results to return.
      *
-     * @x-autobe-specification Validate page >= 1. Use page to compute offset = (page - 1) * limit for the query.
+         * @x-autobe-specification Validate page >= 1. Use page to compute
+         *   offset = (page - 1) * limit for the query.
      */
     page: number & tags.Type<"int32"> & tags.Minimum<1>;
 
     /**
      * The maximum number of records to return in a single page.
      *
-     * @x-autobe-specification Validate 1 <= limit <= 100. Apply limit as the query page size (max records returned).
+         * @x-autobe-specification Validate 1 <= limit <= 100. Apply limit as
+         *   the query page size (max records returned).
      */
     limit: number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>;
   };
@@ -255,32 +318,45 @@ export namespace ICommunityPlatformReport {
     /**
      * The identifier of the community that owns the content being reported.
      *
-     * @x-autobe-database-schema-property community_id
-     * @x-autobe-specification Use communityId as the community_platform_reports.community_id value. Before insert, verify the community exists (and is accessible according to endpoint rules).
+         * @x-autobe-database-schema-property community_id
+         * @x-autobe-specification Use communityId as the
+         *   community_platform_reports.community_id value. Before insert,
+         *   verify the community exists (and is accessible according to
+         *   endpoint rules).
      */
     communityId: string & tags.Format<"uuid">;
 
     /**
      * Discriminator indicating whether the reported target is a post or a comment.
      *
-     * @x-autobe-database-schema-property target_type
-     * @x-autobe-specification Use targetType as community_platform_reports.target_type. Validate that targetType is supported by the platform and that the provided targetId corresponds to that type within the given communityId.
+         * @x-autobe-database-schema-property target_type
+         * @x-autobe-specification Use targetType as
+         *   community_platform_reports.target_type. Validate that targetType is
+         *   supported by the platform and that the provided targetId
+         *   corresponds to that type within the given communityId.
      */
     targetType: string & tags.MinLength<1>;
 
     /**
      * The identifier of the target post/comment inside the specified community.
      *
-     * @x-autobe-database-schema-property target_id
-     * @x-autobe-specification Use targetId as community_platform_reports.target_id. Validate referential context: for posts, ensure community_platform_posts.community_id == communityId; for comments, ensure the comment belongs to a post whose community_id == communityId.
+         * @x-autobe-database-schema-property target_id
+         * @x-autobe-specification Use targetId as
+         *   community_platform_reports.target_id. Validate referential context:
+         *   for posts, ensure community_platform_posts.community_id ==
+         *   communityId; for comments, ensure the comment belongs to a post
+         *   whose community_id == communityId.
      */
     targetId: string & tags.Format<"uuid">;
 
     /**
      * A mandatory explanation of why the target content should be reviewed by moderators.
      *
-     * @x-autobe-database-schema-property reason
-     * @x-autobe-specification Use reason as community_platform_reports.reason verbatim. Reject empty/whitespace-only values per DTO validation (minLength constraint) and persist as provided.
+         * @x-autobe-database-schema-property reason
+         * @x-autobe-specification Use reason as
+         *   community_platform_reports.reason verbatim. Reject
+         *   empty/whitespace-only values per DTO validation (minLength
+         *   constraint) and persist as provided.
      */
     reason: string & tags.MinLength<1>;
   };

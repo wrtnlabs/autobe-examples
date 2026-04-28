@@ -24,7 +24,8 @@ import { IPageIEcommerceMallGuestSession } from "../../../../../structures/IPage
  * @param props.body Search criteria including guest identifier, IP address, navigation URLs, date range filters, and pagination parameters.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor guest
- * @x-autobe-specification Query ecommerce_mall_guest_sessions table with the following implementation steps:
+ * @x-autobe-specification Query ecommerce_mall_guest_sessions table with the
+ *   following implementation steps:
  *
  * 1. **Authorization**: This endpoint requires ADMIN or SUPER_ADMIN authentication. Verify the requester has admin privileges before processing.
  *
@@ -151,7 +152,8 @@ export namespace search {
  * @param props.sessionId Unique identifier of the guest session to retrieve.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor guest
- * @x-autobe-specification Query the ecommerce_mall_guest_sessions table using the provided sessionId as the primary lookup key.
+ * @x-autobe-specification Query the ecommerce_mall_guest_sessions table using
+ *   the provided sessionId as the primary lookup key.
  *
  * Validate the sessionId format as a valid UUID. Check if the session has not expired by comparing current timestamp against the expires_at field.
  *

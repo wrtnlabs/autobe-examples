@@ -18,9 +18,10 @@ export class RedditcloneMembersController {
    *
    * @param connection
    * @param body Search criteria including email, username filters, registration date ranges, account status, pagination parameters, and sorting options.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query reddit_clone_members table with pagination and filtering.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query reddit_clone_members table with pagination
+     *   and filtering.
    *
    * Apply search filters:
    * - Email: partial match or exact match
@@ -64,9 +65,10 @@ export class RedditcloneMembersController {
    *
    * @param connection
    * @param memberId Unique identifier of the member account to retrieve.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query the reddit_clone_members table by primary key (id).
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query the reddit_clone_members table by primary
+     *   key (id).
    *
    * JOIN with reddit_clone_user_profiles on the member relationship to fetch associated profile data.
    *

@@ -25,9 +25,9 @@ export class ShoppingmallAdministratorVariantsInventoryController {
    * @param connection
    * @param variantId UUID of the product variant to view inventory history for
    * @param body Search criteria and pagination parameters for inventory history
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Implementation Steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor administrator
+     * @x-autobe-specification Implementation Steps:
    *
    * 1. **Authentication & Authorization**:
    *    - Verify seller is authenticated
@@ -94,9 +94,9 @@ export class ShoppingmallAdministratorVariantsInventoryController {
    * @param connection
    * @param variantId The UUID of the product variant whose inventory record is being retrieved. Must correspond to a variant owned by the authenticated seller.
    * @param recordId The UUID of the specific inventory record to retrieve. Must belong to the specified variant.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Implementation steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor administrator
+     * @x-autobe-specification Implementation steps:
    *
    * 1. Authenticate the seller from the session token
    * 2. Validate variantId is a valid UUID format

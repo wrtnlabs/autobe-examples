@@ -13,31 +13,31 @@ import { IHrmPlatformOrganization } from "./IHrmPlatformOrganization";
  */
 export type IHrmPlatformActivityLog = {
   /**
-   * @x-autobe-database-schema-property id
+     * @x-autobe-database-schema-property id
    */
   id: string & tags.Format<"uuid">;
   /**
-   * @x-autobe-database-schema-property member
+     * @x-autobe-database-schema-property member
    */
   member: IHrmPlatformMember.ISummary | null;
   /**
-   * @x-autobe-database-schema-property organization
+     * @x-autobe-database-schema-property organization
    */
   organization: IHrmPlatformOrganization.ISummary;
   /**
-   * @x-autobe-database-schema-property entity_type
+     * @x-autobe-database-schema-property entity_type
    */
   entity_type: string;
   /**
-   * @x-autobe-database-schema-property entity_id
+     * @x-autobe-database-schema-property entity_id
    */
   entity_id: string & tags.Format<"uuid">;
   /**
-   * @x-autobe-database-schema-property action_type
+     * @x-autobe-database-schema-property action_type
    */
   action_type: string;
   /**
-   * @x-autobe-database-schema-property action_name
+     * @x-autobe-database-schema-property action_name
    */
   action_name: string;
 
@@ -48,20 +48,22 @@ export type IHrmPlatformActivityLog = {
    *
    * The field is nullable (can be omitted) when no additional metadata exists. When present, it's a JSON string containing key-value pairs that the application parses to an object.
    *
-   * @x-autobe-specification JSON key-value pairs stored as String in DB. Application layer parses to object with additionalProperties (string values) for flexible metadata storage.
-   * @x-autobe-database-schema-property extra_data
+     * @x-autobe-specification JSON key-value pairs stored as String in DB.
+     *   Application layer parses to object with additionalProperties (string
+     *   values) for flexible metadata storage.
+     * @x-autobe-database-schema-property extra_data
    */
   extra_data?: string | null | undefined;
   /**
-   * @x-autobe-database-schema-property created_at
+     * @x-autobe-database-schema-property created_at
    */
   created_at: string & tags.Format<"date-time">;
   /**
-   * @x-autobe-database-schema-property updated_at
+     * @x-autobe-database-schema-property updated_at
    */
   updated_at: string & tags.Format<"date-time">;
   /**
-   * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-database-schema-property deleted_at
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -95,15 +97,15 @@ export namespace IHrmPlatformActivityLog {
    */
   export type IRequest = {
     /**
-     * @x-autobe-database-schema-property entity_type
+         * @x-autobe-database-schema-property entity_type
      */
     entity_type?: string | undefined;
     /**
-     * @x-autobe-database-schema-property action_type
+         * @x-autobe-database-schema-property action_type
      */
     action_type?: string | undefined;
     /**
-     * @x-autobe-database-schema-property action_name
+         * @x-autobe-database-schema-property action_name
      */
     action_name?: string | undefined;
 
@@ -112,8 +114,10 @@ export namespace IHrmPlatformActivityLog {
      *
      * Allows narrowing results to activities performed by a specific user across all entity types. Accepts null for system-generated actions.
      *
-     * @x-autobe-database-schema-property member_id
-     * @x-autobe-specification Filter activity logs by member ID who performed the action. Uses UUID format. Nullable for system-generated actions where no member is associated.
+         * @x-autobe-database-schema-property member_id
+         * @x-autobe-specification Filter activity logs by member ID who
+         *   performed the action. Uses UUID format. Nullable for
+         *   system-generated actions where no member is associated.
      */
     member_id?: (string & tags.Format<"uuid">) | null | undefined;
 
@@ -122,7 +126,10 @@ export namespace IHrmPlatformActivityLog {
      *
      * Accepts ISO 8601 date-time format (e.g., '2024-01-15T00:00:00Z'). Returns activity logs where the creation timestamp is greater than or equal to this value.
      *
-     * @x-autobe-specification Computed filter: created_at >= from. ISO 8601 date-time format (e.g., '2024-01-15T00:00:00Z'). Filters activity logs to include only those created on or after this timestamp. Used for time-range queries.
+         * @x-autobe-specification Computed filter: created_at >= from. ISO 8601
+         *   date-time format (e.g., '2024-01-15T00:00:00Z'). Filters activity
+         *   logs to include only those created on or after this timestamp. Used
+         *   for time-range queries.
      */
     from?: (string & tags.Format<"date-time">) | undefined;
 
@@ -131,7 +138,10 @@ export namespace IHrmPlatformActivityLog {
      *
      * Accepts ISO 8601 date-time format (e.g., '2024-01-15T23:59:59Z'). Returns activity logs where the creation timestamp is less than or equal to this value.
      *
-     * @x-autobe-specification Computed filter: created_at <= to. ISO 8601 date-time format (e.g., '2024-01-15T23:59:59Z'). Filters activity logs to include only those created on or before this timestamp. Used for time-range queries.
+         * @x-autobe-specification Computed filter: created_at <= to. ISO 8601
+         *   date-time format (e.g., '2024-01-15T23:59:59Z'). Filters activity
+         *   logs to include only those created on or before this timestamp.
+         *   Used for time-range queries.
      */
     to?: (string & tags.Format<"date-time">) | undefined;
 
@@ -140,8 +150,11 @@ export namespace IHrmPlatformActivityLog {
      *
      * Performs text search across the extra_data column, allowing filtering by content stored in the JSON field such as changed field names, values, or contextual information. Accepts null when no metadata exists.
      *
-     * @x-autobe-database-schema-property extra_data
-     * @x-autobe-specification Search within the extra_data JSON field using substring matching. Nullable for activity logs without additional metadata. Enables filtering by content stored in the JSON metadata field.
+         * @x-autobe-database-schema-property extra_data
+         * @x-autobe-specification Search within the extra_data JSON field using
+         *   substring matching. Nullable for activity logs without additional
+         *   metadata. Enables filtering by content stored in the JSON metadata
+         *   field.
      */
     extra_data?: string | null | undefined;
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
@@ -169,39 +182,40 @@ export namespace IHrmPlatformActivityLog {
    */
   export type ISummary = {
     /**
-     * @x-autobe-database-schema-property id
+         * @x-autobe-database-schema-property id
      */
     id: string & tags.Format<"uuid">;
     /**
-     * @x-autobe-database-schema-property entity_type
+         * @x-autobe-database-schema-property entity_type
      */
     entity_type: string;
     /**
-     * @x-autobe-database-schema-property entity_id
+         * @x-autobe-database-schema-property entity_id
      */
     entity_id: string & tags.Format<"uuid">;
     /**
-     * @x-autobe-database-schema-property action_name
+         * @x-autobe-database-schema-property action_name
      */
     action_name: string;
     /**
-     * @x-autobe-database-schema-property action_type
+         * @x-autobe-database-schema-property action_type
      */
     action_type: string;
 
     /**
      * Actor who performed the action (nullable for system actions).
      *
-     * @x-autobe-database-schema-property member_id
-     * @x-autobe-specification nullable: true to accommodate system actions with no actor attribution.
+         * @x-autobe-database-schema-property member_id
+         * @x-autobe-specification nullable: true to accommodate system actions
+         *   with no actor attribution.
      */
     member_id: (string & tags.Format<"uuid">) | null;
     /**
-     * @x-autobe-database-schema-property organization_id
+         * @x-autobe-database-schema-property organization_id
      */
     organization_id: string & tags.Format<"uuid">;
     /**
-     * @x-autobe-database-schema-property created_at
+         * @x-autobe-database-schema-property created_at
      */
     created_at: string & tags.Format<"date-time">;
   };

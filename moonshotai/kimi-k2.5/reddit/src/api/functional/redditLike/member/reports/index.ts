@@ -27,7 +27,8 @@ import { IRedditLikeReport } from "../../../../structures/IRedditLikeReport";
  * @param props.body Report creation data including target content, community context, and violation reason
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Create a new content report submitted by an authenticated member targeting either a post or comment within a community.
+ * @x-autobe-specification Create a new content report submitted by an
+ *   authenticated member targeting either a post or comment within a community.
  *
  * Implementation details:
  * - Extract reporter_id from the authenticated member's JWT token

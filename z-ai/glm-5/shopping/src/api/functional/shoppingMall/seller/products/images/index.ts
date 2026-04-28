@@ -36,7 +36,8 @@ import { IShoppingMallProductImage } from "../../../../../structures/IShoppingMa
  * @param props.body Image upload details including the image URL and optional display order position
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Implementation steps for POST /products/{productId}/images:
+ * @x-autobe-specification Implementation steps for POST
+ *   /products/{productId}/images:
  *
  * 1. **Authentication & Authorization**:
  *    - Extract seller from JWT session token
@@ -188,7 +189,8 @@ export namespace create {
  * @param props.body Image properties to update including URL and display order
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Update a product image record in shopping_mall_product_images table.
+ * @x-autobe-specification Update a product image record in
+ *   shopping_mall_product_images table.
  *
  * Implementation Steps:
  * 1. Extract productId and imageId from path parameters

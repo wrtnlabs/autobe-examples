@@ -25,7 +25,8 @@ export * as confirm_delivery from "./confirm_delivery/index";
  * @param props.orderId Unique identifier of the order whose shipments are being retrieved. Must belong to the authenticated customer.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Query the ecommerce_mall_shipments table filtering by ecommerce_mall_order_id matching the provided orderId parameter.
+ * @x-autobe-specification Query the ecommerce_mall_shipments table filtering by
+ *   ecommerce_mall_order_id matching the provided orderId parameter.
  *
  * Verify the order belongs to the authenticated customer by joining with ecommerce_mall_orders and checking ecommerce_mall_customer_id matches the authenticated customer.
  *
@@ -129,7 +130,8 @@ export namespace getByOrderid {
  * @param props.shipmentId Unique identifier of the shipment to retrieve tracking details for.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Query the ecommerce_mall_shipments table filtering by id = {shipmentId} AND ecommerce_mall_order_id = {orderId}.
+ * @x-autobe-specification Query the ecommerce_mall_shipments table filtering by
+ *   id = {shipmentId} AND ecommerce_mall_order_id = {orderId}.
  *
  * Verify order ownership by joining with ecommerce_mall_orders and confirming ecommerce_mall_customer_id matches the authenticated customer. Return 403 Forbidden if the order does not belong to the customer.
  *

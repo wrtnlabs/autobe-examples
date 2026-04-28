@@ -22,9 +22,10 @@ export class EcommercemallCustomerShipmentsController {
    *
    * @param connection
    * @param body Search criteria and pagination parameters for filtering shipments
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Query commerce_shipments with access control based on current actor.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Query commerce_shipments with access control
+     *   based on current actor.
    *
    * For seller users: Filter by seller_id matching the authenticated seller.
    * For customer users: Join with commerce_orders and filter by order.customer_id matching the authenticated customer.
@@ -76,9 +77,10 @@ export class EcommercemallCustomerShipmentsController {
    *
    * @param connection
    * @param shipmentId Unique identifier of the shipment to retrieve (UUID format)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Query the ecommerce_mall_shipments table by primary key id matching the shipmentId path parameter.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Query the ecommerce_mall_shipments table by
+     *   primary key id matching the shipmentId path parameter.
    *
    * Include the following related data in the response:
    * - shipmentItems: Join with ecommerce_mall_shipment_items to get all items in this shipment

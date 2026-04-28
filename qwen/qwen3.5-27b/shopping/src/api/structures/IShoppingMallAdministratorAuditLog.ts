@@ -36,7 +36,10 @@ export namespace IShoppingMallAdministratorAuditLog {
      *
      * Specify the UUID of a specific administrator to retrieve only their audit log entries. This is useful for tracking individual administrator activities, reviewing actions performed by a particular admin, or generating administrator-specific activity reports.
      *
-     * @x-autobe-specification Filter audit logs by the administrator who performed the action. Maps to shopping_mall_administrator_id foreign key column in shopping_mall_administrator_audit_logs table with exact match.
+         * @x-autobe-specification Filter audit logs by the administrator who
+         *   performed the action. Maps to shopping_mall_administrator_id
+         *   foreign key column in shopping_mall_administrator_audit_logs table
+         *   with exact match.
      */
     administrator_id?: (string & tags.Format<"uuid">) | undefined;
 
@@ -45,7 +48,10 @@ export namespace IShoppingMallAdministratorAuditLog {
      *
      * Specify the exact action type to retrieve logs for specific operations. Common action types include: approve_seller, reject_seller, suspend_seller, unsuspend_seller, ban_customer, unban_customer, delete_product, force_cancel_order, force_refund_order, create_category, update_category, delete_category, promote_administrator, demote_administrator.
      *
-     * @x-autobe-specification Filter audit logs by action type. Maps to action_type column in shopping_mall_administrator_audit_logs table with exact match. Examples: 'approve_seller', 'reject_seller', 'ban_customer', 'delete_product', 'force_cancel_order'.
+         * @x-autobe-specification Filter audit logs by action type. Maps to
+         *   action_type column in shopping_mall_administrator_audit_logs table
+         *   with exact match. Examples: 'approve_seller', 'reject_seller',
+         *   'ban_customer', 'delete_product', 'force_cancel_order'.
      */
     action_type?: string | undefined;
 
@@ -54,7 +60,11 @@ export namespace IShoppingMallAdministratorAuditLog {
      *
      * Specify the entity type to retrieve logs for actions affecting specific entity categories. Common target types include: seller, product, order, order_item, customer, category, administrator, cancellation_request, refund_request.
      *
-     * @x-autobe-specification Filter audit logs by the type of entity that was the target of the action. Maps to target_type column in shopping_mall_administrator_audit_logs table with exact match. Examples: 'seller', 'product', 'order', 'order_item', 'customer', 'category', 'administrator'.
+         * @x-autobe-specification Filter audit logs by the type of entity that
+         *   was the target of the action. Maps to target_type column in
+         *   shopping_mall_administrator_audit_logs table with exact match.
+         *   Examples: 'seller', 'product', 'order', 'order_item', 'customer',
+         *   'category', 'administrator'.
      */
     target_type?: string | undefined;
 
@@ -63,7 +73,11 @@ export namespace IShoppingMallAdministratorAuditLog {
      *
      * Specify the UUID of a specific entity to retrieve all administrative actions performed on it. This is useful for tracking the complete history of administrative interventions on a particular seller, product, order, or other entity. Note: Some actions may not have a specific target (target_id is null).
      *
-     * @x-autobe-specification Filter audit logs by the unique identifier of the target entity. Maps to target_id column in shopping_mall_administrator_audit_logs table with exact match. Handles null values for actions without specific targets (e.g., system-wide operations).
+         * @x-autobe-specification Filter audit logs by the unique identifier of
+         *   the target entity. Maps to target_id column in
+         *   shopping_mall_administrator_audit_logs table with exact match.
+         *   Handles null values for actions without specific targets (e.g.,
+         *   system-wide operations).
      */
     target_id?: (string & tags.Format<"uuid">) | undefined;
 
@@ -72,7 +86,10 @@ export namespace IShoppingMallAdministratorAuditLog {
      *
      * Specify an IP address or partial IP to retrieve audit logs from specific network locations. This is useful for security monitoring, forensic analysis, and detecting suspicious administrative activities from unusual IP addresses. Supports substring matching for partial IP searches.
      *
-     * @x-autobe-specification Filter audit logs by IP address. Maps to ip_address column in shopping_mall_administrator_audit_logs table with LIKE substring match. Supports partial IP matching for security investigations.
+         * @x-autobe-specification Filter audit logs by IP address. Maps to
+         *   ip_address column in shopping_mall_administrator_audit_logs table
+         *   with LIKE substring match. Supports partial IP matching for
+         *   security investigations.
      */
     ip_address?: string | undefined;
 
@@ -81,7 +98,10 @@ export namespace IShoppingMallAdministratorAuditLog {
      *
      * Specify the start of the date range in ISO 8601 format (e.g., '2024-01-01T00:00:00Z'). Only audit logs with created_at greater than or equal to this value will be returned. Use in combination with end_date to define a specific time window.
      *
-     * @x-autobe-specification Filter audit logs by creation date range (start). Maps to created_at column in shopping_mall_administrator_audit_logs table with greater-than-or-equal comparison. ISO 8601 date-time format.
+         * @x-autobe-specification Filter audit logs by creation date range
+         *   (start). Maps to created_at column in
+         *   shopping_mall_administrator_audit_logs table with
+         *   greater-than-or-equal comparison. ISO 8601 date-time format.
      */
     start_date?: (string & tags.Format<"date-time">) | undefined;
 
@@ -90,7 +110,10 @@ export namespace IShoppingMallAdministratorAuditLog {
      *
      * Specify the end of the date range in ISO 8601 format (e.g., '2024-12-31T23:59:59Z'). Only audit logs with created_at less than or equal to this value will be returned. Use in combination with start_date to define a specific time window.
      *
-     * @x-autobe-specification Filter audit logs by creation date range (end). Maps to created_at column in shopping_mall_administrator_audit_logs table with less-than-or-equal comparison. ISO 8601 date-time format.
+         * @x-autobe-specification Filter audit logs by creation date range
+         *   (end). Maps to created_at column in
+         *   shopping_mall_administrator_audit_logs table with
+         *   less-than-or-equal comparison. ISO 8601 date-time format.
      */
     end_date?: (string & tags.Format<"date-time">) | undefined;
 
@@ -99,7 +122,9 @@ export namespace IShoppingMallAdministratorAuditLog {
      *
      * Specify which page of results to retrieve. Page numbering starts from 1 (not 0). The default value is 1 if not specified. Each page contains up to 'limit' number of records. Use this parameter along with 'limit' to navigate through paginated results.
      *
-     * @x-autobe-specification Pagination page number (1-indexed). Not mapped to database column. Used to calculate offset for LIMIT/OFFSET pagination. Default value is 1. Minimum value is 1.
+         * @x-autobe-specification Pagination page number (1-indexed). Not
+         *   mapped to database column. Used to calculate offset for
+         *   LIMIT/OFFSET pagination. Default value is 1. Minimum value is 1.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -108,7 +133,9 @@ export namespace IShoppingMallAdministratorAuditLog {
      *
      * Specify how many audit log entries to include in each page of results. The default value is 20 if not specified. Valid range is 1 to 100 records per page. Larger values return more data but may impact performance.
      *
-     * @x-autobe-specification Maximum number of records per page. Not mapped to database column. Used as LIMIT clause in SQL query. Default value is 20. Valid range: 1-100.
+         * @x-autobe-specification Maximum number of records per page. Not
+         *   mapped to database column. Used as LIMIT clause in SQL query.
+         *   Default value is 20. Valid range: 1-100.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -128,8 +155,10 @@ export namespace IShoppingMallAdministratorAuditLog {
      *
      * This UUID serves as the primary key for identifying and referencing specific audit log records across the platform.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_administrator_audit_logs.id. Primary key for the audit log entry.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_administrator_audit_logs.id. Primary key for the
+         *   audit log entry.
      */
     id: string & tags.Format<"uuid">;
 
@@ -138,8 +167,9 @@ export namespace IShoppingMallAdministratorAuditLog {
      *
      * Examples include: approve_seller, reject_seller, suspend_seller, unsuspend_seller, delete_product, force_cancel_order, force_refund_order, ban_customer, unban_customer, ban_seller, unban_seller, create_category, update_category, delete_category, promote_administrator, demote_administrator.
      *
-     * @x-autobe-database-schema-property action_type
-     * @x-autobe-specification Direct mapping from shopping_mall_administrator_audit_logs.action_type.
+         * @x-autobe-database-schema-property action_type
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_administrator_audit_logs.action_type.
      */
     action_type: string;
 
@@ -148,8 +178,9 @@ export namespace IShoppingMallAdministratorAuditLog {
      *
      * Examples include: seller, product, order, order_item, customer, category, administrator, cancellation_request, refund_request.
      *
-     * @x-autobe-database-schema-property target_type
-     * @x-autobe-specification Direct mapping from shopping_mall_administrator_audit_logs.target_type.
+         * @x-autobe-database-schema-property target_type
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_administrator_audit_logs.target_type.
      */
     target_type: string;
 
@@ -158,8 +189,10 @@ export namespace IShoppingMallAdministratorAuditLog {
      *
      * This is a polymorphic reference that can point to different entity types based on target_type. Nullable for actions that don't target a specific entity (e.g., system-wide operations).
      *
-     * @x-autobe-database-schema-property target_id
-     * @x-autobe-specification Direct mapping from shopping_mall_administrator_audit_logs.target_id. Nullable for actions without a specific target entity.
+         * @x-autobe-database-schema-property target_id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_administrator_audit_logs.target_id. Nullable for
+         *   actions without a specific target entity.
      */
     target_id: (string & tags.Format<"uuid">) | null;
 
@@ -168,8 +201,9 @@ export namespace IShoppingMallAdministratorAuditLog {
      *
      * Used for security monitoring and forensic analysis of administrative operations.
      *
-     * @x-autobe-database-schema-property ip_address
-     * @x-autobe-specification Direct mapping from shopping_mall_administrator_audit_logs.ip_address.
+         * @x-autobe-database-schema-property ip_address
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_administrator_audit_logs.ip_address.
      */
     ip_address: string;
 
@@ -178,8 +212,9 @@ export namespace IShoppingMallAdministratorAuditLog {
      *
      * Provides additional context about the client environment for security analysis.
      *
-     * @x-autobe-database-schema-property user_agent
-     * @x-autobe-specification Direct mapping from shopping_mall_administrator_audit_logs.user_agent. Nullable.
+         * @x-autobe-database-schema-property user_agent
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_administrator_audit_logs.user_agent. Nullable.
      */
     user_agent: string | null;
 
@@ -188,8 +223,10 @@ export namespace IShoppingMallAdministratorAuditLog {
      *
      * This is the only temporal field as audit logs are immutable and never updated or deleted.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_administrator_audit_logs.created_at. ISO 8601 date-time format.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_administrator_audit_logs.created_at. ISO 8601
+         *   date-time format.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -198,8 +235,10 @@ export namespace IShoppingMallAdministratorAuditLog {
      *
      * Contains essential information about the administrator account including email, grade, ban status, and creation timestamp.
      *
-     * @x-autobe-database-schema-property administrator
-     * @x-autobe-specification Join via shopping_mall_administrator_id to shopping_mall_administrators.id. Returns IShoppingMallAdministrator.ISummary.
+         * @x-autobe-database-schema-property administrator
+         * @x-autobe-specification Join via shopping_mall_administrator_id to
+         *   shopping_mall_administrators.id. Returns
+         *   IShoppingMallAdministrator.ISummary.
      */
     administrator: IShoppingMallAdministrator.ISummary;
   };

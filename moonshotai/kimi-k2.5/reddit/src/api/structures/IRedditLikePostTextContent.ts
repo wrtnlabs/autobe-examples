@@ -8,48 +8,59 @@ export type IRedditLikePostTextContent = {
   /**
    * Unique identifier for the text content record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from reddit_like_post_text_contents.id. UUID primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_post_text_contents.id. UUID primary key.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Reference to the parent post that owns this text content.
    *
-   * @x-autobe-database-schema-property post_id
-   * @x-autobe-specification Direct mapping from reddit_like_post_text_contents.post_id. Foreign key referencing reddit_like_posts.id. One-to-one relationship with parent post.
+     * @x-autobe-database-schema-property post_id
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_post_text_contents.post_id. Foreign key referencing
+     *   reddit_like_posts.id. One-to-one relationship with parent post.
    */
   post_id: string & tags.Format<"uuid">;
 
   /**
    * Full body text content written by the user for the post.
    *
-   * @x-autobe-database-schema-property body
-   * @x-autobe-specification Direct mapping from reddit_like_post_text_contents.body. Complete user-written text content.
+     * @x-autobe-database-schema-property body
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_post_text_contents.body. Complete user-written text
+     *   content.
    */
   body: string;
 
   /**
    * Preview excerpt or summary of the post content for feed displays and search results.
    *
-   * @x-autobe-database-schema-property excerpt
-   * @x-autobe-specification Direct mapping from reddit_like_post_text_contents.excerpt. Preview summary used for feeds and list views.
+     * @x-autobe-database-schema-property excerpt
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_post_text_contents.excerpt. Preview summary used for feeds
+     *   and list views.
    */
   excerpt: string;
 
   /**
    * Timestamp when the text content was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from reddit_like_post_text_contents.created_at. Timestamp when content was first stored.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_post_text_contents.created_at. Timestamp when content was
+     *   first stored.
    */
   created_at: string;
 
   /**
    * Timestamp when the text content was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from reddit_like_post_text_contents.updated_at. Timestamp when content was last modified.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_post_text_contents.updated_at. Timestamp when content was
+     *   last modified.
    */
   updated_at: string;
 };

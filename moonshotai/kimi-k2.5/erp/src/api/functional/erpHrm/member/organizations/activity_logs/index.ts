@@ -27,7 +27,9 @@ export * as details from "./details/index";
  * @param props.body Search criteria and pagination parameters for filtering activity log entries
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query erp_hrm_activity_logs table filtered by organization_id from path parameter. Join with erp_hrm_activity_log_details to provide complete context for each log entry.
+ * @x-autobe-specification Query erp_hrm_activity_logs table filtered by
+ *   organization_id from path parameter. Join with erp_hrm_activity_log_details
+ *   to provide complete context for each log entry.
  *
  * Apply search filters on:
  * - action: exact match or list of actions (e.g., ['create', 'update'])
@@ -145,7 +147,8 @@ export namespace index {
  * @param props.activityLogId Activity log entry unique identifier
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query erp_hrm_activity_logs table by activityLogId UUID with organization_id matching the path parameter.
+ * @x-autobe-specification Query erp_hrm_activity_logs table by activityLogId
+ *   UUID with organization_id matching the path parameter.
  *
  * Join with erp_hrm_activity_log_details to fetch all related metadata key-value pairs for this activity log entry.
  *

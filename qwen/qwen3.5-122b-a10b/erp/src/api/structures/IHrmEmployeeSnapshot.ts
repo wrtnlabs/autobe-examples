@@ -25,8 +25,9 @@ export type IHrmEmployeeSnapshot = {
    *
    * Generated as a UUID when the snapshot is created. Serves as the primary key for retrieving this specific historical record via GET /hrm/member/snapshots/{snapshotId}.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from hrm_employee_snapshots.id. UUID format, primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from hrm_employee_snapshots.id.
+     *   UUID format, primary key.
    */
   id: string & tags.Format<"uuid">;
 
@@ -35,8 +36,11 @@ export type IHrmEmployeeSnapshot = {
    *
    * This is a denormalized reference captured at the moment the snapshot was created. Even if the employee's organization changes later, this snapshot preserves the original organization context for historical accuracy. Returns organization summary including id, name, currency, timezone, and fiscal settings.
    *
-   * @x-autobe-database-schema-property organization
-   * @x-autobe-specification LEFT JOIN from hrm_employee_snapshots.organization_id to hrm_organizations.id. Returns IHrmOrganization.ISummary. Required relation - every snapshot belongs to an organization.
+     * @x-autobe-database-schema-property organization
+     * @x-autobe-specification LEFT JOIN from
+     *   hrm_employee_snapshots.organization_id to hrm_organizations.id. Returns
+     *   IHrmOrganization.ISummary. Required relation - every snapshot belongs
+     *   to an organization.
    */
   organization: IHrmOrganization.ISummary;
 
@@ -45,8 +49,10 @@ export type IHrmEmployeeSnapshot = {
    *
    * This is a denormalized reference captured at the moment the snapshot was created. Nullable because an employee record may exist before a user account is linked, or the user association may have been removed. Returns member summary including id and email when present.
    *
-   * @x-autobe-database-schema-property user
-   * @x-autobe-specification LEFT JOIN from hrm_employee_snapshots.user_id to hrm_members.id. Returns IHrmMember.ISummary or null. Nullable - employee may not have an associated user account.
+     * @x-autobe-database-schema-property user
+     * @x-autobe-specification LEFT JOIN from hrm_employee_snapshots.user_id to
+     *   hrm_members.id. Returns IHrmMember.ISummary or null. Nullable -
+     *   employee may not have an associated user account.
    */
   user?: IHrmMember.ISummary | null | undefined;
 
@@ -55,8 +61,10 @@ export type IHrmEmployeeSnapshot = {
    *
    * This is a denormalized reference captured at the moment the snapshot was created. Nullable because role assignments can change over time. Returns role summary including id, name, is_builtin flag, and organization context when present.
    *
-   * @x-autobe-database-schema-property role
-   * @x-autobe-specification LEFT JOIN from hrm_employee_snapshots.role_id to hrm_roles.id. Returns IHrmRole.ISummary or null. Nullable - employee may not have a role assigned.
+     * @x-autobe-database-schema-property role
+     * @x-autobe-specification LEFT JOIN from hrm_employee_snapshots.role_id to
+     *   hrm_roles.id. Returns IHrmRole.ISummary or null. Nullable - employee
+     *   may not have a role assigned.
    */
   role?: IHrmRole.ISummary | null | undefined;
 
@@ -65,8 +73,11 @@ export type IHrmEmployeeSnapshot = {
    *
    * This is a denormalized reference captured at the moment the snapshot was created. Nullable because department assignments are optional and can change over time. Returns department summary including id, name, description, and parent department for hierarchy visualization when present.
    *
-   * @x-autobe-database-schema-property department
-   * @x-autobe-specification LEFT JOIN from hrm_employee_snapshots.department_id to hrm_departments.id. Returns IHrmDepartment.ISummary or null. Nullable - employee may not belong to any department.
+     * @x-autobe-database-schema-property department
+     * @x-autobe-specification LEFT JOIN from
+     *   hrm_employee_snapshots.department_id to hrm_departments.id. Returns
+     *   IHrmDepartment.ISummary or null. Nullable - employee may not belong to
+     *   any department.
    */
   department?: IHrmDepartment.ISummary | null | undefined;
 
@@ -75,8 +86,9 @@ export type IHrmEmployeeSnapshot = {
    *
    * Captures the employee's specific role or title within the organization (e.g., "Senior Developer", "Marketing Manager", "HR Specialist") as it existed when the snapshot was created. This value is historical and does not change even if the employee's position is updated in the current employee record. May be null if no position was assigned.
    *
-   * @x-autobe-specification Direct mapping from hrm_employee_snapshots.position. String field, nullable in DB.
-   * @x-autobe-database-schema-property position
+     * @x-autobe-specification Direct mapping from
+     *   hrm_employee_snapshots.position. String field, nullable in DB.
+     * @x-autobe-database-schema-property position
    */
   position?: string | null | undefined;
 
@@ -91,8 +103,10 @@ export type IHrmEmployeeSnapshot = {
    *
    * This is a historical value captured at snapshot creation and does not change even if the employee's employment type is updated in the current employee record.
    *
-   * @x-autobe-database-schema-property employment_type
-   * @x-autobe-specification Direct mapping from hrm_employee_snapshots.employment_type. Enum string: full-time, part-time, contractor, intern.
+     * @x-autobe-database-schema-property employment_type
+     * @x-autobe-specification Direct mapping from
+     *   hrm_employee_snapshots.employment_type. Enum string: full-time,
+     *   part-time, contractor, intern.
    */
   employment_type: string;
 
@@ -105,8 +119,9 @@ export type IHrmEmployeeSnapshot = {
    *
    * This is a historical value captured at snapshot creation and does not change even if the employee's status is updated in the current employee record.
    *
-   * @x-autobe-database-schema-property status
-   * @x-autobe-specification Direct mapping from hrm_employee_snapshots.status. Enum string: active, deactivated.
+     * @x-autobe-database-schema-property status
+     * @x-autobe-specification Direct mapping from
+     *   hrm_employee_snapshots.status. Enum string: active, deactivated.
    */
   status: string;
 
@@ -115,8 +130,9 @@ export type IHrmEmployeeSnapshot = {
    *
    * Records the exact point-in-time when this historical record was captured. Used for audit trails and to order snapshots chronologically. Format: ISO 8601 with timezone (timestamptz).
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from hrm_employee_snapshots.created_at. DateTime with timestamptz format.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_employee_snapshots.created_at. DateTime with timestamptz format.
    */
   created_at: string & tags.Format<"date-time">;
 };

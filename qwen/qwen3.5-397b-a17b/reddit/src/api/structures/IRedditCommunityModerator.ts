@@ -16,8 +16,9 @@ export type IRedditCommunityModerator = {
    *
    * Auto-generated UUID assigned when the moderator is added to the community. Used to reference this specific moderator assignment in update and delete operations.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from reddit_community_moderators.id. UUID format primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_moderators.id. UUID format primary key.
    */
   id: string & tags.Format<"uuid">;
 
@@ -26,8 +27,9 @@ export type IRedditCommunityModerator = {
    *
    * Determines the level of authority within the community. 'owner' is the highest authority (created the community, can add/remove moderators). 'moderator' has content moderation powers but limited moderator management authority. Owners can remove moderators; moderators cannot remove other moderators or the owner.
    *
-   * @x-autobe-database-schema-property role
-   * @x-autobe-specification Direct mapping from reddit_community_moderators.role. String enum: 'owner' or 'moderator'.
+     * @x-autobe-database-schema-property role
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_moderators.role. String enum: 'owner' or 'moderator'.
    */
   role: string;
 
@@ -36,8 +38,10 @@ export type IRedditCommunityModerator = {
    *
    * Records when the member was granted moderation authority. For owners, this is typically the community creation time. For added moderators, this is when an existing moderator assigned them. Used for audit trails and sorting moderators by seniority.
    *
-   * @x-autobe-database-schema-property assigned_at
-   * @x-autobe-specification Direct mapping from reddit_community_moderators.assigned_at. DateTime with date-time format.
+     * @x-autobe-database-schema-property assigned_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_moderators.assigned_at. DateTime with date-time
+     *   format.
    */
   assigned_at: string & tags.Format<"date-time">;
 
@@ -46,8 +50,11 @@ export type IRedditCommunityModerator = {
    *
    * Contains the moderator's public profile information including username, display name, bio, avatar, and karma score. Used to display moderator details in community moderation team lists and individual moderator pages.
    *
-   * @x-autobe-database-schema-property member
-   * @x-autobe-specification Relation mapping via reddit_community_moderators.member JOIN to reddit_community_members. Returns IRedditCommunityMember.ISummary with id, username, display_name, bio, avatar, karma, created_at.
+     * @x-autobe-database-schema-property member
+     * @x-autobe-specification Relation mapping via
+     *   reddit_community_moderators.member JOIN to reddit_community_members.
+     *   Returns IRedditCommunityMember.ISummary with id, username,
+     *   display_name, bio, avatar, karma, created_at.
    */
   member: IRedditCommunityMember.ISummary;
 
@@ -56,8 +63,9 @@ export type IRedditCommunityModerator = {
    *
    * System-managed field indicating when this record was first inserted. Different from assigned_at which tracks when moderation authority was granted. Used for audit purposes.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from reddit_community_moderators.created_at. DateTime with date-time format.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_moderators.created_at. DateTime with date-time format.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -66,8 +74,9 @@ export type IRedditCommunityModerator = {
    *
    * System-managed field updated on every modification to this record. Used for tracking changes and audit trails.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from reddit_community_moderators.updated_at. DateTime with date-time format.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_moderators.updated_at. DateTime with date-time format.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -76,8 +85,10 @@ export type IRedditCommunityModerator = {
    *
    * Used for soft delete functionality to preserve audit history. When a moderator is removed, this field is set instead of deleting the record. Allows tracking of historical moderator assignments and potential restoration. Null indicates the assignment is currently active.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from reddit_community_moderators.deleted_at. Nullable DateTime with date-time format. Null means active assignment.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_moderators.deleted_at. Nullable DateTime with
+     *   date-time format. Null means active assignment.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -97,8 +108,12 @@ export namespace IRedditCommunityModerator {
      *
      * Only the community owner has authority to change role assignments between owner and moderator levels.
      *
-     * @x-autobe-database-schema-property role
-     * @x-autobe-specification Direct mapping from reddit_community_moderators.role. Enum values: 'owner' or 'moderator'. Owner has highest authority including ability to add/remove moderators. Moderator can add other moderators but cannot remove owners or other moderators.
+         * @x-autobe-database-schema-property role
+         * @x-autobe-specification Direct mapping from
+         *   reddit_community_moderators.role. Enum values: 'owner' or
+         *   'moderator'. Owner has highest authority including ability to
+         *   add/remove moderators. Moderator can add other moderators but
+         *   cannot remove owners or other moderators.
      */
     role?: string | undefined;
   };
@@ -116,8 +131,9 @@ export namespace IRedditCommunityModerator {
      *
      * This is the primary key of the moderator assignment, uniquely identifying the relationship between a member and a community. Generated as a UUID when the moderator is added to the community.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from reddit_community_moderators.id. UUID format.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   reddit_community_moderators.id. UUID format.
      */
     id: string & tags.Format<"uuid">;
 
@@ -126,8 +142,9 @@ export namespace IRedditCommunityModerator {
      *
      * Indicates the authority level of the moderator within the community. The 'owner' role is held by the user who created the community and has the highest authority. The 'moderator' role is assigned by the owner or other moderators and has limited authority compared to the owner.
      *
-     * @x-autobe-database-schema-property role
-     * @x-autobe-specification Direct mapping from reddit_community_moderators.role. Values: 'owner' or 'moderator'.
+         * @x-autobe-database-schema-property role
+         * @x-autobe-specification Direct mapping from
+         *   reddit_community_moderators.role. Values: 'owner' or 'moderator'.
      */
     role: string;
 
@@ -136,8 +153,9 @@ export namespace IRedditCommunityModerator {
      *
      * Records when the member gained moderation authority over the community. For owners, this is typically the community creation time. For added moderators, this is when an existing moderator assigned them. Used for audit trails and sorting moderators by seniority.
      *
-     * @x-autobe-database-schema-property assigned_at
-     * @x-autobe-specification Direct mapping from reddit_community_moderators.assigned_at. ISO 8601 date-time format.
+         * @x-autobe-database-schema-property assigned_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_community_moderators.assigned_at. ISO 8601 date-time format.
      */
     assigned_at: string & tags.Format<"date-time">;
 
@@ -146,8 +164,10 @@ export namespace IRedditCommunityModerator {
      *
      * Contains basic public profile information about the moderator including their username, display name, and avatar. This relation is resolved through a JOIN to the reddit_community_members table and returns a summary representation suitable for list display.
      *
-     * @x-autobe-database-schema-property member
-     * @x-autobe-specification Relation mapping via JOIN from reddit_community_moderators.member to reddit_community_members. Returns IRedditCommunityMember.ISummary.
+         * @x-autobe-database-schema-property member
+         * @x-autobe-specification Relation mapping via JOIN from
+         *   reddit_community_moderators.member to reddit_community_members.
+         *   Returns IRedditCommunityMember.ISummary.
      */
     member: IRedditCommunityMember.ISummary;
   };
@@ -177,7 +197,8 @@ export namespace IRedditCommunityModerator {
      * Requesting a page beyond the available range returns an empty data array
      * with valid pagination metadata reflecting the actual totals.
      *
-     * @x-autobe-specification 1-indexed page number. Defaults to 1 if not provided.
+         * @x-autobe-specification 1-indexed page number. Defaults to 1 if not
+         *   provided.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };
@@ -195,8 +216,11 @@ export namespace IRedditCommunityModerator {
      *
      * References an existing member account who will be granted moderation authority over the community. The member must already exist in the system. Backend validates that no duplicate moderator assignment exists for this member-community pair due to the unique constraint.
      *
-     * @x-autobe-database-schema-property reddit_community_member_id
-     * @x-autobe-specification Direct mapping from reddit_community_moderators.reddit_community_member_id. FK to reddit_community_members.id. Backend validates member exists and no duplicate assignment exists for this member-community pair.
+         * @x-autobe-database-schema-property reddit_community_member_id
+         * @x-autobe-specification Direct mapping from
+         *   reddit_community_moderators.reddit_community_member_id. FK to
+         *   reddit_community_members.id. Backend validates member exists and no
+         *   duplicate assignment exists for this member-community pair.
      */
     memberId: string & tags.Format<"uuid">;
 
@@ -205,8 +229,12 @@ export namespace IRedditCommunityModerator {
      *
      * Determines the level of authority the member will have in the community. Owner is the highest authority with full control including the ability to add and remove moderators. Moderator has content moderation powers (delete posts/comments, ban users) but cannot remove other moderators or the owner.
      *
-     * @x-autobe-database-schema-property role
-     * @x-autobe-specification Direct mapping from reddit_community_moderators.role. Accepts 'owner' or 'moderator'. Owner has highest authority including managing other moderators. Moderator has content moderation powers but limited moderator management authority.
+         * @x-autobe-database-schema-property role
+         * @x-autobe-specification Direct mapping from
+         *   reddit_community_moderators.role. Accepts 'owner' or 'moderator'.
+         *   Owner has highest authority including managing other moderators.
+         *   Moderator has content moderation powers but limited moderator
+         *   management authority.
      */
     role: string;
   };

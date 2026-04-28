@@ -16,8 +16,9 @@ export type ITodoAppGuest = {
    *
    * A UUID assigned to each anonymous guest visitor when they first access the application. This identifier distinguishes the guest from all other visitors and is used to reference the guest in subsequent operations.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from todo_app_guests.id. UUID generated server-side on guest creation.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from todo_app_guests.id. UUID
+     *   generated server-side on guest creation.
    */
   id: string & tags.Format<"uuid">;
 
@@ -26,8 +27,9 @@ export type ITodoAppGuest = {
    *
    * Indicates when the anonymous visitor was first tracked by the system.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from todo_app_guests.created_at. Automatically set when the guest record is created.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from todo_app_guests.created_at.
+     *   Automatically set when the guest record is created.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -36,8 +38,9 @@ export type ITodoAppGuest = {
    *
    * Reflects the most recent modification to the guest record's metadata.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from todo_app_guests.updated_at. Updated automatically when the guest record is modified.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from todo_app_guests.updated_at.
+     *   Updated automatically when the guest record is modified.
    */
   updated_at: string & tags.Format<"date-time">;
 };
@@ -55,7 +58,11 @@ export namespace ITodoAppGuest {
      *
      * This URL identifies the page the guest was viewing at the moment the anonymous session was initialized. It is stored as-is from the client request and is used for basic session analytics and security auditing purposes.
      *
-     * @x-autobe-specification Direct mapping from request body href to todo_app_guest_sessions.href column. Empty string values are stored as-is in the database. This is one of two user-provided fields in the request body; all other session fields (id, ip, created_at, expired_at, todo_app_guest_id) are generated server-side.
+         * @x-autobe-specification Direct mapping from request body href to
+         *   todo_app_guest_sessions.href column. Empty string values are stored
+         *   as-is in the database. This is one of two user-provided fields in
+         *   the request body; all other session fields (id, ip, created_at,
+         *   expired_at, todo_app_guest_id) are generated server-side.
      */
     href: string;
 
@@ -64,7 +71,12 @@ export namespace ITodoAppGuest {
      *
      * An empty string value indicates that no referrer header was provided by the client, which may occur when the guest navigated directly to the application by typing the URL, using a bookmark, or when the referrer is suppressed by the browser for privacy reasons. This value is stored as-is for understanding guest traffic sources and entry points.
      *
-     * @x-autobe-specification Direct mapping from request body referrer to todo_app_guest_sessions.referrer column. An empty string indicates the absence of an HTTP referrer header. This is one of two user-provided fields in the request body; all other session fields (id, ip, created_at, expired_at, todo_app_guest_id) are generated server-side.
+         * @x-autobe-specification Direct mapping from request body referrer to
+         *   todo_app_guest_sessions.referrer column. An empty string indicates
+         *   the absence of an HTTP referrer header. This is one of two
+         *   user-provided fields in the request body; all other session fields
+         *   (id, ip, created_at, expired_at, todo_app_guest_id) are generated
+         *   server-side.
      */
     referrer: string;
   };
@@ -86,7 +98,13 @@ export namespace ITodoAppGuest {
      *
      * When the guest transitions to a member account by signing up, the guest record is permanently deleted and this identifier is no longer valid.
      *
-     * @x-autobe-specification The guest's UUID from `todo_app_guests.id`. Generated automatically by the database as the primary key when the guest record is first created during the `join` operation. The same UUID is embedded as the subject claim in the JWT access token, enabling the server to identify the guest on subsequent authenticated requests. When the guest transitions to a member account, this guest record and its UUID are permanently deleted.
+         * @x-autobe-specification The guest's UUID from `todo_app_guests.id`.
+         *   Generated automatically by the database as the primary key when the
+         *   guest record is first created during the `join` operation. The same
+         *   UUID is embedded as the subject claim in the JWT access token,
+         *   enabling the server to identify the guest on subsequent
+         *   authenticated requests. When the guest transitions to a member
+         *   account, this guest record and its UUID are permanently deleted.
      */
     id: string & tags.Format<"uuid">;
 
@@ -95,7 +113,12 @@ export namespace ITodoAppGuest {
      *
      * Set automatically when the guest record is first established in the `todo_app_guests` table during the `join` operation. This timestamp remains fixed for the entire lifetime of the guest identity and is not affected by session refreshes or renewals.
      *
-     * @x-autobe-specification The creation timestamp from `todo_app_guests.created_at`. Set automatically by the database (`@default(now())`) when the guest record is first created during the `join` operation. This timestamp remains unchanged for the entire lifetime of the guest identity and is read directly from the `todo_app_guests` record without any transformation.
+         * @x-autobe-specification The creation timestamp from
+         *   `todo_app_guests.created_at`. Set automatically by the database
+         *   (`@default(now())`) when the guest record is first created during
+         *   the `join` operation. This timestamp remains unchanged for the
+         *   entire lifetime of the guest identity and is read directly from the
+         *   `todo_app_guests` record without any transformation.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -104,14 +127,21 @@ export namespace ITodoAppGuest {
      *
      * Reflects the most recent modification time of the guest record in the `todo_app_guests` table. For guest records, this value typically matches the creation timestamp (`created_at`) since guest records are append-only and rarely modified during their lifetime.
      *
-     * @x-autobe-specification The last modification timestamp from `todo_app_guests.updated_at`. Set automatically by the database (`@updatedAt`) when the guest record is first created (matching `created_at` at that point) and updated whenever the guest record is modified by internal system processes. For guest records, this typically remains equal to `created_at` since guest records are rarely modified after creation.
+         * @x-autobe-specification The last modification timestamp from
+         *   `todo_app_guests.updated_at`. Set automatically by the database
+         *   (`@updatedAt`) when the guest record is first created (matching
+         *   `created_at` at that point) and updated whenever the guest record
+         *   is modified by internal system processes. For guest records, this
+         *   typically remains equal to `created_at` since guest records are
+         *   rarely modified after creation.
      */
     updated_at: string & tags.Format<"date-time">;
 
     /**
      * Authorization token.
      *
-     * @x-autobe-specification Authorization token comes from the session table.
+         * @x-autobe-specification Authorization token comes from the session
+         *   table.
      */
     token: IAuthorizationToken;
   };
@@ -129,8 +159,11 @@ export namespace ITodoAppGuest {
      *
      * This token corresponds to the session UUID stored in `todo_app_guest_sessions`. It is validated server-side by looking up the session record and checking that the session has not expired. Submit this token to obtain new authorization tokens without re-authentication.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from todo_app_guest_sessions.id. The refresh token value is the session UUID. Server looks up the session by matching refresh_token to the session id.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_guest_sessions.id. The refresh token value is the session
+         *   UUID. Server looks up the session by matching refresh_token to the
+         *   session id.
      */
     refresh_token: string & tags.Format<"uuid">;
   };
@@ -146,7 +179,9 @@ export namespace ITodoAppGuest {
      *
      * Records the entry point of the anonymous session for basic analytics and auditing purposes. This URL represents the page that initiated the guest registration process.
      *
-     * @x-autobe-specification Maps to todo_app_guest_sessions.href. Records the entry page URL the guest was accessing when the session was established.
+         * @x-autobe-specification Maps to todo_app_guest_sessions.href. Records
+         *   the entry page URL the guest was accessing when the session was
+         *   established.
      */
     href: string & tags.Format<"uri">;
 
@@ -155,7 +190,9 @@ export namespace ITodoAppGuest {
      *
      * Documents which external or internal page directed the guest to the application. An empty string indicates no referrer was provided by the browser or client.
      *
-     * @x-autobe-specification Maps to todo_app_guest_sessions.referrer. Records the HTTP referrer header indicating which page directed the guest to the application.
+         * @x-autobe-specification Maps to todo_app_guest_sessions.referrer.
+         *   Records the HTTP referrer header indicating which page directed the
+         *   guest to the application.
      */
     referrer: string & tags.Format<"uri">;
 
@@ -164,7 +201,9 @@ export namespace ITodoAppGuest {
      *
      * Used for basic security auditing and rate-limiting analysis. When omitted, the server automatically captures the connection's remote address.
      *
-     * @x-autobe-specification Maps to todo_app_guest_sessions.ip when provided. When omitted (null/undefined), the server captures the connection's remote IP address as fallback.
+         * @x-autobe-specification Maps to todo_app_guest_sessions.ip when
+         *   provided. When omitted (null/undefined), the server captures the
+         *   connection's remote IP address as fallback.
      */
     ip?: (string & tags.Format<"ipv4">) | undefined;
   };

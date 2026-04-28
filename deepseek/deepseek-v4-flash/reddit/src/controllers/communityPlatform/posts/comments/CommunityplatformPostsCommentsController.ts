@@ -21,9 +21,10 @@ export class CommunityplatformPostsCommentsController {
    * @param connection
    * @param postId UUID of the post whose comments are being retrieved. All returned comments belong to this post.
    * @param body Search criteria for listing comments. Includes sort mode (best/new/controversial), pagination parameters (page, limit), and optional parentCommentId for loading child replies to a specific comment instead of top-level comments.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query community_platform_comments table filtered by community_platform_post_id = postId.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query community_platform_comments table filtered
+     *   by community_platform_post_id = postId.
    *
    * Exclude soft-deleted comments (deleted_at IS NULL) unless they have child replies — in those cases return a placeholder indicating the comment was deleted but the thread is preserved.
    *
@@ -73,9 +74,16 @@ export class CommunityplatformPostsCommentsController {
    * @param connection
    * @param postId UUID of the parent post that the comment belongs to. Used to scope the comment within its parent post — the endpoint validates that the comment identified by commentId belongs to this post, returning 404 if mismatched.
    * @param commentId UUID of the comment to retrieve. Identifies the specific comment within the context of the parent post.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query the community_platform_comments table by commentId. Verify the comment exists and is not soft-deleted (deleted_at IS NULL) — return 404 if not found or deleted. Validate that the comment's community_platform_post_id matches the provided postId path parameter — return 404 if mismatched, indicating the comment does not belong to the specified post. Also verify the parent post exists and is not soft-deleted — return 404 if the post is not found or deleted.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query the community_platform_comments table by
+     *   commentId. Verify the comment exists and is not soft-deleted
+     *   (deleted_at IS NULL) — return 404 if not found or deleted. Validate
+     *   that the comment's community_platform_post_id matches the provided
+     *   postId path parameter — return 404 if mismatched, indicating the
+     *   comment does not belong to the specified post. Also verify the parent
+     *   post exists and is not soft-deleted — return 404 if the post is not
+     *   found or deleted.
    *
    * Join with community_platform_profiles (via community_platform_members → community_platform_profiles.member_id) to include the author's display_name and avatar_uri. The comment's community_platform_member_id links to community_platform_members.id, which joins 1:1 with community_platform_profiles.member_id.
    *

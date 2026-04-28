@@ -10,48 +10,59 @@ export type IErpHrmTaskHistory = {
   /**
    * Unique identifier of this task history entry.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from erp_hrm_task_histories.id. UUID primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from erp_hrm_task_histories.id.
+     *   UUID primary key.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * The task that underwent this status transition.
    *
-   * @x-autobe-database-schema-property erp_hrm_task_id
-   * @x-autobe-specification Direct mapping from erp_hrm_task_histories.erp_hrm_task_id. UUID reference to the task whose status was changed.
+     * @x-autobe-database-schema-property erp_hrm_task_id
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_task_histories.erp_hrm_task_id. UUID reference to the task
+     *   whose status was changed.
    */
   task_id: string & tags.Format<"uuid">;
 
   /**
    * The member who initiated this status transition.
    *
-   * @x-autobe-database-schema-property member
-   * @x-autobe-specification JOIN on erp_hrm_task_histories.erp_hrm_member_id → erp_hrm_members.id. Returns IErpHrmMember.ISummary with member's display name and email for identifying who made the status change.
+     * @x-autobe-database-schema-property member
+     * @x-autobe-specification JOIN on erp_hrm_task_histories.erp_hrm_member_id
+     *   → erp_hrm_members.id. Returns IErpHrmMember.ISummary with member's
+     *   display name and email for identifying who made the status change.
    */
   member: IErpHrmMember.ISummary;
 
   /**
    * The workflow status the task held before this transition.
    *
-   * @x-autobe-database-schema-property previous_status
-   * @x-autobe-specification Direct mapping from erp_hrm_task_histories.previous_status. String value representing the task's status before the change.
+     * @x-autobe-database-schema-property previous_status
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_task_histories.previous_status. String value representing the
+     *   task's status before the change.
    */
   previous_status: string;
 
   /**
    * The workflow status the task now holds after this transition.
    *
-   * @x-autobe-database-schema-property new_status
-   * @x-autobe-specification Direct mapping from erp_hrm_task_histories.new_status. String value representing the task's status after the change.
+     * @x-autobe-database-schema-property new_status
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_task_histories.new_status. String value representing the task's
+     *   status after the change.
    */
   new_status: string;
 
   /**
    * Timestamp when this status transition was recorded.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from erp_hrm_task_histories.created_at. Timestamptz timestamp when the status change occurred.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_task_histories.created_at. Timestamptz timestamp when the
+     *   status change occurred.
    */
   created_at: string & tags.Format<"date-time">;
 };
@@ -63,28 +74,36 @@ export namespace IErpHrmTaskHistory {
     /**
      * Start of date range filter - return records created on or after this timestamp.
      *
-     * @x-autobe-specification Date range filter: created_at >= createdAtFrom. Optional ISO 8601 timestamp. When provided, only return records where created_at is on or after this datetime.
+         * @x-autobe-specification Date range filter: created_at >=
+         *   createdAtFrom. Optional ISO 8601 timestamp. When provided, only
+         *   return records where created_at is on or after this datetime.
      */
     createdAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * End of date range filter - return records created on or before this timestamp.
      *
-     * @x-autobe-specification Date range filter: created_at <= createdAtTo. Optional ISO 8601 timestamp. When provided, only return records where created_at is on or before this datetime.
+         * @x-autobe-specification Date range filter: created_at <= createdAtTo.
+         *   Optional ISO 8601 timestamp. When provided, only return records
+         *   where created_at is on or before this datetime.
      */
     createdAtTo?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Filter to show only status changes made by a specific member.
      *
-     * @x-autobe-specification Filter by erp_hrm_member_id: only return history entries where the member who made the status change matches this ID. Optional UUID filter.
+         * @x-autobe-specification Filter by erp_hrm_member_id: only return
+         *   history entries where the member who made the status change matches
+         *   this ID. Optional UUID filter.
      */
     erpHrmMemberId?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Maximum number of task history records to return per page.
      *
-     * @x-autobe-specification Maximum number of records to return per page. Optional integer with max 100. Defaults to system default if not provided. Controls page size in pagination.
+         * @x-autobe-specification Maximum number of records to return per page.
+         *   Optional integer with max 100. Defaults to system default if not
+         *   provided. Controls page size in pagination.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -93,7 +112,9 @@ export namespace IErpHrmTaskHistory {
     /**
      * Page number for paginated results (1-indexed).
      *
-     * @x-autobe-specification 1-indexed page number for pagination. Optional integer with min 1. Defaults to 1 if not provided. Used with limit to calculate offset.
+         * @x-autobe-specification 1-indexed page number for pagination.
+         *   Optional integer with min 1. Defaults to 1 if not provided. Used
+         *   with limit to calculate offset.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
   };
@@ -105,40 +126,48 @@ export namespace IErpHrmTaskHistory {
     /**
      * Unique identifier of the task history entry.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from erp_hrm_task_histories.id (UUID primary key).
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from erp_hrm_task_histories.id
+         *   (UUID primary key).
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * The workflow status the task held before the status change.
      *
-     * @x-autobe-database-schema-property previous_status
-     * @x-autobe-specification Direct mapping from erp_hrm_task_histories.previous_status (string). Workflow status value before the change.
+         * @x-autobe-database-schema-property previous_status
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_task_histories.previous_status (string). Workflow status
+         *   value before the change.
      */
     previousStatus: string;
 
     /**
      * The workflow status the task now holds after the status change.
      *
-     * @x-autobe-database-schema-property new_status
-     * @x-autobe-specification Direct mapping from erp_hrm_task_histories.new_status (string). Workflow status value after the change.
+         * @x-autobe-database-schema-property new_status
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_task_histories.new_status (string). Workflow status value
+         *   after the change.
      */
     newStatus: string;
 
     /**
      * Timestamp when the status change occurred.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from erp_hrm_task_histories.created_at (timestamptz).
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_task_histories.created_at (timestamptz).
      */
     createdAt: string & tags.Format<"date-time">;
 
     /**
      * The member who initiated the status change.
      *
-     * @x-autobe-database-schema-property member
-     * @x-autobe-specification Join via erp_hrm_member_id FK to erp_hrm_members.id. Returns IErpHrmMember.ISummary with fields: id, displayName, avatar.
+         * @x-autobe-database-schema-property member
+         * @x-autobe-specification Join via erp_hrm_member_id FK to
+         *   erp_hrm_members.id. Returns IErpHrmMember.ISummary with fields: id,
+         *   displayName, avatar.
      */
     member: IErpHrmMember.ISummary;
   };

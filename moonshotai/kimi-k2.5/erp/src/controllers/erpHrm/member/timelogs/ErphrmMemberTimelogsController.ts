@@ -27,9 +27,10 @@ export class ErphrmMemberTimelogsController {
    *
    * @param connection
    * @param body Timelog creation data containing project association, time range, billable status, and optional description
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Create a new timelog recording a work session for the authenticated employee.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Create a new timelog recording a work session for
+     *   the authenticated employee.
    *
    * Validation Rules:
    * 1. Verify the authenticated user's organizationMemberId matches the request context (employees can only create timelogs for themselves).
@@ -122,9 +123,10 @@ export class ErphrmMemberTimelogsController {
    *
    * @param connection
    * @param body Search criteria including filters for date range, project, task, billable status, and pagination parameters
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query erp_hrm_timelogs table with comprehensive filtering and pagination.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query erp_hrm_timelogs table with comprehensive
+     *   filtering and pagination.
    *
    * **Authorization Logic:**
    * - Extract current user's organization_member_id from session
@@ -200,11 +202,11 @@ export class ErphrmMemberTimelogsController {
    *
    * @param connection
    * @param timelogId The unique identifier of the timelog to retrieve
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1. Path parameter timelogId validation:
-   *    - Validate that timelogId is a valid UUID format
-   *    - Return 400 if malformed UUID
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification 1. Path parameter timelogId validation: -
+     *   Validate that timelogId is a valid UUID format - Return 400 if
+     *   malformed UUID
    *
    * 2. Timelog retrieval:
    *    - Query erp_hrm_timelogs table by id
@@ -278,9 +280,9 @@ export class ErphrmMemberTimelogsController {
    * @param connection
    * @param timelogId UUID of the timelog to update
    * @param body Timelog update data containing modifiable fields
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation steps:
    *
    * 1. **Authorization Check**: Verify requester has permission to edit this timelog
    *    - Fetch the timelog by timelogId
@@ -350,9 +352,10 @@ export class ErphrmMemberTimelogsController {
    *
    * @param connection
    * @param timelogId UUID identifier of the timelog to delete (global scope)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement DELETE operation for erp_hrm_timelogs table by UUID identifier.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implement DELETE operation for erp_hrm_timelogs
+     *   table by UUID identifier.
    *
    * **Authorization Logic:**
    * 1. Extract authenticated organization member ID from JWT context

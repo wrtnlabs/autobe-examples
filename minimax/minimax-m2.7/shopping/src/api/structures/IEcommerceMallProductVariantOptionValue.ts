@@ -10,8 +10,10 @@ export type IEcommerceMallProductVariantOptionValue = {
    *
    * Examples include 'color', 'size', 'material', or any custom attribute identifier. Each key must be unique within a variant.
    *
-   * @x-autobe-database-schema-property key
-   * @x-autobe-specification Direct mapping from ecommerce_mall_product_variant_option_values.key. Examples: 'color', 'size', 'material'.
+     * @x-autobe-database-schema-property key
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_product_variant_option_values.key. Examples: 'color',
+     *   'size', 'material'.
    */
   key: string;
 
@@ -20,8 +22,10 @@ export type IEcommerceMallProductVariantOptionValue = {
    *
    * Examples include 'Red', 'Large', 'Cotton', or any corresponding attribute value. Paired with key to form complete option specification.
    *
-   * @x-autobe-database-schema-property value
-   * @x-autobe-specification Direct mapping from ecommerce_mall_product_variant_option_values.value. Examples: 'Red', 'Large', 'Cotton'.
+     * @x-autobe-database-schema-property value
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_product_variant_option_values.value. Examples: 'Red',
+     *   'Large', 'Cotton'.
    */
   value: string;
 };
@@ -41,8 +45,10 @@ export namespace IEcommerceMallProductVariantOptionValue {
      *
      * **Update behavior**: If omitted, the existing key value is preserved. If provided, the key must be unique within the same variant.
      *
-     * @x-autobe-database-schema-property key
-     * @x-autobe-specification Direct mapping to ecommerce_mall_product_variant_option_values.key column. Optional on update — only updated if provided.
+         * @x-autobe-database-schema-property key
+         * @x-autobe-specification Direct mapping to
+         *   ecommerce_mall_product_variant_option_values.key column. Optional
+         *   on update — only updated if provided.
      */
     key?: string | undefined;
 
@@ -53,8 +59,10 @@ export namespace IEcommerceMallProductVariantOptionValue {
      *
      * **Update behavior**: If omitted, the existing value is preserved. Can be changed independently of the key.
      *
-     * @x-autobe-database-schema-property value
-     * @x-autobe-specification Direct mapping to ecommerce_mall_product_variant_option_values.value column. Optional on update — only updated if provided.
+         * @x-autobe-database-schema-property value
+         * @x-autobe-specification Direct mapping to
+         *   ecommerce_mall_product_variant_option_values.value column. Optional
+         *   on update — only updated if provided.
      */
     value?: string | undefined;
   };
@@ -76,8 +84,11 @@ export namespace IEcommerceMallProductVariantOptionValue {
      *
      * **Constraints**: Maximum 255 characters. Must be unique per product variant.
      *
-     * @x-autobe-database-schema-property key
-     * @x-autobe-specification Direct mapping from ecommerce_mall_product_variant_option_values.key column. Non-nullable string. Unique constraint: must be unique per variant (enforced via upsert logic).
+         * @x-autobe-database-schema-property key
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_product_variant_option_values.key column.
+         *   Non-nullable string. Unique constraint: must be unique per variant
+         *   (enforced via upsert logic).
      */
     key: string;
 
@@ -88,8 +99,11 @@ export namespace IEcommerceMallProductVariantOptionValue {
      *
      * **Constraints**: Maximum 255 characters.
      *
-     * @x-autobe-database-schema-property value
-     * @x-autobe-specification Direct mapping from ecommerce_mall_product_variant_option_values.value column. Non-nullable string. No unique constraint; same value can appear under different keys.
+         * @x-autobe-database-schema-property value
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_product_variant_option_values.value column.
+         *   Non-nullable string. No unique constraint; same value can appear
+         *   under different keys.
      */
     value: string;
   };

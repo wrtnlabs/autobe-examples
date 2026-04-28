@@ -22,7 +22,10 @@ import { IMallPlatformOrder } from "../../../../../structures/IMallPlatformOrder
  * @param props.body Administrator intervention details indicating whether the full order or specific items should be forcibly cancelled.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor administrator
- * @x-autobe-specification Authorize the caller as an administrator with order intervention authority before loading or mutating any order data. Fetch the order by orderId and interpret the request body to determine whether the intervention targets the whole order or a subset of items.
+ * @x-autobe-specification Authorize the caller as an administrator with order
+ *   intervention authority before loading or mutating any order data. Fetch the
+ *   order by orderId and interpret the request body to determine whether the
+ *   intervention targets the whole order or a subset of items.
  *
  * Perform all work inside a single transaction. Validate that every targeted item belongs to the order and is eligible for administrative cancellation according to the current item state. Apply the cancellation to each targeted item, restore stock by creating positive inventory records for the corresponding product variants, and preserve the intervention outcome in the platform's snapshot/audit history mechanism so the prior state remains reconstructible.
  *

@@ -26,7 +26,9 @@ import { IPageICommunityPlatformModerationActionComment } from "../../../../../.
  * @param props.body Search criteria, filters, sorting, and pagination for moderation action comment targets
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Implement this operation as a community-scoped search endpoint over `community_platform_moderation_action_comments` constrained by a parent moderation action.
+ * @x-autobe-specification Implement this operation as a community-scoped search
+ *   endpoint over `community_platform_moderation_action_comments` constrained
+ *   by a parent moderation action.
  *
  * First, authenticate the caller as a member and load the caller's community moderation standing for the supplied `communityId`. Authorize only if the caller is the community owner or a member holding a moderator assignment in that same community. Do not grant access based on platform-wide admin identity alone, because no global moderation authority is defined.
  *
@@ -150,7 +152,9 @@ export namespace index {
  * @param props.moderationActionCommentId Target moderation action comment record's ID linked to the specified moderation action
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Implement a read-only detail query for the community_platform_moderation_action_comments table scoped through its parent moderation action and community.
+ * @x-autobe-specification Implement a read-only detail query for the
+ *   community_platform_moderation_action_comments table scoped through its
+ *   parent moderation action and community.
  *
  * 1. Authenticate the caller as a member identity. Reject guests and any unauthenticated access before database lookup.
  * 2. Resolve whether the caller holds community-local moderation authority for the target community, meaning owner or moderator standing in that community. Do not grant access based on platform admin status alone.

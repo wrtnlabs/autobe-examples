@@ -12,69 +12,81 @@ export type IShoppingMallShipment = {
   /**
    * Shipment identifier (UUID).
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Map shopping_mall_shipments.id -> IShoppingMallShipment.id. Return the UUID as-is.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Map shopping_mall_shipments.id ->
+     *   IShoppingMallShipment.id. Return the UUID as-is.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * The parent order this shipment belongs to (order summary view).
    *
-   * @x-autobe-database-schema-property order
-   * @x-autobe-specification Resolve shopping_mall_shipments.order (via shopping_mall_shipments.shopping_mall_order_id -> shopping_mall_orders.id) and map the joined shopping_mall_orders row to IShoppingMallOrder.ISummary.
+     * @x-autobe-database-schema-property order
+     * @x-autobe-specification Resolve shopping_mall_shipments.order (via
+     *   shopping_mall_shipments.shopping_mall_order_id ->
+     *   shopping_mall_orders.id) and map the joined shopping_mall_orders row to
+     *   IShoppingMallOrder.ISummary.
    */
   order: IShoppingMallOrder.ISummary;
 
   /**
    * Seller snapshot context identifier for this shipment.
    *
-   * @x-autobe-database-schema-property seller_snapshot_id
-   * @x-autobe-specification Map shopping_mall_shipments.seller_snapshot_id -> IShoppingMallShipment.sellerSnapshotId.
+     * @x-autobe-database-schema-property seller_snapshot_id
+     * @x-autobe-specification Map shopping_mall_shipments.seller_snapshot_id ->
+     *   IShoppingMallShipment.sellerSnapshotId.
    */
   sellerSnapshotId: string & tags.Format<"uuid">;
 
   /**
    * Current shipment status value.
    *
-   * @x-autobe-database-schema-property status
-   * @x-autobe-specification Map shopping_mall_shipments.status -> IShoppingMallShipment.status.
+     * @x-autobe-database-schema-property status
+     * @x-autobe-specification Map shopping_mall_shipments.status ->
+     *   IShoppingMallShipment.status.
    */
   status: string;
 
   /**
    * Order item line summaries included in this shipment.
    *
-   * @x-autobe-specification Compute `orderItems` by selecting from shopping_mall_order_items where shopping_mall_order_items.shopping_mall_shipment_id = shopping_mall_shipments.id, then map each row to IShoppingMallOrderItem.ISummary and return them as an array.
+     * @x-autobe-specification Compute `orderItems` by selecting from
+     *   shopping_mall_order_items where
+     *   shopping_mall_order_items.shopping_mall_shipment_id =
+     *   shopping_mall_shipments.id, then map each row to
+     *   IShoppingMallOrderItem.ISummary and return them as an array.
    */
   orderItems: IShoppingMallOrderItem.ISummary[];
 
   /**
    * Shipment-level carrier tracking derived from the seller confirmation record (null when no active confirmation exists).
    *
-   * @x-autobe-specification Compute `tracking` via left join to shopping_mall_shipment_confirmations on shopping_mall_shipment_confirmations.shopping_mall_shipment_id = shopping_mall_shipments.id. If an active (not-deleted) confirmation exists, map:
-   * - confirmation_type -> confirmationType
-   * - confirmed_at -> confirmedAt
-   * - tracking_url -> trackingUrl
-   * - tracking_number -> trackingNumber
-   * - carrier_name -> carrierName
-   * - note -> note
-   * If no active confirmation exists, return tracking = null.
+     * @x-autobe-specification Compute `tracking` via left join to
+     *   shopping_mall_shipment_confirmations on
+     *   shopping_mall_shipment_confirmations.shopping_mall_shipment_id =
+     *   shopping_mall_shipments.id. If an active (not-deleted) confirmation
+     *   exists, map: - confirmation_type -> confirmationType - confirmed_at ->
+     *   confirmedAt - tracking_url -> trackingUrl - tracking_number ->
+     *   trackingNumber - carrier_name -> carrierName - note -> note If no
+     *   active confirmation exists, return tracking = null.
    */
   tracking: IShoppingMallShipment.ITracking | null;
 
   /**
    * Creation timestamp of the shipment record.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Map shopping_mall_shipments.created_at -> IShoppingMallShipment.createdAt as an ISO 8601 date-time string.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Map shopping_mall_shipments.created_at ->
+     *   IShoppingMallShipment.createdAt as an ISO 8601 date-time string.
    */
   createdAt: string & tags.Format<"date-time">;
 
   /**
    * Last update timestamp of the shipment record.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Map shopping_mall_shipments.updated_at -> IShoppingMallShipment.updatedAt as an ISO 8601 date-time string.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Map shopping_mall_shipments.updated_at ->
+     *   IShoppingMallShipment.updatedAt as an ISO 8601 date-time string.
    */
   updatedAt: string & tags.Format<"date-time">;
 };
@@ -86,83 +98,108 @@ export namespace IShoppingMallShipment {
     /**
      * Unique identifier of the shipment record.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_shipments.id to DTO.id.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_shipments.id to DTO.id.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Parent order summary for this shipment.
      *
-     * @x-autobe-database-schema-property order
-     * @x-autobe-specification Resolve DTO.order as an IShoppingMallOrder.ISummary by joining shopping_mall_shipments.shopping_mall_order_id -> shopping_mall_orders.id, and projecting the IShoppingMallOrder.ISummary fields.
+         * @x-autobe-database-schema-property order
+         * @x-autobe-specification Resolve DTO.order as an
+         *   IShoppingMallOrder.ISummary by joining
+         *   shopping_mall_shipments.shopping_mall_order_id ->
+         *   shopping_mall_orders.id, and projecting the
+         *   IShoppingMallOrder.ISummary fields.
      */
     order: IShoppingMallOrder.ISummary;
 
     /**
      * Seller purchase-context snapshot identifier used to group fulfillment.
      *
-     * @x-autobe-database-schema-property seller_snapshot_id
-     * @x-autobe-specification Direct mapping from shopping_mall_shipments.seller_snapshot_id to DTO.sellerSnapshotId.
+         * @x-autobe-database-schema-property seller_snapshot_id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_shipments.seller_snapshot_id to DTO.sellerSnapshotId.
      */
     sellerSnapshotId: string & tags.Format<"uuid">;
 
     /**
      * Current shipment fulfillment status.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from shopping_mall_shipments.status to DTO.status.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_shipments.status to DTO.status.
      */
     status: string;
 
     /**
      * Latest seller-provided tracking URL for this shipment, or null if not confirmed yet.
      *
-     * @x-autobe-specification LEFT JOIN shopping_mall_shipment_confirmations for the shipment and select the latest non-deleted record. Map its tracking_url to DTO.trackingUrl. If none exists, set DTO.trackingUrl to null.
+         * @x-autobe-specification LEFT JOIN
+         *   shopping_mall_shipment_confirmations for the shipment and select
+         *   the latest non-deleted record. Map its tracking_url to
+         *   DTO.trackingUrl. If none exists, set DTO.trackingUrl to null.
      */
     trackingUrl: (string & tags.Format<"url">) | null;
 
     /**
      * Latest seller-provided tracking number for this shipment, or null if not confirmed yet.
      *
-     * @x-autobe-specification LEFT JOIN shopping_mall_shipment_confirmations for the shipment and select the latest non-deleted record. Map its tracking_number to DTO.trackingNumber. If none exists, set DTO.trackingNumber to null.
+         * @x-autobe-specification LEFT JOIN
+         *   shopping_mall_shipment_confirmations for the shipment and select
+         *   the latest non-deleted record. Map its tracking_number to
+         *   DTO.trackingNumber. If none exists, set DTO.trackingNumber to null.
      */
     trackingNumber: string | null;
 
     /**
      * Carrier name from the latest seller shipment confirmation, or null if not confirmed yet.
      *
-     * @x-autobe-specification LEFT JOIN shopping_mall_shipment_confirmations for the shipment and select the latest non-deleted record. Map its carrier_name to DTO.carrierName. If none exists, set DTO.carrierName to null.
+         * @x-autobe-specification LEFT JOIN
+         *   shopping_mall_shipment_confirmations for the shipment and select
+         *   the latest non-deleted record. Map its carrier_name to
+         *   DTO.carrierName. If none exists, set DTO.carrierName to null.
      */
     carrierName: string | null;
 
     /**
      * Type of the latest seller shipment confirmation, or null if not confirmed yet.
      *
-     * @x-autobe-specification LEFT JOIN shopping_mall_shipment_confirmations for the shipment and select the latest non-deleted record. Map its confirmation_type to DTO.confirmationType. If none exists, set DTO.confirmationType to null.
+         * @x-autobe-specification LEFT JOIN
+         *   shopping_mall_shipment_confirmations for the shipment and select
+         *   the latest non-deleted record. Map its confirmation_type to
+         *   DTO.confirmationType. If none exists, set DTO.confirmationType to
+         *   null.
      */
     confirmationType: string | null;
 
     /**
      * Timestamp when the latest seller shipment confirmation was recorded, or null if not confirmed yet.
      *
-     * @x-autobe-specification LEFT JOIN shopping_mall_shipment_confirmations for the shipment and select the latest non-deleted record. Map its confirmed_at to DTO.confirmedAt. If none exists, set DTO.confirmedAt to null.
+         * @x-autobe-specification LEFT JOIN
+         *   shopping_mall_shipment_confirmations for the shipment and select
+         *   the latest non-deleted record. Map its confirmed_at to
+         *   DTO.confirmedAt. If none exists, set DTO.confirmedAt to null.
      */
     confirmedAt: (string & tags.Format<"date-time">) | null;
 
     /**
      * Shipment record creation timestamp.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_shipments.created_at to DTO.createdAt.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_shipments.created_at to DTO.createdAt.
      */
     createdAt: string & tags.Format<"date-time">;
 
     /**
      * Soft-deletion timestamp of the shipment; null when not deleted.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from shopping_mall_shipments.deleted_at to DTO.deletedAt (nullable).
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_shipments.deleted_at to DTO.deletedAt (nullable).
      */
     deletedAt: (string & tags.Format<"date-time">) | null;
   };
@@ -174,50 +211,74 @@ export namespace IShoppingMallShipment {
     /**
      * Current workflow status of the shipment (driven by the shipment confirmation process).
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping to shopping_mall_shipments.status. If present in the request body, update shopping_mall_shipments.status for the loaded shipmentId.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping to
+         *   shopping_mall_shipments.status. If present in the request body,
+         *   update shopping_mall_shipments.status for the loaded shipmentId.
      */
     status?: string | undefined;
 
     /**
      * Type/classification of the seller’s fulfillment confirmation used to drive the shipment status transition.
      *
-     * @x-autobe-specification When any confirmation-related fields are provided, upsert the single shipment confirmation record for this shipment. Persist `confirmation_type` into the shipment confirmation’s confirmation_type field. If a status transition requires confirmation details and this field is missing, reject per service-layer validation.
+         * @x-autobe-specification When any confirmation-related fields are
+         *   provided, upsert the single shipment confirmation record for this
+         *   shipment. Persist `confirmation_type` into the shipment
+         *   confirmation’s confirmation_type field. If a status transition
+         *   requires confirmation details and this field is missing, reject per
+         *   service-layer validation.
      */
     confirmation_type?: string | undefined;
 
     /**
      * Timestamp when the seller confirmed the shipment fulfillment.
      *
-     * @x-autobe-specification When confirmation fields are being upserted, persist `confirmed_at` into the shipment confirmation record’s confirmed_at. If the requested status transition requires confirmation_time and this is missing, reject per service-layer validation.
+         * @x-autobe-specification When confirmation fields are being upserted,
+         *   persist `confirmed_at` into the shipment confirmation record’s
+         *   confirmed_at. If the requested status transition requires
+         *   confirmation_time and this is missing, reject per service-layer
+         *   validation.
      */
     confirmed_at?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Optional URL to the shipment tracking page provided by the seller.
      *
-     * @x-autobe-specification When confirmation fields are upserted and `tracking_url` is included, persist it into the shipment confirmation record. If `tracking_url` is omitted, do not overwrite an existing value; only set it when creating a new confirmation record.
+         * @x-autobe-specification When confirmation fields are upserted and
+         *   `tracking_url` is included, persist it into the shipment
+         *   confirmation record. If `tracking_url` is omitted, do not overwrite
+         *   an existing value; only set it when creating a new confirmation
+         *   record.
      */
     tracking_url?: (string & tags.Format<"url">) | null | undefined;
 
     /**
      * Optional carrier tracking number provided by the seller.
      *
-     * @x-autobe-specification When confirmation fields are upserted and `tracking_number` is included, persist it into the shipment confirmation record. If omitted, do not overwrite existing tracking_number unless creating a new confirmation record.
+         * @x-autobe-specification When confirmation fields are upserted and
+         *   `tracking_number` is included, persist it into the shipment
+         *   confirmation record. If omitted, do not overwrite existing
+         *   tracking_number unless creating a new confirmation record.
      */
     tracking_number?: string | null | undefined;
 
     /**
      * Optional name of the logistics carrier used for shipment tracking.
      *
-     * @x-autobe-specification When confirmation fields are upserted and `carrier_name` is included, persist it into the shipment confirmation record. If omitted, do not overwrite existing carrier_name unless creating a new confirmation record.
+         * @x-autobe-specification When confirmation fields are upserted and
+         *   `carrier_name` is included, persist it into the shipment
+         *   confirmation record. If omitted, do not overwrite existing
+         *   carrier_name unless creating a new confirmation record.
      */
     carrier_name?: string | null | undefined;
 
     /**
      * Optional seller note for fulfillment/dispute resolution context tied to this shipment confirmation.
      *
-     * @x-autobe-specification When confirmation fields are upserted and `note` is included, persist it into the shipment confirmation record. If omitted, do not overwrite an existing note unless creating a new confirmation record.
+         * @x-autobe-specification When confirmation fields are upserted and
+         *   `note` is included, persist it into the shipment confirmation
+         *   record. If omitted, do not overwrite an existing note unless
+         *   creating a new confirmation record.
      */
     note?: string | null | undefined;
   };
@@ -229,20 +290,26 @@ export namespace IShoppingMallShipment {
     /**
      * The id of the existing order that the newly created shipment will belong to.
      *
-     * @x-autobe-database-schema-property shopping_mall_order_id
-     * @x-autobe-specification Map request.shopping_mall_order_id to shopping_mall_shipments.shopping_mall_order_id when creating the shipment row. Use this value as the constraint when validating that all shopping_mall_order_item_ids belong to the same order.
+         * @x-autobe-database-schema-property shopping_mall_order_id
+         * @x-autobe-specification Map request.shopping_mall_order_id to
+         *   shopping_mall_shipments.shopping_mall_order_id when creating the
+         *   shipment row. Use this value as the constraint when validating that
+         *   all shopping_mall_order_item_ids belong to the same order.
      */
     shopping_mall_order_id: string & tags.Format<"uuid">;
 
     /**
      * The list of order item ids (within the given order) that will be grouped into the new shipment.
      *
-     * @x-autobe-database-schema-property shopping_mall_order_id
-     * @x-autobe-specification Use request.shopping_mall_order_item_ids to:
-     * - Load shopping_mall_order_items
-     * - Validate each item exists and shopping_mall_order_items.shopping_mall_order_id == request.shopping_mall_order_id
-     * - Derive seller_snapshot_id from the selected items and require all selected items to share the same seller_snapshot_id
-     * After the shipment row is created, bulk update shopping_mall_order_items.shopping_mall_shipment_id for the selected items to the new shipment id.
+         * @x-autobe-database-schema-property shopping_mall_order_id
+         * @x-autobe-specification Use request.shopping_mall_order_item_ids to:
+         *   - Load shopping_mall_order_items - Validate each item exists and
+         *   shopping_mall_order_items.shopping_mall_order_id ==
+         *   request.shopping_mall_order_id - Derive seller_snapshot_id from the
+         *   selected items and require all selected items to share the same
+         *   seller_snapshot_id After the shipment row is created, bulk update
+         *   shopping_mall_order_items.shopping_mall_shipment_id for the
+         *   selected items to the new shipment id.
      */
     shopping_mall_order_item_ids: (string & tags.Format<"uuid">)[] &
       tags.MinItems<1>;
@@ -250,15 +317,17 @@ export namespace IShoppingMallShipment {
     /**
      * Optional seller-provided shipment confirmation/tracking details used to initialize the shipment confirmation record for fulfillment transitions and customer tracking.
      *
-     * @x-autobe-specification If request.shipment_confirmation is null, do not create shopping_mall_shipment_confirmations.
-     * If non-null, create a shopping_mall_shipment_confirmations record bound to the newly created shipment with:
-     * - shopping_mall_shipment_id = newly created shipment id
-     * - confirmation_type = shipment_confirmation.confirmation_type
-     * - confirmed_at = shipment_confirmation.confirmed_at
-     * - tracking_url = shipment_confirmation.tracking_url
-     * - tracking_number = shipment_confirmation.tracking_number
-     * - carrier_name = shipment_confirmation.carrier_name
-     * - note = shipment_confirmation.note
+         * @x-autobe-specification If request.shipment_confirmation is null, do
+         *   not create shopping_mall_shipment_confirmations. If non-null,
+         *   create a shopping_mall_shipment_confirmations record bound to the
+         *   newly created shipment with: - shopping_mall_shipment_id = newly
+         *   created shipment id - confirmation_type =
+         *   shipment_confirmation.confirmation_type - confirmed_at =
+         *   shipment_confirmation.confirmed_at - tracking_url =
+         *   shipment_confirmation.tracking_url - tracking_number =
+         *   shipment_confirmation.tracking_number - carrier_name =
+         *   shipment_confirmation.carrier_name - note =
+         *   shipment_confirmation.note
      */
     shipment_confirmation: IShoppingMallShipmentConfirmation.ICreate | null;
   };
@@ -270,14 +339,18 @@ export namespace IShoppingMallShipment {
     /**
      * 1-indexed page number to view (must be >= 1).
      *
-     * @x-autobe-specification Use as the 1-indexed page number for the shipments query. Validate page >= 1. Convert to SQL offset via offset = (page - 1) * limit.
+         * @x-autobe-specification Use as the 1-indexed page number for the
+         *   shipments query. Validate page >= 1. Convert to SQL offset via
+         *   offset = (page - 1) * limit.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of shipment summary records to return per page (1..100).
      *
-     * @x-autobe-specification Use as the maximum number of shipment summary rows to return per page. Validate 1 <= limit <= 100. Apply as SQL LIMIT limit.
+         * @x-autobe-specification Use as the maximum number of shipment summary
+         *   rows to return per page. Validate 1 <= limit <= 100. Apply as SQL
+         *   LIMIT limit.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -286,31 +359,45 @@ export namespace IShoppingMallShipment {
     /**
      * Sorting instruction for the shipments list (maps to ORDER BY on allowed shipment fields).
      *
-     * @x-autobe-specification Interpret sort string to build an ORDER BY clause on allowed shipment fields (e.g., created_at, updated_at, status mapped to their corresponding shopping_mall_shipments columns). Reject unsupported sort keys/directions. If sort is omitted, use a stable default ordering (implementation-defined, typically by created_at).
+         * @x-autobe-specification Interpret sort string to build an ORDER BY
+         *   clause on allowed shipment fields (e.g., created_at, updated_at,
+         *   status mapped to their corresponding shopping_mall_shipments
+         *   columns). Reject unsupported sort keys/directions. If sort is
+         *   omitted, use a stable default ordering (implementation-defined,
+         *   typically by created_at).
      */
     sort?: string | undefined;
 
     /**
      * Parent order identifier to restrict shipments to a single order.
      *
-     * @x-autobe-database-schema-property shopping_mall_order_id
-     * @x-autobe-specification If provided, add condition shopping_mall_shipments.shopping_mall_order_id = :shopping_mall_order_id. Validate UUID format. Combine with other provided filters using AND semantics.
+         * @x-autobe-database-schema-property shopping_mall_order_id
+         * @x-autobe-specification If provided, add condition
+         *   shopping_mall_shipments.shopping_mall_order_id =
+         *   :shopping_mall_order_id. Validate UUID format. Combine with other
+         *   provided filters using AND semantics.
      */
     shopping_mall_order_id?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Current shipment status to filter results (matches shopping_mall_shipments.status).
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification If provided, add condition shopping_mall_shipments.status = :status. Validate against the domain/validation rules for allowed shipment statuses. Combine with other provided filters using AND semantics.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification If provided, add condition
+         *   shopping_mall_shipments.status = :status. Validate against the
+         *   domain/validation rules for allowed shipment statuses. Combine with
+         *   other provided filters using AND semantics.
      */
     status?: string | undefined;
 
     /**
      * Seller grouping snapshot identifier to restrict shipments to a specific seller context within an order.
      *
-     * @x-autobe-database-schema-property seller_snapshot_id
-     * @x-autobe-specification If provided, add condition shopping_mall_shipments.seller_snapshot_id = :seller_snapshot_id. Validate UUID format. Combine with other provided filters using AND semantics.
+         * @x-autobe-database-schema-property seller_snapshot_id
+         * @x-autobe-specification If provided, add condition
+         *   shopping_mall_shipments.seller_snapshot_id = :seller_snapshot_id.
+         *   Validate UUID format. Combine with other provided filters using AND
+         *   semantics.
      */
     seller_snapshot_id?: (string & tags.Format<"uuid">) | undefined;
   };
@@ -322,42 +409,57 @@ export namespace IShoppingMallShipment {
     /**
      * Confirmation classification/type for the seller’s shipment confirmation.
      *
-     * @x-autobe-specification Map to shopping_mall_shipment_confirmations.confirmation_type from the active (non-deleted) confirmation row.
+         * @x-autobe-specification Map to
+         *   shopping_mall_shipment_confirmations.confirmation_type from the
+         *   active (non-deleted) confirmation row.
      */
     confirmationType: null;
 
     /**
      * Timestamp when the shipment confirmation became effective (ISO 8601 date-time).
      *
-     * @x-autobe-specification Format shopping_mall_shipment_confirmations.confirmed_at as ISO 8601 date-time string.
+         * @x-autobe-specification Format
+         *   shopping_mall_shipment_confirmations.confirmed_at as ISO 8601
+         *   date-time string.
      */
     confirmedAt: null;
 
     /**
      * Carrier tracking URL (nullable).
      *
-     * @x-autobe-specification If active confirmation exists: map shopping_mall_shipment_confirmations.tracking_url (nullable) to trackingUrl. Otherwise parent sets the whole tracking field to null.
+         * @x-autobe-specification If active confirmation exists: map
+         *   shopping_mall_shipment_confirmations.tracking_url (nullable) to
+         *   trackingUrl. Otherwise parent sets the whole tracking field to
+         *   null.
      */
     trackingUrl: null | null;
 
     /**
      * Carrier tracking number (nullable).
      *
-     * @x-autobe-specification If active confirmation exists: map shopping_mall_shipment_confirmations.tracking_number (nullable) to trackingNumber. Otherwise parent sets the whole tracking field to null.
+         * @x-autobe-specification If active confirmation exists: map
+         *   shopping_mall_shipment_confirmations.tracking_number (nullable) to
+         *   trackingNumber. Otherwise parent sets the whole tracking field to
+         *   null.
      */
     trackingNumber: null | null;
 
     /**
      * Carrier name (nullable).
      *
-     * @x-autobe-specification If active confirmation exists: map shopping_mall_shipment_confirmations.carrier_name (nullable) to carrierName. Otherwise parent sets the whole tracking field to null.
+         * @x-autobe-specification If active confirmation exists: map
+         *   shopping_mall_shipment_confirmations.carrier_name (nullable) to
+         *   carrierName. Otherwise parent sets the whole tracking field to
+         *   null.
      */
     carrierName: null | null;
 
     /**
      * Optional seller-provided note (nullable).
      *
-     * @x-autobe-specification If active confirmation exists: map shopping_mall_shipment_confirmations.note (nullable) to note. Otherwise parent sets the whole tracking field to null.
+         * @x-autobe-specification If active confirmation exists: map
+         *   shopping_mall_shipment_confirmations.note (nullable) to note.
+         *   Otherwise parent sets the whole tracking field to null.
      */
     note: null | null;
   };

@@ -32,7 +32,8 @@ import { IShoppingMallCart } from "../../../../../../structures/IShoppingMallCar
  * @param props.body Refresh criteria identifying which cart should be re-validated for inventory warnings. The server recomputes warnings and unavailability indicators from current variant inventory state.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification 1) Input parsing: Read refresh request fields to identify the target cart (e.g., cartId). Validate that cartId is a UUID.
+ * @x-autobe-specification 1) Input parsing: Read refresh request fields to
+ *   identify the target cart (e.g., cartId). Validate that cartId is a UUID.
  *
  * 2) Authorization & ownership: Verify the authenticated member owns shopping_mall_carts.id == cartId.
  *

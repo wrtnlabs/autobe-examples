@@ -43,8 +43,12 @@ export namespace IEcommerceMallCancellationRequest {
      *
      * Must reference an existing order item with status 'paid' that belongs to an order placed by the authenticated customer. Each order item can have only one active cancellation request at a time.
      *
-     * @x-autobe-database-schema-property ecommerce_mall_order_item_id
-     * @x-autobe-specification Direct mapping from ecommerce_mall_cancellation_requests.ecommerce_mall_order_item_id. UUID of the order item to cancel. Validated against order items table to ensure item exists and belongs to an order placed by the authenticated customer.
+         * @x-autobe-database-schema-property ecommerce_mall_order_item_id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_cancellation_requests.ecommerce_mall_order_item_id.
+         *   UUID of the order item to cancel. Validated against order items
+         *   table to ensure item exists and belongs to an order placed by the
+         *   authenticated customer.
      */
     order_item_id: string & tags.Format<"uuid">;
 
@@ -53,8 +57,10 @@ export namespace IEcommerceMallCancellationRequest {
      *
      * Required field. Must be a non-empty string explaining why the order item should be cancelled (e.g., changed mind, wrong item, delivery issue).
      *
-     * @x-autobe-database-schema-property reason
-     * @x-autobe-specification Direct mapping from ecommerce_mall_cancellation_requests.reason. Customer-provided reason for cancellation (non-empty string).
+         * @x-autobe-database-schema-property reason
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_cancellation_requests.reason. Customer-provided
+         *   reason for cancellation (non-empty string).
      */
     reason: string & tags.MinLength<1>;
   };
@@ -78,8 +84,9 @@ export namespace IEcommerceMallCancellationRequest {
     /**
      * Unique identifier for this cancellation request.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_mall_cancellation_requests.id. UUID primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_cancellation_requests.id. UUID primary key.
      */
     id: string & tags.Format<"uuid">;
 
@@ -88,8 +95,11 @@ export namespace IEcommerceMallCancellationRequest {
      *
      * This required field captures the customer's justification for requesting cancellation of the order item. Examples include: changed mind, wrong item received, delivery issue, product damaged. The reason is visible to both customers (for their own reference) and sellers (for approval decisions).
      *
-     * @x-autobe-database-schema-property reason
-     * @x-autobe-specification Direct mapping from ecommerce_mall_cancellation_requests.reason. Required customer-provided field explaining why the cancellation is requested.
+         * @x-autobe-database-schema-property reason
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_cancellation_requests.reason. Required
+         *   customer-provided field explaining why the cancellation is
+         *   requested.
      */
     reason: string;
 
@@ -104,8 +114,10 @@ export namespace IEcommerceMallCancellationRequest {
      *
      * When the status changes, the corresponding order item status is updated accordingly.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from ecommerce_mall_cancellation_requests.status. Allowed values: pending, approved, rejected.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_cancellation_requests.status. Allowed values:
+         *   pending, approved, rejected.
      */
     status: string;
 
@@ -114,8 +126,10 @@ export namespace IEcommerceMallCancellationRequest {
      *
      * This immutable timestamp marks the beginning of the cancellation request lifecycle. It is used for sorting requests by date and for tracking how long requests have been pending.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_cancellation_requests.created_at. Timestamp in ISO 8601 format with timezone.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_cancellation_requests.created_at. Timestamp in ISO
+         *   8601 format with timezone.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -124,8 +138,10 @@ export namespace IEcommerceMallCancellationRequest {
      *
      * Updated when the seller responds (approves or rejects) or when any other modification occurs. Useful for tracking request activity and response times.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_cancellation_requests.updated_at. Timestamp in ISO 8601 format with timezone.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_cancellation_requests.updated_at. Timestamp in ISO
+         *   8601 format with timezone.
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -134,8 +150,12 @@ export namespace IEcommerceMallCancellationRequest {
      *
      * This reference includes the product variant information (name, SKU, price), quantity, and current status of the item that the customer requested to cancel. The order item is the core entity that this cancellation request applies to.
      *
-     * @x-autobe-database-schema-property item
-     * @x-autobe-specification Join from ecommerce_mall_cancellation_requests.ecommerce_mall_order_item_id to ecommerce_mall_order_items.id. Returns IEcommerceMallOrderItem.ISummary with product details, pricing, and quantity.
+         * @x-autobe-database-schema-property item
+         * @x-autobe-specification Join from
+         *   ecommerce_mall_cancellation_requests.ecommerce_mall_order_item_id
+         *   to ecommerce_mall_order_items.id. Returns
+         *   IEcommerceMallOrderItem.ISummary with product details, pricing, and
+         *   quantity.
      */
     item: IEcommerceMallOrderItem.ISummary;
 
@@ -144,8 +164,11 @@ export namespace IEcommerceMallCancellationRequest {
      *
      * This reference provides context about the full order, including the customer who placed it, the order number, and the total order value. Useful for display in order history views and for understanding the broader transaction context.
      *
-     * @x-autobe-database-schema-property order
-     * @x-autobe-specification Join from ecommerce_mall_cancellation_requests.ecommerce_mall_order_id to ecommerce_mall_orders.id. Returns IEcommerceMallOrder.ISummary with customer reference and total order details.
+         * @x-autobe-database-schema-property order
+         * @x-autobe-specification Join from
+         *   ecommerce_mall_cancellation_requests.ecommerce_mall_order_id to
+         *   ecommerce_mall_orders.id. Returns IEcommerceMallOrder.ISummary with
+         *   customer reference and total order details.
      */
     order: IEcommerceMallOrder.ISummary;
 
@@ -154,8 +177,11 @@ export namespace IEcommerceMallCancellationRequest {
      *
      * This reference includes the seller's display name and approval status. The seller's dashboard displays pending cancellation requests for their order items, and this entity reference identifies which seller must approve or reject the request.
      *
-     * @x-autobe-database-schema-property seller
-     * @x-autobe-specification Join from ecommerce_mall_cancellation_requests.ecommerce_mall_seller_id to ecommerce_mall_sellers.id. Returns IEcommerceMallSeller.ISummary with seller identity and approval status.
+         * @x-autobe-database-schema-property seller
+         * @x-autobe-specification Join from
+         *   ecommerce_mall_cancellation_requests.ecommerce_mall_seller_id to
+         *   ecommerce_mall_sellers.id. Returns IEcommerceMallSeller.ISummary
+         *   with seller identity and approval status.
      */
     seller: IEcommerceMallSeller.ISummary;
   };
@@ -198,7 +224,9 @@ export namespace IEcommerceMallCancellationRequest {
      *
      * Restricts results to cancellation requests with the specified status value.
      *
-     * @x-autobe-specification Filter by cancellation request status. Valid values: pending, approved, rejected. When provided, only return cancellation requests matching the specified status.
+         * @x-autobe-specification Filter by cancellation request status. Valid
+         *   values: pending, approved, rejected. When provided, only return
+         *   cancellation requests matching the specified status.
      */
     status?: string | undefined;
 
@@ -207,7 +235,9 @@ export namespace IEcommerceMallCancellationRequest {
      *
      * Restricts results to cancellation requests associated with the specified order.
      *
-     * @x-autobe-specification Filter by order UUID. Matches ecommerce_mall_order_id field in cancellation requests table. Use ISO 8601 UUID format (e.g., 550e8400-e29b-41d4-a716-446655440000).
+         * @x-autobe-specification Filter by order UUID. Matches
+         *   ecommerce_mall_order_id field in cancellation requests table. Use
+         *   ISO 8601 UUID format (e.g., 550e8400-e29b-41d4-a716-446655440000).
      */
     order_id?: (string & tags.Format<"uuid">) | undefined;
 
@@ -216,7 +246,9 @@ export namespace IEcommerceMallCancellationRequest {
      *
      * Includes only cancellation requests created after or on the specified date-time.
      *
-     * @x-autobe-specification Filter cancellation requests created after this timestamp. Matches created_at >= after_date. Use ISO 8601 datetime format with timezone (e.g., 2024-01-15T10:30:00Z).
+         * @x-autobe-specification Filter cancellation requests created after
+         *   this timestamp. Matches created_at >= after_date. Use ISO 8601
+         *   datetime format with timezone (e.g., 2024-01-15T10:30:00Z).
      */
     after_date?: (string & tags.Format<"date-time">) | undefined;
 
@@ -225,7 +257,9 @@ export namespace IEcommerceMallCancellationRequest {
      *
      * Includes only cancellation requests created on or before the specified date-time.
      *
-     * @x-autobe-specification Filter cancellation requests created before or on this timestamp. Matches created_at <= before_date. Use ISO 8601 datetime format with timezone (e.g., 2024-01-15T10:30:00Z).
+         * @x-autobe-specification Filter cancellation requests created before
+         *   or on this timestamp. Matches created_at <= before_date. Use ISO
+         *   8601 datetime format with timezone (e.g., 2024-01-15T10:30:00Z).
      */
     before_date?: (string & tags.Format<"date-time">) | undefined;
 
@@ -234,7 +268,10 @@ export namespace IEcommerceMallCancellationRequest {
      *
      * Use the next_cursor value from the previous response to retrieve the next page of results. Omit or set to null for the first page.
      *
-     * @x-autobe-specification Cursor for pagination. Use the next_cursor value from the previous response to fetch the next page. Null or undefined for first page. ISO 8601 datetime format (created_at timestamp).
+         * @x-autobe-specification Cursor for pagination. Use the next_cursor
+         *   value from the previous response to fetch the next page. Null or
+         *   undefined for first page. ISO 8601 datetime format (created_at
+         *   timestamp).
      */
     cursor?: (string & tags.Format<"date-time">) | null | undefined;
 
@@ -243,7 +280,8 @@ export namespace IEcommerceMallCancellationRequest {
      *
      * Limits the number of cancellation requests returned in a single page. Must be between 1 and 100. Defaults to 20 if not provided.
      *
-     * @x-autobe-specification Maximum number of results per page. Range: 1-100. Default: 20. Controls the page size for pagination.
+         * @x-autobe-specification Maximum number of results per page. Range:
+         *   1-100. Default: 20. Controls the page size for pagination.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -254,7 +292,9 @@ export namespace IEcommerceMallCancellationRequest {
      *
      * Determines the order of returned cancellation requests. Valid values: created_at (default, newest first), status, reason. Use '-' prefix for descending order.
      *
-     * @x-autobe-specification Field to sort results by. Valid values: created_at (default, newest first), status, reason. Prefix with '-' for descending order (e.g., -created_at).
+         * @x-autobe-specification Field to sort results by. Valid values:
+         *   created_at (default, newest first), status, reason. Prefix with '-'
+         *   for descending order (e.g., -created_at).
      */
     sort?: string | undefined;
 
@@ -263,7 +303,9 @@ export namespace IEcommerceMallCancellationRequest {
      *
      * Specifies which page of results to return (1-indexed). Use for offset-based pagination. If omitted, null, or undefined, defaults to page 1. Requesting a page beyond available range returns empty data with valid pagination metadata.
      *
-     * @x-autobe-specification Target page number (1-indexed). Use for offset-based pagination as alternative to cursor-based pagination. Defaults to 1 if not provided. Ignored when cursor is provided.
+         * @x-autobe-specification Target page number (1-indexed). Use for
+         *   offset-based pagination as alternative to cursor-based pagination.
+         *   Defaults to 1 if not provided. Ignored when cursor is provided.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };

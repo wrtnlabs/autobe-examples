@@ -21,9 +21,11 @@ export class MallplatformSellerProductsVariantsController {
    * @param connection
    * @param productId Identifier of the product that will own the new variant.
    * @param body Product variant creation data, including SKU code, option values, and optional price override.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Load the target product by productId and verify that it exists. Confirm the authenticated seller owns the product and is allowed to modify it.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Load the target product by productId and verify
+     *   that it exists. Confirm the authenticated seller owns the product and
+     *   is allowed to modify it.
    *
    * Validate the request payload against the product variant rules. The SKU code is required and must be globally unique. Option values must describe the variant combination, and any optional price override must be a valid catalog price. Do not accept client-provided identifiers, owner fields, timestamps, or stock totals.
    *
@@ -64,9 +66,12 @@ export class MallplatformSellerProductsVariantsController {
    * @param productId The identifier of the product that scopes the variant being updated.
    * @param variantId The identifier of the variant within the specified product.
    * @param body The editable product variant fields to apply to the specified variant. This body does not include path identifiers.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Fetch the product by productId and confirm it exists. Then fetch the variant by variantId and verify it belongs to that product. Confirm the authenticated seller owns the product and has permission to edit it.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Fetch the product by productId and confirm it
+     *   exists. Then fetch the variant by variantId and verify it belongs to
+     *   that product. Confirm the authenticated seller owns the product and has
+     *   permission to edit it.
    *
    * Validate the update payload against product variant rules. Apply only mutable fields: SKU code, option values, and optional price override. Do not allow reassignment to a different product or modification of immutable identifiers.
    *
@@ -113,9 +118,11 @@ export class MallplatformSellerProductsVariantsController {
    * @param connection
    * @param productId The identifier of the parent product that owns the variant (UUID scope).
    * @param variantId The identifier of the variant to delete within the specified product (UUID scope).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Verify that the product exists and that the variant belongs to the product before attempting deletion. Enforce seller ownership or equivalent product-management authorization.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Verify that the product exists and that the
+     *   variant belongs to the product before attempting deletion. Enforce
+     *   seller ownership or equivalent product-management authorization.
    *
    * Check for blocking dependencies on the target variant: any order items in paid or shipped status, any pending cancellation requests, and any pending refund requests. If any blocking dependency exists, reject the operation with a conflict-style error and leave all rows unchanged.
    *

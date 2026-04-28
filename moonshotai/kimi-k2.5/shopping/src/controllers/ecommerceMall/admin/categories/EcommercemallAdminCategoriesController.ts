@@ -24,9 +24,11 @@ export class EcommercemallAdminCategoriesController {
    *
    * @param connection
    * @param body Category creation data including name, optional description, and optional parent category
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Validate the requesting user has administrator role. Validate the request body contains a non-empty name field and optional description and parentId fields.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Validate the requesting user has administrator
+     *   role. Validate the request body contains a non-empty name field and
+     *   optional description and parentId fields.
    *
    * If parentId is provided:
    * - Verify the parent category exists and is not deleted (deleted_at is null)
@@ -86,9 +88,11 @@ export class EcommercemallAdminCategoriesController {
    * @param connection
    * @param categoryId Unique identifier of the category to update
    * @param body Category update data with name and optional description
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Validate the administrator's authorization to modify categories. Check that categoryId exists in ecommerce_mall_categories table.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Validate the administrator's authorization to
+     *   modify categories. Check that categoryId exists in
+     *   ecommerce_mall_categories table.
    *
    * Validate IUpdate request body fields:
    * - name: required, non-empty string, unique across all categories (case-insensitive check)
@@ -135,9 +139,10 @@ export class EcommercemallAdminCategoriesController {
    *
    * @param connection
    * @param categoryId The UUID that uniquely identifies the category to delete
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification 1. Validate that the caller has administrator privileges.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification 1. Validate that the caller has administrator
+     *   privileges.
    *
    * 2. Find the category by categoryId from the ecommerce_mall_categories table.
    *

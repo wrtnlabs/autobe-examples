@@ -24,9 +24,18 @@ export class CommunityplatformAuthMemberController {
    *
    * @param connection
    * @param body Member registration payload for creating a new authenticated account.
-   * @x-autobe-authorization-type join
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement member registration by validating the incoming join payload against uniqueness and account lifecycle rules before any write occurs. Check community_platform_members for an existing non-deleted or still-reserved account with the same email, because the table enforces unique email identity and the requirements define registration rejection for duplicate account information. Create a new member row with a new UUID primary key, a generated unique code, the provided email, a securely hashed password stored in password_hash, email_verified initialized to false, status initialized to an active registration state, last_signed_in_at null, and current timestamps.
+     * @x-autobe-authorization-type join
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implement member registration by validating the
+     *   incoming join payload against uniqueness and account lifecycle rules
+     *   before any write occurs. Check community_platform_members for an
+     *   existing non-deleted or still-reserved account with the same email,
+     *   because the table enforces unique email identity and the requirements
+     *   define registration rejection for duplicate account information. Create
+     *   a new member row with a new UUID primary key, a generated unique code,
+     *   the provided email, a securely hashed password stored in password_hash,
+     *   email_verified initialized to false, status initialized to an active
+     *   registration state, last_signed_in_at null, and current timestamps.
    *
    * Within the same transaction, create an initial community_platform_member_email_verifications row for the new member using a unique verification token, status pending, created_at now, expired_at based on the platform verification lifetime, and null values for verified_at and invalidated_at. After transaction commit, issue JWT access and refresh tokens and create a community_platform_member_sessions record containing the new session id, community_platform_member_id, request ip, href, referrer, created_at, and expired_at aligned with refresh-session lifetime.
    *
@@ -66,9 +75,16 @@ export class CommunityplatformAuthMemberController {
    *
    * @param connection
    * @param body Member credential payload for authenticating an existing account.
-   * @x-autobe-authorization-type login
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement member login by locating the target account in community_platform_members using the supported login identifier from the loaded schema, which is email. Exclude rows in unusable lifecycle states according to business rules, such as deleted or suspended status when those states block sign-in. Verify the supplied password against password_hash using the platform password hashing strategy. On success, update last_signed_in_at to the current timestamp.
+     * @x-autobe-authorization-type login
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implement member login by locating the target
+     *   account in community_platform_members using the supported login
+     *   identifier from the loaded schema, which is email. Exclude rows in
+     *   unusable lifecycle states according to business rules, such as deleted
+     *   or suspended status when those states block sign-in. Verify the
+     *   supplied password against password_hash using the platform password
+     *   hashing strategy. On success, update last_signed_in_at to the current
+     *   timestamp.
    *
    * Create a new community_platform_member_sessions record to represent the newly issued authenticated session. Persist the new session with a generated id, the member foreign key, request-origin metadata ip, href, referrer, created_at now, and expired_at set to the refresh lifetime. Then issue a fresh JWT access token and refresh token bound to the session and member identity. The response must use ICommunityPlatformMember.IAuthorized exactly.
    *
@@ -108,9 +124,17 @@ export class CommunityplatformAuthMemberController {
    *
    * @param connection
    * @param body Refresh-token payload for renewing an existing member authorization session.
-   * @x-autobe-authorization-type refresh
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement token refresh by validating the incoming refresh token payload against the persisted session state in community_platform_member_sessions. Resolve the referenced session and owning member, confirm the session has not expired based on expired_at, and confirm the member account remains in a sign-in-eligible state in community_platform_members. If the platform rotates refresh sessions, create a replacement session row and expire or supersede the previous token context according to service policy; otherwise extend continuity using the same persisted session and new JWT issuance.
+     * @x-autobe-authorization-type refresh
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implement token refresh by validating the
+     *   incoming refresh token payload against the persisted session state in
+     *   community_platform_member_sessions. Resolve the referenced session and
+     *   owning member, confirm the session has not expired based on expired_at,
+     *   and confirm the member account remains in a sign-in-eligible state in
+     *   community_platform_members. If the platform rotates refresh sessions,
+     *   create a replacement session row and expire or supersede the previous
+     *   token context according to service policy; otherwise extend continuity
+     *   using the same persisted session and new JWT issuance.
    *
    * When a refresh succeeds, return a fresh ICommunityPlatformMember.IAuthorized payload. If rotation is used, ensure the database state and token issuance are consistent so a client cannot receive tokens bound to a non-existent session. Optionally update contextual audit metadata if policy requires a refreshed session timestamp trail. No authentication prerequisite should be declared because the refresh token itself is the credential for this flow.
    *

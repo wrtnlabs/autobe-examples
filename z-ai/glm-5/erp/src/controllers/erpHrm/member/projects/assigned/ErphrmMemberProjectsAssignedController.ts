@@ -21,9 +21,11 @@ export class ErphrmMemberProjectsAssignedController {
    *
    * @param connection
    * @param body Search criteria and pagination parameters for assigned projects
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query erp_hrm_project_members table to find all memberships for the authenticated employee, joining with erp_hrm_projects to retrieve project details.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query erp_hrm_project_members table to find all
+     *   memberships for the authenticated employee, joining with
+     *   erp_hrm_projects to retrieve project details.
    *
    * Algorithm:
    * 1. Extract employee_id from authenticated user context (erp_hrm_employees where erp_hrm_member_id = current user AND organization_id = current organization context)

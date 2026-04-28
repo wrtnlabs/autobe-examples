@@ -37,7 +37,9 @@ import { IPageIEcommerceAnalytic } from "../../../../structures/IPageIEcommerceA
  * @param props.body Analytics query criteria including date range filters, category filters, seller filters, order status filters, and requested metric types. Supports pagination for large result sets.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Implement multi-table analytics aggregation query across ecommerce_orders, ecommerce_order_items, ecommerce_products, ecommerce_customers, and ecommerce_inventory_records tables.
+ * @x-autobe-specification Implement multi-table analytics aggregation query
+ *   across ecommerce_orders, ecommerce_order_items, ecommerce_products,
+ *   ecommerce_customers, and ecommerce_inventory_records tables.
  *
  * **Query Logic**
  *

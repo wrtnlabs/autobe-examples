@@ -22,9 +22,11 @@ export class EcommercemallSellerSellersMeVariantsController {
    *
    * @param connection
    * @param variantId Unique identifier of the product variant (UUID format).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Query ecommerce_mall_product_variants table to verify the variant exists and belongs to the authenticated seller. Extract ecommerce_mall_product_id from the variant record.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Query ecommerce_mall_product_variants table to
+     *   verify the variant exists and belongs to the authenticated seller.
+     *   Extract ecommerce_mall_product_id from the variant record.
    *
    * Query ecommerce_mall_inventory_records table filtering by ecommerce_mall_product_variant_id matching the path parameter. Join with product variant to verify ownership through the seller's product relationship.
    *

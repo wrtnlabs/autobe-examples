@@ -24,9 +24,11 @@ export class CommunityplatformCommunitiesController {
    *
    * @param connection
    * @param body Community search, filter, pagination, and sorting criteria
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Implement a platform-wide community listing query over community_platform_communities with derived subscriber counts from community_platform_subscriptions.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Implement a platform-wide community listing query
+     *   over community_platform_communities with derived subscriber counts from
+     *   community_platform_subscriptions.
    *
    * Accept a request body of type ICommunityPlatformCommunity.IRequest containing pagination, optional search text, and optional sort criteria. Treat the primary search field as the community title because the requirements specify search by community name. If the request schema supports additional text filters, they may be applied to description as a secondary discovery aid, but title matching must remain the primary behavior.
    *
@@ -69,9 +71,11 @@ export class CommunityplatformCommunitiesController {
    *
    * @param connection
    * @param communitySlug Platform-wide unique community slug used for readable URL lookup
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Implement this operation as a single-resource read against `community_platform_communities` using the unique `slug` column.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Implement this operation as a single-resource
+     *   read against `community_platform_communities` using the unique `slug`
+     *   column.
    *
    * 1. Validate that the `communitySlug` path parameter is a non-empty string and use it as the lookup key.
    * 2. Query `community_platform_communities` for exactly one row matching `slug = :communitySlug`.

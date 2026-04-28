@@ -22,9 +22,10 @@ export class ShoppingmallCustomerReviewsController {
    *
    * @param connection
    * @param body Review creation data including product reference, order item reference, star rating, and optional text content.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Create a new review record in shopping_mall_reviews table.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Create a new review record in
+     *   shopping_mall_reviews table.
    *
    * Validation steps:
    * 1. Verify the authenticated customer exists and is not banned or deleted
@@ -74,16 +75,17 @@ export class ShoppingmallCustomerReviewsController {
    * @param connection
    * @param reviewId UUID of the review to update (global scope)
    * @param body Update payload containing the new rating and/or content for the review.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification 1. Validate the authenticated customer owns the review (shopping_mall_customer_id matches current user).
-   * 2. Verify the review exists and is not deleted (deleted_at IS NULL).
-   * 3. Validate rating is an integer between 1 and 5 (inclusive).
-   * 4. Create a snapshot of the current review state in shopping_mall_review_snapshots before modification.
-   * 5. Update the review's rating and content fields.
-   * 6. Set updated_at to current timestamp.
-   * 7. Recalculate the product's average rating based on all non-deleted reviews.
-   * 8. Return the updated review entity.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification 1. Validate the authenticated customer owns the
+     *   review (shopping_mall_customer_id matches current user). 2. Verify the
+     *   review exists and is not deleted (deleted_at IS NULL). 3. Validate
+     *   rating is an integer between 1 and 5 (inclusive). 4. Create a snapshot
+     *   of the current review state in shopping_mall_review_snapshots before
+     *   modification. 5. Update the review's rating and content fields. 6. Set
+     *   updated_at to current timestamp. 7. Recalculate the product's average
+     *   rating based on all non-deleted reviews. 8. Return the updated review
+     *   entity.
    *
    * Error handling:
    * - 404 if review not found
@@ -124,9 +126,12 @@ export class ShoppingmallCustomerReviewsController {
    *
    * @param connection
    * @param reviewId Unique identifier of the review to delete (global scope)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Query the shopping_mall_reviews table for the review with the given reviewId. Verify that the authenticated customer owns this review by checking shopping_mall_customer_id matches the current user. If ownership verification fails, return 403 Forbidden.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Query the shopping_mall_reviews table for the
+     *   review with the given reviewId. Verify that the authenticated customer
+     *   owns this review by checking shopping_mall_customer_id matches the
+     *   current user. If ownership verification fails, return 403 Forbidden.
    *
    * Soft-delete the review by setting deleted_at to the current timestamp. Do not hard delete the record - this preserves the audit trail.
    *

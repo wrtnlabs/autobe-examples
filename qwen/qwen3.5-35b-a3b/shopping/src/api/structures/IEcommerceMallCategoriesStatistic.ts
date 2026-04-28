@@ -12,8 +12,9 @@ export type IEcommerceMallCategoriesStatistic = {
    *
    * This UUID serves as the primary key for the category entity and is used as a foreign key in product records to establish the category-product relationship.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from categories.id. UUID primary key identifier.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from categories.id. UUID primary
+     *   key identifier.
    */
   category_id: string & tags.Format<"uuid">;
 
@@ -22,8 +23,9 @@ export type IEcommerceMallCategoriesStatistic = {
    *
    * This human-readable name is used for catalog browsing, category listings, and user-facing navigation. The name is unique within each parent category (top-level or subcategory level).
    *
-   * @x-autobe-database-schema-property name
-   * @x-autobe-specification Direct mapping from categories.name. Required field with max 100 characters.
+     * @x-autobe-database-schema-property name
+     * @x-autobe-specification Direct mapping from categories.name. Required
+     *   field with max 100 characters.
    */
   name: string;
 
@@ -32,7 +34,10 @@ export type IEcommerceMallCategoriesStatistic = {
    *
    * This computed value represents the number of products where deleted_at IS NULL and category_id matches this category. Categories with no products show a count of 0.
    *
-   * @x-autobe-specification Computed aggregation: COUNT(*) FROM ecommerce_mall_products WHERE category_id = categories.id AND deleted_at IS NULL. Aggregates active products per category, excluding soft-deleted products.
+     * @x-autobe-specification Computed aggregation: COUNT(*) FROM
+     *   ecommerce_mall_products WHERE category_id = categories.id AND
+     *   deleted_at IS NULL. Aggregates active products per category, excluding
+     *   soft-deleted products.
    */
   product_count: number & tags.Type<"int32"> & tags.Minimum<0>;
 };
@@ -54,7 +59,9 @@ export namespace IEcommerceMallCategoriesStatistic {
      *
      * This count includes all products that belong to this category and have not been soft-deleted. Soft-deleted products (where deleted_at IS NOT NULL) are excluded from this count to provide an accurate representation of the visible product catalog.
      *
-     * @x-autobe-specification COUNT(*) of products where category_id = {categoryId} AND deleted_at IS NULL. This represents all active products (excluding soft-deleted) in the category.
+         * @x-autobe-specification COUNT(*) of products where category_id =
+         *   {categoryId} AND deleted_at IS NULL. This represents all active
+         *   products (excluding soft-deleted) in the category.
      */
     totalProductsCount: number & tags.Type<"int32"> & tags.Minimum<0>;
 
@@ -63,7 +70,10 @@ export namespace IEcommerceMallCategoriesStatistic {
      *
      * This metric tracks products that are currently available for purchase within the category. In the current implementation, this count appears to mirror totalProductsCount, but in production it may differentiate products by an active status field to exclude out-of-stock or temporarily unavailable items.
      *
-     * @x-autobe-specification COUNT(*) of products where category_id = {categoryId} AND deleted_at IS NULL. Currently this appears to be the same calculation as totalProductsCount, potentially representing products marked as active in a separate status field.
+         * @x-autobe-specification COUNT(*) of products where category_id =
+         *   {categoryId} AND deleted_at IS NULL. Currently this appears to be
+         *   the same calculation as totalProductsCount, potentially
+         *   representing products marked as active in a separate status field.
      */
     activeProductCount: number & tags.Type<"int32"> & tags.Minimum<0>;
 
@@ -72,7 +82,10 @@ export namespace IEcommerceMallCategoriesStatistic {
      *
      * This count is computed by joining orders with order_items, then linking to product_variants and products to identify which orders contain products belonging to this category. Each order is counted only once even if it contains multiple products from the same category.
      *
-     * @x-autobe-specification COUNT(DISTINCT orders.id) through the join chain: orders → order_items → product_variants → products WHERE products.category_id = {categoryId}. Counts all orders containing at least one product from this category.
+         * @x-autobe-specification COUNT(DISTINCT orders.id) through the join
+         *   chain: orders → order_items → product_variants → products WHERE
+         *   products.category_id = {categoryId}. Counts all orders containing
+         *   at least one product from this category.
      */
     totalOrderCount: number & tags.Type<"int32"> & tags.Minimum<0>;
 
@@ -81,7 +94,12 @@ export namespace IEcommerceMallCategoriesStatistic {
      *
      * This metric identifies distinct customer accounts (members) that have placed orders containing at least one product from this category. Duplicate purchases by the same customer are counted only once, providing insight into the category's customer reach.
      *
-     * @x-autobe-specification COUNT(DISTINCT orders.ecommerce_mall_member_id) through the join chain: orders → order_items → product_variants → products WHERE products.category_id = {categoryId}. Counts unique customer accounts that have placed at least one order containing category products.
+         * @x-autobe-specification COUNT(DISTINCT
+         *   orders.ecommerce_mall_member_id) through the join chain: orders →
+         *   order_items → product_variants → products WHERE
+         *   products.category_id = {categoryId}. Counts unique customer
+         *   accounts that have placed at least one order containing category
+         *   products.
      */
     uniqueCustomerCount: number & tags.Type<"int32"> & tags.Minimum<0>;
 
@@ -90,7 +108,11 @@ export namespace IEcommerceMallCategoriesStatistic {
      *
      * This computed metric calculates the mean star rating from all customer reviews written for products belonging to this category. The value ranges from 1.0 to 5.0 when reviews exist. Returns NULL when the category has no reviews, indicating either no products or no customer feedback yet.
      *
-     * @x-autobe-specification AVG(reviews.rating) JOIN reviews ON reviews.ecommerce_mall_product_id = products.id WHERE products.ecommerce_mall_category_id = {categoryId}. Returns NULL when no reviews exist for any product in the category. Valid range: 1.0 to 5.0.
+         * @x-autobe-specification AVG(reviews.rating) JOIN reviews ON
+         *   reviews.ecommerce_mall_product_id = products.id WHERE
+         *   products.ecommerce_mall_category_id = {categoryId}. Returns NULL
+         *   when no reviews exist for any product in the category. Valid range:
+         *   1.0 to 5.0.
      */
     averageRating: (number & tags.Minimum<1> & tags.Maximum<5>) | null;
 
@@ -99,7 +121,11 @@ export namespace IEcommerceMallCategoriesStatistic {
      *
      * This timestamp tracks the latest modification to any product or review within the category, providing a freshness indicator for cached statistics. It is computed as the maximum of all product update timestamps and review creation timestamps for products in this category. Returns NULL when the category has no products or reviews.
      *
-     * @x-autobe-specification MAX(products.updated_at, reviews.created_at) where products.category_id = {categoryId} OR reviews.product_id IN (SELECT id FROM products WHERE category_id = {categoryId}). Returns NULL if no products or reviews exist. Used to cache freshness of category statistics.
+         * @x-autobe-specification MAX(products.updated_at, reviews.created_at)
+         *   where products.category_id = {categoryId} OR reviews.product_id IN
+         *   (SELECT id FROM products WHERE category_id = {categoryId}). Returns
+         *   NULL if no products or reviews exist. Used to cache freshness of
+         *   category statistics.
      */
     lastUpdated: string & tags.Format<"date-time">;
   };

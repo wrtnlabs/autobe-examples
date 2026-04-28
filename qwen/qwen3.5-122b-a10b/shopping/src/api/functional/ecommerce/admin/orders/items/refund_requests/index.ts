@@ -34,7 +34,8 @@ export * as snapshots from "./snapshots/index";
  * @param props.body Search criteria for filtering refund requests including status, date ranges, and pagination parameters.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Query ecommerce_refund_requests table filtered by ecommerce_order_item_id.
+ * @x-autobe-specification Query ecommerce_refund_requests table filtered by
+ *   ecommerce_order_item_id.
  *
  * **Implementation Steps**
  *
@@ -169,7 +170,8 @@ export namespace index {
  * @param props.requestId Unique identifier of the refund request (UUID format).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Query the ecommerce_refund_requests table by primary key (id) with foreign key validation.
+ * @x-autobe-specification Query the ecommerce_refund_requests table by primary
+ *   key (id) with foreign key validation.
  *
  * **Implementation Steps**
  * 1. Validate the order exists and belongs to the authenticated customer (or is accessible by seller/admin)

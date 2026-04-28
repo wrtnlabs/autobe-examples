@@ -35,9 +35,14 @@ export class EcommerceAdminOrdersItemsCancellation_requestsController {
    * @param orderId UUID of the parent order (global scope)
    * @param itemId UUID of the order item within the order (scoped to order)
    * @param body Search criteria including status filters and pagination parameters for retrieving cancellation requests.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query ecommerce_cancellation_requests table filtered by ecommerce_order_item_id. First verify the order item belongs to the specified order by joining ecommerce_order_items with ecommerce_orders. Check authorization: if customer, verify ecommerce_customer_id matches authenticated user; if seller, verify ecommerce_seller_id matches authenticated seller; if admin, allow all.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Query ecommerce_cancellation_requests table
+     *   filtered by ecommerce_order_item_id. First verify the order item
+     *   belongs to the specified order by joining ecommerce_order_items with
+     *   ecommerce_orders. Check authorization: if customer, verify
+     *   ecommerce_customer_id matches authenticated user; if seller, verify
+     *   ecommerce_seller_id matches authenticated seller; if admin, allow all.
    *
    * Apply status filters from request body if provided (pending, approved, rejected). Apply pagination using cursor or offset-based pagination. Return IEcommerceCancellationRequest.ISummary for each result.
    *
@@ -92,9 +97,10 @@ export class EcommerceAdminOrdersItemsCancellation_requestsController {
    * @param orderId UUID of the parent order containing the order item (global scope).
    * @param itemId UUID of the order item with the cancellation request (scoped to order).
    * @param requestId UUID of the cancellation request to retrieve (scoped to order item).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query ecommerce_cancellation_requests table by requestId UUID.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Query ecommerce_cancellation_requests table by
+     *   requestId UUID.
    *
    * Validate the cancellation request belongs to the specified orderId and itemId:
    * 1. Load order item by itemId and verify its ecommerce_order_id matches orderId

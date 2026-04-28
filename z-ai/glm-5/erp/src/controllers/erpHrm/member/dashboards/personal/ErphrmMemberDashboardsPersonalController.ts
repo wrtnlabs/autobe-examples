@@ -19,9 +19,11 @@ export class ErphrmMemberDashboardsPersonalController {
    * This is a read-only endpoint designed for quick dashboard rendering. Related operations include timelog creation (POST /timelogs), timer management (POST/DELETE /timers), and timesheet submission (PATCH /timesheets/{timesheetId}).
    *
    * @param connection
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query the erp_hrm_employees table to find the employee record for the authenticated member in the current organization context. Then aggregate data from multiple sources:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query the erp_hrm_employees table to find the
+     *   employee record for the authenticated member in the current
+     *   organization context. Then aggregate data from multiple sources:
    *
    * 1. Hours Today: Query erp_hrm_timelogs where employee_id matches and date equals today's date, sum the duration field (convert minutes to hours).
    *

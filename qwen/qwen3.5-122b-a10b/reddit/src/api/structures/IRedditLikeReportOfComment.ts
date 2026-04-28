@@ -36,8 +36,9 @@ export type IRedditLikeReportOfComment = {
    *
    * **Usage**: Referenced in API endpoints as {reportOfCommentId}
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from reddit_like_report_of_comments.id. Primary key, UUID format.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_report_of_comments.id. Primary key, UUID format.
    */
   id: string & tags.Format<"uuid">;
 
@@ -50,8 +51,11 @@ export type IRedditLikeReportOfComment = {
    *
    * **Status Values**: pending (awaiting review), approved (content deleted), dismissed (content kept)
    *
-   * @x-autobe-database-schema-property report
-   * @x-autobe-specification JOIN from reddit_like_report_of_comments.reddit_like_report_id to reddit_like_reports.id. Returns IRedditLikeReport.ISummary with reporter, actor_type, reason, status, and timestamps.
+     * @x-autobe-database-schema-property report
+     * @x-autobe-specification JOIN from
+     *   reddit_like_report_of_comments.reddit_like_report_id to
+     *   reddit_like_reports.id. Returns IRedditLikeReport.ISummary with
+     *   reporter, actor_type, reason, status, and timestamps.
    */
   report: IRedditLikeReport.ISummary;
 
@@ -64,8 +68,11 @@ export type IRedditLikeReportOfComment = {
    *
    * **Author Information**: Includes IRedditLikeMember.ISummary for accountability and context
    *
-   * @x-autobe-database-schema-property comment
-   * @x-autobe-specification JOIN from reddit_like_report_of_comments.reddit_like_comment_id to reddit_like_comments.id. Returns IRedditLikeComment.ISummary with author, content, vote_score, and timestamps.
+     * @x-autobe-database-schema-property comment
+     * @x-autobe-specification JOIN from
+     *   reddit_like_report_of_comments.reddit_like_comment_id to
+     *   reddit_like_comments.id. Returns IRedditLikeComment.ISummary with
+     *   author, content, vote_score, and timestamps.
    */
   comment: IRedditLikeComment.ISummary;
 
@@ -78,8 +85,9 @@ export type IRedditLikeReportOfComment = {
    *
    * **Timezone**: UTC
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from reddit_like_report_of_comments.created_at. UTC timestamp with timezone.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_report_of_comments.created_at. UTC timestamp with timezone.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -92,8 +100,9 @@ export type IRedditLikeReportOfComment = {
    *
    * **Timezone**: UTC
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from reddit_like_report_of_comments.updated_at. UTC timestamp with timezone.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_report_of_comments.updated_at. UTC timestamp with timezone.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -108,8 +117,10 @@ export type IRedditLikeReportOfComment = {
    *
    * **Nullability**: null while active, non-null when deleted
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from reddit_like_report_of_comments.deleted_at. Nullable UTC timestamp with timezone.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_report_of_comments.deleted_at. Nullable UTC timestamp with
+     *   timezone.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };

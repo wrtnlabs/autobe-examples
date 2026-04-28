@@ -23,9 +23,11 @@ export class MultiusertodoMemberTrashController {
    *
    * @param connection
    * @param body Search criteria for trash todos including pagination, filtering, and sorting parameters.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query multi_user_todo_todos table filtering where is_deleted=true and multi_user_todo_member_id matches the authenticated user's ID.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query multi_user_todo_todos table filtering where
+     *   is_deleted=true and multi_user_todo_member_id matches the authenticated
+     *   user's ID.
    *
    * Apply pagination parameters (page, limit) to cursor or offset-based pagination returning paginated results with total count.
    *
@@ -73,9 +75,9 @@ export class MultiusertodoMemberTrashController {
    *
    * @param connection
    * @param todoId UUID identifier of the todo to restore from trash
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Restore a todo from trash to active list.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Restore a todo from trash to active list.
    *
    * 1. Validate authentication - extract user_id from access_token in Authorization header
    * 2. Query multi_user_todo_todos by id = todoId AND is_deleted = true
@@ -122,17 +124,18 @@ export class MultiusertodoMemberTrashController {
    *
    * @param connection
    * @param todoId UUID identifier of the todo to permanently delete from trash
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1. Validate authentication - require valid access_token, extract user_id from JWT token
-   * 2. Query multi_user_todo_todos for todo with id = todoId AND multi_user_todo_member_id = user_id
-   * 3. Validate todo exists and is_deleted = true (must be in trash)
-   * 4. If todo doesn't exist or is not in trash, return 404 Not Found with appropriate error
-   * 5. Begin database transaction
-   * 6. Delete all multi_user_todo_todos_edits records where todo_id = todoId (cascade delete)
-   * 7. Delete the todo record from multi_user_todo_todos
-   * 8. Commit transaction
-   * 9. Return 200 OK with success message
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification 1. Validate authentication - require valid
+     *   access_token, extract user_id from JWT token 2. Query
+     *   multi_user_todo_todos for todo with id = todoId AND
+     *   multi_user_todo_member_id = user_id 3. Validate todo exists and
+     *   is_deleted = true (must be in trash) 4. If todo doesn't exist or is not
+     *   in trash, return 404 Not Found with appropriate error 5. Begin database
+     *   transaction 6. Delete all multi_user_todo_todos_edits records where
+     *   todo_id = todoId (cascade delete) 7. Delete the todo record from
+     *   multi_user_todo_todos 8. Commit transaction 9. Return 200 OK with
+     *   success message
    *
    * Error handling:
    * - 404 Not Found: Todo doesn't exist or doesn't belong to user, or todo is not in trash

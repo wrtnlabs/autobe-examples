@@ -22,9 +22,10 @@ export class EcommercemallSellerOrder_itemsRefund_requestsController {
    * @param connection
    * @param orderItemId Unique identifier of the order item whose refund requests are being retrieved (UUID format)
    * @param body Search criteria and pagination parameters for filtering refund requests
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Query ecommerce_mall_refund_requests table filtering by the provided orderItemId path parameter.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Query ecommerce_mall_refund_requests table
+     *   filtering by the provided orderItemId path parameter.
    *
    * Apply optional filters from request body:
    * - status: Filter by request status ('pending', 'approved', 'rejected')

@@ -23,9 +23,9 @@ export class CommunityplatformPostsCommentsVotesController {
    * @param postId UUID of the post containing the comment (provides validation context)
    * @param commentId UUID of the comment to vote on
    * @param body Vote change request containing voteType: 'upvote' to add positive vote, 'downvote' to add negative vote, or null to remove existing vote
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Implementation should:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Implementation should:
    *
    * 1. Authenticate the member from session
    * 2. Validate postId and commentId exist and comment belongs to the post
@@ -86,9 +86,10 @@ export class CommunityplatformPostsCommentsVotesController {
    * @param postId The unique identifier of the post containing the comment
    * @param commentId The unique identifier of the comment that was voted on
    * @param voteId The unique identifier of the vote to retrieve
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query the community_platform_comment_votes table by vote ID to retrieve the vote record.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query the community_platform_comment_votes table
+     *   by vote ID to retrieve the vote record.
    *
    * Implementation steps:
    * 1. Find the vote by ID from community_platform_comment_votes

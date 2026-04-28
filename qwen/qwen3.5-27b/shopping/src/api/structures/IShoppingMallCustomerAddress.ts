@@ -12,8 +12,10 @@ export type IShoppingMallCustomerAddress = {
    *
    * This UUID is automatically generated when the address is created and serves as the primary key for database operations. It is used in API paths to identify specific addresses for retrieval, updates, and deletion.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_customer_addresses.id. Primary key UUID generated on address creation.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_customer_addresses.id. Primary key UUID generated on
+     *   address creation.
    */
   id: string & tags.Format<"uuid">;
 
@@ -22,8 +24,9 @@ export type IShoppingMallCustomerAddress = {
    *
    * This field is used on shipping labels and delivery notifications. It can be different from the customer's display name, allowing addresses for gift recipients, family members, or business contacts.
    *
-   * @x-autobe-database-schema-property recipient_name
-   * @x-autobe-specification Direct mapping from shopping_mall_customer_addresses.recipient_name. Required string field.
+     * @x-autobe-database-schema-property recipient_name
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_customer_addresses.recipient_name. Required string field.
    */
   recipient_name: string;
 
@@ -32,8 +35,10 @@ export type IShoppingMallCustomerAddress = {
    *
    * Used by shipping carriers for delivery notifications and to resolve delivery issues. Should be a valid phone number format appropriate for the country of the address.
    *
-   * @x-autobe-database-schema-property phone_number
-   * @x-autobe-specification Direct mapping from shopping_mall_customer_addresses.phone_number. Required string field for delivery contact.
+     * @x-autobe-database-schema-property phone_number
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_customer_addresses.phone_number. Required string field
+     *   for delivery contact.
    */
   phone_number: string;
 
@@ -42,8 +47,10 @@ export type IShoppingMallCustomerAddress = {
    *
    * This is the primary location identifier for delivery. It should include all necessary details for accurate package delivery to the specific destination.
    *
-   * @x-autobe-database-schema-property street_address
-   * @x-autobe-specification Direct mapping from shopping_mall_customer_addresses.street_address. Required string field for primary location.
+     * @x-autobe-database-schema-property street_address
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_customer_addresses.street_address. Required string field
+     *   for primary location.
    */
   street_address: string;
 
@@ -52,8 +59,10 @@ export type IShoppingMallCustomerAddress = {
    *
    * Used for postal routing and regional identification. Required for all addresses regardless of country to ensure proper mail and package delivery.
    *
-   * @x-autobe-database-schema-property city
-   * @x-autobe-specification Direct mapping from shopping_mall_customer_addresses.city. Required string field for municipal location.
+     * @x-autobe-database-schema-property city
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_customer_addresses.city. Required string field for
+     *   municipal location.
    */
   city: string;
 
@@ -62,8 +71,10 @@ export type IShoppingMallCustomerAddress = {
    *
    * Optional field as not all countries use state or province divisions. Required for addresses in countries with regional subdivisions such as the United States, Canada, or Australia.
    *
-   * @x-autobe-database-schema-property state_province
-   * @x-autobe-specification Direct mapping from shopping_mall_customer_addresses.state_province. Nullable string field (String? in DB) for regional subdivision.
+     * @x-autobe-database-schema-property state_province
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_customer_addresses.state_province. Nullable string field
+     *   (String? in DB) for regional subdivision.
    */
   state_province: string | null;
 
@@ -72,8 +83,10 @@ export type IShoppingMallCustomerAddress = {
    *
    * Required for postal routing and delivery verification. Format varies by country (e.g., ZIP code in the US, postal code in other countries). Essential for accurate package delivery.
    *
-   * @x-autobe-database-schema-property postal_code
-   * @x-autobe-specification Direct mapping from shopping_mall_customer_addresses.postal_code. Required string field for postal routing.
+     * @x-autobe-database-schema-property postal_code
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_customer_addresses.postal_code. Required string field for
+     *   postal routing.
    */
   postal_code: string;
 
@@ -82,8 +95,10 @@ export type IShoppingMallCustomerAddress = {
    *
    * Required field for international shipping and tax calculation. Should use a consistent format such as full country name or ISO 3166-1 alpha-2 code.
    *
-   * @x-autobe-database-schema-property country
-   * @x-autobe-specification Direct mapping from shopping_mall_customer_addresses.country. Required string field for international shipping.
+     * @x-autobe-database-schema-property country
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_customer_addresses.country. Required string field for
+     *   international shipping.
    */
   country: string;
 
@@ -92,8 +107,10 @@ export type IShoppingMallCustomerAddress = {
    *
    * Only one address per customer can have this flag set to true. Used for quick checkout selection, automatically pre-filling the shipping address form with the customer's preferred destination.
    *
-   * @x-autobe-database-schema-property is_default
-   * @x-autobe-specification Direct mapping from shopping_mall_customer_addresses.is_default. Boolean field with default value false. Only one address per customer can have this set to true.
+     * @x-autobe-database-schema-property is_default
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_customer_addresses.is_default. Boolean field with default
+     *   value false. Only one address per customer can have this set to true.
    */
   is_default: boolean;
 
@@ -102,8 +119,10 @@ export type IShoppingMallCustomerAddress = {
    *
    * Used for sorting addresses by creation date and maintaining an audit trail. This timestamp is set automatically when the address is added and cannot be modified.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from shopping_mall_customer_addresses.created_at. DateTime field set on address creation, never modified.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_customer_addresses.created_at. DateTime field set on
+     *   address creation, never modified.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -112,8 +131,10 @@ export type IShoppingMallCustomerAddress = {
    *
    * Updated automatically on every address edit to track changes. Useful for detecting when address information was changed and for caching strategies.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from shopping_mall_customer_addresses.updated_at. DateTime field updated on every address modification.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_customer_addresses.updated_at. DateTime field updated on
+     *   every address modification.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -122,8 +143,10 @@ export type IShoppingMallCustomerAddress = {
    *
    * When set, the address is hidden from active lists but preserved for historical order records. Nullable field - null means the address is active, a timestamp means it has been deleted.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from shopping_mall_customer_addresses.deleted_at. Nullable DateTime field (DateTime? in DB) for soft delete support.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_customer_addresses.deleted_at. Nullable DateTime field
+     *   (DateTime? in DB) for soft delete support.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -135,31 +158,31 @@ export namespace IShoppingMallCustomerAddress {
    */
   export type ICreate = {
     /**
-     * @x-autobe-database-schema-property recipient_name
+         * @x-autobe-database-schema-property recipient_name
      */
     recipient_name: string;
     /**
-     * @x-autobe-database-schema-property phone_number
+         * @x-autobe-database-schema-property phone_number
      */
     phone_number: string;
     /**
-     * @x-autobe-database-schema-property street_address
+         * @x-autobe-database-schema-property street_address
      */
     street_address: string;
     /**
-     * @x-autobe-database-schema-property city
+         * @x-autobe-database-schema-property city
      */
     city: string;
     /**
-     * @x-autobe-database-schema-property state_province
+         * @x-autobe-database-schema-property state_province
      */
     state_province?: string | null | undefined;
     /**
-     * @x-autobe-database-schema-property postal_code
+         * @x-autobe-database-schema-property postal_code
      */
     postal_code: string;
     /**
-     * @x-autobe-database-schema-property country
+         * @x-autobe-database-schema-property country
      */
     country: string;
   };
@@ -177,8 +200,10 @@ export namespace IShoppingMallCustomerAddress {
      *
      * This UUID serves as the primary key for the address record and is used to reference the address in update and delete operations.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_customer_addresses.id. Primary key UUID identifying the address record.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_customer_addresses.id. Primary key UUID identifying
+         *   the address record.
      */
     id: string & tags.Format<"uuid">;
 
@@ -187,8 +212,10 @@ export namespace IShoppingMallCustomerAddress {
      *
      * This field is used on shipping labels and delivery notifications. It can be different from the customer's display name, allowing for deliveries to different recipients at the same address.
      *
-     * @x-autobe-database-schema-property recipient_name
-     * @x-autobe-specification Direct mapping from shopping_mall_customer_addresses.recipient_name. Required string field.
+         * @x-autobe-database-schema-property recipient_name
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_customer_addresses.recipient_name. Required string
+         *   field.
      */
     recipient_name: string;
 
@@ -197,8 +224,10 @@ export namespace IShoppingMallCustomerAddress {
      *
      * Used by carriers for delivery notifications and addressing delivery issues. Should be a valid phone number format for the specified country.
      *
-     * @x-autobe-database-schema-property phone_number
-     * @x-autobe-specification Direct mapping from shopping_mall_customer_addresses.phone_number. Required string field for contact purposes.
+         * @x-autobe-database-schema-property phone_number
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_customer_addresses.phone_number. Required string
+         *   field for contact purposes.
      */
     phone_number: string;
 
@@ -207,8 +236,10 @@ export namespace IShoppingMallCustomerAddress {
      *
      * This is the primary location identifier for delivery. Should include all necessary details for accurate delivery to the specific location.
      *
-     * @x-autobe-database-schema-property street_address
-     * @x-autobe-specification Direct mapping from shopping_mall_customer_addresses.street_address. Required string field.
+         * @x-autobe-database-schema-property street_address
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_customer_addresses.street_address. Required string
+         *   field.
      */
     street_address: string;
 
@@ -217,8 +248,9 @@ export namespace IShoppingMallCustomerAddress {
      *
      * Used for postal routing and regional identification. Required for all addresses regardless of country.
      *
-     * @x-autobe-database-schema-property city
-     * @x-autobe-specification Direct mapping from shopping_mall_customer_addresses.city. Required string field.
+         * @x-autobe-database-schema-property city
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_customer_addresses.city. Required string field.
      */
     city: string;
 
@@ -227,8 +259,10 @@ export namespace IShoppingMallCustomerAddress {
      *
      * Optional field as not all countries use state/province divisions. Used for addresses in countries with regional subdivisions.
      *
-     * @x-autobe-database-schema-property state_province
-     * @x-autobe-specification Direct mapping from shopping_mall_customer_addresses.state_province. Nullable string field.
+         * @x-autobe-database-schema-property state_province
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_customer_addresses.state_province. Nullable string
+         *   field.
      */
     state_province: string | null;
 
@@ -237,8 +271,10 @@ export namespace IShoppingMallCustomerAddress {
      *
      * Required for postal routing and delivery verification. Format varies by country (e.g., ZIP in US, postal code in other countries).
      *
-     * @x-autobe-database-schema-property postal_code
-     * @x-autobe-specification Direct mapping from shopping_mall_customer_addresses.postal_code. Required string field.
+         * @x-autobe-database-schema-property postal_code
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_customer_addresses.postal_code. Required string
+         *   field.
      */
     postal_code: string;
 
@@ -247,8 +283,9 @@ export namespace IShoppingMallCustomerAddress {
      *
      * Required field for international shipping and tax calculation. Should use consistent format (e.g., full country name or ISO 3166-1 alpha-2 code).
      *
-     * @x-autobe-database-schema-property country
-     * @x-autobe-specification Direct mapping from shopping_mall_customer_addresses.country. Required string field.
+         * @x-autobe-database-schema-property country
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_customer_addresses.country. Required string field.
      */
     country: string;
 
@@ -257,8 +294,10 @@ export namespace IShoppingMallCustomerAddress {
      *
      * Only one address per customer can have this flag set to true. Used for quick checkout selection. Default value is false.
      *
-     * @x-autobe-database-schema-property is_default
-     * @x-autobe-specification Direct mapping from shopping_mall_customer_addresses.is_default. Boolean field with default value false.
+         * @x-autobe-database-schema-property is_default
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_customer_addresses.is_default. Boolean field with
+         *   default value false.
      */
     is_default: boolean;
 
@@ -267,8 +306,10 @@ export namespace IShoppingMallCustomerAddress {
      *
      * Used for sorting addresses by creation date and maintaining audit trail.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_customer_addresses.created_at. DateTime field with timestamptz type.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_customer_addresses.created_at. DateTime field with
+         *   timestamptz type.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -277,8 +318,10 @@ export namespace IShoppingMallCustomerAddress {
      *
      * Updated on every address edit to track changes and maintain audit trail.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from shopping_mall_customer_addresses.updated_at. DateTime field with timestamptz type.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_customer_addresses.updated_at. DateTime field with
+         *   timestamptz type.
      */
     updated_at: string & tags.Format<"date-time">;
   };
@@ -294,7 +337,9 @@ export namespace IShoppingMallCustomerAddress {
      *
      * Performs a case-insensitive partial text match against the recipient_name field. Useful for finding addresses by the name of the person receiving shipments at that location.
      *
-     * @x-autobe-specification Computed filter parameter. Performs LIKE query on recipient_name column for partial text matching. Case-insensitive search for recipient name substring.
+         * @x-autobe-specification Computed filter parameter. Performs LIKE
+         *   query on recipient_name column for partial text matching.
+         *   Case-insensitive search for recipient name substring.
      */
     search?: string | undefined;
 
@@ -303,8 +348,11 @@ export namespace IShoppingMallCustomerAddress {
      *
      * Set to true to show only the customer's default shipping address. Set to false to show only non-default addresses. Omit this parameter to include all addresses in results.
      *
-     * @x-autobe-database-schema-property is_default
-     * @x-autobe-specification Direct filter on is_default column. When true, returns only default addresses. When false, returns only non-default addresses. When omitted, returns all addresses regardless of default status.
+         * @x-autobe-database-schema-property is_default
+         * @x-autobe-specification Direct filter on is_default column. When
+         *   true, returns only default addresses. When false, returns only
+         *   non-default addresses. When omitted, returns all addresses
+         *   regardless of default status.
      */
     isDefault?: boolean | undefined;
 
@@ -313,8 +361,10 @@ export namespace IShoppingMallCustomerAddress {
      *
      * Specify a country name or ISO country code to retrieve only addresses in that country. Useful for customers who shop internationally and need to find addresses in specific regions.
      *
-     * @x-autobe-database-schema-property country
-     * @x-autobe-specification Direct filter on country column. Exact match against country field. Filters addresses by country name or ISO country code.
+         * @x-autobe-database-schema-property country
+         * @x-autobe-specification Direct filter on country column. Exact match
+         *   against country field. Filters addresses by country name or ISO
+         *   country code.
      */
     country?: string | undefined;
 
@@ -323,7 +373,9 @@ export namespace IShoppingMallCustomerAddress {
      *
      * Specifies which page of results to retrieve. Page numbering starts from 1. Defaults to page 1 if not provided. Use with the limit parameter to navigate through large address collections.
      *
-     * @x-autobe-specification Pagination parameter. 1-indexed page number. Defaults to 1 if omitted. Used with limit to calculate offset for database query.
+         * @x-autobe-specification Pagination parameter. 1-indexed page number.
+         *   Defaults to 1 if omitted. Used with limit to calculate offset for
+         *   database query.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -332,7 +384,9 @@ export namespace IShoppingMallCustomerAddress {
      *
      * Controls how many addresses are returned in each page of results. Accepts values from 1 to 100. Use this parameter to balance between loading fewer addresses with more requests, or more addresses with fewer requests.
      *
-     * @x-autobe-specification Pagination parameter. Maximum records per page. Range 1-100. Defaults to a system-defined value if omitted. Used to control result set size.
+         * @x-autobe-specification Pagination parameter. Maximum records per
+         *   page. Range 1-100. Defaults to a system-defined value if omitted.
+         *   Used to control result set size.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -343,7 +397,10 @@ export namespace IShoppingMallCustomerAddress {
      *
      * Choose which attribute to use for sorting the address list. Supported fields are created_at (when address was added), updated_at (when address was last modified), or is_default (to show default address first).
      *
-     * @x-autobe-specification Sorting parameter. Specifies which field to sort results by. Valid values: created_at, updated_at, is_default. Defaults to created_at if omitted. Maps to corresponding database column for ORDER BY clause.
+         * @x-autobe-specification Sorting parameter. Specifies which field to
+         *   sort results by. Valid values: created_at, updated_at, is_default.
+         *   Defaults to created_at if omitted. Maps to corresponding database
+         *   column for ORDER BY clause.
      */
     sortBy?: string | undefined;
 
@@ -352,7 +409,10 @@ export namespace IShoppingMallCustomerAddress {
      *
      * Determines whether addresses are sorted in ascending (oldest first, A-Z) or descending (newest first, Z-A) order. Defaults to descending order to show most recent addresses first.
      *
-     * @x-autobe-specification Sorting parameter. Specifies sort direction. Valid values: asc (ascending) or desc (descending). Defaults to desc if omitted. Applied to the field specified by sortBy parameter.
+         * @x-autobe-specification Sorting parameter. Specifies sort direction.
+         *   Valid values: asc (ascending) or desc (descending). Defaults to
+         *   desc if omitted. Applied to the field specified by sortBy
+         *   parameter.
      */
     sortOrder?: string | undefined;
   };
@@ -370,8 +430,11 @@ export namespace IShoppingMallCustomerAddress {
      *
      * This field appears on shipping labels and delivery notifications. It can be different from the customer's display name, allowing shipments to family members, colleagues, or other recipients at the same address.
      *
-     * @x-autobe-database-schema-property recipient_name
-     * @x-autobe-specification Direct mapping from shopping_mall_customer_addresses.recipient_name column. String type, required field for shipping labels and delivery notifications.
+         * @x-autobe-database-schema-property recipient_name
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_customer_addresses.recipient_name column. String
+         *   type, required field for shipping labels and delivery
+         *   notifications.
      */
     recipient_name?: string | undefined;
 
@@ -380,8 +443,10 @@ export namespace IShoppingMallCustomerAddress {
      *
      * Carriers use this number for delivery notifications, address clarification, and issue resolution. Should be a valid phone number format for the country where the address is located.
      *
-     * @x-autobe-database-schema-property phone_number
-     * @x-autobe-specification Direct mapping from shopping_mall_customer_addresses.phone_number column. String type, used for carrier delivery coordination.
+         * @x-autobe-database-schema-property phone_number
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_customer_addresses.phone_number column. String type,
+         *   used for carrier delivery coordination.
      */
     phone_number?: string | undefined;
 
@@ -390,8 +455,10 @@ export namespace IShoppingMallCustomerAddress {
      *
      * This is the primary location identifier for package delivery. Include all necessary details such as building number, street name, floor, apartment number, or suite number to ensure accurate delivery.
      *
-     * @x-autobe-database-schema-property street_address
-     * @x-autobe-specification Direct mapping from shopping_mall_customer_addresses.street_address column. String type, primary location identifier for delivery.
+         * @x-autobe-database-schema-property street_address
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_customer_addresses.street_address column. String
+         *   type, primary location identifier for delivery.
      */
     street_address?: string | undefined;
 
@@ -400,8 +467,10 @@ export namespace IShoppingMallCustomerAddress {
      *
      * Used for postal routing and regional identification. Required for all addresses regardless of country. Include the official city or municipality name as recognized by local postal services.
      *
-     * @x-autobe-database-schema-property city
-     * @x-autobe-specification Direct mapping from shopping_mall_customer_addresses.city column. String type, required for postal routing and regional identification.
+         * @x-autobe-database-schema-property city
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_customer_addresses.city column. String type, required
+         *   for postal routing and regional identification.
      */
     city?: string | undefined;
 
@@ -410,8 +479,11 @@ export namespace IShoppingMallCustomerAddress {
      *
      * Optional field since not all countries use state or province divisions. Include this for addresses in countries with regional subdivisions (e.g., states in the US, provinces in Canada). Omit for countries without such divisions.
      *
-     * @x-autobe-database-schema-property state_province
-     * @x-autobe-specification Direct mapping from shopping_mall_customer_addresses.state_province column. Nullable string type, optional as not all countries use state/province divisions.
+         * @x-autobe-database-schema-property state_province
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_customer_addresses.state_province column. Nullable
+         *   string type, optional as not all countries use state/province
+         *   divisions.
      */
     state_province?: string | null | undefined;
 
@@ -420,8 +492,10 @@ export namespace IShoppingMallCustomerAddress {
      *
      * Required for postal routing and delivery verification. Format varies by country (e.g., ZIP code in the US, postal code in other countries). Ensure the code matches the city and state/province provided.
      *
-     * @x-autobe-database-schema-property postal_code
-     * @x-autobe-specification Direct mapping from shopping_mall_customer_addresses.postal_code column. String type, required for postal routing and delivery verification.
+         * @x-autobe-database-schema-property postal_code
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_customer_addresses.postal_code column. String type,
+         *   required for postal routing and delivery verification.
      */
     postal_code?: string | undefined;
 
@@ -430,8 +504,10 @@ export namespace IShoppingMallCustomerAddress {
      *
      * Required field for international shipping and tax calculation. Use a consistent format such as full country name (e.g., 'United States') or ISO 3166-1 alpha-2 code (e.g., 'US').
      *
-     * @x-autobe-database-schema-property country
-     * @x-autobe-specification Direct mapping from shopping_mall_customer_addresses.country column. String type, required for international shipping and tax calculation.
+         * @x-autobe-database-schema-property country
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_customer_addresses.country column. String type,
+         *   required for international shipping and tax calculation.
      */
     country?: string | undefined;
   };

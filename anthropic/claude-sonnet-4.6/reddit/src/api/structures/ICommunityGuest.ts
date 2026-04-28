@@ -10,32 +10,42 @@ export type ICommunityGuest = {
   /**
    * The unique UUID identifier for this guest identity record. This value is assigned by the system when the guest record is first created and is used to look up the record in subsequent requests.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from community_guests.id. UUID primary key. Used as the path parameter (guestId) for retrieving a specific guest record.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from community_guests.id. UUID
+     *   primary key. Used as the path parameter (guestId) for retrieving a
+     *   specific guest record.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * The device fingerprint or anonymous identifier that uniquely identifies this guest's browsing context. This value is used to associate guest sessions with a consistent temporary identity across requests without requiring authentication.
    *
-   * @x-autobe-database-schema-property fingerprint
-   * @x-autobe-specification Direct mapping from community_guests.fingerprint. Unique constraint enforced at the database level (@@unique([fingerprint])). Represents the device fingerprint or anonymous identifier submitted by the client when the guest identity was established.
+     * @x-autobe-database-schema-property fingerprint
+     * @x-autobe-specification Direct mapping from community_guests.fingerprint.
+     *   Unique constraint enforced at the database level
+     *   (@@unique([fingerprint])). Represents the device fingerprint or
+     *   anonymous identifier submitted by the client when the guest identity
+     *   was established.
    */
   fingerprint: string;
 
   /**
    * The timestamp indicating when this guest identity record was first established on the platform. Represented in ISO 8601 date-time format with timezone.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from community_guests.created_at. Timestamptz column set once when the guest record is first created and never updated thereafter.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from community_guests.created_at.
+     *   Timestamptz column set once when the guest record is first created and
+     *   never updated thereafter.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * The timestamp indicating when this guest identity record was last modified. Represented in ISO 8601 date-time format with timezone.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from community_guests.updated_at. Timestamptz column automatically updated whenever the guest record is modified.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from community_guests.updated_at.
+     *   Timestamptz column automatically updated whenever the guest record is
+     *   modified.
    */
   updated_at: string & tags.Format<"date-time">;
 };
@@ -47,7 +57,16 @@ export namespace ICommunityGuest {
     /**
      * The JWT refresh token previously issued to this guest actor. Submit this token to obtain a new access and refresh token pair without needing to re-identify the device fingerprint. Must be a non-expired token originally issued by this platform.
      *
-     * @x-autobe-specification This field receives the JWT refresh token previously issued to the guest actor (either from POST /auth/guest/join or a prior POST /auth/guest/refresh). The backend must validate the JWT signature using the configured secret/key, confirm that the token has not expired (via the exp claim or expired_at on the corresponding community_guest_sessions record), and extract the embedded guest_id and session_id claims. If validation fails (invalid signature, expired, or guest record not found), return 401 Unauthorized. On success, create a new community_guest_sessions record and issue a new token pair.
+         * @x-autobe-specification This field receives the JWT refresh token
+         *   previously issued to the guest actor (either from POST
+         *   /auth/guest/join or a prior POST /auth/guest/refresh). The backend
+         *   must validate the JWT signature using the configured secret/key,
+         *   confirm that the token has not expired (via the exp claim or
+         *   expired_at on the corresponding community_guest_sessions record),
+         *   and extract the embedded guest_id and session_id claims. If
+         *   validation fails (invalid signature, expired, or guest record not
+         *   found), return 401 Unauthorized. On success, create a new
+         *   community_guest_sessions record and issue a new token pair.
      */
     refreshToken: string;
   };
@@ -59,32 +78,41 @@ export namespace ICommunityGuest {
     /**
      * Unique identifier of the guest identity record. A UUID that permanently identifies this guest's browsing context on the platform.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from community_guests.id. UUID primary key. Read directly from the record without any transformation.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from community_guests.id. UUID
+         *   primary key. Read directly from the record without any
+         *   transformation.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Device fingerprint or anonymous identifier that uniquely identifies this guest's browsing context. Used to associate guest sessions with a consistent temporary identity across requests without requiring account registration.
      *
-     * @x-autobe-database-schema-property fingerprint
-     * @x-autobe-specification Direct mapping from community_guests.fingerprint. A unique string value representing the device fingerprint or anonymous identifier submitted by the client. Has a unique constraint in the database.
+         * @x-autobe-database-schema-property fingerprint
+         * @x-autobe-specification Direct mapping from
+         *   community_guests.fingerprint. A unique string value representing
+         *   the device fingerprint or anonymous identifier submitted by the
+         *   client. Has a unique constraint in the database.
      */
     fingerprint: string;
 
     /**
      * Timestamp indicating when this guest identity record was first created. Corresponds to the first time this device fingerprint was encountered on the platform.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from community_guests.created_at. Timestamptz column. Represents when the guest identity record was first created on the platform.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   community_guests.created_at. Timestamptz column. Represents when
+         *   the guest identity record was first created on the platform.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp indicating when this guest identity record was last updated. Reflects the most recent modification to the guest record.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from community_guests.updated_at. Timestamptz column. Represents the last time any field on the guest identity record was updated.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   community_guests.updated_at. Timestamptz column. Represents the
+         *   last time any field on the guest identity record was updated.
      */
     updated_at: string & tags.Format<"date-time">;
   };
@@ -96,39 +124,52 @@ export namespace ICommunityGuest {
     /**
      * Unique identifier of the guest identity record. This UUID persists across sessions and uniquely identifies the temporary guest on the platform.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from community_guests.id. UUID primary key of the guest identity record. Retrieved by querying community_guests using the guest_id claim embedded in the JWT.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from community_guests.id. UUID
+         *   primary key of the guest identity record. Retrieved by querying
+         *   community_guests using the guest_id claim embedded in the JWT.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Device fingerprint or anonymous identifier that uniquely identifies this guest's browsing context. Used to associate guest sessions with a consistent temporary identity across requests without requiring account registration.
      *
-     * @x-autobe-database-schema-property fingerprint
-     * @x-autobe-specification Direct mapping from community_guests.fingerprint. The device or browser-level anonymous identifier provided during the join request. Subject to a unique constraint on the community_guests table.
+         * @x-autobe-database-schema-property fingerprint
+         * @x-autobe-specification Direct mapping from
+         *   community_guests.fingerprint. The device or browser-level anonymous
+         *   identifier provided during the join request. Subject to a unique
+         *   constraint on the community_guests table.
      */
     fingerprint: string;
 
     /**
      * ISO 8601 timestamp indicating when the guest identity was first established on the platform.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from community_guests.created_at (Timestamptz). Reflects when the guest identity record was first created — either at the time of the first join request with this fingerprint, or pre-existing if the fingerprint was already registered.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   community_guests.created_at (Timestamptz). Reflects when the guest
+         *   identity record was first created — either at the time of the first
+         *   join request with this fingerprint, or pre-existing if the
+         *   fingerprint was already registered.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * ISO 8601 timestamp of the most recent update to the guest identity record.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from community_guests.updated_at (Timestamptz). Reflects when the guest identity record was last modified. Updated whenever the guest record is touched (e.g., on upsert during join).
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   community_guests.updated_at (Timestamptz). Reflects when the guest
+         *   identity record was last modified. Updated whenever the guest
+         *   record is touched (e.g., on upsert during join).
      */
     updated_at: string & tags.Format<"date-time">;
 
     /**
      * Authorization token.
      *
-     * @x-autobe-specification Authorization token comes from the session table.
+         * @x-autobe-specification Authorization token comes from the session
+         *   table.
      */
     token: IAuthorizationToken;
   };
@@ -144,14 +185,21 @@ export namespace ICommunityGuest {
     /**
      * Optional partial text filter on the guest's device fingerprint identifier. When provided, only records whose fingerprint contains this value are returned.
      *
-     * @x-autobe-specification Applies a partial text match (LIKE/contains) filter on community_guests.fingerprint column. When provided, only guests whose fingerprint contains this string are returned. When omitted, no fingerprint filter is applied.
+         * @x-autobe-specification Applies a partial text match (LIKE/contains)
+         *   filter on community_guests.fingerprint column. When provided, only
+         *   guests whose fingerprint contains this string are returned. When
+         *   omitted, no fingerprint filter is applied.
      */
     fingerprint?: string | undefined;
 
     /**
      * Optional date-time range filter on the record's creation timestamp. Use `gte` to set a lower bound and `lte` to set an upper bound. Both bounds are inclusive and independently optional.
      *
-     * @x-autobe-specification Date range filter applied to community_guests.created_at. Use createdAt.gte for lower bound (WHERE created_at >= gte) and createdAt.lte for upper bound (WHERE created_at <= lte). Both sub-fields are nullable and optional. Omitting the field entirely means no created_at filter is applied.
+         * @x-autobe-specification Date range filter applied to
+         *   community_guests.created_at. Use createdAt.gte for lower bound
+         *   (WHERE created_at >= gte) and createdAt.lte for upper bound (WHERE
+         *   created_at <= lte). Both sub-fields are nullable and optional.
+         *   Omitting the field entirely means no created_at filter is applied.
      */
     createdAt?:
       | {
@@ -163,7 +211,11 @@ export namespace ICommunityGuest {
     /**
      * Optional date-time range filter on the record's last update timestamp. Use `gte` to set a lower bound and `lte` to set an upper bound. Both bounds are inclusive and independently optional.
      *
-     * @x-autobe-specification Date range filter applied to community_guests.updated_at. Use updatedAt.gte for lower bound (WHERE updated_at >= gte) and updatedAt.lte for upper bound (WHERE updated_at <= lte). Both sub-fields are nullable and optional. Omitting the field entirely means no updated_at filter is applied.
+         * @x-autobe-specification Date range filter applied to
+         *   community_guests.updated_at. Use updatedAt.gte for lower bound
+         *   (WHERE updated_at >= gte) and updatedAt.lte for upper bound (WHERE
+         *   updated_at <= lte). Both sub-fields are nullable and optional.
+         *   Omitting the field entirely means no updated_at filter is applied.
      */
     updatedAt?:
       | {
@@ -175,21 +227,30 @@ export namespace ICommunityGuest {
     /**
      * Page number to retrieve (1-indexed). Defaults to 1 when not provided.
      *
-     * @x-autobe-specification 1-indexed page number for offset-based pagination. skip = (page - 1) * limit. Minimum value is 1. Defaults to 1 when omitted.
+         * @x-autobe-specification 1-indexed page number for offset-based
+         *   pagination. skip = (page - 1) * limit. Minimum value is 1. Defaults
+         *   to 1 when omitted.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of records per page. Defaults to 20 when not provided.
      *
-     * @x-autobe-specification Maximum number of records to return per page. Used as `take` in Prisma findMany. Minimum value is 1. Defaults to 20 when omitted. Applied together with `page` to compute the skip offset.
+         * @x-autobe-specification Maximum number of records to return per page.
+         *   Used as `take` in Prisma findMany. Minimum value is 1. Defaults to
+         *   20 when omitted. Applied together with `page` to compute the skip
+         *   offset.
      */
     limit?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Sort order for the returned results. Specifies the field and direction (e.g., `created_at DESC`). Defaults to creation time descending when not provided.
      *
-     * @x-autobe-specification Sorting specification string indicating the field and direction to order results. Example values: 'created_at DESC', 'created_at ASC', 'updated_at DESC'. Parsed server-side and translated into Prisma orderBy clause. Default sort is created_at DESC when omitted.
+         * @x-autobe-specification Sorting specification string indicating the
+         *   field and direction to order results. Example values: 'created_at
+         *   DESC', 'created_at ASC', 'updated_at DESC'. Parsed server-side and
+         *   translated into Prisma orderBy clause. Default sort is created_at
+         *   DESC when omitted.
      */
     sort?: string | undefined;
   };
@@ -201,29 +262,48 @@ export namespace ICommunityGuest {
     /**
      * Device or browser-level anonymous identifier that uniquely represents this guest's browsing context. Used to look up or create a persistent guest identity without requiring account registration. A consistent fingerprint enables session continuity across requests for the same unauthenticated visitor.
      *
-     * @x-autobe-database-schema-property fingerprint
-     * @x-autobe-specification Direct mapping to community_guests.fingerprint. The server queries community_guests WHERE fingerprint = ? (unique constraint). If no record is found, a new community_guests row is inserted with this value. Must be a non-empty string uniquely identifying the client device or browser context.
+         * @x-autobe-database-schema-property fingerprint
+         * @x-autobe-specification Direct mapping to
+         *   community_guests.fingerprint. The server queries community_guests
+         *   WHERE fingerprint = ? (unique constraint). If no record is found, a
+         *   new community_guests row is inserted with this value. Must be a
+         *   non-empty string uniquely identifying the client device or browser
+         *   context.
      */
     fingerprint: string;
 
     /**
      * The full URL of the page the guest was on when initiating the session. Captured as browsing context for the new guest session record. Required for all environments including server-side rendering.
      *
-     * @x-autobe-specification Stored in community_guest_sessions.href for the newly created session record. Represents the full URL of the page the guest was visiting when the join request was made. Required. Must be a valid URI.
+         * @x-autobe-specification Stored in community_guest_sessions.href for
+         *   the newly created session record. Represents the full URL of the
+         *   page the guest was visiting when the join request was made.
+         *   Required. Must be a valid URI.
      */
     href: string & tags.Format<"uri">;
 
     /**
      * The URL of the referring page that directed the guest to the current page. Captured from the HTTP Referer header as browsing context for the new guest session. Required for all environments.
      *
-     * @x-autobe-specification Stored in community_guest_sessions.referrer for the newly created session record. Represents the HTTP Referer header value — the URL of the page that led the guest to the current page. Required. Must be a valid URI.
+         * @x-autobe-specification Stored in community_guest_sessions.referrer
+         *   for the newly created session record. Represents the HTTP Referer
+         *   header value — the URL of the page that led the guest to the
+         *   current page. Required. Must be a valid URI.
      */
     referrer: string & tags.Format<"uri">;
 
     /**
      * Optional IPv4 address of the guest client. Intended for server-side rendering (SSR) scenarios where the client cannot be identified directly from the request origin. If omitted, the server will determine the IP address from the incoming HTTP request.
      *
-     * @x-autobe-specification Stored in community_guest_sessions.ip (or ip_address) for the newly created session record. Optional IPv4 address provided explicitly by the client. This is intended for server-side rendering (SSR) environments where the actual client IP cannot be automatically extracted from the incoming request because it passes through the SSR server. The server uses this value if provided; otherwise it falls back to the IP extracted from the incoming HTTP request headers (e.g., X-Forwarded-For or REMOTE_ADDR).
+         * @x-autobe-specification Stored in community_guest_sessions.ip (or
+         *   ip_address) for the newly created session record. Optional IPv4
+         *   address provided explicitly by the client. This is intended for
+         *   server-side rendering (SSR) environments where the actual client IP
+         *   cannot be automatically extracted from the incoming request because
+         *   it passes through the SSR server. The server uses this value if
+         *   provided; otherwise it falls back to the IP extracted from the
+         *   incoming HTTP request headers (e.g., X-Forwarded-For or
+         *   REMOTE_ADDR).
      */
     ip?: (string & tags.Format<"ipv4">) | undefined;
   };

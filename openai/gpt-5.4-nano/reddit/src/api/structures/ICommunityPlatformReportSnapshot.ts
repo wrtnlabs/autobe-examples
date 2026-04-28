@@ -8,48 +8,63 @@ export type ICommunityPlatformReportSnapshot = {
   /**
    * Unique identifier of this report snapshot.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from community_platform_report_snapshots.id. UUID string identifier for the snapshot row.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_report_snapshots.id. UUID string identifier for the
+     *   snapshot row.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Identifier of the moderation report this snapshot was captured for.
    *
-   * @x-autobe-database-schema-property community_platform_report_id
-   * @x-autobe-specification Direct mapping from community_platform_report_snapshots.community_platform_report_id. UUID of the moderation report this snapshot belongs to.
+     * @x-autobe-database-schema-property community_platform_report_id
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_report_snapshots.community_platform_report_id. UUID
+     *   of the moderation report this snapshot belongs to.
    */
   community_platform_report_id: string & tags.Format<"uuid">;
 
   /**
    * Admin reviewer identifier for this snapshot (null when reviewed by a member or not yet reviewed).
    *
-   * @x-autobe-database-schema-property reviewed_by_admin_id
-   * @x-autobe-specification Direct mapping from community_platform_report_snapshots.reviewed_by_admin_id. If the snapshot was reviewed by an admin, return the admin UUID; otherwise return null.
+     * @x-autobe-database-schema-property reviewed_by_admin_id
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_report_snapshots.reviewed_by_admin_id. If the
+     *   snapshot was reviewed by an admin, return the admin UUID; otherwise
+     *   return null.
    */
   reviewed_by_admin_id: (string & tags.Format<"uuid">) | null;
 
   /**
    * Member reviewer identifier for this snapshot (null when reviewed by an admin or not yet reviewed).
    *
-   * @x-autobe-database-schema-property reviewed_by_member_id
-   * @x-autobe-specification Direct mapping from community_platform_report_snapshots.reviewed_by_member_id. If the snapshot was reviewed by a member moderator, return the member UUID; otherwise return null.
+     * @x-autobe-database-schema-property reviewed_by_member_id
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_report_snapshots.reviewed_by_member_id. If the
+     *   snapshot was reviewed by a member moderator, return the member UUID;
+     *   otherwise return null.
    */
   reviewed_by_member_id: (string & tags.Format<"uuid">) | null;
 
   /**
    * Identifier of the concrete report target context captured in this snapshot.
    *
-   * @x-autobe-database-schema-property community_platform_report_target_id
-   * @x-autobe-specification Direct mapping from community_platform_report_snapshots.community_platform_report_target_id. UUID of the concrete report target context captured with this snapshot.
+     * @x-autobe-database-schema-property community_platform_report_target_id
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_report_snapshots.community_platform_report_target_id.
+     *   UUID of the concrete report target context captured with this snapshot.
    */
   community_platform_report_target_id: string & tags.Format<"uuid">;
 
   /**
    * Identifier of the moderation resolution associated with this snapshot (null if not resolved).
    *
-   * @x-autobe-database-schema-property community_platform_report_resolution_id
-   * @x-autobe-specification Direct mapping from community_platform_report_snapshots.community_platform_report_resolution_id. If a resolution exists for this snapshot, return its UUID; otherwise return null.
+     * @x-autobe-database-schema-property community_platform_report_resolution_id
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_report_snapshots.community_platform_report_resolution_id.
+     *   If a resolution exists for this snapshot, return its UUID; otherwise
+     *   return null.
    */
   community_platform_report_resolution_id:
     | (string & tags.Format<"uuid">)
@@ -58,56 +73,70 @@ export type ICommunityPlatformReportSnapshot = {
   /**
    * Reporter-provided reason text captured at the moment this snapshot was created.
    *
-   * @x-autobe-database-schema-property snapshot_reason
-   * @x-autobe-specification Direct mapping from community_platform_report_snapshots.snapshot_reason. Non-empty reason text captured at snapshot creation time.
+     * @x-autobe-database-schema-property snapshot_reason
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_report_snapshots.snapshot_reason. Non-empty reason
+     *   text captured at snapshot creation time.
    */
   snapshot_reason: string;
 
   /**
    * Moderation status of the report at the time this snapshot was captured.
    *
-   * @x-autobe-database-schema-property snapshot_status
-   * @x-autobe-specification Direct mapping from community_platform_report_snapshots.snapshot_status. Moderation state value as stored for this snapshot.
+     * @x-autobe-database-schema-property snapshot_status
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_report_snapshots.snapshot_status. Moderation state
+     *   value as stored for this snapshot.
    */
   snapshot_status: string;
 
   /**
    * Timestamp when the moderation decision for this snapshot took effect (null if no decision timestamp is recorded).
    *
-   * @x-autobe-database-schema-property snapshot_decisioned_at
-   * @x-autobe-specification Direct mapping from community_platform_report_snapshots.snapshot_decisioned_at. Returns ISO date-time when a decision was made for this snapshot; otherwise null.
+     * @x-autobe-database-schema-property snapshot_decisioned_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_report_snapshots.snapshot_decisioned_at. Returns ISO
+     *   date-time when a decision was made for this snapshot; otherwise null.
    */
   snapshot_decisioned_at: (string & tags.Format<"date-time">) | null;
 
   /**
    * Exact timestamp when this snapshot record was captured.
    *
-   * @x-autobe-database-schema-property captured_at
-   * @x-autobe-specification Direct mapping from community_platform_report_snapshots.captured_at. ISO 8601 date-time indicating when the snapshot was captured.
+     * @x-autobe-database-schema-property captured_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_report_snapshots.captured_at. ISO 8601 date-time
+     *   indicating when the snapshot was captured.
    */
   captured_at: string & tags.Format<"date-time">;
 
   /**
    * Row creation timestamp for this snapshot.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from community_platform_report_snapshots.created_at. ISO 8601 date-time when the snapshot row was created.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_report_snapshots.created_at. ISO 8601 date-time when
+     *   the snapshot row was created.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Row last update timestamp for this snapshot.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from community_platform_report_snapshots.updated_at. ISO 8601 date-time when the snapshot row was last updated.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_report_snapshots.updated_at. ISO 8601 date-time when
+     *   the snapshot row was last updated.
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * Soft-deletion timestamp for this snapshot (null when not deleted).
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from community_platform_report_snapshots.deleted_at. Returns ISO date-time if the snapshot row is soft-deleted; otherwise null.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_report_snapshots.deleted_at. Returns ISO date-time
+     *   if the snapshot row is soft-deleted; otherwise null.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -119,96 +148,117 @@ export namespace ICommunityPlatformReportSnapshot {
     /**
      * Unique identifier of this report snapshot record.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from community_platform_report_snapshots.id (UUID).
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_report_snapshots.id (UUID).
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Reporter-provided reason captured at the time this snapshot was created.
      *
-     * @x-autobe-database-schema-property snapshot_reason
-     * @x-autobe-specification Direct mapping from community_platform_report_snapshots.snapshot_reason.
+         * @x-autobe-database-schema-property snapshot_reason
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_report_snapshots.snapshot_reason.
      */
     snapshotReason: string;
 
     /**
      * Moderation state of the report at snapshot capture time (e.g., pending/approved/dismissed).
      *
-     * @x-autobe-database-schema-property snapshot_status
-     * @x-autobe-specification Direct mapping from community_platform_report_snapshots.snapshot_status.
+         * @x-autobe-database-schema-property snapshot_status
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_report_snapshots.snapshot_status.
      */
     snapshotStatus: string;
 
     /**
      * Exact timestamp when the snapshot was captured.
      *
-     * @x-autobe-database-schema-property captured_at
-     * @x-autobe-specification Direct mapping from community_platform_report_snapshots.captured_at as ISO-8601 date-time string.
+         * @x-autobe-database-schema-property captured_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_report_snapshots.captured_at as ISO-8601
+         *   date-time string.
      */
     capturedAt: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when the moderation decision became effective for this snapshot, or null if not decided yet.
      *
-     * @x-autobe-database-schema-property snapshot_decisioned_at
-     * @x-autobe-specification Direct mapping from community_platform_report_snapshots.snapshot_decisioned_at; may be null when no decision time is available for the snapshot.
+         * @x-autobe-database-schema-property snapshot_decisioned_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_report_snapshots.snapshot_decisioned_at; may be
+         *   null when no decision time is available for the snapshot.
      */
     snapshotDecisionedAt: (string & tags.Format<"date-time">) | null;
 
     /**
      * Administrator ID who reviewed this snapshot, or null when reviewed by a member or not reviewed by an admin.
      *
-     * @x-autobe-database-schema-property reviewed_by_admin_id
-     * @x-autobe-specification Direct mapping from community_platform_report_snapshots.reviewed_by_admin_id; may be null if the snapshot was reviewed by a member or not yet reviewed by an admin.
+         * @x-autobe-database-schema-property reviewed_by_admin_id
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_report_snapshots.reviewed_by_admin_id; may be
+         *   null if the snapshot was reviewed by a member or not yet reviewed
+         *   by an admin.
      */
     reviewedByAdminId: (string & tags.Format<"uuid">) | null;
 
     /**
      * Community member ID who reviewed this snapshot, or null when reviewed by an admin or not reviewed by a member.
      *
-     * @x-autobe-database-schema-property reviewed_by_member_id
-     * @x-autobe-specification Direct mapping from community_platform_report_snapshots.reviewed_by_member_id; may be null if reviewed by an admin or not yet reviewed by a member.
+         * @x-autobe-database-schema-property reviewed_by_member_id
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_report_snapshots.reviewed_by_member_id; may be
+         *   null if reviewed by an admin or not yet reviewed by a member.
      */
     reviewedByMemberId: (string & tags.Format<"uuid">) | null;
 
     /**
      * Identifier of the concrete target context (post/comment) associated with this report snapshot.
      *
-     * @x-autobe-database-schema-property community_platform_report_target_id
-     * @x-autobe-specification Direct mapping from community_platform_report_snapshots.community_platform_report_target_id.
+         * @x-autobe-database-schema-property community_platform_report_target_id
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_report_snapshots.community_platform_report_target_id.
      */
     reportTargetId: string & tags.Format<"uuid">;
 
     /**
      * Identifier of the linked report resolution record if the snapshot has an applied decision; otherwise null.
      *
-     * @x-autobe-database-schema-property community_platform_report_resolution_id
-     * @x-autobe-specification Direct mapping from community_platform_report_snapshots.community_platform_report_resolution_id; may be null for unresolved snapshots.
+         * @x-autobe-database-schema-property community_platform_report_resolution_id
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_report_snapshots.community_platform_report_resolution_id;
+         *   may be null for unresolved snapshots.
      */
     resolutionId: (string & tags.Format<"uuid">) | null;
 
     /**
      * Timestamp when this snapshot row was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from community_platform_report_snapshots.created_at as ISO-8601 date-time string.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_report_snapshots.created_at as ISO-8601
+         *   date-time string.
      */
     createdAt: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when this snapshot row was last updated.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from community_platform_report_snapshots.updated_at as ISO-8601 date-time string.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_report_snapshots.updated_at as ISO-8601
+         *   date-time string.
      */
     updatedAt: string & tags.Format<"date-time">;
 
     /**
      * Soft-deletion timestamp for this snapshot record, or null if the snapshot is active.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from community_platform_report_snapshots.deleted_at; may be null when not soft-deleted, otherwise ISO-8601 date-time.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_report_snapshots.deleted_at; may be null when
+         *   not soft-deleted, otherwise ISO-8601 date-time.
      */
     deletedAt: (string & tags.Format<"date-time">) | null;
   };
@@ -218,26 +268,28 @@ export namespace ICommunityPlatformReportSnapshot {
    */
   export type ICreate = {
     /**
-     * @x-autobe-database-schema-property snapshot_reason
+         * @x-autobe-database-schema-property snapshot_reason
      */
     snapshot_reason: string & tags.MinLength<1>;
     /**
-     * @x-autobe-database-schema-property snapshot_status
+         * @x-autobe-database-schema-property snapshot_status
      */
     snapshot_status: string;
 
     /**
      * Resolution identifier associated with this snapshot decision; null/omitted when no decision has been applied yet.
      *
-     * @x-autobe-database-schema-property community_platform_report_resolution_id
-     * @x-autobe-specification Allow community_platform_report_resolution_id to be omitted or explicitly set to null for unresolved snapshots; when provided with a decision, it must be a UUID string.
+         * @x-autobe-database-schema-property community_platform_report_resolution_id
+         * @x-autobe-specification Allow community_platform_report_resolution_id
+         *   to be omitted or explicitly set to null for unresolved snapshots;
+         *   when provided with a decision, it must be a UUID string.
      */
     community_platform_report_resolution_id?:
       | (string & tags.Format<"uuid">)
       | null
       | undefined;
     /**
-     * @x-autobe-database-schema-property snapshot_decisioned_at
+         * @x-autobe-database-schema-property snapshot_decisioned_at
      */
     snapshot_decisioned_at?:
       | (string & tags.Format<"date-time">)
@@ -252,14 +304,20 @@ export namespace ICommunityPlatformReportSnapshot {
     /**
      * 1-based page number of the snapshot timeline results to return.
      *
-     * @x-autobe-specification Interpret as a 1-based page number. Validate it matches the schema constraint (minimum 1). Compute OFFSET = (page - 1) * limit. Apply OFFSET/LIMIT to the base snapshot query constrained by reportId (operation logic).
+         * @x-autobe-specification Interpret as a 1-based page number. Validate
+         *   it matches the schema constraint (minimum 1). Compute OFFSET =
+         *   (page - 1) * limit. Apply OFFSET/LIMIT to the base snapshot query
+         *   constrained by reportId (operation logic).
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of snapshot records to return in a single page.
      *
-     * @x-autobe-specification Interpret as the maximum number of snapshot records to return in the current page. Validate minimum=1 and maximum=100. Apply LIMIT = limit to the base snapshot query constrained by reportId (operation logic).
+         * @x-autobe-specification Interpret as the maximum number of snapshot
+         *   records to return in the current page. Validate minimum=1 and
+         *   maximum=100. Apply LIMIT = limit to the base snapshot query
+         *   constrained by reportId (operation logic).
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -268,28 +326,35 @@ export namespace ICommunityPlatformReportSnapshot {
     /**
      * Sort direction for snapshot timeline ordering by the snapshot capture time (`capturedAt`).
      *
-     * @x-autobe-specification Map sort direction to ordering on the snapshot capture timestamp `community_platform_report_snapshots.captured_at`:
-     * - sort='asc' => ORDER BY captured_at ASC
-     * - sort='desc' => ORDER BY captured_at DESC
+         * @x-autobe-specification Map sort direction to ordering on the
+         *   snapshot capture timestamp
+         *   `community_platform_report_snapshots.captured_at`: - sort='asc' =>
+         *   ORDER BY captured_at ASC - sort='desc' => ORDER BY captured_at DESC
      */
     sort?: "asc" | "desc" | undefined;
 
     /**
      * Optional filter to restrict returned snapshots to the given moderation status.
      *
-     * @x-autobe-specification If the client provides `snapshotStatus`, add filter predicate:
-     * `community_platform_report_snapshots.snapshot_status = snapshotStatus`.
-     * If `snapshotStatus` is omitted/undefined, do not apply this predicate.
+         * @x-autobe-specification If the client provides `snapshotStatus`, add
+         *   filter predicate:
+         *   `community_platform_report_snapshots.snapshot_status =
+         *   snapshotStatus`. If `snapshotStatus` is omitted/undefined, do not
+         *   apply this predicate.
      */
     snapshotStatus?: string | undefined;
 
     /**
      * Optional filter indicating whether returned snapshots have a recorded moderation decision.
      *
-     * @x-autobe-specification If the client provides `hasDecision`, add filter predicate based on whether the snapshot has a decision timestamp:
-     * - hasDecision=true => `community_platform_report_snapshots.snapshot_decisioned_at IS NOT NULL`
-     * - hasDecision=false => `community_platform_report_snapshots.snapshot_decisioned_at IS NULL`.
-     * If `hasDecision` is omitted/undefined, do not apply this predicate.
+         * @x-autobe-specification If the client provides `hasDecision`, add
+         *   filter predicate based on whether the snapshot has a decision
+         *   timestamp: - hasDecision=true =>
+         *   `community_platform_report_snapshots.snapshot_decisioned_at IS NOT
+         *   NULL` - hasDecision=false =>
+         *   `community_platform_report_snapshots.snapshot_decisioned_at IS
+         *   NULL`. If `hasDecision` is omitted/undefined, do not apply this
+         *   predicate.
      */
     hasDecision?: boolean | undefined;
   };

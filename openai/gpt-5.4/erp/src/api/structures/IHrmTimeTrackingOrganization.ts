@@ -8,56 +8,75 @@ export type IHrmTimeTrackingOrganization = {
   /**
    * Unique identifier of the organization workspace.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_organizations.id. Return the organization's UUID primary key for the tenant record selected by the request path and authorization scope.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_organizations.id. Return the organization's UUID
+     *   primary key for the tenant record selected by the request path and
+     *   authorization scope.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Organization name shown throughout the workspace.
    *
-   * @x-autobe-database-schema-property name
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_organizations.name. Return the persisted organization name used as the workspace's primary display label.
+     * @x-autobe-database-schema-property name
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_organizations.name. Return the persisted organization
+     *   name used as the workspace's primary display label.
    */
   name: string;
 
   /**
    * Optional summary describing the organization's purpose or business context.
    *
-   * @x-autobe-database-schema-property description
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_organizations.description. Return the stored optional summary text, or null when the organization has no description.
+     * @x-autobe-database-schema-property description
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_organizations.description. Return the stored optional
+     *   summary text, or null when the organization has no description.
    */
   description: string | null;
 
   /**
    * Optional URI of the organization's logo image used for workspace branding.
    *
-   * @x-autobe-database-schema-property logo_uri
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_organizations.logo_uri. Return the persisted organization logo URI, or null when no branding image has been configured.
+     * @x-autobe-database-schema-property logo_uri
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_organizations.logo_uri. Return the persisted
+     *   organization logo URI, or null when no branding image has been
+     *   configured.
    */
   logo_uri: (string & tags.Format<"uri">) | null;
 
   /**
    * Default currency code used by the organization.
    *
-   * @x-autobe-database-schema-property currency_code
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_organizations.currency_code. Return the stored default currency code used for financial values and compensation display within the organization.
+     * @x-autobe-database-schema-property currency_code
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_organizations.currency_code. Return the stored
+     *   default currency code used for financial values and compensation
+     *   display within the organization.
    */
   currency_code: string;
 
   /**
    * IANA timezone identifier used as the organization's local operating time context.
    *
-   * @x-autobe-database-schema-property timezone
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_organizations.timezone. Return the persisted IANA timezone identifier that defines the organization's local time interpretation.
+     * @x-autobe-database-schema-property timezone
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_organizations.timezone. Return the persisted IANA
+     *   timezone identifier that defines the organization's local time
+     *   interpretation.
    */
   timezone: string;
 
   /**
    * Month number indicating when the organization's fiscal year starts.
    *
-   * @x-autobe-database-schema-property fiscal_start_month
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_organizations.fiscal_start_month. Return the stored integer month value from 1 through 12 indicating when the organization's fiscal year begins.
+     * @x-autobe-database-schema-property fiscal_start_month
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_organizations.fiscal_start_month. Return the stored
+     *   integer month value from 1 through 12 indicating when the
+     *   organization's fiscal year begins.
    */
   fiscal_start_month: number &
     tags.Type<"int32"> &
@@ -67,24 +86,31 @@ export type IHrmTimeTrackingOrganization = {
   /**
    * Timestamp when the organization workspace was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_organizations.created_at. Return the timestamp when the organization record was first created.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_organizations.created_at. Return the timestamp when
+     *   the organization record was first created.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the organization workspace was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_organizations.updated_at. Return the timestamp when the organization record was last updated.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_organizations.updated_at. Return the timestamp when
+     *   the organization record was last updated.
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * Soft-deletion timestamp; null means the organization is still active.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_organizations.deleted_at. Return the soft-deletion timestamp when the organization has been removed from active use, or null when the organization is active.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_organizations.deleted_at. Return the soft-deletion
+     *   timestamp when the organization has been removed from active use, or
+     *   null when the organization is active.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -96,27 +122,27 @@ export namespace IHrmTimeTrackingOrganization {
    */
   export type ICreate = {
     /**
-     * @x-autobe-database-schema-property name
+         * @x-autobe-database-schema-property name
      */
     name: string;
     /**
-     * @x-autobe-database-schema-property description
+         * @x-autobe-database-schema-property description
      */
     description?: string | null | undefined;
     /**
-     * @x-autobe-database-schema-property logo_uri
+         * @x-autobe-database-schema-property logo_uri
      */
     logo_uri?: (string & tags.Format<"uri">) | null | undefined;
     /**
-     * @x-autobe-database-schema-property currency_code
+         * @x-autobe-database-schema-property currency_code
      */
     currency_code: string;
     /**
-     * @x-autobe-database-schema-property timezone
+         * @x-autobe-database-schema-property timezone
      */
     timezone: string;
     /**
-     * @x-autobe-database-schema-property fiscal_start_month
+         * @x-autobe-database-schema-property fiscal_start_month
      */
     fiscal_start_month: number & tags.Type<"int32">;
   };
@@ -128,72 +154,83 @@ export namespace IHrmTimeTrackingOrganization {
     /**
      * Unique identifier of the organization workspace.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_organizations.id.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_organizations.id.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Display name of the organization workspace.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_organizations.name.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_organizations.name.
      */
     name: string;
 
     /**
      * Optional short description of the organization workspace.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_organizations.description. Preserve null when the organization has no stored summary text.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_organizations.description. Preserve null when the
+         *   organization has no stored summary text.
      */
     description: string | null;
 
     /**
      * Optional URI of the organization's logo image.
      *
-     * @x-autobe-database-schema-property logo_uri
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_organizations.logo_uri. Preserve null when no logo URI is configured.
+         * @x-autobe-database-schema-property logo_uri
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_organizations.logo_uri. Preserve null when no
+         *   logo URI is configured.
      */
     logo_uri: (string & tags.Format<"uri">) | null;
 
     /**
      * Default currency code used by the organization.
      *
-     * @x-autobe-database-schema-property currency_code
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_organizations.currency_code.
+         * @x-autobe-database-schema-property currency_code
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_organizations.currency_code.
      */
     currency_code: string;
 
     /**
      * IANA timezone identifier used by the organization workspace.
      *
-     * @x-autobe-database-schema-property timezone
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_organizations.timezone.
+         * @x-autobe-database-schema-property timezone
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_organizations.timezone.
      */
     timezone: string;
 
     /**
      * Month number from 1 to 12 when the organization's fiscal year begins.
      *
-     * @x-autobe-database-schema-property fiscal_start_month
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_organizations.fiscal_start_month.
+         * @x-autobe-database-schema-property fiscal_start_month
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_organizations.fiscal_start_month.
      */
     fiscal_start_month: number & tags.Type<"int32">;
 
     /**
      * Timestamp when the organization workspace was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_organizations.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_organizations.created_at.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when the organization workspace was last updated.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_organizations.updated_at.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_organizations.updated_at.
      */
     updated_at: string & tags.Format<"date-time">;
   };
@@ -205,21 +242,28 @@ export namespace IHrmTimeTrackingOrganization {
     /**
      * Keyword text used to search accessible organizations.
      *
-     * @x-autobe-specification Free-text search term for organization browsing. Service logic should apply this value as a partial-match query primarily against organization names and optionally organization descriptions when supported by the endpoint.
+         * @x-autobe-specification Free-text search term for organization
+         *   browsing. Service logic should apply this value as a partial-match
+         *   query primarily against organization names and optionally
+         *   organization descriptions when supported by the endpoint.
      */
     search?: string | undefined;
 
     /**
      * Page number of the result set to return.
      *
-     * @x-autobe-specification 1-indexed page selector for paginated organization results. Validate that the value is at least 1 and apply a default page when omitted.
+         * @x-autobe-specification 1-indexed page selector for paginated
+         *   organization results. Validate that the value is at least 1 and
+         *   apply a default page when omitted.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of organizations to include in a single page.
      *
-     * @x-autobe-specification Maximum number of organization records to return in one page. Enforce the declared request bounds during validation before query execution.
+         * @x-autobe-specification Maximum number of organization records to
+         *   return in one page. Enforce the declared request bounds during
+         *   validation before query execution.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -228,42 +272,60 @@ export namespace IHrmTimeTrackingOrganization {
     /**
      * Instruction that controls the ordering of returned organizations.
      *
-     * @x-autobe-specification Sorting expression for organization browsing. Validate the requested sort field and direction against supported organization list ordering rules, then translate it into deterministic query ordering with a stable tiebreaker.
+         * @x-autobe-specification Sorting expression for organization browsing.
+         *   Validate the requested sort field and direction against supported
+         *   organization list ordering rules, then translate it into
+         *   deterministic query ordering with a stable tiebreaker.
      */
     sort?: string | undefined;
 
     /**
      * Organization name criterion used to narrow results.
      *
-     * @x-autobe-specification Optional organization-name filter input for browsing accessible organizations. Service logic should use this value to constrain the organization query against stored organization names according to supported matching semantics.
+         * @x-autobe-specification Optional organization-name filter input for
+         *   browsing accessible organizations. Service logic should use this
+         *   value to constrain the organization query against stored
+         *   organization names according to supported matching semantics.
      */
     name?: string | undefined;
 
     /**
      * Organization description criterion used to narrow results.
      *
-     * @x-autobe-specification Optional organization-description filter input for browsing accessible organizations. Service logic should use this value to constrain the organization query against stored organization descriptions, including null-aware handling only if the endpoint explicitly supports it.
+         * @x-autobe-specification Optional organization-description filter
+         *   input for browsing accessible organizations. Service logic should
+         *   use this value to constrain the organization query against stored
+         *   organization descriptions, including null-aware handling only if
+         *   the endpoint explicitly supports it.
      */
     description?: string | undefined;
 
     /**
      * Default currency code criterion used to filter organizations.
      *
-     * @x-autobe-specification Optional currency filter input for browsing accessible organizations. Service logic should constrain results to organizations whose default currency matches the requested code.
+         * @x-autobe-specification Optional currency filter input for browsing
+         *   accessible organizations. Service logic should constrain results to
+         *   organizations whose default currency matches the requested code.
      */
     currency_code?: string | undefined;
 
     /**
      * Timezone criterion used to filter organizations.
      *
-     * @x-autobe-specification Optional timezone filter input for browsing accessible organizations. Service logic should constrain results to organizations whose stored timezone matches the requested IANA timezone identifier.
+         * @x-autobe-specification Optional timezone filter input for browsing
+         *   accessible organizations. Service logic should constrain results to
+         *   organizations whose stored timezone matches the requested IANA
+         *   timezone identifier.
      */
     timezone?: string | undefined;
 
     /**
      * Fiscal year start month criterion used to filter organizations.
      *
-     * @x-autobe-specification Optional fiscal-year start month filter input for browsing accessible organizations. Service logic should constrain results to organizations whose fiscal start month matches the supplied month number from 1 through 12.
+         * @x-autobe-specification Optional fiscal-year start month filter input
+         *   for browsing accessible organizations. Service logic should
+         *   constrain results to organizations whose fiscal start month matches
+         *   the supplied month number from 1 through 12.
      */
     fiscal_start_month?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<12>)
@@ -272,21 +334,34 @@ export namespace IHrmTimeTrackingOrganization {
     /**
      * Creation timestamp criterion used to filter organizations.
      *
-     * @x-autobe-specification Optional creation-timestamp filter input for browsing accessible organizations. Service logic should interpret the provided date-time according to the endpoint's supported comparison behavior when constraining organization results.
+         * @x-autobe-specification Optional creation-timestamp filter input for
+         *   browsing accessible organizations. Service logic should interpret
+         *   the provided date-time according to the endpoint's supported
+         *   comparison behavior when constraining organization results.
      */
     created_at?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Last updated timestamp criterion used to filter organizations.
      *
-     * @x-autobe-specification Optional last-updated timestamp filter input for browsing accessible organizations. Service logic should interpret the provided date-time according to the endpoint's supported comparison behavior when constraining organization results.
+         * @x-autobe-specification Optional last-updated timestamp filter input
+         *   for browsing accessible organizations. Service logic should
+         *   interpret the provided date-time according to the endpoint's
+         *   supported comparison behavior when constraining organization
+         *   results.
      */
     updated_at?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Soft-deletion timestamp criterion used to request active or historically deleted organizations when allowed.
      *
-     * @x-autobe-specification Optional soft-deletion filter input for browsing accessible organizations. Null indicates active organizations, while a date-time value targets soft-deleted records matching the supplied timestamp or supported historical filter behavior. Normal organization browsing should still default to active records only unless an explicitly authorized administrative flow enables deleted-record visibility.
+         * @x-autobe-specification Optional soft-deletion filter input for
+         *   browsing accessible organizations. Null indicates active
+         *   organizations, while a date-time value targets soft-deleted records
+         *   matching the supplied timestamp or supported historical filter
+         *   behavior. Normal organization browsing should still default to
+         *   active records only unless an explicitly authorized administrative
+         *   flow enables deleted-record visibility.
      */
     deleted_at?: (string & tags.Format<"date-time">) | null | undefined;
   };
@@ -298,33 +373,33 @@ export namespace IHrmTimeTrackingOrganization {
    */
   export type IUpdate = {
     /**
-     * @x-autobe-database-schema-property name
+         * @x-autobe-database-schema-property name
      */
     name?: string | undefined;
 
     /**
      * Optional organization summary text. May be null to clear the stored description.
      *
-     * @x-autobe-database-schema-property description
+         * @x-autobe-database-schema-property description
      */
     description?: string | null | undefined;
 
     /**
      * Optional URI of the organization's logo image used for workspace branding. May be null to clear the stored logo.
      *
-     * @x-autobe-database-schema-property logo_uri
+         * @x-autobe-database-schema-property logo_uri
      */
     logo_uri?: (string & tags.Format<"uri">) | null | undefined;
     /**
-     * @x-autobe-database-schema-property currency_code
+         * @x-autobe-database-schema-property currency_code
      */
     currency_code?: string | undefined;
     /**
-     * @x-autobe-database-schema-property timezone
+         * @x-autobe-database-schema-property timezone
      */
     timezone?: string | undefined;
     /**
-     * @x-autobe-database-schema-property fiscal_start_month
+         * @x-autobe-database-schema-property fiscal_start_month
      */
     fiscal_start_month?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<12>)

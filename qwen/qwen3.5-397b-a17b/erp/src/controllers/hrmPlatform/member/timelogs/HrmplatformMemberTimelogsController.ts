@@ -33,9 +33,10 @@ export class HrmplatformMemberTimelogsController {
    *
    * @param connection
    * @param body Timelog creation data including date, duration, project reference, optional task, description, and billable flag.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Create a new timelog record in hrm_platform_timelogs table.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Create a new timelog record in
+     *   hrm_platform_timelogs table.
    *
    * 1. Validate authenticated user has an active employee record in the current organization context.
    * 2. Verify the employee is assigned to the specified project (check hrm_platform_project_members).
@@ -94,9 +95,10 @@ export class HrmplatformMemberTimelogsController {
    *
    * @param connection
    * @param body Search criteria including date range, project, task, billable status filters, and pagination parameters.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query hrm_platform_timelogs table with pagination and filtering.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query hrm_platform_timelogs table with pagination
+     *   and filtering.
    *
    * 1. Apply organization scope filter: join with hrm_platform_employees to filter by organization_id from authenticated user's context
    * 2. Apply actor-based access control:
@@ -154,9 +156,10 @@ export class HrmplatformMemberTimelogsController {
    *
    * @param connection
    * @param timelogId Unique identifier of the timelog entry (UUID format).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query hrm_platform_timelogs table by primary key id (UUID).
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query hrm_platform_timelogs table by primary key
+     *   id (UUID).
    *
    * Include related entities via joins:
    * - Join hrm_platform_employees on hrm_platform_employee_id
@@ -203,9 +206,10 @@ export class HrmplatformMemberTimelogsController {
    * @param connection
    * @param timelogId UUID of the timelog entry to update.
    * @param body Update payload containing modifiable timelog fields. All fields are optional - only provided fields will be updated. Project and task must respect employee membership constraints.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query hrm_platform_timelogs by timelogId UUID. Verify the timelog exists and is not soft-deleted.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query hrm_platform_timelogs by timelogId UUID.
+     *   Verify the timelog exists and is not soft-deleted.
    *
    * Check authorization: allow if requester is the timelog owner OR has time:manage permission.
    *
@@ -250,9 +254,9 @@ export class HrmplatformMemberTimelogsController {
    *
    * @param connection
    * @param timelogId UUID of the timelog to delete.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Delete the timelog identified by timelogId.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Delete the timelog identified by timelogId.
    *
    * 1. Verify the timelog exists in hrm_platform_timelogs table.
    * 2. Check authorization:

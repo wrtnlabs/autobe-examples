@@ -27,9 +27,11 @@ export class ShoppingmallCustomerReviewsSnapshotsController {
    * @param connection
    * @param reviewId Target review identifier
    * @param body Pagination, sorting, and filter criteria for review snapshot history
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Implement a paginated history query over shopping_mall_review_snapshots scoped by the parent shopping_mall_review_id that matches the reviewId path parameter.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Implement a paginated history query over
+     *   shopping_mall_review_snapshots scoped by the parent
+     *   shopping_mall_review_id that matches the reviewId path parameter.
    *
    * First, validate that reviewId is a UUID-shaped identifier and load the parent shopping_mall_reviews row. If no review exists for the given id, return a not-found error. Then authorize access: allow the owning customer when shopping_mall_reviews.shopping_mall_customer_id matches the authenticated customer identity, and allow administrators for platform oversight. Reject all other actors.
    *
@@ -77,9 +79,14 @@ export class ShoppingmallCustomerReviewsSnapshotsController {
    * @param connection
    * @param reviewId Target review's ID
    * @param snapshotId Target review snapshot's ID
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Implement a read-only service method that loads a single row from `shopping_mall_review_snapshots` by `id = snapshotId` and `shopping_mall_review_id = reviewId`. Use both predicates in the primary query so the service enforces parent-child scoping at the database layer and does not fetch a snapshot outside the requested review context.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Implement a read-only service method that loads a
+     *   single row from `shopping_mall_review_snapshots` by `id = snapshotId`
+     *   and `shopping_mall_review_id = reviewId`. Use both predicates in the
+     *   primary query so the service enforces parent-child scoping at the
+     *   database layer and does not fetch a snapshot outside the requested
+     *   review context.
    *
    * Join or separately load the parent row from `shopping_mall_reviews` as needed for authorization and consistency checks. The service should verify that the caller is allowed to inspect the target review history according to actor-specific ownership or oversight rules. For customer self-service access, confirm that the target review belongs to the authenticated customer. For administrator access, permit inspection for oversight and dispute review. If seller access is not explicitly supported by policy for review-history inspection, deny it.
    *

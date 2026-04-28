@@ -11,47 +11,47 @@ import { IErpHrmRole } from "./IErpHrmRole";
  */
 export type IErpHrmEmployee = {
   /**
-   * @x-autobe-database-schema-property id
+     * @x-autobe-database-schema-property id
    */
   id: string & tags.Format<"uuid">;
   /**
-   * @x-autobe-database-schema-property member
+     * @x-autobe-database-schema-property member
    */
   member: IErpHrmMember.ISummary;
   /**
-   * @x-autobe-database-schema-property organization
+     * @x-autobe-database-schema-property organization
    */
   organization: IErpHrmOrganization.ISummary;
   /**
-   * @x-autobe-database-schema-property role
+     * @x-autobe-database-schema-property role
    */
   role: IErpHrmRole.ISummary;
   /**
-   * @x-autobe-database-schema-property department
+     * @x-autobe-database-schema-property department
    */
   department: IErpHrmDepartment.ISummary | null;
   /**
-   * @x-autobe-database-schema-property position
+     * @x-autobe-database-schema-property position
    */
   position: string | null;
   /**
-   * @x-autobe-database-schema-property employment_type
+     * @x-autobe-database-schema-property employment_type
    */
   employment_type: "full_time" | "part_time" | "contractor" | "intern";
   /**
-   * @x-autobe-database-schema-property status
+     * @x-autobe-database-schema-property status
    */
   status: "active" | "deactivated";
   /**
-   * @x-autobe-database-schema-property created_at
+     * @x-autobe-database-schema-property created_at
    */
   created_at: string & tags.Format<"date-time">;
   /**
-   * @x-autobe-database-schema-property updated_at
+     * @x-autobe-database-schema-property updated_at
    */
   updated_at: string & tags.Format<"date-time">;
   /**
-   * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-database-schema-property deleted_at
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -104,39 +104,55 @@ export namespace IErpHrmEmployee {
     /**
      * Email address of the member to add to the organization. If the email corresponds to an existing user account, the employee record is created immediately. If not, a pending invitation is created for when that user signs up.
      *
-     * @x-autobe-specification Used to lookup member in erp_hrm_members.email. If found, use erp_hrm_member_id for employee creation. If not found, create pending invitation in erp_hrm_invitations table. Email format validated. Unique constraint check ensures one employee per member per organization.
+         * @x-autobe-specification Used to lookup member in
+         *   erp_hrm_members.email. If found, use erp_hrm_member_id for employee
+         *   creation. If not found, create pending invitation in
+         *   erp_hrm_invitations table. Email format validated. Unique
+         *   constraint check ensures one employee per member per organization.
      */
     email: string & tags.Format<"email">;
 
     /**
      * Unique identifier of the role to assign to this employee. The role determines the employee's permissions within the organization.
      *
-     * @x-autobe-database-schema-property erp_hrm_role_id
-     * @x-autobe-specification Direct mapping to erp_hrm_employees.erp_hrm_role_id. Must reference a role that exists in the current organization (erp_hrm_roles where organization_id matches session). UUID format validated.
+         * @x-autobe-database-schema-property erp_hrm_role_id
+         * @x-autobe-specification Direct mapping to
+         *   erp_hrm_employees.erp_hrm_role_id. Must reference a role that
+         *   exists in the current organization (erp_hrm_roles where
+         *   organization_id matches session). UUID format validated.
      */
     roleId: string & tags.Format<"uuid">;
 
     /**
      * Optional unique identifier of the department to assign this employee to. If not provided, the employee will be unassigned from any department.
      *
-     * @x-autobe-database-schema-property erp_hrm_department_id
-     * @x-autobe-specification Direct mapping to erp_hrm_employees.erp_hrm_department_id (nullable). If provided, must reference a department that exists in the current organization. If null, employee is unassigned from any department.
+         * @x-autobe-database-schema-property erp_hrm_department_id
+         * @x-autobe-specification Direct mapping to
+         *   erp_hrm_employees.erp_hrm_department_id (nullable). If provided,
+         *   must reference a department that exists in the current
+         *   organization. If null, employee is unassigned from any department.
      */
     departmentId?: (string & tags.Format<"uuid">) | null | undefined;
 
     /**
      * Optional job title or position within the organization, such as 'Software Engineer' or 'Marketing Manager'. This is distinct from the system role and reflects the employee's official designation.
      *
-     * @x-autobe-database-schema-property position
-     * @x-autobe-specification Direct mapping to erp_hrm_employees.position (nullable string). Optional job title like 'Software Engineer' or 'Marketing Manager'. No validation constraints beyond being a string.
+         * @x-autobe-database-schema-property position
+         * @x-autobe-specification Direct mapping to erp_hrm_employees.position
+         *   (nullable string). Optional job title like 'Software Engineer' or
+         *   'Marketing Manager'. No validation constraints beyond being a
+         *   string.
      */
     position?: string | null | undefined;
 
     /**
      * Employment classification within the organization. Determines how the employee is categorized for reporting and management purposes.
      *
-     * @x-autobe-database-schema-property employment_type
-     * @x-autobe-specification Direct mapping to erp_hrm_employees.employment_type. Must be one of: 'full_time', 'part_time', 'contractor', 'intern'. Enum validation ensures valid employment classification.
+         * @x-autobe-database-schema-property employment_type
+         * @x-autobe-specification Direct mapping to
+         *   erp_hrm_employees.employment_type. Must be one of: 'full_time',
+         *   'part_time', 'contractor', 'intern'. Enum validation ensures valid
+         *   employment classification.
      */
     employmentType: "full_time" | "part_time" | "contractor" | "intern";
   };
@@ -148,56 +164,56 @@ export namespace IErpHrmEmployee {
     /**
      * Unique identifier for the employee record
      *
-     * @x-autobe-database-schema-property id
+         * @x-autobe-database-schema-property id
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * User profile information including display name and avatar
      *
-     * @x-autobe-database-schema-property member
+         * @x-autobe-database-schema-property member
      */
     member: IErpHrmMember.ISummary;
 
     /**
      * Role assignment determining employee permissions
      *
-     * @x-autobe-database-schema-property role
+         * @x-autobe-database-schema-property role
      */
     role: IErpHrmRole.ISummary;
 
     /**
      * Department affiliation, null if unassigned
      *
-     * @x-autobe-database-schema-property department
+         * @x-autobe-database-schema-property department
      */
     department: IErpHrmDepartment.ISummary | null;
 
     /**
      * Job title or position within the organization
      *
-     * @x-autobe-database-schema-property position
+         * @x-autobe-database-schema-property position
      */
     position: string | null;
 
     /**
      * Employment classification: full_time, part_time, contractor, or intern
      *
-     * @x-autobe-database-schema-property employment_type
+         * @x-autobe-database-schema-property employment_type
      */
     employment_type: string;
 
     /**
      * Activation status: active or deactivated
      *
-     * @x-autobe-database-schema-property status
+         * @x-autobe-database-schema-property status
      */
     status: string;
 
     /**
      * Timestamp when the employee record was created
      *
-     * @x-autobe-database-schema-property created_at
+         * @x-autobe-database-schema-property created_at
      */
     created_at: string & tags.Format<"date-time">;
   };
@@ -209,24 +225,36 @@ export namespace IErpHrmEmployee {
     /**
      * Department assignment for the employee. Provide a valid department UUID to assign the employee to a department, or null to remove their current department affiliation. The department must exist within the current organization.
      *
-     * @x-autobe-database-schema-property erp_hrm_department_id
-     * @x-autobe-specification Maps to erp_hrm_employees.erp_hrm_department_id FK column. Nullable - set to UUID to assign employee to a department, set to null to unassign (remove department affiliation). Validation: if not null, verify the department exists in current organization context (erp_hrm_departments.id with matching organization_id).
+         * @x-autobe-database-schema-property erp_hrm_department_id
+         * @x-autobe-specification Maps to
+         *   erp_hrm_employees.erp_hrm_department_id FK column. Nullable - set
+         *   to UUID to assign employee to a department, set to null to unassign
+         *   (remove department affiliation). Validation: if not null, verify
+         *   the department exists in current organization context
+         *   (erp_hrm_departments.id with matching organization_id).
      */
     departmentId?: (string & tags.Format<"uuid">) | null | undefined;
 
     /**
      * Job title or position within the organization. Examples include 'Software Engineer', 'Marketing Manager', 'HR Specialist', etc. This is distinct from the system role and reflects the employee's official designation.
      *
-     * @x-autobe-database-schema-property position
-     * @x-autobe-specification Direct mapping to erp_hrm_employees.position column. Nullable string field for job title or position designation (e.g., 'Software Engineer', 'Marketing Manager'). No validation constraints beyond being a valid string.
+         * @x-autobe-database-schema-property position
+         * @x-autobe-specification Direct mapping to erp_hrm_employees.position
+         *   column. Nullable string field for job title or position designation
+         *   (e.g., 'Software Engineer', 'Marketing Manager'). No validation
+         *   constraints beyond being a valid string.
      */
     position?: string | null | undefined;
 
     /**
      * Employment classification within the organization. Valid values: 'full_time' for standard full-time employees working regular hours, 'part_time' for employees working reduced hours, 'contractor' for external workers engaged on a contract basis, or 'intern' for temporary training positions.
      *
-     * @x-autobe-database-schema-property employment_type
-     * @x-autobe-specification Maps to erp_hrm_employees.employment_type column. Enum validation required: must be one of 'full_time' (standard full-time hours), 'part_time' (reduced hours), 'contractor' (external workers on contract basis), or 'intern' (temporary training positions).
+         * @x-autobe-database-schema-property employment_type
+         * @x-autobe-specification Maps to erp_hrm_employees.employment_type
+         *   column. Enum validation required: must be one of 'full_time'
+         *   (standard full-time hours), 'part_time' (reduced hours),
+         *   'contractor' (external workers on contract basis), or 'intern'
+         *   (temporary training positions).
      */
     employmentType?:
       | "full_time"

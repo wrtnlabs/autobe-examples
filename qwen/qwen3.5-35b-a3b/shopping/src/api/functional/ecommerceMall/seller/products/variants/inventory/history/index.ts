@@ -34,7 +34,9 @@ import { IPageIEcommerceMallInventoryRecord } from "../../../../../../../structu
  * @param props.body Filter and pagination criteria for inventory history list including date range, operation type, quantity direction, and cursor-based pagination parameters.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Query ecommerce_mall_inventory_records table filtered by product_variant_id derived from variantId (which belongs to the specified productId).
+ * @x-autobe-specification Query ecommerce_mall_inventory_records table filtered
+ *   by product_variant_id derived from variantId (which belongs to the
+ *   specified productId).
  *
  * Apply pagination using cursor-based pagination for efficiency with large result sets. Sort results by created_at DESC (newest first) for chronological browsing.
  *

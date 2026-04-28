@@ -23,9 +23,13 @@ export class EcommercemallCustomerProductsSearchController {
    *
    * @param connection
    * @param body Search criteria including text search, category filters, price range, stock availability, sorting, and pagination parameters
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Query ecommerce_mall_products table joining with ecommerce_mall_categories for category filtering, ecommerce_mall_sellers and ecommerce_mall_seller_profiles for seller information, and ecommerce_mall_product_variants for availability checks.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Query ecommerce_mall_products table joining with
+     *   ecommerce_mall_categories for category filtering,
+     *   ecommerce_mall_sellers and ecommerce_mall_seller_profiles for seller
+     *   information, and ecommerce_mall_product_variants for availability
+     *   checks.
    *
    * Apply mandatory filter: deleted_at IS NULL to exclude deleted products per section 336.
    *

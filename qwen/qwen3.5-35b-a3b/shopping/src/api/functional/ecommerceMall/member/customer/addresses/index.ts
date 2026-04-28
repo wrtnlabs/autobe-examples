@@ -19,11 +19,14 @@ import { IEcommerceMallCustomerAddress } from "../../../../../structures/IEcomme
  * @param props.body Address creation data including recipient name, phone number, complete address details, and default flag.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification 1. Extract authenticated customer ID from JWT session (ecommerce_mall_member_id)
- * 2. Validate all required fields: recipient_name, phone, street, city, state, postal_code, country
- * 3. If is_default is true, find existing address with is_default=true for this customer and set it to false
- * 4. Insert new address record with auto-generated UUID for id, current timestamp for created_at/updated_at, NULL for deleted_at, and the provided is_default value
- * 5. Return the complete address entity including generated id
+ * @x-autobe-specification 1. Extract authenticated customer ID from JWT session
+ *   (ecommerce_mall_member_id) 2. Validate all required fields: recipient_name,
+ *   phone, street, city, state, postal_code, country 3. If is_default is true,
+ *   find existing address with is_default=true for this customer and set it to
+ *   false 4. Insert new address record with auto-generated UUID for id, current
+ *   timestamp for created_at/updated_at, NULL for deleted_at, and the provided
+ *   is_default value 5. Return the complete address entity including generated
+ *   id
  *
  * Error handling:
  * - Return 400 for missing or invalid required fields (recipient_name, phone, street, city, state, postal_code, country cannot be empty)

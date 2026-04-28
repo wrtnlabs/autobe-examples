@@ -18,9 +18,12 @@ export class MallplatformCustomerAdministratorapprovalrequestsController {
    *
    * @param connection
    * @param body The administrator approval request submission containing the applicant's reason for requesting elevated access.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Identify the authenticated principal from the session and resolve the applicant account type. Reject unauthenticated callers and reject callers that are not eligible to submit an administrator approval request.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Identify the authenticated principal from the
+     *   session and resolve the applicant account type. Reject unauthenticated
+     *   callers and reject callers that are not eligible to submit an
+     *   administrator approval request.
    *
    * Check mall_platform_administrator_approval_requests for an existing pending request belonging to the same applicant. If one exists, return a duplicate-pending-request error and do not insert a new row.
    *

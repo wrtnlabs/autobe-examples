@@ -23,18 +23,16 @@ export class EcommercemallMemberPassword_resetsController {
    *
    * @param connection
    * @param body Email address to send password reset token to. The email must be valid and match an existing account (though the API accepts any email to prevent enumeration).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1. Accept email address from request body.
-   * 2. Validate email format (RFC 5322).
-   * 3. Query all actor tables to check if email exists.
-   * 4. Determine actor type and use corresponding password reset table.
-   * 5. Generate cryptographically secure random token (UUID).
-   * 6. Set expires_at to 1 hour from now.
-   * 7. Insert new password reset record.
-   * 8. Delete any existing unused tokens for this user.
-   * 9. Trigger email service to send reset token (async).
-   * 10. Return success response (do NOT expose the token).
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification 1. Accept email address from request body. 2.
+     *   Validate email format (RFC 5322). 3. Query all actor tables to check if
+     *   email exists. 4. Determine actor type and use corresponding password
+     *   reset table. 5. Generate cryptographically secure random token (UUID).
+     *   6. Set expires_at to 1 hour from now. 7. Insert new password reset
+     *   record. 8. Delete any existing unused tokens for this user. 9. Trigger
+     *   email service to send reset token (async). 10. Return success response
+     *   (do NOT expose the token).
    *
    * Error handling:
    * - Invalid email format: 400 Bad Request
@@ -76,9 +74,10 @@ export class EcommercemallMemberPassword_resetsController {
    *
    * @param connection
    * @param resetId The unique identifier of the password reset record to retrieve.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Retrieve the password reset record from the appropriate table based on the resetId.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Retrieve the password reset record from the
+     *   appropriate table based on the resetId.
    *
    * 1. Query the password reset record by ID from the password reset tables
    * 2. Load the associated user account (member, seller, administrator, or super administrator) to include in the response

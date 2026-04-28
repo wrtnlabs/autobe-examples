@@ -49,20 +49,27 @@ import { IErpHrmTimeTrackingReportDefinitionFilter } from "../../../../structure
  *             The system will persist field_key/operator/value_text/value_text_2 and the is_enabled flag as a new erp_hrm_time_tracking_report_definition_filters row associated with the provided reportDefinitionId.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Implementation steps:
- * 1. Resolve organization scope using the authenticated member’s selected UserOrganization context. Load erp_hrm_time_tracking_report_definitions by id = reportDefinitionId and verify its erp_hrm_time_tracking_organization_id is accessible.
- * 2. Validate request payload:
- *    - field_key must be non-empty and conform to expected filter-key format.
- *    - operator must be non-empty and recognized by the report generation engine.
- *    - value_text must be present.
- *    - If operator requires a second value (range-style operators), require value_text_2; otherwise ignore or reject value_text_2 based on validation rules.
- *    - is_enabled must be respected as the filter’s active/inactive flag.
- * 3. Determine display_order:
- *    - If the request provides display_order explicitly, ensure it is consistent with the definition’s existing filter ordering (avoid impossible ordering conflicts).
- *    - If the request does not provide display_order (implementation may auto-assign), set it to next available integer greater than the current maximum display_order for this report definition.
- * 4. Insert into erp_hrm_time_tracking_report_definition_filters within a transaction.
- * 5. Return the created filter record mapped to the API DTO.
- * 6. Audit (if applicable in service implementation): create an ActivityLogEntry that captures creation of a report filter configuration, using the performer attribution and target entity fields.
+ * @x-autobe-specification Implementation steps: 1. Resolve organization scope
+ *   using the authenticated member’s selected UserOrganization context. Load
+ *   erp_hrm_time_tracking_report_definitions by id = reportDefinitionId and
+ *   verify its erp_hrm_time_tracking_organization_id is accessible. 2. Validate
+ *   request payload: - field_key must be non-empty and conform to expected
+ *   filter-key format. - operator must be non-empty and recognized by the
+ *   report generation engine. - value_text must be present. - If operator
+ *   requires a second value (range-style operators), require value_text_2;
+ *   otherwise ignore or reject value_text_2 based on validation rules. -
+ *   is_enabled must be respected as the filter’s active/inactive flag. 3.
+ *   Determine display_order: - If the request provides display_order
+ *   explicitly, ensure it is consistent with the definition’s existing filter
+ *   ordering (avoid impossible ordering conflicts). - If the request does not
+ *   provide display_order (implementation may auto-assign), set it to next
+ *   available integer greater than the current maximum display_order for this
+ *   report definition. 4. Insert into
+ *   erp_hrm_time_tracking_report_definition_filters within a transaction. 5.
+ *   Return the created filter record mapped to the API DTO. 6. Audit (if
+ *   applicable in service implementation): create an ActivityLogEntry that
+ *   captures creation of a report filter configuration, using the performer
+ *   attribution and target entity fields.
  *
  * Database queries:
  * - SELECT report definition by id.
@@ -180,27 +187,33 @@ export namespace createReportDefinitionFilter {
  * @param props.body Filter update payload defining the desired set and configuration of erp_hrm_time_tracking_report_definition_filters rows under the target report definition.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Implementation steps:
- * 1) Resolve reportDefinitionId to erp_hrm_time_tracking_report_definitions. Validate:
- *    - definition exists
- *    - deleted_at is null
- *    - is_active is true
- *    - definition.erp_hrm_time_tracking_organization_id matches the authenticated member’s selected organization context (tenant isolation).
- * 2) Parse requestBody filter update payload into desired filter rows.
- * 3) Validate each filter item:
- *    - field_key must be a supported logical key for the report definition’s report_type.
- *    - operator must be compatible with field_key and with the semantics required by time report filtering.
- *    - value_text must satisfy required format for the operator/field_key; validate value_text_2 presence when needed (e.g., between/range operators).
- *    - is_enabled controls whether the filter participates in later evaluation.
- * 4) Validate cross-filter configuration:
- *    - Ensure the combined filters are logically consistent for the definition’s report_type (e.g., for time report type, employee/project/billable status filters must be applicable). If the configuration is invalid/non-meaningful, reject with a business validation error.
- *    - No filter update should leak information about other organizations.
- * 5) Apply persistence atomically in a database transaction:
- *    - Update existing erp_hrm_time_tracking_report_definition_filters rows for the definition when identifiers are provided in request; otherwise create new rows.
- *    - If request indicates deletion/removal, mark the old filters as removed by setting deleted_at (or by removing rows if the implementation chooses hard removal—must be consistent with schema stance). Use the presence/absence semantics defined by the request DTO.
- *    - Update display_order to match the requested order.
- * 6) Re-load the updated active (deleted_at null) filters for the definition sorted by display_order.
- * 7) Return response DTO summarizing the updated filter configuration.
+ * @x-autobe-specification Implementation steps: 1) Resolve reportDefinitionId
+ *   to erp_hrm_time_tracking_report_definitions. Validate: - definition exists
+ *   - deleted_at is null - is_active is true -
+ *   definition.erp_hrm_time_tracking_organization_id matches the authenticated
+ *   member’s selected organization context (tenant isolation). 2) Parse
+ *   requestBody filter update payload into desired filter rows. 3) Validate
+ *   each filter item: - field_key must be a supported logical key for the
+ *   report definition’s report_type. - operator must be compatible with
+ *   field_key and with the semantics required by time report filtering. -
+ *   value_text must satisfy required format for the operator/field_key;
+ *   validate value_text_2 presence when needed (e.g., between/range operators).
+ *   - is_enabled controls whether the filter participates in later evaluation.
+ *   4) Validate cross-filter configuration: - Ensure the combined filters are
+ *   logically consistent for the definition’s report_type (e.g., for time
+ *   report type, employee/project/billable status filters must be applicable).
+ *   If the configuration is invalid/non-meaningful, reject with a business
+ *   validation error. - No filter update should leak information about other
+ *   organizations. 5) Apply persistence atomically in a database transaction: -
+ *   Update existing erp_hrm_time_tracking_report_definition_filters rows for
+ *   the definition when identifiers are provided in request; otherwise create
+ *   new rows. - If request indicates deletion/removal, mark the old filters as
+ *   removed by setting deleted_at (or by removing rows if the implementation
+ *   chooses hard removal—must be consistent with schema stance). Use the
+ *   presence/absence semantics defined by the request DTO. - Update
+ *   display_order to match the requested order. 6) Re-load the updated active
+ *   (deleted_at null) filters for the definition sorted by display_order. 7)
+ *   Return response DTO summarizing the updated filter configuration.
  *
  * Edge cases:
  * - If request disables all filters, later report generation should safely return empty or unfiltered results depending on report_type rules; this operation still succeeds if the configuration is valid.
@@ -316,7 +329,9 @@ export namespace updateFilters {
  * @param props.filterId Identifier of the report definition filter to retrieve (UUID).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Implement GET detail retrieval for `erp_hrm_time_tracking_report_definition_filters` scoped by the provided reportDefinitionId.
+ * @x-autobe-specification Implement GET detail retrieval for
+ *   `erp_hrm_time_tracking_report_definition_filters` scoped by the provided
+ *   reportDefinitionId.
  *
  * Algorithm:
  * 1) Parse `reportDefinitionId` and `filterId` from path parameters.
@@ -449,7 +464,8 @@ export namespace at {
  * @param props.body Updated configuration for the targeted report definition filter rule. The payload updates field_key/operator/value_text/value_text_2 and whether the filter is enabled for future report generations.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Implement PUT update for erp_hrm_time_tracking_report_definition_filters.
+ * @x-autobe-specification Implement PUT update for
+ *   erp_hrm_time_tracking_report_definition_filters.
  *
  * 1) Authenticate and identify the selected organization context from the member session.
  * 2) Parse path params: reportDefinitionId (UUID) and filterId (UUID).
@@ -583,7 +599,8 @@ export namespace updateFilter {
  * @param props.filterId Target filter ID to permanently remove from the report definition (UUID). Must be associated with the provided reportDefinitionId.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Implement DELETE (erase) for a single report-definition filter.
+ * @x-autobe-specification Implement DELETE (erase) for a single
+ *   report-definition filter.
  *
  * 1) Parse path params:
  *    - reportDefinitionId (UUID string)

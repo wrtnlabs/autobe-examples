@@ -26,7 +26,9 @@ import { IShoppingMallPaymentAttempt } from "../../../../structures/IShoppingMal
  * @param props.body Payment initiation information for checkout
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Authenticate the caller as a customer and derive the target customer ID from the active session rather than trusting any customer identifier in the request body.
+ * @x-autobe-specification Authenticate the caller as a customer and derive the
+ *   target customer ID from the active session rather than trusting any
+ *   customer identifier in the request body.
  *
  * Validate the request payload needed to submit a payment to the external gateway. Confirm that the checkout review context being paid for is still valid, that the computed payable amount is positive, and that the selected gateway provider is one supported by the service. Recalculate or verify the final amount from the reviewed checkout context on the server side so the persisted `shopping_mall_payment_attempts.amount` represents the authoritative commercial amount submitted for payment.
  *
@@ -131,7 +133,8 @@ export namespace create {
  * @param props.body Payment attempt search criteria and pagination options
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Implement this operation as a customer-scoped search over shopping_mall_payment_attempts.
+ * @x-autobe-specification Implement this operation as a customer-scoped search
+ *   over shopping_mall_payment_attempts.
  *
  * 1. Authenticate the caller as a customer and resolve the current shopping_mall_customers.id. Reject the request when there is no active authenticated customer context.
  * 2. Parse IShoppingMallPaymentAttempt.IRequest as the list-query object. Support pagination inputs, sorting inputs, and optional filters grounded in the actual schema: status, gatewayProvider, createdAt range, processedAt range, and amount range if that field exists in the request DTO design. Do not accept arbitrary unsupported fields.
@@ -238,7 +241,9 @@ export namespace index {
  * @param props.paymentAttemptId Target payment attempt's ID
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Implement a read-only service method that loads one record from `shopping_mall_payment_attempts` by primary key `id` using the `paymentAttemptId` path parameter.
+ * @x-autobe-specification Implement a read-only service method that loads one
+ *   record from `shopping_mall_payment_attempts` by primary key `id` using the
+ *   `paymentAttemptId` path parameter.
  *
  * Before returning data, enforce authorization based on actor context. If the caller is a customer, require an authenticated customer session and verify that `shopping_mall_payment_attempts.shopping_mall_customer_id` matches the authenticated customer’s identifier. If the caller is an administrator or super administrator, allow access for oversight and support workflows. Do not allow seller access unless a separate explicit platform policy exists outside this operation. When the caller is unauthenticated or fails the ownership check, reject the request.
  *
@@ -340,7 +345,12 @@ export namespace at {
  * @param props.body Updated payment attempt outcome information
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Load the target shopping_mall_payment_attempts row by id where deleted_at is null unless administrative recovery policies explicitly allow access to logically deleted records. Validate that the caller is a trusted internal payment-processing context or an authorized administrator. Do not allow customer-initiated or seller-initiated direct mutation of payment attempt outcome records.
+ * @x-autobe-specification Load the target shopping_mall_payment_attempts row by
+ *   id where deleted_at is null unless administrative recovery policies
+ *   explicitly allow access to logically deleted records. Validate that the
+ *   caller is a trusted internal payment-processing context or an authorized
+ *   administrator. Do not allow customer-initiated or seller-initiated direct
+ *   mutation of payment attempt outcome records.
  *
  * Apply a controlled update policy. Treat shopping_mall_customer_id as immutable after creation. Treat amount as immutable unless a narrowly defined reconciliation rule exists in the application layer; by default, reject amount replacement to preserve the original commercial attempt fact. Allow updates only to outcome-related and reconciliation-related fields such as status, gateway_provider, gateway_reference, failure_reason, and processed_at according to the request DTO contract. Always refresh updated_at in the service layer.
  *
@@ -450,7 +460,9 @@ export namespace update {
  * @param props.paymentAttemptId Unique identifier of the payment attempt to remove.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Locate the target row in `shopping_mall_payment_attempts` by primary identifier using `paymentAttemptId`.
+ * @x-autobe-specification Locate the target row in
+ *   `shopping_mall_payment_attempts` by primary identifier using
+ *   `paymentAttemptId`.
  *
  * Authorize only administrator and superAdministrator actors. Reject any customer or seller caller before querying destructive logic.
  *

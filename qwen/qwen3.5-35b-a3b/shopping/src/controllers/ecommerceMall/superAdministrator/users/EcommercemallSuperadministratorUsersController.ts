@@ -27,9 +27,10 @@ export class EcommercemallSuperadministratorUsersController {
    *
    * @param connection
    * @param body Search and pagination criteria for listing user accounts.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor superAdministrator
-   * @x-autobe-specification Implement PATCH /users endpoint with the following logic:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor superAdministrator
+     * @x-autobe-specification Implement PATCH /users endpoint with the
+     *   following logic:
    *
    * 1. **Authorization**: Verify the requesting user has administrator actor role. Reject unauthenticated requests and non-administrator accounts with 403 Forbidden.
    *

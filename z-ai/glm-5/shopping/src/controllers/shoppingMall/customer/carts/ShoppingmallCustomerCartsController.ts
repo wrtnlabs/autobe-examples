@@ -35,9 +35,13 @@ export class ShoppingmallCustomerCartsController {
    * **Security:** Cart ownership is strictly validated - customers can only access their own cart. The cart is identified by the authenticated customer's ID from the session token.
    *
    * @param connection
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Query the shopping_mall_carts table to find the cart belonging to the authenticated customer (where shopping_mall_customer_id matches the authenticated customer's ID). If no cart exists, create a new cart record for the customer (though this typically happens when first item is added).
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Query the shopping_mall_carts table to find the
+     *   cart belonging to the authenticated customer (where
+     *   shopping_mall_customer_id matches the authenticated customer's ID). If
+     *   no cart exists, create a new cart record for the customer (though this
+     *   typically happens when first item is added).
    *
    * For the cart items, join shopping_mall_cart_items with shopping_mall_product_variants, shopping_mall_products, and shopping_mall_sellers tables to retrieve:
    * 1. Cart item: id, quantity, unavailable flag, created_at

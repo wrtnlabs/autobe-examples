@@ -19,7 +19,8 @@ import { IPageIHrmTimeTrackTimesheetSnapshot } from "../../../../../structures/I
  * @param props.body Filtering and pagination parameters for timesheet snapshots. Includes optional status filter to narrow results to specific status values (draft, submitted, approved, rejected) and pagination configuration for result set size and cursor.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query hrm_time_track_timesheets table to verify the timesheet exists and belongs to the requesting member's organization.
+ * @x-autobe-specification Query hrm_time_track_timesheets table to verify the
+ *   timesheet exists and belongs to the requesting member's organization.
  *
  * Query hrm_time_track_timesheet_snapshots table filtering by:
  * - hrm_time_track_timesheet_id = timesheetId (path parameter)
@@ -130,7 +131,8 @@ export namespace index {
  * @param props.snapshotId UUID of the specific timesheet snapshot to retrieve. Uniquely identifies the point-in-time status change record within the timesheet's approval history.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query the hrm_time_track_timesheet_snapshots table for a record matching both the timesheet_id and the snapshot id.
+ * @x-autobe-specification Query the hrm_time_track_timesheet_snapshots table
+ *   for a record matching both the timesheet_id and the snapshot id.
  *
  * 1. Validate that the timesheetId and snapshotId parameters are valid UUIDs.
  * 2. Execute a SELECT query on hrm_time_track_timesheet_snapshots where id equals snapshotId and hrm_time_track_timesheet_id equals timesheetId.

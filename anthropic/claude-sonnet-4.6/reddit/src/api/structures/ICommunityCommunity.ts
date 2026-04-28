@@ -10,71 +10,103 @@ export type ICommunityCommunity = {
   /**
    * Unique identifier of the community. A UUID v4 primary key assigned by the system at creation time.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from community_communities.id. UUID v4 primary key, system-generated at row creation. Never user-supplied.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from community_communities.id.
+     *   UUID v4 primary key, system-generated at row creation. Never
+     *   user-supplied.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * The unique public name of the community. Serves as its primary identifier across the platform. Searchable by all users, including unauthenticated guests.
    *
-   * @x-autobe-database-schema-property name
-   * @x-autobe-specification Direct mapping from community_communities.name. Unique across the entire platform (@@unique([name]) constraint). Non-nullable string. Used as the public handle and is searchable by all users including guests.
+     * @x-autobe-database-schema-property name
+     * @x-autobe-specification Direct mapping from community_communities.name.
+     *   Unique across the entire platform (@@unique([name]) constraint).
+     *   Non-nullable string. Used as the public handle and is searchable by all
+     *   users including guests.
    */
   name: string;
 
   /**
    * Optional free-form text describing the community's purpose, rules, or topic. Null if no description has been provided.
    *
-   * @x-autobe-database-schema-property description
-   * @x-autobe-specification Direct mapping from community_communities.description. Nullable string field. When null, the community has no description. Displayed on the community's public page.
+     * @x-autobe-database-schema-property description
+     * @x-autobe-specification Direct mapping from
+     *   community_communities.description. Nullable string field. When null,
+     *   the community has no description. Displayed on the community's public
+     *   page.
    */
   description: string | null;
 
   /**
    * Optional URL pointing to the community's icon image. Used for visual identification in feeds and listings. Null if no icon has been set.
    *
-   * @x-autobe-database-schema-property icon_url
-   * @x-autobe-specification Direct mapping from community_communities.icon_url. Nullable URI string stored as VarChar(80000). When null, the community has no icon image. Used for visual identification in feeds and community listings.
+     * @x-autobe-database-schema-property icon_url
+     * @x-autobe-specification Direct mapping from
+     *   community_communities.icon_url. Nullable URI string stored as
+     *   VarChar(80000). When null, the community has no icon image. Used for
+     *   visual identification in feeds and community listings.
    */
   icon_url: (string & tags.Format<"uri">) | null;
 
   /**
    * Summary of the member who founded and owns this community. The owner holds the highest authority level and is responsible for managing moderators and community settings.
    *
-   * @x-autobe-database-schema-property owner
-   * @x-autobe-specification Join community_members on community_members.id = community_communities.community_member_id. Build ICommunityMember.ISummary for the owner (the founding member with highest authority). Only active members (deleted_at IS NULL) are expected here; the community record is itself considered invalid if the owner account is deleted, but no special handling is needed at this DTO layer.
+     * @x-autobe-database-schema-property owner
+     * @x-autobe-specification Join community_members on community_members.id =
+     *   community_communities.community_member_id. Build
+     *   ICommunityMember.ISummary for the owner (the founding member with
+     *   highest authority). Only active members (deleted_at IS NULL) are
+     *   expected here; the community record is itself considered invalid if the
+     *   owner account is deleted, but no special handling is needed at this DTO
+     *   layer.
    */
   owner: ICommunityMember.ISummary;
 
   /**
    * The current number of members actively subscribed to this community. Dynamically calculated from active subscription records.
    *
-   * @x-autobe-specification Computed as SELECT COUNT(*) FROM community_subscriptions WHERE community_community_id = community_communities.id AND deleted_at IS NULL. Returns a non-negative integer reflecting the real-time number of currently active subscribers. Must be recomputed per request or served from a maintained cache.
+     * @x-autobe-specification Computed as SELECT COUNT(*) FROM
+     *   community_subscriptions WHERE community_community_id =
+     *   community_communities.id AND deleted_at IS NULL. Returns a non-negative
+     *   integer reflecting the real-time number of currently active
+     *   subscribers. Must be recomputed per request or served from a maintained
+     *   cache.
    */
   subscriber_count: number & tags.Type<"int32"> & tags.Minimum<0>;
 
   /**
    * The timestamp when this community was created. Set automatically by the system at creation time and never changed afterwards.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from community_communities.created_at. Timestamptz set by the system at row insertion. Never updated after creation.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   community_communities.created_at. Timestamptz set by the system at row
+     *   insertion. Never updated after creation.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * The timestamp of the most recent update to this community's metadata. Reflects the last time the name, description, or icon image was changed.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from community_communities.updated_at. Timestamptz updated by the system whenever any community metadata (name, description, icon_url) is changed via PUT /community/member/communities/{communityId}.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   community_communities.updated_at. Timestamptz updated by the system
+     *   whenever any community metadata (name, description, icon_url) is
+     *   changed via PUT /community/member/communities/{communityId}.
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * The timestamp when this community was soft-deleted, or null if the community is still active. A non-null value indicates the community has been removed and is no longer accessible.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from community_communities.deleted_at. Nullable Timestamptz. Null when the community is active. Set to the deletion timestamp when the community is soft-deleted via DELETE /community/member/communities/{communityId}. Communities with a non-null deleted_at are never returned by public read endpoints.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   community_communities.deleted_at. Nullable Timestamptz. Null when the
+     *   community is active. Set to the deletion timestamp when the community
+     *   is soft-deleted via DELETE /community/member/communities/{communityId}.
+     *   Communities with a non-null deleted_at are never returned by public
+     *   read endpoints.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -86,24 +118,37 @@ export namespace ICommunityCommunity {
     /**
      * The unique name of the community to create. This name serves as the community's public identifier and is searchable by all users including guests. Must not conflict with any existing active community name on the platform.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping to community_communities.name. Must be a non-empty string (minLength: 1). Must be unique across all active communities (deleted_at IS NULL) in the community_communities table. If a duplicate name is found, reject with 409 Conflict.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping to community_communities.name.
+         *   Must be a non-empty string (minLength: 1). Must be unique across
+         *   all active communities (deleted_at IS NULL) in the
+         *   community_communities table. If a duplicate name is found, reject
+         *   with 409 Conflict.
      */
     name: string & tags.MinLength<1>;
 
     /**
      * An optional human-readable description of the community's purpose, topic, or rules. Displayed on the community's public page. May be null if no description is provided.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping to community_communities.description (nullable String). If omitted from the request body, store NULL. If provided, store the value as-is. No length constraint enforced at the API level beyond what the DB column allows.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping to
+         *   community_communities.description (nullable String). If omitted
+         *   from the request body, store NULL. If provided, store the value
+         *   as-is. No length constraint enforced at the API level beyond what
+         *   the DB column allows.
      */
     description?: string | null | undefined;
 
     /**
      * An optional URI pointing to the community's icon image. Used for visual identification of the community in feeds and community listings. May be null if no icon is provided at creation time.
      *
-     * @x-autobe-database-schema-property icon_url
-     * @x-autobe-specification Direct mapping to community_communities.icon_url (nullable VarChar(80000)). If omitted from the request body, store NULL. If provided, store the URL string as-is. The value must be a valid URI (format: uri) pointing to an image resource used as the community's icon. Note: the schema format should be `uri` per OpenAPI standard.
+         * @x-autobe-database-schema-property icon_url
+         * @x-autobe-specification Direct mapping to
+         *   community_communities.icon_url (nullable VarChar(80000)). If
+         *   omitted from the request body, store NULL. If provided, store the
+         *   URL string as-is. The value must be a valid URI (format: uri)
+         *   pointing to an image resource used as the community's icon. Note:
+         *   the schema format should be `uri` per OpenAPI standard.
      */
     icon_url?: (string & tags.Format<"url">) | null | undefined;
   };
@@ -115,21 +160,33 @@ export namespace ICommunityCommunity {
     /**
      * Optional community name search term. When provided, filters the results to communities whose names contain this value (case-insensitive). If omitted, all active communities are returned.
      *
-     * @x-autobe-specification Optional search filter applied as a case-insensitive partial match (ILIKE '%{name}%') against the `name` column in community_communities. If null or not provided, no name filter is applied and all active communities are returned. If provided but matches no communities, an empty result set is returned.
+         * @x-autobe-specification Optional search filter applied as a
+         *   case-insensitive partial match (ILIKE '%{name}%') against the
+         *   `name` column in community_communities. If null or not provided, no
+         *   name filter is applied and all active communities are returned. If
+         *   provided but matches no communities, an empty result set is
+         *   returned.
      */
     name?: string | null | undefined;
 
     /**
      * The page number to retrieve (1-indexed). Defaults to 1 if omitted. Controls which segment of the full result set is returned.
      *
-     * @x-autobe-specification 1-indexed page number for pagination. Used to calculate OFFSET = (page - 1) * limit. Defaults to 1 (first page) if not provided. Must be >= 1. If the page number exceeds the total available pages, an empty data array is returned with the correct total count.
+         * @x-autobe-specification 1-indexed page number for pagination. Used to
+         *   calculate OFFSET = (page - 1) * limit. Defaults to 1 (first page)
+         *   if not provided. Must be >= 1. If the page number exceeds the total
+         *   available pages, an empty data array is returned with the correct
+         *   total count.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * The maximum number of communities to return per page. Defaults to 20 if omitted. Controls the page size of the paginated result set.
      *
-     * @x-autobe-specification Maximum number of community records to return per page. Used as LIMIT in the database query. Defaults to 20 if not provided. Must be >= 1. Controls the size of the data array in the IPage response envelope.
+         * @x-autobe-specification Maximum number of community records to return
+         *   per page. Used as LIMIT in the database query. Defaults to 20 if
+         *   not provided. Must be >= 1. Controls the size of the data array in
+         *   the IPage response envelope.
      */
     limit?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
   };
@@ -141,24 +198,37 @@ export namespace ICommunityCommunity {
     /**
      * The unique display name of the community. Must be non-empty and unique across the entire platform. If the submitted name is already taken by another community, the request will be rejected with a conflict error.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping to community_communities.name. Must be a non-empty string (minLength: 1). Must be validated for platform-wide uniqueness: SELECT COUNT(*) FROM community_communities WHERE name = body.name AND id != communityId must return 0, otherwise return 409 Conflict. Applied in the UPDATE statement as SET name = body.name.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping to community_communities.name.
+         *   Must be a non-empty string (minLength: 1). Must be validated for
+         *   platform-wide uniqueness: SELECT COUNT(*) FROM
+         *   community_communities WHERE name = body.name AND id != communityId
+         *   must return 0, otherwise return 409 Conflict. Applied in the UPDATE
+         *   statement as SET name = body.name.
      */
     name: string & tags.MinLength<1>;
 
     /**
      * Optional free-form text describing the community's purpose, rules, or topic. Pass null to clear any existing description. Displayed on the community's public page.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping to community_communities.description (nullable column). Passing a string updates the description text. Passing null explicitly clears any existing description. Applied in the UPDATE statement as SET description = body.description.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping to
+         *   community_communities.description (nullable column). Passing a
+         *   string updates the description text. Passing null explicitly clears
+         *   any existing description. Applied in the UPDATE statement as SET
+         *   description = body.description.
      */
     description?: string | null | undefined;
 
     /**
      * Optional URI pointing to the community's icon image. Pass null to remove the existing icon. Used for visual identification of the community in feeds and listings.
      *
-     * @x-autobe-database-schema-property icon_url
-     * @x-autobe-specification Direct mapping to community_communities.icon_url (nullable VARCHAR(80000) column). Must be a valid URI when provided. Passing a URI string updates the icon image. Passing null removes the existing icon. Applied in the UPDATE statement as SET icon_url = body.icon_url.
+         * @x-autobe-database-schema-property icon_url
+         * @x-autobe-specification Direct mapping to
+         *   community_communities.icon_url (nullable VARCHAR(80000) column).
+         *   Must be a valid URI when provided. Passing a URI string updates the
+         *   icon image. Passing null removes the existing icon. Applied in the
+         *   UPDATE statement as SET icon_url = body.icon_url.
      */
     icon_url?: (string & tags.Format<"uri">) | null | undefined;
   };
@@ -170,47 +240,64 @@ export namespace ICommunityCommunity {
     /**
      * Unique identifier of the community. A UUID that permanently identifies this community across all API interactions.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from community_communities.id. UUID primary key, always present.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from community_communities.id.
+         *   UUID primary key, always present.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * The unique public name of the community. This is the primary human-readable identifier used in feeds, listings, and search results.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from community_communities.name. Unique across the platform. Used as the public-facing handle for the community.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from
+         *   community_communities.name. Unique across the platform. Used as the
+         *   public-facing handle for the community.
      */
     name: string;
 
     /**
      * An optional text description of the community's purpose, topic, or rules. Null if the community has no description set.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from community_communities.description. Nullable — null when the community owner has not provided a description.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   community_communities.description. Nullable — null when the
+         *   community owner has not provided a description.
      */
     description: string | null;
 
     /**
      * An optional URL pointing to the community's icon image, used for visual identification in feeds and listings. Null if no icon has been set.
      *
-     * @x-autobe-database-schema-property icon_url
-     * @x-autobe-specification Direct mapping from community_communities.icon_url. Nullable — null when no icon image has been uploaded. The stored value is the full URL to the icon image resource.
+         * @x-autobe-database-schema-property icon_url
+         * @x-autobe-specification Direct mapping from
+         *   community_communities.icon_url. Nullable — null when no icon image
+         *   has been uploaded. The stored value is the full URL to the icon
+         *   image resource.
      */
     iconUrl: (string & tags.Format<"uri">) | null;
 
     /**
      * The current number of active members subscribed to this community. Reflects only active (non-cancelled) subscriptions.
      *
-     * @x-autobe-specification Computed field: SELECT COUNT(*) FROM community_subscriptions WHERE community_community_id = community_communities.id AND deleted_at IS NULL. Implement via LEFT JOIN with GROUP BY community_communities.id or a correlated subquery. Returns 0 when no active subscriptions exist. This reflects the current number of active (non-cancelled) subscriber memberships for the community.
+         * @x-autobe-specification Computed field: SELECT COUNT(*) FROM
+         *   community_subscriptions WHERE community_community_id =
+         *   community_communities.id AND deleted_at IS NULL. Implement via LEFT
+         *   JOIN with GROUP BY community_communities.id or a correlated
+         *   subquery. Returns 0 when no active subscriptions exist. This
+         *   reflects the current number of active (non-cancelled) subscriber
+         *   memberships for the community.
      */
     subscriberCount: number & tags.Type<"int32"> & tags.Minimum<0>;
 
     /**
      * The date and time when the community was created, in ISO 8601 format with timezone information.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from community_communities.created_at. ISO 8601 datetime with timezone (Timestamptz). Indicates when the community was first created on the platform.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   community_communities.created_at. ISO 8601 datetime with timezone
+         *   (Timestamptz). Indicates when the community was first created on
+         *   the platform.
      */
     createdAt: string & tags.Format<"date-time">;
   };

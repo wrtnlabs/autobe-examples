@@ -25,7 +25,8 @@ export * as feeds from "./feeds/index";
  * @param props.body Search criteria including name filter, pagination parameters (cursor, limit), and sorting options (field and direction).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query reddit_clone_communities table with pagination and filtering.
+ * @x-autobe-specification Query reddit_clone_communities table with pagination
+ *   and filtering.
  *
  * 1. Apply soft-delete filter: WHERE deleted_at IS NULL
  * 2. Apply name search filter if provided: WHERE name ILIKE '%searchTerm%'
@@ -125,7 +126,8 @@ export namespace index {
  * @param props.communityId Unique identifier of the community to retrieve (global scope)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query the reddit_clone_communities table for a single record matching the provided communityId parameter.
+ * @x-autobe-specification Query the reddit_clone_communities table for a single
+ *   record matching the provided communityId parameter.
  *
  * 1. Validate that communityId is a valid UUID format
  * 2. Query reddit_clone_communities WHERE id = communityId AND deleted_at IS NULL

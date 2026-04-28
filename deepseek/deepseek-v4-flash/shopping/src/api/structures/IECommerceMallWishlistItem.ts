@@ -17,8 +17,10 @@ export type IECommerceMallWishlistItem = {
    *
    * A UUID assigned automatically when the product is added to the wishlist. Used to reference this specific wishlist item in subsequent operations such as retrieval or removal.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from e_commerce_mall_wishlist_items.id. UUID primary key, auto-generated on creation.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_wishlist_items.id. UUID primary key, auto-generated on
+     *   creation.
    */
   id: string & tags.Format<"uuid">;
 
@@ -27,8 +29,12 @@ export type IECommerceMallWishlistItem = {
    *
    * Contains summary information about the customer including their unique identifier, email address, and profile details. Each wishlist item belongs to exactly one customer, and a customer can view only their own wishlist items.
    *
-   * @x-autobe-database-schema-property customer
-   * @x-autobe-specification JOIN from e_commerce_mall_wishlist_items.e_commerce_mall_customer_id to e_commerce_mall_customers.id (BELONGS-TO). Returns IECommerceMallCustomer.ISummary. The customer ID is extracted from the authenticated JWT session context.
+     * @x-autobe-database-schema-property customer
+     * @x-autobe-specification JOIN from
+     *   e_commerce_mall_wishlist_items.e_commerce_mall_customer_id to
+     *   e_commerce_mall_customers.id (BELONGS-TO). Returns
+     *   IECommerceMallCustomer.ISummary. The customer ID is extracted from the
+     *   authenticated JWT session context.
    */
   customer: IECommerceMallCustomer.ISummary;
 
@@ -37,8 +43,12 @@ export type IECommerceMallWishlistItem = {
    *
    * Contains summary information about the product including its name, base price, thumbnail image, seller shop name, current visibility state, average rating, and review count. The product data is live — it updates dynamically as the seller edits the product. If the product is later deleted by the seller, this wishlist item is automatically soft-deleted.
    *
-   * @x-autobe-database-schema-property product
-   * @x-autobe-specification JOIN from e_commerce_mall_wishlist_items.e_commerce_mall_product_id to e_commerce_mall_products.id (BELONGS-TO). Returns IECommerceMallProduct.ISummary with live product data (name, base price, thumbnail, seller info, average rating).
+     * @x-autobe-database-schema-property product
+     * @x-autobe-specification JOIN from
+     *   e_commerce_mall_wishlist_items.e_commerce_mall_product_id to
+     *   e_commerce_mall_products.id (BELONGS-TO). Returns
+     *   IECommerceMallProduct.ISummary with live product data (name, base
+     *   price, thumbnail, seller info, average rating).
    */
   product: IECommerceMallProduct.ISummary;
 
@@ -47,8 +57,10 @@ export type IECommerceMallWishlistItem = {
    *
    * Automatically set at creation time. Used for ordering the wishlist display with newest additions appearing first.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from e_commerce_mall_wishlist_items.created_at. Set to current timestamp on creation.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_wishlist_items.created_at. Set to current timestamp on
+     *   creation.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -57,8 +69,10 @@ export type IECommerceMallWishlistItem = {
    *
    * Updated automatically whenever the wishlist item's state changes, such as when it is soft-deleted due to manual removal or automatic removal triggered by product deletion.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from e_commerce_mall_wishlist_items.updated_at. Updated on soft-delete or any state changes.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_wishlist_items.updated_at. Updated on soft-delete or
+     *   any state changes.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -67,8 +81,11 @@ export type IECommerceMallWishlistItem = {
    *
    * Null when the item is active and visible in the customer's wishlist. When set, the item has been removed either manually by the customer or automatically because the underlying product was deleted by the seller. Soft-deleted items are excluded from normal customer-facing queries but preserved in the database for data integrity.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from e_commerce_mall_wishlist_items.deleted_at. Null for active items. Set to current timestamp when the item is manually removed or the underlying product is deleted.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   e_commerce_mall_wishlist_items.deleted_at. Null for active items. Set
+     *   to current timestamp when the item is manually removed or the
+     *   underlying product is deleted.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -86,8 +103,9 @@ export namespace IECommerceMallWishlistItem {
      *
      * Uniquely identifies each saved product entry in a customer's wishlist collection, used for referencing and managing individual wishlist items.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from e_commerce_mall_wishlist_items.id. UUID primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_wishlist_items.id. UUID primary key.
      */
     id: string & tags.Format<"uuid">;
 
@@ -96,8 +114,11 @@ export namespace IECommerceMallWishlistItem {
      *
      * Contains the customer's identifying information including their unique identifier, email address, and profile details such as display name and phone number. This relationship enables navigation from a wishlist item to the customer who owns it.
      *
-     * @x-autobe-database-schema-property customer
-     * @x-autobe-specification JOIN from e_commerce_mall_wishlist_items.e_commerce_mall_customer_id to e_commerce_mall_customers.id using the belongs-to relation. Returns IECommerceMallCustomer.ISummary.
+         * @x-autobe-database-schema-property customer
+         * @x-autobe-specification JOIN from
+         *   e_commerce_mall_wishlist_items.e_commerce_mall_customer_id to
+         *   e_commerce_mall_customers.id using the belongs-to relation. Returns
+         *   IECommerceMallCustomer.ISummary.
      */
     customer: IECommerceMallCustomer.ISummary;
 
@@ -106,8 +127,11 @@ export namespace IECommerceMallWishlistItem {
      *
      * Contains the product's live information including name, base price, thumbnail image, seller details, category, average rating, and review count. The product data updates dynamically as the seller edits the product listing — wishlist always shows the current state.
      *
-     * @x-autobe-database-schema-property product
-     * @x-autobe-specification JOIN from e_commerce_mall_wishlist_items.e_commerce_mall_product_id to e_commerce_mall_products.id using the belongs-to relation. Returns IECommerceMallProduct.ISummary.
+         * @x-autobe-database-schema-property product
+         * @x-autobe-specification JOIN from
+         *   e_commerce_mall_wishlist_items.e_commerce_mall_product_id to
+         *   e_commerce_mall_products.id using the belongs-to relation. Returns
+         *   IECommerceMallProduct.ISummary.
      */
     product: IECommerceMallProduct.ISummary;
 
@@ -116,8 +140,9 @@ export namespace IECommerceMallWishlistItem {
      *
      * Used for ordering wishlist items with newest additions appearing first in the customer's wishlist view.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from e_commerce_mall_wishlist_items.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   e_commerce_mall_wishlist_items.created_at.
      */
     created_at: string & tags.Format<"date-time">;
   };
@@ -135,7 +160,9 @@ export namespace IECommerceMallWishlistItem {
      *
      * Defines which page of results to return, with page numbering starting from 1 (the first page). When not specified, defaults to 1 to return the first page of results. Combined with the {@link limit} parameter to control the window of records returned.
      *
-     * @x-autobe-specification Page number for pagination (1-indexed). Combined with limit to calculate SQL OFFSET: (page - 1) * limit. Defaults to 1 when not provided.
+         * @x-autobe-specification Page number for pagination (1-indexed).
+         *   Combined with limit to calculate SQL OFFSET: (page - 1) * limit.
+         *   Defaults to 1 when not provided.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -144,7 +171,9 @@ export namespace IECommerceMallWishlistItem {
      *
      * Controls how many wishlist items are returned in a single response. The maximum allowed value is 100, and values exceeding this cap are clamped down. When not specified, a system-defined default limit is applied. Higher values return more items per page at the cost of increased response size and latency.
      *
-     * @x-autobe-specification Maximum number of records per page (1-100). Used in SQL LIMIT clause. Defaults to system-defined value when not provided.
+         * @x-autobe-specification Maximum number of records per page (1-100).
+         *   Used in SQL LIMIT clause. Defaults to system-defined value when not
+         *   provided.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -155,7 +184,10 @@ export namespace IECommerceMallWishlistItem {
      *
      * Performs a partial match search against the product's name, allowing customers to find specific products in their wishlist. Only wishlist items whose referenced product name contains the search keyword (case-insensitive) are returned. When omitted, all wishlist items belonging to the authenticated customer are returned without name-based filtering.
      *
-     * @x-autobe-specification Optional keyword filter. Performs a partial match (LIKE '%keyword%') against e_commerce_mall_products.name via JOIN. When omitted, no name-based filtering is applied — all wishlist items for the customer are returned.
+         * @x-autobe-specification Optional keyword filter. Performs a partial
+         *   match (LIKE '%keyword%') against e_commerce_mall_products.name via
+         *   JOIN. When omitted, no name-based filtering is applied — all
+         *   wishlist items for the customer are returned.
      */
     search?: string | undefined;
   };
@@ -171,8 +203,11 @@ export namespace IECommerceMallWishlistItem {
      *
      * The product is referenced at the product level (not variant-specific), expressing interest in the product as a whole. The customer is inferred from the authenticated session; only the product identifier needs to be specified in the request body. Each customer can save a given product only once — attempting to add the same product again results in a conflict error. The referenced product must exist and not be soft-deleted.
      *
-     * @x-autobe-database-schema-property e_commerce_mall_product_id
-     * @x-autobe-specification Direct mapping to e_commerce_mall_product_id DB column. The customer's identity (e_commerce_mall_customer_id) is extracted from the authenticated customer JWT session context and set server-side on creation.
+         * @x-autobe-database-schema-property e_commerce_mall_product_id
+         * @x-autobe-specification Direct mapping to e_commerce_mall_product_id
+         *   DB column. The customer's identity (e_commerce_mall_customer_id) is
+         *   extracted from the authenticated customer JWT session context and
+         *   set server-side on creation.
      */
     product_id: string & tags.Format<"uuid">;
   };

@@ -20,8 +20,9 @@ export type ITodoAppMemberSession = {
    *
    * This is the primary key of the session, stored as a UUID. It is used to reference this specific session in API operations like session retrieval and deletion.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from todo_app_member_sessions.id. Primary key, UUID format.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from todo_app_member_sessions.id.
+     *   Primary key, UUID format.
    */
   id: string & tags.Format<"uuid">;
 
@@ -33,8 +34,9 @@ export type ITodoAppMemberSession = {
    * **Security**
    * Only the session owner (the member referenced here) can access this session record.
    *
-   * @x-autobe-database-schema-property member
-   * @x-autobe-specification Join via todo_app_member_id to todo_app_members.id. Returns ITodoAppMember.ISummary.
+     * @x-autobe-database-schema-property member
+     * @x-autobe-specification Join via todo_app_member_id to
+     *   todo_app_members.id. Returns ITodoAppMember.ISummary.
    */
   member: ITodoAppMember.ISummary;
 
@@ -46,8 +48,9 @@ export type ITodoAppMemberSession = {
    * **Format**
    * IPv4 or IPv6 address string.
    *
-   * @x-autobe-database-schema-property ip
-   * @x-autobe-specification Direct mapping from todo_app_member_sessions.ip. Captured at session creation.
+     * @x-autobe-database-schema-property ip
+     * @x-autobe-specification Direct mapping from todo_app_member_sessions.ip.
+     *   Captured at session creation.
    */
   ip: string;
 
@@ -59,8 +62,9 @@ export type ITodoAppMemberSession = {
    * **Format**
    * Full URL string including protocol and path.
    *
-   * @x-autobe-database-schema-property href
-   * @x-autobe-specification Direct mapping from todo_app_member_sessions.href. Page URL where login occurred.
+     * @x-autobe-database-schema-property href
+     * @x-autobe-specification Direct mapping from
+     *   todo_app_member_sessions.href. Page URL where login occurred.
    */
   href: string;
 
@@ -72,8 +76,9 @@ export type ITodoAppMemberSession = {
    * **Format**
    * Full URL string of the referring page.
    *
-   * @x-autobe-database-schema-property referrer
-   * @x-autobe-specification Direct mapping from todo_app_member_sessions.referrer. Referring page URL.
+     * @x-autobe-database-schema-property referrer
+     * @x-autobe-specification Direct mapping from
+     *   todo_app_member_sessions.referrer. Referring page URL.
    */
   referrer: string;
 
@@ -85,8 +90,9 @@ export type ITodoAppMemberSession = {
    * **Format**
    * ISO 8601 date-time string with timezone (e.g., "2024-01-15T10:30:00Z").
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from todo_app_member_sessions.created_at. Timestamp with timezone.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   todo_app_member_sessions.created_at. Timestamp with timezone.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -98,8 +104,9 @@ export type ITodoAppMemberSession = {
    * **Format**
    * ISO 8601 date-time string with timezone (e.g., "2024-01-15T10:30:00Z").
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from todo_app_member_sessions.updated_at. Timestamp with timezone.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   todo_app_member_sessions.updated_at. Timestamp with timezone.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -114,8 +121,9 @@ export type ITodoAppMemberSession = {
    * **Nullable**
    * This field is nullable. Null indicates the session is active; a value indicates soft-deleted status.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from todo_app_member_sessions.deleted_at. Nullable timestamp with timezone.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   todo_app_member_sessions.deleted_at. Nullable timestamp with timezone.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 
@@ -130,8 +138,9 @@ export type ITodoAppMemberSession = {
    * **Expiration Check**
    * A session is expired when current time > expired_at. Expired sessions can still be retrieved but are invalid for authentication.
    *
-   * @x-autobe-database-schema-property expired_at
-   * @x-autobe-specification Direct mapping from todo_app_member_sessions.expired_at. Timestamp with timezone.
+     * @x-autobe-database-schema-property expired_at
+     * @x-autobe-specification Direct mapping from
+     *   todo_app_member_sessions.expired_at. Timestamp with timezone.
    */
   expired_at: string & tags.Format<"date-time">;
 };
@@ -163,8 +172,9 @@ export namespace ITodoAppMemberSession {
      *
      * This UUID uniquely identifies the login session record in the database. It is generated by the server at session creation time and used to reference this specific session in API operations.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from todo_app_member_sessions.id. UUID primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_member_sessions.id. UUID primary key.
      */
     id: string & tags.Format<"uuid">;
 
@@ -175,8 +185,9 @@ export namespace ITodoAppMemberSession {
      *
      * **Format**: IPv4 address string
      *
-     * @x-autobe-database-schema-property ip
-     * @x-autobe-specification Direct mapping from todo_app_member_sessions.ip. Captured at login time.
+         * @x-autobe-database-schema-property ip
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_member_sessions.ip. Captured at login time.
      */
     ip: string & tags.Format<"ipv4">;
 
@@ -187,8 +198,9 @@ export namespace ITodoAppMemberSession {
      *
      * **Format**: URI string
      *
-     * @x-autobe-database-schema-property href
-     * @x-autobe-specification Direct mapping from todo_app_member_sessions.href. Captured at login time.
+         * @x-autobe-database-schema-property href
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_member_sessions.href. Captured at login time.
      */
     href: string & tags.Format<"uri">;
 
@@ -199,8 +211,9 @@ export namespace ITodoAppMemberSession {
      *
      * **Format**: URI string
      *
-     * @x-autobe-database-schema-property referrer
-     * @x-autobe-specification Direct mapping from todo_app_member_sessions.referrer. Captured at login time.
+         * @x-autobe-database-schema-property referrer
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_member_sessions.referrer. Captured at login time.
      */
     referrer: string & tags.Format<"uri">;
 
@@ -211,8 +224,9 @@ export namespace ITodoAppMemberSession {
      *
      * **Format**: ISO 8601 date-time string
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from todo_app_member_sessions.created_at. Server timestamp.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_member_sessions.created_at. Server timestamp.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -223,8 +237,10 @@ export namespace ITodoAppMemberSession {
      *
      * **Format**: ISO 8601 date-time string
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from todo_app_member_sessions.updated_at. Updated on session modifications.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_member_sessions.updated_at. Updated on session
+         *   modifications.
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -235,8 +251,10 @@ export namespace ITodoAppMemberSession {
      *
      * **Format**: ISO 8601 date-time string or null
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from todo_app_member_sessions.deleted_at. Nullable - null for active sessions.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_member_sessions.deleted_at. Nullable - null for active
+         *   sessions.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
 
@@ -247,8 +265,10 @@ export namespace ITodoAppMemberSession {
      *
      * **Format**: ISO 8601 date-time string
      *
-     * @x-autobe-database-schema-property expired_at
-     * @x-autobe-specification Direct mapping from todo_app_member_sessions.expired_at. Based on refresh token expiration policy.
+         * @x-autobe-database-schema-property expired_at
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_member_sessions.expired_at. Based on refresh token
+         *   expiration policy.
      */
     expired_at: string & tags.Format<"date-time">;
 
@@ -259,8 +279,10 @@ export namespace ITodoAppMemberSession {
      *
      * **Type**: Reference to ITodoAppMember.ISummary
      *
-     * @x-autobe-database-schema-property member
-     * @x-autobe-specification Join from todo_app_member_sessions.todo_app_member_id to todo_app_members.id. Returns ITodoAppMember.ISummary.
+         * @x-autobe-database-schema-property member
+         * @x-autobe-specification Join from
+         *   todo_app_member_sessions.todo_app_member_id to todo_app_members.id.
+         *   Returns ITodoAppMember.ISummary.
      */
     member: ITodoAppMember.ISummary;
   };
@@ -292,7 +314,9 @@ export namespace ITodoAppMemberSession {
      *
      * Specifies which page of results to retrieve. Page numbering starts at 1, where page 1 contains the first set of records. Used in combination with the limit parameter to calculate the offset for database queries.
      *
-     * @x-autobe-specification Offset-based pagination page number. Defaults to 1. Used with limit for offset calculation: offset = (page - 1) * limit.
+         * @x-autobe-specification Offset-based pagination page number. Defaults
+         *   to 1. Used with limit for offset calculation: offset = (page - 1) *
+         *   limit.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -301,7 +325,8 @@ export namespace ITodoAppMemberSession {
      *
      * Defines the maximum number of session records to return in a single response. Valid values range from 1 to 100. Larger limits reduce the number of API calls needed but increase response size.
      *
-     * @x-autobe-specification Maximum number of records per page. Valid range: 1-100. Used with page for offset-based pagination.
+         * @x-autobe-specification Maximum number of records per page. Valid
+         *   range: 1-100. Used with page for offset-based pagination.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -312,7 +337,9 @@ export namespace ITodoAppMemberSession {
      *
      * An opaque token that represents the position in the result set. Used as an alternative to page/limit pagination for more efficient browsing of large datasets. When provided, it takes precedence over page and limit parameters.
      *
-     * @x-autobe-specification Cursor token for cursor-based pagination. Alternative to page/limit. Encodes the last record's sorting key for efficient pagination.
+         * @x-autobe-specification Cursor token for cursor-based pagination.
+         *   Alternative to page/limit. Encodes the last record's sorting key
+         *   for efficient pagination.
      */
     cursor?: string | undefined;
 
@@ -321,8 +348,10 @@ export namespace ITodoAppMemberSession {
      *
      * Specifies the earliest creation time for sessions to include in the results. Sessions with created_at values before this timestamp are excluded. Use ISO 8601 date-time format (e.g., "2024-01-15T10:30:00Z").
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Filter sessions where created_at >= this timestamp. ISO 8601 date-time format. Used with created_at_to for inclusive date range filtering.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Filter sessions where created_at >= this
+         *   timestamp. ISO 8601 date-time format. Used with created_at_to for
+         *   inclusive date range filtering.
      */
     created_at_from?: (string & tags.Format<"date-time">) | undefined;
 
@@ -331,8 +360,10 @@ export namespace ITodoAppMemberSession {
      *
      * Specifies the latest creation time for sessions to include in the results. Sessions with created_at values after this timestamp are excluded. Use ISO 8601 date-time format (e.g., "2024-01-20T15:45:00Z").
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Filter sessions where created_at <= this timestamp. ISO 8601 date-time format. Used with created_at_from for inclusive date range filtering.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Filter sessions where created_at <= this
+         *   timestamp. ISO 8601 date-time format. Used with created_at_from for
+         *   inclusive date range filtering.
      */
     created_at_to?: (string & tags.Format<"date-time">) | undefined;
 
@@ -341,8 +372,10 @@ export namespace ITodoAppMemberSession {
      *
      * Specifies the earliest expiration time for sessions to include in the results. Sessions with expired_at values before this timestamp are excluded. Use ISO 8601 date-time format (e.g., "2024-02-01T00:00:00Z").
      *
-     * @x-autobe-database-schema-property expired_at
-     * @x-autobe-specification Filter sessions where expired_at >= this timestamp. ISO 8601 date-time format. Used with expired_at_to for inclusive date range filtering.
+         * @x-autobe-database-schema-property expired_at
+         * @x-autobe-specification Filter sessions where expired_at >= this
+         *   timestamp. ISO 8601 date-time format. Used with expired_at_to for
+         *   inclusive date range filtering.
      */
     expired_at_from?: (string & tags.Format<"date-time">) | undefined;
 
@@ -351,8 +384,10 @@ export namespace ITodoAppMemberSession {
      *
      * Specifies the latest expiration time for sessions to include in the results. Sessions with expired_at values after this timestamp are excluded. Use ISO 8601 date-time format (e.g., "2024-03-01T23:59:59Z").
      *
-     * @x-autobe-database-schema-property expired_at
-     * @x-autobe-specification Filter sessions where expired_at <= this timestamp. ISO 8601 date-time format. Used with expired_at_from for inclusive date range filtering.
+         * @x-autobe-database-schema-property expired_at
+         * @x-autobe-specification Filter sessions where expired_at <= this
+         *   timestamp. ISO 8601 date-time format. Used with expired_at_from for
+         *   inclusive date range filtering.
      */
     expired_at_to?: (string & tags.Format<"date-time">) | undefined;
 
@@ -361,7 +396,9 @@ export namespace ITodoAppMemberSession {
      *
      * Specifies which session attribute to use for ordering the results. Valid values are "created_at" (sort by session creation time) or "expired_at" (sort by session expiration time). Combined with sortOrder to determine the sort direction.
      *
-     * @x-autobe-specification Field to sort results by. Allowed values: created_at, expired_at. Determines which column is used for ordering the result set.
+         * @x-autobe-specification Field to sort results by. Allowed values:
+         *   created_at, expired_at. Determines which column is used for
+         *   ordering the result set.
      */
     sortBy?: "created_at" | "expired_at" | undefined;
 
@@ -370,7 +407,9 @@ export namespace ITodoAppMemberSession {
      *
      * Determines the order in which results are returned. Use "asc" for ascending order (earliest to latest) or "desc" for descending order (latest to earliest). Default is "desc" when sorting by created_at, returning newest sessions first.
      *
-     * @x-autobe-specification Sort direction. Allowed values: asc (ascending), desc (descending). Default is desc when sortBy is created_at.
+         * @x-autobe-specification Sort direction. Allowed values: asc
+         *   (ascending), desc (descending). Default is desc when sortBy is
+         *   created_at.
      */
     sortOrder?: "asc" | "desc" | undefined;
 
@@ -379,7 +418,9 @@ export namespace ITodoAppMemberSession {
      *
      * A free-text search string that filters sessions based on metadata fields including IP address, page href, and referrer URL. Useful for finding sessions from specific devices, locations, or referral sources. The search implementation may use exact matching, partial matching, or pattern matching depending on system configuration.
      *
-     * @x-autobe-specification General search term for filtering session metadata. Searches across ip, href, and referrer fields. Implements text matching or pattern search.
+         * @x-autobe-specification General search term for filtering session
+         *   metadata. Searches across ip, href, and referrer fields. Implements
+         *   text matching or pattern search.
      */
     search?: string | undefined;
   };

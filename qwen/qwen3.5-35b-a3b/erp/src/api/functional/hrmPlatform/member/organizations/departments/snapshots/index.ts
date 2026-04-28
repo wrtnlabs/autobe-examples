@@ -32,7 +32,8 @@ import { IPageIHrmPlatformDepartmentsSnapshot } from "../../../../../../structur
  * @param props.body Snapshot creation configuration. Currently, this operation captures the department's current state automatically. Future versions may support custom snapshot metadata or configuration options.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Create a new department snapshot by capturing the current state of the specified department.
+ * @x-autobe-specification Create a new department snapshot by capturing the
+ *   current state of the specified department.
  *
  * **Service Logic**:
  * 1. Validate that the organization exists and the user belongs to it
@@ -162,7 +163,8 @@ export namespace create {
  * @param props.body Search and pagination criteria for department snapshots. Includes date range filters, status filter, sorting options, and pagination parameters.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query hrm_platform_departments_snapshots table with organization and department scoping.
+ * @x-autobe-specification Query hrm_platform_departments_snapshots table with
+ *   organization and department scoping.
  *
  * 1. Validate organization_id exists and user has access to organization context
  * 2. Validate department_id exists within the organization
@@ -283,7 +285,8 @@ export namespace index {
  * @param props.snapshotId The unique identifier of the snapshot to retrieve. This is the primary key of the hrm_platform_departments_snapshots table.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query hrm_platform_departments_snapshots table to retrieve the snapshot record matching the provided snapshotId UUID.
+ * @x-autobe-specification Query hrm_platform_departments_snapshots table to
+ *   retrieve the snapshot record matching the provided snapshotId UUID.
  *
  * Enforce organization context validation: the snapshot's hrm_platform_department_id must reference a department that belongs to the provided organizationId. Verify the department exists and is active (not soft-deleted).
  *

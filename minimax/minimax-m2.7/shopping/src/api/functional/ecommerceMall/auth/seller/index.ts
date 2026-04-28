@@ -28,12 +28,13 @@ import { IEcommerceMallSeller } from "../../../../structures/IEcommerceMallSelle
  * @param props.body Registration request containing seller email address and password.
  * @x-autobe-authorization-type join
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Service logic:
- * 1. Validate email format and uniqueness (check ecommerce_mall_sellers.email uniqueness)
- * 2. Validate password strength (minimum 8 characters, hash with bcrypt)
- * 3. Create new seller record with approval_status = 'pending'
- * 4. Generate email verification token and store in ecommerce_mall_seller_email_verifications
- * 5. Return IAuthorized response with null tokens (email verification required before login)
+ * @x-autobe-specification Service logic: 1. Validate email format and
+ *   uniqueness (check ecommerce_mall_sellers.email uniqueness) 2. Validate
+ *   password strength (minimum 8 characters, hash with bcrypt) 3. Create new
+ *   seller record with approval_status = 'pending' 4. Generate email
+ *   verification token and store in ecommerce_mall_seller_email_verifications
+ *   5. Return IAuthorized response with null tokens (email verification
+ *   required before login)
  *
  * Edge cases:
  * - Duplicate email: return 409 Conflict
@@ -140,14 +141,12 @@ export namespace join {
  * @param props.body Login credentials containing email and password.
  * @x-autobe-authorization-type login
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Service logic:
- * 1. Validate email exists in ecommerce_mall_sellers
- * 2. Verify password against password_hash
- * 3. Check approval_status = 'approved' (rejected accounts cannot login)
- * 4. Create session record in ecommerce_mall_seller_sessions with ip, href, referrer
- * 5. Generate JWT access_token and refresh_token
- * 6. Store tokens in session record
- * 7. Return IAuthorized with both tokens
+ * @x-autobe-specification Service logic: 1. Validate email exists in
+ *   ecommerce_mall_sellers 2. Verify password against password_hash 3. Check
+ *   approval_status = 'approved' (rejected accounts cannot login) 4. Create
+ *   session record in ecommerce_mall_seller_sessions with ip, href, referrer 5.
+ *   Generate JWT access_token and refresh_token 6. Store tokens in session
+ *   record 7. Return IAuthorized with both tokens
  *
  * Edge cases:
  * - Email not found: return 401 Unauthorized
@@ -256,15 +255,14 @@ export namespace login {
  * @param props.body Refresh request containing the current refresh token.
  * @x-autobe-authorization-type refresh
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Service logic:
- * 1. Extract refresh_token from request body
- * 2. Find session in ecommerce_mall_seller_sessions by refresh_token
- * 3. Verify session not expired (check expired_at > current time)
- * 4. Verify seller still approved (check ecommerce_mall_sellers.approval_status = 'approved')
- * 5. Verify seller not deleted (check ecommerce_mall_sellers.deleted_at is null)
- * 6. Generate new access_token and refresh_token
- * 7. Update session record with new tokens and new expiration
- * 8. Return IAuthorized with new tokens
+ * @x-autobe-specification Service logic: 1. Extract refresh_token from request
+ *   body 2. Find session in ecommerce_mall_seller_sessions by refresh_token 3.
+ *   Verify session not expired (check expired_at > current time) 4. Verify
+ *   seller still approved (check ecommerce_mall_sellers.approval_status =
+ *   'approved') 5. Verify seller not deleted (check
+ *   ecommerce_mall_sellers.deleted_at is null) 6. Generate new access_token and
+ *   refresh_token 7. Update session record with new tokens and new expiration
+ *   8. Return IAuthorized with new tokens
  *
  * Edge cases:
  * - Invalid/expired refresh_token: return 401 Unauthorized

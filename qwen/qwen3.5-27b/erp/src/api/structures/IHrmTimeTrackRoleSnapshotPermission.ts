@@ -16,8 +16,11 @@ export type IHrmTimeTrackRoleSnapshotPermission = {
    *
    * This UUID serves as the primary key for the permission record, enabling precise identification and retrieval of individual permission entries. Each permission record has a globally unique identifier that remains constant throughout its lifecycle.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from hrm_time_track_role_snapshot_permissions.id column. Primary key uniquely identifying this permission record within the role snapshot permissions table. Auto-generated UUID on record creation.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_role_snapshot_permissions.id column. Primary key
+     *   uniquely identifying this permission record within the role snapshot
+     *   permissions table. Auto-generated UUID on record creation.
    */
   id: string & tags.Format<"uuid">;
 
@@ -26,8 +29,14 @@ export type IHrmTimeTrackRoleSnapshotPermission = {
    *
    * This field contains the specific permission name that was assigned to the role when the snapshot was taken. Available permissions control access to various organizational features including organization management, employee operations, project management, time tracking, timesheet approval, and reporting capabilities. The permission value is immutable once captured in the snapshot.
    *
-   * @x-autobe-database-schema-property permission
-   * @x-autobe-specification Direct mapping from hrm_time_track_role_snapshot_permissions.permission column. Stores the permission identifier as a string value. Valid permission types include: organization_management, employee_management, employee_viewing, project_management, project_viewing, time_management, timesheet_approval, time_viewing_all, and report_viewing. This value is captured at snapshot creation time and is immutable.
+     * @x-autobe-database-schema-property permission
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_role_snapshot_permissions.permission column. Stores the
+     *   permission identifier as a string value. Valid permission types
+     *   include: organization_management, employee_management,
+     *   employee_viewing, project_management, project_viewing, time_management,
+     *   timesheet_approval, time_viewing_all, and report_viewing. This value is
+     *   captured at snapshot creation time and is immutable.
    */
   permission: string;
 
@@ -36,8 +45,14 @@ export type IHrmTimeTrackRoleSnapshotPermission = {
    *
    * This relation provides the complete context of the role state at the time this permission was captured, including the role name, description, built-in status, creation timestamp, and references to the parent role and the member who triggered the snapshot. Use this to understand which role and which point in time this permission belongs to.
    *
-   * @x-autobe-database-schema-property roleSnapshot
-   * @x-autobe-specification Relation mapping via hrm_time_track_role_snapshot_id foreign key to hrm_time_track_role_snapshots table. Returns IHrmTimeTrackRoleSnapshot.ISummary format containing snapshot id, name, description, is_builtin, created_at, role reference, and createdByMember reference. This join provides context about which role's permissions were captured at what point in time.
+     * @x-autobe-database-schema-property roleSnapshot
+     * @x-autobe-specification Relation mapping via
+     *   hrm_time_track_role_snapshot_id foreign key to
+     *   hrm_time_track_role_snapshots table. Returns
+     *   IHrmTimeTrackRoleSnapshot.ISummary format containing snapshot id, name,
+     *   description, is_builtin, created_at, role reference, and
+     *   createdByMember reference. This join provides context about which
+     *   role's permissions were captured at what point in time.
    */
   roleSnapshot: IHrmTimeTrackRoleSnapshot.ISummary;
 
@@ -46,8 +61,12 @@ export type IHrmTimeTrackRoleSnapshotPermission = {
    *
    * This field captures the exact moment when the permission was recorded in the snapshot. Since snapshots are immutable audit records, this timestamp reflects when the snapshot (and its associated permissions) was created and cannot be modified. Used for chronological ordering and audit trail purposes.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from hrm_time_track_role_snapshot_permissions.created_at column. DateTime field with timezone (Timestamptz) recording when this permission record was created in the snapshot. This timestamp is set automatically on record creation and is immutable.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_role_snapshot_permissions.created_at column. DateTime
+     *   field with timezone (Timestamptz) recording when this permission record
+     *   was created in the snapshot. This timestamp is set automatically on
+     *   record creation and is immutable.
    */
   created_at: string & tags.Format<"date-time">;
 };
@@ -65,8 +84,14 @@ export namespace IHrmTimeTrackRoleSnapshotPermission {
      *
      * This field specifies which permission should be granted to the role at the time captured by the snapshot. Valid values are: organization_management, employee_management, employee_viewing, project_management, project_viewing, time_management, timesheet_approval, time_viewing_all, and report_viewing. The permission value is validated against the allowed permission types before being recorded in the snapshot.
      *
-     * @x-autobe-database-schema-property permission
-     * @x-autobe-specification Direct mapping to hrm_time_track_role_snapshot_permissions.permission column. String value representing the permission identifier. Must be one of: organization_management, employee_management, employee_viewing, project_management, project_viewing, time_management, timesheet_approval, time_viewing_all, report_viewing. Validated against allowed permission types before insert.
+         * @x-autobe-database-schema-property permission
+         * @x-autobe-specification Direct mapping to
+         *   hrm_time_track_role_snapshot_permissions.permission column. String
+         *   value representing the permission identifier. Must be one of:
+         *   organization_management, employee_management, employee_viewing,
+         *   project_management, project_viewing, time_management,
+         *   timesheet_approval, time_viewing_all, report_viewing. Validated
+         *   against allowed permission types before insert.
      */
     permission: string;
   };
@@ -82,8 +107,10 @@ export namespace IHrmTimeTrackRoleSnapshotPermission {
      *
      * This UUID serves as the primary key for identifying individual permission records within role snapshots. Each permission granted to a role at snapshot time receives a unique identifier.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from hrm_time_track_role_snapshot_permissions.id. Primary key, UUID format, auto-generated on record creation.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_role_snapshot_permissions.id. Primary key, UUID
+         *   format, auto-generated on record creation.
      */
     id: string & tags.Format<"uuid">;
 
@@ -92,8 +119,11 @@ export namespace IHrmTimeTrackRoleSnapshotPermission {
      *
      * This field stores the permission name as a string value. Available permissions include organization_management, employee_management, employee_viewing, project_management, project_viewing, time_management, timesheet_approval, time_viewing_all, and report_viewing. The permission value is captured at snapshot creation and remains immutable.
      *
-     * @x-autobe-database-schema-property permission
-     * @x-autobe-specification Direct mapping from hrm_time_track_role_snapshot_permissions.permission. String value representing the permission name granted to the role at snapshot time. Not nullable.
+         * @x-autobe-database-schema-property permission
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_role_snapshot_permissions.permission. String value
+         *   representing the permission name granted to the role at snapshot
+         *   time. Not nullable.
      */
     permission: string;
 
@@ -102,8 +132,11 @@ export namespace IHrmTimeTrackRoleSnapshotPermission {
      *
      * This relation provides the complete context of the role at the time the snapshot was taken, including the role's name, description, built-in status, and creation timestamp. Use this to understand which role this permission belonged to at that specific point in time.
      *
-     * @x-autobe-database-schema-property roleSnapshot
-     * @x-autobe-specification Relation mapping via JOIN from hrm_time_track_role_snapshot_permissions.hrm_time_track_role_snapshot_id to hrm_time_track_role_snapshots.id. Returns IHrmTimeTrackRoleSnapshot.ISummary. Not nullable.
+         * @x-autobe-database-schema-property roleSnapshot
+         * @x-autobe-specification Relation mapping via JOIN from
+         *   hrm_time_track_role_snapshot_permissions.hrm_time_track_role_snapshot_id
+         *   to hrm_time_track_role_snapshots.id. Returns
+         *   IHrmTimeTrackRoleSnapshot.ISummary. Not nullable.
      */
     roleSnapshot: IHrmTimeTrackRoleSnapshot.ISummary;
 
@@ -112,8 +145,11 @@ export namespace IHrmTimeTrackRoleSnapshotPermission {
      *
      * This field captures the exact moment when the permission was recorded in the snapshot. Since snapshots are immutable audit records, this timestamp reflects when the snapshot (and its associated permissions) was created and cannot be modified.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from hrm_time_track_role_snapshot_permissions.created_at. DateTime in ISO 8601 format with timezone. Records when the permission was captured in the snapshot. Not nullable.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_role_snapshot_permissions.created_at. DateTime in
+         *   ISO 8601 format with timezone. Records when the permission was
+         *   captured in the snapshot. Not nullable.
      */
     created_at: string & tags.Format<"date-time">;
   };
@@ -131,7 +167,11 @@ export namespace IHrmTimeTrackRoleSnapshotPermission {
      *
      * Used for cursor-based pagination, which provides more efficient navigation through large result sets compared to offset-based pagination. The cursor is opaque and generated by the server based on the position of the last record in the previous page. Include this value from the previous response's pagination metadata to fetch the next page.
      *
-     * @x-autobe-specification Cursor token for cursor-based pagination. Used to retrieve the next page of results after an initial query. The cursor is generated server-side based on the last record of the previous page and passed back in the pagination metadata. When provided, offset-based pagination (page/limit) is ignored.
+         * @x-autobe-specification Cursor token for cursor-based pagination.
+         *   Used to retrieve the next page of results after an initial query.
+         *   The cursor is generated server-side based on the last record of the
+         *   previous page and passed back in the pagination metadata. When
+         *   provided, offset-based pagination (page/limit) is ignored.
      */
     cursor?: string | undefined;
 
@@ -140,7 +180,11 @@ export namespace IHrmTimeTrackRoleSnapshotPermission {
      *
      * Restricts results to permissions created on or after the specified date-time. Accepts ISO 8601 format (e.g., 2024-01-15T00:00:00Z). Can be combined with created_at_to to define a date range for filtering permissions within a specific time period.
      *
-     * @x-autobe-specification Filter role snapshot permissions created on or after this timestamp. Applied as WHERE created_at >= value in the database query. Accepts ISO 8601 date-time format (e.g., 2024-01-15T00:00:00Z). When combined with created_at_to, filters records within the specified date range.
+         * @x-autobe-specification Filter role snapshot permissions created on
+         *   or after this timestamp. Applied as WHERE created_at >= value in
+         *   the database query. Accepts ISO 8601 date-time format (e.g.,
+         *   2024-01-15T00:00:00Z). When combined with created_at_to, filters
+         *   records within the specified date range.
      */
     created_at_from?: (string & tags.Format<"date-time">) | undefined;
 
@@ -149,7 +193,11 @@ export namespace IHrmTimeTrackRoleSnapshotPermission {
      *
      * Restricts results to permissions created on or before the specified date-time. Accepts ISO 8601 format (e.g., 2024-01-15T23:59:59Z). Can be combined with created_at_from to define a date range for filtering permissions within a specific time period.
      *
-     * @x-autobe-specification Filter role snapshot permissions created on or before this timestamp. Applied as WHERE created_at <= value in the database query. Accepts ISO 8601 date-time format (e.g., 2024-01-15T23:59:59Z). When combined with created_at_from, filters records within the specified date range.
+         * @x-autobe-specification Filter role snapshot permissions created on
+         *   or before this timestamp. Applied as WHERE created_at <= value in
+         *   the database query. Accepts ISO 8601 date-time format (e.g.,
+         *   2024-01-15T23:59:59Z). When combined with created_at_from, filters
+         *   records within the specified date range.
      */
     created_at_to?: (string & tags.Format<"date-time">) | undefined;
 
@@ -158,7 +206,11 @@ export namespace IHrmTimeTrackRoleSnapshotPermission {
      *
      * Controls the page size for paginated results. Valid values are integers between 1 and 100. If not specified, a default page size is used. This parameter helps optimize API performance by limiting the amount of data transferred in a single request. The actual number of records returned may be less than the limit on the final page when fewer records remain.
      *
-     * @x-autobe-specification Maximum number of records to return per page. Valid range: 1-100. Defaults to a system-defined value (typically 20 or 50) when not specified. Used to control the size of result sets and optimize API performance. The actual number of records returned may be less than the limit on the final page.
+         * @x-autobe-specification Maximum number of records to return per page.
+         *   Valid range: 1-100. Defaults to a system-defined value (typically
+         *   20 or 50) when not specified. Used to control the size of result
+         *   sets and optimize API performance. The actual number of records
+         *   returned may be less than the limit on the final page.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -169,7 +221,11 @@ export namespace IHrmTimeTrackRoleSnapshotPermission {
      *
      * Specifies which page of results to return, starting from page 1 (not page 0). Used for traditional offset-based pagination where the server calculates the offset as (page - 1) * limit. If cursor is provided instead, cursor-based pagination takes precedence and this parameter is ignored.
      *
-     * @x-autobe-specification Page number for offset-based pagination. 1-indexed (first page is page 1, not page 0). Minimum value is 1. When cursor is provided, this parameter is ignored in favor of cursor-based pagination. Used to navigate through paginated results by specifying which page to retrieve.
+         * @x-autobe-specification Page number for offset-based pagination.
+         *   1-indexed (first page is page 1, not page 0). Minimum value is 1.
+         *   When cursor is provided, this parameter is ignored in favor of
+         *   cursor-based pagination. Used to navigate through paginated results
+         *   by specifying which page to retrieve.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -178,7 +234,12 @@ export namespace IHrmTimeTrackRoleSnapshotPermission {
      *
      * Performs a case-insensitive partial match on the permission field. The search term can be a full permission name or a substring. For example, searching for 'management' would return permissions like 'organization_management', 'employee_management', and 'project_management'. Useful for finding specific permission types within a role snapshot.
      *
-     * @x-autobe-specification Search term for filtering role snapshot permissions by permission name. Applied as LIKE filter on the permission field with wildcard matching (e.g., '%searchterm%'). Case-insensitive partial match. Supports filtering by permission names such as 'organization_management', 'employee_viewing', 'project_management', etc.
+         * @x-autobe-specification Search term for filtering role snapshot
+         *   permissions by permission name. Applied as LIKE filter on the
+         *   permission field with wildcard matching (e.g., '%searchterm%').
+         *   Case-insensitive partial match. Supports filtering by permission
+         *   names such as 'organization_management', 'employee_viewing',
+         *   'project_management', etc.
      */
     search?: string | undefined;
   };

@@ -24,7 +24,8 @@ import { IRedditCloneModeratorSnapshot } from "../../../../../../structures/IRed
  * @param props.body Search criteria including date range filters and pagination parameters for retrieving moderator snapshots
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query reddit_clone_moderator_snapshots table filtering by community_id and moderator_id parameters.
+ * @x-autobe-specification Query reddit_clone_moderator_snapshots table
+ *   filtering by community_id and moderator_id parameters.
  *
  * Apply the following query filters from request body:
  * - created_at_range: filter snapshots within a date range (from/to timestamps)
@@ -143,7 +144,8 @@ export namespace index {
  * @param props.snapshotId Unique identifier of the snapshot record (global scope)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query the reddit_clone_moderator_snapshots table using the snapshotId as the primary key.
+ * @x-autobe-specification Query the reddit_clone_moderator_snapshots table
+ *   using the snapshotId as the primary key.
  *
  * Validate that the snapshot belongs to both the specified communityId and moderatorId by checking reddit_clone_community_id and reddit_clone_moderator_id columns respectively.
  *

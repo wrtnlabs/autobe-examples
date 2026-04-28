@@ -24,9 +24,9 @@ export class CommunityplatformMemberCommunitiesController {
    *
    * @param connection
    * @param body Community creation data including unique name, description, and optional icon file
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation steps:
    *
    * 1. Validate authenticated member from JWT token context
    * 2. Validate request body:
@@ -87,9 +87,10 @@ export class CommunityplatformMemberCommunitiesController {
    * @param connection
    * @param communityId Unique identifier of the community to update (UUID format)
    * @param body Community update data including name, description, and optional icon image
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Update an existing community in the community_platform_communities table.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Update an existing community in the
+     *   community_platform_communities table.
    *
    * 1. Authorization: Validate that the authenticated member is the community owner (owner_member_id matches the requesting member's ID).
    *
@@ -152,9 +153,9 @@ export class CommunityplatformMemberCommunitiesController {
    *
    * @param connection
    * @param communityId Unique identifier of the community to delete (UUID format)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation steps:
    *
    * 1. Authenticate the requesting member via session token
    * 2. Validate communityId is a valid UUID format

@@ -20,7 +20,11 @@ import { ITodoAppMemberSession } from "../../../../structures/ITodoAppMemberSess
  * @param props.body Search, filter, pagination, and sorting criteria for the authenticated member's session list.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query todo_app_member_sessions using the authenticated member id from the security context and never accept a member id from the request body. Support pagination, search, and sorting in the request DTO. Default ordering should be newest first by created_at unless overridden.
+ * @x-autobe-specification Query todo_app_member_sessions using the
+ *   authenticated member id from the security context and never accept a member
+ *   id from the request body. Support pagination, search, and sorting in the
+ *   request DTO. Default ordering should be newest first by created_at unless
+ *   overridden.
  *
  * Use the schema columns exactly as stored: id, todo_app_member_id, ip, href, referrer, created_at, and expired_at. Return only a summary projection suitable for list browsing. Do not expose any secret token value because none exists in the schema. Reject unauthorized access, expired sessions in an unauthenticated context, and malformed list parameters with the appropriate auth or validation error.
  * @path /todoApp/member/sessions
@@ -111,7 +115,9 @@ export namespace index {
  * @param props.sessionId The UUID of the session to retrieve.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Load todo_app_member_sessions by primary key id and return the matching row. Validate that sessionId is a UUID and return 404 when no session exists.
+ * @x-autobe-specification Load todo_app_member_sessions by primary key id and
+ *   return the matching row. Validate that sessionId is a UUID and return 404
+ *   when no session exists.
  *
  * Do not mutate the session record, refresh expiration, or trigger logout behavior. Preserve the stored ip, href, referrer, created_at, and expired_at values as-is. If authorization is enforced at this layer, verify the caller may inspect the requested session before returning the entity.
  * @path /todoApp/member/sessions/:sessionId

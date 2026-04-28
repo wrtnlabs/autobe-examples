@@ -13,80 +13,100 @@ export type IHrmTimeTrackingTimer = {
   /**
    * Unique identifier of the live timer record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_timers.id.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from hrm_time_tracking_timers.id.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Organization workspace that owns this running timer.
    *
-   * @x-autobe-database-schema-property organization
-   * @x-autobe-specification Resolve the belongs-to relation from hrm_time_tracking_timers.hrm_time_tracking_organization_id to hrm_time_tracking_organizations.id and project it as IHrmTimeTrackingOrganization.ISummary.
+     * @x-autobe-database-schema-property organization
+     * @x-autobe-specification Resolve the belongs-to relation from
+     *   hrm_time_tracking_timers.hrm_time_tracking_organization_id to
+     *   hrm_time_tracking_organizations.id and project it as
+     *   IHrmTimeTrackingOrganization.ISummary.
    */
   organization: IHrmTimeTrackingOrganization.ISummary;
 
   /**
    * Employee who owns and is currently running this timer.
    *
-   * @x-autobe-database-schema-property employee
-   * @x-autobe-specification Resolve the belongs-to relation from hrm_time_tracking_timers.hrm_time_tracking_employee_id to hrm_time_tracking_employees.id and project it as IHrmTimeTrackingEmployee.ISummary.
+     * @x-autobe-database-schema-property employee
+     * @x-autobe-specification Resolve the belongs-to relation from
+     *   hrm_time_tracking_timers.hrm_time_tracking_employee_id to
+     *   hrm_time_tracking_employees.id and project it as
+     *   IHrmTimeTrackingEmployee.ISummary.
    */
   employee: IHrmTimeTrackingEmployee.ISummary;
 
   /**
    * Project currently selected for the running timer.
    *
-   * @x-autobe-database-schema-property project
-   * @x-autobe-specification Resolve the belongs-to relation from hrm_time_tracking_timers.hrm_time_tracking_project_id to hrm_time_tracking_projects.id and project it as IHrmTimeTrackingProject.ISummary.
+     * @x-autobe-database-schema-property project
+     * @x-autobe-specification Resolve the belongs-to relation from
+     *   hrm_time_tracking_timers.hrm_time_tracking_project_id to
+     *   hrm_time_tracking_projects.id and project it as
+     *   IHrmTimeTrackingProject.ISummary.
    */
   project: IHrmTimeTrackingProject.ISummary;
 
   /**
    * Task currently associated with the running timer, or null when the timer is not tied to a specific task.
    *
-   * @x-autobe-database-schema-property task
-   * @x-autobe-specification Resolve the nullable belongs-to relation from hrm_time_tracking_timers.hrm_time_tracking_task_id to hrm_time_tracking_tasks.id and project it as IHrmTimeTrackingTask.ISummary when present; otherwise return null.
+     * @x-autobe-database-schema-property task
+     * @x-autobe-specification Resolve the nullable belongs-to relation from
+     *   hrm_time_tracking_timers.hrm_time_tracking_task_id to
+     *   hrm_time_tracking_tasks.id and project it as
+     *   IHrmTimeTrackingTask.ISummary when present; otherwise return null.
    */
   task: IHrmTimeTrackingTask.ISummary | null;
 
   /**
    * Timestamp when the timer started running.
    *
-   * @x-autobe-database-schema-property started_at
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_timers.started_at.
+     * @x-autobe-database-schema-property started_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_timers.started_at.
    */
   started_at: string & tags.Format<"date-time">;
 
   /**
    * Current work note describing what the employee is doing, or null when no description has been entered.
    *
-   * @x-autobe-database-schema-property description
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_timers.description. Return null when no live work note has been recorded.
+     * @x-autobe-database-schema-property description
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_timers.description. Return null when no live work
+     *   note has been recorded.
    */
   description: string | null;
 
   /**
    * Timestamp when this timer record was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_timers.created_at.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_timers.created_at.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when this timer record was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_timers.updated_at.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_timers.updated_at.
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * Soft-deletion timestamp for the timer record, or null while the timer remains active.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_timers.deleted_at. This value is null for active timers and non-null when the timer record has been soft deleted or discarded.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_timers.deleted_at. This value is null for active
+     *   timers and non-null when the timer record has been soft deleted or
+     *   discarded.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -100,16 +120,27 @@ export namespace IHrmTimeTrackingTimer {
     /**
      * Identifier of the project to start the running timer under.
      *
-     * @x-autobe-database-schema-property hrm_time_tracking_project_id
-     * @x-autobe-specification Direct mapping to hrm_time_tracking_timers.hrm_time_tracking_project_id for timer creation. The client provides the selected project UUID. On implementation, validate that the referenced project exists, is active for normal use, and belongs to the authenticated employee's active organization context before creating the timer.
+         * @x-autobe-database-schema-property hrm_time_tracking_project_id
+         * @x-autobe-specification Direct mapping to
+         *   hrm_time_tracking_timers.hrm_time_tracking_project_id for timer
+         *   creation. The client provides the selected project UUID. On
+         *   implementation, validate that the referenced project exists, is
+         *   active for normal use, and belongs to the authenticated employee's
+         *   active organization context before creating the timer.
      */
     hrm_time_tracking_project_id: string & tags.Format<"uuid">;
 
     /**
      * Optional identifier of the task to associate with the running timer, or null when no task is selected.
      *
-     * @x-autobe-database-schema-property hrm_time_tracking_task_id
-     * @x-autobe-specification Direct mapping to hrm_time_tracking_timers.hrm_time_tracking_task_id for timer creation when the employee wants to attach the running timer to a task. This field is optional. When provided as a UUID, validate that the referenced task exists, is available for normal use, and belongs to the selected project identified by hrm_time_tracking_project_id. Null means no task is associated.
+         * @x-autobe-database-schema-property hrm_time_tracking_task_id
+         * @x-autobe-specification Direct mapping to
+         *   hrm_time_tracking_timers.hrm_time_tracking_task_id for timer
+         *   creation when the employee wants to attach the running timer to a
+         *   task. This field is optional. When provided as a UUID, validate
+         *   that the referenced task exists, is available for normal use, and
+         *   belongs to the selected project identified by
+         *   hrm_time_tracking_project_id. Null means no task is associated.
      */
     hrm_time_tracking_task_id?:
       | (string & tags.Format<"uuid">)
@@ -119,8 +150,11 @@ export namespace IHrmTimeTrackingTimer {
     /**
      * Optional work note for the running timer, or null when no description is provided.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping to hrm_time_tracking_timers.description for timer creation. This field is optional and stores the employee's live work note for the running timer. Null means no description has been entered.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping to
+         *   hrm_time_tracking_timers.description for timer creation. This field
+         *   is optional and stores the employee's live work note for the
+         *   running timer. Null means no description has been entered.
      */
     description?: string | null | undefined;
   };
@@ -132,24 +166,37 @@ export namespace IHrmTimeTrackingTimer {
     /**
      * Identifier of the project that the running timer should track after the update.
      *
-     * @x-autobe-database-schema-property hrm_time_tracking_project_id
-     * @x-autobe-specification Maps to hrm_time_tracking_timers.hrm_time_tracking_project_id. When provided, replace the timer's selected project with this project ID after verifying that the referenced project exists in the caller's current organization. If omitted, keep the existing project unchanged.
+         * @x-autobe-database-schema-property hrm_time_tracking_project_id
+         * @x-autobe-specification Maps to
+         *   hrm_time_tracking_timers.hrm_time_tracking_project_id. When
+         *   provided, replace the timer's selected project with this project ID
+         *   after verifying that the referenced project exists in the caller's
+         *   current organization. If omitted, keep the existing project
+         *   unchanged.
      */
     project_id?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Identifier of the task linked to the running timer, or null to remove the current task selection.
      *
-     * @x-autobe-database-schema-property hrm_time_tracking_task_id
-     * @x-autobe-specification Maps to hrm_time_tracking_timers.hrm_time_tracking_task_id. When provided with a UUID, set the timer's selected task to that task after verifying that the task belongs to the selected project after any project change. When provided as null, clear the current task association. If omitted, keep the existing task unchanged.
+         * @x-autobe-database-schema-property hrm_time_tracking_task_id
+         * @x-autobe-specification Maps to
+         *   hrm_time_tracking_timers.hrm_time_tracking_task_id. When provided
+         *   with a UUID, set the timer's selected task to that task after
+         *   verifying that the task belongs to the selected project after any
+         *   project change. When provided as null, clear the current task
+         *   association. If omitted, keep the existing task unchanged.
      */
     task_id?: (string & tags.Format<"uuid">) | null | undefined;
 
     /**
      * Current work note describing what the employee is doing on the running timer, or null to clear it.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping to hrm_time_tracking_timers.description. When provided with a string, replace the timer's current work note. When provided as null, clear the note. If omitted, leave the existing description unchanged.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping to
+         *   hrm_time_tracking_timers.description. When provided with a string,
+         *   replace the timer's current work note. When provided as null, clear
+         *   the note. If omitted, leave the existing description unchanged.
      */
     description?: string | null | undefined;
   };
@@ -161,72 +208,93 @@ export namespace IHrmTimeTrackingTimer {
     /**
      * Unique identifier of the running timer record.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_timers.id.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_timers.id.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Organization workspace that owns this running timer.
      *
-     * @x-autobe-database-schema-property organization
-     * @x-autobe-specification Resolve the organization relation from hrm_time_tracking_timers.hrm_time_tracking_organization_id to hrm_time_tracking_organizations.id and project it as IHrmTimeTrackingOrganization.ISummary.
+         * @x-autobe-database-schema-property organization
+         * @x-autobe-specification Resolve the organization relation from
+         *   hrm_time_tracking_timers.hrm_time_tracking_organization_id to
+         *   hrm_time_tracking_organizations.id and project it as
+         *   IHrmTimeTrackingOrganization.ISummary.
      */
     organization: IHrmTimeTrackingOrganization.ISummary;
 
     /**
      * Employee account that currently owns and runs this timer.
      *
-     * @x-autobe-database-schema-property employee
-     * @x-autobe-specification Resolve the employee relation from hrm_time_tracking_timers.hrm_time_tracking_employee_id to hrm_time_tracking_employees.id and project it as IHrmTimeTrackingEmployee.ISummary.
+         * @x-autobe-database-schema-property employee
+         * @x-autobe-specification Resolve the employee relation from
+         *   hrm_time_tracking_timers.hrm_time_tracking_employee_id to
+         *   hrm_time_tracking_employees.id and project it as
+         *   IHrmTimeTrackingEmployee.ISummary.
      */
     employee: IHrmTimeTrackingEmployee.ISummary;
 
     /**
      * Project currently selected for the running timer.
      *
-     * @x-autobe-database-schema-property project
-     * @x-autobe-specification Resolve the project relation from hrm_time_tracking_timers.hrm_time_tracking_project_id to hrm_time_tracking_projects.id and project it as IHrmTimeTrackingProject.ISummary.
+         * @x-autobe-database-schema-property project
+         * @x-autobe-specification Resolve the project relation from
+         *   hrm_time_tracking_timers.hrm_time_tracking_project_id to
+         *   hrm_time_tracking_projects.id and project it as
+         *   IHrmTimeTrackingProject.ISummary.
      */
     project: IHrmTimeTrackingProject.ISummary;
 
     /**
      * Task currently associated with the running timer, or null when the timer is not tracking a specific task.
      *
-     * @x-autobe-database-schema-property task
-     * @x-autobe-specification Resolve the optional task relation from hrm_time_tracking_timers.hrm_time_tracking_task_id to hrm_time_tracking_tasks.id and project it as IHrmTimeTrackingTask.ISummary when present; otherwise return null.
+         * @x-autobe-database-schema-property task
+         * @x-autobe-specification Resolve the optional task relation from
+         *   hrm_time_tracking_timers.hrm_time_tracking_task_id to
+         *   hrm_time_tracking_tasks.id and project it as
+         *   IHrmTimeTrackingTask.ISummary when present; otherwise return null.
      */
     task: IHrmTimeTrackingTask.ISummary | null;
 
     /**
      * Timestamp when the timer started running.
      *
-     * @x-autobe-database-schema-property started_at
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_timers.started_at as an RFC 3339 date-time string.
+         * @x-autobe-database-schema-property started_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_timers.started_at as an RFC 3339 date-time
+         *   string.
      */
     started_at: string & tags.Format<"date-time">;
 
     /**
      * Current work note describing what the employee is doing, or null when no note is set.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_timers.description. Return the current work note when stored, or null when no description has been entered.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_timers.description. Return the current work note
+         *   when stored, or null when no description has been entered.
      */
     description: string | null;
 
     /**
      * Timestamp when this timer record was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_timers.created_at as an RFC 3339 date-time string.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_timers.created_at as an RFC 3339 date-time
+         *   string.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when this timer record was last updated.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_timers.updated_at as an RFC 3339 date-time string.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_timers.updated_at as an RFC 3339 date-time
+         *   string.
      */
     updated_at: string & tags.Format<"date-time">;
   };
@@ -238,91 +306,138 @@ export namespace IHrmTimeTrackingTimer {
     /**
      * Filter timers by the employee who owns the running timer.
      *
-     * @x-autobe-specification Optional equality filter input that narrows the timer query by hrm_time_tracking_timers.hrm_time_tracking_employee_id within the already-authenticated organization scope. For employee callers without broader visibility, the service may additionally enforce the caller's own employee identity regardless of the provided value.
+         * @x-autobe-specification Optional equality filter input that narrows
+         *   the timer query by
+         *   hrm_time_tracking_timers.hrm_time_tracking_employee_id within the
+         *   already-authenticated organization scope. For employee callers
+         *   without broader visibility, the service may additionally enforce
+         *   the caller's own employee identity regardless of the provided
+         *   value.
      */
     hrmTimeTrackingEmployeeId?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Filter timers by the selected project.
      *
-     * @x-autobe-specification Optional equality filter input that narrows the timer query by hrm_time_tracking_timers.hrm_time_tracking_project_id after organization scoping has been applied.
+         * @x-autobe-specification Optional equality filter input that narrows
+         *   the timer query by
+         *   hrm_time_tracking_timers.hrm_time_tracking_project_id after
+         *   organization scoping has been applied.
      */
     hrmTimeTrackingProjectId?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Filter timers by a specific linked task.
      *
-     * @x-autobe-specification Optional equality filter input that narrows the timer query by hrm_time_tracking_timers.hrm_time_tracking_task_id. When present, return only timers linked to the specified task. Because the underlying column is nullable, this explicit task-id filter takes precedence over the broader taskAssigned nullability filter.
+         * @x-autobe-specification Optional equality filter input that narrows
+         *   the timer query by
+         *   hrm_time_tracking_timers.hrm_time_tracking_task_id. When present,
+         *   return only timers linked to the specified task. Because the
+         *   underlying column is nullable, this explicit task-id filter takes
+         *   precedence over the broader taskAssigned nullability filter.
      */
     hrmTimeTrackingTaskId?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Whether to return timers that have a task assigned or timers with no linked task.
      *
-     * @x-autobe-specification Optional boolean query control derived from hrm_time_tracking_timers.hrm_time_tracking_task_id nullability. Interpret true as a filter for rows where the task foreign key is not null, and false as a filter for rows where the task foreign key is null. If hrmTimeTrackingTaskId is also supplied, the explicit task id filter should take precedence and this flag may be ignored or validated for consistency.
+         * @x-autobe-specification Optional boolean query control derived from
+         *   hrm_time_tracking_timers.hrm_time_tracking_task_id nullability.
+         *   Interpret true as a filter for rows where the task foreign key is
+         *   not null, and false as a filter for rows where the task foreign key
+         *   is null. If hrmTimeTrackingTaskId is also supplied, the explicit
+         *   task id filter should take precedence and this flag may be ignored
+         *   or validated for consistency.
      */
     taskAssigned?: boolean | undefined;
 
     /**
      * Search text applied to the timer's current work description.
      *
-     * @x-autobe-specification Optional case-insensitive partial-match search input applied to hrm_time_tracking_timers.description. Implement with database text matching compatible with the indexed description column. This is search criteria, not an exact stored-value field.
+         * @x-autobe-specification Optional case-insensitive partial-match
+         *   search input applied to hrm_time_tracking_timers.description.
+         *   Implement with database text matching compatible with the indexed
+         *   description column. This is search criteria, not an exact
+         *   stored-value field.
      */
     search?: string | undefined;
 
     /**
      * Include only timers that started at or after this date-time.
      *
-     * @x-autobe-specification Optional inclusive lower-bound query input applied to hrm_time_tracking_timers.started_at. When provided, return only timers whose started_at is greater than or equal to this timestamp.
+         * @x-autobe-specification Optional inclusive lower-bound query input
+         *   applied to hrm_time_tracking_timers.started_at. When provided,
+         *   return only timers whose started_at is greater than or equal to
+         *   this timestamp.
      */
     startedAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Include only timers that started at or before this date-time.
      *
-     * @x-autobe-specification Optional inclusive upper-bound query input applied to hrm_time_tracking_timers.started_at. When provided, return only timers whose started_at is less than or equal to this timestamp.
+         * @x-autobe-specification Optional inclusive upper-bound query input
+         *   applied to hrm_time_tracking_timers.started_at. When provided,
+         *   return only timers whose started_at is less than or equal to this
+         *   timestamp.
      */
     startedAtTo?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Include only timers created at or after this date-time.
      *
-     * @x-autobe-specification Optional inclusive lower-bound query input applied to hrm_time_tracking_timers.created_at. When provided, return only timers whose created_at is greater than or equal to this timestamp.
+         * @x-autobe-specification Optional inclusive lower-bound query input
+         *   applied to hrm_time_tracking_timers.created_at. When provided,
+         *   return only timers whose created_at is greater than or equal to
+         *   this timestamp.
      */
     createdAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Include only timers created at or before this date-time.
      *
-     * @x-autobe-specification Optional inclusive upper-bound query input applied to hrm_time_tracking_timers.created_at. When provided, return only timers whose created_at is less than or equal to this timestamp.
+         * @x-autobe-specification Optional inclusive upper-bound query input
+         *   applied to hrm_time_tracking_timers.created_at. When provided,
+         *   return only timers whose created_at is less than or equal to this
+         *   timestamp.
      */
     createdAtTo?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Include only timers updated at or after this date-time.
      *
-     * @x-autobe-specification Optional inclusive lower-bound query input applied to hrm_time_tracking_timers.updated_at. When provided, return only timers whose updated_at is greater than or equal to this timestamp.
+         * @x-autobe-specification Optional inclusive lower-bound query input
+         *   applied to hrm_time_tracking_timers.updated_at. When provided,
+         *   return only timers whose updated_at is greater than or equal to
+         *   this timestamp.
      */
     updatedAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Include only timers updated at or before this date-time.
      *
-     * @x-autobe-specification Optional inclusive upper-bound query input applied to hrm_time_tracking_timers.updated_at. When provided, return only timers whose updated_at is less than or equal to this timestamp.
+         * @x-autobe-specification Optional inclusive upper-bound query input
+         *   applied to hrm_time_tracking_timers.updated_at. When provided,
+         *   return only timers whose updated_at is less than or equal to this
+         *   timestamp.
      */
     updatedAtTo?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Page number of the paginated timer results to retrieve.
      *
-     * @x-autobe-specification Optional pagination input for selecting which result page to return after filters and sorting are applied. Treat as a 1-indexed page number and default according to endpoint pagination policy when omitted.
+         * @x-autobe-specification Optional pagination input for selecting which
+         *   result page to return after filters and sorting are applied. Treat
+         *   as a 1-indexed page number and default according to endpoint
+         *   pagination policy when omitted.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of timer results to include in one page.
      *
-     * @x-autobe-specification Optional pagination input controlling the maximum number of timer rows returned per page after filters and sorting. Enforce the schema bounds and endpoint policy maximum.
+         * @x-autobe-specification Optional pagination input controlling the
+         *   maximum number of timer rows returned per page after filters and
+         *   sorting. Enforce the schema bounds and endpoint policy maximum.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -331,7 +446,11 @@ export namespace IHrmTimeTrackingTimer {
     /**
      * Which timer field to use when ordering the result list.
      *
-     * @x-autobe-specification Optional sort selector for mapping client enum values to concrete timer query columns. Map startedAt to started_at, createdAt to created_at, updatedAt to updated_at, and description to description. Reject or ignore any value outside this allowlist.
+         * @x-autobe-specification Optional sort selector for mapping client
+         *   enum values to concrete timer query columns. Map startedAt to
+         *   started_at, createdAt to created_at, updatedAt to updated_at, and
+         *   description to description. Reject or ignore any value outside this
+         *   allowlist.
      */
     sortBy?:
       | "startedAt"
@@ -343,7 +462,10 @@ export namespace IHrmTimeTrackingTimer {
     /**
      * Direction to apply when sorting timer results.
      *
-     * @x-autobe-specification Optional sort direction applied to the column selected by sortBy. Interpret asc as ascending order and desc as descending order. Apply only when a valid sortBy value is in effect.
+         * @x-autobe-specification Optional sort direction applied to the column
+         *   selected by sortBy. Interpret asc as ascending order and desc as
+         *   descending order. Apply only when a valid sortBy value is in
+         *   effect.
      */
     sortDirection?: "asc" | "desc" | undefined;
   };

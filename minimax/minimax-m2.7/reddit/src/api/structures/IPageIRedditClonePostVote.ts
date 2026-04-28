@@ -11,14 +11,14 @@ export type IPageIRedditClonePostVote = {
   /**
    * Page information.
    *
-   * @x-autobe-specification Pagination information for the page.
+     * @x-autobe-specification Pagination information for the page.
    */
   pagination: IPage.IPagination;
 
   /**
    * List of records.
    *
-   * @x-autobe-specification List of records of type IRedditClonePostVote.
+     * @x-autobe-specification List of records of type IRedditClonePostVote.
    */
   data: IRedditClonePostVote[];
 };
@@ -32,14 +32,15 @@ export namespace IPageIRedditClonePostVote {
     /**
      * Page information.
      *
-     * @x-autobe-specification Pagination information for the page.
+         * @x-autobe-specification Pagination information for the page.
      */
     pagination: IPage.IPagination;
 
     /**
      * List of records.
      *
-     * @x-autobe-specification List of records of type IRedditClonePostVote.ISummary.
+         * @x-autobe-specification List of records of type
+         *   IRedditClonePostVote.ISummary.
      */
     data: IRedditClonePostVote.ISummary[];
   };

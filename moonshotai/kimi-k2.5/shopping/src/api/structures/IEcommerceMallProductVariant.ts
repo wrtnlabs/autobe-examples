@@ -9,33 +9,33 @@ import { IEcommerceMallProductVariantOption } from "./IEcommerceMallProductVaria
  */
 export type IEcommerceMallProductVariant = {
   /**
-   * @x-autobe-database-schema-property id
+     * @x-autobe-database-schema-property id
    */
   id: string & tags.Format<"uuid">;
   /**
-   * @x-autobe-database-schema-property sku_code
+     * @x-autobe-database-schema-property sku_code
    */
   skuCode: string;
   /**
-   * @x-autobe-database-schema-property price
+     * @x-autobe-database-schema-property price
    */
   price: number | null;
   /**
-   * @x-autobe-database-schema-property product
+     * @x-autobe-database-schema-property product
    */
   product: IEcommerceMallProduct.ISummary;
   variantOptions: IEcommerceMallProductVariantOption[];
   inventoryQuantity: number & tags.Type<"int32">;
   /**
-   * @x-autobe-database-schema-property created_at
+     * @x-autobe-database-schema-property created_at
    */
   createdAt: string & tags.Format<"date-time">;
   /**
-   * @x-autobe-database-schema-property updated_at
+     * @x-autobe-database-schema-property updated_at
    */
   updatedAt: string & tags.Format<"date-time">;
   /**
-   * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-database-schema-property deleted_at
    */
   deletedAt: (string & tags.Format<"date-time">) | null;
 };
@@ -47,42 +47,64 @@ export namespace IEcommerceMallProductVariant {
     /**
      * Search term for partial matching against SKU code.
      *
-     * @x-autobe-specification Filter parameter for partial matching against ecommerce_mall_product_variants.sku_code. Uses GIN trigram index for efficient partial text search. When provided, filters variants where sku_code contains the search term (case-insensitive).
+         * @x-autobe-specification Filter parameter for partial matching against
+         *   ecommerce_mall_product_variants.sku_code. Uses GIN trigram index
+         *   for efficient partial text search. When provided, filters variants
+         *   where sku_code contains the search term (case-insensitive).
      */
     search?: string | undefined;
 
     /**
      * Filter by option name (e.g., 'Color', 'Size').
      *
-     * @x-autobe-specification Filter parameter matching ecommerce_mall_product_variant_options.option_name. Used in conjunction with optionValue to find variants with specific attribute combinations (e.g., 'Color'). When provided alone, returns variants having any option with this name.
+         * @x-autobe-specification Filter parameter matching
+         *   ecommerce_mall_product_variant_options.option_name. Used in
+         *   conjunction with optionValue to find variants with specific
+         *   attribute combinations (e.g., 'Color'). When provided alone,
+         *   returns variants having any option with this name.
      */
     optionName?: string | undefined;
 
     /**
      * Filter by option value (e.g., 'Red', 'Large').
      *
-     * @x-autobe-specification Filter parameter matching ecommerce_mall_product_variant_options.option_value. Typically used with optionName to filter specific option combinations. Queries against the normalized option values table using the GIN trigram index.
+         * @x-autobe-specification Filter parameter matching
+         *   ecommerce_mall_product_variant_options.option_value. Typically used
+         *   with optionName to filter specific option combinations. Queries
+         *   against the normalized option values table using the GIN trigram
+         *   index.
      */
     optionValue?: string | undefined;
 
     /**
      * Filter by stock availability - true for in-stock only, false for out-of-stock only, omit for all.
      *
-     * @x-autobe-specification Filter parameter for stock availability. When true, returns only variants with positive inventory (requires JOIN with ecommerce_mall_inventory_records and SUM(quantity_change) > 0). When false, returns only out-of-stock variants. When omitted, returns all variants regardless of stock status.
+         * @x-autobe-specification Filter parameter for stock availability. When
+         *   true, returns only variants with positive inventory (requires JOIN
+         *   with ecommerce_mall_inventory_records and SUM(quantity_change) >
+         *   0). When false, returns only out-of-stock variants. When omitted,
+         *   returns all variants regardless of stock status.
      */
     inStock?: boolean | undefined;
 
     /**
      * Page number for pagination (1-based).
      *
-     * @x-autobe-specification Pagination control parameter (1-based page index). Determines which page of results to return. Combined with limit to calculate OFFSET for SQL query: OFFSET = (page - 1) * limit. Defaults to 1 if omitted.
+         * @x-autobe-specification Pagination control parameter (1-based page
+         *   index). Determines which page of results to return. Combined with
+         *   limit to calculate OFFSET for SQL query: OFFSET = (page - 1) *
+         *   limit. Defaults to 1 if omitted.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Number of items per page (maximum 100).
      *
-     * @x-autobe-specification Pagination control parameter specifying maximum records per page. Used with page to limit result set size and calculate SQL LIMIT clause. Maximum allowed value is 100 to prevent excessive server load. Defaults to a system-defined value if omitted.
+         * @x-autobe-specification Pagination control parameter specifying
+         *   maximum records per page. Used with page to limit result set size
+         *   and calculate SQL LIMIT clause. Maximum allowed value is 100 to
+         *   prevent excessive server load. Defaults to a system-defined value
+         *   if omitted.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -96,23 +118,36 @@ export namespace IEcommerceMallProductVariant {
     /**
      * Unique SKU code identifying this variant across the platform.
      *
-     * @x-autobe-database-schema-property sku_code
-     * @x-autobe-specification Direct mapping to ecommerce_mall_product_variants.sku_code. Must be unique across entire platform. Validation performed separately - returns 409 Conflict if SKU already in use by another variant.
+         * @x-autobe-database-schema-property sku_code
+         * @x-autobe-specification Direct mapping to
+         *   ecommerce_mall_product_variants.sku_code. Must be unique across
+         *   entire platform. Validation performed separately - returns 409
+         *   Conflict if SKU already in use by another variant.
      */
     skuCode?: string | undefined;
 
     /**
      * Optional variant-specific price that overrides the product's base price. Null to inherit from product.
      *
-     * @x-autobe-database-schema-property price
-     * @x-autobe-specification Direct mapping to ecommerce_mall_product_variants.price as nullable DoublePrecision. When null, variant uses parent product's base_price. When provided, overrides base price for this variant. Must be positive number if provided.
+         * @x-autobe-database-schema-property price
+         * @x-autobe-specification Direct mapping to
+         *   ecommerce_mall_product_variants.price as nullable DoublePrecision.
+         *   When null, variant uses parent product's base_price. When provided,
+         *   overrides base price for this variant. Must be positive number if
+         *   provided.
      */
     price?: (number & tags.Minimum<0>) | null | undefined;
 
     /**
      * Optional array of option values (e.g., Color='Red', Size='Large') to replace existing options. When provided, all current options are deleted and replaced with these values.
      *
-     * @x-autobe-specification Computed composition property. When provided in request: 1) Delete all existing records in ecommerce_mall_product_variant_options where product_variant_id matches, 2) Insert new records from provided IEcommerceMallProductVariantOption.ICreate[] array with option_name and option_value. Maps to variantOptions relation via complete replacement strategy.
+         * @x-autobe-specification Computed composition property. When provided
+         *   in request: 1) Delete all existing records in
+         *   ecommerce_mall_product_variant_options where product_variant_id
+         *   matches, 2) Insert new records from provided
+         *   IEcommerceMallProductVariantOption.ICreate[] array with option_name
+         *   and option_value. Maps to variantOptions relation via complete
+         *   replacement strategy.
      */
     options?: IEcommerceMallProductVariantOption.ICreate[] | undefined;
   };
@@ -124,47 +159,60 @@ export namespace IEcommerceMallProductVariant {
     /**
      * Unique identifier for the product variant.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_mall_product_variants.id. UUID primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_product_variants.id. UUID primary key.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Stock Keeping Unit code that uniquely identifies this variant within its product.
      *
-     * @x-autobe-database-schema-property sku_code
-     * @x-autobe-specification Direct mapping from ecommerce_mall_product_variants.sku_code. Unique within the parent product.
+         * @x-autobe-database-schema-property sku_code
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_product_variants.sku_code. Unique within the parent
+         *   product.
      */
     skuCode: string;
 
     /**
      * Optional variant-specific price that overrides the product's base price. Null when using product's base price.
      *
-     * @x-autobe-database-schema-property price
-     * @x-autobe-specification Direct mapping from ecommerce_mall_product_variants.price. Nullable DoublePrecision. When null, the product's base price applies.
+         * @x-autobe-database-schema-property price
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_product_variants.price. Nullable DoublePrecision.
+         *   When null, the product's base price applies.
      */
     price: number | null;
 
     /**
      * List of option values that define this variant (e.g., Color: Red, Size: Large).
      *
-     * @x-autobe-specification Cross-table composition: JOIN ecommerce_mall_product_variant_options WHERE product_variant_id = this.id. Returns array of IEcommerceMallProductVariantOption.ISummary containing option_name and option_value pairs.
+         * @x-autobe-specification Cross-table composition: JOIN
+         *   ecommerce_mall_product_variant_options WHERE product_variant_id =
+         *   this.id. Returns array of
+         *   IEcommerceMallProductVariantOption.ISummary containing option_name
+         *   and option_value pairs.
      */
     options: IEcommerceMallProductVariantOption.ISummary[];
 
     /**
      * Timestamp when the variant was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_product_variants.created_at. Timestamptz field automatically set on creation.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_product_variants.created_at. Timestamptz field
+         *   automatically set on creation.
      */
     createdAt: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when the variant was last updated.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_product_variants.updated_at. Timestamptz field automatically updated on modification.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_product_variants.updated_at. Timestamptz field
+         *   automatically updated on modification.
      */
     updatedAt: string & tags.Format<"date-time">;
   };
@@ -176,23 +224,38 @@ export namespace IEcommerceMallProductVariant {
     /**
      * Unique Stock Keeping Unit code for this variant within the parent product. Must be unique across all variants of the same product.
      *
-     * @x-autobe-database-schema-property sku_code
-     * @x-autobe-specification Direct mapping from ecommerce_mall_product_variants.sku_code column. Required field, minLength: 1. Must be unique within the same product (enforced by DB @@unique([product_id, sku_code]) constraint).
+         * @x-autobe-database-schema-property sku_code
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_product_variants.sku_code column. Required field,
+         *   minLength: 1. Must be unique within the same product (enforced by
+         *   DB @@unique([product_id, sku_code]) constraint).
      */
     skuCode: string & tags.MinLength<1>;
 
     /**
      * Optional variant-specific price that overrides the product's base price. If not provided (null), the product's base price is used for this variant. Must be a non-negative number.
      *
-     * @x-autobe-database-schema-property price
-     * @x-autobe-specification Direct mapping from ecommerce_mall_product_variants.price column. Nullable Float/Double. If null, the product's base_price is used. If provided, this price overrides the base price for this specific variant. Must be non-negative (minimum: 0).
+         * @x-autobe-database-schema-property price
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_product_variants.price column. Nullable
+         *   Float/Double. If null, the product's base_price is used. If
+         *   provided, this price overrides the base price for this specific
+         *   variant. Must be non-negative (minimum: 0).
      */
     price?: (number & tags.Minimum<0>) | null | undefined;
 
     /**
      * Array of option values that define this variant's configuration (e.g., Color: 'Red', Size: 'Large'). Each option is a key-value pair stored in normalized form. Option names must be unique within a variant.
      *
-     * @x-autobe-specification Composition array of IEcommerceMallProductVariantOption.ICreate objects. When the variant is created, each element in this array triggers INSERT into ecommerce_mall_product_variant_options table with the new variant's id as product_variant_id. Each option represents a key-value pair (e.g., Color=Red, Size=Large) that distinguishes this variant. Normalized 1NF structure enforced by DB @@unique([product_variant_id, option_name]) constraint which prevents duplicate option names within a variant.
+         * @x-autobe-specification Composition array of
+         *   IEcommerceMallProductVariantOption.ICreate objects. When the
+         *   variant is created, each element in this array triggers INSERT into
+         *   ecommerce_mall_product_variant_options table with the new variant's
+         *   id as product_variant_id. Each option represents a key-value pair
+         *   (e.g., Color=Red, Size=Large) that distinguishes this variant.
+         *   Normalized 1NF structure enforced by DB
+         *   @@unique([product_variant_id, option_name]) constraint which
+         *   prevents duplicate option names within a variant.
      */
     options: IEcommerceMallProductVariantOption.ICreate[];
   };

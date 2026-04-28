@@ -27,7 +27,8 @@ import { IShoppingMallShipment } from "../../../../../structures/IShoppingMallSh
  * @param props.shipmentId Target shipment ID (UUID) whose tracking details should be retrieved.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implement a read-only endpoint that returns tracking metadata for one shipment.
+ * @x-autobe-specification Implement a read-only endpoint that returns tracking
+ *   metadata for one shipment.
  *
  * Algorithm / service steps:
  * 1. Validate and parse `shipmentId` as UUID.

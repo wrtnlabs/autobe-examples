@@ -22,7 +22,8 @@ import { IPageIEcommerceMallSuperAdmin } from "../../../../../structures/IPageIE
  * @param props.body Search criteria including email filter for finding specific super administrators by email address, date range filter for created_at, pagination parameters (page, limit), and soft delete inclusion flag.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor superAdmin
- * @x-autobe-specification Query the ecommerce_mall_super_admins table with the following implementation details:
+ * @x-autobe-specification Query the ecommerce_mall_super_admins table with the
+ *   following implementation details:
  *
  * 1. **Filtering**: Apply search filters from request body:
  *    - Email filter: use ILIKE for partial matching on email field
@@ -129,7 +130,8 @@ export namespace index {
  * @param props.superAdminId Unique identifier of the super administrator account (UUID format).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor superAdmin
- * @x-autobe-specification Query the ecommerce_mall_super_admins table to retrieve the super admin account matching the provided superAdminId (UUID).
+ * @x-autobe-specification Query the ecommerce_mall_super_admins table to
+ *   retrieve the super admin account matching the provided superAdminId (UUID).
  *
  * 1. Validate the superAdminId parameter is a valid UUID format.
  * 2. Query database: SELECT id, email, created_at, updated_at FROM ecommerce_mall_super_admins WHERE id = superAdminId.

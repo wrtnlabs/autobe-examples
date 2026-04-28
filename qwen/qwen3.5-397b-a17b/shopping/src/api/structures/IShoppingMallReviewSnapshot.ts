@@ -16,8 +16,9 @@ export type IShoppingMallReviewSnapshot = {
    *
    * This UUID serves as the primary key for the snapshot table, enabling precise identification of individual snapshot records in the audit trail.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_review_snapshots.id. UUID format primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_review_snapshots.id. UUID format primary key.
    */
   id: string & tags.Format<"uuid">;
 
@@ -28,8 +29,10 @@ export type IShoppingMallReviewSnapshot = {
    *
    * The rating is mandatory and must be between 1 and 5 inclusive, where 1 represents the lowest satisfaction and 5 represents the highest.
    *
-   * @x-autobe-database-schema-property rating
-   * @x-autobe-specification Direct mapping from shopping_mall_review_snapshots.rating. Integer value 1-5 stars, denormalized from parent review at snapshot time.
+     * @x-autobe-database-schema-property rating
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_review_snapshots.rating. Integer value 1-5 stars,
+     *   denormalized from parent review at snapshot time.
    */
   rating: number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<5>;
 
@@ -40,8 +43,11 @@ export type IShoppingMallReviewSnapshot = {
    *
    * The content is nullable because customers may submit rating-only reviews without written feedback. A null value indicates the review had no text content at the time this snapshot was created.
    *
-   * @x-autobe-database-schema-property content
-   * @x-autobe-specification Direct mapping from shopping_mall_review_snapshots.content. Nullable string, denormalized from parent review at snapshot time. Can be null if review had no text content.
+     * @x-autobe-database-schema-property content
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_review_snapshots.content. Nullable string, denormalized
+     *   from parent review at snapshot time. Can be null if review had no text
+     *   content.
    */
   content: string | null;
 
@@ -52,8 +58,10 @@ export type IShoppingMallReviewSnapshot = {
    *
    * The timestamp is immutable after creation and follows ISO 8601 format with timezone information (e.g., 2024-01-15T10:30:00Z).
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from shopping_mall_review_snapshots.created_at. ISO 8601 datetime with timezone, immutable after creation.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_review_snapshots.created_at. ISO 8601 datetime with
+     *   timezone, immutable after creation.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -64,8 +72,11 @@ export type IShoppingMallReviewSnapshot = {
    *
    * The review is returned as a summary object (IShoppingMallReview.ISummary) containing essential display information without exposing internal foreign keys or sensitive data.
    *
-   * @x-autobe-database-schema-property review
-   * @x-autobe-specification JOIN from shopping_mall_review_snapshots.shopping_mall_review_id to shopping_mall_reviews.id. Returns IShoppingMallReview.ISummary with review metadata.
+     * @x-autobe-database-schema-property review
+     * @x-autobe-specification JOIN from
+     *   shopping_mall_review_snapshots.shopping_mall_review_id to
+     *   shopping_mall_reviews.id. Returns IShoppingMallReview.ISummary with
+     *   review metadata.
    */
   review: IShoppingMallReview.ISummary;
 };
@@ -85,7 +96,10 @@ export namespace IShoppingMallReviewSnapshot {
      *
      * When omitted, defaults to page 1 (first page). Must be at least 1.
      *
-     * @x-autobe-specification 1-based page number for pagination. Converted to offset: offset = (page - 1) * limit. Applied after filtering by shopping_mall_review_id. Minimum value is 1, enforced by validation.
+         * @x-autobe-specification 1-based page number for pagination. Converted
+         *   to offset: offset = (page - 1) * limit. Applied after filtering by
+         *   shopping_mall_review_id. Minimum value is 1, enforced by
+         *   validation.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -96,7 +110,9 @@ export namespace IShoppingMallReviewSnapshot {
      *
      * When omitted, uses service-layer default. Must be between 1 and 100 inclusive.
      *
-     * @x-autobe-specification Maximum items per page (1-100). Applied as LIMIT clause in SQL query. Actual returned count may be less on final page. Validation enforces minimum 1 and maximum 100.
+         * @x-autobe-specification Maximum items per page (1-100). Applied as
+         *   LIMIT clause in SQL query. Actual returned count may be less on
+         *   final page. Validation enforces minimum 1 and maximum 100.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -109,7 +125,10 @@ export namespace IShoppingMallReviewSnapshot {
      *
      * When omitted, defaults to '-created_at' (newest snapshots first). Common sort fields include created_at, id, and rating.
      *
-     * @x-autobe-specification Sort field with optional direction prefix. Prefix '-' means DESC, no prefix means ASC. Default is '-created_at' (newest first). Applied as ORDER BY clause. Valid fields: created_at, id, rating.
+         * @x-autobe-specification Sort field with optional direction prefix.
+         *   Prefix '-' means DESC, no prefix means ASC. Default is
+         *   '-created_at' (newest first). Applied as ORDER BY clause. Valid
+         *   fields: created_at, id, rating.
      */
     sort?: string | undefined;
   };
@@ -127,8 +146,9 @@ export namespace IShoppingMallReviewSnapshot {
      *
      * Uniquely identifies this review snapshot in the audit trail. Generated as a UUID v4 value. Used for retrieving specific snapshot details and for pagination cursors.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_review_snapshots.id. UUID format.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_review_snapshots.id. UUID format.
      */
     id: string & tags.Format<"uuid">;
 
@@ -137,8 +157,9 @@ export namespace IShoppingMallReviewSnapshot {
      *
      * Preserves the exact rating (1-5 stars) that was saved when this snapshot was created. This denormalized field ensures the historical rating value remains unchanged even if the parent review is subsequently modified. Used for audit trail and dispute resolution.
      *
-     * @x-autobe-database-schema-property rating
-     * @x-autobe-specification Direct mapping from shopping_mall_review_snapshots.rating. Integer value 1-5.
+         * @x-autobe-database-schema-property rating
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_review_snapshots.rating. Integer value 1-5.
      */
     rating: number & tags.Type<"int32">;
 
@@ -147,8 +168,10 @@ export namespace IShoppingMallReviewSnapshot {
      *
      * Preserves the exact text content that was saved when this snapshot was created. Can be null if the customer submitted a rating-only review without text feedback. This denormalized field ensures the historical content remains available even if the parent review is subsequently modified or deleted.
      *
-     * @x-autobe-database-schema-property content
-     * @x-autobe-specification Direct mapping from shopping_mall_review_snapshots.content. Nullable string. Null if no text was provided at snapshot time.
+         * @x-autobe-database-schema-property content
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_review_snapshots.content. Nullable string. Null if no
+         *   text was provided at snapshot time.
      */
     content?: string | null | undefined;
 
@@ -157,8 +180,10 @@ export namespace IShoppingMallReviewSnapshot {
      *
      * Records the exact moment when the snapshot was generated, which corresponds to when the customer edited their review. Used for chronological ordering of snapshots to reconstruct the edit history timeline. Immutable after creation. Displayed in ISO 8601 format with timezone information.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_review_snapshots.created_at. ISO 8601 date-time format (timestamptz).
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_review_snapshots.created_at. ISO 8601 date-time
+         *   format (timestamptz).
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -167,8 +192,11 @@ export namespace IShoppingMallReviewSnapshot {
      *
      * Links to the review entity that was edited to create this snapshot. Provides context about which review this historical record belongs to, including the product being reviewed and the customer who wrote it. Returned as IShoppingMallReview.ISummary containing essential review metadata for list display.
      *
-     * @x-autobe-database-schema-property review
-     * @x-autobe-specification Relation mapping via shopping_mall_review_id FK to shopping_mall_reviews.id. Returns IShoppingMallReview.ISummary via JOIN. Provides parent review context for the snapshot.
+         * @x-autobe-database-schema-property review
+         * @x-autobe-specification Relation mapping via shopping_mall_review_id
+         *   FK to shopping_mall_reviews.id. Returns
+         *   IShoppingMallReview.ISummary via JOIN. Provides parent review
+         *   context for the snapshot.
      */
     review: IShoppingMallReview.ISummary;
   };

@@ -24,9 +24,10 @@ export class ShoppingmallSellerProductsSnapshotsVariant_snapshotsController {
    * @param productId Product ID (UUID format) identifying the product that owns the snapshot hierarchy.
    * @param snapshotId Product snapshot ID (UUID format) identifying the parent snapshot container.
    * @param variantSnapshotId Variant snapshot ID (UUID format) identifying the specific variant snapshot to retrieve.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Query shopping_mall_product_variant_snapshots table by variantSnapshotId.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Query shopping_mall_product_variant_snapshots
+     *   table by variantSnapshotId.
    *
    * Validate ownership chain:
    * 1. Join with shopping_mall_product_snapshots on snapshotId

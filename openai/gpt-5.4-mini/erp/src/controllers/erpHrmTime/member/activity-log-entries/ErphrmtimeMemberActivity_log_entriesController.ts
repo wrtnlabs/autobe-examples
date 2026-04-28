@@ -20,10 +20,12 @@ export class ErphrmtimeMemberActivity_log_entriesController {
    *
    * @param connection
    * @param body Search, filter, pagination, and sorting criteria for browsing organization activity log entries.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query erp_hrm_time_activity_log_entries as an organization-scoped, append-only audit trail.
-   * Join to the actor/member table and target entity references only as needed to shape summary output and enforce tenant isolation.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query erp_hrm_time_activity_log_entries as an
+     *   organization-scoped, append-only audit trail. Join to the actor/member
+     *   table and target entity references only as needed to shape summary
+     *   output and enforce tenant isolation.
    *
    * Support filtering by action type, performing user, and date range; apply pagination and stable sorting (default newest-first by recorded timestamp).
    * Reject any request outside the currently selected organization context.
@@ -58,9 +60,12 @@ export class ErphrmtimeMemberActivity_log_entriesController {
    *
    * @param connection
    * @param activityLogEntryId Unique identifier of the activity log entry in UUID format.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Load the activity_log_entries row by UUID and ensure it belongs to the current organization context. Join or resolve the linked member and organization only as needed for authorization and response mapping.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Load the activity_log_entries row by UUID and
+     *   ensure it belongs to the current organization context. Join or resolve
+     *   the linked member and organization only as needed for authorization and
+     *   response mapping.
    *
    * Authorize the request against the currently selected organization, requiring the organization management permission used by the activity log feature. If the entry does not belong to the active organization or the caller lacks permission, return a not-found or forbidden-style failure consistent with the service's security policy.
    *

@@ -28,8 +28,9 @@ export type IHrmTimelog = {
    *
    * Generated as a UUID (version 4) when the timelog record is created. This identifier is used to reference the timelog in API operations and associations with other entities like timesheets.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from hrm_timelogs.id. UUID primary key, auto-generated on creation.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from hrm_timelogs.id. UUID primary
+     *   key, auto-generated on creation.
    */
   id: string & tags.Format<"uuid">;
 
@@ -40,8 +41,9 @@ export type IHrmTimelog = {
    *
    * **Format**: ISO 8601 date-time string (e.g., "2024-01-15T00:00:00Z")
    *
-   * @x-autobe-database-schema-property date
-   * @x-autobe-specification Direct mapping from hrm_timelogs.date. DateTime with time component normalized to midnight (00:00:00).
+     * @x-autobe-database-schema-property date
+     * @x-autobe-specification Direct mapping from hrm_timelogs.date. DateTime
+     *   with time component normalized to midnight (00:00:00).
    */
   date: string & tags.Format<"date-time">;
 
@@ -53,8 +55,10 @@ export type IHrmTimelog = {
    * **Minimum**: 1 minute
    * **Example**: 90 minutes = 1.5 hours
    *
-   * @x-autobe-database-schema-property duration_minutes
-   * @x-autobe-specification Direct mapping from hrm_timelogs.duration_minutes. Integer representing total minutes, calculated from timer sessions or manually entered.
+     * @x-autobe-database-schema-property duration_minutes
+     * @x-autobe-specification Direct mapping from
+     *   hrm_timelogs.duration_minutes. Integer representing total minutes,
+     *   calculated from timer sessions or manually entered.
    */
   duration_minutes: number & tags.Type<"int32">;
 
@@ -66,8 +70,9 @@ export type IHrmTimelog = {
    * **Format**: Free-form text, maximum length determined by database column
    * **Nullable**: Yes, work notes are optional
    *
-   * @x-autobe-database-schema-property description
-   * @x-autobe-specification Direct mapping from hrm_timelogs.description. Nullable string for free-form work notes.
+     * @x-autobe-database-schema-property description
+     * @x-autobe-specification Direct mapping from hrm_timelogs.description.
+     *   Nullable string for free-form work notes.
    */
   description?: string | null | undefined;
 
@@ -79,8 +84,9 @@ export type IHrmTimelog = {
    * **Default**: true (billable)
    * **Usage**: Filter time reports by billable status for client billing vs internal capacity analysis
    *
-   * @x-autobe-database-schema-property billable
-   * @x-autobe-specification Direct mapping from hrm_timelogs.billable. Boolean flag, defaults to true on creation.
+     * @x-autobe-database-schema-property billable
+     * @x-autobe-specification Direct mapping from hrm_timelogs.billable.
+     *   Boolean flag, defaults to true on creation.
    */
   billable: boolean;
 
@@ -93,8 +99,9 @@ export type IHrmTimelog = {
    *
    * **Related Entity**: {@link IHrmEmployee.ISummary} - Contains employee identification, position, employment type, and status.
    *
-   * @x-autobe-database-schema-property employee
-   * @x-autobe-specification JOIN from hrm_timelogs.hrm_employee_id to hrm_employees.id. Returns IHrmEmployee.ISummary with employee details.
+     * @x-autobe-database-schema-property employee
+     * @x-autobe-specification JOIN from hrm_timelogs.hrm_employee_id to
+     *   hrm_employees.id. Returns IHrmEmployee.ISummary with employee details.
    */
   employee: IHrmEmployee.ISummary;
 
@@ -110,8 +117,9 @@ export type IHrmTimelog = {
    *
    * **Related Entity**: {@link IHrmProject.ISummary} - Contains project identification, name, status, and color code.
    *
-   * @x-autobe-database-schema-property project
-   * @x-autobe-specification JOIN from hrm_timelogs.hrm_project_id to hrm_projects.id. Returns IHrmProject.ISummary with project details.
+     * @x-autobe-database-schema-property project
+     * @x-autobe-specification JOIN from hrm_timelogs.hrm_project_id to
+     *   hrm_projects.id. Returns IHrmProject.ISummary with project details.
    */
   project: IHrmProject.ISummary;
 
@@ -127,8 +135,9 @@ export type IHrmTimelog = {
    *
    * **Related Entity**: {@link IHrmTask.ISummary} - Contains task identification, title, status, and priority. Null if no task assigned.
    *
-   * @x-autobe-database-schema-property task
-   * @x-autobe-specification LEFT JOIN from hrm_timelogs.hrm_task_id to hrm_tasks.id. Returns IHrmTask.ISummary or null if no task assigned.
+     * @x-autobe-database-schema-property task
+     * @x-autobe-specification LEFT JOIN from hrm_timelogs.hrm_task_id to
+     *   hrm_tasks.id. Returns IHrmTask.ISummary or null if no task assigned.
    */
   task?: IHrmTask.ISummary | null | undefined;
 
@@ -140,8 +149,9 @@ export type IHrmTimelog = {
    * **Format**: ISO 8601 date-time string with timezone (e.g., "2024-01-15T10:30:00Z")
    * **Auto-generated**: Yes, cannot be manually set
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from hrm_timelogs.created_at. DateTime with timestamptz, auto-set on record creation.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from hrm_timelogs.created_at.
+     *   DateTime with timestamptz, auto-set on record creation.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -153,8 +163,9 @@ export type IHrmTimelog = {
    * **Format**: ISO 8601 date-time string with timezone (e.g., "2024-01-15T14:45:00Z")
    * **Auto-updated**: Yes, reflects the most recent modification time
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from hrm_timelogs.updated_at. DateTime with timestamptz, auto-updated on record modification.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from hrm_timelogs.updated_at.
+     *   DateTime with timestamptz, auto-updated on record modification.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -166,8 +177,9 @@ export type IHrmTimelog = {
    * **Nullable**: Yes - null means active, DateTime value means deleted
    * **Usage**: Soft deletion preserves timelog history while hiding from active lists. Timelogs in approved timesheets cannot be deleted regardless of this field.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from hrm_timelogs.deleted_at. Nullable DateTime with timestamptz, null for active records.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from hrm_timelogs.deleted_at.
+     *   Nullable DateTime with timestamptz, null for active records.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -201,19 +213,19 @@ export namespace IHrmTimelog {
    */
   export type IUpdate = {
     /**
-     * @x-autobe-database-schema-property hrm_project_id
+         * @x-autobe-database-schema-property hrm_project_id
      */
     hrm_project_id?: (string & tags.Format<"uuid">) | undefined;
     /**
-     * @x-autobe-database-schema-property hrm_task_id
+         * @x-autobe-database-schema-property hrm_task_id
      */
     hrm_task_id?: (string & tags.Format<"uuid">) | null | undefined;
     /**
-     * @x-autobe-database-schema-property date
+         * @x-autobe-database-schema-property date
      */
     date?: (string & tags.Format<"date-time">) | undefined;
     /**
-     * @x-autobe-database-schema-property duration_minutes
+         * @x-autobe-database-schema-property duration_minutes
      */
     duration_minutes?:
       | (number & tags.Type<"int32"> & tags.Minimum<1>)
@@ -227,12 +239,13 @@ export namespace IHrmTimelog {
      * **Format**: Free-form text, maximum length determined by database column
      * **Nullable**: Yes, work notes are optional
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from hrm_timelogs.description. Nullable string for free-form work notes.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from hrm_timelogs.description.
+         *   Nullable string for free-form work notes.
      */
     description?: string | null | undefined;
     /**
-     * @x-autobe-database-schema-property billable
+         * @x-autobe-database-schema-property billable
      */
     billable?: boolean | undefined;
   };
@@ -272,7 +285,9 @@ export namespace IHrmTimelog {
      *
      * This field is optional. When omitted, no lower bound is applied to the date filter, including all available timelogs from the earliest record.
      *
-     * @x-autobe-specification Filter parameter for timelog date range start. Maps to hrm_timelogs.date column with >= comparison. Optional - omitting includes all dates.
+         * @x-autobe-specification Filter parameter for timelog date range
+         *   start. Maps to hrm_timelogs.date column with >= comparison.
+         *   Optional - omitting includes all dates.
      */
     start_date?: (string & tags.Format<"date-time">) | undefined;
 
@@ -285,7 +300,9 @@ export namespace IHrmTimelog {
      *
      * This field is optional. When omitted, no upper bound is applied to the date filter, including all available timelogs through the most recent record.
      *
-     * @x-autobe-specification Filter parameter for timelog date range end. Maps to hrm_timelogs.date column with <= comparison. Optional - omitting includes all dates.
+         * @x-autobe-specification Filter parameter for timelog date range end.
+         *   Maps to hrm_timelogs.date column with <= comparison. Optional -
+         *   omitting includes all dates.
      */
     end_date?: (string & tags.Format<"date-time">) | undefined;
 
@@ -298,7 +315,10 @@ export namespace IHrmTimelog {
      *
      * This field is optional. When omitted, both billable and non-billable timelogs are included in the report regardless of their billable status.
      *
-     * @x-autobe-specification Filter parameter for timelog billable status. Maps to hrm_timelogs.billable column with equality comparison. Optional - omitting includes both billable and non-billable entries.
+         * @x-autobe-specification Filter parameter for timelog billable status.
+         *   Maps to hrm_timelogs.billable column with equality comparison.
+         *   Optional - omitting includes both billable and non-billable
+         *   entries.
      */
     billable?: boolean | undefined;
 
@@ -315,7 +335,9 @@ export namespace IHrmTimelog {
      *
      * Each ID must be a valid UUID string matching the employee_id foreign key in the hrm_timelogs table.
      *
-     * @x-autobe-specification Filter parameter for employee scope. Maps to hrm_timelogs.employee_id foreign key with IN comparison. Optional - omitting includes all employees.
+         * @x-autobe-specification Filter parameter for employee scope. Maps to
+         *   hrm_timelogs.employee_id foreign key with IN comparison. Optional -
+         *   omitting includes all employees.
      */
     employee_ids?: (string & tags.Format<"uuid">)[] | undefined;
 
@@ -332,7 +354,9 @@ export namespace IHrmTimelog {
      *
      * Each ID must be a valid UUID string matching the project_id foreign key in the hrm_timelogs table.
      *
-     * @x-autobe-specification Filter parameter for project scope. Maps to hrm_timelogs.project_id foreign key with IN comparison. Optional - omitting includes all projects.
+         * @x-autobe-specification Filter parameter for project scope. Maps to
+         *   hrm_timelogs.project_id foreign key with IN comparison. Optional -
+         *   omitting includes all projects.
      */
     project_ids?: (string & tags.Format<"uuid">)[] | undefined;
 
@@ -349,7 +373,9 @@ export namespace IHrmTimelog {
      *
      * Each ID must be a valid UUID string matching the task_id foreign key in the hrm_timelogs table.
      *
-     * @x-autobe-specification Filter parameter for task scope. Maps to hrm_timelogs.task_id foreign key with IN comparison. Optional - omitting includes all tasks.
+         * @x-autobe-specification Filter parameter for task scope. Maps to
+         *   hrm_timelogs.task_id foreign key with IN comparison. Optional -
+         *   omitting includes all tasks.
      */
     task_ids?: (string & tags.Format<"uuid">)[] | undefined;
 
@@ -368,7 +394,9 @@ export namespace IHrmTimelog {
      * - "project" - Group by project
      * - "task" - Group by task
      *
-     * @x-autobe-specification Aggregation dimension parameter. Valid values: "employee", "project", "task". Determines GROUP BY clause in aggregation query. Multiple values create hierarchical grouping.
+         * @x-autobe-specification Aggregation dimension parameter. Valid
+         *   values: "employee", "project", "task". Determines GROUP BY clause
+         *   in aggregation query. Multiple values create hierarchical grouping.
      */
     group_by?: string[] | undefined;
 
@@ -385,7 +413,8 @@ export namespace IHrmTimelog {
      *
      * Minimum value is 1. Must be a positive integer.
      *
-     * @x-autobe-specification Pagination parameter for cursor-based results. Maps to OFFSET in SQL query. Minimum value is 1.
+         * @x-autobe-specification Pagination parameter for cursor-based
+         *   results. Maps to OFFSET in SQL query. Minimum value is 1.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -402,7 +431,8 @@ export namespace IHrmTimelog {
      *
      * Minimum value is 1, maximum value is 100. This ensures reasonable response sizes and prevents excessive data transfer.
      *
-     * @x-autobe-specification Pagination parameter for result set size. Maps to LIMIT in SQL query. Range: 1-100 entries per page.
+         * @x-autobe-specification Pagination parameter for result set size.
+         *   Maps to LIMIT in SQL query. Range: 1-100 entries per page.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -434,35 +464,37 @@ export namespace IHrmTimelog {
    */
   export type ICreate = {
     /**
-     * @x-autobe-database-schema-property hrm_project_id
+         * @x-autobe-database-schema-property hrm_project_id
      */
     hrm_project_id: string & tags.Format<"uuid">;
 
     /**
      * Optional task reference within the project. If provided, the task must belong to the specified project.
      *
-     * @x-autobe-database-schema-property hrm_task_id
-     * @x-autobe-specification Direct mapping from hrm_timelogs.hrm_task_id. Nullable string UUID, optional task reference.
+         * @x-autobe-database-schema-property hrm_task_id
+         * @x-autobe-specification Direct mapping from hrm_timelogs.hrm_task_id.
+         *   Nullable string UUID, optional task reference.
      */
     hrm_task_id?: (string & tags.Format<"uuid">) | null | undefined;
     /**
-     * @x-autobe-database-schema-property date
+         * @x-autobe-database-schema-property date
      */
     date: string & tags.Format<"date-time">;
     /**
-     * @x-autobe-database-schema-property duration_minutes
+         * @x-autobe-database-schema-property duration_minutes
      */
     duration_minutes: number & tags.Type<"int32"> & tags.Minimum<1>;
 
     /**
      * Free-form text describing the work performed. Provides context beyond project/task assignment.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from hrm_timelogs.description. Nullable string for optional work notes.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from hrm_timelogs.description.
+         *   Nullable string for optional work notes.
      */
     description?: string | null | undefined;
     /**
-     * @x-autobe-database-schema-property billable
+         * @x-autobe-database-schema-property billable
      */
     billable?: boolean | undefined;
   };
@@ -486,7 +518,10 @@ export namespace IHrmTimelog {
      *
      * Calculated by summing the duration_minutes from all timelog records matching the report filters and dividing by 60 to convert to hours. This represents the complete time tracked within the organization for the specified period, regardless of billable status.
      *
-     * @x-autobe-specification Computed as SUM(hrm_timelogs.duration_minutes) / 60 across all filtered timelog entries. Includes both approved timesheet timelogs and active timer sessions converted to timelogs.
+         * @x-autobe-specification Computed as
+         *   SUM(hrm_timelogs.duration_minutes) / 60 across all filtered timelog
+         *   entries. Includes both approved timesheet timelogs and active timer
+         *   sessions converted to timelogs.
      */
     total_hours: number;
 
@@ -495,7 +530,10 @@ export namespace IHrmTimelog {
      *
      * Calculated by summing only the duration_minutes from timelog records where the billable flag is true, then dividing by 60. This represents chargeable client work that can be invoiced, excluding internal administrative tasks.
      *
-     * @x-autobe-specification Computed as SUM(CASE WHEN hrm_timelogs.billable = true THEN hrm_timelogs.duration_minutes ELSE 0 END) / 60. Only includes timelogs marked as billable (chargeable to clients).
+         * @x-autobe-specification Computed as SUM(CASE WHEN
+         *   hrm_timelogs.billable = true THEN hrm_timelogs.duration_minutes
+         *   ELSE 0 END) / 60. Only includes timelogs marked as billable
+         *   (chargeable to clients).
      */
     total_billable_hours: number;
 
@@ -504,7 +542,10 @@ export namespace IHrmTimelog {
      *
      * Calculated by summing only the duration_minutes from timelog records where the billable flag is false, then dividing by 60. This represents internal work such as administrative tasks, meetings, training, and other activities not chargeable to clients.
      *
-     * @x-autobe-specification Computed as SUM(CASE WHEN hrm_timelogs.billable = false THEN hrm_timelogs.duration_minutes ELSE 0 END) / 60. Only includes timelogs marked as non-billable (internal work).
+         * @x-autobe-specification Computed as SUM(CASE WHEN
+         *   hrm_timelogs.billable = false THEN hrm_timelogs.duration_minutes
+         *   ELSE 0 END) / 60. Only includes timelogs marked as non-billable
+         *   (internal work).
      */
     total_non_billable_hours: number;
 
@@ -513,7 +554,9 @@ export namespace IHrmTimelog {
      *
      * Represents the number of individual time tracking records aggregated into this report. Each entry corresponds to one timelog record from the hrm_timelogs table that matches the specified date range, billable status, and entity filters.
      *
-     * @x-autobe-specification Computed as COUNT(*) of hrm_timelogs records matching the report filters. Excludes soft-deleted timelogs (deleted_at IS NULL).
+         * @x-autobe-specification Computed as COUNT(*) of hrm_timelogs records
+         *   matching the report filters. Excludes soft-deleted timelogs
+         *   (deleted_at IS NULL).
      */
     total_entries: number & tags.Type<"int32"> & tags.Minimum<0>;
 
@@ -522,7 +565,12 @@ export namespace IHrmTimelog {
      *
      * An array of detailed line items where each item represents a unique combination of grouping dimensions specified in the request. Items include time metrics for that specific grouping along with references to related employee, project, and task summaries for contextual information. The grouping structure allows drill-down analysis from organization level to individual task level.
      *
-     * @x-autobe-specification Computed array of IHrmTimeReportItem objects grouped by employee, project, and/or task dimensions based on the group_by request parameter. Each item contains time metrics (duration, billable breakdown) for that specific grouping combination with references to employee, project, and task summary objects.
+         * @x-autobe-specification Computed array of IHrmTimeReportItem objects
+         *   grouped by employee, project, and/or task dimensions based on the
+         *   group_by request parameter. Each item contains time metrics
+         *   (duration, billable breakdown) for that specific grouping
+         *   combination with references to employee, project, and task summary
+         *   objects.
      */
     items: IHrmTimeReportItem[];
 
@@ -531,7 +579,9 @@ export namespace IHrmTimelog {
      *
      * Used for cursor-based pagination of large result sets. When present (non-null), pass this value in the next request to retrieve the following page of items. Returns null when the current page is the last page or when the result set fits within a single page.
      *
-     * @x-autobe-specification Pagination cursor string for cursor-based pagination. Generated from the last item's sort key values. Null when no more pages exist.
+         * @x-autobe-specification Pagination cursor string for cursor-based
+         *   pagination. Generated from the last item's sort key values. Null
+         *   when no more pages exist.
      */
     cursor?: string | null | undefined;
   };

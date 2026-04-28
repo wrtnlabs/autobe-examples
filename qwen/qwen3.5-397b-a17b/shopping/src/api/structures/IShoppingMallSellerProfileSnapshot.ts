@@ -16,8 +16,9 @@ export type IShoppingMallSellerProfileSnapshot = {
    *
    * Auto-generated UUID assigned when the snapshot is created. Used to retrieve this specific snapshot record via API endpoints.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_seller_profile_snapshots.id. UUID format primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_seller_profile_snapshots.id. UUID format primary key.
    */
   id: string & tags.Format<"uuid">;
 
@@ -26,8 +27,12 @@ export type IShoppingMallSellerProfileSnapshot = {
    *
    * Links the historical snapshot back to the current seller profile entity. The returned summary includes the seller's current shop information, not the historical state (which is captured in the snapshot's shop_name, shop_description, and logo_image_url fields).
    *
-   * @x-autobe-database-schema-property sellerProfile
-   * @x-autobe-specification Join from shopping_mall_seller_profile_snapshots.shopping_mall_seller_profile_id to shopping_mall_seller_profiles.id. Returns IShoppingMallSellerProfile.ISummary with current seller profile information.
+     * @x-autobe-database-schema-property sellerProfile
+     * @x-autobe-specification Join from
+     *   shopping_mall_seller_profile_snapshots.shopping_mall_seller_profile_id
+     *   to shopping_mall_seller_profiles.id. Returns
+     *   IShoppingMallSellerProfile.ISummary with current seller profile
+     *   information.
    */
   sellerProfile: IShoppingMallSellerProfile.ISummary;
 
@@ -36,8 +41,10 @@ export type IShoppingMallSellerProfileSnapshot = {
    *
    * This is the historical value that was visible to customers when the snapshot was taken. It may differ from the current shop name if the seller has edited their profile since this snapshot was created.
    *
-   * @x-autobe-database-schema-property shop_name
-   * @x-autobe-specification Direct mapping from shopping_mall_seller_profile_snapshots.shop_name. Denormalized value preserved at snapshot creation time.
+     * @x-autobe-database-schema-property shop_name
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_seller_profile_snapshots.shop_name. Denormalized value
+     *   preserved at snapshot creation time.
    */
   shop_name: string;
 
@@ -46,8 +53,10 @@ export type IShoppingMallSellerProfileSnapshot = {
    *
    * This is the historical description that was visible to customers when the snapshot was taken. It may differ from the current description if the seller has edited their profile since this snapshot was created.
    *
-   * @x-autobe-database-schema-property shop_description
-   * @x-autobe-specification Direct mapping from shopping_mall_seller_profile_snapshots.shop_description. Denormalized value preserved at snapshot creation time.
+     * @x-autobe-database-schema-property shop_description
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_seller_profile_snapshots.shop_description. Denormalized
+     *   value preserved at snapshot creation time.
    */
   shop_description: string;
 
@@ -56,8 +65,11 @@ export type IShoppingMallSellerProfileSnapshot = {
    *
    * This is the historical logo URL that was visible to customers when the snapshot was taken. May be null if the seller had not uploaded a logo at the time of snapshot creation. The URL points to the stored image file.
    *
-   * @x-autobe-database-schema-property logo_image_url
-   * @x-autobe-specification Direct mapping from shopping_mall_seller_profile_snapshots.logo_image_url. Nullable - preserves null if no logo existed at snapshot time. URL format validated.
+     * @x-autobe-database-schema-property logo_image_url
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_seller_profile_snapshots.logo_image_url. Nullable -
+     *   preserves null if no logo existed at snapshot time. URL format
+     *   validated.
    */
   logo_image_url: (string & tags.Format<"url">) | null;
 
@@ -66,8 +78,10 @@ export type IShoppingMallSellerProfileSnapshot = {
    *
    * Automatically set when the snapshot is generated, which occurs whenever a seller edits their profile (shop name, description, or logo). Used to establish chronological order of profile changes and to determine which snapshot was active at the time of a purchase.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from shopping_mall_seller_profile_snapshots.created_at. Timestamp with timezone (timestamptz). Records exact moment of snapshot creation.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_seller_profile_snapshots.created_at. Timestamp with
+     *   timezone (timestamptz). Records exact moment of snapshot creation.
    */
   created_at: string & tags.Format<"date-time">;
 };
@@ -87,7 +101,12 @@ export namespace IShoppingMallSellerProfileSnapshot {
      *
      * The value must be a valid UUID matching the seller profile's unique identifier. Omit this field to retrieve snapshots across all sellers (administrators only).
      *
-     * @x-autobe-specification Filters shopping_mall_seller_profile_snapshots by shopping_mall_seller_profile_id column. When provided, adds WHERE shopping_mall_seller_profile_id = {sellerProfileId} clause. Uses composite index on (shopping_mall_seller_profile_id, created_at) for efficient filtering. UUID format validation required.
+         * @x-autobe-specification Filters
+         *   shopping_mall_seller_profile_snapshots by
+         *   shopping_mall_seller_profile_id column. When provided, adds WHERE
+         *   shopping_mall_seller_profile_id = {sellerProfileId} clause. Uses
+         *   composite index on (shopping_mall_seller_profile_id, created_at)
+         *   for efficient filtering. UUID format validation required.
      */
     sellerProfileId?: (string & tags.Format<"uuid">) | undefined;
 
@@ -98,7 +117,12 @@ export namespace IShoppingMallSellerProfileSnapshot {
      *
      * The value must be in ISO 8601 date-time format (e.g., '2024-01-15T00:00:00Z'). Combine with createdAtTo to query snapshots within a specific time period. Omit to include all snapshots from the beginning of time.
      *
-     * @x-autobe-specification Filters shopping_mall_seller_profile_snapshots by created_at column with >= operator. Adds WHERE created_at >= {createdAtFrom} clause when provided. ISO 8601 date-time format required. Use for chronological range queries to find snapshots created on or after a specific timestamp.
+         * @x-autobe-specification Filters
+         *   shopping_mall_seller_profile_snapshots by created_at column with >=
+         *   operator. Adds WHERE created_at >= {createdAtFrom} clause when
+         *   provided. ISO 8601 date-time format required. Use for chronological
+         *   range queries to find snapshots created on or after a specific
+         *   timestamp.
      */
     createdAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
@@ -109,7 +133,11 @@ export namespace IShoppingMallSellerProfileSnapshot {
      *
      * The value must be in ISO 8601 date-time format (e.g., '2024-12-31T23:59:59Z'). Combine with createdAtFrom to query snapshots within a specific time period. Omit to include all snapshots up to the present moment.
      *
-     * @x-autobe-specification Filters shopping_mall_seller_profile_snapshots by created_at column with <= operator. Adds WHERE created_at <= {createdAtTo} clause when provided. ISO 8601 date-time format required. Use with createdAtFrom for bounded chronological range queries.
+         * @x-autobe-specification Filters
+         *   shopping_mall_seller_profile_snapshots by created_at column with <=
+         *   operator. Adds WHERE created_at <= {createdAtTo} clause when
+         *   provided. ISO 8601 date-time format required. Use with
+         *   createdAtFrom for bounded chronological range queries.
      */
     createdAtTo?: (string & tags.Format<"date-time">) | undefined;
 
@@ -120,7 +148,10 @@ export namespace IShoppingMallSellerProfileSnapshot {
      *
      * The actual offset is calculated as (page - 1) * limit. For example, with limit=10, page 1 returns records 1-10, page 2 returns records 11-20. Minimum value is 1. Defaults to 1 when not provided.
      *
-     * @x-autobe-specification Pagination control parameter. Calculates OFFSET as (page - 1) * limit for database query. 1-indexed (page 1 = first page). Minimum value is 1. Defaults to 1 when not provided. Used with limit to implement cursor-based or offset pagination.
+         * @x-autobe-specification Pagination control parameter. Calculates
+         *   OFFSET as (page - 1) * limit for database query. 1-indexed (page 1
+         *   = first page). Minimum value is 1. Defaults to 1 when not provided.
+         *   Used with limit to implement cursor-based or offset pagination.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -131,7 +162,10 @@ export namespace IShoppingMallSellerProfileSnapshot {
      *
      * The value must be between 1 and 100 inclusive. Larger limits reduce the number of API calls needed but increase response payload size. When not provided, defaults to a system-configured value. The actual number of records returned may be less than the limit on the final page.
      *
-     * @x-autobe-specification Pagination control parameter. Sets LIMIT clause for database query. Minimum value is 1, maximum is 100. Defaults to a system default (typically 20 or 50) when not provided. Works with page to control result set size per request.
+         * @x-autobe-specification Pagination control parameter. Sets LIMIT
+         *   clause for database query. Minimum value is 1, maximum is 100.
+         *   Defaults to a system default (typically 20 or 50) when not
+         *   provided. Works with page to control result set size per request.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -151,8 +185,10 @@ export namespace IShoppingMallSellerProfileSnapshot {
      *
      * This is the primary key of the snapshot record, automatically generated as a UUID when the snapshot is created. Used to reference specific snapshot records in API operations and audit trails.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_seller_profile_snapshots.id. UUID format generated by database.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_seller_profile_snapshots.id. UUID format generated by
+         *   database.
      */
     id: string & tags.Format<"uuid">;
 
@@ -161,8 +197,10 @@ export namespace IShoppingMallSellerProfileSnapshot {
      *
      * This value is denormalized from the parent seller profile to preserve the exact shop name that was visible to customers when the snapshot was generated. Used in order item snapshots to display the seller's shop name as it appeared at the time of purchase.
      *
-     * @x-autobe-database-schema-property shop_name
-     * @x-autobe-specification Direct mapping from shopping_mall_seller_profile_snapshots.shop_name. Denormalized from seller profile at snapshot creation time.
+         * @x-autobe-database-schema-property shop_name
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_seller_profile_snapshots.shop_name. Denormalized from
+         *   seller profile at snapshot creation time.
      */
     shop_name: string;
 
@@ -171,8 +209,10 @@ export namespace IShoppingMallSellerProfileSnapshot {
      *
      * This value is denormalized from the parent seller profile to preserve the exact description that was visible to customers when the snapshot was generated. Captures the seller's business description, policies, or other information displayed on their shop page at the time of purchase.
      *
-     * @x-autobe-database-schema-property shop_description
-     * @x-autobe-specification Direct mapping from shopping_mall_seller_profile_snapshots.shop_description. Denormalized from seller profile at snapshot creation time.
+         * @x-autobe-database-schema-property shop_description
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_seller_profile_snapshots.shop_description.
+         *   Denormalized from seller profile at snapshot creation time.
      */
     shop_description: string;
 
@@ -181,8 +221,11 @@ export namespace IShoppingMallSellerProfileSnapshot {
      *
      * This value is denormalized from the parent seller profile to preserve the exact logo that was visible to customers when the snapshot was generated. May be null if the seller had not uploaded a logo when this snapshot was created. Used in order item snapshots to display the seller's branding as it appeared at the time of purchase.
      *
-     * @x-autobe-database-schema-property logo_image_url
-     * @x-autobe-specification Direct mapping from shopping_mall_seller_profile_snapshots.logo_image_url. Nullable string with URI format. Denormalized from seller profile at snapshot creation time.
+         * @x-autobe-database-schema-property logo_image_url
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_seller_profile_snapshots.logo_image_url. Nullable
+         *   string with URI format. Denormalized from seller profile at
+         *   snapshot creation time.
      */
     logo_image_url: (string & tags.Format<"uri">) | null;
 
@@ -191,8 +234,10 @@ export namespace IShoppingMallSellerProfileSnapshot {
      *
      * Records the exact moment when the seller profile was modified and this snapshot was generated. Used to establish chronological order of profile changes and to determine which snapshot was active at the time of a purchase. Snapshots are ordered by this field in descending order for list views.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_seller_profile_snapshots.created_at. DateTime with timestamptz format. Automatically set when snapshot is created.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_seller_profile_snapshots.created_at. DateTime with
+         *   timestamptz format. Automatically set when snapshot is created.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -201,8 +246,12 @@ export namespace IShoppingMallSellerProfileSnapshot {
      *
      * This relation provides context about which seller profile created this snapshot, enabling users to identify the source of the snapshot in list views. Returns a summary representation of the seller profile including the seller account reference and current shop information.
      *
-     * @x-autobe-database-schema-property sellerProfile
-     * @x-autobe-specification Relation mapping via JOIN from shopping_mall_seller_profile_snapshots.sellerProfile to shopping_mall_seller_profiles. Returns IShoppingMallSellerProfile.ISummary with seller profile summary information.
+         * @x-autobe-database-schema-property sellerProfile
+         * @x-autobe-specification Relation mapping via JOIN from
+         *   shopping_mall_seller_profile_snapshots.sellerProfile to
+         *   shopping_mall_seller_profiles. Returns
+         *   IShoppingMallSellerProfile.ISummary with seller profile summary
+         *   information.
      */
     sellerProfile: IShoppingMallSellerProfile.ISummary;
   };

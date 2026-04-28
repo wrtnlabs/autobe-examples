@@ -8,49 +8,67 @@ export type IHrmTimeTrackingOwnerPasswordReset = {
   /**
    * Unique identifier of the password reset record.
    *
-   * @x-autobe-specification Map from the primary key of the resolved password reset row in whichever concrete source table matched the request. Preserve the UUID value exactly as stored.
+     * @x-autobe-specification Map from the primary key of the resolved password
+     *   reset row in whichever concrete source table matched the request.
+     *   Preserve the UUID value exactly as stored.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Actor category that owns this password reset request.
    *
-   * @x-autobe-specification Derive from the resolved source table rather than a shared database column. Return "owner" for hrm_time_tracking_owner_password_resets, "manager" for hrm_time_tracking_manager_password_resets, and "employee" for hrm_time_tracking_employee_password_resets.
+     * @x-autobe-specification Derive from the resolved source table rather than
+     *   a shared database column. Return "owner" for
+     *   hrm_time_tracking_owner_password_resets, "manager" for
+     *   hrm_time_tracking_manager_password_resets, and "employee" for
+     *   hrm_time_tracking_employee_password_resets.
    */
   actorType: "owner" | "manager" | "employee";
 
   /**
    * Timestamp after which the password reset request can no longer be used.
    *
-   * @x-autobe-specification Map from the expired_at column of the resolved password reset row. This timestamp is used to determine whether the reset request is still valid for use.
+     * @x-autobe-specification Map from the expired_at column of the resolved
+     *   password reset row. This timestamp is used to determine whether the
+     *   reset request is still valid for use.
    */
   expired_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the password reset request was consumed, or null if it has not been used yet.
    *
-   * @x-autobe-specification Normalize consumption state across reset tables. For owner and employee rows, map from used_at. For manager rows, map from consumed_at into this property. Emit null when the reset request has not yet been consumed.
+     * @x-autobe-specification Normalize consumption state across reset tables.
+     *   For owner and employee rows, map from used_at. For manager rows, map
+     *   from consumed_at into this property. Emit null when the reset request
+     *   has not yet been consumed.
    */
   used_at: (string & tags.Format<"date-time">) | null;
 
   /**
    * Timestamp when the password reset request was created.
    *
-   * @x-autobe-specification Map from the created_at column of the resolved password reset row in the selected source table.
+     * @x-autobe-specification Map from the created_at column of the resolved
+     *   password reset row in the selected source table.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the password reset record was last updated.
    *
-   * @x-autobe-specification Map from the updated_at column of the resolved password reset row when that lifecycle field is available in the source table. This reflects the latest persisted change to the reset record, including successful consumption flows.
+     * @x-autobe-specification Map from the updated_at column of the resolved
+     *   password reset row when that lifecycle field is available in the source
+     *   table. This reflects the latest persisted change to the reset record,
+     *   including successful consumption flows.
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * Soft-deletion timestamp of the password reset record, or null when the record is still available or the source table does not expose soft deletion.
    *
-   * @x-autobe-specification For owner and manager reset rows, map from deleted_at. For employee reset rows, emit null because the employee reset contract used by this unified DTO does not expose a deleted_at lifecycle field.
+     * @x-autobe-specification For owner and manager reset rows, map from
+     *   deleted_at. For employee reset rows, emit null because the employee
+     *   reset contract used by this unified DTO does not expose a deleted_at
+     *   lifecycle field.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -62,14 +80,31 @@ export namespace IHrmTimeTrackingOwnerPasswordReset {
     /**
      * Actor type of the account that should receive password reset processing.
      *
-     * @x-autobe-specification Interpret this value as the actor category for password-reset routing. When the value is owner, look up the normalized email in hrm_time_tracking_owners and create a row in hrm_time_tracking_owner_password_resets if the account is eligible. When the value is manager, route lookup and reset-row creation to the manager actor and password-reset tables. When the value is employee, route lookup and reset-row creation to the employee actor and password-reset tables. This field is not persisted as a column in hrm_time_tracking_owner_password_resets; it is request metadata that determines the downstream lookup and issuance path.
+         * @x-autobe-specification Interpret this value as the actor category
+         *   for password-reset routing. When the value is owner, look up the
+         *   normalized email in hrm_time_tracking_owners and create a row in
+         *   hrm_time_tracking_owner_password_resets if the account is eligible.
+         *   When the value is manager, route lookup and reset-row creation to
+         *   the manager actor and password-reset tables. When the value is
+         *   employee, route lookup and reset-row creation to the employee actor
+         *   and password-reset tables. This field is not persisted as a column
+         *   in hrm_time_tracking_owner_password_resets; it is request metadata
+         *   that determines the downstream lookup and issuance path.
      */
     actor: "owner" | "manager" | "employee";
 
     /**
      * Email address used to sign in to the account that is requesting password reset instructions.
      *
-     * @x-autobe-specification Use this value as the account sign-in email for lookup in the actor table selected by actor. Normalize the email according to the authentication policy before querying the corresponding actor identity store. If a matching eligible account is found, derive the actor foreign key from that account and create the appropriate password reset row. This request field is not written directly into hrm_time_tracking_owner_password_resets; it is used to resolve the target account and drive reset issuance while outward responses must avoid account-enumeration leakage.
+         * @x-autobe-specification Use this value as the account sign-in email
+         *   for lookup in the actor table selected by actor. Normalize the
+         *   email according to the authentication policy before querying the
+         *   corresponding actor identity store. If a matching eligible account
+         *   is found, derive the actor foreign key from that account and create
+         *   the appropriate password reset row. This request field is not
+         *   written directly into hrm_time_tracking_owner_password_resets; it
+         *   is used to resolve the target account and drive reset issuance
+         *   while outward responses must avoid account-enumeration leakage.
      */
     email: string & tags.Format<"email">;
   };
@@ -81,15 +116,28 @@ export namespace IHrmTimeTrackingOwnerPasswordReset {
     /**
      * One-time password reset token issued for the targeted reset request.
      *
-     * @x-autobe-database-schema-property token
-     * @x-autobe-specification Direct mapping from `hrm_time_tracking_owner_password_resets.token`. Compare this client-supplied token with the stored token of the reset record identified by `passwordResetId`; reject the request if the values do not match.
+         * @x-autobe-database-schema-property token
+         * @x-autobe-specification Direct mapping from
+         *   `hrm_time_tracking_owner_password_resets.token`. Compare this
+         *   client-supplied token with the stored token of the reset record
+         *   identified by `passwordResetId`; reject the request if the values
+         *   do not match.
      */
     token: string;
 
     /**
      * New password to set for the owner account linked to the targeted reset request.
      *
-     * @x-autobe-specification Plaintext replacement password supplied by the client for the password reset completion workflow. This property is not stored in `hrm_time_tracking_owner_password_resets`. After resolving the linked owner through `hrm_time_tracking_owner_password_resets.hrm_time_tracking_owner_id`, hash the submitted password and write the resulting hash to `hrm_time_tracking_owners.password_hash` in the same transaction that validates the reset token and marks the reset record as used. Never persist or return the plaintext password.
+         * @x-autobe-specification Plaintext replacement password supplied by
+         *   the client for the password reset completion workflow. This
+         *   property is not stored in
+         *   `hrm_time_tracking_owner_password_resets`. After resolving the
+         *   linked owner through
+         *   `hrm_time_tracking_owner_password_resets.hrm_time_tracking_owner_id`,
+         *   hash the submitted password and write the resulting hash to
+         *   `hrm_time_tracking_owners.password_hash` in the same transaction
+         *   that validates the reset token and marks the reset record as used.
+         *   Never persist or return the plaintext password.
      */
     password: string & tags.Format<"password">;
   };
@@ -101,21 +149,39 @@ export namespace IHrmTimeTrackingOwnerPasswordReset {
     /**
      * Actor account type whose password reset request is being completed.
      *
-     * @x-autobe-specification Workflow selector, not a direct database field. Use this enum to choose the reset source and actor account target: employee -> hrm_time_tracking_employee_password_resets and hrm_time_tracking_employees, manager -> hrm_time_tracking_manager_password_resets and hrm_time_tracking_managers, owner -> hrm_time_tracking_owner_password_resets and hrm_time_tracking_owners.
+         * @x-autobe-specification Workflow selector, not a direct database
+         *   field. Use this enum to choose the reset source and actor account
+         *   target: employee -> hrm_time_tracking_employee_password_resets and
+         *   hrm_time_tracking_employees, manager ->
+         *   hrm_time_tracking_manager_password_resets and
+         *   hrm_time_tracking_managers, owner ->
+         *   hrm_time_tracking_owner_password_resets and
+         *   hrm_time_tracking_owners.
      */
     actor: "employee" | "manager" | "owner";
 
     /**
      * One-time password reset token previously issued for the selected actor account type.
      *
-     * @x-autobe-specification Workflow input, not a direct object-level table mapping because this DTO spans multiple reset tables. Use token to query the unique token column in the actor-specific password reset table selected by actor, reject missing or invalid matches, and consume the matched reset row only after the password update succeeds.
+         * @x-autobe-specification Workflow input, not a direct object-level
+         *   table mapping because this DTO spans multiple reset tables. Use
+         *   token to query the unique token column in the actor-specific
+         *   password reset table selected by actor, reject missing or invalid
+         *   matches, and consume the matched reset row only after the password
+         *   update succeeds.
      */
     token: string;
 
     /**
      * New password to set for the matched account after the reset token is validated.
      *
-     * @x-autobe-specification Workflow input, not a direct object-level table mapping because this DTO spans reset tables and actor tables. Validate the submitted plaintext password against the platform password policy, hash it with the platform password hashing standard, and persist the resulting hash to the linked actor account password column, including hrm_time_tracking_owners.password_hash for owner resets.
+         * @x-autobe-specification Workflow input, not a direct object-level
+         *   table mapping because this DTO spans reset tables and actor tables.
+         *   Validate the submitted plaintext password against the platform
+         *   password policy, hash it with the platform password hashing
+         *   standard, and persist the resulting hash to the linked actor
+         *   account password column, including
+         *   hrm_time_tracking_owners.password_hash for owner resets.
      */
     password: string & tags.Format<"password">;
 
@@ -127,7 +193,8 @@ export namespace IHrmTimeTrackingOwnerPasswordReset {
      * Requesting a page beyond the available range returns an empty data array
      * with valid pagination metadata reflecting the actual totals.
      *
-     * @x-autobe-specification 1-indexed page number. Defaults to 1 if not provided.
+         * @x-autobe-specification 1-indexed page number. Defaults to 1 if not
+         *   provided.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
 
@@ -139,7 +206,8 @@ export namespace IHrmTimeTrackingOwnerPasswordReset {
      * enforce upper bounds to prevent excessive resource consumption on large
      * requests.
      *
-     * @x-autobe-specification Maximum records per page. Defaults to 100 if not provided.
+         * @x-autobe-specification Maximum records per page. Defaults to 100 if
+         *   not provided.
      */
     limit?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };

@@ -22,9 +22,10 @@ export class EcommercemallSellerDashboardController {
    * Sellers can use this dashboard to quickly identify items requiring attention and monitor their shop's overall performance. The data is scoped to the authenticated seller and excludes information belonging to other sellers.
    *
    * @param connection
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Query and aggregate data for the authenticated seller's dashboard:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Query and aggregate data for the authenticated
+     *   seller's dashboard:
    *
    * 1. Product Count: Count products where product.sellerId equals the authenticated seller's ID.
    * 2. Order Item Count: Count order items where orderItem.sellerId equals the authenticated seller's ID.

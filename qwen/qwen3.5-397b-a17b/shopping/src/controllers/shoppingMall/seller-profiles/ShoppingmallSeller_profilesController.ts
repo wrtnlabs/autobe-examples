@@ -19,9 +19,11 @@ export class ShoppingmallSeller_profilesController {
    *
    * @param connection
    * @param body Partial update payload containing the profile fields to modify. All fields are optional but at least one must be provided. Fields not included in the request remain unchanged.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Authenticate the seller from the session token and verify the seller account exists and has approved status. Reject if seller is suspended or not approved.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Authenticate the seller from the session token
+     *   and verify the seller account exists and has approved status. Reject if
+     *   seller is suspended or not approved.
    *
    * Query the shopping_mall_seller_profiles table to find the profile where seller_id equals the authenticated seller's ID. If no profile exists, return 404 Not Found.
    *
@@ -60,9 +62,10 @@ export class ShoppingmallSeller_profilesController {
    *
    * @param connection
    * @param sellerId The unique identifier of the seller whose profile to retrieve (UUID format).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query the shopping_mall_seller_profiles table by seller_id parameter.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query the shopping_mall_seller_profiles table by
+     *   seller_id parameter.
    *
    * Implementation steps:
    * 1. Validate sellerId is a valid UUID format

@@ -10,64 +10,78 @@ export type ICommunityPlatformCommentVote = {
   /**
    * Unique identifier of the comment vote record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from community_platform_comment_votes.id (UUID) to DTO id.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_comment_votes.id (UUID) to DTO id.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Identifier of the comment this vote applies to (comment_id FK).
    *
-   * @x-autobe-database-schema-property comment_id
-   * @x-autobe-specification Direct mapping from community_platform_comment_votes.comment_id (UUID) to DTO commentId.
+     * @x-autobe-database-schema-property comment_id
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_comment_votes.comment_id (UUID) to DTO commentId.
    */
   commentId: string & tags.Format<"uuid">;
 
   /**
    * Public summary of the member who cast this vote.
    *
-   * @x-autobe-database-schema-property voter
-   * @x-autobe-specification Resolve community_platform_comment_votes.voter_id -> community_platform_members and project the member to ICommunityPlatformMember.ISummary. The scalar voter_id is intentionally not exposed directly.
+     * @x-autobe-database-schema-property voter
+     * @x-autobe-specification Resolve community_platform_comment_votes.voter_id
+     *   -> community_platform_members and project the member to
+     *   ICommunityPlatformMember.ISummary. The scalar voter_id is intentionally
+     *   not exposed directly.
    */
   voter: ICommunityPlatformMember.ISummary;
 
   /**
    * Stored integer representation of the member’s vote direction for the comment (domain-mapped in the service layer).
    *
-   * @x-autobe-database-schema-property vote_direction
-   * @x-autobe-specification Direct mapping from community_platform_comment_votes.vote_direction (integer) to DTO voteDirection.
+     * @x-autobe-database-schema-property vote_direction
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_comment_votes.vote_direction (integer) to DTO
+     *   voteDirection.
    */
   voteDirection: number & tags.Type<"int32">;
 
   /**
    * Timestamp when this vote direction became effective.
    *
-   * @x-autobe-database-schema-property voted_at
-   * @x-autobe-specification Direct mapping from community_platform_comment_votes.voted_at to DTO votedAt (date-time).
+     * @x-autobe-database-schema-property voted_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_comment_votes.voted_at to DTO votedAt (date-time).
    */
   votedAt: string & tags.Format<"date-time">;
 
   /**
    * When the vote record was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from community_platform_comment_votes.created_at to DTO createdAt (date-time).
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_comment_votes.created_at to DTO createdAt
+     *   (date-time).
    */
   createdAt: string & tags.Format<"date-time">;
 
   /**
    * When the vote record was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from community_platform_comment_votes.updated_at to DTO updatedAt (date-time).
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_comment_votes.updated_at to DTO updatedAt
+     *   (date-time).
    */
   updatedAt: string & tags.Format<"date-time">;
 
   /**
    * When the vote was soft-deleted (removed). Null indicates an active vote record.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from community_platform_comment_votes.deleted_at (nullable date-time) to DTO deletedAt.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_comment_votes.deleted_at (nullable date-time) to DTO
+     *   deletedAt.
    *
    * If deletedAt is non-null, the vote is soft-deleted/removed while keeping historical integrity.
    */
@@ -81,8 +95,15 @@ export namespace ICommunityPlatformCommentVote {
     /**
      * Desired vote direction for the target comment (encoded as an integer as defined by the platform’s vote rules).
      *
-     * @x-autobe-database-schema-property vote_direction
-     * @x-autobe-specification Direct mapping from request.body.vote_direction to community_platform_comment_votes.vote_direction. During service upsert keyed by (comment_id, voter_id), set vote_direction to this value and update voted_at/updated_at server-side. vote_direction is validated as an integer by the schema; domain-specific allowed values (e.g., upvote/downvote/neutral) are enforced by business rules.
+         * @x-autobe-database-schema-property vote_direction
+         * @x-autobe-specification Direct mapping from
+         *   request.body.vote_direction to
+         *   community_platform_comment_votes.vote_direction. During service
+         *   upsert keyed by (comment_id, voter_id), set vote_direction to this
+         *   value and update voted_at/updated_at server-side. vote_direction is
+         *   validated as an integer by the schema; domain-specific allowed
+         *   values (e.g., upvote/downvote/neutral) are enforced by business
+         *   rules.
      */
     vote_direction: number & tags.Type<"int32">;
   };
@@ -94,8 +115,17 @@ export namespace ICommunityPlatformCommentVote {
     /**
      * Desired vote direction value for the authenticated member’s vote on the target comment (e.g., upvote/downvote/neutral/reset).
      *
-     * @x-autobe-database-schema-property vote_direction
-     * @x-autobe-specification Direct mapping from ICommunityPlatformCommentVote.IUpdate.voteDirection to community_platform_comment_votes.vote_direction. Validate that the loaded vote row belongs to the target comment (commentId) and that the authenticated member is the voter of that vote row (voter_id check). When applying the update: set vote_direction to the provided value; update voted_at and updated_at to the current server time. Apply soft-delete convention by setting deleted_at when the new voteDirection corresponds to neutral/reset removal; otherwise clear deleted_at (set to null).
+         * @x-autobe-database-schema-property vote_direction
+         * @x-autobe-specification Direct mapping from
+         *   ICommunityPlatformCommentVote.IUpdate.voteDirection to
+         *   community_platform_comment_votes.vote_direction. Validate that the
+         *   loaded vote row belongs to the target comment (commentId) and that
+         *   the authenticated member is the voter of that vote row (voter_id
+         *   check). When applying the update: set vote_direction to the
+         *   provided value; update voted_at and updated_at to the current
+         *   server time. Apply soft-delete convention by setting deleted_at
+         *   when the new voteDirection corresponds to neutral/reset removal;
+         *   otherwise clear deleted_at (set to null).
      */
     voteDirection?:
       | (number &
@@ -112,22 +142,39 @@ export namespace ICommunityPlatformCommentVote {
     /**
      * The authenticated member’s desired vote direction on the target comment. Use the neutral/reset value to remove an existing active vote.
      *
-     * @x-autobe-database-schema-property vote_direction
-     * @x-autobe-specification Direct mapping from ICommunityPlatformCommentVote.IRequest.direction to community_platform_comment_votes.vote_direction (Int). The endpoint must validate that direction is within the API-mapped range (-1..1) and can be translated to a valid vote_direction value. For neutral/reset, treat as remove intent: upsert/remove logic should soft-delete any active vote row by setting deleted_at.
+         * @x-autobe-database-schema-property vote_direction
+         * @x-autobe-specification Direct mapping from
+         *   ICommunityPlatformCommentVote.IRequest.direction to
+         *   community_platform_comment_votes.vote_direction (Int). The endpoint
+         *   must validate that direction is within the API-mapped range (-1..1)
+         *   and can be translated to a valid vote_direction value. For
+         *   neutral/reset, treat as remove intent: upsert/remove logic should
+         *   soft-delete any active vote row by setting deleted_at.
      */
     direction: number & tags.Type<"int32"> & tags.Minimum<-1> & tags.Maximum<1>;
 
     /**
      * 1-indexed page number to retrieve in a paginated response. Defaults to 1 when omitted.
      *
-     * @x-autobe-specification Pagination parameter (1-indexed). When provided, controls which page of records the server should return for list-style responses. If omitted, null, or undefined, default behavior is page 1. This field has no direct database column mapping in community_platform_comment_votes; pagination is applied by query logic in list endpoints only (vote update endpoints may ignore it).
+         * @x-autobe-specification Pagination parameter (1-indexed). When
+         *   provided, controls which page of records the server should return
+         *   for list-style responses. If omitted, null, or undefined, default
+         *   behavior is page 1. This field has no direct database column
+         *   mapping in community_platform_comment_votes; pagination is applied
+         *   by query logic in list endpoints only (vote update endpoints may
+         *   ignore it).
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
 
     /**
      * Maximum number of records to return per page. Defaults to 100 when omitted.
      *
-     * @x-autobe-specification Pagination parameter controlling maximum number of records per page. If omitted, null, or undefined, default behavior is 100. The server may enforce upper bounds. This field has no direct database column mapping in community_platform_comment_votes; pagination is applied by query logic in list endpoints only (vote update endpoints may ignore it).
+         * @x-autobe-specification Pagination parameter controlling maximum
+         *   number of records per page. If omitted, null, or undefined, default
+         *   behavior is 100. The server may enforce upper bounds. This field
+         *   has no direct database column mapping in
+         *   community_platform_comment_votes; pagination is applied by query
+         *   logic in list endpoints only (vote update endpoints may ignore it).
      */
     limit?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };

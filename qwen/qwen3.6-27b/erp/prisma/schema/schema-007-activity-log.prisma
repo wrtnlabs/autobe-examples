@@ -1,0 +1,247 @@
+/// Immutable audit trail entries recording significant organizational
+/// governance events including employee lifecycle actions (invited,
+/// deactivated, reactivated), contract changes (created, edited), project
+/// lifecycle transitions (created, archived, completed, deleted), task
+/// status changes, timesheet workflow events (submitted, approved,
+/// rejected), and role assignments.
+///
+/// All activity logs are scoped to a single organization via the
+/// organization_id foreign key for multi-tenancy isolation. The acting
+/// member is recorded via member_id foreign key for accountability tracking
+/// and user-specific activity views.
+///
+/// Polymorphic target entities are tracked via entity_type string field and
+/// entity_id UUID pair, referencing employees, contracts, projects, tasks,
+/// timesheets, or roles. The entity_name field captures the target's display
+/// name at the time of the action, remaining valid if the entity is later
+/// modified or deleted.
+///
+/// Action-specific details (previous status, new status, rejection reasons,
+/// etc.) are stored in the hrm_platform_activity_log_details key-value child
+/// table, maintaining 1NF compliance.
+///
+/// Activity logs are append-only records with no update or delete
+/// capability, preserving complete governance history for audit compliance
+/// and org:manage permission holders.
+///
+/// @namespace hrm_platform.activity_log
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_platform_activity_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the organization where this activity occurred.
+  ///
+  /// All activity logs are scoped to a single organization for multi-tenancy
+  /// data isolation. Activity log access is governed by org:manage permission.
+  hrm_platform_organization_id String
+  
+  /// Reference to the authenticated member who performed the recorded action.
+  ///
+  /// Captures accountability for all organizational governance events,
+  /// enabling user-specific activity views and audit compliance.
+  hrm_platform_member_id String
+  
+  /// Categorizes the specific action that occurred.
+  ///
+  /// Allowed values: employee_invited, employee_deactivated,
+  /// employee_reactivated, contract_created, contract_edited, project_created,
+  /// project_archived, project_completed, project_deleted,
+  /// task_status_changed, timesheet_submitted, timesheet_approved,
+  /// timesheet_rejected, role_assigned, role_changed.
+  ///
+  /// Used for filtering and grouping activity log entries by action category.
+  action_type String
+  
+  /// Identifies the type of entity that was the target of this action.
+  ///
+  /// Allowed values: employee, contract, project, task, timesheet, role.
+  /// Combined with entity_id to form a polymorphic reference to the affected
+  /// resource.
+  entity_type String
+  
+  /// UUID of the target entity affected by this action.
+  ///
+  /// The actual table depends on entity_type (hrm_platform_employees,
+  /// hrm_platform_employee_contracts, hrm_platform_projects,
+  /// hrm_platform_tasks, hrm_platform_timesheets, or hrm_platform_roles).
+  entity_id String
+  
+  /// Display name of the target entity at the time of the action.
+  ///
+  /// Captures a historical snapshot (e.g., project name, task title) that
+  /// remains valid even if the entity is later renamed, archived, or deleted.
+  entity_name String?
+  
+  /// Timestamp of when the action occurred.
+  ///
+  /// Used for chronological ordering, pagination, date range filtering, and
+  /// audit trail browsing.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  organization hrm_platform_organizations @relation(fields: [hrm_platform_organization_id], references: [id], onDelete: Cascade)
+  member hrm_platform_members @relation(fields: [hrm_platform_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  activityLogDetails hrm_platform_activity_log_details[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([hrm_platform_member_id])
+  // spellchecker: ignore-next-line
+  @@index([hrm_platform_organization_id, created_at], map: "hrm_platform_activity_logs_hrm_platform_organization_i_ad2e97ed")
+  // spellchecker: ignore-next-line
+  @@index([hrm_platform_organization_id, action_type], map: "hrm_platform_activity_logs_hrm_platform_organization_i_58c484f8")
+  // spellchecker: ignore-next-line
+  @@index([hrm_platform_organization_id, hrm_platform_member_id], map: "hrm_platform_activity_logs_hrm_platform_organization_i_896349e7")
+  // spellchecker: ignore-next-line
+  @@index([hrm_platform_organization_id, entity_type, entity_id], map: "hrm_platform_activity_logs_hrm_platform_organization_i_215ef2bd")
+}
+
+/// Immutable audit trail recording every status transition applied to tasks.
+///
+/// Each entry captures the old status, new status, timestamp of the change,
+/// and the member who initiated it. This table is append-only and supports
+/// dispute resolution, compliance audit, and activity reporting within the
+/// project management workflow.
+///
+/// Task status transitions recorded include: open → in-progress, in-progress
+/// → completed, completed → closed, and any other valid state changes.
+///
+/// @namespace hrm_platform.activity_log
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_platform_task_histories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Foreign key referencing the task whose status was changed.
+  ///
+  /// Links to {@link hrm_platform_tasks}.
+  hrm_platform_task_id String
+  
+  /// Foreign key referencing the member who initiated the status change.
+  ///
+  /// Links to {@link hrm_platform_members}. This preserves the identity of the
+  /// actor at the moment of change, even if their organizational role later
+  /// changes.
+  hrm_platform_member_id String
+  
+  /// The status of the task before the change.
+  ///
+  /// Allowed values: open, in-progress, completed, closed.
+  old_status String
+  
+  /// The new status assigned to the task after the change.
+  ///
+  /// Allowed values: open, in-progress, completed, closed.
+  new_status String
+  
+  /// Timestamp recording when the status change occurred.
+  ///
+  /// This is the only temporal field since task histories are immutable once
+  /// created.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  task hrm_platform_tasks @relation(fields: [hrm_platform_task_id], references: [id], onDelete: Cascade)
+  member hrm_platform_members @relation(fields: [hrm_platform_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([hrm_platform_task_id, created_at])
+  // spellchecker: ignore-next-line
+  @@index([hrm_platform_member_id, created_at], map: "hrm_platform_task_histories_hrm_platform_member_id_cre_c2e5a4ad")
+}
+
+/// Key-value pairs storing structured action-specific details for each
+/// activity log entry.
+///
+/// This table enables polymorphic metadata storage across varied action
+/// types without using JSON fields, maintaining strict 1NF compliance. Each
+/// detail entry captures a specific attribute relevant to the logged
+/// action—for example, task status changes store old_status and new_status
+/// as separate key-value rows, timesheet rejections store rejection_reason,
+/// and role assignments store old_role_id and new_role_id.
+///
+/// Details are always created and managed as part of their parent {@link
+/// hrm_platform_activity_logs} entry. The unique constraint on
+/// activity_log_id and key ensures no duplicate attributes exist within the
+/// same log entry.
+///
+/// @namespace hrm_platform.activity_log
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_platform_activity_log_details {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Link to the parent activity log entry that this detail record belongs to.
+  ///
+  /// Each activity log entry can have zero or many detail rows providing
+  /// structured metadata about the action. The detail rows decompose
+  /// polymorphic action data into atomic key-value pairs, ensuring 1NF
+  /// compliance while supporting diverse action-specific attributes.
+  hrm_platform_activity_log_id String
+  
+  /// Attribute name identifying the type of metadata stored in this detail row.
+  ///
+  /// Examples include "oldStatus" and "newStatus" for task status changes,
+  /// "rejectionReason" for rejected timesheets, "oldRoleId" and "newRoleId"
+  /// for role reassignments. The key is unique within its parent activity log
+  /// to prevent duplicate attributes.
+  key String
+  
+  /// String-encoded value of the metadata attribute.
+  ///
+  /// All detail values are stored as strings to maintain uniformity across
+  /// different action types. Values may represent status labels, reason texts,
+  /// user identifiers, or any other action-specific data required for audit
+  /// purposes.
+  value String
+  
+  /// Timestamp when this detail entry was created by the system.
+  ///
+  /// Set automatically when the activity log entry is initially recorded. This
+  /// timestamp provides the temporal context for when the metadata was
+  /// attached to the log.
+  created_at DateTime
+  
+  /// Timestamp when this detail entry was last updated.
+  ///
+  /// Updated whenever the detail value is amended. While activity logs are
+  /// generally immutable, the system allows detail corrections for audit
+  /// accuracy during the initial recording window.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  activityLog hrm_platform_activity_logs @relation(fields: [hrm_platform_activity_log_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([hrm_platform_activity_log_id, key], map: "hrm_platform_activity_log_details_hrm_platform_activit_e6a7970b")
+}

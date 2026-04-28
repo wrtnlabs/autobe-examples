@@ -21,7 +21,8 @@ import { IErpHrmInvitation } from "../../../../structures/IErpHrmInvitation";
  * @param props.token Secure token from the invitation link
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor guest
- * @x-autobe-specification Query the erp_hrm_invitations table using the provided token parameter.
+ * @x-autobe-specification Query the erp_hrm_invitations table using the
+ *   provided token parameter.
  *
  * Validate the token exists and is not null. Reject verification if token is missing or null.
  *

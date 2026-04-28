@@ -23,9 +23,10 @@ export class RedditcommunityMemberMemberSubscriptionsController {
    *
    * @param connection
    * @param body Subscription creation request containing the target community identifier to subscribe to.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Create a new subscription record in reddit_community_subscriptions table.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Create a new subscription record in
+     *   reddit_community_subscriptions table.
    *
    * 1. Extract member_id from authenticated session context (JWT token)
    * 2. Validate community_id exists in reddit_community_communities table (not soft-deleted)
@@ -69,9 +70,10 @@ export class RedditcommunityMemberMemberSubscriptionsController {
    *
    * @param connection
    * @param body Pagination and filtering parameters for retrieving subscribed communities list.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query reddit_community_subscriptions table filtered by the authenticated member's ID from session context.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query reddit_community_subscriptions table
+     *   filtered by the authenticated member's ID from session context.
    *
    * Filter conditions:
    * - member_id equals authenticated user's ID
@@ -119,9 +121,10 @@ export class RedditcommunityMemberMemberSubscriptionsController {
    *
    * @param connection
    * @param subscriptionId Unique identifier of the subscription to cancel (UUID format).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Delete operation for reddit_community_subscriptions table implementing soft delete.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Delete operation for
+     *   reddit_community_subscriptions table implementing soft delete.
    *
    * 1. Validate the subscriptionId exists and belongs to the authenticated member
    * 2. Verify the subscription is currently active (deleted_at is null)

@@ -18,8 +18,9 @@ export type ITodoAppMember = {
    *
    * This is the stable UUID that identifies the authenticated member account in API responses.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from todo_app_members.id. This is the member account UUID used as the primary identifier in the response.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from todo_app_members.id. This is
+     *   the member account UUID used as the primary identifier in the response.
    */
   id: string & tags.Format<"uuid">;
 
@@ -28,8 +29,9 @@ export type ITodoAppMember = {
    *
    * This value is the unique login identity for the private account and is returned exactly as stored.
    *
-   * @x-autobe-database-schema-property email
-   * @x-autobe-specification Direct mapping from todo_app_members.email. This is the member's unique login email and account identity value.
+     * @x-autobe-database-schema-property email
+     * @x-autobe-specification Direct mapping from todo_app_members.email. This
+     *   is the member's unique login email and account identity value.
    */
   email: string & tags.Format<"email">;
 
@@ -38,7 +40,10 @@ export type ITodoAppMember = {
    *
    * This nested object is derived from the member's linked profile record and is returned only for the owning authenticated member.
    *
-   * @x-autobe-specification Resolve the member's profile by joining todo_app_profiles on todo_app_profiles.todo_app_member_id = todo_app_members.id. Serialize the linked profile as the nested profile object for the authenticated member.
+     * @x-autobe-specification Resolve the member's profile by joining
+     *   todo_app_profiles on todo_app_profiles.todo_app_member_id =
+     *   todo_app_members.id. Serialize the linked profile as the nested profile
+     *   object for the authenticated member.
    */
   profile: ITodoAppProfile;
 
@@ -47,7 +52,10 @@ export type ITodoAppMember = {
    *
    * This nested collection contains the member's private todo summaries and is derived from the member's owned todo records.
    *
-   * @x-autobe-specification Resolve the member's todos by joining todo_app_todos on todo_app_todos.todo_app_member_id = todo_app_members.id. Serialize the owned records as todo summaries for the authenticated member.
+     * @x-autobe-specification Resolve the member's todos by joining
+     *   todo_app_todos on todo_app_todos.todo_app_member_id =
+     *   todo_app_members.id. Serialize the owned records as todo summaries for
+     *   the authenticated member.
    */
   todos: ITodoAppTodo.ISummary[];
 
@@ -56,8 +64,9 @@ export type ITodoAppMember = {
    *
    * This timestamp records the original account creation time in the private todo app.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from todo_app_members.created_at. Preserve the stored creation timestamp without transformation.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from todo_app_members.created_at.
+     *   Preserve the stored creation timestamp without transformation.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -66,8 +75,9 @@ export type ITodoAppMember = {
    *
    * This timestamp reflects the most recent account-level change that has been persisted.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from todo_app_members.updated_at. Preserve the stored last-update timestamp without transformation.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from todo_app_members.updated_at.
+     *   Preserve the stored last-update timestamp without transformation.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -76,8 +86,10 @@ export type ITodoAppMember = {
    *
    * A null value means the account is active. When present, the timestamp reflects logical deletion state retained for lifecycle handling.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from todo_app_members.deleted_at. Preserve null when the member is active and the timestamp when the account has been soft deleted.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from todo_app_members.deleted_at.
+     *   Preserve null when the member is active and the timestamp when the
+     *   account has been soft deleted.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -95,8 +107,10 @@ export namespace ITodoAppMember {
      *
      * This value identifies the current private account record returned after successful registration, login, or token refresh. It is the stable member UUID used to reference the signed-in account within the private todo application.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from todo_app_members.id for the authenticated member record returned after join, login, or refresh.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from todo_app_members.id for
+         *   the authenticated member record returned after join, login, or
+         *   refresh.
      */
     id: string & tags.Format<"uuid">;
 
@@ -105,8 +119,9 @@ export namespace ITodoAppMember {
      *
      * This is the unique sign-in address associated with the current private account. It is returned so the client can display the active account identity and confirm which member session is currently authorized.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from todo_app_members.email for the authenticated member's login identity.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from todo_app_members.email
+         *   for the authenticated member's login identity.
      */
     email: string & tags.Format<"email">;
 
@@ -115,7 +130,12 @@ export namespace ITodoAppMember {
      *
      * This nested object represents the profile owned by the current signed-in member. It exposes the member's private display information without revealing other users' profile data.
      *
-     * @x-autobe-specification Resolve the authenticated member's private profile by joining todo_app_profiles through todo_app_profiles.todo_app_member_id = todo_app_members.id and return the single profile object in the authorized response. This field is computed at response time and is not stored on todo_app_members.
+         * @x-autobe-specification Resolve the authenticated member's private
+         *   profile by joining todo_app_profiles through
+         *   todo_app_profiles.todo_app_member_id = todo_app_members.id and
+         *   return the single profile object in the authorized response. This
+         *   field is computed at response time and is not stored on
+         *   todo_app_members.
      */
     profile: ITodoAppProfile;
 
@@ -124,7 +144,12 @@ export namespace ITodoAppMember {
      *
      * This collection contains the private todo items owned by the current account. It is included so the client can access the member's todo summaries immediately after authentication without exposing data from other accounts.
      *
-     * @x-autobe-specification Resolve the authenticated member's own todo summaries by joining todo_app_todos through todo_app_todos.todo_app_member_id = todo_app_members.id and return the member's private todo list as summary items in the authorized response. This field is computed at response time and is not stored on todo_app_members.
+         * @x-autobe-specification Resolve the authenticated member's own todo
+         *   summaries by joining todo_app_todos through
+         *   todo_app_todos.todo_app_member_id = todo_app_members.id and return
+         *   the member's private todo list as summary items in the authorized
+         *   response. This field is computed at response time and is not stored
+         *   on todo_app_members.
      */
     todos: ITodoAppTodo.ISummary[];
 
@@ -133,8 +158,9 @@ export namespace ITodoAppMember {
      *
      * This timestamp reflects when the private account was first registered and is included for account lifecycle context.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from todo_app_members.created_at for the authenticated member record.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_members.created_at for the authenticated member record.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -143,8 +169,9 @@ export namespace ITodoAppMember {
      *
      * This timestamp reflects the most recent account-level change and is included for lifecycle tracking and client state refresh.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from todo_app_members.updated_at for the authenticated member record.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_members.updated_at for the authenticated member record.
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -153,15 +180,19 @@ export namespace ITodoAppMember {
      *
      * A null value means the account is active. When present, the timestamp indicates the account was deactivated while preserving its record for lifecycle handling.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from todo_app_members.deleted_at for the authenticated member record. Preserve the nullable timestamp so a soft-deleted account can be represented when applicable.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_members.deleted_at for the authenticated member record.
+         *   Preserve the nullable timestamp so a soft-deleted account can be
+         *   represented when applicable.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
 
     /**
      * Authorization token.
      *
-     * @x-autobe-specification Authorization token comes from the session table.
+         * @x-autobe-specification Authorization token comes from the session
+         *   table.
      */
     token: IAuthorizationToken;
   };
@@ -177,8 +208,10 @@ export namespace ITodoAppMember {
      *
      * This value identifies the account for sign-in and account recovery, and it must be unique across member accounts.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from todo_app_members.email. Use this as the unique account identifier during member registration.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from todo_app_members.email.
+         *   Use this as the unique account identifier during member
+         *   registration.
      */
     email: string & tags.Format<"email">;
 
@@ -187,8 +220,10 @@ export namespace ITodoAppMember {
      *
      * This value is used only during registration. The server hashes it securely before persisting the account credentials.
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification Accept plaintext password input from the client and hash it server-side into todo_app_members.password_hash. Never store or return the raw password.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification Accept plaintext password input from the
+         *   client and hash it server-side into todo_app_members.password_hash.
+         *   Never store or return the raw password.
      */
     password: string & tags.Format<"password">;
   };
@@ -206,7 +241,11 @@ export namespace ITodoAppMember {
      *
      * This secret credential is sent to the refresh endpoint so the server can renew the authentication session. It is not a member record field, profile attribute, or session metadata value exposed by the API.
      *
-     * @x-autobe-specification Use the raw refresh token string from the request body of POST /todoApp/auth/member/refresh. Treat it as a secret credential and validate it against the member's active session state before issuing a new authorization token bundle. No database mapping applies to this property.
+         * @x-autobe-specification Use the raw refresh token string from the
+         *   request body of POST /todoApp/auth/member/refresh. Treat it as a
+         *   secret credential and validate it against the member's active
+         *   session state before issuing a new authorization token bundle. No
+         *   database mapping applies to this property.
      */
     refreshToken: string & tags.Format<"password">;
   };
@@ -224,8 +263,9 @@ export namespace ITodoAppMember {
      *
      * This value identifies the private account for sign-in and account management. The authenticated owner may change it, and the new email must be unique across member accounts.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from todo_app_members.email. The service must enforce uniqueness before saving changes.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from todo_app_members.email.
+         *   The service must enforce uniqueness before saving changes.
      */
     email?: (string & tags.Format<"email">) | undefined;
 
@@ -234,8 +274,11 @@ export namespace ITodoAppMember {
      *
      * This field accepts the user's plain-text credential for an account password change. The server hashes it before saving and never exposes the stored hash or the submitted raw value.
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification Accept plain-text password input and hash it into todo_app_members.password_hash before persistence. Never store or return the raw password value. This field is optional in partial updates and is processed only when present.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification Accept plain-text password input and hash it
+         *   into todo_app_members.password_hash before persistence. Never store
+         *   or return the raw password value. This field is optional in partial
+         *   updates and is processed only when present.
      */
     password?: (string & tags.Format<"password">) | undefined;
   };
@@ -253,8 +296,9 @@ export namespace ITodoAppMember {
      *
      * This is the sign-in identifier used to find the account being authenticated. It must match the email stored for the member record.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from todo_app_members.email. Used to locate the member account before password verification.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from todo_app_members.email.
+         *   Used to locate the member account before password verification.
      */
     email: string & tags.Format<"email">;
 
@@ -263,8 +307,11 @@ export namespace ITodoAppMember {
      *
      * This is the raw secret submitted to prove account ownership. It is verified against the stored password hash and is never persisted or exposed in responses.
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification Raw password input used only for authentication. Compare this value against todo_app_members.password_hash during authentication and never store or return the raw password.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification Raw password input used only for
+         *   authentication. Compare this value against
+         *   todo_app_members.password_hash during authentication and never
+         *   store or return the raw password.
      */
     password: string & tags.Format<"password">;
   };
@@ -280,7 +327,10 @@ export namespace ITodoAppMember {
      *
      * It does not represent account-deletion input, pagination state, or any persisted data for this endpoint.
      *
-     * @x-autobe-specification Structural placeholder inherited from the shared request-body template. It has no database source and no runtime effect for account deletion; implementers should ignore it when handling this endpoint.
+         * @x-autobe-specification Structural placeholder inherited from the
+         *   shared request-body template. It has no database source and no
+         *   runtime effect for account deletion; implementers should ignore it
+         *   when handling this endpoint.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
 
@@ -289,7 +339,10 @@ export namespace ITodoAppMember {
      *
      * It does not represent account-deletion input, pagination state, or any persisted data for this endpoint.
      *
-     * @x-autobe-specification Structural placeholder inherited from the shared request-body template. It has no database source and no runtime effect for account deletion; implementers should ignore it when handling this endpoint.
+         * @x-autobe-specification Structural placeholder inherited from the
+         *   shared request-body template. It has no database source and no
+         *   runtime effect for account deletion; implementers should ignore it
+         *   when handling this endpoint.
      */
     limit?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };

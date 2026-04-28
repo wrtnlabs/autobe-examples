@@ -14,7 +14,8 @@ export type IHrmTimeTrackEffectivePermission = {
    *
    * The array may be empty if the member has no employee record in the organization, has no role assigned, or if their role has no permissions configured.
    *
-   * @x-autobe-specification Computed array of permission codes from hrm_time_track_role_permissions table.
+     * @x-autobe-specification Computed array of permission codes from
+     *   hrm_time_track_role_permissions table.
    *
    * Computation logic:
    * 1. Use member_id and organization_id from session to find employee record in hrm_time_track_employees

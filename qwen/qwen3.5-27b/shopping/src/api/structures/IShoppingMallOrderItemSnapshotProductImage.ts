@@ -14,8 +14,10 @@ export type IShoppingMallOrderItemSnapshotProductImage = {
    *
    * This UUID identifies a specific product image captured at order placement time. Each image in an order item snapshot has its own unique ID, allowing multiple images to be tracked individually for audit and dispute resolution purposes.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_order_item_snapshot_product_images.id. Primary key UUID identifying this product image snapshot record.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_order_item_snapshot_product_images.id. Primary key UUID
+     *   identifying this product image snapshot record.
    */
   id: string & tags.Format<"uuid">;
 
@@ -24,8 +26,11 @@ export type IShoppingMallOrderItemSnapshotProductImage = {
    *
    * This field stores the complete URL or path to the product image file. The image URI is preserved exactly as it was when the order was placed, even if the seller later changes or deletes the image from their product listing. This ensures customers can always view the product as it appeared when they made their purchase decision.
    *
-   * @x-autobe-database-schema-property image_uri
-   * @x-autobe-specification Direct mapping from shopping_mall_order_item_snapshot_product_images.image_uri. VARCHAR(80000) storing the complete image URL or path. Preserved exactly as it was when the order was placed.
+     * @x-autobe-database-schema-property image_uri
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_order_item_snapshot_product_images.image_uri.
+     *   VARCHAR(80000) storing the complete image URL or path. Preserved
+     *   exactly as it was when the order was placed.
    */
   image_uri: string & tags.Format<"uri">;
 
@@ -34,8 +39,12 @@ export type IShoppingMallOrderItemSnapshotProductImage = {
    *
    * Images are ordered by this field, with display_order = 1 being the first/main/thumbnail image. This preserves the original image sequencing as it appeared when the customer purchased the product. When displaying images, they should be sorted by display_order in ascending order.
    *
-   * @x-autobe-database-schema-property display_order
-   * @x-autobe-specification Direct mapping from shopping_mall_order_item_snapshot_product_images.display_order. Integer field for sequencing images within a product's gallery. Minimum value is 1. Images are sorted by this field ascending, with display_order=1 being the main/thumbnail image.
+     * @x-autobe-database-schema-property display_order
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_order_item_snapshot_product_images.display_order. Integer
+     *   field for sequencing images within a product's gallery. Minimum value
+     *   is 1. Images are sorted by this field ascending, with display_order=1
+     *   being the main/thumbnail image.
    */
   display_order: number & tags.Type<"int32"> & tags.Minimum<1>;
 
@@ -44,8 +53,12 @@ export type IShoppingMallOrderItemSnapshotProductImage = {
    *
    * This field records when the image was captured as part of the order item snapshot. Since this is immutable snapshot data, there is no updated_at or deleted_at field. The created_at timestamp is automatically set to the order placement time and is never modified.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from shopping_mall_order_item_snapshot_product_images.created_at. DateTime field recording when this product image snapshot was created during order placement. This is immutable snapshot data - no updated_at field exists.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_order_item_snapshot_product_images.created_at. DateTime
+     *   field recording when this product image snapshot was created during
+     *   order placement. This is immutable snapshot data - no updated_at field
+     *   exists.
    */
   created_at: string & tags.Format<"date-time">;
 };

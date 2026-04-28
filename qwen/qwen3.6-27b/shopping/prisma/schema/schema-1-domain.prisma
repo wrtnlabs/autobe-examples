@@ -1,0 +1,2525 @@
+/// Customer identities extending authentication with buyer-facing attributes
+/// like display name and phone number.
+///
+/// Customer profiles store personalization information for shoppers
+/// registered on the platform. Each profile belongs to exactly one {@link
+/// ecommerce_platform_customers} account, forming a one-to-one relationship.
+/// Profiles persist independently when a customer deletes their account —
+/// order history and reviews remain preserved with a "deleted user"
+/// designation.
+///
+/// Profiles support editing of display names and phone numbers, allowing
+/// customers to update their contact information at any time during their
+/// account lifecycle.
+///
+/// @namespace ecommerce_platform
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_platform_customer_profiles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the customer profile record.
+  id String @id
+  
+  /// Reference to the owning customer account in the authorization layer.
+  ///
+  /// Each customer profile belongs to exactly one {@link
+  /// ecommerce_platform_customers} account. This establishes the foundational
+  /// identity link between authentication credentials and buyer-facing
+  /// personalization data.
+  ecommerce_platform_customer_id String
+  
+  /// Display name shown publicly to other users on the platform.
+  ///
+  /// This name appears on review pages, in order confirmations, and other
+  /// customer-facing contexts. It can be edited by the customer at any time
+  /// and serves as their visible identity distinct from their login email.
+  display_name String
+  
+  /// Phone number for shipping and delivery coordination.
+  ///
+  /// Used by sellers to coordinate delivery with buyers. Can be edited or
+  /// removed by the customer at any time. Nullable to accommodate users who
+  /// prefer alternative contact methods.
+  phone_number String?
+  
+  /// Timestamp of when this profile was created.
+  ///
+  /// Automatically set when the customer account is first initialized with a
+  /// profile record.
+  created_at DateTime
+  
+  /// Timestamp of the last modification to profile attributes.
+  ///
+  /// Updated whenever display name or phone number is changed.
+  updated_at DateTime
+  
+  /// Timestamp of soft deletion for archival purposes.
+  ///
+  /// When a customer deletes their account, this field is populated to mark
+  /// the profile as deleted while preserving order history and review data
+  /// under a 'deleted user' designation. Nullable for active profiles.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  customer ecommerce_platform_customers @relation(fields: [ecommerce_platform_customer_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  shippingAddresses ecommerce_platform_shipping_addresses[]
+  orders ecommerce_platform_orders[]
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_platform_customer_id], map: "ecommerce_platform_customer_profiles_ecommerce_platfor_0bcd0448")
+  @@index([created_at])
+}
+
+/// Merchant identity profile containing the business name, description, and
+/// brand logo for seller storefront presentation.
+///
+/// The seller profile extends the authenticated seller actor with
+/// commercial-facing attributes that appear across product detail pages,
+/// product listings, search results, and the dedicated seller profile page.
+/// Every attribute modification triggers an immutable snapshot for audit
+/// trail and dispute resolution.
+///
+/// {@link ecommerce_platform_sellers} owns exactly one seller profile.
+///
+/// @namespace ecommerce_platform
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_platform_seller_profiles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key identifying the seller profile entity.
+  id String @id
+  
+  /// Ownership relationship binding this profile to its seller account.
+  ///
+  /// A seller profile belongs to exactly one seller actor. The profile extends
+  /// the seller's authentication credentials with business identity attributes
+  /// for storefront presentation.
+  ///
+  /// {@link ecommerce_platform_sellers}
+  seller_id String
+  
+  /// Unique business name displayed to customers across platform surfaces.
+  ///
+  /// Appears on product detail pages, search results, category listings, and
+  /// the seller profile page. Modifications are preserved via snapshot.
+  shop_name String
+  
+  /// Textual description of the seller's business, product range, or
+  /// commercial nature.
+  ///
+  /// Visible on the seller profile page to help customers understand the
+  /// seller's offering.
+  shop_description String
+  
+  /// Brand logo URI displayed alongside the shop name.
+  ///
+  /// Appears on every product detail page and platform surface where seller
+  /// identity is relevant.
+  logo_image_uri String
+  
+  /// Timestamp of initial profile creation.
+  created_at DateTime
+  
+  /// Timestamp of the most recent profile modification.
+  ///
+  /// Updated on every shop name, description, or logo image change.
+  updated_at DateTime
+  
+  /// Soft-delete timestamp preserving historical snapshots and order records.
+  ///
+  /// Even when a seller deletes their account, profile snapshots remain for
+  /// dispute resolution.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  seller ecommerce_platform_sellers @relation(fields: [seller_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  products ecommerce_platform_products[]
+  refundRequests ecommerce_platform_refund_requests[]
+  sellerProfileSnapshots ecommerce_platform_snapshot_seller_profiles[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([seller_id])
+  @@unique([shop_name])
+}
+
+/// Stores delivery destination information for customers, including
+/// recipient details and geographic address components, with the ability to
+/// designate one address as the default per customer.
+///
+/// Each record represents a single shipping destination that a customer can
+/// use for order delivery. Customers may maintain multiple addresses and
+/// designate exactly one as the default, which is pre-selected during
+/// checkout.
+///
+/// Addresses are linked to {@link ecommerce_platform_customer_profiles} and
+/// support full CRUD operations including soft deletion. Default address
+/// enforcement is maintained via a unique constraint on the combination of
+/// customer profile and default flag.
+///
+/// @namespace ecommerce_platform
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_platform_shipping_addresses {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the customer profile that owns this shipping address.
+  ///
+  /// Each address belongs to exactly one customer profile. Customers can
+  /// manage multiple shipping addresses through this relationship.
+  ecommerce_platform_customer_profile_id String
+  
+  /// Full name of the person who will receive the package at this address.
+  recipient_name String
+  
+  /// Contact phone number of the recipient for delivery coordination.
+  phone_number String
+  
+  /// Detailed street-level address including building number, street name, and
+  /// apartment/unit information.
+  street_address String
+  
+  /// City or metropolitan area of the delivery destination.
+  city String
+  
+  /// State, province, or regional subdivision of the delivery destination.
+  state String
+  
+  /// Postal or ZIP code for the delivery destination.
+  postal_code String
+  
+  /// Country of the delivery destination.
+  country String
+  
+  /// Indicates whether this is the customer's default shipping address.
+  ///
+  /// Only one address per customer can be marked as default. This is enforced
+  /// via a unique constraint combining customer profile ID and this flag.
+  is_default Boolean
+  
+  /// Timestamp when this shipping address was created.
+  created_at DateTime
+  
+  /// Timestamp when this shipping address was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when this shipping address was soft-deleted. Null indicates the
+  /// address is active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  customerProfile ecommerce_platform_customer_profiles @relation(fields: [ecommerce_platform_customer_profile_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  orders ecommerce_platform_orders[]
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_platform_customer_profile_id, is_default], map: "ecommerce_platform_shipping_addresses_ecommerce_platfo_8307f284")
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_platform_customer_profile_id, deleted_at], map: "ecommerce_platform_shipping_addresses_ecommerce_platfo_e66f9b37")
+}
+
+/// Administrator promotion requests submitted by users seeking platform
+/// administrative privileges.
+///
+/// Customers and sellers can each submit a promotion request including a
+/// written justification. Super administrators review pending requests and
+/// either approve (granting regular administrator grade) or reject (with a
+/// rejection reason). Status transitions: pending → approved/rejected.
+///
+/// The actor_type field acts as a discriminator for polymorphic ownership,
+/// enabling child subtype tables to link to the specific customer or seller
+/// accounts.
+///
+/// Cross-references:
+/// - Polymorphic linking via {@link
+/// ecommerce_platform_administrator_promotion_request_of_customers} and
+/// {@link ecommerce_platform_administrator_promotion_request_of_sellers}
+/// - Reviewer tracking via {@link ecommerce_platform_admins}
+///
+/// @namespace ecommerce_platform
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_platform_administrator_promotion_requests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for administrator promotion request records.
+  id String @id
+  
+  /// Reference to the super administrator who reviewed and responded to this
+  /// promotion request.
+  ///
+  /// This field is nullable while the request is in pending status. Once the
+  /// super administrator approves or rejects the request, their ID is recorded
+  /// here for audit trail accountability and transparency about who made the
+  /// decision.
+  reviewed_by_admin_id String?
+  
+  /// Discriminator identifying the type of actor who submitted this promotion
+  /// request.
+  ///
+  /// Valid values:
+  /// - customer: A customer account requesting promotion to administrator
+  /// - seller: A seller account requesting promotion to administrator
+  ///
+  /// This discriminator enables the polymorphic ownership pattern, allowing
+  /// efficient indexing and joining with child subtype tables for customer and
+  /// seller specific records.
+  actor_type String
+  
+  /// Current lifecycle status of this promotion request.
+  ///
+  /// Valid values:
+  /// - pending: Request submitted and awaiting super administrator review
+  /// - approved: Request accepted by super administrator, requester receives
+  /// regular administrator grade
+  /// - rejected: Request declined by super administrator, rejection_reason
+  /// explains the decision
+  ///
+  /// Status transitions are one-way: pending → approved or pending → rejected.
+  /// Once approved or rejected, the status cannot change.
+  status String
+  
+  /// Written justification provided by the requester for their administrator
+  /// promotion application.
+  ///
+  /// The applicant explains why they believe they should be granted
+  /// administrator privileges. This text is reviewed by super administrators
+  /// during the evaluation process and remains permanently associated with the
+  /// request record for audit purposes.
+  reason String
+  
+  /// Explanation provided by the reviewing super administrator when rejecting
+  /// a promotion request.
+  ///
+  /// This field is populated only when the status is changed to rejected. It
+  /// provides transparency to the requester about the basis for the decision
+  /// and serves as an audit trail for the platform's promotion process.
+  rejection_reason String?
+  
+  /// Timestamp recording when the super administrator completed their review
+  /// and changed the request status from pending to either approved or
+  /// rejected.
+  ///
+  /// This field enables audit compliance by marking the exact moment the
+  /// request was processed. It remains null while the request is in pending
+  /// status, allowing tracking of review response times.
+  reviewed_at DateTime?
+  
+  /// Timestamp of when the requester submitted this administrator promotion
+  /// application.
+  created_at DateTime
+  
+  /// Timestamp of the latest modification to this request record, updated when
+  /// the status changes during review.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  reviewedByAdmin ecommerce_platform_admins? @relation(fields: [reviewed_by_admin_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  customerPromotionSubtype ecommerce_platform_administrator_promotion_request_of_customers?
+  sellerSubtype ecommerce_platform_administrator_promotion_request_of_sellers?
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([reviewed_by_admin_id], map: "ecommerce_platform_administrator_promotion_requests_re_5a1ff9c1")
+  // spellchecker: ignore-next-line
+  @@index([actor_type], map: "ecommerce_platform_administrator_promotion_requests_ac_6904ca5e")
+  // spellchecker: ignore-next-line
+  @@index([status, created_at], map: "ecommerce_platform_administrator_promotion_requests_st_e04fd464")
+}
+
+/// Categorical structures organizing the E-Commerce shopping mall platform
+/// products.
+///
+/// Categories support one level of nesting via a self-referential parent
+/// relationship. Root categories have no parent, while subcategories
+/// reference a root category as their parent. Only one level of hierarchy is
+/// supported; subcategories cannot have their own subcategories.
+///
+/// Administrators create, edit, and manage categories for product
+/// classification. Customers browse products filtering by these categories.
+///
+/// @namespace ecommerce_platform
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_platform_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the ecommerce platform category.
+  id String @id
+  
+  /// Self-referential foreign key to the parent {@link
+  /// ecommerce_platform_categories}, enabling one level of nesting.
+  ///
+  /// Root categories have a null parent. Subcategories reference a root
+  /// category as their parent. Only one level of hierarchy is supported;
+  /// subcategories cannot have their own subcategories.
+  parent_ecommerce_platform_category_id String?
+  
+  /// Display name of the category shown to customers.
+  name String
+  
+  /// Textual description of the category explaining its purpose.
+  description String
+  
+  /// Timestamp when the category was created.
+  created_at DateTime
+  
+  /// Timestamp when the category was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the category was soft-deleted. Null indicates an active
+  /// category.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  parentCategory ecommerce_platform_categories? @relation("recursive", fields: [parent_ecommerce_platform_category_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  childrenCategories ecommerce_platform_categories[] @relation("recursive")
+  products ecommerce_platform_products[]
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([name, parent_ecommerce_platform_category_id], map: "ecommerce_platform_categories_name_parent_ecommerce_pl_a7cb5a1a")
+  // spellchecker: ignore-next-line
+  @@index([parent_ecommerce_platform_category_id], map: "ecommerce_platform_categories_parent_ecommerce_platfor_a2f57ef9")
+}
+
+/// Main product listings owned by sellers with name, description, category,
+/// and base price.
+///
+/// Products are the core commerce entities in the marketplace. Each product
+/// is created by an approved seller, assigned to a category or subcategory,
+/// and priced with a base price that can be optionally overridden by
+/// individual variants.
+///
+/// Products support full lifecycle management: creation, editing (with
+/// snapshot recording via {@link ecommerce_platform_snapshots}), and
+/// deletion (restricted when pending orders exist). Products with no
+/// variants are visible in search but marked as unavailable.
+///
+/// Product availability is derived from variant stock levels rather than
+/// stored directly. Images are managed in {@link
+/// ecommerce_platform_product_images} and variants in {@link
+/// ecommerce_platform_product_variants}.
+///
+/// @namespace ecommerce_platform
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_platform_products {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Foreign key to {@link ecommerce_platform_seller_profiles} identifying the
+  /// seller who owns this product.
+  ///
+  /// The owning seller is responsible for creating, editing, and managing the
+  /// product throughout its lifecycle. Only approved sellers can create
+  /// products. Products are automatically associated with the seller's shop.
+  ///
+  /// This foreign key enables sellers to query all products they own, and
+  /// enables customers to discover which shop sells a product.
+  ecommerce_platform_seller_profile_id String
+  
+  /// Foreign key to {@link ecommerce_platform_categories} assigning the
+  /// product to a category or subcategory.
+  ///
+  /// Products are organized hierarchically through this relationship. The
+  /// category determines where the product appears in category browsing and
+  /// search filtering. A product can belong to either a top-level category or
+  /// a subcategory.
+  ///
+  /// Deleting a category does not delete its products; they become
+  /// uncategorized if the category is removed.
+  ecommerce_platform_category_id String
+  
+  /// The product name. Required and validated on creation.
+  ///
+  /// Displayed in search results, category listings, and product detail pages.
+  /// Used as the primary text field for product search queries. Must be
+  /// provided during product creation and editing.
+  name String
+  
+  /// The product description. Required and validated on creation.
+  ///
+  /// Contains detailed information about the product, displayed on the product
+  /// detail page. Must be provided during product creation and editing.
+  description String
+  
+  /// The base price for this product in the marketplace currency.
+  ///
+  /// Required on creation. Serves as the default price displayed in listings
+  /// when variants share the same price. Individual variants in {@link
+  /// ecommerce_platform_product_variants} can optionally override this base
+  /// price with their own variant-specific price.
+  base_price Float
+  
+  /// Timestamp when the product was originally created.
+  created_at DateTime
+  
+  /// Timestamp when the product was last edited.
+  updated_at DateTime
+  
+  /// Timestamp when the product was soft-deleted. Populated when a seller or
+  /// administrator deletes the product.
+  ///
+  /// Soft deletion removes the product from search results and category
+  /// listings while preserving the record for order history integrity.
+  /// Products with active order items, cancellation requests, or refund
+  /// requests cannot be soft-deleted until fulfillment is complete.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  sellerProfile ecommerce_platform_seller_profiles @relation(fields: [ecommerce_platform_seller_profile_id], references: [id], onDelete: Cascade)
+  category ecommerce_platform_categories @relation(fields: [ecommerce_platform_category_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  variants ecommerce_platform_product_variants[]
+  wishlistItems ecommerce_platform_wishlist_items[]
+  reviews ecommerce_platform_reviews[]
+  images ecommerce_platform_product_images[]
+  snapshotProducts ecommerce_platform_snapshot_products[]
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_platform_seller_profile_id], map: "ecommerce_platform_products_ecommerce_platform_seller__679afacf")
+  @@index([ecommerce_platform_category_id])
+  @@index([created_at])
+  @@index([deleted_at])
+}
+
+/// Product variants represent specific SKU configurations for a product,
+/// capturing option values (such as color or size), pricing overrides, and
+/// inventory tracking through external ledger records.
+///
+/// Each variant belongs to exactly one product and is identified by a unique
+/// SKU code within that product scope. Option values are normalized into a
+/// separate key-value child table ({@link
+/// ecommerce_platform_product_variant_options}) to comply with 1NF atomicity
+/// requirements.
+///
+/// Stock quantity is not stored directly in this table; instead, it is
+/// derived by summing all {@link ecommerce_platform_inventory_records} for
+/// the variant, providing an immutable audit trail of every stock change
+/// including restocking, order placement adjustments, and
+/// cancellation/refund restorations.
+///
+/// @namespace ecommerce_platform
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_platform_product_variants {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the product variant record.
+  id String @id
+  
+  /// Identifies the parent product this variant belongs to.
+  ///
+  /// Each product can have multiple variants representing different option
+  /// combinations, but each variant is owned by exactly one product. When a
+  /// product is deleted (without active pending orders), all its variants are
+  /// also removed.
+  ecommerce_platform_product_id String
+  
+  /// Stock Keeping Unit code serving as the unique identifier for this variant
+  /// within its parent product.
+  sku_code String
+  
+  /// Variant-specific price that overrides the base product price when present.
+  ///
+  /// When null, the product's base price applies. Allows sellers to set
+  /// different prices for different option combinations within the same
+  /// product.
+  price Float?
+  
+  /// Timestamp when this variant was created. Part of the standard temporal
+  /// fields.
+  created_at DateTime
+  
+  /// Timestamp when this variant was last modified. Updated on every edit
+  /// including SKU code changes or price adjustments.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. When set, the variant is no longer visible in
+  /// product listings or available for purchase, but the record is preserved
+  /// for order history and snapshot integrity.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  product ecommerce_platform_products @relation(fields: [ecommerce_platform_product_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  inventoryRecords ecommerce_platform_inventory_records[]
+  ecommercePlatformShoppingCartItems ecommerce_platform_shopping_cart_items[]
+  orderItems ecommerce_platform_order_items[]
+  options ecommerce_platform_product_variant_options[]
+  variantSnapshots ecommerce_platform_snapshot_variants[]
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_platform_product_id, sku_code], map: "ecommerce_platform_product_variants_ecommerce_platform_fe10e2e4")
+}
+
+/// Immutable append-only ledger entries recording every stock change event
+/// for product variants.
+///
+/// This table serves as the authoritative inventory history for {@link
+/// ecommerce_platform_product_variants}. Each record represents a single
+/// discrete stock movement: positive quantity deltas for restocking, order
+/// cancellations, and refunds; negative quantity deltas for order placements
+/// and manual loss adjustments.
+///
+/// The current stock level of any product variant is derived by summing all
+/// quantity_delta values across its inventory records. There is no cached
+/// stock column — the running total is always computed from the ledger.
+///
+/// Records are created by: (1) system events such as order placement
+/// (negative), order cancellation (positive), and refund approval
+/// (positive), and (2) direct seller actions such as manual restocking
+/// (positive) and loss adjustments (negative). Once created, records are
+/// never modified or deleted, ensuring a permanent audit trail for dispute
+/// resolution and regulatory compliance.
+///
+/// @namespace ecommerce_platform
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_platform_inventory_records {
+  //----
+  // COLUMNS
+  //----
+  /// Unique identifier for each inventory ledger entry.
+  id String @id
+  
+  /// Foreign key linking this inventory record to the specific product variant
+  /// whose stock was affected.
+  ///
+  /// Each inventory record must reference exactly one {@link
+  /// ecommerce_platform_product_variants} entity. This relationship enables
+  /// aggregation queries that compute current stock levels and retrieve the
+  /// complete inventory history for any variant.
+  ecommerce_platform_product_variant_id String
+  
+  /// Signed integer representing the amount of stock change recorded in this
+  /// entry.
+  ///
+  /// Positive values indicate stock additions (e.g., +50 for a restocking
+  /// event). Negative values indicate stock removals (e.g., -3 for an order of
+  /// 3 units). The current stock level is calculated by summing all
+  /// quantity_delta values for each product variant.
+  ///
+  /// Order fulfillment generates negative deltas. Order cancellations and
+  /// refunds generate positive deltas to restore inventory. Manual seller
+  /// restocking generates positive deltas. Manual loss adjustments generate
+  /// negative deltas.
+  quantity_delta Int
+  
+  /// Business justification documenting the cause of this specific inventory
+  /// adjustment.
+  ///
+  /// Examples include 'Order #12345 fulfillment', 'Restocking from supplier
+  /// shipment', 'Manual adjustment - damaged goods', 'Order #12345
+  /// cancellation refund', 'Refund #98765 stock restoration'. This field
+  /// ensures complete traceability and supports dispute resolution by
+  /// explaining why each stock change occurred.
+  ///
+  /// Automatically set by the system for order-related events. Manually
+  /// entered by sellers for inventory adjustments and restocking operations.
+  reason String
+  
+  /// Immutable timestamp recording when this inventory stock change event
+  /// occurred.
+  ///
+  /// Establishes the chronological sequence of all stock movements for any
+  /// product variant. Used for point-in-time stock level calculations,
+  /// inventory history browsing, and audit trail ordering. Never modified
+  /// after record creation.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  productVariant ecommerce_platform_product_variants @relation(fields: [ecommerce_platform_product_variant_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_platform_product_variant_id, created_at], map: "ecommerce_platform_inventory_records_ecommerce_platfor_40234725")
+}
+
+/// Tracks products that customers have saved for future purchase consideration.
+///
+/// This table establishes a many-to-many relationship between {@link
+/// ecommerce_platform_customers} and {@link ecommerce_platform_products},
+/// allowing customers to maintain a curated list of desired items. A unique
+/// constraint on customer and product IDs ensures no duplicate entries exist
+/// for the same product within a single customer's wishlist.
+///
+/// Soft-delete semantics are applied via the deleted_at field, enabling
+/// customers to remove items while preserving the historical audit trail.
+/// When a product is permanently deleted by a seller, cascade deletion rules
+/// automatically clean up associated wishlist entries to maintain data
+/// integrity.
+///
+/// @namespace ecommerce_platform
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_platform_wishlist_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key uniquely identifying each wishlist entry.
+  id String @id
+  
+  /// The customer who saved the product to their wishlist.
+  ///
+  /// References {@link ecommerce_platform_customers}.
+  ecommerce_platform_customer_id String
+  
+  /// The product saved to the customer wishlist.
+  ///
+  /// References {@link ecommerce_platform_products}. Automatically removed
+  /// when the seller deletes the product.
+  ecommerce_platform_product_id String
+  
+  /// When the customer added the product to their wishlist.
+  created_at DateTime
+  
+  /// When the wishlist entry was last modified.
+  updated_at DateTime
+  
+  /// When the customer removed the product from their wishlist (soft delete).
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  customer ecommerce_platform_customers @relation(fields: [ecommerce_platform_customer_id], references: [id], onDelete: Cascade)
+  product ecommerce_platform_products @relation(fields: [ecommerce_platform_product_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_platform_customer_id, ecommerce_platform_product_id], map: "ecommerce_platform_wishlist_items_ecommerce_platform_c_4c0dae2f")
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_platform_product_id], map: "ecommerce_platform_wishlist_items_ecommerce_platform_p_c55c645a")
+}
+
+/// Tracks individual line items in a customer's shopping cart, linking a
+/// specific customer to a specific product variant with a desired quantity.
+///
+/// This table enforces the consolidation rule whereby adding the same
+/// variant to an existing cart updates the quantity rather than creating a
+/// duplicate row. Each row represents exactly one variant per customer. Cart
+/// items are transient purchase intent; they are removed when the order is
+/// successfully placed or manually deleted by the customer.
+///
+/// Subtotal values (quantity × variant price) are computed at query time
+/// from the {@link ecommerce_platform_product_variants} price and the
+/// quantity field rather than stored redundantly.
+///
+/// @namespace ecommerce_platform
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_platform_shopping_cart_items {
+  //----
+  // COLUMNS
+  //----
+  /// Surrogate primary key for the shopping cart item record.
+  id String @id
+  
+  /// References the customer who owns this cart item.
+  ///
+  /// Cart items are scoped within {@link ecommerce_platform_customers},
+  /// ensuring customers can only view and manipulate items within their own
+  /// cart.
+  ecommerce_platform_customer_id String
+  
+  /// References the specific product variant being added to the cart.
+  ///
+  /// The variant identifier determines which options (e.g., color and size)
+  /// and pricing the customer intends to purchase. Stock availability checks
+  /// reference the corresponding {@link ecommerce_platform_product_variants}
+  /// record.
+  ecommerce_platform_product_variant_id String
+  
+  /// The number of units of the selected product variant the customer wishes
+  /// to purchase.
+  ///
+  /// Increments when the same variant is re-added to the cart, decrements when
+  /// manually reduced, and drives the line-item subtotal calculation
+  /// multiplied by the variant's per-unit price.
+  quantity Int
+  
+  /// Timestamp when this cart item was first created by adding a variant to
+  /// the cart.
+  created_at DateTime
+  
+  /// Timestamp when the quantity was last modified or the row was last touched.
+  updated_at DateTime
+  
+  /// Timestamp when the cart item was soft-deleted.
+  ///
+  /// Supports soft-delete semantics while preserving audit capability for
+  /// deleted cart items.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  ecommercePlatformCustomer ecommerce_platform_customers @relation(fields: [ecommerce_platform_customer_id], references: [id], onDelete: Cascade)
+  ecommercePlatformProductVariant ecommerce_platform_product_variants @relation(fields: [ecommerce_platform_product_variant_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_platform_product_variant_id], map: "ecommerce_platform_shopping_cart_items_ecommerce_platf_13b85fee")
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_platform_customer_id, ecommerce_platform_product_variant_id], map: "ecommerce_platform_shopping_cart_items_ecommerce_platf_3f952049")
+}
+
+/// Purchase transaction header linking a customer to their shipping
+/// destination and containing multiple order items.
+///
+/// An order is created when a customer successfully completes checkout after
+/// payment confirmation. It serves as the container for all individual line
+/// items ({@link ecommerce_platform_order_items}) purchased in that single
+/// transaction. The order status is a derived aggregation of its child item
+/// statuses.
+///
+/// Orders are never deleted — they are preserved indefinitely for legal
+/// compliance, seller records, and customer order history browsing even if
+/// the customer later deletes their account.
+///
+/// The overall order status reflects the collective state of all its items:
+/// paid (all items paid), shipped (any item shipped), delivered (all items
+/// delivered), cancelled (all items cancelled), refunded (all items
+/// refunded), or partially_completed (mixed final states).
+///
+/// @namespace ecommerce_platform
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_platform_orders {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the customer profile of the buyer who placed this order.
+  ///
+  /// This establishes ownership of the purchase transaction. The customer
+  /// profile identifies who ordered and which account's order history this
+  /// belongs to. Even if the customer later deletes their account, this
+  /// reference is preserved to maintain transaction integrity.
+  ///
+  /// One customer profile can have multiple orders over time.
+  ecommerce_platform_customer_profile_id String
+  
+  /// References the shipping address where the order was intended to be
+  /// delivered.
+  ///
+  /// Captured immutably at checkout time from the customer's address list.
+  /// Cannot be changed after the order is placed and payment is confirmed, as
+  /// it represents the contractual delivery destination agreed upon during the
+  /// purchase.
+  ecommerce_platform_shipping_address_id String
+  
+  /// Human-readable order identifier for the customer.
+  ///
+  /// Unique reference number used to identify this order in the customer's
+  /// order history, payment gateway integration, and customer communications.
+  /// Serves as the primary lookup key when customers contact support about
+  /// their purchases.
+  ///
+  /// Formatted as a sequential or timestamp-based string for easy reference.
+  order_number String
+  
+  /// Derived aggregate status reflecting the collective lifecycle state of all
+  /// order items.
+  ///
+  /// Allowed values: paid (all items paid and awaiting shipment), shipped (any
+  /// item shipped with none delivered), delivered (all items delivered),
+  /// cancelled (all items cancelled), refunded (all items refunded),
+  /// partially_completed (mixed final states across items such as some
+  /// delivered and others refunded).
+  ///
+  /// This denormalized field is computed from child item statuses for
+  /// efficient listing queries on the customer order history screen and seller
+  /// dashboard.
+  status String
+  
+  /// Timestamp when the order was successfully created after payment
+  /// confirmation.
+  ///
+  /// This marks the official purchase date of the transaction.
+  created_at DateTime
+  
+  /// Timestamp of the last modification to this order record.
+  ///
+  /// Updated when the derived status is recomputed as child order items
+  /// transition through their lifecycle states.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  customerProfile ecommerce_platform_customer_profiles @relation(fields: [ecommerce_platform_customer_profile_id], references: [id], onDelete: Cascade)
+  shippingAddress ecommerce_platform_shipping_addresses @relation(fields: [ecommerce_platform_shipping_address_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  reviews ecommerce_platform_reviews[]
+  items ecommerce_platform_order_items[]
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_platform_shipping_address_id], map: "ecommerce_platform_orders_ecommerce_platform_shipping__fa920573")
+  @@unique([order_number])
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_platform_customer_profile_id, created_at], map: "ecommerce_platform_orders_ecommerce_platform_customer__dd6dacad")
+  @@index([status])
+}
+
+/// Shipping packages manifested by sellers containing one or more order
+/// items with shared tracking information.
+///
+/// Shipments group order items from the same seller into a single physical
+/// package for delivery tracking. Each shipment records carrier information,
+/// tracking number, and delivery confirmation timestamps.
+///
+/// Customers can manually confirm delivery or the system auto-confirms after
+/// 14 days from shipping. Reference {@link ecommerce_platform_sellers} for
+/// seller identity and {@link ecommerce_platform_order_items} for included
+/// line items via junction table.
+///
+/// @namespace ecommerce_platform
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_platform_shipments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The seller who created and manifested this shipment for delivery.
+  ///
+  /// Sellers are responsible for selecting order items, entering tracking
+  /// information, and managing the shipment lifecycle from dispatch to
+  /// delivery confirmation.
+  ecommerce_platform_seller_id String
+  
+  /// Name of the shipping carrier handling the package delivery (e.g.,
+  /// 'FedEx', 'UPS', 'DHL').
+  carrier_name String
+  
+  /// Tracking number provided by the carrier for package tracking and status
+  /// monitoring.
+  tracking_number String
+  
+  /// Timestamp when the seller dispatched this shipment and all included order
+  /// items transition to shipped status.
+  shipped_at DateTime
+  
+  /// Timestamp when the customer manually confirmed delivery. Nullable until
+  /// customer action.
+  confirmed_at DateTime?
+  
+  /// Timestamp when delivery was confirmed, either manually by customer or
+  /// automatically after 14 days from shipped_at.
+  delivered_at DateTime?
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Last modification timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for audit trail preservation.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  seller ecommerce_platform_sellers @relation(fields: [ecommerce_platform_seller_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  shipmentItems ecommerce_platform_shipment_items[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([carrier_name, tracking_number])
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_platform_seller_id, shipped_at], map: "ecommerce_platform_shipments_ecommerce_platform_seller_a8948ad1")
+}
+
+/// Junction table mapping shipment packages to their included order items
+/// for combined delivery tracking.
+///
+/// This table enables sellers to bundle multiple order items from the same
+/// seller into a single physical shipment with shared carrier tracking
+/// information. When a shipment is created with selected order items, the
+/// status of all included items changes to 'shipped'. When delivery is
+/// confirmed on the shipment, all included items change to 'delivered'.
+///
+/// Each order item can only belong to one shipment package, enforced by a
+/// unique constraint. This ensures unambiguous tracking from seller to
+/// customer.
+///
+/// @namespace ecommerce_platform
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_platform_shipment_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Foreign key linking this junction record to the parent shipment package.
+  ///
+  /// The shipment contains the carrier name, tracking number, and shipping
+  /// date. All order items mapped through this junction record share the same
+  /// tracking information. A single shipment can contain multiple order items
+  /// from the same seller for bundled delivery.
+  ecommerce_platform_shipment_id String
+  
+  /// Foreign key linking this junction record to a specific order item.
+  ///
+  /// Each order item can only be included in one shipment, enforced by a
+  /// unique constraint. When the item is mapped to a shipment, its status
+  /// transitions to 'shipped'. When delivery is confirmed on the parent
+  /// shipment, this item's status transitions to 'delivered'.
+  ecommerce_platform_order_item_id String
+  
+  /// Timestamp recording when this order item was mapped to the shipment.
+  created_at DateTime
+  
+  /// Timestamp recording the last modification to this shipment item mapping.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  shipment ecommerce_platform_shipments @relation(fields: [ecommerce_platform_shipment_id], references: [id], onDelete: Cascade)
+  orderItem ecommerce_platform_order_items @relation(fields: [ecommerce_platform_order_item_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_platform_order_item_id], map: "ecommerce_platform_shipment_items_ecommerce_platform_o_6a094557")
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_platform_shipment_id, created_at], map: "ecommerce_platform_shipment_items_ecommerce_platform_s_a6dbe3ec")
+}
+
+/// Customer ratings and text feedback for purchased products.
+///
+/// Reviews capture buyer evaluations consisting of a required star rating
+/// (1-5) and optional text content. Each review is tied to a specific
+/// product and order, with the constraint that customers can submit only one
+/// review per product per order. Reviews remain visible on product detail
+/// pages even if the reviewing customer deletes their account, at which
+/// point they are attributed to "deleted user."
+///
+/// Reviews can be edited by their authors, with each edit creating a
+/// snapshot in the polymorphic {@link ecommerce_platform_snapshots} table.
+/// Deleted reviews are soft-deleted and excluded from average rating
+/// calculations, while their snapshots are preserved for audit purposes.
+/// Reviews are displayed on product detail pages sorted newest first,
+/// enabling potential buyers to make informed purchasing decisions.
+///
+/// @namespace ecommerce_platform
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_platform_reviews {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the customer who authored this review.
+  ///
+  /// Links to {@link ecommerce_platform_customers} to identify the reviewer.
+  /// Reviews persist even if the customer account is deleted, displaying as
+  /// "deleted user" instead of the customer's display name. The customer must
+  /// have delivered items in the referenced order for this review to be valid.
+  ecommerce_platform_customer_id String
+  
+  /// Reference to the product being reviewed.
+  ///
+  /// Links to {@link ecommerce_platform_products} to identify which product
+  /// received this evaluation. The star rating from each non-deleted review
+  /// contributes to the product's calculated average rating displayed on
+  /// product listings and detail pages.
+  ecommerce_platform_product_id String
+  
+  /// Reference to the order from which the reviewed product was purchased.
+  ///
+  /// Links to {@link ecommerce_platform_orders} to establish the purchase
+  /// context. A review is only valid after at least one order item in this
+  /// order for the referenced product has reached "delivered" status. This FK
+  /// enables the one-review-per-product-per-order constraint.
+  ecommerce_platform_order_id String
+  
+  /// Star rating given by the customer on a scale of 1 to 5.
+  ///
+  /// This required field captures the quantitative evaluation of the product.
+  /// The rating is included in the product's average rating calculation as
+  /// long as the review is not deleted. Values must be integers between 1 and
+  /// 5 inclusive.
+  rating Int
+  
+  /// Optional written comment elaborating on the customer's product experience.
+  ///
+  /// Customers may describe aspects such as quality, fit, or overall
+  /// satisfaction in this free-text field. This field is nullable, allowing
+  /// reviews with star-only ratings. Text content is preserved in snapshots
+  /// when the review is edited or deleted.
+  text_content String?
+  
+  /// Timestamp when the review was originally submitted by the customer.
+  ///
+  /// Used for sorting reviews in newest-first order on product detail pages.
+  /// This timestamp is immutable and marks the initial creation of the review.
+  created_at DateTime
+  
+  /// Timestamp of the most recent edit to this review.
+  ///
+  /// Updated whenever the customer modifies the rating or text content. Each
+  /// edit creates a snapshot in {@link ecommerce_platform_snapshots} before
+  /// the new values are persisted. This field enables chronological tracking
+  /// of review modifications.
+  updated_at DateTime
+  
+  /// Timestamp when the review was soft-deleted by its author.
+  ///
+  /// Nullable field indicating whether the review has been removed by the
+  /// customer. When set, the review is excluded from product average rating
+  /// calculations and hidden from public listings. The snapshot created at
+  /// deletion preserves the review's final state for audit trail purposes.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  customer ecommerce_platform_customers @relation(fields: [ecommerce_platform_customer_id], references: [id], onDelete: Cascade)
+  product ecommerce_platform_products @relation(fields: [ecommerce_platform_product_id], references: [id], onDelete: Cascade)
+  order ecommerce_platform_orders @relation(fields: [ecommerce_platform_order_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  reviewSnapshots ecommerce_platform_snapshot_reviews[]
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_platform_order_id, ecommerce_platform_product_id], map: "ecommerce_platform_reviews_ecommerce_platform_order_id_5a9cc478")
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_platform_product_id, created_at], map: "ecommerce_platform_reviews_ecommerce_platform_product__2474bf68")
+  @@index([ecommerce_platform_customer_id])
+}
+
+/// Records cancellation requests submitted by a customer for a specific
+/// order item.
+///
+/// Customers may request cancellation only when the order item status is
+/// 'paid' (not yet shipped). The seller evaluates and approves or rejects
+/// the request, triggering a snapshot of the state change.
+///
+/// The seller is not stored directly — it is derivable from the order item's
+/// product variant ownership. This avoids transitive dependency violations
+/// per 3NF.
+///
+/// Cross-references: {@link ecommerce_platform_order_items}, {@link
+/// ecommerce_platform_customers}.
+///
+/// @namespace ecommerce_platform
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_platform_cancellation_requests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key for this cancellation request.
+  id String @id
+  
+  /// References the specific order item being requested for cancellation.
+  ///
+  /// Links to {@link ecommerce_platform_order_items}. Only one cancellation
+  /// request is allowed per order item, enforced by a unique constraint.
+  ecommerce_platform_order_item_id String
+  
+  /// References the customer who requested the cancellation.
+  ///
+  /// Links to {@link ecommerce_platform_customers}.
+  ecommerce_platform_customer_id String
+  
+  /// Free-text reason provided by the customer explaining why they want to
+  /// cancel the order item.
+  reason String
+  
+  /// Current processing state. Allowed values are 'pending', 'approved', or
+  /// 'rejected'.
+  status String
+  
+  /// Optional free-text reason provided by the seller when rejecting a
+  /// cancellation request.
+  seller_response_reason String?
+  
+  /// Timestamp when this cancellation request was recorded.
+  created_at DateTime
+  
+  /// Timestamp when this request was last modified, typically when the seller
+  /// approves or rejects.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  orderItem ecommerce_platform_order_items @relation(fields: [ecommerce_platform_order_item_id], references: [id], onDelete: Cascade)
+  customer ecommerce_platform_customers @relation(fields: [ecommerce_platform_customer_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  snapshots ecommerce_platform_snapshot_cancellation_requests[]
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_platform_order_item_id], map: "ecommerce_platform_cancellation_requests_ecommerce_pla_66cc13e3")
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_platform_customer_id, status], map: "ecommerce_platform_cancellation_requests_ecommerce_pla_e03682e9")
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_platform_order_item_id, status], map: "ecommerce_platform_cancellation_requests_ecommerce_pla_7827f15b")
+}
+
+/// Refund requests submitted by customers for delivered order items.
+///
+/// When a customer is dissatisfied with a delivered item, they may submit a
+/// refund request within seven days of delivery. Each request includes a
+/// textual reason and transitions through a status lifecycle while awaiting
+/// the seller's response.
+///
+/// ### Lifecycle
+/// 1. **Pending** — Customer submits refund request with reason.
+/// 2. **Approved** — Seller accepts; the order item transitions to refunded
+/// status and stock is restored.
+/// 3. **Rejected** — Seller declines the request; the order item remains
+/// delivered.
+///
+/// ### Constraints
+/// - One refund request per order item enforced by a unique foreign key.
+/// - The seller is identified via {@link ecommerce_platform_seller_profiles}
+/// for processing and dashboard queries.
+/// - Snapshots capture each state transition for dispute resolution.
+///
+/// @namespace ecommerce_platform
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_platform_refund_requests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key.
+  id String @id
+  
+  /// Order item refund is requested on. Uniquely constrained so each item has
+  /// at most one refund request. Links to {@link
+  /// ecommerce_platform_order_items}.
+  order_item_id String
+  
+  /// Seller assigned to process this refund request. Links to {@link
+  /// ecommerce_platform_seller_profiles}.
+  seller_profile_id String
+  
+  /// Customer-provided justification for the refund request.
+  refund_reason String
+  
+  /// Current state of the refund request.
+  ///
+  /// - `pending` — Awaiting seller review.
+  /// - `approved` — Seller accepted; item refunded and stock restored.
+  /// - `rejected` — Seller declined; item remains delivered.
+  status String
+  
+  /// Timestamp when the seller responded, or null if still pending.
+  responded_at DateTime?
+  
+  /// Timestamp when the refund request was created.
+  created_at DateTime
+  
+  /// Timestamp of the last modification to this refund request.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  orderItem ecommerce_platform_order_items @relation(fields: [order_item_id], references: [id], onDelete: Cascade)
+  sellerProfile ecommerce_platform_seller_profiles @relation(fields: [seller_profile_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  refundRequestSnapshots ecommerce_platform_snapshot_refund_requests[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([order_item_id])
+  @@index([order_item_id, created_at])
+  @@index([status, created_at])
+  @@index([seller_profile_id, status])
+}
+
+/// Polymorphic header table for immutable audit trail records of all mutable
+/// entities in the ecommerce platform.
+///
+/// This table serves as the base identity for snapshot records, delegating
+/// entity-specific previous and current state values to normalized child
+/// tables. This polymorphic design avoids multiple nullable foreign keys and
+/// JSON storage, adhering to 1NF/2NF/3NF normalization rules.
+///
+/// Each row represents a single snapshot event with a specific entity_type
+/// categorizing what was changed. Child tables
+/// (ecommerce_platform_snapshot_products,
+/// ecommerce_platform_snapshot_variants, etc.) store the FK reference back
+/// to this header table with a unique constraint, plus the entity-specific
+/// FK and state fields.
+///
+/// Snapshots capture changes to products, product variants, seller profiles,
+/// order items, reviews, cancellation requests, and refund requests,
+/// providing verifiable historical records for dispute resolution.
+///
+/// @namespace ecommerce_platform
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_platform_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key unique identifier for each snapshot header record.
+  ///
+  /// This UUID serves as the reference point for child tables that store
+  /// entity-specific previous and current state values.
+  id String @id
+  
+  /// Categorizes the type of entity being snapshotted.
+  ///
+  /// Acceptable enum values:
+  /// - product: Product listing edits (name, description, category, base
+  /// price, images)
+  /// - product_variant: Product variant configuration edits (SKU code, option
+  /// values, price)
+  /// - seller_profile: Seller profile edits (shop name, description, logo)
+  /// - order_item: Order item state changes (quantity, price at purchase,
+  /// status)
+  /// - review: Review edits or creation (star rating, text content)
+  /// - cancellation_request: Cancellation request state changes (reason,
+  /// status)
+  /// - refund_request: Refund request state changes (reason, status)
+  ///
+  /// This field identifies which business concept was altered during the
+  /// modification event.
+  entity_type String
+  
+  /// Timestamp of when the snapshot was generated.
+  ///
+  /// Snapshots are immutable once created and cannot be edited or deleted by
+  /// any user, including entity owners or administrators. This timestamp
+  /// ensures complete historical audit trail for dispute resolution and data
+  /// preservation.
+  ///
+  /// This field records exactly when the modification occurred, providing
+  /// verifiable proof of when changes were made to platform entities.
+  created_at DateTime
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  snapshotProduct ecommerce_platform_snapshot_products?
+  variantSnapshot ecommerce_platform_snapshot_variants?
+  sellerProfileSnapshot ecommerce_platform_snapshot_seller_profiles?
+  orderItemSnapshot ecommerce_platform_snapshot_order_items?
+  reviewSnapshot ecommerce_platform_snapshot_reviews?
+  cancellationRequest ecommerce_platform_snapshot_cancellation_requests?
+  refundRequest ecommerce_platform_snapshot_refund_requests?
+  
+  //----
+  // INDEXES
+  //----
+  @@index([entity_type])
+}
+
+/// Seller registration applications submitted for administrator review.
+///
+/// This table tracks the lifecycle of seller account approvals. When a
+/// seller registers, a request is generated here. Administrators review the
+/// request and approve or reject it. If rejected, a reason is provided to
+/// the seller. Sellers can reapply if rejected.
+///
+/// {@link ecommerce_platform_sellers}
+///
+/// @namespace ecommerce_platform
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_platform_seller_approval_requests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the {@link ecommerce_platform_sellers} account requesting
+  /// approval.
+  ///
+  /// Links the approval request to the specific seller account. Each seller
+  /// can have multiple approval requests over time (initial request,
+  /// reapplications after rejection).
+  ecommerce_platform_seller_id String
+  
+  /// The current processing state of the application.
+  ///
+  /// Values: 'pending' (awaiting review), 'approved' (privileges granted),
+  /// 'rejected' (denied with reason).
+  status String
+  
+  /// Explanation provided by the administrator regarding the decision.
+  ///
+  /// Required when status is 'rejected'. Optional or null for 'pending' and
+  /// 'approved' states.
+  reason String?
+  
+  /// Timestamp of when the request was submitted.
+  ///
+  /// Tracks the initial registration submission time.
+  created_at DateTime
+  
+  /// Timestamp of the last modification to the request status or details.
+  ///
+  /// Updated when administrators review and change the status or add a
+  /// rejection reason.
+  updated_at DateTime
+  
+  /// Timestamp of soft deletion.
+  ///
+  /// Used for record retention while allowing logical removal.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  seller ecommerce_platform_sellers @relation(fields: [ecommerce_platform_seller_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_platform_seller_id], map: "ecommerce_platform_seller_approval_requests_ecommerce__d9901171")
+  @@index([status])
+}
+
+/// Product image records storing visual assets and their display ordering
+/// within a product.
+///
+/// Each product can have multiple images, with the image having the lowest
+/// order_index serving as the main thumbnail displayed in search results and
+/// category listings. Sellers can reorder images to control which one
+/// appears as the thumbnail.
+///
+/// Images are soft-deleted when sellers remove them from products,
+/// preserving audit trail for snapshot history.
+///
+/// @namespace ecommerce_platform
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_platform_product_images {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the product image record.
+  id String @id
+  
+  /// References the product that owns this image.
+  ///
+  /// Establishes the many-to-one relationship where multiple images belong to
+  /// a single product. Images cannot exist without a parent product.
+  ecommerce_platform_product_id String
+  
+  /// The storage location or URL of the image file.
+  ///
+  /// Points to the cloud storage or CDN location where the actual image binary
+  /// is stored. Used by the frontend to display product images.
+  uri String
+  
+  /// Display ordering position within the parent product's image gallery.
+  ///
+  /// Lower values appear first. The image with order_index = 0 (or the minimum
+  /// value) serves as the main thumbnail shown in product listings, search
+  /// results, and category pages. Sellers can reorder images by updating this
+  /// field.
+  order_index Int
+  
+  /// Timestamp when the image was uploaded and attached to the product.
+  created_at DateTime
+  
+  /// Timestamp when the image record was last modified, such as when
+  /// reordering occurred.
+  updated_at DateTime
+  
+  /// Timestamp when the image was soft-deleted by the seller.
+  ///
+  /// When not null, the image is hidden from the product's image gallery. Soft
+  /// deletion preserves the record for snapshot history and audit purposes.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  product ecommerce_platform_products @relation(fields: [ecommerce_platform_product_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_platform_product_id, order_index], map: "ecommerce_platform_product_images_ecommerce_platform_p_9fefc20e")
+}
+
+/// Individual line item within an order capturing the purchase of a specific
+/// product variant.
+///
+/// Stores the quantity ordered, the price per unit at the exact moment of
+/// purchase (immutable historical record), and the current fulfillment
+/// status ('paid', 'shipped', 'delivered', 'cancelled', 'refunded'). Order
+/// items are transactional records that preserve the state of the purchase.
+/// Their lifecycle is tracked via status rather than soft deletes, ensuring
+/// an immutable financial audit trail.
+///
+/// Related tables include {@link ecommerce_platform_orders} for the parent
+/// transaction header, {@link ecommerce_platform_product_variants} for the
+/// purchased SKU configuration. Dispute handling is managed via {@link
+/// ecommerce_platform_cancellation_requests} and {@link
+/// ecommerce_platform_refund_requests}. State changes are recorded in {@link
+/// ecommerce_platform_snapshot_order_items} for detailed audit trails of
+/// status transitions.
+///
+/// @namespace ecommerce_platform
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_platform_order_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key and unique identifier for this individual order line item.
+  id String @id
+  
+  /// Foreign key linking to the parent purchase transaction header.
+  ///
+  /// Associates this line item with the specific {@link
+  /// ecommerce_platform_orders} record, grouping it with other items purchased
+  /// in the same checkout session. Essential for aggregating order totals,
+  /// tracking shipment groupings via {@link
+  /// ecommerce_platform_shipment_items}, and managing customer purchase
+  /// history.
+  ecommerce_platform_order_id String
+  
+  /// Foreign key referencing the specific product variant (SKU) that was
+  /// purchased.
+  ///
+  /// Links to {@link ecommerce_platform_product_variants} to capture precisely
+  /// which configuration (e.g., 'Red / Large') was bought. This reference is
+  /// crucial for inventory deduction during order placement and restoration
+  /// during cancellations or refunds. Product and seller details are accessed
+  /// via the variant relationship rather than being denormalized here.
+  ecommerce_platform_product_variant_id String
+  
+  /// The number of units of the specific product variant purchased by the
+  /// customer.
+  ///
+  /// Represents the aggregate quantity if the customer added the same variant
+  /// multiple times. Updated primarily during checkout creation, and serves as
+  /// the basis for stock deduction calculations managed via {@link
+  /// ecommerce_platform_inventory_records}. Cannot exceed available stock at
+  /// purchase time.
+  quantity Int
+  
+  /// The price per unit at the exact time of purchase.
+  ///
+  /// This is an immutable historical financial record representing the
+  /// agreed-upon value between customer and seller. It remains unchanged even
+  /// if the product variant's current price is later modified by the seller or
+  /// if a discount was applied at checkout. Essential for accurate revenue
+  /// tracking and refund calculations.
+  price Float
+  
+  /// The current position of this item in the fulfillment and dispute
+  /// lifecycle.
+  ///
+  /// Valid values: 'paid' (payment completed, awaiting seller shipment),
+  /// 'shipped' (seller dispatched the item, tracking info available),
+  /// 'delivered' (customer confirmed receipt), 'cancelled' (transaction
+  /// cancelled, stock restored), 'refunded' (money returned after delivery,
+  /// stock potentially restored).
+  status String
+  
+  /// Timestamp of when this order item was created during the checkout process.
+  ///
+  /// Represents the committed transaction time when payment was successfully
+  /// processed and the item was added to the order.
+  created_at DateTime
+  
+  /// Timestamp of when this order item was last modified.
+  ///
+  /// Updated primarily during status transitions (e.g., paid to shipped,
+  /// shipped to delivered, paid to cancelled, delivered to refunded). Critical
+  /// for tracking fulfillment speed and audit trails.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  order ecommerce_platform_orders @relation(fields: [ecommerce_platform_order_id], references: [id], onDelete: Cascade)
+  productVariant ecommerce_platform_product_variants @relation(fields: [ecommerce_platform_product_variant_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  shipmentItem ecommerce_platform_shipment_items?
+  cancellationRequests ecommerce_platform_cancellation_requests[]
+  refundRequest ecommerce_platform_refund_requests?
+  itemSnapshots ecommerce_platform_snapshot_order_items[]
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_platform_product_variant_id], map: "ecommerce_platform_order_items_ecommerce_platform_prod_8a02501f")
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_platform_order_id, ecommerce_platform_product_variant_id], map: "ecommerce_platform_order_items_ecommerce_platform_orde_1f95a04f")
+  @@index([status])
+}
+
+/// Polymorphic subtype table linking administrator promotion requests to
+/// specific customer records.
+///
+/// This entity ensures that a generic promotion request submitted by any
+/// user is correctly attributed to the specific customer profile that
+/// submitted it. It maintains a strict one-to-one mapping between the
+/// promotion request header and the customer's identity, ensuring data
+/// consistency and proper ownership tracking for platform governance.
+///
+/// {@link ecommerce_platform_administrator_promotion_requests} represents
+/// the promotion request entity.
+/// {@link ecommerce_platform_customers} represents the customer account entity.
+///
+/// @namespace ecommerce_platform
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_platform_administrator_promotion_request_of_customers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id(map: "ecommerce_platform_administrator_promotion_request_of__c803bbb6")
+  
+  /// Foreign key linking to the parent administrator promotion request.
+  ///
+  /// Establishes the 1:1 relationship with the generic promotion request
+  /// entity, ensuring each request subtype maps to exactly one request record.
+  ecommerce_platform_administrator_promotion_request_id String
+  
+  /// Foreign key linking to the customer profile.
+  ///
+  /// Identifies the specific customer who submitted the administrator
+  /// promotion request, ensuring proper attribution and audit trail for
+  /// platform governance.
+  ecommerce_platform_customer_id String
+  
+  /// Timestamp of when this subtype linkage was created.
+  created_at DateTime
+  
+  /// Timestamp of the last update to this record.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  promotionRequest ecommerce_platform_administrator_promotion_requests @relation(fields: [ecommerce_platform_administrator_promotion_request_id], references: [id], onDelete: Cascade)
+  customer ecommerce_platform_customers @relation(fields: [ecommerce_platform_customer_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_platform_administrator_promotion_request_id], map: "ecommerce_platform_administrator_promotion_request_of__7fd989d2")
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_platform_customer_id], map: "ecommerce_platform_administrator_promotion_request_of__94219185")
+}
+
+/// Polymorphic subtype table linking administrator promotion requests
+/// submitted by sellers to their specific seller records.
+///
+/// Establishes a 1:1 relationship between {@link
+/// ecommerce_platform_administrator_promotion_requests} and {@link
+/// ecommerce_platform_sellers}, ensuring precise actor attribution during
+/// promotion review workflows. Each seller can have at most one active
+/// promotion request, and each promotion request maps to exactly one seller
+/// subtype.
+///
+/// @namespace ecommerce_platform
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_platform_administrator_promotion_request_of_sellers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id(map: "ecommerce_platform_administrator_promotion_request_of__29697f3d")
+  
+  /// References the main {@link
+  /// ecommerce_platform_administrator_promotion_requests} record linking to
+  /// its seller subtype.
+  ///
+  /// Uniquely constrained to ensure each promotion request maps to exactly one
+  /// seller subtype record.
+  ecommerce_platform_administrator_promotion_request_id String
+  
+  /// References the {@link ecommerce_platform_sellers} who submitted the
+  /// administrator promotion request.
+  ///
+  /// Uniquely constrained to prevent a seller from having multiple active
+  /// promotion request records.
+  ecommerce_platform_seller_id String
+  
+  /// Timestamp when this subtype record was persisted.
+  ///
+  /// Tracks when the seller-promotion request linkage was recorded in the
+  /// platform.
+  created_at DateTime
+  
+  /// Timestamp of the most recent update to this subtype record.
+  ///
+  /// Maintains audit trail for relational metadata changes.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  administratorPromotionRequest ecommerce_platform_administrator_promotion_requests @relation(fields: [ecommerce_platform_administrator_promotion_request_id], references: [id], onDelete: Cascade)
+  seller ecommerce_platform_sellers @relation(fields: [ecommerce_platform_seller_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_platform_administrator_promotion_request_id], map: "ecommerce_platform_administrator_promotion_request_of__ae646c9b")
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_platform_seller_id], map: "ecommerce_platform_administrator_promotion_request_of__578caf18")
+}
+
+/// Stores product variant options as individual key-value pairs for atomic,
+/// searchable option data.
+///
+/// Each row represents a single option attribute for a product variant. For
+/// example: a Red Large Cotton Shirt variant would have three option rows:
+/// (color, Red), (size, Large), (material, Cotton). This normalized design
+/// avoids JSON serialization by storing each option separately.
+///
+/// Options are always managed within their parent variant's context and
+/// cannot exist independently. When a variant is edited, its options may be
+/// updated (creating snapshots). When a variant is deleted, all its options
+/// are also logically deleted.
+///
+/// @namespace ecommerce_platform
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_platform_product_variant_options {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key uniquely identifying each product variant option record.
+  id String @id
+  
+  /// Foreign key referencing the product variant that owns this option.
+  ///
+  /// Options always belong to their parent variant and cannot exist
+  /// independently. Enables queries to list all options for a given variant
+  /// when displaying product details.
+  ecommerce_platform_product_variant_id String
+  
+  /// The option category name (e.g., color, size, material, pattern).
+  ///
+  /// Defines what type of option this row represents. Combined with the
+  /// variant FK, this creates the uniqueness constraint ensuring each variant
+  /// has at most one option per key.
+  attribute_key String
+  
+  /// The actual option value (e.g., Red, Large, Cotton).
+  ///
+  /// Displays to customers as the selectable option value on product detail
+  /// pages.
+  attribute_value String
+  
+  /// Timestamp when this variant option record was originally created.
+  ///
+  /// Set automatically during variant creation.
+  created_at DateTime
+  
+  /// Timestamp when this variant option was last modified.
+  ///
+  /// Updated when option values change through variant editing operations.
+  updated_at DateTime
+  
+  /// Nullable timestamp for soft deletion of variant options.
+  ///
+  /// Set during variant deletion operations to preserve option deletion
+  /// history.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  productVariant ecommerce_platform_product_variants @relation(fields: [ecommerce_platform_product_variant_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_platform_product_variant_id, attribute_key], map: "ecommerce_platform_product_variant_options_ecommerce_p_08856e11")
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_platform_product_variant_id], map: "ecommerce_platform_product_variant_options_ecommerce_p_53841d22")
+}
+
+/// Product-specific snapshot records capturing the before and after state of
+/// product listings including name, description, category assignment, and
+/// base price.
+///
+/// These records are created whenever a product is modified, preserving the
+/// complete state of the product at that point in time. Unlike the main
+/// product table which only contains current state, these snapshot records
+/// maintain historical state for audit trails, dispute resolution, and data
+/// recovery purposes.
+///
+/// Each record has a 1:1 relationship with {@link
+/// ecommerce_platform_snapshots} for the polymorphic snapshot header, and
+/// references {@link ecommerce_platform_products} for the specific product
+/// being snapshotted. The snapshot captures all relevant product attributes
+/// including name, description, category assignment (via {@link
+/// ecommerce_platform_categories}), base price in cents, and the count of
+/// product images at the time of the snapshot.
+///
+/// Snapshots are immutable and cannot be deleted. Administrators and sellers
+/// who owned the product can view snapshots.
+///
+/// @namespace ecommerce_platform
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_platform_snapshot_products {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key uniquely identifying this product snapshot record.
+  id String @id
+  
+  /// Foreign key to the polymorphic snapshot header record.
+  ///
+  /// This establishes the 1:1 relationship with {@link
+  /// ecommerce_platform_snapshots}, linking this product-specific snapshot to
+  /// its parent snapshot record that contains metadata about when the snapshot
+  /// was created and what triggered it. The unique constraint ensures one
+  /// product snapshot per snapshot header.
+  ecommerce_platform_snapshot_id String
+  
+  /// Foreign key to the specific product being snapshotted.
+  ///
+  /// References {@link ecommerce_platform_products} to identify which product
+  /// this snapshot captures the state of. This allows retrieving all
+  /// historical states of a particular product by querying snapshots with
+  /// matching product IDs.
+  ecommerce_platform_product_id String
+  
+  /// The product name before the change that triggered this snapshot.
+  ///
+  /// This preserves the historical product name that existed before the
+  /// modification. For initial state snapshots, this may be null if the
+  /// product was newly created.
+  name_previous String?
+  
+  /// The product name after the change that triggered this snapshot.
+  ///
+  /// This captures the product name exactly as it exists after the
+  /// modification, providing the current name at the time the snapshot was
+  /// created.
+  name_current String
+  
+  /// The product description before the change that triggered this snapshot.
+  ///
+  /// This preserves the historical product description that existed before the
+  /// modification. This field can be null if the product was newly created.
+  description_previous String?
+  
+  /// The product description after the change that triggered this snapshot.
+  ///
+  /// This captures the product description exactly as it exists after the
+  /// modification, providing the current description text at the time the
+  /// snapshot was created.
+  description_current String?
+  
+  /// The category UUID the product was assigned to after the change.
+  ///
+  /// References {@link ecommerce_platform_categories} but is stored as a
+  /// non-FK uuid to preserve the category reference even if the category is
+  /// later deleted. This is important for historical integrity - knowing which
+  /// category the product belonged to at the time of the snapshot.
+  category_id_current String?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  snapshot ecommerce_platform_snapshots @relation(fields: [ecommerce_platform_snapshot_id], references: [id], onDelete: Cascade)
+  product ecommerce_platform_products @relation(fields: [ecommerce_platform_product_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_platform_product_id], map: "ecommerce_platform_snapshot_products_ecommerce_platfor_1cb38172")
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_platform_snapshot_id], map: "ecommerce_platform_snapshot_products_ecommerce_platfor_5e252dd4")
+}
+
+/// Product variant-specific snapshot records capturing previous and current
+/// state including SKU codes, option values, prices, and stock quantities.
+///
+/// Contains FK to ecommerce_platform_snapshots (1:1) and FK to
+/// ecommerce_platform_product_variants for the specific variant being
+/// snapshotted.
+///
+/// This table maintains a historical view of a product variant's
+/// configuration at a specific point in time, ensuring data integrity by
+/// denormalizing the state. Option values are stored in a normalized child
+/// table to adhere to 3NF constraints.
+///
+/// @namespace ecommerce_platform
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_platform_snapshot_variants {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the snapshot variant record.
+  id String @id
+  
+  /// Foreign key linking to the main polymorphic snapshot record.
+  ///
+  /// This establishes the 1:1 relationship where each snapshot has exactly one
+  /// specific entity type. For snapshots of type 'variant', this link ensures
+  /// the snapshot context is preserved while the variant-specific data resides
+  /// in this table.
+  ecommerce_platform_snapshot_id String
+  
+  /// Foreign key linking to the product variant that was snapshotted.
+  ///
+  /// This allows retrieving the history of a specific variant by querying all
+  /// records referencing this variant ID. It ensures the snapshot is
+  /// associated with the correct business entity from the active catalog.
+  ecommerce_platform_product_variant_id String
+  
+  /// The Stock Keeping Unit code of the variant at the time of the snapshot.
+  ///
+  /// This preserves the identifier used for inventory tracking and sales
+  /// fulfillment at that moment, even if the variant's SKU is updated later.
+  sku_code String
+  
+  /// The price of the variant at the time of the snapshot.
+  ///
+  /// This ensures the purchase price or list price is preserved in history,
+  /// regardless of subsequent price changes.
+  price Float
+  
+  /// The available stock quantity of the variant at the time of the snapshot.
+  ///
+  /// This captures the inventory state, allowing the system to reconstruct
+  /// availability conditions at the time of the event.
+  stock_quantity Int
+  
+  /// Timestamp of when this snapshot record was created.
+  ///
+  /// Used for ordering snapshot history chronologically and determining the
+  /// exact moment the state was captured.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  snapshot ecommerce_platform_snapshots @relation(fields: [ecommerce_platform_snapshot_id], references: [id], onDelete: Cascade)
+  variant ecommerce_platform_product_variants @relation(fields: [ecommerce_platform_product_variant_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  options ecommerce_platform_snapshot_variant_options[]
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_platform_product_variant_id], map: "ecommerce_platform_snapshot_variants_ecommerce_platfor_55148fbf")
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_platform_snapshot_id], map: "ecommerce_platform_snapshot_variants_ecommerce_platfor_5b4b672c")
+}
+
+/// Seller profile-specific snapshot records capturing previous and current
+/// state including shop name, shop description, and logo URI.
+///
+/// This table serves as a polymorphic subtype of {@link
+/// ecommerce_platform_snapshots} that stores the detailed before-and-after
+/// field values for seller profile modifications. When sellers edit their
+/// shop name, description, or logo image, the system creates a snapshot
+/// record linking to this table to preserve the exact previous and current
+/// values for dispute resolution and audit trail purposes.
+///
+/// Snapshots are immutable and append-only, retaining complete history of
+/// every seller profile change. Administrators and the seller themselves can
+/// view these snapshots to resolve disputes or review edit history.
+///
+/// @namespace ecommerce_platform
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_platform_snapshot_seller_profiles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Links this seller profile snapshot record to its parent polymorphic
+  /// snapshot in {@link ecommerce_platform_snapshots}. This relationship is
+  /// 1:1, meaning each seller profile snapshot subtype record corresponds to
+  /// exactly one generic snapshot header that tracks the entity type, entity
+  /// ID, and timestamp of the change.
+  ecommerce_platform_snapshots_id String
+  
+  /// References the {@link ecommerce_platform_seller_profiles} record whose
+  /// state was captured by this snapshot. Multiple snapshots can exist for the
+  /// same seller profile, representing different edit events over time.
+  ecommerce_platform_seller_profiles_id String
+  
+  /// The shop name value before the modification was applied. Nullable if the
+  /// shop name field was not part of this particular change.
+  previous_shop_name String?
+  
+  /// The shop name value after the modification was applied. Nullable if the
+  /// shop name field was not part of this particular change.
+  current_shop_name String?
+  
+  /// The shop description value before the modification was applied. Nullable
+  /// if the shop description field was not part of this particular change.
+  previous_shop_description String?
+  
+  /// The shop description value after the modification was applied. Nullable
+  /// if the shop description field was not part of this particular change.
+  current_shop_description String?
+  
+  /// The logo image URI value before the modification was applied. Nullable if
+  /// the logo URI field was not part of this particular change.
+  previous_logo_uri String?
+  
+  /// The logo image URI value after the modification was applied. Nullable if
+  /// the logo URI field was not part of this particular change.
+  current_logo_uri String?
+  
+  /// Timestamp when this snapshot record was created. Recorded automatically
+  /// by the system at the moment of the seller profile modification.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  ecommercePlatformSnapshots ecommerce_platform_snapshots @relation(fields: [ecommerce_platform_snapshots_id], references: [id], onDelete: Cascade)
+  ecommercePlatformSellerProfiles ecommerce_platform_seller_profiles @relation(fields: [ecommerce_platform_seller_profiles_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_platform_snapshots_id], map: "ecommerce_platform_snapshot_seller_profiles_ecommerce__a857505d")
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_platform_seller_profiles_id, created_at], map: "ecommerce_platform_snapshot_seller_profiles_ecommerce__e1068eed")
+}
+
+/// Order item-specific snapshot records capturing previous and current state
+/// at time of purchase including product/variant reference, quantity, and
+/// price.
+///
+/// Contains FK to {@link ecommerce_platform_snapshots} (1:1) and FK to
+/// {@link ecommerce_platform_order_items} for the specific order item being
+/// snapshotted.
+///
+/// These snapshot records preserve transactional history for dispute
+/// resolution by capturing the exact quantity ordered and unit price paid at
+/// the moment of purchase, independent of any subsequent price changes,
+/// inventory adjustments, or order modifications.
+///
+/// @namespace ecommerce_platform
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_platform_snapshot_order_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Links the snapshot subtype record to the main polymorphic {@link
+  /// ecommerce_platform_snapshots} audit trail.
+  ///
+  /// Enforces a one-to-one relationship where each generic snapshot maps to
+  /// exactly one order item snapshot record. This ensures snapshots are
+  /// properly typed when accessing order item state history.
+  ecommerce_platform_snapshots_id String
+  
+  /// References the specific {@link ecommerce_platform_order_items} record
+  /// being versioned.
+  ///
+  /// Tracks which order item this snapshot preserves, allowing historical
+  /// reconstruction of purchase states across status changes, cancellations,
+  /// or refunds.
+  ecommerce_platform_order_items_id String
+  
+  /// Timestamp when the snapshot record was initially created.
+  ///
+  /// Marks the exact point in time this purchase state was recorded.
+  created_at DateTime
+  
+  /// The quantity of the product variant purchased at the time of the snapshot.
+  ///
+  /// Captures the exact amount ordered to preserve purchase details
+  /// independent of future inventory changes or order modifications.
+  quantity Int
+  
+  /// The unit price of the product variant at the time of the snapshot.
+  ///
+  /// Preserves the transactional price paid by the customer for accurate
+  /// refund calculations and financial audits.
+  unit_price Float
+  
+  /// Timestamp when the snapshot record was last modified.
+  ///
+  /// Tracks maintenance operations on the audit record itself, though the
+  /// captured state remains immutable.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  snapshot ecommerce_platform_snapshots @relation(fields: [ecommerce_platform_snapshots_id], references: [id], onDelete: Cascade)
+  orderItem ecommerce_platform_order_items @relation(fields: [ecommerce_platform_order_items_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_platform_order_items_id], map: "ecommerce_platform_snapshot_order_items_ecommerce_plat_62ad92bb")
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_platform_snapshots_id], map: "ecommerce_platform_snapshot_order_items_ecommerce_plat_f5745a95")
+}
+
+/// Review-specific snapshot records capturing previous and current state
+/// including star ratings and text content.
+///
+/// This table records the state of individual {@link
+/// ecommerce_platform_reviews} whenever they are updated. It links 1:1 to
+/// {@link ecommerce_platform_snapshots} and references the {@link
+/// ecommerce_platform_reviews} being modified.
+///
+/// Attributes include the rating (stars 1-5) and content (text) before and
+/// after the update to provide a complete audit trail of review changes.
+/// Previous fields are nullable for initial creation snapshots.
+///
+/// @namespace ecommerce_platform
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_platform_snapshot_reviews {
+  //----
+  // COLUMNS
+  //----
+  /// Unique primary key for this snapshot record.
+  id String @id
+  
+  /// Foreign key linking to the main polymorphic audit trail table.
+  ///
+  /// This establishes a 1:1 relationship where one {@link
+  /// ecommerce_platform_snapshots} links to exactly one specific review
+  /// snapshot.
+  ecommerce_platform_snapshot_id String
+  
+  /// Foreign key referencing the specific {@link ecommerce_platform_reviews}
+  /// record.
+  ///
+  /// Points to the review entity that was modified.
+  ecommerce_platform_review_id String
+  
+  /// The star rating (1-5) of the review before the modification.
+  ///
+  /// Nullable if this is a new review creation rather than an update.
+  previous_rating Int?
+  
+  /// The text content of the review before the modification.
+  ///
+  /// Nullable if this is a new review creation.
+  previous_content String?
+  
+  /// The current star rating (1-5) of the review after the modification.
+  new_rating Int
+  
+  /// The current text content of the review after the modification.
+  new_content String?
+  
+  /// Timestamp when this snapshot was created.
+  created_at DateTime
+  
+  /// Timestamp when this snapshot record was last updated.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  snapshot ecommerce_platform_snapshots @relation(fields: [ecommerce_platform_snapshot_id], references: [id], onDelete: Cascade)
+  review ecommerce_platform_reviews @relation(fields: [ecommerce_platform_review_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_platform_snapshot_id], map: "ecommerce_platform_snapshot_reviews_ecommerce_platform_09c5c6b4")
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_platform_review_id], map: "ecommerce_platform_snapshot_reviews_ecommerce_platform_c3f4080a")
+}
+
+/// Cancellation request-specific snapshot records capturing previous and
+/// current state changes for {@link
+/// ecommerce_platform_cancellation_requests}.
+///
+/// Each record stores the before and after values of mutable cancellation
+/// request fields (reason and status), providing an immutable audit trail
+/// for dispute resolution.
+///
+/// These records link one-to-one with the polymorphic {@link
+/// ecommerce_platform_snapshots} parent while also referencing the specific
+/// cancellation request that was modified.
+///
+/// @namespace ecommerce_platform
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_platform_snapshot_cancellation_requests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for this snapshot subtype record.
+  ///
+  /// Uniquely identifies each cancellation request snapshot in the polymorphic
+  /// snapshot hierarchy.
+  id String @id
+  
+  /// One-to-one foreign key linking to the parent polymorphic snapshot record.
+  ///
+  /// This constraint ensures that each snapshot contains exactly one
+  /// cancellation request subtype record, enforcing the polymorphic structure
+  /// required by the domain model. References the specific {@link
+  /// ecommerce_platform_snapshots} instance that created this snapshot.
+  ecommerce_platform_snapshot_id String
+  
+  /// Foreign key linking to the specific {@link
+  /// ecommerce_platform_cancellation_requests} instance that was modified.
+  ///
+  /// Enables querying all historical snapshots for a particular cancellation
+  /// request to support audit trails and dispute resolution. Multiple
+  /// snapshots can exist for a single request as it changes over time.
+  ecommerce_platform_cancellation_request_id String
+  
+  /// The reason text stored in the cancellation request before this change.
+  ///
+  /// Nullable when the reason field was not part of this modification event
+  /// (e.g., initial creation snapshot).
+  previous_reason String?
+  
+  /// The reason text stored in the cancellation request after this change.
+  ///
+  /// Nullable when the reason field was not modified in this event.
+  current_reason String?
+  
+  /// The approval status (pending, approved, rejected) before this change.
+  ///
+  /// Nullable when the status was not modified in this event.
+  previous_status String?
+  
+  /// The approval status after this change.
+  ///
+  /// Nullable when the status was not modified in this event.
+  current_status String?
+  
+  /// Timestamp when this snapshot record was created.
+  ///
+  /// Immutable, recorded when the snapshot is created. Tracks when this
+  /// specific cancellation request snapshot was captured.
+  created_at DateTime
+  
+  /// Timestamp when this snapshot record was last updated.
+  ///
+  /// Tracks administrative modifications to the snapshot record itself.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  snapshot ecommerce_platform_snapshots @relation(fields: [ecommerce_platform_snapshot_id], references: [id], onDelete: Cascade)
+  cancellationRequest ecommerce_platform_cancellation_requests @relation(fields: [ecommerce_platform_cancellation_request_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_platform_snapshot_id], map: "ecommerce_platform_snapshot_cancellation_requests_ecom_3ce7b25f")
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_platform_cancellation_request_id], map: "ecommerce_platform_snapshot_cancellation_requests_ecom_6ca449b5")
+}
+
+/// Refund request-specific snapshot records capturing previous and current
+/// state including refund reasons and approval status.
+///
+/// These records are created when sellers respond to refund requests
+/// (approve or reject), preserving the immutable state of the request before
+/// and after the transition. Each record links to the polymorphic snapshot
+/// header and the specific refund request being archived.
+///
+/// This table enables dispute resolution and audit trails by maintaining a
+/// complete history of refund request state changes, including the
+/// customer's reason for requesting the refund and the seller's approval
+/// status.
+///
+/// @namespace ecommerce_platform
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_platform_snapshot_refund_requests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for this snapshot record.
+  id String @id
+  
+  /// Foreign key to the main polymorphic snapshot header record.
+  ///
+  /// Establishes a 1:1 relationship with {@link ecommerce_platform_snapshots},
+  /// ensuring each refund request snapshot corresponds to exactly one snapshot
+  /// entry in the audit trail.
+  ecommerce_platform_snapshots_id String
+  
+  /// Foreign key to the specific refund request being snapshotted.
+  ///
+  /// Links to {@link ecommerce_platform_refund_requests} to identify which
+  /// refund request's state is being preserved in this snapshot record.
+  ecommerce_platform_refund_requests_id String
+  
+  /// The refund reason captured before the state change.
+  ///
+  /// Preserves the customer's explanation for the return request prior to the
+  /// modification, enabling tracking of reason changes over time.
+  previous_reason String?
+  
+  /// The refund reason captured after the state change.
+  ///
+  /// Reflects the updated explanation for the refund request after the
+  /// modification occurred.
+  current_reason String?
+  
+  /// The approval status captured before the state change.
+  ///
+  /// Preserves the prior status (pending, approved, or rejected) of the refund
+  /// request before the seller's response transition.
+  previous_approval_status String?
+  
+  /// The approval status captured after the state change.
+  ///
+  /// Reflects the new status of the refund request following the seller's
+  /// approval or rejection action.
+  current_approval_status String
+  
+  /// Timestamp when this snapshot record was created.
+  ///
+  /// Records the exact moment the refund request state was archived, providing
+  /// chronological ordering for the audit trail.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  snapshot ecommerce_platform_snapshots @relation(fields: [ecommerce_platform_snapshots_id], references: [id], onDelete: Cascade)
+  refundRequest ecommerce_platform_refund_requests @relation(fields: [ecommerce_platform_refund_requests_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_platform_refund_requests_id], map: "ecommerce_platform_snapshot_refund_requests_ecommerce__ef713dba")
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_platform_snapshots_id], map: "ecommerce_platform_snapshot_refund_requests_ecommerce__c93aa295")
+}
+
+/// Stores normalized key-value option attributes for product variant snapshots.
+///
+/// This table captures individual option pairs such as color, size, style,
+/// or other variant-specific attributes at a point in time. By normalizing
+/// options into separate records, this design maintains 3NF compliance by
+/// eliminating multi-valued dependencies from the parent {@link
+/// ecommerce_platform_snapshot_variants} record.
+///
+/// Each record represents a single option for a specific variant snapshot.
+/// Multiple records can exist per snapshot variant, but each option key must
+/// be unique within that snapshot variant to prevent duplicate attribute
+/// definitions.
+///
+/// @namespace ecommerce_platform
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_platform_snapshot_variant_options {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key identifier for this snapshot variant option record.
+  id String @id
+  
+  /// References the specific product variant snapshot this option belongs to.
+  ///
+  /// Links this normalized option record to its parent variant snapshot
+  /// created when a product variant was modified. This foreign key establishes
+  /// the parent-child relationship where the {@link
+  /// ecommerce_platform_snapshot_variants} record is the parent entity and
+  /// this option record is the child.
+  ecommerce_platform_snapshot_variant_id String
+  
+  /// The option attribute name such as color, size, style, or material.
+  ///
+  /// This field stores the option type identifier that categorizes what
+  /// variant attribute is being recorded. Examples include color for color
+  /// options, size for size options, or custom attribute names defined by
+  /// sellers for their product variants.
+  key String
+  
+  /// The specific option value such as Red, Large, Cotton, or Vintage.
+  ///
+  /// This field stores the actual value for the option attribute. Combined
+  /// with the key field, this creates the complete option definition for the
+  /// product variant at the time of the snapshot.
+  value String
+  
+  /// Timestamp when this snapshot variant option record was created.
+  ///
+  /// Records the exact point in time when this option was captured as part of
+  /// a product variant snapshot. This timestamp corresponds to when the parent
+  /// variant snapshot was created during a variant edit operation.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  snapshotVariant ecommerce_platform_snapshot_variants @relation(fields: [ecommerce_platform_snapshot_variant_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_platform_snapshot_variant_id, key], map: "ecommerce_platform_snapshot_variant_options_ecommerce__9a3685f1")
+}

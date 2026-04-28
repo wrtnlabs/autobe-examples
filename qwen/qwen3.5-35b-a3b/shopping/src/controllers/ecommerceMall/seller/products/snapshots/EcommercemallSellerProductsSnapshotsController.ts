@@ -33,9 +33,10 @@ export class EcommercemallSellerProductsSnapshotsController {
    * @param connection
    * @param productId UUID of the product to retrieve snapshots for (global scope)
    * @param body Search criteria including date range filters, status filters, pagination parameters, and sort options. Filters by created_at range, entity_status, and entity_type. Pagination supports cursor-based navigation with limit and cursor parameters. Sortable by created_at, entity_status.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Query ecommerce_mall_product_snapshots table filtered by product_id (path parameter).
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Query ecommerce_mall_product_snapshots table
+     *   filtered by product_id (path parameter).
    *
    * Apply search filters:
    * - Date range filtering on created_at (start_date, end_date)
@@ -108,9 +109,10 @@ export class EcommercemallSellerProductsSnapshotsController {
    * @param connection
    * @param productId Unique identifier of the product. Path must reference the correct product to which the snapshot belongs.
    * @param snapshotId Unique identifier of the product snapshot to retrieve.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Query ecommerce_mall_product_snapshots table by snapshotId.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Query ecommerce_mall_product_snapshots table by
+     *   snapshotId.
    *
    * Verify that the snapshot belongs to the specified productId (validate reference integrity).
    *

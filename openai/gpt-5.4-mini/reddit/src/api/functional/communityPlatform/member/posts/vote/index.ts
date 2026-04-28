@@ -22,7 +22,10 @@ import { ICommunityPlatformVote } from "../../../../../structures/ICommunityPlat
  * @param props.body Vote direction for the target post.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Load the target post by postId and verify it exists and is not removed from visibility according to the post lifecycle rules. Authenticate the caller as a member and resolve the acting member ID from the session context.
+ * @x-autobe-specification Load the target post by postId and verify it exists
+ *   and is not removed from visibility according to the post lifecycle rules.
+ *   Authenticate the caller as a member and resolve the acting member ID from
+ *   the session context.
  *
  * Read the existing active vote for the pair (memberId, postId) by joining community_platform_votes to community_platform_vote_posts and filtering by community_platform_vote_posts.community_platform_post_id and community_platform_votes.community_platform_member_id. Because the schema models the post-target relationship in a dedicated child table, the service must treat that child row as the authoritative association for post voting.
  *
@@ -128,7 +131,10 @@ export namespace create {
  * @param props.postId Target post identifier.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Resolve the target post by postId, then look up the active vote record for the authenticated member on that post. Verify the caller is a member actor and is authorized to vote on the post under platform rules.
+ * @x-autobe-specification Resolve the target post by postId, then look up the
+ *   active vote record for the authenticated member on that post. Verify the
+ *   caller is a member actor and is authorized to vote on the post under
+ *   platform rules.
  *
  * If the post cannot be found or is not accessible, return a not-found or availability error consistent with post retrieval behavior. If no active vote exists for the member on this post, return a conflict or validation error indicating that there is no vote to remove.
  *

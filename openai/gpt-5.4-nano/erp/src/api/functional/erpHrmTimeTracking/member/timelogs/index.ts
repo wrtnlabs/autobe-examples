@@ -39,10 +39,12 @@ import { IPageIErpHrmTimeTrackingTimelog } from "../../../../structures/IPageIEr
  * @param props.body Creation payload for a new timelog entry, including work date, duration in minutes, target project, and optional task/note/timesheet linkage.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification 1) Authorization & context
- * - Resolve the actor’s currently selected organization context.
- * - Determine the target employee/member id from the actor identity within that organization context.
- * - Enforce that the operation can only create timelog rows for the selected organization (set erp_hrm_time_tracking_organization_id from context; never accept an arbitrary organization id from the client).
+ * @x-autobe-specification 1) Authorization & context - Resolve the actor’s
+ *   currently selected organization context. - Determine the target
+ *   employee/member id from the actor identity within that organization
+ *   context. - Enforce that the operation can only create timelog rows for the
+ *   selected organization (set erp_hrm_time_tracking_organization_id from
+ *   context; never accept an arbitrary organization id from the client).
  *
  * 2) Validate request payload against timelog invariants from the schema/comments and the loaded requirements:
  * - work_date must be provided (timelog requires a date for timesheet grouping).

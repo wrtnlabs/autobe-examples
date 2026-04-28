@@ -16,8 +16,10 @@ export type IMallPlatformAdministratorApprovalRequestSnapshot = {
    *
    * This value identifies one immutable snapshot row and is stable for the lifetime of the record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from mall_platform_administrator_approval_request_snapshots.id. Use the snapshot record's UUID primary key as-is.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_administrator_approval_request_snapshots.id. Use the
+     *   snapshot record's UUID primary key as-is.
    */
   id: string & tags.Format<"uuid">;
 
@@ -26,8 +28,10 @@ export type IMallPlatformAdministratorApprovalRequestSnapshot = {
    *
    * This value links the snapshot to the approval request it preserves and is used to scope historical lookup.
    *
-   * @x-autobe-database-schema-property administrator_approval_request_id
-   * @x-autobe-specification Direct mapping from mall_platform_administrator_approval_request_snapshots.administrator_approval_request_id. This is the parent request UUID used to scope the snapshot record.
+     * @x-autobe-database-schema-property administrator_approval_request_id
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_administrator_approval_request_snapshots.administrator_approval_request_id.
+     *   This is the parent request UUID used to scope the snapshot record.
    */
   administratorApprovalRequestId: string & tags.Format<"uuid">;
 
@@ -36,8 +40,11 @@ export type IMallPlatformAdministratorApprovalRequestSnapshot = {
    *
    * This nested summary reference lets consumers inspect the request context without reconstructing it from raw keys.
    *
-   * @x-autobe-database-schema-property administratorApprovalRequest
-   * @x-autobe-specification Load the parent administrator approval request through the administratorApprovalRequest relation and expose it as an IMallPlatformAdministratorApprovalRequest.ISummary reference. This is the readable parent object for the snapshot.
+     * @x-autobe-database-schema-property administratorApprovalRequest
+     * @x-autobe-specification Load the parent administrator approval request
+     *   through the administratorApprovalRequest relation and expose it as an
+     *   IMallPlatformAdministratorApprovalRequest.ISummary reference. This is
+     *   the readable parent object for the snapshot.
    */
   administratorApprovalRequest: IMallPlatformAdministratorApprovalRequest.ISummary;
 
@@ -46,8 +53,10 @@ export type IMallPlatformAdministratorApprovalRequestSnapshot = {
    *
    * This field explains why the immutable snapshot was recorded, such as a status change or review decision.
    *
-   * @x-autobe-database-schema-property snapshot_reason
-   * @x-autobe-specification Direct mapping from mall_platform_administrator_approval_request_snapshots.snapshot_reason. Preserve the stored human-readable reason for creating the snapshot.
+     * @x-autobe-database-schema-property snapshot_reason
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_administrator_approval_request_snapshots.snapshot_reason.
+     *   Preserve the stored human-readable reason for creating the snapshot.
    */
   snapshotReason: string;
 
@@ -56,8 +65,10 @@ export type IMallPlatformAdministratorApprovalRequestSnapshot = {
    *
    * This timestamp marks when the preserved historical record was written and should be treated as immutable audit metadata.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from mall_platform_administrator_approval_request_snapshots.created_at. Use the timestamp recorded when the immutable snapshot row was created.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_administrator_approval_request_snapshots.created_at. Use
+     *   the timestamp recorded when the immutable snapshot row was created.
    */
   createdAt: string & tags.Format<"date-time">;
 };
@@ -73,8 +84,10 @@ export namespace IMallPlatformAdministratorApprovalRequestSnapshot {
      *
      * This value identifies one immutable administrator approval request snapshot row and is used to reference the snapshot in list and detail views.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from mall_platform_administrator_approval_request_snapshots.id. Expose the snapshot primary key as the DTO id.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_administrator_approval_request_snapshots.id. Expose
+         *   the snapshot primary key as the DTO id.
      */
     id: string & tags.Format<"uuid">;
 
@@ -83,8 +96,11 @@ export namespace IMallPlatformAdministratorApprovalRequestSnapshot {
      *
      * This value explains why the immutable snapshot was created, such as a review decision or lifecycle change, and is shown for audit and dispute review.
      *
-     * @x-autobe-database-schema-property snapshot_reason
-     * @x-autobe-specification Direct mapping from mall_platform_administrator_approval_request_snapshots.snapshot_reason. Expose the human-readable reason recorded when the snapshot was created.
+         * @x-autobe-database-schema-property snapshot_reason
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_administrator_approval_request_snapshots.snapshot_reason.
+         *   Expose the human-readable reason recorded when the snapshot was
+         *   created.
      */
     snapshotReason: string;
 
@@ -93,8 +109,11 @@ export namespace IMallPlatformAdministratorApprovalRequestSnapshot {
      *
      * This timestamp records when the immutable snapshot row was written and is used to order snapshot history chronologically.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from mall_platform_administrator_approval_request_snapshots.created_at. Expose the snapshot creation timestamp as an ISO 8601 date-time value.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_administrator_approval_request_snapshots.created_at.
+         *   Expose the snapshot creation timestamp as an ISO 8601 date-time
+         *   value.
      */
     createdAt: string & tags.Format<"date-time">;
 
@@ -103,8 +122,12 @@ export namespace IMallPlatformAdministratorApprovalRequestSnapshot {
      *
      * This nested summary represents the parent approval request whose state was preserved at the time the snapshot was created.
      *
-     * @x-autobe-database-schema-property administratorApprovalRequest
-     * @x-autobe-specification Join via mall_platform_administrator_approval_request_snapshots.administrator_approval_request_id to mall_platform_administrator_approval_requests.id and expose the related administrator approval request as an IMallPlatformAdministratorApprovalRequest.ISummary reference.
+         * @x-autobe-database-schema-property administratorApprovalRequest
+         * @x-autobe-specification Join via
+         *   mall_platform_administrator_approval_request_snapshots.administrator_approval_request_id
+         *   to mall_platform_administrator_approval_requests.id and expose the
+         *   related administrator approval request as an
+         *   IMallPlatformAdministratorApprovalRequest.ISummary reference.
      */
     administratorApprovalRequest: IMallPlatformAdministratorApprovalRequest.ISummary;
   };
@@ -124,7 +147,10 @@ export namespace IMallPlatformAdministratorApprovalRequestSnapshot {
      *
      * It is intended for browsing and should not be treated as an exact-match value.
      *
-     * @x-autobe-specification Apply free-text search against mall_platform_administrator_approval_request_snapshots.snapshot_reason using case-insensitive partial matching. This allows consumers to find snapshots by keyword phrases in the recorded reason text.
+         * @x-autobe-specification Apply free-text search against
+         *   mall_platform_administrator_approval_request_snapshots.snapshot_reason
+         *   using case-insensitive partial matching. This allows consumers to
+         *   find snapshots by keyword phrases in the recorded reason text.
      */
     search?: string | undefined;
 
@@ -135,7 +161,10 @@ export namespace IMallPlatformAdministratorApprovalRequestSnapshot {
      *
      * It helps administrators isolate changes tied to a particular review action or audit note.
      *
-     * @x-autobe-specification Filter snapshot history by matching mall_platform_administrator_approval_request_snapshots.snapshot_reason. Treat the provided text as a reason filter that narrows results to snapshots whose reason contains the given phrase.
+         * @x-autobe-specification Filter snapshot history by matching
+         *   mall_platform_administrator_approval_request_snapshots.snapshot_reason.
+         *   Treat the provided text as a reason filter that narrows results to
+         *   snapshots whose reason contains the given phrase.
      */
     snapshotReason?: string | undefined;
 
@@ -146,7 +175,9 @@ export namespace IMallPlatformAdministratorApprovalRequestSnapshot {
      *
      * This acts as an inclusive lower boundary for timeline browsing.
      *
-     * @x-autobe-specification Apply an inclusive lower bound to mall_platform_administrator_approval_request_snapshots.created_at. Return only snapshots created at or after the provided timestamp.
+         * @x-autobe-specification Apply an inclusive lower bound to
+         *   mall_platform_administrator_approval_request_snapshots.created_at.
+         *   Return only snapshots created at or after the provided timestamp.
      */
     createdFrom?: (string & tags.Format<"date-time">) | undefined;
 
@@ -157,7 +188,9 @@ export namespace IMallPlatformAdministratorApprovalRequestSnapshot {
      *
      * This acts as an inclusive upper boundary for timeline browsing.
      *
-     * @x-autobe-specification Apply an inclusive upper bound to mall_platform_administrator_approval_request_snapshots.created_at. Return only snapshots created at or before the provided timestamp.
+         * @x-autobe-specification Apply an inclusive upper bound to
+         *   mall_platform_administrator_approval_request_snapshots.created_at.
+         *   Return only snapshots created at or before the provided timestamp.
      */
     createdTo?: (string & tags.Format<"date-time">) | undefined;
 
@@ -168,7 +201,10 @@ export namespace IMallPlatformAdministratorApprovalRequestSnapshot {
      *
      * Sorting should remain stable so the same result set can be browsed consistently.
      *
-     * @x-autobe-specification Sort snapshot history deterministically before pagination is applied. Prefer a stable ordering based on created_at and then id so repeated requests return consistent pages.
+         * @x-autobe-specification Sort snapshot history deterministically
+         *   before pagination is applied. Prefer a stable ordering based on
+         *   created_at and then id so repeated requests return consistent
+         *   pages.
      */
     sort?: string | undefined;
 
@@ -179,7 +215,9 @@ export namespace IMallPlatformAdministratorApprovalRequestSnapshot {
      *
      * Page numbering is 1-indexed, with the first page being 1.
      *
-     * @x-autobe-specification Use as the 1-indexed page number for paginated snapshot browsing. Apply after filtering and sorting to return the requested slice of results.
+         * @x-autobe-specification Use as the 1-indexed page number for
+         *   paginated snapshot browsing. Apply after filtering and sorting to
+         *   return the requested slice of results.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -190,7 +228,9 @@ export namespace IMallPlatformAdministratorApprovalRequestSnapshot {
      *
      * The actual number returned may be smaller on the final page or when fewer records match.
      *
-     * @x-autobe-specification Use as the maximum number of snapshot records to return per page, subject to endpoint validation limits. Apply after filtering and sorting.
+         * @x-autobe-specification Use as the maximum number of snapshot records
+         *   to return per page, subject to endpoint validation limits. Apply
+         *   after filtering and sorting.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)

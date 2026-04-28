@@ -1,0 +1,178 @@
+/// Comments on posts supporting unlimited depth threaded discussions through
+/// parent-child relationships. Each comment belongs to exactly one post and
+/// has one author.
+///
+/// Comments enable user-to-user discussion on post content with nesting
+/// support. Parent-child links create reply chains where each comment can
+/// have zero or more direct reply comments.
+///
+/// @namespace comment
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_community_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the comment record.
+  id String @id
+  
+  /// The post this comment belongs to.
+  ///
+  /// Links the comment to its originating post for context and threading.
+  /// Comments must belong to exactly one post and cannot exist independently.
+  post_id String
+  
+  /// The member who authored this comment.
+  ///
+  /// Establishes content ownership for editing and deletion permissions. Each
+  /// comment has exactly one author who retains modification rights.
+  member_id String
+  
+  /// The parent comment that this comment replies to.
+  ///
+  /// Self-referencing FK enabling infinite depth threading. Null for top-level
+  /// comments. References another comment's ID for all nested replies, forming
+  /// a tree structure under posts.
+  parent_comment_id String?
+  
+  /// The text content of the comment.
+  ///
+  /// Stores what the user wrote. Can be edited by the author. Original content
+  /// is preserved in snapshot tables if edited.
+  content String
+  
+  /// Timestamp when the comment was first created.
+  created_at DateTime
+  
+  /// Timestamp when the comment was last edited. Updated whenever content
+  /// changes.
+  updated_at DateTime
+  
+  /// Timestamp when the comment was soft-deleted. Null means the comment is
+  /// active and visible.
+  ///
+  /// Used for soft deletion to maintain reply chain integrity and moderation
+  /// workflows while hiding deleted comments from users.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  post reddit_like_community_posts @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  member reddit_like_community_members @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  parentComment reddit_like_community_comments? @relation("recursive", fields: [parent_comment_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  postCommentSnapshots reddit_like_community_post_comment_snapshots[] @relation("reddit_like_community_post_comment_snapshots_of_comment_id")
+  childCommentSnapshots reddit_like_community_post_comment_snapshots[] @relation("reddit_like_community_post_comment_snapshots_of_parent_c54f5959")
+  childComments reddit_like_community_comments[] @relation("recursive")
+  commentSnapshots reddit_like_community_comment_snapshots[] @relation("reddit_like_community_comment_snapshots_of_reddit_like_a6437b96")
+  commentCommentSnapshotsOfParents reddit_like_community_comment_snapshots[] @relation("reddit_like_community_comment_snapshots_of_reddit_like_a48c8f14")
+  votes reddit_like_community_comment_votes[]
+  reportOnComments reddit_like_community_report_on_comments[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([post_id, created_at])
+  @@index([parent_comment_id, created_at])
+  @@index([member_id, created_at])
+  @@index([deleted_at])
+}
+
+/// Point-in-time snapshot of a comment capturing its state when created or
+/// edited.
+///
+/// Snapshots preserve the complete comment state including body text, post
+/// association, parent comment reference for threading hierarchy, and author
+/// attribution. These immutable records enable audit trails for content
+/// verification, moderation reviews, and content recovery regardless of
+/// subsequent edits or deletions to the original comment.
+///
+/// Each comment generates a new snapshot whenever it is edited, creating an
+/// append-only history of all comment versions throughout its lifecycle on
+/// the platform.
+///
+/// @namespace comment
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_community_comment_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Unique identifier for this comment snapshot record.
+  ///
+  /// Primary key for the snapshot table, ensuring each point-in-time capture
+  /// of a comment state has a unique identifier for database integrity.
+  id String @id
+  
+  /// Reference to the comment whose state is being captured in this snapshot.
+  ///
+  /// Links to {@link reddit_like_community_comments} to identify which comment
+  /// this snapshot belongs to. Multiple snapshots may reference the same
+  /// comment if it was edited multiple times, creating a chronological version
+  /// history.
+  reddit_like_community_comment_id String
+  
+  /// Reference to the post that the comment belongs to, denormalized at
+  /// snapshot time.
+  ///
+  /// Links to {@link reddit_like_community_posts} to preserve the post
+  /// association independently of any future changes to the original comment.
+  /// This ensures the snapshot remains self-contained for audit purposes.
+  reddit_like_community_post_id String
+  
+  /// Reference to the parent comment if this comment is a reply, denormalized
+  /// at snapshot time.
+  ///
+  /// Links to {@link reddit_like_community_comments} to preserve the recursive
+  /// reply chain structure. Nullable for top-level comments that are direct
+  /// responses to the post rather than replies to other comments.
+  reddit_like_community_parent_comment_id String?
+  
+  /// Reference to the member who authored the comment, denormalized at
+  /// snapshot time.
+  ///
+  /// Links to {@link reddit_like_community_members} to preserve author
+  /// attribution independently of any future account changes or deletions.
+  reddit_like_community_member_id String
+  
+  /// The full text content of the comment at the time this snapshot was
+  /// created.
+  ///
+  /// Preserves the exact body text of the comment when the snapshot was taken,
+  /// enabling comparison with later versions to track edits made by the
+  /// author. This is a core field for audit trail purposes.
+  body String
+  
+  /// Timestamp recording when this snapshot was created, either at initial
+  /// comment posting or at the time of a subsequent edit.
+  ///
+  /// Used to order snapshots chronologically and identify when each version of
+  /// the comment was captured. As this is an append-only snapshot record,
+  /// there is no updated_at or deleted_at field.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  comment reddit_like_community_comments @relation("reddit_like_community_comment_snapshots_of_reddit_like_a6437b96", fields: [reddit_like_community_comment_id], references: [id], onDelete: Cascade)
+  post reddit_like_community_posts @relation(fields: [reddit_like_community_post_id], references: [id], onDelete: Cascade)
+  parentComment reddit_like_community_comments? @relation("reddit_like_community_comment_snapshots_of_reddit_like_a48c8f14", fields: [reddit_like_community_parent_comment_id], references: [id], onDelete: Cascade)
+  member reddit_like_community_members @relation(fields: [reddit_like_community_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([reddit_like_community_post_id], map: "reddit_like_community_comment_snapshots_reddit_like_co_c78a0408")
+  // spellchecker: ignore-next-line
+  @@index([reddit_like_community_parent_comment_id], map: "reddit_like_community_comment_snapshots_reddit_like_co_dfad043b")
+  // spellchecker: ignore-next-line
+  @@index([reddit_like_community_member_id], map: "reddit_like_community_comment_snapshots_reddit_like_co_5ee9b3aa")
+  // spellchecker: ignore-next-line
+  @@index([reddit_like_community_comment_id, created_at], map: "reddit_like_community_comment_snapshots_reddit_like_co_a7325751")
+}

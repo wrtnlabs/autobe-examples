@@ -38,9 +38,9 @@ export class ShoppingmallProductsVariantsController {
    * @param connection
    * @param productId Unique identifier of the product whose variants are being listed (UUID format). Must reference an existing product in shopping_mall_products table.
    * @param body Search criteria and pagination parameters for filtering product variants including SKU code search, stock availability, price range, and sorting options.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Implementation Steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Implementation Steps:
    *
    * 1. Authentication & Authorization:
    *    - Extract user session from JWT token
@@ -120,9 +120,9 @@ export class ShoppingmallProductsVariantsController {
    * @param connection
    * @param productId Unique identifier of the product that the variant belongs to.
    * @param variantId Unique identifier of the variant to retrieve.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Implementation steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Implementation steps:
    *
    * 1. Validate path parameters:
    *    - productId must be a valid UUID

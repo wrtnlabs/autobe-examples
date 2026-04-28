@@ -40,7 +40,8 @@ import { IPageIEcommerceReviewSnapshot } from "../../../../../../structures/IPag
  * @param props.body Search and pagination criteria for retrieving review snapshots including offset, limit, and sorting options.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Query the ecommerce_review_snapshots table filtered by the provided review ID.
+ * @x-autobe-specification Query the ecommerce_review_snapshots table filtered
+ *   by the provided review ID.
  *
  * **Implementation Steps**:
  *
@@ -177,11 +178,13 @@ export namespace index {
  * @param props.snapshotId Unique identifier of the snapshot record (UUID format, global scope).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification 1. Validate that the requesting user has administrator role (regular or super)
- * 2. Verify the review exists by querying ecommerce_reviews table with the provided reviewId
- * 3. Verify the snapshot exists by querying ecommerce_review_snapshots table with the provided snapshotId
- * 4. Ensure the snapshot belongs to the specified review (snapshot.ecommerce_review_id == reviewId)
- * 5. Return the snapshot record with rating, content, and created_at fields
+ * @x-autobe-specification 1. Validate that the requesting user has
+ *   administrator role (regular or super) 2. Verify the review exists by
+ *   querying ecommerce_reviews table with the provided reviewId 3. Verify the
+ *   snapshot exists by querying ecommerce_review_snapshots table with the
+ *   provided snapshotId 4. Ensure the snapshot belongs to the specified review
+ *   (snapshot.ecommerce_review_id == reviewId) 5. Return the snapshot record
+ *   with rating, content, and created_at fields
  *
  * **Edge Cases**
  *

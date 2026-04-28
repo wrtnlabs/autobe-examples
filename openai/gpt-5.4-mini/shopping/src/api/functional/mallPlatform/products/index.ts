@@ -24,7 +24,13 @@ export * as reviews from "./reviews/index";
  * @param props.body Search criteria, filters, sorting, and pagination settings for browsing products.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query the products table as the root catalog search source, joining seller profile and category data as needed for display fields. Apply only customer-visible product eligibility rules so hidden, suspended, deleted, or otherwise unavailable products are excluded from results. Support pagination, text search by product name, category filtering, price range filtering, in-stock-only filtering, and sorting by newest, price ascending, or price descending.
+ * @x-autobe-specification Query the products table as the root catalog search
+ *   source, joining seller profile and category data as needed for display
+ *   fields. Apply only customer-visible product eligibility rules so hidden,
+ *   suspended, deleted, or otherwise unavailable products are excluded from
+ *   results. Support pagination, text search by product name, category
+ *   filtering, price range filtering, in-stock-only filtering, and sorting by
+ *   newest, price ascending, or price descending.
  *
  * Validate any category filter against the categories table before executing the query; if the category does not exist, reject the request with a not-found style error. Calculate list pricing from the product base price and variant pricing rules used by the catalog. If variant prices differ, expose the listing price as a range in summary data as defined by the summary schema. Do not return deleted or otherwise unavailable records. Keep the implementation read-only and avoid loading snapshot tables for this endpoint unless the summary schema explicitly requires derived fields from historical data.
  * @path /mallPlatform/products
@@ -115,8 +121,12 @@ export namespace index {
  * @param props.productId The globally unique product identifier.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Fetch one row from mall_platform_products by its UUID identifier.
- * Apply permission and visibility checks before returning data: customers may read products that are visible according to browsing rules, while administrators may read any product for oversight. Do not expose deleted or otherwise unavailable products to customer callers when platform rules hide them from browsing.
+ * @x-autobe-specification Fetch one row from mall_platform_products by its UUID
+ *   identifier. Apply permission and visibility checks before returning data:
+ *   customers may read products that are visible according to browsing rules,
+ *   while administrators may read any product for oversight. Do not expose
+ *   deleted or otherwise unavailable products to customer callers when platform
+ *   rules hide them from browsing.
  *
  * Return the full product entity response using the canonical MallPlatform DTO. Include only fields that exist in the product schema and response contract; do not infer related arrays or snapshot data. If the record is missing, return not found. If access is denied by business rules, return the appropriate forbidden or unavailable error. This endpoint must remain read-only and must not create snapshots or update any state.
  * @path /mallPlatform/products/:productId

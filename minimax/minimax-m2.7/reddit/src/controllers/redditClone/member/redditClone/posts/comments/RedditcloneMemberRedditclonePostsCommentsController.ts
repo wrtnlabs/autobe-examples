@@ -21,9 +21,9 @@ export class RedditcloneMemberRedditclonePostsCommentsController {
    * @param connection
    * @param postId Unique identifier of the post to comment on.
    * @param body Comment creation payload containing the comment content and optional parent comment ID for replies.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Create a new comment on the specified post.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Create a new comment on the specified post.
    *
    * 1. Validate that the post exists and is not deleted (post.deleted_at must be null). Return 404 if post not found.
    *
@@ -85,9 +85,11 @@ export class RedditcloneMemberRedditclonePostsCommentsController {
    * @param postId Unique identifier of the parent post that contains this comment.
    * @param commentId Unique identifier of the comment to update.
    * @param body Update request containing the new content text for the comment.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Validate that the authenticated user is the author of the comment by comparing the comment's reddit_clone_member_id with the current user's id. Return 403 Forbidden if not authorized.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Validate that the authenticated user is the
+     *   author of the comment by comparing the comment's reddit_clone_member_id
+     *   with the current user's id. Return 403 Forbidden if not authorized.
    *
    * Verify the comment exists and belongs to the specified postId. Return 404 Not Found if the comment does not exist or is not associated with the given post.
    *
@@ -134,9 +136,9 @@ export class RedditcloneMemberRedditclonePostsCommentsController {
    * @param connection
    * @param postId The unique identifier of the post that contains the comment (global scope)
    * @param commentId The unique identifier of the comment to delete (global scope)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Delete a comment from a post.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Delete a comment from a post.
    *
    * 1. Authorization Check: Verify the authenticated member is the author of the comment (reddit_clone_comments.reddit_clone_member_id matches session member ID). If not, return 403 Forbidden.
    *

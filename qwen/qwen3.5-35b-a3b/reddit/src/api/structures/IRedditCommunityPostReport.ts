@@ -28,8 +28,9 @@ export type IRedditCommunityPostReport = {
    *
    * A UUID (Universally Unique Identifier) that uniquely identifies this moderation report across the system. Used as the primary key for all report operations including retrieval, approval, and dismissal.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from reddit_community_post_reports.id. UUID format.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_post_reports.id. UUID format.
    */
   id: string & tags.Format<"uuid">;
 
@@ -38,8 +39,10 @@ export type IRedditCommunityPostReport = {
    *
    * A text field where the member provides context for why they believe the post violates community guidelines. This explanation aids moderators in understanding the reported content's context and making informed decisions about whether to approve or dismiss the report.
    *
-   * @x-autobe-database-schema-property reason
-   * @x-autobe-specification Direct mapping from reddit_community_post_reports.reason. Plain text string, max 500 characters.
+     * @x-autobe-database-schema-property reason
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_post_reports.reason. Plain text string, max 500
+     *   characters.
    */
   reason: string;
 
@@ -52,8 +55,10 @@ export type IRedditCommunityPostReport = {
    *
    * This status enables filtering the moderation queue and tracking report progress.
    *
-   * @x-autobe-database-schema-property status
-   * @x-autobe-specification Direct mapping from reddit_community_post_reports.status. Enum values: pending (awaiting moderator review), reviewed (resolved via approve or dismiss action).
+     * @x-autobe-database-schema-property status
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_post_reports.status. Enum values: pending (awaiting
+     *   moderator review), reviewed (resolved via approve or dismiss action).
    */
   status: string;
 
@@ -62,8 +67,9 @@ export type IRedditCommunityPostReport = {
    *
    * Indicates when the member filed the report. Used for sorting reports by submission time, calculating moderation response times (time from submission to review), and maintaining an audit trail of moderation activity.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from reddit_community_post_reports.created_at. ISO 8601 date-time format.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_post_reports.created_at. ISO 8601 date-time format.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -72,8 +78,10 @@ export type IRedditCommunityPostReport = {
    *
    * Tracks when moderators reviewed the report or status changed from pending to reviewed. Enables SLA monitoring (time-to-review metrics) and audit compliance by recording when moderation actions occurred.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from reddit_community_post_reports.updated_at. ISO 8601 date-time format. Updated when status changes.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_post_reports.updated_at. ISO 8601 date-time format.
+     *   Updated when status changes.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -82,8 +90,10 @@ export type IRedditCommunityPostReport = {
    *
    * Null when the report is active and visible in moderation queues. When set, indicates the report has been soft-deleted (archived) but preserved for audit purposes. Used to hide reports from active workflows while retaining historical records.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from reddit_community_post_reports.deleted_at. Nullable ISO 8601 date-time format. Null when active, set when report is soft-deleted.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_post_reports.deleted_at. Nullable ISO 8601 date-time
+     *   format. Null when active, set when report is soft-deleted.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 
@@ -92,8 +102,11 @@ export type IRedditCommunityPostReport = {
    *
    * Contains the full details of the reported content including title, post type, author reference, and engagement metrics (vote score, comment count). Moderators examine this information to assess whether the post violates community guidelines.
    *
-   * @x-autobe-database-schema-property post
-   * @x-autobe-specification JOIN from reddit_community_post_reports.reddit_community_post_id to reddit_community_posts.id. Returns IRedditCommunityPost.ISummary with id, title, post_type, author reference, vote_score, comment_count.
+     * @x-autobe-database-schema-property post
+     * @x-autobe-specification JOIN from
+     *   reddit_community_post_reports.reddit_community_post_id to
+     *   reddit_community_posts.id. Returns IRedditCommunityPost.ISummary with
+     *   id, title, post_type, author reference, vote_score, comment_count.
    */
   post: IRedditCommunityPost.ISummary;
 
@@ -102,8 +115,11 @@ export type IRedditCommunityPostReport = {
    *
    * Identifies the user who flagged the post for moderation. Includes their username and account creation timestamp. This information helps moderators assess reporter credibility and prevents abuse through pattern analysis of repeat reporters.
    *
-   * @x-autobe-database-schema-property reporter
-   * @x-autobe-specification JOIN from reddit_community_post_reports.reddit_community_user_id to reddit_community_members.id. Returns IRedditCommunityMember.ISummary with id, username, created_at.
+     * @x-autobe-database-schema-property reporter
+     * @x-autobe-specification JOIN from
+     *   reddit_community_post_reports.reddit_community_user_id to
+     *   reddit_community_members.id. Returns IRedditCommunityMember.ISummary
+     *   with id, username, created_at.
    */
   reporter: IRedditCommunityMember.ISummary;
 
@@ -112,8 +128,12 @@ export type IRedditCommunityPostReport = {
    *
    * Provides context for moderation decisions by identifying which community's guidelines may have been violated. Includes the community name, subscriber count, and creation timestamp for moderator reference.
    *
-   * @x-autobe-database-schema-property community
-   * @x-autobe-specification JOIN from reddit_community_post_reports.reddit_community_community_id to reddit_community_communities.id. Returns IRedditCommunityCommunity.ISummary with id, name, subscriber_count, created_at.
+     * @x-autobe-database-schema-property community
+     * @x-autobe-specification JOIN from
+     *   reddit_community_post_reports.reddit_community_community_id to
+     *   reddit_community_communities.id. Returns
+     *   IRedditCommunityCommunity.ISummary with id, name, subscriber_count,
+     *   created_at.
    */
   community: IRedditCommunityCommunity.ISummary;
 };

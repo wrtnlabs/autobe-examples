@@ -16,8 +16,10 @@ export type IShoppingMallPostPurchaseRefundRequestSnapshot = {
    *
    * This UUID serves as the primary key for the snapshot table. Used to retrieve specific snapshot records via the detail endpoint. Generated automatically when the snapshot is created.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_post_purchase_refund_request_snapshots.id. UUID format. Primary key used for snapshot identification and retrieval.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_post_purchase_refund_request_snapshots.id. UUID format.
+     *   Primary key used for snapshot identification and retrieval.
    */
   id: string & tags.Format<"uuid">;
 
@@ -26,8 +28,12 @@ export type IShoppingMallPostPurchaseRefundRequestSnapshot = {
    *
    * Contains summary information about the refund request including the requesting member, order item, and current status. This relation provides context for understanding which refund request the snapshot represents. The refund request summary includes member and order item references for full traceability.
    *
-   * @x-autobe-database-schema-property refundRequest
-   * @x-autobe-specification Relation mapping via JOIN from shopping_mall_post_purchase_refund_request_snapshots.refundRequest to shopping_mall_post_purchase_refund_requests. Returns IShoppingMallPostPurchaseRefundRequest.ISummary with essential refund request fields.
+     * @x-autobe-database-schema-property refundRequest
+     * @x-autobe-specification Relation mapping via JOIN from
+     *   shopping_mall_post_purchase_refund_request_snapshots.refundRequest to
+     *   shopping_mall_post_purchase_refund_requests. Returns
+     *   IShoppingMallPostPurchaseRefundRequest.ISummary with essential refund
+     *   request fields.
    */
   refundRequest: IShoppingMallPostPurchaseRefundRequest.ISummary;
 
@@ -36,8 +42,12 @@ export type IShoppingMallPostPurchaseRefundRequestSnapshot = {
    *
    * Preserves the exact state of the refund request when the snapshot was taken. Valid values are 'pending' (customer submitted, awaiting seller review), 'approved' (seller approved the refund), or 'rejected' (seller denied the refund). This field enables tracking the progression of the refund request through its lifecycle.
    *
-   * @x-autobe-database-schema-property status
-   * @x-autobe-specification Direct mapping from shopping_mall_post_purchase_refund_request_snapshots.status. Captures the exact status value at snapshot creation time: 'pending' (initial submission), 'approved' (seller approved), or 'rejected' (seller denied).
+     * @x-autobe-database-schema-property status
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_post_purchase_refund_request_snapshots.status. Captures
+     *   the exact status value at snapshot creation time: 'pending' (initial
+     *   submission), 'approved' (seller approved), or 'rejected' (seller
+     *   denied).
    */
   status: string;
 
@@ -46,8 +56,11 @@ export type IShoppingMallPostPurchaseRefundRequestSnapshot = {
    *
    * Preserves the customer's original reason text as submitted when creating the refund request. Common reasons include defective product, wrong item received, not as described, or changed mind. This field ensures the reason is preserved even if the customer could theoretically edit their request, maintaining audit trail integrity.
    *
-   * @x-autobe-database-schema-property reason
-   * @x-autobe-specification Direct mapping from shopping_mall_post_purchase_refund_request_snapshots.reason. Captures the customer's original refund reason text at snapshot creation time for audit purposes.
+     * @x-autobe-database-schema-property reason
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_post_purchase_refund_request_snapshots.reason. Captures
+     *   the customer's original refund reason text at snapshot creation time
+     *   for audit purposes.
    */
   reason: string;
 
@@ -56,8 +69,12 @@ export type IShoppingMallPostPurchaseRefundRequestSnapshot = {
    *
    * Contains the seller's decision rationale - either an approval confirmation or a detailed explanation for rejecting the refund. This field is null for initial pending snapshots (created when customer submits the request) and populated only when the seller responds. Preserves the seller's decision for dispute resolution and audit purposes.
    *
-   * @x-autobe-database-schema-property seller_response
-   * @x-autobe-specification Direct mapping from shopping_mall_post_purchase_refund_request_snapshots.seller_response. Nullable string - null for initial pending snapshots, populated with seller's approval confirmation or rejection explanation when seller responds.
+     * @x-autobe-database-schema-property seller_response
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_post_purchase_refund_request_snapshots.seller_response.
+     *   Nullable string - null for initial pending snapshots, populated with
+     *   seller's approval confirmation or rejection explanation when seller
+     *   responds.
    */
   sellerResponse: string | null;
 
@@ -66,8 +83,11 @@ export type IShoppingMallPostPurchaseRefundRequestSnapshot = {
    *
    * Records the exact moment the snapshot was taken, establishing the chronological order of state changes in the refund request lifecycle. Used for sorting snapshot history and determining when each status transition occurred. Format is ISO 8601 date-time (e.g., '2024-01-15T10:30:00Z').
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from shopping_mall_post_purchase_refund_request_snapshots.created_at. ISO 8601 date-time format. Records the exact moment the snapshot was taken for chronological ordering.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_post_purchase_refund_request_snapshots.created_at. ISO
+     *   8601 date-time format. Records the exact moment the snapshot was taken
+     *   for chronological ordering.
    */
   created_at: string & tags.Format<"date-time">;
 };
@@ -85,8 +105,10 @@ export namespace IShoppingMallPostPurchaseRefundRequestSnapshot {
      *
      * This UUID serves as the primary key for the snapshot table, enabling precise identification of each state capture in the refund request audit trail.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_post_purchase_refund_request_snapshots.id. UUID format.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_post_purchase_refund_request_snapshots.id. UUID
+         *   format.
      */
     id: string & tags.Format<"uuid">;
 
@@ -97,8 +119,10 @@ export namespace IShoppingMallPostPurchaseRefundRequestSnapshot {
      *
      * This status is immutable once the snapshot is created, preserving the historical state for audit and dispute resolution purposes.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from shopping_mall_post_purchase_refund_request_snapshots.status. String enum: pending, approved, rejected.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_post_purchase_refund_request_snapshots.status. String
+         *   enum: pending, approved, rejected.
      */
     status: string;
 
@@ -109,8 +133,10 @@ export namespace IShoppingMallPostPurchaseRefundRequestSnapshot {
      *
      * This field ensures the customer's stated reason is permanently recorded even if the refund request could theoretically be modified, supporting transparent dispute resolution.
      *
-     * @x-autobe-database-schema-property reason
-     * @x-autobe-specification Direct mapping from shopping_mall_post_purchase_refund_request_snapshots.reason. String containing customer's refund explanation.
+         * @x-autobe-database-schema-property reason
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_post_purchase_refund_request_snapshots.reason. String
+         *   containing customer's refund explanation.
      */
     reason: string;
 
@@ -121,8 +147,11 @@ export namespace IShoppingMallPostPurchaseRefundRequestSnapshot {
      *
      * The seller's response is preserved immutably in the snapshot, ensuring their decision rationale is available for dispute resolution and compliance auditing.
      *
-     * @x-autobe-database-schema-property seller_response
-     * @x-autobe-specification Direct mapping from shopping_mall_post_purchase_refund_request_snapshots.seller_response. Nullable string - null for pending snapshots, populated when seller responds.
+         * @x-autobe-database-schema-property seller_response
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_post_purchase_refund_request_snapshots.seller_response.
+         *   Nullable string - null for pending snapshots, populated when seller
+         *   responds.
      */
     seller_response: string | null;
 
@@ -133,8 +162,10 @@ export namespace IShoppingMallPostPurchaseRefundRequestSnapshot {
      *
      * The created_at field is immutable and automatically set by the system when the snapshot is created, ensuring accurate audit trail sequencing.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_post_purchase_refund_request_snapshots.created_at. DateTime with date-time format indicating when snapshot was taken.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_post_purchase_refund_request_snapshots.created_at.
+         *   DateTime with date-time format indicating when snapshot was taken.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -145,8 +176,11 @@ export namespace IShoppingMallPostPurchaseRefundRequestSnapshot {
      *
      * The refund request summary includes essential information such as the requesting member, order item being refunded, and current status, enabling users to understand the snapshot's context without additional API calls.
      *
-     * @x-autobe-database-schema-property refundRequest
-     * @x-autobe-specification Relation mapping via JOIN from shopping_mall_post_purchase_refund_request_snapshots.shopping_mall_post_purchase_refund_request_id to shopping_mall_post_purchase_refund_requests.id. Returns IShoppingMallPostPurchaseRefundRequest.ISummary.
+         * @x-autobe-database-schema-property refundRequest
+         * @x-autobe-specification Relation mapping via JOIN from
+         *   shopping_mall_post_purchase_refund_request_snapshots.shopping_mall_post_purchase_refund_request_id
+         *   to shopping_mall_post_purchase_refund_requests.id. Returns
+         *   IShoppingMallPostPurchaseRefundRequest.ISummary.
      */
     refundRequest: IShoppingMallPostPurchaseRefundRequest.ISummary;
   };
@@ -166,7 +200,9 @@ export namespace IShoppingMallPostPurchaseRefundRequestSnapshot {
      *
      * If not provided, defaults to page 1. Must be at least 1.
      *
-     * @x-autobe-specification Pagination page number (1-indexed). Applied as OFFSET (page - 1) * limit. Defaults to 1 if not provided. Minimum value is 1.
+         * @x-autobe-specification Pagination page number (1-indexed). Applied
+         *   as OFFSET (page - 1) * limit. Defaults to 1 if not provided.
+         *   Minimum value is 1.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -177,7 +213,9 @@ export namespace IShoppingMallPostPurchaseRefundRequestSnapshot {
      *
      * If not provided, defaults to 20. Maximum allowed value is 100 to prevent excessive response payloads.
      *
-     * @x-autobe-specification Maximum items per page. Applied as LIMIT clause. Defaults to 20, maximum allowed is 100. Backend enforces upper bound to prevent excessive payload sizes.
+         * @x-autobe-specification Maximum items per page. Applied as LIMIT
+         *   clause. Defaults to 20, maximum allowed is 100. Backend enforces
+         *   upper bound to prevent excessive payload sizes.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -190,7 +228,9 @@ export namespace IShoppingMallPostPurchaseRefundRequestSnapshot {
      *
      * If not provided, snapshots of all statuses are included in the results. Useful for focusing on specific stages of the refund workflow.
      *
-     * @x-autobe-specification Optional filter by snapshot status. Applied as WHERE status = ? clause. Valid values: pending, approved, rejected. If not provided, returns snapshots of all statuses.
+         * @x-autobe-specification Optional filter by snapshot status. Applied
+         *   as WHERE status = ? clause. Valid values: pending, approved,
+         *   rejected. If not provided, returns snapshots of all statuses.
      */
     status?: string | undefined;
 
@@ -201,7 +241,10 @@ export namespace IShoppingMallPostPurchaseRefundRequestSnapshot {
      *
      * If not provided, defaults to 'asc' to show the natural timeline of the refund request.
      *
-     * @x-autobe-specification Sort direction for created_at timestamp. Applied as ORDER BY created_at ASC/DESC. Valid values: 'asc' (chronological, oldest first), 'desc' (reverse, newest first). Defaults to 'asc' if not provided.
+         * @x-autobe-specification Sort direction for created_at timestamp.
+         *   Applied as ORDER BY created_at ASC/DESC. Valid values: 'asc'
+         *   (chronological, oldest first), 'desc' (reverse, newest first).
+         *   Defaults to 'asc' if not provided.
      */
     sort?: "asc" | "desc" | undefined;
   };

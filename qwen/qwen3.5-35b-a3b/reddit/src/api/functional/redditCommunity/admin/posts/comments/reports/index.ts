@@ -20,7 +20,8 @@ import { IRedditCommunityReport } from "../../../../../../structures/IRedditComm
  * @param props.body Search criteria including status filter, reporter filter, date range filters, pagination parameters, and sort order options.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Query reddit_community_reports table where target_comment_id equals the commentId path parameter.
+ * @x-autobe-specification Query reddit_community_reports table where
+ *   target_comment_id equals the commentId path parameter.
  *
  * Apply optional filters:
  * - status_id: filter by report status (0=pending, 1=approved, 2=dismissed)
@@ -149,7 +150,8 @@ export namespace index {
  * @param props.reportId The unique identifier of the report to retrieve.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Fetch a single report by ID from the reddit_community_reports table with soft-delete filtering.
+ * @x-autobe-specification Fetch a single report by ID from the
+ *   reddit_community_reports table with soft-delete filtering.
  *
  * Implementation steps:
  * 1. Validate path parameters: postId, commentId, reportId (UUID format)

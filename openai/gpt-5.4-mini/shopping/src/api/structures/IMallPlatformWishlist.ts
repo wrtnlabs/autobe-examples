@@ -38,7 +38,13 @@ export namespace IMallPlatformWishlist {
      *
      * Each array entry represents one saved product entry. Variant-level selections, wishlist identifiers, and customer identity are not accepted in this field.
      *
-     * @x-autobe-specification Represents the complete set of product-level wishlist entries the authenticated customer wants saved. The server resolves the wishlist owner from authentication, replaces the saved products transactionally, deduplicates repeated product references if needed, and rejects deleted or missing products. This field is null-mapped because it is a request-level collection of wishlist item inputs rather than a direct database column or relation.
+         * @x-autobe-specification Represents the complete set of product-level
+         *   wishlist entries the authenticated customer wants saved. The server
+         *   resolves the wishlist owner from authentication, replaces the saved
+         *   products transactionally, deduplicates repeated product references
+         *   if needed, and rejects deleted or missing products. This field is
+         *   null-mapped because it is a request-level collection of wishlist
+         *   item inputs rather than a direct database column or relation.
      */
     products: IMallPlatformWishlistItem.ICreate[];
   };
@@ -52,23 +58,23 @@ export namespace IMallPlatformWishlist {
    */
   export type ISummary = {
     /**
-     * @x-autobe-database-schema-property id
+         * @x-autobe-database-schema-property id
      */
     id: string & tags.Format<"uuid">;
     /**
-     * @x-autobe-database-schema-property customer
+         * @x-autobe-database-schema-property customer
      */
     customer: IMallPlatformCustomer.ISummary;
     /**
-     * @x-autobe-database-schema-property created_at
+         * @x-autobe-database-schema-property created_at
      */
     createdAt: string & tags.Format<"date-time">;
     /**
-     * @x-autobe-database-schema-property updated_at
+         * @x-autobe-database-schema-property updated_at
      */
     updatedAt: string & tags.Format<"date-time">;
     /**
-     * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-database-schema-property deleted_at
      */
     deletedAt: (string & tags.Format<"date-time">) | null;
   };

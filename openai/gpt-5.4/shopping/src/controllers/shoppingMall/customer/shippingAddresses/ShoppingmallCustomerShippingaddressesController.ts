@@ -29,9 +29,11 @@ export class ShoppingmallCustomerShippingaddressesController {
    *
    * @param connection
    * @param body The delivery details for the new saved shipping address
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Implement this operation in the customer application service as a create flow for shopping_mall_shipping_addresses.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Implement this operation in the customer
+     *   application service as a create flow for
+     *   shopping_mall_shipping_addresses.
    *
    * 1. Authenticate the caller and require the customer actor. Resolve the authenticated customer account identifier from the active customer session. Do not read customer ownership from the request body.
    * 2. Validate the request payload and require all business-mandated delivery fields: recipient name, phone number, street address, city, state or province, postal code, and country. Reject the request with a validation error if any required value is absent or blank.
@@ -86,9 +88,10 @@ export class ShoppingmallCustomerShippingaddressesController {
    *
    * @param connection
    * @param body Pagination, sorting, and filter criteria for searching the authenticated customer's saved shipping addresses
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Implement this operation as a customer-scoped list query over the shipping address table.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Implement this operation as a customer-scoped
+     *   list query over the shipping address table.
    *
    * 1. Authenticate the caller as a customer session and resolve the current customer account identifier from the session context.
    * 2. Parse the `IShoppingMallShippingAddress.IRequest` body for pagination, sorting, and optional search or filter criteria supported by the shared list-browsing conventions.
@@ -140,9 +143,12 @@ export class ShoppingmallCustomerShippingaddressesController {
    *
    * @param connection
    * @param addressId Target saved shipping address identifier owned by the authenticated customer
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Authenticate the caller as a customer before any data access. Resolve the caller's customer account identifier from the active session or auth context; if no authenticated customer context exists, reject the request.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Authenticate the caller as a customer before any
+     *   data access. Resolve the caller's customer account identifier from the
+     *   active session or auth context; if no authenticated customer context
+     *   exists, reject the request.
    *
    * Validate the addressId path parameter as a UUID. Query shopping_mall_shipping_addresses for a single row matching id = :addressId, shopping_mall_customer_id = :currentCustomerId, and deleted_at IS NULL. Do not perform an unconstrained lookup first and then expose ownership differences in the response.
    *
@@ -185,9 +191,10 @@ export class ShoppingmallCustomerShippingaddressesController {
    * @param connection
    * @param addressId Target shipping address identifier owned by the authenticated customer
    * @param body Updated delivery details for the saved shipping address
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Implement this operation as an authenticated customer-only update against shopping_mall_shipping_addresses.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Implement this operation as an authenticated
+     *   customer-only update against shopping_mall_shipping_addresses.
    *
    * 1. Resolve the authenticated customer context from the session or authorization layer. If no active customer context exists, reject the request.
    * 2. Load the target shipping address by shopping_mall_shipping_addresses.id using the addressId path parameter and exclude records whose deleted_at is not null.
@@ -235,9 +242,11 @@ export class ShoppingmallCustomerShippingaddressesController {
    *
    * @param connection
    * @param addressId Identifier of the saved shipping address owned by the signed-in customer
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Authenticate the requester as a customer before performing any lookup. Reject the request when there is no signed-in customer identity.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Authenticate the requester as a customer before
+     *   performing any lookup. Reject the request when there is no signed-in
+     *   customer identity.
    *
    * Load the shipping address record by its primary identifier from the shipping address persistence model and verify that the record belongs to the authenticated customer account. Ownership validation is mandatory before deletion logic proceeds. If no matching record exists for the given identifier within the authenticated customer's scope, fail the operation without disclosing other customers' address information.
    *

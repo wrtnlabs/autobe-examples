@@ -23,10 +23,10 @@ import { IEcommerceMallShippingAddress } from "../../../../structures/IEcommerce
  * @param props.addressId Unique identifier of the shipping address to retrieve. Must be a valid UUID.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Query the ecommerce_mall_shipping_addresses table filtering by:
- * - id = :addressId (UUID primary key)
- * - ecommerce_mall_customer_id = :customerId (from authenticated session)
- * - deleted_at IS NULL (exclude soft-deleted addresses)
+ * @x-autobe-specification Query the ecommerce_mall_shipping_addresses table
+ *   filtering by: - id = :addressId (UUID primary key) -
+ *   ecommerce_mall_customer_id = :customerId (from authenticated session) -
+ *   deleted_at IS NULL (exclude soft-deleted addresses)
  *
  * If no matching record is found, return HTTP 404 Not Found with error message "Address not found".
  *
@@ -124,7 +124,8 @@ export namespace at {
  * @param props.body Complete address update payload containing all address fields. All fields are required. System fields (id, customer_id, created_at, deleted_at) are not accepted and will be ignored.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Update the shipping address identified by {addressId} belonging to the authenticated customer.
+ * @x-autobe-specification Update the shipping address identified by {addressId}
+ *   belonging to the authenticated customer.
  *
  * 1. **Authentication**: Verify customer is authenticated via JWT token. Extract customer_id from token.
  *

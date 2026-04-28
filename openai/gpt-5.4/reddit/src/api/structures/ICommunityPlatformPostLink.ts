@@ -10,56 +10,71 @@ export type ICommunityPlatformPostLink = {
   /**
    * Unique identifier of this post link subtype record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from community_platform_post_links.id.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_post_links.id.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Summary information for the parent post that owns this link content record.
    *
-   * @x-autobe-database-schema-property post
-   * @x-autobe-specification Join community_platform_post_links.community_platform_post_id to community_platform_posts.id and materialize the related parent post as ICommunityPlatformPost.ISummary. The service must ensure this link row belongs to the requested parent post and that the parent remains viewable.
+     * @x-autobe-database-schema-property post
+     * @x-autobe-specification Join
+     *   community_platform_post_links.community_platform_post_id to
+     *   community_platform_posts.id and materialize the related parent post as
+     *   ICommunityPlatformPost.ISummary. The service must ensure this link row
+     *   belongs to the requested parent post and that the parent remains
+     *   viewable.
    */
   post: ICommunityPlatformPost.ISummary;
 
   /**
    * Canonical destination URL attached to the link post.
    *
-   * @x-autobe-database-schema-property target_url
-   * @x-autobe-specification Direct mapping from community_platform_post_links.target_url. Return the canonical destination URL stored for the link-based post.
+     * @x-autobe-database-schema-property target_url
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_post_links.target_url. Return the canonical
+     *   destination URL stored for the link-based post.
    */
   target_url: string & tags.Format<"uri">;
 
   /**
    * Human-readable source domain shown when presenting the link post.
    *
-   * @x-autobe-database-schema-property domain_display
-   * @x-autobe-specification Direct mapping from community_platform_post_links.domain_display. This value is stored as the human-readable source domain label derived from or validated against the target URL for presentation use.
+     * @x-autobe-database-schema-property domain_display
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_post_links.domain_display. This value is stored as
+     *   the human-readable source domain label derived from or validated
+     *   against the target URL for presentation use.
    */
   domain_display: string;
 
   /**
    * Timestamp when this link content record was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from community_platform_post_links.created_at.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_post_links.created_at.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when this link content record was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from community_platform_post_links.updated_at.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_post_links.updated_at.
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * Soft-delete timestamp for this link content record, or null when the record is still active.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from community_platform_post_links.deleted_at. Return a date-time when the link subtype has been soft deleted, or null when it remains active.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_post_links.deleted_at. Return a date-time when the
+     *   link subtype has been soft deleted, or null when it remains active.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -71,8 +86,12 @@ export namespace ICommunityPlatformPostLink {
     /**
      * Canonical destination URL attached to the link-based post.
      *
-     * @x-autobe-database-schema-property target_url
-     * @x-autobe-specification Direct mapping from request input to community_platform_post_links.target_url. Accept the canonical destination URL for the link post, validate it against URI and application URL policy, and use it as the source value for deriving or verifying domain_display before inserting the new subtype row.
+         * @x-autobe-database-schema-property target_url
+         * @x-autobe-specification Direct mapping from request input to
+         *   community_platform_post_links.target_url. Accept the canonical
+         *   destination URL for the link post, validate it against URI and
+         *   application URL policy, and use it as the source value for deriving
+         *   or verifying domain_display before inserting the new subtype row.
      */
     target_url: string & tags.Format<"uri">;
   };

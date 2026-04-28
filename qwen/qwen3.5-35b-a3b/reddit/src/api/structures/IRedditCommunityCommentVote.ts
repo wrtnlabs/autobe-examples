@@ -21,35 +21,36 @@ import { IRedditCommunityMember } from "./IRedditCommunityMember";
  */
 export type IRedditCommunityCommentVote = {
   /**
-   * @x-autobe-database-schema-property id
+     * @x-autobe-database-schema-property id
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * The type of vote cast.
    *
-   * @x-autobe-specification Direct mapping from reddit_community_comment_votes.vote_type. String type.
-   * @x-autobe-database-schema-property vote_type
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_comment_votes.vote_type. String type.
+     * @x-autobe-database-schema-property vote_type
    */
   vote_type: string;
   /**
-   * @x-autobe-database-schema-property member
+     * @x-autobe-database-schema-property member
    */
   author: IRedditCommunityMember.ISummary;
   /**
-   * @x-autobe-database-schema-property comment
+     * @x-autobe-database-schema-property comment
    */
   comment: IRedditCommunityComment.ISummary;
   /**
-   * @x-autobe-database-schema-property created_at
+     * @x-autobe-database-schema-property created_at
    */
   created_at: string & tags.Format<"date-time">;
   /**
-   * @x-autobe-database-schema-property updated_at
+     * @x-autobe-database-schema-property updated_at
    */
   updated_at: string & tags.Format<"date-time">;
   /**
-   * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-database-schema-property deleted_at
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -108,8 +109,12 @@ export namespace IRedditCommunityCommentVote {
      *
      * This field is the only user-provided input in the request body. The member's identity and target comment identifier are resolved from the session token and URL path parameters respectively.
      *
-     * @x-autobe-database-schema-property vote_type
-     * @x-autobe-specification Direct mapping from reddit_community_comment_votes.vote_type. User-provided value determines vote action: 'upvote' (+1), 'downvote' (-1), or null (remove vote). Must match enum constraints defined in database schema.
+         * @x-autobe-database-schema-property vote_type
+         * @x-autobe-specification Direct mapping from
+         *   reddit_community_comment_votes.vote_type. User-provided value
+         *   determines vote action: 'upvote' (+1), 'downvote' (-1), or null
+         *   (remove vote). Must match enum constraints defined in database
+         *   schema.
      */
     vote_type?: "upvote" | "downvote" | null | undefined;
   };

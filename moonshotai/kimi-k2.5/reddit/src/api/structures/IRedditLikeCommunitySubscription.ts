@@ -11,48 +11,62 @@ export type IRedditLikeCommunitySubscription = {
   /**
    * Unique identifier for the subscription record. Auto-generated UUID that identifies this specific member-community relationship.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from reddit_like_community_subscriptions.id. Primary key, auto-generated UUID.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_community_subscriptions.id. Primary key, auto-generated
+     *   UUID.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * The member who subscribed to the community. Includes public member information such as username and email.
    *
-   * @x-autobe-database-schema-property member
-   * @x-autobe-specification JOIN from reddit_like_community_subscriptions.reddit_like_member_id to reddit_like_members.id. Returns complete member information via IRedditLikeMember.ISummary.
+     * @x-autobe-database-schema-property member
+     * @x-autobe-specification JOIN from
+     *   reddit_like_community_subscriptions.reddit_like_member_id to
+     *   reddit_like_members.id. Returns complete member information via
+     *   IRedditLikeMember.ISummary.
    */
   member: IRedditLikeMember.ISummary;
 
   /**
    * The community that the member subscribed to. Includes community details such as name, description, and owner information.
    *
-   * @x-autobe-database-schema-property community
-   * @x-autobe-specification JOIN from reddit_like_community_subscriptions.reddit_like_community_id to reddit_like_communities.id. Returns complete community information via IRedditLikeCommunity.ISummary.
+     * @x-autobe-database-schema-property community
+     * @x-autobe-specification JOIN from
+     *   reddit_like_community_subscriptions.reddit_like_community_id to
+     *   reddit_like_communities.id. Returns complete community information via
+     *   IRedditLikeCommunity.ISummary.
    */
   community: IRedditLikeCommunity.ISummary;
 
   /**
    * Timestamp when the subscription was created. Indicates when the member first subscribed to this community.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from reddit_like_community_subscriptions.created_at. ISO 8601 timestamp in UTC.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_community_subscriptions.created_at. ISO 8601 timestamp in
+     *   UTC.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the subscription record was last modified. Updates whenever the subscription state changes.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from reddit_like_community_subscriptions.updated_at. ISO 8601 timestamp in UTC.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_community_subscriptions.updated_at. ISO 8601 timestamp in
+     *   UTC.
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * Soft deletion timestamp for unsubscription. Null if the member is currently subscribed. Contains a timestamp if the member has unsubscribed from this community.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from reddit_like_community_subscriptions.deleted_at. NULL indicates active subscription. Non-null indicates unsubscribed (soft delete pattern).
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_like_community_subscriptions.deleted_at. NULL indicates active
+     *   subscription. Non-null indicates unsubscribed (soft delete pattern).
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -64,14 +78,17 @@ export namespace IRedditLikeCommunitySubscription {
     /**
      * Page number for pagination (1-based)
      *
-     * @x-autobe-specification Query parameter for pagination. 1-indexed page number. Default: 1. Maps to OFFSET calculation in SQL query.
+         * @x-autobe-specification Query parameter for pagination. 1-indexed
+         *   page number. Default: 1. Maps to OFFSET calculation in SQL query.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Number of results per page
      *
-     * @x-autobe-specification Query parameter for pagination. Maximum records per page. Range: 1-100. Default: 20. Maps to LIMIT clause in SQL query.
+         * @x-autobe-specification Query parameter for pagination. Maximum
+         *   records per page. Range: 1-100. Default: 20. Maps to LIMIT clause
+         *   in SQL query.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -80,14 +97,20 @@ export namespace IRedditLikeCommunitySubscription {
     /**
      * Partial match search filter on community name
      *
-     * @x-autobe-specification Query filter parameter. Partial case-insensitive match on reddit_like_communities.name column using ILIKE or similar operator. Used to search for communities by name.
+         * @x-autobe-specification Query filter parameter. Partial
+         *   case-insensitive match on reddit_like_communities.name column using
+         *   ILIKE or similar operator. Used to search for communities by name.
      */
     search?: string | undefined;
 
     /**
      * Sort field and direction. Use 'created_at' for subscription date, 'name' for community name. Prefix with '-' for descending order (e.g., '-created_at')
      *
-     * @x-autobe-specification Query sort parameter. Maps to SQL ORDER BY clause. Supported values: 'created_at' (subscription date), 'name' (community name), '-created_at' (newest first, default descending), '-name' (reverse alphabetical). '-' prefix indicates descending order.
+         * @x-autobe-specification Query sort parameter. Maps to SQL ORDER BY
+         *   clause. Supported values: 'created_at' (subscription date), 'name'
+         *   (community name), '-created_at' (newest first, default descending),
+         *   '-name' (reverse alphabetical). '-' prefix indicates descending
+         *   order.
      */
     sort?: string | undefined;
   };
@@ -99,24 +122,29 @@ export namespace IRedditLikeCommunitySubscription {
     /**
      * Unique identifier for the community subscription record.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from reddit_like_community_subscriptions.id. UUID primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_community_subscriptions.id. UUID primary key.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * The community that the member is subscribed to, represented as a summary view.
      *
-     * @x-autobe-database-schema-property community
-     * @x-autobe-specification Join via reddit_like_community_id FK to reddit_like_communities table. Returns IRedditLikeCommunity.ISummary with community details.
+         * @x-autobe-database-schema-property community
+         * @x-autobe-specification Join via reddit_like_community_id FK to
+         *   reddit_like_communities table. Returns
+         *   IRedditLikeCommunity.ISummary with community details.
      */
     community: IRedditLikeCommunity.ISummary;
 
     /**
      * Timestamp when the member subscribed to the community.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from reddit_like_community_subscriptions.created_at. Timestamp when subscription was created.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_like_community_subscriptions.created_at. Timestamp when
+         *   subscription was created.
      */
     createdAt: string & tags.Format<"date-time">;
   };

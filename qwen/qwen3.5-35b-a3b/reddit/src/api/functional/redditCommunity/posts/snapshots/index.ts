@@ -21,7 +21,8 @@ import { IRedditCommunityPostSnapshot } from "../../../../structures/IRedditComm
  * @param props.body Search criteria including date range filters, status filters, pagination parameters, and sorting options for the snapshot list.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Retrieve all snapshots for the specified post with pagination and filtering.
+ * @x-autobe-specification Retrieve all snapshots for the specified post with
+ *   pagination and filtering.
  *
  * 1. Validate that the post exists (UUID format check)
  * 2. Verify the requester can view this post:
@@ -144,7 +145,8 @@ export namespace index {
  * @param props.snapshotId UUID of the snapshot to retrieve.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification 1. Validate that both postId and snapshotId are provided as valid UUIDs.
+ * @x-autobe-specification 1. Validate that both postId and snapshotId are
+ *   provided as valid UUIDs.
  *
  * 2. Query reddit_community_post_snapshots table where:
  *    - id = snapshotId

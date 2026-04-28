@@ -25,9 +25,11 @@ export class CommunityplatformMemberPostsVoteController {
    *
    * @param connection
    * @param postId The unique identifier of the post to retrieve the vote for. Must be a valid UUID referencing an existing post.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query the community_platform_post_votes table for the vote record where post_id equals the path parameter and member_id equals the authenticated member's ID.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query the community_platform_post_votes table for
+     *   the vote record where post_id equals the path parameter and member_id
+     *   equals the authenticated member's ID.
    *
    * Implementation steps:
    * 1. Extract postId from path parameters
@@ -76,9 +78,9 @@ export class CommunityplatformMemberPostsVoteController {
    * @param connection
    * @param postId The unique identifier of the post to vote on
    * @param body Vote type specification (upvote or downvote)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation Steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation Steps:
    *
    * 1. Authenticate the member from the request context
    * 2. Validate postId exists in community_platform_posts table and is not deleted (deleted_at IS NULL)
@@ -136,9 +138,9 @@ export class CommunityplatformMemberPostsVoteController {
    * @param connection
    * @param postId The unique identifier of the post to vote on.
    * @param body The vote type indicating approval (upvote) or disapproval (downvote).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation steps:
    *
    * 1. Authenticate the member from the request context
    * 2. Validate postId exists in community_platform_posts table and is not deleted (deleted_at IS NULL)
@@ -189,9 +191,10 @@ export class CommunityplatformMemberPostsVoteController {
    *
    * @param connection
    * @param postId The unique identifier of the post from which to remove the vote (UUID format). This must be an existing post that the authenticated member has previously voted on.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Remove the authenticated member's vote from the specified post.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Remove the authenticated member's vote from the
+     *   specified post.
    *
    * 1. Extract member_id from authentication context (must be authenticated member)
    * 2. Find the vote record where post_id = {postId} AND member_id = authenticated_member_id

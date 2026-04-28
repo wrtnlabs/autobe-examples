@@ -11,64 +11,85 @@ export type IShoppingMallCancellationRequest = {
   /**
    * Unique identifier for the cancellation request.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_cancellation_requests.id. UUID primary key generated automatically on creation.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_cancellation_requests.id. UUID primary key generated
+     *   automatically on creation.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Customer's explanation for requesting cancellation of the order item.
    *
-   * @x-autobe-database-schema-property reason
-   * @x-autobe-specification Direct mapping from shopping_mall_cancellation_requests.reason. Required text field provided by customer explaining why the order item should be cancelled.
+     * @x-autobe-database-schema-property reason
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_cancellation_requests.reason. Required text field
+     *   provided by customer explaining why the order item should be cancelled.
    */
   reason: string;
 
   /**
    * Current status of the cancellation request. 'pending' awaits seller response, 'approved' means seller accepted the cancellation, 'rejected' means seller declined.
    *
-   * @x-autobe-database-schema-property status
-   * @x-autobe-specification Direct mapping from shopping_mall_cancellation_requests.status. Enum values: 'pending' (awaiting seller response), 'approved' (seller accepted), 'rejected' (seller declined). One-way transitions: pending → approved or pending → rejected. Terminal states cannot be changed.
+     * @x-autobe-database-schema-property status
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_cancellation_requests.status. Enum values: 'pending'
+     *   (awaiting seller response), 'approved' (seller accepted), 'rejected'
+     *   (seller declined). One-way transitions: pending → approved or pending →
+     *   rejected. Terminal states cannot be changed.
    */
   status: "pending" | "approved" | "rejected";
 
   /**
    * Timestamp when the cancellation request was created by the customer.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from shopping_mall_cancellation_requests.created_at. Timestamp automatically set when customer creates the cancellation request.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_cancellation_requests.created_at. Timestamp automatically
+     *   set when customer creates the cancellation request.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the cancellation request was last modified.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from shopping_mall_cancellation_requests.updated_at. Timestamp updated when status changes or seller responds.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_cancellation_requests.updated_at. Timestamp updated when
+     *   status changes or seller responds.
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the seller responded to the request. Null until seller approves or rejects.
    *
-   * @x-autobe-database-schema-property responded_at
-   * @x-autobe-specification Direct mapping from shopping_mall_cancellation_requests.responded_at. Nullable timestamp set when seller approves or rejects the request. Null while status is 'pending'.
+     * @x-autobe-database-schema-property responded_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_cancellation_requests.responded_at. Nullable timestamp
+     *   set when seller approves or rejects the request. Null while status is
+     *   'pending'.
    */
   responded_at: (string & tags.Format<"date-time">) | null;
 
   /**
    * The order item being requested for cancellation.
    *
-   * @x-autobe-database-schema-property orderItem
-   * @x-autobe-specification JOIN with shopping_mall_order_items using shopping_mall_order_item_id FK. Returns IShoppingMallOrderItem.ISummary containing the purchased product variant details, quantity, price, and fulfillment status.
+     * @x-autobe-database-schema-property orderItem
+     * @x-autobe-specification JOIN with shopping_mall_order_items using
+     *   shopping_mall_order_item_id FK. Returns IShoppingMallOrderItem.ISummary
+     *   containing the purchased product variant details, quantity, price, and
+     *   fulfillment status.
    */
   orderItem: IShoppingMallOrderItem.ISummary;
 
   /**
    * The seller who responded to the cancellation request. Null until seller approves or rejects.
    *
-   * @x-autobe-database-schema-property seller
-   * @x-autobe-specification LEFT JOIN with shopping_mall_sellers using shopping_mall_seller_id FK. Returns IShoppingMallSeller.ISummary when seller has responded, null while status is 'pending'. Set when seller approves or rejects the request.
+     * @x-autobe-database-schema-property seller
+     * @x-autobe-specification LEFT JOIN with shopping_mall_sellers using
+     *   shopping_mall_seller_id FK. Returns IShoppingMallSeller.ISummary when
+     *   seller has responded, null while status is 'pending'. Set when seller
+     *   approves or rejects the request.
    */
   seller: IShoppingMallSeller.ISummary | null;
 };
@@ -80,62 +101,79 @@ export namespace IShoppingMallCancellationRequest {
     /**
      * Unique identifier for the cancellation request.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_cancellation_requests.id. UUID format stored as string.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_cancellation_requests.id. UUID format stored as
+         *   string.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * ID of the order item being requested for cancellation.
      *
-     * @x-autobe-database-schema-property shopping_mall_order_item_id
-     * @x-autobe-specification Direct mapping from shopping_mall_cancellation_requests.shopping_mall_order_item_id. References the order item being requested for cancellation.
+         * @x-autobe-database-schema-property shopping_mall_order_item_id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_cancellation_requests.shopping_mall_order_item_id.
+         *   References the order item being requested for cancellation.
      */
     orderItemId: string & tags.Format<"uuid">;
 
     /**
      * Name of the product associated with the cancellation request.
      *
-     * @x-autobe-specification JOIN from shopping_mall_products.name through shopping_mall_order_items → shopping_mall_products. Retrieved via order_item's product relationship for display convenience.
+         * @x-autobe-specification JOIN from shopping_mall_products.name through
+         *   shopping_mall_order_items → shopping_mall_products. Retrieved via
+         *   order_item's product relationship for display convenience.
      */
     productName: string;
 
     /**
      * Order number of the order containing the item being cancelled.
      *
-     * @x-autobe-specification JOIN from shopping_mall_orders.order_number through shopping_mall_order_items → shopping_mall_orders. Retrieved via order_item's order relationship for display convenience.
+         * @x-autobe-specification JOIN from shopping_mall_orders.order_number
+         *   through shopping_mall_order_items → shopping_mall_orders. Retrieved
+         *   via order_item's order relationship for display convenience.
      */
     orderNumber: string;
 
     /**
      * Customer's explanation for requesting cancellation.
      *
-     * @x-autobe-database-schema-property reason
-     * @x-autobe-specification Direct mapping from shopping_mall_cancellation_requests.reason. Required text field explaining why the customer wants to cancel.
+         * @x-autobe-database-schema-property reason
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_cancellation_requests.reason. Required text field
+         *   explaining why the customer wants to cancel.
      */
     reason: string;
 
     /**
      * Current status of the cancellation request.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from shopping_mall_cancellation_requests.status. Enum values: 'pending' (awaiting seller response), 'approved' (seller accepted), 'rejected' (seller declined).
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_cancellation_requests.status. Enum values: 'pending'
+         *   (awaiting seller response), 'approved' (seller accepted),
+         *   'rejected' (seller declined).
      */
     status: "pending" | "approved" | "rejected";
 
     /**
      * Timestamp when the cancellation request was created by the customer.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_cancellation_requests.created_at. ISO 8601 datetime format.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_cancellation_requests.created_at. ISO 8601 datetime
+         *   format.
      */
     createdAt: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when the seller responded to the request. Null if request is still pending.
      *
-     * @x-autobe-database-schema-property responded_at
-     * @x-autobe-specification Direct mapping from shopping_mall_cancellation_requests.responded_at. Nullable datetime field populated when seller approves or rejects. ISO 8601 format.
+         * @x-autobe-database-schema-property responded_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_cancellation_requests.responded_at. Nullable datetime
+         *   field populated when seller approves or rejects. ISO 8601 format.
      */
     respondedAt: (string & tags.Format<"date-time">) | null;
   };
@@ -147,50 +185,75 @@ export namespace IShoppingMallCancellationRequest {
     /**
      * Filter cancellation requests by current status. Use 'pending' to find requests awaiting action, 'approved' for accepted requests, or 'rejected' for declined requests.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification WHERE clause filter on shopping_mall_cancellation_requests.status. Accepts values 'pending', 'approved', or 'rejected'. When provided, filters results to only include requests matching the specified status.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification WHERE clause filter on
+         *   shopping_mall_cancellation_requests.status. Accepts values
+         *   'pending', 'approved', or 'rejected'. When provided, filters
+         *   results to only include requests matching the specified status.
      */
     status?: string | undefined;
 
     /**
      * Filter requests created on or after this datetime. Used to find cancellation requests submitted starting from a specific date.
      *
-     * @x-autobe-specification Date range filter computed from shopping_mall_cancellation_requests.created_at using >= operator. When provided, constructs WHERE created_at >= :created_at_from clause. Use in combination with created_at_to for range queries.
+         * @x-autobe-specification Date range filter computed from
+         *   shopping_mall_cancellation_requests.created_at using >= operator.
+         *   When provided, constructs WHERE created_at >= :created_at_from
+         *   clause. Use in combination with created_at_to for range queries.
      */
     created_at_from?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Filter requests created on or before this datetime. Used to find cancellation requests submitted up to a specific date.
      *
-     * @x-autobe-specification Date range filter computed from shopping_mall_cancellation_requests.created_at using <= operator. When provided, constructs WHERE created_at <= :created_at_to clause. Use in combination with created_at_from for range queries.
+         * @x-autobe-specification Date range filter computed from
+         *   shopping_mall_cancellation_requests.created_at using <= operator.
+         *   When provided, constructs WHERE created_at <= :created_at_to
+         *   clause. Use in combination with created_at_from for range queries.
      */
     created_at_to?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Filter requests responded to on or after this datetime. Used to find seller responses starting from a specific date.
      *
-     * @x-autobe-specification Date range filter computed from shopping_mall_cancellation_requests.responded_at using >= operator. When provided, constructs WHERE responded_at >= :responded_at_from clause. Note: pending requests have null responded_at and are excluded when this filter is applied (null comparison returns false in SQL).
+         * @x-autobe-specification Date range filter computed from
+         *   shopping_mall_cancellation_requests.responded_at using >= operator.
+         *   When provided, constructs WHERE responded_at >= :responded_at_from
+         *   clause. Note: pending requests have null responded_at and are
+         *   excluded when this filter is applied (null comparison returns false
+         *   in SQL).
      */
     responded_at_from?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Filter requests responded to on or before this datetime. Used to find seller responses up to a specific date.
      *
-     * @x-autobe-specification Date range filter computed from shopping_mall_cancellation_requests.responded_at using <= operator. When provided, constructs WHERE responded_at <= :responded_at_to clause. Note: pending requests have null responded_at and are excluded when this filter is applied (null comparison returns false in SQL).
+         * @x-autobe-specification Date range filter computed from
+         *   shopping_mall_cancellation_requests.responded_at using <= operator.
+         *   When provided, constructs WHERE responded_at <= :responded_at_to
+         *   clause. Note: pending requests have null responded_at and are
+         *   excluded when this filter is applied (null comparison returns false
+         *   in SQL).
      */
     responded_at_to?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Page number for paginated results. Starts at 1 for the first page. Use with limit to navigate through large result sets.
      *
-     * @x-autobe-specification Pagination parameter for calculating OFFSET in SQL query. Formula: OFFSET = (page - 1) * limit. 1-indexed, so the first page is page 1. Defaults to 1 if not provided. Must be >= 1.
+         * @x-autobe-specification Pagination parameter for calculating OFFSET
+         *   in SQL query. Formula: OFFSET = (page - 1) * limit. 1-indexed, so
+         *   the first page is page 1. Defaults to 1 if not provided. Must be >=
+         *   1.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of results per page. Acceptable range is 1-100. Use with page to control result set size and navigation.
      *
-     * @x-autobe-specification Pagination parameter controlling maximum records per page. Applied directly as LIMIT in SQL query. Capped at maximum 100 records per page to prevent excessive resource consumption. Defaults to 20 if not provided.
+         * @x-autobe-specification Pagination parameter controlling maximum
+         *   records per page. Applied directly as LIMIT in SQL query. Capped at
+         *   maximum 100 records per page to prevent excessive resource
+         *   consumption. Defaults to 20 if not provided.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -204,8 +267,11 @@ export namespace IShoppingMallCancellationRequest {
     /**
      * Customer's explanation for requesting cancellation of the order item. This field is required and provides context for the seller to review the request.
      *
-     * @x-autobe-database-schema-property reason
-     * @x-autobe-specification Direct mapping from request body 'reason' field to shopping_mall_cancellation_requests.reason database column. Required text field stored as-is. No transformation or validation beyond non-empty check.
+         * @x-autobe-database-schema-property reason
+         * @x-autobe-specification Direct mapping from request body 'reason'
+         *   field to shopping_mall_cancellation_requests.reason database
+         *   column. Required text field stored as-is. No transformation or
+         *   validation beyond non-empty check.
      */
     reason: string;
   };

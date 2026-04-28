@@ -21,9 +21,13 @@ export class CommunityplatformMemberCommunitiesSubscribedController {
    *
    * @param connection
    * @param body Search, sorting, and pagination criteria for the current member's subscribed communities.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Resolve the authenticated member from the session context, then query community_platform_community_subscriptions filtered by the current member identifier. Join community_platform_communities to fetch the subscribed community records and map them into a summary list ordered consistently for UI display.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Resolve the authenticated member from the session
+     *   context, then query community_platform_community_subscriptions filtered
+     *   by the current member identifier. Join community_platform_communities
+     *   to fetch the subscribed community records and map them into a summary
+     *   list ordered consistently for UI display.
    *
    * Use pagination because the subscription set can grow large. Do not accept a request body; this is a simple collection retrieval with caller-scoped identity. Return only active subscription links and exclude any stale or inactive membership records if the implementation tracks them. If a linked community record no longer exists, omit it from the result rather than failing the entire request.
    *

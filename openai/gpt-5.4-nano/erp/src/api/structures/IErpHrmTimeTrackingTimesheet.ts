@@ -11,96 +11,129 @@ export type IErpHrmTimeTrackingTimesheet = {
   /**
    * Unique identifier of the timesheet record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_timesheets.id. Use as the stable identifier for the timesheet detail view.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_tracking_timesheets.id. Use as the stable identifier for
+     *   the timesheet detail view.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Organization (tenant) id that owns this timesheet.
    *
-   * @x-autobe-database-schema-property erp_hrm_time_tracking_organization_id
-   * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_timesheets.erp_hrm_time_tracking_organization_id. Endpoint layer must ensure this belongs to the currently selected organization for the authenticated member.
+     * @x-autobe-database-schema-property erp_hrm_time_tracking_organization_id
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_tracking_timesheets.erp_hrm_time_tracking_organization_id.
+     *   Endpoint layer must ensure this belongs to the currently selected
+     *   organization for the authenticated member.
    */
   erpHrmTimeTrackingOrganizationId: string & tags.Format<"uuid">;
 
   /**
    * Employee/member id that owns this timesheet.
    *
-   * @x-autobe-database-schema-property erp_hrm_time_tracking_employee_id
-   * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_timesheets.erp_hrm_time_tracking_employee_id. Used by endpoint authorization to ensure employees only see their own records and reviewers apply proper viewing permissions.
+     * @x-autobe-database-schema-property erp_hrm_time_tracking_employee_id
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_tracking_timesheets.erp_hrm_time_tracking_employee_id.
+     *   Used by endpoint authorization to ensure employees only see their own
+     *   records and reviewers apply proper viewing permissions.
    */
   erpHrmTimeTrackingEmployeeId: string & tags.Format<"uuid">;
 
   /**
    * Start timestamp of the timesheet week period (inclusive).
    *
-   * @x-autobe-database-schema-property week_start_at
-   * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_timesheets.week_start_at to weekStartAt (ISO-8601 date-time string). Represents the inclusive start boundary of the timesheet week period.
+     * @x-autobe-database-schema-property week_start_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_tracking_timesheets.week_start_at to weekStartAt (ISO-8601
+     *   date-time string). Represents the inclusive start boundary of the
+     *   timesheet week period.
    */
   weekStartAt: string;
 
   /**
    * End timestamp of the timesheet week period.
    *
-   * @x-autobe-database-schema-property week_end_at
-   * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_timesheets.week_end_at to weekEndAt (ISO-8601 date-time string). Represents the end boundary of the timesheet week period (service-defined inclusive/exclusive interpretation).
+     * @x-autobe-database-schema-property week_end_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_tracking_timesheets.week_end_at to weekEndAt (ISO-8601
+     *   date-time string). Represents the end boundary of the timesheet week
+     *   period (service-defined inclusive/exclusive interpretation).
    */
   weekEndAt: string;
 
   /**
    * Workflow status of the timesheet (e.g., draft/submitted/approved/rejected).
    *
-   * @x-autobe-database-schema-property status
-   * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_timesheets.status. This value drives which workflow transitions are allowed and whether milestone timestamps should be present.
+     * @x-autobe-database-schema-property status
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_tracking_timesheets.status. This value drives which
+     *   workflow transitions are allowed and whether milestone timestamps
+     *   should be present.
    */
   status: string;
 
   /**
    * Timestamp when the timesheet was submitted for approval; null if not submitted.
    *
-   * @x-autobe-database-schema-property submitted_at
-   * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_timesheets.submitted_at to submittedAt. If the timesheet has not been submitted, return null; otherwise return an ISO-8601 date-time string representing when it was submitted.
+     * @x-autobe-database-schema-property submitted_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_tracking_timesheets.submitted_at to submittedAt. If the
+     *   timesheet has not been submitted, return null; otherwise return an
+     *   ISO-8601 date-time string representing when it was submitted.
    */
   submittedAt: string | null;
 
   /**
    * Timestamp when the timesheet was approved; null if not approved.
    *
-   * @x-autobe-database-schema-property approved_at
-   * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_timesheets.approved_at to approvedAt. If the timesheet has not been approved, return null; otherwise return an ISO-8601 date-time string representing when it was approved.
+     * @x-autobe-database-schema-property approved_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_tracking_timesheets.approved_at to approvedAt. If the
+     *   timesheet has not been approved, return null; otherwise return an
+     *   ISO-8601 date-time string representing when it was approved.
    */
   approvedAt: string | null;
 
   /**
    * Timestamp when the timesheet was rejected; null if not rejected.
    *
-   * @x-autobe-database-schema-property rejected_at
-   * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_timesheets.rejected_at to rejectedAt. If the timesheet has not been rejected, return null; otherwise return an ISO-8601 date-time string representing when it was rejected.
+     * @x-autobe-database-schema-property rejected_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_tracking_timesheets.rejected_at to rejectedAt. If the
+     *   timesheet has not been rejected, return null; otherwise return an
+     *   ISO-8601 date-time string representing when it was rejected.
    */
   rejectedAt: string | null;
 
   /**
    * When the timesheet record was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_timesheets.created_at to createdAt (ISO-8601 date-time string).
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_tracking_timesheets.created_at to createdAt (ISO-8601
+     *   date-time string).
    */
   createdAt: string;
 
   /**
    * When the timesheet record was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_timesheets.updated_at to updatedAt (ISO-8601 date-time string).
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_tracking_timesheets.updated_at to updatedAt (ISO-8601
+     *   date-time string).
    */
   updatedAt: string;
 
   /**
    * Soft-deletion timestamp; null if the record is active.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_timesheets.deleted_at to deletedAt. If the record is not soft-deleted, return null; otherwise return an ISO-8601 date-time string representing when it was soft-deleted.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_tracking_timesheets.deleted_at to deletedAt. If the record
+     *   is not soft-deleted, return null; otherwise return an ISO-8601
+     *   date-time string representing when it was soft-deleted.
    */
   deletedAt: string | null;
 };
@@ -112,56 +145,81 @@ export namespace IErpHrmTimeTrackingTimesheet {
     /**
      * Start timestamp (inclusive) of the timesheet week period.
      *
-     * @x-autobe-database-schema-property week_start_at
-     * @x-autobe-specification Persist directly to erp_hrm_time_tracking_timesheets.week_start_at. Validate that week_end_at is not earlier than this value and that the pair represents a valid week window per service interpretation.
+         * @x-autobe-database-schema-property week_start_at
+         * @x-autobe-specification Persist directly to
+         *   erp_hrm_time_tracking_timesheets.week_start_at. Validate that
+         *   week_end_at is not earlier than this value and that the pair
+         *   represents a valid week window per service interpretation.
      */
     week_start_at: string & tags.Format<"date-time">;
 
     /**
      * End timestamp (inclusive or exclusive based on service interpretation) of the timesheet week period.
      *
-     * @x-autobe-database-schema-property week_end_at
-     * @x-autobe-specification Persist directly to erp_hrm_time_tracking_timesheets.week_end_at. Validate that it is not earlier than week_start_at. Ensure the requested week window is valid per service interpretation.
+         * @x-autobe-database-schema-property week_end_at
+         * @x-autobe-specification Persist directly to
+         *   erp_hrm_time_tracking_timesheets.week_end_at. Validate that it is
+         *   not earlier than week_start_at. Ensure the requested week window is
+         *   valid per service interpretation.
      */
     week_end_at: string & tags.Format<"date-time">;
 
     /**
      * Workflow status of the timesheet (e.g., draft/submitted/approved/rejected). Consistency rules apply to milestone timestamps.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Persist directly to erp_hrm_time_tracking_timesheets.status. Validate milestone timestamps consistency with status: e.g., if status indicates draft, submitted_at/approved_at/rejected_at must be null; if status indicates submitted/approved/rejected, the corresponding milestone timestamp should be non-null and others should follow the workflow rules.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Persist directly to
+         *   erp_hrm_time_tracking_timesheets.status. Validate milestone
+         *   timestamps consistency with status: e.g., if status indicates
+         *   draft, submitted_at/approved_at/rejected_at must be null; if status
+         *   indicates submitted/approved/rejected, the corresponding milestone
+         *   timestamp should be non-null and others should follow the workflow
+         *   rules.
      */
     status: string;
 
     /**
      * Identifier of the employee (member) the timesheet belongs to, within the selected organization context.
      *
-     * @x-autobe-database-schema-property erp_hrm_time_tracking_employee_id
-     * @x-autobe-specification Persist directly to erp_hrm_time_tracking_timesheets.erp_hrm_time_tracking_employee_id after validating the employee belongs to the server-selected organization context. Also enforce deactivation/eligibility rules at processing time as required by domain workflows.
+         * @x-autobe-database-schema-property erp_hrm_time_tracking_employee_id
+         * @x-autobe-specification Persist directly to
+         *   erp_hrm_time_tracking_timesheets.erp_hrm_time_tracking_employee_id
+         *   after validating the employee belongs to the server-selected
+         *   organization context. Also enforce deactivation/eligibility rules
+         *   at processing time as required by domain workflows.
      */
     erp_hrm_time_tracking_employee_id: string & tags.Format<"uuid">;
 
     /**
      * Timestamp when the timesheet was submitted for approval, or null if not submitted yet.
      *
-     * @x-autobe-database-schema-property submitted_at
-     * @x-autobe-specification If provided by the client, validate consistency with status (e.g., submitted status requires submitted_at set). If not provided, initialize to null. Persist to erp_hrm_time_tracking_timesheets.submitted_at as null or timestamp.
+         * @x-autobe-database-schema-property submitted_at
+         * @x-autobe-specification If provided by the client, validate
+         *   consistency with status (e.g., submitted status requires
+         *   submitted_at set). If not provided, initialize to null. Persist to
+         *   erp_hrm_time_tracking_timesheets.submitted_at as null or timestamp.
      */
     submitted_at?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * Timestamp when the timesheet was approved, or null if not approved yet.
      *
-     * @x-autobe-database-schema-property approved_at
-     * @x-autobe-specification If provided by the client, validate consistency with status (e.g., approved status requires approved_at set). If not provided, initialize to null. Persist to erp_hrm_time_tracking_timesheets.approved_at as null or timestamp.
+         * @x-autobe-database-schema-property approved_at
+         * @x-autobe-specification If provided by the client, validate
+         *   consistency with status (e.g., approved status requires approved_at
+         *   set). If not provided, initialize to null. Persist to
+         *   erp_hrm_time_tracking_timesheets.approved_at as null or timestamp.
      */
     approved_at?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * Timestamp when the timesheet was rejected, or null if not rejected yet.
      *
-     * @x-autobe-database-schema-property rejected_at
-     * @x-autobe-specification If provided by the client, validate consistency with status (e.g., rejected status requires rejected_at set). If not provided, initialize to null. Persist to erp_hrm_time_tracking_timesheets.rejected_at as null or timestamp.
+         * @x-autobe-database-schema-property rejected_at
+         * @x-autobe-specification If provided by the client, validate
+         *   consistency with status (e.g., rejected status requires rejected_at
+         *   set). If not provided, initialize to null. Persist to
+         *   erp_hrm_time_tracking_timesheets.rejected_at as null or timestamp.
      */
     rejected_at?: (string & tags.Format<"date-time">) | null | undefined;
   };
@@ -173,32 +231,47 @@ export namespace IErpHrmTimeTrackingTimesheet {
     /**
      * Timesheet workflow status (e.g., draft/submitted/approved/rejected) indicating the current approval lifecycle state.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_timesheets.status. Treat as the source of truth for which milestone timestamps are applicable; enforce allowed workflow transitions based on the stored status.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_tracking_timesheets.status. Treat as the source of
+         *   truth for which milestone timestamps are applicable; enforce
+         *   allowed workflow transitions based on the stored status.
      */
     status?: string | undefined;
 
     /**
      * Timestamp when the timesheet was submitted for approval. Null when the timesheet is not in a submitted state.
      *
-     * @x-autobe-database-schema-property submitted_at
-     * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_timesheets.submitted_at (nullable). Server must ensure consistency with status: submitted_at must be non-null when status indicates the timesheet is submitted; it must be null when the status does not imply submission.
+         * @x-autobe-database-schema-property submitted_at
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_tracking_timesheets.submitted_at (nullable). Server
+         *   must ensure consistency with status: submitted_at must be non-null
+         *   when status indicates the timesheet is submitted; it must be null
+         *   when the status does not imply submission.
      */
     submitted_at?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * Timestamp when the timesheet was approved. Null when the timesheet is not in an approved state.
      *
-     * @x-autobe-database-schema-property approved_at
-     * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_timesheets.approved_at (nullable). Server must ensure consistency with status: approved_at must be non-null when status indicates approved; it must be null when the status does not imply approval.
+         * @x-autobe-database-schema-property approved_at
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_tracking_timesheets.approved_at (nullable). Server
+         *   must ensure consistency with status: approved_at must be non-null
+         *   when status indicates approved; it must be null when the status
+         *   does not imply approval.
      */
     approved_at?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * Timestamp when the timesheet was rejected. Null when the timesheet is not in a rejected state.
      *
-     * @x-autobe-database-schema-property rejected_at
-     * @x-autobe-specification Direct mapping from erp_hrm_time_tracking_timesheets.rejected_at (nullable). Server must ensure consistency with status: rejected_at must be non-null when status indicates rejected; it must be null when the status does not imply rejection.
+         * @x-autobe-database-schema-property rejected_at
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_tracking_timesheets.rejected_at (nullable). Server
+         *   must ensure consistency with status: rejected_at must be non-null
+         *   when status indicates rejected; it must be null when the status
+         *   does not imply rejection.
      */
     rejected_at?: (string & tags.Format<"date-time">) | null | undefined;
   };
@@ -210,96 +283,121 @@ export namespace IErpHrmTimeTrackingTimesheet {
     /**
      * Unique identifier of the timesheet record.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Map erp_hrm_time_tracking_timesheets.id to this DTO.id. Value is a UUID string.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Map erp_hrm_time_tracking_timesheets.id to
+         *   this DTO.id. Value is a UUID string.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Organization tenant context for this timesheet.
      *
-     * @x-autobe-database-schema-property organization
-     * @x-autobe-specification Join erp_hrm_time_tracking_timesheets.organization relation and project it as IErpHrmTimeTrackingOrganization.ISummary into this DTO.organization.
+         * @x-autobe-database-schema-property organization
+         * @x-autobe-specification Join
+         *   erp_hrm_time_tracking_timesheets.organization relation and project
+         *   it as IErpHrmTimeTrackingOrganization.ISummary into this
+         *   DTO.organization.
      */
     organization: IErpHrmTimeTrackingOrganization.ISummary;
 
     /**
      * Employee (member) who owns this timesheet.
      *
-     * @x-autobe-database-schema-property employee
-     * @x-autobe-specification Join erp_hrm_time_tracking_timesheets.employee relation and project it as IErpHrmTimeTrackingMember.ISummary into this DTO.employee.
+         * @x-autobe-database-schema-property employee
+         * @x-autobe-specification Join
+         *   erp_hrm_time_tracking_timesheets.employee relation and project it
+         *   as IErpHrmTimeTrackingMember.ISummary into this DTO.employee.
      */
     employee: IErpHrmTimeTrackingMember.ISummary;
 
     /**
      * Start timestamp (inclusive boundary per service interpretation) of the timesheet week.
      *
-     * @x-autobe-database-schema-property week_start_at
-     * @x-autobe-specification Map erp_hrm_time_tracking_timesheets.week_start_at to this DTO.week_start_at. Returned as ISO-8601 date-time string.
+         * @x-autobe-database-schema-property week_start_at
+         * @x-autobe-specification Map
+         *   erp_hrm_time_tracking_timesheets.week_start_at to this
+         *   DTO.week_start_at. Returned as ISO-8601 date-time string.
      */
     week_start_at: string & tags.Format<"date-time">;
 
     /**
      * End timestamp (inclusive/exclusive per service interpretation) of the timesheet week.
      *
-     * @x-autobe-database-schema-property week_end_at
-     * @x-autobe-specification Map erp_hrm_time_tracking_timesheets.week_end_at to this DTO.week_end_at. Returned as ISO-8601 date-time string.
+         * @x-autobe-database-schema-property week_end_at
+         * @x-autobe-specification Map
+         *   erp_hrm_time_tracking_timesheets.week_end_at to this
+         *   DTO.week_end_at. Returned as ISO-8601 date-time string.
      */
     week_end_at: string & tags.Format<"date-time">;
 
     /**
      * Workflow status of the timesheet (e.g., draft/submitted/approved/rejected).
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Map erp_hrm_time_tracking_timesheets.status to this DTO.status. Returned as the raw workflow status string stored in the DB.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Map erp_hrm_time_tracking_timesheets.status
+         *   to this DTO.status. Returned as the raw workflow status string
+         *   stored in the DB.
      */
     status: string;
 
     /**
      * Timestamp when the timesheet was submitted for approval; null if not submitted yet.
      *
-     * @x-autobe-database-schema-property submitted_at
-     * @x-autobe-specification Map erp_hrm_time_tracking_timesheets.submitted_at to this DTO.submitted_at. If DB value is null, return null.
+         * @x-autobe-database-schema-property submitted_at
+         * @x-autobe-specification Map
+         *   erp_hrm_time_tracking_timesheets.submitted_at to this
+         *   DTO.submitted_at. If DB value is null, return null.
      */
     submitted_at: (string & tags.Format<"date-time">) | null;
 
     /**
      * Timestamp when the timesheet was approved; null if not approved yet.
      *
-     * @x-autobe-database-schema-property approved_at
-     * @x-autobe-specification Map erp_hrm_time_tracking_timesheets.approved_at to this DTO.approved_at. If DB value is null, return null.
+         * @x-autobe-database-schema-property approved_at
+         * @x-autobe-specification Map
+         *   erp_hrm_time_tracking_timesheets.approved_at to this
+         *   DTO.approved_at. If DB value is null, return null.
      */
     approved_at: (string & tags.Format<"date-time">) | null;
 
     /**
      * Timestamp when the timesheet was rejected; null if not rejected yet.
      *
-     * @x-autobe-database-schema-property rejected_at
-     * @x-autobe-specification Map erp_hrm_time_tracking_timesheets.rejected_at to this DTO.rejected_at. If DB value is null, return null.
+         * @x-autobe-database-schema-property rejected_at
+         * @x-autobe-specification Map
+         *   erp_hrm_time_tracking_timesheets.rejected_at to this
+         *   DTO.rejected_at. If DB value is null, return null.
      */
     rejected_at: (string & tags.Format<"date-time">) | null;
 
     /**
      * Creation timestamp of the timesheet record.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Map erp_hrm_time_tracking_timesheets.created_at to this DTO.created_at. Returned as ISO-8601 date-time string.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Map
+         *   erp_hrm_time_tracking_timesheets.created_at to this DTO.created_at.
+         *   Returned as ISO-8601 date-time string.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * Last update timestamp of the timesheet record.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Map erp_hrm_time_tracking_timesheets.updated_at to this DTO.updated_at. Returned as ISO-8601 date-time string.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Map
+         *   erp_hrm_time_tracking_timesheets.updated_at to this DTO.updated_at.
+         *   Returned as ISO-8601 date-time string.
      */
     updated_at: string & tags.Format<"date-time">;
 
     /**
      * Soft-deletion timestamp of the timesheet record; null if the record is active.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Map erp_hrm_time_tracking_timesheets.deleted_at to this DTO.deleted_at. If DB value is null, return null; otherwise return the ISO-8601 date-time string.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Map
+         *   erp_hrm_time_tracking_timesheets.deleted_at to this DTO.deleted_at.
+         *   If DB value is null, return null; otherwise return the ISO-8601
+         *   date-time string.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };
@@ -311,67 +409,90 @@ export namespace IErpHrmTimeTrackingTimesheet {
     /**
      * The 1-indexed page number of the results to return.
      *
-     * @x-autobe-specification Use page to select which portion of the result set to return. It is expected to be 1-indexed (page 1 returns the first slice). Apply it together with limit at the service/repository pagination layer (e.g., offset = (page-1)*limit).
+         * @x-autobe-specification Use page to select which portion of the
+         *   result set to return. It is expected to be 1-indexed (page 1
+         *   returns the first slice). Apply it together with limit at the
+         *   service/repository pagination layer (e.g., offset =
+         *   (page-1)*limit).
      */
     page: number & tags.Type<"int32"> & tags.Minimum<1>;
 
     /**
      * Maximum number of timesheet records to return in this page.
      *
-     * @x-autobe-specification Use limit to cap the number of timesheet rows returned by the list endpoint. Enforce bounds as defined by the DTO (minimum 1, maximum 100).
+         * @x-autobe-specification Use limit to cap the number of timesheet rows
+         *   returned by the list endpoint. Enforce bounds as defined by the DTO
+         *   (minimum 1, maximum 100).
      */
     limit: number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>;
 
     /**
      * Which column to sort the timesheets by. Allowed values are week_start_at, week_end_at, or status.
      *
-     * @x-autobe-specification If provided, map sortBy to an allowed timesheet column for ORDER BY:
-     * - 'week_start_at' -> erp_hrm_time_tracking_timesheets.week_start_at
-     * - 'week_end_at' -> erp_hrm_time_tracking_timesheets.week_end_at
-     * - 'status' -> erp_hrm_time_tracking_timesheets.status
-     * If omitted, the service defaults to ordering by week_start_at descending.
+         * @x-autobe-specification If provided, map sortBy to an allowed
+         *   timesheet column for ORDER BY: - 'week_start_at' ->
+         *   erp_hrm_time_tracking_timesheets.week_start_at - 'week_end_at' ->
+         *   erp_hrm_time_tracking_timesheets.week_end_at - 'status' ->
+         *   erp_hrm_time_tracking_timesheets.status If omitted, the service
+         *   defaults to ordering by week_start_at descending.
      */
     sortBy?: "week_start_at" | "week_end_at" | "status" | undefined;
 
     /**
      * Sort direction: asc for ascending order or desc for descending order.
      *
-     * @x-autobe-specification If provided, map 'asc'/'desc' to the SQL ordering direction for the chosen sortBy column. If omitted, the service defaults to descending for week_start_at.
+         * @x-autobe-specification If provided, map 'asc'/'desc' to the SQL
+         *   ordering direction for the chosen sortBy column. If omitted, the
+         *   service defaults to descending for week_start_at.
      */
     sortDirection?: "asc" | "desc" | undefined;
 
     /**
      * Optional workflow status filter for the timesheets (e.g., draft/submitted/approved/rejected per domain rules).
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification When provided, apply WHERE erp_hrm_time_tracking_timesheets.status = <status>. This DTO does not define the enum of valid statuses; the service layer should validate status values according to the domain/business rules.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification When provided, apply WHERE
+         *   erp_hrm_time_tracking_timesheets.status = <status>. This DTO does
+         *   not define the enum of valid statuses; the service layer should
+         *   validate status values according to the domain/business rules.
      */
     status?: string | undefined;
 
     /**
      * Optional inclusive lower bound for the timesheet week start timestamp.
      *
-     * @x-autobe-database-schema-property week_start_at
-     * @x-autobe-specification When provided, apply WHERE erp_hrm_time_tracking_timesheets.week_start_at >= <weekStartAt> to filter timesheets by their start boundary. If weekEndAt is also provided, the service must validate weekEndAt >= weekStartAt.
+         * @x-autobe-database-schema-property week_start_at
+         * @x-autobe-specification When provided, apply WHERE
+         *   erp_hrm_time_tracking_timesheets.week_start_at >= <weekStartAt> to
+         *   filter timesheets by their start boundary. If weekEndAt is also
+         *   provided, the service must validate weekEndAt >= weekStartAt.
      */
     weekStartAt?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Optional inclusive upper bound for the timesheet week end timestamp.
      *
-     * @x-autobe-database-schema-property week_end_at
-     * @x-autobe-specification When provided, apply WHERE erp_hrm_time_tracking_timesheets.week_end_at <= <weekEndAt> to filter timesheets by their end boundary. If weekStartAt is also provided, the service must validate weekEndAt >= weekStartAt.
+         * @x-autobe-database-schema-property week_end_at
+         * @x-autobe-specification When provided, apply WHERE
+         *   erp_hrm_time_tracking_timesheets.week_end_at <= <weekEndAt> to
+         *   filter timesheets by their end boundary. If weekStartAt is also
+         *   provided, the service must validate weekEndAt >= weekStartAt.
      */
     weekEndAt?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Optional target employee id to filter timesheets. Effective only when the caller is authorized to view that employee’s timesheets; otherwise the endpoint returns only the caller’s own scope or an empty result.
      *
-     * @x-autobe-database-schema-property erp_hrm_time_tracking_employee_id
-     * @x-autobe-specification If provided, treat it as a target employee scope and apply WHERE erp_hrm_time_tracking_timesheets.erp_hrm_time_tracking_employee_id = <employeeId>.
-     * Authorization rules apply:
-     * - If caller has view-all permission for timesheets, allow the provided employeeId within the selected organization.
-     * - Otherwise, ignore disallowed employeeId values by forcing effective scope to caller's own employee id (or return empty results as per authorization layer), to prevent data leakage.
+         * @x-autobe-database-schema-property erp_hrm_time_tracking_employee_id
+         * @x-autobe-specification If provided, treat it as a target employee
+         *   scope and apply WHERE
+         *   erp_hrm_time_tracking_timesheets.erp_hrm_time_tracking_employee_id
+         *   = <employeeId>. Authorization rules apply: - If caller has view-all
+         *   permission for timesheets, allow the provided employeeId within the
+         *   selected organization. - Otherwise, ignore disallowed employeeId
+         *   values by forcing effective scope to caller's own employee id (or
+         *   return empty results as per authorization layer), to prevent data
+         *   leakage.
      */
     employeeId?: (string & tags.Format<"uuid">) | undefined;
   };
@@ -383,7 +504,15 @@ export namespace IErpHrmTimeTrackingTimesheet {
     /**
      * A human-readable reason explaining why the submitted timesheet is being rejected. Must be a non-empty string.
      *
-     * @x-autobe-specification Validate input: trim whitespace and require length > 0. Use this value when persisting the rejection outcome via the service’s audit/reviewer outcome mechanism (e.g., include it in the created ActivityLogEntry content/description if such a field exists; otherwise store it in the designated timesheet rejection outcome storage per service design). Ensure the value is not used to override any server-controlled timestamps or identifiers; all persisted workflow timestamps/IDs must come from the timesheet record and server context.
+         * @x-autobe-specification Validate input: trim whitespace and require
+         *   length > 0. Use this value when persisting the rejection outcome
+         *   via the service’s audit/reviewer outcome mechanism (e.g., include
+         *   it in the created ActivityLogEntry content/description if such a
+         *   field exists; otherwise store it in the designated timesheet
+         *   rejection outcome storage per service design). Ensure the value is
+         *   not used to override any server-controlled timestamps or
+         *   identifiers; all persisted workflow timestamps/IDs must come from
+         *   the timesheet record and server context.
      */
     rejectionReason: string & tags.MinLength<1>;
   };
@@ -395,7 +524,11 @@ export namespace IErpHrmTimeTrackingTimesheet {
     /**
      * Optional reviewer notes provided by the client when approving the timesheet; recorded with the approval activity/audit trail.
      *
-     * @x-autobe-specification If present, include this text in the activity/audit log entry created for the timesheet approval. Do not use it to change timesheet status or timestamps. Persist it in the activity log entry's details/metadata field(s) according to the activity log entry schema used by the service layer.
+         * @x-autobe-specification If present, include this text in the
+         *   activity/audit log entry created for the timesheet approval. Do not
+         *   use it to change timesheet status or timestamps. Persist it in the
+         *   activity log entry's details/metadata field(s) according to the
+         *   activity log entry schema used by the service layer.
      */
     notes?: (string & tags.MaxLength<80000>) | undefined;
   };

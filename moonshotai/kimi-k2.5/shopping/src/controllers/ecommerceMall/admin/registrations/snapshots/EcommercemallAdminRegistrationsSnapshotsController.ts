@@ -23,9 +23,9 @@ export class EcommercemallAdminRegistrationsSnapshotsController {
    * @param connection
    * @param registrationId The unique identifier of the seller registration whose snapshots are being retrieved
    * @param body Search criteria and pagination parameters for filtering registration snapshots
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification registrations.id`.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification registrations.id`.
    *
    * Default sort order is `created_at DESC` (newest snapshots first).
    *
@@ -76,9 +76,10 @@ export class EcommercemallAdminRegistrationsSnapshotsController {
    * @param connection
    * @param registrationId The UUID of the parent seller registration (global scope)
    * @param snapshotId The UUID of the specific snapshot to retrieve (scoped to the registration)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query the ecommerce_mall_seller_registration_snapshots table by snapshotId UUID.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Query the
+     *   ecommerce_mall_seller_registration_snapshots table by snapshotId UUID.
    *
    * Join with ecommerce_mall_admins to retrieve reviewer details when ecommerce_mall_admin_id is present. Include the related ecommerce_mall_seller_registrations record to provide registration context.
    *

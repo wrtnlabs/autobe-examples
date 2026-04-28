@@ -20,9 +20,10 @@ export class ErphrmMemberProfileController {
    * This operation is scoped to the authenticated session and does not require any path parameters.
    *
    * @param connection
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query the erp_hrm_members table using the authenticated member's ID from the session token.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query the erp_hrm_members table using the
+     *   authenticated member's ID from the session token.
    *
    * Return the member's profile including: id, email, display_name, avatar_uri, phone, created_at, updated_at.
    *
@@ -59,9 +60,14 @@ export class ErphrmMemberProfileController {
    *
    * @param connection
    * @param body Partial update fields for the authenticated user's profile
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Validate the request body contains at least one updatable field. For display_name: ensure non-empty string, max 255 characters. For avatar_uri: validate it is a valid URI format if provided. For phone: validate format if provided. For password: validate minimum 8 characters, must include at least one letter and one number.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Validate the request body contains at least one
+     *   updatable field. For display_name: ensure non-empty string, max 255
+     *   characters. For avatar_uri: validate it is a valid URI format if
+     *   provided. For phone: validate format if provided. For password:
+     *   validate minimum 8 characters, must include at least one letter and one
+     *   number.
    *
    * Apply updates to the erp_hrm_members record using the authenticated user's ID from the session token. Update the updated_at timestamp to current time.
    *

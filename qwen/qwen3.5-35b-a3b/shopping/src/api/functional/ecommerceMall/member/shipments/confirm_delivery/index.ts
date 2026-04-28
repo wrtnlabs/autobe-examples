@@ -28,7 +28,8 @@ import { IEcommerceMallShipment } from "../../../../../structures/IEcommerceMall
  * @param props.shipmentId The unique identifier of the shipment to confirm delivery for.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Verify customer owns the order containing this shipment.
+ * @x-autobe-specification Verify customer owns the order containing this
+ *   shipment.
  *
  * Validate shipment exists and is in 'shipped' status.
  *

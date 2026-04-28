@@ -25,9 +25,9 @@ export class ErphrmtimetrackingMemberActivitylogsTargetentitiesTimelineControlle
    *
    * @param connection
    * @param body Timeline filter criteria for activity log entries, including target polymorphic reference, time window, sorting, and pagination options.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation steps:
    *
    * 1) Validate request body:
    * - Require targetEntityType and targetEntityId.

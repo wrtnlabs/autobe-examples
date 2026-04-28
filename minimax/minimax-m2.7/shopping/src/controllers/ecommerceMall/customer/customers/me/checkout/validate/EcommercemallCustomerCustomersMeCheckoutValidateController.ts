@@ -35,9 +35,10 @@ export class EcommercemallCustomerCustomersMeCheckoutValidateController {
    * The response includes the overall validation status, detailed error messages for any blocking issues, warnings about non-blocking concerns, the resolved shipping address, and a summary of cart contents with current prices and availability.
    *
    * @param connection
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification 1. Retrieve the authenticated customer from the session token.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification 1. Retrieve the authenticated customer from the
+     *   session token.
    *
    * 2. Load the customer's cart with all cart items using the customer ID from session.
    *

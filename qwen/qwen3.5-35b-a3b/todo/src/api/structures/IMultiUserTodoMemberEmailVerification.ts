@@ -16,8 +16,10 @@ export type IMultiUserTodoMemberEmailVerification = {
    *
    * A UUID (Universally Unique Identifier) that serves as the primary key for this verification record. Used to reference this specific token in API operations and database queries.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from multi_user_todo_member_email_verifications.id. UUID primary key, unique identifier for this verification token record.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   multi_user_todo_member_email_verifications.id. UUID primary key, unique
+     *   identifier for this verification token record.
    */
   id: string & tags.Format<"uuid">;
 
@@ -26,8 +28,11 @@ export type IMultiUserTodoMemberEmailVerification = {
    *
    * A randomly generated string that serves as the one-time verification code during user registration. This token must be submitted to verify ownership of the email address. Each token can only be used once and expires after a short period for security purposes.
    *
-   * @x-autobe-database-schema-property token
-   * @x-autobe-specification Direct mapping from multi_user_todo_member_email_verifications.token. Secure, randomly generated string used for one-time email verification. Unique constraint ensures each token is used only once.
+     * @x-autobe-database-schema-property token
+     * @x-autobe-specification Direct mapping from
+     *   multi_user_todo_member_email_verifications.token. Secure, randomly
+     *   generated string used for one-time email verification. Unique
+     *   constraint ensures each token is used only once.
    */
   token: string;
 
@@ -36,8 +41,11 @@ export type IMultiUserTodoMemberEmailVerification = {
    *
    * The email address that this verification token is associated with. This matches the email provided when creating the member account and is used to identify which email is being verified.
    *
-   * @x-autobe-database-schema-property email
-   * @x-autobe-specification Direct mapping from multi_user_todo_member_email_verifications.email. The email address being verified during registration, matching the email provided when creating the member account.
+     * @x-autobe-database-schema-property email
+     * @x-autobe-specification Direct mapping from
+     *   multi_user_todo_member_email_verifications.email. The email address
+     *   being verified during registration, matching the email provided when
+     *   creating the member account.
    */
   email: string & tags.Format<"email">;
 
@@ -46,8 +54,11 @@ export type IMultiUserTodoMemberEmailVerification = {
    *
    * The date and time after which this verification token is no longer valid. Tokens are short-lived for security purposes and cannot be used for verification after this timestamp expires.
    *
-   * @x-autobe-database-schema-property expires_at
-   * @x-autobe-specification Direct mapping from multi_user_todo_member_email_verifications.expires_at. Timestamp when this verification token expires. Expired tokens cannot be used for verification.
+     * @x-autobe-database-schema-property expires_at
+     * @x-autobe-specification Direct mapping from
+     *   multi_user_todo_member_email_verifications.expires_at. Timestamp when
+     *   this verification token expires. Expired tokens cannot be used for
+     *   verification.
    */
   expires_at: string & tags.Format<"date-time">;
 
@@ -56,8 +67,10 @@ export type IMultiUserTodoMemberEmailVerification = {
    *
    * The date and time when this verification token was originally generated. Used to determine token age and for audit trail purposes.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from multi_user_todo_member_email_verifications.created_at. Timestamp when this verification token was originally created.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   multi_user_todo_member_email_verifications.created_at. Timestamp when
+     *   this verification token was originally created.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -66,8 +79,10 @@ export type IMultiUserTodoMemberEmailVerification = {
    *
    * The date and time when this verification record was last modified, used to track when verification attempts or token refreshes occur.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from multi_user_todo_member_email_verifications.updated_at. Timestamp when this verification token record was last updated.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   multi_user_todo_member_email_verifications.updated_at. Timestamp when
+     *   this verification token record was last updated.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -76,8 +91,12 @@ export type IMultiUserTodoMemberEmailVerification = {
    *
    * A UUID that references the member account this verification token is associated with. This foreign key links the email verification to the specific member. If the member account has been deleted, this reference will be null due to cascade delete behavior.
    *
-   * @x-autobe-database-schema-property member_id
-   * @x-autobe-specification Direct mapping from multi_user_todo_member_email_verifications.member_id. Foreign key reference to multi_user_todo_members.id. Links this verification token to the associated member account. May be null if member account was deleted (cascade delete).
+     * @x-autobe-database-schema-property member_id
+     * @x-autobe-specification Direct mapping from
+     *   multi_user_todo_member_email_verifications.member_id. Foreign key
+     *   reference to multi_user_todo_members.id. Links this verification token
+     *   to the associated member account. May be null if member account was
+     *   deleted (cascade delete).
    */
   member_id: string & tags.Format<"uuid">;
 
@@ -86,8 +105,12 @@ export type IMultiUserTodoMemberEmailVerification = {
    *
    * The member account that this email verification token belongs to. This relationship provides full member information (id, email, display name, timestamps) for administrative and audit purposes. May be null if the member account has been deleted.
    *
-   * @x-autobe-database-schema-property member
-   * @x-autobe-specification Join from multi_user_todo_member_email_verifications.member_id to multi_user_todo_members.id. Returns IMultiUserTodoMember.ISummary object containing essential member information. Nullable if member account was deleted due to cascade delete.
+     * @x-autobe-database-schema-property member
+     * @x-autobe-specification Join from
+     *   multi_user_todo_member_email_verifications.member_id to
+     *   multi_user_todo_members.id. Returns IMultiUserTodoMember.ISummary
+     *   object containing essential member information. Nullable if member
+     *   account was deleted due to cascade delete.
    */
   member?: IMultiUserTodoMember.ISummary | null | undefined;
 };
@@ -103,8 +126,9 @@ export namespace IMultiUserTodoMemberEmailVerification {
      *
      * Filters the results to only include verification records where the email matches this exact value. Used for finding all verification tokens associated with a specific email address.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Exact email address filter. Matches the email field in multi_user_todo_member_email_verifications table.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Exact email address filter. Matches the email
+         *   field in multi_user_todo_member_email_verifications table.
      */
     email?: string | undefined;
 
@@ -116,7 +140,9 @@ export namespace IMultiUserTodoMemberEmailVerification {
      *
      * This is a computed field derived from the expires_at timestamp, not a stored database column.
      *
-     * @x-autobe-specification Computed filter: calculates token status by comparing expires_at with current time. 'active' = expires_at > now, 'expired' = expires_at <= now.
+         * @x-autobe-specification Computed filter: calculates token status by
+         *   comparing expires_at with current time. 'active' = expires_at >
+         *   now, 'expired' = expires_at <= now.
      */
     status?: "active" | "expired" | undefined;
 
@@ -125,8 +151,10 @@ export namespace IMultiUserTodoMemberEmailVerification {
      *
      * Filters the results to only include verification records associated with a specific member account. Used to find all verification tokens for a particular user.
      *
-     * @x-autobe-database-schema-property member_id
-     * @x-autobe-specification UUID filter for member association. Matches the member_id foreign key in multi_user_todo_member_email_verifications table.
+         * @x-autobe-database-schema-property member_id
+         * @x-autobe-specification UUID filter for member association. Matches
+         *   the member_id foreign key in
+         *   multi_user_todo_member_email_verifications table.
      */
     member_id?: (string & tags.Format<"uuid">) | undefined;
 
@@ -138,7 +166,9 @@ export namespace IMultiUserTodoMemberEmailVerification {
      * - start_date: Beginning of the range (inclusive)
      * - end_date: End of the range (inclusive)
      *
-     * @x-autobe-specification Date range filter for created_at. start_date and end_date define the inclusive range to match. Values compared as date-time timestamps.
+         * @x-autobe-specification Date range filter for created_at. start_date
+         *   and end_date define the inclusive range to match. Values compared
+         *   as date-time timestamps.
      */
     date_range?:
       | {
@@ -155,7 +185,9 @@ export namespace IMultiUserTodoMemberEmailVerification {
      * - page: Which page to return (1-indexed, defaults to 1)
      * - limit: Maximum records per page (1-100, defaults to 100)
      *
-     * @x-autobe-specification Pagination parameters for controlling result set size and position. page specifies which page to retrieve (1-indexed), limit specifies maximum records per page (1-100).
+         * @x-autobe-specification Pagination parameters for controlling result
+         *   set size and position. page specifies which page to retrieve
+         *   (1-indexed), limit specifies maximum records per page (1-100).
      */
     pagination?:
       | {
@@ -177,7 +209,9 @@ export namespace IMultiUserTodoMemberEmailVerification {
      * - 'created_at': Sort by when the verification was created
      * - 'expires_at': Sort by when the verification expires
      *
-     * @x-autobe-specification Sort field selection: 'created_at' or 'expires_at'. Direct mapping to database columns. Results ordered by this field.
+         * @x-autobe-specification Sort field selection: 'created_at' or
+         *   'expires_at'. Direct mapping to database columns. Results ordered
+         *   by this field.
      */
     sort_by?: "created_at" | "expires_at" | undefined;
 
@@ -189,7 +223,9 @@ export namespace IMultiUserTodoMemberEmailVerification {
      * - 'asc': Ascending order (oldest first)
      * - 'desc': Descending order (newest first)
      *
-     * @x-autobe-specification Sort direction: 'asc' (ascending) or 'desc' (descending). Combined with sort_by to control result ordering. Defaults to 'desc'.
+         * @x-autobe-specification Sort direction: 'asc' (ascending) or 'desc'
+         *   (descending). Combined with sort_by to control result ordering.
+         *   Defaults to 'desc'.
      */
     sort_order?: "asc" | "desc" | undefined;
 
@@ -198,7 +234,9 @@ export namespace IMultiUserTodoMemberEmailVerification {
      *
      * Specifies which page of results to return. Page numbering starts from 1. If omitted, null, or undefined, defaults to page 1 (first page). Requesting a page beyond the available range returns an empty data array with valid pagination metadata reflecting the actual totals.
      *
-     * @x-autobe-specification 1-indexed page number. Defaults to 1 if null/undefined. Alternative to specifying in pagination.page object.
+         * @x-autobe-specification 1-indexed page number. Defaults to 1 if
+         *   null/undefined. Alternative to specifying in pagination.page
+         *   object.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
 
@@ -207,7 +245,9 @@ export namespace IMultiUserTodoMemberEmailVerification {
      *
      * Controls how many records are included in each page response. If omitted, null, or undefined, defaults to 100 records per page. The server may enforce upper bounds to prevent excessive resource consumption on large requests.
      *
-     * @x-autobe-specification Maximum records per page. Defaults to 100 if null/undefined. Alternative to specifying in pagination.limit object.
+         * @x-autobe-specification Maximum records per page. Defaults to 100 if
+         *   null/undefined. Alternative to specifying in pagination.limit
+         *   object.
      */
     limit?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };
@@ -223,8 +263,9 @@ export namespace IMultiUserTodoMemberEmailVerification {
      *
      * A UUID that uniquely identifies this email verification token within the system. Used as the primary key for referencing this verification record in administrative operations.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from multi_user_todo_member_email_verifications.id. UUID primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   multi_user_todo_member_email_verifications.id. UUID primary key.
      */
     id: string & tags.Format<"uuid">;
 
@@ -233,8 +274,10 @@ export namespace IMultiUserTodoMemberEmailVerification {
      *
      * The email address associated with this verification token. Matches the email provided when creating the member account. Used as a reference to identify which email is being verified.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from multi_user_todo_member_email_verifications.email. Email address being verified.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   multi_user_todo_member_email_verifications.email. Email address
+         *   being verified.
      */
     email: string & tags.Format<"idn-email">;
 
@@ -243,8 +286,10 @@ export namespace IMultiUserTodoMemberEmailVerification {
      *
      * The date and time when this email verification token expires. Tokens are short-lived for security purposes. Expired tokens cannot be used for verification and will be periodically cleaned up by the system.
      *
-     * @x-autobe-database-schema-property expires_at
-     * @x-autobe-specification Direct mapping from multi_user_todo_member_email_verifications.expires_at. Timestamp when this verification token expires.
+         * @x-autobe-database-schema-property expires_at
+         * @x-autobe-specification Direct mapping from
+         *   multi_user_todo_member_email_verifications.expires_at. Timestamp
+         *   when this verification token expires.
      */
     expires_at: string & tags.Format<"date-time">;
 
@@ -253,8 +298,10 @@ export namespace IMultiUserTodoMemberEmailVerification {
      *
      * The date and time when this email verification token was generated. Used to determine token age and for audit trail purposes.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from multi_user_todo_member_email_verifications.created_at. Timestamp when this verification token was created.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   multi_user_todo_member_email_verifications.created_at. Timestamp
+         *   when this verification token was created.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -263,8 +310,11 @@ export namespace IMultiUserTodoMemberEmailVerification {
      *
      * Reference to the member account that this email verification token is for. Provides administrative context by linking the verification token to the user account it belongs to. Used in administrative views to identify which account is being verified.
      *
-     * @x-autobe-database-schema-property member
-     * @x-autobe-specification Join from multi_user_todo_member_email_verifications.member_id to multi_user_todo_members.id. Returns IMultiUserTodoMember.ISummary for administrative context.
+         * @x-autobe-database-schema-property member
+         * @x-autobe-specification Join from
+         *   multi_user_todo_member_email_verifications.member_id to
+         *   multi_user_todo_members.id. Returns IMultiUserTodoMember.ISummary
+         *   for administrative context.
      */
     member: IMultiUserTodoMember.ISummary;
   };

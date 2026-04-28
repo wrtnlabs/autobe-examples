@@ -149,7 +149,8 @@ export namespace create {
  * @param props.body Community update data including name, description, and optional icon image
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Update an existing community in the community_platform_communities table.
+ * @x-autobe-specification Update an existing community in the
+ *   community_platform_communities table.
  *
  * 1. Authorization: Validate that the authenticated member is the community owner (owner_member_id matches the requesting member's ID).
  *

@@ -11,64 +11,81 @@ export type ICommunityPlatformReportReview = {
   /**
    * Unique identifier of this report review record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from community_platform_report_reviews.id.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_report_reviews.id.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Summary of the report that this moderation review was recorded against.
    *
-   * @x-autobe-database-schema-property report
-   * @x-autobe-specification Resolve the belongs-to relation from community_platform_report_reviews.community_platform_report_id to community_platform_reports.id and project the related row as ICommunityPlatformReport.ISummary.
+     * @x-autobe-database-schema-property report
+     * @x-autobe-specification Resolve the belongs-to relation from
+     *   community_platform_report_reviews.community_platform_report_id to
+     *   community_platform_reports.id and project the related row as
+     *   ICommunityPlatformReport.ISummary.
    */
   report: ICommunityPlatformReport.ISummary;
 
   /**
    * Summary of the community moderator assignment that performed this review action.
    *
-   * @x-autobe-database-schema-property moderator
-   * @x-autobe-specification Resolve the belongs-to relation from community_platform_report_reviews.community_platform_community_moderator_id to community_platform_community_moderators.id and project the related row as ICommunityPlatformCommunityModerator.ISummary.
+     * @x-autobe-database-schema-property moderator
+     * @x-autobe-specification Resolve the belongs-to relation from
+     *   community_platform_report_reviews.community_platform_community_moderator_id
+     *   to community_platform_community_moderators.id and project the related
+     *   row as ICommunityPlatformCommunityModerator.ISummary.
    */
   moderator: ICommunityPlatformCommunityModerator.ISummary;
 
   /**
    * Moderation decision recorded for the report review.
    *
-   * @x-autobe-database-schema-property review_action
-   * @x-autobe-specification Direct mapping from community_platform_report_reviews.review_action. The value stores the moderation decision recorded for the reviewed report, such as approval or dismissal according to supported workflow values.
+     * @x-autobe-database-schema-property review_action
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_report_reviews.review_action. The value stores the
+     *   moderation decision recorded for the reviewed report, such as approval
+     *   or dismissal according to supported workflow values.
    */
   review_action: string;
 
   /**
    * Optional moderator note explaining the reason for the recorded review decision.
    *
-   * @x-autobe-database-schema-property note
-   * @x-autobe-specification Direct mapping from community_platform_report_reviews.note. This field is nullable and should remain null when the moderator did not provide an explanatory rationale.
+     * @x-autobe-database-schema-property note
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_report_reviews.note. This field is nullable and
+     *   should remain null when the moderator did not provide an explanatory
+     *   rationale.
    */
   note: string | null;
 
   /**
    * Timestamp when this review record was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from community_platform_report_reviews.created_at.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_report_reviews.created_at.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when this review record was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from community_platform_report_reviews.updated_at.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_report_reviews.updated_at.
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * Soft-deletion timestamp of this review record, or null when the review has not been soft-deleted.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from community_platform_report_reviews.deleted_at. This field is nullable and is null while the review record remains active.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_report_reviews.deleted_at. This field is nullable
+     *   and is null while the review record remains active.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -80,14 +97,14 @@ export namespace ICommunityPlatformReportReview {
    */
   export type ICreate = {
     /**
-     * @x-autobe-database-schema-property review_action
+         * @x-autobe-database-schema-property review_action
      */
     review_action: string;
 
     /**
      * Optional moderator note explaining the review decision.
      *
-     * @x-autobe-database-schema-property note
+         * @x-autobe-database-schema-property note
      */
     note?: string | null | undefined;
   };

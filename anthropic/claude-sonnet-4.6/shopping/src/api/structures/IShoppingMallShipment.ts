@@ -34,14 +34,18 @@ export namespace IShoppingMallShipment {
     /**
      * The page number to retrieve in the paginated result set (1-indexed). Defaults to the first page if not specified.
      *
-     * @x-autobe-specification 1-indexed page number for offset-based pagination. Compute SQL offset as (page - 1) * limit. Defaults to 1 if omitted. Minimum value is 1.
+         * @x-autobe-specification 1-indexed page number for offset-based
+         *   pagination. Compute SQL offset as (page - 1) * limit. Defaults to 1
+         *   if omitted. Minimum value is 1.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * The maximum number of shipment records to return per page. Must be between 1 and 100. Defaults to 20 if not specified.
      *
-     * @x-autobe-specification Maximum number of shipment records to return per page. Used as the SQL LIMIT clause. Defaults to 20 if omitted. Must be between 1 and 100 inclusive.
+         * @x-autobe-specification Maximum number of shipment records to return
+         *   per page. Used as the SQL LIMIT clause. Defaults to 20 if omitted.
+         *   Must be between 1 and 100 inclusive.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -50,14 +54,22 @@ export namespace IShoppingMallShipment {
     /**
      * Optional filter to narrow results to shipments from a specific logistics carrier. Supports partial text matching (e.g., 'FedEx', 'UPS', 'DHL'). When omitted, all carriers are included.
      *
-     * @x-autobe-specification Optional partial text filter targeting the carrier column of shopping_mall_shipments. Applied as WHERE carrier ILIKE '%{carrier}%' when provided. Case-insensitive partial match. Omitting this field returns shipments regardless of carrier.
+         * @x-autobe-specification Optional partial text filter targeting the
+         *   carrier column of shopping_mall_shipments. Applied as WHERE carrier
+         *   ILIKE '%{carrier}%' when provided. Case-insensitive partial match.
+         *   Omitting this field returns shipments regardless of carrier.
      */
     carrier?: string | undefined;
 
     /**
      * Optional filter by shipment lifecycle status. `pending` means the seller has not yet dispatched the shipment. `shipped` means the shipment has been dispatched but delivery has not been confirmed. `delivered` means the delivery has been confirmed. When omitted, all statuses are included.
      *
-     * @x-autobe-specification Optional derived lifecycle status filter targeting shopping_mall_shipments. Translates to SQL conditions: 'pending' → WHERE shipped_at IS NULL; 'shipped' → WHERE shipped_at IS NOT NULL AND delivered_at IS NULL; 'delivered' → WHERE delivered_at IS NOT NULL. When omitted, no status filter is applied and all active (non-deleted) shipments are returned.
+         * @x-autobe-specification Optional derived lifecycle status filter
+         *   targeting shopping_mall_shipments. Translates to SQL conditions:
+         *   'pending' → WHERE shipped_at IS NULL; 'shipped' → WHERE shipped_at
+         *   IS NOT NULL AND delivered_at IS NULL; 'delivered' → WHERE
+         *   delivered_at IS NOT NULL. When omitted, no status filter is applied
+         *   and all active (non-deleted) shipments are returned.
      */
     status?: "pending" | "shipped" | "delivered" | undefined;
   };
@@ -69,32 +81,49 @@ export namespace IShoppingMallShipment {
     /**
      * The name of the logistics carrier responsible for this shipment (e.g., FedEx, UPS, DHL). This field is required and must be a non-empty string. The carrier name is displayed to customers so they can identify which delivery service to contact for tracking inquiries.
      *
-     * @x-autobe-database-schema-property carrier
-     * @x-autobe-specification Direct mapping to shopping_mall_shipments.carrier. Required non-empty string. Must have minLength: 1. Stores the name of the logistics carrier (e.g., FedEx, UPS, DHL) provided by the seller at the time of shipment update.
+         * @x-autobe-database-schema-property carrier
+         * @x-autobe-specification Direct mapping to
+         *   shopping_mall_shipments.carrier. Required non-empty string. Must
+         *   have minLength: 1. Stores the name of the logistics carrier (e.g.,
+         *   FedEx, UPS, DHL) provided by the seller at the time of shipment
+         *   update.
      */
     carrier: string & tags.MinLength<1>;
 
     /**
      * The carrier-assigned tracking number for this shipment. Customers use this code to monitor their delivery progress externally on the carrier's tracking website. May be `null` if a tracking number has not yet been assigned, or may be explicitly set to `null` to clear a previously recorded tracking code.
      *
-     * @x-autobe-database-schema-property tracking_number
-     * @x-autobe-specification Direct mapping to shopping_mall_shipments.tracking_number. Nullable string. May be set to null to clear a previously assigned tracking code. Stores the carrier-assigned tracking number that customers use to monitor their delivery progress on the carrier's website.
+         * @x-autobe-database-schema-property tracking_number
+         * @x-autobe-specification Direct mapping to
+         *   shopping_mall_shipments.tracking_number. Nullable string. May be
+         *   set to null to clear a previously assigned tracking code. Stores
+         *   the carrier-assigned tracking number that customers use to monitor
+         *   their delivery progress on the carrier's website.
      */
     tracking_number?: string | null | undefined;
 
     /**
      * The timestamp when the seller physically dispatched this shipment to the carrier. Set this field to record when the package left the seller's possession. If the shipment has not yet been dispatched, this field may be `null`. Accepts an ISO 8601 datetime string.
      *
-     * @x-autobe-database-schema-property shipped_at
-     * @x-autobe-specification Direct mapping to shopping_mall_shipments.shipped_at. Nullable ISO 8601 datetime string. Represents the timestamp when the seller physically dispatched the package to the carrier. May be null if the dispatch has not yet been confirmed. Value is written as-is to the DB column (Timestamptz).
+         * @x-autobe-database-schema-property shipped_at
+         * @x-autobe-specification Direct mapping to
+         *   shopping_mall_shipments.shipped_at. Nullable ISO 8601 datetime
+         *   string. Represents the timestamp when the seller physically
+         *   dispatched the package to the carrier. May be null if the dispatch
+         *   has not yet been confirmed. Value is written as-is to the DB column
+         *   (Timestamptz).
      */
     shipped_at?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * The projected date and time by which this shipment is expected to be delivered to the customer. This estimate is provided by the seller or carrier and is surfaced to the customer for planning purposes. May be `null` if no delivery estimate is available. Accepts an ISO 8601 datetime string.
      *
-     * @x-autobe-database-schema-property estimated_delivery_at
-     * @x-autobe-specification Direct mapping to shopping_mall_shipments.estimated_delivery_at. Nullable ISO 8601 datetime string. Represents the projected delivery date and time provided by the seller or carrier. May be null if no estimate is available. Value is written as-is to the DB column (Timestamptz).
+         * @x-autobe-database-schema-property estimated_delivery_at
+         * @x-autobe-specification Direct mapping to
+         *   shopping_mall_shipments.estimated_delivery_at. Nullable ISO 8601
+         *   datetime string. Represents the projected delivery date and time
+         *   provided by the seller or carrier. May be null if no estimate is
+         *   available. Value is written as-is to the DB column (Timestamptz).
      */
     estimated_delivery_at?:
       | (string & tags.Format<"date-time">)
@@ -115,79 +144,119 @@ export namespace IShoppingMallShipment {
     /**
      * The unique identifier of this shipment record.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_shipments.id. UUID primary key. Always present and non-null.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_shipments.id. UUID primary key. Always present and
+         *   non-null.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * The seller who created and is responsible for dispatching this shipment. Identifies the shop and account status of the fulfilling seller.
      *
-     * @x-autobe-database-schema-property seller
-     * @x-autobe-specification Resolved by JOINing shopping_mall_sellers ON shopping_mall_sellers.id = shopping_mall_shipments.shopping_mall_seller_id. Mapped to IShoppingMallSeller.ISummary containing id, email, shop_name, is_banned, is_suspended, created_at, updated_at. The FK column shopping_mall_seller_id is excluded separately.
+         * @x-autobe-database-schema-property seller
+         * @x-autobe-specification Resolved by JOINing shopping_mall_sellers ON
+         *   shopping_mall_sellers.id =
+         *   shopping_mall_shipments.shopping_mall_seller_id. Mapped to
+         *   IShoppingMallSeller.ISummary containing id, email, shop_name,
+         *   is_banned, is_suspended, created_at, updated_at. The FK column
+         *   shopping_mall_seller_id is excluded separately.
      */
     seller: IShoppingMallSeller.ISummary;
 
     /**
      * The name of the logistics carrier responsible for delivering this shipment (e.g., FedEx, UPS, DHL). Provided by the seller at the time of shipment creation.
      *
-     * @x-autobe-database-schema-property carrier
-     * @x-autobe-specification Direct mapping from shopping_mall_shipments.carrier. Non-nullable string. Contains the name of the logistics company used for delivery (e.g., 'FedEx', 'UPS', 'DHL').
+         * @x-autobe-database-schema-property carrier
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_shipments.carrier. Non-nullable string. Contains the
+         *   name of the logistics company used for delivery (e.g., 'FedEx',
+         *   'UPS', 'DHL').
      */
     carrier: string;
 
     /**
      * The carrier-assigned tracking number for this shipment. Null if no tracking number has been assigned yet. Customers can use this to monitor their delivery status on the carrier's platform.
      *
-     * @x-autobe-database-schema-property tracking_number
-     * @x-autobe-specification Direct mapping from shopping_mall_shipments.tracking_number (nullable String?). Returns null if the seller has not yet assigned a tracking number. Customers use this value to track their delivery on the carrier's website.
+         * @x-autobe-database-schema-property tracking_number
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_shipments.tracking_number (nullable String?). Returns
+         *   null if the seller has not yet assigned a tracking number.
+         *   Customers use this value to track their delivery on the carrier's
+         *   website.
      */
     trackingNumber: string | null;
 
     /**
      * The timestamp when the seller physically dispatched this shipment to the carrier. Null if the shipment has not yet been sent.
      *
-     * @x-autobe-database-schema-property shipped_at
-     * @x-autobe-specification Direct mapping from shopping_mall_shipments.shipped_at (nullable DateTime?). Returns null until the seller confirms physical dispatch of the shipment. Set by the seller when the package is handed to the carrier.
+         * @x-autobe-database-schema-property shipped_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_shipments.shipped_at (nullable DateTime?). Returns
+         *   null until the seller confirms physical dispatch of the shipment.
+         *   Set by the seller when the package is handed to the carrier.
      */
     shippedAt: (string & tags.Format<"date-time">) | null;
 
     /**
      * The estimated date and time when this shipment is expected to be delivered to the customer. Null if no estimate has been provided.
      *
-     * @x-autobe-database-schema-property estimated_delivery_at
-     * @x-autobe-specification Direct mapping from shopping_mall_shipments.estimated_delivery_at (nullable DateTime?). Returns null if no estimated delivery date has been provided by the seller or carrier.
+         * @x-autobe-database-schema-property estimated_delivery_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_shipments.estimated_delivery_at (nullable DateTime?).
+         *   Returns null if no estimated delivery date has been provided by the
+         *   seller or carrier.
      */
     estimatedDeliveryAt: (string & tags.Format<"date-time">) | null;
 
     /**
      * The actual timestamp when this shipment was successfully delivered to the customer. Null if delivery has not yet been confirmed.
      *
-     * @x-autobe-database-schema-property delivered_at
-     * @x-autobe-specification Direct mapping from shopping_mall_shipments.delivered_at (nullable DateTime?). Returns null until the delivery has been confirmed. Set when the shipment is confirmed as received by the customer.
+         * @x-autobe-database-schema-property delivered_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_shipments.delivered_at (nullable DateTime?). Returns
+         *   null until the delivery has been confirmed. Set when the shipment
+         *   is confirmed as received by the customer.
      */
     deliveredAt: (string & tags.Format<"date-time">) | null;
 
     /**
      * The list of order items grouped into this shipment. Each entry identifies a specific product variant purchase that is being shipped together in this physical package, along with its purchase quantity, unit price, fulfillment status, and product snapshot details.
      *
-     * @x-autobe-specification Computed by traversing the shipmentItems has-many relation: JOIN shopping_mall_shipment_items ON shopping_mall_shipment_id = shopping_mall_shipments.id. For each shipment item record, JOIN shopping_mall_order_items ON shopping_mall_order_item_id = shopping_mall_order_items.id to get quantity, unit_price, status, created_at, updated_at. Then JOIN shopping_mall_order_item_snapshots ON shopping_mall_order_item_id = shopping_mall_order_items.id for the embedded snapshot. Each element is mapped to IShoppingMallShipmentItem.ISummary (which embeds IShoppingMallOrderItem.ISummary). This is a computed aggregation across multiple tables; the shipmentItems relation is excluded from direct exposure.
+         * @x-autobe-specification Computed by traversing the shipmentItems
+         *   has-many relation: JOIN shopping_mall_shipment_items ON
+         *   shopping_mall_shipment_id = shopping_mall_shipments.id. For each
+         *   shipment item record, JOIN shopping_mall_order_items ON
+         *   shopping_mall_order_item_id = shopping_mall_order_items.id to get
+         *   quantity, unit_price, status, created_at, updated_at. Then JOIN
+         *   shopping_mall_order_item_snapshots ON shopping_mall_order_item_id =
+         *   shopping_mall_order_items.id for the embedded snapshot. Each
+         *   element is mapped to IShoppingMallShipmentItem.ISummary (which
+         *   embeds IShoppingMallOrderItem.ISummary). This is a computed
+         *   aggregation across multiple tables; the shipmentItems relation is
+         *   excluded from direct exposure.
      */
     orderItems: IShoppingMallShipmentItem.ISummary[];
 
     /**
      * The timestamp when this shipment record was first created by the seller.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_shipments.created_at. Non-nullable DateTime. Represents when the seller created this shipment record on the platform.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_shipments.created_at. Non-nullable DateTime.
+         *   Represents when the seller created this shipment record on the
+         *   platform.
      */
     createdAt: string & tags.Format<"date-time">;
 
     /**
      * The timestamp when this shipment record was last updated, reflecting any changes such as tracking number assignment, dispatch confirmation, or delivery confirmation.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from shopping_mall_shipments.updated_at. Non-nullable DateTime. Updated whenever the shipment record is modified, such as when a tracking number is added, dispatch is confirmed, or delivery is confirmed.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_shipments.updated_at. Non-nullable DateTime. Updated
+         *   whenever the shipment record is modified, such as when a tracking
+         *   number is added, dispatch is confirmed, or delivery is confirmed.
      */
     updatedAt: string & tags.Format<"date-time">;
   };
@@ -201,20 +270,20 @@ export namespace IShoppingMallShipment {
    */
   export type ICreate = {
     /**
-     * @x-autobe-database-schema-property carrier
+         * @x-autobe-database-schema-property carrier
      */
     carrier: string;
     /**
-     * @x-autobe-database-schema-property tracking_number
+         * @x-autobe-database-schema-property tracking_number
      */
     trackingNumber?: string | null | undefined;
     orderItemIds: (string & tags.Format<"uuid">)[] & tags.MinItems<1>;
     /**
-     * @x-autobe-database-schema-property shipped_at
+         * @x-autobe-database-schema-property shipped_at
      */
     shippedAt?: (string & tags.Format<"date-time">) | null | undefined;
     /**
-     * @x-autobe-database-schema-property estimated_delivery_at
+         * @x-autobe-database-schema-property estimated_delivery_at
      */
     estimatedDeliveryAt?:
       | (string & tags.Format<"date-time">)

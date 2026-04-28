@@ -22,7 +22,12 @@ import { IPageIErpHrmTimeOrganizationMembership } from "../../../../structures/I
  * @param props.body Data required to create an organization membership for an existing member account.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Resolve the organization from the active organization context and verify the caller has permission to add memberships in that organization. Validate that the target member exists and that no active or existing membership already links the same member and organization pair, using the unique constraint on (erp_hrm_time_member_id, erp_hrm_time_organization_id).
+ * @x-autobe-specification Resolve the organization from the active organization
+ *   context and verify the caller has permission to add memberships in that
+ *   organization. Validate that the target member exists and that no active or
+ *   existing membership already links the same member and organization pair,
+ *   using the unique constraint on (erp_hrm_time_member_id,
+ *   erp_hrm_time_organization_id).
  *
  * Create a new organization membership row with the provided member reference and organization reference, then set the membership status according to the business flow used by invitations or direct additions. Persist is_selected_context according to the service rule for the current organization context, ensuring only the intended membership becomes active in the selected organization scope.
  *
@@ -117,7 +122,13 @@ export namespace create {
  * @param props.body Search, filter, pagination, and sorting criteria for organization memberships.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query erp_hrm_time_organization_memberships using the active organization context as the primary scope. Filter by erp_hrm_time_organization_id from the current selected organization, and optionally filter by erp_hrm_time_member_id, status, and is_selected_context. Support pagination, search, and sorting in the request body; sorting should be applied on allowed columns such as created_at, updated_at, status, and is_selected_context.
+ * @x-autobe-specification Query erp_hrm_time_organization_memberships using the
+ *   active organization context as the primary scope. Filter by
+ *   erp_hrm_time_organization_id from the current selected organization, and
+ *   optionally filter by erp_hrm_time_member_id, status, and
+ *   is_selected_context. Support pagination, search, and sorting in the request
+ *   body; sorting should be applied on allowed columns such as created_at,
+ *   updated_at, status, and is_selected_context.
  *
  * Return only memberships visible in the current organization. Use joins to member and organization only if needed for downstream summary composition, but do not expose fields beyond the membership summary contract. Respect the unique membership constraint on (erp_hrm_time_member_id, erp_hrm_time_organization_id). Exclude logically deleted records by default unless the request explicitly asks for deleted items and the caller is authorized for administrative recovery workflows.
  *
@@ -210,7 +221,14 @@ export namespace index {
  * @param props.organizationMembershipId Organization membership identifier (UUID) in the current organization scope.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Load the organization membership by UUID from erp_hrm_time_organization_memberships with its related member and organization references if needed by the response mapper. Enforce organization context: the resolved membership must belong to the caller's selected organization and must not be deleted. Use the primary key lookup first, then verify the record's organization matches the active organization context before returning it. If the record is missing, deleted, or context-mismatched, return not found.
+ * @x-autobe-specification Load the organization membership by UUID from
+ *   erp_hrm_time_organization_memberships with its related member and
+ *   organization references if needed by the response mapper. Enforce
+ *   organization context: the resolved membership must belong to the caller's
+ *   selected organization and must not be deleted. Use the primary key lookup
+ *   first, then verify the record's organization matches the active
+ *   organization context before returning it. If the record is missing,
+ *   deleted, or context-mismatched, return not found.
  *
  * Do not infer role assignment fields because they are not present in this schema. Return only the membership entity shape that is supported by the loaded schema and the shared DTO conventions for this service. The accessor must remain unique under the organizationMemberships namespace.
  * @path /erpHrmTime/member/organizationMemberships/:organizationMembershipId
@@ -302,7 +320,10 @@ export namespace at {
  * @param props.body Fields used to update the membership status and selected organization context flag.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Load the membership by UUID and enforce organization-context access before any update. Do not allow changing erp_hrm_time_member_id or erp_hrm_time_organization_id because the endpoint is for updating the existing membership record only.
+ * @x-autobe-specification Load the membership by UUID and enforce
+ *   organization-context access before any update. Do not allow changing
+ *   erp_hrm_time_member_id or erp_hrm_time_organization_id because the endpoint
+ *   is for updating the existing membership record only.
  *
  * Update only status and is_selected_context from the request body. Persist updated_at automatically. If is_selected_context is set to true, ensure the selected membership behavior remains coherent for the member within the organization context; if the domain rules require a single selected membership per member, clear other selected memberships for the same member in the same organization scope within the same transaction.
  *
@@ -406,7 +427,11 @@ export namespace update {
  * @param props.organizationMembershipId The unique identifier of the organization membership to remove within the current organization context.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Load the organization membership by organizationMembershipId and verify it belongs to the authenticated user’s current organization context. Enforce permission checks so only callers with membership-management authority in the organization can delete the record.
+ * @x-autobe-specification Load the organization membership by
+ *   organizationMembershipId and verify it belongs to the authenticated user’s
+ *   current organization context. Enforce permission checks so only callers
+ *   with membership-management authority in the organization can delete the
+ *   record.
  *
  * Before deletion, validate business rules that prevent removing memberships needed to preserve organization ownership integrity. If the membership corresponds to the sole owner relationship for the organization, reject the request and instruct the caller to transfer ownership or delete the organization first.
  *

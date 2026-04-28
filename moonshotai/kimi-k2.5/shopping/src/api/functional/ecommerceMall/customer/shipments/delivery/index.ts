@@ -21,7 +21,8 @@ import { IEcommerceMallShipmentDelivery } from "../../../../../structures/IEcomm
  * @param props.shipmentId Unique identifier of the shipment to retrieve delivery information for
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Query the ecommerce_mall_shipment_deliveries table using the provided shipmentId as the foreign key.
+ * @x-autobe-specification Query the ecommerce_mall_shipment_deliveries table
+ *   using the provided shipmentId as the foreign key.
  *
  * Implementation steps:
  * 1. Validate shipmentId is a valid UUID

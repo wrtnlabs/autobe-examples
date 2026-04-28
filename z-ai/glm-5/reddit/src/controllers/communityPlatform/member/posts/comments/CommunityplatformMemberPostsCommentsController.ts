@@ -25,9 +25,9 @@ export class CommunityplatformMemberPostsCommentsController {
    * @param connection
    * @param postId Unique identifier of the post to comment on
    * @param body Comment creation data including content and optional parent comment for threaded replies
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation steps:
    *
    * 1. Authenticate the member from the session token
    * 2. Validate postId path parameter exists as an active (non-deleted) post in community_platform_posts table
@@ -92,9 +92,9 @@ export class CommunityplatformMemberPostsCommentsController {
    * @param postId The unique identifier of the post containing the comment
    * @param commentId The unique identifier of the comment to edit
    * @param body The updated comment content
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Update the content of an existing comment.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Update the content of an existing comment.
    *
    * Implementation steps:
    * 1. Validate that both postId and commentId exist in the database
@@ -155,9 +155,9 @@ export class CommunityplatformMemberPostsCommentsController {
    * @param connection
    * @param postId Unique identifier of the post containing the comment to be deleted
    * @param commentId Unique identifier of the comment to be permanently removed
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation steps:
    *
    * 1. Extract postId and commentId from path parameters
    * 2. Authenticate the requesting member from session

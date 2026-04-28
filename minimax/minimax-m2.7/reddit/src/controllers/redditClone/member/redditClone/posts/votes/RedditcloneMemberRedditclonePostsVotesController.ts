@@ -23,9 +23,9 @@ export class RedditcloneMemberRedditclonePostsVotesController {
    * @param connection
    * @param postId Unique identifier of the post being voted on (global scope)
    * @param body Vote direction to cast on the post
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Vote creation on a post with karma adjustment.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Vote creation on a post with karma adjustment.
    *
    * 1. **Authentication**: Extract member ID from authenticated session. Reject if not authenticated.
    *
@@ -94,9 +94,10 @@ export class RedditcloneMemberRedditclonePostsVotesController {
    * @param postId Unique identifier of the post being voted on (global scope)
    * @param voteId Unique identifier of the vote record to update (global scope)
    * @param body New vote direction to apply to the existing vote
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Update the direction of an existing vote on a post.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Update the direction of an existing vote on a
+     *   post.
    *
    * 1. Validate the vote exists and belongs to the authenticated member (via session).
    * 2. Validate the post exists and is not deleted.
@@ -152,9 +153,10 @@ export class RedditcloneMemberRedditclonePostsVotesController {
    * @param connection
    * @param postId Unique identifier of the post
    * @param voteId Unique identifier of the vote to remove
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Remove vote from reddit_clone_post_votes table where id equals voteId.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Remove vote from reddit_clone_post_votes table
+     *   where id equals voteId.
    *
    * Verify vote exists before deletion. Retrieve vote direction ('upvote' or 'downvote') to calculate adjustments.
    *

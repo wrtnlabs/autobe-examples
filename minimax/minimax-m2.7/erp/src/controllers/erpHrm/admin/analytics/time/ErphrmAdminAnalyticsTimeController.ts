@@ -21,9 +21,10 @@ export class ErphrmAdminAnalyticsTimeController {
    *
    * @param connection
    * @param body Time analytics search criteria including date range, filters, grouping, and pagination parameters.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query the erp_hrm_timelogs table with the provided date range filter.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Query the erp_hrm_timelogs table with the
+     *   provided date range filter.
    *
    * Join erp_hrm_timelogs with erp_hrm_employees to get employee details (name, department, position). Join with erp_hrm_projects to get project details (name, color). Join with erp_hrm_tasks optionally for task-based grouping.
    *

@@ -24,7 +24,8 @@ import { IPrivateTodoAppTodo } from "../../../../structures/IPrivateTodoAppTodo"
  * @param props.body Search criteria, filters, and pagination parameters for trash items
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query the private_todo_app_todos table with the following filters:
+ * @x-autobe-specification Query the private_todo_app_todos table with the
+ *   following filters:
  *
  * 1. Filter by user_id matching the authenticated member's ID
  * 2. Filter by deleted_at IS NOT NULL (only soft-deleted todos)

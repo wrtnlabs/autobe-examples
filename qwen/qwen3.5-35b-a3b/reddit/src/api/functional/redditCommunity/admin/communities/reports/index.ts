@@ -21,7 +21,8 @@ import { IRedditCommunityReport } from "../../../../../structures/IRedditCommuni
  * @param props.body Search criteria and pagination parameters for retrieving the report queue.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Query reddit_community_reports table with the following constraints and filters:
+ * @x-autobe-specification Query reddit_community_reports table with the
+ *   following constraints and filters:
  *
  * 1. Filter by community_id to match the {communityCode} path parameter - only return reports belonging to the specified community
  * 2. Filter by status_id = 0 (pending) - only return unresolved reports awaiting moderator review
@@ -133,7 +134,8 @@ export namespace patchByCommunitycode {
  * @param props.body Search and filter criteria for reports, including status filtering, date range, search text, and pagination parameters.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Query reddit_community_reports table filtered by community_id.
+ * @x-autobe-specification Query reddit_community_reports table filtered by
+ *   community_id.
  *
  * 1. Validate that the authenticated user has moderator privileges for the specified community by checking reddit_community_moderator_roles table.
  *

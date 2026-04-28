@@ -24,9 +24,10 @@ export class ShoppingmallAuthSellerController {
    *
    * @param connection
    * @param body Registration credentials for creating a new seller account.
-   * @x-autobe-authorization-type join
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Implement seller registration with email uniqueness validation and password hashing.
+     * @x-autobe-authorization-type join
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Implement seller registration with email
+     *   uniqueness validation and password hashing.
    *
    * 1. Validate email format and check for existing seller with same email in shopping_mall_sellers table
    * 2. Hash password using BCrypt algorithm with salt
@@ -82,9 +83,10 @@ export class ShoppingmallAuthSellerController {
    *
    * @param connection
    * @param body Login credentials for seller authentication.
-   * @x-autobe-authorization-type login
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Implement seller login with email/password validation and session creation.
+     * @x-autobe-authorization-type login
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Implement seller login with email/password
+     *   validation and session creation.
    *
    * 1. Find seller by email in shopping_mall_sellers table
    * 2. Validate seller exists and is not deleted (deleted_at is null)
@@ -141,9 +143,10 @@ export class ShoppingmallAuthSellerController {
    *
    * @param connection
    * @param body Refresh token for obtaining new authentication tokens.
-   * @x-autobe-authorization-type refresh
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Implement token refresh for seller authentication.
+     * @x-autobe-authorization-type refresh
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Implement token refresh for seller
+     *   authentication.
    *
    * 1. Validate the provided refresh token is a valid JWT
    * 2. Verify the refresh token has not expired

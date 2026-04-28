@@ -16,8 +16,10 @@ export type IHrmTimeTrackOrganizationSnapshot = {
    *
    * This UUID serves as the primary key for the snapshot entity and is used to reference the snapshot across all API operations. Each snapshot is immutable once created, and this identifier remains constant throughout its lifecycle.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from hrm_time_track_organization_snapshots.id column. Primary key of the snapshot record.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_organization_snapshots.id column. Primary key of the
+     *   snapshot record.
    */
   id: string & tags.Format<"uuid">;
 
@@ -26,8 +28,10 @@ export type IHrmTimeTrackOrganizationSnapshot = {
    *
    * Preserves the legal or doing-business-as name of the organization as it existed when the snapshot was taken. This field is required and cannot be null.
    *
-   * @x-autobe-database-schema-property name
-   * @x-autobe-specification Direct mapping from hrm_time_track_organization_snapshots.name column. Captures organization name at snapshot time.
+     * @x-autobe-database-schema-property name
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_organization_snapshots.name column. Captures
+     *   organization name at snapshot time.
    */
   name: string;
 
@@ -36,8 +40,10 @@ export type IHrmTimeTrackOrganizationSnapshot = {
    *
    * Preserves the business description and mission statement that was active when the snapshot was taken. This field is optional and may be null if no description was provided.
    *
-   * @x-autobe-database-schema-property description
-   * @x-autobe-specification Direct mapping from hrm_time_track_organization_snapshots.description column. Nullable field capturing organization description at snapshot time.
+     * @x-autobe-database-schema-property description
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_organization_snapshots.description column. Nullable
+     *   field capturing organization description at snapshot time.
    */
   description: string | null;
 
@@ -46,8 +52,11 @@ export type IHrmTimeTrackOrganizationSnapshot = {
    *
    * Stores the logo image URL that was associated with the organization when the snapshot was created. This field is optional and may be null if no logo was configured.
    *
-   * @x-autobe-specification Direct mapping from hrm_time_track_organization_snapshots.logo_url column. Nullable field capturing organization logo URL at snapshot time. Database column has uri format.
-   * @x-autobe-database-schema-property logo_url
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_organization_snapshots.logo_url column. Nullable field
+     *   capturing organization logo URL at snapshot time. Database column has
+     *   uri format.
+     * @x-autobe-database-schema-property logo_url
    */
   logo_url: (string & tags.Format<"uri">) | null;
 
@@ -56,8 +65,10 @@ export type IHrmTimeTrackOrganizationSnapshot = {
    *
    * Captures the three-letter ISO 4217 currency code (e.g., 'USD', 'EUR', 'KRW') that was active when the snapshot was taken. All financial data in the organization uses this currency for calculations.
    *
-   * @x-autobe-database-schema-property currency
-   * @x-autobe-specification Direct mapping from hrm_time_track_organization_snapshots.currency column. Captures ISO 4217 currency code at snapshot time.
+     * @x-autobe-database-schema-property currency
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_organization_snapshots.currency column. Captures ISO
+     *   4217 currency code at snapshot time.
    */
   currency: string;
 
@@ -66,8 +77,10 @@ export type IHrmTimeTrackOrganizationSnapshot = {
    *
    * Preserves the IANA timezone identifier (e.g., 'Asia/Seoul', 'America/New_York') that was configured when the snapshot was created. All time-based operations are interpreted relative to this timezone.
    *
-   * @x-autobe-database-schema-property timezone
-   * @x-autobe-specification Direct mapping from hrm_time_track_organization_snapshots.timezone column. Captures IANA timezone identifier at snapshot time.
+     * @x-autobe-database-schema-property timezone
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_organization_snapshots.timezone column. Captures IANA
+     *   timezone identifier at snapshot time.
    */
   timezone: string;
 
@@ -76,8 +89,10 @@ export type IHrmTimeTrackOrganizationSnapshot = {
    *
    * Records which month (1=January, 12=December) marked the beginning of the fiscal year when the snapshot was taken. Used for financial reporting and pay period calculations.
    *
-   * @x-autobe-database-schema-property fiscal_start_month
-   * @x-autobe-specification Direct mapping from hrm_time_track_organization_snapshots.fiscal_start_month column. Captures fiscal year start month (1-12) at snapshot time.
+     * @x-autobe-database-schema-property fiscal_start_month
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_organization_snapshots.fiscal_start_month column.
+     *   Captures fiscal year start month (1-12) at snapshot time.
    */
   fiscal_start_month: number & tags.Type<"int32">;
 
@@ -86,8 +101,10 @@ export type IHrmTimeTrackOrganizationSnapshot = {
    *
    * Immutably records the exact moment this point-in-time copy was captured for audit purposes. This timestamp is used to determine the chronological order of snapshots and to filter snapshots by date range.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from hrm_time_track_organization_snapshots.created_at column. Immutably records when the snapshot was captured.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_organization_snapshots.created_at column. Immutably
+     *   records when the snapshot was captured.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -96,8 +113,12 @@ export type IHrmTimeTrackOrganizationSnapshot = {
    *
    * Provides essential organization context including identification (id, name), operational settings (currency, timezone, fiscal start month), and creation timestamp. This relation enables understanding which organization's settings were captured in this snapshot.
    *
-   * @x-autobe-database-schema-property organization
-   * @x-autobe-specification Relation loaded via JOIN on hrm_time_track_organization_id foreign key to hrm_time_track_organizations.id. Returns IHrmTimeTrackOrganization.ISummary with essential organization information.
+     * @x-autobe-database-schema-property organization
+     * @x-autobe-specification Relation loaded via JOIN on
+     *   hrm_time_track_organization_id foreign key to
+     *   hrm_time_track_organizations.id. Returns
+     *   IHrmTimeTrackOrganization.ISummary with essential organization
+     *   information.
    */
   organization: IHrmTimeTrackOrganization.ISummary;
 };
@@ -132,7 +153,9 @@ export namespace IHrmTimeTrackOrganizationSnapshot {
      *
      * Specifies which page of results to retrieve. Page numbering starts from 1, so the first page is page 1. This parameter works with the limit parameter to control which subset of results is returned.
      *
-     * @x-autobe-specification Page number for offset-based pagination (1-indexed). Maps to SQL OFFSET calculation: (page - 1) * limit. Minimum value is 1.
+         * @x-autobe-specification Page number for offset-based pagination
+         *   (1-indexed). Maps to SQL OFFSET calculation: (page - 1) * limit.
+         *   Minimum value is 1.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -141,7 +164,9 @@ export namespace IHrmTimeTrackOrganizationSnapshot {
      *
      * Defines how many organization snapshot records to return per page. The actual number of records may be less than this value on the final page. Valid values range from 1 to 100.
      *
-     * @x-autobe-specification Number of records per page. Maps to SQL LIMIT clause. Valid range is 1-100. Controls the maximum number of records returned in a single page.
+         * @x-autobe-specification Number of records per page. Maps to SQL LIMIT
+         *   clause. Valid range is 1-100. Controls the maximum number of
+         *   records returned in a single page.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -152,7 +177,10 @@ export namespace IHrmTimeTrackOrganizationSnapshot {
      *
      * An alternative pagination mechanism to page/limit offset-based pagination. The cursor token represents a position in the result set and enables efficient traversal of large datasets without performance degradation from high OFFSET values.
      *
-     * @x-autobe-specification Cursor token for cursor-based pagination. Alternative to offset-based pagination (page/limit). Used for efficient large dataset traversal without OFFSET performance issues.
+         * @x-autobe-specification Cursor token for cursor-based pagination.
+         *   Alternative to offset-based pagination (page/limit). Used for
+         *   efficient large dataset traversal without OFFSET performance
+         *   issues.
      */
     cursor?: string | undefined;
 
@@ -161,8 +189,11 @@ export namespace IHrmTimeTrackOrganizationSnapshot {
      *
      * Restricts results to organization snapshots that were created at or after the specified date-time. Uses ISO 8601 format (e.g., 2024-01-15T10:30:00Z). This parameter can be combined with created_at_end to define a date range.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Filter snapshots created on or after this timestamp. Maps to SQL: created_at >= created_at_start. ISO 8601 date-time format. Filters the created_at column in hrm_time_track_organization_snapshots.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Filter snapshots created on or after this
+         *   timestamp. Maps to SQL: created_at >= created_at_start. ISO 8601
+         *   date-time format. Filters the created_at column in
+         *   hrm_time_track_organization_snapshots.
      */
     created_at_start?: (string & tags.Format<"date-time">) | undefined;
 
@@ -171,8 +202,11 @@ export namespace IHrmTimeTrackOrganizationSnapshot {
      *
      * Restricts results to organization snapshots that were created at or before the specified date-time. Uses ISO 8601 format (e.g., 2024-01-15T10:30:00Z). This parameter can be combined with created_at_start to define a date range.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Filter snapshots created on or before this timestamp. Maps to SQL: created_at <= created_at_end. ISO 8601 date-time format. Filters the created_at column in hrm_time_track_organization_snapshots.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Filter snapshots created on or before this
+         *   timestamp. Maps to SQL: created_at <= created_at_end. ISO 8601
+         *   date-time format. Filters the created_at column in
+         *   hrm_time_track_organization_snapshots.
      */
     created_at_end?: (string & tags.Format<"date-time">) | undefined;
 
@@ -181,7 +215,10 @@ export namespace IHrmTimeTrackOrganizationSnapshot {
      *
      * Performs case-insensitive text search across both the organization name and description fields. Supports partial matching, so entering a substring will return all snapshots where the name or description contains that text.
      *
-     * @x-autobe-specification Full-text search term for matching organization name or description. Maps to SQL: (name ILIKE %search% OR description ILIKE %search%). Case-insensitive partial matching on both name and description columns.
+         * @x-autobe-specification Full-text search term for matching
+         *   organization name or description. Maps to SQL: (name ILIKE %search%
+         *   OR description ILIKE %search%). Case-insensitive partial matching
+         *   on both name and description columns.
      */
     search?: string | undefined;
 
@@ -190,8 +227,11 @@ export namespace IHrmTimeTrackOrganizationSnapshot {
      *
      * Restricts results to organization snapshots that used the specified currency code. The currency field represents the base currency for financial calculations within the organization at the time the snapshot was taken.
      *
-     * @x-autobe-database-schema-property currency
-     * @x-autobe-specification Filter by ISO currency code. Maps to SQL: currency = 'XXX'. Filters the currency column in hrm_time_track_organization_snapshots. Example values: USD, EUR, KRW.
+         * @x-autobe-database-schema-property currency
+         * @x-autobe-specification Filter by ISO currency code. Maps to SQL:
+         *   currency = 'XXX'. Filters the currency column in
+         *   hrm_time_track_organization_snapshots. Example values: USD, EUR,
+         *   KRW.
      */
     currency?: string | undefined;
   };

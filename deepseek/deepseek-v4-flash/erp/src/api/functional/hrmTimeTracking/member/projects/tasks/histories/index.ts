@@ -24,7 +24,8 @@ import { IPageIHrmTimeTrackingTaskHistory } from "../../../../../../structures/I
  * @param props.body Search criteria for filtering task history entries, including optional employee ID filter, previous/new status filters, date range on creation timestamp, sorting options, and pagination parameters.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query `hrm_time_tracking_task_histories` filtered by `hrm_time_tracking_task_id = taskId`.
+ * @x-autobe-specification Query `hrm_time_tracking_task_histories` filtered by
+ *   `hrm_time_tracking_task_id = taskId`.
  *
  * Verify accessibility:
  * - Join through `hrm_time_tracking_tasks` on `hrm_time_tracking_task_id` to confirm the task belongs to the specified project (`hrm_time_tracking_project_id = projectId`)
@@ -151,7 +152,8 @@ export namespace index {
  * @param props.historyId UUID of the task history entry to retrieve. Identifies a specific immutable status change record within the task's audit trail.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query the hrm_time_tracking_task_histories table with authorization scoping through the project hierarchy.
+ * @x-autobe-specification Query the hrm_time_tracking_task_histories table with
+ *   authorization scoping through the project hierarchy.
  *
  * 1. Verify the project exists within the user's organization context: query hrm_time_tracking_projects with id = projectId AND hrm_time_tracking_organization_id = <current_org_id> AND deleted_at IS NULL. Return 404 if not found.
  * 2. Verify the task exists within the project: query hrm_time_tracking_tasks with id = taskId AND hrm_time_tracking_project_id = projectId AND deleted_at IS NULL. Return 404 if not found.

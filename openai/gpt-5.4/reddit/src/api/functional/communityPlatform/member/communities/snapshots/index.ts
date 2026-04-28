@@ -24,7 +24,11 @@ import { ICommunityPlatformCommunitySnapshot } from "../../../../../structures/I
  * @param props.body Snapshot creation data for the target community
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Resolve the target community by querying `community_platform_communities` with `slug = :communitySlug` and ensure the record is eligible for management access. Reject the request if the community does not exist or if it has been removed from active use in a way that forbids new snapshot creation according to service policy.
+ * @x-autobe-specification Resolve the target community by querying
+ *   `community_platform_communities` with `slug = :communitySlug` and ensure
+ *   the record is eligible for management access. Reject the request if the
+ *   community does not exist or if it has been removed from active use in a way
+ *   that forbids new snapshot creation according to service policy.
  *
  * Authorize the caller as an authenticated member with management rights over the target community. At minimum, compare the authenticated member identifier against `community_platform_communities.community_platform_member_id`. If the service later allows delegated moderators or other management roles to create historical records, apply that authorization rule before continuing.
  *

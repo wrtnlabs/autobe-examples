@@ -19,9 +19,10 @@ export class RedditcloneModeratorsController {
    *
    * @param connection
    * @param body Search criteria for moderator assignments including community filter, user filter, role type filter, date range filters, and pagination parameters.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query the reddit_clone_community_moderators table with JOINs to reddit_clone_communities and reddit_clone_user_profiles.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query the reddit_clone_community_moderators table
+     *   with JOINs to reddit_clone_communities and reddit_clone_user_profiles.
    *
    * Apply filtering based on request body parameters:
    * - Filter by community_id if provided
@@ -66,9 +67,10 @@ export class RedditcloneModeratorsController {
    *
    * @param connection
    * @param moderatorId Unique identifier of the moderator to retrieve (global scope)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query the reddit_clone_moderators table for a record matching the provided moderatorId UUID.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query the reddit_clone_moderators table for a
+     *   record matching the provided moderatorId UUID.
    *
    * Join with reddit_clone_user_profiles table on reddit_clone_user_profile_id to retrieve associated profile data including display_name, bio, avatar_url, and karma_score.
    *

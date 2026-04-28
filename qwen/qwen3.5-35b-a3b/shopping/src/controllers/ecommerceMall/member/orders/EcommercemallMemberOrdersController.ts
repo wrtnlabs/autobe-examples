@@ -21,9 +21,9 @@ export class EcommercemallMemberOrdersController {
    *
    * @param connection
    * @param body Cart items to order, shipping address ID, and member context. Contains the list of product variants with quantities being ordered, the customer's selected shipping address, and member authentication context.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Create new order record with the following steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Create new order record with the following steps:
    *
    * 1. Validate member authentication and get member_id from session
    * 2. Retrieve cart items for authenticated member from cart
@@ -76,9 +76,10 @@ export class EcommercemallMemberOrdersController {
    *
    * @param connection
    * @param body Search criteria including status filter, date range, sorting options, and pagination parameters.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query ecommerce_mall_orders table with pagination and filtering.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query ecommerce_mall_orders table with pagination
+     *   and filtering.
    *
    * Authorization:
    * - For member actors: filter by ecommerce_mall_member_id = current_user.id
@@ -148,9 +149,10 @@ export class EcommercemallMemberOrdersController {
    *
    * @param connection
    * @param id Unique identifier of the order to retrieve.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Retrieve order by UUID and return full details with all related data.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Retrieve order by UUID and return full details
+     *   with all related data.
    *
    * 1. Query ecommerce_mall_orders by id
    * 2. Join with ecommerce_mall_members to get customer information
@@ -196,9 +198,10 @@ export class EcommercemallMemberOrdersController {
    *
    * @param connection
    * @param orderId The unique identifier of the order to retrieve shipments for.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query ecommerce_mall_shipments table filtering by order_id matching the path parameter.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query ecommerce_mall_shipments table filtering by
+     *   order_id matching the path parameter.
    *
    * Join with ecommerce_mall_shipment_items to retrieve order items included in each shipment, including item quantity_shipped, status, and timestamps.
    *

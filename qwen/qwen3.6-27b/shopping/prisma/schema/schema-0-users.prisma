@@ -1,0 +1,859 @@
+/// Temporary guest account records for unregistered platform visitors.
+///
+/// Guest accounts represent visitors who access the platform before creating
+/// a customer account. Guests have zero platform permissions - they cannot
+/// browse products, manage carts, wishlist items, or perform any platform
+/// operations beyond accessing registration and login entry points.
+///
+/// Each guest is identified by a unique device fingerprint derived from
+/// browser and device characteristics. This fingerprint enables tracking
+/// returning visitors across sessions while maintaining privacy by not
+/// requiring personal information.
+///
+/// When a guest completes registration, they transition to a customer
+/// account via {@link ecommerce_platform_customers}. The guest record may be
+/// preserved for analytics or audit trail purposes.
+///
+/// Related entities:
+/// - {@link ecommerce_platform_guest_sessions} - Temporary session tokens
+/// for guest access to registration flows
+///
+/// @namespace systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_platform_guests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for this guest account.
+  id String @id
+  
+  /// Unique identifier derived from the visitor's browser and device
+  /// characteristics.
+  ///
+  /// This fingerprint is automatically generated when a new visitor accesses
+  /// the platform. It serves as the primary way to identify returning guests
+  /// who have not yet registered. The fingerprint consists of browser
+  /// fingerprint data including user agent, screen resolution, timezone, and
+  /// other device attributes.
+  device_fingerprint String
+  
+  /// Timestamp when this guest account was first created.
+  created_at DateTime
+  
+  /// Timestamp of the most recent update to this guest account.
+  updated_at DateTime
+  
+  /// Timestamp when this guest account was soft-deleted.
+  ///
+  /// A value of null indicates the account is active.
+  deleted_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  guestSessions ecommerce_platform_guest_sessions[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([device_fingerprint])
+}
+
+/// Stores temporary session tokens for unauthenticated guest visitors
+/// accessing registration and login pages.
+///
+/// Tracks the IP address, current page URL, and referrer for each guest
+/// session. Links back to the {@link ecommerce_platform_guests} entity via
+/// foreign key. Sessions automatically expire based on the expired_at
+/// timestamp to clean up stale data.
+///
+/// @namespace systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_platform_guest_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Foreign key linking to the {@link ecommerce_platform_guests} entity that
+  /// owns this session.
+  ///
+  /// Each guest may have multiple session records across different visits.
+  /// Sessions are created when guests interact with registration and login
+  /// pages.
+  ecommerce_platform_guest_id String
+  
+  /// IP address of the guest when the session was created.
+  ip String
+  
+  /// The URL the guest was accessing when the session was created.
+  href String
+  
+  /// The referrer URL that led the guest to the current page.
+  referrer String
+  
+  /// Timestamp when the session was created.
+  created_at DateTime
+  
+  /// Timestamp when the session expires. Used to automatically clean up stale
+  /// guest sessions.
+  expired_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  guest ecommerce_platform_guests @relation(fields: [ecommerce_platform_guest_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_platform_guest_id, created_at], map: "ecommerce_platform_guest_sessions_ecommerce_platform_g_bfda74b5")
+}
+
+/// Registered customer accounts representing the primary identity for
+/// shoppers on the platform. This table stores authentication credentials
+/// and ban status.
+///
+/// Customer accounts allow users to log in, manage their shopping carts,
+/// place orders, and write reviews. Admins can ban customers, preventing
+/// them from accessing platform features while retaining historical
+/// transaction data.
+///
+/// @namespace systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_platform_customers {
+  //----
+  // COLUMNS
+  //----
+  /// Unique identifier for the customer account.
+  id String @id
+  
+  /// Unique email address used for login and account identification.
+  email String
+  
+  /// Encrypted password hash for secure authentication.
+  password_hash String
+  
+  /// Indicates if the customer account is banned by administrators. Banned
+  /// customers cannot access platform features.
+  is_banned Boolean
+  
+  /// Timestamp when the customer account was created.
+  created_at DateTime
+  
+  /// Timestamp when the customer account was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the customer account was soft-deleted. Soft-deletion
+  /// preserves historical order and review data for legal and platform audit
+  /// purposes.
+  deleted_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  sessions ecommerce_platform_customer_sessions[]
+  ecommercePlatformCustomerPasswordResets ecommerce_platform_customer_password_resets[]
+  customerProfile ecommerce_platform_customer_profiles?
+  wishlistItems ecommerce_platform_wishlist_items[]
+  ecommercePlatformShoppingCartItems ecommerce_platform_shopping_cart_items[]
+  reviews ecommerce_platform_reviews[]
+  cancellationRequests ecommerce_platform_cancellation_requests[]
+  promotionRequest ecommerce_platform_administrator_promotion_request_of_customers?
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([email])
+}
+
+/// Authentication session table for customer actors tracking JWT access and
+/// refresh token lifecycle.
+///
+/// Stores one record per active customer login session. Each session
+/// captures the device fingerprint (IP address and user agent), an
+/// expiration timestamp for the refresh token, and soft-delete state for
+/// logout/revocation. Sessions are created when a customer logs in with
+/// valid credentials, updated during token rotation, and soft-deleted when
+/// the customer explicitly logs out or the administrator revokes access.
+///
+/// This table enables server-side token management: the refresh token hash
+/// validates token reuse attempts during rotation, and the expiration
+/// timestamp enforces session lifetime policies.
+///
+/// @namespace systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_platform_customer_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for each session record.
+  id String @id
+  
+  /// Links the session to the customer account that owns it.
+  ///
+  /// This establishes a one-to-many relationship where one customer can
+  /// maintain multiple concurrent sessions across different devices or
+  /// browsers. The foreign key constraint ensures sessions cannot exist
+  /// without a valid customer owner.
+  ///
+  /// When a customer account is deleted, all their sessions are automatically
+  /// cleaned up via cascade delete, preventing orphaned authentication state.
+  ecommerce_platform_customer_id String
+  
+  /// SHA-256 hash of the refresh token issued during login.
+  ///
+  /// Only the hash is persisted—not the raw token—so the database cannot be
+  /// used to reconstruct tokens. This hash is used to validate refresh
+  /// requests, enforce token rotation policies, and detect token reuse
+  /// attacks.
+  refresh_token_hash String
+  
+  /// IP address from the HTTP request at the time of session creation.
+  ///
+  /// Used for security monitoring, anomalous activity alerts, and displaying
+  /// device location in account security settings.
+  ip String
+  
+  /// Browser or application user-agent string recorded at login.
+  ///
+  /// Identifies the device and platform used, aiding in device management and
+  /// security analysis.
+  user_agent String
+  
+  /// Timestamp when the refresh token ceases to be valid.
+  ///
+  /// Determines session lifetime. The authentication service compares the
+  /// current time against this value to decide whether to accept token refresh
+  /// requests or require re-authentication.
+  expired_at DateTime
+  
+  /// Timestamp when the session was created upon successful login.
+  ///
+  /// Used for session ordering and age calculations.
+  created_at DateTime
+  
+  /// Timestamp of the last modification to the session record.
+  ///
+  /// Updated during refresh token rotation, device fingerprint changes, or
+  /// expiration extension.
+  updated_at DateTime
+  
+  /// Soft-delete timestamp indicating when the session was revoked or the
+  /// customer logged out.
+  ///
+  /// Preserves the session record for audit and debugging while logically
+  /// removing it from active authentication queries.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  customer ecommerce_platform_customers @relation(fields: [ecommerce_platform_customer_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_platform_customer_id, created_at], map: "ecommerce_platform_customer_sessions_ecommerce_platfor_1320e04f")
+}
+
+/// Stores password reset tokens for customer account recovery.
+///
+/// Each record represents a single-use cryptographic token generated when a
+/// customer requests password reset through the account recovery flow. The
+/// token is time-limited and linked to the customer's account, IP address,
+/// and referrer context for security auditing.
+///
+/// Password reset tokens enable customers who forgot their password to
+/// securely regain account access by providing a temporary, expiring
+/// credential that can be used once to set a new password.
+///
+/// @namespace systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_platform_customer_password_resets {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  ///
+  /// Unique identifier for each password reset token record.
+  id String @id
+  
+  /// Links the password reset token to the requesting customer account.
+  ///
+  /// Each customer may have multiple reset tokens over time as they request
+  /// password resets. Only the most recent unexpired token is valid for use.
+  ///
+  /// When querying for valid reset tokens, this FK is used to scope tokens to
+  /// a specific account.
+  ecommerce_platform_customer_id String
+  
+  /// Unique cryptographic token string sent to the customer via email.
+  ///
+  /// This value must be provided by the customer to validate the password
+  /// reset request. The token is generated server-side with sufficient entropy
+  /// to prevent guessing and is single-use only.
+  ///
+  /// Once the token is used to reset the password, this record is marked as
+  /// used and becomes invalid.
+  token String
+  
+  /// IP address of the client that requested the password reset.
+  ///
+  /// Captured for security auditing and fraud detection. Helps identify
+  /// suspicious patterns such as repeated reset requests from unknown
+  /// locations.
+  ip String
+  
+  /// Full URL of the page where the password reset was initiated.
+  ///
+  /// Provides context about the user's navigation path when requesting the
+  /// reset, useful for security analysis.
+  href String
+  
+  /// HTTP referrer header from the request that triggered password reset.
+  ///
+  /// Used for security auditing and tracking the source of password reset
+  /// requests.
+  referrer String
+  
+  /// Timestamp when the password reset token was generated.
+  ///
+  /// Set to the current time upon creation. Used in conjunction with
+  /// expired_at to determine token validity.
+  created_at DateTime
+  
+  /// Timestamp after which this token is no longer valid.
+  ///
+  /// Typically set to a short window (e.g., one hour) from creation. Tokens
+  /// past this time are rejected and cannot be used for password reset.
+  expired_at DateTime
+  
+  /// Timestamp when this token was successfully consumed to reset the password.
+  ///
+  /// Nullable because some tokens expire without being used. Once set, the
+  /// token is considered invalid and cannot be reused.
+  used_at DateTime?
+  
+  /// Timestamp when this record was soft-deleted.
+  ///
+  /// Nullable; set when the record is logically removed for cleanup or
+  /// archival purposes.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  ecommercePlatformCustomer ecommerce_platform_customers @relation(fields: [ecommerce_platform_customer_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([token])
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_platform_customer_id, created_at], map: "ecommerce_platform_customer_password_resets_ecommerce__f058200c")
+}
+
+/// Registered seller accounts with email-based authentication, approval
+/// status tracking, and administrator ban controls.
+///
+/// Seller accounts serve as the identity foundation for marketplace
+/// merchants who list products, manage inventory, fulfill orders, and handle
+/// customer requests. Unlike customer accounts, sellers require explicit
+/// administrator approval before gaining full selling privileges.
+///
+/// Authentication is email-based with hashed password storage. The
+/// approval_status field tracks the seller registration lifecycle: pending
+/// applications awaiting administrator review, approved merchants with full
+/// capabilities, or rejected applications with documented rejection_reasons.
+///
+/// Administrators can ban sellers via is_banned flag to prevent platform
+/// access while preserving all historical order data, product snapshots, and
+/// transaction records for legal compliance.
+///
+/// @namespace systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_platform_sellers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique email address used for seller authentication and account
+  /// identification.
+  ///
+  /// This email serves as both the login identifier and the unique account
+  /// key. It must not collide with any existing customer, seller, or
+  /// administrator account email across the entire platform as per the email
+  /// uniqueness constraint.
+  email String
+  
+  /// Hashed password credential for seller authentication.
+  ///
+  /// Stores the bcrypt or similar one-way cryptographic hash of the seller's
+  /// chosen password. Cleartext passwords are never stored. Updated when
+  /// sellers change their passwords.
+  password_hash String
+  
+  /// Current approval status governing the seller's ability to operate on the
+  /// platform.
+  ///
+  /// Determines whether a seller can list products and operate their shop.
+  /// Three valid values: 'pending' (registration submitted, awaiting
+  /// administrator review), 'approved' (full selling privileges granted), or
+  /// 'rejected' (application denied, seller may resubmit with a new approval
+  /// request).
+  approval_status String
+  
+  /// Administrator-provided explanation when a seller registration is rejected.
+  ///
+  /// Populated only when approval_status is 'rejected'. Explains why the
+  /// seller application was denied, such as policy violations or incomplete
+  /// information. Allows sellers to understand and address issues when
+  /// resubmitting a new registration request.
+  rejection_reason String?
+  
+  /// Administrator-enforced ban flag preventing seller from logging into the
+  /// platform.
+  ///
+  /// When true, the seller is blocked from authentication but all historical
+  /// data including products, orders, shipments, and snapshots are preserved
+  /// for audit purposes. Administrators can ban and unban sellers. Banned
+  /// status differs from seller suspension which only hides products.
+  is_banned Boolean
+  
+  /// Timestamp when the seller account was first registered on the platform.
+  created_at DateTime
+  
+  /// Timestamp when this seller record was last modified, such as approval
+  /// status changes, ban state updates, or password changes.
+  updated_at DateTime
+  
+  /// Timestamp when the seller deleted their account, enabling soft-delete
+  /// recovery.
+  ///
+  /// Populated when a seller exercises their right to delete their account,
+  /// which is only allowed when they have no pending orders in paid/shipped
+  /// status, no pending cancellation requests, and no pending refund requests.
+  /// Products are removed from listings but order history and snapshots are
+  /// preserved.
+  deleted_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  sellerSessions ecommerce_platform_seller_sessions[]
+  passwordResets ecommerce_platform_seller_password_resets[]
+  sellerProfile ecommerce_platform_seller_profiles?
+  shipments ecommerce_platform_shipments[]
+  sellerApprovalRequests ecommerce_platform_seller_approval_requests[]
+  administratorPromotionRequestOfSeller ecommerce_platform_administrator_promotion_request_of_sellers?
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([email])
+}
+
+/// Session records for authenticated seller accounts tracking active login
+/// state and client connection metadata.
+///
+/// Each record represents a single authenticated session established when a
+/// seller logs in with their email and password. Sessions enable sellers to
+/// access platform features including product management, inventory
+/// tracking, order fulfillment, shipment creation, and dispute handling.
+///
+/// Banned sellers are prevented from establishing authenticated sessions.
+/// Logout terminates the session and revokes access.
+///
+/// All session records are append-only and never modified after creation.
+///
+/// @namespace systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_platform_seller_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Links the session to the authenticated seller account.
+  ///
+  /// Establishes ownership relationship between a session and the seller who
+  /// created it. All sessions must reference a valid seller record.
+  ecommerce_platform_seller_id String
+  
+  /// IP address of the client device that established this session.
+  ip String
+  
+  /// Page URL where the seller initiated the login request.
+  href String
+  
+  /// Referring page URL that led the seller to the login page.
+  referrer String
+  
+  /// Timestamp when the session was established upon successful authentication.
+  created_at DateTime
+  
+  /// Timestamp when the session expires and authentication is revoked.
+  expired_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  seller ecommerce_platform_sellers @relation(fields: [ecommerce_platform_seller_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_platform_seller_id, created_at], map: "ecommerce_platform_seller_sessions_ecommerce_platform__529f68de")
+}
+
+/// Stores one-time password reset tokens for seller account recovery.
+///
+/// When a seller requests account recovery, this table generates a unique
+/// token linked to their seller account with a specified expiration time.
+/// Once the token is used to change the password or expires, it becomes
+/// invalid.
+///
+/// Facilitates secure password recovery by ensuring tokens are single-use
+/// and time-limited, preventing unauthorized access attempts.
+///
+/// @namespace systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_platform_seller_password_resets {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key uniquely identifying this password reset token record.
+  id String @id
+  
+  /// References the seller account requesting password recovery.
+  ///
+  /// Links this password reset token to the specific {@link
+  /// ecommerce_platform_sellers} record, enabling the system to identify which
+  /// account to update upon successful token validation.
+  ecommerce_platform_seller_id String
+  
+  /// The unique cryptographic token used for password recovery authentication.
+  ///
+  /// This value is sent to the seller's registered email address and must be
+  /// provided to complete the password reset process. Each token is single-use
+  /// and expires after a set duration for security.
+  token String
+  
+  /// Timestamp when the password reset token was created and sent to the
+  /// seller.
+  ///
+  /// Tracks the initiation time of the password recovery request for audit and
+  /// expiration calculation purposes.
+  created_at DateTime
+  
+  /// Timestamp when the password reset token becomes invalid and can no longer
+  /// be used.
+  ///
+  /// Ensures tokens are time-limited for security purposes. Once this time is
+  /// reached, the token is automatically invalidated.
+  expired_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  seller ecommerce_platform_sellers @relation(fields: [ecommerce_platform_seller_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([token])
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_platform_seller_id, created_at], map: "ecommerce_platform_seller_password_resets_ecommerce_pl_03462370")
+}
+
+/// Administrator accounts with email/password credentials, grade tracking,
+/// and ban status.
+///
+/// Regular administrators handle seller approvals, category management,
+/// order oversight, and user bans. Super administrators can promote or
+/// demote other administrators and perform all actions of regular
+/// administrators with additional administrative hierarchy privileges.
+///
+/// @namespace systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_platform_admins {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key.
+  id String @id
+  
+  /// Indicates whether the administrator holds super administrator privileges.
+  ///
+  /// Super administrators can manage the grade hierarchy of other
+  /// administrators (promote and demote) and perform actions unavailable to
+  /// regular administrators. Default is false for newly created admins, who
+  /// are regular administrators until promoted.
+  is_super Boolean
+  
+  /// Indicates whether this administrator account has been banned from
+  /// platform access.
+  ///
+  /// If true, the administrator cannot log in or perform administrative
+  /// actions. This can be managed by super administrators as part of personnel
+  /// management.
+  is_banned Boolean
+  
+  /// Timestamp when this administrator record was created.
+  created_at DateTime
+  
+  /// Timestamp when this administrator record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this administrator record was soft-deleted.
+  ///
+  /// Allows for data preservation and audit trails while removing the admin
+  /// from active operations.
+  deleted_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  adminSessions ecommerce_platform_admin_sessions[]
+  passwordResets ecommerce_platform_admin_password_resets[]
+  auditLogs ecommerce_platform_admin_audit_logs[]
+  promotionRequests ecommerce_platform_administrator_promotion_requests[]
+}
+
+/// Tracks JWT session tokens for administrator authentication, access
+/// control, and session management.
+///
+/// This table records each administrator login session with security context
+/// (IP address, href, referrer) and expiration timestamps for session
+/// validation and security auditing. When an administrator logs in, a
+/// session is created; when they log out or the session expires, it becomes
+/// invalid.
+///
+/// The admin relationship links each session to its owning administrator via
+/// {@link ecommerce_platform_admins}.
+///
+/// @namespace systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_platform_admin_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Uniquely identifies each administrator session record.
+  id String @id
+  
+  /// References the administrator account that owns this session.
+  ///
+  /// Each administrator can have multiple concurrent sessions, tracked
+  /// independently for security auditing, session management, and logout
+  /// operations.
+  ecommerce_platform_admin_id String
+  
+  /// IP address from which this administrator session was initiated.
+  ///
+  /// Records client network origin for security auditing, suspicious activity
+  /// detection, and access pattern tracking.
+  ip String
+  
+  /// URL context where this administrator session was created.
+  ///
+  /// Tracks the web page or application context during session creation.
+  href String
+  
+  /// Referring source or navigation origin that led to this administrator
+  /// session.
+  ///
+  /// Used for security auditing and understanding administrator access
+  /// patterns.
+  referrer String
+  
+  /// Timestamp when this administrator session was created.
+  ///
+  /// Used alongside expired_at to determine session validity windows and
+  /// enforce security timeouts.
+  created_at DateTime
+  
+  /// Expiration timestamp for this administrator session.
+  ///
+  /// Determines the validity window for JWT tokens and enforces session
+  /// timeout policies for security.
+  expired_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  admin ecommerce_platform_admins @relation(fields: [ecommerce_platform_admin_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_platform_admin_id, created_at], map: "ecommerce_platform_admin_sessions_ecommerce_platform_a_e138886d")
+}
+
+/// Stores password reset tokens with expiration for administrator account
+/// recovery.
+///
+/// Each record represents a single-use password reset request associated
+/// with a specific {@link ecommerce_platform_admins}. An administrator may
+/// generate multiple tokens over time, but only unexpired tokens are valid
+/// for authentication recovery. Tokens are automatically invalidated upon
+/// expiration or after successful password reset.
+///
+/// @namespace systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_platform_admin_password_resets {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the administrator requesting password reset.
+  ///
+  /// Links this reset token to a specific {@link ecommerce_platform_admins}.
+  /// An administrator may have multiple password reset tokens over time, but
+  /// only unexpired ones are valid.
+  ecommerce_platform_admin_id String
+  
+  /// Cryptographically secure token for password reset verification.
+  ///
+  /// This token is sent to the administrator and must be provided when setting
+  /// a new password. The token is a random string generated securely to
+  /// prevent guessing attacks.
+  token String
+  
+  /// Token expiration timestamp.
+  ///
+  /// After this time, the reset token becomes invalid and cannot be used for
+  /// password recovery. Typically set to 15-60 minutes from creation for
+  /// security.
+  expired_at DateTime
+  
+  /// Timestamp of when the reset token was created.
+  ///
+  /// This marks when the administrator requested a password reset.
+  created_at DateTime
+  
+  /// Timestamp of when this record was last updated.
+  ///
+  /// Used for general tracking of record modifications.
+  updated_at DateTime
+  
+  /// Soft delete timestamp.
+  ///
+  /// When set, indicates this password reset token has been invalidated or
+  /// archived.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  admin ecommerce_platform_admins @relation(fields: [ecommerce_platform_admin_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_platform_admin_id, created_at], map: "ecommerce_platform_admin_password_resets_ecommerce_pla_571ef109")
+}
+
+/// Immutable audit trail recording every administrative action taken on the
+/// platform.
+///
+/// This append-only event log captures all platform governance activities
+/// including account management (ban/unban), seller approvals and
+/// rejections, category operations, product oversight, order interventions
+/// (force-cancellation, force-refund), and personnel transitions.
+///
+/// Each record links to the performing administrator via a foreign key and
+/// references the affected entity using polymorphic targeting (target_type +
+/// target_id). Records are permanent and cannot be modified or deleted,
+/// serving as the definitive source for compliance, dispute resolution, and
+/// platform history.
+///
+/// @namespace systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_platform_admin_audit_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The administrator who performed this action.
+  ///
+  /// References the admin account that initiated the governance operation.
+  /// Every audit record must have a performing admin, ensuring full
+  /// accountability for all platform interventions.
+  ///
+  /// Links to {@link ecommerce_platform_admins}.
+  ecommerce_platform_admin_id String
+  
+  /// The type of entity that was acted upon.
+  ///
+  /// Values: customer, seller, order_item, product, category,
+  /// seller_approval_request, admin_promotion_request. Enables filtering audit
+  /// logs by the affected entity category.
+  target_type String
+  
+  /// The unique identifier of the specific entity that was acted upon.
+  ///
+  /// When combined with target_type, precisely identifies the subject of this
+  /// admin intervention.
+  target_id String
+  
+  /// The specific administrative action performed.
+  ///
+  /// Values: ban, unban, suspend, unsuspend, approve, reject, force_cancel,
+  /// force_refund, delete_product, create_category, edit_category,
+  /// delete_category, promote_admin, demote_admin. These represent all
+  /// governance operations available to administrators.
+  action String
+  
+  /// Justification provided by the administrator for taking this action.
+  ///
+  /// Required for seller rejections and admin promotion request responses.
+  /// Optional but recommended for other actions to maintain audit quality.
+  reason String?
+  
+  /// Timestamp when this audit record was created.
+  ///
+  /// Immutable and represents the moment the administrative action occurred.
+  /// This is the only temporal field since audit records are never modified or
+  /// deleted.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  admin ecommerce_platform_admins @relation(fields: [ecommerce_platform_admin_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_platform_admin_id, created_at], map: "ecommerce_platform_admin_audit_logs_ecommerce_platform_28346795")
+  // spellchecker: ignore-next-line
+  @@index([target_type, target_id, created_at], map: "ecommerce_platform_admin_audit_logs_target_type_target_ea17f082")
+  @@index([created_at])
+}

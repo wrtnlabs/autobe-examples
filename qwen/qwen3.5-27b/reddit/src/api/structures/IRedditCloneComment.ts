@@ -17,8 +17,9 @@ export type IRedditCloneComment = {
    *
    * This UUID is automatically generated when the comment is created and serves as the primary key for all comment operations. It is used to reference the comment in API paths and for identifying specific comments in requests and responses.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from reddit_clone_comments.id. Primary key UUID generated on comment creation.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from reddit_clone_comments.id.
+     *   Primary key UUID generated on comment creation.
    */
   id: string & tags.Format<"uuid">;
 
@@ -27,8 +28,10 @@ export type IRedditCloneComment = {
    *
    * This field contains the user-written message body and is required for all comments. The content can be edited by the comment author after creation, which updates the updated_at timestamp while preserving the original created_at timestamp.
    *
-   * @x-autobe-database-schema-property content
-   * @x-autobe-specification Direct mapping from reddit_clone_comments.content. Required non-null text field containing the user-written message body.
+     * @x-autobe-database-schema-property content
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_comments.content. Required non-null text field containing
+     *   the user-written message body.
    */
   content: string;
 
@@ -37,8 +40,10 @@ export type IRedditCloneComment = {
    *
    * This field is automatically set when the comment is created and is never modified. It is used to display the posting time and order comments chronologically in feeds and lists.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from reddit_clone_comments.created_at. Immutable timestamp set automatically on comment creation in ISO 8601 date-time format.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_comments.created_at. Immutable timestamp set automatically
+     *   on comment creation in ISO 8601 date-time format.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -47,8 +52,10 @@ export type IRedditCloneComment = {
    *
    * This field is updated whenever the comment content is edited by the author. It tracks edit history and shows when content was modified, while the original created_at timestamp remains unchanged.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from reddit_clone_comments.updated_at. Timestamp updated whenever the comment content is modified, in ISO 8601 date-time format.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_comments.updated_at. Timestamp updated whenever the
+     *   comment content is modified, in ISO 8601 date-time format.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -57,8 +64,10 @@ export type IRedditCloneComment = {
    *
    * When set, the comment is hidden from normal views but preserved for audit purposes. Comments with a non-null deleted_at are excluded from most queries. This enables comment recovery and maintains referential integrity for parent-child comment relationships.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from reddit_clone_comments.deleted_at. Nullable timestamp set when comment is soft deleted. Null indicates active comment.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_comments.deleted_at. Nullable timestamp set when comment
+     *   is soft deleted. Null indicates active comment.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 
@@ -67,8 +76,11 @@ export type IRedditCloneComment = {
    *
    * This object contains the author's public display information including display name, bio, avatar image URL, karma score, and account creation timestamp. The author's identity is used to enforce edit/delete permissions and display attribution on the comment.
    *
-   * @x-autobe-database-schema-property userProfile
-   * @x-autobe-specification Relation mapping from reddit_clone_comments.userProfile. JOIN reddit_clone_user_profiles on reddit_clone_user_profile_id. Returns IRedditCloneUserProfile.ISummary with display_name, bio, avatar, karma, and created_at.
+     * @x-autobe-database-schema-property userProfile
+     * @x-autobe-specification Relation mapping from
+     *   reddit_clone_comments.userProfile. JOIN reddit_clone_user_profiles on
+     *   reddit_clone_user_profile_id. Returns IRedditCloneUserProfile.ISummary
+     *   with display_name, bio, avatar, karma, and created_at.
    */
   author: IRedditCloneUserProfile.ISummary;
 
@@ -77,8 +89,11 @@ export type IRedditCloneComment = {
    *
    * This object contains the parent post's summary information including title, post type, author, community context, vote score, comment count, and content preview. It provides the necessary context for understanding where the comment appears in the discussion thread.
    *
-   * @x-autobe-database-schema-property post
-   * @x-autobe-specification Relation mapping from reddit_clone_comments.post. JOIN reddit_clone_posts on reddit_clone_post_id. Returns IRedditClonePost.ISummary with id, title, post_type, author, community, vote_score, comment_count, created_at, and preview.
+     * @x-autobe-database-schema-property post
+     * @x-autobe-specification Relation mapping from reddit_clone_comments.post.
+     *   JOIN reddit_clone_posts on reddit_clone_post_id. Returns
+     *   IRedditClonePost.ISummary with id, title, post_type, author, community,
+     *   vote_score, comment_count, created_at, and preview.
    */
   post: IRedditClonePost.ISummary;
 
@@ -87,8 +102,11 @@ export type IRedditCloneComment = {
    *
    * This field enables unlimited nesting depth for comment threading. When non-null, it contains the summary of the comment being replied to, allowing proper display of threaded conversations. Top-level comments directly on a post have this field set to null.
    *
-   * @x-autobe-database-schema-property parentComment
-   * @x-autobe-specification Self-referential relation mapping from reddit_clone_comments.parentComment. Self-JOIN reddit_clone_comments on parent_comment_id. Returns IRedditCloneComment.ISummary or null for top-level comments. Nullable field.
+     * @x-autobe-database-schema-property parentComment
+     * @x-autobe-specification Self-referential relation mapping from
+     *   reddit_clone_comments.parentComment. Self-JOIN reddit_clone_comments on
+     *   parent_comment_id. Returns IRedditCloneComment.ISummary or null for
+     *   top-level comments. Nullable field.
    */
   parentComment?: IRedditCloneComment.ISummary | null | undefined;
 
@@ -97,7 +115,11 @@ export type IRedditCloneComment = {
    *
    * This integer represents the community's opinion on the comment. Each upvote adds 1 to the score, each downvote subtracts 1. The score can be positive, negative, or zero. Vote scores are used for sorting comments and calculating author karma.
    *
-   * @x-autobe-specification Computed aggregation from reddit_clone_comment_votes table. Calculate SUM(CASE WHEN vote_type = 'upvote' THEN 1 WHEN vote_type = 'downvote' THEN -1 ELSE 0 END) WHERE reddit_clone_comment_id = this.id. Result is integer that can be positive, negative, or zero.
+     * @x-autobe-specification Computed aggregation from
+     *   reddit_clone_comment_votes table. Calculate SUM(CASE WHEN vote_type =
+     *   'upvote' THEN 1 WHEN vote_type = 'downvote' THEN -1 ELSE 0 END) WHERE
+     *   reddit_clone_comment_id = this.id. Result is integer that can be
+     *   positive, negative, or zero.
    */
   voteScore: number & tags.Type<"int32">;
 
@@ -106,7 +128,9 @@ export type IRedditCloneComment = {
    *
    * This integer count represents how many comments have this comment as their parent. It is used to indicate the depth of discussion under this comment and helps users identify which comments have generated the most engagement.
    *
-   * @x-autobe-specification Computed aggregation from reddit_clone_comments table. COUNT(*) WHERE parent_comment_id = this.id AND deleted_at IS NULL. Returns integer representing number of direct child replies.
+     * @x-autobe-specification Computed aggregation from reddit_clone_comments
+     *   table. COUNT(*) WHERE parent_comment_id = this.id AND deleted_at IS
+     *   NULL. Returns integer representing number of direct child replies.
    */
   replyCount: number & tags.Type<"int32">;
 };
@@ -124,8 +148,9 @@ export namespace IRedditCloneComment {
      *
      * This UUID serves as the primary key for the comment entity and is used to reference the comment in API operations, URL paths, and relationships.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from reddit_clone_comments.id. Primary key UUID identifying the comment.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from reddit_clone_comments.id.
+         *   Primary key UUID identifying the comment.
      */
     id: string & tags.Format<"uuid">;
 
@@ -134,8 +159,9 @@ export namespace IRedditCloneComment {
      *
      * Contains the user-written message body. This field is required for all comments and represents the main content that users see when viewing the comment.
      *
-     * @x-autobe-database-schema-property content
-     * @x-autobe-specification Direct mapping from reddit_clone_comments.content. Text content of the comment.
+         * @x-autobe-database-schema-property content
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_comments.content. Text content of the comment.
      */
     content: string;
 
@@ -144,8 +170,11 @@ export namespace IRedditCloneComment {
      *
      * Contains the public profile information of the user who created this comment, including their display name, bio, avatar, and karma score. This is a summary view optimized for list displays.
      *
-     * @x-autobe-database-schema-property userProfile
-     * @x-autobe-specification Relation mapping via reddit_clone_user_profile_id JOIN to reddit_clone_user_profiles. Returns IRedditCloneUserProfile.ISummary with display_name, bio, avatar, karma, created_at.
+         * @x-autobe-database-schema-property userProfile
+         * @x-autobe-specification Relation mapping via
+         *   reddit_clone_user_profile_id JOIN to reddit_clone_user_profiles.
+         *   Returns IRedditCloneUserProfile.ISummary with display_name, bio,
+         *   avatar, karma, created_at.
      */
     author: IRedditCloneUserProfile.ISummary;
 
@@ -154,8 +183,11 @@ export namespace IRedditCloneComment {
      *
      * Contains summary information about the parent post, including its title, type, author, community context, and engagement metrics. This provides context for where the comment appears.
      *
-     * @x-autobe-database-schema-property post
-     * @x-autobe-specification Relation mapping via reddit_clone_post_id JOIN to reddit_clone_posts. Returns IRedditClonePost.ISummary with title, post_type, author, community, vote_score, comment_count, created_at, preview.
+         * @x-autobe-database-schema-property post
+         * @x-autobe-specification Relation mapping via reddit_clone_post_id
+         *   JOIN to reddit_clone_posts. Returns IRedditClonePost.ISummary with
+         *   title, post_type, author, community, vote_score, comment_count,
+         *   created_at, preview.
      */
     post: IRedditClonePost.ISummary;
 
@@ -164,8 +196,11 @@ export namespace IRedditCloneComment {
      *
      * This field enables threaded comment displays by linking replies to their parent comments. Top-level comments (directly on a post) have null here, while replies reference their parent comment.
      *
-     * @x-autobe-database-schema-property parentComment
-     * @x-autobe-specification Self-referencing relation via parent_comment_id JOIN to reddit_clone_comments. Returns IRedditCloneComment.ISummary or null. Null for top-level comments, set for replies.
+         * @x-autobe-database-schema-property parentComment
+         * @x-autobe-specification Self-referencing relation via
+         *   parent_comment_id JOIN to reddit_clone_comments. Returns
+         *   IRedditCloneComment.ISummary or null. Null for top-level comments,
+         *   set for replies.
      */
     parentComment: IRedditCloneComment.ISummary | null;
 
@@ -174,7 +209,9 @@ export namespace IRedditCloneComment {
      *
      * Calculated as the sum of all votes on this comment, where upvotes contribute +1 and downvotes contribute -1. This score affects the comment's visibility and the author's karma.
      *
-     * @x-autobe-specification Computed aggregation from reddit_clone_comment_votes. SUM of vote values where upvote=+1, downvote=-1 for votes on this comment. Returns integer.
+         * @x-autobe-specification Computed aggregation from
+         *   reddit_clone_comment_votes. SUM of vote values where upvote=+1,
+         *   downvote=-1 for votes on this comment. Returns integer.
      */
     vote_score: number & tags.Type<"int32">;
 
@@ -183,7 +220,10 @@ export namespace IRedditCloneComment {
      *
      * Counts only direct child comments (one level deep), not nested replies. This helps users understand the discussion activity without loading the full reply tree.
      *
-     * @x-autobe-specification Computed aggregation from reddit_clone_comments self-reference. COUNT of child comments where parent_comment_id equals this comment's id and deleted_at IS NULL. Returns integer.
+         * @x-autobe-specification Computed aggregation from
+         *   reddit_clone_comments self-reference. COUNT of child comments where
+         *   parent_comment_id equals this comment's id and deleted_at IS NULL.
+         *   Returns integer.
      */
     reply_count: number & tags.Type<"int32">;
 
@@ -192,8 +232,10 @@ export namespace IRedditCloneComment {
      *
      * Records the exact date and time when the comment was first posted. Used for sorting comments chronologically and displaying how long ago the comment was made.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from reddit_clone_comments.created_at. DateTime when the comment was first created.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_comments.created_at. DateTime when the comment was
+         *   first created.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -202,8 +244,10 @@ export namespace IRedditCloneComment {
      *
      * Tracks the most recent modification to the comment content. This helps users identify edited comments and see when changes were made.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from reddit_clone_comments.updated_at. DateTime when the comment was last updated.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_comments.updated_at. DateTime when the comment was
+         *   last updated.
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -212,8 +256,10 @@ export namespace IRedditCloneComment {
      *
      * Used for soft delete functionality. When this field is set, the comment is hidden from normal views but preserved for audit purposes. Null indicates the comment is currently active.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from reddit_clone_comments.deleted_at. Nullable DateTime for soft delete. When set, comment is hidden from normal views.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_comments.deleted_at. Nullable DateTime for soft
+         *   delete. When set, comment is hidden from normal views.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };
@@ -231,8 +277,13 @@ export namespace IRedditCloneComment {
      *
      * This field contains the new message body that will replace the existing comment content. The content must not be empty. When the update is successful, the comment's updated_at timestamp is automatically refreshed to reflect the modification time, while the original created_at timestamp is preserved to maintain the posting history.
      *
-     * @x-autobe-database-schema-property content
-     * @x-autobe-specification Direct mapping from reddit_clone_comments.content column. This is the only mutable field in the Update DTO. The field contains the user-written comment text body. Validation ensures content is not empty. On save, the database updated_at timestamp is automatically refreshed while created_at remains unchanged.
+         * @x-autobe-database-schema-property content
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_comments.content column. This is the only mutable
+         *   field in the Update DTO. The field contains the user-written
+         *   comment text body. Validation ensures content is not empty. On
+         *   save, the database updated_at timestamp is automatically refreshed
+         *   while created_at remains unchanged.
      */
     content?: string | undefined;
   };
@@ -246,11 +297,11 @@ export namespace IRedditCloneComment {
    */
   export type ICreate = {
     /**
-     * @x-autobe-database-schema-property content
+         * @x-autobe-database-schema-property content
      */
     content: string;
     /**
-     * @x-autobe-database-schema-property parent_comment_id
+         * @x-autobe-database-schema-property parent_comment_id
      */
     parentCommentId?: (string & tags.Format<"uuid">) | null | undefined;
   };
@@ -268,8 +319,9 @@ export namespace IRedditCloneComment {
      *
      * This UUID is used to reference the comment in API operations, including voting, editing, deletion, and reply creation.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from reddit_clone_comments.id. Primary key UUID identifying the comment.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from reddit_clone_comments.id.
+         *   Primary key UUID identifying the comment.
      */
     id: string & tags.Format<"uuid">;
 
@@ -278,8 +330,10 @@ export namespace IRedditCloneComment {
      *
      * This is the user-written message body that appears in the discussion thread. The content can be edited by the author, with edit history tracked via snapshots.
      *
-     * @x-autobe-database-schema-property content
-     * @x-autobe-specification Direct mapping from reddit_clone_comments.content. Required text field containing the comment body.
+         * @x-autobe-database-schema-property content
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_comments.content. Required text field containing the
+         *   comment body.
      */
     content: string;
 
@@ -288,7 +342,11 @@ export namespace IRedditCloneComment {
      *
      * Calculated as the sum of upvotes (+1 each) and downvotes (-1 each) cast by users. This score determines the comment's ranking in sorted views and contributes to the author's karma.
      *
-     * @x-autobe-specification Computed aggregation from reddit_clone_comment_votes table. Sum of vote values where upvote=+1 and downvote=-1. Query: SELECT SUM(CASE WHEN vote_type='upvote' THEN 1 WHEN vote_type='downvote' THEN -1 ELSE 0 END) FROM reddit_clone_comment_votes WHERE comment_id = :id
+         * @x-autobe-specification Computed aggregation from
+         *   reddit_clone_comment_votes table. Sum of vote values where
+         *   upvote=+1 and downvote=-1. Query: SELECT SUM(CASE WHEN
+         *   vote_type='upvote' THEN 1 WHEN vote_type='downvote' THEN -1 ELSE 0
+         *   END) FROM reddit_clone_comment_votes WHERE comment_id = :id
      */
     score: number & tags.Type<"int32">;
 
@@ -297,8 +355,10 @@ export namespace IRedditCloneComment {
      *
      * This field is used to display when the comment was posted and to sort comments chronologically in feeds and threads.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from reddit_clone_comments.created_at. DateTime field set automatically on comment creation.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_comments.created_at. DateTime field set automatically
+         *   on comment creation.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -307,8 +367,10 @@ export namespace IRedditCloneComment {
      *
      * This field tracks when the comment content was edited by the author. The difference between created_at and updated_at indicates if the comment has been modified.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from reddit_clone_comments.updated_at. DateTime field updated on every content modification.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_comments.updated_at. DateTime field updated on every
+         *   content modification.
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -317,8 +379,11 @@ export namespace IRedditCloneComment {
      *
      * When this field is set, the comment is hidden from normal views but preserved for audit purposes. Comments can be deleted by their author or by community moderators.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from reddit_clone_comments.deleted_at. Nullable DateTime field for soft delete support. When null, comment is active. When set, comment is hidden from normal views.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_comments.deleted_at. Nullable DateTime field for soft
+         *   delete support. When null, comment is active. When set, comment is
+         *   hidden from normal views.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
 
@@ -327,8 +392,11 @@ export namespace IRedditCloneComment {
      *
      * Contains the author's public display information including display name, bio, avatar image, and karma score. This is a summary view suitable for display in comment threads.
      *
-     * @x-autobe-database-schema-property userProfile
-     * @x-autobe-specification Relation via reddit_clone_user_profile_id FK. JOIN to reddit_clone_user_profiles table on id. Returns IRedditCloneUserProfile.ISummary with display_name, bio, avatar, karma, created_at.
+         * @x-autobe-database-schema-property userProfile
+         * @x-autobe-specification Relation via reddit_clone_user_profile_id FK.
+         *   JOIN to reddit_clone_user_profiles table on id. Returns
+         *   IRedditCloneUserProfile.ISummary with display_name, bio, avatar,
+         *   karma, created_at.
      */
     author: IRedditCloneUserProfile.ISummary;
 
@@ -337,8 +405,11 @@ export namespace IRedditCloneComment {
      *
      * Contains summary information about the parent post including title, type, author, community, and engagement metrics. Provides context for the comment's discussion.
      *
-     * @x-autobe-database-schema-property post
-     * @x-autobe-specification Relation via reddit_clone_post_id FK. JOIN to reddit_clone_posts table on id. Returns IRedditClonePost.ISummary with title, post_type, author, community, vote_score, comment_count, created_at, preview.
+         * @x-autobe-database-schema-property post
+         * @x-autobe-specification Relation via reddit_clone_post_id FK. JOIN to
+         *   reddit_clone_posts table on id. Returns IRedditClonePost.ISummary
+         *   with title, post_type, author, community, vote_score,
+         *   comment_count, created_at, preview.
      */
     post: IRedditClonePost.ISummary;
 
@@ -347,8 +418,11 @@ export namespace IRedditCloneComment {
      *
      * This field enables threaded discussion by linking replies to their parent comments. Top-level comments (directly on the post) have null here, while replies contain the parent's summary.
      *
-     * @x-autobe-database-schema-property parentComment
-     * @x-autobe-specification Self-relation via parent_comment_id FK (nullable). JOIN to reddit_clone_comments table on id. Returns IRedditCloneComment.ISummary or null. Null for top-level comments, set for replies.
+         * @x-autobe-database-schema-property parentComment
+         * @x-autobe-specification Self-relation via parent_comment_id FK
+         *   (nullable). JOIN to reddit_clone_comments table on id. Returns
+         *   IRedditCloneComment.ISummary or null. Null for top-level comments,
+         *   set for replies.
      */
     parentComment: IRedditCloneComment.ISummary | null;
 
@@ -357,8 +431,11 @@ export namespace IRedditCloneComment {
      *
      * This array contains the complete threaded structure of child comments, recursively including their own replies. Enables unlimited nesting depth for threaded discussions. Empty array if the comment has no replies.
      *
-     * @x-autobe-database-schema-property replies
-     * @x-autobe-specification Has-many self-relation. Query reddit_clone_comments where parent_comment_id = :id. Returns array of IRedditCloneComment.IInvert for recursive nested structure. Empty array if no replies exist.
+         * @x-autobe-database-schema-property replies
+         * @x-autobe-specification Has-many self-relation. Query
+         *   reddit_clone_comments where parent_comment_id = :id. Returns array
+         *   of IRedditCloneComment.IInvert for recursive nested structure.
+         *   Empty array if no replies exist.
      */
     replies: IRedditCloneComment.IInvert[];
   };
@@ -376,7 +453,10 @@ export namespace IRedditCloneComment {
      *
      * Performs case-insensitive partial text matching on the comment's content field. Use this to find comments containing specific keywords or phrases. The search supports substring matching, so 'hello' will match 'hello world', 'say hello', etc.
      *
-     * @x-autobe-specification Query parameter for partial text search on comment content. Implemented as SQL LIKE query: WHERE content ILIKE '%' || search || '%'. Case-insensitive matching. Searches the content field of reddit_clone_comments table.
+         * @x-autobe-specification Query parameter for partial text search on
+         *   comment content. Implemented as SQL LIKE query: WHERE content ILIKE
+         *   '%' || search || '%'. Case-insensitive matching. Searches the
+         *   content field of reddit_clone_comments table.
      */
     search?: string | undefined;
 
@@ -385,7 +465,10 @@ export namespace IRedditCloneComment {
      *
      * When provided, only returns comments authored by the specified user profile. The authorId must be a valid UUID of an existing user profile. This is useful for viewing a user's complete comment history on their profile page.
      *
-     * @x-autobe-specification Query parameter to filter comments by author. Implemented as: WHERE reddit_clone_user_profile_id = authorId. Filters the reddit_clone_comments table by the user profile foreign key. Used to retrieve all comments by a specific user profile.
+         * @x-autobe-specification Query parameter to filter comments by author.
+         *   Implemented as: WHERE reddit_clone_user_profile_id = authorId.
+         *   Filters the reddit_clone_comments table by the user profile foreign
+         *   key. Used to retrieve all comments by a specific user profile.
      */
     authorId?: (string & tags.Format<"uuid">) | undefined;
 
@@ -394,7 +477,10 @@ export namespace IRedditCloneComment {
      *
      * Specifies the start of the date range for filtering comments. Only comments with created_at greater than or equal to this value will be included. Use ISO 8601 format (e.g., '2024-01-15T10:30:00Z'). Useful for viewing recent activity or comments within a specific time period.
      *
-     * @x-autobe-specification Query parameter for date range filtering (start). Implemented as: WHERE created_at >= dateFrom. Filters reddit_clone_comments by the created_at timestamp. Uses ISO 8601 date-time format. Inclusive boundary (>=).
+         * @x-autobe-specification Query parameter for date range filtering
+         *   (start). Implemented as: WHERE created_at >= dateFrom. Filters
+         *   reddit_clone_comments by the created_at timestamp. Uses ISO 8601
+         *   date-time format. Inclusive boundary (>=).
      */
     dateFrom?: (string & tags.Format<"date-time">) | undefined;
 
@@ -403,7 +489,10 @@ export namespace IRedditCloneComment {
      *
      * Specifies the end of the date range for filtering comments. Only comments with created_at less than or equal to this value will be included. Use ISO 8601 format. Combined with dateFrom, this allows filtering comments within a specific time window.
      *
-     * @x-autobe-specification Query parameter for date range filtering (end). Implemented as: WHERE created_at <= dateTo. Filters reddit_clone_comments by the created_at timestamp. Uses ISO 8601 date-time format. Inclusive boundary (<=).
+         * @x-autobe-specification Query parameter for date range filtering
+         *   (end). Implemented as: WHERE created_at <= dateTo. Filters
+         *   reddit_clone_comments by the created_at timestamp. Uses ISO 8601
+         *   date-time format. Inclusive boundary (<=).
      */
     dateTo?: (string & tags.Format<"date-time">) | undefined;
 
@@ -412,7 +501,12 @@ export namespace IRedditCloneComment {
      *
      * Only includes comments with a vote score greater than or equal to this value. The vote score is calculated as the sum of upvotes (+1) and downvotes (-1). Use positive values to show highly-rated comments, or negative values to include controversial or downvoted content.
      *
-     * @x-autobe-specification Query parameter for minimum vote score threshold. Implemented as: WHERE vote_score >= minScore. The vote_score is computed by aggregating reddit_clone_comment_votes: SUM(CASE WHEN vote_type = 'upvote' THEN 1 WHEN vote_type = 'downvote' THEN -1 END) GROUP BY comment_id. Filters to show only comments meeting or exceeding the minimum score.
+         * @x-autobe-specification Query parameter for minimum vote score
+         *   threshold. Implemented as: WHERE vote_score >= minScore. The
+         *   vote_score is computed by aggregating reddit_clone_comment_votes:
+         *   SUM(CASE WHEN vote_type = 'upvote' THEN 1 WHEN vote_type =
+         *   'downvote' THEN -1 END) GROUP BY comment_id. Filters to show only
+         *   comments meeting or exceeding the minimum score.
      */
     minScore?: (number & tags.Type<"int32">) | undefined;
 
@@ -426,10 +520,11 @@ export namespace IRedditCloneComment {
      *
      * Default is 'new' if not specified.
      *
-     * @x-autobe-specification Query parameter for result ordering strategy. Implemented as ORDER BY clause:
-     * - 'new': ORDER BY created_at (most recent first)
-     * - 'top': ORDER BY vote_score (highest score first)
-     * - 'controversial': ORDER BY ABS(vote_score) DESC, vote_count DESC (many votes but score near zero)
+         * @x-autobe-specification Query parameter for result ordering strategy.
+         *   Implemented as ORDER BY clause: - 'new': ORDER BY created_at (most
+         *   recent first) - 'top': ORDER BY vote_score (highest score first) -
+         *   'controversial': ORDER BY ABS(vote_score) DESC, vote_count DESC
+         *   (many votes but score near zero)
      *
      * vote_score computed from reddit_clone_comment_votes aggregation. vote_count is COUNT of votes.
      */
@@ -444,7 +539,11 @@ export namespace IRedditCloneComment {
      *
      * Default is 'desc' if not specified. Combined with sortOrder to achieve the desired result ordering.
      *
-     * @x-autobe-specification Query parameter for sort direction. Implemented as: ORDER BY ... ASC or DESC. Applied to the field specified by sortOrder. 'asc' for ascending order (oldest first, lowest score first), 'desc' for descending order (newest first, highest score first). Default is 'desc' if not specified.
+         * @x-autobe-specification Query parameter for sort direction.
+         *   Implemented as: ORDER BY ... ASC or DESC. Applied to the field
+         *   specified by sortOrder. 'asc' for ascending order (oldest first,
+         *   lowest score first), 'desc' for descending order (newest first,
+         *   highest score first). Default is 'desc' if not specified.
      */
     sortDirection?: "asc" | "desc" | undefined;
 
@@ -453,7 +552,11 @@ export namespace IRedditCloneComment {
      *
      * An opaque string representing the position in the result set. Use the cursor value from the previous page's response to retrieve the next page. Omit this parameter (or use null) to retrieve the first page. Cursors are query-specific and become invalid if filter parameters change.
      *
-     * @x-autobe-specification Query parameter for cursor-based pagination. Implemented as opaque cursor string encoding the last seen record's position. Server decodes cursor to determine OFFSET for next page. Returns empty data array when no more results. Cursor is specific to the query parameters - changing filters invalidates the cursor.
+         * @x-autobe-specification Query parameter for cursor-based pagination.
+         *   Implemented as opaque cursor string encoding the last seen record's
+         *   position. Server decodes cursor to determine OFFSET for next page.
+         *   Returns empty data array when no more results. Cursor is specific
+         *   to the query parameters - changing filters invalidates the cursor.
      */
     cursor?: string | undefined;
 
@@ -462,7 +565,10 @@ export namespace IRedditCloneComment {
      *
      * Specifies how many comments to return in each page of results. Valid values are 1 to 100. Default is 20 if not specified. Use smaller values for faster loading, larger values to reduce the number of pages. Maximum is capped at 100 for performance reasons.
      *
-     * @x-autobe-specification Query parameter for page size. Implemented as: LIMIT limit. Constrains the maximum number of comments returned per page. Valid range: 1 to 100. Default is 20 if not specified. Server enforces maximum of 100 to prevent excessive resource usage.
+         * @x-autobe-specification Query parameter for page size. Implemented
+         *   as: LIMIT limit. Constrains the maximum number of comments returned
+         *   per page. Valid range: 1 to 100. Default is 20 if not specified.
+         *   Server enforces maximum of 100 to prevent excessive resource usage.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -473,7 +579,11 @@ export namespace IRedditCloneComment {
      *
      * Specifies which page of results to return. Page numbering starts from 1 (first page is page 1, not 0). If omitted, null, or undefined, defaults to page 1. Requesting a page number beyond the available range returns an empty data array with pagination metadata reflecting the actual total counts.
      *
-     * @x-autobe-specification Query parameter for page number (1-indexed). Implemented as: OFFSET = (page - 1) * limit. Page numbering starts from 1. Default is 1 if not specified, null, or undefined. Requesting a page beyond available results returns empty data array with valid pagination metadata.
+         * @x-autobe-specification Query parameter for page number (1-indexed).
+         *   Implemented as: OFFSET = (page - 1) * limit. Page numbering starts
+         *   from 1. Default is 1 if not specified, null, or undefined.
+         *   Requesting a page beyond available results returns empty data array
+         *   with valid pagination metadata.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };

@@ -16,8 +16,9 @@ export type IHrmTimeTrackMemberEmailVerification = {
    *
    * This UUID serves as the primary key for the verification token record and is used to reference this specific verification attempt in API operations and audit logs.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from hrm_time_track_member_email_verifications.id. Primary key UUID.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_member_email_verifications.id. Primary key UUID.
    */
   id: string & tags.Format<"uuid">;
 
@@ -26,8 +27,10 @@ export type IHrmTimeTrackMemberEmailVerification = {
    *
    * This token is a single-use, time-limited string that the member must provide by clicking the verification link. Once used or expired, the token cannot be reused for verification.
    *
-   * @x-autobe-database-schema-property token
-   * @x-autobe-specification Direct mapping from hrm_time_track_member_email_verifications.token. Unique constraint enforced at database level.
+     * @x-autobe-database-schema-property token
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_member_email_verifications.token. Unique constraint
+     *   enforced at database level.
    */
   token: string;
 
@@ -36,8 +39,10 @@ export type IHrmTimeTrackMemberEmailVerification = {
    *
    * This field stores the email address that the verification token was sent to, allowing the system to confirm the token matches the intended recipient and provide visibility into which email is pending verification.
    *
-   * @x-autobe-database-schema-property email
-   * @x-autobe-specification Direct mapping from hrm_time_track_member_email_verifications.email. Stored for display and recipient confirmation purposes.
+     * @x-autobe-database-schema-property email
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_member_email_verifications.email. Stored for display and
+     *   recipient confirmation purposes.
    */
   email: string & tags.Format<"email">;
 
@@ -46,8 +51,10 @@ export type IHrmTimeTrackMemberEmailVerification = {
    *
    * This relation provides access to the member account details for which this verification token was generated, including the member's identity and account status.
    *
-   * @x-autobe-database-schema-property member
-   * @x-autobe-specification Join from hrm_time_track_member_email_verifications.hrm_time_track_member_id to hrm_time_track_members.id. Returns IHrmTimeTrackMember.ISummary.
+     * @x-autobe-database-schema-property member
+     * @x-autobe-specification Join from
+     *   hrm_time_track_member_email_verifications.hrm_time_track_member_id to
+     *   hrm_time_track_members.id. Returns IHrmTimeTrackMember.ISummary.
    */
   member: IHrmTimeTrackMember.ISummary;
 
@@ -56,8 +63,10 @@ export type IHrmTimeTrackMemberEmailVerification = {
    *
    * This field indicates when the verification process was initiated and is used to calculate token age and determine if the token is approaching expiration.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from hrm_time_track_member_email_verifications.created_at. Timestamp when verification token was generated and sent.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_member_email_verifications.created_at. Timestamp when
+     *   verification token was generated and sent.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -66,8 +75,10 @@ export type IHrmTimeTrackMemberEmailVerification = {
    *
    * Tokens typically expire after 24 hours for security purposes. Once this timestamp is reached, the token becomes invalid and a new verification must be requested.
    *
-   * @x-autobe-database-schema-property expired_at
-   * @x-autobe-specification Direct mapping from hrm_time_track_member_email_verifications.expired_at. Timestamp when the token expires (typically 24 hours after creation).
+     * @x-autobe-database-schema-property expired_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_member_email_verifications.expired_at. Timestamp when
+     *   the token expires (typically 24 hours after creation).
    */
   expired_at: string & tags.Format<"date-time">;
 
@@ -76,8 +87,10 @@ export type IHrmTimeTrackMemberEmailVerification = {
    *
    * This field is NULL if the token has not been used yet. Once set, it indicates the verification was completed successfully and the token cannot be reused.
    *
-   * @x-autobe-database-schema-property used_at
-   * @x-autobe-specification Direct mapping from hrm_time_track_member_email_verifications.used_at. Nullable field indicating when the token was successfully used.
+     * @x-autobe-database-schema-property used_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_member_email_verifications.used_at. Nullable field
+     *   indicating when the token was successfully used.
    */
   used_at: (string & tags.Format<"date-time">) | null;
 
@@ -86,8 +99,10 @@ export type IHrmTimeTrackMemberEmailVerification = {
    *
    * This field is NULL for active verification records. When set, the record is logically deleted but preserved for audit trail purposes. Soft-deleted records are not returned in API responses.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from hrm_time_track_member_email_verifications.deleted_at. Nullable soft-delete timestamp.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_track_member_email_verifications.deleted_at. Nullable
+     *   soft-delete timestamp.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -105,8 +120,9 @@ export namespace IHrmTimeTrackMemberEmailVerification {
      *
      * This UUID serves as the primary key for identifying and retrieving specific email verification tokens across the system.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from hrm_time_track_member_email_verifications.id. Primary key UUID.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_member_email_verifications.id. Primary key UUID.
      */
     id: string & tags.Format<"uuid">;
 
@@ -115,8 +131,10 @@ export namespace IHrmTimeTrackMemberEmailVerification {
      *
      * This relation provides access to the member's summary information, including their email address and account status. The member is the user who registered and is awaiting email verification.
      *
-     * @x-autobe-database-schema-property member
-     * @x-autobe-specification Relation via JOIN on hrm_time_track_member_id to hrm_time_track_members.id. Returns IHrmTimeTrackMember.ISummary object.
+         * @x-autobe-database-schema-property member
+         * @x-autobe-specification Relation via JOIN on hrm_time_track_member_id
+         *   to hrm_time_track_members.id. Returns IHrmTimeTrackMember.ISummary
+         *   object.
      */
     member: IHrmTimeTrackMember.ISummary;
 
@@ -125,8 +143,10 @@ export namespace IHrmTimeTrackMemberEmailVerification {
      *
      * This is the email address to which the verification token was sent. It matches the member's registered email and is used to confirm the token was delivered to the correct recipient.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from hrm_time_track_member_email_verifications.email column. Email format validation.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_member_email_verifications.email column. Email
+         *   format validation.
      */
     email: string & tags.Format<"email">;
 
@@ -135,8 +155,10 @@ export namespace IHrmTimeTrackMemberEmailVerification {
      *
      * This unique token is included in the verification link sent via email. The member must click this link to verify their email ownership. Each token is single-use and becomes invalid after successful verification or expiration.
      *
-     * @x-autobe-database-schema-property token
-     * @x-autobe-specification Direct mapping from hrm_time_track_member_email_verifications.token column. Unique constraint enforced at database level.
+         * @x-autobe-database-schema-property token
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_member_email_verifications.token column. Unique
+         *   constraint enforced at database level.
      */
     token: string;
 
@@ -145,8 +167,10 @@ export namespace IHrmTimeTrackMemberEmailVerification {
      *
      * This datetime marks when the verification email was dispatched to the member. It serves as the starting point for the token's validity period and is used for audit trail purposes.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from hrm_time_track_member_email_verifications.created_at column. DateTime in UTC timezone.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_member_email_verifications.created_at column.
+         *   DateTime in UTC timezone.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -155,8 +179,10 @@ export namespace IHrmTimeTrackMemberEmailVerification {
      *
      * Tokens typically expire after 24 hours for security purposes. After this timestamp, the token cannot be used for email verification and a new token must be requested if verification is still needed.
      *
-     * @x-autobe-database-schema-property expired_at
-     * @x-autobe-specification Direct mapping from hrm_time_track_member_email_verifications.expired_at column. DateTime in UTC timezone.
+         * @x-autobe-database-schema-property expired_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_member_email_verifications.expired_at column.
+         *   DateTime in UTC timezone.
      */
     expired_at: string & tags.Format<"date-time">;
 
@@ -165,8 +191,11 @@ export namespace IHrmTimeTrackMemberEmailVerification {
      *
      * This field is NULL for unused tokens and contains the verification timestamp once the member clicks the verification link. Once set, the token cannot be reused for verification.
      *
-     * @x-autobe-database-schema-property used_at
-     * @x-autobe-specification Direct mapping from hrm_time_track_member_email_verifications.used_at column. Nullable DateTime in UTC timezone. NULL when token unused, set to current timestamp when token successfully used.
+         * @x-autobe-database-schema-property used_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_member_email_verifications.used_at column. Nullable
+         *   DateTime in UTC timezone. NULL when token unused, set to current
+         *   timestamp when token successfully used.
      */
     used_at: (string & tags.Format<"date-time">) | null;
 
@@ -175,8 +204,11 @@ export namespace IHrmTimeTrackMemberEmailVerification {
      *
      * This field is NULL for active verification records. When set, it indicates the record has been logically deleted while preserving the data for audit trail purposes. Soft-deleted records are excluded from standard queries.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from hrm_time_track_member_email_verifications.deleted_at column. Nullable DateTime in UTC timezone. NULL for active records, set to current timestamp when soft deleted.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_track_member_email_verifications.deleted_at column.
+         *   Nullable DateTime in UTC timezone. NULL for active records, set to
+         *   current timestamp when soft deleted.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
 
@@ -185,7 +217,11 @@ export namespace IHrmTimeTrackMemberEmailVerification {
      *
      * This computed field indicates one of three states: 'unused' for valid tokens awaiting verification, 'used' for successfully verified tokens, or 'expired' for tokens that have passed their expiration date without being used. The status is calculated dynamically based on the token's lifecycle timestamps.
      *
-     * @x-autobe-specification Computed field derived from used_at and expired_at timestamps. Logic: unused when used_at IS NULL AND expired_at > NOW(), used when used_at IS NOT NULL, expired when expired_at <= NOW() AND used_at IS NULL. No database column - calculated at query time.
+         * @x-autobe-specification Computed field derived from used_at and
+         *   expired_at timestamps. Logic: unused when used_at IS NULL AND
+         *   expired_at > NOW(), used when used_at IS NOT NULL, expired when
+         *   expired_at <= NOW() AND used_at IS NULL. No database column -
+         *   calculated at query time.
      */
     status: "unused" | "used" | "expired";
   };
@@ -201,7 +237,10 @@ export namespace IHrmTimeTrackMemberEmailVerification {
      *
      * Performs case-insensitive text matching across both the email address and verification token fields. Accepts partial text input for flexible searching. Useful for finding verification records when you know part of the email or token value.
      *
-     * @x-autobe-specification Computed search parameter that performs LIKE query on email and token columns. Accepts partial text input for fuzzy matching. Case-insensitive search across both email address and verification token fields.
+         * @x-autobe-specification Computed search parameter that performs LIKE
+         *   query on email and token columns. Accepts partial text input for
+         *   fuzzy matching. Case-insensitive search across both email address
+         *   and verification token fields.
      */
     search?: string | undefined;
 
@@ -210,7 +249,11 @@ export namespace IHrmTimeTrackMemberEmailVerification {
      *
      * When provided, only email verification records associated with the specified member account will be returned. This is useful for viewing all verification attempts for a specific user account.
      *
-     * @x-autobe-specification Query parameter that filters by hrm_time_track_member_id foreign key column in hrm_time_track_member_email_verifications table. Accepts a UUID value to filter verification records to only those belonging to the specified member account.
+         * @x-autobe-specification Query parameter that filters by
+         *   hrm_time_track_member_id foreign key column in
+         *   hrm_time_track_member_email_verifications table. Accepts a UUID
+         *   value to filter verification records to only those belonging to the
+         *   specified member account.
      */
     member_id?: (string & tags.Format<"uuid">) | undefined;
 
@@ -219,7 +262,11 @@ export namespace IHrmTimeTrackMemberEmailVerification {
      *
      * Accepts three values: 'unused' for valid tokens awaiting verification, 'used' for successfully verified tokens, or 'expired' for tokens that have passed their expiration date without being used. This status is computed from the token's lifecycle timestamps.
      *
-     * @x-autobe-specification Computed filter parameter based on used_at and expired_at timestamps. Accepts values: 'unused' (used_at IS NULL AND expired_at > NOW()), 'used' (used_at IS NOT NULL), 'expired' (expired_at <= NOW() AND used_at IS NULL). Filters records by their verification lifecycle state.
+         * @x-autobe-specification Computed filter parameter based on used_at
+         *   and expired_at timestamps. Accepts values: 'unused' (used_at IS
+         *   NULL AND expired_at > NOW()), 'used' (used_at IS NOT NULL),
+         *   'expired' (expired_at <= NOW() AND used_at IS NULL). Filters
+         *   records by their verification lifecycle state.
      */
     status?: string | undefined;
 
@@ -228,7 +275,9 @@ export namespace IHrmTimeTrackMemberEmailVerification {
      *
      * Specifies which page of results to retrieve. Page numbering starts from 1 (not 0). Combined with the limit parameter, this controls the offset into the result set. Defaults to page 1 if not specified.
      *
-     * @x-autobe-specification Pagination page number (1-indexed). Defaults to 1 if not provided. Used with limit parameter to control which subset of results is returned. Page numbering starts from 1, not 0.
+         * @x-autobe-specification Pagination page number (1-indexed). Defaults
+         *   to 1 if not provided. Used with limit parameter to control which
+         *   subset of results is returned. Page numbering starts from 1, not 0.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -237,7 +286,10 @@ export namespace IHrmTimeTrackMemberEmailVerification {
      *
      * Controls the page size for pagination results. Minimum value is 1, maximum is 100. If the total result set contains fewer records than the limit, all available records are returned. Use this parameter to control response size and optimize performance.
      *
-     * @x-autobe-specification Maximum number of records per page. Minimum value is 1, maximum is 100. Controls the page size for pagination. If the result set has fewer records than the limit, all remaining records are returned.
+         * @x-autobe-specification Maximum number of records per page. Minimum
+         *   value is 1, maximum is 100. Controls the page size for pagination.
+         *   If the result set has fewer records than the limit, all remaining
+         *   records are returned.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)

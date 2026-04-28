@@ -28,9 +28,10 @@ export class CommunityplatformMemberCommentsVotesController {
    * @param connection
    * @param commentId Identifier of the target comment that receives the vote
    * @param body The desired vote direction for the target comment
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Resolve the authenticated actor as a member and reject unauthenticated or guest callers before any write logic.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Resolve the authenticated actor as a member and
+     *   reject unauthenticated or guest callers before any write logic.
    *
    * Load the target record from `community_platform_comments` by `commentId`. Reject the request when the comment does not exist, is not available for participation, or is attached to a post context that should not accept interaction. Use the loaded comment to retain discussion integrity and, when needed, join to `community_platform_posts` to verify the enclosing post still exists and is in a valid participation state.
    *
@@ -78,9 +79,11 @@ export class CommunityplatformMemberCommentsVotesController {
    * @param connection
    * @param commentId Target comment identifier
    * @param body Paging, filtering, and sorting options for comment vote records
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Validate that commentId is a valid UUID and load the target row from community_platform_comments by id. If the comment does not exist, return a not-found error.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Validate that commentId is a valid UUID and load
+     *   the target row from community_platform_comments by id. If the comment
+     *   does not exist, return a not-found error.
    *
    * Authorize the caller as an authenticated member or admin according to service policy. Reject unauthenticated access. If the service applies additional visibility rules for moderated or removed comments, evaluate those rules before exposing vote records.
    *
@@ -126,9 +129,12 @@ export class CommunityplatformMemberCommentsVotesController {
    * @param connection
    * @param commentId Target comment's unique identifier
    * @param commentVoteId Target comment vote's unique identifier
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Load the target row from `community_platform_comment_votes` by `id = :commentVoteId` and verify that `community_platform_comment_id = :commentId` before returning any data. If no row matches both identifiers, return a not-found error.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Load the target row from
+     *   `community_platform_comment_votes` by `id = :commentVoteId` and verify
+     *   that `community_platform_comment_id = :commentId` before returning any
+     *   data. If no row matches both identifiers, return a not-found error.
    *
    * Apply authorization before returning the resource. The service should require an authenticated actor. For member access, allow retrieval only when the vote belongs to the authenticated member unless broader read permission is explicitly granted by platform policy. For admin access, allow inspection for support, abuse review, or governance purposes. Guests must be rejected.
    *
@@ -177,9 +183,10 @@ export class CommunityplatformMemberCommentsVotesController {
    * @param commentId Target comment's ID
    * @param commentVoteId Target comment vote's ID
    * @param body Replacement direction for the active comment vote
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Load the authenticated member identity from the session context and require the actor to be a member.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Load the authenticated member identity from the
+     *   session context and require the actor to be a member.
    *
    * Within a transaction, load the comment from community_platform_comments by commentId and reject the request if no record exists, if deleted_at is not null, or if the comment status indicates it is not available for normal participation. Load the vote record from community_platform_comment_votes by commentVoteId and reject if no active record exists, if deleted_at is not null, or if its community_platform_comment_id does not equal the supplied commentId. Enforce ownership by rejecting the request unless community_platform_member_id on the vote record equals the authenticated member's id.
    *
@@ -230,9 +237,10 @@ export class CommunityplatformMemberCommentsVotesController {
    * @param connection
    * @param commentId Target comment's unique identifier.
    * @param commentVoteId Target comment vote's unique identifier.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Authenticate the caller as a member and obtain the current member identifier from the session context.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Authenticate the caller as a member and obtain
+     *   the current member identifier from the session context.
    *
    * Load the target comment from community_platform_comments by id = {commentId}. Reject the request if no comment exists. The comment record is the canonical discussion entity attached to a post and is required to validate the nested route context.
    *

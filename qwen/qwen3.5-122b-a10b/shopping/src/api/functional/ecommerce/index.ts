@@ -33,7 +33,10 @@ export * as requests from "./requests/index";
  * @param props.connection
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query ecommerce_categories table for all active (deleted_at IS NULL) categories. Fetch root categories (parent_id IS NULL) with their subcategories using a single query with LEFT JOIN or two separate queries optimized for the two-level hierarchy.
+ * @x-autobe-specification Query ecommerce_categories table for all active
+ *   (deleted_at IS NULL) categories. Fetch root categories (parent_id IS NULL)
+ *   with their subcategories using a single query with LEFT JOIN or two
+ *   separate queries optimized for the two-level hierarchy.
  *
  * **Implementation Steps**
  *

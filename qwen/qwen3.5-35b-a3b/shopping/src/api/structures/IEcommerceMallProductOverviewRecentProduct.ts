@@ -12,8 +12,9 @@ export type IEcommerceMallProductOverviewRecentProduct = {
    *
    * The primary key used to reference this product across all platform operations. This UUID is stable throughout the product's lifecycle and is used in API endpoints for product management, order references, and review associations.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_products.id. UUID primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from ecommerce_mall_products.id.
+     *   UUID primary key.
    */
   id: string & tags.Format<"uuid">;
 
@@ -22,8 +23,9 @@ export type IEcommerceMallProductOverviewRecentProduct = {
    *
    * This name appears in category browse pages, search results, product cards, and wishlist displays. It serves as the primary identifier for customers browsing or searching the catalog. Max length: 100 characters.
    *
-   * @x-autobe-database-schema-property name
-   * @x-autobe-specification Direct mapping from ecommerce_mall_products.name. Product display name, max 100 characters.
+     * @x-autobe-database-schema-property name
+     * @x-autobe-specification Direct mapping from ecommerce_mall_products.name.
+     *   Product display name, max 100 characters.
    */
   name: string;
 
@@ -32,8 +34,9 @@ export type IEcommerceMallProductOverviewRecentProduct = {
    *
    * References the product's category in the catalog hierarchy, enabling category-based browsing and filtering. The category provides organizational structure for the product catalog and supports hierarchical subcategory relationships through the parent category reference.
    *
-   * @x-autobe-database-schema-property category_id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_products.category_id. UUID reference to category table.
+     * @x-autobe-database-schema-property category_id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_products.category_id. UUID reference to category table.
    */
   category_id: string & tags.Format<"uuid">;
 
@@ -42,8 +45,10 @@ export type IEcommerceMallProductOverviewRecentProduct = {
    *
    * The base price applies when no variant override is set. Product variants may have individual prices that override this base price. The base price is used for price range display and comparison shopping.
    *
-   * @x-autobe-database-schema-property base_price
-   * @x-autobe-specification Direct mapping from ecommerce_mall_products.base_price. Float value representing base product price in platform currency.
+     * @x-autobe-database-schema-property base_price
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_products.base_price. Float value representing base
+     *   product price in platform currency.
    */
   base_price: number & tags.Minimum<0>;
 
@@ -52,8 +57,9 @@ export type IEcommerceMallProductOverviewRecentProduct = {
    *
    * Indicates when the product was first added to the platform catalog. Used for chronological browsing, sorting by recency, and audit trail purposes. Always present for active products.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_products.created_at. Timestamp of product creation.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_products.created_at. Timestamp of product creation.
    */
   created_at: string & tags.Format<"date-time">;
 };

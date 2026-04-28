@@ -31,9 +31,11 @@ export class EcommerceAdminOrdersItemsSnapshotVariantOptionsController {
    * @param orderId UUID of the parent order containing the order item (global scope)
    * @param itemId UUID of the order item within the order (scoped to order)
    * @param body Search criteria for filtering variant options by option keys, with pagination parameters for cursor-based navigation through large result sets.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query ecommerce_order_item_snapshot_variant_options table through the following joins:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Query
+     *   ecommerce_order_item_snapshot_variant_options table through the
+     *   following joins:
    *
    * 1. Validate order ownership: Verify ecommerce_order_id matches {orderId} and current user has access rights (customer owns order, seller owns product in order item, or admin role)
    * 2. Load order item: Fetch from ecommerce_order_items where id = {itemId} and ecommerce_order_id = {orderId}

@@ -19,9 +19,10 @@ export class MallplatformProductsVariantsController {
    * @param connection
    * @param productId The product identifier that scopes the variant list.
    * @param body Search, pagination, and sorting criteria for listing the variants of the specified product.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Verify that the target product exists, then query mall_platform_product_variants using product_id as the scope filter.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Verify that the target product exists, then query
+     *   mall_platform_product_variants using product_id as the scope filter.
    *
    * Support the shared list request conventions for pagination, keyword search, and sorting. Search should be applied against variant-facing fields that are useful in list views, such as SKU code and option values, while preserving deterministic sorting for stable pagination.
    *
@@ -58,9 +59,13 @@ export class MallplatformProductsVariantsController {
    * @param connection
    * @param productId The product identifier that scopes the variant lookup.
    * @param variantId The product variant identifier within the specified product.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Resolve the parent product first, then query mall_platform_product_variants using both the product ID and the variant ID so the lookup is constrained to the parent scope. Reject mismatched parent-child combinations even when the variant exists under another product.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Resolve the parent product first, then query
+     *   mall_platform_product_variants using both the product ID and the
+     *   variant ID so the lookup is constrained to the parent scope. Reject
+     *   mismatched parent-child combinations even when the variant exists under
+     *   another product.
    *
    * Return the full current product variant entity only. Do not include inventory history, snapshot history, or parent product images in this response. If either record cannot be found, return a not-found result. If the product is hidden, suspended, or otherwise inaccessible to the caller, return the appropriate authorization or visibility failure based on the caller's role and the product's state.
    *

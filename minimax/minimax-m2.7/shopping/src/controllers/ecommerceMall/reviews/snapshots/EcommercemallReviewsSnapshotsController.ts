@@ -21,9 +21,10 @@ export class EcommercemallReviewsSnapshotsController {
    * @param connection
    * @param reviewId Unique identifier of the review whose snapshots to retrieve.
    * @param body Search criteria including pagination parameters (page number, page size) and optional sorting preferences.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query ecommerce_mall_review_snapshots table filtered by the reviewId path parameter.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query ecommerce_mall_review_snapshots table
+     *   filtered by the reviewId path parameter.
    *
    * Apply pagination with page number and page size limits. Order results by created_at descending (newest first).
    *
@@ -69,9 +70,10 @@ export class EcommercemallReviewsSnapshotsController {
    * @param connection
    * @param reviewId UUID of the parent review that this snapshot belongs to.
    * @param snapshotId UUID of the snapshot to retrieve.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Retrieve a single review snapshot by validating the snapshot exists and belongs to the specified review.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Retrieve a single review snapshot by validating
+     *   the snapshot exists and belongs to the specified review.
    *
    * Implementation steps:
    * 1. Validate both reviewId and snapshotId are valid UUIDs.

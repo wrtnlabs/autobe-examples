@@ -14,7 +14,9 @@ export type IShoppingMallAdminPromotionRequestDashboard = {
    *
    * This count includes all promotion requests regardless of their current status (pending, approved, or rejected). It represents the complete history of promotion requests in the system, excluding only soft-deleted records.
    *
-   * @x-autobe-specification COUNT(*) from shopping_mall_admin_promotion_requests WHERE deleted_at IS NULL. Represents all promotion requests ever submitted regardless of status.
+     * @x-autobe-specification COUNT(*) from
+     *   shopping_mall_admin_promotion_requests WHERE deleted_at IS NULL.
+     *   Represents all promotion requests ever submitted regardless of status.
    */
   total: number & tags.Type<"int32"> & tags.Minimum<0>;
 
@@ -23,7 +25,10 @@ export type IShoppingMallAdminPromotionRequestDashboard = {
    *
    * These are requests that have been submitted by members or sellers but have not yet been reviewed by a super administrator. This count helps super administrators understand their pending review workload.
    *
-   * @x-autobe-specification COUNT(*) from shopping_mall_admin_promotion_requests WHERE status='pending' AND deleted_at IS NULL. Represents requests awaiting super administrator review.
+     * @x-autobe-specification COUNT(*) from
+     *   shopping_mall_admin_promotion_requests WHERE status='pending' AND
+     *   deleted_at IS NULL. Represents requests awaiting super administrator
+     *   review.
    */
   pending: number & tags.Type<"int32"> & tags.Minimum<0>;
 
@@ -32,7 +37,10 @@ export type IShoppingMallAdminPromotionRequestDashboard = {
    *
    * These are requests where a super administrator reviewed and approved the application, resulting in the applicant being promoted to administrator status. The approval triggers account creation in the shopping_mall_admins table.
    *
-   * @x-autobe-specification COUNT(*) from shopping_mall_admin_promotion_requests WHERE status='approved' AND deleted_at IS NULL. Represents requests that resulted in administrator promotion.
+     * @x-autobe-specification COUNT(*) from
+     *   shopping_mall_admin_promotion_requests WHERE status='approved' AND
+     *   deleted_at IS NULL. Represents requests that resulted in administrator
+     *   promotion.
    */
   approved: number & tags.Type<"int32"> & tags.Minimum<0>;
 
@@ -41,7 +49,9 @@ export type IShoppingMallAdminPromotionRequestDashboard = {
    *
    * These are requests where a super administrator reviewed and denied the application. Rejected applicants remain in their current role (member or seller) and may submit a new promotion request in the future.
    *
-   * @x-autobe-specification COUNT(*) from shopping_mall_admin_promotion_requests WHERE status='rejected' AND deleted_at IS NULL. Represents requests denied by super administrators.
+     * @x-autobe-specification COUNT(*) from
+     *   shopping_mall_admin_promotion_requests WHERE status='rejected' AND
+     *   deleted_at IS NULL. Represents requests denied by super administrators.
    */
   rejected: number & tags.Type<"int32"> & tags.Minimum<0>;
 };

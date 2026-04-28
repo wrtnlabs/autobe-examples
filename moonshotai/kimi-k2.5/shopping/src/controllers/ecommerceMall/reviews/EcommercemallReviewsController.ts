@@ -20,9 +20,10 @@ export class EcommercemallReviewsController {
    *
    * @param connection
    * @param body Search criteria and pagination parameters for filtering reviews
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query ecommerce_mall_reviews table with pagination and filtering support.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query ecommerce_mall_reviews table with
+     *   pagination and filtering support.
    *
    * Apply the following filters when provided in request body:
    * - productId: Filter reviews for a specific product
@@ -74,9 +75,10 @@ export class EcommercemallReviewsController {
    *
    * @param connection
    * @param reviewId Unique identifier of the review to retrieve
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query the ecommerce_mall_reviews table by primary key (id).
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query the ecommerce_mall_reviews table by primary
+     *   key (id).
    *
    * **Query Requirements:**
    * - Join with ecommerce_mall_customers to include author information (filtering deleted_at for anonymized display if customer deleted their account)

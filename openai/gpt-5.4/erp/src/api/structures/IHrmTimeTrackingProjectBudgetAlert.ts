@@ -10,80 +10,92 @@ export type IHrmTimeTrackingProjectBudgetAlert = {
   /**
    * Unique identifier of this project budget alert record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_project_budget_alerts.id.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_project_budget_alerts.id.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Summary of the project whose weekly budget utilization is represented by this alert.
    *
-   * @x-autobe-database-schema-property project
-   * @x-autobe-specification Resolve the belongs-to relation from hrm_time_tracking_project_budget_alerts.project by joining hrm_time_tracking_project_id to hrm_time_tracking_projects.id and serialize the related project as IHrmTimeTrackingProject.ISummary.
+     * @x-autobe-database-schema-property project
+     * @x-autobe-specification Resolve the belongs-to relation from
+     *   hrm_time_tracking_project_budget_alerts.project by joining
+     *   hrm_time_tracking_project_id to hrm_time_tracking_projects.id and
+     *   serialize the related project as IHrmTimeTrackingProject.ISummary.
    */
   project: IHrmTimeTrackingProject.ISummary;
 
   /**
    * Start timestamp of the summarized weekly window covered by this alert.
    *
-   * @x-autobe-database-schema-property week_start_date
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_project_budget_alerts.week_start_date.
+     * @x-autobe-database-schema-property week_start_date
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_project_budget_alerts.week_start_date.
    */
   week_start_date: string & tags.Format<"date-time">;
 
   /**
    * End timestamp of the summarized weekly window covered by this alert.
    *
-   * @x-autobe-database-schema-property week_end_date
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_project_budget_alerts.week_end_date.
+     * @x-autobe-database-schema-property week_end_date
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_project_budget_alerts.week_end_date.
    */
   week_end_date: string & tags.Format<"date-time">;
 
   /**
    * Total logged hours counted for the project during the summarized week.
    *
-   * @x-autobe-database-schema-property actual_hours
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_project_budget_alerts.actual_hours.
+     * @x-autobe-database-schema-property actual_hours
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_project_budget_alerts.actual_hours.
    */
   actual_hours: number;
 
   /**
    * Ratio of actual logged hours to the project's configured budget hours for this weekly summary.
    *
-   * @x-autobe-database-schema-property utilization_rate
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_project_budget_alerts.utilization_rate.
+     * @x-autobe-database-schema-property utilization_rate
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_project_budget_alerts.utilization_rate.
    */
   utilization_rate: number;
 
   /**
    * Budget utilization threshold ratio applied when determining whether this alert should be raised.
    *
-   * @x-autobe-database-schema-property threshold_rate
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_project_budget_alerts.threshold_rate.
+     * @x-autobe-database-schema-property threshold_rate
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_project_budget_alerts.threshold_rate.
    */
   threshold_rate: number;
 
   /**
    * Whether the project's utilization met or exceeded the configured threshold for this weekly window.
    *
-   * @x-autobe-database-schema-property is_alert
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_project_budget_alerts.is_alert.
+     * @x-autobe-database-schema-property is_alert
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_project_budget_alerts.is_alert.
    */
   is_alert: boolean;
 
   /**
    * Timestamp when this project budget alert record was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_project_budget_alerts.created_at.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_project_budget_alerts.created_at.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when this project budget alert record was last refreshed or updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from hrm_time_tracking_project_budget_alerts.updated_at.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_time_tracking_project_budget_alerts.updated_at.
    */
   updated_at: string & tags.Format<"date-time">;
 };
@@ -95,88 +107,107 @@ export namespace IHrmTimeTrackingProjectBudgetAlert {
     /**
      * Unique identifier of the project budget alert record.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_project_budget_alerts.id.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_project_budget_alerts.id.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Summary information for the project whose budget utilization is represented by this alert.
      *
-     * @x-autobe-database-schema-property project
-     * @x-autobe-specification Resolve the belongs-to relation from hrm_time_tracking_project_budget_alerts.project using hrm_time_tracking_project_id and serialize the joined row as IHrmTimeTrackingProject.ISummary. This response field replaces the raw hrm_time_tracking_project_id foreign key.
+         * @x-autobe-database-schema-property project
+         * @x-autobe-specification Resolve the belongs-to relation from
+         *   hrm_time_tracking_project_budget_alerts.project using
+         *   hrm_time_tracking_project_id and serialize the joined row as
+         *   IHrmTimeTrackingProject.ISummary. This response field replaces the
+         *   raw hrm_time_tracking_project_id foreign key.
      */
     project: IHrmTimeTrackingProject.ISummary;
 
     /**
      * Start date and time of the weekly summary window covered by this alert.
      *
-     * @x-autobe-database-schema-property week_start_date
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_project_budget_alerts.week_start_date.
+         * @x-autobe-database-schema-property week_start_date
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_project_budget_alerts.week_start_date.
      */
     week_start_date: string & tags.Format<"date-time">;
 
     /**
      * End date and time of the weekly summary window covered by this alert.
      *
-     * @x-autobe-database-schema-property week_end_date
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_project_budget_alerts.week_end_date.
+         * @x-autobe-database-schema-property week_end_date
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_project_budget_alerts.week_end_date.
      */
     week_end_date: string & tags.Format<"date-time">;
 
     /**
      * Total logged hours counted for the project during the summarized week.
      *
-     * @x-autobe-database-schema-property actual_hours
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_project_budget_alerts.actual_hours as a floating-point number of accumulated logged hours.
+         * @x-autobe-database-schema-property actual_hours
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_project_budget_alerts.actual_hours as a
+         *   floating-point number of accumulated logged hours.
      */
     actual_hours: number;
 
     /**
      * Budget utilization ratio reached by the project during the summarized week.
      *
-     * @x-autobe-database-schema-property utilization_rate
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_project_budget_alerts.utilization_rate as the persisted ratio of actual_hours to the project's configured budget hours.
+         * @x-autobe-database-schema-property utilization_rate
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_project_budget_alerts.utilization_rate as the
+         *   persisted ratio of actual_hours to the project's configured budget
+         *   hours.
      */
     utilization_rate: number;
 
     /**
      * Alert threshold ratio that was applied to determine whether this project should be flagged.
      *
-     * @x-autobe-database-schema-property threshold_rate
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_project_budget_alerts.threshold_rate as the ratio threshold used when evaluating alert status.
+         * @x-autobe-database-schema-property threshold_rate
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_project_budget_alerts.threshold_rate as the ratio
+         *   threshold used when evaluating alert status.
      */
     threshold_rate: number;
 
     /**
      * Whether the project's utilization met or exceeded the configured threshold for this week.
      *
-     * @x-autobe-database-schema-property is_alert
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_project_budget_alerts.is_alert.
+         * @x-autobe-database-schema-property is_alert
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_project_budget_alerts.is_alert.
      */
     is_alert: boolean;
 
     /**
      * Timestamp when this derived alert record was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_project_budget_alerts.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_project_budget_alerts.created_at.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when this derived alert record was last refreshed or updated.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_project_budget_alerts.updated_at.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_project_budget_alerts.updated_at.
      */
     updated_at: string & tags.Format<"date-time">;
 
     /**
      * Soft-deletion timestamp for this alert record, or null when the record remains active.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from hrm_time_tracking_project_budget_alerts.deleted_at. Serialize as string date-time when soft deleted, otherwise null.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_time_tracking_project_budget_alerts.deleted_at. Serialize as
+         *   string date-time when soft deleted, otherwise null.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };
@@ -188,147 +219,208 @@ export namespace IHrmTimeTrackingProjectBudgetAlert {
     /**
      * Project identifier used to limit results to one related project's budget alert records.
      *
-     * @x-autobe-specification Use this UUID to filter hrm_time_tracking_project_budget_alerts by exact equality on hrm_time_tracking_project_budget_alerts.hrm_time_tracking_project_id within the active organization context.
+         * @x-autobe-specification Use this UUID to filter
+         *   hrm_time_tracking_project_budget_alerts by exact equality on
+         *   hrm_time_tracking_project_budget_alerts.hrm_time_tracking_project_id
+         *   within the active organization context.
      */
     projectId?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Whether to return only alert rows or only non-alert rows.
      *
-     * @x-autobe-specification Use this boolean to filter hrm_time_tracking_project_budget_alerts.is_alert by exact equality. True returns only alerting rows and false returns only non-alert rows.
+         * @x-autobe-specification Use this boolean to filter
+         *   hrm_time_tracking_project_budget_alerts.is_alert by exact equality.
+         *   True returns only alerting rows and false returns only non-alert
+         *   rows.
      */
     isAlert?: boolean | undefined;
 
     /**
      * Inclusive lower boundary for the summarized week's start timestamp.
      *
-     * @x-autobe-specification Use this timestamp as an inclusive lower bound on hrm_time_tracking_project_budget_alerts.week_start_date. Validate that it does not exceed weekStartTo when both are provided.
+         * @x-autobe-specification Use this timestamp as an inclusive lower
+         *   bound on hrm_time_tracking_project_budget_alerts.week_start_date.
+         *   Validate that it does not exceed weekStartTo when both are
+         *   provided.
      */
     weekStartFrom?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Inclusive upper boundary for the summarized week's start timestamp.
      *
-     * @x-autobe-specification Use this timestamp as an inclusive upper bound on hrm_time_tracking_project_budget_alerts.week_start_date. Validate that it is not earlier than weekStartFrom when both are provided.
+         * @x-autobe-specification Use this timestamp as an inclusive upper
+         *   bound on hrm_time_tracking_project_budget_alerts.week_start_date.
+         *   Validate that it is not earlier than weekStartFrom when both are
+         *   provided.
      */
     weekStartTo?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Inclusive lower boundary for the summarized week's end timestamp.
      *
-     * @x-autobe-specification Use this timestamp as an inclusive lower bound on hrm_time_tracking_project_budget_alerts.week_end_date. Validate that it does not exceed weekEndTo when both are provided.
+         * @x-autobe-specification Use this timestamp as an inclusive lower
+         *   bound on hrm_time_tracking_project_budget_alerts.week_end_date.
+         *   Validate that it does not exceed weekEndTo when both are provided.
      */
     weekEndFrom?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Inclusive upper boundary for the summarized week's end timestamp.
      *
-     * @x-autobe-specification Use this timestamp as an inclusive upper bound on hrm_time_tracking_project_budget_alerts.week_end_date. Validate that it is not earlier than weekEndFrom when both are provided.
+         * @x-autobe-specification Use this timestamp as an inclusive upper
+         *   bound on hrm_time_tracking_project_budget_alerts.week_end_date.
+         *   Validate that it is not earlier than weekEndFrom when both are
+         *   provided.
      */
     weekEndTo?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Minimum actual logged hours required for matching alert records.
      *
-     * @x-autobe-specification Use this number as an inclusive lower bound on hrm_time_tracking_project_budget_alerts.actual_hours. Validate that it does not exceed actualHoursMax when both are provided.
+         * @x-autobe-specification Use this number as an inclusive lower bound
+         *   on hrm_time_tracking_project_budget_alerts.actual_hours. Validate
+         *   that it does not exceed actualHoursMax when both are provided.
      */
     actualHoursMin?: number | undefined;
 
     /**
      * Maximum actual logged hours allowed for matching alert records.
      *
-     * @x-autobe-specification Use this number as an inclusive upper bound on hrm_time_tracking_project_budget_alerts.actual_hours. Validate that it is not less than actualHoursMin when both are provided.
+         * @x-autobe-specification Use this number as an inclusive upper bound
+         *   on hrm_time_tracking_project_budget_alerts.actual_hours. Validate
+         *   that it is not less than actualHoursMin when both are provided.
      */
     actualHoursMax?: number | undefined;
 
     /**
      * Minimum utilization ratio required for matching alert records.
      *
-     * @x-autobe-specification Use this number as an inclusive lower bound on hrm_time_tracking_project_budget_alerts.utilization_rate. Validate that it does not exceed utilizationRateMax when both are provided.
+         * @x-autobe-specification Use this number as an inclusive lower bound
+         *   on hrm_time_tracking_project_budget_alerts.utilization_rate.
+         *   Validate that it does not exceed utilizationRateMax when both are
+         *   provided.
      */
     utilizationRateMin?: number | undefined;
 
     /**
      * Maximum utilization ratio allowed for matching alert records.
      *
-     * @x-autobe-specification Use this number as an inclusive upper bound on hrm_time_tracking_project_budget_alerts.utilization_rate. Validate that it is not less than utilizationRateMin when both are provided.
+         * @x-autobe-specification Use this number as an inclusive upper bound
+         *   on hrm_time_tracking_project_budget_alerts.utilization_rate.
+         *   Validate that it is not less than utilizationRateMin when both are
+         *   provided.
      */
     utilizationRateMax?: number | undefined;
 
     /**
      * Minimum configured alert threshold ratio required for matching records.
      *
-     * @x-autobe-specification Use this number as an inclusive lower bound on hrm_time_tracking_project_budget_alerts.threshold_rate. Validate that it does not exceed thresholdRateMax when both are provided.
+         * @x-autobe-specification Use this number as an inclusive lower bound
+         *   on hrm_time_tracking_project_budget_alerts.threshold_rate. Validate
+         *   that it does not exceed thresholdRateMax when both are provided.
      */
     thresholdRateMin?: number | undefined;
 
     /**
      * Maximum configured alert threshold ratio allowed for matching records.
      *
-     * @x-autobe-specification Use this number as an inclusive upper bound on hrm_time_tracking_project_budget_alerts.threshold_rate. Validate that it is not less than thresholdRateMin when both are provided.
+         * @x-autobe-specification Use this number as an inclusive upper bound
+         *   on hrm_time_tracking_project_budget_alerts.threshold_rate. Validate
+         *   that it is not less than thresholdRateMin when both are provided.
      */
     thresholdRateMax?: number | undefined;
 
     /**
      * Project lifecycle status to match on the related project, such as active, archived, or completed.
      *
-     * @x-autobe-specification Join hrm_time_tracking_projects on hrm_time_tracking_project_id and filter the joined hrm_time_tracking_projects.status column by exact string equality. This property filters the related project row rather than a column on hrm_time_tracking_project_budget_alerts itself.
+         * @x-autobe-specification Join hrm_time_tracking_projects on
+         *   hrm_time_tracking_project_id and filter the joined
+         *   hrm_time_tracking_projects.status column by exact string equality.
+         *   This property filters the related project row rather than a column
+         *   on hrm_time_tracking_project_budget_alerts itself.
      */
     projectStatus?: string | undefined;
 
     /**
      * Free-text search term used to find alert records by related project name.
      *
-     * @x-autobe-specification Apply free-text search after joining hrm_time_tracking_projects. Match this term against verified searchable project fields, specifically hrm_time_tracking_projects.name, typically with case-insensitive partial matching. Do not apply it to unverified columns.
+         * @x-autobe-specification Apply free-text search after joining
+         *   hrm_time_tracking_projects. Match this term against verified
+         *   searchable project fields, specifically
+         *   hrm_time_tracking_projects.name, typically with case-insensitive
+         *   partial matching. Do not apply it to unverified columns.
      */
     search?: string | undefined;
 
     /**
      * Inclusive lower boundary for the alert record creation timestamp.
      *
-     * @x-autobe-specification Use this timestamp as an inclusive lower bound on hrm_time_tracking_project_budget_alerts.created_at. Validate that it does not exceed createdAtTo when both are provided.
+         * @x-autobe-specification Use this timestamp as an inclusive lower
+         *   bound on hrm_time_tracking_project_budget_alerts.created_at.
+         *   Validate that it does not exceed createdAtTo when both are
+         *   provided.
      */
     createdAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Inclusive upper boundary for the alert record creation timestamp.
      *
-     * @x-autobe-specification Use this timestamp as an inclusive upper bound on hrm_time_tracking_project_budget_alerts.created_at. Validate that it is not earlier than createdAtFrom when both are provided.
+         * @x-autobe-specification Use this timestamp as an inclusive upper
+         *   bound on hrm_time_tracking_project_budget_alerts.created_at.
+         *   Validate that it is not earlier than createdAtFrom when both are
+         *   provided.
      */
     createdAtTo?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Inclusive lower boundary for the alert record last refresh timestamp.
      *
-     * @x-autobe-specification Use this timestamp as an inclusive lower bound on hrm_time_tracking_project_budget_alerts.updated_at. Validate that it does not exceed updatedAtTo when both are provided.
+         * @x-autobe-specification Use this timestamp as an inclusive lower
+         *   bound on hrm_time_tracking_project_budget_alerts.updated_at.
+         *   Validate that it does not exceed updatedAtTo when both are
+         *   provided.
      */
     updatedAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Inclusive upper boundary for the alert record last refresh timestamp.
      *
-     * @x-autobe-specification Use this timestamp as an inclusive upper bound on hrm_time_tracking_project_budget_alerts.updated_at. Validate that it is not earlier than updatedAtFrom when both are provided.
+         * @x-autobe-specification Use this timestamp as an inclusive upper
+         *   bound on hrm_time_tracking_project_budget_alerts.updated_at.
+         *   Validate that it is not earlier than updatedAtFrom when both are
+         *   provided.
      */
     updatedAtTo?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Requested sort order for the result set.
      *
-     * @x-autobe-specification Interpret this string as the requested sort expression for the search. Allow only supported sortable fields backed by the query, such as is_alert, week_start_date, utilization_rate, created_at, or updated_at, and apply the fallback order is_alert desc, week_start_date desc, utilization_rate desc, id asc when omitted.
+         * @x-autobe-specification Interpret this string as the requested sort
+         *   expression for the search. Allow only supported sortable fields
+         *   backed by the query, such as is_alert, week_start_date,
+         *   utilization_rate, created_at, or updated_at, and apply the fallback
+         *   order is_alert desc, week_start_date desc, utilization_rate desc,
+         *   id asc when omitted.
      */
     sort?: string | undefined;
 
     /**
      * 1-indexed page number of results to return.
      *
-     * @x-autobe-specification Use this integer as the 1-indexed page number for offset-based pagination over the filtered result set. When omitted, default to the first page.
+         * @x-autobe-specification Use this integer as the 1-indexed page number
+         *   for offset-based pagination over the filtered result set. When
+         *   omitted, default to the first page.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of alert summary records to include in one page of results.
      *
-     * @x-autobe-specification Use this integer as the maximum number of records to return per page. Enforce the schema limits of at least 1 and at most 100, and use it with page to compute pagination offsets.
+         * @x-autobe-specification Use this integer as the maximum number of
+         *   records to return per page. Enforce the schema limits of at least 1
+         *   and at most 100, and use it with page to compute pagination
+         *   offsets.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)

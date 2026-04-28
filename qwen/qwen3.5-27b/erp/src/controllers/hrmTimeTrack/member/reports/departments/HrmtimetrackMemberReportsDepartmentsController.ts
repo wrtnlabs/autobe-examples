@@ -19,9 +19,10 @@ export class HrmtimetrackMemberReportsDepartmentsController {
    * This report is useful for understanding organizational structure, analyzing team sizes, and making management decisions about resource allocation across departments.
    *
    * @param connection
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query hrm_time_track_departments table to build a hierarchical department report.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query hrm_time_track_departments table to build a
+     *   hierarchical department report.
    *
    * 1. Fetch all active departments (deleted_at IS NULL) for the current organization from the authenticated user's context.
    * 2. For each department, count the number of active employees (deleted_at IS NULL) assigned to it from hrm_time_track_employees table.

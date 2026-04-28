@@ -29,7 +29,10 @@ import { IShoppingMallProductVariantSnapshotOptionValue } from "../../../../../.
  * @param props.body Pagination, filtering, and sorting options for historical snapshot option values
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor administrator
- * @x-autobe-specification Implement this operation as a paginated historical child-list query over `shopping_mall_product_variant_snapshot_option_values` scoped by product, variant, and variant snapshot.
+ * @x-autobe-specification Implement this operation as a paginated historical
+ *   child-list query over
+ *   `shopping_mall_product_variant_snapshot_option_values` scoped by product,
+ *   variant, and variant snapshot.
  *
  * 1. Authenticate the caller and authorize only seller or administrator actors. If the caller is a seller, join `shopping_mall_products` and verify that `shopping_mall_products.id = {productId}` and `shopping_mall_products.shopping_mall_seller_id` matches the authenticated seller account. If the caller is an administrator, allow platform-wide access. Reject all other actors.
  *
@@ -162,7 +165,9 @@ export namespace index {
  * @param props.optionValueId Target snapshot option value identifier belonging to the specified variant snapshot
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor administrator
- * @x-autobe-specification Implement a read-only detail query over `shopping_mall_product_variant_snapshot_option_values` with strict parent-chain validation.
+ * @x-autobe-specification Implement a read-only detail query over
+ *   `shopping_mall_product_variant_snapshot_option_values` with strict
+ *   parent-chain validation.
  *
  * 1. Authenticate the requester and authorize only seller or administrator actors.
  * 2. For seller actors, join `shopping_mall_products` and verify that `shopping_mall_products.id = {productId}` and `shopping_mall_products.shopping_mall_seller_id` matches the authenticated seller account. For administrator actors, skip seller-ownership filtering but still validate the hierarchy.

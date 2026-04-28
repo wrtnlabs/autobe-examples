@@ -10,80 +10,93 @@ export type IErpHrmTimeWeeklySummaryReportRow = {
   /**
    * Unique identifier for the weekly summary report row.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from erp_hrm_time_weekly_summary_report_rows.id.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_weekly_summary_report_rows.id.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Organization that owns this weekly summary row.
    *
-   * @x-autobe-database-schema-property organization
-   * @x-autobe-specification Resolve the belongs-to organization relation from erp_hrm_time_weekly_summary_report_rows.organization_id and return it as IErpHrmTimeOrganizationDashboardSummary.ISummary. This is a read-only join result used for organization-scoped reporting.
+     * @x-autobe-database-schema-property organization
+     * @x-autobe-specification Resolve the belongs-to organization relation from
+     *   erp_hrm_time_weekly_summary_report_rows.organization_id and return it
+     *   as IErpHrmTimeOrganizationDashboardSummary.ISummary. This is a
+     *   read-only join result used for organization-scoped reporting.
    */
   organization: IErpHrmTimeOrganizationDashboardSummary.ISummary;
 
   /**
    * Start of the summarized ISO week.
    *
-   * @x-autobe-database-schema-property week_start_date
-   * @x-autobe-specification Direct mapping from erp_hrm_time_weekly_summary_report_rows.week_start_date.
+     * @x-autobe-database-schema-property week_start_date
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_weekly_summary_report_rows.week_start_date.
    */
   weekStartDate: string & tags.Format<"date-time">;
 
   /**
    * End of the summarized ISO week.
    *
-   * @x-autobe-database-schema-property week_end_date
-   * @x-autobe-specification Direct mapping from erp_hrm_time_weekly_summary_report_rows.week_end_date.
+     * @x-autobe-database-schema-property week_end_date
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_weekly_summary_report_rows.week_end_date.
    */
   weekEndDate: string & tags.Format<"date-time">;
 
   /**
    * Total hours logged during the summarized week.
    *
-   * @x-autobe-database-schema-property total_hours
-   * @x-autobe-specification Direct mapping from erp_hrm_time_weekly_summary_report_rows.total_hours.
+     * @x-autobe-database-schema-property total_hours
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_weekly_summary_report_rows.total_hours.
    */
   totalHours: number;
 
   /**
    * Number of timelog records included in the weekly summary.
    *
-   * @x-autobe-database-schema-property timelog_count
-   * @x-autobe-specification Direct mapping from erp_hrm_time_weekly_summary_report_rows.timelog_count.
+     * @x-autobe-database-schema-property timelog_count
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_weekly_summary_report_rows.timelog_count.
    */
   timelogCount: number & tags.Type<"int32">;
 
   /**
    * Number of unique employees who logged time during the week.
    *
-   * @x-autobe-database-schema-property active_employee_count
-   * @x-autobe-specification Direct mapping from erp_hrm_time_weekly_summary_report_rows.active_employee_count.
+     * @x-autobe-database-schema-property active_employee_count
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_weekly_summary_report_rows.active_employee_count.
    */
   activeEmployeeCount: number & tags.Type<"int32">;
 
   /**
    * Timestamp when this weekly summary row was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from erp_hrm_time_weekly_summary_report_rows.created_at.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_weekly_summary_report_rows.created_at.
    */
   createdAt: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when this weekly summary row was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from erp_hrm_time_weekly_summary_report_rows.updated_at.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_weekly_summary_report_rows.updated_at.
    */
   updatedAt: string & tags.Format<"date-time">;
 
   /**
    * Soft-deletion timestamp for this weekly summary row, or null if it is active.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from erp_hrm_time_weekly_summary_report_rows.deleted_at. Preserve null when the report row is active.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_weekly_summary_report_rows.deleted_at. Preserve null when
+     *   the report row is active.
    */
   deletedAt: (string & tags.Format<"date-time">) | null;
 };
@@ -95,80 +108,102 @@ export namespace IErpHrmTimeWeeklySummaryReportRow {
     /**
      * Unique identifier for the weekly summary report row.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from erp_hrm_time_weekly_summary_report_rows.id.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_weekly_summary_report_rows.id.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Organization that owns this weekly summary row.
      *
-     * @x-autobe-database-schema-property organization
-     * @x-autobe-specification Resolve the BELONGS-TO relation from erp_hrm_time_weekly_summary_report_rows.organization_id to the owning organization record and expose it as an organization summary reference.
+         * @x-autobe-database-schema-property organization
+         * @x-autobe-specification Resolve the BELONGS-TO relation from
+         *   erp_hrm_time_weekly_summary_report_rows.organization_id to the
+         *   owning organization record and expose it as an organization summary
+         *   reference.
      */
     organization: IErpHrmTimeOrganizationDashboardSummary.ISummary;
 
     /**
      * Start date of the summarized week.
      *
-     * @x-autobe-database-schema-property week_start_date
-     * @x-autobe-specification Direct mapping from erp_hrm_time_weekly_summary_report_rows.week_start_date. Represents the Monday start of the summarized ISO week in the organization-local reporting context.
+         * @x-autobe-database-schema-property week_start_date
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_weekly_summary_report_rows.week_start_date. Represents
+         *   the Monday start of the summarized ISO week in the
+         *   organization-local reporting context.
      */
     weekStartDate: string & tags.Format<"date-time">;
 
     /**
      * End date of the summarized week.
      *
-     * @x-autobe-database-schema-property week_end_date
-     * @x-autobe-specification Direct mapping from erp_hrm_time_weekly_summary_report_rows.week_end_date. Represents the Sunday end of the summarized ISO week in the organization-local reporting context.
+         * @x-autobe-database-schema-property week_end_date
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_weekly_summary_report_rows.week_end_date. Represents
+         *   the Sunday end of the summarized ISO week in the organization-local
+         *   reporting context.
      */
     weekEndDate: string & tags.Format<"date-time">;
 
     /**
      * Total hours logged during the summarized week.
      *
-     * @x-autobe-database-schema-property total_hours
-     * @x-autobe-specification Direct mapping from erp_hrm_time_weekly_summary_report_rows.total_hours. Use the precomputed aggregate value stored in the reporting row; do not recalculate from timelogs when serializing this DTO.
+         * @x-autobe-database-schema-property total_hours
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_weekly_summary_report_rows.total_hours. Use the
+         *   precomputed aggregate value stored in the reporting row; do not
+         *   recalculate from timelogs when serializing this DTO.
      */
     totalHours: number;
 
     /**
      * Number of timelog entries included in the summary week.
      *
-     * @x-autobe-database-schema-property timelog_count
-     * @x-autobe-specification Direct mapping from erp_hrm_time_weekly_summary_report_rows.timelog_count. Use the precomputed count stored in the reporting row.
+         * @x-autobe-database-schema-property timelog_count
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_weekly_summary_report_rows.timelog_count. Use the
+         *   precomputed count stored in the reporting row.
      */
     timelogCount: number & tags.Type<"int32">;
 
     /**
      * Number of employees who logged time during the summarized week.
      *
-     * @x-autobe-database-schema-property active_employee_count
-     * @x-autobe-specification Direct mapping from erp_hrm_time_weekly_summary_report_rows.active_employee_count. Use the precomputed unique-employee count stored in the reporting row.
+         * @x-autobe-database-schema-property active_employee_count
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_weekly_summary_report_rows.active_employee_count. Use
+         *   the precomputed unique-employee count stored in the reporting row.
      */
     activeEmployeeCount: number & tags.Type<"int32">;
 
     /**
      * Timestamp when this weekly summary row was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from erp_hrm_time_weekly_summary_report_rows.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_weekly_summary_report_rows.created_at.
      */
     createdAt: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when this weekly summary row was last updated.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from erp_hrm_time_weekly_summary_report_rows.updated_at.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_weekly_summary_report_rows.updated_at.
      */
     updatedAt: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when this weekly summary row was soft-deleted, or null if it is active.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from erp_hrm_time_weekly_summary_report_rows.deleted_at. Preserve null when the summary row is active and a timestamp when it has been soft-deleted.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_weekly_summary_report_rows.deleted_at. Preserve null
+         *   when the summary row is active and a timestamp when it has been
+         *   soft-deleted.
      */
     deletedAt: (string & tags.Format<"date-time">) | null;
   };
@@ -180,42 +215,58 @@ export namespace IErpHrmTimeWeeklySummaryReportRow {
     /**
      * Start of the week-start date range filter.
      *
-     * @x-autobe-specification Inclusive lower-bound filter for report rows. The service layer applies this value against erp_hrm_time_weekly_summary_report_rows.week_start_date in the organization's reporting timezone.
+         * @x-autobe-specification Inclusive lower-bound filter for report rows.
+         *   The service layer applies this value against
+         *   erp_hrm_time_weekly_summary_report_rows.week_start_date in the
+         *   organization's reporting timezone.
      */
     weekStartDateFrom?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * End of the week-start date range filter.
      *
-     * @x-autobe-specification Inclusive upper-bound filter for report rows. The service layer applies this value against erp_hrm_time_weekly_summary_report_rows.week_start_date in the organization's reporting timezone.
+         * @x-autobe-specification Inclusive upper-bound filter for report rows.
+         *   The service layer applies this value against
+         *   erp_hrm_time_weekly_summary_report_rows.week_start_date in the
+         *   organization's reporting timezone.
      */
     weekStartDateTo?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Start of the week-end date range filter.
      *
-     * @x-autobe-specification Inclusive lower-bound filter for report rows. The service layer applies this value against erp_hrm_time_weekly_summary_report_rows.week_end_date in the organization's reporting timezone.
+         * @x-autobe-specification Inclusive lower-bound filter for report rows.
+         *   The service layer applies this value against
+         *   erp_hrm_time_weekly_summary_report_rows.week_end_date in the
+         *   organization's reporting timezone.
      */
     weekEndDateFrom?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * End of the week-end date range filter.
      *
-     * @x-autobe-specification Inclusive upper-bound filter for report rows. The service layer applies this value against erp_hrm_time_weekly_summary_report_rows.week_end_date in the organization's reporting timezone.
+         * @x-autobe-specification Inclusive upper-bound filter for report rows.
+         *   The service layer applies this value against
+         *   erp_hrm_time_weekly_summary_report_rows.week_end_date in the
+         *   organization's reporting timezone.
      */
     weekEndDateTo?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Page number to retrieve.
      *
-     * @x-autobe-specification Page number for the paginated list query. Use this to calculate the offset when requesting weekly summary report rows.
+         * @x-autobe-specification Page number for the paginated list query. Use
+         *   this to calculate the offset when requesting weekly summary report
+         *   rows.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of rows to return per page.
      *
-     * @x-autobe-specification Maximum number of report rows to return in a single page. Use this to cap the page size when querying weekly summary report rows.
+         * @x-autobe-specification Maximum number of report rows to return in a
+         *   single page. Use this to cap the page size when querying weekly
+         *   summary report rows.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -224,7 +275,9 @@ export namespace IErpHrmTimeWeeklySummaryReportRow {
     /**
      * Sort expression for ordering the report rows.
      *
-     * @x-autobe-specification Optional sort expression for ordering weekly summary report rows. Default ordering should be week_start_date ascending when omitted.
+         * @x-autobe-specification Optional sort expression for ordering weekly
+         *   summary report rows. Default ordering should be week_start_date
+         *   ascending when omitted.
      */
     sort?: (string & tags.Pattern<"^[a-zA-Z0-9_.,:-]+$">) | undefined;
   };

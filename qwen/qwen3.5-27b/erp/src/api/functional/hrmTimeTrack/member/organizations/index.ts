@@ -22,7 +22,8 @@ export * as _switch from "./_switch/index";
  * @param props.body Organization creation data including name, optional description and logo, currency code, timezone identifier, and fiscal start month.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Insert a new record into hrm_time_track_organizations table with the following behavior:
+ * @x-autobe-specification Insert a new record into hrm_time_track_organizations
+ *   table with the following behavior:
  *
  * 1. Generate UUID for id field automatically
  * 2. Set created_at and updated_at to current timestamp
@@ -124,7 +125,8 @@ export namespace create {
  * @param props.body Search criteria including organization name, description, currency, timezone filters, fiscal start month, date ranges for created/updated timestamps, sorting preferences, and pagination parameters (cursor, limit).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query hrm_time_track_organizations table with pagination and filtering.
+ * @x-autobe-specification Query hrm_time_track_organizations table with
+ *   pagination and filtering.
  *
  * Apply search filters on name, description, currency, timezone, and fiscal_start_month fields.
  * Filter to active organizations only (deleted_at IS NULL).
@@ -226,7 +228,8 @@ export namespace index {
  * @param props.organizationId Unique identifier of the organization to retrieve (global scope).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query hrm_time_track_organizations table for the record matching the provided organizationId UUID.
+ * @x-autobe-specification Query hrm_time_track_organizations table for the
+ *   record matching the provided organizationId UUID.
  *
  * 1. Validate that organizationId is a valid UUID format.
  * 2. Execute SELECT query with WHERE id = :organizationId AND deleted_at IS NULL.
@@ -320,7 +323,8 @@ export namespace at {
  * @param props.body Organization settings to update including name, description, logo URL, currency, timezone, and fiscal start month.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Update organization settings in hrm_time_track_organizations table by primary key.
+ * @x-autobe-specification Update organization settings in
+ *   hrm_time_track_organizations table by primary key.
  *
  * 1. Validate organizationId exists and is not soft-deleted (deleted_at IS NULL)
  * 2. Validate name uniqueness if provided (check @@unique constraint)
@@ -429,7 +433,8 @@ export namespace update {
  * @param props.organizationId Unique identifier of the organization to delete (global scope).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Validate the requesting user is the organization owner before proceeding.
+ * @x-autobe-specification Validate the requesting user is the organization
+ *   owner before proceeding.
  *
  * Check precondition 1: Query hrm_time_track_timesheets for any records with organization_id matching the target and status = 'pending'. If any exist, reject with error indicating pending timesheets must be resolved.
  *
@@ -545,7 +550,8 @@ export namespace erase {
  * @param props.connection
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query hrm_time_track_members table to find all organization memberships for the authenticated user ID from the session.
+ * @x-autobe-specification Query hrm_time_track_members table to find all
+ *   organization memberships for the authenticated user ID from the session.
  *
  * For each membership, join with hrm_time_track_organizations to get organization details (id, name, code, status).
  *

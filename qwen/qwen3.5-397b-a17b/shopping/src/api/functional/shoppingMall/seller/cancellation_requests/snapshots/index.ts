@@ -23,7 +23,8 @@ import { IShoppingMallCancellationRequestSnapshot } from "../../../../../structu
  * @param props.body Search criteria including optional status filter, reviewed date range filter, and pagination parameters (page, limit, sort).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Query shopping_mall_cancellation_request_snapshots table filtered by cancellation_request_id parameter.
+ * @x-autobe-specification Query shopping_mall_cancellation_request_snapshots
+ *   table filtered by cancellation_request_id parameter.
  *
  * Apply pagination using cursor-based or offset-based pagination from request body (page, limit). Sort results by created_at ASC to show chronological history.
  *
@@ -137,7 +138,8 @@ export namespace index {
  * @param props.snapshotId UUID of the cancellation request snapshot to retrieve (globally unique).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Query shopping_mall_cancellation_request_snapshots table by snapshot ID.
+ * @x-autobe-specification Query shopping_mall_cancellation_request_snapshots
+ *   table by snapshot ID.
  *
  * Validate that the snapshotId exists and belongs to the specified cancellationRequestId.
  * Verify caller permissions: allow access only to the customer who submitted the cancellation request, the seller associated with the order item, or administrators.

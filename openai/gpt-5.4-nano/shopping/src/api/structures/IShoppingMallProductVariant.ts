@@ -10,80 +10,94 @@ export type IShoppingMallProductVariant = {
   /**
    * Unique identifier of this product variant.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_product_variants.id (UUID string).
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_product_variants.id (UUID string).
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * The parent product this variant belongs to (lightweight summary for browsing/management).
    *
-   * @x-autobe-database-schema-property product
-   * @x-autobe-specification Join shopping_mall_product_variants.shopping_mall_product_id -> shopping_mall_products.id, then map the joined shopping_mall_products row into IShoppingMallProduct.ISummary.
+     * @x-autobe-database-schema-property product
+     * @x-autobe-specification Join
+     *   shopping_mall_product_variants.shopping_mall_product_id ->
+     *   shopping_mall_products.id, then map the joined shopping_mall_products
+     *   row into IShoppingMallProduct.ISummary.
    */
   product: IShoppingMallProduct.ISummary;
 
   /**
    * SKU-like variant code identifying this variant within its parent product.
    *
-   * @x-autobe-database-schema-property code
-   * @x-autobe-specification Direct mapping from shopping_mall_product_variants.code. Variant SKU-like code unique within its product scope.
+     * @x-autobe-database-schema-property code
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_product_variants.code. Variant SKU-like code unique
+     *   within its product scope.
    */
   code: string;
 
   /**
    * Human-readable title/name for this variant.
    *
-   * @x-autobe-database-schema-property title
-   * @x-autobe-specification Direct mapping from shopping_mall_product_variants.title.
+     * @x-autobe-database-schema-property title
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_product_variants.title.
    */
   title: string;
 
   /**
    * Option value that differentiates this variant (e.g., a specific size or color value).
    *
-   * @x-autobe-database-schema-property option_value
-   * @x-autobe-specification Direct mapping from shopping_mall_product_variants.option_value.
+     * @x-autobe-database-schema-property option_value
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_product_variants.option_value.
    */
   option_value: string;
 
   /**
    * Base price of this variant used for cart and ordering.
    *
-   * @x-autobe-database-schema-property price
-   * @x-autobe-specification Direct mapping from shopping_mall_product_variants.price (Float/Double -> JSON number).
+     * @x-autobe-database-schema-property price
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_product_variants.price (Float/Double -> JSON number).
    */
   price: number;
 
   /**
    * Whether this variant is enabled for purchasing.
    *
-   * @x-autobe-database-schema-property is_active
-   * @x-autobe-specification Direct mapping from shopping_mall_product_variants.is_active (boolean).
+     * @x-autobe-database-schema-property is_active
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_product_variants.is_active (boolean).
    */
   is_active: boolean;
 
   /**
    * Timestamp when this variant record was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from shopping_mall_product_variants.created_at (date-time string).
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_product_variants.created_at (date-time string).
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when this variant record was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from shopping_mall_product_variants.updated_at (date-time string).
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_product_variants.updated_at (date-time string).
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * Soft-delete timestamp. Null means the variant is not soft-deleted.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from shopping_mall_product_variants.deleted_at. If the DB value is null/unset, return null; otherwise return the date-time string.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_product_variants.deleted_at. If the DB value is
+     *   null/unset, return null; otherwise return the date-time string.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -95,40 +109,59 @@ export namespace IShoppingMallProductVariant {
     /**
      * The SKU-like code identifying this variant within its product. Must be present and unique within the same product.
      *
-     * @x-autobe-database-schema-property code
-     * @x-autobe-specification Direct mapping from shopping_mall_product_variants.code. Validate that code is present (required by IUpdate) and enforce uniqueness within the same shopping_mall_product_id at service layer by checking existing variants with the same (shopping_mall_product_id, code), excluding the current variant id.
+         * @x-autobe-database-schema-property code
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_variants.code. Validate that code is present
+         *   (required by IUpdate) and enforce uniqueness within the same
+         *   shopping_mall_product_id at service layer by checking existing
+         *   variants with the same (shopping_mall_product_id, code), excluding
+         *   the current variant id.
      */
     code: string;
 
     /**
      * Human-friendly display title/name for the variant (e.g., “Red - Large”).
      *
-     * @x-autobe-database-schema-property title
-     * @x-autobe-specification Direct mapping from shopping_mall_product_variants.title. Persist as the variant’s display title shown in storefront/management views. Validate required/non-empty semantics per domain rules in service layer if applicable.
+         * @x-autobe-database-schema-property title
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_variants.title. Persist as the variant’s
+         *   display title shown in storefront/management views. Validate
+         *   required/non-empty semantics per domain rules in service layer if
+         *   applicable.
      */
     title?: string | undefined;
 
     /**
      * The variant option value that differentiates this variant (e.g., “Red”, “Large”, or a combined representation).
      *
-     * @x-autobe-database-schema-property option_value
-     * @x-autobe-specification Direct mapping from shopping_mall_product_variants.option_value. Validate option_value and related option/value combination semantics in service layer consistent with variant creation/edit flows.
+         * @x-autobe-database-schema-property option_value
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_variants.option_value. Validate option_value
+         *   and related option/value combination semantics in service layer
+         *   consistent with variant creation/edit flows.
      */
     option_value?: string | undefined;
 
     /**
      * Base price of this variant used when adding to cart and placing orders.
      *
-     * @x-autobe-database-schema-property price
-     * @x-autobe-specification Direct mapping from shopping_mall_product_variants.price (Float). Validate numeric constraints (range/precision) in service layer according to domain rules; reject the whole update atomically on invalid input.
+         * @x-autobe-database-schema-property price
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_variants.price (Float). Validate numeric
+         *   constraints (range/precision) in service layer according to domain
+         *   rules; reject the whole update atomically on invalid input.
      */
     price?: number | undefined;
 
     /**
      * Whether this variant is active/enabled for purchasing.
      *
-     * @x-autobe-database-schema-property is_active
-     * @x-autobe-specification Direct mapping from shopping_mall_product_variants.is_active. Validate boolean semantics and persist. If is_active is false, the variant should be treated as unavailable for purchasing even if deleted_at is not set (enforced by service/query logic).
+         * @x-autobe-database-schema-property is_active
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_variants.is_active. Validate boolean
+         *   semantics and persist. If is_active is false, the variant should be
+         *   treated as unavailable for purchasing even if deleted_at is not set
+         *   (enforced by service/query logic).
      */
     is_active?: boolean | undefined;
   };
@@ -140,48 +173,64 @@ export namespace IShoppingMallProductVariant {
     /**
      * Identifier of the parent product that this new variant belongs to (must be owned by the authenticated seller).
      *
-     * @x-autobe-database-schema-property shopping_mall_product_id
-     * @x-autobe-specification Map request.shopping_mall_product_id directly to shopping_mall_product_variants.shopping_mall_product_id when inserting a new row. Validate seller ownership by joining shopping_mall_products via this id and verifying shopping_mall_products.shopping_mall_seller_id matches the authenticated seller actor.
+         * @x-autobe-database-schema-property shopping_mall_product_id
+         * @x-autobe-specification Map request.shopping_mall_product_id directly
+         *   to shopping_mall_product_variants.shopping_mall_product_id when
+         *   inserting a new row. Validate seller ownership by joining
+         *   shopping_mall_products via this id and verifying
+         *   shopping_mall_products.shopping_mall_seller_id matches the
+         *   authenticated seller actor.
      */
     shopping_mall_product_id: string & tags.Format<"uuid">;
 
     /**
      * Seller-scoped SKU-like code for the variant (unique within the same product).
      *
-     * @x-autobe-database-schema-property code
-     * @x-autobe-specification Map request.code directly to shopping_mall_product_variants.code. Enforce uniqueness within the product by relying on the DB constraint @@unique([shopping_mall_product_id, code]); translate unique-constraint violations to a conflict error.
+         * @x-autobe-database-schema-property code
+         * @x-autobe-specification Map request.code directly to
+         *   shopping_mall_product_variants.code. Enforce uniqueness within the
+         *   product by relying on the DB constraint
+         *   @@unique([shopping_mall_product_id, code]); translate
+         *   unique-constraint violations to a conflict error.
      */
     code: string;
 
     /**
      * Human-friendly display title for the variant (e.g., 'Red - Large').
      *
-     * @x-autobe-database-schema-property title
-     * @x-autobe-specification Map request.title directly to shopping_mall_product_variants.title during insert.
+         * @x-autobe-database-schema-property title
+         * @x-autobe-specification Map request.title directly to
+         *   shopping_mall_product_variants.title during insert.
      */
     title: string;
 
     /**
      * The option value that differentiates this variant (e.g., 'Red', 'Large', or a combined option representation).
      *
-     * @x-autobe-database-schema-property option_value
-     * @x-autobe-specification Map request.option_value directly to shopping_mall_product_variants.option_value during insert.
+         * @x-autobe-database-schema-property option_value
+         * @x-autobe-specification Map request.option_value directly to
+         *   shopping_mall_product_variants.option_value during insert.
      */
     option_value: string;
 
     /**
      * Base price of the variant used for purchasing calculations.
      *
-     * @x-autobe-database-schema-property price
-     * @x-autobe-specification Map request.price directly to shopping_mall_product_variants.price during insert. This is the base price used for cart/order computations when the variant is purchased.
+         * @x-autobe-database-schema-property price
+         * @x-autobe-specification Map request.price directly to
+         *   shopping_mall_product_variants.price during insert. This is the
+         *   base price used for cart/order computations when the variant is
+         *   purchased.
      */
     price: number;
 
     /**
      * Whether the variant is enabled for purchasing (business-level availability flag).
      *
-     * @x-autobe-database-schema-property is_active
-     * @x-autobe-specification Map request.is_active directly to shopping_mall_product_variants.is_active during insert. Treat false as not purchasable at business level even if inventory exists.
+         * @x-autobe-database-schema-property is_active
+         * @x-autobe-specification Map request.is_active directly to
+         *   shopping_mall_product_variants.is_active during insert. Treat false
+         *   as not purchasable at business level even if inventory exists.
      */
     is_active: boolean;
   };
@@ -193,54 +242,63 @@ export namespace IShoppingMallProductVariant {
     /**
      * Scope filter: return only variants that belong to the specified product.
      *
-     * @x-autobe-database-schema-property shopping_mall_product_id
-     * @x-autobe-specification Direct mapping to filtering scope. When provided, add WHERE shopping_mall_product_id = :shopping_mall_product_id.
+         * @x-autobe-database-schema-property shopping_mall_product_id
+         * @x-autobe-specification Direct mapping to filtering scope. When
+         *   provided, add WHERE shopping_mall_product_id =
+         *   :shopping_mall_product_id.
      */
     shopping_mall_product_id?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Search filter for the variant code (SKU-like identifier) using a case-insensitive substring match.
      *
-     * @x-autobe-database-schema-property code
-     * @x-autobe-specification If provided, apply case-insensitive substring matching: WHERE code ILIKE '%' || :code || '%'.
+         * @x-autobe-database-schema-property code
+         * @x-autobe-specification If provided, apply case-insensitive substring
+         *   matching: WHERE code ILIKE '%' || :code || '%'.
      */
     code?: string | undefined;
 
     /**
      * Search filter for the variant display title using a case-insensitive substring match.
      *
-     * @x-autobe-database-schema-property title
-     * @x-autobe-specification If provided, apply case-insensitive substring matching: WHERE title ILIKE '%' || :title || '%'.
+         * @x-autobe-database-schema-property title
+         * @x-autobe-specification If provided, apply case-insensitive substring
+         *   matching: WHERE title ILIKE '%' || :title || '%'.
      */
     title?: string | undefined;
 
     /**
      * Search filter for the variant option value using a case-insensitive substring match (e.g., size/color text).
      *
-     * @x-autobe-database-schema-property option_value
-     * @x-autobe-specification If provided, apply case-insensitive substring matching: WHERE option_value ILIKE '%' || :option_value || '%'.
+         * @x-autobe-database-schema-property option_value
+         * @x-autobe-specification If provided, apply case-insensitive substring
+         *   matching: WHERE option_value ILIKE '%' || :option_value || '%'.
      */
     option_value?: string | undefined;
 
     /**
      * Whether the variant is enabled for purchasing.
      *
-     * @x-autobe-database-schema-property is_active
-     * @x-autobe-specification If provided, add WHERE is_active = :is_active.
+         * @x-autobe-database-schema-property is_active
+         * @x-autobe-specification If provided, add WHERE is_active =
+         *   :is_active.
      */
     is_active?: boolean | undefined;
 
     /**
      * 1-indexed page number of results to return (page must be at least 1).
      *
-     * @x-autobe-specification Pagination control. page is 1-indexed and must be >= 1. Compute SQL offset as (page - 1) * limit and apply OFFSET offset.
+         * @x-autobe-specification Pagination control. page is 1-indexed and
+         *   must be >= 1. Compute SQL offset as (page - 1) * limit and apply
+         *   OFFSET offset.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of records to return in a single page (max 100).
      *
-     * @x-autobe-specification Pagination control. Validate 1 <= limit <= 100. Apply SQL LIMIT :limit.
+         * @x-autobe-specification Pagination control. Validate 1 <= limit <=
+         *   100. Apply SQL LIMIT :limit.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -249,7 +307,10 @@ export namespace IShoppingMallProductVariant {
     /**
      * Which field to sort by: created_at, code, title, price, or option_value.
      *
-     * @x-autobe-specification Sort selector mapping to columns in shopping_mall_product_variants: created_at, code, title, price, option_value. Apply ORDER BY <mapped_column> <direction>. If sort is omitted, default to created_at.
+         * @x-autobe-specification Sort selector mapping to columns in
+         *   shopping_mall_product_variants: created_at, code, title, price,
+         *   option_value. Apply ORDER BY <mapped_column> <direction>. If sort
+         *   is omitted, default to created_at.
      */
     sort?:
       | "created_at"
@@ -262,7 +323,10 @@ export namespace IShoppingMallProductVariant {
     /**
      * Sort direction: asc (ascending) or desc (descending).
      *
-     * @x-autobe-specification Sort direction: asc (ascending) or desc (descending). Apply it to the ORDER BY column determined by sort; if order is provided but sort is omitted, apply to the default sort column created_at.
+         * @x-autobe-specification Sort direction: asc (ascending) or desc
+         *   (descending). Apply it to the ORDER BY column determined by sort;
+         *   if order is provided but sort is omitted, apply to the default sort
+         *   column created_at.
      */
     order?: "asc" | "desc" | undefined;
   };
@@ -274,80 +338,96 @@ export namespace IShoppingMallProductVariant {
     /**
      * Variant primary identifier (UUID).
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Directly map shopping_mall_product_variants.id to this DTO field.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Directly map
+         *   shopping_mall_product_variants.id to this DTO field.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Variant code (SKU-like) used to identify the variant within its product.
      *
-     * @x-autobe-database-schema-property code
-     * @x-autobe-specification Direct mapping from shopping_mall_product_variants.code.
+         * @x-autobe-database-schema-property code
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_variants.code.
      */
     code: string;
 
     /**
      * Variant display title/name.
      *
-     * @x-autobe-database-schema-property title
-     * @x-autobe-specification Direct mapping from shopping_mall_product_variants.title.
+         * @x-autobe-database-schema-property title
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_variants.title.
      */
     title: string;
 
     /**
      * The variant option value (e.g., size/color representation) that differentiates this variant.
      *
-     * @x-autobe-database-schema-property option_value
-     * @x-autobe-specification Direct mapping from shopping_mall_product_variants.option_value.
+         * @x-autobe-database-schema-property option_value
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_variants.option_value.
      */
     option_value: string;
 
     /**
      * Variant base price used for cart and ordering.
      *
-     * @x-autobe-database-schema-property price
-     * @x-autobe-specification Direct mapping from shopping_mall_product_variants.price (float/decimal -> number).
+         * @x-autobe-database-schema-property price
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_variants.price (float/decimal -> number).
      */
     price: number;
 
     /**
      * Whether this variant is enabled for purchasing at the business level.
      *
-     * @x-autobe-database-schema-property is_active
-     * @x-autobe-specification Direct mapping from shopping_mall_product_variants.is_active.
+         * @x-autobe-database-schema-property is_active
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_variants.is_active.
      */
     is_active: boolean;
 
     /**
      * Record creation timestamp.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_product_variants.created_at (timestamptz -> date-time string).
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_variants.created_at (timestamptz -> date-time
+         *   string).
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * Record last update timestamp.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from shopping_mall_product_variants.updated_at (timestamptz -> date-time string).
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_variants.updated_at (timestamptz -> date-time
+         *   string).
      */
     updated_at: string & tags.Format<"date-time">;
 
     /**
      * Soft-delete timestamp; null when the variant is not deleted.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from shopping_mall_product_variants.deleted_at (nullable timestamptz). Return null when not soft-deleted.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_variants.deleted_at (nullable timestamptz).
+         *   Return null when not soft-deleted.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
 
     /**
      * Parent product summary associated with this variant.
      *
-     * @x-autobe-database-schema-property product
-     * @x-autobe-specification Join shopping_mall_product_variants.shopping_mall_product_id -> shopping_mall_products.id and project that product row into IShoppingMallProduct.ISummary. Do not include product has-many collections; rely on the product ISummary mapping.
+         * @x-autobe-database-schema-property product
+         * @x-autobe-specification Join
+         *   shopping_mall_product_variants.shopping_mall_product_id ->
+         *   shopping_mall_products.id and project that product row into
+         *   IShoppingMallProduct.ISummary. Do not include product has-many
+         *   collections; rely on the product ISummary mapping.
      */
     product: IShoppingMallProduct.ISummary;
   };

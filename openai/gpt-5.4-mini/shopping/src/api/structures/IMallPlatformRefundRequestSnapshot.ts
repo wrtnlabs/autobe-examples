@@ -16,8 +16,10 @@ export type IMallPlatformRefundRequestSnapshot = {
    *
    * This value identifies one preserved historical record and is used for lookup, audit trails, and dispute review.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from mall_platform_refund_request_snapshots.id. Immutable snapshot identifier.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_refund_request_snapshots.id. Immutable snapshot
+     *   identifier.
    */
   id: string & tags.Format<"uuid">;
 
@@ -26,8 +28,12 @@ export type IMallPlatformRefundRequestSnapshot = {
    *
    * This is exposed as a summary object so consumers can identify the parent request without handling the underlying foreign-key column directly.
    *
-   * @x-autobe-database-schema-property refundRequest
-   * @x-autobe-specification Resolve the parent relation from mall_platform_refund_request_snapshots.refundRequest, backed by mall_platform_refund_request_id, and return IMallPlatformRefundRequest.ISummary. This is a read-side relation projection, not a raw foreign-key field.
+     * @x-autobe-database-schema-property refundRequest
+     * @x-autobe-specification Resolve the parent relation from
+     *   mall_platform_refund_request_snapshots.refundRequest, backed by
+     *   mall_platform_refund_request_id, and return
+     *   IMallPlatformRefundRequest.ISummary. This is a read-side relation
+     *   projection, not a raw foreign-key field.
    */
   refundRequest: IMallPlatformRefundRequest.ISummary;
 
@@ -36,8 +42,9 @@ export type IMallPlatformRefundRequestSnapshot = {
    *
    * This field explains why the immutable history entry exists, such as approval, rejection, or a state correction.
    *
-   * @x-autobe-database-schema-property snapshot_reason
-   * @x-autobe-specification Direct mapping from mall_platform_refund_request_snapshots.snapshot_reason.
+     * @x-autobe-database-schema-property snapshot_reason
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_refund_request_snapshots.snapshot_reason.
    */
   snapshotReason: string;
 
@@ -46,8 +53,9 @@ export type IMallPlatformRefundRequestSnapshot = {
    *
    * This value preserves the previous state so reviewers can compare it with the resulting status.
    *
-   * @x-autobe-database-schema-property status_before
-   * @x-autobe-specification Direct mapping from mall_platform_refund_request_snapshots.status_before.
+     * @x-autobe-database-schema-property status_before
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_refund_request_snapshots.status_before.
    */
   statusBefore: string;
 
@@ -56,8 +64,9 @@ export type IMallPlatformRefundRequestSnapshot = {
    *
    * This value preserves the state that resulted when the snapshot was created.
    *
-   * @x-autobe-database-schema-property status_after
-   * @x-autobe-specification Direct mapping from mall_platform_refund_request_snapshots.status_after.
+     * @x-autobe-database-schema-property status_after
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_refund_request_snapshots.status_after.
    */
   statusAfter: string;
 
@@ -66,8 +75,10 @@ export type IMallPlatformRefundRequestSnapshot = {
    *
    * This field may be null when the snapshot was created without an explicit reviewer role.
    *
-   * @x-autobe-database-schema-property reviewer_role
-   * @x-autobe-specification Direct mapping from mall_platform_refund_request_snapshots.reviewer_role. Preserve null when no reviewer role was recorded.
+     * @x-autobe-database-schema-property reviewer_role
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_refund_request_snapshots.reviewer_role. Preserve null
+     *   when no reviewer role was recorded.
    */
   reviewerRole: string | null;
 
@@ -76,8 +87,10 @@ export type IMallPlatformRefundRequestSnapshot = {
    *
    * This field may be null when no explanatory note was stored at the time the snapshot was created.
    *
-   * @x-autobe-database-schema-property reviewer_note
-   * @x-autobe-specification Direct mapping from mall_platform_refund_request_snapshots.reviewer_note. Preserve null when no note was recorded.
+     * @x-autobe-database-schema-property reviewer_note
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_refund_request_snapshots.reviewer_note. Preserve null
+     *   when no note was recorded.
    */
   reviewerNote: string | null;
 
@@ -86,8 +99,9 @@ export type IMallPlatformRefundRequestSnapshot = {
    *
    * This timestamp marks when the historical state was recorded and is used for audit ordering and dispute review.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from mall_platform_refund_request_snapshots.created_at.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_refund_request_snapshots.created_at.
    */
   createdAt: string & tags.Format<"date-time">;
 };
@@ -105,7 +119,11 @@ export namespace IMallPlatformRefundRequestSnapshot {
      *
      * This filter helps locate relevant historical changes by matching the snapshot reason or reviewer metadata. It is intended for audit review and dispute investigation over the request's immutable history.
      *
-     * @x-autobe-specification Use this free-text filter to search refund request snapshots for the path-scoped refund request. Match against snapshot_reason, reviewer_role, and reviewer_note using case-insensitive partial matching. Do not treat this value as a persisted database column.
+         * @x-autobe-specification Use this free-text filter to search refund
+         *   request snapshots for the path-scoped refund request. Match against
+         *   snapshot_reason, reviewer_role, and reviewer_note using
+         *   case-insensitive partial matching. Do not treat this value as a
+         *   persisted database column.
      */
     search?: string | undefined;
 
@@ -114,7 +132,10 @@ export namespace IMallPlatformRefundRequestSnapshot {
      *
      * Use this value to limit the returned history to snapshots created on or after the specified time. It is useful for reviewing changes over a specific period.
      *
-     * @x-autobe-specification Use this value as the inclusive lower bound for filtering refund request snapshots by created_at. Return only rows created at or after this timestamp. This is a request-side filter and does not correspond to a persisted field in the DTO.
+         * @x-autobe-specification Use this value as the inclusive lower bound
+         *   for filtering refund request snapshots by created_at. Return only
+         *   rows created at or after this timestamp. This is a request-side
+         *   filter and does not correspond to a persisted field in the DTO.
      */
     createdAtFrom?: (string & tags.Format<"date-time">) | null | undefined;
 
@@ -123,7 +144,10 @@ export namespace IMallPlatformRefundRequestSnapshot {
      *
      * Use this value to limit the returned history to snapshots created on or before the specified time. It is useful for reviewing a bounded period of changes.
      *
-     * @x-autobe-specification Use this value as the inclusive upper bound for filtering refund request snapshots by created_at. Return only rows created at or before this timestamp. This is a request-side filter and does not correspond to a persisted field in the DTO.
+         * @x-autobe-specification Use this value as the inclusive upper bound
+         *   for filtering refund request snapshots by created_at. Return only
+         *   rows created at or before this timestamp. This is a request-side
+         *   filter and does not correspond to a persisted field in the DTO.
      */
     createdAtTo?: (string & tags.Format<"date-time">) | null | undefined;
 
@@ -132,7 +156,10 @@ export namespace IMallPlatformRefundRequestSnapshot {
      *
      * Choose ascending order to inspect the oldest changes first, or descending order to see the newest changes first. Sorting is based on snapshot creation time.
      *
-     * @x-autobe-specification Sort refund request snapshots by created_at only. createdAtAsc returns oldest-first ordering, and createdAtDesc returns newest-first ordering. Keep the sort stable so paginated browsing remains consistent.
+         * @x-autobe-specification Sort refund request snapshots by created_at
+         *   only. createdAtAsc returns oldest-first ordering, and createdAtDesc
+         *   returns newest-first ordering. Keep the sort stable so paginated
+         *   browsing remains consistent.
      */
     sort?: "createdAtAsc" | "createdAtDesc" | undefined;
 
@@ -141,7 +168,11 @@ export namespace IMallPlatformRefundRequestSnapshot {
      *
      * This value selects which page of the filtered snapshot list should be returned. Pagination starts at 1, so the first page is 1.
      *
-     * @x-autobe-specification Use this 1-indexed value as the requested page number for snapshot history pagination. Combine it with limit to calculate the offset when querying the path-scoped refund request history. This is a request-only control, not a persisted value.
+         * @x-autobe-specification Use this 1-indexed value as the requested
+         *   page number for snapshot history pagination. Combine it with limit
+         *   to calculate the offset when querying the path-scoped refund
+         *   request history. This is a request-only control, not a persisted
+         *   value.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -150,7 +181,11 @@ export namespace IMallPlatformRefundRequestSnapshot {
      *
      * This value controls the page size for browsing refund request history. Larger values return more rows at once, up to the allowed maximum.
      *
-     * @x-autobe-specification Use this value as the maximum number of snapshot rows returned per page. Enforce the allowed range and apply it as the page size when querying the path-scoped refund request history. This is a request-only control, not a persisted value.
+         * @x-autobe-specification Use this value as the maximum number of
+         *   snapshot rows returned per page. Enforce the allowed range and
+         *   apply it as the page size when querying the path-scoped refund
+         *   request history. This is a request-only control, not a persisted
+         *   value.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -170,8 +205,10 @@ export namespace IMallPlatformRefundRequestSnapshot {
      *
      * It identifies one preserved historical change record and is used for audit, lookup, and dispute review.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from mall_platform_refund_request_snapshots.id. This is the immutable UUID of the snapshot record.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_refund_request_snapshots.id. This is the immutable
+         *   UUID of the snapshot record.
      */
     id: string & tags.Format<"uuid">;
 
@@ -180,8 +217,12 @@ export namespace IMallPlatformRefundRequestSnapshot {
      *
      * This is exposed as a nested summary object so clients can see which live refund request the historical record belongs to.
      *
-     * @x-autobe-database-schema-property refundRequest
-     * @x-autobe-specification Join mall_platform_refund_request_snapshots.mall_platform_refund_request_id to mall_platform_refund_requests.id and resolve it as IMallPlatformRefundRequest.ISummary. Expose the relation object, not the raw foreign key column.
+         * @x-autobe-database-schema-property refundRequest
+         * @x-autobe-specification Join
+         *   mall_platform_refund_request_snapshots.mall_platform_refund_request_id
+         *   to mall_platform_refund_requests.id and resolve it as
+         *   IMallPlatformRefundRequest.ISummary. Expose the relation object,
+         *   not the raw foreign key column.
      */
     refundRequest: IMallPlatformRefundRequest.ISummary;
 
@@ -190,8 +231,11 @@ export namespace IMallPlatformRefundRequestSnapshot {
      *
      * It describes why the preserved historical entry exists and is shown to users reviewing refund request history.
      *
-     * @x-autobe-database-schema-property snapshot_reason
-     * @x-autobe-specification Direct mapping from mall_platform_refund_request_snapshots.snapshot_reason. Store the human-readable reason the snapshot was recorded, such as approval, rejection, or correction.
+         * @x-autobe-database-schema-property snapshot_reason
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_refund_request_snapshots.snapshot_reason. Store the
+         *   human-readable reason the snapshot was recorded, such as approval,
+         *   rejection, or correction.
      */
     snapshotReason: string;
 
@@ -200,8 +244,11 @@ export namespace IMallPlatformRefundRequestSnapshot {
      *
      * It shows the preserved prior state for the snapshot event.
      *
-     * @x-autobe-database-schema-property status_before
-     * @x-autobe-specification Direct mapping from mall_platform_refund_request_snapshots.status_before. This preserves the refund request status immediately before the recorded change.
+         * @x-autobe-database-schema-property status_before
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_refund_request_snapshots.status_before. This
+         *   preserves the refund request status immediately before the recorded
+         *   change.
      */
     statusBefore: string;
 
@@ -210,8 +257,10 @@ export namespace IMallPlatformRefundRequestSnapshot {
      *
      * It shows the preserved resulting state for the snapshot event.
      *
-     * @x-autobe-database-schema-property status_after
-     * @x-autobe-specification Direct mapping from mall_platform_refund_request_snapshots.status_after. This preserves the refund request status immediately after the recorded change.
+         * @x-autobe-database-schema-property status_after
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_refund_request_snapshots.status_after. This preserves
+         *   the refund request status immediately after the recorded change.
      */
     statusAfter: string;
 
@@ -220,8 +269,11 @@ export namespace IMallPlatformRefundRequestSnapshot {
      *
      * This field may be null when the snapshot was recorded without reviewer-role metadata.
      *
-     * @x-autobe-database-schema-property reviewer_role
-     * @x-autobe-specification Direct mapping from mall_platform_refund_request_snapshots.reviewer_role. Keep the field nullable because some historical events may not store reviewer-role metadata.
+         * @x-autobe-database-schema-property reviewer_role
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_refund_request_snapshots.reviewer_role. Keep the
+         *   field nullable because some historical events may not store
+         *   reviewer-role metadata.
      */
     reviewerRole: string | null;
 
@@ -230,8 +282,11 @@ export namespace IMallPlatformRefundRequestSnapshot {
      *
      * This field may be null when no free-text commentary was recorded for the change.
      *
-     * @x-autobe-database-schema-property reviewer_note
-     * @x-autobe-specification Direct mapping from mall_platform_refund_request_snapshots.reviewer_note. Keep the field nullable because the database allows snapshot notes to be absent.
+         * @x-autobe-database-schema-property reviewer_note
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_refund_request_snapshots.reviewer_note. Keep the
+         *   field nullable because the database allows snapshot notes to be
+         *   absent.
      */
     reviewerNote: string | null;
 
@@ -240,8 +295,10 @@ export namespace IMallPlatformRefundRequestSnapshot {
      *
      * It is used to order refund request history chronologically and to show when the preserved state was recorded.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from mall_platform_refund_request_snapshots.created_at. This is the timestamp when the immutable snapshot row was created.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_refund_request_snapshots.created_at. This is the
+         *   timestamp when the immutable snapshot row was created.
      */
     createdAt: string & tags.Format<"date-time">;
   };

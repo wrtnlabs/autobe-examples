@@ -38,8 +38,9 @@ export type IHrmProject = {
    *
    * Generated automatically upon project creation. Used as the primary key for all project operations including retrieval, updates, and deletions.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from hrm_projects.id. UUID primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from hrm_projects.id. UUID primary
+     *   key.
    */
   id: string & tags.Format<"uuid">;
 
@@ -48,8 +49,9 @@ export type IHrmProject = {
    *
    * Required field used throughout the UI for project references. Must be unique within the organization to prevent ambiguity in project selection and reporting.
    *
-   * @x-autobe-database-schema-property name
-   * @x-autobe-specification Direct mapping from hrm_projects.name. Required field, unique within organization.
+     * @x-autobe-database-schema-property name
+     * @x-autobe-specification Direct mapping from hrm_projects.name. Required
+     *   field, unique within organization.
    */
   name: string;
 
@@ -58,8 +60,9 @@ export type IHrmProject = {
    *
    * Optional field providing additional context about project goals, deliverables, and requirements. Can be null if no description is provided.
    *
-   * @x-autobe-database-schema-property description
-   * @x-autobe-specification Direct mapping from hrm_projects.description. Optional nullable field.
+     * @x-autobe-database-schema-property description
+     * @x-autobe-specification Direct mapping from hrm_projects.description.
+     *   Optional nullable field.
    */
   description?: string | null | undefined;
 
@@ -68,8 +71,9 @@ export type IHrmProject = {
    *
    * Used for project badges, timeline indicators, and dashboard visualizations. Must follow hex color format (#RRGGBB for 6-digit or #RRGGBBAA for 8-digit with alpha channel).
    *
-   * @x-autobe-database-schema-property color_code
-   * @x-autobe-specification Direct mapping from hrm_projects.color_code. Hex format: #RRGGBB or #RRGGBBAA.
+     * @x-autobe-database-schema-property color_code
+     * @x-autobe-specification Direct mapping from hrm_projects.color_code. Hex
+     *   format: #RRGGBB or #RRGGBBAA.
    */
   color_code: string;
 
@@ -83,8 +87,9 @@ export type IHrmProject = {
    *
    * Status is managed via the PUT /hrm/member/organizations/{organizationId}/projects/{projectId}/status endpoint.
    *
-   * @x-autobe-database-schema-property status
-   * @x-autobe-specification Direct mapping from hrm_projects.status. Enum: active, archived, completed.
+     * @x-autobe-database-schema-property status
+     * @x-autobe-specification Direct mapping from hrm_projects.status. Enum:
+     *   active, archived, completed.
    */
   status: string;
 
@@ -93,8 +98,9 @@ export type IHrmProject = {
    *
    * Optional field tracking allocated time resources for the project. Used for progress tracking against estimates and budget utilization reports. Can be null if no budget is defined.
    *
-   * @x-autobe-database-schema-property budget_hours
-   * @x-autobe-specification Direct mapping from hrm_projects.budget_hours. Decimal number, nullable.
+     * @x-autobe-database-schema-property budget_hours
+     * @x-autobe-specification Direct mapping from hrm_projects.budget_hours.
+     *   Decimal number, nullable.
    */
   budget_hours?: number | null | undefined;
 
@@ -103,8 +109,9 @@ export type IHrmProject = {
    *
    * Optional field marking when project work began or is scheduled to begin. Stored in ISO 8601 format (YYYY-MM-DDTHH:MM:SS.sssZ). Can be null if start date is not defined.
    *
-   * @x-autobe-database-schema-property start_date
-   * @x-autobe-specification Direct mapping from hrm_projects.start_date. ISO 8601 datetime, nullable.
+     * @x-autobe-database-schema-property start_date
+     * @x-autobe-specification Direct mapping from hrm_projects.start_date. ISO
+     *   8601 datetime, nullable.
    */
   start_date?: (string & tags.Format<"date-time">) | null | undefined;
 
@@ -113,8 +120,9 @@ export type IHrmProject = {
    *
    * Optional field marking when project is expected to finish or has finished. Stored in ISO 8601 format (YYYY-MM-DDTHH:MM:SS.sssZ). Can be null if end date is not defined.
    *
-   * @x-autobe-database-schema-property end_date
-   * @x-autobe-specification Direct mapping from hrm_projects.end_date. ISO 8601 datetime, nullable.
+     * @x-autobe-database-schema-property end_date
+     * @x-autobe-specification Direct mapping from hrm_projects.end_date. ISO
+     *   8601 datetime, nullable.
    */
   end_date?: (string & tags.Format<"date-time">) | null | undefined;
 
@@ -123,8 +131,9 @@ export type IHrmProject = {
    *
    * Automatically set by the system when the project is first created. Stored in ISO 8601 format with timezone information.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from hrm_projects.created_at. System-generated timestamp.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from hrm_projects.created_at.
+     *   System-generated timestamp.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -133,8 +142,9 @@ export type IHrmProject = {
    *
    * Automatically updated by the system whenever any project field is modified. Stored in ISO 8601 format with timezone information.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from hrm_projects.updated_at. System-generated timestamp, auto-updated on modification.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from hrm_projects.updated_at.
+     *   System-generated timestamp, auto-updated on modification.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -143,8 +153,9 @@ export type IHrmProject = {
    *
    * When null, the project is active and visible in query results. When set to a datetime value, the project is marked for deletion but retained for audit purposes. Soft-deleted projects (deleted_at IS NOT NULL) are excluded from API query results.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from hrm_projects.deleted_at. Soft delete timestamp, nullable. Null for active projects.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from hrm_projects.deleted_at. Soft
+     *   delete timestamp, nullable. Null for active projects.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 
@@ -153,8 +164,10 @@ export type IHrmProject = {
    *
    * Every project must belong to exactly one organization. Organization context is enforced on all project operations to ensure multi-tenancy data isolation. Returned as an IHrmOrganization.ISummary object containing essential organization identification and configuration fields.
    *
-   * @x-autobe-database-schema-property organization
-   * @x-autobe-specification BELONGS-TO relation: JOIN hrm_organizations ON hrm_projects.hrm_organization_id = hrm_organizations.id. Returns IHrmOrganization.ISummary.
+     * @x-autobe-database-schema-property organization
+     * @x-autobe-specification BELONGS-TO relation: JOIN hrm_organizations ON
+     *   hrm_projects.hrm_organization_id = hrm_organizations.id. Returns
+     *   IHrmOrganization.ISummary.
    */
   organization: IHrmOrganization.ISummary;
 };
@@ -183,7 +196,10 @@ export namespace IHrmProject {
      *
      * **Usage**: Optional parameter. Omit to retrieve all projects without text filtering.
      *
-     * @x-autobe-specification Query parameter for trigram-based text search on project name and description fields. Used to build ILIKE or pg_trgm similarity filters in SQL query. Optional parameter - if not provided, no text search filter is applied.
+         * @x-autobe-specification Query parameter for trigram-based text search
+         *   on project name and description fields. Used to build ILIKE or
+         *   pg_trgm similarity filters in SQL query. Optional parameter - if
+         *   not provided, no text search filter is applied.
      */
     search?: string | undefined;
 
@@ -198,7 +214,10 @@ export namespace IHrmProject {
      *
      * **Usage**: Optional parameter. Omit to include projects of all statuses.
      *
-     * @x-autobe-specification Query parameter for filtering projects by lifecycle status. Maps to hrm_projects.status column in WHERE clause. Accepts values: 'active', 'archived', 'completed'. Optional - if not provided, all statuses are included.
+         * @x-autobe-specification Query parameter for filtering projects by
+         *   lifecycle status. Maps to hrm_projects.status column in WHERE
+         *   clause. Accepts values: 'active', 'archived', 'completed'. Optional
+         *   - if not provided, all statuses are included.
      */
     status?: string | undefined;
 
@@ -213,7 +232,10 @@ export namespace IHrmProject {
      *
      * **Usage**: Optional parameter. Use with start_date_to to define a date range, or alone to filter projects starting from a specific date forward.
      *
-     * @x-autobe-specification Query parameter for filtering projects by planned start date range (inclusive lower bound). Maps to hrm_projects.start_date column in WHERE clause (start_date >= :start_date_from). ISO 8601 datetime format. Optional.
+         * @x-autobe-specification Query parameter for filtering projects by
+         *   planned start date range (inclusive lower bound). Maps to
+         *   hrm_projects.start_date column in WHERE clause (start_date >=
+         *   :start_date_from). ISO 8601 datetime format. Optional.
      */
     start_date_from?: (string & tags.Format<"date-time">) | undefined;
 
@@ -228,7 +250,10 @@ export namespace IHrmProject {
      *
      * **Usage**: Optional parameter. Use with start_date_from to define a date range, or alone to filter projects starting before a specific date.
      *
-     * @x-autobe-specification Query parameter for filtering projects by planned start date range (inclusive upper bound). Maps to hrm_projects.start_date column in WHERE clause (start_date <= :start_date_to). ISO 8601 datetime format. Optional.
+         * @x-autobe-specification Query parameter for filtering projects by
+         *   planned start date range (inclusive upper bound). Maps to
+         *   hrm_projects.start_date column in WHERE clause (start_date <=
+         *   :start_date_to). ISO 8601 datetime format. Optional.
      */
     start_date_to?: (string & tags.Format<"date-time">) | undefined;
 
@@ -243,7 +268,10 @@ export namespace IHrmProject {
      *
      * **Usage**: Optional parameter. Use with end_date_to to define a date range, or alone to filter projects ending from a specific date forward.
      *
-     * @x-autobe-specification Query parameter for filtering projects by planned end date range (inclusive lower bound). Maps to hrm_projects.end_date column in WHERE clause (end_date >= :end_date_from). ISO 8601 datetime format. Optional.
+         * @x-autobe-specification Query parameter for filtering projects by
+         *   planned end date range (inclusive lower bound). Maps to
+         *   hrm_projects.end_date column in WHERE clause (end_date >=
+         *   :end_date_from). ISO 8601 datetime format. Optional.
      */
     end_date_from?: (string & tags.Format<"date-time">) | undefined;
 
@@ -258,7 +286,10 @@ export namespace IHrmProject {
      *
      * **Usage**: Optional parameter. Use with end_date_from to define a date range, or alone to filter projects ending before a specific date.
      *
-     * @x-autobe-specification Query parameter for filtering projects by planned end date range (inclusive upper bound). Maps to hrm_projects.end_date column in WHERE clause (end_date <= :end_date_to). ISO 8601 datetime format. Optional.
+         * @x-autobe-specification Query parameter for filtering projects by
+         *   planned end date range (inclusive upper bound). Maps to
+         *   hrm_projects.end_date column in WHERE clause (end_date <=
+         *   :end_date_to). ISO 8601 datetime format. Optional.
      */
     end_date_to?: (string & tags.Format<"date-time">) | undefined;
 
@@ -275,7 +306,9 @@ export namespace IHrmProject {
      *
      * **Usage**: Required for pagination. Increment to navigate through result pages.
      *
-     * @x-autobe-specification Pagination parameter for page number (1-indexed). Maps to SQL OFFSET calculation: offset = (page - 1) * limit. Minimum value is 1. Defaults to 1 if not provided.
+         * @x-autobe-specification Pagination parameter for page number
+         *   (1-indexed). Maps to SQL OFFSET calculation: offset = (page - 1) *
+         *   limit. Minimum value is 1. Defaults to 1 if not provided.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -292,7 +325,9 @@ export namespace IHrmProject {
      *
      * **Usage**: Adjust based on UI requirements and performance considerations. Higher values return more data per request but increase payload size.
      *
-     * @x-autobe-specification Pagination parameter for page size (results per page). Maps to SQL LIMIT clause. Minimum value is 1, maximum is 100. Defaults to 20 if not provided.
+         * @x-autobe-specification Pagination parameter for page size (results
+         *   per page). Maps to SQL LIMIT clause. Minimum value is 1, maximum is
+         *   100. Defaults to 20 if not provided.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -311,7 +346,10 @@ export namespace IHrmProject {
      *
      * **Usage**: Optional parameter. Specify the field name to sort by. Combine with sort_order to control sort direction.
      *
-     * @x-autobe-specification Query parameter for specifying the field to sort results by. Maps to SQL ORDER BY clause. Valid values: name, status, created_at, updated_at. Defaults to created_at if not provided.
+         * @x-autobe-specification Query parameter for specifying the field to
+         *   sort results by. Maps to SQL ORDER BY clause. Valid values: name,
+         *   status, created_at, updated_at. Defaults to created_at if not
+         *   provided.
      */
     sort_by?: string | undefined;
 
@@ -328,7 +366,10 @@ export namespace IHrmProject {
      *
      * **Usage**: Optional parameter. Use 'asc' for ascending order (A-Z, oldest first) or 'desc' for descending order (Z-A, newest first).
      *
-     * @x-autobe-specification Query parameter for specifying sort direction. Maps to SQL ORDER BY ASC/DESC clause. Valid values: 'asc' (ascending) or 'desc' (descending). Defaults to 'desc' if not provided.
+         * @x-autobe-specification Query parameter for specifying sort
+         *   direction. Maps to SQL ORDER BY ASC/DESC clause. Valid values:
+         *   'asc' (ascending) or 'desc' (descending). Defaults to 'desc' if not
+         *   provided.
      */
     sort_order?: string | undefined;
   };
@@ -356,8 +397,9 @@ export namespace IHrmProject {
      *
      * This is the primary key used to reference the project across all API operations. It is a UUID string that uniquely identifies this project within the system.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from hrm_projects.id. UUID primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from hrm_projects.id. UUID
+         *   primary key.
      */
     id: string & tags.Format<"uuid">;
 
@@ -366,8 +408,9 @@ export namespace IHrmProject {
      *
      * This is the human-readable name used throughout the UI for project identification, navigation, and references. It is a required field that must be provided when creating a project.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from hrm_projects.name. Required field.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from hrm_projects.name.
+         *   Required field.
      */
     name: string;
 
@@ -376,8 +419,9 @@ export namespace IHrmProject {
      *
      * This optional field provides additional context about project goals, deliverables, and requirements. It is nullable and may be omitted when creating or updating a project.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from hrm_projects.description. Optional nullable field.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from hrm_projects.description.
+         *   Optional nullable field.
      */
     description?: string | null | undefined;
 
@@ -386,8 +430,9 @@ export namespace IHrmProject {
      *
      * This field is used for project badges, timeline indicators, and dashboard visualizations. Format should be #RRGGBB or #RRGGBBAA (hexadecimal color code with optional alpha channel).
      *
-     * @x-autobe-database-schema-property color_code
-     * @x-autobe-specification Direct mapping from hrm_projects.color_code. Hex color format.
+         * @x-autobe-database-schema-property color_code
+         * @x-autobe-specification Direct mapping from hrm_projects.color_code.
+         *   Hex color format.
      */
     color_code: string;
 
@@ -396,8 +441,9 @@ export namespace IHrmProject {
      *
      * Projects transition through three states: `active` (current work accepting timelogs), `archived` (inactive but preserved for historical reference), and `completed` (finished work, cannot receive new timelogs). This field determines which operations are allowed on the project.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from hrm_projects.status. String enum: active, archived, completed.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from hrm_projects.status.
+         *   String enum: active, archived, completed.
      */
     status: string;
 
@@ -406,8 +452,9 @@ export namespace IHrmProject {
      *
      * This optional field marks when project work began or is scheduled to begin. It is nullable and may be set during project creation or updated later as the project timeline is finalized.
      *
-     * @x-autobe-database-schema-property start_date
-     * @x-autobe-specification Direct mapping from hrm_projects.start_date. Nullable date-time.
+         * @x-autobe-database-schema-property start_date
+         * @x-autobe-specification Direct mapping from hrm_projects.start_date.
+         *   Nullable date-time.
      */
     start_date?: (string & tags.Format<"date-time">) | null | undefined;
 
@@ -416,8 +463,9 @@ export namespace IHrmProject {
      *
      * This optional field marks when project is expected to finish or has finished. It is nullable and may be set during project creation or updated as the project timeline changes.
      *
-     * @x-autobe-database-schema-property end_date
-     * @x-autobe-specification Direct mapping from hrm_projects.end_date. Nullable date-time.
+         * @x-autobe-database-schema-property end_date
+         * @x-autobe-specification Direct mapping from hrm_projects.end_date.
+         *   Nullable date-time.
      */
     end_date?: (string & tags.Format<"date-time">) | null | undefined;
 
@@ -426,8 +474,9 @@ export namespace IHrmProject {
      *
      * Every project belongs to exactly one organization. This is a belongs-to relation exposed as a summary object containing the organization's identification and configuration information. Organization context is enforced on all project operations for multi-tenancy data isolation.
      *
-     * @x-autobe-database-schema-property organization
-     * @x-autobe-specification JOIN from hrm_projects.hrm_organization_id to hrm_organizations.id. Returns IHrmOrganization.ISummary.
+         * @x-autobe-database-schema-property organization
+         * @x-autobe-specification JOIN from hrm_projects.hrm_organization_id to
+         *   hrm_organizations.id. Returns IHrmOrganization.ISummary.
      */
     organization: IHrmOrganization.ISummary;
 
@@ -436,8 +485,9 @@ export namespace IHrmProject {
      *
      * This system-managed field is automatically set when the project is first created. It uses ISO 8601 format with timezone information (timestamptz).
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from hrm_projects.created_at. Timestamp with timezone.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from hrm_projects.created_at.
+         *   Timestamp with timezone.
      */
     created_at: string & tags.Format<"date-time">;
   };
@@ -500,8 +550,9 @@ export namespace IHrmProject {
      *
      * This is the primary identifier for the project within the organization. It appears in all project references, dropdowns, and list views. The name must be unique within the organization and cannot be empty.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from hrm_projects.name. Optional in Update DTO.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from hrm_projects.name.
+         *   Optional in Update DTO.
      */
     name?: string | undefined;
 
@@ -510,8 +561,9 @@ export namespace IHrmProject {
      *
      * This optional field provides additional context about project goals, deliverables, and requirements. It is used for internal documentation and stakeholder communication. Set to null to clear the description.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from hrm_projects.description. Nullable string - use null to clear the value.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from hrm_projects.description.
+         *   Nullable string - use null to clear the value.
      */
     description?: string | null | undefined;
 
@@ -520,8 +572,9 @@ export namespace IHrmProject {
      *
      * This field is used for project badges, timeline indicators, and dashboard visualizations. Format must be #RRGGBB (6-digit) or #RRGGBBAA (8-digit with alpha channel). The color helps users quickly identify projects in lists and calendars.
      *
-     * @x-autobe-database-schema-property color_code
-     * @x-autobe-specification Direct mapping from hrm_projects.color_code. Optional in Update DTO. Must match hex color pattern.
+         * @x-autobe-database-schema-property color_code
+         * @x-autobe-specification Direct mapping from hrm_projects.color_code.
+         *   Optional in Update DTO. Must match hex color pattern.
      */
     color_code?:
       | (string & tags.Pattern<"^#[0-9A-Fa-f]{6}([0-9A-Fa-f]{2})?$">)
@@ -532,8 +585,10 @@ export namespace IHrmProject {
      *
      * This optional field tracks the allocated time resources for the project. It is used for comparing actual logged hours against estimates and generating budget utilization reports. Set to null to remove the budget constraint.
      *
-     * @x-autobe-database-schema-property budget_hours
-     * @x-autobe-specification Direct mapping from hrm_projects.budget_hours. Nullable decimal number (DoublePrecision). Use null to clear the budget.
+         * @x-autobe-database-schema-property budget_hours
+         * @x-autobe-specification Direct mapping from
+         *   hrm_projects.budget_hours. Nullable decimal number
+         *   (DoublePrecision). Use null to clear the budget.
      */
     budget_hours?: number | null | undefined;
 
@@ -542,8 +597,10 @@ export namespace IHrmProject {
      *
      * This optional field marks when project work began or is scheduled to begin. It is used for timeline visualizations, milestone tracking, and reporting. Format: ISO 8601 datetime (e.g., 2024-01-15T09:00:00Z). Set to null to remove the start date.
      *
-     * @x-autobe-database-schema-property start_date
-     * @x-autobe-specification Direct mapping from hrm_projects.start_date. Nullable DateTime (Timestamptz). ISO 8601 format. Use null to clear.
+         * @x-autobe-database-schema-property start_date
+         * @x-autobe-specification Direct mapping from hrm_projects.start_date.
+         *   Nullable DateTime (Timestamptz). ISO 8601 format. Use null to
+         *   clear.
      */
     start_date?: (string & tags.Format<"date-time">) | null | undefined;
 
@@ -552,8 +609,10 @@ export namespace IHrmProject {
      *
      * This optional field marks when project is expected to finish or has finished. It is used for deadline tracking, timeline visualizations, and reporting. Format: ISO 8601 datetime (e.g., 2024-06-30T17:00:00Z). Must be greater than or equal to start_date if both are provided. Set to null to remove the end date.
      *
-     * @x-autobe-database-schema-property end_date
-     * @x-autobe-specification Direct mapping from hrm_projects.end_date. Nullable DateTime (Timestamptz). ISO 8601 format. Use null to clear. Must be >= start_date if both are provided.
+         * @x-autobe-database-schema-property end_date
+         * @x-autobe-specification Direct mapping from hrm_projects.end_date.
+         *   Nullable DateTime (Timestamptz). ISO 8601 format. Use null to
+         *   clear. Must be >= start_date if both are provided.
      */
     end_date?: (string & tags.Format<"date-time">) | null | undefined;
   };
@@ -574,7 +633,9 @@ export namespace IHrmProject {
      *
      * This value is configured when creating or updating the project and represents the estimated time resources available for project work. It serves as the baseline for calculating budget utilization percentage.
      *
-     * @x-autobe-specification Derived from hrm_projects.budget_hours. Represents the planned or estimated budget hours allocated to the project. This value is directly read from the project record.
+         * @x-autobe-specification Derived from hrm_projects.budget_hours.
+         *   Represents the planned or estimated budget hours allocated to the
+         *   project. This value is directly read from the project record.
      */
     budgetHours: number;
 
@@ -583,7 +644,11 @@ export namespace IHrmProject {
      *
      * This value is calculated by aggregating all time tracking records associated with the project. Each timelog stores duration in minutes, which are summed and converted to hours for this report. Only active (non-deleted) timelogs are included in the calculation.
      *
-     * @x-autobe-specification Computed by summing all hrm_timelogs.duration_minutes where hrm_project_id matches the project ID and deleted_at is null, then dividing by 60 to convert minutes to hours. Only includes timelogs that are not part of soft-deleted records.
+         * @x-autobe-specification Computed by summing all
+         *   hrm_timelogs.duration_minutes where hrm_project_id matches the
+         *   project ID and deleted_at is null, then dividing by 60 to convert
+         *   minutes to hours. Only includes timelogs that are not part of
+         *   soft-deleted records.
      */
     actualHours: number;
 
@@ -592,7 +657,10 @@ export namespace IHrmProject {
      *
      * This metric is calculated by dividing actual hours by budget hours and multiplying by 100. It provides a quick indicator of budget health: values approaching or exceeding 100% indicate potential budget overruns that may require attention.
      *
-     * @x-autobe-specification Computed as (actualHours / budgetHours) × 100. Returns the budget utilization percentage. When budgetHours is 0 or null, this value is undefined and the project is excluded from budget reports.
+         * @x-autobe-specification Computed as (actualHours / budgetHours) ×
+         *   100. Returns the budget utilization percentage. When budgetHours is
+         *   0 or null, this value is undefined and the project is excluded from
+         *   budget reports.
      */
     percentageConsumed: number;
   };
@@ -622,8 +690,10 @@ export namespace IHrmProject {
      *
      * Projects can transition from active to archived or completed. Archived projects can be reactivated to active status. Completed projects can be changed back to active status.
      *
-     * @x-autobe-specification Direct mapping from hrm_projects.status column. Valid values: active, archived, completed. Backend validates status transition rules before persisting the update.
-     * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from hrm_projects.status
+         *   column. Valid values: active, archived, completed. Backend
+         *   validates status transition rules before persisting the update.
+         * @x-autobe-database-schema-property status
      */
     status: string;
   };

@@ -18,9 +18,10 @@ export class EcommercemallAdministratorShipmentsItemsController {
    * @param connection
    * @param shipmentId UUID of the shipment to list items for. The requesting seller must own this shipment.
    * @param body Search and filter criteria for listing shipment items, including status filters, quantity ranges, date ranges, pagination, and sorting options.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Query ecommerce_mall_shipment_items table filtered by shipment_id = {shipmentId}.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor administrator
+     * @x-autobe-specification Query ecommerce_mall_shipment_items table
+     *   filtered by shipment_id = {shipmentId}.
    *
    * Apply filters from request body:
    * - status: filter by shipment item status (pending, shipped, delivered, cancelled)

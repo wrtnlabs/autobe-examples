@@ -23,9 +23,10 @@ export class HrmplatformMemberMembershipsController {
    *
    * @param connection
    * @param body Search criteria including organization ID, member ID, ownership status filters, and pagination parameters for cursor-based pagination.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query hrm_platform_organization_memberships table with pagination and filtering.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query hrm_platform_organization_memberships table
+     *   with pagination and filtering.
    *
    * Apply search filters from request body:
    * - hrm_platform_organization_id: filter by specific organization
@@ -70,9 +71,10 @@ export class HrmplatformMemberMembershipsController {
    *
    * @param connection
    * @param membershipId Unique identifier of the organization membership record (UUID format).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query hrm_platform_organization_memberships table by primary key id.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query hrm_platform_organization_memberships table
+     *   by primary key id.
    *
    * Validate the membershipId exists and is a valid UUID.
    * Return the full membership record including:
@@ -129,9 +131,10 @@ export class HrmplatformMemberMembershipsController {
    *
    * @param connection
    * @param membershipId UUID of the organization membership to remove (global scope)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Soft-delete the organization membership by setting deleted_at to current timestamp.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Soft-delete the organization membership by
+     *   setting deleted_at to current timestamp.
    *
    * 1. Load membership record by ID and verify it exists and is not already deleted
    * 2. Check authorization: caller must have org:manage permission OR be the member themselves

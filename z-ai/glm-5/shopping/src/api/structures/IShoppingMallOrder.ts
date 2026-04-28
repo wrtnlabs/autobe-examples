@@ -35,55 +35,68 @@ export namespace IShoppingMallOrder {
     /**
      * Unique identifier for the order.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_orders.id. UUID format primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from shopping_mall_orders.id.
+         *   UUID format primary key.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Human-readable unique order number for customer reference and lookup.
      *
-     * @x-autobe-database-schema-property order_number
-     * @x-autobe-specification Direct mapping from shopping_mall_orders.order_number. Human-readable unique order reference.
+         * @x-autobe-database-schema-property order_number
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_orders.order_number. Human-readable unique order
+         *   reference.
      */
     orderNumber: string;
 
     /**
      * Current order status derived from individual item statuses.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from shopping_mall_orders.status. Derived status: 'paid', 'shipped', 'delivered', 'cancelled', 'refunded', or 'partially_completed'.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_orders.status. Derived status: 'paid', 'shipped',
+         *   'delivered', 'cancelled', 'refunded', or 'partially_completed'.
      */
     status: string;
 
     /**
      * Total order amount in the platform's currency.
      *
-     * @x-autobe-database-schema-property total_price
-     * @x-autobe-specification Direct mapping from shopping_mall_orders.total_price. Sum of (item price × quantity) for all order items at purchase time.
+         * @x-autobe-database-schema-property total_price
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_orders.total_price. Sum of (item price × quantity)
+         *   for all order items at purchase time.
      */
     totalPrice: number;
 
     /**
      * Customer who placed the order. May be null if the customer account has been deleted.
      *
-     * @x-autobe-database-schema-property customer
-     * @x-autobe-specification Fetched via LEFT JOIN from shopping_mall_orders.shopping_mall_customer_id to shopping_mall_customers.id. Returns IShoppingMallCustomer.ISummary or null if customer account deleted.
+         * @x-autobe-database-schema-property customer
+         * @x-autobe-specification Fetched via LEFT JOIN from
+         *   shopping_mall_orders.shopping_mall_customer_id to
+         *   shopping_mall_customers.id. Returns IShoppingMallCustomer.ISummary
+         *   or null if customer account deleted.
      */
     customer: IShoppingMallCustomer.ISummary | null;
 
     /**
      * Total number of distinct items in the order.
      *
-     * @x-autobe-specification Computed via COUNT(*) aggregation on shopping_mall_order_items where order_id matches this order's id. Represents total number of distinct items in the order.
+         * @x-autobe-specification Computed via COUNT(*) aggregation on
+         *   shopping_mall_order_items where order_id matches this order's id.
+         *   Represents total number of distinct items in the order.
      */
     itemsCount: number & tags.Type<"int32">;
 
     /**
      * Timestamp when the order was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_orders.created_at. ISO 8601 timestamp with timezone.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_orders.created_at. ISO 8601 timestamp with timezone.
      */
     createdAt: string & tags.Format<"date-time">;
   };
@@ -95,8 +108,12 @@ export namespace IShoppingMallOrder {
     /**
      * Filter orders by one or more status values. Supported statuses: paid (awaiting shipment), shipped (in transit), delivered (all items received), cancelled (before shipment), refunded (after delivery), partially_completed (mixed item states).
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Translates to WHERE status IN (values) SQL clause. Accepts array of status values: 'paid', 'shipped', 'delivered', 'cancelled', 'refunded', 'partially_completed'. Multiple values combine with OR logic within the IN clause. Null/empty array omits this filter entirely.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Translates to WHERE status IN (values) SQL
+         *   clause. Accepts array of status values: 'paid', 'shipped',
+         *   'delivered', 'cancelled', 'refunded', 'partially_completed'.
+         *   Multiple values combine with OR logic within the IN clause.
+         *   Null/empty array omits this filter entirely.
      */
     statuses?:
       | (
@@ -112,61 +129,88 @@ export namespace IShoppingMallOrder {
     /**
      * Search orders by order number (case-insensitive partial match). Enter full or partial order number to find matching orders.
      *
-     * @x-autobe-database-schema-property order_number
-     * @x-autobe-specification Translates to WHERE order_number ILIKE '%value%' SQL clause for case-insensitive partial match. Null value omits this filter entirely. Useful for administrators to locate specific orders by reference number.
+         * @x-autobe-database-schema-property order_number
+         * @x-autobe-specification Translates to WHERE order_number ILIKE
+         *   '%value%' SQL clause for case-insensitive partial match. Null value
+         *   omits this filter entirely. Useful for administrators to locate
+         *   specific orders by reference number.
      */
     orderNumber?: string | undefined;
 
     /**
      * Filter orders by customer ID. Provide customer UUID to show only orders placed by that customer. Omit to show all orders regardless of customer.
      *
-     * @x-autobe-specification Computed filter parameter. When provided, translates to WHERE shopping_mall_customer_id = value SQL clause for exact UUID match. When omitted, no customer filter is applied. Note: Orders from deleted customers have null shopping_mall_customer_id and are included in unfiltered results - use this filter to find orders from a specific active customer only.
+         * @x-autobe-specification Computed filter parameter. When provided,
+         *   translates to WHERE shopping_mall_customer_id = value SQL clause
+         *   for exact UUID match. When omitted, no customer filter is applied.
+         *   Note: Orders from deleted customers have null
+         *   shopping_mall_customer_id and are included in unfiltered results -
+         *   use this filter to find orders from a specific active customer
+         *   only.
      */
     customerId?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Filter orders created on or after this timestamp. Use with createdTo to specify a date range.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Translates to WHERE created_at >= value SQL clause. Defines lower bound of creation date range filter. Combine with createdTo for range queries. Null value omits lower bound. ISO 8601 date-time format expected.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Translates to WHERE created_at >= value SQL
+         *   clause. Defines lower bound of creation date range filter. Combine
+         *   with createdTo for range queries. Null value omits lower bound. ISO
+         *   8601 date-time format expected.
      */
     createdFrom?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Filter orders created on or before this timestamp. Use with createdFrom to specify a date range.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Translates to WHERE created_at <= value SQL clause. Defines upper bound of creation date range filter. Combine with createdFrom for range queries. Null value omits upper bound. ISO 8601 date-time format expected.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Translates to WHERE created_at <= value SQL
+         *   clause. Defines upper bound of creation date range filter. Combine
+         *   with createdFrom for range queries. Null value omits upper bound.
+         *   ISO 8601 date-time format expected.
      */
     createdTo?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Filter orders with total price at or above this amount. Combine with maxPrice to specify a price range.
      *
-     * @x-autobe-database-schema-property total_price
-     * @x-autobe-specification Translates to WHERE total_price >= value SQL clause. Defines minimum order total price filter. Combine with maxPrice for price range queries. Null value omits lower bound. Must be >= 0.
+         * @x-autobe-database-schema-property total_price
+         * @x-autobe-specification Translates to WHERE total_price >= value SQL
+         *   clause. Defines minimum order total price filter. Combine with
+         *   maxPrice for price range queries. Null value omits lower bound.
+         *   Must be >= 0.
      */
     minPrice?: (number & tags.Minimum<0>) | undefined;
 
     /**
      * Filter orders with total price at or below this amount. Combine with minPrice to specify a price range.
      *
-     * @x-autobe-database-schema-property total_price
-     * @x-autobe-specification Translates to WHERE total_price <= value SQL clause. Defines maximum order total price filter. Combine with minPrice for price range queries. Null value omits upper bound. Must be >= 0.
+         * @x-autobe-database-schema-property total_price
+         * @x-autobe-specification Translates to WHERE total_price <= value SQL
+         *   clause. Defines maximum order total price filter. Combine with
+         *   minPrice for price range queries. Null value omits upper bound.
+         *   Must be >= 0.
      */
     maxPrice?: (number & tags.Minimum<0>) | undefined;
 
     /**
      * Page number for pagination (1-indexed). First page is 1. Default is 1 if omitted.
      *
-     * @x-autobe-specification Computed pagination parameter. Translates to OFFSET = (page - 1) * limit in SQL query. 1-indexed (first page is 1, not 0). Default: 1. Minimum: 1. Used with limit for offset-based pagination.
+         * @x-autobe-specification Computed pagination parameter. Translates to
+         *   OFFSET = (page - 1) * limit in SQL query. 1-indexed (first page is
+         *   1, not 0). Default: 1. Minimum: 1. Used with limit for offset-based
+         *   pagination.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of orders per page. Range: 1-100. Default is 20 if omitted.
      *
-     * @x-autobe-specification Computed pagination parameter. Translates to LIMIT clause in SQL query. Defines maximum records per page. Default: 20. Minimum: 1, Maximum: 100. Use with page for offset-based pagination.
+         * @x-autobe-specification Computed pagination parameter. Translates to
+         *   LIMIT clause in SQL query. Defines maximum records per page.
+         *   Default: 20. Minimum: 1, Maximum: 100. Use with page for
+         *   offset-based pagination.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -175,7 +219,11 @@ export namespace IShoppingMallOrder {
     /**
      * Sort order for results. Format: 'field:asc' or 'field:desc'. Default sorts by creation date (newest first).
      *
-     * @x-autobe-specification Computed sorting parameter. Translates to ORDER BY clause in SQL query. Format: 'field:direction' (e.g., 'created_at:desc', 'total_price:asc'). Default: 'created_at:desc' when omitted. Supported fields: created_at, total_price, status, order_number.
+         * @x-autobe-specification Computed sorting parameter. Translates to
+         *   ORDER BY clause in SQL query. Format: 'field:direction' (e.g.,
+         *   'created_at:desc', 'total_price:asc'). Default: 'created_at:desc'
+         *   when omitted. Supported fields: created_at, total_price, status,
+         *   order_number.
      */
     sort?: string | undefined;
   };
@@ -187,7 +235,14 @@ export namespace IShoppingMallOrder {
     /**
      * Unique identifier of the shipping address to use for this order. Must reference an existing address in the customer's address book that is not soft-deleted. The address fields will be captured and stored immutably on the order record at checkout time.
      *
-     * @x-autobe-specification Foreign key reference to shopping_mall_addresses.id. System queries: SELECT * FROM shopping_mall_addresses WHERE id = addressId AND shopping_mall_customer_id = authenticated_customer_id AND deleted_at IS NULL. Validates address exists, belongs to customer, and is active. On success, copies address fields to shopping_mall_orders shipping_* columns as immutable values preserving delivery destination at checkout time.
+         * @x-autobe-specification Foreign key reference to
+         *   shopping_mall_addresses.id. System queries: SELECT * FROM
+         *   shopping_mall_addresses WHERE id = addressId AND
+         *   shopping_mall_customer_id = authenticated_customer_id AND
+         *   deleted_at IS NULL. Validates address exists, belongs to customer,
+         *   and is active. On success, copies address fields to
+         *   shopping_mall_orders shipping_* columns as immutable values
+         *   preserving delivery destination at checkout time.
      */
     addressId: string & tags.Format<"uuid">;
   };

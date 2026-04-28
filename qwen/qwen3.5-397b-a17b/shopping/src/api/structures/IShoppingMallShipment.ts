@@ -40,8 +40,12 @@ export namespace IShoppingMallShipment {
      *
      * Must be 1-255 characters when provided. Cannot be empty string.
      *
-     * @x-autobe-database-schema-property carrier_name
-     * @x-autobe-specification Direct mapping from shopping_mall_shipments.carrier_name. Optional in Update DTO - include only if changing. Validation: non-empty string, 1-255 characters. Service layer validates at least one of carrier_name or tracking_number is provided in request.
+         * @x-autobe-database-schema-property carrier_name
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_shipments.carrier_name. Optional in Update DTO -
+         *   include only if changing. Validation: non-empty string, 1-255
+         *   characters. Service layer validates at least one of carrier_name or
+         *   tracking_number is provided in request.
      */
     carrier_name?:
       | (string & tags.MinLength<1> & tags.MaxLength<255>)
@@ -54,8 +58,12 @@ export namespace IShoppingMallShipment {
      *
      * Must be 1-255 characters when provided. Cannot be empty string.
      *
-     * @x-autobe-database-schema-property tracking_number
-     * @x-autobe-specification Direct mapping from shopping_mall_shipments.tracking_number. Optional in Update DTO - include only if changing. Validation: non-empty string, 1-255 characters. Service layer validates at least one of carrier_name or tracking_number is provided in request.
+         * @x-autobe-database-schema-property tracking_number
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_shipments.tracking_number. Optional in Update DTO -
+         *   include only if changing. Validation: non-empty string, 1-255
+         *   characters. Service layer validates at least one of carrier_name or
+         *   tracking_number is provided in request.
      */
     tracking_number?:
       | (string & tags.MinLength<1> & tags.MaxLength<255>)
@@ -77,7 +85,15 @@ export namespace IShoppingMallShipment {
      *
      * When the shipment is created, all included order items automatically transition to 'shipped' status and are linked to the new shipment record.
      *
-     * @x-autobe-specification Computed property - array of order item UUIDs (shopping_mall_order_items.id) to include in this shipment. Backend validates: (1) all order items exist, (2) all belong to authenticated seller (shopping_mall_order_items.shopping_mall_seller_id matches JWT), (3) all have status 'paid', (4) none already assigned to a shipment (shopping_mall_shipment_id is null). On successful shipment creation, backend updates shopping_mall_shipment_id FK on each referenced order item to the new shipment ID.
+         * @x-autobe-specification Computed property - array of order item UUIDs
+         *   (shopping_mall_order_items.id) to include in this shipment. Backend
+         *   validates: (1) all order items exist, (2) all belong to
+         *   authenticated seller
+         *   (shopping_mall_order_items.shopping_mall_seller_id matches JWT),
+         *   (3) all have status 'paid', (4) none already assigned to a shipment
+         *   (shopping_mall_shipment_id is null). On successful shipment
+         *   creation, backend updates shopping_mall_shipment_id FK on each
+         *   referenced order item to the new shipment ID.
      */
     order_item_ids: (string & tags.Format<"uuid">)[];
 
@@ -86,8 +102,12 @@ export namespace IShoppingMallShipment {
      *
      * Examples include postal services (USPS, Korea Post), courier companies (FedEx, UPS, DHL), or local delivery services. This field is required when creating a shipment and provides the customer with information about which carrier is transporting their package.
      *
-     * @x-autobe-database-schema-property carrier_name
-     * @x-autobe-specification Direct mapping from shopping_mall_shipments.carrier_name column. String value representing the shipping carrier name (e.g., USPS, FedEx, UPS, DHL, Korea Post). Required field with no format validation beyond being a non-empty string.
+         * @x-autobe-database-schema-property carrier_name
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_shipments.carrier_name column. String value
+         *   representing the shipping carrier name (e.g., USPS, FedEx, UPS,
+         *   DHL, Korea Post). Required field with no format validation beyond
+         *   being a non-empty string.
      */
     carrier_name: string;
 
@@ -96,8 +116,12 @@ export namespace IShoppingMallShipment {
      *
      * This unique identifier allows customers to track the shipment progress through the carrier's website or API. Combined with the carrier name, it provides complete tracking information for the customer to monitor delivery status.
      *
-     * @x-autobe-database-schema-property tracking_number
-     * @x-autobe-specification Direct mapping from shopping_mall_shipments.tracking_number column. String value representing the unique tracking identifier assigned by the carrier. Required field enabling customers to track shipment progress through the carrier's website or API.
+         * @x-autobe-database-schema-property tracking_number
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_shipments.tracking_number column. String value
+         *   representing the unique tracking identifier assigned by the
+         *   carrier. Required field enabling customers to track shipment
+         *   progress through the carrier's website or API.
      */
     tracking_number: string;
   };
@@ -115,8 +139,9 @@ export namespace IShoppingMallShipment {
      *
      * This is the primary key of the shipment record, generated as a UUID when the shipment is created. Used to reference this specific shipment in tracking and delivery confirmation operations.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_shipments.id. UUID format.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_shipments.id. UUID format.
      */
     id: string & tags.Format<"uuid">;
 
@@ -125,8 +150,9 @@ export namespace IShoppingMallShipment {
      *
      * Examples include postal services (USPS, Korea Post), courier companies (FedEx, UPS, DHL), or local delivery services. This field is provided by the seller when creating the shipment and enables customers to track their packages through the carrier's website or API.
      *
-     * @x-autobe-database-schema-property carrier_name
-     * @x-autobe-specification Direct mapping from shopping_mall_shipments.carrier_name. String value.
+         * @x-autobe-database-schema-property carrier_name
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_shipments.carrier_name. String value.
      */
     carrier_name: string;
 
@@ -135,8 +161,9 @@ export namespace IShoppingMallShipment {
      *
      * This unique identifier allows customers to track the shipment progress through the carrier's website or API. Combined with carrier_name, it provides complete tracking information for the customer. Provided by the seller when creating the shipment.
      *
-     * @x-autobe-database-schema-property tracking_number
-     * @x-autobe-specification Direct mapping from shopping_mall_shipments.tracking_number. String value.
+         * @x-autobe-database-schema-property tracking_number
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_shipments.tracking_number. String value.
      */
     tracking_number: string;
 
@@ -145,8 +172,9 @@ export namespace IShoppingMallShipment {
      *
      * This timestamp is set when the seller enters tracking information and confirms the shipment. It marks the transition of all order items in this shipment from 'paid' to 'shipped' status. Also used to calculate the 14-day auto-delivery deadline if customer does not manually confirm delivery.
      *
-     * @x-autobe-database-schema-property shipped_at
-     * @x-autobe-specification Direct mapping from shopping_mall_shipments.shipped_at. ISO 8601 date-time format.
+         * @x-autobe-database-schema-property shipped_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_shipments.shipped_at. ISO 8601 date-time format.
      */
     shipped_at: string & tags.Format<"date-time">;
 
@@ -155,8 +183,10 @@ export namespace IShoppingMallShipment {
      *
      * This is set either when the customer manually confirms delivery, or automatically after 14 days from shipped_at if no confirmation is received. When set, all order items in this shipment transition to 'delivered' status. Null value indicates the shipment is still in transit.
      *
-     * @x-autobe-database-schema-property delivered_at
-     * @x-autobe-specification Direct mapping from shopping_mall_shipments.delivered_at. ISO 8601 date-time format, nullable. Null until delivery confirmed.
+         * @x-autobe-database-schema-property delivered_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_shipments.delivered_at. ISO 8601 date-time format,
+         *   nullable. Null until delivery confirmed.
      */
     delivered_at: (string & tags.Format<"date-time">) | null;
 
@@ -165,8 +195,9 @@ export namespace IShoppingMallShipment {
      *
      * Records when the shipment entity was first created in the system. Used for sorting shipments chronologically and for audit purposes. This is distinct from shipped_at, which represents when the physical shipment was dispatched.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_shipments.created_at. ISO 8601 date-time format.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_shipments.created_at. ISO 8601 date-time format.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -175,8 +206,10 @@ export namespace IShoppingMallShipment {
      *
      * Each shipment is associated with exactly one order. This field provides order context including the order code and total price. Used to navigate from shipment details back to the complete order information.
      *
-     * @x-autobe-database-schema-property order
-     * @x-autobe-specification Relation mapping via shopping_mall_order_id FK to shopping_mall_orders.id. Returns IShoppingMallOrder.ISummary object.
+         * @x-autobe-database-schema-property order
+         * @x-autobe-specification Relation mapping via shopping_mall_order_id
+         *   FK to shopping_mall_orders.id. Returns IShoppingMallOrder.ISummary
+         *   object.
      */
     order: IShoppingMallOrder.ISummary;
 
@@ -185,8 +218,10 @@ export namespace IShoppingMallShipment {
      *
      * Identifies which seller is responsible for shipping this package. Different sellers always create separate shipments even for items in the same order. This field enables customers to identify which merchant is fulfilling their order items.
      *
-     * @x-autobe-database-schema-property seller
-     * @x-autobe-specification Relation mapping via shopping_mall_seller_id FK to shopping_mall_sellers.id. Returns IShoppingMallSeller.ISummary object.
+         * @x-autobe-database-schema-property seller
+         * @x-autobe-specification Relation mapping via shopping_mall_seller_id
+         *   FK to shopping_mall_sellers.id. Returns
+         *   IShoppingMallSeller.ISummary object.
      */
     seller: IShoppingMallSeller.ISummary;
 
@@ -195,7 +230,9 @@ export namespace IShoppingMallShipment {
      *
      * This computed field indicates how many distinct order items are grouped together in this physical package. Useful for customers to understand what items are included in each shipment when an order is split across multiple packages from different sellers.
      *
-     * @x-autobe-specification Computed from COUNT(order_items) WHERE order_items.shipment_id = shipments.id. Integer value representing the number of order items in this shipment.
+         * @x-autobe-specification Computed from COUNT(order_items) WHERE
+         *   order_items.shipment_id = shipments.id. Integer value representing
+         *   the number of order items in this shipment.
      */
     order_items_count: number & tags.Type<"int32">;
   };
@@ -221,7 +258,11 @@ export namespace IShoppingMallShipment {
      *
      * For more targeted searches, use the dedicated `carrier_name` or `tracking_number` filter fields instead. If both `search` and specific fields are provided, filters are combined with AND logic.
      *
-     * @x-autobe-specification Computed filter: applies partial match (ILIKE) on both carrier_name and tracking_number columns with OR logic. Implementation: WHERE carrier_name ILIKE '%search%' OR tracking_number ILIKE '%search%'. Null or empty string means no search filter applied.
+         * @x-autobe-specification Computed filter: applies partial match
+         *   (ILIKE) on both carrier_name and tracking_number columns with OR
+         *   logic. Implementation: WHERE carrier_name ILIKE '%search%' OR
+         *   tracking_number ILIKE '%search%'. Null or empty string means no
+         *   search filter applied.
      */
     search?: string | undefined;
 
@@ -232,8 +273,12 @@ export namespace IShoppingMallShipment {
      *
      * Must be a valid UUID format. If omitted, shipments from all sellers are included (subject to actor authorization).
      *
-     * @x-autobe-database-schema-property shopping_mall_seller_id
-     * @x-autobe-specification Direct mapping to shopping_mall_seller_id column. Filters shipments by seller UUID. Implementation: WHERE shopping_mall_seller_id = :seller_id. Used by sellers to view their own shipments and by admins to filter by specific seller. Null means no seller filter applied.
+         * @x-autobe-database-schema-property shopping_mall_seller_id
+         * @x-autobe-specification Direct mapping to shopping_mall_seller_id
+         *   column. Filters shipments by seller UUID. Implementation: WHERE
+         *   shopping_mall_seller_id = :seller_id. Used by sellers to view their
+         *   own shipments and by admins to filter by specific seller. Null
+         *   means no seller filter applied.
      */
     seller_id?: (string & tags.Format<"uuid">) | undefined;
 
@@ -244,8 +289,11 @@ export namespace IShoppingMallShipment {
      *
      * Must be a valid UUID format. Commonly used in the /orders/{orderId}/shipments endpoint where this filter is implicitly applied via the path parameter. If omitted, shipments from all orders are included.
      *
-     * @x-autobe-database-schema-property shopping_mall_order_id
-     * @x-autobe-specification Direct mapping to shopping_mall_order_id column. Filters shipments by order UUID. Implementation: WHERE shopping_mall_order_id = :order_id. Used to retrieve all shipments for a specific order. Null means no order filter applied.
+         * @x-autobe-database-schema-property shopping_mall_order_id
+         * @x-autobe-specification Direct mapping to shopping_mall_order_id
+         *   column. Filters shipments by order UUID. Implementation: WHERE
+         *   shopping_mall_order_id = :order_id. Used to retrieve all shipments
+         *   for a specific order. Null means no order filter applied.
      */
     order_id?: (string & tags.Format<"uuid">) | undefined;
 
@@ -256,8 +304,12 @@ export namespace IShoppingMallShipment {
      *
      * Examples: 'FedEx' matches 'FedEx Express', 'FedEx Ground'; 'Post' matches 'USPS', 'Korea Post'. For broader searches across both carrier and tracking number, use the `search` field instead.
      *
-     * @x-autobe-database-schema-property carrier_name
-     * @x-autobe-specification Direct mapping to carrier_name column. Applies partial match (ILIKE) filter. Implementation: WHERE carrier_name ILIKE '%carrier_name%'. Use for filtering by specific carrier (e.g., 'FedEx', 'USPS', 'DHL'). Null means no carrier filter applied.
+         * @x-autobe-database-schema-property carrier_name
+         * @x-autobe-specification Direct mapping to carrier_name column.
+         *   Applies partial match (ILIKE) filter. Implementation: WHERE
+         *   carrier_name ILIKE '%carrier_name%'. Use for filtering by specific
+         *   carrier (e.g., 'FedEx', 'USPS', 'DHL'). Null means no carrier
+         *   filter applied.
      */
     carrier_name?: string | undefined;
 
@@ -268,8 +320,12 @@ export namespace IShoppingMallShipment {
      *
      * Supports partial matches: entering '1Z999' will match '1Z999AA10123456784'. For broader searches across both tracking number and carrier name, use the `search` field instead.
      *
-     * @x-autobe-database-schema-property tracking_number
-     * @x-autobe-specification Direct mapping to tracking_number column. Applies partial match (ILIKE) filter. Implementation: WHERE tracking_number ILIKE '%tracking_number%'. Use for finding shipments by tracking number. Null means no tracking number filter applied.
+         * @x-autobe-database-schema-property tracking_number
+         * @x-autobe-specification Direct mapping to tracking_number column.
+         *   Applies partial match (ILIKE) filter. Implementation: WHERE
+         *   tracking_number ILIKE '%tracking_number%'. Use for finding
+         *   shipments by tracking number. Null means no tracking number filter
+         *   applied.
      */
     tracking_number?: string | undefined;
 
@@ -280,7 +336,10 @@ export namespace IShoppingMallShipment {
      *
      * Use ISO 8601 date-time format (e.g., '2024-01-15T00:00:00Z'). Can be used alone to find all shipments after a specific date, or paired with `shipped_to` for a bounded date range. Null means no lower bound restriction.
      *
-     * @x-autobe-specification Computed filter: lower bound for shipped_at range. Implementation: WHERE shipped_at >= :shipped_from. ISO 8601 date-time format. Used with shipped_to for range queries, or alone for 'shipped after X date'. Null means no lower bound applied.
+         * @x-autobe-specification Computed filter: lower bound for shipped_at
+         *   range. Implementation: WHERE shipped_at >= :shipped_from. ISO 8601
+         *   date-time format. Used with shipped_to for range queries, or alone
+         *   for 'shipped after X date'. Null means no lower bound applied.
      */
     shipped_from?: (string & tags.Format<"date-time">) | undefined;
 
@@ -291,7 +350,11 @@ export namespace IShoppingMallShipment {
      *
      * Use ISO 8601 date-time format (e.g., '2024-01-31T23:59:59Z'). Can be used alone to find all shipments before a specific date, or paired with `shipped_from` for a bounded date range. Null means no upper bound restriction.
      *
-     * @x-autobe-specification Computed filter: upper bound for shipped_at range. Implementation: WHERE shipped_at <= :shipped_to. ISO 8601 date-time format. Used with shipped_from for range queries, or alone for 'shipped before X date'. Null means no upper bound applied.
+         * @x-autobe-specification Computed filter: upper bound for shipped_at
+         *   range. Implementation: WHERE shipped_at <= :shipped_to. ISO 8601
+         *   date-time format. Used with shipped_from for range queries, or
+         *   alone for 'shipped before X date'. Null means no upper bound
+         *   applied.
      */
     shipped_to?: (string & tags.Format<"date-time">) | undefined;
 
@@ -302,7 +365,10 @@ export namespace IShoppingMallShipment {
      *
      * Note: This filter implicitly excludes undelivered shipments (where delivered_at is null). Use ISO 8601 date-time format. Can be used alone or paired with `delivered_to` for a bounded range. Null means no lower bound restriction.
      *
-     * @x-autobe-specification Computed filter: lower bound for delivered_at range. Implementation: WHERE delivered_at >= :delivered_from. ISO 8601 date-time format. Filters only delivered shipments (delivered_at IS NOT NULL). Null means no lower bound applied.
+         * @x-autobe-specification Computed filter: lower bound for delivered_at
+         *   range. Implementation: WHERE delivered_at >= :delivered_from. ISO
+         *   8601 date-time format. Filters only delivered shipments
+         *   (delivered_at IS NOT NULL). Null means no lower bound applied.
      */
     delivered_from?: (string & tags.Format<"date-time">) | undefined;
 
@@ -313,7 +379,10 @@ export namespace IShoppingMallShipment {
      *
      * Note: This filter implicitly excludes undelivered shipments (where delivered_at is null). Use ISO 8601 date-time format. Can be used alone or paired with `delivered_from` for a bounded range. Null means no upper bound restriction.
      *
-     * @x-autobe-specification Computed filter: upper bound for delivered_at range. Implementation: WHERE delivered_at <= :delivered_to. ISO 8601 date-time format. Filters only delivered shipments (delivered_at IS NOT NULL). Null means no upper bound applied.
+         * @x-autobe-specification Computed filter: upper bound for delivered_at
+         *   range. Implementation: WHERE delivered_at <= :delivered_to. ISO
+         *   8601 date-time format. Filters only delivered shipments
+         *   (delivered_at IS NOT NULL). Null means no upper bound applied.
      */
     delivered_to?: (string & tags.Format<"date-time">) | undefined;
 
@@ -324,7 +393,11 @@ export namespace IShoppingMallShipment {
      *
      * This is more convenient than using date range filters when you only care about delivery status, not specific dates. Null means no delivery status filter is applied - both delivered and in-transit shipments are included.
      *
-     * @x-autobe-specification Computed filter: delivery status boolean. Implementation: true → WHERE delivered_at IS NOT NULL, false → WHERE delivered_at IS NULL. Provides simple delivered vs in-transit filtering without date range complexity. Null means no delivery status filter applied.
+         * @x-autobe-specification Computed filter: delivery status boolean.
+         *   Implementation: true → WHERE delivered_at IS NOT NULL, false →
+         *   WHERE delivered_at IS NULL. Provides simple delivered vs in-transit
+         *   filtering without date range complexity. Null means no delivery
+         *   status filter applied.
      */
     is_delivered?: boolean | undefined;
 
@@ -335,7 +408,11 @@ export namespace IShoppingMallShipment {
      *
      * Combined with the `limit` parameter, this controls which subset of results is returned. For example, page=1 with limit=20 returns results 1-20, page=2 returns results 21-40, and so on. Minimum value is 1. If omitted, defaults to 1.
      *
-     * @x-autobe-specification Pagination parameter: 1-indexed page number. Implementation: OFFSET = (page - 1) * limit. Default is 1. Minimum value is 1 (validated). Used with limit to implement cursor-based or offset-based pagination. Not stored in database - computed for query execution.
+         * @x-autobe-specification Pagination parameter: 1-indexed page number.
+         *   Implementation: OFFSET = (page - 1) * limit. Default is 1. Minimum
+         *   value is 1 (validated). Used with limit to implement cursor-based
+         *   or offset-based pagination. Not stored in database - computed for
+         *   query execution.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -346,7 +423,10 @@ export namespace IShoppingMallShipment {
      *
      * Minimum value is 1, maximum is 100. If omitted, defaults to 20 results per page. Larger limits reduce the number of API calls needed but increase response size and latency. Consider using the default for most use cases.
      *
-     * @x-autobe-specification Pagination parameter: number of results per page. Implementation: LIMIT = limit. Default is 20, maximum is 100 (validated). Used with page to implement pagination. Not stored in database - computed for query execution.
+         * @x-autobe-specification Pagination parameter: number of results per
+         *   page. Implementation: LIMIT = limit. Default is 20, maximum is 100
+         *   (validated). Used with page to implement pagination. Not stored in
+         *   database - computed for query execution.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)

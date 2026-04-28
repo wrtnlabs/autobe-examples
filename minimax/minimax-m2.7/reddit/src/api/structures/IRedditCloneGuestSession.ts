@@ -10,64 +10,77 @@ export type IRedditCloneGuestSession = {
   /**
    * Unique identifier for this guest session.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from reddit_clone_guest_sessions.id. Primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_guest_sessions.id. Primary key.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Reference to the guest associated with this session.
    *
-   * @x-autobe-database-schema-property reddit_clone_guest_id
-   * @x-autobe-specification Direct mapping from reddit_clone_guest_sessions.reddit_clone_guest_id. Foreign key to reddit_clone_guests.
+     * @x-autobe-database-schema-property reddit_clone_guest_id
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_guest_sessions.reddit_clone_guest_id. Foreign key to
+     *   reddit_clone_guests.
    */
   redditCloneGuestId: string & tags.Format<"uuid">;
 
   /**
    * Client IP address of the guest at session creation.
    *
-   * @x-autobe-specification Direct mapping from reddit_clone_guest_sessions.ip. Client IP address captured at session creation for analytics and security purposes.
-   * @x-autobe-database-schema-property ip
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_guest_sessions.ip. Client IP address captured at session
+     *   creation for analytics and security purposes.
+     * @x-autobe-database-schema-property ip
    */
   ip: string & tags.Format<"ipv4">;
 
   /**
    * Current URL path being accessed in this session.
    *
-   * @x-autobe-database-schema-property href
-   * @x-autobe-specification Direct mapping from reddit_clone_guest_sessions.href. Current URL path the guest is accessing.
+     * @x-autobe-database-schema-property href
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_guest_sessions.href. Current URL path the guest is
+     *   accessing.
    */
   href: string;
 
   /**
    * HTTP referrer header indicating the previous page URL.
    *
-   * @x-autobe-database-schema-property referrer
-   * @x-autobe-specification Direct mapping from reddit_clone_guest_sessions.referrer. HTTP referrer header.
+     * @x-autobe-database-schema-property referrer
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_guest_sessions.referrer. HTTP referrer header.
    */
   referrer: string;
 
   /**
    * Timestamp when this guest session was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from reddit_clone_guest_sessions.created_at. Timestamp when session was created.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_guest_sessions.created_at. Timestamp when session was
+     *   created.
    */
   createdAt: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when this guest session will expire and become invalid.
    *
-   * @x-autobe-database-schema-property expired_at
-   * @x-autobe-specification Direct mapping from reddit_clone_guest_sessions.expired_at. Timestamp when session expires.
+     * @x-autobe-database-schema-property expired_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_clone_guest_sessions.expired_at. Timestamp when session expires.
    */
   expiredAt: string & tags.Format<"date-time">;
 
   /**
    * The guest account associated with this session.
    *
-   * @x-autobe-database-schema-property guest
-   * @x-autobe-specification Join from reddit_clone_guest_sessions.reddit_clone_guest_id to reddit_clone_guests.id. Returns ISummary.
+     * @x-autobe-database-schema-property guest
+     * @x-autobe-specification Join from
+     *   reddit_clone_guest_sessions.reddit_clone_guest_id to
+     *   reddit_clone_guests.id. Returns ISummary.
    */
   guest: IRedditCloneGuest.ISummary;
 };
@@ -79,70 +92,95 @@ export namespace IRedditCloneGuestSession {
     /**
      * Filter by guest identifier to retrieve all sessions belonging to a specific guest.
      *
-     * @x-autobe-specification Maps to reddit_clone_guest_sessions.reddit_clone_guest_id column. Exact match filter to retrieve all sessions belonging to a specific guest. UUID format.
+         * @x-autobe-specification Maps to
+         *   reddit_clone_guest_sessions.reddit_clone_guest_id column. Exact
+         *   match filter to retrieve all sessions belonging to a specific
+         *   guest. UUID format.
      */
     redditCloneGuestId?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Filter by client IP address. Supports exact match or partial match for IP-based session tracking.
      *
-     * @x-autobe-specification Maps to reddit_clone_guest_sessions.ip column. Supports exact match or partial match (LIKE) filter for IP address-based session tracking and filtering.
+         * @x-autobe-specification Maps to reddit_clone_guest_sessions.ip
+         *   column. Supports exact match or partial match (LIKE) filter for IP
+         *   address-based session tracking and filtering.
      */
     ip?: string | undefined;
 
     /**
      * Filter by the current URL path the guest is accessing.
      *
-     * @x-autobe-specification Maps to reddit_clone_guest_sessions.href column. Filters sessions by current URL path for activity tracking and analytics.
+         * @x-autobe-specification Maps to reddit_clone_guest_sessions.href
+         *   column. Filters sessions by current URL path for activity tracking
+         *   and analytics.
      */
     href?: string | undefined;
 
     /**
      * Filter by session status. True returns active sessions (not yet expired), false returns expired sessions.
      *
-     * @x-autobe-specification Computed filter logic: isActive=true maps to expired_at > NOW() returning active sessions, isActive=false maps to expired_at <= NOW() returning expired sessions.
+         * @x-autobe-specification Computed filter logic: isActive=true maps to
+         *   expired_at > NOW() returning active sessions, isActive=false maps
+         *   to expired_at <= NOW() returning expired sessions.
      */
     isActive?: boolean | undefined;
 
     /**
      * Filter sessions created on or after this timestamp (inclusive).
      *
-     * @x-autobe-specification Range filter for reddit_clone_guest_sessions.created_at column. Returns sessions created on or after this timestamp. Use with createdAtTo for between-range filtering.
+         * @x-autobe-specification Range filter for
+         *   reddit_clone_guest_sessions.created_at column. Returns sessions
+         *   created on or after this timestamp. Use with createdAtTo for
+         *   between-range filtering.
      */
     createdAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Filter sessions created on or before this timestamp (inclusive).
      *
-     * @x-autobe-specification Range filter for reddit_clone_guest_sessions.created_at column. Returns sessions created on or before this timestamp. Use with createdAtFrom for between-range filtering.
+         * @x-autobe-specification Range filter for
+         *   reddit_clone_guest_sessions.created_at column. Returns sessions
+         *   created on or before this timestamp. Use with createdAtFrom for
+         *   between-range filtering.
      */
     createdAtTo?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Filter sessions expiring on or after this timestamp (inclusive).
      *
-     * @x-autobe-specification Range filter for reddit_clone_guest_sessions.expired_at column. Returns sessions expiring on or after this timestamp. Useful for finding sessions that will expire in a specific time window.
+         * @x-autobe-specification Range filter for
+         *   reddit_clone_guest_sessions.expired_at column. Returns sessions
+         *   expiring on or after this timestamp. Useful for finding sessions
+         *   that will expire in a specific time window.
      */
     expiredAtFrom?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Filter sessions expiring on or before this timestamp (inclusive).
      *
-     * @x-autobe-specification Range filter for reddit_clone_guest_sessions.expired_at column. Returns sessions expiring on or before this timestamp. Useful for cleanup operations.
+         * @x-autobe-specification Range filter for
+         *   reddit_clone_guest_sessions.expired_at column. Returns sessions
+         *   expiring on or before this timestamp. Useful for cleanup
+         *   operations.
      */
     expiredAtTo?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Page number for pagination (1-indexed).
      *
-     * @x-autobe-specification Pagination parameter: 1-indexed page number. Defaults to 1 if not provided. Used with limit parameter for page-based pagination.
+         * @x-autobe-specification Pagination parameter: 1-indexed page number.
+         *   Defaults to 1 if not provided. Used with limit parameter for
+         *   page-based pagination.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of records to return per page.
      *
-     * @x-autobe-specification Pagination parameter: maximum number of records per page. Valid range 1-100, defaults to implementation value (typically 20 or 50) if not provided.
+         * @x-autobe-specification Pagination parameter: maximum number of
+         *   records per page. Valid range 1-100, defaults to implementation
+         *   value (typically 20 or 50) if not provided.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -151,14 +189,17 @@ export namespace IRedditCloneGuestSession {
     /**
      * Field to sort results by. Options: created_at or expired_at.
      *
-     * @x-autobe-specification Sort field selector. 'created_at' sorts by session creation timestamp, 'expired_at' sorts by session expiration timestamp.
+         * @x-autobe-specification Sort field selector. 'created_at' sorts by
+         *   session creation timestamp, 'expired_at' sorts by session
+         *   expiration timestamp.
      */
     sort?: "created_at" | "expired_at" | undefined;
 
     /**
      * Sort order direction. Options: asc (ascending) or desc (descending).
      *
-     * @x-autobe-specification Sort direction: 'asc' for ascending order, 'desc' for descending order. Defaults to 'desc'.
+         * @x-autobe-specification Sort direction: 'asc' for ascending order,
+         *   'desc' for descending order. Defaults to 'desc'.
      */
     order?: "asc" | "desc" | undefined;
   };
@@ -170,56 +211,64 @@ export namespace IRedditCloneGuestSession {
     /**
      * Unique identifier for the guest session.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from reddit_clone_guest_sessions.id. UUID primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_guest_sessions.id. UUID primary key.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Client IP address used during session creation for analytics and security.
      *
-     * @x-autobe-database-schema-property ip
-     * @x-autobe-specification Direct mapping from reddit_clone_guest_sessions.ip. Client IP address captured at session creation.
+         * @x-autobe-database-schema-property ip
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_guest_sessions.ip. Client IP address captured at
+         *   session creation.
      */
     ip: string & tags.Format<"ipv4">;
 
     /**
      * Current URL path the guest is accessing, used for session activity tracking.
      *
-     * @x-autobe-database-schema-property href
-     * @x-autobe-specification Direct mapping from reddit_clone_guest_sessions.href. Current URL path.
+         * @x-autobe-database-schema-property href
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_guest_sessions.href. Current URL path.
      */
     href: string & tags.Format<"uri">;
 
     /**
      * HTTP referrer header indicating the previous page URL that linked to this session.
      *
-     * @x-autobe-database-schema-property referrer
-     * @x-autobe-specification Direct mapping from reddit_clone_guest_sessions.referrer. HTTP referrer header.
+         * @x-autobe-database-schema-property referrer
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_guest_sessions.referrer. HTTP referrer header.
      */
     referrer: string & tags.Format<"uri">;
 
     /**
      * Timestamp when this guest session was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from reddit_clone_guest_sessions.created_at. Timestamp.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_guest_sessions.created_at. Timestamp.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when this guest session will expire and become invalid.
      *
-     * @x-autobe-database-schema-property expired_at
-     * @x-autobe-specification Direct mapping from reddit_clone_guest_sessions.expired_at. Timestamp.
+         * @x-autobe-database-schema-property expired_at
+         * @x-autobe-specification Direct mapping from
+         *   reddit_clone_guest_sessions.expired_at. Timestamp.
      */
     expired_at: string & tags.Format<"date-time">;
 
     /**
      * The guest account associated with this session, identified by device fingerprint.
      *
-     * @x-autobe-database-schema-property guest
-     * @x-autobe-specification Join via reddit_clone_guest_id FK to reddit_clone_guests.id. Returns IRedditCloneGuest.ISummary.
+         * @x-autobe-database-schema-property guest
+         * @x-autobe-specification Join via reddit_clone_guest_id FK to
+         *   reddit_clone_guests.id. Returns IRedditCloneGuest.ISummary.
      */
     guest: IRedditCloneGuest.ISummary;
   };

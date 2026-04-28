@@ -20,9 +20,11 @@ export class EcommercemallCustomerShipmentsConfirm_deliveryController {
    *
    * @param connection
    * @param shipmentId UUID of the shipment to confirm delivery for. The shipment must belong to an order owned by the authenticated customer and must be in 'shipped' state (not yet delivered).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Find the shipment by `shipmentId` where `deleted_at` is null. Verify the shipment exists — if not found, return 404 Not Found.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Find the shipment by `shipmentId` where
+     *   `deleted_at` is null. Verify the shipment exists — if not found, return
+     *   404 Not Found.
    *
    * Verify customer ownership by traversing: shipment → shipmentItems → orderItems → order → customer. The order's `e_commerce_mall_customer_id` must match the authenticated customer ID. If not authorized, return 403 Forbidden.
    *

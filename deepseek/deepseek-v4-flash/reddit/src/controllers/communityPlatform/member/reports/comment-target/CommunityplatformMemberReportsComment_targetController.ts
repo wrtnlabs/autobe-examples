@@ -18,9 +18,10 @@ export class CommunityplatformMemberReportsComment_targetController {
    *
    * @param connection
    * @param reportId The unique identifier (UUID) of the report whose comment target is being retrieved. Must correspond to an existing report record with target_type set to "comment".
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query community_platform_report_comment_targets by community_platform_report_id matching the {reportId} path parameter.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query community_platform_report_comment_targets
+     *   by community_platform_report_id matching the {reportId} path parameter.
    *
    * The unique constraint on community_platform_report_id guarantees at most one result per report. Join with community_platform_comments on community_platform_comment_id to include full comment data (content, author foreign key, vote_score, created_at, updated_at, deleted_at).
    *

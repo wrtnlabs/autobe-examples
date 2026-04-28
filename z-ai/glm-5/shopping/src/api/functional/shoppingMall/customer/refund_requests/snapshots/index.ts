@@ -161,7 +161,8 @@ export namespace index {
  * @param props.snapshotId The unique identifier of the refund request snapshot (UUID format)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Retrieve a single refund request snapshot by ID with authorization validation.
+ * @x-autobe-specification Retrieve a single refund request snapshot by ID with
+ *   authorization validation.
  *
  * 1. Parse path parameters: refundRequestId (UUID), snapshotId (UUID)
  *

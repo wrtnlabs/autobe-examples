@@ -10,88 +10,95 @@ export type IErpHrmMember = {
   /**
    * Unique identifier for the member account.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from erp_hrm_members.id. Primary key UUID.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from erp_hrm_members.id. Primary
+     *   key UUID.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Member's email address used for authentication and communication.
    *
-   * @x-autobe-database-schema-property email
-   * @x-autobe-specification Direct mapping from erp_hrm_members.email. Unique constraint enforced.
+     * @x-autobe-database-schema-property email
+     * @x-autobe-specification Direct mapping from erp_hrm_members.email. Unique
+     *   constraint enforced.
    */
   email: string & tags.Format<"email">;
 
   /**
    * Member's first name for profile display.
    *
-   * @x-autobe-database-schema-property first_name
-   * @x-autobe-specification Direct mapping from erp_hrm_members.first_name.
+     * @x-autobe-database-schema-property first_name
+     * @x-autobe-specification Direct mapping from erp_hrm_members.first_name.
    */
   firstName: string;
 
   /**
    * Member's last name for profile display.
    *
-   * @x-autobe-database-schema-property last_name
-   * @x-autobe-specification Direct mapping from erp_hrm_members.last_name.
+     * @x-autobe-database-schema-property last_name
+     * @x-autobe-specification Direct mapping from erp_hrm_members.last_name.
    */
   lastName: string;
 
   /**
    * Optional URL to member's profile avatar image.
    *
-   * @x-autobe-database-schema-property avatar_url
-   * @x-autobe-specification Direct mapping from erp_hrm_members.avatar_url. Nullable.
+     * @x-autobe-database-schema-property avatar_url
+     * @x-autobe-specification Direct mapping from erp_hrm_members.avatar_url.
+     *   Nullable.
    */
   avatarUrl: (string & tags.Format<"uri">) | null;
 
   /**
    * Member's preferred timezone for displaying dates and times.
    *
-   * @x-autobe-database-schema-property timezone
-   * @x-autobe-specification Direct mapping from erp_hrm_members.timezone. Nullable.
+     * @x-autobe-database-schema-property timezone
+     * @x-autobe-specification Direct mapping from erp_hrm_members.timezone.
+     *   Nullable.
    */
   timezone: string | null;
 
   /**
    * Member's preferred language locale for localized content.
    *
-   * @x-autobe-database-schema-property locale
-   * @x-autobe-specification Direct mapping from erp_hrm_members.locale. Nullable.
+     * @x-autobe-database-schema-property locale
+     * @x-autobe-specification Direct mapping from erp_hrm_members.locale.
+     *   Nullable.
    */
   locale: string | null;
 
   /**
    * Timestamp when the member's email was verified, null if not verified.
    *
-   * @x-autobe-database-schema-property email_verified_at
-   * @x-autobe-specification Direct mapping from erp_hrm_members.email_verified_at. Nullable timestamp.
+     * @x-autobe-database-schema-property email_verified_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_members.email_verified_at. Nullable timestamp.
    */
   emailVerifiedAt: (string & tags.Format<"date-time">) | null;
 
   /**
    * Timestamp when the member account was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from erp_hrm_members.created_at.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from erp_hrm_members.created_at.
    */
   createdAt: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the member account was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from erp_hrm_members.updated_at.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from erp_hrm_members.updated_at.
    */
   updatedAt: string & tags.Format<"date-time">;
 
   /**
    * Soft delete timestamp, null if account is active.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from erp_hrm_members.deleted_at. Nullable. Soft deletion marker.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from erp_hrm_members.deleted_at.
+     *   Nullable. Soft deletion marker.
    */
   deletedAt: (string & tags.Format<"date-time">) | null;
 };
@@ -103,16 +110,21 @@ export namespace IErpHrmMember {
     /**
      * Member's registered email address used for authentication.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping to erp_hrm_members.email. Used to lookup member record by unique email address. Must match existing registered email.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping to erp_hrm_members.email. Used
+         *   to lookup member record by unique email address. Must match
+         *   existing registered email.
      */
     email: string & tags.Format<"email">;
 
     /**
      * Member's plain-text password for authentication. Must be 8-100 characters long.
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification Maps to erp_hrm_members.password_hash via bcrypt verification. Plain-text password provided by user is hashed using bcrypt and compared against stored password_hash. Minimum 8 characters, maximum 100 characters.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification Maps to erp_hrm_members.password_hash via
+         *   bcrypt verification. Plain-text password provided by user is hashed
+         *   using bcrypt and compared against stored password_hash. Minimum 8
+         *   characters, maximum 100 characters.
      */
     password: string &
       tags.MinLength<8> &
@@ -127,77 +139,100 @@ export namespace IErpHrmMember {
     /**
      * Member's unique email address used for authentication and communication. Must be a valid email format and not already registered.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from erp_hrm_members.email column. Must be unique, valid email format. Validated for uniqueness against existing members.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from erp_hrm_members.email
+         *   column. Must be unique, valid email format. Validated for
+         *   uniqueness against existing members.
      */
     email: string & tags.Format<"email">;
 
     /**
      * Member's password for authentication. Must meet security requirements (minimum 8 characters with complexity). Sent as plain text, hashed server-side before storage.
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification Maps to erp_hrm_members.password_hash column via bcrypt transformation. DTO receives plain text password (8+ characters, complexity requirements), backend hashes using bcrypt with salt rounds before storage. Never stores plain text.
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification Maps to erp_hrm_members.password_hash column
+         *   via bcrypt transformation. DTO receives plain text password (8+
+         *   characters, complexity requirements), backend hashes using bcrypt
+         *   with salt rounds before storage. Never stores plain text.
      */
     password: string & tags.Format<"password">;
 
     /**
      * Member's first name for profile display.
      *
-     * @x-autobe-database-schema-property first_name
-     * @x-autobe-specification Direct mapping from erp_hrm_members.first_name column. Required profile field.
+         * @x-autobe-database-schema-property first_name
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_members.first_name column. Required profile field.
      */
     firstName: string;
 
     /**
      * Member's last name for profile display.
      *
-     * @x-autobe-database-schema-property last_name
-     * @x-autobe-specification Direct mapping from erp_hrm_members.last_name column. Required profile field.
+         * @x-autobe-database-schema-property last_name
+         * @x-autobe-specification Direct mapping from erp_hrm_members.last_name
+         *   column. Required profile field.
      */
     lastName: string;
 
     /**
      * Optional URL to member's profile avatar image. Null if no avatar uploaded.
      *
-     * @x-autobe-database-schema-property avatar_url
-     * @x-autobe-specification Direct mapping from erp_hrm_members.avatar_url column. Nullable. URI format validation. Can be null if member has not uploaded avatar.
+         * @x-autobe-database-schema-property avatar_url
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_members.avatar_url column. Nullable. URI format validation.
+         *   Can be null if member has not uploaded avatar.
      */
     avatarUrl: (string & tags.Format<"uri">) | null;
 
     /**
      * Member's preferred timezone for displaying dates and times (e.g., 'Asia/Seoul'). If not provided, defaults to UTC or organization timezone.
      *
-     * @x-autobe-database-schema-property timezone
-     * @x-autobe-specification Direct mapping from erp_hrm_members.timezone column. Nullable. IANA timezone string (e.g., 'Asia/Seoul', 'America/New_York'). Used for localized date/time display.
+         * @x-autobe-database-schema-property timezone
+         * @x-autobe-specification Direct mapping from erp_hrm_members.timezone
+         *   column. Nullable. IANA timezone string (e.g., 'Asia/Seoul',
+         *   'America/New_York'). Used for localized date/time display.
      */
     timezone: string | null;
 
     /**
      * Member's preferred language locale (e.g., 'en-US', 'ko-KR') for localized content and UI language selection.
      *
-     * @x-autobe-database-schema-property locale
-     * @x-autobe-specification Direct mapping from erp_hrm_members.locale column. Nullable. Language locale string (e.g., 'en-US', 'ko-KR') following IETF BCP 47 language tag format. Used for localized content.
+         * @x-autobe-database-schema-property locale
+         * @x-autobe-specification Direct mapping from erp_hrm_members.locale
+         *   column. Nullable. Language locale string (e.g., 'en-US', 'ko-KR')
+         *   following IETF BCP 47 language tag format. Used for localized
+         *   content.
      */
     locale: string | null;
 
     /**
      * URL of the page where registration was initiated. Captured for analytics to track registration source.
      *
-     * @x-autobe-specification Session context metadata captured from HTTP request headers/referrer. Not stored in erp_hrm_members table. Used for analytics/tracking registration source. Format: full URL string.
+         * @x-autobe-specification Session context metadata captured from HTTP
+         *   request headers/referrer. Not stored in erp_hrm_members table. Used
+         *   for analytics/tracking registration source. Format: full URL
+         *   string.
      */
     href: string & tags.Format<"uri">;
 
     /**
      * Referrer URL indicating the source page that linked to the registration page.
      *
-     * @x-autobe-specification Session context metadata captured from HTTP Referer header. Not stored in erp_hrm_members table. Used for analytics/tracking. Format: full URL string.
+         * @x-autobe-specification Session context metadata captured from HTTP
+         *   Referer header. Not stored in erp_hrm_members table. Used for
+         *   analytics/tracking. Format: full URL string.
      */
     referrer: string & tags.Format<"uri">;
 
     /**
      * IP address of the registering client. Optional because in SSR contexts the client cannot know its own IP. Server uses fallback if not provided.
      *
-     * @x-autobe-specification Session context metadata captured from HTTP request. Not stored in erp_hrm_members table. Optional field (nullable) because in SSR scenarios client cannot determine its own IP - server falls back to connection.remoteAddress. Format: IPv4 address.
+         * @x-autobe-specification Session context metadata captured from HTTP
+         *   request. Not stored in erp_hrm_members table. Optional field
+         *   (nullable) because in SSR scenarios client cannot determine its own
+         *   IP - server falls back to connection.remoteAddress. Format: IPv4
+         *   address.
      */
     ip: (string & tags.Format<"ipv4">) | null;
   };
@@ -209,7 +244,12 @@ export namespace IErpHrmMember {
     /**
      * Refresh token used to obtain new access token without re-entering credentials. Must be a valid, non-expired token from an existing session.
      *
-     * @x-autobe-specification The refresh token provided by the client. Must be a valid, non-expired token from erp_hrm_member_sessions table. Server validates: token exists AND expired_at > current timestamp. If valid, generates new access/refresh token pair and updates session. If invalid/expired, returns 401 authentication error requiring re-login.
+         * @x-autobe-specification The refresh token provided by the client.
+         *   Must be a valid, non-expired token from erp_hrm_member_sessions
+         *   table. Server validates: token exists AND expired_at > current
+         *   timestamp. If valid, generates new access/refresh token pair and
+         *   updates session. If invalid/expired, returns 401 authentication
+         *   error requiring re-login.
      */
     refreshToken: string;
   };
@@ -221,95 +261,113 @@ export namespace IErpHrmMember {
     /**
      * Unique identifier for the member account. UUID generated on registration.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from erp_hrm_members.id. UUID primary key generated on record creation.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from erp_hrm_members.id. UUID
+         *   primary key generated on record creation.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Member's registered email address used for login and communication.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from erp_hrm_members.email. Unique email address used for authentication.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from erp_hrm_members.email.
+         *   Unique email address used for authentication.
      */
     email: string & tags.Format<"email">;
 
     /**
      * Member's first name for profile display.
      *
-     * @x-autobe-database-schema-property first_name
-     * @x-autobe-specification Direct mapping from erp_hrm_members.first_name. Member's first name for display.
+         * @x-autobe-database-schema-property first_name
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_members.first_name. Member's first name for display.
      */
     firstName: string;
 
     /**
      * Member's last name for profile display.
      *
-     * @x-autobe-database-schema-property last_name
-     * @x-autobe-specification Direct mapping from erp_hrm_members.last_name. Member's last name for display.
+         * @x-autobe-database-schema-property last_name
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_members.last_name. Member's last name for display.
      */
     lastName: string;
 
     /**
      * Optional URL to member's profile avatar image. Null if no avatar uploaded.
      *
-     * @x-autobe-database-schema-property avatar_url
-     * @x-autobe-specification Direct mapping from erp_hrm_members.avatar_url. Nullable URL to profile avatar image stored in file storage.
+         * @x-autobe-database-schema-property avatar_url
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_members.avatar_url. Nullable URL to profile avatar image
+         *   stored in file storage.
      */
     avatarUrl: (string & tags.Format<"url">) | null;
 
     /**
      * Member's preferred timezone for displaying dates and times. Null if using default.
      *
-     * @x-autobe-database-schema-property timezone
-     * @x-autobe-specification Direct mapping from erp_hrm_members.timezone. IANA timezone identifier (e.g., 'America/New_York', 'Asia/Seoul'). Used for displaying dates in member's local time.
+         * @x-autobe-database-schema-property timezone
+         * @x-autobe-specification Direct mapping from erp_hrm_members.timezone.
+         *   IANA timezone identifier (e.g., 'America/New_York', 'Asia/Seoul').
+         *   Used for displaying dates in member's local time.
      */
     timezone: string | null;
 
     /**
      * Member's preferred language locale for localized content. Null if using default.
      *
-     * @x-autobe-database-schema-property locale
-     * @x-autobe-specification Direct mapping from erp_hrm_members.locale. IETF BCP 47 language tag (e.g., 'en-US', 'ko-KR'). Used for localizing content.
+         * @x-autobe-database-schema-property locale
+         * @x-autobe-specification Direct mapping from erp_hrm_members.locale.
+         *   IETF BCP 47 language tag (e.g., 'en-US', 'ko-KR'). Used for
+         *   localizing content.
      */
     locale: string | null;
 
     /**
      * Timestamp when email address was verified. Null if email verification is pending.
      *
-     * @x-autobe-database-schema-property email_verified_at
-     * @x-autobe-specification Direct mapping from erp_hrm_members.email_verified_at. Timestamp when email was verified via verification token. Null if not yet verified.
+         * @x-autobe-database-schema-property email_verified_at
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_members.email_verified_at. Timestamp when email was
+         *   verified via verification token. Null if not yet verified.
      */
     emailVerifiedAt: (string & tags.Format<"date-time">) | null;
 
     /**
      * Timestamp when the member account was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from erp_hrm_members.created_at. Timestamp when member account was created.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_members.created_at. Timestamp when member account was
+         *   created.
      */
     createdAt: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when the member profile was last updated.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from erp_hrm_members.updated_at. Timestamp of last profile update.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_members.updated_at. Timestamp of last profile update.
      */
     updatedAt: string & tags.Format<"date-time">;
 
     /**
      * Soft deletion timestamp. Null if account is active, set when account is deleted.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from erp_hrm_members.deleted_at. Soft delete timestamp. Null for active accounts, set when account is deleted.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_members.deleted_at. Soft delete timestamp. Null for active
+         *   accounts, set when account is deleted.
      */
     deletedAt: (string & tags.Format<"date-time">) | null;
 
     /**
      * Authorization token.
      *
-     * @x-autobe-specification Authorization token comes from the session table.
+         * @x-autobe-specification Authorization token comes from the session
+         *   table.
      */
     token: IAuthorizationToken;
   };
@@ -321,40 +379,52 @@ export namespace IErpHrmMember {
     /**
      * The member's first name.
      *
-     * @x-autobe-database-schema-property first_name
-     * @x-autobe-specification Direct mapping from erp_hrm_members.first_name. Optional field - if provided, updates the member's first name.
+         * @x-autobe-database-schema-property first_name
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_members.first_name. Optional field - if provided, updates
+         *   the member's first name.
      */
     firstName?: string | undefined;
 
     /**
      * The member's last name.
      *
-     * @x-autobe-database-schema-property last_name
-     * @x-autobe-specification Direct mapping from erp_hrm_members.last_name. Optional field - if provided, updates the member's last name.
+         * @x-autobe-database-schema-property last_name
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_members.last_name. Optional field - if provided, updates
+         *   the member's last name.
      */
     lastName?: string | undefined;
 
     /**
      * URL of the member's profile avatar image.
      *
-     * @x-autobe-database-schema-property avatar_url
-     * @x-autobe-specification Direct mapping from erp_hrm_members.avatar_url. Optional field - if provided, updates the member's avatar image URL. Must be a valid URL.
+         * @x-autobe-database-schema-property avatar_url
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_members.avatar_url. Optional field - if provided, updates
+         *   the member's avatar image URL. Must be a valid URL.
      */
     avatarUrl?: (string & tags.Format<"url">) | null | undefined;
 
     /**
      * The member's preferred timezone for displaying dates and times.
      *
-     * @x-autobe-database-schema-property timezone
-     * @x-autobe-specification Direct mapping from erp_hrm_members.timezone. Optional field - if provided, updates the member's preferred timezone. Must be a valid IANA timezone identifier (e.g., 'Asia/Seoul', 'America/New_York').
+         * @x-autobe-database-schema-property timezone
+         * @x-autobe-specification Direct mapping from erp_hrm_members.timezone.
+         *   Optional field - if provided, updates the member's preferred
+         *   timezone. Must be a valid IANA timezone identifier (e.g.,
+         *   'Asia/Seoul', 'America/New_York').
      */
     timezone?: string | null | undefined;
 
     /**
      * The member's preferred locale for language and regional formatting.
      *
-     * @x-autobe-database-schema-property locale
-     * @x-autobe-specification Direct mapping from erp_hrm_members.locale. Optional field - if provided, updates the member's preferred locale. Must be a valid BCP 47 language tag (e.g., 'en-US', 'ko-KR').
+         * @x-autobe-database-schema-property locale
+         * @x-autobe-specification Direct mapping from erp_hrm_members.locale.
+         *   Optional field - if provided, updates the member's preferred
+         *   locale. Must be a valid BCP 47 language tag (e.g., 'en-US',
+         *   'ko-KR').
      */
     locale?: string | null | undefined;
   };
@@ -366,7 +436,11 @@ export namespace IErpHrmMember {
     /**
      * URI reference to the avatar image in storage (JPEG, PNG, or GIF format). Set to null to remove the current avatar and revert to default placeholder.
      *
-     * @x-autobe-specification Maps to erp_hrm_members.avatar_url column. When non-null URI provided, update the avatar_url field with the image URI referencing storage (JPEG/PNG/GIF). When null provided, set avatar_url to null to remove avatar. URI format must be valid and point to previously uploaded image file.
+         * @x-autobe-specification Maps to erp_hrm_members.avatar_url column.
+         *   When non-null URI provided, update the avatar_url field with the
+         *   image URI referencing storage (JPEG/PNG/GIF). When null provided,
+         *   set avatar_url to null to remove avatar. URI format must be valid
+         *   and point to previously uploaded image file.
      */
     avatarUrl: string | null;
   };
@@ -378,48 +452,54 @@ export namespace IErpHrmMember {
     /**
      * Unique identifier for the member.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from erp_hrm_members.id. Primary key UUID.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from erp_hrm_members.id.
+         *   Primary key UUID.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Member's email address used for login and communication.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from erp_hrm_members.email. Unique email address used for authentication.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from erp_hrm_members.email.
+         *   Unique email address used for authentication.
      */
     email: string;
 
     /**
      * Member's first name for profile display.
      *
-     * @x-autobe-database-schema-property first_name
-     * @x-autobe-specification Direct mapping from erp_hrm_members.first_name. Member's first name for display.
+         * @x-autobe-database-schema-property first_name
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_members.first_name. Member's first name for display.
      */
     firstName: string;
 
     /**
      * Member's last name for profile display.
      *
-     * @x-autobe-database-schema-property last_name
-     * @x-autobe-specification Direct mapping from erp_hrm_members.last_name. Member's last name for display.
+         * @x-autobe-database-schema-property last_name
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_members.last_name. Member's last name for display.
      */
     lastName: string;
 
     /**
      * Optional URL to the member's profile avatar image.
      *
-     * @x-autobe-database-schema-property avatar_url
-     * @x-autobe-specification Direct mapping from erp_hrm_members.avatar_url. Nullable URL to profile avatar image.
+         * @x-autobe-database-schema-property avatar_url
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_members.avatar_url. Nullable URL to profile avatar image.
      */
     avatarUrl: string | null;
 
     /**
      * Timestamp when the member account was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from erp_hrm_members.created_at. Timestamp when account was created.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_members.created_at. Timestamp when account was created.
      */
     createdAt: string;
   };

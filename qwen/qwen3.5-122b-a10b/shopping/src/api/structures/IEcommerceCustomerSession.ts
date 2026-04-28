@@ -26,8 +26,9 @@ export type IEcommerceCustomerSession = {
    *
    * This UUID serves as the primary key for the session and is used to retrieve the specific session when viewing session details or managing sessions.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_customer_sessions.id. UUID format primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_customer_sessions.id. UUID format primary key.
    */
   id: string & tags.Format<"uuid">;
 
@@ -36,8 +37,9 @@ export type IEcommerceCustomerSession = {
    *
    * This IP address is captured when the customer logs in and is used for security auditing and detecting suspicious login patterns from unusual locations.
    *
-   * @x-autobe-database-schema-property ip
-   * @x-autobe-specification Direct mapping from ecommerce_customer_sessions.ip. IPv4 format.
+     * @x-autobe-database-schema-property ip
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_customer_sessions.ip. IPv4 format.
    */
   ip: string & tags.Format<"ipv4">;
 
@@ -46,8 +48,9 @@ export type IEcommerceCustomerSession = {
    *
    * This timestamp is automatically set when the customer successfully logs in. It is used to determine session age and enforce maximum session duration policies.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_customer_sessions.created_at. UTC timestamp with timezone.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_customer_sessions.created_at. UTC timestamp with timezone.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -56,8 +59,9 @@ export type IEcommerceCustomerSession = {
    *
    * Sessions are considered invalid after this time and the customer must re-authenticate. The expiration time is set at session creation based on the configured session timeout duration.
    *
-   * @x-autobe-database-schema-property expired_at
-   * @x-autobe-specification Direct mapping from ecommerce_customer_sessions.expired_at. UTC timestamp with timezone.
+     * @x-autobe-database-schema-property expired_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_customer_sessions.expired_at. UTC timestamp with timezone.
    */
   expired_at: string & tags.Format<"date-time">;
 
@@ -66,8 +70,9 @@ export type IEcommerceCustomerSession = {
    *
    * This optional field tracks the page or endpoint from which the login originated. It may be null if the client does not provide this information, such as in server-side rendering scenarios.
    *
-   * @x-autobe-database-schema-property href
-   * @x-autobe-specification Direct mapping from ecommerce_customer_sessions.href. Nullable URI format.
+     * @x-autobe-database-schema-property href
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_customer_sessions.href. Nullable URI format.
    */
   href?: (string & tags.Format<"uri">) | null | undefined;
 
@@ -76,8 +81,9 @@ export type IEcommerceCustomerSession = {
    *
    * This optional field tracks the referring page that led to the login attempt. It may be null if the client does not provide this information or if the referrer header is not sent.
    *
-   * @x-autobe-database-schema-property referrer
-   * @x-autobe-specification Direct mapping from ecommerce_customer_sessions.referrer. Nullable URI format.
+     * @x-autobe-database-schema-property referrer
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_customer_sessions.referrer. Nullable URI format.
    */
   referrer?: (string & tags.Format<"uri">) | null | undefined;
 
@@ -86,8 +92,10 @@ export type IEcommerceCustomerSession = {
    *
    * This reference provides context about which customer authenticated to create this session. The customer summary includes essential profile information without exposing sensitive data like email or password.
    *
-   * @x-autobe-database-schema-property customer
-   * @x-autobe-specification Relation mapping from ecommerce_customer_sessions.ecommerce_customer_id to ecommerce_customers.id. Returns IEcommerceCustomer.ISummary via JOIN.
+     * @x-autobe-database-schema-property customer
+     * @x-autobe-specification Relation mapping from
+     *   ecommerce_customer_sessions.ecommerce_customer_id to
+     *   ecommerce_customers.id. Returns IEcommerceCustomer.ISummary via JOIN.
    */
   customer: IEcommerceCustomer.ISummary;
 };
@@ -115,8 +123,9 @@ export namespace IEcommerceCustomerSession {
      *
      * This UUID serves as the primary key for the session and is used to reference the session in API operations such as session listing and session termination.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_customer_sessions.id. Primary key, UUID format.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_customer_sessions.id. Primary key, UUID format.
      */
     id: string & tags.Format<"uuid">;
 
@@ -125,8 +134,9 @@ export namespace IEcommerceCustomerSession {
      *
      * This field records the IPv4 address from which the customer logged in, enabling security auditing and detection of suspicious login patterns from unfamiliar locations.
      *
-     * @x-autobe-database-schema-property ip
-     * @x-autobe-specification Direct mapping from ecommerce_customer_sessions.ip. IPv4 format.
+         * @x-autobe-database-schema-property ip
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_customer_sessions.ip. IPv4 format.
      */
     ip: string & tags.Format<"ipv4">;
 
@@ -135,8 +145,9 @@ export namespace IEcommerceCustomerSession {
      *
      * This optional field tracks the page or endpoint from which the login originated, providing additional context for session identification and security auditing.
      *
-     * @x-autobe-database-schema-property href
-     * @x-autobe-specification Direct mapping from ecommerce_customer_sessions.href. Nullable URI format.
+         * @x-autobe-database-schema-property href
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_customer_sessions.href. Nullable URI format.
      */
     href: (string & tags.Format<"uri">) | null;
 
@@ -145,8 +156,9 @@ export namespace IEcommerceCustomerSession {
      *
      * This optional field tracks the referring page that led to the login attempt, providing additional context for session identification and security auditing.
      *
-     * @x-autobe-database-schema-property referrer
-     * @x-autobe-specification Direct mapping from ecommerce_customer_sessions.referrer. Nullable URI format.
+         * @x-autobe-database-schema-property referrer
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_customer_sessions.referrer. Nullable URI format.
      */
     referrer: (string & tags.Format<"uri">) | null;
 
@@ -155,8 +167,9 @@ export namespace IEcommerceCustomerSession {
      *
      * This field indicates when the session was established and is used to determine session age and enforce maximum session duration policies.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from ecommerce_customer_sessions.created_at. Timestamp with timezone.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_customer_sessions.created_at. Timestamp with timezone.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -165,8 +178,9 @@ export namespace IEcommerceCustomerSession {
      *
      * This field shows when the session will become invalid. Sessions are considered invalid after this time, and customers can use this timestamp to identify stale sessions that may warrant logout.
      *
-     * @x-autobe-database-schema-property expired_at
-     * @x-autobe-specification Direct mapping from ecommerce_customer_sessions.expired_at. Timestamp with timezone.
+         * @x-autobe-database-schema-property expired_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_customer_sessions.expired_at. Timestamp with timezone.
      */
     expired_at: string & tags.Format<"date-time">;
   };
@@ -202,7 +216,9 @@ export namespace IEcommerceCustomerSession {
      * - Minimum value: 1
      * - Must be a positive integer
      *
-     * @x-autobe-specification Pagination page number. 1-indexed. Defaults to 1 if not provided. Used with limit for offset-based pagination (offset = (page - 1) * limit).
+         * @x-autobe-specification Pagination page number. 1-indexed. Defaults
+         *   to 1 if not provided. Used with limit for offset-based pagination
+         *   (offset = (page - 1) * limit).
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -221,7 +237,9 @@ export namespace IEcommerceCustomerSession {
      *
      * Combine with the `page` parameter to retrieve specific pages of results. The actual number of records returned may be less than `limit` on the final page or when total records are fewer than the limit.
      *
-     * @x-autobe-specification Pagination page size. Maximum 100 records per page. Used with page for offset-based pagination. Backend enforces max limit of 100 to prevent excessive data retrieval.
+         * @x-autobe-specification Pagination page size. Maximum 100 records per
+         *   page. Used with page for offset-based pagination. Backend enforces
+         *   max limit of 100 to prevent excessive data retrieval.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -246,7 +264,10 @@ export namespace IEcommerceCustomerSession {
      * - Sessions created today: `{ "gte": "2024-01-15T00:00:00Z", "lte": "2024-01-15T23:59:59Z" }`
      * - Sessions created after a specific date: `{ "gte": "2024-01-01T00:00:00Z" }`
      *
-     * @x-autobe-specification Date range filter object for session creation timestamp. Computed filter with gte (greater than or equal) and lte (less than or equal) operators. Both properties optional. Backend applies these filters to the created_at column.
+         * @x-autobe-specification Date range filter object for session creation
+         *   timestamp. Computed filter with gte (greater than or equal) and lte
+         *   (less than or equal) operators. Both properties optional. Backend
+         *   applies these filters to the created_at column.
      */
     created_at?:
       | {
@@ -274,7 +295,10 @@ export namespace IEcommerceCustomerSession {
      * - Find sessions expiring soon: `{ "gte": "2024-01-15T00:00:00Z", "lte": "2024-01-20T23:59:59Z" }`
      * - Find already expired sessions: `{ "lte": "2024-01-15T00:00:00Z" }`
      *
-     * @x-autobe-specification Date range filter object for session expiration timestamp. Computed filter with gte (greater than or equal) and lte (less than or equal) operators. Both properties optional. Backend applies these filters to the expired_at column.
+         * @x-autobe-specification Date range filter object for session
+         *   expiration timestamp. Computed filter with gte (greater than or
+         *   equal) and lte (less than or equal) operators. Both properties
+         *   optional. Backend applies these filters to the expired_at column.
      */
     expired_at?:
       | {
@@ -304,8 +328,10 @@ export namespace IEcommerceCustomerSession {
      *
      * IPv4 address format (e.g., "192.168.1.100" or "203.0.113.42").
      *
-     * @x-autobe-database-schema-property ip
-     * @x-autobe-specification IP address pattern filter. Partial match supported. Used to find sessions from specific IP addresses or IP ranges. Matches against the ip column in database.
+         * @x-autobe-database-schema-property ip
+         * @x-autobe-specification IP address pattern filter. Partial match
+         *   supported. Used to find sessions from specific IP addresses or IP
+         *   ranges. Matches against the ip column in database.
      */
     ip?: string | undefined;
   };

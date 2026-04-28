@@ -10,40 +10,50 @@ export type ICommunityPlatformGuest = {
   /**
    * Unique identifier of the guest identity record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from community_platform_guests.id. Serialize the guest record UUID exactly as stored.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from community_platform_guests.id.
+     *   Serialize the guest record UUID exactly as stored.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Stable anonymous key used to recognize the same guest across browsing sessions.
    *
-   * @x-autobe-database-schema-property guest_key
-   * @x-autobe-specification Direct mapping from community_platform_guests.guest_key. Return the stable anonymous guest key used to recognize the same guest across guest sessions.
+     * @x-autobe-database-schema-property guest_key
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_guests.guest_key. Return the stable anonymous guest
+     *   key used to recognize the same guest across guest sessions.
    */
   guest_key: string;
 
   /**
    * Timestamp when the guest identity record was first created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from community_platform_guests.created_at. Serialize the timestamp as a string in date-time format.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_guests.created_at. Serialize the timestamp as a
+     *   string in date-time format.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the guest identity record was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from community_platform_guests.updated_at. Serialize the timestamp as a string in date-time format.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_guests.updated_at. Serialize the timestamp as a
+     *   string in date-time format.
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * Soft-deletion timestamp for the guest identity, or null when the record is still active.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from community_platform_guests.deleted_at. Serialize as string(date-time) when the guest identity has been soft-deleted or retired, otherwise null.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_guests.deleted_at. Serialize as string(date-time)
+     *   when the guest identity has been soft-deleted or retired, otherwise
+     *   null.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -55,21 +65,34 @@ export namespace ICommunityPlatformGuest {
     /**
      * Current page URI from which the guest join request is made.
      *
-     * @x-autobe-specification Client-supplied current page URI used as session creation context for the guest join flow. This value is not stored on community_platform_guests; it is consumed when creating the related guest session record so downstream logic can capture where the guest initiated authorization.
+         * @x-autobe-specification Client-supplied current page URI used as
+         *   session creation context for the guest join flow. This value is not
+         *   stored on community_platform_guests; it is consumed when creating
+         *   the related guest session record so downstream logic can capture
+         *   where the guest initiated authorization.
      */
     href: string & tags.Format<"uri">;
 
     /**
      * Referring page URI that led to the guest join request.
      *
-     * @x-autobe-specification Client-supplied referrer URI used as session creation context for the guest join flow. This value is not stored on community_platform_guests; it is consumed when creating the related guest session record so the service can capture the referring location for the new guest session.
+         * @x-autobe-specification Client-supplied referrer URI used as session
+         *   creation context for the guest join flow. This value is not stored
+         *   on community_platform_guests; it is consumed when creating the
+         *   related guest session record so the service can capture the
+         *   referring location for the new guest session.
      */
     referrer: string & tags.Format<"uri">;
 
     /**
      * Optional client IP address for the guest session establishment context.
      *
-     * @x-autobe-specification Optional client-supplied IPv4 address used as guest session context during join. This value is not stored on community_platform_guests. When provided, the service may persist it in the related guest session record; when omitted, especially in SSR environments, the server may derive the remote address from request metadata instead.
+         * @x-autobe-specification Optional client-supplied IPv4 address used as
+         *   guest session context during join. This value is not stored on
+         *   community_platform_guests. When provided, the service may persist
+         *   it in the related guest session record; when omitted, especially in
+         *   SSR environments, the server may derive the remote address from
+         *   request metadata instead.
      */
     ip?: (string & tags.Format<"ipv4">) | undefined;
   };
@@ -81,40 +104,52 @@ export namespace ICommunityPlatformGuest {
     /**
      * Unique identifier of the guest identity record.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from community_platform_guests.id. This is the UUID primary key of the guest actor record selected from the guest table.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_guests.id. This is the UUID primary key of the
+         *   guest actor record selected from the guest table.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Stable anonymous key used to recognize the same guest identity across browsing sessions.
      *
-     * @x-autobe-database-schema-property guest_key
-     * @x-autobe-specification Direct mapping from community_platform_guests.guest_key. This value is the stable anonymous identifier used to recognize the same guest across guest sessions and remains unique within the guest table.
+         * @x-autobe-database-schema-property guest_key
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_guests.guest_key. This value is the stable
+         *   anonymous identifier used to recognize the same guest across guest
+         *   sessions and remains unique within the guest table.
      */
     guest_key: string;
 
     /**
      * Timestamp when the guest identity record was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from community_platform_guests.created_at. Return the timestamp when the guest identity record was first created.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_guests.created_at. Return the timestamp when the
+         *   guest identity record was first created.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when the guest identity record was last updated.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from community_platform_guests.updated_at. Return the timestamp of the most recent update applied to the guest identity record.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_guests.updated_at. Return the timestamp of the
+         *   most recent update applied to the guest identity record.
      */
     updated_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when the guest identity was retired or soft-deleted, or null if it is still active.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from community_platform_guests.deleted_at. Return the guest retirement timestamp when the record has been soft-deleted; otherwise return null for an active guest identity.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_guests.deleted_at. Return the guest retirement
+         *   timestamp when the record has been soft-deleted; otherwise return
+         *   null for an active guest identity.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };
@@ -126,28 +161,47 @@ export namespace ICommunityPlatformGuest {
     /**
      * Refresh credential used to renew the current anonymous guest authorization session.
      *
-     * @x-autobe-specification Opaque refresh credential supplied by the client. Validate and decode or resolve this value to identify the existing guest session in `community_platform_guest_sessions` and its parent guest in `community_platform_guests`. Do not treat it as a guest table column, and do not accept separate guest or session IDs alongside it.
+         * @x-autobe-specification Opaque refresh credential supplied by the
+         *   client. Validate and decode or resolve this value to identify the
+         *   existing guest session in `community_platform_guest_sessions` and
+         *   its parent guest in `community_platform_guests`. Do not treat it as
+         *   a guest table column, and do not accept separate guest or session
+         *   IDs alongside it.
      */
     refresh: boolean;
 
     /**
      * Current page URI from which the guest requests token renewal.
      *
-     * @x-autobe-specification Current client page or resource URI at the time of the refresh request. Use this request-supplied context for refresh-time auditing, continuity tracking, or security analysis within the guest session handling logic. This value is not a column of `community_platform_guests`; if persisted, it belongs to guest session context handling.
+         * @x-autobe-specification Current client page or resource URI at the
+         *   time of the refresh request. Use this request-supplied context for
+         *   refresh-time auditing, continuity tracking, or security analysis
+         *   within the guest session handling logic. This value is not a column
+         *   of `community_platform_guests`; if persisted, it belongs to guest
+         *   session context handling.
      */
     href: string & tags.Format<"uri">;
 
     /**
      * Referring page URI that led to the guest token refresh request.
      *
-     * @x-autobe-specification Referring URI associated with the refresh request. Use this request-supplied context for provenance checks, audit logging, or session-context updates during guest token renewal. This value is not a column of `community_platform_guests`; if persisted, it belongs to guest session context handling.
+         * @x-autobe-specification Referring URI associated with the refresh
+         *   request. Use this request-supplied context for provenance checks,
+         *   audit logging, or session-context updates during guest token
+         *   renewal. This value is not a column of `community_platform_guests`;
+         *   if persisted, it belongs to guest session context handling.
      */
     referrer: string & tags.Format<"uri">;
 
     /**
      * Optional client IPv4 address for the guest refresh request.
      *
-     * @x-autobe-specification Optional client IPv4 address supplied with the refresh request. If present, use it as session-context metadata for guest refresh validation or audit updates; if absent, the server may derive the effective client IP from the transport context. This value is not stored on `community_platform_guests` itself and belongs only to request/session context.
+         * @x-autobe-specification Optional client IPv4 address supplied with
+         *   the refresh request. If present, use it as session-context metadata
+         *   for guest refresh validation or audit updates; if absent, the
+         *   server may derive the effective client IP from the transport
+         *   context. This value is not stored on `community_platform_guests`
+         *   itself and belongs only to request/session context.
      */
     ip?: (string & tags.Format<"ipv4">) | undefined;
   };
@@ -159,47 +213,59 @@ export namespace ICommunityPlatformGuest {
     /**
      * Unique identifier of the guest identity associated with the current anonymous authorization context.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from community_platform_guests.id. Return the UUID of the active guest actor associated with the issued or refreshed guest session.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_guests.id. Return the UUID of the active guest
+         *   actor associated with the issued or refreshed guest session.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Stable anonymous key used to recognize the same guest across browsing sessions.
      *
-     * @x-autobe-database-schema-property guest_key
-     * @x-autobe-specification Direct mapping from community_platform_guests.guest_key. Return the stable anonymous guest key used to recognize the same guest across guest sessions.
+         * @x-autobe-database-schema-property guest_key
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_guests.guest_key. Return the stable anonymous
+         *   guest key used to recognize the same guest across guest sessions.
      */
     guest_key: string;
 
     /**
      * Timestamp when the guest identity record was first created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from community_platform_guests.created_at. Serialize the timestamp as a string in date-time format.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_guests.created_at. Serialize the timestamp as a
+         *   string in date-time format.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when the guest identity record was last updated.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from community_platform_guests.updated_at. Serialize the timestamp as a string in date-time format.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_guests.updated_at. Serialize the timestamp as a
+         *   string in date-time format.
      */
     updated_at: string & tags.Format<"date-time">;
 
     /**
      * Soft-deletion timestamp for the guest identity, or null when the record is still active.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from community_platform_guests.deleted_at. Serialize as string(date-time) when the guest identity has been soft-deleted or retired, otherwise null.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_guests.deleted_at. Serialize as
+         *   string(date-time) when the guest identity has been soft-deleted or
+         *   retired, otherwise null.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
 
     /**
      * Authorization token.
      *
-     * @x-autobe-specification Authorization token comes from the session table.
+         * @x-autobe-specification Authorization token comes from the session
+         *   table.
      */
     token: IAuthorizationToken;
   };
@@ -211,14 +277,20 @@ export namespace ICommunityPlatformGuest {
     /**
      * Page number of the guest list to retrieve.
      *
-     * @x-autobe-specification Pagination control from the request body. Use as the 1-indexed page number when slicing query results over community_platform_guests. This property is not stored in the database.
+         * @x-autobe-specification Pagination control from the request body. Use
+         *   as the 1-indexed page number when slicing query results over
+         *   community_platform_guests. This property is not stored in the
+         *   database.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of guest records to return in one page.
      *
-     * @x-autobe-specification Pagination control from the request body. Use as the maximum number of guest records returned per page, subject to service-side bounds validation. This property is not stored in the database.
+         * @x-autobe-specification Pagination control from the request body. Use
+         *   as the maximum number of guest records returned per page, subject
+         *   to service-side bounds validation. This property is not stored in
+         *   the database.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -227,39 +299,53 @@ export namespace ICommunityPlatformGuest {
     /**
      * Sorting option that determines the order of guest records in the result set.
      *
-     * @x-autobe-specification Sorting directive from the request body. Interpret this value against a service-defined allowlist of sortable community_platform_guests fields, then apply deterministic ordering with fallback to created_at DESC and id as a stable tie-breaker. This property is not stored in the database.
+         * @x-autobe-specification Sorting directive from the request body.
+         *   Interpret this value against a service-defined allowlist of
+         *   sortable community_platform_guests fields, then apply deterministic
+         *   ordering with fallback to created_at DESC and id as a stable
+         *   tie-breaker. This property is not stored in the database.
      */
     sort?: string | undefined;
 
     /**
      * Stable anonymous guest identifier used to narrow results to matching guest records.
      *
-     * @x-autobe-database-schema-property guest_key
-     * @x-autobe-specification Filter value mapped to community_platform_guests.guest_key. Use for exact matching or supported partial matching when browsing guest identity records.
+         * @x-autobe-database-schema-property guest_key
+         * @x-autobe-specification Filter value mapped to
+         *   community_platform_guests.guest_key. Use for exact matching or
+         *   supported partial matching when browsing guest identity records.
      */
     guest_key?: string | undefined;
 
     /**
      * Creation timestamp filter for guest identity records.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Filter value mapped to community_platform_guests.created_at. Use as a time-based search criterion when restricting guest records by creation timestamp.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Filter value mapped to
+         *   community_platform_guests.created_at. Use as a time-based search
+         *   criterion when restricting guest records by creation timestamp.
      */
     created_at?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Last-updated timestamp filter for guest identity records.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Filter value mapped to community_platform_guests.updated_at. Use as a time-based search criterion when restricting guest records by last update timestamp.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Filter value mapped to
+         *   community_platform_guests.updated_at. Use as a time-based search
+         *   criterion when restricting guest records by last update timestamp.
      */
     updated_at?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Retirement timestamp filter used to find active or retired guest identity records.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Filter value mapped to community_platform_guests.deleted_at. Use to search guest identities by retirement timestamp or to distinguish retired records from active ones according to service filter semantics. Null means the guest identity is not retired.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Filter value mapped to
+         *   community_platform_guests.deleted_at. Use to search guest
+         *   identities by retirement timestamp or to distinguish retired
+         *   records from active ones according to service filter semantics.
+         *   Null means the guest identity is not retired.
      */
     deleted_at?: (string & tags.Format<"date-time">) | null | undefined;
   };

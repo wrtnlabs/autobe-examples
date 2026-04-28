@@ -11,72 +11,90 @@ export type IErpHrmMemberSession = {
   /**
    * Unique identifier for this member session (UUID format).
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from erp_hrm_member_sessions.id. UUID primary key generated automatically on session creation.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from erp_hrm_member_sessions.id.
+     *   UUID primary key generated automatically on session creation.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * The authenticated member who owns this session.
    *
-   * @x-autobe-database-schema-property member
-   * @x-autobe-specification Join from erp_hrm_member_sessions.erp_hrm_member_id to erp_hrm_members.id. Returns IErpHrmMember.ISummary. Members can only retrieve their own sessions.
+     * @x-autobe-database-schema-property member
+     * @x-autobe-specification Join from
+     *   erp_hrm_member_sessions.erp_hrm_member_id to erp_hrm_members.id.
+     *   Returns IErpHrmMember.ISummary. Members can only retrieve their own
+     *   sessions.
    */
   member: IErpHrmMember.ISummary;
 
   /**
    * The currently selected organization context for this session. Null if no organization has been selected.
    *
-   * @x-autobe-database-schema-property organization
-   * @x-autobe-specification LEFT JOIN from erp_hrm_member_sessions.erp_hrm_organization_id to erp_hrm_organizations.id. Nullable - member may not have selected an organization yet. Returns IErpHrmOrganization.ISummary.
+     * @x-autobe-database-schema-property organization
+     * @x-autobe-specification LEFT JOIN from
+     *   erp_hrm_member_sessions.erp_hrm_organization_id to
+     *   erp_hrm_organizations.id. Nullable - member may not have selected an
+     *   organization yet. Returns IErpHrmOrganization.ISummary.
    */
   organization: IErpHrmOrganization.ISummary | null;
 
   /**
    * IP address of the client that initiated this session.
    *
-   * @x-autobe-database-schema-property ip
-   * @x-autobe-specification Direct mapping from erp_hrm_member_sessions.ip. Captured at session creation for security logging and fraud detection.
+     * @x-autobe-database-schema-property ip
+     * @x-autobe-specification Direct mapping from erp_hrm_member_sessions.ip.
+     *   Captured at session creation for security logging and fraud detection.
    */
   ip: string;
 
   /**
    * The URL path the member was accessing when the session was created.
    *
-   * @x-autobe-database-schema-property href
-   * @x-autobe-specification Direct mapping from erp_hrm_member_sessions.href. The URL path the member was accessing when the session was created or last active.
+     * @x-autobe-database-schema-property href
+     * @x-autobe-specification Direct mapping from erp_hrm_member_sessions.href.
+     *   The URL path the member was accessing when the session was created or
+     *   last active.
    */
   href: string;
 
   /**
    * The HTTP Referrer header value when the session was created.
    *
-   * @x-autobe-database-schema-property referrer
-   * @x-autobe-specification Direct mapping from erp_hrm_member_sessions.referrer. The HTTP Referrer header value when the session was created.
+     * @x-autobe-database-schema-property referrer
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_member_sessions.referrer. The HTTP Referrer header value when
+     *   the session was created.
    */
   referrer: string;
 
   /**
    * Timestamp when this session was created (login time).
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from erp_hrm_member_sessions.created_at. Timestamp with timezone, automatically set on session creation (login time).
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_member_sessions.created_at. Timestamp with timezone,
+     *   automatically set on session creation (login time).
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when this session was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from erp_hrm_member_sessions.updated_at. Timestamp with timezone, updated on session modifications like organization context switch.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_member_sessions.updated_at. Timestamp with timezone, updated on
+     *   session modifications like organization context switch.
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when this session expires. Session tokens are invalid after this timestamp.
    *
-   * @x-autobe-database-schema-property expired_at
-   * @x-autobe-specification Direct mapping from erp_hrm_member_sessions.expired_at. Timestamp with timezone. Sessions must be refreshed before this time to remain valid.
+     * @x-autobe-database-schema-property expired_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_member_sessions.expired_at. Timestamp with timezone. Sessions
+     *   must be refreshed before this time to remain valid.
    */
   expired_at: string & tags.Format<"date-time">;
 };
@@ -90,21 +108,27 @@ export namespace IErpHrmMemberSession {
     /**
      * Filter sessions by member ID. Returns only sessions belonging to the specified member.
      *
-     * @x-autobe-specification Exact match filter on erp_hrm_member_sessions.erp_hrm_member_id column. Returns only sessions belonging to the specified member.
+         * @x-autobe-specification Exact match filter on
+         *   erp_hrm_member_sessions.erp_hrm_member_id column. Returns only
+         *   sessions belonging to the specified member.
      */
     erp_hrm_member_id?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Filter sessions by organization context. Use null to find sessions without an organization context selected.
      *
-     * @x-autobe-specification Exact match filter on erp_hrm_member_sessions.erp_hrm_organization_id column. Nullable - null returns sessions without organization context selected.
+         * @x-autobe-specification Exact match filter on
+         *   erp_hrm_member_sessions.erp_hrm_organization_id column. Nullable -
+         *   null returns sessions without organization context selected.
      */
     erp_hrm_organization_id?: (string & tags.Format<"uuid">) | null | undefined;
 
     /**
      * Filter sessions by IP address. Supports partial matching to find sessions from similar IP ranges.
      *
-     * @x-autobe-specification Partial match filter using LIKE or ILIKE on erp_hrm_member_sessions.ip column. Allows finding sessions from similar IP ranges.
+         * @x-autobe-specification Partial match filter using LIKE or ILIKE on
+         *   erp_hrm_member_sessions.ip column. Allows finding sessions from
+         *   similar IP ranges.
      */
     ip?: string | undefined;
 
@@ -143,72 +167,97 @@ export namespace IErpHrmMemberSession {
     /**
      * Unique session identifier.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from erp_hrm_member_sessions.id. UUID primary key generated automatically on session creation.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_member_sessions.id. UUID primary key generated
+         *   automatically on session creation.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * IP address of the client that initiated this session. Used for security logging and fraud detection.
      *
-     * @x-autobe-database-schema-property ip
-     * @x-autobe-specification Direct mapping from erp_hrm_member_sessions.ip. Client IP address captured at session creation for security auditing.
+         * @x-autobe-database-schema-property ip
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_member_sessions.ip. Client IP address captured at session
+         *   creation for security auditing.
      */
     ip: string;
 
     /**
      * The URL path the member was accessing when the session was created or last active.
      *
-     * @x-autobe-database-schema-property href
-     * @x-autobe-specification Direct mapping from erp_hrm_member_sessions.href. URL path captured at session creation or last activity for session tracking.
+         * @x-autobe-database-schema-property href
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_member_sessions.href. URL path captured at session creation
+         *   or last activity for session tracking.
      */
     href: string;
 
     /**
      * The HTTP Referrer header value when the session was created.
      *
-     * @x-autobe-database-schema-property referrer
-     * @x-autobe-specification Direct mapping from erp_hrm_member_sessions.referrer. HTTP Referrer header value captured at session creation for tracking session origin.
+         * @x-autobe-database-schema-property referrer
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_member_sessions.referrer. HTTP Referrer header value
+         *   captured at session creation for tracking session origin.
      */
     referrer: string;
 
     /**
      * The authenticated member this session belongs to.
      *
-     * @x-autobe-database-schema-property member
-     * @x-autobe-specification Belongs-to relation via erp_hrm_member_sessions.erp_hrm_member_id. JOIN with erp_hrm_members table to fetch member details. Returns IErpHrmMember.ISummary containing id, email, display_name, avatar_image, phone_number, created_at, deleted_at.
+         * @x-autobe-database-schema-property member
+         * @x-autobe-specification Belongs-to relation via
+         *   erp_hrm_member_sessions.erp_hrm_member_id. JOIN with
+         *   erp_hrm_members table to fetch member details. Returns
+         *   IErpHrmMember.ISummary containing id, email, display_name,
+         *   avatar_image, phone_number, created_at, deleted_at.
      */
     member: IErpHrmMember.ISummary;
 
     /**
      * The currently selected organization context for this session. Null if no organization has been selected.
      *
-     * @x-autobe-database-schema-property organization
-     * @x-autobe-specification Belongs-to relation via erp_hrm_member_sessions.erp_hrm_organization_id. JOIN with erp_hrm_organizations table to fetch organization details. Returns IErpHrmOrganization.ISummary. Nullable because member may not have selected an organization context yet, or may have been removed from all organizations.
+         * @x-autobe-database-schema-property organization
+         * @x-autobe-specification Belongs-to relation via
+         *   erp_hrm_member_sessions.erp_hrm_organization_id. JOIN with
+         *   erp_hrm_organizations table to fetch organization details. Returns
+         *   IErpHrmOrganization.ISummary. Nullable because member may not have
+         *   selected an organization context yet, or may have been removed from
+         *   all organizations.
      */
     organization: IErpHrmOrganization.ISummary | null;
 
     /**
      * Timestamp when this session was created (login time).
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from erp_hrm_member_sessions.created_at. Timestamp with timezone, automatically set when session is created (login time).
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_member_sessions.created_at. Timestamp with timezone,
+         *   automatically set when session is created (login time).
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when this session was last updated.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from erp_hrm_member_sessions.updated_at. Timestamp with timezone, updated when session is modified (e.g., organization context switch, token refresh).
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_member_sessions.updated_at. Timestamp with timezone,
+         *   updated when session is modified (e.g., organization context
+         *   switch, token refresh).
      */
     updated_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when this session expires. Sessions must be refreshed before this time to remain valid.
      *
-     * @x-autobe-database-schema-property expired_at
-     * @x-autobe-specification Direct mapping from erp_hrm_member_sessions.expired_at. Timestamp with timezone indicating session expiration. Sessions must be refreshed before this time to remain valid. Security-critical field.
+         * @x-autobe-database-schema-property expired_at
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_member_sessions.expired_at. Timestamp with timezone
+         *   indicating session expiration. Sessions must be refreshed before
+         *   this time to remain valid. Security-critical field.
      */
     expired_at: string & tags.Format<"date-time">;
   };

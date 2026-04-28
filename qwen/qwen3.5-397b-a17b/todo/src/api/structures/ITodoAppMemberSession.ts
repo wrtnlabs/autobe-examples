@@ -16,8 +16,9 @@ export type ITodoAppMemberSession = {
    *
    * This is the primary key of the session record, generated as a UUID when the session is created during login.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from todo_app_member_sessions.id. UUID format primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from todo_app_member_sessions.id.
+     *   UUID format primary key.
    */
   id: string & tags.Format<"uuid">;
 
@@ -26,8 +27,10 @@ export type ITodoAppMemberSession = {
    *
    * This object contains the profile information of the authenticated member associated with this session. The relation is established via the todo_app_member_id foreign key in the database.
    *
-   * @x-autobe-database-schema-property member
-   * @x-autobe-specification Relation join from todo_app_member_sessions.todo_app_member_id to todo_app_members.id. Returns ITodoAppMember.ISummary with member profile data.
+     * @x-autobe-database-schema-property member
+     * @x-autobe-specification Relation join from
+     *   todo_app_member_sessions.todo_app_member_id to todo_app_members.id.
+     *   Returns ITodoAppMember.ISummary with member profile data.
    */
   member: ITodoAppMember.ISummary;
 
@@ -36,8 +39,9 @@ export type ITodoAppMemberSession = {
    *
    * Recorded for security auditing and to detect suspicious login patterns. Used to identify the geographic location and device network.
    *
-   * @x-autobe-database-schema-property ip
-   * @x-autobe-specification Direct mapping from todo_app_member_sessions.ip. Captured from the client request during session creation.
+     * @x-autobe-database-schema-property ip
+     * @x-autobe-specification Direct mapping from todo_app_member_sessions.ip.
+     *   Captured from the client request during session creation.
    */
   ip: string;
 
@@ -46,8 +50,10 @@ export type ITodoAppMemberSession = {
    *
    * Captures the entry point for the authentication flow. Useful for redirecting users back after successful login and for analytics.
    *
-   * @x-autobe-database-schema-property href
-   * @x-autobe-specification Direct mapping from todo_app_member_sessions.href. Captured from the client request during session creation.
+     * @x-autobe-database-schema-property href
+     * @x-autobe-specification Direct mapping from
+     *   todo_app_member_sessions.href. Captured from the client request during
+     *   session creation.
    */
   href: string & tags.Format<"uri">;
 
@@ -56,8 +62,10 @@ export type ITodoAppMemberSession = {
    *
    * Indicates which page or external site referred the user to the login page. Used for security analysis and traffic source tracking.
    *
-   * @x-autobe-database-schema-property referrer
-   * @x-autobe-specification Direct mapping from todo_app_member_sessions.referrer. Captured from the HTTP referrer header during session creation.
+     * @x-autobe-database-schema-property referrer
+     * @x-autobe-specification Direct mapping from
+     *   todo_app_member_sessions.referrer. Captured from the HTTP referrer
+     *   header during session creation.
    */
   referrer: string & tags.Format<"uri">;
 
@@ -66,8 +74,10 @@ export type ITodoAppMemberSession = {
    *
    * Set automatically when the member successfully logs in. Used for session age calculations and audit trails.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from todo_app_member_sessions.created_at. Set automatically when the member successfully logs in.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   todo_app_member_sessions.created_at. Set automatically when the member
+     *   successfully logs in.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -76,8 +86,10 @@ export type ITodoAppMemberSession = {
    *
    * Sessions are automatically invalidated after this time. Members must log in again to create a new session. Typically set to 7-30 days from creation depending on security policy.
    *
-   * @x-autobe-database-schema-property expired_at
-   * @x-autobe-specification Direct mapping from todo_app_member_sessions.expired_at. Sessions are automatically invalidated after this time.
+     * @x-autobe-database-schema-property expired_at
+     * @x-autobe-specification Direct mapping from
+     *   todo_app_member_sessions.expired_at. Sessions are automatically
+     *   invalidated after this time.
    */
   expired_at: string & tags.Format<"date-time">;
 };
@@ -97,7 +109,8 @@ export namespace ITodoAppMemberSession {
      *
      * Defaults to 1 if not provided. Must be a positive integer.
      *
-     * @x-autobe-specification Query parameter for pagination page number. Defaults to 1. Applied as OFFSET in SQL query.
+         * @x-autobe-specification Query parameter for pagination page number.
+         *   Defaults to 1. Applied as OFFSET in SQL query.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -108,7 +121,9 @@ export namespace ITodoAppMemberSession {
      *
      * Must be between 1 and 100. If not provided, uses a default value determined by the server implementation.
      *
-     * @x-autobe-specification Query parameter for page size. Defaults to implementation-defined value (typically 10-50). Maximum 100. Applied as LIMIT in SQL query.
+         * @x-autobe-specification Query parameter for page size. Defaults to
+         *   implementation-defined value (typically 10-50). Maximum 100.
+         *   Applied as LIMIT in SQL query.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -124,7 +139,10 @@ export namespace ITodoAppMemberSession {
      *
      * Optional parameter. If not provided, returns both active and expired sessions.
      *
-     * @x-autobe-specification Optional filter for session expiration state. 'active' means expired_at > current timestamp. 'expired' means expired_at <= current timestamp. Computed at query time, not stored.
+         * @x-autobe-specification Optional filter for session expiration state.
+         *   'active' means expired_at > current timestamp. 'expired' means
+         *   expired_at <= current timestamp. Computed at query time, not
+         *   stored.
      */
     status?: "active" | "expired" | undefined;
 
@@ -135,7 +153,9 @@ export namespace ITodoAppMemberSession {
      *
      * Optional parameter. Format is ISO 8601 date-time (e.g., 2024-01-15T10:30:00Z). If not provided, no lower bound is applied.
      *
-     * @x-autobe-specification Optional lower bound filter for session creation timestamp. Filters sessions where created_at >= created_at_from. ISO 8601 date-time format.
+         * @x-autobe-specification Optional lower bound filter for session
+         *   creation timestamp. Filters sessions where created_at >=
+         *   created_at_from. ISO 8601 date-time format.
      */
     created_at_from?: (string & tags.Format<"date-time">) | undefined;
 
@@ -146,7 +166,9 @@ export namespace ITodoAppMemberSession {
      *
      * Optional parameter. Format is ISO 8601 date-time (e.g., 2024-01-15T10:30:00Z). If not provided, no upper bound is applied.
      *
-     * @x-autobe-specification Optional upper bound filter for session creation timestamp. Filters sessions where created_at <= created_at_to. ISO 8601 date-time format.
+         * @x-autobe-specification Optional upper bound filter for session
+         *   creation timestamp. Filters sessions where created_at <=
+         *   created_at_to. ISO 8601 date-time format.
      */
     created_at_to?: (string & tags.Format<"date-time">) | undefined;
   };
@@ -164,8 +186,9 @@ export namespace ITodoAppMemberSession {
      *
      * This UUID identifies a specific authentication session for the member. Each login creates a new session with a distinct ID. Used to reference the session in session management operations.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from todo_app_member_sessions.id. UUID format generated by database.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_member_sessions.id. UUID format generated by database.
      */
     id: string & tags.Format<"uuid">;
 
@@ -174,8 +197,10 @@ export namespace ITodoAppMemberSession {
      *
      * This relation connects the session to its owner. Contains the member's profile summary including display name and account timestamps. Loaded via foreign key join to the members table.
      *
-     * @x-autobe-database-schema-property member
-     * @x-autobe-specification Relation loaded via JOIN from todo_app_member_sessions.todo_app_member_id to todo_app_members.id. Returns ITodoAppMember.ISummary with member profile data.
+         * @x-autobe-database-schema-property member
+         * @x-autobe-specification Relation loaded via JOIN from
+         *   todo_app_member_sessions.todo_app_member_id to todo_app_members.id.
+         *   Returns ITodoAppMember.ISummary with member profile data.
      */
     member: ITodoAppMember.ISummary;
 
@@ -184,8 +209,10 @@ export namespace ITodoAppMemberSession {
      *
      * Recorded when the member logs in for security auditing and session identification. Helps detect suspicious login patterns and unauthorized access attempts. Useful for geographic location identification.
      *
-     * @x-autobe-database-schema-property ip
-     * @x-autobe-specification Direct mapping from todo_app_member_sessions.ip. Captured from HTTP request at session creation time.
+         * @x-autobe-database-schema-property ip
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_member_sessions.ip. Captured from HTTP request at session
+         *   creation time.
      */
     ip: string;
 
@@ -194,8 +221,10 @@ export namespace ITodoAppMemberSession {
      *
      * Captures the entry point for the authentication flow. Useful for redirecting users back to their intended destination after successful login and for analytics purposes.
      *
-     * @x-autobe-database-schema-property href
-     * @x-autobe-specification Direct mapping from todo_app_member_sessions.href. Captured from browser location at login time.
+         * @x-autobe-database-schema-property href
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_member_sessions.href. Captured from browser location at
+         *   login time.
      */
     href: string & tags.Format<"uri">;
 
@@ -204,8 +233,10 @@ export namespace ITodoAppMemberSession {
      *
      * Indicates which page or external site referred the user to the login page. Used for security analysis to detect suspicious referral patterns and for traffic source tracking.
      *
-     * @x-autobe-database-schema-property referrer
-     * @x-autobe-specification Direct mapping from todo_app_member_sessions.referrer. Captured from HTTP Referrer header at login time.
+         * @x-autobe-database-schema-property referrer
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_member_sessions.referrer. Captured from HTTP Referrer
+         *   header at login time.
      */
     referrer: string & tags.Format<"uri">;
 
@@ -214,8 +245,10 @@ export namespace ITodoAppMemberSession {
      *
      * Set automatically when the member successfully authenticates and a new session record is inserted. Used for session age calculations, audit trails, and sorting sessions by login time.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from todo_app_member_sessions.created_at. Set automatically by database on session creation.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_member_sessions.created_at. Set automatically by database
+         *   on session creation.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -224,8 +257,10 @@ export namespace ITodoAppMemberSession {
      *
      * Sessions are automatically rejected by the authentication middleware after this time. Members must log in again to create a new session. The expiration duration is determined by security policy at session creation.
      *
-     * @x-autobe-database-schema-property expired_at
-     * @x-autobe-specification Direct mapping from todo_app_member_sessions.expired_at. Calculated at session creation based on security policy (typically 7-30 days).
+         * @x-autobe-database-schema-property expired_at
+         * @x-autobe-specification Direct mapping from
+         *   todo_app_member_sessions.expired_at. Calculated at session creation
+         *   based on security policy (typically 7-30 days).
      */
     expired_at: string & tags.Format<"date-time">;
   };

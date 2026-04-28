@@ -10,48 +10,59 @@ export type IEcommerceMallWishlistItem = {
   /**
    * Unique identifier for the wishlist item.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_wishlist_items.id (UUID primary key).
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_wishlist_items.id (UUID primary key).
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * The customer who saved this item to their wishlist.
    *
-   * @x-autobe-database-schema-property customer_id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_wishlist_items.customer_id (UUID foreign key to customers table). Used for ownership verification against authenticated customer.
+     * @x-autobe-database-schema-property customer_id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_wishlist_items.customer_id (UUID foreign key to
+     *   customers table). Used for ownership verification against authenticated
+     *   customer.
    */
   customerId: string & tags.Format<"uuid">;
 
   /**
    * The product that was saved to the wishlist.
    *
-   * @x-autobe-database-schema-property product_id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_wishlist_items.product_id (UUID foreign key to products table).
+     * @x-autobe-database-schema-property product_id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_wishlist_items.product_id (UUID foreign key to products
+     *   table).
    */
   productId: string & tags.Format<"uuid">;
 
   /**
    * The saved product with complete details including category, seller, pricing, and rating information.
    *
-   * @x-autobe-database-schema-property product
-   * @x-autobe-specification Belongs-to relation from ecommerce_mall_wishlist_items to ecommerce_mall_products. Transformed to IEcommerceMallProduct.ISummary for list display efficiency, including seller profile (shop name) per API specification.
+     * @x-autobe-database-schema-property product
+     * @x-autobe-specification Belongs-to relation from
+     *   ecommerce_mall_wishlist_items to ecommerce_mall_products. Transformed
+     *   to IEcommerceMallProduct.ISummary for list display efficiency,
+     *   including seller profile (shop name) per API specification.
    */
   product: IEcommerceMallProduct.ISummary;
 
   /**
    * Timestamp when the item was added to the wishlist.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_wishlist_items.created_at (timestamptz).
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_wishlist_items.created_at (timestamptz).
    */
   createdAt: string & tags.Format<"date-time">;
 
   /**
    * Timestamp of the most recent modification to the wishlist item.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_wishlist_items.updated_at (timestamptz).
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_wishlist_items.updated_at (timestamptz).
    */
   updatedAt: string & tags.Format<"date-time">;
 };
@@ -63,63 +74,83 @@ export namespace IEcommerceMallWishlistItem {
     /**
      * Partial text search for product name
      *
-     * @x-autobe-specification Partial text search (LIKE/ILIKE) applied to ecommerce_mall_products.name via JOIN on wishlist_item.product_id = product.id. Empty string or null means no name filter.
+         * @x-autobe-specification Partial text search (LIKE/ILIKE) applied to
+         *   ecommerce_mall_products.name via JOIN on wishlist_item.product_id =
+         *   product.id. Empty string or null means no name filter.
      */
     search?: string | undefined;
 
     /**
      * Filter by product category ID
      *
-     * @x-autobe-specification Exact match filter on ecommerce_mall_products.category_id via JOIN. Applied as WHERE clause condition when present.
+         * @x-autobe-specification Exact match filter on
+         *   ecommerce_mall_products.category_id via JOIN. Applied as WHERE
+         *   clause condition when present.
      */
     category_id?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Filter by seller ID
      *
-     * @x-autobe-specification Exact match filter on ecommerce_mall_products.seller_id via JOIN. Applied as WHERE clause condition when present.
+         * @x-autobe-specification Exact match filter on
+         *   ecommerce_mall_products.seller_id via JOIN. Applied as WHERE clause
+         *   condition when present.
      */
     seller_id?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Minimum base price filter
      *
-     * @x-autobe-specification Minimum base price filter applied to ecommerce_mall_products.base_price via JOIN. Products with base_price >= min_price are included.
+         * @x-autobe-specification Minimum base price filter applied to
+         *   ecommerce_mall_products.base_price via JOIN. Products with
+         *   base_price >= min_price are included.
      */
     min_price?: number | undefined;
 
     /**
      * Maximum base price filter
      *
-     * @x-autobe-specification Maximum base price filter applied to ecommerce_mall_products.base_price via JOIN. Products with base_price <= max_price are included.
+         * @x-autobe-specification Maximum base price filter applied to
+         *   ecommerce_mall_products.base_price via JOIN. Products with
+         *   base_price <= max_price are included.
      */
     max_price?: number | undefined;
 
     /**
      * Field to sort by
      *
-     * @x-autobe-specification Determines ORDER BY field: 'created_at' → ecommerce_mall_wishlist_items.created_at (wishlist addition time), 'name' → ecommerce_mall_products.name, 'base_price' → ecommerce_mall_products.base_price. Default is 'created_at'.
+         * @x-autobe-specification Determines ORDER BY field: 'created_at' →
+         *   ecommerce_mall_wishlist_items.created_at (wishlist addition time),
+         *   'name' → ecommerce_mall_products.name, 'base_price' →
+         *   ecommerce_mall_products.base_price. Default is 'created_at'.
      */
     sort_by?: "created_at" | "name" | "base_price" | undefined;
 
     /**
      * Sort direction
      *
-     * @x-autobe-specification Determines sort direction for the ORDER BY clause: 'asc' for ascending (A-Z, 0-9, oldest first), 'desc' for descending (Z-A, 9-0, newest first). Default is 'desc' for created_at, 'asc' for name.
+         * @x-autobe-specification Determines sort direction for the ORDER BY
+         *   clause: 'asc' for ascending (A-Z, 0-9, oldest first), 'desc' for
+         *   descending (Z-A, 9-0, newest first). Default is 'desc' for
+         *   created_at, 'asc' for name.
      */
     sort_order?: "asc" | "desc" | undefined;
 
     /**
      * Page number for pagination (1-based)
      *
-     * @x-autobe-specification Page number for offset-based pagination (1-indexed). Calculated as OFFSET = (page - 1) * limit. Minimum value is 1. Default is 1.
+         * @x-autobe-specification Page number for offset-based pagination
+         *   (1-indexed). Calculated as OFFSET = (page - 1) * limit. Minimum
+         *   value is 1. Default is 1.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Number of items per page
      *
-     * @x-autobe-specification Number of items to return per page, directly maps to SQL LIMIT clause. Maximum enforced server-side is 100. Default is typically 20.
+         * @x-autobe-specification Number of items to return per page, directly
+         *   maps to SQL LIMIT clause. Maximum enforced server-side is 100.
+         *   Default is typically 20.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -133,7 +164,7 @@ export namespace IEcommerceMallWishlistItem {
     /**
      * The ID of the product to add to the wishlist.
      *
-     * @x-autobe-database-schema-property product_id
+         * @x-autobe-database-schema-property product_id
      */
     product_id: string & tags.Format<"uuid">;
   };
@@ -145,24 +176,28 @@ export namespace IEcommerceMallWishlistItem {
     /**
      * Unique identifier for the wishlist item.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_mall_wishlist_items.id. Primary key UUID.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_wishlist_items.id. Primary key UUID.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * The product saved in the customer's wishlist.
      *
-     * @x-autobe-database-schema-property product
-     * @x-autobe-specification Join via product_id to ecommerce_mall_products. Returns IEcommerceMallProduct.ISummary with essential product details.
+         * @x-autobe-database-schema-property product
+         * @x-autobe-specification Join via product_id to
+         *   ecommerce_mall_products. Returns IEcommerceMallProduct.ISummary
+         *   with essential product details.
      */
     product: IEcommerceMallProduct.ISummary;
 
     /**
      * Timestamp when the product was added to the wishlist.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_wishlist_items.created_at. ISO 8601 timestamp.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_wishlist_items.created_at. ISO 8601 timestamp.
      */
     createdAt: string & tags.Format<"date-time">;
   };

@@ -24,9 +24,12 @@ export class RedditlikeProfilesController {
    *
    * @param connection
    * @param memberId Unique identifier of the member account whose profile to retrieve (UUID format).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query the reddit_like_user_profiles table with the memberId path parameter to retrieve a single user profile. Join with reddit_like_members table to verify the associated member account exists and is not soft-deleted (deleted_at IS NULL).
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query the reddit_like_user_profiles table with
+     *   the memberId path parameter to retrieve a single user profile. Join
+     *   with reddit_like_members table to verify the associated member account
+     *   exists and is not soft-deleted (deleted_at IS NULL).
    *
    * **Implementation Steps**
    *
@@ -87,9 +90,10 @@ export class RedditlikeProfilesController {
    *
    * @param connection
    * @param body Search criteria for filtering and sorting user profiles including display name search, karma score range, date ranges, and pagination parameters.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query reddit_like_user_profiles table with pagination and filtering.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query reddit_like_user_profiles table with
+     *   pagination and filtering.
    *
    * **Implementation Steps**
    * 1. Build base query selecting from reddit_like_user_profiles

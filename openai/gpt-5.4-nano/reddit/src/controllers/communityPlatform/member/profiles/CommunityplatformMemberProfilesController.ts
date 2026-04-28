@@ -24,9 +24,11 @@ export class CommunityplatformMemberProfilesController {
    *
    * @param connection
    * @param body Payload to create the authenticated user’s public profile. The profile will be associated with the currently authenticated member identity.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1) Auth & identity resolution: obtain the authenticated member identity id. This value maps to community_platform_user_profiles.community_platform_member_id.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification 1) Auth & identity resolution: obtain the
+     *   authenticated member identity id. This value maps to
+     *   community_platform_user_profiles.community_platform_member_id.
    *
    * 2) Uniqueness pre-check: query community_platform_user_profiles by community_platform_member_id. If a record already exists, reject with a conflict/business error (profile already created) per platform error conventions.
    *

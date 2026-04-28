@@ -19,7 +19,15 @@ import { IHrmTimeTrackingReport } from "../../../../structures/IHrmTimeTrackingR
  * @param props.connection
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor employee
- * @x-autobe-specification Resolve the currently selected organization context from the authenticated session or request-scoped organization selector before executing any dashboard query. Authorize the caller against that organization only. First resolve whether the caller has an employee membership in the selected organization; if not, reject access because the personal dashboard requires an employee record in that organization. Separately evaluate whether the caller has report-viewing permission in the selected organization to determine whether the organization summary may be included.
+ * @x-autobe-specification Resolve the currently selected organization context
+ *   from the authenticated session or request-scoped organization selector
+ *   before executing any dashboard query. Authorize the caller against that
+ *   organization only. First resolve whether the caller has an employee
+ *   membership in the selected organization; if not, reject access because the
+ *   personal dashboard requires an employee record in that organization.
+ *   Separately evaluate whether the caller has report-viewing permission in the
+ *   selected organization to determine whether the organization summary may be
+ *   included.
  *
  * Build the personal dashboard summary from organization-scoped source records only. Identify the caller's employee account in hrm_time_tracking_employees for the selected organization membership, then aggregate hrm_time_tracking_timelogs for that employee and organization to calculate hours logged today and hours logged during the current week. Query hrm_time_tracking_timers by the employee foreign key using the unique hrm_time_tracking_employee_id constraint to load the active timer, if present, and verify that its hrm_time_tracking_organization_id matches the selected organization. Load up to five most recent non-deleted timelogs for that employee within the organization ordered by worked_on descending and created_at descending. Load the current-week timesheet from hrm_time_tracking_timesheets using the unique combination of hrm_time_tracking_employee_id and week_start_date. Load assigned tasks from hrm_time_tracking_tasks where hrm_time_tracking_employee_id matches the employee, status is open or in-progress, deleted_at is null, and the joined project belongs to the selected organization.
  *

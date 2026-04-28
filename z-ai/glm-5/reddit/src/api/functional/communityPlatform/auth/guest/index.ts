@@ -23,7 +23,12 @@ import { ICommunityPlatformGuest } from "../../../../structures/ICommunityPlatfo
  * @param props.body Guest registration request - no credentials required for temporary guest account creation
  * @x-autobe-authorization-type join
  * @x-autobe-authorization-actor guest
- * @x-autobe-specification Creates a new temporary guest account for unauthenticated visitors who want to browse content without creating a full member account. The operation generates a new guest record in the community_platform_guests table with a unique UUID identifier, and creates an initial session record in community_platform_guest_sessions to track the visitor's browsing activity.
+ * @x-autobe-specification Creates a new temporary guest account for
+ *   unauthenticated visitors who want to browse content without creating a full
+ *   member account. The operation generates a new guest record in the
+ *   community_platform_guests table with a unique UUID identifier, and creates
+ *   an initial session record in community_platform_guest_sessions to track the
+ *   visitor's browsing activity.
  *
  * Implementation steps:
  * 1. Generate a unique UUID for the new guest account
@@ -129,7 +134,11 @@ export namespace join {
  * @param props.body Refresh token request to renew guest session tokens
  * @x-autobe-authorization-type refresh
  * @x-autobe-authorization-actor guest
- * @x-autobe-specification Refreshes an expired or expiring guest session token to maintain continuous browsing access without interruption. The operation validates the provided refresh token, ensures it hasn't been revoked or expired beyond the refresh window, and issues a new access token and refresh token pair.
+ * @x-autobe-specification Refreshes an expired or expiring guest session token
+ *   to maintain continuous browsing access without interruption. The operation
+ *   validates the provided refresh token, ensures it hasn't been revoked or
+ *   expired beyond the refresh window, and issues a new access token and
+ *   refresh token pair.
  *
  * Implementation steps:
  * 1. Validate the provided refresh token signature and expiration

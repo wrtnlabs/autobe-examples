@@ -28,18 +28,18 @@ export class EcommerceProductsImagesController {
    * @param connection
    * @param productId UUID of the product whose images are being reordered (global scope).
    * @param body Array of image IDs in the desired display order. The first ID becomes display_order=0 (thumbnail). All active images for the product must be included exactly once.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification 1. Validate productId exists and is not soft-deleted
-   * 2. Verify seller authorization (current user owns product OR is admin)
-   * 3. Validate request body contains array of image IDs belonging to this product
-   * 4. Validate all image IDs exist and are not soft-deleted
-   * 5. Validate no duplicate image IDs in request
-   * 6. Validate image count matches existing active images for product
-   * 7. Update display_order for each image based on array index (0, 1, 2, ...)
-   * 8. Wrap in transaction to ensure atomicity
-   * 9. Create product snapshot capturing image state before and after reorder
-   * 10. Return updated images in new order
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification 1. Validate productId exists and is not
+     *   soft-deleted 2. Verify seller authorization (current user owns product
+     *   OR is admin) 3. Validate request body contains array of image IDs
+     *   belonging to this product 4. Validate all image IDs exist and are not
+     *   soft-deleted 5. Validate no duplicate image IDs in request 6. Validate
+     *   image count matches existing active images for product 7. Update
+     *   display_order for each image based on array index (0, 1, 2, ...) 8.
+     *   Wrap in transaction to ensure atomicity 9. Create product snapshot
+     *   capturing image state before and after reorder 10. Return updated
+     *   images in new order
    *
    * Edge cases:
    * - Product not found: 404
@@ -86,9 +86,10 @@ export class EcommerceProductsImagesController {
    * @param connection
    * @param productId Unique identifier of the parent product (UUID format).
    * @param imageId Unique identifier of the product image (UUID format).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query the ecommerce_product_images table by imageId and verify the image belongs to the specified productId.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query the ecommerce_product_images table by
+     *   imageId and verify the image belongs to the specified productId.
    *
    * 1. Validate both productId and imageId are valid UUIDs
    * 2. Query ecommerce_product_images WHERE id = imageId AND ecommerce_product_id = productId

@@ -29,7 +29,8 @@ import { IEcommerceReviewStatistic } from "../../../../../structures/IEcommerceR
  * @param props.body Search criteria including optional product ID filter for product-specific statistics.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Query ecommerce_reviews table for statistics aggregation.
+ * @x-autobe-specification Query ecommerce_reviews table for statistics
+ *   aggregation.
  *
  * Filter by product_id if provided in request body to get product-specific statistics.
  * Calculate average rating from non-deleted reviews only (WHERE deleted_at IS NULL).

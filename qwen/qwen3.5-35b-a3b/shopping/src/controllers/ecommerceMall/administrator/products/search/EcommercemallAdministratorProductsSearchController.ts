@@ -39,9 +39,10 @@ export class EcommercemallAdministratorProductsSearchController {
    *
    * @param connection
    * @param body Search criteria and filtering options for product listing. Includes text search term, category filters, price range constraints, availability filter, sorting preferences, and pagination parameters for cursor-based pagination.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Query ecommerce_mall_products table with application-level soft delete filter (deleted_at IS NULL).
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor administrator
+     * @x-autobe-specification Query ecommerce_mall_products table with
+     *   application-level soft delete filter (deleted_at IS NULL).
    *
    * Filtering:
    * - name field: full-text search using trigram index (GIN) with partial matching

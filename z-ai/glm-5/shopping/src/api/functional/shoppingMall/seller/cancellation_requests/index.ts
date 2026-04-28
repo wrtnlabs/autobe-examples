@@ -31,7 +31,8 @@ import { IShoppingMallCancellationRequest } from "../../../../structures/IShoppi
  * @param props.cancellationRequestId Unique identifier of the cancellation request to retrieve (UUID format)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Retrieve a single cancellation request by ID from shopping_mall_cancellation_requests table.
+ * @x-autobe-specification Retrieve a single cancellation request by ID from
+ *   shopping_mall_cancellation_requests table.
  *
  * 1. Parse the cancellationRequestId UUID path parameter
  * 2. Query shopping_mall_cancellation_requests where id = cancellationRequestId
@@ -259,7 +260,8 @@ export namespace approve {
  * @param props.cancellationRequestId Unique identifier of the cancellation request to reject (UUID format)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Implementation steps for rejecting a cancellation request:
+ * @x-autobe-specification Implementation steps for rejecting a cancellation
+ *   request:
  *
  * 1. Authentication: Verify the requester is an authenticated seller (not customer or administrator).
  *

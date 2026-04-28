@@ -23,7 +23,8 @@ import { IPageIEcommerceMallRefundRequest } from "../../../../../structures/IPag
  * @param props.body Search criteria and pagination parameters for filtering refund requests
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Query ecommerce_mall_refund_requests table filtering by the provided orderItemId path parameter.
+ * @x-autobe-specification Query ecommerce_mall_refund_requests table filtering
+ *   by the provided orderItemId path parameter.
  *
  * Apply optional filters from request body:
  * - status: Filter by request status ('pending', 'approved', 'rejected')

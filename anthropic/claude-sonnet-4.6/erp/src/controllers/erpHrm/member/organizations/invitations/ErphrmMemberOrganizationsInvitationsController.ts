@@ -36,9 +36,12 @@ export class ErphrmMemberOrganizationsInvitationsController {
    * @param connection
    * @param organizationId The UUID of the target organization into which the prospective employee is being invited.
    * @param body Invitation details specifying the invitee's email address.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1. Authenticate the requesting member and resolve their `erp_hrm_organization_members` record for the given `organizationId`. Reject with 403 if the member does not hold `employee:manage` permission in this organization.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification 1. Authenticate the requesting member and resolve
+     *   their `erp_hrm_organization_members` record for the given
+     *   `organizationId`. Reject with 403 if the member does not hold
+     *   `employee:manage` permission in this organization.
    *
    * 2. Validate `organizationId`: confirm the organization exists in `erp_hrm_organizations` and is not soft-deleted (`deleted_at IS NULL`). Reject with 404 if not found.
    *
@@ -114,9 +117,12 @@ export class ErphrmMemberOrganizationsInvitationsController {
    * @param connection
    * @param organizationId The UUID of the organization whose invitations are being queried (global scope).
    * @param body Search criteria and pagination options for filtering the organization's invitation list.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1. Validate that the authenticated session belongs to a member of the organization identified by `organizationId`. If the organization does not exist or is soft-deleted (`erp_hrm_organizations.deleted_at IS NOT NULL`), return 404.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification 1. Validate that the authenticated session
+     *   belongs to a member of the organization identified by `organizationId`.
+     *   If the organization does not exist or is soft-deleted
+     *   (`erp_hrm_organizations.deleted_at IS NOT NULL`), return 404.
    *
    * 2. Verify that the caller's `erp_hrm_organization_members` record for this organization has the `employee:manage` permission (either via a built-in Owner/Manager role or a custom role that includes this permission code). Return 403 if unauthorized.
    *
@@ -175,15 +181,23 @@ export class ErphrmMemberOrganizationsInvitationsController {
    * @param connection
    * @param organizationId The UUID of the organization to which the invitation belongs.
    * @param invitationId The UUID of the invitation record to retrieve.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1. Validate that the authenticated member belongs to the organization identified by `organizationId` and holds the `employee:manage` permission.
-   * 2. Query the `erp_hrm_invitations` table for a record where `id = invitationId` AND `erp_hrm_organization_id = organizationId`.
-   * 3. If no such record exists (either the invitation does not exist or does not belong to the given organization), return a 404 Not Found error.
-   * 4. Join the inviting member (`erp_hrm_organization_members` via `erp_hrm_organization_member_id`) to include issuer details in the response.
-   * 5. If `erp_hrm_member_id` is non-null (invitation accepted), optionally join `erp_hrm_members` to include linked member identity.
-   * 6. Return the full invitation detail object including: id, email, status, erp_hrm_organization_id, erp_hrm_organization_member_id (issuer), erp_hrm_member_id (nullable, linked member), created_at, updated_at.
-   * 7. No pagination or filtering is needed — this is a single-record retrieval by primary key.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification 1. Validate that the authenticated member belongs
+     *   to the organization identified by `organizationId` and holds the
+     *   `employee:manage` permission. 2. Query the `erp_hrm_invitations` table
+     *   for a record where `id = invitationId` AND `erp_hrm_organization_id =
+     *   organizationId`. 3. If no such record exists (either the invitation
+     *   does not exist or does not belong to the given organization), return a
+     *   404 Not Found error. 4. Join the inviting member
+     *   (`erp_hrm_organization_members` via `erp_hrm_organization_member_id`)
+     *   to include issuer details in the response. 5. If `erp_hrm_member_id` is
+     *   non-null (invitation accepted), optionally join `erp_hrm_members` to
+     *   include linked member identity. 6. Return the full invitation detail
+     *   object including: id, email, status, erp_hrm_organization_id,
+     *   erp_hrm_organization_member_id (issuer), erp_hrm_member_id (nullable,
+     *   linked member), created_at, updated_at. 7. No pagination or filtering
+     *   is needed — this is a single-record retrieval by primary key.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Get(":invitationId")
@@ -231,21 +245,29 @@ export class ErphrmMemberOrganizationsInvitationsController {
    * @param organizationId The UUID of the organization that owns this invitation (global scope).
    * @param invitationId The UUID of the invitation record to update (scoped to the organization).
    * @param body Updated information for the invitation, such as a status transition (e.g., cancelling a pending invitation).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1. Validate that the authenticated member belongs to the organization identified by `organizationId` and holds a role with permission to manage invitations (Owner or Manager level).
-   * 2. Fetch the invitation record from `erp_hrm_invitations` by `id = invitationId` AND `erp_hrm_organization_id = organizationId`. Return 404 if not found or if the invitation belongs to a different organization.
-   * 3. Validate the requested status transition from the current `status` to the new `status` supplied in the request body. Permitted transitions:
-   *    - `pending` → `cancelled` (admin revocation)
-   *    - `pending` → `rejected` (declined by invitee or admin)
-   *    - `pending` → `expired` (admin explicitly marks expired)
-   *    - All other transitions should be rejected with a 422 Unprocessable Entity error explaining the invalid transition.
-   * 4. Apply the update: set `status` to the new value and update `updated_at` to the current timestamp.
-   * 5. Return the full updated `erp_hrm_invitations` record as the response body mapped to `IErpHrmInvitation`.
-   * 6. Edge cases:
-   *    - If the invitation is already in a terminal state (`accepted`, `cancelled`, `rejected`, `expired`), reject the update request with an appropriate error.
-   *    - If the organization itself is soft-deleted (`deleted_at` is not null in `erp_hrm_organizations`), reject the request.
-   *    - Ensure transactional integrity so concurrent updates do not produce inconsistent states.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification 1. Validate that the authenticated member belongs
+     *   to the organization identified by `organizationId` and holds a role
+     *   with permission to manage invitations (Owner or Manager level). 2.
+     *   Fetch the invitation record from `erp_hrm_invitations` by `id =
+     *   invitationId` AND `erp_hrm_organization_id = organizationId`. Return
+     *   404 if not found or if the invitation belongs to a different
+     *   organization. 3. Validate the requested status transition from the
+     *   current `status` to the new `status` supplied in the request body.
+     *   Permitted transitions: - `pending` → `cancelled` (admin revocation) -
+     *   `pending` → `rejected` (declined by invitee or admin) - `pending` →
+     *   `expired` (admin explicitly marks expired) - All other transitions
+     *   should be rejected with a 422 Unprocessable Entity error explaining the
+     *   invalid transition. 4. Apply the update: set `status` to the new value
+     *   and update `updated_at` to the current timestamp. 5. Return the full
+     *   updated `erp_hrm_invitations` record as the response body mapped to
+     *   `IErpHrmInvitation`. 6. Edge cases: - If the invitation is already in a
+     *   terminal state (`accepted`, `cancelled`, `rejected`, `expired`), reject
+     *   the update request with an appropriate error. - If the organization
+     *   itself is soft-deleted (`deleted_at` is not null in
+     *   `erp_hrm_organizations`), reject the request. - Ensure transactional
+     *   integrity so concurrent updates do not produce inconsistent states.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Put(":invitationId")

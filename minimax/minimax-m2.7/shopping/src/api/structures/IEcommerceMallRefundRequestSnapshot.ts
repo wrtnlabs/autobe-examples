@@ -19,8 +19,9 @@ export type IEcommerceMallRefundRequestSnapshot = {
    *
    * Assigned automatically by the system upon snapshot creation. Cannot be modified.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_refund_request_snapshots.id. UUID primary key.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_refund_request_snapshots.id. UUID primary key.
    */
   id: string & tags.Format<"uuid">;
 
@@ -29,8 +30,11 @@ export type IEcommerceMallRefundRequestSnapshot = {
    *
    * Preserved at the moment the seller responded to capture the customer's original justification for dispute resolution.
    *
-   * @x-autobe-database-schema-property snapshot_reason
-   * @x-autobe-specification Direct mapping from ecommerce_mall_refund_request_snapshots.snapshot_reason. The reason text submitted by the customer for the refund request at the time of snapshot creation.
+     * @x-autobe-database-schema-property snapshot_reason
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_refund_request_snapshots.snapshot_reason. The reason
+     *   text submitted by the customer for the refund request at the time of
+     *   snapshot creation.
    */
   snapshotReason: string;
 
@@ -39,8 +43,11 @@ export type IEcommerceMallRefundRequestSnapshot = {
    *
    * Values: pending (awaiting seller response), approved (seller approved the refund), rejected (seller denied the refund).
    *
-   * @x-autobe-database-schema-property snapshot_status
-   * @x-autobe-specification Direct mapping from ecommerce_mall_refund_request_snapshots.snapshot_status. The status of the refund request at snapshot time (e.g., pending, approved, rejected).
+     * @x-autobe-database-schema-property snapshot_status
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_refund_request_snapshots.snapshot_status. The status of
+     *   the refund request at snapshot time (e.g., pending, approved,
+     *   rejected).
    */
   snapshotStatus: string;
 
@@ -49,8 +56,10 @@ export type IEcommerceMallRefundRequestSnapshot = {
    *
    * Values: approved (seller granted the refund), rejected (seller denied the refund request).
    *
-   * @x-autobe-database-schema-property seller_response
-   * @x-autobe-specification Direct mapping from ecommerce_mall_refund_request_snapshots.seller_response. The seller's decision: approved or rejected.
+     * @x-autobe-database-schema-property seller_response
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_refund_request_snapshots.seller_response. The seller's
+     *   decision: approved or rejected.
    */
   sellerResponse: string;
 
@@ -59,8 +68,11 @@ export type IEcommerceMallRefundRequestSnapshot = {
    *
    * Only populated when the seller rejects the refund. Null when the refund is approved or when no reason is provided.
    *
-   * @x-autobe-database-schema-property seller_response_reason
-   * @x-autobe-specification Direct mapping from ecommerce_mall_refund_request_snapshots.seller_response_reason. Optional reason provided by the seller when rejecting the refund request. Nullable.
+     * @x-autobe-database-schema-property seller_response_reason
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_refund_request_snapshots.seller_response_reason.
+     *   Optional reason provided by the seller when rejecting the refund
+     *   request. Nullable.
    */
   sellerResponseReason?: string | null | undefined;
 
@@ -69,8 +81,11 @@ export type IEcommerceMallRefundRequestSnapshot = {
    *
    * Nested ISummary object containing customer identification and profile information for audit trail and contextual display.
    *
-   * @x-autobe-database-schema-property customer
-   * @x-autobe-specification Join via ecommerce_mall_refund_request_snapshots.ecommerce_mall_customer_id = ecommerce_mall_customers.id. Returns IEcommerceMallCustomer.ISummary for the customer who initiated the refund request.
+     * @x-autobe-database-schema-property customer
+     * @x-autobe-specification Join via
+     *   ecommerce_mall_refund_request_snapshots.ecommerce_mall_customer_id =
+     *   ecommerce_mall_customers.id. Returns IEcommerceMallCustomer.ISummary
+     *   for the customer who initiated the refund request.
    */
   customer: IEcommerceMallCustomer.ISummary;
 
@@ -79,8 +94,11 @@ export type IEcommerceMallRefundRequestSnapshot = {
    *
    * Nested ISummary object containing seller identification, approval status, and shop information for audit trail and contextual display.
    *
-   * @x-autobe-database-schema-property seller
-   * @x-autobe-specification Join via ecommerce_mall_refund_request_snapshots.ecommerce_mall_seller_id = ecommerce_mall_sellers.id. Returns IEcommerceMallSeller.ISummary for the seller who responded to the refund request.
+     * @x-autobe-database-schema-property seller
+     * @x-autobe-specification Join via
+     *   ecommerce_mall_refund_request_snapshots.ecommerce_mall_seller_id =
+     *   ecommerce_mall_sellers.id. Returns IEcommerceMallSeller.ISummary for
+     *   the seller who responded to the refund request.
    */
   seller: IEcommerceMallSeller.ISummary;
 
@@ -89,8 +107,10 @@ export type IEcommerceMallRefundRequestSnapshot = {
    *
    * Represents the exact moment the seller approved or rejected the refund request. Immutable.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_refund_request_snapshots.created_at. Timestamp when the snapshot was created, marking when the seller responded.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_refund_request_snapshots.created_at. Timestamp when the
+     *   snapshot was created, marking when the seller responded.
    */
   createdAt: string & tags.Format<"date-time">;
 
@@ -99,8 +119,10 @@ export type IEcommerceMallRefundRequestSnapshot = {
    *
    * Typically mirrors createdAt since snapshots are immutable after creation.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_refund_request_snapshots.updated_at. Timestamp when the snapshot record was last modified.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_refund_request_snapshots.updated_at. Timestamp when the
+     *   snapshot record was last modified.
    */
   updatedAt: string & tags.Format<"date-time">;
 };
@@ -124,7 +146,9 @@ export namespace IEcommerceMallRefundRequestSnapshot {
      *
      * Use this in combination with limit to navigate through large result sets.
      *
-     * @x-autobe-specification Query parameter for pagination. 1-indexed page number. Defaults to 1. Does not map to a database column - controls which page of results to return.
+         * @x-autobe-specification Query parameter for pagination. 1-indexed
+         *   page number. Defaults to 1. Does not map to a database column -
+         *   controls which page of results to return.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -133,7 +157,9 @@ export namespace IEcommerceMallRefundRequestSnapshot {
      *
      * Controls how many records are returned per page. Defaults to 20 items. Maximum allowed value is 100 items per page. Use this with page to control result set size.
      *
-     * @x-autobe-specification Query parameter for pagination. Maximum number of records per page. Defaults to 20, maximum 100. Does not map to a database column - controls page size.
+         * @x-autobe-specification Query parameter for pagination. Maximum
+         *   number of records per page. Defaults to 20, maximum 100. Does not
+         *   map to a database column - controls page size.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -144,7 +170,9 @@ export namespace IEcommerceMallRefundRequestSnapshot {
      *
      * Specifies which database field to use for ordering results. Defaults to created_at (snapshot creation timestamp). Common values include created_at for chronological ordering.
      *
-     * @x-autobe-specification Query parameter for sorting. Field name to sort results by. Defaults to created_at. Does not map to a database column directly - specifies which column to order by.
+         * @x-autobe-specification Query parameter for sorting. Field name to
+         *   sort results by. Defaults to created_at. Does not map to a database
+         *   column directly - specifies which column to order by.
      */
     sortBy?: string | undefined;
 
@@ -153,7 +181,9 @@ export namespace IEcommerceMallRefundRequestSnapshot {
      *
      * Specifies the direction of sorting. Values: asc (ascending, oldest first) or desc (descending, newest first). Defaults to desc to show most recent snapshots first.
      *
-     * @x-autobe-specification Query parameter for sorting. Sort direction: asc or desc. Defaults to desc (newest first). Does not map to a database column - controls sort direction.
+         * @x-autobe-specification Query parameter for sorting. Sort direction:
+         *   asc or desc. Defaults to desc (newest first). Does not map to a
+         *   database column - controls sort direction.
      */
     sortOrder?: "asc" | "desc" | undefined;
 
@@ -162,7 +192,10 @@ export namespace IEcommerceMallRefundRequestSnapshot {
      *
      * Optional filter to return only snapshots with a specific status value. Status values include: pending (awaiting seller response), approved (seller approved refund), rejected (seller rejected refund).
      *
-     * @x-autobe-specification Filter parameter that maps to ecommerce_mall_refund_request_snapshots.snapshot_status column. Optional filter to return only snapshots with the specified status value. Status values: pending, approved, rejected.
+         * @x-autobe-specification Filter parameter that maps to
+         *   ecommerce_mall_refund_request_snapshots.snapshot_status column.
+         *   Optional filter to return only snapshots with the specified status
+         *   value. Status values: pending, approved, rejected.
      */
     snapshotStatus?: string | undefined;
 
@@ -171,7 +204,10 @@ export namespace IEcommerceMallRefundRequestSnapshot {
      *
      * Optional filter to return only snapshots with a specific seller response. Values: approved (seller approved the refund) or rejected (seller rejected the refund).
      *
-     * @x-autobe-specification Filter parameter that maps to ecommerce_mall_refund_request_snapshots.seller_response column. Optional filter to return only snapshots with the specified seller response. Values: approved, rejected.
+         * @x-autobe-specification Filter parameter that maps to
+         *   ecommerce_mall_refund_request_snapshots.seller_response column.
+         *   Optional filter to return only snapshots with the specified seller
+         *   response. Values: approved, rejected.
      */
     sellerResponse?: string | undefined;
   };
@@ -189,8 +225,9 @@ export namespace IEcommerceMallRefundRequestSnapshot {
      *
      * Auto-generated UUID primary key that uniquely identifies this immutable snapshot record.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_mall_refund_request_snapshots.id. Primary key UUID.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_refund_request_snapshots.id. Primary key UUID.
      */
     id: string & tags.Format<"uuid">;
 
@@ -199,8 +236,11 @@ export namespace IEcommerceMallRefundRequestSnapshot {
      *
      * Contains the customer's original reason for requesting a refund, as it was at the time the seller responded. This preserves the exact wording for audit and dispute resolution purposes.
      *
-     * @x-autobe-database-schema-property snapshot_reason
-     * @x-autobe-specification Direct mapping from ecommerce_mall_refund_request_snapshots.snapshot_reason. The reason text submitted by the customer for the refund request at the time of snapshot creation.
+         * @x-autobe-database-schema-property snapshot_reason
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_refund_request_snapshots.snapshot_reason. The reason
+         *   text submitted by the customer for the refund request at the time
+         *   of snapshot creation.
      */
     snapshotReason: string;
 
@@ -209,8 +249,10 @@ export namespace IEcommerceMallRefundRequestSnapshot {
      *
      * Indicates the refund request status when the snapshot was captured. Values: pending (awaiting seller response), approved (seller approved the refund), rejected (seller rejected the refund).
      *
-     * @x-autobe-database-schema-property snapshot_status
-     * @x-autobe-specification Direct mapping from ecommerce_mall_refund_request_snapshots.snapshot_status. Status values: pending, approved, rejected.
+         * @x-autobe-database-schema-property snapshot_status
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_refund_request_snapshots.snapshot_status. Status
+         *   values: pending, approved, rejected.
      */
     snapshotStatus: string;
 
@@ -219,8 +261,10 @@ export namespace IEcommerceMallRefundRequestSnapshot {
      *
      * Indicates whether the seller approved or rejected the customer's refund request. Values: approved, rejected.
      *
-     * @x-autobe-database-schema-property seller_response
-     * @x-autobe-specification Direct mapping from ecommerce_mall_refund_request_snapshots.seller_response. The seller's decision: approved or rejected.
+         * @x-autobe-database-schema-property seller_response
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_refund_request_snapshots.seller_response. The
+         *   seller's decision: approved or rejected.
      */
     sellerResponse: string;
 
@@ -229,8 +273,10 @@ export namespace IEcommerceMallRefundRequestSnapshot {
      *
      * When a seller rejects a refund request, they may provide a reason explaining their decision. This field is null when the seller approves the request.
      *
-     * @x-autobe-database-schema-property seller_response_reason
-     * @x-autobe-specification Direct mapping from ecommerce_mall_refund_request_snapshots.seller_response_reason. Nullable - only populated when seller_response is rejected.
+         * @x-autobe-database-schema-property seller_response_reason
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_refund_request_snapshots.seller_response_reason.
+         *   Nullable - only populated when seller_response is rejected.
      */
     sellerResponseReason: string | null;
 
@@ -239,8 +285,11 @@ export namespace IEcommerceMallRefundRequestSnapshot {
      *
      * Summary information of the customer who submitted the original refund request, including their email and profile details.
      *
-     * @x-autobe-database-schema-property customer
-     * @x-autobe-specification Join from ecommerce_mall_refund_request_snapshots.ecommerce_mall_customer_id to ecommerce_mall_customers.id. Returns IEcommerceMallCustomer.ISummary.
+         * @x-autobe-database-schema-property customer
+         * @x-autobe-specification Join from
+         *   ecommerce_mall_refund_request_snapshots.ecommerce_mall_customer_id
+         *   to ecommerce_mall_customers.id. Returns
+         *   IEcommerceMallCustomer.ISummary.
      */
     customer: IEcommerceMallCustomer.ISummary;
 
@@ -249,8 +298,10 @@ export namespace IEcommerceMallRefundRequestSnapshot {
      *
      * Summary information of the seller who approved or rejected the refund request, including their email and shop details.
      *
-     * @x-autobe-database-schema-property seller
-     * @x-autobe-specification Join from ecommerce_mall_refund_request_snapshots.ecommerce_mall_seller_id to ecommerce_mall_sellers.id. Returns IEcommerceMallSeller.ISummary.
+         * @x-autobe-database-schema-property seller
+         * @x-autobe-specification Join from
+         *   ecommerce_mall_refund_request_snapshots.ecommerce_mall_seller_id to
+         *   ecommerce_mall_sellers.id. Returns IEcommerceMallSeller.ISummary.
      */
     seller: IEcommerceMallSeller.ISummary;
 
@@ -259,8 +310,10 @@ export namespace IEcommerceMallRefundRequestSnapshot {
      *
      * Indicates when the seller responded to the refund request and this immutable snapshot was captured. Used for ordering and audit trail purposes.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_refund_request_snapshots.created_at. Timestamp when the snapshot was created, marking when the seller responded.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_mall_refund_request_snapshots.created_at. Timestamp when
+         *   the snapshot was created, marking when the seller responded.
      */
     createdAt: string & tags.Format<"date-time">;
   };

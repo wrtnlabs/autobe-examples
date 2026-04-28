@@ -22,9 +22,10 @@ export class CommunityplatformMemberProfileController {
    *
    * @param connection
    * @param body Profile update fields for partial update. All fields are optional - only provided fields will be updated. The avatar_file_id references a pre-uploaded file in community_platform_files with owner_type = 'user_avatar'.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Update the authenticated member's profile information in community_platform_members table.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Update the authenticated member's profile
+     *   information in community_platform_members table.
    *
    * 1. Extract member ID from authentication context (JWT session token)
    * 2. Validate request body fields:

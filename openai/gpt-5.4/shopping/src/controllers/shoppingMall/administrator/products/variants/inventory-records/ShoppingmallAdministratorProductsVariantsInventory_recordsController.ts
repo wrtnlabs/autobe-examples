@@ -30,9 +30,12 @@ export class ShoppingmallAdministratorProductsVariantsInventory_recordsControlle
    * @param productId Target product identifier that owns the variant
    * @param variantId Target product variant identifier within the specified product
    * @param body Inventory history filters, pagination, and sorting options
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Implement a read-only inventory history query over `shopping_mall_inventory_records` scoped by both `shopping_mall_product_variants.id = :variantId` and `shopping_mall_product_variants.shopping_mall_product_id = :productId`.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor administrator
+     * @x-autobe-specification Implement a read-only inventory history query
+     *   over `shopping_mall_inventory_records` scoped by both
+     *   `shopping_mall_product_variants.id = :variantId` and
+     *   `shopping_mall_product_variants.shopping_mall_product_id = :productId`.
    *
    * First, load the target variant from `shopping_mall_product_variants` joined to `shopping_mall_products` and verify that the variant belongs to the specified product. If no such pair exists, return a not-found error for the nested resource. For seller callers, also verify that `shopping_mall_products.shopping_mall_seller_id` matches the authenticated seller identity; reject access when the seller does not own the product. Administrators may bypass seller ownership filtering for oversight use cases.
    *
@@ -88,9 +91,11 @@ export class ShoppingmallAdministratorProductsVariantsInventory_recordsControlle
    * @param productId Target product's ID
    * @param variantId Target product variant's ID
    * @param inventoryRecordId Target inventory history record's ID
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Implement a read-only detail query for one `shopping_mall_inventory_records` row scoped by product, variant, and record identifiers.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor administrator
+     * @x-autobe-specification Implement a read-only detail query for one
+     *   `shopping_mall_inventory_records` row scoped by product, variant, and
+     *   record identifiers.
    *
    * 1. Authenticate the caller and resolve actor type.
    * 2. Load the `shopping_mall_products` row by `productId`. If not found, return a not-found error.

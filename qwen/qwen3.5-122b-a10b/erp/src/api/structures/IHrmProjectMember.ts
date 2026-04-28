@@ -31,8 +31,9 @@ export type IHrmProjectMember = {
    *
    * Generated automatically when the membership is created. Used as the primary key for this record in the database.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from hrm_project_members.id. UUID format, auto-generated on creation.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from hrm_project_members.id. UUID
+     *   format, auto-generated on creation.
    */
   id: string & tags.Format<"uuid">;
 
@@ -46,8 +47,10 @@ export type IHrmProjectMember = {
    * - `member`: Standard project member with basic access to view project details and tasks
    * - `project-lead`: Elevated permissions to create, edit, and manage tasks within the project
    *
-   * @x-autobe-specification Direct mapping from hrm_project_members.role. String column with enum constraint enforced at application layer: 'member' or 'project-lead'.
-   * @x-autobe-database-schema-property role
+     * @x-autobe-specification Direct mapping from hrm_project_members.role.
+     *   String column with enum constraint enforced at application layer:
+     *   'member' or 'project-lead'.
+     * @x-autobe-database-schema-property role
    */
   role: string;
 
@@ -56,8 +59,9 @@ export type IHrmProjectMember = {
    *
    * Contains essential project identification and status information. This is a BELONGS-TO association loaded as a summary projection to avoid nested composition arrays.
    *
-   * @x-autobe-database-schema-property project
-   * @x-autobe-specification Loaded via JOIN from hrm_projects on project_id. Returns IHrmProject.ISummary projection.
+     * @x-autobe-database-schema-property project
+     * @x-autobe-specification Loaded via JOIN from hrm_projects on project_id.
+     *   Returns IHrmProject.ISummary projection.
    */
   project: IHrmProject.ISummary;
 
@@ -66,8 +70,9 @@ export type IHrmProjectMember = {
    *
    * Contains essential employee identification and status information. This is a BELONGS-TO association loaded as a summary projection to avoid nested composition arrays.
    *
-   * @x-autobe-database-schema-property employee
-   * @x-autobe-specification Loaded via JOIN from hrm_employees on employee_id. Returns IHrmEmployee.ISummary projection.
+     * @x-autobe-database-schema-property employee
+     * @x-autobe-specification Loaded via JOIN from hrm_employees on
+     *   employee_id. Returns IHrmEmployee.ISummary projection.
    */
   employee: IHrmEmployee.ISummary;
 
@@ -76,8 +81,10 @@ export type IHrmProjectMember = {
    *
    * Automatically set by the database when the membership record is first created. Uses ISO 8601 format with timezone.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from hrm_project_members.created_at. timestamptz format, auto-set on creation.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_project_members.created_at. timestamptz format, auto-set on
+     *   creation.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -86,8 +93,10 @@ export type IHrmProjectMember = {
    *
    * Automatically updated by the database whenever any field in this record is modified. Uses ISO 8601 format with timezone.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from hrm_project_members.updated_at. timestamptz format, auto-updated on modification.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_project_members.updated_at. timestamptz format, auto-updated on
+     *   modification.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -96,8 +105,10 @@ export type IHrmProjectMember = {
    *
    * Null value indicates the membership is active. When set, the membership has been soft-deleted but retained for audit purposes. Uses ISO 8601 format with timezone.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from hrm_project_members.deleted_at. timestamptz format, nullable. Null indicates active record.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_project_members.deleted_at. timestamptz format, nullable. Null
+     *   indicates active record.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };

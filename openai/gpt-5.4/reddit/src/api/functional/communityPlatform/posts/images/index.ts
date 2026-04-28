@@ -24,7 +24,9 @@ import { ICommunityPlatformPostImage } from "../../../../structures/ICommunityPl
  * @param props.imageId Target image attachment's ID within the specified post
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Implement a read-only service that fetches one community_platform_post_images record together with its owning community_platform_posts record for validation.
+ * @x-autobe-specification Implement a read-only service that fetches one
+ *   community_platform_post_images record together with its owning
+ *   community_platform_posts record for validation.
  *
  * Step 1: Validate postId and imageId as UUID path parameters.
  *

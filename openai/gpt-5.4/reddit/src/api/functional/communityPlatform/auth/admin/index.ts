@@ -25,7 +25,14 @@ import { ICommunityPlatformAdmin } from "../../../../structures/ICommunityPlatfo
  * @param props.body Administrator registration information including the initial login identity and credentials.
  * @x-autobe-authorization-type join
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Implement administrator account registration by validating the incoming join payload against the unique administrator email requirement and required credential rules. Query community_platform_admins by email to reject duplicates before creation. Hash the submitted password into password_hash, create a new community_platform_admins record with a generated UUID, an initial status that permits onboarding policy evaluation, null email_verified_at, null last_signed_in_at, and current timestamps.
+ * @x-autobe-specification Implement administrator account registration by
+ *   validating the incoming join payload against the unique administrator email
+ *   requirement and required credential rules. Query community_platform_admins
+ *   by email to reject duplicates before creation. Hash the submitted password
+ *   into password_hash, create a new community_platform_admins record with a
+ *   generated UUID, an initial status that permits onboarding policy
+ *   evaluation, null email_verified_at, null last_signed_in_at, and current
+ *   timestamps.
  *
  * Within the same transactional workflow, issue a new community_platform_admin_email_verifications record linked through community_platform_admin_id. Generate a unique verification token, set the verification status to a pending lifecycle value, calculate expired_at, and persist created_at and updated_at. After persistence, issue administrator authorization credentials and create a community_platform_admin_sessions record containing the newly authenticated administrator id, request context fields such as ip, href, and referrer if available from the runtime, created_at, and expired_at.
  *
@@ -128,7 +135,12 @@ export namespace join {
  * @param props.body Administrator credential payload used to authenticate an existing admin account.
  * @x-autobe-authorization-type login
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Implement administrator login by loading the target record from community_platform_admins via the unique email field. Reject the request when no account exists, when deleted_at is set, or when status indicates the account is suspended or otherwise barred from sign-in. Verify the submitted password against password_hash using the platform password hashing algorithm.
+ * @x-autobe-specification Implement administrator login by loading the target
+ *   record from community_platform_admins via the unique email field. Reject
+ *   the request when no account exists, when deleted_at is set, or when status
+ *   indicates the account is suspended or otherwise barred from sign-in. Verify
+ *   the submitted password against password_hash using the platform password
+ *   hashing algorithm.
  *
  * When credentials are valid, update last_signed_in_at on the administrator record and create a new community_platform_admin_sessions row capturing community_platform_admin_id, request-context fields such as ip, href, and referrer, created_at, and expired_at. Issue fresh access and refresh credentials bound to the authenticated administrator identity and session lifetime model.
  *
@@ -231,7 +243,15 @@ export namespace login {
  * @param props.body Administrator refresh token payload used to renew an existing authorized session.
  * @x-autobe-authorization-type refresh
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Implement token refresh by authenticating the presented refresh payload and resolving the currently authenticated administrator context. Validate that the referenced administrator still exists in community_platform_admins, that deleted_at is null, and that status still permits privileged access. Validate any refresh token metadata against the session model used by the service, including expiration and revocation policy, and correlate it to an active or acceptable administrator session record when the implementation stores session identifiers.
+ * @x-autobe-specification Implement token refresh by authenticating the
+ *   presented refresh payload and resolving the currently authenticated
+ *   administrator context. Validate that the referenced administrator still
+ *   exists in community_platform_admins, that deleted_at is null, and that
+ *   status still permits privileged access. Validate any refresh token metadata
+ *   against the session model used by the service, including expiration and
+ *   revocation policy, and correlate it to an active or acceptable
+ *   administrator session record when the implementation stores session
+ *   identifiers.
  *
  * Issue a new authorized token set for the same administrator identity and extend or rotate session continuity according to platform policy. If rotation is used, create or update community_platform_admin_sessions in a way that preserves auditability of issuance context and expiration boundaries. Return ICommunityPlatformAdmin.IAuthorized.
  *

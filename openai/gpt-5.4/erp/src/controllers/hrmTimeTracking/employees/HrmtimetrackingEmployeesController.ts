@@ -24,9 +24,11 @@ export class HrmtimetrackingEmployeesController {
    *
    * @param connection
    * @param body Employee directory search filters and pagination options
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Authenticate the caller and resolve the currently selected organization from the session context before executing any query logic.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Authenticate the caller and resolve the currently
+     *   selected organization from the session context before executing any
+     *   query logic.
    *
    * Authorize the request by evaluating employee-view capability using the caller's role assignment and permissions in the current organization only. Do not infer permission from membership in another organization. Reject the request if the caller lacks employee view permission for the active organization context.
    *
@@ -67,9 +69,11 @@ export class HrmtimetrackingEmployeesController {
    *
    * @param connection
    * @param employeeId Target employee's unique identifier within the current organization
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Load the employee record by employeeId from the organization-scoped employees table, and always constrain the lookup by the caller's currently selected organization.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Load the employee record by employeeId from the
+     *   organization-scoped employees table, and always constrain the lookup by
+     *   the caller's currently selected organization.
    *
    * Before querying the resource, evaluate whether the authenticated caller has employee view permission in the active organization context. Reject the request when that permission is missing. Do not allow permissions from another organization context to satisfy this check.
    *

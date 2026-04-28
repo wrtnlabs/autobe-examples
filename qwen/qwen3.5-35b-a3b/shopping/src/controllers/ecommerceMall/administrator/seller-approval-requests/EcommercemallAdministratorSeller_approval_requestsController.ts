@@ -23,9 +23,10 @@ export class EcommercemallAdministratorSeller_approval_requestsController {
    *
    * @param connection
    * @param body Search criteria for seller approval requests including status filter, date ranges, sorting options, and pagination parameters.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Query ecommerce_mall_seller_approval_requests table with filtering and pagination.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor administrator
+     * @x-autobe-specification Query ecommerce_mall_seller_approval_requests
+     *   table with filtering and pagination.
    *
    * Filtering:
    * - Optional status filter: pending, approved, or rejected
@@ -92,9 +93,10 @@ export class EcommercemallAdministratorSeller_approval_requestsController {
    *
    * @param connection
    * @param requestId Unique identifier of the seller approval request to retrieve
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Query ecommerce_mall_seller_approval_requests table for the record matching the path parameter requestId.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor administrator
+     * @x-autobe-specification Query ecommerce_mall_seller_approval_requests
+     *   table for the record matching the path parameter requestId.
    *
    * 1. Fetch the approval request by id (UUID) from the database.
    * 2. If record not found (404), return error with message 'Approval request not found'.
@@ -136,9 +138,10 @@ export class EcommercemallAdministratorSeller_approval_requestsController {
    * @param connection
    * @param requestId UUID identifier of the seller approval request to update. The request must be in pending status and accessible by the requesting Administrator.
    * @param body Approval decision including status change, reviewer assignment, and rejection reason (when rejecting the application).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Update seller approval request status and reviewer assignment.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor administrator
+     * @x-autobe-specification Update seller approval request status and
+     *   reviewer assignment.
    *
    * 1. Validation:
    *    - Verify request exists and is not soft-deleted

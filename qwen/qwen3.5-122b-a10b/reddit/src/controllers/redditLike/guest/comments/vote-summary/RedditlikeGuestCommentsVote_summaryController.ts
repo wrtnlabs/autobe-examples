@@ -28,9 +28,12 @@ export class RedditlikeGuestCommentsVote_summaryController {
    *
    * @param connection
    * @param commentId The unique identifier of the comment (UUID format).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor guest
-   * @x-autobe-specification Query the reddit_like_comments table to verify the comment exists and is not deleted (deleted_at IS NULL). Join with reddit_like_votes table to aggregate vote statistics for the specified comment.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor guest
+     * @x-autobe-specification Query the reddit_like_comments table to verify
+     *   the comment exists and is not deleted (deleted_at IS NULL). Join with
+     *   reddit_like_votes table to aggregate vote statistics for the specified
+     *   comment.
    *
    * **Implementation Steps**
    *

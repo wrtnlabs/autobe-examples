@@ -24,16 +24,18 @@ import { IEcommerceMallCartItem } from "../../../../../../structures/IEcommerceM
  * @param props.body Contains the product variant identifier and desired quantity to add to cart.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification 1. Extract customerId from authenticated session token.
- * 2. Check if customer has an existing cart (query ecommerce_mall_carts by customerId).
- * 3. If no cart exists, create a new cart record with current timestamp and customerId.
- * 4. Check if the specified product variant exists and is not soft-deleted (deleted_at IS NULL).
- * 5. Check if cart already contains this variant (query ecommerce_mall_cart_items by cart_id and product_variant_id).
- * 6. If variant exists in cart: increment quantity by the requested amount.
- * 7. If variant does not exist: create new cart_item with quantity.
- * 8. Validate combined quantity against variant's available stock (quantity field).
- * 9. Update cart's updated_at timestamp.
- * 10. Return the cart item with variant details (name, sku, price, options).
+ * @x-autobe-specification 1. Extract customerId from authenticated session
+ *   token. 2. Check if customer has an existing cart (query
+ *   ecommerce_mall_carts by customerId). 3. If no cart exists, create a new
+ *   cart record with current timestamp and customerId. 4. Check if the
+ *   specified product variant exists and is not soft-deleted (deleted_at IS
+ *   NULL). 5. Check if cart already contains this variant (query
+ *   ecommerce_mall_cart_items by cart_id and product_variant_id). 6. If variant
+ *   exists in cart: increment quantity by the requested amount. 7. If variant
+ *   does not exist: create new cart_item with quantity. 8. Validate combined
+ *   quantity against variant's available stock (quantity field). 9. Update
+ *   cart's updated_at timestamp. 10. Return the cart item with variant details
+ *   (name, sku, price, options).
  *
  * Edge Cases:
  * - Variant deleted (soft-delete): Return 404 with variant not found error
@@ -137,7 +139,13 @@ export namespace create {
  * @param props.body Array of cart item updates, each specifying the cart item ID and new quantity.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Retrieve the authenticated customer's cart from ecommerce_mall_carts using the JWT session token. For each item in the request body array: validate cartItemId exists in the customer's cart (join with ecommerce_mall_cart_items and ecommerce_mall_carts), apply quantity validation (1-99 range), remove item if quantity < 1 (DELETE from ecommerce_mall_cart_items), update quantity if valid (UPDATE ecommerce_mall_cart_items SET quantity = newQuantity, updated_at = NOW()).
+ * @x-autobe-specification Retrieve the authenticated customer's cart from
+ *   ecommerce_mall_carts using the JWT session token. For each item in the
+ *   request body array: validate cartItemId exists in the customer's cart (join
+ *   with ecommerce_mall_cart_items and ecommerce_mall_carts), apply quantity
+ *   validation (1-99 range), remove item if quantity < 1 (DELETE from
+ *   ecommerce_mall_cart_items), update quantity if valid (UPDATE
+ *   ecommerce_mall_cart_items SET quantity = newQuantity, updated_at = NOW()).
  *
  * Join with ecommerce_mall_product_variants to check stock availability and variant status (deleted_at IS NULL for active). For unavailable variants (deleted or out of stock), include stock_warning or unavailable status in response.
  *
@@ -234,13 +242,17 @@ export namespace patch {
  * @param props.cartItemId Unique identifier of the cart item to retrieve.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Query ecommerce_mall_cart_items table filtering by id equals cartItemId parameter.
- * Join with ecommerce_mall_carts table to verify the cart belongs to the authenticated customer via ecommerce_mall_customer_id.
- * Join with ecommerce_mall_product_variants to get variant details: sku_code, price (including price override from variant or fallback to product base_price), quantity.
- * Join with ecommerce_mall_products to get product details: name, description, base_price.
- * Join with ecommerce_mall_product_images to include product images if available.
- * Verify cart item exists; if not found or belongs to different customer, return 404.
- * Return full cart item object with nested variant and product information.
+ * @x-autobe-specification Query ecommerce_mall_cart_items table filtering by id
+ *   equals cartItemId parameter. Join with ecommerce_mall_carts table to verify
+ *   the cart belongs to the authenticated customer via
+ *   ecommerce_mall_customer_id. Join with ecommerce_mall_product_variants to
+ *   get variant details: sku_code, price (including price override from variant
+ *   or fallback to product base_price), quantity. Join with
+ *   ecommerce_mall_products to get product details: name, description,
+ *   base_price. Join with ecommerce_mall_product_images to include product
+ *   images if available. Verify cart item exists; if not found or belongs to
+ *   different customer, return 404. Return full cart item object with nested
+ *   variant and product information.
  * @path /ecommerceMall/customer/me/cart/items/:cartItemId
  * @accessor api.functional.ecommerceMall.customer.me.cart.items.at
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -332,15 +344,16 @@ export namespace at {
  * @param props.body New quantity for the cart item. Must be a positive integer greater than zero.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification 1. Extract cartItemId from path parameters (UUID format).
- * 2. Extract customerId from authenticated session (JWT token).
- * 3. Query ecommerce_mall_cart_items table to find the cart item by id.
- * 4. Verify the cart item exists - if not, return 404 Not Found.
- * 5. Verify the cart item belongs to a cart owned by the authenticated customer - if not, return 404 Not Found (do not reveal item existence).
- * 6. Validate the new quantity in request body: must be positive integer (> 0).
- * 7. If quantity validation fails, return 400 Bad Request with validation error.
- * 8. Update the quantity field and set updated_at to current timestamp.
- * 9. Return the updated cart item with 200 OK.
+ * @x-autobe-specification 1. Extract cartItemId from path parameters (UUID
+ *   format). 2. Extract customerId from authenticated session (JWT token). 3.
+ *   Query ecommerce_mall_cart_items table to find the cart item by id. 4.
+ *   Verify the cart item exists - if not, return 404 Not Found. 5. Verify the
+ *   cart item belongs to a cart owned by the authenticated customer - if not,
+ *   return 404 Not Found (do not reveal item existence). 6. Validate the new
+ *   quantity in request body: must be positive integer (> 0). 7. If quantity
+ *   validation fails, return 400 Bad Request with validation error. 8. Update
+ *   the quantity field and set updated_at to current timestamp. 9. Return the
+ *   updated cart item with 200 OK.
  * @path /ecommerceMall/customer/me/cart/items/:cartItemId
  * @accessor api.functional.ecommerceMall.customer.me.cart.items.putByCartitemid
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -443,7 +456,8 @@ export namespace putByCartitemid {
  * @param props.cartItemId Unique identifier of the cart item to remove from the cart.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Implement cart item removal for the authenticated customer.
+ * @x-autobe-specification Implement cart item removal for the authenticated
+ *   customer.
  *
  * 1. **Authentication**: Extract customer ID from the JWT token in Authorization header
  * 2. **Parameter Validation**: Validate cartItemId is a valid UUID format

@@ -20,8 +20,10 @@ export type IRedditCommunityCommentReport = {
   /**
    * Primary key for the report record.
    *
-   * @x-autobe-specification Direct mapping from reddit_community_comment_reports.id. UUID string representing the unique identifier of the report record.
-   * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_comment_reports.id. UUID string representing the
+     *   unique identifier of the report record.
+     * @x-autobe-database-schema-property id
    */
   id: string & tags.Format<"uuid">;
 
@@ -38,8 +40,10 @@ export type IRedditCommunityCommentReport = {
    * - **Minimum length**: 1 character (cannot be empty)
    * - **Maximum length**: 500 characters (reasons are truncated if longer)
    *
-   * @x-autobe-database-schema-property reason
-   * @x-autobe-specification Direct mapping from request body.reason. Required field with minLength: 1, maxLength: 500. Must provide a valid reason text for the report.
+     * @x-autobe-database-schema-property reason
+     * @x-autobe-specification Direct mapping from request body.reason. Required
+     *   field with minLength: 1, maxLength: 500. Must provide a valid reason
+     *   text for the report.
    */
   reason: string & tags.MinLength<1> & tags.MaxLength<500>;
 
@@ -50,24 +54,30 @@ export type IRedditCommunityCommentReport = {
    *
    * Status transitions follow the moderation workflow and are managed by community moderators.
    *
-   * @x-autobe-specification Direct mapping from reddit_community_comment_reports.status. String enum field indicating the current status of the report in the moderation review process.
-   * @x-autobe-database-schema-property status
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_comment_reports.status. String enum field indicating
+     *   the current status of the report in the moderation review process.
+     * @x-autobe-database-schema-property status
    */
   status: string;
 
   /**
    * Timestamp when the report was created.
    *
-   * @x-autobe-specification Direct mapping from reddit_community_comment_reports.created_at. DateTime field (ISO 8601 format) indicating when the report was submitted.
-   * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_comment_reports.created_at. DateTime field (ISO 8601
+     *   format) indicating when the report was submitted.
+     * @x-autobe-database-schema-property created_at
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the report status was last updated.
    *
-   * @x-autobe-specification Direct mapping from reddit_community_comment_reports.updated_at. DateTime field (ISO 8601 format) tracking when moderators reviewed or modified the report.
-   * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_comment_reports.updated_at. DateTime field (ISO 8601
+     *   format) tracking when moderators reviewed or modified the report.
+     * @x-autobe-database-schema-property updated_at
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -76,8 +86,10 @@ export type IRedditCommunityCommentReport = {
    *
    * Null if the report is active. Used for soft deletion while preserving audit trail for moderation history and compliance.
    *
-   * @x-autobe-specification Direct mapping from reddit_community_comment_reports.deleted_at. Nullable DateTime field (ISO 8601 format). When set, the report is marked as deleted.
-   * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_comment_reports.deleted_at. Nullable DateTime field
+     *   (ISO 8601 format). When set, the report is marked as deleted.
+     * @x-autobe-database-schema-property deleted_at
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 
@@ -86,8 +98,11 @@ export type IRedditCommunityCommentReport = {
    *
    * This foreign key establishes the parent-child relationship where the comment is the reported entity and the report is the moderation record tracking the violation flag.
    *
-   * @x-autobe-specification Join from reddit_community_comment_reports.comment_id to reddit_community_comments.id. Returns comment ISummary object. This is the comment that was reported for moderation review.
-   * @x-autobe-database-schema-property comment
+     * @x-autobe-specification Join from
+     *   reddit_community_comment_reports.comment_id to
+     *   reddit_community_comments.id. Returns comment ISummary object. This is
+     *   the comment that was reported for moderation review.
+     * @x-autobe-database-schema-property comment
    */
   comment: IRedditCommunityComment.ISummary;
 
@@ -96,8 +111,11 @@ export type IRedditCommunityCommentReport = {
    *
    * This identifies the reporter for transparency and prevents abuse through rate limiting or pattern analysis.
    *
-   * @x-autobe-specification Join from reddit_community_comment_reports.user_id to reddit_community_members.id. Returns member ISummary object. This is the member who submitted this report.
-   * @x-autobe-database-schema-property reporter
+     * @x-autobe-specification Join from
+     *   reddit_community_comment_reports.user_id to
+     *   reddit_community_members.id. Returns member ISummary object. This is
+     *   the member who submitted this report.
+     * @x-autobe-database-schema-property reporter
    */
   reporter: IRedditCommunityMember.ISummary;
 
@@ -106,8 +124,12 @@ export type IRedditCommunityCommentReport = {
    *
    * This provides context for moderation decisions and enables community-level report metrics and moderation oversight.
    *
-   * @x-autobe-specification Join from reddit_community_comment_reports.community_id to reddit_community_communities.id. Returns community ISummary object. This is the community where the reported content exists and is moderated.
-   * @x-autobe-database-schema-property community
+     * @x-autobe-specification Join from
+     *   reddit_community_comment_reports.community_id to
+     *   reddit_community_communities.id. Returns community ISummary object.
+     *   This is the community where the reported content exists and is
+     *   moderated.
+     * @x-autobe-database-schema-property community
    */
   community: IRedditCommunityCommunity.ISummary;
 };
@@ -123,8 +145,11 @@ export namespace IRedditCommunityCommentReport {
      *
      * Members must provide a reason when submitting a report. This field captures the violation type, context, or specific concern that led to the report. The reason is visible to moderators for review and decision-making. Validated for length (1-500 characters).
      *
-     * @x-autobe-database-schema-property reason
-     * @x-autobe-specification Direct mapping from reddit_community_comment_reports.reason. Required string field (1-500 characters). Captures the member's explanation for why the comment is being reported to moderators.
+         * @x-autobe-database-schema-property reason
+         * @x-autobe-specification Direct mapping from
+         *   reddit_community_comment_reports.reason. Required string field
+         *   (1-500 characters). Captures the member's explanation for why the
+         *   comment is being reported to moderators.
      */
     reason: string;
   };

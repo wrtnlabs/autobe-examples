@@ -24,17 +24,17 @@ import { IPageIErpHrmTimeTrackingProject } from "../../../../../structures/IPage
  * @param props.body Search, filtering, and pagination criteria for retrieving the requesting member’s assigned projects within the selected organization context.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implementation steps:
- * 1) Read organization context from the request context (selected organization) established by middleware.
- * 2) Identify the requesting member/employee identity.
- * 3) Query erp_hrm_time_tracking_project_memberships where:
- *    - employee_id = requesting employee id
- *    - deleted_at IS NULL
- *    - join to erp_hrm_time_tracking_projects to ensure erp_hrm_time_tracking_organization_id = selected organization id
- *    - projects.deleted_at IS NULL
- * 4) Join to erp_hrm_time_tracking_projects and select only the columns required by the assigned-project summary DTO.
- * 5) Apply requestBody filtering/sorting/pagination (as defined by IErpHrmTimeTrackingProject membership request DTO) after scoping to memberships/projects.
- * 6) Return a paginated payload of project summaries.
+ * @x-autobe-specification Implementation steps: 1) Read organization context
+ *   from the request context (selected organization) established by middleware.
+ *   2) Identify the requesting member/employee identity. 3) Query
+ *   erp_hrm_time_tracking_project_memberships where: - employee_id = requesting
+ *   employee id - deleted_at IS NULL - join to erp_hrm_time_tracking_projects
+ *   to ensure erp_hrm_time_tracking_organization_id = selected organization id
+ *   - projects.deleted_at IS NULL 4) Join to erp_hrm_time_tracking_projects and
+ *   select only the columns required by the assigned-project summary DTO. 5)
+ *   Apply requestBody filtering/sorting/pagination (as defined by
+ *   IErpHrmTimeTrackingProject membership request DTO) after scoping to
+ *   memberships/projects. 6) Return a paginated payload of project summaries.
  *
  * Edge cases:
  * - If no memberships exist for the employee in the organization, return an empty paginated result.

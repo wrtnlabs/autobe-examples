@@ -10,40 +10,52 @@ export type ICommunityPlatformAdmin = {
   /**
    * Unique identifier of the administrator account (UUID).
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from community_platform_admins.id. SELECT community_platform_admins.id WHERE id = adminId.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from community_platform_admins.id.
+     *   SELECT community_platform_admins.id WHERE id = adminId.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Administrator login email address used for authentication.
    *
-   * @x-autobe-database-schema-property email
-   * @x-autobe-specification Direct mapping from community_platform_admins.email. SELECT community_platform_admins.email WHERE id = adminId. Must follow email format as defined by the DB model.
+     * @x-autobe-database-schema-property email
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_admins.email. SELECT community_platform_admins.email
+     *   WHERE id = adminId. Must follow email format as defined by the DB
+     *   model.
    */
   email: string & tags.Format<"email">;
 
   /**
    * Timestamp when the administrator account record was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from community_platform_admins.created_at. SELECT community_platform_admins.created_at WHERE id = adminId.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_admins.created_at. SELECT
+     *   community_platform_admins.created_at WHERE id = adminId.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the administrator account record was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from community_platform_admins.updated_at. SELECT community_platform_admins.updated_at WHERE id = adminId.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_admins.updated_at. SELECT
+     *   community_platform_admins.updated_at WHERE id = adminId.
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * Soft-deletion timestamp. Null means the admin account is not soft-removed; non-null indicates removal.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from community_platform_admins.deleted_at. If the column is NULL, the account is considered active; if set, the account is considered soft-removed. SELECT community_platform_admins.deleted_at WHERE id = adminId.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_admins.deleted_at. If the column is NULL, the
+     *   account is considered active; if set, the account is considered
+     *   soft-removed. SELECT community_platform_admins.deleted_at WHERE id =
+     *   adminId.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -55,16 +67,21 @@ export namespace ICommunityPlatformAdmin {
     /**
      * Administrator account email address used for sign-in.
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from community_platform_admins.email. Use the provided email to query the admin account record before verifying password.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_admins.email. Use the provided email to query
+         *   the admin account record before verifying password.
      */
     email: string & tags.Format<"email">;
 
     /**
      * Plain-text password provided for administrator authentication.
      *
-     * @x-autobe-database-schema-property password_hash
-     * @x-autobe-specification Treat `password` as plain text from the client. Verify it against community_platform_admins.password_hash using the platform password hashing/verification algorithm (never store or log this value as a hash in the DTO layer).
+         * @x-autobe-database-schema-property password_hash
+         * @x-autobe-specification Treat `password` as plain text from the
+         *   client. Verify it against community_platform_admins.password_hash
+         *   using the platform password hashing/verification algorithm (never
+         *   store or log this value as a hash in the DTO layer).
      */
     password: string & tags.Format<"password">;
   };
@@ -76,36 +93,54 @@ export namespace ICommunityPlatformAdmin {
     /**
      * Admin account email address used for sign-in (must be unique).
      *
-     * @x-autobe-database-schema-property email
-     * @x-autobe-specification Direct mapping from community_platform_admins.email. Validate it conforms to email format and enforce uniqueness during join.
+         * @x-autobe-database-schema-property email
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_admins.email. Validate it conforms to email
+         *   format and enforce uniqueness during join.
      */
     email: string & tags.Format<"email">;
 
     /**
      * Plain-text password used to create the administrator account. The server hashes it before storing.
      *
-     * @x-autobe-specification Server-side transformation: take the plain-text password from the request, validate strength/length per business rules, hash it using the configured password hashing algorithm, and store the result into community_platform_admins.password_hash. Never persist or return password_hash directly from the client payload.
+         * @x-autobe-specification Server-side transformation: take the
+         *   plain-text password from the request, validate strength/length per
+         *   business rules, hash it using the configured password hashing
+         *   algorithm, and store the result into
+         *   community_platform_admins.password_hash. Never persist or return
+         *   password_hash directly from the client payload.
      */
     password: string & tags.Format<"password">;
 
     /**
      * Optional navigation context URL (the page/request that led to this join). Captured into session metadata.
      *
-     * @x-autobe-specification Session-context capture: record this as the session navigation/href context in community_platform_admin_sessions for the join flow. If absent, store null/omit depending on session-table constraints; do not use it for admin identity creation.
+         * @x-autobe-specification Session-context capture: record this as the
+         *   session navigation/href context in
+         *   community_platform_admin_sessions for the join flow. If absent,
+         *   store null/omit depending on session-table constraints; do not use
+         *   it for admin identity creation.
      */
     href: string & tags.Format<"uri">;
 
     /**
      * Optional HTTP referrer URL captured for session context.
      *
-     * @x-autobe-specification Session-context capture: record this as the session referrer URL in community_platform_admin_sessions for the join flow. If absent, store null/omit depending on session-table constraints; do not use it for admin identity creation.
+         * @x-autobe-specification Session-context capture: record this as the
+         *   session referrer URL in community_platform_admin_sessions for the
+         *   join flow. If absent, store null/omit depending on session-table
+         *   constraints; do not use it for admin identity creation.
      */
     referrer: string & tags.Format<"uri">;
 
     /**
      * Optional IPv4 address of the client used for session tracking (may be null).
      *
-     * @x-autobe-specification Session-context capture: if provided by the client, store it as the session IP in community_platform_admin_sessions. If null/absent, optionally fall back to server-observed IP when available; otherwise store null according to session-table constraints.
+         * @x-autobe-specification Session-context capture: if provided by the
+         *   client, store it as the session IP in
+         *   community_platform_admin_sessions. If null/absent, optionally fall
+         *   back to server-observed IP when available; otherwise store null
+         *   according to session-table constraints.
      */
     ip?: (string & tags.Format<"ipv4">) | null | undefined;
   };
@@ -117,42 +152,54 @@ export namespace ICommunityPlatformAdmin {
     /**
      * Administrator account identifier.
      *
-     * @x-autobe-specification Return the authenticated administrator's unique identifier from the admin identity record used for authentication (community_platform_admins.id).
+         * @x-autobe-specification Return the authenticated administrator's
+         *   unique identifier from the admin identity record used for
+         *   authentication (community_platform_admins.id).
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Administrator account email address.
      *
-     * @x-autobe-specification Return the authenticated administrator's email from the admin identity record (community_platform_admins.email).
+         * @x-autobe-specification Return the authenticated administrator's
+         *   email from the admin identity record
+         *   (community_platform_admins.email).
      */
     email: string & tags.Format<"email">;
 
     /**
      * When the administrator account was created.
      *
-     * @x-autobe-specification Return the administrator account creation timestamp from the admin identity record (community_platform_admins.created_at).
+         * @x-autobe-specification Return the administrator account creation
+         *   timestamp from the admin identity record
+         *   (community_platform_admins.created_at).
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * When the administrator account was last updated.
      *
-     * @x-autobe-specification Return the administrator account last update timestamp from the admin identity record (community_platform_admins.updated_at).
+         * @x-autobe-specification Return the administrator account last update
+         *   timestamp from the admin identity record
+         *   (community_platform_admins.updated_at).
      */
     updated_at: string & tags.Format<"date-time">;
 
     /**
      * Soft-deletion timestamp for the administrator account; null if the account is active.
      *
-     * @x-autobe-specification Return the administrator account soft-delete timestamp from the admin identity record (community_platform_admins.deleted_at). Use null when the account is not soft-deleted.
+         * @x-autobe-specification Return the administrator account soft-delete
+         *   timestamp from the admin identity record
+         *   (community_platform_admins.deleted_at). Use null when the account
+         *   is not soft-deleted.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
 
     /**
      * Authorization token.
      *
-     * @x-autobe-specification Authorization token comes from the session table.
+         * @x-autobe-specification Authorization token comes from the session
+         *   table.
      */
     token: IAuthorizationToken;
   };
@@ -164,7 +211,16 @@ export namespace ICommunityPlatformAdmin {
     /**
      * Refresh token credential used to renew the administrator session. The server validates the token and its expiry/revocation status, then returns newly issued tokens.
      *
-     * @x-autobe-specification Validate the provided refreshToken by resolving it to the corresponding admin session record in community_platform_admin_sessions using the service's session/token rotation mechanism. For the matched session: reject when deleted_at is set or expired_at is in the past. If rotation is supported, update the session row with the rotation context as implemented (e.g., token rotation metadata) and persist it. After successful validation (and rotation if applicable), issue fresh admin access/refresh tokens. Deny with 401 when refreshToken cannot be resolved to a valid, non-deleted, non-expired session.
+         * @x-autobe-specification Validate the provided refreshToken by
+         *   resolving it to the corresponding admin session record in
+         *   community_platform_admin_sessions using the service's session/token
+         *   rotation mechanism. For the matched session: reject when deleted_at
+         *   is set or expired_at is in the past. If rotation is supported,
+         *   update the session row with the rotation context as implemented
+         *   (e.g., token rotation metadata) and persist it. After successful
+         *   validation (and rotation if applicable), issue fresh admin
+         *   access/refresh tokens. Deny with 401 when refreshToken cannot be
+         *   resolved to a valid, non-deleted, non-expired session.
      */
     refreshToken: null;
   };

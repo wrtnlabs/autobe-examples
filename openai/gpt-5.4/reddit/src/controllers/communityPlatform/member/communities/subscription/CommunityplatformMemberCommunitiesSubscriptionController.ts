@@ -23,9 +23,11 @@ export class CommunityplatformMemberCommunitiesSubscriptionController {
    *
    * @param connection
    * @param communityId Target community's ID
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Authenticate the caller as a member and resolve the caller's `community_platform_members.id` from the active member session.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Authenticate the caller as a member and resolve
+     *   the caller's `community_platform_members.id` from the active member
+     *   session.
    *
    * Validate the `communityId` path parameter as a UUID. Query `community_platform_communities` by `id = :communityId` and ensure the community exists. The community schema includes lifecycle fields `status` and `deleted_at`; use them to reject communities that should not be treated as normally available if domain policy requires availability checks before subscription lookup.
    *
@@ -69,9 +71,10 @@ export class CommunityplatformMemberCommunitiesSubscriptionController {
    *
    * @param connection
    * @param communityId Target community's unique identifier.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Authenticate the caller as a member and obtain the current member identifier from the session context.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Authenticate the caller as a member and obtain
+     *   the current member identifier from the session context.
    *
    * Validate that the `communityId` path parameter is a UUID and load the target record from `community_platform_communities` by `id`. Reject the request if no matching community exists or if the community is not available for subscription management according to its lifecycle rules.
    *

@@ -11,64 +11,77 @@ export type IErpHrmTimeOrganizationMembership = {
   /**
    * Unique identifier for this organization membership.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from erp_hrm_time_organization_memberships.id.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_organization_memberships.id.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Member account linked to this organization membership.
    *
-   * @x-autobe-database-schema-property member
-   * @x-autobe-specification Join through erp_hrm_time_organization_memberships.erp_hrm_time_member_id to erp_hrm_time_members.id and expose the related member as IErpHrmTimeMember.ISummary.
+     * @x-autobe-database-schema-property member
+     * @x-autobe-specification Join through
+     *   erp_hrm_time_organization_memberships.erp_hrm_time_member_id to
+     *   erp_hrm_time_members.id and expose the related member as
+     *   IErpHrmTimeMember.ISummary.
    */
   member: IErpHrmTimeMember.ISummary;
 
   /**
    * Organization linked to this membership.
    *
-   * @x-autobe-database-schema-property organization
-   * @x-autobe-specification Join through erp_hrm_time_organization_memberships.erp_hrm_time_organization_id to erp_hrm_time_organizations.id and expose the related organization as IErpHrmTimeOrganizationDashboardSummary.ISummary.
+     * @x-autobe-database-schema-property organization
+     * @x-autobe-specification Join through
+     *   erp_hrm_time_organization_memberships.erp_hrm_time_organization_id to
+     *   erp_hrm_time_organizations.id and expose the related organization as
+     *   IErpHrmTimeOrganizationDashboardSummary.ISummary.
    */
   organization: IErpHrmTimeOrganizationDashboardSummary.ISummary;
 
   /**
    * Membership status within the organization, such as active or pending.
    *
-   * @x-autobe-database-schema-property status
-   * @x-autobe-specification Direct mapping from erp_hrm_time_organization_memberships.status.
+     * @x-autobe-database-schema-property status
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_organization_memberships.status.
    */
   status: string;
 
   /**
    * Whether this membership is the member’s currently selected organization context.
    *
-   * @x-autobe-database-schema-property is_selected_context
-   * @x-autobe-specification Direct mapping from erp_hrm_time_organization_memberships.is_selected_context.
+     * @x-autobe-database-schema-property is_selected_context
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_organization_memberships.is_selected_context.
    */
   isSelectedContext: boolean;
 
   /**
    * Timestamp when this membership record was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from erp_hrm_time_organization_memberships.created_at.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_organization_memberships.created_at.
    */
   createdAt: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when this membership record was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from erp_hrm_time_organization_memberships.updated_at.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_organization_memberships.updated_at.
    */
   updatedAt: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when this membership was soft-deleted, or null if it is still active.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from erp_hrm_time_organization_memberships.deleted_at. Preserve null when the membership is not soft-deleted.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_organization_memberships.deleted_at. Preserve null when
+     *   the membership is not soft-deleted.
    */
   deletedAt: (string & tags.Format<"date-time">) | null;
 };
@@ -80,16 +93,23 @@ export namespace IErpHrmTimeOrganizationMembership {
     /**
      * Current status of the organization membership.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping to erp_hrm_time_organization_memberships.status. Accept partial update input and persist the provided status value as the membership's current state.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping to
+         *   erp_hrm_time_organization_memberships.status. Accept partial update
+         *   input and persist the provided status value as the membership's
+         *   current state.
      */
     status?: string | undefined;
 
     /**
      * Whether this membership is the member's currently selected organization context.
      *
-     * @x-autobe-database-schema-property is_selected_context
-     * @x-autobe-specification Direct mapping to erp_hrm_time_organization_memberships.is_selected_context. When true, the service layer may need to coordinate selected-context consistency across memberships, but this DTO only carries the boolean flag.
+         * @x-autobe-database-schema-property is_selected_context
+         * @x-autobe-specification Direct mapping to
+         *   erp_hrm_time_organization_memberships.is_selected_context. When
+         *   true, the service layer may need to coordinate selected-context
+         *   consistency across memberships, but this DTO only carries the
+         *   boolean flag.
      */
     is_selected_context?: boolean | undefined;
   };
@@ -101,64 +121,77 @@ export namespace IErpHrmTimeOrganizationMembership {
     /**
      * Unique organization membership identifier.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from erp_hrm_time_organization_memberships.id.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_organization_memberships.id.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Member account associated with this organization membership.
      *
-     * @x-autobe-database-schema-property member
-     * @x-autobe-specification Join erp_hrm_time_organization_memberships.erp_hrm_time_member_id to erp_hrm_time_members.id and return the member summary representation.
+         * @x-autobe-database-schema-property member
+         * @x-autobe-specification Join
+         *   erp_hrm_time_organization_memberships.erp_hrm_time_member_id to
+         *   erp_hrm_time_members.id and return the member summary
+         *   representation.
      */
     member: IErpHrmTimeMember.ISummary;
 
     /**
      * Organization associated with this membership.
      *
-     * @x-autobe-database-schema-property organization
-     * @x-autobe-specification Join erp_hrm_time_organization_memberships.erp_hrm_time_organization_id to erp_hrm_time_organizations.id and return the organization summary representation.
+         * @x-autobe-database-schema-property organization
+         * @x-autobe-specification Join
+         *   erp_hrm_time_organization_memberships.erp_hrm_time_organization_id
+         *   to erp_hrm_time_organizations.id and return the organization
+         *   summary representation.
      */
     organization: IErpHrmTimeOrganizationDashboardSummary.ISummary;
 
     /**
      * Current membership status within the organization.
      *
-     * @x-autobe-database-schema-property status
-     * @x-autobe-specification Direct mapping from erp_hrm_time_organization_memberships.status.
+         * @x-autobe-database-schema-property status
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_organization_memberships.status.
      */
     status: string;
 
     /**
      * Whether this membership is the member's currently selected organization context.
      *
-     * @x-autobe-database-schema-property is_selected_context
-     * @x-autobe-specification Direct mapping from erp_hrm_time_organization_memberships.is_selected_context.
+         * @x-autobe-database-schema-property is_selected_context
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_organization_memberships.is_selected_context.
      */
     isSelectedContext: boolean;
 
     /**
      * Timestamp when the membership record was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from erp_hrm_time_organization_memberships.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_organization_memberships.created_at.
      */
     createdAt: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when the membership record was last updated.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from erp_hrm_time_organization_memberships.updated_at.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_organization_memberships.updated_at.
      */
     updatedAt: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when the membership was soft deleted, or null if active.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from erp_hrm_time_organization_memberships.deleted_at. Nullable; null means the membership is active.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_organization_memberships.deleted_at. Nullable; null
+         *   means the membership is active.
      */
     deletedAt: (string & tags.Format<"date-time">) | null;
   };
@@ -170,14 +203,20 @@ export namespace IErpHrmTimeOrganizationMembership {
     /**
      * UUID of the employee whose role will be changed.
      *
-     * @x-autobe-specification Use this UUID to resolve the target employee within the active organization context. Validate that the employee belongs to the current organization, then use the resolved employee record as the subject of the role update transaction.
+         * @x-autobe-specification Use this UUID to resolve the target employee
+         *   within the active organization context. Validate that the employee
+         *   belongs to the current organization, then use the resolved employee
+         *   record as the subject of the role update transaction.
      */
     employeeId: string & tags.Format<"uuid">;
 
     /**
      * UUID of the role to assign to the employee.
      *
-     * @x-autobe-specification Use this UUID to resolve the role within the active organization context. Validate that the role belongs to the same organization as the employee, then assign it to the employee in the same transaction.
+         * @x-autobe-specification Use this UUID to resolve the role within the
+         *   active organization context. Validate that the role belongs to the
+         *   same organization as the employee, then assign it to the employee
+         *   in the same transaction.
      */
     roleId: string & tags.Format<"uuid">;
   };
@@ -189,49 +228,67 @@ export namespace IErpHrmTimeOrganizationMembership {
     /**
      * Keyword used to search organization memberships.
      *
-     * @x-autobe-specification Use as a free-text search term for organization membership browsing within the current organization scope. Apply it server-side against searchable membership-related fields rather than mapping it to a database column.
+         * @x-autobe-specification Use as a free-text search term for
+         *   organization membership browsing within the current organization
+         *   scope. Apply it server-side against searchable membership-related
+         *   fields rather than mapping it to a database column.
      */
     search?: string | undefined;
 
     /**
      * Member account ID used to filter memberships.
      *
-     * @x-autobe-specification Use as a UUID filter to narrow memberships to a specific member account within the active organization context. This value is interpreted only at query time and must not be treated as a persisted DTO field.
+         * @x-autobe-specification Use as a UUID filter to narrow memberships to
+         *   a specific member account within the active organization context.
+         *   This value is interpreted only at query time and must not be
+         *   treated as a persisted DTO field.
      */
     erpHrmTimeMemberId?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Membership status filter.
      *
-     * @x-autobe-specification Use as a membership-status filter in the organization-membership browse query. The backend should apply it against the persisted status field while treating this DTO property as request input only.
+         * @x-autobe-specification Use as a membership-status filter in the
+         *   organization-membership browse query. The backend should apply it
+         *   against the persisted status field while treating this DTO property
+         *   as request input only.
      */
     status?: string | undefined;
 
     /**
      * Filter by whether the membership is the selected organization context.
      *
-     * @x-autobe-specification Use as a boolean filter for whether the membership is the currently selected organization context. Apply it only within the active organization scope.
+         * @x-autobe-specification Use as a boolean filter for whether the
+         *   membership is the currently selected organization context. Apply it
+         *   only within the active organization scope.
      */
     isSelectedContext?: boolean | undefined;
 
     /**
      * Sort expression for the membership list.
      *
-     * @x-autobe-specification Use as the sort expression for membership list ordering. The backend should interpret this value against the allowed sort keys for membership browsing, such as created_at, updated_at, status, and is_selected_context.
+         * @x-autobe-specification Use as the sort expression for membership
+         *   list ordering. The backend should interpret this value against the
+         *   allowed sort keys for membership browsing, such as created_at,
+         *   updated_at, status, and is_selected_context.
      */
     sort?: string | undefined;
 
     /**
      * Page number to retrieve.
      *
-     * @x-autobe-specification Use as the 1-indexed page number for paginated membership browsing. Validate it together with limit to compute the result slice.
+         * @x-autobe-specification Use as the 1-indexed page number for
+         *   paginated membership browsing. Validate it together with limit to
+         *   compute the result slice.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of records to return per page.
      *
-     * @x-autobe-specification Use as the maximum number of membership records returned per page. Validate bounds before applying it with page to paginate the query.
+         * @x-autobe-specification Use as the maximum number of membership
+         *   records returned per page. Validate bounds before applying it with
+         *   page to paginate the query.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)

@@ -26,7 +26,8 @@ import { IShoppingMallSuperAdministrator } from "../../../structures/IShoppingMa
  * @param props.body Search filters, sorting, and pagination for super administrator accounts
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Implement this operation as a paginated search over the shopping_mall_super_administrators table.
+ * @x-autobe-specification Implement this operation as a paginated search over
+ *   the shopping_mall_super_administrators table.
  *
  * Accept an IShoppingMallSuperAdministrator.IRequest body containing pagination, filtering, and sorting directives. Support filters grounded only in actual schema fields: id, email, active, created_at, updated_at, and deleted_at. Implement case-insensitive partial matching for email when text search is provided, exact matching for id when requested, exact boolean filtering for active, and range filtering for created_at and updated_at when date bounds are provided by the request DTO design. If the request model includes deleted-record controls, use deleted_at to include only active records by default and optionally include or isolate deleted records when explicitly requested.
  *
@@ -131,7 +132,9 @@ export namespace index {
  * @param props.superAdministratorId Identifier of the target super administrator account
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Load the target super administrator account from the super administrator identity store using the provided superAdministratorId as the primary lookup key.
+ * @x-autobe-specification Load the target super administrator account from the
+ *   super administrator identity store using the provided superAdministratorId
+ *   as the primary lookup key.
  *
  * Before querying the record, authenticate the caller and verify that the caller holds an administrative governance role permitted to view super administrator account details. Reject unauthenticated requests and reject authenticated callers that do not have governance-level visibility into privileged administrative identities.
  *

@@ -11,56 +11,76 @@ export type IErpHrmOrganization = {
   /**
    * Unique identifier of the organization. A UUID auto-generated at creation time.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from erp_hrm_organizations.id. UUID primary key, auto-generated on creation.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from erp_hrm_organizations.id.
+     *   UUID primary key, auto-generated on creation.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Display name of the organization. Must be unique across the entire platform. Used as the primary human-readable identifier in the UI and reports.
    *
-   * @x-autobe-database-schema-property name
-   * @x-autobe-specification Direct mapping from erp_hrm_organizations.name. Must be globally unique across all organizations (@@unique([name]) constraint). Non-empty string.
+     * @x-autobe-database-schema-property name
+     * @x-autobe-specification Direct mapping from erp_hrm_organizations.name.
+     *   Must be globally unique across all organizations (@@unique([name])
+     *   constraint). Non-empty string.
    */
   name: string;
 
   /**
    * Optional description providing additional context about the organization's purpose or structure. Null if not specified.
    *
-   * @x-autobe-database-schema-property description
-   * @x-autobe-specification Direct mapping from erp_hrm_organizations.description. Nullable String column. Returns null when no description has been set.
+     * @x-autobe-database-schema-property description
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_organizations.description. Nullable String column. Returns null
+     *   when no description has been set.
    */
   description: string | null;
 
   /**
    * Optional URI pointing to the organization's logo image, used for branding purposes across the platform. Null if not configured.
    *
-   * @x-autobe-database-schema-property logo_url
-   * @x-autobe-specification Direct mapping from erp_hrm_organizations.logo_url. Nullable VarChar(80000) column. Must be a valid URI when present. Returns null when no logo has been configured.
+     * @x-autobe-database-schema-property logo_url
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_organizations.logo_url. Nullable VarChar(80000) column. Must be
+     *   a valid URI when present. Returns null when no logo has been
+     *   configured.
    */
   logo_url: (string & tags.Format<"uri">) | null;
 
   /**
    * Default currency code for the organization (e.g., USD, EUR, KRW). Establishes the unit of measurement for all financial figures such as employee pay rates and contract values. Does not perform currency conversion.
    *
-   * @x-autobe-database-schema-property currency
-   * @x-autobe-specification Direct mapping from erp_hrm_organizations.currency. Non-null string. Expected to be an ISO 4217 currency code (e.g., 'USD', 'EUR', 'KRW'). Does not perform currency conversion — purely a default display unit for financial figures.
+     * @x-autobe-database-schema-property currency
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_organizations.currency. Non-null string. Expected to be an ISO
+     *   4217 currency code (e.g., 'USD', 'EUR', 'KRW'). Does not perform
+     *   currency conversion — purely a default display unit for financial
+     *   figures.
    */
   currency: string;
 
   /**
    * IANA timezone identifier for the organization (e.g., Asia/Seoul, America/New_York). Governs how all time-related data is interpreted within the organization, including workday boundaries, timesheet week boundaries, and report date ranges.
    *
-   * @x-autobe-database-schema-property timezone
-   * @x-autobe-specification Direct mapping from erp_hrm_organizations.timezone. Non-null string. Expected to be a valid IANA timezone identifier (e.g., 'Asia/Seoul', 'America/New_York'). Governs how workday boundaries, timesheet week boundaries, and report date ranges are computed for all members.
+     * @x-autobe-database-schema-property timezone
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_organizations.timezone. Non-null string. Expected to be a valid
+     *   IANA timezone identifier (e.g., 'Asia/Seoul', 'America/New_York').
+     *   Governs how workday boundaries, timesheet week boundaries, and report
+     *   date ranges are computed for all members.
    */
   timezone: string;
 
   /**
    * Month number (1-12) indicating when the organization's fiscal year begins. For example, 1 for a calendar-year organization (January start) or 4 for an April-start fiscal year. Influences the boundaries of all financial and time reporting periods.
    *
-   * @x-autobe-database-schema-property fiscal_start_month
-   * @x-autobe-specification Direct mapping from erp_hrm_organizations.fiscal_start_month. Non-null integer column (db.Integer). Valid range: 1-12 inclusive. For example, 1 = January (calendar-year), 4 = April (UK-style fiscal year). Influences boundaries of financial and time reporting periods.
+     * @x-autobe-database-schema-property fiscal_start_month
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_organizations.fiscal_start_month. Non-null integer column
+     *   (db.Integer). Valid range: 1-12 inclusive. For example, 1 = January
+     *   (calendar-year), 4 = April (UK-style fiscal year). Influences
+     *   boundaries of financial and time reporting periods.
    */
   fiscal_start_month: number &
     tags.Type<"int32"> &
@@ -70,32 +90,48 @@ export type IErpHrmOrganization = {
   /**
    * The organization member who holds the Owner role and highest authority within this organization. Includes their employment details, assigned role, and linked platform account. The organization always has exactly one owner at any point in time.
    *
-   * @x-autobe-database-schema-property ownerMember
-   * @x-autobe-specification Resolved via the ownerMember belongs-to relation: erp_hrm_organizations.owner_member_id -> erp_hrm_members.id. Then find erp_hrm_organization_members where member_id = owner_member_id AND organization_id = this organization's id. Returns that organization member record as IErpHrmOrganizationMember.ISummary. The raw owner_member_id scalar is NOT exposed.
+     * @x-autobe-database-schema-property ownerMember
+     * @x-autobe-specification Resolved via the ownerMember belongs-to relation:
+     *   erp_hrm_organizations.owner_member_id -> erp_hrm_members.id. Then find
+     *   erp_hrm_organization_members where member_id = owner_member_id AND
+     *   organization_id = this organization's id. Returns that organization
+     *   member record as IErpHrmOrganizationMember.ISummary. The raw
+     *   owner_member_id scalar is NOT exposed.
    */
   owner: IErpHrmOrganizationMember.ISummary;
 
   /**
    * Timestamp when the organization was created on the platform.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from erp_hrm_organizations.created_at. Non-null Timestamptz column. Set to the current timestamp when the organization record is first inserted. Never updated thereafter.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_organizations.created_at. Non-null Timestamptz column. Set to
+     *   the current timestamp when the organization record is first inserted.
+     *   Never updated thereafter.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the organization record was last updated, reflecting any change to its settings or ownership.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from erp_hrm_organizations.updated_at. Non-null Timestamptz column. Set to the current timestamp at creation and updated whenever the organization record is modified (e.g., name change, settings update, ownership transfer).
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_organizations.updated_at. Non-null Timestamptz column. Set to
+     *   the current timestamp at creation and updated whenever the organization
+     *   record is modified (e.g., name change, settings update, ownership
+     *   transfer).
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * Soft-deletion timestamp. Null if the organization is active. When set, the organization and all associated data are considered deleted and inaccessible to all members.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from erp_hrm_organizations.deleted_at. Nullable Timestamptz column. Null indicates an active organization. When set, the organization and all its scoped data are considered soft-deleted and inaccessible. Read endpoints filter out records where deleted_at IS NOT NULL.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_organizations.deleted_at. Nullable Timestamptz column. Null
+     *   indicates an active organization. When set, the organization and all
+     *   its scoped data are considered soft-deleted and inaccessible. Read
+     *   endpoints filter out records where deleted_at IS NOT NULL.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -107,24 +143,35 @@ export namespace IErpHrmOrganization {
     /**
      * The display name of the organization. Must be unique across the entire platform. Used as the primary human-readable identifier for the organization in the UI and reports.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping to erp_hrm_organizations.name. Must be a non-empty string. Uniqueness is enforced via the @@unique([name]) constraint in the database. Before insert, validate that no active (deleted_at IS NULL) record with the same name exists; return 409 Conflict if a duplicate is found.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping to erp_hrm_organizations.name.
+         *   Must be a non-empty string. Uniqueness is enforced via the
+         *   @@unique([name]) constraint in the database. Before insert,
+         *   validate that no active (deleted_at IS NULL) record with the same
+         *   name exists; return 409 Conflict if a duplicate is found.
      */
     name: string;
 
     /**
      * An optional description providing additional context about the organization's purpose, structure, or scope. May be omitted or set to null if no description is needed.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping to erp_hrm_organizations.description (nullable String?). Accepted as an optional field; when omitted or explicitly null, the column is stored as NULL in the database.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping to
+         *   erp_hrm_organizations.description (nullable String?). Accepted as
+         *   an optional field; when omitted or explicitly null, the column is
+         *   stored as NULL in the database.
      */
     description?: string | null | undefined;
 
     /**
      * An optional URI pointing to the organization's logo image, used for branding purposes across the platform. Must be a valid URI. May be omitted or set to null if no logo is provided.
      *
-     * @x-autobe-database-schema-property logo_url
-     * @x-autobe-specification Direct mapping to erp_hrm_organizations.logo_url (nullable VarChar(80000)). Must be a valid URI if provided. Maximum length is 80,000 characters as per the database column definition. When omitted or explicitly null, the column is stored as NULL.
+         * @x-autobe-database-schema-property logo_url
+         * @x-autobe-specification Direct mapping to
+         *   erp_hrm_organizations.logo_url (nullable VarChar(80000)). Must be a
+         *   valid URI if provided. Maximum length is 80,000 characters as per
+         *   the database column definition. When omitted or explicitly null,
+         *   the column is stored as NULL.
      */
     logo_url?:
       | (string & tags.MaxLength<80000> & tags.Format<"uri">)
@@ -134,24 +181,39 @@ export namespace IErpHrmOrganization {
     /**
      * The default currency code for the organization (e.g., USD, EUR, KRW). Sets the unit of measurement for all financial figures such as employee pay rates and contract values. Does not perform currency conversion.
      *
-     * @x-autobe-database-schema-property currency
-     * @x-autobe-specification Direct mapping to erp_hrm_organizations.currency. Must be a non-empty string. Recommended to use ISO 4217 currency codes (e.g., 'USD', 'EUR', 'KRW'). No currency conversion is performed — this value establishes the unit of measurement for all financial figures within the organization.
+         * @x-autobe-database-schema-property currency
+         * @x-autobe-specification Direct mapping to
+         *   erp_hrm_organizations.currency. Must be a non-empty string.
+         *   Recommended to use ISO 4217 currency codes (e.g., 'USD', 'EUR',
+         *   'KRW'). No currency conversion is performed — this value
+         *   establishes the unit of measurement for all financial figures
+         *   within the organization.
      */
     currency: string;
 
     /**
      * The IANA timezone identifier governing how all time-related data is interpreted within the organization (e.g., 'Asia/Seoul', 'America/New_York'). Affects workday boundaries, timesheet week boundaries, and report date ranges.
      *
-     * @x-autobe-database-schema-property timezone
-     * @x-autobe-specification Direct mapping to erp_hrm_organizations.timezone. Must be a valid IANA timezone identifier string (e.g., 'Asia/Seoul', 'America/New_York'). This value governs how all time-related data is interpreted within the organization, including workday boundaries, timesheet week boundaries, and report date ranges.
+         * @x-autobe-database-schema-property timezone
+         * @x-autobe-specification Direct mapping to
+         *   erp_hrm_organizations.timezone. Must be a valid IANA timezone
+         *   identifier string (e.g., 'Asia/Seoul', 'America/New_York'). This
+         *   value governs how all time-related data is interpreted within the
+         *   organization, including workday boundaries, timesheet week
+         *   boundaries, and report date ranges.
      */
     timezone: string;
 
     /**
      * The month number (1–12) indicating when the organization's fiscal year begins. For example, 1 for a calendar-year organization (January start) or 4 for a UK-style fiscal year (April start). Influences the boundaries of financial and time reporting periods.
      *
-     * @x-autobe-database-schema-property fiscal_start_month
-     * @x-autobe-specification Direct mapping to erp_hrm_organizations.fiscal_start_month (Integer). Must be an integer between 1 and 12 inclusive, where 1 = January and 12 = December. This value indicates when the organization's fiscal year begins and influences the boundaries of financial and time reporting periods.
+         * @x-autobe-database-schema-property fiscal_start_month
+         * @x-autobe-specification Direct mapping to
+         *   erp_hrm_organizations.fiscal_start_month (Integer). Must be an
+         *   integer between 1 and 12 inclusive, where 1 = January and 12 =
+         *   December. This value indicates when the organization's fiscal year
+         *   begins and influences the boundaries of financial and time
+         *   reporting periods.
      */
     fiscal_start_month: number &
       tags.Type<"int32"> &
@@ -170,48 +232,84 @@ export namespace IErpHrmOrganization {
     /**
      * The new display name for the organization. Must be globally unique across all organizations on the platform. If the requested name is already taken by another organization, the update will be rejected with a conflict error. Omit this field to leave the current name unchanged.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping to erp_hrm_organizations.name. When provided, validate that no other organization (where deleted_at IS NULL) has the same name using the @@unique([name]) constraint. If a conflict is found, return 409 Conflict. The name is the primary human-readable identifier for the organization on the platform.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping to erp_hrm_organizations.name.
+         *   When provided, validate that no other organization (where
+         *   deleted_at IS NULL) has the same name using the @@unique([name])
+         *   constraint. If a conflict is found, return 409 Conflict. The name
+         *   is the primary human-readable identifier for the organization on
+         *   the platform.
      */
     name?: string | undefined;
 
     /**
      * An optional description providing additional context about the organization's purpose or structure. Set to null to remove the existing description. Omit this field entirely to leave the current description unchanged.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping to erp_hrm_organizations.description (nullable String?). When provided as a non-null string, update the description. When provided as null, clear the description (set to NULL in the database). When omitted entirely, leave the existing description unchanged.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping to
+         *   erp_hrm_organizations.description (nullable String?). When provided
+         *   as a non-null string, update the description. When provided as
+         *   null, clear the description (set to NULL in the database). When
+         *   omitted entirely, leave the existing description unchanged.
      */
     description?: string | null | undefined;
 
     /**
      * An optional URI pointing to the organization's logo image used for branding across the platform. Set to null to remove the existing logo. Omit this field entirely to leave the current logo URL unchanged.
      *
-     * @x-autobe-database-schema-property logo_url
-     * @x-autobe-specification Direct mapping to erp_hrm_organizations.logo_url (nullable String? @db.VarChar(80000)). When provided as a non-null URI string, update the logo URL. When provided as null, clear the logo URL (set to NULL in the database). When omitted entirely, leave the existing logo URL unchanged. Validate that the value is a syntactically valid URI when non-null.
+         * @x-autobe-database-schema-property logo_url
+         * @x-autobe-specification Direct mapping to
+         *   erp_hrm_organizations.logo_url (nullable String?
+         *   @db.VarChar(80000)). When provided as a non-null URI string, update
+         *   the logo URL. When provided as null, clear the logo URL (set to
+         *   NULL in the database). When omitted entirely, leave the existing
+         *   logo URL unchanged. Validate that the value is a syntactically
+         *   valid URI when non-null.
      */
     logo_url?: (string & tags.Format<"uri">) | null | undefined;
 
     /**
      * The default currency code for the organization (e.g., USD, EUR, KRW). Establishes the unit of measurement for all financial figures within the organization such as pay rates and contract values. Does not perform currency conversion. Omit this field to leave the current currency unchanged.
      *
-     * @x-autobe-database-schema-property currency
-     * @x-autobe-specification Direct mapping to erp_hrm_organizations.currency (String). This field represents the default currency code for the organization (e.g., USD, EUR, KRW). When provided, replace the existing currency value. When omitted, leave the current currency unchanged. Does not perform currency conversion — it establishes the unit of measurement for all financial figures such as employee pay rates and contract values.
+         * @x-autobe-database-schema-property currency
+         * @x-autobe-specification Direct mapping to
+         *   erp_hrm_organizations.currency (String). This field represents the
+         *   default currency code for the organization (e.g., USD, EUR, KRW).
+         *   When provided, replace the existing currency value. When omitted,
+         *   leave the current currency unchanged. Does not perform currency
+         *   conversion — it establishes the unit of measurement for all
+         *   financial figures such as employee pay rates and contract values.
      */
     currency?: string | undefined;
 
     /**
      * The IANA timezone identifier (e.g., Asia/Seoul, America/New_York) that governs how all time-related data is interpreted within the organization, including workday boundaries, timesheet week boundaries, and reporting date ranges. Must be a valid IANA timezone string. Omit this field to leave the current timezone unchanged.
      *
-     * @x-autobe-database-schema-property timezone
-     * @x-autobe-specification Direct mapping to erp_hrm_organizations.timezone (String). Must be a valid IANA timezone identifier (e.g., Asia/Seoul, America/New_York, Europe/London). Validate the provided value against the IANA timezone database before persisting. This setting governs how all time-related data within the organization is interpreted, including workday boundaries, timesheet week boundaries, and report date ranges. When omitted, leave the current timezone unchanged.
+         * @x-autobe-database-schema-property timezone
+         * @x-autobe-specification Direct mapping to
+         *   erp_hrm_organizations.timezone (String). Must be a valid IANA
+         *   timezone identifier (e.g., Asia/Seoul, America/New_York,
+         *   Europe/London). Validate the provided value against the IANA
+         *   timezone database before persisting. This setting governs how all
+         *   time-related data within the organization is interpreted, including
+         *   workday boundaries, timesheet week boundaries, and report date
+         *   ranges. When omitted, leave the current timezone unchanged.
      */
     timezone?: string | undefined;
 
     /**
      * The month number (1–12) indicating when the organization's fiscal year begins. For example, 1 for a calendar-year organization (January) or 4 for a UK-style fiscal year (April). Influences the boundaries of financial and time reporting periods across the organization. Must be an integer between 1 and 12 inclusive. Omit this field to leave the current fiscal start month unchanged.
      *
-     * @x-autobe-database-schema-property fiscal_start_month
-     * @x-autobe-specification Direct mapping to erp_hrm_organizations.fiscal_start_month (Int @db.Integer). Represents the month number (1–12) when the organization's fiscal year begins. Validate that the provided integer is between 1 and 12 inclusive (as enforced by schema minimum:1, maximum:12). For example, 1 indicates a January-start calendar fiscal year; 4 indicates an April-start UK-style fiscal year. Influences all financial and time reporting period boundaries. When omitted, leave the current fiscal_start_month unchanged.
+         * @x-autobe-database-schema-property fiscal_start_month
+         * @x-autobe-specification Direct mapping to
+         *   erp_hrm_organizations.fiscal_start_month (Int @db.Integer).
+         *   Represents the month number (1–12) when the organization's fiscal
+         *   year begins. Validate that the provided integer is between 1 and 12
+         *   inclusive (as enforced by schema minimum:1, maximum:12). For
+         *   example, 1 indicates a January-start calendar fiscal year; 4
+         *   indicates an April-start UK-style fiscal year. Influences all
+         *   financial and time reporting period boundaries. When omitted, leave
+         *   the current fiscal_start_month unchanged.
      */
     fiscal_start_month?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<12>)
@@ -225,31 +323,44 @@ export namespace IErpHrmOrganization {
     /**
      * Optional partial name filter. When provided, only organizations whose name contains this value (case-insensitive) are returned.
      *
-     * @x-autobe-specification Optional filter. When provided, apply SQL ILIKE '%{name}%' against erp_hrm_organizations.name to perform a case-insensitive partial match. When omitted, no name filter is applied and all organizations accessible to the authenticated member are included (subject to other active filters).
+         * @x-autobe-specification Optional filter. When provided, apply SQL
+         *   ILIKE '%{name}%' against erp_hrm_organizations.name to perform a
+         *   case-insensitive partial match. When omitted, no name filter is
+         *   applied and all organizations accessible to the authenticated
+         *   member are included (subject to other active filters).
      */
     name?: string | undefined;
 
     /**
      * Optional exact currency filter. When provided, only organizations using this currency code (e.g., USD, EUR, KRW) are returned.
      *
-     * @x-autobe-specification Optional filter. When provided, apply exact equality match (=) against erp_hrm_organizations.currency (e.g., 'USD', 'EUR', 'KRW'). When omitted, no currency filter is applied.
+         * @x-autobe-specification Optional filter. When provided, apply exact
+         *   equality match (=) against erp_hrm_organizations.currency (e.g.,
+         *   'USD', 'EUR', 'KRW'). When omitted, no currency filter is applied.
      */
     currency?: string | undefined;
 
     /**
      * Optional exact timezone filter. When provided, only organizations with this IANA timezone identifier (e.g., Asia/Seoul, America/New_York) are returned.
      *
-     * @x-autobe-specification Optional filter. When provided, apply exact equality match (=) against erp_hrm_organizations.timezone (IANA timezone identifier, e.g., 'Asia/Seoul', 'America/New_York'). When omitted, no timezone filter is applied.
+         * @x-autobe-specification Optional filter. When provided, apply exact
+         *   equality match (=) against erp_hrm_organizations.timezone (IANA
+         *   timezone identifier, e.g., 'Asia/Seoul', 'America/New_York'). When
+         *   omitted, no timezone filter is applied.
      */
     timezone?: string | undefined;
 
     /**
      * Optional creation date range filter. Specify `from` and/or `to` as ISO 8601 datetime strings to restrict results to organizations created within that window. Either bound may be null or omitted to leave it open-ended.
      *
-     * @x-autobe-specification Optional date range filter object applied against erp_hrm_organizations.created_at. The object has two optional sub-fields:
-     * - from (nullable ISO 8601 datetime): lower bound inclusive. When non-null, apply created_at >= from.
-     * - to (nullable ISO 8601 datetime): upper bound inclusive. When non-null, apply created_at <= to.
-     * Either or both bounds can be null/omitted to leave that side unbounded. When the entire createdAt object is omitted from the request, no date filter is applied.
+         * @x-autobe-specification Optional date range filter object applied
+         *   against erp_hrm_organizations.created_at. The object has two
+         *   optional sub-fields: - from (nullable ISO 8601 datetime): lower
+         *   bound inclusive. When non-null, apply created_at >= from. - to
+         *   (nullable ISO 8601 datetime): upper bound inclusive. When non-null,
+         *   apply created_at <= to. Either or both bounds can be null/omitted
+         *   to leave that side unbounded. When the entire createdAt object is
+         *   omitted from the request, no date filter is applied.
      */
     createdAt?:
       | {
@@ -261,10 +372,14 @@ export namespace IErpHrmOrganization {
     /**
      * Optional sort configuration. Specify the `field` to sort by (name, created_at, or updated_at) and the `direction` (asc or desc). Defaults to sorting by creation date descending.
      *
-     * @x-autobe-specification Optional sort control object with two sub-fields:
-     * - field (string): the column to sort by. Accepted values: 'name' (erp_hrm_organizations.name), 'created_at' (erp_hrm_organizations.created_at), 'updated_at' (erp_hrm_organizations.updated_at). Default: 'created_at'.
-     * - direction (string): sort order. Accepted values: 'asc', 'desc'. Default: 'desc'.
-     * When omitted entirely, use default field 'created_at' and direction 'desc'.
+         * @x-autobe-specification Optional sort control object with two
+         *   sub-fields: - field (string): the column to sort by. Accepted
+         *   values: 'name' (erp_hrm_organizations.name), 'created_at'
+         *   (erp_hrm_organizations.created_at), 'updated_at'
+         *   (erp_hrm_organizations.updated_at). Default: 'created_at'. -
+         *   direction (string): sort order. Accepted values: 'asc', 'desc'.
+         *   Default: 'desc'. When omitted entirely, use default field
+         *   'created_at' and direction 'desc'.
      */
     sort?:
       | {
@@ -276,14 +391,21 @@ export namespace IErpHrmOrganization {
     /**
      * Optional page number for pagination (1-based). Defaults to 1 if omitted. Use together with `limit` to navigate through results.
      *
-     * @x-autobe-specification Optional pagination parameter. 1-based page number indicating which page of results to return. Must be a positive integer (minimum: 1). Default value: 1. Used together with limit to calculate the OFFSET (= (page - 1) * limit) applied to the query.
+         * @x-autobe-specification Optional pagination parameter. 1-based page
+         *   number indicating which page of results to return. Must be a
+         *   positive integer (minimum: 1). Default value: 1. Used together with
+         *   limit to calculate the OFFSET (= (page - 1) * limit) applied to the
+         *   query.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Optional number of records per page (1–100). Defaults to 20 if omitted. Determines how many organization summaries are returned in a single response page.
      *
-     * @x-autobe-specification Optional pagination parameter. Number of records to return per page. Must be between 1 and 100 inclusive. Default value: 20. Applied as SQL LIMIT in the query. The actual number of returned records may be less on the final page.
+         * @x-autobe-specification Optional pagination parameter. Number of
+         *   records to return per page. Must be between 1 and 100 inclusive.
+         *   Default value: 20. Applied as SQL LIMIT in the query. The actual
+         *   number of returned records may be less on the final page.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -297,56 +419,72 @@ export namespace IErpHrmOrganization {
     /**
      * The unique identifier of the organization. A UUID v4 value that permanently and uniquely identifies this organization across the entire platform.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from erp_hrm_organizations.id. UUID v4 primary key, auto-generated on creation. Never changes after creation.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from erp_hrm_organizations.id.
+         *   UUID v4 primary key, auto-generated on creation. Never changes
+         *   after creation.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * The display name of the organization. Serves as the primary human-readable identifier for the organization within the platform and must be unique across all organizations.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from erp_hrm_organizations.name. Must be non-null and unique across all organizations on the platform (@@unique([name]) constraint).
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_organizations.name. Must be non-null and unique across all
+         *   organizations on the platform (@@unique([name]) constraint).
      */
     name: string;
 
     /**
      * An optional description providing additional context about the organization's purpose or structure. Null if no description has been set.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from erp_hrm_organizations.description. Nullable string — returned as null when not set. No length constraint in current schema.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_organizations.description. Nullable string — returned as
+         *   null when not set. No length constraint in current schema.
      */
     description: string | null;
 
     /**
      * An optional URI pointing to the organization's logo image, used for branding purposes across the platform. Null if no logo has been configured.
      *
-     * @x-autobe-database-schema-property logo_url
-     * @x-autobe-specification Direct mapping from erp_hrm_organizations.logo_url. Nullable URI string stored as VarChar(80000). Returned as null when not set. Camelized from snake_case column name.
+         * @x-autobe-database-schema-property logo_url
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_organizations.logo_url. Nullable URI string stored as
+         *   VarChar(80000). Returned as null when not set. Camelized from
+         *   snake_case column name.
      */
     logoUrl: (string & tags.Format<"uri">) | null;
 
     /**
      * The default currency code for the organization (e.g., USD, EUR, KRW). Establishes the unit of measurement for all financial figures such as employee pay rates and contract values within this organization.
      *
-     * @x-autobe-database-schema-property currency
-     * @x-autobe-specification Direct mapping from erp_hrm_organizations.currency. ISO 4217 currency code string (e.g., 'USD', 'EUR', 'KRW'). Non-null, always present.
+         * @x-autobe-database-schema-property currency
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_organizations.currency. ISO 4217 currency code string
+         *   (e.g., 'USD', 'EUR', 'KRW'). Non-null, always present.
      */
     currency: string;
 
     /**
      * The IANA timezone identifier governing how all time-related data is interpreted within the organization, including workday boundaries, timesheet week boundaries, and report date ranges (e.g., 'Asia/Seoul', 'America/New_York').
      *
-     * @x-autobe-database-schema-property timezone
-     * @x-autobe-specification Direct mapping from erp_hrm_organizations.timezone. IANA timezone identifier string (e.g., 'Asia/Seoul', 'America/New_York'). Non-null, always present.
+         * @x-autobe-database-schema-property timezone
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_organizations.timezone. IANA timezone identifier string
+         *   (e.g., 'Asia/Seoul', 'America/New_York'). Non-null, always present.
      */
     timezone: string;
 
     /**
      * The month number (1–12) indicating when the organization's fiscal year begins. For example, 1 for a calendar-year organization (January) or 4 for a UK-style fiscal year (April). Influences boundaries of financial and time reporting periods.
      *
-     * @x-autobe-database-schema-property fiscal_start_month
-     * @x-autobe-specification Direct mapping from erp_hrm_organizations.fiscal_start_month. Integer between 1 and 12 inclusive. Camelized from snake_case column name. 1 = January, 4 = April (UK-style fiscal year), etc.
+         * @x-autobe-database-schema-property fiscal_start_month
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_organizations.fiscal_start_month. Integer between 1 and 12
+         *   inclusive. Camelized from snake_case column name. 1 = January, 4 =
+         *   April (UK-style fiscal year), etc.
      */
     fiscalStartMonth: number &
       tags.Type<"int32"> &
@@ -356,32 +494,44 @@ export namespace IErpHrmOrganization {
     /**
      * The platform-level member account who owns this organization. The owner holds the highest authority within the organization and is the only actor who may initiate organization deletion. Ownership may be transferred to another active member.
      *
-     * @x-autobe-database-schema-property ownerMember
-     * @x-autobe-specification Resolved via JOIN from erp_hrm_organizations.owner_member_id to erp_hrm_members.id using the ownerMember belongs-to relation. Returns IErpHrmMember.ISummary summary of the owning platform-level member account.
+         * @x-autobe-database-schema-property ownerMember
+         * @x-autobe-specification Resolved via JOIN from
+         *   erp_hrm_organizations.owner_member_id to erp_hrm_members.id using
+         *   the ownerMember belongs-to relation. Returns IErpHrmMember.ISummary
+         *   summary of the owning platform-level member account.
      */
     owner: IErpHrmMember.ISummary;
 
     /**
      * The timestamp when the organization was created. ISO 8601 date-time string with timezone information.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from erp_hrm_organizations.created_at. Timestamptz, set once on creation, never changed. Camelized from snake_case column name.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_organizations.created_at. Timestamptz, set once on
+         *   creation, never changed. Camelized from snake_case column name.
      */
     createdAt: string & tags.Format<"date-time">;
 
     /**
      * The timestamp when the organization record was last updated. ISO 8601 date-time string with timezone information. Reflects the most recent modification to any of the organization's settings.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from erp_hrm_organizations.updated_at. Timestamptz, automatically updated whenever the organization record is modified. Camelized from snake_case column name.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_organizations.updated_at. Timestamptz, automatically
+         *   updated whenever the organization record is modified. Camelized
+         *   from snake_case column name.
      */
     updatedAt: string & tags.Format<"date-time">;
 
     /**
      * The timestamp when the organization was soft-deleted. Null if the organization is active. When present, the organization and all associated data are considered deleted and can no longer be accessed by members.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from erp_hrm_organizations.deleted_at. Nullable Timestamptz. Null indicates an active organization. When set, the organization and all its scoped data are considered soft-deleted and inaccessible. Camelized from snake_case column name.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_organizations.deleted_at. Nullable Timestamptz. Null
+         *   indicates an active organization. When set, the organization and
+         *   all its scoped data are considered soft-deleted and inaccessible.
+         *   Camelized from snake_case column name.
      */
     deletedAt: (string & tags.Format<"date-time">) | null;
   };
@@ -397,14 +547,33 @@ export namespace IErpHrmOrganization {
     /**
      * The unique identifier (`erp_hrm_organization_members.id`) of the organization member who will receive the Owner role. The designated member must already be an active member of this organization and must not currently hold the Owner role.
      *
-     * @x-autobe-specification Cross-table FK referencing erp_hrm_organization_members.id — the per-organization identity record of the member who will receive the Owner role. Not a direct column of erp_hrm_organizations. The service must: (a) look up the erp_hrm_organization_members record by this id and verify it belongs to the organizationId from the path, (b) verify status = 'active', (c) verify the member does not already hold the built-in Owner role. After validation, set this member's erp_hrm_organization_members.role_id to the Owner role ID and update erp_hrm_organizations.owner_member_id to this member's erp_hrm_members.id.
+         * @x-autobe-specification Cross-table FK referencing
+         *   erp_hrm_organization_members.id — the per-organization identity
+         *   record of the member who will receive the Owner role. Not a direct
+         *   column of erp_hrm_organizations. The service must: (a) look up the
+         *   erp_hrm_organization_members record by this id and verify it
+         *   belongs to the organizationId from the path, (b) verify status =
+         *   'active', (c) verify the member does not already hold the built-in
+         *   Owner role. After validation, set this member's
+         *   erp_hrm_organization_members.role_id to the Owner role ID and
+         *   update erp_hrm_organizations.owner_member_id to this member's
+         *   erp_hrm_members.id.
      */
     targetMemberId: string & tags.Format<"uuid">;
 
     /**
      * The unique identifier (`erp_hrm_roles.id`) of the non-Owner role within this organization that the outgoing owner will be reassigned to after the transfer. Must be a valid role belonging to this organization and must not be the built-in Owner role.
      *
-     * @x-autobe-specification Cross-table FK referencing erp_hrm_roles.id — the role within this organization that the outgoing owner (the caller) will be reassigned to after the transfer completes. Not a direct column of erp_hrm_organizations. The service must: (a) look up the erp_hrm_roles record by this id, (b) verify erp_hrm_roles.erp_hrm_organization_id = the organizationId from the path, (c) verify it is NOT the built-in Owner role (is_builtin = true AND name = 'Owner'). After validation, set the caller's erp_hrm_organization_members.role_id to this value in the transaction.
+         * @x-autobe-specification Cross-table FK referencing erp_hrm_roles.id —
+         *   the role within this organization that the outgoing owner (the
+         *   caller) will be reassigned to after the transfer completes. Not a
+         *   direct column of erp_hrm_organizations. The service must: (a) look
+         *   up the erp_hrm_roles record by this id, (b) verify
+         *   erp_hrm_roles.erp_hrm_organization_id = the organizationId from the
+         *   path, (c) verify it is NOT the built-in Owner role (is_builtin =
+         *   true AND name = 'Owner'). After validation, set the caller's
+         *   erp_hrm_organization_members.role_id to this value in the
+         *   transaction.
      */
     outgoingOwnerRoleId: string & tags.Format<"uuid">;
   };

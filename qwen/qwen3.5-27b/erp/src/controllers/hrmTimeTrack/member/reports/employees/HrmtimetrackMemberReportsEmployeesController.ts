@@ -17,9 +17,10 @@ export class HrmtimetrackMemberReportsEmployeesController {
    * Data is isolated by organization - users can only access employee data from their current organization context. The endpoint supports pagination to handle large employee populations efficiently. Filtered results help organizations analyze workforce distribution, track employment types, and monitor employee status across departments.
    *
    * @param connection
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query the hrm_time_track_employees table with organization scoping based on the current user's context.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query the hrm_time_track_employees table with
+     *   organization scoping based on the current user's context.
    *
    * Apply filtering based on query parameters:
    * - Filter by department_id if provided (join with hrm_time_track_departments)

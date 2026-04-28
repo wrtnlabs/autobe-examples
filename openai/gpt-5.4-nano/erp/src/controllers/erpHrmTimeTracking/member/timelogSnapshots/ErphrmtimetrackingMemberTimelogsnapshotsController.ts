@@ -35,23 +35,27 @@ export class ErphrmtimetrackingMemberTimelogsnapshotsController {
    *
    * @param connection
    * @param body Snapshot creation payload for persisting a point-in-time timelog state into the timelog snapshot history table.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation (service layer):
-   * 1) Resolve the currently selected organization from the authenticated member context.
-   * 2) Validate the incoming request payload for required snapshot fields.
-   * 3) Verify referenced identities:
-   *    - Load the target timelog record by the provided erp_hrm_time_tracking_timelog_id (snapshot model field: erp_hrm_time_tracking_timelog_id).
-   *    - Confirm the timelog's organization matches the selected organization.
-   *    - Derive employee_id, project_id, task_id, timesheet_id, source_timer_session_id, started_at, ended_at, duration_minutes, work_description, workflow_status from the timelog state rather than trusting the client for authoritative fields.
-   * 4) Create a new erp_hrm_time_tracking_timelog_snapshots row populated with:
-   *    - erp_hrm_time_tracking_timelog_id, organization_id, employee_id, project_id
-   *    - task_id (nullable), timesheet_id (nullable), source_timer_session_id (nullable)
-   *    - started_at, ended_at, duration_minutes, work_description, workflow_status
-   *    - created_at/updated_at timestamps set by server
-   * 5) Persist inside a database transaction:
-   *    - Ensure all referenced lookups and the insert are atomic.
-   * 6) Return the inserted snapshot entity (including created_at and updated_at).
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation (service layer): 1) Resolve the
+     *   currently selected organization from the authenticated member context.
+     *   2) Validate the incoming request payload for required snapshot fields.
+     *   3) Verify referenced identities: - Load the target timelog record by
+     *   the provided erp_hrm_time_tracking_timelog_id (snapshot model field:
+     *   erp_hrm_time_tracking_timelog_id). - Confirm the timelog's organization
+     *   matches the selected organization. - Derive employee_id, project_id,
+     *   task_id, timesheet_id, source_timer_session_id, started_at, ended_at,
+     *   duration_minutes, work_description, workflow_status from the timelog
+     *   state rather than trusting the client for authoritative fields. 4)
+     *   Create a new erp_hrm_time_tracking_timelog_snapshots row populated
+     *   with: - erp_hrm_time_tracking_timelog_id, organization_id, employee_id,
+     *   project_id - task_id (nullable), timesheet_id (nullable),
+     *   source_timer_session_id (nullable) - started_at, ended_at,
+     *   duration_minutes, work_description, workflow_status -
+     *   created_at/updated_at timestamps set by server 5) Persist inside a
+     *   database transaction: - Ensure all referenced lookups and the insert
+     *   are atomic. 6) Return the inserted snapshot entity (including
+     *   created_at and updated_at).
    *
    * Edge cases:
    * - If the timelog does not exist or does not belong to the selected organization, reject with an error.
@@ -99,9 +103,10 @@ export class ErphrmtimetrackingMemberTimelogsnapshotsController {
    *
    * @param connection
    * @param body Search criteria and pagination options for filtering timelog snapshot history records.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement PATCH /timelogSnapshots as a list/search over erp_hrm_time_tracking_timelog_snapshots.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implement PATCH /timelogSnapshots as a
+     *   list/search over erp_hrm_time_tracking_timelog_snapshots.
    *
    * 1) Authorization & scoping
    * - Resolve the selected organization from the caller’s session/context.
@@ -173,15 +178,19 @@ export class ErphrmtimetrackingMemberTimelogsnapshotsController {
    *
    * @param connection
    * @param timelogSnapshotId Unique identifier of the timelog snapshot record to retrieve (UUID).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation steps:
-   * 1) Parse `timelogSnapshotId` (UUID) from path.
-   * 2) Resolve the caller’s selected organization context from the request’s session/auth middleware.
-   * 3) Query `erp_hrm_time_tracking_timelog_snapshots` by `id = timelogSnapshotId`.
-   * 4) Enforce organization access by verifying the loaded row’s `organization_id` equals the selected organization context. If the row exists but organization_id mismatches, reject as authorization/access denied (do not reveal existence across organizations).
-   * 5) Map the database row to `IErpHrmTimeTrackingTimelogSnapshot` response DTO.
-   * 6) Return 200 with the mapped object.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Implementation steps: 1) Parse
+     *   `timelogSnapshotId` (UUID) from path. 2) Resolve the caller’s selected
+     *   organization context from the request’s session/auth middleware. 3)
+     *   Query `erp_hrm_time_tracking_timelog_snapshots` by `id =
+     *   timelogSnapshotId`. 4) Enforce organization access by verifying the
+     *   loaded row’s `organization_id` equals the selected organization
+     *   context. If the row exists but organization_id mismatches, reject as
+     *   authorization/access denied (do not reveal existence across
+     *   organizations). 5) Map the database row to
+     *   `IErpHrmTimeTrackingTimelogSnapshot` response DTO. 6) Return 200 with
+     *   the mapped object.
    *
    * DB/Query notes:
    * - Use the primary key lookup on `id`.

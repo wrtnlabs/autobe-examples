@@ -15,8 +15,8 @@ export type IMallPlatformCartItem = {
    *
    * This value identifies one persisted shopping cart line and is stable for the lifetime of the row, including updates until deletion.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from mall_platform_cart_items.id.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from mall_platform_cart_items.id.
    */
   id: string & tags.Format<"uuid">;
 
@@ -25,8 +25,11 @@ export type IMallPlatformCartItem = {
    *
    * This relation identifies the parent cart for the selected variant and is returned as a cart summary object rather than a raw foreign key.
    *
-   * @x-autobe-database-schema-property shoppingCart
-   * @x-autobe-specification Join from mall_platform_cart_items.mall_platform_shopping_cart_id to mall_platform_shopping_carts.id and expose the related cart as IMallPlatformShoppingCart.ISummary.
+     * @x-autobe-database-schema-property shoppingCart
+     * @x-autobe-specification Join from
+     *   mall_platform_cart_items.mall_platform_shopping_cart_id to
+     *   mall_platform_shopping_carts.id and expose the related cart as
+     *   IMallPlatformShoppingCart.ISummary.
    */
   shoppingCart: IMallPlatformShoppingCart.ISummary;
 
@@ -35,8 +38,11 @@ export type IMallPlatformCartItem = {
    *
    * This relation identifies the purchasable variant that was added to the cart and is returned as a variant summary object rather than a raw foreign key.
    *
-   * @x-autobe-database-schema-property productVariant
-   * @x-autobe-specification Join from mall_platform_cart_items.mall_platform_product_variant_id to mall_platform_product_variants.id and expose the related variant as IMallPlatformProductVariant.ISummary.
+     * @x-autobe-database-schema-property productVariant
+     * @x-autobe-specification Join from
+     *   mall_platform_cart_items.mall_platform_product_variant_id to
+     *   mall_platform_product_variants.id and expose the related variant as
+     *   IMallPlatformProductVariant.ISummary.
    */
   productVariant: IMallPlatformProductVariant.ISummary;
 
@@ -45,8 +51,10 @@ export type IMallPlatformCartItem = {
    *
    * This value reflects the persisted quantity for the item and is the primary mutable amount the customer can adjust before checkout.
    *
-   * @x-autobe-database-schema-property quantity
-   * @x-autobe-specification Direct mapping from mall_platform_cart_items.quantity. In create and update request flows, this is the client-controlled quantity for the cart line.
+     * @x-autobe-database-schema-property quantity
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_cart_items.quantity. In create and update request flows,
+     *   this is the client-controlled quantity for the cart line.
    */
   quantity: number & tags.Type<"int32">;
 
@@ -55,8 +63,11 @@ export type IMallPlatformCartItem = {
    *
    * This value indicates whether the selected variant is available, low in stock, out of stock, or otherwise unavailable for checkout.
    *
-   * @x-autobe-database-schema-property availability_state
-   * @x-autobe-specification Direct mapping from mall_platform_cart_items.availability_state. The value is derived by the service from the current product-variant availability at the time the cart item is created or refreshed.
+     * @x-autobe-database-schema-property availability_state
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_cart_items.availability_state. The value is derived by
+     *   the service from the current product-variant availability at the time
+     *   the cart item is created or refreshed.
    */
   availabilityState: string;
 
@@ -65,8 +76,9 @@ export type IMallPlatformCartItem = {
    *
    * This timestamp is preserved on the stored cart-item row and can be used to understand when the line was first added to the cart.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from mall_platform_cart_items.created_at.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_cart_items.created_at.
    */
   createdAt: string & tags.Format<"date-time">;
 
@@ -75,8 +87,9 @@ export type IMallPlatformCartItem = {
    *
    * This timestamp changes whenever the cart line quantity or availability-related persisted state is modified.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from mall_platform_cart_items.updated_at.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_cart_items.updated_at.
    */
   updatedAt: string & tags.Format<"date-time">;
 
@@ -85,8 +98,10 @@ export type IMallPlatformCartItem = {
    *
    * A null value means the cart line is active. A timestamp means the row has been soft-deleted while preserving its historical record.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from mall_platform_cart_items.deleted_at. A null value means the cart item is active; a timestamp means the row was soft-deleted.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   mall_platform_cart_items.deleted_at. A null value means the cart item
+     *   is active; a timestamp means the row was soft-deleted.
    */
   deletedAt: (string & tags.Format<"date-time">) | null;
 };
@@ -104,8 +119,13 @@ export namespace IMallPlatformCartItem {
      *
      * Provide the UUID of a purchasable product variant. The backend uses this value to identify the target cart line and validate that the selected variant is eligible for purchase.
      *
-     * @x-autobe-database-schema-property mall_platform_product_variant_id
-     * @x-autobe-specification Direct mapping to mall_platform_cart_items.mall_platform_product_variant_id. The server uses this UUID to locate the selected product variant, verify that it exists, and confirm it can be added to the authenticated customer's cart before inserting or merging the cart item.
+         * @x-autobe-database-schema-property mall_platform_product_variant_id
+         * @x-autobe-specification Direct mapping to
+         *   mall_platform_cart_items.mall_platform_product_variant_id. The
+         *   server uses this UUID to locate the selected product variant,
+         *   verify that it exists, and confirm it can be added to the
+         *   authenticated customer's cart before inserting or merging the cart
+         *   item.
      */
     productVariantId: string & tags.Format<"uuid">;
 
@@ -114,8 +134,13 @@ export namespace IMallPlatformCartItem {
      *
      * This value must be a positive integer. When the same variant is already present in the cart, the server combines the quantities into a single cart item instead of creating another line.
      *
-     * @x-autobe-database-schema-property quantity
-     * @x-autobe-specification Direct mapping to mall_platform_cart_items.quantity. This stores how many units of the selected variant should be added to the cart and must be a positive integer. If a matching cart line already exists, the backend increases that line's quantity instead of creating a duplicate row.
+         * @x-autobe-database-schema-property quantity
+         * @x-autobe-specification Direct mapping to
+         *   mall_platform_cart_items.quantity. This stores how many units of
+         *   the selected variant should be added to the cart and must be a
+         *   positive integer. If a matching cart line already exists, the
+         *   backend increases that line's quantity instead of creating a
+         *   duplicate row.
      */
     quantity: number & tags.Type<"int32"> & tags.Minimum<1>;
   };
@@ -133,8 +158,13 @@ export namespace IMallPlatformCartItem {
      *
      * This value changes the quantity for the existing cart line only. It must be a positive whole number and is validated by the server before the update is applied.
      *
-     * @x-autobe-database-schema-property quantity
-     * @x-autobe-specification Direct mapping from mall_platform_cart_items.quantity. The service updates only this field for the cart item identified by cartId and cartItemId, and must validate the requested value against cart rules and the current availability of the referenced product variant before saving.
+         * @x-autobe-database-schema-property quantity
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_cart_items.quantity. The service updates only this
+         *   field for the cart item identified by cartId and cartItemId, and
+         *   must validate the requested value against cart rules and the
+         *   current availability of the referenced product variant before
+         *   saving.
      */
     quantity?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
   };
@@ -150,7 +180,9 @@ export namespace IMallPlatformCartItem {
      *
      * Use this to filter the current cart's line items by the supported search rules.
      *
-     * @x-autobe-specification Apply this value as a scoped text filter over the cart's item list. It is not persisted and does not map to any cart-item database property.
+         * @x-autobe-specification Apply this value as a scoped text filter over
+         *   the cart's item list. It is not persisted and does not map to any
+         *   cart-item database property.
      */
     search?: string | undefined;
 
@@ -159,7 +191,9 @@ export namespace IMallPlatformCartItem {
      *
      * Use this to select which page of the current cart's items is returned.
      *
-     * @x-autobe-specification Use this value as 1-indexed pagination control for the scoped cart-item list. It is not persisted in the database.
+         * @x-autobe-specification Use this value as 1-indexed pagination
+         *   control for the scoped cart-item list. It is not persisted in the
+         *   database.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -168,7 +202,9 @@ export namespace IMallPlatformCartItem {
      *
      * Use this to control the size of the paginated cart-item list for the scoped cart.
      *
-     * @x-autobe-specification Use this value as the maximum number of cart-item records returned per page. It is not persisted and only affects pagination.
+         * @x-autobe-specification Use this value as the maximum number of
+         *   cart-item records returned per page. It is not persisted and only
+         *   affects pagination.
      */
     limit?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -177,7 +213,9 @@ export namespace IMallPlatformCartItem {
      *
      * Use this to control how the cart-item list is ordered.
      *
-     * @x-autobe-specification Apply this value as the sort instruction for the scoped cart-item query. It is interpreted by the listing service only and does not map to a database column.
+         * @x-autobe-specification Apply this value as the sort instruction for
+         *   the scoped cart-item query. It is interpreted by the listing
+         *   service only and does not map to a database column.
      */
     sort?: string | undefined;
 
@@ -186,7 +224,11 @@ export namespace IMallPlatformCartItem {
      *
      * Use this when adjusting a specific cart line rather than browsing the whole cart item collection.
      *
-     * @x-autobe-specification Use this value as a request-only selector for one cart line within the scoped cart when applying a quantity mutation. It does not map to a database property in this request schema because the service resolves the line from the cart scope and selector value.
+         * @x-autobe-specification Use this value as a request-only selector for
+         *   one cart line within the scoped cart when applying a quantity
+         *   mutation. It does not map to a database property in this request
+         *   schema because the service resolves the line from the cart scope
+         *   and selector value.
      */
     cartItemId?: (string & tags.Format<"uuid">) | undefined;
 
@@ -195,8 +237,11 @@ export namespace IMallPlatformCartItem {
      *
      * Use this to update how many units of the selected product variant are kept in the current cart.
      *
-     * @x-autobe-database-schema-property quantity
-     * @x-autobe-specification Map this value to mall_platform_cart_items.quantity for the selected cart line when performing a mutation. When provided with cartItemId, it represents the desired replacement quantity for that line.
+         * @x-autobe-database-schema-property quantity
+         * @x-autobe-specification Map this value to
+         *   mall_platform_cart_items.quantity for the selected cart line when
+         *   performing a mutation. When provided with cartItemId, it represents
+         *   the desired replacement quantity for that line.
      */
     quantity?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
   };
@@ -214,8 +259,9 @@ export namespace IMallPlatformCartItem {
      *
      * This value identifies one persisted cart line record and can be used for record-level references and navigation.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from mall_platform_cart_items.id.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_cart_items.id.
      */
     id: string & tags.Format<"uuid">;
 
@@ -224,8 +270,9 @@ export namespace IMallPlatformCartItem {
      *
      * This is the persisted line quantity used when rendering the cart and evaluating checkout readiness.
      *
-     * @x-autobe-database-schema-property quantity
-     * @x-autobe-specification Direct mapping from mall_platform_cart_items.quantity.
+         * @x-autobe-database-schema-property quantity
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_cart_items.quantity.
      */
     quantity: number & tags.Type<"int32">;
 
@@ -234,8 +281,10 @@ export namespace IMallPlatformCartItem {
      *
      * This value indicates whether the selected variant is available for checkout, out of stock, or otherwise unavailable.
      *
-     * @x-autobe-database-schema-property availability_state
-     * @x-autobe-specification Direct mapping from mall_platform_cart_items.availability_state with camelCase API naming.
+         * @x-autobe-database-schema-property availability_state
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_cart_items.availability_state with camelCase API
+         *   naming.
      */
     availabilityState: string;
 
@@ -244,8 +293,10 @@ export namespace IMallPlatformCartItem {
      *
      * This is exposed as a referenced cart summary rather than a raw foreign key so clients can navigate the parent cart directly.
      *
-     * @x-autobe-database-schema-property shoppingCart
-     * @x-autobe-specification Resolve the belonged relation mall_platform_cart_items.shoppingCart and return IMallPlatformShoppingCart.ISummary.
+         * @x-autobe-database-schema-property shoppingCart
+         * @x-autobe-specification Resolve the belonged relation
+         *   mall_platform_cart_items.shoppingCart and return
+         *   IMallPlatformShoppingCart.ISummary.
      */
     shoppingCart: IMallPlatformShoppingCart.ISummary;
 
@@ -254,8 +305,10 @@ export namespace IMallPlatformCartItem {
      *
      * This is exposed as a referenced variant summary rather than a raw foreign key so clients can display the chosen purchasable option set.
      *
-     * @x-autobe-database-schema-property productVariant
-     * @x-autobe-specification Resolve the belonged relation mall_platform_cart_items.productVariant and return IMallPlatformProductVariant.ISummary.
+         * @x-autobe-database-schema-property productVariant
+         * @x-autobe-specification Resolve the belonged relation
+         *   mall_platform_cart_items.productVariant and return
+         *   IMallPlatformProductVariant.ISummary.
      */
     productVariant: IMallPlatformProductVariant.ISummary;
 
@@ -264,8 +317,9 @@ export namespace IMallPlatformCartItem {
      *
      * This timestamp is preserved for auditability and for ordering cart state changes.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from mall_platform_cart_items.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_cart_items.created_at.
      */
     createdAt: string & tags.Format<"date-time">;
 
@@ -274,8 +328,9 @@ export namespace IMallPlatformCartItem {
      *
      * This timestamp reflects the most recent persisted modification to the cart line.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from mall_platform_cart_items.updated_at.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_cart_items.updated_at.
      */
     updatedAt: string & tags.Format<"date-time">;
 
@@ -284,8 +339,10 @@ export namespace IMallPlatformCartItem {
      *
      * A null value means the cart item is still active. A timestamp indicates a soft-deleted record that remains preserved for history.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from mall_platform_cart_items.deleted_at. Preserve null when the row is active.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   mall_platform_cart_items.deleted_at. Preserve null when the row is
+         *   active.
      */
     deletedAt: (string & tags.Format<"date-time">) | null;
   };

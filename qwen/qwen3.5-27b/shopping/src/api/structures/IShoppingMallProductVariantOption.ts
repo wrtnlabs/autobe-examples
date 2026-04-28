@@ -12,8 +12,14 @@ export type IShoppingMallProductVariantOption = {
    *
    * This field stores the name of the variant attribute being described. Keys must be unique per variant to prevent duplicate attribute definitions. Common keys include color, size, material, pattern, style, capacity, and other product-specific characteristics.
    *
-   * @x-autobe-database-schema-property key
-   * @x-autobe-specification Direct mapping from shopping_mall_product_variant_options.key column. Stores the option attribute name (e.g., 'color', 'size', 'material'). This field must be unique per variant - enforced by composite unique index with shopping_mall_product_variant_id. When creating or updating variants, duplicate keys within the same variant will cause database constraint violations.
+     * @x-autobe-database-schema-property key
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_product_variant_options.key column. Stores the option
+     *   attribute name (e.g., 'color', 'size', 'material'). This field must be
+     *   unique per variant - enforced by composite unique index with
+     *   shopping_mall_product_variant_id. When creating or updating variants,
+     *   duplicate keys within the same variant will cause database constraint
+     *   violations.
    */
   key: string;
 
@@ -22,8 +28,13 @@ export type IShoppingMallProductVariantOption = {
    *
    * This field stores the actual value for the option key. Values are human-readable strings displayed to customers when selecting variants. The value represents the specific characteristic of this variant for the given key.
    *
-   * @x-autobe-database-schema-property value
-   * @x-autobe-specification Direct mapping from shopping_mall_product_variant_options.value column. Stores the actual attribute value for the option key (e.g., 'Red', 'Large', 'Cotton'). Values are human-readable strings displayed to customers when selecting variants. The value represents the specific characteristic of this variant for the given key.
+     * @x-autobe-database-schema-property value
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_product_variant_options.value column. Stores the actual
+     *   attribute value for the option key (e.g., 'Red', 'Large', 'Cotton').
+     *   Values are human-readable strings displayed to customers when selecting
+     *   variants. The value represents the specific characteristic of this
+     *   variant for the given key.
    */
   value: string;
 };

@@ -29,8 +29,9 @@ export type IHrmActivityLog = {
    *
    * Generated as a UUID when the log entry is created. Serves as the primary key for querying and referencing specific log entries.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from hrm_activity_logs.id. Primary key, UUID format.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from hrm_activity_logs.id. Primary
+     *   key, UUID format.
    */
   id: string & tags.Format<"uuid">;
 
@@ -43,8 +44,9 @@ export type IHrmActivityLog = {
    *
    * The performer is always included in activity log responses to provide full audit context. Users querying activity logs can filter by performer to see all actions taken by a specific user.
    *
-   * @x-autobe-database-schema-property hrmMember
-   * @x-autobe-specification Join from hrm_activity_logs.hrm_members_id to hrm_members.id. Returns IHrmMember.ISummary.
+     * @x-autobe-database-schema-property hrmMember
+     * @x-autobe-specification Join from hrm_activity_logs.hrm_members_id to
+     *   hrm_members.id. Returns IHrmMember.ISummary.
    */
   performer: IHrmMember.ISummary;
 
@@ -57,8 +59,9 @@ export type IHrmActivityLog = {
    *
    * ISO 8601 datetime with timezone (timestamptz). Example: "2026-04-06T18:19:41.783Z"
    *
-   * @x-autobe-database-schema-property timestamp
-   * @x-autobe-specification Direct mapping from hrm_activity_logs.timestamp. DateTime with timestamptz.
+     * @x-autobe-database-schema-property timestamp
+     * @x-autobe-specification Direct mapping from hrm_activity_logs.timestamp.
+     *   DateTime with timestamptz.
    */
   timestamp: string & tags.Format<"date-time">;
 
@@ -76,8 +79,9 @@ export type IHrmActivityLog = {
    *
    * The specific set of action types is documented in the activity logging specification.
    *
-   * @x-autobe-database-schema-property action_type
-   * @x-autobe-specification Direct mapping from hrm_activity_logs.action_type. String enum value.
+     * @x-autobe-database-schema-property action_type
+     * @x-autobe-specification Direct mapping from
+     *   hrm_activity_logs.action_type. String enum value.
    */
   action_type: string;
 
@@ -88,8 +92,9 @@ export type IHrmActivityLog = {
    *
    * Used in conjunction with {@link target_entity_id} to form a polymorphic reference to the affected entity. This design allows a single activity log table to reference entities across all domain components without requiring foreign keys to each specific table.
    *
-   * @x-autobe-database-schema-property target_entity_type
-   * @x-autobe-specification Direct mapping from hrm_activity_logs.target_entity_type. String value.
+     * @x-autobe-database-schema-property target_entity_type
+     * @x-autobe-specification Direct mapping from
+     *   hrm_activity_logs.target_entity_type. String value.
    */
   target_entity_type: string;
 
@@ -102,8 +107,9 @@ export type IHrmActivityLog = {
    *
    * This field is nullable for actions that do not target a specific entity (e.g., system-wide events, configuration changes). When null, only the {@link action_type} and {@link performer} fields provide context about the event.
    *
-   * @x-autobe-database-schema-property target_entity_id
-   * @x-autobe-specification Direct mapping from hrm_activity_logs.target_entity_id. Nullable UUID.
+     * @x-autobe-database-schema-property target_entity_id
+     * @x-autobe-specification Direct mapping from
+     *   hrm_activity_logs.target_entity_id. Nullable UUID.
    */
   target_entity_id: (string & tags.Format<"uuid">) | null;
 
@@ -122,8 +128,9 @@ export type IHrmActivityLog = {
    *
    * Stored as a JSON string in the database. Clients should parse this field as JSON to access the structured data.
    *
-   * @x-autobe-database-schema-property details
-   * @x-autobe-specification Direct mapping from hrm_activity_logs.details. Nullable JSON string.
+     * @x-autobe-database-schema-property details
+     * @x-autobe-specification Direct mapping from hrm_activity_logs.details.
+     *   Nullable JSON string.
    */
   details: string | null;
 
@@ -136,8 +143,9 @@ export type IHrmActivityLog = {
    *
    * ISO 8601 datetime with timezone (timestamptz).
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from hrm_activity_logs.created_at. DateTime with timestamptz.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from hrm_activity_logs.created_at.
+     *   DateTime with timestamptz.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -150,8 +158,9 @@ export type IHrmActivityLog = {
    *
    * ISO 8601 datetime with timezone (timestamptz).
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from hrm_activity_logs.updated_at. DateTime with timestamptz.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from hrm_activity_logs.updated_at.
+     *   DateTime with timestamptz.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -168,8 +177,9 @@ export type IHrmActivityLog = {
    *
    * ISO 8601 datetime with timezone (timestamptz), or null if not deleted.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from hrm_activity_logs.deleted_at. Nullable DateTime with timestamptz.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from hrm_activity_logs.deleted_at.
+     *   Nullable DateTime with timestamptz.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -200,8 +210,9 @@ export namespace IHrmActivityLog {
      *
      * When omitted, returns all action types. When provided, only logs matching the specified action type are returned.
      *
-     * @x-autobe-database-schema-property action_type
-     * @x-autobe-specification Direct mapping from hrm_activity_logs.action_type. Filters by exact action type match.
+         * @x-autobe-database-schema-property action_type
+         * @x-autobe-specification Direct mapping from
+         *   hrm_activity_logs.action_type. Filters by exact action type match.
      */
     action_type?: string | undefined;
 
@@ -212,8 +223,10 @@ export namespace IHrmActivityLog {
      *
      * Useful for auditing a specific user's actions or investigating activity from a particular account.
      *
-     * @x-autobe-database-schema-property hrm_members_id
-     * @x-autobe-specification Maps to hrm_activity_logs.hrm_members_id FK column. Used to JOIN with hrm_members table for performer filtering.
+         * @x-autobe-database-schema-property hrm_members_id
+         * @x-autobe-specification Maps to hrm_activity_logs.hrm_members_id FK
+         *   column. Used to JOIN with hrm_members table for performer
+         *   filtering.
      */
     performer_id?: (string & tags.Format<"uuid">) | undefined;
 
@@ -228,7 +241,11 @@ export namespace IHrmActivityLog {
      *
      * When both properties are provided, returns logs within the specified time window. When only one is provided, filters by that single boundary. When omitted, no timestamp filtering is applied.
      *
-     * @x-autobe-specification Computed filter object for date range queries on hrm_activity_logs.timestamp. Contains gte (greater than or equal) and lte (less than or equal) properties for filtering logs within a time window. The underlying DB column is hrm_activity_logs.timestamp.
+         * @x-autobe-specification Computed filter object for date range queries
+         *   on hrm_activity_logs.timestamp. Contains gte (greater than or
+         *   equal) and lte (less than or equal) properties for filtering logs
+         *   within a time window. The underlying DB column is
+         *   hrm_activity_logs.timestamp.
      */
     timestamp?:
       | {
@@ -248,7 +265,9 @@ export namespace IHrmActivityLog {
      *
      * Use in combination with `pageSize` to control the result set size. For example, page 2 with pageSize 20 retrieves records 21-40.
      *
-     * @x-autobe-specification Pagination parameter for offset-based paging. 1-indexed page number used with pageSize to calculate OFFSET = (page - 1) * pageSize.
+         * @x-autobe-specification Pagination parameter for offset-based paging.
+         *   1-indexed page number used with pageSize to calculate OFFSET =
+         *   (page - 1) * pageSize.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -264,7 +283,9 @@ export namespace IHrmActivityLog {
      *
      * Use in combination with `page` to navigate through paginated results. The actual number of records returned may be less than pageSize on the final page.
      *
-     * @x-autobe-specification Pagination parameter specifying maximum records per page. Used with page to calculate OFFSET. Server enforces maximum of 100 records per page.
+         * @x-autobe-specification Pagination parameter specifying maximum
+         *   records per page. Used with page to calculate OFFSET. Server
+         *   enforces maximum of 100 records per page.
      */
     pageSize?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -282,7 +303,9 @@ export namespace IHrmActivityLog {
      *
      * When omitted, results are ordered by timestamp in descending order (most recent first).
      *
-     * @x-autobe-specification Sorting parameter specifying field name to order results by. Common values: timestamp, action_type, performer_id. Used with sortOrder to determine sort direction.
+         * @x-autobe-specification Sorting parameter specifying field name to
+         *   order results by. Common values: timestamp, action_type,
+         *   performer_id. Used with sortOrder to determine sort direction.
      */
     sortBy?: string | undefined;
 
@@ -297,7 +320,9 @@ export namespace IHrmActivityLog {
      *
      * When omitted, defaults to `desc` for timestamp-based ordering (most recent activity logs first).
      *
-     * @x-autobe-specification Sorting parameter specifying sort direction. Valid values: 'asc' (ascending) or 'desc' (descending). Used with sortBy to determine ordering.
+         * @x-autobe-specification Sorting parameter specifying sort direction.
+         *   Valid values: 'asc' (ascending) or 'desc' (descending). Used with
+         *   sortBy to determine ordering.
      */
     sortOrder?: "asc" | "desc" | undefined;
 
@@ -313,7 +338,9 @@ export namespace IHrmActivityLog {
      *
      * Use in combination with `page` for pagination. The actual number of records returned may be less than the limit on the final page or when total records are fewer than the limit.
      *
-     * @x-autobe-specification Pagination parameter for maximum records per page. Nullable, defaults to 100 if not provided or null. Used with page for offset calculation.
+         * @x-autobe-specification Pagination parameter for maximum records per
+         *   page. Nullable, defaults to 100 if not provided or null. Used with
+         *   page for offset calculation.
      */
     limit?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };
@@ -342,8 +369,9 @@ export namespace IHrmActivityLog {
      *
      * This is the primary key of the activity log record, stored as a UUID. Each log entry has a globally unique identifier that can be used to retrieve the specific log entry via the get endpoint.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from hrm_activity_logs.id. UUID format, primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from hrm_activity_logs.id.
+         *   UUID format, primary key.
      */
     id: string & tags.Format<"uuid">;
 
@@ -352,8 +380,9 @@ export namespace IHrmActivityLog {
      *
      * Captures the exact moment the logged event happened, independent of when the log entry was created. This allows for accurate chronological ordering of events even if log entries are written asynchronously. Results are typically ordered by this field in descending order (newest first).
      *
-     * @x-autobe-database-schema-property timestamp
-     * @x-autobe-specification Direct mapping from hrm_activity_logs.timestamp. DateTime with timestamptz format.
+         * @x-autobe-database-schema-property timestamp
+         * @x-autobe-specification Direct mapping from
+         *   hrm_activity_logs.timestamp. DateTime with timestamptz format.
      */
     timestamp: string & tags.Format<"date-time">;
 
@@ -362,8 +391,9 @@ export namespace IHrmActivityLog {
      *
      * Enumerates the category of business event being logged. Examples include: employee_invited, employee_deactivated, employee_reactivated, contract_created, contract_edited, project_created, project_archived, project_completed, project_deleted, task_status_changed, timesheet_submitted, timesheet_approved, timesheet_rejected, role_assigned, role_changed.
      *
-     * @x-autobe-database-schema-property action_type
-     * @x-autobe-specification Direct mapping from hrm_activity_logs.action_type. String enum value.
+         * @x-autobe-database-schema-property action_type
+         * @x-autobe-specification Direct mapping from
+         *   hrm_activity_logs.action_type. String enum value.
      */
     action_type: string;
 
@@ -372,8 +402,10 @@ export namespace IHrmActivityLog {
      *
      * Identifies the domain entity class affected by the action (e.g., "Employee", "Project", "Task", "Timesheet", "Contract", "Role"). Used in conjunction with target_entity_id to form a polymorphic reference to the affected entity.
      *
-     * @x-autobe-database-schema-property target_entity_type
-     * @x-autobe-specification Direct mapping from hrm_activity_logs.target_entity_type. String identifying entity class.
+         * @x-autobe-database-schema-property target_entity_type
+         * @x-autobe-specification Direct mapping from
+         *   hrm_activity_logs.target_entity_type. String identifying entity
+         *   class.
      */
     target_entity_type: string;
 
@@ -382,8 +414,10 @@ export namespace IHrmActivityLog {
      *
      * The primary key of the entity affected by the action. Combined with target_entity_type, this forms a polymorphic reference. Nullable for actions that do not target a specific entity (e.g., system-wide events or organization-level operations).
      *
-     * @x-autobe-database-schema-property target_entity_id
-     * @x-autobe-specification Direct mapping from hrm_activity_logs.target_entity_id. UUID format, nullable for system-wide events.
+         * @x-autobe-database-schema-property target_entity_id
+         * @x-autobe-specification Direct mapping from
+         *   hrm_activity_logs.target_entity_id. UUID format, nullable for
+         *   system-wide events.
      */
     target_entity_id?: (string & tags.Format<"uuid">) | null | undefined;
 
@@ -392,8 +426,9 @@ export namespace IHrmActivityLog {
      *
      * Contains contextual information about the event, including before/after values for changed fields, additional metadata, and any relevant context. The structure varies by action_type and is documented in the activity logging specification. Nullable for actions with no additional details.
      *
-     * @x-autobe-database-schema-property details
-     * @x-autobe-specification Direct mapping from hrm_activity_logs.details. JSON string format, nullable.
+         * @x-autobe-database-schema-property details
+         * @x-autobe-specification Direct mapping from
+         *   hrm_activity_logs.details. JSON string format, nullable.
      */
     details?: string | null | undefined;
 
@@ -402,8 +437,9 @@ export namespace IHrmActivityLog {
      *
      * Loaded via JOIN with the hrm_members table using the hrm_members_id foreign key. Contains summary information about the member who triggered the logged event. For system-generated actions, this may reference a system service account.
      *
-     * @x-autobe-database-schema-property hrmMember
-     * @x-autobe-specification JOIN from hrm_activity_logs.hrm_members_id to hrm_members.id. Returns IHrmMember.ISummary via hrmMember relation.
+         * @x-autobe-database-schema-property hrmMember
+         * @x-autobe-specification JOIN from hrm_activity_logs.hrm_members_id to
+         *   hrm_members.id. Returns IHrmMember.ISummary via hrmMember relation.
      */
     performer: IHrmMember.ISummary;
 
@@ -412,8 +448,9 @@ export namespace IHrmActivityLog {
      *
      * Automatically set when the activity log record is inserted. This may differ from the timestamp field if log entries are written asynchronously after the action occurs.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from hrm_activity_logs.created_at. DateTime with timestamptz format.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_activity_logs.created_at. DateTime with timestamptz format.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -422,8 +459,9 @@ export namespace IHrmActivityLog {
      *
      * Automatically updated on any modification to the log entry. Used for tracking changes and synchronization purposes.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from hrm_activity_logs.updated_at. DateTime with timestamptz format.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_activity_logs.updated_at. DateTime with timestamptz format.
      */
     updated_at: string & tags.Format<"date-time">;
 
@@ -432,8 +470,10 @@ export namespace IHrmActivityLog {
      *
      * Audit logs are typically retained indefinitely, but soft delete support allows for compliance-driven data removal when required. Null value indicates the log entry is active and not deleted.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from hrm_activity_logs.deleted_at. DateTime with timestamptz format, nullable.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_activity_logs.deleted_at. DateTime with timestamptz format,
+         *   nullable.
      */
     deleted_at?: (string & tags.Format<"date-time">) | null | undefined;
   };

@@ -26,8 +26,9 @@ export type IEcommerceAddress = {
    *
    * Automatically generated UUID assigned when the address record is created. Used as the primary key for address retrieval, updates, and deletion operations.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_addresses.id. UUID primary key uniquely identifying each shipping address record.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from ecommerce_addresses.id. UUID
+     *   primary key uniquely identifying each shipping address record.
    */
   id: string & tags.Format<"uuid">;
 
@@ -38,8 +39,11 @@ export type IEcommerceAddress = {
    *
    * The customer object includes identification and basic profile information but excludes sensitive data like password credentials.
    *
-   * @x-autobe-database-schema-property customer
-   * @x-autobe-specification Join from ecommerce_addresses.ecommerce_customer_id to ecommerce_customers.id. Returns IEcommerceCustomer.ISummary with customer identification and profile information.
+     * @x-autobe-database-schema-property customer
+     * @x-autobe-specification Join from
+     *   ecommerce_addresses.ecommerce_customer_id to ecommerce_customers.id.
+     *   Returns IEcommerceCustomer.ISummary with customer identification and
+     *   profile information.
    */
   customer: IEcommerceCustomer.ISummary;
 
@@ -48,8 +52,9 @@ export type IEcommerceAddress = {
    *
    * The person who will receive packages at this address. Required for delivery purposes and displayed on shipping labels. Must be a non-empty string.
    *
-   * @x-autobe-database-schema-property recipient_name
-   * @x-autobe-specification Direct mapping from ecommerce_addresses.recipient_name. Non-empty string required.
+     * @x-autobe-database-schema-property recipient_name
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_addresses.recipient_name. Non-empty string required.
    */
   recipient_name: string;
 
@@ -58,8 +63,10 @@ export type IEcommerceAddress = {
    *
    * Used by shipping carriers for delivery notifications and contact if delivery issues arise. Should include country code for international addresses (e.g., +1 for US, +82 for Korea). Must be a non-empty string.
    *
-   * @x-autobe-database-schema-property phone_number
-   * @x-autobe-specification Direct mapping from ecommerce_addresses.phone_number. Non-empty string required. Should include country code for international addresses.
+     * @x-autobe-database-schema-property phone_number
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_addresses.phone_number. Non-empty string required. Should
+     *   include country code for international addresses.
    */
   phone_number: string;
 
@@ -68,8 +75,9 @@ export type IEcommerceAddress = {
    *
    * Contains building number, street name, apartment/suite number, and other location-specific details required for delivery. Must be a non-empty string with sufficient detail for accurate package delivery.
    *
-   * @x-autobe-database-schema-property street_address
-   * @x-autobe-specification Direct mapping from ecommerce_addresses.street_address. Non-empty string required.
+     * @x-autobe-database-schema-property street_address
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_addresses.street_address. Non-empty string required.
    */
   street_address: string;
 
@@ -78,8 +86,9 @@ export type IEcommerceAddress = {
    *
    * Required component for address validation and shipping zone determination. Must be a non-empty string representing the city, town, or locality where the address is located.
    *
-   * @x-autobe-database-schema-property city
-   * @x-autobe-specification Direct mapping from ecommerce_addresses.city. Non-empty string required.
+     * @x-autobe-database-schema-property city
+     * @x-autobe-specification Direct mapping from ecommerce_addresses.city.
+     *   Non-empty string required.
    */
   city: string;
 
@@ -88,8 +97,9 @@ export type IEcommerceAddress = {
    *
    * Nullable field to accommodate countries without state/province divisions. Used for shipping calculation and address validation where applicable. Set to null when not applicable to the address location.
    *
-   * @x-autobe-database-schema-property state
-   * @x-autobe-specification Direct mapping from ecommerce_addresses.state. Nullable string - null for countries without state/province divisions.
+     * @x-autobe-database-schema-property state
+     * @x-autobe-specification Direct mapping from ecommerce_addresses.state.
+     *   Nullable string - null for countries without state/province divisions.
    */
   state?: string | null | undefined;
 
@@ -98,8 +108,10 @@ export type IEcommerceAddress = {
    *
    * Required for shipping calculation, delivery routing, and address validation. Format varies by country (e.g., 5-digit ZIP for US, alphanumeric for UK). Must be a non-empty string matching the postal code format for the specified country.
    *
-   * @x-autobe-database-schema-property postal_code
-   * @x-autobe-specification Direct mapping from ecommerce_addresses.postal_code. Non-empty string required. Format varies by country.
+     * @x-autobe-database-schema-property postal_code
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_addresses.postal_code. Non-empty string required. Format
+     *   varies by country.
    */
   postal_code: string;
 
@@ -108,8 +120,10 @@ export type IEcommerceAddress = {
    *
    * Identifies the country for international shipping, customs documentation, and address format validation. Should use ISO country codes (e.g., US, KR, JP) for consistency across the system. Must be a non-empty string.
    *
-   * @x-autobe-database-schema-property country
-   * @x-autobe-specification Direct mapping from ecommerce_addresses.country. Non-empty string required. Should use ISO country codes for consistency.
+     * @x-autobe-database-schema-property country
+     * @x-autobe-specification Direct mapping from ecommerce_addresses.country.
+     *   Non-empty string required. Should use ISO country codes for
+     *   consistency.
    */
   country: string;
 
@@ -118,8 +132,10 @@ export type IEcommerceAddress = {
    *
    * Only one address per customer can be marked as default at any time. When set to true, this address is automatically selected during checkout unless the customer chooses otherwise. The system enforces the one-default constraint through application-level logic.
    *
-   * @x-autobe-database-schema-property is_default
-   * @x-autobe-specification Direct mapping from ecommerce_addresses.is_default. Boolean value. Application logic ensures only one default address per customer via unique partial index.
+     * @x-autobe-database-schema-property is_default
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_addresses.is_default. Boolean value. Application logic
+     *   ensures only one default address per customer via unique partial index.
    */
   is_default: boolean;
 
@@ -128,8 +144,10 @@ export type IEcommerceAddress = {
    *
    * Automatically set to the current timestamp when the address is first created. Cannot be modified. Used for audit trail and sorting addresses by creation date.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_addresses.created_at. DateTime with timestamptz format. Set automatically on record creation.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_addresses.created_at. DateTime with timestamptz format. Set
+     *   automatically on record creation.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -138,8 +156,10 @@ export type IEcommerceAddress = {
    *
    * Automatically updated whenever any address field is changed. Used for auditing and tracking modification history. Cannot be manually set by the client.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from ecommerce_addresses.updated_at. DateTime with timestamptz format. Automatically updated on any address field modification.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_addresses.updated_at. DateTime with timestamptz format.
+     *   Automatically updated on any address field modification.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -148,8 +168,11 @@ export type IEcommerceAddress = {
    *
    * Null while the address is active. Set to the current timestamp when the customer deletes the address. Soft deletion preserves address history for existing order records while removing it from active address selection. Addresses with non-null deleted_at are not accessible via read operations.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from ecommerce_addresses.deleted_at. Nullable DateTime with timestamptz format. Null while address is active, set to current timestamp when soft-deleted.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_addresses.deleted_at. Nullable DateTime with timestamptz
+     *   format. Null while address is active, set to current timestamp when
+     *   soft-deleted.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -175,19 +198,19 @@ export namespace IEcommerceAddress {
    */
   export type ICreate = {
     /**
-     * @x-autobe-database-schema-property recipient_name
+         * @x-autobe-database-schema-property recipient_name
      */
     recipient_name: string;
     /**
-     * @x-autobe-database-schema-property phone_number
+         * @x-autobe-database-schema-property phone_number
      */
     phone_number: string;
     /**
-     * @x-autobe-database-schema-property street_address
+         * @x-autobe-database-schema-property street_address
      */
     street_address: string;
     /**
-     * @x-autobe-database-schema-property city
+         * @x-autobe-database-schema-property city
      */
     city: string;
 
@@ -196,20 +219,22 @@ export namespace IEcommerceAddress {
      *
      * Nullable field to accommodate countries without state/province divisions. Used for shipping calculation and address validation where applicable. Set to null when not applicable to the address location.
      *
-     * @x-autobe-database-schema-property state
-     * @x-autobe-specification Direct mapping from ecommerce_addresses.state. Nullable string - null for countries without state/province divisions.
+         * @x-autobe-database-schema-property state
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_addresses.state. Nullable string - null for countries
+         *   without state/province divisions.
      */
     state?: string | null | undefined;
     /**
-     * @x-autobe-database-schema-property postal_code
+         * @x-autobe-database-schema-property postal_code
      */
     postal_code: string;
     /**
-     * @x-autobe-database-schema-property country
+         * @x-autobe-database-schema-property country
      */
     country: string;
     /**
-     * @x-autobe-database-schema-property is_default
+         * @x-autobe-database-schema-property is_default
      */
     is_default?: boolean | undefined;
   };
@@ -234,8 +259,10 @@ export namespace IEcommerceAddress {
      *
      * This UUID serves as the primary key for the address record and is used in all API operations involving this address (update, delete, view). It is auto-generated upon address creation.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_addresses.id. UUID format primary key uniquely identifying each shipping address record.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from ecommerce_addresses.id.
+         *   UUID format primary key uniquely identifying each shipping address
+         *   record.
      */
     id: string & tags.Format<"uuid">;
 
@@ -244,8 +271,10 @@ export namespace IEcommerceAddress {
      *
      * The person who will receive packages at this address. This name appears on shipping labels and delivery documentation. Required for all address records.
      *
-     * @x-autobe-database-schema-property recipient_name
-     * @x-autobe-specification Direct mapping from ecommerce_addresses.recipient_name. Required string field for the person receiving deliveries.
+         * @x-autobe-database-schema-property recipient_name
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_addresses.recipient_name. Required string field for the
+         *   person receiving deliveries.
      */
     recipient_name: string;
 
@@ -254,8 +283,10 @@ export namespace IEcommerceAddress {
      *
      * Contains the complete street-level address including building number, street name, apartment or suite number, and any other location-specific details required for successful delivery. This is the most critical field for package routing.
      *
-     * @x-autobe-database-schema-property street_address
-     * @x-autobe-specification Direct mapping from ecommerce_addresses.street_address. Required string containing building number, street name, apartment/suite details.
+         * @x-autobe-database-schema-property street_address
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_addresses.street_address. Required string containing
+         *   building number, street name, apartment/suite details.
      */
     street_address: string;
 
@@ -264,8 +295,9 @@ export namespace IEcommerceAddress {
      *
      * Required component for address validation, shipping zone determination, and delivery routing. Must match the official postal service designation for the area.
      *
-     * @x-autobe-database-schema-property city
-     * @x-autobe-specification Direct mapping from ecommerce_addresses.city. Required string field for city or locality name.
+         * @x-autobe-database-schema-property city
+         * @x-autobe-specification Direct mapping from ecommerce_addresses.city.
+         *   Required string field for city or locality name.
      */
     city: string;
 
@@ -274,8 +306,10 @@ export namespace IEcommerceAddress {
      *
      * Optional field to accommodate countries without state/province divisions. Used for shipping calculation and address validation where applicable. Set to null when not applicable for the country.
      *
-     * @x-autobe-database-schema-property state
-     * @x-autobe-specification Direct mapping from ecommerce_addresses.state. Nullable string for state, province, or region. Null for countries without state divisions.
+         * @x-autobe-database-schema-property state
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_addresses.state. Nullable string for state, province, or
+         *   region. Null for countries without state divisions.
      */
     state?: string | null | undefined;
 
@@ -284,8 +318,10 @@ export namespace IEcommerceAddress {
      *
      * Required for shipping calculation, delivery routing, and address validation. Format varies by country (e.g., 5-digit ZIP for US, alphanumeric for UK). Must match the postal service format for accurate delivery.
      *
-     * @x-autobe-database-schema-property postal_code
-     * @x-autobe-specification Direct mapping from ecommerce_addresses.postal_code. Required string field for postal or ZIP code.
+         * @x-autobe-database-schema-property postal_code
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_addresses.postal_code. Required string field for postal
+         *   or ZIP code.
      */
     postal_code: string;
 
@@ -294,8 +330,10 @@ export namespace IEcommerceAddress {
      *
      * Identifies the country for international shipping, customs documentation, and address format validation. Should use ISO 3166-1 alpha-2 country codes (e.g., US, KR, JP) for consistency across the platform.
      *
-     * @x-autobe-database-schema-property country
-     * @x-autobe-specification Direct mapping from ecommerce_addresses.country. Required string field for country code or name.
+         * @x-autobe-database-schema-property country
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_addresses.country. Required string field for country code
+         *   or name.
      */
     country: string;
 
@@ -304,8 +342,11 @@ export namespace IEcommerceAddress {
      *
      * When true, this address is automatically selected during checkout unless the customer chooses otherwise. A unique partial index ensures each customer has at most one default address. Setting a new default requires unsetting the previous one.
      *
-     * @x-autobe-database-schema-property is_default
-     * @x-autobe-specification Direct mapping from ecommerce_addresses.is_default. Boolean flag indicating this is the customer's default shipping address. Unique constraint ensures only one default per customer.
+         * @x-autobe-database-schema-property is_default
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_addresses.is_default. Boolean flag indicating this is the
+         *   customer's default shipping address. Unique constraint ensures only
+         *   one default per customer.
      */
     is_default: boolean;
 
@@ -314,8 +355,10 @@ export namespace IEcommerceAddress {
      *
      * Automatically set by the database when the address is first saved. Used for audit trail purposes and for sorting addresses by creation date. Cannot be modified after creation.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from ecommerce_addresses.created_at. DateTime with timestamptz format, automatically set on record creation.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_addresses.created_at. DateTime with timestamptz format,
+         *   automatically set on record creation.
      */
     created_at: string & tags.Format<"date-time">;
 
@@ -324,8 +367,11 @@ export namespace IEcommerceAddress {
      *
      * Null while the address is active and available for selection. Set to the current timestamp when the customer deletes the address. Soft deletion preserves address history for existing order records while removing it from active address selection. The address can be permanently purged according to data retention policies.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from ecommerce_addresses.deleted_at. Nullable DateTime with timestamptz format. Null while address is active, set to current timestamp on soft-delete.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_addresses.deleted_at. Nullable DateTime with timestamptz
+         *   format. Null while address is active, set to current timestamp on
+         *   soft-delete.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };
@@ -357,7 +403,8 @@ export namespace IEcommerceAddress {
      *
      * This parameter controls which page of results to retrieve. Page numbering starts from 1, not 0. When combined with the limit parameter, it determines the offset for the database query.
      *
-     * @x-autobe-specification Query parameter for pagination. 1-indexed page number. Defaults to 1. Used with limit for OFFSET/LIMIT query.
+         * @x-autobe-specification Query parameter for pagination. 1-indexed
+         *   page number. Defaults to 1. Used with limit for OFFSET/LIMIT query.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -366,7 +413,9 @@ export namespace IEcommerceAddress {
      *
      * This parameter controls how many records to return per page. The maximum is capped at 100 to prevent excessive data retrieval. The actual number returned may be less on the final page.
      *
-     * @x-autobe-specification Query parameter for pagination. Maximum records per page. Capped at 100. Used with page for OFFSET/LIMIT query.
+         * @x-autobe-specification Query parameter for pagination. Maximum
+         *   records per page. Capped at 100. Used with page for OFFSET/LIMIT
+         *   query.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -377,7 +426,9 @@ export namespace IEcommerceAddress {
      *
      * This parameter performs case-insensitive text matching across multiple address fields. It enables customers to quickly find specific addresses by typing any part of the recipient name, street, city, or country.
      *
-     * @x-autobe-specification Query parameter for text search. Performs LIKE query across recipient_name, street_address, city, and country fields. Maximum 200 characters.
+         * @x-autobe-specification Query parameter for text search. Performs
+         *   LIKE query across recipient_name, street_address, city, and country
+         *   fields. Maximum 200 characters.
      */
     search?: (string & tags.MaxLength<200>) | undefined;
 
@@ -386,8 +437,10 @@ export namespace IEcommerceAddress {
      *
      * This boolean filter allows customers to retrieve only their default shipping address or only their non-default addresses. When omitted, both default and non-default addresses are returned.
      *
-     * @x-autobe-database-schema-property is_default
-     * @x-autobe-specification Direct mapping from ecommerce_addresses.is_default. Boolean filter for default address status.
+         * @x-autobe-database-schema-property is_default
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_addresses.is_default. Boolean filter for default address
+         *   status.
      */
     is_default?: boolean | undefined;
 
@@ -396,8 +449,9 @@ export namespace IEcommerceAddress {
      *
      * This parameter filters the results to only include addresses in the specified city. The match is case-sensitive and requires an exact match of the city name as stored in the database.
      *
-     * @x-autobe-database-schema-property city
-     * @x-autobe-specification Direct mapping from ecommerce_addresses.city. Exact match filter for city name.
+         * @x-autobe-database-schema-property city
+         * @x-autobe-specification Direct mapping from ecommerce_addresses.city.
+         *   Exact match filter for city name.
      */
     city?: string | undefined;
 
@@ -406,8 +460,9 @@ export namespace IEcommerceAddress {
      *
      * This parameter filters the results to only include addresses in the specified country. The match is case-sensitive and requires an exact match of the country name as stored in the database.
      *
-     * @x-autobe-database-schema-property country
-     * @x-autobe-specification Direct mapping from ecommerce_addresses.country. Exact match filter for country name.
+         * @x-autobe-database-schema-property country
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_addresses.country. Exact match filter for country name.
      */
     country?: string | undefined;
 
@@ -416,7 +471,8 @@ export namespace IEcommerceAddress {
      *
      * This parameter determines which field to use for sorting the results. Allowed values are created_at (default), updated_at, and recipient_name. The sort_order parameter controls ascending or descending order.
      *
-     * @x-autobe-specification Query parameter for sorting. Allowed values: created_at, updated_at, recipient_name. Maps to ORDER BY clause.
+         * @x-autobe-specification Query parameter for sorting. Allowed values:
+         *   created_at, updated_at, recipient_name. Maps to ORDER BY clause.
      */
     sort_by?: "created_at" | "updated_at" | "recipient_name" | undefined;
 
@@ -425,7 +481,8 @@ export namespace IEcommerceAddress {
      *
      * This parameter controls whether results are sorted in ascending (asc) or descending (desc) order. When combined with sort_by, it determines the final ordering of the result set. Default is descending order (newest first for date fields).
      *
-     * @x-autobe-specification Query parameter for sorting direction. Allowed values: asc, desc. Maps to ORDER BY direction.
+         * @x-autobe-specification Query parameter for sorting direction.
+         *   Allowed values: asc, desc. Maps to ORDER BY direction.
      */
     sort_order?: "asc" | "desc" | undefined;
   };
@@ -451,8 +508,10 @@ export namespace IEcommerceAddress {
      *
      * The person who will receive packages at this address. This field is required for delivery purposes and is shown on shipping labels. Must be a non-empty string.
      *
-     * @x-autobe-database-schema-property recipient_name
-     * @x-autobe-specification Direct mapping from ecommerce_addresses.recipient_name. Required field for address validation.
+         * @x-autobe-database-schema-property recipient_name
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_addresses.recipient_name. Required field for address
+         *   validation.
      */
     recipient_name?: string | undefined;
 
@@ -461,8 +520,10 @@ export namespace IEcommerceAddress {
      *
      * Used by shipping carriers for delivery notifications and contact if delivery issues arise. Should include country code for international addresses. Must be a non-empty string.
      *
-     * @x-autobe-database-schema-property phone_number
-     * @x-autobe-specification Direct mapping from ecommerce_addresses.phone_number. Required field for delivery contact.
+         * @x-autobe-database-schema-property phone_number
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_addresses.phone_number. Required field for delivery
+         *   contact.
      */
     phone_number?: string | undefined;
 
@@ -471,8 +532,10 @@ export namespace IEcommerceAddress {
      *
      * Contains building number, street name, apartment/suite number, and other location-specific details required for delivery. Must be a non-empty string.
      *
-     * @x-autobe-database-schema-property street_address
-     * @x-autobe-specification Direct mapping from ecommerce_addresses.street_address. Required field for delivery location.
+         * @x-autobe-database-schema-property street_address
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_addresses.street_address. Required field for delivery
+         *   location.
      */
     street_address?: string | undefined;
 
@@ -481,8 +544,10 @@ export namespace IEcommerceAddress {
      *
      * Required component for address validation and shipping zone determination. Must be a non-empty string.
      *
-     * @x-autobe-database-schema-property city
-     * @x-autobe-specification Direct mapping from ecommerce_addresses.city. Required field for address validation and shipping zone determination.
+         * @x-autobe-database-schema-property city
+         * @x-autobe-specification Direct mapping from ecommerce_addresses.city.
+         *   Required field for address validation and shipping zone
+         *   determination.
      */
     city?: string | undefined;
 
@@ -491,8 +556,10 @@ export namespace IEcommerceAddress {
      *
      * Nullable field to accommodate countries without state/province divisions. Used for shipping calculation and address validation where applicable. Can be null or a non-empty string.
      *
-     * @x-autobe-database-schema-property state
-     * @x-autobe-specification Direct mapping from ecommerce_addresses.state. Nullable field to accommodate countries without state/province divisions.
+         * @x-autobe-database-schema-property state
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_addresses.state. Nullable field to accommodate countries
+         *   without state/province divisions.
      */
     state?: string | null | undefined;
 
@@ -501,8 +568,10 @@ export namespace IEcommerceAddress {
      *
      * Required for shipping calculation, delivery routing, and address validation. Format varies by country. Must be a non-empty string.
      *
-     * @x-autobe-database-schema-property postal_code
-     * @x-autobe-specification Direct mapping from ecommerce_addresses.postal_code. Required field for shipping calculation and delivery routing.
+         * @x-autobe-database-schema-property postal_code
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_addresses.postal_code. Required field for shipping
+         *   calculation and delivery routing.
      */
     postal_code?: string | undefined;
 
@@ -511,8 +580,10 @@ export namespace IEcommerceAddress {
      *
      * Identifies the country for international shipping, customs documentation, and address format validation. Should use ISO country codes for consistency. Must be a non-empty string.
      *
-     * @x-autobe-database-schema-property country
-     * @x-autobe-specification Direct mapping from ecommerce_addresses.country. Required field for international shipping and customs documentation.
+         * @x-autobe-database-schema-property country
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_addresses.country. Required field for international
+         *   shipping and customs documentation.
      */
     country?: string | undefined;
 
@@ -521,8 +592,11 @@ export namespace IEcommerceAddress {
      *
      * Only one address per customer can be marked as default at any time. When set to true, this address is automatically selected during checkout unless the customer chooses otherwise. When this flag is set to true in the update request, the system automatically unsets the default status on the customer's previous default address to maintain the one-default-per-customer constraint.
      *
-     * @x-autobe-database-schema-property is_default
-     * @x-autobe-specification Direct mapping from ecommerce_addresses.is_default. When set to true, backend must query and unset previous default address for this customer to maintain one-default constraint.
+         * @x-autobe-database-schema-property is_default
+         * @x-autobe-specification Direct mapping from
+         *   ecommerce_addresses.is_default. When set to true, backend must
+         *   query and unset previous default address for this customer to
+         *   maintain one-default constraint.
      */
     is_default?: boolean | undefined;
   };

@@ -21,7 +21,10 @@ import { ICommunityPlatformMember } from "../../../../structures/ICommunityPlatf
  * @param props.body Profile presentation fields to update for the authenticated member.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Load the authenticated member identity from the request context and resolve the corresponding community_platform_members record. Do not accept a user identifier in the path or request body, because the operation must always target the current account owner.
+ * @x-autobe-specification Load the authenticated member identity from the
+ *   request context and resolve the corresponding community_platform_members
+ *   record. Do not accept a user identifier in the path or request body,
+ *   because the operation must always target the current account owner.
  *
  * Apply a partial update to the member profile fields that are allowed by the domain: display_name, bio_text, and avatar_image. Preserve existing values when a field is not present in the request payload. Reject any attempt to modify credentials, username, karma, moderation data, or any other account fields that are not part of profile presentation.
  *

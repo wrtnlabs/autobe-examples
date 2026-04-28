@@ -21,9 +21,10 @@ export class ShoppingmallSellerOrdersShipmentsController {
    * @param connection
    * @param orderId UUID of the order containing the items to be shipped. The seller must have order items in this order.
    * @param body Shipment creation data including the list of order item IDs to include, carrier name, and tracking number.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Create a new shipment record in shopping_mall_shipments table.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Create a new shipment record in
+     *   shopping_mall_shipments table.
    *
    * 1. Validate that the authenticated user is a seller with appropriate permissions.
    * 2. Validate orderId exists and belongs to an order that contains items from this seller.

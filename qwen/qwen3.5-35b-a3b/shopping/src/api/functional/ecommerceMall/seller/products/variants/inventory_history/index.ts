@@ -30,7 +30,8 @@ import { IPageIEcommerceMallInventoryRecord } from "../../../../../../structures
  * @param props.body Search criteria for inventory history records including operation type filters, date range, quantity range, and pagination parameters.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Query ecommerce_mall_inventory_records table filtered by product_variant_id = {variantId}.
+ * @x-autobe-specification Query ecommerce_mall_inventory_records table filtered
+ *   by product_variant_id = {variantId}.
  *
  * ### Filtering
  * - operation_type: filter by exact match (RESTOCK, ADJUSTMENT, LOSS, ORDER_DEDUCTION, REFUND_RETURN, CANCELLATION_RETURN)

@@ -10,80 +10,103 @@ export type IPrivateTodoAppTodo = {
   /**
    * Unique identifier for the todo item, auto-generated as UUID on creation.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from private_todo_app_todos.id. Auto-generated UUID on creation. Used as path parameter in GET/PUT/DELETE operations.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from private_todo_app_todos.id.
+     *   Auto-generated UUID on creation. Used as path parameter in
+     *   GET/PUT/DELETE operations.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Required title providing a brief summary of the task.
    *
-   * @x-autobe-database-schema-property title
-   * @x-autobe-specification Direct mapping from private_todo_app_todos.title. Required non-empty string. Provides brief summary of the task.
+     * @x-autobe-database-schema-property title
+     * @x-autobe-specification Direct mapping from private_todo_app_todos.title.
+     *   Required non-empty string. Provides brief summary of the task.
    */
   title: string;
 
   /**
    * Optional detailed description or notes about the task. Can be null if not provided.
    *
-   * @x-autobe-database-schema-property description
-   * @x-autobe-specification Direct mapping from private_todo_app_todos.description. Nullable text field for additional context or notes. Can be set to null to clear.
+     * @x-autobe-database-schema-property description
+     * @x-autobe-specification Direct mapping from
+     *   private_todo_app_todos.description. Nullable text field for additional
+     *   context or notes. Can be set to null to clear.
    */
   description: string | null;
 
   /**
    * Optional start date indicating when the task should begin. Null if not set.
    *
-   * @x-autobe-database-schema-property start_date
-   * @x-autobe-specification Direct mapping from private_todo_app_todos.start_date. Nullable timestamp. When sorting by start date, todos without start date appear at the end.
+     * @x-autobe-database-schema-property start_date
+     * @x-autobe-specification Direct mapping from
+     *   private_todo_app_todos.start_date. Nullable timestamp. When sorting by
+     *   start date, todos without start date appear at the end.
    */
   start_date: (string & tags.Format<"date-time">) | null;
 
   /**
    * Optional due date indicating when the task should be completed by. Null if not set.
    *
-   * @x-autobe-database-schema-property due_date
-   * @x-autobe-specification Direct mapping from private_todo_app_todos.due_date. Nullable timestamp. When sorting by due date, todos without due date appear at the end.
+     * @x-autobe-database-schema-property due_date
+     * @x-autobe-specification Direct mapping from
+     *   private_todo_app_todos.due_date. Nullable timestamp. When sorting by
+     *   due date, todos without due date appear at the end.
    */
   due_date: (string & tags.Format<"date-time">) | null;
 
   /**
    * Completion status - false for incomplete todos, true for completed ones.
    *
-   * @x-autobe-database-schema-property completed
-   * @x-autobe-specification Direct mapping from private_todo_app_todos.completed. Boolean flag: false for incomplete, true for completed. Defaults to false on creation. Toggle via dedicated POST /todos/{todoId}/toggle endpoint.
+     * @x-autobe-database-schema-property completed
+     * @x-autobe-specification Direct mapping from
+     *   private_todo_app_todos.completed. Boolean flag: false for incomplete,
+     *   true for completed. Defaults to false on creation. Toggle via dedicated
+     *   POST /todos/{todoId}/toggle endpoint.
    */
   completed: boolean;
 
   /**
    * The owning member of this todo. Todos are completely private to their owner.
    *
-   * @x-autobe-database-schema-property member
-   * @x-autobe-specification JOIN from private_todo_app_todos.user_id to private_todo_app_members.id. Returns IPrivateTodoAppMember.ISummary with owner's id and display_name. Enforces privacy - only owner can access their todos.
+     * @x-autobe-database-schema-property member
+     * @x-autobe-specification JOIN from private_todo_app_todos.user_id to
+     *   private_todo_app_members.id. Returns IPrivateTodoAppMember.ISummary
+     *   with owner's id and display_name. Enforces privacy - only owner can
+     *   access their todos.
    */
   member: IPrivateTodoAppMember.ISummary;
 
   /**
    * Timestamp when the todo was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from private_todo_app_todos.created_at. Auto-set to current timestamp on creation. Used for default sorting (newest first).
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   private_todo_app_todos.created_at. Auto-set to current timestamp on
+     *   creation. Used for default sorting (newest first).
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the todo was last modified.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from private_todo_app_todos.updated_at. Auto-updated to current timestamp on every modification (title, description, dates, completion toggle, restoration).
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   private_todo_app_todos.updated_at. Auto-updated to current timestamp on
+     *   every modification (title, description, dates, completion toggle,
+     *   restoration).
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * Soft-delete timestamp. When set, the todo is in the trash. Null for active todos.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from private_todo_app_todos.deleted_at. Nullable timestamp. When set, todo is in trash and excluded from normal todo list. Cleared on restoration from trash.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   private_todo_app_todos.deleted_at. Nullable timestamp. When set, todo
+     *   is in trash and excluded from normal todo list. Cleared on restoration
+     *   from trash.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -95,42 +118,63 @@ export namespace IPrivateTodoAppTodo {
     /**
      * Search term for filtering todos by title. Case-insensitive partial match using trigram index for fast text search.
      *
-     * @x-autobe-specification Query parameter for case-insensitive partial matching on the title column using GIN trigram index. Applied as WHERE title ILIKE '%search%' if provided. Uses PostgreSQL pg_trgm extension for efficient trigram-based text search.
+         * @x-autobe-specification Query parameter for case-insensitive partial
+         *   matching on the title column using GIN trigram index. Applied as
+         *   WHERE title ILIKE '%search%' if provided. Uses PostgreSQL pg_trgm
+         *   extension for efficient trigram-based text search.
      */
     search?: string | undefined;
 
     /**
      * Filter todos by completion status. Use 'all' to show all todos, 'complete' to show only completed todos, or 'incomplete' to show only incomplete todos.
      *
-     * @x-autobe-specification Filter control for completion status. Determines how to query the completed boolean column: 'all' or omitted → no filter on completed, 'complete' → WHERE completed = true, 'incomplete' → WHERE completed = false. Default behavior shows all todos regardless of completion status.
+         * @x-autobe-specification Filter control for completion status.
+         *   Determines how to query the completed boolean column: 'all' or
+         *   omitted → no filter on completed, 'complete' → WHERE completed =
+         *   true, 'incomplete' → WHERE completed = false. Default behavior
+         *   shows all todos regardless of completion status.
      */
     completed?: "all" | "complete" | "incomplete" | undefined;
 
     /**
      * Field to sort the todo list by. Defaults to 'created_at'. When sorting by start_date or due_date, todos without those dates appear at the end of the list.
      *
-     * @x-autobe-specification Sort field selector for ORDER BY clause. Options: 'created_at' (default), 'start_date', 'due_date'. When sorting by start_date or due_date, NULL values are sorted last (NULLS LAST) so todos without those dates appear at the end of the list.
+         * @x-autobe-specification Sort field selector for ORDER BY clause.
+         *   Options: 'created_at' (default), 'start_date', 'due_date'. When
+         *   sorting by start_date or due_date, NULL values are sorted last
+         *   (NULLS LAST) so todos without those dates appear at the end of the
+         *   list.
      */
     sort?: "created_at" | "start_date" | "due_date" | undefined;
 
     /**
      * Sort direction for the todo list. Use 'desc' for newest/earliest first or 'asc' for oldest/latest first.
      *
-     * @x-autobe-specification Sort direction for ORDER BY clause. 'desc' (default) for descending order - newest/earliest first depending on sort field. 'asc' for ascending order - oldest/latest first. Combined with sort field to produce final ORDER BY clause (e.g., ORDER BY created_at DESC).
+         * @x-autobe-specification Sort direction for ORDER BY clause. 'desc'
+         *   (default) for descending order - newest/earliest first depending on
+         *   sort field. 'asc' for ascending order - oldest/latest first.
+         *   Combined with sort field to produce final ORDER BY clause (e.g.,
+         *   ORDER BY created_at DESC).
      */
     order?: "asc" | "desc" | undefined;
 
     /**
      * Page number for pagination. Starts from 1 (first page). Use with limit to navigate through large todo lists.
      *
-     * @x-autobe-specification Page number for pagination, 1-indexed. Used to calculate OFFSET as (page - 1) * limit. Default value is 1 (first page). Must be >= 1. Combined with limit parameter to implement offset-based pagination.
+         * @x-autobe-specification Page number for pagination, 1-indexed. Used
+         *   to calculate OFFSET as (page - 1) * limit. Default value is 1
+         *   (first page). Must be >= 1. Combined with limit parameter to
+         *   implement offset-based pagination.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Number of todos to return per page. Maximum 100 items per page to ensure efficient performance.
      *
-     * @x-autobe-specification Maximum number of records per page. Controls LIMIT clause in query. Default is configurable by the backend. Maximum allowed value is 100 to prevent excessive memory usage. Combined with page parameter to implement offset-based pagination.
+         * @x-autobe-specification Maximum number of records per page. Controls
+         *   LIMIT clause in query. Default is configurable by the backend.
+         *   Maximum allowed value is 100 to prevent excessive memory usage.
+         *   Combined with page parameter to implement offset-based pagination.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -144,28 +188,28 @@ export namespace IPrivateTodoAppTodo {
     /**
      * Title of the todo item. Required field that provides a brief summary of the task.
      *
-     * @x-autobe-database-schema-property title
+         * @x-autobe-database-schema-property title
      */
     title: string;
 
     /**
      * Detailed description of the todo item. Optional field for additional context or notes about the task.
      *
-     * @x-autobe-database-schema-property description
+         * @x-autobe-database-schema-property description
      */
     description?: string | null | undefined;
 
     /**
      * Optional start date for the todo item. When provided, helps track when to begin the task.
      *
-     * @x-autobe-database-schema-property start_date
+         * @x-autobe-database-schema-property start_date
      */
     start_date?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * Optional due date for the todo item. When provided, helps track when the task should be completed.
      *
-     * @x-autobe-database-schema-property due_date
+         * @x-autobe-database-schema-property due_date
      */
     due_date?: (string & tags.Format<"date-time">) | null | undefined;
   };
@@ -177,32 +221,43 @@ export namespace IPrivateTodoAppTodo {
     /**
      * The title of the todo item. Required field that provides a brief summary of the task. Must be a non-empty string.
      *
-     * @x-autobe-database-schema-property title
-     * @x-autobe-specification Direct mapping from private_todo_app_todos.title. Required field - must be non-empty string. Used as the main summary of the todo task.
+         * @x-autobe-database-schema-property title
+         * @x-autobe-specification Direct mapping from
+         *   private_todo_app_todos.title. Required field - must be non-empty
+         *   string. Used as the main summary of the todo task.
      */
     title: string & tags.MinLength<1>;
 
     /**
      * Detailed description or notes about the todo item. Optional field that can be set to null to clear any existing description.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from private_todo_app_todos.description. Optional field - can be null or any string value. Used for detailed notes or context about the task.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   private_todo_app_todos.description. Optional field - can be null or
+         *   any string value. Used for detailed notes or context about the
+         *   task.
      */
     description?: string | null | undefined;
 
     /**
      * The start date for the todo item. Optional field that indicates when the task should begin. Can be set to null to clear any existing start date.
      *
-     * @x-autobe-database-schema-property start_date
-     * @x-autobe-specification Direct mapping from private_todo_app_todos.start_date. Optional datetime field - can be null or a valid ISO 8601 datetime string. Indicates when the task should begin.
+         * @x-autobe-database-schema-property start_date
+         * @x-autobe-specification Direct mapping from
+         *   private_todo_app_todos.start_date. Optional datetime field - can be
+         *   null or a valid ISO 8601 datetime string. Indicates when the task
+         *   should begin.
      */
     startDate?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * The due date for the todo item. Optional field that indicates when the task should be completed by. Can be set to null to clear any existing due date.
      *
-     * @x-autobe-database-schema-property due_date
-     * @x-autobe-specification Direct mapping from private_todo_app_todos.due_date. Optional datetime field - can be null or a valid ISO 8601 datetime string. Indicates when the task should be completed by.
+         * @x-autobe-database-schema-property due_date
+         * @x-autobe-specification Direct mapping from
+         *   private_todo_app_todos.due_date. Optional datetime field - can be
+         *   null or a valid ISO 8601 datetime string. Indicates when the task
+         *   should be completed by.
      */
     dueDate?: (string & tags.Format<"date-time">) | null | undefined;
   };
@@ -214,48 +269,54 @@ export namespace IPrivateTodoAppTodo {
     /**
      * Unique identifier of the todo item.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from private_todo_app_todos.id. UUID primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   private_todo_app_todos.id. UUID primary key.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Title of the todo item.
      *
-     * @x-autobe-database-schema-property title
-     * @x-autobe-specification Direct mapping from private_todo_app_todos.title. Required string field.
+         * @x-autobe-database-schema-property title
+         * @x-autobe-specification Direct mapping from
+         *   private_todo_app_todos.title. Required string field.
      */
     title: string;
 
     /**
      * Completion status of the todo item.
      *
-     * @x-autobe-database-schema-property completed
-     * @x-autobe-specification Direct mapping from private_todo_app_todos.completed. Boolean field, defaults to false.
+         * @x-autobe-database-schema-property completed
+         * @x-autobe-specification Direct mapping from
+         *   private_todo_app_todos.completed. Boolean field, defaults to false.
      */
     completed: boolean;
 
     /**
      * Optional start date for the todo item.
      *
-     * @x-autobe-database-schema-property start_date
-     * @x-autobe-specification Direct mapping from private_todo_app_todos.start_date. Optional timestamp, nullable.
+         * @x-autobe-database-schema-property start_date
+         * @x-autobe-specification Direct mapping from
+         *   private_todo_app_todos.start_date. Optional timestamp, nullable.
      */
     start_date: (string & tags.Format<"date-time">) | null;
 
     /**
      * Optional due date for the todo item.
      *
-     * @x-autobe-database-schema-property due_date
-     * @x-autobe-specification Direct mapping from private_todo_app_todos.due_date. Optional timestamp, nullable.
+         * @x-autobe-database-schema-property due_date
+         * @x-autobe-specification Direct mapping from
+         *   private_todo_app_todos.due_date. Optional timestamp, nullable.
      */
     due_date: (string & tags.Format<"date-time">) | null;
 
     /**
      * Timestamp when the todo item was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from private_todo_app_todos.created_at. Timestamp field.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   private_todo_app_todos.created_at. Timestamp field.
      */
     created_at: string & tags.Format<"date-time">;
   };

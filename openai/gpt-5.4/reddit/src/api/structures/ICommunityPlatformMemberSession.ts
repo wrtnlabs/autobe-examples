@@ -10,56 +10,71 @@ export type ICommunityPlatformMemberSession = {
   /**
    * Unique identifier of this authenticated member session.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from community_platform_member_sessions.id.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_member_sessions.id.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Summary of the member account that owns this session.
    *
-   * @x-autobe-database-schema-property member
-   * @x-autobe-specification Join community_platform_members through community_platform_member_sessions.community_platform_member_id = community_platform_members.id and map the related row as ICommunityPlatformMember.ISummary.
+     * @x-autobe-database-schema-property member
+     * @x-autobe-specification Join community_platform_members through
+     *   community_platform_member_sessions.community_platform_member_id =
+     *   community_platform_members.id and map the related row as
+     *   ICommunityPlatformMember.ISummary.
    */
   member: ICommunityPlatformMember.ISummary;
 
   /**
    * IP address recorded when the member session was created.
    *
-   * @x-autobe-database-schema-property ip
-   * @x-autobe-specification Direct mapping from community_platform_member_sessions.ip. Return the IP address recorded when the session was established.
+     * @x-autobe-database-schema-property ip
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_member_sessions.ip. Return the IP address recorded
+     *   when the session was established.
    */
   ip: string;
 
   /**
    * Page URL recorded when this session was created.
    *
-   * @x-autobe-database-schema-property href
-   * @x-autobe-specification Direct mapping from community_platform_member_sessions.href. Return the page URL or request href captured when the authenticated member session was established.
+     * @x-autobe-database-schema-property href
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_member_sessions.href. Return the page URL or request
+     *   href captured when the authenticated member session was established.
    */
   href: string;
 
   /**
    * HTTP referrer recorded when this session was created.
    *
-   * @x-autobe-database-schema-property referrer
-   * @x-autobe-specification Direct mapping from community_platform_member_sessions.referrer. Return the HTTP referrer captured when the session was created.
+     * @x-autobe-database-schema-property referrer
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_member_sessions.referrer. Return the HTTP referrer
+     *   captured when the session was created.
    */
   referrer: string;
 
   /**
    * Timestamp when this authenticated session was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from community_platform_member_sessions.created_at. Serialize the stored timestamptz value as a date-time string.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_member_sessions.created_at. Serialize the stored
+     *   timestamptz value as a date-time string.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when this session expires and is no longer valid unless renewed or replaced.
    *
-   * @x-autobe-database-schema-property expired_at
-   * @x-autobe-specification Direct mapping from community_platform_member_sessions.expired_at. Serialize the stored timestamptz value as a date-time string indicating when the session stops being valid unless renewed or replaced.
+     * @x-autobe-database-schema-property expired_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_member_sessions.expired_at. Serialize the stored
+     *   timestamptz value as a date-time string indicating when the session
+     *   stops being valid unless renewed or replaced.
    */
   expired_at: string & tags.Format<"date-time">;
 };
@@ -71,48 +86,57 @@ export namespace ICommunityPlatformMemberSession {
     /**
      * Unique identifier of this authenticated member session.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from community_platform_member_sessions.id.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_member_sessions.id.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * IP address recorded for the session creation event.
      *
-     * @x-autobe-database-schema-property ip
-     * @x-autobe-specification Direct mapping from community_platform_member_sessions.ip. Return the IP address recorded when the session was established.
+         * @x-autobe-database-schema-property ip
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_member_sessions.ip. Return the IP address
+         *   recorded when the session was established.
      */
     ip: string;
 
     /**
      * Request URL or origin associated with when this session was created.
      *
-     * @x-autobe-database-schema-property href
-     * @x-autobe-specification Direct mapping from community_platform_member_sessions.href. Return the request URL or origin href captured when the session was created.
+         * @x-autobe-database-schema-property href
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_member_sessions.href. Return the request URL or
+         *   origin href captured when the session was created.
      */
     href: string & tags.Format<"uri">;
 
     /**
      * HTTP referrer recorded when this session was created.
      *
-     * @x-autobe-database-schema-property referrer
-     * @x-autobe-specification Direct mapping from community_platform_member_sessions.referrer. Return the HTTP referrer captured at session creation time.
+         * @x-autobe-database-schema-property referrer
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_member_sessions.referrer. Return the HTTP
+         *   referrer captured at session creation time.
      */
     referrer: string & tags.Format<"uri">;
 
     /**
      * Timestamp when this member session was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from community_platform_member_sessions.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_member_sessions.created_at.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when this member session expires unless it is renewed or replaced.
      *
-     * @x-autobe-database-schema-property expired_at
-     * @x-autobe-specification Direct mapping from community_platform_member_sessions.expired_at.
+         * @x-autobe-database-schema-property expired_at
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_member_sessions.expired_at.
      */
     expired_at: string & tags.Format<"date-time">;
   };
@@ -124,56 +148,87 @@ export namespace ICommunityPlatformMemberSession {
     /**
      * Free-text keyword used to search the member's session records by connection details such as IP address, request URL, or referrer.
      *
-     * @x-autobe-specification Optional free-text search term applied across the authenticated member's session rows in community_platform_member_sessions. When provided, implement a partial-match filter over the ip, href, and referrer columns using OR semantics within the caller's owned sessions.
+         * @x-autobe-specification Optional free-text search term applied across
+         *   the authenticated member's session rows in
+         *   community_platform_member_sessions. When provided, implement a
+         *   partial-match filter over the ip, href, and referrer columns using
+         *   OR semantics within the caller's owned sessions.
      */
     search?: string | undefined;
 
     /**
      * Filters session records by the recorded IP address from which the session was established.
      *
-     * @x-autobe-specification Optional filter parameter used to constrain community_platform_member_sessions rows by their ip column after ownership filtering to the authenticated member. Support exact matching or implementation-defined partial matching consistent with the operation specification.
+         * @x-autobe-specification Optional filter parameter used to constrain
+         *   community_platform_member_sessions rows by their ip column after
+         *   ownership filtering to the authenticated member. Support exact
+         *   matching or implementation-defined partial matching consistent with
+         *   the operation specification.
      */
     ip?: string | undefined;
 
     /**
      * Filters session records by the request URL or origin href recorded when the session was created.
      *
-     * @x-autobe-specification Optional filter parameter used to constrain community_platform_member_sessions rows by their href column after ownership filtering to the authenticated member. Preserve the existing uri-reference format semantics in request validation.
+         * @x-autobe-specification Optional filter parameter used to constrain
+         *   community_platform_member_sessions rows by their href column after
+         *   ownership filtering to the authenticated member. Preserve the
+         *   existing uri-reference format semantics in request validation.
      */
     href?: (string & tags.Format<"uri-reference">) | undefined;
 
     /**
      * Filters session records by the HTTP referrer captured at session creation time.
      *
-     * @x-autobe-specification Optional filter parameter used to constrain community_platform_member_sessions rows by their referrer column after ownership filtering to the authenticated member. Preserve the existing uri-reference format semantics in request validation.
+         * @x-autobe-specification Optional filter parameter used to constrain
+         *   community_platform_member_sessions rows by their referrer column
+         *   after ownership filtering to the authenticated member. Preserve the
+         *   existing uri-reference format semantics in request validation.
      */
     referrer?: (string & tags.Format<"uri-reference">) | undefined;
 
     /**
      * Inclusive start timestamp for narrowing results to sessions created on or after a specific time.
      *
-     * @x-autobe-specification Optional lower-bound timestamp filter applied to community_platform_member_sessions.created_at. When provided, include only authenticated-member session rows whose created_at is greater than or equal to this value.
+         * @x-autobe-specification Optional lower-bound timestamp filter applied
+         *   to community_platform_member_sessions.created_at. When provided,
+         *   include only authenticated-member session rows whose created_at is
+         *   greater than or equal to this value.
      */
     created_from?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Inclusive end timestamp for narrowing results to sessions created on or before a specific time.
      *
-     * @x-autobe-specification Optional upper-bound timestamp filter applied to community_platform_member_sessions.created_at. When provided, include only authenticated-member session rows whose created_at is less than or equal to this value.
+         * @x-autobe-specification Optional upper-bound timestamp filter applied
+         *   to community_platform_member_sessions.created_at. When provided,
+         *   include only authenticated-member session rows whose created_at is
+         *   less than or equal to this value.
      */
     created_to?: (string & tags.Format<"date-time">) | undefined;
 
     /**
      * Filters sessions by whether they are currently active or already expired.
      *
-     * @x-autobe-specification Optional derived active-status filter computed from community_platform_member_sessions.expired_at and the current server time. When true, return only rows where the current time is earlier than expired_at. When false, return only rows where the current time is equal to or later than expired_at.
+         * @x-autobe-specification Optional derived active-status filter
+         *   computed from community_platform_member_sessions.expired_at and the
+         *   current server time. When true, return only rows where the current
+         *   time is earlier than expired_at. When false, return only rows where
+         *   the current time is equal to or later than expired_at.
      */
     is_active?: boolean | undefined;
 
     /**
      * Sort order for the session list, using supported tokens for creation time or expiration time in ascending or descending order.
      *
-     * @x-autobe-specification Optional sort token controlling ordered retrieval of authenticated member session rows. Map 'created_at' and '-created_at' to ascending or descending order on community_platform_member_sessions.created_at, and map 'expired_at' and '-expired_at' to ascending or descending order on community_platform_member_sessions.expired_at. Apply a deterministic secondary sort by id in implementation for stable pagination.
+         * @x-autobe-specification Optional sort token controlling ordered
+         *   retrieval of authenticated member session rows. Map 'created_at'
+         *   and '-created_at' to ascending or descending order on
+         *   community_platform_member_sessions.created_at, and map 'expired_at'
+         *   and '-expired_at' to ascending or descending order on
+         *   community_platform_member_sessions.expired_at. Apply a
+         *   deterministic secondary sort by id in implementation for stable
+         *   pagination.
      */
     sort?:
       | "created_at"
@@ -185,14 +240,21 @@ export namespace ICommunityPlatformMemberSession {
     /**
      * Page number of the paginated session results to retrieve.
      *
-     * @x-autobe-specification Optional 1-indexed pagination selector for the result set. Convert this request value into query offset logic together with limit after applying ownership filtering, search, field filters, derived filters, and sorting.
+         * @x-autobe-specification Optional 1-indexed pagination selector for
+         *   the result set. Convert this request value into query offset logic
+         *   together with limit after applying ownership filtering, search,
+         *   field filters, derived filters, and sorting.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of session records to return in a single page of results.
      *
-     * @x-autobe-specification Optional page-size limit for paginated session retrieval. Use this integer to cap the number of rows returned per page after applying ownership filtering, search, field filters, derived filters, and sorting. Respect the existing schema maximum of 100.
+         * @x-autobe-specification Optional page-size limit for paginated
+         *   session retrieval. Use this integer to cap the number of rows
+         *   returned per page after applying ownership filtering, search, field
+         *   filters, derived filters, and sorting. Respect the existing schema
+         *   maximum of 100.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)

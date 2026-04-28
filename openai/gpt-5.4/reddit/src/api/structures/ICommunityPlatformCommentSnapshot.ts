@@ -10,16 +10,22 @@ export type ICommunityPlatformCommentSnapshot = {
   /**
    * Unique identifier of this historical comment snapshot.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from community_platform_comment_snapshots.id.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_comment_snapshots.id.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * The discussion comment that this historical snapshot belongs to.
    *
-   * @x-autobe-database-schema-property comment
-   * @x-autobe-specification Resolve the belongs-to relation from community_platform_comment_snapshots.community_platform_comment_id to community_platform_comments.id and materialize the joined record as ICommunityPlatformComment. This property represents the related comment object instead of exposing the raw community_platform_comment_id scalar.
+     * @x-autobe-database-schema-property comment
+     * @x-autobe-specification Resolve the belongs-to relation from
+     *   community_platform_comment_snapshots.community_platform_comment_id to
+     *   community_platform_comments.id and materialize the joined record as
+     *   ICommunityPlatformComment. This property represents the related comment
+     *   object instead of exposing the raw community_platform_comment_id
+     *   scalar.
    */
   comment: ICommunityPlatformComment;
 };
@@ -31,14 +37,21 @@ export namespace ICommunityPlatformCommentSnapshot {
     /**
      * Page number of the snapshot history results to return.
      *
-     * @x-autobe-specification Client-supplied 1-indexed page number used to offset the filtered community_platform_comment_snapshots result set after validating postId and commentId from the path. If omitted, the implementation should default to the first page.
+         * @x-autobe-specification Client-supplied 1-indexed page number used to
+         *   offset the filtered community_platform_comment_snapshots result set
+         *   after validating postId and commentId from the path. If omitted,
+         *   the implementation should default to the first page.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of snapshot history records to include in one response page.
      *
-     * @x-autobe-specification Client-supplied maximum number of snapshot summary records to return per page from the filtered community_platform_comment_snapshots query. Enforce the declared bounds and use the validated value when constructing pagination metadata and database query limits.
+         * @x-autobe-specification Client-supplied maximum number of snapshot
+         *   summary records to return per page from the filtered
+         *   community_platform_comment_snapshots query. Enforce the declared
+         *   bounds and use the validated value when constructing pagination
+         *   metadata and database query limits.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -47,7 +60,12 @@ export namespace ICommunityPlatformCommentSnapshot {
     /**
      * Sort order to apply when browsing comment snapshot history.
      *
-     * @x-autobe-specification Client-supplied ordering directive for the filtered community_platform_comment_snapshots history query. Support created_at and id in ascending or descending direction according to the enum values. When omitted, default to newest-first traversal, using descending snapshot creation context and id as a stable secondary key for deterministic page boundaries.
+         * @x-autobe-specification Client-supplied ordering directive for the
+         *   filtered community_platform_comment_snapshots history query.
+         *   Support created_at and id in ascending or descending direction
+         *   according to the enum values. When omitted, default to newest-first
+         *   traversal, using descending snapshot creation context and id as a
+         *   stable secondary key for deterministic page boundaries.
      */
     sort?: "created_at" | "-created_at" | "id" | "-id" | undefined;
   };
@@ -59,16 +77,21 @@ export namespace ICommunityPlatformCommentSnapshot {
     /**
      * Unique identifier of this historical comment snapshot entry.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from community_platform_comment_snapshots.id.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   community_platform_comment_snapshots.id.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Summary information for the comment that owns this snapshot history entry.
      *
-     * @x-autobe-database-schema-property comment
-     * @x-autobe-specification Resolve the belongs-to relation community_platform_comment_snapshots.comment by joining community_platform_comment_snapshots.community_platform_comment_id to community_platform_comments.id and materializing the related ICommunityPlatformComment.ISummary.
+         * @x-autobe-database-schema-property comment
+         * @x-autobe-specification Resolve the belongs-to relation
+         *   community_platform_comment_snapshots.comment by joining
+         *   community_platform_comment_snapshots.community_platform_comment_id
+         *   to community_platform_comments.id and materializing the related
+         *   ICommunityPlatformComment.ISummary.
      */
     comment: ICommunityPlatformComment.ISummary;
   };

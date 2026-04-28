@@ -22,7 +22,10 @@ import { IPageIEcommerceMallUserBanOfCustomer } from "../../../../structures/IPa
  * @param props.body Search criteria for filtering customer ban records including ban status, date ranges, customer information, and administrator filter.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor administrator
- * @x-autobe-specification Query the ecommerce_mall_user_ban_of_customers table with joins to ecommerce_mall_user_bans (for ban metadata), ecommerce_mall_members (for customer info), and ecommerce_mall_administrators (for administrator info).
+ * @x-autobe-specification Query the ecommerce_mall_user_ban_of_customers table
+ *   with joins to ecommerce_mall_user_bans (for ban metadata),
+ *   ecommerce_mall_members (for customer info), and
+ *   ecommerce_mall_administrators (for administrator info).
  *
  * Apply search filters:
  * - ban_status: 'active' (deleted_at IS NULL) or 'all' (include lifted bans)
@@ -126,7 +129,8 @@ export namespace index {
  * @param props.banOfCustomerId The unique identifier of the customer ban subtype record
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor administrator
- * @x-autobe-specification Query the ecommerce_mall_user_ban_of_customers table for a record matching the path parameter banOfCustomerId.
+ * @x-autobe-specification Query the ecommerce_mall_user_ban_of_customers table
+ *   for a record matching the path parameter banOfCustomerId.
  *
  * Steps:
  * 1. Validate banOfCustomerId is a valid UUID format

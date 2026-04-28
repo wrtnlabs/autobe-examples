@@ -18,9 +18,10 @@ export class RedditcloneMemberReportsController {
    *
    * @param connection
    * @param body Report creation data including the type of content being reported (post or comment), the ID of the target content, and the reason for reporting.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Create a new report record in reddit_clone_reports table.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Create a new report record in
+     *   reddit_clone_reports table.
    *
    * 1. Extract the authenticated member's ID from the request context (session/user middleware).
    * 2. Validate that report_type is either 'post' or 'comment'.

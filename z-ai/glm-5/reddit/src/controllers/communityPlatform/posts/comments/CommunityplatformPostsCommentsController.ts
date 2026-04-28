@@ -23,9 +23,11 @@ export class CommunityplatformPostsCommentsController {
    * @param connection
    * @param postId Unique identifier of the post whose comments are being retrieved
    * @param body Sorting and pagination parameters for comment retrieval
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query community_platform_comments table filtered by community_platform_post_id matching the postId path parameter, excluding soft-deleted comments (deleted_at IS NULL).
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Query community_platform_comments table filtered
+     *   by community_platform_post_id matching the postId path parameter,
+     *   excluding soft-deleted comments (deleted_at IS NULL).
    *
    * For sorting:
    * - 'best': ORDER BY vote_score DESC, created_at DESC
@@ -75,9 +77,10 @@ export class CommunityplatformPostsCommentsController {
    * @param connection
    * @param postId UUID of the post containing the comment
    * @param commentId UUID of the comment to retrieve
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Retrieve a single comment by its UUID from the community_platform_comments table.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor null
+     * @x-autobe-specification Retrieve a single comment by its UUID from the
+     *   community_platform_comments table.
    *
    * Query the comment record where id = commentId. Verify that the comment's community_platform_post_id matches the provided postId parameter for data integrity.
    *

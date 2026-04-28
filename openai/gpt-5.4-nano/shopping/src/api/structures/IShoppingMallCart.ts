@@ -10,55 +10,71 @@ export type IShoppingMallCart = {
   /**
    * Unique identifier of the cart.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_carts.id. Must be the cart identifier for subsequent cart item loading and for the operation-layer authorization checks.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from shopping_mall_carts.id. Must
+     *   be the cart identifier for subsequent cart item loading and for the
+     *   operation-layer authorization checks.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Identifier of the member who owns this cart.
    *
-   * @x-autobe-database-schema-property shopping_mall_member_id
-   * @x-autobe-specification Direct mapping from shopping_mall_carts.shopping_mall_member_id. Used to ensure the cart belongs to the authenticated member (ownership enforced in operation layer).
+     * @x-autobe-database-schema-property shopping_mall_member_id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_carts.shopping_mall_member_id. Used to ensure the cart
+     *   belongs to the authenticated member (ownership enforced in operation
+     *   layer).
    */
   shopping_mall_member_id: string & tags.Format<"uuid">;
 
   /**
    * Whether this cart currently has an inventory insufficiency warning.
    *
-   * @x-autobe-database-schema-property warning_inventory_insufficient
-   * @x-autobe-specification Direct mapping from shopping_mall_carts.warning_inventory_insufficient. Represents whether the cart currently contains item quantities that may exceed purchasable inventory, as computed by cart update/conversion operations.
+     * @x-autobe-database-schema-property warning_inventory_insufficient
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_carts.warning_inventory_insufficient. Represents whether
+     *   the cart currently contains item quantities that may exceed purchasable
+     *   inventory, as computed by cart update/conversion operations.
    */
   warning_inventory_insufficient: boolean;
 
   /**
    * Timestamp when the cart was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from shopping_mall_carts.created_at.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_carts.created_at.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the cart was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from shopping_mall_carts.updated_at.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_carts.updated_at.
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * Soft-deletion timestamp of the cart. Null if the cart is active.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from shopping_mall_carts.deleted_at. When the cart is active, this must be null; when soft-deleted, it must be the deletion timestamp.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_carts.deleted_at. When the cart is active, this must be
+     *   null; when soft-deleted, it must be the deletion timestamp.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 
   /**
    * Active cart line items contained in this cart.
    *
-   * @x-autobe-specification Load cart line items from shopping_mall_cart_items where shopping_mall_cart_id = shopping_mall_carts.id AND deleted_at IS NULL, then map each row to IShoppingMallCartItem.ISummary and return the array as `items` (empty array if none exist).
+     * @x-autobe-specification Load cart line items from
+     *   shopping_mall_cart_items where shopping_mall_cart_id =
+     *   shopping_mall_carts.id AND deleted_at IS NULL, then map each row to
+     *   IShoppingMallCartItem.ISummary and return the array as `items` (empty
+     *   array if none exist).
    */
   items: null;
 };
@@ -75,8 +91,14 @@ export namespace IShoppingMallCart {
     /**
      * Indicates whether the cart currently has inventory insufficiency for one or more requested product variants. The server recomputes this value from the cart’s line items before saving.
      *
-     * @x-autobe-database-schema-property warning_inventory_insufficient
-     * @x-autobe-specification Direct mapping to shopping_mall_carts.warning_inventory_insufficient, but treated as a non-authoritative hint. Implementation must recompute the cart warning from shopping_mall_cart_items belonging to the cart and persist the recomputed boolean into shopping_mall_carts.warning_inventory_insufficient within the PUT /shoppingMall/member/carts/{cartId} transaction.
+         * @x-autobe-database-schema-property warning_inventory_insufficient
+         * @x-autobe-specification Direct mapping to
+         *   shopping_mall_carts.warning_inventory_insufficient, but treated as
+         *   a non-authoritative hint. Implementation must recompute the cart
+         *   warning from shopping_mall_cart_items belonging to the cart and
+         *   persist the recomputed boolean into
+         *   shopping_mall_carts.warning_inventory_insufficient within the PUT
+         *   /shoppingMall/member/carts/{cartId} transaction.
      */
     warning_inventory_insufficient?: boolean | undefined;
   };
@@ -88,29 +110,42 @@ export namespace IShoppingMallCart {
     /**
      * Cart line item operation instructions (primarily quantity changes) to be applied within the authenticated member’s cart.
      *
-     * @x-autobe-database-schema-property quantity
-     * @x-autobe-specification Process `items` as cart-item operations scoped to the authenticated member’s cart. For each nested instruction, apply the requested quantity change to the target shopping_mall_cart_items row (quantity column), ensuring ownership by joining shopping_mall_cart_items.shopping_mall_cart_id to shopping_mall_carts.shopping_mall_member_id. After updating quantities, the server must recompute subtotal_amount and refresh cart warning_inventory_insufficient using existing inventory logic.
+         * @x-autobe-database-schema-property quantity
+         * @x-autobe-specification Process `items` as cart-item operations
+         *   scoped to the authenticated member’s cart. For each nested
+         *   instruction, apply the requested quantity change to the target
+         *   shopping_mall_cart_items row (quantity column), ensuring ownership
+         *   by joining shopping_mall_cart_items.shopping_mall_cart_id to
+         *   shopping_mall_carts.shopping_mall_member_id. After updating
+         *   quantities, the server must recompute subtotal_amount and refresh
+         *   cart warning_inventory_insufficient using existing inventory logic.
      */
     items: IShoppingMallCartItem.IRequest[] & tags.MinItems<1>;
 
     /**
      * Client-provided identifier to correlate this request with its response.
      *
-     * @x-autobe-specification Echo this identifier back in responses for client-side request correlation; do not persist it to shopping_mall_cart_items.
+         * @x-autobe-specification Echo this identifier back in responses for
+         *   client-side request correlation; do not persist it to
+         *   shopping_mall_cart_items.
      */
     clientMutationId?: string | undefined;
 
     /**
      * Target page number to retrieve (1-indexed).
      *
-     * @x-autobe-specification Optional request-only list control for endpoints that return paginated cart-item results. When null/omitted, the server defaults to page 1 (first page).
+         * @x-autobe-specification Optional request-only list control for
+         *   endpoints that return paginated cart-item results. When
+         *   null/omitted, the server defaults to page 1 (first page).
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
 
     /**
      * Maximum number of records to return per page.
      *
-     * @x-autobe-specification Optional request-only list control for endpoints that return paginated cart-item results. When null/omitted, the server defaults to 100 items per page.
+         * @x-autobe-specification Optional request-only list control for
+         *   endpoints that return paginated cart-item results. When
+         *   null/omitted, the server defaults to 100 items per page.
      */
     limit?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };
@@ -120,23 +155,23 @@ export namespace IShoppingMallCart {
    */
   export type ISummary = {
     /**
-     * @x-autobe-database-schema-property id
+         * @x-autobe-database-schema-property id
      */
     id: string & tags.Format<"uuid">;
     /**
-     * @x-autobe-database-schema-property warning_inventory_insufficient
+         * @x-autobe-database-schema-property warning_inventory_insufficient
      */
     warning_inventory_insufficient: boolean;
     /**
-     * @x-autobe-database-schema-property created_at
+         * @x-autobe-database-schema-property created_at
      */
     created_at: string & tags.Format<"date-time">;
     /**
-     * @x-autobe-database-schema-property updated_at
+         * @x-autobe-database-schema-property updated_at
      */
     updated_at: string & tags.Format<"date-time">;
     /**
-     * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-database-schema-property deleted_at
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };

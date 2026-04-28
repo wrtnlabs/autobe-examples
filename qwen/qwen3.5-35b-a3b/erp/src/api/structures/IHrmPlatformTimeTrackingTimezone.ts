@@ -26,8 +26,10 @@ export type IHrmPlatformTimeTrackingTimezone = {
    *
    * UUID primary key that uniquely identifies this timezone configuration record within the system. Used as the primary reference when retrieving, updating, or deleting timezone settings.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from hrm_platform_time_tracking_timezones.id. Generated as UUID v4 on record creation.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_time_tracking_timezones.id. Generated as UUID v4 on record
+     *   creation.
    */
   id: string & tags.Format<"uuid">;
 
@@ -36,8 +38,11 @@ export type IHrmPlatformTimeTrackingTimezone = {
    *
    * UUID that identifies the organization this timezone setting applies to. Each organization can have only one timezone configuration, enforced by unique constraint on organization_id. This FK enables data isolation and organization-level access control.
    *
-   * @x-autobe-database-schema-property organization_id
-   * @x-autobe-specification Direct mapping from hrm_platform_time_tracking_timezones.organization_id. FK constraint to hrm_platform_organizations.id with CASCADE delete. Validated against organization existence on create.
+     * @x-autobe-database-schema-property organization_id
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_time_tracking_timezones.organization_id. FK constraint to
+     *   hrm_platform_organizations.id with CASCADE delete. Validated against
+     *   organization existence on create.
    */
   organization_id: string & tags.Format<"uuid">;
 
@@ -46,8 +51,11 @@ export type IHrmPlatformTimeTrackingTimezone = {
    *
    * IANA Time Zone Database identifier string (e.g., 'Asia/Seoul', 'America/New_York', 'Europe/London'). This value determines how timer sessions, timelogs, and timesheets display and calculate time for all employees in the organization. Must be a valid IANA timezone name; invalid identifiers are rejected during validation.
    *
-   * @x-autobe-database-schema-property timezone
-   * @x-autobe-specification Direct mapping from hrm_platform_time_tracking_timezones.timezone. String field containing IANA timezone identifier. Validated against IANA Time Zone Database on create and update operations.
+     * @x-autobe-database-schema-property timezone
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_time_tracking_timezones.timezone. String field containing
+     *   IANA timezone identifier. Validated against IANA Time Zone Database on
+     *   create and update operations.
    */
   timezone: string;
 
@@ -56,8 +64,10 @@ export type IHrmPlatformTimeTrackingTimezone = {
    *
    * UTC timestamp marking when the timezone configuration record was first created. Immutable field that provides audit trail information for compliance and historical tracking.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from hrm_platform_time_tracking_timezones.created_at. Automatically set to current UTC timestamp on record creation. Format: RFC3339 date-time.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_time_tracking_timezones.created_at. Automatically set to
+     *   current UTC timestamp on record creation. Format: RFC3339 date-time.
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -66,8 +76,11 @@ export type IHrmPlatformTimeTrackingTimezone = {
    *
    * UTC timestamp updated on every modification to the timezone configuration. Used to track the most recent changes and support soft delete workflows.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from hrm_platform_time_tracking_timezones.updated_at. Automatically set to current UTC timestamp on every UPDATE operation. Format: RFC3339 date-time.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_time_tracking_timezones.updated_at. Automatically set to
+     *   current UTC timestamp on every UPDATE operation. Format: RFC3339
+     *   date-time.
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -76,8 +89,11 @@ export type IHrmPlatformTimeTrackingTimezone = {
    *
    * Nullable timestamp indicating when this timezone configuration was marked for deletion. NULL indicates active record. When present, marks the record as deleted while preserving data for compliance and audit requirements.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from hrm_platform_time_tracking_timezones.deleted_at. Nullable timestamptz field. NULL for active records, set to current UTC timestamp on soft delete. Format: RFC3339 date-time.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   hrm_platform_time_tracking_timezones.deleted_at. Nullable timestamptz
+     *   field. NULL for active records, set to current UTC timestamp on soft
+     *   delete. Format: RFC3339 date-time.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 
@@ -86,8 +102,12 @@ export type IHrmPlatformTimeTrackingTimezone = {
    *
    * Organization summary object providing context about the organization this timezone setting applies to. Resolved via JOIN from organization_id foreign key to organizations table. Contains essential identification fields for display and navigation purposes without including large compositions or aggregations.
    *
-   * @x-autobe-database-schema-property organization
-   * @x-autobe-specification Belongs-to relation via organization_id FK to hrm_platform_organizations.id. Resolved through SQL JOIN. Returns IHrmPlatformOrganization.ISummary with id, name, owner, and other essential fields. Organization data isolation enforced - only accessible for user's current organization.
+     * @x-autobe-database-schema-property organization
+     * @x-autobe-specification Belongs-to relation via organization_id FK to
+     *   hrm_platform_organizations.id. Resolved through SQL JOIN. Returns
+     *   IHrmPlatformOrganization.ISummary with id, name, owner, and other
+     *   essential fields. Organization data isolation enforced - only
+     *   accessible for user's current organization.
    */
   organization: IHrmPlatformOrganization.ISummary;
 };
@@ -113,8 +133,11 @@ export namespace IHrmPlatformTimeTrackingTimezone {
      *
      * This field specifies which organization the timezone setting applies to. The organization must exist and be owned by the authenticated member. Each organization can only have one timezone configuration.
      *
-     * @x-autobe-database-schema-property organization_id
-     * @x-autobe-specification Direct mapping from hrm_platform_time_tracking_timezones.organization_id. Foreign key UUID referencing hrm_platform_organizations.id. Must be a valid organization UUID owned by the authenticated member.
+         * @x-autobe-database-schema-property organization_id
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_time_tracking_timezones.organization_id. Foreign key
+         *   UUID referencing hrm_platform_organizations.id. Must be a valid
+         *   organization UUID owned by the authenticated member.
      */
     organization_id: string & tags.Format<"uuid">;
 
@@ -123,8 +146,12 @@ export namespace IHrmPlatformTimeTrackingTimezone {
      *
      * This field accepts standard IANA timezone database identifiers (e.g., 'Asia/Seoul', 'America/New_York', 'Europe/London'). Invalid timezone names are rejected by the server. The timezone determines how dates and times are displayed and calculated for timers, timelogs, and timesheets.
      *
-     * @x-autobe-database-schema-property timezone
-     * @x-autobe-specification Direct mapping from hrm_platform_time_tracking_timezones.timezone. IANA timezone identifier string (e.g., 'Asia/Seoul', 'America/New_York', 'Europe/London'). Server validates the timezone string and rejects invalid identifiers.
+         * @x-autobe-database-schema-property timezone
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_time_tracking_timezones.timezone. IANA timezone
+         *   identifier string (e.g., 'Asia/Seoul', 'America/New_York',
+         *   'Europe/London'). Server validates the timezone string and rejects
+         *   invalid identifiers.
      */
     timezone: string;
   };
@@ -172,8 +199,12 @@ export namespace IHrmPlatformTimeTrackingTimezone {
      *
      * Invalid timezone identifiers will be rejected by the server with a 400 Bad Request response.
      *
-     * @x-autobe-database-schema-property timezone
-     * @x-autobe-specification Direct mapping from hrm_platform_time_tracking_timezones.timezone field. Must be a valid IANA Time Zone Database identifier (e.g., 'Asia/Seoul', 'America/New_York', 'Europe/London'). All other fields excluded for partial update support.
+         * @x-autobe-database-schema-property timezone
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_time_tracking_timezones.timezone field. Must be a
+         *   valid IANA Time Zone Database identifier (e.g., 'Asia/Seoul',
+         *   'America/New_York', 'Europe/London'). All other fields excluded for
+         *   partial update support.
      */
     timezone?: string | undefined;
   };
@@ -206,8 +237,11 @@ export namespace IHrmPlatformTimeTrackingTimezone {
      * - Valid UUID v4 string
      * - Organization must exist and be accessible to the authenticated user
      *
-     * @x-autobe-database-schema-property organization_id
-     * @x-autobe-specification Direct filter on hrm_platform_time_tracking_timezones.organization_id column. UUID format required. Used to restrict search results to a specific organization's timezone configurations.
+         * @x-autobe-database-schema-property organization_id
+         * @x-autobe-specification Direct filter on
+         *   hrm_platform_time_tracking_timezones.organization_id column. UUID
+         *   format required. Used to restrict search results to a specific
+         *   organization's timezone configurations.
      */
     organization_id?: (string & tags.Format<"uuid">) | undefined;
 
@@ -221,8 +255,11 @@ export namespace IHrmPlatformTimeTrackingTimezone {
      * - IANA timezone identifier string (e.g., 'Asia/Seoul', 'America/New_York', 'Europe/London')
      * - Full timezone database names only (no abbreviations)
      *
-     * @x-autobe-database-schema-property timezone
-     * @x-autobe-specification Direct filter on hrm_platform_time_tracking_timezones.timezone column. String matching against IANA timezone identifier (e.g., 'Asia/Seoul', 'America/New_York').
+         * @x-autobe-database-schema-property timezone
+         * @x-autobe-specification Direct filter on
+         *   hrm_platform_time_tracking_timezones.timezone column. String
+         *   matching against IANA timezone identifier (e.g., 'Asia/Seoul',
+         *   'America/New_York').
      */
     timezone?: string | undefined;
 
@@ -240,7 +277,10 @@ export namespace IHrmPlatformTimeTrackingTimezone {
      *
      * When not specified, defaults to returning only active records. Use this filter to audit or manage deleted configurations.
      *
-     * @x-autobe-specification Computed filter that maps to deleted_at state: 'active' means deleted_at IS NULL, 'deleted' means deleted_at IS NOT NULL. Used to include or exclude soft-deleted timezone configuration records from search results.
+         * @x-autobe-specification Computed filter that maps to deleted_at
+         *   state: 'active' means deleted_at IS NULL, 'deleted' means
+         *   deleted_at IS NOT NULL. Used to include or exclude soft-deleted
+         *   timezone configuration records from search results.
      */
     status?: "active" | "deleted" | undefined;
 
@@ -255,7 +295,9 @@ export namespace IHrmPlatformTimeTrackingTimezone {
      * - Must be a positive integer
      * - Defaults to 1 if not provided
      *
-     * @x-autobe-specification Standard pagination page number parameter. 1-indexed page number for paginated list browsing. Not stored in database - purely client-controlled navigation parameter.
+         * @x-autobe-specification Standard pagination page number parameter.
+         *   1-indexed page number for paginated list browsing. Not stored in
+         *   database - purely client-controlled navigation parameter.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -274,7 +316,9 @@ export namespace IHrmPlatformTimeTrackingTimezone {
      *
      * Smaller page sizes reduce memory usage per request but require more requests to browse all results. Larger page sizes improve browsing efficiency but increase memory and network overhead.
      *
-     * @x-autobe-specification Standard pagination records per page parameter. Controls how many records appear on each page. Not stored in database - purely client-controlled pagination parameter.
+         * @x-autobe-specification Standard pagination records per page
+         *   parameter. Controls how many records appear on each page. Not
+         *   stored in database - purely client-controlled pagination parameter.
      */
     pageSize?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -294,7 +338,10 @@ export namespace IHrmPlatformTimeTrackingTimezone {
      *
      * Combine with sortOrder parameter to control ascending or descending order.
      *
-     * @x-autobe-specification Sort field specifier for list ordering. Controls which database field results are sorted by. Valid values: 'createdAt' (created_at column) or 'updatedAt' (updated_at column). Not stored in database - purely client-controlled sort parameter.
+         * @x-autobe-specification Sort field specifier for list ordering.
+         *   Controls which database field results are sorted by. Valid values:
+         *   'createdAt' (created_at column) or 'updatedAt' (updated_at column).
+         *   Not stored in database - purely client-controlled sort parameter.
      */
     sortBy?: "createdAt" | "updatedAt" | undefined;
 
@@ -312,7 +359,9 @@ export namespace IHrmPlatformTimeTrackingTimezone {
      *
      * Defaults to ascending order if not specified.
      *
-     * @x-autobe-specification Sort direction parameter for list ordering. Controls whether results are sorted ascending or descending. Not stored in database - purely client-controlled sort parameter.
+         * @x-autobe-specification Sort direction parameter for list ordering.
+         *   Controls whether results are sorted ascending or descending. Not
+         *   stored in database - purely client-controlled sort parameter.
      */
     sortOrder?: "asc" | "desc" | undefined;
 
@@ -331,7 +380,10 @@ export namespace IHrmPlatformTimeTrackingTimezone {
      *
      * Prevents accidental or malicious requests that could consume excessive server resources or network bandwidth.
      *
-     * @x-autobe-specification Maximum records per page cap. Controls the upper bound on records returned per page. If omitted, null, or undefined, defaults to 100 records per page. Server may enforce stricter upper bounds to prevent excessive resource consumption.
+         * @x-autobe-specification Maximum records per page cap. Controls the
+         *   upper bound on records returned per page. If omitted, null, or
+         *   undefined, defaults to 100 records per page. Server may enforce
+         *   stricter upper bounds to prevent excessive resource consumption.
      */
     limit?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };
@@ -347,8 +399,9 @@ export namespace IHrmPlatformTimeTrackingTimezone {
      *
      * Universally unique identifier (UUID) that serves as the primary key for the timezone configuration record. Used for database indexing, API references, and cross-entity relationships.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from hrm_platform_time_tracking_timezones.id. UUID format.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_time_tracking_timezones.id. UUID format.
      */
     id: string & tags.Format<"uuid">;
 
@@ -357,8 +410,10 @@ export namespace IHrmPlatformTimeTrackingTimezone {
      *
      * Standard timezone string following IANA timezone database format. Used to convert between UTC storage and local display time, calculate timesheet hours, and format timestamps for the organization's geographical context.
      *
-     * @x-autobe-database-schema-property timezone
-     * @x-autobe-specification Direct mapping from hrm_platform_time_tracking_timezones.timezone. IANA timezone database identifier (e.g., 'Asia/Seoul', 'America/New_York').
+         * @x-autobe-database-schema-property timezone
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_time_tracking_timezones.timezone. IANA timezone
+         *   database identifier (e.g., 'Asia/Seoul', 'America/New_York').
      */
     timezone: string;
 
@@ -367,8 +422,11 @@ export namespace IHrmPlatformTimeTrackingTimezone {
      *
      * Reference to the organization that this timezone setting applies to. Each organization has exactly one timezone configuration. The nested ISummary provides essential organization identification without including all organization detail fields.
      *
-     * @x-autobe-database-schema-property organization
-     * @x-autobe-specification Relation join from hrm_platform_time_tracking_timezones.organization_id to hrm_platform_organizations.id. Returns IHrmPlatformOrganization.ISummary.
+         * @x-autobe-database-schema-property organization
+         * @x-autobe-specification Relation join from
+         *   hrm_platform_time_tracking_timezones.organization_id to
+         *   hrm_platform_organizations.id. Returns
+         *   IHrmPlatformOrganization.ISummary.
      */
     organization: IHrmPlatformOrganization.ISummary;
 
@@ -377,8 +435,10 @@ export namespace IHrmPlatformTimeTrackingTimezone {
      *
      * Immutable timestamp marking when the timezone configuration record was first created. Used for audit trails, tracking configuration changes over time, and determining the age of timezone settings.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from hrm_platform_time_tracking_timezones.created_at. Immutable timestamp set when record is created.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_time_tracking_timezones.created_at. Immutable
+         *   timestamp set when record is created.
      */
     createdAt: string & tags.Format<"date-time">;
 
@@ -387,8 +447,10 @@ export namespace IHrmPlatformTimeTrackingTimezone {
      *
      * Automatically updated whenever the timezone configuration is changed, including timezone value updates or organization reassignments. Used to track the most recent changes and support sync operations.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from hrm_platform_time_tracking_timezones.updated_at. Timestamp automatically updated on every write operation.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_time_tracking_timezones.updated_at. Timestamp
+         *   automatically updated on every write operation.
      */
     updatedAt: string & tags.Format<"date-time">;
 
@@ -397,8 +459,10 @@ export namespace IHrmPlatformTimeTrackingTimezone {
      *
      * Nullable field that is NULL when the record is active. When set, indicates the timezone configuration was marked for deletion while preserving data for compliance. Soft-deleted records are excluded from active queries but retained for audit purposes.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from hrm_platform_time_tracking_timezones.deleted_at. Nullable timestamp - NULL indicates active record, set value indicates soft-deletion.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   hrm_platform_time_tracking_timezones.deleted_at. Nullable timestamp
+         *   - NULL indicates active record, set value indicates soft-deletion.
      */
     deletedAt: (string & tags.Format<"date-time">) | null;
   };

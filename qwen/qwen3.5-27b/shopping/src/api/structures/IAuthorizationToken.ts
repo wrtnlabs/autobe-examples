@@ -24,7 +24,8 @@ export type IAuthorizationToken = {
    * roles, and permissions. Typically expires within 15-60 minutes for
    * security; use the refresh token to obtain a new access token when expired.
    *
-   * @x-autobe-specification JWT access token. Use in Authorization header as "Bearer {access}".
+     * @x-autobe-specification JWT access token. Use in Authorization header as
+     *   "Bearer {access}".
    */
   access: string;
 
@@ -36,7 +37,8 @@ export type IAuthorizationToken = {
    * securely and transmitted only to the token refresh endpoint. Typical
    * lifetime ranges from 7 to 30 days depending on security requirements.
    *
-   * @x-autobe-specification Refresh token for obtaining new access tokens without re-authentication.
+     * @x-autobe-specification Refresh token for obtaining new access tokens
+     *   without re-authentication.
    */
   refresh: string;
 
@@ -49,7 +51,8 @@ export type IAuthorizationToken = {
    * time falls below 5 minutes. This timestamp is also embedded within the JWT
    * itself as the "exp" claim.
    *
-   * @x-autobe-specification Access token expiration timestamp in ISO 8601 format.
+     * @x-autobe-specification Access token expiration timestamp in ISO 8601
+     *   format.
    */
   expired_at: string & tags.Format<"date-time">;
 
@@ -62,7 +65,8 @@ export type IAuthorizationToken = {
    * activity. If refresh token rotation is enabled, this deadline may extend
    * with each successful refresh.
    *
-   * @x-autobe-specification Refresh token expiration timestamp. Re-authentication required after this time.
+     * @x-autobe-specification Refresh token expiration timestamp.
+     *   Re-authentication required after this time.
    */
   refreshable_until: string & tags.Format<"date-time">;
 };

@@ -14,8 +14,9 @@ export type IEcommerceMallSellerSession = {
    *
    * UUID primary key that uniquely identifies this specific session across the platform. Used for administrative reference, session lookup, and audit trail operations.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_seller_sessions.id (UUID primary key).
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_seller_sessions.id (UUID primary key).
    */
   id: string & tags.Format<"uuid">;
 
@@ -24,8 +25,10 @@ export type IEcommerceMallSellerSession = {
    *
    * Foreign key linking this session to the seller account. Admins can use this to verify session ownership and cross-reference with seller account details. The seller account must exist and be active for this session to remain valid.
    *
-   * @x-autobe-database-schema-property ecommerce_mall_seller_id
-   * @x-autobe-specification Direct mapping from ecommerce_mall_seller_sessions.ecommerce_mall_seller_id (UUID FK to sellers.id).
+     * @x-autobe-database-schema-property ecommerce_mall_seller_id
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_seller_sessions.ecommerce_mall_seller_id (UUID FK to
+     *   sellers.id).
    */
   ecommerce_mall_seller_id: string & tags.Format<"uuid">;
 
@@ -34,8 +37,9 @@ export type IEcommerceMallSellerSession = {
    *
    * Bearer token included in Authorization header for making authenticated API calls as the seller. Token is valid until the expired_at timestamp and should be refreshed before expiration using the refresh_token.
    *
-   * @x-autobe-database-schema-property access_token
-   * @x-autobe-specification Direct mapping from ecommerce_mall_seller_sessions.access_token (JWT string).
+     * @x-autobe-database-schema-property access_token
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_seller_sessions.access_token (JWT string).
    */
   access_token: string;
 
@@ -44,8 +48,9 @@ export type IEcommerceMallSellerSession = {
    *
    * Token used to generate a new access_token without requiring seller re-authentication. Also subject to expired_at constraint. Must be kept secure and transmitted only over HTTPS.
    *
-   * @x-autobe-database-schema-property refresh_token
-   * @x-autobe-specification Direct mapping from ecommerce_mall_seller_sessions.refresh_token (JWT string).
+     * @x-autobe-database-schema-property refresh_token
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_seller_sessions.refresh_token (JWT string).
    */
   refresh_token: string;
 
@@ -54,8 +59,9 @@ export type IEcommerceMallSellerSession = {
    *
    * IPv4 or IPv6 address captured at session creation time for security auditing and fraud detection. Used to identify suspicious login activity from unusual geographic locations or to track session origins.
    *
-   * @x-autobe-database-schema-property ip
-   * @x-autobe-specification Direct mapping from ecommerce_mall_seller_sessions.ip (IPv4/IPv6 string).
+     * @x-autobe-database-schema-property ip
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_seller_sessions.ip (IPv4/IPv6 string).
    */
   ip: string;
 
@@ -64,8 +70,9 @@ export type IEcommerceMallSellerSession = {
    *
    * Landing page or action URL captured during the authentication flow. Provides context about the user journey and is useful for analytics and security audits.
    *
-   * @x-autobe-database-schema-property href
-   * @x-autobe-specification Direct mapping from ecommerce_mall_seller_sessions.href (URI string).
+     * @x-autobe-database-schema-property href
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_seller_sessions.href (URI string).
    */
   href: string & tags.Format<"uri">;
 
@@ -74,8 +81,9 @@ export type IEcommerceMallSellerSession = {
    *
    * URL of the page that directed the user to the authentication flow. Used for analytics to understand traffic sources and for security audits to detect suspicious referrer patterns.
    *
-   * @x-autobe-database-schema-property referrer
-   * @x-autobe-specification Direct mapping from ecommerce_mall_seller_sessions.referrer (URI string).
+     * @x-autobe-database-schema-property referrer
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_seller_sessions.referrer (URI string).
    */
   referrer: string & tags.Format<"uri">;
 
@@ -84,8 +92,9 @@ export type IEcommerceMallSellerSession = {
    *
    * ISO 8601 formatted datetime marking when the seller successfully authenticated and the session was established. Used for tracking session age and compliance with session timeout policies.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_seller_sessions.created_at (TIMESTAMPTZ).
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_seller_sessions.created_at (TIMESTAMPTZ).
    */
   created_at: string & tags.Format<"date-time">;
 
@@ -94,8 +103,9 @@ export type IEcommerceMallSellerSession = {
    *
    * ISO 8601 formatted datetime tracking the most recent modification to the session record. Used for audit purposes and to detect tampering with session data.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_seller_sessions.updated_at (TIMESTAMPTZ).
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_seller_sessions.updated_at (TIMESTAMPTZ).
    */
   updated_at: string & tags.Format<"date-time">;
 
@@ -104,8 +114,9 @@ export type IEcommerceMallSellerSession = {
    *
    * Nullable ISO 8601 formatted datetime. Null when session is active. Populated when the session is revoked, expired, or manually deleted by an administrator. Soft-deleted sessions are excluded from active session queries but preserved for audit purposes.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_seller_sessions.deleted_at (nullable TIMESTAMPTZ).
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_seller_sessions.deleted_at (nullable TIMESTAMPTZ).
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 
@@ -114,8 +125,9 @@ export type IEcommerceMallSellerSession = {
    *
    * ISO 8601 formatted datetime marking when the session becomes invalid. Access tokens should be refreshed before this timestamp to maintain uninterrupted authentication. Expired sessions are automatically excluded from active session management.
    *
-   * @x-autobe-database-schema-property expired_at
-   * @x-autobe-specification Direct mapping from ecommerce_mall_seller_sessions.expired_at (TIMESTAMPTZ).
+     * @x-autobe-database-schema-property expired_at
+     * @x-autobe-specification Direct mapping from
+     *   ecommerce_mall_seller_sessions.expired_at (TIMESTAMPTZ).
    */
   expired_at: string & tags.Format<"date-time">;
 };

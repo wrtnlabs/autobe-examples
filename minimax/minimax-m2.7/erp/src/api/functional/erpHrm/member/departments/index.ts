@@ -22,7 +22,8 @@ import { IPageIErpHrmDepartment } from "../../../../structures/IPageIErpHrmDepar
  * @param props.body Search criteria and pagination parameters for filtering departments.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query erp_hrm_departments table with organization-scoped filtering from session context.
+ * @x-autobe-specification Query erp_hrm_departments table with
+ *   organization-scoped filtering from session context.
  *
  * Apply search filters:
  * - Filter by name substring match (case-insensitive)
@@ -124,7 +125,8 @@ export namespace index {
  * @param props.departmentId Unique identifier of the department to retrieve (global scope).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query erp_hrm_departments table using the provided departmentId as the primary key lookup.
+ * @x-autobe-specification Query erp_hrm_departments table using the provided
+ *   departmentId as the primary key lookup.
  *
  * Verify the department belongs to the authenticated user's current organization context (erp_hrm_organization_id match). Return 404 error if department does not exist or does not belong to the organization.
  *
@@ -216,7 +218,8 @@ export namespace at {
  * @param props.connection
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query the erp_hrm_departments table filtering by the current organization context.
+ * @x-autobe-specification Query the erp_hrm_departments table filtering by the
+ *   current organization context.
  *
  * Build the hierarchy tree structure server-side:
  * 1. Fetch all departments belonging to the organization where deleted_at IS NULL or deleted_at IS NOT NULL (include both active and inactive)

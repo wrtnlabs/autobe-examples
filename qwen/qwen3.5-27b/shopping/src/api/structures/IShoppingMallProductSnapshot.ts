@@ -42,7 +42,10 @@ export namespace IShoppingMallProductSnapshot {
      *
      * Specifies which page of results to retrieve. Page numbering starts from 1, so the first page is page 1. This parameter works in conjunction with limit to paginate through results. When using cursor-based pagination, the cursor parameter takes precedence over page.
      *
-     * @x-autobe-specification Page number for cursor-based pagination. Used with limit to determine how many records to skip. Minimum value is 1 (1-indexed). When cursor is provided, page is ignored in favor of cursor-based navigation.
+         * @x-autobe-specification Page number for cursor-based pagination. Used
+         *   with limit to determine how many records to skip. Minimum value is
+         *   1 (1-indexed). When cursor is provided, page is ignored in favor of
+         *   cursor-based navigation.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
@@ -51,7 +54,9 @@ export namespace IShoppingMallProductSnapshot {
      *
      * Controls how many product snapshots are returned in each page of results. The value must be between 1 and 100. A higher limit reduces the number of API calls needed but increases response size. Default is typically 20 snapshots per page.
      *
-     * @x-autobe-specification Maximum number of snapshots to return per page. Must be between 1 and 100. Default is typically 20. This controls the page size for pagination responses.
+         * @x-autobe-specification Maximum number of snapshots to return per
+         *   page. Must be between 1 and 100. Default is typically 20. This
+         *   controls the page size for pagination responses.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -62,7 +67,10 @@ export namespace IShoppingMallProductSnapshot {
      *
      * Cursor-based pagination ensures consistent results even when data is being modified between requests. The cursor is a UUID that represents the position in the result set. To paginate forward, include the cursor from the previous response. This method is more reliable than offset-based pagination for large or frequently-changing datasets.
      *
-     * @x-autobe-specification UUID cursor for cursor-based pagination. Use the cursor value from the previous page's pagination response to fetch the next page. When provided, this takes precedence over the page parameter for consistent pagination across dynamic datasets.
+         * @x-autobe-specification UUID cursor for cursor-based pagination. Use
+         *   the cursor value from the previous page's pagination response to
+         *   fetch the next page. When provided, this takes precedence over the
+         *   page parameter for consistent pagination across dynamic datasets.
      */
     cursor?: (string & tags.Format<"uuid">) | undefined;
 
@@ -71,7 +79,12 @@ export namespace IShoppingMallProductSnapshot {
      *
      * Limits results to product snapshots that were created at or after the specified datetime. The value must be in ISO 8601 format (e.g., '2024-01-15T10:30:00Z'). This is useful for retrieving recent changes or filtering to a specific time period for audit purposes.
      *
-     * @x-autobe-specification ISO 8601 datetime filter for snapshots created on or after this timestamp. This is a computed filter that applies >= comparison on shopping_mall_product_snapshots.created_at column. The parameter value is not stored but used for query filtering to retrieve snapshots from a specific starting point in time.
+         * @x-autobe-specification ISO 8601 datetime filter for snapshots
+         *   created on or after this timestamp. This is a computed filter that
+         *   applies >= comparison on shopping_mall_product_snapshots.created_at
+         *   column. The parameter value is not stored but used for query
+         *   filtering to retrieve snapshots from a specific starting point in
+         *   time.
      */
     dateFrom?: (string & tags.Format<"date-time">) | undefined;
 
@@ -80,7 +93,11 @@ export namespace IShoppingMallProductSnapshot {
      *
      * Limits results to product snapshots that were created at or before the specified datetime. The value must be in ISO 8601 format (e.g., '2024-01-20T15:45:00Z'). Combined with dateFrom, this allows filtering snapshots to a specific time window for targeted audit reviews.
      *
-     * @x-autobe-specification ISO 8601 datetime filter for snapshots created on or before this timestamp. This is a computed filter that applies <= comparison on shopping_mall_product_snapshots.created_at column. Used in combination with dateFrom to define a date range for filtering.
+         * @x-autobe-specification ISO 8601 datetime filter for snapshots
+         *   created on or before this timestamp. This is a computed filter that
+         *   applies <= comparison on shopping_mall_product_snapshots.created_at
+         *   column. Used in combination with dateFrom to define a date range
+         *   for filtering.
      */
     dateTo?: (string & tags.Format<"date-time">) | undefined;
 
@@ -89,7 +106,14 @@ export namespace IShoppingMallProductSnapshot {
      *
      * Retrieves only snapshots where the specified field was modified in that change event. Each value corresponds to a pair of before/after columns in the database: 'name' checks name_before/name_after, 'description' checks description_before/description_after, 'category' checks category_id_before/category_id_after, 'price' checks base_price_before/base_price_after, and 'images' checks images_before/images_after. This enables targeted audits of specific types of product modifications.
      *
-     * @x-autobe-specification Enum filter to retrieve snapshots where a specific field was modified. Valid values: 'name' (filters where name_before OR name_after is non-null), 'description' (description_before/description_after), 'category' (category_id_before/category_id_after), 'price' (base_price_before/base_price_after), 'images' (images_before/images_after). This is a computed filter that checks multiple column pairs for non-null values.
+         * @x-autobe-specification Enum filter to retrieve snapshots where a
+         *   specific field was modified. Valid values: 'name' (filters where
+         *   name_before OR name_after is non-null), 'description'
+         *   (description_before/description_after), 'category'
+         *   (category_id_before/category_id_after), 'price'
+         *   (base_price_before/base_price_after), 'images'
+         *   (images_before/images_after). This is a computed filter that checks
+         *   multiple column pairs for non-null values.
      */
     changedField?:
       | "name"
@@ -113,8 +137,10 @@ export namespace IShoppingMallProductSnapshot {
      *
      * This UUID identifies a specific snapshot in the audit trail. Each snapshot is immutable and represents the state of a product at the moment of a modification.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_product_snapshots.id. Primary key uniquely identifying each product snapshot record.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_snapshots.id. Primary key uniquely
+         *   identifying each product snapshot record.
      */
     id: string & tags.Format<"uuid">;
 
@@ -123,8 +149,10 @@ export namespace IShoppingMallProductSnapshot {
      *
      * This UUID links the snapshot to the specific product whose state was captured. Multiple snapshots can exist for the same product, each representing a different modification point in time.
      *
-     * @x-autobe-database-schema-property shopping_mall_product_id
-     * @x-autobe-specification Direct mapping from shopping_mall_product_snapshots.shopping_mall_product_id. Foreign key reference to the product that was modified.
+         * @x-autobe-database-schema-property shopping_mall_product_id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_snapshots.shopping_mall_product_id. Foreign
+         *   key reference to the product that was modified.
      */
     product_id: string & tags.Format<"uuid">;
 
@@ -133,8 +161,12 @@ export namespace IShoppingMallProductSnapshot {
      *
      * This nested object contains the seller's summary information including email, approval status, and shop profile. The seller identity is preserved for audit compliance, enabling tracking of which seller was responsible for the product at each modification point.
      *
-     * @x-autobe-database-schema-property seller
-     * @x-autobe-specification Join from shopping_mall_product_snapshots.shopping_mall_seller_id to shopping_mall_sellers.id. Returns IShoppingMallSeller.ISummary via JOIN. Preserves seller identity for audit purposes even if product ownership changes or seller account is deleted.
+         * @x-autobe-database-schema-property seller
+         * @x-autobe-specification Join from
+         *   shopping_mall_product_snapshots.shopping_mall_seller_id to
+         *   shopping_mall_sellers.id. Returns IShoppingMallSeller.ISummary via
+         *   JOIN. Preserves seller identity for audit purposes even if product
+         *   ownership changes or seller account is deleted.
      */
     seller: IShoppingMallSeller.ISummary;
 
@@ -143,8 +175,11 @@ export namespace IShoppingMallProductSnapshot {
      *
      * Captures the previous product name value before the change was applied. This field is null if the product name was not changed in this modification. Used for audit trails showing what the product was called before the modification.
      *
-     * @x-autobe-database-schema-property name_before
-     * @x-autobe-specification Direct mapping from shopping_mall_product_snapshots.name_before. Nullable - only populated when the product name field was changed in the modification.
+         * @x-autobe-database-schema-property name_before
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_snapshots.name_before. Nullable - only
+         *   populated when the product name field was changed in the
+         *   modification.
      */
     name_before: string | null;
 
@@ -153,8 +188,11 @@ export namespace IShoppingMallProductSnapshot {
      *
      * Captures the new product name value after the change was applied. This field is null if the product name was not changed in this modification. Shows the current state of the product name following the modification.
      *
-     * @x-autobe-database-schema-property name_after
-     * @x-autobe-specification Direct mapping from shopping_mall_product_snapshots.name_after. Nullable - only populated when the product name field was changed in the modification.
+         * @x-autobe-database-schema-property name_after
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_snapshots.name_after. Nullable - only
+         *   populated when the product name field was changed in the
+         *   modification.
      */
     name_after: string | null;
 
@@ -163,8 +201,11 @@ export namespace IShoppingMallProductSnapshot {
      *
      * Captures the previous product description text before the change was applied. This field is null if the product description was not changed in this modification. Preserves the historical description for audit purposes.
      *
-     * @x-autobe-database-schema-property description_before
-     * @x-autobe-specification Direct mapping from shopping_mall_product_snapshots.description_before. Nullable - only populated when the product description field was changed in the modification.
+         * @x-autobe-database-schema-property description_before
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_snapshots.description_before. Nullable - only
+         *   populated when the product description field was changed in the
+         *   modification.
      */
     description_before: string | null;
 
@@ -173,8 +214,11 @@ export namespace IShoppingMallProductSnapshot {
      *
      * Captures the new product description text after the change was applied. This field is null if the product description was not changed in this modification. Shows the current description state following the modification.
      *
-     * @x-autobe-database-schema-property description_after
-     * @x-autobe-specification Direct mapping from shopping_mall_product_snapshots.description_after. Nullable - only populated when the product description field was changed in the modification.
+         * @x-autobe-database-schema-property description_after
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_snapshots.description_after. Nullable - only
+         *   populated when the product description field was changed in the
+         *   modification.
      */
     description_after: string | null;
 
@@ -183,8 +227,11 @@ export namespace IShoppingMallProductSnapshot {
      *
      * Captures the previous category assignment UUID before the change was applied. This field is null if the product category was not changed in this modification. Tracks category changes for audit compliance.
      *
-     * @x-autobe-database-schema-property category_id_before
-     * @x-autobe-specification Direct mapping from shopping_mall_product_snapshots.category_id_before. Nullable UUID - only populated when the product category assignment was changed in the modification.
+         * @x-autobe-database-schema-property category_id_before
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_snapshots.category_id_before. Nullable UUID -
+         *   only populated when the product category assignment was changed in
+         *   the modification.
      */
     category_id_before: (string & tags.Format<"uuid">) | null;
 
@@ -193,8 +240,11 @@ export namespace IShoppingMallProductSnapshot {
      *
      * Captures the new category assignment UUID after the change was applied. This field is null if the product category was not changed in this modification. Shows the current category state following the modification.
      *
-     * @x-autobe-database-schema-property category_id_after
-     * @x-autobe-specification Direct mapping from shopping_mall_product_snapshots.category_id_after. Nullable UUID - only populated when the product category assignment was changed in the modification.
+         * @x-autobe-database-schema-property category_id_after
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_snapshots.category_id_after. Nullable UUID -
+         *   only populated when the product category assignment was changed in
+         *   the modification.
      */
     category_id_after: (string & tags.Format<"uuid">) | null;
 
@@ -203,8 +253,11 @@ export namespace IShoppingMallProductSnapshot {
      *
      * Captures the previous base price value before the change was applied. This field is null if the product base price was not changed in this modification. Critical for audit trails of pricing changes.
      *
-     * @x-autobe-database-schema-property base_price_before
-     * @x-autobe-specification Direct mapping from shopping_mall_product_snapshots.base_price_before. Nullable number - only populated when the product base price was changed in the modification.
+         * @x-autobe-database-schema-property base_price_before
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_snapshots.base_price_before. Nullable number
+         *   - only populated when the product base price was changed in the
+         *   modification.
      */
     base_price_before: number | null;
 
@@ -213,8 +266,11 @@ export namespace IShoppingMallProductSnapshot {
      *
      * Captures the new base price value after the change was applied. This field is null if the product base price was not changed in this modification. Shows the current pricing state following the modification.
      *
-     * @x-autobe-database-schema-property base_price_after
-     * @x-autobe-specification Direct mapping from shopping_mall_product_snapshots.base_price_after. Nullable number - only populated when the product base price was changed in the modification.
+         * @x-autobe-database-schema-property base_price_after
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_snapshots.base_price_after. Nullable number -
+         *   only populated when the product base price was changed in the
+         *   modification.
      */
     base_price_after: number | null;
 
@@ -223,8 +279,11 @@ export namespace IShoppingMallProductSnapshot {
      *
      * Captures the previous set of product image reference UUIDs before the change was applied. This field is null if the product images were not changed in this modification. Stored as comma-separated UUIDs for simplicity in snapshot format.
      *
-     * @x-autobe-database-schema-property images_before
-     * @x-autobe-specification Direct mapping from shopping_mall_product_snapshots.images_before. Nullable string - only populated when the product images were changed in the modification. Stored as comma-separated UUIDs.
+         * @x-autobe-database-schema-property images_before
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_snapshots.images_before. Nullable string -
+         *   only populated when the product images were changed in the
+         *   modification. Stored as comma-separated UUIDs.
      */
     images_before: string | null;
 
@@ -233,8 +292,11 @@ export namespace IShoppingMallProductSnapshot {
      *
      * Captures the new set of product image reference UUIDs after the change was applied. This field is null if the product images were not changed in this modification. Stored as comma-separated UUIDs showing the current image configuration.
      *
-     * @x-autobe-database-schema-property images_after
-     * @x-autobe-specification Direct mapping from shopping_mall_product_snapshots.images_after. Nullable string - only populated when the product images were changed in the modification. Stored as comma-separated UUIDs.
+         * @x-autobe-database-schema-property images_after
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_snapshots.images_after. Nullable string -
+         *   only populated when the product images were changed in the
+         *   modification. Stored as comma-separated UUIDs.
      */
     images_after: string | null;
 
@@ -243,8 +305,10 @@ export namespace IShoppingMallProductSnapshot {
      *
      * Records the exact moment when the product modification occurred and the snapshot was taken. This provides temporal ordering of all product state changes. Used for sorting snapshots chronologically (newest first by default).
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_product_snapshots.created_at. Timestamp when this snapshot was created, recorded in ISO 8601 format.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_product_snapshots.created_at. Timestamp when this
+         *   snapshot was created, recorded in ISO 8601 format.
      */
     created_at: string & tags.Format<"date-time">;
   };

@@ -11,80 +11,93 @@ export type IShoppingMallProduct = {
   /**
    * Unique identifier of the product.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_products.id. Returned as a UUID string as stored in the database.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from shopping_mall_products.id.
+     *   Returned as a UUID string as stored in the database.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Identifier of the seller that owns this product.
    *
-   * @x-autobe-database-schema-property shopping_mall_seller_id
-   * @x-autobe-specification Direct mapping from shopping_mall_products.shopping_mall_seller_id. Represents the owning seller member id for this product.
+     * @x-autobe-database-schema-property shopping_mall_seller_id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_products.shopping_mall_seller_id. Represents the owning
+     *   seller member id for this product.
    */
   shopping_mall_seller_id: string & tags.Format<"uuid">;
 
   /**
    * Identifier of the category this product belongs to.
    *
-   * @x-autobe-database-schema-property shopping_mall_category_id
-   * @x-autobe-specification Direct mapping from shopping_mall_products.shopping_mall_category_id. Represents the category that organizes this product.
+     * @x-autobe-database-schema-property shopping_mall_category_id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_products.shopping_mall_category_id. Represents the
+     *   category that organizes this product.
    */
   shopping_mall_category_id: string & tags.Format<"uuid">;
 
   /**
    * Seller-scoped product code used for referencing the product within the seller scope.
    *
-   * @x-autobe-database-schema-property code
-   * @x-autobe-specification Direct mapping from shopping_mall_products.code. This code is seller-scoped as enforced by the DB unique constraint.
+     * @x-autobe-database-schema-property code
+     * @x-autobe-specification Direct mapping from shopping_mall_products.code.
+     *   This code is seller-scoped as enforced by the DB unique constraint.
    */
   code: string;
 
   /**
    * Customer-visible product name.
    *
-   * @x-autobe-database-schema-property name
-   * @x-autobe-specification Direct mapping from shopping_mall_products.name. Returned as stored.
+     * @x-autobe-database-schema-property name
+     * @x-autobe-specification Direct mapping from shopping_mall_products.name.
+     *   Returned as stored.
    */
   name: string;
 
   /**
    * Customer-visible description of the product.
    *
-   * @x-autobe-database-schema-property description
-   * @x-autobe-specification Direct mapping from shopping_mall_products.description. Returned as stored.
+     * @x-autobe-database-schema-property description
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_products.description. Returned as stored.
    */
   description: string;
 
   /**
    * Whether the product is marked as featured for higher visibility in listings.
    *
-   * @x-autobe-database-schema-property is_featured
-   * @x-autobe-specification Direct mapping from shopping_mall_products.is_featured (boolean).
+     * @x-autobe-database-schema-property is_featured
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_products.is_featured (boolean).
    */
   is_featured: boolean;
 
   /**
    * Timestamp when the product record was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from shopping_mall_products.created_at to a date-time string.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_products.created_at to a date-time string.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the product record was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from shopping_mall_products.updated_at to a date-time string.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_products.updated_at to a date-time string.
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * Soft-deletion timestamp. Null means the product is active/visible per authorization rules; non-null means the product is hidden/removed.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from shopping_mall_products.deleted_at. Return null when the product is active; otherwise return the stored timestamp as a date-time string.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_products.deleted_at. Return null when the product is
+     *   active; otherwise return the stored timestamp as a date-time string.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -96,14 +109,23 @@ export namespace IShoppingMallProduct {
     /**
      * Target page number to retrieve (1-indexed). Defaults to 1 when omitted/null/undefined. Requesting beyond the available range returns an empty data array with valid pagination metadata.
      *
-     * @x-autobe-specification Compute the requested page index from `page` input: treat null/undefined as default page=1. Convert to SQL offset as (page-1) * limit (or equivalent cursor/page strategy) after validating bounds. Clamp/validate to ensure non-negative constraints per schema.
+         * @x-autobe-specification Compute the requested page index from `page`
+         *   input: treat null/undefined as default page=1. Convert to SQL
+         *   offset as (page-1) * limit (or equivalent cursor/page strategy)
+         *   after validating bounds. Clamp/validate to ensure non-negative
+         *   constraints per schema.
      */
     page?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
 
     /**
      * Maximum number of records to return per page. Defaults to 100 when omitted/null/undefined. The server may enforce upper bounds to prevent excessive resource consumption.
      *
-     * @x-autobe-specification Compute the page size from `limit` input: treat null/undefined as default limit=100. Enforce minimum/non-negative constraint per schema and apply any server-side max cap to protect resources. Use it as the LIMIT value (or page size) when building the product list query; include it in response pagination metadata.
+         * @x-autobe-specification Compute the page size from `limit` input:
+         *   treat null/undefined as default limit=100. Enforce
+         *   minimum/non-negative constraint per schema and apply any
+         *   server-side max cap to protect resources. Use it as the LIMIT value
+         *   (or page size) when building the product list query; include it in
+         *   response pagination metadata.
      */
     limit?: null | (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
   };
@@ -115,80 +137,101 @@ export namespace IShoppingMallProduct {
     /**
      * Unique identifier of the product.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_products.id to IShoppingMallProduct.ISummary.id.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from shopping_mall_products.id
+         *   to IShoppingMallProduct.ISummary.id.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Seller-scoped product code used for stable identification in catalog operations.
      *
-     * @x-autobe-database-schema-property code
-     * @x-autobe-specification Direct mapping from shopping_mall_products.code to IShoppingMallProduct.ISummary.code. (Unique within the same seller according to DB constraints.)
+         * @x-autobe-database-schema-property code
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_products.code to IShoppingMallProduct.ISummary.code.
+         *   (Unique within the same seller according to DB constraints.)
      */
     code: string;
 
     /**
      * Public product name displayed to customers.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from shopping_mall_products.name to IShoppingMallProduct.ISummary.name.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_products.name to IShoppingMallProduct.ISummary.name.
      */
     name: string;
 
     /**
      * Product description shown on the product detail page.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from shopping_mall_products.description to IShoppingMallProduct.ISummary.description.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_products.description to
+         *   IShoppingMallProduct.ISummary.description.
      */
     description: string;
 
     /**
      * Whether the product is marked as featured for higher visibility in listings.
      *
-     * @x-autobe-database-schema-property is_featured
-     * @x-autobe-specification Direct mapping from shopping_mall_products.is_featured to IShoppingMallProduct.ISummary.is_featured.
+         * @x-autobe-database-schema-property is_featured
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_products.is_featured to
+         *   IShoppingMallProduct.ISummary.is_featured.
      */
     is_featured: boolean;
 
     /**
      * Lightweight summary of the seller that owns this product.
      *
-     * @x-autobe-database-schema-property seller
-     * @x-autobe-specification Join shopping_mall_products.shopping_mall_seller_id -> shopping_mall_members.id and map the joined row to IShoppingMallMember.ISummary as seller.
+         * @x-autobe-database-schema-property seller
+         * @x-autobe-specification Join
+         *   shopping_mall_products.shopping_mall_seller_id ->
+         *   shopping_mall_members.id and map the joined row to
+         *   IShoppingMallMember.ISummary as seller.
      */
     seller: IShoppingMallMember.ISummary;
 
     /**
      * Lightweight summary of the category this product belongs to.
      *
-     * @x-autobe-database-schema-property category
-     * @x-autobe-specification Join shopping_mall_products.shopping_mall_category_id -> shopping_mall_categories.id and map the joined row to IShoppingMallCategory.ISummary as category.
+         * @x-autobe-database-schema-property category
+         * @x-autobe-specification Join
+         *   shopping_mall_products.shopping_mall_category_id ->
+         *   shopping_mall_categories.id and map the joined row to
+         *   IShoppingMallCategory.ISummary as category.
      */
     category: IShoppingMallCategory.ISummary;
 
     /**
      * Timestamp when the product record was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_products.created_at to IShoppingMallProduct.ISummary.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_products.created_at to
+         *   IShoppingMallProduct.ISummary.created_at.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when the product record was last updated.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from shopping_mall_products.updated_at to IShoppingMallProduct.ISummary.updated_at.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_products.updated_at to
+         *   IShoppingMallProduct.ISummary.updated_at.
      */
     updated_at: string & tags.Format<"date-time">;
 
     /**
      * Soft-delete timestamp. Null when the product is active; otherwise indicates when it was hidden/removed from customer listings.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from shopping_mall_products.deleted_at to IShoppingMallProduct.ISummary.deleted_at. Preserve null when the product is not soft-deleted.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_products.deleted_at to
+         *   IShoppingMallProduct.ISummary.deleted_at. Preserve null when the
+         *   product is not soft-deleted.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };
@@ -200,40 +243,58 @@ export namespace IShoppingMallProduct {
     /**
      * The identifier of the category that the product belongs to.
      *
-     * @x-autobe-database-schema-property shopping_mall_category_id
-     * @x-autobe-specification Direct mapping from IShoppingMallProduct.IUpdate.shopping_mall_category_id to shopping_mall_products.shopping_mall_category_id. Validate that the referenced category exists in shopping_mall_categories before applying the update.
+         * @x-autobe-database-schema-property shopping_mall_category_id
+         * @x-autobe-specification Direct mapping from
+         *   IShoppingMallProduct.IUpdate.shopping_mall_category_id to
+         *   shopping_mall_products.shopping_mall_category_id. Validate that the
+         *   referenced category exists in shopping_mall_categories before
+         *   applying the update.
      */
     shopping_mall_category_id?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Seller-scoped product code used to identify the product within the seller’s catalog.
      *
-     * @x-autobe-database-schema-property code
-     * @x-autobe-specification Direct mapping from IShoppingMallProduct.IUpdate.code to shopping_mall_products.code. When the code is provided, enforce uniqueness within the authenticated seller using @@unique([shopping_mall_seller_id, code]). Seller identity (shopping_mall_seller_id) is resolved from the JWT/session, not from this DTO.
+         * @x-autobe-database-schema-property code
+         * @x-autobe-specification Direct mapping from
+         *   IShoppingMallProduct.IUpdate.code to shopping_mall_products.code.
+         *   When the code is provided, enforce uniqueness within the
+         *   authenticated seller using @@unique([shopping_mall_seller_id,
+         *   code]). Seller identity (shopping_mall_seller_id) is resolved from
+         *   the JWT/session, not from this DTO.
      */
     code?: string | undefined;
 
     /**
      * Public product name displayed to customers.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from IShoppingMallProduct.IUpdate.name to shopping_mall_products.name. Persist as provided after service-layer validation for allowed content/length rules.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from
+         *   IShoppingMallProduct.IUpdate.name to shopping_mall_products.name.
+         *   Persist as provided after service-layer validation for allowed
+         *   content/length rules.
      */
     name?: string | undefined;
 
     /**
      * Product description shown on the product detail page.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from IShoppingMallProduct.IUpdate.description to shopping_mall_products.description. Persist as provided after service-layer validation for allowed content/length rules.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   IShoppingMallProduct.IUpdate.description to
+         *   shopping_mall_products.description. Persist as provided after
+         *   service-layer validation for allowed content/length rules.
      */
     description?: string | undefined;
 
     /**
      * Whether the product is marked as featured for higher visibility in listings.
      *
-     * @x-autobe-database-schema-property is_featured
-     * @x-autobe-specification Direct mapping from IShoppingMallProduct.IUpdate.is_featured to shopping_mall_products.is_featured. Update the listing visibility flag as provided.
+         * @x-autobe-database-schema-property is_featured
+         * @x-autobe-specification Direct mapping from
+         *   IShoppingMallProduct.IUpdate.is_featured to
+         *   shopping_mall_products.is_featured. Update the listing visibility
+         *   flag as provided.
      */
     is_featured?: boolean | undefined;
   };
@@ -245,40 +306,56 @@ export namespace IShoppingMallProduct {
     /**
      * The category UUID that the new product belongs to (seller-selected).
      *
-     * @x-autobe-database-schema-property shopping_mall_category_id
-     * @x-autobe-specification Direct mapping from request.shopping_mall_category_id to shopping_mall_products.shopping_mall_category_id. Server must validate that the chosen category is allowed for the hierarchy constraint (including optional one-level parent nesting) as part of the create workflow, rejecting the request without inserting if invalid.
+         * @x-autobe-database-schema-property shopping_mall_category_id
+         * @x-autobe-specification Direct mapping from
+         *   request.shopping_mall_category_id to
+         *   shopping_mall_products.shopping_mall_category_id. Server must
+         *   validate that the chosen category is allowed for the hierarchy
+         *   constraint (including optional one-level parent nesting) as part of
+         *   the create workflow, rejecting the request without inserting if
+         *   invalid.
      */
     shopping_mall_category_id: string & tags.Format<"uuid">;
 
     /**
      * Seller-scoped product code (must be unique for the same seller).
      *
-     * @x-autobe-database-schema-property code
-     * @x-autobe-specification Direct mapping from request.code to shopping_mall_products.code. The server must enforce uniqueness within the seller scope using the database constraint @@unique([shopping_mall_seller_id, code]) at insert time.
+         * @x-autobe-database-schema-property code
+         * @x-autobe-specification Direct mapping from request.code to
+         *   shopping_mall_products.code. The server must enforce uniqueness
+         *   within the seller scope using the database constraint
+         *   @@unique([shopping_mall_seller_id, code]) at insert time.
      */
     code: string;
 
     /**
      * Customer-visible product name.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from request.name to shopping_mall_products.name. Stored as the customer-visible product title.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from request.name to
+         *   shopping_mall_products.name. Stored as the customer-visible product
+         *   title.
      */
     name: string;
 
     /**
      * Customer-visible product description.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from request.description to shopping_mall_products.description. Stored as the product detail page description text.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from request.description to
+         *   shopping_mall_products.description. Stored as the product detail
+         *   page description text.
      */
     description: string;
 
     /**
      * Whether the product should be featured in listings.
      *
-     * @x-autobe-database-schema-property is_featured
-     * @x-autobe-specification Direct mapping from request.is_featured to shopping_mall_products.is_featured. When true, the product should be treated as featured for storefront listing visibility as handled by the listing/search logic.
+         * @x-autobe-database-schema-property is_featured
+         * @x-autobe-specification Direct mapping from request.is_featured to
+         *   shopping_mall_products.is_featured. When true, the product should
+         *   be treated as featured for storefront listing visibility as handled
+         *   by the listing/search logic.
      */
     is_featured: boolean;
   };

@@ -26,7 +26,8 @@ import { IPageIEcommerceMallSuperAdmin } from "../../../../structures/IPageIEcom
  * @param props.body Search criteria including email filter, status filter, date range filters, and pagination parameters for listing super admin accounts.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor superAdmin
- * @x-autobe-specification Query the ecommerce_mall_super_admins table with the following specifications:
+ * @x-autobe-specification Query the ecommerce_mall_super_admins table with the
+ *   following specifications:
  *
  * 1. **Base Query**: Select super admin records from ecommerce_mall_super_admins
  *

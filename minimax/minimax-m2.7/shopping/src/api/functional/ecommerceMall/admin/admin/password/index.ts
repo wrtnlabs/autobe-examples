@@ -25,7 +25,8 @@ import { IEcommerceMallAdmin } from "../../../../../structures/IEcommerceMallAdm
  * @param props.body Contains the current password for verification and the new password to set.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Validate the current password against the stored password_hash in ecommerce_mall_admins table for the authenticated admin.
+ * @x-autobe-specification Validate the current password against the stored
+ *   password_hash in ecommerce_mall_admins table for the authenticated admin.
  *
  * If current password verification fails, return 401 Unauthorized with message indicating incorrect current password.
  *

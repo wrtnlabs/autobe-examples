@@ -8,56 +8,73 @@ export type IShoppingMallCategory = {
   /**
    * Unique identifier for the category. UUID format, system-generated on category creation.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_categories.id. UUID primary key generated on creation.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from shopping_mall_categories.id.
+     *   UUID primary key generated on creation.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Display name of the category. Must be unique across all categories in the system. Used for customer navigation and product organization.
    *
-   * @x-autobe-database-schema-property name
-   * @x-autobe-specification Direct mapping from shopping_mall_categories.name. Unique constraint enforced at database level (@@unique([name])). Must be non-empty string.
+     * @x-autobe-database-schema-property name
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_categories.name. Unique constraint enforced at database
+     *   level (@@unique([name])). Must be non-empty string.
    */
   name: string;
 
   /**
    * Detailed description of the category. Optional field that may be null for categories without detailed descriptions. Can explain the types of products the category contains.
    *
-   * @x-autobe-database-schema-property description
-   * @x-autobe-specification Direct mapping from shopping_mall_categories.description. Nullable text field. May contain detailed information about the category's purpose and product types.
+     * @x-autobe-database-schema-property description
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_categories.description. Nullable text field. May contain
+     *   detailed information about the category's purpose and product types.
    */
   description: string | null;
 
   /**
    * Parent category reference for subcategories. Null for top-level categories. For subcategories, contains a summary of the parent category including its id and name. Supports one level of category hierarchy.
    *
-   * @x-autobe-database-schema-property parent
-   * @x-autobe-specification Maps to shopping_mall_categories parent relation (self-referential belongs-to). Query: LEFT JOIN shopping_mall_categories AS parent ON parent_id = parent.id WHERE parent.deleted_at IS NULL. Returns ISummary containing only id and name. Null for top-level categories.
+     * @x-autobe-database-schema-property parent
+     * @x-autobe-specification Maps to shopping_mall_categories parent relation
+     *   (self-referential belongs-to). Query: LEFT JOIN
+     *   shopping_mall_categories AS parent ON parent_id = parent.id WHERE
+     *   parent.deleted_at IS NULL. Returns ISummary containing only id and
+     *   name. Null for top-level categories.
    */
   parent: IShoppingMallCategory.ISummary | null;
 
   /**
    * Array of subcategories directly beneath this category in the hierarchy. Each child contains id and name summary. Empty array for categories without subcategories. One level of nesting is enforced - subcategories cannot have their own subcategories.
    *
-   * @x-autobe-database-schema-property children
-   * @x-autobe-specification Maps to shopping_mall_categories children relation (inverse has-many). Query: SELECT FROM shopping_mall_categories WHERE parent_id = this.id AND deleted_at IS NULL. Returns array of ISummary objects. Empty array if category has no subcategories.
+     * @x-autobe-database-schema-property children
+     * @x-autobe-specification Maps to shopping_mall_categories children
+     *   relation (inverse has-many). Query: SELECT FROM
+     *   shopping_mall_categories WHERE parent_id = this.id AND deleted_at IS
+     *   NULL. Returns array of ISummary objects. Empty array if category has no
+     *   subcategories.
    */
   children: IShoppingMallCategory.ISummary[];
 
   /**
    * Timestamp when the category was created by an administrator. ISO 8601 datetime format with timezone.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from shopping_mall_categories.created_at. Timestamp with timezone (timestamptz). Set automatically on category creation.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_categories.created_at. Timestamp with timezone
+     *   (timestamptz). Set automatically on category creation.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the category was last modified. Updated automatically on name or description changes. ISO 8601 datetime format with timezone.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from shopping_mall_categories.updated_at. Timestamp with timezone (timestamptz). Updated automatically on any category modification.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_categories.updated_at. Timestamp with timezone
+     *   (timestamptz). Updated automatically on any category modification.
    */
   updated_at: string & tags.Format<"date-time">;
 };
@@ -69,16 +86,23 @@ export namespace IShoppingMallCategory {
     /**
      * The category's display name. Must be unique across all active categories. Cannot be empty when provided.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping to shopping_mall_categories.name. Must be non-empty when provided. Uniqueness validation required: SELECT COUNT(*) WHERE name = ? AND id != ? AND deleted_at IS NULL. Returns 409 Conflict if duplicate name exists.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping to
+         *   shopping_mall_categories.name. Must be non-empty when provided.
+         *   Uniqueness validation required: SELECT COUNT(*) WHERE name = ? AND
+         *   id != ? AND deleted_at IS NULL. Returns 409 Conflict if duplicate
+         *   name exists.
      */
     name?: (string & tags.MinLength<1>) | undefined;
 
     /**
      * Optional detailed description of the category's purpose and contents. Can be set to null to remove existing description.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping to shopping_mall_categories.description. Nullable column. Accepts null, empty string, or text content. No uniqueness constraints applied.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping to
+         *   shopping_mall_categories.description. Nullable column. Accepts
+         *   null, empty string, or text content. No uniqueness constraints
+         *   applied.
      */
     description?: string | null | undefined;
   };
@@ -90,56 +114,83 @@ export namespace IShoppingMallCategory {
     /**
      * General search term for case-insensitive partial matching across category name and description fields.
      *
-     * @x-autobe-specification Full-text search query parameter. Maps to WHERE clause: WHERE (name ILIKE '%search%' OR description ILIKE '%search%'). Case-insensitive partial match across shopping_mall_categories.name and shopping_mall_categories.description columns. Returns categories matching the search term in either field.
+         * @x-autobe-specification Full-text search query parameter. Maps to
+         *   WHERE clause: WHERE (name ILIKE '%search%' OR description ILIKE
+         *   '%search%'). Case-insensitive partial match across
+         *   shopping_mall_categories.name and
+         *   shopping_mall_categories.description columns. Returns categories
+         *   matching the search term in either field.
      */
     search?: string | undefined;
 
     /**
      * Filter categories by name using case-insensitive partial matching.
      *
-     * @x-autobe-specification Filter by category name. Maps to WHERE clause on shopping_mall_categories.name column: WHERE name ILIKE '%name%'. Case-insensitive partial matching. Returns categories whose name contains the provided text.
+         * @x-autobe-specification Filter by category name. Maps to WHERE clause
+         *   on shopping_mall_categories.name column: WHERE name ILIKE '%name%'.
+         *   Case-insensitive partial matching. Returns categories whose name
+         *   contains the provided text.
      */
     name?: string | undefined;
 
     /**
      * Filter by parent category ID. Use null to find top-level categories, or specify a UUID to find subcategories of that parent.
      *
-     * @x-autobe-specification Filter by parent category ID. Maps to WHERE clause on shopping_mall_categories.parent_id column. Exact match: WHERE parent_id = :parentId for UUID string, or WHERE parent_id IS NULL when parentId is null (finds top-level categories). Use UUID string to find subcategories of a specific parent.
+         * @x-autobe-specification Filter by parent category ID. Maps to WHERE
+         *   clause on shopping_mall_categories.parent_id column. Exact match:
+         *   WHERE parent_id = :parentId for UUID string, or WHERE parent_id IS
+         *   NULL when parentId is null (finds top-level categories). Use UUID
+         *   string to find subcategories of a specific parent.
      */
     parentId?: (string & tags.Format<"uuid">) | null | undefined;
 
     /**
      * Filter by position in category hierarchy. 'top-level' returns categories without a parent, 'subcategory' returns categories with a parent.
      *
-     * @x-autobe-specification Hierarchy position filter computed from shopping_mall_categories.parent_id column. 'top-level' applies WHERE parent_id IS NULL. 'subcategory' applies WHERE parent_id IS NOT NULL. Mutually exclusive with parentId parameter - if both provided, parentId takes precedence.
+         * @x-autobe-specification Hierarchy position filter computed from
+         *   shopping_mall_categories.parent_id column. 'top-level' applies
+         *   WHERE parent_id IS NULL. 'subcategory' applies WHERE parent_id IS
+         *   NOT NULL. Mutually exclusive with parentId parameter - if both
+         *   provided, parentId takes precedence.
      */
     hierarchyLevel?: "top-level" | "subcategory" | undefined;
 
     /**
      * Sort field for ordering results. 'name' sorts alphabetically by category name, 'createdAt' sorts chronologically by creation time.
      *
-     * @x-autobe-specification Sort field for ordering results. Maps to ORDER BY clause. 'name' applies ORDER BY shopping_mall_categories.name. 'createdAt' applies ORDER BY shopping_mall_categories.created_at. Combined with 'direction' parameter. Default: name ascending.
+         * @x-autobe-specification Sort field for ordering results. Maps to
+         *   ORDER BY clause. 'name' applies ORDER BY
+         *   shopping_mall_categories.name. 'createdAt' applies ORDER BY
+         *   shopping_mall_categories.created_at. Combined with 'direction'
+         *   parameter. Default: name ascending.
      */
     sort?: "name" | "createdAt" | undefined;
 
     /**
      * Sort direction. 'asc' for ascending order, 'desc' for descending order.
      *
-     * @x-autobe-specification Sort direction for ordering results. Maps to ASC/DESC in ORDER BY clause. 'asc' for ascending order (A-Z, oldest-first). 'desc' for descending order (Z-A, newest-first). Works with 'sort' parameter.
+         * @x-autobe-specification Sort direction for ordering results. Maps to
+         *   ASC/DESC in ORDER BY clause. 'asc' for ascending order (A-Z,
+         *   oldest-first). 'desc' for descending order (Z-A, newest-first).
+         *   Works with 'sort' parameter.
      */
     direction?: "asc" | "desc" | undefined;
 
     /**
      * Page number for pagination, starting from 1.
      *
-     * @x-autobe-specification Page number for pagination (1-indexed). Used to calculate SQL OFFSET as (page - 1) * limit. Must be >= 1. Default: 1. Combined with 'limit' parameter for paginated results.
+         * @x-autobe-specification Page number for pagination (1-indexed). Used
+         *   to calculate SQL OFFSET as (page - 1) * limit. Must be >= 1.
+         *   Default: 1. Combined with 'limit' parameter for paginated results.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Number of items per page. Maximum allowed value is 100.
      *
-     * @x-autobe-specification Number of items per page. Maps to SQL LIMIT clause. Must be between 1 and 100. Default: 20. Maximum: 100 to prevent excessive data retrieval and ensure performance.
+         * @x-autobe-specification Number of items per page. Maps to SQL LIMIT
+         *   clause. Must be between 1 and 100. Default: 20. Maximum: 100 to
+         *   prevent excessive data retrieval and ensure performance.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -153,56 +204,67 @@ export namespace IShoppingMallCategory {
     /**
      * Unique identifier for the category.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_categories.id. UUID primary key.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_categories.id. UUID primary key.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Category name displayed to customers.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from shopping_mall_categories.name. Unique constraint enforced.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_categories.name. Unique constraint enforced.
      */
     name: string;
 
     /**
      * Optional detailed description of the category and its purpose.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from shopping_mall_categories.description. Nullable field.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_categories.description. Nullable field.
      */
     description: string | null;
 
     /**
      * Parent category reference for subcategories. Null for top-level categories.
      *
-     * @x-autobe-database-schema-property parent
-     * @x-autobe-specification Self-referential belongs-to relation via parent_id. LEFT JOIN on parent_id to get parent category, returning IShoppingMallCategory.ISummary. Null for top-level categories.
+         * @x-autobe-database-schema-property parent
+         * @x-autobe-specification Self-referential belongs-to relation via
+         *   parent_id. LEFT JOIN on parent_id to get parent category, returning
+         *   IShoppingMallCategory.ISummary. Null for top-level categories.
      */
     parent: IShoppingMallCategory.ISummary | null;
 
     /**
      * Timestamp when the category was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_categories.created_at. Timestamp when category was created.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_categories.created_at. Timestamp when category was
+         *   created.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when the category was last modified.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from shopping_mall_categories.updated_at. Timestamp when category was last modified.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_categories.updated_at. Timestamp when category was
+         *   last modified.
      */
     updated_at: string & tags.Format<"date-time">;
 
     /**
      * Soft deletion timestamp. Null for active categories.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from shopping_mall_categories.deleted_at. Nullable field for soft delete. Active categories have null value.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_categories.deleted_at. Nullable field for soft
+         *   delete. Active categories have null value.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };
@@ -214,24 +276,40 @@ export namespace IShoppingMallCategory {
     /**
      * Unique display name for the category. Must be globally unique across all active categories in the system. Used for customer navigation and product organization.
      *
-     * @x-autobe-database-schema-property name
-     * @x-autobe-specification Direct mapping from IShoppingMallCategory.ICreate.name to shopping_mall_categories.name. Must be non-empty string. Unique constraint enforced at database level (@@unique([name])). Case-sensitive exact match used for duplicate detection. Stored as String type in database.
+         * @x-autobe-database-schema-property name
+         * @x-autobe-specification Direct mapping from
+         *   IShoppingMallCategory.ICreate.name to
+         *   shopping_mall_categories.name. Must be non-empty string. Unique
+         *   constraint enforced at database level (@@unique([name])).
+         *   Case-sensitive exact match used for duplicate detection. Stored as
+         *   String type in database.
      */
     name: string;
 
     /**
      * Optional detailed description of the category's purpose and the types of products it contains. May be null for categories without detailed descriptions.
      *
-     * @x-autobe-database-schema-property description
-     * @x-autobe-specification Direct mapping from IShoppingMallCategory.ICreate.description to shopping_mall_categories.description. Nullable text field. May contain detailed information about the category's purpose and product types. Optional - can be omitted or set to null.
+         * @x-autobe-database-schema-property description
+         * @x-autobe-specification Direct mapping from
+         *   IShoppingMallCategory.ICreate.description to
+         *   shopping_mall_categories.description. Nullable text field. May
+         *   contain detailed information about the category's purpose and
+         *   product types. Optional - can be omitted or set to null.
      */
     description?: string | null | undefined;
 
     /**
      * Optional reference to parent category for creating a subcategory. Must be a valid UUID of an existing top-level category. Omit this field to create a top-level category. Only one level of nesting is supported.
      *
-     * @x-autobe-database-schema-property parent_id
-     * @x-autobe-specification Direct mapping from IShoppingMallCategory.ICreate.parent_id to shopping_mall_categories.parent_id. Nullable UUID foreign key referencing shopping_mall_categories.id. When provided, parent must exist and be a top-level category (parent.parent_id IS NULL). Only one level of nesting allowed. For POST /administrator/categories/{categoryId}/subcategories, this field should be omitted as parent_id comes from path parameter.
+         * @x-autobe-database-schema-property parent_id
+         * @x-autobe-specification Direct mapping from
+         *   IShoppingMallCategory.ICreate.parent_id to
+         *   shopping_mall_categories.parent_id. Nullable UUID foreign key
+         *   referencing shopping_mall_categories.id. When provided, parent must
+         *   exist and be a top-level category (parent.parent_id IS NULL). Only
+         *   one level of nesting allowed. For POST
+         *   /administrator/categories/{categoryId}/subcategories, this field
+         *   should be omitted as parent_id comes from path parameter.
      */
     parent_id?: (string & tags.Format<"uuid">) | null | undefined;
   };

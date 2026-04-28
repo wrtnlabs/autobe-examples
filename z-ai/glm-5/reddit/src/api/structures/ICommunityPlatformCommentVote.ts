@@ -10,48 +10,64 @@ export type ICommunityPlatformCommentVote = {
   /**
    * Unique identifier for this vote record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from community_platform_comment_votes.id. UUID primary key generated on creation.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_comment_votes.id. UUID primary key generated on
+     *   creation.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Vote type indicating the member's evaluation of the comment: 'upvote' for approval or 'downvote' for disapproval.
    *
-   * @x-autobe-specification Direct mapping from community_platform_comment_votes.vote_type. Enum values: 'upvote' or 'downvote'. Upvote adds 1 to comment vote_score and +1 karma to author. Downvote subtracts 1 from comment vote_score and -1 karma to author.
-   * @x-autobe-database-schema-property vote_type
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_comment_votes.vote_type. Enum values: 'upvote' or
+     *   'downvote'. Upvote adds 1 to comment vote_score and +1 karma to author.
+     *   Downvote subtracts 1 from comment vote_score and -1 karma to author.
+     * @x-autobe-database-schema-property vote_type
    */
   voteType: "upvote" | "downvote";
 
   /**
    * The member who cast this vote, returned as a summary object for display.
    *
-   * @x-autobe-database-schema-property member
-   * @x-autobe-specification JOIN from community_platform_comment_votes.community_platform_member_id to community_platform_members.id. Returns ICommunityPlatformMember.ISummary with id, username, displayName, bio, karma, avatar, createdAt.
+     * @x-autobe-database-schema-property member
+     * @x-autobe-specification JOIN from
+     *   community_platform_comment_votes.community_platform_member_id to
+     *   community_platform_members.id. Returns
+     *   ICommunityPlatformMember.ISummary with id, username, displayName, bio,
+     *   karma, avatar, createdAt.
    */
   member: ICommunityPlatformMember.ISummary;
 
   /**
    * Timestamp when the vote was initially cast.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from community_platform_comment_votes.created_at. Set to current timestamp on vote creation.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_comment_votes.created_at. Set to current timestamp
+     *   on vote creation.
    */
   createdAt: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the vote was last modified (vote type changed).
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from community_platform_comment_votes.updated_at. Set to current timestamp on creation and updated whenever vote_type changes.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_comment_votes.updated_at. Set to current timestamp
+     *   on creation and updated whenever vote_type changes.
    */
   updatedAt: string & tags.Format<"date-time">;
 
   /**
    * Soft-deletion timestamp. Null if vote is active; set when vote is removed, reversing the karma effect on the comment author.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from community_platform_comment_votes.deleted_at. Nullable field. When set to a timestamp, the vote is soft-deleted (removed) and karma effect on author is reversed. Null for active votes.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   community_platform_comment_votes.deleted_at. Nullable field. When set
+     *   to a timestamp, the vote is soft-deleted (removed) and karma effect on
+     *   author is reversed. Null for active votes.
    */
   deletedAt: (string & tags.Format<"date-time">) | null;
 };
@@ -63,8 +79,12 @@ export namespace ICommunityPlatformCommentVote {
     /**
      * The type of vote being cast on the comment. Use 'upvote' to express approval (adds 1 to comment score, increases author's karma by 1) or 'downvote' to express disapproval (subtracts 1 from comment score, decreases author's karma by 1).
      *
-     * @x-autobe-database-schema-property vote_type
-     * @x-autobe-specification Direct mapping to community_platform_comment_votes.vote_type column. Only 'upvote' or 'downvote' values allowed. Upvote adds 1 to comment's vote_score and +1 karma to comment author. Downvote subtracts 1 from comment's vote_score and -1 karma to comment author.
+         * @x-autobe-database-schema-property vote_type
+         * @x-autobe-specification Direct mapping to
+         *   community_platform_comment_votes.vote_type column. Only 'upvote' or
+         *   'downvote' values allowed. Upvote adds 1 to comment's vote_score
+         *   and +1 karma to comment author. Downvote subtracts 1 from comment's
+         *   vote_score and -1 karma to comment author.
      */
     vote_type: "upvote" | "downvote";
   };
@@ -76,8 +96,15 @@ export namespace ICommunityPlatformCommentVote {
     /**
      * The type of vote to cast on this comment. Use 'upvote' to express approval, 'downvote' to express disapproval, or null to remove your existing vote entirely.
      *
-     * @x-autobe-database-schema-property vote_type
-     * @x-autobe-specification Direct mapping to vote_type column in community_platform_comment_votes table. Valid values: 'upvote' (adds +1 to comment score and +1 karma to author), 'downvote' (subtracts -1 from comment score and -1 karma from author), or null (removes existing vote by setting deleted_at timestamp). When value is null and no existing vote exists, returns error. When value changes from upvote to downvote or vice versa, updates vote_type and adjusted_at timestamp, adjusting karma accordingly.
+         * @x-autobe-database-schema-property vote_type
+         * @x-autobe-specification Direct mapping to vote_type column in
+         *   community_platform_comment_votes table. Valid values: 'upvote'
+         *   (adds +1 to comment score and +1 karma to author), 'downvote'
+         *   (subtracts -1 from comment score and -1 karma from author), or null
+         *   (removes existing vote by setting deleted_at timestamp). When value
+         *   is null and no existing vote exists, returns error. When value
+         *   changes from upvote to downvote or vice versa, updates vote_type
+         *   and adjusted_at timestamp, adjusting karma accordingly.
      */
     voteType?: "upvote" | "downvote" | null | undefined;
   };

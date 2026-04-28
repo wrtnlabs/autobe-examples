@@ -27,9 +27,9 @@ export class ShoppingmallAdminProductvariantsnapshotsController {
    *
    * @param connection
    * @param body Payload to create a new product-variant snapshot capturing the variant’s point-in-time state.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Implementation steps for Realize Agent:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Implementation steps for Realize Agent:
    *
    * 1) Input validation
    * - Validate that `shopping_mall_product_variant_id` references an existing `shopping_mall_product_variants.id`.
@@ -92,9 +92,10 @@ export class ShoppingmallAdminProductvariantsnapshotsController {
    *
    * @param connection
    * @param body Search criteria and pagination parameters for product variant snapshot lookup.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Implement a paginated search over shopping_mall_product_variant_snapshots.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Implement a paginated search over
+     *   shopping_mall_product_variant_snapshots.
    *
    * 1) Parse request body (IShoppingMallProductVariantSnapshot.IRequest) for filters such as:
    * - product/variant identifiers as applicable
@@ -153,18 +154,21 @@ export class ShoppingmallAdminProductvariantsnapshotsController {
    *
    * @param connection
    * @param productVariantSnapshotId Identifier of the product variant snapshot record to retrieve.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Implementation steps:
-   * 1. Parse path parameter productVariantSnapshotId (UUID).
-   * 2. Authorize the caller for snapshot viewing.
-   *    - Allowed per snapshot dispute-resolution rules: owners (relevant seller who owns the product/variant) and administrators.
-   *    - If authorization fails, return 403/authorization error.
-   * 3. Query shopping_mall_product_variant_snapshots by id.
-   *    - Select snapshot fields required by IShoppingMallProductVariantSnapshot: id, shopping_mall_product_variant_id, code, name, price, currency, is_available, variant_status, created_at, updated_at.
-   *    - Do not join to the mutable variant row unless needed to satisfy DTO structure; the snapshot already contains snapshot-time values.
-   * 4. If no record exists for id, return 404 not found.
-   * 5. Map database row to response DTO IShoppingMallProductVariantSnapshot and return JSON.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor admin
+     * @x-autobe-specification Implementation steps: 1. Parse path parameter
+     *   productVariantSnapshotId (UUID). 2. Authorize the caller for snapshot
+     *   viewing. - Allowed per snapshot dispute-resolution rules: owners
+     *   (relevant seller who owns the product/variant) and administrators. - If
+     *   authorization fails, return 403/authorization error. 3. Query
+     *   shopping_mall_product_variant_snapshots by id. - Select snapshot fields
+     *   required by IShoppingMallProductVariantSnapshot: id,
+     *   shopping_mall_product_variant_id, code, name, price, currency,
+     *   is_available, variant_status, created_at, updated_at. - Do not join to
+     *   the mutable variant row unless needed to satisfy DTO structure; the
+     *   snapshot already contains snapshot-time values. 4. If no record exists
+     *   for id, return 404 not found. 5. Map database row to response DTO
+     *   IShoppingMallProductVariantSnapshot and return JSON.
    *
    * Edge cases:
    * - Ensure that failing authorization does not leak whether a snapshot id exists (prefer authorization error).

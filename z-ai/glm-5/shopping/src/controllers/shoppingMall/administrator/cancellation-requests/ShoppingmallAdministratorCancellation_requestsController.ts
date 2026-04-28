@@ -32,9 +32,10 @@ export class ShoppingmallAdministratorCancellation_requestsController {
    *
    * @param connection
    * @param cancellationRequestId Unique identifier of the cancellation request to retrieve (UUID format)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Retrieve a single cancellation request by ID from shopping_mall_cancellation_requests table.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor administrator
+     * @x-autobe-specification Retrieve a single cancellation request by ID from
+     *   shopping_mall_cancellation_requests table.
    *
    * 1. Parse the cancellationRequestId UUID path parameter
    * 2. Query shopping_mall_cancellation_requests where id = cancellationRequestId

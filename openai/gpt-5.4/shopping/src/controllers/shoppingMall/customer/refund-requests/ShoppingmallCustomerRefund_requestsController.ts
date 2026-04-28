@@ -27,9 +27,10 @@ export class ShoppingmallCustomerRefund_requestsController {
    *
    * @param connection
    * @param body Refund request creation data
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Authenticate the caller as a customer and derive the customer identity from the session context.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Authenticate the caller as a customer and derive
+     *   the customer identity from the session context.
    *
    * Validate the request body fields defined by `IShoppingMallRefundRequest.ICreate`, at minimum ensuring that the target order item identifier is present and that the refund reason text is provided in a non-empty form acceptable to domain validation rules.
    *
@@ -79,9 +80,11 @@ export class ShoppingmallCustomerRefund_requestsController {
    *
    * @param connection
    * @param body Refund request search criteria and pagination options
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Accept an IShoppingMallRefundRequest.IRequest body containing pagination, sorting, and filter criteria for browsing current refund request records.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Accept an IShoppingMallRefundRequest.IRequest
+     *   body containing pagination, sorting, and filter criteria for browsing
+     *   current refund request records.
    *
    * Build the primary query from shopping_mall_refund_requests as the root table. Join shopping_mall_order_items on shopping_mall_refund_requests.shopping_mall_order_item_id = shopping_mall_order_items.id, and join shopping_mall_orders on shopping_mall_order_items.shopping_mall_order_id = shopping_mall_orders.id when order-level lookup or sorting is requested. Select summary-oriented fields from the refund request row and any minimal related identifiers or display attributes required by IShoppingMallRefundRequest.ISummary.
    *
@@ -129,9 +132,16 @@ export class ShoppingmallCustomerRefund_requestsController {
    *
    * @param connection
    * @param refundRequestId Target refund request ID
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Load the target row from `shopping_mall_refund_requests` by `id = :refundRequestId` and exclude records that should not be visible in active views, such as rows with `deleted_at` set when the service policy treats them as hidden. Join or separately fetch the related `shopping_mall_order_items` row using `shopping_mall_order_item_id`, and the related `shopping_mall_orders` row through `shopping_mall_order_items.shopping_mall_order_id`, because access control and business context depend on those relations.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Load the target row from
+     *   `shopping_mall_refund_requests` by `id = :refundRequestId` and exclude
+     *   records that should not be visible in active views, such as rows with
+     *   `deleted_at` set when the service policy treats them as hidden. Join or
+     *   separately fetch the related `shopping_mall_order_items` row using
+     *   `shopping_mall_order_item_id`, and the related `shopping_mall_orders`
+     *   row through `shopping_mall_order_items.shopping_mall_order_id`, because
+     *   access control and business context depend on those relations.
    *
    * Authorize by actor type. For `customer`, require `shopping_mall_refund_requests.shopping_mall_customer_id` to match the authenticated customer account. For `seller`, require `shopping_mall_order_items.shopping_mall_seller_id` to match the authenticated seller account. For `administrator` and `superAdministrator`, allow access for oversight without ownership matching. Reject all other actor contexts. If the refund request exists but the caller does not satisfy the ownership or oversight rule, return a not-found or forbidden outcome according to the platform's security policy without leaking resource existence.
    *

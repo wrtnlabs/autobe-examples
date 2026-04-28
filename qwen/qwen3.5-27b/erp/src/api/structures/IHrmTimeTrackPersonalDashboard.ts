@@ -32,7 +32,11 @@ export type IHrmTimeTrackPersonalDashboard = {
    *
    * The list may be empty if the employee has no active tasks assigned.
    *
-   * @x-autobe-specification Computed from hrm_time_track_tasks via JOIN on authenticated employee.id. Filter: status IN ('open', 'in-progress'), deleted_at IS NULL. Order by priority DESC, created_at ASC. Returns array of IHrmTimeTrackTask.ISummary objects. Empty array if no active tasks exist.
+     * @x-autobe-specification Computed from hrm_time_track_tasks via JOIN on
+     *   authenticated employee.id. Filter: status IN ('open', 'in-progress'),
+     *   deleted_at IS NULL. Order by priority DESC, created_at ASC. Returns
+     *   array of IHrmTimeTrackTask.ISummary objects. Empty array if no active
+     *   tasks exist.
    */
   activeTasks: IHrmTimeTrackTask.ISummary[];
 
@@ -43,7 +47,11 @@ export type IHrmTimeTrackPersonalDashboard = {
    *
    * Timesheets in 'draft' status can be modified. 'Submitted' timesheets are pending approval. 'Approved' timesheets are locked and cannot be changed. 'Rejected' timesheets can be edited and resubmitted.
    *
-   * @x-autobe-specification Computed from hrm_time_track_timesheets via LEFT JOIN on authenticated employee.id AND week_start_date = current week Monday. Returns IHrmTimeTrackTimesheet.ISummary if exists, null if no timesheet for current week. Week boundaries: Monday 00:00 to Sunday 23:59 in organization timezone.
+     * @x-autobe-specification Computed from hrm_time_track_timesheets via LEFT
+     *   JOIN on authenticated employee.id AND week_start_date = current week
+     *   Monday. Returns IHrmTimeTrackTimesheet.ISummary if exists, null if no
+     *   timesheet for current week. Week boundaries: Monday 00:00 to Sunday
+     *   23:59 in organization timezone.
    */
   currentTimesheet: IHrmTimeTrackTimesheet.ISummary | null;
 
@@ -54,7 +62,12 @@ export type IHrmTimeTrackPersonalDashboard = {
    *
    * For users belonging to multiple organizations, this shows the employee record for the currently selected organization context.
    *
-   * @x-autobe-specification Computed from hrm_time_track_employees via JOIN on authenticated employee.id from JWT session. Returns IHrmTimeTrackEmployee.ISummary with employee identity, position, department, role, employment type, and status. Organization context from session ensures correct employee record is retrieved for multi-organization users.
+     * @x-autobe-specification Computed from hrm_time_track_employees via JOIN
+     *   on authenticated employee.id from JWT session. Returns
+     *   IHrmTimeTrackEmployee.ISummary with employee identity, position,
+     *   department, role, employment type, and status. Organization context
+     *   from session ensures correct employee record is retrieved for
+     *   multi-organization users.
    */
   employee: IHrmTimeTrackEmployee.ISummary;
 
@@ -65,7 +78,11 @@ export type IHrmTimeTrackPersonalDashboard = {
    *
    * The list may be empty if the employee is not assigned to any active projects.
    *
-   * @x-autobe-specification Computed from hrm_time_track_project_members via JOIN on authenticated employee.id. Filter: deleted_at IS NULL, project.status = 'active'. Returns array of IHrmTimeTrackProjectMember.ISummary objects including project details and assigned role. Empty array if no active project memberships.
+     * @x-autobe-specification Computed from hrm_time_track_project_members via
+     *   JOIN on authenticated employee.id. Filter: deleted_at IS NULL,
+     *   project.status = 'active'. Returns array of
+     *   IHrmTimeTrackProjectMember.ISummary objects including project details
+     *   and assigned role. Empty array if no active project memberships.
    */
   projectMemberships: IHrmTimeTrackProjectMember.ISummary[];
 
@@ -76,7 +93,11 @@ export type IHrmTimeTrackPersonalDashboard = {
    *
    * The list may be empty if the employee has not logged any time entries this week.
    *
-   * @x-autobe-specification Computed from hrm_time_track_timelogs via JOIN on authenticated employee.id. Filter: date >= current week Monday AND date <= current week Sunday, deleted_at IS NULL. Returns array of IHrmTimeTrackTimelog.ISummary objects ordered by date DESC. Empty array if no timelogs in current week.
+     * @x-autobe-specification Computed from hrm_time_track_timelogs via JOIN on
+     *   authenticated employee.id. Filter: date >= current week Monday AND date
+     *   <= current week Sunday, deleted_at IS NULL. Returns array of
+     *   IHrmTimeTrackTimelog.ISummary objects ordered by date DESC. Empty array
+     *   if no timelogs in current week.
    */
   recentTimelogs: IHrmTimeTrackTimelog.ISummary[];
 
@@ -91,11 +112,16 @@ export type IHrmTimeTrackPersonalDashboard = {
    *
    * All statistics are calculated in real-time and reflect the current state of the employee's work data.
    *
-   * @x-autobe-specification Computed aggregations from multiple sources:
-   * - totalActiveTasks: COUNT(hrm_time_track_tasks) WHERE employee.id = authenticated.id AND status IN ('open', 'in-progress') AND deleted_at IS NULL
-   * - hoursLoggedThisWeek: SUM(duration_seconds) / 3600 FROM hrm_time_track_timelogs WHERE employee.id = authenticated.id AND date >= current week Monday AND date <= current week Sunday AND deleted_at IS NULL
-   * - pendingTimesheets: COUNT(hrm_time_track_timesheets) WHERE employee.id = authenticated.id AND status = 'submitted' AND deleted_at IS NULL
-   * All values are non-negative. Returns 0 for hoursLoggedThisWeek if no timelogs exist.
+     * @x-autobe-specification Computed aggregations from multiple sources: -
+     *   totalActiveTasks: COUNT(hrm_time_track_tasks) WHERE employee.id =
+     *   authenticated.id AND status IN ('open', 'in-progress') AND deleted_at
+     *   IS NULL - hoursLoggedThisWeek: SUM(duration_seconds) / 3600 FROM
+     *   hrm_time_track_timelogs WHERE employee.id = authenticated.id AND date
+     *   >= current week Monday AND date <= current week Sunday AND deleted_at
+     *   IS NULL - pendingTimesheets: COUNT(hrm_time_track_timesheets) WHERE
+     *   employee.id = authenticated.id AND status = 'submitted' AND deleted_at
+     *   IS NULL All values are non-negative. Returns 0 for hoursLoggedThisWeek
+     *   if no timelogs exist.
    */
   statistics: {
     hoursLoggedThisWeek: number;

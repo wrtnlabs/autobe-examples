@@ -14,8 +14,10 @@ export type IRedditCommunityPostImageContent = {
    *
    * This is the primary image content for the post. The URL points to the full-resolution image hosted on the platform's storage. Displayed on the post detail page and in feeds.
    *
-   * @x-autobe-database-schema-property image_url
-   * @x-autobe-specification Direct mapping from reddit_community_post_images.image_url column. Required field with URI format validation.
+     * @x-autobe-database-schema-property image_url
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_post_images.image_url column. Required field with URI
+     *   format validation.
    */
   imageUrl: string & tags.Format<"uri">;
 
@@ -24,8 +26,11 @@ export type IRedditCommunityPostImageContent = {
    *
    * A smaller, optimized version of the image for display in feeds, lists, and preview contexts. May be null if the thumbnail has not been generated or if the post was created before thumbnail generation was implemented.
    *
-   * @x-autobe-database-schema-property thumbnail_url
-   * @x-autobe-specification Direct mapping from reddit_community_post_images.thumbnail_url column. Nullable field with URI format validation. Null indicates thumbnail generation is pending or not available.
+     * @x-autobe-database-schema-property thumbnail_url
+     * @x-autobe-specification Direct mapping from
+     *   reddit_community_post_images.thumbnail_url column. Nullable field with
+     *   URI format validation. Null indicates thumbnail generation is pending
+     *   or not available.
    */
   thumbnailUrl: (string & tags.Format<"uri">) | null;
 };

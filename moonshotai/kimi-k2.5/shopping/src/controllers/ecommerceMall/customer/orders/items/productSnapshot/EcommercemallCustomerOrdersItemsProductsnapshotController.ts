@@ -23,9 +23,9 @@ export class EcommercemallCustomerOrdersItemsProductsnapshotController {
    * @param connection
    * @param orderId UUID of the order containing the order item
    * @param orderItemId UUID of the order item whose product snapshot should be retrieved
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Implementation steps:
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor customer
+     * @x-autobe-specification Implementation steps:
    *
    * 1. Validate the order exists by orderId (UUID)
    * 2. Validate the order item exists by orderItemId and belongs to the specified order

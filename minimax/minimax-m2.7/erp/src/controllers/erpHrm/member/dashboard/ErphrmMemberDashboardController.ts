@@ -19,9 +19,10 @@ export class ErphrmMemberDashboardController {
    * The dashboard data refreshes automatically as time entries are logged and timesheets are submitted or reviewed. The response structure adapts based on the requesting user's role and permissions within the organization.
    *
    * @param connection
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query the database to build dashboard metrics for the authenticated user's organization.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor member
+     * @x-autobe-specification Query the database to build dashboard metrics for
+     *   the authenticated user's organization.
    *
    * 1. Load session context to get: current organization ID, current employee ID, user's role permissions
    * 2. Build personal metrics (always included):

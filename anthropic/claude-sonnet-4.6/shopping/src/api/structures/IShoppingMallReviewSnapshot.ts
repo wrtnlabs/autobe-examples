@@ -8,40 +8,57 @@ export type IShoppingMallReviewSnapshot = {
   /**
    * The unique identifier of this review snapshot. A UUID that permanently and immutably identifies this specific point-in-time capture of the review's content.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from shopping_mall_review_snapshots.id. UUID primary key, auto-generated on record creation. Immutable after creation.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_review_snapshots.id. UUID primary key, auto-generated on
+     *   record creation. Immutable after creation.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * The unique identifier of the parent review that this snapshot belongs to. References the review whose content state was captured at the moment this snapshot was created.
    *
-   * @x-autobe-database-schema-property shopping_mall_review_id
-   * @x-autobe-specification Direct mapping from shopping_mall_review_snapshots.shopping_mall_review_id. UUID foreign key referencing shopping_mall_reviews.id. Identifies which review this snapshot belongs to. The DTO field name is camelCased as reviewId.
+     * @x-autobe-database-schema-property shopping_mall_review_id
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_review_snapshots.shopping_mall_review_id. UUID foreign
+     *   key referencing shopping_mall_reviews.id. Identifies which review this
+     *   snapshot belongs to. The DTO field name is camelCased as reviewId.
    */
   reviewId: string & tags.Format<"uuid">;
 
   /**
    * The star rating given by the customer at the time this snapshot was recorded. An integer from 1 (lowest) to 5 (highest), representing the customer's satisfaction level with the product.
    *
-   * @x-autobe-database-schema-property rating
-   * @x-autobe-specification Direct mapping from shopping_mall_review_snapshots.rating. Integer column with valid range 1–5 inclusive, enforced by the DB schema (minimum: 1, maximum: 5). Captures the exact star rating the customer had assigned to the product at the time this snapshot was recorded.
+     * @x-autobe-database-schema-property rating
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_review_snapshots.rating. Integer column with valid range
+     *   1–5 inclusive, enforced by the DB schema (minimum: 1, maximum: 5).
+     *   Captures the exact star rating the customer had assigned to the product
+     *   at the time this snapshot was recorded.
    */
   rating: number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<5>;
 
   /**
    * The optional written content of the review captured at the time this snapshot was recorded. Null if the customer chose to submit only a star rating without any accompanying text.
    *
-   * @x-autobe-database-schema-property body
-   * @x-autobe-specification Direct mapping from shopping_mall_review_snapshots.body. Nullable string column. Contains the optional free-text written content of the review as it existed at the time this snapshot was recorded. Null when the customer submitted a rating-only review without any written feedback.
+     * @x-autobe-database-schema-property body
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_review_snapshots.body. Nullable string column. Contains
+     *   the optional free-text written content of the review as it existed at
+     *   the time this snapshot was recorded. Null when the customer submitted a
+     *   rating-only review without any written feedback.
    */
   body: string | null;
 
   /**
    * The timestamp when this snapshot was created, corresponding to the exact moment the review's content state was captured. Immutable after creation and expressed as an ISO 8601 date-time string with UTC offset.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from shopping_mall_review_snapshots.created_at. Timestamptz column stored with timezone. Immutable after creation. Corresponds to the exact moment the snapshot was appended — either when the review was first submitted or immediately before a subsequent edit was applied.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   shopping_mall_review_snapshots.created_at. Timestamptz column stored
+     *   with timezone. Immutable after creation. Corresponds to the exact
+     *   moment the snapshot was appended — either when the review was first
+     *   submitted or immediately before a subsequent edit was applied.
    */
   createdAt: string & tags.Format<"date-time">;
 };
@@ -53,21 +70,30 @@ export namespace IShoppingMallReviewSnapshot {
     /**
      * Optional start of the date range filter. When provided, only review snapshots created at or after this timestamp are included in the results.
      *
-     * @x-autobe-specification Optional lower bound (inclusive) for the created_at timestamp filter. When non-null, only snapshots with created_at >= from are included. Maps to the created_at column of shopping_mall_review_snapshots via a WHERE clause condition.
+         * @x-autobe-specification Optional lower bound (inclusive) for the
+         *   created_at timestamp filter. When non-null, only snapshots with
+         *   created_at >= from are included. Maps to the created_at column of
+         *   shopping_mall_review_snapshots via a WHERE clause condition.
      */
     from?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * Optional end of the date range filter. When provided, only review snapshots created at or before this timestamp are included in the results.
      *
-     * @x-autobe-specification Optional upper bound (inclusive) for the created_at timestamp filter. When non-null, only snapshots with created_at <= to are included. Maps to the created_at column of shopping_mall_review_snapshots via a WHERE clause condition.
+         * @x-autobe-specification Optional upper bound (inclusive) for the
+         *   created_at timestamp filter. When non-null, only snapshots with
+         *   created_at <= to are included. Maps to the created_at column of
+         *   shopping_mall_review_snapshots via a WHERE clause condition.
      */
     to?: (string & tags.Format<"date-time">) | null | undefined;
 
     /**
      * Optional minimum star rating filter (inclusive, 1–5). When provided, only snapshots where the captured rating is at or above this value are returned.
      *
-     * @x-autobe-specification Optional minimum rating filter (inclusive). When non-null, only snapshots with rating >= ratingMin are included. Valid range: 1–5. Maps to the rating column of shopping_mall_review_snapshots via a WHERE clause condition.
+         * @x-autobe-specification Optional minimum rating filter (inclusive).
+         *   When non-null, only snapshots with rating >= ratingMin are
+         *   included. Valid range: 1–5. Maps to the rating column of
+         *   shopping_mall_review_snapshots via a WHERE clause condition.
      */
     ratingMin?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<5>)
@@ -77,7 +103,10 @@ export namespace IShoppingMallReviewSnapshot {
     /**
      * Optional maximum star rating filter (inclusive, 1–5). When provided, only snapshots where the captured rating is at or below this value are returned.
      *
-     * @x-autobe-specification Optional maximum rating filter (inclusive). When non-null, only snapshots with rating <= ratingMax are included. Valid range: 1–5. Maps to the rating column of shopping_mall_review_snapshots via a WHERE clause condition.
+         * @x-autobe-specification Optional maximum rating filter (inclusive).
+         *   When non-null, only snapshots with rating <= ratingMax are
+         *   included. Valid range: 1–5. Maps to the rating column of
+         *   shopping_mall_review_snapshots via a WHERE clause condition.
      */
     ratingMax?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<5>)
@@ -87,14 +116,19 @@ export namespace IShoppingMallReviewSnapshot {
     /**
      * The page number to retrieve (1-indexed). Defaults to 1 when not specified. Use in combination with `limit` to paginate through the list of snapshots.
      *
-     * @x-autobe-specification 1-based page number for pagination. When null, defaults to 1. Used with limit to compute OFFSET = (page - 1) * limit in the SQL query. Must be a positive integer (minimum 1).
+         * @x-autobe-specification 1-based page number for pagination. When
+         *   null, defaults to 1. Used with limit to compute OFFSET = (page - 1)
+         *   * limit in the SQL query. Must be a positive integer (minimum 1).
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | null | undefined;
 
     /**
      * The maximum number of snapshot records to return per page. Defaults to 20 when not specified. Accepts values from 1 to 100.
      *
-     * @x-autobe-specification Maximum number of records to return per page. When null, defaults to 20. Maximum allowed value is 100. Used to set the SQL LIMIT clause and compute total pages in the IPage.IPagination response.
+         * @x-autobe-specification Maximum number of records to return per page.
+         *   When null, defaults to 20. Maximum allowed value is 100. Used to
+         *   set the SQL LIMIT clause and compute total pages in the
+         *   IPage.IPagination response.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -109,40 +143,53 @@ export namespace IShoppingMallReviewSnapshot {
     /**
      * Unique identifier of this review snapshot record.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from shopping_mall_review_snapshots.id (UUID primary key). Immutable after creation.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_review_snapshots.id (UUID primary key). Immutable
+         *   after creation.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * The unique identifier of the parent review this snapshot belongs to. Use this to correlate the snapshot with its owning review record.
      *
-     * @x-autobe-database-schema-property shopping_mall_review_id
-     * @x-autobe-specification Maps from shopping_mall_review_snapshots.shopping_mall_review_id (UUID FK referencing shopping_mall_reviews.id). Exposed as `reviewId` for client-side correlation with the parent review entity.
+         * @x-autobe-database-schema-property shopping_mall_review_id
+         * @x-autobe-specification Maps from
+         *   shopping_mall_review_snapshots.shopping_mall_review_id (UUID FK
+         *   referencing shopping_mall_reviews.id). Exposed as `reviewId` for
+         *   client-side correlation with the parent review entity.
      */
     reviewId: string & tags.Format<"uuid">;
 
     /**
      * Star rating captured at the time of this snapshot, expressed as an integer from 1 (worst) to 5 (best).
      *
-     * @x-autobe-database-schema-property rating
-     * @x-autobe-specification Direct mapping from shopping_mall_review_snapshots.rating (Integer 1–5). Represents the customer's star rating at the moment this snapshot was taken.
+         * @x-autobe-database-schema-property rating
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_review_snapshots.rating (Integer 1–5). Represents the
+         *   customer's star rating at the moment this snapshot was taken.
      */
     rating: number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<5>;
 
     /**
      * Optional text content of the review captured at the time of this snapshot. Null if the customer submitted a rating-only review without written feedback.
      *
-     * @x-autobe-database-schema-property body
-     * @x-autobe-specification Direct mapping from shopping_mall_review_snapshots.body (nullable String). Null when the customer submitted a rating-only review without written feedback at this point in history.
+         * @x-autobe-database-schema-property body
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_review_snapshots.body (nullable String). Null when
+         *   the customer submitted a rating-only review without written
+         *   feedback at this point in history.
      */
     body: string | null;
 
     /**
      * Timestamp when this snapshot was recorded, corresponding to the moment the review was first submitted or edited. Immutable after creation.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from shopping_mall_review_snapshots.created_at (Timestamptz). Immutable after creation. Corresponds to the exact moment the review was first submitted or subsequently edited.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   shopping_mall_review_snapshots.created_at (Timestamptz). Immutable
+         *   after creation. Corresponds to the exact moment the review was
+         *   first submitted or subsequently edited.
      */
     created_at: string & tags.Format<"date-time">;
   };

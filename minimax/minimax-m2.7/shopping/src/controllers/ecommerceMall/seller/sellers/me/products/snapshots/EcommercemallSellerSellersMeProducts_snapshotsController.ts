@@ -25,9 +25,13 @@ export class EcommercemallSellerSellersMeProducts_snapshotsController {
    * @param connection
    * @param productId UUID of the product whose snapshot is being retrieved (global scope).
    * @param snapshotId UUID of the product snapshot to retrieve (global scope).
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Query the ecommerce_mall_product_snapshots table filtering by id equal to snapshotId and ecommerce_mall_product_id equal to productId. Validate that the snapshot's ecommerce_mall_seller_id matches the authenticated seller's ID. If validation fails, return 403 Forbidden.
+     * @x-autobe-authorization-type null
+     * @x-autobe-authorization-actor seller
+     * @x-autobe-specification Query the ecommerce_mall_product_snapshots table
+     *   filtering by id equal to snapshotId and ecommerce_mall_product_id equal
+     *   to productId. Validate that the snapshot's ecommerce_mall_seller_id
+     *   matches the authenticated seller's ID. If validation fails, return 403
+     *   Forbidden.
    *
    * Join with ecommerce_mall_product_snapshot_variants using snapshot ID to retrieve all variants. For each variant, join with ecommerce_mall_product_snapshot_variant_option_values to retrieve option key-value pairs. Join with ecommerce_mall_product_snapshot_images to retrieve all images ordered by display_order.
    *

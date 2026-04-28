@@ -11,72 +11,91 @@ export type IErpHrmTimeProjectMembership = {
   /**
    * Unique identifier of the project membership record.
    *
-   * @x-autobe-database-schema-property id
-   * @x-autobe-specification Direct mapping from erp_hrm_time_project_memberships.id.
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_project_memberships.id.
    */
   id: string & tags.Format<"uuid">;
 
   /**
    * Identifier of the project that owns this membership.
    *
-   * @x-autobe-database-schema-property erp_hrm_time_project_id
-   * @x-autobe-specification Direct mapping from erp_hrm_time_project_memberships.erp_hrm_time_project_id. Keep the raw project identifier in the read payload alongside the expanded project relation.
+     * @x-autobe-database-schema-property erp_hrm_time_project_id
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_project_memberships.erp_hrm_time_project_id. Keep the raw
+     *   project identifier in the read payload alongside the expanded project
+     *   relation.
    */
   erp_hrm_time_project_id: string & tags.Format<"uuid">;
 
   /**
    * Identifier of the employee assigned to this project.
    *
-   * @x-autobe-database-schema-property erp_hrm_time_employee_id
-   * @x-autobe-specification Direct mapping from erp_hrm_time_project_memberships.erp_hrm_time_employee_id. Keep the raw employee identifier in the read payload alongside the expanded employee relation.
+     * @x-autobe-database-schema-property erp_hrm_time_employee_id
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_project_memberships.erp_hrm_time_employee_id. Keep the raw
+     *   employee identifier in the read payload alongside the expanded employee
+     *   relation.
    */
   erp_hrm_time_employee_id: string & tags.Format<"uuid">;
 
   /**
    * Role the employee performs in this project.
    *
-   * @x-autobe-database-schema-property project_role
-   * @x-autobe-specification Direct mapping from erp_hrm_time_project_memberships.project_role. This is the employee's role within the project assignment, such as member or project lead.
+     * @x-autobe-database-schema-property project_role
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_project_memberships.project_role. This is the employee's
+     *   role within the project assignment, such as member or project lead.
    */
   project_role: string;
 
   /**
    * Expanded project information for this membership.
    *
-   * @x-autobe-database-schema-property project
-   * @x-autobe-specification Resolve via the erp_hrm_time_project_memberships.project relation joined through erp_hrm_time_project_id. Return the project as IErpHrmTimeProject.ISummary.
+     * @x-autobe-database-schema-property project
+     * @x-autobe-specification Resolve via the
+     *   erp_hrm_time_project_memberships.project relation joined through
+     *   erp_hrm_time_project_id. Return the project as
+     *   IErpHrmTimeProject.ISummary.
    */
   project: IErpHrmTimeProject.ISummary;
 
   /**
    * Expanded employee information for this membership.
    *
-   * @x-autobe-database-schema-property employee
-   * @x-autobe-specification Resolve via the erp_hrm_time_project_memberships.employee relation joined through erp_hrm_time_employee_id. Return the employee as IErpHrmTimeEmployeeDashboardSummary.ISummary.
+     * @x-autobe-database-schema-property employee
+     * @x-autobe-specification Resolve via the
+     *   erp_hrm_time_project_memberships.employee relation joined through
+     *   erp_hrm_time_employee_id. Return the employee as
+     *   IErpHrmTimeEmployeeDashboardSummary.ISummary.
    */
   employee: IErpHrmTimeEmployeeDashboardSummary.ISummary;
 
   /**
    * Timestamp when the membership was created.
    *
-   * @x-autobe-database-schema-property created_at
-   * @x-autobe-specification Direct mapping from erp_hrm_time_project_memberships.created_at.
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_project_memberships.created_at.
    */
   created_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the membership was last updated.
    *
-   * @x-autobe-database-schema-property updated_at
-   * @x-autobe-specification Direct mapping from erp_hrm_time_project_memberships.updated_at.
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_project_memberships.updated_at.
    */
   updated_at: string & tags.Format<"date-time">;
 
   /**
    * Timestamp when the membership was soft deleted, or null if it is active.
    *
-   * @x-autobe-database-schema-property deleted_at
-   * @x-autobe-specification Direct mapping from erp_hrm_time_project_memberships.deleted_at. Preserve the nullable deleted timestamp as a oneOf string|null value.
+     * @x-autobe-database-schema-property deleted_at
+     * @x-autobe-specification Direct mapping from
+     *   erp_hrm_time_project_memberships.deleted_at. Preserve the nullable
+     *   deleted timestamp as a oneOf string|null value.
    */
   deleted_at: (string & tags.Format<"date-time">) | null;
 };
@@ -88,16 +107,24 @@ export namespace IErpHrmTimeProjectMembership {
     /**
      * Identifier of the employee to assign to the project.
      *
-     * @x-autobe-database-schema-property erp_hrm_time_employee_id
-     * @x-autobe-specification Direct mapping to erp_hrm_time_project_memberships.erp_hrm_time_employee_id. The client supplies the UUID of the employee to assign to the route-scoped project. The service must verify the employee belongs to the current organization before insert.
+         * @x-autobe-database-schema-property erp_hrm_time_employee_id
+         * @x-autobe-specification Direct mapping to
+         *   erp_hrm_time_project_memberships.erp_hrm_time_employee_id. The
+         *   client supplies the UUID of the employee to assign to the
+         *   route-scoped project. The service must verify the employee belongs
+         *   to the current organization before insert.
      */
     erpHrmtimeEmployeeId: string & tags.Format<"uuid">;
 
     /**
      * Role assigned to the employee within the project membership.
      *
-     * @x-autobe-database-schema-property project_role
-     * @x-autobe-specification Direct mapping to erp_hrm_time_project_memberships.project_role. Persist the employee's role within the project assignment, such as member or project lead. Validate against allowed project membership role values before saving.
+         * @x-autobe-database-schema-property project_role
+         * @x-autobe-specification Direct mapping to
+         *   erp_hrm_time_project_memberships.project_role. Persist the
+         *   employee's role within the project assignment, such as member or
+         *   project lead. Validate against allowed project membership role
+         *   values before saving.
      */
     projectRole: string;
   };
@@ -109,16 +136,23 @@ export namespace IErpHrmTimeProjectMembership {
     /**
      * UUID of the employee assigned to this project membership.
      *
-     * @x-autobe-database-schema-property erp_hrm_time_employee_id
-     * @x-autobe-specification Direct mapping to erp_hrm_time_project_memberships.erp_hrm_time_employee_id. When present, the service must confirm the employee exists, belongs to the same organization as the project, and does not create a duplicate project-employee membership.
+         * @x-autobe-database-schema-property erp_hrm_time_employee_id
+         * @x-autobe-specification Direct mapping to
+         *   erp_hrm_time_project_memberships.erp_hrm_time_employee_id. When
+         *   present, the service must confirm the employee exists, belongs to
+         *   the same organization as the project, and does not create a
+         *   duplicate project-employee membership.
      */
     erp_hrm_time_employee_id?: (string & tags.Format<"uuid">) | undefined;
 
     /**
      * Role assigned to the employee within the project, such as member or project lead.
      *
-     * @x-autobe-database-schema-property project_role
-     * @x-autobe-specification Direct mapping to erp_hrm_time_project_memberships.project_role. Validate the value against the allowed project membership role set before persisting the change.
+         * @x-autobe-database-schema-property project_role
+         * @x-autobe-specification Direct mapping to
+         *   erp_hrm_time_project_memberships.project_role. Validate the value
+         *   against the allowed project membership role set before persisting
+         *   the change.
      */
     project_role?: string | undefined;
   };
@@ -130,14 +164,20 @@ export namespace IErpHrmTimeProjectMembership {
     /**
      * Current page number for the project membership list.
      *
-     * @x-autobe-specification Use as the 1-indexed page number for the project membership list query. Apply after resolving the selected project from the {projectId} path parameter and current organization context. Defaults to the first page when omitted.
+         * @x-autobe-specification Use as the 1-indexed page number for the
+         *   project membership list query. Apply after resolving the selected
+         *   project from the {projectId} path parameter and current
+         *   organization context. Defaults to the first page when omitted.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
      * Maximum number of project membership records to return per page.
      *
-     * @x-autobe-specification Use as the maximum number of project membership records returned per page. Enforce the endpoint's paging bounds before querying the database. If omitted, apply the service default page size.
+         * @x-autobe-specification Use as the maximum number of project
+         *   membership records returned per page. Enforce the endpoint's paging
+         *   bounds before querying the database. If omitted, apply the service
+         *   default page size.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -146,14 +186,23 @@ export namespace IErpHrmTimeProjectMembership {
     /**
      * Free-text search term for narrowing the project membership list.
      *
-     * @x-autobe-specification Use as a free-text filter against project membership list data, typically the linked employee display fields and membership role display labels returned by the list query. Apply within the selected project and organization scope only. If omitted, return unfiltered results aside from pagination and sort criteria.
+         * @x-autobe-specification Use as a free-text filter against project
+         *   membership list data, typically the linked employee display fields
+         *   and membership role display labels returned by the list query.
+         *   Apply within the selected project and organization scope only. If
+         *   omitted, return unfiltered results aside from pagination and sort
+         *   criteria.
      */
     search?: string | undefined;
 
     /**
      * Sort order for the project membership list.
      *
-     * @x-autobe-specification Use as the sort instruction for the project membership list query. Interpret it in the service layer to order memberships deterministically, with a stable default order when omitted. The sort must operate only within the current project and organization scope.
+         * @x-autobe-specification Use as the sort instruction for the project
+         *   membership list query. Interpret it in the service layer to order
+         *   memberships deterministically, with a stable default order when
+         *   omitted. The sort must operate only within the current project and
+         *   organization scope.
      */
     sort?: string | undefined;
   };
@@ -165,56 +214,68 @@ export namespace IErpHrmTimeProjectMembership {
     /**
      * Unique project membership identifier.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from erp_hrm_time_project_memberships.id.
+         * @x-autobe-database-schema-property id
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_project_memberships.id.
      */
     id: string & tags.Format<"uuid">;
 
     /**
      * Employee's role within this project assignment, such as member or project lead.
      *
-     * @x-autobe-database-schema-property project_role
-     * @x-autobe-specification Direct mapping from erp_hrm_time_project_memberships.project_role.
+         * @x-autobe-database-schema-property project_role
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_project_memberships.project_role.
      */
     projectRole: string;
 
     /**
      * Employee assigned to this project membership.
      *
-     * @x-autobe-database-schema-property employee
-     * @x-autobe-specification Join from erp_hrm_time_project_memberships.erp_hrm_time_employee_id to the related employee record and expose it using the employee summary schema.
+         * @x-autobe-database-schema-property employee
+         * @x-autobe-specification Join from
+         *   erp_hrm_time_project_memberships.erp_hrm_time_employee_id to the
+         *   related employee record and expose it using the employee summary
+         *   schema.
      */
     employee: IErpHrmTimeEmployeeDashboardSummary.ISummary;
 
     /**
      * Project that this membership belongs to.
      *
-     * @x-autobe-database-schema-property project
-     * @x-autobe-specification Join from erp_hrm_time_project_memberships.erp_hrm_time_project_id to the related project record and expose it using the project summary schema.
+         * @x-autobe-database-schema-property project
+         * @x-autobe-specification Join from
+         *   erp_hrm_time_project_memberships.erp_hrm_time_project_id to the
+         *   related project record and expose it using the project summary
+         *   schema.
      */
     project: IErpHrmTimeProject.ISummary;
 
     /**
      * Timestamp when the project membership was created.
      *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from erp_hrm_time_project_memberships.created_at.
+         * @x-autobe-database-schema-property created_at
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_project_memberships.created_at.
      */
     created_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when the project membership was last updated.
      *
-     * @x-autobe-database-schema-property updated_at
-     * @x-autobe-specification Direct mapping from erp_hrm_time_project_memberships.updated_at.
+         * @x-autobe-database-schema-property updated_at
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_project_memberships.updated_at.
      */
     updated_at: string & tags.Format<"date-time">;
 
     /**
      * Timestamp when the project membership was soft deleted, or null if active.
      *
-     * @x-autobe-database-schema-property deleted_at
-     * @x-autobe-specification Direct mapping from erp_hrm_time_project_memberships.deleted_at. Nullable soft-delete timestamp returned as-is.
+         * @x-autobe-database-schema-property deleted_at
+         * @x-autobe-specification Direct mapping from
+         *   erp_hrm_time_project_memberships.deleted_at. Nullable soft-delete
+         *   timestamp returned as-is.
      */
     deleted_at: (string & tags.Format<"date-time">) | null;
   };
